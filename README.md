@@ -33,3 +33,5 @@ Other tests may or may not run based on this command.  In those cases, running '
 
 See preliminary BlackParrot coding guidelines at:
 https://docs.google.com/document/d/1GOSp6NVQUzGAAk_ahleAsANaQK2XJ0MUOZFPC9DLbLQ/edit?usp=sharing
+
+NOTE: Currently, BlackParrot requires a VCS license.  Work in is progress to adapt the project to Verilator (https://www.veripool.org/wiki/verilator), an open-source simulator.  At the moment, for the purpose of this pre-alpha release, please contact petrisko@cs.washington.edu for help massaging your own VCS setup into this build flow (or pull-request a working Verilator build =))
