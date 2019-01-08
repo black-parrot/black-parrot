@@ -1,0 +1,6 @@
+obj_dir/
+dump.vcd
+csrc/
+simv.daidir/
+simv
+ucli.key

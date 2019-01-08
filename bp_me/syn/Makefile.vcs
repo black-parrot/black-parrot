@@ -1,0 +1,68 @@
+## Setup CAD tools
+
+ifneq (,$(findstring xor,$(shell hostname)))
+  include $(CADENV_PATH)/cadenv.mk
+else
+  $(info Not on xor...VCS not supported)
+endif
+
+## Tool specific options
+VCS_OPTIONS += +notimingcheck
+VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
+VCS_OPTIONS += -timescale=1ps/1ps
+VCS_OPTIONS += -full64
+VCS_OPTIONS += +v2k
+VCS_OPTIONS += +vc
+VCS_OPTIONS += -sverilog
+VCS_OPTIONS += -debug_pp
+VCS_OPTIONS += +vcs+lic+wait
+VCS_OPTIONS += +multisource_int_delays
+VCS_OPTIONS += +neg_tchk
+VCS_OPTIONS += +libext+.v+.vlib+.vh
+
+## Find sources
+VCS_OPTIONS += +incdir+$(BP_COMMON_PATH)
+VCS_OPTIONS += +incdir+$(SRC_PATH)
+VCS_OPTIONS += +incdir+$(INC_PATH)
+VCS_OPTIONS += +incdir+$(TB_PATH)
+VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_dataflow
+VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_mem
+VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_misc
+VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_noc
+
+LINT_OPTIONS +=+lint=all,noSVA-UA,noVCDE,noSVA-NSVU -notice
+
+# Enable GUI (DVE) mode
+# This is to run interative simulation/debugging in GUI mode.
+ifeq ($(VCS_GUI),1)
+  VCS_OPTIONS += -gui
+endif
+
+# add VCS test sources
+VTB_SOURCE = \
+	$(TB_COMMON_PATH)/bp_me_top.v   \
+	$(TB_COMMON_PATH)/bp_mem.v			\
+	$(CCE_ROM_PATH)/bp_me_mem_rom_0.v \
+	$(BSG_IP_PATH)/bsg_noc/bsg_noc_pkg.v \
+	$(NETWORK_PATH)/bp_coherence_network_channel.v \
+	$(NETWORK_PATH)/bp_coherence_network.v \
+	$(BSG_IP_PATH)/bsg_noc/bsg_mesh_router_buffered.v \
+	$(BSG_IP_PATH)/bsg_noc/bsg_mesh_router.v
+
+V_TOP_MODULE = bp_me_top
+
+lint.v: $(HDL_SOURCE)
+	$(eval HDL_SOURCE += $(CCE_ROM_PATH)/old/bp_cce_inst_rom_lce1.v)
+	$(VCS) $(VCS_OPTIONS) $(LINT_OPTIONS) -top $(V_TOP_MODULE) $(HDL_SOURCE) $(VTB_SOURCE)
+
+# TODO: targets below not tested or supported for BP ME
+%.build.v: $(HDL_SOURCE)
+	$(eval include $(VTB_PATH)/$*/Makefile.frag)
+	$(VCS) $(VCS_OPTIONS) -o $(VTB_PATH)/$*/simv -top test_bp \
+		$(HDL_SOURCE) $(HDL_PARAMS) $(TEST_SOURCE) $(VTB_PATH)/$*/test_bp.v
+
+%.run.v: %.build.v
+	$(eval include $(VTB_PATH)/$*/Makefile.frag)
+	cd $(VTB_PATH)/$* && \
+	$(VTB_PATH)/$*/simv $(SIM_OPTIONS) > $(VTB_PATH)/$*/simout.txt
+

@@ -1,0 +1,9 @@
+verilator
+verilator-build
+systemc-build
+systemc.tar.gz
+systemc-2.3.2.tar.gz
+systemc
+.\#*
+*~
+src/bp_fe_top/tb/bp_fe_rom.v

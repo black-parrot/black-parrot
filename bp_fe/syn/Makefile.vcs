@@ -1,0 +1,136 @@
+
+VCS_OPTIONS += -timescale=1ps/1ps
+VCS_OPTIONS += -full64
+VCS_OPTIONS += +v2k
+VCS_OPTIONS += +vc
+VCS_OPTIONS += -sverilog
+VCS_OPTIONS += -debug_pp
+VCS_OPTIONS += +vcs+lic+wait
+VCS_OPTIONS += +multisource_int_delays
+VCS_OPTIONS += +neg_tchk
+VCS_OPTIONS += +libext+.v+.vlib+.vh
+VCS_OPTIONS += +vcs+finish+10000000ps
+VCS_OPTIONS += -R
+VCS_OPTIONS += +vcs+vcdplusautoflushon
+VCS_OPTIONS += +vcs+vcdpluson
+VCS_OPTIONS += +vcs+vcdplusmemon
+
+## Find sources
+VCS_OPTIONS += +incdir+$(BP_COMMON_PATH)
+VCS_OPTIONS += +incdir+$(SRC_PATH)
+VCS_OPTIONS += +incdir+$(TB_PATH)
+VCS_OPTIONS += +incdir+$(BP_BE_PATH)/bp_dcache/include
+VCS_OPTIONS += +incdir+$(BP_BE_PATH)/bp_dcache/testing/v
+VCS_OPTIONS += +incdir+$(BP_ME_PATH)/include/v
+VCS_OPTIONS += +incdir+$(BP_FE_PATH)/src/common
+VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_dataflow
+VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_mem
+VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_misc
+VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_test
+VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_noc
+
+# Enable GUI (DVE) mode
+# This is to run interative simulation/debugging in GUI mode.
+ifeq ($(VCS_GUI),1)
+  VCS_OPTIONS += -gui
+endif
+
+ROM_PATH       ?=${BP_FE_PATH}/test/roms/v
+TEST_ROM       ?=rv64ui_p_add_rom.v
+
+SRC_V        ?=${TB_PATH}/bp_fe_top/tb.v 
+INCLUDE_V    ?=\
+               ${BSG_IP_PATH}/bsg_misc/bsg_defines.v \
+               ${BP_COMMON_PATH}/bp_common_pkg.vh \
+               ${BP_COMMON_PATH}/bp_common_fe_be_if.vh \
+               ${BP_COMMON_PATH}/bp_common_me_if.vh \
+               ${INC_PATH}/bp_fe_pc_gen_pkg.vh \
+               ${INC_PATH}/bp_fe_itlb_pkg.vh \
+               ${INC_PATH}/bp_fe_pc_gen.vh \
+               ${INC_PATH}/bp_fe_itlb.vh \
+               ${INC_PATH}/bp_fe_icache.vh \
+               ${INC_PATH}/bp_fe_lce.vh \
+               ${TB_PATH}/bp_fe_top/tb.v \
+               ${BSG_IP_PATH}/bsg_misc/bsg_mux.v \
+               ${BSG_IP_PATH}/bsg_misc/bsg_priority_encode_one_hot_out.v \
+               ${BSG_IP_PATH}/bsg_misc/bsg_encode_one_hot.v\
+               ${BSG_IP_PATH}/bsg_test/bsg_nonsynth_clock_gen.v \
+               ${BSG_IP_PATH}/bsg_test/bsg_nonsynth_reset_gen.v \
+               ${BSG_IP_PATH}/bsg_dataflow/bsg_two_fifo.v\
+               ${BSG_IP_PATH}/bsg_dataflow/bsg_two_buncher.v\
+               ${BP_BE_PATH}/bp_dcache/v/bp_dcache_lru_decode.v\
+               ${BP_BE_PATH}/bp_dcache/v/bp_dcache_lru_encode.v\
+               ${BSG_IP_PATH}/bsg_misc/bsg_priority_encode.v \
+               ${BSG_IP_PATH}/bsg_misc/bsg_lfsr.v \
+               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1r1w_sync.v \
+               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1r1w_synth.v \
+               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1r1w.v \
+               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1r1w_sync_synth.v \
+               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1rw_sync_mask_write_byte.v \
+               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1rw_sync_synth.v \
+               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1rw_sync.v \
+               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1rw_sync_mask_write_bit_synth.v \
+               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v \
+               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1rw_sync_mask_write_byte_synth.v \
+               ${BSG_IP_PATH}/bsg_misc/bsg_scan.v\
+               ${SRC_PATH}/bp_fe_btb.v \
+               ${SRC_PATH}/bp_fe_bht.v \
+               ${SRC_PATH}/bp_fe_instr_scan.v \
+               ${SRC_PATH}/bp_fe_pc_gen.v \
+               ${SRC_PATH}/bp_fe_branch_predictor.v \
+               ${SRC_PATH}/bp_fe_cce_lce_cmd.v \
+               ${SRC_PATH}/bp_fe_cce_lce_data_cmd.v \
+               ${SRC_PATH}/bp_fe_icache.v \
+               ${SRC_PATH}/bp_fe_lce.v \
+               ${SRC_PATH}/bp_fe_lce_cce_req.v \
+               ${SRC_PATH}/bp_fe_lce_lce_tr_resp_in.v \
+               ${SRC_PATH}/bp_fe_itlb.v \
+               ${SRC_PATH}/bp_fe_top.v  \
+               ${BP_FE_PATH}/test/common/mock/mock_cce.v \
+               ${BP_FE_PATH}/test/common/mock/mock_be.v \
+               ${BP_FE_PATH}/test/common/wrappers/bp_fe_top_wrapper.v \
+               bp_fe_rom.v 
+
+
+TEST_V       ?=$(notdir $(SRC_V))
+TEST_INCLUDE ?=$(notdir $(INCLUDE_V) )
+
+VCS_LOG      ?= vcs.log
+
+LINT_FLAGS   ?="+lint=all,noVCDE,noNS,noSV-PIU,noSVA-UA,noSVA-NSVU,noSV-LCM-PPWI"
+
+vcs          ?=vcs +v2k -R $(LINT_FLAGS) -sverilog -full64  \
+		-debug_pp -timescale=1ps/1ps +vcs+vcdpluson +vcs+vcdplusmemon -l $(VCS_LOG) \
+		+vcs+vcdplusautoflushon 
+
+HIGHLIGHT    = grep -z --color 'Error'
+
+all: bp_fe_top_wrapper.run.v
+
+bp_fe_rom.v:
+	echo "TESTING ROM:" $(TEST_ROM);\
+	ln -svf $(ROM_PATH)/$(TEST_ROM) bp_fe_rom.v
+
+%.build.v: ${BP_FE_PATH}/test/common/wrappers/%.v $(INCLUDE_V) $(SRC_V)
+	$(eval include $(dir $<)Makefile.frag) 
+	mkdir -p build; \
+	cp $^ build;\
+	cp $< build;\
+	touch $@; 
+	
+%.run.v: %.build.v 
+	cd build;\
+	${vcs} ${VCS_OPTIONS} ${TEST_INCLUDE} ${HDL_PARAMS} -top tb | $(HIGHLIGHT);\
+	trap 'echo -e "\033[31m\033[1m [ERROR] \033[0m " exit simv or vcd2wlf' SIGINT;\
+	./simv +verbose=1  <<< "exit" | grep -E --color "^\[INS\]" | tee $(basename ${TEST_ROM})_trace.log ;\
+	touch $@;
+	#vcd2wlf tb.vcd tb.wlf;
+
+dve:
+	# simvision -input simvision.svcf
+	# vsim -do modelsim.tcl
+	trap 'echo -e "\033[31m\033[1m [ERROR] \033[0m " exit simv or vcd2wlf' SIGINT;\
+	cd build; dve -full64 -vpd vcdplus.vpd &
+clean:
+	rm -rf build *.log *.run.v *.build.v;\
+	unlink bp_fe_rom.v

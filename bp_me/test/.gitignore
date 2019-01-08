@@ -1,0 +1,6 @@
+obj_dir/
+sim
+simsc
+sim.txt
+simout.txt
+dump.vcd

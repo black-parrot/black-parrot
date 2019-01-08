@@ -1,0 +1,136 @@
+## Setup CAD tools
+include $(CADENV_PATH)/cadenv.mk
+
+## Tool specific options
+VCS_OPTIONS += +notimingcheck
+VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
+VCS_OPTIONS += -timescale=1ps/1ps
+VCS_OPTIONS += -full64
+VCS_OPTIONS += +v2k
+VCS_OPTIONS += +vc
+VCS_OPTIONS += -sverilog
+VCS_OPTIONS += -debug_pp
+VCS_OPTIONS += +vcs+lic+wait
+VCS_OPTIONS += +multisource_int_delays
+VCS_OPTIONS += +neg_tchk
+VCS_OPTIONS += +libext+.v+.vlib+.vh
+VCS_OPTIONS += +vcs+finish+1000000ps
+
+## Find sources
+VCS_OPTIONS += +incdir+$(BP_COMMON_PATH)
+VCS_OPTIONS += +incdir+$(BP_BE_PATH)/v
+VCS_OPTIONS += +incdir+$(TB_PATH)
+VCS_OPTIONS += +incdir+$(BP_BE_PATH)/bp_dcache/include
+VCS_OPTIONS += +incdir+$(BP_BE_PATH)/bp_dcache/testing/v
+VCS_OPTIONS += +incdir+$(BP_ME_PATH)/src/include/v
+VCS_OPTIONS += +incdir+$(BP_FE_PATH)/src/include
+VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_dataflow
+VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_mem
+VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_misc
+VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_test
+VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_noc
+
+LINT_OPTIONS +=+lint=all,noSVA-UA,noVCDE,noSV-LCM-PPWI
+
+# Enable GUI (DVE) mode
+# This is to run interative simulation/debugging in GUI mode.
+ifeq ($(VCS_GUI),1)
+  VCS_OPTIONS += -gui
+endif
+
+TRACE_ROM ?= rv64ui_p_add_trace_rom.v
+TEST_ROM  ?= bp_be_example_rom.v
+LOAD_ROM  ?= bp_be_boot_rom.v
+
+TEST_ROM_C  = $(notdir $(TEST_ROM))
+LOAD_ROM_C  = $(notdir $(LOAD_ROM))
+
+#$(BP_ME_PATH)/v/roms/bp_cce_inst_rom_lce1_wg16_assoc8.v						               
+#$(BP_ME_PATH)/v/roms/old/bp_cce_inst_rom_lce4_wg16_demo.v   					   
+TEST_SOURCE += 	\
+\
+		    $(BP_FE_PATH)/src/include/bp_fe_pc_gen_pkg.vh									\
+		    $(BP_FE_PATH)/src/include/bp_fe_itlb_pkg.vh									  \
+			  $(BP_FE_PATH)/src/include/bp_fe_lce.vh											  \
+			  $(BP_FE_PATH)/src/include/bp_fe_pc_gen.vh										  \
+			  $(BP_FE_PATH)/src/include/bp_fe_icache.vh										  \
+			  $(BP_FE_PATH)/src/v/bp_fe_top.v										   \
+			  $(BP_FE_PATH)/src/v/bp_fe_itlb.v									   \
+			  $(BP_FE_PATH)/src/v/bp_fe_branch_predictor.v								   \
+			  $(BP_FE_PATH)/src/v/bp_fe_pc_gen.v								   \
+			  $(BP_FE_PATH)/src/v/bp_fe_icache.v								   \
+			  $(BP_FE_PATH)/src/v/bp_fe_lce.v								       \
+			  $(BP_FE_PATH)/src/v/bp_fe_cce_lce_cmd.v							   \
+			  $(BP_FE_PATH)/src/v/bp_fe_cce_lce_data_cmd.v						   \
+			  $(BP_FE_PATH)/src/v/bp_fe_lce_cce_req.v   						   \
+			  $(BP_FE_PATH)/src/v/bp_fe_lce_lce_tr_resp_in.v   				   \
+			  $(BP_FE_PATH)/src/v/bp_fe_bht.v										   \
+			  $(BP_FE_PATH)/src/v/bp_fe_btb.v										   \
+			  $(BP_FE_PATH)/src/v/bp_fe_instr_scan.v									   \
+\
+			  $(BP_ME_PATH)/src/include/v/bp_cce_inst_pkg.v				                           \
+			  $(BSG_IP_PATH)/bsg_noc/bsg_noc_pkg.v											   \
+			  $(BP_ME_PATH)/test/common/bp_me_top.v											   \
+			  $(BP_ME_PATH)/src/v/cce/bp_cce_top.v						                           \
+			  $(BP_ME_PATH)/src/v/cce/bp_cce_alu.v						                           \
+			  $(BP_ME_PATH)/src/v/cce/bp_cce_dir.v						                           \
+			  $(BP_ME_PATH)/src/v/cce/bp_cce_gad.v						                           \
+			  $(BP_ME_PATH)/src/v/cce/bp_cce_inst_decode.v  			                           \
+			  $(BP_ME_PATH)/src/v/cce/bp_cce_pc.v						                           \
+			  $(BP_ME_PATH)/src/v/cce/bp_cce_reg.v						                           \
+			  $(BP_ME_PATH)/src/v/cce/bp_cce.v						                               \
+			  $(BP_ME_PATH)/src/v/network/bp_coherence_network.v                                   \
+			  $(BP_ME_PATH)/src/v/network/bp_coherence_network_channel.v                           \
+			  $(BSG_IP_PATH)/bsg_noc/bsg_mesh_router_buffered.v								   \
+			  $(BSG_IP_PATH)/bsg_noc/bsg_mesh_router.v       								   \
+			  $(BSG_IP_PATH)/bsg_misc/bsg_round_robin_arb.v						               \
+\
+			  $(BSG_IP_PATH)/bsg_test/bsg_nonsynth_clock_gen.v                                 \
+			  $(BSG_IP_PATH)/bsg_test/bsg_nonsynth_reset_gen.v                                 \
+\
+			  $(BP_BE_PATH)/tb/common/bp_top_wrapper.v											   \
+			  $(BP_BE_PATH)/tb/common/bp_multi_wrapper.v											   \
+			  $(BP_BE_PATH)/tb/common/bp_be_nonsynth_mock_top_wrapper.v                              \
+			  $(BP_BE_PATH)/tb/common/bp_be_nonsynth_mock_fe_top_wrapper.v                           \
+			  $(BP_BE_PATH)/tb/common/bp_be_nonsynth_mock_fe.v		                               \
+			  $(BP_BE_PATH)/tb/common/bp_be_nonsynth_mock_fe_trace.v	                               \
+			  $(BP_BE_PATH)/tb/common/bp_be_nonsynth_mock_mmu.v		                               \
+			  $(BP_BE_PATH)/tb/common/bp_be_nonsynth_tracer.v			                               \
+			  $(BP_BE_PATH)/tb/common/bp_multi_nonsynth_mock_fe_top_wrapper.v						   \
+																	                           \
+			  $(BP_BE_PATH)/bp_dcache/testing/v/mock_tlb.v			                           \
+																	                           \
+			  $(BP_ME_PATH)/test/common/bp_cce_test.v			                               \
+			  $(BP_ME_PATH)/test/common/bp_mem.v					                           \
+																                               \
+			  $(BP_TOP_PATH)/test/rom/v/$(LOAD_ROM)					   	                       \
+			  
+	
+lint.v: $(HDL_SOURCE)
+	$(VCS) $(VCS_OPTIONS) $(LINT_OPTIONS) -top bp_be_top $(HDL_SOURCE) 
+
+load_rom.v: $(HDL_SOURCE)
+	if [ "$(TEST_ROM_C)" != "$(LOAD_ROM_C)" ]; then						    \
+		ln -sf $(BP_TOP_PATH)/test/rom/v/$(TEST_ROM_C) $(BP_TOP_PATH)/test/rom/v/$(LOAD_ROM_C);	\
+	fi;
+
+%.build.v: $(HDL_SOURCE) load_rom.v
+	$(eval include $(TB_PATH)/$*/Makefile.frag)			         	    \
+	$(VCS) $(VCS_OPTIONS) -o $(TB_PATH)/$*/simv -top test_bp               \
+		$(HDL_SOURCE) $(HDL_PARAMS) $(TEST_SOURCE) $(TB_PATH)/$*/test_bp.v
+
+%.run.v: %.build.v
+	$(eval include $(TB_PATH)/$*/Makefile.frag)
+	cd $(TB_PATH)/$* && 				     			      \
+	$(TB_PATH)/$*/simv $(SIM_OPTIONS)                        \
+		> $(TB_PATH)/$*/$(basename $(TEST_ROM_C))_simout.txt
+	
+%.clean.v:
+	cd $(TB_PATH)/$* 		;\
+		rm -rf DVEfiles	    ;\
+		rm -rf simv*        ;\
+		rm -rf *.old        ;\
+		rm -rf *.tcl        ;\
+		rm -rf inter.vpd    ;\
+		rm -rf ucli.key    
+
