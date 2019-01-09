@@ -7,6 +7,9 @@ Fetch the latest bsg_ip_cores with:
 
 git submodule update
 
+NOTE: Some users are reporting access issues with the submodule.  If this is you, instead delete the git submodule and clone directly from bitbucket into the same place as the original submodule (even level with bp_be, bp_top, etc.)
+https://bitbucket.org/taylor-bsg/bsg_ip_cores/src/master/
+
 cd bp_top/syn
 
 The general command to run a test program with a testbench wrapper (found in bp_top/test/tb) is
