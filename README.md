@@ -3,9 +3,9 @@ Black Parrot is coming soon.
 
 To run the demo code:
 
-Clone the latest bsg_ip_cores (in the same hierarchical level as bp_fe, bp_me, etc...):
+Fetch the latest bsg_ip_cores with:
 
-git clone https://bitbucket.org/taylor-bsg/bsg_ip_cores.git
+git submodule update
 
 cd bp_top/syn
 
