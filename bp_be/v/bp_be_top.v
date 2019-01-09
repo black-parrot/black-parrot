@@ -33,6 +33,9 @@ module bp_be_top
                                                 ,branch_metadata_fwd_width_p
                                                 ,asid_width_p
                                                 )
+   ,localparam pipe_stage_reg_width_lp=`bp_be_pipe_stage_reg_width(branch_metadata_fwd_width_p)
+   ,localparam calc_result_width_lp=`bp_be_calc_result_width(branch_metadata_fwd_width_p)
+   ,localparam exception_width_lp=`bp_be_exception_width
 
    ,localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                           ,num_lce_p
@@ -111,6 +114,10 @@ module bp_be_top
    ,output logic [lce_lce_tr_resp_width_lp-1:0]   lce_lce_tr_resp_o
    ,output logic                                  lce_lce_tr_resp_v_o
    ,input logic                                   lce_lce_tr_resp_rdy_i
+
+   ,output logic[pipe_stage_reg_width_lp-1:0]     calc_trace_stage_reg_o
+   ,output logic[calc_result_width_lp-1:0]        calc_trace_result_o
+   ,output logic[exception_width_lp-1:0]          calc_trace_exc_o
   );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p
@@ -224,6 +231,7 @@ bp_be_calculator #(.mhartid_p(mhartid_p)
                    ,.calc_trace_exc_o(calc_trace_exc)
                   );
 
+/* TODO: Remove redundant tracer */
 bp_be_nonsynth_tracer #(.vaddr_width_p(vaddr_width_p)
                         ,.paddr_width_p(paddr_width_p)
                         ,.asid_width_p(asid_width_p)

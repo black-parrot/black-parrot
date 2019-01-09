@@ -1,6 +1,6 @@
 /**
  *
- * bp_be_nonsynth_mock_fe_top_wrapper.v
+ * bp_be_qed_wrapper.v
  *
  */
 
@@ -11,7 +11,7 @@
 
 `include "bp_be_internal_if.vh"
 
-module bp_be_nonsynth_mock_fe_top_wrapper
+module bp_be_qed_wrapper
  #(parameter mhartid_p="inv"
    ,parameter vaddr_width_p="inv"
    ,parameter paddr_width_p="inv"
@@ -267,5 +267,5 @@ bp_be_boot_rom #(.width_p(boot_rom_width_p)
                  ,.data_o(irom_data)
                  );
 
-endmodule : bp_be_nonsynth_mock_fe_top_wrapper
+endmodule : bp_be_qed_wrapper
 

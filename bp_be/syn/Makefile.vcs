@@ -89,6 +89,7 @@ TEST_SOURCE += 										   			                               \
 			  $(TB_PATH)/common/bp_top_wrapper.v											   \
 			  $(TB_PATH)/common/bp_multi_wrapper.v											   \
 			  $(TB_PATH)/common/bp_be_nonsynth_mock_top_wrapper.v                              \
+			  $(TB_PATH)/common/bp_be_qed_wrapper.v                                            \
 			  $(TB_PATH)/common/bp_be_nonsynth_mock_fe_top_wrapper.v                           \
 			  $(TB_PATH)/common/bp_be_nonsynth_mock_fe.v		                               \
 			  $(TB_PATH)/common/bp_be_nonsynth_mock_fe_trace.v	                               \
@@ -109,7 +110,7 @@ lint.v: $(HDL_SOURCE)
 
 load_rom.v: $(HDL_SOURCE)
 	if [ "$(TEST_ROM_C)" != "$(LOAD_ROM_C)" ]; then						    \
-		ln -sf $(TB_PATH)/rom/$(TEST_ROM_C) $(TB_PATH)/rom/$(LOAD_ROM_C);	\
+		ln -sf $(TB_PATH)/rom/$(TEST_ROM_C) $(BP_TOP_PATH)/test/rom/v/$(LOAD_ROM_C);	\
 	fi;
 
 %.build.v: $(HDL_SOURCE) load_rom.v
