@@ -92,8 +92,10 @@ bsg_mux_segmented #(.segments_p(cache_hit_latency_lp)
                               ,1'b0})
                     ,.data1_i({1'b1
                                ,1'b1
+                               ,1'b1
                                })
                     ,.sel_i({chk_psn_ex_i
+                             ,chk_psn_ex_i
                              ,chk_psn_ex_i
                              })
                     ,.data_o(psn_n)
