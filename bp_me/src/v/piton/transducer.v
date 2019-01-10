@@ -166,7 +166,7 @@ module transducer
   end
 
   always_comb begin
-      if (noc2decoder_l15_val & (noc2decoder_l15_reqtype == `INT_RET)) begin
+      if (noc2decoder_l15_val & (noc2decoder_l15_reqtype == `MSG_TYPE_INTERRUPT)) begin
         if (noc2decoder_l15_data_0[17:16] == 2'b01) begin
             reset_int_recv = 1'b1;
         end
@@ -304,12 +304,14 @@ simplenocbuffer simplenocbuffer(
     noc2decoder takes the data from the buffer and decode it to meaningful signals
     to the l15
 */
+assign l15_noc2decoder_ack = noc2_data_val;
+assign l15_noc2decoder_header_ack = noc2_data_val;
 noc2decoder noc2decoder(
     .clk(clk_i),
     .rst_n(rst_n),
     // inputs
-    .noc2_data(noc2_data_i),
-    .noc2_data_val(noc2_v_i),
+    .noc2_data(noc2_data),
+    .noc2_data_val(noc2_data_val),
     .l15_noc2decoder_ack(l15_noc2decoder_ack),
     .l15_noc2decoder_header_ack(l15_noc2decoder_header_ack),
     // outputs
