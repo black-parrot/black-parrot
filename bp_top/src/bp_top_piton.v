@@ -7,8 +7,8 @@
 // FIXME: Parameter passing from OpenPiton infrastructure instead
 module bp_top_piton
  #(parameter core_els_p=1
-   ,parameter vaddr_width_p=22
-   ,parameter paddr_width_p=22
+   ,parameter vaddr_width_p=32
+   ,parameter paddr_width_p=32
    ,parameter asid_width_p=10
    ,parameter branch_metadata_fwd_width_p=36
    ,parameter num_cce_p=1
@@ -114,7 +114,7 @@ assign reset_i = ~reset_l;
                ,.inst_width_p(32)
                ,.lce_sets_p(lce_sets_p)
                ,.lce_assoc_p(lce_assoc_p)
-               ,.tag_width_p(12)
+               ,.tag_width_p(22)
                ,.coh_states_p(coh_states_p)
                ,.num_cce_p(num_cce_p)
                ,.num_lce_p(num_lce_p)
