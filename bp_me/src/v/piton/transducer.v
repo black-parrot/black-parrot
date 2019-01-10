@@ -874,7 +874,7 @@ noc3encoder noc3encoder(
 
           l15_noc1buffer_req_val <= 1'b1;
           if (icache_req_r) begin
-            l15_noc1buffer_req_type <= `L15_NOC1_REQTYPE_IFILL_REQUEST;
+            l15_noc1buffer_req_type <= `L15_NOC1_REQTYPE_LD_REQUEST;
             icache_req_r <= '0;
           //end else begin
           // TODO: how do we know that request should be Rd or RdEx?
@@ -894,6 +894,8 @@ noc3encoder noc3encoder(
           l15_noc1buffer_req_csm_data <= '0;
           l15_noc1buffer_req_data_0 <= '0;
           l15_noc1buffer_req_data_1 <= '0;
+
+          trans_state <= LCE_REQ_END;
 
         end
         LCE_REQ_END: begin
