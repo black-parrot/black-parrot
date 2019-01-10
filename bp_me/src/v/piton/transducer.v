@@ -32,6 +32,7 @@ module transducer
 
     ,parameter lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
     ,parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
+    ,parameter lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
   )
   (
     input                                                  clk_i
@@ -669,6 +670,7 @@ noc3encoder noc3encoder(
     ,RESET_SYNC_ACK
     ,READY
     ,LCE_REQ
+    ,LCE_REQ_END
     ,LCE_RESP
     ,LCE_DATA_RESP
     ,SEND_CCE_CMD
@@ -678,11 +680,14 @@ noc3encoder noc3encoder(
   transducer_state_e trans_state;
 
   logic icache_req_r;
-  logic set_count_r;
+  logic [lg_lce_sets_lp:0] set_count_r;
 
-  always_ff begin
+  logic [lg_num_lce_lp:0] sync_count_r;
+  logic [lg_num_lce_lp:0] sync_ack_count_r;
+
+  always_ff @(posedge clk_i) begin
     if (reset_i) begin
-      trans_state <= RESET;
+      trans_state <= RESET_SET_CLEAR;
       lce_req_r <= '0;
       lce_resp_r <= '0;
       lce_data_resp_r <= '0;
@@ -692,10 +697,10 @@ noc3encoder noc3encoder(
       icache_lce_cmd_r <= '0;
       icache_lce_cmd_v_o <= '0;
 
-      dcache_data_lce_cmd_r <= '0;
-      dcache_data_lce_cmd_v_o <= '0;
-      icache_data_lce_cmd_r <= '0;
-      icache_data_lce_cmd_v_o <= '0;
+      dcache_lce_data_cmd_r <= '0;
+      dcache_lce_data_cmd_v_o <= '0;
+      icache_lce_data_cmd_r <= '0;
+      icache_lce_data_cmd_v_o <= '0;
 
       icache_req_r <= '0;
       set_count_r <= '0;
@@ -852,7 +857,7 @@ noc3encoder noc3encoder(
           trans_state <= READY;
         end
         default: begin
-          trans_state <= RESET;
+          trans_state <= RESET_SET_CLEAR;
         end
       endcase
     end
