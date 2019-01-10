@@ -728,26 +728,26 @@ noc3encoder noc3encoder(
       lce_data_resp_r <= '0;
 
       dcache_lce_cmd_r <= '0;
-      dcache_lce_cmd_v_o <= '0;
+      dcache_lce_cmd_v_o <= 1'b0;
       icache_lce_cmd_r <= '0;
-      icache_lce_cmd_v_o <= '0;
+      icache_lce_cmd_v_o <= 1'b0;
 
       dcache_lce_data_cmd_r <= '0;
-      dcache_lce_data_cmd_v_o <= '0;
+      dcache_lce_data_cmd_v_o <= 1'b0;
       icache_lce_data_cmd_r <= '0;
-      icache_lce_data_cmd_v_o <= '0;
+      icache_lce_data_cmd_v_o <= 1'b0;
 
-      icache_req_r <= '0;
+      icache_req_r <= 1'b0;
       set_count_r <= '0;
       sync_count_r <= '0;
       sync_ack_count_r <= '0;
 
-      icache_lce_req_yumi_from_tr <= '0;
-      icache_lce_resp_yumi_from_tr <= '0;
-      icache_lce_data_resp_yumi_from_tr <= '0;
-      dcache_lce_req_yumi_from_tr <= '0;
-      dcache_lce_resp_yumi_from_tr <= '0;
-      dcache_lce_data_resp_yumi_from_tr <= '0;
+      icache_lce_req_yumi_from_tr <= 1'b0;
+      icache_lce_resp_yumi_from_tr <= 1'b0;
+      icache_lce_data_resp_yumi_from_tr <= 1'b0;
+      dcache_lce_req_yumi_from_tr <= 1'b0;
+      dcache_lce_resp_yumi_from_tr <= 1'b0;
+      dcache_lce_data_resp_yumi_from_tr <= 1'b0;
 
     end else begin
       case (trans_state)
