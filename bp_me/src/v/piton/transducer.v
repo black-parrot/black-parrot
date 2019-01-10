@@ -37,6 +37,7 @@ module transducer
   (
     input                                                  clk_i
     ,input                                                 reset_i
+    ,output                                                reset_done_o
 
     // LCE-CCE Interface
 
@@ -122,6 +123,62 @@ module transducer
   logic [bp_lce_cce_data_resp_width_lp-1:0]      icache_lce_data_resp_to_tr;
   logic                                          icache_lce_data_resp_v_to_tr;
   logic                                          icache_lce_data_resp_yumi_from_tr;
+
+  logic l15_noc2decoder_ack;
+  logic l15_noc2decoder_header_ack;
+  logic noc2decoder_l15_val;
+  logic [`L15_MSHR_ID_WIDTH-1:0] noc2decoder_l15_mshrid;
+  logic noc2decoder_l15_l2miss;
+  logic noc2decoder_l15_icache_type;
+  logic noc2decoder_l15_f4b;
+  logic [`MSG_TYPE_WIDTH-1:0] noc2decoder_l15_reqtype;
+  logic [`L15_MESI_STATE_WIDTH-1:0] noc2decoder_l15_ack_state;
+  logic [63:0] noc2decoder_l15_data_0;
+  logic [63:0] noc2decoder_l15_data_1;
+  logic [63:0] noc2decoder_l15_data_2;
+  logic [63:0] noc2decoder_l15_data_3;
+  logic [63:0] noc2decoder_l15_data_4;
+  logic [63:0] noc2decoder_l15_data_5;
+  logic [63:0] noc2decoder_l15_data_6;
+  logic [63:0] noc2decoder_l15_data_7;
+  logic [`L15_PADDR_HI:0] noc2decoder_l15_address;
+  logic [3:0] noc2decoder_l15_fwd_subcacheline_vector;
+  logic [`PACKET_HOME_ID_WIDTH-1:0] noc2decoder_l15_src_homeid;
+  
+  logic [`L15_CSM_NUM_TICKETS_LOG2-1:0] noc2decoder_l15_csm_mshrid;
+  logic [`L15_THREADID_MASK] noc2decoder_l15_threadid;
+  logic noc2decoder_l15_hmc_fill;
+
+  // Look for interrupt packet
+  logic                                          reset_int_recv;
+  logic                                          reset_int_recv_r;
+  logic                                          noc1_ready_with_reset;
+
+  assign noc1_ready_with_reset = noc1_ready_i & reset_int_recv_r;
+
+  always_ff @(posedge clk_i) begin
+      if (~rst_n) begin
+          reset_int_recv_r <= 1'b0;
+      end
+      else if (reset_int_recv) begin
+          reset_int_recv_r <= 1'b1;
+      end
+  end
+
+  always_comb begin
+      if (noc2decoder_l15_val & (noc2decoder_l15_reqtype == `INT_RET)) begin
+        if (noc2decoder_l15_data_0[17:16] == 2'b01) begin
+            reset_int_recv = 1'b1;
+        end
+        else begin
+            reset_int_recv = 1'b0;
+        end
+      end
+      else begin
+          reset_int_recv = 1'b0;
+      end
+  end
+
 
   // Inbound LCE to Transducer - D$
   bsg_two_fifo
@@ -242,30 +299,6 @@ simplenocbuffer simplenocbuffer(
     .msg_val(noc2_data_val)
 );
 
-logic l15_noc2decoder_ack;
-logic l15_noc2decoder_header_ack;
-logic noc2decoder_l15_val;
-logic [`L15_MSHR_ID_WIDTH-1:0] noc2decoder_l15_mshrid;
-logic noc2decoder_l15_l2miss;
-logic noc2decoder_l15_icache_type;
-logic noc2decoder_l15_f4b;
-logic [`MSG_TYPE_WIDTH-1:0] noc2decoder_l15_reqtype;
-logic [`L15_MESI_STATE_WIDTH-1:0] noc2decoder_l15_ack_state;
-logic [63:0] noc2decoder_l15_data_0;
-logic [63:0] noc2decoder_l15_data_1;
-logic [63:0] noc2decoder_l15_data_2;
-logic [63:0] noc2decoder_l15_data_3;
-logic [63:0] noc2decoder_l15_data_4;
-logic [63:0] noc2decoder_l15_data_5;
-logic [63:0] noc2decoder_l15_data_6;
-logic [63:0] noc2decoder_l15_data_7;
-logic [`L15_PADDR_HI:0] noc2decoder_l15_address;
-logic [3:0] noc2decoder_l15_fwd_subcacheline_vector;
-logic [`PACKET_HOME_ID_WIDTH-1:0] noc2decoder_l15_src_homeid;
-
-logic [`L15_CSM_NUM_TICKETS_LOG2-1:0] noc2decoder_l15_csm_mshrid;
-logic [`L15_THREADID_MASK] noc2decoder_l15_threadid;
-logic noc2decoder_l15_hmc_fill;
 
 /*
     noc2decoder takes the data from the buffer and decode it to meaningful signals
@@ -275,8 +308,8 @@ noc2decoder noc2decoder(
     .clk(clk_i),
     .rst_n(rst_n),
     // inputs
-    .noc2_data(noc2_data),
-    .noc2_data_val(noc2_data_val),
+    .noc2_data(noc2_data_i),
+    .noc2_data_val(noc2_v_i),
     .l15_noc2decoder_ack(l15_noc2decoder_ack),
     .l15_noc2decoder_header_ack(l15_noc2decoder_header_ack),
     // outputs
@@ -501,13 +534,13 @@ noc1encoder noc1encoder(
     .chipid(chipid),
     .coreid_x(coreid_x),
     .coreid_y(coreid_y),
-    .noc1out_ready(noc1_out_rdy),
+    .noc1out_ready(noc1_ready_with_reset),
     
     .l15_dmbr_l1missIn(l15_dmbr_l1missIn),
     .l15_dmbr_l1missTag(l15_dmbr_l1missTag),
     .noc1encoder_noc1buffer_req_ack(noc1encoder_noc1buffer_req_ack),
-    .noc1encoder_noc1out_val(noc1_out_val),
-    .noc1encoder_noc1out_data(noc1_out_data),
+    .noc1encoder_noc1out_val(noc1_v_o),
+    .noc1encoder_noc1out_data(noc1_data_o),
     
     // csm interface
     .noc1encoder_csm_req_ack(noc1encoder_csm_req_ack),
@@ -592,10 +625,10 @@ noc3encoder noc3encoder(
     .chipid(chipid),
     .coreid_x(coreid_x),
     .coreid_y(coreid_y),
-    .noc3out_ready(noc3_out_rdy),
+    .noc3out_ready(noc3_ready_i),
     .noc3encoder_l15_req_ack(noc3encoder_noc3buffer_req_ack),
-    .noc3encoder_noc3out_val(noc3_out_val),
-    .noc3encoder_noc3out_data(noc3_out_data)
+    .noc3encoder_noc3out_val(noc3_v_o),
+    .noc3encoder_noc3out_data(noc3_data_o)
 );
 
 

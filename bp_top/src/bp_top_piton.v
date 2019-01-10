@@ -262,7 +262,6 @@ assign reset_i = ~reset_l;
                      ,.block_size_in_bytes_p(cce_block_size_in_bytes_p)
                     ) transducer (.clk_i(clk_i)
                               ,.reset_i(reset_i)
-                                
 
                               /* ****I cache ports **** */
                               ,.icache_lce_req_i(lce_cce_req[icache_id])
