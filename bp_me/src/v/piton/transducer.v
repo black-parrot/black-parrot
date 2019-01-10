@@ -740,6 +740,13 @@ noc3encoder noc3encoder(
       sync_count_r <= '0;
       sync_ack_count_r <= '0;
 
+      icache_lce_req_yumi_from_tr <= '0;
+      icache_lce_resp_yumi_from_tr <= '0;
+      icache_lce_data_resp_yumi_from_tr <= '0;
+      dcache_lce_req_yumi_from_tr <= '0;
+      dcache_lce_resp_yumi_from_tr <= '0;
+      dcache_lce_data_resp_yumi_from_tr <= '0;
+
     end else begin
       case (trans_state)
         RESET_SET_CLEAR: begin
@@ -821,6 +828,8 @@ noc3encoder noc3encoder(
           end
         end
         RESET_SYNC_ACK: begin
+          icache_lce_resp_yumi_from_tr <= '0;
+          dcache_lce_resp_yumi_from_tr <= '0;
           if (sync_ack_count_r < num_lce_p) begin
             if (icache_lce_resp_v_to_tr) begin
               sync_ack_count_r <= sync_ack_count_r + 'd1;
