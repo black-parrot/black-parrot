@@ -750,6 +750,42 @@ noc3encoder noc3encoder(
       dcache_lce_resp_yumi_from_tr <= 1'b0;
       dcache_lce_data_resp_yumi_from_tr <= 1'b0;
 
+      l15_noc1buffer_req_data_0 <= '0;
+      l15_noc1buffer_req_data_1 <= '0;
+      l15_noc1buffer_req_val <= '0;
+      l15_noc1buffer_req_type <= '0;
+      l15_noc1buffer_req_threadid <= '0;
+      l15_noc1buffer_req_mshrid <= '0;
+      l15_noc1buffer_req_address <= '0;
+      l15_noc1buffer_req_non_cacheable <= '0;
+      l15_noc1buffer_req_size <= '0;
+      l15_noc1buffer_req_prefetch <= '0;
+      l15_noc1buffer_req_csm_data <= '0;
+      
+      l15_noc1buffer_req_csm_ticket <= '0;
+      l15_noc1buffer_req_homeid <= '0;
+      l15_noc1buffer_req_homeid_val <= '0;
+
+      l15_noc3encoder_req_val <= '0;
+      l15_noc3encoder_req_type <= '0;
+      l15_noc3encoder_req_data_0 <= '0;
+      l15_noc3encoder_req_data_1 <= '0;
+      l15_noc3encoder_req_data_2 <= '0;
+      l15_noc3encoder_req_data_3 <= '0;
+      l15_noc3encoder_req_data_4 <= '0;
+      l15_noc3encoder_req_data_5 <= '0;
+      l15_noc3encoder_req_data_6 <= '0;
+      l15_noc3encoder_req_data_7 <= '0;
+      l15_noc3encoder_req_mshrid <= '0;
+      l15_noc3encoder_req_sequenceid <= '0;
+      l15_noc3encoder_req_threadid <= '0;
+      l15_noc3encoder_req_address <= '0;
+      l15_noc3encoder_req_with_data <= '0;
+      l15_noc3encoder_req_was_inval <= '0;
+      l15_noc3encoder_req_fwdack_vector <= '0;
+      l15_noc3encoder_req_homeid <= '0;
+
+
     end else begin
       case (trans_state)
         RESET_SET_CLEAR: begin
