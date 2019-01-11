@@ -106,6 +106,6 @@ localparam RV64_funct3_width_gp   = 3;
 localparam RV64_funct7_width_gp   = 7;
 
 /* TODO: I should live somewhere else */
-localparam bp_pc_entry_point_gp   = 32'h80000124;
+localparam bp_pc_entry_point_gp   = 32'h80000248;
 
 `endif

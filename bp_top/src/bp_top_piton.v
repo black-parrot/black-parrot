@@ -108,7 +108,7 @@ assign reset_i = ~reset_l;
                ,.ras_addr_width_p(vaddr_width_p)
                ,.asid_width_p(10)
                ,.instr_width_p(32)
-               ,.bp_first_pc_p(bp_pc_entry_point_gp) /* TODO: Not ideal to couple to RISCV-tests */
+               ,.bp_first_pc_p('h080000248) /* TODO: Not ideal to couple to RISCV-tests */
 
                ,.data_width_p(64)
                ,.inst_width_p(32)
