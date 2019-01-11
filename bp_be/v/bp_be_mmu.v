@@ -28,8 +28,8 @@ module bp_be_mmu
  
    ,localparam data_mask_width_lp=(cce_block_size_in_bytes_p>>3)
    ,localparam vindex_width_lp=10 /* TODO: Generalize */
-   ,localparam vtag_width_lp=12   /* TODO: Generalize */
-   ,localparam ptag_width_lp=12   /* TODO: Generalize */
+   ,localparam vtag_width_lp=22   /* TODO: Generalize */
+   ,localparam ptag_width_lp=22   /* TODO: Generalize */
 
    ,localparam mmu_cmd_width_lp=`bp_be_mmu_cmd_width
    ,localparam mmu_resp_width_lp=`bp_be_mmu_resp_width
@@ -147,7 +147,7 @@ logic unused0;
 assign unused0 = mmu_resp_rdy_i;
 
 /* TODO: Should pass through vtag->ptag width */
-mock_tlb #(.tag_width_p(12)
+mock_tlb #(.tag_width_p(22)
            )
        tlb(.clk_i(clk_i)
     
@@ -163,7 +163,7 @@ bp_dcache #(.id_p(dcache_id_p)
             ,.data_width_p(64) 
             ,.sets_p(lce_sets_p)
             ,.ways_p(lce_assoc_p)
-            ,.tag_width_p(12)
+            ,.tag_width_p(22)
             ,.num_cce_p(num_cce_p)
             ,.num_lce_p(num_lce_p)
             )
