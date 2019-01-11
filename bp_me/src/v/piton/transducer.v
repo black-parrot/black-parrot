@@ -710,6 +710,7 @@ noc3encoder noc3encoder(
     ,LCE_DATA_RESP
     ,SEND_CCE_CMD
     ,SEND_CCE_DATA_CMD
+    ,SEND_ICACHE_END
   } transducer_state_e;
 
   transducer_state_e trans_state;
@@ -866,7 +867,48 @@ noc3encoder noc3encoder(
             lce_req_r <= dcache_lce_req_to_tr;
             dcache_lce_req_yumi_from_tr <= 1'b1;
             trans_state <= LCE_REQ;
+          end else if (noc2decoder_l15_val) begin // TODO: receive response from and send to LCE
+          // For now, assume that we process only I$ requests
+            if (icache_lce_cmd_ready_i && icache_lce_data_cmd_ready_i) begin
+              // TODO: populate cmd and data_cmd fields
+              icache_lce_cmd_r.dst_id <= '0;
+              icache_lce_cmd_r.src_id <= '0;
+              icache_lce_cmd_r.msg_type <= e_lce_cmd_set_tag;
+              icache_lce_cmd_r.addr <= lce_req_r.addr;
+              icache_lce_cmd_r.way_id <= lce_req_r.lru_way_id;
+              icache_lce_cmd_r.state <= e_MESI_E; // return in E instead of S due to BP implementation
+              icache_lce_cmd_r.target <= '0;
+              icache_lce_cmd_r.target_way_id <= '0;
+              // assert valid
+              icache_lce_cmd_v_o <= 1'b1;
+
+              icache_lce_data_cmd_r.dst_id <= '0;
+              icache_lce_data_cmd_r.src_id <= '0;
+              icache_lce_data_cmd_r.msg_type <= e_lce_req_type_rd;
+              icache_lce_data_cmd_r.way_id <= lce_req_r.lru_way_id;
+              icache_lce_data_cmd_r.addr <= lce_req_r.addr;
+              icache_lce_data_cmd_r.data <= {
+                                             noc2decoder_l15_data_0
+                                             ,noc2decoder_l15_data_1
+                                             ,noc2decoder_l15_data_2
+                                             ,noc2decoder_l15_data_3
+                                             ,noc2decoder_l15_data_4
+                                             ,noc2decoder_l15_data_5
+                                             ,noc2decoder_l15_data_6
+                                             ,noc2decoder_l15_data_7
+                                            };
+
+              // assert valid
+              icache_lce_data_cmd_v_o <= 1'b1;
+
+              trans_state <= SEND_ICACHE_END;
+            end
           end
+        end
+        SEND_ICACHE_END: begin
+          icache_lce_cmd_v_o <= 1'b0;
+          icache_lce_data_cmd_v_o <= 1'b0;
+          trans_state <= READY;
         end
         LCE_REQ: begin
           icache_lce_req_yumi_from_tr <= '0;
