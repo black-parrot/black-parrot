@@ -903,7 +903,7 @@ noc3encoder noc3encoder(
             lce_req_r <= dcache_lce_req_to_tr;
             dcache_lce_req_yumi_from_tr <= 1'b1;
             trans_state <= LCE_REQ;
-          end else if (noc2decoder_l15_val) begin // TODO: receive response from and send to LCE
+          end else if (noc2decoder_l15_val && noc2decoder_l15_reqtype != `MSG_TYPE_INTERRUPT) begin // TODO: receive response from and send to LCE
           // For now, assume that we process only I$ requests
             if (icache_lce_cmd_ready_i && icache_lce_data_cmd_ready_i) begin
               // TODO: populate cmd and data_cmd fields
