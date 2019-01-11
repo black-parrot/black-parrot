@@ -870,14 +870,12 @@ noc3encoder noc3encoder(
           icache_lce_resp_yumi_from_tr <= 1'b0;
           dcache_lce_resp_yumi_from_tr <= 1'b0;
           if (sync_ack_count_r < num_lce_p) begin
-            if (icache_lce_resp_v_to_tr) begin
-              sync_ack_count_r <= sync_ack_count_r + 'd1;
+            if (icache_lce_resp_v_to_tr && dcache_lce_resp_v_to_tr) begin
               icache_lce_resp_yumi_from_tr <= 1'b1;
               lce_resp_r <= icache_lce_resp_to_tr;
-            end else if (dcache_lce_resp_v_to_tr) begin
-              sync_ack_count_r <= sync_ack_count_r + 'd1;
               dcache_lce_resp_yumi_from_tr <= 1'b1;
               lce_resp_r <= dcache_lce_resp_to_tr;
+              sync_ack_count_r <= sync_ack_count_r + 'd2;
             end else begin
               dcache_lce_resp_yumi_from_tr <= 1'b0;
               icache_lce_resp_yumi_from_tr <= 1'b0;
@@ -891,8 +889,10 @@ noc3encoder noc3encoder(
           end
         end
         READY: begin
-          dcache_lce_cmd_v_o <= '0;
-          icache_lce_cmd_v_o <= '0;
+          dcache_lce_resp_yumi_from_tr <= 1'b0;
+          icache_lce_resp_yumi_from_tr <= 1'b0;
+          dcache_lce_cmd_v_o <= 1'b0;
+          icache_lce_cmd_v_o <= 1'b0;
           // prefer icache requests over dcache requests
           if (icache_lce_req_v_to_tr) begin
             lce_req_r <= icache_lce_req_to_tr;
