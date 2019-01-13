@@ -498,8 +498,8 @@ noc1buffer noc1buffer(
     .l15_csm_read_ticket(l15_csm_read_ticket),
     .l15_csm_clear_ticket(l15_csm_clear_ticket),
     .l15_csm_clear_ticket_val(l15_csm_clear_ticket_val),
-    .csm_l15_read_res_data(csm_l15_read_res_data),
-    .csm_l15_read_res_val(csm_l15_read_res_val),
+    .csm_l15_read_res_data('0),
+    .csm_l15_read_res_val('0),
     .noc1buffer_noc1encoder_req_homeid(noc1buffer_noc1encoder_req_homeid),
     
     // .noc1buffer_l15_req_ack(noc1encoder_l15_req_ack),
@@ -532,10 +532,10 @@ noc1encoder noc1encoder(
     .noc1buffer_noc1encoder_req_csm_lsid(noc1buffer_noc1encoder_req_csm_lsid),
     .noc1buffer_noc1encoder_req_homeid(noc1buffer_noc1encoder_req_homeid),
     
-    .dmbr_l15_stall(dmbr_l15_stall),
-    .chipid(chipid),
-    .coreid_x(coreid_x),
-    .coreid_y(coreid_y),
+    .dmbr_l15_stall(1'b0),
+    .chipid(1'b0),
+    .coreid_x(1'b0),
+    .coreid_y(1'b0),
     .noc1out_ready(noc1_ready_with_reset),
     
     .l15_dmbr_l1missIn(l15_dmbr_l1missIn),
@@ -546,7 +546,7 @@ noc1encoder noc1encoder(
     
     // csm interface
     .noc1encoder_csm_req_ack(noc1encoder_csm_req_ack),
-    .csm_noc1encoder_req_val(csm_noc1encoder_req_val),
+    .csm_noc1encoder_req_val(1'b0),
     .csm_noc1encoder_req_type(csm_noc1encoder_req_type),
     .csm_noc1encoder_req_mshrid(csm_noc1encoder_req_mshrid),
     .csm_noc1encoder_req_address(csm_noc1encoder_req_address),
@@ -967,6 +967,8 @@ noc3encoder noc3encoder(
           l15_noc1buffer_req_non_cacheable <= '0;
           l15_noc1buffer_req_size <= 3'b100;
           l15_noc1buffer_req_prefetch <= '0;
+          l15_noc1buffer_req_homeid <= '0;
+          l15_noc1buffer_req_homeid_val <= 1'b1;
 
 
           l15_noc1buffer_req_csm_data <= '0;
