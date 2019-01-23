@@ -12,14 +12,12 @@ module bp_cce_reg
   import bp_cce_inst_pkg::*;
   #(parameter num_lce_p="inv"
     ,parameter num_cce_p="inv"
-    ,parameter num_mem_p="inv"
     ,parameter addr_width_p="inv"
     ,parameter lce_assoc_p="inv"
     ,parameter lce_sets_p="inv"
     ,parameter block_size_in_bytes_p="inv"
     ,parameter lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
     ,parameter lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
-    ,parameter lg_num_mem_lp=`BSG_SAFE_CLOG2(num_mem_p)
     ,parameter block_size_in_bits_lp=block_size_in_bytes_p*8
     ,parameter lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
     ,parameter lg_lce_assoc_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
@@ -32,8 +30,8 @@ module bp_cce_reg
     ,parameter bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p)
     ,parameter bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, addr_width_p)
     ,parameter bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, addr_width_p, block_size_in_bits_lp)
-    ,parameter bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(num_mem_p, num_cce_p, addr_width_p, num_lce_p, lce_assoc_p)
-    ,parameter bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(num_mem_p, num_cce_p, addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    ,parameter bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(addr_width_p, num_lce_p, lce_assoc_p)
+    ,parameter bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
   )
   (
     input                                                                  clk_i
@@ -113,8 +111,9 @@ module bp_cce_reg
   `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p);
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, addr_width_p);
   `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, addr_width_p, block_size_in_bits_lp);
-  `declare_bp_mem_cce_resp_s(num_mem_p, num_cce_p, addr_width_p, num_lce_p, lce_assoc_p);
-  `declare_bp_mem_cce_data_resp_s(num_mem_p, num_cce_p, addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
+
+
+  `declare_bp_me_if(addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
 
   bp_lce_cce_req_s lce_req_s_i;
   bp_lce_cce_resp_s lce_resp_s_i;
@@ -214,11 +213,11 @@ module bp_cce_reg
         req_addr_n = lce_req_s_i.addr;
       end
       e_req_sel_mem_resp: begin
-        req_lce_n = mem_resp_s_i.lce_id;
-        req_addr_n = mem_resp_s_i.req_addr;
+        req_lce_n = mem_resp_s_i.payload.lce_id;
+        req_addr_n = mem_resp_s_i.payload.req_addr;
       end
       e_req_sel_mem_data_resp: begin
-        req_lce_n = mem_data_resp_s_i.lce_id;
+        req_lce_n = mem_data_resp_s_i.payload.lce_id;
         req_addr_n = mem_data_resp_s_i.addr;
       end
       e_req_sel_pending: begin // TODO: v2
@@ -237,10 +236,10 @@ module bp_cce_reg
         req_addr_way_n = gad_req_addr_way_i;
       end
       e_req_addr_way_sel_mem_resp: begin
-        req_addr_way_n = mem_resp_s_i.way_id;
+        req_addr_way_n = mem_resp_s_i.payload.way_id;
       end
       e_req_addr_way_sel_mem_data_resp: begin
-        req_addr_way_n = mem_data_resp_s_i.way_id;
+        req_addr_way_n = mem_data_resp_s_i.payload.way_id;
       end
       default: begin
         req_addr_way_n = '0;
@@ -263,10 +262,10 @@ module bp_cce_reg
         lru_way_n = lce_req_s_i.lru_way_id;
       end
       e_lru_way_sel_mem_resp: begin
-        lru_way_n = mem_resp_s_i.way_id;
+        lru_way_n = mem_resp_s_i.payload.way_id;
       end
       e_lru_way_sel_mem_data_resp: begin
-        lru_way_n = mem_data_resp_s_i.way_id;
+        lru_way_n = mem_data_resp_s_i.payload.way_id;
       end
       e_lru_way_sel_pending: begin
         lru_way_n = '0; // TODO: v2
@@ -291,8 +290,8 @@ module bp_cce_reg
         transfer_lce_way_n = gad_transfer_lce_way_i;
       end
       e_tr_lce_sel_mem_resp: begin
-        transfer_lce_n = mem_resp_s_i.tr_lce_id;
-        transfer_lce_way_n = mem_resp_s_i.tr_way_id;
+        transfer_lce_n = mem_resp_s_i.payload.tr_lce_id;
+        transfer_lce_way_n = mem_resp_s_i.payload.tr_way_id;
       end
       default: begin
         transfer_lce_n = '0;
@@ -355,7 +354,7 @@ module bp_cce_reg
 
     case (decoded_inst_i.tf_sel)
       e_tf_logic: flags_n[e_flag_sel_tf] = gad_transfer_flag_i;
-      e_tf_mem_resp: flags_n[e_flag_sel_tf] = mem_resp_s_i.transfer;
+      e_tf_mem_resp: flags_n[e_flag_sel_tf] = mem_resp_s_i.payload.transfer;
       e_tf_imm0: flags_n[e_flag_sel_tf] = decoded_inst_i.imm[0];
       default: flags_n[e_flag_sel_tf] = '0;
     endcase
@@ -385,7 +384,7 @@ module bp_cce_reg
     endcase
 
     case (decoded_inst_i.rwbf_sel)
-      e_rwbf_mem_resp: flags_n[e_flag_sel_rwbf] = mem_resp_s_i.replacement;
+      e_rwbf_mem_resp: flags_n[e_flag_sel_rwbf] = mem_resp_s_i.payload.replacement;
       e_rwbf_imm0: flags_n[e_flag_sel_rwbf] = decoded_inst_i.imm[0];
       default: flags_n[e_flag_sel_rwbf] = '0;
     endcase

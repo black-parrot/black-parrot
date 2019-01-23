@@ -13,7 +13,6 @@ module bp_cce
   #(parameter cce_id_p="inv"
     ,parameter num_lce_p="inv"
     ,parameter num_cce_p="inv"
-    ,parameter num_mem_p="inv"
     ,parameter addr_width_p="inv"
     ,parameter lce_assoc_p="inv"
     ,parameter lce_sets_p="inv"
@@ -21,7 +20,6 @@ module bp_cce
     ,parameter num_inst_ram_els_p="inv"
     ,parameter lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
     ,parameter lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
-    ,parameter lg_num_mem_lp=`BSG_SAFE_CLOG2(num_mem_p)
     ,parameter block_size_in_bits_lp=block_size_in_bytes_p*8
     ,parameter lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
     ,parameter lg_lce_assoc_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
@@ -39,10 +37,10 @@ module bp_cce
     ,parameter bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p)
     ,parameter bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, addr_width_p, block_size_in_bits_lp, lce_assoc_p)
 
-    ,parameter bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(num_mem_p, num_cce_p, addr_width_p, num_lce_p, lce_assoc_p)
-    ,parameter bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(num_mem_p, num_cce_p, addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
-    ,parameter bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(num_mem_p, num_cce_p, addr_width_p, num_lce_p, lce_assoc_p)
-    ,parameter bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(num_mem_p, num_cce_p, addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    ,parameter bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(addr_width_p, num_lce_p, lce_assoc_p)
+    ,parameter bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    ,parameter bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(addr_width_p, num_lce_p, lce_assoc_p)
+    ,parameter bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
 
     ,parameter harden_p=0
   )
@@ -94,10 +92,11 @@ module bp_cce
   );
 
   // Define structure variables for output queues
+
+  `declare_bp_me_if(addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
+
   `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p);
   `declare_bp_cce_lce_data_cmd_s(num_cce_p, num_lce_p, addr_width_p, block_size_in_bits_lp, lce_assoc_p);
-  `declare_bp_cce_mem_cmd_s(num_mem_p, num_cce_p, addr_width_p, num_lce_p, lce_assoc_p);
-  `declare_bp_cce_mem_data_cmd_s(num_mem_p, num_cce_p, addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
 
   bp_cce_lce_cmd_s lce_cmd_s_o;
   bp_cce_lce_data_cmd_s lce_data_cmd_s_o;
@@ -334,7 +333,6 @@ module bp_cce
   bp_cce_reg
     #(.num_lce_p(num_lce_p)
       ,.num_cce_p(num_cce_p)
-      ,.num_mem_p(num_mem_p)
       ,.addr_width_p(addr_width_p)
       ,.lce_assoc_p(lce_assoc_p)
       ,.lce_sets_p(lce_sets_p)
@@ -469,27 +467,23 @@ module bp_cce
     lce_data_cmd_s_o.data = cache_block_data_r_o;
 
     // Mem Command Queue Inputs
-    mem_cmd_s_o.dst_id = '0; // TODO: not needed, single L2 per CCE
-    mem_cmd_s_o.src_id = (lg_num_cce_lp)'(cce_id_p);
     mem_cmd_s_o.msg_type = bp_lce_cce_req_type_e'(flags_r_o[e_flag_sel_rqf]);
-    mem_cmd_s_o.lce_id = req_lce_r_o;
-    mem_cmd_s_o.way_id = lru_way_r_o;
+    mem_cmd_s_o.payload.lce_id = req_lce_r_o;
+    mem_cmd_s_o.payload.way_id = lru_way_r_o;
     mem_cmd_s_o.addr = req_addr_r_o;
 
     // Mem Data Command Queue Inputs
-    mem_data_cmd_s_o.dst_id = '0; // TODO: not needed, single L2 per CCE
-    mem_data_cmd_s_o.src_id = (lg_num_cce_lp)'(cce_id_p);
     mem_data_cmd_s_o.msg_type = bp_lce_cce_req_type_e'(flags_r_o[e_flag_sel_rqf]);
     mem_data_cmd_s_o.addr = mem_data_cmd_addr;
     mem_data_cmd_s_o.data = cache_block_data_r_o;
     // Request data for return
-    mem_data_cmd_s_o.lce_id = req_lce_r_o;
-    mem_data_cmd_s_o.way_id = lru_way_r_o;
-    mem_data_cmd_s_o.req_addr = req_addr_r_o;
-    mem_data_cmd_s_o.tr_lce_id = transfer_lce_r_o;
-    mem_data_cmd_s_o.tr_way_id = transfer_lce_way_r_o;
-    mem_data_cmd_s_o.transfer = flags_r_o[e_flag_sel_tf];
-    mem_data_cmd_s_o.replacement = flags_r_o[e_flag_sel_rf];
+    mem_data_cmd_s_o.payload.lce_id = req_lce_r_o;
+    mem_data_cmd_s_o.payload.way_id = lru_way_r_o;
+    mem_data_cmd_s_o.payload.req_addr = req_addr_r_o;
+    mem_data_cmd_s_o.payload.tr_lce_id = transfer_lce_r_o;
+    mem_data_cmd_s_o.payload.tr_way_id = transfer_lce_way_r_o;
+    mem_data_cmd_s_o.payload.transfer = flags_r_o[e_flag_sel_tf];
+    mem_data_cmd_s_o.payload.replacement = flags_r_o[e_flag_sel_rf];
   end
 
 
