@@ -196,14 +196,14 @@ typedef union packed {
  * target is the LCE that will receive a transfer for a transfer command
  * target_way_id is the way within the target LCE's set (computed from addr) to fill the data in to
  */
-`define declare_bp_cce_lce_cmd_s(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp, coh_states_mp) \
+`define declare_bp_cce_lce_cmd_s(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp) \
   typedef struct packed {                                       \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      dst_id;        \
     logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]      src_id;        \
     bp_cce_lce_cmd_type_e                        msg_type;      \
     logic [addr_width_mp-1:0]                    addr;          \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id;        \
-    logic [`BSG_SAFE_CLOG2(coh_states_mp)-1:0]   state;         \
+    logic [`bp_cce_coh_bits-1:0]                  state;         \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      target;        \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    target_way_id; \
   } bp_cce_lce_cmd_s
@@ -483,9 +483,9 @@ typedef enum logic {
   (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+1+1+addr_width_mp \
    +`BSG_SAFE_CLOG2(lce_assoc_mp)+1)
 
-`define bp_cce_lce_cmd_width(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp, coh_states_mp) \
+`define bp_cce_lce_cmd_width(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp) \
   (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+3+addr_width_mp \
-   +(2*`BSG_SAFE_CLOG2(lce_assoc_mp))+`BSG_SAFE_CLOG2(coh_states_mp)+`BSG_SAFE_CLOG2(num_lce_mp))
+   +(2*`BSG_SAFE_CLOG2(lce_assoc_mp))+`bp_cce_coh_bits+`BSG_SAFE_CLOG2(num_lce_mp))
 
 `define bp_cce_lce_data_cmd_width(num_cce_mp, num_lce_mp, addr_width_mp, data_width_mp, lce_assoc_mp) \
   (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+1+`BSG_SAFE_CLOG2(lce_assoc_mp) \

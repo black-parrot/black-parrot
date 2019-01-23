@@ -18,7 +18,6 @@ module bp_coherence_network
   ,parameter num_cce_p="inv"
   ,parameter addr_width_p="inv"
   ,parameter lce_assoc_p="inv"
-  ,parameter coh_states_p="inv"
   ,parameter block_size_in_bytes_p="inv"
 
   ,parameter lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
@@ -32,7 +31,7 @@ module bp_coherence_network
   ,parameter bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p)
   ,parameter bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, addr_width_p)
   ,parameter bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, addr_width_p, block_size_in_bits_lp)
-  ,parameter bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p, coh_states_p)
+  ,parameter bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p)
   ,parameter bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, addr_width_p, block_size_in_bits_lp, lce_assoc_p)
   ,parameter bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p, addr_width_p, block_size_in_bits_lp, lce_assoc_p)
 

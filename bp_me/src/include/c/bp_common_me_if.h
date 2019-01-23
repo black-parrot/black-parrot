@@ -76,6 +76,8 @@ typedef enum {
   ,e_VI_V = 2
 } bp_cce_coh_vi_e;
 
+#define bp_cce_coh_bits 2
+
 
 #define bp_lce_cce_req_width (LG_N_CCE+LG_N_LCE+1+1+ADDR_WIDTH+LG_LCE_ASSOC+1)
 

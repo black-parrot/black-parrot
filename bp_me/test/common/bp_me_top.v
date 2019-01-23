@@ -9,7 +9,6 @@ module bp_me_top
     ,parameter addr_width_p=22 // 10 tag + 6 idx + 6 offset
     ,parameter lce_assoc_p=8
     ,parameter lce_sets_p=64
-    ,parameter coh_states_p=4
     ,parameter block_size_in_bytes_p=64
     ,parameter block_size_in_bits_lp=block_size_in_bytes_p*8
     ,parameter num_inst_ram_els_p=256
@@ -22,7 +21,7 @@ module bp_me_top
     ,parameter bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p)
     ,parameter bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, addr_width_p)
     ,parameter bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, addr_width_p, block_size_in_bits_lp)
-    ,parameter bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p, coh_states_p)
+    ,parameter bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p)
     ,parameter bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, addr_width_p, block_size_in_bits_lp, lce_assoc_p)
     ,parameter bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p, addr_width_p, block_size_in_bits_lp, lce_assoc_p)
 
@@ -99,7 +98,6 @@ module bp_me_top
     ,.num_cce_p(num_cce_p)
     ,.addr_width_p(addr_width_p)
     ,.lce_assoc_p(lce_assoc_p)
-    ,.coh_states_p(coh_states_p)
     ,.block_size_in_bytes_p(block_size_in_bytes_p)
   ) network (
     .clk_i(clk_i)
@@ -196,7 +194,6 @@ module bp_me_top
         ,.addr_width_p(addr_width_p)
         ,.lce_assoc_p(lce_assoc_p)
         ,.lce_sets_p(lce_sets_p)
-        ,.coh_states_p(coh_states_p)
         ,.block_size_in_bytes_p(block_size_in_bytes_p)
         ,.num_inst_ram_els_p(num_inst_ram_els_p)
        )
