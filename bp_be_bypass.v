@@ -9,8 +9,6 @@
  * Parameters:
  *   fwd_els_p        - Number of potential forwarding candidates. Should be
  *                      equal to # stages in pipeline after dispatch
- *   reg_addr_width_p -
- *   reg_data_width_p -
  *   enable_p         - When disabled, module becomes passthrough. Useful for debugging.
  *
  * Inputs:
@@ -35,35 +33,33 @@
  */
 
 module bp_be_bypass
- #(parameter fwd_els_p          = "inv"
-   , parameter reg_addr_width_p = "inv"
-   , parameter reg_data_width_p = "inv"
+ #(parameter fwd_els_p = "inv"
 
-   // Default params
+   // Default parameters
    , parameter enable_p = 1
 
-   // Generated params
+   // Generated parameters
    // # Bypasses == Number of forwarded elements + 1 for the dispatched data
    , localparam bypass_els_p = fwd_els_p + 1 
    )
   (
    // Dispatched instruction operands
-   input logic                                        id_rs1_v_i
-   , input logic[reg_addr_width_p-1:0]                id_rs1_addr_i
-   , input logic[reg_data_width_p-1:0]                id_rs1_i
+   input logic                                              id_rs1_v_i
+   , input logic[rv64_reg_addr_width_gp-1:0]                id_rs1_addr_i
+   , input logic[rv64_reg_data_width_gp-1:0]                id_rs1_i
 
-   , input logic                                      id_rs2_v_i
-   , input logic[reg_addr_width_p-1:0]                id_rs2_addr_i
-   , input logic[reg_data_width_p-1:0]                id_rs2_i
+   , input logic                                            id_rs2_v_i
+   , input logic[rv64_reg_addr_width_gp-1:0]                id_rs2_addr_i
+   , input logic[rv64_reg_data_width_gp-1:0]                id_rs2_i
 
    // Completed rd writes in the pipeline
-   , input logic[fwd_els_p-1:0]                       fwd_rd_v_i
-   , input logic[fwd_els_p-1:0][reg_addr_width_p-1:0] fwd_rd_addr_i
-   , input logic[fwd_els_p-1:0][reg_data_width_p-1:0] fwd_rd_i
+   , input logic[fwd_els_p-1:0]                             fwd_rd_v_i
+   , input logic[fwd_els_p-1:0][rv64_reg_addr_width_gp-1:0] fwd_rd_addr_i
+   , input logic[fwd_els_p-1:0][rv64_reg_data_width_gp-1:0] fwd_rd_i
 
    // The latest valid rs1, rs2 data
-   , output logic[reg_data_width_p-1:0]               bypass_rs1_o
-   , output logic[reg_data_width_p-1:0]               bypass_rs2_o
+   , output logic[rv64_reg_data_width_gp-1:0]               bypass_rs1_o
+   , output logic[rv64_reg_data_width_gp-1:0]               bypass_rs2_o
    );
 
 initial begin : parameter_validation
@@ -71,17 +67,15 @@ initial begin : parameter_validation
     else $error("fwd_els_p must be positive, else there is nothing to bypass. " 
                 + "Did you remember to set it?");
 
-  assert(reg_addr_width_p > 0 && reg_addr_width_p != "inv")
-    else $error("reg_addr_width_p is invalid.  Did you remember to set it?");
-
   assert(enable_p == 1)
     else $warning("Bypassing disabled");
 end
 
 // Intermediate connections
-logic[bypass_els_p-1:0]                       rs1_match_vector       , rs2_match_vector;
-logic[bypass_els_p-1:0]                       rs1_match_vector_onehot, rs2_match_vector_onehot;
-logic[bypass_els_p-1:0][reg_data_width_p-1:0] rs1_data_vector        , rs2_data_vector;
+logic[bypass_els_p-1:0] rs1_match_vector       , rs2_match_vector;
+logic[bypass_els_p-1:0] rs1_match_vector_onehot, rs2_match_vector_onehot;
+
+logic[bypass_els_p-1:0][rv64_reg_data_width_gp-1:0] rs1_data_vector, rs2_data_vector;
 
 // Module instantiations
 if(enable_p == 1) begin
@@ -103,7 +97,7 @@ if(enable_p == 1) begin
   // Bypass data with a simple crossbar
   bsg_crossbar_o_by_i #(.i_els_p(bypass_els_p)
                         ,.o_els_p(1)
-                        ,.width_p(reg_data_width_p)
+                        ,.width_p(rv64_reg_data_width_gp)
                         ) rs1_crossbar
                        (.i(rs1_data_vector)
                         ,.sel_oi_one_hot_i(rs1_match_vector_onehot)
@@ -112,7 +106,7 @@ if(enable_p == 1) begin
 
   bsg_crossbar_o_by_i #(.i_els_p(bypass_els_p)
                         ,.o_els_p(1)
-                        ,.width_p(reg_data_width_p)
+                        ,.width_p(rv64_reg_data_width_gp)
                         ) rs2_crossbar
                        (.i(rs2_data_vector)
                         ,.sel_oi_one_hot_i(rs2_match_vector_onehot)
@@ -137,18 +131,17 @@ always_comb begin : vector_generation
     rs1_match_vector[i] = ((i == bypass_els_p-1)
                            || ((id_rs1_addr_i == fwd_rd_addr_i[i])
                                & (id_rs1_v_i & fwd_rd_v_i[i])
-                               & (id_rs1_addr_i != reg_addr_width_p'(0))
+                               & (id_rs1_addr_i != rv64_reg_addr_width_gp'(0))
                                )
                            );
 
     rs2_match_vector[i] = ((i == bypass_els_p-1)
                            || ((id_rs2_addr_i == fwd_rd_addr_i[i]) 
                                & (id_rs2_v_i & fwd_rd_v_i[i]) 
-                               & (id_rs2_addr_i != reg_addr_width_p'(0))
+                               & (id_rs2_addr_i != rv64_reg_addr_width_gp'(0))
                                )
                            );
   end
 end
 
 endmodule : bp_be_bypass
-
