@@ -71,7 +71,7 @@ initial begin : parameter_validation
                 + "Did you remember to set it?");
 
   assert(enable_p == 1)
-    else $warning("Bypassing disabled");
+    else $warning("Bypassing disabled.");
 end
 
 // Intermediate connections
@@ -79,41 +79,50 @@ logic[bypass_els_lp-1:0]                        rs1_match_vector       , rs2_mat
 logic[bypass_els_lp-1:0]                        rs1_match_vector_onehot, rs2_match_vector_onehot;
 logic[bypass_els_lp-1:0][reg_data_width_lp-1:0] rs1_data_vector        , rs2_data_vector;
 
-// Module instantiations
+// Datapath
 if(enable_p == 1) begin
   // Find the youngest valid data to forward
-  bsg_priority_encode_one_hot_out #(.width_p(bypass_els_lp)
-                                    ,.lo_to_hi_p(1)
-                                    ) match_one_hot_rs1
-                                   (.i(rs1_match_vector)
-                                    ,.o(rs1_match_vector_onehot)
-                                    );
+  bsg_priority_encode_one_hot_out 
+   #(.width_p(bypass_els_lp)
+     ,.lo_to_hi_p(1)
+     ) 
+  match_one_hot_rs1
+    (.i(rs1_match_vector)
+     ,.o(rs1_match_vector_onehot)
+     );
 
-  bsg_priority_encode_one_hot_out #(.width_p(bypass_els_lp)
-                                    ,.lo_to_hi_p(1)
-                                    ) match_one_hot_rs2
-                                   (.i(rs2_match_vector)
-                                    ,.o(rs2_match_vector_onehot)
-                                    );
+  bsg_priority_encode_one_hot_out 
+   #(.width_p(bypass_els_lp)
+     ,.lo_to_hi_p(1)
+     ) 
+  match_one_hot_rs2
+    (.i(rs2_match_vector)
+     ,.o(rs2_match_vector_onehot)
+     );
 
   // Bypass data with a simple crossbar
-  bsg_crossbar_o_by_i #(.i_els_p(bypass_els_lp)
-                        ,.o_els_p(1)
-                        ,.width_p(reg_data_width_lp)
-                        ) rs1_crossbar
-                       (.i(rs1_data_vector)
-                        ,.sel_oi_one_hot_i(rs1_match_vector_onehot)
-                        ,.o(bypass_rs1_o)
-                        );
+  bsg_crossbar_o_by_i 
+   #(.i_els_p(bypass_els_lp)
+     ,.o_els_p(1)
+     ,.width_p(reg_data_width_lp)
+     ) 
+  rs1_crossbar
+    (.i(rs1_data_vector)
+     ,.sel_oi_one_hot_i(rs1_match_vector_onehot)
+     ,.o(bypass_rs1_o)
+     );
 
-  bsg_crossbar_o_by_i #(.i_els_p(bypass_els_lp)
-                        ,.o_els_p(1)
-                        ,.width_p(reg_data_width_lp)
-                        ) rs2_crossbar
-                       (.i(rs2_data_vector)
-                        ,.sel_oi_one_hot_i(rs2_match_vector_onehot)
-                        ,.o(bypass_rs2_o)
-                        );
+  bsg_crossbar_o_by_i 
+   #(.i_els_p(bypass_els_lp)
+     ,.o_els_p(1)
+     ,.width_p(reg_data_width_lp)
+     ) 
+  rs2_crossbar
+    (.i(rs2_data_vector)
+     ,.sel_oi_one_hot_i(rs2_match_vector_onehot)
+     ,.o(bypass_rs2_o)
+     );
+
 end else begin
   // Passthrough if disabled
   assign bypass_rs1_o = id_rs1_i;
