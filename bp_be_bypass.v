@@ -86,7 +86,7 @@ if(enable_p == 1) begin
    #(.width_p(bypass_els_lp)
      ,.lo_to_hi_p(1)
      ) 
-  match_one_hot_rs1
+   match_one_hot_rs1
     (.i(rs1_match_vector)
      ,.o(rs1_match_vector_onehot)
      );
@@ -95,7 +95,7 @@ if(enable_p == 1) begin
    #(.width_p(bypass_els_lp)
      ,.lo_to_hi_p(1)
      ) 
-  match_one_hot_rs2
+   match_one_hot_rs2
     (.i(rs2_match_vector)
      ,.o(rs2_match_vector_onehot)
      );
@@ -106,7 +106,7 @@ if(enable_p == 1) begin
      ,.o_els_p(1)
      ,.width_p(reg_data_width_lp)
      ) 
-  rs1_crossbar
+   rs1_crossbar
     (.i(rs1_data_vector)
      ,.sel_oi_one_hot_i(rs1_match_vector_onehot)
      ,.o(bypass_rs1_o)
@@ -117,7 +117,7 @@ if(enable_p == 1) begin
      ,.o_els_p(1)
      ,.width_p(reg_data_width_lp)
      ) 
-  rs2_crossbar
+   rs2_crossbar
     (.i(rs2_data_vector)
      ,.sel_oi_one_hot_i(rs2_match_vector_onehot)
      ,.o(bypass_rs2_o)
