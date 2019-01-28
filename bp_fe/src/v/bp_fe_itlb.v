@@ -71,7 +71,7 @@ module itlb
 
   // struct declaration
   // be interfaces
-  localparam branch_metadata_fwd_width_p = branch_metadata_fwd_width_lp; 
+  localparam branch_metadata_fwd_width_p=branch_metadata_fwd_width_lp;
   `declare_bp_fe_be_if_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)
   `declare_bp_fe_itlb_icache_data_resp_s(ppn_width_lp);
   `declare_bp_fe_itlb_cmd_s;
