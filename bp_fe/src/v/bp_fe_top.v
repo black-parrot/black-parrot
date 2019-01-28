@@ -46,23 +46,13 @@ module bp_fe_top
     ,parameter block_size_in_bytes_p="inv"
     ,parameter lg_lce_assoc_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
     ,parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-    ,parameter lg_coh_states_lp=`BSG_SAFE_CLOG2(coh_states_p)
-    ,parameter block_size_in_bits_lp=block_size_in_bytes_p*8
     ,parameter lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
-    ,parameter entry_width_lp=tag_width_p+lg_coh_states_lp
-    ,parameter tag_set_width_lp=(entry_width_lp*lce_assoc_p)
-    ,parameter way_group_width_lp=(tag_set_width_lp*num_lce_p)
-    ,parameter data_set_width_lp=(data_width_p*lce_assoc_p)
-    ,parameter meta_data_set_width=(lg_lce_assoc_lp+lce_assoc_p)
     ,parameter data_mask_width_lp=(data_width_p>>3)
     ,parameter lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
-    ,parameter lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
-    ,parameter lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
     ,parameter vaddr_width_lp=(lg_lce_sets_lp+lg_lce_assoc_lp+lg_data_mask_width_lp)
     ,parameter addr_width_lp=(vaddr_width_lp+tag_width_p)
     ,parameter lce_data_width_lp=(lce_assoc_p*data_width_p)
 
-    ,parameter bp_fe_pc_gen_icache_width_lp=`bp_fe_pc_gen_icache_width(eaddr_width_p)
     ,parameter bp_fe_itlb_icache_width_lp=44
 
     ,parameter bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, addr_width_lp, lce_assoc_p)
@@ -72,11 +62,7 @@ module bp_fe_top
     ,parameter bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, addr_width_lp, lce_data_width_lp, lce_assoc_p)
     ,parameter bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p, addr_width_lp, lce_data_width_lp, lce_assoc_p)
 
-    ,parameter bp_fe_icache_tag_set_width_lp=`bp_fe_icache_tag_set_width(coh_states_p,tag_width_p, lce_assoc_p)
-    ,parameter bp_fe_icache_tag_state_width_lp=`bp_fe_icache_tag_state_width(coh_state_p, tag_width_p)
-    ,parameter bp_fe_icache_meta_data_width_lp=`bp_fe_icache_meta_data_width(lce_assoc_p)
 
-    ,parameter bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(eaddr_width_p)
 
     // pc gen related parameters
     ,parameter btb_indx_width_p="inv"
@@ -141,8 +127,9 @@ module bp_fe_top
 );
 
 // the first level of structs
-// be fe interface udpate (not sure if this is needed)
-  localparam branch_metadata_fwd_width_p = branch_metadata_fwd_width_lp; 
+// be fe interface update
+// super strange bug here
+localparam branch_metadata_fwd_width_p=branch_metadata_fwd_width_lp;
 `declare_bp_fe_be_if_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)
 // pc_gen to fe
 `declare_bp_fe_pc_gen_queue_s;
