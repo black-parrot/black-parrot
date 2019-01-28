@@ -22,12 +22,10 @@
 
 `include "bsg_defines.v"
 
-import bp_common_pkg::*;
-
 /*
  * Clients need only use this macro to declare all parameterized structs for FE<->BE interface.
  */
-`define declare_bp_fe_be_if_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p) \
+`define declare_bp_common_fe_be_if_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p) \
     /*                                                                                             \
      *                                                                                             \
      * bp_fe_fetch_s contains the pc/instruction pair, along with additional                       \
@@ -41,7 +39,7 @@ import bp_common_pkg::*;
         logic [bp_eaddr_width_gp-1:0]             pc;                                              \
         logic [bp_instr_width_gp-1:0]             instr;                                           \
         logic [branch_metadata_fwd_width_p-1:0]   branch_metadata_fwd;                             \
-        logic [`bp_fe_fetch_padding_width-1:0]    padding;                                         \
+        logic [`bp_fe_fetch_padding_width(vaddr_width_p,branch_metadata_fwd_width_p)-1:0]    padding;                                         \
     } bp_fe_fetch_s;                                                                               \
                                                                                                    \
     /*                                                                                             \
@@ -54,7 +52,7 @@ import bp_common_pkg::*;
     typedef struct packed {                                                                        \
         logic [vaddr_width_p-1:0]                  vaddr;                                          \
         bp_fe_exception_code_e                     exception_code;                                 \
-        logic [`bp_fe_exception_padding_width-1:0] padding;                                        \
+        logic [`bp_fe_exception_padding_width(vaddr_width_p,branch_metadata_fwd_width_p)-1:0] padding;                                        \
     } bp_fe_exception_s;                                                                           \
                                                                                                    \
     /*                                                                                             \
@@ -84,7 +82,7 @@ import bp_common_pkg::*;
         logic [branch_metadata_fwd_width_p-1:0] branch_metadata_fwd;                               \
         bp_fe_misprediction_reason_e            misprediction_reason;                              \
         logic                                   translation_enabled;                               \
-        logic [`bp_fe_cmd_pc_redirect_operands_padding_width-1:0]                                  \
+        logic [`bp_fe_cmd_pc_redirect_operands_padding_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)-1:0]                                  \
                                                 padding;                                           \
     } bp_fe_cmd_pc_redirect_operands_s;                                                            \
                                                                                                    \
@@ -95,7 +93,7 @@ import bp_common_pkg::*;
     typedef struct packed {                                                                        \
         logic [bp_eaddr_width_gp-1:0]           pc;                                                \
         logic [branch_metadata_fwd_width_p-1:0] branch_metadata_fwd;                               \
-        logic [`bp_fe_cmd_attaboy_padding_width-1:0]                                               \
+        logic [`bp_fe_cmd_attaboy_padding_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)-1:0]                                               \
                                                 padding;                                           \
     } bp_fe_cmd_attaboy_s;                                                                         \
                                                                                                    \
@@ -122,7 +120,7 @@ import bp_common_pkg::*;
     typedef struct packed {                                                                        \
         logic [vaddr_width_p-1:0] vaddr;                                                           \
         bp_fe_pte_entry_leaf_s    pte_entry_leaf;                                                  \
-        logic [`bp_fe_cmd_itlb_map_padding_width-1:0]                                              \
+        logic [`bp_fe_cmd_itlb_map_padding_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)-1:0]                                              \
                                   padding;                                                         \
     } bp_fe_cmd_itlb_map_s;                                                                        \
                                                                                                    \
@@ -136,7 +134,7 @@ import bp_common_pkg::*;
         logic [asid_width_p-1:0]  asid;                                                            \
         logic                     flush_all_addresses;                                             \
         logic                     flush_all_asid;                                                  \
-        logic [`bp_fe_cmd_itlb_fence_padding_width-1:0]                                            \
+        logic [`bp_fe_cmd_itlb_fence_padding_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)-1:0]                                            \
                                   padding;                                                         \
     } bp_fe_cmd_itlb_fence_s;                                                                      \
                                                                                                    \
@@ -275,11 +273,11 @@ typedef enum bit [2:0] {
     (1+`BSG_MAX(`bp_fe_fetch_width_no_padding(branch_metadata_fwd_width_p)                         \
                 ,`bp_fe_exception_width_no_padding(vaddr_width_p)))
 
-`define bp_fe_fetch_padding_width                                                                  \
+`define bp_fe_fetch_padding_width(vaddr_width_p,branch_metadata_fwd_width_p)                                                                  \
     (`bp_fe_queue_msg_u_width(vaddr_width_p,branch_metadata_fwd_width_p)                           \
      -`bp_fe_fetch_width_no_padding(branch_metadata_fwd_width_p))
 
-`define bp_fe_exception_padding_width                                                              \
+`define bp_fe_exception_padding_width(vaddr_width_p,branch_metadata_fwd_width_p)                                                              \
     (`bp_fe_queue_msg_u_width(vaddr_width_p,branch_metadata_fwd_width_p)                           \
      -`bp_fe_exception_width_no_padding(vaddr_width_p))
 
@@ -304,22 +302,22 @@ typedef enum bit [2:0] {
                                     ,`bp_fe_cmd_itlb_fence_width_no_padding(vaddr_width_p          \
                                                                             ,asid_width_p)))))
 
-`define bp_fe_cmd_pc_redirect_operands_padding_width                                               \
+`define bp_fe_cmd_pc_redirect_operands_padding_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)                                               \
     (`bp_fe_cmd_operands_u_width(vaddr_width_p,paddr_width_p,asid_width_p                          \
                                  ,branch_metadata_fwd_width_p)                                     \
      -`bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_p))
 
-`define bp_fe_cmd_attaboy_padding_width                                                            \
+`define bp_fe_cmd_attaboy_padding_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)                                               \
     (`bp_fe_cmd_operands_u_width(vaddr_width_p,paddr_width_p,asid_width_p                          \
                                  ,branch_metadata_fwd_width_p)                                     \
      -`bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_p))
 
-`define bp_fe_cmd_itlb_map_padding_width                                                           \
+`define bp_fe_cmd_itlb_map_padding_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)                                               \
     (`bp_fe_cmd_operands_u_width(vaddr_width_p,paddr_width_p,asid_width_p                          \
                                  ,branch_metadata_fwd_width_p)                                     \
      -`bp_fe_cmd_itlb_map_width_no_padding(vaddr_width_p,paddr_width_p))
 
-`define bp_fe_cmd_itlb_fence_padding_width                                                         \
+`define bp_fe_cmd_itlb_fence_padding_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)                                               \
     (`bp_fe_cmd_operands_u_width(vaddr_width_p,paddr_width_p,asid_width_p                          \
                                  ,branch_metadata_fwd_width_p)                                     \
      -`bp_fe_cmd_itlb_fence_width_no_padding(vaddr_width_p,asid_width_p))

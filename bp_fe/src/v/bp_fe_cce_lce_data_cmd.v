@@ -14,8 +14,7 @@
 `endif
 
 module bp_fe_cce_lce_data_cmd
-  #(parameter lce_id_p="inv"
-    ,parameter data_width_p="inv"
+  #(parameter data_width_p="inv"
     ,parameter lce_addr_width_p="inv"
     ,parameter lce_data_width_p="inv"
     ,parameter num_cce_p="inv"

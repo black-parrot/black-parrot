@@ -29,8 +29,7 @@
 `endif
 
 module bp_fe_lce
-  #(parameter lce_id_p="inv"
-    ,parameter data_width_p="inv"
+  #(parameter data_width_p="inv"
     ,parameter lce_data_width_p="inv"
     ,parameter lce_addr_width_p="inv"
     ,parameter lce_sets_p="inv"
@@ -57,10 +56,14 @@ module bp_fe_lce
     ,parameter bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, lce_addr_width_p, lce_assoc_p, coh_states_p)
     ,parameter bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, lce_addr_width_p, lce_data_width_p, lce_assoc_p)
     ,parameter bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p, lce_addr_width_p, lce_data_width_p, lce_assoc_p)    
+
+    ,localparam lce_id_width_lp=`bp_lce_id_width
    )
    (
     input logic                                                clk_i
     ,input logic                                               reset_i
+
+    ,input logic [lce_id_width_lp-1:0]                         id_i
 
     ,output logic                                              ready_o
     ,output logic                                              cache_miss_o
@@ -156,8 +159,7 @@ module bp_fe_lce
   logic lce_cce_req_lce_cce_resp_yumi_li;
   
   bp_fe_lce_cce_req #(
-    .lce_id_p(lce_id_p)
-    ,.data_width_p(data_width_p)
+    .data_width_p(data_width_p)
     ,.lce_addr_width_p(lce_addr_width_p)
     ,.num_cce_p(num_cce_p)
     ,.num_lce_p(num_lce_p)
@@ -168,6 +170,8 @@ module bp_fe_lce
     .clk_i(clk_i)
     ,.reset_i(reset_i)
   
+    ,.id_i(id_i)
+
     ,.miss_i(miss_i)
     ,.miss_addr_i(miss_addr_i)
     ,.lru_way_i(lru_way_i)
@@ -219,8 +223,7 @@ module bp_fe_lce
 
 
   bp_fe_cce_lce_cmd #(
-    .lce_id_p(lce_id_p)
-    ,.data_width_p(data_width_p)
+    .data_width_p(data_width_p)
     ,.lce_addr_width_p(lce_addr_width_p)
     ,.lce_data_width_p(lce_data_width_p)
     ,.lce_sets_p(lce_sets_p)
@@ -233,6 +236,8 @@ module bp_fe_lce
   ) cce_lce_cmd (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
+
+    ,.id_i(id_i)
 
     ,.lce_ready_o(lce_ready_lo)
     ,.tag_set_o(tag_set_li)
@@ -294,8 +299,7 @@ module bp_fe_lce
   );
 
   bp_fe_cce_lce_data_cmd #(
-    .lce_id_p(lce_id_p)
-    ,.data_width_p(data_width_p)
+    .data_width_p(data_width_p)
     ,.lce_addr_width_p(lce_addr_width_p)
     ,.lce_data_width_p(lce_data_width_p)
     ,.lce_sets_p(lce_sets_p)
@@ -341,8 +345,7 @@ module bp_fe_lce
 
 
   bp_fe_lce_lce_tr_resp_in #(
-    .lce_id_p(lce_id_p)
-    ,.data_width_p(data_width_p)
+    .data_width_p(data_width_p)
     ,.lce_addr_width_p(lce_addr_width_p)
     ,.lce_data_width_p(lce_data_width_p)
     ,.lce_sets_p(lce_sets_p)

@@ -21,7 +21,7 @@ VTB_PATH    = $(TB_PATH)/v
 SCTB_PATH   = $(TB_PATH)/sc
 
 ## Tools
-VV = $(VERILATOR_PATH)/bin/verilator
+VV = verilator
 CC = g++
 
 VV_OPTS +=-I$(SRC_PATH) -I$(TB_PATH)/common -I$(BP_COMMON_PATH) 

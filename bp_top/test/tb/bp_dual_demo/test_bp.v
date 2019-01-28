@@ -9,8 +9,8 @@
 `include "bp_common_fe_be_if.vh"
 `include "bp_common_me_if.vh"
 
-`include "bp_be_internal_if.vh"
-`include "bp_be_rv_defines.vh"
+`include "bp_be_internal_if_defines.vh"
+`include "bp_be_rv64_defines.vh"
 
 module test_bp
  #(parameter vaddr_width_p="inv"

@@ -39,7 +39,6 @@ module bp_fe_top
     ,parameter tag_width_p="inv"
     ,parameter num_cce_p="inv"
     ,parameter num_lce_p="inv"
-    ,parameter lce_id_p="inv"
     ,parameter lce_assoc_p="inv"
     ,parameter lce_sets_p="inv"
     ,parameter coh_states_p="inv"
@@ -98,10 +97,12 @@ module bp_fe_top
     ,parameter bp_fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)
     ,parameter bp_fe_queue_width_lp=`bp_fe_queue_width(vaddr_width_p,branch_metadata_fwd_width_lp)
 
-
+    ,localparam lce_id_width_lp=`bp_lce_id_width
 )(
     input clk_i
     ,input reset_i
+
+    ,input [lce_id_width_lp-1:0]                      icache_id_i
 
     ,input [bp_fe_cmd_width_lp-1:0]                   bp_fe_cmd_i
     ,input                                            bp_fe_cmd_v_i
@@ -143,7 +144,7 @@ module bp_fe_top
 // the first level of structs
 // be fe interface udpate (not sure if this is needed)
   localparam branch_metadata_fwd_width_p = branch_metadata_fwd_width_lp; 
-`declare_bp_fe_be_if_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)
+`declare_bp_common_fe_be_if_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)
 // pc_gen to fe
 `declare_bp_fe_pc_gen_queue_s;
 // fe to pc_gen
@@ -292,7 +293,6 @@ icache
 ,.tag_width_p(tag_width_p)
 ,.num_cce_p(num_cce_p)
 ,.num_lce_p(num_lce_p)
-,.lce_id_p(lce_id_p)
 ,.lce_assoc_p(lce_assoc_p)
 ,.lce_sets_p(lce_sets_p)
 ,.coh_states_p(coh_states_p)
@@ -302,6 +302,8 @@ icache_1
 (
 .clk_i(clk_i)
 ,.reset_i(reset_i)
+
+,.id_i(icache_id_i)
 
 ,.pc_gen_icache_vaddr_i(pc_gen_icache)
 ,.pc_gen_icache_vaddr_v_i(pc_gen_icache_v)

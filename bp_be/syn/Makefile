@@ -22,11 +22,13 @@ SCTB_PATH   = $(TB_PATH)/sc
 # All synthesizable sources 
 # Nonsynth and test sources are added in tool-specific files
 HDL_SOURCE = 										   			             \
+			 $(BP_BE_PATH)/v/bp_be_rv64_pkg.vh								 \
 			 $(BP_COMMON_PATH)/bp_common_pkg.vh	                             \
 			 $(BP_COMMON_PATH)/bp_common_fe_be_if.vh                         \
 			 $(BP_BE_PATH)/bp_dcache/include/bp_dcache_lce_pkg.vh 	         \
 			 $(BP_BE_PATH)/bp_dcache/include/bp_dcache_pkg.vh 			     \
 																             \
+			 $(BP_BE_PATH)/v/bp_be_pkg.vh									 \
 			 $(SRC_PATH)/bp_be_top.v                                         \
              $(SRC_PATH)/bp_be_checker.v                                     \
 			 $(SRC_PATH)/bp_be_fe_adapter.v			                         \
@@ -52,12 +54,7 @@ HDL_SOURCE = 										   			             \
 			 $(BP_BE_PATH)/bp_dcache/v/bp_dcache_cce_lce_data_cmd.v		     \
 			 $(BP_BE_PATH)/bp_dcache/v/bp_dcache_lce_lce_tr_resp_in.v		 \
 			 										                         \
-			 $(SRC_PATH)/bsg_decode.v                                        \
-			 $(SRC_PATH)/bsg_dff_reset_en.v        	                         \
 			 $(SRC_PATH)/bsg_fifo_1r1w_rolly.v		                         \
-			 $(SRC_PATH)/bsg_circular_ptr_resval.v		                     \
-			 $(SRC_PATH)/bsg_pipeline.v	                                     \
-			 $(SRC_PATH)/bsg_scan.v 					                     \
 			 													             \
 			 $(BSG_IP_PATH)/bsg_dataflow/bsg_fifo_1r1w_small.v		         \
 			 $(BSG_IP_PATH)/bsg_dataflow/bsg_fifo_tracker.v			         \
@@ -78,17 +75,20 @@ HDL_SOURCE = 										   			             \
 			 $(BSG_IP_PATH)/bsg_misc/bsg_circular_ptr.v			             \
 			 $(BSG_IP_PATH)/bsg_misc/bsg_counter_clear_up.v		             \
 			 $(BSG_IP_PATH)/bsg_misc/bsg_crossbar_o_by_i.v     	             \
+			 $(BSG_IP_PATH)/bsg_misc/bsg_decode.v						     \
 			 $(BSG_IP_PATH)/bsg_misc/bsg_decode_with_v.v      	             \
 			 $(BSG_IP_PATH)/bsg_misc/bsg_dff.v                 	             \
 			 $(BSG_IP_PATH)/bsg_misc/bsg_dff_chain.v           	             \
 			 $(BSG_IP_PATH)/bsg_misc/bsg_dff_en.v              	             \
 			 $(BSG_IP_PATH)/bsg_misc/bsg_dff_reset.v        	             \
+			 $(BSG_IP_PATH)/bsg_misc/bsg_dff_reset_en.v						 \
 			 $(BSG_IP_PATH)/bsg_misc/bsg_encode_one_hot.v					 \
 			 $(BSG_IP_PATH)/bsg_misc/bsg_mux.v                 	             \
 			 $(BSG_IP_PATH)/bsg_misc/bsg_mux_one_hot.v         	             \
 			 $(BSG_IP_PATH)/bsg_misc/bsg_mux_segmented.v      	             \
 			 $(BSG_IP_PATH)/bsg_misc/bsg_priority_encode_one_hot_out.v       \
 			 $(BSG_IP_PATH)/bsg_misc/bsg_priority_encode.v					 \
+			 $(BSG_IP_PATH)/bsg_misc/bsg_scan.v								 \
 			 $(BSG_IP_PATH)/bsg_fsb/bsg_fsb_node_trace_replay.v				 \
 	
 # Tests that all BP repos are present

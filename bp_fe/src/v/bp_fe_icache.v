@@ -33,6 +33,7 @@
 `endif
 
 module icache
+  import bp_common_pkg::*;
   #(
     parameter eaddr_width_p="inv"
     ,parameter data_width_p="inv"
@@ -40,7 +41,6 @@ module icache
     ,parameter tag_width_p="inv"
     ,parameter num_cce_p="inv"
     ,parameter num_lce_p="inv"
-    ,parameter lce_id_p="inv"
     ,parameter lce_assoc_p="inv"
     ,parameter lce_sets_p="inv"
     ,parameter coh_states_p="inv"
@@ -81,10 +81,13 @@ module icache
     ,parameter bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(eaddr_width_p)
 
     //,parameter bp_fe_pc_gen_cmd_width_lp=`bp_fe_pc_gen_cmd_width
+    ,localparam lce_id_width_lp=`bp_lce_id_width
    )
    (
     input logic                                       clk_i
     ,input logic                                      reset_i
+
+    ,input logic [lce_id_width_lp-1:0]                id_i
 
     ,input logic [bp_fe_pc_gen_icache_width_lp-1:0]   pc_gen_icache_vaddr_i
     ,input logic                                      pc_gen_icache_vaddr_v_i
@@ -322,7 +325,7 @@ module icache
 
   assign lru_bits = meta_data_mem_data_lo;
 
-  bp_dcache_lru_encode #(
+  bp_be_dcache_lru_encode #(
     .ways_p(lce_assoc_p)
     ) lru_encoder (
     .lru_i(lru_bits)
@@ -360,8 +363,7 @@ module icache
 
 
   bp_fe_lce #(
-   .lce_id_p(lce_id_p)
-   ,.data_width_p(data_width_p)
+   .data_width_p(data_width_p)
    ,.lce_data_width_p(lce_data_width_lp)
    ,.lce_addr_width_p(addr_width_lp)
    ,.lce_sets_p(lce_sets_p)
@@ -374,6 +376,8 @@ module icache
   ) lce (
    .clk_i(clk_i)
    ,.reset_i(reset_i)
+
+   ,.id_i(id_i)
 
    ,.ready_o(pc_gen_icache_vaddr_ready_o)
    ,.cache_miss_o(cache_miss_o)
@@ -507,7 +511,7 @@ module icache
   logic [lce_assoc_p-2:0]     lru_decode_data_lo;
   logic [lce_assoc_p-2:0]     lru_decode_mask_lo;
 
-   bp_dcache_lru_decode #(
+   bp_be_dcache_lru_decode #(
      .ways_p(lce_assoc_p)
    ) lru_decode (
      .way_i(lru_decode_way_li)
@@ -572,11 +576,11 @@ module icache
   // synopsys translate_off
   if (debug_p) begin
     bp_fe_icache_axe_trace_gen #(
-      .id_p(lce_id_p)
-      ,.addr_width_p(addr_width_lp)
+      .addr_width_p(addr_width_lp)
       ,.data_width_p(inst_width_p)
     ) cc (
       .clk_i(clk_i)
+      ,.id_i(id_i)
       ,.v_i(icache_pc_gen_data_v_o)
       ,.addr_i(addr_tv_r)
       ,.data_i(icache_pc_gen_data_o)

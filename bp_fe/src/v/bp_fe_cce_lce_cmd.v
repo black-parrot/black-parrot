@@ -14,8 +14,7 @@
 `endif
 
 module bp_fe_cce_lce_cmd
-  #(parameter lce_id_p="inv"
-    ,parameter data_width_p="inv"
+  #(parameter data_width_p="inv"
     ,parameter lce_data_width_p="inv"
     ,parameter lce_addr_width_p="inv"
     ,parameter lce_sets_p="inv"
@@ -46,10 +45,14 @@ module bp_fe_cce_lce_cmd
     ,parameter bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, lce_addr_width_p, lce_assoc_p, coh_states_p)
     ,parameter bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, lce_addr_width_p, lce_data_width_p, lce_assoc_p)
     ,parameter bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p, lce_addr_width_p, lce_data_width_p, lce_assoc_p)    
+
+    ,localparam lce_id_width_lp=`bp_lce_id_width
    )
    (
     input logic                                                clk_i
     ,input logic                                               reset_i
+
+    ,input logic [lce_id_width_lp-1:0]                         id_i
 
     ,output logic                                              lce_ready_o
     ,output logic                                              tag_set_o
@@ -164,7 +167,7 @@ module bp_fe_cce_lce_cmd
           state_n                = data_mem_pkt_yumi_i ? e_cce_lce_cmd_transfer : e_cce_lce_cmd_ready;
 
         end else if (cce_lce_cmd_li.msg_type == e_lce_cmd_writeback) begin
-          lce_cce_data_resp_lo.src_id   = lce_id_p;
+          lce_cce_data_resp_lo.src_id   = id_i;
           lce_cce_data_resp_lo.dst_id   = cce_lce_cmd_li.src_id;
           lce_cce_data_resp_lo.msg_type = e_lce_resp_null_wb;
           lce_cce_data_resp_lo.addr     = cce_lce_cmd_li.addr;
@@ -212,7 +215,7 @@ module bp_fe_cce_lce_cmd
               : meta_data_mem_pkt_yumi_i;
 
           lce_cce_resp_lo.dst_id   = cce_lce_cmd_li.src_id;
-          lce_cce_resp_lo.src_id   = lce_id_p;
+          lce_cce_resp_lo.src_id   = id_i;
           lce_cce_resp_lo.msg_type = e_lce_cce_inv_ack;
           lce_cce_resp_lo.addr     = cce_lce_cmd_li.addr;
           lce_cce_resp_v_o         = (flag_invalidate_r | tag_mem_pkt_yumi_i) & (flag_updated_lru_r | meta_data_mem_pkt_yumi_i);
@@ -224,7 +227,7 @@ module bp_fe_cce_lce_cmd
         flag_data_buffered_n       = ~lce_lce_tr_resp_ready_i;
         data_n                     = flag_data_buffered_r ? data_r : data_mem_data_i;
         lce_lce_tr_resp_lo.dst_id  = cce_lce_cmd_li.target;
-        lce_lce_tr_resp_lo.src_id  = lce_id_p;
+        lce_lce_tr_resp_lo.src_id  = id_i;
         lce_lce_tr_resp_lo.way_id  = cce_lce_cmd_li.target_way_id;
         lce_lce_tr_resp_lo.addr    = cce_lce_cmd_li.addr;
         lce_lce_tr_resp_lo.data    = flag_data_buffered_r ? data_r : data_mem_data_i;
@@ -247,7 +250,7 @@ module bp_fe_cce_lce_cmd
 
         end else if (cce_lce_cmd_li.msg_type == e_lce_cmd_sync) begin
           lce_cce_resp_lo.dst_id   = cce_lce_cmd_li.src_id;
-          lce_cce_resp_lo.src_id   = lce_id_p;
+          lce_cce_resp_lo.src_id   = id_i;
           lce_cce_resp_lo.msg_type = e_lce_cce_sync_ack;
           // lce_cce_resp_lo.addr is left unfilled for sync_ack
           lce_cce_resp_v_o         = cce_lce_cmd_v_i;

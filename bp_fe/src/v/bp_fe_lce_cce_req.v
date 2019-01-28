@@ -14,8 +14,7 @@
 `endif
 
 module bp_fe_lce_cce_req
-  #(parameter lce_id_p="inv"
-    ,parameter data_width_p="inv"
+  #(parameter data_width_p="inv"
     ,parameter lce_addr_width_p="inv"
     ,parameter num_cce_p="inv"
     ,parameter num_lce_p="inv"
@@ -35,10 +34,13 @@ module bp_fe_lce_cce_req
 
     ,parameter lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, lce_addr_width_p, lce_assoc_p)
     ,parameter lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, lce_addr_width_p)
+    ,localparam lce_id_width_lp=`bp_lce_id_width
    )
    (
     input logic                               clk_i
     ,input logic                              reset_i
+
+    ,input logic [lce_id_width_lp-1:0]        id_i
 
     ,input logic                              miss_i
     ,input logic [lce_addr_width_p-1:0]       miss_addr_i
@@ -103,7 +105,7 @@ module bp_fe_lce_cce_req
     cce_data_received     = cce_data_received_r | cce_data_received_i;
     tag_set               = tag_set_r | tag_set_i;
 
-    lce_cce_req_lo.src_id        = (lg_num_lce_lp)'(lce_id_p);
+    lce_cce_req_lo.src_id        = (lg_num_lce_lp)'(id_i);
     lce_cce_req_lo.non_exclusive = e_lce_req_excl;
     lce_cce_req_lo.msg_type      = e_lce_req_type_rd;
     lce_cce_req_lo.addr          = miss_addr_r;
@@ -111,7 +113,7 @@ module bp_fe_lce_cce_req
     lce_cce_req_lo.lru_dirty     = e_lce_req_lru_clean;
     lce_cce_req_v_o              = 1'b0;
 
-    lce_cce_resp_lo.src_id       = lce_id_p;
+    lce_cce_resp_lo.src_id       = id_i;
     lce_cce_resp_lo.msg_type     = e_lce_cce_tr_ack;
     lce_cce_resp_lo.addr         = miss_addr_r;
     lce_cce_resp_v_o             = 1'b0;
