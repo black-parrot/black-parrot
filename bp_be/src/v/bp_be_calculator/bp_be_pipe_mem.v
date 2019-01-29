@@ -87,6 +87,7 @@ assign mmu_resp  = mmu_resp_i;
 wire unused0 = clk_i;
 wire unused1 = reset_i;
 wire unused2 = mmu_cmd_rdy_i;
+wire unused3 = mmu_resp_v_i;
 
 // Module instantiations
 always_comb begin

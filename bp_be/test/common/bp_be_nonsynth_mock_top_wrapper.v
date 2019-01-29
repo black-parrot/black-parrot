@@ -178,7 +178,6 @@ bp_be_scheduler #(.vaddr_width_p(vaddr_width_p)
                    ,.fe_cmd_v_o(fe_cmd_v)
                    ,.fe_cmd_rdy_i(fe_cmd_rdy)
 
-                   ,.chk_npc_status_i(chk_npc_status)
                    ,.chk_stall_issue_i(chk_stall_issue)
                    ,.chk_cache_miss_i(chk_cache_miss)
                    ,.chk_instr_ckpt_v_i(chk_instr_commit)
@@ -197,8 +196,6 @@ bp_be_checker #(.vaddr_width_p(vaddr_width_p)
                 ,.chk_stall_issue_o(chk_stall_issue)
                 ,.chk_cache_miss_o(chk_cache_miss)
                 ,.chk_instr_ckpt_v_o(chk_instr_commit)
-
-                ,.chk_npc_status_o(chk_npc_status)
 
                 ,.chk_psn_isd_o(chk_psn_isd)
                 ,.chk_psn_ex_o(chk_psn_ex)

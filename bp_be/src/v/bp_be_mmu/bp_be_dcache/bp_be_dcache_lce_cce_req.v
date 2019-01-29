@@ -30,7 +30,7 @@ module bp_be_dcache_lce_cce_req
     input clk_i
     ,input reset_i
 
-    ,input logic[lce_id_width_lp] id_i
+    ,input logic[lce_id_width_lp-1:0] id_i
 
     ,input load_miss_i
     ,input store_miss_i

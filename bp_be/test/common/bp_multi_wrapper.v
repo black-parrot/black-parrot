@@ -113,9 +113,9 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
     localparam icache_id = (core_id*2+icache_lce_id_lp);
     localparam dcache_id = (core_id*2+dcache_lce_id_lp);
 
-    assign proc_cfg[core_id].mhartid = mhartid;
-    assign proc_cfg[core_id].icache_id = icache_id;
-    assign proc_cfg[core_id].dcache_id = dcache_id;
+    assign proc_cfg[core_id].mhartid   = mhartid;
+    assign proc_cfg[core_id].icache_id = icache_id[0+:lce_id_width_lp];
+    assign proc_cfg[core_id].dcache_id = dcache_id[0+:lce_id_width_lp];
 
     bp_fe_top#(.vaddr_width_p(vaddr_width_p)
                ,.paddr_width_p(paddr_width_p)

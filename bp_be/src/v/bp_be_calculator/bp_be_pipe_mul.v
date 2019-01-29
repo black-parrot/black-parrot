@@ -59,6 +59,11 @@ assign exc    = exc_i;
 wire unused0 = clk_i;
 wire unused1 = reset_i;
 
+wire[decode_width_lp-1:0]    unused2 = decode_i;
+wire[reg_data_width_lp-1:0]  unused3 = rs1_i;
+wire[reg_data_width_lp-1:0]  unused4 = rs2_i;
+wire[exception_width_lp-1:0] unused5 = exc_i;
+
 // Submodule connections
 
 // Module instantiations

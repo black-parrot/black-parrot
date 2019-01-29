@@ -78,7 +78,7 @@ assign imem_addr = pc_r[0+:lg_boot_rom_bytes_lp];
 assign imem_data = {mem[imem_addr+3], mem[imem_addr+2], mem[imem_addr+1], mem[imem_addr]};
 
 always_comb begin : fe_cmd_gen
-    fe_cmd_rdy_o 	= fe_cmd_v_i;;
+    fe_cmd_rdy_o 	= fe_cmd_v_i;
 
     pc_n = pc_r + 'd4;
     if(fe_cmd_v_i & fe_cmd_rdy_o) begin

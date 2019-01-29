@@ -14,7 +14,7 @@ VCS_OPTIONS += +vcs+lic+wait
 VCS_OPTIONS += +multisource_int_delays
 VCS_OPTIONS += +neg_tchk
 VCS_OPTIONS += +libext+.v+.vlib+.vh
-VCS_OPTIONS += +vcs+finish+20000000ps
+VCS_OPTIONS += +vcs+finish+15000000ps
 
 ## Find sources
 VCS_OPTIONS += +incdir+$(BP_COMMON_DIR)
@@ -30,7 +30,7 @@ VCS_OPTIONS += +incdir+$(BSG_IP_CORES_DIR)/bsg_misc
 VCS_OPTIONS += +incdir+$(BSG_IP_CORES_DIR)/bsg_test
 VCS_OPTIONS += +incdir+$(BSG_IP_CORES_DIR)/bsg_noc
 
-LINT_OPTIONS +=+lint=all,noSVA-UA,noVCDE,noSV-LCM-PPWI
+LINT_OPTIONS +=+lint=all,noSVA-UA,noVCDE,noSV-LCM-PPWI,noSVA-NSVU,noVNGS
 
 # Enable GUI (DVE) mode
 # This is to run interative simulation/debugging in GUI mode.

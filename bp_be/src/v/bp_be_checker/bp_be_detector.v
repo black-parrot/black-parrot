@@ -80,6 +80,10 @@ bp_be_calc_status_s calc_status;
 
 assign calc_status = calc_status_i;
 
+// Suppress unused inputs
+wire unused1 = clk_i;
+wire unused2 = reset_i;
+
 // Declare intermediate signals
 logic[1:0] irs1_dhaz_v     , irs2_dhaz_v;
 logic[2:0] frs1_dhaz_v     , frs2_dhaz_v;

@@ -43,14 +43,14 @@ module bsg_fifo_1r1w_rolly
     assign rptr_jmp = roll_v_i 
                       ? (cptr_r - rptr_r) 
                       : (deq 
-                         ? ('b1)
-                         : ('b0));
+                         ? (1'b1)
+                         : (1'b0));
 
     assign wptr_jmp = clr_v_i
                       ? (rptr_r - wptr_r)
                       : (enq
-                         ? ('b1)
-                         : ('b0));
+                         ? (1'b1)
+                         : (1'b0));
 
     assign empty = (rptr_r[0+:ptr_width_lp] == wptr_r[0+:ptr_width_lp]) 
                    & (rptr_r[ptr_width_lp] == wptr_r[ptr_width_lp]);
