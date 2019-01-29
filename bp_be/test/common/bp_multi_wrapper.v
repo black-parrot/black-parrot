@@ -282,6 +282,9 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
                         ,.paddr_width_p(paddr_width_p)
                         ,.asid_width_p(asid_width_p)
                         ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+						,.trace_replay_en_p(0)	// Set to 1 for trace replay check
+						,.trace_ring_width_p(129)
+						,.trace_rom_addr_width_p(32)
                         )
               be_tracer(.clk_i(clk_i)
                         ,.reset_i(reset_i)
