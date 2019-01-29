@@ -17,7 +17,7 @@ module bp_cce
     ,parameter lce_assoc_p="inv"
     ,parameter lce_sets_p="inv"
     ,parameter block_size_in_bytes_p="inv"
-    ,parameter num_inst_ram_els_p="inv"
+    ,parameter num_cce_inst_ram_els_p="inv"
     ,parameter lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
     ,parameter lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
     ,parameter block_size_in_bits_lp=block_size_in_bytes_p*8
@@ -186,7 +186,7 @@ module bp_cce
 
   // PC Logic, Instruction RAM
   bp_cce_pc
-    #(.num_inst_ram_els_p(num_inst_ram_els_p)
+    #(.num_cce_inst_ram_els_p(num_cce_inst_ram_els_p)
       ,.harden_p(harden_p)
      )
      pc_inst_ram

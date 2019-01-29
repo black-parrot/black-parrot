@@ -10,9 +10,9 @@
 
 module bp_cce_pc
   import bp_cce_inst_pkg::*;
-  #(parameter num_inst_ram_els_p="inv"
+  #(parameter num_cce_inst_ram_els_p="inv"
     ,parameter inst_width_lp=`bp_cce_inst_width
-    ,parameter inst_ram_addr_width_lp=`BSG_SAFE_CLOG2(num_inst_ram_els_p)
+    ,parameter inst_ram_addr_width_lp=`BSG_SAFE_CLOG2(num_cce_inst_ram_els_p)
     ,parameter harden_p=0
   )
   (

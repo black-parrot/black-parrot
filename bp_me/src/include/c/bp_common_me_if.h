@@ -58,6 +58,7 @@ typedef enum {
   e_lce_cce_sync_ack         = 0 // Sync Ack
   ,e_lce_cce_inv_ack         = 1 // Invalidate Tag Ack
   ,e_lce_cce_tr_ack          = 2 // Transfer Ack
+  ,e_lce_cce_coh_ack         = 3 // Coherence Ack
 } bp_lce_cce_ack_type_e;
 
 #define bp_lce_cce_ack_type_width 2
