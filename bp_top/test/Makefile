@@ -15,7 +15,7 @@ HEX2BIN        = $(BP_TOP_PATH)/software/py/hex2binascii.py
 SPIKE2TR       = $(BP_TOP_PATH)/software/py/spike2tr.py
 BSG_ROM_GEN    = $(BSG_IP_PATH)/bsg_mem/bsg_ascii_to_rom.py
 RISCV_ELF2HEX  = elf2hex
-RISCV_SIM	   = spike
+RISCV_SIM	   = $(TOP)/riscv-isa-sim/install/bin/spike
 RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -D -M no-aliases,numeric
 RISCV_GCC=riscv64-unknown-elf-gcc -fPIC -march=rv64i -mabi=lp64 -mcmodel=medany -static -nostdlib -nostartfiles -T demos/riscv.ld
 
