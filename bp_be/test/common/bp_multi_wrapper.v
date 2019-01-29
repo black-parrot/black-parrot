@@ -110,8 +110,8 @@ genvar core_id;
 generate 
 for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
     localparam mhartid = (mhartid_width_lp)'(core_id);
-    localparam icache_id = (lce_id_width_lp)'(core_id*2+icache_lce_id_lp);
-    localparam dcache_id = (lce_id_width_lp)'(core_id*2+dcache_lce_id_lp);
+    localparam icache_id = (core_id*2+icache_lce_id_lp);
+    localparam dcache_id = (core_id*2+dcache_lce_id_lp);
 
     assign proc_cfg[core_id].mhartid = mhartid;
     assign proc_cfg[core_id].icache_id = icache_id;

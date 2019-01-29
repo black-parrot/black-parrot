@@ -7,7 +7,7 @@ BP_COMMON_PATH = $(TOP)/bp_common
 
 BSG_IP_PATH	   = $(TOP)/bsg_ip_cores
 
-TB_DIR         = $(BP_BE_PATH)/tb
+TB_DIR         = $(BP_BE_PATH)/test
 ASM_DIR        = $(TB_DIR)/asm
 ROM_DIR        = $(TB_DIR)/rom
 TRACE_ROM_DIR  = $(TB_DIR)/trace_rom

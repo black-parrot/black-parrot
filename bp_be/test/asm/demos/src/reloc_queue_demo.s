@@ -23,7 +23,7 @@ lock_queue:
 .L4:
 	ld	a4,-56(s0)
 	ld	a5,-24(s0)
-	addi	a5,a5,38
+	addi	a5,a5,42
 	slli	a5,a5,3
 	add	a5,a4,a5
 	ld	a5,8(a5)
@@ -31,7 +31,7 @@ lock_queue:
 	bgeu	a4,a5,.L3
 	ld	a4,-56(s0)
 	ld	a5,-24(s0)
-	addi	a5,a5,38
+	addi	a5,a5,42
 	slli	a5,a5,3
 	add	a5,a4,a5
 	ld	a5,8(a5)
@@ -42,13 +42,13 @@ lock_queue:
 	sd	a5,-24(s0)
 .L2:
 	ld	a4,-24(s0)
-	li	a5,3
+	li	a5,7
 	bleu	a4,a5,.L4
 	ld	a5,-40(s0)
 	addi	a4,a5,1
 	ld	a3,-56(s0)
 	ld	a5,-64(s0)
-	addi	a5,a5,38
+	addi	a5,a5,42
 	slli	a5,a5,3
 	add	a5,a3,a5
 	sd	a4,8(a5)
@@ -74,33 +74,33 @@ lock_queue:
 .L8:
 	ld	a4,-56(s0)
 	ld	a5,-32(s0)
-	addi	a5,a5,38
+	addi	a5,a5,42
 	slli	a5,a5,3
 	add	a5,a4,a5
 	ld	a5,8(a5)
 	beqz	a5,.L7
 	ld	a4,-56(s0)
 	ld	a5,-64(s0)
-	addi	a5,a5,38
+	addi	a5,a5,42
 	slli	a5,a5,3
 	add	a5,a4,a5
 	ld	a4,8(a5)
 	ld	a3,-56(s0)
 	ld	a5,-32(s0)
-	addi	a5,a5,38
+	addi	a5,a5,42
 	slli	a5,a5,3
 	add	a5,a3,a5
 	ld	a5,8(a5)
 	bgtu	a4,a5,.L8
 	ld	a4,-56(s0)
 	ld	a5,-64(s0)
-	addi	a5,a5,38
+	addi	a5,a5,42
 	slli	a5,a5,3
 	add	a5,a4,a5
 	ld	a4,8(a5)
 	ld	a3,-56(s0)
 	ld	a5,-32(s0)
-	addi	a5,a5,38
+	addi	a5,a5,42
 	slli	a5,a5,3
 	add	a5,a3,a5
 	ld	a5,8(a5)
@@ -114,7 +114,7 @@ lock_queue:
 	sd	a5,-32(s0)
 .L5:
 	ld	a4,-32(s0)
-	li	a5,3
+	li	a5,7
 	bleu	a4,a5,.L9
 	nop
 	ld	s0,56(sp)
@@ -132,7 +132,7 @@ unlock_queue:
 	sd	a1,-32(s0)
 	ld	a4,-24(s0)
 	ld	a5,-32(s0)
-	addi	a5,a5,38
+	addi	a5,a5,42
 	slli	a5,a5,3
 	add	a5,a4,a5
 	sd	zero,8(a5)
@@ -354,7 +354,7 @@ main:
 	sd	zero,8(a5)
 	ld	a4,-48(s0)
 	ld	a5,-24(s0)
-	addi	a5,a5,38
+	addi	a5,a5,42
 	slli	a5,a5,3
 	add	a5,a4,a5
 	sd	zero,8(a5)
@@ -363,7 +363,7 @@ main:
 	sd	a5,-24(s0)
 .L29:
 	ld	a4,-24(s0)
-	li	a5,3
+	li	a5,7
 	bleu	a4,a5,.L30
 	ld	a5,-48(s0)
 	sd	zero,8(a5)

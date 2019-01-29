@@ -14,7 +14,7 @@ VCS_OPTIONS += +vcs+lic+wait
 VCS_OPTIONS += +multisource_int_delays
 VCS_OPTIONS += +neg_tchk
 VCS_OPTIONS += +libext+.v+.vlib+.vh
-VCS_OPTIONS += +vcs+finish+1000000ps
+VCS_OPTIONS += +vcs+finish+20000000ps
 
 ## Find sources
 VCS_OPTIONS += +incdir+$(BP_COMMON_DIR)

@@ -1,8 +1,8 @@
 #include <stdint.h>
 
 #define QUEUE_LENGTH 32
-#define NUM_READERS 2
-#define NUM_WRITERS 2
+#define NUM_READERS 4
+#define NUM_WRITERS 4
 #define NUM_OPS 10
 
 

@@ -13,6 +13,7 @@
 `include "bp_be_rv64_defines.vh"
 
 module test_bp
+ import bp_be_rv64_pkg::*;
  #(parameter vaddr_width_p="inv"
    ,parameter paddr_width_p="inv"
    ,parameter asid_width_p="inv"
@@ -30,8 +31,8 @@ module test_bp
    ,parameter boot_rom_width_p="inv"
    ,parameter boot_rom_els_p="inv"
 
-   ,localparam reg_data_width_lp=RV64_reg_data_width_gp
-   ,localparam byte_width_lp=RV64_byte_width_gp
+   ,localparam reg_data_width_lp=rv64_reg_data_width_gp
+   ,localparam byte_width_lp=rv64_byte_width_gp
  );
 
 logic clk, reset;
@@ -53,6 +54,7 @@ bp_multi_wrapper #(.vaddr_width_p(vaddr_width_p)
                  ,.paddr_width_p(paddr_width_p)
                  ,.asid_width_p(asid_width_p)
                  ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+                 ,.core_els_p(core_els_p)
                  ,.num_cce_p(num_cce_p)
                  ,.num_lce_p(num_lce_p)
                  ,.num_mem_p(num_mem_p)
