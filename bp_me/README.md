@@ -5,6 +5,8 @@ in a BlackParrot multicore processor. It can be configured to support one or mor
 via the Coherence Network to one or more Local Cache Engines (LCEs), which are the L1 entities
 that participate in coherence.
 
+Diagrams for the ME blocks can be found [here][2]
+
 ## Memory End (ME)
 
 The file *bp\_me\_top.v* defines the top level Memory End module. This module is instantiated once
@@ -71,3 +73,4 @@ Coherence Engine and instantiates the CCE and exposes a well-defined handshaking
 
 
 [1]: http://cseweb.ucsd.edu/~mbtaylor/papers/Taylor_DAC_BaseJump_STL_2018.pdf
+[2]: http://docs.google.com/presentation/d/1yfb3akbj7ajXSX3sYYmxcPwYRE8H5mElJf3b8Vi6mbo/edit 
