@@ -42,13 +42,13 @@ module bp_fe_lce_lce_tr_resp_in
    (
     output logic                                                tr_received_o
  
-    , input logic[bp_lce_lce_tr_resp_width_lp-1:0]              lce_lce_tr_resp_i
-    , input logic                                               lce_lce_tr_resp_v_i
-    , output logic                                              lce_lce_tr_resp_yumi_o
+    , input logic [bp_lce_lce_tr_resp_width_lp-1:0]              lce_lce_tr_resp_i
+    , input logic                                                lce_lce_tr_resp_v_i
+    , output logic                                               lce_lce_tr_resp_yumi_o
 
-    , output logic                                              data_mem_pkt_v_o
-    , output logic[bp_fe_icache_lce_data_mem_pkt_width_lp-1:0]  data_mem_pkt_o
-    , input logic                                               data_mem_pkt_yumi_i
+    , output logic                                               data_mem_pkt_v_o
+    , output logic [bp_fe_icache_lce_data_mem_pkt_width_lp-1:0]  data_mem_pkt_o
+    , input logic                                                data_mem_pkt_yumi_i
    );
 
   `declare_bp_lce_lce_tr_resp_s(num_lce_p, lce_addr_width_p, lce_data_width_p, lce_assoc_p);

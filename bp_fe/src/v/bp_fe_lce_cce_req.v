@@ -43,8 +43,8 @@ module bp_fe_lce_cce_req
     , input logic                              reset_i
 
     , input logic                              miss_i
-    , input logic[lce_addr_width_p-1:0]        miss_addr_i
-    , input logic[lg_lce_assoc_lp-1:0]         lru_way_i
+    , input logic [lce_addr_width_p-1:0]       miss_addr_i
+    , input logic [lg_lce_assoc_lp-1:0]        lru_way_i
     , output logic                             cache_miss_o
           
     , input logic                              tr_received_i
@@ -52,21 +52,21 @@ module bp_fe_lce_cce_req
     , input logic                              tag_set_i
     , input logic                              tag_set_wakeup_i
           
-    , output logic[lce_cce_req_width_lp-1:0]   lce_cce_req_o
+    , output logic [lce_cce_req_width_lp-1:0]  lce_cce_req_o
     , output logic                             lce_cce_req_v_o
     , input logic                              lce_cce_req_ready_i
           
-    , output logic[lce_cce_resp_width_lp-1:0]  lce_cce_resp_o
+    , output logic [lce_cce_resp_width_lp-1:0] lce_cce_resp_o
     , output logic                             lce_cce_resp_v_o
     , input logic                              lce_cce_resp_yumi_i
    );
 
-  bp_fe_lce_cce_req_state_e                  state_r, state_n;
-  logic[lce_addr_width_p-1:0]                miss_addr_r, miss_addr_n;
-  logic                                      tr_received_r, tr_received_n, tr_received;
-  logic                                      cce_data_received_r, cce_data_received_n, cce_data_received;
-  logic                                      tag_set_r, tag_set_n, tag_set;
-  logic[lg_lce_assoc_lp-1:0]                 lru_way_r, lru_way_n;
+  bp_fe_lce_cce_req_state_e                   state_r, state_n;
+  logic [lce_addr_width_p-1:0]                miss_addr_r, miss_addr_n;
+  logic                                       tr_received_r, tr_received_n, tr_received;
+  logic                                       cce_data_received_r, cce_data_received_n, cce_data_received;
+  logic                                       tag_set_r, tag_set_n, tag_set;
+  logic [lg_lce_assoc_lp-1:0]                 lru_way_r, lru_way_n;
 
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, lce_addr_width_p);
   bp_lce_cce_resp_s lce_cce_resp_lo;

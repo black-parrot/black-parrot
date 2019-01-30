@@ -90,56 +90,56 @@ module bp_fe_lce
                                                                       ,lce_assoc_p
                                                                      )    
    )
-   (input logic                                                 clk_i
-    , input logic                                               reset_i
+   (input logic                                                  clk_i
+    , input logic                                                reset_i
 
-    , output logic                                              ready_o
-    , output logic                                              cache_miss_o
+    , output logic                                               ready_o
+    , output logic                                               cache_miss_o
 
-    , input logic                                               miss_i
-    , input logic[lce_addr_width_p-1:0]                         miss_addr_i
+    , input logic                                                miss_i
+    , input logic [lce_addr_width_p-1:0]                         miss_addr_i
 
-    , input logic[lce_data_width_p-1:0] data_mem_data_i
-    , output logic[bp_fe_icache_lce_data_mem_pkt_width_lp-1:0]  data_mem_pkt_o
-    , output logic                                              data_mem_pkt_v_o
-    , input logic                                               data_mem_pkt_yumi_i
+    , input logic [lce_data_width_p-1:0] data_mem_data_i
+    , output logic [bp_fe_icache_lce_data_mem_pkt_width_lp-1:0]  data_mem_pkt_o
+    , output logic                                               data_mem_pkt_v_o
+    , input logic                                                data_mem_pkt_yumi_i
 
-    , output logic[bp_fe_icache_lce_tag_mem_pkt_width_lp-1:0]   tag_mem_pkt_o
-    , output logic                                              tag_mem_pkt_v_o
-    , input logic                                               tag_mem_pkt_yumi_i
+    , output logic [bp_fe_icache_lce_tag_mem_pkt_width_lp-1:0]   tag_mem_pkt_o
+    , output logic                                               tag_mem_pkt_v_o
+    , input logic                                                tag_mem_pkt_yumi_i
        
-    , output logic                                              meta_data_mem_pkt_v_o
-    , output logic[bp_fe_icache_lce_meta_data_mem_pkt_width_lp-1:0] meta_data_mem_pkt_o
-    , input logic[lg_lce_assoc_lp-1:0]                          lru_way_i
-    , input logic                                               meta_data_mem_pkt_yumi_i
+    , output logic                                               meta_data_mem_pkt_v_o
+    , output logic [bp_fe_icache_lce_meta_data_mem_pkt_width_lp-1:0] meta_data_mem_pkt_o
+    , input logic [lg_lce_assoc_lp-1:0]                          lru_way_i
+    , input logic                                                meta_data_mem_pkt_yumi_i
        
-    , output logic[bp_lce_cce_req_width_lp-1:0]                 lce_cce_req_o
-    , output logic                                              lce_cce_req_v_o
-    , input  logic                                              lce_cce_req_ready_i
+    , output logic [bp_lce_cce_req_width_lp-1:0]                 lce_cce_req_o
+    , output logic                                               lce_cce_req_v_o
+    , input  logic                                               lce_cce_req_ready_i
 
-    , output logic[bp_lce_cce_resp_width_lp-1:0]                lce_cce_resp_o
-    , output logic                                              lce_cce_resp_v_o
-    , input  logic                                              lce_cce_resp_ready_i
+    , output logic [bp_lce_cce_resp_width_lp-1:0]                lce_cce_resp_o
+    , output logic                                               lce_cce_resp_v_o
+    , input  logic                                               lce_cce_resp_ready_i
 
-    , output logic[bp_lce_cce_data_resp_width_lp-1:0]           lce_cce_data_resp_o     
-    , output logic                                              lce_cce_data_resp_v_o 
-    , input logic                                               lce_cce_data_resp_ready_i
+    , output logic [bp_lce_cce_data_resp_width_lp-1:0]           lce_cce_data_resp_o     
+    , output logic                                               lce_cce_data_resp_v_o 
+    , input logic                                                lce_cce_data_resp_ready_i
 
-    , input logic[bp_cce_lce_cmd_width_lp-1:0]                  cce_lce_cmd_i
-    , input logic                                               cce_lce_cmd_v_i
-    , output logic                                              cce_lce_cmd_ready_o
+    , input logic [bp_cce_lce_cmd_width_lp-1:0]                  cce_lce_cmd_i
+    , input logic                                                cce_lce_cmd_v_i
+    , output logic                                               cce_lce_cmd_ready_o
 
-    , input logic[bp_cce_lce_data_cmd_width_lp-1:0]             cce_lce_data_cmd_i
-    , input logic                                               cce_lce_data_cmd_v_i
-    , output logic                                              cce_lce_data_cmd_ready_o
+    , input logic [bp_cce_lce_data_cmd_width_lp-1:0]             cce_lce_data_cmd_i
+    , input logic                                                cce_lce_data_cmd_v_i
+    , output logic                                               cce_lce_data_cmd_ready_o
 
-    , input logic[bp_lce_lce_tr_resp_width_lp-1:0]              lce_lce_tr_resp_i
-    , input logic                                               lce_lce_tr_resp_v_i
-    , output logic                                              lce_lce_tr_resp_ready_o
+    , input logic [bp_lce_lce_tr_resp_width_lp-1:0]              lce_lce_tr_resp_i
+    , input logic                                                lce_lce_tr_resp_v_i
+    , output logic                                               lce_lce_tr_resp_ready_o
 
-    , output logic[bp_lce_lce_tr_resp_width_lp-1:0]             lce_lce_tr_resp_o
-    , output logic                                              lce_lce_tr_resp_v_o
-    , input logic                                               lce_lce_tr_resp_ready_i
+    , output logic [bp_lce_lce_tr_resp_width_lp-1:0]             lce_lce_tr_resp_o
+    , output logic                                               lce_lce_tr_resp_v_o
+    , input logic                                                lce_lce_tr_resp_ready_i
    );
 
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, lce_addr_width_p);
@@ -398,12 +398,12 @@ module bp_fe_lce
     lce_lce_tr_resp_in_data_mem_pkt_yumi_li = 1'b0;
     cce_lce_data_cmd_data_mem_pkt_yumi_li   = 1'b0;
     cce_lce_cmd_data_mem_pkt_yumi_li = 1'b0;
-    if(lce_lce_tr_resp_in_data_mem_pkt_v_lo) begin
+    if (lce_lce_tr_resp_in_data_mem_pkt_v_lo) begin
       data_mem_pkt_v_o                        = 1'b1;
       data_mem_pkt_lo                         = lce_lce_tr_resp_in_data_mem_pkt_lo;
       lce_lce_tr_resp_in_data_mem_pkt_yumi_li = data_mem_pkt_yumi_i;
     end
-    else if(cce_lce_data_cmd_data_mem_pkt_v_lo) begin
+    else if (cce_lce_data_cmd_data_mem_pkt_v_lo) begin
       data_mem_pkt_v_o                        = 1'b1;
       data_mem_pkt_lo                         = cce_lce_data_cmd_data_mem_pkt_lo;
       cce_lce_data_cmd_data_mem_pkt_yumi_li   = data_mem_pkt_yumi_i;
@@ -434,19 +434,19 @@ module bp_fe_lce
     : 1'b0;   
 
   // timeout logic (similar to dcache timeout logic)
-  logic[`BSG_SAFE_CLOG2(timeout_max_limit_p)-1:0] timeout_cnt_r, timeout_cnt_n;
+  logic [`BSG_SAFE_CLOG2(timeout_max_limit_p)-1:0] timeout_cnt_r, timeout_cnt_n;
   logic timeout;
 
   always_comb begin
     timeout       = 1'b0;
     timeout_cnt_n = timeout_cnt_r;
     
-    if(timeout_cnt_r == timeout_max_limit_p) begin
+    if (timeout_cnt_r == timeout_max_limit_p) begin
       timeout = 1'b1;
       timeout_cnt_n = '0;
     end
     else begin
-      if(data_mem_pkt_v_o | tag_mem_pkt_v_o | meta_data_mem_pkt_v_o) begin
+      if (data_mem_pkt_v_o | tag_mem_pkt_v_o | meta_data_mem_pkt_v_o) begin
         timeout_cnt_n = ~(data_mem_pkt_yumi_i | tag_mem_pkt_yumi_i | meta_data_mem_pkt_yumi_i)
           ? (timeout_cnt_r + 1)
           : '0;
@@ -458,7 +458,7 @@ module bp_fe_lce
   end
 
   always_ff @ (posedge clk_i) begin
-    if(reset_i) begin
+    if (reset_i) begin
       timeout_cnt_r   <= '0;
     end
     else begin

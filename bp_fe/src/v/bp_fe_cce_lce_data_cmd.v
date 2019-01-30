@@ -42,15 +42,15 @@ module bp_fe_cce_lce_data_cmd
                                                                                             ,lce_data_width_p
                                                                                            )
    )
-   (output logic                                                cce_data_received_o
+   (output logic                                                 cce_data_received_o
               
-    , input logic[bp_cce_lce_data_cmd_width_lp-1:0]             cce_lce_data_cmd_i
-    , input logic                                               cce_lce_data_cmd_v_i
-    , output logic                                              cce_lce_data_cmd_yumi_o
+    , input logic [bp_cce_lce_data_cmd_width_lp-1:0]             cce_lce_data_cmd_i
+    , input logic                                                cce_lce_data_cmd_v_i
+    , output logic                                               cce_lce_data_cmd_yumi_o
                  
-    , output logic                                              data_mem_pkt_v_o
-    , output logic[bp_fe_icache_lce_data_mem_pkt_width_lp-1:0]  data_mem_pkt_o
-    , input logic                                               data_mem_pkt_yumi_i
+    , output logic                                               data_mem_pkt_v_o
+    , output logic [bp_fe_icache_lce_data_mem_pkt_width_lp-1:0]  data_mem_pkt_o
+    , input logic                                                data_mem_pkt_yumi_i
    );
 
   `declare_bp_cce_lce_data_cmd_s(num_cce_p, num_lce_p, lce_addr_width_p, lce_data_width_p, lce_assoc_p);
