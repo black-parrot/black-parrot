@@ -53,6 +53,7 @@ HDL_SOURCE = 										   			             																\
 			 										                         												        	\
 			 $(BP_BE_DIR)/src/v/common/bsg_fifo_1r1w_rolly.v		                          \
 			 $(BP_BE_DIR)/src/v/common/bsg_dff_reset_en.v        	                        \
+			 $(BP_BE_DIR)/src/v/common/bp_be_trace_replay_gen.v        	                        \
 			 													             											                  \
 			 $(BSG_IP_CORES_DIR)/bsg_dataflow/bsg_fifo_1r1w_small.v		                    \
 			 $(BSG_IP_CORES_DIR)/bsg_dataflow/bsg_fifo_tracker.v			                    \

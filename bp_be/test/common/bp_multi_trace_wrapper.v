@@ -29,6 +29,10 @@ module bp_multi_wrapper
    ,parameter cce_block_size_in_bytes_p="inv"
    ,parameter cce_num_inst_ram_els_p="inv"
  
+   ,parameter trace_ring_width_p="inv"
+   ,parameter trace_rom_addr_width_p="inv"
+   ,localparam trace_rom_data_width_lp = trace_ring_width_p + 4
+ 
    ,parameter boot_rom_els_p="inv"
    ,parameter boot_rom_width_p="inv"
    ,localparam lg_boot_rom_els_lp=`BSG_SAFE_CLOG2(boot_rom_els_p)
@@ -101,6 +105,11 @@ logic [num_lce_p-1:0] remote_lce_tr_resp_v, remote_lce_tr_resp_rdy;
 bp_be_pipe_stage_reg_s[core_els_p-1:0] cmt_trace_stage_reg;
 bp_be_calc_result_s   [core_els_p-1:0] cmt_trace_result;
 bp_be_exception_s     [core_els_p-1:0] cmt_trace_exc;
+
+logic [core_els_p-1:0] [trace_ring_width_p-1:0] 		tr_data_i;
+logic [core_els_p-1:0]									tr_v_i, tr_ready_o;
+logic [core_els_p-1:0] [trace_rom_addr_width_p-1:0] 	tr_rom_addr_i;
+logic [core_els_p-1:0] [trace_rom_data_width_lp-1:0] 	tr_rom_data_o;
 
 bp_proc_cfg_s[core_els_p-1:0] proc_cfg;
 
@@ -278,20 +287,52 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
                 ,.cmt_trace_exc_o(cmt_trace_exc[core_id])
                 );
 
-             bp_be_nonsynth_tracer #(.vaddr_width_p(vaddr_width_p)
+             bp_be_trace_replay_gen #(.vaddr_width_p(vaddr_width_p)
                         ,.paddr_width_p(paddr_width_p)
                         ,.asid_width_p(asid_width_p)
                         ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+						,.trace_ring_width_p(trace_ring_width_p)
                         )
-              be_tracer(.clk_i(clk_i)
+              be_trace_gen(.clk_i(clk_i)
                         ,.reset_i(reset_i)
-
-                        ,.proc_cfg_i(proc_cfg[core_id])
 
                         ,.cmt_trace_stage_reg_i(cmt_trace_stage_reg[core_id])
                         ,.cmt_trace_result_i(cmt_trace_result[core_id])
                         ,.cmt_trace_exc_i(cmt_trace_exc[core_id])
+						
+						,.data_o(tr_data_i[core_id])
+						,.v_o(tr_v_i[core_id])
+						,.ready_i(tr_ready_o[core_id])
                         );
+						
+			 bsg_fsb_node_trace_replay #(.ring_width_p(trace_ring_width_p)
+						,.rom_addr_width_p(trace_rom_addr_width_p)
+						)
+			  be_trace_replay (.clk_i(clk_i)
+						,.reset_i(reset_i)
+						,.en_i(1'b1)
+										
+						,.v_i(tr_v_i[core_id])
+						,.data_i(tr_data_i[core_id])
+						,.ready_o(tr_ready_o[core_id])
+									
+						,.v_o()
+						,.data_o()
+						,.yumi_i(1'b0)
+									
+						,.rom_addr_o(tr_rom_addr_i[core_id])
+						,.rom_data_i(tr_rom_data_o[core_id])
+									
+						,.done_o()
+						,.error_o()
+						);
+
+			 bp_trace_rom #(.width_p(trace_ring_width_p+4)
+						,.addr_width_p(trace_rom_addr_width_p)
+						)
+			  trace_rom (.addr_i(tr_rom_addr_i[core_id])
+						,.data_o(tr_rom_data_o[core_id])
+						);
 end
 endgenerate
 
@@ -341,3 +382,4 @@ bp_me_top #(.num_lce_p(num_lce_p)
             );
 
 endmodule : bp_multi_wrapper
+
