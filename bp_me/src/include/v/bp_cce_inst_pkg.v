@@ -1,6 +1,11 @@
 /**
  * bp_cce_inst_pkg.v
  *
+ * This file describes the CCE microcode instructions. Any changes made to this file must be
+ * reflected in the source code of the CCE microcode assembler, too.
+ *
+ * Some software operations are supported via assembler transforms rather than being supported
+ * directly in hardware (e.g., ALU increment and decrement).
  */
 
 `ifndef BP_CCE_INST_PKG_VH

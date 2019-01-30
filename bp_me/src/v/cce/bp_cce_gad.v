@@ -175,7 +175,8 @@ module bp_cce_gad
     // if the LRU way is in S (and therefore, lruDirty should also be false)
     // NOTE: it is possible that prior to the current request, the LRU block was invalidated, and
     // thus, we only do replacement if the block is still in E or M state
-    replacement_flag_o = ((lru_coh_state == e_MESI_E) || (lru_coh_state == e_MESI_M)) & lru_dirty_flag_i;
+    replacement_flag_o = ((lru_coh_state == e_MESI_E) || (lru_coh_state == e_MESI_M))
+                         & lru_dirty_flag_i;
   end
 
   assign transfer_lce_one_hot = ~lce_id_one_hot & sharers_hits_o;

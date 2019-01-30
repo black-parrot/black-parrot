@@ -13,28 +13,27 @@
 module bp_cce_top
   import bp_cce_inst_pkg::*;
   #(parameter cce_id_p="inv"
-    ,parameter num_lce_p="inv"
     ,parameter num_cce_p="inv"
-    ,parameter num_mem_p="inv"
+    ,parameter num_cce_inst_ram_els_p="inv"
+
+    ,parameter num_lce_p="inv"
     ,parameter addr_width_p="inv"
     ,parameter lce_assoc_p="inv"
     ,parameter lce_sets_p="inv"
-    ,parameter coh_states_p="inv"
     ,parameter block_size_in_bytes_p="inv"
-    ,parameter num_inst_ram_els_p="inv"
 
     ,parameter block_size_in_bits_lp=block_size_in_bytes_p*8
 
     ,parameter bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p)
     ,parameter bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, addr_width_p)
     ,parameter bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, addr_width_p, block_size_in_bits_lp)
-    ,parameter bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p, coh_states_p)
+    ,parameter bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p)
     ,parameter bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, addr_width_p, block_size_in_bits_lp, lce_assoc_p)
 
-    ,parameter bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(num_mem_p, num_cce_p, addr_width_p, num_lce_p, lce_assoc_p)
-    ,parameter bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(num_mem_p, num_cce_p, addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
-    ,parameter bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(num_mem_p, num_cce_p, addr_width_p, num_lce_p, lce_assoc_p)
-    ,parameter bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(num_mem_p, num_cce_p, addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    ,parameter bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(addr_width_p, num_lce_p, lce_assoc_p)
+    ,parameter bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    ,parameter bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(addr_width_p, num_lce_p, lce_assoc_p)
+    ,parameter bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
 
     ,parameter harden_p=0
   )
@@ -223,13 +222,11 @@ module bp_cce_top
     #(.cce_id_p(cce_id_p)
       ,.num_lce_p(num_lce_p)
       ,.num_cce_p(num_cce_p)
-      ,.num_mem_p(num_mem_p)
       ,.addr_width_p(addr_width_p)
       ,.lce_assoc_p(lce_assoc_p)
       ,.lce_sets_p(lce_sets_p)
-      ,.coh_states_p(coh_states_p)
       ,.block_size_in_bytes_p(block_size_in_bytes_p)
-      ,.num_inst_ram_els_p(num_inst_ram_els_p)
+      ,.num_cce_inst_ram_els_p(num_cce_inst_ram_els_p)
      )
      bp_cce
      (.clk_i(clk_i)

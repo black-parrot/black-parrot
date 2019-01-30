@@ -7,7 +7,7 @@
  * coherence state and tag.
  *
  * The way-group memory in the directory is a synchronous read 1RW memories.
- * The pending bits are stored in flops.
+ * The pending bits are stored in flops and may be read asynchronously.
  *
  * All writes take 1 cycle
  * RDW and RDE instructions present valid data in the next cycle (synchronous reads)
@@ -83,14 +83,22 @@ module bp_cce_dir
   assign wg_ram_w_v = w_v_i & ((w_cmd_i == e_wde_op) | (w_cmd_i == e_wds_op));
   assign wg_ram_v = (wg_ram_r_v | wg_ram_w_v);
 
-  assign wg_ram_addr = wg_ram_v ? way_group_i : 'X;
+  assign wg_ram_addr = wg_ram_v ? way_group_i : '0;
 
-  assign wg_ram_w_mask =
-    w_cmd_i == e_wde_op ? {{(way_group_width_lp-entry_width_lp){1'b0}},{entry_width_lp{1'b1}}} << (lce_i*tag_set_width_lp + way_i*entry_width_lp) :
-    w_cmd_i == e_wds_op ? {{(way_group_width_lp-`bp_cce_coh_bits){1'b0}},{`bp_cce_coh_bits{1'b1}}} << (lce_i*tag_set_width_lp + way_i*entry_width_lp) :
-    '0;
+  always_comb begin
+    if (w_cmd_i == e_wde_op) begin
+      wg_ram_w_mask = {{(way_group_width_lp-entry_width_lp){1'b0}},{entry_width_lp{1'b1}}}
+                      << (lce_i*tag_set_width_lp + way_i*entry_width_lp);
+    end else if (w_cmd_i == e_wds_op) begin
+      wg_ram_w_mask = {{(way_group_width_lp-`bp_cce_coh_bits){1'b0}},{`bp_cce_coh_bits{1'b1}}}
+                      << (lce_i*tag_set_width_lp + way_i*entry_width_lp);
+    end else begin
+      wg_ram_w_mask = '0;
+    end
+  end
 
-  assign wg_ram_w_data = {{(way_group_width_lp-entry_width_lp){1'b0}},{tag_i, coh_state_i}} << (lce_i*tag_set_width_lp + way_i*entry_width_lp);
+  assign wg_ram_w_data = {{(way_group_width_lp-entry_width_lp){1'b0}},{tag_i, coh_state_i}}
+                         << (lce_i*tag_set_width_lp + way_i*entry_width_lp);
 
   // Reads are synchronous, with the address latched in the current cycle, and data available next
   // Writes take 1 cycle
