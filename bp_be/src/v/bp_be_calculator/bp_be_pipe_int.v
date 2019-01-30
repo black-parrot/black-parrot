@@ -35,29 +35,29 @@ module bp_be_pipe_int
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
  #(// Generated parameters
-   localparam decode_width_lp    = `bp_be_decode_width
+   localparam decode_width_lp      = `bp_be_decode_width
    , localparam exception_width_lp = `bp_be_exception_width
    , localparam mhartid_width_lp   = `bp_mhartid_width
    // From RISC-V specifications
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )
-  (input logic                           clk_i
-   , input logic                         reset_i
+  (input logic                            clk_i
+   , input logic                          reset_i
 
    // Common pipeline interface
-   , input logic[decode_width_lp-1:0]    decode_i
-   , input logic[reg_data_width_lp-1:0]  pc_i
-   , input logic[reg_data_width_lp-1:0]  rs1_i
-   , input logic[reg_data_width_lp-1:0]  rs2_i
-   , input logic[reg_data_width_lp-1:0]  imm_i
-   , input logic[exception_width_lp-1:0] exc_i
+   , input logic [decode_width_lp-1:0]    decode_i
+   , input logic [reg_data_width_lp-1:0]  pc_i
+   , input logic [reg_data_width_lp-1:0]  rs1_i
+   , input logic [reg_data_width_lp-1:0]  rs2_i
+   , input logic [reg_data_width_lp-1:0]  imm_i
+   , input logic [exception_width_lp-1:0] exc_i
 
    // For mhartid CSR
-   , input logic[mhartid_width_lp-1:0]   mhartid_i
+   , input logic [mhartid_width_lp-1:0]   mhartid_i
 
    // Pipeline results
-   , output logic[reg_data_width_lp-1:0] result_o
-   , output logic[reg_data_width_lp-1:0] br_tgt_o
+   , output logic [reg_data_width_lp-1:0] result_o
+   , output logic [reg_data_width_lp-1:0] br_tgt_o
    );
 
 // Cast input and output ports 
@@ -72,10 +72,10 @@ wire unused0 = clk_i;
 wire unused1 = reset_i;
 
 // Submodule connections
-logic [reg_data_width_lp-1:0] src1      , src2            , baddr;
+logic [reg_data_width_lp-1:0] src1      , src2   , baddr;
 logic [reg_data_width_lp-1:0] alu_result, result;
 
-logic [reg_data_width_lp-1:0] pc_plus4 , mhartid;
+logic [reg_data_width_lp-1:0] pc_plus4  , mhartid;
 
 // Module instantiations
 bsg_mux 
@@ -130,7 +130,7 @@ bsg_mux
 
 // Perform the actual ALU computation
 bp_be_int_alu 
-alu
+ alu
   (.src1_i(src1)
    ,.src2_i(src2)
    ,.op_i(decode.fu_op)
@@ -139,12 +139,12 @@ alu
    ,.result_o(alu_result)
    );
 
-// Auxillary computation
-always_comb begin
-  mhartid          = reg_data_width_lp'(mhartid_i);
-  pc_plus4         = pc_i + reg_data_width_lp'(4);
-  br_tgt_o         = baddr + imm_i;
-end
+always_comb 
+  begin : aux_computation
+    mhartid          = reg_data_width_lp'(mhartid_i);
+    pc_plus4         = pc_i + reg_data_width_lp'(4);
+    br_tgt_o         = baddr + imm_i;
+  end
 
 endmodule : bp_be_pipe_int
 

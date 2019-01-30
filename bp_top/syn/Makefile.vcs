@@ -100,7 +100,7 @@ TEST_SOURCE += 	                                                      \
 			  $(BP_ME_DIR)/test/common/bp_mem.v	                            \
 																                                      \
 			  $(BP_TOP_DIR)/test/rom/v/$(LOAD_ROM) 													\
-			  $(BP_TOP_DIR)/test/trace_rom/v/$(TRACE_ROM) 													\
+			  #$(BP_TOP_DIR)/test/trace_rom/v/$(TRACE_ROM) 									\
 			
 
 ISA_TESTS = rv64ui_p_add_rom.v \
@@ -158,10 +158,10 @@ lint.v: $(HDL_SOURCE)
 	$(eval include $(TB_PATH)/bp_single_demo/Makefile.frag)			         	    \
 	$(VCS) $(VCS_OPTIONS) $(LINT_OPTIONS) -top bp_multi_wrapper $(HDL_SOURCE) $(TEST_SOURCE) $(HDL_PARAMS)
 
+		#ln -sf $(BP_TOP_DIR)/test/trace_rom/v/$(TEST_ROM_C) $(BP_TOP_DIR)/test/trace_rom/v/$(TRACE_ROM_C);
 load_rom.v: $(HDL_SOURCE)
 	if [ "$(TEST_ROM_C)" != "$(LOAD_ROM_C)" ]; then						    \
 		ln -sf $(BP_TOP_DIR)/test/rom/v/$(TEST_ROM_C) $(BP_TOP_DIR)/test/rom/v/$(LOAD_ROM_C);	\
-		ln -sf $(BP_TOP_DIR)/test/trace_rom/v/$(TEST_ROM_C) $(BP_TOP_DIR)/test/trace_rom/v/$(TRACE_ROM_C);	\
 	fi;
 
 %.build.v: $(HDL_SOURCE) load_rom.v

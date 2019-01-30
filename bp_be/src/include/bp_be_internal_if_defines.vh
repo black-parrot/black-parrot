@@ -19,7 +19,7 @@
     logic                                    fe_exception_not_instr;                               \
     bp_fe_exception_code_e                   fe_exception_code;                                    \
     logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                  \
-  }  bp_be_instr_metadata_s;                                                                       \
+   } bp_be_instr_metadata_s;                                                                       \
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
@@ -32,14 +32,14 @@
     logic[rv64_reg_addr_width_gp-1:0] rs1_addr;                                                    \
     logic[rv64_reg_addr_width_gp-1:0] rs2_addr;                                                    \
     logic[rv64_reg_data_width_gp-1:0] imm;                                                         \
-  }  bp_be_issue_pkt_s;                                                                            \
+   } bp_be_issue_pkt_s;                                                                            \
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
     logic[rv64_reg_data_width_gp-1:0] rs1;                                                         \
     logic[rv64_reg_data_width_gp-1:0] rs2;                                                         \
     logic[rv64_reg_data_width_gp-1:0] imm;                                                         \
-  }  bp_be_instr_operands_s;                                                                       \
+   } bp_be_instr_operands_s;                                                                       \
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
@@ -47,7 +47,7 @@
     logic[rv64_instr_width_gp-1:0] instr;                                                          \
     bp_be_instr_operands_s         instr_operands;                                                 \
     bp_be_decode_s                 decode;                                                         \
-  }  bp_be_pipe_stage_reg_s;                                                                       \
+   } bp_be_pipe_stage_reg_s;                                                                       \
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
@@ -58,7 +58,7 @@
     logic                             fp_fwb_v;                                                    \
                                                                                                    \
     logic[rv64_reg_addr_width_gp-1:0] rd_addr;                                                     \
-  }  bp_be_dep_status_s;                                                                           \
+   } bp_be_dep_status_s;                                                                           \
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
@@ -88,13 +88,13 @@
     logic                                   mem3_ret_v;                                            \
                                                                                                    \
     logic                                   instr_ckpt_v;                                          \
-  }  bp_be_calc_status_s;                                                                          \
+   } bp_be_calc_status_s;                                                                          \
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
     logic[rv64_reg_data_width_gp-1:0] result;                                                      \
     logic[rv64_eaddr_width_gp-1:0]    br_tgt;                                                      \
-  }  bp_be_calc_result_s;                                                                          \
+   } bp_be_calc_result_s;                                                                          \
 
 /* Declare width macros so that clients can use structs in ports before struct declaration */
 `define bp_be_instr_metadata_width(branch_metadata_fwd_width_mp)                                   \

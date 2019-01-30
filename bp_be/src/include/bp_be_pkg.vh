@@ -25,10 +25,10 @@ package bp_be_pkg;
   }  bp_be_mmu_resp_s;                          
 
 `define bp_be_mmu_cmd_width                                                                        \
-  (`bp_be_fu_op_width + rv64_eaddr_width_gp + rv64_reg_data_width_gp)                              \
+  ($bits(bp_be_mmu_cmd_s))
 
 `define bp_be_mmu_resp_width                                                                       \
-  (rv64_reg_data_width_gp+`bp_be_exception_width)                                                  \
+  ($bits(bp_be_mmu_resp_s))
 
 endpackage : bp_be_pkg
 

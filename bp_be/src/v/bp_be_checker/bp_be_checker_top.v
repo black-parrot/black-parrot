@@ -77,37 +77,37 @@ module bp_be_checker_top
    , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
    , localparam eaddr_width_lp    = rv64_eaddr_width_gp
    )
-  (input logic                             clk_i
-   , input logic                           reset_i
+  (input logic                              clk_i
+   , input logic                            reset_i
 
    // FE cmd interface
-   , output logic[fe_cmd_width_lp-1:0]     fe_cmd_o
-   , output logic                          fe_cmd_v_o
-   , input logic                           fe_cmd_rdy_i
+   , output logic [fe_cmd_width_lp-1:0]     fe_cmd_o
+   , output logic                           fe_cmd_v_o
+   , input logic                            fe_cmd_rdy_i
 
    // FE queue interface
-   , input logic[fe_queue_width_lp-1:0]    fe_queue_i
-   , input logic                           fe_queue_v_i
-   , output logic                          fe_queue_rdy_o
+   , input logic [fe_queue_width_lp-1:0]    fe_queue_i
+   , input logic                            fe_queue_v_i
+   , output logic                           fe_queue_rdy_o
 
-   , output logic                          chk_roll_fe_o
-   , output logic                          chk_flush_fe_o
-   , output logic                          chk_ckpt_fe_o
+   , output logic                           chk_roll_fe_o
+   , output logic                           chk_flush_fe_o
+   , output logic                           chk_ckpt_fe_o
 
    // Instruction issue interface
-   , output logic[issue_pkt_width_lp-1:0]  issue_pkt_o
-   , output logic                          issue_pkt_v_o
-   , input logic                           issue_pkt_rdy_i
+   , output logic [issue_pkt_width_lp-1:0]  issue_pkt_o
+   , output logic                           issue_pkt_v_o
+   , input logic                            issue_pkt_rdy_i
 
    // Dependency information
-   , input logic[calc_status_width_lp-1:0] calc_status_i
-   , input logic                           mmu_cmd_rdy_i
+   , input logic [calc_status_width_lp-1:0] calc_status_i
+   , input logic                            mmu_cmd_rdy_i
 
    // Checker pipeline control information
-   , output logic                          chk_dispatch_v_o
-   , output logic                          chk_roll_o
-   , output logic                          chk_psn_isd_o
-   , output logic                          chk_psn_ex_o
+   , output logic                           chk_dispatch_v_o
+   , output logic                           chk_roll_o
+   , output logic                           chk_psn_isd_o
+   , output logic                           chk_psn_ex_o
    );
 
 // Declare parameterizable structures
@@ -176,4 +176,3 @@ bp_be_scheduler
    );
 
 endmodule : bp_be_checker_top
-

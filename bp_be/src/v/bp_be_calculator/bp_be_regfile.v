@@ -78,10 +78,11 @@ module bp_be_regfile
    , output logic [reg_data_width_lp-1:0] rs2_data_o
    );
 
-initial begin : parameter_validation
-  assert(w_to_r_fwd_p == 0)
-    else $error("Write to read forwarding is not yet supported.");
-end
+initial 
+  begin : parameter_validation
+    assert(w_to_r_fwd_p == 0)
+      else $error("Write to read forwarding is not yet supported.");
+  end
 
 // Intermediate connections
 logic                         rs1_read_v     , rs2_read_v;
@@ -133,24 +134,25 @@ bsg_dff_en
    ,.data_o(rs2_addr_r)
    );
 
-always_comb begin
-  // Instruction has been issued, don't both reading if the register data is not used
-  rs1_issue_v = (issue_v_i & rs1_r_v_i);
-  rs2_issue_v = (issue_v_i & rs2_r_v_i);
-
-  // We need to read from the regfile if we have issued a new request, or if we have stalled
-  rs1_read_v = rs1_issue_v | ~dispatch_v_i;
-  rs2_read_v = rs2_issue_v | ~dispatch_v_i;
-
-  // If we have issued a new instruction, then we should read from the register. Else, we should 
-  //   reread the last request
-  rs1_reread_addr = rs1_issue_v ? rs1_addr_i : rs1_addr_r;
-  rs2_reread_addr = rs2_issue_v ? rs2_addr_i : rs2_addr_r;
-
-  // RISC-V defines x0 as 0. Else, pass out the register data
-  rs1_data_o = (rs1_addr_r == 0) ? 0 : rs1_reg_data;
-  rs2_data_o = (rs2_addr_r == 0) ? 0 : rs2_reg_data;
-end
+always_comb 
+  begin : control_signals
+    // Instruction has been issued, don't both reading if the register data is not used
+    rs1_issue_v = (issue_v_i & rs1_r_v_i);
+    rs2_issue_v = (issue_v_i & rs2_r_v_i);
+  
+    // We need to read from the regfile if we have issued a new request, or if we have stalled
+    rs1_read_v = rs1_issue_v | ~dispatch_v_i;
+    rs2_read_v = rs2_issue_v | ~dispatch_v_i;
+  
+    // If we have issued a new instruction, then we should read from the register. Else, we should 
+    //   reread the last request
+    rs1_reread_addr = rs1_issue_v ? rs1_addr_i : rs1_addr_r;
+    rs2_reread_addr = rs2_issue_v ? rs2_addr_i : rs2_addr_r;
+  
+    // RISC-V defines x0 as 0. Else, pass out the register data
+    rs1_data_o = (rs1_addr_r == 0) ? 0 : rs1_reg_data;
+    rs2_data_o = (rs2_addr_r == 0) ? 0 : rs2_reg_data;
+  end
 
 endmodule : bp_be_regfile
 

@@ -54,19 +54,19 @@ module bp_be_detector
    , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
    , localparam eaddr_width_lp    = rv64_eaddr_width_gp
    )
-  (input logic                              clk_i
-   , input logic                            reset_i
+  (input logic                               clk_i
+   , input logic                             reset_i
 
    // Dependency information
-   , input logic[calc_status_width_lp-1:0]  calc_status_i
-   , input logic[reg_data_width_lp-1:0]     expected_npc_i
-   , input logic                            mmu_cmd_rdy_i
+   , input logic [calc_status_width_lp-1:0]  calc_status_i
+   , input logic [reg_data_width_lp-1:0]     expected_npc_i
+   , input logic                             mmu_cmd_rdy_i
 
    // Pipeline control signals from the checker to the calculator
-   , output logic                           chk_dispatch_v_o
-   , output logic                           chk_roll_o
-   , output logic                           chk_psn_isd_o
-   , output logic                           chk_psn_ex_o
+   , output logic                            chk_dispatch_v_o
+   , output logic                            chk_roll_o
+   , output logic                            chk_psn_isd_o
+   , output logic                            chk_psn_ex_o
   );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p
@@ -91,15 +91,17 @@ logic[2:0] rs1_match_vector, rs2_match_vector;
 
 logic dhaz_v, shaz_v, mispredict_v;
 
-always_comb begin
+always_comb 
+  begin : detection
     // Generate matches for rs1 and rs2
-    for(integer i = 0; i < 3; i+=1) begin
+    for(integer i = 0; i < 3; i++) 
+      begin : match_vector
         rs1_match_vector[i] = (calc_status.isd_rs1_addr != reg_addr_width_lp'(0))
                               & (calc_status.isd_rs1_addr == calc_status.dep_status[i].rd_addr);
 
         rs2_match_vector[i] = (calc_status.isd_rs2_addr != reg_addr_width_lp'(0))
                               & (calc_status.isd_rs2_addr == calc_status.dep_status[i].rd_addr);
-    end
+      end
 
     // Detect data hazards for EX1
     irs1_dhaz_v[0] = (calc_status.isd_irs1_v & rs1_match_vector[0])
@@ -156,6 +158,6 @@ always_comb begin
                        | calc_status.mem3_cache_miss_v 
                        | calc_status.mem3_exception_v 
                        | calc_status.mem3_ret_v;
-end
+  end
 
 endmodule : bp_be_detector

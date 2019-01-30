@@ -41,25 +41,25 @@ module bp_be_int_alu
    , localparam shamtw_width_lp   = rv64_shamtw_width_gp
    )
   (// Source data
-   input logic[reg_data_width_lp-1:0]    src1_i
-   , input logic[reg_data_width_lp-1:0]  src2_i
+   input logic [reg_data_width_lp-1:0]    src1_i
+   , input logic [reg_data_width_lp-1:0]  src2_i
 
    // Arithmetic operation metadata
-   , input logic[fu_op_width_lp-1:0]     op_i
-   , input logic                         opw_v_i
+   , input logic [fu_op_width_lp-1:0]     op_i
+   , input logic                          opw_v_i
 
    // Result
-   , output logic[reg_data_width_lp-1:0] result_o
+   , output logic [reg_data_width_lp-1:0] result_o
    );
 
 // Intermediate connections
 // These are signed because we're doing math on them, most of which is signed
-logic signed[reg_data_width_lp-1:0] src1_sgn   , src2_sgn;
-logic signed[word_width_lp-1:0]     src1_w_sgn , src2_w_sgn;
-logic signed[reg_data_width_lp-1:0] result_sgn , result_toggled;
-logic signed[word_width_lp-1:0]     resultw_sgn;
-logic       [shamt_width_lp-1:0]    shamt;
-logic       [shamtw_width_lp-1:0]   shamtw;
+logic signed [reg_data_width_lp-1:0] src1_sgn   , src2_sgn;
+logic signed [word_width_lp-1:0]     src1_w_sgn , src2_w_sgn;
+logic signed [reg_data_width_lp-1:0] result_sgn , result_toggled;
+logic signed [word_width_lp-1:0]     resultw_sgn;
+logic        [shamt_width_lp-1:0]    shamt;
+logic        [shamtw_width_lp-1:0]   shamtw;
 
 // Casting 
 assign src1_sgn   = $signed(src1_i);
@@ -70,8 +70,8 @@ assign src2_w_sgn = $signed(src2_i[0+:word_width_lp]);
 assign shamt      = src2_i[0+:shamt_width_lp];
 assign shamtw     = src2_i[0+:shamtw_width_lp];
 
-// The actual computation
-always_comb begin
+always_comb 
+  begin : compute
   // These two case statements are mutually exclusive, but we separate them because they 
   //   assign to different results
   // Calculate result for 32-bit operations
