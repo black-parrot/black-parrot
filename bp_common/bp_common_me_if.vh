@@ -203,7 +203,7 @@ typedef union packed {
     bp_cce_lce_cmd_type_e                        msg_type;      \
     logic [addr_width_mp-1:0]                    addr;          \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id;        \
-    logic [`bp_cce_coh_bits-1:0]                  state;         \
+    logic [`bp_cce_coh_bits-1:0]                 state;         \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      target;        \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    target_way_id; \
   } bp_cce_lce_cmd_s
