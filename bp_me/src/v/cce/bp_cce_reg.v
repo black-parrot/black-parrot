@@ -22,7 +22,7 @@ module bp_cce_reg
     ,parameter lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
     ,parameter lg_lce_assoc_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
     ,parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-    ,parameter tag_width_lp=addr_width_p-lg_lce_sets_lp-lg_block_size_in_bytes_lp // TODO: breaks if sets == 1
+    ,parameter tag_width_lp=addr_width_p-lg_lce_sets_lp-lg_block_size_in_bytes_lp
     ,parameter entry_width_lp=tag_width_lp+`bp_cce_coh_bits
     ,parameter tag_set_width_lp=(entry_width_lp*lce_assoc_p)
     ,parameter way_group_width_lp=(tag_set_width_lp*num_lce_p)
@@ -136,7 +136,7 @@ module bp_cce_reg
   logic [lg_num_lce_lp-1:0] req_lce_r, req_lce_n;
   logic [addr_width_p-1:0] req_addr_r, req_addr_n;
   logic [lg_lce_assoc_lp-1:0] req_addr_way_r, req_addr_way_n;
-  logic [`bp_cce_coh_bits-1:0] req_coh_state_r, req_coh_state_n; // TODO _r unsued
+  logic [`bp_cce_coh_bits-1:0] req_coh_state_r, req_coh_state_n;
 
   logic [lg_lce_assoc_lp-1:0] lru_way_r, lru_way_n;
   logic [addr_width_p-1:0] lru_addr_r, lru_addr_n;
@@ -158,7 +158,7 @@ module bp_cce_reg
 
   logic [num_lce_p-1:0] sharers_hits_r, sharers_hits_n;
   logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0] sharers_ways_r, sharers_ways_n;
-  logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0] sharers_coh_states_r, sharers_coh_states_n; // TODO: _r unused
+  logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0] sharers_coh_states_r, sharers_coh_states_n;
 
   always_comb
   begin

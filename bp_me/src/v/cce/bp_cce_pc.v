@@ -66,6 +66,7 @@ module bp_cce_pc
       pc_r <= pc_n;
   end
 
+  // TODO: make ROM a 1RW RAM
   bp_cce_inst_s inst;
   logic [inst_width_lp-1:0] inst_mem_data_o;
   bp_cce_inst_rom
@@ -92,7 +93,10 @@ module bp_cce_pc
     inst_v_o = ~reset_i;
 
     pushq_op = (inst.op == e_op_queue) && (inst.minor_op == e_pushq_op);
-    pushq_qsel = bp_cce_inst_dst_q_sel_e'(inst.imm[`bp_cce_lce_cmd_type_width +: `bp_cce_inst_dst_q_sel_width]); //[4:3]
+    pushq_qsel =
+      bp_cce_inst_dst_q_sel_e'(
+        inst.imm[`bp_cce_lce_cmd_type_width +: `bp_cce_inst_dst_q_sel_width]
+      );
     wfq_op = (inst.op == e_op_queue) && (inst.minor_op == e_wfq_op);
     stall_op = (inst.op == e_op_misc) && (inst.minor_op == e_stall_op);
 
