@@ -19,9 +19,9 @@ per core in a BlackParrot multicore processor. This module consists of three maj
 * __num\_cce\_p__ \- number of CCEs in the system
 * __num\_mem\_p__ \- number of memory units per CCE in the system (deprecated)
 * __coh\_states\_p__ \- number of coherence states in the system (deprecated)
-* __lce\_assoc\_p__ \- Associativity of the LCEs
-* __lce\_sets\_p__ \- number of Sets in each LCE
-* __cce_\_block\_size\_in\_bytes\_p__ \- number of bytes per cache block in the CCEs
+* __lce\_assoc\_p__ \- associativity of the LCEs
+* __lce\_sets\_p__ \- number of sets in each LCE
+* __cce\_block\_size\_in\_bytes\_p__ \- number of bytes per cache block in the CCEs
 
 ### Interfaces
 
