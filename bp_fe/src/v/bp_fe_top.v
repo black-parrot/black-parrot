@@ -123,6 +123,7 @@ module bp_fe_top
    , parameter bp_fe_queue_width_lp=`bp_fe_queue_width(vaddr_width_p
                                                       ,branch_metadata_fwd_width_lp
                                                      )
+  , parameter branch_predictor_p=1
   )
   (input logic                                       clk_i
    , input logic                                     reset_i
