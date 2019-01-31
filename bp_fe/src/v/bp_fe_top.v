@@ -55,16 +55,16 @@ module bp_fe_top
                                                              ,num_lce_p
                                                              ,addr_width_lp
                                                              ,lce_assoc_p
-                                                           )
+                                                            )
    , parameter bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
                                                                ,num_lce_p
                                                                ,addr_width_lp
-                                                             )
+                                                              )
    , parameter bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p
                                                                          ,num_lce_p
                                                                          ,addr_width_lp
                                                                          ,lce_data_width_lp
-                                                                       )
+                                                                        )
    , parameter bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p
                                                              ,num_lce_p
                                                              ,addr_width_lp
@@ -94,75 +94,75 @@ module bp_fe_top
    , parameter branch_metadata_fwd_width_lp=btb_indx_width_p+bht_indx_width_p+ras_addr_width_p
    , parameter bp_fe_pc_gen_itlb_width_lp=`bp_fe_pc_gen_itlb_width(eaddr_width_p)
    , parameter bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p
-                                                              ,paddr_width_p
-                                                              ,asid_width_p
-                                                              ,branch_metadata_fwd_width_lp
-                                                             )
+                                                               ,paddr_width_p
+                                                               ,asid_width_p
+                                                               ,branch_metadata_fwd_width_lp
+                                                              )
    , parameter bp_fe_pc_gen_width_o_lp=`bp_fe_pc_gen_queue_width(vaddr_width_p
-                                                                ,branch_metadata_fwd_width_lp
-                                                               )
+                                                                 ,branch_metadata_fwd_width_lp
+                                                                )
   
   
    // itlb related parameters 
    , parameter ppn_start_bit_p=lg_lce_sets_lp+lg_block_size_in_bytes_lp+lg_lce_assoc_lp
    , parameter bp_fe_itlb_cmd_width_lp=`bp_fe_itlb_cmd_width(vaddr_width_p
-                                                            ,paddr_width_p
-                                                            ,asid_width_p
-                                                            ,branch_metadata_fwd_width_lp
-                                                           )
+                                                             ,paddr_width_p
+                                                             ,asid_width_p
+                                                             ,branch_metadata_fwd_width_lp
+                                                            )
    , parameter bp_fe_itlb_queue_width_lp=`bp_fe_itlb_queue_width(vaddr_width_p
-                                                                ,branch_metadata_fwd_width_lp
-                                                               )
+                                                                 ,branch_metadata_fwd_width_lp
+                                                                )
     
    // be interfaces parameters
    , parameter bp_fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_p
-                                                  ,paddr_width_p
-                                                  ,asid_width_p
-                                                  ,branch_metadata_fwd_width_lp
-                                                 )
+                                                   ,paddr_width_p
+                                                   ,asid_width_p
+                                                   ,branch_metadata_fwd_width_lp
+                                                  )
    , parameter bp_fe_queue_width_lp=`bp_fe_queue_width(vaddr_width_p
-                                                      ,branch_metadata_fwd_width_lp
-                                                     )
+                                                       ,branch_metadata_fwd_width_lp
+                                                      )
   , parameter branch_predictor_p=1
   )
-  (input logic                                       clk_i
-   , input logic                                     reset_i
+  (input logic                                        clk_i
+   , input logic                                      reset_i
 
-   , input logic[bp_fe_cmd_width_lp-1:0]             bp_fe_cmd_i
-   , input logic                                     bp_fe_cmd_v_i
-   , output logic                                    bp_fe_cmd_ready_o
+   , input logic [bp_fe_cmd_width_lp-1:0]             bp_fe_cmd_i
+   , input logic                                      bp_fe_cmd_v_i
+   , output logic                                     bp_fe_cmd_ready_o
 
-   , output logic[bp_fe_queue_width_lp-1:0]          bp_fe_queue_o
-   , output logic                                    bp_fe_queue_v_o
-   , input logic                                     bp_fe_queue_ready_i
+   , output logic [bp_fe_queue_width_lp-1:0]          bp_fe_queue_o
+   , output logic                                     bp_fe_queue_v_o
+   , input logic                                      bp_fe_queue_ready_i
 
-   , output logic[bp_lce_cce_req_width_lp-1:0]       lce_cce_req_o
-   , output logic                                    lce_cce_req_v_o
-   , input  logic                                    lce_cce_req_ready_i
+   , output logic [bp_lce_cce_req_width_lp-1:0]       lce_cce_req_o
+   , output logic                                     lce_cce_req_v_o
+   , input  logic                                     lce_cce_req_ready_i
 
-   , output logic[bp_lce_cce_resp_width_lp-1:0]      lce_cce_resp_o
-   , output logic                                    lce_cce_resp_v_o
-   , input  logic                                    lce_cce_resp_ready_i
+   , output logic [bp_lce_cce_resp_width_lp-1:0]      lce_cce_resp_o
+   , output logic                                     lce_cce_resp_v_o
+   , input  logic                                     lce_cce_resp_ready_i
 
-   , output logic[bp_lce_cce_data_resp_width_lp-1:0] lce_cce_data_resp_o     
-   , output logic                                    lce_cce_data_resp_v_o 
-   , input logic                                     lce_cce_data_resp_ready_i
+   , output logic [bp_lce_cce_data_resp_width_lp-1:0] lce_cce_data_resp_o     
+   , output logic                                     lce_cce_data_resp_v_o 
+   , input logic                                      lce_cce_data_resp_ready_i
 
-   , input logic[bp_cce_lce_cmd_width_lp-1:0]        cce_lce_cmd_i
-   , input logic                                     cce_lce_cmd_v_i
-   , output logic                                    cce_lce_cmd_ready_o
+   , input logic [bp_cce_lce_cmd_width_lp-1:0]        cce_lce_cmd_i
+   , input logic                                      cce_lce_cmd_v_i
+   , output logic                                     cce_lce_cmd_ready_o
 
-   , input logic[bp_cce_lce_data_cmd_width_lp-1:0]   cce_lce_data_cmd_i
-   , input logic                                     cce_lce_data_cmd_v_i
-   , output logic                                    cce_lce_data_cmd_ready_o
+   , input logic [bp_cce_lce_data_cmd_width_lp-1:0]   cce_lce_data_cmd_i
+   , input logic                                      cce_lce_data_cmd_v_i
+   , output logic                                     cce_lce_data_cmd_ready_o
 
-   , input logic[bp_lce_lce_tr_resp_width_lp-1:0]    lce_lce_tr_resp_i
-   , input logic                                     lce_lce_tr_resp_v_i
-   , output logic                                    lce_lce_tr_resp_ready_o
+   , input logic [bp_lce_lce_tr_resp_width_lp-1:0]    lce_lce_tr_resp_i
+   , input logic                                      lce_lce_tr_resp_v_i
+   , output logic                                     lce_lce_tr_resp_ready_o
 
-   , output logic[bp_lce_lce_tr_resp_width_lp-1:0]   lce_lce_tr_resp_o
-   , output logic                                    lce_lce_tr_resp_v_o
-   , input logic                                     lce_lce_tr_resp_ready_i
+   , output logic [bp_lce_lce_tr_resp_width_lp-1:0]   lce_lce_tr_resp_o
+   , output logic                                     lce_lce_tr_resp_v_o
+   , input logic                                      lce_lce_tr_resp_ready_i
   );
 
 // the first level of structs
