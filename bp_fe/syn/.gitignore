@@ -1,0 +1,6 @@
+!.gitignore
+build/
+*.log 
+*.run.v 
+*.build.v
+bp_fe_rom.v
