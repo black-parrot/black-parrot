@@ -34,103 +34,124 @@
 
 module icache
   import bp_common_pkg::*;
-  #(
-    parameter eaddr_width_p="inv"
-    ,parameter data_width_p="inv"
-    ,parameter inst_width_p="inv"
-    ,parameter tag_width_p="inv"
-    ,parameter num_cce_p="inv"
-    ,parameter num_lce_p="inv"
-    ,parameter lce_assoc_p="inv"
-    ,parameter lce_sets_p="inv"
-    ,parameter coh_states_p="inv"
-    ,parameter block_size_in_bytes_p="inv"
-    ,parameter lg_lce_assoc_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
-    ,parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-    ,parameter lg_coh_states_lp=`BSG_SAFE_CLOG2(coh_states_p)
-    ,parameter block_size_in_bits_lp=block_size_in_bytes_p*8
-    ,parameter lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
-    ,parameter entry_width_lp=tag_width_p+lg_coh_states_lp
-    ,parameter tag_set_width_lp=(entry_width_lp*lce_assoc_p)
-    ,parameter way_group_width_lp=(tag_set_width_lp*num_lce_p)
-    ,parameter data_set_width_lp=(data_width_p*lce_assoc_p)
-    ,parameter meta_data_set_width=(lg_lce_assoc_lp+lce_assoc_p)
-    ,parameter data_mask_width_lp=(data_width_p>>3)
-    ,parameter lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
-    ,parameter lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
-    ,parameter lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
-    ,parameter vaddr_width_lp=(lg_lce_sets_lp+lg_lce_assoc_lp+lg_data_mask_width_lp)
-    ,parameter addr_width_lp=(vaddr_width_lp+tag_width_p)
-    ,parameter lce_data_width_lp=(lce_assoc_p*data_width_p)
-    ,parameter debug_p=0
+  #(parameter eaddr_width_p="inv"
+    , parameter data_width_p="inv"
+    , parameter inst_width_p="inv"
+    , parameter tag_width_p="inv"
+    , parameter num_cce_p="inv"
+    , parameter num_lce_p="inv"
+    , parameter lce_assoc_p="inv"
+    , parameter lce_sets_p="inv"
+    , parameter coh_states_p="inv"
+    , parameter block_size_in_bytes_p="inv"
+    , parameter lg_lce_assoc_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
+    , parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
+    , localparam lg_coh_states_lp=`BSG_SAFE_CLOG2(coh_states_p)
+    , parameter lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
+    , parameter data_mask_width_lp=(data_width_p>>3)
+    , parameter lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
+    , parameter lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
+    , localparam lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
+    , parameter vaddr_width_lp=(lg_lce_sets_lp+lg_lce_assoc_lp+lg_data_mask_width_lp)
+    , parameter addr_width_lp=(vaddr_width_lp+tag_width_p)
+    , parameter lce_data_width_lp=(lce_assoc_p*data_width_p)
+    , parameter debug_p=0
 
-    ,parameter bp_fe_pc_gen_icache_width_lp=`bp_fe_pc_gen_icache_width(eaddr_width_p)
-    ,parameter bp_fe_itlb_icache_width_lp=44
+    , parameter bp_fe_pc_gen_icache_width_lp=`bp_fe_pc_gen_icache_width(eaddr_width_p)
+    , parameter bp_fe_itlb_icache_width_lp=44
 
-    ,parameter bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, addr_width_lp, lce_assoc_p)
-    ,parameter bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, addr_width_lp)
-    ,parameter bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, addr_width_lp, lce_data_width_lp)
-    ,parameter bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, addr_width_lp, lce_assoc_p, coh_states_p)
-    ,parameter bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, addr_width_lp, lce_data_width_lp, lce_assoc_p)
-    ,parameter bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p, addr_width_lp, lce_data_width_lp, lce_assoc_p)
+    , parameter bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
+                                                              ,num_lce_p
+                                                              ,addr_width_lp
+                                                              ,lce_assoc_p
+                                                             )
+    , parameter bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
+                                                                ,num_lce_p
+                                                                ,addr_width_lp
+                                                               )
+    , parameter bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p
+                                                                          ,num_lce_p
+                                                                          ,addr_width_lp
+                                                                          ,lce_data_width_lp
+                                                                         )
+    , parameter bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p
+                                                              ,num_lce_p
+                                                              ,addr_width_lp
+                                                              ,lce_assoc_p
+                                                              ,coh_states_p
+                                                             )
+    , parameter bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
+                                                                        ,num_lce_p
+                                                                        ,addr_width_lp
+                                                                        ,lce_data_width_lp
+                                                                        ,lce_assoc_p
+                                                                       )
+    , parameter bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p
+                                                                      ,addr_width_lp
+                                                                      ,lce_data_width_lp
+                                                                      ,lce_assoc_p
+                                                                     )
 
-    ,parameter bp_fe_icache_tag_set_width_lp=`bp_fe_icache_tag_set_width(coh_states_p,tag_width_p, lce_assoc_p)
-    ,parameter bp_fe_icache_tag_state_width_lp=`bp_fe_icache_tag_state_width(coh_state_p, tag_width_p)
-    ,parameter bp_fe_icache_meta_data_width_lp=`bp_fe_icache_meta_data_width(lce_assoc_p)
+    , localparam bp_fe_icache_tag_set_width_lp=`bp_fe_icache_tag_set_width(coh_states_p
+                                                                          ,tag_width_p
+                                                                          ,lce_assoc_p
+                                                                         )
+    , localparam bp_fe_icache_tag_state_width_lp=`bp_fe_icache_tag_state_width(coh_state_p
+                                                                              ,tag_width_p
+                                                                             )
+    , localparam bp_fe_icache_meta_data_width_lp=`bp_fe_icache_meta_data_width(lce_assoc_p)
 
-    ,parameter bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(eaddr_width_p)
+    , parameter bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(eaddr_width_p)
 
-    //,parameter bp_fe_pc_gen_cmd_width_lp=`bp_fe_pc_gen_cmd_width
-    ,localparam lce_id_width_lp=`bp_lce_id_width
+    , localparam lce_id_width_lp='bp_lce_id_width
    )
    (
-    input logic                                       clk_i
-    ,input logic                                      reset_i
+    input logic                                        clk_i
+    , input logic                                      reset_i
+    , input logic [lce_id_width_lp-1:0]                id_i
 
-    ,input logic [lce_id_width_lp-1:0]                id_i
+    , input logic [bp_fe_pc_gen_icache_width_lp-1:0]   pc_gen_icache_vaddr_i
+    , input logic                                      pc_gen_icache_vaddr_v_i
+    , output logic                                     pc_gen_icache_vaddr_ready_o
 
-    ,input logic [bp_fe_pc_gen_icache_width_lp-1:0]   pc_gen_icache_vaddr_i
-    ,input logic                                      pc_gen_icache_vaddr_v_i
-    ,output logic                                     pc_gen_icache_vaddr_ready_o
+    , output logic [bp_fe_icache_pc_gen_width_lp-1:0]  icache_pc_gen_data_o
+    , output logic                                     icache_pc_gen_data_v_o
+    , input logic                                      icache_pc_gen_data_ready_i // Not used
 
-    ,output logic [bp_fe_icache_pc_gen_width_lp-1:0]  icache_pc_gen_data_o
-    ,output logic                                     icache_pc_gen_data_v_o
-    ,input logic                                      icache_pc_gen_data_ready_i // Not used
+    , input logic [bp_fe_itlb_icache_width_lp-1:0]     itlb_icache_data_resp_i
+    , input logic                                      itlb_icache_data_resp_v_i
+    , output logic                                     itlb_icache_data_resp_ready_o
 
-    ,input logic [bp_fe_itlb_icache_width_lp-1:0]     itlb_icache_data_resp_i
-    ,input logic                                      itlb_icache_data_resp_v_i
-    ,output logic                                     itlb_icache_data_resp_ready_o
+    , output logic                                     cache_miss_o
+    , input logic                                      poison_i
 
-    ,output logic                                     cache_miss_o
-    ,input logic                                      poison_i
+    , output logic [bp_lce_cce_req_width_lp-1:0]       lce_cce_req_o
+    , output logic                                     lce_cce_req_v_o
+    , input  logic                                     lce_cce_req_ready_i
 
-    ,output logic [bp_lce_cce_req_width_lp-1:0]       lce_cce_req_o
-    ,output logic                                     lce_cce_req_v_o
-    ,input  logic                                     lce_cce_req_ready_i
+    , output logic [bp_lce_cce_resp_width_lp-1:0]      lce_cce_resp_o
+    , output logic                                     lce_cce_resp_v_o
+    , input  logic                                     lce_cce_resp_ready_i
 
-    ,output logic [bp_lce_cce_resp_width_lp-1:0]      lce_cce_resp_o
-    ,output logic                                     lce_cce_resp_v_o
-    ,input  logic                                     lce_cce_resp_ready_i
+    , output logic [bp_lce_cce_data_resp_width_lp-1:0] lce_cce_data_resp_o     
+    , output logic                                     lce_cce_data_resp_v_o 
+    , input logic                                      lce_cce_data_resp_ready_i
 
-    ,output logic [bp_lce_cce_data_resp_width_lp-1:0] lce_cce_data_resp_o     
-    ,output logic                                     lce_cce_data_resp_v_o 
-    ,input logic                                      lce_cce_data_resp_ready_i
+    , input logic [bp_cce_lce_cmd_width_lp-1:0]        cce_lce_cmd_i
+    , input logic                                      cce_lce_cmd_v_i
+    , output logic                                     cce_lce_cmd_ready_o
 
-    ,input logic [bp_cce_lce_cmd_width_lp-1:0]        cce_lce_cmd_i
-    ,input logic                                      cce_lce_cmd_v_i
-    ,output logic                                     cce_lce_cmd_ready_o
+    , input logic [bp_cce_lce_data_cmd_width_lp-1:0]   cce_lce_data_cmd_i
+    , input logic                                      cce_lce_data_cmd_v_i
+    , output logic                                     cce_lce_data_cmd_ready_o
 
-    ,input logic [bp_cce_lce_data_cmd_width_lp-1:0]   cce_lce_data_cmd_i
-    ,input logic                                      cce_lce_data_cmd_v_i
-    ,output logic                                     cce_lce_data_cmd_ready_o
+    , input logic [bp_lce_lce_tr_resp_width_lp-1:0]    lce_lce_tr_resp_i
+    , input logic                                      lce_lce_tr_resp_v_i
+    , output logic                                     lce_lce_tr_resp_ready_o
 
-    ,input logic [bp_lce_lce_tr_resp_width_lp-1:0]    lce_lce_tr_resp_i
-    ,input logic                                      lce_lce_tr_resp_v_i
-    ,output logic                                     lce_lce_tr_resp_ready_o
-
-    ,output logic [bp_lce_lce_tr_resp_width_lp-1:0]   lce_lce_tr_resp_o
-    ,output logic                                     lce_lce_tr_resp_v_o
-    ,input logic                                      lce_lce_tr_resp_ready_i
+    , output logic [bp_lce_lce_tr_resp_width_lp-1:0]   lce_lce_tr_resp_o
+    , output logic                                     lce_lce_tr_resp_v_o
+    , input logic                                      lce_lce_tr_resp_ready_i
 
  );
 
@@ -152,7 +173,9 @@ module icache
   bp_fe_itlb_icache_data_resp_s itlb_icache_data_resp_li;
   assign itlb_icache_data_resp_li = itlb_icache_data_resp_i;
 
-  assign vaddr_index      = pc_gen_icache_vaddr_i[lg_block_size_in_bytes_lp+lg_data_mask_width_lp+:lg_lce_sets_lp];
+  assign vaddr_index      = pc_gen_icache_vaddr_i[lg_block_size_in_bytes_lp
+                                                  +lg_data_mask_width_lp
+                                                  +:lg_lce_sets_lp];
   assign vaddr_offset     = pc_gen_icache_vaddr_i[lg_data_mask_width_lp+:lg_block_size_in_bytes_lp];
    
   // TL stage
@@ -204,7 +227,8 @@ module icache
 
   for (genvar assoc = 0; assoc < lce_assoc_p; assoc++)
   begin: state_tag
-    assign state_tl[assoc] = tag_mem_data_lo[(bp_fe_icache_tag_state_width_lp*assoc+tag_width_p)+:lg_coh_states_lp];
+    assign state_tl[assoc] = tag_mem_data_lo[(bp_fe_icache_tag_state_width_lp*assoc+tag_width_p)
+                                              +:lg_coh_states_lp];
     assign tag_tl[assoc]   = tag_mem_data_lo[(bp_fe_icache_tag_state_width_lp*assoc)+:tag_width_p];
   end
 
@@ -271,8 +295,13 @@ module icache
     end
   end
 
-  assign addr_tag_tv          = addr_tv_r[lg_data_mask_width_lp+lg_block_size_in_bytes_lp+lg_lce_sets_lp+:tag_width_p];
-  assign addr_index_tv        = addr_tv_r[lg_data_mask_width_lp+lg_block_size_in_bytes_lp+:lg_lce_sets_lp];
+  assign addr_tag_tv          = addr_tv_r[lg_data_mask_width_lp
+                                          +lg_block_size_in_bytes_lp
+                                          +lg_lce_sets_lp
+                                          +:tag_width_p];
+  assign addr_index_tv        = addr_tv_r[lg_data_mask_width_lp
+                                          +lg_block_size_in_bytes_lp
+                                          +:lg_lce_sets_lp];
   assign addr_block_offset_tv = addr_tv_r[lg_data_mask_width_lp+:lg_block_size_in_bytes_lp];
 
   //cache hit?
