@@ -33,13 +33,14 @@ module bp_fe_top
    , parameter data_width_p="inv"
    , parameter inst_width_p="inv"
   
+   , parameter branch_predictor_p=1 // TODO: Make string to select branch predictor 
+
    // icache related parameters 
    , parameter tag_width_p="inv"
    , parameter num_cce_p="inv"
    , parameter num_lce_p="inv"
    , parameter lce_assoc_p="inv"
    , parameter lce_sets_p="inv"
-   , parameter coh_states_p="inv"
    , parameter block_size_in_bytes_p="inv"
    , parameter lg_lce_assoc_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
    , parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
@@ -68,7 +69,6 @@ module bp_fe_top
                                                              ,num_lce_p
                                                              ,addr_width_lp
                                                              ,lce_assoc_p
-                                                             ,coh_states_p
                                                             )
    , parameter bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
                                                                        ,num_lce_p
@@ -169,7 +169,7 @@ module bp_fe_top
 // the first level of structs
 // be_fe interface
 localparam branch_metadata_fwd_width_p = branch_metadata_fwd_width_lp; 
-`declare_bp_fe_be_if_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)
+`declare_bp_common_fe_be_if_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)
 // pc_gen to fe
 `declare_bp_fe_pc_gen_queue_s;
 // fe to pc_gen
@@ -310,10 +310,8 @@ icache #(.eaddr_width_p(eaddr_width_p)
          ,.tag_width_p(tag_width_p)
          ,.num_cce_p(num_cce_p)
          ,.num_lce_p(num_lce_p)
-         ,.lce_id_p(lce_id_p)
          ,.lce_assoc_p(lce_assoc_p)
          ,.lce_sets_p(lce_sets_p)
-         ,.coh_states_p(coh_states_p)
          ,.block_size_in_bytes_p(block_size_in_bytes_p)
         ) icache_1
         (.clk_i(clk_i)

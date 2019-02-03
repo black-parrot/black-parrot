@@ -42,7 +42,7 @@ module icache
     , parameter num_lce_p="inv"
     , parameter lce_assoc_p="inv"
     , parameter lce_sets_p="inv"
-    , parameter coh_states_p="inv"
+    , parameter coh_states_p=4 // TODO: temporary fix
     , parameter block_size_in_bytes_p="inv"
     , parameter lg_lce_assoc_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
     , parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
@@ -78,7 +78,6 @@ module icache
                                                               ,num_lce_p
                                                               ,addr_width_lp
                                                               ,lce_assoc_p
-                                                              ,coh_states_p
                                                              )
     , parameter bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
                                                                         ,num_lce_p
@@ -103,7 +102,7 @@ module icache
 
     , parameter bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(eaddr_width_p)
 
-    , localparam lce_id_width_lp='bp_lce_id_width
+    , localparam lce_id_width_lp=`bp_lce_id_width
    )
    (
     input logic                                        clk_i
@@ -398,7 +397,6 @@ module icache
    ,.lce_sets_p(lce_sets_p)
    ,.lce_assoc_p(lce_assoc_p)
    ,.tag_width_p(tag_width_p)
-   ,.coh_states_p(coh_states_p)
    ,.num_cce_p(num_cce_p)
    ,.num_lce_p(num_lce_p)
    ,.block_size_in_bytes_p(block_size_in_bytes_p)

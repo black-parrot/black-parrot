@@ -12,7 +12,6 @@
 `include "bp_be_internal_if_defines.vh"
 
 module bp_multi_wrapper
- /* TODO: Get rid of this */
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
  #(parameter core_els_p="inv"
@@ -22,8 +21,6 @@ module bp_multi_wrapper
    ,parameter branch_metadata_fwd_width_p="inv"
    ,parameter num_cce_p="inv"
    ,parameter num_lce_p="inv"
-   ,parameter num_mem_p="inv"
-   ,parameter coh_states_p="inv"
    ,parameter lce_assoc_p="inv"
    ,parameter lce_sets_p="inv"
    ,parameter cce_block_size_in_bytes_p="inv"
@@ -66,7 +63,7 @@ module bp_multi_wrapper
 `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
 `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
 `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, cce_block_size_in_bits_lp);
-`declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, coh_states_p);
+`declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
 `declare_bp_cce_lce_data_cmd_s(num_cce_p, num_lce_p, paddr_width_p, cce_block_size_in_bits_lp, lce_assoc_p);
 `declare_bp_lce_lce_tr_resp_s(num_lce_p, paddr_width_p, cce_block_size_in_bits_lp, lce_assoc_p);
 
@@ -132,7 +129,6 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
                ,.lce_sets_p(lce_sets_p)
                ,.lce_assoc_p(lce_assoc_p)
                ,.tag_width_p(12)
-               ,.coh_states_p(coh_states_p)
                ,.num_cce_p(num_cce_p)
                ,.num_lce_p(num_lce_p)
                ,.block_size_in_bytes_p(8) /* TODO: This is ways not blocks */
@@ -222,8 +218,6 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
                 ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
                 ,.num_cce_p(num_cce_p)
                 ,.num_lce_p(num_lce_p)
-                ,.num_mem_p(num_mem_p)
-                ,.coh_states_p(coh_states_p)
                 ,.lce_assoc_p(lce_assoc_p)
                 ,.lce_sets_p(lce_sets_p)
                 ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
@@ -297,11 +291,9 @@ endgenerate
 
 bp_me_top #(.num_lce_p(num_lce_p)
             ,.num_cce_p(num_cce_p)
-            ,.num_mem_p(num_mem_p)
             ,.addr_width_p(paddr_width_p)
             ,.lce_assoc_p(lce_assoc_p)
             ,.lce_sets_p(lce_sets_p)
-            ,.coh_states_p(coh_states_p)
             ,.block_size_in_bytes_p(cce_block_size_in_bytes_p)
             ,.num_inst_ram_els_p(cce_num_inst_ram_els_p)
 
