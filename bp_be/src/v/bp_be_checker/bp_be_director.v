@@ -228,7 +228,6 @@ always_comb begin : fe_cmd_adapter
     fe_cmd_v_o = fe_cmd_rdy_i & ~chk_roll_fe_o & ~redirect_pending;
   // Send an attaboy if there's a correct prediction
   end 
-  /* TODO: When attaboys are enabled, the FE sends junk instructions in XOR and OR tests
   else if(calc_status.isd_v & ~npc_mismatch_v & calc_status.int1_br_or_jmp) begin : attaboy
     fe_cmd.opcode                      = e_op_attaboy;
     fe_cmd_attaboy.pc                  = calc_status.isd_pc;
@@ -240,7 +239,6 @@ always_comb begin : fe_cmd_adapter
 
     fe_cmd_v_o = fe_cmd_rdy_i & ~chk_roll_fe_o & ~redirect_pending;
   end
-  */
 end
 
 endmodule : bp_be_director
