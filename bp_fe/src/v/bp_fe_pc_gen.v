@@ -121,6 +121,7 @@ logic [eaddr_width_p-1:0]       icache_miss_pc;
 logic [eaddr_width_p-1:0]       last_pc;
 logic [eaddr_width_p-1:0]       pc;
 logic [eaddr_width_p-1:0]       next_pc;
+logic [eaddr_width_p-1:0]       pc_redirect;
 
 logic [eaddr_width_p-1:0]       btb_target;
 logic [instr_width_p-1:0]       next_instr;
@@ -136,7 +137,8 @@ logic                          branch_misprediction;
 logic                          attaboy;
 logic                          misalignment;
 logic                          pc_redirect_after_icache_miss;
-
+logic                          stalled_pc_redirect;
+   
 
 //connect pc_gen to the rest of the FE submodules as well as FE top module   
 assign pc_gen_icache_o    = pc_gen_icache;
@@ -203,9 +205,19 @@ always_ff @(posedge clk_i) begin
   if (reset_i) begin
     pc <= bp_first_pc_p;
   end else if (pc_gen_icache_ready_i && pc_gen_fe_ready_i) begin
-    pc             <= next_pc;
-    last_pc        <= pc;
-    icache_miss_pc <= last_pc;
+    pc                  <= next_pc;
+    last_pc             <= pc;
+    icache_miss_pc      <= last_pc;
+    stalled_pc_redirect <= 1'b0;
+  //stalled PC_redirect due to icache miss (icache is not ready)
+  end else if (icache_miss_i && fe_pc_gen_v_i && branch_misprediction) begin
+    pc_redirect         <= fe_pc_gen_cmd.operands.pc_redirect_operands.pc;
+    stalled_pc_redirect <= 1'b1; 
+  end else if (stalled_pc_redirect) begin
+    pc                  <= pc_redirect;//next_pc;
+    last_pc             <= pc;
+    icache_miss_pc      <= last_pc;
+    stalled_pc_redirect <= 1'b1;
   end else if (icache_miss_i && ~pc_gen_icache_ready_i) begin
     pc             <= icache_miss_pc;
     last_pc        <= pc;
@@ -214,6 +226,8 @@ always_ff @(posedge clk_i) begin
 end
    
 always_comb begin
+  //if (stalled_pc_redirect) begin
+    //next_pc = pc_redirect;
   if (icache_miss_i) begin
     next_pc = icache_miss_pc;
   end else if (branch_misprediction && fe_pc_gen_v_i) begin
