@@ -35,7 +35,7 @@ module bp_fe_lce
     , parameter lce_sets_p="inv"
     , parameter lce_assoc_p="inv"
     , parameter tag_width_p="inv"
-    , parameter coh_states_p="inv"
+    , parameter coh_states_p=4 // Temporary fix
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
     , parameter block_size_in_bytes_p="inv"
@@ -75,7 +75,6 @@ module bp_fe_lce
                                                               ,num_lce_p
                                                               ,lce_addr_width_p
                                                               ,lce_assoc_p
-                                                              ,coh_states_p
                                                              )
     , parameter bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
                                                                         ,num_lce_p
@@ -147,7 +146,7 @@ module bp_fe_lce
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, lce_addr_width_p);
   `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, lce_addr_width_p, lce_assoc_p);
   `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, lce_addr_width_p, lce_data_width_p);
-  `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, lce_addr_width_p, lce_assoc_p, coh_states_p);
+  `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, lce_addr_width_p, lce_assoc_p);
   `declare_bp_cce_lce_data_cmd_s(num_cce_p, num_lce_p, lce_addr_width_p, lce_data_width_p, lce_assoc_p);
   `declare_bp_lce_lce_tr_resp_s(num_lce_p, lce_addr_width_p, lce_data_width_p, lce_assoc_p);
 

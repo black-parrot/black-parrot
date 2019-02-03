@@ -85,7 +85,7 @@ module bp_fe_pc_gen
 //the first level of structs
 //be_fe interface
 localparam branch_metadata_fwd_width_p = branch_metadata_fwd_width_lp; 
-`declare_bp_fe_be_if_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)
+`declare_bp_common_fe_be_if_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)
 //pc_gen to fe
 `declare_bp_fe_pc_gen_queue_s;
 //fe to pc_gen
