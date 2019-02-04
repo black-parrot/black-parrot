@@ -51,7 +51,7 @@ module bp_fe_pc_gen
    , parameter bp_fe_pc_gen_itlb_width_lp=`bp_fe_pc_gen_itlb_width(eaddr_width_p)
    , parameter bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)
    , parameter bp_fe_pc_gen_width_o_lp=`bp_fe_pc_gen_queue_width(vaddr_width_p,branch_metadata_fwd_width_lp)
-   , parameter prediction_on=0
+   , parameter prediction_on=1
    , parameter branch_predictor_p="inv"
   )
   (input logic                                       clk_i
@@ -263,7 +263,7 @@ generate
                                 ,.bp_w_i(fe_pc_gen_v_i)
                                 ,.pc_queue_i(pc)
                                 ,.pc_cmd_i(fe_pc_gen_cmd.operands.pc_redirect_operands.pc)
-                                ,.pc_fwd_i(pc)
+                                ,.pc_fwd_i(icache_pc_gen.addr)
                                 ,.branch_metadata_fwd_i(branch_metadata_fwd_i)
                                 ,.predict_o(predict)
                                 ,.pc_o(btb_target)
@@ -282,7 +282,7 @@ generate
                                   ,.bp_w_i(fe_pc_gen_v_i)
                                   ,.pc_queue_i(pc)
                                   ,.pc_cmd_i(fe_pc_gen_cmd.operands.pc_redirect_operands.pc)
-                                  ,.pc_fwd_i(pc)
+                                  ,.pc_fwd_i(icache_pc_gen.addr)
                                   ,.branch_metadata_fwd_i(branch_metadata_fwd_i)
                                   ,.predict_o(predict)
                                   ,.pc_o(btb_target)
