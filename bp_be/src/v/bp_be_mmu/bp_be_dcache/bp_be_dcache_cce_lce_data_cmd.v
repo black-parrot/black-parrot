@@ -1,7 +1,5 @@
 /**
  *  bp_be_dcache_cce_lce_data_cmd.v
- *  
- *  @author tommy
  */
 
 module bp_be_dcache_cce_lce_data_cmd 

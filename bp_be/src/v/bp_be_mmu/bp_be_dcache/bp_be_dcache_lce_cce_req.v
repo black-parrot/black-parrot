@@ -1,14 +1,12 @@
 /**
  *  bp_be_dcache_lce_cce_req.v
- *
- *  @author tommy
  */
 
 `include "bp_common_me_if.vh"
 
 module bp_be_dcache_lce_cce_req
-  import bp_be_pkg::*;
-  #(parameter data_width_p="inv"
+  #(parameter lce_id_width_p="inv"
+    ,parameter data_width_p="inv"
     ,parameter lce_addr_width_p="inv"
     ,parameter num_cce_p="inv"
     ,parameter num_lce_p="inv"
@@ -23,14 +21,12 @@ module bp_be_dcache_lce_cce_req
 
     ,parameter lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, lce_addr_width_p, ways_p)
     ,parameter lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, lce_addr_width_p)
-
-    ,localparam lce_id_width_lp=`bp_lce_id_width
   )
   (
     input clk_i
     ,input reset_i
 
-    ,input logic[lce_id_width_lp-1:0] id_i
+    ,input [lce_id_width_p-1:0] id_i
 
     ,input load_miss_i
     ,input store_miss_i
@@ -86,16 +82,9 @@ module bp_be_dcache_lce_cce_req
 
   // comb logic
   //
-
   if (num_cce_p == 1) begin
-    /* TODO: VCS has problems with structs assigned in different comb blocks
-    *        Remove when fixed more elegantly*/
-    logic zero_r;
-    always_ff @(posedge clk_i) begin
-        zero_r <= 1'b0;
-    end
-    assign lce_cce_resp.dst_id = zero_r;
-    assign lce_cce_req.dst_id = zero_r;
+    assign lce_cce_resp.dst_id = 1'b0;
+    assign lce_cce_req.dst_id = 1'b0;
   end
   else begin
     assign lce_cce_resp.dst_id = miss_addr_r[lg_data_mask_width_lp+lg_ways_lp+:lg_num_cce_lp];
@@ -136,6 +125,8 @@ module bp_be_dcache_lce_cce_req
     lce_cce_resp.msg_type = e_lce_cce_tr_ack;
 
     case (state_r)
+      // READY
+      // wait for the cache miss.
       e_lce_cce_req_ready: begin
         cache_miss_o = missed;
         if (missed) begin
@@ -149,6 +140,8 @@ module bp_be_dcache_lce_cce_req
         end
       end
 
+      // SEND REQ
+      // send out cache miss request to CCE.
       e_lce_cce_req_send: begin
         cache_miss_o = 1'b1;
 
@@ -161,6 +154,8 @@ module bp_be_dcache_lce_cce_req
         state_n = lce_cce_req_ready_i ? e_lce_cce_req_sleep : e_lce_cce_req_send;
       end
 
+      // SLEEP 
+      // wait for signals from other modules to wake up.
       e_lce_cce_req_sleep: begin
         cache_miss_o = 1'b1;
         tr_received_n = tr_received_i ? 1'b1 : tr_received_r;
@@ -177,6 +172,8 @@ module bp_be_dcache_lce_cce_req
           );
       end
 
+      // TRANSFER ACK
+      // send out transfer ack to CCE.
       e_lce_cce_req_send_tr_ack: begin
         cache_miss_o = 1'b1;
         lce_cce_resp_v_o = 1'b1;
@@ -185,6 +182,8 @@ module bp_be_dcache_lce_cce_req
           : e_lce_cce_req_send_tr_ack;
       end
 
+      // COH ACK
+      // send out coh ack to CCE.
       e_lce_cce_req_send_coh_ack: begin
         cache_miss_o = 1'b1;
         lce_cce_resp_v_o = 1'b1;

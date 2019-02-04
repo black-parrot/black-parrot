@@ -1,7 +1,5 @@
 /**
  *  bp_be_dcache_lce_lce_tr_resp_in.v
- *
- *  @author tommy
  */
 
 module bp_be_dcache_lce_lce_tr_resp_in

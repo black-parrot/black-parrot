@@ -1,7 +1,5 @@
 /**
  *  bp_be_dcache_lru_decode.v
- *  
- *  @author tommy
  */
 
 module bp_be_dcache_lru_decode
