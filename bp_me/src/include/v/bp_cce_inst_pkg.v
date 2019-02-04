@@ -404,6 +404,9 @@ package bp_cce_inst_pkg;
 
   `define bp_cce_inst_mem_data_cmd_addr_sel_width $bits(bp_cce_inst_mem_data_cmd_addr_sel_e)
 
+  // Instruction immediate fields
+  `define bp_cce_inst_flag_imm_bit 0
+
   // CCE Microcode Instruction Struct
   typedef struct packed {
     bp_cce_inst_op_e                       op;
