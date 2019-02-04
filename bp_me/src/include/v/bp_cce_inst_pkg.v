@@ -11,8 +11,6 @@
 `ifndef BP_CCE_INST_PKG_VH
 `define BP_CCE_INST_PKG_VH
 
-`include "bsg_defines.v"
-
 package bp_cce_inst_pkg;
 
   // Major Op Codes
@@ -27,7 +25,7 @@ package bp_cce_inst_pkg;
   } bp_cce_inst_op_e;
   //,e_op_flag                             = 3'b010 // Set and Clear Flag are MOVI variants
 
-  `define bp_cce_inst_op_width 3
+  `define bp_cce_inst_op_width $bits(bp_cce_inst_op_e)
 
   // Minor Op Codes
   typedef enum logic [2:0] {
@@ -162,7 +160,8 @@ package bp_cce_inst_pkg;
     ,e_gpr_r3                              = 2'b11
   } bp_cce_gpr_e;
 
-  `define bp_cce_inst_num_gpr 4
+  // Note: number of gpr must be a power of 2
+  `define bp_cce_inst_num_gpr (2**$bits(bp_cce_gpr_e))
   `define bp_cce_inst_gpr_width 16
 
   typedef enum logic [11:0] {
