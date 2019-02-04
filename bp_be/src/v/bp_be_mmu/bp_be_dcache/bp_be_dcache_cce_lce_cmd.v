@@ -1,13 +1,11 @@
 /**
  *  bp_be_dcache_cce_lce_cmd.v
- *
- *  @author tommy
  */
 
 module bp_be_dcache_cce_lce_cmd
-  import bp_be_pkg::*;
   import bp_be_dcache_lce_pkg::*;
-  #(parameter num_cce_p="inv"
+  #(parameter lce_id_width_p="inv"
+    ,parameter num_cce_p="inv"
     ,parameter num_lce_p="inv"
     ,parameter lce_addr_width_p="inv"
     ,parameter lce_data_width_p="inv"
@@ -31,14 +29,12 @@ module bp_be_dcache_cce_lce_cmd
     ,parameter dcache_lce_data_mem_pkt_width_lp=`bp_be_dcache_lce_data_mem_pkt_width(sets_p, ways_p, lce_data_width_p)
     ,parameter dcache_lce_tag_mem_pkt_width_lp=`bp_be_dcache_lce_tag_mem_pkt_width(sets_p, ways_p, tag_width_p)
     ,parameter dcache_lce_stat_mem_pkt_width_lp=`bp_be_dcache_lce_stat_mem_pkt_width(sets_p, ways_p)
-
-    ,localparam lce_id_width_lp=`bp_lce_id_width
   )
   (
     input clk_i
     ,input reset_i
 
-    ,input logic [lce_id_width_lp-1:0] id_i
+    ,input [lce_id_width_p-1:0] id_i
 
     ,output logic lce_sync_done_o
     ,output logic tag_set_o
@@ -129,8 +125,8 @@ module bp_be_dcache_cce_lce_cmd
   logic [lg_num_cce_lp-1:0] sync_ack_count_r, sync_ack_count_n;
 
   // for invalidate_tag_cmd
-  logic invalidated_tag_r, invalidated_tag_n;
-  logic updated_lru_r, updated_lru_n;
+  //logic invalidated_tag_r, invalidated_tag_n;
+  //logic updated_lru_r, updated_lru_n;
 
   // for transfer_cmd
   logic tr_data_buffered_r, tr_data_buffered_n;
@@ -162,8 +158,6 @@ module bp_be_dcache_cce_lce_cmd
 
     state_n = state_r;
     sync_ack_count_n = sync_ack_count_r;
-    invalidated_tag_n = invalidated_tag_r;
-    updated_lru_n = updated_lru_r;
     tr_data_buffered_n = tr_data_buffered_r;
     tr_dirty_cleared_n = tr_dirty_cleared_r;
 
@@ -196,7 +190,11 @@ module bp_be_dcache_cce_lce_cmd
     
     case (state_r)
 
-      // RESET
+      // < RESET >
+      // LCE is expected to receive SET-CLEAR messages from CCE to invalidate every cache lines.
+      // set-clear messages clears the valid bits in tag_mem and the dirty bits in stat_mem.
+      // When LCE receives SYNC message, it responds with SYNC-ACK. When LCE received SYNC messages from
+      // every CCE in the system, it moves onto READY state.
       e_cce_lce_cmd_reset: begin
         case (cce_lce_cmd.msg_type)
           e_lce_cmd_sync: begin
@@ -220,13 +218,18 @@ module bp_be_dcache_cce_lce_cmd
             stat_mem_pkt_v_o = cce_lce_cmd_v_i;
             cce_lce_cmd_yumi_o = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
           end
-
         endcase 
       end
 
-      // READY
+      // < READY >
+      // LCE is ready to process cce_lce_cmd packets. In general, the packets are dequeued, when LCE
+      // has finished with the job related to the packet.
       e_cce_lce_cmd_ready: begin
+
         case (cce_lce_cmd.msg_type)
+
+          // <transfer packet>
+          // LCE first reads the data mem, and moves onto TRANSFER state.
           e_lce_cmd_transfer: begin
             data_mem_pkt.index = cce_lce_cmd_addr_index;
             data_mem_pkt.way = cce_lce_cmd.way_id;
@@ -237,6 +240,9 @@ module bp_be_dcache_cce_lce_cmd
               : e_cce_lce_cmd_ready;
           end
 
+          //  <writeback packet>
+          //  LCE is asked to writeback a cache line.
+          //  It first reads stat_mem to check if the line is dirty.
           e_lce_cmd_writeback: begin
             stat_mem_pkt.index = cce_lce_cmd_addr_index;
             stat_mem_pkt.way = cce_lce_cmd.way_id;
@@ -247,6 +253,8 @@ module bp_be_dcache_cce_lce_cmd
               : e_cce_lce_cmd_ready;
           end
 
+          //  <set tag>
+          //  set the tag and coherency state of given index/way.
           e_lce_cmd_set_tag: begin
             tag_mem_pkt.index = cce_lce_cmd_addr_index;
             tag_mem_pkt.way = cce_lce_cmd.way_id;
@@ -258,6 +266,8 @@ module bp_be_dcache_cce_lce_cmd
             tag_set_o = tag_mem_pkt_yumi_i;
           end
 
+          //  <set tag wakeup>
+          //  set the tag and send wake-up signal to lce_cce_req module.
           e_lce_cmd_set_tag_wakeup: begin
             tag_mem_pkt.index = cce_lce_cmd_addr_index;
             tag_mem_pkt.way = cce_lce_cmd.way_id;
@@ -269,41 +279,19 @@ module bp_be_dcache_cce_lce_cmd
             tag_set_wakeup_o = tag_mem_pkt_yumi_i;
           end
 
+          //  <invalidate tag>
+          //  invalidate tag.
           e_lce_cmd_invalidate_tag: begin
             tag_mem_pkt.index = cce_lce_cmd_addr_index;
             tag_mem_pkt.way = cce_lce_cmd.way_id;
             tag_mem_pkt.opcode = e_dcache_lce_tag_mem_invalidate;
-            tag_mem_pkt_v_o = invalidated_tag_r
-              ? 1'b0
-              : cce_lce_cmd_v_i;
-            invalidated_tag_n = lce_cce_resp_yumi_i
-              ? 1'b0
-              : (invalidated_tag_r
-                ? 1'b1
-                : tag_mem_pkt_yumi_i);
-
-            
-            stat_mem_pkt.index = cce_lce_cmd_addr_index;
-            stat_mem_pkt.way = cce_lce_cmd.way_id;
-            stat_mem_pkt.opcode = e_dcache_lce_stat_mem_set_lru;
-            stat_mem_pkt_v_o = updated_lru_r
-              ? 1'b0
-              : invalidated_tag_r | tag_mem_pkt_yumi_i;
-            updated_lru_n = lce_cce_resp_yumi_i
-              ? 1'b0
-              : (updated_lru_r
-                ? 1'b1
-                : stat_mem_pkt_yumi_i);
-
-            lce_cce_resp.dst_id = cce_lce_cmd.src_id;
-            lce_cce_resp.msg_type = e_lce_cce_inv_ack;
-            lce_cce_resp.addr = cce_lce_cmd.addr;
-            lce_cce_resp_v_o = (invalidated_tag_r | tag_mem_pkt_yumi_i) & (updated_lru_r | stat_mem_pkt_yumi_i);
-            cce_lce_cmd_yumi_o = lce_cce_resp_yumi_i;
+            tag_mem_pkt_v_o = tag_mem_pkt_yumi_i;
+            cce_lce_cmd_yumi_o = tag_mem_pkt_yumi_i;
           end
         endcase
       end
-    
+      // <TRANSFER state>    
+      // First, buffer the data read from data_mem, and try to send transfer to another LCE.
       e_cce_lce_cmd_tr: begin
         data_buf_n = tr_data_buffered_r
           ? data_buf_r
@@ -324,12 +312,17 @@ module bp_be_dcache_cce_lce_cmd
           : e_cce_lce_cmd_tr;
       end
 
+      // <WRITEBACK state>
+      // Determine if the block is dirty or not.
       e_cce_lce_cmd_wb: begin
         state_n = dirty_i[cce_lce_cmd.way_id] 
           ? e_cce_lce_cmd_wb_dirty
           : e_cce_lce_cmd_wb_not_dirty;
       end
 
+      // <WRITEBACK dirty state>
+      // If the block is dirty, read the block, buffers the data, clear the dirty bit on the block.
+      // At last, send out the block data to CCE.
       e_cce_lce_cmd_wb_dirty: begin
         data_mem_pkt.index = cce_lce_cmd_addr_index;
         data_mem_pkt.way = cce_lce_cmd.way_id;
@@ -376,6 +369,8 @@ module bp_be_dcache_cce_lce_cmd
           : e_cce_lce_cmd_wb_dirty;
       end
 
+      //  <WRITEBACK not-dirty state>
+      //  If not dirty, just respond with null writeback data.
       e_cce_lce_cmd_wb_not_dirty: begin
         lce_cce_data_resp.dst_id = cce_lce_cmd.src_id;
         lce_cce_data_resp.msg_type = e_lce_resp_null_wb;
@@ -396,8 +391,6 @@ module bp_be_dcache_cce_lce_cmd
     if (reset_i) begin
       state_r <= e_cce_lce_cmd_reset;
       sync_ack_count_r <= '0;
-      invalidated_tag_r <= 1'b0;
-      updated_lru_r <= 1'b0;
       tr_data_buffered_r <= 1'b0;
       tr_dirty_cleared_r <= 1'b0;
       wb_data_buffered_r <= 1'b0;
@@ -407,8 +400,6 @@ module bp_be_dcache_cce_lce_cmd
     else begin
       state_r <= state_n;
       sync_ack_count_r <= sync_ack_count_n;
-      invalidated_tag_r <= invalidated_tag_n;
-      updated_lru_r <= updated_lru_n;
       tr_data_buffered_r <= tr_data_buffered_n;
       tr_dirty_cleared_r <= tr_dirty_cleared_n;
       wb_data_buffered_r <= wb_data_buffered_n;

@@ -1,14 +1,11 @@
 /**
  *  bp_be_dcache_lce.v
- *
- *  @author tommy
  */
 
 `include "bp_be_dcache_lce_pkt.vh"
 `include "bp_common_me_if.vh"
 
 module bp_be_dcache_lce
-  import bp_be_pkg::*;
   import bp_be_dcache_lce_pkg::*;
   #(parameter data_width_p="inv"
     ,parameter lce_data_width_p="inv"
@@ -21,27 +18,27 @@ module bp_be_dcache_lce
     
     ,parameter timeout_max_limit_p=4
     
-    ,parameter lg_sets_lp=`BSG_SAFE_CLOG2(sets_p)
-    ,parameter lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
+    ,localparam lg_sets_lp=`BSG_SAFE_CLOG2(sets_p)
+    ,localparam lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
   
-    ,parameter dcache_lce_data_mem_pkt_width_lp=`bp_be_dcache_lce_data_mem_pkt_width(sets_p, ways_p, lce_data_width_p)
-    ,parameter dcache_lce_tag_mem_pkt_width_lp=`bp_be_dcache_lce_tag_mem_pkt_width(sets_p, ways_p, tag_width_p)
-    ,parameter dcache_lce_stat_mem_pkt_width_lp=`bp_be_dcache_lce_stat_mem_pkt_width(sets_p, ways_p)
+    ,localparam dcache_lce_data_mem_pkt_width_lp=`bp_be_dcache_lce_data_mem_pkt_width(sets_p, ways_p, lce_data_width_p)
+    ,localparam dcache_lce_tag_mem_pkt_width_lp=`bp_be_dcache_lce_tag_mem_pkt_width(sets_p, ways_p, tag_width_p)
+    ,localparam dcache_lce_stat_mem_pkt_width_lp=`bp_be_dcache_lce_stat_mem_pkt_width(sets_p, ways_p)
     
-    ,parameter lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, lce_addr_width_p, ways_p)
-    ,parameter lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, lce_addr_width_p)
-    ,parameter lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, lce_addr_width_p, lce_data_width_p)
-    ,parameter cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, lce_addr_width_p, ways_p, 4)
-    ,parameter cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, lce_addr_width_p, lce_data_width_p, ways_p)
-    ,parameter lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p, lce_addr_width_p, lce_data_width_p, ways_p)
-
-    ,localparam lce_id_width_lp=`bp_lce_id_width
+    ,localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, lce_addr_width_p, ways_p)
+    ,localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, lce_addr_width_p)
+    ,localparam lce_cce_data_resp_width_lp=
+      `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, lce_addr_width_p, lce_data_width_p)
+    ,localparam cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, lce_addr_width_p, ways_p, 4)
+    ,localparam cce_lce_data_cmd_width_lp=
+      `bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, lce_addr_width_p, lce_data_width_p, ways_p)
+    ,localparam lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p, lce_addr_width_p, lce_data_width_p, ways_p)
   )
   (
     input clk_i
     ,input reset_i
 
-    ,input logic [lce_id_width_lp-1:0] id_i
+    ,input logic [lce_id_width_p-1:0] id_i
 
     ,output logic ready_o
     ,output logic cache_miss_o
@@ -150,7 +147,8 @@ module bp_be_dcache_lce
   logic lce_cce_req_lce_cce_resp_yumi_li;
 
   bp_be_dcache_lce_cce_req #(
-    .data_width_p(data_width_p)
+    .lce_id_width_p(lce_id_width_p)
+    ,.data_width_p(data_width_p)
     ,.lce_addr_width_p(lce_addr_width_p)
     ,.num_cce_p(num_cce_p)
     ,.num_lce_p(num_lce_p)
@@ -198,6 +196,7 @@ module bp_be_dcache_lce
   logic cce_lce_cmd_fifo_yumi_li;
   bp_cce_lce_cmd_s cce_lce_cmd_fifo_data_lo;
 
+  // this two_fifo is needed to convert from valid-yumi to valid-ready interface.
   bsg_two_fifo #(
     .width_p(cce_lce_cmd_width_lp)
   ) cce_lce_cmd_fifo (
@@ -214,7 +213,8 @@ module bp_be_dcache_lce
   );
 
   bp_be_dcache_cce_lce_cmd #(
-    .num_cce_p(num_cce_p)
+    .lce_id_width_p(lce_id_width_p)
+    ,.num_cce_p(num_cce_p)
     ,.num_lce_p(num_lce_p)
     ,.lce_addr_width_p(lce_addr_width_p)
     ,.lce_data_width_p(lce_data_width_p)
@@ -275,6 +275,7 @@ module bp_be_dcache_lce
   bp_cce_lce_data_cmd_s cce_lce_data_cmd_fifo_data_lo;
   logic cce_lce_data_cmd_fifo_yumi_li;
 
+  // this two_fifo is needed to convert from valid-yumi to valid-ready interface.
   bsg_two_fifo #(
     .width_p(cce_lce_data_cmd_width_lp)
   ) cce_lce_data_cmd_fifo (
@@ -320,6 +321,7 @@ module bp_be_dcache_lce
   bp_lce_lce_tr_resp_s lce_lce_tr_resp_in_fifo_data_lo;
   logic lce_lce_tr_resp_in_fifo_yumi_li;
 
+  // this two_fifo is needed to convert from valid-yumi to valid-ready interface.
   bsg_two_fifo #(
     .width_p(lce_lce_tr_resp_width_lp)
   ) lce_lce_tr_resp_in_fifo (
@@ -381,7 +383,6 @@ module bp_be_dcache_lce
 
   // LCE_CCE_resp arbiter
   //
-
   always_comb begin
     lce_cce_req_lce_cce_resp_yumi_li = 1'b0;
     cce_lce_cmd_lce_cce_resp_yumi_li = 1'b0;
@@ -398,8 +399,11 @@ module bp_be_dcache_lce
     end
   end
 
-  // timeout logic
-  //
+  //  timeout logic
+  //  LCE can read/write to data_mem, tag_mem, and stat_mem, when they are free (e.g. dcache is not accessing them).
+  //  In order to prevent LCE taking too much time to process incoming coherency requests,
+  //  there is a timer, which counts up whenever LCE needs to access mem, but have not been able to.
+  //  when the timer reaches max, it deasserts ready_o of dcache for one cycle, allowing it to access mem, by creating a free slot.
   logic [`BSG_SAFE_CLOG2(timeout_max_limit_p+1)-1:0] timeout_count_r, timeout_count_n;
   logic timeout;
 

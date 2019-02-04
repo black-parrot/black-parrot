@@ -1,7 +1,5 @@
 /**
  *  bp_be_dcache_wbuf.v
- *
- *  @author tommy
  */
 
 

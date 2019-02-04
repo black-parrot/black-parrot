@@ -1,7 +1,5 @@
 /**
  *  bp_be_dcache_wbuf_queue.v
- *
- *  @author tommy
  */
 
 module bp_be_dcache_wbuf_queue

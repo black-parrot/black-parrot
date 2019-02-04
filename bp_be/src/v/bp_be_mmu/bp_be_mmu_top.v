@@ -227,7 +227,9 @@ mock_tlb #(.tag_width_p(12)
            );
 
 /* TODO: Un-hardcode these values */
-bp_be_dcache #(.data_width_p(64) 
+bp_be_dcache #(
+            .lce_id_width_p(`bp_lce_id_width)
+            ,.data_width_p(64) 
             ,.sets_p(lce_sets_p)
             ,.ways_p(lce_assoc_p)
             ,.tag_width_p(12)
