@@ -3,33 +3,38 @@
  */
 
 module bp_be_dcache_lce_cce_req
-  #(parameter lce_id_width_p="inv"
-    , parameter data_width_p="inv"
-    , parameter lce_addr_width_p="inv"
+  #(parameter data_width_p="inv"
+    , parameter paddr_width_p="inv"
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
     , parameter ways_p="inv"
+    , parameter sets_p="inv"
   
+    , localparam block_size_in_words_lp=ways_p
     , localparam data_mask_width_lp=(data_width_p>>3)
-    , localparam lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
+    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_width_p>>3)
+    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
+    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
+    , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
+    , localparam page_offset_width_lp=(block_offset_width_lp+index_width_lp)
+    , localparam ptag_width_lp=(paddr_width_p-page_offset_width_lp)
+    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
+    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
+    , localparam cce_id_width_lp=`BSG_SAFE_CLOG2(num_cce_p)
   
-    , localparam lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
-    , localparam lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
-    , localparam lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
-
-    , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, lce_addr_width_p, ways_p)
-    , localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, lce_addr_width_p)
+    , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, ways_p)
+    , localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
   )
   (
     input clk_i
     , input reset_i
 
-    , input [lce_id_width_p-1:0] id_i
+    , input [lce_id_width_lp-1:0] lce_id_i
 
     , input load_miss_i
     , input store_miss_i
-    , input [lce_addr_width_p-1:0] miss_addr_i
-    , input [lg_ways_lp-1:0] lru_way_i
+    , input [paddr_width_p-1:0] miss_addr_i
+    , input [way_id_width_lp-1:0] lru_way_i
     , input [ways_p-1:0] dirty_i
     , output logic cache_miss_o
 
@@ -49,8 +54,8 @@ module bp_be_dcache_lce_cce_req
 
   // casting struct
   //
-  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, lce_addr_width_p, ways_p);
-  `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, lce_addr_width_p);
+  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, ways_p);
+  `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
   bp_lce_cce_req_s lce_cce_req;
   bp_lce_cce_resp_s lce_cce_resp;
   assign lce_cce_req_o = lce_cce_req;
@@ -68,9 +73,9 @@ module bp_be_dcache_lce_cce_req
 
   lce_cce_req_state_e state_r, state_n;
   logic load_not_store_r, load_not_store_n;
-  logic [lg_ways_lp-1:0] lru_way_r, lru_way_n;
+  logic [way_id_width_lp-1:0] lru_way_r, lru_way_n;
   logic dirty_r, dirty_n;
-  logic [lce_addr_width_p-1:0] miss_addr_r, miss_addr_n;
+  logic [paddr_width_p-1:0] miss_addr_r, miss_addr_n;
   logic dirty_lru_flopped_r, dirty_lru_flopped_n;
   logic missed;
 
@@ -85,8 +90,8 @@ module bp_be_dcache_lce_cce_req
     assign lce_cce_req.dst_id = 1'b0;
   end
   else begin
-    assign lce_cce_resp.dst_id = miss_addr_r[lg_data_mask_width_lp+lg_ways_lp+:lg_num_cce_lp];
-    assign lce_cce_req.dst_id = miss_addr_r[lg_data_mask_width_lp+lg_ways_lp+:lg_num_cce_lp];
+    assign lce_cce_resp.dst_id = miss_addr_r[block_offset_width_lp+:cce_id_width_lp];
+    assign lce_cce_req.dst_id = miss_addr_r[block_offset_width_lp+:cce_id_width_lp];
   end
 
   always_comb begin
@@ -108,7 +113,7 @@ module bp_be_dcache_lce_cce_req
     tag_set = tag_set_r | tag_set_i;
 
     lce_cce_req_v_o = 1'b0;
-    lce_cce_req.src_id = (lg_num_lce_lp)'(id_i);
+    lce_cce_req.src_id = (lce_id_width_lp)'(lce_id_i);
     lce_cce_req.non_exclusive = e_lce_req_excl;
     lce_cce_req.msg_type = load_not_store_r ? e_lce_req_type_rd : e_lce_req_type_wr;
     lce_cce_req.addr = miss_addr_r;
@@ -118,7 +123,7 @@ module bp_be_dcache_lce_cce_req
       : bp_lce_cce_lru_dirty_e'(dirty_i[lru_way_i]);
 
     lce_cce_resp_v_o = 1'b0;
-    lce_cce_resp.src_id = (lg_num_lce_lp)'(id_i);
+    lce_cce_resp.src_id = (lce_id_width_lp)'(lce_id_i);
     lce_cce_resp.addr = miss_addr_r;
     lce_cce_resp.msg_type = e_lce_cce_tr_ack;
 
@@ -220,10 +225,14 @@ module bp_be_dcache_lce_cce_req
   // synopsys translate_off
   always_ff @ (negedge clk_i) begin
     if (state_r == e_lce_cce_req_ready) begin
-      assert(~tr_received_i) else $error("id: %0d, transfer received while no cache miss.", id_i);
-      assert(~cce_data_received_i) else $error("id: %0d, data_cmd received while no cache miss.", id_i);
-      assert(~tag_set_i) else $error("id: %0d, set_tag_cmd received while no cache miss.", id_i);
-      assert(~tag_set_wakeup_i) else $error("id: %0d, set_tag_wakeup_cmd received while no cache miss.", id_i);
+      assert(~tr_received_i)
+        else $error("id: %0d, transfer received while no cache miss.", lce_id_i);
+      assert(~cce_data_received_i)
+        else $error("id: %0d, data_cmd received while no cache miss.", lce_id_i);
+      assert(~tag_set_i)
+        else $error("id: %0d, set_tag_cmd received while no cache miss.", lce_id_i);
+      assert(~tag_set_wakeup_i)
+        else $error("id: %0d, set_tag_wakeup_cmd received while no cache miss.", lce_id_i);
     end
   end
   // synopsys translate_on

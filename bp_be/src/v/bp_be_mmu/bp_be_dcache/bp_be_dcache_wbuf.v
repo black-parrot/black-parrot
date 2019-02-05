@@ -1,56 +1,61 @@
 /**
  *  bp_be_dcache_wbuf.v
+ *
+ *  Data cache write buffer.
  */
 
 
 module bp_be_dcache_wbuf
   #(parameter data_width_p="inv"
-    , parameter addr_width_p="inv"
+    , parameter paddr_width_p="inv"
     , parameter ways_p="inv"
     , parameter sets_p="inv"
 
+    , localparam block_size_in_words_lp=ways_p
+    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
     , localparam data_mask_width_lp=(data_width_p>>3)
-    , localparam lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
-    , localparam lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
-    , localparam lg_sets_lp=`BSG_SAFE_CLOG2(sets_p)
+    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_width_p>>3)
+    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
+    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
+    , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
   )
   (
     input clk_i
     , input reset_i
     
     , input v_i
-    , input [addr_width_p-1:0] addr_i
+    , input [paddr_width_p-1:0] addr_i
     , input [data_width_p-1:0] data_i
     , input [data_mask_width_lp-1:0] mask_i
-    , input [lg_ways_lp-1:0] way_i
+    , input [way_id_width_lp-1:0] way_i
 
     , output logic v_o
     , output logic [data_width_p-1:0] data_o
-    , output logic [addr_width_p-1:0] addr_o
+    , output logic [paddr_width_p-1:0] addr_o
     , output logic [data_mask_width_lp-1:0] mask_o
-    , output logic [lg_ways_lp-1:0] way_o
+    , output logic [way_id_width_lp-1:0] way_o
     , input yumi_i
 
     , output logic empty_o
     
-    , input [addr_width_p-1:0] bypass_addr_i
+    , input [paddr_width_p-1:0] bypass_addr_i
     , input bypass_v_i
     , output logic [data_width_p-1:0] bypass_data_o
     , output logic [data_mask_width_lp-1:0] bypass_mask_o
 
-    , input [lg_sets_lp-1:0] lce_snoop_index_i
-    , input [lg_ways_lp-1:0] lce_snoop_way_i
+    , input [index_width_lp-1:0] lce_snoop_index_i
+    , input [way_id_width_lp-1:0] lce_snoop_way_i
     , output logic lce_snoop_match_o
   );
 
-  logic [addr_width_p-1:0] el0_addr;
-  logic [addr_width_p-1:0] el1_addr;
+  logic [paddr_width_p-1:0] el0_addr;
+  logic [paddr_width_p-1:0] el1_addr;
   logic [data_width_p-1:0] el0_data;
   logic [data_width_p-1:0] el1_data;
   logic [data_mask_width_lp-1:0] el0_mask;
   logic [data_mask_width_lp-1:0] el1_mask;
-  logic [lg_ways_lp-1:0] el0_way;
-  logic [lg_ways_lp-1:0] el1_way;
+  logic [way_id_width_lp-1:0] el0_way;
+  logic [way_id_width_lp-1:0] el1_way;
 
   logic [1:0] num_els_r;
 
@@ -143,7 +148,7 @@ module bp_be_dcache_wbuf
     ,.data_o(data_o)
   );
 
-  bp_be_dcache_wbuf_queue #(.width_p(addr_width_p)) wbq_addr (
+  bp_be_dcache_wbuf_queue #(.width_p(paddr_width_p)) wbq_addr (
     .clk_i(clk_i)
     ,.data_i(addr_i)
     ,.el0_en_i(el0_enable)
@@ -155,7 +160,7 @@ module bp_be_dcache_wbuf
     ,.data_o(addr_o)
   );
 
-  bp_be_dcache_wbuf_queue #(.width_p(lg_ways_lp)) wbq_way (
+  bp_be_dcache_wbuf_queue #(.width_p(way_id_width_lp)) wbq_way (
     .clk_i(clk_i)
     ,.data_i(way_i)
     ,.el0_en_i(el0_enable)
@@ -172,12 +177,12 @@ module bp_be_dcache_wbuf
   logic tag_hit0, tag_hit0_n;
   logic tag_hit1, tag_hit1_n;
   logic tag_hit2, tag_hit2_n;
-  logic [addr_width_p-lg_data_mask_width_lp-1:0] bypass_word_addr;
+  logic [paddr_width_p-byte_offset_width_lp-1:0] bypass_word_addr;
 
-  assign bypass_word_addr = bypass_addr_i[addr_width_p-1:lg_data_mask_width_lp];
-  assign tag_hit0_n = bypass_word_addr == el0_addr[addr_width_p-1:lg_data_mask_width_lp]; 
-  assign tag_hit1_n = bypass_word_addr == el1_addr[addr_width_p-1:lg_data_mask_width_lp]; 
-  assign tag_hit2_n = bypass_word_addr == addr_i[addr_width_p-1:lg_data_mask_width_lp]; 
+  assign bypass_word_addr = bypass_addr_i[paddr_width_p-1:byte_offset_width_lp];
+  assign tag_hit0_n = bypass_word_addr == el0_addr[paddr_width_p-1:byte_offset_width_lp]; 
+  assign tag_hit1_n = bypass_word_addr == el1_addr[paddr_width_p-1:byte_offset_width_lp]; 
+  assign tag_hit2_n = bypass_word_addr == addr_i[paddr_width_p-1:byte_offset_width_lp]; 
 
   assign tag_hit0 = tag_hit0_n & el0_valid;
   assign tag_hit1 = tag_hit1_n & el1_valid;
@@ -238,9 +243,9 @@ module bp_be_dcache_wbuf
   logic lce_snoop_el0_match;
   logic lce_snoop_el1_match;
 
-  assign lce_snoop_el2_match = v_i & (lce_snoop_index_i == addr_i[lg_data_mask_width_lp+lg_ways_lp+:lg_sets_lp]) & (lce_snoop_way_i == way_i);
-  assign lce_snoop_el0_match = el0_valid & (lce_snoop_index_i == el0_addr[lg_data_mask_width_lp+lg_ways_lp+:lg_sets_lp]) & (lce_snoop_way_i == el0_way);
-  assign lce_snoop_el1_match = el1_valid & (lce_snoop_index_i == el1_addr[lg_data_mask_width_lp+lg_ways_lp+:lg_sets_lp]) & (lce_snoop_way_i == el1_way);
+  assign lce_snoop_el2_match = v_i & (lce_snoop_index_i == addr_i[block_offset_width_lp+:index_width_lp]) & (lce_snoop_way_i == way_i);
+  assign lce_snoop_el0_match = el0_valid & (lce_snoop_index_i == el0_addr[block_offset_width_lp+:index_width_lp]) & (lce_snoop_way_i == el0_way);
+  assign lce_snoop_el1_match = el1_valid & (lce_snoop_index_i == el1_addr[block_offset_width_lp+:index_width_lp]) & (lce_snoop_way_i == el1_way);
   assign lce_snoop_match_o = lce_snoop_el2_match | lce_snoop_el0_match | lce_snoop_el1_match;
 
 endmodule

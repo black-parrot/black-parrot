@@ -1,5 +1,7 @@
 /**
  *  bp_be_dcache_wbuf_queue.v
+ *
+ *  Data cache write buffer queue.
  */
 
 module bp_be_dcache_wbuf_queue
