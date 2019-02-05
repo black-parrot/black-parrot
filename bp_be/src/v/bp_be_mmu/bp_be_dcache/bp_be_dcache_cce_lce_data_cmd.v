@@ -11,14 +11,16 @@ module bp_be_dcache_cce_lce_data_cmd
     ,parameter ways_p="inv"
     ,parameter sets_p="inv"
 
-    ,parameter data_mask_width_lp=(data_width_p>>3)
-    ,parameter lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
-    ,parameter lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
-    ,parameter lg_sets_lp=`BSG_SAFE_CLOG2(sets_p)
+    ,localparam data_mask_width_lp=(data_width_p>>3)
+    ,localparam lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
+    ,localparam lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
+    ,localparam lg_sets_lp=`BSG_SAFE_CLOG2(sets_p)
 
-    ,parameter cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, lce_addr_width_p, lce_data_width_p, ways_p)
+    ,localparam cce_lce_data_cmd_width_lp=
+      `bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, lce_addr_width_p, lce_data_width_p, ways_p)
 
-    ,parameter dcache_lce_data_mem_pkt_width_lp=`bp_be_dcache_lce_data_mem_pkt_width(sets_p, ways_p, lce_data_width_p)
+    ,localparam dcache_lce_data_mem_pkt_width_lp=
+      `bp_be_dcache_lce_data_mem_pkt_width(sets_p, ways_p, lce_data_width_p)
   )
   (
     output logic cce_data_received_o

@@ -4,12 +4,12 @@
 
 module bp_be_dcache_lru_decode
   #(parameter ways_p="inv"
-    ,parameter lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
+    , localparam lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
   )
   (
     input [lg_ways_lp-1:0] way_i
-    ,output logic [ways_p-2:0] data_o
-    ,output logic [ways_p-2:0] mask_o
+    , output logic [ways_p-2:0] data_o
+    , output logic [ways_p-2:0] mask_o
   );
 
   if (ways_p == 8) begin
