@@ -1,40 +1,52 @@
 /**
  *  bp_be_dcache_cce_lce_cmd.v
+ *
+ *  Data cache LCE cce_lce_cmd handler
  */
 
 module bp_be_dcache_cce_lce_cmd
   import bp_be_dcache_lce_pkg::*;
-  #(parameter lce_id_width_p="inv"
-    , parameter num_cce_p="inv"
+  #(parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
-    , parameter lce_addr_width_p="inv"
+    , parameter paddr_width_p="inv"
     , parameter lce_data_width_p="inv"
     , parameter sets_p="inv"
     , parameter ways_p="inv"
     , parameter data_width_p="inv"
-    , parameter tag_width_p="inv"
 
-    , localparam lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
-    , localparam lg_sets_lp=`BSG_SAFE_CLOG2(sets_p)
-    , localparam lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
-    , localparam lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
+    , localparam block_size_in_words_lp=ways_p
     , localparam data_mask_width_lp=(data_width_p>>3)
-    , localparam lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
+    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_width_p>>3)
+    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
+    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
+    , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
+    , localparam page_offset_width_lp=(block_offset_width_lp+index_width_lp)
+    , localparam ptag_width_lp=(paddr_width_p-page_offset_width_lp)
+    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
+    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
+    , localparam cce_id_width_lp=`BSG_SAFE_CLOG2(num_cce_p)
     
-    , localparam cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, lce_addr_width_p, ways_p, 4)
-    , localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, lce_addr_width_p)
-    , localparam lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, lce_addr_width_p, lce_data_width_p)
-    , localparam lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p, lce_addr_width_p, lce_data_width_p, ways_p)
+    , localparam cce_lce_cmd_width_lp=
+      `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, ways_p, 4)
+    , localparam lce_cce_resp_width_lp=
+      `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
+    , localparam lce_cce_data_resp_width_lp=
+      `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_p)
+    , localparam lce_lce_tr_resp_width_lp=
+      `bp_lce_lce_tr_resp_width(num_lce_p, paddr_width_p, lce_data_width_p, ways_p)
 
-    , localparam dcache_lce_data_mem_pkt_width_lp=`bp_be_dcache_lce_data_mem_pkt_width(sets_p, ways_p, lce_data_width_p)
-    , localparam dcache_lce_tag_mem_pkt_width_lp=`bp_be_dcache_lce_tag_mem_pkt_width(sets_p, ways_p, tag_width_p)
-    , localparam dcache_lce_stat_mem_pkt_width_lp=`bp_be_dcache_lce_stat_mem_pkt_width(sets_p, ways_p)
+    , localparam dcache_lce_data_mem_pkt_width_lp=
+      `bp_be_dcache_lce_data_mem_pkt_width(sets_p, ways_p, lce_data_width_p)
+    , localparam dcache_lce_tag_mem_pkt_width_lp=
+      `bp_be_dcache_lce_tag_mem_pkt_width(sets_p, ways_p, ptag_width_lp)
+    , localparam dcache_lce_stat_mem_pkt_width_lp=
+      `bp_be_dcache_lce_stat_mem_pkt_width(sets_p, ways_p)
   )
   (
     input clk_i
     , input reset_i
 
-    , input [lce_id_width_p-1:0] id_i
+    , input [lce_id_width_lp-1:0] lce_id_i
 
     , output logic lce_sync_done_o
     , output logic tag_set_o
@@ -80,12 +92,12 @@ module bp_be_dcache_cce_lce_cmd
 
   // casting structs
   //
-  `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, lce_addr_width_p, ways_p, 4);
-  `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, lce_addr_width_p);
-  `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, lce_addr_width_p, lce_data_width_p);
-  `declare_bp_lce_lce_tr_resp_s(num_lce_p, lce_addr_width_p, lce_data_width_p, ways_p);
+  `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, ways_p, 4);
+  `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
+  `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_p);
+  `declare_bp_lce_lce_tr_resp_s(num_lce_p, paddr_width_p, lce_data_width_p, ways_p);
   `declare_bp_be_dcache_lce_data_mem_pkt_s(sets_p, ways_p, lce_data_width_p);
-  `declare_bp_be_dcache_lce_tag_mem_pkt_s(sets_p, ways_p, tag_width_p);
+  `declare_bp_be_dcache_lce_tag_mem_pkt_s(sets_p, ways_p, ptag_width_lp);
   `declare_bp_be_dcache_lce_stat_mem_pkt_s(sets_p, ways_p);
 
   bp_cce_lce_cmd_s cce_lce_cmd;
@@ -104,10 +116,10 @@ module bp_be_dcache_cce_lce_cmd
   assign tag_mem_pkt_o = tag_mem_pkt;
   assign stat_mem_pkt_o = stat_mem_pkt;
 
-  logic [lg_sets_lp-1:0] cce_lce_cmd_addr_index;
-  logic [tag_width_p-1:0] cce_lce_cmd_addr_tag;
-  assign cce_lce_cmd_addr_index = cce_lce_cmd.addr[lg_data_mask_width_lp+lg_ways_lp+:lg_sets_lp];
-  assign cce_lce_cmd_addr_tag = cce_lce_cmd.addr[lg_data_mask_width_lp+lg_ways_lp+lg_sets_lp+:tag_width_p];
+  logic [index_width_lp-1:0] cce_lce_cmd_addr_index;
+  logic [ptag_width_lp-1:0] cce_lce_cmd_addr_tag;
+  assign cce_lce_cmd_addr_index = cce_lce_cmd.addr[block_offset_width_lp+:index_width_lp];
+  assign cce_lce_cmd_addr_tag = cce_lce_cmd.addr[page_offset_width_lp+:ptag_width_lp];
 
 
   // states
@@ -122,7 +134,7 @@ module bp_be_dcache_cce_lce_cmd
   } cce_lce_cmd_state_e;
 
   cce_lce_cmd_state_e state_r, state_n;
-  logic [lg_num_cce_lp-1:0] sync_ack_count_r, sync_ack_count_n;
+  logic [cce_id_width_lp-1:0] sync_ack_count_r, sync_ack_count_n;
 
   // for invalidate_tag_cmd
   //logic invalidated_tag_r, invalidated_tag_n;
@@ -170,15 +182,15 @@ module bp_be_dcache_cce_lce_cmd
     cce_lce_cmd_yumi_o = 1'b0;
 
     lce_cce_resp ='0;
-    lce_cce_resp.src_id = (lg_num_lce_lp)'(id_i);
+    lce_cce_resp.src_id = (lce_id_width_lp)'(lce_id_i);
     lce_cce_resp_v_o = 1'b0;
 
     lce_cce_data_resp = '0;
-    lce_cce_data_resp.src_id = (lg_num_lce_lp)'(id_i);
+    lce_cce_data_resp.src_id = (lce_id_width_lp)'(lce_id_i);
     lce_cce_data_resp_v_o = 1'b0;
 
     lce_lce_tr_resp_out = '0;
-    lce_lce_tr_resp_out.src_id = (lg_num_lce_lp)'(id_i);
+    lce_lce_tr_resp_out.src_id = (lce_id_width_lp)'(lce_id_i);
     lce_lce_tr_resp_v_o = 1'b0;
 
     data_mem_pkt = '0;
@@ -232,7 +244,7 @@ module bp_be_dcache_cce_lce_cmd
           // LCE first reads the data mem, and moves onto TRANSFER state.
           e_lce_cmd_transfer: begin
             data_mem_pkt.index = cce_lce_cmd_addr_index;
-            data_mem_pkt.way = cce_lce_cmd.way_id;
+            data_mem_pkt.way_id = cce_lce_cmd.way_id;
             data_mem_pkt.write_not_read = 1'b0;
             data_mem_pkt_v_o = cce_lce_cmd_v_i;
             state_n = data_mem_pkt_yumi_i
@@ -245,7 +257,7 @@ module bp_be_dcache_cce_lce_cmd
           //  It first reads stat_mem to check if the line is dirty.
           e_lce_cmd_writeback: begin
             stat_mem_pkt.index = cce_lce_cmd_addr_index;
-            stat_mem_pkt.way = cce_lce_cmd.way_id;
+            stat_mem_pkt.way_id = cce_lce_cmd.way_id;
             stat_mem_pkt.opcode = e_dcache_lce_stat_mem_read;
             stat_mem_pkt_v_o = cce_lce_cmd_v_i;
             state_n = stat_mem_pkt_yumi_i
@@ -257,7 +269,7 @@ module bp_be_dcache_cce_lce_cmd
           //  set the tag and coherency state of given index/way.
           e_lce_cmd_set_tag: begin
             tag_mem_pkt.index = cce_lce_cmd_addr_index;
-            tag_mem_pkt.way = cce_lce_cmd.way_id;
+            tag_mem_pkt.way_id = cce_lce_cmd.way_id;
             tag_mem_pkt.state = cce_lce_cmd.state;
             tag_mem_pkt.tag = cce_lce_cmd_addr_tag;
             tag_mem_pkt.opcode = e_dcache_lce_tag_mem_set_tag;
@@ -270,7 +282,7 @@ module bp_be_dcache_cce_lce_cmd
           //  set the tag and send wake-up signal to lce_cce_req module.
           e_lce_cmd_set_tag_wakeup: begin
             tag_mem_pkt.index = cce_lce_cmd_addr_index;
-            tag_mem_pkt.way = cce_lce_cmd.way_id;
+            tag_mem_pkt.way_id = cce_lce_cmd.way_id;
             tag_mem_pkt.state = cce_lce_cmd.state;
             tag_mem_pkt.tag = cce_lce_cmd_addr_tag;
             tag_mem_pkt.opcode = e_dcache_lce_tag_mem_set_tag;
@@ -283,7 +295,7 @@ module bp_be_dcache_cce_lce_cmd
           //  invalidate tag.
           e_lce_cmd_invalidate_tag: begin
             tag_mem_pkt.index = cce_lce_cmd_addr_index;
-            tag_mem_pkt.way = cce_lce_cmd.way_id;
+            tag_mem_pkt.way_id = cce_lce_cmd.way_id;
             tag_mem_pkt.opcode = e_dcache_lce_tag_mem_invalidate;
             tag_mem_pkt_v_o = tag_mem_pkt_yumi_i;
             cce_lce_cmd_yumi_o = tag_mem_pkt_yumi_i;
@@ -325,7 +337,7 @@ module bp_be_dcache_cce_lce_cmd
       // At last, send out the block data to CCE.
       e_cce_lce_cmd_wb_dirty: begin
         data_mem_pkt.index = cce_lce_cmd_addr_index;
-        data_mem_pkt.way = cce_lce_cmd.way_id;
+        data_mem_pkt.way_id = cce_lce_cmd.way_id;
         data_mem_pkt.write_not_read = 1'b0;
         data_mem_pkt_v_o = ~wb_data_read_r;
         data_buf_n = wb_data_buffered_r
@@ -345,7 +357,7 @@ module bp_be_dcache_cce_lce_cmd
             : data_mem_pkt_yumi_i);
 
         stat_mem_pkt.index = cce_lce_cmd_addr_index;
-        stat_mem_pkt.way = cce_lce_cmd.way_id;
+        stat_mem_pkt.way_id = cce_lce_cmd.way_id;
         stat_mem_pkt.opcode = e_dcache_lce_stat_mem_clear_dirty;
         stat_mem_pkt_v_o = wb_dirty_cleared_r
           ? 1'b0

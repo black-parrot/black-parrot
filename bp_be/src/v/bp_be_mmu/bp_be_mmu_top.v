@@ -228,18 +228,18 @@ mock_tlb #(.tag_width_p(12)
 
 /* TODO: Un-hardcode these values */
 bp_be_dcache #(
-            .lce_id_width_p(`bp_lce_id_width)
+            .lce_id_width_p(`bp_lce_id_width) // should be calculated from num_lce_p
             ,.data_width_p(64) 
             ,.sets_p(lce_sets_p)
             ,.ways_p(lce_assoc_p)
-            ,.tag_width_p(12)
+            ,.paddr_width_p(56)
             ,.num_cce_p(num_cce_p)
             ,.num_lce_p(num_lce_p)
             )
      dcache(.clk_i(clk_i)
             ,.reset_i(reset_i)
 
-            ,.id_i(dcache_id_i)
+            ,.lce_id_i(dcache_id_i)
 
             ,.dcache_pkt_i(dcache_pkt)
             ,.v_i(mmu_cmd_v_i)
@@ -249,7 +249,7 @@ bp_be_dcache #(
             ,.data_o(mmu_resp.data)
 
             ,.tlb_miss_i(tlb_miss)
-            ,.paddr_i(ptag)
+            ,.ptag_i(ptag)
 
             /* TODO: Also assign tlb miss to exception */
             ,.cache_miss_o(dcache_miss_v)
@@ -290,7 +290,8 @@ bp_be_dcache #(
 always_comb begin
     /* TODO: Make vaddr a struct to cast to (avoids having to manually pick offsets ERROR PRONE */
     dcache_pkt.opcode = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
-    dcache_pkt.vaddr = mmu_cmd.addr[0+:vindex_width_lp];
+    // TODO: make localparam page_offset_width_lp. look at bp_be_dcache.v
+    dcache_pkt.page_offset = mmu_cmd.addr[0+:vindex_width_lp];
     dcache_pkt.data  = mmu_cmd.data;
 
     mmu_resp.exception.cache_miss_v = dcache_miss_v;

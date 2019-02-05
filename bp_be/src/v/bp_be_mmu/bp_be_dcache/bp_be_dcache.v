@@ -1,51 +1,69 @@
 /**
  *  bp_be_dcache.v
+ *
+ *  L1 data cache.
  */
+
+
+//  address terminology
+//
+//  [                                      paddr                                          ]
+//  [         physical tag         ] [                    page_offset                     ] 
+//  [         physical tag         ] [     index     ] [           block_offset           ]
+//  [         physical tag         ] [     index     ] [  word_offset  ]  [  byte_offset  ] 
+
+//  Some notes:
+//  - In this cache, block size in # of words is equal to the number of ways.
 
 `include "bp_be_dcache_pkt.vh"
 `include "bp_be_dcache_lce_pkt.vh"
+`include "bp_common_me_if.vh"
 
 module bp_be_dcache
   import bp_be_dcache_pkg::*;
   import bp_be_dcache_lce_pkg::*;
-  #(parameter lce_id_width_p="inv"
-    , parameter data_width_p="inv"
+  #(parameter data_width_p="inv"
+    , parameter paddr_width_p="inv"
     , parameter sets_p="inv"
     , parameter ways_p="inv"
-    , parameter tag_width_p="inv"
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
    
     , parameter debug_p=0 
-
+ 
+    , localparam block_size_in_words_lp=ways_p
     , localparam data_mask_width_lp=(data_width_p>>3)
-    , localparam lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
-    , localparam lg_sets_lp=`BSG_SAFE_CLOG2(sets_p)
-    , localparam lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
-    , localparam vaddr_width_lp=(lg_sets_lp+lg_ways_lp+lg_data_mask_width_lp)
-    , localparam addr_width_lp=(vaddr_width_lp+tag_width_p)
-    , localparam lce_data_width_lp=(ways_p*data_width_p)
+    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_width_p>>3)
+    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
+    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
+    , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
+    , localparam page_offset_width_lp=(block_offset_width_lp+index_width_lp)
+    , localparam ptag_width_lp=(paddr_width_p-page_offset_width_lp)
+    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
   
-    , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(vaddr_width_lp, data_width_p)
+    , localparam lce_data_width_lp=(ways_p*data_width_p)
+    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
+
+    , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(page_offset_width_lp, data_width_p)
     
     , localparam lce_cce_req_width_lp=
-      `bp_lce_cce_req_width(num_cce_p, num_lce_p, addr_width_lp, ways_p)
+      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, ways_p)
     , localparam lce_cce_resp_width_lp=
-      `bp_lce_cce_resp_width(num_cce_p, num_lce_p, addr_width_lp)
+      `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
     , localparam lce_cce_data_resp_width_lp=
-      `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, addr_width_lp, lce_data_width_lp)
+      `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_lp)
     , localparam cce_lce_cmd_width_lp=
-      `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, addr_width_lp, ways_p, 4)
+      `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, ways_p, 4)
     , localparam cce_lce_data_cmd_width_lp=
-      `bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, addr_width_lp, lce_data_width_lp, ways_p)
+      `bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_lp, ways_p)
     , localparam lce_lce_tr_resp_width_lp=
-      `bp_lce_lce_tr_resp_width(num_lce_p, addr_width_lp, lce_data_width_lp, ways_p)
+      `bp_lce_lce_tr_resp_width(num_lce_p, paddr_width_p, lce_data_width_lp, ways_p)
   )
   (
     input clk_i
     , input reset_i
     
-    , input [lce_id_width_p-1:0] id_i
+    , input [lce_id_width_lp-1:0] lce_id_i
 
     , input [dcache_pkt_width_lp-1:0] dcache_pkt_i
     , input v_i
@@ -56,7 +74,7 @@ module bp_be_dcache
 
     // TLB interface
     , input tlb_miss_i
-    , input [tag_width_p-1:0] paddr_i
+    , input [ptag_width_lp-1:0] ptag_i
 
     // ctrl
     , output logic cache_miss_o
@@ -96,7 +114,7 @@ module bp_be_dcache
 
   // packet decoding
   //
-  `declare_bp_be_dcache_pkt_s(vaddr_width_lp, data_width_p);
+  `declare_bp_be_dcache_pkt_s(page_offset_width_lp, data_width_p);
   bp_be_dcache_pkt_s dcache_pkt;
   assign dcache_pkt = dcache_pkt_i;
 
@@ -107,8 +125,8 @@ module bp_be_dcache
   logic word_op;
   logic half_op;
   logic byte_op;
-  logic [lg_sets_lp-1:0] vaddr_index;
-  logic [lg_ways_lp-1:0] vaddr_block_offset;
+  logic [index_width_lp-1:0] addr_index;
+  logic [word_offset_width_lp-1:0] addr_word_offset;
 
   assign load_op = ~dcache_pkt.opcode[3];
   assign store_op = dcache_pkt.opcode[3];
@@ -117,8 +135,8 @@ module bp_be_dcache
   assign word_op = (dcache_pkt.opcode[1:0] == 2'b10);
   assign half_op = (dcache_pkt.opcode[1:0] == 2'b01);
   assign byte_op = (dcache_pkt.opcode[1:0] == 2'b00);
-  assign vaddr_index = dcache_pkt.vaddr[lg_data_mask_width_lp+lg_ways_lp+:lg_sets_lp];
-  assign vaddr_block_offset = dcache_pkt.vaddr[lg_data_mask_width_lp+:lg_ways_lp];
+  assign addr_index = dcache_pkt.page_offset[block_offset_width_lp+:index_width_lp];
+  assign addr_word_offset = dcache_pkt.page_offset[byte_offset_width_lp+:word_offset_width_lp];
   
   // TL stage
   //
@@ -131,7 +149,7 @@ module bp_be_dcache
   logic word_op_tl_r;
   logic half_op_tl_r;
   logic byte_op_tl_r;
-  logic [vaddr_width_lp-1:0] vaddr_tl_r;
+  logic [page_offset_width_lp-1:0] page_offset_tl_r;
   logic [data_width_p-1:0] data_tl_r;
 
   assign tl_we = v_i & ready_o & ~poison_i;
@@ -150,7 +168,7 @@ module bp_be_dcache
         word_op_tl_r <= word_op;
         half_op_tl_r <= half_op;
         byte_op_tl_r <= byte_op;
-        vaddr_tl_r <= dcache_pkt.vaddr;
+        page_offset_tl_r <= dcache_pkt.page_offset;
       end
     
       if (tl_we & store_op) begin
@@ -163,22 +181,18 @@ module bp_be_dcache
   //
   logic tag_mem_v_li;
   logic tag_mem_w_li;
-  logic [lg_sets_lp-1:0] tag_mem_addr_li;
-  logic [ways_p-1:0][(tag_width_p+2)-1:0] tag_mem_data_li;
-  logic [ways_p-1:0][(tag_width_p+2)-1:0] tag_mem_mask_li;
-  logic [ways_p-1:0][(tag_width_p+2)-1:0] tag_mem_data_lo;
-  logic [ways_p-1:0][tag_width_p-1:0] tag_tl;
+  logic [index_width_lp-1:0] tag_mem_addr_li;
+  logic [ways_p-1:0][(ptag_width_lp+2)-1:0] tag_mem_data_li;
+  logic [ways_p-1:0][(ptag_width_lp+2)-1:0] tag_mem_mask_li;
+  logic [ways_p-1:0][(ptag_width_lp+2)-1:0] tag_mem_data_lo;
+  logic [ways_p-1:0][ptag_width_lp-1:0] tag_tl;
   logic [ways_p-1:0][1:0] coh_tl;
   
-  // tag_mem width: (tag_width_p + 2) +  ways_p
-  // it contains coherence states and associated tags for each way in sets.
-  // {coh_state[n], tag[n], coh_state[n-1], tag[n-1], ... , coh_state[0], tag[0]}
-  //
   bsg_mem_1rw_sync_mask_write_bit
-    #(.width_p((tag_width_p+2)*ways_p)
+    #(.width_p((ptag_width_lp+2)*ways_p)
       ,.els_p(sets_p)
     )
-   tag_mem
+    tag_mem
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
       ,.v_i(~reset_i & tag_mem_v_li)
@@ -190,15 +204,15 @@ module bp_be_dcache
       );
 
   for (genvar i = 0; i < ways_p; i++) begin
-    assign tag_tl[i] = tag_mem_data_lo[i][0+:tag_width_p];
-    assign coh_tl[i] = tag_mem_data_lo[i][tag_width_p+:2];
+    assign tag_tl[i] = tag_mem_data_lo[i][0+:ptag_width_lp];
+    assign coh_tl[i] = tag_mem_data_lo[i][ptag_width_lp+:2];
   end
 
   // data_mem
   //
   logic [ways_p-1:0] data_mem_v_li;
   logic [ways_p-1:0] data_mem_w_li;
-  logic [ways_p-1:0][lg_sets_lp+lg_ways_lp-1:0] data_mem_addr_li;
+  logic [ways_p-1:0][index_width_lp+word_offset_width_lp-1:0] data_mem_addr_li;
   logic [ways_p-1:0][data_width_p-1:0] data_mem_data_li;
   logic [ways_p-1:0][data_mask_width_lp-1:0] data_mem_mask_li;
   logic [ways_p-1:0][data_width_p-1:0] data_mem_data_lo;
@@ -231,14 +245,14 @@ module bp_be_dcache
   logic word_op_tv_r;
   logic half_op_tv_r;
   logic byte_op_tv_r;
-  logic [addr_width_lp-1:0] addr_tv_r;
+  logic [paddr_width_p-1:0] paddr_tv_r;
   logic [data_width_p-1:0] data_tv_r;
-  logic [ways_p-1:0][tag_width_p-1:0] tag_tv_r;
+  logic [ways_p-1:0][ptag_width_lp-1:0] tag_tv_r;
   logic [ways_p-1:0][1:0] coh_tv_r;
   logic [ways_p-1:0][data_width_p-1:0] ld_data_tv_r;
-  logic [tag_width_p-1:0] addr_tag_tv;
-  logic [lg_sets_lp-1:0] addr_index_tv;
-  logic [lg_ways_lp-1:0] addr_block_offset_tv;
+  logic [ptag_width_lp-1:0] addr_tag_tv;
+  logic [index_width_lp-1:0] addr_index_tv;
+  logic [word_offset_width_lp-1:0] addr_word_offset_tv;
 
   assign tv_we = v_tl_r & ~poison_i & ~tlb_miss_i;
 
@@ -257,7 +271,7 @@ module bp_be_dcache
         word_op_tv_r <= word_op_tl_r;
         half_op_tv_r <= half_op_tl_r;
         byte_op_tv_r <= byte_op_tl_r;
-        addr_tv_r <= {paddr_i, vaddr_tl_r};
+        paddr_tv_r <= {ptag_i, page_offset_tl_r};
         tag_tv_r <= tag_tl;
         coh_tv_r <= coh_tl;
       end
@@ -272,9 +286,9 @@ module bp_be_dcache
     end
   end
 
-  assign addr_tag_tv = addr_tv_r[lg_data_mask_width_lp+lg_ways_lp+lg_sets_lp+:tag_width_p];
-  assign addr_index_tv = addr_tv_r[lg_data_mask_width_lp+lg_ways_lp+:lg_sets_lp];
-  assign addr_block_offset_tv = addr_tv_r[lg_data_mask_width_lp+:lg_ways_lp];
+  assign addr_tag_tv = paddr_tv_r[page_offset_width_lp+:ptag_width_lp];
+  assign addr_index_tv = paddr_tv_r[block_offset_width_lp+:index_width_lp];
+  assign addr_word_offset_tv = paddr_tv_r[byte_offset_width_lp+:word_offset_width_lp];
 
   // miss_detect
   //
@@ -285,8 +299,8 @@ module bp_be_dcache
   logic store_miss_tv;
   logic load_hit;
   logic store_hit;
-  logic [lg_ways_lp-1:0] load_hit_way;
-  logic [lg_ways_lp-1:0] store_hit_way;
+  logic [way_id_width_lp-1:0] load_hit_way;
+  logic [way_id_width_lp-1:0] store_hit_way;
 
   for (genvar i = 0; i < ways_p; i++) begin
     assign load_hit_tv[i] = (addr_tag_tv == tag_tv_r[i]) & (coh_tv_r[i] != e_MESI_I);
@@ -300,9 +314,9 @@ module bp_be_dcache
       )
     pe_load_hit
     (.i(load_hit_tv)
-    ,.v_o(load_hit)
-    ,.addr_o(load_hit_way)
-    );
+      ,.v_o(load_hit)
+      ,.addr_o(load_hit_way)
+      );
   
   bsg_priority_encode
     #(.width_p(ways_p)
@@ -310,9 +324,9 @@ module bp_be_dcache
       )
     pe_store_hit
     (.i(store_hit_tv)
-    ,.v_o(store_hit)
-    ,.addr_o(store_hit_way)
-    );
+      ,.v_o(store_hit)
+      ,.addr_o(store_hit_way)
+      );
 
   assign load_miss_tv = ~load_hit & v_tv_r & load_op_tv_r;
   assign store_miss_tv = ~store_hit & v_tv_r & store_op_tv_r;
@@ -323,13 +337,13 @@ module bp_be_dcache
   logic wbuf_v_li;
   logic [data_width_p-1:0] wbuf_data_li;
   logic [data_mask_width_lp-1:0] wbuf_mask_li;
-  logic [lg_ways_lp-1:0] wbuf_way_li;
+  logic [way_id_width_lp-1:0] wbuf_way_li;
   
   logic wbuf_v_lo;
-  logic [addr_width_lp-1:0] wbuf_addr_lo;
+  logic [paddr_width_p-1:0] wbuf_addr_lo;
   logic [data_width_p-1:0] wbuf_data_lo;
   logic [data_mask_width_lp-1:0] wbuf_mask_lo;
-  logic [lg_ways_lp-1:0] wbuf_way_lo;
+  logic [way_id_width_lp-1:0] wbuf_way_lo;
   logic wbuf_yumi_li;
   
   logic wbuf_empty_lo;
@@ -339,22 +353,22 @@ module bp_be_dcache
   logic [data_width_p-1:0] bypass_data_lo;
   logic [data_mask_width_lp-1:0] bypass_mask_lo;
 
-  logic [lg_sets_lp-1:0] lce_snoop_index_li;
-  logic [lg_ways_lp-1:0] lce_snoop_way_li;
+  logic [index_width_lp-1:0] lce_snoop_index_li;
+  logic [way_id_width_lp-1:0] lce_snoop_way_li;
   logic lce_snoop_match_lo; 
  
   bp_be_dcache_wbuf
     #(.data_width_p(data_width_p)
-    ,.addr_width_p(addr_width_lp)
-    ,.ways_p(ways_p)
-    ,.sets_p(sets_p)
+      ,.paddr_width_p(paddr_width_p)
+      ,.ways_p(ways_p)
+      ,.sets_p(sets_p)
       )
     wbuf
     ( .clk_i(clk_i)
       ,.reset_i(reset_i)
 
       ,.v_i(wbuf_v_li)
-      ,.addr_i(addr_tv_r)
+      ,.addr_i(paddr_tv_r)
       ,.data_i(wbuf_data_li)
       ,.mask_i(wbuf_mask_li)
       ,.way_i(store_hit_way)
@@ -369,7 +383,7 @@ module bp_be_dcache
       ,.empty_o(wbuf_empty_lo)
     
       ,.bypass_v_i(bypass_v_li)
-      ,.bypass_addr_i({paddr_i, vaddr_tl_r})
+      ,.bypass_addr_i({ptag_i, page_offset_tl_r})
       ,.bypass_data_o(bypass_data_lo)
       ,.bypass_mask_o(bypass_mask_lo)
 
@@ -378,10 +392,10 @@ module bp_be_dcache
       ,.lce_snoop_match_o(lce_snoop_match_lo)
     );
 
-  logic [lg_ways_lp-1:0] wbuf_addr_lo_block_offset;
-  logic [lg_sets_lp-1:0] wbuf_addr_lo_index;
-  assign wbuf_addr_lo_block_offset = wbuf_addr_lo[lg_data_mask_width_lp+:lg_ways_lp];
-  assign wbuf_addr_lo_index = wbuf_addr_lo[lg_data_mask_width_lp+lg_ways_lp+:lg_sets_lp];
+  logic [word_offset_width_lp-1:0] wbuf_addr_lo_word_offset;
+  logic [index_width_lp-1:0] wbuf_addr_lo_index;
+  assign wbuf_addr_lo_word_offset = wbuf_addr_lo[byte_offset_width_lp+:word_offset_width_lp];
+  assign wbuf_addr_lo_index = wbuf_addr_lo[block_offset_width_lp+:index_width_lp];
 
   if (data_width_p == 64) begin
     assign wbuf_data_li = double_op_tv_r
@@ -395,18 +409,18 @@ module bp_be_dcache
     assign wbuf_mask_li = double_op_tv_r
       ? 8'b1111_1111
       : (word_op_tv_r
-        ? {{4{addr_tv_r[2]}}, {4{~addr_tv_r[2]}}}
+        ? {{4{paddr_tv_r[2]}}, {4{~paddr_tv_r[2]}}}
         : (half_op_tv_r
-          ? {{2{addr_tv_r[2] & addr_tv_r[1]}}, {2{addr_tv_r[2] & ~addr_tv_r[1]}},
-             {2{~addr_tv_r[2] & addr_tv_r[1]}}, {2{~addr_tv_r[2] & ~addr_tv_r[1]}}}
-          : {(addr_tv_r[2] & addr_tv_r[1] & addr_tv_r[0]), 
-             (addr_tv_r[2] & addr_tv_r[1] & ~addr_tv_r[0]),
-             (addr_tv_r[2] & ~addr_tv_r[1] & addr_tv_r[0]),
-             (addr_tv_r[2] & ~addr_tv_r[1] & ~addr_tv_r[0]),
-             (~addr_tv_r[2] & addr_tv_r[1] & addr_tv_r[0]),
-             (~addr_tv_r[2] & addr_tv_r[1] & ~addr_tv_r[0]),
-             (~addr_tv_r[2] & ~addr_tv_r[1] & addr_tv_r[0]),
-             (~addr_tv_r[2] & ~addr_tv_r[1] & ~addr_tv_r[0])
+          ? {{2{paddr_tv_r[2] & paddr_tv_r[1]}}, {2{paddr_tv_r[2] & ~paddr_tv_r[1]}},
+             {2{~paddr_tv_r[2] & paddr_tv_r[1]}}, {2{~paddr_tv_r[2] & ~paddr_tv_r[1]}}}
+          : {(paddr_tv_r[2] & paddr_tv_r[1] & paddr_tv_r[0]), 
+             (paddr_tv_r[2] & paddr_tv_r[1] & ~paddr_tv_r[0]),
+             (paddr_tv_r[2] & ~paddr_tv_r[1] & paddr_tv_r[0]),
+             (paddr_tv_r[2] & ~paddr_tv_r[1] & ~paddr_tv_r[0]),
+             (~paddr_tv_r[2] & paddr_tv_r[1] & paddr_tv_r[0]),
+             (~paddr_tv_r[2] & paddr_tv_r[1] & ~paddr_tv_r[0]),
+             (~paddr_tv_r[2] & ~paddr_tv_r[1] & paddr_tv_r[0]),
+             (~paddr_tv_r[2] & ~paddr_tv_r[1] & ~paddr_tv_r[0])
             }));
   end
 
@@ -414,7 +428,7 @@ module bp_be_dcache
   //
   logic stat_mem_v_li;
   logic stat_mem_w_li;
-  logic [lg_sets_lp-1:0] stat_mem_addr_li;
+  logic [index_width_lp-1:0] stat_mem_addr_li;
   logic [(2*ways_p)-2:0] stat_mem_data_li;
   logic [(2*ways_p)-2:0] stat_mem_mask_li;
   logic [(2*ways_p)-2:0] stat_mem_data_lo;
@@ -432,26 +446,25 @@ module bp_be_dcache
       ,.data_i(stat_mem_data_li)
       ,.w_mask_i(stat_mem_mask_li)
       ,.data_o(stat_mem_data_lo)
-    );
+      );
   
   logic [ways_p-1:0] lce_dirty_li;
   logic [ways_p-2:0] lru_bits;
-  logic [lg_ways_lp-1:0] lru_encode;
+  logic [way_id_width_lp-1:0] lru_encode;
 
   assign lce_dirty_li = stat_mem_data_lo[ways_p-1:0];
   assign lru_bits = stat_mem_data_lo[ways_p+:ways_p-1];
 
   bp_be_dcache_lru_encode
-    #(.ways_p(ways_p)
-      )
+    #(.ways_p(ways_p))
     lru_encoder
-    (.lru_i(lru_bits)
-    ,.way_o(lru_encode)
-    );
+      (.lru_i(lru_bits)
+      ,.way_o(lru_encode)
+      );
 
 
   logic invalid_exist;
-  logic [lg_ways_lp-1:0] invalid_way;
+  logic [way_id_width_lp-1:0] invalid_way;
   bsg_priority_encode
     #(.width_p(ways_p)
       ,.lo_to_hi_p(1)
@@ -463,13 +476,13 @@ module bp_be_dcache
       );
 
   // if there is invalid way, then it take prioirty over LRU way.
-  logic [lg_ways_lp-1:0] lce_lru_way_li;
+  logic [way_id_width_lp-1:0] lce_lru_way_li;
   assign lce_lru_way_li = invalid_exist ? invalid_way : lru_encode;
  
   // LCE
   //
   `declare_bp_be_dcache_lce_data_mem_pkt_s(sets_p, ways_p, data_width_p*ways_p);
-  `declare_bp_be_dcache_lce_tag_mem_pkt_s(sets_p, ways_p, tag_width_p);
+  `declare_bp_be_dcache_lce_tag_mem_pkt_s(sets_p, ways_p, ptag_width_lp);
   `declare_bp_be_dcache_lce_stat_mem_pkt_s(sets_p, ways_p);
 
   bp_be_dcache_lce_data_mem_pkt_s lce_data_mem_pkt;
@@ -487,13 +500,11 @@ module bp_be_dcache
   logic lce_stat_mem_pkt_yumi_li;
  
   bp_be_dcache_lce
-    #(.lce_id_width_p(lce_id_width_p)
+    #(.lce_data_width_p(ways_p*data_width_p)
       ,.data_width_p(data_width_p)
-      ,.lce_data_width_p(ways_p*data_width_p)
-      ,.lce_addr_width_p(addr_width_lp)
+      ,.paddr_width_p(paddr_width_p)
       ,.sets_p(sets_p)
       ,.ways_p(ways_p)
-      ,.tag_width_p(tag_width_p)
       ,.num_cce_p(num_cce_p)
       ,.num_lce_p(num_lce_p)
       )
@@ -501,14 +512,14 @@ module bp_be_dcache
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
     
-      ,.id_i(id_i)
+      ,.lce_id_i(lce_id_i)
 
       ,.ready_o(ready_o)
       ,.cache_miss_o(cache_miss_o)
 
       ,.load_miss_i(load_miss_tv)
       ,.store_miss_i(store_miss_tv)
-      ,.miss_addr_i(addr_tv_r)
+      ,.miss_addr_i(paddr_tv_r)
 
       ,.data_mem_pkt_v_o(lce_data_mem_pkt_v_lo)
       ,.data_mem_pkt_o(lce_data_mem_pkt)
@@ -567,7 +578,7 @@ module bp_be_dcache
       )
     ld_data_set_select_mux
       (.data_i(ld_data_tv_r)
-      ,.sel_i(load_hit_way ^ addr_block_offset_tv)
+      ,.sel_i(load_hit_way ^ addr_word_offset_tv)
       ,.data_o(ld_data_way_picked)
       );
 
@@ -596,7 +607,7 @@ module bp_be_dcache
         )
       word_mux
       (.data_i(bypass_data_masked)
-      ,.sel_i(addr_tv_r[2])
+      ,.sel_i(paddr_tv_r[2])
       ,.data_o(data_word_selected)
       );
     
@@ -606,7 +617,7 @@ module bp_be_dcache
         )
       half_mux
       (.data_i(bypass_data_masked)
-      ,.sel_i(addr_tv_r[2:1])
+      ,.sel_i(paddr_tv_r[2:1])
       ,.data_o(data_half_selected)
       );
 
@@ -616,7 +627,7 @@ module bp_be_dcache
       )
       byte_mux
       (.data_i(bypass_data_masked)
-      ,.sel_i(addr_tv_r[2:0])
+      ,.sel_i(paddr_tv_r[2:0])
       ,.data_o(data_byte_selected)
       );
 
@@ -645,7 +656,7 @@ module bp_be_dcache
     #(.num_out_p(ways_p)
       )
     wbuf_data_mem_v_decode
-    (.i(wbuf_way_lo ^ wbuf_addr_lo_block_offset)
+    (.i(wbuf_way_lo ^ wbuf_addr_lo_word_offset)
     ,.o(wbuf_data_mem_v)
     );  
 
@@ -661,20 +672,20 @@ module bp_be_dcache
 
   for (genvar i = 0; i < ways_p; i++) begin
     assign data_mem_addr_li[i] = (load_op & tl_we)
-      ? {vaddr_index, vaddr_block_offset}
+      ? {addr_index, addr_word_offset}
       : (wbuf_yumi_li
         ? {wbuf_addr_lo_index}
-        : {lce_data_mem_pkt.index, lce_data_mem_pkt.way ^ ((lg_data_mask_width_lp)'(i))});
+        : {lce_data_mem_pkt.index, lce_data_mem_pkt.way_id ^ ((word_offset_width_lp)'(i))});
 
     bsg_mux
       #(.els_p(ways_p)
-      ,.width_p(data_width_p)
-      )
-      lce_data_mem_write_mux (
-      .data_i(lce_data_mem_pkt.data)
-      ,.sel_i(lce_data_mem_pkt.way ^ ((lg_data_mask_width_lp)'(i)))
-      ,.data_o(lce_data_mem_write_data[i])
-      );
+        ,.width_p(data_width_p)
+        )
+      lce_data_mem_write_mux
+        (.data_i(lce_data_mem_pkt.data)
+        ,.sel_i(lce_data_mem_pkt.way_id ^ ((word_offset_width_lp)'(i)))
+        ,.data_o(lce_data_mem_write_data[i])
+        );
 
     assign data_mem_data_li[i] = wbuf_yumi_li
       ? wbuf_data_lo
@@ -690,39 +701,38 @@ module bp_be_dcache
   assign tag_mem_v_li = tl_we | lce_tag_mem_pkt_yumi_li; 
   assign tag_mem_w_li = ~tl_we & lce_tag_mem_pkt_v_lo;
   assign tag_mem_addr_li = tl_we 
-    ? vaddr_index
+    ? addr_index
     : lce_tag_mem_pkt.index;
 
   logic [ways_p-1:0] lce_tag_mem_way_one_hot;
   bsg_decode
-    #(.num_out_p(ways_p)
-    )
-    lce_tag_mem_way_decode (
-    .i(lce_tag_mem_pkt.way)
-    ,.o(lce_tag_mem_way_one_hot)
-    );
+    #(.num_out_p(ways_p))
+    lce_tag_mem_way_decode
+      (.i(lce_tag_mem_pkt.way_id)
+      ,.o(lce_tag_mem_way_one_hot)
+      );
 
   always_comb begin
     case (lce_tag_mem_pkt.opcode)
       e_dcache_lce_tag_mem_set_clear: begin
-        tag_mem_data_li = {((tag_width_p+2)*ways_p){1'b0}};
-        tag_mem_mask_li = {((tag_width_p+2)*ways_p){1'b1}};
+        tag_mem_data_li = {((ptag_width_lp+2)*ways_p){1'b0}};
+        tag_mem_mask_li = {((ptag_width_lp+2)*ways_p){1'b1}};
       end
       e_dcache_lce_tag_mem_invalidate: begin
-        tag_mem_data_li = {((tag_width_p+2)*ways_p){1'b0}};
+        tag_mem_data_li = {((ptag_width_lp+2)*ways_p){1'b0}};
         for (integer i = 0; i < ways_p; i++) begin
-          tag_mem_mask_li[i] = {{2{lce_tag_mem_way_one_hot[i]}}, {tag_width_p{1'b0}}};
+          tag_mem_mask_li[i] = {{2{lce_tag_mem_way_one_hot[i]}}, {ptag_width_lp{1'b0}}};
         end
       end
       e_dcache_lce_tag_mem_set_tag: begin
         tag_mem_data_li = {ways_p{lce_tag_mem_pkt.state, lce_tag_mem_pkt.tag}};
         for (integer i = 0; i < ways_p; i++) begin
-          tag_mem_mask_li[i] = {(2+tag_width_p){lce_tag_mem_way_one_hot[i]}};
+          tag_mem_mask_li[i] = {(2+ptag_width_lp){lce_tag_mem_way_one_hot[i]}};
         end
       end
       default: begin
-        tag_mem_data_li = {((tag_width_p+2)*ways_p){1'b0}};
-        tag_mem_mask_li = {((tag_width_p+2)*ways_p){1'b0}};
+        tag_mem_data_li = {((ptag_width_lp+2)*ways_p){1'b0}};
+        tag_mem_mask_li = {((ptag_width_lp+2)*ways_p){1'b0}};
       end
     endcase
   end
@@ -737,31 +747,29 @@ module bp_be_dcache
     ? addr_index_tv
     : lce_stat_mem_pkt.index;
 
-  logic [lg_ways_lp-1:0] lru_decode_way_li;
+  logic [way_id_width_lp-1:0] lru_decode_way_li;
   logic [ways_p-2:0] lru_decode_data_lo;
   logic [ways_p-2:0] lru_decode_mask_lo;
 
   bp_be_dcache_lru_decode
-    #(.ways_p(ways_p)
-    )
-    lru_decode (
-    .way_i(lru_decode_way_li)
-    ,.data_o(lru_decode_data_lo)
-    ,.mask_o(lru_decode_mask_lo)
+    #(.ways_p(ways_p))
+    lru_decode
+      (.way_i(lru_decode_way_li)
+      ,.data_o(lru_decode_data_lo)
+      ,.mask_o(lru_decode_mask_lo)
       );
 
-  logic [lg_ways_lp-1:0] dirty_mask_way_li;
+  logic [way_id_width_lp-1:0] dirty_mask_way_li;
   logic dirty_mask_v_li;
   logic [ways_p-1:0] dirty_mask_lo;
 
   bsg_decode_with_v
-      #(
-      .num_out_p(ways_p)
-        ) dirty_mask_decode (
-      .i(dirty_mask_way_li)
-    ,.v_i(dirty_mask_v_li)
+    #(.num_out_p(ways_p))
+    dirty_mask_decode
+      (.i(dirty_mask_way_li)
+      ,.v_i(dirty_mask_v_li)
       ,.o(dirty_mask_lo)
-        );
+      );
 
   always_comb begin
     if (v_tv_r) begin
@@ -773,8 +781,8 @@ module bp_be_dcache
       stat_mem_mask_li = {lru_decode_mask_lo, dirty_mask_lo};
     end
     else begin
-      lru_decode_way_li = lce_stat_mem_pkt.way;
-      dirty_mask_way_li = lce_stat_mem_pkt.way;
+      lru_decode_way_li = lce_stat_mem_pkt.way_id;
+      dirty_mask_way_li = lce_stat_mem_pkt.way_id;
       dirty_mask_v_li = 1'b1;
       case (lce_stat_mem_pkt.opcode)
         e_dcache_lce_stat_mem_set_clear: begin
@@ -804,28 +812,28 @@ module bp_be_dcache
   assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we);
   assign bypass_v_li = tv_we & load_op_tl_r;
   assign lce_snoop_index_li = lce_data_mem_pkt.index;
-  assign lce_snoop_way_li = lce_data_mem_pkt.way;
+  assign lce_snoop_way_li = lce_data_mem_pkt.way_id;
 
   // LCE data_mem
   //
-  logic [lg_ways_lp-1:0] lce_data_mem_pkt_way_r;
+  logic [way_id_width_lp-1:0] lce_data_mem_pkt_way_r;
 
   always_ff @ (posedge clk_i) begin
     if (lce_data_mem_pkt_v_lo & lce_data_mem_pkt_yumi_li & ~lce_data_mem_pkt.write_not_read) begin
-      lce_data_mem_pkt_way_r <= lce_data_mem_pkt.way;
+      lce_data_mem_pkt_way_r <= lce_data_mem_pkt.way_id;
     end
   end
 
   for (genvar i = 0; i < ways_p; i++) begin
     bsg_mux 
-    #(
-      .els_p(ways_p)
-      ,.width_p(data_width_p)
-      ) lce_data_mem_read_mux (
-        .data_i(data_mem_data_lo)
-        ,.sel_i(lce_data_mem_pkt_way_r ^ ((lg_ways_lp)'(i)))
+      #(.els_p(ways_p)
+        ,.width_p(data_width_p)
+        )
+      lce_data_mem_read_mux
+        (.data_i(data_mem_data_lo)
+        ,.sel_i(lce_data_mem_pkt_way_r ^ ((word_offset_width_lp)'(i)))
         ,.data_o(lce_data_mem_data_li[i])
-    );
+        );
   end
 
   assign lce_data_mem_pkt_yumi_li = ~(load_op & tl_we) & ~wbuf_v_lo & ~lce_snoop_match_lo & lce_data_mem_pkt_v_lo;
@@ -841,31 +849,33 @@ module bp_be_dcache
   // synopsys translate_off
   if (debug_p) begin
     bp_be_dcache_axe_trace_gen
-  #(
-   .addr_width_p(addr_width_lp)
-   ,.data_width_p(data_width_p)
-  ) cc (
-      .clk_i(clk_i)
-      ,.id_i(id_i)
-      ,.v_i(v_o)
-      ,.addr_i(addr_tv_r)
-      ,.load_data_i(data_o)
-      ,.store_data_i(data_tv_r)
-      ,.load_i(load_op_tv_r)
-      ,.store_i(store_op_tv_r)
-    );
+      #(.addr_width_p(paddr_width_p)
+        ,.data_width_p(data_width_p)
+        )
+      axe_trace_gen
+        (.clk_i(clk_i)
+        ,.id_i(lce_id_i)
+        ,.v_i(v_o)
+        ,.addr_i(paddr_tv_r)
+        ,.load_data_i(data_o)
+        ,.store_data_i(data_tv_r)
+        ,.load_i(load_op_tv_r)
+        ,.store_i(store_op_tv_r)
+        );
   end
 
   always_ff @ (negedge clk_i) begin
     if (v_tv_r) begin
-      assert($countones(load_hit_tv) <= 1) else $error("multiple load hit: %b. id = %0d", load_hit_tv, id_i);
-      assert($countones(store_hit_tv) <= 1) else $error("multiple store hit: %b. id = %0d", store_hit_tv, id_i);
+      assert($countones(load_hit_tv) <= 1)
+        else $error("multiple load hit: %b. id = %0d", load_hit_tv, lce_id_i);
+      assert($countones(store_hit_tv) <= 1)
+        else $error("multiple store hit: %b. id = %0d", store_hit_tv, lce_id_i);
     end
   end
 
   initial begin
-    assert(data_width_p == 64) else $error("data_width_p has to be 64").
-    assert(ways_p == 8) else $error("ways_p has to be 8").
+    assert(data_width_p == 64) else $error("data_width_p has to be 64");
+    assert(ways_p == 8) else $error("ways_p has to be 8");
   end
   // synopsys translate_on
 
