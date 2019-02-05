@@ -25,10 +25,10 @@
  *   fe_cmd_o                    - FE cmd, handling pc redirection and attaboys, 
  *                                   among other things.
  *   fe_cmd_v_o                  - "ready-then-valid"
- *   fe_cmd_rdy_i                -
+ *   fe_cmd_ready_i              -
  *  
  *   chk_flush_fe_o              - Command to flush the fe_queue (on mispredict)
- *   chk_ckpt_fe_o               - Increments the fe_queue checkpoint when an instruction commits
+ *   chk_dequeue_fe_o            - Increments the fe_queue checkpoint when an instruction commits
  *   chk_roll_fe_o               - Command to rollback the fe_queue to the last checkpoint
  *   
  *
@@ -72,11 +72,11 @@ module bp_be_director
    // FE-BE interface
    , output logic[fe_cmd_width_lp-1:0]      fe_cmd_o
    , output logic                           fe_cmd_v_o
-   , input logic                            fe_cmd_rdy_i
+   , input logic                            fe_cmd_ready_i
 
    // FE cmd queue control signals
    , output logic                           chk_flush_fe_o
-   , output logic                           chk_ckpt_fe_o
+   , output logic                           chk_dequeue_fe_o
    , output logic                           chk_roll_fe_o
   );
 
@@ -170,6 +170,8 @@ bsg_mux
    );
 
 // Save branch prediction metadata for forwarding on the next (mis)predicted instruction
+// TODO: branch_metadata should come from the target instruction, not the branch instruction,
+//   eliminating the need to store this in the BE
 bsg_dff 
  #(.width_p(branch_metadata_fwd_width_p)
    ) 
@@ -194,53 +196,55 @@ bsg_dff_reset_en
    ,.data_o(redirect_pending)
    );
 
-always_comb begin : control_signals
-  // Expected npc updates in the same cycle as it's updated. But if a new instruction is 
-  //   not being executed, then we're still waiting for the previous npc
-  expected_npc_o = npc_w_v ? npc_n : npc_r;
-  // Increment the checkpoint if there's a committing instruction
-  chk_ckpt_fe_o = ~calc_status.mem3_cache_miss_v & calc_status.instr_ckpt_v;
-  // Flush the FE queue if there's a pc redirect
-  chk_flush_fe_o = fe_cmd_v_o & (fe_cmd.opcode == e_op_pc_redirection);
-  // Rollback the FE queue on a cache miss
-  chk_roll_fe_o  = calc_status.mem3_cache_miss_v;
-end
-
-always_comb begin : fe_cmd_adapter
-  fe_cmd = 'b0;
-  fe_cmd_v_o = 1'b0;
-
-  // Redirect the pc if there's an NPC mismatch
-  if(calc_status.isd_v & npc_mismatch_v) begin : pc_redirect
-    fe_cmd.opcode                                   = e_op_pc_redirection;
-    fe_cmd_pc_redirect_operands.pc                  = expected_npc_o;
-    fe_cmd_pc_redirect_operands.subopcode           = e_subop_branch_mispredict;
-    fe_cmd_pc_redirect_operands.branch_metadata_fwd = calc_status.ex1_v 
-                                                      ? calc_status.int1_branch_metadata_fwd
-                                                      : branch_metadata_fwd_r;
-
-    fe_cmd_pc_redirect_operands.misprediction_reason = calc_status.int1_br_or_jmp 
-                                                       ? e_incorrect_prediction 
-                                                       : e_not_a_branch;
-
-    fe_cmd.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
-
-    fe_cmd_v_o = fe_cmd_rdy_i & ~chk_roll_fe_o & ~redirect_pending;
-  // Send an attaboy if there's a correct prediction
-  end 
-  /* TODO: When attaboys are enabled, the FE sends junk instructions in XOR and OR tests
-  else if(calc_status.isd_v & ~npc_mismatch_v & calc_status.int1_br_or_jmp) begin : attaboy
-    fe_cmd.opcode                      = e_op_attaboy;
-    fe_cmd_attaboy.pc                  = calc_status.isd_pc;
-    fe_cmd_attaboy.branch_metadata_fwd = calc_status.ex1_v 
-                                         ? calc_status.int1_branch_metadata_fwd
-                                         : branch_metadata_fwd_r;
-
-    fe_cmd.operands.attaboy = fe_cmd_attaboy;
-
-    fe_cmd_v_o = fe_cmd_rdy_i & ~chk_roll_fe_o & ~redirect_pending;
+always_comb 
+  begin : control_signals
+    // Expected npc updates in the same cycle as it's updated. But if a new instruction is 
+    //   not being executed, then we're still waiting for the previous npc
+    expected_npc_o = npc_w_v ? npc_n : npc_r;
+    // Increment the checkpoint if there's a committing instruction
+    chk_dequeue_fe_o = ~calc_status.mem3_cache_miss_v & calc_status.instr_dequeue_v;
+    // Flush the FE queue if there's a pc redirect
+    chk_flush_fe_o = fe_cmd_v_o & (fe_cmd.opcode == e_op_pc_redirection);
+    // Rollback the FE queue on a cache miss
+    chk_roll_fe_o  = calc_status.mem3_cache_miss_v;
   end
-  */
-end
+
+always_comb 
+  begin : fe_cmd_adapter
+    fe_cmd = 'b0;
+    fe_cmd_v_o = 1'b0;
+
+    // Redirect the pc if there's an NPC mismatch
+    if(calc_status.isd_v & npc_mismatch_v) 
+      begin : pc_redirect
+        fe_cmd.opcode                                   = e_op_pc_redirection;
+        fe_cmd_pc_redirect_operands.pc                  = expected_npc_o;
+        fe_cmd_pc_redirect_operands.subopcode           = e_subop_branch_mispredict;
+        fe_cmd_pc_redirect_operands.branch_metadata_fwd = calc_status.ex1_v 
+                                                          ? calc_status.int1_branch_metadata_fwd
+                                                          : branch_metadata_fwd_r;
+
+        fe_cmd_pc_redirect_operands.misprediction_reason = calc_status.int1_br_or_jmp 
+                                                           ? e_incorrect_prediction 
+                                                           : e_not_a_branch;
+
+        fe_cmd.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
+
+        fe_cmd_v_o = fe_cmd_ready_i & ~chk_roll_fe_o & ~redirect_pending;
+      end 
+    // Send an attaboy if there's a correct prediction
+    else if(calc_status.isd_v & ~npc_mismatch_v & calc_status.int1_br_or_jmp) 
+      begin : attaboy
+        fe_cmd.opcode                      = e_op_attaboy;
+        fe_cmd_attaboy.pc                  = calc_status.isd_pc;
+        fe_cmd_attaboy.branch_metadata_fwd = calc_status.ex1_v 
+                                             ? calc_status.int1_branch_metadata_fwd
+                                             : branch_metadata_fwd_r;
+
+        fe_cmd.operands.attaboy = fe_cmd_attaboy;
+
+        fe_cmd_v_o = fe_cmd_ready_i & ~chk_roll_fe_o & ~redirect_pending;
+      end
+  end
 
 endmodule : bp_be_director
