@@ -4,11 +4,11 @@
 
 module bp_be_dcache_lru_encode
   #(parameter ways_p="inv"
-    ,parameter lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
+    , localparam lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
   )
   (
     input [ways_p-2:0] lru_i
-    ,output logic [lg_ways_lp-1:0] way_o
+    , output logic [lg_ways_lp-1:0] way_o
   );
 
   if (ways_p == 8) begin
@@ -25,5 +25,10 @@ module bp_be_dcache_lru_encode
       endcase
     end
   end 
+  else begin
+    initial begin
+      assert("ways_p" == "unhandled") else $error("unhandled case for %m");
+    end
+  end
 
 endmodule

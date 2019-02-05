@@ -2,51 +2,49 @@
  *  bp_be_dcache_lce_cce_req.v
  */
 
-`include "bp_common_me_if.vh"
-
 module bp_be_dcache_lce_cce_req
   #(parameter lce_id_width_p="inv"
-    ,parameter data_width_p="inv"
-    ,parameter lce_addr_width_p="inv"
-    ,parameter num_cce_p="inv"
-    ,parameter num_lce_p="inv"
-    ,parameter ways_p="inv"
+    , parameter data_width_p="inv"
+    , parameter lce_addr_width_p="inv"
+    , parameter num_cce_p="inv"
+    , parameter num_lce_p="inv"
+    , parameter ways_p="inv"
   
-    ,parameter data_mask_width_lp=(data_width_p>>3)
-    ,parameter lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
+    , localparam data_mask_width_lp=(data_width_p>>3)
+    , localparam lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
   
-    ,parameter lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
-    ,parameter lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
-    ,parameter lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
+    , localparam lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
+    , localparam lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
+    , localparam lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
 
-    ,parameter lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, lce_addr_width_p, ways_p)
-    ,parameter lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, lce_addr_width_p)
+    , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, lce_addr_width_p, ways_p)
+    , localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, lce_addr_width_p)
   )
   (
     input clk_i
-    ,input reset_i
+    , input reset_i
 
-    ,input [lce_id_width_p-1:0] id_i
+    , input [lce_id_width_p-1:0] id_i
 
-    ,input load_miss_i
-    ,input store_miss_i
-    ,input [lce_addr_width_p-1:0] miss_addr_i
-    ,input [lg_ways_lp-1:0] lru_way_i
-    ,input [ways_p-1:0] dirty_i
-    ,output logic cache_miss_o
+    , input load_miss_i
+    , input store_miss_i
+    , input [lce_addr_width_p-1:0] miss_addr_i
+    , input [lg_ways_lp-1:0] lru_way_i
+    , input [ways_p-1:0] dirty_i
+    , output logic cache_miss_o
 
-    ,input tr_received_i
-    ,input cce_data_received_i
-    ,input tag_set_i
-    ,input tag_set_wakeup_i
+    , input tr_received_i
+    , input cce_data_received_i
+    , input tag_set_i
+    , input tag_set_wakeup_i
 
-    ,output logic [lce_cce_req_width_lp-1:0] lce_cce_req_o
-    ,output logic lce_cce_req_v_o
-    ,input lce_cce_req_ready_i
+    , output logic [lce_cce_req_width_lp-1:0] lce_cce_req_o
+    , output logic lce_cce_req_v_o
+    , input lce_cce_req_ready_i
 
-    ,output logic [lce_cce_resp_width_lp-1:0] lce_cce_resp_o
-    ,output logic lce_cce_resp_v_o
-    ,input lce_cce_resp_yumi_i
+    , output logic [lce_cce_resp_width_lp-1:0] lce_cce_resp_o
+    , output logic lce_cce_resp_v_o
+    , input lce_cce_resp_yumi_i
   );
 
   // casting struct

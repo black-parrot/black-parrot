@@ -5,41 +5,42 @@
 
 module bp_be_dcache_wbuf
   #(parameter data_width_p="inv"
-    ,parameter addr_width_p="inv"
-    ,parameter ways_p="inv"
-    ,parameter sets_p="inv"
-    ,parameter data_mask_width_lp=(data_width_p>>3)
-    ,parameter lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
-    ,parameter lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
-    ,parameter lg_sets_lp=`BSG_SAFE_CLOG2(sets_p)
+    , parameter addr_width_p="inv"
+    , parameter ways_p="inv"
+    , parameter sets_p="inv"
+
+    , localparam data_mask_width_lp=(data_width_p>>3)
+    , localparam lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
+    , localparam lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
+    , localparam lg_sets_lp=`BSG_SAFE_CLOG2(sets_p)
   )
   (
     input clk_i
-    ,input reset_i
+    , input reset_i
     
-    ,input v_i
-    ,input [addr_width_p-1:0] addr_i
-    ,input [data_width_p-1:0] data_i
-    ,input [data_mask_width_lp-1:0] mask_i
-    ,input [lg_ways_lp-1:0] way_i
+    , input v_i
+    , input [addr_width_p-1:0] addr_i
+    , input [data_width_p-1:0] data_i
+    , input [data_mask_width_lp-1:0] mask_i
+    , input [lg_ways_lp-1:0] way_i
 
-    ,output logic v_o
-    ,output logic [data_width_p-1:0] data_o
-    ,output logic [addr_width_p-1:0] addr_o
-    ,output logic [data_mask_width_lp-1:0] mask_o
-    ,output logic [lg_ways_lp-1:0] way_o
-    ,input yumi_i
+    , output logic v_o
+    , output logic [data_width_p-1:0] data_o
+    , output logic [addr_width_p-1:0] addr_o
+    , output logic [data_mask_width_lp-1:0] mask_o
+    , output logic [lg_ways_lp-1:0] way_o
+    , input yumi_i
 
-    ,output logic empty_o
+    , output logic empty_o
     
-    ,input [addr_width_p-1:0] bypass_addr_i
-    ,input bypass_v_i
-    ,output logic [data_width_p-1:0] bypass_data_o
-    ,output logic [data_mask_width_lp-1:0] bypass_mask_o
+    , input [addr_width_p-1:0] bypass_addr_i
+    , input bypass_v_i
+    , output logic [data_width_p-1:0] bypass_data_o
+    , output logic [data_mask_width_lp-1:0] bypass_mask_o
 
-    ,input [lg_sets_lp-1:0] lce_snoop_index_i
-    ,input [lg_ways_lp-1:0] lce_snoop_way_i
-    ,output logic lce_snoop_match_o
+    , input [lg_sets_lp-1:0] lce_snoop_index_i
+    , input [lg_ways_lp-1:0] lce_snoop_way_i
+    , output logic lce_snoop_match_o
   );
 
   logic [addr_width_p-1:0] el0_addr;
