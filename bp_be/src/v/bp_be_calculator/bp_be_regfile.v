@@ -55,33 +55,34 @@ module bp_be_regfile
    , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )
-  (input logic                            clk_i
-   , input logic                          reset_i
+  (input                            clk_i
+   , input                          reset_i
 
    // Pipeline control signals
-   , input logic                          issue_v_i
-   , input logic                          dispatch_v_i
+   , input                          issue_v_i
+   , input                          dispatch_v_i
 
    // rd write bus
-   , input logic                          rd_w_v_i
-   , input logic [reg_addr_width_lp-1:0]  rd_addr_i
-   , input logic [reg_data_width_lp-1:0]  rd_data_i
+   , input                          rd_w_v_i
+   , input [reg_addr_width_lp-1:0]  rd_addr_i
+   , input [reg_data_width_lp-1:0]  rd_data_i
 
    // rs1 read bus
-   , input logic                          rs1_r_v_i
-   , input logic [reg_addr_width_lp-1:0]  rs1_addr_i
-   , output logic [reg_data_width_lp-1:0] rs1_data_o
+   , input                          rs1_r_v_i
+   , input [reg_addr_width_lp-1:0]  rs1_addr_i
+   , output [reg_data_width_lp-1:0] rs1_data_o
    
    // rs2 read bus
-   , input logic                          rs2_r_v_i
-   , input logic [reg_addr_width_lp-1:0]  rs2_addr_i
-   , output logic [reg_data_width_lp-1:0] rs2_data_o
+   , input                          rs2_r_v_i
+   , input [reg_addr_width_lp-1:0]  rs2_addr_i
+   , output [reg_data_width_lp-1:0] rs2_data_o
    );
 
-initial begin : parameter_validation
-  assert(w_to_r_fwd_p == 0)
-    else $error("Write to read forwarding is not yet supported.");
-end
+initial 
+  begin : parameter_validation
+    assert (w_to_r_fwd_p == 0)
+      else $error("Write to read forwarding is not yet supported.");
+  end
 
 // Intermediate connections
 logic                         rs1_read_v     , rs2_read_v;
@@ -133,24 +134,25 @@ bsg_dff_en
    ,.data_o(rs2_addr_r)
    );
 
-always_comb begin
-  // Instruction has been issued, don't both reading if the register data is not used
-  rs1_issue_v = (issue_v_i & rs1_r_v_i);
-  rs2_issue_v = (issue_v_i & rs2_r_v_i);
-
-  // We need to read from the regfile if we have issued a new request, or if we have stalled
-  rs1_read_v = rs1_issue_v | ~dispatch_v_i;
-  rs2_read_v = rs2_issue_v | ~dispatch_v_i;
-
-  // If we have issued a new instruction, then we should read from the register. Else, we should 
-  //   reread the last request
-  rs1_reread_addr = rs1_issue_v ? rs1_addr_i : rs1_addr_r;
-  rs2_reread_addr = rs2_issue_v ? rs2_addr_i : rs2_addr_r;
-
-  // RISC-V defines x0 as 0. Else, pass out the register data
-  rs1_data_o = (rs1_addr_r == 0) ? 0 : rs1_reg_data;
-  rs2_data_o = (rs2_addr_r == 0) ? 0 : rs2_reg_data;
-end
+always_comb 
+  begin
+    // Instruction has been issued, don't bother reading if the register data is not used
+    rs1_issue_v = (issue_v_i & rs1_r_v_i);
+    rs2_issue_v = (issue_v_i & rs2_r_v_i);
+  
+    // We need to read from the regfile if we have issued a new request, or if we have stalled
+    rs1_read_v = rs1_issue_v | ~dispatch_v_i;
+    rs2_read_v = rs2_issue_v | ~dispatch_v_i;
+  
+    // If we have issued a new instruction, use input address to read, 
+    //   else use last request address to read
+    rs1_reread_addr = rs1_issue_v ? rs1_addr_i : rs1_addr_r;
+    rs2_reread_addr = rs2_issue_v ? rs2_addr_i : rs2_addr_r;
+  
+    // RISC-V defines x0 as 0. Else, pass out the register data
+    rs1_data_o = (rs1_addr_r == '0) ? '0 : rs1_reg_data;
+    rs2_data_o = (rs2_addr_r == '0) ? '0 : rs2_reg_data;
+  end
 
 endmodule : bp_be_regfile
 
