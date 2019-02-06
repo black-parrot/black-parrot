@@ -25,7 +25,6 @@ import itlb_pkg::*;
  * I-Cache. The I-TLB sends the Physical Page Number (PPN) to the
  * I-Cache. The width of PPN is specified by ppn_width_p parameter.
 */
-  
 `define declare_bp_fe_itlb_icache_data_resp_s(ppn_width_p)\
   typedef struct packed {                    \
     logic [ppn_width_p-1:0] ppn;       \
