@@ -1,12 +1,14 @@
 /**
- *  bp_be_dcache_lce_lce_tr_resp_in.v
+ *  Name:
+ *    bp_be_dcache_lce_data_cmd.v
  *
- *  Data cache LCE Transfer-In handler.
+ *  Description:
+ *    It handles data_cmd from CCE, and writes to data_mem.
  */
 
-module bp_be_dcache_lce_lce_tr_resp_in
-  #(parameter num_lce_p="inv"
-    , parameter num_cce_p="inv"
+module bp_be_dcache_lce_data_cmd 
+  #(parameter num_cce_p="inv"
+    , parameter num_lce_p="inv"
     , parameter data_width_p="inv"
     , parameter paddr_width_p="inv"
     , parameter lce_data_width_p="inv"
@@ -23,18 +25,18 @@ module bp_be_dcache_lce_lce_tr_resp_in
     , localparam ptag_width_lp=(paddr_width_p-page_offset_width_lp)
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
 
-    , localparam lce_lce_tr_resp_width_lp=
-      `bp_lce_lce_tr_resp_width(num_lce_p, paddr_width_p, lce_data_width_p, ways_p)
+    , localparam cce_lce_data_cmd_width_lp=
+      `bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_p, ways_p)
 
     , localparam dcache_lce_data_mem_pkt_width_lp=
       `bp_be_dcache_lce_data_mem_pkt_width(sets_p, ways_p, lce_data_width_p)
   )
   (
-    output logic tr_received_o
-
-    , input [lce_lce_tr_resp_width_lp-1:0] lce_lce_tr_resp_i
-    , input lce_lce_tr_resp_v_i
-    , output logic lce_lce_tr_resp_yumi_o
+    output logic cce_data_received_o
+  
+    , input [cce_lce_data_cmd_width_lp-1:0] cce_lce_data_cmd_i
+    , input cce_lce_data_cmd_v_i
+    , output logic cce_lce_data_cmd_yumi_o
 
     , output logic data_mem_pkt_v_o
     , output logic [dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
@@ -43,27 +45,27 @@ module bp_be_dcache_lce_lce_tr_resp_in
 
   // casting structs
   //
-  `declare_bp_lce_lce_tr_resp_s(num_lce_p, paddr_width_p, lce_data_width_p, ways_p);
+  `declare_bp_cce_lce_data_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_p, ways_p);
   `declare_bp_be_dcache_lce_data_mem_pkt_s(sets_p, ways_p, lce_data_width_p);
   
-  bp_lce_lce_tr_resp_s lce_lce_tr_resp_in;
+  bp_cce_lce_data_cmd_s cce_lce_data_cmd;
   bp_be_dcache_lce_data_mem_pkt_s data_mem_pkt;
 
-  assign lce_lce_tr_resp_in = lce_lce_tr_resp_i;
+  assign cce_lce_data_cmd = cce_lce_data_cmd_i;
   assign data_mem_pkt_o = data_mem_pkt;
 
-  // connecting channels
+  // channel connection
   //
-  assign data_mem_pkt.index = lce_lce_tr_resp_in.addr[block_offset_width_lp+:index_width_lp];
-  assign data_mem_pkt.way_id = lce_lce_tr_resp_in.way_id;
-  assign data_mem_pkt.data = lce_lce_tr_resp_in.data;
-  assign data_mem_pkt.write_not_read = 1'b1;
-
-  assign data_mem_pkt_v_o = lce_lce_tr_resp_v_i;
-  assign lce_lce_tr_resp_yumi_o = data_mem_pkt_yumi_i;
+  assign data_mem_pkt.index = cce_lce_data_cmd.addr[block_offset_width_lp+:index_width_lp];
+  assign data_mem_pkt.way_id = cce_lce_data_cmd.way_id;
+  assign data_mem_pkt.data = cce_lce_data_cmd.data;
+  assign data_mem_pkt.write_not_read = 1'b1; 
+  
+  assign data_mem_pkt_v_o = cce_lce_data_cmd_v_i;
+  assign cce_lce_data_cmd_yumi_o = data_mem_pkt_yumi_i; 
 
   // wakeup logic
   //
-  assign tr_received_o = data_mem_pkt_yumi_i;
+  assign cce_data_received_o = data_mem_pkt_yumi_i;
 
 endmodule

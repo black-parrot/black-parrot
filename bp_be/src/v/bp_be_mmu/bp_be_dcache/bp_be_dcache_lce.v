@@ -1,7 +1,46 @@
 /**
- *  bp_be_dcache_lce.v
- * 
- *  Local coherence engine.
+ *  Name: 
+ *    bp_be_dcache_lce.v
+ *
+ *
+ *  Description:
+ *    Local coherence engine.
+ *
+ *      This module handles coherency protocols with CCE, acting as LCE.
+ *    This involves reading or writing data_mem, tag_mem, and stat_mem,
+ *    sending back responses to CCE or another LCE. These responses could
+ *    include data or could simply be an ack. LCE also sends miss requests
+ *    to CCE, when data cache has ran into store or load miss.
+ *
+ *      LCE receives commands from CCE through cce_lce_cmd. Some CCE
+ *    commands could be arriving unsolicited. For example, LCE could be
+ *    commanded to invalidate a tag for another LCE's store miss.
+ *
+ *      LCE sends miss request to CCE through lce_cce_req. load_miss_i and
+ *    store_miss_i indicates that miss occured in the fast path of data
+ *    cache. cache_miss_o is raised immediately once load_miss_i or
+ *    store_miss_i is raised. cache_miss_o remains asserted until the miss
+ *    is resolved.
+ *     
+ *      LCE sends responses back to CCE through lce_cce_resp. Both
+ *    lce_cce_req or cce_lce_cmd could send response back, and when both
+ *    modules want to send the response, lce_cce_req always get the higher
+ *    priority in arbitration. We want to prioritize the types of acknowledge 
+ *    that are sent by later in the chain of coherence messages which resolves
+ *    coherence transaction, otherwise it could create backpressure in
+ *    network and cause a deadlock.
+ *
+ *      LCE could be asked to writeback locally-cached data via lce_cce_data_resp.
+ *    Only lce_cmd modules uses this channel.
+ *
+ *
+ *
+ *
+ *
+ *  + lce_cce_data_resp
+ * + cce_lce_data_cmd
+ *+ lce_lce_tr_resp_in
+ *+ lce_lce_tr_resp_out
  */
 
 `include "bp_be_dcache_lce_pkt.vh"
@@ -161,7 +200,7 @@ module bp_be_dcache_lce
   logic lce_cce_req_lce_cce_resp_v_lo;
   logic lce_cce_req_lce_cce_resp_yumi_li;
 
-  bp_be_dcache_lce_cce_req
+  bp_be_dcache_lce_req
     #(.data_width_p(data_width_p)
       ,.paddr_width_p(paddr_width_p)
       ,.num_cce_p(num_cce_p)
@@ -196,7 +235,7 @@ module bp_be_dcache_lce
       ,.lce_cce_resp_yumi_i(lce_cce_req_lce_cce_resp_yumi_li)
       );
 
-  // CCE_LCE_cmd
+  // LCE cmd
   //
   logic lce_sync_done_lo;
 
@@ -229,7 +268,7 @@ module bp_be_dcache_lce
       ,.yumi_i(cce_lce_cmd_fifo_yumi_li)
       );
 
-  bp_be_dcache_cce_lce_cmd
+  bp_be_dcache_lce_cmd
     #(.num_cce_p(num_cce_p)
       ,.num_lce_p(num_lce_p)
       ,.paddr_width_p(paddr_width_p)
@@ -307,7 +346,7 @@ module bp_be_dcache_lce
       ,.yumi_i(cce_lce_data_cmd_fifo_yumi_li)
       );
 
-  bp_be_dcache_cce_lce_data_cmd
+  bp_be_dcache_lce_data_cmd
     #(.num_cce_p(num_cce_p)
       ,.num_lce_p(num_lce_p)
       ,.data_width_p(data_width_p)
@@ -354,7 +393,7 @@ module bp_be_dcache_lce
       ,.yumi_i(lce_lce_tr_resp_in_fifo_yumi_li)
       );
 
-  bp_be_dcache_lce_lce_tr_resp_in 
+  bp_be_dcache_lce_tr
     #(.num_lce_p(num_lce_p)
       ,.num_cce_p(num_cce_p)
       ,.data_width_p(data_width_p)
@@ -363,7 +402,7 @@ module bp_be_dcache_lce
       ,.ways_p(ways_p)
       ,.sets_p(sets_p)
       )
-    lce_lce_tr_resp_in_inst
+    lce_tr_inst
       (.tr_received_o(tr_received_li)
 
       ,.lce_lce_tr_resp_i(lce_lce_tr_resp_in_fifo_data_lo)
