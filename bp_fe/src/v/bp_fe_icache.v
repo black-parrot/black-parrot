@@ -1,36 +1,32 @@
 /**
  *
- * bp_fe_icache.v
+ * Name:
+ *   bp_fe_icache.v
+ *
+ * Description:
+ *   To	be updated
  * The icache module implements a virtually-indexed physically-tagged cache. Although the cache
  * design is parameterized, our default icache configuration is a 4-way set associative cache. Our
  * icache has an LCE as part of the cache controller that communicates with the CCE. For replacement
  * policy, we use the pseudo-LRU module implemnted for dcache.
+ *
+ * Parameters:
+ *
+ * Inputs:
+ *
+ * Outputs:
+ *
+ * Keywords:
+ *
+ * Notes:
+ *
  */
 
-`ifndef BSG_DEFINES_V
-`define BSG_DEFINES_V
 `include "bsg_defines.v"
-`endif
-
-`ifndef BP_CCE_MSG_VH
-`define BP_CCE_MSG_VH
 `include "bp_common_me_if.vh"
-`endif
-
-`ifndef BP_FE_ICACHE_VH
-`define BP_FE_ICACHE_VH
 `include "bp_fe_icache.vh"
-`endif
-
-`ifndef BP_FE_PC_GEN_VH
-`define BP_FE_PC_GEN_VH
 `include "bp_fe_pc_gen.vh"
-`endif
-
-`ifndef BP_FE_ITLB_VH
-`define BP_FE_ITLB_VH
 `include "bp_fe_itlb.vh"
-`endif
 
 module icache
   import bp_common_pkg::*;
@@ -106,24 +102,24 @@ module icache
     , localparam lce_id_width_lp='bp_lce_id_width
    )
    (
-    input logic                                        clk_i
-    , input logic                                      reset_i
-    , input logic [lce_id_width_lp-1:0]                id_i
+    input                                              clk_i
+    , input                                            reset_i
+    , input [lce_id_width_lp-1:0]                      id_i
 
-    , input logic [bp_fe_pc_gen_icache_width_lp-1:0]   pc_gen_icache_vaddr_i
-    , input logic                                      pc_gen_icache_vaddr_v_i
+    , input [bp_fe_pc_gen_icache_width_lp-1:0]         pc_gen_icache_vaddr_i
+    , input                                            pc_gen_icache_vaddr_v_i
     , output logic                                     pc_gen_icache_vaddr_ready_o
 
     , output logic [bp_fe_icache_pc_gen_width_lp-1:0]  icache_pc_gen_data_o
     , output logic                                     icache_pc_gen_data_v_o
-    , input logic                                      icache_pc_gen_data_ready_i // Not used
+    , input                                            icache_pc_gen_data_ready_i // Not used
 
-    , input logic [bp_fe_itlb_icache_width_lp-1:0]     itlb_icache_data_resp_i
-    , input logic                                      itlb_icache_data_resp_v_i
+    , input [bp_fe_itlb_icache_width_lp-1:0]           itlb_icache_data_resp_i
+    , input                                            itlb_icache_data_resp_v_i
     , output logic                                     itlb_icache_data_resp_ready_o
 
     , output logic                                     cache_miss_o
-    , input logic                                      poison_i
+    , input                                            poison_i
 
     , output logic [bp_lce_cce_req_width_lp-1:0]       lce_cce_req_o
     , output logic                                     lce_cce_req_v_o
@@ -135,23 +131,23 @@ module icache
 
     , output logic [bp_lce_cce_data_resp_width_lp-1:0] lce_cce_data_resp_o     
     , output logic                                     lce_cce_data_resp_v_o 
-    , input logic                                      lce_cce_data_resp_ready_i
+    , input                                            lce_cce_data_resp_ready_i
 
-    , input logic [bp_cce_lce_cmd_width_lp-1:0]        cce_lce_cmd_i
-    , input logic                                      cce_lce_cmd_v_i
+    , input [bp_cce_lce_cmd_width_lp-1:0]              cce_lce_cmd_i
+    , input                                            cce_lce_cmd_v_i
     , output logic                                     cce_lce_cmd_ready_o
 
-    , input logic [bp_cce_lce_data_cmd_width_lp-1:0]   cce_lce_data_cmd_i
-    , input logic                                      cce_lce_data_cmd_v_i
+    , input [bp_cce_lce_data_cmd_width_lp-1:0]         cce_lce_data_cmd_i
+    , input                                            cce_lce_data_cmd_v_i
     , output logic                                     cce_lce_data_cmd_ready_o
 
-    , input logic [bp_lce_lce_tr_resp_width_lp-1:0]    lce_lce_tr_resp_i
-    , input logic                                      lce_lce_tr_resp_v_i
+    , input [bp_lce_lce_tr_resp_width_lp-1:0]          lce_lce_tr_resp_i
+    , input                                            lce_lce_tr_resp_v_i
     , output logic                                     lce_lce_tr_resp_ready_o
 
     , output logic [bp_lce_lce_tr_resp_width_lp-1:0]   lce_lce_tr_resp_o
     , output logic                                     lce_lce_tr_resp_v_o
-    , input logic                                      lce_lce_tr_resp_ready_i
+    , input                                            lce_lce_tr_resp_ready_i
 
  );
 

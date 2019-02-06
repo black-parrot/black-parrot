@@ -1,0 +1,3084 @@
+Notice: timing checks disabled with +notimingcheck at compile-time
+Chronologic VCS simulator copyright 1991-2016
+Contains Synopsys proprietary information.
+Compiler version L-2016.06-SP2-15_Full64; Runtime version L-2016.06-SP2-15_Full64;  Feb  1 15:43 2019
+VCD+ Writer L-2016.06-SP2-15_Full64 Copyright (c) 1991-2016 by Synopsys Inc.
+test_bp.clock_gen with cycle_time_p          10
+## bsg_mem_1r1w: instantiating width_p=         38, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.cce_lce_cmd_network.rof[0].fi2.efi3.coherence_network_channel_node.rof[0].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=         38, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.cce_lce_cmd_network.rof[0].fi2.efi3.coherence_network_channel_node.rof[2].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=         38, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.cce_lce_cmd_network.rof[0].fi2.efi3.coherence_network_channel_node.rof[4].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=         38, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.cce_lce_cmd_network.rof[1].efi2.fi9.coherence_network_channel_node.rof[0].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=         38, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.cce_lce_cmd_network.rof[1].efi2.fi9.coherence_network_channel_node.rof[1].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        542, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.cce_lce_data_cmd_network.rof[0].fi2.efi3.coherence_network_channel_node.rof[0].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        542, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.cce_lce_data_cmd_network.rof[0].fi2.efi3.coherence_network_channel_node.rof[2].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        542, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.cce_lce_data_cmd_network.rof[0].fi2.efi3.coherence_network_channel_node.rof[4].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        542, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.cce_lce_data_cmd_network.rof[1].efi2.fi9.coherence_network_channel_node.rof[0].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        542, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.cce_lce_data_cmd_network.rof[1].efi2.fi9.coherence_network_channel_node.rof[1].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=         32, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.lce_cce_req_network.rof[0].fi2.efi3.coherence_network_channel_node.rof[0].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=         32, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.lce_cce_req_network.rof[0].fi2.efi3.coherence_network_channel_node.rof[2].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=         32, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.lce_cce_req_network.rof[0].fi2.efi3.coherence_network_channel_node.rof[4].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=         32, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.lce_cce_req_network.rof[1].efi2.fi7.coherence_network_channel_node.rof[1].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=         32, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.lce_cce_req_network.rof[1].efi2.fi7.coherence_network_channel_node.rof[4].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        539, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.lce_cce_data_resp_network.rof[0].fi2.efi3.coherence_network_channel_node.rof[0].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        539, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.lce_cce_data_resp_network.rof[0].fi2.efi3.coherence_network_channel_node.rof[2].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        539, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.lce_cce_data_resp_network.rof[0].fi2.efi3.coherence_network_channel_node.rof[4].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        539, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.lce_cce_data_resp_network.rof[1].efi2.fi7.coherence_network_channel_node.rof[1].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        539, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.lce_cce_data_resp_network.rof[1].efi2.fi7.coherence_network_channel_node.rof[4].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        541, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.lce_lce_tr_resp_network.rof[0].fi2.efi3.coherence_network_channel_node.rof[0].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        541, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.lce_lce_tr_resp_network.rof[0].fi2.efi3.coherence_network_channel_node.rof[2].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        541, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.lce_lce_tr_resp_network.rof[0].fi2.efi3.coherence_network_channel_node.rof[4].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        541, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.lce_lce_tr_resp_network.rof[1].efi2.fi5.coherence_network_channel_node.rof[0].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        541, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.lce_lce_tr_resp_network.rof[1].efi2.fi5.coherence_network_channel_node.rof[1].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        541, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.lce_lce_tr_resp_network.rof[1].efi2.fi5.coherence_network_channel_node.rof[4].fi.twofer.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        537, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.genblk1[0].bp_cce_top.lce_cce_data_resp_fifo.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=         35, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.genblk1[0].bp_cce_top.mem_cce_resp_fifo.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        541, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.genblk1[0].bp_cce_top.mem_cce_data_resp_fifo.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        569, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.genblk1[0].bp_cce_top.cce_mem_data_cmd_fifo.mem_1r1w)
+## bsg_mem_1rw_sync_synth: instantiating width_p=        512, els_p=        512 (test_bp.DUT.me.genblk1[0].bp_mem.mem)
+## bsg_mem_1r1w: instantiating width_p=         64, els_p=        512, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].fe.bp_fe_pc_gen_1.genblk1.branch_prediction_1.btb_1.bsg_mem_1rw_sync_synth_1)
+## bsg_mem_1rw_sync_mask_write_bit: instantiating width_p=        112, els_p=         16 (test_bp.DUT.genblk1[0].fe.icache_1.tag_mem)
+## bsg_mem_1rw_sync_mask_write_bit: instantiating width_p=          7, els_p=         16 (test_bp.DUT.genblk1[0].fe.icache_1.meta_data_mem)
+## bsg_mem_1r1w: instantiating width_p=        36, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].fe.icache_1.lce.cce_lce_cmd_fifo.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=       540, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].fe.icache_1.lce.cce_lce_data_cmd_fifo.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=       539, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].fe.icache_1.lce.lce_lce_tr_resp_in_fifo.mem_1r1w)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[0].data_mem_bank.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[0].data_mem_bank.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[0].data_mem_bank.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[0].data_mem_bank.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[0].data_mem_bank.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[0].data_mem_bank.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[0].data_mem_bank.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[0].data_mem_bank.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[0].data_mem_bank)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[1].data_mem_bank.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[1].data_mem_bank.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[1].data_mem_bank.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[1].data_mem_bank.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[1].data_mem_bank.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[1].data_mem_bank.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[1].data_mem_bank.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[1].data_mem_bank.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[1].data_mem_bank)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[2].data_mem_bank.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[2].data_mem_bank.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[2].data_mem_bank.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[2].data_mem_bank.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[2].data_mem_bank.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[2].data_mem_bank.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[2].data_mem_bank.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[2].data_mem_bank.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[2].data_mem_bank)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[3].data_mem_bank.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[3].data_mem_bank.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[3].data_mem_bank.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[3].data_mem_bank.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[3].data_mem_bank.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[3].data_mem_bank.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[3].data_mem_bank.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[3].data_mem_bank.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[3].data_mem_bank)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[4].data_mem_bank.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[4].data_mem_bank.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[4].data_mem_bank.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[4].data_mem_bank.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[4].data_mem_bank.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[4].data_mem_bank.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[4].data_mem_bank.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[4].data_mem_bank.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[4].data_mem_bank)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[5].data_mem_bank.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[5].data_mem_bank.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[5].data_mem_bank.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[5].data_mem_bank.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[5].data_mem_bank.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[5].data_mem_bank.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[5].data_mem_bank.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[5].data_mem_bank.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[5].data_mem_bank)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[6].data_mem_bank.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[6].data_mem_bank.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[6].data_mem_bank.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[6].data_mem_bank.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[6].data_mem_bank.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[6].data_mem_bank.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[6].data_mem_bank.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[6].data_mem_bank.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[6].data_mem_bank)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[7].data_mem_bank.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[7].data_mem_bank.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[7].data_mem_bank.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[7].data_mem_bank.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[7].data_mem_bank.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[7].data_mem_bank.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[7].data_mem_bank.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[7].data_mem_bank.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[7].data_mem_bank)
+## bsg_mem_1r1w: instantiating width_p=        134, els_p=         16, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].fe_queue_fifo.fifo_mem)
+## bsg_mem_1r1w: instantiating width_p=        109, els_p=          8, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].fe_cmd_fifo.mem_1r1w)
+## bsg_mem_1rw_sync_mask_write_bit: instantiating width_p=        112, els_p=         16 (test_bp.DUT.genblk1[0].be.mmu.dcache.tag_mem)
+## bsg_mem_1rw_sync_mask_write_bit: instantiating width_p=         15, els_p=         16 (test_bp.DUT.genblk1[0].be.mmu.dcache.stat_mem)
+## bsg_mem_1r1w: instantiating width_p=        36, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].be.mmu.dcache.lce.cce_lce_cmd_fifo.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=       540, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].be.mmu.dcache.lce.cce_lce_data_cmd_fifo.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=       539, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].be.mmu.dcache.lce.lce_lce_tr_resp_in_fifo.mem_1r1w)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[0].data_mem.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[0].data_mem.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[0].data_mem.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[0].data_mem.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[0].data_mem.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[0].data_mem.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[0].data_mem.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[0].data_mem.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[0].data_mem)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[1].data_mem.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[1].data_mem.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[1].data_mem.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[1].data_mem.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[1].data_mem.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[1].data_mem.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[1].data_mem.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[1].data_mem.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[1].data_mem)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[2].data_mem.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[2].data_mem.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[2].data_mem.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[2].data_mem.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[2].data_mem.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[2].data_mem.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[2].data_mem.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[2].data_mem.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[2].data_mem)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[3].data_mem.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[3].data_mem.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[3].data_mem.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[3].data_mem.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[3].data_mem.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[3].data_mem.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[3].data_mem.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[3].data_mem.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[3].data_mem)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[4].data_mem.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[4].data_mem.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[4].data_mem.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[4].data_mem.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[4].data_mem.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[4].data_mem.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[4].data_mem.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[4].data_mem.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[4].data_mem)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[5].data_mem.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[5].data_mem.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[5].data_mem.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[5].data_mem.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[5].data_mem.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[5].data_mem.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[5].data_mem.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[5].data_mem.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[5].data_mem)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[6].data_mem.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[6].data_mem.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[6].data_mem.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[6].data_mem.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[6].data_mem.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[6].data_mem.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[6].data_mem.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[6].data_mem.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[6].data_mem)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[7].data_mem.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[7].data_mem.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[7].data_mem.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[7].data_mem.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[7].data_mem.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[7].data_mem.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[7].data_mem.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[7].data_mem.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[7].data_mem)
+__________ ___________  _______________________________
+\______   \\_   _____/ /   _____/\_   _____/\__    ___/
+ |       _/ |    __)_  \_____  \  |    __)_   |    |   
+ |    |   \ |        \ /        \ |        \  |    |  1->0 time =          0
+ |____|_  //_______  //_______  //_______  /  |____|   
+ ASYNC  \/         \/         \/         \/            
+__________ ___________  _______________________________
+\______   \\_   _____/ /   _____/\_   _____/\__    ___/
+ |       _/ |    __)_  \_____  \  |    __)_   |    |   
+ |    |   \ |        \ /        \ |        \  |    |  0->1 time =          0
+ |____|_  //_______  //_______  //_______  /  |____|   
+ ASYNC  \/         \/         \/         \/            
+__________ ___________  _______________________________
+\______   \\_   _____/ /   _____/\_   _____/\__    ___/
+ |       _/ |    __)_  \_____  \  |    __)_   |    |   
+ |    |   \ |        \ /        \ |        \  |    |  1->0 time =        100
+ |____|_  //_______  //_______  //_______  /  |____|   
+ ASYNC  \/         \/         \/         \/            
+[CORE0 CMT] itag: 000005d0 pc: 0000000080000124 instr: 00000093
+			op: integer sem: r 1 <- {0000000000000000}
+[CORE0 CMT] itag: 000005d1 pc: 0000000080000128 instr: 00000113
+			op: integer sem: r 2 <- {0000000000000000}
+[CORE0 CMT] itag: 000005d2 pc: 000000008000012c instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000000}
+[CORE0 CMT] itag: 000005d3 pc: 0000000080000130 instr: 00000e93
+			op: integer sem: r29 <- {0000000000000000}
+[CORE0 CMT] itag: 000005d4 pc: 0000000080000134 instr: 00200e13
+			op: integer sem: r28 <- {0000000000000002}
+[CORE0 CMT] itag: 000005d5 pc: 0000000080000138 instr: 4fd19063
+			op: branch sem: pc <- {000000008000013c} rs1: 0000000000000000 cmp rs2: 0000000000000000 taken: 0
+[CORE0 CMT] itag: 000005d6 pc: 000000008000013c instr: 00100093
+			op: integer sem: r 1 <- {0000000000000001}
+[CORE0 BUB] itag: 000005d7 cause: FE
+[CORE0 BUB] itag: 000005d8 cause: FE
+[CORE0 BUB] itag: 000005d9 cause: FE
+[CORE0 BUB] itag: 000005da cause: FE
+[CORE0 BUB] itag: 000005db cause: FE
+[CORE0 BUB] itag: 000005dc cause: FE
+[CORE0 BUB] itag: 000005dd cause: FE
+[CORE0 BUB] itag: 000005de cause: FE
+[CORE0 BUB] itag: 000005df cause: FE
+[CORE0 BUB] itag: 000005e0 cause: FE
+[CORE0 BUB] itag: 000005e1 cause: FE
+[CORE0 BUB] itag: 000005e2 cause: FE
+[CORE0 BUB] itag: 000005e3 cause: FE
+[CORE0 BUB] itag: 000005e4 cause: FE
+[CORE0 BUB] itag: 000005e5 cause: FE
+[CORE0 BUB] itag: 000005e6 cause: FE
+[CORE0 BUB] itag: 000005e7 cause: FE
+[CORE0 BUB] itag: 000005e8 cause: FE
+[CORE0 BUB] itag: 000005e9 cause: FE
+[CORE0 BUB] itag: 000005ea cause: FE
+[CORE0 BUB] itag: 000005eb cause: FE
+[CORE0 BUB] itag: 000005ec cause: FE
+[CORE0 BUB] itag: 000005ed cause: FE
+[CORE0 BUB] itag: 000005ee cause: FE
+[CORE0 BUB] itag: 000005ef cause: FE
+[CORE0 BUB] itag: 000005f0 cause: FE
+[CORE0 BUB] itag: 000005f1 cause: FE
+[CORE0 BUB] itag: 000005f2 cause: FE
+[CORE0 BUB] itag: 000005f3 cause: FE
+[CORE0 BUB] itag: 000005f4 cause: FE
+[CORE0 BUB] itag: 000005f5 cause: FE
+[CORE0 BUB] itag: 000005f6 cause: FE
+[CORE0 BUB] itag: 000005f7 cause: FE
+[CORE0 BUB] itag: 000005f8 cause: FE
+[CORE0 BUB] itag: 000005f9 cause: FE
+[CORE0 BUB] itag: 000005fa cause: FE
+[CORE0 BUB] itag: 000005fb cause: FE
+[CORE0 BUB] itag: 000005fc cause: FE
+[CORE0 BUB] itag: 000005fd cause: FE
+[CORE0 CMT] itag: 000005fe pc: 0000000080000140 instr: 00100113
+			op: integer sem: r 2 <- {0000000000000001}
+[CORE0 CMT] itag: 000005ff pc: 0000000080000144 instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000002}
+[CORE0 CMT] itag: 00000600 pc: 0000000080000148 instr: 00200e93
+			op: integer sem: r29 <- {0000000000000002}
+[CORE0 CMT] itag: 00000601 pc: 000000008000014c instr: 00300e13
+			op: integer sem: r28 <- {0000000000000003}
+[CORE0 CMT] itag: 00000602 pc: 0000000080000150 instr: 4dd19463
+			op: branch sem: pc <- {0000000080000154} rs1: 0000000000000002 cmp rs2: 0000000000000002 taken: 0
+[CORE0 CMT] itag: 00000603 pc: 0000000080000154 instr: 00300093
+			op: integer sem: r 1 <- {0000000000000003}
+[CORE0 CMT] itag: 00000604 pc: 0000000080000158 instr: 00700113
+			op: integer sem: r 2 <- {0000000000000007}
+[CORE0 CMT] itag: 00000605 pc: 000000008000015c instr: 002081b3
+			op: integer sem: r 3 <- {000000000000000a}
+[CORE0 CMT] itag: 00000606 pc: 0000000080000160 instr: 00a00e93
+			op: integer sem: r29 <- {000000000000000a}
+[CORE0 CMT] itag: 00000607 pc: 0000000080000164 instr: 00400e13
+			op: integer sem: r28 <- {0000000000000004}
+[CORE0 CMT] itag: 00000608 pc: 0000000080000168 instr: 4bd19863
+			op: branch sem: pc <- {000000008000016c} rs1: 000000000000000a cmp rs2: 000000000000000a taken: 0
+[CORE0 CMT] itag: 00000609 pc: 000000008000016c instr: 00000093
+			op: integer sem: r 1 <- {0000000000000000}
+[CORE0 CMT] itag: 0000060a pc: 0000000080000170 instr: ffff8137
+			op: integer sem: r 2 <- {ffffffffffff8000}
+[CORE0 CMT] itag: 0000060b pc: 0000000080000174 instr: 002081b3
+			op: integer sem: r 3 <- {ffffffffffff8000}
+[CORE0 CMT] itag: 0000060c pc: 0000000080000178 instr: ffff8eb7
+			op: integer sem: r29 <- {ffffffffffff8000}
+[CORE0 CMT] itag: 0000060d pc: 000000008000017c instr: 00500e13
+			op: integer sem: r28 <- {0000000000000005}
+[CORE0 BUB] itag: 0000060e cause: FE
+[CORE0 BUB] itag: 0000060f cause: FE
+[CORE0 BUB] itag: 00000610 cause: FE
+[CORE0 BUB] itag: 00000611 cause: FE
+[CORE0 BUB] itag: 00000612 cause: FE
+[CORE0 BUB] itag: 00000613 cause: FE
+[CORE0 BUB] itag: 00000614 cause: FE
+[CORE0 BUB] itag: 00000615 cause: FE
+[CORE0 BUB] itag: 00000616 cause: FE
+[CORE0 BUB] itag: 00000617 cause: FE
+[CORE0 BUB] itag: 00000618 cause: FE
+[CORE0 BUB] itag: 00000619 cause: FE
+[CORE0 BUB] itag: 0000061a cause: FE
+[CORE0 BUB] itag: 0000061b cause: FE
+[CORE0 BUB] itag: 0000061c cause: FE
+[CORE0 BUB] itag: 0000061d cause: FE
+[CORE0 BUB] itag: 0000061e cause: FE
+[CORE0 BUB] itag: 0000061f cause: FE
+[CORE0 BUB] itag: 00000620 cause: FE
+[CORE0 BUB] itag: 00000621 cause: FE
+[CORE0 BUB] itag: 00000622 cause: FE
+[CORE0 BUB] itag: 00000623 cause: FE
+[CORE0 BUB] itag: 00000624 cause: FE
+[CORE0 BUB] itag: 00000625 cause: FE
+[CORE0 BUB] itag: 00000626 cause: FE
+[CORE0 BUB] itag: 00000627 cause: FE
+[CORE0 BUB] itag: 00000628 cause: FE
+[CORE0 BUB] itag: 00000629 cause: FE
+[CORE0 BUB] itag: 0000062a cause: FE
+[CORE0 BUB] itag: 0000062b cause: FE
+[CORE0 BUB] itag: 0000062c cause: FE
+[CORE0 BUB] itag: 0000062d cause: FE
+[CORE0 BUB] itag: 0000062e cause: FE
+[CORE0 BUB] itag: 0000062f cause: FE
+[CORE0 BUB] itag: 00000630 cause: FE
+[CORE0 BUB] itag: 00000631 cause: FE
+[CORE0 BUB] itag: 00000632 cause: FE
+[CORE0 BUB] itag: 00000633 cause: FE
+[CORE0 BUB] itag: 00000634 cause: FE
+[CORE0 CMT] itag: 00000635 pc: 0000000080000180 instr: 49d19c63
+			op: branch sem: pc <- {0000000080000184} rs1: ffffffffffff8000 cmp rs2: ffffffffffff8000 taken: 0
+[CORE0 CMT] itag: 00000636 pc: 0000000080000184 instr: 800000b7
+			op: integer sem: r 1 <- {ffffffff80000000}
+[CORE0 CMT] itag: 00000637 pc: 0000000080000188 instr: 00000113
+			op: integer sem: r 2 <- {0000000000000000}
+[CORE0 CMT] itag: 00000638 pc: 000000008000018c instr: 002081b3
+			op: integer sem: r 3 <- {ffffffff80000000}
+[CORE0 CMT] itag: 00000639 pc: 0000000080000190 instr: 80000eb7
+			op: integer sem: r29 <- {ffffffff80000000}
+[CORE0 CMT] itag: 0000063a pc: 0000000080000194 instr: 00600e13
+			op: integer sem: r28 <- {0000000000000006}
+[CORE0 CMT] itag: 0000063b pc: 0000000080000198 instr: 49d19063
+			op: branch sem: pc <- {000000008000019c} rs1: ffffffff80000000 cmp rs2: ffffffff80000000 taken: 0
+[CORE0 CMT] itag: 0000063c pc: 000000008000019c instr: 800000b7
+			op: integer sem: r 1 <- {ffffffff80000000}
+[CORE0 CMT] itag: 0000063d pc: 00000000800001a0 instr: ffff8137
+			op: integer sem: r 2 <- {ffffffffffff8000}
+[CORE0 CMT] itag: 0000063e pc: 00000000800001a4 instr: 002081b3
+			op: integer sem: r 3 <- {ffffffff7fff8000}
+[CORE0 CMT] itag: 0000063f pc: 00000000800001a8 instr: ffff0eb7
+			op: integer sem: r29 <- {ffffffffffff0000}
+[CORE0 CMT] itag: 00000640 pc: 00000000800001ac instr: fffe8e9b
+			op: integer sem: r29 <- {fffffffffffeffff}
+[CORE0 CMT] itag: 00000641 pc: 00000000800001b0 instr: 00fe9e93
+			op: integer sem: r29 <- {ffffffff7fff8000}
+[CORE0 CMT] itag: 00000642 pc: 00000000800001b4 instr: 00700e13
+			op: integer sem: r28 <- {0000000000000007}
+[CORE0 CMT] itag: 00000643 pc: 00000000800001b8 instr: 47d19063
+			op: branch sem: pc <- {00000000800001bc} rs1: ffffffff7fff8000 cmp rs2: ffffffff7fff8000 taken: 0
+[CORE0 CMT] itag: 00000644 pc: 00000000800001bc instr: 00000093
+			op: integer sem: r 1 <- {0000000000000000}
+[CORE0 BUB] itag: 00000645 cause: FE
+[CORE0 BUB] itag: 00000646 cause: FE
+[CORE0 BUB] itag: 00000647 cause: FE
+[CORE0 BUB] itag: 00000648 cause: FE
+[CORE0 BUB] itag: 00000649 cause: FE
+[CORE0 BUB] itag: 0000064a cause: FE
+[CORE0 BUB] itag: 0000064b cause: FE
+[CORE0 BUB] itag: 0000064c cause: FE
+[CORE0 BUB] itag: 0000064d cause: FE
+[CORE0 BUB] itag: 0000064e cause: FE
+[CORE0 BUB] itag: 0000064f cause: FE
+[CORE0 BUB] itag: 00000650 cause: FE
+[CORE0 BUB] itag: 00000651 cause: FE
+[CORE0 BUB] itag: 00000652 cause: FE
+[CORE0 BUB] itag: 00000653 cause: FE
+[CORE0 BUB] itag: 00000654 cause: FE
+[CORE0 BUB] itag: 00000655 cause: FE
+[CORE0 BUB] itag: 00000656 cause: FE
+[CORE0 BUB] itag: 00000657 cause: FE
+[CORE0 BUB] itag: 00000658 cause: FE
+[CORE0 BUB] itag: 00000659 cause: FE
+[CORE0 BUB] itag: 0000065a cause: FE
+[CORE0 BUB] itag: 0000065b cause: FE
+[CORE0 BUB] itag: 0000065c cause: FE
+[CORE0 BUB] itag: 0000065d cause: FE
+[CORE0 BUB] itag: 0000065e cause: FE
+[CORE0 BUB] itag: 0000065f cause: FE
+[CORE0 BUB] itag: 00000660 cause: FE
+[CORE0 BUB] itag: 00000661 cause: FE
+[CORE0 BUB] itag: 00000662 cause: FE
+[CORE0 BUB] itag: 00000663 cause: FE
+[CORE0 BUB] itag: 00000664 cause: FE
+[CORE0 BUB] itag: 00000665 cause: FE
+[CORE0 BUB] itag: 00000666 cause: FE
+[CORE0 BUB] itag: 00000667 cause: FE
+[CORE0 BUB] itag: 00000668 cause: FE
+[CORE0 BUB] itag: 00000669 cause: FE
+[CORE0 BUB] itag: 0000066a cause: FE
+[CORE0 BUB] itag: 0000066b cause: FE
+[CORE0 CMT] itag: 0000066c pc: 00000000800001c0 instr: 00008137
+			op: integer sem: r 2 <- {0000000000008000}
+[CORE0 CMT] itag: 0000066d pc: 00000000800001c4 instr: fff1011b
+			op: integer sem: r 2 <- {0000000000007fff}
+[CORE0 CMT] itag: 0000066e pc: 00000000800001c8 instr: 002081b3
+			op: integer sem: r 3 <- {0000000000007fff}
+[CORE0 CMT] itag: 0000066f pc: 00000000800001cc instr: 00008eb7
+			op: integer sem: r29 <- {0000000000008000}
+[CORE0 CMT] itag: 00000670 pc: 00000000800001d0 instr: fffe8e9b
+			op: integer sem: r29 <- {0000000000007fff}
+[CORE0 CMT] itag: 00000671 pc: 00000000800001d4 instr: 00800e13
+			op: integer sem: r28 <- {0000000000000008}
+[CORE0 CMT] itag: 00000672 pc: 00000000800001d8 instr: 45d19063
+			op: branch sem: pc <- {00000000800001dc} rs1: 0000000000007fff cmp rs2: 0000000000007fff taken: 0
+[CORE0 CMT] itag: 00000673 pc: 00000000800001dc instr: 800000b7
+			op: integer sem: r 1 <- {ffffffff80000000}
+[CORE0 CMT] itag: 00000674 pc: 00000000800001e0 instr: fff0809b
+			op: integer sem: r 1 <- {000000007fffffff}
+[CORE0 CMT] itag: 00000675 pc: 00000000800001e4 instr: 00000113
+			op: integer sem: r 2 <- {0000000000000000}
+[CORE0 CMT] itag: 00000676 pc: 00000000800001e8 instr: 002081b3
+			op: integer sem: r 3 <- {000000007fffffff}
+[CORE0 CMT] itag: 00000677 pc: 00000000800001ec instr: 80000eb7
+			op: integer sem: r29 <- {ffffffff80000000}
+[CORE0 CMT] itag: 00000678 pc: 00000000800001f0 instr: fffe8e9b
+			op: integer sem: r29 <- {000000007fffffff}
+[CORE0 CMT] itag: 00000679 pc: 00000000800001f4 instr: 00900e13
+			op: integer sem: r28 <- {0000000000000009}
+[CORE0 CMT] itag: 0000067a pc: 00000000800001f8 instr: 43d19063
+			op: branch sem: pc <- {00000000800001fc} rs1: 000000007fffffff cmp rs2: 000000007fffffff taken: 0
+[CORE0 CMT] itag: 0000067b pc: 00000000800001fc instr: 800000b7
+			op: integer sem: r 1 <- {ffffffff80000000}
+[CORE0 BUB] itag: 0000067c cause: FE
+[CORE0 BUB] itag: 0000067d cause: FE
+[CORE0 BUB] itag: 0000067e cause: FE
+[CORE0 BUB] itag: 0000067f cause: FE
+[CORE0 BUB] itag: 00000680 cause: FE
+[CORE0 BUB] itag: 00000681 cause: FE
+[CORE0 BUB] itag: 00000682 cause: FE
+[CORE0 BUB] itag: 00000683 cause: FE
+[CORE0 BUB] itag: 00000684 cause: FE
+[CORE0 BUB] itag: 00000685 cause: FE
+[CORE0 BUB] itag: 00000686 cause: FE
+[CORE0 BUB] itag: 00000687 cause: FE
+[CORE0 BUB] itag: 00000688 cause: FE
+[CORE0 BUB] itag: 00000689 cause: FE
+[CORE0 BUB] itag: 0000068a cause: FE
+[CORE0 BUB] itag: 0000068b cause: FE
+[CORE0 BUB] itag: 0000068c cause: FE
+[CORE0 BUB] itag: 0000068d cause: FE
+[CORE0 BUB] itag: 0000068e cause: FE
+[CORE0 BUB] itag: 0000068f cause: FE
+[CORE0 BUB] itag: 00000690 cause: FE
+[CORE0 BUB] itag: 00000691 cause: FE
+[CORE0 BUB] itag: 00000692 cause: FE
+[CORE0 BUB] itag: 00000693 cause: FE
+[CORE0 BUB] itag: 00000694 cause: FE
+[CORE0 BUB] itag: 00000695 cause: FE
+[CORE0 BUB] itag: 00000696 cause: FE
+[CORE0 BUB] itag: 00000697 cause: FE
+[CORE0 BUB] itag: 00000698 cause: FE
+[CORE0 BUB] itag: 00000699 cause: FE
+[CORE0 BUB] itag: 0000069a cause: FE
+[CORE0 BUB] itag: 0000069b cause: FE
+[CORE0 BUB] itag: 0000069c cause: FE
+[CORE0 BUB] itag: 0000069d cause: FE
+[CORE0 BUB] itag: 0000069e cause: FE
+[CORE0 BUB] itag: 0000069f cause: FE
+[CORE0 BUB] itag: 000006a0 cause: FE
+[CORE0 BUB] itag: 000006a1 cause: FE
+[CORE0 BUB] itag: 000006a2 cause: FE
+[CORE0 CMT] itag: 000006a3 pc: 0000000080000200 instr: fff0809b
+			op: integer sem: r 1 <- {000000007fffffff}
+[CORE0 CMT] itag: 000006a4 pc: 0000000080000204 instr: 00008137
+			op: integer sem: r 2 <- {0000000000008000}
+[CORE0 CMT] itag: 000006a5 pc: 0000000080000208 instr: fff1011b
+			op: integer sem: r 2 <- {0000000000007fff}
+[CORE0 CMT] itag: 000006a6 pc: 000000008000020c instr: 002081b3
+			op: integer sem: r 3 <- {0000000080007ffe}
+[CORE0 CMT] itag: 000006a7 pc: 0000000080000210 instr: 00010eb7
+			op: integer sem: r29 <- {0000000000010000}
+[CORE0 CMT] itag: 000006a8 pc: 0000000080000214 instr: 001e8e9b
+			op: integer sem: r29 <- {0000000000010001}
+[CORE0 CMT] itag: 000006a9 pc: 0000000080000218 instr: 00fe9e93
+			op: integer sem: r29 <- {0000000080008000}
+[CORE0 CMT] itag: 000006aa pc: 000000008000021c instr: ffee8e93
+			op: integer sem: r29 <- {0000000080007ffe}
+[CORE0 CMT] itag: 000006ab pc: 0000000080000220 instr: 00a00e13
+			op: integer sem: r28 <- {000000000000000a}
+[CORE0 CMT] itag: 000006ac pc: 0000000080000224 instr: 3fd19a63
+			op: branch sem: pc <- {0000000080000228} rs1: 0000000080007ffe cmp rs2: 0000000080007ffe taken: 0
+[CORE0 CMT] itag: 000006ad pc: 0000000080000228 instr: 800000b7
+			op: integer sem: r 1 <- {ffffffff80000000}
+[CORE0 CMT] itag: 000006ae pc: 000000008000022c instr: 00008137
+			op: integer sem: r 2 <- {0000000000008000}
+[CORE0 CMT] itag: 000006af pc: 0000000080000230 instr: fff1011b
+			op: integer sem: r 2 <- {0000000000007fff}
+[CORE0 CMT] itag: 000006b0 pc: 0000000080000234 instr: 002081b3
+			op: integer sem: r 3 <- {ffffffff80007fff}
+[CORE0 CMT] itag: 000006b1 pc: 0000000080000238 instr: 80008eb7
+			op: integer sem: r29 <- {ffffffff80008000}
+[CORE0 CMT] itag: 000006b2 pc: 000000008000023c instr: fffe8e9b
+			op: integer sem: r29 <- {ffffffff80007fff}
+[CORE0 BUB] itag: 000006b3 cause: FE
+[CORE0 BUB] itag: 000006b4 cause: FE
+[CORE0 BUB] itag: 000006b5 cause: FE
+[CORE0 BUB] itag: 000006b6 cause: FE
+[CORE0 BUB] itag: 000006b7 cause: FE
+[CORE0 BUB] itag: 000006b8 cause: FE
+[CORE0 BUB] itag: 000006b9 cause: FE
+[CORE0 BUB] itag: 000006ba cause: FE
+[CORE0 BUB] itag: 000006bb cause: FE
+[CORE0 BUB] itag: 000006bc cause: FE
+[CORE0 BUB] itag: 000006bd cause: FE
+[CORE0 BUB] itag: 000006be cause: FE
+[CORE0 BUB] itag: 000006bf cause: FE
+[CORE0 BUB] itag: 000006c0 cause: FE
+[CORE0 BUB] itag: 000006c1 cause: FE
+[CORE0 BUB] itag: 000006c2 cause: FE
+[CORE0 BUB] itag: 000006c3 cause: FE
+[CORE0 BUB] itag: 000006c4 cause: FE
+[CORE0 BUB] itag: 000006c5 cause: FE
+[CORE0 BUB] itag: 000006c6 cause: FE
+[CORE0 BUB] itag: 000006c7 cause: FE
+[CORE0 BUB] itag: 000006c8 cause: FE
+[CORE0 BUB] itag: 000006c9 cause: FE
+[CORE0 BUB] itag: 000006ca cause: FE
+[CORE0 BUB] itag: 000006cb cause: FE
+[CORE0 BUB] itag: 000006cc cause: FE
+[CORE0 BUB] itag: 000006cd cause: FE
+[CORE0 BUB] itag: 000006ce cause: FE
+[CORE0 BUB] itag: 000006cf cause: FE
+[CORE0 BUB] itag: 000006d0 cause: FE
+[CORE0 BUB] itag: 000006d1 cause: FE
+[CORE0 BUB] itag: 000006d2 cause: FE
+[CORE0 BUB] itag: 000006d3 cause: FE
+[CORE0 BUB] itag: 000006d4 cause: FE
+[CORE0 BUB] itag: 000006d5 cause: FE
+[CORE0 BUB] itag: 000006d6 cause: FE
+[CORE0 BUB] itag: 000006d7 cause: FE
+[CORE0 BUB] itag: 000006d8 cause: FE
+[CORE0 BUB] itag: 000006d9 cause: FE
+[CORE0 CMT] itag: 000006da pc: 0000000080000240 instr: 00b00e13
+			op: integer sem: r28 <- {000000000000000b}
+[CORE0 CMT] itag: 000006db pc: 0000000080000244 instr: 3dd19a63
+			op: branch sem: pc <- {0000000080000248} rs1: ffffffff80007fff cmp rs2: ffffffff80007fff taken: 0
+[CORE0 CMT] itag: 000006dc pc: 0000000080000248 instr: 800000b7
+			op: integer sem: r 1 <- {ffffffff80000000}
+[CORE0 CMT] itag: 000006dd pc: 000000008000024c instr: fff0809b
+			op: integer sem: r 1 <- {000000007fffffff}
+[CORE0 CMT] itag: 000006de pc: 0000000080000250 instr: ffff8137
+			op: integer sem: r 2 <- {ffffffffffff8000}
+[CORE0 CMT] itag: 000006df pc: 0000000080000254 instr: 002081b3
+			op: integer sem: r 3 <- {000000007fff7fff}
+[CORE0 CMT] itag: 000006e0 pc: 0000000080000258 instr: 7fff8eb7
+			op: integer sem: r29 <- {000000007fff8000}
+[CORE0 CMT] itag: 000006e1 pc: 000000008000025c instr: fffe8e9b
+			op: integer sem: r29 <- {000000007fff7fff}
+[CORE0 CMT] itag: 000006e2 pc: 0000000080000260 instr: 00c00e13
+			op: integer sem: r28 <- {000000000000000c}
+[CORE0 CMT] itag: 000006e3 pc: 0000000080000264 instr: 3bd19a63
+			op: branch sem: pc <- {0000000080000268} rs1: 000000007fff7fff cmp rs2: 000000007fff7fff taken: 0
+[CORE0 CMT] itag: 000006e4 pc: 0000000080000268 instr: 00000093
+			op: integer sem: r 1 <- {0000000000000000}
+[CORE0 CMT] itag: 000006e5 pc: 000000008000026c instr: fff00113
+			op: integer sem: r 2 <- {ffffffffffffffff}
+[CORE0 CMT] itag: 000006e6 pc: 0000000080000270 instr: 002081b3
+			op: integer sem: r 3 <- {ffffffffffffffff}
+[CORE0 CMT] itag: 000006e7 pc: 0000000080000274 instr: fff00e93
+			op: integer sem: r29 <- {ffffffffffffffff}
+[CORE0 CMT] itag: 000006e8 pc: 0000000080000278 instr: 00d00e13
+			op: integer sem: r28 <- {000000000000000d}
+[CORE0 CMT] itag: 000006e9 pc: 000000008000027c instr: 39d19e63
+			op: branch sem: pc <- {0000000080000280} rs1: ffffffffffffffff cmp rs2: ffffffffffffffff taken: 0
+[CORE0 BUB] itag: 000006ea cause: FE
+[CORE0 BUB] itag: 000006eb cause: FE
+[CORE0 BUB] itag: 000006ec cause: FE
+[CORE0 BUB] itag: 000006ed cause: FE
+[CORE0 BUB] itag: 000006ee cause: FE
+[CORE0 BUB] itag: 000006ef cause: FE
+[CORE0 BUB] itag: 000006f0 cause: FE
+[CORE0 BUB] itag: 000006f1 cause: FE
+[CORE0 BUB] itag: 000006f2 cause: FE
+[CORE0 BUB] itag: 000006f3 cause: FE
+[CORE0 BUB] itag: 000006f4 cause: FE
+[CORE0 BUB] itag: 000006f5 cause: FE
+[CORE0 BUB] itag: 000006f6 cause: FE
+[CORE0 BUB] itag: 000006f7 cause: FE
+[CORE0 BUB] itag: 000006f8 cause: FE
+[CORE0 BUB] itag: 000006f9 cause: FE
+[CORE0 BUB] itag: 000006fa cause: FE
+[CORE0 BUB] itag: 000006fb cause: FE
+[CORE0 BUB] itag: 000006fc cause: FE
+[CORE0 BUB] itag: 000006fd cause: FE
+[CORE0 BUB] itag: 000006fe cause: FE
+[CORE0 BUB] itag: 000006ff cause: FE
+[CORE0 BUB] itag: 00000700 cause: FE
+[CORE0 BUB] itag: 00000701 cause: FE
+[CORE0 BUB] itag: 00000702 cause: FE
+[CORE0 BUB] itag: 00000703 cause: FE
+[CORE0 BUB] itag: 00000704 cause: FE
+[CORE0 BUB] itag: 00000705 cause: FE
+[CORE0 BUB] itag: 00000706 cause: FE
+[CORE0 BUB] itag: 00000707 cause: FE
+[CORE0 BUB] itag: 00000708 cause: FE
+[CORE0 BUB] itag: 00000709 cause: FE
+[CORE0 BUB] itag: 0000070a cause: FE
+[CORE0 BUB] itag: 0000070b cause: FE
+[CORE0 BUB] itag: 0000070c cause: FE
+[CORE0 BUB] itag: 0000070d cause: FE
+[CORE0 BUB] itag: 0000070e cause: FE
+[CORE0 BUB] itag: 0000070f cause: FE
+[CORE0 BUB] itag: 00000710 cause: FE
+[CORE0 CMT] itag: 00000711 pc: 0000000080000280 instr: fff00093
+			op: integer sem: r 1 <- {ffffffffffffffff}
+[CORE0 CMT] itag: 00000712 pc: 0000000080000284 instr: 00100113
+			op: integer sem: r 2 <- {0000000000000001}
+[CORE0 CMT] itag: 00000713 pc: 0000000080000288 instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000000}
+[CORE0 CMT] itag: 00000714 pc: 000000008000028c instr: 00000e93
+			op: integer sem: r29 <- {0000000000000000}
+[CORE0 CMT] itag: 00000715 pc: 0000000080000290 instr: 00e00e13
+			op: integer sem: r28 <- {000000000000000e}
+[CORE0 CMT] itag: 00000716 pc: 0000000080000294 instr: 39d19263
+			op: branch sem: pc <- {0000000080000298} rs1: 0000000000000000 cmp rs2: 0000000000000000 taken: 0
+[CORE0 CMT] itag: 00000717 pc: 0000000080000298 instr: fff00093
+			op: integer sem: r 1 <- {ffffffffffffffff}
+[CORE0 CMT] itag: 00000718 pc: 000000008000029c instr: fff00113
+			op: integer sem: r 2 <- {ffffffffffffffff}
+[CORE0 CMT] itag: 00000719 pc: 00000000800002a0 instr: 002081b3
+			op: integer sem: r 3 <- {fffffffffffffffe}
+[CORE0 CMT] itag: 0000071a pc: 00000000800002a4 instr: ffe00e93
+			op: integer sem: r29 <- {fffffffffffffffe}
+[CORE0 CMT] itag: 0000071b pc: 00000000800002a8 instr: 00f00e13
+			op: integer sem: r28 <- {000000000000000f}
+[CORE0 CMT] itag: 0000071c pc: 00000000800002ac instr: 37d19663
+			op: branch sem: pc <- {00000000800002b0} rs1: fffffffffffffffe cmp rs2: fffffffffffffffe taken: 0
+[CORE0 CMT] itag: 0000071d pc: 00000000800002b0 instr: 00100093
+			op: integer sem: r 1 <- {0000000000000001}
+[CORE0 CMT] itag: 0000071e pc: 00000000800002b4 instr: 80000137
+			op: integer sem: r 2 <- {ffffffff80000000}
+[CORE0 CMT] itag: 0000071f pc: 00000000800002b8 instr: fff1011b
+			op: integer sem: r 2 <- {000000007fffffff}
+[CORE0 CMT] itag: 00000720 pc: 00000000800002bc instr: 002081b3
+			op: integer sem: r 3 <- {0000000080000000}
+[CORE0 BUB] itag: 00000721 cause: FE
+[CORE0 BUB] itag: 00000722 cause: FE
+[CORE0 BUB] itag: 00000723 cause: FE
+[CORE0 BUB] itag: 00000724 cause: FE
+[CORE0 BUB] itag: 00000725 cause: FE
+[CORE0 BUB] itag: 00000726 cause: FE
+[CORE0 BUB] itag: 00000727 cause: FE
+[CORE0 BUB] itag: 00000728 cause: FE
+[CORE0 BUB] itag: 00000729 cause: FE
+[CORE0 BUB] itag: 0000072a cause: FE
+[CORE0 BUB] itag: 0000072b cause: FE
+[CORE0 BUB] itag: 0000072c cause: FE
+[CORE0 BUB] itag: 0000072d cause: FE
+[CORE0 BUB] itag: 0000072e cause: FE
+[CORE0 BUB] itag: 0000072f cause: FE
+[CORE0 BUB] itag: 00000730 cause: FE
+[CORE0 BUB] itag: 00000731 cause: FE
+[CORE0 BUB] itag: 00000732 cause: FE
+[CORE0 BUB] itag: 00000733 cause: FE
+[CORE0 BUB] itag: 00000734 cause: FE
+[CORE0 BUB] itag: 00000735 cause: FE
+[CORE0 BUB] itag: 00000736 cause: FE
+[CORE0 BUB] itag: 00000737 cause: FE
+[CORE0 BUB] itag: 00000738 cause: FE
+[CORE0 BUB] itag: 00000739 cause: FE
+[CORE0 BUB] itag: 0000073a cause: FE
+[CORE0 BUB] itag: 0000073b cause: FE
+[CORE0 BUB] itag: 0000073c cause: FE
+[CORE0 BUB] itag: 0000073d cause: FE
+[CORE0 BUB] itag: 0000073e cause: FE
+[CORE0 BUB] itag: 0000073f cause: FE
+[CORE0 BUB] itag: 00000740 cause: FE
+[CORE0 BUB] itag: 00000741 cause: FE
+[CORE0 BUB] itag: 00000742 cause: FE
+[CORE0 BUB] itag: 00000743 cause: FE
+[CORE0 BUB] itag: 00000744 cause: FE
+[CORE0 BUB] itag: 00000745 cause: FE
+[CORE0 BUB] itag: 00000746 cause: FE
+[CORE0 BUB] itag: 00000747 cause: FE
+[CORE0 CMT] itag: 00000748 pc: 00000000800002c0 instr: 00100e9b
+			op: integer sem: r29 <- {0000000000000001}
+[CORE0 CMT] itag: 00000749 pc: 00000000800002c4 instr: 01fe9e93
+			op: integer sem: r29 <- {0000000080000000}
+[CORE0 CMT] itag: 0000074a pc: 00000000800002c8 instr: 01000e13
+			op: integer sem: r28 <- {0000000000000010}
+[CORE0 CMT] itag: 0000074b pc: 00000000800002cc instr: 35d19663
+			op: branch sem: pc <- {00000000800002d0} rs1: 0000000080000000 cmp rs2: 0000000080000000 taken: 0
+[CORE0 CMT] itag: 0000074c pc: 00000000800002d0 instr: 00d00093
+			op: integer sem: r 1 <- {000000000000000d}
+[CORE0 CMT] itag: 0000074d pc: 00000000800002d4 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 CMT] itag: 0000074e pc: 00000000800002d8 instr: 002080b3
+			op: integer sem: r 1 <- {0000000000000018}
+[CORE0 CMT] itag: 0000074f pc: 00000000800002dc instr: 01800e93
+			op: integer sem: r29 <- {0000000000000018}
+[CORE0 CMT] itag: 00000750 pc: 00000000800002e0 instr: 01100e13
+			op: integer sem: r28 <- {0000000000000011}
+[CORE0 CMT] itag: 00000751 pc: 00000000800002e4 instr: 33d09a63
+			op: branch sem: pc <- {00000000800002e8} rs1: 0000000000000018 cmp rs2: 0000000000000018 taken: 0
+[CORE0 CMT] itag: 00000752 pc: 00000000800002e8 instr: 00e00093
+			op: integer sem: r 1 <- {000000000000000e}
+[CORE0 CMT] itag: 00000753 pc: 00000000800002ec instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 CMT] itag: 00000754 pc: 00000000800002f0 instr: 00208133
+			op: integer sem: r 2 <- {0000000000000019}
+[CORE0 CMT] itag: 00000755 pc: 00000000800002f4 instr: 01900e93
+			op: integer sem: r29 <- {0000000000000019}
+[CORE0 CMT] itag: 00000756 pc: 00000000800002f8 instr: 01200e13
+			op: integer sem: r28 <- {0000000000000012}
+[CORE0 CMT] itag: 00000757 pc: 00000000800002fc instr: 31d11e63
+			op: branch sem: pc <- {0000000080000300} rs1: 0000000000000019 cmp rs2: 0000000000000019 taken: 0
+[CORE0 BUB] itag: 00000758 cause: FE
+[CORE0 BUB] itag: 00000759 cause: FE
+[CORE0 BUB] itag: 0000075a cause: FE
+[CORE0 BUB] itag: 0000075b cause: FE
+[CORE0 BUB] itag: 0000075c cause: FE
+[CORE0 BUB] itag: 0000075d cause: FE
+[CORE0 BUB] itag: 0000075e cause: FE
+[CORE0 BUB] itag: 0000075f cause: FE
+[CORE0 BUB] itag: 00000760 cause: FE
+[CORE0 BUB] itag: 00000761 cause: FE
+[CORE0 BUB] itag: 00000762 cause: FE
+[CORE0 BUB] itag: 00000763 cause: FE
+[CORE0 BUB] itag: 00000764 cause: FE
+[CORE0 BUB] itag: 00000765 cause: FE
+[CORE0 BUB] itag: 00000766 cause: FE
+[CORE0 BUB] itag: 00000767 cause: FE
+[CORE0 BUB] itag: 00000768 cause: FE
+[CORE0 BUB] itag: 00000769 cause: FE
+[CORE0 BUB] itag: 0000076a cause: FE
+[CORE0 BUB] itag: 0000076b cause: FE
+[CORE0 BUB] itag: 0000076c cause: FE
+[CORE0 BUB] itag: 0000076d cause: FE
+[CORE0 BUB] itag: 0000076e cause: FE
+[CORE0 BUB] itag: 0000076f cause: FE
+[CORE0 BUB] itag: 00000770 cause: FE
+[CORE0 BUB] itag: 00000771 cause: FE
+[CORE0 BUB] itag: 00000772 cause: FE
+[CORE0 BUB] itag: 00000773 cause: FE
+[CORE0 BUB] itag: 00000774 cause: FE
+[CORE0 BUB] itag: 00000775 cause: FE
+[CORE0 BUB] itag: 00000776 cause: FE
+[CORE0 BUB] itag: 00000777 cause: FE
+[CORE0 BUB] itag: 00000778 cause: FE
+[CORE0 BUB] itag: 00000779 cause: FE
+[CORE0 BUB] itag: 0000077a cause: FE
+[CORE0 BUB] itag: 0000077b cause: FE
+[CORE0 BUB] itag: 0000077c cause: FE
+[CORE0 BUB] itag: 0000077d cause: FE
+[CORE0 BUB] itag: 0000077e cause: FE
+[CORE0 CMT] itag: 0000077f pc: 0000000080000300 instr: 00d00093
+			op: integer sem: r 1 <- {000000000000000d}
+[CORE0 CMT] itag: 00000780 pc: 0000000080000304 instr: 001080b3
+			op: integer sem: r 1 <- {000000000000001a}
+[CORE0 CMT] itag: 00000781 pc: 0000000080000308 instr: 01a00e93
+			op: integer sem: r29 <- {000000000000001a}
+[CORE0 CMT] itag: 00000782 pc: 000000008000030c instr: 01300e13
+			op: integer sem: r28 <- {0000000000000013}
+[CORE0 CMT] itag: 00000783 pc: 0000000080000310 instr: 31d09463
+			op: branch sem: pc <- {0000000080000314} rs1: 000000000000001a cmp rs2: 000000000000001a taken: 0
+[CORE0 CMT] itag: 00000784 pc: 0000000080000314 instr: 00000213
+			op: integer sem: r 4 <- {0000000000000000}
+[CORE0 CMT] itag: 00000785 pc: 0000000080000318 instr: 00d00093
+			op: integer sem: r 1 <- {000000000000000d}
+[CORE0 CMT] itag: 00000786 pc: 000000008000031c instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 CMT] itag: 00000787 pc: 0000000080000320 instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000018}
+[CORE0 CMT] itag: 00000788 pc: 0000000080000324 instr: 00018313
+			op: integer sem: r 6 <- {0000000000000018}
+[CORE0 CMT] itag: 00000789 pc: 0000000080000328 instr: 00120213
+			op: integer sem: r 4 <- {0000000000000001}
+[CORE0 CMT] itag: 0000078a pc: 000000008000032c instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 CMT] itag: 0000078b pc: 0000000080000330 instr: fe5214e3
+			op: branch sem: pc <- {0000000080000318} rs1: 0000000000000001 cmp rs2: 0000000000000002 taken: 1
+[CORE0 PSN] itag: 0000078c pc: 0000000080000334 instr: 01800e93
+[CORE0 BUB] itag: 0000078d cause: FE
+[CORE0 BUB] itag: 0000078e cause: FE
+[CORE0 BUB] itag: 0000078f cause: FE
+[CORE0 BUB] itag: 00000790 cause: FE
+[CORE0 BUB] itag: 00000791 cause: FE
+[CORE0 BUB] itag: 00000792 cause: FE
+[CORE0 BUB] itag: 00000793 cause: FE
+[CORE0 BUB] itag: 00000794 cause: FE
+[CORE0 BUB] itag: 00000795 cause: FE
+[CORE0 BUB] itag: 00000796 cause: FE
+[CORE0 BUB] itag: 00000797 cause: FE
+[CORE0 BUB] itag: 00000798 cause: FE
+[CORE0 BUB] itag: 00000799 cause: FE
+[CORE0 BUB] itag: 0000079a cause: FE
+[CORE0 BUB] itag: 0000079b cause: FE
+[CORE0 BUB] itag: 0000079c cause: FE
+[CORE0 BUB] itag: 0000079d cause: FE
+[CORE0 BUB] itag: 0000079e cause: FE
+[CORE0 BUB] itag: 0000079f cause: FE
+[CORE0 BUB] itag: 000007a0 cause: FE
+[CORE0 BUB] itag: 000007a1 cause: FE
+[CORE0 BUB] itag: 000007a2 cause: FE
+[CORE0 BUB] itag: 000007a3 cause: FE
+[CORE0 BUB] itag: 000007a4 cause: FE
+[CORE0 BUB] itag: 000007a5 cause: FE
+[CORE0 BUB] itag: 000007a6 cause: FE
+[CORE0 BUB] itag: 000007a7 cause: FE
+[CORE0 BUB] itag: 000007a8 cause: FE
+[CORE0 BUB] itag: 000007a9 cause: FE
+[CORE0 BUB] itag: 000007aa cause: FE
+[CORE0 BUB] itag: 000007ab cause: FE
+[CORE0 BUB] itag: 000007ac cause: FE
+[CORE0 BUB] itag: 000007ad cause: FE
+[CORE0 BUB] itag: 000007ae cause: FE
+[CORE0 BUB] itag: 000007af cause: FE
+[CORE0 BUB] itag: 000007b0 cause: FE
+[CORE0 BUB] itag: 000007b1 cause: FE
+[CORE0 BUB] itag: 000007b2 cause: FE
+[CORE0 BUB] itag: 000007b3 cause: FE
+[CORE0 BUB] itag: 000007b4 cause: FE
+[CORE0 BUB] itag: 000007b5 cause: FE
+[CORE0 PSN] itag: 000007b6 pc: 000000008000033c instr: 2dd31e63
+[CORE0 BUB] itag: 000007b7 cause: FE
+[CORE0 BUB] itag: 000007b8 cause: FE
+[CORE0 PSN] itag: 000007b9 pc: 0000000080000348 instr: 00b00113
+[CORE0 BUB] itag: 000007ba cause: FE
+[CORE0 BUB] itag: 000007bb cause: FE
+[CORE0 CMT] itag: 000007bc pc: 0000000080000318 instr: 00d00093
+			op: integer sem: r 1 <- {000000000000000d}
+[CORE0 BUB] itag: 000007bd cause: FE
+[CORE0 CMT] itag: 000007be pc: 000000008000031c instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 PSN] itag: 000007bf pc: 0000000080000318 instr: 00d00093
+[CORE0 BUB] itag: 000007c0 cause: FE
+[CORE0 BUB] itag: 000007c1 cause: FE
+[CORE0 PSN] itag: 000007c2 pc: 0000000080000324 instr: 00018313
+[CORE0 BUB] itag: 000007c3 cause: FE
+[CORE0 BUB] itag: 000007c4 cause: FE
+[CORE0 CMT] itag: 000007c5 pc: 0000000080000320 instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000018}
+[CORE0 BUB] itag: 000007c6 cause: FE
+[CORE0 CMT] itag: 000007c7 pc: 0000000080000324 instr: 00018313
+			op: integer sem: r 6 <- {0000000000000018}
+[CORE0 PSN] itag: 000007c8 pc: 0000000080000320 instr: 002081b3
+[CORE0 BUB] itag: 000007c9 cause: FE
+[CORE0 BUB] itag: 000007ca cause: FE
+[CORE0 PSN] itag: 000007cb pc: 000000008000032c instr: 00200293
+[CORE0 BUB] itag: 000007cc cause: FE
+[CORE0 BUB] itag: 000007cd cause: FE
+[CORE0 CMT] itag: 000007ce pc: 0000000080000328 instr: 00120213
+			op: integer sem: r 4 <- {0000000000000002}
+[CORE0 BUB] itag: 000007cf cause: FE
+[CORE0 CMT] itag: 000007d0 pc: 000000008000032c instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 PSN] itag: 000007d1 pc: 0000000080000328 instr: 00120213
+[CORE0 BUB] itag: 000007d2 cause: FE
+[CORE0 BUB] itag: 000007d3 cause: FE
+[CORE0 PSN] itag: 000007d4 pc: 0000000080000334 instr: 01800e93
+[CORE0 BUB] itag: 000007d5 cause: FE
+[CORE0 BUB] itag: 000007d6 cause: FE
+[CORE0 CMT] itag: 000007d7 pc: 0000000080000330 instr: fe5214e3
+			op: branch sem: pc <- {0000000080000334} rs1: 0000000000000002 cmp rs2: 0000000000000002 taken: 0
+[CORE0 BUB] itag: 000007d8 cause: FE
+[CORE0 CMT] itag: 000007d9 pc: 0000000080000334 instr: 01800e93
+			op: integer sem: r29 <- {0000000000000018}
+[CORE0 PSN] itag: 000007da pc: 0000000080000330 instr: fe5214e3
+[CORE0 BUB] itag: 000007db cause: FE
+[CORE0 BUB] itag: 000007dc cause: FE
+[CORE0 PSN] itag: 000007dd pc: 000000008000033c instr: 2dd31e63
+[CORE0 BUB] itag: 000007de cause: FE
+[CORE0 BUB] itag: 000007df cause: FE
+[CORE0 CMT] itag: 000007e0 pc: 0000000080000338 instr: 01400e13
+			op: integer sem: r28 <- {0000000000000014}
+[CORE0 BUB] itag: 000007e1 cause: FE
+[CORE0 CMT] itag: 000007e2 pc: 000000008000033c instr: 2dd31e63
+			op: branch sem: pc <- {0000000080000340} rs1: 0000000000000018 cmp rs2: 0000000000000018 taken: 0
+[CORE0 PSN] itag: 000007e3 pc: 0000000080000338 instr: 01400e13
+[CORE0 BUB] itag: 000007e4 cause: FE
+[CORE0 BUB] itag: 000007e5 cause: FE
+[CORE0 PSN] itag: 000007e6 pc: 0000000080000344 instr: 00e00093
+[CORE0 BUB] itag: 000007e7 cause: FE
+[CORE0 BUB] itag: 000007e8 cause: FE
+[CORE0 CMT] itag: 000007e9 pc: 0000000080000340 instr: 00000213
+			op: integer sem: r 4 <- {0000000000000000}
+[CORE0 BUB] itag: 000007ea cause: FE
+[CORE0 CMT] itag: 000007eb pc: 0000000080000344 instr: 00e00093
+			op: integer sem: r 1 <- {000000000000000e}
+[CORE0 PSN] itag: 000007ec pc: 0000000080000340 instr: 00000213
+[CORE0 BUB] itag: 000007ed cause: FE
+[CORE0 BUB] itag: 000007ee cause: FE
+[CORE0 PSN] itag: 000007ef pc: 000000008000034c instr: 002081b3
+[CORE0 BUB] itag: 000007f0 cause: FE
+[CORE0 BUB] itag: 000007f1 cause: FE
+[CORE0 CMT] itag: 000007f2 pc: 0000000080000348 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 BUB] itag: 000007f3 cause: FE
+[CORE0 CMT] itag: 000007f4 pc: 000000008000034c instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000019}
+[CORE0 PSN] itag: 000007f5 pc: 0000000080000348 instr: 00b00113
+[CORE0 BUB] itag: 000007f6 cause: FE
+[CORE0 BUB] itag: 000007f7 cause: FE
+[CORE0 PSN] itag: 000007f8 pc: 0000000080000354 instr: 00018313
+[CORE0 BUB] itag: 000007f9 cause: FE
+[CORE0 BUB] itag: 000007fa cause: FE
+[CORE0 CMT] itag: 000007fb pc: 0000000080000350 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 BUB] itag: 000007fc cause: FE
+[CORE0 CMT] itag: 000007fd pc: 0000000080000354 instr: 00018313
+			op: integer sem: r 6 <- {0000000000000019}
+[CORE0 PSN] itag: 000007fe pc: 0000000080000350 instr: 00000013
+[CORE0 BUB] itag: 000007ff cause: FE
+[CORE0 BUB] itag: 00000800 cause: FE
+[CORE0 PSN] itag: 00000801 pc: 000000008000035c instr: 00200293
+[CORE0 BUB] itag: 00000802 cause: FE
+[CORE0 BUB] itag: 00000803 cause: FE
+[CORE0 CMT] itag: 00000804 pc: 0000000080000358 instr: 00120213
+			op: integer sem: r 4 <- {0000000000000001}
+[CORE0 BUB] itag: 00000805 cause: FE
+[CORE0 CMT] itag: 00000806 pc: 000000008000035c instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 PSN] itag: 00000807 pc: 0000000080000358 instr: 00120213
+[CORE0 BUB] itag: 00000808 cause: FE
+[CORE0 BUB] itag: 00000809 cause: FE
+[CORE0 PSN] itag: 0000080a pc: 0000000080000364 instr: 01900e93
+[CORE0 BUB] itag: 0000080b cause: FE
+[CORE0 BUB] itag: 0000080c cause: FE
+[CORE0 CMT] itag: 0000080d pc: 0000000080000360 instr: fe5212e3
+			op: branch sem: pc <- {0000000080000344} rs1: 0000000000000001 cmp rs2: 0000000000000002 taken: 1
+[CORE0 BUB] itag: 0000080e cause: FE
+[CORE0 PSN] itag: 0000080f pc: 0000000080000364 instr: 01900e93
+[CORE0 BUB] itag: 00000810 cause: FE
+[CORE0 BUB] itag: 00000811 cause: FE
+[CORE0 PSN] itag: 00000812 pc: 0000000080000368 instr: 01500e13
+[CORE0 BUB] itag: 00000813 cause: FE
+[CORE0 BUB] itag: 00000814 cause: FE
+[CORE0 CMT] itag: 00000815 pc: 0000000080000344 instr: 00e00093
+			op: integer sem: r 1 <- {000000000000000e}
+[CORE0 BUB] itag: 00000816 cause: FE
+[CORE0 CMT] itag: 00000817 pc: 0000000080000348 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 PSN] itag: 00000818 pc: 0000000080000344 instr: 00e00093
+[CORE0 BUB] itag: 00000819 cause: FE
+[CORE0 BUB] itag: 0000081a cause: FE
+[CORE0 PSN] itag: 0000081b pc: 0000000080000350 instr: 00000013
+[CORE0 BUB] itag: 0000081c cause: FE
+[CORE0 BUB] itag: 0000081d cause: FE
+[CORE0 CMT] itag: 0000081e pc: 000000008000034c instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000019}
+[CORE0 BUB] itag: 0000081f cause: FE
+[CORE0 CMT] itag: 00000820 pc: 0000000080000350 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 PSN] itag: 00000821 pc: 000000008000034c instr: 002081b3
+[CORE0 BUB] itag: 00000822 cause: FE
+[CORE0 BUB] itag: 00000823 cause: FE
+[CORE0 PSN] itag: 00000824 pc: 0000000080000358 instr: 00120213
+[CORE0 BUB] itag: 00000825 cause: FE
+[CORE0 BUB] itag: 00000826 cause: FE
+[CORE0 CMT] itag: 00000827 pc: 0000000080000354 instr: 00018313
+			op: integer sem: r 6 <- {0000000000000019}
+[CORE0 BUB] itag: 00000828 cause: FE
+[CORE0 CMT] itag: 00000829 pc: 0000000080000358 instr: 00120213
+			op: integer sem: r 4 <- {0000000000000002}
+[CORE0 PSN] itag: 0000082a pc: 0000000080000354 instr: 00018313
+[CORE0 BUB] itag: 0000082b cause: FE
+[CORE0 BUB] itag: 0000082c cause: FE
+[CORE0 PSN] itag: 0000082d pc: 0000000080000360 instr: fe5212e3
+[CORE0 BUB] itag: 0000082e cause: FE
+[CORE0 BUB] itag: 0000082f cause: FE
+[CORE0 CMT] itag: 00000830 pc: 000000008000035c instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 BUB] itag: 00000831 cause: FE
+[CORE0 CMT] itag: 00000832 pc: 0000000080000360 instr: fe5212e3
+			op: branch sem: pc <- {0000000080000364} rs1: 0000000000000002 cmp rs2: 0000000000000002 taken: 0
+[CORE0 PSN] itag: 00000833 pc: 000000008000035c instr: 00200293
+[CORE0 BUB] itag: 00000834 cause: FE
+[CORE0 BUB] itag: 00000835 cause: FE
+[CORE0 PSN] itag: 00000836 pc: 0000000080000368 instr: 01500e13
+[CORE0 BUB] itag: 00000837 cause: FE
+[CORE0 BUB] itag: 00000838 cause: FE
+[CORE0 CMT] itag: 00000839 pc: 0000000080000364 instr: 01900e93
+			op: integer sem: r29 <- {0000000000000019}
+[CORE0 BUB] itag: 0000083a cause: FE
+[CORE0 CMT] itag: 0000083b pc: 0000000080000368 instr: 01500e13
+			op: integer sem: r28 <- {0000000000000015}
+[CORE0 PSN] itag: 0000083c pc: 0000000080000364 instr: 01900e93
+[CORE0 BUB] itag: 0000083d cause: FE
+[CORE0 BUB] itag: 0000083e cause: FE
+[CORE0 PSN] itag: 0000083f pc: 0000000080000370 instr: 00000213
+[CORE0 BUB] itag: 00000840 cause: FE
+[CORE0 BUB] itag: 00000841 cause: FE
+[CORE0 CMT] itag: 00000842 pc: 000000008000036c instr: 2bd31663
+			op: branch sem: pc <- {0000000080000370} rs1: 0000000000000019 cmp rs2: 0000000000000019 taken: 0
+[CORE0 BUB] itag: 00000843 cause: FE
+[CORE0 CMT] itag: 00000844 pc: 0000000080000370 instr: 00000213
+			op: integer sem: r 4 <- {0000000000000000}
+[CORE0 PSN] itag: 00000845 pc: 000000008000036c instr: 2bd31663
+[CORE0 BUB] itag: 00000846 cause: FE
+[CORE0 BUB] itag: 00000847 cause: FE
+[CORE0 PSN] itag: 00000848 pc: 0000000080000378 instr: 00b00113
+[CORE0 BUB] itag: 00000849 cause: FE
+[CORE0 BUB] itag: 0000084a cause: FE
+[CORE0 CMT] itag: 0000084b pc: 0000000080000374 instr: 00f00093
+			op: integer sem: r 1 <- {000000000000000f}
+[CORE0 BUB] itag: 0000084c cause: FE
+[CORE0 CMT] itag: 0000084d pc: 0000000080000378 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 PSN] itag: 0000084e pc: 0000000080000374 instr: 00f00093
+[CORE0 BUB] itag: 0000084f cause: FE
+[CORE0 BUB] itag: 00000850 cause: FE
+[CORE0 BUB] itag: 00000851 cause: FE
+[CORE0 BUB] itag: 00000852 cause: FE
+[CORE0 BUB] itag: 00000853 cause: FE
+[CORE0 BUB] itag: 00000854 cause: FE
+[CORE0 BUB] itag: 00000855 cause: FE
+[CORE0 BUB] itag: 00000856 cause: FE
+[CORE0 BUB] itag: 00000857 cause: FE
+[CORE0 BUB] itag: 00000858 cause: FE
+[CORE0 BUB] itag: 00000859 cause: FE
+[CORE0 BUB] itag: 0000085a cause: FE
+[CORE0 BUB] itag: 0000085b cause: FE
+[CORE0 BUB] itag: 0000085c cause: FE
+[CORE0 BUB] itag: 0000085d cause: FE
+[CORE0 BUB] itag: 0000085e cause: FE
+[CORE0 BUB] itag: 0000085f cause: FE
+[CORE0 BUB] itag: 00000860 cause: FE
+[CORE0 BUB] itag: 00000861 cause: FE
+[CORE0 BUB] itag: 00000862 cause: FE
+[CORE0 BUB] itag: 00000863 cause: FE
+[CORE0 BUB] itag: 00000864 cause: FE
+[CORE0 BUB] itag: 00000865 cause: FE
+[CORE0 BUB] itag: 00000866 cause: FE
+[CORE0 BUB] itag: 00000867 cause: FE
+[CORE0 BUB] itag: 00000868 cause: FE
+[CORE0 BUB] itag: 00000869 cause: FE
+[CORE0 BUB] itag: 0000086a cause: FE
+[CORE0 BUB] itag: 0000086b cause: FE
+[CORE0 BUB] itag: 0000086c cause: FE
+[CORE0 BUB] itag: 0000086d cause: FE
+[CORE0 BUB] itag: 0000086e cause: FE
+[CORE0 BUB] itag: 0000086f cause: FE
+[CORE0 BUB] itag: 00000870 cause: FE
+[CORE0 BUB] itag: 00000871 cause: FE
+[CORE0 BUB] itag: 00000872 cause: FE
+[CORE0 BUB] itag: 00000873 cause: FE
+[CORE0 BUB] itag: 00000874 cause: FE
+[CORE0 BUB] itag: 00000875 cause: FE
+[CORE0 BUB] itag: 00000876 cause: FE
+[CORE0 BUB] itag: 00000877 cause: FE
+[CORE0 CMT] itag: 00000878 pc: 000000008000037c instr: 002081b3
+			op: integer sem: r 3 <- {000000000000001a}
+[CORE0 CMT] itag: 00000879 pc: 0000000080000380 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 CMT] itag: 0000087a pc: 0000000080000384 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 CMT] itag: 0000087b pc: 0000000080000388 instr: 00018313
+			op: integer sem: r 6 <- {000000000000001a}
+[CORE0 CMT] itag: 0000087c pc: 000000008000038c instr: 00120213
+			op: integer sem: r 4 <- {0000000000000001}
+[CORE0 CMT] itag: 0000087d pc: 0000000080000390 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 CMT] itag: 0000087e pc: 0000000080000394 instr: fe5210e3
+			op: branch sem: pc <- {0000000080000374} rs1: 0000000000000001 cmp rs2: 0000000000000002 taken: 1
+[CORE0 PSN] itag: 0000087f pc: 0000000080000398 instr: 01a00e93
+[CORE0 BUB] itag: 00000880 cause: FE
+[CORE0 BUB] itag: 00000881 cause: FE
+[CORE0 PSN] itag: 00000882 pc: 00000000800003a4 instr: 00000213
+[CORE0 BUB] itag: 00000883 cause: FE
+[CORE0 BUB] itag: 00000884 cause: FE
+[CORE0 CMT] itag: 00000885 pc: 0000000080000374 instr: 00f00093
+			op: integer sem: r 1 <- {000000000000000f}
+[CORE0 BUB] itag: 00000886 cause: FE
+[CORE0 CMT] itag: 00000887 pc: 0000000080000378 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 PSN] itag: 00000888 pc: 0000000080000374 instr: 00f00093
+[CORE0 BUB] itag: 00000889 cause: FE
+[CORE0 BUB] itag: 0000088a cause: FE
+[CORE0 PSN] itag: 0000088b pc: 0000000080000380 instr: 00000013
+[CORE0 BUB] itag: 0000088c cause: FE
+[CORE0 BUB] itag: 0000088d cause: FE
+[CORE0 CMT] itag: 0000088e pc: 000000008000037c instr: 002081b3
+			op: integer sem: r 3 <- {000000000000001a}
+[CORE0 BUB] itag: 0000088f cause: FE
+[CORE0 CMT] itag: 00000890 pc: 0000000080000380 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 PSN] itag: 00000891 pc: 000000008000037c instr: 002081b3
+[CORE0 BUB] itag: 00000892 cause: FE
+[CORE0 BUB] itag: 00000893 cause: FE
+[CORE0 PSN] itag: 00000894 pc: 0000000080000388 instr: 00018313
+[CORE0 BUB] itag: 00000895 cause: FE
+[CORE0 BUB] itag: 00000896 cause: FE
+[CORE0 CMT] itag: 00000897 pc: 0000000080000384 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 BUB] itag: 00000898 cause: FE
+[CORE0 CMT] itag: 00000899 pc: 0000000080000388 instr: 00018313
+			op: integer sem: r 6 <- {000000000000001a}
+[CORE0 PSN] itag: 0000089a pc: 0000000080000384 instr: 00000013
+[CORE0 BUB] itag: 0000089b cause: FE
+[CORE0 BUB] itag: 0000089c cause: FE
+[CORE0 PSN] itag: 0000089d pc: 0000000080000390 instr: 00200293
+[CORE0 BUB] itag: 0000089e cause: FE
+[CORE0 BUB] itag: 0000089f cause: FE
+[CORE0 CMT] itag: 000008a0 pc: 000000008000038c instr: 00120213
+			op: integer sem: r 4 <- {0000000000000002}
+[CORE0 BUB] itag: 000008a1 cause: FE
+[CORE0 CMT] itag: 000008a2 pc: 0000000080000390 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 PSN] itag: 000008a3 pc: 000000008000038c instr: 00120213
+[CORE0 BUB] itag: 000008a4 cause: FE
+[CORE0 BUB] itag: 000008a5 cause: FE
+[CORE0 PSN] itag: 000008a6 pc: 0000000080000398 instr: 01a00e93
+[CORE0 BUB] itag: 000008a7 cause: FE
+[CORE0 BUB] itag: 000008a8 cause: FE
+[CORE0 CMT] itag: 000008a9 pc: 0000000080000394 instr: fe5210e3
+			op: branch sem: pc <- {0000000080000398} rs1: 0000000000000002 cmp rs2: 0000000000000002 taken: 0
+[CORE0 BUB] itag: 000008aa cause: FE
+[CORE0 CMT] itag: 000008ab pc: 0000000080000398 instr: 01a00e93
+			op: integer sem: r29 <- {000000000000001a}
+[CORE0 PSN] itag: 000008ac pc: 0000000080000394 instr: fe5210e3
+[CORE0 BUB] itag: 000008ad cause: FE
+[CORE0 BUB] itag: 000008ae cause: FE
+[CORE0 PSN] itag: 000008af pc: 00000000800003a0 instr: 27d31c63
+[CORE0 BUB] itag: 000008b0 cause: FE
+[CORE0 BUB] itag: 000008b1 cause: FE
+[CORE0 CMT] itag: 000008b2 pc: 000000008000039c instr: 01600e13
+			op: integer sem: r28 <- {0000000000000016}
+[CORE0 BUB] itag: 000008b3 cause: FE
+[CORE0 CMT] itag: 000008b4 pc: 00000000800003a0 instr: 27d31c63
+			op: branch sem: pc <- {00000000800003a4} rs1: 000000000000001a cmp rs2: 000000000000001a taken: 0
+[CORE0 PSN] itag: 000008b5 pc: 000000008000039c instr: 01600e13
+[CORE0 BUB] itag: 000008b6 cause: FE
+[CORE0 BUB] itag: 000008b7 cause: FE
+[CORE0 PSN] itag: 000008b8 pc: 00000000800003a8 instr: 00d00093
+[CORE0 BUB] itag: 000008b9 cause: FE
+[CORE0 BUB] itag: 000008ba cause: FE
+[CORE0 CMT] itag: 000008bb pc: 00000000800003a4 instr: 00000213
+			op: integer sem: r 4 <- {0000000000000000}
+[CORE0 BUB] itag: 000008bc cause: FE
+[CORE0 CMT] itag: 000008bd pc: 00000000800003a8 instr: 00d00093
+			op: integer sem: r 1 <- {000000000000000d}
+[CORE0 PSN] itag: 000008be pc: 00000000800003a4 instr: 00000213
+[CORE0 BUB] itag: 000008bf cause: FE
+[CORE0 BUB] itag: 000008c0 cause: FE
+[CORE0 PSN] itag: 000008c1 pc: 00000000800003b0 instr: 002081b3
+[CORE0 BUB] itag: 000008c2 cause: FE
+[CORE0 BUB] itag: 000008c3 cause: FE
+[CORE0 CMT] itag: 000008c4 pc: 00000000800003ac instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 BUB] itag: 000008c5 cause: FE
+[CORE0 CMT] itag: 000008c6 pc: 00000000800003b0 instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000018}
+[CORE0 PSN] itag: 000008c7 pc: 00000000800003ac instr: 00b00113
+[CORE0 BUB] itag: 000008c8 cause: FE
+[CORE0 BUB] itag: 000008c9 cause: FE
+[CORE0 PSN] itag: 000008ca pc: 00000000800003b8 instr: 00200293
+[CORE0 BUB] itag: 000008cb cause: FE
+[CORE0 BUB] itag: 000008cc cause: FE
+[CORE0 CMT] itag: 000008cd pc: 00000000800003b4 instr: 00120213
+			op: integer sem: r 4 <- {0000000000000001}
+[CORE0 BUB] itag: 000008ce cause: FE
+[CORE0 CMT] itag: 000008cf pc: 00000000800003b8 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 PSN] itag: 000008d0 pc: 00000000800003b4 instr: 00120213
+[CORE0 BUB] itag: 000008d1 cause: FE
+[CORE0 BUB] itag: 000008d2 cause: FE
+[CORE0 BUB] itag: 000008d3 cause: FE
+[CORE0 BUB] itag: 000008d4 cause: FE
+[CORE0 BUB] itag: 000008d5 cause: FE
+[CORE0 BUB] itag: 000008d6 cause: FE
+[CORE0 BUB] itag: 000008d7 cause: FE
+[CORE0 BUB] itag: 000008d8 cause: FE
+[CORE0 BUB] itag: 000008d9 cause: FE
+[CORE0 BUB] itag: 000008da cause: FE
+[CORE0 BUB] itag: 000008db cause: FE
+[CORE0 BUB] itag: 000008dc cause: FE
+[CORE0 BUB] itag: 000008dd cause: FE
+[CORE0 BUB] itag: 000008de cause: FE
+[CORE0 BUB] itag: 000008df cause: FE
+[CORE0 BUB] itag: 000008e0 cause: FE
+[CORE0 BUB] itag: 000008e1 cause: FE
+[CORE0 BUB] itag: 000008e2 cause: FE
+[CORE0 BUB] itag: 000008e3 cause: FE
+[CORE0 BUB] itag: 000008e4 cause: FE
+[CORE0 BUB] itag: 000008e5 cause: FE
+[CORE0 BUB] itag: 000008e6 cause: FE
+[CORE0 BUB] itag: 000008e7 cause: FE
+[CORE0 BUB] itag: 000008e8 cause: FE
+[CORE0 BUB] itag: 000008e9 cause: FE
+[CORE0 BUB] itag: 000008ea cause: FE
+[CORE0 BUB] itag: 000008eb cause: FE
+[CORE0 BUB] itag: 000008ec cause: FE
+[CORE0 BUB] itag: 000008ed cause: FE
+[CORE0 BUB] itag: 000008ee cause: FE
+[CORE0 BUB] itag: 000008ef cause: FE
+[CORE0 BUB] itag: 000008f0 cause: FE
+[CORE0 BUB] itag: 000008f1 cause: FE
+[CORE0 BUB] itag: 000008f2 cause: FE
+[CORE0 BUB] itag: 000008f3 cause: FE
+[CORE0 BUB] itag: 000008f4 cause: FE
+[CORE0 BUB] itag: 000008f5 cause: FE
+[CORE0 BUB] itag: 000008f6 cause: FE
+[CORE0 BUB] itag: 000008f7 cause: FE
+[CORE0 BUB] itag: 000008f8 cause: FE
+[CORE0 BUB] itag: 000008f9 cause: FE
+[CORE0 CMT] itag: 000008fa pc: 00000000800003bc instr: fe5216e3
+			op: branch sem: pc <- {00000000800003a8} rs1: 0000000000000001 cmp rs2: 0000000000000002 taken: 1
+[CORE0 PSN] itag: 000008fb pc: 00000000800003c0 instr: 01800e93
+[CORE0 BUB] itag: 000008fc cause: FE
+[CORE0 BUB] itag: 000008fd cause: FE
+[CORE0 PSN] itag: 000008fe pc: 00000000800003cc instr: 00000213
+[CORE0 BUB] itag: 000008ff cause: FE
+[CORE0 BUB] itag: 00000900 cause: FE
+[CORE0 CMT] itag: 00000901 pc: 00000000800003a8 instr: 00d00093
+			op: integer sem: r 1 <- {000000000000000d}
+[CORE0 BUB] itag: 00000902 cause: FE
+[CORE0 CMT] itag: 00000903 pc: 00000000800003ac instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 PSN] itag: 00000904 pc: 00000000800003a8 instr: 00d00093
+[CORE0 BUB] itag: 00000905 cause: FE
+[CORE0 BUB] itag: 00000906 cause: FE
+[CORE0 PSN] itag: 00000907 pc: 00000000800003b4 instr: 00120213
+[CORE0 BUB] itag: 00000908 cause: FE
+[CORE0 BUB] itag: 00000909 cause: FE
+[CORE0 CMT] itag: 0000090a pc: 00000000800003b0 instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000018}
+[CORE0 BUB] itag: 0000090b cause: FE
+[CORE0 CMT] itag: 0000090c pc: 00000000800003b4 instr: 00120213
+			op: integer sem: r 4 <- {0000000000000002}
+[CORE0 PSN] itag: 0000090d pc: 00000000800003b0 instr: 002081b3
+[CORE0 BUB] itag: 0000090e cause: FE
+[CORE0 BUB] itag: 0000090f cause: FE
+[CORE0 PSN] itag: 00000910 pc: 00000000800003bc instr: fe5216e3
+[CORE0 BUB] itag: 00000911 cause: FE
+[CORE0 BUB] itag: 00000912 cause: FE
+[CORE0 CMT] itag: 00000913 pc: 00000000800003b8 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 BUB] itag: 00000914 cause: FE
+[CORE0 CMT] itag: 00000915 pc: 00000000800003bc instr: fe5216e3
+			op: branch sem: pc <- {00000000800003c0} rs1: 0000000000000002 cmp rs2: 0000000000000002 taken: 0
+[CORE0 PSN] itag: 00000916 pc: 00000000800003b8 instr: 00200293
+[CORE0 BUB] itag: 00000917 cause: FE
+[CORE0 BUB] itag: 00000918 cause: FE
+[CORE0 PSN] itag: 00000919 pc: 00000000800003c4 instr: 01700e13
+[CORE0 BUB] itag: 0000091a cause: FE
+[CORE0 BUB] itag: 0000091b cause: FE
+[CORE0 CMT] itag: 0000091c pc: 00000000800003c0 instr: 01800e93
+			op: integer sem: r29 <- {0000000000000018}
+[CORE0 BUB] itag: 0000091d cause: FE
+[CORE0 CMT] itag: 0000091e pc: 00000000800003c4 instr: 01700e13
+			op: integer sem: r28 <- {0000000000000017}
+[CORE0 PSN] itag: 0000091f pc: 00000000800003c0 instr: 01800e93
+[CORE0 BUB] itag: 00000920 cause: FE
+[CORE0 BUB] itag: 00000921 cause: FE
+[CORE0 PSN] itag: 00000922 pc: 00000000800003cc instr: 00000213
+[CORE0 BUB] itag: 00000923 cause: FE
+[CORE0 BUB] itag: 00000924 cause: FE
+[CORE0 CMT] itag: 00000925 pc: 00000000800003c8 instr: 25d19863
+			op: branch sem: pc <- {00000000800003cc} rs1: 0000000000000018 cmp rs2: 0000000000000018 taken: 0
+[CORE0 BUB] itag: 00000926 cause: FE
+[CORE0 CMT] itag: 00000927 pc: 00000000800003cc instr: 00000213
+			op: integer sem: r 4 <- {0000000000000000}
+[CORE0 PSN] itag: 00000928 pc: 00000000800003c8 instr: 25d19863
+[CORE0 BUB] itag: 00000929 cause: FE
+[CORE0 BUB] itag: 0000092a cause: FE
+[CORE0 PSN] itag: 0000092b pc: 00000000800003d4 instr: 00b00113
+[CORE0 BUB] itag: 0000092c cause: FE
+[CORE0 BUB] itag: 0000092d cause: FE
+[CORE0 CMT] itag: 0000092e pc: 00000000800003d0 instr: 00e00093
+			op: integer sem: r 1 <- {000000000000000e}
+[CORE0 BUB] itag: 0000092f cause: FE
+[CORE0 CMT] itag: 00000930 pc: 00000000800003d4 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 PSN] itag: 00000931 pc: 00000000800003d0 instr: 00e00093
+[CORE0 BUB] itag: 00000932 cause: FE
+[CORE0 BUB] itag: 00000933 cause: FE
+[CORE0 PSN] itag: 00000934 pc: 00000000800003dc instr: 002081b3
+[CORE0 BUB] itag: 00000935 cause: FE
+[CORE0 BUB] itag: 00000936 cause: FE
+[CORE0 CMT] itag: 00000937 pc: 00000000800003d8 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 BUB] itag: 00000938 cause: FE
+[CORE0 CMT] itag: 00000939 pc: 00000000800003dc instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000019}
+[CORE0 PSN] itag: 0000093a pc: 00000000800003d8 instr: 00000013
+[CORE0 BUB] itag: 0000093b cause: FE
+[CORE0 BUB] itag: 0000093c cause: FE
+[CORE0 PSN] itag: 0000093d pc: 00000000800003e4 instr: 00200293
+[CORE0 BUB] itag: 0000093e cause: FE
+[CORE0 BUB] itag: 0000093f cause: FE
+[CORE0 CMT] itag: 00000940 pc: 00000000800003e0 instr: 00120213
+			op: integer sem: r 4 <- {0000000000000001}
+[CORE0 BUB] itag: 00000941 cause: FE
+[CORE0 CMT] itag: 00000942 pc: 00000000800003e4 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 PSN] itag: 00000943 pc: 00000000800003e0 instr: 00120213
+[CORE0 BUB] itag: 00000944 cause: FE
+[CORE0 BUB] itag: 00000945 cause: FE
+[CORE0 PSN] itag: 00000946 pc: 00000000800003ec instr: 01900e93
+[CORE0 BUB] itag: 00000947 cause: FE
+[CORE0 BUB] itag: 00000948 cause: FE
+[CORE0 CMT] itag: 00000949 pc: 00000000800003e8 instr: fe5214e3
+			op: branch sem: pc <- {00000000800003d0} rs1: 0000000000000001 cmp rs2: 0000000000000002 taken: 1
+[CORE0 BUB] itag: 0000094a cause: FE
+[CORE0 PSN] itag: 0000094b pc: 00000000800003ec instr: 01900e93
+[CORE0 BUB] itag: 0000094c cause: FE
+[CORE0 BUB] itag: 0000094d cause: FE
+[CORE0 PSN] itag: 0000094e pc: 00000000800003f0 instr: 01800e13
+[CORE0 BUB] itag: 0000094f cause: FE
+[CORE0 BUB] itag: 00000950 cause: FE
+[CORE0 CMT] itag: 00000951 pc: 00000000800003d0 instr: 00e00093
+			op: integer sem: r 1 <- {000000000000000e}
+[CORE0 BUB] itag: 00000952 cause: FE
+[CORE0 CMT] itag: 00000953 pc: 00000000800003d4 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 PSN] itag: 00000954 pc: 00000000800003d0 instr: 00e00093
+[CORE0 BUB] itag: 00000955 cause: FE
+[CORE0 BUB] itag: 00000956 cause: FE
+[CORE0 PSN] itag: 00000957 pc: 00000000800003dc instr: 002081b3
+[CORE0 BUB] itag: 00000958 cause: FE
+[CORE0 BUB] itag: 00000959 cause: FE
+[CORE0 CMT] itag: 0000095a pc: 00000000800003d8 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 BUB] itag: 0000095b cause: FE
+[CORE0 CMT] itag: 0000095c pc: 00000000800003dc instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000019}
+[CORE0 PSN] itag: 0000095d pc: 00000000800003d8 instr: 00000013
+[CORE0 BUB] itag: 0000095e cause: FE
+[CORE0 BUB] itag: 0000095f cause: FE
+[CORE0 PSN] itag: 00000960 pc: 00000000800003e4 instr: 00200293
+[CORE0 BUB] itag: 00000961 cause: FE
+[CORE0 BUB] itag: 00000962 cause: FE
+[CORE0 CMT] itag: 00000963 pc: 00000000800003e0 instr: 00120213
+			op: integer sem: r 4 <- {0000000000000002}
+[CORE0 BUB] itag: 00000964 cause: FE
+[CORE0 CMT] itag: 00000965 pc: 00000000800003e4 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 PSN] itag: 00000966 pc: 00000000800003e0 instr: 00120213
+[CORE0 BUB] itag: 00000967 cause: FE
+[CORE0 BUB] itag: 00000968 cause: FE
+[CORE0 PSN] itag: 00000969 pc: 00000000800003ec instr: 01900e93
+[CORE0 BUB] itag: 0000096a cause: FE
+[CORE0 BUB] itag: 0000096b cause: FE
+[CORE0 CMT] itag: 0000096c pc: 00000000800003e8 instr: fe5214e3
+			op: branch sem: pc <- {00000000800003ec} rs1: 0000000000000002 cmp rs2: 0000000000000002 taken: 0
+[CORE0 BUB] itag: 0000096d cause: FE
+[CORE0 CMT] itag: 0000096e pc: 00000000800003ec instr: 01900e93
+			op: integer sem: r29 <- {0000000000000019}
+[CORE0 PSN] itag: 0000096f pc: 00000000800003e8 instr: fe5214e3
+[CORE0 BUB] itag: 00000970 cause: FE
+[CORE0 BUB] itag: 00000971 cause: FE
+[CORE0 PSN] itag: 00000972 pc: 00000000800003f4 instr: 23d19263
+[CORE0 BUB] itag: 00000973 cause: FE
+[CORE0 BUB] itag: 00000974 cause: FE
+[CORE0 CMT] itag: 00000975 pc: 00000000800003f0 instr: 01800e13
+			op: integer sem: r28 <- {0000000000000018}
+[CORE0 BUB] itag: 00000976 cause: FE
+[CORE0 CMT] itag: 00000977 pc: 00000000800003f4 instr: 23d19263
+			op: branch sem: pc <- {00000000800003f8} rs1: 0000000000000019 cmp rs2: 0000000000000019 taken: 0
+[CORE0 PSN] itag: 00000978 pc: 00000000800003f0 instr: 01800e13
+[CORE0 BUB] itag: 00000979 cause: FE
+[CORE0 BUB] itag: 0000097a cause: FE
+[CORE0 PSN] itag: 0000097b pc: 00000000800003fc instr: 00f00093
+[CORE0 BUB] itag: 0000097c cause: FE
+[CORE0 BUB] itag: 0000097d cause: FE
+[CORE0 BUB] itag: 0000097e cause: FE
+[CORE0 BUB] itag: 0000097f cause: FE
+[CORE0 BUB] itag: 00000980 cause: FE
+[CORE0 BUB] itag: 00000981 cause: FE
+[CORE0 BUB] itag: 00000982 cause: FE
+[CORE0 BUB] itag: 00000983 cause: FE
+[CORE0 BUB] itag: 00000984 cause: FE
+[CORE0 BUB] itag: 00000985 cause: FE
+[CORE0 BUB] itag: 00000986 cause: FE
+[CORE0 BUB] itag: 00000987 cause: FE
+[CORE0 BUB] itag: 00000988 cause: FE
+[CORE0 BUB] itag: 00000989 cause: FE
+[CORE0 BUB] itag: 0000098a cause: FE
+[CORE0 BUB] itag: 0000098b cause: FE
+[CORE0 BUB] itag: 0000098c cause: FE
+[CORE0 BUB] itag: 0000098d cause: FE
+[CORE0 BUB] itag: 0000098e cause: FE
+[CORE0 BUB] itag: 0000098f cause: FE
+[CORE0 BUB] itag: 00000990 cause: FE
+[CORE0 BUB] itag: 00000991 cause: FE
+[CORE0 BUB] itag: 00000992 cause: FE
+[CORE0 BUB] itag: 00000993 cause: FE
+[CORE0 BUB] itag: 00000994 cause: FE
+[CORE0 BUB] itag: 00000995 cause: FE
+[CORE0 BUB] itag: 00000996 cause: FE
+[CORE0 BUB] itag: 00000997 cause: FE
+[CORE0 BUB] itag: 00000998 cause: FE
+[CORE0 BUB] itag: 00000999 cause: FE
+[CORE0 BUB] itag: 0000099a cause: FE
+[CORE0 BUB] itag: 0000099b cause: FE
+[CORE0 BUB] itag: 0000099c cause: FE
+[CORE0 BUB] itag: 0000099d cause: FE
+[CORE0 BUB] itag: 0000099e cause: FE
+[CORE0 BUB] itag: 0000099f cause: FE
+[CORE0 BUB] itag: 000009a0 cause: FE
+[CORE0 BUB] itag: 000009a1 cause: FE
+[CORE0 BUB] itag: 000009a2 cause: FE
+[CORE0 BUB] itag: 000009a3 cause: FE
+[CORE0 PSN] itag: 000009a4 pc: 0000000080000400 instr: 00b00113
+[CORE0 BUB] itag: 000009a5 cause: FE
+[CORE0 BUB] itag: 000009a6 cause: FE
+[CORE0 PSN] itag: 000009a7 pc: 000000008000040c instr: 002081b3
+[CORE0 BUB] itag: 000009a8 cause: FE
+[CORE0 BUB] itag: 000009a9 cause: FE
+[CORE0 CMT] itag: 000009aa pc: 00000000800003f8 instr: 00000213
+			op: integer sem: r 4 <- {0000000000000000}
+[CORE0 BUB] itag: 000009ab cause: FE
+[CORE0 CMT] itag: 000009ac pc: 00000000800003fc instr: 00f00093
+			op: integer sem: r 1 <- {000000000000000f}
+[CORE0 PSN] itag: 000009ad pc: 00000000800003f8 instr: 00000213
+[CORE0 BUB] itag: 000009ae cause: FE
+[CORE0 BUB] itag: 000009af cause: FE
+[CORE0 PSN] itag: 000009b0 pc: 0000000080000404 instr: 00000013
+[CORE0 BUB] itag: 000009b1 cause: FE
+[CORE0 BUB] itag: 000009b2 cause: FE
+[CORE0 CMT] itag: 000009b3 pc: 0000000080000400 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 BUB] itag: 000009b4 cause: FE
+[CORE0 CMT] itag: 000009b5 pc: 0000000080000404 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 PSN] itag: 000009b6 pc: 0000000080000400 instr: 00b00113
+[CORE0 BUB] itag: 000009b7 cause: FE
+[CORE0 BUB] itag: 000009b8 cause: FE
+[CORE0 PSN] itag: 000009b9 pc: 000000008000040c instr: 002081b3
+[CORE0 BUB] itag: 000009ba cause: FE
+[CORE0 BUB] itag: 000009bb cause: FE
+[CORE0 CMT] itag: 000009bc pc: 0000000080000408 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 BUB] itag: 000009bd cause: FE
+[CORE0 CMT] itag: 000009be pc: 000000008000040c instr: 002081b3
+			op: integer sem: r 3 <- {000000000000001a}
+[CORE0 PSN] itag: 000009bf pc: 0000000080000408 instr: 00000013
+[CORE0 BUB] itag: 000009c0 cause: FE
+[CORE0 BUB] itag: 000009c1 cause: FE
+[CORE0 PSN] itag: 000009c2 pc: 0000000080000414 instr: 00200293
+[CORE0 BUB] itag: 000009c3 cause: FE
+[CORE0 BUB] itag: 000009c4 cause: FE
+[CORE0 CMT] itag: 000009c5 pc: 0000000080000410 instr: 00120213
+			op: integer sem: r 4 <- {0000000000000001}
+[CORE0 BUB] itag: 000009c6 cause: FE
+[CORE0 CMT] itag: 000009c7 pc: 0000000080000414 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 PSN] itag: 000009c8 pc: 0000000080000410 instr: 00120213
+[CORE0 BUB] itag: 000009c9 cause: FE
+[CORE0 BUB] itag: 000009ca cause: FE
+[CORE0 PSN] itag: 000009cb pc: 000000008000041c instr: 01a00e93
+[CORE0 BUB] itag: 000009cc cause: FE
+[CORE0 BUB] itag: 000009cd cause: FE
+[CORE0 CMT] itag: 000009ce pc: 0000000080000418 instr: fe5212e3
+			op: branch sem: pc <- {00000000800003fc} rs1: 0000000000000001 cmp rs2: 0000000000000002 taken: 1
+[CORE0 BUB] itag: 000009cf cause: FE
+[CORE0 PSN] itag: 000009d0 pc: 000000008000041c instr: 01a00e93
+[CORE0 BUB] itag: 000009d1 cause: FE
+[CORE0 BUB] itag: 000009d2 cause: FE
+[CORE0 PSN] itag: 000009d3 pc: 0000000080000420 instr: 01900e13
+[CORE0 BUB] itag: 000009d4 cause: FE
+[CORE0 BUB] itag: 000009d5 cause: FE
+[CORE0 CMT] itag: 000009d6 pc: 00000000800003fc instr: 00f00093
+			op: integer sem: r 1 <- {000000000000000f}
+[CORE0 BUB] itag: 000009d7 cause: FE
+[CORE0 CMT] itag: 000009d8 pc: 0000000080000400 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 PSN] itag: 000009d9 pc: 00000000800003fc instr: 00f00093
+[CORE0 BUB] itag: 000009da cause: FE
+[CORE0 BUB] itag: 000009db cause: FE
+[CORE0 PSN] itag: 000009dc pc: 0000000080000408 instr: 00000013
+[CORE0 BUB] itag: 000009dd cause: FE
+[CORE0 BUB] itag: 000009de cause: FE
+[CORE0 CMT] itag: 000009df pc: 0000000080000404 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 BUB] itag: 000009e0 cause: FE
+[CORE0 CMT] itag: 000009e1 pc: 0000000080000408 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 PSN] itag: 000009e2 pc: 0000000080000404 instr: 00000013
+[CORE0 BUB] itag: 000009e3 cause: FE
+[CORE0 BUB] itag: 000009e4 cause: FE
+[CORE0 PSN] itag: 000009e5 pc: 0000000080000410 instr: 00120213
+[CORE0 BUB] itag: 000009e6 cause: FE
+[CORE0 BUB] itag: 000009e7 cause: FE
+[CORE0 CMT] itag: 000009e8 pc: 000000008000040c instr: 002081b3
+			op: integer sem: r 3 <- {000000000000001a}
+[CORE0 BUB] itag: 000009e9 cause: FE
+[CORE0 CMT] itag: 000009ea pc: 0000000080000410 instr: 00120213
+			op: integer sem: r 4 <- {0000000000000002}
+[CORE0 PSN] itag: 000009eb pc: 000000008000040c instr: 002081b3
+[CORE0 BUB] itag: 000009ec cause: FE
+[CORE0 BUB] itag: 000009ed cause: FE
+[CORE0 PSN] itag: 000009ee pc: 0000000080000418 instr: fe5212e3
+[CORE0 BUB] itag: 000009ef cause: FE
+[CORE0 BUB] itag: 000009f0 cause: FE
+[CORE0 CMT] itag: 000009f1 pc: 0000000080000414 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 BUB] itag: 000009f2 cause: FE
+[CORE0 CMT] itag: 000009f3 pc: 0000000080000418 instr: fe5212e3
+			op: branch sem: pc <- {000000008000041c} rs1: 0000000000000002 cmp rs2: 0000000000000002 taken: 0
+[CORE0 PSN] itag: 000009f4 pc: 0000000080000414 instr: 00200293
+[CORE0 BUB] itag: 000009f5 cause: FE
+[CORE0 BUB] itag: 000009f6 cause: FE
+[CORE0 PSN] itag: 000009f7 pc: 0000000080000420 instr: 01900e13
+[CORE0 BUB] itag: 000009f8 cause: FE
+[CORE0 BUB] itag: 000009f9 cause: FE
+[CORE0 CMT] itag: 000009fa pc: 000000008000041c instr: 01a00e93
+			op: integer sem: r29 <- {000000000000001a}
+[CORE0 BUB] itag: 000009fb cause: FE
+[CORE0 CMT] itag: 000009fc pc: 0000000080000420 instr: 01900e13
+			op: integer sem: r28 <- {0000000000000019}
+[CORE0 PSN] itag: 000009fd pc: 000000008000041c instr: 01a00e93
+[CORE0 BUB] itag: 000009fe cause: FE
+[CORE0 BUB] itag: 000009ff cause: FE
+[CORE0 PSN] itag: 00000a00 pc: 0000000080000428 instr: 00000213
+[CORE0 BUB] itag: 00000a01 cause: FE
+[CORE0 BUB] itag: 00000a02 cause: FE
+[CORE0 CMT] itag: 00000a03 pc: 0000000080000424 instr: 1fd19a63
+			op: branch sem: pc <- {0000000080000428} rs1: 000000000000001a cmp rs2: 000000000000001a taken: 0
+[CORE0 BUB] itag: 00000a04 cause: FE
+[CORE0 CMT] itag: 00000a05 pc: 0000000080000428 instr: 00000213
+			op: integer sem: r 4 <- {0000000000000000}
+[CORE0 PSN] itag: 00000a06 pc: 0000000080000424 instr: 1fd19a63
+[CORE0 BUB] itag: 00000a07 cause: FE
+[CORE0 BUB] itag: 00000a08 cause: FE
+[CORE0 PSN] itag: 00000a09 pc: 0000000080000430 instr: 00000013
+[CORE0 BUB] itag: 00000a0a cause: FE
+[CORE0 BUB] itag: 00000a0b cause: FE
+[CORE0 CMT] itag: 00000a0c pc: 000000008000042c instr: 00d00093
+			op: integer sem: r 1 <- {000000000000000d}
+[CORE0 BUB] itag: 00000a0d cause: FE
+[CORE0 CMT] itag: 00000a0e pc: 0000000080000430 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 PSN] itag: 00000a0f pc: 000000008000042c instr: 00d00093
+[CORE0 BUB] itag: 00000a10 cause: FE
+[CORE0 BUB] itag: 00000a11 cause: FE
+[CORE0 PSN] itag: 00000a12 pc: 0000000080000438 instr: 002081b3
+[CORE0 BUB] itag: 00000a13 cause: FE
+[CORE0 BUB] itag: 00000a14 cause: FE
+[CORE0 CMT] itag: 00000a15 pc: 0000000080000434 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 BUB] itag: 00000a16 cause: FE
+[CORE0 CMT] itag: 00000a17 pc: 0000000080000438 instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000018}
+[CORE0 PSN] itag: 00000a18 pc: 0000000080000434 instr: 00b00113
+[CORE0 BUB] itag: 00000a19 cause: FE
+[CORE0 BUB] itag: 00000a1a cause: FE
+[CORE0 BUB] itag: 00000a1b cause: FE
+[CORE0 BUB] itag: 00000a1c cause: FE
+[CORE0 BUB] itag: 00000a1d cause: FE
+[CORE0 BUB] itag: 00000a1e cause: FE
+[CORE0 BUB] itag: 00000a1f cause: FE
+[CORE0 BUB] itag: 00000a20 cause: FE
+[CORE0 BUB] itag: 00000a21 cause: FE
+[CORE0 BUB] itag: 00000a22 cause: FE
+[CORE0 BUB] itag: 00000a23 cause: FE
+[CORE0 BUB] itag: 00000a24 cause: FE
+[CORE0 BUB] itag: 00000a25 cause: FE
+[CORE0 BUB] itag: 00000a26 cause: FE
+[CORE0 BUB] itag: 00000a27 cause: FE
+[CORE0 BUB] itag: 00000a28 cause: FE
+[CORE0 BUB] itag: 00000a29 cause: FE
+[CORE0 BUB] itag: 00000a2a cause: FE
+[CORE0 BUB] itag: 00000a2b cause: FE
+[CORE0 BUB] itag: 00000a2c cause: FE
+[CORE0 BUB] itag: 00000a2d cause: FE
+[CORE0 BUB] itag: 00000a2e cause: FE
+[CORE0 BUB] itag: 00000a2f cause: FE
+[CORE0 BUB] itag: 00000a30 cause: FE
+[CORE0 BUB] itag: 00000a31 cause: FE
+[CORE0 BUB] itag: 00000a32 cause: FE
+[CORE0 BUB] itag: 00000a33 cause: FE
+[CORE0 BUB] itag: 00000a34 cause: FE
+[CORE0 BUB] itag: 00000a35 cause: FE
+[CORE0 BUB] itag: 00000a36 cause: FE
+[CORE0 BUB] itag: 00000a37 cause: FE
+[CORE0 BUB] itag: 00000a38 cause: FE
+[CORE0 BUB] itag: 00000a39 cause: FE
+[CORE0 BUB] itag: 00000a3a cause: FE
+[CORE0 BUB] itag: 00000a3b cause: FE
+[CORE0 BUB] itag: 00000a3c cause: FE
+[CORE0 BUB] itag: 00000a3d cause: FE
+[CORE0 BUB] itag: 00000a3e cause: FE
+[CORE0 BUB] itag: 00000a3f cause: FE
+[CORE0 BUB] itag: 00000a40 cause: FE
+[CORE0 BUB] itag: 00000a41 cause: FE
+[CORE0 CMT] itag: 00000a42 pc: 000000008000043c instr: 00120213
+			op: integer sem: r 4 <- {0000000000000001}
+[CORE0 CMT] itag: 00000a43 pc: 0000000080000440 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 CMT] itag: 00000a44 pc: 0000000080000444 instr: fe5214e3
+			op: branch sem: pc <- {000000008000042c} rs1: 0000000000000001 cmp rs2: 0000000000000002 taken: 1
+[CORE0 PSN] itag: 00000a45 pc: 0000000080000448 instr: 01800e93
+[CORE0 BUB] itag: 00000a46 cause: FE
+[CORE0 BUB] itag: 00000a47 cause: FE
+[CORE0 PSN] itag: 00000a48 pc: 0000000080000454 instr: 00000213
+[CORE0 BUB] itag: 00000a49 cause: FE
+[CORE0 BUB] itag: 00000a4a cause: FE
+[CORE0 CMT] itag: 00000a4b pc: 000000008000042c instr: 00d00093
+			op: integer sem: r 1 <- {000000000000000d}
+[CORE0 BUB] itag: 00000a4c cause: FE
+[CORE0 CMT] itag: 00000a4d pc: 0000000080000430 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 PSN] itag: 00000a4e pc: 000000008000042c instr: 00d00093
+[CORE0 BUB] itag: 00000a4f cause: FE
+[CORE0 BUB] itag: 00000a50 cause: FE
+[CORE0 PSN] itag: 00000a51 pc: 0000000080000438 instr: 002081b3
+[CORE0 BUB] itag: 00000a52 cause: FE
+[CORE0 BUB] itag: 00000a53 cause: FE
+[CORE0 CMT] itag: 00000a54 pc: 0000000080000434 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 BUB] itag: 00000a55 cause: FE
+[CORE0 CMT] itag: 00000a56 pc: 0000000080000438 instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000018}
+[CORE0 PSN] itag: 00000a57 pc: 0000000080000434 instr: 00b00113
+[CORE0 BUB] itag: 00000a58 cause: FE
+[CORE0 BUB] itag: 00000a59 cause: FE
+[CORE0 PSN] itag: 00000a5a pc: 0000000080000440 instr: 00200293
+[CORE0 BUB] itag: 00000a5b cause: FE
+[CORE0 BUB] itag: 00000a5c cause: FE
+[CORE0 CMT] itag: 00000a5d pc: 000000008000043c instr: 00120213
+			op: integer sem: r 4 <- {0000000000000002}
+[CORE0 BUB] itag: 00000a5e cause: FE
+[CORE0 CMT] itag: 00000a5f pc: 0000000080000440 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 PSN] itag: 00000a60 pc: 000000008000043c instr: 00120213
+[CORE0 BUB] itag: 00000a61 cause: FE
+[CORE0 BUB] itag: 00000a62 cause: FE
+[CORE0 PSN] itag: 00000a63 pc: 0000000080000448 instr: 01800e93
+[CORE0 BUB] itag: 00000a64 cause: FE
+[CORE0 BUB] itag: 00000a65 cause: FE
+[CORE0 CMT] itag: 00000a66 pc: 0000000080000444 instr: fe5214e3
+			op: branch sem: pc <- {0000000080000448} rs1: 0000000000000002 cmp rs2: 0000000000000002 taken: 0
+[CORE0 BUB] itag: 00000a67 cause: FE
+[CORE0 CMT] itag: 00000a68 pc: 0000000080000448 instr: 01800e93
+			op: integer sem: r29 <- {0000000000000018}
+[CORE0 PSN] itag: 00000a69 pc: 0000000080000444 instr: fe5214e3
+[CORE0 BUB] itag: 00000a6a cause: FE
+[CORE0 BUB] itag: 00000a6b cause: FE
+[CORE0 PSN] itag: 00000a6c pc: 0000000080000450 instr: 1dd19463
+[CORE0 BUB] itag: 00000a6d cause: FE
+[CORE0 BUB] itag: 00000a6e cause: FE
+[CORE0 CMT] itag: 00000a6f pc: 000000008000044c instr: 01a00e13
+			op: integer sem: r28 <- {000000000000001a}
+[CORE0 BUB] itag: 00000a70 cause: FE
+[CORE0 CMT] itag: 00000a71 pc: 0000000080000450 instr: 1dd19463
+			op: branch sem: pc <- {0000000080000454} rs1: 0000000000000018 cmp rs2: 0000000000000018 taken: 0
+[CORE0 PSN] itag: 00000a72 pc: 000000008000044c instr: 01a00e13
+[CORE0 BUB] itag: 00000a73 cause: FE
+[CORE0 BUB] itag: 00000a74 cause: FE
+[CORE0 PSN] itag: 00000a75 pc: 0000000080000458 instr: 00e00093
+[CORE0 BUB] itag: 00000a76 cause: FE
+[CORE0 BUB] itag: 00000a77 cause: FE
+[CORE0 CMT] itag: 00000a78 pc: 0000000080000454 instr: 00000213
+			op: integer sem: r 4 <- {0000000000000000}
+[CORE0 BUB] itag: 00000a79 cause: FE
+[CORE0 CMT] itag: 00000a7a pc: 0000000080000458 instr: 00e00093
+			op: integer sem: r 1 <- {000000000000000e}
+[CORE0 PSN] itag: 00000a7b pc: 0000000080000454 instr: 00000213
+[CORE0 BUB] itag: 00000a7c cause: FE
+[CORE0 BUB] itag: 00000a7d cause: FE
+[CORE0 PSN] itag: 00000a7e pc: 0000000080000460 instr: 00b00113
+[CORE0 BUB] itag: 00000a7f cause: FE
+[CORE0 BUB] itag: 00000a80 cause: FE
+[CORE0 CMT] itag: 00000a81 pc: 000000008000045c instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 BUB] itag: 00000a82 cause: FE
+[CORE0 CMT] itag: 00000a83 pc: 0000000080000460 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 PSN] itag: 00000a84 pc: 000000008000045c instr: 00000013
+[CORE0 BUB] itag: 00000a85 cause: FE
+[CORE0 BUB] itag: 00000a86 cause: FE
+[CORE0 PSN] itag: 00000a87 pc: 0000000080000468 instr: 002081b3
+[CORE0 BUB] itag: 00000a88 cause: FE
+[CORE0 BUB] itag: 00000a89 cause: FE
+[CORE0 CMT] itag: 00000a8a pc: 0000000080000464 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 BUB] itag: 00000a8b cause: FE
+[CORE0 CMT] itag: 00000a8c pc: 0000000080000468 instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000019}
+[CORE0 PSN] itag: 00000a8d pc: 0000000080000464 instr: 00000013
+[CORE0 BUB] itag: 00000a8e cause: FE
+[CORE0 BUB] itag: 00000a8f cause: FE
+[CORE0 PSN] itag: 00000a90 pc: 0000000080000470 instr: 00200293
+[CORE0 BUB] itag: 00000a91 cause: FE
+[CORE0 BUB] itag: 00000a92 cause: FE
+[CORE0 CMT] itag: 00000a93 pc: 000000008000046c instr: 00120213
+			op: integer sem: r 4 <- {0000000000000001}
+[CORE0 BUB] itag: 00000a94 cause: FE
+[CORE0 CMT] itag: 00000a95 pc: 0000000080000470 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 PSN] itag: 00000a96 pc: 000000008000046c instr: 00120213
+[CORE0 BUB] itag: 00000a97 cause: FE
+[CORE0 BUB] itag: 00000a98 cause: FE
+[CORE0 PSN] itag: 00000a99 pc: 0000000080000478 instr: 01900e93
+[CORE0 BUB] itag: 00000a9a cause: FE
+[CORE0 BUB] itag: 00000a9b cause: FE
+[CORE0 CMT] itag: 00000a9c pc: 0000000080000474 instr: fe5212e3
+			op: branch sem: pc <- {0000000080000458} rs1: 0000000000000001 cmp rs2: 0000000000000002 taken: 1
+[CORE0 BUB] itag: 00000a9d cause: FE
+[CORE0 PSN] itag: 00000a9e pc: 0000000080000478 instr: 01900e93
+[CORE0 BUB] itag: 00000a9f cause: FE
+[CORE0 BUB] itag: 00000aa0 cause: FE
+[CORE0 PSN] itag: 00000aa1 pc: 000000008000047c instr: 01b00e13
+[CORE0 BUB] itag: 00000aa2 cause: FE
+[CORE0 BUB] itag: 00000aa3 cause: FE
+[CORE0 BUB] itag: 00000aa4 cause: FE
+[CORE0 BUB] itag: 00000aa5 cause: FE
+[CORE0 BUB] itag: 00000aa6 cause: FE
+[CORE0 BUB] itag: 00000aa7 cause: FE
+[CORE0 BUB] itag: 00000aa8 cause: FE
+[CORE0 BUB] itag: 00000aa9 cause: FE
+[CORE0 BUB] itag: 00000aaa cause: FE
+[CORE0 BUB] itag: 00000aab cause: FE
+[CORE0 BUB] itag: 00000aac cause: FE
+[CORE0 BUB] itag: 00000aad cause: FE
+[CORE0 BUB] itag: 00000aae cause: FE
+[CORE0 BUB] itag: 00000aaf cause: FE
+[CORE0 BUB] itag: 00000ab0 cause: FE
+[CORE0 BUB] itag: 00000ab1 cause: FE
+[CORE0 BUB] itag: 00000ab2 cause: FE
+[CORE0 BUB] itag: 00000ab3 cause: FE
+[CORE0 BUB] itag: 00000ab4 cause: FE
+[CORE0 BUB] itag: 00000ab5 cause: FE
+[CORE0 BUB] itag: 00000ab6 cause: FE
+[CORE0 BUB] itag: 00000ab7 cause: FE
+[CORE0 BUB] itag: 00000ab8 cause: FE
+[CORE0 BUB] itag: 00000ab9 cause: FE
+[CORE0 BUB] itag: 00000aba cause: FE
+[CORE0 BUB] itag: 00000abb cause: FE
+[CORE0 BUB] itag: 00000abc cause: FE
+[CORE0 BUB] itag: 00000abd cause: FE
+[CORE0 BUB] itag: 00000abe cause: FE
+[CORE0 BUB] itag: 00000abf cause: FE
+[CORE0 BUB] itag: 00000ac0 cause: FE
+[CORE0 BUB] itag: 00000ac1 cause: FE
+[CORE0 BUB] itag: 00000ac2 cause: FE
+[CORE0 BUB] itag: 00000ac3 cause: FE
+[CORE0 BUB] itag: 00000ac4 cause: FE
+[CORE0 BUB] itag: 00000ac5 cause: FE
+[CORE0 BUB] itag: 00000ac6 cause: FE
+[CORE0 BUB] itag: 00000ac7 cause: FE
+[CORE0 BUB] itag: 00000ac8 cause: FE
+[CORE0 BUB] itag: 00000ac9 cause: FE
+[CORE0 PSN] itag: 00000aca pc: 0000000080000480 instr: 19d19c63
+[CORE0 BUB] itag: 00000acb cause: FE
+[CORE0 BUB] itag: 00000acc cause: FE
+[CORE0 PSN] itag: 00000acd pc: 000000008000048c instr: 00000013
+[CORE0 BUB] itag: 00000ace cause: FE
+[CORE0 BUB] itag: 00000acf cause: FE
+[CORE0 CMT] itag: 00000ad0 pc: 0000000080000458 instr: 00e00093
+			op: integer sem: r 1 <- {000000000000000e}
+[CORE0 BUB] itag: 00000ad1 cause: FE
+[CORE0 CMT] itag: 00000ad2 pc: 000000008000045c instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 PSN] itag: 00000ad3 pc: 0000000080000458 instr: 00e00093
+[CORE0 BUB] itag: 00000ad4 cause: FE
+[CORE0 BUB] itag: 00000ad5 cause: FE
+[CORE0 PSN] itag: 00000ad6 pc: 0000000080000464 instr: 00000013
+[CORE0 BUB] itag: 00000ad7 cause: FE
+[CORE0 BUB] itag: 00000ad8 cause: FE
+[CORE0 CMT] itag: 00000ad9 pc: 0000000080000460 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 BUB] itag: 00000ada cause: FE
+[CORE0 CMT] itag: 00000adb pc: 0000000080000464 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 PSN] itag: 00000adc pc: 0000000080000460 instr: 00b00113
+[CORE0 BUB] itag: 00000add cause: FE
+[CORE0 BUB] itag: 00000ade cause: FE
+[CORE0 PSN] itag: 00000adf pc: 000000008000046c instr: 00120213
+[CORE0 BUB] itag: 00000ae0 cause: FE
+[CORE0 BUB] itag: 00000ae1 cause: FE
+[CORE0 CMT] itag: 00000ae2 pc: 0000000080000468 instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000019}
+[CORE0 BUB] itag: 00000ae3 cause: FE
+[CORE0 CMT] itag: 00000ae4 pc: 000000008000046c instr: 00120213
+			op: integer sem: r 4 <- {0000000000000002}
+[CORE0 PSN] itag: 00000ae5 pc: 0000000080000468 instr: 002081b3
+[CORE0 BUB] itag: 00000ae6 cause: FE
+[CORE0 BUB] itag: 00000ae7 cause: FE
+[CORE0 PSN] itag: 00000ae8 pc: 0000000080000474 instr: fe5212e3
+[CORE0 BUB] itag: 00000ae9 cause: FE
+[CORE0 BUB] itag: 00000aea cause: FE
+[CORE0 CMT] itag: 00000aeb pc: 0000000080000470 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 BUB] itag: 00000aec cause: FE
+[CORE0 CMT] itag: 00000aed pc: 0000000080000474 instr: fe5212e3
+			op: branch sem: pc <- {0000000080000478} rs1: 0000000000000002 cmp rs2: 0000000000000002 taken: 0
+[CORE0 PSN] itag: 00000aee pc: 0000000080000470 instr: 00200293
+[CORE0 BUB] itag: 00000aef cause: FE
+[CORE0 BUB] itag: 00000af0 cause: FE
+[CORE0 PSN] itag: 00000af1 pc: 000000008000047c instr: 01b00e13
+[CORE0 BUB] itag: 00000af2 cause: FE
+[CORE0 BUB] itag: 00000af3 cause: FE
+[CORE0 CMT] itag: 00000af4 pc: 0000000080000478 instr: 01900e93
+			op: integer sem: r29 <- {0000000000000019}
+[CORE0 BUB] itag: 00000af5 cause: FE
+[CORE0 CMT] itag: 00000af6 pc: 000000008000047c instr: 01b00e13
+			op: integer sem: r28 <- {000000000000001b}
+[CORE0 PSN] itag: 00000af7 pc: 0000000080000478 instr: 01900e93
+[CORE0 BUB] itag: 00000af8 cause: FE
+[CORE0 BUB] itag: 00000af9 cause: FE
+[CORE0 PSN] itag: 00000afa pc: 0000000080000484 instr: 00000213
+[CORE0 BUB] itag: 00000afb cause: FE
+[CORE0 BUB] itag: 00000afc cause: FE
+[CORE0 CMT] itag: 00000afd pc: 0000000080000480 instr: 19d19c63
+			op: branch sem: pc <- {0000000080000484} rs1: 0000000000000019 cmp rs2: 0000000000000019 taken: 0
+[CORE0 BUB] itag: 00000afe cause: FE
+[CORE0 CMT] itag: 00000aff pc: 0000000080000484 instr: 00000213
+			op: integer sem: r 4 <- {0000000000000000}
+[CORE0 PSN] itag: 00000b00 pc: 0000000080000480 instr: 19d19c63
+[CORE0 BUB] itag: 00000b01 cause: FE
+[CORE0 BUB] itag: 00000b02 cause: FE
+[CORE0 PSN] itag: 00000b03 pc: 000000008000048c instr: 00000013
+[CORE0 BUB] itag: 00000b04 cause: FE
+[CORE0 BUB] itag: 00000b05 cause: FE
+[CORE0 CMT] itag: 00000b06 pc: 0000000080000488 instr: 00f00093
+			op: integer sem: r 1 <- {000000000000000f}
+[CORE0 BUB] itag: 00000b07 cause: FE
+[CORE0 CMT] itag: 00000b08 pc: 000000008000048c instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 PSN] itag: 00000b09 pc: 0000000080000488 instr: 00f00093
+[CORE0 BUB] itag: 00000b0a cause: FE
+[CORE0 BUB] itag: 00000b0b cause: FE
+[CORE0 PSN] itag: 00000b0c pc: 0000000080000494 instr: 00b00113
+[CORE0 BUB] itag: 00000b0d cause: FE
+[CORE0 BUB] itag: 00000b0e cause: FE
+[CORE0 CMT] itag: 00000b0f pc: 0000000080000490 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 BUB] itag: 00000b10 cause: FE
+[CORE0 CMT] itag: 00000b11 pc: 0000000080000494 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 PSN] itag: 00000b12 pc: 0000000080000490 instr: 00000013
+[CORE0 BUB] itag: 00000b13 cause: FE
+[CORE0 BUB] itag: 00000b14 cause: FE
+[CORE0 PSN] itag: 00000b15 pc: 000000008000049c instr: 00120213
+[CORE0 BUB] itag: 00000b16 cause: FE
+[CORE0 BUB] itag: 00000b17 cause: FE
+[CORE0 CMT] itag: 00000b18 pc: 0000000080000498 instr: 002081b3
+			op: integer sem: r 3 <- {000000000000001a}
+[CORE0 BUB] itag: 00000b19 cause: FE
+[CORE0 CMT] itag: 00000b1a pc: 000000008000049c instr: 00120213
+			op: integer sem: r 4 <- {0000000000000001}
+[CORE0 PSN] itag: 00000b1b pc: 0000000080000498 instr: 002081b3
+[CORE0 BUB] itag: 00000b1c cause: FE
+[CORE0 BUB] itag: 00000b1d cause: FE
+[CORE0 PSN] itag: 00000b1e pc: 00000000800004a4 instr: fe5212e3
+[CORE0 BUB] itag: 00000b1f cause: FE
+[CORE0 BUB] itag: 00000b20 cause: FE
+[CORE0 CMT] itag: 00000b21 pc: 00000000800004a0 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 BUB] itag: 00000b22 cause: FE
+[CORE0 CMT] itag: 00000b23 pc: 00000000800004a4 instr: fe5212e3
+			op: branch sem: pc <- {0000000080000488} rs1: 0000000000000001 cmp rs2: 0000000000000002 taken: 1
+[CORE0 PSN] itag: 00000b24 pc: 00000000800004a0 instr: 00200293
+[CORE0 BUB] itag: 00000b25 cause: FE
+[CORE0 BUB] itag: 00000b26 cause: FE
+[CORE0 PSN] itag: 00000b27 pc: 00000000800004ac instr: 01c00e13
+[CORE0 BUB] itag: 00000b28 cause: FE
+[CORE0 BUB] itag: 00000b29 cause: FE
+[CORE0 CMT] itag: 00000b2a pc: 0000000080000488 instr: 00f00093
+			op: integer sem: r 1 <- {000000000000000f}
+[CORE0 BUB] itag: 00000b2b cause: FE
+[CORE0 CMT] itag: 00000b2c pc: 000000008000048c instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 PSN] itag: 00000b2d pc: 0000000080000488 instr: 00f00093
+[CORE0 BUB] itag: 00000b2e cause: FE
+[CORE0 BUB] itag: 00000b2f cause: FE
+[CORE0 PSN] itag: 00000b30 pc: 0000000080000494 instr: 00b00113
+[CORE0 BUB] itag: 00000b31 cause: FE
+[CORE0 BUB] itag: 00000b32 cause: FE
+[CORE0 CMT] itag: 00000b33 pc: 0000000080000490 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 BUB] itag: 00000b34 cause: FE
+[CORE0 CMT] itag: 00000b35 pc: 0000000080000494 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 PSN] itag: 00000b36 pc: 0000000080000490 instr: 00000013
+[CORE0 BUB] itag: 00000b37 cause: FE
+[CORE0 BUB] itag: 00000b38 cause: FE
+[CORE0 PSN] itag: 00000b39 pc: 000000008000049c instr: 00120213
+[CORE0 BUB] itag: 00000b3a cause: FE
+[CORE0 BUB] itag: 00000b3b cause: FE
+[CORE0 CMT] itag: 00000b3c pc: 0000000080000498 instr: 002081b3
+			op: integer sem: r 3 <- {000000000000001a}
+[CORE0 BUB] itag: 00000b3d cause: FE
+[CORE0 CMT] itag: 00000b3e pc: 000000008000049c instr: 00120213
+			op: integer sem: r 4 <- {0000000000000002}
+[CORE0 PSN] itag: 00000b3f pc: 0000000080000498 instr: 002081b3
+[CORE0 BUB] itag: 00000b40 cause: FE
+[CORE0 BUB] itag: 00000b41 cause: FE
+[CORE0 PSN] itag: 00000b42 pc: 00000000800004a4 instr: fe5212e3
+[CORE0 BUB] itag: 00000b43 cause: FE
+[CORE0 BUB] itag: 00000b44 cause: FE
+[CORE0 CMT] itag: 00000b45 pc: 00000000800004a0 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 BUB] itag: 00000b46 cause: FE
+[CORE0 CMT] itag: 00000b47 pc: 00000000800004a4 instr: fe5212e3
+			op: branch sem: pc <- {00000000800004a8} rs1: 0000000000000002 cmp rs2: 0000000000000002 taken: 0
+[CORE0 PSN] itag: 00000b48 pc: 00000000800004a0 instr: 00200293
+[CORE0 BUB] itag: 00000b49 cause: FE
+[CORE0 BUB] itag: 00000b4a cause: FE
+[CORE0 PSN] itag: 00000b4b pc: 00000000800004ac instr: 01c00e13
+[CORE0 BUB] itag: 00000b4c cause: FE
+[CORE0 BUB] itag: 00000b4d cause: FE
+[CORE0 CMT] itag: 00000b4e pc: 00000000800004a8 instr: 01a00e93
+			op: integer sem: r29 <- {000000000000001a}
+[CORE0 BUB] itag: 00000b4f cause: FE
+[CORE0 CMT] itag: 00000b50 pc: 00000000800004ac instr: 01c00e13
+			op: integer sem: r28 <- {000000000000001c}
+[CORE0 PSN] itag: 00000b51 pc: 00000000800004a8 instr: 01a00e93
+[CORE0 BUB] itag: 00000b52 cause: FE
+[CORE0 BUB] itag: 00000b53 cause: FE
+[CORE0 PSN] itag: 00000b54 pc: 00000000800004b4 instr: 00000213
+[CORE0 BUB] itag: 00000b55 cause: FE
+[CORE0 BUB] itag: 00000b56 cause: FE
+[CORE0 CMT] itag: 00000b57 pc: 00000000800004b0 instr: 17d19463
+			op: branch sem: pc <- {00000000800004b4} rs1: 000000000000001a cmp rs2: 000000000000001a taken: 0
+[CORE0 BUB] itag: 00000b58 cause: FE
+[CORE0 CMT] itag: 00000b59 pc: 00000000800004b4 instr: 00000213
+			op: integer sem: r 4 <- {0000000000000000}
+[CORE0 PSN] itag: 00000b5a pc: 00000000800004b0 instr: 17d19463
+[CORE0 BUB] itag: 00000b5b cause: FE
+[CORE0 BUB] itag: 00000b5c cause: FE
+[CORE0 PSN] itag: 00000b5d pc: 00000000800004bc instr: 00d00093
+[CORE0 BUB] itag: 00000b5e cause: FE
+[CORE0 BUB] itag: 00000b5f cause: FE
+[CORE0 BUB] itag: 00000b60 cause: FE
+[CORE0 BUB] itag: 00000b61 cause: FE
+[CORE0 BUB] itag: 00000b62 cause: FE
+[CORE0 BUB] itag: 00000b63 cause: FE
+[CORE0 BUB] itag: 00000b64 cause: FE
+[CORE0 BUB] itag: 00000b65 cause: FE
+[CORE0 BUB] itag: 00000b66 cause: FE
+[CORE0 BUB] itag: 00000b67 cause: FE
+[CORE0 BUB] itag: 00000b68 cause: FE
+[CORE0 BUB] itag: 00000b69 cause: FE
+[CORE0 BUB] itag: 00000b6a cause: FE
+[CORE0 BUB] itag: 00000b6b cause: FE
+[CORE0 BUB] itag: 00000b6c cause: FE
+[CORE0 BUB] itag: 00000b6d cause: FE
+[CORE0 BUB] itag: 00000b6e cause: FE
+[CORE0 BUB] itag: 00000b6f cause: FE
+[CORE0 BUB] itag: 00000b70 cause: FE
+[CORE0 BUB] itag: 00000b71 cause: FE
+[CORE0 BUB] itag: 00000b72 cause: FE
+[CORE0 BUB] itag: 00000b73 cause: FE
+[CORE0 BUB] itag: 00000b74 cause: FE
+[CORE0 BUB] itag: 00000b75 cause: FE
+[CORE0 BUB] itag: 00000b76 cause: FE
+[CORE0 BUB] itag: 00000b77 cause: FE
+[CORE0 BUB] itag: 00000b78 cause: FE
+[CORE0 BUB] itag: 00000b79 cause: FE
+[CORE0 BUB] itag: 00000b7a cause: FE
+[CORE0 BUB] itag: 00000b7b cause: FE
+[CORE0 BUB] itag: 00000b7c cause: FE
+[CORE0 BUB] itag: 00000b7d cause: FE
+[CORE0 BUB] itag: 00000b7e cause: FE
+[CORE0 BUB] itag: 00000b7f cause: FE
+[CORE0 BUB] itag: 00000b80 cause: FE
+[CORE0 BUB] itag: 00000b81 cause: FE
+[CORE0 BUB] itag: 00000b82 cause: FE
+[CORE0 BUB] itag: 00000b83 cause: FE
+[CORE0 BUB] itag: 00000b84 cause: FE
+[CORE0 BUB] itag: 00000b85 cause: FE
+[CORE0 PSN] itag: 00000b86 pc: 00000000800004c0 instr: 002081b3
+[CORE0 BUB] itag: 00000b87 cause: FE
+[CORE0 BUB] itag: 00000b88 cause: FE
+[CORE0 PSN] itag: 00000b89 pc: 00000000800004cc instr: fe5216e3
+[CORE0 BUB] itag: 00000b8a cause: FE
+[CORE0 BUB] itag: 00000b8b cause: FE
+[CORE0 CMT] itag: 00000b8c pc: 00000000800004b8 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 BUB] itag: 00000b8d cause: FE
+[CORE0 CMT] itag: 00000b8e pc: 00000000800004bc instr: 00d00093
+			op: integer sem: r 1 <- {000000000000000d}
+[CORE0 PSN] itag: 00000b8f pc: 00000000800004b8 instr: 00b00113
+[CORE0 BUB] itag: 00000b90 cause: FE
+[CORE0 BUB] itag: 00000b91 cause: FE
+[CORE0 PSN] itag: 00000b92 pc: 00000000800004c4 instr: 00120213
+[CORE0 BUB] itag: 00000b93 cause: FE
+[CORE0 BUB] itag: 00000b94 cause: FE
+[CORE0 CMT] itag: 00000b95 pc: 00000000800004c0 instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000018}
+[CORE0 BUB] itag: 00000b96 cause: FE
+[CORE0 CMT] itag: 00000b97 pc: 00000000800004c4 instr: 00120213
+			op: integer sem: r 4 <- {0000000000000001}
+[CORE0 PSN] itag: 00000b98 pc: 00000000800004c0 instr: 002081b3
+[CORE0 BUB] itag: 00000b99 cause: FE
+[CORE0 BUB] itag: 00000b9a cause: FE
+[CORE0 PSN] itag: 00000b9b pc: 00000000800004cc instr: fe5216e3
+[CORE0 BUB] itag: 00000b9c cause: FE
+[CORE0 BUB] itag: 00000b9d cause: FE
+[CORE0 CMT] itag: 00000b9e pc: 00000000800004c8 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 BUB] itag: 00000b9f cause: FE
+[CORE0 CMT] itag: 00000ba0 pc: 00000000800004cc instr: fe5216e3
+			op: branch sem: pc <- {00000000800004b8} rs1: 0000000000000001 cmp rs2: 0000000000000002 taken: 1
+[CORE0 PSN] itag: 00000ba1 pc: 00000000800004c8 instr: 00200293
+[CORE0 BUB] itag: 00000ba2 cause: FE
+[CORE0 BUB] itag: 00000ba3 cause: FE
+[CORE0 PSN] itag: 00000ba4 pc: 00000000800004d4 instr: 01d00e13
+[CORE0 BUB] itag: 00000ba5 cause: FE
+[CORE0 BUB] itag: 00000ba6 cause: FE
+[CORE0 CMT] itag: 00000ba7 pc: 00000000800004b8 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 BUB] itag: 00000ba8 cause: FE
+[CORE0 CMT] itag: 00000ba9 pc: 00000000800004bc instr: 00d00093
+			op: integer sem: r 1 <- {000000000000000d}
+[CORE0 PSN] itag: 00000baa pc: 00000000800004b8 instr: 00b00113
+[CORE0 BUB] itag: 00000bab cause: FE
+[CORE0 BUB] itag: 00000bac cause: FE
+[CORE0 PSN] itag: 00000bad pc: 00000000800004c4 instr: 00120213
+[CORE0 BUB] itag: 00000bae cause: FE
+[CORE0 BUB] itag: 00000baf cause: FE
+[CORE0 CMT] itag: 00000bb0 pc: 00000000800004c0 instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000018}
+[CORE0 BUB] itag: 00000bb1 cause: FE
+[CORE0 CMT] itag: 00000bb2 pc: 00000000800004c4 instr: 00120213
+			op: integer sem: r 4 <- {0000000000000002}
+[CORE0 PSN] itag: 00000bb3 pc: 00000000800004c0 instr: 002081b3
+[CORE0 BUB] itag: 00000bb4 cause: FE
+[CORE0 BUB] itag: 00000bb5 cause: FE
+[CORE0 PSN] itag: 00000bb6 pc: 00000000800004cc instr: fe5216e3
+[CORE0 BUB] itag: 00000bb7 cause: FE
+[CORE0 BUB] itag: 00000bb8 cause: FE
+[CORE0 CMT] itag: 00000bb9 pc: 00000000800004c8 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 BUB] itag: 00000bba cause: FE
+[CORE0 CMT] itag: 00000bbb pc: 00000000800004cc instr: fe5216e3
+			op: branch sem: pc <- {00000000800004d0} rs1: 0000000000000002 cmp rs2: 0000000000000002 taken: 0
+[CORE0 PSN] itag: 00000bbc pc: 00000000800004c8 instr: 00200293
+[CORE0 BUB] itag: 00000bbd cause: FE
+[CORE0 BUB] itag: 00000bbe cause: FE
+[CORE0 PSN] itag: 00000bbf pc: 00000000800004d4 instr: 01d00e13
+[CORE0 BUB] itag: 00000bc0 cause: FE
+[CORE0 BUB] itag: 00000bc1 cause: FE
+[CORE0 CMT] itag: 00000bc2 pc: 00000000800004d0 instr: 01800e93
+			op: integer sem: r29 <- {0000000000000018}
+[CORE0 BUB] itag: 00000bc3 cause: FE
+[CORE0 CMT] itag: 00000bc4 pc: 00000000800004d4 instr: 01d00e13
+			op: integer sem: r28 <- {000000000000001d}
+[CORE0 PSN] itag: 00000bc5 pc: 00000000800004d0 instr: 01800e93
+[CORE0 BUB] itag: 00000bc6 cause: FE
+[CORE0 BUB] itag: 00000bc7 cause: FE
+[CORE0 PSN] itag: 00000bc8 pc: 00000000800004dc instr: 00000213
+[CORE0 BUB] itag: 00000bc9 cause: FE
+[CORE0 BUB] itag: 00000bca cause: FE
+[CORE0 CMT] itag: 00000bcb pc: 00000000800004d8 instr: 15d19063
+			op: branch sem: pc <- {00000000800004dc} rs1: 0000000000000018 cmp rs2: 0000000000000018 taken: 0
+[CORE0 BUB] itag: 00000bcc cause: FE
+[CORE0 CMT] itag: 00000bcd pc: 00000000800004dc instr: 00000213
+			op: integer sem: r 4 <- {0000000000000000}
+[CORE0 PSN] itag: 00000bce pc: 00000000800004d8 instr: 15d19063
+[CORE0 BUB] itag: 00000bcf cause: FE
+[CORE0 BUB] itag: 00000bd0 cause: FE
+[CORE0 PSN] itag: 00000bd1 pc: 00000000800004e4 instr: 00e00093
+[CORE0 BUB] itag: 00000bd2 cause: FE
+[CORE0 BUB] itag: 00000bd3 cause: FE
+[CORE0 CMT] itag: 00000bd4 pc: 00000000800004e0 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 BUB] itag: 00000bd5 cause: FE
+[CORE0 CMT] itag: 00000bd6 pc: 00000000800004e4 instr: 00e00093
+			op: integer sem: r 1 <- {000000000000000e}
+[CORE0 PSN] itag: 00000bd7 pc: 00000000800004e0 instr: 00b00113
+[CORE0 BUB] itag: 00000bd8 cause: FE
+[CORE0 BUB] itag: 00000bd9 cause: FE
+[CORE0 PSN] itag: 00000bda pc: 00000000800004ec instr: 002081b3
+[CORE0 BUB] itag: 00000bdb cause: FE
+[CORE0 BUB] itag: 00000bdc cause: FE
+[CORE0 CMT] itag: 00000bdd pc: 00000000800004e8 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 BUB] itag: 00000bde cause: FE
+[CORE0 CMT] itag: 00000bdf pc: 00000000800004ec instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000019}
+[CORE0 PSN] itag: 00000be0 pc: 00000000800004e8 instr: 00000013
+[CORE0 BUB] itag: 00000be1 cause: FE
+[CORE0 BUB] itag: 00000be2 cause: FE
+[CORE0 PSN] itag: 00000be3 pc: 00000000800004f4 instr: 00200293
+[CORE0 BUB] itag: 00000be4 cause: FE
+[CORE0 BUB] itag: 00000be5 cause: FE
+[CORE0 CMT] itag: 00000be6 pc: 00000000800004f0 instr: 00120213
+			op: integer sem: r 4 <- {0000000000000001}
+[CORE0 BUB] itag: 00000be7 cause: FE
+[CORE0 CMT] itag: 00000be8 pc: 00000000800004f4 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 PSN] itag: 00000be9 pc: 00000000800004f0 instr: 00120213
+[CORE0 BUB] itag: 00000bea cause: FE
+[CORE0 BUB] itag: 00000beb cause: FE
+[CORE0 PSN] itag: 00000bec pc: 00000000800004fc instr: 01900e93
+[CORE0 BUB] itag: 00000bed cause: FE
+[CORE0 BUB] itag: 00000bee cause: FE
+[CORE0 BUB] itag: 00000bef cause: FE
+[CORE0 BUB] itag: 00000bf0 cause: FE
+[CORE0 BUB] itag: 00000bf1 cause: FE
+[CORE0 BUB] itag: 00000bf2 cause: FE
+[CORE0 BUB] itag: 00000bf3 cause: FE
+[CORE0 BUB] itag: 00000bf4 cause: FE
+[CORE0 BUB] itag: 00000bf5 cause: FE
+[CORE0 BUB] itag: 00000bf6 cause: FE
+[CORE0 BUB] itag: 00000bf7 cause: FE
+[CORE0 BUB] itag: 00000bf8 cause: FE
+[CORE0 BUB] itag: 00000bf9 cause: FE
+[CORE0 BUB] itag: 00000bfa cause: FE
+[CORE0 BUB] itag: 00000bfb cause: FE
+[CORE0 BUB] itag: 00000bfc cause: FE
+[CORE0 BUB] itag: 00000bfd cause: FE
+[CORE0 BUB] itag: 00000bfe cause: FE
+[CORE0 BUB] itag: 00000bff cause: FE
+[CORE0 BUB] itag: 00000c00 cause: FE
+[CORE0 BUB] itag: 00000c01 cause: FE
+[CORE0 BUB] itag: 00000c02 cause: FE
+[CORE0 BUB] itag: 00000c03 cause: FE
+[CORE0 BUB] itag: 00000c04 cause: FE
+[CORE0 BUB] itag: 00000c05 cause: FE
+[CORE0 BUB] itag: 00000c06 cause: FE
+[CORE0 BUB] itag: 00000c07 cause: FE
+[CORE0 BUB] itag: 00000c08 cause: FE
+[CORE0 BUB] itag: 00000c09 cause: FE
+[CORE0 BUB] itag: 00000c0a cause: FE
+[CORE0 BUB] itag: 00000c0b cause: FE
+[CORE0 BUB] itag: 00000c0c cause: FE
+[CORE0 BUB] itag: 00000c0d cause: FE
+[CORE0 BUB] itag: 00000c0e cause: FE
+[CORE0 BUB] itag: 00000c0f cause: FE
+[CORE0 BUB] itag: 00000c10 cause: FE
+[CORE0 BUB] itag: 00000c11 cause: FE
+[CORE0 BUB] itag: 00000c12 cause: FE
+[CORE0 BUB] itag: 00000c13 cause: FE
+[CORE0 BUB] itag: 00000c14 cause: FE
+[CORE0 PSN] itag: 00000c15 pc: 0000000080000500 instr: 01e00e13
+[CORE0 BUB] itag: 00000c16 cause: FE
+[CORE0 BUB] itag: 00000c17 cause: FE
+[CORE0 PSN] itag: 00000c18 pc: 000000008000050c instr: 00b00113
+[CORE0 BUB] itag: 00000c19 cause: FE
+[CORE0 BUB] itag: 00000c1a cause: FE
+[CORE0 CMT] itag: 00000c1b pc: 00000000800004f8 instr: fe5214e3
+			op: branch sem: pc <- {00000000800004e0} rs1: 0000000000000001 cmp rs2: 0000000000000002 taken: 1
+[CORE0 BUB] itag: 00000c1c cause: FE
+[CORE0 PSN] itag: 00000c1d pc: 00000000800004fc instr: 01900e93
+[CORE0 BUB] itag: 00000c1e cause: FE
+[CORE0 BUB] itag: 00000c1f cause: FE
+[CORE0 PSN] itag: 00000c20 pc: 0000000080000500 instr: 01e00e13
+[CORE0 BUB] itag: 00000c21 cause: FE
+[CORE0 BUB] itag: 00000c22 cause: FE
+[CORE0 CMT] itag: 00000c23 pc: 00000000800004e0 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 BUB] itag: 00000c24 cause: FE
+[CORE0 CMT] itag: 00000c25 pc: 00000000800004e4 instr: 00e00093
+			op: integer sem: r 1 <- {000000000000000e}
+[CORE0 PSN] itag: 00000c26 pc: 00000000800004e0 instr: 00b00113
+[CORE0 BUB] itag: 00000c27 cause: FE
+[CORE0 BUB] itag: 00000c28 cause: FE
+[CORE0 PSN] itag: 00000c29 pc: 00000000800004ec instr: 002081b3
+[CORE0 BUB] itag: 00000c2a cause: FE
+[CORE0 BUB] itag: 00000c2b cause: FE
+[CORE0 CMT] itag: 00000c2c pc: 00000000800004e8 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 BUB] itag: 00000c2d cause: FE
+[CORE0 CMT] itag: 00000c2e pc: 00000000800004ec instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000019}
+[CORE0 PSN] itag: 00000c2f pc: 00000000800004e8 instr: 00000013
+[CORE0 BUB] itag: 00000c30 cause: FE
+[CORE0 BUB] itag: 00000c31 cause: FE
+[CORE0 PSN] itag: 00000c32 pc: 00000000800004f4 instr: 00200293
+[CORE0 BUB] itag: 00000c33 cause: FE
+[CORE0 BUB] itag: 00000c34 cause: FE
+[CORE0 CMT] itag: 00000c35 pc: 00000000800004f0 instr: 00120213
+			op: integer sem: r 4 <- {0000000000000002}
+[CORE0 BUB] itag: 00000c36 cause: FE
+[CORE0 CMT] itag: 00000c37 pc: 00000000800004f4 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 PSN] itag: 00000c38 pc: 00000000800004f0 instr: 00120213
+[CORE0 BUB] itag: 00000c39 cause: FE
+[CORE0 BUB] itag: 00000c3a cause: FE
+[CORE0 PSN] itag: 00000c3b pc: 00000000800004fc instr: 01900e93
+[CORE0 BUB] itag: 00000c3c cause: FE
+[CORE0 BUB] itag: 00000c3d cause: FE
+[CORE0 CMT] itag: 00000c3e pc: 00000000800004f8 instr: fe5214e3
+			op: branch sem: pc <- {00000000800004fc} rs1: 0000000000000002 cmp rs2: 0000000000000002 taken: 0
+[CORE0 BUB] itag: 00000c3f cause: FE
+[CORE0 CMT] itag: 00000c40 pc: 00000000800004fc instr: 01900e93
+			op: integer sem: r29 <- {0000000000000019}
+[CORE0 PSN] itag: 00000c41 pc: 00000000800004f8 instr: fe5214e3
+[CORE0 BUB] itag: 00000c42 cause: FE
+[CORE0 BUB] itag: 00000c43 cause: FE
+[CORE0 PSN] itag: 00000c44 pc: 0000000080000504 instr: 11d19a63
+[CORE0 BUB] itag: 00000c45 cause: FE
+[CORE0 BUB] itag: 00000c46 cause: FE
+[CORE0 CMT] itag: 00000c47 pc: 0000000080000500 instr: 01e00e13
+			op: integer sem: r28 <- {000000000000001e}
+[CORE0 BUB] itag: 00000c48 cause: FE
+[CORE0 CMT] itag: 00000c49 pc: 0000000080000504 instr: 11d19a63
+			op: branch sem: pc <- {0000000080000508} rs1: 0000000000000019 cmp rs2: 0000000000000019 taken: 0
+[CORE0 PSN] itag: 00000c4a pc: 0000000080000500 instr: 01e00e13
+[CORE0 BUB] itag: 00000c4b cause: FE
+[CORE0 BUB] itag: 00000c4c cause: FE
+[CORE0 PSN] itag: 00000c4d pc: 000000008000050c instr: 00b00113
+[CORE0 BUB] itag: 00000c4e cause: FE
+[CORE0 BUB] itag: 00000c4f cause: FE
+[CORE0 CMT] itag: 00000c50 pc: 0000000080000508 instr: 00000213
+			op: integer sem: r 4 <- {0000000000000000}
+[CORE0 BUB] itag: 00000c51 cause: FE
+[CORE0 CMT] itag: 00000c52 pc: 000000008000050c instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 PSN] itag: 00000c53 pc: 0000000080000508 instr: 00000213
+[CORE0 BUB] itag: 00000c54 cause: FE
+[CORE0 BUB] itag: 00000c55 cause: FE
+[CORE0 PSN] itag: 00000c56 pc: 0000000080000514 instr: 00000013
+[CORE0 BUB] itag: 00000c57 cause: FE
+[CORE0 BUB] itag: 00000c58 cause: FE
+[CORE0 CMT] itag: 00000c59 pc: 0000000080000510 instr: 00f00093
+			op: integer sem: r 1 <- {000000000000000f}
+[CORE0 BUB] itag: 00000c5a cause: FE
+[CORE0 CMT] itag: 00000c5b pc: 0000000080000514 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 PSN] itag: 00000c5c pc: 0000000080000510 instr: 00f00093
+[CORE0 BUB] itag: 00000c5d cause: FE
+[CORE0 BUB] itag: 00000c5e cause: FE
+[CORE0 PSN] itag: 00000c5f pc: 000000008000051c instr: 002081b3
+[CORE0 BUB] itag: 00000c60 cause: FE
+[CORE0 BUB] itag: 00000c61 cause: FE
+[CORE0 CMT] itag: 00000c62 pc: 0000000080000518 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 BUB] itag: 00000c63 cause: FE
+[CORE0 CMT] itag: 00000c64 pc: 000000008000051c instr: 002081b3
+			op: integer sem: r 3 <- {000000000000001a}
+[CORE0 PSN] itag: 00000c65 pc: 0000000080000518 instr: 00000013
+[CORE0 BUB] itag: 00000c66 cause: FE
+[CORE0 BUB] itag: 00000c67 cause: FE
+[CORE0 PSN] itag: 00000c68 pc: 0000000080000524 instr: 00200293
+[CORE0 BUB] itag: 00000c69 cause: FE
+[CORE0 BUB] itag: 00000c6a cause: FE
+[CORE0 CMT] itag: 00000c6b pc: 0000000080000520 instr: 00120213
+			op: integer sem: r 4 <- {0000000000000001}
+[CORE0 BUB] itag: 00000c6c cause: FE
+[CORE0 CMT] itag: 00000c6d pc: 0000000080000524 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 PSN] itag: 00000c6e pc: 0000000080000520 instr: 00120213
+[CORE0 BUB] itag: 00000c6f cause: FE
+[CORE0 BUB] itag: 00000c70 cause: FE
+[CORE0 PSN] itag: 00000c71 pc: 000000008000052c instr: 01a00e93
+[CORE0 BUB] itag: 00000c72 cause: FE
+[CORE0 BUB] itag: 00000c73 cause: FE
+[CORE0 CMT] itag: 00000c74 pc: 0000000080000528 instr: fe5212e3
+			op: branch sem: pc <- {000000008000050c} rs1: 0000000000000001 cmp rs2: 0000000000000002 taken: 1
+[CORE0 BUB] itag: 00000c75 cause: FE
+[CORE0 PSN] itag: 00000c76 pc: 000000008000052c instr: 01a00e93
+[CORE0 BUB] itag: 00000c77 cause: FE
+[CORE0 BUB] itag: 00000c78 cause: FE
+[CORE0 PSN] itag: 00000c79 pc: 0000000080000530 instr: 01f00e13
+[CORE0 BUB] itag: 00000c7a cause: FE
+[CORE0 BUB] itag: 00000c7b cause: FE
+[CORE0 CMT] itag: 00000c7c pc: 000000008000050c instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 BUB] itag: 00000c7d cause: FE
+[CORE0 CMT] itag: 00000c7e pc: 0000000080000510 instr: 00f00093
+			op: integer sem: r 1 <- {000000000000000f}
+[CORE0 PSN] itag: 00000c7f pc: 000000008000050c instr: 00b00113
+[CORE0 BUB] itag: 00000c80 cause: FE
+[CORE0 BUB] itag: 00000c81 cause: FE
+[CORE0 PSN] itag: 00000c82 pc: 0000000080000518 instr: 00000013
+[CORE0 BUB] itag: 00000c83 cause: FE
+[CORE0 BUB] itag: 00000c84 cause: FE
+[CORE0 CMT] itag: 00000c85 pc: 0000000080000514 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 BUB] itag: 00000c86 cause: FE
+[CORE0 CMT] itag: 00000c87 pc: 0000000080000518 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 PSN] itag: 00000c88 pc: 0000000080000514 instr: 00000013
+[CORE0 BUB] itag: 00000c89 cause: FE
+[CORE0 BUB] itag: 00000c8a cause: FE
+[CORE0 PSN] itag: 00000c8b pc: 0000000080000520 instr: 00120213
+[CORE0 BUB] itag: 00000c8c cause: FE
+[CORE0 BUB] itag: 00000c8d cause: FE
+[CORE0 CMT] itag: 00000c8e pc: 000000008000051c instr: 002081b3
+			op: integer sem: r 3 <- {000000000000001a}
+[CORE0 BUB] itag: 00000c8f cause: FE
+[CORE0 CMT] itag: 00000c90 pc: 0000000080000520 instr: 00120213
+			op: integer sem: r 4 <- {0000000000000002}
+[CORE0 PSN] itag: 00000c91 pc: 000000008000051c instr: 002081b3
+[CORE0 BUB] itag: 00000c92 cause: FE
+[CORE0 BUB] itag: 00000c93 cause: FE
+[CORE0 PSN] itag: 00000c94 pc: 0000000080000528 instr: fe5212e3
+[CORE0 BUB] itag: 00000c95 cause: FE
+[CORE0 BUB] itag: 00000c96 cause: FE
+[CORE0 CMT] itag: 00000c97 pc: 0000000080000524 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 BUB] itag: 00000c98 cause: FE
+[CORE0 CMT] itag: 00000c99 pc: 0000000080000528 instr: fe5212e3
+			op: branch sem: pc <- {000000008000052c} rs1: 0000000000000002 cmp rs2: 0000000000000002 taken: 0
+[CORE0 PSN] itag: 00000c9a pc: 0000000080000524 instr: 00200293
+[CORE0 BUB] itag: 00000c9b cause: FE
+[CORE0 BUB] itag: 00000c9c cause: FE
+[CORE0 PSN] itag: 00000c9d pc: 0000000080000530 instr: 01f00e13
+[CORE0 BUB] itag: 00000c9e cause: FE
+[CORE0 BUB] itag: 00000c9f cause: FE
+[CORE0 CMT] itag: 00000ca0 pc: 000000008000052c instr: 01a00e93
+			op: integer sem: r29 <- {000000000000001a}
+[CORE0 BUB] itag: 00000ca1 cause: FE
+[CORE0 CMT] itag: 00000ca2 pc: 0000000080000530 instr: 01f00e13
+			op: integer sem: r28 <- {000000000000001f}
+[CORE0 PSN] itag: 00000ca3 pc: 000000008000052c instr: 01a00e93
+[CORE0 BUB] itag: 00000ca4 cause: FE
+[CORE0 BUB] itag: 00000ca5 cause: FE
+[CORE0 PSN] itag: 00000ca6 pc: 0000000080000538 instr: 00000213
+[CORE0 BUB] itag: 00000ca7 cause: FE
+[CORE0 BUB] itag: 00000ca8 cause: FE
+[CORE0 CMT] itag: 00000ca9 pc: 0000000080000534 instr: 0fd19263
+			op: branch sem: pc <- {0000000080000538} rs1: 000000000000001a cmp rs2: 000000000000001a taken: 0
+[CORE0 BUB] itag: 00000caa cause: FE
+[CORE0 CMT] itag: 00000cab pc: 0000000080000538 instr: 00000213
+			op: integer sem: r 4 <- {0000000000000000}
+[CORE0 PSN] itag: 00000cac pc: 0000000080000534 instr: 0fd19263
+[CORE0 BUB] itag: 00000cad cause: FE
+[CORE0 BUB] itag: 00000cae cause: FE
+[CORE0 BUB] itag: 00000caf cause: FE
+[CORE0 BUB] itag: 00000cb0 cause: FE
+[CORE0 BUB] itag: 00000cb1 cause: FE
+[CORE0 BUB] itag: 00000cb2 cause: FE
+[CORE0 BUB] itag: 00000cb3 cause: FE
+[CORE0 BUB] itag: 00000cb4 cause: FE
+[CORE0 BUB] itag: 00000cb5 cause: FE
+[CORE0 BUB] itag: 00000cb6 cause: FE
+[CORE0 BUB] itag: 00000cb7 cause: FE
+[CORE0 BUB] itag: 00000cb8 cause: FE
+[CORE0 BUB] itag: 00000cb9 cause: FE
+[CORE0 BUB] itag: 00000cba cause: FE
+[CORE0 BUB] itag: 00000cbb cause: FE
+[CORE0 BUB] itag: 00000cbc cause: FE
+[CORE0 BUB] itag: 00000cbd cause: FE
+[CORE0 BUB] itag: 00000cbe cause: FE
+[CORE0 BUB] itag: 00000cbf cause: FE
+[CORE0 BUB] itag: 00000cc0 cause: FE
+[CORE0 BUB] itag: 00000cc1 cause: FE
+[CORE0 BUB] itag: 00000cc2 cause: FE
+[CORE0 BUB] itag: 00000cc3 cause: FE
+[CORE0 BUB] itag: 00000cc4 cause: FE
+[CORE0 BUB] itag: 00000cc5 cause: FE
+[CORE0 BUB] itag: 00000cc6 cause: FE
+[CORE0 BUB] itag: 00000cc7 cause: FE
+[CORE0 BUB] itag: 00000cc8 cause: FE
+[CORE0 BUB] itag: 00000cc9 cause: FE
+[CORE0 BUB] itag: 00000cca cause: FE
+[CORE0 BUB] itag: 00000ccb cause: FE
+[CORE0 BUB] itag: 00000ccc cause: FE
+[CORE0 BUB] itag: 00000ccd cause: FE
+[CORE0 BUB] itag: 00000cce cause: FE
+[CORE0 BUB] itag: 00000ccf cause: FE
+[CORE0 BUB] itag: 00000cd0 cause: FE
+[CORE0 BUB] itag: 00000cd1 cause: FE
+[CORE0 BUB] itag: 00000cd2 cause: FE
+[CORE0 BUB] itag: 00000cd3 cause: FE
+[CORE0 BUB] itag: 00000cd4 cause: FE
+[CORE0 BUB] itag: 00000cd5 cause: FE
+[CORE0 CMT] itag: 00000cd6 pc: 000000008000053c instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 CMT] itag: 00000cd7 pc: 0000000080000540 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 CMT] itag: 00000cd8 pc: 0000000080000544 instr: 00d00093
+			op: integer sem: r 1 <- {000000000000000d}
+[CORE0 CMT] itag: 00000cd9 pc: 0000000080000548 instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000018}
+[CORE0 CMT] itag: 00000cda pc: 000000008000054c instr: 00120213
+			op: integer sem: r 4 <- {0000000000000001}
+[CORE0 CMT] itag: 00000cdb pc: 0000000080000550 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 CMT] itag: 00000cdc pc: 0000000080000554 instr: fe5214e3
+			op: branch sem: pc <- {000000008000053c} rs1: 0000000000000001 cmp rs2: 0000000000000002 taken: 1
+[CORE0 PSN] itag: 00000cdd pc: 0000000080000558 instr: 01800e93
+[CORE0 BUB] itag: 00000cde cause: FE
+[CORE0 BUB] itag: 00000cdf cause: FE
+[CORE0 PSN] itag: 00000ce0 pc: 0000000080000564 instr: 00000213
+[CORE0 BUB] itag: 00000ce1 cause: FE
+[CORE0 BUB] itag: 00000ce2 cause: FE
+[CORE0 CMT] itag: 00000ce3 pc: 000000008000053c instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 BUB] itag: 00000ce4 cause: FE
+[CORE0 CMT] itag: 00000ce5 pc: 0000000080000540 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 PSN] itag: 00000ce6 pc: 000000008000053c instr: 00b00113
+[CORE0 BUB] itag: 00000ce7 cause: FE
+[CORE0 BUB] itag: 00000ce8 cause: FE
+[CORE0 PSN] itag: 00000ce9 pc: 0000000080000548 instr: 002081b3
+[CORE0 BUB] itag: 00000cea cause: FE
+[CORE0 BUB] itag: 00000ceb cause: FE
+[CORE0 CMT] itag: 00000cec pc: 0000000080000544 instr: 00d00093
+			op: integer sem: r 1 <- {000000000000000d}
+[CORE0 BUB] itag: 00000ced cause: FE
+[CORE0 CMT] itag: 00000cee pc: 0000000080000548 instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000018}
+[CORE0 PSN] itag: 00000cef pc: 0000000080000544 instr: 00d00093
+[CORE0 BUB] itag: 00000cf0 cause: FE
+[CORE0 BUB] itag: 00000cf1 cause: FE
+[CORE0 PSN] itag: 00000cf2 pc: 0000000080000550 instr: 00200293
+[CORE0 BUB] itag: 00000cf3 cause: FE
+[CORE0 BUB] itag: 00000cf4 cause: FE
+[CORE0 CMT] itag: 00000cf5 pc: 000000008000054c instr: 00120213
+			op: integer sem: r 4 <- {0000000000000002}
+[CORE0 BUB] itag: 00000cf6 cause: FE
+[CORE0 CMT] itag: 00000cf7 pc: 0000000080000550 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 PSN] itag: 00000cf8 pc: 000000008000054c instr: 00120213
+[CORE0 BUB] itag: 00000cf9 cause: FE
+[CORE0 BUB] itag: 00000cfa cause: FE
+[CORE0 PSN] itag: 00000cfb pc: 0000000080000558 instr: 01800e93
+[CORE0 BUB] itag: 00000cfc cause: FE
+[CORE0 BUB] itag: 00000cfd cause: FE
+[CORE0 CMT] itag: 00000cfe pc: 0000000080000554 instr: fe5214e3
+			op: branch sem: pc <- {0000000080000558} rs1: 0000000000000002 cmp rs2: 0000000000000002 taken: 0
+[CORE0 BUB] itag: 00000cff cause: FE
+[CORE0 CMT] itag: 00000d00 pc: 0000000080000558 instr: 01800e93
+			op: integer sem: r29 <- {0000000000000018}
+[CORE0 PSN] itag: 00000d01 pc: 0000000080000554 instr: fe5214e3
+[CORE0 BUB] itag: 00000d02 cause: FE
+[CORE0 BUB] itag: 00000d03 cause: FE
+[CORE0 PSN] itag: 00000d04 pc: 0000000080000560 instr: 0bd19c63
+[CORE0 BUB] itag: 00000d05 cause: FE
+[CORE0 BUB] itag: 00000d06 cause: FE
+[CORE0 CMT] itag: 00000d07 pc: 000000008000055c instr: 02000e13
+			op: integer sem: r28 <- {0000000000000020}
+[CORE0 BUB] itag: 00000d08 cause: FE
+[CORE0 CMT] itag: 00000d09 pc: 0000000080000560 instr: 0bd19c63
+			op: branch sem: pc <- {0000000080000564} rs1: 0000000000000018 cmp rs2: 0000000000000018 taken: 0
+[CORE0 PSN] itag: 00000d0a pc: 000000008000055c instr: 02000e13
+[CORE0 BUB] itag: 00000d0b cause: FE
+[CORE0 BUB] itag: 00000d0c cause: FE
+[CORE0 PSN] itag: 00000d0d pc: 0000000080000568 instr: 00b00113
+[CORE0 BUB] itag: 00000d0e cause: FE
+[CORE0 BUB] itag: 00000d0f cause: FE
+[CORE0 CMT] itag: 00000d10 pc: 0000000080000564 instr: 00000213
+			op: integer sem: r 4 <- {0000000000000000}
+[CORE0 BUB] itag: 00000d11 cause: FE
+[CORE0 CMT] itag: 00000d12 pc: 0000000080000568 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 PSN] itag: 00000d13 pc: 0000000080000564 instr: 00000213
+[CORE0 BUB] itag: 00000d14 cause: FE
+[CORE0 BUB] itag: 00000d15 cause: FE
+[CORE0 PSN] itag: 00000d16 pc: 0000000080000570 instr: 00e00093
+[CORE0 BUB] itag: 00000d17 cause: FE
+[CORE0 BUB] itag: 00000d18 cause: FE
+[CORE0 CMT] itag: 00000d19 pc: 000000008000056c instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 BUB] itag: 00000d1a cause: FE
+[CORE0 CMT] itag: 00000d1b pc: 0000000080000570 instr: 00e00093
+			op: integer sem: r 1 <- {000000000000000e}
+[CORE0 PSN] itag: 00000d1c pc: 000000008000056c instr: 00000013
+[CORE0 BUB] itag: 00000d1d cause: FE
+[CORE0 BUB] itag: 00000d1e cause: FE
+[CORE0 PSN] itag: 00000d1f pc: 0000000080000578 instr: 002081b3
+[CORE0 BUB] itag: 00000d20 cause: FE
+[CORE0 BUB] itag: 00000d21 cause: FE
+[CORE0 CMT] itag: 00000d22 pc: 0000000080000574 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 BUB] itag: 00000d23 cause: FE
+[CORE0 CMT] itag: 00000d24 pc: 0000000080000578 instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000019}
+[CORE0 PSN] itag: 00000d25 pc: 0000000080000574 instr: 00000013
+[CORE0 BUB] itag: 00000d26 cause: FE
+[CORE0 BUB] itag: 00000d27 cause: FE
+[CORE0 BUB] itag: 00000d28 cause: FE
+[CORE0 BUB] itag: 00000d29 cause: FE
+[CORE0 BUB] itag: 00000d2a cause: FE
+[CORE0 BUB] itag: 00000d2b cause: FE
+[CORE0 BUB] itag: 00000d2c cause: FE
+[CORE0 BUB] itag: 00000d2d cause: FE
+[CORE0 BUB] itag: 00000d2e cause: FE
+[CORE0 BUB] itag: 00000d2f cause: FE
+[CORE0 BUB] itag: 00000d30 cause: FE
+[CORE0 BUB] itag: 00000d31 cause: FE
+[CORE0 BUB] itag: 00000d32 cause: FE
+[CORE0 BUB] itag: 00000d33 cause: FE
+[CORE0 BUB] itag: 00000d34 cause: FE
+[CORE0 BUB] itag: 00000d35 cause: FE
+[CORE0 BUB] itag: 00000d36 cause: FE
+[CORE0 BUB] itag: 00000d37 cause: FE
+[CORE0 BUB] itag: 00000d38 cause: FE
+[CORE0 BUB] itag: 00000d39 cause: FE
+[CORE0 BUB] itag: 00000d3a cause: FE
+[CORE0 BUB] itag: 00000d3b cause: FE
+[CORE0 BUB] itag: 00000d3c cause: FE
+[CORE0 BUB] itag: 00000d3d cause: FE
+[CORE0 BUB] itag: 00000d3e cause: FE
+[CORE0 BUB] itag: 00000d3f cause: FE
+[CORE0 BUB] itag: 00000d40 cause: FE
+[CORE0 BUB] itag: 00000d41 cause: FE
+[CORE0 BUB] itag: 00000d42 cause: FE
+[CORE0 BUB] itag: 00000d43 cause: FE
+[CORE0 BUB] itag: 00000d44 cause: FE
+[CORE0 BUB] itag: 00000d45 cause: FE
+[CORE0 BUB] itag: 00000d46 cause: FE
+[CORE0 BUB] itag: 00000d47 cause: FE
+[CORE0 BUB] itag: 00000d48 cause: FE
+[CORE0 BUB] itag: 00000d49 cause: FE
+[CORE0 BUB] itag: 00000d4a cause: FE
+[CORE0 BUB] itag: 00000d4b cause: FE
+[CORE0 BUB] itag: 00000d4c cause: FE
+[CORE0 BUB] itag: 00000d4d cause: FE
+[CORE0 BUB] itag: 00000d4e cause: FE
+[CORE0 CMT] itag: 00000d4f pc: 000000008000057c instr: 00120213
+			op: integer sem: r 4 <- {0000000000000001}
+[CORE0 CMT] itag: 00000d50 pc: 0000000080000580 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 CMT] itag: 00000d51 pc: 0000000080000584 instr: fe5212e3
+			op: branch sem: pc <- {0000000080000568} rs1: 0000000000000001 cmp rs2: 0000000000000002 taken: 1
+[CORE0 PSN] itag: 00000d52 pc: 0000000080000588 instr: 01900e93
+[CORE0 BUB] itag: 00000d53 cause: FE
+[CORE0 BUB] itag: 00000d54 cause: FE
+[CORE0 PSN] itag: 00000d55 pc: 0000000080000594 instr: 00000213
+[CORE0 BUB] itag: 00000d56 cause: FE
+[CORE0 BUB] itag: 00000d57 cause: FE
+[CORE0 CMT] itag: 00000d58 pc: 0000000080000568 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 BUB] itag: 00000d59 cause: FE
+[CORE0 CMT] itag: 00000d5a pc: 000000008000056c instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 PSN] itag: 00000d5b pc: 0000000080000568 instr: 00b00113
+[CORE0 BUB] itag: 00000d5c cause: FE
+[CORE0 BUB] itag: 00000d5d cause: FE
+[CORE0 PSN] itag: 00000d5e pc: 0000000080000574 instr: 00000013
+[CORE0 BUB] itag: 00000d5f cause: FE
+[CORE0 BUB] itag: 00000d60 cause: FE
+[CORE0 CMT] itag: 00000d61 pc: 0000000080000570 instr: 00e00093
+			op: integer sem: r 1 <- {000000000000000e}
+[CORE0 BUB] itag: 00000d62 cause: FE
+[CORE0 CMT] itag: 00000d63 pc: 0000000080000574 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 PSN] itag: 00000d64 pc: 0000000080000570 instr: 00e00093
+[CORE0 BUB] itag: 00000d65 cause: FE
+[CORE0 BUB] itag: 00000d66 cause: FE
+[CORE0 PSN] itag: 00000d67 pc: 000000008000057c instr: 00120213
+[CORE0 BUB] itag: 00000d68 cause: FE
+[CORE0 BUB] itag: 00000d69 cause: FE
+[CORE0 CMT] itag: 00000d6a pc: 0000000080000578 instr: 002081b3
+			op: integer sem: r 3 <- {0000000000000019}
+[CORE0 BUB] itag: 00000d6b cause: FE
+[CORE0 CMT] itag: 00000d6c pc: 000000008000057c instr: 00120213
+			op: integer sem: r 4 <- {0000000000000002}
+[CORE0 PSN] itag: 00000d6d pc: 0000000080000578 instr: 002081b3
+[CORE0 BUB] itag: 00000d6e cause: FE
+[CORE0 BUB] itag: 00000d6f cause: FE
+[CORE0 PSN] itag: 00000d70 pc: 0000000080000584 instr: fe5212e3
+[CORE0 BUB] itag: 00000d71 cause: FE
+[CORE0 BUB] itag: 00000d72 cause: FE
+[CORE0 CMT] itag: 00000d73 pc: 0000000080000580 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 BUB] itag: 00000d74 cause: FE
+[CORE0 CMT] itag: 00000d75 pc: 0000000080000584 instr: fe5212e3
+			op: branch sem: pc <- {0000000080000588} rs1: 0000000000000002 cmp rs2: 0000000000000002 taken: 0
+[CORE0 PSN] itag: 00000d76 pc: 0000000080000580 instr: 00200293
+[CORE0 BUB] itag: 00000d77 cause: FE
+[CORE0 BUB] itag: 00000d78 cause: FE
+[CORE0 PSN] itag: 00000d79 pc: 000000008000058c instr: 02100e13
+[CORE0 BUB] itag: 00000d7a cause: FE
+[CORE0 BUB] itag: 00000d7b cause: FE
+[CORE0 CMT] itag: 00000d7c pc: 0000000080000588 instr: 01900e93
+			op: integer sem: r29 <- {0000000000000019}
+[CORE0 BUB] itag: 00000d7d cause: FE
+[CORE0 CMT] itag: 00000d7e pc: 000000008000058c instr: 02100e13
+			op: integer sem: r28 <- {0000000000000021}
+[CORE0 PSN] itag: 00000d7f pc: 0000000080000588 instr: 01900e93
+[CORE0 BUB] itag: 00000d80 cause: FE
+[CORE0 BUB] itag: 00000d81 cause: FE
+[CORE0 PSN] itag: 00000d82 pc: 0000000080000594 instr: 00000213
+[CORE0 BUB] itag: 00000d83 cause: FE
+[CORE0 BUB] itag: 00000d84 cause: FE
+[CORE0 CMT] itag: 00000d85 pc: 0000000080000590 instr: 09d19463
+			op: branch sem: pc <- {0000000080000594} rs1: 0000000000000019 cmp rs2: 0000000000000019 taken: 0
+[CORE0 BUB] itag: 00000d86 cause: FE
+[CORE0 CMT] itag: 00000d87 pc: 0000000080000594 instr: 00000213
+			op: integer sem: r 4 <- {0000000000000000}
+[CORE0 PSN] itag: 00000d88 pc: 0000000080000590 instr: 09d19463
+[CORE0 BUB] itag: 00000d89 cause: FE
+[CORE0 BUB] itag: 00000d8a cause: FE
+[CORE0 PSN] itag: 00000d8b pc: 000000008000059c instr: 00000013
+[CORE0 BUB] itag: 00000d8c cause: FE
+[CORE0 BUB] itag: 00000d8d cause: FE
+[CORE0 CMT] itag: 00000d8e pc: 0000000080000598 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 BUB] itag: 00000d8f cause: FE
+[CORE0 CMT] itag: 00000d90 pc: 000000008000059c instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 PSN] itag: 00000d91 pc: 0000000080000598 instr: 00b00113
+[CORE0 BUB] itag: 00000d92 cause: FE
+[CORE0 BUB] itag: 00000d93 cause: FE
+[CORE0 PSN] itag: 00000d94 pc: 00000000800005a4 instr: 00f00093
+[CORE0 BUB] itag: 00000d95 cause: FE
+[CORE0 BUB] itag: 00000d96 cause: FE
+[CORE0 CMT] itag: 00000d97 pc: 00000000800005a0 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 BUB] itag: 00000d98 cause: FE
+[CORE0 CMT] itag: 00000d99 pc: 00000000800005a4 instr: 00f00093
+			op: integer sem: r 1 <- {000000000000000f}
+[CORE0 PSN] itag: 00000d9a pc: 00000000800005a0 instr: 00000013
+[CORE0 BUB] itag: 00000d9b cause: FE
+[CORE0 BUB] itag: 00000d9c cause: FE
+[CORE0 PSN] itag: 00000d9d pc: 00000000800005ac instr: 00120213
+[CORE0 BUB] itag: 00000d9e cause: FE
+[CORE0 BUB] itag: 00000d9f cause: FE
+[CORE0 CMT] itag: 00000da0 pc: 00000000800005a8 instr: 002081b3
+			op: integer sem: r 3 <- {000000000000001a}
+[CORE0 BUB] itag: 00000da1 cause: FE
+[CORE0 CMT] itag: 00000da2 pc: 00000000800005ac instr: 00120213
+			op: integer sem: r 4 <- {0000000000000001}
+[CORE0 PSN] itag: 00000da3 pc: 00000000800005a8 instr: 002081b3
+[CORE0 BUB] itag: 00000da4 cause: FE
+[CORE0 BUB] itag: 00000da5 cause: FE
+[CORE0 PSN] itag: 00000da6 pc: 00000000800005b4 instr: fe5212e3
+[CORE0 BUB] itag: 00000da7 cause: FE
+[CORE0 BUB] itag: 00000da8 cause: FE
+[CORE0 CMT] itag: 00000da9 pc: 00000000800005b0 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 BUB] itag: 00000daa cause: FE
+[CORE0 CMT] itag: 00000dab pc: 00000000800005b4 instr: fe5212e3
+			op: branch sem: pc <- {0000000080000598} rs1: 0000000000000001 cmp rs2: 0000000000000002 taken: 1
+[CORE0 PSN] itag: 00000dac pc: 00000000800005b0 instr: 00200293
+[CORE0 BUB] itag: 00000dad cause: FE
+[CORE0 BUB] itag: 00000dae cause: FE
+[CORE0 PSN] itag: 00000daf pc: 00000000800005bc instr: 02200e13
+[CORE0 BUB] itag: 00000db0 cause: FE
+[CORE0 BUB] itag: 00000db1 cause: FE
+[CORE0 BUB] itag: 00000db2 cause: FE
+[CORE0 BUB] itag: 00000db3 cause: FE
+[CORE0 BUB] itag: 00000db4 cause: FE
+[CORE0 BUB] itag: 00000db5 cause: FE
+[CORE0 BUB] itag: 00000db6 cause: FE
+[CORE0 BUB] itag: 00000db7 cause: FE
+[CORE0 BUB] itag: 00000db8 cause: FE
+[CORE0 BUB] itag: 00000db9 cause: FE
+[CORE0 BUB] itag: 00000dba cause: FE
+[CORE0 BUB] itag: 00000dbb cause: FE
+[CORE0 BUB] itag: 00000dbc cause: FE
+[CORE0 BUB] itag: 00000dbd cause: FE
+[CORE0 BUB] itag: 00000dbe cause: FE
+[CORE0 BUB] itag: 00000dbf cause: FE
+[CORE0 BUB] itag: 00000dc0 cause: FE
+[CORE0 BUB] itag: 00000dc1 cause: FE
+[CORE0 BUB] itag: 00000dc2 cause: FE
+[CORE0 BUB] itag: 00000dc3 cause: FE
+[CORE0 BUB] itag: 00000dc4 cause: FE
+[CORE0 BUB] itag: 00000dc5 cause: FE
+[CORE0 BUB] itag: 00000dc6 cause: FE
+[CORE0 BUB] itag: 00000dc7 cause: FE
+[CORE0 BUB] itag: 00000dc8 cause: FE
+[CORE0 BUB] itag: 00000dc9 cause: FE
+[CORE0 BUB] itag: 00000dca cause: FE
+[CORE0 BUB] itag: 00000dcb cause: FE
+[CORE0 BUB] itag: 00000dcc cause: FE
+[CORE0 BUB] itag: 00000dcd cause: FE
+[CORE0 BUB] itag: 00000dce cause: FE
+[CORE0 BUB] itag: 00000dcf cause: FE
+[CORE0 BUB] itag: 00000dd0 cause: FE
+[CORE0 BUB] itag: 00000dd1 cause: FE
+[CORE0 BUB] itag: 00000dd2 cause: FE
+[CORE0 BUB] itag: 00000dd3 cause: FE
+[CORE0 BUB] itag: 00000dd4 cause: FE
+[CORE0 BUB] itag: 00000dd5 cause: FE
+[CORE0 BUB] itag: 00000dd6 cause: FE
+[CORE0 BUB] itag: 00000dd7 cause: FE
+[CORE0 PSN] itag: 00000dd8 pc: 00000000800005c0 instr: 05d19c63
+[CORE0 BUB] itag: 00000dd9 cause: FE
+[CORE0 BUB] itag: 00000dda cause: FE
+[CORE0 PSN] itag: 00000ddb pc: 00000000800005cc instr: 00f00e93
+[CORE0 BUB] itag: 00000ddc cause: FE
+[CORE0 BUB] itag: 00000ddd cause: FE
+[CORE0 CMT] itag: 00000dde pc: 0000000080000598 instr: 00b00113
+			op: integer sem: r 2 <- {000000000000000b}
+[CORE0 BUB] itag: 00000ddf cause: FE
+[CORE0 CMT] itag: 00000de0 pc: 000000008000059c instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 PSN] itag: 00000de1 pc: 0000000080000598 instr: 00b00113
+[CORE0 BUB] itag: 00000de2 cause: FE
+[CORE0 BUB] itag: 00000de3 cause: FE
+[CORE0 PSN] itag: 00000de4 pc: 00000000800005a4 instr: 00f00093
+[CORE0 BUB] itag: 00000de5 cause: FE
+[CORE0 BUB] itag: 00000de6 cause: FE
+[CORE0 CMT] itag: 00000de7 pc: 00000000800005a0 instr: 00000013
+			op: integer sem: r 0 <- {0000000000000000}
+[CORE0 BUB] itag: 00000de8 cause: FE
+[CORE0 CMT] itag: 00000de9 pc: 00000000800005a4 instr: 00f00093
+			op: integer sem: r 1 <- {000000000000000f}
+[CORE0 PSN] itag: 00000dea pc: 00000000800005a0 instr: 00000013
+[CORE0 BUB] itag: 00000deb cause: FE
+[CORE0 BUB] itag: 00000dec cause: FE
+[CORE0 PSN] itag: 00000ded pc: 00000000800005ac instr: 00120213
+[CORE0 BUB] itag: 00000dee cause: FE
+[CORE0 BUB] itag: 00000def cause: FE
+[CORE0 CMT] itag: 00000df0 pc: 00000000800005a8 instr: 002081b3
+			op: integer sem: r 3 <- {000000000000001a}
+[CORE0 BUB] itag: 00000df1 cause: FE
+[CORE0 CMT] itag: 00000df2 pc: 00000000800005ac instr: 00120213
+			op: integer sem: r 4 <- {0000000000000002}
+[CORE0 PSN] itag: 00000df3 pc: 00000000800005a8 instr: 002081b3
+[CORE0 BUB] itag: 00000df4 cause: FE
+[CORE0 BUB] itag: 00000df5 cause: FE
+[CORE0 PSN] itag: 00000df6 pc: 00000000800005b4 instr: fe5212e3
+[CORE0 BUB] itag: 00000df7 cause: FE
+[CORE0 BUB] itag: 00000df8 cause: FE
+[CORE0 CMT] itag: 00000df9 pc: 00000000800005b0 instr: 00200293
+			op: integer sem: r 5 <- {0000000000000002}
+[CORE0 BUB] itag: 00000dfa cause: FE
+[CORE0 CMT] itag: 00000dfb pc: 00000000800005b4 instr: fe5212e3
+			op: branch sem: pc <- {00000000800005b8} rs1: 0000000000000002 cmp rs2: 0000000000000002 taken: 0
+[CORE0 PSN] itag: 00000dfc pc: 00000000800005b0 instr: 00200293
+[CORE0 BUB] itag: 00000dfd cause: FE
+[CORE0 BUB] itag: 00000dfe cause: FE
+[CORE0 PSN] itag: 00000dff pc: 00000000800005bc instr: 02200e13
+[CORE0 BUB] itag: 00000e00 cause: FE
+[CORE0 BUB] itag: 00000e01 cause: FE
+[CORE0 CMT] itag: 00000e02 pc: 00000000800005b8 instr: 01a00e93
+			op: integer sem: r29 <- {000000000000001a}
+[CORE0 BUB] itag: 00000e03 cause: FE
+[CORE0 CMT] itag: 00000e04 pc: 00000000800005bc instr: 02200e13
+			op: integer sem: r28 <- {0000000000000022}
+[CORE0 PSN] itag: 00000e05 pc: 00000000800005b8 instr: 01a00e93
+[CORE0 BUB] itag: 00000e06 cause: FE
+[CORE0 BUB] itag: 00000e07 cause: FE
+[CORE0 PSN] itag: 00000e08 pc: 00000000800005c4 instr: 00f00093
+[CORE0 BUB] itag: 00000e09 cause: FE
+[CORE0 BUB] itag: 00000e0a cause: FE
+[CORE0 CMT] itag: 00000e0b pc: 00000000800005c0 instr: 05d19c63
+			op: branch sem: pc <- {00000000800005c4} rs1: 000000000000001a cmp rs2: 000000000000001a taken: 0
+[CORE0 BUB] itag: 00000e0c cause: FE
+[CORE0 CMT] itag: 00000e0d pc: 00000000800005c4 instr: 00f00093
+			op: integer sem: r 1 <- {000000000000000f}
+[CORE0 PSN] itag: 00000e0e pc: 00000000800005c0 instr: 05d19c63
+[CORE0 BUB] itag: 00000e0f cause: FE
+[CORE0 BUB] itag: 00000e10 cause: FE
+[CORE0 PSN] itag: 00000e11 pc: 00000000800005cc instr: 00f00e93
+[CORE0 BUB] itag: 00000e12 cause: FE
+[CORE0 BUB] itag: 00000e13 cause: FE
+[CORE0 CMT] itag: 00000e14 pc: 00000000800005c8 instr: 00100133
+			op: integer sem: r 2 <- {000000000000000f}
+[CORE0 BUB] itag: 00000e15 cause: FE
+[CORE0 CMT] itag: 00000e16 pc: 00000000800005cc instr: 00f00e93
+			op: integer sem: r29 <- {000000000000000f}
+[CORE0 PSN] itag: 00000e17 pc: 00000000800005c8 instr: 00100133
+[CORE0 BUB] itag: 00000e18 cause: FE
+[CORE0 BUB] itag: 00000e19 cause: FE
+[CORE0 PSN] itag: 00000e1a pc: 00000000800005d4 instr: 05d11263
+[CORE0 BUB] itag: 00000e1b cause: FE
+[CORE0 BUB] itag: 00000e1c cause: FE
+[CORE0 CMT] itag: 00000e1d pc: 00000000800005d0 instr: 02300e13
+			op: integer sem: r28 <- {0000000000000023}
+[CORE0 BUB] itag: 00000e1e cause: FE
+[CORE0 CMT] itag: 00000e1f pc: 00000000800005d4 instr: 05d11263
+			op: branch sem: pc <- {00000000800005d8} rs1: 000000000000000f cmp rs2: 000000000000000f taken: 0
+[CORE0 PSN] itag: 00000e20 pc: 00000000800005d0 instr: 02300e13
+[CORE0 BUB] itag: 00000e21 cause: FE
+[CORE0 BUB] itag: 00000e22 cause: FE
+[CORE0 PSN] itag: 00000e23 pc: 00000000800005dc instr: 00008133
+[CORE0 BUB] itag: 00000e24 cause: FE
+[CORE0 BUB] itag: 00000e25 cause: FE
+[CORE0 CMT] itag: 00000e26 pc: 00000000800005d8 instr: 02000093
+			op: integer sem: r 1 <- {0000000000000020}
+[CORE0 BUB] itag: 00000e27 cause: FE
+[CORE0 CMT] itag: 00000e28 pc: 00000000800005dc instr: 00008133
+			op: integer sem: r 2 <- {0000000000000020}
+[CORE0 PSN] itag: 00000e29 pc: 00000000800005d8 instr: 02000093
+[CORE0 BUB] itag: 00000e2a cause: FE
+[CORE0 BUB] itag: 00000e2b cause: FE
+[CORE0 PSN] itag: 00000e2c pc: 00000000800005e4 instr: 02400e13
+[CORE0 BUB] itag: 00000e2d cause: FE
+[CORE0 BUB] itag: 00000e2e cause: FE
+[CORE0 CMT] itag: 00000e2f pc: 00000000800005e0 instr: 02000e93
+			op: integer sem: r29 <- {0000000000000020}
+[CORE0 BUB] itag: 00000e30 cause: FE
+[CORE0 CMT] itag: 00000e31 pc: 00000000800005e4 instr: 02400e13
+			op: integer sem: r28 <- {0000000000000024}
+[CORE0 PSN] itag: 00000e32 pc: 00000000800005e0 instr: 02000e93
+[CORE0 BUB] itag: 00000e33 cause: FE
+[CORE0 BUB] itag: 00000e34 cause: FE
+[CORE0 PSN] itag: 00000e35 pc: 00000000800005ec instr: 000000b3
+[CORE0 BUB] itag: 00000e36 cause: FE
+[CORE0 BUB] itag: 00000e37 cause: FE
+[CORE0 CMT] itag: 00000e38 pc: 00000000800005e8 instr: 03d11863
+			op: branch sem: pc <- {00000000800005ec} rs1: 0000000000000020 cmp rs2: 0000000000000020 taken: 0
+[CORE0 BUB] itag: 00000e39 cause: FE
+[CORE0 CMT] itag: 00000e3a pc: 00000000800005ec instr: 000000b3
+			op: integer sem: r 1 <- {0000000000000000}
+[CORE0 PSN] itag: 00000e3b pc: 00000000800005e8 instr: 03d11863
+[CORE0 BUB] itag: 00000e3c cause: FE
+[CORE0 BUB] itag: 00000e3d cause: FE
+[CORE0 PSN] itag: 00000e3e pc: 00000000800005f4 instr: 02500e13
+[CORE0 BUB] itag: 00000e3f cause: FE
+[CORE0 BUB] itag: 00000e40 cause: FE
+[CORE0 CMT] itag: 00000e41 pc: 00000000800005f0 instr: 00000e93
+			op: integer sem: r29 <- {0000000000000000}
+[CORE0 BUB] itag: 00000e42 cause: FE
+[CORE0 CMT] itag: 00000e43 pc: 00000000800005f4 instr: 02500e13
+			op: integer sem: r28 <- {0000000000000025}
+[CORE0 PSN] itag: 00000e44 pc: 00000000800005f0 instr: 00000e93
+[CORE0 BUB] itag: 00000e45 cause: FE
+[CORE0 BUB] itag: 00000e46 cause: FE
+[CORE0 PSN] itag: 00000e47 pc: 00000000800005fc instr: 01000093
+[CORE0 BUB] itag: 00000e48 cause: FE
+[CORE0 BUB] itag: 00000e49 cause: FE
+[CORE0 BUB] itag: 00000e4a cause: FE
+[CORE0 BUB] itag: 00000e4b cause: FE
+[CORE0 BUB] itag: 00000e4c cause: FE
+[CORE0 BUB] itag: 00000e4d cause: FE
+[CORE0 BUB] itag: 00000e4e cause: FE
+[CORE0 BUB] itag: 00000e4f cause: FE
+[CORE0 BUB] itag: 00000e50 cause: FE
+[CORE0 BUB] itag: 00000e51 cause: FE
+[CORE0 BUB] itag: 00000e52 cause: FE
+[CORE0 BUB] itag: 00000e53 cause: FE
+[CORE0 BUB] itag: 00000e54 cause: FE
+[CORE0 BUB] itag: 00000e55 cause: FE
+[CORE0 BUB] itag: 00000e56 cause: FE
+[CORE0 BUB] itag: 00000e57 cause: FE
+[CORE0 BUB] itag: 00000e58 cause: FE
+[CORE0 BUB] itag: 00000e59 cause: FE
+[CORE0 BUB] itag: 00000e5a cause: FE
+[CORE0 BUB] itag: 00000e5b cause: FE
+[CORE0 BUB] itag: 00000e5c cause: FE
+[CORE0 BUB] itag: 00000e5d cause: FE
+[CORE0 BUB] itag: 00000e5e cause: FE
+[CORE0 BUB] itag: 00000e5f cause: FE
+[CORE0 BUB] itag: 00000e60 cause: FE
+[CORE0 BUB] itag: 00000e61 cause: FE
+[CORE0 BUB] itag: 00000e62 cause: FE
+[CORE0 BUB] itag: 00000e63 cause: FE
+[CORE0 BUB] itag: 00000e64 cause: FE
+[CORE0 BUB] itag: 00000e65 cause: FE
+[CORE0 BUB] itag: 00000e66 cause: FE
+[CORE0 BUB] itag: 00000e67 cause: FE
+[CORE0 BUB] itag: 00000e68 cause: FE
+[CORE0 BUB] itag: 00000e69 cause: FE
+[CORE0 BUB] itag: 00000e6a cause: FE
+[CORE0 BUB] itag: 00000e6b cause: FE
+[CORE0 BUB] itag: 00000e6c cause: FE
+[CORE0 BUB] itag: 00000e6d cause: FE
+[CORE0 BUB] itag: 00000e6e cause: FE
+[CORE0 BUB] itag: 00000e6f cause: FE
+[CORE0 PSN] itag: 00000e70 pc: 0000000080000600 instr: 01e00113
+[CORE0 BUB] itag: 00000e71 cause: FE
+[CORE0 BUB] itag: 00000e72 cause: FE
+[CORE0 PSN] itag: 00000e73 pc: 000000008000060c instr: 02600e13
+[CORE0 BUB] itag: 00000e74 cause: FE
+[CORE0 BUB] itag: 00000e75 cause: FE
+[CORE0 CMT] itag: 00000e76 pc: 00000000800005f8 instr: 03d09063
+			op: branch sem: pc <- {00000000800005fc} rs1: 0000000000000000 cmp rs2: 0000000000000000 taken: 0
+[CORE0 BUB] itag: 00000e77 cause: FE
+[CORE0 CMT] itag: 00000e78 pc: 00000000800005fc instr: 01000093
+			op: integer sem: r 1 <- {0000000000000010}
+[CORE0 PSN] itag: 00000e79 pc: 00000000800005f8 instr: 03d09063
+[CORE0 BUB] itag: 00000e7a cause: FE
+[CORE0 BUB] itag: 00000e7b cause: FE
+[CORE0 PSN] itag: 00000e7c pc: 0000000080000604 instr: 00208033
+[CORE0 BUB] itag: 00000e7d cause: FE
+[CORE0 BUB] itag: 00000e7e cause: FE
+[CORE0 CMT] itag: 00000e7f pc: 0000000080000600 instr: 01e00113
+			op: integer sem: r 2 <- {000000000000001e}
+[CORE0 BUB] itag: 00000e80 cause: FE
+[CORE0 CMT] itag: 00000e81 pc: 0000000080000604 instr: 00208033
+			op: integer sem: r 0 <- {000000000000002e}
+[CORE0 PSN] itag: 00000e82 pc: 0000000080000600 instr: 01e00113
+[CORE0 BUB] itag: 00000e83 cause: FE
+[CORE0 BUB] itag: 00000e84 cause: FE
+[CORE0 PSN] itag: 00000e85 pc: 000000008000060c instr: 02600e13
+[CORE0 BUB] itag: 00000e86 cause: FE
+[CORE0 BUB] itag: 00000e87 cause: FE
+[CORE0 CMT] itag: 00000e88 pc: 0000000080000608 instr: 00000e93
+			op: integer sem: r29 <- {0000000000000000}
+[CORE0 BUB] itag: 00000e89 cause: FE
+[CORE0 CMT] itag: 00000e8a pc: 000000008000060c instr: 02600e13
+			op: integer sem: r28 <- {0000000000000026}
+[CORE0 PSN] itag: 00000e8b pc: 0000000080000608 instr: 00000e93
+[CORE0 BUB] itag: 00000e8c cause: FE
+[CORE0 BUB] itag: 00000e8d cause: FE
+[CORE0 PSN] itag: 00000e8e pc: 0000000080000614 instr: 05c01263
+[CORE0 BUB] itag: 00000e8f cause: FE
+[CORE0 BUB] itag: 00000e90 cause: FE
+[CORE0 CMT] itag: 00000e91 pc: 0000000080000610 instr: 01d01463
+			op: branch sem: pc <- {0000000080000614} rs1: 0000000000000000 cmp rs2: 0000000000000000 taken: 0
+[CORE0 BUB] itag: 00000e92 cause: FE
+[CORE0 CMT] itag: 00000e93 pc: 0000000080000614 instr: 05c01263
+			op: branch sem: pc <- {0000000080000658} rs1: 0000000000000000 cmp rs2: 0000000000000026 taken: 1
+[CORE0 PSN] itag: 00000e94 pc: 0000000080000610 instr: 01d01463
+[CORE0 BUB] itag: 00000e95 cause: FE
+[CORE0 BUB] itag: 00000e96 cause: FE
+[CORE0 PSN] itag: 00000e97 pc: 000000008000061c instr: 000c0337
+[CORE0 BUB] itag: 00000e98 cause: FE
+[CORE0 BUB] itag: 00000e99 cause: FE
+[CORE0 BUB] itag: 00000e9a cause: FE
+[CORE0 BUB] itag: 00000e9b cause: FE
+[CORE0 BUB] itag: 00000e9c cause: FE
+[CORE0 BUB] itag: 00000e9d cause: FE
+[CORE0 BUB] itag: 00000e9e cause: FE
+[CORE0 BUB] itag: 00000e9f cause: FE
+[CORE0 BUB] itag: 00000ea0 cause: FE
+[CORE0 BUB] itag: 00000ea1 cause: FE
+[CORE0 BUB] itag: 00000ea2 cause: FE
+[CORE0 BUB] itag: 00000ea3 cause: FE
+[CORE0 BUB] itag: 00000ea4 cause: FE
+[CORE0 BUB] itag: 00000ea5 cause: FE
+[CORE0 BUB] itag: 00000ea6 cause: FE
+[CORE0 BUB] itag: 00000ea7 cause: FE
+[CORE0 BUB] itag: 00000ea8 cause: FE
+[CORE0 BUB] itag: 00000ea9 cause: FE
+[CORE0 BUB] itag: 00000eaa cause: FE
+[CORE0 BUB] itag: 00000eab cause: FE
+[CORE0 BUB] itag: 00000eac cause: FE
+[CORE0 BUB] itag: 00000ead cause: FE
+[CORE0 BUB] itag: 00000eae cause: FE
+[CORE0 BUB] itag: 00000eaf cause: FE
+[CORE0 BUB] itag: 00000eb0 cause: FE
+[CORE0 BUB] itag: 00000eb1 cause: FE
+[CORE0 BUB] itag: 00000eb2 cause: FE
+[CORE0 BUB] itag: 00000eb3 cause: FE
+[CORE0 BUB] itag: 00000eb4 cause: FE
+[CORE0 BUB] itag: 00000eb5 cause: FE
+[CORE0 BUB] itag: 00000eb6 cause: FE
+[CORE0 BUB] itag: 00000eb7 cause: FE
+[CORE0 BUB] itag: 00000eb8 cause: FE
+[CORE0 BUB] itag: 00000eb9 cause: FE
+[CORE0 BUB] itag: 00000eba cause: FE
+[CORE0 BUB] itag: 00000ebb cause: FE
+[CORE0 BUB] itag: 00000ebc cause: FE
+[CORE0 BUB] itag: 00000ebd cause: FE
+[CORE0 BUB] itag: 00000ebe cause: FE
+[CORE0 BUB] itag: 00000ebf cause: FE
+[CORE0 BUB] itag: 00000ec0 cause: FE
+[CORE0 PSN] itag: 00000ec1 pc: 0000000080000620 instr: 0df3031b
+[CORE0 BUB] itag: 00000ec2 cause: FE
+[CORE0 BUB] itag: 00000ec3 cause: FE
+[CORE0 PSN] itag: 00000ec4 pc: 000000008000062c instr: 000e0513
+[CORE0 BUB] itag: 00000ec5 cause: FE
+[CORE0 BUB] itag: 00000ec6 cause: FE
+[CORE0 CMT] itag: 00000ec7 pc: 0000000080000658 instr: 0ff0000f
+[CORE0 BUB] itag: 00000ec8 cause: FE
+[CORE0 CMT] itag: 00000ec9 pc: 000000008000065c instr: 000c02b7
+			op: integer sem: r 5 <- {00000000000c0000}
+[CORE0 PSN] itag: 00000eca pc: 0000000080000658 instr: 0ff0000f
+[CORE0 BUB] itag: 00000ecb cause: FE
+[CORE0 BUB] itag: 00000ecc cause: FE
+[CORE0 PSN] itag: 00000ecd pc: 0000000080000664 instr: 00c29293
+[CORE0 BUB] itag: 00000ece cause: FE
+[CORE0 BUB] itag: 00000ecf cause: FE
+[CORE0 CMT] itag: 00000ed0 pc: 0000000080000660 instr: 0df2829b
+			op: integer sem: r 5 <- {00000000000c00df}
+[CORE0 BUB] itag: 00000ed1 cause: FE
+[CORE0 CMT] itag: 00000ed2 pc: 0000000080000664 instr: 00c29293
+			op: integer sem: r 5 <- {00000000c00df000}
+[CORE0 PSN] itag: 00000ed3 pc: 0000000080000660 instr: 0df2829b
+[CORE0 BUB] itag: 00000ed4 cause: FE
+[CORE0 BUB] itag: 00000ed5 cause: FE
+[CORE0 PSN] itag: 00000ed6 pc: 000000008000066c instr: 000e0513
+[CORE0 BUB] itag: 00000ed7 cause: FE
+[CORE0 BUB] itag: 00000ed8 cause: FE
+[CORE0 CMT] itag: 00000ed9 pc: 0000000080000668 instr: ad028293
+			op: integer sem: r 5 <- {00000000c00dead0}
+[CORE0 BUB] itag: 00000eda cause: FE
+[CORE0 CMT] itag: 00000edb pc: 000000008000066c instr: 000e0513
+			op: integer sem: r10 <- {0000000000000026}
+[CORE0 PSN] itag: 00000edc pc: 0000000080000668 instr: ad028293
+[CORE0 BUB] itag: 00000edd cause: FE
+[CORE0 BUB] itag: 00000ede cause: FE
+[CORE0 PSN] itag: 00000edf pc: 0000000080000674 instr: fff5859b
+[CORE0 BUB] itag: 00000ee0 cause: FE
+[CORE0 BUB] itag: 00000ee1 cause: FE
+[CORE0 CMT] itag: 00000ee2 pc: 0000000080000670 instr: 000105b7
+			op: integer sem: r11 <- {0000000000010000}
+[CORE0 BUB] itag: 00000ee3 cause: FE
+[CORE0 CMT] itag: 00000ee4 pc: 0000000080000674 instr: fff5859b
+			op: integer sem: r11 <- {000000000000ffff}
+[CORE0 PSN] itag: 00000ee5 pc: 0000000080000670 instr: 000105b7
+[CORE0 BUB] itag: 00000ee6 cause: FE
+[CORE0 BUB] itag: 00000ee7 cause: FE
+[CORE0 PSN] itag: 00000ee8 pc: 000000008000067c instr: 00a2a023
+[CORE0 BUB] itag: 00000ee9 cause: FE
+[CORE0 BUB] itag: 00000eea cause: FE
+[CORE0 BUB] itag: 00000eeb cause: FE
+[CORE0 BUB] itag: 00000eec cause: FE
+[CORE0 BUB] itag: 00000eed cause: FE
+[CORE0 BUB] itag: 00000eee cause: FE
+[CORE0 BUB] itag: 00000eef cause: FE
+[CORE0 BUB] itag: 00000ef0 cause: FE
+[CORE0 BUB] itag: 00000ef1 cause: FE
+[CORE0 BUB] itag: 00000ef2 cause: FE
+[CORE0 BUB] itag: 00000ef3 cause: FE
+[CORE0 BUB] itag: 00000ef4 cause: FE
+[CORE0 BUB] itag: 00000ef5 cause: FE
+[CORE0 BUB] itag: 00000ef6 cause: FE
+[CORE0 BUB] itag: 00000ef7 cause: FE
+[CORE0 BUB] itag: 00000ef8 cause: FE
+[CORE0 BUB] itag: 00000ef9 cause: FE
+[CORE0 BUB] itag: 00000efa cause: FE
+[CORE0 BUB] itag: 00000efb cause: FE
+[CORE0 BUB] itag: 00000efc cause: FE
+[CORE0 BUB] itag: 00000efd cause: FE
+[CORE0 BUB] itag: 00000efe cause: FE
+[CORE0 BUB] itag: 00000eff cause: FE
+[CORE0 BUB] itag: 00000f00 cause: FE
+[CORE0 BUB] itag: 00000f01 cause: FE
+[CORE0 BUB] itag: 00000f02 cause: FE
+[CORE0 BUB] itag: 00000f03 cause: FE
+[CORE0 BUB] itag: 00000f04 cause: FE
+[CORE0 BUB] itag: 00000f05 cause: FE
+[CORE0 BUB] itag: 00000f06 cause: FE
+[CORE0 BUB] itag: 00000f07 cause: FE
+[CORE0 BUB] itag: 00000f08 cause: FE
+[CORE0 BUB] itag: 00000f09 cause: FE
+[CORE0 BUB] itag: 00000f0a cause: FE
+[CORE0 BUB] itag: 00000f0b cause: FE
+[CORE0 BUB] itag: 00000f0c cause: FE
+[CORE0 BUB] itag: 00000f0d cause: FE
+[CORE0 BUB] itag: 00000f0e cause: FE
+[CORE0 BUB] itag: 00000f0f cause: FE
+[CORE0 BUB] itag: 00000f10 cause: FE
+[CORE0 PSN] itag: 00000f11 pc: 0000000080000680 instr: 0ff0000f
+[CORE0 BUB] itag: 00000f12 cause: FE
+[CORE0 BUB] itag: 00000f13 cause: FE
+[CORE0 PSN] itag: 00000f14 pc: 000000008000068c instr: c0001073
+[CORE0 BUB] itag: 00000f15 cause: FE
+[CORE0 BUB] itag: 00000f16 cause: FE
+[CORE0 PSN] itag: 00000f17 pc: 0000000080000678 instr: 00b57533
+[CORE0 BUB] itag: 00000f18 cause: FE
+[CORE0 PSN] itag: 00000f19 pc: 000000008000067c instr: 00a2a023
+[CORE0 BUB] itag: 00000f1a cause: FE
+[CORE0 BUB] itag: 00000f1b cause: FE
+[CORE0 PSN] itag: 00000f1c pc: 0000000080000680 instr: 0ff0000f
+[CORE0 BUB] itag: 00000f1d cause: FE
+[CORE0 BUB] itag: 00000f1e cause: FE
+[CORE0 CMT] itag: 00000f1f pc: 0000000080000678 instr: 00b57533
+			op: integer sem: r10 <- {0000000000000026}
+[CORE0 BUB] itag: 00000f20 cause: FE
+[CORE0 MIS] itag: 00000f21 pc: 000000008000067c instr: 00a2a023
+[CORE0 ROL] itag: 00000f22 pc: 0000000080000678 instr: 00b57533
+[CORE0 BUB] itag: 00000f23 cause: FE
+[CORE0 BUB] itag: 00000f24 cause: FE
+[CORE0 BUB] itag: 00000f25 cause: FE
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 BUB] itag: 00000f26 cause: ME
+[CORE0 CMT] itag: 00000f26 pc: 000000008000067c instr: 00a2a023
+[CORE0 PAS] TEST_NUM=0026
+$finish called from file "/usr3/graduate/fe/pymtl/clean_code_cleanup/pre-alpha-release/bp_top/syn/../../bp_be/tb/common/bp_be_nonsynth_tracer.v", line 143.
+$finish at simulation time                39315
+           V C S   S i m u l a t i o n   R e p o r t 
+Time: 39315 ps
+CPU Time:      2.110 seconds;       Data structure size:   9.0Mb
+Fri Feb  1 15:43:48 2019

@@ -1,17 +1,25 @@
 /**
  *
- * bp_fe_lce_cce_req.v
-*/
+ * Name:
+ *   bp_fe_lce_cce_data_cmd.v
+ *
+ * Description:
+ *   To	be updated
+ *
+ * Parameters:
+ *
+ * Inputs:
+ *
+ * Outputs:
+ *
+ * Keywords:
+ *
+ * Notes:
+ *
+ */
 
-`ifndef BP_CCE_MSG_VH
-`define BP_CCE_MSG_VH
 `include "bp_common_me_if.vh"
-`endif
-
-`ifndef BSG_DEFINES_V
-`define BSG_DEFINES_V
 `include "bsg_defines.v"
-`endif
 
 module bp_fe_cce_lce_data_cmd
   #(parameter data_width_p="inv"

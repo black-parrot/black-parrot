@@ -1,17 +1,25 @@
 /**
  *
- * bp_fe_cce_lce_cmd.v
-*/
+ * Name:
+ *   bp_fe_cce_lce_cmd.v
+ * 
+ * Description:
+ *   To be updated
+ *
+ * Parameters:
+ *
+ * Inputs:
+ *
+ * Outputs:
+ *   
+ * Keywords:
+ * 
+ * Notes:
+ * 
+ */
 
-`ifndef BP_CCE_MSG_VH
-`define BP_CCE_MSG_VH
 `include "bp_common_me_if.vh"
-`endif
-
-`ifndef BSG_DEFINES_V
-`define BSG_DEFINES_V
 `include "bsg_defines.v"
-`endif
 
 module bp_fe_cce_lce_cmd
   #(parameter data_width_p="inv"
@@ -73,42 +81,42 @@ module bp_fe_cce_lce_cmd
                                                                      )    
     , localparam lce_id_width_lp=`bp_lce_id_width
    )
-   (input logic                                                  clk_i
-    , input logic                                                reset_i
-    , input logic [lce_id_width_lp-1:0]                          id_i
+   (input                                                        clk_i
+    , input                                                      reset_i
+    , input [lce_id_width_lp-1:0]                                id_i
 
     , output logic                                               lce_ready_o
     , output logic                                               tag_set_o
     , output logic                                               tag_set_wakeup_o
 
-    , input logic [lce_data_width_p-1:0]                         data_mem_data_i
+    , input [lce_data_width_p-1:0]                               data_mem_data_i
     , output logic [bp_fe_icache_lce_data_mem_pkt_width_lp-1:0]  data_mem_pkt_o
     , output logic                                               data_mem_pkt_v_o
-    , input logic                                                data_mem_pkt_yumi_i
+    , input                                                      data_mem_pkt_yumi_i
 
     , output logic [bp_fe_icache_lce_tag_mem_pkt_width_lp-1:0]   tag_mem_pkt_o
     , output logic                                               tag_mem_pkt_v_o
-    , input logic                                                tag_mem_pkt_yumi_i
+    , input                                                      tag_mem_pkt_yumi_i
 
     , output logic                                               meta_data_mem_pkt_v_o
     , output logic [bp_fe_icache_lce_meta_data_mem_pkt_width_lp-1:0] meta_data_mem_pkt_o
-    , input logic                                                meta_data_mem_pkt_yumi_i
+    , input                                                      meta_data_mem_pkt_yumi_i
 
     , output logic [bp_lce_cce_resp_width_lp-1:0]                lce_cce_resp_o
     , output logic                                               lce_cce_resp_v_o
-    , input logic                                                lce_cce_resp_yumi_i
+    , input                                                      lce_cce_resp_yumi_i
 
     , output logic [bp_lce_cce_data_resp_width_lp-1:0]           lce_cce_data_resp_o     
     , output logic                                               lce_cce_data_resp_v_o 
-    , input logic                                                lce_cce_data_resp_ready_i
+    , input                                                      lce_cce_data_resp_ready_i
 
-    , input logic [bp_cce_lce_cmd_width_lp-1:0]                  cce_lce_cmd_i
-    , input logic                                                cce_lce_cmd_v_i
+    , input [bp_cce_lce_cmd_width_lp-1:0]                        cce_lce_cmd_i
+    , input                                                      cce_lce_cmd_v_i
     , output logic                                               cce_lce_cmd_yumi_o
 
     , output logic [bp_lce_lce_tr_resp_width_lp-1:0]             lce_lce_tr_resp_o
     , output logic                                               lce_lce_tr_resp_v_o
-    , input logic                                                lce_lce_tr_resp_ready_i
+    , input                                                      lce_lce_tr_resp_ready_i
    );
 
   logic [lg_lce_sets_lp-1:0]                                   syn_ack_cnt_r, syn_ack_cnt_n;

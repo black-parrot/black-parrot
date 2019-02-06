@@ -1,17 +1,25 @@
 /**
  *
- * bp_fe_lce_lce_tr_resp_in.v
-*/
+ * Name:
+ *   bp_fe_lce_lce_tr_resp_in.v
+ *
+ * Description:
+ *   To	be updated
+ *
+ * Parameters:
+ *
+ * Inputs:
+ *
+ * Outputs:
+ *
+ * Keywords:
+ *
+ * Notes:
+ *
+ */
 
-`ifndef BP_CCE_MSG_VH
-`define BP_CCE_MSG_VH
 `include "bp_common_me_if.vh"
-`endif
-
-`ifndef BSG_DEFINES_V
-`define BSG_DEFINES_V
 `include "bsg_defines.v"
-`endif
 
 module bp_fe_lce_lce_tr_resp_in
   #(parameter data_width_p="inv"
@@ -39,15 +47,15 @@ module bp_fe_lce_lce_tr_resp_in
                                                                      )
    )
    (
-    output logic                                                tr_received_o
+    output logic                                                 tr_received_o
  
-    , input logic [bp_lce_lce_tr_resp_width_lp-1:0]              lce_lce_tr_resp_i
-    , input logic                                                lce_lce_tr_resp_v_i
+    , input [bp_lce_lce_tr_resp_width_lp-1:0]                    lce_lce_tr_resp_i
+    , input                                                      lce_lce_tr_resp_v_i
     , output logic                                               lce_lce_tr_resp_yumi_o
 
     , output logic                                               data_mem_pkt_v_o
     , output logic [bp_fe_icache_lce_data_mem_pkt_width_lp-1:0]  data_mem_pkt_o
-    , input logic                                                data_mem_pkt_yumi_i
+    , input                                                      data_mem_pkt_yumi_i
    );
 
   `declare_bp_lce_lce_tr_resp_s(num_lce_p, lce_addr_width_p, lce_data_width_p, lce_assoc_p);

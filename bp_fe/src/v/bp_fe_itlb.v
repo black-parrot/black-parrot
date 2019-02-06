@@ -1,33 +1,22 @@
 /**
  *
- * bp_fe_itlb.v 
- *  
+ * Name:
+ *   bp_fe_itlb.v
+ *
+ * Description:
+ *   To	be updated
+ *
+ * Parameters:
+ *
+ * Inputs:
+ *
+ * Outputs:
+ *
+ * Keywords:
+ *
+ * Notes:
+ *
  */
-
-`ifndef BSG_DEFINES_V
-`define BSG_DEFINES_V
-`include "bsg_defines.v"
-`endif
-
-`ifndef BP_COMMON_FE_BE_IF_VH
-`define BP_COMMON_FE_BE_IF_VH
-`include "bp_common_fe_be_if.vh"
-`endif
-
-`ifndef BP_FE_PC_GEN_VH
-`define BP_FE_PC_GEN_VH
-`include "bp_fe_pc_gen.vh"
-`endif
-
-`ifndef BP_FE_ITLB_VH
-`define BP_FE_ITLB_VH
-`include "bp_fe_itlb.vh"
-`endif
-
-`ifndef BP_FE_ICACHE_VH
-`define BP_FE_ICACHE_VH
-`include "bp_fe_icache.vh"
-`endif
 
 import itlb_pkg::*;
 
@@ -55,24 +44,24 @@ module itlb
                                                                  ,branch_metadata_fwd_width_lp
                                                                 )
   )
-  (input logic                                    clk_i
-   , input logic                                  reset_i
+  (input                                          clk_i
+   , input                                        reset_i
 
-   , input logic [bp_fe_itlb_cmd_width_lp-1:0]    fe_itlb_i
-   , input logic                                  fe_itlb_v_i
+   , input [bp_fe_itlb_cmd_width_lp-1:0]          fe_itlb_i
+   , input                                        fe_itlb_v_i
    , output logic                                 fe_itlb_ready_o
    
-   , input logic [bp_fe_pc_gen_itlb_width_lp-1:0] pc_gen_itlb_i
-   , input logic                                  pc_gen_itlb_v_i
+   , input [bp_fe_pc_gen_itlb_width_lp-1:0]       pc_gen_itlb_i
+   , input                                        pc_gen_itlb_v_i
    , output logic                                 pc_gen_itlb_ready_o
 
    , output logic [bp_fe_ppn_width_lp-1:0]        itlb_icache_o
    , output logic                                 itlb_icache_data_resp_v_o
-   , input logic                                  itlb_icache_data_resp_ready_i
+   , input                                        itlb_icache_data_resp_ready_i
 
    , output logic [bp_fe_itlb_queue_width_lp-1:0] itlb_fe_o
    , output logic                                 itlb_fe_v_o
-   , input logic                                  itlb_fe_ready_i
+   , input                                        itlb_fe_ready_i
   );
 
 // struct declaration

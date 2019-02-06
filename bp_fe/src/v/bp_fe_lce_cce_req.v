@@ -1,17 +1,25 @@
 /**
  *
- * bp_fe_lce_cce_req.v
-*/
+ * Name:
+ *   bp_fe_lce_cce_req.v
+ *
+ * Description:
+ *   To	be updated
+ *
+ * Parameters:
+ *
+ * Inputs:
+ *
+ * Outputs:
+ *
+ * Keywords:
+ *
+ * Notes:
+ *
+ */
 
-`ifndef BP_CCE_MSG_VH
-`define BP_CCE_MSG_VH
 `include "bp_common_me_if.vh"
-`endif
-
-`ifndef BSG_DEFINES_V
-`define BSG_DEFINES_V
 `include "bsg_defines.v"
-`endif
 
 module bp_fe_lce_cce_req
   #(parameter data_width_p="inv"
@@ -40,26 +48,27 @@ module bp_fe_lce_cce_req
     , localparam lce_id_width_lp=`bp_lce_id_width
 
     )
-   (input logic                                clk_i
-    , input logic                              reset_i
-    , input logic [lce_id_width_lp-1:0]        id_i
-    , input logic                              miss_i
-    , input logic [lce_addr_width_p-1:0]       miss_addr_i
-    , input logic [lg_lce_assoc_lp-1:0]        lru_way_i
+   (input                                      clk_i
+    , input                                    reset_i
+    , input [lce_id_width_lp-1:0]              id_i
+
+    , input                                    miss_i
+    , input [lce_addr_width_p-1:0]             miss_addr_i
+    , input [lg_lce_assoc_lp-1:0]              lru_way_i
     , output logic                             cache_miss_o
           
-    , input logic                              tr_received_i
-    , input logic                              cce_data_received_i
-    , input logic                              tag_set_i
-    , input logic                              tag_set_wakeup_i
+    , input                                    tr_received_i
+    , input                                    cce_data_received_i
+    , input                                    tag_set_i
+    , input                                    tag_set_wakeup_i
           
     , output logic [lce_cce_req_width_lp-1:0]  lce_cce_req_o
     , output logic                             lce_cce_req_v_o
-    , input logic                              lce_cce_req_ready_i
+    , input                                    lce_cce_req_ready_i
           
     , output logic [lce_cce_resp_width_lp-1:0] lce_cce_resp_o
     , output logic                             lce_cce_resp_v_o
-    , input logic                              lce_cce_resp_yumi_i
+    , input                                    lce_cce_resp_yumi_i
    );
 
   bp_fe_lce_cce_req_state_e                   state_r, state_n;
