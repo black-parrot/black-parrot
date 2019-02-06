@@ -70,14 +70,14 @@ module bp_be_dcache_lce_req
   // states
   //
   typedef enum logic [2:0] {
-    e_lce_cce_req_ready
-    ,e_lce_cce_req_send
-    ,e_lce_cce_req_send_tr_ack
-    ,e_lce_cce_req_send_coh_ack
-    ,e_lce_cce_req_sleep
-  } lce_cce_req_state_e; 
+    e_lce_req_state_ready
+    ,e_lce_req_state_send
+    ,e_lce_req_state_send_tr_ack
+    ,e_lce_req_state_send_coh_ack
+    ,e_lce_req_state_sleep
+  } lce_req_state_e; 
 
-  lce_cce_req_state_e state_r, state_n;
+  lce_req_state_e state_r, state_n;
   logic load_not_store_r, load_not_store_n;
   logic [way_id_width_lp-1:0] lru_way_r, lru_way_n;
   logic dirty_r, dirty_n;
@@ -136,7 +136,7 @@ module bp_be_dcache_lce_req
     case (state_r)
       // READY
       // wait for the cache miss.
-      e_lce_cce_req_ready: begin
+      e_lce_req_state_ready: begin
         cache_miss_o = missed;
         if (missed) begin
           miss_addr_n = miss_addr_i;
@@ -145,13 +145,13 @@ module bp_be_dcache_lce_req
           tr_received_n = 1'b0;
           cce_data_received_n = 1'b0;
           tag_set_n = 1'b0;
-          state_n = e_lce_cce_req_send;
+          state_n = e_lce_req_state_send;
         end
       end
 
       // SEND REQ
       // send out cache miss request to CCE.
-      e_lce_cce_req_send: begin
+      e_lce_req_state_send: begin
         cache_miss_o = 1'b1;
 
         dirty_lru_flopped_n = 1'b1;
@@ -161,47 +161,47 @@ module bp_be_dcache_lce_req
         lce_req_v_o = 1'b1;
 
         state_n = lce_req_ready_i
-          ? e_lce_cce_req_sleep
-          : e_lce_cce_req_send;
+          ? e_lce_req_state_sleep
+          : e_lce_req_state_send;
       end
 
       // SLEEP 
       // wait for signals from other modules to wake up.
-      e_lce_cce_req_sleep: begin
+      e_lce_req_state_sleep: begin
         cache_miss_o = 1'b1;
         tr_received_n = tr_received_i ? 1'b1 : tr_received_r;
         cce_data_received_n = cce_data_received_i ? 1'b1 : cce_data_received_r;
         tag_set_n = tag_set_i ? 1'b1 : tag_set_r;
 
         state_n = tag_set_wakeup_i
-          ? e_lce_cce_req_ready
+          ? e_lce_req_state_ready
           : (tag_set
             ? (tr_received
-              ? e_lce_cce_req_send_tr_ack
-              : (cce_data_received ? e_lce_cce_req_send_coh_ack : e_lce_cce_req_sleep))
-            : e_lce_cce_req_sleep
+              ? e_lce_req_state_send_tr_ack
+              : (cce_data_received ? e_lce_req_state_send_coh_ack : e_lce_req_state_sleep))
+            : e_lce_req_state_sleep
           );
       end
 
       // TRANSFER ACK
       // send out transfer ack to CCE.
-      e_lce_cce_req_send_tr_ack: begin
+      e_lce_req_state_send_tr_ack: begin
         cache_miss_o = 1'b1;
         lce_resp_v_o = 1'b1;
         state_n = lce_resp_yumi_i
-          ? e_lce_cce_req_ready
-          : e_lce_cce_req_send_tr_ack;
+          ? e_lce_req_state_ready
+          : e_lce_req_state_send_tr_ack;
       end
 
       // COH ACK
       // send out coh ack to CCE.
-      e_lce_cce_req_send_coh_ack: begin
+      e_lce_req_state_send_coh_ack: begin
         cache_miss_o = 1'b1;
         lce_resp_v_o = 1'b1;
         lce_resp.msg_type = e_lce_cce_coh_ack;
         state_n = lce_resp_yumi_i
-          ? e_lce_cce_req_ready
-          : e_lce_cce_req_send_coh_ack;
+          ? e_lce_req_state_ready
+          : e_lce_req_state_send_coh_ack;
       end
     endcase
   end
@@ -211,7 +211,7 @@ module bp_be_dcache_lce_req
   //
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
-      state_r <= e_lce_cce_req_ready;
+      state_r <= e_lce_req_state_ready;
       dirty_lru_flopped_r <= 1'b0;
       tr_received_r <= 1'b0;
       cce_data_received_r <= 1'b0;
@@ -232,7 +232,7 @@ module bp_be_dcache_lce_req
 
   // synopsys translate_off
   always_ff @ (negedge clk_i) begin
-    if (state_r == e_lce_cce_req_ready) begin
+    if (state_r == e_lce_req_state_ready) begin
       assert(~tr_received_i)
         else $error("id: %0d, transfer received while no cache miss.", lce_id_i);
       assert(~cce_data_received_i)
