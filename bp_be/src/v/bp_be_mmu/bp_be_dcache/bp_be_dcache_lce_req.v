@@ -47,23 +47,25 @@ module bp_be_dcache_lce_req
     , input tag_set_i
     , input tag_set_wakeup_i
 
-    , output logic [lce_cce_req_width_lp-1:0] lce_cce_req_o
-    , output logic lce_cce_req_v_o
-    , input lce_cce_req_ready_i
+    , output logic [lce_cce_req_width_lp-1:0] lce_req_o
+    , output logic lce_req_v_o
+    , input lce_req_ready_i
 
-    , output logic [lce_cce_resp_width_lp-1:0] lce_cce_resp_o
-    , output logic lce_cce_resp_v_o
-    , input lce_cce_resp_yumi_i
+    , output logic [lce_cce_resp_width_lp-1:0] lce_resp_o
+    , output logic lce_resp_v_o
+    , input lce_resp_yumi_i
   );
 
   // casting struct
   //
   `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, ways_p);
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
-  bp_lce_cce_req_s lce_cce_req;
-  bp_lce_cce_resp_s lce_cce_resp;
-  assign lce_cce_req_o = lce_cce_req;
-  assign lce_cce_resp_o = lce_cce_resp;
+
+  bp_lce_cce_req_s lce_req;
+  bp_lce_cce_resp_s lce_resp;
+
+  assign lce_req_o = lce_req;
+  assign lce_resp_o = lce_resp;
 
   // states
   //
@@ -90,12 +92,12 @@ module bp_be_dcache_lce_req
   // comb logic
   //
   if (num_cce_p == 1) begin
-    assign lce_cce_resp.dst_id = 1'b0;
-    assign lce_cce_req.dst_id = 1'b0;
+    assign lce_resp.dst_id = 1'b0;
+    assign lce_req.dst_id = 1'b0;
   end
   else begin
-    assign lce_cce_resp.dst_id = miss_addr_r[block_offset_width_lp+:cce_id_width_lp];
-    assign lce_cce_req.dst_id = miss_addr_r[block_offset_width_lp+:cce_id_width_lp];
+    assign lce_resp.dst_id = miss_addr_r[block_offset_width_lp+:cce_id_width_lp];
+    assign lce_req.dst_id = miss_addr_r[block_offset_width_lp+:cce_id_width_lp];
   end
 
   always_comb begin
@@ -116,20 +118,20 @@ module bp_be_dcache_lce_req
     cce_data_received = cce_data_received_r | cce_data_received_i;
     tag_set = tag_set_r | tag_set_i;
 
-    lce_cce_req_v_o = 1'b0;
-    lce_cce_req.src_id = (lce_id_width_lp)'(lce_id_i);
-    lce_cce_req.non_exclusive = e_lce_req_excl;
-    lce_cce_req.msg_type = load_not_store_r ? e_lce_req_type_rd : e_lce_req_type_wr;
-    lce_cce_req.addr = miss_addr_r;
-    lce_cce_req.lru_way_id = dirty_lru_flopped_r ? lru_way_r : lru_way_i;
-    lce_cce_req.lru_dirty = dirty_lru_flopped_r
+    lce_req_v_o = 1'b0;
+    lce_req.src_id = (lce_id_width_lp)'(lce_id_i);
+    lce_req.non_exclusive = e_lce_req_excl;
+    lce_req.msg_type = load_not_store_r ? e_lce_req_type_rd : e_lce_req_type_wr;
+    lce_req.addr = miss_addr_r;
+    lce_req.lru_way_id = dirty_lru_flopped_r ? lru_way_r : lru_way_i;
+    lce_req.lru_dirty = dirty_lru_flopped_r
       ? bp_lce_cce_lru_dirty_e'(dirty_r)
       : bp_lce_cce_lru_dirty_e'(dirty_i[lru_way_i]);
 
-    lce_cce_resp_v_o = 1'b0;
-    lce_cce_resp.src_id = (lce_id_width_lp)'(lce_id_i);
-    lce_cce_resp.addr = miss_addr_r;
-    lce_cce_resp.msg_type = e_lce_cce_tr_ack;
+    lce_resp_v_o = 1'b0;
+    lce_resp.src_id = (lce_id_width_lp)'(lce_id_i);
+    lce_resp.addr = miss_addr_r;
+    lce_resp.msg_type = e_lce_cce_tr_ack;
 
     case (state_r)
       // READY
@@ -156,9 +158,11 @@ module bp_be_dcache_lce_req
         lru_way_n = dirty_lru_flopped_r ? lru_way_r : lru_way_i;
         dirty_n = dirty_lru_flopped_r ? dirty_r : dirty_i[lru_way_i];
 
-        lce_cce_req_v_o = 1'b1;
+        lce_req_v_o = 1'b1;
 
-        state_n = lce_cce_req_ready_i ? e_lce_cce_req_sleep : e_lce_cce_req_send;
+        state_n = lce_req_ready_i
+          ? e_lce_cce_req_sleep
+          : e_lce_cce_req_send;
       end
 
       // SLEEP 
@@ -183,8 +187,8 @@ module bp_be_dcache_lce_req
       // send out transfer ack to CCE.
       e_lce_cce_req_send_tr_ack: begin
         cache_miss_o = 1'b1;
-        lce_cce_resp_v_o = 1'b1;
-        state_n = lce_cce_resp_yumi_i
+        lce_resp_v_o = 1'b1;
+        state_n = lce_resp_yumi_i
           ? e_lce_cce_req_ready
           : e_lce_cce_req_send_tr_ack;
       end
@@ -193,9 +197,9 @@ module bp_be_dcache_lce_req
       // send out coh ack to CCE.
       e_lce_cce_req_send_coh_ack: begin
         cache_miss_o = 1'b1;
-        lce_cce_resp_v_o = 1'b1;
-        lce_cce_resp.msg_type = e_lce_cce_coh_ack;
-        state_n = lce_cce_resp_yumi_i
+        lce_resp_v_o = 1'b1;
+        lce_resp.msg_type = e_lce_cce_coh_ack;
+        state_n = lce_resp_yumi_i
           ? e_lce_cce_req_ready
           : e_lce_cce_req_send_coh_ack;
       end

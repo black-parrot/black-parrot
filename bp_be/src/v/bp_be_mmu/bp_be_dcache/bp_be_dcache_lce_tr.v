@@ -35,9 +35,9 @@ module bp_be_dcache_lce_tr
   (
     output logic tr_received_o
 
-    , input [lce_lce_tr_resp_width_lp-1:0] lce_lce_tr_resp_i
-    , input lce_lce_tr_resp_v_i
-    , output logic lce_lce_tr_resp_yumi_o
+    , input [lce_lce_tr_resp_width_lp-1:0] lce_tr_resp_i
+    , input lce_tr_resp_v_i
+    , output logic lce_tr_resp_yumi_o
 
     , output logic data_mem_pkt_v_o
     , output logic [dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
@@ -47,23 +47,24 @@ module bp_be_dcache_lce_tr
   // casting structs
   //
   `declare_bp_lce_lce_tr_resp_s(num_lce_p, paddr_width_p, lce_data_width_p, ways_p);
-  `declare_bp_be_dcache_lce_data_mem_pkt_s(sets_p, ways_p, lce_data_width_p);
-  
-  bp_lce_lce_tr_resp_s lce_lce_tr_resp_in;
-  bp_be_dcache_lce_data_mem_pkt_s data_mem_pkt;
+  bp_lce_lce_tr_resp_s lce_tr_resp_in;
 
-  assign lce_lce_tr_resp_in = lce_lce_tr_resp_i;
+  assign lce_tr_resp_in = lce_tr_resp_i;
+
+  `declare_bp_be_dcache_lce_data_mem_pkt_s(sets_p, ways_p, lce_data_width_p);
+  bp_be_dcache_lce_data_mem_pkt_s data_mem_pkt;
+  
   assign data_mem_pkt_o = data_mem_pkt;
 
   // connecting channels
   //
-  assign data_mem_pkt.index = lce_lce_tr_resp_in.addr[block_offset_width_lp+:index_width_lp];
-  assign data_mem_pkt.way_id = lce_lce_tr_resp_in.way_id;
-  assign data_mem_pkt.data = lce_lce_tr_resp_in.data;
+  assign data_mem_pkt.index = lce_tr_resp_in.addr[block_offset_width_lp+:index_width_lp];
+  assign data_mem_pkt.way_id = lce_tr_resp_in.way_id;
+  assign data_mem_pkt.data = lce_tr_resp_in.data;
   assign data_mem_pkt.write_not_read = 1'b1;
 
-  assign data_mem_pkt_v_o = lce_lce_tr_resp_v_i;
-  assign lce_lce_tr_resp_yumi_o = data_mem_pkt_yumi_i;
+  assign data_mem_pkt_v_o = lce_tr_resp_v_i;
+  assign lce_tr_resp_yumi_o = data_mem_pkt_yumi_i;
 
   // wakeup logic
   //
