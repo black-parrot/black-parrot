@@ -862,7 +862,8 @@ module bp_be_dcache
         );
   end
 
-  assign lce_data_mem_pkt_yumi_li = ~(load_op & tl_we) & ~wbuf_v_lo & ~lce_snoop_match_lo & lce_data_mem_pkt_v_lo;
+  assign lce_data_mem_pkt_yumi_li = ~(load_op & tl_we)
+    & ~wbuf_v_lo & ~lce_snoop_match_lo & lce_data_mem_pkt_v_lo;
   
   // LCE tag_mem
   //
