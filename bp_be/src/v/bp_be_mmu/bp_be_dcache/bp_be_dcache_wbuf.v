@@ -1,11 +1,10 @@
 /**
- *  bp_be_dcache_wbuf.v
+ *  Name:
+ *    bp_be_dcache_wbuf.v
  *
- *  Data cache write buffer.
+ *  Description:
+ *    Data cache write buffer.
  */
-
-// Some notes:
-// - write buffer can store up to two entries.
 
 `include "bp_be_dcache_wbuf_entry.vh"
 
@@ -68,47 +67,47 @@ module bp_be_dcache_wbuf
 
   always_comb begin
     case (num_els_r) 
-      0: begin
+      2'd0: begin
         v_o = v_i;
-        empty_o = 1;
-        el0_valid = 0;
-        el1_valid = 0;
-        el0_enable = 0;
+        empty_o = 1'b1;
+        el0_valid = 1'b0;
+        el1_valid = 1'b0;
+        el0_enable = 1'b0;
         el1_enable = v_i & ~yumi_i;
-        mux0_sel = 0;
-        mux1_sel = 0;
+        mux0_sel = 1'b0;
+        mux1_sel = 1'b0;
       end
       
-      1: begin
-        v_o = 1;
-        empty_o = 0;
-        el0_valid = 0;
-        el1_valid = 1;
+      2'd1: begin
+        v_o = 1'b1;
+        empty_o = 1'b0;
+        el0_valid = 1'b0;
+        el1_valid = 1'b1;
         el0_enable = v_i & ~yumi_i;
         el1_enable = v_i & yumi_i;
-        mux0_sel = 0;
-        mux1_sel = 1;
+        mux0_sel = 1'b0;
+        mux1_sel = 1'b1;
       end
 
-      2: begin
-        v_o = 1;
-        empty_o = 0;
-        el0_valid = 1;
-        el1_valid = 1;
+      2'd2: begin
+        v_o = 1'b1;
+        empty_o = 1'b0;
+        el0_valid = 1'b1;
+        el1_valid = 1'b1;
         el0_enable = v_i & yumi_i;
         el1_enable = yumi_i;
-        mux0_sel = 1;
-        mux1_sel = 1;
+        mux0_sel = 1'b1;
+        mux1_sel = 1'b1;
       end
       default: begin
-        v_o = 0;
-        empty_o = 0;
-        el0_valid = 0;
-        el1_valid = 0;
-        el0_enable = 0;
-        el1_enable = 0;
-        mux0_sel = 0;
-        mux1_sel = 0;
+        v_o = 1'b0;
+        empty_o = 1'b0;
+        el0_valid = 1'b0;
+        el1_valid = 1'b0;
+        el0_enable = 1'b0;
+        el1_enable = 1'b0;
+        mux0_sel = 1'b0;
+        mux1_sel = 1'b0;
       end
     endcase
   end
@@ -122,7 +121,7 @@ module bp_be_dcache_wbuf
     end
   end
 
-  // wbuf queues
+  // wbuf queue
   //
   bp_be_dcache_wbuf_queue
     #(.width_p(wbuf_entry_width_lp))
