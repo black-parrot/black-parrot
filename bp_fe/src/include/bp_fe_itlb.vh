@@ -32,6 +32,7 @@ import itlb_pkg::*;
   } bp_fe_itlb_icache_data_resp_s
 
 `define bp_fe_itlb_icache_width(ppn_width_p) (ppn_width_p)
+
 /*
  * In the case of an I-TLB miss, bp_fe_itlb_miss_exception_data_s
  * struct is passed to the BE for I-TLB miss handling. This struct
