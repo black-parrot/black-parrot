@@ -79,6 +79,9 @@
                                                                                                    \
     logic                                   ex1_v;                                                 \
                                                                                                    \
+    // 5 is the number of stages in the pipeline                                                   \
+    // In fact, we don't need all of this dependency information, since some of the stages are     \
+    //    post-commit. However, for now we're passing all of it.                                   \
     bp_be_dep_status_s[4:0]                 dep_status;                                            \
                                                                                                    \
     logic                                   mem3_v;                                                \
@@ -87,7 +90,7 @@
     logic                                   mem3_exception_v;                                      \
     logic                                   mem3_ret_v;                                            \
                                                                                                    \
-    logic                                   instr_ckpt_v;                                          \
+    logic                                   instr_cmt_v;                                           \
   }  bp_be_calc_status_s;                                                                          \
                                                                                                    \
   typedef struct packed                                                                            \
@@ -96,7 +99,11 @@
     logic[rv64_eaddr_width_gp-1:0]    br_tgt;                                                      \
   }  bp_be_calc_result_s;                                                                          \
 
-/* Declare width macros so that clients can use structs in ports before struct declaration */
+/* Declare width macros so that clients can use structs in ports before struct declaration
+ * Each of these macros needs to be kept in sync with the struct definition. The computation
+ *   comes from literally counting bits in the struct definition, which is ugly, error-prone,
+ *   and an unfortunate, necessary consequence of parameterized structs.
+ */
 `define bp_be_instr_metadata_width(branch_metadata_fwd_width_mp)                                   \
   (bp_be_itag_width_gp                                                                             \
    + rv64_eaddr_width_gp                                                                           \
@@ -108,7 +115,7 @@
 `define bp_be_issue_pkt_width(branch_metadata_fwd_width_mp)                                        \
   (`bp_be_instr_metadata_width(branch_metadata_fwd_width_mp)                                       \
    + rv64_instr_width_gp                                                                           \
-   + 4 * 1                                                                                         \
+   + 4                                                                                             \
    + 2 * rv64_reg_addr_width_gp                                                                    \
    + rv64_reg_data_width_gp                                                                        \
    )                                                                                               \
@@ -124,21 +131,21 @@
    )                                                                                               \
 
 `define bp_be_dep_status_width                                                                     \
-  (5 * 1 + rv64_reg_addr_width_gp)                                                                 \
+  (5 + rv64_reg_addr_width_gp)                                                                     \
 
 `define bp_be_calc_status_width(branch_metadata_fwd_width_mp)                                      \
   (1                                                                                               \
    + rv64_eaddr_width_gp                                                                           \
-   + 2 * 1                                                                                         \
+   + 2                                                                                             \
    + rv64_reg_addr_width_gp                                                                        \
-   + 2 * 1                                                                                         \
+   + 2                                                                                             \
    + rv64_reg_addr_width_gp+1                                                                      \
    + rv64_eaddr_width_gp+branch_metadata_fwd_width_mp                                              \
-   + 3 * 1                                                                                         \
+   + 3                                                                                             \
    + 5 * `bp_be_dep_status_width                                                                   \
    + 1                                                                                             \
    + rv64_eaddr_width_gp                                                                           \
-   + 4 * 1                                                                                         \
+   + 4                                                                                             \
    )                                                                                               \
 
 `define bp_be_calc_result_width(branch_metadata_fwd_width_mp)                                      \
