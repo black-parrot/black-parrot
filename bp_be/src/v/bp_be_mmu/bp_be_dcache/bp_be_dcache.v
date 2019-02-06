@@ -450,7 +450,8 @@ module bp_be_dcache
   end
 
   // stat_mem {lru, dirty}
-  //
+  // It has (ways_p-1) bits to form pseudo-LRU tree, and ways_p bits for dirty
+  // bit for each block in set.
   `declare_bp_be_dcache_stat_info_s(ways_p);
 
   logic stat_mem_v_li;

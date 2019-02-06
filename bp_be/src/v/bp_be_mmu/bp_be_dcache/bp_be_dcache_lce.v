@@ -26,8 +26,8 @@
  *    lce_cce_req or cce_lce_cmd could send response back, and when both
  *    modules want to send the response, lce_cce_req always get the higher
  *    priority in arbitration. We want to prioritize the types of acknowledge 
- *    that are sent by later in the chain of coherence messages which resolves
- *    coherence transaction, otherwise it could create backpressure in
+ *    that are sent later in the chain of coherence messages which resolves
+ *    coherence transaction, otherwise it could create back-pressure in
  *    network and cause a deadlock.
  *
  *      LCE could be asked to writeback locally-cached data via lce_cce_data_resp.
