@@ -33,14 +33,12 @@
  *      LCE could be asked to writeback locally-cached data via lce_cce_data_resp.
  *    Only lce_cmd modules uses this channel.
  *
+ *      LCE could be asked by CCE to write data to data_mem. When data_cmd
+ *    is processed, it raises cce_data_received_li signal to lce_req module.
  *
- *
- *
- *
- *  + lce_cce_data_resp
- * + cce_lce_data_cmd
- *+ lce_lce_tr_resp_in
- *+ lce_lce_tr_resp_out
+ *      LCE could receive data transfer from another LCE or could be commanded
+ *    to transfer data to another LCE. When transfer is received, tr module
+ *    raises tr_received_li signal to lce_req module.
  */
 
 `include "bp_be_dcache_lce_pkt.vh"

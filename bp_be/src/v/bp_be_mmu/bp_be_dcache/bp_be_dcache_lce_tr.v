@@ -4,8 +4,7 @@
  *    bp_be_dcache_lce_tr.v
  *
  *  Description:
- *    Data cache LCE transfer handler. It receives data transfer from another LCE,
- *    and write to data_mem.
+ *    LCE transfer handler.
  */
 
 module bp_be_dcache_lce_tr

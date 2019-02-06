@@ -3,7 +3,7 @@
  *    bp_be_dcache_lce_data_cmd.v
  *
  *  Description:
- *    It handles data_cmd from CCE, and writes to data_mem.
+ *    LCE data command handler.
  */
 
 module bp_be_dcache_lce_data_cmd 
