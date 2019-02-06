@@ -38,11 +38,9 @@ module icache
     , parameter num_lce_p="inv"
     , parameter lce_assoc_p="inv"
     , parameter lce_sets_p="inv"
-    , parameter coh_states_p="inv"
     , parameter block_size_in_bytes_p="inv"
     , parameter lg_lce_assoc_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
     , parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-    , localparam lg_coh_states_lp=`BSG_SAFE_CLOG2(coh_states_p)
     , parameter lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
     , parameter data_mask_width_lp=(data_width_p>>3)
     , parameter lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
@@ -51,6 +49,7 @@ module icache
     , parameter vaddr_width_lp=(lg_lce_sets_lp+lg_lce_assoc_lp+lg_data_mask_width_lp)
     , parameter addr_width_lp=(vaddr_width_lp+tag_width_p)
     , parameter lce_data_width_lp=(lce_assoc_p*data_width_p)
+    , parameter cce_coh_bits_lp=`bp_cce_coh_bits
     , parameter debug_p=0
 
     , parameter bp_fe_pc_gen_icache_width_lp=`bp_fe_pc_gen_icache_width(eaddr_width_p)
@@ -74,7 +73,6 @@ module icache
                                                               ,num_lce_p
                                                               ,addr_width_lp
                                                               ,lce_assoc_p
-                                                              ,coh_states_p
                                                              )
     , parameter bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
                                                                         ,num_lce_p
@@ -88,18 +86,16 @@ module icache
                                                                       ,lce_assoc_p
                                                                      )
 
-    , localparam bp_fe_icache_tag_set_width_lp=`bp_fe_icache_tag_set_width(coh_states_p
-                                                                          ,tag_width_p
+    , localparam bp_fe_icache_tag_set_width_lp=`bp_fe_icache_tag_set_width(tag_width_p
                                                                           ,lce_assoc_p
                                                                          )
-    , localparam bp_fe_icache_tag_state_width_lp=`bp_fe_icache_tag_state_width(coh_state_p
-                                                                              ,tag_width_p
-                                                                             )
+    , localparam bp_fe_icache_tag_state_width_lp=`bp_fe_icache_tag_state_width(tag_width_p)
+
     , localparam bp_fe_icache_meta_data_width_lp=`bp_fe_icache_meta_data_width(lce_assoc_p)
 
     , parameter bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(eaddr_width_p)
 
-    , localparam lce_id_width_lp='bp_lce_id_width
+    , localparam lce_id_width_lp=`bp_lce_id_width
    )
    (
     input                                              clk_i
@@ -123,11 +119,11 @@ module icache
 
     , output logic [bp_lce_cce_req_width_lp-1:0]       lce_cce_req_o
     , output logic                                     lce_cce_req_v_o
-    , input  logic                                     lce_cce_req_ready_i
+    , input                                            lce_cce_req_ready_i
 
     , output logic [bp_lce_cce_resp_width_lp-1:0]      lce_cce_resp_o
     , output logic                                     lce_cce_resp_v_o
-    , input  logic                                     lce_cce_resp_ready_i
+    , input                                            lce_cce_resp_ready_i
 
     , output logic [bp_lce_cce_data_resp_width_lp-1:0] lce_cce_data_resp_o     
     , output logic                                     lce_cce_data_resp_v_o 
@@ -218,13 +214,13 @@ module icache
     ,.data_o(tag_mem_data_lo)
   );
 
-  logic [lce_assoc_p-1:0][lg_coh_states_lp-1:0] state_tl;
+  logic [lce_assoc_p-1:0][cce_coh_bits_lp-1:0] state_tl;
   logic [lce_assoc_p-1:0][tag_width_p-1:0]      tag_tl;
 
   for (genvar assoc = 0; assoc < lce_assoc_p; assoc++)
   begin: state_tag
     assign state_tl[assoc] = tag_mem_data_lo[(bp_fe_icache_tag_state_width_lp*assoc+tag_width_p)
-                                              +:lg_coh_states_lp];
+                                              +:cce_coh_bits_lp];
     assign tag_tl[assoc]   = tag_mem_data_lo[(bp_fe_icache_tag_state_width_lp*assoc)+:tag_width_p];
   end
 
@@ -262,7 +258,7 @@ module icache
   logic [addr_width_lp-1:0]                     addr_tv_r;
   logic [eaddr_width_p-1:0]                     eaddr_tv_r; 
   logic [lce_assoc_p-1:0][tag_width_p-1:0]      tag_tv_r;
-  logic [lce_assoc_p-1:0][lg_coh_states_lp-1:0] state_tv_r;
+  logic [lce_assoc_p-1:0][cce_coh_bits_lp-1:0] state_tv_r;
   logic [lce_assoc_p-1:0][data_width_p-1:0]     ld_data_tv_r;
   logic [tag_width_p-1:0]                       addr_tag_tv;
   logic [lg_lce_sets_lp-1:0]                    addr_index_tv;
@@ -376,7 +372,7 @@ module icache
   logic                                     data_mem_pkt_v_lo;
   logic                                     data_mem_pkt_yumi_li;
 
-  `declare_bp_fe_icache_lce_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, coh_states_p, tag_width_p);
+  `declare_bp_fe_icache_lce_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, tag_width_p);
   bp_fe_icache_lce_tag_mem_pkt_s tag_mem_pkt;
   logic                                     tag_mem_pkt_v_lo;
   logic                                     tag_mem_pkt_yumi_li;
@@ -394,7 +390,6 @@ module icache
    ,.lce_sets_p(lce_sets_p)
    ,.lce_assoc_p(lce_assoc_p)
    ,.tag_width_p(tag_width_p)
-   ,.coh_states_p(coh_states_p)
    ,.num_cce_p(num_cce_p)
    ,.num_lce_p(num_lce_p)
    ,.block_size_in_bytes_p(block_size_in_bytes_p)
@@ -514,7 +509,7 @@ module icache
       end
       e_tag_mem_ivalidate: begin
         tag_mem_data_li    = '0;
-        tag_mem_w_mask_li  = {{lg_coh_states_lp}{1'b1}}<<{tag_mem_pkt.assoc*bp_fe_icache_tag_state_width_lp+tag_width_p};
+        tag_mem_w_mask_li  = {{cce_coh_bits_lp}{1'b1}}<<{tag_mem_pkt.assoc*bp_fe_icache_tag_state_width_lp+tag_width_p};
       end
       e_tag_mem_set_tag: begin
          tag_mem_data_li   = {lce_assoc_p{tag_mem_pkt.state, tag_mem_pkt.tag}};

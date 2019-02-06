@@ -50,8 +50,9 @@ module bp_fe_lce_cce_req
     )
    (input                                      clk_i
     , input                                    reset_i
-    , input [lce_id_width_lp-1:0]              id_i
 
+    , input [lce_id_width_lp-1:0]              id_i
+ 
     , input                                    miss_i
     , input [lce_addr_width_p-1:0]             miss_addr_i
     , input [lg_lce_assoc_lp-1:0]              lru_way_i

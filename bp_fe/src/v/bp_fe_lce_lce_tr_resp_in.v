@@ -18,6 +18,7 @@
  *
  */
 
+
 `include "bp_common_me_if.vh"
 `include "bsg_defines.v"
 
@@ -47,7 +48,7 @@ module bp_fe_lce_lce_tr_resp_in
                                                                      )
    )
    (
-    output logic                                                 tr_received_o
+    output logic                                                tr_received_o
  
     , input [bp_lce_lce_tr_resp_width_lp-1:0]                    lce_lce_tr_resp_i
     , input                                                      lce_lce_tr_resp_v_i

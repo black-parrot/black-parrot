@@ -31,7 +31,6 @@ module bp_fe_lce
     , parameter lce_sets_p="inv"
     , parameter lce_assoc_p="inv"
     , parameter tag_width_p="inv"
-    , parameter coh_states_p="inv"
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
     , parameter block_size_in_bytes_p="inv"
@@ -46,7 +45,6 @@ module bp_fe_lce
                                                                                            )
     , parameter bp_fe_icache_lce_tag_mem_pkt_width_lp=`bp_fe_icache_lce_tag_mem_pkt_width(lce_sets_p
                                                                                           ,lce_assoc_p
-                                                                                          ,coh_states_p
                                                                                           ,tag_width_p
                                                                                          )
     , parameter bp_fe_icache_lce_meta_data_mem_pkt_width_lp=`bp_fe_icache_lce_meta_data_mem_pkt_width(lce_sets_p
@@ -71,7 +69,6 @@ module bp_fe_lce
                                                               ,num_lce_p
                                                               ,lce_addr_width_p
                                                               ,lce_assoc_p
-                                                              ,coh_states_p
                                                              )
     , parameter bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
                                                                         ,num_lce_p
@@ -113,11 +110,11 @@ module bp_fe_lce
        
     , output logic [bp_lce_cce_req_width_lp-1:0]                 lce_cce_req_o
     , output logic                                               lce_cce_req_v_o
-    , input  logic                                               lce_cce_req_ready_i
+    , input                                                      lce_cce_req_ready_i
 
     , output logic [bp_lce_cce_resp_width_lp-1:0]                lce_cce_resp_o
     , output logic                                               lce_cce_resp_v_o
-    , input  logic                                               lce_cce_resp_ready_i
+    , input                                                      lce_cce_resp_ready_i
 
     , output logic [bp_lce_cce_data_resp_width_lp-1:0]           lce_cce_data_resp_o     
     , output logic                                               lce_cce_data_resp_v_o 
@@ -143,12 +140,12 @@ module bp_fe_lce
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, lce_addr_width_p);
   `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, lce_addr_width_p, lce_assoc_p);
   `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, lce_addr_width_p, lce_data_width_p);
-  `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, lce_addr_width_p, lce_assoc_p, coh_states_p);
+  `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, lce_addr_width_p, lce_assoc_p);
   `declare_bp_cce_lce_data_cmd_s(num_cce_p, num_lce_p, lce_addr_width_p, lce_data_width_p, lce_assoc_p);
   `declare_bp_lce_lce_tr_resp_s(num_lce_p, lce_addr_width_p, lce_data_width_p, lce_assoc_p);
 
   `declare_bp_fe_icache_lce_data_mem_pkt_s(lce_sets_p, lce_assoc_p, lce_data_width_p);
-  `declare_bp_fe_icache_lce_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, coh_states_p, tag_width_p);
+  `declare_bp_fe_icache_lce_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, tag_width_p);
   `declare_bp_fe_icache_lce_meta_data_mem_pkt_s(lce_sets_p, lce_assoc_p);
 
   bp_lce_cce_req_s lce_cce_req_lo;
@@ -255,7 +252,6 @@ module bp_fe_lce
     ,.lce_sets_p(lce_sets_p)
     ,.lce_assoc_p(lce_assoc_p)
     ,.tag_width_p(tag_width_p)
-    ,.coh_states_p(coh_states_p)
     ,.num_cce_p(num_cce_p)
     ,.num_lce_p(num_lce_p)
     ,.block_size_in_bytes_p(block_size_in_bytes_p)
