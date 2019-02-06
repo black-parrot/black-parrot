@@ -5,6 +5,9 @@
  *
  *  Description:
  *    LCE transfer handler.
+ *
+ *    It receives transfer from another LCE and write it on data_mem.
+ *    It signals lce_req module, when transfer is received.
  */
 
 module bp_be_dcache_lce_tr

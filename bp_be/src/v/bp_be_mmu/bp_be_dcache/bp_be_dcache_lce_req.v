@@ -4,6 +4,21 @@
  *
  *  Description:
  *    LCE request handler.
+ *
+ *    When the miss occurs in dcache, either load_miss_i or store_miss_i is
+ *    raised. Also, the address that caused miss (miss_addr_i), and lru_way
+ *    and dirty bits are provided.
+ *
+ *    cache_miss_o is raised immediately, when the miss arrives. It is
+ *    asserted until the miss is resolved.
+ *
+ *    There are multiple ways that a miss can be resolved.
+ *    - set_tag_wakeup
+ *    - set_tag and data_cmd
+ *    - set_tag and transfer
+ *
+ *    This modules sends out ack to lce_resp channel, depending on how the miss is
+ *    resolved.
  */
 
 module bp_be_dcache_lce_req

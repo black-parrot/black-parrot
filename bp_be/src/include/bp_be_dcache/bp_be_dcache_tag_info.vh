@@ -1,5 +1,9 @@
 /**
- *  bp_be_dcache_tag_info.vh
+ *  Name:
+ *    bp_be_dcache_tag_info.vh
+ *
+ *  Description:
+ *    dcache tag_mem format.
  */
 
 `ifndef BP_BE_DCACHE_TAG_INFO_VH

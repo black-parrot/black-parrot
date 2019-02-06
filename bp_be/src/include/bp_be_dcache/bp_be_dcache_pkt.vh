@@ -1,5 +1,9 @@
 /**
- *  bp_be_dcache_pkt.vh
+ *  Name:
+ *    bp_be_dcache_pkt.vh
+ *
+ *  Description:
+ *    dcache packet format to be sent from mmu.
  */
 
 `ifndef BP_BE_DCACHE_PKT_VH

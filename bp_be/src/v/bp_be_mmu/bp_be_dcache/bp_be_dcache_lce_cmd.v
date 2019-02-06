@@ -9,6 +9,7 @@
  *    has responded with ack, it asserts lce_sync_done_o signal to indicate
  *    that the cache may begin start accepting load/store instructions from
  *    the backend.
+ *
  */
 
 module bp_be_dcache_lce_cmd

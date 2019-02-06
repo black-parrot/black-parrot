@@ -1,5 +1,9 @@
 /**
- *  bp_be_dcache_lce_pkt.vh
+ *  Name:
+ *    bp_be_dcache_lce_pkt.vh
+ *
+ *  Description:
+ *    packet definition that LCE uses to access data_mem, tag_mem, and stat_mem.
  */
 
 `ifndef BP_BE_DCACHE_LCE_PKT_VH

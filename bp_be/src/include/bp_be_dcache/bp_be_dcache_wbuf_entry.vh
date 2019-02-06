@@ -1,5 +1,9 @@
 /**
- *  bp_be_dcache_wbuf_entry.vh
+ *  Name:
+ *    bp_be_dcache_wbuf_entry.vh
+ *
+ *  Description:
+ *    dcache write buffer entry format.
  */
 
 

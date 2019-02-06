@@ -1,5 +1,9 @@
 /**
- *  bp_be_dcache_stat_info.vh
+ *  Name:
+ *    bp_be_dcache_stat_info.vh
+ *
+ *  Description:
+ *    stat_mem entry format.
  */
 
 `ifndef BP_BE_DCACHE_STAT_INFO_VH
