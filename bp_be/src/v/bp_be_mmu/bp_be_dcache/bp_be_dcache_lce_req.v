@@ -1,8 +1,12 @@
 /**
- *  bp_be_dcache_lce_cce_req.v
+ *  Name:
+ *    bp_be_dcache_lce_req.v
+ *
+ *  Description:
+ *    It receives miss from the tv stage, and sends out miss request to CCE.
  */
 
-module bp_be_dcache_lce_cce_req
+module bp_be_dcache_lce_req
   #(parameter data_width_p="inv"
     , parameter paddr_width_p="inv"
     , parameter num_cce_p="inv"

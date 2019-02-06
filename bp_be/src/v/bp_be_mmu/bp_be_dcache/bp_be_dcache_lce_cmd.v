@@ -1,10 +1,10 @@
 /**
- *  bp_be_dcache_cce_lce_cmd.v
+ *  bp_be_dcache_lce_cmd.v
  *
- *  Data cache LCE cce_lce_cmd handler
+ *  Data cache LCE command handler
  */
 
-module bp_be_dcache_cce_lce_cmd
+module bp_be_dcache_lce_cmd
   import bp_be_dcache_lce_pkg::*;
   #(parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
