@@ -92,7 +92,7 @@ logic [reg_addr_width_lp-1:0] rs1_addr_r     , rs2_addr_r;
 logic [reg_addr_width_lp-1:0] rs1_reread_addr, rs2_reread_addr;
 
 // Datapath
-bsg_mem_2r1w_sync_synth 
+bsg_mem_2r1w_sync 
  #(.width_p(reg_data_width_lp)
    ,.els_p(rf_els_lp)
    )
