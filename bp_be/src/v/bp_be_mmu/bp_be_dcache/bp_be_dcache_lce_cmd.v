@@ -3,7 +3,12 @@
  *    bp_be_dcache_lce_cmd.v
  *
  *  Description:
- *    LCE command handler.
+ *    LCE command handler. On reset, LCE is in reset state, waiting to be
+ *    initialized. LCE receives set_clear commands to invalidate all the sets
+ *    in the cache. Once LCE has received sync command from all the CCEs, and
+ *    has responded with ack, it asserts lce_sync_done_o signal to indicate
+ *    that the cache may begin start accepting load/store instructions from
+ *    the backend.
  */
 
 module bp_be_dcache_lce_cmd
@@ -29,7 +34,7 @@ module bp_be_dcache_lce_cmd
     , localparam cce_id_width_lp=`BSG_SAFE_CLOG2(num_cce_p)
     
     , localparam cce_lce_cmd_width_lp=
-      `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, ways_p, 4)
+      `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, ways_p)
     , localparam lce_cce_resp_width_lp=
       `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
     , localparam lce_cce_data_resp_width_lp=
@@ -94,7 +99,7 @@ module bp_be_dcache_lce_cmd
 
   // casting structs
   //
-  `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, ways_p, 4);
+  `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, ways_p);
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
   `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_p);
   `declare_bp_lce_lce_tr_resp_s(num_lce_p, paddr_width_p, lce_data_width_p, ways_p);
