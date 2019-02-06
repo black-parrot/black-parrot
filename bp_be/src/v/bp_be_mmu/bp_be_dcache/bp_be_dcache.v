@@ -1,19 +1,53 @@
 /**
- *  bp_be_dcache.v
+ *  Name:
+ *    bp_be_dcache.v
  *
- *  L1 data cache.
+ *  Description:
+ *    L1 data cache. It receives load or store instruction from the mmu. This
+ *    is virtually-indexed and physically-tagged cache. It is 8-way
+ *    set-associative.
+ *
+ *    There are three different 1rw memory blocks: data_mem, tag_mem, stat_mem.
+ *    
+ *    data_mem is divided into 8 different banks, and cache blocks are
+ *    interleaved among the banks. The governing relationship is "bank_id =
+ *    word_offset ^ way_id".  
+ *    
+ *    tag_mem contains tag and coherence state bits.
+ *    
+ *    stat_mem contains information about dirty bits for each cache block and
+ *    LRU info about each way group. This cache uses pseudo tree-LRU
+ *    algorithm.
+ *
+ *    There are two pipeline stages: tag lookup (tl) and tag verity (tv) stages.
+ *    Signals or registers belonging to each stage is suffixed by "_tl" or
+ *    "tv". We could also think of input as another stage.
+ *
+ *    Physical tag translated by TLB arrives in tag lookup stages. tag_mem and
+ *    TLB are accessed in the same cycle for each instruction. tlb_miss_i
+ *    indicates that there is TLB miss and all instructions in tl and input stage
+ *    has to be poisoned.
+ *
+ *    Instructions from mmu arrives in the form of bp_be_dcache_pkt_s. It
+ *    contains opcode, addr, data.
+ *    
+ *    There is write buffer which allows holding write data info that left tv stage,
+ *    in forms of "bp_be_dcache_wbuf_entry_s" until data_mem becomes free from incoming
+ *    load instructions. It also allows bypassing of store data when load moving
+ *    from tl to tv stage has the same address as the entries in write buffer.
+ *    LCE can snoop write buffer entries to hold off lce_data_mem operations until entries
+ *    with matching address is no longer present in write buffer.
+ *
+ *    Data cache faces mmu and coherence network.
  */
 
-
-//  address terminology
+//  address terminology map
 //
-//  [                                      paddr                                          ]
-//  [         physical tag         ] [                    page_offset                     ] 
-//  [         physical tag         ] [     index     ] [           block_offset           ]
-//  [         physical tag         ] [     index     ] [  word_offset  ]  [  byte_offset  ] 
+//  [                          paddr                                        ]
+//  [    physical tag    ] [                page_offset                     ] 
+//  [    physical tag    ] [   index   ] [           block_offset           ]
+//  [    physical tag    ] [   index   ] [  word_offset  ]  [  byte_offset  ] 
 
-//  Some notes:
-//  - In this cache, block size in # of words is equal to the number of ways.
 
 `include "bp_be_dcache_pkt.vh"
 `include "bp_be_dcache_lce_pkt.vh"
@@ -207,11 +241,6 @@ module bp_be_dcache
       ,.data_o(tag_mem_data_lo)
       );
 
-  //for (genvar i = 0; i < ways_p; i++) begin
-  //  assign tag_tl[i] = tag_mem_data_lo[i][0+:ptag_width_lp];
-  //  assign coh_tl[i] = tag_mem_data_lo[i][ptag_width_lp+:2];
-  //end
-
   // data_mem
   //
   logic [ways_p-1:0] data_mem_v_li;
@@ -305,8 +334,10 @@ module bp_be_dcache
   logic [way_id_width_lp-1:0] store_hit_way;
 
   for (genvar i = 0; i < ways_p; i++) begin
-    assign load_hit_tv[i] = (addr_tag_tv == tag_info_tv_r[i].tag) & (tag_info_tv_r[i].coh_state != e_MESI_I);
-    assign store_hit_tv[i] = (addr_tag_tv == tag_info_tv_r[i].tag) & (tag_info_tv_r[i].coh_state == e_MESI_E);
+    assign load_hit_tv[i] = (addr_tag_tv == tag_info_tv_r[i].tag)
+      & (tag_info_tv_r[i].coh_state != e_MESI_I);
+    assign store_hit_tv[i] = (addr_tag_tv == tag_info_tv_r[i].tag)
+      & (tag_info_tv_r[i].coh_state == e_MESI_E);
     assign invalid_tv[i] = (tag_info_tv_r[i].coh_state == e_MESI_I);
   end
 
@@ -337,8 +368,10 @@ module bp_be_dcache
   // write buffer
   //
   `declare_bp_be_dcache_wbuf_entry_s(paddr_width_p, data_width_p, ways_p);
+
   bp_be_dcache_wbuf_entry_s wbuf_entry_in;
   logic wbuf_v_li;
+
   bp_be_dcache_wbuf_entry_s wbuf_entry_out;
   logic wbuf_v_lo;
   logic wbuf_yumi_li;
@@ -447,7 +480,7 @@ module bp_be_dcache
     #(.ways_p(ways_p))
     lru_encoder
       (.lru_i(stat_mem_data_lo.lru)
-      ,.way_o(lru_encode)
+      ,.way_id_o(lru_encode)
       );
 
 
@@ -743,7 +776,7 @@ module bp_be_dcache
   bp_be_dcache_lru_decode
     #(.ways_p(ways_p))
     lru_decode
-      (.way_i(lru_decode_way_li)
+      (.way_id_i(lru_decode_way_li)
       ,.data_o(lru_decode_data_lo)
       ,.mask_o(lru_decode_mask_lo)
       );

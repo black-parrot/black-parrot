@@ -1,7 +1,9 @@
 /**
- *  bp_be_dcache_lce_cmd.v
+ *  Name:
+ *    bp_be_dcache_lce_cmd.v
  *
- *  Data cache LCE command handler
+ *  Description:
+ *    LCE command handler.
  */
 
 module bp_be_dcache_lce_cmd

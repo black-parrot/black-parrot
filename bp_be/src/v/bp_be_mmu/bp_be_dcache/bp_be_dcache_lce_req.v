@@ -3,7 +3,7 @@
  *    bp_be_dcache_lce_req.v
  *
  *  Description:
- *    It receives miss from the tv stage, and sends out miss request to CCE.
+ *    LCE request handler.
  */
 
 module bp_be_dcache_lce_req
