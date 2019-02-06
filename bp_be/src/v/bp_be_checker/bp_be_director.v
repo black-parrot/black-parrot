@@ -37,6 +37,10 @@
  * Notes:
  *   We don't need the entirety of the calc_status structure here, but for simplicity 
  *     we pass it all. If the compiler doesn't flatten and optimize, we can do it ourselves.
+ *   Branch_metadata should come from the target instruction, not the branch instruction,
+ *     eliminating the need to store this in the BE
+ *   We don't currently support MTVAL or EPC, so error muxes are disconnected
+ *   FE cmd adapter could be split into a separate module
  */
 
 module bp_be_director 
@@ -62,22 +66,22 @@ module bp_be_director
    , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
    , localparam eaddr_width_lp    = rv64_eaddr_width_gp
    )
-  (input logic                              clk_i
-   , input logic                            reset_i
+  (input                               clk_i
+   , input                             reset_i
 
    // Dependency information
-   , input logic[calc_status_width_lp-1:0]  calc_status_i
-   , output logic[eaddr_width_lp-1:0]       expected_npc_o
+   , input [calc_status_width_lp-1:0]  calc_status_i
+   , output [eaddr_width_lp-1:0]       expected_npc_o
 
    // FE-BE interface
-   , output logic[fe_cmd_width_lp-1:0]      fe_cmd_o
-   , output logic                           fe_cmd_v_o
-   , input logic                            fe_cmd_ready_i
+   , output [fe_cmd_width_lp-1:0]      fe_cmd_o
+   , output                            fe_cmd_v_o
+   , input                             fe_cmd_ready_i
 
    // FE cmd queue control signals
-   , output logic                           chk_flush_fe_o
-   , output logic                           chk_dequeue_fe_o
-   , output logic                           chk_roll_fe_o
+   , output                            chk_flush_fe_o
+   , output                            chk_dequeue_fe_o
+   , output                            chk_roll_fe_o
   );
 
 // Declare parameterized structures
@@ -164,14 +168,12 @@ bsg_mux
    ,.els_p(2)
    )
  ret_mux
-  (.data_i(/* TODO: {MTVAL, EPC} */)
+  (.data_i()
    ,.sel_i(calc_status.mem3_ret_v)
    ,.data_o(ret_mux_o)
    );
 
 // Save branch prediction metadata for forwarding on the next (mis)predicted instruction
-// TODO: branch_metadata should come from the target instruction, not the branch instruction,
-//   eliminating the need to store this in the BE
 bsg_dff 
  #(.width_p(branch_metadata_fwd_width_p)
    ) 

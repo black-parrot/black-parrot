@@ -34,7 +34,8 @@
  * Notes:
  *   We don't need the entirety of the calc_status structure here, but for simplicity 
  *     we pass it all. If the compiler doesn't flatten and optimize, we can do it ourselves.
- *
+ *   We should get rid of the magic numbers here and replace with constants based on pipeline
+ *     stages. However, like the calculator, this is a high risk change that should be postponed
  */
 
 module bp_be_detector 
@@ -54,19 +55,19 @@ module bp_be_detector
    , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
    , localparam eaddr_width_lp    = rv64_eaddr_width_gp
    )
-  (input logic                              clk_i
-   , input logic                            reset_i
+  (input                               clk_i
+   , input                             reset_i
 
    // Dependency information
-   , input logic[calc_status_width_lp-1:0]  calc_status_i
-   , input logic[reg_data_width_lp-1:0]     expected_npc_i
-   , input logic                            mmu_cmd_ready_i
+   , input [calc_status_width_lp-1:0]  calc_status_i
+   , input [reg_data_width_lp-1:0]     expected_npc_i
+   , input                             mmu_cmd_ready_i
 
    // Pipeline control signals from the checker to the calculator
-   , output logic                           chk_dispatch_v_o
-   , output logic                           chk_roll_o
-   , output logic                           chk_poison_isd_o
-   , output logic                           chk_poison_ex_o
+   , output                            chk_dispatch_v_o
+   , output                            chk_roll_o
+   , output                            chk_poison_isd_o
+   , output                            chk_poison_ex_o
   );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p

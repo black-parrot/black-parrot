@@ -32,6 +32,7 @@
  * Notes:
  *   It might make sense to use an enum for RISC-V opcodes rather than `defines.
  *   Floating point instruction decoding is not implemented, so we do not predecode.
+ *   It might makes sense to split fe_queue_in into a separate module
  */
 
 module bp_be_scheduler
@@ -50,18 +51,18 @@ module bp_be_scheduler
    , localparam itag_width_lp     = bp_be_itag_width_gp
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )
-  (input logic                            clk_i
-   , input logic                          reset_i
+  (input                             clk_i
+   , input                           reset_i
 
    // Fetch interface
-   , input logic[fe_queue_width_lp-1:0]   fe_queue_i
-   , input logic                          fe_queue_v_i
-   , output logic                         fe_queue_ready_o
+   , input [fe_queue_width_lp-1:0]   fe_queue_i
+   , input                           fe_queue_v_i
+   , output                          fe_queue_ready_o
 
    // Issue interface
-   , output logic[issue_pkt_width_lp-1:0] issue_pkt_o
-   , output logic                         issue_pkt_v_o
-   , input logic                          issue_pkt_ready_i
+   , output [issue_pkt_width_lp-1:0] issue_pkt_o
+   , output                          issue_pkt_v_o
+   , input                           issue_pkt_ready_i
    );
 
 // Declare parameterizable structures
@@ -95,8 +96,8 @@ assign fe_exception       = fe_queue.msg.exception;
 // Declare intermediate signals
 bp_be_instr_metadata_s           fe_instr_metadata;
 bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
-logic[itag_width_lp-1:0]         itag_n, itag_r;
-logic[reg_data_width_lp-1:0]     exception_eaddr;
+logic [itag_width_lp-1:0]        itag_n, itag_r;
+logic [reg_data_width_lp-1:0]    exception_eaddr;
 
 assign exception_eaddr = rv64_reg_data_width_gp'($signed(fe_exception.vaddr));
 
@@ -200,3 +201,4 @@ always_comb
   end
 
 endmodule : bp_be_scheduler
+
