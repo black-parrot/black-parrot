@@ -1,6 +1,6 @@
 /**
  *
- * bp_be_internal_if_defines.v
+ * bp_be_internal_if_defines.vh
  *
  */
 
@@ -97,7 +97,7 @@
   {                                                                                                \
     logic[rv64_reg_data_width_gp-1:0] result;                                                      \
     logic[rv64_eaddr_width_gp-1:0]    br_tgt;                                                      \
-  }  bp_be_calc_result_s;                                                                          \
+  }  bp_be_calc_result_s;                                                                          
 
 /* Declare width macros so that clients can use structs in ports before struct declaration
  * Each of these macros needs to be kept in sync with the struct definition. The computation
@@ -110,7 +110,7 @@
    + 1                                                                                             \
    + $bits(bp_fe_exception_code_e)                                                                 \
    + branch_metadata_fwd_width_mp                                                                  \
-   )                                                                                               \
+   )                                                                                               
 
 `define bp_be_issue_pkt_width(branch_metadata_fwd_width_mp)                                        \
   (`bp_be_instr_metadata_width(branch_metadata_fwd_width_mp)                                       \
@@ -118,20 +118,20 @@
    + 4                                                                                             \
    + 2 * rv64_reg_addr_width_gp                                                                    \
    + rv64_reg_data_width_gp                                                                        \
-   )                                                                                               \
+   )                                                                                               
 
 `define bp_be_instr_operands_width                                                                 \
-  (3 * rv64_reg_data_width_gp)                                                                     \
+  (3 * rv64_reg_data_width_gp)                                                                     
 
 `define bp_be_pipe_stage_reg_width(branch_metadata_fwd_width_mp)                                   \
   (`bp_be_instr_metadata_width(branch_metadata_fwd_width_mp)                                       \
    + rv64_instr_width_gp                                                                           \
    + `bp_be_instr_operands_width                                                                   \
    + `bp_be_decode_width                                                                           \
-   )                                                                                               \
+   )                                                                                               
 
 `define bp_be_dep_status_width                                                                     \
-  (5 + rv64_reg_addr_width_gp)                                                                     \
+  (5 + rv64_reg_addr_width_gp)                                                                     
 
 `define bp_be_calc_status_width(branch_metadata_fwd_width_mp)                                      \
   (1                                                                                               \
@@ -146,10 +146,10 @@
    + 1                                                                                             \
    + rv64_eaddr_width_gp                                                                           \
    + 4                                                                                             \
-   )                                                                                               \
+   )                                                                                               
 
 `define bp_be_calc_result_width(branch_metadata_fwd_width_mp)                                      \
-  (2 * rv64_reg_data_width_gp)                                                                     \
+  (2 * rv64_reg_data_width_gp)                                                                     
 
 `endif
 
