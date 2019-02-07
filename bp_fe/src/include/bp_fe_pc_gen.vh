@@ -21,10 +21,9 @@
 
 `include "bsg_defines.v"
 `include "bp_common_fe_be_if.vh"
-
-// import bp_common_pkg::*;
-import pc_gen_pkg::*;
-
+`include "bp_fe_pc_gen.vh"
+`include "bp_fe_itlb.vh"
+`include "bp_fe_icache.vh"
 
 // this part is modified to accomodate the instr output
 `define declare_bp_fe_pc_gen_queue_s                  \
