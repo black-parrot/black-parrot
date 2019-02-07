@@ -14,18 +14,18 @@ module bp_fe_btb
    , parameter eaddr_width_p="inv"
    , localparam els_lp=2**bp_fe_pc_gen_btb_idx_width_lp
    ) 
-  (input logic                                       clk_i
-   , input logic                                     reset_i 
+  (input                                       clk_i
+   , input                                     reset_i 
 
-   , input logic [bp_fe_pc_gen_btb_idx_width_lp-1:0] idx_w_i
-   , input logic [bp_fe_pc_gen_btb_idx_width_lp-1:0] idx_r_i
-   , input logic                                     r_v_i
-   , input logic                                     w_v_i
+   , input [bp_fe_pc_gen_btb_idx_width_lp-1:0] idx_w_i
+   , input [bp_fe_pc_gen_btb_idx_width_lp-1:0] idx_r_i
+   , input                                     r_v_i
+   , input                                     w_v_i
 
-   , input  logic [eaddr_width_p-1:0]                branch_target_i
-   , output logic [eaddr_width_p-1:0]                branch_target_o
+   , input [eaddr_width_p-1:0]                 branch_target_i
+   , output logic [eaddr_width_p-1:0]          branch_target_o
 
-   , output logic                                    read_valid_o
+   , output logic                              read_valid_o
    );
 
    
