@@ -58,26 +58,6 @@
 `define bp_fe_pc_gen_cmd_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p) \
     (`bp_fe_cmd_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p))
 
-
-/*
- * bp_fe_pc_gen_s is provided to the backend, which consists of pc, BTB entry
- * index, and ras address.
-*/
-`define bp_fe_pc_gen_fetch_s bp_fe_fetch_s
-
-/*
- * bp_fe_pc_gen_width provides the width of bp_fe_pc_gen_s. All the width
- * informations are parameterized.
-*/
-`define bp_fe_pc_gen_fetch_width(vaddr_width_p,branch_metadata_fwd_width_p) \
-    (`bp_fe_fetch_width(vaddr_width_p,branch_metadata_fwd_width_p))
-
-
-`define bp_fe_pc_gen_exception_s bp_fe_exception_s
-
-`define bp_fe_pc_gen_exception_width(vaddr_width_p,branch_metadata_fwd_width_p) \
-     `bp_fe_exception_width(vaddr_width_p,branch_metadata_fwd_width_p)
-
 /*
  * bp_fe_pc_gen_icache_s defines the interface between pc_gen and icache.
  * pc_gen informs the icache of the pc value.
