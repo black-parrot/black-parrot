@@ -23,44 +23,44 @@
 
 module bp_cce_dir
   import bp_cce_inst_pkg::*;
-  #(parameter num_way_groups_p        = "inv"
-    ,parameter num_lce_p              = "inv"
-    ,parameter lce_assoc_p            = "inv"
-    ,parameter tag_width_p            = "inv"
+  #(parameter num_way_groups_p         = "inv"
+    , parameter num_lce_p              = "inv"
+    , parameter lce_assoc_p            = "inv"
+    , parameter tag_width_p            = "inv"
 
     // Default parameters
-    ,parameter harden_p               = 0
+    , parameter harden_p               = 0
 
     // Derived parameters
-    ,localparam lg_num_way_groups_lp  = `BSG_SAFE_CLOG2(num_way_groups_p)
-    ,localparam lg_num_lce_lp         = `BSG_SAFE_CLOG2(num_lce_p)
-    ,localparam lg_lce_assoc_lp       = `BSG_SAFE_CLOG2(lce_assoc_p)
-    ,localparam entry_width_lp        = (tag_width_p+`bp_cce_coh_bits)
-    ,localparam tag_set_width_lp      = (entry_width_lp*lce_assoc_p)
-    ,localparam way_group_width_lp    = (tag_set_width_lp*num_lce_p)
+    , localparam lg_num_way_groups_lp  = `BSG_SAFE_CLOG2(num_way_groups_p)
+    , localparam lg_num_lce_lp         = `BSG_SAFE_CLOG2(num_lce_p)
+    , localparam lg_lce_assoc_lp       = `BSG_SAFE_CLOG2(lce_assoc_p)
+    , localparam entry_width_lp        = (tag_width_p+`bp_cce_coh_bits)
+    , localparam tag_set_width_lp      = (entry_width_lp*lce_assoc_p)
+    , localparam way_group_width_lp    = (tag_set_width_lp*num_lce_p)
   )
-  (input                                    clk_i
-   ,input                                   reset_i
+  (input                                     clk_i
+   , input                                   reset_i
 
-   ,input [lg_num_way_groups_lp-1:0]        way_group_i
-   ,input [lg_num_lce_lp-1:0]               lce_i
-   ,input [lg_lce_assoc_lp-1:0]             way_i
-   ,input [`bp_cce_inst_minor_op_width-1:0] r_cmd_i
-   ,input                                   r_v_i
+   , input [lg_num_way_groups_lp-1:0]        way_group_i
+   , input [lg_num_lce_lp-1:0]               lce_i
+   , input [lg_lce_assoc_lp-1:0]             way_i
+   , input [`bp_cce_inst_minor_op_width-1:0] r_cmd_i
+   , input                                   r_v_i
 
-   ,input [tag_width_p-1:0]                 tag_i
-   ,input [`bp_cce_coh_bits-1:0]            coh_state_i
-   ,input                                   pending_i
-   ,input [`bp_cce_inst_minor_op_width-1:0] w_cmd_i
-   ,input                                   w_v_i
+   , input [tag_width_p-1:0]                 tag_i
+   , input [`bp_cce_coh_bits-1:0]            coh_state_i
+   , input                                   pending_i
+   , input [`bp_cce_inst_minor_op_width-1:0] w_cmd_i
+   , input                                   w_v_i
 
-   ,output logic                            pending_o
-   ,output logic                            pending_v_o
-   ,output logic [tag_width_p-1:0]          tag_o
-   ,output logic [`bp_cce_coh_bits-1:0]     coh_state_o
-   ,output logic                            entry_v_o
-   ,output logic [way_group_width_lp-1:0]   way_group_o
-   ,output logic                            way_group_v_o
+   , output logic                            pending_o
+   , output logic                            pending_v_o
+   , output logic [tag_width_p-1:0]          tag_o
+   , output logic [`bp_cce_coh_bits-1:0]     coh_state_o
+   , output logic                            entry_v_o
+   , output logic [way_group_width_lp-1:0]   way_group_o
+   , output logic                            way_group_v_o
   );
 
   // pending bits

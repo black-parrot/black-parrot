@@ -12,51 +12,51 @@
 
 module bp_cce_gad
   import bp_cce_inst_pkg::*;
-  #(parameter num_way_groups_p       = "inv"
-    ,parameter num_lce_p             = "inv"
-    ,parameter lce_assoc_p           = "inv"
-    ,parameter tag_width_p           = "inv"
+  #(parameter num_way_groups_p         = "inv"
+    , parameter num_lce_p              = "inv"
+    , parameter lce_assoc_p            = "inv"
+    , parameter tag_width_p            = "inv"
 
     // Default parameters
-    ,parameter harden_p              = 0
+    , parameter harden_p               = 0
 
     // Derived parameters
-    ,parameter lg_num_way_groups_lp  = `BSG_SAFE_CLOG2(num_way_groups_p)
-    ,parameter lg_num_lce_lp         = `BSG_SAFE_CLOG2(num_lce_p)
-    ,parameter lg_lce_assoc_lp       = `BSG_SAFE_CLOG2(lce_assoc_p)
-    ,parameter entry_width_lp        = (tag_width_p+`bp_cce_coh_bits)
-    ,parameter tag_set_width_lp      = (entry_width_lp*lce_assoc_p)
-    ,parameter way_group_width_lp    = (tag_set_width_lp*num_lce_p)
+    , localparam lg_num_way_groups_lp  = `BSG_SAFE_CLOG2(num_way_groups_p)
+    , localparam lg_num_lce_lp         = `BSG_SAFE_CLOG2(num_lce_p)
+    , localparam lg_lce_assoc_lp       = `BSG_SAFE_CLOG2(lce_assoc_p)
+    , localparam entry_width_lp        = (tag_width_p+`bp_cce_coh_bits)
+    , localparam tag_set_width_lp      = (entry_width_lp*lce_assoc_p)
+    , localparam way_group_width_lp    = (tag_set_width_lp*num_lce_p)
   )
-  (input                                                 clk_i
-   ,input                                                reset_i
+  (input                                                  clk_i
+   , input                                                reset_i
 
-   ,input [way_group_width_lp-1:0]                        way_group_i
-   ,input [lg_num_lce_lp-1:0]                             req_lce_i
-   ,input [tag_width_p-1:0]                               req_tag_i
-   ,input [lg_lce_assoc_lp-1:0]                           lru_way_i
-   ,input                                                 req_type_flag_i
-   ,input                                                 lru_dirty_flag_i
+   , input [way_group_width_lp-1:0]                        way_group_i
+   , input [lg_num_lce_lp-1:0]                             req_lce_i
+   , input [tag_width_p-1:0]                               req_tag_i
+   , input [lg_lce_assoc_lp-1:0]                           lru_way_i
+   , input                                                 req_type_flag_i
+   , input                                                 lru_dirty_flag_i
 
    // high if the current op is a GAD op
-   ,input                                                 gad_v_i
+   , input                                                 gad_v_i
 
-   ,output logic [lg_lce_assoc_lp-1:0]                    req_addr_way_o
-   ,output logic [`bp_cce_coh_bits-1:0]                   coh_state_o
+   , output logic [lg_lce_assoc_lp-1:0]                    req_addr_way_o
+   , output logic [`bp_cce_coh_bits-1:0]                   coh_state_o
 
-   ,output logic [tag_width_p-1:0]                        lru_tag_o
+   , output logic [tag_width_p-1:0]                        lru_tag_o
 
-   ,output logic                                          transfer_flag_o
-   ,output logic [lg_num_lce_lp-1:0]                      transfer_lce_o
-   ,output logic [lg_lce_assoc_lp-1:0]                    transfer_way_o
-   ,output logic                                          replacement_flag_o
-   ,output logic                                          upgrade_flag_o
-   ,output logic                                          invalidate_flag_o
-   ,output logic                                          exclusive_flag_o
+   , output logic                                          transfer_flag_o
+   , output logic [lg_num_lce_lp-1:0]                      transfer_lce_o
+   , output logic [lg_lce_assoc_lp-1:0]                    transfer_way_o
+   , output logic                                          replacement_flag_o
+   , output logic                                          upgrade_flag_o
+   , output logic                                          invalidate_flag_o
+   , output logic                                          exclusive_flag_o
 
-   ,output logic [num_lce_p-1:0]                          sharers_hits_o
-   ,output logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0]     sharers_ways_o
-   ,output logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0]    sharers_coh_states_o
+   , output logic [num_lce_p-1:0]                          sharers_hits_o
+   , output logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0]     sharers_ways_o
+   , output logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0]    sharers_coh_states_o
   );
 
   logic hit;

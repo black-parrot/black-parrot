@@ -19,18 +19,18 @@ module bp_cce_inst_decode
   #(parameter inst_width_p = "inv"
   )
   (// Instruction from bp_cce_pc
-   input [inst_width_p-1:0]                     inst_i
-   ,input                                       inst_v_i
+   input [inst_width_p-1:0]                      inst_i
+   , input                                       inst_v_i
 
    // ready_i signals for output queues
-   ,input                                       lce_cmd_ready_i
-   ,input                                       lce_data_cmd_ready_i
-   ,input                                       mem_cmd_ready_i
-   ,input                                       mem_data_cmd_ready_i
+   , input                                       lce_cmd_ready_i
+   , input                                       lce_data_cmd_ready_i
+   , input                                       mem_cmd_ready_i
+   , input                                       mem_data_cmd_ready_i
 
    // Decoded instruction
-   ,output bp_cce_inst_decoded_s                decoded_inst_o
-   ,output logic                                decoded_inst_v_o
+   , output bp_cce_inst_decoded_s                decoded_inst_o
+   , output logic                                decoded_inst_v_o
   );
 
   bp_cce_inst_s inst;

@@ -13,38 +13,38 @@
 
 module bp_cce_pc
   import bp_cce_inst_pkg::*;
-  #(parameter num_cce_inst_ram_els_p    = "inv"
+  #(parameter num_cce_inst_ram_els_p     = "inv"
 
     // Default parameters
-    ,parameter harden_p                 = 0
+    , parameter harden_p                 = 0
 
     // Derived parameters
-    ,localparam inst_width_lp           = `bp_cce_inst_width
-    ,localparam inst_ram_addr_width_lp  = `BSG_SAFE_CLOG2(num_cce_inst_ram_els_p)
+    , localparam inst_width_lp           = `bp_cce_inst_width
+    , localparam inst_ram_addr_width_lp  = `BSG_SAFE_CLOG2(num_cce_inst_ram_els_p)
   )
-  (input                                        clk_i
-   ,input                                       reset_i
+  (input                                         clk_i
+   , input                                       reset_i
 
    // ALU branch result signal
-   ,input                                       alu_branch_res_i
+   , input                                       alu_branch_res_i
 
    // input queue valid signals
-   ,input                                       lce_req_v_i
-   ,input                                       lce_resp_v_i
-   ,input                                       lce_data_resp_v_i
-   ,input                                       mem_resp_v_i
-   ,input                                       mem_data_resp_v_i
-   ,input                                       pending_v_i
+   , input                                       lce_req_v_i
+   , input                                       lce_resp_v_i
+   , input                                       lce_data_resp_v_i
+   , input                                       mem_resp_v_i
+   , input                                       mem_data_resp_v_i
+   , input                                       pending_v_i
 
    // output queue ready_i signals
-   ,input                                       lce_cmd_ready_i
-   ,input                                       lce_data_cmd_ready_i
-   ,input                                       mem_cmd_ready_i
-   ,input                                       mem_data_cmd_ready_i
+   , input                                       lce_cmd_ready_i
+   , input                                       lce_data_cmd_ready_i
+   , input                                       mem_cmd_ready_i
+   , input                                       mem_data_cmd_ready_i
 
    // instruction output to decode
-   ,output logic [inst_width_lp-1:0]            inst_o
-   ,output logic                                inst_v_o
+   , output logic [inst_width_lp-1:0]            inst_o
+   , output logic                                inst_v_o
   );
 
   // Combination logic signals

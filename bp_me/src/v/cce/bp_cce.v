@@ -15,118 +15,118 @@
 module bp_cce
   import bp_cce_inst_pkg::*;
   #(parameter cce_id_p                     = "inv"
-    ,parameter num_lce_p                   = "inv"
-    ,parameter num_cce_p                   = "inv"
-    ,parameter addr_width_p                = "inv"
-    ,parameter lce_assoc_p                 = "inv"
-    ,parameter lce_sets_p                  = "inv"
-    ,parameter block_size_in_bytes_p       = "inv"
-    ,parameter num_cce_inst_ram_els_p      = "inv"
+    , parameter num_lce_p                  = "inv"
+    , parameter num_cce_p                  = "inv"
+    , parameter addr_width_p               = "inv"
+    , parameter lce_assoc_p                = "inv"
+    , parameter lce_sets_p                 = "inv"
+    , parameter block_size_in_bytes_p      = "inv"
+    , parameter num_cce_inst_ram_els_p     = "inv"
 
     // Default parameters
-    ,parameter harden_p                    = 0
+    , parameter harden_p                   = 0
 
     // Derived parameters
-    ,localparam lg_num_lce_lp              = `BSG_SAFE_CLOG2(num_lce_p)
-    ,localparam lg_num_cce_lp              = `BSG_SAFE_CLOG2(num_cce_p)
-    ,localparam block_size_in_bits_lp      = (block_size_in_bytes_p*8)
-    ,localparam lg_block_size_in_bytes_lp  = `BSG_SAFE_CLOG2(block_size_in_bytes_p)
-    ,localparam lg_lce_assoc_lp            = `BSG_SAFE_CLOG2(lce_assoc_p)
-    ,localparam lg_lce_sets_lp             = `BSG_SAFE_CLOG2(lce_sets_p)
-    ,localparam tag_width_lp               = (addr_width_p-lg_lce_sets_lp-lg_block_size_in_bytes_lp)
-    ,localparam entry_width_lp             = (tag_width_lp+`bp_cce_coh_bits)
-    ,localparam tag_set_width_lp           = (entry_width_lp*lce_assoc_p)
-    ,localparam way_group_width_lp         = (tag_set_width_lp*num_lce_p)
-    ,localparam way_group_offset_high_lp   = (lg_block_size_in_bytes_lp+lg_lce_sets_lp)
-    ,localparam num_way_groups_lp          = (lce_sets_p/num_cce_p)
+    , localparam lg_num_lce_lp             = `BSG_SAFE_CLOG2(num_lce_p)
+    , localparam lg_num_cce_lp             = `BSG_SAFE_CLOG2(num_cce_p)
+    , localparam block_size_in_bits_lp     = (block_size_in_bytes_p*8)
+    , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_p)
+    , localparam lg_lce_assoc_lp           = `BSG_SAFE_CLOG2(lce_assoc_p)
+    , localparam lg_lce_sets_lp            = `BSG_SAFE_CLOG2(lce_sets_p)
+    , localparam tag_width_lp              = (addr_width_p-lg_lce_sets_lp-lg_block_size_in_bytes_lp)
+    , localparam entry_width_lp            = (tag_width_lp+`bp_cce_coh_bits)
+    , localparam tag_set_width_lp          = (entry_width_lp*lce_assoc_p)
+    , localparam way_group_width_lp        = (tag_set_width_lp*num_lce_p)
+    , localparam way_group_offset_high_lp  = (lg_block_size_in_bytes_lp+lg_lce_sets_lp)
+    , localparam num_way_groups_lp         = (lce_sets_p/num_cce_p)
 
-    ,localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
-                                                              ,num_lce_p
-                                                              ,addr_width_p
-                                                              ,lce_assoc_p)
+    , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
+                                                               ,num_lce_p
+                                                               ,addr_width_p
+                                                               ,lce_assoc_p)
 
-    ,localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
-                                                                ,num_lce_p
-                                                                ,addr_width_p)
+    , localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
+                                                                 ,num_lce_p
+                                                                 ,addr_width_p)
 
-    ,localparam bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p
-                                                                          ,num_lce_p
-                                                                          ,addr_width_p
-                                                                          ,block_size_in_bits_lp)
+    , localparam bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p
+                                                                           ,num_lce_p
+                                                                           ,addr_width_p
+                                                                           ,block_size_in_bits_lp)
 
-    ,localparam bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p
-                                                              ,num_lce_p
-                                                              ,addr_width_p
-                                                              ,lce_assoc_p)
+    , localparam bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p
+                                                               ,num_lce_p
+                                                               ,addr_width_p
+                                                               ,lce_assoc_p)
 
-    ,localparam bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
-                                                                        ,num_lce_p
-                                                                        ,addr_width_p
-                                                                        ,block_size_in_bits_lp
-                                                                        ,lce_assoc_p)
+    , localparam bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
+                                                                         ,num_lce_p
+                                                                         ,addr_width_p
+                                                                         ,block_size_in_bits_lp
+                                                                         ,lce_assoc_p)
 
-    ,localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(addr_width_p
-                                                                ,num_lce_p
-                                                                ,lce_assoc_p)
+    , localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(addr_width_p
+                                                                 ,num_lce_p
+                                                                 ,lce_assoc_p)
 
-    ,localparam bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(addr_width_p
-                                                                          ,block_size_in_bits_lp
-                                                                          ,num_lce_p
-                                                                          ,lce_assoc_p)
+    , localparam bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(addr_width_p
+                                                                           ,block_size_in_bits_lp
+                                                                           ,num_lce_p
+                                                                           ,lce_assoc_p)
 
-    ,localparam bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(addr_width_p
-                                                              ,num_lce_p
-                                                              ,lce_assoc_p)
+    , localparam bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(addr_width_p
+                                                               ,num_lce_p
+                                                               ,lce_assoc_p)
 
-    ,localparam bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(addr_width_p
+    , localparam bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(addr_width_p
                                                                         ,block_size_in_bits_lp
                                                                         ,num_lce_p
                                                                         ,lce_assoc_p)
   )
-  (input                                              clk_i
-   ,input                                             reset_i
+  (input                                               clk_i
+   , input                                             reset_i
 
    // LCE-CCE Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer
    // outbound: ready->valid, demanding producer
-   ,input [bp_lce_cce_req_width_lp-1:0]               lce_req_i
-   ,input                                             lce_req_v_i
-   ,output logic                                      lce_req_yumi_o
+   , input [bp_lce_cce_req_width_lp-1:0]               lce_req_i
+   , input                                             lce_req_v_i
+   , output logic                                      lce_req_yumi_o
 
-   ,input [bp_lce_cce_resp_width_lp-1:0]              lce_resp_i
-   ,input                                             lce_resp_v_i
-   ,output logic                                      lce_resp_yumi_o
+   , input [bp_lce_cce_resp_width_lp-1:0]              lce_resp_i
+   , input                                             lce_resp_v_i
+   , output logic                                      lce_resp_yumi_o
 
-   ,input [bp_lce_cce_data_resp_width_lp-1:0]         lce_data_resp_i
-   ,input                                             lce_data_resp_v_i
-   ,output logic                                      lce_data_resp_yumi_o
+   , input [bp_lce_cce_data_resp_width_lp-1:0]         lce_data_resp_i
+   , input                                             lce_data_resp_v_i
+   , output logic                                      lce_data_resp_yumi_o
 
-   ,output logic [bp_cce_lce_cmd_width_lp-1:0]        lce_cmd_o
-   ,output logic                                      lce_cmd_v_o
-   ,input                                             lce_cmd_ready_i
+   , output logic [bp_cce_lce_cmd_width_lp-1:0]        lce_cmd_o
+   , output logic                                      lce_cmd_v_o
+   , input                                             lce_cmd_ready_i
 
-   ,output logic [bp_cce_lce_data_cmd_width_lp-1:0]   lce_data_cmd_o
-   ,output logic                                      lce_data_cmd_v_o
-   ,input                                             lce_data_cmd_ready_i
+   , output logic [bp_cce_lce_data_cmd_width_lp-1:0]   lce_data_cmd_o
+   , output logic                                      lce_data_cmd_v_o
+   , input                                             lce_data_cmd_ready_i
 
    // CCE-MEM Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer
    // outbound: ready->valid, demanding producer
-   ,input [bp_mem_cce_resp_width_lp-1:0]              mem_resp_i
-   ,input                                             mem_resp_v_i
-   ,output logic                                      mem_resp_yumi_o
+   , input [bp_mem_cce_resp_width_lp-1:0]              mem_resp_i
+   , input                                             mem_resp_v_i
+   , output logic                                      mem_resp_yumi_o
 
-   ,input [bp_mem_cce_data_resp_width_lp-1:0]         mem_data_resp_i
-   ,input                                             mem_data_resp_v_i
-   ,output logic                                      mem_data_resp_yumi_o
+   , input [bp_mem_cce_data_resp_width_lp-1:0]         mem_data_resp_i
+   , input                                             mem_data_resp_v_i
+   , output logic                                      mem_data_resp_yumi_o
 
-   ,output logic [bp_cce_mem_cmd_width_lp-1:0]        mem_cmd_o
-   ,output logic                                      mem_cmd_v_o
-   ,input                                             mem_cmd_ready_i
+   , output logic [bp_cce_mem_cmd_width_lp-1:0]        mem_cmd_o
+   , output logic                                      mem_cmd_v_o
+   , input                                             mem_cmd_ready_i
 
-   ,output logic [bp_cce_mem_data_cmd_width_lp-1:0]   mem_data_cmd_o
-   ,output logic                                      mem_data_cmd_v_o
-   ,input                                             mem_data_cmd_ready_i
+   , output logic [bp_cce_mem_data_cmd_width_lp-1:0]   mem_data_cmd_o
+   , output logic                                      mem_data_cmd_v_o
+   , input                                             mem_data_cmd_ready_i
   );
 
   initial begin
