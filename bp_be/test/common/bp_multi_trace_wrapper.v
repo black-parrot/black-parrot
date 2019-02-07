@@ -11,7 +11,7 @@
 
 `include "bp_be_internal_if_defines.vh"
 
-module bp_multi_wrapper
+module bp_multi_trace_wrapper
  /* TODO: Get rid of this */
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
@@ -381,5 +381,5 @@ bp_me_top #(.num_lce_p(num_lce_p)
             ,.lce_tr_resp_ready_i(local_lce_tr_resp_rdy)
             );
 
-endmodule : bp_multi_wrapper
+endmodule : bp_multi_trace_wrapper
 
