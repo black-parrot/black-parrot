@@ -27,14 +27,14 @@ module bp_fe_lce_cce_req
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
     , parameter lce_sets_p="inv"
-    , parameter lce_assoc_p="inv"
+    , parameter ways_p="inv"
     , parameter block_size_in_bytes_p="inv"
 
     , parameter data_mask_width_lp=(data_width_p>>3)
     , parameter lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
 
     , parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-    , parameter lg_lce_assoc_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
+    , parameter lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
     , parameter lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
     , localparam lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
     , parameter lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
@@ -42,7 +42,7 @@ module bp_fe_lce_cce_req
     , parameter lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                            ,num_lce_p
                                                            ,lce_addr_width_p
-                                                           ,lce_assoc_p
+                                                           ,ways_p
                                                           )
     , parameter lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, lce_addr_width_p)
     , localparam lce_id_width_lp=`bp_lce_id_width
@@ -55,7 +55,7 @@ module bp_fe_lce_cce_req
  
     , input                                    miss_i
     , input [lce_addr_width_p-1:0]             miss_addr_i
-    , input [lg_lce_assoc_lp-1:0]              lru_way_i
+    , input [lg_ways_lp-1:0]                   lru_way_i
     , output logic                             cache_miss_o
           
     , input                                    tr_received_i
@@ -77,12 +77,12 @@ module bp_fe_lce_cce_req
   logic                                       tr_received_r, tr_received_n, tr_received;
   logic                                       cce_data_received_r, cce_data_received_n, cce_data_received;
   logic                                       tag_set_r, tag_set_n, tag_set;
-  logic [lg_lce_assoc_lp-1:0]                 lru_way_r, lru_way_n;
+  logic [lg_ways_lp-1:0]                      lru_way_r, lru_way_n;
 
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, lce_addr_width_p);
   bp_lce_cce_resp_s lce_cce_resp_lo;
 
-  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, lce_addr_width_p, lce_assoc_p);
+  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, lce_addr_width_p, ways_p);
   bp_lce_cce_req_s lce_cce_req_lo;
 
   assign lce_cce_req_o  = lce_cce_req_lo;
