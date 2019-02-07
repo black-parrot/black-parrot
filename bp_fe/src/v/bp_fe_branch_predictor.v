@@ -6,7 +6,7 @@
  * e.g. branch taken or not taken.  
 */
 
-module branch_prediction_bht_btb
+module bp_fe_branch_predictor
  import bp_fe_pkg::*;
  #(parameter eaddr_width_p="inv"
    , parameter btb_indx_width_p="inv"
@@ -52,7 +52,7 @@ assign branch_metadata_o     = {pc_fwd_i[btb_indx_width_p-1:0]
 
 
    
-bht 
+bp_fe_bht 
  #(.saturation_size_lp(2)
    ,.bht_indx_width_p(bht_indx_width_p)
    ) 
@@ -72,7 +72,7 @@ bht
    );
 
     
-btb
+bp_fe_btb
  #(.bp_fe_pc_gen_btb_idx_width_lp(btb_indx_width_p)
    ,.eaddr_width_p(eaddr_width_p)
    ) 

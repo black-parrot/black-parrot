@@ -250,45 +250,49 @@ always_ff @(posedge clk_i)
 generate
   if (branch_predictor_p) 
     begin //select bht_btb implementation for branch predictor
-      branch_prediction_bht_btb #(.eaddr_width_p(eaddr_width_p)
-                                  ,.btb_indx_width_p(btb_indx_width_p)
-                                  ,.bht_indx_width_p(bht_indx_width_p)
-                                  ,.ras_addr_width_p(ras_addr_width_p)
-                                 ) branch_prediction_1 
-                                 (.clk_i(clk_i)
-                                  ,.reset_i(reset_i)
-                                  ,.attaboy_i(attaboy)
-                                  ,.r_v_i(~fe_pc_gen_v_i)
-                                  ,.w_v_i(fe_pc_gen_v_i)
-                                  ,.pc_queue_i(pc)
-                                  ,.pc_cmd_i(fe_pc_gen_cmd.operands.pc_redirect_operands.pc)
-                                  ,.pc_fwd_i(icache_pc_gen.addr)
-                                  ,.branch_metadata_fwd_i(branch_metadata_fwd_i)
-                                  ,.predict_o(predict)
-                                  ,.pc_o(btb_target)
-                                  ,.branch_metadata_fwd_o(branch_metadata_fwd_o)
-                                 );
+      bp_fe_branch_predictor 
+        #(.eaddr_width_p(eaddr_width_p)
+          ,.btb_indx_width_p(btb_indx_width_p)
+          ,.bht_indx_width_p(bht_indx_width_p)
+          ,.ras_addr_width_p(ras_addr_width_p)
+          ) 
+        branch_prediction_1 
+         (.clk_i(clk_i)
+          ,.reset_i(reset_i)
+          ,.attaboy_i(attaboy)
+          ,.r_v_i(~fe_pc_gen_v_i)
+          ,.w_v_i(fe_pc_gen_v_i)
+          ,.pc_queue_i(pc)
+          ,.pc_cmd_i(fe_pc_gen_cmd.operands.pc_redirect_operands.pc)
+          ,.pc_fwd_i(icache_pc_gen.addr)
+          ,.branch_metadata_fwd_i(branch_metadata_fwd_i)
+          ,.predict_o(predict)
+          ,.pc_o(btb_target)
+          ,.branch_metadata_fwd_o(branch_metadata_fwd_o)
+          );
     end 
   else 
     begin //seselct Pc+4 as branch predictor
-      branch_prediction_pc_plus_4 #(.eaddr_width_p(eaddr_width_p)
-                                    ,.btb_indx_width_p(btb_indx_width_p)
-                                    ,.bht_indx_width_p(bht_indx_width_p)
-                                    ,.ras_addr_width_p(ras_addr_width_p)
-                                   ) branch_prediction_1 
-                                   (.clk_i(clk_i)
-                                    ,.reset_i(reset_i)
-                                    ,.attaboy_i(attaboy)
-                                    ,.r_v_i(~fe_pc_gen_v_i)
-                                    ,.w_v_i(fe_pc_gen_v_i)
-                                    ,.pc_queue_i(pc)
-                                    ,.pc_cmd_i(fe_pc_gen_cmd.operands.pc_redirect_operands.pc)
-                                    ,.pc_fwd_i(icache_pc_gen.addr)
-                                    ,.branch_metadata_fwd_i(branch_metadata_fwd_i)
-                                    ,.predict_o(predict)
-                                    ,.pc_o(btb_target)
-                                    ,.branch_metadata_fwd_o(branch_metadata_fwd_o)
-                                   );
+      branch_prediction_pc_plus_4 
+       #(.eaddr_width_p(eaddr_width_p)
+         ,.btb_indx_width_p(btb_indx_width_p)
+         ,.bht_indx_width_p(bht_indx_width_p)
+         ,.ras_addr_width_p(ras_addr_width_p)
+         ) 
+       branch_prediction_1 
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+         ,.attaboy_i(attaboy)
+         ,.r_v_i(~fe_pc_gen_v_i)
+         ,.w_v_i(fe_pc_gen_v_i)
+         ,.pc_queue_i(pc)
+         ,.pc_cmd_i(fe_pc_gen_cmd.operands.pc_redirect_operands.pc)
+         ,.pc_fwd_i(icache_pc_gen.addr)
+         ,.branch_metadata_fwd_i(branch_metadata_fwd_i)
+         ,.predict_o(predict)
+         ,.pc_o(btb_target)
+         ,.branch_metadata_fwd_o(branch_metadata_fwd_o)
+         );
     end
   endgenerate
 

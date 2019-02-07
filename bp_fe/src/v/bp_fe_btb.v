@@ -8,10 +8,11 @@
  * uses the bsg_mem_1rw_sync_synth RAM design.
 */
 
-module btb
+module bp_fe_btb
  import bp_fe_pkg::*; 
  #(parameter   bp_fe_pc_gen_btb_idx_width_lp=9
    , parameter eaddr_width_p="inv"
+   , localparam els_lp=2**bp_fe_pc_gen_btb_idx_width_lp
    ) 
   (input logic                                       clk_i
    , input logic                                     reset_i 
@@ -28,7 +29,7 @@ module btb
    );
 
    
-logic [2**bp_fe_pc_gen_btb_idx_width_lp-1:0] valid;
+logic [els_lp-1:0] valid;
 
 always_ff @(posedge clk_i) 
   begin

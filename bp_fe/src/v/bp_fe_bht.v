@@ -8,7 +8,7 @@
  * negative regime, the BHT predicts "not taken". The implementation of BHT is
  * native to this design.
 */
-module bht
+module bp_fe_bht
  import bp_fe_pkg::*; 
  #(localparam saturation_size_lp=2
    , parameter bht_indx_width_p="inv"

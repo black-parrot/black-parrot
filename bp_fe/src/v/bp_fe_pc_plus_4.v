@@ -1,7 +1,7 @@
 /*
  * bp_fe_pc_plus_4.v
  * 
- * The simplest predictor ever :D 
+ * The simplest predictor 
 */
 
 module branch_prediction_pc_plus_4
