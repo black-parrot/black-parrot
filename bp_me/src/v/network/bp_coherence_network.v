@@ -4,11 +4,11 @@
  *   bp_coherence_network.v
  *
  * Description:
- *   Each coherence network is a N x 1 mesh of routers connecting the LCEs and CCEs. The first router
- *   will connect to both an LCE and an CCE, while following routers may connect to both or only an
- *   LCE or CCE, depending on the number of each in the system. The width of the mesh is the max of
- *   the number of LCEs and CCEs. The exception to this is the LCE-LCE transfer network, which
- *   connects each LCE to every other LCE, and has width of number of LCEs.
+ *   Each coherence network is a N x 1 mesh of routers connecting the LCEs and CCEs. The first
+ *   router will connect to both an LCE and an CCE, while following routers may connect to both or
+ *   only an LCE or CCE, depending on the number of each in the system. The width of the mesh is the
+ *   max of the number of LCEs and CCEs. The exception to this is the LCE-LCE transfer network,
+ *   which connects each LCE to every other LCE, and has width of number of LCEs.
  *
  *   Input and output signals should be concatenated together at instantiation
  *   Example input and output assignment ,.lce_cmd_x({lce_cmd_x_2, lce_cmd_x_1, lce_cmd_x_0})
