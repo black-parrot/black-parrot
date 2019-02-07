@@ -78,7 +78,7 @@ module bp_fe_top
   
   
    // itlb related parameters 
-   , parameter ppn_start_bit_p=lg_lce_sets_lp+lg_block_size_in_bytes_lp+lg_lce_assoc_lp
+   , localparam ppn_start_bit_lp=lg_lce_sets_lp+lg_block_size_in_bytes_lp+lg_lce_assoc_lp
    , localparam bp_fe_itlb_cmd_width_lp=`bp_fe_itlb_cmd_width(vaddr_width_p
                                                               ,paddr_width_p
                                                               ,asid_width_p
@@ -205,8 +205,8 @@ logic icache_pc_gen_ready;
 logic icache_itlb_v;
 logic icache_itlb_ready;
 // reserved icache
-logic cache_miss_o;
-logic poison_i;
+logic cache_miss;
+logic poison;
 
 // be interfaces
 assign bp_fe_cmd     = bp_fe_cmd_i;
@@ -236,7 +236,7 @@ assign fe_itlb_v   = bp_fe_cmd_v_i;
 assign itlb_fe_ready = bp_fe_queue_ready_i;
 
 // icache to icache
-assign poison_i = cache_miss_o && bp_fe_cmd.opcode == e_op_icache_fence;
+assign poison = cache_miss && bp_fe_cmd.opcode == e_op_icache_fence;
 
 
    
@@ -265,7 +265,7 @@ bp_fe_pc_gen
    ,.icache_pc_gen_i(icache_pc_gen)
    ,.icache_pc_gen_v_i(icache_pc_gen_v)
    ,.icache_pc_gen_ready_o(icache_pc_gen_ready)
-   ,.icache_miss_i(cache_miss_o)
+   ,.icache_miss_i(cache_miss)
                
    ,.pc_gen_itlb_o(pc_gen_itlb)
    ,.pc_gen_itlb_v_o(pc_gen_itlb_v)
@@ -338,8 +338,8 @@ icache
    ,.lce_lce_tr_resp_v_o(lce_lce_tr_resp_v_o)
    ,.lce_lce_tr_resp_ready_i(lce_lce_tr_resp_ready_i)
          
-   ,.cache_miss_o(cache_miss_o)
-   ,.poison_i(poison_i)
+   ,.cache_miss_o(cache_miss)
+   ,.poison_i(poison)
    );
 
    
@@ -351,7 +351,7 @@ itlb
    ,.bht_indx_width_p(bht_indx_width_p)
    ,.ras_addr_width_p(ras_addr_width_p)
    ,.asid_width_p(asid_width_p)
-   ,.ppn_start_bit_p(ppn_start_bit_p)
+   ,.ppn_start_bit_p(ppn_start_bit_lp)
    ) 
  itlb_1
   (.clk_i(clk_i)
