@@ -48,11 +48,12 @@ module itlb
    , output logic [bp_fe_itlb_queue_width_lp-1:0] itlb_fe_o
    , output logic                                 itlb_fe_v_o
    , input                                        itlb_fe_ready_i
-  );
+   );
 
 // struct declaration
 // be interfaces
 `declare_bp_common_fe_be_if_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)
+
 `declare_bp_fe_itlb_icache_data_resp_s(ppn_width_lp);
 `declare_bp_fe_itlb_cmd_s;
 `declare_bp_fe_itlb_queue_s;
@@ -70,6 +71,7 @@ assign fe_itlb_cmd   = fe_itlb_i;
 assign itlb_fe_o     = fe_itlb_queue;
 assign pc_gen_itlb   = pc_gen_itlb_i;
   
+
 logic [bp_fe_ppn_width_lp-1:0] ppn;
 
 // pass through itlb
@@ -77,6 +79,7 @@ always @(posedge clk_i)
   begin
     ppn <= pc_gen_itlb.virt_addr[ppn_start_bit_p+bp_fe_ppn_width_lp-1:ppn_start_bit_p];
   end
+
 assign itlb_icache.ppn = ppn;
 
 assign itlb_icache_data_resp_v_o = 1'b1;
