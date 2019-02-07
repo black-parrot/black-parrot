@@ -1,18 +1,27 @@
 /**
- * bp_coherence_network_channel
  *
- * This coherence network channel is a series of buffered mesh routers and fifos used to relay
- * messages between the LCE and CCE or LCE and LCE. Each network channel uses the South port of
- * the routers as the source, and the Proc port of the routers as the destination.
+ * Name:
+ *   bp_coherence_network_channel.v
  *
- * All y's defaulted to 1 since channel is 1 dimensional.
+ * Description:
+ *   This coherence network channel is a series of buffered mesh routers and fifos used to relay
+ *   messages between the LCE and CCE or LCE and LCE. Each network channel uses the South port of
+ *   the routers as the source, and the Proc port of the routers as the destination.
  *
- * Assumes first node will always have a source and destination.
+ * Notes:
+ *   All y's defaulted to 1 since channel is 1 dimensional.
  *
- * Since the stub_p plays a major role in node functionality but is a parameter value
- * and parameter values have to be constant at instantiation we explicitly lay
- * out each instantiation situation which is verbose but adds no extra logic
- * and shouldn't make it too much harder to follow.
+ *   Assumes first node will always have a source and destination.
+ *
+ *   The stub_p parameter on bsg_mesh_buffered_router indicates which of the router's ports will
+ *   be "stubbed" and made non-operational. Stubbed ports are not connected to anything. East and
+ *   West ports connect to other routers if not stubbed. South ports connect to the message sender,
+ *   and Proc ports connect to the message receiver.
+ *
+ *   Since the stub_p plays a major role in node functionality but is a parameter value
+ *   and parameter values have to be constant at instantiation we explicitly lay
+ *   out each instantiation situation which is verbose but adds no extra logic
+ *   and shouldn't make it too much harder to follow.
 */
 
 `include "bsg_noc_links.vh"
@@ -20,30 +29,33 @@
 
 module bp_coherence_network_channel
   import bsg_noc_pkg::*;
-  #(parameter packet_width_p="inv"
-    ,parameter num_src_p="inv"
-    ,parameter num_dst_p="inv"
-    ,parameter mesh_width_lp=`BSG_MAX(num_src_p,num_dst_p)
-    ,parameter lg_mesh_width_lp=`BSG_SAFE_CLOG2(mesh_width_lp)
-    ,parameter network_width_lp=(packet_width_p+lg_mesh_width_lp+1)
-    ,parameter dirs_lp=5
-    ,parameter repeater_output_p={dirs_lp {1'b0}}
-    ,parameter bsg_ready_then_link_sif_width_lp=`bsg_ready_then_link_sif_width(network_width_lp)
-    ,parameter debug_p=0
-  )
-  (
-    input                                             clk_i
-    ,input                                            reset_i
+  #(parameter packet_width_p        = "inv"
+    , parameter num_src_p           = "inv"
+    , parameter num_dst_p           = "inv"
 
-    // South port (src), helpful consumer (buffered inputs), ready->valid
-    ,input [num_src_p-1:0][packet_width_p-1:0]        src_data_i
-    ,input [num_src_p-1:0]                            src_v_i
-    ,output[num_src_p-1:0]                            src_ready_o
+    // Default parameters
+    , parameter debug_p             = 0
 
-    // Proc port (dest), demanding producer, ready->valid
-    ,output [num_dst_p-1:0][packet_width_p-1:0]       dst_data_o
-    ,output [num_dst_p-1:0]                           dst_v_o
-    ,input  [num_dst_p-1:0]                           dst_ready_i
+    // Derived parameters
+    , localparam mesh_width_lp      = `BSG_MAX(num_src_p,num_dst_p)
+    , localparam lg_mesh_width_lp   = `BSG_SAFE_CLOG2(mesh_width_lp)
+    , localparam network_width_lp   = (packet_width_p+lg_mesh_width_lp+1)
+    , localparam dirs_lp            = 5
+    , localparam repeater_output_p  = {dirs_lp {1'b0}}
+    , localparam bsg_ready_then_link_sif_width_lp=`bsg_ready_then_link_sif_width(network_width_lp)
+    )
+  (input                                              clk_i
+   , input                                            reset_i
+
+   // South port (src), helpful consumer (buffered inputs), ready->valid
+   , input [num_src_p-1:0][packet_width_p-1:0]        src_data_i
+   , input [num_src_p-1:0]                            src_v_i
+   , output[num_src_p-1:0]                            src_ready_o
+
+   // Proc port (dest), demanding producer, ready->valid
+   , output [num_dst_p-1:0][packet_width_p-1:0]       dst_data_o
+   , output [num_dst_p-1:0]                           dst_v_o
+   , input  [num_dst_p-1:0]                           dst_ready_i
   );
 
   // Each message type has its own packet structure, and the router has its own format so we
@@ -75,11 +87,11 @@ module bp_coherence_network_channel
 
   // Intermediate stitching signals
   assign src_data_i_stitch = src_data_i;
-  assign src_v_i_stitch = src_v_i;
-  assign src_ready_o = src_ready_o_stitch;
-  assign dst_id_i_stitch = dst_id_i;
-  assign dst_data_o = dst_data_o_stitch;
-  assign dst_v_o = dst_v_o_stitch;
+  assign src_v_i_stitch    = src_v_i;
+  assign src_ready_o       = src_ready_o_stitch;
+  assign dst_id_i_stitch   = dst_id_i;
+  assign dst_data_o        = dst_data_o_stitch;
+  assign dst_v_o           = dst_v_o_stitch;
 
   // Create the mesh network
   genvar i;
@@ -122,48 +134,50 @@ module bp_coherence_network_channel
         assign link_i_stitch[i][E].ready_then_rev = 1'b0;
 
         // Instantiate and stitch a mesh router unit
-        bsg_mesh_router_buffered #(
-          .width_p(network_width_lp)
-          ,.x_cord_width_p(lg_mesh_width_lp)
-          ,.y_cord_width_p(1)
-          ,.debug_p(debug_p)
-          ,.dirs_lp(dirs_lp)
-          ,.stub_p(5'b01110) // SNEWP -> _NEW_
-          ,.allow_S_to_EW_p(1)
-          ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
-          ,.repeater_output_p(repeater_output_p)
-        ) coherence_network_channel_node (
-          .clk_i(clk_i)
-          ,.reset_i(reset_i)
-          ,.link_i(link_i_stitch[i])
-          ,.link_o(link_o_stitch[i])
-          ,.my_x_i(i[lg_mesh_width_lp-1:0]) // Indexed to remove truncation warning
-          ,.my_y_i(1'b1)
-        );
+        bsg_mesh_router_buffered
+          #(.width_p(network_width_lp)
+            ,.x_cord_width_p(lg_mesh_width_lp)
+            ,.y_cord_width_p(1)
+            ,.debug_p(debug_p)
+            ,.dirs_lp(dirs_lp)
+            ,.stub_p(5'b01110) // SNEWP -> _NEW_
+            ,.allow_S_to_EW_p(1)
+            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
+            ,.repeater_output_p(repeater_output_p)
+            )
+          coherence_network_channel_node
+           (.clk_i(clk_i)
+            ,.reset_i(reset_i)
+            ,.link_i(link_i_stitch[i])
+            ,.link_o(link_o_stitch[i])
+            ,.my_x_i(i[lg_mesh_width_lp-1:0]) // Indexed to remove truncation warning
+            ,.my_y_i(1'b1)
+            );
       end // fi3
 
       // If first node but not last node
       else begin: efi3
 
         // Instantiate and stitch a mesh router unit stub north and west
-        bsg_mesh_router_buffered #(
-          .width_p(network_width_lp)
-          ,.x_cord_width_p(lg_mesh_width_lp)
-          ,.y_cord_width_p(1)
-          ,.debug_p(debug_p)
-          ,.dirs_lp(dirs_lp)
-          ,.stub_p(5'b01010) // SNEWP -> _N_W_
-          ,.allow_S_to_EW_p(1)
-          ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
-          ,.repeater_output_p(repeater_output_p)
-        ) coherence_network_channel_node (
-          .clk_i(clk_i)
-          ,.reset_i(reset_i)
-          ,.link_i(link_i_stitch[i])
-          ,.link_o(link_o_stitch[i])
-          ,.my_x_i(i[lg_mesh_width_lp-1:0]) // Indexed to remove truncation warning
-          ,.my_y_i(1'b1)
-        );
+        bsg_mesh_router_buffered
+          #(.width_p(network_width_lp)
+            ,.x_cord_width_p(lg_mesh_width_lp)
+            ,.y_cord_width_p(1)
+            ,.debug_p(debug_p)
+            ,.dirs_lp(dirs_lp)
+            ,.stub_p(5'b01010) // SNEWP -> _N_W_
+            ,.allow_S_to_EW_p(1)
+            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
+            ,.repeater_output_p(repeater_output_p)
+            )
+          coherence_network_channel_node
+           (.clk_i(clk_i)
+            ,.reset_i(reset_i)
+            ,.link_i(link_i_stitch[i])
+            ,.link_o(link_o_stitch[i])
+            ,.my_x_i(i[lg_mesh_width_lp-1:0]) // Indexed to remove truncation warning
+            ,.my_y_i(1'b1)
+            );
       end // efi3
     end // fi2
 
@@ -177,24 +191,25 @@ module bp_coherence_network_channel
       // South, Proc, and East port used
       if((i < num_src_p) & (i < num_dst_p) & (i != (mesh_width_lp-1))) begin: fi4
         // Instantiate and stitch a mesh router unit
-        bsg_mesh_router_buffered #(
-          .width_p(network_width_lp)
-          ,.x_cord_width_p(lg_mesh_width_lp)
-          ,.y_cord_width_p(1)
-          ,.debug_p(debug_p)
-          ,.dirs_lp(dirs_lp)
-          ,.stub_p(5'b01000)  // SNEWP -> _N___
-          ,.allow_S_to_EW_p(1)
-          ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
-          ,.repeater_output_p(repeater_output_p)
-        ) coherence_network_channel_node (
-          .clk_i(clk_i)
-          ,.reset_i(reset_i)
-          ,.link_i(link_i_stitch[i])
-          ,.link_o(link_o_stitch[i])
-          ,.my_x_i(i[lg_mesh_width_lp-1:0]) // Indexed to remove truncation warning
-          ,.my_y_i(1'b1)
-        );
+        bsg_mesh_router_buffered
+          #(.width_p(network_width_lp)
+            ,.x_cord_width_p(lg_mesh_width_lp)
+            ,.y_cord_width_p(1)
+            ,.debug_p(debug_p)
+            ,.dirs_lp(dirs_lp)
+            ,.stub_p(5'b01000)  // SNEWP -> _N___
+            ,.allow_S_to_EW_p(1)
+            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
+            ,.repeater_output_p(repeater_output_p)
+            )
+          coherence_network_channel_node
+           (.clk_i(clk_i)
+            ,.reset_i(reset_i)
+            ,.link_i(link_i_stitch[i])
+            ,.link_o(link_o_stitch[i])
+            ,.my_x_i(i[lg_mesh_width_lp-1:0]) // Indexed to remove truncation warning
+            ,.my_y_i(1'b1)
+            );
       end // fi4
 
       // South, and Proc port used, stub East port
@@ -206,24 +221,25 @@ module bp_coherence_network_channel
         assign link_i_stitch[i][E].ready_then_rev = 1'b0;
 
         // Instantiate and stitch a mesh router unit
-        bsg_mesh_router_buffered #(
-          .width_p(network_width_lp)
-          ,.x_cord_width_p(lg_mesh_width_lp)
-          ,.y_cord_width_p(1)
-          ,.debug_p(debug_p)
-          ,.dirs_lp(dirs_lp)
-          ,.stub_p(5'b01100)  // SNEWP -> _NE__
-          ,.allow_S_to_EW_p(1)
-          ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
-          ,.repeater_output_p(repeater_output_p)
-        ) coherence_network_channel_node (
-          .clk_i(clk_i)
-          ,.reset_i(reset_i)
-          ,.link_i(link_i_stitch[i])
-          ,.link_o(link_o_stitch[i])
-          ,.my_x_i(i[lg_mesh_width_lp-1:0]) // Indexed to remove truncation warning
-          ,.my_y_i(1'b1)
-        );
+        bsg_mesh_router_buffered
+          #(.width_p(network_width_lp)
+            ,.x_cord_width_p(lg_mesh_width_lp)
+            ,.y_cord_width_p(1)
+            ,.debug_p(debug_p)
+            ,.dirs_lp(dirs_lp)
+            ,.stub_p(5'b01100)  // SNEWP -> _NE__
+            ,.allow_S_to_EW_p(1)
+            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
+            ,.repeater_output_p(repeater_output_p)
+            )
+          coherence_network_channel_node
+           (.clk_i(clk_i)
+            ,.reset_i(reset_i)
+            ,.link_i(link_i_stitch[i])
+            ,.link_o(link_o_stitch[i])
+            ,.my_x_i(i[lg_mesh_width_lp-1:0]) // Indexed to remove truncation warning
+            ,.my_y_i(1'b1)
+            );
       end // fi5
 
       // South, and East port used, stub Proc port
@@ -232,24 +248,25 @@ module bp_coherence_network_channel
         // Proc input already initialized to no valid input data by default
 
         // Instantiate and stitch a mesh router unit
-        bsg_mesh_router_buffered #(
-          .width_p(network_width_lp)
-          ,.x_cord_width_p(lg_mesh_width_lp)
-          ,.y_cord_width_p(1)
-          ,.debug_p(debug_p)
-          ,.dirs_lp(dirs_lp)
-          ,.stub_p(5'b01001) // SNEWP -> _N__P
-          ,.allow_S_to_EW_p(1)
-          ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
-          ,.repeater_output_p(repeater_output_p)
-        ) coherence_network_channel_node (
-          .clk_i(clk_i)
-          ,.reset_i(reset_i)
-          ,.link_i(link_i_stitch[i])
-          ,.link_o(link_o_stitch[i])
-          ,.my_x_i(i[lg_mesh_width_lp-1:0]) // Indexed to remove truncation warning
-          ,.my_y_i(1'b1)
-        );
+        bsg_mesh_router_buffered
+          #(.width_p(network_width_lp)
+            ,.x_cord_width_p(lg_mesh_width_lp)
+            ,.y_cord_width_p(1)
+            ,.debug_p(debug_p)
+            ,.dirs_lp(dirs_lp)
+            ,.stub_p(5'b01001) // SNEWP -> _N__P
+            ,.allow_S_to_EW_p(1)
+            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
+            ,.repeater_output_p(repeater_output_p)
+            )
+          coherence_network_channel_node
+           (.clk_i(clk_i)
+            ,.reset_i(reset_i)
+            ,.link_i(link_i_stitch[i])
+            ,.link_o(link_o_stitch[i])
+            ,.my_x_i(i[lg_mesh_width_lp-1:0]) // Indexed to remove truncation warning
+            ,.my_y_i(1'b1)
+            );
       end // fi6
 
       // South port used, stub East and Proc port
@@ -263,24 +280,25 @@ module bp_coherence_network_channel
         assign link_i_stitch[i][E].ready_then_rev = 1'b0;
 
         // Instantiate and stitch a mesh router unit
-        bsg_mesh_router_buffered #(
-          .width_p(network_width_lp)
-          ,.x_cord_width_p(lg_mesh_width_lp)
-          ,.y_cord_width_p(1)
-          ,.debug_p(debug_p)
-          ,.dirs_lp(dirs_lp)
-          ,.stub_p(5'b01101) // SNEWP -> _NE_P
-          ,.allow_S_to_EW_p(1)
-          ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
-          ,.repeater_output_p(repeater_output_p)
-        ) coherence_network_channel_node (
-          .clk_i(clk_i)
-          ,.reset_i(reset_i)
-          ,.link_i(link_i_stitch[i])
-          ,.link_o(link_o_stitch[i])
-          ,.my_x_i(i[lg_mesh_width_lp-1:0]) // Indexed to remove truncation warning
-          ,.my_y_i(1'b1)
-        );
+        bsg_mesh_router_buffered
+          #(.width_p(network_width_lp)
+            ,.x_cord_width_p(lg_mesh_width_lp)
+            ,.y_cord_width_p(1)
+            ,.debug_p(debug_p)
+            ,.dirs_lp(dirs_lp)
+            ,.stub_p(5'b01101) // SNEWP -> _NE_P
+            ,.allow_S_to_EW_p(1)
+            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
+            ,.repeater_output_p(repeater_output_p)
+            )
+          coherence_network_channel_node
+           (.clk_i(clk_i)
+            ,.reset_i(reset_i)
+            ,.link_i(link_i_stitch[i])
+            ,.link_o(link_o_stitch[i])
+            ,.my_x_i(i[lg_mesh_width_lp-1:0]) // Indexed to remove truncation warning
+            ,.my_y_i(1'b1)
+            );
       end // fi7
 
       // Proc and East port used, stub South port
@@ -292,24 +310,25 @@ module bp_coherence_network_channel
         assign link_i_stitch[i][S].ready_then_rev = 1'b0;
 
         // Instantiate and stitch a mesh router unit
-        bsg_mesh_router_buffered #(
-          .width_p(network_width_lp)
-          ,.x_cord_width_p(lg_mesh_width_lp)
-          ,.y_cord_width_p(1)
-          ,.debug_p(debug_p)
-          ,.dirs_lp(dirs_lp)
-          ,.stub_p(5'b11000)  // SNEWP -> SN___
-          ,.allow_S_to_EW_p(1)
-          ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
-          ,.repeater_output_p(repeater_output_p)
-        ) coherence_network_channel_node (
-          .clk_i(clk_i)
-          ,.reset_i(reset_i)
-          ,.link_i(link_i_stitch[i])
-          ,.link_o(link_o_stitch[i])
-          ,.my_x_i(i[lg_mesh_width_lp-1:0]) // Indexed to remove truncation warning
-          ,.my_y_i(1'b1)
-        );
+        bsg_mesh_router_buffered
+          #(.width_p(network_width_lp)
+            ,.x_cord_width_p(lg_mesh_width_lp)
+            ,.y_cord_width_p(1)
+            ,.debug_p(debug_p)
+            ,.dirs_lp(dirs_lp)
+            ,.stub_p(5'b11000)  // SNEWP -> SN___
+            ,.allow_S_to_EW_p(1)
+            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
+            ,.repeater_output_p(repeater_output_p)
+            )
+          coherence_network_channel_node
+           (.clk_i(clk_i)
+            ,.reset_i(reset_i)
+            ,.link_i(link_i_stitch[i])
+            ,.link_o(link_o_stitch[i])
+            ,.my_x_i(i[lg_mesh_width_lp-1:0]) // Indexed to remove truncation warning
+            ,.my_y_i(1'b1)
+            );
       end // fi8
 
       // Proc port used, stub South and East port
@@ -326,24 +345,25 @@ module bp_coherence_network_channel
         assign link_i_stitch[i][E].ready_then_rev = 1'b0;
 
         // Instantiate and stitch a mesh router unit
-        bsg_mesh_router_buffered #(
-          .width_p(network_width_lp)
-          ,.x_cord_width_p(lg_mesh_width_lp)
-          ,.y_cord_width_p(1)
-          ,.debug_p(debug_p)
-          ,.dirs_lp(dirs_lp)
-          ,.stub_p(5'b11100) // SNEWP -> SNE__
-          ,.allow_S_to_EW_p(1)
-          ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
-          ,.repeater_output_p(repeater_output_p)
-        ) coherence_network_channel_node (
-          .clk_i(clk_i)
-          ,.reset_i(reset_i)
-          ,.link_i(link_i_stitch[i])
-          ,.link_o(link_o_stitch[i])
-          ,.my_x_i(i[lg_mesh_width_lp-1:0]) // Indexed to remove truncation warning
-          ,.my_y_i(1'b1)
-        );
+        bsg_mesh_router_buffered
+          #(.width_p(network_width_lp)
+            ,.x_cord_width_p(lg_mesh_width_lp)
+            ,.y_cord_width_p(1)
+            ,.debug_p(debug_p)
+            ,.dirs_lp(dirs_lp)
+            ,.stub_p(5'b11100) // SNEWP -> SNE__
+            ,.allow_S_to_EW_p(1)
+            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
+            ,.repeater_output_p(repeater_output_p)
+            )
+          coherence_network_channel_node
+           (.clk_i(clk_i)
+            ,.reset_i(reset_i)
+            ,.link_i(link_i_stitch[i])
+            ,.link_o(link_o_stitch[i])
+            ,.my_x_i(i[lg_mesh_width_lp-1:0]) // Indexed to remove truncation warning
+            ,.my_y_i(1'b1)
+            );
       end // fi9
     end // efi2
 
