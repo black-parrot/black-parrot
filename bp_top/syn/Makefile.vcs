@@ -1,5 +1,5 @@
 ## Setup CAD tools
-include $(CADENV_PATH)/cadenv.mk
+#include $(CADENV_PATH)/cadenv.mk
 
 ## Tool specific options
 VCS_OPTIONS += +notimingcheck
@@ -47,7 +47,6 @@ LOAD_ROM_C  = $(notdir $(LOAD_ROM))
 
 TEST_SOURCE += 	                                                      \
 				$(BP_FE_DIR)/src/include/bp_fe_pkg.vh												  \
-		    $(BP_FE_DIR)/src/include/bp_fe_pc_gen_pkg.vh									\
 		    $(BP_FE_DIR)/src/include/bp_fe_itlb_pkg.vh									  \
 			  $(BP_FE_DIR)/src/v/bp_fe_top.v										            \
 			  $(BP_FE_DIR)/src/v/bp_fe_itlb.v									              \
