@@ -98,7 +98,7 @@ test_env:
 		[ -d $(BP_TOP_DIR)    ] && [ -d $(BP_FE_DIR)      ] && \
 		[ -d $(BP_BE_DIR)     ] && [ -d $(BP_ME_DIR)      ] && \
 		[ -d $(COMMON_PATH)    ] && [ -d $(BSG_IP_CORES_DIR)     ] && \
-#		[ -d $(CADENV_PATH)	   ] 							     \
+		[ -d $(CADENV_PATH)	   ] 							     \
 		echo "BP environment correctly set up!"
 
 clean:
