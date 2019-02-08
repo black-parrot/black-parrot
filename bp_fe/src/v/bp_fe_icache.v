@@ -347,7 +347,7 @@ module icache
     .ways_p(ways_p)
     ) lru_encoder (
     .lru_i(lru_bits)
-    ,.way_o(lru_encode)
+    ,.way_id_o(lru_encode)
   );
 
   bsg_priority_encode #(
@@ -531,7 +531,7 @@ module icache
    bp_be_dcache_lru_decode #(
      .ways_p(ways_p)
    ) lru_decode (
-     .way_i(lru_decode_way_li)
+     .way_id_i(lru_decode_way_li)
      ,.data_o(lru_decode_data_lo)
      ,.mask_o(lru_decode_mask_lo)
    );

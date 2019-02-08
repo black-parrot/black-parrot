@@ -290,7 +290,7 @@ icache
    ,.tag_width_p(tag_width_p)
    ,.num_cce_p(num_cce_p)
    ,.num_lce_p(num_lce_p)
-   ,.lce_assoc_p(lce_assoc_p)
+   ,.ways_p(lce_assoc_p)
    ,.lce_sets_p(lce_sets_p)
    ,.block_size_in_bytes_p(block_size_in_bytes_p)
    ) 
