@@ -35,13 +35,13 @@ module bp_coherence_network_channel
 
     // Default parameters
     , parameter debug_p             = 0
+    , localparam dirs_lp            = 5
+    , parameter repeater_output_p  = {dirs_lp {1'b0}}
 
     // Derived parameters
     , localparam mesh_width_lp      = `BSG_MAX(num_src_p,num_dst_p)
     , localparam lg_mesh_width_lp   = `BSG_SAFE_CLOG2(mesh_width_lp)
     , localparam network_width_lp   = (packet_width_p+lg_mesh_width_lp+1)
-    , localparam dirs_lp            = 5
-    , localparam repeater_output_p  = {dirs_lp {1'b0}}
     , localparam bsg_ready_then_link_sif_width_lp=`bsg_ready_then_link_sif_width(network_width_lp)
     )
   (input                                              clk_i

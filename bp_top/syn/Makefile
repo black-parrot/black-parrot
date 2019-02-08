@@ -7,7 +7,7 @@ BP_BE_DIR	     = $(TOP)/bp_be
 BP_ME_DIR 	     = $(TOP)/bp_me
 BP_COMMON_DIR   = $(TOP)/bp_common
 
-#CADENV_PATH      = $(TOP)/bsg_cadenv
+CADENV_PATH      = $(TOP)/bsg_cadenv
 BSG_IP_CORES_DIR = $(TOP)/bsg_ip_cores
 
 SRC_PATH	= $(BP_TOP_DIR)/src/v
@@ -46,10 +46,14 @@ HDL_SOURCE = 										   			             																\
 			 $(BP_BE_DIR)/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lru_encode.v				  \
 			 $(BP_BE_DIR)/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_wbuf_queue.v				  \
 			 $(BP_BE_DIR)/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_wbuf.v				        \
+			 $(BP_BE_DIR)/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_req.v    				  \
 			 $(BP_BE_DIR)/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_cce_req.v				  \
 			 $(BP_BE_DIR)/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_cce_lce_cmd.v				  \
+			 $(BP_BE_DIR)/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_cmd.v		     		  \
 			 $(BP_BE_DIR)/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_cce_lce_data_cmd.v		\
+			 $(BP_BE_DIR)/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_data_cmd.v    		\
 			 $(BP_BE_DIR)/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_lce_tr_resp_in.v	\
+			 $(BP_BE_DIR)/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_tr.v    	        \
 			 										                         												        	\
 			 $(BP_BE_DIR)/src/v/common/bsg_fifo_1r1w_rolly.v		                          \
 			 $(BP_BE_DIR)/src/v/common/bsg_dff_reset_en.v        	                        \
@@ -58,6 +62,7 @@ HDL_SOURCE = 										   			             																\
 			 $(BSG_IP_CORES_DIR)/bsg_dataflow/bsg_fifo_tracker.v			                    \
 			 $(BSG_IP_CORES_DIR)/bsg_dataflow/bsg_shift_reg.v			                        \
 			 $(BSG_IP_CORES_DIR)/bsg_dataflow/bsg_two_fifo.v				                      \
+			 $(BSG_IP_CORES_DIR)/bsg_mem/bsg_mem_2r1w_sync.v                              \
 			 $(BSG_IP_CORES_DIR)/bsg_mem/bsg_mem_2r1w_sync_synth.v                        \
 			 $(BSG_IP_CORES_DIR)/bsg_mem/bsg_mem_1r1w.v		                                \
 			 $(BSG_IP_CORES_DIR)/bsg_mem/bsg_mem_1r1w_sync.v						                  \
