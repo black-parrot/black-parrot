@@ -235,15 +235,15 @@ bp_be_checker_top
 
    ,.chk_dispatch_v_o(chk_dispatch_v)
    ,.chk_roll_o(chk_roll)
-   ,.chk_psn_isd_o(chk_psn_isd)
-   ,.chk_psn_ex_o(chk_psn_ex)
+   ,.chk_poison_isd_o(chk_psn_isd)
+   ,.chk_poison_ex_o(chk_psn_ex)
 
    ,.calc_status_i(calc_status)
-   ,.mmu_cmd_rdy_i(mmu_cmd_rdy)
+   ,.mmu_cmd_ready_i(mmu_cmd_rdy)
 
    ,.fe_cmd_o(fe_cmd_o)
    ,.fe_cmd_v_o(fe_cmd_v_o)
-   ,.fe_cmd_rdy_i(fe_cmd_rdy_i)
+   ,.fe_cmd_ready_i(fe_cmd_rdy_i)
 
    ,.chk_roll_fe_o(fe_queue_rollback_o)
    ,.chk_flush_fe_o(fe_queue_clr_o)
@@ -251,11 +251,11 @@ bp_be_checker_top
 
    ,.fe_queue_i(fe_queue_i)
    ,.fe_queue_v_i(fe_queue_v_i)
-   ,.fe_queue_rdy_o(fe_queue_rdy_o)
+   ,.fe_queue_ready_o(fe_queue_rdy_o)
 
    ,.issue_pkt_o(issue_pkt)
    ,.issue_pkt_v_o(issue_pkt_v)
-   ,.issue_pkt_rdy_i(issue_pkt_rdy)
+   ,.issue_pkt_ready_i(issue_pkt_rdy)
    );
 
 bp_be_calculator_top 
@@ -270,23 +270,23 @@ bp_be_calculator_top
 
    ,.issue_pkt_i(issue_pkt)
    ,.issue_pkt_v_i(issue_pkt_v)
-   ,.issue_pkt_rdy_o(issue_pkt_rdy)
+   ,.issue_pkt_ready_o(issue_pkt_rdy)
    
    ,.chk_dispatch_v_i(chk_dispatch_v)
 
    ,.chk_roll_i(chk_roll)
-   ,.chk_psn_ex_i(chk_psn_ex)
-   ,.chk_psn_isd_i(chk_psn_isd)
+   ,.chk_poison_ex_i(chk_psn_ex)
+   ,.chk_poison_isd_i(chk_psn_isd)
 
    ,.calc_status_o(calc_status)
 
    ,.mmu_cmd_o(mmu_cmd)
    ,.mmu_cmd_v_o(mmu_cmd_v)
-   ,.mmu_cmd_rdy_i(mmu_cmd_rdy)
+   ,.mmu_cmd_ready_i(mmu_cmd_rdy)
 
    ,.mmu_resp_i(mmu_resp) 
    ,.mmu_resp_v_i(mmu_resp_v)
-   ,.mmu_resp_rdy_o(mmu_resp_rdy)   
+   ,.mmu_resp_ready_o(mmu_resp_rdy)   
 
    ,.proc_cfg_i(proc_cfg_i)     
 
@@ -314,41 +314,41 @@ bp_be_mmu_top
 
     ,.mmu_cmd_i(mmu_cmd)
     ,.mmu_cmd_v_i(mmu_cmd_v)
-    ,.mmu_cmd_rdy_o(mmu_cmd_rdy)
+    ,.mmu_cmd_ready_o(mmu_cmd_rdy)
 
     ,.chk_psn_ex_i(chk_psn_ex)
 
     ,.mmu_resp_o(mmu_resp)
     ,.mmu_resp_v_o(mmu_resp_v)
-    ,.mmu_resp_rdy_i(mmu_resp_rdy)      
+    ,.mmu_resp_ready_i(mmu_resp_rdy)      
 
-    ,.lce_cce_req_o(lce_cce_req_o)
-    ,.lce_cce_req_v_o(lce_cce_req_v_o)
-    ,.lce_cce_req_rdy_i(lce_cce_req_rdy_i)
+    ,.lce_req_o(lce_cce_req_o)
+    ,.lce_req_v_o(lce_cce_req_v_o)
+    ,.lce_req_ready_i(lce_cce_req_rdy_i)
 
-    ,.lce_cce_resp_o(lce_cce_resp_o)
-    ,.lce_cce_resp_v_o(lce_cce_resp_v_o)
-    ,.lce_cce_resp_rdy_i(lce_cce_resp_rdy_i)        
+    ,.lce_resp_o(lce_cce_resp_o)
+    ,.lce_resp_v_o(lce_cce_resp_v_o)
+    ,.lce_resp_ready_i(lce_cce_resp_rdy_i)        
 
-    ,.lce_cce_data_resp_o(lce_cce_data_resp_o)
-    ,.lce_cce_data_resp_v_o(lce_cce_data_resp_v_o)
-    ,.lce_cce_data_resp_rdy_i(lce_cce_data_resp_rdy_i)
+    ,.lce_data_resp_o(lce_cce_data_resp_o)
+    ,.lce_data_resp_v_o(lce_cce_data_resp_v_o)
+    ,.lce_data_resp_ready_i(lce_cce_data_resp_rdy_i)
 
-    ,.cce_lce_cmd_i(cce_lce_cmd_i)
-    ,.cce_lce_cmd_v_i(cce_lce_cmd_v_i)
-    ,.cce_lce_cmd_rdy_o(cce_lce_cmd_rdy_o)
+    ,.lce_cmd_i(cce_lce_cmd_i)
+    ,.lce_cmd_v_i(cce_lce_cmd_v_i)
+    ,.lce_cmd_ready_o(cce_lce_cmd_rdy_o)
 
-    ,.cce_lce_data_cmd_i(cce_lce_data_cmd_i)
-    ,.cce_lce_data_cmd_v_i(cce_lce_data_cmd_v_i)
-    ,.cce_lce_data_cmd_rdy_o(cce_lce_data_cmd_rdy_o)
+    ,.lce_data_cmd_i(cce_lce_data_cmd_i)
+    ,.lce_data_cmd_v_i(cce_lce_data_cmd_v_i)
+    ,.lce_data_cmd_ready_o(cce_lce_data_cmd_rdy_o)
 
-    ,.lce_lce_tr_resp_i(lce_lce_tr_resp_i)
-    ,.lce_lce_tr_resp_v_i(lce_lce_tr_resp_v_i)
-    ,.lce_lce_tr_resp_rdy_o(lce_lce_tr_resp_rdy_o)
+    ,.lce_tr_resp_i(lce_lce_tr_resp_i)
+    ,.lce_tr_resp_v_i(lce_lce_tr_resp_v_i)
+    ,.lce_tr_resp_ready_o(lce_lce_tr_resp_rdy_o)
 
-    ,.lce_lce_tr_resp_o(lce_lce_tr_resp_o)
-    ,.lce_lce_tr_resp_v_o(lce_lce_tr_resp_v_o)
-    ,.lce_lce_tr_resp_rdy_i(lce_lce_tr_resp_rdy_i)
+    ,.lce_tr_resp_o(lce_lce_tr_resp_o)
+    ,.lce_tr_resp_v_o(lce_lce_tr_resp_v_o)
+    ,.lce_tr_resp_ready_i(lce_lce_tr_resp_rdy_i)
 
     ,.dcache_id_i(proc_cfg.dcache_id)
     );

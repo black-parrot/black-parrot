@@ -24,42 +24,42 @@
  *
  *   mmu_resp_i                  -
  *   mmu_resp_v_i                -
- *   mmu_resp_rdy_o              -
+ *   mmu_resp_ready_o            -
  *
  *   cce_lce_cmd_i               -
  *   cce_lce_cmd_v_i             -
- *   cce_lce_cmd_rdy_o           -
+ *   cce_lce_cmd_ready_o         -
  *
  *   cce_lce_data_cmd_i          -
  *   cce_lce_data_cmd_v_i        -
- *   cce_lce_data_cmd_rdy_o      -
+ *   cce_lce_data_cmd_ready_o    -
  * 
  *   lce_lce_tr_resp_i           - 
  *   lce_lce_tr_resp_v_i         -
- *   lce_lce_tr_resp_rdy_o       -
+ *   lce_lce_tr_resp_ready_o     -
  * 
  *   proc_cfg_i                  -
  *
  * Outputs:
  *   mmu_cmd_o                   -
  *   mmu_cmd_v_o                 -
- *   mmu_cmd_rdy_i               -
+ *   mmu_cmd_ready_i             -
  *
  *   lce_cce_req_o               -
  *   lce_cce_req_v_o             -
- *   lce_cce_req_rdy_i           -
+ *   lce_cce_req_ready_i         -
  *
  *   lce_cce_resp_o              -
  *   lce_cce_resp_v_o            -
- *   lce_cce_resp_rdy_i          -
+ *   lce_cce_resp_ready_i        -
  *
  *   lce_cce_data_resp_o         -
  *   lce_cce_data_resp_v_o       -
- *   lce_cce_data_resp_rdy_i     -
+ *   lce_cce_data_resp_ready_i   -
  *
  *   lce_lce_tr_resp_o           -
  *   lce_lce_tr_resp_v_o         -
- *   lce_lce_tr_resp_rdy_i       -
+ *   lce_lce_tr_resp_ready_i     -
  *
  *   dcache_id_i                 -
  *
@@ -139,13 +139,13 @@ module bp_be_mmu_top
 
    ,input [mmu_cmd_width_lp-1:0]            mmu_cmd_i
    ,input mmu_cmd_v_i
-   ,output logic                                  mmu_cmd_rdy_o
+   ,output logic                                  mmu_cmd_ready_o
 
    ,input logic                                   chk_psn_ex_i
 
    ,output logic [mmu_resp_width_lp-1:0]          mmu_resp_o
    ,output logic                                  mmu_resp_v_o
-   ,input mmu_resp_rdy_i
+   ,input mmu_resp_ready_i
 
    ,output logic [lce_cce_req_width_lp-1:0]       lce_req_o
    ,output logic                                  lce_req_v_o
@@ -196,7 +196,7 @@ logic tlb_miss;
 logic [ptag_width_lp-1:0] ptag;
 
 bp_be_dcache_pkt_s dcache_pkt;
-logic dcache_rdy, dcache_miss_v, dcache_v;
+logic dcache_ready, dcache_miss_v, dcache_v;
 
 logic [cce_lce_cmd_width_lp-1:0] cce_lce_cmd_buf;
 logic cce_lce_cmd_v_buf, cce_lce_cmd_yumi_buf;
@@ -209,7 +209,7 @@ logic [lce_lce_tr_resp_width_lp-1:0] lce_lce_tr_resp_buf;
 
 /* Suppress warnings */
 logic unused0;
-assign unused0 = mmu_resp_rdy_i;
+assign unused0 = mmu_resp_ready_i;
 
 /* TODO: Should pass through vtag->ptag width */
 mock_tlb #(.tag_width_p(12)
@@ -240,7 +240,7 @@ bp_be_dcache #(
 
             ,.dcache_pkt_i(dcache_pkt)
             ,.v_i(mmu_cmd_v_i)
-            ,.ready_o(dcache_rdy)
+            ,.ready_o(dcache_ready)
 
             ,.v_o(dcache_v)
             ,.data_o(mmu_resp.data)
@@ -294,7 +294,7 @@ always_comb begin
     mmu_resp.exception.cache_miss_v = dcache_miss_v;
     mmu_resp_v_o = dcache_v;
 
-    mmu_cmd_rdy_o = dcache_rdy & ~dcache_miss_v;
+    mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v;
 end
 
 endmodule : bp_be_mmu_top

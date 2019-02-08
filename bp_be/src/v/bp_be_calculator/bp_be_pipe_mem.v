@@ -21,13 +21,13 @@
  *
  *   mmu_resp_i       - Load / store response from the MMU.
  *   mmu_resp_v_i     - 'ready-then-valid' interface
- *   mmu_resp_rdy_o   - 
+ *   mmu_resp_ready_o   - 
 
  *
  * Outputs:
  *   mmu_cmd_o        -  Load / store command to the MMU
  *   mmu_cmd_v_o      -  'ready-then-valid' interface
- *   mmu_cmd_rdy_i    - 
+ *   mmu_cmd_ready_i    - 
  * 
  *   result_o         - The calculated result of a load
  *   cache_miss_o     - Goes high when the result of the load is a cache miss 
@@ -62,11 +62,11 @@ module bp_be_pipe_mem
 
    , output [mmu_cmd_width_lp-1:0]  mmu_cmd_o
    , output                         mmu_cmd_v_o
-   , input                          mmu_cmd_rdy_i
+   , input                          mmu_cmd_ready_i
 
    , input [mmu_resp_width_lp-1:0]  mmu_resp_i
    , input                          mmu_resp_v_i
-   , output                         mmu_resp_rdy_o
+   , output                         mmu_resp_ready_o
 
    , output [reg_data_width_lp-1:0] result_o
    , output                         cache_miss_o
@@ -86,7 +86,7 @@ assign mmu_resp  = mmu_resp_i;
 // Suppress unused signal warnings
 wire unused0 = clk_i;
 wire unused1 = reset_i;
-wire unused2 = mmu_cmd_rdy_i;
+wire unused2 = mmu_cmd_ready_i;
 wire unused3 = mmu_resp_v_i;
 
 // Module instantiations
@@ -98,7 +98,7 @@ always_comb
     mmu_cmd_v_o    = (decode.dcache_r_v | decode.dcache_w_v)
                      & ~|exc;
 
-    mmu_resp_rdy_o = 1'b1;
+    mmu_resp_ready_o = 1'b1;
     result_o       = mmu_resp.data;
 
     cache_miss_o   = mmu_resp.exception.cache_miss_v;
