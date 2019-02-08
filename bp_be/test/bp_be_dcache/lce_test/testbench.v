@@ -2,7 +2,7 @@
  *  testbench.v
  */
 
-`include "bp_dcache_pkt.vh"
+`include "bp_be_dcache_pkt.vh"
 `include "bp_common_me_if.vh"
 
 module testbench;
@@ -115,11 +115,11 @@ module testbench;
   assign tr_tag = tr_data_lo[data_width_p+vaddr_width_lp+:tag_width_p];
   assign tr_opcode = tr_data_lo[data_width_p+vaddr_width_lp+tag_width_p+:4];
 
-  `declare_bp_dcache_pkt_s(vaddr_width_lp, data_width_p);
-  bp_dcache_pkt_s bp_dcache_pkt;
-  assign bp_dcache_pkt.opcode = bp_dcache_opcode_e'(tr_opcode);
-  assign bp_dcache_pkt.vaddr = tr_vaddr;
-  assign bp_dcache_pkt.data = tr_data;
+  `declare_bp_be_dcache_pkt_s(vaddr_width_lp, data_width_p);
+  bp_be_dcache_pkt_s bp_be_dcache_pkt;
+  assign bp_be_dcache_pkt.opcode = bp_be_dcache_opcode_e'(tr_opcode);
+  assign bp_be_dcache_pkt.vaddr = tr_vaddr;
+  assign bp_be_dcache_pkt.data = tr_data;
 
   // mock tlb
   //
@@ -162,7 +162,7 @@ module testbench;
   logic cce_lce_data_cmd_v_li;
   logic cce_lce_data_cmd_ready_lo;
 
-  bp_dcache #(
+  bp_be_dcache #(
     .id_p(0)
     ,.data_width_p(data_width_p)
     ,.sets_p(sets_p)
@@ -174,7 +174,7 @@ module testbench;
     .clk_i(clk)
     ,.reset_i(reset)
 
-    ,.dcache_pkt_i(bp_dcache_pkt)
+    ,.dcache_pkt_i(bp_be_dcache_pkt)
     ,.v_i(tr_v_lo)
     ,.ready_o(dcache_ready_lo)
     

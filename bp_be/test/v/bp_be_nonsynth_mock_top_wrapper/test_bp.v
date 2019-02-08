@@ -19,7 +19,6 @@ module test_bp
    ,parameter branch_metadata_fwd_width_p="inv"
    ,parameter num_cce_p="inv"
    ,parameter num_lce_p="inv"
-   ,parameter coh_states_p="inv"
    ,parameter lce_assoc_p="inv"
    ,parameter lce_addr_width_p="inv"
    ,parameter lce_data_width_p="inv"
@@ -52,7 +51,6 @@ bp_be_nonsynth_mock_top_wrapper #(.vaddr_width_p(vaddr_width_p)
                                   ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
                                   ,.num_cce_p(num_cce_p)
                                   ,.num_lce_p(num_lce_p)
-                                  ,.coh_states_p(coh_states_p)
                                   ,.lce_assoc_p(lce_assoc_p)
                                   ,.lce_addr_width_p(lce_addr_width_p)
                                   ,.lce_data_width_p(lce_data_width_p)

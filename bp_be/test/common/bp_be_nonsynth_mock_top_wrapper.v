@@ -12,6 +12,7 @@
 `include "bp_be_internal_if_defines.vh"
 
 module bp_be_nonsynth_mock_top_wrapper
+ /* TODO: Get rid of this */
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
  #(parameter mhartid_p=0

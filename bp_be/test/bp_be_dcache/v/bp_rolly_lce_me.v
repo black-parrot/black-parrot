@@ -2,10 +2,10 @@
  *  bp_rolly_lce_me.v
  */ 
 
-`include "bp_dcache_pkt.vh"
+`include "bp_be_dcache_pkt.vh"
 
 module bp_rolly_lce_me
-  import bp_dcache_pkg::*;
+  import bp_be_dcache_pkg::*;
   #(parameter data_width_p="inv"
     ,parameter sets_p="inv"
     ,parameter ways_p="inv"
@@ -25,7 +25,7 @@ module bp_rolly_lce_me
     ,parameter lce_data_width_lp=(ways_p*data_width_p)
     ,parameter lg_boot_rom_els_lp=`BSG_SAFE_CLOG2(boot_rom_els_p)
       
-    ,parameter bp_dcache_pkt_width_lp=`bp_dcache_pkt_width(vaddr_width_lp, data_width_p)
+    ,parameter bp_be_dcache_pkt_width_lp=`bp_be_dcache_pkt_width(vaddr_width_lp, data_width_p)
 
     ,parameter lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, addr_width_lp, ways_p)
     ,parameter lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, addr_width_lp)
@@ -38,7 +38,7 @@ module bp_rolly_lce_me
     input clk_i
     ,input reset_i
   
-    ,input [num_lce_p-1:0][bp_dcache_pkt_width_lp-1:0] dcache_pkt_i
+    ,input [num_lce_p-1:0][bp_be_dcache_pkt_width_lp-1:0] dcache_pkt_i
     ,input [num_lce_p-1:0][tag_width_p-1:0] paddr_i
     ,input [num_lce_p-1:0] dcache_pkt_v_i
     ,output logic [num_lce_p-1:0] dcache_pkt_ready_o
@@ -49,19 +49,19 @@ module bp_rolly_lce_me
 
   // casting structs
   //
-  `declare_bp_dcache_pkt_s(vaddr_width_lp, data_width_p);
+  `declare_bp_be_dcache_pkt_s(vaddr_width_lp, data_width_p);
 
   // rolly fifo
   //
   logic [num_lce_p-1:0] rollback_li;
   logic [num_lce_p-1:0][tag_width_p-1:0] rolly_paddr_lo;
-  bp_dcache_pkt_s [num_lce_p-1:0] rolly_dcache_pkt_lo;
+  bp_be_dcache_pkt_s [num_lce_p-1:0] rolly_dcache_pkt_lo;
   logic [num_lce_p-1:0] rolly_v_lo;
   logic [num_lce_p-1:0] rolly_yumi_li;
 
   for (genvar i = 0; i < num_lce_p; i++) begin
     bsg_fifo_1r1w_rolly #(
-      .width_p(bp_dcache_pkt_width_lp+tag_width_p)
+      .width_p(bp_be_dcache_pkt_width_lp+tag_width_p)
       ,.els_p(8)
     ) rolly (
       .clk_i(clk_i)
@@ -125,7 +125,7 @@ module bp_rolly_lce_me
   logic [num_lce_p-1:0] dcache_ready_lo;
 
   for (genvar i = 0; i < num_lce_p; i++) begin
-    bp_dcache #(
+    bp_be_dcache #(
       .id_p(i)
       ,.data_width_p(data_width_p)
       ,.sets_p(sets_p)
@@ -214,7 +214,6 @@ module bp_rolly_lce_me
     ,.addr_width_p(addr_width_lp)
     ,.lce_assoc_p(ways_p)
     ,.lce_sets_p(sets_p)
-    ,.coh_states_p(4)
     ,.block_size_in_bytes_p(ways_p*8)
     ,.num_inst_ram_els_p(256)
     ,.mem_els_p(mem_els_p)

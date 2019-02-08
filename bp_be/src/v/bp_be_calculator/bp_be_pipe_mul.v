@@ -30,7 +30,7 @@ module bp_be_pipe_mul
   import bp_be_pkg::*;
   import bp_be_rv64_pkg::*;
  #(// Generated parameters
-   localparam decode_width_lp    = `bp_be_decode_width
+   localparam decode_width_lp      = `bp_be_decode_width
    , localparam exception_width_lp = `bp_be_exception_width
    // From RISC-V specifications
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
@@ -59,23 +59,24 @@ assign exc    = exc_i;
 wire unused0 = clk_i;
 wire unused1 = reset_i;
 
-wire[decode_width_lp-1:0]    unused2 = decode_i;
-wire[reg_data_width_lp-1:0]  unused3 = rs1_i;
-wire[reg_data_width_lp-1:0]  unused4 = rs2_i;
-wire[exception_width_lp-1:0] unused5 = exc_i;
+wire [decode_width_lp-1:0]    unused2 = decode_i;
+wire [reg_data_width_lp-1:0]  unused3 = rs1_i;
+wire [reg_data_width_lp-1:0]  unused4 = rs2_i;
+wire [exception_width_lp-1:0] unused5 = exc_i;
 
 // Submodule connections
 
 // Module instantiations
 
-always_comb begin
+always_comb 
+  begin
     result_o = '0;
-end 
+  end 
 
-// Runtime assertions
-always_comb begin
-  assert(~decode.pipe_mul_v) 
-    else $warning("RV64M is not currently supported");
-end
+always_comb 
+  begin : runtime_assertions
+    assert(reset_i | ~decode.pipe_mul_v) 
+      else $warning("RV64M is not currently supported");
+  end
 
 endmodule : bp_be_pipe_mul

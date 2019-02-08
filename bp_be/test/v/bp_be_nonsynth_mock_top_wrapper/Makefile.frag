@@ -4,7 +4,6 @@ HDL_PARAMS=-pvalue+vaddr_width_p=39 			                           \
 		   -pvalue+branch_metadata_fwd_width_p=10                          \
 		   -pvalue+num_cce_p=1					                           \
 		   -pvalue+num_lce_p=1					                           \
-		   -pvalue+coh_states_p=2				                           \
 		   -pvalue+lce_assoc_p=1				                           \
 		   -pvalue+lce_addr_width_p=56			                           \
 		   -pvalue+lce_data_width_p=256			                           \

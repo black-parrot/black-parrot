@@ -133,49 +133,49 @@ module bp_be_mmu_top
                                                                   )
    ,localparam lce_id_width_lp=`bp_lce_id_width
    )
-  (input logic                                    clk_i
-   ,input logic                                   reset_i
+  (input clk_i
+   ,input reset_i
 
 
-   ,input logic [mmu_cmd_width_lp-1:0]            mmu_cmd_i
-   ,input logic                                   mmu_cmd_v_i
+   ,input [mmu_cmd_width_lp-1:0]            mmu_cmd_i
+   ,input mmu_cmd_v_i
    ,output logic                                  mmu_cmd_rdy_o
 
    ,input logic                                   chk_psn_ex_i
 
    ,output logic [mmu_resp_width_lp-1:0]          mmu_resp_o
    ,output logic                                  mmu_resp_v_o
-   ,input logic                                   mmu_resp_rdy_i
+   ,input mmu_resp_rdy_i
 
-   ,output logic [lce_cce_req_width_lp-1:0]       lce_cce_req_o
-   ,output logic                                  lce_cce_req_v_o
-   ,input logic                                   lce_cce_req_rdy_i
+   ,output logic [lce_cce_req_width_lp-1:0]       lce_req_o
+   ,output logic                                  lce_req_v_o
+   ,input lce_req_ready_i
 
-   ,output logic [lce_cce_resp_width_lp-1:0]      lce_cce_resp_o
-   ,output logic                                  lce_cce_resp_v_o
-   ,input logic                                   lce_cce_resp_rdy_i                                 
+   ,output logic [lce_cce_resp_width_lp-1:0]      lce_resp_o
+   ,output logic                                  lce_resp_v_o
+   ,input lce_resp_ready_i                                 
 
-   ,output logic [lce_cce_data_resp_width_lp-1:0] lce_cce_data_resp_o
-   ,output logic                                  lce_cce_data_resp_v_o
-   ,input logic                                   lce_cce_data_resp_rdy_i
+   ,output logic [lce_cce_data_resp_width_lp-1:0] lce_data_resp_o
+   ,output logic                                  lce_data_resp_v_o
+   ,input lce_data_resp_ready_i
 
-   ,input logic [cce_lce_cmd_width_lp-1:0]        cce_lce_cmd_i
-   ,input logic                                   cce_lce_cmd_v_i
-   ,output logic                                  cce_lce_cmd_rdy_o
+   ,input [cce_lce_cmd_width_lp-1:0]        lce_cmd_i
+   ,input lce_cmd_v_i
+   ,output logic                                  lce_cmd_ready_o
 
-   ,input logic [cce_lce_data_cmd_width_lp-1:0]   cce_lce_data_cmd_i
-   ,input logic                                   cce_lce_data_cmd_v_i
-   ,output logic                                  cce_lce_data_cmd_rdy_o
+   ,input [cce_lce_data_cmd_width_lp-1:0]   lce_data_cmd_i
+   ,input lce_data_cmd_v_i
+   ,output logic                                  lce_data_cmd_ready_o
 
-   ,input logic [lce_lce_tr_resp_width_lp-1:0]    lce_lce_tr_resp_i
-   ,input logic                                   lce_lce_tr_resp_v_i
-   ,output logic                                  lce_lce_tr_resp_rdy_o
+   ,input [lce_lce_tr_resp_width_lp-1:0]    lce_tr_resp_i
+   ,input lce_tr_resp_v_i
+   ,output logic                                  lce_tr_resp_ready_o
 
-   ,output logic [lce_lce_tr_resp_width_lp-1:0]   lce_lce_tr_resp_o
-   ,output logic                                  lce_lce_tr_resp_v_o
-   ,input logic                                   lce_lce_tr_resp_rdy_i
+   ,output logic [lce_lce_tr_resp_width_lp-1:0]   lce_tr_resp_o
+   ,output logic                                  lce_tr_resp_v_o
+   ,input lce_tr_resp_ready_i
 
-   ,input logic [lce_id_width_lp-1:0]             dcache_id_i
+   ,input [lce_id_width_lp-1:0]             dcache_id_i
    );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p,paddr_width_p,asid_width_p
@@ -224,17 +224,19 @@ mock_tlb #(.tag_width_p(12)
            );
 
 /* TODO: Un-hardcode these values */
-bp_be_dcache #(.data_width_p(64) 
+bp_be_dcache #(
+            .lce_id_width_p(`BSG_SAFE_CLOG2(num_lce_p)) // should be calculated from num_lce_p
+            ,.data_width_p(64) 
             ,.sets_p(lce_sets_p)
             ,.ways_p(lce_assoc_p)
-            ,.tag_width_p(12)
+            ,.paddr_width_p(56)
             ,.num_cce_p(num_cce_p)
             ,.num_lce_p(num_lce_p)
             )
      dcache(.clk_i(clk_i)
             ,.reset_i(reset_i)
 
-            ,.id_i(dcache_id_i)
+            ,.lce_id_i(dcache_id_i)
 
             ,.dcache_pkt_i(dcache_pkt)
             ,.v_i(mmu_cmd_v_i)
@@ -244,48 +246,49 @@ bp_be_dcache #(.data_width_p(64)
             ,.data_o(mmu_resp.data)
 
             ,.tlb_miss_i(tlb_miss)
-            ,.paddr_i(ptag)
+            ,.ptag_i(ptag)
 
             /* TODO: Also assign tlb miss to exception */
             ,.cache_miss_o(dcache_miss_v)
             ,.poison_i(chk_psn_ex_i)
 
             // LCE-CCE interface
-            ,.lce_cce_req_o(lce_cce_req_o)
-            ,.lce_cce_req_v_o(lce_cce_req_v_o)
-            ,.lce_cce_req_ready_i(lce_cce_req_rdy_i)
+            ,.lce_req_o(lce_req_o)
+            ,.lce_req_v_o(lce_req_v_o)
+            ,.lce_req_ready_i(lce_req_ready_i)
 
-            ,.lce_cce_resp_o(lce_cce_resp_o)
-            ,.lce_cce_resp_v_o(lce_cce_resp_v_o)
-            ,.lce_cce_resp_ready_i(lce_cce_resp_rdy_i)
+            ,.lce_resp_o(lce_resp_o)
+            ,.lce_resp_v_o(lce_resp_v_o)
+            ,.lce_resp_ready_i(lce_resp_ready_i)
 
-            ,.lce_cce_data_resp_o(lce_cce_data_resp_o)
-            ,.lce_cce_data_resp_v_o(lce_cce_data_resp_v_o)
-            ,.lce_cce_data_resp_ready_i(lce_cce_data_resp_rdy_i)
+            ,.lce_data_resp_o(lce_data_resp_o)
+            ,.lce_data_resp_v_o(lce_data_resp_v_o)
+            ,.lce_data_resp_ready_i(lce_data_resp_ready_i)
 
             // CCE-LCE interface
-            ,.cce_lce_cmd_i(cce_lce_cmd_i)
-            ,.cce_lce_cmd_v_i(cce_lce_cmd_v_i)
-            ,.cce_lce_cmd_ready_o(cce_lce_cmd_rdy_o)
+            ,.lce_cmd_i(lce_cmd_i)
+            ,.lce_cmd_v_i(lce_cmd_v_i)
+            ,.lce_cmd_ready_o(lce_cmd_ready_o)
 
-            ,.cce_lce_data_cmd_i(cce_lce_data_cmd_i)
-            ,.cce_lce_data_cmd_v_i(cce_lce_data_cmd_v_i)
-            ,.cce_lce_data_cmd_ready_o(cce_lce_data_cmd_rdy_o)
+            ,.lce_data_cmd_i(lce_data_cmd_i)
+            ,.lce_data_cmd_v_i(lce_data_cmd_v_i)
+            ,.lce_data_cmd_ready_o(lce_data_cmd_ready_o)
 
             // LCE-LCE interface
-            ,.lce_lce_tr_resp_i(lce_lce_tr_resp_i)
-            ,.lce_lce_tr_resp_v_i(lce_lce_tr_resp_v_i)
-            ,.lce_lce_tr_resp_ready_o(lce_lce_tr_resp_rdy_o)
+            ,.lce_tr_resp_i(lce_tr_resp_i)
+            ,.lce_tr_resp_v_i(lce_tr_resp_v_i)
+            ,.lce_tr_resp_ready_o(lce_tr_resp_ready_o)
 
-            ,.lce_lce_tr_resp_o(lce_lce_tr_resp_o)
-            ,.lce_lce_tr_resp_v_o(lce_lce_tr_resp_v_o)
-            ,.lce_lce_tr_resp_ready_i(lce_lce_tr_resp_rdy_i)
+            ,.lce_tr_resp_o(lce_tr_resp_o)
+            ,.lce_tr_resp_v_o(lce_tr_resp_v_o)
+            ,.lce_tr_resp_ready_i(lce_tr_resp_ready_i)
             );
 
 always_comb begin
     /* TODO: Make vaddr a struct to cast to (avoids having to manually pick offsets ERROR PRONE */
     dcache_pkt.opcode = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
-    dcache_pkt.vaddr = mmu_cmd.addr[0+:vindex_width_lp];
+    // TODO: make localparam page_offset_width_lp. look at bp_be_dcache.v
+    dcache_pkt.page_offset = mmu_cmd.addr[0+:vindex_width_lp];
     dcache_pkt.data  = mmu_cmd.data;
 
     mmu_resp.exception.cache_miss_v = dcache_miss_v;

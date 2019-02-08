@@ -14,7 +14,6 @@
  *   num_cce_p                   - 
  *   num_lce_p                   - 
  *   num_mem_p                   - 
- *   coh_states_p                - 
  *   lce_assoc_p                 - 
  *   lce_sets_p                  - 
  *   cce_block_size_in_bytes_p   - 
