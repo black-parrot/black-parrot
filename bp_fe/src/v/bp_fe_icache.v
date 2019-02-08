@@ -22,15 +22,11 @@
  *
  */
 
-`include "bsg_defines.v"
-`include "bp_common_me_if.vh"
-`include "bp_fe_icache.vh"
-`include "bp_fe_pc_gen.vh"
-`include "bp_fe_itlb.vh"
-`include "bp_fe_lce.vh"
 
 module icache
   import bp_common_pkg::*;
+  import bp_fe_pkg::*;
+  import bp_fe_icache_pkg::*;  
   #(parameter eaddr_width_p="inv"
     , parameter data_width_p="inv"
     , parameter inst_width_p="inv"

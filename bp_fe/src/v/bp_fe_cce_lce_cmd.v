@@ -19,10 +19,8 @@
  */
 
 
-`include "bp_common_me_if.vh"
-`include "bsg_defines.v"
-
 module bp_fe_cce_lce_cmd
+  import bp_fe_icache_pkg::*;
   #(parameter data_width_p="inv"
     , parameter lce_data_width_p="inv"
     , parameter lce_addr_width_p="inv"

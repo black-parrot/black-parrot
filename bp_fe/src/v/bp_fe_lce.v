@@ -18,13 +18,11 @@
  *
  */
 
-`include "bp_fe_icache.vh"
-`include "bp_fe_pc_gen.vh"
-`include "bp_fe_itlb.vh"
-`include "bp_common_me_if.vh"
-`include "bsg_defines.v"
 
 module bp_fe_lce
+  import bp_common_pkg::*;
+  import bp_fe_pkg::*;
+  import bp_fe_icache_pkg::*;
   #(parameter data_width_p="inv"
     , parameter lce_data_width_p="inv"
     , parameter lce_addr_width_p="inv"
