@@ -85,7 +85,7 @@
  * bp_fe_instr_scan_class_e specifies the type of the current instruction,
  * including whether the instruction is compressed or not.
 */
-typedef enum bit [3:0] {
+typedef enum logic [3:0] {
   e_rvc_beqz    
   , e_rvc_bnez   
   , e_rvc_call   
