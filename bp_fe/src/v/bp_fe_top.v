@@ -1,7 +1,10 @@
-/*                                                                                                                                                                                                                                           
- * bp_fe_pc_gen.v                                                                                                                                                                                                                            */
+/*                                  
+* bp_fe_pc_gen.v                                                                                                                                                                                          
+* */
+
 module bp_fe_top
- import bp_fe_pkg::*; 
+ import bp_fe_pkg::*;
+ import bp_common_pkg::*;  
  #(parameter  vaddr_width_p="inv" 
    , parameter paddr_width_p="inv" 
    , parameter eaddr_width_p="inv" 

@@ -18,5 +18,4 @@ package bp_fe_pkg;
 `include "bp_fe_itlb.vh"
 `include "bp_fe_icache.vh"
 
-
 endpackage : bp_fe_pkg
