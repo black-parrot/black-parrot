@@ -27,6 +27,7 @@
 `include "bp_fe_icache.vh"
 `include "bp_fe_pc_gen.vh"
 `include "bp_fe_itlb.vh"
+`include "bp_fe_lce.vh"
 
 module icache
   import bp_common_pkg::*;
