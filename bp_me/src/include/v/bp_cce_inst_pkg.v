@@ -1,17 +1,24 @@
 /**
- * bp_cce_inst_pkg.v
  *
- * This file describes the CCE microcode instructions. Any changes made to this file must be
- * reflected in the source code of the CCE microcode assembler, too.
+ * Name:
+ *   bp_cce_inst_pkg.v
  *
- * Some software operations are supported via assembler transforms rather than being supported
- * directly in hardware (e.g., ALU increment and decrement).
+ * Description:
+ *   This file describes the CCE microcode instructions. Any changes made to this file must be
+ *   reflected in the source code of the CCE microcode assembler, too.
+ *
+ *   Some software operations are supported via assembler transforms rather than being supported
+ *   directly in hardware (e.g., ALU increment and decrement).
+ *
+ * Notes:
+ *   Some operations that a programmer can specify in the CCE microcode program are not directly
+ *   supported in hardware. These operations are translated into hardware microcode ops by the
+ *   assembler. These operations are shown as comments below the op and minor op enums below.
+ *
  */
 
-`ifndef BP_CCE_INST_PKG_VH
-`define BP_CCE_INST_PKG_VH
-
-`include "bsg_defines.v"
+`ifndef BP_CCE_INST_PKG_V
+`define BP_CCE_INST_PKG_V
 
 package bp_cce_inst_pkg;
 
@@ -25,18 +32,26 @@ package bp_cce_inst_pkg;
     ,e_op_misc                             = 3'b110
     ,e_op_queue                            = 3'b111
   } bp_cce_inst_op_e;
-  //,e_op_flag                             = 3'b010 // Set and Clear Flag are MOVI variants
 
-  `define bp_cce_inst_op_width 3
+  // Set and Clear Flag are MOVI variants
+  //,e_op_flag                             = 3'b010
 
-  // Minor Op Codes
+  `define bp_cce_inst_op_width $bits(bp_cce_inst_op_e)
+
+  // Minor ALU Op Codes
+  // Add, Subtract
   typedef enum logic [2:0] {
     e_add_op                               = 3'b000   // Add
     ,e_sub_op                              = 3'b001   // Subtract
   } bp_cce_inst_minor_alu_op_e;
-  //,e_inc_op                              = 3'b000   // Increment by 1 // same as ADD, src_b = 1, dst = src_a
-  //,e_dec_op                              = 3'b001   // Decrement by 1 // same as DEC, src_b = 1, dst = src_a
 
+  // Software supported ALU operations
+  // Increment by 1 // same as ADD, src_b = 1, dst = src_a
+  //,e_inc_op                              = 3'b000
+  // Decrement by 1 // same as DEC, src_b = 1, dst = src_a
+  //,e_dec_op                              = 3'b001
+
+  // Minor Branch Op Codes
   typedef enum logic [2:0] {
     e_bi_op                                = 3'b111   // Branch Immediate (Unconditional)
 
@@ -46,47 +61,66 @@ package bp_cce_inst_pkg;
     ,e_blt_op                              = 3'b100   // Branch if A < B
     ,e_ble_op                              = 3'b101   // Branch if A <= B
   } bp_cce_inst_minor_branch_op_e;
-  //,e_bz_op                               = 3'b010   // Branch if A == 0 // same as BEQ, src_b = 0
-  //,e_bnz_op                              = 3'b011   // Branch if A != 0 // same as BNE, src_b = 0
-  //,e_bf_op                               = 3'b010   // Branch if Flag == 1 // same as BEQ, src_a = flag, src_b = 1
-  //,e_bfz_op                              = 3'b010   // Branch if Flag == 0 // same as BEQ, src_a = flag, src_b = 0
-  //,e_bqr_op                              = 3'b010   // Branch if Queue.ready == 1 // same as BEQ src_a = queue.ready, src_b = 1
-  //,e_bgt_op                              = 3'b100   // Branch if A > B // same as BLT, swap src_a and src_b
-  //,e_bge_op                              = 3'b101   // Branch if A >= B // same as BLE, swap src_a and src_b
 
+  // Software supported branch operations
+  // Branch if A == 0 // same as BEQ, src_b = 0
+  //,e_bz_op                               = 3'b010
+  // Branch if A != 0 // same as BNE, src_b = 0
+  //,e_bnz_op                              = 3'b011
+  // Branch if Flag == 1 // same as BEQ, src_a = flag, src_b = 1
+  //,e_bf_op                               = 3'b010
+  // Branch if Flag == 0 // same as BEQ, src_a = flag, src_b = 0
+  //,e_bfz_op                              = 3'b010
+  // Branch if Queue.ready == 1 // same as BEQ src_a = queue.ready, src_b = 1
+  //,e_bqr_op                              = 3'b010
+  // Branch if A > B // same as BLT, swap src_a and src_b
+  //,e_bgt_op                              = 3'b100
+  // Branch if A >= B // same as BLE, swap src_a and src_b
+  //,e_bge_op                              = 3'b101
+
+  // Minor Move Op Codes
   typedef enum logic [2:0] {
     e_mov_op                               = 3'b000   // Move src_a to dst
     ,e_movi_op                             = 3'b001   // Move imm to dst
   } bp_cce_inst_minor_mov_op_e;
 
+  // Minor Set Flag Op Codes
   typedef enum logic [2:0] {
     e_sf_op                                = 3'b001   // Move imm[0] = 1 to dst(flag)
   } bp_cce_inst_minor_flag_op_e;
-  //,e_sfz_op                              = 3'b001   // Move imm[1] = 0 to dst(flag)
 
+  // Software supported flag operations
+  // Move imm[1] = 0 to dst(flag)
+  //,e_sfz_op                              = 3'b001
+
+  // Minor Read Directory Op Codes
   typedef enum logic [2:0] {
     e_rdp_op                               = 3'b000   // Read Directory Pending Bit
     ,e_rdw_op                              = 3'b001   // Read Directory Way Group
     ,e_rde_op                              = 3'b010   // Read Directory Entry
   } bp_cce_inst_minor_read_dir_op_e;
 
+  // Minor Write Directory Op Codes
   typedef enum logic [2:0] {
     e_wdp_op                               = 3'b000   // Write Directory Pending Bit
     ,e_wde_op                              = 3'b001   // Write Directory Entry
     ,e_wds_op                              = 3'b010   // Write Directory Entry State
   } bp_cce_inst_minor_write_dir_op_e;
 
+  // Minor Misc Op Codes
   typedef enum logic [2:0] {
     e_gad_op                               = 3'b000   // Generate Auxiliary Data
     ,e_stall_op                            = 3'b111   // Stall PC
   } bp_cce_inst_minor_misc_op_e;
 
+  // Minor Queue Op Codes
   typedef enum logic [2:0] {
     e_wfq_op                               = 3'b000   // Wait for Queue Ready
     ,e_pushq_op                            = 3'b001   // Push Queue
     ,e_popq_op                             = 3'b010   // Pop Queue
   } bp_cce_inst_minor_queue_op_e;
 
+  // Minor Op Code Union
   typedef union packed {
     bp_cce_inst_minor_alu_op_e             alu_minor_op;
     bp_cce_inst_minor_branch_op_e          branch_minor_op;
@@ -100,6 +134,7 @@ package bp_cce_inst_pkg;
 
   `define bp_cce_inst_minor_op_width $bits(bp_cce_inst_minor_op_u)
 
+  // Source Select
   typedef enum logic [4:0] {
     e_src_r0                               = 5'b00000
     ,e_src_r1                              = 5'b00001
@@ -133,6 +168,7 @@ package bp_cce_inst_pkg;
 
   `define bp_cce_inst_src_width $bits(bp_cce_inst_src_e)
 
+  // Destination Select
   typedef enum logic [4:0] {
     e_dst_r0                               = 5'b00000
     ,e_dst_r1                              = 5'b00001
@@ -155,6 +191,7 @@ package bp_cce_inst_pkg;
 
   `define bp_cce_inst_dst_width $bits(bp_cce_inst_dst_e)
 
+  // GPR Numbers
   typedef enum logic [1:0] {
     e_gpr_r0                               = 2'b00
     ,e_gpr_r1                              = 2'b01
@@ -162,9 +199,11 @@ package bp_cce_inst_pkg;
     ,e_gpr_r3                              = 2'b11
   } bp_cce_gpr_e;
 
-  `define bp_cce_inst_num_gpr 4
+  // Note: number of gpr must be a power of 2
+  `define bp_cce_inst_num_gpr (2**$bits(bp_cce_gpr_e))
   `define bp_cce_inst_gpr_width 16
 
+  // Flag Register One Hot
   typedef enum logic [11:0] {
     e_flag_rqf                             = 12'b0000_0000_0001 // request type flag
     ,e_flag_nerf                           = 12'b0000_0000_0010 // non-exclusive request flag
@@ -182,6 +221,7 @@ package bp_cce_inst_pkg;
 
   `define bp_cce_inst_num_flags $bits(bp_cce_inst_flag_e)
 
+  // Flag Register Select
   typedef enum logic [3:0] {
     e_flag_sel_rqf                         = 4'b0000 // request type flag
     ,e_flag_sel_nerf                       = 4'b0001 // non-exclusive request flag
@@ -209,6 +249,7 @@ package bp_cce_inst_pkg;
 
   `define bp_cce_inst_req_sel_width $bits(bp_cce_inst_req_sel_e)
 
+  // Source select for req_addr_way
   typedef enum logic [1:0] {
     e_req_addr_way_sel_logic               = 2'b00
     ,e_req_addr_way_sel_mem_resp           = 2'b01
@@ -217,6 +258,7 @@ package bp_cce_inst_pkg;
 
   `define bp_cce_inst_req_addr_way_sel_width $bits(bp_cce_inst_req_addr_way_sel_e)
 
+  // Source select for lru_way
   typedef enum logic [1:0] {
     e_lru_way_sel_lce_req                  = 2'b00
     ,e_lru_way_sel_mem_resp                = 2'b01
@@ -296,6 +338,7 @@ package bp_cce_inst_pkg;
 
   `define bp_cce_inst_transfer_lce_sel_width $bits(bp_cce_inst_transfer_lce_sel_e)
 
+  // Source queue select
   typedef enum logic [2:0] {
     e_src_q_lce_req                        = 3'b000
     ,e_src_q_mem_resp                      = 3'b001
@@ -308,6 +351,7 @@ package bp_cce_inst_pkg;
   `define bp_cce_inst_src_q_sel_width $bits(bp_cce_inst_src_q_sel_e)
   `define bp_cce_num_src_q 6
 
+  // Destination queue select
   typedef enum logic [1:0] {
     e_dst_q_lce_cmd                        = 2'b00
     ,e_dst_q_lce_data_cmd                  = 2'b01
@@ -317,6 +361,7 @@ package bp_cce_inst_pkg;
 
   `define bp_cce_inst_dst_q_sel_width $bits(bp_cce_inst_dst_q_sel_e)
 
+  // RQF flag source select
   typedef enum logic [2:0] {
     e_rqf_lce_req                          = 3'b000
     ,e_rqf_mem_resp                        = 3'b001
@@ -327,6 +372,7 @@ package bp_cce_inst_pkg;
 
   `define bp_cce_inst_rq_flag_sel_width $bits(bp_cce_inst_rq_flag_sel_e)
 
+  // NERF and LDF flag source select
   typedef enum logic [1:0] {
     e_nerldf_lce_req                       = 2'b00
     ,e_nerldf_pending                      = 2'b01
@@ -335,6 +381,7 @@ package bp_cce_inst_pkg;
 
   `define bp_cce_inst_ner_ld_flag_sel_width $bits(bp_cce_inst_ner_ld_flag_sel_e)
 
+  // NWBF flag source select
   typedef enum logic {
     e_nwbf_lce_data_resp                   = 1'b0
     ,e_nwbf_imm0                           = 1'b1
@@ -342,6 +389,7 @@ package bp_cce_inst_pkg;
 
   `define bp_cce_inst_nwb_flag_sel_width $bits(bp_cce_inst_nwb_flag_sel_e)
 
+  // RWBF flag source select
   typedef enum logic {
     e_rwbf_mem_resp                        = 1'b0
     ,e_rwbf_imm0                           = 1'b1
@@ -349,6 +397,7 @@ package bp_cce_inst_pkg;
 
   `define bp_cce_inst_rwb_flag_sel_width $bits(bp_cce_inst_rwb_flag_sel_e)
 
+  // TF flag source select
   typedef enum logic [1:0] {
     e_tf_logic                             = 2'b00
     ,e_tf_mem_resp                         = 2'b01
@@ -357,6 +406,7 @@ package bp_cce_inst_pkg;
 
   `define bp_cce_inst_t_flag_sel_width $bits(bp_cce_inst_t_flag_sel_e)
 
+  // PF, RF, UF, IF, EF flag source select
   typedef enum logic {
     e_pruief_logic                         = 1'b0
     ,e_pruief_imm0                         = 1'b1
@@ -364,6 +414,7 @@ package bp_cce_inst_pkg;
 
   `define bp_cce_inst_pruie_flag_sel_width $bits(bp_cce_inst_pruie_flag_sel_e)
 
+  // LCE cmd lce_id source select
   typedef enum logic [2:0] {
     e_lce_cmd_lce_r0                       = 3'b000
     ,e_lce_cmd_lce_r1                      = 3'b001
@@ -376,6 +427,7 @@ package bp_cce_inst_pkg;
 
   `define bp_cce_inst_lce_cmd_lce_sel_width $bits(bp_cce_inst_lce_cmd_lce_sel_e)
 
+  // LCE cmd addr source select
   typedef enum logic [2:0] {
     e_lce_cmd_addr_r0                      = 3'b000
     ,e_lce_cmd_addr_r1                     = 3'b001
@@ -388,6 +440,7 @@ package bp_cce_inst_pkg;
 
   `define bp_cce_inst_lce_cmd_addr_sel_width $bits(bp_cce_inst_lce_cmd_addr_sel_e)
 
+  // LCE cmd way source select
   typedef enum logic [2:0] {
     e_lce_cmd_way_req_addr_way             = 3'b000
     ,e_lce_cmd_way_tr_addr_way             = 3'b001
@@ -398,12 +451,16 @@ package bp_cce_inst_pkg;
 
   `define bp_cce_inst_lce_cmd_way_sel_width $bits(bp_cce_inst_lce_cmd_way_sel_e)
 
+  // Mem Data cmd addr source select
   typedef enum logic {
     e_mem_data_cmd_addr_lru_way_addr       = 1'b0
     ,e_mem_data_cmd_addr_req_addr          = 1'b1
   } bp_cce_inst_mem_data_cmd_addr_sel_e;
 
   `define bp_cce_inst_mem_data_cmd_addr_sel_width $bits(bp_cce_inst_mem_data_cmd_addr_sel_e)
+
+  // Instruction immediate fields
+  `define bp_cce_inst_flag_imm_bit 0
 
   // CCE Microcode Instruction Struct
   typedef struct packed {
@@ -456,11 +513,13 @@ package bp_cce_inst_pkg;
     // mem_data_cmd_queue inputs
     bp_cce_inst_mem_data_cmd_addr_sel_e    mem_data_cmd_addr_sel;
 
-    // Write enables
-    logic                                  req_w_v; // req_lce, req_addr, req_tag
-    logic                                  req_addr_way_w_v; // req_addr_way
+    // Write enable for req_lce, req_addr, req_tag registers
+    logic                                  req_w_v;
+    // Write enable for req_addr_way register
+    logic                                  req_addr_way_w_v;
     logic                                  lru_way_w_v;
-    logic                                  transfer_lce_w_v; // transfer_lce, transfer_lce_way
+    // Write enable for tr_lce and tr_lce_way register
+    logic                                  transfer_lce_w_v;
     logic                                  cache_block_data_w_v;
     logic                                  ack_type_w_v;
 

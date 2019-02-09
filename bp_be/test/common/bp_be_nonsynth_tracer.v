@@ -97,7 +97,7 @@ always_ff @(posedge clk_i) begin
                          ,cmt_trace_stage_reg.instr_metadata.pc
                          ,cmt_trace_stage_reg.instr
                          );
-            end else if(cmt_trace_exc.psn_v) begin
+            end else if(cmt_trace_exc.poison_v) begin
                 $display("[CORE%0x PSN] itag: %x pc: %x instr: %x"
                          ,proc_cfg.mhartid
                          ,cmt_trace_stage_reg.instr_metadata.itag

@@ -1,8 +1,11 @@
 /**
- * bp_cce_inst_decode.v
  *
- * This module contains combinational logic to decode the current instruction, which
- * is provided from the bp_cce_pc module.
+ * Name:
+ *   bp_cce_inst_decode.v
+ *
+ * Description:
+ *   This module contains combinational logic to decode the current instruction, which
+ *   is provided from the bp_cce_pc module.
  *
  */
 
@@ -13,22 +16,21 @@
 
 module bp_cce_inst_decode
   import bp_cce_inst_pkg::*;
-  #(parameter inst_width_p="inv"
+  #(parameter inst_width_p = "inv"
   )
-  (
-    // Instruction from bp_cce_pc
-    input [inst_width_p-1:0]                     inst_i
-    ,input                                       inst_v_i
+  (// Instruction from bp_cce_pc
+   input [inst_width_p-1:0]                      inst_i
+   , input                                       inst_v_i
 
-    // ready_i signals for output queues
-    ,input                                       lce_cmd_ready_i
-    ,input                                       lce_data_cmd_ready_i
-    ,input                                       mem_cmd_ready_i
-    ,input                                       mem_data_cmd_ready_i
+   // ready_i signals for output queues
+   , input                                       lce_cmd_ready_i
+   , input                                       lce_data_cmd_ready_i
+   , input                                       mem_cmd_ready_i
+   , input                                       mem_data_cmd_ready_i
 
-    // Decoded instruction
-    ,output bp_cce_inst_decoded_s                decoded_inst_o
-    ,output logic                                decoded_inst_v_o
+   // Decoded instruction
+   , output bp_cce_inst_decoded_s                decoded_inst_o
+   , output logic                                decoded_inst_v_o
   );
 
   bp_cce_inst_s inst;

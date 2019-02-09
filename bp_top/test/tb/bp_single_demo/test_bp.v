@@ -23,6 +23,7 @@ module test_bp
    ,parameter core_els_p="inv"
    ,parameter num_cce_p="inv"
    ,parameter num_lce_p="inv"
+   ,parameter num_mem_p="inv"
    ,parameter lce_sets_p="inv"
    ,parameter lce_assoc_p="inv"
    ,parameter cce_block_size_in_bytes_p="inv"
@@ -56,6 +57,7 @@ bp_multi_wrapper #(.vaddr_width_p(vaddr_width_p)
                  ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
                  ,.num_cce_p(num_cce_p)
                  ,.num_lce_p(num_lce_p)
+                 ,.num_mem_p(num_mem_p)
                  ,.lce_sets_p(lce_sets_p)
                  ,.lce_assoc_p(lce_assoc_p)
                  ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)

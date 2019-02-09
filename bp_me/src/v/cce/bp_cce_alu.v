@@ -1,13 +1,16 @@
 /**
- * bp_cce_alu.v
  *
- * This ALU implements only addition, subtraction, less than comparison,
- * equality comparison, and less than or equality comparison. All operations
- * computed as (opd_a_i operator opd_b_i). Arithmetic overflow is undefined.
+ * Name:
+ *   bp_cce_alu.v
  *
- * Additional operations (INC, DEC, BGT, BGE, BF, BFZ, etc.) are supported via
- * software transformations, which allows the ALU to be simple.
- * e.g., BGE a, b target == BLE b, a target
+ * Description:
+ *   This ALU implements only addition, subtraction, less than comparison,
+ *   equality comparison, and less than or equality comparison. All operations
+ *   computed as (opd_a_i operator opd_b_i). Arithmetic overflow is undefined.
+ *
+ *   Additional operations (INC, DEC, BGT, BGE, BF, BFZ, etc.) are supported via
+ *   software transformations, which allows the ALU to be simple.
+ *   e.g., BGE a, b target == BLE b, a target
  *
  */
 
@@ -16,16 +19,15 @@
 
 module bp_cce_alu
   import bp_cce_inst_pkg::*;
-  #(parameter width_p="inv"
+  #(parameter width_p = "inv"
   )
-  (
-    input logic                              v_i
-    ,input logic [width_p-1:0]               opd_a_i
-    ,input logic [width_p-1:0]               opd_b_i
-    ,input bp_cce_inst_minor_alu_op_e        alu_op_i
-    ,output logic                            v_o
-    ,output logic [width_p-1:0]              res_o
-    ,output logic                            branch_res_o
+  (input logic                               v_i
+   , input logic [width_p-1:0]               opd_a_i
+   , input logic [width_p-1:0]               opd_b_i
+   , input bp_cce_inst_minor_alu_op_e        alu_op_i
+   , output logic                            v_o
+   , output logic [width_p-1:0]              res_o
+   , output logic                            branch_res_o
   );
 
   assign v_o = v_i;

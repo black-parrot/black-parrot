@@ -2,7 +2,7 @@
  *  testbench.v
  */
 
-`include "bp_dcache_pkt.vh"
+`include "bp_be_dcache_pkt.vh"
 `include "bp_common_me_if.vh"
 
 module testbench;
@@ -25,7 +25,7 @@ module testbench;
   localparam vaddr_width_lp=lg_ways_lp+lg_sets_lp+lg_data_mask_width_lp;
   localparam lce_addr_width_lp=vaddr_width_lp+tag_width_p;
   localparam lce_data_width_lp=ways_p*data_width_p;
-  localparam bp_dcache_pkt_width_lp=`bp_dcache_pkt_width(vaddr_width_lp, data_width_p);
+  localparam bp_be_dcache_pkt_width_lp=`bp_be_dcache_pkt_width(vaddr_width_lp, data_width_p);
 
   localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, lce_addr_width_lp, ways_p);
   localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, lce_addr_width_lp);
@@ -61,8 +61,8 @@ module testbench;
  
   // mem subsystem under test
   //
-  `declare_bp_dcache_pkt_s(vaddr_width_lp, data_width_p);
-  bp_dcache_pkt_s [num_lce_p-1:0] dcache_pkt;
+  `declare_bp_be_dcache_pkt_s(vaddr_width_lp, data_width_p);
+  bp_be_dcache_pkt_s [num_lce_p-1:0] dcache_pkt;
   logic [num_lce_p-1:0] dcache_pkt_v_li;
   logic [num_lce_p-1:0] dcache_pkt_ready_lo;
   logic [num_lce_p-1:0][tag_width_p-1:0] paddr_li;
@@ -124,7 +124,7 @@ module testbench;
     );
     
     assign tr_yumi_li[i] = tr_v_lo[i] & dcache_pkt_ready_lo[i];
-    assign dcache_pkt[i].opcode = bp_dcache_opcode_e'(tr_data_lo[i][data_width_p+vaddr_width_lp+tag_width_p+:4]);
+    assign dcache_pkt[i].opcode = bp_be_dcache_opcode_e'(tr_data_lo[i][data_width_p+vaddr_width_lp+tag_width_p+:4]);
     assign paddr_li[i] = tr_data_lo[i][data_width_p+vaddr_width_lp+:tag_width_p];
     assign dcache_pkt[i].vaddr = tr_data_lo[i][data_width_p+:vaddr_width_lp];
     assign dcache_pkt[i].data = tr_data_lo[i][0+:data_width_p];
