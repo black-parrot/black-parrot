@@ -5,28 +5,13 @@
  *The entire block is implemented in combinational logic, achieved within one cycle.
 */
 
-
-`ifndef BSG_DEFINES_V
-`define BSG_DEFINES_V
-`include "bsg_defines.v"
-`endif
-
-`ifndef BP_FE_ICACHE_VH
-`define BP_FE_ICACHE_VH
-`include "bp_fe_icache.vh"
-`endif
-
-`ifndef BP_FE_PC_GEN_VH
-`define BP_FE_PC_GEN_VH
-`include "bp_fe_pc_gen.vh"
-`endif
-
-module instr_scan 
+module instr_scan
+ import bp_fe_pkg::*; 
  #(parameter eaddr_width_p="inv"
    , parameter instr_width_p="inv"
-   , parameter bp_fe_instr_scan_width_lp=`bp_fe_instr_scan_width 
+   , localparam bp_fe_instr_scan_width_lp=`bp_fe_instr_scan_width 
   ) 
-  (input logic [instr_width_p-1:0]               instr_i
+  (input [instr_width_p-1:0]                      instr_i
    , output logic [bp_fe_instr_scan_width_lp-1:0] scan_o
   );
 

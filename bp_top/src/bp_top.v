@@ -20,7 +20,6 @@ module bp_top
    ,parameter num_cce_p="inv"
    ,parameter num_lce_p="inv"
    ,parameter num_mem_p="inv"
-   ,parameter coh_states_p="inv"
    ,parameter lce_assoc_p="inv"
    ,parameter lce_sets_p="inv"
    ,parameter cce_block_size_in_bytes_p="inv"
@@ -58,7 +57,7 @@ module bp_top
 `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
 `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
 `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, cce_block_size_in_bits_lp);
-`declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, coh_states_p);
+`declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
 `declare_bp_cce_lce_data_cmd_s(num_cce_p, num_lce_p, paddr_width_p, cce_block_size_in_bits_lp, lce_assoc_p);
 `declare_bp_lce_lce_tr_resp_s(num_lce_p, paddr_width_p, cce_block_size_in_bits_lp, lce_assoc_p);
 
@@ -113,7 +112,6 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
                ,.lce_sets_p(lce_sets_p)
                ,.lce_assoc_p(lce_assoc_p)
                ,.tag_width_p(12)
-               ,.coh_states_p(coh_states_p)
                ,.num_cce_p(num_cce_p)
                ,.num_lce_p(num_lce_p)
                ,.lce_id_p(icache_id) /* TODO: What should this be? Globally set? */
@@ -206,7 +204,6 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
                 ,.num_cce_p(num_cce_p)
                 ,.num_lce_p(num_lce_p)
                 ,.num_mem_p(num_mem_p)
-                ,.coh_states_p(coh_states_p)
                 ,.lce_assoc_p(lce_assoc_p)
                 ,.lce_sets_p(lce_sets_p)
                 ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
@@ -265,7 +262,6 @@ bp_me_top #(.num_lce_p(num_lce_p)
             ,.addr_width_p(paddr_width_p)
             ,.lce_assoc_p(lce_assoc_p)
             ,.lce_sets_p(lce_sets_p)
-            ,.coh_states_p(coh_states_p)
             ,.block_size_in_bytes_p(cce_block_size_in_bytes_p)
             ,.num_inst_ram_els_p(cce_num_inst_ram_els_p)
 

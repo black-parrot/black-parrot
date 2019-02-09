@@ -1,33 +1,39 @@
 /**
  *
- * bp_fe_lce_cce_req.v
-*/
+ * Name:
+ *   bp_fe_lce_cce_req.v
+ *
+ * Description:
+ *   To	be updated
+ *
+ * Parameters:
+ *
+ * Inputs:
+ *
+ * Outputs:
+ *
+ * Keywords:
+ *
+ * Notes:
+ *
+ */
 
-`ifndef BP_CCE_MSG_VH
-`define BP_CCE_MSG_VH
-`include "bp_common_me_if.vh"
-`endif
-
-`ifndef BSG_DEFINES_V
-`define BSG_DEFINES_V
-`include "bsg_defines.v"
-`endif
 
 module bp_fe_lce_cce_req
-  #(parameter lce_id_p="inv"
-    , parameter data_width_p="inv"
+  import bp_fe_icache_pkg::*;
+  #(parameter data_width_p="inv"
     , parameter lce_addr_width_p="inv"
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
     , parameter lce_sets_p="inv"
-    , parameter lce_assoc_p="inv"
+    , parameter ways_p="inv"
     , parameter block_size_in_bytes_p="inv"
 
     , parameter data_mask_width_lp=(data_width_p>>3)
     , parameter lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
 
     , parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-    , parameter lg_lce_assoc_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
+    , parameter lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
     , parameter lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
     , localparam lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
     , parameter lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
@@ -35,30 +41,34 @@ module bp_fe_lce_cce_req
     , parameter lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                            ,num_lce_p
                                                            ,lce_addr_width_p
-                                                           ,lce_assoc_p
+                                                           ,ways_p
                                                           )
     , parameter lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, lce_addr_width_p)
-   )
-   (input logic                                clk_i
-    , input logic                              reset_i
+    , localparam lce_id_width_lp=`bp_lce_id_width
 
-    , input logic                              miss_i
-    , input logic [lce_addr_width_p-1:0]       miss_addr_i
-    , input logic [lg_lce_assoc_lp-1:0]        lru_way_i
+    )
+   (input                                      clk_i
+    , input                                    reset_i
+
+    , input [lce_id_width_lp-1:0]              id_i
+ 
+    , input                                    miss_i
+    , input [lce_addr_width_p-1:0]             miss_addr_i
+    , input [lg_ways_lp-1:0]                   lru_way_i
     , output logic                             cache_miss_o
           
-    , input logic                              tr_received_i
-    , input logic                              cce_data_received_i
-    , input logic                              tag_set_i
-    , input logic                              tag_set_wakeup_i
+    , input                                    tr_received_i
+    , input                                    cce_data_received_i
+    , input                                    tag_set_i
+    , input                                    tag_set_wakeup_i
           
     , output logic [lce_cce_req_width_lp-1:0]  lce_cce_req_o
     , output logic                             lce_cce_req_v_o
-    , input logic                              lce_cce_req_ready_i
+    , input                                    lce_cce_req_ready_i
           
     , output logic [lce_cce_resp_width_lp-1:0] lce_cce_resp_o
     , output logic                             lce_cce_resp_v_o
-    , input logic                              lce_cce_resp_yumi_i
+    , input                                    lce_cce_resp_yumi_i
    );
 
   bp_fe_lce_cce_req_state_e                   state_r, state_n;
@@ -66,12 +76,12 @@ module bp_fe_lce_cce_req
   logic                                       tr_received_r, tr_received_n, tr_received;
   logic                                       cce_data_received_r, cce_data_received_n, cce_data_received;
   logic                                       tag_set_r, tag_set_n, tag_set;
-  logic [lg_lce_assoc_lp-1:0]                 lru_way_r, lru_way_n;
+  logic [lg_ways_lp-1:0]                      lru_way_r, lru_way_n;
 
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, lce_addr_width_p);
   bp_lce_cce_resp_s lce_cce_resp_lo;
 
-  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, lce_addr_width_p, lce_assoc_p);
+  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, lce_addr_width_p, ways_p);
   bp_lce_cce_req_s lce_cce_req_lo;
 
   assign lce_cce_req_o  = lce_cce_req_lo;
@@ -109,7 +119,7 @@ module bp_fe_lce_cce_req
     cce_data_received     = cce_data_received_r | cce_data_received_i;
     tag_set               = tag_set_r | tag_set_i;
 
-    lce_cce_req_lo.src_id        = (lg_num_lce_lp)'(lce_id_p);
+    lce_cce_req_lo.src_id        = (lg_num_lce_lp)'(id_i);
     lce_cce_req_lo.non_exclusive = e_lce_req_excl;
     lce_cce_req_lo.msg_type      = e_lce_req_type_rd;
     lce_cce_req_lo.addr          = miss_addr_r;
@@ -117,7 +127,7 @@ module bp_fe_lce_cce_req
     lce_cce_req_lo.lru_dirty     = e_lce_req_lru_clean;
     lce_cce_req_v_o              = 1'b0;
 
-    lce_cce_resp_lo.src_id       = lce_id_p;
+    lce_cce_resp_lo.src_id       = id_i;
     lce_cce_resp_lo.msg_type     = e_lce_cce_tr_ack;
     lce_cce_resp_lo.addr         = miss_addr_r;
     lce_cce_resp_v_o             = 1'b0;

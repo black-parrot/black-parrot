@@ -1,7 +1,4 @@
 # Black Parrot Front End
-
-<img src="./schm/BlackParrot_FE_top.svg">
-
 The Front End (FE) consists of two different stages: PC Generation (PC_GEN) and Instruction Fetch
   (IF). These two stages receive the same PC value at the beginning of the stage; as a result, we
   consider them as one stage. PC_GEN specifies the next virtual PC value that will be fetched. The
@@ -25,8 +22,6 @@ Note that in the current implementation, the I-TLB is a pass-through module.
  
 
 ## PC Generation
-
-<img src="./schm/BlackParrot_FE_pcgen.svg">
 
 *pc\_gen.v* provides the interfaces for the PC\_GEN logics and also interfacing other modules in the
   FE. PC\_GEN provides the pc for the I-TLB and I-Cache. PC\_GEN also provides the BTB, BHT and
@@ -121,9 +116,6 @@ During the branch prediction, the FE reads the corresponding entry taken or not 
 * __predict\_o__ - the bit used to predict next branch
   
 ## I-Cache
-
-<img src="./schm/BlackParrot_FE_icache.svg">
-
 The I-Cache (I$) is implemented as a virtually-indexed physically-tagged cache. The I-Cache module
   consists of two components: cache logic and Local Cache Engine (LCE). The cache logic is a
   two-staged pipelined cache (consisting of Tag-Lookup (TL) stage and Tag-Verify (TV) stage) and the

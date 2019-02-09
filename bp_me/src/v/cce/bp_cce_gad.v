@@ -1,56 +1,62 @@
 /**
- * bp_cce_gad.v
+ *
+ * Name:
+ *   bp_cce_gad.v
+ *
+ * Description:
  *
  */
 
 `include "bp_cce_inst_pkg.v"
 `include "bp_common_me_if.vh"
 
-
 module bp_cce_gad
   import bp_cce_inst_pkg::*;
-  #(parameter num_way_groups_p="inv"
-    ,parameter num_lce_p="inv"
-    ,parameter lce_assoc_p="inv"
-    ,parameter tag_width_p="inv"
-    ,parameter lg_num_way_groups_lp=`BSG_SAFE_CLOG2(num_way_groups_p)
-    ,parameter lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
-    ,parameter lg_lce_assoc_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
-    ,parameter entry_width_lp=tag_width_p+`bp_cce_coh_bits
-    ,parameter tag_set_width_lp=(entry_width_lp*lce_assoc_p)
-    ,parameter way_group_width_lp=(tag_set_width_lp*num_lce_p)
-    ,parameter harden_p=0
+  #(parameter num_way_groups_p         = "inv"
+    , parameter num_lce_p              = "inv"
+    , parameter lce_assoc_p            = "inv"
+    , parameter tag_width_p            = "inv"
+
+    // Default parameters
+    , parameter harden_p               = 0
+
+    // Derived parameters
+    , localparam lg_num_way_groups_lp  = `BSG_SAFE_CLOG2(num_way_groups_p)
+    , localparam lg_num_lce_lp         = `BSG_SAFE_CLOG2(num_lce_p)
+    , localparam lg_lce_assoc_lp       = `BSG_SAFE_CLOG2(lce_assoc_p)
+    , localparam entry_width_lp        = (tag_width_p+`bp_cce_coh_bits)
+    , localparam tag_set_width_lp      = (entry_width_lp*lce_assoc_p)
+    , localparam way_group_width_lp    = (tag_set_width_lp*num_lce_p)
   )
-  (
-    input                                                 clk_i
-    ,input                                                reset_i
+  (input                                                  clk_i
+   , input                                                reset_i
 
-    ,input [way_group_width_lp-1:0]                        way_group_i
-    ,input [lg_num_lce_lp-1:0]                             req_lce_i
-    ,input [tag_width_p-1:0]                               req_tag_i
-    ,input [lg_lce_assoc_lp-1:0]                           lru_way_i
-    ,input                                                 req_type_flag_i
-    ,input                                                 lru_dirty_flag_i
+   , input [way_group_width_lp-1:0]                        way_group_i
+   , input [lg_num_lce_lp-1:0]                             req_lce_i
+   , input [tag_width_p-1:0]                               req_tag_i
+   , input [lg_lce_assoc_lp-1:0]                           lru_way_i
+   , input                                                 req_type_flag_i
+   , input                                                 lru_dirty_flag_i
 
-    // high if the current op is a GAD op
-    ,input                                                 gad_v_i
+   // high if the current op is a GAD op
+   , input                                                 gad_v_i
 
-    ,output logic [lg_lce_assoc_lp-1:0]                    req_addr_way_o
-    ,output logic [`bp_cce_coh_bits-1:0]                   coh_state_o
+   , output logic [lg_lce_assoc_lp-1:0]                    req_addr_way_o
+   , output logic [`bp_cce_coh_bits-1:0]                   coh_state_o
 
-    ,output logic [tag_width_p-1:0]                        lru_tag_o
+   , output logic [tag_width_p-1:0]                        lru_tag_o
 
-    ,output logic                                          transfer_flag_o
-    ,output logic [lg_num_lce_lp-1:0]                      transfer_lce_o
-    ,output logic [lg_lce_assoc_lp-1:0]                    transfer_way_o
-    ,output logic                                          replacement_flag_o
-    ,output logic                                          upgrade_flag_o
-    ,output logic                                          invalidate_flag_o
-    ,output logic                                          exclusive_flag_o
+   , output logic                                          transfer_flag_o
+   , output logic [lg_num_lce_lp-1:0]                      transfer_lce_o
+   , output logic [lg_lce_assoc_lp-1:0]                    transfer_way_o
+   , output logic                                          replacement_flag_o
+   , output logic                                          upgrade_flag_o
+   , output logic                                          invalidate_flag_o
+   , output logic                                          exclusive_flag_o
 
-    ,output logic [num_lce_p-1:0]                          sharers_hits_o
-    ,output logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0]     sharers_ways_o
-    ,output logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0]    sharers_coh_states_o
+   , output logic [num_lce_p-1:0]                          sharers_hits_o
+   , output logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0]     sharers_ways_o
+   , output logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0]    sharers_coh_states_o
   );
 
   logic hit;
@@ -98,17 +104,17 @@ module bp_cce_gad
   end
 
   // combinational logic to encode one-hot hit vector per LCE tag set into a valid bit and way ID
-  genvar i, j;
+  genvar i;
   generate
     for (i = 0; i < num_lce_p; i=i+1) begin : hit_vec_to_way_id_gen
       bsg_encode_one_hot
         #(.width_p(lce_assoc_p)
-         )
-         tag_set_hits_to_way_id
+          )
+        tag_set_hits_to_way_id
          (.i(tag_set_hits[i])
           ,.addr_o(tag_set_hit_ways[i])
           ,.v_o(tag_set_hit_v[i])
-         );
+          );
     end
   endgenerate
 
@@ -143,7 +149,7 @@ module bp_cce_gad
   end
 
   // Flag outputs
-  int n, m;
+  int n;
   always_comb
   begin
     // exclusive_flag - cached exclusively in a LCE other than requesting LCE
@@ -175,18 +181,19 @@ module bp_cce_gad
     // if the LRU way is in S (and therefore, lruDirty should also be false)
     // NOTE: it is possible that prior to the current request, the LRU block was invalidated, and
     // thus, we only do replacement if the block is still in E or M state
-    replacement_flag_o = ((lru_coh_state == e_MESI_E) || (lru_coh_state == e_MESI_M)) & lru_dirty_flag_i;
+    replacement_flag_o = ((lru_coh_state == e_MESI_E) || (lru_coh_state == e_MESI_M))
+                         & lru_dirty_flag_i;
   end
 
   assign transfer_lce_one_hot = ~lce_id_one_hot & sharers_hits_o;
   bsg_encode_one_hot
     #(.width_p(num_lce_p)
-     )
-     tag_set_hits_to_way_id
+      )
+    tag_set_hits_to_way_id
      (.i(transfer_lce_one_hot)
       ,.addr_o(transfer_lce_n)
       ,.v_o(transfer_lce_v)
-     );
+      );
 
   always_comb
   begin

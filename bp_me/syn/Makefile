@@ -9,8 +9,8 @@ BP_COMMON_PATH = $(TOP)/bp_common
 
 CADENV_PATH    = $(TOP)/bsg_cadenv
 BSG_IP_PATH	   = $(TOP)/bsg_ip_cores
-VERILATOR_PATH = $(TOP)/verilator-4.006
-SYSTEMC_PATH   = $(TOP)/systemc-2.3.2
+VERILATOR_PATH = $(TOP)/verilator
+SYSTEMC_PATH   = $(TOP)/systemc
 
 SRC_PATH	= $(BP_ME_PATH)/src
 INC_PATH  = $(SRC_PATH)/include/v

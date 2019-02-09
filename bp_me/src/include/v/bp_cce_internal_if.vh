@@ -1,5 +1,10 @@
 /**
- * bp_cce_internal_if.vh
+ *
+ * Name:
+ *   bp_cce_internal_if.vh
+ *
+ * Description:
+ *   This file defines the internal interface structs used within the CCE.
  *
  */
 
@@ -11,6 +16,10 @@
 
 import bp_cce_inst_pkg::*;
 
+/*
+ * bp_cce_inst_decoded_s defines the decoded form of the CCE microcode instructions
+ *
+ */
 typedef struct packed {
 
   bp_cce_inst_minor_op_u                   minor_op_u;
@@ -66,10 +75,13 @@ typedef struct packed {
   logic [`bp_cce_inst_num_gpr-1:0]         gpr_w_mask;
   logic                                    gpr_w_v;
 
-  logic                                    req_w_v; // req_lce, req_addr, req_tag
-  logic                                    req_addr_way_w_v; // req_addr_way
+  // Write enable for req_lce, req_addr, req_tab registers
+  logic                                    req_w_v;
+  // Write enable for req_addr_way register
+  logic                                    req_addr_way_w_v;
   logic                                    lru_way_w_v;
-  logic                                    transfer_lce_w_v; // transfer_lce, transfer_lce_way
+  // Write enable for tr_lce and tr_lce_way registers
+  logic                                    transfer_lce_w_v;
   logic                                    cache_block_data_w_v;
   logic                                    ack_type_w_v;
 
@@ -90,7 +102,6 @@ typedef struct packed {
   logic                                    lce_data_cmd_v;
   logic                                    mem_cmd_v;
   logic                                    mem_data_cmd_v;
-
 
 } bp_cce_inst_decoded_s;
 
