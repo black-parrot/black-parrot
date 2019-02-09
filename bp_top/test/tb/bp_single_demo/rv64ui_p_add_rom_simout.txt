@@ -1,7 +1,7 @@
 Notice: timing checks disabled with +notimingcheck at compile-time
 Chronologic VCS simulator copyright 1991-2016
 Contains Synopsys proprietary information.
-Compiler version L-2016.06-SP2-15_Full64; Runtime version L-2016.06-SP2-15_Full64;  Feb  9 01:54 2019
+Compiler version L-2016.06-SP2-15_Full64; Runtime version L-2016.06-SP2-15_Full64;  Feb  9 02:16 2019
 test_bp.clock_gen with cycle_time_p          10
 ## bsg_mem_1r1w: instantiating width_p=         38, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.cce_lce_cmd_network.rof[0].fi2.efi3.coherence_network_channel_node.rof[0].fi.twofer.mem_1r1w)
 ## bsg_mem_1r1w: instantiating width_p=         38, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.cce_lce_cmd_network.rof[0].fi2.efi3.coherence_network_channel_node.rof[2].fi.twofer.mem_1r1w)
@@ -2215,5 +2215,5 @@ $finish called from file "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/
 $finish at simulation time                29165
            V C S   S i m u l a t i o n   R e p o r t 
 Time: 29165 ps
-CPU Time:      1.790 seconds;       Data structure size:   8.9Mb
-Sat Feb  9 01:54:51 2019
+CPU Time:      1.610 seconds;       Data structure size:   8.9Mb
+Sat Feb  9 02:16:18 2019
