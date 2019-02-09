@@ -40,12 +40,12 @@ module bp_be_instr_decoder
   (input [instr_width_lp-1:0]     instr_i
 
    // Various sources of nop
-   , input                        fe_nop_v_i
-   , input                        be_nop_v_i
-   , input                        me_nop_v_i
+   , input                              fe_nop_v_i
+   , input                              be_nop_v_i
+   , input                              me_nop_v_i
 
-   , output [decode_width_lp-1:0] decode_o
-   , output                       illegal_instr_o
+   , output logic [decode_width_lp-1:0] decode_o
+   , output logic                       illegal_instr_o
    );
 
 // Cast input and output ports 

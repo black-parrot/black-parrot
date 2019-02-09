@@ -68,14 +68,14 @@ module bp_be_regfile
    , input [reg_data_width_lp-1:0]  rd_data_i
 
    // rs1 read bus
-   , input                          rs1_r_v_i
-   , input [reg_addr_width_lp-1:0]  rs1_addr_i
-   , output [reg_data_width_lp-1:0] rs1_data_o
+   , input                                rs1_r_v_i
+   , input        [reg_addr_width_lp-1:0] rs1_addr_i
+   , output logic [reg_data_width_lp-1:0] rs1_data_o
    
    // rs2 read bus
-   , input                          rs2_r_v_i
-   , input [reg_addr_width_lp-1:0]  rs2_addr_i
-   , output [reg_data_width_lp-1:0] rs2_data_o
+   , input                                rs2_r_v_i
+   , input        [reg_addr_width_lp-1:0] rs2_addr_i
+   , output logic [reg_data_width_lp-1:0] rs2_data_o
    );
 
 initial 

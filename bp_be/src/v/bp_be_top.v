@@ -46,7 +46,7 @@
  *   fe_cmd_rdy_i                -
  *
  *   fe_queue_clr_o              -
- *   fe_queue_ckpt_inc_o         -
+ *   fe_queue_dequeue_inc_o      -
  *   fe_queue_rollback_o         -
  *
  *   lce_cce_req_o               -
@@ -147,7 +147,7 @@ module bp_be_top
    , output logic                                 fe_queue_rdy_o
 
    , output logic                                 fe_queue_clr_o
-   , output logic                                 fe_queue_ckpt_inc_o
+   , output logic                                 fe_queue_dequeue_o
    , output logic                                 fe_queue_rollback_o
  
    // FE cmd interface
@@ -220,7 +220,7 @@ bp_be_exception_s      cmt_trace_exc;
 bp_be_pipe_stage_reg_s cmt_trace_stage_reg;
 bp_be_calc_result_s    cmt_trace_result;
 
-logic chk_dispatch_v, chk_psn_isd, chk_psn_ex, chk_roll, chk_instr_ckpt_v;
+logic chk_dispatch_v, chk_psn_isd, chk_psn_ex, chk_roll, chk_instr_dequeue_v;
 
 // Module instantiations
 bp_be_checker_top 
@@ -247,7 +247,7 @@ bp_be_checker_top
 
    ,.chk_roll_fe_o(fe_queue_rollback_o)
    ,.chk_flush_fe_o(fe_queue_clr_o)
-   ,.chk_ckpt_fe_o(fe_queue_ckpt_inc_o)
+   ,.chk_dequeue_fe_o(fe_queue_dequeue_o)
 
    ,.fe_queue_i(fe_queue_i)
    ,.fe_queue_v_i(fe_queue_v_i)

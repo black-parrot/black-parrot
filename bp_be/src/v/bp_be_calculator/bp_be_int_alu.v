@@ -49,7 +49,7 @@ module bp_be_int_alu
    , input                          opw_v_i
 
    // Result
-   , output [reg_data_width_lp-1:0] result_o
+   , output logic [reg_data_width_lp-1:0] result_o
    );
 
 // Intermediate connections

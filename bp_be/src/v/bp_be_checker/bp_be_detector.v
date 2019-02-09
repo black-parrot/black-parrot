@@ -64,10 +64,10 @@ module bp_be_detector
    , input                             mmu_cmd_ready_i
 
    // Pipeline control signals from the checker to the calculator
-   , output                            chk_dispatch_v_o
-   , output                            chk_roll_o
-   , output                            chk_poison_isd_o
-   , output                            chk_poison_ex_o
+   , output logic                      chk_dispatch_v_o
+   , output logic                      chk_roll_o
+   , output logic                      chk_poison_isd_o
+   , output logic                      chk_poison_ex_o
   );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p
@@ -81,7 +81,7 @@ bp_be_calc_status_s      calc_status;
 bp_be_dep_status_s [4:0] dep_status;
 
 assign calc_status = calc_status_i;
-assign dep_status  = dep_status;
+assign dep_status  = calc_status.dep_status;
 
 // Suppress unused inputs
 wire unused1 = clk_i;

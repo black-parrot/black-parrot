@@ -56,8 +56,8 @@ module bp_be_pipe_int
    , input [mhartid_width_lp-1:0]   mhartid_i
 
    // Pipeline results
-   , output [reg_data_width_lp-1:0] result_o
-   , output [reg_data_width_lp-1:0] br_tgt_o
+   , output logic [reg_data_width_lp-1:0] result_o
+   , output logic [reg_data_width_lp-1:0] br_tgt_o
    );
 
 // Cast input and output ports 

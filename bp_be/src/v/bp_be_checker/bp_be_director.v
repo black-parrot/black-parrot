@@ -70,18 +70,18 @@ module bp_be_director
    , input                             reset_i
 
    // Dependency information
-   , input [calc_status_width_lp-1:0]  calc_status_i
-   , output [eaddr_width_lp-1:0]       expected_npc_o
+   , input        [calc_status_width_lp-1:0]  calc_status_i
+   , output logic [eaddr_width_lp-1:0]        expected_npc_o
 
    // FE-BE interface
    , output [fe_cmd_width_lp-1:0]      fe_cmd_o
-   , output                            fe_cmd_v_o
+   , output logic                      fe_cmd_v_o
    , input                             fe_cmd_ready_i
 
    // FE cmd queue control signals
-   , output                            chk_flush_fe_o
-   , output                            chk_dequeue_fe_o
-   , output                            chk_roll_fe_o
+   , output logic                      chk_flush_fe_o
+   , output logic                      chk_dequeue_fe_o
+   , output logic                      chk_roll_fe_o
   );
 
 // Declare parameterized structures
@@ -204,7 +204,7 @@ always_comb
     //   not being executed, then we're still waiting for the previous npc
     expected_npc_o = npc_w_v ? npc_n : npc_r;
     // Increment the checkpoint if there's a committing instruction
-    chk_dequeue_fe_o = ~calc_status.mem3_cache_miss_v & calc_status.instr_dequeue_v;
+    chk_dequeue_fe_o = ~calc_status.mem3_cache_miss_v & calc_status.instr_cmt_v;
     // Flush the FE queue if there's a pc redirect
     chk_flush_fe_o = fe_cmd_v_o & (fe_cmd.opcode == e_op_pc_redirection);
     // Rollback the FE queue on a cache miss

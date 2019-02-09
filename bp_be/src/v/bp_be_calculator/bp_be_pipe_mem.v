@@ -60,16 +60,16 @@ module bp_be_pipe_mem
    , input [reg_data_width_lp-1:0]  imm_i
    , input [exception_width_lp-1:0] exc_i
 
-   , output [mmu_cmd_width_lp-1:0]  mmu_cmd_o
-   , output                         mmu_cmd_v_o
-   , input                          mmu_cmd_ready_i
+   , output logic [mmu_cmd_width_lp-1:0]  mmu_cmd_o
+   , output logic                         mmu_cmd_v_o
+   , input                                mmu_cmd_ready_i
 
-   , input [mmu_resp_width_lp-1:0]  mmu_resp_i
-   , input                          mmu_resp_v_i
-   , output                         mmu_resp_ready_o
+   , input       [mmu_resp_width_lp-1:0]  mmu_resp_i
+   , input                                mmu_resp_v_i
+   , output logic                         mmu_resp_ready_o
 
-   , output [reg_data_width_lp-1:0] result_o
-   , output                         cache_miss_o
+   , output logic [reg_data_width_lp-1:0] result_o
+   , output logic                         cache_miss_o
    );
 
 // Cast input and output ports 

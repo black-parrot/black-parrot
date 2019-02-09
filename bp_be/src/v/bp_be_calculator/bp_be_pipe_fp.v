@@ -45,7 +45,7 @@ module bp_be_pipe_fp
    , input [exception_width_lp-1:0] exc_i
 
    // Pipeline result
-   , output [reg_data_width_lp-1:0] result_o
+   , output logic [reg_data_width_lp-1:0] result_o
    );
 
 // Cast input and output ports 

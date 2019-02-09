@@ -97,28 +97,28 @@ module bp_be_calculator_top
   // Calculator - Checker interface
   , input [issue_pkt_width_lp-1:0]       issue_pkt_i
   , input                                issue_pkt_v_i
-  , output                               issue_pkt_ready_o
+  , output logic                         issue_pkt_ready_o
 
   , input                                chk_dispatch_v_i
   , input                                chk_roll_i
   , input                                chk_poison_ex_i
   , input                                chk_poison_isd_i
 
-  , output [calc_status_width_lp-1:0]    calc_status_o
+  , output logic [calc_status_width_lp-1:0]   calc_status_o
 
   // MMU interface
-  , output [mmu_cmd_width_lp-1:0]        mmu_cmd_o
-  , output                               mmu_cmd_v_o
-  , input                                mmu_cmd_ready_i
+  , output logic [mmu_cmd_width_lp-1:0]       mmu_cmd_o
+  , output logic                              mmu_cmd_v_o
+  , input                                     mmu_cmd_ready_i
 
-  , input [mmu_resp_width_lp-1:0]        mmu_resp_i
-  , input                                mmu_resp_v_i
-  , output                               mmu_resp_ready_o
+  , input [mmu_resp_width_lp-1:0]             mmu_resp_i
+  , input                                     mmu_resp_v_i
+  , output logic                              mmu_resp_ready_o
 
   // Commit tracer
-  , output [pipe_stage_reg_width_lp-1:0] cmt_trace_stage_reg_o
-  , output [calc_result_width_lp-1:0]    cmt_trace_result_o
-  , output [exception_width_lp-1:0]      cmt_trace_exc_o
+  , output logic [pipe_stage_reg_width_lp-1:0] cmt_trace_stage_reg_o
+  , output logic [calc_result_width_lp-1:0]    cmt_trace_result_o
+  , output logic [exception_width_lp-1:0]      cmt_trace_exc_o
   );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p
@@ -493,7 +493,7 @@ always_comb
     // Additional commit point information
     calc_status.mem3_v            = calc_stage_r[2].decode.pipe_mem_v & ~|exc_stage_r[2];
     calc_status.mem3_pc           = calc_stage_r[2].instr_metadata.pc;
-    calc_status.cache_miss_mem3_v = cache_miss_mem3
+    calc_status.mem3_cache_miss_v = cache_miss_mem3
                                     & (calc_stage_r[2].decode.dcache_r_v
                                        | calc_stage_r[2].decode.dcache_w_v
                                        )

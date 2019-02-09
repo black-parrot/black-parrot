@@ -131,7 +131,7 @@ module bp_be_mmu_top
                                                                   ,cce_block_size_in_bits_lp
                                                                   ,lce_assoc_p
                                                                   )
-   ,localparam lce_id_width_lp=`bp_lce_id_width
+   ,localparam lce_id_width_lp=4 // TODO: parameterize proc_cfg based on width
    )
   (input clk_i
    ,input reset_i
@@ -223,10 +223,8 @@ mock_tlb #(.tag_width_p(12)
            ,.tlb_miss_o(tlb_miss)
            );
 
-/* TODO: Un-hardcode these values */
 bp_be_dcache #(
-            .lce_id_width_p(`BSG_SAFE_CLOG2(num_lce_p)) // should be calculated from num_lce_p
-            ,.data_width_p(64) 
+            .data_width_p(64) 
             ,.sets_p(lce_sets_p)
             ,.ways_p(lce_assoc_p)
             ,.paddr_width_p(56)

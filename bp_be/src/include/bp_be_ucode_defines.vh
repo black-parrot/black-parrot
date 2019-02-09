@@ -110,7 +110,7 @@ typedef struct packed
 
 typedef struct packed
 {
-  logic psn_v;
+  logic poison_v;
   logic roll_v;
   logic illegal_instr_v;
   logic tlb_miss_v;

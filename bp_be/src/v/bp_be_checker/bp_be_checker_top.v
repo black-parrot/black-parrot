@@ -36,7 +36,7 @@
  *    
  *   chk_roll_fe_o               - Command to rollback the FE queue to the last checkpoint 
  *   chk_flush_fe_o              - Command to flush the FE queue (e.g. on a mispredict)
- *   chk_ckpt_fe_o               - An instruction has committed in the BE
+ *   chk_dequeue_fe_o            - An instruction has committed in the BE
  *
  *   issue_pkt_o                 - Issuing instruction with pre-decode information
  *   issue_pkt_v_o               - "ready-then-valid" interface
