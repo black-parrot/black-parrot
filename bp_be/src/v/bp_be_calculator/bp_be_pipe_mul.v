@@ -59,24 +59,23 @@ assign exc    = exc_i;
 wire unused0 = clk_i;
 wire unused1 = reset_i;
 
-wire[decode_width_lp-1:0]    unused2 = decode_i;
-wire[reg_data_width_lp-1:0]  unused3 = rs1_i;
-wire[reg_data_width_lp-1:0]  unused4 = rs2_i;
-wire[exception_width_lp-1:0] unused5 = exc_i;
+wire [decode_width_lp-1:0]    unused2 = decode_i;
+wire [reg_data_width_lp-1:0]  unused3 = rs1_i;
+wire [reg_data_width_lp-1:0]  unused4 = rs2_i;
+wire [exception_width_lp-1:0] unused5 = exc_i;
 
 // Submodule connections
 
 // Module instantiations
 
 always_comb 
-  begin : pipeline
+  begin
     result_o = '0;
   end 
 
-// Runtime assertions
 always_comb 
   begin : runtime_assertions
-    assert(~decode.pipe_mul_v) 
+    assert(reset_i | ~decode.pipe_mul_v) 
       else $warning("RV64M is not currently supported");
   end
 

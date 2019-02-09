@@ -1,5 +1,9 @@
 /**
- * bp_cce_reg.v
+ *
+ * Name:
+ *   bp_cce_reg.v
+ *
+ * Description:
  *
  */
 
@@ -10,101 +14,117 @@
 
 module bp_cce_reg
   import bp_cce_inst_pkg::*;
-  #(parameter num_lce_p="inv"
-    ,parameter num_cce_p="inv"
-    ,parameter num_mem_p="inv"
-    ,parameter addr_width_p="inv"
-    ,parameter lce_assoc_p="inv"
-    ,parameter lce_sets_p="inv"
-    ,parameter block_size_in_bytes_p="inv"
-    ,parameter lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
-    ,parameter lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
-    ,parameter lg_num_mem_lp=`BSG_SAFE_CLOG2(num_mem_p)
-    ,parameter block_size_in_bits_lp=block_size_in_bytes_p*8
-    ,parameter lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
-    ,parameter lg_lce_assoc_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
-    ,parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-    ,parameter tag_width_lp=addr_width_p-lg_lce_sets_lp-lg_block_size_in_bytes_lp // TODO: breaks if sets == 1
-    ,parameter entry_width_lp=tag_width_lp+`bp_cce_coh_bits
-    ,parameter tag_set_width_lp=(entry_width_lp*lce_assoc_p)
-    ,parameter way_group_width_lp=(tag_set_width_lp*num_lce_p)
+  #(parameter num_lce_p                     = "inv"
+    , parameter num_cce_p                   = "inv"
+    , parameter addr_width_p                = "inv"
+    , parameter lce_assoc_p                 = "inv"
+    , parameter lce_sets_p                  = "inv"
+    , parameter block_size_in_bytes_p       = "inv"
 
-    ,parameter bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p)
-    ,parameter bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, addr_width_p)
-    ,parameter bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, addr_width_p, block_size_in_bits_lp)
-    ,parameter bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(num_mem_p, num_cce_p, addr_width_p, num_lce_p, lce_assoc_p)
-    ,parameter bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(num_mem_p, num_cce_p, addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    // Derived parameters
+    , localparam lg_num_lce_lp              = `BSG_SAFE_CLOG2(num_lce_p)
+    , localparam lg_num_cce_lp              = `BSG_SAFE_CLOG2(num_cce_p)
+    , localparam block_size_in_bits_lp      = (block_size_in_bytes_p*8)
+    , localparam lg_block_size_in_bytes_lp  = `BSG_SAFE_CLOG2(block_size_in_bytes_p)
+    , localparam lg_lce_assoc_lp            = `BSG_SAFE_CLOG2(lce_assoc_p)
+    , localparam lg_lce_sets_lp             = `BSG_SAFE_CLOG2(lce_sets_p)
+    , localparam tag_width_lp               = (addr_width_p-lg_lce_sets_lp-lg_block_size_in_bytes_lp)
+    , localparam entry_width_lp             = (tag_width_lp+`bp_cce_coh_bits)
+    , localparam tag_set_width_lp           = (entry_width_lp*lce_assoc_p)
+    , localparam way_group_width_lp         = (tag_set_width_lp*num_lce_p)
+
+    , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
+                                                               ,num_lce_p
+                                                               ,addr_width_p
+                                                               ,lce_assoc_p)
+
+    , localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
+                                                                 ,num_lce_p
+                                                                 ,addr_width_p)
+
+    , localparam bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p
+                                                                           ,num_lce_p
+                                                                           ,addr_width_p
+                                                                           ,block_size_in_bits_lp)
+
+    , localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(addr_width_p
+                                                                 ,num_lce_p
+                                                                 ,lce_assoc_p)
+
+    , localparam bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(addr_width_p
+                                                                           ,block_size_in_bits_lp
+                                                                           ,num_lce_p
+                                                                           ,lce_assoc_p)
+
   )
-  (
-    input                                                                  clk_i
-    ,input                                                                 reset_i
+  (input                                                                   clk_i
+   , input                                                                 reset_i
 
-    ,input bp_cce_inst_decoded_s                                           decoded_inst_i
+   , input bp_cce_inst_decoded_s                                           decoded_inst_i
 
-    ,input [bp_lce_cce_req_width_lp-1:0]                                   lce_req_i
-    ,input [bp_lce_cce_data_resp_width_lp-1:0]                             lce_data_resp_i
-    ,input [bp_lce_cce_resp_width_lp-1:0]                                  lce_resp_i
+   , input [bp_lce_cce_req_width_lp-1:0]                                   lce_req_i
+   , input [bp_lce_cce_data_resp_width_lp-1:0]                             lce_data_resp_i
+   , input [bp_lce_cce_resp_width_lp-1:0]                                  lce_resp_i
 
-    ,input [bp_mem_cce_resp_width_lp-1:0]                                  mem_resp_i
-    ,input [bp_mem_cce_data_resp_width_lp-1:0]                             mem_data_resp_i
+   , input [bp_mem_cce_resp_width_lp-1:0]                                  mem_resp_i
+   , input [bp_mem_cce_data_resp_width_lp-1:0]                             mem_data_resp_i
 
-    ,input [`bp_cce_inst_gpr_width-1:0]                                    alu_res_i
-    ,input [`bp_cce_inst_gpr_width-1:0]                                    mov_src_i
+   , input [`bp_cce_inst_gpr_width-1:0]                                    alu_res_i
+   , input [`bp_cce_inst_gpr_width-1:0]                                    mov_src_i
 
-    ,input [way_group_width_lp-1:0]                                        dir_way_group_o_i
-    ,input                                                                 dir_way_group_v_o_i
-    ,input [`bp_cce_coh_bits-1:0]                                          dir_coh_state_o_i
-    ,input                                                                 dir_entry_v_o_i
-    ,input                                                                 dir_pending_o_i
-    ,input                                                                 dir_pending_v_o_i
+   , input [way_group_width_lp-1:0]                                        dir_way_group_o_i
+   , input                                                                 dir_way_group_v_o_i
+   , input [`bp_cce_coh_bits-1:0]                                          dir_coh_state_o_i
+   , input                                                                 dir_entry_v_o_i
+   , input                                                                 dir_pending_o_i
+   , input                                                                 dir_pending_v_o_i
 
-    ,input [num_lce_p-1:0]                                                 gad_sharers_hits_i
-    ,input [num_lce_p-1:0][lg_lce_assoc_lp-1:0]                            gad_sharers_ways_i
-    ,input [num_lce_p-1:0][`bp_cce_coh_bits-1:0]                           gad_sharers_coh_states_i
+   , input [num_lce_p-1:0]                                                 gad_sharers_hits_i
+   , input [num_lce_p-1:0][lg_lce_assoc_lp-1:0]                            gad_sharers_ways_i
+   , input [num_lce_p-1:0][`bp_cce_coh_bits-1:0]                           gad_sharers_coh_states_i
 
-    ,input [lg_lce_assoc_lp-1:0]                                           gad_req_addr_way_i
-    ,input [`bp_cce_coh_bits-1:0]                                          gad_coh_state_i
-    ,input [tag_width_lp-1:0]                                              gad_lru_tag_i
-    ,input [lg_num_lce_lp-1:0]                                             gad_transfer_lce_i
-    ,input [lg_lce_assoc_lp-1:0]                                           gad_transfer_lce_way_i
-    ,input                                                                 gad_transfer_flag_i
-    ,input                                                                 gad_replacement_flag_i
-    ,input                                                                 gad_upgrade_flag_i
-    ,input                                                                 gad_invalidate_flag_i
-    ,input                                                                 gad_exclusive_flag_i
+   , input [lg_lce_assoc_lp-1:0]                                           gad_req_addr_way_i
+   , input [`bp_cce_coh_bits-1:0]                                          gad_coh_state_i
+   , input [tag_width_lp-1:0]                                              gad_lru_tag_i
+   , input [lg_num_lce_lp-1:0]                                             gad_transfer_lce_i
+   , input [lg_lce_assoc_lp-1:0]                                           gad_transfer_lce_way_i
+   , input                                                                 gad_transfer_flag_i
+   , input                                                                 gad_replacement_flag_i
+   , input                                                                 gad_upgrade_flag_i
+   , input                                                                 gad_invalidate_flag_i
+   , input                                                                 gad_exclusive_flag_i
 
-    // Register value outputs
+   // Register value outputs
 
-    ,output logic [lg_num_lce_lp-1:0]                                      req_lce_o
-    ,output logic [addr_width_p-1:0]                                       req_addr_o
-    ,output logic [tag_width_lp-1:0]                                       req_tag_o
+   , output logic [lg_num_lce_lp-1:0]                                      req_lce_o
+   , output logic [addr_width_p-1:0]                                       req_addr_o
+   , output logic [tag_width_lp-1:0]                                       req_tag_o
 
 
-    ,output logic [lg_lce_assoc_lp-1:0]                                    req_addr_way_o
-    ,output logic [`bp_cce_coh_bits-1:0]                                   req_coh_state_o
+   , output logic [lg_lce_assoc_lp-1:0]                                    req_addr_way_o
+   , output logic [`bp_cce_coh_bits-1:0]                                   req_coh_state_o
 
-    ,output logic [lg_lce_assoc_lp-1:0]                                    lru_way_o
-    ,output logic [addr_width_p-1:0]                                       lru_addr_o
+   , output logic [lg_lce_assoc_lp-1:0]                                    lru_way_o
+   , output logic [addr_width_p-1:0]                                       lru_addr_o
 
-    ,output logic [lg_num_lce_lp-1:0]                                      transfer_lce_o
-    ,output logic [lg_lce_assoc_lp-1:0]                                    transfer_lce_way_o
+   , output logic [lg_num_lce_lp-1:0]                                      transfer_lce_o
+   , output logic [lg_lce_assoc_lp-1:0]                                    transfer_lce_way_o
 
-    ,output logic [`bp_cce_coh_bits-1:0]                                   next_coh_state_o
+   , output logic [`bp_cce_coh_bits-1:0]                                   next_coh_state_o
 
-    ,output logic [block_size_in_bits_lp-1:0]                              cache_block_data_o
+   , output logic [block_size_in_bits_lp-1:0]                              cache_block_data_o
 
-    ,output logic [`bp_cce_inst_num_flags-1:0]                             flags_o
+   , output logic [`bp_cce_inst_num_flags-1:0]                             flags_o
 
-    ,output logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0]   gpr_o
+   , output logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0]   gpr_o
 
-    ,output logic [`bp_lce_cce_ack_type_width-1:0]                         ack_type_o
+   , output logic [`bp_lce_cce_ack_type_width-1:0]                         ack_type_o
 
-    ,output logic [way_group_width_lp-1:0]                                 way_group_o
+   , output logic [way_group_width_lp-1:0]                                 way_group_o
 
-    ,output logic [num_lce_p-1:0]                                          sharers_hits_o
-    ,output logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0]                     sharers_ways_o
-    ,output logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0]                    sharers_coh_states_o
-
+   , output logic [num_lce_p-1:0]                                          sharers_hits_o
+   , output logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0]                     sharers_ways_o
+   , output logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0]                    sharers_coh_states_o
   );
 
   wire unused = dir_pending_v_o_i;
@@ -113,8 +133,9 @@ module bp_cce_reg
   `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p);
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, addr_width_p);
   `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, addr_width_p, block_size_in_bits_lp);
-  `declare_bp_mem_cce_resp_s(num_mem_p, num_cce_p, addr_width_p, num_lce_p, lce_assoc_p);
-  `declare_bp_mem_cce_data_resp_s(num_mem_p, num_cce_p, addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
+
+
+  `declare_bp_me_if(addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
 
   bp_lce_cce_req_s lce_req_s_i;
   bp_lce_cce_resp_s lce_resp_s_i;
@@ -137,7 +158,7 @@ module bp_cce_reg
   logic [lg_num_lce_lp-1:0] req_lce_r, req_lce_n;
   logic [addr_width_p-1:0] req_addr_r, req_addr_n;
   logic [lg_lce_assoc_lp-1:0] req_addr_way_r, req_addr_way_n;
-  logic [`bp_cce_coh_bits-1:0] req_coh_state_r, req_coh_state_n; // TODO _r unsued
+  logic [`bp_cce_coh_bits-1:0] req_coh_state_r, req_coh_state_n;
 
   logic [lg_lce_assoc_lp-1:0] lru_way_r, lru_way_n;
   logic [addr_width_p-1:0] lru_addr_r, lru_addr_n;
@@ -159,7 +180,7 @@ module bp_cce_reg
 
   logic [num_lce_p-1:0] sharers_hits_r, sharers_hits_n;
   logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0] sharers_ways_r, sharers_ways_n;
-  logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0] sharers_coh_states_r, sharers_coh_states_n; // TODO: _r unused
+  logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0] sharers_coh_states_r, sharers_coh_states_n;
 
   always_comb
   begin
@@ -214,11 +235,11 @@ module bp_cce_reg
         req_addr_n = lce_req_s_i.addr;
       end
       e_req_sel_mem_resp: begin
-        req_lce_n = mem_resp_s_i.lce_id;
-        req_addr_n = mem_resp_s_i.req_addr;
+        req_lce_n = mem_resp_s_i.payload.lce_id;
+        req_addr_n = mem_resp_s_i.payload.req_addr;
       end
       e_req_sel_mem_data_resp: begin
-        req_lce_n = mem_data_resp_s_i.lce_id;
+        req_lce_n = mem_data_resp_s_i.payload.lce_id;
         req_addr_n = mem_data_resp_s_i.addr;
       end
       e_req_sel_pending: begin // TODO: v2
@@ -237,10 +258,10 @@ module bp_cce_reg
         req_addr_way_n = gad_req_addr_way_i;
       end
       e_req_addr_way_sel_mem_resp: begin
-        req_addr_way_n = mem_resp_s_i.way_id;
+        req_addr_way_n = mem_resp_s_i.payload.way_id;
       end
       e_req_addr_way_sel_mem_data_resp: begin
-        req_addr_way_n = mem_data_resp_s_i.way_id;
+        req_addr_way_n = mem_data_resp_s_i.payload.way_id;
       end
       default: begin
         req_addr_way_n = '0;
@@ -263,10 +284,10 @@ module bp_cce_reg
         lru_way_n = lce_req_s_i.lru_way_id;
       end
       e_lru_way_sel_mem_resp: begin
-        lru_way_n = mem_resp_s_i.way_id;
+        lru_way_n = mem_resp_s_i.payload.way_id;
       end
       e_lru_way_sel_mem_data_resp: begin
-        lru_way_n = mem_data_resp_s_i.way_id;
+        lru_way_n = mem_data_resp_s_i.payload.way_id;
       end
       e_lru_way_sel_pending: begin
         lru_way_n = '0; // TODO: v2
@@ -291,8 +312,8 @@ module bp_cce_reg
         transfer_lce_way_n = gad_transfer_lce_way_i;
       end
       e_tr_lce_sel_mem_resp: begin
-        transfer_lce_n = mem_resp_s_i.tr_lce_id;
-        transfer_lce_way_n = mem_resp_s_i.tr_way_id;
+        transfer_lce_n = mem_resp_s_i.payload.tr_lce_id;
+        transfer_lce_way_n = mem_resp_s_i.payload.tr_way_id;
       end
       default: begin
         transfer_lce_n = '0;
@@ -317,14 +338,14 @@ module bp_cce_reg
     ack_type_n = lce_resp_s_i.msg_type;
 
     // Flags
-    flags_n[e_flag_sel_pcf] = decoded_inst_i.imm[0];
+    flags_n[e_flag_sel_pcf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
 
     case (decoded_inst_i.rqf_sel)
       e_rqf_lce_req: flags_n[e_flag_sel_rqf] = lce_req_s_i.msg_type;
       e_rqf_mem_resp: flags_n[e_flag_sel_rqf] = mem_resp_s_i.msg_type;
       e_rqf_mem_data_resp: flags_n[e_flag_sel_rqf] = mem_data_resp_s_i.msg_type;
       e_rqf_pending: flags_n[e_flag_sel_rqf] = '0; // TODO: v2
-      e_rqf_imm0: flags_n[e_flag_sel_rqf] = decoded_inst_i.imm[0];
+      e_rqf_imm0: flags_n[e_flag_sel_rqf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
       default: flags_n[e_flag_sel_rqf] = '0;
     endcase
 
@@ -338,8 +359,8 @@ module bp_cce_reg
         flags_n[e_flag_sel_ldf] = '0; // TODO: v2
       end
       e_nerldf_imm0: begin
-        flags_n[e_flag_sel_nerf] = decoded_inst_i.imm[0];
-        flags_n[e_flag_sel_ldf] = decoded_inst_i.imm[0];
+        flags_n[e_flag_sel_nerf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+        flags_n[e_flag_sel_ldf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
       end
       default: begin
         flags_n[e_flag_sel_nerf] = '0;
@@ -349,14 +370,14 @@ module bp_cce_reg
 
     case (decoded_inst_i.nwbf_sel)
       e_nwbf_lce_data_resp: flags_n[e_flag_sel_nwbf] = lce_data_resp_s_i.msg_type;
-      e_nwbf_imm0: flags_n[e_flag_sel_nwbf] = decoded_inst_i.imm[0];
+      e_nwbf_imm0: flags_n[e_flag_sel_nwbf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
       default: flags_n[e_flag_sel_nwbf] = '0;
     endcase
 
     case (decoded_inst_i.tf_sel)
       e_tf_logic: flags_n[e_flag_sel_tf] = gad_transfer_flag_i;
-      e_tf_mem_resp: flags_n[e_flag_sel_tf] = mem_resp_s_i.transfer;
-      e_tf_imm0: flags_n[e_flag_sel_tf] = decoded_inst_i.imm[0];
+      e_tf_mem_resp: flags_n[e_flag_sel_tf] = mem_resp_s_i.payload.transfer;
+      e_tf_imm0: flags_n[e_flag_sel_tf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
       default: flags_n[e_flag_sel_tf] = '0;
     endcase
 
@@ -369,11 +390,11 @@ module bp_cce_reg
         flags_n[e_flag_sel_ef] = gad_exclusive_flag_i;
       end
       e_pruief_imm0: begin
-        flags_n[e_flag_sel_pf] = decoded_inst_i.imm[0];
-        flags_n[e_flag_sel_rf] = decoded_inst_i.imm[0];
-        flags_n[e_flag_sel_uf] = decoded_inst_i.imm[0];
-        flags_n[e_flag_sel_if] = decoded_inst_i.imm[0];
-        flags_n[e_flag_sel_ef] = decoded_inst_i.imm[0];
+        flags_n[e_flag_sel_pf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+        flags_n[e_flag_sel_rf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+        flags_n[e_flag_sel_uf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+        flags_n[e_flag_sel_if] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+        flags_n[e_flag_sel_ef] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
       end
       default: begin
         flags_n[e_flag_sel_pf] = '0;
@@ -385,8 +406,8 @@ module bp_cce_reg
     endcase
 
     case (decoded_inst_i.rwbf_sel)
-      e_rwbf_mem_resp: flags_n[e_flag_sel_rwbf] = mem_resp_s_i.replacement;
-      e_rwbf_imm0: flags_n[e_flag_sel_rwbf] = decoded_inst_i.imm[0];
+      e_rwbf_mem_resp: flags_n[e_flag_sel_rwbf] = mem_resp_s_i.payload.replacement;
+      e_rwbf_imm0: flags_n[e_flag_sel_rwbf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
       default: flags_n[e_flag_sel_rwbf] = '0;
     endcase
 

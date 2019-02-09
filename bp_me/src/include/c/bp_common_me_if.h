@@ -58,6 +58,7 @@ typedef enum {
   e_lce_cce_sync_ack         = 0 // Sync Ack
   ,e_lce_cce_inv_ack         = 1 // Invalidate Tag Ack
   ,e_lce_cce_tr_ack          = 2 // Transfer Ack
+  ,e_lce_cce_coh_ack         = 3 // Coherence Ack
 } bp_lce_cce_ack_type_e;
 
 #define bp_lce_cce_ack_type_width 2
@@ -76,6 +77,8 @@ typedef enum {
   ,e_VI_V = 2
 } bp_cce_coh_vi_e;
 
+#define bp_cce_coh_bits 2
+
 
 #define bp_lce_cce_req_width (LG_N_CCE+LG_N_LCE+1+1+ADDR_WIDTH+LG_LCE_ASSOC+1)
 
@@ -89,12 +92,16 @@ typedef enum {
 
 #define bp_lce_lce_tr_resp_width (LG_N_LCE+LG_N_LCE+LG_LCE_ASSOC+ADDR_WIDTH+DATA_WIDTH_BITS)
 
-#define bp_cce_mem_cmd_width (LG_N_MEM+LG_N_CCE+1+LG_N_LCE+LG_LCE_ASSOC+ADDR_WIDTH)
+#define bp_cce_mem_cmd_payload_width (LG_N_LCE+LG_LCE_ASSOC)
 
-#define bp_cce_mem_data_cmd_width (LG_N_MEM+LG_N_CCE+1+(2*LG_N_LCE)+(2*LG_LCE_ASSOC)+2+(2*ADDR_WIDTH)+DATA_WIDTH_BITS)
+#define bp_cce_mem_data_cmd_payload_width ((2*LG_N_LCE)+(2*LG_LCE_ASSOC)+ADDR_WIDTH+2)
 
-#define bp_mem_cce_resp_width (LG_N_MEM+LG_N_CCE+1+(2*LG_N_LCE)+(2*LG_LCE_ASSOC)+2+ADDR_WIDTH)
+#define bp_cce_mem_cmd_width (1+ADDR_WIDTH+bp_cce_mem_cmd_payload_width)
 
-#define bp_mem_cce_data_resp_width (LG_N_MEM+LG_N_CCE+1+LG_N_LCE+LG_LCE_ASSOC+ADDR_WIDTH+DATA_WIDTH_BITS)
+#define bp_cce_mem_data_cmd_width (1+ADDR_WIDTH+DATA_WIDTH_BITS+bp_cce_mem_data_cmd_payload_width)
+
+#define bp_mem_cce_resp_width (1+bp_cce_mem_data_cmd_payload_width)
+
+#define bp_mem_cce_data_resp_width (1+ADDR_WIDTH+DATA_WIDTH_BITS+bp_cce_mem_cmd_payload_width)
 
 #endif

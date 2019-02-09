@@ -1,21 +1,23 @@
 /**
- *  bp_be_dcache_wbuf_queue.v
+ *  Name:
+ *    bp_be_dcache_wbuf_queue.v
  *
- *  @author tommy
+ *  Description:
+ *    Data cache write buffer queue.
  */
 
 module bp_be_dcache_wbuf_queue
   #(parameter width_p="inv")
   (
     input clk_i
-    ,input [width_p-1:0] data_i
-    ,input el0_en_i
-    ,input el1_en_i
-    ,input mux0_sel_i
-    ,input mux1_sel_i
-    ,output logic [width_p-1:0] el0_snoop_o
-    ,output logic [width_p-1:0] el1_snoop_o
-    ,output logic [width_p-1:0] data_o
+    , input [width_p-1:0] data_i
+    , input el0_en_i
+    , input el1_en_i
+    , input mux0_sel_i
+    , input mux1_sel_i
+    , output logic [width_p-1:0] el0_snoop_o
+    , output logic [width_p-1:0] el1_snoop_o
+    , output logic [width_p-1:0] data_o
   );
 
   logic [width_p-1:0] el0_r, el1_r;

@@ -2,7 +2,7 @@
  *  testbench.v
  */
 
-`include "bp_dcache_pkt.vh"
+`include "bp_be_dcache_pkt.vh"
 `include "bp_common_me_if.vh"
 
 module testbench;
@@ -27,7 +27,7 @@ module testbench;
   localparam vaddr_width_lp=lg_ways_lp+lg_sets_lp+lg_data_mask_width_lp;
   localparam lce_addr_width_lp=vaddr_width_lp+tag_width_p;
   localparam lce_data_width_lp=ways_p*data_width_p;
-  localparam bp_dcache_pkt_width_lp=`bp_dcache_pkt_width(vaddr_width_lp, data_width_p);
+  localparam bp_be_dcache_pkt_width_lp=`bp_be_dcache_pkt_width(vaddr_width_lp, data_width_p);
 
   localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, lce_addr_width_lp, ways_p);
   localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, lce_addr_width_lp);
@@ -64,7 +64,7 @@ module testbench;
 
   // declare structs 
   //
-  `declare_bp_dcache_pkt_s(vaddr_width_lp, data_width_p);
+  `declare_bp_be_dcache_pkt_s(vaddr_width_lp, data_width_p);
 
   // mem subsystem under test
   //
@@ -75,7 +75,7 @@ module testbench;
   logic [num_core_p-1:0] icache_v_lo;
   logic [num_core_p-1:0][inst_width_p-1:0] icache_data_lo;
 
-  bp_dcache_pkt_s [num_core_p-1:0] dcache_pkt_li;
+  bp_be_dcache_pkt_s [num_core_p-1:0] dcache_pkt_li;
   logic [num_core_p-1:0] dcache_pkt_v_li;
   logic [num_core_p-1:0] dcache_pkt_ready_lo;
   logic [num_core_p-1:0][tag_width_p-1:0] dcache_paddr_li;
@@ -179,7 +179,7 @@ module testbench;
     
       assign tr_yumi_li[i] = tr_v_lo[i] & dcache_pkt_ready_lo[i/2];
       assign dcache_paddr_li[i/2] = tr_data_lo[i][data_width_p+vaddr_width_lp+:tag_width_p];
-      assign dcache_pkt_li[i/2].opcode = bp_dcache_opcode_e'(tr_data_lo[i][data_width_p+vaddr_width_lp+tag_width_p+:4]);
+      assign dcache_pkt_li[i/2].opcode = bp_be_dcache_opcode_e'(tr_data_lo[i][data_width_p+vaddr_width_lp+tag_width_p+:4]);
       assign dcache_pkt_li[i/2].vaddr = tr_data_lo[i][data_width_p+:vaddr_width_lp];
       assign dcache_pkt_li[i/2].data = tr_data_lo[i][0+:data_width_p];
       assign dcache_pkt_v_li[i/2] = tr_v_lo[i];

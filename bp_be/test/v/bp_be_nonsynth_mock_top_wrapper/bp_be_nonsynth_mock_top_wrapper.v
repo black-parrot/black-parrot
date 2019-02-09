@@ -33,7 +33,6 @@ module bp_be_nonsynth_mock_top_wrapper_tb
    ,parameter branch_metadata_fwd_width_p=`HC_BRANCH_METADATA_FWD_WIDTH
    ,parameter num_cce_p=`HC_NUM_CCE
    ,parameter num_lce_p=`HC_NUM_LCE
-   ,parameter coh_states_p=`HC_COH_STATES
    ,parameter lce_assoc_p=`HC_LCE_ASSOC
    ,parameter lce_addr_width_p=`HC_LCE_ADDR_WIDTH
    ,parameter lce_data_width_p=`HC_LCE_DATA_WIDTH
@@ -63,7 +62,6 @@ bp_be_nonsynth_mock_top_wrapper #(.vaddr_width_p(vaddr_width_p)
                                   ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
                                   ,.num_cce_p(num_cce_p)
                                   ,.num_lce_p(num_lce_p)
-                                  ,.coh_states_p(coh_states_p)
                                   ,.lce_assoc_p(lce_assoc_p)
                                   ,.lce_addr_width_p(lce_addr_width_p)
                                   ,.lce_data_width_p(lce_data_width_p)

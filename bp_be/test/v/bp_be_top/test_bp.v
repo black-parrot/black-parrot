@@ -20,7 +20,6 @@ module test_bp
    ,parameter num_cce_p="inv"
    ,parameter num_lce_p="inv"
    ,parameter num_mem_p="inv"
-   ,parameter coh_states_p="inv"
    ,parameter lce_sets_p="inv"
    ,parameter lce_assoc_p="inv"
    ,parameter cce_block_size_in_bytes_p="inv"

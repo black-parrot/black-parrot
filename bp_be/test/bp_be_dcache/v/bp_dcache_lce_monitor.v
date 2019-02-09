@@ -1,12 +1,12 @@
 /**
- *  bp_dcache_lce_monitor.v
+ *  bp_be_dcache_lce_monitor.v
  *
  *  @author tommy
  */
 
 `include "bp_common_me_if.vh"
 
-module bp_dcache_lce_monitor
+module bp_be_dcache_lce_monitor
   #(parameter id_p="inv"
     ,parameter data_width_p="inv"
     ,parameter lce_data_width_p="inv"
@@ -22,9 +22,9 @@ module bp_dcache_lce_monitor
     ,parameter lg_sets_lp=`BSG_SAFE_CLOG2(sets_p)
     ,parameter lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
   
-    ,parameter dcache_lce_data_mem_pkt_width_lp=`bp_dcache_lce_data_mem_pkt_width(sets_p, ways_p, lce_data_width_p)
-    ,parameter dcache_lce_tag_mem_pkt_width_lp=`bp_dcache_lce_tag_mem_pkt_width(sets_p, ways_p, tag_width_p)
-    ,parameter dcache_lce_stat_mem_pkt_width_lp=`bp_dcache_lce_stat_mem_pkt_width(sets_p, ways_p)
+    ,parameter dcache_lce_data_mem_pkt_width_lp=`bp_be_dcache_lce_data_mem_pkt_width(sets_p, ways_p, lce_data_width_p)
+    ,parameter dcache_lce_tag_mem_pkt_width_lp=`bp_be_dcache_lce_tag_mem_pkt_width(sets_p, ways_p, tag_width_p)
+    ,parameter dcache_lce_stat_mem_pkt_width_lp=`bp_be_dcache_lce_stat_mem_pkt_width(sets_p, ways_p)
     
     ,parameter lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, lce_addr_width_p, ways_p)
     ,parameter lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, lce_addr_width_p)

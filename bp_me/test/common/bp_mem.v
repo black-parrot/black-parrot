@@ -12,7 +12,6 @@ module bp_mem
   import bp_cce_inst_pkg::*;
   #(parameter num_lce_p="inv"
     ,parameter num_cce_p="inv"
-    ,parameter num_mem_p="inv"
     ,parameter addr_width_p="inv"
     ,parameter lce_assoc_p="inv"
     ,parameter block_size_in_bytes_p="inv"
@@ -24,10 +23,10 @@ module bp_mem
     ,parameter boot_rom_els_p="inv"
     ,parameter lg_boot_rom_els_lp=`BSG_SAFE_CLOG2(boot_rom_els_p)
 
-    ,parameter bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(num_mem_p, num_cce_p, addr_width_p, num_lce_p, lce_assoc_p)
-    ,parameter bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(num_mem_p, num_cce_p, addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
-    ,parameter bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(num_mem_p, num_cce_p, addr_width_p, num_lce_p, lce_assoc_p)
-    ,parameter bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(num_mem_p, num_cce_p, addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    ,parameter bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(addr_width_p, num_lce_p, lce_assoc_p)
+    ,parameter bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    ,parameter bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(addr_width_p, num_lce_p, lce_assoc_p)
+    ,parameter bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
 
     ,parameter mem_addr_width_lp=`BSG_SAFE_CLOG2(mem_els_p)
     ,parameter block_offset_bits_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
@@ -60,11 +59,8 @@ module bp_mem
     ,input logic [boot_rom_width_p-1:0]   boot_rom_data_i
   );
 
-  `declare_bp_cce_mem_cmd_s(num_mem_p, num_cce_p, addr_width_p, num_lce_p, lce_assoc_p);
-  `declare_bp_cce_mem_data_cmd_s(num_mem_p, num_cce_p, addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
-  `declare_bp_mem_cce_resp_s(num_mem_p, num_cce_p, addr_width_p, num_lce_p, lce_assoc_p);
-  `declare_bp_mem_cce_data_resp_s(num_mem_p, num_cce_p, addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
- 
+  `declare_bp_me_if(addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
+
   bp_cce_mem_cmd_s mem_cmd_s_r, mem_cmd_i_s;
   bp_cce_mem_data_cmd_s mem_data_cmd_s_r, mem_data_cmd_i_s;
   bp_mem_cce_resp_s mem_resp_s_o;
@@ -200,11 +196,9 @@ module bp_mem
         RD_CMD: begin
           mem_st <= READY;
 
-          mem_data_resp_s_o.dst_id <= mem_cmd_s_r.src_id;
-          mem_data_resp_s_o.src_id <= mem_cmd_s_r.dst_id;
           mem_data_resp_s_o.msg_type <= mem_cmd_s_r.msg_type;
-          mem_data_resp_s_o.lce_id <= mem_cmd_s_r.lce_id;
-          mem_data_resp_s_o.way_id <= mem_cmd_s_r.way_id;
+          mem_data_resp_s_o.payload.lce_id <= mem_cmd_s_r.payload.lce_id;
+          mem_data_resp_s_o.payload.way_id <= mem_cmd_s_r.payload.way_id;
           mem_data_resp_s_o.addr <= mem_cmd_s_r.addr;
           mem_data_resp_s_o.data <= mem_data_o;
 
@@ -215,16 +209,14 @@ module bp_mem
           mem_data_cmd_yumi_o <= '0;
           mem_st <= READY;
 
-          mem_resp_s_o.dst_id <= mem_data_cmd_s_r.src_id;
-          mem_resp_s_o.src_id <= mem_data_cmd_s_r.dst_id;
           mem_resp_s_o.msg_type <= mem_data_cmd_s_r.msg_type;
-          mem_resp_s_o.lce_id <= mem_data_cmd_s_r.lce_id;
-          mem_resp_s_o.way_id <= mem_data_cmd_s_r.way_id;
-          mem_resp_s_o.req_addr <= mem_data_cmd_s_r.req_addr;
-          mem_resp_s_o.tr_lce_id <= mem_data_cmd_s_r.tr_lce_id;
-          mem_resp_s_o.tr_way_id <= mem_data_cmd_s_r.tr_way_id;
-          mem_resp_s_o.transfer <= mem_data_cmd_s_r.transfer;
-          mem_resp_s_o.replacement <= mem_data_cmd_s_r.replacement;
+          mem_resp_s_o.payload.lce_id <= mem_data_cmd_s_r.payload.lce_id;
+          mem_resp_s_o.payload.way_id <= mem_data_cmd_s_r.payload.way_id;
+          mem_resp_s_o.payload.req_addr <= mem_data_cmd_s_r.payload.req_addr;
+          mem_resp_s_o.payload.tr_lce_id <= mem_data_cmd_s_r.payload.tr_lce_id;
+          mem_resp_s_o.payload.tr_way_id <= mem_data_cmd_s_r.payload.tr_way_id;
+          mem_resp_s_o.payload.transfer <= mem_data_cmd_s_r.payload.transfer;
+          mem_resp_s_o.payload.replacement <= mem_data_cmd_s_r.payload.replacement;
 
           // pull valid high
           mem_resp_v_o <= 1'b1;
