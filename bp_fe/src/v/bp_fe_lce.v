@@ -32,49 +32,48 @@ module bp_fe_lce
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
     , parameter block_size_in_bytes_p="inv"
-    , parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-    , parameter lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
+    , localparam lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
 
     , parameter timeout_max_limit_p=4
 
-    , parameter bp_fe_icache_lce_data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(lce_sets_p
+    , localparam bp_fe_icache_lce_data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(lce_sets_p
                                                                                             ,ways_p
                                                                                             ,lce_data_width_p
                                                                                            )
-    , parameter bp_fe_icache_lce_tag_mem_pkt_width_lp=`bp_fe_icache_lce_tag_mem_pkt_width(lce_sets_p
+    , localparam bp_fe_icache_lce_tag_mem_pkt_width_lp=`bp_fe_icache_lce_tag_mem_pkt_width(lce_sets_p
                                                                                           ,ways_p
                                                                                           ,tag_width_p
                                                                                          )
-    , parameter bp_fe_icache_lce_metadata_mem_pkt_width_lp=`bp_fe_icache_lce_metadata_mem_pkt_width(lce_sets_p
+    , localparam bp_fe_icache_lce_metadata_mem_pkt_width_lp=`bp_fe_icache_lce_metadata_mem_pkt_width(lce_sets_p
                                                                                                       ,ways_p
                                                                                                      )
 
-    , parameter bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
+    , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                               ,num_lce_p
                                                               ,lce_addr_width_p
                                                               ,ways_p
                                                              )
-    , parameter bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
+    , localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
                                                                 ,num_lce_p
                                                                 ,lce_addr_width_p
                                                                )
-    , parameter bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p
+    , localparam bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p
                                                                           ,num_lce_p
                                                                           ,lce_addr_width_p
                                                                           ,lce_data_width_p
                                                                          )
-    , parameter bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p
+    , localparam bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p
                                                               ,num_lce_p
                                                               ,lce_addr_width_p
                                                               ,ways_p
                                                              )
-    , parameter bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
+    , localparam bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
                                                                         ,num_lce_p
                                                                         ,lce_addr_width_p
                                                                         ,lce_data_width_p
                                                                         ,ways_p
                                                                        )
-    , parameter bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p
+    , localparam bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p
                                                                       ,lce_addr_width_p
                                                                       ,lce_data_width_p
                                                                       ,ways_p
