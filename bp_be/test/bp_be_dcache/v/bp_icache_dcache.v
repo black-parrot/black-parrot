@@ -2,10 +2,10 @@
  *  bp_icache_dcache.v
  */ 
 
-`include "bp_dcache_pkt.vh"
+`include "bp_be_dcache_pkt.vh"
 
 module bp_icache_dcache
-  import bp_dcache_pkg::*;
+  import bp_be_dcache_pkg::*;
   #(parameter data_width_p="inv"
     ,parameter sets_p="inv"
     ,parameter ways_p="inv"
@@ -26,7 +26,7 @@ module bp_icache_dcache
     ,parameter lce_data_width_lp=(ways_p*data_width_p)
     ,parameter lg_boot_rom_els_lp=`BSG_SAFE_CLOG2(boot_rom_els_p)
       
-    ,parameter bp_dcache_pkt_width_lp=`bp_dcache_pkt_width(vaddr_width_lp, data_width_p)
+    ,parameter bp_be_dcache_pkt_width_lp=`bp_be_dcache_pkt_width(vaddr_width_lp, data_width_p)
 
     ,parameter lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_lp, addr_width_lp, ways_p)
     ,parameter lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_lp, addr_width_lp)
@@ -48,7 +48,7 @@ module bp_icache_dcache
     ,output logic [num_core_p-1:0][inst_width_p-1:0] icache_data_o
   
     // dcache 
-    ,input [num_core_p-1:0][bp_dcache_pkt_width_lp-1:0] dcache_pkt_i
+    ,input [num_core_p-1:0][bp_be_dcache_pkt_width_lp-1:0] dcache_pkt_i
     ,input [num_core_p-1:0][tag_width_p-1:0] dcache_paddr_i
     ,input [num_core_p-1:0] dcache_pkt_v_i
     ,output logic [num_core_p-1:0] dcache_pkt_ready_o
@@ -61,7 +61,7 @@ module bp_icache_dcache
 
   // declare structs
   //
-  `declare_bp_dcache_pkt_s(vaddr_width_lp, data_width_p);
+  `declare_bp_be_dcache_pkt_s(vaddr_width_lp, data_width_p);
   `declare_bp_lce_cce_req_s(num_cce_p, num_lce_lp, addr_width_lp, ways_p);
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_lp, addr_width_lp);
   `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_lp, addr_width_lp, lce_data_width_lp);
@@ -73,13 +73,13 @@ module bp_icache_dcache
   //
   logic [num_core_p-1:0] dcache_rollback_li;
   logic [num_core_p-1:0][tag_width_p-1:0] dcache_rolly_paddr_lo;
-  bp_dcache_pkt_s [num_core_p-1:0] dcache_rolly_pkt_lo;
+  bp_be_dcache_pkt_s [num_core_p-1:0] dcache_rolly_pkt_lo;
   logic [num_core_p-1:0] dcache_rolly_v_lo;
   logic [num_core_p-1:0] dcache_rolly_yumi_li;
 
   for (genvar i = 0; i < num_core_p; i++) begin
     bsg_fifo_1r1w_rolly #(
-      .width_p(bp_dcache_pkt_width_lp+tag_width_p)
+      .width_p(bp_be_dcache_pkt_width_lp+tag_width_p)
       ,.els_p(8)
     ) dcache_rolly (
       .clk_i(clk_i)
@@ -196,7 +196,6 @@ module bp_icache_dcache
       ,.lce_sets_p(sets_p)
       ,.lce_assoc_p(ways_p)
       ,.tag_width_p(tag_width_p)
-      ,.coh_states_p(4)
       ,.num_cce_p(num_cce_p)
       ,.num_lce_p(num_lce_lp)
       ,.block_size_in_bytes_p(ways_p)
@@ -262,7 +261,7 @@ module bp_icache_dcache
   logic [num_core_p-1:0] dcache_ready_lo;
 
   for (genvar i = 0; i < num_core_p; i++) begin
-    bp_dcache #(
+    bp_be_dcache #(
       .id_p(2*i+1)
       ,.data_width_p(data_width_p)
       ,.sets_p(sets_p)
@@ -395,7 +394,6 @@ module bp_icache_dcache
       ,.addr_width_p(addr_width_lp)
       ,.lce_assoc_p(ways_p)
       ,.lce_sets_p(sets_p)
-      ,.coh_states_p(4)
       ,.block_size_in_bytes_p(ways_p*8)
       ,.num_inst_ram_els_p(256)
     ) cce (
@@ -495,7 +493,6 @@ module bp_icache_dcache
     ,.num_cce_p(num_cce_p)
     ,.addr_width_p(addr_width_lp)
     ,.lce_assoc_p(ways_p)
-    ,.coh_states_p(4)
     ,.block_size_in_bytes_p(ways_p*8)
   ) network (
     .clk_i(clk_i)

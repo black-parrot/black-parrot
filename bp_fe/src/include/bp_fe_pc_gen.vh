@@ -19,45 +19,22 @@
 `ifndef BP_FE_PC_GEN_VH
 `define BP_FE_PC_GEN_VH
 
-`ifndef BSG_DEFINES_V
-`define BSG_DEFINES_V
 `include "bsg_defines.v"
-`endif
-
-`ifndef BP_COMMON_FE_BE_IF_VH
-`define BP_COMMON_FE_BE_IF_VH
 `include "bp_common_fe_be_if.vh"
-`endif
-
-// import bp_common_pkg::*;
-import pc_gen_pkg::*;
-
-typedef enum  {
-    e_state_reset               =0
-    ,e_state_first_reset_icache =1
-    ,e_state_first_start_icache =2
-    ,e_state_pc_redirect        =3
-    ,e_state_after_pc_redirect  =4
-    ,e_state_interrupt          =5
-    ,e_state_icache_miss        =6
-    ,e_state_after_icache_miss  =7
-    ,e_state_attaboy            =8
-    ,e_state_no_cmd             =9
-    ,e_state_not_ready          =10
-    ,e_state_always_not_ready   =11
-    ,e_state_invalid_cmd        =12
-} pc_gen_state_e;
+`include "bp_fe_pc_gen.vh"
+`include "bp_fe_itlb.vh"
+`include "bp_fe_icache.vh"
 
 // this part is modified to accomodate the instr output
-`define declare_bp_fe_pc_gen_queue_s                    \
-    typedef struct packed {                             \
-        bp_fe_queue_type_e    msg_type;                 \
-        logic [`bp_fe_instr_scan_width-1:0] scan_instr; \
-        union packed {                                  \
-            bp_fe_fetch_s        fetch;                 \
-            bp_fe_exception_s    exception;             \
-        } msg;                                          \
-    } bp_fe_pc_gen_queue_s
+`define declare_bp_fe_pc_gen_queue_s                  \
+  typedef struct packed {                             \
+    bp_fe_queue_type_e                  msg_type;     \
+    logic [`bp_fe_instr_scan_width-1:0] scan_instr;   \
+    union packed {                                    \
+      bp_fe_fetch_s                     fetch;        \
+      bp_fe_exception_s                 exception;    \
+    } msg;                                            \
+  }  bp_fe_pc_gen_queue_s
 
 `define bp_fe_pc_gen_queue_width(vaddr_width_p,branch_metadata_fwd_width_p) \
      (`bp_fe_queue_width(vaddr_width_p,branch_metadata_fwd_width_p)+`bp_fe_instr_scan_width)
@@ -68,62 +45,39 @@ typedef enum  {
  * exceptions.  pc_gen inherets the interfaces from the frontend that uses the
  * exception codes to notify if any exception happens.
 */
-
-`define declare_bp_fe_pc_gen_cmd_s                                     \
-    typedef struct packed {                                            \
-        bp_fe_command_queue_opcodes_e          command_queue_opcodes;  \
-        union packed {                                                 \
-            bp_fe_cmd_pc_redirect_operands_s   pc_redirect_operands;   \
-            bp_fe_cmd_attaboy_s                attaboy;                \
-        } operands;                                                    \
-    } bp_fe_pc_gen_cmd_s
+`define declare_bp_fe_pc_gen_cmd_s                               \
+  typedef struct packed {                                        \
+    bp_fe_command_queue_opcodes_e        command_queue_opcodes;  \
+    union packed {                                               \
+      bp_fe_cmd_pc_redirect_operands_s   pc_redirect_operands;   \
+      bp_fe_cmd_attaboy_s                attaboy;                \
+    } operands;                                                  \
+  }  bp_fe_pc_gen_cmd_s
 
 
 `define bp_fe_pc_gen_cmd_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p) \
     (`bp_fe_cmd_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p))
 
-
-/*
- * bp_fe_pc_gen_s is provided to the backend, which consists of pc, BTB entry
- * index, and ras address.
-*/
-`define bp_fe_pc_gen_fetch_s bp_fe_fetch_s
-
-/*
- * bp_fe_pc_gen_width provides the width of bp_fe_pc_gen_s. All the width
- * informations are parameterized.
-*/
-`define bp_fe_pc_gen_fetch_width(vaddr_width_p,branch_metadata_fwd_width_p) \
-    (`bp_fe_fetch_width(vaddr_width_p,branch_metadata_fwd_width_p))
-
-
-`define bp_fe_pc_gen_exception_s bp_fe_exception_s
-
-`define bp_fe_pc_gen_exception_width(vaddr_width_p,branch_metadata_fwd_width_p) \
-     `bp_fe_exception_width(vaddr_width_p,branch_metadata_fwd_width_p)
-
 /*
  * bp_fe_pc_gen_icache_s defines the interface between pc_gen and icache.
  * pc_gen informs the icache of the pc value.
 */
-`define declare_bp_fe_pc_gen_icache_s(eaddr_wdith_p)          \
-    typedef struct packed{                      \
-        logic [eaddr_width_p-1:0] virt_addr;\
-    } bp_fe_pc_gen_icache_s
-        //logic speculative;\
+`define declare_bp_fe_pc_gen_icache_s(eaddr_width_p)  \
+  typedef struct packed{                              \
+    logic [eaddr_width_p-1:0] virt_addr;              \
+    }  bp_fe_pc_gen_icache_s;
 
 `define bp_fe_pc_gen_icache_width(eaddr_width_p) \
          (eaddr_width_p)
-         //(eaddr_width_p+1)
 
 /*
  * bp_fe_pc_gen_icache_s defines the interface between pc_gen and itlb.
  * The pc_gen informs the itlb of the pc address.
 */
-`define declare_bp_fe_pc_gen_itlb_s(eaddr_width_p)             \
-    typedef struct packed {                      \
-        logic [eaddr_width_p-1:0] virt_addr; \
-    } bp_fe_pc_gen_itlb_s
+`define declare_bp_fe_pc_gen_itlb_s(eaddr_width_p)  \
+  typedef struct packed {                           \
+    logic [eaddr_width_p-1:0] virt_addr;            \
+  }  bp_fe_pc_gen_itlb_s;
 
 `define bp_fe_pc_gen_itlb_width(eaddr_width_p) (eaddr_width_p)
 
@@ -131,22 +85,22 @@ typedef enum  {
  * bp_fe_instr_scan_class_e specifies the type of the current instruction,
  * including whether the instruction is compressed or not.
 */
-typedef enum {
-    e_rvc_beqz    
-    ,e_rvc_bnez   
-    ,e_rvc_call   
-    ,e_rvc_imm     
-    ,e_rvc_jalr     
-    ,e_rvc_jal     
-    ,e_rvc_jr     
-    ,e_rvc_return     
-    ,e_rvi_branch     
-    ,e_rvi_call     
-    ,e_rvi_imm     
-    ,e_rvi_jalr      
-    ,e_rvi_jal       
-    ,e_rvi_return      
-    ,e_default    
+typedef enum logic [3:0] {
+  e_rvc_beqz    
+  , e_rvc_bnez   
+  , e_rvc_call   
+  , e_rvc_imm     
+  , e_rvc_jalr     
+  , e_rvc_jal     
+  , e_rvc_jr     
+  , e_rvc_return     
+  , e_rvi_branch     
+  , e_rvi_call     
+  , e_rvi_imm     
+  , e_rvi_jalr      
+  , e_rvi_jal       
+  , e_rvi_return      
+  , e_default    
 } bp_fe_instr_scan_class_e;
 
 `define bp_fe_instr_scan_class_width \
@@ -161,10 +115,10 @@ typedef enum {
  * compressed or not and 2) what class pc instruction is.
 */
 `define declare_bp_fe_instr_scan_s                                   \
-    typedef struct packed {                                             \
-        logic                                       is_compressed;   \
-        logic [`bp_fe_instr_scan_class_width-1:0]   instr_scan_class;\
-    } bp_fe_instr_scan_s
+  typedef struct packed {                                            \
+    logic                                       is_compressed;       \
+    logic [`bp_fe_instr_scan_class_width-1:0]   instr_scan_class;    \
+  } bp_fe_instr_scan_s
 
 
 /*
@@ -196,11 +150,11 @@ typedef enum {
 `define bp_fe_instr_scan_width (1+`bp_fe_instr_scan_class_width)
 
 `define declare_bp_fe_branch_metadata_fwd_s(btb_idx_width_p,bht_idx_width_p,ras_addr_width_p) \
-    typedef struct packed {                                                                   \
-        logic [btb_idx_width_p-1:0]    btb_indx;                                              \
-        logic [bht_idx_width_p-1:0]    bht_indx;                                              \
-        logic [ras_addr_width_p-1:0]   ras_addr;                                              \
-    } bp_fe_branch_metadata_fwd_s
+  typedef struct packed {                                                                     \
+    logic [btb_idx_width_p-1:0]    btb_indx;                                                  \
+    logic [bht_idx_width_p-1:0]    bht_indx;                                                  \
+    logic [ras_addr_width_p-1:0]   ras_addr;                                                  \
+  } bp_fe_branch_metadata_fwd_s
 
 `define bp_fe_branch_metadata_fwd_width(btb_idx_width_p,bht_idx_width_p,ras_addr_width_p) \
      (btb_idx_width_p+bht_idx_width_p+ras_addr_width_p)

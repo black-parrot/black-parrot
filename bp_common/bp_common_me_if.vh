@@ -61,6 +61,9 @@
  * 2. bp_mem_cce_resp_s
  * 3. bp_lce_cce_req_s
  *
+ *
+ * Clients should use declare_bp_me_if(addr_width_mp, data_width_mp, num_lce_mp, lce_assoc_mp)
+ *   to declare all me_if structs at once.
  */
 
 /*
@@ -73,9 +76,10 @@
  * bp_lce_cce_req_type_e specifies whether the containing message is related to a read or write
  * cache miss request from and LCE.
  */
-typedef enum logic {
+typedef enum bit 
+{
   e_lce_req_type_rd          = 1'b0 // Read-miss
-  ,e_lce_req_type_wr         = 1'b1 // Write-miss
+  , e_lce_req_type_wr        = 1'b1 // Write-miss
 } bp_lce_cce_req_type_e;
 
 /*
@@ -85,18 +89,20 @@ typedef enum logic {
  * state as opposed to the S state in a MESI protocol. The CCE treats this bit as a hint, and is
  * not required to follow it.
  */
-typedef enum logic {
+typedef enum bit 
+{
   e_lce_req_excl             = 1'b0 // exclusive cache line request (read-only, exclusive request)
-  ,e_lce_req_not_excl        = 1'b1 // non-exclusive cache line request (read-only, shared request)
+  , e_lce_req_not_excl       = 1'b1 // non-exclusive cache line request (read-only, shared request)
 } bp_lce_cce_req_non_excl_e;
 
 /*
  * bp_lce_cce_lru_dirty_e specifies whether the LRU way in an LCE request (bp_lce_cce_req_s)
  * contains a dirty cache block. The 
  */
-typedef enum logic {
+typedef enum bit 
+{
   e_lce_req_lru_clean        = 1'b0 // lru way from requesting lce's tag set is clean
-  ,e_lce_req_lru_dirty       = 1'b1 // lru way from requesting lce's tag set is dirty
+  , e_lce_req_lru_dirty      = 1'b1 // lru way from requesting lce's tag set is dirty
 } bp_lce_cce_lru_dirty_e;
 
 /*
@@ -113,7 +119,8 @@ typedef enum logic {
  * lru_dirty indicates if the LRU way was dirty or clean when the miss request was sent
  */
 `define declare_bp_lce_cce_req_s(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp) \
-  typedef struct packed {                                       \
+  typedef struct packed                                         \
+  {                                                             \
     logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]      dst_id;        \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      src_id;        \
     bp_lce_cce_req_type_e                        msg_type;      \
@@ -121,7 +128,7 @@ typedef enum logic {
     logic [addr_width_mp-1:0]                    addr;          \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    lru_way_id;    \
     bp_lce_cce_lru_dirty_e                       lru_dirty;     \
-  } bp_lce_cce_req_s
+  }  bp_lce_cce_req_s
 
 /*
  *
@@ -142,7 +149,8 @@ typedef enum logic {
  *   the coherence state of the specified entry being changed to Invalid (no read or write
  *   permissions)
  */
-typedef enum logic [2:0] {
+typedef enum bit [2:0] 
+{
   e_lce_cmd_sync             = 3'b000
   ,e_lce_cmd_set_clear       = 3'b001
   ,e_lce_cmd_transfer        = 3'b010
@@ -162,7 +170,8 @@ typedef enum logic [2:0] {
  *   may not be dirty in the LCE.
  * e_MESI_M has the same meaning as e_MESI_E, but the CCE knows the block is dirty
  */
-typedef enum logic [1:0] {
+typedef enum bit [1:0] 
+{
   e_MESI_I                   = 2'b00
   ,e_MESI_S                  = 2'b01
   ,e_MESI_E                  = 2'b10
@@ -173,15 +182,17 @@ typedef enum logic [1:0] {
  * bp_cce_coh_vi_e defines the coherence states for a Valid/Invalid style protocol.
  * In VI, the V state is equivalent to e_MESI_E, and I is the same as e_MESI_I.
  */
-typedef enum logic [1:0] {
+typedef enum bit [1:0] 
+{
   e_VI_I                     = 2'b00
   ,e_VI_V                    = 2'b10
 } bp_cce_coh_vi_e;
 
-typedef union packed {
+typedef union packed 
+{
   bp_cce_coh_vi_e            vi;
   bp_cce_coh_mesi_e          mesi;
-} bp_cce_coh_u;
+}  bp_cce_coh_u;
 
 `define bp_cce_coh_bits $bits(bp_cce_coh_u)
 
@@ -197,7 +208,8 @@ typedef union packed {
  * target_way_id is the way within the target LCE's set (computed from addr) to fill the data in to
  */
 `define declare_bp_cce_lce_cmd_s(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp) \
-  typedef struct packed {                                       \
+  typedef struct packed                                         \
+  {                                                             \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      dst_id;        \
     logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]      src_id;        \
     bp_cce_lce_cmd_type_e                        msg_type;      \
@@ -206,7 +218,7 @@ typedef union packed {
     logic [`bp_cce_coh_bits-1:0]                 state;         \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      target;        \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    target_way_id; \
-  } bp_cce_lce_cmd_s
+  }  bp_cce_lce_cmd_s
 
 /*
  *
@@ -226,14 +238,15 @@ typedef union packed {
  * data is the cache block data
  */
 `define declare_bp_cce_lce_data_cmd_s(num_cce_mp, num_lce_mp, addr_width_mp, data_width_mp, lce_assoc_mp) \
-  typedef struct packed {                                  \
+  typedef struct packed                                    \
+  {                                                        \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      dst_id;   \
     logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]      src_id;   \
     bp_lce_cce_req_type_e                        msg_type; \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id;   \
     logic [addr_width_mp-1:0]                    addr;     \
     logic [data_width_mp-1:0]                    data;     \
-  } bp_cce_lce_data_cmd_s
+  }  bp_cce_lce_data_cmd_s
 
 /*
  *
@@ -253,7 +266,8 @@ typedef union packed {
  *   command, or a set tag and wakeup command from the CCE. The sending LCE considers itself woken
  *   up after sending this ACK.
  */
-typedef enum logic [1:0] {
+typedef enum bit [1:0] 
+{
   e_lce_cce_sync_ack         = 2'b00
   ,e_lce_cce_inv_ack         = 2'b01
   ,e_lce_cce_tr_ack          = 2'b10
@@ -272,7 +286,8 @@ typedef enum logic [1:0] {
  * NOTE: addr is not valid for e_lce_cce_sync_ack
  */
 `define declare_bp_lce_cce_resp_s(num_cce_mp, num_lce_mp, addr_width_mp) \
-  typedef struct packed {                                  \
+  typedef struct packed                                    \
+  {                                                        \
     logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]      dst_id;   \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      src_id;   \
     bp_lce_cce_ack_type_e                        msg_type; \
@@ -295,7 +310,8 @@ typedef enum logic [1:0] {
  * data is the cache block data (if this is not a null writeback)
  */
 `define declare_bp_lce_lce_tr_resp_s(num_lce_mp, addr_width_mp, data_width_mp, lce_assoc_mp) \
-  typedef struct packed {                                \
+  typedef struct packed                                  \
+  {                                                      \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      dst_id; \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      src_id; \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id; \
@@ -317,7 +333,8 @@ typedef enum logic [1:0] {
  * e_lce_resp_null_wb indicates that the LCE never wrote to the cache block and the block is still
  *   clean. The data field should be 0 and is invalid.
  */
-typedef enum logic {
+typedef enum bit 
+{
   e_lce_resp_wb              = 1'b0 // Normal Writeback Response
   ,e_lce_resp_null_wb        = 1'b1 // Null Writeback Response
 } bp_lce_cce_wb_resp_type_e;
@@ -331,7 +348,8 @@ typedef enum logic {
  * data is the cache block data (if this is not a null writeback)
  */
 `define declare_bp_lce_cce_data_resp_s(num_cce_mp, num_lce_mp, addr_width_mp, data_width_mp) \
-  typedef struct packed {                                  \
+  typedef struct packed                                    \
+  {                                                        \
     logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]      dst_id;   \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      src_id;   \
     bp_lce_cce_wb_resp_type_e                    msg_type; \
@@ -361,10 +379,11 @@ typedef enum logic {
  */
 
 `define declare_bp_cce_mem_cmd_payload_s(num_lce_mp, lce_assoc_mp) \
-  typedef struct packed {                                     \
+  typedef struct packed                                       \
+  {                                                           \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      lce_id;      \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id;      \
-  } bp_cce_mem_cmd_payload_s
+  }  bp_cce_mem_cmd_payload_s
 
 
 /*
@@ -374,11 +393,12 @@ typedef enum logic {
  * payload is data sent to mem and returned to cce unmodified
  */
 `define declare_bp_cce_mem_cmd_s(addr_width_mp) \
-  typedef struct packed {                                  \
+  typedef struct packed                                    \
+  {                                                        \
     bp_lce_cce_req_type_e                        msg_type; \
     logic [addr_width_mp-1:0]                    addr;     \
     bp_cce_mem_cmd_payload_s                     payload;  \
-  } bp_cce_mem_cmd_s
+  }  bp_cce_mem_cmd_s
 
 /*
  *
@@ -394,7 +414,8 @@ typedef enum logic {
  * data is the cache block data supplied by memory
  */
 `define declare_bp_mem_cce_data_resp_s(addr_width_mp, data_width_mp) \
-  typedef struct packed {                                  \
+  typedef struct packed                                    \
+  {                                                        \
     bp_lce_cce_req_type_e                        msg_type; \
     logic [addr_width_mp-1:0]                    addr;     \
     bp_cce_mem_cmd_payload_s                     payload;  \
@@ -426,7 +447,8 @@ typedef enum logic {
  */
 
 `define declare_bp_cce_mem_data_cmd_payload_s(num_lce_mp, lce_assoc_mp, addr_width_mp) \
-  typedef struct packed {                                     \
+  typedef struct packed                                       \
+  {                                                           \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      lce_id;      \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id;      \
     logic [addr_width_mp-1:0]                    req_addr;    \
@@ -445,7 +467,8 @@ typedef enum logic {
  *
  */
 `define declare_bp_cce_mem_data_cmd_s(addr_width_mp, data_width_mp) \
-  typedef struct packed {                                     \
+  typedef struct packed                                       \
+  {                                                           \
     bp_lce_cce_req_type_e                        msg_type;    \
     logic [addr_width_mp-1:0]                    addr;        \
     bp_cce_mem_data_cmd_payload_s                payload;     \
@@ -467,7 +490,8 @@ typedef enum logic {
  *
  */
 `define declare_bp_mem_cce_resp_s(addr_width_mp) \
-  typedef struct packed {                                     \
+  typedef struct packed                                       \
+  {                                                           \
     bp_lce_cce_req_type_e                        msg_type;    \
     logic [addr_width_mp-1:0]                    addr;        \
     bp_cce_mem_data_cmd_payload_s                payload;     \
@@ -482,11 +506,11 @@ typedef enum logic {
  */
 
 `define declare_bp_me_if(addr_width_mp, data_width_mp, num_lce_mp, lce_assoc_mp) \
-  `declare_bp_cce_mem_cmd_payload_s(num_lce_mp, lce_assoc_mp); \
+  `declare_bp_cce_mem_cmd_payload_s(num_lce_mp, lce_assoc_mp);                     \
   `declare_bp_cce_mem_data_cmd_payload_s(num_lce_mp, lce_assoc_mp, addr_width_mp); \
-  `declare_bp_cce_mem_cmd_s(addr_width_mp); \
-  `declare_bp_mem_cce_data_resp_s(addr_width_mp, data_width_mp); \
-  `declare_bp_cce_mem_data_cmd_s(addr_width_mp, data_width_mp); \
+  `declare_bp_cce_mem_cmd_s(addr_width_mp);                                        \
+  `declare_bp_mem_cce_data_resp_s(addr_width_mp, data_width_mp);                   \
+  `declare_bp_cce_mem_data_cmd_s(addr_width_mp, data_width_mp);                    \
   `declare_bp_mem_cce_resp_s(addr_width_mp);
 
 /*

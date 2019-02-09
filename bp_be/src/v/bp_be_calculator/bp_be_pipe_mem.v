@@ -21,13 +21,13 @@
  *
  *   mmu_resp_i       - Load / store response from the MMU.
  *   mmu_resp_v_i     - 'ready-then-valid' interface
- *   mmu_resp_rdy_o   - 
+ *   mmu_resp_ready_o   - 
 
  *
  * Outputs:
  *   mmu_cmd_o        -  Load / store command to the MMU
  *   mmu_cmd_v_o      -  'ready-then-valid' interface
- *   mmu_cmd_rdy_i    - 
+ *   mmu_cmd_ready_i    - 
  * 
  *   result_o         - The calculated result of a load
  *   cache_miss_o     - Goes high when the result of the load is a cache miss 
@@ -36,40 +36,40 @@
  *   calculator, mem, mmu, load, store, rv64i, rv64f
  *
  * Notes:
- *   We could also replace explicit muxes with case statements, not sure which is clearer.
+ *   
  */
 
 module bp_be_pipe_mem 
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
  #(// Generated parameters
-   localparam decode_width_lp=`bp_be_decode_width
-   , localparam exception_width_lp=`bp_be_exception_width
-   , localparam mmu_cmd_width_lp=`bp_be_mmu_cmd_width
-   , localparam mmu_resp_width_lp=`bp_be_mmu_resp_width
+   localparam decode_width_lp      = `bp_be_decode_width
+   , localparam exception_width_lp = `bp_be_exception_width
+   , localparam mmu_cmd_width_lp   = `bp_be_mmu_cmd_width
+   , localparam mmu_resp_width_lp  = `bp_be_mmu_resp_width
 
    // From RISC-V specifications
-   , localparam reg_data_width_lp=rv64_reg_data_width_gp
+   , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )
-  (input logic                                clk_i
-   , input logic                              reset_i
+  (input                            clk_i
+   , input                          reset_i
 
-   , input logic[decode_width_lp-1:0]         decode_i
-   , input logic[reg_data_width_lp-1:0]       rs1_i
-   , input logic[reg_data_width_lp-1:0]       rs2_i
-   , input logic[reg_data_width_lp-1:0]       imm_i
-   , input logic[exception_width_lp-1:0]      exc_i
+   , input [decode_width_lp-1:0]    decode_i
+   , input [reg_data_width_lp-1:0]  rs1_i
+   , input [reg_data_width_lp-1:0]  rs2_i
+   , input [reg_data_width_lp-1:0]  imm_i
+   , input [exception_width_lp-1:0] exc_i
 
-   , output logic[mmu_cmd_width_lp-1:0]       mmu_cmd_o
-   , output logic                             mmu_cmd_v_o
-   , input logic                              mmu_cmd_rdy_i
+   , output logic [mmu_cmd_width_lp-1:0]  mmu_cmd_o
+   , output logic                         mmu_cmd_v_o
+   , input                                mmu_cmd_ready_i
 
-   , input logic[mmu_resp_width_lp-1:0]       mmu_resp_i
-   , input logic                              mmu_resp_v_i
-   , output logic                             mmu_resp_rdy_o
+   , input       [mmu_resp_width_lp-1:0]  mmu_resp_i
+   , input                                mmu_resp_v_i
+   , output logic                         mmu_resp_ready_o
 
-   , output logic[reg_data_width_lp-1:0]      result_o
-   , output logic                             cache_miss_o
+   , output logic [reg_data_width_lp-1:0] result_o
+   , output logic                         cache_miss_o
    );
 
 // Cast input and output ports 
@@ -86,22 +86,23 @@ assign mmu_resp  = mmu_resp_i;
 // Suppress unused signal warnings
 wire unused0 = clk_i;
 wire unused1 = reset_i;
-wire unused2 = mmu_cmd_rdy_i;
+wire unused2 = mmu_cmd_ready_i;
 wire unused3 = mmu_resp_v_i;
 
 // Module instantiations
-always_comb begin
+always_comb 
+  begin
     mmu_cmd.mem_op = decode.fu_op;
     mmu_cmd.data   = rs2_i;
     mmu_cmd.addr   = rs1_i + imm_i;
     mmu_cmd_v_o    = (decode.dcache_r_v | decode.dcache_w_v)
                      & ~|exc;
 
-    mmu_resp_rdy_o = 1'b1;
+    mmu_resp_ready_o = 1'b1;
     result_o       = mmu_resp.data;
 
     cache_miss_o   = mmu_resp.exception.cache_miss_v;
-end 
+  end 
 
 endmodule : bp_be_pipe_mem
 

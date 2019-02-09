@@ -1,8 +1,8 @@
 /**
- *  bp_dcache_axe_trace_gen.v
+ *  bp_be_dcache_axe_trace_gen.v
  */
 
-module bp_dcache_axe_trace_gen
+module bp_be_dcache_axe_trace_gen
   #(parameter addr_width_p="inv"
     ,parameter data_width_p="inv"
     ,parameter data_mask_width_lp=(data_width_p>>3)
