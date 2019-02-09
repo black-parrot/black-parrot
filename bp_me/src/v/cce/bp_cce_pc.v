@@ -1,7 +1,10 @@
 /**
- * bp_cce_pc.v
  *
- * PC register, next PC logic, and instruction memory
+ * Name:
+ *   bp_cce_pc.v
+ *
+ * Description:
+ *   PC register, next PC logic, and instruction memory
  *
  */
 
@@ -10,35 +13,38 @@
 
 module bp_cce_pc
   import bp_cce_inst_pkg::*;
-  #(parameter num_inst_ram_els_p="inv"
-    ,parameter inst_width_lp=`bp_cce_inst_width
-    ,parameter inst_ram_addr_width_lp=`BSG_SAFE_CLOG2(num_inst_ram_els_p)
-    ,parameter harden_p=0
+  #(parameter num_cce_inst_ram_els_p     = "inv"
+
+    // Default parameters
+    , parameter harden_p                 = 0
+
+    // Derived parameters
+    , localparam inst_width_lp           = `bp_cce_inst_width
+    , localparam inst_ram_addr_width_lp  = `BSG_SAFE_CLOG2(num_cce_inst_ram_els_p)
   )
-  (
-    input                                        clk_i
-    ,input                                       reset_i
+  (input                                         clk_i
+   , input                                       reset_i
 
-    // ALU branch result signal
-    ,input                                       alu_branch_res_i
+   // ALU branch result signal
+   , input                                       alu_branch_res_i
 
-    // input queue valid signals
-    ,input                                       lce_req_v_i
-    ,input                                       lce_resp_v_i
-    ,input                                       lce_data_resp_v_i
-    ,input                                       mem_resp_v_i
-    ,input                                       mem_data_resp_v_i
-    ,input                                       pending_v_i
+   // input queue valid signals
+   , input                                       lce_req_v_i
+   , input                                       lce_resp_v_i
+   , input                                       lce_data_resp_v_i
+   , input                                       mem_resp_v_i
+   , input                                       mem_data_resp_v_i
+   , input                                       pending_v_i
 
-    // output queue ready_i signals
-    ,input                                       lce_cmd_ready_i
-    ,input                                       lce_data_cmd_ready_i
-    ,input                                       mem_cmd_ready_i
-    ,input                                       mem_data_cmd_ready_i
+   // output queue ready_i signals
+   , input                                       lce_cmd_ready_i
+   , input                                       lce_data_cmd_ready_i
+   , input                                       mem_cmd_ready_i
+   , input                                       mem_data_cmd_ready_i
 
-    // instruction output to decode
-    ,output logic [inst_width_lp-1:0]            inst_o
-    ,output logic                                inst_v_o
+   // instruction output to decode
+   , output logic [inst_width_lp-1:0]            inst_o
+   , output logic                                inst_v_o
   );
 
   // Combination logic signals
@@ -66,6 +72,7 @@ module bp_cce_pc
       pc_r <= pc_n;
   end
 
+  // TODO: make ROM a 1RW RAM
   bp_cce_inst_s inst;
   logic [inst_width_lp-1:0] inst_mem_data_o;
   bp_cce_inst_rom
@@ -92,7 +99,10 @@ module bp_cce_pc
     inst_v_o = ~reset_i;
 
     pushq_op = (inst.op == e_op_queue) && (inst.minor_op == e_pushq_op);
-    pushq_qsel = bp_cce_inst_dst_q_sel_e'(inst.imm[`bp_cce_lce_cmd_type_width +: `bp_cce_inst_dst_q_sel_width]); //[4:3]
+    pushq_qsel =
+      bp_cce_inst_dst_q_sel_e'(
+        inst.imm[`bp_cce_lce_cmd_type_width +: `bp_cce_inst_dst_q_sel_width]
+      );
     wfq_op = (inst.op == e_op_queue) && (inst.minor_op == e_wfq_op);
     stall_op = (inst.op == e_op_misc) && (inst.minor_op == e_stall_op);
 

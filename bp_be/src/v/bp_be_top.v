@@ -14,7 +14,6 @@
  *   num_cce_p                   - 
  *   num_lce_p                   - 
  *   num_mem_p                   - 
- *   coh_states_p                - 
  *   lce_assoc_p                 - 
  *   lce_sets_p                  - 
  *   cce_block_size_in_bytes_p   - 
@@ -47,7 +46,7 @@
  *   fe_cmd_rdy_i                -
  *
  *   fe_queue_clr_o              -
- *   fe_queue_ckpt_inc_o         -
+ *   fe_queue_dequeue_inc_o      -
  *   fe_queue_rollback_o         -
  *
  *   lce_cce_req_o               -
@@ -90,7 +89,6 @@ module bp_be_top
    , parameter num_cce_p                   = "inv"
    , parameter num_lce_p                   = "inv"
    , parameter num_mem_p                   = "inv"
-   , parameter coh_states_p                = "inv"
    , parameter lce_assoc_p                 = "inv"
    , parameter lce_sets_p                  = "inv"
    , parameter cce_block_size_in_bytes_p   = "inv"
@@ -122,7 +120,6 @@ module bp_be_top
                                                                    , num_lce_p
                                                                    , paddr_width_p
                                                                    , lce_assoc_p
-                                                                   , coh_states_p
                                                                    )
    , localparam cce_lce_data_cmd_width_lp  = `bp_cce_lce_data_cmd_width(num_cce_p
                                                                        , num_lce_p
@@ -150,7 +147,7 @@ module bp_be_top
    , output logic                                 fe_queue_rdy_o
 
    , output logic                                 fe_queue_clr_o
-   , output logic                                 fe_queue_ckpt_inc_o
+   , output logic                                 fe_queue_dequeue_o
    , output logic                                 fe_queue_rollback_o
  
    // FE cmd interface
@@ -223,7 +220,7 @@ bp_be_exception_s      cmt_trace_exc;
 bp_be_pipe_stage_reg_s cmt_trace_stage_reg;
 bp_be_calc_result_s    cmt_trace_result;
 
-logic chk_dispatch_v, chk_psn_isd, chk_psn_ex, chk_roll, chk_instr_ckpt_v;
+logic chk_dispatch_v, chk_psn_isd, chk_psn_ex, chk_roll, chk_instr_dequeue_v;
 
 // Module instantiations
 bp_be_checker_top 
@@ -238,27 +235,27 @@ bp_be_checker_top
 
    ,.chk_dispatch_v_o(chk_dispatch_v)
    ,.chk_roll_o(chk_roll)
-   ,.chk_psn_isd_o(chk_psn_isd)
-   ,.chk_psn_ex_o(chk_psn_ex)
+   ,.chk_poison_isd_o(chk_psn_isd)
+   ,.chk_poison_ex_o(chk_psn_ex)
 
    ,.calc_status_i(calc_status)
-   ,.mmu_cmd_rdy_i(mmu_cmd_rdy)
+   ,.mmu_cmd_ready_i(mmu_cmd_rdy)
 
    ,.fe_cmd_o(fe_cmd_o)
    ,.fe_cmd_v_o(fe_cmd_v_o)
-   ,.fe_cmd_rdy_i(fe_cmd_rdy_i)
+   ,.fe_cmd_ready_i(fe_cmd_rdy_i)
 
    ,.chk_roll_fe_o(fe_queue_rollback_o)
    ,.chk_flush_fe_o(fe_queue_clr_o)
-   ,.chk_ckpt_fe_o(fe_queue_ckpt_inc_o)
+   ,.chk_dequeue_fe_o(fe_queue_dequeue_o)
 
    ,.fe_queue_i(fe_queue_i)
    ,.fe_queue_v_i(fe_queue_v_i)
-   ,.fe_queue_rdy_o(fe_queue_rdy_o)
+   ,.fe_queue_ready_o(fe_queue_rdy_o)
 
    ,.issue_pkt_o(issue_pkt)
    ,.issue_pkt_v_o(issue_pkt_v)
-   ,.issue_pkt_rdy_i(issue_pkt_rdy)
+   ,.issue_pkt_ready_i(issue_pkt_rdy)
    );
 
 bp_be_calculator_top 
@@ -273,23 +270,23 @@ bp_be_calculator_top
 
    ,.issue_pkt_i(issue_pkt)
    ,.issue_pkt_v_i(issue_pkt_v)
-   ,.issue_pkt_rdy_o(issue_pkt_rdy)
+   ,.issue_pkt_ready_o(issue_pkt_rdy)
    
    ,.chk_dispatch_v_i(chk_dispatch_v)
 
    ,.chk_roll_i(chk_roll)
-   ,.chk_psn_ex_i(chk_psn_ex)
-   ,.chk_psn_isd_i(chk_psn_isd)
+   ,.chk_poison_ex_i(chk_psn_ex)
+   ,.chk_poison_isd_i(chk_psn_isd)
 
    ,.calc_status_o(calc_status)
 
    ,.mmu_cmd_o(mmu_cmd)
    ,.mmu_cmd_v_o(mmu_cmd_v)
-   ,.mmu_cmd_rdy_i(mmu_cmd_rdy)
+   ,.mmu_cmd_ready_i(mmu_cmd_rdy)
 
    ,.mmu_resp_i(mmu_resp) 
    ,.mmu_resp_v_i(mmu_resp_v)
-   ,.mmu_resp_rdy_o(mmu_resp_rdy)   
+   ,.mmu_resp_ready_o(mmu_resp_rdy)   
 
    ,.proc_cfg_i(proc_cfg_i)     
 
@@ -307,7 +304,6 @@ bp_be_mmu_top
    ,.num_cce_p(num_cce_p)
    ,.num_lce_p(num_lce_p)
    ,.num_mem_p(num_mem_p)
-   ,.coh_states_p(coh_states_p)
    ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
    ,.lce_assoc_p(lce_assoc_p)
    ,.lce_sets_p(lce_sets_p)
@@ -318,41 +314,41 @@ bp_be_mmu_top
 
     ,.mmu_cmd_i(mmu_cmd)
     ,.mmu_cmd_v_i(mmu_cmd_v)
-    ,.mmu_cmd_rdy_o(mmu_cmd_rdy)
+    ,.mmu_cmd_ready_o(mmu_cmd_rdy)
 
     ,.chk_psn_ex_i(chk_psn_ex)
 
     ,.mmu_resp_o(mmu_resp)
     ,.mmu_resp_v_o(mmu_resp_v)
-    ,.mmu_resp_rdy_i(mmu_resp_rdy)      
+    ,.mmu_resp_ready_i(mmu_resp_rdy)      
 
-    ,.lce_cce_req_o(lce_cce_req_o)
-    ,.lce_cce_req_v_o(lce_cce_req_v_o)
-    ,.lce_cce_req_rdy_i(lce_cce_req_rdy_i)
+    ,.lce_req_o(lce_cce_req_o)
+    ,.lce_req_v_o(lce_cce_req_v_o)
+    ,.lce_req_ready_i(lce_cce_req_rdy_i)
 
-    ,.lce_cce_resp_o(lce_cce_resp_o)
-    ,.lce_cce_resp_v_o(lce_cce_resp_v_o)
-    ,.lce_cce_resp_rdy_i(lce_cce_resp_rdy_i)        
+    ,.lce_resp_o(lce_cce_resp_o)
+    ,.lce_resp_v_o(lce_cce_resp_v_o)
+    ,.lce_resp_ready_i(lce_cce_resp_rdy_i)        
 
-    ,.lce_cce_data_resp_o(lce_cce_data_resp_o)
-    ,.lce_cce_data_resp_v_o(lce_cce_data_resp_v_o)
-    ,.lce_cce_data_resp_rdy_i(lce_cce_data_resp_rdy_i)
+    ,.lce_data_resp_o(lce_cce_data_resp_o)
+    ,.lce_data_resp_v_o(lce_cce_data_resp_v_o)
+    ,.lce_data_resp_ready_i(lce_cce_data_resp_rdy_i)
 
-    ,.cce_lce_cmd_i(cce_lce_cmd_i)
-    ,.cce_lce_cmd_v_i(cce_lce_cmd_v_i)
-    ,.cce_lce_cmd_rdy_o(cce_lce_cmd_rdy_o)
+    ,.lce_cmd_i(cce_lce_cmd_i)
+    ,.lce_cmd_v_i(cce_lce_cmd_v_i)
+    ,.lce_cmd_ready_o(cce_lce_cmd_rdy_o)
 
-    ,.cce_lce_data_cmd_i(cce_lce_data_cmd_i)
-    ,.cce_lce_data_cmd_v_i(cce_lce_data_cmd_v_i)
-    ,.cce_lce_data_cmd_rdy_o(cce_lce_data_cmd_rdy_o)
+    ,.lce_data_cmd_i(cce_lce_data_cmd_i)
+    ,.lce_data_cmd_v_i(cce_lce_data_cmd_v_i)
+    ,.lce_data_cmd_ready_o(cce_lce_data_cmd_rdy_o)
 
-    ,.lce_lce_tr_resp_i(lce_lce_tr_resp_i)
-    ,.lce_lce_tr_resp_v_i(lce_lce_tr_resp_v_i)
-    ,.lce_lce_tr_resp_rdy_o(lce_lce_tr_resp_rdy_o)
+    ,.lce_tr_resp_i(lce_lce_tr_resp_i)
+    ,.lce_tr_resp_v_i(lce_lce_tr_resp_v_i)
+    ,.lce_tr_resp_ready_o(lce_lce_tr_resp_rdy_o)
 
-    ,.lce_lce_tr_resp_o(lce_lce_tr_resp_o)
-    ,.lce_lce_tr_resp_v_o(lce_lce_tr_resp_v_o)
-    ,.lce_lce_tr_resp_rdy_i(lce_lce_tr_resp_rdy_i)
+    ,.lce_tr_resp_o(lce_lce_tr_resp_o)
+    ,.lce_tr_resp_v_o(lce_lce_tr_resp_v_o)
+    ,.lce_tr_resp_ready_i(lce_lce_tr_resp_rdy_i)
 
     ,.dcache_id_i(proc_cfg.dcache_id)
     );

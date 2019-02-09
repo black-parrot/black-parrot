@@ -30,19 +30,19 @@ module bp_be_pipe_fp
   import bp_be_pkg::*;
   import bp_be_rv64_pkg::*;
  #(// Generated parameters
-   localparam decode_width_lp    = `bp_be_decode_width
+   localparam decode_width_lp      = `bp_be_decode_width
    , localparam exception_width_lp = `bp_be_exception_width
    // From RISC-V specifications
-   , localparam reg_data_width_lp = rv64_reg_data_width_gp
+   , localparam reg_data_width_lp  = rv64_reg_data_width_gp
    )
-  (input logic                            clk_i
-   , input logic                          reset_i
+  (input                            clk_i
+   , input                          reset_i
 
    // Common pipeline interface
-   , input logic [decode_width_lp-1:0]    decode_i
-   , input logic [reg_data_width_lp-1:0]  rs1_i
-   , input logic [reg_data_width_lp-1:0]  rs2_i
-   , input logic [exception_width_lp-1:0] exc_i
+   , input [decode_width_lp-1:0]    decode_i
+   , input [reg_data_width_lp-1:0]  rs1_i
+   , input [reg_data_width_lp-1:0]  rs2_i
+   , input [exception_width_lp-1:0] exc_i
 
    // Pipeline result
    , output logic [reg_data_width_lp-1:0] result_o
@@ -69,17 +69,15 @@ wire [exception_width_lp-1:0] unused5 = exc_i;
 
 // Module instantiations
 
-always_comb 
-  begin : pipeline
-    result_o = '0;
-  end 
+always_comb begin
+  result_o = '0;
+end 
 
 // Runtime assertions
-always_comb 
-  begin : runtime_assertions
-    assert(~decode.pipe_fp_v) 
-      else $warning("RV64FD not currently supported");
-  end
+always_comb begin
+  assert (reset_i | ~decode.pipe_fp_v) 
+    else $warning("RV64FD not currently supported");
+end
 
 endmodule : bp_be_pipe_fp
 

@@ -23,7 +23,6 @@ module bp_multi_wrapper
    ,parameter num_cce_p="inv"
    ,parameter num_lce_p="inv"
    ,parameter num_mem_p="inv"
-   ,parameter coh_states_p="inv"
    ,parameter lce_assoc_p="inv"
    ,parameter lce_sets_p="inv"
    ,parameter cce_block_size_in_bytes_p="inv"
@@ -66,7 +65,7 @@ module bp_multi_wrapper
 `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
 `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
 `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, cce_block_size_in_bits_lp);
-`declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, coh_states_p);
+`declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
 `declare_bp_cce_lce_data_cmd_s(num_cce_p, num_lce_p, paddr_width_p, cce_block_size_in_bits_lp, lce_assoc_p);
 `declare_bp_lce_lce_tr_resp_s(num_lce_p, paddr_width_p, cce_block_size_in_bits_lp, lce_assoc_p);
 
@@ -74,7 +73,7 @@ module bp_multi_wrapper
 bp_fe_queue_s[core_els_p-1:0] fe_fe_queue, be_fe_queue;
 logic[core_els_p-1:0] fe_fe_queue_v, be_fe_queue_v, fe_fe_queue_rdy, be_fe_queue_rdy;
 
-logic [core_els_p-1:0] fe_queue_clr, fe_queue_ckpt_inc, fe_queue_rollback;
+logic [core_els_p-1:0] fe_queue_clr, fe_queue_dequeue, fe_queue_rollback;
 
 bp_fe_cmd_s[core_els_p-1:0] fe_fe_cmd, be_fe_cmd;
 logic [core_els_p-1:0] fe_fe_cmd_v, be_fe_cmd_v, fe_fe_cmd_rdy, be_fe_cmd_rdy;
@@ -132,7 +131,6 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
                ,.lce_sets_p(lce_sets_p)
                ,.lce_assoc_p(lce_assoc_p)
                ,.tag_width_p(12)
-               ,.coh_states_p(coh_states_p)
                ,.num_cce_p(num_cce_p)
                ,.num_lce_p(num_lce_p)
                ,.block_size_in_bytes_p(8) /* TODO: This is ways not blocks */
@@ -188,7 +186,7 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
                           ,.reset_i(reset_i)
 
                           ,.clr_v_i(fe_queue_clr[core_id])
-                          ,.ckpt_v_i(fe_queue_ckpt_inc[core_id])
+                          ,.ckpt_v_i(fe_queue_dequeue[core_id])
                           ,.roll_v_i(fe_queue_rollback[core_id])
 
                           ,.data_i(fe_fe_queue[core_id])
@@ -223,7 +221,6 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
                 ,.num_cce_p(num_cce_p)
                 ,.num_lce_p(num_lce_p)
                 ,.num_mem_p(num_mem_p)
-                ,.coh_states_p(coh_states_p)
                 ,.lce_assoc_p(lce_assoc_p)
                 ,.lce_sets_p(lce_sets_p)
                 ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
@@ -236,7 +233,7 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
                 ,.fe_queue_rdy_o(be_fe_queue_rdy[core_id])
 
                 ,.fe_queue_clr_o(fe_queue_clr[core_id])
-                ,.fe_queue_ckpt_inc_o(fe_queue_ckpt_inc[core_id])
+                ,.fe_queue_dequeue_o(fe_queue_dequeue[core_id])
                 ,.fe_queue_rollback_o(fe_queue_rollback[core_id])
 
                 ,.fe_cmd_o(be_fe_cmd[core_id])
@@ -297,11 +294,9 @@ endgenerate
 
 bp_me_top #(.num_lce_p(num_lce_p)
             ,.num_cce_p(num_cce_p)
-            ,.num_mem_p(num_mem_p)
             ,.addr_width_p(paddr_width_p)
             ,.lce_assoc_p(lce_assoc_p)
             ,.lce_sets_p(lce_sets_p)
-            ,.coh_states_p(coh_states_p)
             ,.block_size_in_bytes_p(cce_block_size_in_bytes_p)
             ,.num_inst_ram_els_p(cce_num_inst_ram_els_p)
 

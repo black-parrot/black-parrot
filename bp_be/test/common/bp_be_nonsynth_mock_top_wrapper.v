@@ -22,7 +22,6 @@ module bp_be_nonsynth_mock_top_wrapper
    ,parameter branch_metadata_fwd_width_p="inv"
    ,parameter num_cce_p="inv"
    ,parameter num_lce_p="inv"
-   ,parameter coh_states_p="inv"
    ,parameter lce_assoc_p="inv"
    ,parameter lce_addr_width_p="inv"
    ,parameter lce_data_width_p="inv"
@@ -57,7 +56,6 @@ module bp_be_nonsynth_mock_top_wrapper
                                                           ,num_lce_p
                                                           ,lce_addr_width_p
                                                           ,lce_assoc_p
-                                                          ,coh_states_p
                                                           )
    ,localparam cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
                                                                     ,num_lce_p
