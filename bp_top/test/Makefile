@@ -6,6 +6,7 @@ BP_ME_PATH 	   = $(TOP)/bp_me
 BP_COMMON_PATH = $(TOP)/bp_common
 
 BSG_IP_PATH	   = $(TOP)/bsg_ip_cores
+SPIKE_MOD_PATH = $(TOP)/external/bin
 
 TEST_DIR       = $(BP_TOP_PATH)/test
 ROM_DIR        = $(TEST_DIR)/rom/v
@@ -15,7 +16,7 @@ HEX2BIN        = $(BP_TOP_PATH)/software/py/hex2binascii.py
 SPIKE2TR       = $(BP_TOP_PATH)/software/py/spike2tr.py
 BSG_ROM_GEN    = $(BSG_IP_PATH)/bsg_mem/bsg_ascii_to_rom.py
 RISCV_ELF2HEX  = elf2hex
-RISCV_SIM	     = $(SPIKE_MOD_PATH)/bin/spike # TODO: Set this at top level
+RISCV_SIM	     = $(SPIKE_MOD_PATH)/spike
 RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -D -M no-aliases,numeric
 RISCV_GCC=riscv64-unknown-elf-gcc -fPIC -march=rv64i -mabi=lp64 -mcmodel=medany -static -nostdlib -nostartfiles -T demos/riscv.ld
 
