@@ -95,7 +95,7 @@ always_ff @(posedge clk_i) begin
 
     if(reset_complete == 2'b11) begin
         if(booted) begin
-            if(!(cmt_trace_exc.cache_miss_v || cmt_trace_exc.roll_v || cmt_trace_exc.psn_v)) begin //TODO: Add other possible exceptions
+            if(!(cmt_trace_exc.cache_miss_v || cmt_trace_exc.roll_v || cmt_trace_exc.poison_v)) begin //TODO: Add other possible exceptions
                 if(cmt_trace_stage_reg.decode.mhartid_r_v) begin
 					// csr sem: r%d <- mhartid {%x}"
 					if(cmt_trace_stage_reg.decode.rd_addr != 5'b0) begin
