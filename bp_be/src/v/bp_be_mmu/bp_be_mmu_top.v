@@ -214,7 +214,7 @@ assign mmu_resp_o = mmu_resp;
 
 /* Internal connections */
 logic tlb_miss;
-logic [ptag_width_lp-1:0] ptag;
+logic [ptag_width_lp-1:0] ptag_r;
 
 bp_be_dcache_pkt_s dcache_pkt;
 logic dcache_ready, dcache_miss_v, dcache_v;
@@ -223,8 +223,11 @@ logic dcache_ready, dcache_miss_v, dcache_v;
 logic unused0;
 assign unused0 = mmu_resp_ready_i;
 
-// Passthrough conversion
-assign ptag = mmu_cmd.vaddr.tag;
+// Passthrough TLB conversion
+always_ff @(posedge clk_i) 
+  begin
+    ptag_r <= mmu_cmd.vaddr.tag;
+  end
 
 bp_be_dcache 
   #(.data_width_p(reg_data_width_lp) 
@@ -248,7 +251,7 @@ bp_be_dcache
     ,.data_o(mmu_resp.data)
 
     ,.tlb_miss_i(1'b0)
-    ,.ptag_i(ptag)
+    ,.ptag_i(ptag_r)
 
     ,.cache_miss_o(dcache_miss_v)
     ,.poison_i(chk_psn_ex_i)
