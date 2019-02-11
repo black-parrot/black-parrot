@@ -7,6 +7,7 @@
  *   Pipeline for RISC-V integer instructions. Handles integer computation and mhartid requests.
  *
  * Parameters:
+ *   core_els_p       - 
  *
  * Inputs:
  *   clk_i            -
@@ -34,10 +35,11 @@
 module bp_be_pipe_int 
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
- #(// Generated parameters
-   localparam decode_width_lp      = `bp_be_decode_width
+ #(parameter core_els_p = "inv"
+   // Generated parameters
+   , localparam decode_width_lp    = `bp_be_decode_width
    , localparam exception_width_lp = `bp_be_exception_width
-   , localparam mhartid_width_lp   = `bp_mhartid_width
+   , localparam mhartid_width_lp   = `BSG_SAFE_CLOG2(core_els_p)
    // From RISC-V specifications
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )

@@ -68,14 +68,14 @@ module bp_be_regfile
    , input [reg_data_width_lp-1:0]  rd_data_i
 
    // rs1 read bus
-   , input                                rs1_r_v_i
-   , input        [reg_addr_width_lp-1:0] rs1_addr_i
-   , output logic [reg_data_width_lp-1:0] rs1_data_o
+   , input                          rs1_r_v_i
+   , input  [reg_addr_width_lp-1:0] rs1_addr_i
+   , output [reg_data_width_lp-1:0] rs1_data_o
    
    // rs2 read bus
-   , input                                rs2_r_v_i
-   , input        [reg_addr_width_lp-1:0] rs2_addr_i
-   , output logic [reg_data_width_lp-1:0] rs2_data_o
+   , input                          rs2_r_v_i
+   , input  [reg_addr_width_lp-1:0] rs2_addr_i
+   , output [reg_data_width_lp-1:0] rs2_data_o
    );
 
 initial 
@@ -149,10 +149,11 @@ always_comb
     rs1_reread_addr = rs1_issue_v ? rs1_addr_i : rs1_addr_r;
     rs2_reread_addr = rs2_issue_v ? rs2_addr_i : rs2_addr_r;
   
-    // RISC-V defines x0 as 0. Else, pass out the register data
-    rs1_data_o = (rs1_addr_r == '0) ? '0 : rs1_reg_data;
-    rs2_data_o = (rs2_addr_r == '0) ? '0 : rs2_reg_data;
-  end
+end
+
+// RISC-V defines x0 as 0. Else, pass out the register data
+assign rs1_data_o = (rs1_addr_r == '0) ? '0 : rs1_reg_data;
+assign rs2_data_o = (rs2_addr_r == '0) ? '0 : rs2_reg_data;
 
 endmodule : bp_be_regfile
 

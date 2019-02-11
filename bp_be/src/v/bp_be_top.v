@@ -13,7 +13,6 @@
  *
  *   num_cce_p                   - 
  *   num_lce_p                   - 
- *   num_mem_p                   - 
  *   lce_assoc_p                 - 
  *   lce_sets_p                  - 
  *   cce_block_size_in_bytes_p   - 
@@ -85,10 +84,11 @@ module bp_be_top
    , parameter asid_width_p                = "inv"
    , parameter branch_metadata_fwd_width_p = "inv"
 
+   , parameter core_els_p                  = "inv"
+
    // MMU parameters
    , parameter num_cce_p                   = "inv"
    , parameter num_lce_p                   = "inv"
-   , parameter num_mem_p                   = "inv"
    , parameter lce_assoc_p                 = "inv"
    , parameter lce_sets_p                  = "inv"
    , parameter cce_block_size_in_bytes_p   = "inv"
@@ -132,68 +132,70 @@ module bp_be_top
                                                                        , cce_block_size_in_bits_lp
                                                                        , lce_assoc_p
                                                                        )                                                               
-   , localparam proc_cfg_width_lp          = `bp_proc_cfg_width
+   , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(core_els_p, num_lce_p)
 
    , localparam pipe_stage_reg_width_lp    = `bp_be_pipe_stage_reg_width(branch_metadata_fwd_width_p)
    , localparam calc_result_width_lp       = `bp_be_calc_result_width(branch_metadata_fwd_width_p)
    , localparam exception_width_lp         = `bp_be_exception_width
    )
-  (input logic                                    clk_i
-   , input logic                                  reset_i
+  (input                                     clk_i
+   , input                                   reset_i
 
    // FE queue interface
-   , input logic[fe_queue_width_lp-1:0]           fe_queue_i
-   , input logic                                  fe_queue_v_i
-   , output logic                                 fe_queue_rdy_o
+   , input [fe_queue_width_lp-1:0]           fe_queue_i
+   , input                                   fe_queue_v_i
+   , output                                  fe_queue_rdy_o
 
-   , output logic                                 fe_queue_clr_o
-   , output logic                                 fe_queue_dequeue_o
-   , output logic                                 fe_queue_rollback_o
+   , output                                  fe_queue_clr_o
+   , output                                  fe_queue_dequeue_o
+   , output                                  fe_queue_rollback_o
  
    // FE cmd interface
-   , output logic[fe_cmd_width_lp-1:0]            fe_cmd_o
-   , output logic                                 fe_cmd_v_o
-   , input logic                                  fe_cmd_rdy_i
+   , output [fe_cmd_width_lp-1:0]            fe_cmd_o
+   , output                                  fe_cmd_v_o
+   , input                                   fe_cmd_rdy_i
 
    // LCE-CCE interface
-   , output logic[lce_cce_req_width_lp-1:0]       lce_cce_req_o
-   , output logic                                 lce_cce_req_v_o
-   , input logic                                  lce_cce_req_rdy_i
+   , output [lce_cce_req_width_lp-1:0]       lce_cce_req_o
+   , output                                  lce_cce_req_v_o
+   , input                                   lce_cce_req_rdy_i
 
-   , output logic[lce_cce_resp_width_lp-1:0]      lce_cce_resp_o
-   , output logic                                 lce_cce_resp_v_o
-   , input logic                                  lce_cce_resp_rdy_i                                 
+   , output [lce_cce_resp_width_lp-1:0]      lce_cce_resp_o
+   , output                                  lce_cce_resp_v_o
+   , input                                   lce_cce_resp_rdy_i                                 
 
-   , output logic[lce_cce_data_resp_width_lp-1:0] lce_cce_data_resp_o
-   , output logic                                 lce_cce_data_resp_v_o
-   , input logic                                  lce_cce_data_resp_rdy_i
+   , output [lce_cce_data_resp_width_lp-1:0] lce_cce_data_resp_o
+   , output                                  lce_cce_data_resp_v_o
+   , input                                   lce_cce_data_resp_rdy_i
 
-   , input logic[cce_lce_cmd_width_lp-1:0]        cce_lce_cmd_i
-   , input logic                                  cce_lce_cmd_v_i
-   , output logic                                 cce_lce_cmd_rdy_o
+   , input [cce_lce_cmd_width_lp-1:0]        cce_lce_cmd_i
+   , input                                   cce_lce_cmd_v_i
+   , output                                  cce_lce_cmd_rdy_o
 
-   , input logic[cce_lce_data_cmd_width_lp-1:0]   cce_lce_data_cmd_i
-   , input logic                                  cce_lce_data_cmd_v_i
-   , output logic                                 cce_lce_data_cmd_rdy_o
+   , input [cce_lce_data_cmd_width_lp-1:0]   cce_lce_data_cmd_i
+   , input                                   cce_lce_data_cmd_v_i
+   , output                                  cce_lce_data_cmd_rdy_o
 
-   , input logic [lce_lce_tr_resp_width_lp-1:0]   lce_lce_tr_resp_i
-   , input logic                                  lce_lce_tr_resp_v_i
-   , output logic                                 lce_lce_tr_resp_rdy_o
+   , input [lce_lce_tr_resp_width_lp-1:0]    lce_lce_tr_resp_i
+   , input                                   lce_lce_tr_resp_v_i
+   , output                                  lce_lce_tr_resp_rdy_o
 
-   , output logic[lce_lce_tr_resp_width_lp-1:0]   lce_lce_tr_resp_o
-   , output logic                                 lce_lce_tr_resp_v_o
-   , input logic                                  lce_lce_tr_resp_rdy_i
+   , output [lce_lce_tr_resp_width_lp-1:0]   lce_lce_tr_resp_o
+   , output                                  lce_lce_tr_resp_v_o
+   , input                                   lce_lce_tr_resp_rdy_i
 
    // Processor configuration
-   , input logic[proc_cfg_width_lp-1:0]           proc_cfg_i
+   , input [proc_cfg_width_lp-1:0]           proc_cfg_i
 
    // Commit tracer
-   , output logic[pipe_stage_reg_width_lp-1:0]    cmt_trace_stage_reg_o
-   , output logic[calc_result_width_lp-1:0]       cmt_trace_result_o
-   , output logic[exception_width_lp-1:0]         cmt_trace_exc_o
+   , output [pipe_stage_reg_width_lp-1:0]    cmt_trace_stage_reg_o
+   , output [calc_result_width_lp-1:0]       cmt_trace_result_o
+   , output [exception_width_lp-1:0]         cmt_trace_exc_o
    );
 
 // Declare parameterized structures
+`declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
+`declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
 `declare_bp_be_internal_if_structs(vaddr_width_p
                                    , paddr_width_p
                                    , asid_width_p
@@ -263,6 +265,11 @@ bp_be_calculator_top
    ,.paddr_width_p(paddr_width_p)
    ,.asid_width_p(asid_width_p)
    ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+
+   ,.core_els_p(core_els_p)
+   ,.num_lce_p(num_lce_p)
+   ,.lce_sets_p(lce_sets_p)
+   ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
    )
  calculator
   (.clk_i(clk_i)
@@ -303,7 +310,6 @@ bp_be_mmu_top
 
    ,.num_cce_p(num_cce_p)
    ,.num_lce_p(num_lce_p)
-   ,.num_mem_p(num_mem_p)
    ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
    ,.lce_assoc_p(lce_assoc_p)
    ,.lce_sets_p(lce_sets_p)

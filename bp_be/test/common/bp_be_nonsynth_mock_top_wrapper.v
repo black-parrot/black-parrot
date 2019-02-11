@@ -23,8 +23,11 @@ module bp_be_nonsynth_mock_top_wrapper
    ,parameter num_cce_p="inv"
    ,parameter num_lce_p="inv"
    ,parameter lce_assoc_p="inv"
+   ,parameter lce_sets_p="inv"
    ,parameter lce_addr_width_p="inv"
    ,parameter lce_data_width_p="inv"
+
+   ,parameter cce_block_size_in_bytes_p="inv"
  
    ,parameter boot_rom_els_p="inv"
    ,parameter boot_rom_width_p="inv"
@@ -70,6 +73,7 @@ module bp_be_nonsynth_mock_top_wrapper
    ,input logic reset_i
   );
 
+`declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
 `declare_bp_common_fe_be_if_structs(vaddr_width_p,paddr_width_p,asid_width_p
                                    ,branch_metadata_fwd_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p,paddr_width_p,asid_width_p

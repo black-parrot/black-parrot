@@ -40,20 +40,22 @@ module bp_be_instr_decoder
   (input [instr_width_lp-1:0]     instr_i
 
    // Various sources of nop
-   , input                              fe_nop_v_i
-   , input                              be_nop_v_i
-   , input                              me_nop_v_i
+   , input                        fe_nop_v_i
+   , input                        be_nop_v_i
+   , input                        me_nop_v_i
 
-   , output logic [decode_width_lp-1:0] decode_o
-   , output logic                       illegal_instr_o
+   , output [decode_width_lp-1:0] decode_o
+   , output                       illegal_instr_o
    );
 
 // Cast input and output ports 
 bp_be_instr_s  instr;
 bp_be_decode_s decode;
+logic          illegal_instr;
 
-assign instr    = instr_i;
-assign decode_o = decode;
+assign instr           = instr_i;
+assign decode_o        = decode;
+assign illegal_instr_o = illegal_instr;
 
 // Decode logic 
 always_comb 
@@ -98,7 +100,7 @@ always_comb
     decode.baddr_sel     = bp_be_baddr_e'('0);
     decode.result_sel    = bp_be_result_e'('0);
 
-    illegal_instr_o      = '0;
+    illegal_instr        = '0;
 
     unique casez (instr.opcode) 
       `RV64_OP_OP, `RV64_OP_32_OP : 
@@ -117,7 +119,7 @@ always_comb
             `RV64_XOR             : decode.fu_op = e_int_op_xor;
             `RV64_OR              : decode.fu_op = e_int_op_or;
             `RV64_AND             : decode.fu_op = e_int_op_and;
-            default : illegal_instr_o = 1'b1;
+            default : illegal_instr = 1'b1;
           endcase
 
           decode.src1_sel   = e_src1_is_rs1;
@@ -139,7 +141,7 @@ always_comb
             `RV64_XORI              : decode.fu_op = e_int_op_xor;
             `RV64_ORI               : decode.fu_op = e_int_op_or;
             `RV64_ANDI              : decode.fu_op = e_int_op_and;
-            default : illegal_instr_o = 1'b1;
+            default : illegal_instr = 1'b1;
           endcase
 
           decode.src1_sel   = e_src1_is_rs1;
@@ -190,7 +192,7 @@ always_comb
             `RV64_BGE  : decode.fu_op = e_int_op_sge;
             `RV64_BLTU : decode.fu_op = e_int_op_sltu;
             `RV64_BGEU : decode.fu_op = e_int_op_sgeu;
-            default : illegal_instr_o = 1'b1;
+            default : illegal_instr = 1'b1;
           endcase
           decode.src1_sel   = e_src1_is_rs1;
           decode.src2_sel   = e_src2_is_rs2;
@@ -210,7 +212,7 @@ always_comb
             `RV64_LHU: decode.fu_op = e_lhu;
             `RV64_LWU: decode.fu_op = e_lwu;
             `RV64_LD : decode.fu_op = e_ld;
-            default : illegal_instr_o = 1'b1;
+            default : illegal_instr = 1'b1;
           endcase
         end
       `RV64_STORE_OP : 
@@ -222,7 +224,7 @@ always_comb
             `RV64_SH : decode.fu_op = e_sh;
             `RV64_SW : decode.fu_op = e_sw;
             `RV64_SD : decode.fu_op = e_sd;
-            default : illegal_instr_o = 1'b1;
+            default : illegal_instr = 1'b1;
           endcase
         end
       `RV64_MISC_MEM_OP : 
@@ -240,14 +242,14 @@ always_comb
                 decode.irf_w_v     = 1'b1;
                 decode.mhartid_r_v = 1'b1;
               end
-            default : illegal_instr_o = 1'b1;
+            default : illegal_instr = 1'b1;
           endcase
         end
-      default : illegal_instr_o = 1'b1;
+      default : illegal_instr = 1'b1;
     endcase
 
     /* If NOP or illegal instruction, dispatch the instruction directly to the completion pipe */
-    if (fe_nop_v_i | be_nop_v_i | me_nop_v_i | illegal_instr_o) 
+    if (fe_nop_v_i | be_nop_v_i | me_nop_v_i | illegal_instr) 
       begin
         decode             = '0;
         decode.fe_nop_v    = fe_nop_v_i;

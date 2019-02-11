@@ -49,6 +49,7 @@ module bp_top_wrapper
    ,input logic reset_i
   );
 
+`declare_bp_common_proc_cfg_s(1, num_lce_p)
 `declare_bp_common_fe_be_if_structs(vaddr_width_p,paddr_width_p,asid_width_p
                                    ,branch_metadata_fwd_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p,paddr_width_p,asid_width_p
@@ -192,6 +193,7 @@ bp_be_top #(.mhartid_p(mhartid_p)
             ,.paddr_width_p(paddr_width_p)
             ,.asid_width_p(asid_width_p)
             ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+            ,.core_els_p(1)
             ,.num_cce_p(num_cce_p)
             ,.num_lce_p(num_lce_p)
             ,.num_mem_p(num_mem_p)
