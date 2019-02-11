@@ -98,7 +98,7 @@ TEST_SOURCE += 	                                                      \
 			  $(BP_ME_DIR)/test/common/bp_mem.v	                            \
 																                                      \
 			  $(BP_TOP_DIR)/test/rom/v/$(LOAD_ROM) 													\
-			  $(BP_TOP_DIR)/test/trace_rom/v/$(TRACE_ROM) 									\
+			  #$(BP_TOP_DIR)/test/trace_rom/v/$(TRACE_ROM) 									\
 			
 
 ISA_TESTS = rv64ui_p_add_rom.v \

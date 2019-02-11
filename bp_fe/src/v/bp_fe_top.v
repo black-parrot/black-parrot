@@ -100,7 +100,7 @@ module bp_fe_top
    , localparam bp_fe_queue_width_lp=`bp_fe_queue_width(vaddr_width_p
                                                         ,branch_metadata_fwd_width_lp
                                                        )
-   , localparam lce_id_width_lp=`bp_lce_id_width
+   , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
    )
   (input                                              clk_i
    , input                                            reset_i

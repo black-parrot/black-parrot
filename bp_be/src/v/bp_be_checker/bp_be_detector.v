@@ -64,10 +64,10 @@ module bp_be_detector
    , input                             mmu_cmd_ready_i
 
    // Pipeline control signals from the checker to the calculator
-   , output logic                      chk_dispatch_v_o
-   , output logic                      chk_roll_o
-   , output logic                      chk_poison_isd_o
-   , output logic                      chk_poison_ex_o
+   , output                           chk_dispatch_v_o
+   , output                           chk_roll_o
+   , output                           chk_poison_isd_o
+   , output                           chk_poison_ex_o
   );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p
@@ -152,19 +152,20 @@ always_comb
     // Detect misprediction
     mispredict_v = (calc_status.isd_v & (calc_status.isd_pc != expected_npc_i));
 
-    // Generate calculator control signals
-    chk_dispatch_v_o = ~(data_haz_v | struct_haz_v);
-    chk_roll_o       = calc_status.mem3_cache_miss_v;
-    chk_poison_isd_o = reset_i 
+  end
+
+// Generate calculator control signals
+assign chk_dispatch_v_o = ~(data_haz_v | struct_haz_v);
+assign chk_roll_o       = calc_status.mem3_cache_miss_v;
+assign chk_poison_isd_o = reset_i 
                        | mispredict_v
                        | calc_status.mem3_cache_miss_v 
                        | calc_status.mem3_exception_v 
                        | calc_status.mem3_ret_v;
 
-    chk_poison_ex_o  = reset_i
+assign chk_poison_ex_o  = reset_i
                        | calc_status.mem3_cache_miss_v 
                        | calc_status.mem3_exception_v 
                        | calc_status.mem3_ret_v;
-  end
 
 endmodule : bp_be_detector

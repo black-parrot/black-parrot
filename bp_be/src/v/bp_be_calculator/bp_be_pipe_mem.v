@@ -7,6 +7,7 @@
  *   Pipeline for RISC-V memory instructions. This includes both int + float loads + stores.
  *
  * Parameters:
+ *   vaddr_width_p    -
  *
  * Inputs:
  *   clk_i            -
@@ -42,8 +43,11 @@
 module bp_be_pipe_mem 
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
- #(// Generated parameters
-   localparam decode_width_lp      = `bp_be_decode_width
+ #(parameter vaddr_width_p               = "inv"
+   , parameter lce_sets_p                = "inv"
+   , parameter cce_block_size_in_bytes_p = "inv"
+   // Generated parameters
+   , localparam decode_width_lp    = `bp_be_decode_width
    , localparam exception_width_lp = `bp_be_exception_width
    , localparam mmu_cmd_width_lp   = `bp_be_mmu_cmd_width
    , localparam mmu_resp_width_lp  = `bp_be_mmu_resp_width
@@ -60,17 +64,20 @@ module bp_be_pipe_mem
    , input [reg_data_width_lp-1:0]  imm_i
    , input [exception_width_lp-1:0] exc_i
 
-   , output logic [mmu_cmd_width_lp-1:0]  mmu_cmd_o
-   , output logic                         mmu_cmd_v_o
-   , input                                mmu_cmd_ready_i
+   , output [mmu_cmd_width_lp-1:0]  mmu_cmd_o
+   , output                         mmu_cmd_v_o
+   , input                          mmu_cmd_ready_i
 
-   , input       [mmu_resp_width_lp-1:0]  mmu_resp_i
-   , input                                mmu_resp_v_i
-   , output logic                         mmu_resp_ready_o
+   , input  [mmu_resp_width_lp-1:0] mmu_resp_i
+   , input                          mmu_resp_v_i
+   , output                         mmu_resp_ready_o
 
-   , output logic [reg_data_width_lp-1:0] result_o
-   , output logic                         cache_miss_o
+   , output [reg_data_width_lp-1:0] result_o
+   , output                         cache_miss_o
    );
+
+// Declare parameterizable structs
+`declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
 
 // Cast input and output ports 
 bp_be_decode_s    decode;
@@ -90,18 +97,18 @@ wire unused2 = mmu_cmd_ready_i;
 wire unused3 = mmu_resp_v_i;
 
 // Module instantiations
+assign mmu_cmd_v_o    = (decode.dcache_r_v | decode.dcache_w_v) & ~|exc;
 always_comb 
   begin
     mmu_cmd.mem_op = decode.fu_op;
     mmu_cmd.data   = rs2_i;
-    mmu_cmd.addr   = rs1_i + imm_i;
-    mmu_cmd_v_o    = (decode.dcache_r_v | decode.dcache_w_v) & ~|exc;
-
-    mmu_resp_ready_o = 1'b1;
-    result_o       = mmu_resp.data;
-
-    cache_miss_o   = mmu_resp.exception.cache_miss_v;
+    mmu_cmd.vaddr  = rs1_i + imm_i;
   end 
+
+// Output results of memory op
+assign mmu_resp_ready_o = 1'b1;
+assign result_o         = mmu_resp.data;
+assign cache_miss_o     = mmu_resp.exception.cache_miss_v;
 
 endmodule : bp_be_pipe_mem
 

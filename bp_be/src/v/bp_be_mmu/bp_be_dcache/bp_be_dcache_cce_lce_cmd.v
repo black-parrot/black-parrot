@@ -32,7 +32,7 @@ module bp_be_dcache_cce_lce_cmd
     ,parameter dcache_lce_tag_mem_pkt_width_lp=`bp_be_dcache_lce_tag_mem_pkt_width(sets_p, ways_p, tag_width_p)
     ,parameter dcache_lce_stat_mem_pkt_width_lp=`bp_be_dcache_lce_stat_mem_pkt_width(sets_p, ways_p)
 
-    ,localparam lce_id_width_lp=`bp_lce_id_width
+    ,localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
   )
   (
     input clk_i

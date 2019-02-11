@@ -24,7 +24,7 @@ module bp_be_dcache_lce_cce_req
     ,parameter lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, lce_addr_width_p, ways_p)
     ,parameter lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, lce_addr_width_p)
 
-    ,localparam lce_id_width_lp=`bp_lce_id_width
+    ,localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
   )
   (
     input clk_i
