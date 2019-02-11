@@ -22,7 +22,11 @@ SECTIONS
 {
 
   /* text: test code section */
-  . = 0x80000000;
+  /* Non-standard linking address. Because things are terrible.
+   * JK it's because we use a different start file than for normal ISA tests
+   * with incompatible stuff ripped out 
+   */
+  . = 0x80000124;
   .text.init : { *(.text.init) }
 
   . = ALIGN(0x1000);
