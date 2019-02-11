@@ -17,7 +17,6 @@ module instr_scan
 
    
 //assign the struct to the port signals
-`declare_bp_fe_instr_scan_s;
 bp_fe_instr_scan_s scan;
 assign scan_o = scan;
    

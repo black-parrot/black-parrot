@@ -1,5 +1,5 @@
 /*                                  
-* bp_fe_pc_gen.v                                                                                                                                                                                          
+* bp_fe_top.v                                                                                                                                                                                          
 * */
 
 module bp_fe_top
@@ -11,7 +11,7 @@ module bp_fe_top
    , parameter data_width_p="inv"
    , parameter inst_width_p="inv"
   
-   , parameter branch_predictor_p=1 // TODO: Make string to select branch predictor 
+   , parameter branch_predictor_p=1 
 
    // icache related parameters 
    , parameter tag_width_p="inv"
@@ -71,8 +71,6 @@ module bp_fe_top
    , localparam branch_metadata_fwd_width_lp=btb_indx_width_p+bht_indx_width_p+ras_addr_width_p
    , localparam bp_fe_pc_gen_itlb_width_lp=`bp_fe_pc_gen_itlb_width(eaddr_width_p)
    , localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p
-                                                                ,paddr_width_p
-                                                                ,asid_width_p
                                                                 ,branch_metadata_fwd_width_lp
                                                                )
    , localparam bp_fe_pc_gen_width_o_lp=`bp_fe_pc_gen_queue_width(vaddr_width_p
@@ -145,24 +143,17 @@ module bp_fe_top
    );
 
 // the first level of structs
-// be_fe interface
-`declare_bp_common_fe_be_if_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)
-// pc_gen to fe
-`declare_bp_fe_pc_gen_queue_s;
+`declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp);   
 // fe to pc_gen
-`declare_bp_fe_pc_gen_cmd_s;
+`declare_bp_fe_pc_gen_cmd_s(branch_metadata_fwd_width_lp);
 // pc_gen to icache
 `declare_bp_fe_pc_gen_icache_s(eaddr_width_p);
 // pc_gen to itlb
 `declare_bp_fe_pc_gen_itlb_s(eaddr_width_p);
 // icache to pc_gen
 `declare_bp_fe_icache_pc_gen_s(eaddr_width_p);
-// fe to itlb
-`declare_bp_fe_itlb_cmd_s;
 // itlb to cache
 `declare_bp_fe_itlb_icache_data_resp_s(bp_fe_itlb_icache_width_lp);
-// itlb to fe
-`declare_bp_fe_itlb_queue_s;
 
    
 // fe to be
@@ -215,7 +206,6 @@ assign bp_fe_cmd     = bp_fe_cmd_i;
 assign bp_fe_queue_o = bp_fe_queue;
 
 // pc_gen to fe
-// pc_gen output msg_type and msg, does not forward the instr_scan results to the backend
 assign bp_fe_queue.msg_type = pc_gen_queue.msg_type;
 assign bp_fe_queue.msg      = pc_gen_queue.msg;
 assign pc_gen_fe_ready      = bp_fe_queue_ready_i;
@@ -223,10 +213,23 @@ assign bp_fe_queue_v_o      = pc_gen_fe_v;
 
 
 // fe to pc_gen 
-//(top module only forward information if the bp_fe_cmd is in the following opcode)
-assign fe_pc_gen         = bp_fe_cmd;
-assign fe_pc_gen_v       = bp_fe_cmd_v_i;
-assign bp_fe_cmd_ready_o = fe_pc_gen_ready;
+assign fe_pc_gen.pc_redirect_valid   = (bp_fe_cmd.opcode == e_op_pc_redirection)
+                                       && (bp_fe_cmd.operands.pc_redirect_operands.subopcode
+                                       == e_subop_branch_mispredict);
+   
+assign fe_pc_gen.attaboy_valid       = bp_fe_cmd.opcode == e_op_attaboy;
+   
+assign fe_pc_gen.branch_metadata_fwd = (bp_fe_cmd.opcode  == e_op_attaboy) ?
+                                       bp_fe_cmd.operands.attaboy.branch_metadata_fwd :
+                                       (bp_fe_cmd.opcode  == e_op_pc_redirection) ?
+                                       bp_fe_cmd.operands.pc_redirect_operands.branch_metadata_fwd :
+                                       '{default:'0};
+
+assign fe_pc_gen.pc                  = fe_pc_gen.pc_redirect_valid ? bp_fe_cmd.operands.pc_redirect_operands.pc :
+                                       bp_fe_cmd.operands.attaboy.pc;
+   
+assign fe_pc_gen_v                   = bp_fe_cmd_v_i;
+assign bp_fe_cmd_ready_o             = fe_pc_gen_ready;
 
    
 // fe to itlb
@@ -239,7 +242,6 @@ assign itlb_fe_ready = bp_fe_queue_ready_i;
 
 // icache to icache
 assign poison = cache_miss && bp_fe_cmd.opcode == e_op_icache_fence;
-
 
    
 bp_fe_pc_gen 

@@ -24,7 +24,7 @@ module bp_fe_pc_gen
    , localparam bp_fe_pc_gen_icache_width_lp=eaddr_width_p
    , localparam bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(eaddr_width_p)
    , localparam bp_fe_pc_gen_itlb_width_lp=`bp_fe_pc_gen_itlb_width(eaddr_width_p)
-   , localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)
+   , localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p,branch_metadata_fwd_width_lp)
    , localparam bp_fe_pc_gen_width_o_lp=`bp_fe_pc_gen_queue_width(vaddr_width_p,branch_metadata_fwd_width_lp)
    , parameter prediction_on_p=1
    , parameter branch_predictor_p="inv"
@@ -58,12 +58,9 @@ module bp_fe_pc_gen
 
    
 //the first level of structs
-//be_fe interface
-`declare_bp_common_fe_be_if_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)
-//pc_gen to fe
-`declare_bp_fe_pc_gen_queue_s;
+`declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)
 //fe to pc_gen
-`declare_bp_fe_pc_gen_cmd_s;
+`declare_bp_fe_pc_gen_cmd_s(branch_metadata_fwd_width_lp);
 //pc_gen to icache
 `declare_bp_fe_pc_gen_icache_s(eaddr_width_p);
 //pc_gen to itlb
@@ -105,10 +102,6 @@ logic [instr_width_p-1:0]       instr_out;
 
 //control signals
 logic                          predict;
-logic                          interrupt;
-logic                          branch_misprediction;
-logic                          attaboy;
-logic                          misalignment;
 logic                          pc_redirect_after_icache_miss;
 logic                          stalled_pc_redirect;
    
@@ -119,30 +112,13 @@ assign pc_gen_itlb_o   = pc_gen_itlb;
 assign pc_gen_fe_o     = pc_gen_queue;
 assign fe_pc_gen_cmd   = fe_pc_gen_i;
 assign icache_pc_gen   = icache_pc_gen_i;
-   
 
-
-   
-/* input wiring */
-assign interrupt             = fe_pc_gen_cmd.command_queue_opcodes == e_op_interrupt ;
-assign branch_misprediction  = (fe_pc_gen_cmd.command_queue_opcodes == e_op_pc_redirection)
-                               && (fe_pc_gen_cmd.operands.pc_redirect_operands.subopcode 
-                               == e_subop_branch_mispredict) ;
-assign attaboy               = fe_pc_gen_cmd.command_queue_opcodes == e_op_attaboy ;
-
-assign branch_metadata_fwd_i = (fe_pc_gen_cmd.command_queue_opcodes  == e_op_attaboy) ? 
-                               fe_pc_gen_cmd.operands.attaboy.branch_metadata_fwd :
-                               (fe_pc_gen_cmd.command_queue_opcodes  == e_op_pc_redirection) ?
-                               fe_pc_gen_cmd.operands.pc_redirect_operands.branch_metadata_fwd :
-                               '{default:'0};
-
-assign misalignment          = fe_pc_gen_v_i 
-                               && ~fe_pc_gen_cmd.operands.pc_redirect_operands.pc[3:0] == 4'h0 
-                               && ~fe_pc_gen_cmd.operands.pc_redirect_operands.pc[3:0] == 4'h4
-                               && ~fe_pc_gen_cmd.operands.pc_redirect_operands.pc[3:0] == 4'h8
-                               && ~fe_pc_gen_cmd.operands.pc_redirect_operands.pc[3:0] == 4'hC;
-
-
+assign misalignment          = fe_pc_gen_v_i
+                               && fe_pc_gen_cmd.pc_redirect_valid 
+                               && ~fe_pc_gen_cmd.pc[3:0] == 4'h0 
+                               && ~fe_pc_gen_cmd.pc[3:0] == 4'h4
+                               && ~fe_pc_gen_cmd.pc[3:0] == 4'h8
+                               && ~fe_pc_gen_cmd.pc[3:0] == 4'hC;
    
 /* output wiring */
 // there should be fixes to the pc signal sent out according to the valid/ready signal pairs
@@ -156,8 +132,6 @@ assign pc_gen_itlb.virt_addr            = pc;
 assign pc_gen_fetch.branch_metadata_fwd = branch_metadata_fwd_o;
 assign pc_gen_fetch.padding             = '0;
 assign pc_gen_exception.padding         = '0;
-
-
 
    
 //valid-ready signals assignments
@@ -177,15 +151,16 @@ always_comb
       end
   end
 
+   
 //next_pc
 always_comb begin
   if (icache_miss_i) 
     begin
       next_pc = icache_miss_pc;
     end 
-  else if (branch_misprediction && fe_pc_gen_v_i) 
+  else if (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) 
     begin
-      next_pc = fe_pc_gen_cmd.operands.pc_redirect_operands.pc;
+      next_pc = fe_pc_gen_cmd.pc;
     end 
   else if (prediction_on_p && predict) 
     begin
@@ -197,6 +172,7 @@ always_comb begin
     end
 end 
 
+   
 always_ff @(posedge clk_i) 
   begin
     if (reset_i) 
@@ -227,9 +203,9 @@ always_ff @(posedge clk_i)
 //Keep track of stalled PC_redirect due to icache miss (icache is not ready). 
 always_ff @(posedge clk_i) 
   begin
-    if (fe_pc_gen_v_i && branch_misprediction) 
+    if (fe_pc_gen_v_i && fe_pc_gen_cmd.pc_redirect_valid) 
       begin
-        pc_redirect         <= fe_pc_gen_cmd.operands.pc_redirect_operands.pc;
+        pc_redirect         <= fe_pc_gen_cmd.pc;
         stalled_pc_redirect <= 1'b1;
       end 
     else if (stalled_pc_redirect && (pc_gen_fetch.pc != pc_redirect)) 
@@ -260,11 +236,11 @@ generate
         branch_prediction_1 
          (.clk_i(clk_i)
           ,.reset_i(reset_i)
-          ,.attaboy_i(attaboy)
+          ,.attaboy_i(fe_pc_gen_cmd.attaboy_valid)
           ,.r_v_i(~fe_pc_gen_v_i)
           ,.w_v_i(fe_pc_gen_v_i)
           ,.pc_queue_i(pc)
-          ,.pc_cmd_i(fe_pc_gen_cmd.operands.pc_redirect_operands.pc)
+          ,.pc_cmd_i(fe_pc_gen_cmd.pc)
           ,.pc_fwd_i(icache_pc_gen.addr)
           ,.branch_metadata_fwd_i(branch_metadata_fwd_i)
           ,.predict_o(predict)
@@ -283,11 +259,11 @@ generate
        branch_prediction_1 
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
-         ,.attaboy_i(attaboy)
+         ,.attaboy_i(fe_pc_gen_cmd.attaboy_valid)
          ,.r_v_i(~fe_pc_gen_v_i)
          ,.w_v_i(fe_pc_gen_v_i)
          ,.pc_queue_i(pc)
-         ,.pc_cmd_i(fe_pc_gen_cmd.operands.pc_redirect_operands.pc)
+         ,.pc_cmd_i(fe_pc_gen_cmd.pc)
          ,.pc_fwd_i(icache_pc_gen.addr)
          ,.branch_metadata_fwd_i(branch_metadata_fwd_i)
          ,.predict_o(predict)
