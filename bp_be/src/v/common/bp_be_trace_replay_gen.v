@@ -56,6 +56,35 @@ assign booted = (reset_complete == 2'b11) & ~(cmt_trace_stage_reg.decode.fe_nop_
 												cmt_trace_stage_reg.decode.be_nop_v |
 												cmt_trace_stage_reg.decode.me_nop_v);
 
+logic[rv64_reg_data_width_gp-1:0] mem_data;
+
+always_comb begin
+    if (cmt_trace_stage_reg.decode.dcache_w_v) begin
+        // get size of the memory operation
+        case (cmt_trace_stage_reg.decode.fu_op[1:0])
+            // byte
+            2'b00: begin
+                mem_data = {{(rv64_reg_data_width_gp - 8){1'b0}}, cmt_trace_stage_reg.instr_operands.rs2[7:0]};
+            end
+            // halfword
+            2'b01: begin
+                mem_data = {{(rv64_reg_data_width_gp - 16){1'b0}}, cmt_trace_stage_reg.instr_operands.rs2[15:0]};
+            end
+            // word
+            2'b10: begin
+                mem_data = {{(rv64_reg_data_width_gp - 32){1'b0}}, cmt_trace_stage_reg.instr_operands.rs2[31:0]};
+            end
+            // doubleword
+            2'b11: begin
+                mem_data = cmt_trace_stage_reg.instr_operands.rs2;
+            end
+            default: begin
+                mem_data = 'x;
+            end
+        endcase
+    end
+end
+
 always_ff @(posedge clk_i) begin
 	v_o <= 1'b0;
     if(reset_i) begin
@@ -82,7 +111,7 @@ always_ff @(posedge clk_i) begin
                 end else if(cmt_trace_stage_reg.decode.dcache_w_v) begin
 					// store sem: mem[%x] <- r%d {%x}" 
 					v_o <= 1'b1;
-					data_o <= {1'b1, cmt_trace_stage_reg.instr_operands.rs1 + cmt_trace_stage_reg.instr_operands.imm, cmt_trace_stage_reg.instr_operands.rs2};
+					data_o <= {1'b1, cmt_trace_stage_reg.instr_operands.rs1 + cmt_trace_stage_reg.instr_operands.imm, mem_data};
                 end else if(cmt_trace_stage_reg.decode.jmp_v) begin
 					// jump sem: pc <- {%x}, r%d <- {%x}"
 					if(cmt_trace_stage_reg.decode.rd_addr != 5'b0) begin
