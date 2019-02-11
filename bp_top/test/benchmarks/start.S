@@ -2,14 +2,10 @@
 .globl _start
 
 _start:
-/* setup stack pointer. Stacks start at 0x8FFF_DFFF */
-/* We then subtract off 4K*coreID */
+/* For benchmarks, our stack always starts at 0x8FFFCFF0 */
+/* Don't use like this for multicore */
     li   sp, 0x8FFFCFF0
     
-    csrr x1, mhartid 
-    slli x1, x1, 12
-    sub  sp, sp, x1 
-
 /* 0 all registers */
     addi x1,  x0, 0
     /* x2 is the sp which we set, so don't zero */
