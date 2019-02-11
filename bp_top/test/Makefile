@@ -15,7 +15,7 @@ HEX2BIN        = $(BP_TOP_PATH)/software/py/hex2binascii.py
 SPIKE2TR       = $(BP_TOP_PATH)/software/py/spike2tr.py
 BSG_ROM_GEN    = $(BSG_IP_PATH)/bsg_mem/bsg_ascii_to_rom.py
 RISCV_ELF2HEX  = elf2hex
-RISCV_SIM	   = $(TOP)/riscv-isa-sim/install/bin/spike
+RISCV_SIM	   = /home/katielim/mod_spike_bin/bin/spike
 RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -D -M no-aliases,numeric
 RISCV_GCC=riscv64-unknown-elf-gcc -fPIC -march=rv64i -mabi=lp64 -mcmodel=medany -static -nostdlib -nostartfiles -T demos/riscv.ld
 
@@ -25,9 +25,20 @@ include Makefile.frag
 all: isa
 
 isa: isa_elf isa_rom
+benchmarks: benchmarks_elf benchmarks_rom
 
 isa_elf: $(foreach x, $(subst -,_,$(RV64_TESTS)), $(x))
 isa_rom: $(foreach x, $(subst -,_,$(RV64_TESTS)), $(x).v)
+
+benchmarks_elf:
+	make -C benchmarks/
+	cp benchmarks/median.elf benchmarks/multiply.elf benchmarks/towers.elf benchmarks/vvadd.elf .
+
+benchmarks_rom: 
+	make median.v
+	make multiply.v
+	make towers.v
+	make vvadd.v
 
 #demo: $(foreach x, $(subst -,_,$(BP_DEMOS)),$(x).v)
 
@@ -42,7 +53,14 @@ isa_rom: $(foreach x, $(subst -,_,$(RV64_TESTS)), $(x).v)
 
 %.hex: %.trace
 	$(RISCV_ELF2HEX) 16 32768 $*.elf 2147483648  > $@
-	rm $*.elf
+	#rm $*.elf
+
+median.trace multiply.trace towers.trace vvadd.trace:
+	$(RISCV_SIM) --pc=0x80000124 -l --end-pc=0x800001b0 $(basename $@).elf 2>$(basename $@).spike
+	python $(SPIKE2TR) $(basename $@)
+	python $(BSG_ROM_GEN) $(basename $@).tr bp_trace_rom zero > $(TRACE_ROM_DIR)/$(basename $@)_rom.v
+	#rm $*.spike
+	#rm $*.tr
 
 %.trace: 
 	$(RISCV_SIM) -l $*.elf 2> $*.spike
