@@ -13,6 +13,8 @@
 //   oct-core configurations.
 // typedef logic[2:0] bp_mhartid_t;
 // typedef logic[3:0] bp_lce_id_t;
+//
+// We could pass pc_entry_point here as logic.  We could also pass it as a bsg_tag message
 
 // Passing in proc_cfg as a port rather than a parameter limits some optimizations (need to 
 //   route the ids through the chip), but it allows us to stamp out cores in our flow
