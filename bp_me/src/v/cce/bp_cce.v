@@ -234,7 +234,7 @@ module bp_cce
 
   // PC Logic, Instruction RAM
   bp_cce_pc
-    #(.num_cce_inst_ram_els_p(num_cce_inst_ram_els_p)
+    #(.inst_ram_els_p(num_cce_inst_ram_els_p)
       ,.harden_p(harden_p)
       )
     pc_inst_ram
