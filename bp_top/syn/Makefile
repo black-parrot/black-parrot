@@ -54,6 +54,9 @@ HDL_SOURCE = 										   			             																\
 			 $(BP_BE_DIR)/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_data_cmd.v    		\
 			 $(BP_BE_DIR)/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_lce_tr_resp_in.v	\
 			 $(BP_BE_DIR)/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_tr.v    	        \
+			 $(BP_BE_DIR)/src/v/bp_be_mmu/bp_be_tlb/bp_be_tlb.v    	        				\
+			 $(BP_BE_DIR)/src/v/bp_be_mmu/bp_be_tlb/bp_plru.v    	        				\
+			 $(BP_BE_DIR)/src/v/bp_be_mmu/bp_be_tlb/bp_tlb_cam.v    	        			\
 			 										                         												        	\
 			 $(BP_BE_DIR)/src/v/common/bsg_fifo_1r1w_rolly.v		                          \
 			 $(BP_BE_DIR)/src/v/common/bsg_dff_reset_en.v        	                        \
@@ -65,6 +68,7 @@ HDL_SOURCE = 										   			             																\
 			 $(BSG_IP_CORES_DIR)/bsg_dataflow/bsg_two_fifo.v				                      \
 			 $(BSG_IP_CORES_DIR)/bsg_mem/bsg_mem_2r1w_sync.v                              \
 			 $(BSG_IP_CORES_DIR)/bsg_mem/bsg_mem_2r1w_sync_synth.v                        \
+			 $(BSG_IP_CORES_DIR)/bsg_mem/bsg_cam_1r1w.v		                                \
 			 $(BSG_IP_CORES_DIR)/bsg_mem/bsg_mem_1r1w.v		                                \
 			 $(BSG_IP_CORES_DIR)/bsg_mem/bsg_mem_1r1w_sync.v						                  \
 			 $(BSG_IP_CORES_DIR)/bsg_mem/bsg_mem_1r1w_sync_synth.v		                    \
