@@ -461,7 +461,7 @@
 //    80002009:	000000ef          	jal	x1,80002009 <tdat10>
 //    8000200d:	0000                	unimp
 //	...
-module bp_be_boot_rom #(parameter width_p=-1, addr_width_p=-1)
+module bp_boot_rom #(parameter width_p=-1, addr_width_p=-1)
 (input  [addr_width_p-1:0] addr_i
 ,output logic [width_p-1:0]      data_o
 );

@@ -346,7 +346,7 @@
 //
 //000000008000200c <tdat4>:
 //    8000200c:	f00ff00f          	0xf00ff00f
-module bp_be_boot_rom #(parameter width_p=-1, addr_width_p=-1)
+module bp_boot_rom #(parameter width_p=-1, addr_width_p=-1)
 (input  [addr_width_p-1:0] addr_i
 ,output logic [width_p-1:0]      data_o
 );

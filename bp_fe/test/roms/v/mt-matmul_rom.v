@@ -2533,7 +2533,7 @@
 //  ec:	6964                	c.ld	x9,208(x10)
 //  ee:	2e76                	c.fldsp	f28,344(x2)
 //  f0:	          	fadd.s	f0,f0,f0,rne
-module bp_be_boot_rom #(parameter width_p=-1, addr_width_p=-1)
+module bp_boot_rom #(parameter width_p=-1, addr_width_p=-1)
 (input  [addr_width_p-1:0] addr_i
 ,output logic [width_p-1:0]      data_o
 );

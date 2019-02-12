@@ -8,24 +8,24 @@ module test_bp
  import bp_common_pkg::*;
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
- #(parameter vaddr_width_p="inv"
-   ,parameter paddr_width_p="inv"
-   ,parameter asid_width_p="inv"
-   ,parameter branch_metadata_fwd_width_p="inv"
-   ,parameter core_els_p="inv"
-   ,parameter num_cce_p="inv"
-   ,parameter num_lce_p="inv"
-   ,parameter lce_sets_p="inv"
-   ,parameter lce_assoc_p="inv"
-   ,parameter cce_block_size_in_bytes_p="inv"
-   ,parameter cce_num_inst_ram_els_p="inv"
-   ,parameter trace_en_p="inv"
+ #(parameter vaddr_width_p                 = "inv"
+   , parameter paddr_width_p               = "inv"
+   , parameter asid_width_p                = "inv"
+   , parameter branch_metadata_fwd_width_p = "inv"
+   , parameter core_els_p                  = "inv"
+   , parameter num_cce_p                   = "inv"
+   , parameter num_lce_p                   = "inv"
+   , parameter lce_sets_p                  = "inv"
+   , parameter lce_assoc_p                 = "inv"
+   , parameter cce_block_size_in_bytes_p   = "inv"
+   , parameter cce_num_inst_ram_els_p      = "inv"
+   , parameter trace_en_p                  = "inv"
 
-   ,parameter boot_rom_width_p="inv"
-   ,parameter boot_rom_els_p="inv"
+   , parameter boot_rom_width_p            = "inv"
+   , parameter boot_rom_els_p              = "inv"
 
-   ,localparam reg_data_width_lp=rv64_reg_data_width_gp
-   ,localparam byte_width_lp=rv64_byte_width_gp
+   , localparam reg_data_width_lp          = rv64_reg_data_width_gp
+   , localparam byte_width_lp              = rv64_byte_width_gp
  );
 
 logic clk, reset;

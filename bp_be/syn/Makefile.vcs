@@ -40,7 +40,7 @@ endif
 
 TRACE_ROM ?= rv64ui_p_add_trace_rom.v
 TEST_ROM  ?= bp_be_example_rom.v
-LOAD_ROM  ?= bp_be_boot_rom.v
+LOAD_ROM  ?= bp_boot_rom.v
 
 TEST_ROM_C  = $(notdir $(TEST_ROM))
 LOAD_ROM_C  = $(notdir $(LOAD_ROM))

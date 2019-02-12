@@ -7,7 +7,6 @@
 `include "bp_be_rv64_defines.vh"
 
 module bp_be_trace_replay_gen
- /* TODO: Get rid of this */
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
  #(parameter vaddr_width_p="inv"

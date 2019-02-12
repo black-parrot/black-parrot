@@ -133,7 +133,7 @@ bp_be_nonsynth_mock_fe #(.vaddr_width_p(vaddr_width_p)
                          ,.boot_rom_data_i(irom_data)
                          );
 
-bp_be_boot_rom #(.width_p(boot_rom_width_p)
+bp_boot_rom #(.width_p(boot_rom_width_p)
                  ,.addr_width_p(lg_boot_rom_els_lp)
                  )
           irom  (.addr_i(irom_addr)
@@ -273,7 +273,7 @@ bp_be_nonsynth_mock_mmu #(.vaddr_width_p(vaddr_width_p)
                           ,.boot_rom_data_i(drom_data)
                           );
 
-bp_be_boot_rom #(.width_p(boot_rom_width_p)
+bp_boot_rom #(.width_p(boot_rom_width_p)
                  ,.addr_width_p(lg_boot_rom_els_lp)
                  )
           drom  (.addr_i(drom_addr)
