@@ -49,7 +49,7 @@ benchmarks_rom:
 %.v: %.bin
 	python $(BSG_ROM_GEN) $< bp_boot_rom zero > $*.vtmp \
 	&& awk 'FNR==2{system("$(RISCV_OBJDUMP) $*.elf | sed 's-^-//-'")} 1' $*.vtmp \
-		> $(ROM_DIR)/$*_rom.v \
+		> $(ROM_DIR)/$*_rom.v  \
 	&& rm $*.vtmp \
 	&& rm $*.elf \
 	&& rm $*.spike \
