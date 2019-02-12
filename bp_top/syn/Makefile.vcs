@@ -2,16 +2,16 @@
 include $(CADENV_PATH)/cadenv.mk
 
 ## Tool specific options
-VCS_OPTIONS+=+vcs+finish+15000000ps # Change this to run longer / shorter
-VCS_OPTIONS+=+notimingcheck +vcs+loopdetect +vcs+loopreport
+VCS_OPTIONS+=+vcs+finish+150000ps # Change this to run longer / shorter
+#VCS_OPTIONS+=+notimingcheck +vcs+loopdetect +vcs+loopreport
 VCS_OPTIONS+=-timescale=1ps/1ps
 VCS_OPTIONS+=-full64
 VCS_OPTIONS+=+v2k +vc +vcs+lic_wait
 VCS_OPTIONS+=-sverilog -debug_pp
-VCS_OPTIONS+=+multisource_int_delays +neg_tchk
-VCS_OPTIONS+=+libext+.v+.vlib+.vh
+#VCS_OPTIONS+=+multisource_int_delays +neg_tchk
+VCS_OPTIONS+=+libext+.v+.vlib+.vh -R +vcs+vcdpluson
 
-LINT_OPTIONS +=+lint=all,noSVA-UA,noVCDE,noSV-LCM-PPWI,noSVA-NSVU,noVNGS
+LINT_OPTIONS +=+lint=all,noSVA-UA,noVCDE,noSVA-NSVU
 
 # Enable GUI (DVE) mode
 # This is to run interative simulation/debugging in GUI mode.
@@ -108,3 +108,5 @@ lint.v: $(HDL_SOURCE)
 		rm -rf inter.vpd    ;\
 		rm -rf ucli.key    
 
+dve:
+	dve -full64 -vpd vcdplus.vpd &
