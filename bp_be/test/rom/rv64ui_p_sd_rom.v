@@ -617,7 +617,7 @@
 //0000000080002048 <tdat10>:
 //    80002048:	deadbeef          	jal	x29,7ffdd632 <_start-0x229ce>
 //    8000204c:	deadbeef          	jal	x29,7ffdd636 <_start-0x229ca>
-module bp_be_boot_rom #(parameter width_p=-1, addr_width_p=-1)
+module bp_boot_rom #(parameter width_p=-1, addr_width_p=-1)
 (input  [addr_width_p-1:0] addr_i
 ,output logic [width_p-1:0]      data_o
 );

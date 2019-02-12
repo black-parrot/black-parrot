@@ -218,7 +218,7 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
                 ,.lce_lce_tr_resp_rdy_i(remote_lce_tr_resp_rdy[dcache_id])
                 );
 
-bp_be_boot_rom #(.width_p(boot_rom_width_p)
+bp_boot_rom #(.width_p(boot_rom_width_p)
                  ,.addr_width_p(lg_boot_rom_els_lp)
                  )
           irom  (.addr_i(irom_addr[core_id])

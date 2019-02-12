@@ -20,11 +20,9 @@ ifeq ($(VCS_GUI),1)
 endif
 
 TEST_ROM  ?= bp_be_example_rom.v
-LOAD_ROM  ?= bp_be_boot_rom.v
-TRACE_ROM  ?= bp_trace_rom.v
+TRACE_ROM ?= bp_be_example_tr_rom.v
 
 TEST_ROM_C  = $(notdir $(TEST_ROM))
-LOAD_ROM_C  = $(notdir $(LOAD_ROM))
 TRACE_ROM_C  = $(notdir $(TRACE_ROM))
 
 .EXPORT_ALL_VARIABLES:

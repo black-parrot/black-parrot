@@ -47,9 +47,9 @@ benchmarks_rom:
 #demo_rom: $(foreach x, $(subst -,_,$(BP_DEMOS)),$(x).v)
 
 %.v: %.bin
-	python $(BSG_ROM_GEN) $< bp_be_boot_rom zero > $*.vtmp 			             \
-	&& awk 'FNR==2{system("$(RISCV_OBJDUMP) $*.elf | sed 's-^-//-'")} 1' $*.vtmp   \
-		> $(ROM_DIR)/$*_rom.v 													     \
+	python $(BSG_ROM_GEN) $< bp_boot_rom zero > $*.vtmp \
+	&& awk 'FNR==2{system("$(RISCV_OBJDUMP) $*.elf | sed 's-^-//-'")} 1' $*.vtmp \
+		> $(ROM_DIR)/$*_rom.v \
 	&& rm $*.vtmp \
 	&& rm $*.elf \
 	&& rm $*.spike \

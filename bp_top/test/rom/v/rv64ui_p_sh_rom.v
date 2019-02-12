@@ -493,7 +493,7 @@
 //0000000080002012 <tdat10>:
 //    80002012:	0000beef          	jal	x29,8000d012 <_end+0xaff2>
 //	...
-module bp_be_boot_rom #(parameter width_p=-1, addr_width_p=-1)
+module bp_boot_rom #(parameter width_p=-1, addr_width_p=-1)
 (input  [addr_width_p-1:0] addr_i
 ,output logic [width_p-1:0]      data_o
 );

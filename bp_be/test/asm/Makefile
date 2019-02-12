@@ -48,7 +48,7 @@ all: rv64ui-test-roms
 	rm $*.tr
 
 %.v: %.bin
-	python $(BSG_ROM_GEN) $*.bin bp_be_boot_rom zero > $*.vtmp 			             \
+	python $(BSG_ROM_GEN) $*.bin bp_boot_rom zero > $*.vtmp 			             \
 	&& awk 'FNR==2{system("$(RISCV_OBJDUMP) $*.riscv | sed 's-^-//-'")} 1' $*.vtmp   \
 		> $(ROM_DIR)/$*_rom.v 													     \
 	&& rm $*.vtmp
