@@ -35,6 +35,12 @@ def tr_finish():
   binary += '0100_0_' + hex2bin(str(0), 64) + '_' + hex2bin(str(0), 64)
   return binary
 
+def tr_done():
+  binary  = '# Done' + '\n'
+  binary += '0011_0_' + hex2bin(str(0), 64) + '_' + hex2bin(str(0), 64)
+  return binary
+
+
 name = str(sys.argv[1])
 #recv_els = int(sys.argv[2])
 infile = open(name + ".spike", "r")
@@ -94,5 +100,5 @@ for i in xrange(len(lines)):
 for i in xrange(len(recv)):
 	outfile.write(recvBinary(recv[i]) + '\n')
 
-outfile.write(tr_finish() + '\n')
+outfile.write(tr_done() + '\n')
 outfile.close()
