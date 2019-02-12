@@ -11,5 +11,4 @@ HDL_PARAMS=-pvalue+vaddr_width_p=22 			                           \
 		   -pvalue+lce_assoc_p=8				                           \
 		   -pvalue+boot_rom_els_p=512									   \
 		   -pvalue+boot_rom_width_p=512									   \
-
-HDL_SOURCE += $(BP_ME_DIR)/src/v/roms/demo-v2/bp_cce_inst_rom_demo-v2_lce2_wg64_assoc8.v
+			 -pvalue+trace_en_p=1
