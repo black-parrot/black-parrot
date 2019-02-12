@@ -422,6 +422,9 @@ module bp_be_dcache
   assign wbuf_entry_out_word_offset = wbuf_entry_out.paddr[byte_offset_width_lp+:word_offset_width_lp];
   assign wbuf_entry_out_index = wbuf_entry_out.paddr[block_offset_width_lp+:index_width_lp];
 
+  assign wbuf_entry_in.paddr = paddr_tv_r;
+  assign wbuf_entry_in.way_id = store_hit_way;
+
   if (data_width_p == 64) begin
     assign wbuf_entry_in.data = double_op_tv_r
       ? data_tv_r
