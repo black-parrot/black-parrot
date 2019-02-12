@@ -25,6 +25,7 @@ NETWORK_PATH = $(SRC_PATH)/v/network
 HDL_SOURCE = \
 	$(abspath $(wildcard $(CCE_SRC_PATH)/*.v)) \
 	$(BP_COMMON_PATH)/bp_common_me_if.vh \
+	$(BP_COMMON_PATH)/bp_common_pkg.vh \
 	$(BSG_IP_PATH)/bsg_misc/bsg_decode.v \
 	$(BSG_IP_PATH)/bsg_misc/bsg_encode_one_hot.v \
 	$(BSG_IP_PATH)/bsg_misc/bsg_defines.v \
