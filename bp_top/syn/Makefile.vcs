@@ -27,6 +27,8 @@ TEST_ROM_C  = $(notdir $(TEST_ROM))
 LOAD_ROM_C  = $(notdir $(LOAD_ROM))
 TRACE_ROM_C  = $(notdir $(TRACE_ROM))
 
+.EXPORT_ALL_VARIABLES:
+
 ISA_TESTS = rv64ui_p_add_rom.v \
 						rv64ui_p_addi_rom.v \
 						rv64ui_p_addiw_rom.v \
@@ -93,11 +95,11 @@ lint.v: $(HDL_SOURCE)
 	$(TB_PATH)/$*/simv $(SIM_OPTIONS) \
 	  > $(TB_PATH)/$*/$(basename $(TEST_ROM_C))_simout.txt
 
-%.regress.v: %.build.v
-	for rom in $(ISA_TESTS) ; do \
-		$(MAKE) TEST_ROM=$$rom $*.run.v ; \
-  done ; \
-	egrep "PAS|FAL" $(TB_PATH)/$*/*_simout.txt
+#%.regress.v: %.build.v
+#	for rom in $(ISA_TESTS) ; do \
+#		$(MAKE) TEST_ROM=$$rom $*.run.v ; \
+#  done ; \
+#	egrep "PAS|FAL" $(TB_PATH)/$*/*_simout.txt
 
 %.clean.v:
 	cd $(TB_PATH)/$* 		;\

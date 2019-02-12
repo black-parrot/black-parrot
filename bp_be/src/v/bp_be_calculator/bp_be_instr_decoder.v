@@ -266,8 +266,9 @@ always_comb
 // Runtime assertions
 always_comb 
   begin
-    assert (~(decode.instr_v & (instr.opcode == `RV64_MISC_MEM_OP)))
-      else $warning("RV64 misc-mem ops are not currently implemented");
+    /* TODO: Re-enable when less annoying */
+    //assert (~(decode.instr_v & (instr.opcode == `RV64_MISC_MEM_OP)))
+    //  else $warning("RV64 misc-mem ops are not currently implemented");
   end
 
 endmodule : bp_be_instr_decoder

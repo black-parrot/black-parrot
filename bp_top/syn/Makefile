@@ -14,8 +14,6 @@ SRC_PATH	= $(BP_TOP_DIR)/src/v
 TB_PATH		= $(BP_TOP_DIR)/test/tb
 SYN_PATH	= $(BP_TOP_DIR)/syn
 
-.EXPORT_ALL_VARIABLES:
-
 clean:
 	rm -rf $(SYN_PATH)/obj_dir
 	rm -rf csrc

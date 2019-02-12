@@ -39,13 +39,22 @@ module bp_multi_top
    ,localparam lce_id_width_lp = `BSG_SAFE_CLOG2(num_lce_p)
    ,localparam proc_cfg_width_lp = `bp_proc_cfg_width(core_els_p, num_lce_p)
 
-   ,localparam icache_lce_id_lp=0
-   ,localparam dcache_lce_id_lp=1
+   , localparam pipe_stage_reg_width_lp    = `bp_be_pipe_stage_reg_width(branch_metadata_fwd_width_p)
+   , localparam calc_result_width_lp       = `bp_be_calc_result_width(branch_metadata_fwd_width_p)
+   , localparam exception_width_lp         = `bp_be_exception_width
 
-   ,localparam reg_data_width_lp=rv64_reg_data_width_gp
+   , localparam icache_lce_id_lp=0
+   , localparam dcache_lce_id_lp=1
+
+   , localparam reg_data_width_lp=rv64_reg_data_width_gp
    )
-  (input logic                  clk_i
-   ,input logic                 reset_i
+  (input                                  clk_i
+   , input                                reset_i
+
+   // Commit tracer
+   , output [pipe_stage_reg_width_lp-1:0] cmt_trace_stage_reg_o
+   , output [calc_result_width_lp-1:0]    cmt_trace_result_o
+   , output [exception_width_lp-1:0]      cmt_trace_exc_o
   );
 
 `declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
@@ -99,6 +108,10 @@ bp_be_calc_result_s   [core_els_p-1:0] cmt_trace_result;
 bp_be_exception_s     [core_els_p-1:0] cmt_trace_exc;
 
 bp_proc_cfg_s[core_els_p-1:0] proc_cfg;
+
+assign cmt_trace_stage_reg_o = cmt_trace_stage_reg[0];
+assign cmt_trace_result_o    = cmt_trace_result[0];
+assign cmt_trace_exc_o       = cmt_trace_exc[0];
 
 // Module instantiations
 genvar core_id;
