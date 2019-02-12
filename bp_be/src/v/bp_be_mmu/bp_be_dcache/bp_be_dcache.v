@@ -698,7 +698,7 @@ module bp_be_dcache
     assign data_mem_addr_li[i] = (load_op & tl_we)
       ? {addr_index, addr_word_offset}
       : (wbuf_yumi_li
-        ? {wbuf_entry_out_index}
+        ? {wbuf_entry_out_index, wbuf_entry_out_word_offset}
         : {lce_data_mem_pkt.index, lce_data_mem_pkt.way_id ^ ((word_offset_width_lp)'(i))});
 
     bsg_mux
