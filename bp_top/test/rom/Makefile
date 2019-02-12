@@ -23,7 +23,7 @@ RISCV_GCC=riscv64-unknown-elf-gcc -fPIC -march=rv64i -mabi=lp64 -mcmodel=medany 
 include Makefile.frag
 
 #TODO: add demo rom generation
-all: isa
+all: isa benchmarks
 
 isa: isa_elf isa_rom
 benchmarks: benchmarks_elf benchmarks_rom
@@ -41,10 +41,10 @@ benchmarks_rom:
 	make towers.v
 	make vvadd.v
 
-demo: demo_elf demo_rom
+#demo: demo_elf demo_rom
 
-demo_elf: $(foreach x, $(subst -,_,$(BP_DEMOS)),$(x))
-demo_rom: $(foreach x, $(subst -,_,$(BP_DEMOS)),$(x).v)
+#demo_elf: $(foreach x, $(subst -,_,$(BP_DEMOS)),$(x))
+#demo_rom: $(foreach x, $(subst -,_,$(BP_DEMOS)),$(x).v)
 
 %.v: %.bin
 	python $(BSG_ROM_GEN) $< bp_be_boot_rom zero > $*.vtmp 			             \
@@ -64,16 +64,12 @@ demo_rom: $(foreach x, $(subst -,_,$(BP_DEMOS)),$(x).v)
 median.trace multiply.trace towers.trace vvadd.trace:
 	$(RISCV_SIM) --pc=0x80000124 -l --end-pc=0x800001b0 $(basename $@).elf 2>$(basename $@).spike
 	python $(SPIKE2TR) $(basename $@)
-	python $(BSG_ROM_GEN) $(basename $@).tr bp_trace_rom zero > $(ROM_DIR)/$(basename $@)_tr_rom.v
-	#rm $*.spike
-	#rm $*.tr
+	python $(BSG_ROM_GEN) $(basename $@).tr bp_trace_rom zero > $(ROM_DIR)/$(basename $@)_rom.tr.v
 
 %.trace: 
 	$(RISCV_SIM) -l $*.elf 2> $*.spike
 	python $(SPIKE2TR) $*
-	python $(BSG_ROM_GEN) $*.tr bp_trace_rom zero > $(ROM_DIR)/$*_tr_rom.v
-	#rm $*.spike
-	#rm $*.tr
+	python $(BSG_ROM_GEN) $*.tr bp_trace_rom zero > $(ROM_DIR)/$*_rom.tr.v
 	
 rv64ui_p_%: src/isa/rv64ui/%.S 
 	make -C src/isa/ $@

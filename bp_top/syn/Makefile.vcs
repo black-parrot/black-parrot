@@ -2,7 +2,7 @@
 include $(CADENV_PATH)/cadenv.mk
 
 ## Tool specific options
-VCS_OPTIONS+=+vcs+finish+150000ps # Change this to run longer / shorter
+VCS_OPTIONS+=+vcs+finish+200000ps # Change this to run longer / shorter
 #VCS_OPTIONS+=+notimingcheck +vcs+loopdetect +vcs+loopreport
 VCS_OPTIONS+=-timescale=1ps/1ps
 VCS_OPTIONS+=-full64

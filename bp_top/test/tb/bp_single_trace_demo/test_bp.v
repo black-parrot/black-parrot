@@ -49,6 +49,7 @@ logic [trace_ring_width_p-1:0]   		tr_data_i;
 logic               								tr_v_i, tr_ready_o;
 logic [trace_rom_addr_width_p-1:0] 	tr_rom_addr_i;
 logic [trace_rom_data_width_lp-1:0] tr_rom_data_o;
+logic test_done;
 
 bsg_nonsynth_clock_gen #(.cycle_time_p(10)
                          )
@@ -122,7 +123,7 @@ bp_multi_top #(.vaddr_width_p(vaddr_width_p)
 						,.rom_addr_o(tr_rom_addr_i)
 						,.rom_data_i(tr_rom_data_o)
 									
-						,.done_o()
+						,.done_o(test_done)
 						,.error_o()
 						);
 
@@ -132,6 +133,15 @@ bp_multi_top #(.vaddr_width_p(vaddr_width_p)
 			  trace_rom (.addr_i(tr_rom_addr_i)
 						,.data_o(tr_rom_data_o)
 						);
+
+always_ff @(posedge clk) 
+  begin
+    if (test_done) 
+      begin
+        $display("Test PASSed!");
+        $finish(0);
+      end
+  end
 
 endmodule : test_bp
 
