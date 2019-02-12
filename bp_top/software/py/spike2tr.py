@@ -60,6 +60,8 @@ lines = infile.readlines()
 for i in xrange(len(lines)):
 	line = lines[i].rstrip("\n\r").split()
 	
+	if("ecall" in line):
+		break
 	if(line[0] == "core" and line[2][:2] == "0x"):
 		skip = 0
 		pc = line[2]
