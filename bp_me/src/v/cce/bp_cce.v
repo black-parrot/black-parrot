@@ -232,10 +232,22 @@ module bp_cce
   logic [addr_width_p-1:0] lce_cmd_addr;
   logic [lg_lce_assoc_lp-1:0] lce_cmd_way;
 
+  logic [inst_ram_addr_width_lp-1:0] boot_rom_addr_i;
+  logic [`bp_cce_inst_width-1:0] boot_rom_data_o;
+
+  // CCE Boot ROM
+  bp_cce_inst_rom
+    #(.width_p(`bp_cce_inst_width)
+      ,.addr_width_p(inst_ram_addr_width_lp)
+      )
+    cce_inst_rom
+     (.addr_i(boot_rom_addr_i)
+      ,.data_o(boot_rom_data_o)
+      );
+
   // PC Logic, Instruction RAM
   bp_cce_pc
     #(.inst_ram_els_p(num_cce_inst_ram_els_p)
-      ,.harden_p(harden_p)
       )
     pc_inst_ram
      (.clk_i(clk_i)
@@ -248,6 +260,9 @@ module bp_cce
 
       ,.inst_o(pc_inst_o)
       ,.inst_v_o(pc_inst_v_o)
+
+      ,.boot_rom_addr_o(boot_rom_addr_i)
+      ,.boot_rom_data_i(boot_rom_data_o)
       );
 
 
