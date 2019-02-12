@@ -64,6 +64,10 @@ bp_multi_top
  DUT
   (.clk_i(clk)
    ,.reset_i(reset)
+
+   ,.cmt_trace_stage_reg_o()
+   ,.cmt_trace_result_o()
+   ,.cmt_trace_exc_o()
    );
 
 endmodule : test_bp
