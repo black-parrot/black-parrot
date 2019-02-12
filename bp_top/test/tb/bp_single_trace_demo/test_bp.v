@@ -140,10 +140,9 @@ bsg_fsb_node_trace_replay
    ,.rom_addr_o(tr_rom_addr_i)
    ,.rom_data_i(tr_rom_data_o)
          
-   ,.done_o()
+   ,.done_o(test_done)
    ,.error_o()
    );
-assign test_done = ~reset & (tr_rom_data_o[trace_rom_data_width_lp-1-:4] == 4'b0011);
 
 bp_trace_rom 
  #(.width_p(trace_rom_data_width_lp)
