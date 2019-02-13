@@ -1,1 +1,5 @@
 bsg_cadenv
+simsc
+simout.txt
+systemc
+verilator

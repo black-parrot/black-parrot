@@ -5,13 +5,9 @@
  *
  */
 
-`include "bsg_defines.v"
-`include "bp_common_me_if.vh"
-`include "bp_cce_inst_pkg.v"
-`include "bp_cce_internal_if.vh"
-
 module bp_me_nonsynth_mock_cce
-  import bp_cce_inst_pkg::*;
+  import bp_common_pkg::*;
+  import bp_cce_pkg::*;
   #(parameter cce_id_p=0
     ,parameter num_lce_p=1
     ,parameter num_cce_p=1

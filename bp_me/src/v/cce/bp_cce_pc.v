@@ -8,11 +8,9 @@
  *
  */
 
-`include "bp_common_me_if.vh"
-`include "bp_cce_inst_pkg.v"
-
 module bp_cce_pc
-  import bp_cce_inst_pkg::*;
+  import bp_common_pkg::*;
+  import bp_cce_pkg::*;
   #(parameter inst_ram_els_p     = "inv"
 
     // Derived parameters

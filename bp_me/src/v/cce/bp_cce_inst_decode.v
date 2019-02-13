@@ -9,13 +9,9 @@
  *
  */
 
-`include "bsg_defines.v"
-`include "bp_common_me_if.vh"
-`include "bp_cce_inst_pkg.v"
-`include "bp_cce_internal_if.vh"
-
 module bp_cce_inst_decode
-  import bp_cce_inst_pkg::*;
+  import bp_common_pkg::*;
+  import bp_cce_pkg::*;
   #(parameter inst_width_p        = "inv"
     , parameter inst_addr_width_p = "inv"
   )

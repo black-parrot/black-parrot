@@ -10,10 +10,10 @@
 
 // TODO: We have these includes outside of the package so that the build isn't broken while we 
 //         migrate to exclusive package imports. Eventually, remove!
-`include "bsg_defines.v"
-`include "bp_common_cfg_defines.vh"
-`include "bp_common_fe_be_if.vh"
-`include "bp_common_me_if.vh"
+//`include "bsg_defines.v"
+//`include "bp_common_cfg_defines.vh"
+//`include "bp_common_fe_be_if.vh"
+//`include "bp_common_me_if.vh"
 
 package bp_common_pkg;
 
