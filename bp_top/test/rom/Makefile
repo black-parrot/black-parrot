@@ -18,7 +18,7 @@ BSG_ROM_GEN    = $(BSG_IP_PATH)/bsg_mem/bsg_ascii_to_rom.py
 RISCV_ELF2HEX  = elf2hex
 RISCV_SIM	     = $(SPIKE_MOD_PATH)/spike
 RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -D -M no-aliases,numeric
-RISCV_GCC=riscv64-unknown-elf-gcc -fPIC -march=rv64i -mabi=lp64 -mcmodel=medany -static -nostdlib -nostartfiles -T demos/riscv.ld
+RISCV_GCC_RAND = riscv64-unknown-elf-gcc -nostdlib -nostartfiles -Wa,-march=rv64g -I${RANDOM_FLD}p/ -T${RANDOM_FLD}p/link.ld
 
 include Makefile.frag
 
@@ -60,6 +60,17 @@ benchmarks_rom:
 
 %.hex: %.trace
 	$(RISCV_ELF2HEX) 16 32768 $*.elf 2147483648  > $@
+
+%_random.riscv:
+	$(RANDOM_GEN) -seed $(SEED) -mem 50 20 -mode m -o $@.S
+	${RISCV_GCC_RAND}  $@.S -o $@
+	rm $@.S
+
+rv_random:
+	num=1; while [ $$num -le $(RANDOM_NUM) ]; do \
+  make test`expr $$num + 0`_random.v SEED=`expr $$num + 0`; \
+  num=`expr $$num + 1`; \
+  done
 
 median.trace multiply.trace towers.trace vvadd.trace:
 	$(RISCV_SIM) --pc=0x80000124 -l --end-pc=0x800001b0 $(basename $@).elf 2>$(basename $@).spike
