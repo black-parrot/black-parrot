@@ -122,17 +122,19 @@ assign misalignment          = fe_pc_gen_v_i
    
 /* output wiring */
 // there should be fixes to the pc signal sent out according to the valid/ready signal pairs
-assign pc_gen_queue.msg_type            = (misalignment) ?  e_fe_exception : e_fe_fetch;
-assign pc_gen_exception.exception_code  = (misalignment) ? e_instr_addr_misaligned : e_illegal_instruction;
-assign pc_gen_queue.msg                 = (pc_gen_queue.msg_type == e_fe_fetch) ? pc_gen_fetch : pc_gen_exception;
-assign pc_gen_fetch.pc                  = icache_pc_gen.addr;
-assign pc_gen_fetch.instr               = icache_pc_gen.instr;
-assign pc_gen_icache.virt_addr          = pc;
-assign pc_gen_itlb.virt_addr            = pc;
-assign pc_gen_fetch.branch_metadata_fwd = branch_metadata_fwd_o;
-assign pc_gen_fetch.padding             = '0;
-assign pc_gen_exception.padding         = '0;
-
+always_comb 
+  begin
+    pc_gen_queue.msg_type            = (misalignment) ?  e_fe_exception : e_fe_fetch;
+    pc_gen_exception.exception_code  = (misalignment) ? e_instr_addr_misaligned : e_illegal_instruction;
+    pc_gen_queue.msg                 = (pc_gen_queue.msg_type == e_fe_fetch) ? pc_gen_fetch : pc_gen_exception;
+    pc_gen_fetch.pc                  = icache_pc_gen.addr;
+    pc_gen_fetch.instr               = icache_pc_gen.instr;
+    pc_gen_icache.virt_addr          = pc;
+    pc_gen_itlb.virt_addr            = pc;
+    pc_gen_fetch.branch_metadata_fwd = branch_metadata_fwd_o;
+    pc_gen_fetch.padding             = '0;
+    pc_gen_exception.padding         = '0;
+  end
    
 //valid-ready signals assignments
 always_comb 
