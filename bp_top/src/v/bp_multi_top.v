@@ -8,45 +8,52 @@ module bp_multi_top
  import bp_common_pkg::*;
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
- #(parameter core_els_p="inv"
-   ,parameter vaddr_width_p="inv"
-   ,parameter paddr_width_p="inv"
-   ,parameter asid_width_p="inv"
-   ,parameter branch_metadata_fwd_width_p="inv"
-   ,parameter num_cce_p="inv"
-   ,parameter num_lce_p="inv"
-   ,parameter lce_assoc_p="inv"
-   ,parameter lce_sets_p="inv"
-   ,parameter cce_block_size_in_bytes_p="inv"
-   ,parameter cce_num_inst_ram_els_p="inv"
-   ,parameter trace_en_p=0
+ #(// System parameters
+   parameter core_els_p                    = "inv"
+   , parameter vaddr_width_p               = "inv"
+   , parameter paddr_width_p               = "inv"
+   , parameter asid_width_p                = "inv"
+   , parameter branch_metadata_fwd_width_p = "inv"
+
+   // ME parameters
+   , parameter num_cce_p                 = "inv"
+   , parameter num_lce_p                 = "inv"
+   , parameter lce_assoc_p               = "inv"
+   , parameter lce_sets_p                = "inv"
+   , parameter cce_block_size_in_bytes_p = "inv"
+   , parameter cce_num_inst_ram_els_p    = "inv"
  
-   ,parameter boot_rom_els_p="inv"
-   ,parameter boot_rom_width_p="inv"
-   ,localparam lg_boot_rom_els_lp=`BSG_SAFE_CLOG2(boot_rom_els_p)
+   // Test specific parameters
+   , parameter trace_en_p                = 0
+   , parameter boot_rom_els_p            = "inv"
+   , parameter boot_rom_width_p          = "inv"
 
-   ,localparam lg_core_els_p=`BSG_SAFE_CLOG2(core_els_p)
-   ,localparam lg_num_lce_p=`BSG_SAFE_CLOG2(num_lce_p)
+   // Generated parameters
+   , localparam lg_boot_rom_els_lp = `BSG_SAFE_CLOG2(boot_rom_els_p)
+   , localparam lg_core_els_p      = `BSG_SAFE_CLOG2(core_els_p)
+   , localparam lg_num_lce_p       = `BSG_SAFE_CLOG2(num_lce_p)
+   , localparam mhartid_width_lp   = `BSG_SAFE_CLOG2(core_els_p)
+   , localparam lce_id_width_lp    = `BSG_SAFE_CLOG2(num_lce_p)
 
-   ,localparam cce_block_size_in_bits_lp=8*cce_block_size_in_bytes_p
-   ,localparam fe_queue_width_lp=`bp_fe_queue_width(vaddr_width_p,branch_metadata_fwd_width_p)
-   ,localparam fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_p
-                                                  , paddr_width_p
-                                                  , asid_width_p
-                                                  , branch_metadata_fwd_width_p
-                                                  )
-   ,localparam mhartid_width_lp = `BSG_SAFE_CLOG2(core_els_p)
-   ,localparam lce_id_width_lp = `BSG_SAFE_CLOG2(num_lce_p)
-   ,localparam proc_cfg_width_lp = `bp_proc_cfg_width(core_els_p, num_lce_p)
+   , localparam cce_block_size_in_bits_lp = 8*cce_block_size_in_bytes_p
+   , localparam fe_queue_width_lp         =`bp_fe_queue_width(vaddr_width_p
+                                                              , branch_metadata_fwd_width_p
+                                                              )
+   , localparam fe_cmd_width_lp           =`bp_fe_cmd_width(vaddr_width_p
+                                                            , paddr_width_p
+                                                            , asid_width_p
+                                                            , branch_metadata_fwd_width_p
+                                                            )
+   , localparam proc_cfg_width_lp         = `bp_proc_cfg_width(core_els_p, num_lce_p)
 
-   , localparam pipe_stage_reg_width_lp    = `bp_be_pipe_stage_reg_width(branch_metadata_fwd_width_p)
-   , localparam calc_result_width_lp       = `bp_be_calc_result_width(branch_metadata_fwd_width_p)
-   , localparam exception_width_lp         = `bp_be_exception_width
+   , localparam pipe_stage_reg_width_lp   = `bp_be_pipe_stage_reg_width(branch_metadata_fwd_width_p)
+   , localparam calc_result_width_lp      = `bp_be_calc_result_width(branch_metadata_fwd_width_p)
+   , localparam exception_width_lp        = `bp_be_exception_width
 
-   , localparam icache_lce_id_lp=0
-   , localparam dcache_lce_id_lp=1
+   , localparam icache_lce_id_lp          = 0 // Base ID for icache
+   , localparam dcache_lce_id_lp          = 1 // Base ID for dcache
 
-   , localparam reg_data_width_lp=rv64_reg_data_width_gp
+   , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )
   (input                                  clk_i
    , input                                reset_i
