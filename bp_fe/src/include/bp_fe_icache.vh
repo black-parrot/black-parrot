@@ -17,15 +17,15 @@
  * I-Cache sends the data (instruction) stored at the virtual pc address to the
  * pc_gen. The width of data (instruction) is specified by the bp_instr_width_gp parameter.
  */
-`define declare_bp_fe_icache_pc_gen_s(eaddr_width_p) \
+`define declare_bp_fe_icache_pc_gen_s(eaddr_width_mp) \
   typedef struct packed                              \
   {                                                  \
     logic [bp_instr_width_gp-1:0] instr;             \
-    logic [eaddr_width_p-1:0]     addr;              \
+    logic [eaddr_width_mp-1:0]     addr;              \
   }  bp_fe_icache_pc_gen_s                           
 
-`define bp_fe_icache_pc_gen_width(eaddr_width_p)     \
-  (bp_instr_width_gp+eaddr_width_p)
+`define bp_fe_icache_pc_gen_width(eaddr_width_mp)     \
+  (bp_instr_width_gp+eaddr_width_mp)
 
 /*
  *
@@ -41,14 +41,14 @@
  * LCE transmits the meta-data (including LRU and dirty bits) information of the
  * tag set to the CCE, and the CCE makes the necessary decisions. 
 */
-`define declare_bp_fe_icache_metadata_s(ways_p) \
+`define declare_bp_fe_icache_metadata_s(ways_mp) \
   typedef struct packed                         \
   {                                             \
-    logic [ways_p-2:0] way;                     \
+    logic [ways_mp-2:0] way;                     \
   }  bp_fe_icache_metadata_s                     
 
-`define bp_fe_icache_metadata_width(ways_p) \
-  (ways_p-1)
+`define bp_fe_icache_metadata_width(ways_mp) \
+  (ways_mp-1)
 
 /*
  *
@@ -60,17 +60,17 @@
  * | S | addr | S | addr | S | addr | S | addr |
  * -   way_0  -   way_1  -   way_2 -    way_3  -
  */
-`define declare_bp_fe_icache_tag_set_s(tag_width_p, ways_p) \
+`define declare_bp_fe_icache_tag_set_s(tag_width_mp, ways_mp) \
   typedef struct packed                                     \
   {                                                         \
     logic [`bp_cce_coh_bits-1:0]  state;                    \
-    logic [tag_width_p-1:0]       tag;                      \
-  }  bp_fe_icache_tag_set_s [ways_p-1:0]
+    logic [tag_width_mp-1:0]       tag;                      \
+  }  bp_fe_icache_tag_set_s [ways_mp-1:0]
 
-`define bp_fe_icache_tag_set_width(tag_width_p, ways_p) \
+`define bp_fe_icache_tag_set_width(tag_width_mp, ways_mp) \
   ((`bp_cce_coh_bits+tag_width_p)*ways_p)
 
-`define bp_fe_icache_tag_state_width(tag_width_p) \
+`define bp_fe_icache_tag_state_width(tag_width_mp) \
   (`bp_cce_coh_bits+tag_width_p)
 
 `endif

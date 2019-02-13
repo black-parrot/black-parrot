@@ -30,28 +30,29 @@ typedef enum logic {
 `define bp_fe_icache_metadata_mem_opcode_width $bits(bp_fe_icache_metadata_mem_opcode_e)
 
 /*
- * bp_fe_lce_cce_req_state_e specifies the state of the cce_lce_cmd.
+ * bp_fe_lce_cce_req_state_e specifies the state of the lce_cmd.
  */
 typedef enum logic [2:0] {
-  e_lce_cce_req_ready          = 3'b000
-  , e_lce_cce_req_send_miss_req = 3'b001
-  , e_lce_cce_req_send_ack_tr   = 3'b010
-  , e_lce_cce_req_send_coh_ack  = 3'b011
-  , e_lce_cce_req_sleep         = 3'b100
-} bp_fe_lce_cce_req_state_e;
+  e_lce_req_ready          = 3'b000
+  , e_lce_req_send_miss_req = 3'b001
+  , e_lce_req_send_ack_tr   = 3'b010
+  , e_lce_req_send_coh_ack  = 3'b011
+  , e_lce_req_sleep         = 3'b100
+} bp_fe_lce_req_state_e;
 
-`define bp_fe_lce_cce_req_state_width $bits(bp_fe_lce_cce_req_state_e)
+`define bp_fe_lce_req_state_width $bits(bp_fe_lce_req_state_e)
 
 /*
- * bp_fe_cce_lce_cmd_state_e specifies the state of the cce_lce_cmd.
+ * bp_fe_cce_lce_cmd_state_e specifies the state of the lce_cmd.
+ *TODO:same name for transfer used in common
  */
 typedef enum logic [1:0] {
-  e_cce_lce_cmd_reset     = 2'b00
-  , e_cce_lce_cmd_ready    = 2'b01
-  , e_cce_lce_cmd_transfer = 2'b10
-} bp_fe_cce_lce_cmd_state_e;
+  e_lce_cmd_reset     = 2'b00
+  , e_lce_cmd_ready    = 2'b01
+  , e_lce_cmd_transfer_tmp = 2'b10
+} bp_fe_lce_cmd_state_e;
 
-`define bp_fe_cce_lce_cmd_state_width $bits(bp_fe_cce_lce_cmd_state_e)
+`define bp_fe_lce_cmd_state_width $bits(bp_fe_lce_cmd_state_e)
 
 /* 
  * data_mem_pkt_s specifies a data memory packet transferred from LCE to the i-cache
