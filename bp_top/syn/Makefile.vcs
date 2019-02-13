@@ -12,8 +12,8 @@ VCS_OPTIONS +=-R +vcs+vcdpluson         # Enable vcd dump
 
 LINT_OPTIONS +=+lint=all,noSVA-UA,noVCDE,noSVA-NSVU
 
-TEST_ROM  ?= bp_be_example_rom.v
-TRACE_ROM ?= bp_be_example_tr_rom.v
+TEST_ROM  ?= bp_example_rom.v
+TRACE_ROM ?= bp_example_rom.tr.v
 
 # Export variables to flists
 .EXPORT_ALL_VARIABLES:
