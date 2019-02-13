@@ -18,11 +18,9 @@
  *
  */
 
-`include "bp_common_me_if.vh"
-`include "bp_cce_inst_pkg.v"
-
 module bp_cce_dir
-  import bp_cce_inst_pkg::*;
+  import bp_common_pkg::*;
+  import bp_cce_pkg::*;
   #(parameter num_way_groups_p         = "inv"
     , parameter num_lce_p              = "inv"
     , parameter lce_assoc_p            = "inv"

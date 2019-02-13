@@ -7,13 +7,9 @@
  *
  */
 
-`include "bsg_defines.v"
-`include "bp_common_me_if.vh"
-`include "bp_cce_inst_pkg.v"
-`include "bp_cce_internal_if.vh"
-
 module bp_cce_reg
-  import bp_cce_inst_pkg::*;
+  import bp_common_pkg::*;
+  import bp_cce_pkg::*;
   #(parameter num_lce_p                     = "inv"
     , parameter num_cce_p                   = "inv"
     , parameter addr_width_p                = "inv"

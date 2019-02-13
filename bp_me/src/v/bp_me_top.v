@@ -3,6 +3,7 @@
  */ 
 
 module bp_me_top
+  import bp_common_pkg::*;
   #(parameter num_lce_p=1
     ,parameter num_cce_p=1
     ,parameter addr_width_p=22 // 10 tag + 6 idx + 6 offset
