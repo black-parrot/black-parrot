@@ -1,0 +1,66 @@
+/**
+ *
+ * test_bp.v
+ *
+ */
+
+`include "bsg_defines.v"
+
+`include "bp_common_fe_be_if.vh"
+`include "bp_common_me_if.vh"
+
+`include "bp_be_internal_if.vh"
+`include "bp_be_rv64_defines.vh"
+
+module test_bp
+ #(parameter vaddr_width_p="inv"
+   ,parameter paddr_width_p="inv"
+   ,parameter asid_width_p="inv"
+   ,parameter branch_metadata_fwd_width_p="inv"
+   ,parameter num_cce_p="inv"
+   ,parameter num_lce_p="inv"
+   ,parameter lce_assoc_p="inv"
+   ,parameter lce_addr_width_p="inv"
+   ,parameter lce_data_width_p="inv"
+ 
+   ,parameter boot_rom_width_p="inv"
+   ,parameter boot_rom_els_p="inv"
+
+   ,localparam reg_data_width_lp=RV64_reg_data_width_gp
+   ,localparam byte_width_lp=RV64_byte_width_gp
+ );
+
+logic clk, reset;
+
+bsg_nonsynth_clock_gen #(.cycle_time_p(10)
+                         )
+              clock_gen (.o(clk)
+                         );
+
+bsg_nonsynth_reset_gen #(.num_clocks_p(1)
+                         ,.reset_cycles_lo_p(1)
+                         ,.reset_cycles_hi_p(boot_rom_els_p)
+                         )
+               reset_gen(.clk_i(clk)
+                         ,.async_reset_o(reset)
+                         );
+
+bp_be_nonsynth_mock_top_wrapper #(.vaddr_width_p(vaddr_width_p)
+                                  ,.paddr_width_p(paddr_width_p)
+                                  ,.asid_width_p(asid_width_p)
+                                  ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+                                  ,.num_cce_p(num_cce_p)
+                                  ,.num_lce_p(num_lce_p)
+                                  ,.lce_assoc_p(lce_assoc_p)
+                                  ,.lce_addr_width_p(lce_addr_width_p)
+                                  ,.lce_data_width_p(lce_data_width_p)
+
+                                  ,.boot_rom_width_p(boot_rom_width_p)
+                                  ,.boot_rom_els_p(boot_rom_els_p)
+                                  )
+                              DUT(.clk_i(clk)
+                                  ,.reset_i(reset)
+                                  );
+
+endmodule : test_bp
+
