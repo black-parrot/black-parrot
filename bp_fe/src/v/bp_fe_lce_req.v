@@ -29,22 +29,22 @@ module bp_fe_lce_req
     , parameter ways_p="inv"
     , parameter block_size_in_bytes_p="inv"
 
-    , parameter data_mask_width_lp=(data_width_p>>3)
-    , parameter lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
+    , localparam data_mask_width_lp=(data_width_p>>3)
+    , localparam lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
 
-    , parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-    , parameter lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
-    , parameter lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
+    , localparam lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
+    , localparam lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
+    , localparam lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
     , localparam lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
-    , parameter lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
+    , localparam lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
 
-    , parameter lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
+    , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                            ,num_lce_p
                                                            ,lce_addr_width_p
                                                            ,ways_p
                                                           )
-    , parameter lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, lce_addr_width_p)
-    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
+    , localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, lce_addr_width_p)
+    , localparam lce_id_width_lp=`bp_lce_id_width
 
     )
    (input                                      clk_i
@@ -71,7 +71,7 @@ module bp_fe_lce_req
     , input                                    lce_resp_yumi_i
    );
 
-  bp_fe_lce_req_state_e                   state_r, state_n;
+  bp_fe_lce_req_state_e                       state_r, state_n;
   logic [lce_addr_width_p-1:0]                miss_addr_r, miss_addr_n;
   logic                                       tr_received_r, tr_received_n, tr_received;
   logic                                       cce_data_received_r, cce_data_received_n, cce_data_received;

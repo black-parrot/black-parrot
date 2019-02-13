@@ -29,17 +29,16 @@ module bp_fe_lce_tr_resp_in
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
     , parameter block_size_in_bytes_p="inv"
-    , parameter data_mask_width_lp=(data_width_p>>3)
-    , parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-    , parameter lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
-    , parameter lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
-    , parameter lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
+    , localparam data_mask_width_lp=(data_width_p>>3)
+    , localparam lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
+    , localparam lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
+    , localparam lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
 
-    , parameter bp_fe_icache_lce_data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(lce_sets_p
+    , localparam bp_fe_icache_lce_data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(lce_sets_p
                                                                                             ,ways_p
                                                                                             ,lce_data_width_p
                                                                                            )
-    , parameter bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p
+    , localparam bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p
                                                                       ,lce_addr_width_p
                                                                       ,lce_data_width_p
                                                                       ,ways_p
