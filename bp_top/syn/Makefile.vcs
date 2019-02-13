@@ -1,85 +1,25 @@
 ## Setup CAD tools
+# TODO: Change to your export own VCS license variables
 include $(CADENV_PATH)/cadenv.mk
 
 ## Tool specific options
-VCS_OPTIONS+=+vcs+finish+200000ps # Change this to run longer / shorter
-#VCS_OPTIONS+=+notimingcheck +vcs+loopdetect +vcs+loopreport
-VCS_OPTIONS+=-timescale=1ps/1ps
-VCS_OPTIONS+=-full64
-VCS_OPTIONS+=+v2k +vc +vcs+lic_wait
-VCS_OPTIONS+=-sverilog -debug_pp
-#VCS_OPTIONS+=+multisource_int_delays +neg_tchk
-VCS_OPTIONS+=+libext+.v+.vlib+.vh -R +vcs+vcdpluson
+VCS_OPTIONS +=+vcs+finish+200000ps      # Change this to run longer / shorter
+VCS_OPTIONS +=-timescale=1ps/1ps        # Set timescale
+VCS_OPTIONS +=-full64 +vcs+lic_wait     # Run 64-bit and wait for license
+VCS_OPTIONS +=+v2k -sverilog -debug_pp  # Enable
+VCS_OPTIONS +=+libext+.v+.vlib+.vh      # Find library files with these extensions
+VCS_OPTIONS +=-R +vcs+vcdpluson         # Enable vcd dump
 
 LINT_OPTIONS +=+lint=all,noSVA-UA,noVCDE,noSVA-NSVU
-
-# Enable GUI (DVE) mode
-# This is to run interative simulation/debugging in GUI mode.
-ifeq ($(VCS_GUI),1)
-  VCS_OPTIONS += -gui
-endif
 
 TEST_ROM  ?= bp_be_example_rom.v
 TRACE_ROM ?= bp_be_example_tr_rom.v
 
-TEST_ROM_C  = $(notdir $(TEST_ROM))
-TRACE_ROM_C  = $(notdir $(TRACE_ROM))
-
+# Export variables to flists
 .EXPORT_ALL_VARIABLES:
 
-ISA_TESTS = rv64ui_p_add_rom.v \
-						rv64ui_p_addi_rom.v \
-						rv64ui_p_addiw_rom.v \
-						rv64ui_p_addw_rom.v \
-						rv64ui_p_and_rom.v \
-						rv64ui_p_andi_rom.v \
-						rv64ui_p_auipc_rom.v \
-						rv64ui_p_beq_rom.v \
-						rv64ui_p_bge_rom.v \
-						rv64ui_p_bgeu_rom.v \
-						rv64ui_p_blt_rom.v \
-						rv64ui_p_bltu_rom.v \
-						rv64ui_p_bne_rom.v \
-						rv64ui_p_j_rom.v \
-						rv64ui_p_jal_rom.v \
-						rv64ui_p_jalr_rom.v \
-						rv64ui_p_lb_rom.v \
-						rv64ui_p_lbu_rom.v \
-						rv64ui_p_ld_rom.v \
-						rv64ui_p_lh_rom.v \
-						rv64ui_p_lhu_rom.v \
-						rv64ui_p_lui_rom.v \
-						rv64ui_p_lw_rom.v \
-						rv64ui_p_lwu_rom.v \
-						rv64ui_p_or_rom.v \
-						rv64ui_p_ori_rom.v \
-						rv64ui_p_sb_rom.v \
-						rv64ui_p_sd_rom.v \
-						rv64ui_p_sh_rom.v \
-						rv64ui_p_sll_rom.v \
-						rv64ui_p_slli_rom.v \
-						rv64ui_p_slliw_rom.v \
-						rv64ui_p_sllw_rom.v \
-						rv64ui_p_slt_rom.v \
-						rv64ui_p_slti_rom.v \
-						rv64ui_p_sltiu_rom.v \
-						rv64ui_p_sltu_rom.v \
-						rv64ui_p_sra_rom.v \
-						rv64ui_p_srai_rom.v \
-						rv64ui_p_sraiw_rom.v \
-						rv64ui_p_sraw_rom.v \
-						rv64ui_p_srl_rom.v \
-						rv64ui_p_srli_rom.v \
-						rv64ui_p_srliw_rom.v \
-						rv64ui_p_srlw_rom.v \
-						rv64ui_p_sub_rom.v \
-						rv64ui_p_subw_rom.v \
-						rv64ui_p_sw_rom.v \
-						rv64ui_p_xor_rom.v \
-						rv64ui_p_xori_rom.v
-
 lint.v: $(HDL_SOURCE)
-	$(eval include $(TB_PATH)/bp_single_demo/Makefile.frag)			         	    \
+	$(eval include $(TB_PATH)/bp_single_demo/Makefile.frag) \
 	$(VCS) $(VCS_OPTIONS) $(LINT_OPTIONS) -top bp_multi_top -f flist.vcs $(HDL_PARAMS)
 
 %.build.v: 
@@ -89,24 +29,16 @@ lint.v: $(HDL_SOURCE)
 
 %.run.v: %.build.v
 	$(eval include $(TB_PATH)/$*/Makefile.frag)
-	cd $(TB_PATH)/$* && \
 	$(TB_PATH)/$*/simv $(SIM_OPTIONS) \
-	  > $(TB_PATH)/$*/$(basename $(TEST_ROM_C))_simout.txt
-
-#%.regress.v: %.build.v
-#	for rom in $(ISA_TESTS) ; do \
-#		$(MAKE) TEST_ROM=$$rom $*.run.v ; \
-#  done ; \
-#	egrep "PAS|FAL" $(TB_PATH)/$*/*_simout.txt
+	  > $(TB_PATH)/$*/$(basename $(notdir $(TEST_ROM)))_simout.txt
 
 %.clean.v:
-	cd $(TB_PATH)/$* 		;\
-		rm -rf DVEfiles	    ;\
-		rm -rf simv*        ;\
-		rm -rf *.old        ;\
-		rm -rf *.tcl        ;\
-		rm -rf inter.vpd    ;\
-		rm -rf ucli.key    
+		rm -rf $(TB_PATH)/$*/DVEfiles
+		rm -rf $(TB_PATH)/$*/simv*
+		rm -rf $(TB_PATH)/$*/*.old
+		rm -rf $(TB_PATH)/$*/*.tcl
+		rm -rf $(TB_PATH)/$*/inter.vpd
+		rm -rf $(TB_PATH)/$*/ucli.key
 
 dve:
 	dve -full64 -vpd vcdplus.vpd &
