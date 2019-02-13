@@ -45,7 +45,7 @@ module bp_be_pipe_fp
    , input [exception_width_lp-1:0] exc_i
 
    // Pipeline result
-   , output logic [reg_data_width_lp-1:0] result_o
+   , output [reg_data_width_lp-1:0] result_o
    );
 
 // Cast input and output ports 
@@ -69,9 +69,7 @@ wire [exception_width_lp-1:0] unused5 = exc_i;
 
 // Module instantiations
 
-always_comb begin
-  result_o = '0;
-end 
+assign result_o = '0;
 
 // Runtime assertions
 always_comb begin

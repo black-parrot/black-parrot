@@ -163,7 +163,7 @@ module bp_cce_test
       ,.boot_rom_data_i(boot_rom_data)
      );
 
-  bp_be_boot_rom #(
+  bp_boot_rom #(
     .width_p(boot_rom_width_p)
     ,.addr_width_p(lg_boot_rom_els_lp)
   ) boot_rom (

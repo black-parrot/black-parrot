@@ -1,3 +1,0 @@
-HDL_SOURCE=bsg_dff.v
-HDL_PARAMS=-pvalue+width_p=32
-VV_OPTS+=-CFLAGS -DWIDTH_P=32

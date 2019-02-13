@@ -35,17 +35,17 @@ module bp_be_pipe_mul
    // From RISC-V specifications
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )
-  (input logic                           clk_i
-   , input logic                         reset_i
+  (input                            clk_i
+   , input                          reset_i
 
    // Common pipeline interface
-   , input logic[decode_width_lp-1:0]    decode_i
-   , input logic[reg_data_width_lp-1:0]  rs1_i
-   , input logic[reg_data_width_lp-1:0]  rs2_i
-   , input logic[exception_width_lp-1:0] exc_i
+   , input [decode_width_lp-1:0]    decode_i
+   , input [reg_data_width_lp-1:0]  rs1_i
+   , input [reg_data_width_lp-1:0]  rs2_i
+   , input [exception_width_lp-1:0] exc_i
 
    // Pipeline result
-   , output logic[reg_data_width_lp-1:0] result_o
+   , output [reg_data_width_lp-1:0] result_o
    );
 
 // Cast input and output ports 
@@ -67,11 +67,7 @@ wire [exception_width_lp-1:0] unused5 = exc_i;
 // Submodule connections
 
 // Module instantiations
-
-always_comb 
-  begin
-    result_o = '0;
-  end 
+assign result_o = '0;
 
 always_comb 
   begin : runtime_assertions

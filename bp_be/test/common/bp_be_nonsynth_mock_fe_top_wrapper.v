@@ -255,7 +255,7 @@ bp_me_top #(.num_lce_p(num_lce_p)
             ,.lce_tr_resp_ready_i(local_lce_tr_resp_rdy)
             );
 
-bp_be_boot_rom #(.width_p(boot_rom_width_p)
+bp_boot_rom #(.width_p(boot_rom_width_p)
                  ,.addr_width_p(lg_boot_rom_els_lp)
                  )
           irom  (.addr_i(irom_addr)

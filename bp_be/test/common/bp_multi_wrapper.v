@@ -22,7 +22,6 @@ module bp_multi_wrapper
    ,parameter branch_metadata_fwd_width_p="inv"
    ,parameter num_cce_p="inv"
    ,parameter num_lce_p="inv"
-   ,parameter num_mem_p="inv"
    ,parameter lce_assoc_p="inv"
    ,parameter lce_sets_p="inv"
    ,parameter cce_block_size_in_bytes_p="inv"
@@ -42,9 +41,9 @@ module bp_multi_wrapper
                                                   , asid_width_p
                                                   , branch_metadata_fwd_width_p
                                                   )
-   ,localparam mhartid_width_lp = `bp_mhartid_width
-   ,localparam lce_id_width_lp = `bp_lce_id_width
-   ,localparam proc_cfg_width_lp = `bp_proc_cfg_width
+   ,localparam mhartid_width_lp = `BSG_SAFE_CLOG2(core_els_p)
+   ,localparam lce_id_width_lp = `BSG_SAFE_CLOG2(num_lce_p)
+   ,localparam proc_cfg_width_lp = `bp_proc_cfg_width(core_els_p, num_lce_p)
 
    ,localparam icache_lce_id_lp=0
    ,localparam dcache_lce_id_lp=1
@@ -55,6 +54,7 @@ module bp_multi_wrapper
    ,input logic                 reset_i
   );
 
+`declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
 `declare_bp_common_fe_be_if_structs(vaddr_width_p,paddr_width_p,asid_width_p
                                    ,branch_metadata_fwd_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p,paddr_width_p,asid_width_p
@@ -130,7 +130,7 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
                ,.inst_width_p(32)
                ,.lce_sets_p(lce_sets_p)
                ,.lce_assoc_p(lce_assoc_p)
-               ,.tag_width_p(12)
+               ,.tag_width_p(10)
                ,.num_cce_p(num_cce_p)
                ,.num_lce_p(num_lce_p)
                ,.block_size_in_bytes_p(8) /* TODO: This is ways not blocks */
@@ -218,9 +218,9 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
                 ,.paddr_width_p(paddr_width_p)
                 ,.asid_width_p(asid_width_p)
                 ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+                ,.core_els_p(core_els_p)
                 ,.num_cce_p(num_cce_p)
                 ,.num_lce_p(num_lce_p)
-                ,.num_mem_p(num_mem_p)
                 ,.lce_assoc_p(lce_assoc_p)
                 ,.lce_sets_p(lce_sets_p)
                 ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
@@ -279,6 +279,8 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
                         ,.paddr_width_p(paddr_width_p)
                         ,.asid_width_p(asid_width_p)
                         ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+                        ,.core_els_p(core_els_p)
+                        ,.num_lce_p(num_lce_p)
                         )
               be_tracer(.clk_i(clk_i)
                         ,.reset_i(reset_i)
@@ -336,4 +338,3 @@ bp_me_top #(.num_lce_p(num_lce_p)
             );
 
 endmodule : bp_multi_wrapper
-

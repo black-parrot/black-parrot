@@ -7,14 +7,17 @@
 `include "bp_be_rv64_defines.vh"
 
 /* TODO: Does not support byte / hword / word / dword loads / stores */
+/* TODO: unmaintained 02/11/2019 */
 module bp_be_nonsynth_mock_mmu 
- /* TODO: Get rid of this */
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
  #(parameter vaddr_width_p="inv"
    ,parameter paddr_width_p="inv"
    ,parameter asid_width_p="inv"
    ,parameter branch_metadata_fwd_width_p="inv"
+
+   ,parameter cce_block_size_in_bytes_p="inv"
+   ,parameter lce_sets_p="inv"
 
    ,parameter boot_rom_els_p="inv"
    ,parameter boot_rom_width_p="inv"
@@ -55,6 +58,7 @@ module bp_be_nonsynth_mock_mmu
    ,input logic  [boot_rom_width_p-1:0]   boot_rom_data_i
    );
 
+`declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
 `declare_bp_be_internal_if_structs(vaddr_width_p,paddr_width_p,asid_width_p
                                    ,branch_metadata_fwd_width_p);
 

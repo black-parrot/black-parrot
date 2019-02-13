@@ -198,7 +198,7 @@ mock_cce #(
   ,.rom_data_i(rom_data)
 );
 
-bp_be_boot_rom 
+bp_boot_rom 
 #(
   .addr_width_p(rom_addr_width_lp)
   ,.width_p(rom_data_width_lp)
