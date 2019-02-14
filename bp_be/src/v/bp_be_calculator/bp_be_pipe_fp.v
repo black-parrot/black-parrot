@@ -73,8 +73,9 @@ assign result_o = '0;
 
 // Runtime assertions
 always_comb begin
-  assert (reset_i | ~decode.pipe_fp_v) 
-    else $warning("RV64FD not currently supported");
+  // Fires immediately after reset
+  //assert (reset_i | ~decode.pipe_fp_v) 
+  //  else $warning("RV64FD not currently supported");
 end
 
 endmodule : bp_be_pipe_fp

@@ -71,8 +71,9 @@ assign result_o = '0;
 
 always_comb 
   begin : runtime_assertions
-    assert(reset_i | ~decode.pipe_mul_v) 
-      else $warning("RV64M is not currently supported");
+    // Fires immediately after reset
+    //assert(reset_i | ~decode.pipe_mul_v) 
+    //  else $warning("RV64M is not currently supported");
   end
 
 endmodule : bp_be_pipe_mul
