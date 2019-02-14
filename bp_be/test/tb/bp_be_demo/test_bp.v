@@ -23,11 +23,7 @@ module test_bp
    , parameter boot_rom_width_p            = "inv"
    , parameter boot_rom_els_p              = "inv"
 
-   , parameter trace_ring_width_p       = "inv"
-   , parameter trace_rom_addr_width_p   = "inv"
-
    , localparam cce_block_size_in_bits_lp = 8 * cce_block_size_in_bytes_p
-   , localparam trace_rom_data_width_lp   = trace_ring_width_p + 4
    , localparam lg_boot_rom_els_lp        = `BSG_SAFE_CLOG2(boot_rom_els_p)
 
    , localparam fe_queue_width_lp = `bp_fe_queue_width(vaddr_width_p, branch_metadata_fwd_width_p)
@@ -68,6 +64,9 @@ logic fe_fe_queue_v, be_fe_queue_v, fe_fe_queue_rdy, be_fe_queue_rdy;
 logic [lg_boot_rom_els_lp-1:0] irom_addr;
 logic [boot_rom_width_p-1:0]   irom_data;
 
+logic [lg_boot_rom_els_lp-1:0] boot_rom_addr;
+logic [boot_rom_width_p-1:0]   boot_rom_data;
+
 logic fe_queue_clr, fe_queue_dequeue, fe_queue_rollback;
 
 bp_fe_cmd_s fe_fe_cmd, be_fe_cmd;
@@ -97,12 +96,6 @@ bp_be_calc_result_s    cmt_trace_result;
 bp_be_exception_s      cmt_trace_exc;
 
 bp_proc_cfg_s proc_cfg;
-
-logic [trace_ring_width_p-1:0] tr_data_li;
-logic tr_v_li, tr_ready_lo;
-
-logic [trace_rom_addr_width_p-1:0]  tr_rom_addr_li;
-logic [trace_rom_data_width_lp-1:0] tr_rom_data_lo;
 
 bsg_nonsynth_clock_gen 
  #(.cycle_time_p(10))
@@ -321,7 +314,20 @@ bp_me_top
    ,.lce_tr_resp_o(local_lce_tr_resp)
    ,.lce_tr_resp_v_o(local_lce_tr_resp_v)
    ,.lce_tr_resp_ready_i(local_lce_tr_resp_rdy)
+
+   ,.boot_rom_addr_o(boot_rom_addr)
+   ,.boot_rom_data_i(boot_rom_data)
    );
+
+bp_boot_rom 
+ #(.width_p(boot_rom_width_p)
+   ,.addr_width_p(lg_boot_rom_els_lp)
+   ) 
+ me_boot_rom 
+  (.addr_i(boot_rom_addr)
+   ,.data_o(boot_rom_data)
+   );
+
 
 always_ff @(posedge clk) 
   begin
