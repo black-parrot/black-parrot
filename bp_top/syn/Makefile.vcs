@@ -15,6 +15,10 @@ VCS_OPTIONS += +multisource_int_delays
 VCS_OPTIONS += +neg_tchk
 VCS_OPTIONS += +libext+.v+.vlib+.vh
 VCS_OPTIONS += +vcs+finish+15000000ps
+VCS_OPTIONS += -R
+VCS_OPTIONS += +vcs+vcdplusautoflushon
+VCS_OPTIONS += +vcs+vcdpluson
+VCS_OPTIONS += +vcs+vcdplusmemon
 
 ## Find sources
 VCS_OPTIONS += +incdir+$(BP_COMMON_DIR)
