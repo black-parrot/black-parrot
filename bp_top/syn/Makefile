@@ -24,3 +24,5 @@ clean:
 
 include $(SYN_PATH)/Makefile.vcs
 
+include $(SYN_PATH)/Makefile.dc
+
