@@ -176,11 +176,12 @@ bsg_mux
    );
 
 // Save branch prediction metadata for forwarding on the next (mis)predicted instruction
-bsg_dff 
+bsg_dff_en
  #(.width_p(branch_metadata_fwd_width_p)
    ) 
  branch_metadata_fwd_reg
   (.clk_i(clk_i)
+   ,.en_i(calc_status.ex1_v)
    ,.data_i(calc_status.int1_branch_metadata_fwd)
    ,.data_o(branch_metadata_fwd_r)
    );

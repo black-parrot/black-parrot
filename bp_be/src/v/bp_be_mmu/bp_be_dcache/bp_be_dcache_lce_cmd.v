@@ -320,7 +320,7 @@ module bp_be_dcache_lce_cmd
             tag_mem_pkt.index = lce_cmd_addr_index;
             tag_mem_pkt.way_id = lce_cmd.way_id;
             tag_mem_pkt.opcode = e_dcache_lce_tag_mem_invalidate;
-            tag_mem_pkt_v_o = tag_mem_pkt_yumi_i;
+            tag_mem_pkt_v_o = lce_cmd_v_i;
 
             lce_cmd_yumi_o = tag_mem_pkt_yumi_i;
           end

@@ -186,7 +186,8 @@ module bp_fe_lce_cmd
            
     case (state_r)
       e_lce_cmd_ready: begin
-        if (lce_cmd_li.msg_type == e_lce_cmd_transfer_tmp) begin
+        // Casting because these enums are different types, although they should be synchronized
+        if (lce_cmd_li.msg_type == bp_cce_lce_cmd_type_e'(e_lce_cmd_transfer_tmp)) begin
           data_mem_pkt_lo.index  = lce_cmd_li.addr[lg_data_mask_width_lp
                                                        +lg_block_size_in_bytes_lp
                                                        +:lg_lce_sets_lp];
