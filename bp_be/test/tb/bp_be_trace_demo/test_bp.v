@@ -68,6 +68,9 @@ logic fe_fe_queue_v, be_fe_queue_v, fe_fe_queue_rdy, be_fe_queue_rdy;
 logic [lg_boot_rom_els_lp-1:0] irom_addr;
 logic [boot_rom_width_p-1:0]   irom_data;
 
+logic [lg_boot_rom_els_lp-1:0] mrom_addr;
+logic [boot_rom_width_p-1:0]   mrom_data;
+
 logic fe_queue_clr, fe_queue_dequeue, fe_queue_rollback;
 
 bp_fe_cmd_s fe_fe_cmd, be_fe_cmd;
@@ -354,6 +357,18 @@ bp_me_top
    ,.lce_tr_resp_o(local_lce_tr_resp)
    ,.lce_tr_resp_v_o(local_lce_tr_resp_v)
    ,.lce_tr_resp_ready_i(local_lce_tr_resp_rdy)
+
+   ,.boot_rom_addr_o(mrom_addr)
+   ,.boot_rom_data_i(mrom_data)
+   );
+
+bp_boot_rom 
+ #(.width_p(boot_rom_width_p)
+   ,.addr_width_p(lg_boot_rom_els_lp)
+   ) 
+ me_boot_rom 
+  (.addr_i(mrom_addr)
+   ,.data_o(mrom_data)
    );
 
 always_ff @(posedge clk) 
