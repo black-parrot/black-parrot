@@ -3,7 +3,7 @@
 include $(CADENV_PATH)/cadenv.mk
 
 # Top-level module
-DESIGN_NAME :=bp_be_top
+DESIGN_NAME :=bp_multi_top
 
 # Run director for DesignCompiler
 DC_RUN_DIR :=run_dc

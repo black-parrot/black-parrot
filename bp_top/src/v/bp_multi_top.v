@@ -24,7 +24,6 @@ module bp_multi_top
    , parameter cce_num_inst_ram_els_p    = "inv"
  
    // Test specific parameters
-   , parameter trace_en_p                = 0
    , parameter boot_rom_els_p            = "inv"
    , parameter boot_rom_width_p          = "inv"
 
@@ -55,13 +54,16 @@ module bp_multi_top
 
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )
-  (input                                  clk_i
-   , input                                reset_i
+  (input                                                  clk_i
+   , input                                                reset_i
+
+   , output logic [num_cce_p-1:0][lg_boot_rom_els_lp-1:0] boot_rom_addr_o
+   , input logic [num_cce_p-1:0][boot_rom_width_p-1:0]    boot_rom_data_i
 
    // Commit tracer
-   , output [pipe_stage_reg_width_lp-1:0] cmt_trace_stage_reg_o
-   , output [calc_result_width_lp-1:0]    cmt_trace_result_o
-   , output [exception_width_lp-1:0]      cmt_trace_exc_o
+   , output [core_els_p-1:0][pipe_stage_reg_width_lp-1:0] cmt_trace_stage_reg_o
+   , output [core_els_p-1:0][calc_result_width_lp-1:0]    cmt_trace_result_o
+   , output [core_els_p-1:0][exception_width_lp-1:0]      cmt_trace_exc_o
   );
 
 `declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
@@ -110,20 +112,12 @@ bp_lce_lce_tr_resp_s [num_lce_p-1:0] local_lce_tr_resp, remote_lce_tr_resp;
 logic [num_lce_p-1:0] local_lce_tr_resp_v, local_lce_tr_resp_rdy;
 logic [num_lce_p-1:0] remote_lce_tr_resp_v, remote_lce_tr_resp_rdy;
 
-bp_be_pipe_stage_reg_s[core_els_p-1:0] cmt_trace_stage_reg;
-bp_be_calc_result_s   [core_els_p-1:0] cmt_trace_result;
-bp_be_exception_s     [core_els_p-1:0] cmt_trace_exc;
-
 bp_proc_cfg_s[core_els_p-1:0] proc_cfg;
-
-assign cmt_trace_stage_reg_o = cmt_trace_stage_reg[0];
-assign cmt_trace_result_o    = cmt_trace_result[0];
-assign cmt_trace_exc_o       = cmt_trace_exc[0];
 
 // Module instantiations
 genvar core_id;
 generate 
-for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) 
+for(core_id = 0; core_id < core_els_p; core_id++) 
   begin : rof1
     localparam mhartid = (mhartid_width_lp)'(core_id);
     localparam icache_id = (core_id*2+icache_lce_id_lp);
@@ -294,32 +288,10 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1)
 
        ,.proc_cfg_i(proc_cfg[core_id])
 
-       ,.cmt_trace_stage_reg_o(cmt_trace_stage_reg[core_id])
-       ,.cmt_trace_result_o(cmt_trace_result[core_id])
-       ,.cmt_trace_exc_o(cmt_trace_exc[core_id])
+       ,.cmt_trace_stage_reg_o(cmt_trace_stage_reg_o[core_id])
+       ,.cmt_trace_result_o(cmt_trace_result_o[core_id])
+       ,.cmt_trace_exc_o(cmt_trace_exc_o[core_id])
        );
-
-       if (trace_en_p == 1)
-         begin : fi1
-           bp_be_nonsynth_tracer 
-            #(.vaddr_width_p(vaddr_width_p)
-              ,.paddr_width_p(paddr_width_p)
-              ,.asid_width_p(asid_width_p)
-              ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
-              ,.core_els_p(core_els_p)
-              ,.num_lce_p(num_lce_p)
-              )
-            be_tracer
-             (.clk_i(clk_i)
-              ,.reset_i(reset_i)
-
-              ,.proc_cfg_i(proc_cfg[core_id])
-
-              ,.cmt_trace_stage_reg_i(cmt_trace_stage_reg[core_id])
-              ,.cmt_trace_result_i(cmt_trace_result[core_id])
-              ,.cmt_trace_exc_i(cmt_trace_exc[core_id])
-              );
-         end
   end
 endgenerate 
 
@@ -366,6 +338,9 @@ bp_me_top
    ,.lce_tr_resp_o(local_lce_tr_resp)
    ,.lce_tr_resp_v_o(local_lce_tr_resp_v)
    ,.lce_tr_resp_ready_i(local_lce_tr_resp_rdy)
+
+   ,.boot_rom_addr_o(boot_rom_addr_o)
+   ,.boot_rom_data_i(boot_rom_data_i)
    );
 
 endmodule : bp_multi_top
