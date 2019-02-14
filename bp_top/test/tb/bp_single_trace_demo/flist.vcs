@@ -3,7 +3,6 @@ $BSG_IP_CORES_DIR/bsg_test/bsg_nonsynth_reset_gen.v
 $BSG_IP_CORES_DIR/bsg_test/bsg_nonsynth_clock_gen.v
 $BSG_IP_CORES_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
 # me files
-$BP_ME_DIR/src/v/roms/demo-v2/bp_cce_inst_rom_demo-v2_lce2_wg64_assoc8.v
 # top files
 $BP_TOP_DIR/test/rom/v/$TRACE_ROM
 $BP_TOP_DIR/test/rom/v/$TEST_ROM

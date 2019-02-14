@@ -110,6 +110,7 @@ assign fe_cmd_v_o  = fe_cmd_v;
 // Declare intermediate signals
 logic [eaddr_width_lp-1:0]              npc_plus4, npc_expected;
 logic [eaddr_width_lp-1:0]              npc_n, npc_r;
+logic                                   npc_mismatch_v;
 logic [branch_metadata_fwd_width_p-1:0] branch_metadata_fwd_r;
 
 // Control signals

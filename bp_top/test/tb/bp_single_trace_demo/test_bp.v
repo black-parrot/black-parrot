@@ -50,6 +50,9 @@ module test_bp
 
 logic clk, reset;
 
+logic [num_cce_p-1:0][lg_boot_rom_els_lp-1:0] boot_rom_addr;
+logic [num_cce_p-1:0][boot_rom_width_p-1:0]   boot_rom_data;
+
 bp_be_pipe_stage_reg_s[core_els_p-1:0] cmt_trace_stage_reg;
 bp_be_calc_result_s   [core_els_p-1:0] cmt_trace_result;
 bp_be_exception_s     [core_els_p-1:0] cmt_trace_exc;
@@ -94,6 +97,9 @@ bp_multi_top
  dut
   (.clk_i(clk)
    ,.reset_i(reset)
+
+   ,.boot_rom_addr_o(boot_rom_addr)
+   ,.boot_rom_data_i(boot_rom_data)
 
    ,.cmt_trace_stage_reg_o(cmt_trace_stage_reg)
    ,.cmt_trace_result_o(cmt_trace_result)
@@ -152,6 +158,18 @@ bp_trace_rom
   (.addr_i(tr_rom_addr_i)
    ,.data_o(tr_rom_data_o)
    );
+
+for (genvar i = 0; i < num_cce_p; i++)
+  begin : rof1
+    bp_boot_rom 
+     #(.width_p(boot_rom_width_p)
+       ,.addr_width_p(lg_boot_rom_els_lp)
+       ) 
+     me_boot_rom 
+      (.addr_i(boot_rom_addr[i])
+       ,.data_o(boot_rom_data[i])
+       );
+  end // rof1
 
 always_ff @(posedge clk) 
   begin

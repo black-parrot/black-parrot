@@ -231,7 +231,7 @@ bp_be_checker_top
    ,.asid_width_p(asid_width_p)
    ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
    )
- checker
+ be_checker
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
@@ -271,7 +271,7 @@ bp_be_calculator_top
    ,.lce_sets_p(lce_sets_p)
    ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
    )
- calculator
+ be_calculator
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
@@ -314,7 +314,7 @@ bp_be_mmu_top
    ,.lce_assoc_p(lce_assoc_p)
    ,.lce_sets_p(lce_sets_p)
    )
- mmu
+ be_mmu
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
