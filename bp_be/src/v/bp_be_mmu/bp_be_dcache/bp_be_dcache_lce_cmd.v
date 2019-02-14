@@ -148,8 +148,7 @@ module bp_be_dcache_lce_cmd
   logic [cce_id_width_lp-1:0] sync_ack_count_r, sync_ack_count_n;
 
   // for invalidate_tag_cmd
-  //logic invalidated_tag_r, invalidated_tag_n;
-  //logic updated_lru_r, updated_lru_n;
+  logic invalidated_tag_r, invalidated_tag_n;
 
   // for transfer_cmd
   logic tr_data_buffered_r, tr_data_buffered_n;
@@ -187,6 +186,8 @@ module bp_be_dcache_lce_cmd
     wb_data_buffered_n = wb_data_buffered_r;
     wb_data_read_n = wb_data_read_r;
     wb_dirty_cleared_n = wb_dirty_cleared_r;
+
+    invalidated_tag_n = invalidated_tag_r;
 
     data_buf_n = data_buf_r;
 
@@ -315,14 +316,26 @@ module bp_be_dcache_lce_cmd
           end
 
           //  <invalidate tag>
-          //  invalidate tag. It does not update the LRU.
+          //  invalidate tag. It does not update the LRU. It sends out
+          //  invalidate_ack response.
           e_lce_cmd_invalidate_tag: begin
             tag_mem_pkt.index = lce_cmd_addr_index;
             tag_mem_pkt.way_id = lce_cmd.way_id;
             tag_mem_pkt.opcode = e_dcache_lce_tag_mem_invalidate;
-            tag_mem_pkt_v_o = lce_cmd_v_i;
+            tag_mem_pkt_v_o = invalidated_tag_r
+              ? 1'b0
+              : lce_cmd_v_i;
+            invalidated_tag_n = lce_resp_yumi_i
+              ? 1'b0
+              : (invalidated_tag_r
+                ? 1'b1
+                : tag_mem_pkt_yumi_i);
 
-            lce_cmd_yumi_o = tag_mem_pkt_yumi_i;
+            lce_resp.dst_id = lce_cmd.src_id;
+            lce_resp.msg_type = e_lce_cce_inv_ack;
+            lce_resp.addr = lce_cmd.addr;
+            lce_resp_v_o = invalidated_tag_r | tag_mem_pkt_yumi_i;
+            lce_cmd_yumi_o = lce_resp_yumi_i;
           end
         endcase
       end
@@ -437,6 +450,7 @@ module bp_be_dcache_lce_cmd
       wb_data_buffered_r <= 1'b0;
       wb_data_read_r <= 1'b0;
       wb_dirty_cleared_r <= 1'b0;
+      invalidated_tag_r <= 1'b0;
     end
     else begin
       state_r <= state_n;
@@ -447,6 +461,7 @@ module bp_be_dcache_lce_cmd
       wb_data_read_r <= wb_data_read_n;
       wb_dirty_cleared_r <= wb_dirty_cleared_n;
       data_buf_r <= data_buf_n;
+      invalidated_tag_r <= invalidated_tag_n;
     end
   end
 
