@@ -14,6 +14,5 @@ DUT_PARAMS = -pvalue+vaddr_width_p=22                \
 
 TB_PARAMS =  -pvalue+trace_ring_width_p=129     \
              -pvalue+trace_rom_addr_width_p=32  \
-             -pvalue+trace_en_p=0
 
 HDL_PARAMS = ${DUT_PARAMS} + ${TB_PARAMS}

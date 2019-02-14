@@ -22,6 +22,7 @@ module test_bp
 
    , parameter boot_rom_width_p            = "inv"
    , parameter boot_rom_els_p              = "inv"
+   , localparam lg_boot_rom_els_lp         = `BSG_SAFE_CLOG2(boot_rom_els_p)
 
    , localparam reg_data_width_lp          = rv64_reg_data_width_gp
    , localparam byte_width_lp              = rv64_byte_width_gp

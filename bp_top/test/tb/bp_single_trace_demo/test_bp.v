@@ -20,10 +20,9 @@ module test_bp
    , parameter cce_block_size_in_bytes_p   = "inv"
    , parameter cce_num_inst_ram_els_p      = "inv"
 
-   , parameter trace_en_p                  = 0
-
    , parameter boot_rom_width_p            = "inv"
    , parameter boot_rom_els_p              = "inv"
+   , localparam lg_boot_rom_els_lp         = `BSG_SAFE_CLOG2(boot_rom_els_p)
    
    // Trace replay parameters
    , parameter trace_ring_width_p          = "inv"
@@ -89,7 +88,6 @@ bp_multi_top
    ,.lce_assoc_p(lce_assoc_p)
    ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
    ,.cce_num_inst_ram_els_p(cce_num_inst_ram_els_p)
-   ,.trace_en_p(trace_en_p)
 
    ,.boot_rom_width_p(boot_rom_width_p)
    ,.boot_rom_els_p(boot_rom_els_p)
