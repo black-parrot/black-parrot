@@ -123,6 +123,7 @@ for (genvar i = 0; i < num_cce_p; i++)
       (.addr_i(boot_rom_addr[i])
        ,.data_o(boot_rom_data[i])
        );
+  end // rof2
 
 endmodule : test_bp
 
