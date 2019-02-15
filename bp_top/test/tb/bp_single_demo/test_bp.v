@@ -49,6 +49,15 @@ bp_be_pipe_stage_reg_s[core_els_p-1:0] cmt_trace_stage_reg;
 bp_be_calc_result_s   [core_els_p-1:0] cmt_trace_result;
 bp_be_exception_s     [core_els_p-1:0] cmt_trace_exc;
 
+bp_proc_cfg_s proc_cfg;
+
+always_comb
+  begin
+    proc_cfg.mhartid   = 1'b0;
+    proc_cfg.icache_id = 1'b0;
+    proc_cfg.dcache_id = 1'b1;
+  end
+
 bsg_nonsynth_clock_gen 
  #(.cycle_time_p(10))
  clock_gen 
@@ -102,10 +111,10 @@ for (genvar i = 0; i < core_els_p; i++)
        ,.num_lce_p(num_lce_p)
        )
      tracer
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
+     (.clk_i(clk)
+      ,.reset_i(reset)
     
-      ,.proc_cfg_i(proc_cfg[core_id])
+      ,.proc_cfg_i(proc_cfg)
     
       ,.cmt_trace_stage_reg_i(cmt_trace_stage_reg[i])
       ,.cmt_trace_result_i(cmt_trace_result[i])
@@ -123,6 +132,7 @@ for (genvar i = 0; i < num_cce_p; i++)
       (.addr_i(boot_rom_addr[i])
        ,.data_o(boot_rom_data[i])
        );
+  end // rof2
 
 endmodule : test_bp
 
