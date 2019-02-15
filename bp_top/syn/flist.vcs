@@ -29,7 +29,8 @@ $BP_BE_DIR/src/include/bp_be_pkg.vh
 $BP_BE_DIR/src/include/bp_be_dcache/bp_be_dcache_lce_pkg.vh
 $BP_BE_DIR/src/include/bp_be_dcache/bp_be_dcache_pkg.vh
 # ME packages
-$BP_ME_DIR/src/include/v/bp_cce_inst_pkg.v
+$BP_ME_DIR/src/include/v/bp_cce_pkg.v
+$BP_ME_DIR/src/include/v/bp_me_network_pkg.v
 ## bsg_ip_cores files
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_fifo_1r1w_small.v
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_fifo_tracker.v
@@ -119,7 +120,7 @@ $BP_FE_DIR/src/v/bp_fe_pc_gen.v
 $BP_FE_DIR/src/v/bp_fe_top.v
 ## ME files
 $BP_ME_DIR/test/common/bp_cce_test.v
-$BP_ME_DIR/test/common/bp_me_top.v
+$BP_ME_DIR/src/v/bp_me_top.v
 $BP_ME_DIR/test/common/bp_mem.v
 # Note: This should be a testing rom, because it varies per testbench
 # You must change it for testbenches with different numbers of lce
