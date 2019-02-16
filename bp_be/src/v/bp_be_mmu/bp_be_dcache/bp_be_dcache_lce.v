@@ -44,6 +44,7 @@
 `include "bp_be_dcache_lce_pkt.vh"
 
 module bp_be_dcache_lce
+  import bp_common_pkg::*;
   import bp_be_dcache_lce_pkg::*;
   #(parameter data_width_p="inv"
     , parameter paddr_width_p="inv"

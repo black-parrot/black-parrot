@@ -57,6 +57,7 @@
 `include "bp_common_me_if.vh"
 
 module bp_be_dcache
+  import bp_common_pkg::*;
   import bp_be_dcache_pkg::*;
   import bp_be_dcache_lce_pkg::*;
   #(parameter data_width_p="inv"
@@ -882,6 +883,7 @@ module bp_be_dcache
     bp_be_dcache_axe_trace_gen
       #(.addr_width_p(paddr_width_p)
         ,.data_width_p(data_width_p)
+        ,.num_lce_p(num_lce_p)
         )
       axe_trace_gen
         (.clk_i(clk_i)

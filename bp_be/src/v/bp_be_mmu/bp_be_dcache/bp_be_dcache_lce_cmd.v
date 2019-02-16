@@ -13,6 +13,7 @@
  */
 
 module bp_be_dcache_lce_cmd
+  import bp_common_pkg::*;
   import bp_be_dcache_lce_pkg::*;
   #(parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
