@@ -48,18 +48,9 @@
 //  [    physical tag    ] [   index   ] [           block_offset           ]
 //  [    physical tag    ] [   index   ] [  word_offset  ]  [  byte_offset  ] 
 
-
-`include "bp_be_dcache_pkt.vh"
-`include "bp_be_dcache_lce_pkt.vh"
-`include "bp_be_dcache_tag_info.vh"
-`include "bp_be_dcache_stat_info.vh"
-`include "bp_be_dcache_wbuf_entry.vh"
-`include "bp_common_me_if.vh"
-
 module bp_be_dcache
   import bp_common_pkg::*;
   import bp_be_dcache_pkg::*;
-  import bp_be_dcache_lce_pkg::*;
   #(parameter data_width_p="inv"
     , parameter paddr_width_p="inv"
     , parameter sets_p="inv"

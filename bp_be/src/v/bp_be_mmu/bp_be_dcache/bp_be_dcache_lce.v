@@ -41,11 +41,9 @@
  *    raises tr_received_li signal to lce_req module.
  */
 
-`include "bp_be_dcache_lce_pkt.vh"
-
 module bp_be_dcache_lce
   import bp_common_pkg::*;
-  import bp_be_dcache_lce_pkg::*;
+  import bp_be_dcache_pkg::*;
   #(parameter data_width_p="inv"
     , parameter paddr_width_p="inv"
     , parameter lce_data_width_p="inv"

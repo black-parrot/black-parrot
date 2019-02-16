@@ -26,7 +26,6 @@ $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_bit_synth.v
 $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_byte.v
 $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_byte_synth.v
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_two_fifo.v
-$BP_BE_DIR/src/include/bp_be_dcache/bp_be_dcache_lce_pkg.vh
 $BP_BE_DIR/src/include/bp_be_dcache/bp_be_dcache_pkg.vh
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lru_decode.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lru_encode.v

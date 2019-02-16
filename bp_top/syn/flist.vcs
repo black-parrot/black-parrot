@@ -26,7 +26,6 @@ $BP_FE_DIR/src/include/bp_fe_pkg.vh
 # BE packages
 $BP_BE_DIR/src/include/bp_be_rv64_pkg.vh
 $BP_BE_DIR/src/include/bp_be_pkg.vh
-$BP_BE_DIR/src/include/bp_be_dcache/bp_be_dcache_lce_pkg.vh
 $BP_BE_DIR/src/include/bp_be_dcache/bp_be_dcache_pkg.vh
 # ME packages
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
