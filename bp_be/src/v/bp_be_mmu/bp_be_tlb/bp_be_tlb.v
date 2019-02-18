@@ -87,9 +87,6 @@ bp_tlb_cam
    ,.empty_v_o(cam_empty_v_o)
    ,.empty_addr_o(cam_empty_addr_o)
   );
-  
-logic [ptag_width_p-1:0] ram_data_i;
-assign ram_data_i = w_ptag_i;
 
 bsg_mem_1rw_sync_synth
   #(.width_p(ptag_width_p)
@@ -98,7 +95,7 @@ bsg_mem_1rw_sync_synth
   ram
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.data_i(ram_data_i)
+   ,.data_i(w_ptag_i)
    ,.addr_i(ram_addr_i)
    ,.v_i(1'b1)
    ,.w_i(w_v_i)
