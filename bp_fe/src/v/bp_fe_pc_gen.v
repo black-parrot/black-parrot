@@ -105,7 +105,7 @@ logic                          misalignment;
 logic                          predict;
 logic                          pc_redirect_after_icache_miss;
 logic                          stalled_pc_redirect;
-   
+logic 		               prev_icache_miss;
 
 //connect pc_gen to the rest of the FE submodules as well as FE top module   
 assign pc_gen_icache_o = pc_gen_icache;
@@ -157,14 +157,24 @@ always_comb
    
 //next_pc
 always_comb begin
-  if (icache_miss_i) 
+  if (icache_miss_i || prev_icache_miss) 
     begin
       next_pc = icache_miss_pc;
-    end 
+    end
+   //comment
+  else if (stalled_pc_redirect && icache_miss_i)
+    begin
+      next_pc = pc_redirect;
+    end
   else if (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) 
     begin
       next_pc = fe_pc_gen_cmd.pc;
-    end 
+    end
+   //comment
+  else if ((prev_icache_miss || icache_miss_i) && ~pc_gen_icache_ready_i)
+    begin
+      next_pc = icache_miss_pc; 
+    end
   else if (prediction_on_p && predict) 
     begin
       next_pc = btb_target;
@@ -178,10 +188,19 @@ end
    
 always_ff @(posedge clk_i) 
   begin
+    prev_icache_miss <= icache_miss_i;
     if (reset_i) 
       begin
        pc <= bp_first_pc_p;
-      end 
+      end
+     //comment
+    else if (pc_gen_icache_ready_i && pc_gen_fe_ready_i)
+      begin
+        pc                  <= next_pc;
+	last_pc             <= pc;
+	icache_miss_pc      <= last_pc;
+      end // else: !if(reset_i)
+     /*
     else if (stalled_pc_redirect && icache_miss_i) 
       begin
         pc                  <= pc_redirect;
@@ -199,7 +218,7 @@ always_ff @(posedge clk_i)
           pc             <= icache_miss_pc;
           last_pc        <= pc;
           icache_miss_pc <= last_pc;
-        end
+        end*/
   end
 
 
