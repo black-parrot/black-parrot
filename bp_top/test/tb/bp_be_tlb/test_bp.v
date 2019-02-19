@@ -14,7 +14,7 @@ module test_bp
    ,localparam lg_els_lp=`BSG_SAFE_CLOG2(els_p)
  );
  
-localparam mapSize = 100;
+localparam mapSize = 10;
  
 logic clk, reset;
 logic [mapSize-1:0][vtag_width_p-1:0] vtag_map;
@@ -64,7 +64,7 @@ bp_be_tlb
    ,.w_vtag_i(w_vtag_i)
    ,.w_ptag_i(w_ptag_i)
    
-   ,.miss_o(miss_o)
+   ,.miss_v_o(miss_o)
    ,.miss_vtag_o(miss_vtag_o)
   );
   
@@ -76,29 +76,17 @@ bp_be_mock_ptw
   (.clk_i(clk)
    ,.reset_i(reset)
    
-   ,.v_i(miss_o)
+   ,.miss_v_i(miss_o)
    ,.vtag_i(miss_vtag_o)
-   ,.rdy_o()
   
    ,.v_o(w_v_i)
    ,.vtag_o(w_vtag_i)
    ,.ptag_o(w_ptag_i)
-   ,.yumi_i(1'b1)
   );
-  
-logic missed;
+
+
 logic [31:0] counter;
 logic [31:0] addr;
-
-always_ff @(posedge clk) begin
-	if(reset)
-		missed <= '0;
-	else if(miss_o)
-		missed <= 'b1;
-	else if(w_v_i)
-		missed <= '0;
-end
-
 
 always_ff @(posedge clk) begin
     if(reset) begin
@@ -112,7 +100,7 @@ always_ff @(posedge clk) begin
         counter <= counter + 'b1;
         r_v_i <= '0;
 
-        if(!(missed || miss_o) && counter[0]) begin
+        if(!miss_o && counter[0]) begin
 		    addr     <= $urandom_range(0,mapSize-1);
             r_v_i    <= 'b1;
             r_vtag_i <= vtag_map[addr];
