@@ -50,6 +50,7 @@ module mock_be_trace
     ,parameter bp_fe_queue_width_lp=`bp_fe_queue_width(vaddr_width_p,branch_metadata_fwd_width_p)
     //trace_rom params
     ,parameter trace_addr_width_p="inv"
+    ,localparam lg_trace_addr_width_lp=`BSG_SAFE_CLOG2(trace_addr_width_p)
     ,parameter trace_data_width_p="inv"
 
     ,localparam total_trace_instr_count_p=512
@@ -100,36 +101,6 @@ module mock_be_trace
 
     ,output logic [trace_addr_width_p-1:0]                 trace_addr_o
     ,input  logic [trace_data_width_p-1:0]                 trace_data_i
-
-   // LCE-CCE interface
-    , output [lce_cce_req_width_lp-1:0]                    lce_cce_req_o
-    , output                                               lce_cce_req_v_o
-    , input                                                lce_cce_req_rdy_i
-
-    , output [lce_cce_resp_width_lp-1:0]                   lce_cce_resp_o
-    , output                                               lce_cce_resp_v_o
-    , input                                                lce_cce_resp_rdy_i                                 
-
-    , output [lce_cce_data_resp_width_lp-1:0]              lce_cce_data_resp_o
-    , output                                               lce_cce_data_resp_v_o
-    , input                                                lce_cce_data_resp_rdy_i
-
-    , input [cce_lce_cmd_width_lp-1:0]                     cce_lce_cmd_i
-    , input                                                cce_lce_cmd_v_i
-    , output                                               cce_lce_cmd_rdy_o
-
-    , input [cce_lce_data_cmd_width_lp-1:0]                cce_lce_data_cmd_i
-    , input                                                cce_lce_data_cmd_v_i
-    , output                                               cce_lce_data_cmd_rdy_o
-
-    , input [lce_lce_tr_resp_width_lp-1:0]                 lce_lce_tr_resp_i
-    , input                                                lce_lce_tr_resp_v_i
-    , output                                               lce_lce_tr_resp_rdy_o
-
-    , output [lce_lce_tr_resp_width_lp-1:0]                lce_lce_tr_resp_o
-    , output                                               lce_lce_tr_resp_v_o
-    , input                                                lce_lce_tr_resp_rdy_i
-
 );
 
 logic [total_trace_instr_count_p-1:0] instr_count;
@@ -171,64 +142,5 @@ always_comb begin : be_queue_gen
     //bp_fe_queue_ready_o     = bp_fe_queue_v_i;
     bp_fe_queue_ready_o     = '1;
 end;
-
-
-bp_be_mmu_top
- #(.vaddr_width_p(vaddr_width_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.asid_width_p(asid_width_p)
-   ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
-
-   ,.num_cce_p(num_cce_p)
-   ,.num_lce_p(num_lce_p)
-   ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
-   ,.lce_assoc_p(lce_assoc_p)
-   ,.lce_sets_p(lce_sets_p)
-   )
- be_mmu
-   (.clk_i(clk_i)
-    ,.reset_i(reset_i)
-
-    ,.mmu_cmd_i(mmu_cmd)
-    ,.mmu_cmd_v_i(mmu_cmd_v)
-    ,.mmu_cmd_ready_o(mmu_cmd_rdy)
-
-    ,.chk_psn_ex_i(chk_psn_ex)
-
-    ,.mmu_resp_o(mmu_resp)
-    ,.mmu_resp_v_o(mmu_resp_v)
-    ,.mmu_resp_ready_i(mmu_resp_rdy)      
-
-    ,.lce_req_o(lce_cce_req_o)
-    ,.lce_req_v_o(lce_cce_req_v_o)
-    ,.lce_req_ready_i(lce_cce_req_rdy_i)
-
-    ,.lce_resp_o(lce_cce_resp_o)
-    ,.lce_resp_v_o(lce_cce_resp_v_o)
-    ,.lce_resp_ready_i(lce_cce_resp_rdy_i)        
-
-    ,.lce_data_resp_o(lce_cce_data_resp_o)
-    ,.lce_data_resp_v_o(lce_cce_data_resp_v_o)
-    ,.lce_data_resp_ready_i(lce_cce_data_resp_rdy_i)
-
-    ,.lce_cmd_i(cce_lce_cmd_i)
-    ,.lce_cmd_v_i(cce_lce_cmd_v_i)
-    ,.lce_cmd_ready_o(cce_lce_cmd_rdy_o)
-
-    ,.lce_data_cmd_i(cce_lce_data_cmd_i)
-    ,.lce_data_cmd_v_i(cce_lce_data_cmd_v_i)
-    ,.lce_data_cmd_ready_o(cce_lce_data_cmd_rdy_o)
-
-    ,.lce_tr_resp_i(lce_lce_tr_resp_i)
-    ,.lce_tr_resp_v_i(lce_lce_tr_resp_v_i)
-    ,.lce_tr_resp_ready_o(lce_lce_tr_resp_rdy_o)
-
-    ,.lce_tr_resp_o(lce_lce_tr_resp_o)
-    ,.lce_tr_resp_v_o(lce_lce_tr_resp_v_o)
-    ,.lce_tr_resp_ready_i(lce_lce_tr_resp_rdy_i)
-
-    ,.dcache_id_i(proc_cfg.dcache_id)
-    );
-
 
 endmodule

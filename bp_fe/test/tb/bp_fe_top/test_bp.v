@@ -20,7 +20,6 @@ parameter vaddr_width_p          ="inv"
 ,parameter lce_sets_p            ="inv"
 ,parameter lce_assoc_p           ="inv"
 ,parameter tag_width_p           ="inv"
-,parameter coh_states_p          ="inv"
 ,parameter num_cce_p             ="inv"
 ,parameter num_lce_p             ="inv"
 ,parameter lce_id_p              ="inv"
@@ -57,7 +56,6 @@ bp_fe_top_wrapper
 ,.lce_sets_p(lce_sets_p)
 ,.lce_assoc_p(lce_assoc_p)
 ,.tag_width_p(tag_width_p)
-,.coh_states_p(coh_states_p)
 ,.num_cce_p(num_cce_p)
 ,.num_lce_p(num_lce_p)
 ,.lce_id_p(lce_id_p)

@@ -166,7 +166,7 @@ bp_fe_trace_rom.v:
 	echo "TESTING ROM:" $(TRACE_TEST_ROM);\
 
 %.build.v: 
-	$(eval include $(dir $<)Makefile.frag) \
+	$(eval include $(TB_PATH)/$*/Makefile.frag) \
 	$(VCS) $(VCS_OPTIONS) -o $(TB_PATH)/$*/simv -top test_bp \
 	  -f flist.vcs -f $(TB_PATH)/$*/flist.vcs $(HDL_PARAMS) $(TB_PATH)/$*/test_bp.v
 	
