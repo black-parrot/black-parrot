@@ -49,7 +49,7 @@ module bp_be_int_alu
    , input                          opw_v_i
 
    // Result
-   , output logic [reg_data_width_lp-1:0] result_o
+   , output [reg_data_width_lp-1:0] result_o
    );
 
 // Intermediate connections
@@ -106,10 +106,10 @@ always_comb
       e_int_op_sgeu : result_sgn = (reg_data_width_lp)'($unsigned(src1_i   >= src2_i));
       default       : result_sgn = '0;
     endcase
-  
-    // Select between word and double word width results
-    result_o = opw_v_i ? reg_data_width_lp'(resultw_sgn) : result_sgn;
   end
+
+// Select between word and double word width results
+assign result_o = opw_v_i ? reg_data_width_lp'(resultw_sgn) : result_sgn;
 
 endmodule : bp_be_int_alu
 

@@ -33,9 +33,9 @@ typedef enum bit [3:0]
   ,e_lwu = 4'b0110
   ,e_ld  = 4'b0011
 
-  ,e_sb  = 4'b1100
-  ,e_sh  = 4'b1101
-  ,e_sw  = 4'b1110
+  ,e_sb  = 4'b1000
+  ,e_sh  = 4'b1001
+  ,e_sw  = 4'b1010
   ,e_sd  = 4'b1011
 } bp_be_mem_fu_op_e;
 

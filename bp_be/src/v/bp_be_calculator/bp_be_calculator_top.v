@@ -59,9 +59,14 @@ module bp_be_calculator_top
    , parameter paddr_width_p               = "inv"
    , parameter asid_width_p                = "inv"
    , parameter branch_metadata_fwd_width_p = "inv"
+
+   , parameter core_els_p                  = "inv"
+   , parameter num_lce_p                   = "inv"
+   , parameter lce_sets_p                  = "inv"
+   , parameter cce_block_size_in_bytes_p   = "inv"
    
    // Generated parameters
-   , localparam proc_cfg_width_lp       = `bp_proc_cfg_width
+   , localparam proc_cfg_width_lp       = `bp_proc_cfg_width(core_els_p, num_lce_p)
    , localparam issue_pkt_width_lp      = `bp_be_issue_pkt_width(branch_metadata_fwd_width_p)
    , localparam calc_status_width_lp    = `bp_be_calc_status_width(branch_metadata_fwd_width_p)
    , localparam exception_width_lp      = `bp_be_exception_width
@@ -90,37 +95,40 @@ module bp_be_calculator_top
    )
  (input                                  clk_i
   , input                                reset_i
-
-  // Slow inputs
+   
+  // Slow inputs   
   , input [proc_cfg_width_lp-1:0]        proc_cfg_i
-
-  // Calculator - Checker interface
+   
+  // Calculator - Checker interface   
   , input [issue_pkt_width_lp-1:0]       issue_pkt_i
   , input                                issue_pkt_v_i
-  , output logic                         issue_pkt_ready_o
-
+  , output                               issue_pkt_ready_o
+   
   , input                                chk_dispatch_v_i
   , input                                chk_roll_i
   , input                                chk_poison_ex_i
   , input                                chk_poison_isd_i
-
-  , output logic [calc_status_width_lp-1:0]   calc_status_o
-
-  // MMU interface
-  , output logic [mmu_cmd_width_lp-1:0]       mmu_cmd_o
-  , output logic                              mmu_cmd_v_o
-  , input                                     mmu_cmd_ready_i
-
-  , input [mmu_resp_width_lp-1:0]             mmu_resp_i
-  , input                                     mmu_resp_v_i
-  , output logic                              mmu_resp_ready_o
+   
+  , output [calc_status_width_lp-1:0]    calc_status_o
+   
+  // MMU interface   
+  , output [mmu_cmd_width_lp-1:0]        mmu_cmd_o
+  , output                               mmu_cmd_v_o
+  , input                                mmu_cmd_ready_i
+   
+  , input [mmu_resp_width_lp-1:0]        mmu_resp_i
+  , input                                mmu_resp_v_i
+  , output                               mmu_resp_ready_o
 
   // Commit tracer
-  , output logic [pipe_stage_reg_width_lp-1:0] cmt_trace_stage_reg_o
-  , output logic [calc_result_width_lp-1:0]    cmt_trace_result_o
-  , output logic [exception_width_lp-1:0]      cmt_trace_exc_o
+  , output [pipe_stage_reg_width_lp-1:0] cmt_trace_stage_reg_o
+  , output [calc_result_width_lp-1:0]    cmt_trace_result_o
+  , output [exception_width_lp-1:0]      cmt_trace_exc_o
   );
 
+// Declare parameterizable structs
+`declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
+`declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
 `declare_bp_be_internal_if_structs(vaddr_width_p
                                    , paddr_width_p
                                    , asid_width_p
@@ -177,6 +185,7 @@ logic [pipe_stage_els_lp-1:1][reg_data_width_lp-1:0] comp_stage_n_slice_rd;
 assign issue_pkt_ready_o = (chk_dispatch_v_i | ~issue_pkt_v_r) & ~chk_roll_i & ~chk_poison_isd_i;
 
 // Module instantiations
+// Register files
 bp_be_regfile
  int_regfile
   (.clk_i(clk_i)
@@ -223,6 +232,7 @@ bp_be_regfile
    ,.rs2_data_o(frf_rs2)
    );
 
+// Issued instruction registere
 bsg_dff_reset_en 
  #(.width_p(issue_pkt_width_lp)
    ) 
@@ -247,6 +257,7 @@ bsg_dff_reset_en
    ,.data_o(issue_pkt_v_r)
    );
 
+// Decode the dispatched instruction
 bp_be_instr_decoder
  instr_decoder
   (.fe_nop_v_i(~issue_pkt_v_r)
@@ -258,6 +269,7 @@ bp_be_instr_decoder
    ,.illegal_instr_o(illegal_instr_isd)
    );
 
+// Bypass the instruction operands from written registers in the stack
 bp_be_bypass 
  // Don't need to forward isd data
  #(.fwd_els_p(pipe_stage_els_lp-1)
@@ -320,7 +332,11 @@ bsg_mux
    ,.data_o(bypass_rs2)
    );
 
+// Computation pipelines
+// Integer pipe: 1 cycle latency
 bp_be_pipe_int 
+ #(.core_els_p(core_els_p)
+   )
  pipe_int
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -338,6 +354,7 @@ bp_be_pipe_int
    ,.br_tgt_o(int_calc_result.br_tgt)
    );
 
+// Multiplication pipe: 2 cycle latency
 bp_be_pipe_mul
  pipe_mul
   (.clk_i(clk_i)
@@ -351,7 +368,10 @@ bp_be_pipe_mul
    ,.result_o(mul_calc_result.result)
    );
 
+// Memory pipe: 3 cycle latency
 bp_be_pipe_mem
+ #(.vaddr_width_p(vaddr_width_p)
+   )
  pipe_mem
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -374,6 +394,7 @@ bp_be_pipe_mem
    ,.cache_miss_o(cache_miss_mem3)
    );
 
+// Floating point pipe: 4 cycle latency
 bp_be_pipe_fp 
  pipe_fp
   (.clk_i(clk_i)
@@ -527,12 +548,11 @@ always_comb
         exc_stage_n[2].roll_v          = exc_stage_r[1].roll_v   | chk_roll_i;
         exc_stage_n[3].cache_miss_v    = cache_miss_mem3;
         exc_stage_n[3].roll_v          = exc_stage_r[2].roll_v   | chk_roll_i;
-
-    // Commit tracer 
-    cmt_trace_stage_reg_o = calc_stage_r[pipe_stage_els_lp-1];
-    cmt_trace_result_o    = comp_stage_r[pipe_stage_els_lp-1];
-    cmt_trace_exc_o       = exc_stage_r[pipe_stage_els_lp-1];
   end
 
-endmodule : bp_be_calculator_top
+// Commit tracer
+assign cmt_trace_stage_reg_o = calc_stage_r[pipe_stage_els_lp-1];
+assign cmt_trace_result_o    = comp_stage_r[pipe_stage_els_lp-1];
+assign cmt_trace_exc_o       = exc_stage_r[pipe_stage_els_lp-1];
 
+endmodule : bp_be_calculator_top

@@ -48,17 +48,9 @@
 //  [    physical tag    ] [   index   ] [           block_offset           ]
 //  [    physical tag    ] [   index   ] [  word_offset  ]  [  byte_offset  ] 
 
-
-`include "bp_be_dcache_pkt.vh"
-`include "bp_be_dcache_lce_pkt.vh"
-`include "bp_be_dcache_tag_info.vh"
-`include "bp_be_dcache_stat_info.vh"
-`include "bp_be_dcache_wbuf_entry.vh"
-`include "bp_common_me_if.vh"
-
 module bp_be_dcache
+  import bp_common_pkg::*;
   import bp_be_dcache_pkg::*;
-  import bp_be_dcache_lce_pkg::*;
   #(parameter data_width_p="inv"
     , parameter paddr_width_p="inv"
     , parameter sets_p="inv"
@@ -422,6 +414,9 @@ module bp_be_dcache
   assign wbuf_entry_out_word_offset = wbuf_entry_out.paddr[byte_offset_width_lp+:word_offset_width_lp];
   assign wbuf_entry_out_index = wbuf_entry_out.paddr[block_offset_width_lp+:index_width_lp];
 
+  assign wbuf_entry_in.paddr = paddr_tv_r;
+  assign wbuf_entry_in.way_id = store_hit_way;
+
   if (data_width_p == 64) begin
     assign wbuf_entry_in.data = double_op_tv_r
       ? data_tv_r
@@ -695,7 +690,7 @@ module bp_be_dcache
     assign data_mem_addr_li[i] = (load_op & tl_we)
       ? {addr_index, addr_word_offset}
       : (wbuf_yumi_li
-        ? {wbuf_entry_out_index}
+        ? {wbuf_entry_out_index, wbuf_entry_out_word_offset}
         : {lce_data_mem_pkt.index, lce_data_mem_pkt.way_id ^ ((word_offset_width_lp)'(i))});
 
     bsg_mux
@@ -879,6 +874,7 @@ module bp_be_dcache
     bp_be_dcache_axe_trace_gen
       #(.addr_width_p(paddr_width_p)
         ,.data_width_p(data_width_p)
+        ,.num_lce_p(num_lce_p)
         )
       axe_trace_gen
         (.clk_i(clk_i)

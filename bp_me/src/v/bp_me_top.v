@@ -66,6 +66,8 @@ module bp_me_top
     ,output logic [num_lce_p-1:0]                                         lce_tr_resp_v_o
     ,input [num_lce_p-1:0]                                                lce_tr_resp_ready_i
 
+    ,output logic [num_cce_p-1:0][lg_boot_rom_els_lp-1:0]                 boot_rom_addr_o
+    ,input logic [num_cce_p-1:0][boot_rom_width_p-1:0]                    boot_rom_data_i
   );
 
   // Coherence Network <-> CCE
@@ -181,8 +183,6 @@ module bp_me_top
   logic [num_cce_p-1:0]                                         mem_data_cmd_v_o;
   logic [num_cce_p-1:0]                                         mem_data_cmd_yumi_i;
 
-  logic [num_cce_p-1:0][lg_boot_rom_els_lp-1:0]                 boot_rom_addr;
-  logic [num_cce_p-1:0][boot_rom_width_p-1:0]                   boot_rom_data;
 
 
   for (genvar i = 0; i < num_cce_p; i++) begin
@@ -263,18 +263,9 @@ module bp_me_top
         ,.mem_data_resp_v_o(mem_data_resp_v_i[i])
         ,.mem_data_resp_ready_i(mem_data_resp_ready_o[i])
 
-        ,.boot_rom_addr_o(boot_rom_addr[i])
-        ,.boot_rom_data_i(boot_rom_data[i])
+        ,.boot_rom_addr_o(boot_rom_addr_o[i])
+        ,.boot_rom_data_i(boot_rom_data_i[i])
        );
-
-    bp_me_boot_rom #(
-      .width_p(boot_rom_width_p)
-      ,.addr_width_p(lg_boot_rom_els_lp)
-    ) me_boot_rom (
-      .addr_i(boot_rom_addr[i])
-      ,.data_o(boot_rom_data[i])
-    );
-
   end
 
 endmodule

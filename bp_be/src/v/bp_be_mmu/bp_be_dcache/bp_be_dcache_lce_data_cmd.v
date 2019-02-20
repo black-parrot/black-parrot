@@ -7,6 +7,7 @@
  */
 
 module bp_be_dcache_lce_data_cmd 
+  import bp_common_pkg::*;
   #(parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
     , parameter data_width_p="inv"

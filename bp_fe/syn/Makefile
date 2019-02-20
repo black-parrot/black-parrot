@@ -20,4 +20,11 @@ INC_PATH  = $(BP_FE_PATH)/src/include
 VTB_PATH    = $(TB_PATH)/v
 SCTB_PATH   = $(TB_PATH)/sc
 
+BP_TOP_DIR       = $(TOP)/bp_top
+BP_FE_DIR        = $(TOP)/bp_fe
+BP_BE_DIR        = $(TOP)/bp_be
+BP_ME_DIR        = $(TOP)/bp_me
+BP_COMMON_DIR    = $(TOP)/bp_common
+BSG_IP_CORES_DIR = $(TOP)/bsg_ip_cores
+
 include $(SYN_PATH)/Makefile.vcs

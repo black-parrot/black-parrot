@@ -1,7 +1,7 @@
 /**
 y *
  * Name:
- *   bp_fe_lce_cce_data_cmd.v
+ *   bp_fe_lce_data_cmd.v
  *
  * Description:
  *   To	be updated
@@ -19,7 +19,7 @@ y *
  */
 
 
-module bp_fe_cce_lce_data_cmd
+module bp_fe_lce_data_cmd
   import bp_fe_icache_pkg::*;
   #(parameter data_width_p="inv"
     , parameter lce_addr_width_p="inv"
@@ -50,9 +50,9 @@ module bp_fe_cce_lce_data_cmd
    )
    (output logic                                                 cce_data_received_o
               
-    , input [bp_cce_lce_data_cmd_width_lp-1:0]                   cce_lce_data_cmd_i
-    , input                                                      cce_lce_data_cmd_v_i
-    , output logic                                               cce_lce_data_cmd_yumi_o
+    , input [bp_cce_lce_data_cmd_width_lp-1:0]                   lce_data_cmd_i
+    , input                                                      lce_data_cmd_v_i
+    , output logic                                               lce_data_cmd_yumi_o
                  
     , output logic                                               data_mem_pkt_v_o
     , output logic [bp_fe_icache_lce_data_mem_pkt_width_lp-1:0]  data_mem_pkt_o
@@ -60,22 +60,22 @@ module bp_fe_cce_lce_data_cmd
    );
 
   `declare_bp_cce_lce_data_cmd_s(num_cce_p, num_lce_p, lce_addr_width_p, lce_data_width_p, ways_p);
-  bp_cce_lce_data_cmd_s cce_lce_data_cmd_li;
-  assign cce_lce_data_cmd_li = cce_lce_data_cmd_i;
+  bp_cce_lce_data_cmd_s lce_data_cmd_li;
+  assign lce_data_cmd_li = lce_data_cmd_i;
    
   `declare_bp_fe_icache_lce_data_mem_pkt_s(lce_sets_p, ways_p, lce_data_width_p);
   bp_fe_icache_lce_data_mem_pkt_s data_mem_pkt_lo;
   assign data_mem_pkt_o = data_mem_pkt_lo;
 
-  assign data_mem_pkt_lo.index   = cce_lce_data_cmd_li.addr[lg_data_mask_width_lp
+  assign data_mem_pkt_lo.index   = lce_data_cmd_li.addr[lg_data_mask_width_lp
                                                             +lg_block_size_in_bytes_lp
                                                             +:lg_lce_sets_lp];
-  assign data_mem_pkt_lo.way_id  = cce_lce_data_cmd_li.way_id;
-  assign data_mem_pkt_lo.data    = cce_lce_data_cmd_li.data;
+  assign data_mem_pkt_lo.way_id  = lce_data_cmd_li.way_id;
+  assign data_mem_pkt_lo.data    = lce_data_cmd_li.data;
   assign data_mem_pkt_lo.we      = 1'b1;
   
-  assign data_mem_pkt_v_o        = cce_lce_data_cmd_v_i;
-  assign cce_lce_data_cmd_yumi_o = data_mem_pkt_yumi_i;
-  assign cce_data_received_o     = cce_lce_data_cmd_v_i & data_mem_pkt_yumi_i;
+  assign data_mem_pkt_v_o        = lce_data_cmd_v_i;
+  assign lce_data_cmd_yumi_o = data_mem_pkt_yumi_i;
+  assign cce_data_received_o     = lce_data_cmd_v_i & data_mem_pkt_yumi_i;
 
 endmodule

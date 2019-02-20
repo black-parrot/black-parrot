@@ -13,6 +13,9 @@ module bp_cce_pc
   import bp_cce_pkg::*;
   #(parameter inst_ram_els_p     = "inv"
 
+    // Default parameters
+    , parameter harden_p                 = 0
+
     // Derived parameters
     , localparam inst_width_lp           = `bp_cce_inst_width
     , localparam inst_ram_addr_width_lp  = `BSG_SAFE_CLOG2(inst_ram_els_p)
@@ -35,7 +38,6 @@ module bp_cce_pc
    , output logic [inst_ram_addr_width_lp-1:0]   boot_rom_addr_o
    , input [inst_width_lp-1:0]                   boot_rom_data_i
   );
-
 
 
   logic [inst_ram_addr_width_lp-1:0] boot_rom_addr_r;
@@ -235,6 +237,8 @@ module bp_cce_pc
 // OLD
 //////////////////////////////////////////////////////////////////////////////
 /*
+=======
+>>>>>>> dev
   // PC Register
   logic [inst_ram_addr_width_lp-1:0] pc_r, pc_n;
   logic pc_v;

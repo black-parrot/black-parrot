@@ -28,14 +28,8 @@ package bp_be_rv64_pkg;
     logic[rv64_opcode_width_gp-1:0]   opcode;                                                      
   }  bp_be_instr_s;
 
-  `define bp_be_instr_width                                                                        \
-    (rv64_funct7_width_gp                                                                          \
-     + rv64_reg_addr_width_gp                                                                      \
-     + rv64_reg_addr_width_gp                                                                      \
-     + rv64_funct3_width_gp                                                                        \
-     + rv64_reg_addr_width_gp                                                                      \
-     + rv64_opcode_width_gp                                                                        \
-     )                                                                                             \
+  `define bp_be_instr_width \
+    ($bits(bp_be_instr_s))
 
 endpackage : bp_be_rv64_pkg
 
