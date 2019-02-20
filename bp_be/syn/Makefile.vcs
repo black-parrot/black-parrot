@@ -3,7 +3,7 @@
 include $(CADENV_PATH)/cadenv.mk
 
 ## Tool specific options
-VCS_OPTIONS +=+vcs+finish+200000ps      # Change this to run longer / shorter
+VCS_OPTIONS +=+vcs+finish+1000000ps     # Change this to run longer / shorter
 VCS_OPTIONS +=-timescale=1ps/1ps        # Set timescale
 VCS_OPTIONS +=-full64 +vcs+lic_wait     # Run 64-bit and wait for license
 VCS_OPTIONS +=+v2k -sverilog -debug_pp  # Enable
