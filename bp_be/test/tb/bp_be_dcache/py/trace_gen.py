@@ -27,20 +27,20 @@ class TraceGen:
     else:
       if (signed):
         if (size == 1):
-          packet += "0100_"
-        elif (size == 2):
-          packet += "0101_"
-        elif (size == 4):
-          packet += "0110_"
-        else:
-          raise ValueError("unexpected size for signed load.")
-      else:
-        if (size == 1):
           packet += "0000_"
         elif (size == 2):
           packet += "0001_"
         elif (size == 4):
           packet += "0010_"
+        else:
+          raise ValueError("unexpected size for signed load.")
+      else:
+        if (size == 1):
+          packet += "0100_"
+        elif (size == 2):
+          packet += "0101_"
+        elif (size == 4):
+          packet += "0110_"
         else:
           raise ValueError("unexpected size for unsigned load.")
 
