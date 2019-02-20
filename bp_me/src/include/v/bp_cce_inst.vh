@@ -22,8 +22,6 @@
 `ifndef BP_CCE_INST_VH
 `define BP_CCE_INST_VH
 
-import bp_common_pkg::*;
-
 // Major Op Codes
 typedef enum logic [2:0] {
   e_op_alu                               = 3'b000

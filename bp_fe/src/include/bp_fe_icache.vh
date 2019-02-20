@@ -68,9 +68,9 @@
   }  bp_fe_icache_tag_set_s [ways_mp-1:0]
 
 `define bp_fe_icache_tag_set_width(tag_width_mp, ways_mp) \
-  ((`bp_cce_coh_bits+tag_width_p)*ways_p)
+  ((`bp_cce_coh_bits+tag_width_mp)*ways_mp)
 
 `define bp_fe_icache_tag_state_width(tag_width_mp) \
-  (`bp_cce_coh_bits+tag_width_p)
+  (`bp_cce_coh_bits+tag_width_mp)
 
 `endif

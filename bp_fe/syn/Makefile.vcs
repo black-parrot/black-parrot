@@ -1,4 +1,7 @@
 
+CADENV_PATH = $(TOP)/bsg_cadenv
+include $(CADENV_PATH)/cadenv.mk
+
 VCS_OPTIONS += -timescale=1ps/1ps
 VCS_OPTIONS += -full64
 VCS_OPTIONS += +v2k
@@ -37,11 +40,8 @@ ifeq ($(VCS_GUI),1)
   VCS_OPTIONS += -gui
 endif
 
-ROM_PATH       ?=${BP_FE_PATH}/test/roms/v
 TEST_ROM       ?=rv64ui_p_add_rom.v
-
-TRACE_ROM_PATH ?=${BP_FE_PATH}/test/roms/trace_rom
-TRACE_TEST_ROM ?=rv64ui_p_add_trace_rom.v
+TRACE_ROM ?=rv64ui_p_add_trace_rom.v
 
                #${SRC_PATH}/bp_fe_instr_scan.v \
                ${INC_PATH}/bp_fe_pc_gen.vh \
@@ -140,8 +140,6 @@ INCLUDE_V      ?=\
                ${BP_FE_PATH}/test/common/mock/mock_be_trace.v \
                ${BP_FE_PATH}/test/common/wrappers/bp_fe_mock_be_trace/bp_fe_mock_be_wrapper.v \
                ${BP_FE_PATH}/test/tb/bp_fe_mock_be_trace/test_bp.v \
-               bp_fe_rom.v \
-               bp_fe_trace_rom.v  \
 
 
 TEST_V       ?=$(notdir $(SRC_V))
@@ -163,22 +161,18 @@ all: bp_fe_mock_be_trace.trace.run.v
 
 bp_fe_rom.v:
 	echo "TESTING ROM:" $(TEST_ROM);\
-	ln -svf $(ROM_PATH)/$(TEST_ROM) bp_fe_rom.v
 
 bp_fe_trace_rom.v:
 	echo "TESTING ROM:" $(TRACE_TEST_ROM);\
-	ln -svf $(TRACE_ROM_PATH)/$(TRACE_TEST_ROM) bp_fe_trace_rom.v
 
-%.build.v: ${BP_FE_PATH}/test/common/wrappers/bp_fe_mock_be/%.v $(INCLUDE_V) $(SRC_V)
+%.build.v: 
 	$(eval include $(dir $<)Makefile.frag) \
-	mkdir -p build; \
-	cp $^ build;\
-	cp $< build;\
-	touch $@; 
+	$(VCS) $(VCS_OPTIONS) -o $(TB_PATH)/$*/simv -top test_bp \
+	  -f flist.vcs -f $(TB_PATH)/$*/flist.vcs $(HDL_PARAMS) $(TB_PATH)/$*/test_bp.v
 	
 %.run.v: %.build.v
 	cd build;\
-	${vcs} ${VCS_OPTIONS} ${TEST_INCLUDE} ${HDL_PARAMS} -top tb | $(HIGHLIGHT);\
+	${vcs} ${VCS_OPTIONS} -f flist.vcs ${HDL_PARAMS} -top tb | $(HIGHLIGHT);\
 	trap 'echo -e "\033[31m\033[1m [ERROR] \033[0m " exit simv or vcd2wlf' SIGINT;\
 	./simv +verbose=1  <<< "exit" | grep -E --color "^\[INS\]" | tee $(basename ${TEST_ROM})_trace.log ;\
 	touch $@;
