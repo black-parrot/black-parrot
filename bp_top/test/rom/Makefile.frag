@@ -1,9 +1,19 @@
 BP_DEMOS = \
-	hello_world      \
-	basic_demo 	     \
-	queue_demo       \
-	reloc_queue_demo \
-	copy_example     \
+	hello_world        \
+	basic_demo 	       \
+	queue_demo_2       \
+	queue_demo_4       \
+	queue_demo_8       \
+	reloc_queue_demo_2 \
+	reloc_queue_demo_4 \
+	reloc_queue_demo_8 \
+	copy_example
+
+RV64_BENCHMARKS = \
+  median   \
+	multiply \
+	towers   \
+	vvadd
 
 RV64_TESTS = \
 	rv64ui-p-add     \
@@ -19,8 +29,6 @@ RV64_TESTS = \
 	rv64ui-p-blt 	   \
 	rv64ui-p-bltu 	 \
 	rv64ui-p-bne 	   \
-	rv64ui-p-example \
-	rv64ui-p-simple  \
 	rv64ui-p-j 		   \
 	rv64ui-p-jal 	   \
 	rv64ui-p-jalr 	 \
@@ -57,5 +65,5 @@ RV64_TESTS = \
 	rv64ui-p-sub 	   \
 	rv64ui-p-subw 	 \
 	rv64ui-p-xor 	   \
-	rv64ui-p-xori 	 \
+	rv64ui-p-xori
 
