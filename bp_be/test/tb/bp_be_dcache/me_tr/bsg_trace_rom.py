@@ -57,6 +57,7 @@ N_B_MEM = N_B * args.mem_size
 # Simulated memory
 byte_memory = {}
 
+sentry = 17152
 def read_memory(mem, addr, size):
   # get the bytes from addr to addr+(size-1)
   # values are read assuming memory store multi-byte values in Little Endian order
@@ -64,6 +65,8 @@ def read_memory(mem, addr, size):
   val = 0
   for i in xrange(size):
     val = (val << 8) + data[i]
+    if (addr+i) == sentry:
+      eprint('SENTRY(read): mem[{0}] == {1}'.format(addr+i, data[size-1-i]))
   return val
 
 def write_memory(mem, addr, value, size):
@@ -72,8 +75,9 @@ def write_memory(mem, addr, value, size):
   # bytes of value are stored into memory in Little Endian order
   for i in xrange(size):
     v = (value >> (i*8)) & 0xff
-    #eprint('mem[{0}]: {1}'.format(addr+i, v))
-    mem[addr+i] = (value >> (i*8)) & 0xff
+    if (addr+i) == sentry:
+      eprint('SENTRY(write): mem[{0}] := {1}'.format(addr+i, v))
+    mem[addr+i] = v
     
 #write_memory(byte_memory, 0, 256, 2)
 #print(read_memory(byte_memory, 0, 1))
@@ -101,11 +105,11 @@ tg.recv_data(data=1)
 
 for i in range(args.num_instr):
   load = random.choice([True, False])
-  #size = random.choice([1, 2, 4, 8])
-  size = 1
+  size = random.choice([1, 2, 4, 8])
+  #size = 1
   # choose which cache block in memory to target
-  #block = random.randint(0, 4)#N_B_MEM)
-  block = 0
+  block = random.randint(0, N_B_MEM)
+  #block = 0
   # choose offset in cache block based on size of access ("word" size for this access)
   words = B / size
   word = random.randint(0, words)

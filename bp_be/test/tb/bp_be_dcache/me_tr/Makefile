@@ -32,7 +32,7 @@ CCE_ROM = $(BP_ME_DIR)/src/v/roms/demo-v2/bp_cce_inst_rom_demo-v2_lce1_wg16_asso
 all: sim
 
 bsg_trace_rom_%.tr:
-	python bsg_trace_rom.py -n 2048 > $@
+	python bsg_trace_rom.py -n 16384 > $@
 
 bsg_trace_rom_%.v: bsg_trace_rom_%.tr
 	python $(BSG_IP_CORES_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_trace_rom_$* > $@
