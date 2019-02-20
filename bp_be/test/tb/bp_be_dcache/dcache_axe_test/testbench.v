@@ -18,6 +18,7 @@ module testbench();
   localparam num_lce_p = `NUM_LCE_P;
   localparam num_mem_p = 1;
   localparam mem_els_p = sets_p*ways_p*ways_p;
+  localparam instr_count = `NUM_INSTR_P;
 
   localparam word_offset_width_lp=`BSG_SAFE_CLOG2(ways_p);
   localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p);
@@ -133,7 +134,6 @@ module testbench();
     assign dcache_pkt_v_li[i] = tr_v_lo[i];
   end
 
-  localparam instr_count = 2**10;
   logic [num_lce_p-1:0] dcache_done;
   logic [num_lce_p-1:0][31:0] dcache_v_count;
   
@@ -159,10 +159,7 @@ module testbench();
   end
 
   initial begin
-    //wait(&dcache_done);
-    for (integer i = 0; i < 100000; i++) begin
-      @(posedge clk);
-    end
+    wait(&dcache_done);
     $finish;
   end
 
