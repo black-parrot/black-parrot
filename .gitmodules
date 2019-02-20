@@ -8,3 +8,9 @@
   url = https://github.com/black-parrot/riscv-isa-sim.git
   branch = trace_replay_spike
   ignore = dirty
+
+[submodule "external/axe"]
+	path = external/axe
+  url = https://github.com/CTSRD-CHERI/axe.git
+  branch = add
+  ignore = dirty
