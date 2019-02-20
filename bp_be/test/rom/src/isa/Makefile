@@ -25,7 +25,7 @@ vpath %.S $(src_dir)
 define compile_template
 
 $$($(1)_p_tests): $(1)_p_%: $(1)/%.S
-	$$(RISCV_GCC) $(2) $$(RISCV_GCC_OPTS) -I$(src_dir)/../env/p -I$(src_dir)/macros/scalar -T$(src_dir)/../env/p/link.ld $$< -o $$@
+	$$(RISCV_GCC) $(2) $$(RISCV_GCC_OPTS) -I$(src_dir)/../env/p -I$(src_dir)/macros/scalar -T$(src_dir)/../env/p/link.ld $$< -o $$@.elf
 $(1)_tests += $$($(1)_p_tests)
 
 .PHONY: $(1)

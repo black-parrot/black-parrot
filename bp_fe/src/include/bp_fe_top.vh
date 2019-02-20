@@ -58,22 +58,11 @@
 */
 typedef enum logic [3:0]
 {
-  e_rvc_beqz
-  , e_rvc_bnez
-  , e_rvc_call
-  , e_rvc_imm
-  , e_rvc_jalr
-  , e_rvc_jal
-  , e_rvc_jr
-  , e_rvc_return
-  , e_rvi_branch
-  , e_rvi_call
-  , e_rvi_imm
+  e_rvi_branch
   , e_rvi_jalr
   , e_rvi_jal
-  , e_rvi_return
   , e_default
-} bp_fe_instr_scan_class_e;
+ } bp_fe_instr_scan_class_e;
 
 `define bp_fe_instr_scan_class_width ($bits(bp_fe_instr_scan_class_e))
 
@@ -87,8 +76,9 @@ typedef enum logic [3:0]
 */                                                                                                            
 typedef struct packed                                                                                         
 {                                                                                                             
-  logic                                       is_compressed;                                                  
-  logic [`bp_fe_instr_scan_class_width-1:0]   instr_scan_class;                                               
+  logic                       is_compressed;                                                  
+  bp_fe_instr_scan_class_e    instr_scan_class;
+  logic [63:0]                imm;                                              
 }  bp_fe_instr_scan_s;
 
 
@@ -154,20 +144,9 @@ typedef struct packed
  *  All the opcode macros for the control flow instructions.  These opcodes are
  * used in the Frontend for scanning compressed instructions.
 */
-`define opcode_rvc_beqz     4'h6
-`define opcode_rvc_bnez     4'h7
-`define opcode_rvc_call     16'h9082
-`define opcode_rvc_imm      3'h5
-`define opcode_rvc_jalr     4'h9
-`define opcode_rvc_jal      3'h1
-`define opcode_rvc_jr       4'h8
-`define opcode_rvc_return   16'h9002
 `define opcode_rvi_branch   7'h63
-`define opcode_rvi_call     8'he7
-`define opcode_rvi_imm      12'h06F
 `define opcode_rvi_jalr     7'h67
 `define opcode_rvi_jal      7'h6F
-`define opcode_rvi_return   16'h8067
 
 
 /*
@@ -190,7 +169,7 @@ typedef struct packed
 
 `define bp_fe_pc_gen_itlb_width(eaddr_width_mp) (eaddr_width_mp)
 
-`define bp_fe_instr_scan_width (1+`bp_fe_instr_scan_class_width)
+`define bp_fe_instr_scan_width (1+`bp_fe_instr_scan_class_width+bp_eaddr_width_gp)
 
 `define bp_fe_branch_metadata_fwd_width(btb_idx_width_mp,bht_idx_width_mp,ras_addr_width_mp) \
   (btb_idx_width_mp+bht_idx_width_mp+ras_addr_width_mp)

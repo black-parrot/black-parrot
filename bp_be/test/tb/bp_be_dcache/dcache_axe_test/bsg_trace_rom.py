@@ -1,3 +1,7 @@
+#
+#   bsg_trace_rom.py
+#
+
 import sys
 import random
 sys.path.append("../py/")
@@ -5,15 +9,18 @@ from trace_gen import TraceGen
 
 num_lce_p = int(sys.argv[1])
 id_p = int(sys.argv[2])
+num_instr = int(sys.argv[3])
+seed_p = int(sys.argv[4]) + id_p if len(sys.argv) >= 5 else None
+random.seed(seed_p)
 
 tg = TraceGen(addr_width_p=22, data_width_p=64)
 
 # preamble  
 tg.print_header()
 
+print("# seed: {0}".format(seed_p))
+
 # test begin
-random.seed(id_p)
-num_instr = 1024
 store_val = num_lce_p if id_p == 0 else id_p
 
 for i in range(num_instr):
