@@ -20,7 +20,7 @@ module testbench();
   localparam paddr_width_p = 32;
 
   localparam num_cce_p = 1;
-  localparam num_lce_p = `NUM_LCE_P;
+  localparam num_lce_p = 1;
   localparam num_mem_p = 1;
   // Number of cache blocks in simulated memory
   localparam mem_els_p = 2*num_lce_p*sets_p*ways_p;

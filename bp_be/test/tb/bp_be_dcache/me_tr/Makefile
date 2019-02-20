@@ -21,17 +21,18 @@ HIGHLIGHT = grep --color -E '^|Error|Warning|Implicit wire is used|Too few insta
 TRACE_AXE = trace.axe
 VCS_LOG = vcs.log
 
+# TODO: NUM_LCE fixed at 1 for this test
 NUM_LCE_P ?= 1
 NUMS = $(shell seq 0 `expr $(NUM_LCE_P) - 1`)
 BASE = bsg_trace_rom_
 TRACE_ROMS = $(addsuffix .v, $(addprefix $(BASE), $(NUMS)))
 
-CCE_ROM = $(BP_ME_DIR)/src/v/roms/demo-v2/bp_cce_inst_rom_demo-v2_lce$(NUM_LCE_P)_wg16_assoc8.v
+CCE_ROM = $(BP_ME_DIR)/src/v/roms/demo-v2/bp_cce_inst_rom_demo-v2_lce1_wg16_assoc8.v
 
 all: sim
 
 bsg_trace_rom_%.tr:
-	python bsg_trace_rom.py $(NUM_LCE_P) $* > $@
+	python bsg_trace_rom.py -n 2048 > $@
 
 bsg_trace_rom_%.v: bsg_trace_rom_%.tr
 	python $(BSG_IP_CORES_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_trace_rom_$* > $@
