@@ -29,7 +29,7 @@
   - https://github.com/CTSRD-CHERI/axe
 
 - Run `make` to run the simulation
-  - `make NUM_LCE_P={2|4|8|16}` to vary the number of LCEs.
+  - `make NUM\_LCE\_P={2|4|8|16}` to vary the number of LCEs.
   - optionally, `make SEED_P=123` to set the random seed. By default, system clock is used for seed.
   - optionally, `make NUM_INSTR_P=5000` to set the number of instruction for each cache. By default, it is set to be 10000.
 
