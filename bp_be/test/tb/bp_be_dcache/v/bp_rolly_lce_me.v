@@ -218,7 +218,7 @@ module bp_rolly_lce_me
   bp_me_top #(
     .num_lce_p(num_lce_p)
     ,.num_cce_p(num_cce_p)
-    ,.addr_width_p(paddr_width_p)
+    ,.paddr_width_p(paddr_width_p)
     ,.lce_assoc_p(ways_p)
     ,.lce_sets_p(sets_p)
     ,.block_size_in_bytes_p(ways_p*8)

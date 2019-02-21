@@ -13,7 +13,8 @@ DUT_PARAMS = -pvalue+vaddr_width_p=22               \
              -pvalue+cce_num_inst_ram_els_p=256     \
              -pvalue+lce_assoc_p=8                  \
              -pvalue+boot_rom_els_p=512             \
-             -pvalue+boot_rom_width_p=512           
+             -pvalue+boot_rom_width_p=512           \
+						 -pvalue+mem_els_p=512
 
 TB_PARAMS = 
 

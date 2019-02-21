@@ -10,10 +10,9 @@
 module bp_cce
   import bp_common_pkg::*;
   import bp_cce_pkg::*;
-  #(parameter cce_id_p                     = "inv"
-    , parameter num_lce_p                  = "inv"
+  #(parameter num_lce_p                    = "inv"
     , parameter num_cce_p                  = "inv"
-    , parameter addr_width_p               = "inv"
+    , parameter paddr_width_p              = "inv"
     , parameter lce_assoc_p                = "inv"
     , parameter lce_sets_p                 = "inv"
     , parameter block_size_in_bytes_p      = "inv"
@@ -29,7 +28,8 @@ module bp_cce
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_p)
     , localparam lg_lce_assoc_lp           = `BSG_SAFE_CLOG2(lce_assoc_p)
     , localparam lg_lce_sets_lp            = `BSG_SAFE_CLOG2(lce_sets_p)
-    , localparam tag_width_lp              = (addr_width_p-lg_lce_sets_lp-lg_block_size_in_bytes_lp)
+    , localparam tag_width_lp              = (paddr_width_p-lg_lce_sets_lp
+                                              -lg_block_size_in_bytes_lp)
     , localparam entry_width_lp            = (tag_width_lp+`bp_cce_coh_bits)
     , localparam tag_set_width_lp          = (entry_width_lp*lce_assoc_p)
     , localparam way_group_width_lp        = (tag_set_width_lp*num_lce_p)
@@ -39,43 +39,43 @@ module bp_cce
 
     , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                                ,num_lce_p
-                                                               ,addr_width_p
+                                                               ,paddr_width_p
                                                                ,lce_assoc_p)
 
     , localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
                                                                  ,num_lce_p
-                                                                 ,addr_width_p)
+                                                                 ,paddr_width_p)
 
     , localparam bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p
                                                                            ,num_lce_p
-                                                                           ,addr_width_p
+                                                                           ,paddr_width_p
                                                                            ,block_size_in_bits_lp)
 
     , localparam bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p
                                                                ,num_lce_p
-                                                               ,addr_width_p
+                                                               ,paddr_width_p
                                                                ,lce_assoc_p)
 
     , localparam bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
                                                                          ,num_lce_p
-                                                                         ,addr_width_p
+                                                                         ,paddr_width_p
                                                                          ,block_size_in_bits_lp
                                                                          ,lce_assoc_p)
 
-    , localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(addr_width_p
+    , localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p
                                                                  ,num_lce_p
                                                                  ,lce_assoc_p)
 
-    , localparam bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(addr_width_p
+    , localparam bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(paddr_width_p
                                                                            ,block_size_in_bits_lp
                                                                            ,num_lce_p
                                                                            ,lce_assoc_p)
 
-    , localparam bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(addr_width_p
+    , localparam bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(paddr_width_p
                                                                ,num_lce_p
                                                                ,lce_assoc_p)
 
-    , localparam bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(addr_width_p
+    , localparam bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_p
                                                                         ,block_size_in_bits_lp
                                                                         ,num_lce_p
                                                                         ,lce_assoc_p)
@@ -124,6 +124,8 @@ module bp_cce
    , output logic [bp_cce_mem_data_cmd_width_lp-1:0]   mem_data_cmd_o
    , output logic                                      mem_data_cmd_v_o
    , input                                             mem_data_cmd_ready_i
+
+   , input [lg_num_cce_lp-1:0]                         cce_id_i
   );
 
   initial begin
@@ -132,12 +134,12 @@ module bp_cce
 
   // Define structure variables for output queues
 
-  `declare_bp_me_if(addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
+  `declare_bp_me_if(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
 
-  `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p);
+  `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
   `declare_bp_cce_lce_data_cmd_s(num_cce_p
                                  ,num_lce_p
-                                 ,addr_width_p
+                                 ,paddr_width_p
                                  ,block_size_in_bits_lp
                                  ,lce_assoc_p);
 
@@ -205,12 +207,12 @@ module bp_cce
 
   // Register signals
   logic [lg_num_lce_lp-1:0] req_lce_r_o;
-  logic [addr_width_p-1:0] req_addr_r_o;
+  logic [paddr_width_p-1:0] req_addr_r_o;
   logic [tag_width_lp-1:0] req_tag_r_o;
   logic [lg_lce_assoc_lp-1:0] req_addr_way_r_o;
   logic [`bp_cce_coh_bits-1:0] req_coh_state_r_o;
   logic [lg_lce_assoc_lp-1:0] lru_way_r_o;
-  logic [addr_width_p-1:0] lru_addr_r_o;
+  logic [paddr_width_p-1:0] lru_addr_r_o;
   logic [lg_num_lce_lp-1:0] transfer_lce_r_o;
   logic [lg_lce_assoc_lp-1:0] transfer_lce_way_r_o;
   logic [`bp_cce_coh_bits-1:0] next_coh_state_r_o;
@@ -225,7 +227,7 @@ module bp_cce
 
   // LCE Command Queue
   logic [lg_num_lce_lp-1:0] lce_cmd_lce;
-  logic [addr_width_p-1:0] lce_cmd_addr;
+  logic [paddr_width_p-1:0] lce_cmd_addr;
   logic [lg_lce_assoc_lp-1:0] lce_cmd_way;
 
   logic [inst_ram_addr_width_lp-1:0] boot_rom_addr_i;
@@ -397,7 +399,7 @@ module bp_cce
   bp_cce_reg
     #(.num_lce_p(num_lce_p)
       ,.num_cce_p(num_cce_p)
-      ,.addr_width_p(addr_width_p)
+      ,.addr_width_p(paddr_width_p)
       ,.lce_assoc_p(lce_assoc_p)
       ,.lce_sets_p(lce_sets_p)
       ,.block_size_in_bytes_p(block_size_in_bytes_p)
@@ -456,7 +458,7 @@ module bp_cce
   // A localparams and signals for output queue message formation
   // NOTE: num_cce_p must be a power of two
   localparam gpr_shift_lp = (num_cce_p == 1) ? 0 : lg_num_cce_lp;
-  localparam [addr_width_p-1:0] lce_cmd_addr_0 = (addr_width_p-lg_lce_sets_lp)'('0);
+  localparam [paddr_width_p-1:0] lce_cmd_addr_0 = (paddr_width_p-lg_lce_sets_lp)'('0);
   logic [lg_lce_sets_lp-1:0] gpr_set;
 
   // Output queue message field inputs
@@ -478,26 +480,26 @@ module bp_cce
       // "set index" bits of the address. The GPR holds the way-group number relative to this CCE,
       // which is then translated into the proper set index in the LCE (sets in the LCEs are
       // striped across the CCEs in the system).
-      // Thus, set index bits = (way_group * num_cce_p) + cce_id_p
+      // Thus, set index bits = (way_group * num_cce_p) + cce_id_i
       // NOTE: num_cce_p must be a power of two
       e_lce_cmd_addr_r0: begin
         gpr_set = gpr_r_o[e_gpr_r0][lg_lce_sets_lp-1:0];
-        lce_cmd_addr = (({lce_cmd_addr_0,gpr_set} << gpr_shift_lp) + cce_id_p)
+        lce_cmd_addr = (({lce_cmd_addr_0,gpr_set} << gpr_shift_lp) + cce_id_i)
                        << lg_block_size_in_bytes_lp;
       end
       e_lce_cmd_addr_r1: begin
         gpr_set = gpr_r_o[e_gpr_r1][lg_lce_sets_lp-1:0];
-        lce_cmd_addr = (({lce_cmd_addr_0,gpr_set} << gpr_shift_lp) + cce_id_p)
+        lce_cmd_addr = (({lce_cmd_addr_0,gpr_set} << gpr_shift_lp) + cce_id_i)
                        << lg_block_size_in_bytes_lp;
       end
       e_lce_cmd_addr_r2: begin
         gpr_set = gpr_r_o[e_gpr_r2][lg_lce_sets_lp-1:0];
-        lce_cmd_addr = (({lce_cmd_addr_0,gpr_set} << gpr_shift_lp) + cce_id_p)
+        lce_cmd_addr = (({lce_cmd_addr_0,gpr_set} << gpr_shift_lp) + cce_id_i)
                        << lg_block_size_in_bytes_lp;
       end
       e_lce_cmd_addr_r3: begin
         gpr_set = gpr_r_o[e_gpr_r3][lg_lce_sets_lp-1:0];
-        lce_cmd_addr = (({lce_cmd_addr_0,gpr_set} << gpr_shift_lp) + cce_id_p)
+        lce_cmd_addr = (({lce_cmd_addr_0,gpr_set} << gpr_shift_lp) + cce_id_i)
                        << lg_block_size_in_bytes_lp;
       end
       e_lce_cmd_addr_req_addr: begin
@@ -535,7 +537,7 @@ module bp_cce
     endcase
   end
   // Mem Data Command Queue
-  logic [addr_width_p-1:0] mem_data_cmd_addr;
+  logic [paddr_width_p-1:0] mem_data_cmd_addr;
   always_comb
   begin
     case (decoded_inst_o.mem_data_cmd_addr_sel)
@@ -549,7 +551,7 @@ module bp_cce
   begin
     // LCE Command Queue Inputs
     lce_cmd_s_o.dst_id = lce_cmd_lce;
-    lce_cmd_s_o.src_id = (lg_num_cce_lp)'(cce_id_p);
+    lce_cmd_s_o.src_id = (lg_num_cce_lp)'(cce_id_i);
     lce_cmd_s_o.msg_type = decoded_inst_o.lce_cmd_cmd;
     lce_cmd_s_o.addr = lce_cmd_addr;
     lce_cmd_s_o.way_id = lce_cmd_way;
@@ -569,7 +571,7 @@ module bp_cce
 
     // LCE Data Command Queue Inputs
     lce_data_cmd_s_o.dst_id = req_lce_r_o;
-    lce_data_cmd_s_o.src_id = (lg_num_cce_lp)'(cce_id_p);
+    lce_data_cmd_s_o.src_id = (lg_num_cce_lp)'(cce_id_i);
     lce_data_cmd_s_o.msg_type = bp_lce_cce_req_type_e'(flags_r_o[e_flag_sel_rqf]);
     lce_data_cmd_s_o.way_id = lru_way_r_o;
     lce_data_cmd_s_o.addr = req_addr_r_o;
@@ -649,8 +651,8 @@ module bp_cce
       default: dir_coh_state_i = '0;
     endcase
     case (decoded_inst_o.dir_tag_sel)
-      e_dir_tag_sel_req_addr: dir_tag_i = req_addr_r_o[addr_width_p-1 -: tag_width_lp];
-      e_dir_tag_sel_lru_way_addr: dir_tag_i = lru_addr_r_o[addr_width_p-1 -: tag_width_lp];
+      e_dir_tag_sel_req_addr: dir_tag_i = req_addr_r_o[paddr_width_p-1 -: tag_width_lp];
+      e_dir_tag_sel_lru_way_addr: dir_tag_i = lru_addr_r_o[paddr_width_p-1 -: tag_width_lp];
       e_dir_tag_sel_const_0: dir_tag_i = '0;
       default: dir_tag_i = '0;
     endcase

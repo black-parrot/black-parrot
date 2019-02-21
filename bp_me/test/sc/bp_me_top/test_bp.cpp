@@ -72,6 +72,10 @@ int sc_main(int argc, char **argv)
   sc_signal <bool>     lce_tr_resp_v_o("lce_tr_resp_v_o");
   sc_signal <bool>     lce_tr_resp_ready_i("lce_tr_resp_ready_i");
 
+  sc_signal <uint32_t> boot_rom_addr_o;
+  sc_signal <sc_bv<512> > boot_rom_data_i;
+  boot_rom_data_i = 0;
+
   sc_clock clock("clk", sc_time(CLK_TIME, SC_NS));
 
   Vbp_me_top DUT("DUT");
@@ -107,8 +111,8 @@ int sc_main(int argc, char **argv)
   DUT.lce_tr_resp_v_o(lce_tr_resp_v_o);
   DUT.lce_tr_resp_ready_i(lce_tr_resp_ready_i);
 
-  DUT.boot_rom_addr_o();
-  DUT.boot_rom_data_i();
+  DUT.boot_rom_addr_o(boot_rom_addr_o);
+  DUT.boot_rom_data_i(boot_rom_data_i);
 
 
   VerilatedVcdSc* wf = new VerilatedVcdSc;

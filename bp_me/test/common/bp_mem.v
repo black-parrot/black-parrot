@@ -8,7 +8,7 @@ module bp_mem
   import bp_cce_pkg::*;
   #(parameter num_lce_p="inv"
     ,parameter num_cce_p="inv"
-    ,parameter addr_width_p="inv"
+    ,parameter paddr_width_p="inv"
     ,parameter lce_assoc_p="inv"
     ,parameter block_size_in_bytes_p="inv"
     ,parameter block_size_in_bits_lp=block_size_in_bytes_p*8
@@ -19,10 +19,10 @@ module bp_mem
     ,parameter boot_rom_els_p="inv"
     ,parameter lg_boot_rom_els_lp=`BSG_SAFE_CLOG2(boot_rom_els_p)
 
-    ,parameter bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(addr_width_p, num_lce_p, lce_assoc_p)
-    ,parameter bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
-    ,parameter bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(addr_width_p, num_lce_p, lce_assoc_p)
-    ,parameter bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    ,parameter bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p, num_lce_p, lce_assoc_p)
+    ,parameter bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    ,parameter bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(paddr_width_p, num_lce_p, lce_assoc_p)
+    ,parameter bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
 
     ,parameter mem_addr_width_lp=`BSG_SAFE_CLOG2(mem_els_p)
     ,parameter block_offset_bits_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
@@ -55,7 +55,7 @@ module bp_mem
     ,input logic [boot_rom_width_p-1:0]   boot_rom_data_i
   );
 
-  `declare_bp_me_if(addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
+  `declare_bp_me_if(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
 
   bp_cce_mem_cmd_s mem_cmd_s_r, mem_cmd_i_s;
   bp_cce_mem_data_cmd_s mem_data_cmd_s_r, mem_data_cmd_i_s;
