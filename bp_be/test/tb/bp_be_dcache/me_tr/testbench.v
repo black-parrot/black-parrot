@@ -106,6 +106,8 @@ module testbench();
 
   // trace node master
   //
+  logic [num_lce_p-1:0][ring_width_p-1:0] tr_data_li;
+
   logic [num_lce_p-1:0] tr_v_lo;
   logic [num_lce_p-1:0][ring_width_p-1:0] tr_data_lo;
   logic [num_lce_p-1:0] tr_yumi_li;
@@ -124,7 +126,8 @@ module testbench();
       ,.en_i(1'b1)
 
       ,.v_i(dcache_v_lo[i])
-      ,.data_i(dcache_data_lo[i])
+      //,.data_i(dcache_data_lo[i])
+      ,.data_i(tr_data_li[i])
       ,.ready_o()
 
       ,.v_o(tr_v_lo[i])
@@ -140,6 +143,9 @@ module testbench();
     assign dcache_pkt[i].page_offset = tr_data_lo[i][data_width_p+:page_offset_width_lp];
     assign dcache_pkt[i].data = tr_data_lo[i][0+:data_width_p];
     assign dcache_pkt_v_li[i] = tr_v_lo[i];
+
+    assign tr_data_li[i][data_width_p-1:0] = dcache_data_lo[i];
+    assign tr_data_li[i][ring_width_p-1:data_width_p] = '0;
   end
 
   integer cnt = 0;

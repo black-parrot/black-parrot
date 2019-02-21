@@ -32,6 +32,9 @@ VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_noc
 
 LINT_OPTIONS +=+lint=all,noSVA-UA,noVCDE,noSVA-NSVU -notice
 
+# Export variables to flists
+.EXPORT_ALL_VARIABLES:
+
 # Enable GUI (DVE) mode
 # This is to run interative simulation/debugging in GUI mode.
 ifeq ($(VCS_GUI),1)
