@@ -1,7 +1,5 @@
 bsg_cadenv
 external/*
-run_dc
-simsc
-simout.txt
-systemc
-verilator
+*.swp
+*.pyc
+*.log
