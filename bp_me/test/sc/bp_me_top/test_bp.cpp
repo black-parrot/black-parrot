@@ -36,7 +36,7 @@ std::map<uint64_t, uint32_t> MRU;
 
 int sc_main(int argc, char **argv) 
 {
-  sc_init("bp_cce", argc, argv);
+  sc_init("bp_me_top", argc, argv);
 
   sc_signal <bool>     reset_i("reset_i");
 
@@ -106,6 +106,9 @@ int sc_main(int argc, char **argv)
   DUT.lce_tr_resp_o(lce_tr_resp_o);
   DUT.lce_tr_resp_v_o(lce_tr_resp_v_o);
   DUT.lce_tr_resp_ready_i(lce_tr_resp_ready_i);
+
+  DUT.boot_rom_addr_o();
+  DUT.boot_rom_data_i();
 
 
   VerilatedVcdSc* wf = new VerilatedVcdSc;
