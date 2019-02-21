@@ -23,7 +23,7 @@ NETWORK_PATH = $(BP_ME_SRC_PATH)/network
 # All synthesizable sources 
 # Nonsynth and test sources are added in tool-specific files
 HDL_SOURCE = \
-	$(BP_COMMON_PATH)/bp_common_pkg.vh \
+	$(BP_COMMON_PATH)/src/include/bp_common_pkg.vh \
 	$(BP_ME_INC_PATH)/bp_cce_pkg.v \
 	$(BP_ME_INC_PATH)/bp_me_network_pkg.v \
 	$(BSG_IP_PATH)/bsg_misc/bsg_defines.v \

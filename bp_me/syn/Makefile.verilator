@@ -8,7 +8,7 @@ VV = $(VERILATOR_PATH)/bin/verilator
 CC = g++
 
 
-VV_OPTS +=-I$(BP_COMMON_PATH)
+VV_OPTS +=-I$(BP_COMMON_PATH)/src/include
 VV_OPTS +=-I$(BSG_IP_PATH)/bsg_misc
 VV_OPTS +=-I$(BSG_IP_PATH)/bsg_noc
 VV_OPTS +=-I$(BP_ME_INC_PATH)
