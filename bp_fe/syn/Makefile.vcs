@@ -1,209 +1,60 @@
+## Setup CAD tools
+# TODO: Change to your export own VCS license variables
+#include $(CADENV_PATH)/cadenv.mk
+VCS_LOG     ?= vcs.log
 
-VCS_OPTIONS += -timescale=1ps/1ps
-VCS_OPTIONS += -full64
-VCS_OPTIONS += +v2k
-VCS_OPTIONS += +vc
-VCS_OPTIONS += -sverilog
-VCS_OPTIONS += -debug_pp
-VCS_OPTIONS += +vcs+lic+wait
-VCS_OPTIONS += +multisource_int_delays
-VCS_OPTIONS += +neg_tchk
-VCS_OPTIONS += +libext+.v+.vlib+.vh
-VCS_OPTIONS += +vcs+finish+10000000ps
-VCS_OPTIONS += -R
-VCS_OPTIONS += +vcs+vcdplusautoflushon
-VCS_OPTIONS += +vcs+vcdpluson
-VCS_OPTIONS += +vcs+vcdplusmemon
+VCS_OPTIONS += +vcs+finish+1000000ps     # Change this to run longer / shorter
+VCS_OPTIONS += -timescale=1ps/1ps        # Set timescale
+VCS_OPTIONS += -full64 +vcs+lic+wait     # Run 64-bit and wait for license
+VCS_OPTIONS += +v2k -sverilog -debug_pp  # Enable SystemVerilog
+VCS_OPTIONS += +libext+.v+.vlib+.vh      # Find library files with these extensions
+VCS_OPTIONS += +vcs+vcdpluson           # Enable vcd dump
 
 ## Find sources
-VCS_OPTIONS += +incdir+$(BP_COMMON_PATH)
-VCS_OPTIONS += +incdir+$(BP_COMMON_PATH)/src/include
-VCS_OPTIONS += +incdir+$(SRC_PATH)
-VCS_OPTIONS += +incdir+$(TB_PATH)
-VCS_OPTIONS += +incdir+$(BP_BE_PATH)/bp_dcache/include
-VCS_OPTIONS += +incdir+$(BP_BE_PATH)/bp_dcache/testing/v
-VCS_OPTIONS += +incdir+$(BP_ME_PATH)/include/v
-VCS_OPTIONS += +incdir+$(BP_ME_PATH)/src/include/v
-VCS_OPTIONS += +incdir+$(BP_FE_PATH)/src/common
-VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_dataflow
-VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_mem
-VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_misc
-VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_test
-VCS_OPTIONS += +incdir+$(BSG_IP_PATH)/bsg_noc
 
-# Enable GUI (DVE) mode
-# This is to run interative simulation/debugging in GUI mode.
-ifeq ($(VCS_GUI),1)
-  VCS_OPTIONS += -gui
-endif
-
-ROM_PATH       ?=${BP_FE_PATH}/test/roms/v
-TEST_ROM       ?=rv64ui_p_add_rom.v
-
-TRACE_ROM_PATH ?=${BP_FE_PATH}/test/roms/trace_rom
-TRACE_TEST_ROM ?=rv64ui_p_add_trace_rom.v
-
-               #${SRC_PATH}/bp_fe_instr_scan.v \
-               ${INC_PATH}/bp_fe_pc_gen.vh \
-               ${BP_FE_PATH}/test/common/mock/mock_cce.v \
-               ${BP_FE_PATH}/test/common/wrappers/bp_fe_mock_be/bp_fe_top_wrapper.v \
-
-SRC_V          ?=${TB_PATH}/bp_fe_top/tb.v 
-INCLUDE_V      ?=\
-               ${BSG_IP_PATH}/bsg_noc/bsg_noc_pkg.v \
-               ${BSG_IP_PATH}/bsg_misc/bsg_defines.v \
-               ${BSG_IP_PATH}/bsg_dataflow/bsg_fifo_1r1w_small.v \
-               ${BSG_IP_PATH}/bsg_dataflow/bsg_fifo_tracker.v \
-               ${BSG_IP_PATH}/bsg_dataflow/bsg_shift_reg.v \
-               ${BSG_IP_PATH}/bsg_dataflow/bsg_two_fifo.v \
-               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1r1w.v \
-               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1r1w_sync.v \
-               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1r1w_sync_synth.v \
-               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1r1w_synth.v \
-               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1rw_sync.v \
-               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v \
-               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1rw_sync_mask_write_bit_synth.v \
-               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1rw_sync_mask_write_byte.v \
-               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1rw_sync_mask_write_byte_synth.v \
-               ${BSG_IP_PATH}/bsg_mem/bsg_mem_1rw_sync_synth.v \
-               ${BSG_IP_PATH}/bsg_mem/bsg_mem_2r1w_sync.v \
-               ${BSG_IP_PATH}/bsg_mem/bsg_mem_2r1w_sync_synth.v \
-               ${BSG_IP_PATH}/bsg_misc/bsg_adder_ripple_carry.v \
-               ${BSG_IP_PATH}/bsg_misc/bsg_circular_ptr.v \
-               ${BSG_IP_PATH}/bsg_misc/bsg_counter_clear_up.v \
-               ${BSG_IP_PATH}/bsg_misc/bsg_crossbar_o_by_i.v \
-               ${BSG_IP_PATH}/bsg_misc/bsg_decode.v \
-               ${BSG_IP_PATH}/bsg_misc/bsg_decode_with_v.v \
-               ${BSG_IP_PATH}/bsg_misc/bsg_dff.v \
-               ${BSG_IP_PATH}/bsg_misc/bsg_dff_chain.v \
-               ${BSG_IP_PATH}/bsg_misc/bsg_dff_en.v \
-               ${BSG_IP_PATH}/bsg_misc/bsg_dff_reset.v \
-               ${BSG_IP_PATH}/bsg_misc/bsg_encode_one_hot.v \
-               ${BSG_IP_PATH}/bsg_misc/bsg_mux.v \
-               ${BSG_IP_PATH}/bsg_misc/bsg_mux_one_hot.v \
-               ${BSG_IP_PATH}/bsg_misc/bsg_mux_segmented.v \
-               ${BSG_IP_PATH}/bsg_misc/bsg_priority_encode.v \
-               ${BSG_IP_PATH}/bsg_misc/bsg_priority_encode_one_hot_out.v \
-               ${BSG_IP_PATH}/bsg_misc/bsg_round_robin_arb.v \
-               ${BSG_IP_PATH}/bsg_misc/bsg_scan.v \
-               ${BSG_IP_PATH}/bsg_noc/bsg_mesh_router.v \
-               ${BSG_IP_PATH}/bsg_noc/bsg_mesh_router_buffered.v \
-               ${BSG_IP_PATH}/bsg_test/bsg_nonsynth_clock_gen.v \
-               ${BSG_IP_PATH}/bsg_test/bsg_nonsynth_reset_gen.v \
-               ${BP_COMMON_PATH}/src/include/bp_common_pkg.vh \
-               ${BP_COMMON_PATH}/src/include/bp_common_fe_be_if.vh \
-               ${BP_COMMON_PATH}/src/include/bp_common_me_if.vh \
-               ${INC_PATH}/bp_fe_itlb_pkg.vh \
-               ${INC_PATH}/bp_fe_itlb.vh \
-               ${INC_PATH}/bp_fe_icache.vh \
-               ${INC_PATH}/bp_fe_icache_pkg.vh \
-               ${INC_PATH}/bp_fe_lce.vh \
-               ${BP_FE_PATH}/src/include/bp_fe_pkg.vh \
-               ${BP_FE_PATH}/src/include/bp_fe_top.vh \
-               ${TB_PATH}/bp_fe_top/tb.v \
-               ${BP_BE_PATH}/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lru_decode.v\
-               ${BP_BE_PATH}/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lru_encode.v\
-               ${SRC_PATH}/bp_fe_btb.v \
-               ${SRC_PATH}/bp_fe_bht.v \
-               ${SRC_PATH}/bp_fe_pc_gen.v \
-               ${SRC_PATH}/bp_fe_branch_predictor.v \
-               ${SRC_PATH}/bp_fe_cce_lce_cmd.v \
-               ${SRC_PATH}/bp_fe_cce_lce_data_cmd.v \
-               ${SRC_PATH}/bp_fe_icache.v \
-               ${SRC_PATH}/bp_fe_lce.v \
-               ${SRC_PATH}/bp_fe_lce_cce_req.v \
-               ${SRC_PATH}/bp_fe_lce_lce_tr_resp_in.v \
-               ${SRC_PATH}/bp_fe_itlb.v \
-               ${SRC_PATH}/bp_fe_top.v  \
-	       ${BP_BE_PATH}/src/include/bp_be_internal_if_defines.vh \
-	       ${BP_BE_PATH}/src/include/bp_be_mmu_defines.vh \
-	       ${BP_BE_PATH}/src/include/bp_be_rv64_defines.vh \
-	       ${BP_BE_PATH}/src/include/bp_be_rv64_pkg.vh \
-	       ${BP_BE_PATH}/src/include/bp_be_pkg.vh \
-	       ${BP_BE_PATH}/src/include/bp_be_ucode_defines.vh \
-               $(BSG_IP_PATH)/bsg_noc/bsg_noc_pkg.v                           \
-               $(BP_ME_PATH)/src/include/v/bp_cce_pkg.v                          \
-               $(BP_ME_PATH)/src/include/v/bp_me_network_pkg.v                          \
-               $(BP_ME_PATH)/test/common/bp_mem.v                          \
-               $(BP_ME_PATH)/src/v/bp_me_top.v                          \
-               $(BP_ME_PATH)/src/v/cce/bp_cce_top.v                           \
-               $(BP_ME_PATH)/src/v/cce/bp_cce_alu.v                           \
-               $(BP_ME_PATH)/src/v/cce/bp_cce_dir.v                           \
-               $(BP_ME_PATH)/src/v/cce/bp_cce_gad.v                           \
-               $(BP_ME_PATH)/src/v/cce/bp_cce_inst_decode.v                   \
-               $(BP_ME_PATH)/src/v/cce/bp_cce_pc.v                            \
-               $(BP_ME_PATH)/src/v/cce/bp_cce_reg.v                           \
-               $(BP_ME_PATH)/src/v/cce/bp_cce.v                               \
-               $(BP_ME_PATH)/src/v/network/bp_coherence_network.v             \
-               $(BP_ME_PATH)/src/v/network/bp_coherence_network_channel.v     \
-	       $(BP_ME_PATH)/src/v/roms/demo-v2/bp_cce_inst_rom_demo-v2_lce2_wg16_assoc8.v\
-               ${BP_FE_PATH}/test/common/mock/mock_be_trace.v \
-               ${BP_FE_PATH}/test/common/wrappers/bp_fe_mock_be_trace/bp_fe_mock_be_wrapper.v \
-               ${BP_FE_PATH}/test/tb/bp_fe_mock_be_trace/test_bp.v \
-               bp_fe_rom.v \
-               bp_fe_trace_rom.v  \
-
-
-TEST_V       ?=$(notdir $(SRC_V))
-TEST_INCLUDE ?=$(notdir $(INCLUDE_V) )
-
-VCS_LOG      ?= vcs.log
+TEST_ROM  ?= rv64ui_p_add_rom.v
+TRACE_ROM ?= rv64ui_p_add_rom.tr.v
 
 LINT_FLAGS   ?="+lint=all,noVCDE,noNS,noSV-PIU,noSVA-UA,noSVA-NSVU,noSV-LCM-PPWI"
 
 vcs          ?=vcs +v2k -R $(LINT_FLAGS) -sverilog -full64  \
-		-debug_pp -timescale=1ps/1ps +vcs+vcdpluson +vcs+vcdplusmemon -l $(VCS_LOG) \
-		+vcs+vcdplusautoflushon 
+	             -debug_pp -timescale=1ps/1ps +vcs+vcdpluson +vcs+vcdplusmemon -l $(VCS_LOG) \
+               +vcs+vcdplusautoflushon 
+
+VCS = vcs
 
 HIGHLIGHT    = grep -z --color 'Error'
 
 .EXPORT_ALL_VARIABLES:
 
-all: bp_fe_mock_be_trace.trace.run.v
-
 bp_fe_rom.v:
 	echo "TESTING ROM:" $(TEST_ROM);\
-	ln -svf $(ROM_PATH)/$(TEST_ROM) bp_fe_rom.v
 
 bp_fe_trace_rom.v:
-	echo "TESTING ROM:" $(TRACE_TEST_ROM);\
-	ln -svf $(TRACE_ROM_PATH)/$(TRACE_TEST_ROM) bp_fe_trace_rom.v
+	echo "TESTING ROM:" $(TRACE_ROM);\
 
-%.build.v: ${BP_FE_PATH}/test/common/wrappers/bp_fe_mock_be/%.v $(INCLUDE_V) $(SRC_V)
-	$(eval include $(dir $<)Makefile.frag) \
-	mkdir -p build; \
-	cp $^ build;\
-	cp $< build;\
-	touch $@; 
+%.build.v: 
+	$(eval include $(TB_PATH)/$*/Makefile.frag) \
+	$(VCS) $(VCS_OPTIONS) -o $(TB_PATH)/$*/simv -top test_bp \
+	  -f flist.vcs -f $(TB_PATH)/$*/flist.vcs $(HDL_PARAMS) $(TB_PATH)/$*/test_bp.v \
+		| tee $(TB_PATH)/$*/$(basename $(notdir $(TEST_ROM)))_buildout.txt
 	
-%.run.v: %.build.v
-	cd build;\
-	${vcs} ${VCS_OPTIONS} ${TEST_INCLUDE} ${HDL_PARAMS} -top tb | $(HIGHLIGHT);\
-	trap 'echo -e "\033[31m\033[1m [ERROR] \033[0m " exit simv or vcd2wlf' SIGINT;\
-	./simv +verbose=1  <<< "exit" | grep -E --color "^\[INS\]" | tee $(basename ${TEST_ROM})_trace.log ;\
-	touch $@;
+%.run.v: %.build.v bp_fe_rom.v bp_fe_trace_rom.v
+	$(eval include $(TB_PATH)/$*/Makefile.frag) \
+	$(TB_PATH)/$*/simv \
+	  | tee $(TB_PATH)/$*/$(basename $(notdir $(TEST_ROM)))_simout.txt
+
+	#$(VCS) $(VCS_OPTIONS) $(VCS_RUN_OPTIONS) -f flist.vcs $(HDL_PARAMS) -top test_bp | $(HIGHLIGHT); \
+	#trap 'echo -e "\033[31m\033[1m [ERROR] \033[0m " exit simv or vcd2wlf' SIGINT;\
+	#./simv +verbose=1  <<< "exit" | grep -E --color "^\[INS\]" | tee $(basename ${TEST_ROM})_trace.log ;\
+	#touch $@;
 	#vcd2wlf tb.vcd tb.wlf;
-
-bp_fe_mock_be_trace.trace.build.v: ${BP_FE_PATH}/test/common/wrappers/bp_fe_mock_be_trace/bp_fe_mock_be_wrapper.v $(INCLUDE_V) $(SRC_V)
-	$(eval include $(dir $<)Makefile.frag)  \
-	mkdir -p build; \
-	cp flist.vcs build;\
-	cp $^ build;\
-	cp $< build;\
-	touch $@; 
-
-bp_fe_mock_be_trace.trace.run.v: bp_fe_mock_be_trace.trace.build.v
-	cd build;\
-	${vcs} ${VCS_OPTIONS} -f flist.vcs ${HDL_PARAMS} -top test_bp;\
-	trap 'echo -e "\033[31m\033[1m [ERROR] \033[0m " exit simv or vcd2wlf' SIGINT;\
-	./simv +verbose=1  <<< "exit" | grep -E --color "^\[INS\]" | tee $(basename ${TEST_ROM})_trace.log ;\
-	touch $@;
 
 dve:
 	# simvision -input simvision.svcf
 	# vsim -do modelsim.tcl
 	trap 'echo -e "\033[31m\033[1m [ERROR] \033[0m " exit simv or vcd2wlf' SIGINT;\
-	cd build; dve -full64 -vpd vcdplus.vpd &
+	dve -full64 -vpd vcdplus.vpd &
 clean:
 	rm -rf build *.log *.run.v *.build.v;\
 	unlink bp_fe_rom.v
