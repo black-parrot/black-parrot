@@ -17,31 +17,36 @@ module testbench();
   localparam ways_p = 8;
 
   // Physical address width
-  localparam paddr_width_p = 32;
+  localparam paddr_width_p = bp_sv39_paddr_width_gp;
 
   localparam num_cce_p = 1;
   localparam num_lce_p = 1;
-  localparam num_mem_p = 1;
   // Number of cache blocks in simulated memory
   localparam mem_els_p = 2*num_lce_p*sets_p*ways_p;
 
-  localparam word_offset_width_lp=`BSG_SAFE_CLOG2(ways_p);
-  localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p);
+  localparam block_size_in_words_lp=ways_p;
   localparam data_mask_width_lp=(data_width_p>>3);
+  localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp);
   localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp);
-  localparam page_offset_width_lp=word_offset_width_lp+index_width_lp+byte_offset_width_lp;
-  localparam ptag_width_lp=paddr_width_p-page_offset_width_lp;
+  localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p);
+  localparam ptag_width_lp=paddr_width_p-bp_page_offset_width_gp;
 
   // For the D$, cache block size is number of ways multiplied by D$ "word" size
-  localparam cache_block_size_in_bytes=ways_p*data_width_p;
-  localparam bp_be_dcache_pkt_width_lp=`bp_be_dcache_pkt_width(page_offset_width_lp, data_width_p);
+  localparam cache_block_size_in_bits=ways_p*data_width_p;
+  localparam bp_be_dcache_pkt_width_lp=`bp_be_dcache_pkt_width(bp_page_offset_width_gp, data_width_p);
 
-  localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, ways_p);
-  localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p);
-  localparam lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, cache_block_size_in_bytes);
-  localparam cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, ways_p);
-  localparam cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, paddr_width_p, cache_block_size_in_bytes, ways_p);
-  localparam lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p, paddr_width_p, cache_block_size_in_bytes, ways_p);
+  localparam lce_cce_req_width_lp=
+    `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, ways_p);
+  localparam lce_cce_resp_width_lp=
+    `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p);
+  localparam lce_cce_data_resp_width_lp=
+    `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, cache_block_size_in_bits);
+  localparam cce_lce_cmd_width_lp=
+    `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, ways_p);
+  localparam cce_lce_data_cmd_width_lp=
+    `bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, paddr_width_p, cache_block_size_in_bits, ways_p);
+  localparam lce_lce_tr_resp_width_lp=
+    `bp_lce_lce_tr_resp_width(num_lce_p, paddr_width_p, cache_block_size_in_bits, ways_p);
 
   localparam ring_width_p = data_width_p+paddr_width_p+4;
 
@@ -72,11 +77,11 @@ module testbench();
  
   // mem subsystem under test
   //
-  `declare_bp_be_dcache_pkt_s(page_offset_width_lp, data_width_p);
+  `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp, data_width_p);
   bp_be_dcache_pkt_s [num_lce_p-1:0] dcache_pkt;
   logic [num_lce_p-1:0] dcache_pkt_v_li;
   logic [num_lce_p-1:0] dcache_pkt_ready_lo;
-  logic [num_lce_p-1:0][ptag_width_lp-1:0] paddr_li;
+  logic [num_lce_p-1:0][ptag_width_lp-1:0] ptag_li;
 
   logic [num_lce_p-1:0] dcache_v_lo;
   logic [num_lce_p-1:0][data_width_p-1:0] dcache_data_lo;
@@ -88,7 +93,6 @@ module testbench();
     ,.paddr_width_p(paddr_width_p)
     ,.num_lce_p(num_lce_p)
     ,.num_cce_p(num_cce_p)
-    ,.num_mem_p(num_mem_p)
     ,.mem_els_p(mem_els_p)
     ,.boot_rom_els_p(mem_els_p)
   ) dcache_cce_mem (
@@ -98,7 +102,7 @@ module testbench();
     ,.dcache_pkt_i(dcache_pkt)
     ,.dcache_pkt_v_i(dcache_pkt_v_li)
     ,.dcache_pkt_ready_o(dcache_pkt_ready_lo)
-    ,.paddr_i(paddr_li)
+    ,.ptag_i(ptag_li)
 
     ,.v_o(dcache_v_lo)
     ,.data_o(dcache_data_lo)
@@ -139,8 +143,8 @@ module testbench();
     
     assign tr_yumi_li[i] = tr_v_lo[i] & dcache_pkt_ready_lo[i];
     assign dcache_pkt[i].opcode = bp_be_dcache_opcode_e'(tr_data_lo[i][data_width_p+paddr_width_p+:4]);
-    assign paddr_li[i] = tr_data_lo[i][data_width_p+page_offset_width_lp+:ptag_width_lp];
-    assign dcache_pkt[i].page_offset = tr_data_lo[i][data_width_p+:page_offset_width_lp];
+    assign ptag_li[i] = tr_data_lo[i][data_width_p+bp_page_offset_width_gp+:ptag_width_lp];
+    assign dcache_pkt[i].page_offset = tr_data_lo[i][data_width_p+:bp_page_offset_width_gp];
     assign dcache_pkt[i].data = tr_data_lo[i][0+:data_width_p];
     assign dcache_pkt_v_li[i] = tr_v_lo[i];
 
