@@ -42,7 +42,6 @@ def tr_done():
 
 
 name = str(sys.argv[1])
-#recv_els = int(sys.argv[2])
 infile = open(name + ".spike", "r")
 outfile = open(name + ".tr", "w")
 

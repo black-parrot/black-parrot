@@ -49,11 +49,7 @@ module mock_be_trace
     ,parameter bp_fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)
     ,parameter bp_fe_queue_width_lp=`bp_fe_queue_width(vaddr_width_p,branch_metadata_fwd_width_p)
     //trace_rom params
-    ,parameter trace_addr_width_p="inv"
-    ,localparam lg_trace_addr_width_lp=`BSG_SAFE_CLOG2(trace_addr_width_p)
-    ,parameter trace_data_width_p="inv"
-
-    ,localparam total_trace_instr_count_p=512
+    ,parameter trace_ring_width_p="inv"
 
    , localparam lce_cce_req_width_lp       = `bp_lce_cce_req_width(num_cce_p
                                                             , num_lce_p
@@ -97,15 +93,20 @@ module mock_be_trace
 
     ,input  logic [bp_fe_queue_width_lp-1:0]               bp_fe_queue_i
     ,input  logic                                          bp_fe_queue_v_i
-    ,output logic                                          bp_fe_queue_ready_o
+    ,output logic                                          bp_fe_queue_yumi_o
 
-    ,output logic [trace_addr_width_p-1:0]                 trace_addr_o
-    ,input  logic [trace_data_width_p-1:0]                 trace_data_i
+    // PC / instr validation information
+    ,output logic [trace_ring_width_p-1:0]                 trace_data_o
+    ,output logic                                          trace_v_o
+    ,input  logic                                          trace_ready_i
+
+    // Branch redirection information
+    ,input  logic [trace_ring_width_p-1:0]                 trace_data_i
+    ,input  logic                                          trace_v_i
+    ,output logic                                          trace_yumi_o
 );
 
-logic [total_trace_instr_count_p-1:0] instr_count;
 `declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
-
 `declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
 
 // the first level of structs
@@ -120,27 +121,28 @@ bp_fe_cmd_s                   bp_fe_cmd;
 
 bp_proc_cfg_s proc_cfg;
 
-bp_be_mmu_cmd_s mmu_cmd;
-logic mmu_cmd_v, mmu_cmd_rdy;
-
-bp_be_mmu_resp_s mmu_resp;
-logic mmu_resp_v, mmu_resp_rdy;
-
 logic chk_psn_ex;
 
+logic[reg_data_width_lp-1:0] next_btarget;
+
 // cmd block
-always_ff @(posedge clk_i) begin : be_cmd_gen
+always_comb begin : be_cmd_gen
     bp_fe_cmd_v_o       = '0;
-    //
-    if (reset_i) 
-        instr_count <= '0;
-    else
-        instr_count <= instr_count + '1;
-end;
+end
+
+assign trace_yumi_o = trace_v_i;
+always_ff @(clk_i) begin
+  if (trace_v_i) begin
+    next_btarget <= trace_data_i[0+:64];
+  end
+end
+
 // queue block
 always_comb begin : be_queue_gen
-    //bp_fe_queue_ready_o     = bp_fe_queue_v_i;
-    bp_fe_queue_ready_o     = '1;
-end;
+  if (bp_fe_queue_v_i) begin
+    
+  end
+end
 
 endmodule
+
