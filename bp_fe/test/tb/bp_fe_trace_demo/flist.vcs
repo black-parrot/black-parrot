@@ -11,5 +11,5 @@ $BP_FE_DIR/test/common/mock/mock_cce.v
 $BP_FE_DIR/test/common/wrappers/bp_fe_mock_be_trace/bp_fe_mock_be_wrapper.v 
 $BP_FE_DIR/test/common/wrappers/bp_fe_top_wrapper.v
 # top files
-$BP_FE_DIR/test/roms/v/$TEST_ROM
-$BP_FE_DIR/test/roms/trace_rom/$TRACE_ROM
+$BP_FE_DIR/test/rom/v/$TEST_ROM
+$BP_FE_DIR/test/rom/v/$TRACE_ROM

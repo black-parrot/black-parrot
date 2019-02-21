@@ -28,6 +28,11 @@ def recvBinary(recv):
 
   return binary
 
+def tr_done():
+  binary  = '# Done' + '\n'
+  binary += '0011_' + hex2bin(str(0), 64) + '_' + hex2bin(str(0), 32)
+
+  return binary
 
 name = str(sys.argv[1])
 infile = open(name + ".spike", "r")
@@ -48,6 +53,12 @@ jal_op    = "1101111"
 jalr_op   = "1100111"
 branch_op = "1100011"
 
+# TODO: More elegant solution
+skip_unbooted = True
+boot_pc       = "0x0000000080000124"
+
+msg.append(("send", ["0x0000000080000124", "0"]))
+
 for i in xrange(len(lines)-2):
   line = lines[i].rstrip("\n\r").split()
   reg_line = lines[i+1].rstrip("\n\r").split()
@@ -56,7 +67,12 @@ for i in xrange(len(lines)-2):
       break
     if(line[0] == "core" and line[2][:2] == "0x"):
       pc = line[2]
+
       pc_idx = pc_idx + 1
+      if skip_unbooted and boot_pc != pc:
+        continue
+
+      skip_unbooted = False
       next_pc = pc_list[pc_idx]
       instr_hex = line[3][1:-1]
       opcode = hex2bin(instr_hex[-2:], 8)[1:]
@@ -69,9 +85,10 @@ for i in xrange(len(lines)-2):
         else:
           branch_taken = '1'
 
+        msg.append(("recv", [pc, instr_hex]))
         msg.append(("send", [branch_target, branch_taken]))
-
-      msg.append(("recv", [pc, instr_hex]))
+      else:
+        msg.append(("recv", [pc, instr_hex]))
   
 for i in msg:
   if i[0] == "send":
@@ -79,6 +96,7 @@ for i in msg:
   else:
     outfile.write(recvBinary(i[1]) + '\n')
 
+outfile.write(tr_done() + '\n')
 outfile.close()
     
   

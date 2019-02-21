@@ -4,38 +4,40 @@
  *
  */
 
-`include "bsg_defines.v"
-
-`include "bp_common_fe_be_if.vh"
-`include "bp_common_me_if.vh"
-
-`include "bp_be_internal_if_defines.vh"
-`include "bp_be_rv64_defines.vh"
-
 module test_bp
- #(
-   parameter core_els_p="inv"
-   ,parameter vaddr_width_p="inv"
-   ,parameter paddr_width_p="inv"
-   ,parameter asid_width_p="inv"
-   ,parameter eaddr_width_p="inv"
-   ,parameter branch_metadata_fwd_width_p="inv"
-   ,parameter num_cce_p="inv"
-   ,parameter num_lce_p="inv"
-   ,parameter num_mem_p="inv"
-   ,parameter lce_sets_p="inv"
-   ,parameter lce_assoc_p="inv"
-   ,parameter cce_block_size_in_bytes_p="inv"
-   ,parameter cce_num_inst_ram_els_p="inv"
+ import bp_common_pkg::*;
+ import bp_be_pkg::*;
+ #(parameter core_els_p                    = "inv"
+   , parameter vaddr_width_p               = "inv"
+   , parameter paddr_width_p               = "inv"
+   , parameter asid_width_p                = "inv"
+   , parameter eaddr_width_p               = "inv"
+   , parameter branch_metadata_fwd_width_p = "inv"
+   , parameter num_cce_p                   = "inv"
+   , parameter num_lce_p                   = "inv"
+   , parameter num_mem_p                   = "inv"
+   , parameter lce_sets_p                  = "inv"
+   , parameter lce_assoc_p                 = "inv"
+   , parameter cce_block_size_in_bytes_p   = "inv"
+   , parameter cce_num_inst_ram_els_p      = "inv"
 
-   ,parameter boot_rom_width_p="inv"
-   ,parameter boot_rom_els_p="inv"
+   , parameter boot_rom_width_p = "inv"
+   , parameter boot_rom_els_p   = "inv"
 
-   ,parameter trace_data_width_p="inv"
-   ,parameter trace_addr_width_p="inv"
+   , parameter trace_ring_width_p     = "inv"
+   , parameter trace_rom_addr_width_p = "inv"
 
-   ,localparam cce_block_size_in_bits_lp=8*cce_block_size_in_bytes_p
-   ,localparam lg_boot_rom_els_lp=`BSG_SAFE_CLOG2(boot_rom_els_p)
+   , localparam trace_rom_data_width_lp   = trace_ring_width_p + 4
+   , localparam cce_block_size_in_bits_lp = 8*cce_block_size_in_bytes_p
+   , localparam lg_boot_rom_els_lp        = `BSG_SAFE_CLOG2(boot_rom_els_p)
+
+   , localparam fe_queue_width_lp = `bp_fe_queue_width(vaddr_width_p, branch_metadata_fwd_width_p)
+   , localparam fe_cmd_width_lp   = `bp_fe_cmd_width(vaddr_width_p
+                                                     , paddr_width_p
+                                                     , asid_width_p
+                                                     , branch_metadata_fwd_width_p
+                                                     )
+
  );
 
 `declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
@@ -86,26 +88,31 @@ logic  remote_lce_tr_resp_v, remote_lce_tr_resp_rdy;
 
 bp_proc_cfg_s proc_cfg;
 
-logic [trace_data_width_p-1:0] trace_data;
-logic [trace_addr_width_p-1:0] trace_addr;
+logic [trace_ring_width_p-1:0] tr_data_li, tr_data_lo;
+logic tr_v_li, tr_ready_lo, tr_v_lo, tr_yumi_li;
+
+logic [trace_rom_addr_width_p-1:0]  tr_rom_addr_li;
+logic [trace_rom_data_width_lp-1:0] tr_rom_data_lo;
 
 logic [lg_boot_rom_els_lp-1:0] mrom_addr;
 logic [boot_rom_width_p-1:0]   mrom_data;
 
-bsg_nonsynth_clock_gen #(.cycle_time_p(10)
-                         )
-              clock_gen (.o(clk)
-                         );
+bsg_nonsynth_clock_gen 
+ #(.cycle_time_p(10))
+ clock_gen 
+  (.o(clk));
 
-bsg_nonsynth_reset_gen #(.num_clocks_p(1)
-                         ,.reset_cycles_lo_p(1)
-                         ,.reset_cycles_hi_p(10)
-                         )
-               reset_gen(.clk_i(clk)
-                         ,.async_reset_o(reset)
-                         );
+bsg_nonsynth_reset_gen 
+ #(.num_clocks_p(1)
+   ,.reset_cycles_lo_p(1)
+   ,.reset_cycles_hi_p(10)
+   )
+ reset_gen
+  (.clk_i(clk)
+   ,.async_reset_o(reset)
+   );
 
-assign proc_cfg.mhartid = 1'b0;
+assign proc_cfg.mhartid   = 1'b0;
 assign proc_cfg.icache_id = 1'b0;
 assign proc_cfg.dcache_id = 1'b1; // Unused
 
@@ -130,7 +137,7 @@ bp_fe_top
        ,.block_size_in_bytes_p(8) /* TODO: This is ways not blocks (should be 64) */
 
        )
-    fe(.clk_i(clk)
+   DUT(.clk_i(clk)
        ,.reset_i(reset)
 
        ,.icache_id_i(proc_cfg.icache_id)
@@ -172,43 +179,118 @@ bp_fe_top
        ,.lce_lce_tr_resp_ready_i(remote_lce_tr_resp_rdy)
        );
 
-    mock_be_trace #(
-                 .vaddr_width_p(vaddr_width_p)
-                 ,.paddr_width_p(paddr_width_p)
-                 ,.asid_width_p(asid_width_p)
-                 ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
-                 ,.num_cce_p(num_cce_p)
-                 ,.num_lce_p(num_lce_p)
-                 ,.num_mem_p(num_mem_p)
-                 ,.lce_assoc_p(lce_assoc_p)
-                 ,.lce_sets_p(lce_sets_p)
-                 ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
 
-                 ,.trace_addr_width_p(trace_addr_width_p)
-                 ,.trace_data_width_p(trace_data_width_p)
-		             ,.core_els_p(core_els_p)
-                 )
-              be(.clk_i(clk)
-                 ,.reset_i(reset)
+bsg_fifo_1r1w_rolly
+ #(.width_p(fe_queue_width_lp)
+   ,.els_p(16)
+   ,.ready_THEN_valid_p(1)
+   )
+ fe_queue_fifo
+  (.clk_i(clk)
+   ,.reset_i(reset) 
 
-                 ,.bp_fe_queue_i(fe_fe_queue)
-                 ,.bp_fe_queue_v_i(fe_fe_queue_v)
-                 ,.bp_fe_queue_ready_o(fe_fe_queue_rdy)
+   ,.clr_v_i(1'b0) 
+   ,.ckpt_v_i((be_fe_queue_v & be_fe_queue_rdy))
+   ,.roll_v_i(1'b0)
 
-                 ,.bp_fe_cmd_o(fe_fe_cmd)
-                 ,.bp_fe_cmd_v_o(fe_fe_cmd_v)
-                 ,.bp_fe_cmd_ready_i(fe_fe_cmd_rdy)
+   ,.data_i(fe_fe_queue)
+   ,.v_i(fe_fe_queue_v)
+   ,.ready_o(fe_fe_queue_rdy)
 
-                 ,.trace_addr_o(trace_addr)
-                 ,.trace_data_i(trace_data)
-            );
+   ,.data_o(be_fe_queue)
+   ,.v_o(be_fe_queue_v)
+   ,.yumi_i(be_fe_queue_rdy)
+   );
 
-    rv64ui_p_add_trace_rom #(.width_p  (trace_data_width_p)
-            ,.addr_width_p(trace_addr_width_p)
-            ) trace_rom(
-	    .addr_i(trace_addr)
-            ,.data_o(trace_data)
-            );
+bsg_fifo_1r1w_small
+ #(.width_p(fe_cmd_width_lp)
+   ,.els_p(8)
+   ,.ready_THEN_valid_p(1)
+   )
+ fe_cmd_fifo
+  (.clk_i(clk)
+   ,.reset_i(reset)
+
+   ,.data_i(be_fe_cmd)
+   ,.v_i(be_fe_cmd_v)
+   ,.ready_o(be_fe_cmd_rdy)
+
+   ,.data_o(fe_fe_cmd)
+   ,.v_o(fe_fe_cmd_v)
+   ,.yumi_i(fe_fe_cmd_rdy)
+   );
+
+mock_be_trace 
+ #(.vaddr_width_p(vaddr_width_p)
+   ,.paddr_width_p(paddr_width_p)
+   ,.asid_width_p(asid_width_p)
+   ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+   ,.num_cce_p(num_cce_p)
+   ,.num_lce_p(num_lce_p)
+   ,.num_mem_p(num_mem_p)
+   ,.lce_assoc_p(lce_assoc_p)
+   ,.lce_sets_p(lce_sets_p)
+   ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
+
+   ,.trace_ring_width_p(trace_ring_width_p)
+	,.core_els_p(core_els_p)
+  )
+ be
+  (.clk_i(clk)
+   ,.reset_i(reset)
+
+   ,.bp_fe_queue_i(be_fe_queue)
+   ,.bp_fe_queue_v_i(be_fe_queue_v)
+   ,.bp_fe_queue_ready_o(be_fe_queue_rdy)
+
+   ,.bp_fe_queue_clr_o(fe_queue_clr)
+
+   ,.bp_fe_cmd_o(be_fe_cmd)
+   ,.bp_fe_cmd_v_o(be_fe_cmd_v)
+   ,.bp_fe_cmd_ready_i(be_fe_cmd_rdy)
+
+   ,.trace_data_o(tr_data_li)
+   ,.trace_v_o(tr_v_li)
+   ,.trace_ready_i(tr_ready_lo)
+
+   ,.trace_data_i(tr_data_lo)
+   ,.trace_v_i(tr_v_lo)
+   ,.trace_yumi_o(tr_yumi_li)
+   );
+
+bsg_fsb_node_trace_replay
+ #(.ring_width_p(trace_ring_width_p)
+   ,.rom_addr_width_p(trace_rom_addr_width_p)
+   )
+ be_trace_replay
+  (.clk_i(clk)
+   ,.reset_i(reset)
+   ,.en_i(1'b1)
+
+   ,.data_i(tr_data_li)
+   ,.v_i(tr_v_li)
+   ,.ready_o(tr_ready_lo)
+
+   ,.data_o(tr_data_lo)
+   ,.v_o(tr_v_lo)
+   ,.yumi_i(tr_yumi_li)
+
+   ,.rom_addr_o(tr_rom_addr_li)
+   ,.rom_data_i(tr_rom_data_lo)
+
+   ,.done_o(test_done)
+   ,.error_o()
+   );
+
+
+bp_trace_rom 
+ #(.width_p  (trace_rom_data_width_lp)
+   ,.addr_width_p(trace_rom_addr_width_p)
+   ) 
+ trace_rom
+  (.addr_i(tr_rom_addr_li)
+   ,.data_o(tr_rom_data_lo)
+   );
 
 bp_me_top 
  #(.num_lce_p(num_lce_p)
@@ -266,6 +348,15 @@ bp_boot_rom
   (.addr_i(mrom_addr)
    ,.data_o(mrom_data)
    );
+
+always_ff @(posedge clk)
+  begin
+    if (test_done)
+      begin
+        $display("Test PASSed!");
+        $finish(0);
+      end
+  end
 
 endmodule : test_bp
 

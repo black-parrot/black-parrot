@@ -3,12 +3,12 @@
 include $(CADENV_PATH)/cadenv.mk
 
 ## Tool specific options
-VCS_OPTIONS +=+vcs+finish+20000000ps      # Change this to run longer / shorter
-VCS_OPTIONS +=-timescale=1ps/1ps        # Set timescale
-VCS_OPTIONS +=-full64 +vcs+lic_wait     # Run 64-bit and wait for license
-VCS_OPTIONS +=+v2k -sverilog -debug_pp  # Enable
-VCS_OPTIONS +=+libext+.v+.vlib+.vh      # Find library files with these extensions
-VCS_OPTIONS +=-R +vcs+vcdpluson         # Enable vcd dump
+VCS_OPTIONS += +vcs+finish+20000000ps    # Change this to run longer / shorter
+VCS_OPTIONS += -timescale=1ps/1ps        # Set timescale
+VCS_OPTIONS += -full64 +vcs+lic+wait     # Run 64-bit and wait for license
+VCS_OPTIONS += +v2k -sverilog -debug_pp  # Enable
+VCS_OPTIONS += +libext+.v+.vlib+.vh      # Find library files with these extensions
+VCS_OPTIONS += +vcs+vcdpluson            # Enable vcd dump
 
 LINT_OPTIONS +=+lint=all,noSVA-UA,noVCDE,noSVA-NSVU
 
@@ -25,12 +25,13 @@ lint.v: $(HDL_SOURCE)
 %.build.v: 
 	$(eval include $(TB_PATH)/$*/Makefile.frag) \
 	$(VCS) $(VCS_OPTIONS) -o $(TB_PATH)/$*/simv -top test_bp \
-    -f flist.vcs -f $(TB_PATH)/$*/flist.vcs $(HDL_PARAMS) $(TB_PATH)/$*/test_bp.v 
+    -f flist.vcs -f $(TB_PATH)/$*/flist.vcs $(HDL_PARAMS) $(TB_PATH)/$*/test_bp.v  \
+		| tee $(TB_PATH)/$*/$(basename $(notdir $(TEST_ROM)))_buildout.txt
 
 %.run.v: %.build.v
 	$(eval include $(TB_PATH)/$*/Makefile.frag)
-	$(TB_PATH)/$*/simv $(SIM_OPTIONS) \
-	  > $(TB_PATH)/$*/$(basename $(notdir $(TEST_ROM)))_simout.txt
+	$(TB_PATH)/$*/simv \
+	  | tee $(TB_PATH)/$*/$(basename $(notdir $(TEST_ROM)))_simout.txt
 
 %.clean.v:
 		rm -rf $(TB_PATH)/$*/DVEfiles
