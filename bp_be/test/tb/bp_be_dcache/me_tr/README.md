@@ -1,11 +1,8 @@
 ## Memory End Trace Replay Test
 
-- make sure that axe is installed, and 'axe' binary is in $PATH.
-  - https://github.com/CTSRD-CHERI/axe
-
 - Run "make" to run the simulation
   - You should see "TEST PASSED" printed out if the test runs successfully.
 
+- You can change the number of instructions run with the NUM\_INSTR variable in the Makefile
+  - e.g., running "make NUM\_INSTR=4096"
 
-- After running "make", run "make axe" to run the axe test. 
-  - it should print out "OK" at the end.

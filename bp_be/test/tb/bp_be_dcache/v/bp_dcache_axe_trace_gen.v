@@ -28,11 +28,9 @@ module bp_be_dcache_axe_trace_gen
     if (v_i) begin
       if (store_i) begin
         $display("#AXE %0d: M[%0d] := %0d", id_i, addr, store_data_i);
-        $display("#AXE %0d: M[%0d] := %0d", id_i, addr_i, store_data_i);
       end
       else if (load_i) begin
         $display("#AXE %0d: M[%0d] == %0d", id_i, addr, load_data_i);
-        $display("#AXE %0d: M[%0d] == %0d", id_i, addr_i, load_data_i);
       end
     end
   end
