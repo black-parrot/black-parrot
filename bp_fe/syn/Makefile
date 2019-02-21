@@ -30,3 +30,5 @@ BSG_IP_CORES_DIR = $(TOP)/bsg_ip_cores
 
 include $(SYN_PATH)/Makefile.vcs
 
+include $(SYN_PATH)/Makefile.dc
+

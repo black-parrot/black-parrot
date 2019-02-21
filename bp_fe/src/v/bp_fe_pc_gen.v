@@ -106,7 +106,8 @@ logic                          misalignment;
 logic                          predict;
 logic                          pc_redirect_after_icache_miss;
 logic                          stalled_pc_redirect;
-logic   		       bht_r_v_branch_jalr_inst;
+logic                          bht_r_v_branch_jalr_inst;
+logic                          branch_inst;
    
 //connect pc_gen to the rest of the FE submodules as well as FE top module   
 assign pc_gen_icache_o = pc_gen_icache;

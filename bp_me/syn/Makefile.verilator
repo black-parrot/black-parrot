@@ -1,24 +1,24 @@
 
 # Verilator specific test bench paths
-SCTB_PATH = $(BP_ME_TB_PATH)/sc
-BP_ME_TB_COMMON_PATH = $(BP_ME_TB_PATH)/common
+SCTB_DIR = $(BP_ME_TB_DIR)/sc
+BP_ME_TB_COMMON_DIR = $(BP_ME_TB_DIR)/common
 
 ## Tools
-VV = $(VERILATOR_PATH)/bin/verilator
+VV = $(VERILATOR_DIR)/bin/verilator
 CC = g++
 
 
-VV_OPTS +=-I$(BP_COMMON_PATH)
-VV_OPTS +=-I$(BSG_IP_PATH)/bsg_misc
-VV_OPTS +=-I$(BSG_IP_PATH)/bsg_noc
-VV_OPTS +=-I$(BP_ME_INC_PATH)
-#VV_OPTS +=-I$(BP_BE_PATH)/tb/rom
-#VV_OPTS +=-I$(BSG_IP_PATH)/bsg_dataflow
-#VV_OPTS +=-I$(BSG_IP_PATH)/bsg_mem
-#VV_OPTS +=-I$(BP_ME_TB_COMMON_PATH)
-#VV_OPTS +=-I$(BP_ME_SRC_PATH)
-#VV_OPTS +=-I$(NETWORK_PATH)
-#VV_OPTS +=-I$(CCE_ROM_PATH)
+VV_OPTS +=-I$(BP_COMMON_DIR)
+VV_OPTS +=-I$(BSG_IP_DIR)/bsg_misc
+VV_OPTS +=-I$(BSG_IP_DIR)/bsg_noc
+VV_OPTS +=-I$(BP_ME_INC_DIR)
+#VV_OPTS +=-I$(BP_BE_DIR)/tb/rom
+#VV_OPTS +=-I$(BSG_IP_DIR)/bsg_dataflow
+#VV_OPTS +=-I$(BSG_IP_DIR)/bsg_mem
+#VV_OPTS +=-I$(BP_ME_TB_COMMON_DIR)
+#VV_OPTS +=-I$(BP_ME_SRC_DIR)
+#VV_OPTS +=-I$(NETWORK_DIR)
+#VV_OPTS +=-I$(CCE_ROM_DIR)
 
 VV_OPTS +=--trace -O3
 VV_OPTS +=-Wno-unoptflat # Verilator has problems with false positive combinatorial
@@ -26,12 +26,12 @@ VV_OPTS +=-Wno-unoptflat # Verilator has problems with false positive combinator
 VV_OPTS +=-Wno-width -Wno-unused
 
 # These flags are passed to the C++ compiler used by Verilator
-CPPFLAGS +=-I$(BP_ME_TB_PATH)/include -I$(BP_ME_PATH)/src/include/c
+CPPFLAGS +=-I$(BP_ME_TB_DIR)/include -I$(BP_ME_DIR)/src/include/c
 
 # Verilator specific sources (LINT only)
 SCTB_SOURCE = \
-	$(BP_ME_TB_COMMON_PATH)/bp_mem.v
-#	$(BP_ME_TB_COMMON_PATH)/bp_me_top.v \
+	$(BP_ME_TB_COMMON_DIR)/bp_mem.v
+#	$(BP_ME_TB_COMMON_DIR)/bp_me_top.v \
 
 SC_TOP_MODULE = bp_me_top
 
@@ -40,23 +40,23 @@ export
 
 ## Targets
 cleansc: clean
-	$(shell find $(SCTB_PATH) -regex '.*\(simsc\|simout\.txt\|dump\.vcd\)' | xargs rm -f)
+	$(shell find $(SCTB_DIR) -regex '.*\(simsc\|simout\.txt\|dump\.vcd\)' | xargs rm -f)
 
 lint.sc:
-	$(eval HDL_SOURCE += $(CCE_ROM_PATH)/demo-v2/bp_cce_inst_rom_demo-v2_lce1_wg16_assoc8.v)
+	$(eval HDL_SOURCE += $(CCE_ROM_DIR)/demo-v2/bp_cce_inst_rom_demo-v2_lce1_wg16_assoc8.v)
 	$(VV) $(VV_OPTS) --lint-only $(HDL_SOURCE) $(SCTB_SOURCE) --top-module $(SC_TOP_MODULE)
 
 # Makefile.frag is allowed to set TOP_MODULE, which allows multiple tests to target the same
 # top module. If Makefile.frag does not set TOP_MODULE, it defaults to the target stem
 %.build.sc: clean
-	$(eval include $(SCTB_PATH)/$*/Makefile.frag)
+	$(eval include $(SCTB_DIR)/$*/Makefile.frag)
 	$(eval TOP_MODULE ?= $*)
 	$(VV) $(VV_OPTS) --top-module $(TOP_MODULE) --sc $(HDL_SOURCE) $(HDL_PARAMS) \
-		--exe $(SCTB_PATH)/$*/test_bp.cpp --trace-structs \
+		--exe $(SCTB_DIR)/$*/test_bp.cpp --trace-structs \
 	&& make -C obj_dir -f V$(TOP_MODULE).mk \
-	&& cp obj_dir/V$(TOP_MODULE) $(SCTB_PATH)/$*/simsc
+	&& cp obj_dir/V$(TOP_MODULE) $(SCTB_DIR)/$*/simsc
 
 %.run.sc: %.build.sc
-	$(eval include $(SCTB_PATH)/$*/Makefile.frag) \
-	cd $(SCTB_PATH)/$* \
-	&& ./simsc $(HDL_PARAMS) > $(SCTB_PATH)/$*/simout.txt
+	$(eval include $(SCTB_DIR)/$*/Makefile.frag) \
+	cd $(SCTB_DIR)/$* \
+	&& ./simsc $(HDL_PARAMS) > $(SCTB_DIR)/$*/simout.txt

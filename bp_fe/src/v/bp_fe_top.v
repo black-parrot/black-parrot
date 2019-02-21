@@ -7,22 +7,29 @@ module bp_fe_top
  import bp_common_pkg::*;  
  #(parameter  vaddr_width_p="inv" 
    , parameter paddr_width_p="inv" 
-   , parameter eaddr_width_p="inv" 
-   , parameter data_width_p="inv"
-   , parameter inst_width_p="inv"
-  
+
+
+   /* TODO: These all need to go away */
+   , parameter eaddr_width_p=64
+   , parameter data_width_p=64
+   , parameter inst_width_p=32
+   , parameter tag_width_p=10 // TODO: Need to calculate this based on vaddr
+   , parameter instr_width_p=32
+
+
    , parameter branch_predictor_p=1 
 
    // icache related parameters 
-   , parameter tag_width_p="inv"
    , parameter num_cce_p="inv"
    , parameter num_lce_p="inv"
    , parameter lce_assoc_p="inv"
    , parameter lce_sets_p="inv"
-   , parameter block_size_in_bytes_p="inv"
+   , parameter cce_block_size_in_bytes_p="inv"
+   /* TODO: Fix.  This is in words, not bytes, but FE depends on it */
+   , localparam block_size_in_bytes_fix_lp=cce_block_size_in_bytes_p/8 
    , localparam lg_lce_assoc_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
    , localparam lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-   , localparam lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
+   , localparam lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_fix_lp)
    , localparam data_mask_width_lp=(data_width_p>>3)
    , localparam lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
    , localparam vaddr_width_lp=(lg_lce_sets_lp+lg_lce_assoc_lp+lg_data_mask_width_lp)
@@ -66,7 +73,6 @@ module bp_fe_top
    , parameter ras_addr_width_p="inv"
    , parameter asid_width_p="inv"
    , parameter bp_first_pc_p="inv"
-   , parameter instr_width_p="inv"
    , localparam instr_scan_width_lp=`bp_fe_instr_scan_width
    , localparam branch_metadata_fwd_width_lp=btb_indx_width_p+bht_indx_width_p+ras_addr_width_p
    , localparam bp_fe_pc_gen_itlb_width_lp=`bp_fe_pc_gen_itlb_width(eaddr_width_p)
@@ -294,7 +300,7 @@ icache
    ,.num_lce_p(num_lce_p)
    ,.ways_p(lce_assoc_p)
    ,.lce_sets_p(lce_sets_p)
-   ,.block_size_in_bytes_p(block_size_in_bytes_p)
+   ,.block_size_in_bytes_p(block_size_in_bytes_fix_lp)
    ) 
  icache_1
   (.clk_i(clk_i)

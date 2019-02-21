@@ -7,6 +7,16 @@ BP_BE_PATH	   = $(TOP)/bp_be
 BP_ME_PATH 	   = $(TOP)/bp_me
 BP_COMMON_PATH = $(TOP)/bp_common
 
+# Needed for other dc check_syn
+BP_TOP_DIR	     = $(TOP)/bp_top
+BP_FE_DIR	       = $(TOP)/bp_fe
+BP_BE_DIR	       = $(TOP)/bp_be
+BP_ME_DIR 	     = $(TOP)/bp_me
+BP_COMMON_DIR    = $(TOP)/bp_common
+BSG_IP_CORES_DIR = $(TOP)/bsg_ip_cores
+SYN_PATH         = $(BP_ME_DIR)/syn
+TB_PATH          = $(BP_ME_DIR)/test/tb
+
 CADENV_PATH    = $(TOP)/bsg_cadenv
 BSG_IP_PATH	   = $(TOP)/bsg_ip_cores
 VERILATOR_PATH = $(TOP)/verilator
@@ -71,4 +81,6 @@ clean:
 include	$(BP_ME_SYN_PATH)/Makefile.verilator
 
 include $(BP_ME_SYN_PATH)/Makefile.vcs
+
+include $(BP_ME_SYN_PATH)/Makefile.dc
 
