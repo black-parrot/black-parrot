@@ -7,6 +7,10 @@ BP_COMMON_DIR = $(BP_DIR)/bp_common
 BP_BE_DIR = $(BP_DIR)/bp_be
 BP_ME_DIR = $(BP_DIR)/bp_me
 BSG_IP_CORES_DIR = $(BP_DIR)/bsg_ip_cores
+EXTERNAL_DIR = $(BP_DIR)/external
+
+AXE = axe
+#AXE = $(EXTERNAL_DIR)/bin/axe
 
 .EXPORT_ALL_VARIABLES:
 
@@ -61,4 +65,4 @@ $(TRACE_AXE): $(VCS_LOG)
 
 axe: $(TRACE_AXE)
 	cat $<
-	axe check TSO $(TRACE_AXE)
+	$(AXE) check TSO $(TRACE_AXE)

@@ -97,12 +97,13 @@ logic [num_lce_p-1:0] local_lce_tr_resp_v, local_lce_tr_resp_rdy;
 logic [num_lce_p-1:0] remote_lce_tr_resp_v, remote_lce_tr_resp_rdy;
 
 logic [trace_data_width_p-1:0] trace_data;
-logic [trace_addr_width_p-1:0] trace_addr;
+logic [lg_trace_addr_els_p-1:0] trace_addr;
 
-logic [boot_rom_els_p-1:0] boot_rom_addr;
+logic [lg_boot_rom_els_lp-1:0] boot_rom_addr;
 logic [boot_rom_width_p-1:0] boot_rom_data;
 // Module instantiations
 /* TODO: Settle on parameter names and converge redundant parameters */
+/* TODO: This is not multi-core scalable. */
 genvar core_id;
 generate
 for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
@@ -115,7 +116,7 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
                ,.btb_indx_width_p(9)
                ,.bht_indx_width_p(5)
                ,.ras_addr_width_p(vaddr_width_p)
-               ,.asid_width_lp(10)
+               ,.asid_width_p(10)
 	       ,.instr_width_p(32)
                ,.bp_first_pc_p(bp_pc_entry_point_gp) /* TODO: Not ideal to couple to RISCV-tests */
 
@@ -126,17 +127,12 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
                ,.tag_width_p(12)
                ,.num_cce_p(num_cce_p)
                ,.num_lce_p(num_lce_p)
-               ,.lce_id_p(icache_id) /* TODO: What should this be? Globally set? */
                ,.block_size_in_bytes_p(8) /* TODO: This is ways not blocks */
-
-               /* TODO: DEFINITELY RENAME */
-               ,.els_p(100)
-               ,.width(100)
                )
             fe(.clk_i(clk_i)
                ,.reset_i(reset_i)
 
-	       ,.icache_id_i(core_id)
+	       ,.icache_id_i(1'b0)
 
                ,.bp_fe_queue_o(fe_fe_queue[core_id])
                ,.bp_fe_queue_v_o(fe_fe_queue_v[core_id])
@@ -175,8 +171,8 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
                ,.lce_lce_tr_resp_ready_i(remote_lce_tr_resp_rdy[icache_id])
                );
    
-    mock_be_trace #(.mhartid_p(core_id)
-                 ,.vaddr_width_p(vaddr_width_p)
+    mock_be_trace #(
+                 .vaddr_width_p(vaddr_width_p)
                  ,.paddr_width_p(paddr_width_p)
                  ,.asid_width_p(asid_width_p)
                  ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
@@ -186,8 +182,6 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
                  ,.lce_assoc_p(lce_assoc_p)
                  ,.lce_sets_p(lce_sets_p)
                  ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
-
-                 ,.dcache_id_p(dcache_id)
 		 ,.core_els_p(core_els_p)
                  )
               be(.clk_i(clk_i)
@@ -200,34 +194,6 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
                  ,.bp_fe_cmd_o(fe_fe_cmd[core_id])
                  ,.bp_fe_cmd_v_o(fe_fe_cmd_v[core_id])
                  ,.bp_fe_cmd_ready_i(fe_fe_cmd_rdy[core_id])
-
-                 ,.lce_cce_req_o(lce_cce_req[dcache_id])
-                 ,.lce_cce_req_v_o(lce_cce_req_v[dcache_id])
-                 ,.lce_cce_req_rdy_i(lce_cce_req_rdy[dcache_id])
-
-                 ,.lce_cce_resp_o(lce_cce_resp[dcache_id])
-                 ,.lce_cce_resp_v_o(lce_cce_resp_v[dcache_id])
-                 ,.lce_cce_resp_rdy_i(lce_cce_resp_rdy[dcache_id])
-
-                 ,.lce_cce_data_resp_o(lce_cce_data_resp[dcache_id])
-                 ,.lce_cce_data_resp_v_o(lce_cce_data_resp_v[dcache_id])
-                 ,.lce_cce_data_resp_rdy_i(lce_cce_data_resp_rdy[dcache_id])
-
-                 ,.cce_lce_cmd_i(cce_lce_cmd[dcache_id])
-                 ,.cce_lce_cmd_v_i(cce_lce_cmd_v[dcache_id])
-                 ,.cce_lce_cmd_rdy_o(cce_lce_cmd_rdy[dcache_id])
-
-                 ,.cce_lce_data_cmd_i(cce_lce_data_cmd[dcache_id])
-                 ,.cce_lce_data_cmd_v_i(cce_lce_data_cmd_v[dcache_id])
-                 ,.cce_lce_data_cmd_rdy_o(cce_lce_data_cmd_rdy[dcache_id])
-
-                 ,.lce_lce_tr_resp_i(local_lce_tr_resp[dcache_id])
-                 ,.lce_lce_tr_resp_v_i(local_lce_tr_resp_v[dcache_id])
-                 ,.lce_lce_tr_resp_rdy_o(local_lce_tr_resp_rdy[dcache_id])
-
-                 ,.lce_lce_tr_resp_o(remote_lce_tr_resp[dcache_id])
-                 ,.lce_lce_tr_resp_v_o(remote_lce_tr_resp_v[dcache_id])
-                 ,.lce_lce_tr_resp_rdy_i(remote_lce_tr_resp_rdy[dcache_id])
 
                  ,.trace_addr_o(trace_addr)
                  ,.trace_data_i(trace_data)

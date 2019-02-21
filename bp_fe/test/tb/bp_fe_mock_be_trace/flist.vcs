@@ -1,0 +1,15 @@
+# bsg_ip_cores files
+$BSG_IP_CORES_DIR/bsg_test/bsg_nonsynth_reset_gen.v
+$BSG_IP_CORES_DIR/bsg_test/bsg_nonsynth_clock_gen.v
+$BSG_IP_CORES_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
+# be files
+# me files
+# fe files
+## MOCK wrapper + test_bp 
+$BP_FE_DIR/test/common/mock/mock_be_trace.v 
+$BP_FE_DIR/test/common/mock/mock_cce.v
+$BP_FE_DIR/test/common/wrappers/bp_fe_mock_be_trace/bp_fe_mock_be_wrapper.v 
+$BP_FE_DIR/test/common/wrappers/bp_fe_top_wrapper.v
+# top files
+$BP_FE_DIR/test/roms/v/$TEST_ROM
+$BP_FE_DIR/test/roms/trace_rom/$TRACE_ROM

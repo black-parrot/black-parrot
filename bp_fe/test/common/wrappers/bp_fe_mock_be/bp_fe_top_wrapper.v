@@ -49,7 +49,7 @@ localparam entry_width_lp=tag_width_p+lg_coh_states_lp;
 localparam tag_set_width_lp=(entry_width_lp*lce_assoc_p);
 localparam way_group_width_lp=(tag_set_width_lp*num_lce_p);
 localparam data_set_width_lp=(data_width_p*lce_assoc_p);
-localparam meta_data_set_width=(lg_lce_assoc_lp+lce_assoc_p);
+localparam metadata_set_width=(lg_lce_assoc_lp+lce_assoc_p);
 localparam data_mask_width_lp=(data_width_p>>3);
 localparam lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp);
 localparam lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p);
@@ -67,7 +67,7 @@ localparam bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p, nu
 localparam bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p, addr_width_lp, lce_data_width_lp, lce_assoc_p);
 localparam bp_fe_icache_tag_set_width_lp=`bp_fe_icache_tag_set_width(coh_states_p,tag_width_p, lce_assoc_p);
 localparam bp_fe_icache_tag_state_width_lp=`bp_fe_icache_tag_state_width(coh_state_p, tag_width_p);
-localparam bp_fe_icache_meta_data_width_lp=`bp_fe_icache_meta_data_width(lce_assoc_p);
+localparam bp_fe_icache_metadata_width_lp=`bp_fe_icache_metadata_width(lce_assoc_p);
 localparam bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(eaddr_width_p);
 
 // pc gen related parameters

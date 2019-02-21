@@ -237,7 +237,6 @@ always_ff @(posedge clk_i)
 
 instr_scan 
   #(.eaddr_width_p(eaddr_width_p)
-    ,.bp_fe_instr_scan_width_lp(`bp_fe_instr_scan_width)
     ,.instr_width_p(instr_width_p)
    ) 
   instr_scan_1 
