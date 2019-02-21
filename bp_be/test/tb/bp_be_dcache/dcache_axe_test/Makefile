@@ -9,7 +9,8 @@ BP_ME_DIR = $(BP_DIR)/bp_me
 BSG_IP_CORES_DIR = $(BP_DIR)/bsg_ip_cores
 EXTERNAL_DIR = $(BP_DIR)/external
 
-AXE = $(EXTERNAL_DIR)/bin/axe
+AXE = axe
+#AXE = $(EXTERNAL_DIR)/bin/axe
 
 .EXPORT_ALL_VARIABLES:
 
