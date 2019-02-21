@@ -35,18 +35,6 @@ assign r_ptag_o     = ram_data_o;
 assign cam_w_addr_i = (cam_empty_v_o)? cam_empty_addr_o : victim_addr;
 assign ram_addr_i   = (w_v_i)? cam_w_addr_i : cam_r_addr_o;
 
-/*
-always_ff @(posedge clk_i) begin
-  if(reset_i) begin
-    miss_v_o  <= '0;
-	r_v_o     <= '0;
-  end else begin
-    miss_v_o  <= r_v_i & ~cam_r_v_o;
-    r_v_o     <= r_v_i & cam_r_v_o;
-  end
-end
-*/
-
 bsg_dff_reset #(.width_p(1))
   r_v_reg
   (.clk_i(clk_i)
@@ -88,7 +76,7 @@ bp_tlb_cam
   #(.els_p(els_p)
     ,.width_p(vtag_width_p)
   )
-  cam
+  vtag_cam
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    
@@ -110,12 +98,12 @@ bsg_mem_1rw_sync_synth
   #(.width_p(ptag_width_p)
     ,.els_p(els_p)
   )
-  ram
+  ptag_ram
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.data_i(w_ptag_i)
    ,.addr_i(ram_addr_i)
-   ,.v_i(1'b1)
+   ,.v_i(cam_r_v_o | w_v_i)
    ,.w_i(w_v_i)
    ,.data_o(ram_data_o)
   );
