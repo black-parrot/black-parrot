@@ -171,7 +171,7 @@ module bp_rolly_lce_me
 
       ,.lce_data_resp_o(lce_data_resp_lo[i])
       ,.lce_data_resp_v_o(lce_data_resp_v_lo[i])
-      ,.lce_data_resp_ready_i(lce_resp_ready_li[i])
+      ,.lce_data_resp_ready_i(lce_data_resp_ready_li[i])
 
       // CCE-LCE interface
       ,.lce_cmd_i(lce_cmd_li[i])
