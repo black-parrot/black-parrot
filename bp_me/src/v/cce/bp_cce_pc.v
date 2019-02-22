@@ -39,7 +39,8 @@ module bp_cce_pc
    , input [inst_width_lp-1:0]                   boot_rom_data_i
   );
 
-
+// RAM version
+/*
   logic [inst_ram_addr_width_lp-1:0] boot_rom_addr_r;
 
   logic [inst_ram_addr_width_lp-1:0] ex_pc_r;
@@ -237,12 +238,7 @@ module bp_cce_pc
       endcase
     end
   end
-
-
-
-
-
-
+*/
 
 
 
@@ -250,9 +246,6 @@ module bp_cce_pc
 //////////////////////////////////////////////////////////////////////////////
 // OLD
 //////////////////////////////////////////////////////////////////////////////
-/*
-=======
->>>>>>> dev
   // PC Register
   logic [inst_ram_addr_width_lp-1:0] pc_r, pc_n;
   logic pc_v;
@@ -295,6 +288,5 @@ module bp_cce_pc
     pc_n = alu_branch_res_i ? pc_branch_target_i : (pc_r + 1);
 
   end
-*/
 
 endmodule
