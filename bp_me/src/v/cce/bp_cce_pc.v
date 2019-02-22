@@ -43,6 +43,7 @@ module bp_cce_pc
   logic [inst_ram_addr_width_lp-1:0] boot_rom_addr_r;
 
   logic [inst_ram_addr_width_lp-1:0] ex_pc_r;
+  logic inst_v_r;
 
   logic ram_v_i, ram_w_i;
   logic ram_v_r, ram_w_r;
@@ -72,6 +73,14 @@ module bp_cce_pc
   pc_state_e pc_state;
 
   always_comb begin
+    boot_rom_addr_o = '0;
+    ram_v_i = '0;
+    ram_w_i = '0;
+    ram_addr_i = '0;
+    ram_data_i = '0;
+    inst_o = '0;
+    inst_v_o = '0;
+
     if (reset_i) begin
       boot_rom_addr_o = '0;
       ram_v_i = '0;
@@ -107,7 +116,7 @@ module bp_cce_pc
       // PC is always fetching, every cycle, so instruction to output is directly from the
       // RAM and it is always valid
       inst_o = ram_data_o;
-      inst_v_o = 1'b1;
+      inst_v_o = inst_v_r;
 
       // determine input address for RAM depending on stall and branch in execution
       if (pc_stall_i) begin
@@ -145,6 +154,7 @@ module bp_cce_pc
       boot_rom_addr_r <= '0;
 
       ex_pc_r <= '0;
+      inst_v_r <= '0;
 
     end else begin
       // Defaults for registers
@@ -156,6 +166,7 @@ module bp_cce_pc
       boot_rom_addr_r <= '0;
 
       ex_pc_r <= '0;
+      inst_v_r <= '0;
 
       case (pc_state)
         BOOT: begin
@@ -182,6 +193,8 @@ module bp_cce_pc
           pc_state <= FETCH;
         end
         FETCH: begin
+          inst_v_r <= 1'b1;
+
           // at end of cycle 1, RAM controls are captured into registers
           // at end of cycle 2, RAM captures the control registers
           // in cycle 3, the instruction is produced and executed
@@ -218,6 +231,7 @@ module bp_cce_pc
           boot_rom_addr_r <= '0;
     
           ex_pc_r <= '0;
+          inst_v_r <= '0;
 
         end
       endcase
