@@ -9,12 +9,21 @@
 
 #include "systemc.h"
 
+#include <iomanip>
 #include <sstream>
 #include <string>
 
 #include "bp_cce_verilator.h"
 #include "bp_cce.h"
 #include "bp_common_me_if.h"
+
+template<typename T>
+std::string toHex(T in)
+{
+  std::stringstream ss;
+  ss << std::setfill('0') << std::setw(sizeof(T)*2) << std::hex << in;
+  return ss.str();
+}
 
 template<typename T>
 std::string toString(T in, int bits)
@@ -48,7 +57,7 @@ createLceReq(uint32_t dst, uint32_t src, bp_lce_cce_req_type_e reqType, uint64_t
   cout << " dst(" << LG_N_CCE << "): " << dst
        << " src(" << LG_N_LCE << "): " << src
        << " type(1): " << ((int)reqType ? "W" : "R")
-       << " addr(" << ADDR_WIDTH << "): " << toString<uint64_t>(addr, ADDR_WIDTH)
+       << " addr(" << ADDR_WIDTH << "): " << toHex<uint64_t>(addr) //toString<uint64_t>(addr, ADDR_WIDTH)
        << " NE(1): " << (int)non_excl
        << " lruWay(" << LG_LCE_ASSOC << "): " << (int)lruWay
        << " lruDirty(1): " << (int)lruDirty << endl;
@@ -83,9 +92,41 @@ createCceCmd(uint32_t dst, uint32_t src, bp_cce_lce_cmd_type_e cmd, uint64_t add
   msg.range(bp_cce_lce_cmd_width-LG_N_LCE-1, bp_cce_lce_cmd_width-LG_N_LCE-LG_N_CCE) = src;
   msg.range(bp_cce_lce_cmd_width-1, bp_cce_lce_cmd_width-LG_N_LCE) = dst;
 
-	cout << "target: " << target << endl;
+  cout << "cceCmd(" << bp_cce_lce_cmd_width << "):  " << msg.to_string() << endl;
+  cout << " dst(" << LG_N_LCE << "): " << dst
+       << " src(" << LG_N_CCE << "): " << src
+       << " cmd(" << bp_cce_lce_cmd_type_width << "): " << (uint32_t)cmd 
+       << " addr(" << ADDR_WIDTH << "): " << toHex<uint64_t>(addr) //toString<uint64_t>(addr, ADDR_WIDTH)
+       << " way(" << LG_LCE_ASSOC << "): " << way
+       << " state(" << bp_cce_coh_bits << "): " << (uint32_t)state
+       << " target(" << LG_N_LCE << "): " << target
+       << " targetWay(" << LG_LCE_ASSOC << "): " << target_way
+       << endl;
 
   return msg;
+}
+
+void printCceCmd(sc_bv<bp_cce_lce_cmd_width> &msg)
+{
+  cout << "cceCmd(" << bp_cce_lce_cmd_width << "):  " << msg.to_string() << endl;
+  int high = bp_cce_lce_cmd_width-1;
+  cout << " dst(" << LG_N_LCE << "): " << msg.range(high, high-LG_N_LCE+1).to_uint(); //dst
+  high -= LG_N_LCE;
+  cout << " src(" << LG_N_CCE << "): " << msg.range(high, high-LG_N_CCE+1).to_uint(); //src
+  high -= LG_N_CCE;
+  cout << " cmd(" << bp_cce_lce_cmd_type_width << "): " << msg.range(high, high-bp_cce_lce_cmd_type_width+1).to_uint(); //(uint32_t)cmd 
+  high -= bp_cce_lce_cmd_type_width;
+  cout << " addr(" << ADDR_WIDTH << "): " << toHex<uint64_t>(msg.range(high, high-ADDR_WIDTH+1).to_uint64()); //toHex<uint64_t>(addr) //toString<uint64_t>(addr, ADDR_WIDTH)
+  high -= ADDR_WIDTH;
+  cout << " way(" << LG_LCE_ASSOC << "): " << msg.range(high, high-LG_LCE_ASSOC+1).to_uint(); //way
+  high -= LG_LCE_ASSOC;
+  cout << " state(" << bp_cce_coh_bits << "): " << msg.range(high, high-bp_cce_coh_bits+1).to_uint(); //(uint32_t)state
+  high -= bp_cce_coh_bits;
+  cout << " target(" << LG_N_LCE << "): " << msg.range(high, high-LG_N_LCE+1).to_uint(); //target
+  high -= LG_N_LCE;
+  cout << " targetWay(" << LG_LCE_ASSOC << "): " << msg.range(high, high-LG_LCE_ASSOC+1).to_uint(); //target_way
+  cout << endl;
+
 }
 
 bool
@@ -93,8 +134,10 @@ checkCceCmd(sc_bv<bp_cce_lce_cmd_width> &msg, uint32_t dst, uint32_t src, uint64
             uint32_t way, bp_cce_lce_cmd_type_e cmd, bp_cce_coh_mesi_e state, uint32_t target,
             uint32_t target_way)
 {
+  cout << "Checking CCE Cmd..." << endl;
   sc_bv<bp_cce_lce_cmd_width> exp = createCceCmd(dst, src, cmd, addr, way, state, target, target_way);
   cout << "CCE Cmd: " << msg.to_string() << endl;
+  printCceCmd(msg);
   cout << "exp msg: " << exp.to_string() << endl;
   return !(msg.to_string().compare(exp.to_string()));
 }
@@ -165,6 +208,11 @@ createCceDataCmd(uint32_t dst, uint32_t src, uint64_t addr, uint32_t way,
   msg.range(bp_cce_lce_data_cmd_width-LG_N_LCE-1, bp_cce_lce_data_cmd_width-LG_N_LCE-LG_N_CCE) = src;
   msg.range(bp_cce_lce_data_cmd_width-1, bp_cce_lce_data_cmd_width-LG_N_LCE) = dst;
 
+  std::stringstream ss;
+  ss << "CCE Data Cmd Addr: " 
+     << std::setfill('0') << std::setw(sizeof(uint64_t)*2) << std::hex << addr;
+  cout << ss.str() << endl;
+
   return msg;
 }
 
@@ -172,6 +220,7 @@ bool
 checkCceDataCmd(sc_bv<bp_cce_lce_data_cmd_width> &msg, uint32_t dst, uint32_t src, uint64_t addr,
                 uint32_t way, bp_lce_cce_req_type_e reqType, uint64_t data, bool checkData)
 {
+  cout << "Checking CCE Data Cmd..." << endl;
   sc_bv<bp_cce_lce_data_cmd_width> exp = createCceDataCmd(dst, src, addr, way, reqType, data);
   // if not checking data, set data to 0 in both received message and expected message
   if (!checkData) {

@@ -192,6 +192,7 @@ int sc_main(int argc, char **argv)
   sc_start(CLK_TIME*1000, SC_NS);
 
   // NOTE: at this point, all tags and states in directory should be 0
+  cout << "@" << sc_time_stamp() << " SYNC FINISHED!" << endl << endl;
 
   // Test non-exclusive request with clean LRU way
   for (int i = 0; i < TRACE_ITERS; i++) {
@@ -267,6 +268,7 @@ int sc_main(int argc, char **argv)
     // something received, or stalled, pull ready low
     lce_cmd_ready_i = 0;
     sc_start(CLK_TIME, SC_NS);
+    cout << endl;
 
     sc_start(RST_TIME, SC_NS);
   }
@@ -336,6 +338,8 @@ int sc_main(int argc, char **argv)
   lce_resp_i = 0;
   lce_resp_v_i = 0;
   sc_start(CLK_TIME, SC_NS);
+
+  cout << "@" << sc_time_stamp() << " SYNC FINISHED!" << endl << endl;
 
   // Let the CCE finish initialization
   sc_start(CLK_TIME*1000, SC_NS);
