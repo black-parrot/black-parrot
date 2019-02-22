@@ -8,7 +8,7 @@ BP_ME_PATH     = $(TOP)/bp_me
 BP_COMMON_PATH = $(TOP)/bp_common
 
 
-CADENV_PATH    = $(TOP)/bsg_cadenv
+BSG_CADENV_DIR    = $(TOP)/bsg_cadenv
 BSG_IP_PATH    = $(TOP)/bsg_ip_cores
 VERILATOR_PATH = $(TOP)/verilator
 SYSTEMC_PATH   = $(TOP)/systemc

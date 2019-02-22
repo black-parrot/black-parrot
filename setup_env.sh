@@ -4,6 +4,7 @@ CWD=$PWD
 
 # Set common environment variables
 export BSG_IP_CORES_DIR=$CWD/bsg_ip_cores
+export BSG_CADENV_DIR=$CWD/bsg_cadenv
 export BP_COMMON_DIR=$CWD/bp_common
 export BP_FE_DIR=$CWD/bp_fe
 export BP_BE_DIR=$CWD/bp_be
