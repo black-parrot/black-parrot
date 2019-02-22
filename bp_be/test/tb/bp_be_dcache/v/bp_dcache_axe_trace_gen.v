@@ -5,14 +5,13 @@
 module bp_be_dcache_axe_trace_gen
   #(parameter addr_width_p="inv"
     ,parameter data_width_p="inv"
+    ,parameter num_lce_p="inv"
     ,parameter data_mask_width_lp=(data_width_p>>3)
     ,parameter lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
-
-    ,localparam lce_id_width_lp=`bp_lce_id_width
   )
   (
     input clk_i
-    ,input [lce_id_width_lp-1:0] id_i
+    ,input [`BSG_SAFE_CLOG2(num_lce_p)-1:0] id_i
     ,input v_i
     ,input [data_width_p-1:0] store_data_i
     ,input [data_width_p-1:0] load_data_i

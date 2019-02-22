@@ -1,3 +1,5 @@
 bsg_cadenv
 external/*
-run_dc
+*.swp
+*.pyc
+*.log

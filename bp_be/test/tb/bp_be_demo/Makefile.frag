@@ -3,7 +3,6 @@ DUT_PARAMS = -pvalue+core_els_p=1												 \
              -pvalue+paddr_width_p=22                    \
              -pvalue+asid_width_p=10                     \
              -pvalue+branch_metadata_fwd_width_p=36      \
-             -pvalue+core_els_p=1                        \
              -pvalue+num_cce_p=1                         \
              -pvalue+num_lce_p=1                         \
              -pvalue+lce_sets_p=64                       \

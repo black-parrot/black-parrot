@@ -18,48 +18,64 @@ BSG_ROM_GEN    = $(BSG_IP_PATH)/bsg_mem/bsg_ascii_to_rom.py
 RISCV_ELF2HEX  = elf2hex
 RISCV_SIM	     = $(SPIKE_MOD_PATH)/spike
 RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -D -M no-aliases,numeric
-RISCV_GCC_RAND = riscv64-unknown-elf-gcc -nostdlib -nostartfiles -Wa,-march=rv64g -I${RANDOM_FLD}p/ -T${RANDOM_FLD}p/link.ld
+RISCV_GCC_RAND  = riscv64-unknown-elf-gcc -nostdlib -nostartfiles -Wa,-march=rv64g 
+RISCV_GCC_RAND += -I${RANDOM_FLD}p/ -T${RANDOM_FLD}p/link.ld
 
 include Makefile.frag
 
-#TODO: add demo rom generation
-all: isa benchmarks
+all: isa benchmarks demos
 
 isa: isa_elf isa_rom
 benchmarks: benchmarks_elf benchmarks_rom
+demos: demos_elf demos_rom
 
-isa_elf: $(foreach x, $(subst -,_,$(RV64_TESTS)), $(x))
-isa_rom: $(foreach x, $(subst -,_,$(RV64_TESTS)), $(x).v)
+isa_elf:
+	make -C src/isa
+	mv src/isa/*.elf .
 
 benchmarks_elf:
-	make -C src/benchmarks/
-	cp src/benchmarks/median.elf src/benchmarks/multiply.elf src/benchmarks/towers.elf src/benchmarks/vvadd.elf .
+	make -C src/benchmarks
+	mv src/benchmarks/*.elf . 
 
-benchmarks_rom: 
-	make median.v
-	make multiply.v
-	make towers.v
-	make vvadd.v
+demos_elf:
+	make -C src/demos
+	mv src/demos/*.elf .
 
-#demo: demo_elf demo_rom
+isa_rom: SPIKE_OPTS := 
+isa_rom: $(foreach x, $(subst -,_,$(RV64_TESTS)), $(x).v)
+isa_rom: $(foreach x, $(subst -,_,$(RV64_TESTS)), $(x).trace)
 
-#demo_elf: $(foreach x, $(subst -,_,$(BP_DEMOS)),$(x))
-#demo_rom: $(foreach x, $(subst -,_,$(BP_DEMOS)),$(x).v)
+benchmarks_rom: SPIKE_OPTS := --pc=0x80000124 --end-pc=0x800001b0
+benchmarks_rom: $(foreach x, $(subst -,_,$(RV64_BENCHMARKS)), $(x).v)
+benchmarks_rom: $(foreach x, $(subst -,_,$(RV64_BENCHMARKS)), $(x).trace)
 
+demos_rom: $(foreach x, $(subst -,_,$(BP_DEMOS)), $(x).v)
+
+# This hacky code prints the dumped assembly into the test rom, which is nice for debugging
 %.v: %.bin
 	python $(BSG_ROM_GEN) $< bp_boot_rom zero > $*.vtmp \
 	&& awk 'FNR==2{system("$(RISCV_OBJDUMP) $*.elf | sed 's-^-//-'")} 1' $*.vtmp \
 		> $(ROM_DIR)/$*_rom.v  \
 	&& rm $*.vtmp \
-	&& rm $*.elf \
-	&& rm $*.spike \
-	&& rm $*.tr 
 
 %.bin: %.hex
 	python $(HEX2BIN) $< 512 > $@
 
-%.hex: %.trace
+# 32 kB ROM with a 0x80000124 offset
+%.hex:
 	$(RISCV_ELF2HEX) 16 32768 $*.elf 2147483648  > $@
+
+%.trace: 
+	$(RISCV_SIM) -l $(SPIKE_OPTS) $(basename $@).elf 2>$(basename $@).spike
+	python $(SPIKE2TR) $(basename $@)
+	python $(BSG_ROM_GEN) $(basename $@).tr bp_trace_rom zero > $(ROM_DIR)/$(basename $@)_rom.tr.v
+
+clean:
+	rm -f *.elf;   \
+	rm -f *.tr;    \
+	rm -f *.spike;
+
+####### These targets are not maintained at the moment
 
 %_random.riscv:
 	$(RANDOM_GEN) -seed $(SEED) -mem 50 20 -mode m -o $@.S
@@ -72,18 +88,4 @@ rv_random:
   num=`expr $$num + 1`; \
   done
 
-median.trace multiply.trace towers.trace vvadd.trace:
-	$(RISCV_SIM) --pc=0x80000124 -l --end-pc=0x800001b0 $(basename $@).elf 2>$(basename $@).spike
-	python $(SPIKE2TR) $(basename $@)
-	python $(BSG_ROM_GEN) $(basename $@).tr bp_trace_rom zero > $(ROM_DIR)/$(basename $@)_rom.tr.v
-
-%.trace: 
-	$(RISCV_SIM) -l $*.elf 2> $*.spike
-	python $(SPIKE2TR) $*
-	python $(BSG_ROM_GEN) $*.tr bp_trace_rom zero > $(ROM_DIR)/$*_rom.tr.v
-	
-rv64ui_p_%: src/isa/rv64ui/%.S 
-	make -C src/isa/ $@
-	mv src/isa/$@ $@.elf
-	
 ##########################################

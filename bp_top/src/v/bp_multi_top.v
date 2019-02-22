@@ -14,6 +14,9 @@ module bp_multi_top
    , parameter paddr_width_p               = "inv"
    , parameter asid_width_p                = "inv"
    , parameter branch_metadata_fwd_width_p = "inv"
+   , parameter btb_indx_width_p            = "inv"
+   , parameter bht_indx_width_p            = "inv"
+   , parameter ras_addr_width_p            = "inv"
 
    // ME parameters
    , parameter num_cce_p                 = "inv"
@@ -130,23 +133,17 @@ for(core_id = 0; core_id < core_els_p; core_id++)
     bp_fe_top
      #(.vaddr_width_p(vaddr_width_p)
        ,.paddr_width_p(paddr_width_p)
-       ,.btb_indx_width_p(9)
-       ,.bht_indx_width_p(5)
-       ,.ras_addr_width_p(vaddr_width_p)
-       ,.asid_width_p(10)
+       ,.btb_indx_width_p(btb_indx_width_p)
+       ,.bht_indx_width_p(bht_indx_width_p)
+       ,.ras_addr_width_p(ras_addr_width_p)
+       ,.asid_width_p(asid_width_p)
        ,.bp_first_pc_p(bp_pc_entry_point_gp) /* TODO: Not ideal to couple to RISCV-tests */
 
        ,.lce_sets_p(lce_sets_p)
        ,.lce_assoc_p(lce_assoc_p)
-       ,.tag_width_p(10) /* TODO: This parameter should go away */
-       ,.eaddr_width_p(64) /* '' */
-       ,.inst_width_p(32) /* '' */
-       ,.instr_width_p(32) /* '' */
-       ,.data_width_p(64) /* '' */
        ,.num_cce_p(num_cce_p)
        ,.num_lce_p(num_lce_p)
-       ,.block_size_in_bytes_p(8) /* TODO: This is ways not blocks (should be 64) */
-
+       ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p) 
        )
     fe(.clk_i(clk_i)
        ,.reset_i(reset_i)

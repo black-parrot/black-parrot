@@ -7,8 +7,8 @@
  *
  */
 
-`ifndef BP_CCE_MSG_VH
-`define BP_CCE_MSG_VH
+`ifndef BP_COMMON_ME_IF_VH
+`define BP_COMMON_ME_IF_VH
 
 `include "bsg_defines.v"
 

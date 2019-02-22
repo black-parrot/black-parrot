@@ -85,7 +85,8 @@ bp_fe_icache_pc_gen_s       icache_pc_gen;
 //the second level structs instatiations
 bp_fe_fetch_s            pc_gen_fetch;
 bp_fe_exception_s        pc_gen_exception;
-
+bp_fe_instr_scan_s       scan_instr;
+   
    
 // save last pc
 logic [eaddr_width_p-1:0]       icache_miss_pc;
@@ -105,8 +106,9 @@ logic                          misalignment;
 logic                          predict;
 logic                          pc_redirect_after_icache_miss;
 logic                          stalled_pc_redirect;
+logic                          bht_r_v_branch_jalr_inst;
+logic                          branch_inst;
    
-
 //connect pc_gen to the rest of the FE submodules as well as FE top module   
 assign pc_gen_icache_o = pc_gen_icache;
 assign pc_gen_itlb_o   = pc_gen_itlb;
@@ -160,15 +162,23 @@ always_comb begin
   if (icache_miss_i) 
     begin
       next_pc = icache_miss_pc;
-    end 
+    end
   else if (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) 
     begin
       next_pc = fe_pc_gen_cmd.pc;
-    end 
-  else if (prediction_on_p && predict) 
+    end
+  else if (prediction_on_p && predict && icache_pc_gen_v_i && (scan_instr.instr_scan_class == e_rvi_jalr)) 
     begin
       next_pc = btb_target;
-    end 
+    end
+  else if (prediction_on_p && predict && icache_pc_gen_v_i && (scan_instr.instr_scan_class == e_rvi_branch))
+    begin
+      next_pc = icache_pc_gen.addr + scan_instr.imm; 
+    end
+  else if (icache_pc_gen_v_i && (scan_instr.instr_scan_class == e_rvi_jal))
+    begin
+       next_pc = icache_pc_gen.addr + scan_instr.imm;
+    end
   else 
     begin 
       next_pc = pc + 4;
@@ -181,7 +191,7 @@ always_ff @(posedge clk_i)
     if (reset_i) 
       begin
        pc <= bp_first_pc_p;
-      end 
+      end
     else if (stalled_pc_redirect && icache_miss_i) 
       begin
         pc                  <= pc_redirect;
@@ -226,6 +236,18 @@ always_ff @(posedge clk_i)
   end
   
 
+instr_scan 
+  #(.eaddr_width_p(eaddr_width_p)
+    ,.instr_width_p(instr_width_p)
+   ) 
+  instr_scan_1 
+    (.instr_i(icache_pc_gen.instr)
+     ,.scan_o(scan_instr)
+    );
+
+assign bht_r_v_branch_jalr_inst = icache_pc_gen_v_i && (scan_instr.instr_scan_class == e_rvi_jalr
+                                                      ||scan_instr.instr_scan_class == e_rvi_branch);
+   
 //select among 2 available branch predictor implementations
 generate
   if (branch_predictor_p) 
@@ -240,9 +262,9 @@ generate
          (.clk_i(clk_i)
           ,.reset_i(reset_i)
           ,.attaboy_i(fe_pc_gen_cmd.attaboy_valid)
-          ,.r_v_i(~fe_pc_gen_v_i)
+          ,.r_v_i(/*~fe_pc_gen_v_i*/bht_r_v_branch_jalr_inst)
           ,.w_v_i(fe_pc_gen_v_i)
-          ,.pc_queue_i(pc)
+          ,.pc_queue_i(/*pc*/icache_pc_gen.addr)
           ,.pc_cmd_i(fe_pc_gen_cmd.pc)
           ,.pc_fwd_i(icache_pc_gen.addr)
           ,.branch_metadata_fwd_i(fe_pc_gen_cmd.branch_metadata_fwd)
@@ -258,14 +280,14 @@ generate
          ,.btb_indx_width_p(btb_indx_width_p)
          ,.bht_indx_width_p(bht_indx_width_p)
          ,.ras_addr_width_p(ras_addr_width_p)
-         ) 
+        ) 
        branch_prediction_1 
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
          ,.attaboy_i(fe_pc_gen_cmd.attaboy_valid)
-         ,.r_v_i(~fe_pc_gen_v_i)
+         ,.r_v_i(/*~fe_pc_gen_v_i*/branch_inst)
          ,.w_v_i(fe_pc_gen_v_i)
-         ,.pc_queue_i(pc)
+         ,.pc_queue_i(/*pc*/icache_pc_gen.addr)
          ,.pc_cmd_i(fe_pc_gen_cmd.pc)
          ,.pc_fwd_i(icache_pc_gen.addr)
          ,.branch_metadata_fwd_i(fe_pc_gen_cmd.branch_metadata_fwd)

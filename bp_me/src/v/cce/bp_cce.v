@@ -7,13 +7,9 @@
  *
  */
 
-`include "bsg_defines.v"
-`include "bp_common_me_if.vh"
-`include "bp_cce_inst_pkg.v"
-`include "bp_cce_internal_if.vh"
-
 module bp_cce
-  import bp_cce_inst_pkg::*;
+  import bp_common_pkg::*;
+  import bp_cce_pkg::*;
   #(parameter cce_id_p                     = "inv"
     , parameter num_lce_p                  = "inv"
     , parameter num_cce_p                  = "inv"
@@ -39,6 +35,7 @@ module bp_cce
     , localparam way_group_width_lp        = (tag_set_width_lp*num_lce_p)
     , localparam way_group_offset_high_lp  = (lg_block_size_in_bytes_lp+lg_lce_sets_lp)
     , localparam num_way_groups_lp         = (lce_sets_p/num_cce_p)
+    , localparam inst_ram_addr_width_lp    = `BSG_SAFE_CLOG2(num_cce_inst_ram_els_p)
 
     , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                                ,num_lce_p
@@ -162,6 +159,10 @@ module bp_cce
   logic [`bp_cce_inst_width-1:0] pc_inst_o;
   logic pc_inst_v_o;
 
+  // Decode to PC signals
+  logic decode_stall_o;
+  logic [inst_ram_addr_width_lp-1:0] decode_branch_target_o;
+
   // ALU signals
   logic alu_v_o;
   logic alu_branch_res_o;
@@ -229,7 +230,7 @@ module bp_cce
 
   // PC Logic, Instruction RAM
   bp_cce_pc
-    #(.num_cce_inst_ram_els_p(num_cce_inst_ram_els_p)
+    #(.inst_ram_els_p(num_cce_inst_ram_els_p)
       ,.harden_p(harden_p)
       )
     pc_inst_ram
@@ -238,17 +239,8 @@ module bp_cce
 
       ,.alu_branch_res_i(alu_branch_res_o)
 
-      ,.lce_req_v_i(lce_req_v_i)
-      ,.lce_resp_v_i(lce_resp_v_i)
-      ,.lce_data_resp_v_i(lce_data_resp_v_i)
-      ,.mem_resp_v_i(mem_resp_v_i)
-      ,.mem_data_resp_v_i(mem_data_resp_v_i)
-      ,.pending_v_i('0) // TODO: implement in v2
-
-      ,.lce_cmd_ready_i(lce_cmd_ready_i)
-      ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
-      ,.mem_cmd_ready_i(mem_cmd_ready_i)
-      ,.mem_data_cmd_ready_i(mem_data_cmd_ready_i)
+      ,.pc_stall_i(decode_stall_o)
+      ,.pc_branch_target_i(decode_branch_target_o)
 
       ,.inst_o(pc_inst_o)
       ,.inst_v_o(pc_inst_v_o)
@@ -258,10 +250,21 @@ module bp_cce
   // Instruction Decode
   bp_cce_inst_decode
     #(.inst_width_p(`bp_cce_inst_width)
+      ,.inst_addr_width_p(inst_ram_addr_width_lp)
       )
     inst_decode
-     (.inst_i(pc_inst_o)
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+
+      ,.inst_i(pc_inst_o)
       ,.inst_v_i(pc_inst_v_o)
+
+      ,.lce_req_v_i(lce_req_v_i)
+      ,.lce_resp_v_i(lce_resp_v_i)
+      ,.lce_data_resp_v_i(lce_data_resp_v_i)
+      ,.mem_resp_v_i(mem_resp_v_i)
+      ,.mem_data_resp_v_i(mem_data_resp_v_i)
+      ,.pending_v_i('0)
 
       ,.lce_cmd_ready_i(lce_cmd_ready_i)
       ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
@@ -270,6 +273,9 @@ module bp_cce
 
       ,.decoded_inst_o(decoded_inst_o)
       ,.decoded_inst_v_o(decoded_inst_v_o)
+
+      ,.pc_stall_o(decode_stall_o)
+      ,.pc_branch_target_o(decode_branch_target_o)
       );
 
   // assign ready and valid signals from decode to input/output queue ports

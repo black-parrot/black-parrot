@@ -10,10 +10,10 @@
 
 // TODO: We have these includes outside of the package so that the build isn't broken while we 
 //         migrate to exclusive package imports. Eventually, remove!
-`include "bsg_defines.v"
-`include "bp_common_cfg_defines.vh"
-`include "bp_common_fe_be_if.vh"
-`include "bp_common_me_if.vh"
+//`include "bsg_defines.v"
+//`include "bp_common_cfg_defines.vh"
+//`include "bp_common_fe_be_if.vh"
+//`include "bp_common_me_if.vh"
 
 package bp_common_pkg;
 
@@ -37,6 +37,10 @@ package bp_common_pkg;
   localparam bp_paddr_width_gp = 22;
   localparam bp_instr_width_gp = 32;
 
+  parameter bp_sv39_vaddr_width_gp = 39;
+  parameter bp_sv39_paddr_width_gp = 56;
+  parameter bp_page_size_in_bytes_gp = 4096;
+  parameter bp_page_offset_width_gp = `BSG_SAFE_CLOG2(bp_page_size_in_bytes_gp);
+
+
 endpackage : bp_common_pkg
-
-

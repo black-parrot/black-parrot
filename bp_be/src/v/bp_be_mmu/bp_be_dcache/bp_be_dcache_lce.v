@@ -41,10 +41,9 @@
  *    raises tr_received_li signal to lce_req module.
  */
 
-`include "bp_be_dcache_lce_pkt.vh"
-
 module bp_be_dcache_lce
-  import bp_be_dcache_lce_pkg::*;
+  import bp_common_pkg::*;
+  import bp_be_dcache_pkg::*;
   #(parameter data_width_p="inv"
     , parameter paddr_width_p="inv"
     , parameter lce_data_width_p="inv"
@@ -61,15 +60,14 @@ module bp_be_dcache_lce
     , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
     , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
     , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
-    , localparam page_offset_width_lp=(block_offset_width_lp+index_width_lp)
-    , localparam ptag_width_lp=(paddr_width_p-page_offset_width_lp)
+    , localparam tag_width_lp=(paddr_width_p-index_width_lp-block_offset_width_lp)
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
     , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
   
     , localparam dcache_lce_data_mem_pkt_width_lp=
       `bp_be_dcache_lce_data_mem_pkt_width(sets_p, ways_p, lce_data_width_p)
     , localparam dcache_lce_tag_mem_pkt_width_lp=
-      `bp_be_dcache_lce_tag_mem_pkt_width(sets_p, ways_p, ptag_width_lp)
+      `bp_be_dcache_lce_tag_mem_pkt_width(sets_p, ways_p, tag_width_lp)
     , localparam dcache_lce_stat_mem_pkt_width_lp=
       `bp_be_dcache_lce_stat_mem_pkt_width(sets_p, ways_p)
     
@@ -159,7 +157,7 @@ module bp_be_dcache_lce
   `declare_bp_lce_lce_tr_resp_s(num_lce_p, paddr_width_p, lce_data_width_p, ways_p);
 
   `declare_bp_be_dcache_lce_data_mem_pkt_s(sets_p, ways_p, lce_data_width_p);
-  `declare_bp_be_dcache_lce_tag_mem_pkt_s(sets_p, ways_p, ptag_width_lp);
+  `declare_bp_be_dcache_lce_tag_mem_pkt_s(sets_p, ways_p, tag_width_lp);
   `declare_bp_be_dcache_lce_stat_mem_pkt_s(sets_p, ways_p);
  
   bp_lce_cce_req_s lce_req;
