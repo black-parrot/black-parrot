@@ -10,14 +10,14 @@ echo "################# BP_ME REGRESSION ###################"
 for ROM in $ISA_ROMS ; do 
   echo -n "$ROM : "
   make -C $BP_ME_DIR/syn TEST_ROM=$ROM.v TRACE_ROM=$ROM.tr.v bp_me_trace_demo.run.v \
-    | grep "PASS" > /dev/null && echo "PASS" || echo "FAIL"
+    | grep "PASS" || echo "FAIL"
 done
 
 echo "################# BP_ME BENCH ###################"
 for ROM in $BENCH_ROMS ; do 
   echo -n "$ROM : "
   make -C $BP_ME_DIR/syn TEST_ROM=$ROM.v TRACE_ROM=$ROM.tr.v bp_me_trace_demo.run.v \
-    | grep "PASS" > /dev/null && echo "PASS" || echo "FAIL"
+    | grep "PASS" || echo "FAIL"
 done
 
 echo "################# BP_ME STRESS ###################"
@@ -25,5 +25,5 @@ echo "################# BP_ME STRESS ###################"
     | grep "mBPC"                                         \
   && echo -n "Testing TSO: "                              \
   && make -C $BP_ME_DIR/test/tb/bp_me_random_demo axe     \
-    | grep "OK" > /dev/null && echo "PASS" || echo "FAIL"
+    | grep "OK" || echo "FAIL"
 
