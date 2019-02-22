@@ -13,7 +13,7 @@ for ROM in $ISA_ROMS ; do
     | grep "PASS" > /dev/null && echo "PASS" || echo "FAIL"
 done
 
-echo "################# BP_FE REGRESSION ###################"
+echo "################# BP_FE BENCH ###################"
 for ROM in $BENCH_ROMS ; do 
   echo -n "$ROM : "
   make -C $BP_FE_DIR/syn TEST_ROM=$ROM.v TRACE_ROM=$ROM.tr.v bp_fe_trace_demo.run.v \

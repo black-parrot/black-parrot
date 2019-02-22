@@ -157,9 +157,47 @@ module testbench();
     end
   end
 
-  initial begin
-    wait(&dcache_done);
-    $finish;
-  end
+  logic booted;
+
+  localparam max_clock_cnt_lp    = 2**30-1;
+  localparam lg_max_clock_cnt_lp = `BSG_SAFE_CLOG2(max_clock_cnt_lp);
+  logic [lg_max_clock_cnt_lp-1:0] clock_cnt;
+
+  bsg_counter_clear_up
+   #(.max_val_p(max_clock_cnt_lp)
+     ,.init_val_p(0)
+     )
+   clock_counter
+    (.clk_i(clk)
+     ,.reset_i(reset)
+
+     ,.clear_i(~booted)
+     ,.up_i(1'b1)
+
+     ,.count_o(clock_cnt)
+     );
+
+  always_ff @(posedge clk)
+    begin
+      if (reset)
+          booted <= 1'b0;
+      else
+        begin
+          booted <= booted | (|dcache_pkt_ready_lo); // Booted when dcaches are ready
+        end
+    end
+
+  always_ff @(posedge clk)
+    begin
+      if (&dcache_done)
+        begin
+        $display("Bytes: %d Clocks: %d mBPC: %d "
+                 , instr_count*64
+                 , clock_cnt
+                 , (instr_count*64*1000) / clock_cnt
+                 );
+        $finish(0);
+        end
+    end
 
 endmodule
