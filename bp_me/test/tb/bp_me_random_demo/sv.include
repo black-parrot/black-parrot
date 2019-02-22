@@ -14,6 +14,7 @@ $BSG_IP_CORES_DIR/bsg_misc/bsg_priority_encode_one_hot_out.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_encode_one_hot.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_scan.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_circular_ptr.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_counter_clear_up.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router_buffered.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router.v
 $BSG_IP_CORES_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v

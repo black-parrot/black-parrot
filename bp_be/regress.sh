@@ -10,13 +10,13 @@ echo "################# BP_BE REGRESSION ###################"
 for ROM in $ISA_ROMS ; do 
   echo -n "$ROM : "
   make -C $BP_BE_DIR/syn TEST_ROM=$ROM.v TRACE_ROM=$ROM.tr.v bp_be_trace_demo.run.v \
-    | grep "PASS" > /dev/null && echo "PASS" || echo "FAIL"
+    | grep "PASS" || echo "FAIL"
 done
 
-echo "################# BP_BE REGRESSION ###################"
+echo "################# BP_BE BENCH ###################"
 for ROM in $BENCH_ROMS ; do 
   echo -n "$ROM : "
   make -C $BP_BE_DIR/syn TEST_ROM=$ROM.v TRACE_ROM=$ROM.tr.v bp_be_trace_demo.run.v \
-    | grep "PASS" > /dev/null && echo "PASS" || echo "FAIL"
+    | grep "PASS" || echo "FAIL"
 done
 

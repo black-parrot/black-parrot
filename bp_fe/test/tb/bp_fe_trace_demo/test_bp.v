@@ -260,7 +260,7 @@ bsg_fsb_node_trace_replay
  #(.ring_width_p(trace_ring_width_p)
    ,.rom_addr_width_p(trace_rom_addr_width_p)
    )
- be_trace_replay
+ fe_trace_replay
   (.clk_i(clk)
    ,.reset_i(reset)
    ,.en_i(1'b1)
@@ -347,14 +347,63 @@ bp_boot_rom
    ,.data_o(mrom_data)
    );
 
+logic booted;
+
+localparam max_instr_cnt_lp    = 2**30-1;
+localparam lg_max_instr_cnt_lp = `BSG_SAFE_CLOG2(max_instr_cnt_lp);
+logic [lg_max_instr_cnt_lp-1:0] instr_cnt;
+
+  bsg_counter_clear_up
+   #(.max_val_p(max_instr_cnt_lp)
+     ,.init_val_p(0)
+     )
+   instr_counter
+    (.clk_i(clk)
+     ,.reset_i(reset)
+
+     ,.clear_i(1'b0)
+     ,.up_i(tr_v_li)
+
+     ,.count_o(instr_cnt)
+     );
+
+localparam max_clock_cnt_lp    = 2**30-1;
+localparam lg_max_clock_cnt_lp = `BSG_SAFE_CLOG2(max_clock_cnt_lp);
+logic [lg_max_clock_cnt_lp-1:0] clock_cnt;
+
+  bsg_counter_clear_up
+   #(.max_val_p(max_clock_cnt_lp)
+     ,.init_val_p(0)
+     )
+   clock_counter
+    (.clk_i(clk)
+     ,.reset_i(reset)
+
+     ,.clear_i(~booted)
+     ,.up_i(1'b1)
+
+     ,.count_o(clock_cnt)
+     );
+
+always_ff @(posedge clk)
+  begin
+    if (reset)
+        booted <= 1'b0;
+    else
+      begin
+        booted <= booted | fe_fe_queue_v; // Booted when we fetch the first instruction
+      end
+  end
+
 always_ff @(posedge clk)
   begin
     if (test_done)
       begin
-        $display("Test PASSed!");
+        $display("Test PASSed! Clocks: %d Instr: %d mIPC: %d", clock_cnt, instr_cnt, (1000*instr_cnt) / clock_cnt);
         $finish(0);
       end
   end
+
 
 endmodule : test_bp
 

@@ -24,14 +24,15 @@ if [ "$1" = "init" ]; then
 
   # Make external tools (uncomment whichever individual tool you would like to build)
   #make -C $CWD/external all
-  #make -C $CWD/external gnu
-  make -C $CWD/external fesvr
-  make -C $CWD/external spike
-  make -C $CWD/external axe
+  make -C $CWD/external gnu   -j 25
+  make -C $CWD/external fesvr -j 25
+  make -C $CWD/external spike -j 25
+  make -C $CWD/external axe   -j 25
 
   # Make test roms
   make -C $BP_FE_DIR/test/rom all
   make -C $BP_BE_DIR/test/rom all
+  make -C $BP_ME_DIR/test/rom all
   make -C $BP_TOP_DIR/test/rom all
 fi
 
