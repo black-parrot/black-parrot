@@ -1,8 +1,15 @@
 ucli.key
 simv*
 *simout.txt
+*buildout.txt
 *stack.info*
 DVEfiles
 inter.vpd*
 *.vpd
 csrc
+*_rom.tr.v
+*_rom.v
+*.elf
+*.spike
+*.tr
+

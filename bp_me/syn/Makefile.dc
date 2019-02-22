@@ -1,6 +1,6 @@
 ## Setup CAD tools
 # TODO: Change to your export own DC license variables
-include $(CADENV_PATH)/cadenv.mk
+include $(BSG_CADENV_DIR)/cadenv.mk
 
 # Top-level module
 DESIGN_NAME :=bp_me_top
