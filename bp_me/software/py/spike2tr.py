@@ -10,7 +10,7 @@ outfile = open(name + ".tr", "w")
 
 print("# Trace format: wait (4bit)_padding(124 bit)\n")
 print("#               send (4bit)_size(4 bit)_address(56 bit)_data(64 bit)\n")
-print("#               recv (4bit)_size(4 bit)_address(56 bit)_data(64 bit)\n")
+print("#               recv (4bit)_size(4 bit)_padding(56 bit)_data(64 bit)\n")
 
 msg = []
 
@@ -35,6 +35,7 @@ for i in xrange(len(lines)-2):
       break
     if(line[0] == "core" and line[2][:2] == "0x"):
       pc = line[2]
+      instr = line[3][1:-1]
 
       if skip_unbooted and boot_pc != pc:
         continue
@@ -42,6 +43,10 @@ for i in xrange(len(lines)-2):
       skip_unbooted = False
 
       op_string = lines[i+1].rstrip("\n\r").split()[0]
+
+      # Send a fetch instruction
+      tg.send_load(0, 15, int(pc, 16))
+      tg.recv_data(int(instr, 16))
 
       if op_string not in ["lb", "lbu", "lh", "lhu", "lw", "lwu", "ld", "sb", "sh", "sw", "sd"]:
         tg.nop()

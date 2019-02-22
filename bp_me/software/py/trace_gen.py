@@ -24,6 +24,8 @@ class TraceGen:
     packet = "0001_"
     if (size == 8):
       packet += "0111_"
+    elif (size == 15):
+      packet += "1111_"
     else:
       if (signed):
         if (size == 1):
