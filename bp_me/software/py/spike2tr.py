@@ -44,6 +44,7 @@ for i in xrange(len(lines)-2):
       op_string = lines[i+1].rstrip("\n\r").split()[0]
 
       if op_string not in ["lb", "lbu", "lh", "lhu", "lw", "lwu", "ld", "sb", "sh", "sw", "sd"]:
+        tg.nop()
         continue
 
       addr = int(lines[i+5].rstrip("\n\r").split()[1], 16)
@@ -111,8 +112,6 @@ for i in xrange(len(lines)-2):
 
         tg.send_store(size, addr, data)
         tg.recv_data(0)
-      else:
-        tg.nop()
 
     
 tg.test_done()

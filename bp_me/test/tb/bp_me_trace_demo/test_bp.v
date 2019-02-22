@@ -30,6 +30,7 @@ module test_bp
    // Test program related parameters
    , parameter boot_rom_els_p              = "inv"
    , parameter boot_rom_width_p            = "inv"
+   , localparam lg_boot_rom_els_lp         = `BSG_SAFE_CLOG2(boot_rom_els_p)
 
    // From RISC-V specifications
    , localparam data_width_lp = rv64_dword_width_gp
@@ -165,10 +166,14 @@ logic tlb_miss_lo;
 
 // Rolly FIFO connection
 bp_be_dcache_pkt_s rolly_dcache_pkt_li;
-logic rolly_v_lo;
+logic rolly_v_lo, rolly_ready_lo;
 
 logic [ptag_width_lp-1:0] rolly_paddr_li;
 logic [ptag_width_lp-1:0] rolly_paddr_lo;
+
+// Boot ROM connection
+logic [lg_boot_rom_els_lp-1:0] boot_rom_addr_li;
+logic [boot_rom_width_p-1:0]   boot_rom_data_lo;
 
 // Memory End
 bp_me_top 
@@ -215,8 +220,17 @@ bp_me_top
    ,.lce_tr_resp_v_o()
    ,.lce_tr_resp_ready_i(1'b0)
 
-   ,.boot_rom_addr_o()
-   ,.boot_rom_data_i('0)
+   ,.boot_rom_addr_o(boot_rom_addr_li)
+   ,.boot_rom_data_i(boot_rom_data_lo)
+   );
+
+bp_boot_rom
+ #(.addr_width_p(lg_boot_rom_els_lp)
+   ,.width_p(boot_rom_width_p)
+   )
+ mrom
+  (.addr_i(boot_rom_addr_li)
+   ,.data_o(boot_rom_data_lo)
    );
 
 bsg_fsb_node_trace_replay 
@@ -316,7 +330,7 @@ bp_be_dcache
 
 
 always_comb begin
-  tr_yumi_li = tr_v_lo & dcache_ready_lo;
+  tr_yumi_li = tr_v_lo & rolly_ready_lo;
   rolly_dcache_pkt_li.opcode = bp_be_dcache_opcode_e'(tr_data_lo[data_width_lp+paddr_width_p+:4]);
   rolly_dcache_pkt_li.page_offset = tr_data_lo[data_width_lp+:page_offset_width_lp];
   rolly_dcache_pkt_li.data        = tr_data_lo[0+:data_width_lp];

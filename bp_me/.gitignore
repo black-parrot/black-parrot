@@ -4,4 +4,11 @@
 *.elf
 *.spike
 *.tr
+run_dc
+DVEfiles
+csrc
+*_simout.txt
+*_buildout.txt
+simv*
+*.vpd
 
