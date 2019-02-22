@@ -15,20 +15,22 @@ export BP_EXTERNAL_DIR=$CWD/external
 export VCS=${VCS:-vcs}
 export VERILATOR=${VERILATOR:-verilator}
 
-git submodule update --init --recursive
-
-# Make external tools (uncomment whichever individual tool you would like to build)
-#make -C $CWD/external all
-#make -C $CWD/external gnu
-#make -C $CWD/external fesvr
-#make -C $CWD/external spike
-#make -C $CWD/external axe
-
 # Add external tools to path
 export PATH=$CWD/external/bin:$PATH
 
-# Make test roms
-make -C $BP_FE_DIR/test/rom all
-make -C $BP_BE_DIR/test/rom all
-make -C $BP_TOP_DIR/test/rom all
+if [ "$1" = "init" ]; then
+  git submodule update --init --recursive
+
+  # Make external tools (uncomment whichever individual tool you would like to build)
+  #make -C $CWD/external all
+  #make -C $CWD/external gnu
+  make -C $CWD/external fesvr
+  make -C $CWD/external spike
+  make -C $CWD/external axe
+
+  # Make test roms
+  make -C $BP_FE_DIR/test/rom all
+  make -C $BP_BE_DIR/test/rom all
+  make -C $BP_TOP_DIR/test/rom all
+fi
 
