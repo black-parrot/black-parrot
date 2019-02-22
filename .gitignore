@@ -3,3 +3,5 @@ external/*
 *.swp
 *.pyc
 *.log
+setup_env.sh
+
