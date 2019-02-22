@@ -24,7 +24,7 @@ module testbench();
   localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p);
   localparam data_mask_width_lp=(data_width_p>>3);
   localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp);
-  localparam page_offset_width_lp=word_offset_width_lp+index_width_lp+byte_offset_width_lp;
+  localparam page_offset_width_lp=bp_page_offset_width_gp;
   localparam ptag_width_lp=paddr_width_p-page_offset_width_lp;
 
   localparam lce_data_width_lp=ways_p*data_width_p;
@@ -80,7 +80,6 @@ module testbench();
     ,.paddr_width_p(paddr_width_p)
     ,.num_lce_p(num_lce_p)
     ,.num_cce_p(num_cce_p)
-    ,.num_mem_p(num_mem_p)
     ,.mem_els_p(mem_els_p)
     ,.boot_rom_els_p(mem_els_p)
   ) dcache_cce_mem (
@@ -90,7 +89,7 @@ module testbench();
     ,.dcache_pkt_i(dcache_pkt)
     ,.dcache_pkt_v_i(dcache_pkt_v_li)
     ,.dcache_pkt_ready_o(dcache_pkt_ready_lo)
-    ,.paddr_i(paddr_li)
+    ,.ptag_i(paddr_li)
 
     ,.v_o(dcache_v_lo)
     ,.data_o(dcache_data_lo)

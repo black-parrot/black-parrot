@@ -11,4 +11,5 @@ csrc
 *_buildout.txt
 simv*
 *.vpd
+ucli.key
 
