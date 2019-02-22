@@ -1,189 +1,45 @@
 ## Setup CAD tools
-include $(CADENV_PATH)/cadenv.mk
+# TODO: Change to your export own VCS license variables
+include $(BSG_CADENV_DIR)/cadenv.mk
 
 ## Tool specific options
-VCS_OPTIONS += +notimingcheck
-VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
-VCS_OPTIONS += -timescale=1ps/1ps
-VCS_OPTIONS += -full64
-VCS_OPTIONS += +v2k
-VCS_OPTIONS += +vc
-VCS_OPTIONS += -sverilog
-VCS_OPTIONS += -debug_pp
-VCS_OPTIONS += +vcs+lic+wait
-VCS_OPTIONS += +multisource_int_delays
-VCS_OPTIONS += +neg_tchk
-VCS_OPTIONS += +libext+.v+.vlib+.vh
-VCS_OPTIONS += +vcs+finish+15000000ps
+VCS_OPTIONS += +vcs+finish+5000000ps    # Change this to run longer / shorter
+VCS_OPTIONS += -timescale=1ps/1ps        # Set timescale
+VCS_OPTIONS += -full64 +vcs+lic+wait     # Run 64-bit and wait for license
+VCS_OPTIONS += +v2k -sverilog -debug_pp  # Enable
+VCS_OPTIONS += +libext+.v+.vlib+.vh      # Find library files with these extensions
+VCS_OPTIONS += +vcs+vcdpluson            # Enable vcd dump
 
-## Find sources
-VCS_OPTIONS += +incdir+$(BP_COMMON_DIR)
-VCS_OPTIONS += +incdir+$(BP_BE_DIR)/src/include
-VCS_OPTIONS += +incdir+$(TB_PATH)
-VCS_OPTIONS += +incdir+$(BP_BE_DIR)/src/include/bp_be_dcache
-VCS_OPTIONS += +incdir+$(BP_BE_DIR)/test/bp_be_dcache/v
-VCS_OPTIONS += +incdir+$(BP_ME_DIR)/src/include/v
-VCS_OPTIONS += +incdir+$(BP_FE_DIR)/src/include
-VCS_OPTIONS += +incdir+$(BSG_IP_CORES_DIR)/bsg_dataflow
-VCS_OPTIONS += +incdir+$(BSG_IP_CORES_DIR)/bsg_mem
-VCS_OPTIONS += +incdir+$(BSG_IP_CORES_DIR)/bsg_misc
-VCS_OPTIONS += +incdir+$(BSG_IP_CORES_DIR)/bsg_test
-VCS_OPTIONS += +incdir+$(BSG_IP_CORES_DIR)/bsg_noc
+LINT_OPTIONS +=+lint=all,noSVA-UA,noVCDE,noSVA-NSVU
 
-LINT_OPTIONS +=+lint=all,noSVA-UA,noVCDE,noSV-LCM-PPWI,noSVA-NSVU,noVNGS
+TEST_ROM  ?= bp_example_rom.v
+TRACE_ROM ?= bp_example_rom.tr.v
 
-# Enable GUI (DVE) mode
-# This is to run interative simulation/debugging in GUI mode.
-ifeq ($(VCS_GUI),1)
-  VCS_OPTIONS += -gui
-endif
-
-TRACE_ROM ?= rv64ui_p_add_trace_rom.v
-TEST_ROM  ?= bp_be_example_rom.v
-LOAD_ROM  ?= bp_be_boot_rom.v
-
-TEST_ROM_C  = $(notdir $(TEST_ROM))
-LOAD_ROM_C  = $(notdir $(LOAD_ROM))
-
-TEST_SOURCE += 	                                                      \
-																																		  \
-		    $(BP_FE_DIR)/src/include/bp_fe_pc_gen_pkg.vh									\
-		    $(BP_FE_DIR)/src/include/bp_fe_itlb_pkg.vh									  \
-			  $(BP_FE_DIR)/src/include/bp_fe_lce.vh											    \
-			  $(BP_FE_DIR)/src/include/bp_fe_pc_gen.vh										  \
-			  $(BP_FE_DIR)/src/include/bp_fe_icache.vh										  \
-			  $(BP_FE_DIR)/src/v/bp_fe_top.v										            \
-			  $(BP_FE_DIR)/src/v/bp_fe_itlb.v									              \
-			  $(BP_FE_DIR)/src/v/bp_fe_branch_predictor.v								    \
-			  $(BP_FE_DIR)/src/v/bp_fe_pc_gen.v								              \
-			  $(BP_FE_DIR)/src/v/bp_fe_icache.v								              \
-			  $(BP_FE_DIR)/src/v/bp_fe_lce.v								                \
-			  $(BP_FE_DIR)/src/v/bp_fe_cce_lce_cmd.v							          \
-			  $(BP_FE_DIR)/src/v/bp_fe_cce_lce_data_cmd.v						        \
-			  $(BP_FE_DIR)/src/v/bp_fe_lce_cce_req.v   						          \
-			  $(BP_FE_DIR)/src/v/bp_fe_lce_lce_tr_resp_in.v   				      \
-			  $(BP_FE_DIR)/src/v/bp_fe_bht.v										            \
-			  $(BP_FE_DIR)/src/v/bp_fe_btb.v										            \
-			  $(BP_FE_DIR)/src/v/bp_fe_instr_scan.v									        \
-   																																		\
-			  $(BP_ME_DIR)/src/include/v/bp_cce_inst_pkg.v				          \
-			  $(BSG_IP_CORES_DIR)/bsg_noc/bsg_noc_pkg.v											\
-			  $(BP_ME_DIR)/test/common/bp_me_top.v											    \
-			  $(BP_ME_DIR)/src/v/cce/bp_cce_top.v						                \
-			  $(BP_ME_DIR)/src/v/cce/bp_cce_alu.v						                \
-			  $(BP_ME_DIR)/src/v/cce/bp_cce_dir.v						                \
-			  $(BP_ME_DIR)/src/v/cce/bp_cce_gad.v						                \
-			  $(BP_ME_DIR)/src/v/cce/bp_cce_inst_decode.v  			            \
-			  $(BP_ME_DIR)/src/v/cce/bp_cce_pc.v						                \
-			  $(BP_ME_DIR)/src/v/cce/bp_cce_reg.v						                \
-			  $(BP_ME_DIR)/src/v/cce/bp_cce.v						                    \
-			  $(BP_ME_DIR)/src/v/network/bp_coherence_network.v             \
-			  $(BP_ME_DIR)/src/v/network/bp_coherence_network_channel.v     \
-			  $(BSG_IP_CORES_DIR)/bsg_noc/bsg_mesh_router_buffered.v				\
-			  $(BSG_IP_CORES_DIR)/bsg_noc/bsg_mesh_router.v       					\
-			  $(BSG_IP_CORES_DIR)/bsg_misc/bsg_round_robin_arb.v						\
-																																			\
-			  $(BSG_IP_CORES_DIR)/bsg_test/bsg_nonsynth_clock_gen.v         \
-			  $(BSG_IP_CORES_DIR)/bsg_test/bsg_nonsynth_reset_gen.v         \
-																																			\
-			  $(BP_BE_DIR)/test/common/bp_top_wrapper.v											\
-			  $(BP_BE_DIR)/test/common/bp_multi_wrapper.v										\
-			  $(BP_BE_DIR)/test/common/bp_be_nonsynth_mock_top_wrapper.v    \
-			  $(BP_BE_DIR)/test/common/bp_be_nonsynth_mock_fe.v		          \
-			  $(BP_BE_DIR)/test/common/bp_be_nonsynth_mock_mmu.v		        \
-			  $(BP_BE_DIR)/test/common/bp_be_nonsynth_tracer.v			        \
-																	                           					\
-			  $(BP_BE_DIR)/test/bp_be_dcache/v/mock_tlb.v			              \
-																	                           					\
-			  $(BP_ME_DIR)/test/common/bp_cce_test.v												\
-			  $(BP_ME_DIR)/test/common/bp_mem.v	                            \
-																                                      \
-			  $(BP_TOP_DIR)/test/rom/v/$(LOAD_ROM) 													\
-			
-
-ISA_TESTS = rv64ui_p_add_rom.v \
-						rv64ui_p_addi_rom.v \
-						rv64ui_p_addiw_rom.v \
-						rv64ui_p_addw_rom.v \
-						rv64ui_p_and_rom.v \
-						rv64ui_p_andi_rom.v \
-						rv64ui_p_auipc_rom.v \
-						rv64ui_p_beq_rom.v \
-						rv64ui_p_bge_rom.v \
-						rv64ui_p_bgeu_rom.v \
-						rv64ui_p_blt_rom.v \
-						rv64ui_p_bltu_rom.v \
-						rv64ui_p_bne_rom.v \
-						rv64ui_p_j_rom.v \
-						rv64ui_p_jal_rom.v \
-						rv64ui_p_jalr_rom.v \
-						rv64ui_p_lb_rom.v \
-						rv64ui_p_lbu_rom.v \
-						rv64ui_p_ld_rom.v \
-						rv64ui_p_lh_rom.v \
-						rv64ui_p_lhu_rom.v \
-						rv64ui_p_lui_rom.v \
-						rv64ui_p_lw_rom.v \
-						rv64ui_p_lwu_rom.v \
-						rv64ui_p_or_rom.v \
-						rv64ui_p_ori_rom.v \
-						rv64ui_p_sb_rom.v \
-						rv64ui_p_sd_rom.v \
-						rv64ui_p_sh_rom.v \
-						rv64ui_p_sll_rom.v \
-						rv64ui_p_slli_rom.v \
-						rv64ui_p_slliw_rom.v \
-						rv64ui_p_sllw_rom.v \
-						rv64ui_p_slt_rom.v \
-						rv64ui_p_slti_rom.v \
-						rv64ui_p_sltiu_rom.v \
-						rv64ui_p_sltu_rom.v \
-						rv64ui_p_sra_rom.v \
-						rv64ui_p_srai_rom.v \
-						rv64ui_p_sraiw_rom.v \
-						rv64ui_p_sraw_rom.v \
-						rv64ui_p_srl_rom.v \
-						rv64ui_p_srli_rom.v \
-						rv64ui_p_srliw_rom.v \
-						rv64ui_p_srlw_rom.v \
-						rv64ui_p_sub_rom.v \
-						rv64ui_p_subw_rom.v \
-						rv64ui_p_sw_rom.v \
-						rv64ui_p_xor_rom.v \
-						rv64ui_p_xori_rom.v
+# Export variables to flists
+.EXPORT_ALL_VARIABLES:
 
 lint.v: $(HDL_SOURCE)
-	$(eval include $(TB_PATH)/bp_single_demo/Makefile.frag)			         	    \
-	$(VCS) $(VCS_OPTIONS) $(LINT_OPTIONS) -top bp_multi_wrapper $(HDL_SOURCE) $(TEST_SOURCE) $(HDL_PARAMS)
+	$(eval include $(TB_PATH)/bp_single_demo/Makefile.frag) \
+	$(VCS) $(VCS_OPTIONS) $(LINT_OPTIONS) -top bp_multi_top -f flist.vcs $(HDL_PARAMS)
 
-load_rom.v: $(HDL_SOURCE)
-	if [ "$(TEST_ROM_C)" != "$(LOAD_ROM_C)" ]; then						    \
-		ln -sf $(BP_TOP_DIR)/test/rom/v/$(TEST_ROM_C) $(BP_TOP_DIR)/test/rom/v/$(LOAD_ROM_C);	\
-	fi;
-
-%.build.v: $(HDL_SOURCE) load_rom.v
-	$(eval include $(TB_PATH)/$*/Makefile.frag)			         	    \
-	$(VCS) $(VCS_OPTIONS) -o $(TB_PATH)/$*/simv -top test_bp               \
-		$(HDL_SOURCE) $(HDL_PARAMS) $(TEST_SOURCE) $(TB_PATH)/$*/test_bp.v
+%.build.v: 
+	$(eval include $(TB_PATH)/$*/Makefile.frag) \
+	$(VCS) $(VCS_OPTIONS) -o $(TB_PATH)/$*/simv -top test_bp \
+    -f flist.vcs -f $(TB_PATH)/$*/flist.vcs $(HDL_PARAMS) $(TB_PATH)/$*/test_bp.v  \
+		| tee $(TB_PATH)/$*/$(basename $(notdir $(TEST_ROM)))_buildout.txt
 
 %.run.v: %.build.v
 	$(eval include $(TB_PATH)/$*/Makefile.frag)
-	cd $(TB_PATH)/$* && 				     			      \
-	$(TB_PATH)/$*/simv $(SIM_OPTIONS)                        \
-		> $(TB_PATH)/$*/$(basename $(TEST_ROM_C))_simout.txt
-	
-%.regress.v: %.build.v
-	for rom in $(ISA_TESTS) ; do \
-		$(MAKE) TEST_ROM=$$rom $*.run.v ; \
-  done ; \
-	egrep "PAS|FAL" $(TB_PATH)/$*/*_simout.txt
+	$(TB_PATH)/$*/simv \
+	  | tee $(TB_PATH)/$*/$(basename $(notdir $(TEST_ROM)))_simout.txt
 
 %.clean.v:
-	cd $(TB_PATH)/$* 		;\
-		rm -rf DVEfiles	    ;\
-		rm -rf simv*        ;\
-		rm -rf *.old        ;\
-		rm -rf *.tcl        ;\
-		rm -rf inter.vpd    ;\
-		rm -rf ucli.key    
+		rm -rf $(TB_PATH)/$*/DVEfiles
+		rm -rf $(TB_PATH)/$*/simv*
+		rm -rf $(TB_PATH)/$*/*.old
+		rm -rf $(TB_PATH)/$*/*.tcl
+		rm -rf $(TB_PATH)/$*/inter.vpd
+		rm -rf $(TB_PATH)/$*/ucli.key
 
+dve:
+	dve -full64 -vpd vcdplus.vpd &

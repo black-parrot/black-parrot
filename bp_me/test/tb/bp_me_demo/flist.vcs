@@ -1,0 +1,8 @@
+# bsg_ip_cores files
+$BSG_IP_CORES_PATH/bsg_test/bsg_nonsynth_reset_gen.v
+$BSG_IP_CORES_PATH/bsg_test/bsg_nonsynth_clock_gen.v
+# be files
+# me files
+# top files
+# We borrow the test rom from top at the moment, should have a copy in ME
+$BP_TOP_PATH/test/rom/v/$TEST_ROM

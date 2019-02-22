@@ -41,26 +41,26 @@ module bp_be_int_alu
    , localparam shamtw_width_lp   = rv64_shamtw_width_gp
    )
   (// Source data
-   input logic[reg_data_width_lp-1:0]    src1_i
-   , input logic[reg_data_width_lp-1:0]  src2_i
+   input [reg_data_width_lp-1:0]    src1_i
+   , input [reg_data_width_lp-1:0]  src2_i
 
    // Arithmetic operation metadata
-   , input logic[fu_op_width_lp-1:0]     op_i
-   , input logic                         opw_v_i
+   , input [fu_op_width_lp-1:0]     op_i
+   , input                          opw_v_i
 
    // Result
-   , output logic[reg_data_width_lp-1:0] result_o
+   , output [reg_data_width_lp-1:0] result_o
    );
 
 // Intermediate connections
 // These are signed because we're doing math on them, most of which is signed
-logic signed[reg_data_width_lp-1:0] src1_sgn   , src2_sgn;
-logic signed[word_width_lp-1:0]     src1_w_sgn , src2_w_sgn;
-logic signed[reg_data_width_lp-1:0] result_sgn , result_toggled;
-logic signed[word_width_lp-1:0]     resultw_sgn;
-logic       [shamt_width_lp-1:0]    shamt;
-logic       [shamtw_width_lp-1:0]   shamtw;
-
+logic signed [reg_data_width_lp-1:0] src1_sgn   , src2_sgn;
+logic signed [word_width_lp-1:0]     src1_w_sgn , src2_w_sgn;
+logic signed [reg_data_width_lp-1:0] result_sgn ;
+logic signed [word_width_lp-1:0]     resultw_sgn;
+logic        [shamt_width_lp-1:0]    shamt;
+logic        [shamtw_width_lp-1:0]   shamtw;
+ 
 // Casting 
 assign src1_sgn   = $signed(src1_i);
 assign src2_sgn   = $signed(src2_i);
@@ -71,43 +71,45 @@ assign shamt      = src2_i[0+:shamt_width_lp];
 assign shamtw     = src2_i[0+:shamtw_width_lp];
 
 // The actual computation
-always_comb begin
-  // These two case statements are mutually exclusive, but we separate them because they 
-  //   assign to different results
-  // Calculate result for 32-bit operations
-  unique case(op_i)
-    e_int_op_add : resultw_sgn = src1_w_sgn +   src2_w_sgn;
-    e_int_op_sub : resultw_sgn = src1_w_sgn -   src2_w_sgn;
-    e_int_op_sll : resultw_sgn = src1_w_sgn <<  shamtw;
-    e_int_op_srl : resultw_sgn = src1_w_sgn >>  shamtw;
-    e_int_op_sra : resultw_sgn = src1_w_sgn >>> shamtw;
-    default      : resultw_sgn = 'X;
-  endcase
+always_comb 
+  begin
+    // These two case statements are mutually exclusive, but we separate them because they 
+    //   assign to different results
+    // Calculate result for 32-bit operations
+    unique case (op_i)
+      e_int_op_add : resultw_sgn = src1_w_sgn +   src2_w_sgn;
+      e_int_op_sub : resultw_sgn = src1_w_sgn -   src2_w_sgn;
+      e_int_op_sll : resultw_sgn = src1_w_sgn <<  shamtw;
+      e_int_op_srl : resultw_sgn = src1_w_sgn >>  shamtw;
+      e_int_op_sra : resultw_sgn = src1_w_sgn >>> shamtw;
+      default      : resultw_sgn = '0;
+    endcase
+  
+    // Calculate result for 64-bit operations
+    unique case (op_i)
+      e_int_op_add       : result_sgn = src1_sgn +   src2_sgn;
+      e_int_op_sub       : result_sgn = src1_sgn -   src2_sgn;
+      e_int_op_xor       : result_sgn = src1_sgn ^   src2_sgn;
+      e_int_op_or        : result_sgn = src1_sgn |   src2_sgn;
+      e_int_op_and       : result_sgn = src1_sgn &   src2_sgn;
+      e_int_op_sll       : result_sgn = src1_sgn <<  shamt;
+      e_int_op_srl       : result_sgn = src1_sgn >>  shamt;
+      e_int_op_sra       : result_sgn = src1_sgn >>> shamt;
+      e_int_op_pass_src2 : result_sgn =              src2_i;
+  
+      // Single bit results
+      e_int_op_slt  : result_sgn = (reg_data_width_lp)'($unsigned(src1_sgn <  src2_sgn));
+      e_int_op_sge  : result_sgn = (reg_data_width_lp)'($unsigned(src1_sgn >= src2_sgn));
+      e_int_op_eq   : result_sgn = (reg_data_width_lp)'($unsigned(src1_i   == src2_i));
+      e_int_op_ne   : result_sgn = (reg_data_width_lp)'($unsigned(src1_i   != src2_i));
+      e_int_op_sltu : result_sgn = (reg_data_width_lp)'($unsigned(src1_i   <  src2_i));
+      e_int_op_sgeu : result_sgn = (reg_data_width_lp)'($unsigned(src1_i   >= src2_i));
+      default       : result_sgn = '0;
+    endcase
+  end
 
-  // Calculate result for 64-bit operations
-  unique case(op_i)
-    e_int_op_add       : result_sgn = src1_sgn +   src2_sgn;
-    e_int_op_sub       : result_sgn = src1_sgn -   src2_sgn;
-    e_int_op_xor       : result_sgn = src1_sgn ^   src2_sgn;
-    e_int_op_or        : result_sgn = src1_sgn |   src2_sgn;
-    e_int_op_and       : result_sgn = src1_sgn &   src2_sgn;
-    e_int_op_sll       : result_sgn = src1_sgn <<  shamt;
-    e_int_op_srl       : result_sgn = src1_sgn >>  shamt;
-    e_int_op_sra       : result_sgn = src1_sgn >>> shamt;
-    e_int_op_pass_src2 : result_sgn =              src2_i;
-
-    // Single bit results
-    e_int_op_slt  : result_sgn = (reg_data_width_lp)'($unsigned(src1_sgn <  src2_sgn));
-    e_int_op_sge  : result_sgn = (reg_data_width_lp)'($unsigned(src1_sgn >= src2_sgn));
-    e_int_op_eq   : result_sgn = (reg_data_width_lp)'($unsigned(src1_i   == src2_i));
-    e_int_op_ne   : result_sgn = (reg_data_width_lp)'($unsigned(src1_i   != src2_i));
-    e_int_op_sltu : result_sgn = (reg_data_width_lp)'($unsigned(src1_i   <  src2_i));
-    e_int_op_sgeu : result_sgn = (reg_data_width_lp)'($unsigned(src1_i   >= src2_i));
-    default       : result_sgn = 'X;
-  endcase
-
-  // Select between word and double word width results
-  result_o = opw_v_i ? reg_data_width_lp'(resultw_sgn) : result_sgn;
-end
+// Select between word and double word width results
+assign result_o = opw_v_i ? reg_data_width_lp'(resultw_sgn) : result_sgn;
 
 endmodule : bp_be_int_alu
+

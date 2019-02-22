@@ -1,1 +1,5 @@
 bsg_cadenv
+external/*
+*.swp
+*.pyc
+*.log

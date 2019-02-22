@@ -8,57 +8,59 @@
  * uses the bsg_mem_1rw_sync_synth RAM design.
 */
 
-`ifndef BSG_DEFINES_V
-`define BSG_DEFINES_V
-`include "bsg_defines.v"
-`endif
-
-
-module btb 
+module bp_fe_btb
+ import bp_fe_pkg::*; 
  #(parameter   bp_fe_pc_gen_btb_idx_width_lp=9
    , parameter eaddr_width_p="inv"
-  ) 
-  (input logic                                       clk_i
-   , input logic                                     reset_i 
+   , localparam els_lp=2**bp_fe_pc_gen_btb_idx_width_lp
+   ) 
+  (input                                       clk_i
+   , input                                     reset_i 
 
-   , input logic [bp_fe_pc_gen_btb_idx_width_lp-1:0] btb_idx_w_i
-   , input logic [bp_fe_pc_gen_btb_idx_width_lp-1:0] btb_idx_r_i
-   , input logic                                     btb_r_i
-   , input logic                                     btb_w_i
+   , input [bp_fe_pc_gen_btb_idx_width_lp-1:0] idx_w_i
+   , input [bp_fe_pc_gen_btb_idx_width_lp-1:0] idx_r_i
+   , input                                     r_v_i
+   , input                                     w_v_i
 
-   , input  logic [eaddr_width_p-1:0]                branch_target_i
-   , output logic [eaddr_width_p-1:0]                branch_target_o
+   , input [eaddr_width_p-1:0]                 branch_target_i
+   , output logic [eaddr_width_p-1:0]          branch_target_o
 
-   , output logic                                    read_valid_o
-  );
+   , output logic                              read_valid_o
+   );
 
    
-logic [2**bp_fe_pc_gen_btb_idx_width_lp-1:0] valid;
+logic [els_lp-1:0] valid;
 
-always_ff @(posedge clk_i) begin
-  if (reset_i) begin
-    valid <= '{default:'0};
-  end else if (btb_w_i) begin
-    valid[btb_idx_w_i] <= '1;
+always_ff @(posedge clk_i) 
+  begin
+    if (reset_i) 
+      begin
+        valid <= '{default:'0};
+      end 
+    else if (w_v_i) 
+      begin
+        valid[idx_w_i] <= '1;
+      end
   end
-end
 
-assign read_valid_o = valid[btb_idx_r_i];
+assign read_valid_o = valid[idx_r_i];
 
-bsg_mem_1r1w #(.width_p(eaddr_width_p)
-               ,.els_p(2**bp_fe_pc_gen_btb_idx_width_lp)
-               ,.addr_width_lp(bp_fe_pc_gen_btb_idx_width_lp)
-              ) bsg_mem_1rw_sync_synth_1 
-              (.w_clk_i(clk_i)
-               ,.w_reset_i(reset_i)
+bsg_mem_1r1w 
+ #(.width_p(eaddr_width_p)
+   ,.els_p(2**bp_fe_pc_gen_btb_idx_width_lp)
+   ,.addr_width_lp(bp_fe_pc_gen_btb_idx_width_lp)
+   ) 
+ bsg_mem_1rw_sync_synth_1 
+  (.w_clk_i(clk_i)
+   ,.w_reset_i(reset_i)
 
-               ,.w_v_i(btb_w_i)
-               ,.w_addr_i(btb_idx_w_i)
-               ,.w_data_i(branch_target_i)
+   ,.w_v_i(w_v_i)
+   ,.w_addr_i(idx_w_i)
+   ,.w_data_i(branch_target_i)
    
-               ,.r_v_i(btb_r_i)
-               ,.r_addr_i(btb_idx_r_i)
-               ,.r_data_o(branch_target_o)
-              );
+   ,.r_v_i(r_v_i)
+   ,.r_addr_i(idx_r_i)
+   ,.r_data_o(branch_target_o)
+   );
 
 endmodule

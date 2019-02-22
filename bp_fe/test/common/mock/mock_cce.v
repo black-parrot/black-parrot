@@ -23,7 +23,7 @@ module mock_cce
     ,parameter lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, addr_width_lp, ways_p)
     ,parameter lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, addr_width_lp)
     ,parameter lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, addr_width_lp, lce_data_width_lp)
-    ,parameter cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, addr_width_lp, ways_p, 4)
+    ,parameter cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, addr_width_lp, ways_p)
     ,parameter cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, addr_width_lp, lce_data_width_lp, ways_p)
    
     ,parameter rom_addr_width_lp=eaddr_width_p
@@ -61,7 +61,7 @@ module mock_cce
 
   // casting structs
   //
-  `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, addr_width_lp, ways_p, 4);
+  `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, addr_width_lp, ways_p);
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, addr_width_lp);
   `declare_bp_cce_lce_data_cmd_s(num_cce_p, num_lce_p, addr_width_lp, lce_data_width_lp, ways_p);
   `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, addr_width_lp, ways_p);

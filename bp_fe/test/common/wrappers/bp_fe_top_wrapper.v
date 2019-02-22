@@ -1,35 +1,9 @@
 `timescale 1ps/1ps
 
-`ifndef BSG_DEFINES_V
-`define BSG_DEFINES_V
-`include "bsg_defines.v"
-`endif
-
-`ifndef BP_COMMON_FE_BE_IF_VH
-`define BP_COMMON_FE_BE_IF_VH
-`include "bp_common_fe_be_if.vh"
-`endif
-
-`ifndef BP_FE_PC_GEN_VH
-`define BP_FE_PC_GEN_VH
-`include "bp_fe_pc_gen.vh"
-`endif
-
-`ifndef BP_FE_ITLB_VH
-`define BP_FE_ITLB_VH
-`include "bp_fe_itlb.vh"
-`endif
-
-`ifndef BP_FE_ICACHE_VH
-`define BP_FE_ICACHE_VH
-`include "bp_fe_icache.vh"
-`endif
-
-//import bp_common_pkg::*;
-//import itlb_pkg::*;
-//import pc_gen_pkg::*;
 
 module bp_fe_top_wrapper 
+ import bp_common_pkg::*;
+ import itlb_pkg::*;
 #(
 parameter vaddr_width_p          ="inv"
 ,parameter paddr_width_p         ="inv"
@@ -39,7 +13,7 @@ parameter vaddr_width_p          ="inv"
 ,parameter lce_sets_p            ="inv"
 ,parameter lce_assoc_p           ="inv"
 ,parameter tag_width_p           ="inv"
-,parameter coh_states_p          ="inv"
+,parameter coh_states_p          =4
 ,parameter num_cce_p             ="inv"
 ,parameter num_lce_p             ="inv"
 ,parameter lce_id_p              ="inv"
@@ -64,7 +38,7 @@ localparam entry_width_lp=tag_width_p+lg_coh_states_lp;
 localparam tag_set_width_lp=(entry_width_lp*lce_assoc_p);
 localparam way_group_width_lp=(tag_set_width_lp*num_lce_p);
 localparam data_set_width_lp=(data_width_p*lce_assoc_p);
-localparam meta_data_set_width=(lg_lce_assoc_lp+lce_assoc_p);
+localparam metadata_set_width=(lg_lce_assoc_lp+lce_assoc_p);
 localparam data_mask_width_lp=(data_width_p>>3);
 localparam lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp);
 localparam lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p);
@@ -77,19 +51,19 @@ localparam bp_fe_itlb_icache_width_lp=44;
 localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, addr_width_lp, lce_assoc_p);
 localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, addr_width_lp);
 localparam bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, addr_width_lp, lce_data_width_lp);
-localparam bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, addr_width_lp, lce_assoc_p, coh_states_p);
+localparam bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, addr_width_lp, lce_assoc_p);
 localparam bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, addr_width_lp, lce_data_width_lp, lce_assoc_p);
 localparam bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p, addr_width_lp, lce_data_width_lp, lce_assoc_p);
-localparam bp_fe_icache_tag_set_width_lp=`bp_fe_icache_tag_set_width(coh_states_p,tag_width_p, lce_assoc_p);
-localparam bp_fe_icache_tag_state_width_lp=`bp_fe_icache_tag_state_width(coh_state_p, tag_width_p);
-localparam bp_fe_icache_meta_data_width_lp=`bp_fe_icache_meta_data_width(lce_assoc_p);
+localparam bp_fe_icache_tag_set_width_lp=`bp_fe_icache_tag_set_width(tag_width_p, lce_assoc_p);
+localparam bp_fe_icache_tag_state_width_lp=`bp_fe_icache_tag_state_width(tag_width_p);
+localparam bp_fe_icache_metadata_width_lp=`bp_fe_icache_metadata_width(lce_assoc_p);
 localparam bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(eaddr_width_p);
 
 // pc gen related parameters
 localparam instr_scan_width_lp=`bp_fe_instr_scan_width;
 localparam branch_metadata_fwd_width_lp=btb_indx_width_p+bht_indx_width_p+ras_addr_width_p;
 localparam bp_fe_pc_gen_itlb_width_lp=`bp_fe_pc_gen_itlb_width(eaddr_width_p);
-localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp);
+localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p,branch_metadata_fwd_width_lp);
 localparam bp_fe_pc_gen_width_o_lp=`bp_fe_pc_gen_queue_width(vaddr_width_p,branch_metadata_fwd_width_lp);
 
 // itlb related parameters 
@@ -213,7 +187,7 @@ mock_cce #(
   ,.rom_data_i(rom_data)
 );
 
-bp_be_boot_rom 
+bp_boot_rom 
 #(
   .addr_width_p(rom_addr_width_lp)
   ,.width_p(rom_data_width_lp)

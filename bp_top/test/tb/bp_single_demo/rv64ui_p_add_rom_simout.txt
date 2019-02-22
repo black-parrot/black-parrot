@@ -1,7 +1,7 @@
 Notice: timing checks disabled with +notimingcheck at compile-time
 Chronologic VCS simulator copyright 1991-2016
 Contains Synopsys proprietary information.
-Compiler version L-2016.06-SP2-15_Full64; Runtime version L-2016.06-SP2-15_Full64;  Feb  3 13:21 2019
+Compiler version L-2016.06-SP2-15_Full64; Runtime version L-2016.06-SP2-15_Full64;  Feb  9 03:12 2019
 test_bp.clock_gen with cycle_time_p          10
 ## bsg_mem_1r1w: instantiating width_p=         38, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.cce_lce_cmd_network.rof[0].fi2.efi3.coherence_network_channel_node.rof[0].fi.twofer.mem_1r1w)
 ## bsg_mem_1r1w: instantiating width_p=         38, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.network.cce_lce_cmd_network.rof[0].fi2.efi3.coherence_network_channel_node.rof[2].fi.twofer.mem_1r1w)
@@ -33,13 +33,14 @@ test_bp.clock_gen with cycle_time_p          10
 ## bsg_mem_1r1w: instantiating width_p=         33, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.genblk1[0].bp_cce_top.mem_cce_resp_fifo.mem_1r1w)
 ## bsg_mem_1r1w: instantiating width_p=        539, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.genblk1[0].bp_cce_top.mem_cce_data_resp_fifo.mem_1r1w)
 ## bsg_mem_1r1w: instantiating width_p=        567, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.me.genblk1[0].bp_cce_top.cce_mem_data_cmd_fifo.mem_1r1w)
+## bsg_mem_1rw_sync_mask_write_bit: instantiating width_p=        224, els_p=         16 (test_bp.DUT.me.genblk1[0].bp_cce_top.bp_cce.directory.wg_ram)
 ## bsg_mem_1rw_sync_synth: instantiating width_p=        512, els_p=        512 (test_bp.DUT.me.genblk1[0].bp_mem.mem)
 ## bsg_mem_1r1w: instantiating width_p=         64, els_p=        512, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].fe.bp_fe_pc_gen_1.genblk1.branch_prediction_1.btb_1.bsg_mem_1rw_sync_synth_1)
 ## bsg_mem_1rw_sync_mask_write_bit: instantiating width_p=        112, els_p=         16 (test_bp.DUT.genblk1[0].fe.icache_1.tag_mem)
-## bsg_mem_1rw_sync_mask_write_bit: instantiating width_p=          7, els_p=         16 (test_bp.DUT.genblk1[0].fe.icache_1.meta_data_mem)
-## bsg_mem_1r1w: instantiating width_p=        36, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].fe.icache_1.lce.cce_lce_cmd_fifo.mem_1r1w)
-## bsg_mem_1r1w: instantiating width_p=       540, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].fe.icache_1.lce.cce_lce_data_cmd_fifo.mem_1r1w)
-## bsg_mem_1r1w: instantiating width_p=       539, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].fe.icache_1.lce.lce_lce_tr_resp_in_fifo.mem_1r1w)
+## bsg_mem_1rw_sync_mask_write_bit: instantiating width_p=          7, els_p=         16 (test_bp.DUT.genblk1[0].fe.icache_1.metadata_mem)
+## bsg_mem_1r1w: instantiating width_p=        36, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].fe.icache_1.lce.lce_cmd_fifo.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=       540, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].fe.icache_1.lce.lce_data_cmd_fifo.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=       539, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].fe.icache_1.lce.lce_tr_resp_in_fifo.mem_1r1w)
 ## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[0].data_mem_bank.synth.bk[0].mem_1rw_sync.synth)
 ## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[0].data_mem_bank.synth.bk[1].mem_1rw_sync.synth)
 ## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[0].data_mem_bank.synth.bk[2].mem_1rw_sync.synth)
@@ -114,96 +115,98 @@ test_bp.clock_gen with cycle_time_p          10
 ## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].fe.icache_1.data_mem_banks[7].data_mem_bank)
 ## bsg_mem_1r1w: instantiating width_p=        134, els_p=         16, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].fe_queue_fifo.fifo_mem)
 ## bsg_mem_1r1w: instantiating width_p=        109, els_p=          8, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].fe_cmd_fifo.mem_1r1w)
-## bsg_mem_1rw_sync_mask_write_bit: instantiating width_p=        112, els_p=         16 (test_bp.DUT.genblk1[0].be.mmu.dcache.tag_mem)
+## bsg_mem_2r1w_sync: instantiating width_p=         64, els_p=         32, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf)
+## bsg_mem_2r1w_sync: instantiating width_p=         64, els_p=         32, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].be.calculator.float_regfile.rf)
+## bsg_mem_1rw_sync_mask_write_bit: instantiating width_p=       112, els_p=         16 (test_bp.DUT.genblk1[0].be.mmu.dcache.tag_mem)
 ## bsg_mem_1rw_sync_mask_write_bit: instantiating width_p=         15, els_p=         16 (test_bp.DUT.genblk1[0].be.mmu.dcache.stat_mem)
-## bsg_mem_1r1w: instantiating width_p=        36, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].be.mmu.dcache.lce.cce_lce_cmd_fifo.mem_1r1w)
-## bsg_mem_1r1w: instantiating width_p=       540, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].be.mmu.dcache.lce.cce_lce_data_cmd_fifo.mem_1r1w)
-## bsg_mem_1r1w: instantiating width_p=       539, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].be.mmu.dcache.lce.lce_lce_tr_resp_in_fifo.mem_1r1w)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[0].data_mem.synth.bk[0].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[0].data_mem.synth.bk[1].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[0].data_mem.synth.bk[2].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[0].data_mem.synth.bk[3].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[0].data_mem.synth.bk[4].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[0].data_mem.synth.bk[5].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[0].data_mem.synth.bk[6].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[0].data_mem.synth.bk[7].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[0].data_mem)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[1].data_mem.synth.bk[0].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[1].data_mem.synth.bk[1].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[1].data_mem.synth.bk[2].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[1].data_mem.synth.bk[3].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[1].data_mem.synth.bk[4].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[1].data_mem.synth.bk[5].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[1].data_mem.synth.bk[6].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[1].data_mem.synth.bk[7].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[1].data_mem)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[2].data_mem.synth.bk[0].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[2].data_mem.synth.bk[1].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[2].data_mem.synth.bk[2].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[2].data_mem.synth.bk[3].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[2].data_mem.synth.bk[4].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[2].data_mem.synth.bk[5].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[2].data_mem.synth.bk[6].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[2].data_mem.synth.bk[7].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[2].data_mem)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[3].data_mem.synth.bk[0].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[3].data_mem.synth.bk[1].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[3].data_mem.synth.bk[2].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[3].data_mem.synth.bk[3].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[3].data_mem.synth.bk[4].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[3].data_mem.synth.bk[5].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[3].data_mem.synth.bk[6].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[3].data_mem.synth.bk[7].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[3].data_mem)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[4].data_mem.synth.bk[0].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[4].data_mem.synth.bk[1].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[4].data_mem.synth.bk[2].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[4].data_mem.synth.bk[3].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[4].data_mem.synth.bk[4].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[4].data_mem.synth.bk[5].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[4].data_mem.synth.bk[6].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[4].data_mem.synth.bk[7].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[4].data_mem)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[5].data_mem.synth.bk[0].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[5].data_mem.synth.bk[1].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[5].data_mem.synth.bk[2].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[5].data_mem.synth.bk[3].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[5].data_mem.synth.bk[4].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[5].data_mem.synth.bk[5].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[5].data_mem.synth.bk[6].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[5].data_mem.synth.bk[7].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[5].data_mem)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[6].data_mem.synth.bk[0].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[6].data_mem.synth.bk[1].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[6].data_mem.synth.bk[2].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[6].data_mem.synth.bk[3].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[6].data_mem.synth.bk[4].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[6].data_mem.synth.bk[5].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[6].data_mem.synth.bk[6].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[6].data_mem.synth.bk[7].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[6].data_mem)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[7].data_mem.synth.bk[0].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[7].data_mem.synth.bk[1].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[7].data_mem.synth.bk[2].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[7].data_mem.synth.bk[3].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[7].data_mem.synth.bk[4].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[7].data_mem.synth.bk[5].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[7].data_mem.synth.bk[6].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[7].data_mem.synth.bk[7].mem_1rw_sync.synth)
-## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk2[7].data_mem)
+## bsg_mem_1r1w: instantiating width_p=         36, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].be.mmu.dcache.lce.lce_cmd_fifo.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        540, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].be.mmu.dcache.lce.lce_data_cmd_fifo.mem_1r1w)
+## bsg_mem_1r1w: instantiating width_p=        539, els_p=          2, read_write_same_addr_p=          0, harden_p=          0 (test_bp.DUT.genblk1[0].be.mmu.dcache.lce.lce_tr_resp_in_fifo.mem_1r1w)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[0].data_mem.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[0].data_mem.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[0].data_mem.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[0].data_mem.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[0].data_mem.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[0].data_mem.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[0].data_mem.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[0].data_mem.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[0].data_mem)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[1].data_mem.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[1].data_mem.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[1].data_mem.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[1].data_mem.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[1].data_mem.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[1].data_mem.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[1].data_mem.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[1].data_mem.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[1].data_mem)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[2].data_mem.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[2].data_mem.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[2].data_mem.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[2].data_mem.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[2].data_mem.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[2].data_mem.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[2].data_mem.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[2].data_mem.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[2].data_mem)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[3].data_mem.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[3].data_mem.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[3].data_mem.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[3].data_mem.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[3].data_mem.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[3].data_mem.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[3].data_mem.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[3].data_mem.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[3].data_mem)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[4].data_mem.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[4].data_mem.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[4].data_mem.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[4].data_mem.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[4].data_mem.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[4].data_mem.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[4].data_mem.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[4].data_mem.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[4].data_mem)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[5].data_mem.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[5].data_mem.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[5].data_mem.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[5].data_mem.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[5].data_mem.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[5].data_mem.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[5].data_mem.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[5].data_mem.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[5].data_mem)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[6].data_mem.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[6].data_mem.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[6].data_mem.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[6].data_mem.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[6].data_mem.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[6].data_mem.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[6].data_mem.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[6].data_mem.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[6].data_mem)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[7].data_mem.synth.bk[0].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[7].data_mem.synth.bk[1].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[7].data_mem.synth.bk[2].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[7].data_mem.synth.bk[3].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[7].data_mem.synth.bk[4].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[7].data_mem.synth.bk[5].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[7].data_mem.synth.bk[6].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_synth: instantiating width_p=          8, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[7].data_mem.synth.bk[7].mem_1rw_sync.synth)
+## bsg_mem_1rw_sync_mask_write_byte: instantiating data_width_p=         64, els_p=        128 (test_bp.DUT.genblk1[0].be.mmu.dcache.genblk1[7].data_mem)
 __________ ___________  _______________________________
 \______   \\_   _____/ /   _____/\_   _____/\__    ___/
  |       _/ |    __)_  \_____  \  |    __)_   |    |   
  |    |   \ |        \ /        \ |        \  |    |  1->0 time =          0
  |____|_  //_______  //_______  //_______  /  |____|   
  ASYNC  \/         \/         \/         \/            
-"/home/petrisko/bitbucket/POSH/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_pipe_mul.v", 77: test_bp.DUT.genblk1[0].be.calculator.pipe_mul.unnamed$$_0: started at 0ps failed at 0ps
-	Offending '(~decode.pipe_mul_v)'
-Warning: "/home/petrisko/bitbucket/POSH/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_pipe_mul.v", 77: test_bp.DUT.genblk1[0].be.calculator.pipe_mul.unnamed$$_0: at time 0 ps
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_pipe_mul.v", 78: test_bp.DUT.genblk1[0].be.calculator.pipe_mul.runtime_assertions.unnamed$$_0: started at 0ps failed at 0ps
+	Offending '(reset_i | (~decode.pipe_mul_v))'
+Warning: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_pipe_mul.v", 78: test_bp.DUT.genblk1[0].be.calculator.pipe_mul.runtime_assertions.unnamed$$_0: at time 0 ps
 RV64M is not currently supported
-"/home/petrisko/bitbucket/POSH/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_pipe_fp.v", 78: test_bp.DUT.genblk1[0].be.calculator.pipe_fp.unnamed$$_0: started at 0ps failed at 0ps
-	Offending '(~decode.pipe_fp_v)'
-Warning: "/home/petrisko/bitbucket/POSH/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_pipe_fp.v", 78: test_bp.DUT.genblk1[0].be.calculator.pipe_fp.unnamed$$_0: at time 0 ps
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_pipe_fp.v", 78: test_bp.DUT.genblk1[0].be.calculator.pipe_fp.unnamed$$_0: started at 0ps failed at 0ps
+	Offending '(reset_i | (~decode.pipe_fp_v))'
+Warning: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_pipe_fp.v", 78: test_bp.DUT.genblk1[0].be.calculator.pipe_fp.unnamed$$_0: at time 0 ps
 RV64FD not currently supported
 __________ ___________  _______________________________
 \______   \\_   _____/ /   _____/\_   _____/\__    ___/
@@ -221,9 +224,9 @@ __________ ___________  _______________________________
 			op: integer sem: r 1 <- {0000000000000000}
 [CORE0 CMT] itag: 00000001 pc: 0000000080000128 instr: 00000113
 			op: integer sem: r 2 <- {0000000000000000}
-"/home/petrisko/bitbucket/POSH/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_instr_decoder.v", 253: test_bp.DUT.genblk1[0].be.calculator.instr_decoder.unnamed$$_0: started at 15055ps failed at 15055ps
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_instr_decoder.v", 267: test_bp.DUT.genblk1[0].be.calculator.instr_decoder.unnamed$$_0: started at 15055ps failed at 15055ps
 	Offending '(~(decode.instr_v & (instr.opcode == 7'b0001111)))'
-Warning: "/home/petrisko/bitbucket/POSH/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_instr_decoder.v", 253: test_bp.DUT.genblk1[0].be.calculator.instr_decoder.unnamed$$_0: at time 15055 ps
+Warning: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_instr_decoder.v", 267: test_bp.DUT.genblk1[0].be.calculator.instr_decoder.unnamed$$_0: at time 15055 ps
 RV64 misc-mem ops are not currently implemented
 [CORE0 CMT] itag: 00000002 pc: 000000008000012c instr: 002081b3
 			op: integer sem: r 3 <- {0000000000000000}
@@ -363,6 +366,10 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r 1 <- {ffffffff80000000}
 [CORE0 CMT] itag: 0000001f pc: 00000000800001a0 instr: ffff8137
 			op: integer sem: r 2 <- {ffffffffffff8000}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 16135ps failed at 16135ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 16135 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 00000020 pc: 00000000800001a4 instr: 002081b3
 			op: integer sem: r 3 <- {ffffffff7fff8000}
 [CORE0 CMT] itag: 00000021 pc: 00000000800001a8 instr: ffff0eb7
@@ -495,6 +502,10 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r 2 <- {0000000000007fff}
 [CORE0 CMT] itag: 0000003a pc: 000000008000020c instr: 002081b3
 			op: integer sem: r 3 <- {0000000080007ffe}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 56: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_2: started at 17185ps failed at 17185ps
+	Offending '(~((((r1_addr_i == w_addr_i) && w_v_i) && r1_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 56: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_2: at time 17185 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 1 Attempt to read and write same address
 [CORE0 CMT] itag: 0000003b pc: 0000000080000210 instr: 00010eb7
 			op: integer sem: r29 <- {0000000000010000}
 [CORE0 CMT] itag: 0000003c pc: 0000000080000214 instr: 001e8e9b
@@ -708,6 +719,10 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r28 <- {0000000000000010}
 [CORE0 CMT] itag: 0000006a pc: 00000000800002cc instr: 35d19663
 			op: branch sem: pc <- {0000000080000618} rs1: 0000000080000000 cmp rs2: 0000000080000000 taken: 0
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 18835ps failed at 18835ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 18835 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 0000006b pc: 00000000800002d0 instr: 00d00093
 			op: integer sem: r 1 <- {000000000000000d}
 [CORE0 CMT] itag: 0000006c pc: 00000000800002d4 instr: 00b00113
@@ -781,6 +796,10 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r28 <- {0000000000000013}
 [CORE0 CMT] itag: 0000007b pc: 0000000080000310 instr: 31d09463
 			op: branch sem: pc <- {0000000080000618} rs1: 000000000000001a cmp rs2: 000000000000001a taken: 0
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 19395ps failed at 19395ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 19395 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 0000007c pc: 0000000080000314 instr: 00000213
 			op: integer sem: r 4 <- {0000000000000000}
 [CORE0 CMT] itag: 0000007d pc: 0000000080000318 instr: 00d00093
@@ -867,6 +886,10 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r 2 <- {000000000000000b}
 [CORE0 CMT] itag: 00000092 pc: 000000008000034c instr: 002081b3
 			op: integer sem: r 3 <- {0000000000000019}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 20035ps failed at 20035ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 20035 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 00000093 pc: 0000000080000350 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 00000094 pc: 0000000080000354 instr: 00018313
@@ -890,6 +913,10 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r 2 <- {000000000000000b}
 [CORE0 CMT] itag: 0000009d pc: 000000008000034c instr: 002081b3
 			op: integer sem: r 3 <- {0000000000000019}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 20185ps failed at 20185ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 20185 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 0000009e pc: 0000000080000350 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 0000009f pc: 0000000080000354 instr: 00018313
@@ -954,6 +981,10 @@ RV64 misc-mem ops are not currently implemented
 [CORE0 BUB] cause: FE
 [CORE0 CMT] itag: 000000aa pc: 0000000080000380 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 20695ps failed at 20695ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 20695 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 000000ab pc: 0000000080000384 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 000000ac pc: 0000000080000388 instr: 00018313
@@ -979,6 +1010,10 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r 3 <- {000000000000001a}
 [CORE0 CMT] itag: 000000b6 pc: 0000000080000380 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 20855ps failed at 20855ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 20855 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 000000b7 pc: 0000000080000384 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 000000b8 pc: 0000000080000388 instr: 00018313
@@ -1072,12 +1107,20 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r28 <- {0000000000000017}
 [CORE0 CMT] itag: 000000d1 pc: 00000000800003c8 instr: 25d19863
 			op: branch sem: pc <- {0000000080000618} rs1: 0000000000000018 cmp rs2: 0000000000000018 taken: 0
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 21545ps failed at 21545ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 21545 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 000000d2 pc: 00000000800003cc instr: 00000213
 			op: integer sem: r 4 <- {0000000000000000}
 [CORE0 CMT] itag: 000000d3 pc: 00000000800003d0 instr: 00e00093
 			op: integer sem: r 1 <- {000000000000000e}
 [CORE0 CMT] itag: 000000d4 pc: 00000000800003d4 instr: 00b00113
 			op: integer sem: r 2 <- {000000000000000b}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 21575ps failed at 21575ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 21575 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 000000d5 pc: 00000000800003d8 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 000000d6 pc: 00000000800003dc instr: 002081b3
@@ -1136,6 +1179,10 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r 1 <- {000000000000000e}
 [CORE0 CMT] itag: 000000dd pc: 00000000800003d4 instr: 00b00113
 			op: integer sem: r 2 <- {000000000000000b}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 22085ps failed at 22085ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 22085 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 000000de pc: 00000000800003d8 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 000000df pc: 00000000800003dc instr: 002081b3
@@ -1160,6 +1207,10 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r 2 <- {000000000000000b}
 [CORE0 CMT] itag: 000000e9 pc: 0000000080000404 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 22205ps failed at 22205ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 22205 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 000000ea pc: 0000000080000408 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 000000eb pc: 000000008000040c instr: 002081b3
@@ -1183,6 +1234,10 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r 2 <- {000000000000000b}
 [CORE0 CMT] itag: 000000f4 pc: 0000000080000404 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 22355ps failed at 22355ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 22355 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 000000f5 pc: 0000000080000408 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 000000f6 pc: 000000008000040c instr: 002081b3
@@ -1199,6 +1254,10 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r28 <- {0000000000000019}
 [CORE0 CMT] itag: 000000fc pc: 0000000080000424 instr: 1fd19a63
 			op: branch sem: pc <- {0000000080000618} rs1: 000000000000001a cmp rs2: 000000000000001a taken: 0
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 22435ps failed at 22435ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 22435 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 000000fd pc: 0000000080000428 instr: 00000213
 			op: integer sem: r 4 <- {0000000000000000}
 [CORE0 CMT] itag: 000000fe pc: 000000008000042c instr: 00d00093
@@ -1284,10 +1343,18 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r 4 <- {0000000000000000}
 [CORE0 CMT] itag: 00000113 pc: 0000000080000458 instr: 00e00093
 			op: integer sem: r 1 <- {000000000000000e}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 23085ps failed at 23085ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 23085 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 00000114 pc: 000000008000045c instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 00000115 pc: 0000000080000460 instr: 00b00113
 			op: integer sem: r 2 <- {000000000000000b}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 23105ps failed at 23105ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 23105 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 00000116 pc: 0000000080000464 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 00000117 pc: 0000000080000468 instr: 002081b3
@@ -1340,10 +1407,18 @@ RV64 misc-mem ops are not currently implemented
 [CORE0 BUB] cause: FE
 [CORE0 CMT] itag: 0000011c pc: 0000000080000458 instr: 00e00093
 			op: integer sem: r 1 <- {000000000000000e}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 23565ps failed at 23565ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 23565 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 0000011d pc: 000000008000045c instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 0000011e pc: 0000000080000460 instr: 00b00113
 			op: integer sem: r 2 <- {000000000000000b}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 23585ps failed at 23585ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 23585 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 0000011f pc: 0000000080000464 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 00000120 pc: 0000000080000468 instr: 002081b3
@@ -1364,6 +1439,10 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r 4 <- {0000000000000000}
 [CORE0 CMT] itag: 00000128 pc: 0000000080000488 instr: 00f00093
 			op: integer sem: r 1 <- {000000000000000f}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 23685ps failed at 23685ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 23685 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 00000129 pc: 000000008000048c instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 0000012a pc: 0000000080000490 instr: 00000013
@@ -1387,6 +1466,10 @@ RV64 misc-mem ops are not currently implemented
 [CORE0 BUB] cause: FE
 [CORE0 CMT] itag: 00000133 pc: 0000000080000488 instr: 00f00093
 			op: integer sem: r 1 <- {000000000000000f}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 23835ps failed at 23835ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 23835 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 00000134 pc: 000000008000048c instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 00000135 pc: 0000000080000490 instr: 00000013
@@ -1484,12 +1567,20 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r28 <- {000000000000001d}
 [CORE0 CMT] itag: 00000150 pc: 00000000800004d8 instr: 15d19063
 			op: branch sem: pc <- {0000000080000618} rs1: 0000000000000018 cmp rs2: 0000000000000018 taken: 0
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 24545ps failed at 24545ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 24545 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 00000151 pc: 00000000800004dc instr: 00000213
 			op: integer sem: r 4 <- {0000000000000000}
 [CORE0 CMT] itag: 00000152 pc: 00000000800004e0 instr: 00b00113
 			op: integer sem: r 2 <- {000000000000000b}
 [CORE0 CMT] itag: 00000153 pc: 00000000800004e4 instr: 00e00093
 			op: integer sem: r 1 <- {000000000000000e}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 24575ps failed at 24575ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 24575 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 00000154 pc: 00000000800004e8 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 00000155 pc: 00000000800004ec instr: 002081b3
@@ -1543,6 +1634,10 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r 2 <- {000000000000000b}
 [CORE0 CMT] itag: 0000015b pc: 00000000800004e4 instr: 00e00093
 			op: integer sem: r 1 <- {000000000000000e}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 25035ps failed at 25035ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 25035 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 0000015c pc: 00000000800004e8 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 0000015d pc: 00000000800004ec instr: 002081b3
@@ -1567,6 +1662,10 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r 1 <- {000000000000000f}
 [CORE0 CMT] itag: 00000167 pc: 0000000080000514 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 25155ps failed at 25155ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 25155 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 00000168 pc: 0000000080000518 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 00000169 pc: 000000008000051c instr: 002081b3
@@ -1590,6 +1689,10 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r 1 <- {000000000000000f}
 [CORE0 CMT] itag: 00000172 pc: 0000000080000514 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 25305ps failed at 25305ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 25305 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 00000173 pc: 0000000080000518 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 00000174 pc: 000000008000051c instr: 002081b3
@@ -1752,10 +1855,18 @@ RV64 misc-mem ops are not currently implemented
 [CORE0 BUB] cause: FE
 [CORE0 CMT] itag: 0000019c pc: 0000000080000568 instr: 00b00113
 			op: integer sem: r 2 <- {000000000000000b}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 26565ps failed at 26565ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 26565 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 0000019d pc: 000000008000056c instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 0000019e pc: 0000000080000570 instr: 00e00093
 			op: integer sem: r 1 <- {000000000000000e}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 26585ps failed at 26585ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 26585 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 0000019f pc: 0000000080000574 instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 000001a0 pc: 0000000080000578 instr: 002081b3
@@ -1776,6 +1887,10 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r 4 <- {0000000000000000}
 [CORE0 CMT] itag: 000001a8 pc: 0000000080000598 instr: 00b00113
 			op: integer sem: r 2 <- {000000000000000b}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 26685ps failed at 26685ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 26685 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 000001a9 pc: 000000008000059c instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 000001aa pc: 00000000800005a0 instr: 00000013
@@ -1832,6 +1947,10 @@ RV64 misc-mem ops are not currently implemented
 [CORE0 BUB] cause: FE
 [CORE0 CMT] itag: 000001b1 pc: 0000000080000598 instr: 00b00113
 			op: integer sem: r 2 <- {000000000000000b}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 27165ps failed at 27165ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 27165 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 000001b2 pc: 000000008000059c instr: 00000013
 			op: integer sem: r 0 <- {0000000000000000}
 [CORE0 CMT] itag: 000001b3 pc: 00000000800005a0 instr: 00000013
@@ -1923,9 +2042,9 @@ RV64 misc-mem ops are not currently implemented
 [CORE0 BUB] cause: FE
 [CORE0 CMT] itag: 000001cb pc: 0000000080000600 instr: 01e00113
 			op: integer sem: r 2 <- {000000000000001e}
-"/home/petrisko/bitbucket/POSH/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_instr_decoder.v", 253: test_bp.DUT.genblk1[0].be.calculator.instr_decoder.unnamed$$_0: started at 27815ps failed at 27815ps
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_instr_decoder.v", 267: test_bp.DUT.genblk1[0].be.calculator.instr_decoder.unnamed$$_0: started at 27815ps failed at 27815ps
 	Offending '(~(decode.instr_v & (instr.opcode == 7'b0001111)))'
-Warning: "/home/petrisko/bitbucket/POSH/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_instr_decoder.v", 253: test_bp.DUT.genblk1[0].be.calculator.instr_decoder.unnamed$$_0: at time 27815 ps
+Warning: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_instr_decoder.v", 267: test_bp.DUT.genblk1[0].be.calculator.instr_decoder.unnamed$$_0: at time 27815 ps
 RV64 misc-mem ops are not currently implemented
 [CORE0 CMT] itag: 000001cc pc: 0000000080000604 instr: 00208033
 			op: integer sem: r 0 <- {000000000000002e}
@@ -1977,9 +2096,9 @@ RV64 misc-mem ops are not currently implemented
 [CORE0 BUB] cause: FE
 [CORE0 BUB] cause: FE
 [CORE0 BUB] cause: FE
-"/home/petrisko/bitbucket/POSH/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_instr_decoder.v", 253: test_bp.DUT.genblk1[0].be.calculator.instr_decoder.unnamed$$_0: started at 28265ps failed at 28265ps
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_instr_decoder.v", 267: test_bp.DUT.genblk1[0].be.calculator.instr_decoder.unnamed$$_0: started at 28265ps failed at 28265ps
 	Offending '(~(decode.instr_v & (instr.opcode == 7'b0001111)))'
-Warning: "/home/petrisko/bitbucket/POSH/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_instr_decoder.v", 253: test_bp.DUT.genblk1[0].be.calculator.instr_decoder.unnamed$$_0: at time 28265 ps
+Warning: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_instr_decoder.v", 267: test_bp.DUT.genblk1[0].be.calculator.instr_decoder.unnamed$$_0: at time 28265 ps
 RV64 misc-mem ops are not currently implemented
 [CORE0 BUB] cause: FE
 [CORE0 BUB] cause: FE
@@ -1993,6 +2112,10 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r 5 <- {00000000000c00df}
 [CORE0 CMT] itag: 000001d7 pc: 0000000080000664 instr: 00c29293
 			op: integer sem: r 5 <- {00000000c00df000}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: started at 28355ps failed at 28355ps
+	Offending '(~((((r0_addr_i == w_addr_i) && w_v_i) && r0_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 53: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_1: at time 28355 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 0 Attempt to read and write same address
 [CORE0 CMT] itag: 000001d8 pc: 0000000080000668 instr: ad028293
 			op: integer sem: r 5 <- {00000000c00dead0}
 [CORE0 CMT] itag: 000001d9 pc: 000000008000066c instr: 000e0513
@@ -2001,6 +2124,10 @@ RV64 misc-mem ops are not currently implemented
 			op: integer sem: r11 <- {0000000000010000}
 [CORE0 CMT] itag: 000001db pc: 0000000080000674 instr: fff5859b
 			op: integer sem: r11 <- {000000000000ffff}
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 56: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_2: started at 28395ps failed at 28395ps
+	Offending '(~((((r1_addr_i == w_addr_i) && w_v_i) && r1_v_i) && (!read_write_same_addr_p)))'
+Error: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bsg_ip_cores/bsg_mem/bsg_mem_2r1w_sync.v", 56: test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf.unnamed$$_2: at time 28395 ps
+test_bp.DUT.genblk1[0].be.calculator.int_regfile.rf: port 1 Attempt to read and write same address
 [CORE0 CMT] itag: 000001dc pc: 0000000080000678 instr: 00b57533
 			op: integer sem: r10 <- {0000000000000026}
 [CORE0 MIS] itag: 000001dd pc: 000000008000067c instr: 00a2a023
@@ -2074,9 +2201,9 @@ RV64 misc-mem ops are not currently implemented
 [CORE0 BUB] cause: ME
 [CORE0 BUB] cause: ME
 [CORE0 BUB] cause: ME
-"/home/petrisko/bitbucket/POSH/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_instr_decoder.v", 253: test_bp.DUT.genblk1[0].be.calculator.instr_decoder.unnamed$$_0: started at 29115ps failed at 29115ps
+"/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_instr_decoder.v", 267: test_bp.DUT.genblk1[0].be.calculator.instr_decoder.unnamed$$_0: started at 29115ps failed at 29115ps
 	Offending '(~(decode.instr_v & (instr.opcode == 7'b0001111)))'
-Warning: "/home/petrisko/bitbucket/POSH/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_instr_decoder.v", 253: test_bp.DUT.genblk1[0].be.calculator.instr_decoder.unnamed$$_0: at time 29115 ps
+Warning: "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bp_be/src/v/bp_be_calculator/bp_be_instr_decoder.v", 267: test_bp.DUT.genblk1[0].be.calculator.instr_decoder.unnamed$$_0: at time 29115 ps
 RV64 misc-mem ops are not currently implemented
 [CORE0 BUB] cause: ME
 [CORE0 BUB] cause: ME
@@ -2084,9 +2211,9 @@ RV64 misc-mem ops are not currently implemented
 [CORE0 BUB] cause: ME
 [CORE0 CMT] itag: 000001de pc: 000000008000067c instr: 00a2a023
 [CORE0 PAS] TEST_NUM=0026
-$finish called from file "/home/petrisko/bitbucket/POSH/pre-alpha-release/bp_top/syn/../../bp_be/test/common/bp_be_nonsynth_tracer.v", line 154.
+$finish called from file "/usr3/graduate/fe/fe_dev/pre-alpha-release/bp_top/syn/../../bp_be/test/common/bp_be_nonsynth_tracer.v", line 154.
 $finish at simulation time                29165
            V C S   S i m u l a t i o n   R e p o r t 
 Time: 29165 ps
-CPU Time:      0.450 seconds;       Data structure size:   9.0Mb
-Sun Feb  3 13:21:18 2019
+CPU Time:      1.590 seconds;       Data structure size:   8.9Mb
+Sat Feb  9 03:12:32 2019

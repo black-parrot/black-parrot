@@ -7,24 +7,39 @@ BP_BE_PATH	   = $(TOP)/bp_be
 BP_ME_PATH 	   = $(TOP)/bp_me
 BP_COMMON_PATH = $(TOP)/bp_common
 
-CADENV_PATH    = $(TOP)/bsg_cadenv
+# Needed for other dc check_syn
+BP_TOP_DIR	     = $(TOP)/bp_top
+BP_FE_DIR	       = $(TOP)/bp_fe
+BP_BE_DIR	       = $(TOP)/bp_be
+BP_ME_DIR 	     = $(TOP)/bp_me
+BP_COMMON_DIR    = $(TOP)/bp_common
+BSG_IP_CORES_DIR = $(TOP)/bsg_ip_cores
+SYN_PATH         = $(BP_ME_DIR)/syn
+TB_PATH          = $(BP_ME_DIR)/test/tb
+
+BSG_CADENV_DIR    = $(TOP)/bsg_cadenv
 BSG_IP_PATH	   = $(TOP)/bsg_ip_cores
 VERILATOR_PATH = $(TOP)/verilator
 SYSTEMC_PATH   = $(TOP)/systemc
 
-SRC_PATH	= $(BP_ME_PATH)/src
-INC_PATH  = $(SRC_PATH)/include/v
-TB_PATH		= $(BP_ME_PATH)/test
-SYN_PATH	= $(BP_ME_PATH)/syn
-CCE_ROM_PATH = $(SRC_PATH)/v/roms
-CCE_SRC_PATH = $(SRC_PATH)/v/cce
-NETWORK_PATH = $(SRC_PATH)/v/network
+BP_ME_SRC_PATH	= $(BP_ME_PATH)/src/v
+BP_ME_INC_PATH  = $(BP_ME_PATH)/src/include/v
+BP_ME_TB_PATH		= $(BP_ME_PATH)/test
+BP_ME_SYN_PATH	= $(BP_ME_PATH)/syn
+CCE_ROM_PATH = $(BP_ME_SRC_PATH)/roms
+CCE_SRC_PATH = $(BP_ME_SRC_PATH)/cce
+NETWORK_PATH = $(BP_ME_SRC_PATH)/network
 
 # All synthesizable sources 
 # Nonsynth and test sources are added in tool-specific files
 HDL_SOURCE = \
-	$(abspath $(wildcard $(CCE_SRC_PATH)/*.v)) \
-	$(BP_COMMON_PATH)/bp_common_me_if.vh \
+	$(BP_COMMON_PATH)/bp_common_pkg.vh \
+	$(BP_ME_INC_PATH)/bp_cce_pkg.v \
+	$(BP_ME_INC_PATH)/bp_me_network_pkg.v \
+	$(BSG_IP_PATH)/bsg_misc/bsg_defines.v \
+	$(BSG_IP_PATH)/bsg_noc/bsg_noc_pkg.v \
+	$(BSG_IP_PATH)/bsg_noc/bsg_mesh_router_buffered.v \
+	$(BSG_IP_PATH)/bsg_noc/bsg_mesh_router.v \
 	$(BSG_IP_PATH)/bsg_misc/bsg_decode.v \
 	$(BSG_IP_PATH)/bsg_misc/bsg_encode_one_hot.v \
 	$(BSG_IP_PATH)/bsg_misc/bsg_defines.v \
@@ -36,19 +51,25 @@ HDL_SOURCE = \
 	$(BSG_IP_PATH)/bsg_mem/bsg_mem_1rw_sync_synth.v \
 	$(BSG_IP_PATH)/bsg_mem/bsg_mem_1r1w.v \
 	$(BSG_IP_PATH)/bsg_mem/bsg_mem_1r1w_synth.v \
-	$(BSG_IP_PATH)/bsg_dataflow/bsg_two_fifo.v
+	$(BSG_IP_PATH)/bsg_dataflow/bsg_two_fifo.v \
+	$(abspath $(wildcard $(CCE_SRC_PATH)/*.v)) \
+	$(abspath $(wildcard $(NETWORK_PATH)/*.v)) \
+	$(BP_ME_SRC_PATH)/bp_me_top.v \
+	$(CCE_ROM_PATH)/bp_me_mem_rom_0.v
+
+#	$(BP_ME_TB_COMMON_PATH)/bp_mem.v \
 
 # Tests that all BP repos are present
 test_env:
 		[ -d $(BP_TOP_PATH)    ] && [ -d $(BP_FE_PATH)      ] && \
 		[ -d $(BP_BE_PATH)     ] && [ -d $(BP_ME_PATH)      ] && \
 		[ -d $(BP_COMMON_PATH)    ] && [ -d $(BSG_IP_PATH)     ] && \
-		[ -d $(CADENV_PATH)	   ] && [ -d $(VERILATOR_PATH)  ] && \
+		[ -d $(BSG_CADENV_DIR)	   ] && [ -d $(VERILATOR_PATH)  ] && \
 		[ -d $(SYSTEMC_PATH)   ] && 							 \
 		echo "BP environment correctly set up!"
 
 clean:
-	rm -rf $(SYN_PATH)/obj_dir
+	rm -rf $(BP_ME_SYN_PATH)/obj_dir
 	rm -rf csrc
 	rm -rf ucli.key
 	rm -rf inter.vpd
@@ -57,7 +78,9 @@ clean:
 	rm -rf *simv
 	rm -rf *simv.daidir
 
-include	$(SYN_PATH)/Makefile.verilator
+include	$(BP_ME_SYN_PATH)/Makefile.verilator
 
-include $(SYN_PATH)/Makefile.vcs
+include $(BP_ME_SYN_PATH)/Makefile.vcs
+
+include $(BP_ME_SYN_PATH)/Makefile.dc
 

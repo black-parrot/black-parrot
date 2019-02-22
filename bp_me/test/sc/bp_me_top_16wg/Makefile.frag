@@ -1,12 +1,5 @@
 HDL_SOURCE += \
-	bp_mem \
-	bp_me_top \
-	bp_me_mem_rom_0.v \
-	bsg_noc_pkg.v \
-	bp_coherence_network_channel.v \
-	bp_coherence_network.v \
-	bsg_mesh_router_buffered.v \
-	bsg_mesh_router.v
+	$(BP_ME_TB_COMMON_PATH)/bp_mem.v
 
 HDL_PARAMS=-pvalue+num_lce_p=1 -pvalue+num_cce_p=1 \
            -pvalue+addr_width_p=20 -pvalue+lce_assoc_p=8 -pvalue+lce_sets_p=16 \

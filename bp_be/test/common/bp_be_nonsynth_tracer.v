@@ -1,4 +1,3 @@
-
 `include "bsg_defines.v"
 
 `include "bp_common_me_if.vh"
@@ -15,7 +14,10 @@ module bp_be_nonsynth_tracer
    , parameter asid_width_p="inv"
    , parameter branch_metadata_fwd_width_p="inv"
 
-   , localparam proc_cfg_width_lp = `bp_proc_cfg_width
+   , parameter core_els_p="inv"
+   , parameter num_lce_p="inv"
+
+   , localparam proc_cfg_width_lp = `bp_proc_cfg_width(core_els_p, num_lce_p)
 
    , localparam pipe_stage_reg_width_lp=`bp_be_pipe_stage_reg_width(branch_metadata_fwd_width_p)
    , localparam calc_result_width_lp=`bp_be_calc_result_width(branch_metadata_fwd_width_p)
@@ -31,6 +33,7 @@ module bp_be_nonsynth_tracer
    , input logic [exception_width_lp-1:0]      cmt_trace_exc_i 
    );
 
+`declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
 `declare_bp_be_internal_if_structs(vaddr_width_p
                                    , paddr_width_p
                                    , asid_width_p
@@ -97,7 +100,7 @@ always_ff @(posedge clk_i) begin
                          ,cmt_trace_stage_reg.instr_metadata.pc
                          ,cmt_trace_stage_reg.instr
                          );
-            end else if(cmt_trace_exc.psn_v) begin
+            end else if(cmt_trace_exc.poison_v) begin
                 $display("[CORE%0x PSN] itag: %x pc: %x instr: %x"
                          ,proc_cfg.mhartid
                          ,cmt_trace_stage_reg.instr_metadata.itag
@@ -198,4 +201,3 @@ always_ff @(posedge clk_i) begin
     end
 end
 endmodule : bp_be_nonsynth_tracer
-

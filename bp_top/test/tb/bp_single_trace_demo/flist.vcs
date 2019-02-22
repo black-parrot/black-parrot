@@ -1,0 +1,8 @@
+# bsg_ip_cores files
+$BSG_IP_CORES_DIR/bsg_test/bsg_nonsynth_reset_gen.v
+$BSG_IP_CORES_DIR/bsg_test/bsg_nonsynth_clock_gen.v
+$BSG_IP_CORES_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
+# me files
+# top files
+$BP_TOP_DIR/test/rom/v/$TRACE_ROM
+$BP_TOP_DIR/test/rom/v/$TEST_ROM
