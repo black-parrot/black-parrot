@@ -69,6 +69,9 @@ $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router_buffered.v
 ## BE files
 $BP_BE_DIR/src/v/bp_be_top.v
+# BSerial files
+$BP_BE_DIR/src/v/bp_be_bserial/bp_be_bserial_top.v
+$BP_BE_DIR/src/v/bp_be_bserial/bp_be_bserial_ctl.v
 # Calculator
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_bypass.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_calculator_top.v

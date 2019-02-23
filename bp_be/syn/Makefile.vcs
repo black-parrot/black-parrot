@@ -22,8 +22,8 @@ TRACE_ROM ?= bp_example_rom.tr.v
 .EXPORT_ALL_VARIABLES:
 
 lint.v: $(HDL_SOURCE)
-	$(eval include $(TB_PATH)/bp_single_demo/Makefile.frag) \
-	$(VCS) $(VCS_OPTIONS) $(LINT_OPTIONS) -top bp_be_top -f flist.vcs $(HDL_PARAMS)
+	$(eval include $(TB_PATH)/bp_be_trace_demo/Makefile.frag) \
+	$(VCS) $(VCS_OPTIONS) $(LINT_OPTIONS) -top bp_be_bserial_top -f flist.vcs $(HDL_PARAMS)
 
 %.build.v: 
 	$(eval include $(TB_PATH)/$*/Makefile.frag) \
