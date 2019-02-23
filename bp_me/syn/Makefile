@@ -17,7 +17,7 @@ BSG_IP_CORES_DIR = $(TOP)/bsg_ip_cores
 SYN_PATH         = $(BP_ME_DIR)/syn
 TB_PATH          = $(BP_ME_DIR)/test/tb
 
-CADENV_PATH    = $(TOP)/bsg_cadenv
+BSG_CADENV_DIR    = $(TOP)/bsg_cadenv
 BSG_IP_PATH	   = $(TOP)/bsg_ip_cores
 VERILATOR_PATH = $(TOP)/verilator
 SYSTEMC_PATH   = $(TOP)/systemc
@@ -64,7 +64,7 @@ test_env:
 		[ -d $(BP_TOP_PATH)    ] && [ -d $(BP_FE_PATH)      ] && \
 		[ -d $(BP_BE_PATH)     ] && [ -d $(BP_ME_PATH)      ] && \
 		[ -d $(BP_COMMON_PATH)    ] && [ -d $(BSG_IP_PATH)     ] && \
-		[ -d $(CADENV_PATH)	   ] && [ -d $(VERILATOR_PATH)  ] && \
+		[ -d $(BSG_CADENV_DIR)	   ] && [ -d $(VERILATOR_PATH)  ] && \
 		[ -d $(SYSTEMC_PATH)   ] && 							 \
 		echo "BP environment correctly set up!"
 
