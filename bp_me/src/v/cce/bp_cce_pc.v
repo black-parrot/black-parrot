@@ -39,8 +39,6 @@ module bp_cce_pc
    , input [inst_width_lp-1:0]                   boot_rom_data_i
   );
 
-// RAM version
-/*
   logic [inst_ram_addr_width_lp-1:0] boot_rom_addr_r;
 
   logic [inst_ram_addr_width_lp-1:0] ex_pc_r;
@@ -238,55 +236,4 @@ module bp_cce_pc
       endcase
     end
   end
-*/
-
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-// OLD
-//////////////////////////////////////////////////////////////////////////////
-  // PC Register
-  logic [inst_ram_addr_width_lp-1:0] pc_r, pc_n;
-  logic pc_v;
-
-  // PC register update
-  always_ff @(posedge clk_i)
-  begin
-    if (reset_i)
-      pc_r <= 0;
-    else if (!pc_stall_i)
-      pc_r <= pc_n;
-  end
-
-  // TODO: make ROM a 1RW RAM
-  bp_cce_inst_s inst;
-  logic [inst_width_lp-1:0] inst_mem_data_o;
-  bp_cce_inst_rom
-    #(.width_p(inst_width_lp)
-      ,.addr_width_p(inst_ram_addr_width_lp)
-     )
-  inst_rom
-    (.addr_i(pc_r)
-     ,.data_o(inst_mem_data_o)
-    );
-
-  // Next PC combinational logic
-  always_comb
-  begin
-    pc_v = ~reset_i;
-
-    if (reset_i) begin
-      inst = '0;
-      inst_o = '0;
-    end else begin
-      inst = inst_mem_data_o;
-      inst_o = inst_mem_data_o;
-    end
-    inst_v_o = ~reset_i;
-
-    pc_n = alu_branch_res_i ? pc_branch_target_i : (pc_r + 1);
-
-  end
-
 endmodule
