@@ -96,17 +96,22 @@ bp_lce_lce_tr_resp_s local_lce_tr_resp, remote_lce_tr_resp;
 logic local_lce_tr_resp_v, local_lce_tr_resp_rdy;
 logic remote_lce_tr_resp_v, remote_lce_tr_resp_rdy;
 
-logic [reg_addr_width_lp-1:0] rd_addr_lo;
 logic                         rd_data_lo;
+logic [reg_addr_width_lp-1:0] rd_addr_lo;
 logic                         rd_w_v_lo;
-logic                         commit_v_lo;
 
-logic [reg_addr_width_lp-1:0] rd_addr_r;
-logic [reg_data_width_lp-1:0] rd_data_r;
+logic                         pc_lo;
+logic                         pc_w_v_lo;
+logic                         npc_lo;
+logic                         npc_w_v_lo;
+logic                         commit_v_lo;
+logic                         recover_v_lo;
+logic                         shex_dir_lo;
+logic                         skip_commit_lo;
 
 bp_proc_cfg_s proc_cfg;
 
-logic [trace_ring_width_p-1:0] tr_data_li;
+logic [trace_ring_width_p-1:0] tr_data_li, tr_data_lo;
 logic tr_v_li, tr_ready_lo;
 
 logic [trace_rom_addr_width_p-1:0]  tr_rom_addr_li;
@@ -130,7 +135,7 @@ bsg_nonsynth_reset_gen
 assign proc_cfg.mhartid   = 1'b0;
 assign proc_cfg.icache_id = 1'b1; // Unused
 assign proc_cfg.dcache_id = 1'b0;
-bp_be_top 
+bp_be_bserial_top 
  #(.vaddr_width_p(vaddr_width_p)
    ,.paddr_width_p(paddr_width_p)
    ,.asid_width_p(asid_width_p)
@@ -186,24 +191,40 @@ bp_be_top
 
    ,.proc_cfg_i(proc_cfg)
 
-   // Debug port 
+   ,.pc_o(pc_lo)
+   ,.pc_w_v_o(pc_w_v_lo)
+   ,.npc_o(npc_lo)
+   ,.npc_w_v_o(npc_w_v_lo)
+   ,.rd_data_o(rd_data_lo)
    ,.rd_addr_o(rd_addr_lo)
-   ..rd_data_o(rd_data_lo)
    ,.rd_w_v_o(rd_w_v_lo)
    ,.commit_v_o(commit_v_lo)
+   ,.recover_v_o(recover_v_lo)
+   ,.shex_dir_o(shex_dir_lo)
+
+   ,.skip_commit_o(skip_commit_lo)
    );
 
-bp_be_bserial_trace_replay_gen
+bp_be_bserial_trace_replay_gen 
  #(.trace_ring_width_p(trace_ring_width_p))
- be_bserial_trace_replay_gen
+ be_trace_gen
   (.clk_i(clk)
    ,.reset_i(reset)
 
-   ,.rd_data_i(rd_data_r)
-   ,.rd_addr_i(rd_addr_r)
+   ,.pc_i(pc_lo)
+   ,.pc_w_v_i(pc_w_v_lo)
+   ,.npc_i(npc_lo)
+   ,.npc_w_v_i(npc_w_v_lo)
+   ,.rd_data_i(rd_data_lo)
+   ,.rd_addr_i(rd_addr_lo)
    ,.rd_w_v_i(rd_w_v_lo)
    ,.commit_v_i(commit_v_lo)
-            
+   ,.recover_v_i(recover_v_lo)         
+   ,.shex_dir_i(shex_dir_lo)
+
+   ,.skip_commit_i(skip_commit_lo)
+   ,.data_i(tr_data_lo)
+
    ,.data_o(tr_data_li)
    ,.v_o(tr_v_li)
    ,.ready_i(tr_ready_lo)
@@ -223,7 +244,7 @@ bsg_fsb_node_trace_replay
    ,.ready_o(tr_ready_lo)
                   
    ,.v_o()
-   ,.data_o()
+   ,.data_o(tr_data_lo)
    ,.yumi_i(1'b0)
                   
    ,.rom_addr_o(tr_rom_addr_li)
@@ -389,12 +410,7 @@ logic [lg_max_instr_cnt_lp-1:0] instr_cnt;
      ,.reset_i(reset)
 
      ,.clear_i(1'b0)
-     ,.up_i(~(|cmt_trace_exc
-              | cmt_trace_stage_reg.decode.fe_nop_v
-              | cmt_trace_stage_reg.decode.be_nop_v
-              | cmt_trace_stage_reg.decode.me_nop_v
-              )
-            )
+     ,.up_i(commit_v_lo)
 
      ,.count_o(instr_cnt)
      );
