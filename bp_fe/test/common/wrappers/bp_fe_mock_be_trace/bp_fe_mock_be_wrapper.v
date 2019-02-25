@@ -15,6 +15,7 @@ import bp_be_rv64_pkg::*;
 import bp_be_pkg::*;
 
 module bp_fe_mock_be_wrapper
+  import bp_cce_pkg::*;
  #(parameter core_els_p="inv"
    ,parameter vaddr_width_p="inv"
    ,parameter paddr_width_p="inv"
@@ -51,6 +52,8 @@ module bp_fe_mock_be_wrapper
    ,localparam dcache_lce_id_lp=1
 
    ,localparam reg_data_width_lp=rv64_reg_data_width_gp
+
+   , localparam cce_inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(cce_num_inst_ram_els_p)
    )
   (input logic                  clk_i
    ,input logic                 reset_i
@@ -101,6 +104,11 @@ logic [lg_trace_addr_els_p-1:0] trace_addr;
 
 logic [lg_boot_rom_els_lp-1:0] boot_rom_addr;
 logic [boot_rom_width_p-1:0] boot_rom_data;
+
+// CCE Inst Boot ROM
+logic [cce_inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
+logic [`bp_cce_inst_width-1:0]         cce_inst_boot_rom_data;
+
 // Module instantiations
 /* TODO: Settle on parameter names and converge redundant parameters */
 /* TODO: This is not multi-core scalable. */
@@ -354,9 +362,21 @@ bp_me_top #(.num_lce_p(num_lce_p)
             ,.lce_tr_resp_v_o(local_lce_tr_resp_v)
             ,.lce_tr_resp_ready_i(local_lce_tr_resp_rdy)
 
-	    ,.boot_rom_addr_o(boot_rom_addr)
-	    ,.boot_rom_data_i(boot_rom_data)
+	          ,.boot_rom_addr_o(boot_rom_addr)
+	          ,.boot_rom_data_i(boot_rom_data)
+
+            ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr)
+            ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data)
             );
+
+bp_cce_inst_rom
+  #(.width_p(`bp_cce_inst_width)
+    ,.addr_width_p(cce_inst_ram_addr_width_lp)
+    )
+  cce_inst_rom
+   (.addr_i(cce_inst_boot_rom_addr)
+    ,.data_o(cce_inst_boot_rom_data)
+    );
 
 endmodule : bp_fe_mock_be_wrapper
 
