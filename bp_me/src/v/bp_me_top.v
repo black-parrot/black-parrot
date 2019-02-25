@@ -10,6 +10,7 @@
 
 module bp_me_top
   import bp_common_pkg::*;
+  import bp_cce_pkg::*;
   #(parameter num_lce_p                ="inv"
     , parameter num_cce_p              ="inv"
     , parameter paddr_width_p          ="inv"
@@ -30,6 +31,7 @@ module bp_me_top
     , localparam block_size_in_bits_lp = (block_size_in_bytes_p*8)
     , localparam lg_num_cce_lp         = `BSG_SAFE_CLOG2(num_cce_p)
     , localparam lg_boot_rom_els_lp    = `BSG_SAFE_CLOG2(boot_rom_els_p)
+    , localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_inst_ram_els_p)
 
     , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                                ,num_lce_p
@@ -116,6 +118,9 @@ module bp_me_top
 
    , output logic [num_cce_p-1:0][lg_boot_rom_els_lp-1:0]                 boot_rom_addr_o
    , input logic [num_cce_p-1:0][boot_rom_width_p-1:0]                    boot_rom_data_i
+
+   , output logic [inst_ram_addr_width_lp-1:0]                            cce_inst_boot_rom_addr_o
+   , input [`bp_cce_inst_width-1:0]                                       cce_inst_boot_rom_data_i
   );
 
   // Coherence Network <-> CCE
@@ -251,6 +256,9 @@ module bp_me_top
         ,.reset_i(reset_i)
 
         ,.cce_id_i(cce_id[i])
+
+        ,.boot_rom_addr_o(cce_inst_boot_rom_addr_o)
+        ,.boot_rom_data_i(cce_inst_boot_rom_data_i)
 
         // To CCE
         ,.lce_req_i(lce_req_i_to_cce[i])

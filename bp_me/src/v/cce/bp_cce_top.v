@@ -25,6 +25,7 @@ module bp_cce_top
     // Derived parameters
     , localparam block_size_in_bits_lp  = (block_size_in_bytes_p*8)
     , localparam lg_num_cce_lp          = `BSG_SAFE_CLOG2(num_cce_p)
+    , localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_inst_ram_els_p)
 
     , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                                ,num_lce_p
@@ -115,6 +116,9 @@ module bp_cce_top
    , input                                                 mem_data_cmd_yumi_i
 
    , input [lg_num_cce_lp-1:0]                             cce_id_i
+
+   , output logic [inst_ram_addr_width_lp-1:0]             boot_rom_addr_o
+   , input [`bp_cce_inst_width-1:0]                        boot_rom_data_i
   );
 
   logic [bp_lce_cce_req_width_lp-1:0]            lce_req_to_cce;
@@ -265,6 +269,9 @@ module bp_cce_top
       ,.reset_i(reset_i)
 
       ,.cce_id_i(cce_id_i)
+
+      ,.boot_rom_addr_o(boot_rom_addr_o)
+      ,.boot_rom_data_i(boot_rom_data_i)
 
       // To CCE
       ,.lce_req_i(lce_req_to_cce)

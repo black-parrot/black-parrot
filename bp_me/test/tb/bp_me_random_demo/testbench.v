@@ -19,6 +19,7 @@ module testbench();
   localparam num_mem_p = 1;
   localparam mem_els_p = 2*num_lce_p*sets_p*ways_p;
   localparam instr_count = `NUM_INSTR_P;
+  localparam num_cce_inst_ram_els_p = 256;
 
   localparam word_offset_width_lp=`BSG_SAFE_CLOG2(ways_p);
   localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p);
@@ -82,6 +83,7 @@ module testbench();
     ,.num_cce_p(num_cce_p)
     ,.mem_els_p(mem_els_p)
     ,.boot_rom_els_p(mem_els_p)
+    ,.num_cce_inst_ram_els_p(num_cce_inst_ram_els_p)
   ) dcache_cce_mem (
     .clk_i(clk)
     ,.reset_i(reset)

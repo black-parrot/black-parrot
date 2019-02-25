@@ -5,6 +5,7 @@
 
 module bp_cce_test
   import bp_common_pkg::*;
+  import bp_cce_pkg::*;
   #(parameter num_lce_p=1
     ,parameter num_cce_p=1
     ,parameter addr_width_p=22 // 10 tag + 6 idx + 6 offset
@@ -32,6 +33,7 @@ module bp_cce_test
     ,parameter bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(addr_width_p, num_lce_p, lce_assoc_p)
     ,parameter bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
 
+    , localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_inst_ram_els_p)
   )
   (
     input                                                  clk_i
@@ -87,6 +89,19 @@ module bp_cce_test
   localparam cce_id_lp = 0;
   assign cce_id = cce_id_lp;
 
+  logic [inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr_i;
+  logic [`bp_cce_inst_width-1:0] cce_inst_boot_rom_data_o;
+
+  // CCE Boot ROM
+  bp_cce_inst_rom
+    #(.width_p(`bp_cce_inst_width)
+      ,.addr_width_p(inst_ram_addr_width_lp)
+      )
+    cce_inst_rom
+     (.addr_i(cce_inst_boot_rom_addr_i)
+      ,.data_o(cce_inst_boot_rom_data_o)
+      );
+
   bp_cce_top
     #(.num_lce_p(num_lce_p)
       ,.num_cce_p(num_cce_p)
@@ -101,6 +116,9 @@ module bp_cce_test
       ,.reset_i(reset_i)
 
       ,.cce_id_i(cce_id)
+
+      ,.boot_rom_addr_o(cce_inst_boot_rom_addr_i)
+      ,.boot_rom_data_i(cce_inst_boot_rom_data_o)
 
       // To CCE
       ,.lce_req_i(lce_req_i)
