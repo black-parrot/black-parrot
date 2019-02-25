@@ -36,14 +36,14 @@ module icache
     , parameter ways_p="inv"
     , parameter lce_sets_p="inv"
     , parameter block_size_in_bytes_p="inv"
-    , localparam lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
+    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
     , localparam lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
     , localparam lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
     , localparam data_mask_width_lp=(data_width_p>>3)
     , localparam lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
     , localparam lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
     , localparam lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
-    , localparam vaddr_width_lp=(lg_lce_sets_lp+lg_ways_lp+lg_data_mask_width_lp)
+    , localparam vaddr_width_lp=(lg_lce_sets_lp+way_id_width_lp+lg_data_mask_width_lp)
     , localparam addr_width_lp=(vaddr_width_lp+tag_width_p)
     , localparam lce_data_width_lp=(ways_p*data_width_p)
     , localparam cce_coh_bits_lp=`bp_cce_coh_bits
@@ -148,10 +148,10 @@ module icache
   logic [lg_block_size_in_bytes_lp-1:0] vaddr_offset;
 
   logic [ways_p-1:0]                    way_v; // valid bits of each way
-  logic [lg_ways_lp-1:0]                way_invalid_index; // first invalid way
+  logic [way_id_width_lp-1:0]           way_invalid_index; // first invalid way
   logic                                 invalid_exist;
 
-  logic [lg_ways_lp-1:0]                lru_way_li;
+  logic [way_id_width_lp-1:0]           lru_way_li;
 
   logic                                 invalidate_cmd_v; // an invalidate command from CCE
 
@@ -295,7 +295,7 @@ module icache
 
   //cache hit?
   logic [ways_p-1:0]          hit_v;
-  logic [lg_ways_lp-1:0] hit_index;
+  logic [way_id_width_lp-1:0] hit_index;
   logic                       hit;
   logic                       miss_v;
 
@@ -338,8 +338,8 @@ module icache
     ,.data_o(metadata_mem_data_lo)
   );
 
-  logic [ways_p-2:0] lru_bits;
-  logic [lg_ways_lp-1:0] lru_encode;
+  logic [ways_p-2:0]          lru_bits;
+  logic [way_id_width_lp-1:0] lru_encode;
 
   assign lru_bits = metadata_mem_data_lo;
 
@@ -524,9 +524,9 @@ module icache
   assign metadata_mem_w_li = (v_tv_r & ~miss_v) | metadata_mem_pkt_yumi_li;
   assign metadata_mem_addr_li = v_tv_r ? addr_index_tv : metadata_mem_pkt.index;
 
-  logic [lg_ways_lp-1:0] lru_decode_way_li;
-  logic [ways_p-2:0] lru_decode_data_lo;
-  logic [ways_p-2:0] lru_decode_mask_lo;
+  logic [way_id_width_lp-1:0] lru_decode_way_li;
+  logic [ways_p-2:0]          lru_decode_data_lo;
+  logic [ways_p-2:0]          lru_decode_mask_lo;
 
    bp_be_dcache_lru_decode #(
      .ways_p(ways_p)
@@ -564,7 +564,7 @@ module icache
   end
    
   // LCE: data mem
-  logic [lg_ways_lp-1:0] data_mem_pkt_way_r;
+  logic [way_id_width_lp-1:0] data_mem_pkt_way_r;
   always_ff @ (posedge clk_i) begin
     data_mem_pkt_way_r <= (data_mem_pkt_v_lo & data_mem_pkt_yumi_li)
       ? data_mem_pkt.way_id
@@ -577,7 +577,7 @@ module icache
       ,.width_p(data_width_p)
     ) lce_data_mem_read_mux (
       .data_i(data_mem_bank_data_lo)
-      ,.sel_i(data_mem_pkt_way_r ^ ((lg_ways_lp)'(i)))
+      ,.sel_i(data_mem_pkt_way_r ^ ((way_id_width_lp)'(i)))
       ,.data_o(data_mem_data_li[i])
     );
   end

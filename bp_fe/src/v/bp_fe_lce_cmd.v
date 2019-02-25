@@ -33,7 +33,6 @@ module bp_fe_lce_cmd
     , parameter data_mask_width_lp=(data_width_p>>3)
     , parameter lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
     , parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-    , parameter lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
     , parameter lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
 
     , parameter timeout_max_limit_p=4

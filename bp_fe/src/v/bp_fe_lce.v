@@ -32,7 +32,7 @@ module bp_fe_lce
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
     , parameter block_size_in_bytes_p="inv"
-    , localparam lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
+    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
 
     , parameter timeout_max_limit_p=4
 
@@ -102,7 +102,7 @@ module bp_fe_lce
        
     , output logic                                               metadata_mem_pkt_v_o
     , output logic [bp_fe_icache_lce_metadata_mem_pkt_width_lp-1:0] metadata_mem_pkt_o
-    , input [lg_ways_lp-1:0]                                     lru_way_i
+    , input [way_id_width_lp-1:0]                                lru_way_i
     , input                                                      metadata_mem_pkt_yumi_i
        
     , output logic [bp_lce_cce_req_width_lp-1:0]                 lce_req_o
