@@ -8,6 +8,7 @@ module test_bp
  import bp_common_pkg::*;
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
+ import bp_cce_pkg::*;
  #(parameter vaddr_width_p                 = "inv"
    , parameter paddr_width_p               = "inv"
    , parameter asid_width_p                = "inv"
@@ -26,6 +27,7 @@ module test_bp
    , parameter boot_rom_width_p            = "inv"
    , parameter boot_rom_els_p              = "inv"
    , localparam lg_boot_rom_els_lp         = `BSG_SAFE_CLOG2(boot_rom_els_p)
+   , localparam cce_inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(cce_num_inst_ram_els_p)
    
    // Trace replay parameters
    , parameter trace_ring_width_p          = "inv"
@@ -54,6 +56,9 @@ logic clk, reset;
 
 logic [num_cce_p-1:0][lg_boot_rom_els_lp-1:0] boot_rom_addr;
 logic [num_cce_p-1:0][boot_rom_width_p-1:0]   boot_rom_data;
+
+logic [cce_inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
+logic [`bp_cce_inst_width-1:0] cce_inst_boot_rom_data;
 
 bp_be_pipe_stage_reg_s[core_els_p-1:0] cmt_trace_stage_reg;
 bp_be_calc_result_s   [core_els_p-1:0] cmt_trace_result;
@@ -105,6 +110,9 @@ bp_multi_top
 
    ,.boot_rom_addr_o(boot_rom_addr)
    ,.boot_rom_data_i(boot_rom_data)
+
+   ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr)
+   ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data)
 
    ,.cmt_trace_stage_reg_o(cmt_trace_stage_reg)
    ,.cmt_trace_result_o(cmt_trace_result)
@@ -175,6 +183,16 @@ for (genvar i = 0; i < num_cce_p; i++)
        ,.data_o(boot_rom_data[i])
        );
   end // rof1
+
+// CCE Boot ROM
+bp_cce_inst_rom
+  #(.width_p(`bp_cce_inst_width)
+    ,.addr_width_p(cce_inst_ram_addr_width_lp)
+    )
+  cce_inst_rom
+   (.addr_i(cce_inst_boot_rom_addr)
+    ,.data_o(cce_inst_boot_rom_data)
+    );
 
 logic booted;
 
