@@ -1,40 +1,52 @@
 # coming-soon
 Black Parrot is coming soon.
 
-To run the demo code:
+To setup the repo:
+```
+  source setup_env.sh init
+```
 
-Fetch the latest bsg_ip_cores with:
+'init' will pull external submodule dependencies as well as make all test roms and trace roms. This may take a while, especially to build riscv-gnu-toolchain if needed. But you only have to run this once.
 
-git submodule update
+To set environment variables needed for BlackParrot (everytime you restart your terminal):
+```
+  source setup_env.sh 
+```
 
-NOTE: Some users are reporting access issues with the submodule.  If this is you, instead delete the git submodule and clone directly from bitbucket into the same place as the original submodule (even level with bp_be, bp_top, etc.)
-https://bitbucket.org/taylor-bsg/bsg_ip_cores/src/master/
+Each module has a synthesizable trace-replay-based testbench found in bp\_\*/test/tb/
+```
+make TEST_ROM=<rom from test/rom/v/> TEST_ROM=<trace rom from test/rom/v/> <wrapper>.run.v
+```
 
-cd bp_top/syn
+For instance, 
 
-The general command to run a test program with a testbench wrapper (found in bp_top/test/tb) is
-make TEST_ROM=<rom from test/rom/v/> <wrapper>.run.v
+```
+make TEST_ROM=median\_rom.v TRACE_ROM=median\_rom.tr.v bp\_single\_trace\_demo.run.v
+make TEST_ROM=median\_rom.v TRACE_ROM=median\_rom.tr.v bp\_fe\_trace_demo.run.v
+make TEST_ROM=median\_rom.v TRACE_ROM=median\_rom.tr.v bp\_be\_trace_demo.run.v
+make TEST_ROM=median\_rom.v TRACE_ROM=median\_rom.tr.v bp\_me\_trace_demo.run.v
+```
 
-For example,
+Each test will print "PASS" if it passed.
 
-make TEST_ROM=rv64ui_p_add_rom.v bp_single_demo.run.v
+We also provide a regression in each module (and a wrapper running all modules at the top level) run by 
+```
+./regress.sh
+```
+which will show you each test and whether or not it passed.
 
-make TEST_ROM=hello_world_rom.v bp_single_demo.run.v
+Additionally, ME has a random load / store tracer designed to stress test the system (README in the tb directory has more information on extra parameters.
+```
+cd $BP_ME_DIR/test/tb/bp_me_random_demo
+make 
+```
 
-make TEST_ROM=queue_demo_rom.v bp_dual_demo.run.v
+Other tests may or may not run based on this command structure.  In those cases, running 'make' in the test directory should run the test. Many tests are deprecated. Cleaning old testbenches and monitoring the rest with CI is high on our priority list.
 
-This command also works for system wrappers found in bp_be.  For example:
-You must first 
-
-cd bp_be/tb/asm && make && make -f Makefile.demo, which will generate all of the test roms in bp_be/tb/rom
-
-then
-
-make TEST_ROM=rv64ui_p_ld_rom.v bp_be_nonsynth_mock_fe_top_wrapper.run.v
-
-Other tests may or may not run based on this command.  In those cases, running 'make' in the test directory should run the test. Else, contact petrisko@cs.washington.edu who can direct you to the correct implementor.
-
-See preliminary BlackParrot coding guidelines at:
+For pull requests, please follow BlackParrot coding guidelines at:
 https://docs.google.com/document/d/1GOSp6NVQUzGAAk_ahleAsANaQK2XJ0MUOZFPC9DLbLQ/edit?usp=sharing
+
+The preliminary BlackParrot microarchitecture spec is available at:
+https://docs.google.com/document/d/1UDGMtXfCCgmO62fothY-9x9TLF5AyTLUEURk-fDVeLM/edit
 
 NOTE: Currently, BlackParrot requires a VCS license.  Work in is progress to adapt the project to Verilator (https://www.veripool.org/wiki/verilator), an open-source simulator.  At the moment, for the purpose of this pre-alpha release, please contact petrisko@cs.washington.edu for help massaging your own VCS setup into this build flow (or pull-request a working Verilator build =))

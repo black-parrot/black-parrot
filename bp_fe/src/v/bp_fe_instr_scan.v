@@ -23,23 +23,19 @@ assign scan_o = scan;
 //is_compressed signal indicates if the instruction from icache is compressed
 assign scan.is_compressed = (instr_i[1:0] != 2'b11);
 
-assign scan.instr_scan_class =
-  (instr_i[15:13] == `opcode_rvc_beqz  ) ? `bp_fe_instr_scan_class_width'(e_rvc_beqz  ) :
-  (instr_i[15:13] == `opcode_rvc_bnez  ) ? `bp_fe_instr_scan_class_width'(e_rvc_bnez  ) :
-  (instr_i[15:0]  == `opcode_rvc_call  ) ? `bp_fe_instr_scan_class_width'(e_rvc_call  ) :
-  (instr_i[15:13] == `opcode_rvc_imm   ) ? `bp_fe_instr_scan_class_width'(e_rvc_imm   ) :
-  (instr_i[15:12] == `opcode_rvc_jalr  ) ? `bp_fe_instr_scan_class_width'(e_rvc_jalr  ) :
-  (instr_i[15:12] == `opcode_rvc_jal   ) ? `bp_fe_instr_scan_class_width'(e_rvc_jalr  ) :
-  (instr_i[15:12] == `opcode_rvc_jr    ) ? `bp_fe_instr_scan_class_width'(e_rvc_jr    ) :
-  (instr_i[15:0]  == `opcode_rvc_return) ? `bp_fe_instr_scan_class_width'(e_rvc_return) :
+assign scan.instr_scan_class = bp_fe_instr_scan_class_e'(
   (instr_i[6:0]   == `opcode_rvi_branch) ? `bp_fe_instr_scan_class_width'(e_rvi_branch) :
-  (instr_i[7:0]   == `opcode_rvi_call  ) ? `bp_fe_instr_scan_class_width'(e_rvi_call  ) :
-  (instr_i[11:0]  == `opcode_rvi_imm   ) ? `bp_fe_instr_scan_class_width'(e_rvi_imm   ) :
   (instr_i[6:0]   == `opcode_rvi_jalr  ) ? `bp_fe_instr_scan_class_width'(e_rvi_jalr  ) :
   (instr_i[6:0]   == `opcode_rvi_jal   ) ? `bp_fe_instr_scan_class_width'(e_rvi_jal   ) :
-  (instr_i[15:0]  == `opcode_rvi_return) ? `bp_fe_instr_scan_class_width'(e_rvi_return) :
-                                           `bp_fe_instr_scan_class_width'(e_default   );
+                                           `bp_fe_instr_scan_class_width'(e_default   ) );
 
+
+assign scan.imm =
+  (instr_i[6:0]   == `opcode_rvi_branch) ? {{51{instr_i[31]}}, instr_i[31], instr_i[7], instr_i[30:25], instr_i[11:8], 1'b0} :
+  (instr_i[6:0]   == `opcode_rvi_jalr  ) ? {{52{instr_i[31]}}, instr_i[31:20]} :
+  (instr_i[6:0]   == `opcode_rvi_jal   ) ? {{44{instr_i[31]}}, instr_i[19:12], instr_i[20], instr_i[30:21], 1'b0} :
+					   {64{1'b0}};
+   
 endmodule
 
 

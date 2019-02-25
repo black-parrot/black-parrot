@@ -70,18 +70,18 @@ module bp_be_director
    , input                             reset_i
 
    // Dependency information
-   , input        [calc_status_width_lp-1:0]  calc_status_i
-   , output logic [eaddr_width_lp-1:0]        expected_npc_o
+   , input [calc_status_width_lp-1:0]  calc_status_i
+   , output [eaddr_width_lp-1:0]       expected_npc_o
 
    // FE-BE interface
    , output [fe_cmd_width_lp-1:0]      fe_cmd_o
-   , output logic                      fe_cmd_v_o
+   , output                            fe_cmd_v_o
    , input                             fe_cmd_ready_i
 
    // FE cmd queue control signals
-   , output logic                      chk_flush_fe_o
-   , output logic                      chk_dequeue_fe_o
-   , output logic                      chk_roll_fe_o
+   , output                            chk_flush_fe_o
+   , output                            chk_dequeue_fe_o
+   , output                            chk_roll_fe_o
   );
 
 // Declare parameterized structures
@@ -99,20 +99,23 @@ module bp_be_director
 // Cast input and output ports 
 bp_be_calc_status_s              calc_status;
 bp_fe_cmd_s                      fe_cmd;
+logic                            fe_cmd_v;
 bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
 bp_fe_cmd_attaboy_s              fe_cmd_attaboy;
 
 assign calc_status = calc_status_i;
 assign fe_cmd_o    = fe_cmd;
+assign fe_cmd_v_o  = fe_cmd_v;
 
 // Declare intermediate signals
-logic[eaddr_width_lp-1:0]              npc_plus4, npc_expected;
-logic[eaddr_width_lp-1:0]              npc_n, npc_r;
-logic[branch_metadata_fwd_width_p-1:0] branch_metadata_fwd_r;
+logic [eaddr_width_lp-1:0]              npc_plus4, npc_expected;
+logic [eaddr_width_lp-1:0]              npc_n, npc_r;
+logic                                   npc_mismatch_v;
+logic [branch_metadata_fwd_width_p-1:0] branch_metadata_fwd_r;
 
 // Control signals
-logic npc_w_v, btaken_v, redirect_pending;
-logic[eaddr_width_lp-1:0] br_mux_o, miss_mux_o, exception_mux_o, ret_mux_o;
+logic                      npc_w_v , btaken_v  , redirect_pending;
+logic [eaddr_width_lp-1:0] br_mux_o, miss_mux_o, exception_mux_o, ret_mux_o;
 
 // Module instantiations
 // Update the NPC on a valid instruction in ex1 or a cache miss
@@ -174,11 +177,12 @@ bsg_mux
    );
 
 // Save branch prediction metadata for forwarding on the next (mis)predicted instruction
-bsg_dff 
+bsg_dff_en
  #(.width_p(branch_metadata_fwd_width_p)
    ) 
  branch_metadata_fwd_reg
   (.clk_i(clk_i)
+   ,.en_i(calc_status.ex1_v)
    ,.data_i(calc_status.int1_branch_metadata_fwd)
    ,.data_o(branch_metadata_fwd_r)
    );
@@ -198,23 +202,21 @@ bsg_dff_reset_en
    ,.data_o(redirect_pending)
    );
 
-always_comb 
-  begin : control_signals
-    // Expected npc updates in the same cycle as it's updated. But if a new instruction is 
-    //   not being executed, then we're still waiting for the previous npc
-    expected_npc_o = npc_w_v ? npc_n : npc_r;
-    // Increment the checkpoint if there's a committing instruction
-    chk_dequeue_fe_o = ~calc_status.mem3_cache_miss_v & calc_status.instr_cmt_v;
-    // Flush the FE queue if there's a pc redirect
-    chk_flush_fe_o = fe_cmd_v_o & (fe_cmd.opcode == e_op_pc_redirection);
-    // Rollback the FE queue on a cache miss
-    chk_roll_fe_o  = calc_status.mem3_cache_miss_v;
-  end
+// Generate control signals
+// Expected npc updates in the same cycle as it's updated. But if a new instruction is 
+//   not being executed, then we're still waiting for the previous npc
+assign expected_npc_o = npc_w_v ? npc_n : npc_r;
+// Increment the checkpoint if there's a committing instruction
+assign chk_dequeue_fe_o = ~calc_status.mem3_cache_miss_v & calc_status.instr_cmt_v;
+// Flush the FE queue if there's a pc redirect
+assign chk_flush_fe_o = fe_cmd_v & (fe_cmd.opcode == e_op_pc_redirection);
+// Rollback the FE queue on a cache miss
+assign chk_roll_fe_o  = calc_status.mem3_cache_miss_v;
 
 always_comb 
   begin : fe_cmd_adapter
     fe_cmd = 'b0;
-    fe_cmd_v_o = 1'b0;
+    fe_cmd_v = 1'b0;
 
     // Redirect the pc if there's an NPC mismatch
     if(calc_status.isd_v & npc_mismatch_v) 
@@ -232,7 +234,7 @@ always_comb
 
         fe_cmd.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
 
-        fe_cmd_v_o = fe_cmd_ready_i & ~chk_roll_fe_o & ~redirect_pending;
+        fe_cmd_v = fe_cmd_ready_i & ~chk_roll_fe_o & ~redirect_pending;
       end 
     // Send an attaboy if there's a correct prediction
     else if(calc_status.isd_v & ~npc_mismatch_v & calc_status.int1_br_or_jmp) 
@@ -245,7 +247,7 @@ always_comb
 
         fe_cmd.operands.attaboy = fe_cmd_attaboy;
 
-        fe_cmd_v_o = fe_cmd_ready_i & ~chk_roll_fe_o & ~redirect_pending;
+        fe_cmd_v = fe_cmd_ready_i & ~chk_roll_fe_o & ~redirect_pending;
       end
   end
 

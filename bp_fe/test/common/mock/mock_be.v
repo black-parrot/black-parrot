@@ -26,7 +26,7 @@
 
 //import bp_common_pkg::*;
 //import itlb_pkg::*;
-import pc_gen_pkg::*;
+//import pc_gen_pkg::*;
 
 module mock_be
 #(

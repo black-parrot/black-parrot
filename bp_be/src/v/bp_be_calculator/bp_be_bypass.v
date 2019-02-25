@@ -162,4 +162,3 @@ always_comb
   end
 
 endmodule : bp_be_bypass
-

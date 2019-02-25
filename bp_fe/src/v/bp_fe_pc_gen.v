@@ -76,7 +76,6 @@ bp_fe_pc_gen_queue_s        pc_gen_queue;
 bp_fe_pc_gen_cmd_s          fe_pc_gen_cmd;
 bp_fe_pc_gen_icache_s       pc_gen_icache;
 bp_fe_pc_gen_itlb_s         pc_gen_itlb;
-bp_fe_branch_metadata_fwd_s branch_metadata_fwd_i;
 bp_fe_branch_metadata_fwd_s branch_metadata_fwd_o;
 bp_fe_icache_pc_gen_s       icache_pc_gen;
 
@@ -85,7 +84,8 @@ bp_fe_icache_pc_gen_s       icache_pc_gen;
 //the second level structs instatiations
 bp_fe_fetch_s            pc_gen_fetch;
 bp_fe_exception_s        pc_gen_exception;
-
+bp_fe_instr_scan_s       scan_instr;
+   
    
 // save last pc
 logic [eaddr_width_p-1:0]       icache_miss_pc;
@@ -101,11 +101,13 @@ logic [instr_width_p-1:0]       last_instr;
 logic [instr_width_p-1:0]       instr_out;
 
 //control signals
+logic                          misalignment;
 logic                          predict;
 logic                          pc_redirect_after_icache_miss;
 logic                          stalled_pc_redirect;
+logic                          bht_r_v_branch_jalr_inst;
+logic                          branch_inst;
    
-
 //connect pc_gen to the rest of the FE submodules as well as FE top module   
 assign pc_gen_icache_o = pc_gen_icache;
 assign pc_gen_itlb_o   = pc_gen_itlb;
@@ -122,17 +124,19 @@ assign misalignment          = fe_pc_gen_v_i
    
 /* output wiring */
 // there should be fixes to the pc signal sent out according to the valid/ready signal pairs
-assign pc_gen_queue.msg_type            = (misalignment) ?  e_fe_exception : e_fe_fetch;
-assign pc_gen_exception.exception_code  = (misalignment) ? e_instr_addr_misaligned : e_illegal_instruction;
-assign pc_gen_queue.msg                 = (pc_gen_queue.msg_type == e_fe_fetch) ? pc_gen_fetch : pc_gen_exception;
-assign pc_gen_fetch.pc                  = icache_pc_gen.addr;
-assign pc_gen_fetch.instr               = icache_pc_gen.instr;
-assign pc_gen_icache.virt_addr          = pc;
-assign pc_gen_itlb.virt_addr            = pc;
-assign pc_gen_fetch.branch_metadata_fwd = branch_metadata_fwd_o;
-assign pc_gen_fetch.padding             = '0;
-assign pc_gen_exception.padding         = '0;
-
+always_comb 
+  begin
+    pc_gen_queue.msg_type            = (misalignment) ?  e_fe_exception : e_fe_fetch;
+    pc_gen_exception.exception_code  = (misalignment) ? e_instr_addr_misaligned : e_illegal_instruction;
+    pc_gen_fetch.pc                  = icache_pc_gen.addr;
+    pc_gen_fetch.instr               = icache_pc_gen.instr;
+    pc_gen_fetch.branch_metadata_fwd = branch_metadata_fwd_o;
+    pc_gen_fetch.padding             = '0;
+    pc_gen_exception.padding         = '0;
+    pc_gen_queue.msg                 = (pc_gen_queue.msg_type == e_fe_fetch) ? pc_gen_fetch : pc_gen_exception;
+    pc_gen_icache.virt_addr          = pc;
+    pc_gen_itlb.virt_addr            = pc;
+  end
    
 //valid-ready signals assignments
 always_comb 
@@ -157,15 +161,23 @@ always_comb begin
   if (icache_miss_i) 
     begin
       next_pc = icache_miss_pc;
-    end 
+    end
   else if (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) 
     begin
       next_pc = fe_pc_gen_cmd.pc;
-    end 
-  else if (prediction_on_p && predict) 
+    end
+  else if (prediction_on_p && predict && icache_pc_gen_v_i && (scan_instr.instr_scan_class == e_rvi_jalr)) 
     begin
       next_pc = btb_target;
-    end 
+    end
+  else if (prediction_on_p && predict && icache_pc_gen_v_i && (scan_instr.instr_scan_class == e_rvi_branch))
+    begin
+      next_pc = icache_pc_gen.addr + scan_instr.imm; 
+    end
+  else if (icache_pc_gen_v_i && (scan_instr.instr_scan_class == e_rvi_jal))
+    begin
+       next_pc = icache_pc_gen.addr + scan_instr.imm;
+    end
   else 
     begin 
       next_pc = pc + 4;
@@ -178,7 +190,7 @@ always_ff @(posedge clk_i)
     if (reset_i) 
       begin
        pc <= bp_first_pc_p;
-      end 
+      end
     else if (stalled_pc_redirect && icache_miss_i) 
       begin
         pc                  <= pc_redirect;
@@ -223,6 +235,18 @@ always_ff @(posedge clk_i)
   end
   
 
+instr_scan 
+  #(.eaddr_width_p(eaddr_width_p)
+    ,.instr_width_p(instr_width_p)
+   ) 
+  instr_scan_1 
+    (.instr_i(icache_pc_gen.instr)
+     ,.scan_o(scan_instr)
+    );
+
+assign bht_r_v_branch_jalr_inst = icache_pc_gen_v_i && (scan_instr.instr_scan_class == e_rvi_jalr
+                                                      ||scan_instr.instr_scan_class == e_rvi_branch);
+   
 //select among 2 available branch predictor implementations
 generate
   if (branch_predictor_p) 
@@ -237,12 +261,12 @@ generate
          (.clk_i(clk_i)
           ,.reset_i(reset_i)
           ,.attaboy_i(fe_pc_gen_cmd.attaboy_valid)
-          ,.r_v_i(~fe_pc_gen_v_i)
+          ,.r_v_i(bht_r_v_branch_jalr_inst)
           ,.w_v_i(fe_pc_gen_v_i)
-          ,.pc_queue_i(pc)
+          ,.pc_queue_i(last_pc)
           ,.pc_cmd_i(fe_pc_gen_cmd.pc)
           ,.pc_fwd_i(icache_pc_gen.addr)
-          ,.branch_metadata_fwd_i(branch_metadata_fwd_i)
+          ,.branch_metadata_fwd_i(fe_pc_gen_cmd.branch_metadata_fwd)
           ,.predict_o(predict)
           ,.pc_o(btb_target)
           ,.branch_metadata_fwd_o(branch_metadata_fwd_o)
@@ -255,17 +279,17 @@ generate
          ,.btb_indx_width_p(btb_indx_width_p)
          ,.bht_indx_width_p(bht_indx_width_p)
          ,.ras_addr_width_p(ras_addr_width_p)
-         ) 
+        ) 
        branch_prediction_1 
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
          ,.attaboy_i(fe_pc_gen_cmd.attaboy_valid)
-         ,.r_v_i(~fe_pc_gen_v_i)
+         ,.r_v_i(bht_r_v_branch_jalr_inst)
          ,.w_v_i(fe_pc_gen_v_i)
-         ,.pc_queue_i(pc)
+         ,.pc_queue_i(last_pc)
          ,.pc_cmd_i(fe_pc_gen_cmd.pc)
          ,.pc_fwd_i(icache_pc_gen.addr)
-         ,.branch_metadata_fwd_i(branch_metadata_fwd_i)
+         ,.branch_metadata_fwd_i(fe_pc_gen_cmd.branch_metadata_fwd)
          ,.predict_o(predict)
          ,.pc_o(btb_target)
          ,.branch_metadata_fwd_o(branch_metadata_fwd_o)

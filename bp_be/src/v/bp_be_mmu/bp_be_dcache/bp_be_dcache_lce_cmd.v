@@ -13,7 +13,8 @@
  */
 
 module bp_be_dcache_lce_cmd
-  import bp_be_dcache_lce_pkg::*;
+  import bp_common_pkg::*;
+  import bp_be_dcache_pkg::*;
   #(parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
     , parameter paddr_width_p="inv"
@@ -28,8 +29,7 @@ module bp_be_dcache_lce_cmd
     , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
     , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
     , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
-    , localparam page_offset_width_lp=(block_offset_width_lp+index_width_lp)
-    , localparam ptag_width_lp=(paddr_width_p-page_offset_width_lp)
+    , localparam tag_width_lp=(paddr_width_p-index_width_lp-block_offset_width_lp)
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
     , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
     , localparam cce_id_width_lp=`BSG_SAFE_CLOG2(num_cce_p)
@@ -46,7 +46,7 @@ module bp_be_dcache_lce_cmd
     , localparam dcache_lce_data_mem_pkt_width_lp=
       `bp_be_dcache_lce_data_mem_pkt_width(sets_p, ways_p, lce_data_width_p)
     , localparam dcache_lce_tag_mem_pkt_width_lp=
-      `bp_be_dcache_lce_tag_mem_pkt_width(sets_p, ways_p, ptag_width_lp)
+      `bp_be_dcache_lce_tag_mem_pkt_width(sets_p, ways_p, tag_width_lp)
     , localparam dcache_lce_stat_mem_pkt_width_lp=
       `bp_be_dcache_lce_stat_mem_pkt_width(sets_p, ways_p)
   )
@@ -105,7 +105,7 @@ module bp_be_dcache_lce_cmd
   `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_p);
   `declare_bp_lce_lce_tr_resp_s(num_lce_p, paddr_width_p, lce_data_width_p, ways_p);
   `declare_bp_be_dcache_lce_data_mem_pkt_s(sets_p, ways_p, lce_data_width_p);
-  `declare_bp_be_dcache_lce_tag_mem_pkt_s(sets_p, ways_p, ptag_width_lp);
+  `declare_bp_be_dcache_lce_tag_mem_pkt_s(sets_p, ways_p, tag_width_lp);
   `declare_bp_be_dcache_lce_stat_mem_pkt_s(sets_p, ways_p);
 
   bp_cce_lce_cmd_s lce_cmd;
@@ -127,10 +127,10 @@ module bp_be_dcache_lce_cmd
   assign stat_mem_pkt_o = stat_mem_pkt;
 
   logic [index_width_lp-1:0] lce_cmd_addr_index;
-  logic [ptag_width_lp-1:0] lce_cmd_addr_tag;
+  logic [tag_width_lp-1:0] lce_cmd_addr_tag;
 
   assign lce_cmd_addr_index = lce_cmd.addr[block_offset_width_lp+:index_width_lp];
-  assign lce_cmd_addr_tag = lce_cmd.addr[page_offset_width_lp+:ptag_width_lp];
+  assign lce_cmd_addr_tag = lce_cmd.addr[block_offset_width_lp+index_width_lp+:tag_width_lp];
 
 
   // states
@@ -148,8 +148,7 @@ module bp_be_dcache_lce_cmd
   logic [cce_id_width_lp-1:0] sync_ack_count_r, sync_ack_count_n;
 
   // for invalidate_tag_cmd
-  //logic invalidated_tag_r, invalidated_tag_n;
-  //logic updated_lru_r, updated_lru_n;
+  logic invalidated_tag_r, invalidated_tag_n;
 
   // for transfer_cmd
   logic tr_data_buffered_r, tr_data_buffered_n;
@@ -187,6 +186,8 @@ module bp_be_dcache_lce_cmd
     wb_data_buffered_n = wb_data_buffered_r;
     wb_data_read_n = wb_data_read_r;
     wb_dirty_cleared_n = wb_dirty_cleared_r;
+
+    invalidated_tag_n = invalidated_tag_r;
 
     data_buf_n = data_buf_r;
 
@@ -315,14 +316,26 @@ module bp_be_dcache_lce_cmd
           end
 
           //  <invalidate tag>
-          //  invalidate tag. It does not update the LRU.
+          //  invalidate tag. It does not update the LRU. It sends out
+          //  invalidate_ack response.
           e_lce_cmd_invalidate_tag: begin
             tag_mem_pkt.index = lce_cmd_addr_index;
             tag_mem_pkt.way_id = lce_cmd.way_id;
             tag_mem_pkt.opcode = e_dcache_lce_tag_mem_invalidate;
-            tag_mem_pkt_v_o = tag_mem_pkt_yumi_i;
+            tag_mem_pkt_v_o = invalidated_tag_r
+              ? 1'b0
+              : lce_cmd_v_i;
+            invalidated_tag_n = lce_resp_yumi_i
+              ? 1'b0
+              : (invalidated_tag_r
+                ? 1'b1
+                : tag_mem_pkt_yumi_i);
 
-            lce_cmd_yumi_o = tag_mem_pkt_yumi_i;
+            lce_resp.dst_id = lce_cmd.src_id;
+            lce_resp.msg_type = e_lce_cce_inv_ack;
+            lce_resp.addr = lce_cmd.addr;
+            lce_resp_v_o = invalidated_tag_r | tag_mem_pkt_yumi_i;
+            lce_cmd_yumi_o = lce_resp_yumi_i;
           end
         endcase
       end
@@ -437,6 +450,7 @@ module bp_be_dcache_lce_cmd
       wb_data_buffered_r <= 1'b0;
       wb_data_read_r <= 1'b0;
       wb_dirty_cleared_r <= 1'b0;
+      invalidated_tag_r <= 1'b0;
     end
     else begin
       state_r <= state_n;
@@ -447,6 +461,7 @@ module bp_be_dcache_lce_cmd
       wb_data_read_r <= wb_data_read_n;
       wb_dirty_cleared_r <= wb_dirty_cleared_n;
       data_buf_r <= data_buf_n;
+      invalidated_tag_r <= invalidated_tag_n;
     end
   end
 

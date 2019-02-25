@@ -22,6 +22,7 @@
  */
 
 module bp_be_dcache_lce_req
+  import bp_common_pkg::*;
   #(parameter data_width_p="inv"
     , parameter paddr_width_p="inv"
     , parameter num_cce_p="inv"

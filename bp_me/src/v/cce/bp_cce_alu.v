@@ -14,11 +14,9 @@
  *
  */
 
-`include "bsg_defines.v"
-`include "bp_cce_inst_pkg.v"
-
 module bp_cce_alu
-  import bp_cce_inst_pkg::*;
+  import bp_common_pkg::*;
+  import bp_cce_pkg::*;
   #(parameter width_p = "inv"
   )
   (input logic                               v_i

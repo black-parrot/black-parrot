@@ -92,7 +92,7 @@ module icache
 
     , parameter bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(eaddr_width_p)
 
-    , localparam lce_id_width_lp=`bp_lce_id_width
+    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
    )
    (
     input                                              clk_i

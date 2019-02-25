@@ -24,10 +24,9 @@
  *   and shouldn't make it too much harder to follow.
 */
 
-`include "bsg_noc_links.vh"
-`include "bsg_defines.v"
-
 module bp_coherence_network_channel
+  import bp_common_pkg::*;
+  import bp_me_network_pkg::*;
   import bsg_noc_pkg::*;
   #(parameter packet_width_p        = "inv"
     , parameter num_src_p           = "inv"

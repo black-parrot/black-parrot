@@ -191,4 +191,3 @@ bp_be_scheduler
    );
 
 endmodule : bp_be_checker_top
-

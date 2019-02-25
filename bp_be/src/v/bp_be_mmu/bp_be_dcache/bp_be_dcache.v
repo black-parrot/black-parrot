@@ -38,27 +38,18 @@
  *    LCE can snoop write buffer entries to hold off lce_data_mem operations until entries
  *    with matching address is no longer present in write buffer.
  *
- *    Data cache faces mmu and coherence network.
+ *    There are tags in two different contexts: 'ptag' and 'tag'. 'ptag' is
+ *    used in the context of translating 'vtag' into 'ptag', and its width is
+ *    fixed as defined by sv39. 'tag' width can vary with the number of sets,
+ *    and it is the width of the tag that is stored inside the cache.
+ *    
+ *    paddr_width = ptag_width + page_offset_width = tag_width + index_width
+ *    + block_offset_width
  */
 
-//  address terminology map
-//
-//  [                          paddr                                        ]
-//  [    physical tag    ] [                page_offset                     ] 
-//  [    physical tag    ] [   index   ] [           block_offset           ]
-//  [    physical tag    ] [   index   ] [  word_offset  ]  [  byte_offset  ] 
-
-
-`include "bp_be_dcache_pkt.vh"
-`include "bp_be_dcache_lce_pkt.vh"
-`include "bp_be_dcache_tag_info.vh"
-`include "bp_be_dcache_stat_info.vh"
-`include "bp_be_dcache_wbuf_entry.vh"
-`include "bp_common_me_if.vh"
-
 module bp_be_dcache
+  import bp_common_pkg::*;
   import bp_be_dcache_pkg::*;
-  import bp_be_dcache_lce_pkg::*;
   #(parameter data_width_p="inv"
     , parameter paddr_width_p="inv"
     , parameter sets_p="inv"
@@ -74,15 +65,15 @@ module bp_be_dcache
     , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
     , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
     , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
-    , localparam page_offset_width_lp=(block_offset_width_lp+index_width_lp)
-    , localparam ptag_width_lp=(paddr_width_p-page_offset_width_lp)
+    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
+    , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
   
     , localparam lce_data_width_lp=(ways_p*data_width_p)
     , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
 
-    , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(page_offset_width_lp, data_width_p)
-    , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(ptag_width_lp)
+    , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(bp_page_offset_width_gp,data_width_p)
+    , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(tag_width_lp)
     , localparam stat_info_width_lp=`bp_be_dcache_stat_info_width(ways_p)
     
     , localparam lce_cce_req_width_lp=
@@ -153,7 +144,7 @@ module bp_be_dcache
 
   // packet decoding
   //
-  `declare_bp_be_dcache_pkt_s(page_offset_width_lp, data_width_p);
+  `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp, data_width_p);
   bp_be_dcache_pkt_s dcache_pkt;
   assign dcache_pkt = dcache_pkt_i;
 
@@ -188,7 +179,7 @@ module bp_be_dcache
   logic word_op_tl_r;
   logic half_op_tl_r;
   logic byte_op_tl_r;
-  logic [page_offset_width_lp-1:0] page_offset_tl_r;
+  logic [bp_page_offset_width_gp-1:0] page_offset_tl_r;
   logic [data_width_p-1:0] data_tl_r;
 
   assign tl_we = v_i & ready_o & ~poison_i;
@@ -218,7 +209,7 @@ module bp_be_dcache
  
   // tag_mem
   //
-  `declare_bp_be_dcache_tag_info_s(ptag_width_lp);
+  `declare_bp_be_dcache_tag_info_s(tag_width_lp);
   logic tag_mem_v_li;
   logic tag_mem_w_li;
   logic [index_width_lp-1:0] tag_mem_addr_li;
@@ -227,7 +218,7 @@ module bp_be_dcache
   bp_be_dcache_tag_info_s [ways_p-1:0] tag_mem_data_lo;
   
   bsg_mem_1rw_sync_mask_write_bit
-    #(.width_p((ptag_width_lp+2)*ways_p)
+    #(.width_p(tag_info_width_lp*ways_p)
       ,.els_p(sets_p)
     )
     tag_mem
@@ -282,7 +273,7 @@ module bp_be_dcache
   logic [data_width_p-1:0] data_tv_r;
   bp_be_dcache_tag_info_s [ways_p-1:0] tag_info_tv_r;
   logic [ways_p-1:0][data_width_p-1:0] ld_data_tv_r;
-  logic [ptag_width_lp-1:0] addr_tag_tv;
+  logic [tag_width_lp-1:0] addr_tag_tv;
   logic [index_width_lp-1:0] addr_index_tv;
   logic [word_offset_width_lp-1:0] addr_word_offset_tv;
 
@@ -317,7 +308,7 @@ module bp_be_dcache
     end
   end
 
-  assign addr_tag_tv = paddr_tv_r[page_offset_width_lp+:ptag_width_lp];
+  assign addr_tag_tv = paddr_tv_r[block_offset_width_lp+index_width_lp+:tag_width_lp];
   assign addr_index_tv = paddr_tv_r[block_offset_width_lp+:index_width_lp];
   assign addr_word_offset_tv = paddr_tv_r[byte_offset_width_lp+:word_offset_width_lp];
 
@@ -422,6 +413,9 @@ module bp_be_dcache
   assign wbuf_entry_out_word_offset = wbuf_entry_out.paddr[byte_offset_width_lp+:word_offset_width_lp];
   assign wbuf_entry_out_index = wbuf_entry_out.paddr[block_offset_width_lp+:index_width_lp];
 
+  assign wbuf_entry_in.paddr = paddr_tv_r;
+  assign wbuf_entry_in.way_id = store_hit_way;
+
   if (data_width_p == 64) begin
     assign wbuf_entry_in.data = double_op_tv_r
       ? data_tv_r
@@ -504,7 +498,7 @@ module bp_be_dcache
   // LCE
   //
   `declare_bp_be_dcache_lce_data_mem_pkt_s(sets_p, ways_p, data_width_p*ways_p);
-  `declare_bp_be_dcache_lce_tag_mem_pkt_s(sets_p, ways_p, ptag_width_lp);
+  `declare_bp_be_dcache_lce_tag_mem_pkt_s(sets_p, ways_p, tag_width_lp);
   `declare_bp_be_dcache_lce_stat_mem_pkt_s(sets_p, ways_p);
 
   bp_be_dcache_lce_data_mem_pkt_s lce_data_mem_pkt;
@@ -695,7 +689,7 @@ module bp_be_dcache
     assign data_mem_addr_li[i] = (load_op & tl_we)
       ? {addr_index, addr_word_offset}
       : (wbuf_yumi_li
-        ? {wbuf_entry_out_index}
+        ? {wbuf_entry_out_index, wbuf_entry_out_word_offset}
         : {lce_data_mem_pkt.index, lce_data_mem_pkt.way_id ^ ((word_offset_width_lp)'(i))});
 
     bsg_mux
@@ -743,14 +737,14 @@ module bp_be_dcache
         tag_mem_data_li = {((tag_info_width_lp)*ways_p){1'b0}};
         for (integer i = 0; i < ways_p; i++) begin
           tag_mem_mask_li[i].coh_state = {2{lce_tag_mem_way_one_hot[i]}};
-          tag_mem_mask_li[i].tag = {ptag_width_lp{1'b0}};
+          tag_mem_mask_li[i].tag = {tag_width_lp{1'b0}};
         end
       end
       e_dcache_lce_tag_mem_set_tag: begin
         tag_mem_data_li = {ways_p{lce_tag_mem_pkt.state, lce_tag_mem_pkt.tag}};
         for (integer i = 0; i < ways_p; i++) begin
           tag_mem_mask_li[i].coh_state = {2{lce_tag_mem_way_one_hot[i]}};
-          tag_mem_mask_li[i].tag = {ptag_width_lp{lce_tag_mem_way_one_hot[i]}};
+          tag_mem_mask_li[i].tag = {tag_width_lp{lce_tag_mem_way_one_hot[i]}};
         end
       end
       default: begin
@@ -810,11 +804,11 @@ module bp_be_dcache
       dirty_mask_v_li = 1'b1;
       case (lce_stat_mem_pkt.opcode)
         e_dcache_lce_stat_mem_set_clear: begin
-          stat_mem_data_li = {(tag_info_width_lp){1'b0}};
-          stat_mem_mask_li = {(tag_info_width_lp){1'b1}};
+          stat_mem_data_li = {(stat_info_width_lp){1'b0}};
+          stat_mem_mask_li = {(stat_info_width_lp){1'b1}};
         end
         e_dcache_lce_stat_mem_clear_dirty: begin
-          stat_mem_data_li = {(tag_info_width_lp){1'b0}};
+          stat_mem_data_li = {(stat_info_width_lp){1'b0}};
           stat_mem_mask_li.lru = {(ways_p-1){1'b0}};
           stat_mem_mask_li.dirty = dirty_mask_lo;
         end
@@ -825,8 +819,8 @@ module bp_be_dcache
           stat_mem_mask_li.dirty = {ways_p{1'b0}};
         end
         default: begin
-          stat_mem_data_li = {(tag_info_width_lp){1'b0}};
-          stat_mem_mask_li = {(tag_info_width_lp){1'b0}};
+          stat_mem_data_li = {(stat_info_width_lp){1'b0}};
+          stat_mem_mask_li = {(stat_info_width_lp){1'b0}};
         end
       endcase
     end
@@ -879,6 +873,7 @@ module bp_be_dcache
     bp_be_dcache_axe_trace_gen
       #(.addr_width_p(paddr_width_p)
         ,.data_width_p(data_width_p)
+        ,.num_lce_p(num_lce_p)
         )
       axe_trace_gen
         (.clk_i(clk_i)
