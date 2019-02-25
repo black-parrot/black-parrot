@@ -76,7 +76,6 @@ bp_fe_pc_gen_queue_s        pc_gen_queue;
 bp_fe_pc_gen_cmd_s          fe_pc_gen_cmd;
 bp_fe_pc_gen_icache_s       pc_gen_icache;
 bp_fe_pc_gen_itlb_s         pc_gen_itlb;
-bp_fe_branch_metadata_fwd_s branch_metadata_fwd_i;
 bp_fe_branch_metadata_fwd_s branch_metadata_fwd_o;
 bp_fe_icache_pc_gen_s       icache_pc_gen;
 
@@ -262,9 +261,9 @@ generate
          (.clk_i(clk_i)
           ,.reset_i(reset_i)
           ,.attaboy_i(fe_pc_gen_cmd.attaboy_valid)
-          ,.r_v_i(/*~fe_pc_gen_v_i*/bht_r_v_branch_jalr_inst)
+          ,.r_v_i(bht_r_v_branch_jalr_inst)
           ,.w_v_i(fe_pc_gen_v_i)
-          ,.pc_queue_i(/*pc*/icache_pc_gen.addr)
+          ,.pc_queue_i(last_pc)
           ,.pc_cmd_i(fe_pc_gen_cmd.pc)
           ,.pc_fwd_i(icache_pc_gen.addr)
           ,.branch_metadata_fwd_i(fe_pc_gen_cmd.branch_metadata_fwd)
@@ -285,9 +284,9 @@ generate
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
          ,.attaboy_i(fe_pc_gen_cmd.attaboy_valid)
-         ,.r_v_i(/*~fe_pc_gen_v_i*/branch_inst)
+         ,.r_v_i(bht_r_v_branch_jalr_inst)
          ,.w_v_i(fe_pc_gen_v_i)
-         ,.pc_queue_i(/*pc*/icache_pc_gen.addr)
+         ,.pc_queue_i(last_pc)
          ,.pc_cmd_i(fe_pc_gen_cmd.pc)
          ,.pc_fwd_i(icache_pc_gen.addr)
          ,.branch_metadata_fwd_i(fe_pc_gen_cmd.branch_metadata_fwd)
