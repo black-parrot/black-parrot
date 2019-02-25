@@ -26,7 +26,7 @@ module bp_fe_lce
   #(parameter data_width_p="inv"
     , parameter lce_data_width_p="inv"
     , parameter lce_addr_width_p="inv"
-    , parameter lce_sets_p="inv"
+    , parameter sets_p="inv"
     , parameter ways_p="inv"
     , parameter tag_width_p="inv"
     , parameter num_cce_p="inv"
@@ -36,15 +36,15 @@ module bp_fe_lce
 
     , parameter timeout_max_limit_p=4
 
-    , localparam bp_fe_icache_lce_data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(lce_sets_p
+    , localparam bp_fe_icache_lce_data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(sets_p
                                                                                             ,ways_p
                                                                                             ,lce_data_width_p
                                                                                            )
-    , localparam bp_fe_icache_lce_tag_mem_pkt_width_lp=`bp_fe_icache_lce_tag_mem_pkt_width(lce_sets_p
+    , localparam bp_fe_icache_lce_tag_mem_pkt_width_lp=`bp_fe_icache_lce_tag_mem_pkt_width(sets_p
                                                                                           ,ways_p
                                                                                           ,tag_width_p
                                                                                          )
-    , localparam bp_fe_icache_lce_metadata_mem_pkt_width_lp=`bp_fe_icache_lce_metadata_mem_pkt_width(lce_sets_p
+    , localparam bp_fe_icache_lce_metadata_mem_pkt_width_lp=`bp_fe_icache_lce_metadata_mem_pkt_width(sets_p
                                                                                                       ,ways_p
                                                                                                      )
 
@@ -141,9 +141,9 @@ module bp_fe_lce
   `declare_bp_cce_lce_data_cmd_s(num_cce_p, num_lce_p, lce_addr_width_p, lce_data_width_p, ways_p);
   `declare_bp_lce_lce_tr_resp_s(num_lce_p, lce_addr_width_p, lce_data_width_p, ways_p);
 
-  `declare_bp_fe_icache_lce_data_mem_pkt_s(lce_sets_p, ways_p, lce_data_width_p);
-  `declare_bp_fe_icache_lce_tag_mem_pkt_s(lce_sets_p, ways_p, tag_width_p);
-  `declare_bp_fe_icache_lce_metadata_mem_pkt_s(lce_sets_p, ways_p);
+  `declare_bp_fe_icache_lce_data_mem_pkt_s(sets_p, ways_p, lce_data_width_p);
+  `declare_bp_fe_icache_lce_tag_mem_pkt_s(sets_p, ways_p, tag_width_p);
+  `declare_bp_fe_icache_lce_metadata_mem_pkt_s(sets_p, ways_p);
 
   bp_lce_cce_req_s lce_req_lo;
   bp_lce_cce_resp_s lce_resp_lo;
@@ -183,7 +183,7 @@ module bp_fe_lce
     ,.lce_addr_width_p(lce_addr_width_p)
     ,.num_cce_p(num_cce_p)
     ,.num_lce_p(num_lce_p)
-    ,.lce_sets_p(lce_sets_p)
+    ,.sets_p(sets_p)
     ,.ways_p(ways_p)
     ,.block_size_in_bytes_p(block_size_in_bytes_p)
   ) lce_req (
@@ -246,7 +246,7 @@ module bp_fe_lce
     .data_width_p(data_width_p)
     ,.lce_addr_width_p(lce_addr_width_p)
     ,.lce_data_width_p(lce_data_width_p)
-    ,.lce_sets_p(lce_sets_p)
+    ,.sets_p(sets_p)
     ,.ways_p(ways_p)
     ,.tag_width_p(tag_width_p)
     ,.num_cce_p(num_cce_p)
@@ -321,7 +321,7 @@ module bp_fe_lce
     .data_width_p(data_width_p)
     ,.lce_addr_width_p(lce_addr_width_p)
     ,.lce_data_width_p(lce_data_width_p)
-    ,.lce_sets_p(lce_sets_p)
+    ,.sets_p(sets_p)
     ,.ways_p(ways_p)
     ,.num_cce_p(num_cce_p)
     ,.num_lce_p(num_lce_p)
@@ -367,7 +367,7 @@ module bp_fe_lce
     .data_width_p(data_width_p)
     ,.lce_addr_width_p(lce_addr_width_p)
     ,.lce_data_width_p(lce_data_width_p)
-    ,.lce_sets_p(lce_sets_p)
+    ,.sets_p(sets_p)
     ,.ways_p(ways_p)
     ,.num_cce_p(num_cce_p)
     ,.num_lce_p(num_lce_p)

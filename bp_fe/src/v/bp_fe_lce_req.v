@@ -25,26 +25,24 @@ module bp_fe_lce_req
     , parameter lce_addr_width_p="inv"
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
-    , parameter lce_sets_p="inv"
+    , parameter sets_p="inv"
     , parameter ways_p="inv"
     , parameter block_size_in_bytes_p="inv"
 
-    , parameter data_mask_width_lp=(data_width_p>>3)
-    , parameter lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
+    , localparam data_mask_width_lp=(data_width_p>>3)
+    , localparam lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
 
-    , parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-    , parameter way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
-    , parameter lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
-    , localparam lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
-    , parameter lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
+    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
+    , localparam cce_id_width_lp=`BSG_SAFE_CLOG2(num_cce_p)
+    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
+    , localparam lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
 
-    , parameter lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
+    , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                            ,num_lce_p
                                                            ,lce_addr_width_p
                                                            ,ways_p
                                                           )
-    , parameter lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, lce_addr_width_p)
-    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
+    , localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, lce_addr_width_p)
 
     )
    (input                                      clk_i
@@ -99,10 +97,10 @@ module bp_fe_lce_req
   else begin
     assign lce_resp_lo.dst_id = miss_addr_r[lg_data_mask_width_lp
                                                 +lg_block_size_in_bytes_lp
-                                                +:lg_num_cce_lp];
+                                                +:cce_id_width_lp];
     assign lce_req_lo.dst_id  = miss_addr_r[lg_data_mask_width_lp
                                                 +lg_block_size_in_bytes_lp
-                                                +:lg_num_cce_lp];
+                                                +:cce_id_width_lp];
   end
    
   // lce_req fsm
@@ -119,7 +117,7 @@ module bp_fe_lce_req
     cce_data_received     = cce_data_received_r | cce_data_received_i;
     tag_set               = tag_set_r | tag_set_i;
 
-    lce_req_lo.src_id        = (lg_num_lce_lp)'(id_i);
+    lce_req_lo.src_id        = (lce_id_width_lp)'(id_i);
     lce_req_lo.non_exclusive = e_lce_req_excl;
     lce_req_lo.msg_type      = e_lce_req_type_rd;
     lce_req_lo.addr          = miss_addr_r;
