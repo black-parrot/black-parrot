@@ -7,6 +7,7 @@ TB_PARAMS= -pvalue+trace_ring_width_p=124              \
            -pvalue+branch_metadata_fwd_width_p=36      \
 					 -pvalue+cce_block_size_in_bytes_p=64        \
            -pvalue+cce_num_inst_ram_els_p=256          \
+					 -pvalue+mem_els_p=512
 
 DUT_PARAMS=-pvalue+num_cce_p=1                         \
            -pvalue+num_lce_p=2                         \
