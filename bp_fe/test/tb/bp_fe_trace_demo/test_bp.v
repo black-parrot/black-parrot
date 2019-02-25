@@ -24,6 +24,8 @@ module test_bp
    , parameter bht_indx_width_p            = "inv"
    , parameter ras_addr_width_p            = "inv"
 
+   , parameter mem_els_p                   = "inv"
+
    , parameter boot_rom_width_p = "inv"
    , parameter boot_rom_els_p   = "inv"
 
@@ -293,11 +295,12 @@ bp_trace_rom
 bp_me_top 
  #(.num_lce_p(num_lce_p)
    ,.num_cce_p(num_cce_p)
-   ,.addr_width_p(paddr_width_p)
+   ,.paddr_width_p(paddr_width_p)
    ,.lce_assoc_p(lce_assoc_p)
    ,.lce_sets_p(lce_sets_p)
    ,.block_size_in_bytes_p(cce_block_size_in_bytes_p)
    ,.num_inst_ram_els_p(cce_num_inst_ram_els_p)
+   ,.mem_els_p(mem_els_p)
 
    ,.boot_rom_els_p(boot_rom_els_p)
    ,.boot_rom_width_p(boot_rom_width_p)
