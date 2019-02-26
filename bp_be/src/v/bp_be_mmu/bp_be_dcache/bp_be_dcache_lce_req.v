@@ -227,6 +227,8 @@ module bp_be_dcache_lce_req
 
   // sequential
   //
+
+  // synopsys sync_set_reset "reset_i"
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       state_r <= e_lce_req_state_ready;
