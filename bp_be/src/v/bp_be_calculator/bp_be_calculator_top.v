@@ -124,6 +124,9 @@ module bp_be_calculator_top
   , output [pipe_stage_reg_width_lp-1:0] cmt_trace_stage_reg_o
   , output [calc_result_width_lp-1:0]    cmt_trace_result_o
   , output [exception_width_lp-1:0]      cmt_trace_exc_o
+
+  // STD: TODO -- remove synth hack and find real solution
+  ,output [`bp_be_fu_op_width-1:0] decoded_fu_op_o
   );
 
 // Declare parameterizable structs
@@ -180,6 +183,9 @@ logic [pipe_stage_els_lp-1:1]                        comp_stage_n_slice_iwb_v;
 logic [pipe_stage_els_lp-1:1]                        comp_stage_n_slice_fwb_v;
 logic [pipe_stage_els_lp-1:1][reg_addr_width_lp-1:0] comp_stage_n_slice_rd_addr;
 logic [pipe_stage_els_lp-1:1][reg_data_width_lp-1:0] comp_stage_n_slice_rd;
+
+// STD: TODO -- remove synth hack and find real solution
+assign decoded_fu_op_o = decoded.fu_op;
 
 // Handshakes
 assign issue_pkt_ready_o = (chk_dispatch_v_i | ~issue_pkt_v_r) & ~chk_roll_i & ~chk_poison_isd_i;
