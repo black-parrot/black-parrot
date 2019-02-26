@@ -36,7 +36,7 @@ std::map<uint64_t, uint32_t> MRU;
 
 int sc_main(int argc, char **argv) 
 {
-  sc_init("bp_cce", argc, argv);
+  sc_init("bp_me_top", argc, argv);
 
   sc_signal <bool>     reset_i("reset_i");
 
@@ -72,6 +72,10 @@ int sc_main(int argc, char **argv)
   sc_signal <bool>     lce_tr_resp_v_o("lce_tr_resp_v_o");
   sc_signal <bool>     lce_tr_resp_ready_i("lce_tr_resp_ready_i");
 
+  sc_signal <uint32_t> boot_rom_addr_o;
+  sc_signal <sc_bv<512> > boot_rom_data_i;
+  boot_rom_data_i = 0;
+
   sc_clock clock("clk", sc_time(CLK_TIME, SC_NS));
 
   Vbp_me_top DUT("DUT");
@@ -106,6 +110,9 @@ int sc_main(int argc, char **argv)
   DUT.lce_tr_resp_o(lce_tr_resp_o);
   DUT.lce_tr_resp_v_o(lce_tr_resp_v_o);
   DUT.lce_tr_resp_ready_i(lce_tr_resp_ready_i);
+
+  DUT.boot_rom_addr_o(boot_rom_addr_o);
+  DUT.boot_rom_data_i(boot_rom_data_i);
 
 
   VerilatedVcdSc* wf = new VerilatedVcdSc;
@@ -185,6 +192,7 @@ int sc_main(int argc, char **argv)
   sc_start(CLK_TIME*1000, SC_NS);
 
   // NOTE: at this point, all tags and states in directory should be 0
+  cout << "@" << sc_time_stamp() << " SYNC FINISHED!" << endl << endl;
 
   // Test non-exclusive request with clean LRU way
   for (int i = 0; i < TRACE_ITERS; i++) {
@@ -260,6 +268,7 @@ int sc_main(int argc, char **argv)
     // something received, or stalled, pull ready low
     lce_cmd_ready_i = 0;
     sc_start(CLK_TIME, SC_NS);
+    cout << endl;
 
     sc_start(RST_TIME, SC_NS);
   }
@@ -329,6 +338,8 @@ int sc_main(int argc, char **argv)
   lce_resp_i = 0;
   lce_resp_v_i = 0;
   sc_start(CLK_TIME, SC_NS);
+
+  cout << "@" << sc_time_stamp() << " SYNC FINISHED!" << endl << endl;
 
   // Let the CCE finish initialization
   sc_start(CLK_TIME*1000, SC_NS);

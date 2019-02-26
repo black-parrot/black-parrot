@@ -15,10 +15,11 @@ module testbench();
   localparam ways_p = 8;
   localparam paddr_width_p = 56;
   localparam num_cce_p = 1;
-  localparam num_lce_p = `NUM_LCE_P;
+  localparam num_lce_p = 1;
   localparam num_mem_p = 1;
-  localparam mem_els_p = sets_p*ways_p*ways_p;
+  localparam mem_els_p = 2*num_lce_p*sets_p*ways_p;
   localparam instr_count = `NUM_INSTR_P;
+  localparam num_cce_inst_ram_els_p = 256;
 
   localparam word_offset_width_lp=`BSG_SAFE_CLOG2(ways_p);
   localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p);
@@ -82,6 +83,7 @@ module testbench();
     ,.num_cce_p(num_cce_p)
     ,.mem_els_p(mem_els_p)
     ,.boot_rom_els_p(mem_els_p)
+    ,.num_cce_inst_ram_els_p(num_cce_inst_ram_els_p)
   ) dcache_cce_mem (
     .clk_i(clk)
     ,.reset_i(reset)
@@ -97,6 +99,8 @@ module testbench();
 
   // trace node master
   //
+  logic [num_lce_p-1:0][ring_width_p-1:0] tr_data_li;
+
   logic [num_lce_p-1:0] tr_v_lo;
   logic [num_lce_p-1:0][ring_width_p-1:0] tr_data_lo;
   logic [num_lce_p-1:0] tr_yumi_li;
@@ -114,8 +118,8 @@ module testbench();
       ,.reset_i(reset)
       ,.en_i(1'b1)
 
-      ,.v_i(1'b0)
-      ,.data_i('0)
+      ,.v_i(dcache_v_lo[i])
+      ,.data_i(tr_data_li[i])
       ,.ready_o()
 
       ,.v_o(tr_v_lo[i])
@@ -131,30 +135,9 @@ module testbench();
     assign dcache_pkt[i].page_offset = tr_data_lo[i][data_width_p+:page_offset_width_lp];
     assign dcache_pkt[i].data = tr_data_lo[i][0+:data_width_p];
     assign dcache_pkt_v_li[i] = tr_v_lo[i];
-  end
 
-  logic [num_lce_p-1:0] dcache_done;
-  logic [num_lce_p-1:0][31:0] dcache_v_count;
-  
-  always_ff @ (posedge clk) begin
-    if (reset) begin
-      for (integer i = 0; i < num_lce_p; i++) begin
-        dcache_v_count[i] <= '0;
-      end 
-    end
-    else begin
-      for (integer i = 0; i < num_lce_p; i++) begin
-        dcache_v_count[i] <= dcache_v_lo[i]
-          ? dcache_v_count[i] + 1
-          : dcache_v_count[i];
-      end
-    end 
-  end
-
-  always_comb begin
-    for (integer i = 0; i < num_lce_p; i++) begin
-      dcache_done[i] = (dcache_v_count[i] == instr_count);
-    end
+    assign tr_data_li[i][data_width_p-1:0] = dcache_data_lo[i];
+    assign tr_data_li[i][ring_width_p-1:data_width_p] = '0;
   end
 
   logic booted;
@@ -189,7 +172,7 @@ module testbench();
 
   always_ff @(posedge clk)
     begin
-      if (&dcache_done)
+      if (&tr_done_lo)
         begin
         $display("Bytes: %d Clocks: %d mBPC: %d "
                  , instr_count*64

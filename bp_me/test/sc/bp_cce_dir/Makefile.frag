@@ -1,5 +1,5 @@
 HDL_SOURCE = \
-	$(BP_COMMON_PATH)/bp_common_pkg.vh \
+	$(BP_COMMON_PATH)/src/include/bp_common_pkg.vh \
 	$(BP_ME_INC_PATH)/bp_cce_pkg.v \
 	$(BSG_IP_PATH)/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v \
 	$(BSG_IP_PATH)/bsg_mem/bsg_mem_1rw_sync_mask_write_bit_synth.v \

@@ -7,6 +7,7 @@ module test_bp
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
  import bp_be_dcache_pkg::*;
+ import bp_cce_pkg::*;
  #(parameter vaddr_width_p                 = "inv"
    , parameter paddr_width_p               = "inv"
    , parameter asid_width_p                = "inv"
@@ -21,6 +22,7 @@ module test_bp
    , parameter lce_assoc_p                 = "inv"
    , parameter cce_block_size_in_bytes_p   = "inv"
    , parameter cce_num_inst_ram_els_p      = "inv"
+   , parameter mem_els_p                   = "inv"
 
    // Trace replay parameters
    , parameter trace_ring_width_p          = "inv"
@@ -82,6 +84,8 @@ module test_bp
                                                                        , cce_block_size_in_bytes_p
                                                                        , lce_assoc_p
                                                                        )
+
+   , localparam cce_inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(cce_num_inst_ram_els_p)
    );
 
 `declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
@@ -181,15 +185,20 @@ logic [1:0][ptag_width_lp-1:0] rolly_paddr_lo;
 logic [lg_boot_rom_els_lp-1:0] boot_rom_addr_li;
 logic [boot_rom_width_p-1:0]   boot_rom_data_lo;
 
+// CCE Inst Boot ROM
+logic [cce_inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
+logic [`bp_cce_inst_width-1:0]         cce_inst_boot_rom_data;
+
 // Memory End
 bp_me_top 
  #(.num_lce_p(num_lce_p)
    ,.num_cce_p(num_cce_p)
-   ,.addr_width_p(paddr_width_p)
+   ,.paddr_width_p(paddr_width_p)
    ,.lce_assoc_p(lce_assoc_p)
    ,.lce_sets_p(lce_sets_p)
    ,.block_size_in_bytes_p(cce_block_size_in_bytes_p)
    ,.num_inst_ram_els_p(cce_num_inst_ram_els_p)
+   ,.mem_els_p(mem_els_p)
    ,.boot_rom_width_p(boot_rom_width_p)
    ,.boot_rom_els_p(boot_rom_els_p)
    )
@@ -227,6 +236,9 @@ bp_me_top
 
    ,.boot_rom_addr_o(boot_rom_addr_li)
    ,.boot_rom_data_i(boot_rom_data_lo)
+
+   ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr)
+   ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data)
    );
 
 bp_boot_rom
@@ -237,6 +249,15 @@ bp_boot_rom
   (.addr_i(boot_rom_addr_li)
    ,.data_o(boot_rom_data_lo)
    );
+
+bp_cce_inst_rom
+  #(.width_p(`bp_cce_inst_width)
+    ,.addr_width_p(cce_inst_ram_addr_width_lp)
+    )
+  cce_inst_rom
+   (.addr_i(cce_inst_boot_rom_addr)
+    ,.data_o(cce_inst_boot_rom_data)
+    );
 
 bsg_fsb_node_trace_replay 
  #(.ring_width_p(trace_ring_width_p)
