@@ -30,7 +30,8 @@ module bp_fe_btb
 
    
 logic [els_lp-1:0] valid;
-
+logic [bp_fe_pc_gen_btb_idx_width_lp-1:0] addr;
+   
 always_ff @(posedge clk_i) 
   begin
     if (reset_i) 
@@ -43,24 +44,26 @@ always_ff @(posedge clk_i)
       end
   end
 
-assign read_valid_o = valid[idx_r_i];
+assign addr = (w_v_i) ? idx_w_i : idx_r_i;
 
-bsg_mem_1r1w 
+always_ff @(posedge clk_i)
+  begin
+    read_valid_o = valid[idx_r_i];
+  end
+   
+bsg_mem_1rw_sync 
  #(.width_p(eaddr_width_p)
    ,.els_p(2**bp_fe_pc_gen_btb_idx_width_lp)
    ,.addr_width_lp(bp_fe_pc_gen_btb_idx_width_lp)
    ) 
- bsg_mem_1rw_sync_synth_1 
-  (.w_clk_i(clk_i)
-   ,.w_reset_i(reset_i)
-
-   ,.w_v_i(w_v_i)
-   ,.w_addr_i(idx_w_i)
-   ,.w_data_i(branch_target_i)
-   
-   ,.r_v_i(r_v_i)
-   ,.r_addr_i(idx_r_i)
-   ,.r_data_o(branch_target_o)
+ btb_mem 
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.data_i(branch_target_i)
+   ,.addr_i(addr)
+   ,.v_i(1'b1)
+   ,.w_i(w_v_i)
+   ,.data_o(branch_target_o)
    );
 
 endmodule

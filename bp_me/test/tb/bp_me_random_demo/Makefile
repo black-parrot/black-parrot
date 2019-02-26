@@ -23,8 +23,11 @@ TRACE_AXE = trace.axe
 VCS_LOG = vcs.log
 
 # testparam
-NUM_INSTR_P ?= 10000
-NUM_LCE_P ?= 2
+NUM_INSTR_P ?= 32768
+SEED_P ?= 1
+
+# this test uses a single LCE since it checks the values of loads returned
+NUM_LCE_P := 1
 
 NUMS = $(shell seq 0 `expr $(NUM_LCE_P) - 1`)
 BASE = bsg_trace_rom_
@@ -35,7 +38,7 @@ CCE_ROM = $(BP_ME_DIR)/src/v/roms/demo-v2/bp_cce_inst_rom_demo-v2_lce$(NUM_LCE_P
 all: clean sim
 
 bsg_trace_rom_%.tr:
-	python bsg_trace_rom.py $(NUM_LCE_P) $* $(NUM_INSTR_P) $(SEED_P) > $@
+	python bsg_trace_rom.py -n $(NUM_INSTR_P) -s $(SEED_P) > $@
 
 bsg_trace_rom_%.v: bsg_trace_rom_%.tr
 	python $(BSG_IP_CORES_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_trace_rom_$* > $@

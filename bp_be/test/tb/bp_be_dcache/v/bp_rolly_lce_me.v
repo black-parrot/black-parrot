@@ -7,6 +7,7 @@
 module bp_rolly_lce_me
   import bp_common_pkg::*;
   import bp_be_dcache_pkg::*;
+  import bp_cce_pkg::*;
   #(parameter data_width_p="inv"
     , parameter sets_p="inv"
     , parameter ways_p="inv"
@@ -15,6 +16,7 @@ module bp_rolly_lce_me
     , parameter num_cce_p="inv"
     , parameter mem_els_p="inv"
     , parameter boot_rom_els_p="inv"
+    , parameter num_cce_inst_ram_els_p="inv"
     
     , localparam data_mask_width_lp=(data_width_p>>3)
     , localparam block_size_in_words_lp=ways_p
@@ -24,6 +26,7 @@ module bp_rolly_lce_me
     , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
 
     , localparam lce_data_width_lp=(ways_p*data_width_p)
+    , localparam block_size_in_bytes_lp=(lce_data_width_lp / 8)
 
     , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
       
@@ -41,6 +44,8 @@ module bp_rolly_lce_me
       `bp_cce_lce_data_cmd_width(num_cce_p,num_lce_p,paddr_width_p,lce_data_width_lp,ways_p)
     , localparam lce_lce_tr_resp_width_lp=
       `bp_lce_lce_tr_resp_width(num_lce_p,paddr_width_p,lce_data_width_lp,ways_p)
+
+    , localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_inst_ram_els_p)
   )
   (
     input clk_i
@@ -213,18 +218,31 @@ module bp_rolly_lce_me
       ,.tlb_miss_o(dcache_tlb_miss_li[i])
     );
   end
-   
+
+  logic [inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr_i;
+  logic [`bp_cce_inst_width-1:0] cce_inst_boot_rom_data_o;
+
+  // CCE Boot ROM
+  bp_cce_inst_rom
+    #(.width_p(`bp_cce_inst_width)
+      ,.addr_width_p(inst_ram_addr_width_lp)
+      )
+    cce_inst_rom
+     (.addr_i(cce_inst_boot_rom_addr_i)
+      ,.data_o(cce_inst_boot_rom_data_o)
+      );
+
   // Memory End
   bp_me_top #(
     .num_lce_p(num_lce_p)
     ,.num_cce_p(num_cce_p)
-    ,.addr_width_p(paddr_width_p)
+    ,.paddr_width_p(paddr_width_p)
     ,.lce_assoc_p(ways_p)
     ,.lce_sets_p(sets_p)
-    ,.block_size_in_bytes_p(ways_p*8)
-    ,.num_inst_ram_els_p(256)
+    ,.block_size_in_bytes_p(block_size_in_bytes_lp)
+    ,.num_inst_ram_els_p(num_cce_inst_ram_els_p)
     ,.mem_els_p(mem_els_p)
-    ,.boot_rom_width_p(ways_p*8*8)
+    ,.boot_rom_width_p(lce_data_width_lp)
     ,.boot_rom_els_p(boot_rom_els_p)
   ) me (
     .clk_i(clk_i)
@@ -260,6 +278,9 @@ module bp_rolly_lce_me
 
     ,.boot_rom_addr_o()
     ,.boot_rom_data_i('0)
-  );
+
+    ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr_i)
+    ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data_o)
+    );
 
 endmodule

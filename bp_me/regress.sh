@@ -23,7 +23,9 @@ done
 echo "################# BP_ME STRESS ###################"
   make -C $BP_ME_DIR/test/tb/bp_me_random_demo            \
     | grep "mBPC"                                         \
-  && echo -n "Testing TSO: "                              \
-  && make -C $BP_ME_DIR/test/tb/bp_me_random_demo axe     \
-    | grep "OK" || echo "FAIL"
+    | grep "FAIL" || echo "PASS"
+
+#&& echo -n "Testing TSO: "                              \
+#&& make -C $BP_ME_DIR/test/tb/bp_me_random_demo axe     \
+#    | grep "OK" || echo "FAIL"
 
