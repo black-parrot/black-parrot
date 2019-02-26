@@ -122,6 +122,10 @@ bsg_dff_reset_en
 
 always_comb 
   begin : fe_queue_extract
+
+    // Default value
+    fe_instr_metadata = '0;
+
     case(fe_queue.msg_type)
       // Populate the issue packet with a valid pc/instruction pair.
       e_fe_fetch : 
