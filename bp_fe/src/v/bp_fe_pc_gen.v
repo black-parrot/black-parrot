@@ -212,27 +212,26 @@ always_ff @(posedge clk_i)
         end
   end
 
-
-//Keep track of stalled PC_redirect due to icache miss (icache is not ready). 
+// PC redirect register
 always_ff @(posedge clk_i) 
   begin
     if (fe_pc_gen_v_i && fe_pc_gen_cmd.pc_redirect_valid) 
       begin
-        pc_redirect         <= fe_pc_gen_cmd.pc;
-        stalled_pc_redirect <= 1'b1;
-      end 
-    else if (stalled_pc_redirect && (pc_gen_fetch.pc != pc_redirect)) 
-      begin
-        stalled_pc_redirect <= 1'b1;  
-      end 
-    else if (stalled_pc_redirect && (pc_gen_fetch.pc == pc_redirect) && !pc_gen_fe_v_o) 
-      begin 
-        stalled_pc_redirect <= 1'b1;
-      end 
-    else 
-      begin
-        stalled_pc_redirect <= 1'b0;
+        pc_redirect <= fe_pc_gen_cmd.pc;
       end
+  end
+
+//Keep track of stalled PC_redirect due to icache miss (icache is not ready). 
+wire stalled_pc_redirect_n = (fe_pc_gen_v_i & fe_pc_gen_cmd.pc_redirect_valid)
+                             | (stalled_pc_redirect & (pc_gen_fetch.pc != pc_redirect))
+                             | (stalled_pc_redirect & (pc_gen_fetch.pc == pc_redirect) & ~pc_gen_fe_v_o);
+
+always_ff @(posedge clk_i) 
+  begin
+    if (reset_i)
+      stalled_pc_redirect <= 1'b0;
+    else
+      stalled_pc_redirect <= stalled_pc_redirect_n;
   end
   
 
