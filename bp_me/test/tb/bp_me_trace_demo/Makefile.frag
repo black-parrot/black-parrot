@@ -10,6 +10,7 @@ TB_PARAMS= -pvalue+trace_ring_width_p=124              \
 
 DUT_PARAMS=-pvalue+num_cce_p=1                         \
            -pvalue+num_lce_p=2                         \
+           -pvalue+addr_width_p=56                     \
            -pvalue+lce_sets_p=64                       \
            -pvalue+block_size_in_bytes_p=64            \
            -pvalue+num_inst_ram_els_p=256              \
