@@ -28,6 +28,7 @@ module bp_multi_top
    , parameter cce_num_inst_ram_els_p    = "inv"
  
    // Test specific parameters
+   , parameter mem_els_p                 = "inv"
    , parameter boot_rom_els_p            = "inv"
    , parameter boot_rom_width_p          = "inv"
 
@@ -307,6 +308,7 @@ bp_me_top
    ,.block_size_in_bytes_p(cce_block_size_in_bytes_p)
    ,.num_inst_ram_els_p(cce_num_inst_ram_els_p)
 
+   ,.mem_els_p(mem_els_p)
    ,.boot_rom_els_p(boot_rom_els_p)
    ,.boot_rom_width_p(boot_rom_width_p)
    )

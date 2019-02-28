@@ -64,7 +64,7 @@ set BP_BE_DIR        $::env(BP_BE_DIR)
 set BP_ME_DIR        $::env(BP_ME_DIR)
 set BP_COMMON_DIR    $::env(BP_COMMON_DIR)
 
-set CADENV_PATH      $::env(CADENV_PATH)
+set CADENV_PATH      $::env(BSG_CADENV_DIR)
 set BSG_IP_CORES_DIR $::env(BSG_IP_CORES_DIR)
 
 set SYN_PATH $::env(SYN_PATH)

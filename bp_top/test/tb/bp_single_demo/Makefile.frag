@@ -1,4 +1,4 @@
-DUT_PARAMS = -pvalue+vaddr_width_p=22               \
+DUT_PARAMS = -pvalue+vaddr_width_p=56               \
              -pvalue+paddr_width_p=22               \
              -pvalue+asid_width_p=10                \
              -pvalue+branch_metadata_fwd_width_p=36 \
@@ -18,5 +18,5 @@ DUT_PARAMS = -pvalue+vaddr_width_p=22               \
 
 TB_PARAMS = 
 
-HDL_PARAMS = ${DUT_PARAMS} + ${TB_PARAMS}
+HDL_PARAMS = $(DUT_PARAMS) $(TB_PARAMS)
 

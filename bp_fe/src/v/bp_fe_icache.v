@@ -50,7 +50,7 @@ module icache
     , parameter debug_p=0
 
     , localparam bp_fe_pc_gen_icache_width_lp=`bp_fe_pc_gen_icache_width(eaddr_width_p)
-    , localparam bp_fe_itlb_icache_width_lp=44
+    , localparam bp_fe_itlb_icache_data_resp_width_lp=`bp_fe_itlb_icache_data_resp_width(tag_width_p)
 
     , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                               ,num_lce_p
@@ -107,7 +107,7 @@ module icache
     , output logic                                     icache_pc_gen_data_v_o
     , input                                            icache_pc_gen_data_ready_i // Not used
 
-    , input [bp_fe_itlb_icache_width_lp-1:0]           itlb_icache_data_resp_i
+    , input [bp_fe_itlb_icache_data_resp_width_lp-1:0] itlb_icache_data_resp_i
     , input                                            itlb_icache_data_resp_v_i
     , output logic                                     itlb_icache_data_resp_ready_o
 
@@ -143,6 +143,9 @@ module icache
     , input                                            lce_tr_resp_ready_i
 
  );
+
+  // Suppress unused signal warnings
+  wire unused0 = icache_pc_gen_data_ready_i;
 
   logic [lg_lce_sets_lp-1:0]            vaddr_index;
   logic [lg_block_size_in_bytes_lp-1:0] vaddr_offset;

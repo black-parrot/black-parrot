@@ -20,6 +20,7 @@
 
 
 module bp_fe_lce_req
+  import bp_common_pkg::*;
   import bp_fe_icache_pkg::*;
   #(parameter data_width_p="inv"
     , parameter lce_addr_width_p="inv"
@@ -177,7 +178,10 @@ module bp_fe_lce_req
         lce_resp_lo.msg_type = e_lce_cce_coh_ack;
         state_n                  = lce_resp_yumi_i ? e_lce_req_ready : e_lce_req_send_coh_ack;
       end
-    
+
+      default: begin
+
+      end
     endcase
   end
 

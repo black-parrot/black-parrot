@@ -260,6 +260,16 @@ bp_be_checker_top
    ,.issue_pkt_ready_i(issue_pkt_rdy)
    );
 
+// STD: TODO -- remove synth hack and find real solution
+wire [`bp_be_fu_op_width-1:0] decoded_fu_op_n;
+reg  [`bp_be_fu_op_width-1:0] decoded_fu_op_r;
+
+// STD: TODO -- remove synth hack and find real solution
+always_ff @(posedge clk_i)
+  begin
+    decoded_fu_op_r <= decoded_fu_op_n;
+  end
+
 bp_be_calculator_top 
  #(.vaddr_width_p(vaddr_width_p)
    ,.paddr_width_p(paddr_width_p)
@@ -300,7 +310,13 @@ bp_be_calculator_top
    ,.cmt_trace_stage_reg_o(cmt_trace_stage_reg_o)
    ,.cmt_trace_result_o(cmt_trace_result_o)
    ,.cmt_trace_exc_o(cmt_trace_exc_o)
+
+    // STD: TODO -- remove synth hack and find real solution
+   ,.decoded_fu_op_o(decoded_fu_op_n)
     );
+
+// STD: TODO -- remove synth hack and find real solution
+localparam mmu_sub_width_lp = $bits(mmu_cmd)-`bp_be_fu_op_width;
 
 bp_be_mmu_top
  #(.vaddr_width_p(vaddr_width_p)
@@ -318,7 +334,8 @@ bp_be_mmu_top
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
-    ,.mmu_cmd_i(mmu_cmd)
+    // STD: TODO -- remove synth hack and find real solution
+    ,.mmu_cmd_i({decoded_fu_op_r, mmu_cmd[mmu_sub_width_lp-1:0]})
     ,.mmu_cmd_v_i(mmu_cmd_v)
     ,.mmu_cmd_ready_o(mmu_cmd_rdy)
 

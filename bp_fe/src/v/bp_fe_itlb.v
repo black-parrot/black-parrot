@@ -16,7 +16,8 @@ module itlb
    , parameter ras_addr_width_p="inv"
    , parameter asid_width_p="inv"
    , parameter ppn_start_bit_p="inv"
-   , localparam ppn_width_lp=44
+   , parameter tag_width_p="inv"
+   , localparam ppn_width_lp=`bp_fe_itlb_icache_data_resp_width(tag_width_p)
    , localparam bp_fe_ppn_width_lp=ppn_width_lp
    , localparam branch_metadata_fwd_width_lp=btb_indx_width_p
                                             +bht_indx_width_p
@@ -50,6 +51,16 @@ module itlb
    , output logic                                 itlb_fe_v_o
    , input                                        itlb_fe_ready_i
    );
+
+// Suppress unused inputs
+wire unused0 = reset_i;
+wire unused1 = fe_itlb_v_i;
+wire unused2 = pc_gen_itlb_v_i;
+wire unused3 = itlb_icache_data_resp_ready_i;
+wire unused4 = itlb_fe_ready_i;
+
+assign itlb_fe_v_o = '0;
+assign fe_itlb_ready_o = '0;
 
 // struct declaration
 `declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)

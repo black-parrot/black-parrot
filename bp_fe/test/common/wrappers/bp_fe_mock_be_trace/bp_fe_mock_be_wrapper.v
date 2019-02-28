@@ -6,16 +6,11 @@
 
 `include "bsg_defines.v"
 
-`include "bp_common_fe_be_if.vh"
-`include "bp_common_me_if.vh"
-
-`include "bp_be_internal_if_defines.vh"
-
-import bp_be_rv64_pkg::*;
-import bp_be_pkg::*;
-
 module bp_fe_mock_be_wrapper
-  import bp_cce_pkg::*;
+ import bp_common_pkg::*;
+ import bp_cce_pkg::*;
+ import bp_be_rv64_pkg::*;
+ import bp_be_pkg::*;
  #(parameter core_els_p="inv"
    ,parameter vaddr_width_p="inv"
    ,parameter paddr_width_p="inv"

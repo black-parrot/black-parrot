@@ -117,6 +117,9 @@ module bp_be_dcache_lce_req
   end
 
   always_comb begin
+    cache_miss_o = 1'b0;
+
+    cache_miss_o = 1'b0;
 
     missed = load_miss_i | store_miss_i;
 
@@ -219,12 +222,17 @@ module bp_be_dcache_lce_req
           ? e_lce_req_state_ready
           : e_lce_req_state_send_coh_ack;
       end
+
+      default: begin
+
+      end
     endcase
   end
 
 
   // sequential
   //
+  // synopsys sync_set_reset "reset_i"
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       state_r <= e_lce_req_state_ready;

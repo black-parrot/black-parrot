@@ -35,7 +35,7 @@ module bp_fe_top
    , localparam vaddr_width_lp=(lg_lce_sets_lp+lg_lce_assoc_lp+lg_data_mask_width_lp)
    , localparam addr_width_lp=(vaddr_width_lp+tag_width_p)
    , localparam lce_data_width_lp=(lce_assoc_p*data_width_p)
-   , localparam bp_fe_itlb_icache_width_lp=44
+   , localparam bp_fe_itlb_icache_data_resp_width_lp=`bp_fe_itlb_icache_data_resp_width(tag_width_p)
    , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p 
                                                               ,num_lce_p
                                                               ,addr_width_lp
@@ -159,7 +159,7 @@ module bp_fe_top
 // icache to pc_gen
 `declare_bp_fe_icache_pc_gen_s(eaddr_width_p);
 // itlb to cache
-`declare_bp_fe_itlb_icache_data_resp_s(bp_fe_itlb_icache_width_lp);
+`declare_bp_fe_itlb_icache_data_resp_s(tag_width_p);
 
    
 // fe to be
@@ -219,24 +219,27 @@ assign bp_fe_queue_v_o      = pc_gen_fe_v;
 
 
 // fe to pc_gen 
-assign fe_pc_gen.pc_redirect_valid   = (bp_fe_cmd.opcode == e_op_pc_redirection)
-                                       && (bp_fe_cmd.operands.pc_redirect_operands.subopcode
-                                       == e_subop_branch_mispredict);
-   
-assign fe_pc_gen.attaboy_valid       = bp_fe_cmd.opcode == e_op_attaboy;
-   
-assign fe_pc_gen.branch_metadata_fwd = (bp_fe_cmd.opcode  == e_op_attaboy) ?
-                                       bp_fe_cmd.operands.attaboy.branch_metadata_fwd :
-                                       (bp_fe_cmd.opcode  == e_op_pc_redirection) ?
-                                       bp_fe_cmd.operands.pc_redirect_operands.branch_metadata_fwd :
-                                       '{default:'0};
+always_comb
+  begin
+    fe_pc_gen.pc_redirect_valid   = (bp_fe_cmd.opcode == e_op_pc_redirection)
+                                    && (bp_fe_cmd.operands.pc_redirect_operands.subopcode
+                                    == e_subop_branch_mispredict);
+       
+    fe_pc_gen.attaboy_valid       = bp_fe_cmd.opcode == e_op_attaboy;
+       
+    fe_pc_gen.branch_metadata_fwd = (bp_fe_cmd.opcode  == e_op_attaboy) 
+                                    ? bp_fe_cmd.operands.attaboy.branch_metadata_fwd
+                                    : (bp_fe_cmd.opcode  == e_op_pc_redirection)
+                                      ? bp_fe_cmd.operands.pc_redirect_operands.branch_metadata_fwd
+                                      : '{default:'0};
+    
+    fe_pc_gen.pc                  = fe_pc_gen.pc_redirect_valid 
+                                    ? bp_fe_cmd.operands.pc_redirect_operands.pc
+                                    : bp_fe_cmd.operands.attaboy.pc;
 
-assign fe_pc_gen.pc                  = fe_pc_gen.pc_redirect_valid ? bp_fe_cmd.operands.pc_redirect_operands.pc :
-                                       bp_fe_cmd.operands.attaboy.pc;
-   
-assign fe_pc_gen_v                   = bp_fe_cmd_v_i;
-assign bp_fe_cmd_ready_o             = fe_pc_gen_ready;
-
+    fe_pc_gen_v                   = bp_fe_cmd_v_i;
+    bp_fe_cmd_ready_o             = fe_pc_gen_ready;
+  end
    
 // fe to itlb
 // itlb does not has the exception functionality yet, thus it does not use the valid/ready signal from backend
@@ -362,6 +365,7 @@ itlb
    ,.ras_addr_width_p(ras_addr_width_p)
    ,.asid_width_p(asid_width_p)
    ,.ppn_start_bit_p(ppn_start_bit_lp)
+   ,.tag_width_p(tag_width_p)
    ) 
  itlb_1
   (.clk_i(clk_i)

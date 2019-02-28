@@ -1,0 +1,10 @@
+// bsg_ip_cores files
+$BSG_IP_CORES_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
+// be files
+$BP_BE_DIR/test/common/bp_be_mock_fe.v
+// me files
+// top files
+$BP_BE_DIR/test/rom/v/$TEST_ROM
+$BP_BE_DIR/test/rom/v/$TRACE_ROM
+$BP_BE_DIR/test/tb/bp_be_trace_demo/testbench.v
+

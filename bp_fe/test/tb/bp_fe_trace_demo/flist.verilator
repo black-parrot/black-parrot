@@ -1,0 +1,13 @@
+// bsg_ip_cores files
+$BSG_IP_CORES_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
+// be files
+// me files
+// fe files
+// MOCK wrapper + test_bp 
+$BP_FE_DIR/test/common/mock/mock_be_trace.v 
+$BP_FE_DIR/test/common/mock/mock_cce.v
+// top files
+$BP_FE_DIR/test/rom/v/$TEST_ROM
+$BP_FE_DIR/test/rom/v/$TRACE_ROM
+$BP_FE_DIR/test/tb/bp_fe_trace_demo/testbench.v
+

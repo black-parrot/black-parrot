@@ -464,6 +464,7 @@ module bp_be_dcache_lce
   logic [`BSG_SAFE_CLOG2(timeout_max_limit_p+1)-1:0] timeout_count_r, timeout_count_n;
   logic timeout;
 
+  // synopsys sync_set_reset "reset_i"
   always_comb begin
     if (timeout_count_r == timeout_max_limit_p) begin
       timeout = 1'b1;
@@ -482,6 +483,7 @@ module bp_be_dcache_lce
     end
   end
 
+  // synopsys sync_set_reset "reset_i"
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       timeout_count_r <= '0;
