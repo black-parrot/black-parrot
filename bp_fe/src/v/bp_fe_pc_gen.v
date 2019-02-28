@@ -55,8 +55,13 @@ module bp_fe_pc_gen
    , output logic                                    fe_pc_gen_ready_o
    );
 
+// Suppress unused signal warnings
+wire unused0 = v_i;
+wire unused1 = pc_gen_itlb_ready_i;
 
-   
+assign icache_pc_gen_ready_o = '0;
+assign pc_gen_itlb_v_o = '0;
+
 //the first level of structs
 `declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)
 //fe to pc_gen
@@ -189,7 +194,9 @@ always_ff @(posedge clk_i)
   begin
     if (reset_i) 
       begin
-       pc <= bp_first_pc_p;
+       pc <= eaddr_width_p'(bp_first_pc_p);
+       last_pc <= '0;
+       icache_miss_pc <= '0;
       end
     else if (stalled_pc_redirect && icache_miss_i) 
       begin
@@ -211,29 +218,27 @@ always_ff @(posedge clk_i)
         end
   end
 
-
-//Keep track of stalled PC_redirect due to icache miss (icache is not ready). 
+// PC redirect register
 always_ff @(posedge clk_i) 
   begin
     if (fe_pc_gen_v_i && fe_pc_gen_cmd.pc_redirect_valid) 
       begin
-        pc_redirect         <= fe_pc_gen_cmd.pc;
-        stalled_pc_redirect <= 1'b1;
-      end 
-    else if (stalled_pc_redirect && (pc_gen_fetch.pc != pc_redirect)) 
-      begin
-        stalled_pc_redirect <= 1'b1;  
-      end 
-    else if (stalled_pc_redirect && (pc_gen_fetch.pc == pc_redirect) && !pc_gen_fe_v_o) 
-      begin 
-        stalled_pc_redirect <= 1'b1;
-      end 
-    else 
-      begin
-        stalled_pc_redirect <= 1'b0;
+        pc_redirect <= fe_pc_gen_cmd.pc;
       end
   end
-  
+
+//Keep track of stalled PC_redirect due to icache miss (icache is not ready). 
+wire stalled_pc_redirect_n = (fe_pc_gen_v_i & fe_pc_gen_cmd.pc_redirect_valid)
+                             | (stalled_pc_redirect & (pc_gen_fetch.pc != pc_redirect))
+                             | (stalled_pc_redirect & (pc_gen_fetch.pc == pc_redirect) & ~pc_gen_fe_v_o);
+
+always_ff @(posedge clk_i) 
+  begin
+    if (reset_i)
+      stalled_pc_redirect <= 1'b0;
+    else
+      stalled_pc_redirect <= stalled_pc_redirect_n;
+  end
 
 instr_scan 
   #(.eaddr_width_p(eaddr_width_p)
@@ -244,8 +249,8 @@ instr_scan
      ,.scan_o(scan_instr)
     );
 
-assign bht_r_v_branch_jalr_inst = icache_pc_gen_v_i && (scan_instr.instr_scan_class == e_rvi_jalr
-                                                      ||scan_instr.instr_scan_class == e_rvi_branch);
+assign bht_r_v_branch_jalr_inst = (icache_pc_gen_v_i & (scan_instr.instr_scan_class == e_rvi_jalr
+                                                        | scan_instr.instr_scan_class == e_rvi_branch));
    
 //select among 2 available branch predictor implementations
 generate

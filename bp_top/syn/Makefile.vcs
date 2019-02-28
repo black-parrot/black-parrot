@@ -10,7 +10,7 @@ VCS_OPTIONS += +v2k -sverilog -debug_pp  # Enable
 VCS_OPTIONS += +libext+.v+.vlib+.vh      # Find library files with these extensions
 VCS_OPTIONS += +vcs+vcdpluson            # Enable vcd dump
 
-LINT_OPTIONS +=+lint=all,noSVA-UA,noVCDE,noSVA-NSVU
+LINT_OPTIONS +=+lint=all,noSVA-UA,noSVA-NSVU,noVCDE
 
 TEST_ROM  ?= bp_example_rom.v
 TRACE_ROM ?= bp_example_rom.tr.v

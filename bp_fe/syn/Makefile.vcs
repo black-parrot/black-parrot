@@ -37,6 +37,11 @@ bp_fe_rom.v:
 bp_fe_trace_rom.v:
 	echo "TESTING ROM:" $(TRACE_ROM);\
 
+lint.v: 
+	$(eval include $(TB_PATH)/bp_fe_trace_demo/Makefile.frag) \
+	$(VCS) $(VCS_OPTIONS) $(LINT_OPTIONS) -top bp_be_top -f flist.vcs $(HDL_PARAMS) \
+  | tee bp_be_top_lint.log
+
 %.build.v: 
 	$(eval include $(TB_PATH)/$*/Makefile.frag) \
 	$(VCS) $(VCS_OPTIONS) -o $(TB_PATH)/$*/simv -top test_bp \
@@ -60,7 +65,6 @@ dve:
 	trap 'echo -e "\033[31m\033[1m [ERROR] \033[0m " exit simv or vcd2wlf' SIGINT;\
 	dve -full64 -vpd vcdplus.vpd &
 clean:
-	rm -rf build *.log *.run.v *.build.v;\
-	unlink bp_fe_rom.v
+	rm -rf build *.log *.run.v *.build.v obj_dir;\
 
 

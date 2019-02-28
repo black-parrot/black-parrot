@@ -1,0 +1,26 @@
+## Tools
+CC=g++
+VV=$(VERILATOR)
+
+## Tool options
+VV_OPTS+= --sc           # Output in SystemC rather than C++
+VV_OPTS+= --trace				 # Dump a VCD
+VV_OPTS+= -Wno-unoptflat # Verilator has problems with false positive combinatorial
+                         #   loop detection e.g. bit 0 drives bit 1 of struct
+
+lint.sc:
+	$(eval include $(TB_PATH)/bp_fe_trace_demo/Makefile.frag)           \
+	$(VV) $(VV_OPTS) --lint-only --top-module testbench                 \
+	  -f flist.verilator -f $(TB_PATH)/bp_fe_trace_demo/flist.verilator \
+	  $(HDL_PARAMS) $(TB_PATH)/bp_fe_trace_demo/test_bp.cpp 
+
+%.build.sc: 
+	$(eval include $(TB_PATH)/$*/Makefile.frag)               \
+	$(VV) $(VV_OPTS) --Wno-fatal --exe --top-module testbench \
+	  -f flist.verilator -f $(TB_PATH)/$*/flist.verilator     \
+	  $(HDL_PARAMS) $(TB_PATH)/$*/test_bp.cpp
+	make -C obj_dir -f Vtestbench.mk
+
+%.run.sc: clean %.build.sc
+	obj_dir/Vtestbench
+

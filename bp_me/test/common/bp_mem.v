@@ -104,6 +104,7 @@ module bp_mem
 
   //logic [block_size_in_bits_lp-1:0] cnt;
 
+  // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
       mem_v_i <= '0;

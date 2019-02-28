@@ -33,3 +33,6 @@
   ignore = dirty
   shallow = true
 
+[submodule "external/verilator"]
+	path = external/verilator
+	url = http://git.veripool.org/git/verilator

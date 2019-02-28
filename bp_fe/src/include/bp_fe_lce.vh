@@ -8,7 +8,6 @@
 
 `include "bsg_defines.v"
 
-import bp_common_pkg::*;
 `include "bp_common_me_if.vh"
 
 /*

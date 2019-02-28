@@ -1,12 +1,6 @@
 
-`include "bsg_defines.v"
-
-`include "bp_common_me_if.vh"
-
-`include "bp_be_internal_if_defines.vh"
-`include "bp_be_rv64_defines.vh"
-
 module bp_be_trace_replay_gen
+ import bp_common_pkg::*;
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
  #(parameter vaddr_width_p="inv"

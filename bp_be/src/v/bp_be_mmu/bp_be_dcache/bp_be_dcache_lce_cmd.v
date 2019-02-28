@@ -231,7 +231,7 @@ module bp_be_dcache_lce_cmd
             sync_ack_count_n = lce_resp_yumi_i
               ? sync_ack_count_r + 1
               : sync_ack_count_r;
-            state_n = ((sync_ack_count_r == num_cce_p-1) & lce_resp_yumi_i)
+            state_n = ((sync_ack_count_r == cce_id_width_lp'(num_cce_p-1)) & lce_resp_yumi_i)
               ? e_lce_cmd_state_ready
               : e_lce_cmd_state_sync;
           end
@@ -248,6 +248,9 @@ module bp_be_dcache_lce_cmd
             lce_cmd_yumi_o = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
           end
 
+          default: begin
+
+          end
         endcase 
       end
 
@@ -336,6 +339,10 @@ module bp_be_dcache_lce_cmd
             lce_resp.addr = lce_cmd.addr;
             lce_resp_v_o = invalidated_tag_r | tag_mem_pkt_yumi_i;
             lce_cmd_yumi_o = lce_resp_yumi_i;
+          end
+
+          default: begin
+
           end
         endcase
       end
@@ -434,6 +441,10 @@ module bp_be_dcache_lce_cmd
         state_n = lce_data_resp_done
           ? e_lce_cmd_state_ready
           : e_lce_cmd_state_wb_not_dirty;
+      end
+
+      default: begin
+
       end
     endcase
   end
