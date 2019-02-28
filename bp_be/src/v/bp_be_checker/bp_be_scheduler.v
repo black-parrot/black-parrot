@@ -95,7 +95,6 @@ assign fe_exception       = fe_queue.msg.exception;
 
 // Declare intermediate signals
 bp_be_instr_metadata_s           fe_instr_metadata;
-bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
 logic [itag_width_lp-1:0]        itag_n, itag_r;
 logic [reg_data_width_lp-1:0]    exception_eaddr;
 
