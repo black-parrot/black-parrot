@@ -16,18 +16,25 @@ export BP_EXTERNAL_DIR=$CWD/external
 export VCS=${VCS:-vcs}
 export VERILATOR=${VERILATOR:-verilator}
 
+# Needed for verilator g++ compilation
+export VERILATOR_ROOT=$BP_EXTERNAL_DIR/verilator
+export SYSTEMC_INCLUDE=$BP_EXTERNAL_DIR/include
+export SYSTEMC_LIBDIR=$BP_EXTERNAL_DIR/lib-linux64
+
 # Add external tools to path
 export PATH=$CWD/external/bin:$PATH
+export LD_LIBRARY_PATH=$SYSTEMC_LIBDIR:$LD_LIBRARY_PATH
 
 if [ "$1" = "init" ]; then
   git submodule update --init --recursive
 
   # Make external tools (uncomment whichever individual tool you would like to build)
   #make -C $CWD/external all
-  make -C $CWD/external gnu   -j 25
-  make -C $CWD/external fesvr -j 25
-  make -C $CWD/external spike -j 25
-  make -C $CWD/external axe   -j 25
+  make -C $CWD/external verilator -j 25
+  make -C $CWD/external gnu       -j 25
+  make -C $CWD/external fesvr     -j 25
+  make -C $CWD/external spike     -j 25
+  make -C $CWD/external axe       -j 25
 
   # Make test roms
   make -C $BP_FE_DIR/test/rom all

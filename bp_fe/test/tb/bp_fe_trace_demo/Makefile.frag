@@ -6,6 +6,7 @@ DUT_PARAMS= \
            -pvalue+btb_indx_width_p=9             \
            -pvalue+bht_indx_width_p=5             \
            -pvalue+ras_addr_width_p=22            \
+					"-pvalue+bp_first_pc_p=32\'h80000124"   \
            -pvalue+num_cce_p=1                    \
            -pvalue+num_lce_p=1                    \
            -pvalue+lce_sets_p=64                  \

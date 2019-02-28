@@ -5,8 +5,6 @@ TB_PARAMS= -pvalue+trace_ring_width_p=124              \
            -pvalue+paddr_width_p=56                    \
            -pvalue+asid_width_p=10                     \
            -pvalue+branch_metadata_fwd_width_p=36      \
-					 -pvalue+cce_block_size_in_bytes_p=64        \
-           -pvalue+cce_num_inst_ram_els_p=256          \
 					 -pvalue+mem_els_p=512
 
 DUT_PARAMS=-pvalue+num_cce_p=1                         \
@@ -19,4 +17,6 @@ DUT_PARAMS=-pvalue+num_cce_p=1                         \
 					 -pvalue+boot_rom_width_p=512                
 
 HDL_PARAMS=$(DUT_PARAMS) $(TB_PARAMS)
+
+TOP_MODULE=testbench
 

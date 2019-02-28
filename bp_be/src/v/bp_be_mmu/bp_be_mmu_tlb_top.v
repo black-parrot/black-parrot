@@ -105,7 +105,7 @@ module bp_be_mmu_top
    , localparam lce_id_width_lp = `BSG_SAFE_CLOG2(num_lce_p)
 
    // MMU                                                              
-   , localparam mmu_cmd_width_lp  = `bp_be_mmu_cmd_width
+   , localparam mmu_cmd_width_lp  = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam mmu_resp_width_lp = `bp_be_mmu_resp_width
    , localparam vtag_width_lp     = `bp_be_vtag_width(vaddr_width_p
                                                       , lce_sets_p

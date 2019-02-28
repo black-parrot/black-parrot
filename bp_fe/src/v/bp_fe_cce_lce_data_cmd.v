@@ -20,6 +20,7 @@ y *
 
 
 module bp_fe_lce_data_cmd
+  import bp_common_pkg::*;
   import bp_fe_icache_pkg::*;
   #(parameter data_width_p="inv"
     , parameter lce_addr_width_p="inv"

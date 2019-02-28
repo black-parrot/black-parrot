@@ -70,7 +70,7 @@ module bp_be_calculator_top
    , localparam issue_pkt_width_lp      = `bp_be_issue_pkt_width(branch_metadata_fwd_width_p)
    , localparam calc_status_width_lp    = `bp_be_calc_status_width(branch_metadata_fwd_width_p)
    , localparam exception_width_lp      = `bp_be_exception_width
-   , localparam mmu_cmd_width_lp        = `bp_be_mmu_cmd_width
+   , localparam mmu_cmd_width_lp        = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam mmu_resp_width_lp       = `bp_be_mmu_resp_width
    , localparam pipe_stage_reg_width_lp = `bp_be_pipe_stage_reg_width(branch_metadata_fwd_width_p)
    , localparam calc_result_width_lp    = `bp_be_calc_result_width(branch_metadata_fwd_width_p)
@@ -531,7 +531,10 @@ always_comb
         comp_stage_n_slice_rd_addr[i] = calc_stage_r[i-1].decode.rd_addr;
         comp_stage_n_slice_rd[i]      = comp_stage_n[i].result;
       end
+  end
 
+always_comb 
+  begin
     // Exception aggregation
     for (integer i = 0; i < pipe_stage_els_lp; i++) 
       begin : exc_stage
