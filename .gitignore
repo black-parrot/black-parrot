@@ -3,3 +3,6 @@ external/*
 *.swp
 *.pyc
 *.log
+setup_env.sh
+run_dc
+

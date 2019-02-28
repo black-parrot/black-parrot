@@ -1,11 +1,7 @@
-## Setup CAD tools
-# TODO: Change to your export own DC license variables
-include $(BSG_CADENV_DIR)/cadenv.mk
-
 # Top-level module
 DESIGN_NAME :=bp_be_top
 
-# Run director for DesignCompiler
+# Run directory for DesignCompiler
 DC_RUN_DIR :=run_dc
 
 # Check if the design is synthesizable. This is not an actual synthesis run,

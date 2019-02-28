@@ -4,6 +4,7 @@
  */
 
 module mock_cce
+  import bp_common_pkg::*;
   #(parameter data_width_p="inv"
     ,parameter sets_p="inv"
     ,parameter ways_p="inv"

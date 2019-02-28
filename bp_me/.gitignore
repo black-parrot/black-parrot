@@ -12,4 +12,6 @@ csrc
 simv*
 *.vpd
 ucli.key
+obj_dir
+*.vcd
 

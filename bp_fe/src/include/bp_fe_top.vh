@@ -48,7 +48,7 @@
       bp_fe_fetch_s      fetch;                                                                                 \
       bp_fe_exception_s  exception;                                                                             \
     }  msg;                                                                                                     \
-  }  bp_fe_itlb_queue_s;                                                                                      
+  }  bp_fe_itlb_queue_s;
 
 
 
@@ -66,19 +66,19 @@ typedef enum logic [3:0]
 
 `define bp_fe_instr_scan_class_width ($bits(bp_fe_instr_scan_class_e))
 
-/*                                                                                                            
-* bp_fe_instr_scan_s flags the category of the instruction. The control                                      
-* flow instruction under the inspections are branch, call, immediate call, jump                              
-* and link, jump register, jump and return. If any of these instructions are                                 
-* compressed, the PC gen will use one of the instr_scan_class enum types to                                  
-* inform the other blocks. bp_fe_instr_scan_s consists of 1) whether pc is                                   
-* compressed or not and 2) what class pc instruction is.                                                     
-*/                                                                                                            
-typedef struct packed                                                                                         
-{                                                                                                             
-  logic                       is_compressed;                                                  
+/*
+* bp_fe_instr_scan_s flags the category of the instruction. The control
+* flow instruction under the inspections are branch, call, immediate call, jump
+* and link, jump register, jump and return. If any of these instructions are
+* compressed, the PC gen will use one of the instr_scan_class enum types to
+* inform the other blocks. bp_fe_instr_scan_s consists of 1) whether pc is
+* compressed or not and 2) what class pc instruction is.
+*/
+typedef struct packed
+{
+  logic                       is_compressed;
   bp_fe_instr_scan_class_e    instr_scan_class;
-  logic [63:0]                imm;                                              
+  logic [63:0]                imm;
 }  bp_fe_instr_scan_s;
 
 
@@ -96,7 +96,7 @@ typedef struct packed
 
 /*
  * The pc_gen logic recieves the commands from the backend if there is any
- * exceptions. These commands are either pc_redirect or attaboy. 
+ * exceptions. These commands are either pc_redirect or attaboy.
 */
 `define declare_bp_fe_pc_gen_cmd_s(branch_metadata_fwd_width_mp)  \
   typedef struct packed                                           \
@@ -157,8 +157,6 @@ typedef struct packed
 `define bp_fe_not_compressed 0
 
 
-`define bp_fe_itlb_icache_width(ppn_width_mp) (ppn_width_mp)
-
 `define bp_fe_pc_gen_queue_width(vaddr_width_mp,branch_metadata_fwd_width_mp) \
   (`bp_fe_queue_width(vaddr_width_mp,branch_metadata_fwd_width_mp)+`bp_fe_instr_scan_width)
 
@@ -174,7 +172,8 @@ typedef struct packed
 `define bp_fe_branch_metadata_fwd_width(btb_idx_width_mp,bht_idx_width_mp,ras_addr_width_mp) \
   (btb_idx_width_mp+bht_idx_width_mp+ras_addr_width_mp)
 
-`define bp_fe_itlb_icache_width(ppn_width_mp) (ppn_width_mp)
+`define bp_fe_itlb_icache_data_resp_width(ppn_width_mp) \
+  (ppn_width_mp)
 
 `define bp_fe_itlb_cmd_width(vaddr_width_mp,paddr_width_mp,asid_width_mp,branch_metadata_fwd_width_mp) \
   (`bp_fe_cmd_width(vaddr_width_mp,paddr_width_mp,asid_width_mp,branch_metadata_fwd_width_mp))

@@ -20,4 +20,5 @@ $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_wbuf_queue.v
 # top files
 $BP_ME_DIR/test/rom/v/$TEST_ROM
 $BP_ME_DIR/test/rom/v/$TRACE_ROM
+$BP_ME_DIR/test/tb/bp_me_trace_demo/testbench.v
 

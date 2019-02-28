@@ -120,8 +120,15 @@ bsg_dff_reset_en
    ,.data_o(itag_r)
    );
 
+
+assign issue_pkt.instr_metadata = fe_instr_metadata;
+assign issue_pkt.instr          = fe_fetch_instr;
 always_comb 
   begin : fe_queue_extract
+
+    // Default value
+    fe_instr_metadata = '0;
+
     case(fe_queue.msg_type)
       // Populate the issue packet with a valid pc/instruction pair.
       e_fe_fetch : 
@@ -130,9 +137,6 @@ always_comb
           fe_instr_metadata.pc                     = fe_fetch.pc;
           fe_instr_metadata.fe_exception_not_instr = 1'b0;
           fe_instr_metadata.branch_metadata_fwd    = fe_fetch.branch_metadata_fwd;
-
-          issue_pkt.instr_metadata = fe_instr_metadata;
-          issue_pkt.instr          = fe_fetch_instr;
 
           // Decide whether to read from integer regfile (saves power)
           casez(fe_fetch_instr.opcode)
@@ -190,13 +194,10 @@ always_comb
           fe_instr_metadata.fe_exception_code      = fe_exception.exception_code;
           // branch_metadata is meaningless for a FE exception
           fe_instr_metadata.branch_metadata_fwd    = '0; 
-
-          issue_pkt                = '0;
-          issue_pkt.instr_metadata = fe_instr_metadata;
         end
 
       // Should not reach
-      default : issue_pkt = '0;
+      default : begin end
     endcase
   end
 

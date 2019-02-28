@@ -8,3 +8,5 @@ $BP_BE_DIR/test/common/bp_be_mock_fe.v
 # top files
 $BP_BE_DIR/test/rom/v/$TEST_ROM
 $BP_BE_DIR/test/rom/v/$TRACE_ROM
+$BP_BE_DIR/test/tb/bp_be_trace_demo/testbench.v
+
