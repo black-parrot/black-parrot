@@ -483,6 +483,7 @@ module bp_be_dcache_lce
     end
   end
 
+  // synopsys sync_set_reset "reset_i"
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       timeout_count_r <= '0;

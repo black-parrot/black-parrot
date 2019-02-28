@@ -218,7 +218,6 @@ always_ff @(posedge clk_i)
         end
   end
 
-
 // PC redirect register
 always_ff @(posedge clk_i) 
   begin

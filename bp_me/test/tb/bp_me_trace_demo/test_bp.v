@@ -38,7 +38,7 @@ logic clk, reset;
 // clock gen
 //
 bsg_nonsynth_clock_gen 
- #(.cycle_time_p(10)) 
+ #(.cycle_time_p(`BSG_CORE_CLOCK_PERIOD))
  clk_gen 
   (.o(clk));
 

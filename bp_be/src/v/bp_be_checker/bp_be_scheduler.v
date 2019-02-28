@@ -125,6 +125,8 @@ assign issue_pkt.instr_metadata = fe_instr_metadata;
 assign issue_pkt.instr          = fe_fetch_instr;
 always_comb 
   begin : fe_queue_extract
+
+    // Default value
     fe_instr_metadata = '0;
 
     case(fe_queue.msg_type)
