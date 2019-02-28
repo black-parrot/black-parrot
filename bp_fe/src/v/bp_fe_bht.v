@@ -28,6 +28,8 @@ module bp_fe_bht
    , output                       predict_o
    );
 
+// Suppress unused signal warning
+wire unused0 = r_v_i;
    
 logic [els_lp-1:0][saturation_size_lp-1:0] mem;
 

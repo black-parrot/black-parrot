@@ -6,3 +6,4 @@ $BSG_IP_CORES_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
 # top files
 $BP_TOP_DIR/test/rom/v/$TRACE_ROM
 $BP_TOP_DIR/test/rom/v/$TEST_ROM
+$BP_TOP_DIR/test/tb/bp_single_trace_demo/testbench.v

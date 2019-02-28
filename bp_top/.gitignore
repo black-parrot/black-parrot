@@ -12,4 +12,6 @@ csrc
 *.elf
 *.spike
 *.tr
+obj_dir
+*.vcd
 

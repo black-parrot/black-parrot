@@ -44,6 +44,9 @@ module bp_cce_inst_decode
    , output logic [inst_addr_width_p-1:0]        pc_branch_target_o
   );
 
+  // Suppress unused signal warning
+  wire unused0 = clk_i;
+
   bp_cce_inst_s inst;
 
   logic pushq_op, popq_op;

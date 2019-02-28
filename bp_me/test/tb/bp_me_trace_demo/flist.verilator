@@ -1,0 +1,21 @@
+// bsg_ip_cores files
+$BSG_IP_CORES_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
+// be files
+$BP_BE_DIR/test/tb/bp_be_dcache/v/mock_tlb.v
+$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache.v
+$BP_BE_DIR/src/v/common/bsg_fifo_1r1w_rolly.v
+$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_cmd.v
+$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce.v
+$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_req.v
+$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_data_cmd.v
+$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_tr.v
+$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lru_decode.v
+$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lru_encode.v
+$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_wbuf.v
+$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_wbuf_queue.v
+// me files
+// top files
+$BP_ME_DIR/test/rom/v/$TEST_ROM
+$BP_ME_DIR/test/rom/v/$TRACE_ROM
+$BP_ME_DIR/test/tb/bp_me_trace_demo/testbench.v
+

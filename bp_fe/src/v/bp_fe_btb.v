@@ -28,7 +28,6 @@ module bp_fe_btb
    , output logic                              read_valid_o
    );
 
-   
 logic [els_lp-1:0] valid;
 logic [bp_fe_pc_gen_btb_idx_width_lp-1:0] addr;
    
@@ -61,7 +60,7 @@ bsg_mem_1rw_sync
    ,.reset_i(reset_i)
    ,.data_i(branch_target_i)
    ,.addr_i(addr)
-   ,.v_i(1'b1)
+   ,.v_i(1'b1) 
    ,.w_i(w_v_i)
    ,.data_o(branch_target_o)
    );

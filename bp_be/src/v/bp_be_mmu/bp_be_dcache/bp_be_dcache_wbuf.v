@@ -6,9 +6,8 @@
  *    Data cache write buffer.
  */
 
-`include "bp_be_dcache_wbuf_entry.vh"
-
 module bp_be_dcache_wbuf
+  import bp_common_pkg::*;
   #(parameter data_width_p="inv"
     , parameter paddr_width_p="inv"
     , parameter ways_p="inv"
@@ -117,7 +116,7 @@ module bp_be_dcache_wbuf
       num_els_r <= 2'b0;
     end
     else begin
-      num_els_r <= num_els_r + v_i - (v_o & yumi_i);
+      num_els_r <= num_els_r + 2'(v_i - (v_o & yumi_i));
     end
   end
 

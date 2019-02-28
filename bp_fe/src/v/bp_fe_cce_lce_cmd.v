@@ -20,6 +20,7 @@
 
 
 module bp_fe_lce_cmd
+  import bp_common_pkg::*;
   import bp_fe_icache_pkg::*;
   #(parameter data_width_p="inv"
     , parameter lce_data_width_p="inv"
@@ -309,6 +310,10 @@ module bp_fe_lce_cmd
             state_n                = e_lce_cmd_ready;
           end
         end
+      end
+
+      default: begin
+
       end
     endcase
   end 
