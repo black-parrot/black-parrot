@@ -118,7 +118,7 @@ module bp_fe_lce_req
     tag_set               = tag_set_r | tag_set_i;
 
     lce_req_lo.src_id        = (lce_id_width_lp)'(id_i);
-    lce_req_lo.non_exclusive = e_lce_req_excl;
+    lce_req_lo.non_exclusive = e_lce_req_not_excl; 
     lce_req_lo.msg_type      = e_lce_req_type_rd;
     lce_req_lo.addr          = miss_addr_r;
     lce_req_lo.lru_way_id    = lru_way_r;
@@ -145,7 +145,7 @@ module bp_fe_lce_req
 
       e_lce_req_send_miss_req: begin
         cache_miss_o                 = 1'b1;
-        lce_req_v_o              = 1'b1;
+        lce_req_v_o                  = 1'b1;
         state_n                      = lce_req_ready_i ? e_lce_req_sleep : e_lce_req_send_miss_req;
       end
 
