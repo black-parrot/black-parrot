@@ -101,7 +101,7 @@ logic [lg_boot_rom_els_lp-1:0] mrom_addr;
 logic [boot_rom_width_p-1:0]   mrom_data;
 
 bsg_nonsynth_clock_gen 
- #(.cycle_time_p(10))
+ #(.cycle_time_p(`BSG_CORE_CLOCK_PERIOD))
  clock_gen 
   (.o(clk));
 

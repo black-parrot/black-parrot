@@ -108,7 +108,7 @@ logic [trace_rom_addr_width_p-1:0]  tr_rom_addr_li;
 logic [trace_rom_data_width_lp-1:0] tr_rom_data_lo;
 
 bsg_nonsynth_clock_gen 
- #(.cycle_time_p(10))
+ #(.cycle_time_p(`BSG_CORE_CLOCK_PERIOD))
  clock_gen 
   (.o(clk));
 
