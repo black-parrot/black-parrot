@@ -238,7 +238,7 @@ module bp_fe_lce_cmd
                                                             +lg_block_size_in_bytes_lp
                                                             +:index_width_lp];
           tag_mem_pkt_lo.way_id       = lce_cmd_li.way_id;
-          tag_mem_pkt_lo.state        = e_VI_I;
+          tag_mem_pkt_lo.state        = e_MESI_I;
           tag_mem_pkt_lo.opcode       = e_tag_mem_ivalidate;
           tag_mem_pkt_v_o             = flag_invalidate_r ? 1'b0 : lce_cmd_v_i;
           flag_invalidate_n           = lce_resp_yumi_i ? 1'b0 : (flag_invalidate_r ? 1'b1 : tag_mem_pkt_yumi_i);
@@ -285,7 +285,7 @@ module bp_fe_lce_cmd
           tag_mem_pkt_lo.index        = lce_cmd_li.addr[lg_data_mask_width_lp
                                                             +lg_block_size_in_bytes_lp
                                                             +:index_width_lp];
-          tag_mem_pkt_lo.state        = e_VI_I;
+          tag_mem_pkt_lo.state        = e_MESI_I;
           tag_mem_pkt_lo.tag          = '0;
           tag_mem_pkt_lo.opcode       = e_tag_mem_set_clear;
           tag_mem_pkt_v_o             = lce_cmd_v_i;
