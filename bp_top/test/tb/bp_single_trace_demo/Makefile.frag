@@ -14,6 +14,7 @@ DUT_PARAMS = -pvalue+vaddr_width_p=22                \
              -pvalue+lce_assoc_p=8                   \
              -pvalue+boot_rom_els_p=512              \
              -pvalue+boot_rom_width_p=512            \
+             -pvalue+mem_els_p=512
 
 TB_PARAMS =  -pvalue+trace_ring_width_p=129     \
              -pvalue+trace_rom_addr_width_p=32  \

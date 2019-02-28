@@ -230,7 +230,8 @@ int sc_main(int argc, char **argv)
       }
     }
     sc_bv<bp_cce_lce_cmd_width> cmd(lce_cmd_o.read());
-    if (!checkCceCmd(cmd, 0, 0, reqAddr, lruWay, e_lce_cmd_set_tag, e_MESI_E, 0, 0)) {
+    bp_cce_coh_mesi_e cohSt = e_MESI_E;//(nonExclReq) ? e_MESI_S : e_MESI_E;
+    if (!checkCceCmd(cmd, 0, 0, reqAddr, lruWay, e_lce_cmd_set_tag, cohSt, 0, 0)) {
       cout << "@" << sc_time_stamp() << " TEST FAILED!" << endl;
       wf->close();
       exit(-1);
@@ -242,12 +243,36 @@ int sc_main(int argc, char **argv)
     lce_cmd_ready_i = 0;
     sc_start(CLK_TIME, SC_NS);
 
+    // send coherence ack
+    stallDetect = 0;
+    while (!lce_resp_ready_o) {
+      stallDetect++;
+      if (stallDetect == STALL_MAX) {
+        cout << "@" << sc_time_stamp() << " STALL!" << endl;
+        wf->close();
+        return 0;
+      }
+      sc_start(CLK_TIME, SC_NS);
+    }
+
+    // create and send coherence ack
+    bp_lce_cce_ack_type_e ackType = e_lce_cce_coh_ack;
+    sc_bv<bp_lce_cce_resp_width> lceResp = createLceResp(0, 0, ackType, reqAddr).to_uint();
+    cout << "@" << sc_time_stamp() << " Sending Coherence Ack: " << lceResp << endl;
+    //lce_resp_i = createLceResp(0, 0, ackType, reqAddr).to_uint();
+    lce_resp_i = lceResp.to_uint();
+    lce_resp_v_i = 1;
+    sc_start(CLK_TIME, SC_NS);
+    lce_resp_i = 0;
+    lce_resp_v_i = 0;
+    sc_start(CLK_TIME, SC_NS);
+
     sc_start(RST_TIME, SC_NS);
   }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-
+/*
   // reset
   lce_req_i = 0;
   lce_req_v_i = 0;
@@ -441,7 +466,7 @@ int sc_main(int argc, char **argv)
 
     sc_start(RST_TIME, SC_NS);
   }
-
+*/
   sc_start(RST_TIME, SC_NS);
 
   cout << "@" << sc_time_stamp() << " TEST PASSED!" << endl;

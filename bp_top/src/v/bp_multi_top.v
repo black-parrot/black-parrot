@@ -8,6 +8,7 @@ module bp_multi_top
  import bp_common_pkg::*;
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
+ import bp_cce_pkg::*;
  #(// System parameters
    parameter core_els_p                    = "inv"
    , parameter vaddr_width_p               = "inv"
@@ -56,12 +57,17 @@ module bp_multi_top
    , localparam dcache_lce_id_lp          = 1 // Base ID for dcache
 
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
+
+   , localparam cce_inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(cce_num_inst_ram_els_p)
    )
   (input                                                  clk_i
    , input                                                reset_i
 
    , output logic [num_cce_p-1:0][lg_boot_rom_els_lp-1:0] boot_rom_addr_o
    , input logic [num_cce_p-1:0][boot_rom_width_p-1:0]    boot_rom_data_i
+
+   , output logic [cce_inst_ram_addr_width_lp-1:0]        cce_inst_boot_rom_addr_o
+   , input logic [`bp_cce_inst_width-1:0]                 cce_inst_boot_rom_data_i
 
    // Commit tracer
    , output [core_els_p-1:0][pipe_stage_reg_width_lp-1:0] cmt_trace_stage_reg_o
@@ -295,7 +301,7 @@ endgenerate
 bp_me_top 
  #(.num_lce_p(num_lce_p)
    ,.num_cce_p(num_cce_p)
-   ,.addr_width_p(paddr_width_p)
+   ,.paddr_width_p(paddr_width_p)
    ,.lce_assoc_p(lce_assoc_p)
    ,.lce_sets_p(lce_sets_p)
    ,.block_size_in_bytes_p(cce_block_size_in_bytes_p)
@@ -338,6 +344,9 @@ bp_me_top
 
    ,.boot_rom_addr_o(boot_rom_addr_o)
    ,.boot_rom_data_i(boot_rom_data_i)
+
+   ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr_o)
+   ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data_i)
    );
 
 endmodule : bp_multi_top

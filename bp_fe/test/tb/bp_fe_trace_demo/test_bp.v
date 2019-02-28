@@ -7,6 +7,7 @@
 module test_bp
  import bp_common_pkg::*;
  import bp_be_pkg::*;
+ import bp_cce_pkg::*;
  #(parameter core_els_p                    = "inv"
    , parameter vaddr_width_p               = "inv"
    , parameter paddr_width_p               = "inv"
@@ -23,6 +24,8 @@ module test_bp
    , parameter btb_indx_width_p            = "inv"
    , parameter bht_indx_width_p            = "inv"
    , parameter ras_addr_width_p            = "inv"
+
+   , parameter mem_els_p                   = "inv"
 
    , parameter boot_rom_width_p = "inv"
    , parameter boot_rom_els_p   = "inv"
@@ -41,6 +44,7 @@ module test_bp
                                                      , branch_metadata_fwd_width_p
                                                      )
 
+   , localparam cce_inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(cce_num_inst_ram_els_p)
  );
 
 `declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
@@ -99,6 +103,10 @@ logic [trace_rom_data_width_lp-1:0] tr_rom_data_lo;
 
 logic [lg_boot_rom_els_lp-1:0] mrom_addr;
 logic [boot_rom_width_p-1:0]   mrom_data;
+
+// CCE Inst Boot ROM
+logic [cce_inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
+logic [`bp_cce_inst_width-1:0]         cce_inst_boot_rom_data;
 
 bsg_nonsynth_clock_gen 
  #(.cycle_time_p(10))
@@ -293,11 +301,12 @@ bp_trace_rom
 bp_me_top 
  #(.num_lce_p(num_lce_p)
    ,.num_cce_p(num_cce_p)
-   ,.addr_width_p(paddr_width_p)
+   ,.paddr_width_p(paddr_width_p)
    ,.lce_assoc_p(lce_assoc_p)
    ,.lce_sets_p(lce_sets_p)
    ,.block_size_in_bytes_p(cce_block_size_in_bytes_p)
    ,.num_inst_ram_els_p(cce_num_inst_ram_els_p)
+   ,.mem_els_p(mem_els_p)
 
    ,.boot_rom_els_p(boot_rom_els_p)
    ,.boot_rom_width_p(boot_rom_width_p)
@@ -336,7 +345,19 @@ bp_me_top
 
    ,.boot_rom_addr_o(mrom_addr)
    ,.boot_rom_data_i(mrom_data)
+
+   ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr)
+   ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data)
    );
+
+bp_cce_inst_rom
+  #(.width_p(`bp_cce_inst_width)
+    ,.addr_width_p(cce_inst_ram_addr_width_lp)
+    )
+  cce_inst_rom
+   (.addr_i(cce_inst_boot_rom_addr)
+    ,.data_o(cce_inst_boot_rom_data)
+    );
 
 bp_boot_rom 
  #(.width_p(boot_rom_width_p)

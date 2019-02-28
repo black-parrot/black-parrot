@@ -82,6 +82,8 @@ typedef enum bit
   , e_lce_req_type_wr        = 1'b1 // Write-miss
 } bp_lce_cce_req_type_e;
 
+`define bp_lce_cce_req_type_width $bits(bp_lce_cce_req_type_e)
+
 /*
  * bp_lce_cce_req_non_excl_e specifies whether the requesting LCE would like a read-miss request
  * to be returned in an exclusive coherence state if possible or not. An I$, for example, should
@@ -95,6 +97,8 @@ typedef enum bit
   , e_lce_req_not_excl       = 1'b1 // non-exclusive cache line request (read-only, shared request)
 } bp_lce_cce_req_non_excl_e;
 
+`define bp_lce_cce_req_non_excl_width $bits(bp_lce_cce_req_non_excl_e)
+
 /*
  * bp_lce_cce_lru_dirty_e specifies whether the LRU way in an LCE request (bp_lce_cce_req_s)
  * contains a dirty cache block. The 
@@ -104,6 +108,8 @@ typedef enum bit
   e_lce_req_lru_clean        = 1'b0 // lru way from requesting lce's tag set is clean
   , e_lce_req_lru_dirty      = 1'b1 // lru way from requesting lce's tag set is dirty
 } bp_lce_cce_lru_dirty_e;
+
+`define bp_lce_cce_lru_dirty_width $bits(bp_lce_cce_lru_dirty_e)
 
 /*
  * bp_lce_cce_req_s defines an LCE request sent by an LCE to a CCE on a cache miss. An LCE enters
@@ -339,6 +345,8 @@ typedef enum bit
   ,e_lce_resp_null_wb        = 1'b1 // Null Writeback Response
 } bp_lce_cce_wb_resp_type_e;
 
+`define bp_lce_cce_wb_resp_type_width $bits(bp_lce_cce_wb_resp_type_e)
+
 /*
  * bp_lce_cce_data_resp_s is used by an LCE to respond to a writeback command from the CCE
  * dst_id is the CCE that commanded the writeback
@@ -519,26 +527,28 @@ typedef enum bit
 
 // CCE-LCE Interface
 `define bp_lce_cce_req_width(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp) \
-  (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+1+1+addr_width_mp \
-   +`BSG_SAFE_CLOG2(lce_assoc_mp)+1)
+  (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_cce_req_type_width \
+   +`bp_lce_cce_req_non_excl_width+addr_width_mp+`BSG_SAFE_CLOG2(lce_assoc_mp) \
+   +`bp_lce_cce_lru_dirty_width)
 
 `define bp_cce_lce_cmd_width(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp) \
-  (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+3+addr_width_mp \
-   +(2*`BSG_SAFE_CLOG2(lce_assoc_mp))+`bp_cce_coh_bits+`BSG_SAFE_CLOG2(num_lce_mp))
+  (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_cce_lce_cmd_type_width \
+   +addr_width_mp+(2*`BSG_SAFE_CLOG2(lce_assoc_mp))+`bp_cce_coh_bits+`BSG_SAFE_CLOG2(num_lce_mp))
 
 `define bp_cce_lce_data_cmd_width(num_cce_mp, num_lce_mp, addr_width_mp, data_width_mp, lce_assoc_mp) \
-  (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+1+`BSG_SAFE_CLOG2(lce_assoc_mp) \
-   +addr_width_mp+data_width_mp)
+  (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_cce_req_type_width \
+   +`BSG_SAFE_CLOG2(lce_assoc_mp)+addr_width_mp+data_width_mp)
 
 `define bp_lce_cce_resp_width(num_cce_mp, num_lce_mp, addr_width_mp) \
-  (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+2+addr_width_mp)
+  (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_cce_ack_type_width+addr_width_mp)
 
 `define bp_lce_lce_tr_resp_width(num_lce_mp, addr_width_mp, data_width_mp, lce_assoc_mp) \
   (`BSG_SAFE_CLOG2(num_lce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`BSG_SAFE_CLOG2(lce_assoc_mp) \
     +addr_width_mp+data_width_mp)
 
 `define bp_lce_cce_data_resp_width(num_cce_mp, num_lce_mp, addr_width_mp, data_width_mp) \
-  (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+1+addr_width_mp+data_width_mp)
+  (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_cce_wb_resp_type_width \
+   +addr_width_mp+data_width_mp)
 
 // CCE-MEM Interface
 `define bp_cce_mem_cmd_payload_width(num_lce_mp, lce_assoc_mp) \
@@ -548,16 +558,18 @@ typedef enum bit
   ((2*`BSG_SAFE_CLOG2(num_lce_mp))+(2*`BSG_SAFE_CLOG2(lce_assoc_mp))+addr_width_mp+2)
 
 `define bp_cce_mem_cmd_width(addr_width_mp, num_lce_mp, lce_assoc_mp) \
-  (1+addr_width_mp+`bp_cce_mem_cmd_payload_width(num_lce_mp, lce_assoc_mp)) \
+  (`bp_lce_cce_req_type_width+addr_width_mp+`bp_cce_mem_cmd_payload_width(num_lce_mp, lce_assoc_mp))
 
 `define bp_cce_mem_data_cmd_width(addr_width_mp, data_width_mp, num_lce_mp, lce_assoc_mp) \
-  (1+addr_width_mp+data_width_mp \
+  (`bp_lce_cce_req_type_width+addr_width_mp+data_width_mp \
    +`bp_cce_mem_data_cmd_payload_width(num_lce_mp, lce_assoc_mp, addr_width_mp))
 
 `define bp_mem_cce_resp_width(addr_width_mp, num_lce_mp, lce_assoc_mp) \
-  (1+`bp_cce_mem_data_cmd_payload_width(num_lce_mp, lce_assoc_mp, addr_width_mp))
+  (`bp_lce_cce_req_type_width \
+   +`bp_cce_mem_data_cmd_payload_width(num_lce_mp, lce_assoc_mp, addr_width_mp))
 
 `define bp_mem_cce_data_resp_width(addr_width_mp, data_width_mp, num_lce_mp, lce_assoc_mp) \
-  (1+addr_width_mp+data_width_mp+`bp_cce_mem_cmd_payload_width(num_lce_mp, lce_assoc_mp))
+  (`bp_lce_cce_req_type_width+addr_width_mp+data_width_mp \
+   +`bp_cce_mem_cmd_payload_width(num_lce_mp, lce_assoc_mp))
 
 `endif

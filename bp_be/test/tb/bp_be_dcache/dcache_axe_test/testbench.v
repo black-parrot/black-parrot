@@ -18,6 +18,7 @@ module testbench();
   localparam num_lce_p = `NUM_LCE_P;
   localparam mem_els_p = sets_p*ways_p*ways_p;
   localparam instr_count = `NUM_INSTR_P;
+  localparam num_cce_inst_ram_els_p = 256;
 
   localparam data_mask_width_lp=(data_width_p>>3);
   localparam block_size_in_words_lp=ways_p;
@@ -87,6 +88,7 @@ module testbench();
     ,.num_cce_p(num_cce_p)
     ,.mem_els_p(mem_els_p)
     ,.boot_rom_els_p(mem_els_p)
+    ,.num_cce_inst_ram_els_p(num_cce_inst_ram_els_p)
   ) dcache_cce_mem (
     .clk_i(clk)
     ,.reset_i(reset)
