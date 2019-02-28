@@ -1,10 +1,3 @@
-## Setup CAD tools
-ifneq (,$(findstring xor,$(shell hostname)))
-  include $(BSG_CADENV_DIR)/cadenv.mk
-else
-  $(info Not on xor...VCS not supported)
-endif
-
 ## Tool specific options
 VCS_OPTIONS += +vcs+finish+5000000ps     # Change this to run longer / shorter
 VCS_OPTIONS += -timescale=1ps/1ps        # Set timescale
@@ -15,34 +8,37 @@ VCS_OPTIONS += +vcs+vcdpluson # Enable vcd dump
 
 LINT_OPTIONS += +lint=all,noSVA-UA,noVCDE,noSVA-NSVU
 
+# Default ROM to example
 TEST_ROM  ?= bp_example_rom.v
 TRACE_ROM ?= bp_example_rom.tr.v
 
 # Export variables to flists
 .EXPORT_ALL_VARIABLES:
 
-lint.v: $(HDL_SOURCE)
-	$(eval include $(TB_PATH)/bp_single_demo/Makefile.frag) \
-	$(VCS) $(VCS_OPTIONS) $(LINT_OPTIONS) -top bp_be_top -f flist.vcs $(HDL_PARAMS)
+lint.v: 
+	$(eval include $(TB_PATH)/bp_be_trace_demo/Makefile.frag) \
+	$(VCS) $(VCS_OPTIONS) $(LINT_OPTIONS) -top bp_be_top -f flist.vcs $(DUT_PARAMS) \
+	| tee bp_be_top_lint.log
 
 %.build.v: 
 	$(eval include $(TB_PATH)/$*/Makefile.frag) \
 	$(VCS) $(VCS_OPTIONS) -o $(TB_PATH)/$*/simv -top test_bp \
     -f flist.vcs -f $(TB_PATH)/$*/flist.vcs $(HDL_PARAMS) $(TB_PATH)/$*/test_bp.v \
-		| tee $(TB_PATH)/$*/$(basename $(notdir $(TEST_ROM)))_buildout.txt
+		| tee $(TB_PATH)/$*/$(basename $(notdir $(TEST_ROM)))_build.log
 
 %.run.v: %.build.v
 	$(eval include $(TB_PATH)/$*/Makefile.frag)
 	$(TB_PATH)/$*/simv \
-	  | tee $(TB_PATH)/$*/$(basename $(notdir $(TEST_ROM)))_simout.txt
+	  | tee $(TB_PATH)/$*/$(basename $(notdir $(TEST_ROM)))_sim.log
 
-%.clean.v:
+clean:
 		rm -rf DVEfiles
 		rm -rf simv*
 		rm -rf *.old
 		rm -rf *.tcl
 		rm -rf inter.vpd
 		rm -rf ucli.key
+		rm -rf obj_dir
 
 dve:
 	dve -full64 -vpd vcdplus.vpd &

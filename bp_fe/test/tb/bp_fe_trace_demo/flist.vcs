@@ -13,3 +13,5 @@ $BP_FE_DIR/test/common/wrappers/bp_fe_top_wrapper.v
 # top files
 $BP_FE_DIR/test/rom/v/$TEST_ROM
 $BP_FE_DIR/test/rom/v/$TRACE_ROM
+$BP_FE_DIR/test/tb/bp_fe_trace_demo/testbench.v
+

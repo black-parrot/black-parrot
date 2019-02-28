@@ -70,8 +70,9 @@ module bp_be_bypass
 
 initial begin : parameter_validation
   assert (fwd_els_p > 0 && fwd_els_p != "inv") 
-    else $error("fwd_els_p must be positive, else there is nothing to bypass. " 
-                + "Did you remember to set it?");
+    else $error("fwd_els_p must be positive, else there is nothing to bypass. \
+                 Did you remember to set it?"
+                );
 
   assert (enable_p == 1)
     else $warning("Bypassing disabled.");

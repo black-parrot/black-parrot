@@ -49,7 +49,7 @@ module bp_be_pipe_mem
    // Generated parameters
    , localparam decode_width_lp    = `bp_be_decode_width
    , localparam exception_width_lp = `bp_be_exception_width
-   , localparam mmu_cmd_width_lp   = `bp_be_mmu_cmd_width
+   , localparam mmu_cmd_width_lp   = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam mmu_resp_width_lp  = `bp_be_mmu_resp_width
 
    // From RISC-V specifications
@@ -96,13 +96,15 @@ wire unused1 = reset_i;
 wire unused2 = mmu_cmd_ready_i;
 wire unused3 = mmu_resp_v_i;
 
+
+
 // Module instantiations
 assign mmu_cmd_v_o    = (decode.dcache_r_v | decode.dcache_w_v) & ~|exc;
 always_comb 
   begin
     mmu_cmd.mem_op = decode.fu_op;
     mmu_cmd.data   = rs2_i;
-    mmu_cmd.vaddr  = rs1_i + imm_i;
+    mmu_cmd.vaddr  = (rs1_i + imm_i[0+:vaddr_width_p]);
   end 
 
 // Output results of memory op

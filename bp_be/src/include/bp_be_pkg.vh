@@ -1,7 +1,7 @@
 
 package bp_be_pkg;
 
-  import bp_common_pkg::*;
+  //import bp_common_pkg::*;
   import bp_be_rv64_pkg::*;
 
   `include "bp_common_fe_be_if.vh"

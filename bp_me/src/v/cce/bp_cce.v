@@ -448,7 +448,7 @@ module bp_cce
   // A localparams and signals for output queue message formation
   // NOTE: num_cce_p must be a power of two
   localparam gpr_shift_lp = (num_cce_p == 1) ? 0 : lg_num_cce_lp;
-  localparam [paddr_width_p-1:0] lce_cmd_addr_0 = (paddr_width_p-lg_lce_sets_lp)'('0);
+  localparam [paddr_width_p-1:0] lce_cmd_addr_0 = (paddr_width_p)'('0);
   logic [lg_lce_sets_lp-1:0] gpr_set;
 
   // Output queue message field inputs
@@ -474,22 +474,22 @@ module bp_cce
       // NOTE: num_cce_p must be a power of two
       e_lce_cmd_addr_r0: begin
         gpr_set = gpr_r_o[e_gpr_r0][lg_lce_sets_lp-1:0];
-        lce_cmd_addr = (({lce_cmd_addr_0,gpr_set} << gpr_shift_lp) + cce_id_i)
+        lce_cmd_addr = (({lce_cmd_addr_0,gpr_set} << gpr_shift_lp) + paddr_width_p'(cce_id_i))
                        << lg_block_size_in_bytes_lp;
       end
       e_lce_cmd_addr_r1: begin
         gpr_set = gpr_r_o[e_gpr_r1][lg_lce_sets_lp-1:0];
-        lce_cmd_addr = (({lce_cmd_addr_0,gpr_set} << gpr_shift_lp) + cce_id_i)
+        lce_cmd_addr = (({lce_cmd_addr_0,gpr_set} << gpr_shift_lp) + paddr_width_p'(cce_id_i))
                        << lg_block_size_in_bytes_lp;
       end
       e_lce_cmd_addr_r2: begin
         gpr_set = gpr_r_o[e_gpr_r2][lg_lce_sets_lp-1:0];
-        lce_cmd_addr = (({lce_cmd_addr_0,gpr_set} << gpr_shift_lp) + cce_id_i)
+        lce_cmd_addr = (({lce_cmd_addr_0,gpr_set} << gpr_shift_lp) + paddr_width_p'(cce_id_i))
                        << lg_block_size_in_bytes_lp;
       end
       e_lce_cmd_addr_r3: begin
         gpr_set = gpr_r_o[e_gpr_r3][lg_lce_sets_lp-1:0];
-        lce_cmd_addr = (({lce_cmd_addr_0,gpr_set} << gpr_shift_lp) + cce_id_i)
+        lce_cmd_addr = (({lce_cmd_addr_0,gpr_set} << gpr_shift_lp) + paddr_width_p'(cce_id_i))
                        << lg_block_size_in_bytes_lp;
       end
       e_lce_cmd_addr_req_addr: begin

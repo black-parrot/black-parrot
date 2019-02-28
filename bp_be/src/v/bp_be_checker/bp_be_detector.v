@@ -39,6 +39,7 @@
  */
 
 module bp_be_detector 
+ import bp_common_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
  #(parameter vaddr_width_p                 = "inv"

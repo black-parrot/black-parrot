@@ -26,3 +26,5 @@ include $(SYN_PATH)/Makefile.vcs
 
 include $(SYN_PATH)/Makefile.dc
 
+include $(SYN_PATH)/Makefile.verilator
+
