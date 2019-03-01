@@ -220,17 +220,10 @@ module bp_be_dcache_lce_req
           ? e_lce_req_state_ready
           : e_lce_req_state_send_coh_ack;
       end
-
+      
+      // we should never get in this state, but if we do, return to ready.
       default: begin
         state_n = e_lce_req_state_ready;
-        load_not_store_n = 1'b0;
-        lru_way_n = '0;
-        dirty_n = 1'b0;
-        miss_addr_n = '0;
-        dirty_lru_flopped_n = 1'b0;
-        tr_received_n = 1'b0;
-        cce_data_received_n = 1'b0;
-        tag_set_n = 1'b0;
       end
 
     endcase

@@ -447,17 +447,10 @@ module bp_be_dcache_lce_cmd
           ? e_lce_cmd_state_ready
           : e_lce_cmd_state_wb_not_dirty;
       end
-
-      default: begin // we should never get in this state, but if we do, return to the default state.
+      
+      // we should never get in this state, but if we do, return to the sync state.
+      default: begin 
         state_n = e_lce_cmd_state_sync;
-        sync_ack_count_n = '0;
-        tr_data_buffered_n = 1'b0;
-        tr_dirty_cleared_n = 1'b0;
-        wb_data_buffered_n = 1'b0;
-        wb_data_read_n = 1'b0;
-        wb_dirty_cleared_n = 1'b0;
-        invalidated_tag_n = 1'b0;
-        data_buf_n = '0;
       end
     endcase
   end
