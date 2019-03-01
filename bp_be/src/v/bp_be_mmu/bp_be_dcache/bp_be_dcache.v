@@ -241,7 +241,7 @@ module bp_be_dcache
   logic [ways_p-1:0][data_mask_width_lp-1:0] data_mem_mask_li;
   logic [ways_p-1:0][data_width_p-1:0] data_mem_data_lo;
   
-  for (genvar i = 0; i < ways_p; i++) begin
+  for (genvar i = 0; i < ways_p; i++) begin // TODO: MISSING GENERATE LABEL
     bsg_mem_1rw_sync_mask_write_byte
       #(.data_width_p(data_width_p)
         ,.els_p(sets_p*ways_p)
@@ -324,7 +324,7 @@ module bp_be_dcache
   logic [way_id_width_lp-1:0] load_hit_way;
   logic [way_id_width_lp-1:0] store_hit_way;
 
-  for (genvar i = 0; i < ways_p; i++) begin
+  for (genvar i = 0; i < ways_p; i++) begin // TODO: MISSING GENERATE LABEL
     assign load_hit_tv[i] = (addr_tag_tv == tag_info_tv_r[i].tag)
       & (tag_info_tv_r[i].coh_state != e_MESI_I);
     assign store_hit_tv[i] = (addr_tag_tv == tag_info_tv_r[i].tag)
@@ -609,7 +609,7 @@ module bp_be_dcache
       ,.data_o(bypass_data_masked)
       );
 
-  if (data_width_p == 64) begin
+  if (data_width_p == 64) begin // TODO: MISSING GENERATE LABEL
     logic [31:0] data_word_selected;
     logic [15:0] data_half_selected;
     logic [7:0] data_byte_selected;
@@ -685,7 +685,7 @@ module bp_be_dcache
 
   logic [ways_p-1:0][data_width_p-1:0] lce_data_mem_write_data;
 
-  for (genvar i = 0; i < ways_p; i++) begin
+  for (genvar i = 0; i < ways_p; i++) begin // TODO: MISSING GENERATE LABEL
     assign data_mem_addr_li[i] = (load_op & tl_we)
       ? {addr_index, addr_word_offset}
       : (wbuf_yumi_li
@@ -735,7 +735,7 @@ module bp_be_dcache
       end
       e_dcache_lce_tag_mem_invalidate: begin
         tag_mem_data_li = {((tag_info_width_lp)*ways_p){1'b0}};
-        for (integer i = 0; i < ways_p; i++) begin
+        for (integer i = 0; i < ways_p; i++) begin 
           tag_mem_mask_li[i].coh_state = {2{lce_tag_mem_way_one_hot[i]}};
           tag_mem_mask_li[i].tag = {tag_width_lp{1'b0}};
         end
@@ -845,7 +845,7 @@ module bp_be_dcache
     end
   end
 
-  for (genvar i = 0; i < ways_p; i++) begin
+  for (genvar i = 0; i < ways_p; i++) begin // TODO: MISSING GENERATE LABEL
     bsg_mux 
       #(.els_p(ways_p)
         ,.width_p(data_width_p)
@@ -869,7 +869,7 @@ module bp_be_dcache
   assign lce_stat_mem_pkt_yumi_li = ~v_tv_r & lce_stat_mem_pkt_v_lo;
 
   // synopsys translate_off
-  if (debug_p) begin
+  if (debug_p) begin // TODO: MISSING GENERATE LABEL
     bp_be_dcache_axe_trace_gen
       #(.addr_width_p(paddr_width_p)
         ,.data_width_p(data_width_p)
