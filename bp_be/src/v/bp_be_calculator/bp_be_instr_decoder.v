@@ -73,7 +73,13 @@ always_comb
     decode.frf_w_v       = '0;
     decode.dcache_w_v    = '0;
     decode.dcache_r_v    = '0;
+
+    // CSR signals
     decode.mhartid_r_v   = '0;
+    decode.mcycle_r_v    = '0;
+    decode.mtime_r_v     = '0;
+    decode.minstret_r_v  = '0;
+    decode.mtvec_rw_v    = '0;
 
     // Decode metadata
     decode.fp_not_int_v  = '0;
@@ -230,12 +236,37 @@ always_comb
         end
       `RV64_SYSTEM_OP : 
         begin
-          decode.pipe_int_v = 1'b1;
+          decode.pipe_mem_v = 1'b1;
           unique case (instr[31:20])
             `RV64_MHARTID_CSR_ADDR : 
               begin 
+                decode.csr_instr_v = 1'b1;
                 decode.irf_w_v     = 1'b1;
                 decode.mhartid_r_v = 1'b1;
+              end
+            `RV64_MCYCLE_CSR_ADDR:
+              begin
+                decode.csr_instr_v = 1'b1;
+                decode.irf_w_v     = 1'b1;
+                decode.mcycle_r_v  = 1'b1;
+              end
+            `RV64_MTIME_CSR_ADDR:
+              begin
+                decode.csr_instr_v  = 1'b1;
+                decode.irf_w_v      = 1'b1;
+                decode.mtime_r_v    = 1'b1;
+              end
+            `RV64_MINSTRET_CSR_ADDR:
+              begin
+                decode.csr_instr_v  = 1'b1;
+                decode.irf_w_v      = 1'b1;
+                decode.minstret_r_v = 1'b1;
+              end
+            `RV64_MTVEC_CSR_ADDR:
+              begin
+                decode.csr_instr_v  = 1'b1;
+                decode.irf_w_v      = 1'b1;
+                decode.mtvec_rw_v   = 1'b1;
               end
             default : illegal_instr = 1'b1;
           endcase

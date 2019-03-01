@@ -46,11 +46,13 @@ module bp_be_pipe_mem
  #(parameter vaddr_width_p               = "inv"
    , parameter lce_sets_p                = "inv"
    , parameter cce_block_size_in_bytes_p = "inv"
+   , parameter core_els_p                = "inv"
    // Generated parameters
    , localparam decode_width_lp    = `bp_be_decode_width
    , localparam exception_width_lp = `bp_be_exception_width
    , localparam mmu_cmd_width_lp   = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam mmu_resp_width_lp  = `bp_be_mmu_resp_width
+   , localparam mhartid_width_lp   = `BSG_SAFE_CLOG2(core_els_p)
 
    // From RISC-V specifications
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
@@ -74,6 +76,16 @@ module bp_be_pipe_mem
 
    , output [reg_data_width_lp-1:0] result_o
    , output                         cache_miss_o
+
+   // CSR interface
+   , input [mhartid_width_lp-1:0]   mhartid_i
+   , input [reg_data_width_lp-1:0]  mcycle_i
+   , input [reg_data_width_lp-1:0]  mtime_i
+   , input [reg_data_width_lp-1:0]  minstret_i
+
+   , output [reg_data_width_lp-1:0] mtvec_o
+   , input  [reg_data_width_lp-1:0] mtvec_i
+   , output                         mtvec_w_v_o
    );
 
 // Declare parameterizable structs
@@ -85,16 +97,31 @@ bp_be_exception_s exc;
 bp_be_mmu_cmd_s   mmu_cmd;
 bp_be_mmu_resp_s  mmu_resp;
 
+logic [reg_data_width_lp-1:0] result;
+
 assign decode    = decode_i;
 assign mmu_cmd_o = mmu_cmd;
 assign mmu_resp  = mmu_resp_i;
+assign result_o  = result;
+
+bp_be_decode_s                decode_r;
+logic [reg_data_width_lp-1:0] rs1_r, imm_r;
 
 // Suppress unused signal warnings
-wire unused0 = clk_i;
-wire unused1 = reset_i;
 wire unused2 = mmu_cmd_ready_i;
-wire unused3 = mmu_resp_v_i;
 
+bsg_shift_reg
+ #(.width_p(decode_width_lp+reg_data_width_lp*2)
+   ,.stages_p(2)
+   )
+ csr_shift_reg
+  (.clk(clk_i)
+   ,.reset_i(reset_i)
+   ,.valid_i(decode.csr_instr_v)
+   ,.data_i({decode, rs1_i, imm_i})
+   ,.valid_o(/* We look at decode for valid_o */)
+   ,.data_o({decode_r, rs1_r, imm_r})
+   );
 
 
 // Module instantiations
@@ -108,8 +135,20 @@ always_comb
 
 // Output results of memory op
 assign mmu_resp_ready_o = 1'b1;
-assign result_o         = mmu_resp.data;
 assign cache_miss_o     = mmu_resp.exception.cache_miss_v;
+assign mtvec_o          = rs1_r;
+assign mtvec_w_v_o      = decode_r.mtvec_rw_v;
+
+always_comb
+  begin
+    unique if (decode_r.mhartid_r_v)  result = reg_data_width_lp'(mhartid_i);
+    else   if (decode_r.mcycle_r_v)   result = mcycle_i;
+    else   if (decode_r.mtime_r_v)    result = mtime_i;
+    else   if (decode_r.minstret_r_v) result = minstret_i;
+    else   if (decode_r.mtvec_rw_v)   result = mtvec_i;
+    else   if (mmu_resp_v_i)          result = mmu_resp.data;
+    else                              result = '0;
+  end
 
 endmodule : bp_be_pipe_mem
 

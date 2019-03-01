@@ -8,6 +8,7 @@ module test_bp
  import bp_common_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
+ import bp_cce_pkg::*;
  #(parameter core_els_p                    = "inv"
    , parameter vaddr_width_p               = "inv"
    , parameter paddr_width_p               = "inv"
@@ -20,11 +21,13 @@ module test_bp
    , parameter cce_block_size_in_bytes_p   = "inv"
    , parameter cce_num_inst_ram_els_p      = "inv"
  
+   , parameter mem_els_p                   = "inv"
    , parameter boot_rom_width_p            = "inv"
    , parameter boot_rom_els_p              = "inv"
 
-   , localparam cce_block_size_in_bits_lp = 8 * cce_block_size_in_bytes_p
-   , localparam lg_boot_rom_els_lp        = `BSG_SAFE_CLOG2(boot_rom_els_p)
+   , localparam cce_block_size_in_bits_lp  = 8 * cce_block_size_in_bytes_p
+   , localparam cce_inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(cce_num_inst_ram_els_p)
+   , localparam lg_boot_rom_els_lp         = `BSG_SAFE_CLOG2(boot_rom_els_p)
 
    , localparam fe_queue_width_lp = `bp_fe_queue_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam fe_cmd_width_lp   = `bp_fe_cmd_width(vaddr_width_p
@@ -66,6 +69,10 @@ logic [boot_rom_width_p-1:0]   irom_data;
 
 logic [lg_boot_rom_els_lp-1:0] boot_rom_addr;
 logic [boot_rom_width_p-1:0]   boot_rom_data;
+
+// CCE Inst Boot ROM
+logic [cce_inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
+logic [`bp_cce_inst_width-1:0]         cce_inst_boot_rom_data;
 
 logic fe_queue_clr, fe_queue_dequeue, fe_queue_rollback;
 
@@ -274,11 +281,12 @@ bp_be_nonsynth_tracer
 bp_me_top 
  #(.num_lce_p(num_lce_p)
    ,.num_cce_p(num_cce_p)
-   ,.addr_width_p(paddr_width_p)
+   ,.paddr_width_p(paddr_width_p)
    ,.lce_assoc_p(lce_assoc_p)
    ,.lce_sets_p(lce_sets_p)
    ,.block_size_in_bytes_p(cce_block_size_in_bytes_p)
    ,.num_inst_ram_els_p(cce_num_inst_ram_els_p)
+   ,.mem_els_p(mem_els_p)
 
    ,.boot_rom_els_p(boot_rom_els_p)
    ,.boot_rom_width_p(boot_rom_width_p)
@@ -317,7 +325,19 @@ bp_me_top
 
    ,.boot_rom_addr_o(boot_rom_addr)
    ,.boot_rom_data_i(boot_rom_data)
+
+   ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr)
+   ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data)
    );
+
+bp_cce_inst_rom
+  #(.width_p(`bp_cce_inst_width)
+    ,.addr_width_p(cce_inst_ram_addr_width_lp)
+    )
+  cce_inst_rom
+   (.addr_i(cce_inst_boot_rom_addr)
+    ,.data_o(cce_inst_boot_rom_data)
+    );
 
 bp_boot_rom 
  #(.width_p(boot_rom_width_p)

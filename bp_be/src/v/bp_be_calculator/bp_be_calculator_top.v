@@ -184,6 +184,9 @@ logic [pipe_stage_els_lp-1:1]                        comp_stage_n_slice_fwb_v;
 logic [pipe_stage_els_lp-1:1][reg_addr_width_lp-1:0] comp_stage_n_slice_rd_addr;
 logic [pipe_stage_els_lp-1:1][reg_data_width_lp-1:0] comp_stage_n_slice_rd;
 
+// Performance counters
+logic [reg_data_width_lp-1:0] cycle_cnt_lo, time_cnt_lo, instret_cnt_lo;
+
 // Handshakes
 assign issue_pkt_ready_o = (chk_dispatch_v_i | ~issue_pkt_v_r) & ~chk_roll_i & ~chk_poison_ex1_i;
 
@@ -335,8 +338,6 @@ bsg_mux
 // Computation pipelines
 // Integer pipe: 1 cycle latency
 bp_be_pipe_int 
- #(.core_els_p(core_els_p)
-   )
  pipe_int
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -347,8 +348,6 @@ bp_be_pipe_int
    ,.rs2_i(calc_stage_r[dispatch_point_lp].instr_operands.rs2)
    ,.imm_i(calc_stage_r[dispatch_point_lp].instr_operands.imm)
    ,.exc_i(exc_stage_n[dispatch_point_lp+1])
-
-   ,.mhartid_i(proc_cfg.mhartid)
 
    ,.result_o(int_calc_result.result)
    ,.br_tgt_o(int_calc_result.br_tgt)
@@ -389,6 +388,14 @@ bp_be_pipe_mem
    ,.mmu_resp_i(mmu_resp_i)
    ,.mmu_resp_v_i(mmu_resp_v_i)
    ,.mmu_resp_ready_o(mmu_resp_ready_o)
+
+   ,.mhartid_i(proc_cfg.mhartid)
+   ,.mcycle_i(cycle_cnt_lo)
+   ,.mtime_i(time_cnt_lo)
+   ,.minstret_i(instret_cnt_lo)
+   ,.mtvec_o()
+   ,.mtvec_w_v_o()
+   ,.mtvec_i()
 
    ,.result_o(mem_calc_result.result)
    ,.cache_miss_o(cache_miss_mem3)
@@ -468,6 +475,50 @@ assign me_nop = {pipe_comp_v:1'b1, me_nop_v:1'b1, default:'0};
 assign fe_nop_v = ~issue_pkt_v_r & chk_dispatch_v_i;
 assign be_nop_v = ~chk_dispatch_v_i &  mmu_cmd_ready_i;
 assign me_nop_v = ~chk_dispatch_v_i & ~mmu_cmd_ready_i;
+
+// CSR counters
+bsg_counter_clear_up
+ #(.init_val_p(0)
+   ,.ptr_width_lp(reg_data_width_lp)
+   )
+ cycle_counter
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.clear_i(1'b0)
+   ,.up_i(1'b1)
+
+   ,.count_o(cycle_cnt_lo)
+   );
+
+bsg_counter_clear_up
+ #(.init_val_p(0)
+   ,.ptr_width_lp(reg_data_width_lp)
+   )
+ time_counter
+  (.clk_i(clk_i) // TODO: Right now, we don't have a real time clock. 
+                 //         When we do, hook it up here 
+   ,.reset_i(reset_i)
+
+   ,.clear_i(1'b0)
+   ,.up_i(1'b1)
+
+   ,.count_o(time_cnt_lo)
+   );
+
+bsg_counter_clear_up
+ #(.init_val_p(0)
+   ,.ptr_width_lp(reg_data_width_lp)
+   )
+ instret_counter
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.clear_i(1'b0)
+   ,.up_i(calc_stage_r[2].decode.instr_v & ~|exc_stage_n[3])
+
+   ,.count_o(instret_cnt_lo)
+   );
 
 always_comb 
   begin

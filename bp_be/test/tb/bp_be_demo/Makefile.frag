@@ -12,6 +12,7 @@ DUT_PARAMS = -pvalue+core_els_p=1												 \
 TB_PARAMS =  -pvalue+boot_rom_els_p=512                  \
              -pvalue+boot_rom_width_p=512                \
              -pvalue+cce_num_inst_ram_els_p=256          \
+						 -pvalue+mem_els_p=512
 
-HDL_PARAMS = ${DUT_PARAMS} + ${TB_PARAMS}
+HDL_PARAMS = $(DUT_PARAMS) $(TB_PARAMS)
 
