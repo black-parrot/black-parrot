@@ -140,7 +140,7 @@ module bp_coherence_network_channel
             ,.debug_p(debug_p)
             ,.dirs_lp(dirs_lp)
             ,.stub_p(5'b01110) // SNEWP -> _NEW_
-            ,.allow_S_to_EW_p(1)
+            ,.XY_order_p(0)
             ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
             ,.repeater_output_p(repeater_output_p)
             )
@@ -164,6 +164,7 @@ module bp_coherence_network_channel
             ,.y_cord_width_p(1)
             ,.debug_p(debug_p)
             ,.dirs_lp(dirs_lp)
+            ,.XY_order_p(0)
             ,.stub_p(5'b01010) // SNEWP -> _N_W_
             ,.allow_S_to_EW_p(1)
             ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
@@ -196,6 +197,7 @@ module bp_coherence_network_channel
             ,.y_cord_width_p(1)
             ,.debug_p(debug_p)
             ,.dirs_lp(dirs_lp)
+            ,.XY_order_p(0)
             ,.stub_p(5'b01000)  // SNEWP -> _N___
             ,.allow_S_to_EW_p(1)
             ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
@@ -226,6 +228,7 @@ module bp_coherence_network_channel
             ,.y_cord_width_p(1)
             ,.debug_p(debug_p)
             ,.dirs_lp(dirs_lp)
+            ,.XY_order_p(0)
             ,.stub_p(5'b01100)  // SNEWP -> _NE__
             ,.allow_S_to_EW_p(1)
             ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
@@ -253,6 +256,7 @@ module bp_coherence_network_channel
             ,.y_cord_width_p(1)
             ,.debug_p(debug_p)
             ,.dirs_lp(dirs_lp)
+            ,.XY_order_p(0)
             ,.stub_p(5'b01001) // SNEWP -> _N__P
             ,.allow_S_to_EW_p(1)
             ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
@@ -285,6 +289,7 @@ module bp_coherence_network_channel
             ,.y_cord_width_p(1)
             ,.debug_p(debug_p)
             ,.dirs_lp(dirs_lp)
+            ,.XY_order_p(0)
             ,.stub_p(5'b01101) // SNEWP -> _NE_P
             ,.allow_S_to_EW_p(1)
             ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
@@ -315,6 +320,7 @@ module bp_coherence_network_channel
             ,.y_cord_width_p(1)
             ,.debug_p(debug_p)
             ,.dirs_lp(dirs_lp)
+            ,.XY_order_p(0)
             ,.stub_p(5'b11000)  // SNEWP -> SN___
             ,.allow_S_to_EW_p(1)
             ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
@@ -350,6 +356,7 @@ module bp_coherence_network_channel
             ,.y_cord_width_p(1)
             ,.debug_p(debug_p)
             ,.dirs_lp(dirs_lp)
+            ,.XY_order_p(0)
             ,.stub_p(5'b11100) // SNEWP -> SNE__
             ,.allow_S_to_EW_p(1)
             ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
