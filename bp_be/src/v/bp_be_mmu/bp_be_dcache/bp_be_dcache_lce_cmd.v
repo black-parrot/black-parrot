@@ -215,7 +215,7 @@ module bp_be_dcache_lce_cmd
     stat_mem_pkt = '0;
     stat_mem_pkt_v_o = 1'b0;
     
-    case (state_r)
+    unique case (state_r)
 
       // < RESET >
       // LCE is expected to receive SET-CLEAR messages from CCE to invalidate every cache lines.
@@ -224,7 +224,7 @@ module bp_be_dcache_lce_cmd
       // every CCE in the system, it moves onto READY state.
       e_lce_cmd_state_sync: begin
 
-        case (lce_cmd.msg_type)
+        unique case (lce_cmd.msg_type)
 
           e_lce_cmd_sync: begin
             lce_resp.dst_id = lce_cmd.src_id;
@@ -250,31 +250,10 @@ module bp_be_dcache_lce_cmd
 
             lce_cmd_yumi_o = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
           end
+  
+          // for other message types in this state, use default as defined at top.
+          default: begin 
 
-          default: begin
-            tag_set_o = 1'b0;
-            tag_set_wakeup_o = 1'b0;
-
-            lce_cmd_yumi_o = 1'b0;
-
-            lce_resp ='0;
-            lce_resp.src_id = (lce_id_width_lp)'(lce_id_i);
-            lce_resp_v_o = 1'b0;
-
-            lce_data_resp = '0;
-            lce_data_resp.src_id = (lce_id_width_lp)'(lce_id_i);
-            lce_data_resp_v_o = 1'b0;
-
-            lce_tr_resp_out = '0;
-            lce_tr_resp_out.src_id = (lce_id_width_lp)'(lce_id_i);
-            lce_tr_resp_v_o = 1'b0;
-
-            data_mem_pkt = '0;
-            data_mem_pkt_v_o = 1'b0;
-            tag_mem_pkt = '0;
-            tag_mem_pkt_v_o = 1'b0;
-            stat_mem_pkt = '0;
-            stat_mem_pkt_v_o = 1'b0;
           end
         endcase 
       end
@@ -284,7 +263,7 @@ module bp_be_dcache_lce_cmd
       // has finished with the job related to the packet.
       e_lce_cmd_state_ready: begin
 
-        case (lce_cmd.msg_type)
+        unique case (lce_cmd.msg_type)
 
           // <transfer packet>
           // LCE first reads the data mem, and moves onto TRANSFER state.
@@ -366,30 +345,9 @@ module bp_be_dcache_lce_cmd
             lce_cmd_yumi_o = lce_resp_yumi_i;
           end
 
+          // for other message types in this state, use default as defined at top.
           default: begin
-            tag_set_o = 1'b0;
-            tag_set_wakeup_o = 1'b0;
 
-            lce_cmd_yumi_o = 1'b0;
-
-            lce_resp ='0;
-            lce_resp.src_id = (lce_id_width_lp)'(lce_id_i);
-            lce_resp_v_o = 1'b0;
-
-            lce_data_resp = '0;
-            lce_data_resp.src_id = (lce_id_width_lp)'(lce_id_i);
-            lce_data_resp_v_o = 1'b0;
-
-            lce_tr_resp_out = '0;
-            lce_tr_resp_out.src_id = (lce_id_width_lp)'(lce_id_i);
-            lce_tr_resp_v_o = 1'b0;
-
-            data_mem_pkt = '0;
-            data_mem_pkt_v_o = 1'b0;
-            tag_mem_pkt = '0;
-            tag_mem_pkt_v_o = 1'b0;
-            stat_mem_pkt = '0;
-            stat_mem_pkt_v_o = 1'b0;
           end
         endcase
       end
@@ -490,7 +448,7 @@ module bp_be_dcache_lce_cmd
           : e_lce_cmd_state_wb_not_dirty;
       end
 
-      default: begin
+      default: begin // we should never get in this state, but if we do, return to the default state.
         state_n = e_lce_cmd_state_sync;
         sync_ack_count_n = '0;
         tr_data_buffered_n = 1'b0;
