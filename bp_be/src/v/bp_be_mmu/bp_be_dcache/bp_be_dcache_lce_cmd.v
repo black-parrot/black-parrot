@@ -170,13 +170,13 @@ module bp_be_dcache_lce_cmd
   assign lce_tr_resp_done = lce_tr_resp_v_o & lce_tr_resp_ready_i;
   assign lce_data_resp_done = lce_data_resp_ready_i & lce_data_resp_v_o;
 
+  // this gets asserted when LCE finishes its sync with CCE.
+  assign lce_sync_done_o = (state_r != e_lce_cmd_state_sync);
+
   // next state logic
   //
   always_comb begin
     
-    lce_sync_done_o = (state_r != e_lce_cmd_state_sync);
-    tag_set_o = 1'b0;
-    tag_set_wakeup_o = 1'b0;
 
     state_n = state_r;
     sync_ack_count_n = sync_ack_count_r;
@@ -190,6 +190,9 @@ module bp_be_dcache_lce_cmd
     invalidated_tag_n = invalidated_tag_r;
 
     data_buf_n = data_buf_r;
+
+    tag_set_o = 1'b0;
+    tag_set_wakeup_o = 1'b0;
 
     lce_cmd_yumi_o = 1'b0;
 
@@ -249,7 +252,29 @@ module bp_be_dcache_lce_cmd
           end
 
           default: begin
+            tag_set_o = 1'b0;
+            tag_set_wakeup_o = 1'b0;
 
+            lce_cmd_yumi_o = 1'b0;
+
+            lce_resp ='0;
+            lce_resp.src_id = (lce_id_width_lp)'(lce_id_i);
+            lce_resp_v_o = 1'b0;
+
+            lce_data_resp = '0;
+            lce_data_resp.src_id = (lce_id_width_lp)'(lce_id_i);
+            lce_data_resp_v_o = 1'b0;
+
+            lce_tr_resp_out = '0;
+            lce_tr_resp_out.src_id = (lce_id_width_lp)'(lce_id_i);
+            lce_tr_resp_v_o = 1'b0;
+
+            data_mem_pkt = '0;
+            data_mem_pkt_v_o = 1'b0;
+            tag_mem_pkt = '0;
+            tag_mem_pkt_v_o = 1'b0;
+            stat_mem_pkt = '0;
+            stat_mem_pkt_v_o = 1'b0;
           end
         endcase 
       end
@@ -342,7 +367,29 @@ module bp_be_dcache_lce_cmd
           end
 
           default: begin
+            tag_set_o = 1'b0;
+            tag_set_wakeup_o = 1'b0;
 
+            lce_cmd_yumi_o = 1'b0;
+
+            lce_resp ='0;
+            lce_resp.src_id = (lce_id_width_lp)'(lce_id_i);
+            lce_resp_v_o = 1'b0;
+
+            lce_data_resp = '0;
+            lce_data_resp.src_id = (lce_id_width_lp)'(lce_id_i);
+            lce_data_resp_v_o = 1'b0;
+
+            lce_tr_resp_out = '0;
+            lce_tr_resp_out.src_id = (lce_id_width_lp)'(lce_id_i);
+            lce_tr_resp_v_o = 1'b0;
+
+            data_mem_pkt = '0;
+            data_mem_pkt_v_o = 1'b0;
+            tag_mem_pkt = '0;
+            tag_mem_pkt_v_o = 1'b0;
+            stat_mem_pkt = '0;
+            stat_mem_pkt_v_o = 1'b0;
           end
         endcase
       end
@@ -444,7 +491,15 @@ module bp_be_dcache_lce_cmd
       end
 
       default: begin
-
+        state_n = e_lce_cmd_state_sync;
+        sync_ack_count_n = '0;
+        tr_data_buffered_n = 1'b0;
+        tr_dirty_cleared_n = 1'b0;
+        wb_data_buffered_n = 1'b0;
+        wb_data_read_n = 1'b0;
+        wb_dirty_cleared_n = 1'b0;
+        invalidated_tag_n = 1'b0;
+        data_buf_n = '0;
       end
     endcase
   end
