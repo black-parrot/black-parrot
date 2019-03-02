@@ -374,11 +374,11 @@ bp_be_pipe_mem
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
+   ,.kill_v_i(|exc_stage_r[0] | chk_poison_ex1_i) 
    ,.decode_i(calc_stage_r[dispatch_point_lp].decode)
    ,.rs1_i(calc_stage_r[dispatch_point_lp].instr_operands.rs1)
    ,.rs2_i(calc_stage_r[dispatch_point_lp].instr_operands.rs2)
    ,.imm_i(calc_stage_r[dispatch_point_lp].instr_operands.imm)
-   ,.exc_i(exc_stage_n[dispatch_point_lp+1])
 
    ,.mmu_cmd_o(mmu_cmd)
    ,.mmu_cmd_v_o(mmu_cmd_v_o)
