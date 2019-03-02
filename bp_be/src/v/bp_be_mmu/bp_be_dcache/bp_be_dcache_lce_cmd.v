@@ -170,13 +170,13 @@ module bp_be_dcache_lce_cmd
   assign lce_tr_resp_done = lce_tr_resp_v_o & lce_tr_resp_ready_i;
   assign lce_data_resp_done = lce_data_resp_ready_i & lce_data_resp_v_o;
 
+  // this gets asserted when LCE finishes its sync with CCE.
+  assign lce_sync_done_o = (state_r != e_lce_cmd_state_sync);
+
   // next state logic
   //
   always_comb begin
     
-    lce_sync_done_o = (state_r != e_lce_cmd_state_sync);
-    tag_set_o = 1'b0;
-    tag_set_wakeup_o = 1'b0;
 
     state_n = state_r;
     sync_ack_count_n = sync_ack_count_r;
@@ -190,6 +190,9 @@ module bp_be_dcache_lce_cmd
     invalidated_tag_n = invalidated_tag_r;
 
     data_buf_n = data_buf_r;
+
+    tag_set_o = 1'b0;
+    tag_set_wakeup_o = 1'b0;
 
     lce_cmd_yumi_o = 1'b0;
 
@@ -212,7 +215,7 @@ module bp_be_dcache_lce_cmd
     stat_mem_pkt = '0;
     stat_mem_pkt_v_o = 1'b0;
     
-    case (state_r)
+    unique case (state_r)
 
       // < RESET >
       // LCE is expected to receive SET-CLEAR messages from CCE to invalidate every cache lines.
@@ -221,7 +224,7 @@ module bp_be_dcache_lce_cmd
       // every CCE in the system, it moves onto READY state.
       e_lce_cmd_state_sync: begin
 
-        case (lce_cmd.msg_type)
+        unique case (lce_cmd.msg_type)
 
           e_lce_cmd_sync: begin
             lce_resp.dst_id = lce_cmd.src_id;
@@ -247,8 +250,9 @@ module bp_be_dcache_lce_cmd
 
             lce_cmd_yumi_o = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
           end
-
-          default: begin
+  
+          // for other message types in this state, use default as defined at top.
+          default: begin 
 
           end
         endcase 
@@ -259,7 +263,7 @@ module bp_be_dcache_lce_cmd
       // has finished with the job related to the packet.
       e_lce_cmd_state_ready: begin
 
-        case (lce_cmd.msg_type)
+        unique case (lce_cmd.msg_type)
 
           // <transfer packet>
           // LCE first reads the data mem, and moves onto TRANSFER state.
@@ -341,6 +345,7 @@ module bp_be_dcache_lce_cmd
             lce_cmd_yumi_o = lce_resp_yumi_i;
           end
 
+          // for other message types in this state, use default as defined at top.
           default: begin
 
           end
@@ -442,9 +447,10 @@ module bp_be_dcache_lce_cmd
           ? e_lce_cmd_state_ready
           : e_lce_cmd_state_wb_not_dirty;
       end
-
-      default: begin
-
+      
+      // we should never get in this state, but if we do, return to the sync state.
+      default: begin 
+        state_n = e_lce_cmd_state_sync;
       end
     endcase
   end
