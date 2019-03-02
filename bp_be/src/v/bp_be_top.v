@@ -222,7 +222,7 @@ bp_be_exception_s      cmt_trace_exc;
 bp_be_pipe_stage_reg_s cmt_trace_stage_reg;
 bp_be_calc_result_s    cmt_trace_result;
 
-logic chk_dispatch_v, chk_psn_isd, chk_psn_ex, chk_roll, chk_instr_dequeue_v;
+logic chk_dispatch_v, chk_poison_ex1, chk_poison_ex2, chk_roll, chk_instr_dequeue_v;
 
 // Module instantiations
 bp_be_checker_top 
@@ -237,8 +237,8 @@ bp_be_checker_top
 
    ,.chk_dispatch_v_o(chk_dispatch_v)
    ,.chk_roll_o(chk_roll)
-   ,.chk_poison_isd_o(chk_psn_isd)
-   ,.chk_poison_ex_o(chk_psn_ex)
+   ,.chk_poison_ex1_o(chk_poison_ex1)
+   ,.chk_poison_ex2_o(chk_poison_ex2)
 
    ,.calc_status_i(calc_status)
    ,.mmu_cmd_ready_i(mmu_cmd_rdy)
@@ -259,16 +259,6 @@ bp_be_checker_top
    ,.issue_pkt_v_o(issue_pkt_v)
    ,.issue_pkt_ready_i(issue_pkt_rdy)
    );
-
-// STD: TODO -- remove synth hack and find real solution
-wire [`bp_be_fu_op_width-1:0] decoded_fu_op_n;
-reg  [`bp_be_fu_op_width-1:0] decoded_fu_op_r;
-
-// STD: TODO -- remove synth hack and find real solution
-always_ff @(posedge clk_i)
-  begin
-    decoded_fu_op_r <= decoded_fu_op_n;
-  end
 
 bp_be_calculator_top 
  #(.vaddr_width_p(vaddr_width_p)
@@ -292,8 +282,8 @@ bp_be_calculator_top
    ,.chk_dispatch_v_i(chk_dispatch_v)
 
    ,.chk_roll_i(chk_roll)
-   ,.chk_poison_ex_i(chk_psn_ex)
-   ,.chk_poison_isd_i(chk_psn_isd)
+   ,.chk_poison_ex1_i(chk_poison_ex1)
+   ,.chk_poison_ex2_i(chk_poison_ex2)
 
    ,.calc_status_o(calc_status)
 
@@ -310,13 +300,7 @@ bp_be_calculator_top
    ,.cmt_trace_stage_reg_o(cmt_trace_stage_reg_o)
    ,.cmt_trace_result_o(cmt_trace_result_o)
    ,.cmt_trace_exc_o(cmt_trace_exc_o)
-
-    // STD: TODO -- remove synth hack and find real solution
-   ,.decoded_fu_op_o(decoded_fu_op_n)
-    );
-
-// STD: TODO -- remove synth hack and find real solution
-localparam mmu_sub_width_lp = $bits(mmu_cmd)-`bp_be_fu_op_width;
+   );
 
 bp_be_mmu_top
  #(.vaddr_width_p(vaddr_width_p)
@@ -334,12 +318,11 @@ bp_be_mmu_top
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
-    // STD: TODO -- remove synth hack and find real solution
-    ,.mmu_cmd_i({decoded_fu_op_r, mmu_cmd[mmu_sub_width_lp-1:0]})
+    ,.mmu_cmd_i(mmu_cmd)
     ,.mmu_cmd_v_i(mmu_cmd_v)
     ,.mmu_cmd_ready_o(mmu_cmd_rdy)
 
-    ,.chk_psn_ex_i(chk_psn_ex)
+    ,.chk_poison_ex_i(chk_poison_ex2)
 
     ,.mmu_resp_o(mmu_resp)
     ,.mmu_resp_v_o(mmu_resp_v)
