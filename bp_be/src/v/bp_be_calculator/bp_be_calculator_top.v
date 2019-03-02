@@ -261,10 +261,7 @@ bsg_dff_reset_en
 // Decode the dispatched instruction
 bp_be_instr_decoder
  instr_decoder
-  (.fe_nop_v_i(~issue_pkt_v_r)
-   ,.be_nop_v_i(~chk_dispatch_v_i &  mmu_cmd_ready_i)
-   ,.me_nop_v_i(~chk_dispatch_v_i & ~mmu_cmd_ready_i)
-   ,.instr_i(issue_pkt_r.instr)
+  (.instr_i(issue_pkt_r.instr)
 
    ,.decode_o(decoded)
    ,.illegal_instr_o(illegal_instr_isd)
@@ -459,6 +456,17 @@ bsg_dff
    ,.data_o(exc_stage_r)
    );
 
+bp_be_decode_s fe_nop, be_nop, me_nop;
+logic fe_nop_v, be_nop_v, me_nop_v;
+
+assign fe_nop = {pipe_comp_v:1'b1, fe_nop_v:1'b1, default:'0};
+assign be_nop = {pipe_comp_v:1'b1, be_nop_v:1'b1, default:'0};
+assign me_nop = {pipe_comp_v:1'b1, me_nop_v:1'b1, default:'0};
+
+assign fe_nop_v = ~issue_pkt_v_r & chk_dispatch_v_i;
+assign be_nop_v = ~chk_dispatch_v_i &  mmu_cmd_ready_i;
+assign me_nop_v = ~chk_dispatch_v_i & ~mmu_cmd_ready_i;
+
 always_comb 
   begin
     // Form dispatch packet
@@ -467,7 +475,11 @@ always_comb
     dispatch_pkt.instr_operands.rs1 = bypass_rs1;
     dispatch_pkt.instr_operands.rs2 = bypass_rs2;
     dispatch_pkt.instr_operands.imm = issue_pkt_r.imm;
-    dispatch_pkt.decode             = decoded;
+
+    unique if (fe_nop_v) dispatch_pkt.decode = fe_nop;
+      else if (be_nop_v) dispatch_pkt.decode = be_nop;
+      else if (me_nop_v) dispatch_pkt.decode = me_nop;
+      else               dispatch_pkt.decode = decoded;
 
     // Calculator status ISD stage
     calc_status.isd_v                    = issue_pkt_v_r;
