@@ -30,6 +30,7 @@ package bp_common_pkg;
   localparam bp_paddr_width_gp = 22;
   localparam bp_instr_width_gp = 32;
 
+  parameter bp_sv39_pte_width_gp = 64;
   parameter bp_sv39_vaddr_width_gp = 39;
   parameter bp_sv39_paddr_width_gp = 56;
   parameter bp_page_size_in_bytes_gp = 4096;

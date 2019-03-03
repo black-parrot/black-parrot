@@ -3,8 +3,9 @@ module bp_tlb_cam
   #(parameter els_p= "inv"
     ,parameter width_p= "inv"
   )
-  (input                                      clk_i
+  (input                                       clk_i
    , input                                     reset_i
+   , input                                     en_i
 
    , input                                     w_v_i
    , input [`BSG_SAFE_CLOG2(els_p)-1:0]        w_addr_i
@@ -32,9 +33,9 @@ assign r_v_o = r_v_i & matched;
 always_ff @(posedge clk_i) 
 begin
   if (reset_i) begin
-    valid <= 0;
+    valid <= '0;
   end 
-  else if (w_v_i) begin
+  else if (en_i & w_v_i) begin
     assert(w_addr_i < els_p)
       else $error("Invalid address %x of size %x\n", w_addr_i, els_p);
 
