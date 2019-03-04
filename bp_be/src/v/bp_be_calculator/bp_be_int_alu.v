@@ -49,7 +49,7 @@ module bp_be_int_alu
    , input                          opw_v_i
 
    // Result
-   , output [reg_data_width_lp-1:0] result_o
+   , output logic [reg_data_width_lp-1:0] result_o
    );
 
 // Intermediate connections
@@ -76,6 +76,8 @@ always_comb
     // These two case statements are mutually exclusive, but we separate them because they 
     //   assign to different results
     // Calculate result for 32-bit operations
+  if(opw_v_i)
+   begin
     unique case (op_i)
       e_int_op_add : resultw_sgn = src1_w_sgn +   src2_w_sgn;
       e_int_op_sub : resultw_sgn = src1_w_sgn -   src2_w_sgn;
@@ -84,8 +86,11 @@ always_comb
       e_int_op_sra : resultw_sgn = src1_w_sgn >>> shamtw;
       default      : resultw_sgn = '0;
     endcase
-  
+    result_o = reg_data_width_lp'(resultw_sgn);
+  end
     // Calculate result for 64-bit operations
+  else
+   begin  
     unique case (op_i)
       e_int_op_add       : result_sgn = src1_sgn +   src2_sgn;
       e_int_op_sub       : result_sgn = src1_sgn -   src2_sgn;
@@ -106,10 +111,12 @@ always_comb
       e_int_op_sgeu : result_sgn = (reg_data_width_lp)'($unsigned(src1_i   >= src2_i));
       default       : result_sgn = '0;
     endcase
+    result_o = result_sgn;
+   end
   end
 
 // Select between word and double word width results
-assign result_o = opw_v_i ? reg_data_width_lp'(resultw_sgn) : result_sgn;
+//assign result_o = opw_v_i ? reg_data_width_lp'(resultw_sgn) : result_sgn;
 
 endmodule : bp_be_int_alu
 
