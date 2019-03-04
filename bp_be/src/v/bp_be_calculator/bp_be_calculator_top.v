@@ -142,12 +142,14 @@ module bp_be_calculator_top
 bp_be_issue_pkt_s   issue_pkt;
 bp_be_calc_status_s calc_status;
 bp_be_mmu_cmd_s     mmu_cmd;
+bp_be_mmu_cmd_s     mmu_cmd_old;
+   
 bp_be_mmu_resp_s    mmu_resp;
 bp_proc_cfg_s       proc_cfg;
 
 assign issue_pkt     = issue_pkt_i;
 assign calc_status_o = calc_status;
-assign mmu_cmd_o     = mmu_cmd;
+assign mmu_cmd_o     = (mmu_cmd_v_o) ? mmu_cmd : mmu_cmd_old;
 assign mmu_resp      = mmu_resp_i;
 assign proc_cfg      = proc_cfg_i;
 
@@ -556,6 +558,14 @@ always_comb
         exc_stage_n[3].roll_v          = exc_stage_r[2].roll_v   | chk_roll_i;
   end
 
+always_ff @(posedge clk_i)
+  begin
+     if (mmu_cmd_v_o)
+       mmu_cmd_old <= mmu_cmd;
+     else
+       mmu_cmd_old <= mmu_cmd_old;
+  end
+   
 // Commit tracer
 assign cmt_trace_stage_reg_o = calc_stage_r[pipe_stage_els_lp-1];
 assign cmt_trace_result_o    = comp_stage_r[pipe_stage_els_lp-1];

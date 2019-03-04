@@ -181,7 +181,12 @@ module bp_be_dcache
   logic byte_op_tl_r;
   logic [bp_page_offset_width_gp-1:0] page_offset_tl_r;
   logic [data_width_p-1:0] data_tl_r;
+  logic [paddr_width_p-1:0] paddr_tl;
+  logic [tag_width_lp-1:0] addr_tag_tl;
 
+   assign paddr_tl = {ptag_i, page_offset_tl_r};
+   
+  assign addr_tag_tl = paddr_tl[block_offset_width_lp+index_width_lp+:tag_width_lp]; 
   assign tl_we = v_i & ready_o & ~poison_i;
  
   always_ff @ (posedge clk_i) begin
@@ -277,15 +282,23 @@ module bp_be_dcache
   logic [index_width_lp-1:0] addr_index_tv;
   logic [word_offset_width_lp-1:0] addr_word_offset_tv;
 
+  logic [ways_p-1:0] load_hit_tv;
+  logic [ways_p-1:0] load_hit_tl;
+  logic [ways_p-1:0] store_hit_tv;
+  logic [ways_p-1:0] store_hit_tl;
+
   assign tv_we = v_tl_r & ~poison_i & ~tlb_miss_i;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       v_tv_r <= 1'b0;
+      store_hit_tv <= '0; 
+      load_hit_tv <= '0; 
     end
     else begin
       v_tv_r <= tv_we;
-
+      store_hit_tv <= store_hit_tl; 
+      load_hit_tv <= load_hit_tl; 
       if (tv_we) begin
         load_op_tv_r <= load_op_tl_r;
         store_op_tv_r <= store_op_tl_r;
@@ -311,11 +324,10 @@ module bp_be_dcache
   assign addr_tag_tv = paddr_tv_r[block_offset_width_lp+index_width_lp+:tag_width_lp];
   assign addr_index_tv = paddr_tv_r[block_offset_width_lp+:index_width_lp];
   assign addr_word_offset_tv = paddr_tv_r[byte_offset_width_lp+:word_offset_width_lp];
-
+   
   // miss_detect
   //
-  logic [ways_p-1:0] load_hit_tv;
-  logic [ways_p-1:0] store_hit_tv;
+  logic [ways_p-1:0] way_hit_tl; 
   logic [ways_p-1:0] invalid_tv;
   logic load_miss_tv;
   logic store_miss_tv;
@@ -325,10 +337,11 @@ module bp_be_dcache
   logic [way_id_width_lp-1:0] store_hit_way;
 
   for (genvar i = 0; i < ways_p; i++) begin
-    assign load_hit_tv[i] = (addr_tag_tv == tag_info_tv_r[i].tag)
-      & (tag_info_tv_r[i].coh_state != e_MESI_I);
-    assign store_hit_tv[i] = (addr_tag_tv == tag_info_tv_r[i].tag)
-      & (tag_info_tv_r[i].coh_state == e_MESI_E);
+    assign way_hit_tl[i] = addr_tag_tl == tag_mem_data_lo[i].tag; 
+    assign load_hit_tl[i] = way_hit_tl[i]
+      & (tag_mem_data_lo[i].coh_state != e_MESI_I);
+    assign store_hit_tl[i] = way_hit_tl[i]
+      & (tag_mem_data_lo[i].coh_state == e_MESI_E);
     assign invalid_tv[i] = (tag_info_tv_r[i].coh_state == e_MESI_I);
   end
 
