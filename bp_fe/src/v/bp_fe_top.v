@@ -4,17 +4,15 @@
 
 module bp_fe_top
  import bp_fe_pkg::*;
- import bp_common_pkg::*;  
- #(parameter  vaddr_width_p="inv" 
+ import bp_common_pkg::*;
+/*TODO should this come from backend?*/
+ import bp_be_rv64_pkg::*;  
+ #(parameter   vaddr_width_p="inv" 
    , parameter paddr_width_p="inv" 
 
    /* TODO: These all need to go away */
-   , parameter eaddr_width_p=64
-   , parameter data_width_p=64
-   , parameter inst_width_p=32
-   , parameter tag_width_p=10 // TODO: Need to calculate this based on vaddr
-   , parameter instr_width_p=32
    , parameter branch_predictor_p=1 
+
 
    // icache related parameters 
    , parameter num_cce_p="inv"
@@ -23,17 +21,28 @@ module bp_fe_top
    , parameter lce_assoc_p="inv"
    , parameter lce_sets_p="inv"
    , parameter cce_block_size_in_bytes_p="inv"
-   /* TODO: Fix.  This is in words, not bytes, but FE depends on it */
+
+   , localparam reg_data_width_lp = rv64_reg_data_width_gp
+   , localparam eaddr_width_lp    = rv64_eaddr_width_gp
+   , localparam instr_width_lp    = rv64_instr_width_gp   
+
+
    , localparam lg_lce_assoc_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
    , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)
    , localparam block_size_in_words_lp=lce_assoc_p
    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
-   , localparam data_mask_width_lp=(data_width_p>>3)
+   , localparam data_mask_width_lp=(reg_data_width_lp>>3)
    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
+
+
+
+   , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
+   , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
+
    , localparam vaddr_width_lp=(index_width_lp+lg_lce_assoc_lp+byte_offset_width_lp)
-   , localparam addr_width_lp=(vaddr_width_lp+tag_width_p)
-   , localparam lce_data_width_lp=(lce_assoc_p*data_width_p)
-   , localparam bp_fe_itlb_icache_data_resp_width_lp=`bp_fe_itlb_icache_data_resp_width(tag_width_p)
+   , localparam addr_width_lp=(vaddr_width_lp+tag_width_lp)
+   , localparam lce_data_width_lp=(lce_assoc_p*reg_data_width_lp)
+   , localparam bp_fe_itlb_icache_data_resp_width_lp=`bp_fe_itlb_icache_data_resp_width(tag_width_lp)
    , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p 
                                                               ,num_lce_p
                                                               ,addr_width_lp
@@ -73,7 +82,7 @@ module bp_fe_top
    , parameter bp_first_pc_p="inv"
    , localparam instr_scan_width_lp=`bp_fe_instr_scan_width
    , localparam branch_metadata_fwd_width_lp=btb_indx_width_p+bht_indx_width_p+ras_addr_width_p
-   , localparam bp_fe_pc_gen_itlb_width_lp=`bp_fe_pc_gen_itlb_width(eaddr_width_p)
+   , localparam bp_fe_pc_gen_itlb_width_lp=`bp_fe_pc_gen_itlb_width(eaddr_width_lp)
    , localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p
                                                                 ,branch_metadata_fwd_width_lp
                                                                )
@@ -151,13 +160,13 @@ module bp_fe_top
 // fe to pc_gen
 `declare_bp_fe_pc_gen_cmd_s(branch_metadata_fwd_width_lp);
 // pc_gen to icache
-`declare_bp_fe_pc_gen_icache_s(eaddr_width_p);
+`declare_bp_fe_pc_gen_icache_s(eaddr_width_lp);
 // pc_gen to itlb
-`declare_bp_fe_pc_gen_itlb_s(eaddr_width_p);
+`declare_bp_fe_pc_gen_itlb_s(eaddr_width_lp);
 // icache to pc_gen
-`declare_bp_fe_icache_pc_gen_s(eaddr_width_p);
+`declare_bp_fe_icache_pc_gen_s(eaddr_width_lp);
 // itlb to cache
-`declare_bp_fe_itlb_icache_data_resp_s(tag_width_p);
+`declare_bp_fe_itlb_icache_data_resp_s(tag_width_lp);
 
    
 // fe to be
@@ -254,13 +263,13 @@ assign poison = cache_miss && bp_fe_cmd.opcode == e_op_icache_fence;
 bp_fe_pc_gen 
  #(.vaddr_width_p(vaddr_width_p)
    ,.paddr_width_p(paddr_width_p)
-   ,.eaddr_width_p(eaddr_width_p)
+   ,.eaddr_width_p(eaddr_width_lp)
    ,.btb_indx_width_p(btb_indx_width_p)
    ,.bht_indx_width_p(bht_indx_width_p)
    ,.ras_addr_width_p(ras_addr_width_p)
    ,.asid_width_p(asid_width_p)
    ,.bp_first_pc_p(bp_first_pc_p)
-   ,.instr_width_p(instr_width_p)
+   ,.instr_width_p(instr_width_lp)
    ,.branch_predictor_p(branch_predictor_p)
    ) 
  bp_fe_pc_gen_1
@@ -293,11 +302,10 @@ bp_fe_pc_gen
 
    
 icache 
- #(.eaddr_width_p(eaddr_width_p)
+ #(.eaddr_width_p(eaddr_width_lp)
    ,.paddr_width_p(paddr_width_p)
-   ,.data_width_p(data_width_p)
-   ,.inst_width_p(inst_width_p)
-   ,.tag_width_p(tag_width_p)
+   ,.data_width_p(reg_data_width_lp)
+   ,.instr_width_p(instr_width_lp)
    ,.num_cce_p(num_cce_p)
    ,.num_lce_p(num_lce_p)
    ,.ways_p(lce_assoc_p)
@@ -357,13 +365,13 @@ icache
 itlb 
  #(.vaddr_width_p(vaddr_width_p)
    ,.paddr_width_p(paddr_width_p)
-   ,.eaddr_width_p(eaddr_width_p)
+   ,.eaddr_width_p(eaddr_width_lp)
    ,.btb_indx_width_p(btb_indx_width_p)
    ,.bht_indx_width_p(bht_indx_width_p)
    ,.ras_addr_width_p(ras_addr_width_p)
+   ,.tag_width_p(tag_width_lp)
    ,.asid_width_p(asid_width_p)
    ,.ppn_start_bit_p(ppn_start_bit_lp)
-   ,.tag_width_p(tag_width_p)
    ) 
  itlb_1
   (.clk_i(clk_i)

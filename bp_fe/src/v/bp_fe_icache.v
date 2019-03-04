@@ -30,8 +30,7 @@ module icache
   #(parameter eaddr_width_p="inv"
     , parameter paddr_width_p="inv"
     , parameter data_width_p="inv"
-    , parameter inst_width_p="inv"
-    , parameter tag_width_p="inv"
+    , parameter instr_width_p="inv"
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
     , parameter ways_p="inv"
@@ -45,7 +44,6 @@ module icache
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
     , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
     , localparam vaddr_width_lp=(index_width_lp+way_id_width_lp+byte_offset_width_lp)
-    , localparam addr_width_lp=(vaddr_width_lp+tag_width_p)
     , localparam lce_data_width_lp=(ways_p*data_width_p)
     , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
     , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
@@ -53,43 +51,43 @@ module icache
     , parameter debug_p=0
 
     , localparam bp_fe_pc_gen_icache_width_lp=`bp_fe_pc_gen_icache_width(eaddr_width_p)
-    , localparam bp_fe_itlb_icache_data_resp_width_lp=`bp_fe_itlb_icache_data_resp_width(tag_width_p)
+    , localparam bp_fe_itlb_icache_data_resp_width_lp=`bp_fe_itlb_icache_data_resp_width(tag_width_lp)
 
     , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                               ,num_lce_p
-                                                              ,addr_width_lp
+                                                              ,paddr_width_p
                                                               ,ways_p
                                                              )
     , localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
                                                                 ,num_lce_p
-                                                                ,addr_width_lp
+                                                                ,paddr_width_p
                                                                )
     , localparam bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p
                                                                           ,num_lce_p
-                                                                          ,addr_width_lp
+                                                                          ,paddr_width_p
                                                                           ,lce_data_width_lp
                                                                          )
     , localparam bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p
                                                               ,num_lce_p
-                                                              ,addr_width_lp
+                                                              ,paddr_width_p
                                                               ,ways_p
                                                              )
     , localparam bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
                                                                         ,num_lce_p
-                                                                        ,addr_width_lp
+                                                                        ,paddr_width_p
                                                                         ,lce_data_width_lp
                                                                         ,ways_p
                                                                        )
     , localparam bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p
-                                                                      ,addr_width_lp
+                                                                      ,paddr_width_p
                                                                       ,lce_data_width_lp
                                                                       ,ways_p
                                                                      )
 
-    , localparam bp_fe_icache_tag_set_width_lp=`bp_fe_icache_tag_set_width(tag_width_p
+    , localparam bp_fe_icache_tag_set_width_lp=`bp_fe_icache_tag_set_width(tag_width_lp
                                                                           ,ways_p
                                                                          )
-    , localparam bp_fe_icache_tag_state_width_lp=`bp_fe_icache_tag_state_width(tag_width_p)
+    , localparam bp_fe_icache_tag_state_width_lp=`bp_fe_icache_tag_state_width(tag_width_lp)
 
     , localparam bp_fe_icache_metadata_width_lp=`bp_fe_icache_metadata_width(ways_p)
 
@@ -162,7 +160,7 @@ module icache
   logic                                 invalidate_cmd_v; // an invalidate command from CCE
 
 
-  `declare_bp_fe_itlb_icache_data_resp_s(tag_width_p);
+  `declare_bp_fe_itlb_icache_data_resp_s(tag_width_lp);
   bp_fe_itlb_icache_data_resp_s itlb_icache_data_resp_li;
   assign itlb_icache_data_resp_li = itlb_icache_data_resp_i;
 
@@ -216,13 +214,13 @@ module icache
   );
 
   logic [ways_p-1:0][cce_coh_bits_lp-1:0] state_tl;
-  logic [ways_p-1:0][tag_width_p-1:0]      tag_tl;
+  logic [ways_p-1:0][tag_width_lp-1:0]      tag_tl;
 
   for (genvar way = 0; way < ways_p; way++)
   begin: state_tag
-    assign state_tl[way] = tag_mem_data_lo[(bp_fe_icache_tag_state_width_lp*way+tag_width_p)
+    assign state_tl[way] = tag_mem_data_lo[(bp_fe_icache_tag_state_width_lp*way+tag_width_lp)
                                               +:cce_coh_bits_lp];
-    assign tag_tl[way]   = tag_mem_data_lo[(bp_fe_icache_tag_state_width_lp*way)+:tag_width_p];
+    assign tag_tl[way]   = tag_mem_data_lo[(bp_fe_icache_tag_state_width_lp*way)+:tag_width_lp];
   end
 
   // data memory
@@ -256,12 +254,12 @@ module icache
   // TV stage
   logic v_tv_r;
   logic tv_we;
-  logic [addr_width_lp-1:0]                     addr_tv_r;
+  logic [paddr_width_p-1:0]                     addr_tv_r;
   logic [eaddr_width_p-1:0]                     eaddr_tv_r; 
-  logic [ways_p-1:0][tag_width_p-1:0]           tag_tv_r;
+  logic [ways_p-1:0][tag_width_lp-1:0]          tag_tv_r;
   logic [ways_p-1:0][cce_coh_bits_lp-1:0]       state_tv_r;
   logic [ways_p-1:0][data_width_p-1:0]          ld_data_tv_r;
-  logic [tag_width_p-1:0]                       addr_tag_tv;
+  logic [tag_width_lp-1:0]                      addr_tag_tv;
   logic [index_width_lp-1:0]                    addr_index_tv;
   logic [word_offset_width_lp-1:0]              addr_block_offset_tv;
 
@@ -288,10 +286,9 @@ module icache
     end
   end
 
-  assign addr_tag_tv          = addr_tv_r[byte_offset_width_lp
-                                          +word_offset_width_lp
+  assign addr_tag_tv          = addr_tv_r[block_offset_width_lp
                                           +index_width_lp
-                                          +:tag_width_p];
+                                          +:tag_width_lp];
   assign addr_index_tv        = addr_tv_r[byte_offset_width_lp
                                           +word_offset_width_lp
                                           +:index_width_lp];
@@ -373,7 +370,7 @@ module icache
   logic                                     data_mem_pkt_v_lo;
   logic                                     data_mem_pkt_yumi_li;
 
-  `declare_bp_fe_icache_lce_tag_mem_pkt_s(sets_p, ways_p, tag_width_p);
+  `declare_bp_fe_icache_lce_tag_mem_pkt_s(sets_p, ways_p, tag_width_lp);
   bp_fe_icache_lce_tag_mem_pkt_s tag_mem_pkt;
   logic                                     tag_mem_pkt_v_lo;
   logic                                     tag_mem_pkt_yumi_li;
@@ -386,11 +383,11 @@ module icache
 
   bp_fe_lce #(
    .data_width_p(data_width_p)
+   ,.paddr_width_p(paddr_width_p)
    ,.lce_data_width_p(lce_data_width_lp)
-   ,.lce_addr_width_p(addr_width_lp)
+   ,.lce_addr_width_p(paddr_width_p)
    ,.sets_p(sets_p)
    ,.ways_p(ways_p)
-   ,.tag_width_p(tag_width_p)
    ,.num_cce_p(num_cce_p)
    ,.num_lce_p(num_lce_p)
   ) lce (
@@ -467,8 +464,8 @@ module icache
   bp_fe_icache_pc_gen_s icache_pc_gen_data_lo;
   assign lower_upper_sel             = addr_tv_r[byte_offset_width_lp-1+:1];
   assign icache_pc_gen_data_lo.instr = lower_upper_sel
-    ? ld_data_way_picked[inst_width_p+:inst_width_p]
-    : ld_data_way_picked[inst_width_p-1:0];
+    ? ld_data_way_picked[instr_width_p+:instr_width_p]
+    : ld_data_way_picked[instr_width_p-1:0];
   assign icache_pc_gen_data_lo.addr  = eaddr_tv_r;
   assign icache_pc_gen_data_o        = icache_pc_gen_data_lo;
 
@@ -509,7 +506,7 @@ module icache
       end
       e_tag_mem_ivalidate: begin
         tag_mem_data_li    = '0;
-        tag_mem_w_mask_li  = {{cce_coh_bits_lp}{1'b1}}<<{tag_mem_pkt.way_id*bp_fe_icache_tag_state_width_lp+tag_width_p};
+        tag_mem_w_mask_li  = {{cce_coh_bits_lp}{1'b1}}<<{tag_mem_pkt.way_id*bp_fe_icache_tag_state_width_lp+tag_width_lp};
       end
       e_tag_mem_set_tag: begin
          tag_mem_data_li   = {ways_p{tag_mem_pkt.state, tag_mem_pkt.tag}};
@@ -596,8 +593,8 @@ module icache
   // synopsys translate_off
   if (debug_p) begin
     bp_fe_icache_axe_trace_gen #(
-      .addr_width_p(addr_width_lp)
-      ,.data_width_p(inst_width_p)
+      .addr_width_p(paddr_width_p)
+      ,.data_width_p(instr_width_p)
     ) cc (
       .clk_i(clk_i)
       ,.id_i(id_i)
