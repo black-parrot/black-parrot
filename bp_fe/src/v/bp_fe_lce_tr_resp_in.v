@@ -28,11 +28,11 @@ module bp_fe_lce_tr_resp_in
     , parameter ways_p="inv"
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
-    , parameter block_size_in_bytes_p="inv"
+    , localparam block_size_in_words_lp=ways_p
+    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
     , parameter data_mask_width_lp=(data_width_p>>3)
     , parameter index_width_lp=`BSG_SAFE_CLOG2(sets_p)
-    , parameter lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
-    , parameter lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
+    , parameter byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
 
     , parameter bp_fe_icache_lce_data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(sets_p
                                                                                             ,ways_p
@@ -64,8 +64,8 @@ module bp_fe_lce_tr_resp_in
   bp_fe_icache_lce_data_mem_pkt_s data_mem_pkt_lo;
   assign data_mem_pkt_o = data_mem_pkt_lo;
 
-  assign data_mem_pkt_lo.index  = lce_tr_resp_li.addr[lg_data_mask_width_lp
-                                                          +lg_block_size_in_bytes_lp
+  assign data_mem_pkt_lo.index  = lce_tr_resp_li.addr[byte_offset_width_lp
+                                                          +word_offset_width_lp
                                                           +:index_width_lp];
   assign data_mem_pkt_lo.way_id = lce_tr_resp_li.way_id;
   assign data_mem_pkt_lo.data   = lce_tr_resp_li.data;

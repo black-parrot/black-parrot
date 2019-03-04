@@ -28,16 +28,15 @@ module bp_fe_lce_req
     , parameter num_lce_p="inv"
     , parameter sets_p="inv"
     , parameter ways_p="inv"
-    , parameter block_size_in_bytes_p="inv"
 
     , localparam data_mask_width_lp=(data_width_p>>3)
-    , localparam lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
+    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
 
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
     , localparam cce_id_width_lp=`BSG_SAFE_CLOG2(num_cce_p)
     , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
-    , localparam lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
-
+    , localparam block_size_in_words_lp=ways_p
+    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
     , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                            ,num_lce_p
                                                            ,lce_addr_width_p
@@ -96,11 +95,11 @@ module bp_fe_lce_req
     assign lce_req_lo.dst_id  = zero_r;
   end
   else begin
-    assign lce_resp_lo.dst_id = miss_addr_r[lg_data_mask_width_lp
-                                                +lg_block_size_in_bytes_lp
+    assign lce_resp_lo.dst_id = miss_addr_r[byte_offset_width_lp
+                                                +word_offset_width_lp
                                                 +:cce_id_width_lp];
-    assign lce_req_lo.dst_id  = miss_addr_r[lg_data_mask_width_lp
-                                                +lg_block_size_in_bytes_lp
+    assign lce_req_lo.dst_id  = miss_addr_r[byte_offset_width_lp
+                                                +word_offset_width_lp
                                                 +:cce_id_width_lp];
   end
    

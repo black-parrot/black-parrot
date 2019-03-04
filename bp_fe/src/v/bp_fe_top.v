@@ -24,13 +24,13 @@ module bp_fe_top
    , parameter lce_sets_p="inv"
    , parameter cce_block_size_in_bytes_p="inv"
    /* TODO: Fix.  This is in words, not bytes, but FE depends on it */
-   , localparam block_size_in_bytes_fix_lp=cce_block_size_in_bytes_p/8 
    , localparam lg_lce_assoc_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
    , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-   , localparam lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_fix_lp)
+   , localparam block_size_in_words_lp=lce_assoc_p
+   , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
    , localparam data_mask_width_lp=(data_width_p>>3)
-   , localparam lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
-   , localparam vaddr_width_lp=(index_width_lp+lg_lce_assoc_lp+lg_data_mask_width_lp)
+   , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
+   , localparam vaddr_width_lp=(index_width_lp+lg_lce_assoc_lp+byte_offset_width_lp)
    , localparam addr_width_lp=(vaddr_width_lp+tag_width_p)
    , localparam lce_data_width_lp=(lce_assoc_p*data_width_p)
    , localparam bp_fe_itlb_icache_data_resp_width_lp=`bp_fe_itlb_icache_data_resp_width(tag_width_p)
@@ -83,7 +83,7 @@ module bp_fe_top
   
   
    // itlb related parameters 
-   , localparam ppn_start_bit_lp=index_width_lp+lg_block_size_in_bytes_lp+lg_lce_assoc_lp
+   , localparam ppn_start_bit_lp=index_width_lp+word_offset_width_lp+lg_lce_assoc_lp
    , localparam bp_fe_itlb_cmd_width_lp=`bp_fe_itlb_cmd_width(vaddr_width_p
                                                               ,paddr_width_p
                                                               ,asid_width_p
@@ -294,6 +294,7 @@ bp_fe_pc_gen
    
 icache 
  #(.eaddr_width_p(eaddr_width_p)
+   ,.paddr_width_p(paddr_width_p)
    ,.data_width_p(data_width_p)
    ,.inst_width_p(inst_width_p)
    ,.tag_width_p(tag_width_p)
@@ -301,7 +302,6 @@ icache
    ,.num_lce_p(num_lce_p)
    ,.ways_p(lce_assoc_p)
    ,.sets_p(lce_sets_p)
-   ,.block_size_in_bytes_p(block_size_in_bytes_fix_lp)
    ) 
  icache_1
   (.clk_i(clk_i)

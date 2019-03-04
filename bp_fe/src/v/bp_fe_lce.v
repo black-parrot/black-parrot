@@ -31,7 +31,6 @@ module bp_fe_lce
     , parameter tag_width_p="inv"
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
-    , parameter block_size_in_bytes_p="inv"
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
 
     , parameter timeout_max_limit_p=4
@@ -185,7 +184,6 @@ module bp_fe_lce
     ,.num_lce_p(num_lce_p)
     ,.sets_p(sets_p)
     ,.ways_p(ways_p)
-    ,.block_size_in_bytes_p(block_size_in_bytes_p)
   ) lce_req (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -251,7 +249,6 @@ module bp_fe_lce
     ,.tag_width_p(tag_width_p)
     ,.num_cce_p(num_cce_p)
     ,.num_lce_p(num_lce_p)
-    ,.block_size_in_bytes_p(block_size_in_bytes_p)
   ) lce_cmd (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -325,7 +322,6 @@ module bp_fe_lce
     ,.ways_p(ways_p)
     ,.num_cce_p(num_cce_p)
     ,.num_lce_p(num_lce_p)
-    ,.block_size_in_bytes_p(block_size_in_bytes_p)
   ) lce_data_cmd (
     .cce_data_received_o(cce_data_received_li)
      
@@ -371,7 +367,6 @@ module bp_fe_lce
     ,.ways_p(ways_p)
     ,.num_cce_p(num_cce_p)
     ,.num_lce_p(num_lce_p)
-    ,.block_size_in_bytes_p(block_size_in_bytes_p)
   ) lce_tr_resp_in (
     .tr_received_o(tr_received_li)
 
