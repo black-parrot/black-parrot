@@ -217,12 +217,23 @@ module bp_be_dcache
   bp_be_dcache_tag_info_s [ways_p-1:0] tag_mem_mask_li;
   bp_be_dcache_tag_info_s [ways_p-1:0] tag_mem_data_lo;
   
+  /////////////////////////////////////////////////////////////
+  // personal clockgating logic for tag_mem
+  logic tag_mem_gated_clk;
+  logic tag_clk_en;
+  assign tag_clk_en = (reset_i) ? 1'b0 :
+                        (~clk_i) ? (~reset_i & tag_mem_v_li) :
+                                    tag_clk_en;
+  assign tag_mem_gated_clk = clk_i & tag_clk_en;
+  /////////////////////////////////////////////////////////////
+  
   bsg_mem_1rw_sync_mask_write_bit
     #(.width_p(tag_info_width_lp*ways_p)
       ,.els_p(sets_p)
     )
     tag_mem
-      (.clk_i(clk_i)
+      (//.clk_i(clk_i)
+      .clk_i (tag_mem_gated_clk)
       ,.reset_i(reset_i)
       ,.v_i(~reset_i & tag_mem_v_li)
       ,.w_i(tag_mem_w_li)
@@ -240,14 +251,28 @@ module bp_be_dcache
   logic [ways_p-1:0][data_width_p-1:0] data_mem_data_li;
   logic [ways_p-1:0][data_mask_width_lp-1:0] data_mem_mask_li;
   logic [ways_p-1:0][data_width_p-1:0] data_mem_data_lo;
-  
+  ///////////////////////////////////////////////////
+  // personal clockgating logic for data_mem
+  logic [ways_p - 1:0] data_mem_gated_clk;
+  logic [ways_p - 1:0] data_clk_en;
+  ///////////////////////////////////////////////////
   for (genvar i = 0; i < ways_p; i++) begin
+  
+    /////////////////////////////////////////////////////// 
+    // personal clockgating logic for data_mem
+    assign data_clk_en[i] = (reset_i) ? 1'b0 :
+                             (~clk_i) ? (~reset_i & data_mem_v_li[i]) :
+                                         data_clk_en[i];
+    assign data_mem_gated_clk[i] = clk_i & data_clk_en[i];
+   ///////////////////////////////////////////////////////
+    
     bsg_mem_1rw_sync_mask_write_byte
       #(.data_width_p(data_width_p)
         ,.els_p(sets_p*ways_p)
         )
       data_mem
-        (.clk_i(clk_i)
+        (//.clk_i(clk_i)
+        .clk_i(data_mem_gated_clk[i])
         ,.reset_i(reset_i)
         ,.v_i(~reset_i & data_mem_v_li[i])
         ,.w_i(data_mem_w_li[i])
@@ -455,12 +480,24 @@ module bp_be_dcache
   bp_be_dcache_stat_info_s stat_mem_mask_li;
   bp_be_dcache_stat_info_s stat_mem_data_lo;
 
+  /////////////////////////////////////////////////////////////
+  // personal clockgating logic for stat_mem
+  logic stat_mem_gated_clk;
+  logic stat_clk_en;
+  assign stat_clk_en = (reset_i) ? 1'b0 :
+                        (~clk_i) ? (~reset_i & stat_mem_v_li) :
+                                   stat_clk_en;  
+  assign stat_mem_gated_clk = clk_i & stat_clk_en;
+  /////////////////////////////////////////////////////////////
+  
+
   bsg_mem_1rw_sync_mask_write_bit
     #(.width_p(stat_info_width_lp)
       ,.els_p(sets_p)
       )
     stat_mem
-      (.clk_i(clk_i)
+      (//.clk_i(clk_i)
+      .clk_i (stat_mem_gated_clk)
       ,.reset_i(reset_i)
       ,.v_i(~reset_i & stat_mem_v_li)
       ,.w_i(stat_mem_w_li)
@@ -515,6 +552,18 @@ module bp_be_dcache
   logic lce_stat_mem_pkt_v_lo;
   logic lce_stat_mem_pkt_yumi_li;
  
+ 
+ /////////////////////////////////////////////////////////////
+  // personal clockgating logic for stat_mem
+ // logic lce_gated_clk;
+ // logic lce_clk_en;
+ // always_ff @ (negedge clk_i)
+ //   begin
+ //     lce_clk_en <= ~reset_i & stat_mem_v_li;
+ //   end
+ // assign stat_mem_gated_clk = clk_i & stat_clk_en;
+  /////////////////////////////////////////////////////////////
+  
   bp_be_dcache_lce
     #(.lce_data_width_p(ways_p*data_width_p)
       ,.data_width_p(data_width_p)
