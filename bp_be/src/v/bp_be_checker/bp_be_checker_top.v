@@ -66,6 +66,8 @@ module bp_be_checker_top
    , parameter asid_width_p                = "inv"
    , parameter branch_metadata_fwd_width_p = "inv"
 
+   , parameter load_to_use_forwarding_p = 1
+
    // Generated parameters
    , localparam calc_status_width_lp = `bp_be_calc_status_width(branch_metadata_fwd_width_p)
    , localparam fe_queue_width_lp    = `bp_fe_queue_width(vaddr_width_p
@@ -156,6 +158,7 @@ bp_be_detector
    ,.paddr_width_p(paddr_width_p)
    ,.asid_width_p(asid_width_p)
    ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+   ,.load_to_use_forwarding_p(load_to_use_forwarding_p)
    ) 
  detector
   (.clk_i(clk_i)

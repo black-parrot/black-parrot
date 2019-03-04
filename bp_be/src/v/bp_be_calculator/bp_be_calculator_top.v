@@ -64,6 +64,8 @@ module bp_be_calculator_top
    , parameter num_lce_p                   = "inv"
    , parameter lce_sets_p                  = "inv"
    , parameter cce_block_size_in_bytes_p   = "inv"
+
+   , parameter load_to_use_forwarding_p = 1
    
    // Generated parameters
    , localparam proc_cfg_width_lp       = `bp_proc_cfg_width(core_els_p, num_lce_p)
@@ -534,10 +536,13 @@ always_comb
     // Slicing the completion pipe for Forwarding information
     for (integer i = 1;i < pipe_stage_els_lp; i++) 
       begin : comp_stage_slice
-        comp_stage_n_slice_iwb_v[i]   = calc_stage_r[i-1].decode.irf_w_v & ~|exc_stage_n[i]; 
-        comp_stage_n_slice_fwb_v[i]   = calc_stage_r[i-1].decode.frf_w_v & ~|exc_stage_n[i]; 
+        comp_stage_n_slice_iwb_v[i]   = calc_stage_r[i-1].decode.irf_w_v & ~|exc_stage_r[i-1]; 
+        comp_stage_n_slice_fwb_v[i]   = calc_stage_r[i-1].decode.frf_w_v & ~|exc_stage_r[i-1]; 
         comp_stage_n_slice_rd_addr[i] = calc_stage_r[i-1].decode.rd_addr;
-        comp_stage_n_slice_rd[i]      = comp_stage_n[i].result;
+
+          comp_stage_n_slice_rd[i]    = comp_stage_n[i].result;
+        if ((load_to_use_forwarding_p == 0))
+          comp_stage_n_slice_rd[3]    = comp_stage_r[2].result;
       end
   end
 

@@ -86,6 +86,8 @@ module bp_be_top
 
    , parameter core_els_p                  = "inv"
 
+   , parameter load_to_use_forwarding_p    = 1
+
    // MMU parameters
    , parameter num_cce_p                   = "inv"
    , parameter num_lce_p                   = "inv"
@@ -230,6 +232,8 @@ bp_be_checker_top
    ,.paddr_width_p(paddr_width_p)
    ,.asid_width_p(asid_width_p)
    ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+
+   ,.load_to_use_forwarding_p(load_to_use_forwarding_p)
    )
  be_checker
   (.clk_i(clk_i)
@@ -265,6 +269,8 @@ bp_be_calculator_top
    ,.paddr_width_p(paddr_width_p)
    ,.asid_width_p(asid_width_p)
    ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+   
+   ,.load_to_use_forwarding_p(load_to_use_forwarding_p)
 
    ,.core_els_p(core_els_p)
    ,.num_lce_p(num_lce_p)
