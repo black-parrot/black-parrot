@@ -45,14 +45,14 @@ always_ff @(posedge clk_i)
 
 assign read_valid_o = valid[idx_r_i];
 
-bsg_mem_1r1w 
+bsg_mem_1r1w_sync
  #(.width_p(eaddr_width_p)
    ,.els_p(2**bp_fe_pc_gen_btb_idx_width_lp)
    ,.addr_width_lp(bp_fe_pc_gen_btb_idx_width_lp)
    ) 
- bsg_mem_1rw_sync_synth_1 
-  (.w_clk_i(clk_i)
-   ,.w_reset_i(reset_i)
+ bsg_mem_1r1w_sync_synth_1 
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
 
    ,.w_v_i(w_v_i)
    ,.w_addr_i(idx_w_i)

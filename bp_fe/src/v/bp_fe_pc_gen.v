@@ -284,7 +284,7 @@ generate
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
          ,.attaboy_i(fe_pc_gen_cmd.attaboy_valid)
-         ,.r_v_i(/*~fe_pc_gen_v_i*/branch_inst)
+         ,.r_v_i(/*~fe_pc_gen_v_i*//*pc_gen_fe_v_o*/fe_pc_gen_v_i)
          ,.w_v_i(fe_pc_gen_v_i)
          ,.pc_queue_i(/*pc*/icache_pc_gen.addr)
          ,.pc_cmd_i(fe_pc_gen_cmd.pc)

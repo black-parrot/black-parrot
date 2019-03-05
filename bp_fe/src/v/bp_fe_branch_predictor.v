@@ -60,7 +60,7 @@ bp_fe_bht
    ,.reset_i(reset_i)
    ,.en_i(1'b1)
         
-   ,.idx_r_i(pc_queue_i[bht_indx_width_p-1:0])
+   ,.idx_r_i(pc_queue_i[bht_indx_width_p-1+2:0+2])
    ,.idx_w_i(branch_metadata_i.bht_indx)
      
    ,.r_v_i(r_v_i)
@@ -79,7 +79,7 @@ bp_fe_btb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
     
-   ,.idx_r_i(pc_queue_i[btb_indx_width_p-1:0])
+   ,.idx_r_i(pc_queue_i[btb_indx_width_p-1+2:0+2])
    ,.idx_w_i(branch_metadata_i.btb_indx)
     
    ,.r_v_i(r_v_i)
