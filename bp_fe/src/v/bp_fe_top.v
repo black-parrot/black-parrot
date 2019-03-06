@@ -118,41 +118,41 @@ module bp_fe_top
 
    , input [lce_id_width_lp-1:0]                      icache_id_i
 
-   , input [bp_fe_cmd_width_lp-1:0]                   bp_fe_cmd_i
-   , input                                            bp_fe_cmd_v_i
-   , output logic                                     bp_fe_cmd_ready_o
+   , input [bp_fe_cmd_width_lp-1:0]                   fe_cmd_i
+   , input                                            fe_cmd_v_i
+   , output logic                                     fe_cmd_ready_o
 
-   , output logic [bp_fe_queue_width_lp-1:0]          bp_fe_queue_o
-   , output logic                                     bp_fe_queue_v_o
-   , input                                            bp_fe_queue_ready_i
+   , output logic [bp_fe_queue_width_lp-1:0]          fe_queue_o
+   , output logic                                     fe_queue_v_o
+   , input                                            fe_queue_ready_i
 
-   , output logic [bp_lce_cce_req_width_lp-1:0]       lce_cce_req_o
-   , output logic                                     lce_cce_req_v_o
-   , input                                            lce_cce_req_ready_i
+   , output logic [bp_lce_cce_req_width_lp-1:0]       lce_req_o
+   , output logic                                     lce_req_v_o
+   , input                                            lce_req_ready_i
 
-   , output logic [bp_lce_cce_resp_width_lp-1:0]      lce_cce_resp_o
-   , output logic                                     lce_cce_resp_v_o
-   , input                                            lce_cce_resp_ready_i
+   , output logic [bp_lce_cce_resp_width_lp-1:0]      lce_resp_o
+   , output logic                                     lce_resp_v_o
+   , input                                            lce_resp_ready_i
 
-   , output logic [bp_lce_cce_data_resp_width_lp-1:0] lce_cce_data_resp_o     
-   , output logic                                     lce_cce_data_resp_v_o 
-   , input                                            lce_cce_data_resp_ready_i
+   , output logic [bp_lce_cce_data_resp_width_lp-1:0] lce_data_resp_o     
+   , output logic                                     lce_data_resp_v_o 
+   , input                                            lce_data_resp_ready_i
 
-   , input [bp_cce_lce_cmd_width_lp-1:0]              cce_lce_cmd_i
-   , input                                            cce_lce_cmd_v_i
-   , output logic                                     cce_lce_cmd_ready_o
+   , input [bp_cce_lce_cmd_width_lp-1:0]              lce_cmd_i
+   , input                                            lce_cmd_v_i
+   , output logic                                     lce_cmd_ready_o
 
-   , input [bp_cce_lce_data_cmd_width_lp-1:0]         cce_lce_data_cmd_i
-   , input                                            cce_lce_data_cmd_v_i
-   , output logic                                     cce_lce_data_cmd_ready_o
+   , input [bp_cce_lce_data_cmd_width_lp-1:0]         lce_data_cmd_i
+   , input                                            lce_data_cmd_v_i
+   , output logic                                     lce_data_cmd_ready_o
 
-   , input [bp_lce_lce_tr_resp_width_lp-1:0]          lce_lce_tr_resp_i
-   , input                                            lce_lce_tr_resp_v_i
-   , output logic                                     lce_lce_tr_resp_ready_o
+   , input [bp_lce_lce_tr_resp_width_lp-1:0]          lce_tr_resp_i
+   , input                                            lce_tr_resp_v_i
+   , output logic                                     lce_tr_resp_ready_o
 
-   , output logic[bp_lce_lce_tr_resp_width_lp-1:0]    lce_lce_tr_resp_o
-   , output logic                                     lce_lce_tr_resp_v_o
-   , input                                            lce_lce_tr_resp_ready_i
+   , output logic[bp_lce_lce_tr_resp_width_lp-1:0]    lce_tr_resp_o
+   , output logic                                     lce_tr_resp_v_o
+   , input                                            lce_tr_resp_ready_i
    );
 
 // the first level of structs
@@ -215,14 +215,14 @@ logic cache_miss;
 logic poison;
 
 // be interfaces
-assign bp_fe_cmd     = bp_fe_cmd_i;
-assign bp_fe_queue_o = bp_fe_queue;
+assign bp_fe_cmd     = fe_cmd_i;
+assign fe_queue_o = bp_fe_queue;
 
 // pc_gen to fe
 assign bp_fe_queue.msg_type = pc_gen_queue.msg_type;
 assign bp_fe_queue.msg      = pc_gen_queue.msg;
-assign pc_gen_fe_ready      = bp_fe_queue_ready_i;
-assign bp_fe_queue_v_o      = pc_gen_fe_v;
+assign pc_gen_fe_ready      = fe_queue_ready_i;
+assign fe_queue_v_o      = pc_gen_fe_v;
 
 
 // fe to pc_gen 
@@ -244,17 +244,17 @@ always_comb
                                     ? bp_fe_cmd.operands.pc_redirect_operands.pc
                                     : bp_fe_cmd.operands.attaboy.pc;
 
-    fe_pc_gen_v                   = bp_fe_cmd_v_i;
-    bp_fe_cmd_ready_o             = fe_pc_gen_ready;
+    fe_pc_gen_v                   = fe_cmd_v_i;
+    fe_cmd_ready_o             = fe_pc_gen_ready;
   end
    
 // fe to itlb
 // itlb does not has the exception functionality yet, thus it does not use the valid/ready signal from backend
 assign fe_itlb_cmd = bp_fe_cmd;
-assign fe_itlb_v   = bp_fe_cmd_v_i;
+assign fe_itlb_v   = fe_cmd_v_i;
 
 // itlb to fe
-assign itlb_fe_ready = bp_fe_queue_ready_i;
+assign itlb_fe_ready = fe_queue_ready_i;
 
 // icache to icache
 assign poison = cache_miss && bp_fe_cmd.opcode == e_op_icache_fence;
@@ -329,25 +329,25 @@ icache
    ,.itlb_icache_data_resp_v_i(itlb_icache_data_resp_v)
    ,.itlb_icache_data_resp_ready_o(itlb_icache_data_resp_ready)
          
-   ,.lce_req_o(lce_cce_req_o)
-   ,.lce_req_v_o(lce_cce_req_v_o)
-   ,.lce_req_ready_i(lce_cce_req_ready_i)
+   ,.lce_req_o(lce_req_o)
+   ,.lce_req_v_o(lce_req_v_o)
+   ,.lce_req_ready_i(lce_req_ready_i)
          
-   ,.lce_resp_o(lce_cce_resp_o)
-   ,.lce_resp_v_o(lce_cce_resp_v_o)
-   ,.lce_resp_ready_i(lce_cce_resp_ready_i)
+   ,.lce_resp_o(lce_resp_o)
+   ,.lce_resp_v_o(lce_resp_v_o)
+   ,.lce_resp_ready_i(lce_resp_ready_i)
          
-   ,.lce_data_resp_o(lce_cce_data_resp_o)
-   ,.lce_data_resp_v_o(lce_cce_data_resp_v_o)
-   ,.lce_data_resp_ready_i(lce_cce_data_resp_ready_i)
+   ,.lce_data_resp_o(lce_data_resp_o)
+   ,.lce_data_resp_v_o(lce_data_resp_v_o)
+   ,.lce_data_resp_ready_i(lce_data_resp_ready_i)
          
-   ,.lce_cmd_i(cce_lce_cmd_i)
-   ,.lce_cmd_v_i(cce_lce_cmd_v_i)
-   ,.lce_cmd_ready_o(cce_lce_cmd_ready_o)
+   ,.lce_cmd_i(lce_cmd_i)
+   ,.lce_cmd_v_i(lce_cmd_v_i)
+   ,.lce_cmd_ready_o(lce_cmd_ready_o)
          
-   ,.lce_data_cmd_i(cce_lce_data_cmd_i)
-   ,.lce_data_cmd_v_i(cce_lce_data_cmd_v_i)
-   ,.lce_data_cmd_ready_o(cce_lce_data_cmd_ready_o)
+   ,.lce_data_cmd_i(lce_data_cmd_i)
+   ,.lce_data_cmd_v_i(lce_data_cmd_v_i)
+   ,.lce_data_cmd_ready_o(lce_data_cmd_ready_o)
          
    ,.lce_tr_resp_i(lce_lce_tr_resp_i)
    ,.lce_tr_resp_v_i(lce_lce_tr_resp_v_i)

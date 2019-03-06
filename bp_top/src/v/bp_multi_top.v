@@ -157,41 +157,41 @@ for(core_id = 0; core_id < core_els_p; core_id++)
 
        ,.icache_id_i(proc_cfg[core_id].icache_id)
 
-       ,.bp_fe_queue_o(fe_fe_queue[core_id])
-       ,.bp_fe_queue_v_o(fe_fe_queue_v[core_id])
-       ,.bp_fe_queue_ready_i(fe_fe_queue_rdy[core_id])
+       ,.fe_queue_o(fe_fe_queue[core_id])
+       ,.fe_queue_v_o(fe_fe_queue_v[core_id])
+       ,.fe_queue_ready_i(fe_fe_queue_rdy[core_id])
 
-       ,.bp_fe_cmd_i(fe_fe_cmd[core_id])
-       ,.bp_fe_cmd_v_i(fe_fe_cmd_v[core_id])
-       ,.bp_fe_cmd_ready_o(fe_fe_cmd_rdy[core_id])
+       ,.fe_cmd_i(fe_fe_cmd[core_id])
+       ,.fe_cmd_v_i(fe_fe_cmd_v[core_id])
+       ,.fe_cmd_ready_o(fe_fe_cmd_rdy[core_id])
 
-       ,.lce_cce_req_o(lce_cce_req[icache_id])
-       ,.lce_cce_req_v_o(lce_cce_req_v[icache_id])
-       ,.lce_cce_req_ready_i(lce_cce_req_rdy[icache_id])
+       ,.lce_req_o(lce_cce_req[icache_id])
+       ,.lce_req_v_o(lce_cce_req_v[icache_id])
+       ,.lce_req_ready_i(lce_cce_req_rdy[icache_id])
 
-       ,.lce_cce_resp_o(lce_cce_resp[icache_id])
-       ,.lce_cce_resp_v_o(lce_cce_resp_v[icache_id])
-       ,.lce_cce_resp_ready_i(lce_cce_resp_rdy[icache_id])
+       ,.lce_resp_o(lce_cce_resp[icache_id])
+       ,.lce_resp_v_o(lce_cce_resp_v[icache_id])
+       ,.lce_resp_ready_i(lce_cce_resp_rdy[icache_id])
 
-       ,.lce_cce_data_resp_o(lce_cce_data_resp[icache_id])
-       ,.lce_cce_data_resp_v_o(lce_cce_data_resp_v[icache_id])
-       ,.lce_cce_data_resp_ready_i(lce_cce_data_resp_rdy[icache_id])
+       ,.lce_data_resp_o(lce_cce_data_resp[icache_id])
+       ,.lce_data_resp_v_o(lce_cce_data_resp_v[icache_id])
+       ,.lce_data_resp_ready_i(lce_cce_data_resp_rdy[icache_id])
 
-       ,.cce_lce_cmd_i(cce_lce_cmd[icache_id])
-       ,.cce_lce_cmd_v_i(cce_lce_cmd_v[icache_id])
-       ,.cce_lce_cmd_ready_o(cce_lce_cmd_rdy[icache_id])
+       ,.lce_cmd_i(cce_lce_cmd[icache_id])
+       ,.lce_cmd_v_i(cce_lce_cmd_v[icache_id])
+       ,.lce_cmd_ready_o(cce_lce_cmd_rdy[icache_id])
 
-       ,.cce_lce_data_cmd_i(cce_lce_data_cmd[icache_id])
-       ,.cce_lce_data_cmd_v_i(cce_lce_data_cmd_v[icache_id])
-       ,.cce_lce_data_cmd_ready_o(cce_lce_data_cmd_rdy[icache_id])
+       ,.lce_data_cmd_i(cce_lce_data_cmd[icache_id])
+       ,.lce_data_cmd_v_i(cce_lce_data_cmd_v[icache_id])
+       ,.lce_data_cmd_ready_o(cce_lce_data_cmd_rdy[icache_id])
 
-       ,.lce_lce_tr_resp_i(local_lce_tr_resp[icache_id])
-       ,.lce_lce_tr_resp_v_i(local_lce_tr_resp_v[icache_id])
-       ,.lce_lce_tr_resp_ready_o(local_lce_tr_resp_rdy[icache_id])
+       ,.lce_tr_resp_i(local_lce_tr_resp[icache_id])
+       ,.lce_tr_resp_v_i(local_lce_tr_resp_v[icache_id])
+       ,.lce_tr_resp_ready_o(local_lce_tr_resp_rdy[icache_id])
 
-       ,.lce_lce_tr_resp_o(remote_lce_tr_resp[icache_id])
-       ,.lce_lce_tr_resp_v_o(remote_lce_tr_resp_v[icache_id])
-       ,.lce_lce_tr_resp_ready_i(remote_lce_tr_resp_rdy[icache_id])
+       ,.lce_tr_resp_o(remote_lce_tr_resp[icache_id])
+       ,.lce_tr_resp_v_o(remote_lce_tr_resp_v[icache_id])
+       ,.lce_tr_resp_ready_i(remote_lce_tr_resp_rdy[icache_id])
        );
 
     bsg_fifo_1r1w_rolly 
