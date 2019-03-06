@@ -25,55 +25,56 @@
  *   fe_queue_v_i                -
  *   fe_queue_rdy_o              -
  *
- *   cce_lce_cmd_i               -
- *   cce_lce_cmd_v_i             -
- *   cce_lce_cmd_rdy_o           -
+ *   lce_cmd_i               -
+ *   lce_cmd_v_i             -
+ *   lce_cmd_ready_o           -
  *
- *   cce_lce_data_cmd_i          -
- *   cce_lce_data_cmd_v_i        -
- *   cce_lce_data_cmd_rdy_o      -
+ *   lce_data_cmd_i          -
+ *   lce_data_cmd_v_i        -
+ *   lce_data_cmd_ready_o      -
  * 
- *   lce_lce_tr_resp_i           - 
- *   lce_lce_tr_resp_v_i         -
- *   lce_lce_tr_resp_rdy_o       -
+ *   lce_tr_resp_i           - 
+ *   lce_tr_resp_v_i         -
+ *   lce_tr_resp_ready_o       -
  * 
- *   proc_cfg_i                  -
+ *   proc_cfg_i
  *
  * Outputs:
- *   fe_cmd_o                    -
- *   fe_cmd_v_o                  -
- *   fe_cmd_rdy_i                -
+ *   fe_cmd_o
+ *   fe_cmd_v_o
+ *   fe_cmd_rdy_i
  *
- *   fe_queue_clr_o              -
- *   fe_queue_dequeue_inc_o      -
- *   fe_queue_rollback_o         -
+ *   fe_queue_clr_o
+ *   fe_queue_dequeue_inc_o
+ *   fe_queue_rollback_o
  *
- *   lce_cce_req_o               -
- *   lce_cce_req_v_o             -
- *   lce_cce_req_rdy_i           -
+ *   lce_req_o
+ *   lce_req_v_o
+ *   lce_req_ready_i
  *
- *   lce_cce_resp_o              -
- *   lce_cce_resp_v_o            -
- *   lce_cce_resp_rdy_i          -
+ *   lce_resp_o
+ *   lce_resp_v_o
+ *   lce_resp_ready_i
  *
- *   lce_cce_data_resp_o         -
- *   lce_cce_data_resp_v_o       -
- *   lce_cce_data_resp_rdy_i     -
+ *   lce_data_resp_o
+ *   lce_data_resp_v_o
+ *   lce_data_resp_ready_i
  *
- *   lce_lce_tr_resp_o           -
- *   lce_lce_tr_resp_v_o         -
- *   lce_lce_tr_resp_rdy_i       -
+ *   lce_tr_resp_o
+ *   lce_tr_resp_v_o
+ *   lce_tr_resp_ready_i
  *
- *   cmt_trace_stage_reg_o       -
- *   cmt_trace_result_o          -
- *   cmt_trace_exc_o             -
+ *   cmt_trace_stage_reg_o
+ *   cmt_trace_result_o
+ *   cmt_trace_exc_o
  *
- * Keywords:
+ *  Keywords:
  *   be, top
  * 
- * Notes:
+ *  Notes:
  *
  */
+
 
 module bp_be_top
  import bp_common_pkg::*;
@@ -156,33 +157,33 @@ module bp_be_top
    , input                                   fe_cmd_rdy_i
 
    // LCE-CCE interface
-   , output [lce_cce_req_width_lp-1:0]       lce_cce_req_o
-   , output                                  lce_cce_req_v_o
-   , input                                   lce_cce_req_rdy_i
+   , output [lce_cce_req_width_lp-1:0]       lce_req_o
+   , output                                  lce_req_v_o
+   , input                                   lce_req_ready_i
 
-   , output [lce_cce_resp_width_lp-1:0]      lce_cce_resp_o
-   , output                                  lce_cce_resp_v_o
-   , input                                   lce_cce_resp_rdy_i                                 
+   , output [lce_cce_resp_width_lp-1:0]      lce_resp_o
+   , output                                  lce_resp_v_o
+   , input                                   lce_resp_ready_i                                 
 
-   , output [lce_cce_data_resp_width_lp-1:0] lce_cce_data_resp_o
-   , output                                  lce_cce_data_resp_v_o
-   , input                                   lce_cce_data_resp_rdy_i
+   , output [lce_cce_data_resp_width_lp-1:0] lce_data_resp_o
+   , output                                  lce_data_resp_v_o
+   , input                                   lce_data_resp_ready_i
 
-   , input [cce_lce_cmd_width_lp-1:0]        cce_lce_cmd_i
-   , input                                   cce_lce_cmd_v_i
-   , output                                  cce_lce_cmd_rdy_o
+   , input [cce_lce_cmd_width_lp-1:0]        lce_cmd_i
+   , input                                   lce_cmd_v_i
+   , output                                  lce_cmd_ready_o
 
-   , input [cce_lce_data_cmd_width_lp-1:0]   cce_lce_data_cmd_i
-   , input                                   cce_lce_data_cmd_v_i
-   , output                                  cce_lce_data_cmd_rdy_o
+   , input [cce_lce_data_cmd_width_lp-1:0]   lce_data_cmd_i
+   , input                                   lce_data_cmd_v_i
+   , output                                  lce_data_cmd_ready_o
 
-   , input [lce_lce_tr_resp_width_lp-1:0]    lce_lce_tr_resp_i
-   , input                                   lce_lce_tr_resp_v_i
-   , output                                  lce_lce_tr_resp_rdy_o
+   , input [lce_lce_tr_resp_width_lp-1:0]    lce_tr_resp_i
+   , input                                   lce_tr_resp_v_i
+   , output                                  lce_tr_resp_ready_o
 
-   , output [lce_lce_tr_resp_width_lp-1:0]   lce_lce_tr_resp_o
-   , output                                  lce_lce_tr_resp_v_o
-   , input                                   lce_lce_tr_resp_rdy_i
+   , output [lce_lce_tr_resp_width_lp-1:0]   lce_tr_resp_o
+   , output                                  lce_tr_resp_v_o
+   , input                                   lce_tr_resp_ready_i
 
    // Processor configuration
    , input [proc_cfg_width_lp-1:0]           proc_cfg_i
@@ -345,33 +346,33 @@ bp_be_mmu_top
     ,.mmu_resp_v_o(mmu_resp_v)
     ,.mmu_resp_ready_i(mmu_resp_rdy)      
 
-    ,.lce_req_o(lce_cce_req_o)
-    ,.lce_req_v_o(lce_cce_req_v_o)
-    ,.lce_req_ready_i(lce_cce_req_rdy_i)
+    ,.lce_req_o(lce_req_o)
+    ,.lce_req_v_o(lce_req_v_o)
+    ,.lce_req_ready_i(lce_req_ready_i)
 
-    ,.lce_resp_o(lce_cce_resp_o)
-    ,.lce_resp_v_o(lce_cce_resp_v_o)
-    ,.lce_resp_ready_i(lce_cce_resp_rdy_i)        
+    ,.lce_resp_o(lce_resp_o)
+    ,.lce_resp_v_o(lce_resp_v_o)
+    ,.lce_resp_ready_i(lce_resp_ready_i)        
 
-    ,.lce_data_resp_o(lce_cce_data_resp_o)
-    ,.lce_data_resp_v_o(lce_cce_data_resp_v_o)
-    ,.lce_data_resp_ready_i(lce_cce_data_resp_rdy_i)
+    ,.lce_data_resp_o(lce_data_resp_o)
+    ,.lce_data_resp_v_o(lce_data_resp_v_o)
+    ,.lce_data_resp_ready_i(lce_data_resp_ready_i)
 
-    ,.lce_cmd_i(cce_lce_cmd_i)
-    ,.lce_cmd_v_i(cce_lce_cmd_v_i)
-    ,.lce_cmd_ready_o(cce_lce_cmd_rdy_o)
+    ,.lce_cmd_i(lce_cmd_i)
+    ,.lce_cmd_v_i(lce_cmd_v_i)
+    ,.lce_cmd_ready_o(lce_cmd_ready_o)
 
-    ,.lce_data_cmd_i(cce_lce_data_cmd_i)
-    ,.lce_data_cmd_v_i(cce_lce_data_cmd_v_i)
-    ,.lce_data_cmd_ready_o(cce_lce_data_cmd_rdy_o)
+    ,.lce_data_cmd_i(lce_data_cmd_i)
+    ,.lce_data_cmd_v_i(lce_data_cmd_v_i)
+    ,.lce_data_cmd_ready_o(lce_data_cmd_ready_o)
 
-    ,.lce_tr_resp_i(lce_lce_tr_resp_i)
-    ,.lce_tr_resp_v_i(lce_lce_tr_resp_v_i)
-    ,.lce_tr_resp_ready_o(lce_lce_tr_resp_rdy_o)
+    ,.lce_tr_resp_i(lce_tr_resp_i)
+    ,.lce_tr_resp_v_i(lce_tr_resp_v_i)
+    ,.lce_tr_resp_ready_o(lce_tr_resp_ready_o)
 
-    ,.lce_tr_resp_o(lce_lce_tr_resp_o)
-    ,.lce_tr_resp_v_o(lce_lce_tr_resp_v_o)
-    ,.lce_tr_resp_ready_i(lce_lce_tr_resp_rdy_i)
+    ,.lce_tr_resp_o(lce_tr_resp_o)
+    ,.lce_tr_resp_v_o(lce_tr_resp_v_o)
+    ,.lce_tr_resp_ready_i(lce_tr_resp_ready_i)
 
     ,.dcache_id_i(proc_cfg.dcache_id)
     );
