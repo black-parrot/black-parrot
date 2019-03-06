@@ -23,7 +23,7 @@
  *
  *   fe_queue_i                  -
  *   fe_queue_v_i                -
- *   fe_queue_rdy_o              -
+ *   fe_queue_ready_o              -
  *
  *   lce_cmd_i               -
  *   lce_cmd_v_i             -
@@ -42,7 +42,7 @@
  * Outputs:
  *   fe_cmd_o
  *   fe_cmd_v_o
- *   fe_cmd_rdy_i
+ *   fe_cmd_ready_i
  *
  *   fe_queue_clr_o
  *   fe_queue_dequeue_inc_o
@@ -145,7 +145,7 @@ module bp_be_top
    // FE queue interface
    , input [fe_queue_width_lp-1:0]           fe_queue_i
    , input                                   fe_queue_v_i
-   , output                                  fe_queue_rdy_o
+   , output                                  fe_queue_ready_o
 
    , output                                  fe_queue_clr_o
    , output                                  fe_queue_dequeue_o
@@ -154,7 +154,7 @@ module bp_be_top
    // FE cmd interface
    , output [fe_cmd_width_lp-1:0]            fe_cmd_o
    , output                                  fe_cmd_v_o
-   , input                                   fe_cmd_rdy_i
+   , input                                   fe_cmd_ready_i
 
    // LCE-CCE interface
    , output [lce_cce_req_width_lp-1:0]       lce_req_o
@@ -246,7 +246,7 @@ bp_be_checker_top
 
    ,.fe_cmd_o(fe_cmd_o)
    ,.fe_cmd_v_o(fe_cmd_v_o)
-   ,.fe_cmd_ready_i(fe_cmd_rdy_i)
+   ,.fe_cmd_ready_i(fe_cmd_ready_i)
 
    ,.chk_roll_fe_o(fe_queue_rollback_o)
    ,.chk_flush_fe_o(fe_queue_clr_o)
@@ -254,7 +254,7 @@ bp_be_checker_top
 
    ,.fe_queue_i(fe_queue_i)
    ,.fe_queue_v_i(fe_queue_v_i)
-   ,.fe_queue_ready_o(fe_queue_rdy_o)
+   ,.fe_queue_ready_o(fe_queue_ready_o)
 
    ,.issue_pkt_o(issue_pkt)
    ,.issue_pkt_v_o(issue_pkt_v)

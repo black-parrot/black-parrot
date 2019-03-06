@@ -131,7 +131,7 @@ bp_be_top
    ,.reset_i(reset)
    ,.fe_queue_i(be_fe_queue)
    ,.fe_queue_v_i(be_fe_queue_v)
-   ,.fe_queue_rdy_o(be_fe_queue_rdy)
+   ,.fe_queue_ready_o(be_fe_queue_rdy)
 
    ,.fe_queue_clr_o(fe_queue_clr)
    ,.fe_queue_dequeue_o(fe_queue_dequeue)
@@ -139,7 +139,7 @@ bp_be_top
 
    ,.fe_cmd_o(be_fe_cmd)
    ,.fe_cmd_v_o(be_fe_cmd_v)
-   ,.fe_cmd_rdy_i(be_fe_cmd_rdy)
+   ,.fe_cmd_ready_i(be_fe_cmd_rdy)
 
    ,.lce_req_o(lce_cce_req)
    ,.lce_req_v_o(lce_cce_req_v)
