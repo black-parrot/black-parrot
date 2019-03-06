@@ -20,16 +20,12 @@ module bp_me_top
 
     , parameter num_inst_ram_els_p     ="inv"//256
 
-    , parameter boot_rom_width_p       ="inv"//512
-    , parameter boot_rom_els_p         ="inv"//512
-
     // Default parameters
     , parameter harden_p               = 0
 
     // Derived parameters
     , localparam block_size_in_bits_lp = (block_size_in_bytes_p*8)
     , localparam lg_num_cce_lp         = `BSG_SAFE_CLOG2(num_cce_p)
-    , localparam lg_boot_rom_els_lp    = `BSG_SAFE_CLOG2(boot_rom_els_p)
     , localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_inst_ram_els_p)
 
     , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
