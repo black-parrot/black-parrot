@@ -1,6 +1,6 @@
 ## Setup CAD tools
 # TODO: Change to your export own VCS license variables
-include $(BSG_CADENV_DIR)/cadenv.mk
+#include $(BSG_CADENV_DIR)/cadenv.mk
 
 ## Tool specific options
 VCS_OPTIONS += +vcs+finish+5000000ps    # Change this to run longer / shorter
