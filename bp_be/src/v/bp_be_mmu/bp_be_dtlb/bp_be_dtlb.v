@@ -122,7 +122,7 @@ bp_tlb_cam
    ,.empty_addr_o(cam_empty_addr)
   );
 
-bsg_mem_1rw_sync_synth
+bsg_mem_1rw_sync
   #(.width_p(entry_width_lp)
     ,.els_p(els_p)
   )
