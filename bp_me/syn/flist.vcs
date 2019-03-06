@@ -66,7 +66,7 @@ $BSG_IP_CORES_DIR/bsg_misc/bsg_priority_encode_one_hot_out.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_round_robin_arb.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_scan.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router.v
-$BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router_buffered.v
+#$BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router_buffered.v
 ## BE files
 # Common
 ## FE files
@@ -91,5 +91,6 @@ $BP_ME_DIR/src/v/cce/bp_cce_top.v
 # Network
 $BP_ME_DIR/src/v/network/bp_coherence_network.v
 $BP_ME_DIR/src/v/network/bp_coherence_network_channel.v
+$BP_ME_DIR/src/v/network/bsg_mesh_router_buffered.v
 ## TOP
 $BP_TOP_DIR/src/v/bp_multi_top.v
