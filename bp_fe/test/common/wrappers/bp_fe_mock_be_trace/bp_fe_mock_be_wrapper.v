@@ -217,103 +217,9 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
     .addr_i(boot_rom_addr)
     ,.data_o(boot_rom_data)
     );
-
-    // bsg_fifo_1r1w_rolly #(.width_p(fe_queue_width_lp)
-    //                       ,.els_p(16)
-    //                       ,.ready_THEN_valid_p(1)
-    //                       )
-    //         fe_queue_fifo(.clk_i(clk_i)
-    //                       ,.reset_i(reset_i)
-
-    //                       ,.clr_v_i(fe_queue_clr[core_id])
-    //                       ,.ckpt_v_i(fe_queue_ckpt_inc[core_id])
-    //                       ,.roll_v_i(fe_queue_rollback[core_id])
-
-    //                       ,.data_i(fe_fe_queue[core_id])
-    //                       ,.v_i(fe_fe_queue_v[core_id])
-    //                       ,.ready_o(fe_fe_queue_rdy[core_id])
-
-    //                       ,.data_o(be_fe_queue[core_id])
-    //                       ,.v_o(be_fe_queue_v[core_id])
-    //                       ,.yumi_i(be_fe_queue_rdy[core_id] & be_fe_queue_v[core_id])
-    //                       );
-
-    // bsg_fifo_1r1w_small #(.width_p(109) /* TODO: Fix padding issue */
-    //                       ,.els_p(8)    /* TODO: Make ready-then-valid */
-    //                       )
-    //           fe_cmd_fifo(.clk_i(clk_i)
-    //                       ,.reset_i(reset_i)
-    //                       
-    //                       ,.data_i(be_fe_cmd[core_id])
-    //                       ,.v_i(be_fe_cmd_v[core_id])
-    //                       ,.ready_o(be_fe_cmd_rdy[core_id])
-    //                 
-    //                       ,.data_o(fe_fe_cmd[core_id])
-    //                       ,.v_o(fe_fe_cmd_v[core_id])
-    //                       ,.yumi_i(fe_fe_cmd_rdy[core_id] & fe_fe_cmd_v[core_id])
-    //                       );
-
-    // bp_be_top #(.mhartid_p(core_id)
-    //             ,.vaddr_width_p(vaddr_width_p)
-    //             ,.paddr_width_p(paddr_width_p)
-    //             ,.asid_width_p(asid_width_p)
-    //             ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
-    //             ,.num_cce_p(num_cce_p)
-    //             ,.num_lce_p(num_lce_p)
-    //             ,.num_mem_p(num_mem_p)
-    //             ,.lce_assoc_p(lce_assoc_p)
-    //             ,.lce_sets_p(lce_sets_p)
-    //             ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
-
-    //             ,.dcache_id_p(dcache_id)
-    //             )
-    //          be(.clk_i(clk_i)
-    //             ,.reset_i(reset_i)
-
-    //             ,.fe_queue_i(be_fe_queue[core_id])
-    //             ,.fe_queue_v_i(be_fe_queue_v[core_id])
-    //             ,.fe_queue_rdy_o(be_fe_queue_rdy[core_id])
-
-    //             ,.fe_queue_clr_o(fe_queue_clr[core_id])
-    //             ,.fe_queue_ckpt_inc_o(fe_queue_ckpt_inc[core_id])
-    //             ,.fe_queue_rollback_o(fe_queue_rollback[core_id])
-
-    //             ,.fe_cmd_o(be_fe_cmd[core_id])
-    //             ,.fe_cmd_v_o(be_fe_cmd_v[core_id])
-    //             ,.fe_cmd_rdy_i(be_fe_cmd_rdy[core_id])
-
-    //             ,.lce_cce_req_o(lce_cce_req[dcache_id])
-    //             ,.lce_cce_req_v_o(lce_cce_req_v[dcache_id])
-    //             ,.lce_cce_req_rdy_i(lce_cce_req_rdy[dcache_id])
-
-    //             ,.lce_cce_resp_o(lce_cce_resp[dcache_id])
-    //             ,.lce_cce_resp_v_o(lce_cce_resp_v[dcache_id])
-    //             ,.lce_cce_resp_rdy_i(lce_cce_resp_rdy[dcache_id])
-
-    //             ,.lce_cce_data_resp_o(lce_cce_data_resp[dcache_id])
-    //             ,.lce_cce_data_resp_v_o(lce_cce_data_resp_v[dcache_id])
-    //             ,.lce_cce_data_resp_rdy_i(lce_cce_data_resp_rdy[dcache_id])
-
-    //             ,.cce_lce_cmd_i(cce_lce_cmd[dcache_id])
-    //             ,.cce_lce_cmd_v_i(cce_lce_cmd_v[dcache_id])
-    //             ,.cce_lce_cmd_rdy_o(cce_lce_cmd_rdy[dcache_id])
-
-    //             ,.cce_lce_data_cmd_i(cce_lce_data_cmd[dcache_id])
-    //             ,.cce_lce_data_cmd_v_i(cce_lce_data_cmd_v[dcache_id])
-    //             ,.cce_lce_data_cmd_rdy_o(cce_lce_data_cmd_rdy[dcache_id])
-
-    //             ,.lce_lce_tr_resp_i(local_lce_tr_resp[dcache_id])
-    //             ,.lce_lce_tr_resp_v_i(local_lce_tr_resp_v[dcache_id])
-    //             ,.lce_lce_tr_resp_rdy_o(local_lce_tr_resp_rdy[dcache_id])
-
-    //             ,.lce_lce_tr_resp_o(remote_lce_tr_resp[dcache_id])
-    //             ,.lce_lce_tr_resp_v_o(remote_lce_tr_resp_v[dcache_id])
-    //             ,.lce_lce_tr_resp_rdy_i(remote_lce_tr_resp_rdy[dcache_id])
-    //             );
 end
 endgenerate
 
-            //,.num_mem_p(num_mem_p)
 bp_me_top #(.num_lce_p(num_lce_p)
             ,.num_cce_p(num_cce_p)
             ,.paddr_width_p(paddr_width_p)
@@ -356,9 +262,6 @@ bp_me_top #(.num_lce_p(num_lce_p)
             ,.lce_tr_resp_o(local_lce_tr_resp)
             ,.lce_tr_resp_v_o(local_lce_tr_resp_v)
             ,.lce_tr_resp_ready_i(local_lce_tr_resp_rdy)
-
-	          ,.boot_rom_addr_o(boot_rom_addr)
-	          ,.boot_rom_data_i(boot_rom_data)
 
             ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr)
             ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data)

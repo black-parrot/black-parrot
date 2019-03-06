@@ -20,7 +20,6 @@ module bp_me_top
 
     , parameter num_inst_ram_els_p     ="inv"//256
 
-    , parameter mem_els_p              ="inv"//512
     , parameter boot_rom_width_p       ="inv"//512
     , parameter boot_rom_els_p         ="inv"//512
 
@@ -116,11 +115,26 @@ module bp_me_top
    , output logic [num_lce_p-1:0]                                         lce_tr_resp_v_o
    , input [num_lce_p-1:0]                                                lce_tr_resp_ready_i
 
-   , output logic [num_cce_p-1:0][lg_boot_rom_els_lp-1:0]                 boot_rom_addr_o
-   , input logic [num_cce_p-1:0][boot_rom_width_p-1:0]                    boot_rom_data_i
+  // cce inst boot rom
+   , output logic [num_cce_p-1:0][inst_ram_addr_width_lp-1:0]       cce_inst_boot_rom_addr_o
+   , input [num_cce_p-1:0][`bp_cce_inst_width-1:0]                  cce_inst_boot_rom_data_i
 
-   , output logic [inst_ram_addr_width_lp-1:0]                            cce_inst_boot_rom_addr_o
-   , input [`bp_cce_inst_width-1:0]                                       cce_inst_boot_rom_data_i
+  // CCE-MEM Interface
+   , input [num_cce_p-1:0][bp_mem_cce_resp_width_lp-1:0]            mem_resp_i
+   , input [num_cce_p-1:0]                                          mem_resp_v_i
+   , output logic [num_cce_p-1:0]                                   mem_resp_ready_o
+
+   , input [num_cce_p-1:0][bp_mem_cce_data_resp_width_lp-1:0]       mem_data_resp_i
+   , input [num_cce_p-1:0]                                          mem_data_resp_v_i
+   , output logic [num_cce_p-1:0]                                   mem_data_resp_ready_o
+
+   , output logic [num_cce_p-1:0][bp_cce_mem_cmd_width_lp-1:0]      mem_cmd_o
+   , output logic [num_cce_p-1:0]                                   mem_cmd_v_o
+   , input [num_cce_p-1:0]                                          mem_cmd_yumi_i
+
+   , output logic [num_cce_p-1:0][bp_cce_mem_data_cmd_width_lp-1:0] mem_data_cmd_o
+   , output logic [num_cce_p-1:0]                                   mem_data_cmd_v_o
+   , input [num_cce_p-1:0]                                          mem_data_cmd_yumi_i
   );
 
   // Coherence Network <-> CCE
@@ -220,27 +234,8 @@ module bp_me_top
       ,.lce_tr_resp_ready_i(lce_tr_resp_ready_i)
       );
 
-  // CCE-MEM Interface
-  logic [num_cce_p-1:0][bp_mem_cce_resp_width_lp-1:0]           mem_resp_i;
-  logic [num_cce_p-1:0]                                         mem_resp_v_i;
-  logic [num_cce_p-1:0]                                         mem_resp_ready_o;
 
-  logic [num_cce_p-1:0][bp_mem_cce_data_resp_width_lp-1:0]      mem_data_resp_i;
-  logic [num_cce_p-1:0]                                         mem_data_resp_v_i;
-  logic [num_cce_p-1:0]                                         mem_data_resp_ready_o;
-
-  logic [num_cce_p-1:0][bp_cce_mem_cmd_width_lp-1:0]            mem_cmd_o;
-  logic [num_cce_p-1:0]                                         mem_cmd_v_o;
-  logic [num_cce_p-1:0]                                         mem_cmd_yumi_i;
-
-  logic [num_cce_p-1:0][bp_cce_mem_data_cmd_width_lp-1:0]       mem_data_cmd_o;
-  logic [num_cce_p-1:0]                                         mem_data_cmd_v_o;
-  logic [num_cce_p-1:0]                                         mem_data_cmd_yumi_i;
-
-  logic [num_cce_p-1:0][lg_num_cce_lp-1:0] cce_id;
   for (genvar i = 0; i < num_cce_p; i++) begin
-    localparam id = i;
-    assign cce_id[i] = (lg_num_cce_lp)'(id);
     bp_cce_top
       #(.num_lce_p(num_lce_p)
         ,.num_cce_p(num_cce_p)
@@ -255,10 +250,10 @@ module bp_me_top
        (.clk_i(clk_i)
         ,.reset_i(reset_i)
 
-        ,.cce_id_i(cce_id[i])
+        ,.cce_id_i((lg_num_cce_lp)'(i))
 
-        ,.boot_rom_addr_o(cce_inst_boot_rom_addr_o)
-        ,.boot_rom_data_i(cce_inst_boot_rom_data_i)
+        ,.boot_rom_addr_o(cce_inst_boot_rom_addr_o[i])
+        ,.boot_rom_data_i(cce_inst_boot_rom_data_i[i])
 
         // To CCE
         ,.lce_req_i(lce_req_i_to_cce[i])
@@ -294,37 +289,6 @@ module bp_me_top
         ,.mem_data_cmd_o(mem_data_cmd_o[i])
         ,.mem_data_cmd_v_o(mem_data_cmd_v_o[i])
         ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi_i[i])
-        );
-
-    bp_mem
-      #(.num_lce_p(num_lce_p)
-        ,.num_cce_p(num_cce_p)
-        ,.paddr_width_p(paddr_width_p)
-        ,.lce_assoc_p(lce_assoc_p)
-        ,.block_size_in_bytes_p(block_size_in_bytes_p)
-        ,.lce_sets_p(lce_sets_p)
-        ,.mem_els_p(mem_els_p)
-        ,.boot_rom_width_p(boot_rom_width_p)
-        ,.boot_rom_els_p(boot_rom_els_p)
-        )
-      bp_mem
-       (.clk_i(clk_i)
-        ,.reset_i(reset_i)
-        ,.mem_cmd_i(mem_cmd_o[i])
-        ,.mem_cmd_v_i(mem_cmd_v_o[i])
-        ,.mem_cmd_yumi_o(mem_cmd_yumi_i[i])
-        ,.mem_data_cmd_i(mem_data_cmd_o[i])
-        ,.mem_data_cmd_v_i(mem_data_cmd_v_o[i])
-        ,.mem_data_cmd_yumi_o(mem_data_cmd_yumi_i[i])
-        ,.mem_resp_o(mem_resp_i[i])
-        ,.mem_resp_v_o(mem_resp_v_i[i])
-        ,.mem_resp_ready_i(mem_resp_ready_o[i])
-        ,.mem_data_resp_o(mem_data_resp_i[i])
-        ,.mem_data_resp_v_o(mem_data_resp_v_i[i])
-        ,.mem_data_resp_ready_i(mem_data_resp_ready_o[i])
-
-        ,.boot_rom_addr_o(boot_rom_addr_o[i])
-        ,.boot_rom_data_i(boot_rom_data_i[i])
         );
   end
 
