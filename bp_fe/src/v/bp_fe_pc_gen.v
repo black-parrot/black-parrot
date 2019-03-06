@@ -55,7 +55,21 @@ module bp_fe_pc_gen
    , output logic                                    fe_pc_gen_ready_o
    );
 
+//////////////////////////////////////////////////////////// Should be removed
+logic icache_miss_r;
+always_ff @(posedge clk_i) begin
+  if(reset_i) begin
+    icache_miss_r <= 1'b0;
+  end
+  else begin
+    icache_miss_r <= icache_miss_i;
+  end
+end
 
+logic icache_miss;
+assign icache_miss = icache_miss_i | icache_miss_r;
+assign pc_gen_icache_ready = pc_gen_icache_ready_i & ~icache_miss;
+///////////////////////////////////////////////////////////
    
 //the first level of structs
 `declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)
@@ -151,19 +165,19 @@ always_comb
     else 
       begin
         fe_pc_gen_ready_o = fe_pc_gen_v_i;
-        pc_gen_fe_v_o     = pc_gen_fe_ready_i && icache_pc_gen_v_i && ~icache_miss_i;
-        pc_gen_icache_v_o = pc_gen_fe_ready_i && ~icache_miss_i;
+        pc_gen_fe_v_o     = pc_gen_fe_ready_i && icache_pc_gen_v_i && ~icache_miss;
+        pc_gen_icache_v_o = pc_gen_fe_ready_i && ~icache_miss;
       end
   end
 
    
 //next_pc
 always_comb begin
-  if (icache_miss_i) 
+  if (icache_miss) 
     begin
       next_pc = icache_miss_pc;
     end
-  else if (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) 
+  else if (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i && ~stalled_pc_redirect) 
     begin
       next_pc = fe_pc_gen_cmd.pc;
     end
@@ -185,46 +199,75 @@ always_comb begin
     end
 end 
 
-   
+
+always_ff @(posedge clk_i) begin
+  if(reset_i) begin
+    pc <= bp_first_pc_p;
+  end
+  else if(pc_gen_icache_ready && pc_gen_fe_ready_i) begin
+    pc <= next_pc;
+  end
+end
+
+always_ff @(posedge clk_i) begin
+  if(reset_i) begin
+    last_pc <= bp_first_pc_p;
+  end
+  else if(pc_gen_icache_ready && pc_gen_fe_ready_i) begin
+    last_pc <= pc;
+  end
+end
+
+always_ff @(posedge clk_i) begin
+  if(reset_i) begin
+    icache_miss_pc <= bp_first_pc_p;
+  end
+  else if(pc_gen_icache_ready) begin
+    icache_miss_pc <= last_pc;
+  end
+end
+
+/*
 always_ff @(posedge clk_i) 
   begin
     if (reset_i) 
       begin
        pc <= bp_first_pc_p;
       end
-    else if (stalled_pc_redirect && icache_miss_i) 
+    else if (stalled_pc_redirect && icache_miss) 
       begin
         pc                  <= pc_redirect;
         last_pc             <= pc;
         icache_miss_pc      <= last_pc;
       end 
-      else if (pc_gen_icache_ready_i && pc_gen_fe_ready_i) 
+      else if (pc_gen_icache_ready && pc_gen_fe_ready_i) 
         begin
           pc                  <= next_pc;
           last_pc             <= pc;
           icache_miss_pc      <= last_pc;
         end 
-      else if (icache_miss_i && ~pc_gen_icache_ready_i) 
+      else if (icache_miss) 
         begin
           pc             <= icache_miss_pc;
           last_pc        <= pc;
-          icache_miss_pc <= last_pc;
+          icache_miss_pc <= icache_miss_pc;
         end
   end
+*/
 
 // PC redirect register
-always_ff @(posedge clk_i) 
-  begin
-    if (fe_pc_gen_v_i && fe_pc_gen_cmd.pc_redirect_valid) 
-      begin
-        pc_redirect <= fe_pc_gen_cmd.pc;
-      end
-  end
+//always_ff @(posedge clk_i) 
+//  begin
+//    if (fe_pc_gen_v_i && fe_pc_gen_cmd.pc_redirect_valid) 
+//      begin
+//        pc_redirect <= fe_pc_gen_cmd.pc;
+//      end
+//  end
 
 //Keep track of stalled PC_redirect due to icache miss (icache is not ready). 
-wire stalled_pc_redirect_n = (fe_pc_gen_v_i & fe_pc_gen_cmd.pc_redirect_valid)
-                             | (stalled_pc_redirect & (pc_gen_fetch.pc != pc_redirect))
-                             | (stalled_pc_redirect & (pc_gen_fetch.pc == pc_redirect) & ~pc_gen_fe_v_o);
+wire stalled_pc_redirect_n = (fe_pc_gen_v_i & fe_pc_gen_cmd.pc_redirect_valid);
+                        //     | (stalled_pc_redirect & (pc_gen_fetch.pc != pc_redirect))
+                        //     | (stalled_pc_redirect & (pc_gen_fetch.pc == pc_redirect) & ~pc_gen_fe_v_o);
 
 always_ff @(posedge clk_i) 
   begin
