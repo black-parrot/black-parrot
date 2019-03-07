@@ -12,7 +12,7 @@ bp-demo-elf: $(foreach x,$(subst -,_,$(BP_DEMOS)),$(x).elf)
 bp-demo-s  : $(foreach x,$(subst -,_,$(BP_DEMOS_C)),$(x).s)
 
 %.elf:
-	$(RISCV_GCC) -o $@ src/$*.s src/start.S src/emu.S
+	$(RISCV_GCC) -o $@ src/$*.s src/start.S src/exception.S src/emulation.c
 
 queue_demo_%.s:
 	$(RISCV_GCC) -DNUM_CORES=$(notdir $*) -S -o src/queue_demo_$(notdir $*).s src/queue_demo.c

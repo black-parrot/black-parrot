@@ -60,7 +60,8 @@ module bp_be_pipe_mem
   (input                            clk_i
    , input                          reset_i
 
-   , input                          kill_v_i
+   , input                          kill_mem1_v_i
+   , input                          kill_mem3_v_i
    , input [decode_width_lp-1:0]    decode_i
    , input [reg_data_width_lp-1:0]  rs1_i
    , input [reg_data_width_lp-1:0]  rs2_i
@@ -131,13 +132,13 @@ bsg_shift_reg
    ,.reset_i(reset_i)
    ,.valid_i(decode.csr_instr_v)
    ,.data_i({decode, rs1_i, imm_i})
-   ,.valid_o(/* We look at decode for valid_o */)
+   ,.valid_o(/* We rely on decode for valids */)
    ,.data_o({decode_r, rs1_r, imm_r})
    );
 
 
 // Module instantiations
-assign mmu_cmd_v_o    = (decode.dcache_r_v | decode.dcache_w_v) & ~kill_v_i;
+assign mmu_cmd_v_o    = (decode.dcache_r_v | decode.dcache_w_v) & ~kill_mem1_v_i;
 always_comb 
   begin
     mmu_cmd.mem_op = decode.fu_op;
@@ -149,26 +150,30 @@ always_comb
 assign mmu_resp_ready_o = 1'b1;
 assign cache_miss_o     = mmu_resp.exception.cache_miss_v;
 assign mtvec_o          = rs1_r;
-assign mtvec_w_v_o      = decode_r.mtvec_rw_v;
+assign mtvec_w_v_o      = decode_r.mtvec_rw_v & ~kill_mem3_v_i;
 assign mtval_o          = rs1_r;
-assign mtval_w_v_o      = decode_r.mtval_rw_v;
+assign mtval_w_v_o      = decode_r.mtval_rw_v & ~kill_mem3_v_i;
 assign mepc_o           = rs1_r;
-assign mepc_w_v_o       = decode_r.mepc_rw_v;
+assign mepc_w_v_o       = decode_r.mepc_rw_v & ~kill_mem3_v_i;
 assign mscratch_o       = rs1_r;
-assign mscratch_w_v_o   = decode_r.mscratch_rw_v;
+assign mscratch_w_v_o   = decode_r.mscratch_rw_v & ~kill_mem3_v_i;
 
 always_comb
   begin
-    unique if (decode_r.mhartid_r_v)   result = reg_data_width_lp'(mhartid_i);
-    else   if (decode_r.mcycle_r_v)    result = mcycle_i;
-    else   if (decode_r.mtime_r_v)     result = mtime_i;
-    else   if (decode_r.minstret_r_v)  result = minstret_i;
-    else   if (decode_r.mtvec_rw_v)    result = mtvec_i;
-    else   if (decode_r.mtval_rw_v)    result = mtval_i;
-    else   if (decode_r.mepc_rw_v)     result = mepc_i;
-    else   if (decode_r.mscratch_rw_v) result = mscratch_i;
-    else   if (mmu_resp_v_i)           result = mmu_resp.data;
-    else                               result = '0;
+    if (mmu_resp_v_i)
+      result = mmu_resp.data;
+    else 
+      begin
+        unique if (decode_r.mhartid_r_v)   result = reg_data_width_lp'(mhartid_i);
+        else   if (decode_r.mcycle_r_v)    result = mcycle_i;
+        else   if (decode_r.mtime_r_v)     result = mtime_i;
+        else   if (decode_r.minstret_r_v)  result = minstret_i;
+        else   if (decode_r.mtvec_rw_v)    result = mtvec_i;
+        else   if (decode_r.mtval_rw_v)    result = mtval_i;
+        else   if (decode_r.mepc_rw_v)     result = mepc_i;
+        else   if (decode_r.mscratch_rw_v) result = mscratch_i;
+        else                               result = '0;
+      end
   end
 
 endmodule : bp_be_pipe_mem
