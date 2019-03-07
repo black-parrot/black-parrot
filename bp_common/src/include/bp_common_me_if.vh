@@ -565,7 +565,7 @@ typedef enum bit
    +`bp_cce_mem_data_cmd_payload_width(num_lce_mp, lce_assoc_mp, addr_width_mp))
 
 `define bp_mem_cce_resp_width(addr_width_mp, num_lce_mp, lce_assoc_mp) \
-  (`bp_lce_cce_req_type_width \
+  (`bp_lce_cce_req_type_width+addr_width_mp \
    +`bp_cce_mem_data_cmd_payload_width(num_lce_mp, lce_assoc_mp, addr_width_mp))
 
 `define bp_mem_cce_data_resp_width(addr_width_mp, data_width_mp, num_lce_mp, lce_assoc_mp) \
