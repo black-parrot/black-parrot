@@ -10,8 +10,7 @@
 */
 module bp_fe_bht
  import bp_fe_pkg::*; 
- #(localparam saturation_size_lp=2
-   , parameter bht_indx_width_p="inv"
+ #(parameter bht_indx_width_p="inv"
    , localparam els_lp=2**bht_indx_width_p
    )
   (input                          clk_i
@@ -28,6 +27,9 @@ module bp_fe_bht
    , output                       predict_o
    );
 
+
+localparam saturation_size_lp=2;
+   
 // Suppress unused signal warning
 wire unused0 = r_v_i;
    

@@ -10,10 +10,6 @@ module bp_fe_top
  #(parameter   vaddr_width_p="inv" 
    , parameter paddr_width_p="inv" 
 
-   /* TODO: These all need to go away */
-   , parameter branch_predictor_p=1 
-
-
    // icache related parameters 
    , parameter num_cce_p="inv"
    , parameter num_lce_p="inv"
@@ -39,10 +35,9 @@ module bp_fe_top
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
 
-   , localparam vaddr_width_lp=(index_width_lp+lg_lce_assoc_lp+byte_offset_width_lp)
-   , localparam addr_width_lp=(vaddr_width_lp+tag_width_lp)
+   , localparam vaddr_offset_width_lp=(index_width_lp+lg_lce_assoc_lp+byte_offset_width_lp)
+   , localparam addr_width_lp=(vaddr_offset_width_lp+tag_width_lp)
    , localparam lce_data_width_lp=(lce_assoc_p*reg_data_width_lp)
-   , localparam bp_fe_itlb_icache_data_resp_width_lp=`bp_fe_itlb_icache_data_resp_width(tag_width_lp)
    , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p 
                                                               ,num_lce_p
                                                               ,addr_width_lp
@@ -80,29 +75,11 @@ module bp_fe_top
    , parameter ras_addr_width_p="inv"
    , parameter asid_width_p="inv"
    , parameter bp_first_pc_p="inv"
-   , localparam instr_scan_width_lp=`bp_fe_instr_scan_width
-   , localparam branch_metadata_fwd_width_lp=btb_indx_width_p+bht_indx_width_p+ras_addr_width_p
-   , localparam bp_fe_pc_gen_itlb_width_lp=`bp_fe_pc_gen_itlb_width(eaddr_width_lp)
-   , localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p
-                                                                ,branch_metadata_fwd_width_lp
-                                                               )
-   , localparam bp_fe_pc_gen_width_o_lp=`bp_fe_pc_gen_queue_width(vaddr_width_p
-                                                                  ,branch_metadata_fwd_width_lp
-                                                                 )
-  
-  
-   // itlb related parameters 
-   , localparam ppn_start_bit_lp=index_width_lp+word_offset_width_lp+lg_lce_assoc_lp
-   , localparam bp_fe_itlb_cmd_width_lp=`bp_fe_itlb_cmd_width(vaddr_width_p
-                                                              ,paddr_width_p
-                                                              ,asid_width_p
-                                                              ,branch_metadata_fwd_width_lp
-                                                             )
-   , localparam bp_fe_itlb_queue_width_lp=`bp_fe_itlb_queue_width(vaddr_width_p
-                                                                  ,branch_metadata_fwd_width_lp
-                                                                 )
+   , parameter branch_predictor_p=1
+
     
    // be interfaces parameters
+   , localparam branch_metadata_fwd_width_lp=btb_indx_width_p+bht_indx_width_p+ras_addr_width_p
    , localparam bp_fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_p
                                                     ,paddr_width_p
                                                     ,asid_width_p
@@ -155,6 +132,10 @@ module bp_fe_top
    , input                                            lce_tr_resp_ready_i
    );
 
+
+//ITLB related parameters
+localparam ppn_start_bit_lp=index_width_lp+word_offset_width_lp+lg_lce_assoc_lp;
+   
 // the first level of structs
 `declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp);   
 // fe to pc_gen
@@ -215,14 +196,14 @@ logic cache_miss;
 logic poison;
 
 // be interfaces
-assign bp_fe_cmd     = fe_cmd_i;
+assign bp_fe_cmd  = fe_cmd_i;
 assign fe_queue_o = bp_fe_queue;
 
 // pc_gen to fe
 assign bp_fe_queue.msg_type = pc_gen_queue.msg_type;
 assign bp_fe_queue.msg      = pc_gen_queue.msg;
 assign pc_gen_fe_ready      = fe_queue_ready_i;
-assign fe_queue_v_o      = pc_gen_fe_v;
+assign fe_queue_v_o         = pc_gen_fe_v;
 
 
 // fe to pc_gen 
@@ -237,15 +218,15 @@ always_comb
     fe_pc_gen.branch_metadata_fwd = (bp_fe_cmd.opcode  == e_op_attaboy) 
                                     ? bp_fe_cmd.operands.attaboy.branch_metadata_fwd
                                     : (bp_fe_cmd.opcode  == e_op_pc_redirection)
-                                      ? bp_fe_cmd.operands.pc_redirect_operands.branch_metadata_fwd
-                                      : '{default:'0};
+                                    ? bp_fe_cmd.operands.pc_redirect_operands.branch_metadata_fwd
+                                    : '{default:'0};
     
     fe_pc_gen.pc                  = fe_pc_gen.pc_redirect_valid 
                                     ? bp_fe_cmd.operands.pc_redirect_operands.pc
                                     : bp_fe_cmd.operands.attaboy.pc;
 
     fe_pc_gen_v                   = fe_cmd_v_i;
-    fe_cmd_ready_o             = fe_pc_gen_ready;
+    fe_cmd_ready_o                = fe_pc_gen_ready;
   end
    
 // fe to itlb
