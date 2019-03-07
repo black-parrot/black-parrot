@@ -6,16 +6,17 @@ ISA_ROMS=`( for f in $i; do printf '%s\n' "${f%.v}" ; done )`
 
 BENCH_ROMS="median_rom multiply_rom towers_rom vvadd_rom"
 
-echo "################# BP_TOP BENCH ###################"
-for ROM in $BENCH_ROMS ; do 
+echo "################# BP_TOP REGRESSION ###################"
+for ROM in $ISA_ROMS ; do 
   echo -n "$ROM : "
-  make -C $BP_TOP_DIR/syn VCS=vcs TEST_ROM=$ROM.v TRACE_ROM=$ROM.tr.v bp_single_trace_demo.run.v \
+  make -C $BP_TOP_DIR/syn TEST_ROM=$ROM.v TRACE_ROM=$ROM.tr.v bp_single_trace_demo.run.v \
     | grep "PASS" || echo "FAIL"
 done
 
-echo "################# BP_TOP REGRESSION ###################"
-for ROM in $ISA_ROMS ; do
+echo "################# BP_TOP BENCH ###################"
+for ROM in $BENCH_ROMS ; do 
   echo -n "$ROM : "
-  make -C $BP_TOP_DIR/syn VCS=vcs TEST_ROM=$ROM.v TRACE_ROM=$ROM.tr.v bp_single_trace_demo.run.v \
+  make -C $BP_TOP_DIR/syn TEST_ROM=$ROM.v TRACE_ROM=$ROM.tr.v bp_single_trace_demo.run.v \
     | grep "PASS" || echo "FAIL"
 done
+
