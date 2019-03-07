@@ -47,6 +47,16 @@ module testbench
                                                      )
 
    , localparam cce_inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(cce_num_inst_ram_els_p)
+
+   , localparam bp_mem_cce_resp_width_lp=
+     `bp_mem_cce_resp_width(paddr_width_p,num_lce_p,lce_assoc_p)
+   , localparam bp_mem_cce_data_resp_width_lp=
+     `bp_mem_cce_data_resp_width(paddr_width_p,cce_block_size_in_bits_lp,num_lce_p,lce_assoc_p)
+   , localparam bp_cce_mem_cmd_width_lp=
+     `bp_cce_mem_cmd_width(paddr_width_p,num_lce_p,lce_assoc_p)
+   , localparam bp_cce_mem_data_cmd_width_lp=
+     `bp_cce_mem_data_cmd_width(paddr_width_p,cce_block_size_in_bits_lp,num_lce_p,lce_assoc_p)
+
    )
   (input clk_i
    , input reset_i
@@ -108,12 +118,12 @@ logic tr_v_li, tr_ready_lo, tr_v_lo, tr_yumi_li;
 logic [trace_rom_addr_width_p-1:0]  tr_rom_addr_li;
 logic [trace_rom_data_width_lp-1:0] tr_rom_data_lo;
 
-logic [lg_boot_rom_els_lp-1:0] mrom_addr;
-logic [boot_rom_width_p-1:0]   mrom_data;
+logic [num_cce_p-1:0][lg_boot_rom_els_lp-1:0] mrom_addr;
+logic [num_cce_p-1:0][boot_rom_width_p-1:0]   mrom_data;
 
 // CCE Inst Boot ROM
-logic [cce_inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
-logic [`bp_cce_inst_width-1:0]         cce_inst_boot_rom_data;
+logic [num_cce_p-1:0][cce_inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
+logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]         cce_inst_boot_rom_data;
 
 
 assign proc_cfg.mhartid   = 1'b0;
@@ -291,6 +301,23 @@ bp_trace_rom
    ,.data_o(tr_rom_data_lo)
    );
 
+logic [num_cce_p-1:0][bp_mem_cce_resp_width_lp-1:0] mem_resp;
+logic [num_cce_p-1:0] mem_resp_v;
+logic [num_cce_p-1:0] mem_resp_ready;
+
+logic [num_cce_p-1:0][bp_mem_cce_data_resp_width_lp-1:0] mem_data_resp;
+logic [num_cce_p-1:0] mem_data_resp_v;
+logic [num_cce_p-1:0] mem_data_resp_ready;
+
+logic [num_cce_p-1:0][bp_cce_mem_cmd_width_lp-1:0] mem_cmd;
+logic [num_cce_p-1:0] mem_cmd_v;
+logic [num_cce_p-1:0] mem_cmd_yumi;
+
+logic [num_cce_p-1:0][bp_cce_mem_data_cmd_width_lp-1:0] mem_data_cmd;
+logic [num_cce_p-1:0] mem_data_cmd_v;
+logic [num_cce_p-1:0] mem_data_cmd_yumi;
+
+
 bp_me_top 
  #(.num_lce_p(num_lce_p)
    ,.num_cce_p(num_cce_p)
@@ -299,7 +326,6 @@ bp_me_top
    ,.lce_sets_p(lce_sets_p)
    ,.block_size_in_bytes_p(cce_block_size_in_bytes_p)
    ,.num_inst_ram_els_p(cce_num_inst_ram_els_p)
-   ,.mem_els_p(mem_els_p)
 
    ,.boot_rom_els_p(boot_rom_els_p)
    ,.boot_rom_width_p(boot_rom_width_p)
@@ -336,30 +362,84 @@ bp_me_top
    ,.lce_tr_resp_v_o(local_lce_tr_resp_v)
    ,.lce_tr_resp_ready_i(local_lce_tr_resp_rdy)
 
-   ,.boot_rom_addr_o(mrom_addr)
-   ,.boot_rom_data_i(mrom_data)
-
    ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr)
    ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data)
+
+   ,.mem_resp_i(mem_resp)
+   ,.mem_resp_v_i(mem_resp_v)
+   ,.mem_resp_ready_o(mem_resp_ready)
+
+   ,.mem_data_resp_i(mem_data_resp)
+   ,.mem_data_resp_v_i(mem_data_resp_v)
+   ,.mem_data_resp_ready_o(mem_data_resp_ready)
+
+   ,.mem_cmd_o(mem_cmd)
+   ,.mem_cmd_v_o(mem_cmd_v)
+   ,.mem_cmd_yumi_i(mem_cmd_yumi)
+
+   ,.mem_data_cmd_o(mem_data_cmd)
+   ,.mem_data_cmd_v_o(mem_data_cmd_v)
+   ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi)
+
    );
+
+for (genvar i = 0; i < num_cce_p; i++) begin
 
 bp_cce_inst_rom
   #(.width_p(`bp_cce_inst_width)
     ,.addr_width_p(cce_inst_ram_addr_width_lp)
     )
   cce_inst_rom
-   (.addr_i(cce_inst_boot_rom_addr)
-    ,.data_o(cce_inst_boot_rom_data)
+   (.addr_i(cce_inst_boot_rom_addr[i])
+    ,.data_o(cce_inst_boot_rom_data[i])
     );
+
+bp_mem
+  #(.num_lce_p(num_lce_p)
+    ,.num_cce_p(num_cce_p)
+    ,.paddr_width_p(paddr_width_p)
+    ,.lce_assoc_p(lce_assoc_p)
+    ,.block_size_in_bytes_p(cce_block_size_in_bits_lp/8)
+    ,.lce_sets_p(lce_sets_p)
+    ,.mem_els_p(mem_els_p)
+    ,.boot_rom_width_p(cce_block_size_in_bits_lp)
+    ,.boot_rom_els_p(boot_rom_els_p)
+  )
+  bp_mem
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.mem_cmd_i(mem_cmd[i])
+   ,.mem_cmd_v_i(mem_cmd_v[i])
+   ,.mem_cmd_yumi_o(mem_cmd_yumi[i])
+
+   ,.mem_data_cmd_i(mem_data_cmd[i])
+   ,.mem_data_cmd_v_i(mem_data_cmd_v[i])
+   ,.mem_data_cmd_yumi_o(mem_data_cmd_yumi[i])
+
+   ,.mem_resp_o(mem_resp[i])
+   ,.mem_resp_v_o(mem_resp_v[i])
+   ,.mem_resp_ready_i(mem_resp_ready[i])
+
+   ,.mem_data_resp_o(mem_data_resp[i])
+   ,.mem_data_resp_v_o(mem_data_resp_v[i])
+   ,.mem_data_resp_ready_i(mem_data_resp_ready[i])
+
+   ,.boot_rom_addr_o(mrom_addr[i])
+   ,.boot_rom_data_i(mrom_data[i])
+   );
 
 bp_boot_rom 
  #(.width_p(boot_rom_width_p)
    ,.addr_width_p(lg_boot_rom_els_lp)
    ) 
  me_boot_rom 
-  (.addr_i(mrom_addr)
-   ,.data_o(mrom_data)
+  (.addr_i(mrom_addr[i])
+   ,.data_o(mrom_data[i])
    );
+
+
+end
 
 logic booted;
 

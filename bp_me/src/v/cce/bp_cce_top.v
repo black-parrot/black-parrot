@@ -19,9 +19,6 @@ module bp_cce_top
     , parameter block_size_in_bytes_p   = "inv"
     , parameter num_cce_inst_ram_els_p  = "inv"
 
-    // Default parameters
-    , parameter harden_p                = 0
-
     // Derived parameters
     , localparam block_size_in_bits_lp  = (block_size_in_bytes_p*8)
     , localparam lg_num_cce_lp          = `BSG_SAFE_CLOG2(num_cce_p)

@@ -27,13 +27,7 @@ module bp_multi_top
    , parameter cce_block_size_in_bytes_p = "inv"
    , parameter cce_num_inst_ram_els_p    = "inv"
  
-   // Test specific parameters
-   , parameter mem_els_p                 = "inv"
-   , parameter boot_rom_els_p            = "inv"
-   , parameter boot_rom_width_p          = "inv"
-
    // Generated parameters
-   , localparam lg_boot_rom_els_lp = `BSG_SAFE_CLOG2(boot_rom_els_p)
    , localparam lg_core_els_p      = `BSG_SAFE_CLOG2(core_els_p)
    , localparam lg_num_lce_p       = `BSG_SAFE_CLOG2(num_lce_p)
    , localparam mhartid_width_lp   = `BSG_SAFE_CLOG2(core_els_p)
@@ -60,15 +54,50 @@ module bp_multi_top
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
 
    , localparam cce_inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(cce_num_inst_ram_els_p)
+
+
+   , localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p
+                                                                 ,num_lce_p
+                                                                 ,lce_assoc_p)
+
+   , localparam bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(paddr_width_p
+                                                                           ,cce_block_size_in_bits_lp
+                                                                           ,num_lce_p
+                                                                           ,lce_assoc_p)
+
+   , localparam bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(paddr_width_p
+                                                               ,num_lce_p
+                                                               ,lce_assoc_p)
+
+   , localparam bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_p
+                                                                         ,cce_block_size_in_bits_lp
+                                                                         ,num_lce_p
+                                                                         ,lce_assoc_p)
+
    )
   (input                                                  clk_i
    , input                                                reset_i
 
-   , output logic [num_cce_p-1:0][lg_boot_rom_els_lp-1:0] boot_rom_addr_o
-   , input logic [num_cce_p-1:0][boot_rom_width_p-1:0]    boot_rom_data_i
-
    , output logic [cce_inst_ram_addr_width_lp-1:0]        cce_inst_boot_rom_addr_o
    , input logic [`bp_cce_inst_width-1:0]                 cce_inst_boot_rom_data_i
+
+   , input [num_cce_p-1:0][bp_mem_cce_resp_width_lp-1:0]            mem_resp_i
+   , input [num_cce_p-1:0]                                          mem_resp_v_i
+   , output [num_cce_p-1:0]                                         mem_resp_ready_o
+
+   , input [num_cce_p-1:0][bp_mem_cce_data_resp_width_lp-1:0]       mem_data_resp_i
+   , input [num_cce_p-1:0]                                          mem_data_resp_v_i
+   , output [num_cce_p-1:0]                                         mem_data_resp_ready_o
+
+   , output [num_cce_p-1:0][bp_cce_mem_cmd_width_lp-1:0]      mem_cmd_o
+   , output [num_cce_p-1:0]                                   mem_cmd_v_o
+   , input [num_cce_p-1:0]                                    mem_cmd_yumi_i
+
+   , output [num_cce_p-1:0][bp_cce_mem_data_cmd_width_lp-1:0] mem_data_cmd_o
+   , output [num_cce_p-1:0]                                   mem_data_cmd_v_o
+   , input [num_cce_p-1:0]                                    mem_data_cmd_yumi_i
+
+   
 
    // Commit tracer
    , output [core_els_p-1:0][pipe_stage_reg_width_lp-1:0] cmt_trace_stage_reg_o
@@ -190,10 +219,6 @@ bp_me_top
    ,.lce_sets_p(lce_sets_p)
    ,.block_size_in_bytes_p(cce_block_size_in_bytes_p)
    ,.num_inst_ram_els_p(cce_num_inst_ram_els_p)
-
-   ,.mem_els_p(mem_els_p)
-   ,.boot_rom_els_p(boot_rom_els_p)
-   ,.boot_rom_width_p(boot_rom_width_p)
    )
  me
   (.clk_i(clk_i)
@@ -227,11 +252,25 @@ bp_me_top
    ,.lce_tr_resp_v_o(lce_tr_resp_v_li)
    ,.lce_tr_resp_ready_i(lce_tr_resp_ready_lo)
 
-   ,.boot_rom_addr_o(boot_rom_addr_o)
-   ,.boot_rom_data_i(boot_rom_data_i)
-
    ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr_o)
    ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data_i)
+  
+   ,.mem_resp_i(mem_resp_i)
+   ,.mem_resp_v_i(mem_resp_v_i)
+   ,.mem_resp_ready_o(mem_resp_ready_o)
+
+   ,.mem_data_resp_i(mem_data_resp_i)
+   ,.mem_data_resp_v_i(mem_data_resp_v_i)
+   ,.mem_data_resp_ready_o(mem_data_resp_ready_o)
+
+   ,.mem_cmd_o(mem_cmd_o)
+   ,.mem_cmd_v_o(mem_cmd_v_o)
+   ,.mem_cmd_yumi_i(mem_cmd_yumi_i)
+
+   ,.mem_data_cmd_o(mem_data_cmd_o)
+   ,.mem_data_cmd_v_o(mem_data_cmd_v_o)
+   ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi_i)
+
    );
 
 endmodule : bp_multi_top
