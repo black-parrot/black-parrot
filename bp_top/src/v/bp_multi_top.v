@@ -27,12 +27,7 @@ module bp_multi_top
    , parameter cce_block_size_in_bytes_p = "inv"
    , parameter cce_num_inst_ram_els_p    = "inv"
  
-   // Test specific parameters
-   , parameter boot_rom_els_p            = "inv"
-   , parameter boot_rom_width_p          = "inv"
-
    // Generated parameters
-   , localparam lg_boot_rom_els_lp = `BSG_SAFE_CLOG2(boot_rom_els_p)
    , localparam lg_core_els_p      = `BSG_SAFE_CLOG2(core_els_p)
    , localparam lg_num_lce_p       = `BSG_SAFE_CLOG2(num_lce_p)
    , localparam mhartid_width_lp   = `BSG_SAFE_CLOG2(core_els_p)
@@ -224,9 +219,6 @@ bp_me_top
    ,.lce_sets_p(lce_sets_p)
    ,.block_size_in_bytes_p(cce_block_size_in_bytes_p)
    ,.num_inst_ram_els_p(cce_num_inst_ram_els_p)
-
-   ,.boot_rom_els_p(boot_rom_els_p)
-   ,.boot_rom_width_p(boot_rom_width_p)
    )
  me
   (.clk_i(clk_i)
