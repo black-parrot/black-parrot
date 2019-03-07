@@ -112,12 +112,12 @@ assign pc_gen_fe_o     = pc_gen_queue;
 assign fe_pc_gen_cmd   = fe_pc_gen_i;
 assign icache_pc_gen   = icache_pc_gen_i;
 
-assign misalignment          = fe_pc_gen_v_i
-                               && fe_pc_gen_cmd.pc_redirect_valid 
-                               && ~fe_pc_gen_cmd.pc[3:0] == 4'h0 
-                               && ~fe_pc_gen_cmd.pc[3:0] == 4'h4
-                               && ~fe_pc_gen_cmd.pc[3:0] == 4'h8
-                               && ~fe_pc_gen_cmd.pc[3:0] == 4'hC;
+assign misalignment    = fe_pc_gen_v_i
+                         && fe_pc_gen_cmd.pc_redirect_valid 
+                         && ~fe_pc_gen_cmd.pc[3:0] == 4'h0 
+                         && ~fe_pc_gen_cmd.pc[3:0] == 4'h4
+                         && ~fe_pc_gen_cmd.pc[3:0] == 4'h8
+                         && ~fe_pc_gen_cmd.pc[3:0] == 4'hC;
 							   
 
 //register the pc redirect signal
@@ -199,25 +199,9 @@ always_ff @(posedge clk_i) begin
     pc <= bp_first_pc_p;
   end
   else if(pc_gen_icache_ready_i && pc_gen_fe_ready_i) begin
-    pc <= next_pc;
-  end
-end
-
-always_ff @(posedge clk_i) begin
-  if(reset_i) begin
-    last_pc <= bp_first_pc_p;
-  end
-  else if(pc_gen_icache_ready_i && pc_gen_fe_ready_i) begin
-    last_pc <= pc;
-  end
-end
-
-always_ff @(posedge clk_i) begin
-  if(reset_i) begin
-    icache_miss_pc <= bp_first_pc_p;
-  end
-  else if(pc_gen_icache_ready_i) begin
-    icache_miss_pc <= last_pc;
+    pc             <= next_pc;
+	last_pc        <= pc;
+	icache_miss_pc <= last_pc;
   end
 end
   
