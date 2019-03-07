@@ -126,9 +126,6 @@ module bp_be_calculator_top
   , output [pipe_stage_reg_width_lp-1:0] cmt_trace_stage_reg_o
   , output [calc_result_width_lp-1:0]    cmt_trace_result_o
   , output [exception_width_lp-1:0]      cmt_trace_exc_o
-
-  // STD: TODO -- remove synth hack and find real solution
-  ,output [`bp_be_fu_op_width-1:0] decoded_fu_op_o
   );
 
 // Declare parameterizable structs
@@ -186,9 +183,6 @@ logic [pipe_stage_els_lp-1:1]                        comp_stage_n_slice_iwb_v;
 logic [pipe_stage_els_lp-1:1]                        comp_stage_n_slice_fwb_v;
 logic [pipe_stage_els_lp-1:1][reg_addr_width_lp-1:0] comp_stage_n_slice_rd_addr;
 logic [pipe_stage_els_lp-1:1][reg_data_width_lp-1:0] comp_stage_n_slice_rd;
-
-// STD: TODO -- remove synth hack and find real solution
-assign decoded_fu_op_o = decoded.fu_op;
 
 // Handshakes
 assign issue_pkt_ready_o = (chk_dispatch_v_i | ~issue_pkt_v_r) & ~chk_roll_i & ~chk_poison_ex1_i;
@@ -542,8 +536,9 @@ always_comb
     // Slicing the completion pipe for Forwarding information
     for (integer i = 1;i < pipe_stage_els_lp; i++) 
       begin : comp_stage_slice
-        comp_stage_n_slice_iwb_v[i]   = calc_stage_r[i-1].decode.irf_w_v & ~|exc_stage_r[i-1]; 
-        comp_stage_n_slice_fwb_v[i]   = calc_stage_r[i-1].decode.frf_w_v & ~|exc_stage_r[i-1]; 
+        // TODO: This could be reduced to individual exceptions
+        comp_stage_n_slice_iwb_v[i]   = calc_stage_r[i-1].decode.irf_w_v & ~|exc_stage_n[i]; 
+        comp_stage_n_slice_fwb_v[i]   = calc_stage_r[i-1].decode.frf_w_v & ~|exc_stage_n[i]; 
         comp_stage_n_slice_rd_addr[i] = calc_stage_r[i-1].decode.rd_addr;
 
           comp_stage_n_slice_rd[i]    = comp_stage_n[i].result;
@@ -567,7 +562,8 @@ always_comb
         exc_stage_n[1].roll_v          = exc_stage_r[0].roll_v   | chk_roll_i;
         exc_stage_n[2].poison_v        = exc_stage_r[1].poison_v | chk_poison_ex2_i;
         exc_stage_n[2].roll_v          = exc_stage_r[1].roll_v   | chk_roll_i;
-        exc_stage_n[3].cache_miss_v    = cache_miss_mem3;
+        // TODO: Unused, critical path 
+        exc_stage_n[3].cache_miss_v    = cache_miss_mem3; 
   end
 
 // Commit tracer

@@ -264,16 +264,6 @@ bp_be_checker_top
    ,.issue_pkt_ready_i(issue_pkt_rdy)
    );
 
-// STD: TODO -- remove synth hack and find real solution
-wire [`bp_be_fu_op_width-1:0] decoded_fu_op_n;
-reg  [`bp_be_fu_op_width-1:0] decoded_fu_op_r;
-
-// STD: TODO -- remove synth hack and find real solution
-always_ff @(posedge clk_i)
-  begin
-    decoded_fu_op_r <= decoded_fu_op_n;
-  end
-
 bp_be_calculator_top 
  #(.vaddr_width_p(vaddr_width_p)
    ,.paddr_width_p(paddr_width_p)
