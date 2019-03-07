@@ -159,7 +159,7 @@ module bp_be_mmu_top
    , input                                 mmu_cmd_v_i
    , output                                mmu_cmd_ready_o
 
-   , input                                 chk_psn_ex_i
+   , input                                 chk_poison_ex_i
 
    , output [mmu_resp_width_lp-1:0]        mmu_resp_o
    , output                                mmu_resp_v_o
@@ -259,7 +259,7 @@ bp_be_dcache
     ,.ptag_i(ptag_r)
 
     ,.cache_miss_o(dcache_miss_v)
-    ,.poison_i(chk_psn_ex_i)
+    ,.poison_i(chk_poison_ex_i)
 
     // LCE-CCE interface
     ,.lce_req_o(lce_req_o)

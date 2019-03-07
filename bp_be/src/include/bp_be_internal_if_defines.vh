@@ -63,7 +63,6 @@
   typedef struct packed                                                                            \
   {                                                                                                \
     logic                                   isd_v;                                                 \
-    logic[rv64_eaddr_width_gp-1:0]          isd_pc;                                                \
     logic                                   isd_irs1_v;                                            \
     logic                                   isd_frs1_v;                                            \
     logic[rv64_reg_addr_width_gp-1:0]       isd_rs1_addr;                                          \
@@ -78,10 +77,13 @@
     logic                                   int1_btaken;                                           \
                                                                                                    \
     logic                                   ex1_v;                                                 \
+    logic[rv64_eaddr_width_gp-1:0]          ex1_pc;                                                \
                                                                                                    \
-    // 5 is the number of stages in the pipeline                                                   \
-    // In fact, we don't need all of this dependency information, since some of the stages are     \
-    //    post-commit. However, for now we're passing all of it.                                   \
+    /*                                                                                             \
+     * 5 is the number of stages in the pipeline.                                                  \
+     * In fact, we don't need all of this dependency information, since some of the stages are     \
+     *    post-commit. However, for now we're passing all of it.                                   \
+     */                                                                                            \
     bp_be_dep_status_s[4:0]                 dep_status;                                            \
                                                                                                    \
     logic                                   mem3_v;                                                \
