@@ -20,3 +20,12 @@ for ROM in $BENCH_ROMS ; do
     | grep "PASS" || echo "FAIL"
 done
 
+echo "################# BP_BE_DCACHE AXE TEST ###################"
+DCACHE_AXE_TEST_DIR=$BP_BE_DIR/test/tb/bp_be_dcache/dcache_axe_test
+
+for lce in 2 4 8 16; do
+  echo "Running $lce LCE AXE TEST"
+  make -C $DCACHE_AXE_TEST_DIR NUM_LCE_P=$lce NUM_INSTR_P=2500 > /dev/null
+  make -C $DCACHE_AXE_TEST_DIR axe | grep "OK" || echo "FAIL"
+done
+
