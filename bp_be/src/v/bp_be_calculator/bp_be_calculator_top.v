@@ -122,6 +122,15 @@ module bp_be_calculator_top
   , input                                mmu_resp_v_i
   , output                               mmu_resp_ready_o
 
+  // CSR interface
+  , output [reg_data_width_lp-1:0]       mtvec_o
+  , output                               mtvec_w_v_o
+  , input  [reg_data_width_lp-1:0]       mtvec_i
+
+  , output [reg_data_width_lp-1:0]       mepc_o
+  , output                               mepc_w_v_o
+  , input [reg_data_width_lp-1:0]        mepc_i
+
   // Commit tracer
   , output [pipe_stage_reg_width_lp-1:0] cmt_trace_stage_reg_o
   , output [calc_result_width_lp-1:0]    cmt_trace_result_o
@@ -186,6 +195,13 @@ logic [pipe_stage_els_lp-1:1][reg_data_width_lp-1:0] comp_stage_n_slice_rd;
 
 // Performance counters
 logic [reg_data_width_lp-1:0] cycle_cnt_lo, time_cnt_lo, instret_cnt_lo;
+
+// CSRs
+logic [reg_data_width_lp-1:0] mtval_lo, mtval_li, mtval_mux_lo;
+logic                         mtval_w_v_lo;
+
+logic [reg_data_width_lp-1:0] mscratch_lo, mscratch_li;
+logic                         mscratch_w_v_lo;
 
 // Handshakes
 assign issue_pkt_ready_o = (chk_dispatch_v_i | ~issue_pkt_v_r) & ~chk_roll_i & ~chk_poison_ex1_i;
@@ -393,9 +409,22 @@ bp_be_pipe_mem
    ,.mcycle_i(cycle_cnt_lo)
    ,.mtime_i(time_cnt_lo)
    ,.minstret_i(instret_cnt_lo)
-   ,.mtvec_o()
-   ,.mtvec_w_v_o()
-   ,.mtvec_i()
+
+   ,.mtvec_o(mtvec_o)
+   ,.mtvec_w_v_o(mtvec_w_v_o)
+   ,.mtvec_i(mtvec_i)
+
+   ,.mtval_o(mtval_lo)
+   ,.mtval_w_v_o(mtval_w_v_lo)
+   ,.mtval_i(mtval_li)
+
+   ,.mepc_o(mepc_o)
+   ,.mepc_w_v_o(mepc_w_v_o)
+   ,.mepc_i(mepc_i)
+
+   ,.mscratch_o(mscratch_lo)
+   ,.mscratch_w_v_o(mscratch_w_v_lo)
+   ,.mscratch_i(mscratch_li)
 
    ,.result_o(mem_calc_result.result)
    ,.cache_miss_o(cache_miss_mem3)
@@ -468,13 +497,20 @@ bsg_dff
 bp_be_decode_s fe_nop, be_nop, me_nop;
 logic fe_nop_v, be_nop_v, me_nop_v;
 
-assign fe_nop = {pipe_comp_v:1'b1, fe_nop_v:1'b1, default:'0};
-assign be_nop = {pipe_comp_v:1'b1, be_nop_v:1'b1, default:'0};
-assign me_nop = {pipe_comp_v:1'b1, me_nop_v:1'b1, default:'0};
-
 assign fe_nop_v = ~issue_pkt_v_r & chk_dispatch_v_i;
 assign be_nop_v = ~chk_dispatch_v_i &  mmu_cmd_ready_i;
 assign me_nop_v = ~chk_dispatch_v_i & ~mmu_cmd_ready_i;
+
+always_comb
+  begin
+    be_nop = '0;
+    fe_nop = '0;
+    me_nop = '0;
+
+    fe_nop.fe_nop_v = 1'b1;
+    be_nop.be_nop_v = 1'b1;
+    me_nop.me_nop_v = 1'b1;
+  end
 
 // CSR counters
 bsg_counter_clear_up
@@ -518,6 +554,34 @@ bsg_counter_clear_up
    ,.up_i(calc_stage_r[2].decode.instr_v & ~|exc_stage_n[3])
 
    ,.count_o(instret_cnt_lo)
+   );
+
+bsg_dff_en
+ #(.width_p(reg_data_width_lp))
+ mtval_csr_reg
+  (.clk_i(clk_i)
+   ,.en_i(mtval_w_v_lo | exc_stage_r[2].illegal_instr_v)
+   ,.data_i(mtval_mux_lo)
+   ,.data_o(mtval_li)
+   );
+
+bsg_mux
+ #(.width_p(reg_data_width_lp)
+   ,.els_p(2)
+   )
+ mtval_mux
+  (.data_i({reg_data_width_lp'(calc_stage_r[2].instr), mtval_lo})
+   ,.sel_i(exc_stage_r[2].illegal_instr_v)
+   ,.data_o(mtval_mux_lo)
+   );
+
+bsg_dff_en
+ #(.width_p(reg_data_width_lp))
+ mscratch_csr_reg
+  (.clk_i(clk_i)
+   ,.en_i(mscratch_w_v_lo)
+   ,.data_i(mscratch_lo)
+   ,.data_o(mscratch_li)
    );
 
 always_comb 
@@ -572,7 +636,9 @@ always_comb
         calc_status.dep_status[i].fp_fwb_v  = calc_stage_r[i].decode.pipe_fp_v  
                                               & ~|exc_stage_n[i+1] 
                                               & calc_stage_r[i].decode.frf_w_v;
-        calc_status.dep_status[i].rd_addr     = calc_stage_r[i].decode.rd_addr;
+        calc_status.dep_status[i].rd_addr   = calc_stage_r[i].decode.rd_addr;
+        calc_status.dep_status[i].stall_v   = calc_stage_r[i].decode.csr_instr_v
+                                              | calc_stage_r[i].decode.ret_v;
       end
 
     // Additional commit point information
@@ -580,8 +646,13 @@ always_comb
     calc_status.mem3_pc           = calc_stage_r[2].instr_metadata.pc;
     // We don't want cache_miss itself to trigger the exception invalidation
     calc_status.mem3_cache_miss_v = cache_miss_mem3 & ~|exc_stage_r[2]; 
-    calc_status.mem3_exception_v  = 1'b0; 
-    calc_status.mem3_ret_v        = calc_stage_r[2].decode.ret_v;
+    calc_status.mem3_exception_v  = calc_stage_r[2].decode.instr_v
+                                    & exc_stage_r[2].illegal_instr_v
+                                    & ~exc_stage_r[2].poison_v
+                                    & ~exc_stage_r[2].roll_v;
+    calc_status.mem3_ret_v        = calc_stage_r[2].decode.ret_v
+                                    & ~exc_stage_r[2].poison_v
+                                    & ~exc_stage_r[2].roll_v;
     calc_status.instr_cmt_v       = calc_stage_r[2].decode.instr_v & ~exc_stage_n[3].roll_v;
           
     // Slicing the completion pipe for Forwarding information

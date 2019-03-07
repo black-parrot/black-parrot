@@ -139,6 +139,9 @@ module bp_be_top
    , localparam pipe_stage_reg_width_lp    = `bp_be_pipe_stage_reg_width(branch_metadata_fwd_width_p)
    , localparam calc_result_width_lp       = `bp_be_calc_result_width(branch_metadata_fwd_width_p)
    , localparam exception_width_lp         = `bp_be_exception_width
+
+   // From RISC-V specifications
+   , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -226,6 +229,12 @@ bp_be_calc_result_s    cmt_trace_result;
 
 logic chk_dispatch_v, chk_poison_ex1, chk_poison_ex2, chk_roll, chk_instr_dequeue_v;
 
+logic [reg_data_width_lp-1:0] chk_mtvec_li, chk_mtvec_lo;
+logic                         chk_mtvec_w_v_li;
+
+logic [reg_data_width_lp-1:0] chk_mepc_li, chk_mepc_lo;
+logic                         chk_mepc_w_v_li;
+
 // Module instantiations
 bp_be_checker_top 
  #(.vaddr_width_p(vaddr_width_p)
@@ -262,6 +271,14 @@ bp_be_checker_top
    ,.issue_pkt_o(issue_pkt)
    ,.issue_pkt_v_o(issue_pkt_v)
    ,.issue_pkt_ready_i(issue_pkt_rdy)
+
+   ,.mtvec_i(chk_mtvec_li)
+   ,.mtvec_w_v_i(chk_mtvec_w_v_li)
+   ,.mtvec_o(chk_mtvec_lo)
+
+   ,.mepc_i(chk_mepc_li)
+   ,.mepc_w_v_i(chk_mepc_w_v_li)
+   ,.mepc_o(chk_mepc_lo)
    );
 
 bp_be_calculator_top 
@@ -306,6 +323,14 @@ bp_be_calculator_top
    ,.cmt_trace_stage_reg_o(cmt_trace_stage_reg_o)
    ,.cmt_trace_result_o(cmt_trace_result_o)
    ,.cmt_trace_exc_o(cmt_trace_exc_o)
+
+   ,.mtvec_o(chk_mtvec_li)
+   ,.mtvec_w_v_o(chk_mtvec_w_v_li)
+   ,.mtvec_i(chk_mtvec_lo)
+
+   ,.mepc_o(chk_mepc_li)
+   ,.mepc_w_v_o(chk_mepc_w_v_li)
+   ,.mepc_i(chk_mepc_lo)
    );
 
 bp_be_mmu_top

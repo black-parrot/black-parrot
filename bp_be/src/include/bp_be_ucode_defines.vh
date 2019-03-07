@@ -93,6 +93,9 @@ typedef struct packed
   logic                             mtime_r_v;
   logic                             minstret_r_v;
   logic                             mtvec_rw_v;
+  logic                             mtval_rw_v;
+  logic                             mepc_rw_v;
+  logic                             mscratch_rw_v;
   logic                             dcache_w_v;
   logic                             dcache_r_v;
   logic                             fp_not_int_v;

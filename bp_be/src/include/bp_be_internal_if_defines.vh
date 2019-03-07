@@ -56,6 +56,7 @@
     logic                             mem_iwb_v;                                                   \
     logic                             mem_fwb_v;                                                   \
     logic                             fp_fwb_v;                                                    \
+    logic                             stall_v;                                                     \
                                                                                                    \
     logic[rv64_reg_addr_width_gp-1:0] rd_addr;                                                     \
    } bp_be_dep_status_s;                                                                           \
@@ -133,7 +134,7 @@
    )                                                                                               
 
 `define bp_be_dep_status_width                                                                     \
-  (5 + rv64_reg_addr_width_gp)                                                                     
+  (6 + rv64_reg_addr_width_gp)                                                                     
 
 `define bp_be_calc_status_width(branch_metadata_fwd_width_mp)                                      \
   (1                                                                                               \

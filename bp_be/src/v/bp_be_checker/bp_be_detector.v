@@ -97,7 +97,7 @@ logic [2:0] irs1_data_haz_v , irs2_data_haz_v;
 logic [2:0] frs1_data_haz_v , frs2_data_haz_v;
 logic [2:0] rs1_match_vector, rs2_match_vector;
 
-logic data_haz_v, struct_haz_v, mispredict_v;
+logic stall_haz_v, data_haz_v, struct_haz_v, mispredict_v;
 
 always_comb 
   begin
@@ -160,8 +160,17 @@ always_comb
     frs2_data_haz_v[2] = (calc_status.isd_frs2_v & rs2_match_vector[2])
                          & (dep_status[2].fp_fwb_v);
 
+    stall_haz_v        = dep_status[0].stall_v
+                         | dep_status[1].stall_v
+                         | dep_status[2].stall_v
+                         | dep_status[3].stall_v;
+
     // Combine all data hazard information
-    data_haz_v = (|irs1_data_haz_v) | (|irs2_data_haz_v) | (|frs1_data_haz_v) | (|frs2_data_haz_v);
+    data_haz_v = stall_haz_v
+                 | (|irs1_data_haz_v) 
+                 | (|irs2_data_haz_v) 
+                 | (|frs1_data_haz_v) 
+                 | (|frs2_data_haz_v);
 
     // Combine all structural hazard information
     struct_haz_v = ~mmu_cmd_ready_i;

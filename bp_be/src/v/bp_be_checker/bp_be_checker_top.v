@@ -118,6 +118,15 @@ module bp_be_checker_top
    , output                           chk_roll_o
    , output                           chk_poison_ex1_o
    , output                           chk_poison_ex2_o
+
+   // CSR interface
+   , input [reg_data_width_lp-1:0]    mtvec_i
+   , input                            mtvec_w_v_i
+   , output [reg_data_width_lp-1:0]   mtvec_o
+
+   , input [reg_data_width_lp-1:0]    mepc_i
+   , input                            mepc_w_v_i
+   , output [reg_data_width_lp-1:0]   mepc_o
    );
 
 // Declare parameterizable structures
@@ -151,6 +160,14 @@ bp_be_director
    ,.chk_dequeue_fe_o(chk_dequeue_fe_o)
    ,.chk_roll_fe_o(chk_roll_fe_o)
    ,.chk_flush_fe_o(chk_flush_fe_o)
+
+   ,.mtvec_i(mtvec_i)
+   ,.mtvec_w_v_i(mtvec_w_v_i)
+   ,.mtvec_o(mtvec_o)
+
+   ,.mepc_i(mepc_i)
+   ,.mepc_w_v_i(mepc_w_v_i)
+   ,.mepc_o(mepc_o)
    );
 
 bp_be_detector 

@@ -21,21 +21,24 @@ main:
 	slli	a5,a5,28
 	addi	a5,a5,-1
 	sd	a5,-24(s0)
-	li	a5,305418240
-	addi	a5,a5,1656
+	la	a5,_emu
 	sd	a5,-32(s0)
  #APP
-# 13 "src/trap_demo.c" 1
+# 15 "src/trap_demo.c" 1
 	csrr  a5, mhartid
 # 0 "" 2
  #NO_APP
 	sd	a5,-40(s0)
 	ld	a5,-32(s0)
  #APP
-# 14 "src/trap_demo.c" 1
+# 16 "src/trap_demo.c" 1
 	csrw mtvec, a5
 # 0 "" 2
+# 18 "src/trap_demo.c" 1
+	csrr  a5, mvendorid
+# 0 "" 2
  #NO_APP
+	sd	a5,-48(s0)
 	li	a5,0
 	mv	a0,a5
 	ld	s0,56(sp)

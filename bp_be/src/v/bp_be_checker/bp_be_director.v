@@ -82,6 +82,15 @@ module bp_be_director
    , output                            chk_flush_fe_o
    , output                            chk_dequeue_fe_o
    , output                            chk_roll_fe_o
+
+   // CSR interface
+   , input [reg_data_width_lp-1:0]    mtvec_i
+   , input                            mtvec_w_v_i
+   , output [reg_data_width_lp-1:0]   mtvec_o
+
+   , input [reg_data_width_lp-1:0]    mepc_i
+   , input                            mepc_w_v_i
+   , output [reg_data_width_lp-1:0]   mepc_o
   );
 
 // Declare parameterized structures
@@ -112,15 +121,19 @@ logic [eaddr_width_lp-1:0]              npc_plus4;
 logic [eaddr_width_lp-1:0]              npc_n, npc_r;
 logic                                   npc_mismatch_v;
 logic [branch_metadata_fwd_width_p-1:0] branch_metadata_fwd_r;
+logic [reg_data_width_lp-1:0]           mepc_mux_lo;
 
 // Control signals
 logic npc_w_v, btaken_v, redirect_pending, attaboy_pending;
 
-logic [eaddr_width_lp-1:0] br_mux_o, miss_mux_o, exception_mux_o, ret_mux_o;
+logic [eaddr_width_lp-1:0] br_mux_o, roll_mux_o, ret_mux_o;
 
 // Module instantiations
 // Update the NPC on a valid instruction in ex1 or a cache miss
-assign npc_w_v = (calc_status.ex1_v & ~npc_mismatch_v) | (calc_status.mem3_cache_miss_v);
+assign npc_w_v = (calc_status.ex1_v & ~npc_mismatch_v) 
+                 | (calc_status.mem3_cache_miss_v)
+                 | (calc_status.mem3_exception_v)
+                 | (calc_status.mem3_ret_v);
 bsg_dff_reset_en 
  #(.width_p(eaddr_width_lp)
    ,.reset_val_p(pc_entry_point_lp)     
@@ -140,8 +153,8 @@ bsg_mux
    ,.els_p(2)   
    )
  exception_mux
-  (.data_i({ret_mux_o, miss_mux_o})
-   ,.sel_i(calc_status.mem3_exception_v)
+  (.data_i({ret_mux_o, roll_mux_o})
+   ,.sel_i(calc_status.mem3_exception_v | calc_status.mem3_ret_v)
    ,.data_o(npc_n)
    );
 
@@ -149,10 +162,10 @@ bsg_mux
  #(.width_p(eaddr_width_lp)
    ,.els_p(2)
    )
- miss_mux
+ roll_mux
   (.data_i({calc_status.mem3_pc, br_mux_o})
    ,.sel_i(calc_status.mem3_cache_miss_v)
-   ,.data_o(miss_mux_o)
+   ,.data_o(roll_mux_o)
    );
 
 assign npc_plus4 = npc_r + eaddr_width_lp'(4);
@@ -172,20 +185,9 @@ bsg_mux
    ,.els_p(2)
    )
  ret_mux
-  (.data_i()
+  (.data_i({mepc_o, mtvec_o})
    ,.sel_i(calc_status.mem3_ret_v)
    ,.data_o(ret_mux_o)
-   );
-
-// Save branch prediction metadata for forwarding on the next (mis)predicted instruction
-bsg_dff_en
- #(.width_p(branch_metadata_fwd_width_p)
-   ) 
- branch_metadata_fwd_reg
-  (.clk_i(clk_i)
-   ,.en_i(calc_status.ex1_v)
-   ,.data_i(calc_status.int1_branch_metadata_fwd)
-   ,.data_o(branch_metadata_fwd_r)
    );
 
 // A redirect is pending until the correct instruction has been fetched. Otherwise, we'll 
@@ -214,6 +216,36 @@ bsg_dff_reset_en
    ,.data_o(attaboy_pending)
    );
 
+bsg_dff_en
+ #(.width_p(reg_data_width_lp))
+ mtvec_csr_reg
+  (.clk_i(clk_i)
+   ,.en_i(mtvec_w_v_i)
+
+   ,.data_i(mtvec_i)
+   ,.data_o(mtvec_o)
+   );
+
+bsg_dff_en
+ #(.width_p(reg_data_width_lp))
+ mepc_csr_reg
+  (.clk_i(clk_i)
+   ,.en_i(mepc_w_v_i | calc_status.mem3_exception_v)
+
+   ,.data_i(mepc_mux_lo)
+   ,.data_o(mepc_o)
+   );
+
+bsg_mux
+ #(.width_p(reg_data_width_lp)
+   ,.els_p(2)
+   )
+ mepc_mux
+  (.data_i({calc_status.mem3_pc, mepc_i})
+   ,.sel_i(calc_status.mem3_exception_v)
+   ,.data_o(mepc_mux_lo)
+   );
+
 // Generate control signals
 assign expected_npc_o = npc_r;
 // Increment the checkpoint if there's a committing instruction
@@ -235,9 +267,7 @@ always_comb
         fe_cmd.opcode                                   = e_op_pc_redirection;
         fe_cmd_pc_redirect_operands.pc                  = expected_npc_o;
         fe_cmd_pc_redirect_operands.subopcode           = e_subop_branch_mispredict;
-        fe_cmd_pc_redirect_operands.branch_metadata_fwd = calc_status.ex1_v 
-                                                          ? calc_status.int1_branch_metadata_fwd
-                                                          : branch_metadata_fwd_r;
+        fe_cmd_pc_redirect_operands.branch_metadata_fwd =  calc_status.int1_branch_metadata_fwd;
 
         fe_cmd_pc_redirect_operands.misprediction_reason = calc_status.int1_br_or_jmp 
                                                            ? e_incorrect_prediction 
@@ -252,9 +282,7 @@ always_comb
       begin : attaboy
         fe_cmd.opcode                      = e_op_attaboy;
         fe_cmd_attaboy.pc                  = calc_status.ex1_pc;
-        fe_cmd_attaboy.branch_metadata_fwd = calc_status.ex1_v 
-                                             ? calc_status.int1_branch_metadata_fwd
-                                             : branch_metadata_fwd_r;
+        fe_cmd_attaboy.branch_metadata_fwd = calc_status.int1_branch_metadata_fwd;
 
         fe_cmd.operands.attaboy = fe_cmd_attaboy;
 
