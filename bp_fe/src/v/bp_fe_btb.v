@@ -60,7 +60,7 @@ bsg_mem_1rw_sync
    ,.reset_i(reset_i)
    ,.data_i(branch_target_i)
    ,.addr_i(addr)
-   ,.v_i(1'b1) 
+   ,.v_i(w_v_i || r_v_i) 
    ,.w_i(w_v_i)
    ,.data_o(branch_target_o)
    );

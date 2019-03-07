@@ -19,6 +19,7 @@ module bp_fe_branch_predictor
 
    , input                                           attaboy_i
    , input                                           r_v_i
+   , input                                           btb_r_v_i
    , input                                           w_v_i
    , input [eaddr_width_p-1:0]                       pc_queue_i
    , input [eaddr_width_p-1:0]                       pc_cmd_i
@@ -83,7 +84,7 @@ bp_fe_btb
    ,.idx_r_i(pc_queue_i[btb_indx_width_p-1:0])
    ,.idx_w_i(branch_metadata_i.btb_indx)
     
-   ,.r_v_i(r_v_i)
+   ,.r_v_i(btb_r_v_i)
    ,.w_v_i(w_v_i)
     
    ,.branch_target_i(pc_cmd_i)
