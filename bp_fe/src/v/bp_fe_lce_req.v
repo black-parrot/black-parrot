@@ -33,10 +33,7 @@ module bp_fe_lce_req
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
 
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
-    , localparam cce_id_width_lp=`BSG_SAFE_CLOG2(num_cce_p)
     , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
-    , localparam block_size_in_words_lp=ways_p
-    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
     , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                            ,num_lce_p
                                                            ,lce_addr_width_p
@@ -69,12 +66,16 @@ module bp_fe_lce_req
     , input                                    lce_resp_yumi_i
    );
 
+  localparam cce_id_width_lp=`BSG_SAFE_CLOG2(num_cce_p);
+  localparam block_size_in_words_lp=ways_p;
+  localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp);
+   
   bp_fe_lce_req_state_e                   state_r, state_n;
-  logic [lce_addr_width_p-1:0]                miss_addr_r, miss_addr_n;
-  logic                                       tr_received_r, tr_received_n, tr_received;
-  logic                                       cce_data_received_r, cce_data_received_n, cce_data_received;
-  logic                                       tag_set_r, tag_set_n, tag_set;
-  logic [way_id_width_lp-1:0]                      lru_way_r, lru_way_n;
+  logic [lce_addr_width_p-1:0]            miss_addr_r, miss_addr_n;
+  logic                                   tr_received_r, tr_received_n, tr_received;
+  logic                                   cce_data_received_r, cce_data_received_n, cce_data_received;
+  logic                                   tag_set_r, tag_set_n, tag_set;
+  logic [way_id_width_lp-1:0]             lru_way_r, lru_way_n;
 
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, lce_addr_width_p);
   bp_lce_cce_resp_s lce_resp_lo;

@@ -29,13 +29,6 @@ module bp_fe_lce_data_cmd
     , parameter num_lce_p="inv"
     , parameter sets_p="inv"
     , parameter ways_p="inv"
-    , localparam block_size_in_words_lp=ways_p
-    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
-    , parameter data_mask_width_lp=(data_width_p>>3)
-    , parameter byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
-
-    , parameter index_width_lp=`BSG_SAFE_CLOG2(sets_p)
-
     , parameter bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
                                                                         ,num_lce_p
                                                                         ,lce_addr_width_p
@@ -58,6 +51,13 @@ module bp_fe_lce_data_cmd
     , input                                                      data_mem_pkt_yumi_i
    );
 
+  localparam block_size_in_words_lp=ways_p; 
+  localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp);
+  localparam data_mask_width_lp=(data_width_p>>3);  
+  localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp); 
+  localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p);
+   
+									       
   `declare_bp_cce_lce_data_cmd_s(num_cce_p, num_lce_p, lce_addr_width_p, lce_data_width_p, ways_p);
   bp_cce_lce_data_cmd_s lce_data_cmd_li;
   assign lce_data_cmd_li = lce_data_cmd_i;

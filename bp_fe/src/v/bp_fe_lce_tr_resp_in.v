@@ -28,11 +28,11 @@ module bp_fe_lce_tr_resp_in
     , parameter ways_p="inv"
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
-    , localparam block_size_in_words_lp=ways_p
-    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
-    , parameter data_mask_width_lp=(data_width_p>>3)
-    , parameter index_width_lp=`BSG_SAFE_CLOG2(sets_p)
-    , parameter byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
+   // , localparam block_size_in_words_lp=ways_p
+   // , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
+   // , parameter data_mask_width_lp=(data_width_p>>3)
+   // , parameter index_width_lp=`BSG_SAFE_CLOG2(sets_p)
+   // , parameter byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
 
     , parameter bp_fe_icache_lce_data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(sets_p
                                                                                             ,ways_p
@@ -55,6 +55,14 @@ module bp_fe_lce_tr_resp_in
     , output logic [bp_fe_icache_lce_data_mem_pkt_width_lp-1:0]  data_mem_pkt_o
     , input                                                      data_mem_pkt_yumi_i
    );
+
+   
+  localparam block_size_in_words_lp=ways_p;
+  localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp);
+  localparam data_mask_width_lp=(data_width_p>>3); 
+  localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p);
+  localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp);
+   
 
   `declare_bp_lce_lce_tr_resp_s(num_lce_p, lce_addr_width_p, lce_data_width_p, ways_p);
   bp_lce_lce_tr_resp_s lce_tr_resp_li;
