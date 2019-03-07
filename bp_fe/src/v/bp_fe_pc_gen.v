@@ -88,12 +88,29 @@ bp_fe_exception_s        pc_gen_exception;
 bp_fe_instr_scan_s       scan_instr;
    
    
-// save last pc
-logic [eaddr_width_p-1:0]       icache_miss_pc;
-logic [eaddr_width_p-1:0]       last_pc;
-logic [eaddr_width_p-1:0]       pc;
-logic [eaddr_width_p-1:0]       next_pc;
-logic [eaddr_width_p-1:0]       pc_redirect;
+// pipeline pc's
+logic [eaddr_width_p-1:0]       pc_f2;
+logic                           pc_v_f2;
+logic [eaddr_width_p-1:0]       pc_f1;
+// pc_v_f1 is not a pipeline register, because the squash needs to be 
+// done in the same cycle as when we know the instruction in f2 is
+// a branch
+logic                           pc_v_f1;
+logic [eaddr_width_p-1:0]       pc_n;
+
+logic                           stall;
+
+//branch prediction wires
+logic                           is_br;
+logic                           is_jal;
+logic [eaddr_width_p-1:0]       br_target;
+logic                           is_back_br;
+logic                           predict_taken;
+
+// icache miss recovery wires
+logic                           icache_miss_recover;
+logic                           icache_miss_prev;
+
 
 logic [eaddr_width_p-1:0]       btb_target;
 logic [instr_width_p-1:0]       next_instr;
@@ -135,104 +152,86 @@ always_comb
     pc_gen_fetch.padding             = '0;
     pc_gen_exception.padding         = '0;
     pc_gen_queue.msg                 = (pc_gen_queue.msg_type == e_fe_fetch) ? pc_gen_fetch : pc_gen_exception;
-    pc_gen_icache.virt_addr          = pc;
-    pc_gen_itlb.virt_addr            = pc;
+    pc_gen_icache.virt_addr          = pc_n;
+    pc_gen_itlb.virt_addr            = pc_n;
   end
    
 //valid-ready signals assignments
 always_comb 
-  begin
-    if (reset_i) 
-      begin
-        pc_gen_fe_v_o     = 1'b0;
-        fe_pc_gen_ready_o = 1'b0;
-        pc_gen_icache_v_o = 1'b0;
-      end 
-    else 
-      begin
-        fe_pc_gen_ready_o = fe_pc_gen_v_i;
-        pc_gen_fe_v_o     = pc_gen_fe_ready_i && icache_pc_gen_v_i && ~icache_miss_i;
-        pc_gen_icache_v_o = pc_gen_fe_ready_i && ~icache_miss_i;
-      end
-  end
-
-   
-//next_pc
-always_comb begin
-  if (icache_miss_i) 
+begin
+  if (reset_i) 
     begin
-      next_pc = icache_miss_pc;
-    end
-  else if (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) 
-    begin
-      next_pc = fe_pc_gen_cmd.pc;
-    end
-  else if (prediction_on_p && predict && icache_pc_gen_v_i && (scan_instr.instr_scan_class == e_rvi_jalr)) 
-    begin
-      next_pc = btb_target;
-    end
-  else if (prediction_on_p && predict && icache_pc_gen_v_i && (scan_instr.instr_scan_class == e_rvi_branch))
-    begin
-      next_pc = icache_pc_gen.addr + scan_instr.imm; 
-    end
-  else if (icache_pc_gen_v_i && (scan_instr.instr_scan_class == e_rvi_jal))
-    begin
-       next_pc = icache_pc_gen.addr + scan_instr.imm;
-    end
+      pc_gen_fe_v_o     = 1'b0;
+      fe_pc_gen_ready_o = 1'b0;
+      pc_gen_icache_v_o = 1'b0;
+    end 
   else 
-    begin 
-      next_pc = pc + 4;
+    begin
+      fe_pc_gen_ready_o = ~stall & fe_pc_gen_v_i;
+      pc_gen_fe_v_o     = pc_gen_fe_ready_i & icache_pc_gen_v_i & ~icache_miss_i & pc_v_f2;
+      pc_gen_icache_v_o = pc_gen_fe_ready_i && ~icache_miss_i;
     end
-end 
+end
 
-   
-always_ff @(posedge clk_i) 
-  begin
-    if (reset_i) 
-      begin
-       pc <= bp_first_pc_p;
-      end
-    else if (stalled_pc_redirect && icache_miss_i) 
-      begin
-        pc                  <= pc_redirect;
-        last_pc             <= pc;
-        icache_miss_pc      <= last_pc;
-      end 
-      else if (pc_gen_icache_ready_i && pc_gen_fe_ready_i) 
-        begin
-          pc                  <= next_pc;
-          last_pc             <= pc;
-          icache_miss_pc      <= last_pc;
-        end 
-      else if (icache_miss_i && ~pc_gen_icache_ready_i) 
-        begin
-          pc             <= icache_miss_pc;
-          last_pc        <= pc;
-          icache_miss_pc <= last_pc;
-        end
-  end
+assign pc_v_f1 = ~predict_taken;
 
-// PC redirect register
-always_ff @(posedge clk_i) 
-  begin
-    if (fe_pc_gen_v_i && fe_pc_gen_cmd.pc_redirect_valid) 
-      begin
-        pc_redirect <= fe_pc_gen_cmd.pc;
-      end
-  end
+// stall logic
+assign stall = ~pc_gen_fe_ready_i | ~pc_gen_icache_ready_i | icache_miss_i;
 
-//Keep track of stalled PC_redirect due to icache miss (icache is not ready). 
-wire stalled_pc_redirect_n = (fe_pc_gen_v_i & fe_pc_gen_cmd.pc_redirect_valid)
-                             | (stalled_pc_redirect & (pc_gen_fetch.pc != pc_redirect))
-                             | (stalled_pc_redirect & (pc_gen_fetch.pc == pc_redirect) & ~pc_gen_fe_v_o);
-
-always_ff @(posedge clk_i) 
-  begin
+assign icache_miss_recover = icache_miss_prev & (~icache_miss_i);
+// imiss recover logic
+always_ff @(posedge clk_i)
+begin
     if (reset_i)
-      stalled_pc_redirect <= 1'b0;
+    begin
+        icache_miss_prev <= '0;
+    end
     else
-      stalled_pc_redirect <= stalled_pc_redirect_n;
-  end
+    begin
+        icache_miss_prev <= icache_miss_i;
+    end
+end
+
+always_comb
+begin
+    // if we need to redirect
+    if (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) begin
+        pc_n = fe_pc_gen_cmd.pc;
+    end
+    // if we've missed in the icache
+    else if (icache_miss_recover)
+    begin
+        pc_n = pc_f2;
+    end
+    else if (predict_taken)
+    begin
+        pc_n = br_target;
+    end
+    else
+    begin
+        pc_n = pc_f1 + 4;
+    end
+end
+
+always_ff @(posedge clk_i)
+begin
+    if (reset_i) 
+    begin
+        pc_f2 <= '0;
+        pc_v_f2 <= '0;
+        pc_f1 <= '0;
+    end
+    else 
+    begin
+        if (~stall)
+        begin
+            pc_f2 <= pc_f1;
+            pc_v_f2 <= pc_v_f1;
+
+            pc_f1 <= pc_n;
+        end
+    end
+end
   
 
 instr_scan 
@@ -244,57 +243,10 @@ instr_scan
      ,.scan_o(scan_instr)
     );
 
-assign bht_r_v_branch_jalr_inst = icache_pc_gen_v_i && (scan_instr.instr_scan_class == e_rvi_jalr
-                                                      ||scan_instr.instr_scan_class == e_rvi_branch);
-   
-//select among 2 available branch predictor implementations
-generate
-  if (branch_predictor_p) 
-    begin //select bht_btb implementation for branch predictor
-      bp_fe_branch_predictor 
-        #(.eaddr_width_p(eaddr_width_p)
-          ,.btb_indx_width_p(btb_indx_width_p)
-          ,.bht_indx_width_p(bht_indx_width_p)
-          ,.ras_addr_width_p(ras_addr_width_p)
-          ) 
-        branch_prediction_1 
-         (.clk_i(clk_i)
-          ,.reset_i(reset_i)
-          ,.attaboy_i(fe_pc_gen_cmd.attaboy_valid)
-          ,.r_v_i(/*~fe_pc_gen_v_i*/bht_r_v_branch_jalr_inst)
-          ,.w_v_i(fe_pc_gen_v_i)
-          ,.pc_queue_i(/*pc*/icache_pc_gen.addr)
-          ,.pc_cmd_i(fe_pc_gen_cmd.pc)
-          ,.pc_fwd_i(icache_pc_gen.addr)
-          ,.branch_metadata_fwd_i(fe_pc_gen_cmd.branch_metadata_fwd)
-          ,.predict_o(predict)
-          ,.pc_o(btb_target)
-          ,.branch_metadata_fwd_o(branch_metadata_fwd_o)
-          );
-    end 
-  else 
-    begin //seselct Pc+4 as branch predictor
-      branch_prediction_pc_plus_4 
-       #(.eaddr_width_p(eaddr_width_p)
-         ,.btb_indx_width_p(btb_indx_width_p)
-         ,.bht_indx_width_p(bht_indx_width_p)
-         ,.ras_addr_width_p(ras_addr_width_p)
-        ) 
-       branch_prediction_1 
-        (.clk_i(clk_i)
-         ,.reset_i(reset_i)
-         ,.attaboy_i(fe_pc_gen_cmd.attaboy_valid)
-         ,.r_v_i(/*~fe_pc_gen_v_i*/branch_inst)
-         ,.w_v_i(fe_pc_gen_v_i)
-         ,.pc_queue_i(/*pc*/icache_pc_gen.addr)
-         ,.pc_cmd_i(fe_pc_gen_cmd.pc)
-         ,.pc_fwd_i(icache_pc_gen.addr)
-         ,.branch_metadata_fwd_i(fe_pc_gen_cmd.branch_metadata_fwd)
-         ,.predict_o(predict)
-         ,.pc_o(btb_target)
-         ,.branch_metadata_fwd_o(branch_metadata_fwd_o)
-         );
-    end
-  endgenerate
+assign is_br = icache_pc_gen_v_i & (scan_instr.instr_scan_class == e_rvi_branch);
+assign is_jal = icache_pc_gen_v_i & (scan_instr.instr_scan_class == e_rvi_jal);
+assign br_target = icache_pc_gen.addr + scan_instr.imm; 
+assign is_back_br = scan_instr.imm[63];
+assign predict_taken = ((is_br & is_back_br) | (is_jal)) & icache_pc_gen_v_i;
 
 endmodule
