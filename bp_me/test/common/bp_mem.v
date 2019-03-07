@@ -72,6 +72,7 @@ module bp_mem
   bsg_mem_1rw_sync
     #(.width_p(block_size_in_bits_lp)
       ,.els_p(mem_els_p)
+      ,.enable_clock_gating_p(1'b1) // Gating enabled!
     ) mem
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

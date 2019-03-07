@@ -113,6 +113,7 @@ module bp_cce_dir
   bsg_mem_1rw_sync_mask_write_bit
     #(.width_p(way_group_width_lp)
       ,.els_p(num_way_groups_p)
+      ,.enable_clock_gating_p(1'b1) // Gating enabled! 
       )
     wg_ram
      (
