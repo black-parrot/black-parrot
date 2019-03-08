@@ -13,7 +13,7 @@ DUT_PARAMS=-pvalue+core_els_p=1                        \
            -pvalue+num_lce_p=1                         \
            -pvalue+lce_sets_p=64                       \
            -pvalue+cce_block_size_in_bytes_p=64        \
-           -pvalue+lce_assoc_p=8
+           -pvalue+lce_assoc_p=8                       \
 
 HDL_PARAMS=$(DUT_PARAMS) $(TB_PARAMS)
 

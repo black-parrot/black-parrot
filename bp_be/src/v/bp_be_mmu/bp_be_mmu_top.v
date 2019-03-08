@@ -105,7 +105,7 @@ module bp_be_mmu_top
    , localparam lce_id_width_lp = `BSG_SAFE_CLOG2(num_lce_p)
 
    // MMU                                                              
-   , localparam mmu_cmd_width_lp  = `bp_be_mmu_cmd_width
+   , localparam mmu_cmd_width_lp  = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam mmu_resp_width_lp = `bp_be_mmu_resp_width
    , localparam vtag_width_lp     = `bp_be_vtag_width(vaddr_width_p
                                                       , lce_sets_p
@@ -159,7 +159,7 @@ module bp_be_mmu_top
    , input                                 mmu_cmd_v_i
    , output                                mmu_cmd_ready_o
 
-   , input                                 chk_psn_ex_i
+   , input                                 chk_poison_ex_i
 
    , output [mmu_resp_width_lp-1:0]        mmu_resp_o
    , output                                mmu_resp_v_o
@@ -208,9 +208,14 @@ module bp_be_mmu_top
 // Cast input and output ports 
 bp_be_mmu_cmd_s        mmu_cmd;
 bp_be_mmu_resp_s       mmu_resp;
+bp_be_mmu_vaddr_s      mmu_cmd_vaddr;
 
 assign mmu_cmd    = mmu_cmd_i;
 assign mmu_resp_o = mmu_resp;
+
+// TODO: This struct is not working properly (mismatched widths in synth). Figure out why.
+//         This cast works, though
+assign mmu_cmd_vaddr = mmu_cmd.vaddr;
 
 /* Internal connections */
 logic tlb_miss;
@@ -226,7 +231,7 @@ assign unused0 = mmu_resp_ready_i;
 // Passthrough TLB conversion
 always_ff @(posedge clk_i) 
   begin
-    ptag_r <= mmu_cmd.vaddr.tag;
+    ptag_r <= ptag_width_lp'(mmu_cmd_vaddr.tag);
   end
 
 bp_be_dcache 
@@ -254,7 +259,7 @@ bp_be_dcache
     ,.ptag_i(ptag_r)
 
     ,.cache_miss_o(dcache_miss_v)
-    ,.poison_i(chk_psn_ex_i)
+    ,.poison_i(chk_poison_ex_i)
 
     // LCE-CCE interface
     ,.lce_req_o(lce_req_o)
@@ -291,7 +296,7 @@ bp_be_dcache
 always_comb 
   begin
     dcache_pkt.opcode      = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
-    dcache_pkt.page_offset = {mmu_cmd.vaddr.index, mmu_cmd.vaddr.offset};
+    dcache_pkt.page_offset = {mmu_cmd_vaddr.index, mmu_cmd_vaddr.offset};
     dcache_pkt.data        = mmu_cmd.data;
 
     mmu_resp.exception.cache_miss_v = dcache_miss_v;
