@@ -143,6 +143,7 @@ module bp_coherence_network
       ,.num_dst_p(num_lce_p)
       ,.debug_p(debug_p)
       ,.repeater_output_p(repeater_output_lp)
+      ,.enable_clock_gating_p(1'b1) // Gating enabled! 
       )
     cce_lce_cmd_network
      (.clk_i(clk_i)
@@ -164,6 +165,7 @@ module bp_coherence_network
       ,.num_dst_p(num_lce_p)
       ,.debug_p(debug_p)
       ,.repeater_output_p(repeater_output_lp)
+      ,.enable_clock_gating_p(1'b1) // Gating enabled! 
       )
     cce_lce_data_cmd_network
      (.clk_i(clk_i)
@@ -185,6 +187,7 @@ module bp_coherence_network
       ,.num_dst_p(num_cce_p)
       ,.debug_p(debug_p)
       ,.repeater_output_p(repeater_output_lp)
+      ,.enable_clock_gating_p(1'b1) // Gating enabled! 
       )
     lce_cce_req_network
      (.clk_i(clk_i)
@@ -206,6 +209,7 @@ module bp_coherence_network
       ,.num_dst_p(num_cce_p)
       ,.debug_p(debug_p)
       ,.repeater_output_p(repeater_output_lp)
+      ,.enable_clock_gating_p(1'b1) // Gating enabled! 
       )
     lce_cce_resp_network
      (.clk_i(clk_i)
@@ -227,6 +231,7 @@ module bp_coherence_network
       ,.num_dst_p(num_cce_p)
       ,.debug_p(debug_p)
       ,.repeater_output_p(repeater_output_lp)
+      ,.enable_clock_gating_p(1'b1) // Gating enabled! 
       )
     lce_cce_data_resp_network
      (.clk_i(clk_i)
@@ -248,6 +253,7 @@ module bp_coherence_network
       ,.num_dst_p(num_lce_p)
       ,.debug_p(debug_p)
       ,.repeater_output_p(repeater_output_lp)
+      ,.enable_clock_gating_p(1'b1) // Gating enabled! 
       )
     lce_lce_tr_resp_network
      (.clk_i(clk_i)

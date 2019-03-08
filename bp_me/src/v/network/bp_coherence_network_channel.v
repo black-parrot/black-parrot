@@ -31,6 +31,7 @@ module bp_coherence_network_channel
   #(parameter packet_width_p        = "inv"
     , parameter num_src_p           = "inv"
     , parameter num_dst_p           = "inv"
+    , parameter enable_clock_gating_p = 1'b0 // Default to clock gating off
 
     // Default parameters
     , parameter debug_p             = 0
@@ -143,6 +144,7 @@ module bp_coherence_network_channel
             ,.allow_S_to_EW_p(1)
             ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
             ,.repeater_output_p(repeater_output_p)
+            ,.enable_clock_gating_p(enable_clock_gating_p)
             )
           coherence_network_channel_node
            (.clk_i(clk_i)
@@ -168,6 +170,7 @@ module bp_coherence_network_channel
             ,.allow_S_to_EW_p(1)
             ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
             ,.repeater_output_p(repeater_output_p)
+            ,.enable_clock_gating_p(enable_clock_gating_p)
             )
           coherence_network_channel_node
            (.clk_i(clk_i)
@@ -200,6 +203,7 @@ module bp_coherence_network_channel
             ,.allow_S_to_EW_p(1)
             ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
             ,.repeater_output_p(repeater_output_p)
+            ,.enable_clock_gating_p(enable_clock_gating_p)
             )
           coherence_network_channel_node
            (.clk_i(clk_i)
@@ -230,6 +234,7 @@ module bp_coherence_network_channel
             ,.allow_S_to_EW_p(1)
             ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
             ,.repeater_output_p(repeater_output_p)
+            ,.enable_clock_gating_p(enable_clock_gating_p)
             )
           coherence_network_channel_node
            (.clk_i(clk_i)
@@ -257,6 +262,7 @@ module bp_coherence_network_channel
             ,.allow_S_to_EW_p(1)
             ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
             ,.repeater_output_p(repeater_output_p)
+            ,.enable_clock_gating_p(enable_clock_gating_p)
             )
           coherence_network_channel_node
            (.clk_i(clk_i)
@@ -289,6 +295,7 @@ module bp_coherence_network_channel
             ,.allow_S_to_EW_p(1)
             ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
             ,.repeater_output_p(repeater_output_p)
+            ,.enable_clock_gating_p(enable_clock_gating_p)
             )
           coherence_network_channel_node
            (.clk_i(clk_i)
@@ -319,6 +326,7 @@ module bp_coherence_network_channel
             ,.allow_S_to_EW_p(1)
             ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
             ,.repeater_output_p(repeater_output_p)
+            ,.enable_clock_gating_p(enable_clock_gating_p)
             )
           coherence_network_channel_node
            (.clk_i(clk_i)
@@ -354,6 +362,7 @@ module bp_coherence_network_channel
             ,.allow_S_to_EW_p(1)
             ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
             ,.repeater_output_p(repeater_output_p)
+            ,.enable_clock_gating_p(enable_clock_gating_p)
             )
           coherence_network_channel_node
            (.clk_i(clk_i)
