@@ -35,4 +35,8 @@
 
 [submodule "external/verilator"]
 	path = external/verilator
-	url = http://git.veripool.org/git/verilator
+  url = http://git.veripool.org/git/verilator
+  branch = master
+  ignore = dirty
+  shallow = true
+

@@ -173,7 +173,7 @@ always_ff @(posedge clk_i) begin
                         $finish();
                     end else if(cmt_trace_stage_reg.instr_operands.rs1
                                 +cmt_trace_stage_reg.instr_operands.imm==64'h8FFF_FFFF) begin
-                        $display("[CORE%0x PRT] %d"
+                        $display("[CORE%0x PRT] %x"
                                  ,proc_cfg.mhartid
                                  ,cmt_trace_stage_reg.instr_operands.rs2[0+:8]
                                  );

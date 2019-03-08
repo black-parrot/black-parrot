@@ -56,7 +56,7 @@ _emu:
 
     # Decode the faulting instruction
     add a0, x0, t0
-    add a2, x0, t1
+    add a1, x0, t1
     jal decode_illegal
 
     # Return address is the instruction after MEPC
