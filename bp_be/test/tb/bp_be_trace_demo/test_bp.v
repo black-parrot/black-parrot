@@ -29,7 +29,6 @@ module test_bp
    , parameter trace_rom_addr_width_p   = "inv"
    );
 
-
 logic clk, reset;
 
 bsg_nonsynth_clock_gen 

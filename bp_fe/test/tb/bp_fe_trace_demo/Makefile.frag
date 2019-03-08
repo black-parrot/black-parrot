@@ -23,5 +23,7 @@ TB_PARAMS= \
            -pvalue+mem_els_p=512                  \
            -pvalue+trace_rom_addr_width_p=32
 
-HDL_PARAMS = $(DUT_PARAMS) $(TB_PARAMS)
+HDL_DEFINES = +define+BSG_CORE_CLOCK_PERIOD=10
+
+HDL_PARAMS = $(DUT_PARAMS) $(TB_PARAMS) $(HDL_DEFINES)
 

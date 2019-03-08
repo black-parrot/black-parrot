@@ -1,6 +1,6 @@
 ## Setup CAD tools
 # TODO: Change to your export own VCS license variables
-#include $(BSG_CADENV_DIR)/cadenv.mk
+include $(BSG_CADENV_DIR)/cadenv.mk
 
 ## Tool specific options
 VCS_OPTIONS += +vcs+finish+5000000ps    # Change this to run longer / shorter
@@ -10,7 +10,18 @@ VCS_OPTIONS += +v2k -sverilog -debug_pp  # Enable
 VCS_OPTIONS += +libext+.v+.vlib+.vh      # Find library files with these extensions
 VCS_OPTIONS += +vcs+vcdpluson            # Enable vcd dump
 
-LINT_OPTIONS +=+lint=all,noSVA-UA,noSVA-NSVU,noVCDE
+
+# VCS coverage options
+COVERAGE =
+VCS_COV_OPTIONS =
+VCS_COV_RUN_OPTIONS =
+
+
+VCS_OPTIONS += $(VCS_COV_OPTIONS)
+
+include $(BP_TOP_DIR)/syn/Makefile.coverage
+
+LINT_OPTIONS +=+lint=all,noSVA-UA,noVCDE,noSVA-NSVU
 
 TEST_ROM  ?= bp_example_rom.v
 TRACE_ROM ?= bp_example_rom.tr.v
@@ -30,7 +41,7 @@ lint.v: $(HDL_SOURCE)
 
 %.run.v: %.build.v
 	$(eval include $(TB_PATH)/$*/Makefile.frag)
-	$(TB_PATH)/$*/simv \
+	$(TB_PATH)/$*/simv $(VCS_COV_RUN_OPTIONS)\
 	  | tee $(TB_PATH)/$*/$(basename $(notdir $(TEST_ROM)))_simout.txt
 
 %.clean.v:

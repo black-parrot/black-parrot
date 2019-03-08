@@ -116,12 +116,13 @@ module bp_be_dcache_lce_req
     assign lce_req.dst_id = miss_addr_r[block_offset_width_lp+:cce_id_width_lp];
   end
 
+  assign missed = load_miss_i | store_miss_i;
+  assign tr_received = tr_received_r | tr_received_i;
+  assign cce_data_received = cce_data_received_r | cce_data_received_i;
+  assign tag_set = tag_set_r | tag_set_i;
+
   always_comb begin
     cache_miss_o = 1'b0;
-
-    cache_miss_o = 1'b0;
-
-    missed = load_miss_i | store_miss_i;
 
     state_n = state_r;
     load_not_store_n = load_not_store_r;
@@ -133,9 +134,6 @@ module bp_be_dcache_lce_req
     tr_received_n = tr_received_r;
     cce_data_received_n = cce_data_received_r;
     tag_set_n = tag_set_r;
-    tr_received = tr_received_r | tr_received_i;
-    cce_data_received = cce_data_received_r | cce_data_received_i;
-    tag_set = tag_set_r | tag_set_i;
 
     lce_req_v_o = 1'b0;
     lce_req.src_id = (lce_id_width_lp)'(lce_id_i);
@@ -152,7 +150,7 @@ module bp_be_dcache_lce_req
     lce_resp.addr = miss_addr_r;
     lce_resp.msg_type = e_lce_cce_tr_ack;
 
-    case (state_r)
+    unique case (state_r)
       // READY
       // wait for the cache miss.
       e_lce_req_state_ready: begin
@@ -222,9 +220,10 @@ module bp_be_dcache_lce_req
           ? e_lce_req_state_ready
           : e_lce_req_state_send_coh_ack;
       end
-
+      
+      // we should never get in this state, but if we do, return to ready.
       default: begin
-
+        state_n = e_lce_req_state_ready;
       end
     endcase
   end

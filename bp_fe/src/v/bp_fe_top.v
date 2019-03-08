@@ -148,7 +148,6 @@ localparam ppn_start_bit_lp=index_width_lp+word_offset_width_lp+lg_lce_assoc_lp;
 `declare_bp_fe_icache_pc_gen_s(eaddr_width_lp);
 // itlb to cache
 `declare_bp_fe_itlb_icache_data_resp_s(tag_width_lp);
-
    
 // fe to be
 bp_fe_queue_s                 bp_fe_queue;
@@ -330,13 +329,13 @@ icache
    ,.lce_data_cmd_v_i(lce_data_cmd_v_i)
    ,.lce_data_cmd_ready_o(lce_data_cmd_ready_o)
          
-   ,.lce_tr_resp_i(lce_lce_tr_resp_i)
-   ,.lce_tr_resp_v_i(lce_lce_tr_resp_v_i)
-   ,.lce_tr_resp_ready_o(lce_lce_tr_resp_ready_o)               
+   ,.lce_tr_resp_i(lce_tr_resp_i)
+   ,.lce_tr_resp_v_i(lce_tr_resp_v_i)
+   ,.lce_tr_resp_ready_o(lce_tr_resp_ready_o)               
          
-   ,.lce_tr_resp_o(lce_lce_tr_resp_o)
-   ,.lce_tr_resp_v_o(lce_lce_tr_resp_v_o)
-   ,.lce_tr_resp_ready_i(lce_lce_tr_resp_ready_i)
+   ,.lce_tr_resp_o(lce_tr_resp_o)
+   ,.lce_tr_resp_v_o(lce_tr_resp_v_o)
+   ,.lce_tr_resp_ready_i(lce_tr_resp_ready_i)
          
    ,.cache_miss_o(cache_miss)
    ,.poison_i(poison)

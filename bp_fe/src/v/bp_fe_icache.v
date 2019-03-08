@@ -145,6 +145,7 @@ module icache
 
  );
 
+
   logic [index_width_lp-1:0]            vaddr_index;
   // Suppress unused signal warnings
   wire unused0 = icache_pc_gen_data_ready_i;

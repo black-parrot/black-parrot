@@ -1,29 +1,15 @@
-# README #
+# make & view coverage reports
+##### 1. To monitor coverage, include `COVERAGE=VCS` option during simulation.
+For instance:
+```
+    $ make TEST_ROM=median_rom.v TRACE_ROM=median_rom.tr.v COVERAGE=VCS bp_single_trace_demo.run.v
+```
+##### 2. To generate coverage reports, run the following command:
+```
+    $ make COVERAGE=VCS urg
+```
+This command will generate reports in both html and txt format.
+You can view reports in `bp_top/syn/coverage_reports` folder.
 
-This README would normally document whatever steps are necessary to get your application up and running.
-
-### What is this repository for? ###
-
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
-
-### How do I get set up? ###
-
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
-
-### Contribution guidelines ###
-
-* Writing tests
-* Code review
-* Other guidelines
-
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact
+##### 3. Editing signal and module coverage of Coverage reports
+In file `coverage.hier`, I specify signals excluded from coveage report.

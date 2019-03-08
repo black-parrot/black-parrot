@@ -21,6 +21,10 @@ clean:
 	rm -rf *vpd
 	rm -rf *simv
 	rm -rf *simv.daidir
+	rm -rf *.log
+	rm -rf coverage
+	rm -rf coverage_reports
+	rm -rf coverage_vdb
 
 include $(SYN_PATH)/Makefile.vcs
 

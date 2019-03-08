@@ -167,8 +167,7 @@ typedef struct packed
 
 `define bp_fe_pc_gen_itlb_width(eaddr_width_mp) (eaddr_width_mp)
 
-`define bp_fe_instr_scan_width (1+`bp_fe_instr_scan_class_width)
-//`define bp_fe_instr_scan_width (1+`bp_fe_instr_scan_class_width+bp_eaddr_width_gp)
+`define bp_fe_instr_scan_width (1+`bp_fe_instr_scan_class_width+bp_eaddr_width_gp)
 
 `define bp_fe_branch_metadata_fwd_width(btb_idx_width_mp,bht_idx_width_mp,ras_addr_width_mp) \
   (btb_idx_width_mp+bht_idx_width_mp+ras_addr_width_mp)

@@ -19,9 +19,6 @@ module bp_cce_top
     , parameter block_size_in_bytes_p   = "inv"
     , parameter num_cce_inst_ram_els_p  = "inv"
 
-    // Default parameters
-    , parameter harden_p                = 0
-
     // Derived parameters
     , localparam block_size_in_bits_lp  = (block_size_in_bytes_p*8)
     , localparam lg_num_cce_lp          = `BSG_SAFE_CLOG2(num_cce_p)
@@ -146,7 +143,6 @@ module bp_cce_top
   // Inbound LCE to CCE
   bsg_two_fifo
     #(.width_p(bp_lce_cce_req_width_lp)
-      ,.ready_THEN_valid_p(1) // ready-then-valid
       )
     lce_cce_req_fifo
      (.clk_i(clk_i)
@@ -161,7 +157,6 @@ module bp_cce_top
 
   bsg_two_fifo
     #(.width_p(bp_lce_cce_resp_width_lp)
-      ,.ready_THEN_valid_p(1) // ready-then-valid
       )
     lce_cce_resp_fifo
      (.clk_i(clk_i)
@@ -176,7 +171,6 @@ module bp_cce_top
 
   bsg_two_fifo
     #(.width_p(bp_lce_cce_data_resp_width_lp)
-      ,.ready_THEN_valid_p(1) // ready-then-valid
       )
     lce_cce_data_resp_fifo
      (.clk_i(clk_i)
@@ -192,7 +186,6 @@ module bp_cce_top
   // Inbound Mem to CCE
   bsg_two_fifo
     #(.width_p(bp_mem_cce_resp_width_lp)
-      ,.ready_THEN_valid_p(1) // ready-then-valid
       )
     mem_cce_resp_fifo
      (.clk_i(clk_i)
@@ -207,7 +200,6 @@ module bp_cce_top
 
   bsg_two_fifo
     #(.width_p(bp_mem_cce_data_resp_width_lp)
-      ,.ready_THEN_valid_p(1) // ready-then-valid
       )
     mem_cce_data_resp_fifo
      (.clk_i(clk_i)
@@ -224,7 +216,6 @@ module bp_cce_top
   // Outbound CCE to Mem
   bsg_two_fifo
     #(.width_p(bp_cce_mem_cmd_width_lp)
-      ,.ready_THEN_valid_p(1) // ready-then-valid
       )
     cce_mem_cmd_fifo
      (.clk_i(clk_i)
@@ -239,7 +230,6 @@ module bp_cce_top
 
   bsg_two_fifo
     #(.width_p(bp_cce_mem_data_cmd_width_lp)
-      ,.ready_THEN_valid_p(1) // ready-then-valid
       )
     cce_mem_data_cmd_fifo
      (.clk_i(clk_i)

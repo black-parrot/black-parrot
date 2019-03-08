@@ -17,7 +17,13 @@ DUT_PARAMS=-pvalue+num_cce_p=1                         \
            -pvalue+boot_rom_els_p=512                  \
            -pvalue+boot_rom_width_p=512                
 
-HDL_PARAMS=$(DUT_PARAMS) $(TB_PARAMS)
+
+HDL_DEFINES=+define+BSG_CORE_CLOCK_PERIOD=10
+
+HDL_PARAMS=$(DUT_PARAMS) $(TB_PARAMS) $(HDL_DEFINES)
+
+
+TOP_MODULE=testbench
 
 TOP_MODULE=testbench
 
