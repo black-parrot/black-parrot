@@ -74,7 +74,7 @@ module bp_fe_top
    , parameter asid_width_p="inv"
    , parameter bp_first_pc_p="inv"
    , localparam instr_scan_width_lp=`bp_fe_instr_scan_width
-   , localparam branch_metadata_fwd_width_lp=btb_indx_width_p+bht_indx_width_p+ras_addr_width_p
+   , localparam branch_metadata_fwd_width_lp=eaddr_width_p-2+bht_indx_width_p+ras_addr_width_p
    , localparam bp_fe_pc_gen_itlb_width_lp=`bp_fe_pc_gen_itlb_width(eaddr_width_p)
    , localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p
                                                                 ,branch_metadata_fwd_width_lp

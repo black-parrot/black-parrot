@@ -8,6 +8,7 @@
 
 module bp_fe_branch_predictor
  import bp_fe_pkg::*;
+ import bp_be_rv64_pkg::*;
  #(parameter eaddr_width_p="inv"
    , parameter btb_indx_width_p="inv"
    , parameter bht_indx_width_p="inv"
