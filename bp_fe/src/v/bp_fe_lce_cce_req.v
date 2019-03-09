@@ -20,19 +20,20 @@
 
 
 module bp_fe_lce_req
+  import bp_common_pkg::*;
   import bp_fe_icache_pkg::*;
   #(parameter data_width_p="inv"
     , parameter lce_addr_width_p="inv"
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
-    , parameter lce_sets_p="inv"
+    , parameter icache_sets_p="inv"
     , parameter ways_p="inv"
     , parameter block_size_in_bytes_p="inv"
 
     , parameter data_mask_width_lp=(data_width_p>>3)
     , parameter lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
 
-    , parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
+    , parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(icache_sets_p)
     , parameter lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
     , parameter lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
     , localparam lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
@@ -177,7 +178,10 @@ module bp_fe_lce_req
         lce_resp_lo.msg_type = e_lce_cce_coh_ack;
         state_n                  = lce_resp_yumi_i ? e_lce_req_ready : e_lce_req_send_coh_ack;
       end
-    
+
+      default: begin
+
+      end
     endcase
   end
 

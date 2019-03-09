@@ -20,20 +20,21 @@ y *
 
 
 module bp_fe_lce_data_cmd
+  import bp_common_pkg::*;
   import bp_fe_icache_pkg::*;
   #(parameter data_width_p="inv"
     , parameter lce_addr_width_p="inv"
     , parameter lce_data_width_p="inv"
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
-    , parameter lce_sets_p="inv"
+    , parameter icache_sets_p="inv"
     , parameter ways_p="inv"
     , parameter block_size_in_bytes_p="inv"
 
     , parameter data_mask_width_lp=(data_width_p>>3)
     , parameter lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
 
-    , parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
+    , parameter lg_lce_sets_lp=`BSG_SAFE_CLOG2(icache_sets_p)
     , parameter lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
     , parameter lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
 
@@ -43,7 +44,7 @@ module bp_fe_lce_data_cmd
                                                                         ,lce_data_width_p
                                                                         ,ways_p
                                                                        )
-    , parameter bp_fe_icache_lce_data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(lce_sets_p
+    , parameter bp_fe_icache_lce_data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(icache_sets_p
                                                                                             ,ways_p
                                                                                             ,lce_data_width_p
                                                                                            )
@@ -63,7 +64,7 @@ module bp_fe_lce_data_cmd
   bp_cce_lce_data_cmd_s lce_data_cmd_li;
   assign lce_data_cmd_li = lce_data_cmd_i;
    
-  `declare_bp_fe_icache_lce_data_mem_pkt_s(lce_sets_p, ways_p, lce_data_width_p);
+  `declare_bp_fe_icache_lce_data_mem_pkt_s(icache_sets_p, ways_p, lce_data_width_p);
   bp_fe_icache_lce_data_mem_pkt_s data_mem_pkt_lo;
   assign data_mem_pkt_o = data_mem_pkt_lo;
 
