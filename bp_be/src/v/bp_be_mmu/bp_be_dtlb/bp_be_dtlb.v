@@ -88,7 +88,7 @@ bsg_dff_reset_en #(.width_p(vtag_width_p))
    ,.data_o(miss_vtag_o)
   );
   
-bp_plru #(.ways_p(els_p))
+bp_be_dtlb_replacement #(.ways_p(els_p))
   plru
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -99,9 +99,11 @@ bp_plru #(.ways_p(els_p))
    ,.way_o(victim_addr)
   ); 
   
-bp_tlb_cam 
+bsg_cam_1r1w 
   #(.els_p(els_p)
     ,.width_p(vtag_width_p)
+	,.multiple_entries_p(0)
+	,.find_empty_entry_p(1)
   )
   vtag_cam
   (.clk_i(clk_i)
@@ -109,6 +111,7 @@ bp_tlb_cam
    ,.en_i(en_i)
    
    ,.w_v_i(w_v_i)
+   ,.w_set_not_clear_i(1'b1)
    ,.w_addr_i(cam_w_addr)
    ,.w_data_i(w_vtag_i)
   
