@@ -290,10 +290,7 @@ module bp_be_dcache
   logic [tag_width_lp-1:0] addr_tag_tv;
   logic [index_width_lp-1:0] addr_index_tv;
   logic [word_offset_width_lp-1:0] addr_word_offset_tv;
-
-  logic [ways_p-1:0] load_hit_tv_r;
   logic [ways_p-1:0] load_hit_tl;
-  logic [ways_p-1:0] store_hit_tv_r;
   logic [ways_p-1:0] store_hit_tl;
 
   assign tv_we = v_tl_r & ~poison_i & ~tlb_miss_i;
@@ -301,12 +298,6 @@ module bp_be_dcache
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       v_tv_r <= 1'b0;
-      store_hit_tv_r <= '0; 
-      load_hit_tv_r <= '0;
-      load_hit_bit_r <= '0;
-      store_hit_bit_r <= '0;
-      load_hit_way_r <= '0;
-      store_hit_way_r <= '0;
     end
     else begin
       v_tv_r <= tv_we;
@@ -320,12 +311,8 @@ module bp_be_dcache
         byte_op_tv_r <= byte_op_tl_r;
         paddr_tv_r <= {ptag_i, page_offset_tl_r};
         tag_info_tv_r <= tag_mem_data_lo;
-        store_hit_tv_r <= store_hit_tl; 
-        load_hit_tv_r <= load_hit_tl; 
         load_hit_bit_r <= load_hit_bit_tl;
-        store_hit_bit_r <= store_hit_bit_tl;
         load_hit_way_r <= load_hit_way_tl;
-        store_hit_way_r <= store_hit_way_tl;
       end
 
       if (tv_we & load_op_tl_r) begin
@@ -333,6 +320,8 @@ module bp_be_dcache
       end
 
       if (tv_we & store_op_tl_r) begin
+        store_hit_way_r <= store_hit_way_tl;
+        store_hit_bit_r <= store_hit_bit_tl;	 
         data_tv_r <= data_tl_r;
       end
     end
@@ -914,11 +903,11 @@ module bp_be_dcache
   end
 
   always_ff @ (negedge clk_i) begin
-    if (v_tv_r) begin
-      assert($countones(load_hit_tv_r) <= 1)
-        else $error("multiple load hit: %b. id = %0d", load_hit_tv_r, lce_id_i);
-      assert($countones(store_hit_tv_r) <= 1)
-        else $error("multiple store hit: %b. id = %0d", store_hit_tv_r, lce_id_i);
+    if (tv_we) begin
+      assert($countones(load_hit_tl) <= 1)
+        else $error("multiple load hit: %b. id = %0d", load_hit_tl, lce_id_i);
+      assert($countones(store_hit_tl) <= 1)
+        else $error("multiple store hit: %b. id = %0d", store_hit_tl, lce_id_i);
     end
   end
 
