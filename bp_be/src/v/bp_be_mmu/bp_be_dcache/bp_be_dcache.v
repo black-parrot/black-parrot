@@ -183,10 +183,10 @@ module bp_be_dcache
   logic [data_width_p-1:0] data_tl_r;
   logic [paddr_width_p-1:0] paddr_tl;
   logic [tag_width_lp-1:0] addr_tag_tl;
-  logic load_hit;
-  logic store_hit;
-  logic [way_id_width_lp-1:0] load_hit_way;
-  logic [way_id_width_lp-1:0] store_hit_way;
+  logic load_hit_bit_r;
+  logic store_hit_bit_r;
+  logic [way_id_width_lp-1:0] load_hit_way_r;
+  logic [way_id_width_lp-1:0] store_hit_way_r;
   logic load_hit_bit_tl;
   logic store_hit_bit_tl;
   logic [way_id_width_lp-1:0] load_hit_way_tl;
@@ -291,9 +291,9 @@ module bp_be_dcache
   logic [index_width_lp-1:0] addr_index_tv;
   logic [word_offset_width_lp-1:0] addr_word_offset_tv;
 
-  logic [ways_p-1:0] load_hit_tv;
+  logic [ways_p-1:0] load_hit_tv_r;
   logic [ways_p-1:0] load_hit_tl;
-  logic [ways_p-1:0] store_hit_tv;
+  logic [ways_p-1:0] store_hit_tv_r;
   logic [ways_p-1:0] store_hit_tl;
 
   assign tv_we = v_tl_r & ~poison_i & ~tlb_miss_i;
@@ -301,21 +301,21 @@ module bp_be_dcache
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       v_tv_r <= 1'b0;
-      store_hit_tv <= '0; 
-      load_hit_tv <= '0;
-      load_hit <= '0;
-      store_hit <= '0;
-      load_hit_way <= '0;
-      store_hit_way <= '0;
+      store_hit_tv_r <= '0; 
+      load_hit_tv_r <= '0;
+      load_hit_bit_r <= '0;
+      store_hit_bit_r <= '0;
+      load_hit_way_r <= '0;
+      store_hit_way_r <= '0;
     end
     else begin
       v_tv_r <= tv_we;
-      store_hit_tv <= store_hit_tl; 
-      load_hit_tv <= load_hit_tl; 
-      load_hit <= load_hit_bit_tl;
-      store_hit <= store_hit_bit_tl;
-      load_hit_way <= load_hit_way_tl;
-      store_hit_way <= store_hit_way_tl;
+      store_hit_tv_r <= store_hit_tl; 
+      load_hit_tv_r <= load_hit_tl; 
+      load_hit_bit_r <= load_hit_bit_tl;
+      store_hit_bit_r <= store_hit_bit_tl;
+      load_hit_way_r <= load_hit_way_tl;
+      store_hit_way_r <= store_hit_way_tl;
       if (tv_we) begin
         load_op_tv_r <= load_op_tl_r;
         store_op_tv_r <= store_op_tl_r;
@@ -378,8 +378,8 @@ module bp_be_dcache
       ,.addr_o(store_hit_way_tl)
       );
 
-  assign load_miss_tv = ~load_hit & v_tv_r & load_op_tv_r;
-  assign store_miss_tv = ~store_hit & v_tv_r & store_op_tv_r;
+  assign load_miss_tv = ~load_hit_bit_r & v_tv_r & load_op_tv_r;
+  assign store_miss_tv = ~store_hit_bit_r & v_tv_r & store_op_tv_r;
 
 
   // write buffer
@@ -440,7 +440,7 @@ module bp_be_dcache
   assign wbuf_entry_out_index = wbuf_entry_out.paddr[block_offset_width_lp+:index_width_lp];
 
   assign wbuf_entry_in.paddr = paddr_tv_r;
-  assign wbuf_entry_in.way_id = store_hit_way;
+  assign wbuf_entry_in.way_id = store_hit_way_r;
 
   if (data_width_p == 64) begin
     assign wbuf_entry_in.data = double_op_tv_r
@@ -620,7 +620,7 @@ module bp_be_dcache
       )
     ld_data_set_select_mux
       (.data_i(ld_data_tv_r)
-      ,.sel_i(load_hit_way ^ addr_word_offset_tv)
+      ,.sel_i(load_hit_way_r ^ addr_word_offset_tv)
       ,.data_o(ld_data_way_picked)
       );
 
@@ -816,8 +816,8 @@ module bp_be_dcache
 
   always_comb begin
     if (v_tv_r) begin
-      lru_decode_way_li = store_op_tv_r ? store_hit_way : load_hit_way;
-      dirty_mask_way_li = store_hit_way;
+      lru_decode_way_li = store_op_tv_r ? store_hit_way_r : load_hit_way_r;
+      dirty_mask_way_li = store_hit_way_r;
       dirty_mask_v_li = store_op_tv_r;
       
       stat_mem_data_li.lru = lru_decode_data_lo;
@@ -855,7 +855,7 @@ module bp_be_dcache
 
   // write buffer
   //
-  assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit;
+  assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_bit_r;
   assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we);
   assign bypass_v_li = tv_we & load_op_tl_r;
   assign lce_snoop_index_li = lce_data_mem_pkt.index;
@@ -915,10 +915,10 @@ module bp_be_dcache
 
   always_ff @ (negedge clk_i) begin
     if (v_tv_r) begin
-      assert($countones(load_hit_tv) <= 1)
-        else $error("multiple load hit: %b. id = %0d", load_hit_tv, lce_id_i);
-      assert($countones(store_hit_tv) <= 1)
-        else $error("multiple store hit: %b. id = %0d", store_hit_tv, lce_id_i);
+      assert($countones(load_hit_tv_r) <= 1)
+        else $error("multiple load hit: %b. id = %0d", load_hit_tv_r, lce_id_i);
+      assert($countones(store_hit_tv_r) <= 1)
+        else $error("multiple store hit: %b. id = %0d", store_hit_tv_r, lce_id_i);
     end
   end
 
