@@ -2,7 +2,7 @@
 `ifndef BP_BE_VM_DEFINES_VH
 `define BP_BE_VM_DEFINES_VH
 
-`define declare_bp_sv39_pte_s(ppn0_width_mp, ppn1_width_mp, ppn2_width_mp)                             \
+`define declare_bp_sv39_pte_s(pte_width_mp, ppn_width_mp, pte_offset_width_mp)                             \
   typedef struct packed {                                                                              \
     logic v;                                                                                           \
 	logic r;                                                                                           \
@@ -13,10 +13,10 @@
 	logic a;                                                                                           \
 	logic d;                                                                                           \
 	logic [1:0] rsw;                                                                                   \
-	logic [ppn0_width_mp-1:0] ppn0;                                                                    \
-	logic [ppn1_width_mp-1:0] ppn1;                                                                    \
-	logic [ppn2_width_mp-1:0] ppn2;                                                                    \
-	logic [bp_sv39_pte_width_gp - 10 - ppn0_width_mp - ppn1_width_mp - ppn2_width_mp - 1:0] reserved;  \
+	logic [pte_offset_width_mp-1:0] ppn0;                                                                    \
+	logic [pte_offset_width_mp-1:0] ppn1;                                                                    \
+	logic [ppn_width_mp-2*pte_offset_width_mp-1:0] ppn2;                                                                    \
+	logic [pte_width_mp - 10 - ppn_width_mp - 1:0] reserved;  \
   } bp_sv39_pte_s                                                                                      \
 
   
