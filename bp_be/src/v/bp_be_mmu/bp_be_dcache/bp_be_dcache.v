@@ -310,12 +310,6 @@ module bp_be_dcache
     end
     else begin
       v_tv_r <= tv_we;
-      store_hit_tv_r <= store_hit_tl; 
-      load_hit_tv_r <= load_hit_tl; 
-      load_hit_bit_r <= load_hit_bit_tl;
-      store_hit_bit_r <= store_hit_bit_tl;
-      load_hit_way_r <= load_hit_way_tl;
-      store_hit_way_r <= store_hit_way_tl;
       if (tv_we) begin
         load_op_tv_r <= load_op_tl_r;
         store_op_tv_r <= store_op_tl_r;
@@ -326,6 +320,12 @@ module bp_be_dcache
         byte_op_tv_r <= byte_op_tl_r;
         paddr_tv_r <= {ptag_i, page_offset_tl_r};
         tag_info_tv_r <= tag_mem_data_lo;
+        store_hit_tv_r <= store_hit_tl; 
+        load_hit_tv_r <= load_hit_tl; 
+        load_hit_bit_r <= load_hit_bit_tl;
+        store_hit_bit_r <= store_hit_bit_tl;
+        load_hit_way_r <= load_hit_way_tl;
+        store_hit_way_r <= store_hit_way_tl;
       end
 
       if (tv_we & load_op_tl_r) begin
