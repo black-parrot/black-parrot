@@ -536,8 +536,8 @@ always_comb
     // Slicing the completion pipe for Forwarding information
     for (integer i = 1;i < pipe_stage_els_lp; i++) 
       begin : comp_stage_slice
-        comp_stage_n_slice_iwb_v[i]   = calc_stage_r[i-1].decode.irf_w_v & ~|exc_stage_r[i-1]; 
-        comp_stage_n_slice_fwb_v[i]   = calc_stage_r[i-1].decode.frf_w_v & ~|exc_stage_r[i-1]; 
+        comp_stage_n_slice_iwb_v[i]   = calc_stage_r[i-1].decode.irf_w_v & ~|exc_stage_n[i]; 
+        comp_stage_n_slice_fwb_v[i]   = calc_stage_r[i-1].decode.frf_w_v & ~|exc_stage_n[i]; 
         comp_stage_n_slice_rd_addr[i] = calc_stage_r[i-1].decode.rd_addr;
 
           comp_stage_n_slice_rd[i]    = comp_stage_n[i].result;
