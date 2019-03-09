@@ -143,6 +143,13 @@ always_ff @(posedge clk_i) begin
                              ,cmt_trace_stage_reg.decode.rs1_addr
                              ,cmt_trace_stage_reg.instr_operands.rs1
                              );
+                end else if(cmt_trace_stage_reg.decode.mtval_rw_v) begin
+                    $display("\t\t\top: csr sem: r%d <- mtval {%x} r%d {%x} -> mtval"
+                             ,cmt_trace_stage_reg.decode.rd_addr
+                             ,cmt_trace_result.result
+                             ,cmt_trace_stage_reg.decode.rs1_addr
+                             ,cmt_trace_stage_reg.instr_operands.rs1
+                             );
                 end else if(cmt_trace_stage_reg.decode.ret_v) begin
                     $display("\t\t\top: ret");
                 end else if(cmt_trace_stage_reg.decode.dcache_r_v) begin

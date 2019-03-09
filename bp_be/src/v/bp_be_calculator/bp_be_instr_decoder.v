@@ -239,6 +239,8 @@ always_comb
           decode.pipe_int_v = 1'b1;
         end
       `RV64_SYSTEM_OP : 
+        // TODO: CSR support is extremely fragile right now.  We assume that software does exactly
+        //         what we want it to do. e.g. always R/W, always valid bits, etc.
         begin
           decode.pipe_mem_v = 1'b1;
           unique case (instr[31:20])

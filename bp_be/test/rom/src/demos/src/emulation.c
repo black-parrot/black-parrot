@@ -21,7 +21,18 @@ typedef union {
     uint8_t  rd       : 5;
     uint8_t  opcode   : 7;
   } csr;
+  struct {
+    uint32_t padding : 32;
+    uint8_t  funct7  : 7;
+    uint8_t  rs2     : 5;
+    uint8_t  rs1     : 5;
+    uint8_t  funct3  : 3;
+    uint8_t  rd      : 5;
+    uint8_t  opcode  : 7;
+  } arith;
 } riscv_instr_t;
+
+//uint64_t multiply(
 
 uint8_t get_byte(uint64_t dword, uint8_t byte_idx)
 {
@@ -40,7 +51,7 @@ void print_reg(uint8_t reg, uint64_t dword)
   *print_address_n = reg;
   *print_address_c = ' ';
 
-  for (int i = 0; i < 8; i++)
+  for (int i = 7; i >= 0; i--)
   {
     *print_address_n = get_byte(dword, i);
   }
@@ -51,36 +62,40 @@ void print_reg(uint8_t reg, uint64_t dword)
 
 void decode_illegal(uint64_t *regs, uint64_t instr) 
 {
-  //riscv_instr_t riscv_instr;
+  riscv_instr_t riscv_instr;
+  riscv_instr.bits = instr;
 
-  //riscv_instr.bits = instr;
-  print_reg(0, regs[0]);
-  print_reg(1, regs[1]);
-  print_reg(2, regs[2]);
-  print_reg(3, regs[3]);
-  print_reg(4, regs[4]);
-  print_reg(5, regs[5]);
-  print_reg(6, regs[6]);
-  print_reg(7, regs[7]);
-  print_reg(8, regs[8]);
-  print_reg(9, regs[9]);
-  print_reg(10, regs[10]);
-  print_reg(11, regs[11]);
-  print_reg(12, regs[12]);
-  print_reg(13, regs[13]);
-  print_reg(14, regs[14]);
-  print_reg(15, regs[15]);
-  print_reg(16, regs[16]);
-  print_reg(17, regs[17]);
-  print_reg(18, regs[18]);
+  /*
+  uint8_t rs1_addr, rs2_addr, rd_addr;
+  uint64_t rs1_data, rs2_data, rd_data;
+  __int128 rd_data_128;
 
-/*
-  if (riscv_instr.csr.opcode == 1110011) {
-    switch (riscv_instr.csr
+  rs1_addr = riscv_instr.rs1;
+  rs2_addr = riscv_instr.rs2;
+  rd_addr  = riscv_instr.rd;
+
+  rs1_data = regs[rs1_addr];
+  rs2_data = regs[rs2_addr];
+
+  // M extension
+  if (riscv_instr.arith.opcode == 0b0110011) {
+    switch (riscv_instr.arith.funct3) {
+      case 0b000: rd_data_128 = (int64_t) rs1_data * (int64_t) rs2_data;
+                  rd_data     = (rd_data_128 >>  0) & 0xFFFFFFFFFFFFFFFF;
+                  break;
+      case 0b001: rd_data_128 = (int64_t) rs1_data * (int64_t) rs2_data;
+                  rd_data     = (rd_data_128 >> 64) & 0xFFFFFFFFFFFFFFFF;
+                  break;
+      case 0b010: rd_data_128 = (int64_t) rs1_data * rs2_data;
+                  rd_data     = (rd_data_128 >> 64) & 0xFFFFFFFFFFFFFFFF;
+                  break;
+      case 0b011: rd_data_128 = rs1_data * rs2_data;
+                  rd_data     = (rd_data_128 >>  
+    }
   } else {
     while (1); // Infinite loop because we don't have a 'we messed up' mechanism
   }
-*/
+  */
 
   return;
 }

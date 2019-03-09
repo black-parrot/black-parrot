@@ -562,7 +562,7 @@ bsg_dff_en
  #(.width_p(reg_data_width_lp))
  mtval_csr_reg
   (.clk_i(clk_i)
-   ,.en_i(mtval_w_v_lo | exc_stage_r[2].illegal_instr_v)
+   ,.en_i(mtval_w_v_lo | calc_status.mem3_exception_v)
    ,.data_i(mtval_mux_lo)
    ,.data_o(mtval_li)
    );
@@ -573,7 +573,7 @@ bsg_mux
    )
  mtval_mux
   (.data_i({reg_data_width_lp'(calc_stage_r[2].instr), mtval_lo})
-   ,.sel_i(exc_stage_r[2].illegal_instr_v)
+   ,.sel_i(calc_status.mem3_exception_v)
    ,.data_o(mtval_mux_lo)
    );
 

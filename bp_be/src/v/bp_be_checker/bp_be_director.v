@@ -185,6 +185,9 @@ bsg_mux
    ,.els_p(2)
    )
  ret_mux
+  /* TODO: MTVEC is not actually the 64 bit address, it's a subset of them where the
+   *         last few bits are the vectorization mode 
+   */
   (.data_i({mepc_o, mtvec_o})
    ,.sel_i(calc_status.mem3_ret_v)
    ,.data_o(ret_mux_o)
