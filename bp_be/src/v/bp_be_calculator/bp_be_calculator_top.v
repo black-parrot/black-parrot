@@ -190,6 +190,32 @@ assign decoded_fu_op_o = decoded.fu_op;
 // Handshakes
 assign issue_pkt_ready_o = (chk_dispatch_v_i | ~issue_pkt_v_r) & ~chk_roll_i & ~chk_poison_isd_i;
 
+//Data gating for alu fp mem and multi
+logic pipe_fp_clk_latch, pipe_mem_clk_latch, pipe_mul_clk_latch;
+logic pipe_fp_gclk, pipe_mem_gclk, pipe_mul_gclk;
+
+always @ (decoded.pipe_fp_v or clk_i) begin
+  if (!clk_i) begin
+    pipe_fp_clk_latch = decoded.pipe_fp_v;
+  end
+end
+
+always @ (decoded.pipe_mem_v or clk_i) begin
+  if (!clk_i) begin
+    pipe_mem_clk_latch = decoded.pipe_mem_v;
+  end
+end
+
+always @ (decoded.pipe_mul_v or clk_i) begin
+  if (!clk_i) begin
+    pipe_mul_clk_latch = decoded.pipe_mul_v;
+  end
+end
+
+assign pipe_fp_gclk = pipe_fp_clk_latch && clk_i;
+assign pipe_mem_gclk = pipe_mem_clk_latch && clk_i;
+assign pipe_mul_gclk = pipe_mul_clk_latch && clk_i;
+
 // Module instantiations
 // Register files
 bp_be_regfile
@@ -363,7 +389,7 @@ bp_be_pipe_int
 // Multiplication pipe: 2 cycle latency
 bp_be_pipe_mul
  pipe_mul
-  (.clk_i(clk_i)
+  (.clk_i(pipe_mul_gclk)
    ,.reset_i(reset_i)
 
    ,.decode_i(calc_stage_r[dispatch_point_lp].decode)
@@ -379,7 +405,7 @@ bp_be_pipe_mem
  #(.vaddr_width_p(vaddr_width_p)
    )
  pipe_mem
-  (.clk_i(clk_i)
+  (.clk_i(pipe_mem_gclk)
    ,.reset_i(reset_i)
 
    ,.decode_i(calc_stage_r[dispatch_point_lp].decode)
@@ -403,7 +429,7 @@ bp_be_pipe_mem
 // Floating point pipe: 4 cycle latency
 bp_be_pipe_fp 
  pipe_fp
-  (.clk_i(clk_i)
+  (.clk_i(pipe_fp_gclk)
    ,.reset_i(reset_i)
 
    ,.decode_i(calc_stage_r[dispatch_point_lp].decode)
