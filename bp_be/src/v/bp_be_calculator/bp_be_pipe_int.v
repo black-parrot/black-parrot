@@ -76,12 +76,15 @@ wire unused1 = reset_i;
 // Submodule connections
 logic [reg_data_width_lp-1:0] src1, src2, baddr, alu_result;
 logic [reg_data_width_lp-1:0] pc_plus4, mhartid;
+logic [reg_data_width_lp-1:0] src1_gated, src2_gated;
 
+assign src1_gated = {reg_data_width_lp{decode.pipe_int_v}} & src1;
+assign src2_gated = {reg_data_width_lp{decode.pipe_int_v}} & src2;
 // Perform the actual ALU computation
 bp_be_int_alu 
  alu
-  (.src1_i(src1)
-   ,.src2_i(src2)
+  (.src1_i(src1_gated)
+   ,.src2_i(src2_gated)
    ,.op_i(decode.fu_op)
    ,.opw_v_i(decode.opw_v)
 
