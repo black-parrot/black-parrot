@@ -220,7 +220,6 @@ module bp_be_dcache
   bsg_mem_1rw_sync_mask_write_bit
     #(.width_p(tag_info_width_lp*ways_p)
       ,.els_p(sets_p)
-      ,.enable_clock_gating_p(1'b1)
     )
     tag_mem
       (.clk_i(clk_i)
@@ -246,7 +245,6 @@ module bp_be_dcache
     bsg_mem_1rw_sync_mask_write_byte
       #(.data_width_p(data_width_p)
         ,.els_p(sets_p*ways_p)
-        ,.enable_clock_gating_p(1'b1)
         )
       data_mem
         (.clk_i(clk_i)
@@ -460,7 +458,6 @@ module bp_be_dcache
   bsg_mem_1rw_sync_mask_write_bit
     #(.width_p(stat_info_width_lp)
       ,.els_p(sets_p)
-      ,.enable_clock_gating_p(1'b1)
       )
     stat_mem
       (.clk_i(clk_i)
