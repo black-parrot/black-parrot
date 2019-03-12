@@ -28,20 +28,25 @@ module bp_network_deserializer
 
 
   wire [src_id_width_p-1:0]                 curr_addr = data_i[(source_data_width_p-dest_id_width_p-1)-:src_id_width_p];
-  wire [packet_data_width_p-1:0]            curr_data = data_i[0+:packet_data_width_p]
+  wire [packet_data_width_p-1:0]            curr_data = data_i[0+:packet_data_width_p];
 
   wire [`BSG_SAFE_CLOG2(num_packets_p)-1:0] count_p1 = count[curr_addr] + 1'b1;
 
   wire                                      fifo_en = v_i & (count_p1 == num_packets_p);
 
-  wire [num_packets_p-1:0]                  curr_mask = num_packets_p'b1 << count[curr_addr];
+  wire [num_packets_p-1:0]                  curr_mask = 1'b1 << count[curr_addr];
 
 
   wire [`BSG_SAFE_CLOG2(num_packets_p)-1:0] count_n = ( v_i ? ((count_p1 == num_packets_p) ? '0 : count_p1) : count[curr_addr] );
 
 
   always_ff @ (posedge clk_i) begin
-    if(reset_i) count <= '0;
+    if(reset_i) begin
+      integer i;
+      for(i = 0; i < num_src; i = i + 1) begin
+        count[i] <= '0;
+      end // for(i = 0; i < num_src; i = i + 1)
+    end // if(reset_i)
     else begin
       count[curr_addr] <= count_n;  
     end // else
@@ -50,16 +55,16 @@ module bp_network_deserializer
   wire fifo_vo;
   wire [src_id_width_p-1:0] data_addr_fifo;
 
-  bsg_fifo_1r1w_small queue
-    #(.width_p(src_id_width_p)
-    , .els_p(num_src)
-    , .ready_THEN_valid_p(0)
-    )
+  bsg_fifo_1r1w_small #(.width_p(src_id_width_p)
+                      , .els_p(num_src)
+                      , .ready_THEN_valid_p(0)
+                      )
+    queue
     ( .clk_i(clk_i)
     , .reset_i(reset_i)
 
     , .v_i(fifo_en)
-    , .ready_o(ready_o)
+    , .ready_o()
     , .data_i(curr_addr)
 
     , .v_o(fifo_vo)
@@ -67,12 +72,12 @@ module bp_network_deserializer
     , .yumi_i(yumi_i)
     );
 
-  bsg_mem_1r1w_sync_mask_write_var scratch_pad 
-    #(.width_p(1)
-    , .mask_width_p(packet_data_width_p)
-    , .els_p(num_src)
-    , .harden_p(1'b0)
-    )
+  bsg_mem_1r1w_sync_mask_write_var #(.width_p(1)
+                                   , .mask_width_p(packet_data_width_p)
+                                   , .els_p(num_src)
+                                   , .harden_p(1'b0)
+                                   )
+    scratch_pad
     ( .clk_i(clk_i)
     , .reset_i(reset_i)
     , .w_v_i(v_i)
@@ -87,10 +92,6 @@ module bp_network_deserializer
   always_ff @(posedge clk_i) begin
     v_o <= fifo_vo;
   end
-
-
-
-
 
 endmodule
 

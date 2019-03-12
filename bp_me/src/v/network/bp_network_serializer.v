@@ -15,15 +15,15 @@ module bp_network_serializer
   // Data Input Channel
   , input                           valid_i
   , input [source_data_width_p-1:0] data_i
-  , input                           ready_o
+  , output                          ready_o
   // Data Output Channel
   , output                          valid_o
   , output [total_o_data_width-1:0] data_o
-  , output                          yumi_i
+  , input                           yumi_i
   );
 
 
-  wire corrected_data_in = total_data_width'b{{total_data_width-source_data_width_p{0}},data_i};
+  wire [total_data_width-1:0] corrected_data_in = {{total_data_width-source_data_width_p{1'b0}},data_i};
 
   reg [dest_id_width_p-1:0] dest_id_r;
   reg [src_id_width_p-1:0] src_id_r;
@@ -47,10 +47,10 @@ module bp_network_serializer
 
   assign data_o[(total_o_data_width-1)-:(dest_id_width_p+src_id_width_p)] = {dest_id_r, src_id_r};
 
-  bsg_parallel_in_serial_out serial_me
-    #(.width_p(packet_data_width_p)
-    , .els_p(num_packets_p)
-    )                            
+  bsg_parallel_in_serial_out #(.width_p(packet_data_width_p)
+                             , .els_p(num_packets_p)
+                             ) 
+    serial_me
     ( .clk_i(clk_i)
     , .reset_i(reset_i)
     , .valid_i(valid_i)

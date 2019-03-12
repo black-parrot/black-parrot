@@ -22,15 +22,17 @@ module bp_coherence_network_channel_serialize
   logic [num_src_p-1:0]                   src_v_serial;
   logic [num_src_p-1:0]                   src_ready_serial;
 
+  logic [num_dst_p-1:0][chunk_size_p-1:0] dst_data_serial;
+  logic [num_dst_p-1:0]                   dst_v_serial;
+  logic [num_dst_p-1:0]                   dst_ready_serial;
 
   genvar i;
   for(i = 0; i < num_src_p; i = i + 1) begin : serializers
-    bp_network_serializer 
-    #(.num_dest(num_dst_p)
-    , .num_src(num_src_p)
-    , .source_data_width_p(packet_width_p)
-    , .packet_data_width_p(chunk_size_p)
-    )
+    bp_network_serializer #(.num_dest(num_dst_p)
+                          , .num_src(num_src_p)
+                          , .source_data_width_p(packet_width_p)
+                          , .packet_data_width_p(chunk_size_p)
+                          )
     serialize
     ( .clk_i(clk_i)
     , .reset_i(reset_i)
@@ -45,14 +47,13 @@ module bp_coherence_network_channel_serialize
     );
   end // serializers
 
-  bp_coherence_network_channel
-    #(.packet_width_p(packet_width_p)
-    , .num_src_p(num_src)
-    , .num_dst_p(num_dst)
-    , .debug_p(debug_p)//
-    , .repeater_output_p(repeater_output_lp)//
-    )
-    cce_lce_cmd_network
+  bp_coherence_network_channel #(.packet_width_p(packet_width_p)
+                               , .num_src_p(num_src_p)
+                               , .num_dst_p(num_dst_p)
+                               , .debug_p(debug_p)//
+                               , .repeater_output_p(repeater_output_p)//
+                               )
+    network_channel
     ( .clk_i(clk_i)
     , .reset_i(reset_i)
     // South Port (src)
@@ -65,19 +66,14 @@ module bp_coherence_network_channel_serialize
     , .dst_ready_i(dst_ready_serial)
     );
 
-  logic [num_dst_p-1:0][chunk_size_p-1:0] dst_data_serial
-  logic [num_dst_p-1:0]                   dst_v_serial
-  logic [num_dst_p-1:0]                   dst_ready_serial
-
 
   genvar j;
   for(j = 0; j < num_dst_p; j = j + 1) begin : deserializers
-    bp_network_deserializer 
-    #(.num_dest(num_dest_p)            
-    , .num_src(num_src_p)
-    , .source_data_width_p(packet_width_p) 
-    , .packet_data_width_p(chunk_width_p) 
-    )
+    bp_network_deserializer #(.num_dest(num_dst_p)            
+                            , .num_src(num_src_p)
+                            , .source_data_width_p(packet_width_p) 
+                            , .packet_data_width_p(chunk_size_p) 
+                            )
     to_parallel
     ( .clk_i(clk_i)
     , .reset_i(reset_i)
@@ -87,7 +83,7 @@ module bp_coherence_network_channel_serialize
     , .data_i(dst_ready_serial[j])
 
     , .data_o(dst_data_o[j])
-    , .v_o(dst_valid_o[j])
+    , .v_o(dst_v_o[j])
     , .yumi_i(dst_ready_i[j])
     );
   end // deserializers
