@@ -184,6 +184,8 @@ module bp_be_dcache_lce
   assign tag_mem_pkt_o = tag_mem_pkt;
   assign stat_mem_pkt_o = stat_mem_pkt;
 
+  //enable clockgate? 1 = enable, 0 = disable
+  localparam enable_clkgate = 1'b1;
 
   // LCE_CCE_req
   //
@@ -250,6 +252,7 @@ module bp_be_dcache_lce
   // this two_fifo is needed to convert from valid-yumi to valid-ready interface.
   bsg_two_fifo
     #(.width_p(cce_lce_cmd_width_lp)
+     ,.enable_clock_gating_p(enable_clkgate)
       )
     lce_cmd_fifo 
       (.clk_i(clk_i)
@@ -329,7 +332,9 @@ module bp_be_dcache_lce
 
   // this two_fifo is needed to convert from valid-yumi to valid-ready interface.
   bsg_two_fifo
-    #(.width_p(cce_lce_data_cmd_width_lp))
+    #(.width_p(cce_lce_data_cmd_width_lp)
+     ,.enable_clock_gating_p(enable_clkgate)
+     )
     lce_data_cmd_fifo
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -377,7 +382,9 @@ module bp_be_dcache_lce
 
   // this two_fifo is needed to convert from valid-yumi to valid-ready interface.
   bsg_two_fifo
-    #(.width_p(lce_lce_tr_resp_width_lp))
+    #(.width_p(lce_lce_tr_resp_width_lp)
+     ,.enable_clock_gating_p(enable_clkgate)
+     )
     lce_tr_resp_in_fifo
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
