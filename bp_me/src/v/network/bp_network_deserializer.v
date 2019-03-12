@@ -70,7 +70,7 @@ module bp_network_deserializer
 
     , .v_o(fifo_vo)
     , .data_o(data_addr_fifo)
-    , .yumi_i(yumi_i)
+    , .yumi_i(yumi_i & fifo_vo)
     );
 
   bsg_mem_1r1w_sync_mask_write_var #(.width_p(total_data_width)
