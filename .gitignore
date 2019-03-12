@@ -5,4 +5,4 @@ external/*
 *.log
 setup_env.sh
 run_dc
-top/syn/coverage
+bp_top/syn/coverage
