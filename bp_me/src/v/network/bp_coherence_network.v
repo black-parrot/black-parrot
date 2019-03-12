@@ -158,10 +158,11 @@ module bp_coherence_network
       );
 
   // CCE Data Command Network - (CCE->trans_net->LCE)
-  bp_coherence_network_channel
+  bp_coherence_network_channel_serialize
     #(.packet_width_p(bp_cce_lce_data_cmd_width_lp)
       ,.num_src_p(num_cce_p)
       ,.num_dst_p(num_lce_p)
+      ,.chunk_size_p(64)
       ,.debug_p(debug_p)
       ,.repeater_output_p(repeater_output_lp)
       )
