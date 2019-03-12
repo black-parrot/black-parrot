@@ -59,16 +59,9 @@ module bp_coherence_network
                                                                ,paddr_width_p
                                                                ,lce_assoc_p)
 
-    , localparam bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
-                                                                         ,num_lce_p
-                                                                         ,paddr_width_p
-                                                                         ,block_size_in_bits_lp
-                                                                         ,lce_assoc_p)
-
-    , localparam bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p
-                                                                       ,paddr_width_p
-                                                                       ,block_size_in_bits_lp
-                                                                       ,lce_assoc_p)
+    , localparam bp_lce_data_cmd_width_lp=`bp_lce_data_cmd_width(num_lce_p
+                                                                 ,block_size_in_bits_lp
+                                                                 ,lce_assoc_p)
 
     , localparam repeater_output_lp     = 5'b00000
   )
@@ -87,13 +80,13 @@ module bp_coherence_network
 
    // CCE Data Command Network - (CCE->trans_net->LCE)
    // (LCE side)
-   , output [num_lce_p-1:0][bp_cce_lce_data_cmd_width_lp-1:0]   lce_data_cmd_o
+   , output [num_lce_p-1:0][bp_lce_data_cmd_width_lp-1:0]       lce_data_cmd_o
    , output [num_lce_p-1:0]                                     lce_data_cmd_v_o
    , input  [num_lce_p-1:0]                                     lce_data_cmd_ready_i
    // (CCE side)
-   , input  [num_cce_p-1:0][bp_cce_lce_data_cmd_width_lp-1:0]   lce_data_cmd_i
-   , input  [num_cce_p-1:0]                                     lce_data_cmd_v_i
-   , output [num_cce_p-1:0]                                     lce_data_cmd_ready_o
+   , input  [num_cce_p-1:0][bp_lce_data_cmd_width_lp-1:0]       cce_lce_data_cmd_i
+   , input  [num_cce_p-1:0]                                     cce_lce_data_cmd_v_i
+   , output [num_cce_p-1:0]                                     cce_lce_data_cmd_ready_o
 
    // LCE Request Network - (LCE->trans_net->CCE)
    // (LCE side)
@@ -127,13 +120,9 @@ module bp_coherence_network
 
    // LCE-LCE Transfer Network - (LCE(s)->trans_net->LCE(d))
    // (LCE source side)
-   , input  [num_lce_p-1:0][bp_lce_lce_tr_resp_width_lp-1:0]    lce_tr_resp_i
-   , input  [num_lce_p-1:0]                                     lce_tr_resp_v_i
-   , output [num_lce_p-1:0]                                     lce_tr_resp_ready_o
-   // (LCE dest side)
-   , output [num_lce_p-1:0][bp_lce_lce_tr_resp_width_lp-1:0]    lce_tr_resp_o
-   , output [num_lce_p-1:0]                                     lce_tr_resp_v_o
-   , input  [num_lce_p-1:0]                                     lce_tr_resp_ready_i
+   , input  [num_lce_p-1:0][bp_lce_data_cmd_width_lp-1:0]    lce_lce_data_cmd_i
+   , input  [num_lce_p-1:0]                                  lce_lce_data_cmd_v_i
+   , output [num_lce_p-1:0]                                  lce_lce_data_cmd_ready_o
   );
 
   // CCE Command Network - (CCE->trans_net->LCE)
@@ -155,27 +144,6 @@ module bp_coherence_network
       ,.dst_data_o(lce_cmd_o)
       ,.dst_v_o(lce_cmd_v_o)
       ,.dst_ready_i(lce_cmd_ready_i)
-      );
-
-  // CCE Data Command Network - (CCE->trans_net->LCE)
-  bp_coherence_network_channel
-    #(.packet_width_p(bp_cce_lce_data_cmd_width_lp)
-      ,.num_src_p(num_cce_p)
-      ,.num_dst_p(num_lce_p)
-      ,.debug_p(debug_p)
-      ,.repeater_output_p(repeater_output_lp)
-      )
-    cce_lce_data_cmd_network
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
-      // South Port (src)
-      ,.src_data_i(lce_data_cmd_i)
-      ,.src_v_i(lce_data_cmd_v_i)
-      ,.src_ready_o(lce_data_cmd_ready_o)
-      // Proc Port (dst)
-      ,.dst_data_o(lce_data_cmd_o)
-      ,.dst_v_o(lce_data_cmd_v_o)
-      ,.dst_ready_i(lce_data_cmd_ready_i)
       );
 
   // LCE Request Network - (LCE->trans_net->CCE)
@@ -241,25 +209,28 @@ module bp_coherence_network
       ,.dst_ready_i(lce_data_resp_ready_i)
       );
 
-  // LCE-LCE Transfer Network - (LCE->trans_net->LCE)
-  bp_coherence_network_channel
-    #(.packet_width_p(bp_lce_lce_tr_resp_width_lp)
-      ,.num_src_p(num_lce_p)
-      ,.num_dst_p(num_lce_p)
-      ,.debug_p(debug_p)
-      ,.repeater_output_p(repeater_output_lp)
-      )
-    lce_lce_tr_resp_network
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
-      // South Port (src)
-      ,.src_data_i(lce_tr_resp_i)
-      ,.src_v_i(lce_tr_resp_v_i)
-      ,.src_ready_o(lce_tr_resp_ready_o)
-      // Proc Port (dst)
-      ,.dst_data_o(lce_tr_resp_o)
-      ,.dst_v_o(lce_tr_resp_v_o)
-      ,.dst_ready_i(lce_tr_resp_ready_i)
-      );
+  // LCE data cmd network
+  bp_coherence_network_channel_data_cmd #(
+    .num_lce_p(num_lce_p)
+    ,.num_cce_p(num_cce_p) 
+    ,.block_size_in_bits_p(block_size_in_bits_lp)
+    ,.lce_assoc_p(lce_assoc_p)
+  ) lce_data_cmd_channel (
+    .clk_i(clk_i)
+    ,.reset_i(reset_i)
 
+    ,.lce_data_cmd_o(lce_data_cmd_o)
+    ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
+    ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
+
+    ,.cce_lce_data_cmd_i(cce_lce_data_cmd_i)
+    ,.cce_lce_data_cmd_v_i(cce_lce_data_cmd_v_i)
+    ,.cce_lce_data_cmd_ready_o(cce_lce_data_cmd_ready_o)
+
+    ,.lce_lce_data_cmd_i(lce_lce_data_cmd_i)
+    ,.lce_lce_data_cmd_v_i(lce_lce_data_cmd_v_i)
+    ,.lce_lce_data_cmd_ready_o(lce_lce_data_cmd_ready_o)
+  );
+
+  
 endmodule
