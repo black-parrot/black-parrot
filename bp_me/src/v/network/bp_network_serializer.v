@@ -6,7 +6,7 @@ module bp_network_serializer
   , parameter   packet_data_width_p   = "inv"
   , localparam  dest_id_width_p       = `BSG_SAFE_CLOG2(num_dest)
   , localparam  src_id_width_p        = `BSG_SAFE_CLOG2(num_src)
-  , localparam  num_packets_p         = (source_data_width_p / packet_data_width_p) + 1
+  , localparam  num_packets_p         = (source_data_width_p + packet_data_width_p - 1) / packet_data_width_p
   , localparam  total_data_width      = packet_data_width_p*num_packets_p
   , localparam  total_o_data_width    = packet_data_width_p + dest_id_width_p + src_id_width_p
   )
