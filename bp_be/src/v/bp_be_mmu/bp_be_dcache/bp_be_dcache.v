@@ -148,6 +148,9 @@ module bp_be_dcache
   bp_be_dcache_pkt_s dcache_pkt;
   assign dcache_pkt = dcache_pkt_i;
 
+  //enable clkgate? 1 = enable, 0 = disable
+  localparam enable_clkgate = 1'b1;
+
   logic load_op;
   logic store_op;
   logic signed_op;
@@ -220,6 +223,7 @@ module bp_be_dcache
   bsg_mem_1rw_sync_mask_write_bit
     #(.width_p(tag_info_width_lp*ways_p)
       ,.els_p(sets_p)
+      ,.enable_clock_gating_p(enable_clkgate)
     )
     tag_mem
       (.clk_i(clk_i)
@@ -245,6 +249,7 @@ module bp_be_dcache
     bsg_mem_1rw_sync_mask_write_byte
       #(.data_width_p(data_width_p)
         ,.els_p(sets_p*ways_p)
+        ,.enable_clock_gating_p(enable_clkgate)
         )
       data_mem
         (.clk_i(clk_i)
@@ -458,6 +463,7 @@ module bp_be_dcache
   bsg_mem_1rw_sync_mask_write_bit
     #(.width_p(stat_info_width_lp)
       ,.els_p(sets_p)
+      ,.enable_clock_gating_p(enable_clkgate)
       )
     stat_mem
       (.clk_i(clk_i)
