@@ -27,7 +27,8 @@ module bp_network_deserializer
   logic [`BSG_SAFE_CLOG2(num_packets_p)-1:0] count [num_src-1:0];
 
 
-  wire [src_id_width_p-1:0]                 curr_addr = data_i[(source_data_width_p-dest_id_width_p-1)-:src_id_width_p];
+  wire [src_id_width_p-1:0]                 curr_addr = data_i[(dest_id_width_p-1)-:src_id_width_p];
+
   wire [packet_data_width_p-1:0]            curr_data = data_i[0+:packet_data_width_p];
 
   wire [`BSG_SAFE_CLOG2(num_packets_p)-1:0] count_p1 = count[curr_addr] + 1'b1;
@@ -72,7 +73,7 @@ module bp_network_deserializer
     , .yumi_i(yumi_i)
     );
 
-  bsg_mem_1r1w_sync_mask_write_var #(.width_p(1)
+  bsg_mem_1r1w_sync_mask_write_var #(.width_p(total_data_width)
                                    , .mask_width_p(packet_data_width_p)
                                    , .els_p(num_src)
                                    , .harden_p(1'b0)
@@ -83,7 +84,7 @@ module bp_network_deserializer
     , .w_v_i(v_i)
     , .w_mask_i(curr_mask)
     , .w_addr_i(curr_addr)
-    , .w_data_i(curr_data)
+    , .w_data_i({num_packets_p{curr_data}})
     , .r_v_i(1'b1)
     , .r_addr_i(data_addr_fifo)
     , .r_data_o(data_o)

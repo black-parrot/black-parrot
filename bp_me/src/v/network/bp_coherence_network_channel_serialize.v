@@ -47,7 +47,7 @@ module bp_coherence_network_channel_serialize
     );
   end // serializers
 
-  bp_coherence_network_channel #(.packet_width_p(packet_width_p)
+  bp_coherence_network_channel #(.packet_width_p(chunk_size_p)
                                , .num_src_p(num_src_p)
                                , .num_dst_p(num_dst_p)
                                , .debug_p(debug_p)//
@@ -80,7 +80,7 @@ module bp_coherence_network_channel_serialize
     
     , .v_i(dst_v_serial[j])
     , .ready_o(dst_ready_serial[j])
-    , .data_i(dst_ready_serial[j])
+    , .data_i(dst_data_serial[j])
 
     , .data_o(dst_data_o[j])
     , .v_o(dst_v_o[j])
