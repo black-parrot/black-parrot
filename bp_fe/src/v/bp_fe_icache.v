@@ -200,6 +200,7 @@ module icache
   bsg_mem_1rw_sync_mask_write_bit #(
     .width_p(bp_fe_icache_tag_set_width_lp)
     ,.els_p(lce_sets_p)
+    ,.enable_clock_gating_p(1'b1)
   ) tag_mem (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -235,6 +236,7 @@ module icache
     bsg_mem_1rw_sync_mask_write_byte #(
       .data_width_p(data_width_p)
       ,.els_p(lce_sets_p*ways_p) // same number of blocks and ways
+      ,.enable_clock_gating_p(1'b1)
     ) data_mem_bank (
       .clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -327,6 +329,7 @@ module icache
   bsg_mem_1rw_sync_mask_write_bit #(
     .width_p(bp_fe_icache_metadata_width_lp)
     ,.els_p(lce_sets_p)
+    ,.enable_clock_gating_p(1'b1)
   ) metadata_mem (
     .clk_i(clk_i)
     ,.reset_i(reset_i)

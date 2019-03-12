@@ -228,6 +228,7 @@ module bp_fe_lce
 
   bsg_two_fifo #(
     .width_p(bp_cce_lce_cmd_width_lp)
+    ,.enable_clock_gating_p(1'b1)
   ) lce_cmd_fifo (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -304,6 +305,7 @@ module bp_fe_lce
 
   bsg_two_fifo #(
     .width_p(bp_cce_lce_data_cmd_width_lp)
+    ,.enable_clock_gating_p(1'b1)
   ) lce_data_cmd_fifo (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -347,8 +349,11 @@ module bp_fe_lce
   bp_lce_lce_tr_resp_s lce_tr_resp_in_fifo_data_lo;
   logic lce_tr_resp_in_fifo_yumi_li;
 
+  
+
   bsg_two_fifo #(
     .width_p(bp_lce_lce_tr_resp_width_lp)
+    ,.enable_clock_gating_p(1'b1)
   ) lce_tr_resp_in_fifo (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
