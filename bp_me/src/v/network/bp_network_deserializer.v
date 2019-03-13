@@ -74,9 +74,11 @@ module bp_network_deserializer
     , .yumi_i(yumi_i & fifo_vo)
     );
 
+  wire [total_data_width-1:0] ram_data_out;
+
   bsg_mem_1r1w_sync_mask_write_var #(.width_p(total_data_width)
                                    , .mask_width_p(packet_data_width_p)
-                                   , .els_p(num_src)
+                                   , .els_p(2**`BSG_SAFE_CLOG2(num_src))
                                    , .harden_p(1'b0)
                                    )
     scratch_pad
@@ -88,7 +90,7 @@ module bp_network_deserializer
     , .w_data_i({num_packets_p{curr_data}})
     , .r_v_i(1'b1)
     , .r_addr_i(data_addr_fifo)
-    , .r_data_o(data_o)
+    , .r_data_o(ram_data_out)
     );
 
   always_ff @(posedge clk_i) begin
@@ -96,6 +98,8 @@ module bp_network_deserializer
     fifo_en <= fifo_en_r;
     p_addr <= curr_addr;
   end
+
+  assign data_o = ram_data_out[source_data_width_p-1:0];
 
 endmodule
 
