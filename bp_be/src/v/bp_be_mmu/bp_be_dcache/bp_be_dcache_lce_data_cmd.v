@@ -49,7 +49,7 @@ module bp_be_dcache_lce_data_cmd
 
   // casting structs
   //
-  `declare_bp_cce_lce_data_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_p, ways_p);
+  `declare_bp_lce_data_cmd_s(num_lce_p, lce_data_width_p, ways_p);
   bp_lce_data_cmd_s lce_data_cmd;
 
   assign lce_data_cmd = lce_data_cmd_i;

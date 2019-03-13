@@ -43,11 +43,9 @@ module bp_me_top
                                                                ,paddr_width_p
                                                                ,lce_assoc_p)
 
-    , localparam bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
-                                                                         ,num_lce_p
-                                                                         ,paddr_width_p
-                                                                         ,block_size_in_bits_lp
-                                                                         ,lce_assoc_p)
+    , localparam bp_lce_data_cmd_width_lp=`bp_lce_data_cmd_width(num_lce_p
+                                                                 ,block_size_in_bits_lp
+                                                                 ,lce_assoc_p)
 
     , localparam bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p
                                                                        ,paddr_width_p
@@ -94,18 +92,13 @@ module bp_me_top
    , output logic [num_lce_p-1:0]                                         lce_cmd_v_o
    , input [num_lce_p-1:0]                                                lce_cmd_ready_i
 
-   , output logic [num_lce_p-1:0][bp_cce_lce_data_cmd_width_lp-1:0]       lce_data_cmd_o
+   , output logic [num_lce_p-1:0][bp_lce_data_cmd_width_lp-1:0]           lce_data_cmd_o
    , output logic [num_lce_p-1:0]                                         lce_data_cmd_v_o
    , input [num_lce_p-1:0]                                                lce_data_cmd_ready_i
 
-   // LCE <-> LCE transfer networks
-   , input [num_lce_p-1:0][bp_lce_lce_tr_resp_width_lp-1:0]               lce_tr_resp_i
-   , input [num_lce_p-1:0]                                                lce_tr_resp_v_i
-   , output logic [num_lce_p-1:0]                                         lce_tr_resp_ready_o
-
-   , output logic [num_lce_p-1:0][bp_lce_lce_tr_resp_width_lp-1:0]        lce_tr_resp_o
-   , output logic [num_lce_p-1:0]                                         lce_tr_resp_v_o
-   , input [num_lce_p-1:0]                                                lce_tr_resp_ready_i
+   , input [num_lce_p-1:0][bp_lce_data_cmd_width_lp-1:0]                  lce_data_cmd_i
+   , input [num_lce_p-1:0]                                                lce_data_cmd_v_i
+   , output logic [num_lce_p-1:0]                                         lce_data_cmd_ready_o
 
   // cce inst boot rom
    , output logic [num_cce_p-1:0][inst_ram_addr_width_lp-1:0]       cce_inst_boot_rom_addr_o
@@ -148,7 +141,7 @@ module bp_me_top
   logic [num_cce_p-1:0]                                         lce_cmd_v_o_from_cce;
   logic [num_cce_p-1:0]                                         lce_cmd_ready_i_to_cce;
 
-  logic [num_cce_p-1:0][bp_cce_lce_data_cmd_width_lp-1:0]       lce_data_cmd_o_from_cce;
+  logic [num_cce_p-1:0][bp_lce_data_cmd_width_lp-1:0]           lce_data_cmd_o_from_cce;
   logic [num_cce_p-1:0]                                         lce_data_cmd_v_o_from_cce;
   logic [num_cce_p-1:0]                                         lce_data_cmd_ready_i_to_cce;
 
@@ -180,10 +173,15 @@ module bp_me_top
       ,.lce_data_cmd_o(lce_data_cmd_o)
       ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
       ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
-      // (CCE side)
-      ,.lce_data_cmd_i(lce_data_cmd_o_from_cce)
-      ,.lce_data_cmd_v_i(lce_data_cmd_v_o_from_cce)
-      ,.lce_data_cmd_ready_o(lce_data_cmd_ready_i_to_cce)
+
+      ,.cce_lce_data_cmd_i(lce_data_cmd_o_from_cce)
+      ,.cce_lce_data_cmd_v_i(lce_data_cmd_v_o_from_cce)
+      ,.cce_lce_data_cmd_ready_o(lce_data_cmd_ready_i_to_cce)
+
+      ,.lce_lce_data_cmd_i(lce_data_cmd_i)
+      ,.lce_lce_data_cmd_v_i(lce_data_cmd_v_i)
+      ,.lce_lce_data_cmd_ready_o(lce_data_cmd_ready_o)
+      
 
       // LCE Request Network - (LCE->network->CCE)
       // (LCE side)
@@ -214,16 +212,6 @@ module bp_me_top
       ,.lce_data_resp_o(lce_data_resp_i_to_cce)
       ,.lce_data_resp_v_o(lce_data_resp_v_i_to_cce)
       ,.lce_data_resp_ready_i(lce_data_resp_ready_o_from_cce)
-
-      // LCE-LCE Transfer Network - (LCE(s)->network->LCE(d))
-      // (LCE source side)
-      ,.lce_tr_resp_i(lce_tr_resp_i)
-      ,.lce_tr_resp_v_i(lce_tr_resp_v_i)
-      ,.lce_tr_resp_ready_o(lce_tr_resp_ready_o)
-      // (LCE dest side)
-      ,.lce_tr_resp_o(lce_tr_resp_o)
-      ,.lce_tr_resp_v_o(lce_tr_resp_v_o)
-      ,.lce_tr_resp_ready_i(lce_tr_resp_ready_i)
       );
 
 

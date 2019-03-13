@@ -35,13 +35,13 @@ $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_req.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_cmd.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_data_cmd.v
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_tr.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache.v
 $BP_BE_DIR/src/v/common/bsg_fifo_1r1w_rolly.v
 $BSG_IP_CORES_DIR/bsg_test/bsg_nonsynth_clock_gen.v
 $BSG_IP_CORES_DIR/bsg_test/bsg_nonsynth_reset_gen.v
 $BP_ME_DIR/src/v/network/bp_coherence_network.v
 $BP_ME_DIR/src/v/network/bp_coherence_network_channel.v
+$BP_ME_DIR/src/v/network/bp_coherence_network_channel_data_cmd.v
 $BP_ME_DIR/src/v/cce/bp_cce_top.v
 $BP_ME_DIR/src/v/cce/bp_cce_pc.v
 $BP_ME_DIR/src/v/cce/bp_cce_inst_decode.v
