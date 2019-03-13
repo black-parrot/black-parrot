@@ -92,29 +92,6 @@ logic [reg_addr_width_lp-1:0] rs1_addr_r     , rs2_addr_r;
 logic [reg_addr_width_lp-1:0] rs1_reread_addr, rs2_reread_addr;
 
 // Datapath
-//bsg_mem_2r1w_sync 
-// #(.width_p(reg_data_width_lp)
-//   ,.els_p(rf_els_lp)
-//   ,.read_write_same_addr_p(1) // We can't actually read/write the same address, but this should 
-//                               //   be taken care of by forwarding and otherwise the assertion is
-//                               //   annoying
-//   )
-// rf
-//  (.clk_i(clk_i)
-//  ,.reset_i(reset_i)
-//
-//   ,.w_v_i(rd_w_v_i)
-//   ,.w_addr_i(rd_addr_i)
-//   ,.w_data_i(rd_data_i)
-//
-//   ,.r0_v_i(rs1_read_v)
-//   ,.r0_addr_i(rs1_reread_addr)
-//   ,.r0_data_o(rs1_reg_data)
-//
-//   ,.r1_v_i(rs2_read_v)
-//   ,.r1_addr_i(rs2_reread_addr)
-//   ,.r1_data_o(rs2_reg_data)
-//   );
 
 bsg_mem_1r1w_sync
   #(.width_p(reg_data_width_lp)
