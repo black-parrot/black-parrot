@@ -49,6 +49,7 @@ bsg_mem_1r1w
  #(.width_p(eaddr_width_p)
    ,.els_p(2**bp_fe_pc_gen_btb_idx_width_lp)
    ,.addr_width_lp(bp_fe_pc_gen_btb_idx_width_lp)
+   ,.enable_clock_gating_p(1'b1)
    ) 
  bsg_mem_1rw_sync_synth_1 
   (.w_clk_i(clk_i)
