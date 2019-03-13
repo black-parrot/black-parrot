@@ -212,7 +212,7 @@ logic poison;
 //itlb
 logic [vtag_width_lp-1:0] tlb_miss_vtag;
 logic [63:0]              tlb_miss_vaddr;
-logic 		          tlb_miss_v;
+logic 		          tlb_miss_v, prev_tlb_miss;
    
 // be interfaces
 assign bp_fe_cmd  = fe_cmd_i;
@@ -227,8 +227,12 @@ assign itlb_miss_exception.padding        = '0;
 assign bp_fe_queue.msg_type               = tlb_miss_v ? e_fe_exception : pc_gen_queue.msg_type;
 assign bp_fe_queue.msg                    = tlb_miss_v ? itlb_miss_exception : pc_gen_queue.msg;
 assign pc_gen_fe_ready                    = fe_queue_ready_i;//& ~itlb_miss==>maybe in pc_gen
-assign fe_queue_v_o                       = pc_gen_fe_v || tlb_miss_v;
+assign fe_queue_v_o                       = pc_gen_fe_v || (~prev_tlb_miss && tlb_miss_v);
 
+always_ff @(posedge clk_i)
+  begin
+     prev_tlb_miss <= tlb_miss_v;
+  end
 // fe to pc_gen 
 always_comb
   begin
@@ -373,7 +377,7 @@ bp_fe_itlb
      itlb
           (.clk_i(clk_i)
 	       ,.reset_i(reset_i)
-
+               ,.en_i(1'b1)
 	       ,.r_v_i(pc_gen_itlb_v)
 	       ,.r_vtag_i(itlb_vaddr.tag)
 

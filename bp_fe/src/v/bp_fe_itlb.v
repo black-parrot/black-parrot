@@ -9,7 +9,7 @@ module bp_fe_itlb
  )
  (input                             clk_i
   , input                           reset_i
-  
+  , input                           en_i    
   // Connections to Cache
   , input                           r_v_i
   , input [vtag_width_p-1:0]        r_vtag_i //change it to .vtag right now it receives the lowest bits if you reduce the width to vtag_width_p ==> so change it to pass the exact part of the address which is vtag
@@ -83,7 +83,7 @@ bsg_dff_reset_en #(.width_p(vtag_width_p))
    ,.data_o(miss_vtag_o)
   );
   
-bp_plru #(.ways_p(els_p))
+bp_fe_itlb_replacement #(.ways_p(els_p))
   plru
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -94,15 +94,19 @@ bp_plru #(.ways_p(els_p))
    ,.way_o(victim_addr)
   ); 
   
-bp_tlb_cam 
+bsg_cam_1r1w 
   #(.els_p(els_p)
     ,.width_p(vtag_width_p)
+    ,.multiple_entries_p(0)
+    ,.find_empty_entry_p(1)
   )
   vtag_cam
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   
+   ,.en_i(en_i) 
+  
    ,.w_v_i(w_v_i)
+   ,.w_set_not_clear_i(1'b1)
    ,.w_addr_i(cam_w_addr_i)
    ,.w_data_i(w_vtag_i)
   

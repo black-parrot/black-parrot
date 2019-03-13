@@ -172,7 +172,7 @@ always_comb begin
     begin
       next_pc = last_pc;
     end
-  if (icache_miss_i) 
+  else if (icache_miss_i) 
     begin
       next_pc = icache_miss_pc;
     end
