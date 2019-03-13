@@ -52,6 +52,8 @@ module bp_fe_pc_gen
    , input [bp_fe_pc_gen_width_i_lp-1:0]             fe_pc_gen_i
    , input                                           fe_pc_gen_v_i
    , output logic                                    fe_pc_gen_ready_o
+
+   , input logic                                     tlb_miss_v_i
    );
 
 // Suppress unused signal warnings
@@ -59,7 +61,7 @@ wire unused0 = v_i;
 wire unused1 = pc_gen_itlb_ready_i;
 
 assign icache_pc_gen_ready_o = '0;
-assign pc_gen_itlb_v_o = '0;
+assign pc_gen_itlb_v_o = pc_gen_icache_v_o;
 
 //the first level of structs
 `declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)
@@ -82,7 +84,7 @@ bp_fe_pc_gen_icache_s       pc_gen_icache;
 bp_fe_pc_gen_itlb_s         pc_gen_itlb;
 bp_fe_branch_metadata_fwd_s branch_metadata_fwd_o;
 bp_fe_icache_pc_gen_s       icache_pc_gen;
-
+   
 
    
 //the second level structs instatiations
@@ -158,7 +160,7 @@ always_comb
     else 
       begin
         fe_pc_gen_ready_o = fe_pc_gen_v_i;
-        pc_gen_fe_v_o     = pc_gen_fe_ready_i && icache_pc_gen_v_i && ~icache_miss_i;
+        pc_gen_fe_v_o     = pc_gen_fe_ready_i && icache_pc_gen_v_i && ~icache_miss_i && ~tlb_miss_v_i;
         pc_gen_icache_v_o = pc_gen_fe_ready_i && ~icache_miss_i;
       end
   end
@@ -166,6 +168,10 @@ always_comb
    
 //next_pc
 always_comb begin
+  if(tlb_miss_v_i)
+    begin
+      next_pc = last_pc;
+    end
   if (icache_miss_i) 
     begin
       next_pc = icache_miss_pc;

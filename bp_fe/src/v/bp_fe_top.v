@@ -103,6 +103,8 @@ module bp_fe_top
    , output logic                                     fe_queue_v_o
    , input                                            fe_queue_ready_i
 
+   , output logic [63:0]                              tlb_miss_vaddr_o
+
    , output logic [bp_lce_cce_req_width_lp-1:0]       lce_req_o
    , output logic                                     lce_req_v_o
    , input                                            lce_req_ready_i
@@ -134,7 +136,17 @@ module bp_fe_top
 
 
 //ITLB related parameters
-localparam ppn_start_bit_lp=index_width_lp+word_offset_width_lp+lg_lce_assoc_lp;
+localparam ppn_start_bit_lp=index_width_lp+word_offset_width_lp+lg_lce_assoc_lp;                                                                                                                                                             
+localparam vtag_width_lp=`bp_fe_vtag_width(vaddr_width_p
+                                           ,lce_sets_p
+                                           ,cce_block_size_in_bytes_p
+                                           );
+   
+localparam ptag_width_lp=`bp_fe_ptag_width(paddr_width_p
+                                           ,lce_sets_p
+                                           ,cce_block_size_in_bytes_p
+                                           );
+   
    
 // the first level of structs
 `declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp);   
@@ -144,10 +156,11 @@ localparam ppn_start_bit_lp=index_width_lp+word_offset_width_lp+lg_lce_assoc_lp;
 `declare_bp_fe_pc_gen_icache_s(eaddr_width_lp);
 // pc_gen to itlb
 `declare_bp_fe_pc_gen_itlb_s(eaddr_width_lp);
+`declare_bp_fe_itlb_vaddr_s(vaddr_width_p,lce_sets_p,cce_block_size_in_bytes_p) 
 // icache to pc_gen
 `declare_bp_fe_icache_pc_gen_s(eaddr_width_lp);
 // itlb to cache
-`declare_bp_fe_itlb_icache_data_resp_s(tag_width_lp);
+`declare_bp_fe_itlb_icache_data_resp_s(tag_width_lp);//change to ptag_width_lp
    
 // fe to be
 bp_fe_queue_s                 bp_fe_queue;
@@ -159,6 +172,7 @@ bp_fe_pc_gen_cmd_s            fe_pc_gen;
 bp_fe_pc_gen_icache_s         pc_gen_icache;
 // pc_gen to itlb
 bp_fe_pc_gen_itlb_s           pc_gen_itlb;
+bp_fe_itlb_vaddr_s            itlb_vaddr;   
 // icache to pc_gen
 bp_fe_icache_pc_gen_s         icache_pc_gen;
 // be to fe
@@ -167,6 +181,7 @@ bp_fe_cmd_s                   bp_fe_cmd;
 bp_fe_itlb_cmd_s              fe_itlb_cmd;
 // itlb to fe 
 bp_fe_itlb_queue_s            itlb_fe_queue;
+bp_fe_exception_s             itlb_miss_exception;   
 // itlb to icache
 bp_fe_itlb_icache_data_resp_s itlb_icache;
 
@@ -194,16 +209,25 @@ logic icache_itlb_ready;
 logic cache_miss;
 logic poison;
 
+//itlb
+logic [vtag_width_lp-1:0] tlb_miss_vtag;
+logic [63:0]              tlb_miss_vaddr;
+logic 		          tlb_miss_v;
+   
 // be interfaces
 assign bp_fe_cmd  = fe_cmd_i;
 assign fe_queue_o = bp_fe_queue;
 
-// pc_gen to fe
-assign bp_fe_queue.msg_type = pc_gen_queue.msg_type;
-assign bp_fe_queue.msg      = pc_gen_queue.msg;
-assign pc_gen_fe_ready      = fe_queue_ready_i;
-assign fe_queue_v_o         = pc_gen_fe_v;
-
+// pc_gen/itlb to fe
+assign itlb_miss_exception.vaddr          = tlb_miss_vaddr;
+assign tlb_miss_vaddr_o                   = tlb_miss_vaddr;
+   
+assign itlb_miss_exception.exception_code = e_itlb_miss;
+assign itlb_miss_exception.padding        = '0;   
+assign bp_fe_queue.msg_type               = tlb_miss_v ? e_fe_exception : pc_gen_queue.msg_type;
+assign bp_fe_queue.msg                    = tlb_miss_v ? itlb_miss_exception : pc_gen_queue.msg;
+assign pc_gen_fe_ready                    = fe_queue_ready_i;//& ~itlb_miss==>maybe in pc_gen
+assign fe_queue_v_o                       = pc_gen_fe_v || tlb_miss_v;
 
 // fe to pc_gen 
 always_comb
@@ -227,14 +251,7 @@ always_comb
     fe_pc_gen_v                   = fe_cmd_v_i;
     fe_cmd_ready_o                = fe_pc_gen_ready;
   end
-   
-// fe to itlb
-// itlb does not has the exception functionality yet, thus it does not use the valid/ready signal from backend
-assign fe_itlb_cmd = bp_fe_cmd;
-assign fe_itlb_v   = fe_cmd_v_i;
-
-// itlb to fe
-assign itlb_fe_ready = fe_queue_ready_i;
+     
 
 // icache to icache
 assign poison = cache_miss && bp_fe_cmd.opcode == e_op_icache_fence;
@@ -278,6 +295,8 @@ bp_fe_pc_gen
    ,.fe_pc_gen_i(fe_pc_gen)
    ,.fe_pc_gen_v_i(fe_pc_gen_v)
    ,.fe_pc_gen_ready_o(fe_pc_gen_ready)
+
+   ,.tlb_miss_v_i(tlb_miss_v)
    );
 
    
@@ -308,7 +327,8 @@ icache
    ,.itlb_icache_data_resp_i(itlb_icache)
    ,.itlb_icache_data_resp_v_i(itlb_icache_data_resp_v)
    ,.itlb_icache_data_resp_ready_o(itlb_icache_data_resp_ready)
-         
+   ,.itlb_icache_miss_i(tlb_miss_v /*1'b0*/) 
+  
    ,.lce_req_o(lce_req_o)
    ,.lce_req_v_o(lce_req_v_o)
    ,.lce_req_ready_i(lce_req_ready_i)
@@ -341,8 +361,39 @@ icache
    ,.poison_i(poison)
    );
 
+assign itlb_vaddr=pc_gen_itlb.virt_addr;
    
-itlb 
+bp_fe_itlb
+   #(.vtag_width_p(vtag_width_lp)
+        ,.ptag_width_p(ptag_width_lp)
+        ,.els_p(16)
+        ,.passthrough_tlb(/*1'b1*/ 1'b0)
+        ,.ppn_start_bit_p(ppn_start_bit_lp)
+        )
+     itlb
+          (.clk_i(clk_i)
+	       ,.reset_i(reset_i)
+
+	       ,.r_v_i(pc_gen_itlb_v)
+	       ,.r_vtag_i(itlb_vaddr.tag)
+
+	       ,.vaddr_i(pc_gen_itlb.virt_addr)
+	   
+	       ,.r_v_o(itlb_icache_data_resp_v)
+	       ,.r_ptag_o(itlb_icache.ppn)
+
+	       ,.w_v_i(fe_cmd_v_i && bp_fe_cmd.opcode == e_op_itlb_fill_response)
+	       ,.w_vtag_i(bp_fe_cmd.operands.itlb_fill_response.vaddr[vaddr_width_p-1:ppn_start_bit_lp]/*[vtag_width_lp-1:0]*/ )
+	       ,.w_ptag_i(bp_fe_cmd.operands.itlb_fill_response.pte_entry_leaf.paddr[paddr_width_p-1:ppn_start_bit_lp] /*[ptag_width_lp-1:0]*/)
+
+	       ,.miss_v_o(tlb_miss_v)
+	       ,.miss_vtag_o(tlb_miss_vtag)
+               ,.miss_vaddr(tlb_miss_vaddr)
+	   );
+
+   
+   
+/*itlb 
  #(.vaddr_width_p(vaddr_width_p)
    ,.paddr_width_p(paddr_width_p)
    ,.eaddr_width_p(eaddr_width_lp)
@@ -373,5 +424,5 @@ itlb
    ,.itlb_fe_v_o(itlb_fe_v)
    ,.itlb_fe_ready_i(itlb_fe_ready)
    );
-
+*/
 endmodule

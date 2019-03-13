@@ -78,6 +78,8 @@ module mock_be_trace
     ,input  logic [trace_ring_width_p-1:0]                 trace_data_i
     ,input  logic                                          trace_v_i
     ,output logic                                          trace_yumi_o
+
+    ,input logic [63:0]                                    tlb_miss_vaddr_i
 );
 
 `declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
@@ -88,40 +90,63 @@ module mock_be_trace
 // fe to pc_gen
 `declare_bp_fe_pc_gen_cmd_s(branch_metadata_fwd_width_p);
 
-bp_fe_queue_s                 bp_fe_queue;
-bp_fe_cmd_s                   bp_fe_cmd;
+bp_fe_queue_s                    bp_fe_queue;
+bp_fe_cmd_s                      bp_fe_cmd;
 bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
-
+bp_fe_cmd_itlb_map_s             fe_cmd_itlb_map;
+   
 assign bp_fe_queue = bp_fe_queue_i;
 assign bp_fe_cmd_o = bp_fe_cmd;
 
 bp_proc_cfg_s proc_cfg;
 
 logic chk_psn_ex;
-
+logic prev_trace_v;
+   
 logic [reg_data_width_lp-1:0] next_btarget_r, next_btarget_n;
 
-// cmd block
-always_comb begin : be_cmd_gen
-    bp_fe_cmd_v_o     = bp_fe_queue_v_i & trace_ready_i & (bp_fe_queue.msg.fetch.pc != next_btarget_r);
-    bp_fe_queue_clr_o = bp_fe_cmd_v_o;
+logic 		      tlb_miss;
 
-    bp_fe_cmd.opcode                                 = e_op_pc_redirection;
+assign tlb_miss = (bp_fe_queue.msg_type == e_fe_exception) & bp_fe_queue.msg.exception.exception_code == e_itlb_miss;
+   
+// cmd block
+logic 	      just_for_test;
+logic         just_for_test2;
+logic [63:0] test_pc;
+   
+assign just_for_test  = ((bp_fe_queue.msg.exception.exception_code == e_itlb_miss) & (bp_fe_queue.msg_type == e_fe_exception));
+assign just_for_test2 = (bp_fe_queue.msg.fetch.pc != next_btarget_r) ;   
+
+always_comb begin : be_cmd_gen
+    //bp_fe_cmd_v_o     = bp_fe_queue_v_i & trace_ready_i & prev_trace_v & ((bp_fe_queue.msg.fetch.pc != next_btarget_r) | just_for_test);
+    bp_fe_cmd_v_o  = bp_fe_queue_v_i & trace_ready_i & (bp_fe_queue.msg.fetch.pc != next_btarget_r);
+    bp_fe_queue_clr_o = bp_fe_cmd_v_o;
+    bp_fe_cmd.opcode                                 = tlb_miss ? e_op_itlb_fill_response : e_op_pc_redirection;
     fe_cmd_pc_redirect_operands.pc                   = next_btarget_r;
     fe_cmd_pc_redirect_operands.subopcode            = e_subop_branch_mispredict;
     fe_cmd_pc_redirect_operands.branch_metadata_fwd  = '0;    
     fe_cmd_pc_redirect_operands.misprediction_reason = e_incorrect_prediction;
 
+   fe_cmd_itlb_map.vaddr = tlb_miss_vaddr_i; //bp_fe_queue.msg.exception.vaddr;
+   fe_cmd_itlb_map.pte_entry_leaf.paddr = tlb_miss_vaddr_i;
+ //bp_fe_queue.msg.exception.vaddr;
+
+   if(~tlb_miss)
     bp_fe_cmd.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
+   else
+    bp_fe_cmd.operands.itlb_fill_response = fe_cmd_itlb_map;
 end
 
-
+//assign bp_fe_cmd.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
+   
 assign trace_yumi_o = trace_v_i;
 always_ff @(posedge clk_i) begin
   if (reset_i) begin
     next_btarget_r <= '0;
+    prev_trace_v   <= '0; 
   end else begin
     next_btarget_r <= next_btarget_n;
+    prev_trace_v   <= trace_v_i; 
   end
 end
 
