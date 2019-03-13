@@ -244,10 +244,11 @@ module bp_coherence_network
       );
 
   // LCE-LCE Transfer Network - (LCE->trans_net->LCE)
-  bp_coherence_network_channel
+  bp_coherence_network_channel_serialize
     #(.packet_width_p(bp_lce_lce_tr_resp_width_lp)
       ,.num_src_p(num_lce_p)
       ,.num_dst_p(num_lce_p)
+      ,.chunk_size_p(64)
       ,.debug_p(debug_p)
       ,.repeater_output_p(repeater_output_lp)
       )
