@@ -113,8 +113,8 @@ logic                          pc_redirect_after_icache_miss;
 logic                          stalled_pc_redirect;
 logic                          bht_r_v_branch_jalr_inst;
 logic                          branch_inst;
-logic 		               btb_r_v_i;
-logic 		               previous_pc_gen_icache_v;
+logic 		                     btb_r_v_i;
+logic 		                     previous_pc_gen_icache_v;
    
 //connect pc_gen to the rest of the FE submodules as well as FE top module   
 assign pc_gen_icache_o = pc_gen_icache;
@@ -213,24 +213,25 @@ always_ff @(posedge clk_i)
         pc                  <= pc_redirect;
         last_pc             <= pc;
         icache_miss_pc      <= last_pc;
-	previous_pc_gen_icache_v <= pc_gen_icache_v_o; 
+	      previous_pc_gen_icache_v <= pc_gen_icache_v_o; 
       end 
       else if (pc_gen_icache_ready_i && pc_gen_fe_ready_i) 
         begin
           pc                  <= next_pc;
           last_pc             <= pc;
           icache_miss_pc      <= last_pc;
-	  previous_pc_gen_icache_v <= pc_gen_icache_v_o;
+	        previous_pc_gen_icache_v <= pc_gen_icache_v_o;
         end 
       else if (icache_miss_i && ~pc_gen_icache_ready_i) 
         begin
           pc             <= icache_miss_pc;
           last_pc        <= pc;
           icache_miss_pc <= last_pc;
-	  previous_pc_gen_icache_v <= pc_gen_icache_v_o;
+	        previous_pc_gen_icache_v <= pc_gen_icache_v_o;
         end
   end
 
+   
 // PC redirect register
 always_ff @(posedge clk_i) 
   begin
@@ -254,16 +255,16 @@ always_ff @(posedge clk_i)
   end
 
 instr_scan 
-  #(.eaddr_width_p(eaddr_width_p)
-    ,.instr_width_p(instr_width_p)
+ #(.eaddr_width_p(eaddr_width_p)
+   ,.instr_width_p(instr_width_p)
    ) 
-  instr_scan_1 
-    (.instr_i(icache_pc_gen.instr)
-     ,.scan_o(scan_instr)
-    );
+ instr_scan_1 
+  (.instr_i(icache_pc_gen.instr)
+   ,.scan_o(scan_instr)
+   );
 
 assign bht_r_v_branch_jalr_inst = (icache_pc_gen_v_i & (scan_instr.instr_scan_class == e_rvi_jalr
-                                                        | scan_instr.instr_scan_class == e_rvi_branch));
+                                                      | scan_instr.instr_scan_class == e_rvi_branch));
    
 //select among 2 available branch predictor implementations
 generate
@@ -280,7 +281,7 @@ generate
           ,.reset_i(reset_i)
           ,.attaboy_i(fe_pc_gen_cmd.attaboy_valid)
           ,.r_v_i(bht_r_v_branch_jalr_inst)
-	  ,.btb_r_v_i(btb_r_v_i)
+	        ,.btb_r_v_i(btb_r_v_i)
           ,.w_v_i(fe_pc_gen_v_i)
           ,.pc_queue_i(last_pc)
           ,.pc_cmd_i(fe_pc_gen_cmd.pc)

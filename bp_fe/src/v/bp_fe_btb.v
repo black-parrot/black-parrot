@@ -30,7 +30,7 @@ module bp_fe_btb
 
 logic [els_lp-1:0] valid;
 logic [bp_fe_pc_gen_btb_idx_width_lp-1:0] addr;
-   
+
 always_ff @(posedge clk_i) 
   begin
     if (reset_i) 
@@ -49,7 +49,7 @@ always_ff @(posedge clk_i)
   begin
     read_valid_o = valid[idx_r_i];
   end
-   
+
 bsg_mem_1rw_sync 
  #(.width_p(eaddr_width_p)
    ,.els_p(2**bp_fe_pc_gen_btb_idx_width_lp)
