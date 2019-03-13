@@ -5,6 +5,11 @@ module bp_coherence_network_channel_serialize
   , parameter chunk_size_p        = "inv"
   , parameter debug_p             = "inv"
   , parameter repeater_output_p   = "inv"
+  , localparam  dest_id_width_p       = `BSG_SAFE_CLOG2(num_dst_p)
+  , localparam  src_id_width_p        = `BSG_SAFE_CLOG2(num_src_p)
+  , localparam  num_packets_p         = (packet_width_p + chunk_size_p - 1) / packet_width_p
+//  , localparam  total_data_width      = packet_data_width_p*num_packets_p
+  , localparam  total_o_data_width    = chunk_size_p + dest_id_width_p + src_id_width_p
   )
   ( input                                              clk_i
   , input                                            reset_i
@@ -18,11 +23,11 @@ module bp_coherence_network_channel_serialize
   , input  [num_dst_p-1:0]                           dst_ready_i
   );
 
-  logic [num_src_p-1:0][chunk_size_p-1:0] src_data_serial;
+  logic [num_src_p-1:0][total_o_data_width-1:0] src_data_serial;
   logic [num_src_p-1:0]                   src_v_serial;
   logic [num_src_p-1:0]                   src_ready_serial;
 
-  logic [num_dst_p-1:0][chunk_size_p-1:0] dst_data_serial;
+  logic [num_dst_p-1:0][total_o_data_width-1:0] dst_data_serial;
   logic [num_dst_p-1:0]                   dst_v_serial;
   logic [num_dst_p-1:0]                   dst_ready_serial;
 
@@ -47,7 +52,7 @@ module bp_coherence_network_channel_serialize
     );
   end // serializers
 
-  bp_coherence_network_channel #(.packet_width_p(chunk_size_p)
+  bp_coherence_network_channel #(.packet_width_p(total_o_data_width)
                                , .num_src_p(num_src_p)
                                , .num_dst_p(num_dst_p)
                                , .debug_p(debug_p)//

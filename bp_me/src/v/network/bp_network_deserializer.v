@@ -25,15 +25,16 @@ module bp_network_deserializer
   assign ready_o = 1'b1;
 
   logic [`BSG_SAFE_CLOG2(num_packets_p)-1:0] count [num_src-1:0];
+  logic fifo_en;
+  logic [src_id_width_p-1:0] p_addr;  
 
-
-  wire [src_id_width_p-1:0]                 curr_addr = data_i[(dest_id_width_p-1)-:src_id_width_p];
+  wire [src_id_width_p-1:0]                 curr_addr = data_i[(total_o_data_width-dest_id_width_p-1)-:src_id_width_p];
 
   wire [packet_data_width_p-1:0]            curr_data = data_i[0+:packet_data_width_p];
 
   wire [`BSG_SAFE_CLOG2(num_packets_p)-1:0] count_p1 = count[curr_addr] + 1'b1;
 
-  wire                                      fifo_en = v_i & (count_p1 == num_packets_p);
+  wire                                      fifo_en_r = v_i & (count_p1 == num_packets_p-1);
 
   wire [num_packets_p-1:0]                  curr_mask = 1'b1 << count[curr_addr];
 
@@ -66,7 +67,7 @@ module bp_network_deserializer
 
     , .v_i(fifo_en)
     , .ready_o()
-    , .data_i(curr_addr)
+    , .data_i(p_addr)
 
     , .v_o(fifo_vo)
     , .data_o(data_addr_fifo)
@@ -92,6 +93,8 @@ module bp_network_deserializer
 
   always_ff @(posedge clk_i) begin
     v_o <= fifo_vo;
+    fifo_en <= fifo_en_r;
+    p_addr <= curr_addr;
   end
 
 endmodule
