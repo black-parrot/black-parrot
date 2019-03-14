@@ -114,7 +114,7 @@ module icache
     
     
     // Added by Paul, temporary fix of localparams
-    , localparam icache_bp_fe_icache_tag_set_width_lp = `bp_fe_icache_tag_set_width(icache_tag_width_lp, icache_ways_p)
+    , localparam icache_bp_fe_icache_tag_set_width_lp = 1 << (`BSG_SAFE_CLOG2(`bp_fe_icache_tag_set_width(icache_tag_width_lp, icache_ways_p)))
     , localparam icache_bp_fe_icache_tag_state_width_lp = `bp_fe_icache_tag_state_width(icache_tag_width_lp)
     , localparam icache_bp_fe_icache_metadata_width_lp = `bp_fe_icache_metadata_width(icache_ways_p)
     
