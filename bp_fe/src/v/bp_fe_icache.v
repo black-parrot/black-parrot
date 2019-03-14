@@ -370,7 +370,7 @@ module icache
 
   assign lru_bits = metadata_mem_data_lo;
 
-  bp_be_dcache_lru_encode #(
+  bp_fe_icache_lru_encode #(
     .ways_p(icache_ways_p)
     ) lru_encoder (
     .lru_i(lru_bits)
@@ -574,7 +574,7 @@ module icache
   logic [icache_ways_p-2:0] lru_decode_data_lo;
   logic [icache_ways_p-2:0] lru_decode_mask_lo;
 
-   bp_be_dcache_lru_decode #(
+   bp_fe_icache_lru_decode #(
      .ways_p(icache_ways_p)
    ) lru_decode (
      .way_id_i(lru_decode_way_li)

@@ -117,6 +117,8 @@ $BP_FE_DIR/src/v/bp_fe_lce_cce_req.v
 $BP_FE_DIR/src/v/bp_fe_lce_lce_tr_resp_in.v
 $BP_FE_DIR/src/v/bp_fe_pc_gen.v
 $BP_FE_DIR/src/v/bp_fe_top.v
+$BP_FE_DIR/src/v/bp_fe_icache_lru_decode.v
+$BP_FE_DIR/src/v/bp_fe_icache_lru_encode.v
 ## ME files
 $BP_ME_DIR/test/common/bp_cce_test.v
 $BP_ME_DIR/src/v/bp_me_top.v
