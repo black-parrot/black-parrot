@@ -19,7 +19,6 @@ module bp_fe_pc_gen
    , parameter instr_width_p="inv"
    , parameter asid_width_p="inv"
    , parameter bp_first_pc_p="inv"
-   , localparam instr_scan_width_lp=`bp_fe_instr_scan_width
    , localparam branch_metadata_fwd_width_lp=btb_indx_width_p+bht_indx_width_p+ras_addr_width_p
    , localparam bp_fe_pc_gen_icache_width_lp=eaddr_width_p
    , localparam bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(eaddr_width_p)
@@ -112,6 +111,8 @@ logic                          pc_redirect_after_icache_miss;
 logic                          stalled_pc_redirect;
 logic                          bht_r_v_branch_jalr_inst;
 logic                          branch_inst;
+logic 		               btb_r_v_i;
+logic 		               previous_pc_gen_icache_v;
    
 //connect pc_gen to the rest of the FE submodules as well as FE top module   
 assign pc_gen_icache_o = pc_gen_icache;
@@ -120,12 +121,14 @@ assign pc_gen_fe_o     = pc_gen_queue;
 assign fe_pc_gen_cmd   = fe_pc_gen_i;
 assign icache_pc_gen   = icache_pc_gen_i;
 
-assign misalignment          = fe_pc_gen_v_i
-                               && fe_pc_gen_cmd.pc_redirect_valid 
-                               && ~fe_pc_gen_cmd.pc[3:0] == 4'h0 
-                               && ~fe_pc_gen_cmd.pc[3:0] == 4'h4
-                               && ~fe_pc_gen_cmd.pc[3:0] == 4'h8
-                               && ~fe_pc_gen_cmd.pc[3:0] == 4'hC;
+assign misalignment    = fe_pc_gen_v_i
+                         && fe_pc_gen_cmd.pc_redirect_valid 
+                         && ~fe_pc_gen_cmd.pc[3:0] == 4'h0 
+                         && ~fe_pc_gen_cmd.pc[3:0] == 4'h4
+                         && ~fe_pc_gen_cmd.pc[3:0] == 4'h8
+                         && ~fe_pc_gen_cmd.pc[3:0] == 4'hC;
+
+assign btb_r_v_i       = previous_pc_gen_icache_v;
    
 /* output wiring */
 // there should be fixes to the pc signal sent out according to the valid/ready signal pairs
@@ -150,7 +153,7 @@ always_comb
       begin
         pc_gen_fe_v_o     = 1'b0;
         fe_pc_gen_ready_o = 1'b0;
-        pc_gen_icache_v_o = 1'b0;
+        pc_gen_icache_v_o = 1'b0; 
       end 
     else 
       begin
@@ -197,24 +200,28 @@ always_ff @(posedge clk_i)
        pc <= eaddr_width_p'(bp_first_pc_p);
        last_pc <= '0;
        icache_miss_pc <= '0;
+       previous_pc_gen_icache_v <= '0;	 
       end
     else if (stalled_pc_redirect && icache_miss_i) 
       begin
         pc                  <= pc_redirect;
         last_pc             <= pc;
         icache_miss_pc      <= last_pc;
+	previous_pc_gen_icache_v <= pc_gen_icache_v_o; 
       end 
       else if (pc_gen_icache_ready_i && pc_gen_fe_ready_i) 
         begin
           pc                  <= next_pc;
           last_pc             <= pc;
           icache_miss_pc      <= last_pc;
+	  previous_pc_gen_icache_v <= pc_gen_icache_v_o;
         end 
       else if (icache_miss_i && ~pc_gen_icache_ready_i) 
         begin
           pc             <= icache_miss_pc;
           last_pc        <= pc;
           icache_miss_pc <= last_pc;
+	  previous_pc_gen_icache_v <= pc_gen_icache_v_o;
         end
   end
 
@@ -267,6 +274,7 @@ generate
           ,.reset_i(reset_i)
           ,.attaboy_i(fe_pc_gen_cmd.attaboy_valid)
           ,.r_v_i(bht_r_v_branch_jalr_inst)
+	  ,.btb_r_v_i(btb_r_v_i)
           ,.w_v_i(fe_pc_gen_v_i)
           ,.pc_queue_i(last_pc)
           ,.pc_cmd_i(fe_pc_gen_cmd.pc)

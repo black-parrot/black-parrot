@@ -225,7 +225,6 @@ module bp_be_dcache_lce_req
       default: begin
         state_n = e_lce_req_state_ready;
       end
-
     endcase
   end
 

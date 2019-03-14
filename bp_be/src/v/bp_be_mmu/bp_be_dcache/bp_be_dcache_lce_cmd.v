@@ -252,8 +252,8 @@ module bp_be_dcache_lce_cmd
           end
   
           // for other message types in this state, use default as defined at top.
-          default: begin 
-
+          default: begin
+	     
           end
         endcase 
       end
@@ -446,8 +446,7 @@ module bp_be_dcache_lce_cmd
         state_n = lce_data_resp_done
           ? e_lce_cmd_state_ready
           : e_lce_cmd_state_wb_not_dirty;
-      end
-      
+      end      
       // we should never get in this state, but if we do, return to the sync state.
       default: begin 
         state_n = e_lce_cmd_state_sync;

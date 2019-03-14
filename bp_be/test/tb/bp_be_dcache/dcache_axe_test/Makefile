@@ -9,8 +9,7 @@ BP_ME_DIR = $(BP_DIR)/bp_me
 BSG_IP_CORES_DIR = $(BP_DIR)/bsg_ip_cores
 EXTERNAL_DIR = $(BP_DIR)/external
 
-AXE = axe
-#AXE = $(EXTERNAL_DIR)/bin/axe
+AXE = $(EXTERNAL_DIR)/bin/axe
 
 .EXPORT_ALL_VARIABLES:
 
@@ -53,16 +52,16 @@ sim: clean $(TRACE_ROMS)
 dve:
 	dve -full64 -vpd vcdplus.vpd &
 
-clean:
-	rm -rf DVEfiles
-	rm -rf csrc
-	rm -rf simv.daidir simv.vdb stack.info.*
-	rm -f ucli.key vcdplus.vpd simv cm.log *.tar.gz $(VCS_LOG)
-	rm -f bsg_trace_rom_*.v bsg_trace_rom_*.tr $(TRACE_AXE)
-
 $(TRACE_AXE): $(VCS_LOG)
 	python ../py/axe_trace_filter.py $(VCS_LOG) > $(TRACE_AXE)
 
 axe: $(TRACE_AXE)
 	cat $<
 	$(AXE) check TSO $(TRACE_AXE)
+	
+clean:
+	rm -rf DVEfiles
+	rm -rf csrc
+	rm -rf simv.daidir simv.vdb stack.info.*
+	rm -f ucli.key vcdplus.vpd simv cm.log *.tar.gz $(VCS_LOG)
+	rm -f bsg_trace_rom_*.v bsg_trace_rom_*.tr $(TRACE_AXE)

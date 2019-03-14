@@ -138,7 +138,7 @@ bp_be_top
    ,.reset_i(reset)
    ,.fe_queue_i(be_fe_queue)
    ,.fe_queue_v_i(be_fe_queue_v)
-   ,.fe_queue_rdy_o(be_fe_queue_rdy)
+   ,.fe_queue_ready_o(be_fe_queue_rdy)
 
    ,.fe_queue_clr_o(fe_queue_clr)
    ,.fe_queue_dequeue_o(fe_queue_dequeue)
@@ -146,35 +146,35 @@ bp_be_top
 
    ,.fe_cmd_o(be_fe_cmd)
    ,.fe_cmd_v_o(be_fe_cmd_v)
-   ,.fe_cmd_rdy_i(be_fe_cmd_rdy)
+   ,.fe_cmd_ready_i(be_fe_cmd_rdy)
 
-   ,.lce_cce_req_o(lce_cce_req)
-   ,.lce_cce_req_v_o(lce_cce_req_v)
-   ,.lce_cce_req_rdy_i(lce_cce_req_rdy)
+   ,.lce_req_o(lce_cce_req)
+   ,.lce_req_v_o(lce_cce_req_v)
+   ,.lce_req_ready_i(lce_cce_req_rdy)
 
-   ,.lce_cce_resp_o(lce_cce_resp)
-   ,.lce_cce_resp_v_o(lce_cce_resp_v)
-   ,.lce_cce_resp_rdy_i(lce_cce_resp_rdy)
+   ,.lce_resp_o(lce_cce_resp)
+   ,.lce_resp_v_o(lce_cce_resp_v)
+   ,.lce_resp_ready_i(lce_cce_resp_rdy)
 
-   ,.lce_cce_data_resp_o(lce_cce_data_resp)
-   ,.lce_cce_data_resp_v_o(lce_cce_data_resp_v)
-   ,.lce_cce_data_resp_rdy_i(lce_cce_data_resp_rdy)
+   ,.lce_data_resp_o(lce_cce_data_resp)
+   ,.lce_data_resp_v_o(lce_cce_data_resp_v)
+   ,.lce_data_resp_ready_i(lce_cce_data_resp_rdy)
 
-   ,.cce_lce_cmd_i(cce_lce_cmd)
-   ,.cce_lce_cmd_v_i(cce_lce_cmd_v)
-   ,.cce_lce_cmd_rdy_o(cce_lce_cmd_rdy)
+   ,.lce_cmd_i(cce_lce_cmd)
+   ,.lce_cmd_v_i(cce_lce_cmd_v)
+   ,.lce_cmd_ready_o(cce_lce_cmd_rdy)
 
-   ,.cce_lce_data_cmd_i(cce_lce_data_cmd)
-   ,.cce_lce_data_cmd_v_i(cce_lce_data_cmd_v)
-   ,.cce_lce_data_cmd_rdy_o(cce_lce_data_cmd_rdy)
+   ,.lce_data_cmd_i(cce_lce_data_cmd)
+   ,.lce_data_cmd_v_i(cce_lce_data_cmd_v)
+   ,.lce_data_cmd_ready_o(cce_lce_data_cmd_rdy)
 
-   ,.lce_lce_tr_resp_i(local_lce_tr_resp)
-   ,.lce_lce_tr_resp_v_i(local_lce_tr_resp_v)
-   ,.lce_lce_tr_resp_rdy_o(local_lce_tr_resp_rdy)
+   ,.lce_tr_resp_i(local_lce_tr_resp)
+   ,.lce_tr_resp_v_i(local_lce_tr_resp_v)
+   ,.lce_tr_resp_ready_o(local_lce_tr_resp_rdy)
 
-   ,.lce_lce_tr_resp_o(remote_lce_tr_resp)
-   ,.lce_lce_tr_resp_v_o(remote_lce_tr_resp_v)
-   ,.lce_lce_tr_resp_rdy_i(remote_lce_tr_resp_rdy)
+   ,.lce_tr_resp_o(remote_lce_tr_resp)
+   ,.lce_tr_resp_v_o(remote_lce_tr_resp_v)
+   ,.lce_tr_resp_ready_i(remote_lce_tr_resp_rdy)
 
    ,.proc_cfg_i(proc_cfg)
 

@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_mmu_top.v
+ *   bp_be_mmu_top.v
  * 
  * Description:
  *
@@ -25,17 +25,17 @@
  *   mmu_resp_v_i                -
  *   mmu_resp_ready_o            -
  *
- *   cce_lce_cmd_i               -
- *   cce_lce_cmd_v_i             -
- *   cce_lce_cmd_ready_o         -
+ *   lce_cmd_i               -
+ *   lce_cmd_v_i             -
+ *   lce_cmd_ready_o         -
  *
- *   cce_lce_data_cmd_i          -
- *   cce_lce_data_cmd_v_i        -
- *   cce_lce_data_cmd_ready_o    -
+ *   lce_data_cmd_i          -
+ *   lce_data_cmd_v_i        -
+ *   lce_data_cmd_ready_o    -
  * 
- *   lce_lce_tr_resp_i           - 
- *   lce_lce_tr_resp_v_i         -
- *   lce_lce_tr_resp_ready_o     -
+ *   lce_tr_resp_i           - 
+ *   lce_tr_resp_v_i         -
+ *   lce_tr_resp_ready_o     -
  * 
  *   proc_cfg_i                  -
  *
@@ -56,9 +56,9 @@
  *   lce_data_resp_v_o       -
  *   lce_data_resp_ready_i   -
  *
- *   lce_lce_tr_resp_o           -
- *   lce_lce_tr_resp_v_o         -
- *   lce_lce_tr_resp_ready_i     -
+ *   lce_tr_resp_o           -
+ *   lce_tr_resp_v_o         -
+ *   lce_tr_resp_ready_i     -
  *
  *   dcache_id_i                 -
  *
@@ -107,15 +107,8 @@ module bp_be_mmu_top
    // MMU                                                              
    , localparam mmu_cmd_width_lp  = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam mmu_resp_width_lp = `bp_be_mmu_resp_width
-   , localparam vtag_width_lp     = `bp_be_vtag_width(vaddr_width_p
-                                                      , lce_sets_p
-                                                      , cce_block_size_in_bytes_p
-                                                      )
-                                                    
-   , localparam ptag_width_lp     = `bp_be_ptag_width(paddr_width_p
-                                                      , lce_sets_p
-                                                      , cce_block_size_in_bytes_p
-                                                      )
+   , localparam vtag_width_lp=(vaddr_width_p-bp_page_offset_width_gp)
+   , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
                                                       
    // ME
    , localparam cce_block_size_in_bits_lp = 8 * cce_block_size_in_bytes_p

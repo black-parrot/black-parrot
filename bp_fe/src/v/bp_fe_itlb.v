@@ -8,15 +8,15 @@
 module itlb
  import bp_common_pkg::*;
  import bp_fe_pkg::*;
- #(parameter   vaddr_width_p="inv"
+ #(parameter vaddr_width_p="inv"
    , parameter paddr_width_p="inv"
    , parameter eaddr_width_p="inv"
+   , parameter tag_width_p="inv"
    , parameter btb_indx_width_p="inv"
    , parameter bht_indx_width_p="inv"
    , parameter ras_addr_width_p="inv"
    , parameter asid_width_p="inv"
    , parameter ppn_start_bit_p="inv"
-   , parameter tag_width_p="inv"
    , localparam ppn_width_lp=`bp_fe_itlb_icache_data_resp_width(tag_width_p)
    , localparam bp_fe_ppn_width_lp=ppn_width_lp
    , localparam branch_metadata_fwd_width_lp=btb_indx_width_p

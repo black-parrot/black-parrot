@@ -1,5 +1,5 @@
-DUT_PARAMS = -pvalue+vaddr_width_p=56                \
-             -pvalue+paddr_width_p=22                \
+DUT_PARAMS = -pvalue+vaddr_width_p=39                \
+             -pvalue+paddr_width_p=56                \
              -pvalue+asid_width_p=10                 \
              -pvalue+branch_metadata_fwd_width_p=36  \
              -pvalue+btb_indx_width_p=9              \

@@ -1,6 +1,6 @@
 HDL_PARAMS=-pvalue+core_els_p=1                                      \
-                   -pvalue+vaddr_width_p=22 			     \
-		   -pvalue+paddr_width_p=22 			     \
+                   -pvalue+vaddr_width_p=39 			     \
+		   -pvalue+paddr_width_p=56 			     \
 		   -pvalue+eaddr_width_p=64 			     \
 		   -pvalue+asid_width_p=10			     \
 		   -pvalue+branch_metadata_fwd_width_p=36            \

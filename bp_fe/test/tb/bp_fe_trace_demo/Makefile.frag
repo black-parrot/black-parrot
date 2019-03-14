@@ -1,6 +1,6 @@
 DUT_PARAMS= \
-           -pvalue+vaddr_width_p=22               \
-           -pvalue+paddr_width_p=22               \
+           -pvalue+vaddr_width_p=39               \
+           -pvalue+paddr_width_p=56               \
            -pvalue+asid_width_p=10                \
            -pvalue+btb_indx_width_p=9             \
            -pvalue+bht_indx_width_p=5             \

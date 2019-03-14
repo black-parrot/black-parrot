@@ -57,6 +57,7 @@ $BSG_IP_CORES_DIR/bsg_misc/bsg_dff.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_dff_chain.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_dff_en.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_dff_reset.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_dff_reset_en.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_encode_one_hot.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_mux.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_mux_one_hot.v
@@ -101,20 +102,19 @@ $BP_BE_DIR/src/v/bp_be_mmu/bp_be_tlb/bp_plru.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_tlb/bp_tlb_cam.v
 # Common
 $BP_BE_DIR/src/v/common/bp_be_trace_replay_gen.v
-$BP_BE_DIR/src/v/common/bsg_dff_reset_en.v
 $BP_BE_DIR/src/v/common/bsg_fifo_1r1w_rolly.v
 ## FE files
 $BP_FE_DIR/src/v/bp_fe_bht.v
 $BP_FE_DIR/src/v/bp_fe_branch_predictor.v
 $BP_FE_DIR/src/v/bp_fe_btb.v
-$BP_FE_DIR/src/v/bp_fe_cce_lce_cmd.v
-$BP_FE_DIR/src/v/bp_fe_cce_lce_data_cmd.v
+$BP_FE_DIR/src/v/bp_fe_lce_cmd.v
+$BP_FE_DIR/src/v/bp_fe_lce_data_cmd.v
 $BP_FE_DIR/src/v/bp_fe_icache.v
 $BP_FE_DIR/src/v/bp_fe_instr_scan.v
 $BP_FE_DIR/src/v/bp_fe_itlb.v
 $BP_FE_DIR/src/v/bp_fe_lce.v
-$BP_FE_DIR/src/v/bp_fe_lce_cce_req.v
-$BP_FE_DIR/src/v/bp_fe_lce_lce_tr_resp_in.v
+$BP_FE_DIR/src/v/bp_fe_lce_req.v
+$BP_FE_DIR/src/v/bp_fe_lce_tr_resp_in.v
 $BP_FE_DIR/src/v/bp_fe_pc_gen.v
 $BP_FE_DIR/src/v/bp_fe_top.v
 ## ME files
