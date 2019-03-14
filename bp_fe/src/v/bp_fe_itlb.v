@@ -16,6 +16,9 @@ module itlb
    , parameter ras_addr_width_p="inv"
    , parameter asid_width_p="inv"
    , parameter ppn_start_bit_p="inv"
+   // Added by Paul
+   ,parameter icache_ppn_start_bit_p = 3+3+`BSG_SAFE_CLOG2(16)
+   
    , localparam ppn_width_lp=44
    , localparam bp_fe_ppn_width_lp=ppn_width_lp
    , localparam branch_metadata_fwd_width_lp=btb_indx_width_p
@@ -74,7 +77,7 @@ logic [bp_fe_ppn_width_lp-1:0] ppn;
 // pass through itlb
 always @(posedge clk_i) 
   begin
-    ppn <= pc_gen_itlb.virt_addr[ppn_start_bit_p+bp_fe_ppn_width_lp-1:ppn_start_bit_p];
+    ppn <= pc_gen_itlb.virt_addr[icache_ppn_start_bit_p+bp_fe_ppn_width_lp-1:icache_ppn_start_bit_p];
   end
 
 assign itlb_icache.ppn = ppn;

@@ -40,7 +40,7 @@ module icache
     
     // Added by Paul, temporary fix of parameters
     ,parameter icache_ways_p = 2
-    ,parameter icache_sets_p = 64
+    ,parameter icache_sets_p = 16
     ,parameter icache_addr_width_p = 22
     ,parameter block_size_in_words_p = 8
 
@@ -185,7 +185,7 @@ module icache
   logic [lg_num_cce_lp-1:0]             cce_dst_r, cce_dst_n;
   logic [lg_num_lce_lp-1:0]             lce_dst_r, lce_dst_n;
 
-  `declare_bp_fe_itlb_icache_data_resp_s(tag_width_p);
+  `declare_bp_fe_itlb_icache_data_resp_s(bp_fe_itlb_icache_width_lp);
   bp_fe_itlb_icache_data_resp_s itlb_icache_data_resp_li;
   assign itlb_icache_data_resp_li = itlb_icache_data_resp_i;
 
@@ -302,7 +302,7 @@ module icache
     else begin
       v_tv_r <= tv_we;
       if (tv_we) begin
-        addr_tv_r    <= {itlb_icache_data_resp_li.ppn[(icache_vaddr_width_lp-vaddr_width_lp)+:(icache_addr_width_p-icache_vaddr_width_lp)], vaddr_tl_r};
+        addr_tv_r    <= {itlb_icache_data_resp_li.ppn[icache_tag_width_lp-1:0], vaddr_tl_r};
         eaddr_tv_r   <= eaddr_tl_r ;
         tag_tv_r     <= tag_tl;
         state_tv_r   <= state_tl;
