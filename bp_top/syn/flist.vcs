@@ -35,6 +35,7 @@ $BSG_IP_CORES_DIR/bsg_dataflow/bsg_fifo_1r1w_small.v
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_fifo_tracker.v
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_shift_reg.v
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_two_fifo.v
+$BSG_IP_CORES_DIR/bsg_mem/bsg_cam_1r1w.v
 $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_1r1w.v
 $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_1r1w_sync.v
 $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_1r1w_sync_synth.v
@@ -65,6 +66,8 @@ $BSG_IP_CORES_DIR/bsg_misc/bsg_priority_encode.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_priority_encode_one_hot_out.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_round_robin_arb.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_scan.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_lru_pseudo_tree_encode.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_lru_pseudo_tree_decode.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router_buffered.v
 ## BE files
@@ -111,6 +114,7 @@ $BP_FE_DIR/src/v/bp_fe_lce_cmd.v
 $BP_FE_DIR/src/v/bp_fe_lce_data_cmd.v
 $BP_FE_DIR/src/v/bp_fe_icache.v
 $BP_FE_DIR/src/v/bp_fe_instr_scan.v
+$BP_FE_DIR/src/v/bp_fe_itlb_replacement.v
 $BP_FE_DIR/src/v/bp_fe_itlb.v
 $BP_FE_DIR/src/v/bp_fe_lce.v
 $BP_FE_DIR/src/v/bp_fe_lce_req.v
