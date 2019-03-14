@@ -1,21 +1,24 @@
 
 module bp_be_mock_ptw
   import bp_common_pkg::*;
+  import bp_be_rv64_pkg::*;
   import bp_be_pkg::*;
   import bp_be_dcache_pkg::*;
-  #(parameter pte_width_p              = bp_sv39_pte_width_gp
-    ,parameter vaddr_width_p           = bp_sv39_vaddr_width_gp
-    ,parameter paddr_width_p           = bp_sv39_paddr_width_gp
-    ,parameter page_offset_width_p     = bp_page_offset_width_gp
-    ,parameter page_table_depth_p      = bp_sv39_page_table_depth_gp
+  #(parameter pte_width_p               = bp_sv39_pte_width_gp
+    ,parameter vaddr_width_p            = bp_sv39_vaddr_width_gp
+    ,parameter paddr_width_p            = bp_sv39_paddr_width_gp
+    ,parameter page_offset_width_p      = bp_page_offset_width_gp
+    ,parameter page_table_depth_p       = bp_sv39_page_table_depth_gp
     
-    ,localparam vpn_width_lp           = vaddr_width_p - page_offset_width_p
-    ,localparam ppn_width_lp           = paddr_width_p - page_offset_width_p
-    ,localparam dcache_pkt_width_lp    = `bp_be_dcache_pkt_width(page_offset_width_p, pte_width_p)    
-    ,localparam tlb_entry_width_lp     = `bp_be_tlb_entry_width(ppn_width_lp)
-	,localparam lg_page_table_depth_lp = `BSG_SAFE_CLOG2(page_table_depth_p)
+    ,localparam vpn_width_lp            = vaddr_width_p - page_offset_width_p
+    ,localparam ppn_width_lp            = paddr_width_p - page_offset_width_p
+    ,localparam dcache_pkt_width_lp     = `bp_be_dcache_pkt_width(page_offset_width_p, pte_width_p)    
+    ,localparam tlb_entry_width_lp      = `bp_be_tlb_entry_width(ppn_width_lp)
+	,localparam lg_page_table_depth_lp  = `BSG_SAFE_CLOG2(page_table_depth_p)
 	
-	,localparam page_entry_offset_width_lp = page_offset_width_p - `BSG_SAFE_CLOG2(pte_width_p/8)
+	,localparam pte_size_in_bytes_lp    = pte_width_p/rv64_byte_width_gp
+	,localparam lg_pte_size_in_bytes_lp = `BSG_SAFE_CLOG2(pte_size_in_bytes_lp)
+	,localparam partial_vpn_width_lp    = page_offset_width_p - lg_pte_size_in_bytes_lp
   )
   (input                                    clk_i
    , input                                  reset_i
@@ -42,7 +45,8 @@ module bp_be_mock_ptw
   );
   
   `declare_bp_be_dcache_pkt_s(page_offset_width_p, pte_width_p);
-  `declare_bp_sv39_pte_s(pte_width_p, ppn_width_lp, pte_offset_width_lp);
+  `declare_bp_sv39_pte_s(pte_width_p, ppn_width_lp);
+  `declare_bp_be_tlb_entry_s(ppn_width_lp);
   
   typedef enum [2:0] { eIdle, eSendLoad, eSendPtag, eWaitLoad, eWriteBack, eStuck } state_e;
   
@@ -54,11 +58,27 @@ module bp_be_mock_ptw
 
   logic pte_leaf_v;
   logic start;
-  logic [lg_page_table_depth_lp-1:0] page_level_cntr;
-  logic                              page_level_cntr_en;
+  logic [lg_page_table_depth_lp-1:0] level_cntr;
+  logic                              level_cntr_en;
   logic [vpn_width_lp-1:0]           vpn_r;
   logic [ppn_width_lp-1:0]           ppn_r, ppn_n;
   logic                              ppn_en;
+  
+  logic [lg_page_table_depth_lp-1:0] [partial_vpn_width_lp-1:0] partial_vpn;
+  logic [lg_page_table_depth_lp-1:0] [partial_vpn_width_lp-1:0] partial_ppn;
+
+  genvar i;
+  generate begin
+    for(i=0; i<page_table_depth_p; i++) begin
+      assign partial_vpn[i] = vpn_r[partial_vpn_width_lp*i +: partial_vpn_width_lp];
+    end
+	for(i=0; i<page_table_depth_p-1; i++) begin
+      assign partial_ppn[i] = ppn_r[partial_vpn_width_lp*i +: partial_vpn_width_lp];
+	  assign tlb_w_entry.ptag[partial_vpn_width_lp*i +: partial_vpn_width_lp] = (level_cntr > i)? partial_vpn[i] : partial_ppn[i];
+    end
+	assign tlb_w_entry.ptag[ppn_width_lp-1 : (page_table_depth_p-1)*partial_vpn_width_lp] = ppn_r[ppn_width_lp-1 : (page_table_depth_p-1)*partial_vpn_width_lp];
+  end
+  endgenerate
   
   assign dcache_pkt_o           = dcache_pkt;
   assign dcache_ptag_o          = ppn_r;
@@ -66,17 +86,13 @@ module bp_be_mock_ptw
   assign tlb_w_entry_o          = tlb_w_entry;
   
   assign dcache_pkt.opcode      = e_dcache_opcode_ld;
-  assign dcache_pkt.page_offset = {vpn_r[page_level_cntr*page_entry_offset_width_lp +: page_entry_offset_width_lp], 3'b0};
+  assign dcache_pkt.page_offset = {partial_vpn[level_cntr], (lg_pte_size_in_bytes_lp)'(0)};
   
-  assign tlb_w_entry.ptag       = (page_level_cntr == '0)? ppn_r :
-                                  {ppn_r[ppn_width_lp-1 : page_level_cntr*page_entry_offset_width_lp], 
-								   vpn_r[0 +: page_level_cntr*page_entry_offset_width_lp]};
-
   assign start                  = (state_r == eIdle) & tlb_miss_v_i;
   
   assign pte_leaf_v             = dcache_data.x | dcache_data.w | dcache_data.r;
   
-  assign page_level_cntr_en     = dcache_v_i & ~pte_leaf_v;
+  assign level_cntr_en     = dcache_v_i & ~pte_leaf_v;
   
   assign ppn_en                 = start | dcache_v_i;
   assign ppn_n                  = (state_r == eIdle)? base_ppn_i : dcache_data.ppn;
@@ -98,13 +114,13 @@ module bp_be_mock_ptw
   
   always_ff @(posedge clk_i) begin
     if(reset_i) begin
-	  page_level_cntr <= '0;
+	  level_cntr <= '0;
 	end
 	else if(start) begin
-	  page_level_cntr <= page_table_depth_p - 1;
+	  level_cntr <= page_table_depth_p - 1;
 	end
-	else if(page_level_cntr_en) begin
-	  page_level_cntr <= page_level_cntr - 'b1;
+	else if(level_cntr_en) begin
+	  level_cntr <= level_cntr - 'b1;
 	end
   end
   
