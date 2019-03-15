@@ -100,7 +100,7 @@ bp_be_int_alu
  alu
   (.src1_i(src1_gated)
    ,.src2_i(src2_gated)
-   ,.op_i(decode.fu_op)
+   ,.op_i(decode.fu_op&{4{decode.pipe_int_v}})
    ,.opw_v_i(decode.opw_v)
 
    ,.result_o(alu_result)
