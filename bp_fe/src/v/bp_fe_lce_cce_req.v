@@ -104,7 +104,7 @@ module bp_fe_lce_req
                                                 +lg_block_size_in_bytes_lp
                                                 +:lg_num_cce_lp];
   end
-   
+
   // lce_req fsm
   always_comb begin : lce_req_fsm
 
@@ -181,6 +181,7 @@ module bp_fe_lce_req
     endcase
   end
 
+  // synopsys sync_set_reset "reset_i"
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       state_r              <= e_lce_req_ready;

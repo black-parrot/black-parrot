@@ -131,10 +131,10 @@ typedef struct packed
   }  bp_fe_pc_gen_itlb_s;
 
 
-`define declare_bp_fe_branch_metadata_fwd_s(btb_idx_width_mp,bht_idx_width_mp,ras_addr_width_mp) \
+`define declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_mp,btb_idx_width_mp,bht_idx_width_mp,ras_addr_width_mp) \
   typedef struct packed                                                                          \
   {                                                                                              \
-    logic [rv64_eaddr_width_gp-btb_idx_width_mp-2-1:0] btb_tag;                                  \
+    logic [btb_tag_width_mp-1:0]                       btb_tag;                                  \
     logic [btb_idx_width_mp-1:0]                       btb_indx;                                 \
     logic [bht_idx_width_mp-1:0]                       bht_indx;                                 \
     logic [ras_addr_width_mp-1:0]                      ras_addr;                                 \
@@ -172,8 +172,8 @@ typedef struct packed
 
 `define bp_fe_instr_scan_width (1+`bp_fe_instr_scan_class_width+bp_eaddr_width_gp)
 
-`define bp_fe_branch_metadata_fwd_width(btb_idx_width_mp,bht_idx_width_mp,ras_addr_width_mp) \
-  (btb_idx_width_mp+bht_idx_width_mp+ras_addr_width_mp)
+`define bp_fe_branch_metadata_fwd_width(btb_tag_width_mp,btb_idx_width_mp,bht_idx_width_mp,ras_addr_width_mp) \
+  (btb_tag_width_mp+btb_idx_width_mp+bht_idx_width_mp+ras_addr_width_mp)
 
 `define bp_fe_itlb_icache_width(ppn_width_mp) (ppn_width_mp)
 

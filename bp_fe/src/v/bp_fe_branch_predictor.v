@@ -10,10 +10,11 @@ module bp_fe_branch_predictor
  import bp_fe_pkg::*;
  import bp_be_rv64_pkg::*;
  #(parameter eaddr_width_p="inv"
+   , parameter btb_tag_width_p="inv"
    , parameter btb_indx_width_p="inv"
    , parameter bht_indx_width_p="inv"
    , parameter ras_addr_width_p="inv"
-   , localparam branch_metadata_fwd_width_lp=btb_indx_width_p+bht_indx_width_p+ras_addr_width_p
+   , localparam branch_metadata_fwd_width_lp=`bp_fe_branch_metadata_fwd_width(btb_tag_width_p,btb_indx_width_p,bht_indx_width_p,ras_addr_width_p)
    )
   (input                                             clk_i
    , input                                           reset_i
@@ -38,7 +39,7 @@ logic predict;
 logic read_valid;
 
    
-`declare_bp_fe_branch_metadata_fwd_s(btb_indx_width_p,bht_indx_width_p,ras_addr_width_p);
+`declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p,btb_indx_width_p,bht_indx_width_p,ras_addr_width_p);
 bp_fe_branch_metadata_fwd_s branch_metadata_i;
 bp_fe_branch_metadata_fwd_s branch_metadata_o;
 
@@ -52,7 +53,7 @@ assign branch_metadata_o     = {pc_fwd_i[btb_indx_width_p-1:0]
                                };
 
 
-   
+/*
 bp_fe_bht 
  #(.bht_indx_width_p(bht_indx_width_p)
    ) 
@@ -91,5 +92,6 @@ bp_fe_btb
     
    ,.read_valid_o(read_valid)
    );
+*/
 
 endmodule
