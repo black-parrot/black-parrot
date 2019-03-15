@@ -18,7 +18,7 @@ module itlb
    , parameter ppn_start_bit_p="inv"
    , localparam ppn_width_lp=44
    , localparam bp_fe_ppn_width_lp=ppn_width_lp
-   , localparam branch_metadata_fwd_width_lp=btb_indx_width_p
+   , localparam branch_metadata_fwd_width_lp=eaddr_width_p-2
                                             +bht_indx_width_p
                                             +ras_addr_width_p
    , localparam bp_fe_itlb_cmd_width_lp=`bp_fe_itlb_cmd_width(vaddr_width_p
