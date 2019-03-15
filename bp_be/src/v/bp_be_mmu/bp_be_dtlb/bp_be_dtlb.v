@@ -102,8 +102,8 @@ bp_be_dtlb_replacement #(.ways_p(els_p))
 bsg_cam_1r1w 
   #(.els_p(els_p)
     ,.width_p(vtag_width_p)
-	,.multiple_entries_p(0)
-	,.find_empty_entry_p(1)
+    ,.multiple_entries_p(0)
+    ,.find_empty_entry_p(1)
   )
   vtag_cam
   (.clk_i(clk_i)

@@ -14,11 +14,11 @@ module bp_be_mock_ptw
     ,localparam ppn_width_lp            = paddr_width_p - page_offset_width_p
     ,localparam dcache_pkt_width_lp     = `bp_be_dcache_pkt_width(page_offset_width_p, pte_width_p)    
     ,localparam tlb_entry_width_lp      = `bp_be_tlb_entry_width(ppn_width_lp)
-	,localparam lg_page_table_depth_lp  = `BSG_SAFE_CLOG2(page_table_depth_p)
-	
-	,localparam pte_size_in_bytes_lp    = pte_width_p/rv64_byte_width_gp
-	,localparam lg_pte_size_in_bytes_lp = `BSG_SAFE_CLOG2(pte_size_in_bytes_lp)
-	,localparam partial_vpn_width_lp    = page_offset_width_p - lg_pte_size_in_bytes_lp
+    ,localparam lg_page_table_depth_lp  = `BSG_SAFE_CLOG2(page_table_depth_p)
+
+    ,localparam pte_size_in_bytes_lp    = pte_width_p/rv64_byte_width_gp
+    ,localparam lg_pte_size_in_bytes_lp = `BSG_SAFE_CLOG2(pte_size_in_bytes_lp)
+    ,localparam partial_vpn_width_lp    = page_offset_width_p - lg_pte_size_in_bytes_lp
   )
   (input                                    clk_i
    , input                                  reset_i
@@ -72,11 +72,11 @@ module bp_be_mock_ptw
     for(i=0; i<page_table_depth_p; i++) begin
       assign partial_vpn[i] = vpn_r[partial_vpn_width_lp*i +: partial_vpn_width_lp];
     end
-	for(i=0; i<page_table_depth_p-1; i++) begin
+   for(i=0; i<page_table_depth_p-1; i++) begin
       assign partial_ppn[i] = ppn_r[partial_vpn_width_lp*i +: partial_vpn_width_lp];
-	  assign tlb_w_entry.ptag[partial_vpn_width_lp*i +: partial_vpn_width_lp] = (level_cntr > i)? partial_vpn[i] : partial_ppn[i];
+      assign tlb_w_entry.ptag[partial_vpn_width_lp*i +: partial_vpn_width_lp] = (level_cntr > i)? partial_vpn[i] : partial_ppn[i];
     end
-	assign tlb_w_entry.ptag[ppn_width_lp-1 : (page_table_depth_p-1)*partial_vpn_width_lp] = ppn_r[ppn_width_lp-1 : (page_table_depth_p-1)*partial_vpn_width_lp];
+    assign tlb_w_entry.ptag[ppn_width_lp-1 : (page_table_depth_p-1)*partial_vpn_width_lp] = ppn_r[ppn_width_lp-1 : (page_table_depth_p-1)*partial_vpn_width_lp];
   end
   endgenerate
   
@@ -100,13 +100,13 @@ module bp_be_mock_ptw
   
   always_comb begin
     case(state_r)
-	  eIdle:      state_n = (tlb_miss_v_i)? eSendLoad : eIdle;
-	  eSendLoad:  state_n = (dcache_rdy_i)? eSendPtag : eSendLoad;
-	  eSendPtag:  state_n = eWaitLoad;
-	  eWaitLoad:  state_n = (dcache_miss_i)? eSendLoad :
-	                        (dcache_v_i)? ((pte_leaf_v)? eWaitLoad : eSendLoad) :
-						    eWaitLoad;
-	  eWriteBack: state_n = eIdle;
+      eIdle:      state_n = (tlb_miss_v_i)? eSendLoad : eIdle;
+      eSendLoad:  state_n = (dcache_rdy_i)? eSendPtag : eSendLoad;
+      eSendPtag:  state_n = eWaitLoad;
+      eWaitLoad:  state_n = (dcache_miss_i)? eSendLoad :
+                            (dcache_v_i)? ((pte_leaf_v)? eWaitLoad : eSendLoad) :
+                            eWaitLoad;
+      eWriteBack: state_n = eIdle;
       default: state_n = eStuck;
     endcase
   end
@@ -114,14 +114,14 @@ module bp_be_mock_ptw
   
   always_ff @(posedge clk_i) begin
     if(reset_i) begin
-	  level_cntr <= '0;
-	end
-	else if(start) begin
-	  level_cntr <= page_table_depth_p - 1;
-	end
-	else if(level_cntr_en) begin
-	  level_cntr <= level_cntr - 'b1;
-	end
+      level_cntr <= '0;
+    end
+    else if(start) begin
+      level_cntr <= page_table_depth_p - 1;
+    end
+    else if(level_cntr_en) begin
+      level_cntr <= level_cntr - 'b1;
+    end
   end
   
   bsg_dff_reset_en #(.width_p(vpn_width_lp))
