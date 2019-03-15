@@ -417,15 +417,44 @@ module bp_be_dcache
   assign wbuf_entry_in.way_id = store_hit_way;
 
   if (data_width_p == 64) begin
-    assign wbuf_entry_in.data = double_op_tv_r
+    /*assign wbuf_entry_in.data = double_op_tv_r
       ? data_tv_r
       : (word_op_tv_r
         ? {2{data_tv_r[0+:32]}}
         : (half_op_tv_r
           ? {4{data_tv_r[0+:16]}}
-          : {8{data_tv_r[0+:8]}}));
+          : {8{data_tv_r[0+:8]}}));*/
 
-    assign wbuf_entry_in.mask = double_op_tv_r
+always_comb begin
+
+	if (double_op_tv_r) begin
+	wbuf_entry_in.data = data_tv_r;
+	wbuf_entry_in.mask = 8'b1111_1111;
+	end
+	else if (word_op_tv_r) begin
+	wbuf_entry_in.data = {2{data_tv_r[0+:32]}};
+	wbuf_entry_in.mask = {{4{paddr_tv_r[2]}}, {4{~paddr_tv_r[2]}}};
+	end
+	else if (half_op_tv_r) begin
+	wbuf_entry_in.data = {4{data_tv_r[0+:16]}};
+	wbuf_entry_in.mask = {{2{paddr_tv_r[2] & paddr_tv_r[1]}}, {2{paddr_tv_r[2] & ~paddr_tv_r[1]}},
+             {2{~paddr_tv_r[2] & paddr_tv_r[1]}}, {2{~paddr_tv_r[2] & ~paddr_tv_r[1]}}};
+	end
+	else begin
+	wbuf_entry_in.data = {8{data_tv_r[0+:8]}};
+	wbuf_entry_in.mask = {(paddr_tv_r[2] & paddr_tv_r[1] & paddr_tv_r[0]), 
+             (paddr_tv_r[2] & paddr_tv_r[1] & ~paddr_tv_r[0]),
+             (paddr_tv_r[2] & ~paddr_tv_r[1] & paddr_tv_r[0]),
+             (paddr_tv_r[2] & ~paddr_tv_r[1] & ~paddr_tv_r[0]),
+             (~paddr_tv_r[2] & paddr_tv_r[1] & paddr_tv_r[0]),
+             (~paddr_tv_r[2] & paddr_tv_r[1] & ~paddr_tv_r[0]),
+             (~paddr_tv_r[2] & ~paddr_tv_r[1] & paddr_tv_r[0]),
+             (~paddr_tv_r[2] & ~paddr_tv_r[1] & ~paddr_tv_r[0])
+            };
+	end
+end
+
+    /*assign wbuf_entry_in.mask = double_op_tv_r
       ? 8'b1111_1111
       : (word_op_tv_r
         ? {{4{paddr_tv_r[2]}}, {4{~paddr_tv_r[2]}}}
@@ -440,7 +469,8 @@ module bp_be_dcache
              (~paddr_tv_r[2] & paddr_tv_r[1] & ~paddr_tv_r[0]),
              (~paddr_tv_r[2] & ~paddr_tv_r[1] & paddr_tv_r[0]),
              (~paddr_tv_r[2] & ~paddr_tv_r[1] & ~paddr_tv_r[0])
-            }));
+            }));*/
+
   end
 
   // stat_mem {lru, dirty}
@@ -651,7 +681,7 @@ module bp_be_dcache
     assign half_sigext = signed_op_tv_r & data_half_selected[15]; 
     assign byte_sigext = signed_op_tv_r & data_byte_selected[7]; 
 
-    assign data_o = load_op_tv_r
+    /*assign data_o = load_op_tv_r
       ? (double_op_tv_r
         ? bypass_data_masked
         : (word_op_tv_r
@@ -659,7 +689,27 @@ module bp_be_dcache
           : (half_op_tv_r
             ? {{48{half_sigext}}, data_half_selected}
             : {{56{byte_sigext}}, data_byte_selected})))
-      : 64'b0;
+      : 64'b0;*/
+
+
+always_comb begin
+	if (~load_op_tv_r) begin
+	data_o = 64'b0;
+	end
+	else if (double_op_tv_r) begin
+	data_o = bypass_data_masked;
+	end
+	else if (word_op_tv_r) begin
+	data_o = {{32{word_sigext}}, data_word_selected};
+	end
+	else if (half_op_tv_r) begin
+	data_o = {{48{half_sigext}}, data_half_selected};
+	end
+	else begin
+	data_o = {{56{byte_sigext}}, data_byte_selected};
+	end
+	
+end
   end
  
   // ctrl logic
