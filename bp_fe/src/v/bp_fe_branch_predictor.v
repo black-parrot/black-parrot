@@ -52,7 +52,7 @@ assign branch_metadata_o     = {pc_fwd_i[btb_indx_width_p-1:0]
 
 
    
-assign predict = ([pc_o[4:0] < pc_queue_i[4:0]);
+assign predict = (pc_o[4:0] < pc_queue_i[4:0]);
     
 bp_fe_btb
  #(.bp_fe_pc_gen_btb_idx_width_lp(btb_indx_width_p)
