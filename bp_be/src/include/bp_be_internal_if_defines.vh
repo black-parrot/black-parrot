@@ -18,31 +18,32 @@
     logic [rv64_eaddr_width_gp-1:0]          pc;                                                   \
     logic                                    fe_exception_not_instr;                               \
     bp_fe_exception_code_e                   fe_exception_code;                                    \
-    logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                  \
    } bp_be_instr_metadata_s;                                                                       \
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
-    bp_be_instr_metadata_s             instr_metadata;                                             \
-    logic [rv64_instr_width_gp-1:0]    instr;                                                      \
-    logic                              irs1_v;                                                     \
-    logic                              irs2_v;                                                     \
-    logic                              frs1_v;                                                     \
-    logic                              frs2_v;                                                     \
-    logic [rv64_reg_addr_width_gp-1:0] rs1_addr;                                                   \
-    logic [rv64_reg_addr_width_gp-1:0] rs2_addr;                                                   \
-    logic [rv64_reg_data_width_gp-1:0] imm;                                                        \
+    bp_be_instr_metadata_s                   instr_metadata;                                       \
+    logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                  \
+    logic [rv64_instr_width_gp-1:0]          instr;                                                \
+    logic                                    irs1_v;                                               \
+    logic                                    irs2_v;                                               \
+    logic                                    frs1_v;                                               \
+    logic                                    frs2_v;                                               \
+    logic [rv64_reg_addr_width_gp-1:0]       rs1_addr;                                             \
+    logic [rv64_reg_addr_width_gp-1:0]       rs2_addr;                                             \
+    logic [rv64_reg_data_width_gp-1:0]       imm;                                                  \
    } bp_be_issue_pkt_s;                                                                            \
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
-    bp_be_instr_metadata_s             instr_metadata;                                             \
-    logic [rv64_instr_width_gp-1:0]    instr;                                                      \
-    bp_be_decode_s                     decode;                                                     \
+    bp_be_instr_metadata_s                   instr_metadata;                                       \
+    logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                  \
+    logic [rv64_instr_width_gp-1:0]          instr;                                                \
+    bp_be_decode_s                           decode;                                               \
                                                                                                    \
-    logic [rv64_reg_data_width_gp-1:0] rs1;                                                        \
-    logic [rv64_reg_data_width_gp-1:0] rs2;                                                        \
-    logic [rv64_reg_data_width_gp-1:0] imm;                                                        \
+    logic [rv64_reg_data_width_gp-1:0]       rs1;                                                  \
+    logic [rv64_reg_data_width_gp-1:0]       rs2;                                                  \
+    logic [rv64_reg_data_width_gp-1:0]       imm;                                                  \
    } bp_be_dispatch_pkt_s;                                                                         \
                                                                                                    \
   typedef struct packed                                                                            \
@@ -114,16 +115,16 @@
  *   comes from literally counting bits in the struct definition, which is ugly, error-prone,
  *   and an unfortunate, necessary consequence of parameterized structs.
  */
-`define bp_be_instr_metadata_width(branch_metadata_fwd_width_mp)                                   \
+`define bp_be_instr_metadata_width                                                                 \
   (bp_be_itag_width_gp                                                                             \
    + rv64_eaddr_width_gp                                                                           \
    + 1                                                                                             \
    + $bits(bp_fe_exception_code_e)                                                                 \
-   + branch_metadata_fwd_width_mp                                                                  \
    )                                                                                               
 
 `define bp_be_issue_pkt_width(branch_metadata_fwd_width_mp)                                        \
-  (`bp_be_instr_metadata_width(branch_metadata_fwd_width_mp)                                       \
+  (`bp_be_instr_metadata_width                                                                     \
+   + branch_metadata_fwd_width_mp                                                                  \
    + rv64_instr_width_gp                                                                           \
    + 4                                                                                             \
    + 2 * rv64_reg_addr_width_gp                                                                    \
@@ -131,14 +132,15 @@
    )                                                                                               
 
 `define bp_be_dispatch_pkt_width(branch_metadata_fwd_width_mp)                                     \
-  (`bp_be_instr_metadata_width(branch_metadata_fwd_width_mp)                                       \
+  (`bp_be_instr_metadata_width                                                                     \
+   + branch_metadata_fwd_width_mp                                                                  \
    + rv64_instr_width_gp                                                                           \
    + 3 * rv64_reg_data_width_gp                                                                    \
    + `bp_be_decode_width                                                                           \
    )                                                                                               
 
-`define bp_be_pipe_stage_reg_width(branch_metadata_fwd_width_mp)                                   \
-  (`bp_be_instr_metadata_width(branch_metadata_fwd_width_mp)                                       \
+`define bp_be_pipe_stage_reg_width                                                                 \
+  (`bp_be_instr_metadata_width                                                                     \
    +rv64_instr_width_gp                                                                            \
    +8                                                                                              \
    +rv64_reg_addr_width_gp                                                                         \

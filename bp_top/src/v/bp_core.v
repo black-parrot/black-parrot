@@ -44,10 +44,11 @@ module bp_core
       `bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, paddr_width_p, cce_block_size_in_bits_lp, lce_assoc_p)
     , localparam lce_lce_tr_resp_width_lp =
       `bp_lce_lce_tr_resp_width(num_lce_p, paddr_width_p, cce_block_size_in_bits_lp, lce_assoc_p)
-
-    , localparam pipe_stage_reg_width_lp   = `bp_be_pipe_stage_reg_width(branch_metadata_fwd_width_p)
-    , localparam calc_result_width_lp      = `bp_be_calc_result_width(branch_metadata_fwd_width_p)
-    , localparam exception_width_lp        = `bp_be_exception_width
+    , localparam fu_op_width_lp=`bp_be_fu_op_width
+    // From RISC-V specifications
+    , localparam reg_data_width_lp = rv64_reg_data_width_gp
+    , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
+    , localparam eaddr_width_lp    = rv64_eaddr_width_gp
   )
   (
     input clk_i
@@ -86,11 +87,14 @@ module bp_core
     , output [1:0]                               lce_tr_resp_v_o
     , input [1:0]                                lce_tr_resp_ready_i 
 
-    // Commit tracer
-    , output [pipe_stage_reg_width_lp-1:0] cmt_trace_stage_reg_o
-    , output [calc_result_width_lp-1:0]    cmt_trace_result_o
-    , output [exception_width_lp-1:0]      cmt_trace_exc_o
-  );
+    // Commit tracer for trace replay
+    , output                                  cmt_rd_w_v_o
+    , output [reg_addr_width_lp-1:0]          cmt_rd_addr_o
+    , output                                  cmt_mem_w_v_o
+    , output [eaddr_width_lp-1:0]             cmt_mem_addr_o
+    , output [fu_op_width_lp-1:0]             cmt_mem_op_o
+    , output [reg_data_width_lp-1:0]          cmt_data_o
+    );
 
   `declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
   bp_proc_cfg_s proc_cfg;
@@ -264,8 +268,13 @@ module bp_core
        ,.lce_tr_resp_v_o(lce_tr_resp_v_o[1])
        ,.lce_tr_resp_ready_i(lce_tr_resp_ready_i[1])
 
-       ,.cmt_trace_stage_reg_o(cmt_trace_stage_reg_o)
-       ,.cmt_trace_result_o(cmt_trace_result_o)
-       ,.cmt_trace_exc_o(cmt_trace_exc_o)
-    );
-endmodule
+       ,.cmt_rd_w_v_o(cmt_rd_w_v_o)
+       ,.cmt_rd_addr_o(cmt_rd_addr_o)
+       ,.cmt_mem_w_v_o(cmt_mem_w_v_o)
+       ,.cmt_mem_addr_o(cmt_mem_addr_o)
+       ,.cmt_mem_op_o(cmt_mem_op_o)
+       ,.cmt_data_o(cmt_data_o)
+       );
+
+endmodule : bp_core
+

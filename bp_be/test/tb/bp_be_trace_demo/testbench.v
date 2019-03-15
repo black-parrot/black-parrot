@@ -25,6 +25,7 @@ module testbench
    , parameter boot_rom_width_p            = "inv"
    , parameter boot_rom_els_p              = "inv"
 
+   , parameter trace_p                  = 0
    , parameter trace_ring_width_p       = "inv"
    , parameter trace_rom_addr_width_p   = "inv"
 
@@ -148,6 +149,7 @@ bp_be_top
    ,.lce_assoc_p(lce_assoc_p)
    ,.lce_sets_p(lce_sets_p)
    ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
+   ,.trace_p(trace_p)
    )
  DUT
   (.clk_i(clk_i)
@@ -203,61 +205,64 @@ bp_be_top
    ,.cmt_data_o(cmt_data)
    );
 
-bp_be_trace_replay_gen 
- #(.vaddr_width_p(vaddr_width_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.asid_width_p(asid_width_p)
-   ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
-   ,.trace_ring_width_p(trace_ring_width_p)
-   )
- be_trace_gen
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-
-   ,.cmt_rd_w_v_i(cmt_rd_w_v)
-   ,.cmt_rd_addr_i(cmt_rd_addr)
-   ,.cmt_mem_w_v_i(cmt_mem_w_v)
-   ,.cmt_mem_addr_i(cmt_mem_addr)
-   ,.cmt_mem_op_i(cmt_mem_op)
-   ,.cmt_data_i(cmt_data)
+if (trace_p)
+  begin : fi1
+    bp_be_trace_replay_gen 
+     #(.vaddr_width_p(vaddr_width_p)
+       ,.paddr_width_p(paddr_width_p)
+       ,.asid_width_p(asid_width_p)
+       ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+       ,.trace_ring_width_p(trace_ring_width_p)
+       )
+     be_trace_gen
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
+    
+       ,.cmt_rd_w_v_i(cmt_rd_w_v)
+       ,.cmt_rd_addr_i(cmt_rd_addr)
+       ,.cmt_mem_w_v_i(cmt_mem_w_v)
+       ,.cmt_mem_addr_i(cmt_mem_addr)
+       ,.cmt_mem_op_i(cmt_mem_op)
+       ,.cmt_data_i(cmt_data)
+                
+       ,.data_o(tr_data_li)
+       ,.v_o(tr_v_li)
+       ,.ready_i(tr_ready_lo)
+       );
             
-   ,.data_o(tr_data_li)
-   ,.v_o(tr_v_li)
-   ,.ready_i(tr_ready_lo)
-   );
-            
-bsg_fsb_node_trace_replay 
- #(.ring_width_p(trace_ring_width_p)
-   ,.rom_addr_width_p(trace_rom_addr_width_p)
-   )
- be_trace_replay 
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.en_i(1'b1)
-                    
-   ,.v_i(tr_v_li)
-   ,.data_i(tr_data_li)
-   ,.ready_o(tr_ready_lo)
-                  
-   ,.v_o()
-   ,.data_o()
-   ,.yumi_i(1'b0)
-                  
-   ,.rom_addr_o(tr_rom_addr_li)
-   ,.rom_data_i(tr_rom_data_lo)
-                  
-   ,.done_o(test_done)
-   ,.error_o()
-   );
-
-bp_trace_rom 
- #(.width_p(trace_ring_width_p+4)
-   ,.addr_width_p(trace_rom_addr_width_p)
-   )
- trace_rom 
-  (.addr_i(tr_rom_addr_li)
-   ,.data_o(tr_rom_data_lo)
-   );
+    bsg_fsb_node_trace_replay 
+     #(.ring_width_p(trace_ring_width_p)
+       ,.rom_addr_width_p(trace_rom_addr_width_p)
+       )
+     be_trace_replay 
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
+       ,.en_i(1'b1)
+                        
+       ,.v_i(tr_v_li)
+       ,.data_i(tr_data_li)
+       ,.ready_o(tr_ready_lo)
+                      
+       ,.v_o()
+       ,.data_o()
+       ,.yumi_i(1'b0)
+                      
+       ,.rom_addr_o(tr_rom_addr_li)
+       ,.rom_data_i(tr_rom_data_lo)
+                      
+       ,.done_o(test_done)
+       ,.error_o()
+       );
+    
+    bp_trace_rom 
+     #(.width_p(trace_ring_width_p+4)
+       ,.addr_width_p(trace_rom_addr_width_p)
+       )
+     trace_rom 
+      (.addr_i(tr_rom_addr_li)
+       ,.data_o(tr_rom_data_lo)
+       );
+  end // fi1
 
 bsg_fifo_1r1w_rolly 
  #(.width_p(fe_queue_width_lp)

@@ -88,7 +88,9 @@ module bp_be_top
    , parameter core_els_p                  = "inv"
 
    , parameter load_to_use_forwarding_p    = 1
-   , parameter trace_p                     = 1
+   , parameter trace_p                     = 0
+   , parameter calc_debug_p                = 0
+   , parameter calc_debug_file_p           = "inv"
 
    // MMU parameters
    , parameter num_cce_p                   = "inv"
@@ -229,7 +231,8 @@ logic mmu_resp_v, mmu_resp_rdy;
 
 bp_be_calc_status_s    calc_status;
 
-logic chk_dispatch_v, chk_poison_ex1, chk_poison_ex2, chk_poison_ex3, chk_roll, chk_instr_dequeue_v;
+logic chk_dispatch_v, chk_poison_isd;
+logic chk_poison_ex1, chk_poison_ex2, chk_poison_ex3, chk_roll, chk_instr_dequeue_v;
 
 logic [reg_data_width_lp-1:0] chk_mtvec_li, chk_mtvec_lo;
 logic                         chk_mtvec_w_v_li;
@@ -252,6 +255,7 @@ bp_be_checker_top
 
    ,.chk_dispatch_v_o(chk_dispatch_v)
    ,.chk_roll_o(chk_roll)
+   ,.chk_poison_isd_o(chk_poison_isd)
    ,.chk_poison_ex1_o(chk_poison_ex1)
    ,.chk_poison_ex2_o(chk_poison_ex2)
    ,.chk_poison_ex3_o(chk_poison_ex3)
@@ -292,6 +296,8 @@ bp_be_calculator_top
    
    ,.load_to_use_forwarding_p(load_to_use_forwarding_p)
    ,.trace_p(trace_p)
+   ,.debug_p(calc_debug_p)
+   ,.debug_file_p(calc_debug_file_p)
 
    ,.core_els_p(core_els_p)
    ,.num_lce_p(num_lce_p)
@@ -309,6 +315,7 @@ bp_be_calculator_top
    ,.chk_dispatch_v_i(chk_dispatch_v)
 
    ,.chk_roll_i(chk_roll)
+   ,.chk_poison_isd_i(chk_poison_isd)
    ,.chk_poison_ex1_i(chk_poison_ex1)
    ,.chk_poison_ex2_i(chk_poison_ex2)
    ,.chk_poison_ex3_i(chk_poison_ex3)
