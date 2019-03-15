@@ -52,24 +52,7 @@ assign branch_metadata_o     = {pc_fwd_i[btb_indx_width_p-1:0]
 
 
    
-bp_fe_bht 
- #(.bht_indx_width_p(bht_indx_width_p)
-   ) 
- bht_1
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.en_i(1'b1)
-        
-   ,.idx_r_i(pc_queue_i[bht_indx_width_p-1:0])
-   ,.idx_w_i(branch_metadata_i.bht_indx)
-     
-   ,.r_v_i(r_v_i)
-   ,.w_v_i(w_v_i)
-     
-   ,.correct_i(attaboy_i)
-   ,.predict_o(predict)
-   );
-
+assign predict = ([pc_o[4:0] < pc_queue_i[4:0]);
     
 bp_fe_btb
  #(.bp_fe_pc_gen_btb_idx_width_lp(btb_indx_width_p)
