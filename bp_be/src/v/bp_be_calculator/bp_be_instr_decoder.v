@@ -41,6 +41,8 @@ module bp_be_instr_decoder
 
    , output [decode_width_lp-1:0] decode_o
    , output                       illegal_instr_o
+   , output                       ret_instr_o
+   , output                       csr_instr_o
    );
 
 // Cast input and output ports 
@@ -51,6 +53,8 @@ logic          illegal_instr;
 assign instr           = instr_i;
 assign decode_o        = decode;
 assign illegal_instr_o = illegal_instr;
+assign ret_instr_o     = decode.ret_v;
+assign csr_instr_o     = decode.csr_instr_v;
 
 // Decode logic 
 always_comb 

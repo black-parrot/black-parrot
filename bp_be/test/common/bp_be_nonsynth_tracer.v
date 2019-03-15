@@ -13,8 +13,8 @@ module bp_be_nonsynth_tracer
    , localparam proc_cfg_width_lp = `bp_proc_cfg_width(core_els_p, num_lce_p)
 
    , localparam pipe_stage_reg_width_lp=`bp_be_pipe_stage_reg_width(branch_metadata_fwd_width_p)
-   , localparam calc_result_width_lp=`bp_be_calc_result_width(branch_metadata_fwd_width_p)
    , localparam exception_width_lp=`bp_be_exception_width
+   , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )
   (input logic                                 clk_i
    , input logic                               reset_i
@@ -22,7 +22,7 @@ module bp_be_nonsynth_tracer
    , input logic [proc_cfg_width_lp-1:0] proc_cfg_i
 
    , input logic [pipe_stage_reg_width_lp-1:0] cmt_trace_stage_reg_i
-   , input logic [calc_result_width_lp-1:0]    cmt_trace_result_i
+   , input logic [reg_data_width_lp-1:0]       cmt_trace_result_i
    , input logic [exception_width_lp-1:0]      cmt_trace_exc_i 
    );
 
@@ -32,13 +32,13 @@ module bp_be_nonsynth_tracer
                                    , asid_width_p
                                    , branch_metadata_fwd_width_p
                                    );
-
+/*
 // Cast input and output ports
 bp_proc_cfg_s proc_cfg;
 
-bp_be_pipe_stage_reg_s cmt_trace_stage_reg;
-bp_be_calc_result_s    cmt_trace_result;
-bp_be_exception_s      cmt_trace_exc;
+bp_be_pipe_stage_reg_s        cmt_trace_stage_reg;
+logic [reg_data_width_lp-1:0] cmt_trace_result;
+bp_be_exception_s             cmt_trace_exc;
 
 assign proc_cfg = proc_cfg_i;
 
@@ -100,16 +100,16 @@ always_ff @(posedge clk_i) begin
                          ,cmt_trace_stage_reg.instr_metadata.pc
                          ,cmt_trace_stage_reg.instr
                          );
-            /* 
-             * TODO: Get exceptions from exception pipe 
-            end else if(cmt_trace_stage_reg.decode.exception_v) begin
-                $display("[CORE%0x EXC] itag: %x pc: %x instr: %x"
-                         ,proc_cfg.mhartid
-                         ,cmt_trace_stage_reg.instr_metadata.itag
-                         ,cmt_trace_stage_reg.instr_metadata.pc
-                         ,cmt_trace_stage_reg.instr
-                         );
-            */
+            //
+            // TODO: Get exceptions from exception pipe 
+            //end else if(cmt_trace_stage_reg.decode.exception_v) begin
+            //    $display("[CORE%0x EXC] itag: %x pc: %x instr: %x"
+            //             ,proc_cfg.mhartid
+            //             ,cmt_trace_stage_reg.instr_metadata.itag
+            //             ,cmt_trace_stage_reg.instr_metadata.pc
+            //             ,cmt_trace_stage_reg.instr
+            //             );
+            //
             end else begin
                 $display("[CORE%0x CMT] itag: %x pc: %x instr: %x"
                          ,proc_cfg.mhartid
@@ -205,7 +205,7 @@ always_ff @(posedge clk_i) begin
                              ,cmt_trace_result.result
                              );
                 end else if(cmt_trace_stage_reg.decode.br_v) begin
-                    /* TODO: Expand on this trace to have all branch instructions */
+                    // TODO: Expand on this trace to have all branch instructions
                     $display("\t\t\top: branch sem: pc <- {%x} rs1: %x cmp rs2: %x taken: %x"
                              ,cmt_trace_result.br_tgt
                              ,cmt_trace_stage_reg.instr_operands.rs1
@@ -213,7 +213,7 @@ always_ff @(posedge clk_i) begin
                              ,cmt_trace_result.result[0]
                              );
                 end else if(cmt_trace_stage_reg.decode.irf_w_v) begin
-                    /* TODO: Expand on this trace to have all integer instructions */
+                    // TODO: Expand on this trace to have all integer instructions
                     $display("\t\t\top: integer sem: r%d <- {%x}"
                              ,cmt_trace_stage_reg.decode.rd_addr
                              ,cmt_trace_result.result
@@ -223,4 +223,5 @@ always_ff @(posedge clk_i) begin
         end
     end
 end
+*/
 endmodule : bp_be_nonsynth_tracer

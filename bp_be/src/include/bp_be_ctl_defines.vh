@@ -1,5 +1,5 @@
-`ifndef BP_BE_UCODE_DEFINES_VH
-`define BP_BE_UCODE_DEFINES_VH
+`ifndef BP_BE_CTL_DEFINES_VH
+`define BP_BE_CTL_DEFINES_VH
 
 /* int_fu_op [2:0] is equivalent to funct3 in the RV instruction.
  * int_fu_op [3] is an alternate version of that operation.
@@ -121,6 +121,8 @@ typedef struct packed
   logic poison_v;
   logic roll_v;
   logic illegal_instr_v;
+  logic ret_instr_v;
+  logic csr_instr_v;
   logic tlb_miss_v;
   logic load_fault_v;
   logic store_fault_v;

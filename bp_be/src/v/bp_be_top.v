@@ -88,6 +88,7 @@ module bp_be_top
    , parameter core_els_p                  = "inv"
 
    , parameter load_to_use_forwarding_p    = 1
+   , parameter trace_p                     = 1
 
    // MMU parameters
    , parameter num_cce_p                   = "inv"
@@ -137,12 +138,12 @@ module bp_be_top
                                                                        )                                                               
    , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(core_els_p, num_lce_p)
 
-   , localparam pipe_stage_reg_width_lp    = `bp_be_pipe_stage_reg_width(branch_metadata_fwd_width_p)
-   , localparam calc_result_width_lp       = `bp_be_calc_result_width(branch_metadata_fwd_width_p)
-   , localparam exception_width_lp         = `bp_be_exception_width
+   , localparam fu_op_width_lp             = `bp_be_fu_op_width
 
    // From RISC-V specifications
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
+   , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
+   , localparam eaddr_width_lp    = rv64_eaddr_width_gp
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -193,10 +194,13 @@ module bp_be_top
    // Processor configuration
    , input [proc_cfg_width_lp-1:0]           proc_cfg_i
 
-   // Commit tracer
-   , output [pipe_stage_reg_width_lp-1:0]    cmt_trace_stage_reg_o
-   , output [calc_result_width_lp-1:0]       cmt_trace_result_o
-   , output [exception_width_lp-1:0]         cmt_trace_exc_o
+   // Commit tracer for trace replay
+   , output                                  cmt_rd_w_v_o
+   , output [reg_addr_width_lp-1:0]          cmt_rd_addr_o
+   , output                                  cmt_mem_w_v_o
+   , output [eaddr_width_lp-1:0]             cmt_mem_addr_o
+   , output [fu_op_width_lp-1:0]             cmt_mem_op_o
+   , output [reg_data_width_lp-1:0]          cmt_data_o
    );
 
 // Declare parameterized structures
@@ -224,11 +228,8 @@ bp_be_mmu_resp_s mmu_resp;
 logic mmu_resp_v, mmu_resp_rdy;
 
 bp_be_calc_status_s    calc_status;
-bp_be_exception_s      cmt_trace_exc;
-bp_be_pipe_stage_reg_s cmt_trace_stage_reg;
-bp_be_calc_result_s    cmt_trace_result;
 
-logic chk_dispatch_v, chk_poison_ex1, chk_poison_ex2, chk_roll, chk_instr_dequeue_v;
+logic chk_dispatch_v, chk_poison_ex1, chk_poison_ex2, chk_poison_ex3, chk_roll, chk_instr_dequeue_v;
 
 logic [reg_data_width_lp-1:0] chk_mtvec_li, chk_mtvec_lo;
 logic                         chk_mtvec_w_v_li;
@@ -253,6 +254,7 @@ bp_be_checker_top
    ,.chk_roll_o(chk_roll)
    ,.chk_poison_ex1_o(chk_poison_ex1)
    ,.chk_poison_ex2_o(chk_poison_ex2)
+   ,.chk_poison_ex3_o(chk_poison_ex3)
 
    ,.calc_status_i(calc_status)
    ,.mmu_cmd_ready_i(mmu_cmd_rdy)
@@ -289,6 +291,7 @@ bp_be_calculator_top
    ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
    
    ,.load_to_use_forwarding_p(load_to_use_forwarding_p)
+   ,.trace_p(trace_p)
 
    ,.core_els_p(core_els_p)
    ,.num_lce_p(num_lce_p)
@@ -308,6 +311,7 @@ bp_be_calculator_top
    ,.chk_roll_i(chk_roll)
    ,.chk_poison_ex1_i(chk_poison_ex1)
    ,.chk_poison_ex2_i(chk_poison_ex2)
+   ,.chk_poison_ex3_i(chk_poison_ex3)
 
    ,.calc_status_o(calc_status)
 
@@ -321,9 +325,12 @@ bp_be_calculator_top
 
    ,.proc_cfg_i(proc_cfg_i)     
 
-   ,.cmt_trace_stage_reg_o(cmt_trace_stage_reg_o)
-   ,.cmt_trace_result_o(cmt_trace_result_o)
-   ,.cmt_trace_exc_o(cmt_trace_exc_o)
+   ,.cmt_rd_w_v_o(cmt_rd_w_v_o)
+   ,.cmt_rd_addr_o(cmt_rd_addr_o)
+   ,.cmt_mem_w_v_o(cmt_mem_w_v_o)
+   ,.cmt_mem_addr_o(cmt_mem_addr_o)
+   ,.cmt_mem_op_o(cmt_mem_op_o)
+   ,.cmt_data_o(cmt_data_o)
 
    ,.mtvec_o(chk_mtvec_li)
    ,.mtvec_w_v_o(chk_mtvec_w_v_li)

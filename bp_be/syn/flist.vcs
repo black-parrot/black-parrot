@@ -80,6 +80,7 @@ $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_int.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mem.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mul.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_regfile.v
+$BP_BE_DIR/test/common/bp_be_nonsynth_tracer.v
 # Checker
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_checker_top.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_detector.v
@@ -138,4 +139,3 @@ $BP_ME_DIR/src/v/cce/bp_cce_top.v
 $BP_ME_DIR/src/v/network/bp_coherence_network.v
 $BP_ME_DIR/src/v/network/bp_coherence_network_channel.v
 ## TOP
-$BP_TOP_DIR/src/v/bp_multi_top.v

@@ -118,6 +118,7 @@ module bp_be_checker_top
    , output                           chk_roll_o
    , output                           chk_poison_ex1_o
    , output                           chk_poison_ex2_o
+   , output                           chk_poison_ex3_o
 
    // CSR interface
    , input [reg_data_width_lp-1:0]    mtvec_i
@@ -189,6 +190,7 @@ bp_be_detector
    ,.chk_roll_o(chk_roll_o)
    ,.chk_poison_ex1_o(chk_poison_ex1_o)
    ,.chk_poison_ex2_o(chk_poison_ex2_o)
+   ,.chk_poison_ex3_o(chk_poison_ex3_o)
    );
 
 bp_be_scheduler 
