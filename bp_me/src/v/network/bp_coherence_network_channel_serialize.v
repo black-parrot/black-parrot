@@ -1,3 +1,7 @@
+/*
+  Wrapped network channel module to incorporate serializer and deserializer, with additional
+  parameters to facilitate easy swapping of network channels within the network module
+*/
 module bp_coherence_network_channel_serialize
   #(parameter packet_width_p      = "inv"
   , parameter num_src_p           = "inv"

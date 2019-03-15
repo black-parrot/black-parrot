@@ -1,3 +1,15 @@
+/*
+    This module recieves serialized packets over the network and reconstructs the cache lines one packet at a time
+    inside of the scratch pad memory. There is one location in the scratch pad for each source on the network
+
+    Counters are used to track which packet of the cahce line is being recieved so the can be palced into the
+    scratch pad in the correct location
+
+    Once a cache line has all packets received, that address is placed into a FIFO that passes the finished cache
+    lines to the "backend" of the deserializer, which then reads the addresses out of the FIFO and passes that data off
+    to the destination module.
+
+*/
 module bp_network_deserializer 
   //import bp_common_pkg::*;
   #(parameter   num_dest              = "inv"
@@ -22,23 +34,30 @@ module bp_network_deserializer
   , input                                   yumi_i
   );
 
+  // Module should always be ready to accept new data from the network
   assign ready_o = 1'b1;
 
+  // Store the count of which packet is being received
   logic [`BSG_SAFE_CLOG2(num_packets_p)-1:0] count [num_src-1:0];
+
+
   logic fifo_en;
   logic [src_id_width_p-1:0] p_addr;  
 
+  // The address bits of the current packet on the inputs
   wire [src_id_width_p-1:0]                 curr_addr = data_i[(total_o_data_width-dest_id_width_p-1)-:src_id_width_p];
-
+  // The data bits of the current packet on the inputs
   wire [packet_data_width_p-1:0]            curr_data = data_i[0+:packet_data_width_p];
 
   wire [`BSG_SAFE_CLOG2(num_packets_p)-1:0] count_p1 = count[curr_addr] + 1'b1;
 
+  // enable the fifo to store the address that has received all packets
   wire                                      fifo_en_r = v_i & (count_p1 == num_packets_p-1);
 
+  // Mask for writing to the scratch pad, one packet size at a time
   wire [num_packets_p-1:0]                  curr_mask = 1'b1 << count[curr_addr];
 
-
+  // calculates the next count for the current address recieving packets
   wire [`BSG_SAFE_CLOG2(num_packets_p)-1:0] count_n = ( v_i ? ((count_p1 == num_packets_p) ? '0 : count_p1) : count[curr_addr] );
 
 
@@ -102,20 +121,3 @@ module bp_network_deserializer
   assign data_o = ram_data_out[source_data_width_p-1:0];
 
 endmodule
-
-
-
-
-  // bsg_mem_1r1w_sync_mask_write_byte scratch_pad 
-  //   #(.els_p(2**source_data_width_p)
-  //   , .data_width_p(total_data_width)
-  //   )
-  //   ( .clk_i()
-  //   , .reset_i()
-  //   , .v_i()
-  //   , .w_i()
-  //   , .addr_i()
-  //   , .data_i()
-  //   , .write_mask_i()
-  //   , .data_o()
-  //   );
