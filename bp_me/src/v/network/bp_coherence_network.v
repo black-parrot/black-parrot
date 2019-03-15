@@ -180,11 +180,11 @@ module bp_coherence_network
       );
 
   // LCE Request Network - (LCE->trans_net->CCE)
-  bp_coherence_network_channel_serialize
+  bp_coherence_network_channel//_serialize
     #(.packet_width_p(bp_lce_cce_req_width_lp)
       ,.num_src_p(num_lce_p)
       ,.num_dst_p(num_cce_p)
-      ,.chunk_size_p(8)
+      //,.chunk_size_p(8)
       ,.debug_p(debug_p)
       ,.repeater_output_p(repeater_output_lp)
       )
@@ -223,10 +223,11 @@ module bp_coherence_network
       );
 
   // LCE Data Response Network - (LCE->trans_net->CCE)
-  bp_coherence_network_channel
+  bp_coherence_network_channel_serialize
     #(.packet_width_p(bp_lce_cce_data_resp_width_lp)
       ,.num_src_p(num_lce_p)
       ,.num_dst_p(num_cce_p)
+      ,.chunk_size_p(64)
       ,.debug_p(debug_p)
       ,.repeater_output_p(repeater_output_lp)
       )
