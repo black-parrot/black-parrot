@@ -1,3 +1,8 @@
+/*
+  Wrapper to use bsg serializer module and adds the original source and desitination bits to the output data to
+  traverse the network
+
+*/
 module bp_network_serializer 
   //import bp_common_pkg::*;
   #(parameter   num_dest              = "inv"
