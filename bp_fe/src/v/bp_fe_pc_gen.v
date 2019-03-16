@@ -304,6 +304,6 @@ assign is_br = icache_pc_gen_v_i & (scan_instr.instr_scan_class == e_rvi_branch)
 assign is_jal = icache_pc_gen_v_i & (scan_instr.instr_scan_class == e_rvi_jal);
 assign br_target = icache_pc_gen.addr + scan_instr.imm; 
 assign is_back_br = scan_instr.imm[63];
-assign predict_taken = pc_v_f2 & ((is_br & is_back_br) | (is_jal)) & icache_pc_gen_v_i;
+assign predict_taken = pc_v_f2 & ((is_br & is_back_br) | (is_jal)) & ~btb_pred_f1_r & icache_pc_gen_v_i;
 
 endmodule

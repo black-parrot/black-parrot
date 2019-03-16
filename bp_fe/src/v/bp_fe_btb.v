@@ -86,16 +86,26 @@ assign br_tgt_v_o = tag_mem_v_lo & r_v_r & (tag_mem_lo == r_tag_r);
 
 always_ff @(posedge clk_i)
   begin
-      r_tag_r <= r_addr_i[btb_offset_width_lp+btb_idx_width_p+:btb_tag_width_p];
-      r_idx_r <= r_addr_i[btb_offset_width_lp+:btb_tag_width_p];
-
-      // Read didn't actually happen if there was a write
-      r_v_r <= r_v_i & ~w_v_i;
-
+    if (reset_i)
+      begin
+        r_v_r <= '0;
+        r_tag_r <= '0;
+        r_idx_r <= '0;
+      end
+    else
+      begin
+        // Read didn't actually happen if there was a write
+        r_v_r <= r_v_i & ~w_v_i;
+        r_tag_r <= r_addr_i[btb_offset_width_lp+btb_idx_width_p+:btb_tag_width_p];
+        r_idx_r <= r_addr_i[btb_offset_width_lp+:btb_tag_width_p];
+      end
+    
       if (reset_i)
         v_r <= '0;
       else if (w_v_i)
         v_r[tag_mem_addr_li] <= 1'b1;
+      else 
+        v_r <= v_r;
   end
 
 always_ff @(posedge clk_i)
