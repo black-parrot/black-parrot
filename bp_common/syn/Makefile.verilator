@@ -1,0 +1,44 @@
+## Tools
+CC ?= $(GCC)
+VV ?= $(VERILATOR)
+
+## Tool options
+VV_OPTS := --sc            # Output in SystemC rather than C++
+VV_OPTS += --trace         # Dump a VCD
+VV_OPTS += --trace-structs # Dump struct information with VCD
+VV_OPTS += -Wno-unoptflat  # Verilator has problems with false positive combinatorial
+                           #   loop detection e.g. bit 0 drives bit 1 of struct
+
+LINT_OPTS  := --lint-only
+BUILD_OPTS := --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --exe
+
+TOP_MODULE ?= testbench
+
+.PHONY: deps.sc lint.sc build.sc run.sc clean.sc
+
+deps.sc:
+	$(eval include $(TB_PATH)/$(TB)/Makefile.frag)
+	$(eval LOG_DIR := $(LOG_PATH)/verilator)
+	$(shell mkdir -p $(LOG_DIR))
+
+lint.sc: deps.sc
+	$(VV) $(VV_OPTS) $(LINT_OPTS) --top-module $(TOP_MODULE) \
+	  -f flist.verilator -f $(TB_PATH)/$(TB)/flist.verilator \
+	  $(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.cpp             \
+	  | tee $(LOG_DIR)/$(TB)_lint.log
+
+build.sc: deps.sc
+	$(VV) $(VV_OPTS) $(BUILD_OPTS) --top-module $(TOP_MODULE) \
+	  -f flist.verilator -f $(TB_PATH)/$(TB)/flist.verilator  \
+	  $(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.cpp              \
+	  | tee $(LOG_DIR)/$(TB)_$(ROM_NAME)_vbuild.log
+	make -C obj_dir -f Vtestbench.mk               	          \
+	  | tee $(LOG_DIR)/$(TB)_$(ROM_NAME)_cbuild.log
+
+run.sc: build.sc
+	obj_dir/V$(TOP_MODULE) | tee $(LOG_DIR)/$(TB)_$(ROM_NAME)_sim.log
+
+clean.sc:
+	rm -rf obj_dir
+	rm -rf vcdplus.vpd
+

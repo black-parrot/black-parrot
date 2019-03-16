@@ -1,0 +1,41 @@
+## Set common environment variables
+TOP ?= $(shell git rev-parse --show-toplevel)
+
+BSG_IP_CORES_DIR ?= $(TOP)/bsg_ip_cores
+BP_COMMON_DIR    ?= $(TOP)/bp_common
+BP_FE_DIR        ?= $(TOP)/bp_fe
+BP_BE_DIR        ?= $(TOP)/bp_be
+BP_ME_DIR        ?= $(TOP)/bp_me
+BP_TOP_DIR       ?= $(TOP)/bp_top
+BP_EXTERNAL_DIR  ?= $(TOP)/external
+
+## Setup CAD tools
+# BSG currently hosts its CAD tools on xor. If BSG_CADENV is not set, then we should 
+#   default to using free tools such as verilator
+ifneq (,$(findstring xor,$(shell hostname)))
+  BSG_CADENV     ?= 1
+  BSG_CADENV_DIR ?= $(TOP)/bsg_cadenv
+  include $(BSG_CADENV_DIR)/cadenv.mk
+else
+  BSG_CADENV ?= 0
+  $(info Not on xor...VCS and DC not supported)
+endif
+
+## Override tool paths if needed
+GCC       ?= gcc
+VCS       ?= vcs
+DVE       ?= dve
+VERILATOR ?= verilator
+
+## Needed for verilator g++ compilations
+VERILATOR_ROOT  ?= $(BP_EXTERNAL_DIR)/verilator
+SYSTEMC_INCLUDE ?= $(BP_EXTERNAL_DIR)/include
+SYSTEMC_LIBDIR  ?= $(BP_EXTERNAL_DIR)/lib-linux64
+
+## Add external tools and libraries to environment
+PATH            := $(BP_EXTERNAL_DIR)/bin:$(PATH)
+LD_LIBRARY_PATH := $(SYSTEMC_LIBDIR):$(LD_LIBRARY_PATH)
+
+# Exports variables to subprocesses. Then, we can e.g. use BP_FE_DIR in flists
+.EXPORT_ALL_VARIABLES:
+

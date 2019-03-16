@@ -76,6 +76,7 @@ module bp_be_calculator_top
    , localparam mmu_resp_width_lp       = `bp_be_mmu_resp_width
    , localparam pipe_stage_reg_width_lp = `bp_be_pipe_stage_reg_width(branch_metadata_fwd_width_p)
    , localparam calc_result_width_lp    = `bp_be_calc_result_width(branch_metadata_fwd_width_p)
+   , localparam mhartid_width_lp        = `BSG_SAFE_CLOG2(core_els_p)
 
    // From BP BE specifications
    , localparam pipe_stage_els_lp = bp_be_pipe_stage_els_gp
@@ -385,7 +386,8 @@ bp_be_pipe_mul
 
 // Memory pipe: 3 cycle latency
 bp_be_pipe_mem
- #(.vaddr_width_p(vaddr_width_p)
+ #(.core_els_p(core_els_p)
+   ,.vaddr_width_p(vaddr_width_p)
    ,.lce_sets_p(lce_sets_p)
    ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
    )

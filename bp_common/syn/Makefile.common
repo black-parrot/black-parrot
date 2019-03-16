@@ -1,0 +1,14 @@
+## Set common environment variables
+TOP ?= $(shell git rev-parse --show-toplevel)
+
+include $(TOP)/Makefile.common
+
+.PHONY: dve clean
+
+dve:
+	$(DVE) -full64 -vpd vcdplus.vpd &
+
+clean:
+	$(MAKE) clean.v clean.sc clean.syn
+	rm -rf logs
+

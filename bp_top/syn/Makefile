@@ -1,3 +1,8 @@
+## Set common environment variables
+TOP ?= $(shell git rev-parse --show-toplevel)
+
+include $(TOP)/Makefile.env
+
 ## Top level source directory should include 
 TOP              = $(CURDIR)/../..
 BP_TOP_DIR       = $(TOP)/bp_top

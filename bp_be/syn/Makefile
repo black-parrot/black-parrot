@@ -1,15 +1,20 @@
-## Setup CAD tools
-ifneq (,$(findstring xor,$(shell hostname)))
-  include $(BSG_CADENV_DIR)/cadenv.mk
-else
-  $(info Not on xor...VCS and DC not supported)
-endif
+## Set common environment variables
+TOP ?= $(shell git rev-parse --show-toplevel)
 
-SYN_PATH = $(BP_BE_DIR)/syn
-TB_PATH  = $(BP_BE_DIR)/test/tb
+include $(TOP)/Makefile.common
 
-include $(SYN_PATH)/Makefile.vcs
-include $(SYN_PATH)/Makefile.dc
-include $(SYN_PATH)/Makefile.verilator
+SYN_PATH := $(BP_BE_DIR)/syn
+TB_PATH  := $(BP_BE_DIR)/test/tb
+LOG_PATH := $(BP_BE_DIR)/syn/logs
 
+# Default ROM to example
+ROM_NAME ?= bp_example_rom
+TB       ?= bp_be_trace_demo
+
+.EXPORT_ALL_VARIABLES:
+
+include $(BP_COMMON_DIR)/syn/Makefile.common
+include $(BP_COMMON_DIR)/syn/Makefile.dc
+include $(BP_COMMON_DIR)/syn/Makefile.verilator
+include $(BP_COMMON_DIR)/syn/Makefile.vcs
 

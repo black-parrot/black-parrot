@@ -1,0 +1,38 @@
+## Tool specific options
+VCS_OPTIONS += +vcs+finish+5000000ps     # Change this to run longer / shorter
+VCS_OPTIONS += -timescale=1ps/1ps        # Set timescale
+VCS_OPTIONS += -full64 +vcs+lic+wait     # Run 64-bit and wait for license
+VCS_OPTIONS += +v2k -sverilog -debug_pp  # Enable SystemVerilog
+VCS_OPTIONS += +libext+.v+.vlib+.vh      # Find library files with these extensions
+VCS_OPTIONS += +vcs+vcdpluson            # Enable vcd dump
+
+LINT_OPTIONS += +lint=all,noSVA-UA,noVCDE,noSVA-NSVU
+
+.PHONY: deps.v lint.v build.v run.v clean.v
+
+deps.v:
+	$(eval include $(TB_PATH)/$(TB)/Makefile.frag)
+	$(eval LOG_DIR := $(LOG_PATH)/vcs)
+	$(shell mkdir -p $(LOG_DIR))
+
+lint.v: deps.v
+	$(VCS) $(VCS_OPTIONS) $(LINT_OPTIONS) -top test_bp -f flist.vcs -f $(TB_PATH)/$(TB)/flist.vcs \
+	  $(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.v \
+	  | tee $(LOG_DIR)/$(TB)_lint.log
+
+build.v: deps.v
+	$(VCS) $(VCS_OPTIONS) -top test_bp -f flist.vcs -f $(TB_PATH)/$(TB)/flist.vcs \
+ 	  $(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.v -o $(TB_PATH)/$(TB)/simv \
+		| tee $(LOG_DIR)/$(TB)_$(ROM_NAME)_build.log
+
+run.v: build.v
+	$(TB_PATH)/$(TB)/simv | tee $(LOG_DIR)/$(TB)_$(ROM_NAME)_sim.log
+
+clean.v:
+	rm -rf csrc
+	rm -rf dve
+	rm -rf simv
+	rm -rf simv.daidir
+	rm -rf ucli.key
+	rm -rf vcdplus.vpd
+

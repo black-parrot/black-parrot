@@ -30,9 +30,11 @@ module bp_be_dcache_lru_encode
     end
   end 
   else begin
+    // synopsys translate_off
     initial begin
       assert("ways_p" == "unhandled") else $error("unhandled case for %m");
     end
+    // synopsys translate_on
   end
 
 endmodule
