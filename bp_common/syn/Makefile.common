@@ -11,4 +11,5 @@ dve:
 clean:
 	$(MAKE) clean.v clean.sc clean.syn
 	rm -rf logs
+	rm -rf reports
 

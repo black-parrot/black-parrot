@@ -4,8 +4,6 @@ VV ?= $(VERILATOR)
 
 ## Tool options
 VV_OPTS := --sc            # Output in SystemC rather than C++
-VV_OPTS += --trace         # Dump a VCD
-VV_OPTS += --trace-structs # Dump struct information with VCD
 VV_OPTS += -Wno-unoptflat  # Verilator has problems with false positive combinatorial
                            #   loop detection e.g. bit 0 drives bit 1 of struct
 
@@ -14,31 +12,51 @@ BUILD_OPTS := --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --exe
 
 TOP_MODULE ?= testbench
 
+ifeq ($(DUMP), 1)
+  VV_OPTS += --trace         # Dump a VCD
+  VV_OPTS += --trace-structs # Dump struct information with VCD
+endif
+ifeq ($(COVERAGE), 1)
+  VV_OPTS += --coverage
+  #VV_OPTS += --coverage-line
+  #VV_OPTS += --coverage-toggle
+  #VV_OPTS += -DCOVERAGE_DAT_FILENAME="coverage.dat"
+endif
+
 .PHONY: deps.sc lint.sc build.sc run.sc clean.sc
+
+VERILATOR_RUN_DIR ?= $(SYN_PATH)/run_verilator
 
 deps.sc:
 	$(eval include $(TB_PATH)/$(TB)/Makefile.frag)
 	$(eval LOG_DIR := $(LOG_PATH)/verilator)
+	$(eval REPORT_DIR := $(REPORT_PATH)/verilator)
+	$(shell mkdir -p $(REPORT_DIR))
 	$(shell mkdir -p $(LOG_DIR))
+	$(shell mkdir -p $(VERILATOR_RUN_DIR))
+	@grep -v -e "^\#" $(SYN_PATH)/flist.verilator > $(VERILATOR_RUN_DIR)/flist_design.verilator
+	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.verilator > $(VERILATOR_RUN_DIR)/flist_test.verilator
 
 lint.sc: deps.sc
+	cd $(VERILATOR_RUN_DIR); \
 	$(VV) $(VV_OPTS) $(LINT_OPTS) --top-module $(TOP_MODULE) \
-	  -f flist.verilator -f $(TB_PATH)/$(TB)/flist.verilator \
-	  $(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.cpp             \
-	  | tee $(LOG_DIR)/$(TB)_lint.log
+		-f flist_design.verilator \
+		$(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.cpp \
+	| tee $(LOG_DIR)/$(TB)_lint.log
 
 build.sc: deps.sc
+	cd $(VERILATOR_RUN_DIR); \
 	$(VV) $(VV_OPTS) $(BUILD_OPTS) --top-module $(TOP_MODULE) \
-	  -f flist.verilator -f $(TB_PATH)/$(TB)/flist.verilator  \
-	  $(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.cpp              \
-	  | tee $(LOG_DIR)/$(TB)_$(ROM_NAME)_vbuild.log
-	make -C obj_dir -f Vtestbench.mk               	          \
-	  | tee $(LOG_DIR)/$(TB)_$(ROM_NAME)_cbuild.log
+		-f flist_design.verilator -f flist_test.verilator \
+		$(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.cpp \
+		| tee $(LOG_DIR)/$(TB)_$(ROM_NAME)_vbuild.log; \
+	make -C obj_dir -f Vtestbench.mk \
+	| tee $(LOG_DIR)/$(TB)_$(ROM_NAME)_cbuild.log
 
 run.sc: build.sc
-	obj_dir/V$(TOP_MODULE) | tee $(LOG_DIR)/$(TB)_$(ROM_NAME)_sim.log
+	cd $(VERILATOR_RUN_DIR); \
+	$(VERILATOR_RUN_DIR)/obj_dir/V$(TOP_MODULE) | tee $(LOG_DIR)/$(TB)_$(ROM_NAME)_sim.log
 
 clean.sc:
-	rm -rf obj_dir
-	rm -rf vcdplus.vpd
+	rm -rf $(VERILATOR_RUN_DIR)
 

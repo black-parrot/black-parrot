@@ -2,6 +2,7 @@
 TOP ?= $(shell git rev-parse --show-toplevel)
 
 include $(TOP)/Makefile.common
+include $(BP_EXTERNAL_DIR)/Makefile.tools
 
 .PHONY: update_submodules tools roms
 
@@ -25,11 +26,11 @@ update_submodules:
 
 tools:
 	cd $(TOP) && git submodule update --init --recursive
-	$(MAKE) -C $(TOP)/external verilator && git submodule deinit $(BP_EXTERNAL_DIR)/verilator
-	$(MAKE) -C $(TOP)/external gnu       && git submodule deinit $(BP_EXTERNAL_DIR)/gnu
-	$(MAKE) -C $(TOP)/external fesvr     && git submodule deinit $(BP_EXTERNAL_DIR)/fesvr
-	$(MAKE) -C $(TOP)/external spike     && git submodule deinit $(BP_EXTERNAL_DIR)/spike
-	$(MAKE) -C $(TOP)/external axe       && git submodule deinit $(BP_EXTERNAL_DIR)/axe
+	$(MAKE) verilator && git submodule deinit -f $(BP_EXTERNAL_DIR)/verilator
+	$(MAKE) gnu       && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-gnu-toolchain
+	$(MAKE) fesvr     && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-fesvr
+	$(MAKE) spike     && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-isa-sim
+	$(MAKE) axe       && git submodule deinit -f $(BP_EXTERNAL_DIR)/axe
 
 ## This target makes all of the test roms needed to test BlackParrot with trace-replay
 #  NOTE: There are many redundant boot roms generated. However, work is in progress to 

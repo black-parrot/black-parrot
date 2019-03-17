@@ -1,39 +1,22 @@
 ## Set common environment variables
 TOP ?= $(shell git rev-parse --show-toplevel)
 
-include $(TOP)/Makefile.env
+include $(TOP)/Makefile.common
 
-## Top level source directory should include 
-TOP              = $(CURDIR)/../..
-BP_TOP_DIR       = $(TOP)/bp_top
-BP_FE_DIR        = $(TOP)/bp_fe
-BP_BE_DIR        = $(TOP)/bp_be
-BP_ME_DIR        = $(TOP)/bp_me
-BP_COMMON_DIR    = $(TOP)/bp_common
+SYN_PATH    := $(BP_TOP_DIR)/syn
+TB_PATH     := $(BP_TOP_DIR)/test/tb
+LOG_PATH    := $(BP_TOP_DIR)/syn/logs
+REPORT_PATH := $(BP_TOP_DIR)/syn/reports
 
-BSG_CADENV_DIR      = $(TOP)/bsg_cadenv
-BSG_IP_CORES_DIR = $(TOP)/bsg_ip_cores
+# Default ROM to example
+DESIGN_NAME ?= bp_multi_top
+ROM_NAME    ?= bp_example_rom
+TB          ?= bp_single_trace_demo
 
-SYN_PATH = $(BP_TOP_DIR)/syn
-TB_PATH  = $(BP_TOP_DIR)/test/tb
+.EXPORT_ALL_VARIABLES:
 
-clean:
-	rm -rf $(SYN_PATH)/obj_dir
-	rm -rf csrc
-	rm -rf ucli.key
-	rm -rf inter.vpd
-	rm -rf DVEfiles
-	rm -rf *vpd
-	rm -rf *simv
-	rm -rf *simv.daidir
-	rm -rf *.log
-	rm -rf coverage
-	rm -rf coverage_reports
-	rm -rf coverage_vdb
-
-include $(SYN_PATH)/Makefile.vcs
-
-include $(SYN_PATH)/Makefile.dc
-
-include $(SYN_PATH)/Makefile.verilator
+include $(BP_COMMON_DIR)/syn/Makefile.common
+include $(BP_COMMON_DIR)/syn/Makefile.dc
+include $(BP_COMMON_DIR)/syn/Makefile.verilator
+include $(BP_COMMON_DIR)/syn/Makefile.vcs
 

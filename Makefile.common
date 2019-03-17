@@ -24,6 +24,7 @@ endif
 ## Override tool paths if needed
 GCC       ?= gcc
 VCS       ?= vcs
+URG       ?= urg
 DVE       ?= dve
 VERILATOR ?= verilator
 

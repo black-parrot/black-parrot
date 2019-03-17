@@ -54,9 +54,7 @@ assign branch_metadata_o     = {pc_fwd_i[btb_indx_width_p-1:0]
 
    
 bp_fe_bht 
- #(.saturation_size_lp(2)
-   ,.bht_indx_width_p(bht_indx_width_p)
-   ) 
+ #(.bht_indx_width_p(bht_indx_width_p))
  bht_1
   (.clk_i(clk_i)
    ,.reset_i(reset_i)

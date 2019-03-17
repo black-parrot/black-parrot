@@ -3,13 +3,15 @@ TOP ?= $(shell git rev-parse --show-toplevel)
 
 include $(TOP)/Makefile.common
 
-SYN_PATH := $(BP_BE_DIR)/syn
-TB_PATH  := $(BP_BE_DIR)/test/tb
-LOG_PATH := $(BP_BE_DIR)/syn/logs
+SYN_PATH    := $(BP_BE_DIR)/syn
+TB_PATH     := $(BP_BE_DIR)/test/tb
+LOG_PATH    := $(BP_BE_DIR)/syn/logs
+REPORT_PATH := $(BP_BE_DIR)/syn/reports
 
 # Default ROM to example
-ROM_NAME ?= bp_example_rom
-TB       ?= bp_be_trace_demo
+DESIGN_NAME ?= bp_be_top
+ROM_NAME    ?= bp_example_rom
+TB          ?= bp_be_trace_demo
 
 .EXPORT_ALL_VARIABLES:
 
