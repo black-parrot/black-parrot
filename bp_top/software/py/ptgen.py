@@ -82,7 +82,7 @@ outfile.write("/* page table start: " + root_table_addr + " */ \n")
 outfile.write("/* address space start: " + address_space_start + " */ \n")
 outfile.write("/* address space size in pages: " + str(as_page_num) + " */ \n")
 outfile.write(".section \".data.pt\"\n")
-outfile.write(".globl _ptn\n\n")
+outfile.write(".globl _pt\n\n")
 outfile.write("_pt:\n")
 for i in xrange(len(page_table)):
   for j in xrange(len(page_table[i])):
