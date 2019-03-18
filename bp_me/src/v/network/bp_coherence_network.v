@@ -29,7 +29,7 @@ module bp_coherence_network
 
     // Default parameters
     , parameter debug_p                  = 0
-    , localparam num_ser_blocks_lp       = 2
+    , localparam num_ser_blocks_lp       = 5
     , localparam fifo_els_lp             = 0
 
     // Derived parameters

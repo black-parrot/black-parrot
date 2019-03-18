@@ -42,9 +42,10 @@ module bp_coherence_network_channel
     // Derived parameters
     , localparam mesh_width_lp                    = `BSG_MAX(num_src_p,num_dst_p)
     , localparam lg_mesh_width_lp                 = `BSG_SAFE_CLOG2(mesh_width_lp)
+    , localparam lg_num_dst_lp                    = `BSG_SAFE_CLOG2(num_dst_p)
     , localparam num_serialized_blocks_lp         = (packet_width_p+reduced_payload_width_p-1)/reduced_payload_width_p
-    , localparam reduced_packet_width_lp          = (num_serialized_blocks_lp == 1) ? packet_width_p : reduced_payload_width_p + lg_mesh_width_lp
-    , localparam network_width_lp                 = (reduced_packet_width_lp+lg_mesh_width_lp+1)
+    , localparam reduced_packet_width_lp          = (num_serialized_blocks_lp == 1) ? packet_width_p + lg_mesh_width_lp -lg_num_dst_lp : reduced_payload_width_p + lg_mesh_width_lp
+    , localparam network_width_lp                 = (reduced_packet_width_lp+1)//+lg_mesh_width_lp+1)
     , localparam bsg_ready_then_link_sif_width_lp = `bsg_ready_then_link_sif_width(network_width_lp)
     )
   (input                                              clk_i
@@ -105,6 +106,7 @@ module bp_coherence_network_channel
       ,.dst_serialized_ready_o(dst_ready_i_int)
     );
 
+/*  NOTE: this is no longer needed.
   // Each message type has its own packet structure, and the router has its own format so we
   // refactor dst_id_i based around lg_mesh_width_lp instead of some lg_num_dst_p since
   // bsg_mesh_router determines x_dirs[i] = data_i[i][0+:x_cord_width_p]; and x_cord_width has to
@@ -117,7 +119,7 @@ module bp_coherence_network_channel
       dst_id_i[i] = src_data_i_int[i][reduced_packet_width_lp-1 -: `BSG_SAFE_CLOG2(num_dst_p)];
     end
   end
-
+*/
   `declare_bsg_ready_then_link_sif_s(network_width_lp,bsg_ready_then_link_sif_s);
   // Similar to dst_id_i, even though Dirs is logic[2:0], the router links follow this
   // [dirs_lp-1:0] format
@@ -127,7 +129,7 @@ module bp_coherence_network_channel
   // South port
   logic [num_src_p-1:0][reduced_packet_width_lp-1:0] src_data_i_int_stitch;
   logic [num_src_p-1:0] src_v_i_int_stitch, src_ready_o_int_stitch;
-  logic [num_src_p-1:0][lg_mesh_width_lp-1:0] dst_id_i_stitch;
+  //logic [num_src_p-1:0][lg_mesh_width_lp-1:0] dst_id_i_stitch;
   // Proc port
   logic [num_dst_p-1:0][reduced_packet_width_lp-1:0] dst_data_o_int_stitch;
   logic [num_dst_p-1:0] dst_v_o_int_stitch;
@@ -136,7 +138,7 @@ module bp_coherence_network_channel
   assign src_data_i_int_stitch = src_data_i_int;
   assign src_v_i_int_stitch    = src_v_i_int;
   assign src_ready_o_int       = src_ready_o_int_stitch;
-  assign dst_id_i_stitch   = dst_id_i;
+  //assign dst_id_i_stitch   = dst_id_i;
   assign dst_data_o_int        = dst_data_o_int_stitch;
   assign dst_v_o_int           = dst_v_o_int_stitch;
 
@@ -156,7 +158,7 @@ module bp_coherence_network_channel
     // Stitching input data to the mesh
     if(i < num_src_p) begin: fi0
       // Format data on router to {packet, y, x}
-      assign link_i_stitch[i][S].data = {src_data_i_int_stitch[i], 1'b1, dst_id_i_stitch[i]};
+      assign link_i_stitch[i][S].data = {src_data_i_int_stitch[i][0 +: reduced_packet_width_lp-lg_mesh_width_lp], 1'b1, src_data_i_int_stitch[i][reduced_packet_width_lp-1 -: lg_mesh_width_lp]};
       assign link_i_stitch[i][S].v  = src_v_i_int_stitch[i];
       assign link_i_stitch[i][S].ready_then_rev = 1'b0;
 
@@ -416,7 +418,7 @@ module bp_coherence_network_channel
 
     if (i < num_dst_p) begin
       assign dst_data_o_int_stitch[i] =
-        link_o_stitch[i][P].data[(network_width_lp-1):(lg_mesh_width_lp+1)];
+        { (lg_mesh_width_lp)'(i) , link_o_stitch[i][P].data[(network_width_lp-1):(lg_mesh_width_lp+1)]};
       assign dst_v_o_int_stitch[i] = link_o_stitch[i][P].v;
       assign link_i_stitch[i][P].ready_then_rev = dst_ready_i_int[i];
     end else begin

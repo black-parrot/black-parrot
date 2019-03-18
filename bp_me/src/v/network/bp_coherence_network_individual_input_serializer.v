@@ -19,7 +19,8 @@ module bp_coherence_network_individual_input_serializer
     , localparam lg_mesh_width_lp               = `BSG_SAFE_CLOG2(mesh_width_lp)
     , localparam dst_id_width_lp                = `BSG_SAFE_CLOG2(num_dst_p)
     , localparam num_serialized_blocks_lp       = (packet_width_p+reduced_payload_width_p-1)/reduced_payload_width_p
-    , localparam reduced_packet_width_lp        = (num_serialized_blocks_lp == 1) ? packet_width_p : reduced_payload_width_p + lg_mesh_width_lp
+    , localparam lg_num_dst_lp              = `BSG_SAFE_CLOG2(num_dst_p)
+    , localparam reduced_packet_width_lp    = (num_serialized_blocks_lp == 1) ? packet_width_p + lg_mesh_width_lp -lg_num_dst_lp : reduced_payload_width_p + lg_mesh_width_lp
     , localparam log_num_serialized_blocks_lp   = `BSG_SAFE_CLOG2(num_serialized_blocks_lp)
     )
   (input                                        clk_i
@@ -38,7 +39,7 @@ module bp_coherence_network_individual_input_serializer
 
   // If there is no serialization, don't do anything
   if(num_serialized_blocks_lp == 1) begin
-    assign src_serialized_data_o = src_data_i;
+    assign src_serialized_data_o = (reduced_packet_width_lp)'(src_data_i);
     assign src_serialized_v_o = src_v_i;
     assign src_ready_o = src_serialized_ready_i;
   end

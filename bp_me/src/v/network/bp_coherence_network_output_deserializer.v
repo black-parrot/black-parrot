@@ -16,7 +16,8 @@ module bp_coherence_network_output_deserializer
     , localparam mesh_width_lp              = `BSG_MAX(num_src_p,num_dst_p)
     , localparam lg_mesh_width_lp           = `BSG_SAFE_CLOG2(mesh_width_lp)
     , localparam num_serialized_blocks_lp   = (packet_width_p+reduced_payload_width_p-1)/reduced_payload_width_p
-    , localparam reduced_packet_width_lp    = (num_serialized_blocks_lp == 1) ? packet_width_p : reduced_payload_width_p + lg_mesh_width_lp
+    , localparam lg_num_dst_lp              = `BSG_SAFE_CLOG2(num_dst_p)
+    , localparam reduced_packet_width_lp    = (num_serialized_blocks_lp == 1) ? packet_width_p + lg_mesh_width_lp -lg_num_dst_lp : reduced_payload_width_p + lg_mesh_width_lp
     )
   (input                                                      clk_i
    , input                                                    reset_i
