@@ -29,6 +29,8 @@ module bp_coherence_network
 
     // Default parameters
     , parameter debug_p                  = 0
+    , localparam num_ser_blocks_lp       = 2
+    , localparam fifo_els_lp             = 0
 
     // Derived parameters
     , localparam lg_num_lce_lp          = `BSG_SAFE_CLOG2(num_lce_p)
@@ -143,6 +145,8 @@ module bp_coherence_network
       ,.num_dst_p(num_lce_p)
       ,.debug_p(debug_p)
       ,.repeater_output_p(repeater_output_lp)
+      ,.reduced_payload_width_p((bp_cce_lce_cmd_width_lp+num_ser_blocks_lp-1)/num_ser_blocks_lp)
+      ,.fifo_els_p(fifo_els_lp)
       )
     cce_lce_cmd_network
      (.clk_i(clk_i)
@@ -164,6 +168,8 @@ module bp_coherence_network
       ,.num_dst_p(num_lce_p)
       ,.debug_p(debug_p)
       ,.repeater_output_p(repeater_output_lp)
+      ,.reduced_payload_width_p((bp_cce_lce_data_cmd_width_lp+num_ser_blocks_lp-1)/num_ser_blocks_lp)
+      ,.fifo_els_p(fifo_els_lp)
       )
     cce_lce_data_cmd_network
      (.clk_i(clk_i)
@@ -178,6 +184,7 @@ module bp_coherence_network
       ,.dst_ready_i(lce_data_cmd_ready_i)
       );
 
+
   // LCE Request Network - (LCE->trans_net->CCE)
   bp_coherence_network_channel
     #(.packet_width_p(bp_lce_cce_req_width_lp)
@@ -185,6 +192,8 @@ module bp_coherence_network
       ,.num_dst_p(num_cce_p)
       ,.debug_p(debug_p)
       ,.repeater_output_p(repeater_output_lp)
+      ,.reduced_payload_width_p((bp_lce_cce_req_width_lp+num_ser_blocks_lp-1)/num_ser_blocks_lp)
+      ,.fifo_els_p(fifo_els_lp)
       )
     lce_cce_req_network
      (.clk_i(clk_i)
@@ -198,7 +207,6 @@ module bp_coherence_network
       ,.dst_v_o(lce_req_v_o)
       ,.dst_ready_i(lce_req_ready_i)
       );
-
   // LCE Response Network - (LCE->trans_net->CCE)
   bp_coherence_network_channel
     #(.packet_width_p(bp_lce_cce_resp_width_lp)
@@ -206,6 +214,8 @@ module bp_coherence_network
       ,.num_dst_p(num_cce_p)
       ,.debug_p(debug_p)
       ,.repeater_output_p(repeater_output_lp)
+      ,.reduced_payload_width_p((bp_lce_cce_resp_width_lp+num_ser_blocks_lp-1)/num_ser_blocks_lp)
+      ,.fifo_els_p(fifo_els_lp)
       )
     lce_cce_resp_network
      (.clk_i(clk_i)
@@ -227,6 +237,8 @@ module bp_coherence_network
       ,.num_dst_p(num_cce_p)
       ,.debug_p(debug_p)
       ,.repeater_output_p(repeater_output_lp)
+      ,.reduced_payload_width_p((bp_lce_cce_data_resp_width_lp+num_ser_blocks_lp-1)/num_ser_blocks_lp)
+      ,.fifo_els_p(fifo_els_lp)
       )
     lce_cce_data_resp_network
      (.clk_i(clk_i)
@@ -248,6 +260,8 @@ module bp_coherence_network
       ,.num_dst_p(num_lce_p)
       ,.debug_p(debug_p)
       ,.repeater_output_p(repeater_output_lp)
+      ,.reduced_payload_width_p((bp_lce_lce_tr_resp_width_lp+num_ser_blocks_lp-1)/num_ser_blocks_lp)
+      ,.fifo_els_p(fifo_els_lp)
       )
     lce_lce_tr_resp_network
      (.clk_i(clk_i)
