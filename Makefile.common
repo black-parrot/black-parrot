@@ -29,7 +29,6 @@ DVE       ?= dve
 VERILATOR ?= verilator
 
 ## Needed for verilator g++ compilations
-VERILATOR_ROOT  ?= $(BP_EXTERNAL_DIR)/verilator
 SYSTEMC_INCLUDE ?= $(BP_EXTERNAL_DIR)/include
 SYSTEMC_LIBDIR  ?= $(BP_EXTERNAL_DIR)/lib-linux64
 

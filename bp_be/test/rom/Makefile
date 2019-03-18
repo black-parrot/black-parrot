@@ -1,20 +1,16 @@
-TOP            = $(CURDIR)/../../..
-BP_TOP_PATH    = $(TOP)/bp_top
-BP_FE_PATH     = $(TOP)/bp_fe
-BP_BE_PATH     = $(TOP)/bp_be
-BP_ME_PATH     = $(TOP)/bp_me
-BP_COMMON_PATH = $(TOP)/bp_common
-EXTERNAL_PATH  = $(TOP)/external
+## Set common environment variables
+TOP ?= $(shell git rev-parse --show-toplevel)
 
-BSG_IP_PATH    = $(TOP)/bsg_ip_cores
-SPIKE_MOD_PATH = $(TOP)/external/bin
+include $(TOP)/Makefile.common
 
-TEST_DIR       = $(BP_BE_PATH)/test
+SPIKE_MOD_PATH = $(BP_EXTERNAL_DIR)/bin
+
+TEST_DIR       = $(BP_BE_DIR)/test
 ROM_DIR        = $(TEST_DIR)/rom/v
 
-HEX2BIN        = $(BP_BE_PATH)/software/py/hex2binascii.py
-SPIKE2TR       = $(BP_BE_PATH)/software/py/spike2tr.py
-BSG_ROM_GEN    = $(BSG_IP_PATH)/bsg_mem/bsg_ascii_to_rom.py
+HEX2BIN        = $(BP_BE_DIR)/software/py/hex2binascii.py
+SPIKE2TR       = $(BP_BE_DIR)/software/py/spike2tr.py
+BSG_ROM_GEN    = $(BSG_IP_CORES_DIR)/bsg_mem/bsg_ascii_to_rom.py
 RISCV_ELF2HEX  = elf2hex
 RISCV_SIM      = $(SPIKE_MOD_PATH)/spike
 RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -D -M no-aliases,numeric
@@ -54,6 +50,8 @@ demos_rom: $(foreach x, $(subst -,_,$(BP_DEMOS)), $(x).v)
 # This hacky code prints the dumped assembly into the test rom, which is nice for debugging
 %.v: %.bin
 	python $(BSG_ROM_GEN) $< bp_boot_rom zero > $*.vtmp \
+	&& sed -i '1s#^#/*verilator coverage_off*/\n#' $*.vtmp \
+	&& echo "/*verilator coverage_on*/" >> $*.vtmp \
 	&& awk 'FNR==2{system("$(RISCV_OBJDUMP) $*.elf | sed 's-^-//-'")} 1' $*.vtmp \
 		> $(ROM_DIR)/$*_rom.v  \
 	&& rm $*.vtmp \
@@ -71,8 +69,8 @@ demos_rom: $(foreach x, $(subst -,_,$(BP_DEMOS)), $(x).v)
 	python $(BSG_ROM_GEN) $(basename $@).tr bp_trace_rom zero > $(ROM_DIR)/$(basename $@)_rom.tr.v
 
 clean:
-	rm -f *.elf;  \
-	rm -f *.tr;   \
+	rm -f *.elf
+	rm -f *.tr
 	rm -f *.spike
 
 ####### These targets are not maintained at the moment

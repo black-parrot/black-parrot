@@ -9,6 +9,7 @@
 
 int sc_main(int argc, char **argv)
 {
+  Verilated::commandArgs(argc, argv);
   Verilated::traceEverOn(VM_TRACE);
 
   Vtestbench *tb = new Vtestbench("testbench");
@@ -41,7 +42,7 @@ int sc_main(int argc, char **argv)
   }
 
 #if VM_COVERAGE
-  VerilatedCov::write();
+  VerilatedCov::write(argv[1]);
 #endif
 
   exit(EXIT_SUCCESS);

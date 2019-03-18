@@ -1,3 +1,4 @@
+*.s
 ucli.key
 run_vcs
 run_dc

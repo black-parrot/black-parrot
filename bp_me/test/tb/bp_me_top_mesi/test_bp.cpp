@@ -107,10 +107,11 @@ int sc_main(int argc, char **argv)
   DUT.lce_tr_resp_v_o(lce_tr_resp_v_o);
   DUT.lce_tr_resp_ready_i(lce_tr_resp_ready_i);
 
-
+#if VM_TRACE
   VerilatedVcdSc* wf = new VerilatedVcdSc;
   DUT.trace(wf, TRACE_LEVELS);
   wf->open("dump.vcd");
+#endif
 
   // reset
   lce_req_i = 0;
@@ -143,7 +144,9 @@ int sc_main(int argc, char **argv)
       stallDetect++;
       if (stallDetect == STALL_MAX) {
         cout << "@" << sc_time_stamp() << " STALL!" << endl;
+#if VM_TRACE
         wf->close();
+#endif
         return 0;
       }
       sc_start(CLK_TIME, SC_NS);
@@ -168,7 +171,9 @@ int sc_main(int argc, char **argv)
     stallDetect++;
     if (stallDetect == STALL_MAX) {
       cout << "@" << sc_time_stamp() << " STALL!" << endl;
+#if VM_TRACE
       wf->close();
+#endif
       return 0;
     }
     sc_start(CLK_TIME, SC_NS);
@@ -193,7 +198,9 @@ int sc_main(int argc, char **argv)
       stallDetect++;
       if (stallDetect == STALL_MAX) {
         cout << "@" << sc_time_stamp() << " STALL!" << endl;
+#if VM_TRACE
         wf->close();
+#endif
         return 0;
       }
       sc_start(CLK_TIME, SC_NS);
@@ -219,7 +226,9 @@ int sc_main(int argc, char **argv)
       stallDetect++;
       if (stallDetect == STALL_MAX) {
         cout << "@" << sc_time_stamp() << " STALL!" << endl;
+#if VM_TRACE
         wf->close();
+#endif
         return 0;
       }
     }
@@ -227,7 +236,9 @@ int sc_main(int argc, char **argv)
     sc_bv<bp_cce_lce_data_cmd_width> data_cmd(lce_data_cmd_o.read());
     if (!checkCceDataCmd(data_cmd, 0, 0, reqAddr, lruWay, reqType, 0, false)) {
       cout << "@" << sc_time_stamp() << " TEST FAILED!" << endl;
+#if VM_TRACE
       wf->close();
+#endif
       exit(-1);
     } else {
       cout << "@" << sc_time_stamp() << " lceDataCmd: " << lce_data_cmd_o.read().to_string() << endl;
@@ -245,7 +256,9 @@ int sc_main(int argc, char **argv)
       stallDetect++;
       if (stallDetect == STALL_MAX) {
         cout << "@" << sc_time_stamp() << " STALL!" << endl;
+#if VM_TRACE
         wf->close();
+#endif
         return 0;
       }
     }
@@ -253,7 +266,9 @@ int sc_main(int argc, char **argv)
     bp_cce_coh_mesi_e cohSt = (nonExclReq) ? e_MESI_S : e_MESI_E;
     if (!checkCceCmd(cmd, 0, 0, reqAddr, lruWay, e_lce_cmd_set_tag, cohSt, 0, 0)) {
       cout << "@" << sc_time_stamp() << " TEST FAILED!" << endl;
+#if VM_TRACE
       wf->close();
+#endif
       exit(-1);
     } else {
       cout << "@" << sc_time_stamp() << " lceCmd: " << cmd.to_string() << endl;
@@ -269,7 +284,9 @@ int sc_main(int argc, char **argv)
       stallDetect++;
       if (stallDetect == STALL_MAX) {
         cout << "@" << sc_time_stamp() << " STALL!" << endl;
+#if VM_TRACE
         wf->close();
+#endif
         return 0;
       }
       sc_start(CLK_TIME, SC_NS);
@@ -488,7 +505,9 @@ int sc_main(int argc, char **argv)
 
   cout << "@" << sc_time_stamp() << " TEST PASSED!" << endl;
 
+#if VM_TRACE
   wf->close();
+#endif
 
   return 0;
 }

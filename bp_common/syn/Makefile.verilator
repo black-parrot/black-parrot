@@ -3,24 +3,29 @@ CC ?= $(GCC)
 VV ?= $(VERILATOR)
 
 ## Tool options
-VV_OPTS := --sc            # Output in SystemC rather than C++
-VV_OPTS += -Wno-unoptflat  # Verilator has problems with false positive combinatorial
-                           #   loop detection e.g. bit 0 drives bit 1 of struct
+VV_OPTS  = --sc                 # Output in SystemC rather than C++
+VV_OPTS += -Wno-unoptflat       # Verilator has problems with false positive combinatorial
+                                #   loop detection e.g. bit 0 drives bit 1 of struct
+#VV_OPTS += --debug --gdbbt     # Debugs and produces stack trace
+VVOPTS += -O1 -fstrict-aliasing # Fastest compile time options
 
 LINT_OPTS  := --lint-only
 BUILD_OPTS := --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --exe
 
 TOP_MODULE ?= testbench
 
+COVERAGE ?= 0
+DUMP     ?= 0
+
 ifeq ($(DUMP), 1)
   VV_OPTS += --trace         # Dump a VCD
   VV_OPTS += --trace-structs # Dump struct information with VCD
 endif
+
 ifeq ($(COVERAGE), 1)
-  VV_OPTS += --coverage
-  #VV_OPTS += --coverage-line
-  #VV_OPTS += --coverage-toggle
-  #VV_OPTS += -DCOVERAGE_DAT_FILENAME="coverage.dat"
+  VV_OPTS += --coverage-line
+  VV_OPTS += --coverage-toggle
+  COVERAGE_DAT = "$(ROM_NAME)_coverage.dat"
 endif
 
 .PHONY: deps.sc lint.sc build.sc run.sc clean.sc
@@ -34,28 +39,43 @@ deps.sc:
 	$(shell mkdir -p $(REPORT_DIR))
 	$(shell mkdir -p $(LOG_DIR))
 	$(shell mkdir -p $(VERILATOR_RUN_DIR))
-	@grep -v -e "^\#" $(SYN_PATH)/flist.verilator > $(VERILATOR_RUN_DIR)/flist_design.verilator
-	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.verilator > $(VERILATOR_RUN_DIR)/flist_test.verilator
+	@grep -v -e "^\/\/" $(SYN_PATH)/flist.verilator > $(VERILATOR_RUN_DIR)/flist_design.verilator || true
+	@touch $(VERILATOR_RUN_DIR)/flist_design.verilator
+	@grep -v -e "^\/\/" $(TB_PATH)/$(TB)/flist.verilator > $(VERILATOR_RUN_DIR)/flist_test.verilator || true
+	@touch $(VERILATOR_RUN_DIR)/flist_test.verilator
+	@cat $(SYN_PATH)/coverage_hier.verilator | envsubst > $(VERILATOR_RUN_DIR)/config.vlt || true
+	@touch $(VERILATOR_RUN_DIR)/config.vlt 
 
 lint.sc: deps.sc
 	cd $(VERILATOR_RUN_DIR); \
 	$(VV) $(VV_OPTS) $(LINT_OPTS) --top-module $(TOP_MODULE) \
-		-f flist_design.verilator \
+		-f flist_design.verilator -f flist_test.verilator \
 		$(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.cpp \
 	| tee $(LOG_DIR)/$(TB)_lint.log
 
-build.sc: deps.sc
+verilate.sc: deps.sc
 	cd $(VERILATOR_RUN_DIR); \
+	rm -rf obj_dir; \
 	$(VV) $(VV_OPTS) $(BUILD_OPTS) --top-module $(TOP_MODULE) \
-		-f flist_design.verilator -f flist_test.verilator \
+		config.vlt -f flist_design.verilator -f flist_test.verilator \
 		$(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.cpp \
-		| tee $(LOG_DIR)/$(TB)_$(ROM_NAME)_vbuild.log; \
-	make -C obj_dir -f Vtestbench.mk \
+		| tee $(LOG_DIR)/$(TB)_$(ROM_NAME)_vbuild.log
+
+build.sc: verilate.sc
+	cd $(VERILATOR_RUN_DIR); \
+	$(MAKE) -C obj_dir -f V$(TOP_MODULE).mk \
 	| tee $(LOG_DIR)/$(TB)_$(ROM_NAME)_cbuild.log
 
 run.sc: build.sc
 	cd $(VERILATOR_RUN_DIR); \
-	$(VERILATOR_RUN_DIR)/obj_dir/V$(TOP_MODULE) | tee $(LOG_DIR)/$(TB)_$(ROM_NAME)_sim.log
+	$(VERILATOR_RUN_DIR)/obj_dir/V$(TOP_MODULE) $(COVERAGE_DAT) \
+	| tee $(LOG_DIR)/$(TB)_$(ROM_NAME)_sim.log
+
+cov.sc: deps.sc
+	cd $(VERILATOR_RUN_DIR); \
+	verilator_coverage *_coverage.dat --annotate $(REPORT_DIR)/coverage \
+		--write $(REPORT_DIR)/coverage/total_coverage.dat --rank \
+	| tee $(LOG_DIR)/$(TB)_cov.log
 
 clean.sc:
 	rm -rf $(VERILATOR_RUN_DIR)

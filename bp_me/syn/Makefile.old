@@ -1,0 +1,24 @@
+## Set common environment variables
+TOP ?= $(shell git rev-parse --show-toplevel)
+
+include $(TOP)/Makefile.common
+
+SYN_PATH    := $(BP_ME_DIR)/syn
+TB_PATH     := $(BP_ME_DIR)/test/tb
+LOG_PATH    := $(BP_ME_DIR)/syn/logs
+REPORT_PATH := $(BP_ME_DIR)/syn/reports
+
+# Default ROM to example
+DESIGN_NAME ?= bp_me_top
+ROM_NAME    ?= bp_example_rom
+TB          ?= bp_me_trace_demo
+
+CPPFLAGS +=-I$(BP_ME_TB_DIR)/include -I$(BP_ME_DIR)/src/include/c
+
+.EXPORT_ALL_VARIABLES:
+
+include $(BP_COMMON_DIR)/syn/Makefile.common
+include $(BP_COMMON_DIR)/syn/Makefile.dc
+include $(BP_COMMON_DIR)/syn/Makefile.verilator
+include $(BP_COMMON_DIR)/syn/Makefile.vcs
+

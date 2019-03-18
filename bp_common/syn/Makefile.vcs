@@ -13,24 +13,21 @@ VCS_RUN_DIR ?= $(SYN_PATH)/run_vcs
 COVERAGE ?= 0
 
 ifeq ($(COVERAGE), 1)
-  VCS_RUN_OPTIONS += -cm_dir coverage/$(ROM_NAME)
-  VCS_RUN_OPTIONS += -cm line+tgl
-
   VCS_OPTIONS += -cm_dir coverage/$(ROM_NAME)
   VCS_OPTIONS += -cm line+tgl
   VCS_OPTIONS += -cm_line contassign
   VCS_OPTIONS += -cm_noconst
   VCS_OPTIONS += -cm_seqnoconst
-  VCS_OPTIONS += -cm_hier $(SYN_PATH)/coverage.hier
+  VCS_OPTIONS += -cm_hier $(SYN_PATH)/coverage_hier.vcs
+endif
 
   URG_OPTIONS = -full64
   URG_OPTIONS += -show tests
-  URG_OPTIONS += -dir coverage/$(ROM_NAME)
+  URG_OPTIONS += -dir coverage/*
   URG_OPTIONS += -format both
   URG_OPTIONS += -dbname coverage
   URG_OPTIONS += -report $(REPORT_DIR)/coverage
   URG_OPTIONS += -log $(LOG_DIR)/$(TB)_$(ROM_NAME)_coverage.log
-endif
 
 .PHONY: deps.v lint.v build.v run.v clean.v
 
@@ -41,8 +38,10 @@ deps.v:
 	$(shell mkdir -p $(LOG_DIR))
 	$(shell mkdir -p $(REPORT_DIR))
 	$(shell mkdir -p $(VCS_RUN_DIR))
-	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs > $(VCS_RUN_DIR)/flist_design.vcs
-	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs > $(VCS_RUN_DIR)/flist_test.vcs
+	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs > $(VCS_RUN_DIR)/flist_design.vcs || true
+	@touch $(VCS_RUN_DIR)/flist_design.vcs
+	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs > $(VCS_RUN_DIR)/flist_test.vcs || true
+	@touch $(VCS_RUN_DIR)/flist_test.vcs
 
 lint.v: deps.v
 	cd $(VCS_RUN_DIR); \
@@ -58,10 +57,13 @@ build.v: deps.v
 
 run.v: build.v
 	cd $(VCS_RUN_DIR); \
-	$(VCS_RUN_DIR)/simv $(VCS_RUN_OPTIONS) | tee $(LOG_DIR)/$(TB)_$(ROM_NAME)_sim.log; \
-	if [ $(COVERAGE) -eq "1" ]; then \
-		$(URG) $(URG_OPTIONS); \
-	fi
+	$(VCS_RUN_DIR)/simv $(VCS_OPTIONS) | tee $(LOG_DIR)/$(TB)_$(ROM_NAME)_sim.log
+
+cov.v: deps.v
+	cd $(VCS_RUN_DIR); \
+	$(URG) $(URG_OPTIONS) \
+	&& cp $(REPORT_DIR)/coverage/tests.txt $(REPORT_DIR)/$(TB)_$(ROM_NAME)_cov_tests.rpt \
+	&& cp $(REPORT_DIR)/coverage/tests.txt $(REPORT_DIR)/$(TB)_$(ROM_NAME)_cov_hier.rpt
 
 clean.v:
 	rm -rf run_vcs

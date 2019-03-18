@@ -1,3 +1,8 @@
+run_vcs
+run_verilator
+run_dc
+logs
+reports
 ucli.key
 simv*
 *simout.txt

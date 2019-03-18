@@ -700,3 +700,4 @@ assign cmt_trace_result_o    = comp_stage_r[pipe_stage_els_lp-1];
 assign cmt_trace_exc_o       = exc_stage_r[pipe_stage_els_lp-1];
 
 endmodule : bp_be_calculator_top
+

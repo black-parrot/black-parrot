@@ -97,9 +97,8 @@ $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lru_decode.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lru_encode.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_wbuf.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_wbuf_queue.v
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_tlb/bp_be_tlb.v
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_tlb/bp_plru.v
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_tlb/bp_tlb_cam.v
+$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dtlb/bp_be_dtlb.v
+$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dtlb/bp_be_dtlb_replacement.v
 # Common
 $BP_BE_DIR/src/v/common/bp_be_trace_replay_gen.v
 $BP_BE_DIR/src/v/common/bsg_fifo_1r1w_rolly.v
