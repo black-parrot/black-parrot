@@ -176,7 +176,7 @@ module bp_fe_lce_cmd
 
     data_mem_pkt_lo        = '0;
     tag_mem_pkt_lo         = '0;
-    metadata_mem_pkt_v_o   = '0;
+    metadata_mem_pkt_lo   = '0;
 
     lce_ready_o             = (state_r != e_lce_cmd_reset);
     tag_set_o               = 1'b0;

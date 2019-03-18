@@ -241,7 +241,7 @@ module bp_be_dcache
   logic [ways_p-1:0][data_mask_width_lp-1:0] data_mem_mask_li;
   logic [ways_p-1:0][data_width_p-1:0] data_mem_data_lo;
   
-  for (genvar i = 0; i < ways_p; i++) begin
+  for (genvar i = 0; i < ways_p; i++) begin: data_mem
     bsg_mem_1rw_sync_mask_write_byte
       #(.data_width_p(data_width_p)
         ,.els_p(sets_p*ways_p)

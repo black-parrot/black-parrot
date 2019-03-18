@@ -130,6 +130,8 @@ module bp_fe_lce_req
     lce_resp_lo.msg_type     = e_lce_cce_tr_ack;
     lce_resp_lo.addr         = miss_addr_r;
     lce_resp_v_o             = 1'b0;
+  
+    cache_miss_o = 1'b0;
      
     case (state_r)
       e_lce_req_ready: begin
