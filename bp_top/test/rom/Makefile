@@ -25,9 +25,9 @@ include Makefile.frag
 
 all: isa benchmarks demos
 
-isa: isa_elf isa_rom
-benchmarks: benchmarks_elf benchmarks_rom
-demos: demos_elf demos_rom
+isa: isa_elf isa_rom clean
+benchmarks: benchmarks_elf benchmarks_rom clean
+demos: demos_elf demos_rom clean
 
 isa_elf:
 	make -C src/isa

@@ -1,5 +1,5 @@
 RISCV_GCC=riscv64-unknown-elf-gcc -fPIC -march=rv64i -mabi=lp64 -mcmodel=medany -static -nostdlib -nostartfiles -T test.ld
-COMMON_FILES = start.S -I../env util.h 
+COMMON_FILES = pt.S start.S -I../env util.h 
 
 all: median.elf multiply.elf towers.elf vvadd.elf
 
