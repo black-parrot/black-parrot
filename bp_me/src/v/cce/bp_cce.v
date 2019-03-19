@@ -56,11 +56,9 @@ module bp_cce
                                                                ,paddr_width_p
                                                                ,lce_assoc_p)
 
-    , localparam bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
-                                                                         ,num_lce_p
-                                                                         ,paddr_width_p
-                                                                         ,block_size_in_bits_lp
-                                                                         ,lce_assoc_p)
+    , localparam bp_lce_data_cmd_width_lp=`bp_lce_data_cmd_width(num_lce_p
+                                                                 ,block_size_in_bits_lp
+                                                                 ,lce_assoc_p)
 
     , localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p
                                                                  ,num_lce_p
@@ -102,7 +100,7 @@ module bp_cce
    , output logic                                      lce_cmd_v_o
    , input                                             lce_cmd_ready_i
 
-   , output logic [bp_cce_lce_data_cmd_width_lp-1:0]   lce_data_cmd_o
+   , output logic [bp_lce_data_cmd_width_lp-1:0]       lce_data_cmd_o
    , output logic                                      lce_data_cmd_v_o
    , input                                             lce_data_cmd_ready_i
 
@@ -140,14 +138,12 @@ module bp_cce
   `declare_bp_me_if(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
 
   `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
-  `declare_bp_cce_lce_data_cmd_s(num_cce_p
-                                 ,num_lce_p
-                                 ,paddr_width_p
-                                 ,block_size_in_bits_lp
-                                 ,lce_assoc_p);
+  `declare_bp_lce_data_cmd_s(num_lce_p
+                             ,block_size_in_bits_lp
+                             ,lce_assoc_p);
 
   bp_cce_lce_cmd_s lce_cmd_s_o;
-  bp_cce_lce_data_cmd_s lce_data_cmd_s_o;
+  bp_lce_data_cmd_s lce_data_cmd_s_o;
   bp_cce_mem_cmd_s mem_cmd_s_o;
   bp_cce_mem_data_cmd_s mem_data_cmd_s_o;
 
@@ -561,10 +557,8 @@ module bp_cce
 
     // LCE Data Command Queue Inputs
     lce_data_cmd_s_o.dst_id = req_lce_r_o;
-    lce_data_cmd_s_o.src_id = (lg_num_cce_lp)'(cce_id_i);
-    lce_data_cmd_s_o.msg_type = bp_lce_cce_req_type_e'(flags_r_o[e_flag_sel_rqf]);
+    lce_data_cmd_s_o.msg_type = e_lce_data_cmd_cce;
     lce_data_cmd_s_o.way_id = lru_way_r_o;
-    lce_data_cmd_s_o.addr = req_addr_r_o;
     lce_data_cmd_s_o.data = cache_block_data_r_o;
 
     // Mem Command Queue Inputs

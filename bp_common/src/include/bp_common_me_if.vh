@@ -255,33 +255,31 @@ typedef union packed
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    target_way_id; \
   }  bp_cce_lce_cmd_s
 
-/*
+
+/**
+ *  bp_lce_data_cmd_s is used to send cache block data from CCE to LCE or from LCE to LCE.
  *
- * CCE to LCE Data Command
- *
+ *  dst_id:   LCE receiving the cache block data
+ *  msg_type: indicates whether this is from CCE or from another LCE. LCE uses this field to decide
+ *            what type of lce_resp to send.
+ *  way_id:   the way within the receiving LCE's target set to fill the data in to.
+ *  data:     the cache block data
  */
 
-/*
- * bp_cce_lce_data_cmd_s is used to send cache block data from an CCE to an LCE in response to a
- *   cache miss request. Once an LCE receives this message and a set tag message, it considers
- *   itself to be woken up and can resume normal execution.
- * dst_id is the LCE receiving the cache block data
- * src_id is the CCE sending the cache block data
- * msg_type indicates if this cache block data is in response to a read or write cache miss
- * way_id is the way within the receiving LCE's target set to fill the data in to
- * addr is the memory address of the cache miss
- * data is the cache block data
- */
-`define declare_bp_cce_lce_data_cmd_s(num_cce_mp, num_lce_mp, addr_width_mp, data_width_mp, lce_assoc_mp) \
+typedef enum bit {
+  e_lce_data_cmd_transfer // lce to lce transfer
+  ,e_lce_data_cmd_cce     // data refill from L2
+} bp_lce_data_cmd_type_e;
+
+
+`define declare_bp_lce_data_cmd_s(num_lce_mp, data_width_mp, lce_assoc_mp) \
   typedef struct packed                                    \
   {                                                        \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      dst_id;   \
-    logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]      src_id;   \
-    bp_lce_cce_req_type_e                        msg_type; \
+    bp_lce_data_cmd_type_e                       msg_type; \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id;   \
-    logic [addr_width_mp-1:0]                    addr;     \
     logic [data_width_mp-1:0]                    data;     \
-  }  bp_cce_lce_data_cmd_s
+  }  bp_lce_data_cmd_s
 
 /*
  *
@@ -329,30 +327,6 @@ typedef enum bit [1:0]
     logic [addr_width_mp-1:0]                    addr;     \
   } bp_lce_cce_resp_s
 
-/*
- *
- * LCE to LCE Transfer Response
- *
- */
-
-/*
- * bp_lce_lce_tr_resp_s is sent from one LCE to another to satisfy a transfer command from a CCE.
- *   This message performs a direct LCE to LCE data transfer.
- * dst_id is the LCE receiving the cache block transfer
- * src_id is the LCE sending the cache block transfer
- * way_id is the way within the receiving LCE's target set to fill the data in to
- * addr is the memory address of the cache block being written back
- * data is the cache block data (if this is not a null writeback)
- */
-`define declare_bp_lce_lce_tr_resp_s(num_lce_mp, addr_width_mp, data_width_mp, lce_assoc_mp) \
-  typedef struct packed                                  \
-  {                                                      \
-    logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      dst_id; \
-    logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      src_id; \
-    logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id; \
-    logic [addr_width_mp-1:0]                    addr;   \
-    logic [data_width_mp-1:0]                    data;   \
-  } bp_lce_lce_tr_resp_s
 
 /*
  *
@@ -572,9 +546,8 @@ typedef enum bit
   (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_cce_lce_cmd_type_width \
    +addr_width_mp+(2*`BSG_SAFE_CLOG2(lce_assoc_mp))+`bp_cce_coh_bits+`BSG_SAFE_CLOG2(num_lce_mp))
 
-`define bp_cce_lce_data_cmd_width(num_cce_mp, num_lce_mp, addr_width_mp, data_width_mp, lce_assoc_mp) \
-  (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_cce_req_type_width \
-   +`BSG_SAFE_CLOG2(lce_assoc_mp)+addr_width_mp+data_width_mp)
+`define bp_lce_data_cmd_width(num_lce_mp, data_width_mp, lce_assoc_mp) \
+  (`BSG_SAFE_CLOG2(num_lce_mp)+1+`BSG_SAFE_CLOG2(lce_assoc_mp)+data_width_mp)
 
 `define bp_lce_cce_resp_width(num_cce_mp, num_lce_mp, addr_width_mp) \
   (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_cce_ack_type_width+addr_width_mp)

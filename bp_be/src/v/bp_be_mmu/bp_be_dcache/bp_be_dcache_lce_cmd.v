@@ -40,8 +40,8 @@ module bp_be_dcache_lce_cmd
       `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
     , localparam lce_cce_data_resp_width_lp=
       `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_p)
-    , localparam lce_lce_tr_resp_width_lp=
-      `bp_lce_lce_tr_resp_width(num_lce_p, paddr_width_p, lce_data_width_p, ways_p)
+    , localparam lce_data_cmd_width_lp=
+      `bp_lce_data_cmd_width(num_lce_p, lce_data_width_p, ways_p)
 
     , localparam dcache_lce_data_mem_pkt_width_lp=
       `bp_be_dcache_lce_data_mem_pkt_width(sets_p, ways_p, lce_data_width_p)
@@ -75,10 +75,10 @@ module bp_be_dcache_lce_cmd
     ,output logic lce_data_resp_v_o
     ,input lce_data_resp_ready_i
 
-    // LCE_LCE_tr_out
-    , output logic [lce_lce_tr_resp_width_lp-1:0] lce_tr_resp_o
-    , output logic lce_tr_resp_v_o
-    , input lce_tr_resp_ready_i 
+    // LCE_data_cmd_out
+    , output logic [lce_data_cmd_width_lp-1:0] lce_data_cmd_o
+    , output logic lce_data_cmd_v_o
+    , input lce_data_cmd_ready_i 
 
     // data_mem
     , output logic data_mem_pkt_v_o
@@ -103,7 +103,7 @@ module bp_be_dcache_lce_cmd
   `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, ways_p);
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
   `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_p);
-  `declare_bp_lce_lce_tr_resp_s(num_lce_p, paddr_width_p, lce_data_width_p, ways_p);
+  `declare_bp_lce_data_cmd_s(num_lce_p, lce_data_width_p, ways_p);
   `declare_bp_be_dcache_lce_data_mem_pkt_s(sets_p, ways_p, lce_data_width_p);
   `declare_bp_be_dcache_lce_tag_mem_pkt_s(sets_p, ways_p, tag_width_lp);
   `declare_bp_be_dcache_lce_stat_mem_pkt_s(sets_p, ways_p);
@@ -111,12 +111,12 @@ module bp_be_dcache_lce_cmd
   bp_cce_lce_cmd_s lce_cmd;
   bp_lce_cce_resp_s lce_resp;
   bp_lce_cce_data_resp_s lce_data_resp;
-  bp_lce_lce_tr_resp_s lce_tr_resp_out;
+  bp_lce_data_cmd_s lce_data_cmd_out;
 
   assign lce_cmd = lce_cmd_i;
   assign lce_resp_o = lce_resp;
   assign lce_data_resp_o = lce_data_resp;
-  assign lce_tr_resp_o = lce_tr_resp_out;
+  assign lce_data_cmd_o = lce_data_cmd_out;
 
   bp_be_dcache_lce_data_mem_pkt_s data_mem_pkt;
   bp_be_dcache_lce_tag_mem_pkt_s tag_mem_pkt;
@@ -152,7 +152,6 @@ module bp_be_dcache_lce_cmd
 
   // for transfer_cmd
   logic tr_data_buffered_r, tr_data_buffered_n;
-  logic tr_dirty_cleared_r, tr_dirty_cleared_n;
 
   // for writeback_cmd
   logic wb_data_buffered_r, wb_data_buffered_n;
@@ -165,9 +164,9 @@ module bp_be_dcache_lce_cmd
   // transaction signals
   //
   logic lce_data_resp_done;
-  logic lce_tr_resp_done;
+  logic lce_tr_done;
   
-  assign lce_tr_resp_done = lce_tr_resp_v_o & lce_tr_resp_ready_i;
+  assign lce_tr_done = lce_data_cmd_v_o & lce_data_cmd_ready_i;
   assign lce_data_resp_done = lce_data_resp_ready_i & lce_data_resp_v_o;
 
   // this gets asserted when LCE finishes its sync with CCE.
@@ -177,11 +176,9 @@ module bp_be_dcache_lce_cmd
   //
   always_comb begin
     
-
     state_n = state_r;
     sync_ack_count_n = sync_ack_count_r;
     tr_data_buffered_n = tr_data_buffered_r;
-    tr_dirty_cleared_n = tr_dirty_cleared_r;
 
     wb_data_buffered_n = wb_data_buffered_r;
     wb_data_read_n = wb_data_read_r;
@@ -204,9 +201,8 @@ module bp_be_dcache_lce_cmd
     lce_data_resp.src_id = (lce_id_width_lp)'(lce_id_i);
     lce_data_resp_v_o = 1'b0;
 
-    lce_tr_resp_out = '0;
-    lce_tr_resp_out.src_id = (lce_id_width_lp)'(lce_id_i);
-    lce_tr_resp_v_o = 1'b0;
+    lce_data_cmd_out = '0;
+    lce_data_cmd_v_o = 1'b0;
 
     data_mem_pkt = '0;
     data_mem_pkt_v_o = 1'b0;
@@ -358,18 +354,17 @@ module bp_be_dcache_lce_cmd
         data_buf_n = tr_data_buffered_r
           ? data_buf_r
           : data_mem_data_i;
-        tr_data_buffered_n = ~lce_tr_resp_done;
+        tr_data_buffered_n = ~lce_tr_done;
 
-        lce_tr_resp_out.dst_id = lce_cmd.target;
-        lce_tr_resp_out.way_id = lce_cmd.target_way_id;
-        lce_tr_resp_out.addr = lce_cmd.addr;
-        lce_tr_resp_out.data = tr_data_buffered_r
+        lce_data_cmd_out.dst_id = lce_cmd.target;
+        lce_data_cmd_out.way_id = lce_cmd.target_way_id;
+        lce_data_cmd_out.data = tr_data_buffered_r
           ? data_buf_r
           : data_mem_data_i;
-        lce_tr_resp_v_o = 1'b1;
+        lce_data_cmd_v_o = 1'b1;
 
-        lce_cmd_yumi_o = lce_tr_resp_done;
-        state_n = lce_tr_resp_done
+        lce_cmd_yumi_o = lce_tr_done;
+        state_n = lce_tr_done
           ? e_lce_cmd_state_ready
           : e_lce_cmd_state_tr;
       end
@@ -462,7 +457,6 @@ module bp_be_dcache_lce_cmd
       state_r <= e_lce_cmd_state_sync;
       sync_ack_count_r <= '0;
       tr_data_buffered_r <= 1'b0;
-      tr_dirty_cleared_r <= 1'b0;
       wb_data_buffered_r <= 1'b0;
       wb_data_read_r <= 1'b0;
       wb_dirty_cleared_r <= 1'b0;
@@ -472,7 +466,6 @@ module bp_be_dcache_lce_cmd
       state_r <= state_n;
       sync_ack_count_r <= sync_ack_count_n;
       tr_data_buffered_r <= tr_data_buffered_n;
-      tr_dirty_cleared_r <= tr_dirty_cleared_n;
       wb_data_buffered_r <= wb_data_buffered_n;
       wb_data_read_r <= wb_data_read_n;
       wb_dirty_cleared_r <= wb_dirty_cleared_n;

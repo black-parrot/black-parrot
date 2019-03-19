@@ -57,8 +57,9 @@ module bp_be_dcache_lce_req
     , input [way_id_width_lp-1:0] lru_way_i
     , input [ways_p-1:0] dirty_i
     , output logic cache_miss_o
+    , output logic [paddr_width_p-1:0] miss_addr_o
 
-    , input tr_received_i
+    , input tr_data_received_i
     , input cce_data_received_i
     , input tag_set_i
     , input tag_set_wakeup_i
@@ -101,7 +102,7 @@ module bp_be_dcache_lce_req
   logic dirty_lru_flopped_r, dirty_lru_flopped_n;
   logic missed;
 
-  logic tr_received_r, tr_received_n, tr_received;
+  logic tr_data_received_r, tr_data_received_n, tr_data_received;
   logic cce_data_received_r, cce_data_received_n, cce_data_received;
   logic tag_set_r, tag_set_n, tag_set;
 
@@ -117,9 +118,10 @@ module bp_be_dcache_lce_req
   end
 
   assign missed = load_miss_i | store_miss_i;
-  assign tr_received = tr_received_r | tr_received_i;
+  assign tr_data_received = tr_data_received_r | tr_data_received_i;
   assign cce_data_received = cce_data_received_r | cce_data_received_i;
   assign tag_set = tag_set_r | tag_set_i;
+  assign miss_addr_o = miss_addr_r;
 
   always_comb begin
     cache_miss_o = 1'b0;
@@ -131,7 +133,7 @@ module bp_be_dcache_lce_req
     miss_addr_n = miss_addr_r;
     dirty_lru_flopped_n = dirty_lru_flopped_r;
     
-    tr_received_n = tr_received_r;
+    tr_data_received_n = tr_data_received_r;
     cce_data_received_n = cce_data_received_r;
     tag_set_n = tag_set_r;
 
@@ -159,7 +161,7 @@ module bp_be_dcache_lce_req
           miss_addr_n = miss_addr_i;
           dirty_lru_flopped_n = 1'b0;
           load_not_store_n = load_miss_i;
-          tr_received_n = 1'b0;
+          tr_data_received_n = 1'b0;
           cce_data_received_n = 1'b0;
           tag_set_n = 1'b0;
           state_n = e_lce_req_state_send;
@@ -186,14 +188,14 @@ module bp_be_dcache_lce_req
       // wait for signals from other modules to wake up.
       e_lce_req_state_sleep: begin
         cache_miss_o = 1'b1;
-        tr_received_n = tr_received_i ? 1'b1 : tr_received_r;
+        tr_data_received_n = tr_data_received_i ? 1'b1 : tr_data_received_r;
         cce_data_received_n = cce_data_received_i ? 1'b1 : cce_data_received_r;
         tag_set_n = tag_set_i ? 1'b1 : tag_set_r;
 
         state_n = tag_set_wakeup_i
           ? e_lce_req_state_ready
           : (tag_set
-            ? (tr_received
+            ? (tr_data_received
               ? e_lce_req_state_send_tr_ack
               : (cce_data_received ? e_lce_req_state_send_coh_ack : e_lce_req_state_sleep))
             : e_lce_req_state_sleep
@@ -205,6 +207,7 @@ module bp_be_dcache_lce_req
       e_lce_req_state_send_tr_ack: begin
         cache_miss_o = 1'b1;
         lce_resp_v_o = 1'b1;
+        lce_resp.msg_type = e_lce_cce_tr_ack;
         state_n = lce_resp_yumi_i
           ? e_lce_req_state_ready
           : e_lce_req_state_send_tr_ack;
@@ -236,7 +239,7 @@ module bp_be_dcache_lce_req
     if (reset_i) begin
       state_r <= e_lce_req_state_ready;
       dirty_lru_flopped_r <= 1'b0;
-      tr_received_r <= 1'b0;
+      tr_data_received_r <= 1'b0;
       cce_data_received_r <= 1'b0;
       tag_set_r <= 1'b0;
     end
@@ -247,7 +250,7 @@ module bp_be_dcache_lce_req
       dirty_r <= dirty_n;
       miss_addr_r <= miss_addr_n;
       dirty_lru_flopped_r <= dirty_lru_flopped_n;
-      tr_received_r <= tr_received_n;
+      tr_data_received_r <= tr_data_received_n;
       cce_data_received_r <= cce_data_received_n;
       tag_set_r <= tag_set_n;
     end
@@ -256,7 +259,7 @@ module bp_be_dcache_lce_req
   // synopsys translate_off
   always_ff @ (negedge clk_i) begin
     if (state_r == e_lce_req_state_ready) begin
-      assert(~tr_received_i)
+      assert(~tr_data_received_i)
         else $error("id: %0d, transfer received while no cache miss.", lce_id_i);
       assert(~cce_data_received_i)
         else $error("id: %0d, data_cmd received while no cache miss.", lce_id_i);

@@ -26,16 +26,19 @@ module bp_be_dcache_lce_data_cmd
     , localparam ptag_width_lp=(paddr_width_p-page_offset_width_lp)
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
 
-    , localparam cce_lce_data_cmd_width_lp=
-      `bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_p, ways_p)
+    , localparam lce_data_cmd_width_lp=
+      `bp_lce_data_cmd_width(num_lce_p, lce_data_width_p, ways_p)
 
     , localparam dcache_lce_data_mem_pkt_width_lp=
       `bp_be_dcache_lce_data_mem_pkt_width(sets_p, ways_p, lce_data_width_p)
   )
   (
     output logic cce_data_received_o
+    , output logic tr_data_received_o
+
+    , input [paddr_width_p-1:0] miss_addr_i
   
-    , input [cce_lce_data_cmd_width_lp-1:0] lce_data_cmd_i
+    , input [lce_data_cmd_width_lp-1:0] lce_data_cmd_i
     , input lce_data_cmd_v_i
     , output logic lce_data_cmd_yumi_o
 
@@ -46,8 +49,8 @@ module bp_be_dcache_lce_data_cmd
 
   // casting structs
   //
-  `declare_bp_cce_lce_data_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_p, ways_p);
-  bp_cce_lce_data_cmd_s lce_data_cmd;
+  `declare_bp_lce_data_cmd_s(num_lce_p, lce_data_width_p, ways_p);
+  bp_lce_data_cmd_s lce_data_cmd;
 
   assign lce_data_cmd = lce_data_cmd_i;
 
@@ -58,7 +61,7 @@ module bp_be_dcache_lce_data_cmd
 
   // channel connection
   //
-  assign data_mem_pkt.index = lce_data_cmd.addr[block_offset_width_lp+:index_width_lp];
+  assign data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
   assign data_mem_pkt.way_id = lce_data_cmd.way_id;
   assign data_mem_pkt.data = lce_data_cmd.data;
   assign data_mem_pkt.write_not_read = 1'b1; 
@@ -68,6 +71,7 @@ module bp_be_dcache_lce_data_cmd
 
   // wakeup logic
   //
-  assign cce_data_received_o = data_mem_pkt_yumi_i;
+  assign cce_data_received_o = data_mem_pkt_yumi_i & (lce_data_cmd.msg_type == e_lce_data_cmd_cce);
+  assign tr_data_received_o = data_mem_pkt_yumi_i & (lce_data_cmd.msg_type == e_lce_data_cmd_transfer);
 
 endmodule

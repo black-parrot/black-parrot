@@ -84,10 +84,8 @@ module bp_be_dcache
       `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_lp)
     , localparam cce_lce_cmd_width_lp=
       `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, ways_p)
-    , localparam cce_lce_data_cmd_width_lp=
-      `bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_lp, ways_p)
-    , localparam lce_lce_tr_resp_width_lp=
-      `bp_lce_lce_tr_resp_width(num_lce_p, paddr_width_p, lce_data_width_lp, ways_p)
+    , localparam lce_data_cmd_width_lp=
+      `bp_lce_data_cmd_width(num_lce_p, lce_data_width_lp, ways_p)
   )
   (
     input clk_i
@@ -128,18 +126,14 @@ module bp_be_dcache
     , input lce_cmd_v_i
     , output logic lce_cmd_ready_o
 
-    , input [cce_lce_data_cmd_width_lp-1:0] lce_data_cmd_i
+    , input [lce_data_cmd_width_lp-1:0] lce_data_cmd_i
     , input lce_data_cmd_v_i
     , output logic lce_data_cmd_ready_o
 
     // LCE-LCE interface
-    , input [lce_lce_tr_resp_width_lp-1:0] lce_tr_resp_i
-    , input lce_tr_resp_v_i
-    , output logic lce_tr_resp_ready_o
-
-    , output logic [lce_lce_tr_resp_width_lp-1:0] lce_tr_resp_o
-    , output logic lce_tr_resp_v_o
-    , input lce_tr_resp_ready_i 
+    , output logic [lce_data_cmd_width_lp-1:0] lce_data_cmd_o
+    , output logic lce_data_cmd_v_o
+    , input lce_data_cmd_ready_i 
   );
 
   // packet decoding
@@ -573,13 +567,9 @@ module bp_be_dcache
       ,.lce_data_cmd_v_i(lce_data_cmd_v_i)
       ,.lce_data_cmd_ready_o(lce_data_cmd_ready_o)
 
-      ,.lce_tr_resp_i(lce_tr_resp_i)
-      ,.lce_tr_resp_v_i(lce_tr_resp_v_i)
-      ,.lce_tr_resp_ready_o(lce_tr_resp_ready_o)
-
-      ,.lce_tr_resp_o(lce_tr_resp_o)
-      ,.lce_tr_resp_v_o(lce_tr_resp_v_o)
-      ,.lce_tr_resp_ready_i(lce_tr_resp_ready_i)
+      ,.lce_data_cmd_o(lce_data_cmd_o)
+      ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
+      ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
       );
  
   // output stage
