@@ -1,16 +1,19 @@
 
 # Verilator specific test bench paths
-SCTB_PATH = $(BP_ME_TB_PATH)/tb
+SCTB_PATH = $(BP_ME_TB_PATH)/sc
 BP_ME_TB_COMMON_PATH = $(BP_ME_TB_PATH)/common
 
 ## Tools
-VV = $(VERILATOR) 
+#VV = $(VERILATOR) 
+VV = $(TOP)/verilator/bin/verilator
 CC = g++
 
 VV_OPTS +=--trace #-O3
 #VV_OPTS +=--trace-structs
 VV_OPTS +=-Wno-unoptflat # Verilator has problems with false positive combinatorial
                          #   loop detection e.g. bit 0 drives bit 1 of struct
+VV_OPTS += -I$(BP_ME_INC_PATH) -I$(BP_COMMON_PATH)/src/include
+VV_OPTS += -I$(BSG_IP_PATH)/bsg_noc -I$(BSG_IP_PATH)/bsg_misc 
 
 # These flags are passed to the C++ compiler used by Verilator
 CPPFLAGS +=-I$(BP_ME_TB_PATH)/include -I$(BP_ME_PATH)/src/include/c
@@ -38,10 +41,13 @@ lint.sc:
 %.build.sc: clean
 	$(eval include $(SCTB_PATH)/$*/Makefile.frag)
 	$(eval TOP_MODULE ?= $*)
-	$(VV) $(VV_OPTS) --Wno-fatal --top-module $(TOP_MODULE) --sc -f flist.verilator $(HDL_PARAMS) \
-		--exe $(SCTB_PATH)/$*/test_bp.cpp -f $(SCTB_PATH)/$*/flist.verilator \
+	$(VV) $(VV_OPTS) --Wno-fatal --top-module $(TOP_MODULE) --sc $(HDL_SOURCE) $(HDL_PARAMS) \
+		--exe $(SCTB_PATH)/$*/test_bp.cpp \
 	&& make -C obj_dir -f V$(TOP_MODULE).mk \
 	&& cp obj_dir/V$(TOP_MODULE) $(SCTB_PATH)/$*/simsc
+
+#		-f flist.verilator $(HDL_PARAMS) \
+#		-f $(SCTB_PATH)/$*/flist.verilator \
 
 %.run.sc: %.build.sc
 	$(eval include $(SCTB_PATH)/$*/Makefile.frag) \
