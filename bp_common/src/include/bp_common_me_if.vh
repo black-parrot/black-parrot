@@ -261,14 +261,15 @@ typedef union packed
  *
  *  dst_id:   LCE receiving the cache block data
  *  msg_type: indicates whether this is from CCE or from another LCE. LCE uses this field to decide
- *            what type of lce_resp to send.
+ *            what type of lce_resp to send. or whether this is non_cacheable data_cmd from CCE.
  *  way_id:   the way within the receiving LCE's target set to fill the data in to.
  *  data:     the cache block data
  */
 
-typedef enum bit {
-  e_lce_data_cmd_transfer // lce to lce transfer
-  ,e_lce_data_cmd_cce     // data refill from L2
+typedef enum logic [1:0] {
+  e_lce_data_cmd_transfer         // lce to lce transfer
+  ,e_lce_data_cmd_cce             // data refill from L2
+  ,e_lce_data_cmd_non_cacheable   // only 64-bit is valid
 } bp_lce_data_cmd_type_e;
 
 
@@ -335,20 +336,22 @@ typedef enum bit [1:0]
  */
 
 /*
- * bp_lce_cce_wb_resp_type_e is an enum that is used by the LCE when sending a writeback response
+ * bp_lce_cce_msg_type_e is an enum that is used by the LCE when sending a writeback response
  *   to indicate if the response contains valid data
  * e_lce_resp_wb indicates the data field (cache block data) is valid, and that the LCE ahd the
  *   cache block in a dirty state
  * e_lce_resp_null_wb indicates that the LCE never wrote to the cache block and the block is still
  *   clean. The data field should be 0 and is invalid.
  */
-typedef enum bit 
-{
-  e_lce_resp_wb              = 1'b0 // Normal Writeback Response
-  ,e_lce_resp_null_wb        = 1'b1 // Null Writeback Response
-} bp_lce_cce_wb_resp_type_e;
 
-`define bp_lce_cce_wb_resp_type_width $bits(bp_lce_cce_wb_resp_type_e)
+typedef enum logic [1:0]
+{
+  e_lce_resp_wb              = 2'b00  // Normal Writeback Response (full data)
+  ,e_lce_resp_null_wb        = 2'b01  // Null Writeback Response (no data)
+  ,e_lce_resp_non_cacheable  = 2'b10  // non_cacheable data response (only 64-bit data)
+} bp_lce_cce_resp_msg_type_e;
+
+`define bp_lce_cce_msg_type_width $bits(bp_lce_cce_resp_msg_type_e)
 
 /*
  * bp_lce_cce_data_resp_s is used by an LCE to respond to a writeback command from the CCE
@@ -363,7 +366,7 @@ typedef enum bit
   {                                                        \
     logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]      dst_id;   \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      src_id;   \
-    bp_lce_cce_wb_resp_type_e                    msg_type; \
+    bp_lce_cce_resp_msg_type_e                   msg_type; \
     logic [addr_width_mp-1:0]                    addr;     \
     logic [data_width_mp-1:0]                    data;     \
   } bp_lce_cce_data_resp_s
@@ -547,7 +550,7 @@ typedef enum bit
    +addr_width_mp+(2*`BSG_SAFE_CLOG2(lce_assoc_mp))+`bp_cce_coh_bits+`BSG_SAFE_CLOG2(num_lce_mp))
 
 `define bp_lce_data_cmd_width(num_lce_mp, data_width_mp, lce_assoc_mp) \
-  (`BSG_SAFE_CLOG2(num_lce_mp)+1+`BSG_SAFE_CLOG2(lce_assoc_mp)+data_width_mp)
+  (`BSG_SAFE_CLOG2(num_lce_mp)+2+`BSG_SAFE_CLOG2(lce_assoc_mp)+data_width_mp)
 
 `define bp_lce_cce_resp_width(num_cce_mp, num_lce_mp, addr_width_mp) \
   (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_cce_ack_type_width+addr_width_mp)
@@ -557,7 +560,7 @@ typedef enum bit
     +addr_width_mp+data_width_mp)
 
 `define bp_lce_cce_data_resp_width(num_cce_mp, num_lce_mp, addr_width_mp, data_width_mp) \
-  (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_cce_wb_resp_type_width \
+  (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_cce_resp_msg_type_width \
    +addr_width_mp+data_width_mp)
 
 // CCE-MEM Interface
