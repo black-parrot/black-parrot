@@ -272,6 +272,7 @@ typedef enum logic [1:0] {
   ,e_lce_data_cmd_non_cacheable   // only 64-bit is valid
 } bp_lce_data_cmd_type_e;
 
+`define bp_lce_data_cmd_type_width $bits(bp_lce_data_cmd_type_e)
 
 `define declare_bp_lce_data_cmd_s(num_lce_mp, data_width_mp, lce_assoc_mp) \
   typedef struct packed                                    \
@@ -550,7 +551,8 @@ typedef enum logic [1:0]
    +addr_width_mp+(2*`BSG_SAFE_CLOG2(lce_assoc_mp))+`bp_cce_coh_bits+`BSG_SAFE_CLOG2(num_lce_mp))
 
 `define bp_lce_data_cmd_width(num_lce_mp, data_width_mp, lce_assoc_mp) \
-  (`BSG_SAFE_CLOG2(num_lce_mp)+2+`BSG_SAFE_CLOG2(lce_assoc_mp)+data_width_mp)
+  (`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_data_cmd_type_width+`BSG_SAFE_CLOG2(lce_assoc_mp) \
+   +data_width_mp)
 
 `define bp_lce_cce_resp_width(num_cce_mp, num_lce_mp, addr_width_mp) \
   (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_cce_ack_type_width+addr_width_mp)
