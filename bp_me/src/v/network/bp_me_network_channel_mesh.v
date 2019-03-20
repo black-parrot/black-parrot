@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_coherence_network_channel.v
+ *   bp_me_network_channel_mesh.v
  *
  * Description:
  *   This coherence network channel is a series of buffered mesh routers and fifos used to relay
@@ -24,7 +24,7 @@
  *   and shouldn't make it too much harder to follow.
 */
 
-module bp_coherence_network_channel
+module bp_me_network_channel_mesh
   import bp_common_pkg::*;
   import bp_me_network_pkg::*;
   import bsg_noc_pkg::*;
