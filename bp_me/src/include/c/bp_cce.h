@@ -33,7 +33,7 @@
 #define LG_LCE_SETS 6
 #endif
 
-#define SET_MASK ~((uint32_t)(~0) << LG_LCE_SETS)
+#define SET_MASK ~((uint64_t)(~0) << LG_LCE_SETS)
 //BSG_SAFE_CLOG2(LCE_SETS)
 
 #ifndef DATA_WIDTH_BYTES
@@ -43,19 +43,27 @@
 //BSG_SAFE_CLOG2(DATA_WIDTH_BYTES)
 #define DATA_WIDTH_BITS (DATA_WIDTH_BYTES*8)
 
+#ifndef ADDR_WIDTH
+#define ADDR_WIDTH 56
+#endif
+
+#define TAG_WIDTH (ADDR_WIDTH-LG_LCE_SETS-LG_DATA_WIDTH_BYTES)
+
+/*
 #ifndef TAG_WIDTH
 #define TAG_WIDTH 10
 //(ADDR_WIDTH-LG_LCE_SETS-LG_DATA_WIDTH_BYTES)
 #endif
+*/
 
-#define TAG_MASK ~((uint32_t)(~0) << TAG_WIDTH)
+#define TAG_MASK ~((uint64_t)(~0) << TAG_WIDTH)
 #define N_WG (LCE_SETS/N_CCE)
-#define ADDR_WIDTH (TAG_WIDTH+LG_LCE_SETS+LG_DATA_WIDTH_BYTES)
+//#define ADDR_WIDTH (TAG_WIDTH+LG_LCE_SETS+LG_DATA_WIDTH_BYTES)
 
 #define COH_ST 4
 #define LG_COH_ST 2
 //BSG_SAFE_CLOG2(COH_ST)
-#define COH_ST_MASK ~((uint32_t)(~0) << LG_COH_ST)
+#define COH_ST_MASK ~((uint64_t)(~0) << LG_COH_ST)
 
 #define WG_WIDTH N_LCE*LCE_ASSOC*(TAG_WIDTH+LG_COH_ST)
 

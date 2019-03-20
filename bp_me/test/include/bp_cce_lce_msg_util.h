@@ -42,14 +42,40 @@ std::string toString(T in, int bits)
 // LCE to CCE Request
 sc_bv<bp_lce_cce_req_width>
 createLceReq(uint32_t dst, uint32_t src, bp_lce_cce_req_type_e reqType, uint64_t addr,
-             bp_lce_cce_req_non_excl_e non_excl, uint32_t lruWay, bp_lce_cce_lru_dirty_e lruDirty)
+             bp_lce_cce_req_non_excl_e non_excl, uint32_t lruWay, bp_lce_cce_lru_dirty_e lruDirty,
+             bp_lce_cce_req_non_cacheable_e nc_req = e_lce_req_cacheable,
+             bp_lce_cce_nc_req_size_e nc_size = e_lce_nc_req_1)
 {
   sc_bv<bp_lce_cce_req_width> msg(0);
-  msg.range(0,0) = (int)lruDirty;
-  msg.range(LG_LCE_ASSOC,1) = lruWay;
-  msg.range(ADDR_WIDTH+LG_LCE_ASSOC,LG_LCE_ASSOC+1) = addr;
-  msg.range(ADDR_WIDTH+LG_LCE_ASSOC+1,ADDR_WIDTH+LG_LCE_ASSOC+1) = (int)non_excl;
-  msg.range(ADDR_WIDTH+LG_LCE_ASSOC+1+bp_lce_cce_req_type_width,ADDR_WIDTH+LG_LCE_ASSOC+2) = (int)reqType;
+
+  int offset_lo = 0;
+  int offset_hi = bp_lce_cce_nc_req_size_width-1;
+  msg.range(offset_hi, offset_lo) = (int)nc_size;
+
+  offset_lo = offset_hi+1;
+  offset_hi = offset_hi+bp_lce_cce_req_non_cacheable_width;
+  msg.range(offset_hi, offset_lo) = (int)nc_req;
+
+  offset_lo = offset_hi+1;
+  offset_hi = offset_hi+bp_lce_cce_lru_dirty_width;
+  msg.range(offset_hi, offset_lo) = (int)lruDirty;
+
+  offset_lo = offset_hi+1;
+  offset_hi = offset_hi+LG_LCE_ASSOC;
+  msg.range(offset_hi, offset_lo) = lruWay;
+
+  offset_lo = offset_hi+1;
+  offset_hi = offset_hi+ADDR_WIDTH;
+  msg.range(offset_hi, offset_lo) = addr;
+
+  offset_lo = offset_hi+1;
+  offset_hi = offset_hi+bp_lce_cce_req_non_excl_width;
+  msg.range(offset_hi, offset_lo) = (int)non_excl;
+
+  offset_lo = offset_hi+1;
+  offset_hi = offset_hi+bp_lce_cce_req_type_width;
+  msg.range(offset_hi, offset_lo) = (int)reqType;
+
   msg.range(bp_lce_cce_req_width-LG_N_CCE-1,bp_lce_cce_req_width-LG_N_CCE-LG_N_LCE) = src;
   msg.range(bp_lce_cce_req_width-1,bp_lce_cce_req_width-LG_N_CCE) = dst;
 
@@ -60,7 +86,10 @@ createLceReq(uint32_t dst, uint32_t src, bp_lce_cce_req_type_e reqType, uint64_t
        << " addr(" << ADDR_WIDTH << "): " << toHex<uint64_t>(addr) //toString<uint64_t>(addr, ADDR_WIDTH)
        << " NE(1): " << (int)non_excl
        << " lruWay(" << LG_LCE_ASSOC << "): " << (int)lruWay
-       << " lruDirty(1): " << (int)lruDirty << endl;
+       << " lruDirty(1): " << (int)lruDirty
+       << " ncReq(1): " << (int)nc_req
+       << " ncReqSize(2): " << (int)nc_size
+       << endl;
 
   return msg;
 }
@@ -68,9 +97,10 @@ createLceReq(uint32_t dst, uint32_t src, bp_lce_cce_req_type_e reqType, uint64_t
 bool
 checkLceReq(sc_bv<bp_lce_cce_req_width> &msg, uint32_t dst, uint32_t src,
             bp_lce_cce_req_type_e reqType, uint64_t addr, bp_lce_cce_req_non_excl_e non_excl,
-            uint32_t lruWay, bp_lce_cce_lru_dirty_e lruDirty)
+            uint32_t lruWay, bp_lce_cce_lru_dirty_e lruDirty,
+            bp_lce_cce_req_non_cacheable_e nc_req, bp_lce_cce_nc_req_size_e nc_size)
 {
-  sc_bv<bp_lce_cce_req_width> exp = createLceReq(dst, src, reqType, addr, non_excl, lruWay, lruDirty);
+  sc_bv<bp_lce_cce_req_width> exp = createLceReq(dst, src, reqType, addr, non_excl, lruWay, lruDirty, nc_req, nc_size);
   //cout << "LCE Req: " << msg.to_string() << endl;
   //cout << "exp msg: " << exp.to_string() << endl;
   return !(msg.to_string().compare(exp.to_string()));
@@ -144,13 +174,13 @@ checkCceCmd(sc_bv<bp_cce_lce_cmd_width> &msg, uint32_t dst, uint32_t src, uint64
 
 // LCE to CCE Data Response
 sc_bv<bp_lce_cce_data_resp_width>
-createLceDataResp(uint32_t dst, uint32_t src, uint64_t addr, bp_lce_cce_wb_resp_type_e wb, uint64_t dataVal)
+createLceDataResp(uint32_t dst, uint32_t src, uint64_t addr, bp_lce_cce_resp_msg_type_e wb, uint64_t dataVal)
 {
   sc_bv<bp_lce_cce_data_resp_width> msg(0);
 
   msg.range(DATA_WIDTH_BITS-1,0) = dataVal;
   msg.range(DATA_WIDTH_BITS+ADDR_WIDTH-1,DATA_WIDTH_BITS) = addr;
-  msg.range(DATA_WIDTH_BITS+ADDR_WIDTH+bp_lce_cce_wb_resp_type_width-1,DATA_WIDTH_BITS+ADDR_WIDTH) = (uint8_t)wb;
+  msg.range(DATA_WIDTH_BITS+ADDR_WIDTH+bp_lce_cce_resp_msg_type_width-1,DATA_WIDTH_BITS+ADDR_WIDTH) = (uint8_t)wb;
   msg.range(bp_lce_cce_data_resp_width-LG_N_CCE-1, bp_lce_cce_data_resp_width-LG_N_CCE-LG_N_LCE) = src;
   msg.range(bp_lce_cce_data_resp_width-1, bp_lce_cce_data_resp_width-LG_N_CCE) = dst;
 
@@ -161,7 +191,7 @@ createLceDataResp(uint32_t dst, uint32_t src, uint64_t addr, bp_lce_cce_wb_resp_
 
 bool
 checkLceDataResp(sc_bv<bp_lce_cce_data_resp_width> &msg, uint32_t dst, uint32_t src, uint64_t addr,
-                 bp_lce_cce_wb_resp_type_e wb, uint64_t dataVal)
+                 bp_lce_cce_resp_msg_type_e wb, uint64_t dataVal)
 {
   sc_bv<bp_lce_cce_data_resp_width> exp = createLceDataResp(dst, src, addr, wb, dataVal);
   cout << "LCE Data Resp: " << msg.to_string() << endl;
@@ -195,33 +225,32 @@ checkLceResp(sc_bv<bp_lce_cce_resp_width> &msg, uint32_t dst, uint32_t src,
 }
 
 // CCE to LCE Data Command
-sc_bv<bp_cce_lce_data_cmd_width>
-createCceDataCmd(uint32_t dst, uint32_t src, uint64_t addr, uint32_t way,
-                 bp_lce_cce_req_type_e reqType, uint64_t data)
+sc_bv<bp_lce_data_cmd_width>
+createCceDataCmd(uint32_t dst, uint32_t way, bp_lce_data_cmd_type_e cmdType, uint64_t data)
 {
-  sc_bv<bp_cce_lce_data_cmd_width> msg(0);
+  sc_bv<bp_lce_data_cmd_width> msg(0);
 
-  msg.range(DATA_WIDTH_BITS-1,0) = data;
-  msg.range(DATA_WIDTH_BITS+ADDR_WIDTH-1,DATA_WIDTH_BITS) = addr;
-  msg.range(DATA_WIDTH_BITS+ADDR_WIDTH+LG_LCE_ASSOC-1,DATA_WIDTH_BITS+ADDR_WIDTH) = way;
-  msg.range(DATA_WIDTH_BITS+ADDR_WIDTH+LG_LCE_ASSOC+bp_lce_cce_req_type_width-1,DATA_WIDTH_BITS+ADDR_WIDTH+LG_LCE_ASSOC) = (uint8_t)reqType;
-  msg.range(bp_cce_lce_data_cmd_width-LG_N_LCE-1, bp_cce_lce_data_cmd_width-LG_N_LCE-LG_N_CCE) = src;
-  msg.range(bp_cce_lce_data_cmd_width-1, bp_cce_lce_data_cmd_width-LG_N_LCE) = dst;
+  msg.range(LG_LCE_ASSOC-1,0) = way;
+  msg.range(LG_LCE_ASSOC+bp_lce_data_cmd_type_width-1, LG_LCE_ASSOC) = (uint8_t)cmdType;
+  msg.range(LG_LCE_ASSOC+bp_lce_data_cmd_type_width+LG_N_LCE-1, LG_LCE_ASSOC+bp_lce_data_cmd_type_width) = dst;
+  msg.range(bp_lce_data_cmd_width-1, bp_lce_data_cmd_width-DATA_WIDTH_BITS) = data;
 
+  /*
   std::stringstream ss;
   ss << "CCE Data Cmd Addr: " 
      << std::setfill('0') << std::setw(sizeof(uint64_t)*2) << std::hex << addr;
   cout << ss.str() << endl;
+  */
 
   return msg;
 }
 
 bool
-checkCceDataCmd(sc_bv<bp_cce_lce_data_cmd_width> &msg, uint32_t dst, uint32_t src, uint64_t addr,
-                uint32_t way, bp_lce_cce_req_type_e reqType, uint64_t data, bool checkData)
+checkCceDataCmd(sc_bv<bp_lce_data_cmd_width> &msg, uint32_t dst, uint32_t way,
+                bp_lce_data_cmd_type_e reqType, uint64_t data, bool checkData)
 {
   cout << "Checking CCE Data Cmd..." << endl;
-  sc_bv<bp_cce_lce_data_cmd_width> exp = createCceDataCmd(dst, src, addr, way, reqType, data);
+  sc_bv<bp_lce_data_cmd_width> exp = createCceDataCmd(dst, way, reqType, data);
   // if not checking data, set data to 0 in both received message and expected message
   if (!checkData) {
     msg.range(DATA_WIDTH_BITS-1,0) = 0;

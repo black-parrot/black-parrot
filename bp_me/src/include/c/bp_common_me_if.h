@@ -51,6 +51,20 @@ typedef enum {
 
 #define bp_lce_cce_nc_req_size_width 2
 
+uint32_t nc_req_size(bp_lce_cce_nc_req_size_e nc_req)
+{
+  if (nc_req == e_lce_nc_req_1) {
+    return 1;
+  } else if (nc_req == e_lce_nc_req_2) {
+    return 2;
+  } else if (nc_req == e_lce_nc_req_4) {
+    return 4;
+  } else if (nc_req == e_lce_nc_req_8) {
+    return 8;
+  }
+  return 0;
+}
+
 typedef enum { // CCE to LCE Commands
   e_lce_cmd_sync             = 0
   ,e_lce_cmd_set_clear       = 1
