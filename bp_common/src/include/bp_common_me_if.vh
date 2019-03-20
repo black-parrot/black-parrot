@@ -277,10 +277,10 @@ typedef enum logic [1:0] {
 `define declare_bp_lce_data_cmd_s(num_lce_mp, data_width_mp, lce_assoc_mp) \
   typedef struct packed                                    \
   {                                                        \
+    logic [data_width_mp-1:0]                    data;     \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      dst_id;   \
     bp_lce_data_cmd_type_e                       msg_type; \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id;   \
-    logic [data_width_mp-1:0]                    data;     \
   }  bp_lce_data_cmd_s
 
 /*
@@ -365,11 +365,11 @@ typedef enum logic [1:0]
 `define declare_bp_lce_cce_data_resp_s(num_cce_mp, num_lce_mp, addr_width_mp, data_width_mp) \
   typedef struct packed                                    \
   {                                                        \
+    logic [data_width_mp-1:0]                    data;     \
     logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]      dst_id;   \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      src_id;   \
     bp_lce_cce_resp_msg_type_e                   msg_type; \
     logic [addr_width_mp-1:0]                    addr;     \
-    logic [data_width_mp-1:0]                    data;     \
   } bp_lce_cce_data_resp_s
 
 /*
