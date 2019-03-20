@@ -7,8 +7,16 @@ def int2hex(num, width):
   
 def checkAddr(vpn, as_start_vpn, as_size, page_pte_num, level, pt_depth):
   for i in xrange(len(as_start_vpn)):
-    if as_start_vpn[i] >= vpn and as_start_vpn[i] < vpn + page_pte_num**(pt_depth-level-1):
-      return 1
+    as_start = as_start_vpn[i]
+    as_end = as_start_vpn[i] + as_size[i] - 1
+    
+    page_start = vpn
+    page_end = vpn + page_pte_num**(pt_depth-level-1) - 1
+    
+    if not(as_start > page_end or as_end < page_start):
+      return 1   
+#    if as_start_vpn[i] >= vpn and as_start_vpn[i] < vpn + page_pte_num**(pt_depth-level-1):
+#      return 1
   return 0
 
 #######################################
