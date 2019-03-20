@@ -352,7 +352,7 @@ typedef enum logic [1:0]
   ,e_lce_resp_non_cacheable  = 2'b10  // non_cacheable data response (only 64-bit data)
 } bp_lce_cce_resp_msg_type_e;
 
-`define bp_lce_cce_msg_type_width $bits(bp_lce_cce_resp_msg_type_e)
+`define bp_lce_cce_resp_msg_type_width $bits(bp_lce_cce_resp_msg_type_e)
 
 /*
  * bp_lce_cce_data_resp_s is used by an LCE to respond to a writeback command from the CCE
