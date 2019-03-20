@@ -4,17 +4,17 @@
 
 `define declare_bp_sv39_pte_s(pte_width_mp, ppn_width_mp) \
   typedef struct packed {                                 \
-    logic v;                                              \
-    logic r;                                              \
-    logic w;                                              \
-    logic x;                                              \
-    logic u;                                              \
-    logic g;                                              \
-    logic a;                                              \
-    logic d;                                              \
-    logic [1:0] rsw;                                      \
-    logic [ppn_width_mp-1:0] ppn;                         \
     logic [pte_width_mp-10-ppn_width_mp-1:0] reserved;    \
+    logic [ppn_width_mp-1:0] ppn;                         \
+    logic [1:0] rsw;                                      \
+    logic d;                                              \
+    logic a;                                              \
+    logic g;                                              \
+    logic u;                                              \
+    logic x;                                              \
+    logic w;                                              \
+    logic r;                                              \
+    logic v;                                              \
   } bp_sv39_pte_s                                         \
 
   

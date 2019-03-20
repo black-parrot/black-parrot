@@ -69,7 +69,7 @@ SECTIONS
   /* End of uninitalized data segement */
   _end = .;
   
-  . = 0x80003000;
+  . = 0x80008000;
   .data.pt : { *(.data.pt) }
   
 }

@@ -1,5 +1,5 @@
 
-module bp_be_mock_ptw
+module bp_be_ptw
   import bp_common_pkg::*;
   import bp_be_rv64_pkg::*;
   import bp_be_pkg::*;
@@ -27,7 +27,7 @@ module bp_be_mock_ptw
    // TLB connections
    , input                                  tlb_miss_v_i
    , input [vpn_width_lp-1:0]               tlb_miss_vtag_i
-   , output logic                           tlb_rdy_o
+   , output logic                           busy_o
    
    , output logic                           tlb_w_v_o
    , output logic [vpn_width_lp-1:0]        tlb_w_vtag_o
@@ -64,8 +64,8 @@ module bp_be_mock_ptw
   logic [ppn_width_lp-1:0]           ppn_r, ppn_n;
   logic                              ppn_en;
   
-  logic [lg_page_table_depth_lp-1:0] [partial_vpn_width_lp-1:0] partial_vpn;
-  logic [lg_page_table_depth_lp-1:0] [partial_vpn_width_lp-1:0] partial_ppn;
+  logic [page_table_depth_p-1:0] [partial_vpn_width_lp-1:0] partial_vpn;
+  logic [page_table_depth_p-2:0] [partial_vpn_width_lp-1:0] partial_ppn;
 
   genvar i;
   generate begin
@@ -83,10 +83,16 @@ module bp_be_mock_ptw
   assign dcache_pkt_o           = dcache_pkt;
   assign dcache_ptag_o          = ppn_r;
   assign dcache_data            = dcache_data_i;
-  assign tlb_w_entry_o          = tlb_w_entry;
   
+  assign tlb_w_v_o              = (state_r == eWriteBack);
+  assign tlb_w_vtag_o           = vpn_r;
+  assign tlb_w_entry_o          = tlb_w_entry;
+
+  assign dcache_v_o             = (state_r == eSendLoad);
   assign dcache_pkt.opcode      = e_dcache_opcode_ld;
   assign dcache_pkt.page_offset = {partial_vpn[level_cntr], (lg_pte_size_in_bytes_lp)'(0)};
+  
+  assign busy_o                 = (state_r != eIdle);
   
   assign start                  = (state_r == eIdle) & tlb_miss_v_i;
   
@@ -104,7 +110,7 @@ module bp_be_mock_ptw
       eSendLoad:  state_n = (dcache_rdy_i)? eSendPtag : eSendLoad;
       eSendPtag:  state_n = eWaitLoad;
       eWaitLoad:  state_n = (dcache_miss_i)? eSendLoad :
-                            (dcache_v_i)? ((pte_leaf_v)? eWaitLoad : eSendLoad) :
+                            (dcache_v_i)? ((pte_leaf_v)? eWriteBack : eSendLoad) :
                             eWaitLoad;
       eWriteBack: state_n = eIdle;
       default: state_n = eStuck;
@@ -121,6 +127,15 @@ module bp_be_mock_ptw
     end
     else if(level_cntr_en) begin
       level_cntr <= level_cntr - 'b1;
+    end
+  end
+  
+  always_ff @(posedge clk_i) begin
+    if(reset_i) begin
+      state_r <= eIdle;
+    end
+    else begin
+      state_r <= state_n;
     end
   end
   

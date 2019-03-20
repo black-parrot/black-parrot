@@ -132,26 +132,37 @@ module bp_be_mmu_vm_top
 // Cast input and output ports 
 bp_be_mmu_cmd_s        mmu_cmd;
 bp_be_mmu_resp_s       mmu_resp;
-//bp_be_mmu_vaddr_s      mmu_cmd_vaddr;
+bp_be_mmu_vaddr_s      mmu_cmd_vaddr;
 
 assign mmu_cmd    = mmu_cmd_i;
 assign mmu_resp_o = mmu_resp;
 
 // TODO: This struct is not working properly (mismatched widths in synth). Figure out why.
 //         This cast works, though
-//assign mmu_cmd_vaddr = mmu_cmd.vaddr;
-
-/* Internal connections */
-logic                     tlb_miss, tlb_w_v;
-logic [vtag_width_lp-1:0] tlb_w_vtag, tlb_miss_vtag;
-bp_be_tlb_entry_s         tlb_r_entry, tlb_w_entry;
-
-bp_be_dcache_pkt_s dcache_pkt;
-logic dcache_ready, dcache_miss_v, dcache_v;
+assign mmu_cmd_vaddr = mmu_cmd.vaddr;
 
 /* Suppress warnings */
 logic unused0;
 assign unused0 = mmu_resp_ready_i;
+
+/* Internal connections */
+/* TLB ports */
+logic                     tlb_en, tlb_miss, tlb_w_v;
+logic [vtag_width_lp-1:0] tlb_w_vtag, tlb_miss_vtag;
+bp_be_tlb_entry_s         tlb_r_entry, tlb_w_entry;
+
+/* PTW ports */
+logic [ptag_width_lp-1:0] base_ppn, ptw_dcache_ptag;
+logic                     ptw_dcache_v, ptw_busy;
+bp_be_dcache_pkt_s        ptw_dcache_pkt; 
+
+assign base_ppn = 'h80008;    
+
+/* D-Cache ports*/
+bp_be_dcache_pkt_s            dcache_pkt;
+logic [reg_data_width_lp-1:0] dcache_data;
+logic [ptag_width_lp-1:0]     dcache_ptag;
+logic                         dcache_ready, dcache_miss_v, dcache_v, dcache_pkt_v, dcache_tlb_miss;
 
 bp_be_dtlb
   #(.vtag_width_p(vtag_width_lp)
@@ -161,20 +172,50 @@ bp_be_dtlb
   dtlb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(1'b0)
+   ,.en_i(1'b1)
    
    ,.r_v_i(mmu_cmd_v_i)
-   ,.r_vtag_i(mmu_cmd.vaddr.tag)
+   ,.r_vtag_i(mmu_cmd_vaddr.tag)
    
    ,.r_v_o()
    ,.r_entry_o(tlb_r_entry)
    
-   ,.w_v_i(/*tlb_w_v*/1'b0)
+   ,.w_v_i(tlb_w_v)
    ,.w_vtag_i(tlb_w_vtag)
    ,.w_entry_i(tlb_w_entry)
    
    ,.miss_v_o(tlb_miss)
    ,.miss_vtag_o(tlb_miss_vtag)
+  );
+  
+bp_be_ptw
+  #(.pte_width_p(bp_sv39_pte_width_gp)
+    ,.vaddr_width_p(vaddr_width_p)
+    ,.paddr_width_p(paddr_width_p)
+    ,.page_offset_width_p(page_offset_width_lp)
+    ,.page_table_depth_p(bp_sv39_page_table_depth_gp)
+  )
+  ptw
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.base_ppn_i(base_ppn)
+   
+   ,.tlb_miss_v_i(tlb_miss)
+   ,.tlb_miss_vtag_i(tlb_miss_vtag)
+   ,.busy_o(ptw_busy)
+   
+   ,.tlb_w_v_o(tlb_w_v)
+   ,.tlb_w_vtag_o(tlb_w_vtag)
+   ,.tlb_w_entry_o(tlb_w_entry)
+
+   ,.dcache_v_i(dcache_v)
+   ,.dcache_data_i(dcache_data)
+   
+   ,.dcache_v_o(ptw_dcache_v)
+   ,.dcache_pkt_o(ptw_dcache_pkt)
+   ,.dcache_ptag_o(ptw_dcache_ptag)
+   ,.dcache_rdy_i(dcache_ready)
+   ,.dcache_miss_i(dcache_miss_v)
   );
 
 bp_be_dcache 
@@ -192,14 +233,14 @@ bp_be_dcache
     ,.lce_id_i(dcache_id_i)
 
     ,.dcache_pkt_i(dcache_pkt)
-    ,.v_i(mmu_cmd_v_i)
+    ,.v_i(dcache_pkt_v)
     ,.ready_o(dcache_ready)
 
     ,.v_o(dcache_v)
-    ,.data_o(mmu_resp.data)
+    ,.data_o(dcache_data/*mmu_resp.data*/)
 
-    ,.tlb_miss_i(tlb_miss)
-    ,.ptag_i(tlb_r_entry.ptag)
+    ,.tlb_miss_i(dcache_tlb_miss)
+    ,.ptag_i(dcache_ptag)
 
     ,.cache_miss_o(dcache_miss_v)
     ,.poison_i(chk_poison_ex_i)
@@ -238,16 +279,26 @@ bp_be_dcache
 
 always_comb 
   begin
-    dcache_pkt.opcode      = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
-    dcache_pkt.page_offset = {mmu_cmd.vaddr.index, mmu_cmd.vaddr.offset};
-    dcache_pkt.data        = mmu_cmd.data;
-
-    mmu_resp.exception.cache_miss_v = dcache_miss_v;
+    if(ptw_busy) begin
+      dcache_pkt = ptw_dcache_pkt;
+    end
+    else begin
+      dcache_pkt.opcode      = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
+      dcache_pkt.page_offset = {mmu_cmd_vaddr.index, mmu_cmd_vaddr.offset};
+      dcache_pkt.data        = mmu_cmd.data;
+    end
+    
+    dcache_pkt_v    = (ptw_busy)? ptw_dcache_v : mmu_cmd_v_i;
+    dcache_ptag     = (ptw_busy)? ptw_dcache_ptag : tlb_r_entry.ptag;
+    dcache_tlb_miss = (ptw_busy)? 1'b0 : tlb_miss;
+    
+    mmu_resp.data   = dcache_data;  
+    mmu_resp.exception.cache_miss_v = dcache_miss_v | tlb_miss; /* TODO: should change! */
   end
 
 // Ready-valid handshakes
-assign mmu_resp_v_o    = dcache_v;
-assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v;
+assign mmu_resp_v_o    = (ptw_busy)? 1'b0: dcache_v;
+assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~tlb_miss;
 
 endmodule : bp_be_mmu_vm_top
 
