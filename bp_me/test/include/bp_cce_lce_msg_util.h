@@ -165,9 +165,10 @@ checkCceCmd(sc_bv<bp_cce_lce_cmd_width> &msg, uint32_t dst, uint32_t src, uint64
             uint32_t target_way)
 {
   cout << "Checking CCE Cmd..." << endl;
+  cout << "Creating expected message" << endl;
   sc_bv<bp_cce_lce_cmd_width> exp = createCceCmd(dst, src, cmd, addr, way, state, target, target_way);
   cout << "CCE Cmd: " << msg.to_string() << endl;
-  printCceCmd(msg);
+  //printCceCmd(msg);
   cout << "exp msg: " << exp.to_string() << endl;
   return !(msg.to_string().compare(exp.to_string()));
 }

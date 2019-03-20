@@ -171,6 +171,7 @@ int sc_main(int argc, char **argv)
 
   // Test non-exclusive request with clean LRU way
   for (int i = 0; i < TRACE_ITERS; i++) {
+    cout << "@" << sc_time_stamp() << " Iteration: " << i << endl;
     stallDetect = 0;
     while (!lce_req_ready_o) {
       stallDetect++;
@@ -212,7 +213,7 @@ int sc_main(int argc, char **argv)
       wf->close();
       exit(-1);
     } else {
-      cout << "@" << sc_time_stamp() << " lceDataCmd: " << lce_data_cmd_o.read().to_string() << endl;
+      cout << "@" << sc_time_stamp() << " lceDataCmd: " << data_cmd.to_string() << endl;
     }
 
     // something received, or stalled, pull ready low
