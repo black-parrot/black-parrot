@@ -709,7 +709,7 @@ module bp_cce
         alu_opd_a_i = '0;
       end
       e_src_const_1: begin
-        alu_opd_a_i = 1'b1;
+        alu_opd_a_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, 1'b1};
       end
       e_src_imm: begin
         alu_opd_a_i = decoded_inst_o.imm;
@@ -776,7 +776,7 @@ module bp_cce
       e_src_ef: alu_opd_b_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_o[e_flag_sel_ef]};
       e_src_pcf: alu_opd_b_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_o[e_flag_sel_pcf]};
       e_src_const_0: alu_opd_b_i = '0;
-      e_src_const_1: alu_opd_b_i = 1'b1;
+      e_src_const_1: alu_opd_b_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, 1'b1};
       e_src_imm: alu_opd_b_i = decoded_inst_o.imm;
       e_src_req_lce: alu_opd_b_i = {{(`bp_cce_inst_gpr_width-lg_num_lce_lp){1'b0}}, req_lce_r_o};
       e_src_ack_type: alu_opd_b_i = {gpr_ack_0, ack_type_r_o};

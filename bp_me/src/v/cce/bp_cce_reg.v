@@ -365,9 +365,19 @@ module bp_cce_reg
     endcase
 
     case (decoded_inst_i.nwbf_sel)
-      e_nwbf_lce_data_resp: flags_n[e_flag_sel_nwbf] = lce_data_resp_s_i.msg_type;
-      e_nwbf_imm0: flags_n[e_flag_sel_nwbf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
-      default: flags_n[e_flag_sel_nwbf] = '0;
+      e_nwbf_lce_data_resp: begin
+        if (lce_data_resp_s_i.msg_type == e_lce_resp_null_wb) begin
+          flags_n[e_flag_sel_nwbf] = 1'b1;
+        end else begin
+          flags_n[e_flag_sel_nwbf] = '0;
+        end
+      end
+      e_nwbf_imm0: begin
+        flags_n[e_flag_sel_nwbf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+      end
+      default: begin
+        flags_n[e_flag_sel_nwbf] = '0;
+      end
     endcase
 
     case (decoded_inst_i.tf_sel)

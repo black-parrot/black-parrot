@@ -174,7 +174,7 @@ module bp_cce_pc
           ram_addr_r <= boot_rom_addr_r;
           ram_data_i_r <= boot_rom_data_i;
 
-          pc_state <= (boot_rom_addr_r == inst_ram_els_p-1)
+          pc_state <= (boot_rom_addr_r == (inst_ram_addr_width_lp)'(inst_ram_els_p-1))
             ? BOOT_END
             : BOOT;
 
