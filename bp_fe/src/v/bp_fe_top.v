@@ -383,7 +383,7 @@ bp_fe_itlb
  itlb
   (.clk_i(clk_i)
 	 ,.reset_i(reset_i)
-   ,.en_i(1'b1)
+   ,.en_i(/*1'b1*/ 1'b0)
 	       
    ,.r_v_i(pc_gen_itlb_v)
    ,.r_vtag_i(itlb_vaddr.tag)
