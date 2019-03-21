@@ -44,11 +44,11 @@ assign cam_w_addr                 = (cam_empty_v)? cam_empty_addr : victim_addr;
 assign ram_addr                   = (w_v_i)? cam_w_addr : cam_r_addr;
 
 assign r_entry_passthrough.ptag   = {(ptag_width_p-vtag_width_p)'(0), miss_vtag_o};
-assign r_entry_passthrough.extent = '0;
-assign r_entry_passthrough.u      = '0;
-assign r_entry_passthrough.g      = '0;
-assign r_entry_passthrough.l      = '0;
-assign r_entry_passthrough.x      = '0;
+assign r_entry_passthrough.g      = 1'b0;
+assign r_entry_passthrough.u      = 1'b0;
+assign r_entry_passthrough.x      = 1'b1;
+assign r_entry_passthrough.w      = 1'b1;
+assign r_entry_passthrough.r      = 1'b1;
 
 assign r_entry                    = (en_r)? ram_r_data : r_entry_passthrough;
 assign r_v_n                      = (en_i)? (r_v_i & cam_r_v) : r_v_i;

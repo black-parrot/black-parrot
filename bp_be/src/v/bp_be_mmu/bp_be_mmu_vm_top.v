@@ -1,4 +1,6 @@
 
+//TODO: may have to gate dcache poison signal
+
 module bp_be_mmu_vm_top 
   import bp_common_pkg::*;
   import bp_be_pkg::*;
@@ -156,7 +158,7 @@ logic [ptag_width_lp-1:0] base_ppn, ptw_dcache_ptag;
 logic                     ptw_dcache_v, ptw_busy;
 bp_be_dcache_pkt_s        ptw_dcache_pkt; 
 
-assign base_ppn = 'h80008;    
+assign base_ppn = 'h80008;    //TODO: pass from upper level modules
 
 /* D-Cache ports*/
 bp_be_dcache_pkt_s            dcache_pkt;

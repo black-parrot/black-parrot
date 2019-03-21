@@ -21,14 +21,14 @@
 `define declare_bp_be_tlb_entry_s(ptag_width_mp) \
   typedef struct packed {                        \
     logic [ptag_width_mp-1:0]  ptag;             \
-    logic                      extent;           \
-    logic                      l;                \
     logic                      g;                \
     logic                      u;                \
     logic                      x;                \
+    logic                      w;                \
+    logic                      r;                \
   } bp_be_tlb_entry_s                            \
   
-`define bp_be_tlb_entry_width(ptag_width_mp) \
-  (ptag_width_mp + 5)                        \
+`define bp_be_tlb_entry_width(ptag_width_mp)     \
+  (ptag_width_mp + 5)                            \
   
 `endif

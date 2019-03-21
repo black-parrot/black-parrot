@@ -1,4 +1,8 @@
 
+// TODO: add valid check and page-fault exceptions
+// TODO: add fe tlb fill service
+
+
 module bp_be_ptw
   import bp_common_pkg::*;
   import bp_be_rv64_pkg::*;
@@ -48,7 +52,7 @@ module bp_be_ptw
   `declare_bp_sv39_pte_s(pte_width_p, ppn_width_lp);
   `declare_bp_be_tlb_entry_s(ppn_width_lp);
   
-  typedef enum [2:0] { eIdle, eSendLoad, eSendPtag, eWaitLoad, eWriteBack, eStuck } state_e;
+  typedef enum [2:0] { eIdle, eSendLoad, eWaitLoad, eWriteBack, eStuck } state_e;
   
   bp_be_dcache_pkt_s dcache_pkt;
   bp_sv39_pte_s      dcache_data;
@@ -60,7 +64,7 @@ module bp_be_ptw
   logic start;
   logic [lg_page_table_depth_lp-1:0] level_cntr;
   logic                              level_cntr_en;
-  logic [vpn_width_lp-1:0]           vpn_r;
+  logic [vpn_width_lp-1:0]           vpn_r, vpn_n;
   logic [ppn_width_lp-1:0]           ppn_r, ppn_n;
   logic                              ppn_en;
   
@@ -87,10 +91,17 @@ module bp_be_ptw
   assign tlb_w_v_o              = (state_r == eWriteBack);
   assign tlb_w_vtag_o           = vpn_r;
   assign tlb_w_entry_o          = tlb_w_entry;
+  
+  assign tlb_w_entry.g          = dcache_data.g;
+  assign tlb_w_entry.u          = dcache_data.u;
+  assign tlb_w_entry.x          = dcache_data.x;
+  assign tlb_w_entry.w          = dcache_data.w;
+  assign tlb_w_entry.r          = dcache_data.r;
 
   assign dcache_v_o             = (state_r == eSendLoad);
   assign dcache_pkt.opcode      = e_dcache_opcode_ld;
   assign dcache_pkt.page_offset = {partial_vpn[level_cntr], (lg_pte_size_in_bytes_lp)'(0)};
+  assign dcache_pkt.data        = '0;
   
   assign busy_o                 = (state_r != eIdle);
   
@@ -98,17 +109,17 @@ module bp_be_ptw
   
   assign pte_leaf_v             = dcache_data.x | dcache_data.w | dcache_data.r;
   
-  assign level_cntr_en     = dcache_v_i & ~pte_leaf_v;
+  assign level_cntr_en          = dcache_v_i & ~pte_leaf_v;
   
   assign ppn_en                 = start | dcache_v_i;
   assign ppn_n                  = (state_r == eIdle)? base_ppn_i : dcache_data.ppn;
+  assign vpn_n                  = tlb_miss_vtag_i;
   
   
   always_comb begin
     case(state_r)
       eIdle:      state_n = (tlb_miss_v_i)? eSendLoad : eIdle;
-      eSendLoad:  state_n = (dcache_rdy_i)? eSendPtag : eSendLoad;
-      eSendPtag:  state_n = eWaitLoad;
+      eSendLoad:  state_n = (dcache_rdy_i)? eWaitLoad : eSendLoad;
       eWaitLoad:  state_n = (dcache_miss_i)? eSendLoad :
                             (dcache_v_i)? ((pte_leaf_v)? eWriteBack : eSendLoad) :
                             eWaitLoad;
@@ -144,7 +155,7 @@ module bp_be_ptw
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(start)
-     ,.data_i(tlb_miss_vtag_i)
+     ,.data_i(vpn_n)
      ,.data_o(vpn_r)
     );
   
