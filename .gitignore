@@ -3,6 +3,7 @@ external/*
 *.swp
 *.pyc
 *.log
+*.s
 setup_env.sh
 run_dc
 */syn/coverage

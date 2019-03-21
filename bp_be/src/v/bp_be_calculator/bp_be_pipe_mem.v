@@ -30,7 +30,7 @@
  *   mmu_cmd_v_o      -  'ready-then-valid' interface
  *   mmu_cmd_ready_i    - 
  * 
- *   result_o         - The calculated result of a load
+ *   data_o         - The calculated result of a load
  *   cache_miss_o     - Goes high when the result of the load is a cache miss 
  *   
  * Keywords:
@@ -60,8 +60,9 @@ module bp_be_pipe_mem
   (input                            clk_i
    , input                          reset_i
 
-   , input                          kill_mem1_v_i
-   , input                          kill_mem3_v_i
+   , input                          kill_ex1_i
+   , input                          kill_ex2_i
+   , input                          kill_ex3_i
    , input [decode_width_lp-1:0]    decode_i
    , input [reg_data_width_lp-1:0]  rs1_i
    , input [reg_data_width_lp-1:0]  rs2_i
@@ -75,8 +76,9 @@ module bp_be_pipe_mem
    , input                          mmu_resp_v_i
    , output                         mmu_resp_ready_o
 
-   , output [reg_data_width_lp-1:0] result_o
-   , output                         cache_miss_o
+   , output logic [reg_data_width_lp-1:0] data_o
+
+   , output                               cache_miss_o
 
    // CSR interface
    , input [mhartid_width_lp-1:0]   mhartid_i
@@ -110,35 +112,40 @@ bp_be_exception_s exc;
 bp_be_mmu_cmd_s   mmu_cmd;
 bp_be_mmu_resp_s  mmu_resp;
 
+logic [vaddr_width_p-1:0] addr_li, addr_r;
 logic [reg_data_width_lp-1:0] result;
 
 assign decode    = decode_i;
 assign mmu_cmd_o = mmu_cmd;
 assign mmu_resp  = mmu_resp_i;
-assign result_o  = result;
+
+// Suppress unused signal warnings
+wire unused0 = kill_ex2_i;
 
 bp_be_decode_s                decode_r;
-logic [reg_data_width_lp-1:0] rs1_r, imm_r;
+logic [reg_data_width_lp-1:0] rs1_r;
 
 // Suppress unused signal warnings
 wire unused2 = mmu_cmd_ready_i;
 
+assign data_o  = result;
+
+// We only need to save one of: rs1, imm
 bsg_shift_reg
- #(.width_p(decode_width_lp+reg_data_width_lp*2)
+ #(.width_p(decode_width_lp+reg_data_width_lp)
    ,.stages_p(2)
    )
  csr_shift_reg
   (.clk(clk_i)
    ,.reset_i(reset_i)
-   ,.valid_i(decode.csr_instr_v)
-   ,.data_i({decode, rs1_i, imm_i})
+   ,.valid_i(1'b1)
+   ,.data_i({decode, rs1_i})
    ,.valid_o(/* We rely on decode for valids */)
-   ,.data_o({decode_r, rs1_r, imm_r})
+   ,.data_o({decode_r, rs1_r})
    );
 
-
 // Module instantiations
-assign mmu_cmd_v_o    = (decode.dcache_r_v | decode.dcache_w_v) & ~kill_mem1_v_i;
+assign mmu_cmd_v_o = (decode.dcache_r_v | decode.dcache_w_v) & ~kill_ex1_i;
 always_comb 
   begin
     mmu_cmd.mem_op = decode.fu_op;
@@ -150,13 +157,13 @@ always_comb
 assign mmu_resp_ready_o = 1'b1;
 assign cache_miss_o     = mmu_resp.exception.cache_miss_v;
 assign mtvec_o          = rs1_r;
-assign mtvec_w_v_o      = decode_r.mtvec_rw_v & ~kill_mem3_v_i;
+assign mtvec_w_v_o      = decode_r.mtvec_rw_v & ~kill_ex3_i;
 assign mtval_o          = rs1_r;
-assign mtval_w_v_o      = decode_r.mtval_rw_v & ~kill_mem3_v_i;
+assign mtval_w_v_o      = decode_r.mtval_rw_v & ~kill_ex3_i;
 assign mepc_o           = rs1_r;
-assign mepc_w_v_o       = decode_r.mepc_rw_v & ~kill_mem3_v_i;
+assign mepc_w_v_o       = decode_r.mepc_rw_v & ~kill_ex3_i;
 assign mscratch_o       = rs1_r;
-assign mscratch_w_v_o   = decode_r.mscratch_rw_v & ~kill_mem3_v_i;
+assign mscratch_w_v_o   = decode_r.mscratch_rw_v & ~kill_ex3_i;
 
 always_comb
   begin

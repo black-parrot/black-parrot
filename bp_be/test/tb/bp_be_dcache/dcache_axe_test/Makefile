@@ -2,6 +2,13 @@
 #		Makefile
 #
 
+## Setup CAD tools
+ifneq (,$(findstring xor,$(shell hostname)))
+  include $(BSG_CADENV_DIR)/cadenv.mk
+else
+  $(info Not on xor...VCS and DC not supported)
+endif
+
 BP_DIR = $(abspath ../../../../../)
 BP_COMMON_DIR = $(BP_DIR)/bp_common
 BP_BE_DIR = $(BP_DIR)/bp_be
@@ -23,6 +30,7 @@ HIGHLIGHT = grep --color -E '^|Error|Warning|Implicit wire is used|Too few insta
 
 TRACE_AXE = trace.axe
 VCS_LOG = vcs.log
+VCS ?= vcs
 
 # testparam
 NUM_INSTR_P ?= 10000
@@ -43,7 +51,7 @@ bsg_trace_rom_%.v: bsg_trace_rom_%.tr
 	python $(BSG_IP_CORES_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_trace_rom_$* > $@
 
 sim: clean $(TRACE_ROMS)
-	vcs +v2k -R +lint=all,noSVA-UA,noSVA-NSVU,noVCDE -sverilog -full64 \
+	$(VCS) +v2k -R +lint=all,noSVA-UA,noSVA-NSVU,noVCDE -sverilog -full64 \
 		$(INCDIR) -f sv.include $(TRACE_ROMS) $(CCE_ROM)  \
 		-debug_pp -timescale=1ps/1ps +vcs+vcdpluson +vcs+vcdplusmemon -l $(VCS_LOG) \
 		+vcs+vcdplusautoflushon +define+NUM_LCE_P=$(NUM_LCE_P) \

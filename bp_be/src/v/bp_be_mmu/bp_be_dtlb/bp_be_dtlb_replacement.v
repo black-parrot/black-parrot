@@ -14,21 +14,19 @@ module bp_be_dtlb_replacement
 logic [ways_p-2:0]                     lru_r, lru_n, update_mask, update_data;
 
 genvar i;
-generate begin: gen
-  for(i=0; i<ways_p-1; i++) begin: rof
-    assign lru_n[i] = (update_mask[i])? update_data[i] : lru_r[i];
-  end
+for(i = 0; i < ways_p-1; i++) begin: rof
+  assign lru_n[i] = (update_mask[i]) ? update_data[i] : lru_r[i];
 end
-endgenerate
 
 // Update lru_r
-always_ff @(posedge clk_i) begin
-  if(reset_i) begin
-    lru_r <= '0;
-  end else if(v_i) begin
-    lru_r <= lru_n;
+always_ff @(posedge clk_i) 
+  begin
+    if (reset_i) 
+      lru_r <= '0;
+    else if (v_i) begin
+      lru_r <= lru_n;
+    end
   end
-end
 
 bsg_lru_pseudo_tree_decode #(.ways_p(ways_p))
   decoder 

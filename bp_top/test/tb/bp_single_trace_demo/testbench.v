@@ -40,7 +40,6 @@ module testbench
          , localparam trace_rom_data_width_lp    = trace_ring_width_p + 4
 
          // From RISC-V specifications
-         , localparam reg_data_width_lp = rv64_reg_data_width_gp
          , localparam byte_width_lp     = rv64_byte_width_gp
 
          , localparam cce_block_size_in_bits_lp = 8*cce_block_size_in_bytes_p
@@ -62,6 +61,11 @@ module testbench
 									                                                                               ,cce_block_size_in_bits_lp
 									                                                                               ,num_lce_p
 									                                                                               ,lce_assoc_p)
+         , localparam fu_op_width_lp=`bp_be_fu_op_width
+         // From RISC-V specifications
+         , localparam reg_data_width_lp = rv64_reg_data_width_gp
+         , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
+         , localparam eaddr_width_lp    = rv64_eaddr_width_gp
          )
      (input clk_i
          , input reset_i
@@ -93,13 +97,6 @@ module testbench
    logic [num_cce_p-1:0][`bp_cce_inst_width-1:0] 	 cce_inst_boot_rom_data;
 
 
-   bp_be_pipe_stage_reg_s[core_els_p-1:0] cmt_trace_stage_reg;
-
-   bp_be_calc_result_s   [core_els_p-1:0] cmt_trace_result;
-
-   bp_be_exception_s     [core_els_p-1:0] cmt_trace_exc;
-
-
    logic [trace_ring_width_p-1:0] 			 tr_data_i;
 
    logic 						 tr_v_i, tr_ready_o;
@@ -110,6 +107,12 @@ module testbench
 
    logic 						 test_done;
 
+   logic                                  cmt_rd_w_v;
+   logic [reg_addr_width_lp-1:0]          cmt_rd_addr;
+   logic                                  cmt_mem_w_v;
+   logic [eaddr_width_lp-1:0]             cmt_mem_addr;
+   logic [fu_op_width_lp-1:0]             cmt_mem_op;
+   logic [reg_data_width_lp-1:0]          cmt_data;
 
    logic [num_cce_p-1:0][bp_mem_cce_resp_width_lp-1:0] 	 mem_resp;
 
@@ -167,10 +170,12 @@ module testbench
 	    ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr)
 	    ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data)
 
-	    ,.cmt_trace_stage_reg_o(cmt_trace_stage_reg)
-	    ,.cmt_trace_result_o(cmt_trace_result)
-	    ,.cmt_trace_exc_o(cmt_trace_exc)
-
+      ,.cmt_rd_w_v_o(cmt_rd_w_v)
+      ,.cmt_rd_addr_o(cmt_rd_addr)
+      ,.cmt_mem_w_v_o(cmt_mem_w_v)
+      ,.cmt_mem_addr_o(cmt_mem_addr)
+      ,.cmt_mem_op_o(cmt_mem_op)
+      ,.cmt_data_o(cmt_data)
 
 	    ,.mem_resp_i(mem_resp)
 	    ,.mem_resp_v_i(mem_resp_v)
@@ -253,10 +258,13 @@ module testbench
         (.clk_i(clk_i)
 	    ,.reset_i(reset_i)
 
-	    ,.cmt_trace_stage_reg_i(cmt_trace_stage_reg)
-	    ,.cmt_trace_result_i(cmt_trace_result)
-	    ,.cmt_trace_exc_i(cmt_trace_exc)
-
+      ,.cmt_rd_w_v_i(cmt_rd_w_v)
+      ,.cmt_rd_addr_i(cmt_rd_addr)
+      ,.cmt_mem_w_v_i(cmt_mem_w_v)
+      ,.cmt_mem_addr_i(cmt_mem_addr)
+      ,.cmt_mem_op_i(cmt_mem_op)
+      ,.cmt_data_i(cmt_data)
+            
 	    ,.data_o(tr_data_i)
 	    ,.v_o(tr_v_i)
 	    ,.ready_i(tr_ready_o)
@@ -330,12 +338,7 @@ module testbench
 	          ,.reset_i(reset_i)
 
 	          ,.clear_i(1'b0)
-	          ,.up_i(~(|cmt_trace_exc[0]
-			                 | cmt_trace_stage_reg[0].decode.fe_nop_v
-			                 | cmt_trace_stage_reg[0].decode.be_nop_v
-			                 | cmt_trace_stage_reg[0].decode.me_nop_v
-			                 )
-			             )
+	          ,.up_i(cmt_rd_w_v | cmt_mem_w_v)
 
 	          ,.count_o(instr_cnt)
 	     );

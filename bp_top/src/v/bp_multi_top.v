@@ -44,14 +44,8 @@ module bp_multi_top
                                                             )
    , localparam proc_cfg_width_lp         = `bp_proc_cfg_width(core_els_p, num_lce_p)
 
-   , localparam pipe_stage_reg_width_lp   = `bp_be_pipe_stage_reg_width(branch_metadata_fwd_width_p)
-   , localparam calc_result_width_lp      = `bp_be_calc_result_width(branch_metadata_fwd_width_p)
-   , localparam exception_width_lp        = `bp_be_exception_width
-
    , localparam icache_lce_id_lp          = 0 // Base ID for icache
    , localparam dcache_lce_id_lp          = 1 // Base ID for dcache
-
-   , localparam reg_data_width_lp = rv64_reg_data_width_gp
 
    , localparam cce_inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(cce_num_inst_ram_els_p)
 
@@ -73,21 +67,27 @@ module bp_multi_top
                                                                          ,cce_block_size_in_bits_lp
                                                                          ,num_lce_p
                                                                          ,lce_assoc_p)
+   , localparam fu_op_width_lp=`bp_be_fu_op_width
+
+   // From RISC-V specifications
+   , localparam reg_data_width_lp = rv64_reg_data_width_gp
+   , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
+   , localparam eaddr_width_lp    = rv64_eaddr_width_gp
 
    )
-  (input                                                  clk_i
-   , input                                                reset_i
+  (input                                                      clk_i
+   , input                                                    reset_i
 
-   , output logic [cce_inst_ram_addr_width_lp-1:0]        cce_inst_boot_rom_addr_o
-   , input logic [`bp_cce_inst_width-1:0]                 cce_inst_boot_rom_data_i
+   , output logic [cce_inst_ram_addr_width_lp-1:0]            cce_inst_boot_rom_addr_o
+   , input logic [`bp_cce_inst_width-1:0]                     cce_inst_boot_rom_data_i
 
-   , input [num_cce_p-1:0][bp_mem_cce_resp_width_lp-1:0]            mem_resp_i
-   , input [num_cce_p-1:0]                                          mem_resp_v_i
-   , output [num_cce_p-1:0]                                         mem_resp_ready_o
+   , input [num_cce_p-1:0][bp_mem_cce_resp_width_lp-1:0]      mem_resp_i
+   , input [num_cce_p-1:0]                                    mem_resp_v_i
+   , output [num_cce_p-1:0]                                   mem_resp_ready_o
 
-   , input [num_cce_p-1:0][bp_mem_cce_data_resp_width_lp-1:0]       mem_data_resp_i
-   , input [num_cce_p-1:0]                                          mem_data_resp_v_i
-   , output [num_cce_p-1:0]                                         mem_data_resp_ready_o
+   , input [num_cce_p-1:0][bp_mem_cce_data_resp_width_lp-1:0] mem_data_resp_i
+   , input [num_cce_p-1:0]                                    mem_data_resp_v_i
+   , output [num_cce_p-1:0]                                   mem_data_resp_ready_o
 
    , output [num_cce_p-1:0][bp_cce_mem_cmd_width_lp-1:0]      mem_cmd_o
    , output [num_cce_p-1:0]                                   mem_cmd_v_o
@@ -97,12 +97,13 @@ module bp_multi_top
    , output [num_cce_p-1:0]                                   mem_data_cmd_v_o
    , input [num_cce_p-1:0]                                    mem_data_cmd_yumi_i
 
-   
-
-   // Commit tracer
-   , output [core_els_p-1:0][pipe_stage_reg_width_lp-1:0] cmt_trace_stage_reg_o
-   , output [core_els_p-1:0][calc_result_width_lp-1:0]    cmt_trace_result_o
-   , output [core_els_p-1:0][exception_width_lp-1:0]      cmt_trace_exc_o
+   // Commit tracer for trace replay
+   , output [core_els_p-1:0]                                  cmt_rd_w_v_o
+   , output [core_els_p-1:0][reg_addr_width_lp-1:0]           cmt_rd_addr_o
+   , output [core_els_p-1:0]                                  cmt_mem_w_v_o
+   , output [core_els_p-1:0][eaddr_width_lp-1:0]              cmt_mem_addr_o
+   , output [core_els_p-1:0][fu_op_width_lp-1:0]              cmt_mem_op_o
+   , output [core_els_p-1:0][reg_data_width_lp-1:0]           cmt_data_o
   );
 
 `declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
@@ -203,10 +204,13 @@ for(core_id = 0; core_id < core_els_p; core_id++)
         ,.lce_tr_resp_v_o(lce_tr_resp_v_lo[core_id])
         ,.lce_tr_resp_ready_i(lce_tr_resp_ready_li[core_id])
 
-        ,.cmt_trace_stage_reg_o(cmt_trace_stage_reg_o[core_id])
-        ,.cmt_trace_result_o(cmt_trace_result_o[core_id])
-        ,.cmt_trace_exc_o(cmt_trace_exc_o[core_id])
-      );
+        ,.cmt_rd_w_v_o(cmt_rd_w_v_o[core_id])
+        ,.cmt_rd_addr_o(cmt_rd_addr_o[core_id])
+        ,.cmt_mem_w_v_o(cmt_mem_w_v_o[core_id])
+        ,.cmt_mem_addr_o(cmt_mem_addr_o[core_id])
+        ,.cmt_mem_op_o(cmt_mem_op_o[core_id])
+        ,.cmt_data_o(cmt_data_o[core_id])
+        );
 
   end
 endgenerate 

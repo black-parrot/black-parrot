@@ -21,7 +21,7 @@
  *   exc_i            - Exception information for a dispatched instruction
  * 
  * Outputs:
- *   result_o         - The calculated result of the instruction
+ *   data_o           - The calculated result of the instruction
  *   br_tgt_o         - The calculated branch target from branch instructions
  *   
  * Keywords:
@@ -34,41 +34,44 @@ module bp_be_pipe_int
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
  #(// Generated parameters
-   localparam decode_width_lp      = `bp_be_decode_width
-   , localparam exception_width_lp = `bp_be_exception_width
+   localparam decode_width_lp        = `bp_be_decode_width
+   , localparam exception_width_lp   = `bp_be_exception_width
    // From RISC-V specifications
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
+   , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
    )
   (input                            clk_i
    , input                          reset_i
 
    // Common pipeline interface
+   , input                          kill_ex1_i
+
    , input [decode_width_lp-1:0]    decode_i
    , input [reg_data_width_lp-1:0]  pc_i
    , input [reg_data_width_lp-1:0]  rs1_i
    , input [reg_data_width_lp-1:0]  rs2_i
    , input [reg_data_width_lp-1:0]  imm_i
-   , input [exception_width_lp-1:0] exc_i
 
    // Pipeline results
-   , output logic [reg_data_width_lp-1:0] result_o
-   , output logic [reg_data_width_lp-1:0] br_tgt_o
+   , output [reg_data_width_lp-1:0] data_o
+
+   , output [reg_data_width_lp-1:0] br_tgt_o
    );
 
 // Cast input and output ports 
-bp_be_decode_s     decode;
-bp_be_exception_s  exc;
+bp_be_decode_s      decode;
 
 assign decode = decode_i;
-assign exc    = exc_i;
 
-// Suppress unused signal warnings
+// Suppress unused signal warning
 wire unused0 = clk_i;
 wire unused1 = reset_i;
+wire unused2 = kill_ex1_i;
 
 // Submodule connections
 logic [reg_data_width_lp-1:0] src1, src2, baddr, alu_result;
 logic [reg_data_width_lp-1:0] pc_plus4;
+logic [reg_data_width_lp-1:0] data_lo;
 
 // Perform the actual ALU computation
 bp_be_int_alu 
@@ -83,20 +86,16 @@ bp_be_int_alu
 
 always_comb 
   begin 
-    src1  = decode.src1_sel  ? pc_i  : rs1_i;
-    src2  = decode.src2_sel  ? imm_i : rs2_i;
-    baddr = decode.baddr_sel ? src1  : pc_i ;
-
-    result_o = decode.result_sel
-               ? pc_plus4
-               : alu_result;
+    src1     = decode.src1_sel  ? pc_i  : rs1_i;
+    src2     = decode.src2_sel  ? imm_i : rs2_i;
+    baddr    = decode.baddr_sel ? src1  : pc_i ;
+    pc_plus4 = pc_i + reg_data_width_lp'(4);
   end
 
-always_comb 
-  begin : aux_compute
-    pc_plus4         = pc_i + reg_data_width_lp'(4);
-    br_tgt_o         = baddr + imm_i;
-  end
+assign data_o   = decode.result_sel
+                  ? pc_plus4
+                  : alu_result;
+assign br_tgt_o = baddr + imm_i;
 
 endmodule : bp_be_pipe_int
 
