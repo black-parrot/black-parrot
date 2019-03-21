@@ -8,6 +8,7 @@ package bp_be_pkg;
   `include "bp_be_ucode_defines.vh"
   `include "bp_be_mmu_defines.vh"
   `include "bp_be_internal_if_defines.vh"
+  `include "bp_be_vm_defines.vh"
 
   localparam bp_pc_entry_point_gp    = 32'h80000124;
   localparam bp_be_itag_width_gp     = 8;

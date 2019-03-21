@@ -207,8 +207,6 @@ bp_me_top
    ,.lce_sets_p(lce_sets_p)
    ,.block_size_in_bytes_p(block_size_in_bytes_p)
    ,.num_inst_ram_els_p(num_inst_ram_els_p)
-   ,.boot_rom_width_p(boot_rom_width_p)
-   ,.boot_rom_els_p(boot_rom_els_p)
    )
  DUT
   (.clk_i(clk_i)

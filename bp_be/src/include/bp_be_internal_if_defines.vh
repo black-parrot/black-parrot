@@ -56,6 +56,7 @@
     logic                             mem_iwb_v;                                                   \
     logic                             mem_fwb_v;                                                   \
     logic                             fp_fwb_v;                                                    \
+    logic                             stall_v;                                                     \
                                                                                                    \
     logic[rv64_reg_addr_width_gp-1:0] rd_addr;                                                     \
    } bp_be_dep_status_s;                                                                           \
@@ -63,7 +64,6 @@
   typedef struct packed                                                                            \
   {                                                                                                \
     logic                                   isd_v;                                                 \
-    logic[rv64_eaddr_width_gp-1:0]          isd_pc;                                                \
     logic                                   isd_irs1_v;                                            \
     logic                                   isd_frs1_v;                                            \
     logic[rv64_reg_addr_width_gp-1:0]       isd_rs1_addr;                                          \
@@ -78,10 +78,13 @@
     logic                                   int1_btaken;                                           \
                                                                                                    \
     logic                                   ex1_v;                                                 \
+    logic[rv64_eaddr_width_gp-1:0]          ex1_pc;                                                \
                                                                                                    \
-    // 5 is the number of stages in the pipeline                                                   \
-    // In fact, we don't need all of this dependency information, since some of the stages are     \
-    //    post-commit. However, for now we're passing all of it.                                   \
+    /*                                                                                             \
+     * 5 is the number of stages in the pipeline.                                                  \
+     * In fact, we don't need all of this dependency information, since some of the stages are     \
+     *    post-commit. However, for now we're passing all of it.                                   \
+     */                                                                                            \
     bp_be_dep_status_s[4:0]                 dep_status;                                            \
                                                                                                    \
     logic                                   mem3_v;                                                \
@@ -131,7 +134,7 @@
    )                                                                                               
 
 `define bp_be_dep_status_width                                                                     \
-  (5 + rv64_reg_addr_width_gp)                                                                     
+  (6 + rv64_reg_addr_width_gp)                                                                     
 
 `define bp_be_calc_status_width(branch_metadata_fwd_width_mp)                                      \
   (1                                                                                               \

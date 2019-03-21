@@ -1,0 +1,11 @@
+`verilator_config
+coverage_off -file "/home/petrisko/bitbucket/pre-alpha-release/bp_top/src/*"
+coverage_off -file "/home/petrisko/bitbucket/pre-alpha-release/bp_fe/src/*"
+coverage_off -file "/home/petrisko/bitbucket/pre-alpha-release/bp_be/src/*"
+coverage_on  -file "/home/petrisko/bitbucket/pre-alpha-release/bp_me/src/*"
+
+coverage_off -file "/home/petrisko/bitbucket/pre-alpha-release/bp_be/test/*"
+coverage_off -file "/home/petrisko/bitbucket/pre-alpha-release/bp_fe/test/*"
+coverage_off -file "/home/petrisko/bitbucket/pre-alpha-release/bp_me/test/*"
+coverage_off -file "/home/petrisko/bitbucket/pre-alpha-release/bsg_ip_cores/*"
+

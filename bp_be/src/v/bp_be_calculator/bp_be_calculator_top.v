@@ -64,6 +64,8 @@ module bp_be_calculator_top
    , parameter num_lce_p                   = "inv"
    , parameter lce_sets_p                  = "inv"
    , parameter cce_block_size_in_bytes_p   = "inv"
+
+   , parameter load_to_use_forwarding_p = 1
    
    // Generated parameters
    , localparam proc_cfg_width_lp       = `bp_proc_cfg_width(core_els_p, num_lce_p)
@@ -74,6 +76,7 @@ module bp_be_calculator_top
    , localparam mmu_resp_width_lp       = `bp_be_mmu_resp_width
    , localparam pipe_stage_reg_width_lp = `bp_be_pipe_stage_reg_width(branch_metadata_fwd_width_p)
    , localparam calc_result_width_lp    = `bp_be_calc_result_width(branch_metadata_fwd_width_p)
+   , localparam mhartid_width_lp        = `BSG_SAFE_CLOG2(core_els_p)
 
    // From BP BE specifications
    , localparam pipe_stage_els_lp = bp_be_pipe_stage_els_gp
@@ -106,8 +109,8 @@ module bp_be_calculator_top
    
   , input                                chk_dispatch_v_i
   , input                                chk_roll_i
-  , input                                chk_poison_ex_i
-  , input                                chk_poison_isd_i
+  , input                                chk_poison_ex1_i
+  , input                                chk_poison_ex2_i
    
   , output [calc_status_width_lp-1:0]    calc_status_o
    
@@ -120,13 +123,19 @@ module bp_be_calculator_top
   , input                                mmu_resp_v_i
   , output                               mmu_resp_ready_o
 
+  // CSR interface
+  , output [reg_data_width_lp-1:0]       mtvec_o
+  , output                               mtvec_w_v_o
+  , input  [reg_data_width_lp-1:0]       mtvec_i
+
+  , output [reg_data_width_lp-1:0]       mepc_o
+  , output                               mepc_w_v_o
+  , input [reg_data_width_lp-1:0]        mepc_i
+
   // Commit tracer
   , output [pipe_stage_reg_width_lp-1:0] cmt_trace_stage_reg_o
   , output [calc_result_width_lp-1:0]    cmt_trace_result_o
   , output [exception_width_lp-1:0]      cmt_trace_exc_o
-
-  // STD: TODO -- remove synth hack and find real solution
-  ,output [`bp_be_fu_op_width-1:0] decoded_fu_op_o
   );
 
 // Declare parameterizable structs
@@ -170,7 +179,8 @@ logic illegal_instr_isd, cache_miss_mem3;
 // Pipeline stage registers
 bp_be_pipe_stage_reg_s [pipe_stage_els_lp-1:0] calc_stage_r, calc_stage_n;
 bp_be_calc_result_s    [pipe_stage_els_lp-1:0] comp_stage_r, comp_stage_n;
-bp_be_exception_s      [pipe_stage_els_lp-1:0]  exc_stage_r , exc_stage_n;
+bp_be_exception_s      [pipe_stage_els_lp-1:0] exc_stage_r;
+bp_be_exception_s      [pipe_stage_els_lp  :0] exc_stage_n;
 
 bp_be_calc_result_s nop_calc_result;
 bp_be_calc_result_s int_calc_result; 
@@ -184,11 +194,18 @@ logic [pipe_stage_els_lp-1:1]                        comp_stage_n_slice_fwb_v;
 logic [pipe_stage_els_lp-1:1][reg_addr_width_lp-1:0] comp_stage_n_slice_rd_addr;
 logic [pipe_stage_els_lp-1:1][reg_data_width_lp-1:0] comp_stage_n_slice_rd;
 
-// STD: TODO -- remove synth hack and find real solution
-assign decoded_fu_op_o = decoded.fu_op;
+// Performance counters
+logic [reg_data_width_lp-1:0] cycle_cnt_lo, time_cnt_lo, instret_cnt_lo;
+
+// CSRs
+logic [reg_data_width_lp-1:0] mtval_lo, mtval_li, mtval_mux_lo;
+logic                         mtval_w_v_lo;
+
+logic [reg_data_width_lp-1:0] mscratch_lo, mscratch_li;
+logic                         mscratch_w_v_lo;
 
 // Handshakes
-assign issue_pkt_ready_o = (chk_dispatch_v_i | ~issue_pkt_v_r) & ~chk_roll_i & ~chk_poison_isd_i;
+assign issue_pkt_ready_o = (chk_dispatch_v_i | ~issue_pkt_v_r) & ~chk_roll_i & ~chk_poison_ex1_i;
 
 // Module instantiations
 // Register files
@@ -266,10 +283,7 @@ bsg_dff_reset_en
 // Decode the dispatched instruction
 bp_be_instr_decoder
  instr_decoder
-  (.fe_nop_v_i(~issue_pkt_v_r)
-   ,.be_nop_v_i(~chk_dispatch_v_i &  mmu_cmd_ready_i)
-   ,.me_nop_v_i(~chk_dispatch_v_i & ~mmu_cmd_ready_i)
-   ,.instr_i(issue_pkt_r.instr)
+  (.instr_i(issue_pkt_r.instr)
 
    ,.decode_o(decoded)
    ,.illegal_instr_o(illegal_instr_isd)
@@ -341,8 +355,6 @@ bsg_mux
 // Computation pipelines
 // Integer pipe: 1 cycle latency
 bp_be_pipe_int 
- #(.core_els_p(core_els_p)
-   )
  pipe_int
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -352,9 +364,7 @@ bp_be_pipe_int
    ,.rs1_i(calc_stage_r[dispatch_point_lp].instr_operands.rs1)
    ,.rs2_i(calc_stage_r[dispatch_point_lp].instr_operands.rs2)
    ,.imm_i(calc_stage_r[dispatch_point_lp].instr_operands.imm)
-   ,.exc_i(exc_stage_r[dispatch_point_lp])
-
-   ,.mhartid_i(proc_cfg.mhartid)
+   ,.exc_i(exc_stage_n[dispatch_point_lp+1])
 
    ,.result_o(int_calc_result.result)
    ,.br_tgt_o(int_calc_result.br_tgt)
@@ -369,14 +379,15 @@ bp_be_pipe_mul
    ,.decode_i(calc_stage_r[dispatch_point_lp].decode)
    ,.rs1_i(calc_stage_r[dispatch_point_lp].instr_operands.rs1)
    ,.rs2_i(calc_stage_r[dispatch_point_lp].instr_operands.rs2)
-   ,.exc_i(exc_stage_r[dispatch_point_lp])
+   ,.exc_i(exc_stage_n[dispatch_point_lp+1])
 
    ,.result_o(mul_calc_result.result)
    );
 
 // Memory pipe: 3 cycle latency
 bp_be_pipe_mem
- #(.vaddr_width_p(vaddr_width_p)
+ #(.core_els_p(core_els_p)
+   ,.vaddr_width_p(vaddr_width_p)
    ,.lce_sets_p(lce_sets_p)
    ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
    )
@@ -384,11 +395,13 @@ bp_be_pipe_mem
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
+   ,.kill_mem1_v_i(|exc_stage_r[0] | chk_poison_ex1_i | chk_roll_i) 
+   ,.kill_mem3_v_i(|exc_stage_r[2]) 
+
    ,.decode_i(calc_stage_r[dispatch_point_lp].decode)
    ,.rs1_i(calc_stage_r[dispatch_point_lp].instr_operands.rs1)
    ,.rs2_i(calc_stage_r[dispatch_point_lp].instr_operands.rs2)
    ,.imm_i(calc_stage_r[dispatch_point_lp].instr_operands.imm)
-   ,.exc_i(exc_stage_r[dispatch_point_lp])
 
    ,.mmu_cmd_o(mmu_cmd)
    ,.mmu_cmd_v_o(mmu_cmd_v_o)
@@ -397,6 +410,27 @@ bp_be_pipe_mem
    ,.mmu_resp_i(mmu_resp_i)
    ,.mmu_resp_v_i(mmu_resp_v_i)
    ,.mmu_resp_ready_o(mmu_resp_ready_o)
+
+   ,.mhartid_i(proc_cfg.mhartid)
+   ,.mcycle_i(cycle_cnt_lo)
+   ,.mtime_i(time_cnt_lo)
+   ,.minstret_i(instret_cnt_lo)
+
+   ,.mtvec_o(mtvec_o)
+   ,.mtvec_w_v_o(mtvec_w_v_o)
+   ,.mtvec_i(mtvec_i)
+
+   ,.mtval_o(mtval_lo)
+   ,.mtval_w_v_o(mtval_w_v_lo)
+   ,.mtval_i(mtval_li)
+
+   ,.mepc_o(mepc_o)
+   ,.mepc_w_v_o(mepc_w_v_o)
+   ,.mepc_i(mepc_i)
+
+   ,.mscratch_o(mscratch_lo)
+   ,.mscratch_w_v_o(mscratch_w_v_lo)
+   ,.mscratch_i(mscratch_li)
 
    ,.result_o(mem_calc_result.result)
    ,.cache_miss_o(cache_miss_mem3)
@@ -411,7 +445,7 @@ bp_be_pipe_fp
    ,.decode_i(calc_stage_r[dispatch_point_lp].decode)
    ,.rs1_i(calc_stage_r[dispatch_point_lp].instr_operands.rs1)
    ,.rs2_i(calc_stage_r[dispatch_point_lp].instr_operands.rs2)
-   ,.exc_i(exc_stage_r[dispatch_point_lp])
+   ,.exc_i(exc_stage_n[dispatch_point_lp+1])
 
    ,.result_o(fp_calc_result.result)
    );
@@ -462,8 +496,98 @@ bsg_dff
    ) 
  exc_stage_reg
   (.clk_i(clk_i)
-   ,.data_i(exc_stage_n)
+   ,.data_i(exc_stage_n[0+:pipe_stage_els_lp])
    ,.data_o(exc_stage_r)
+   );
+
+bp_be_decode_s fe_nop, be_nop, me_nop;
+logic fe_nop_v, be_nop_v, me_nop_v;
+
+assign fe_nop_v = ~issue_pkt_v_r & chk_dispatch_v_i;
+assign be_nop_v = ~chk_dispatch_v_i &  mmu_cmd_ready_i;
+assign me_nop_v = ~chk_dispatch_v_i & ~mmu_cmd_ready_i;
+
+always_comb
+  begin
+    be_nop = '0;
+    fe_nop = '0;
+    me_nop = '0;
+
+    fe_nop.fe_nop_v = 1'b1;
+    be_nop.be_nop_v = 1'b1;
+    me_nop.me_nop_v = 1'b1;
+  end
+
+// CSR counters
+bsg_counter_clear_up
+ #(.init_val_p(0)
+   ,.ptr_width_lp(reg_data_width_lp)
+   )
+ cycle_counter
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.clear_i(1'b0)
+   ,.up_i(1'b1)
+
+   ,.count_o(cycle_cnt_lo)
+   );
+
+bsg_counter_clear_up
+ #(.init_val_p(0)
+   ,.ptr_width_lp(reg_data_width_lp)
+   )
+ time_counter
+  (.clk_i(clk_i) // TODO: Right now, we don't have a real time clock. 
+                 //         When we do, hook it up here 
+   ,.reset_i(reset_i)
+
+   ,.clear_i(1'b0)
+   ,.up_i(1'b1)
+
+   ,.count_o(time_cnt_lo)
+   );
+
+bsg_counter_clear_up
+ #(.init_val_p(0)
+   ,.ptr_width_lp(reg_data_width_lp)
+   )
+ instret_counter
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.clear_i(1'b0)
+   ,.up_i(calc_stage_r[2].decode.instr_v & ~|exc_stage_n[3])
+
+   ,.count_o(instret_cnt_lo)
+   );
+
+bsg_dff_en
+ #(.width_p(reg_data_width_lp))
+ mtval_csr_reg
+  (.clk_i(clk_i)
+   ,.en_i(mtval_w_v_lo | calc_status.mem3_exception_v)
+   ,.data_i(mtval_mux_lo)
+   ,.data_o(mtval_li)
+   );
+
+bsg_mux
+ #(.width_p(reg_data_width_lp)
+   ,.els_p(2)
+   )
+ mtval_mux
+  (.data_i({reg_data_width_lp'(calc_stage_r[2].instr), mtval_lo})
+   ,.sel_i(calc_status.mem3_exception_v)
+   ,.data_o(mtval_mux_lo)
+   );
+
+bsg_dff_en
+ #(.width_p(reg_data_width_lp))
+ mscratch_csr_reg
+  (.clk_i(clk_i)
+   ,.en_i(mscratch_w_v_lo)
+   ,.data_i(mscratch_lo)
+   ,.data_o(mscratch_li)
    );
 
 always_comb 
@@ -474,11 +598,14 @@ always_comb
     dispatch_pkt.instr_operands.rs1 = bypass_rs1;
     dispatch_pkt.instr_operands.rs2 = bypass_rs2;
     dispatch_pkt.instr_operands.imm = issue_pkt_r.imm;
-    dispatch_pkt.decode             = decoded;
+
+    unique if (fe_nop_v) dispatch_pkt.decode = fe_nop;
+      else if (be_nop_v) dispatch_pkt.decode = be_nop;
+      else if (me_nop_v) dispatch_pkt.decode = me_nop;
+      else               dispatch_pkt.decode = decoded;
 
     // Calculator status ISD stage
     calc_status.isd_v                    = issue_pkt_v_r;
-    calc_status.isd_pc                   = issue_pkt_r.instr_metadata.pc;
     calc_status.isd_irs1_v               = issue_pkt_r.irs1_v;
     calc_status.isd_frs1_v               = issue_pkt_r.frs1_v;
     calc_status.isd_rs1_addr             = issue_pkt_r.rs1_addr;
@@ -487,57 +614,64 @@ always_comb
     calc_status.isd_rs2_addr             = issue_pkt_r.rs2_addr;
 
     // Calculator status EX1 information
-    calc_status.int1_v                   = calc_stage_r[0].decode.pipe_int_v 
-                                           & ~|exc_stage_r[0];
+    calc_status.int1_v                   = calc_stage_r[0].decode.pipe_int_v;
     calc_status.int1_br_tgt              = int_calc_result.br_tgt;
     calc_status.int1_branch_metadata_fwd = calc_stage_r[0].instr_metadata.branch_metadata_fwd;
     calc_status.int1_btaken              = (calc_stage_r[0].decode.br_v & int_calc_result.result[0])
                                            | calc_stage_r[0].decode.jmp_v;
     calc_status.int1_br_or_jmp           = calc_stage_r[0].decode.br_v 
                                            | calc_stage_r[0].decode.jmp_v;
-    calc_status.ex1_v                    = calc_stage_r[0].decode.instr_v
-                                           & ~|exc_stage_r[0];
+    calc_status.ex1_v                    = calc_stage_r[0].decode.instr_v;
+    calc_status.ex1_pc                   = calc_stage_r[0].instr_metadata.pc;
 
     // Dependency information for pipelines
     for (integer i = 0; i < pipe_stage_els_lp; i++) 
       begin : dep_status
         calc_status.dep_status[i].int_iwb_v = calc_stage_r[i].decode.pipe_int_v 
-                                              & ~|exc_stage_r[i] 
+                                              & ~|exc_stage_n[i+1] 
                                               & calc_stage_r[i].decode.irf_w_v;
         calc_status.dep_status[i].mul_iwb_v = calc_stage_r[i].decode.pipe_mul_v 
-                                              & ~|exc_stage_r[i] 
+                                              & ~|exc_stage_n[i+1] 
                                               & calc_stage_r[i].decode.irf_w_v;
         calc_status.dep_status[i].mem_iwb_v = calc_stage_r[i].decode.pipe_mem_v 
-                                              & ~|exc_stage_r[i] 
+                                              & ~|exc_stage_n[i+1] 
                                               & calc_stage_r[i].decode.irf_w_v;
         calc_status.dep_status[i].mem_fwb_v = calc_stage_r[i].decode.pipe_mem_v 
-                                              & ~|exc_stage_r[i] 
+                                              & ~|exc_stage_n[i+1] 
                                               & calc_stage_r[i].decode.frf_w_v;
         calc_status.dep_status[i].fp_fwb_v  = calc_stage_r[i].decode.pipe_fp_v  
-                                              & ~|exc_stage_r[i] 
+                                              & ~|exc_stage_n[i+1] 
                                               & calc_stage_r[i].decode.frf_w_v;
-        calc_status.dep_status[i].rd_addr     = calc_stage_r[i].decode.rd_addr;
+        calc_status.dep_status[i].rd_addr   = calc_stage_r[i].decode.rd_addr;
+        calc_status.dep_status[i].stall_v   = calc_stage_r[i].decode.csr_instr_v
+                                              | calc_stage_r[i].decode.ret_v;
       end
 
     // Additional commit point information
-    calc_status.mem3_v            = calc_stage_r[2].decode.pipe_mem_v & ~|exc_stage_r[2];
+    calc_status.mem3_v            = calc_stage_r[2].decode.pipe_mem_v & ~|exc_stage_n[3];
     calc_status.mem3_pc           = calc_stage_r[2].instr_metadata.pc;
-    calc_status.mem3_cache_miss_v = cache_miss_mem3
-                                    & (calc_stage_r[2].decode.dcache_r_v
-                                       | calc_stage_r[2].decode.dcache_w_v
-                                       )
-                                    & ~|exc_stage_r[2];
-    calc_status.mem3_exception_v  = 1'b0; 
-    calc_status.mem3_ret_v        = calc_stage_r[2].decode.ret_v;
+    // We don't want cache_miss itself to trigger the exception invalidation
+    calc_status.mem3_cache_miss_v = cache_miss_mem3 & ~|exc_stage_r[2]; 
+    calc_status.mem3_exception_v  = calc_stage_r[2].decode.instr_v
+                                    & exc_stage_r[2].illegal_instr_v
+                                    & ~exc_stage_r[2].poison_v
+                                    & ~exc_stage_r[2].roll_v;
+    calc_status.mem3_ret_v        = calc_stage_r[2].decode.ret_v
+                                    & ~exc_stage_r[2].poison_v
+                                    & ~exc_stage_r[2].roll_v;
     calc_status.instr_cmt_v       = calc_stage_r[2].decode.instr_v & ~exc_stage_n[3].roll_v;
           
     // Slicing the completion pipe for Forwarding information
     for (integer i = 1;i < pipe_stage_els_lp; i++) 
       begin : comp_stage_slice
-        comp_stage_n_slice_iwb_v[i]   = calc_stage_r[i-1].decode.irf_w_v & ~|exc_stage_r[i-1]; 
-        comp_stage_n_slice_fwb_v[i]   = calc_stage_r[i-1].decode.frf_w_v & ~|exc_stage_r[i-1]; 
+        // TODO: This could be reduced to individual exceptions
+        comp_stage_n_slice_iwb_v[i]   = calc_stage_r[i-1].decode.irf_w_v & ~|exc_stage_n[i]; 
+        comp_stage_n_slice_fwb_v[i]   = calc_stage_r[i-1].decode.frf_w_v & ~|exc_stage_n[i]; 
         comp_stage_n_slice_rd_addr[i] = calc_stage_r[i-1].decode.rd_addr;
-        comp_stage_n_slice_rd[i]      = comp_stage_n[i].result;
+
+          comp_stage_n_slice_rd[i]    = comp_stage_n[i].result;
+        if ((load_to_use_forwarding_p == 0))
+          comp_stage_n_slice_rd[3]    = comp_stage_r[2].result;
       end
   end
 
@@ -550,15 +684,14 @@ always_comb
         exc_stage_n[i] = (i == 0) ? '0 : exc_stage_r[i-1];
       end
         // If there are new exceptions, add them to the list
-        exc_stage_n[0].poison_v        = chk_poison_isd_i;
         exc_stage_n[0].roll_v          = chk_roll_i;
         exc_stage_n[0].illegal_instr_v = illegal_instr_isd;
-        exc_stage_n[1].poison_v        = exc_stage_r[0].poison_v | chk_poison_ex_i;
+        exc_stage_n[1].poison_v        = exc_stage_r[0].poison_v | chk_poison_ex1_i;
         exc_stage_n[1].roll_v          = exc_stage_r[0].roll_v   | chk_roll_i;
-        exc_stage_n[2].poison_v        = exc_stage_r[1].poison_v | chk_poison_ex_i;
+        exc_stage_n[2].poison_v        = exc_stage_r[1].poison_v | chk_poison_ex2_i;
         exc_stage_n[2].roll_v          = exc_stage_r[1].roll_v   | chk_roll_i;
-        exc_stage_n[3].cache_miss_v    = cache_miss_mem3;
-        exc_stage_n[3].roll_v          = exc_stage_r[2].roll_v   | chk_roll_i;
+        // TODO: Unused, critical path 
+        exc_stage_n[3].cache_miss_v    = cache_miss_mem3; 
   end
 
 // Commit tracer
@@ -567,3 +700,4 @@ assign cmt_trace_result_o    = comp_stage_r[pipe_stage_els_lp-1];
 assign cmt_trace_exc_o       = exc_stage_r[pipe_stage_els_lp-1];
 
 endmodule : bp_be_calculator_top
+

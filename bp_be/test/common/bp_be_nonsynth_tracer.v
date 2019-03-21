@@ -1,12 +1,5 @@
-`include "bsg_defines.v"
-
-`include "bp_common_me_if.vh"
-
-`include "bp_be_internal_if_defines.vh"
-`include "bp_be_rv64_defines.vh"
-
 module bp_be_nonsynth_tracer
- /* TODO: Get rid of this */
+ import bp_common_pkg::*;
  import bp_be_pkg::*;
  import bp_common_pkg::*;
  import bp_be_rv64_pkg::*;
@@ -130,6 +123,36 @@ always_ff @(posedge clk_i) begin
                              ,cmt_trace_stage_reg.decode.rd_addr
                              ,cmt_trace_result.result
                              );
+                end else if(cmt_trace_stage_reg.decode.mtvec_rw_v) begin
+                    $display("\t\t\top: csr sem: r%d <- mtvec {%x} r%d {%x} -> mtvec"
+                             ,cmt_trace_stage_reg.decode.rd_addr
+                             ,cmt_trace_result.result
+                             ,cmt_trace_stage_reg.decode.rs1_addr
+                             ,cmt_trace_stage_reg.instr_operands.rs1
+                             );
+                end else if(cmt_trace_stage_reg.decode.mepc_rw_v) begin
+                    $display("\t\t\top: csr sem: r%d <- mepc {%x} r%d {%x} -> mepc"
+                             ,cmt_trace_stage_reg.decode.rd_addr
+                             ,cmt_trace_result.result
+                             ,cmt_trace_stage_reg.decode.rs1_addr
+                             ,cmt_trace_stage_reg.instr_operands.rs1
+                             );
+                end else if(cmt_trace_stage_reg.decode.mscratch_rw_v) begin
+                    $display("\t\t\top: csr sem: r%d <- mscratch {%x} r%d {%x} -> mscratch"
+                             ,cmt_trace_stage_reg.decode.rd_addr
+                             ,cmt_trace_result.result
+                             ,cmt_trace_stage_reg.decode.rs1_addr
+                             ,cmt_trace_stage_reg.instr_operands.rs1
+                             );
+                end else if(cmt_trace_stage_reg.decode.mtval_rw_v) begin
+                    $display("\t\t\top: csr sem: r%d <- mtval {%x} r%d {%x} -> mtval"
+                             ,cmt_trace_stage_reg.decode.rd_addr
+                             ,cmt_trace_result.result
+                             ,cmt_trace_stage_reg.decode.rs1_addr
+                             ,cmt_trace_stage_reg.instr_operands.rs1
+                             );
+                end else if(cmt_trace_stage_reg.decode.ret_v) begin
+                    $display("\t\t\top: ret");
                 end else if(cmt_trace_stage_reg.decode.dcache_r_v) begin
                     $display("\t\t\top: load sem: r%d <- mem[%x] {%x}"
                              ,cmt_trace_stage_reg.decode.rd_addr
@@ -158,7 +181,7 @@ always_ff @(posedge clk_i) begin
                         $finish();
                     end else if(cmt_trace_stage_reg.instr_operands.rs1
                                 +cmt_trace_stage_reg.instr_operands.imm==64'h8FFF_FFFF) begin
-                        $display("[CORE%0x PRT] %d"
+                        $display("[CORE%0x PRT] %x"
                                  ,proc_cfg.mhartid
                                  ,cmt_trace_stage_reg.instr_operands.rs2[0+:8]
                                  );
