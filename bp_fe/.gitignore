@@ -19,4 +19,4 @@ csrc
 *.tr
 obj_dir
 *.vcd
-
+*.s

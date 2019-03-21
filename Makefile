@@ -39,9 +39,9 @@ tools:
 #          End.
 
 roms:
-	$(MAKE) -C $(BP_COMMON_DIR)/test/rom all
-	$(MAKE) -C $(BP_FE_DIR)/test/rom     all 
-	$(MAKE) -C $(BP_BE_DIR)/test/rom     all 
-	$(MAKE) -C $(BP_ME_DIR)/test/rom     all 
-	$(MAKE) -C $(BP_TOP_DIR)/test/rom    all
+	$(MAKE) -C $(BP_FE_DIR)/test/rom     all &
+	$(MAKE) -C $(BP_BE_DIR)/test/rom     all &
+	$(MAKE) -C $(BP_ME_DIR)/test/rom     all &
+	$(MAKE) -C $(BP_TOP_DIR)/test/rom    all &
+	wait
 

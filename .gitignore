@@ -6,3 +6,6 @@ external/*
 setup_env.sh
 run_dc
 */syn/coverage
+*.bin
+*.hex
+*.s
