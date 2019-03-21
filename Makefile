@@ -26,7 +26,7 @@ update_submodules:
 
 tools:
 	cd $(TOP) && git submodule update --init --recursive
-	$(MAKE) verilator && git submodule deinit -f $(BP_EXTERNAL_DIR)/verilator
+	$(MAKE) verilator systemc && rm -rf systemc*
 	$(MAKE) gnu       && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-gnu-toolchain
 	$(MAKE) fesvr     && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-fesvr
 	$(MAKE) spike     && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-isa-sim

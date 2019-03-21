@@ -10,13 +10,18 @@ REPORT_PATH := $(BP_TOP_DIR)/syn/reports
 
 # Default ROM to example
 DESIGN_NAME ?= bp_multi_top
-ROM_NAME    ?= bp_example_rom
 TB          ?= bp_single_trace_demo
 
 .EXPORT_ALL_VARIABLES:
 
 include $(BP_COMMON_DIR)/syn/Makefile.common
 include $(BP_COMMON_DIR)/syn/Makefile.dc
+include $(BP_COMMON_DIR)/syn/Makefile.regress
 include $(BP_COMMON_DIR)/syn/Makefile.verilator
 include $(BP_COMMON_DIR)/syn/Makefile.vcs
+
+regress.top: regress
+regress: regress.v check_design.syn
+	$(MAKE) lint.v || true
+	$(MAKE) lint.sc || true
 

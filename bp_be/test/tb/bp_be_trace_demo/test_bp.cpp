@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <systemc.h>
+#include "systemc.h"
 #include <verilated_vcd_sc.h>
 #include <verilated_cov.h>
 

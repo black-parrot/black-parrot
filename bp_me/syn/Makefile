@@ -10,7 +10,6 @@ REPORT_PATH := $(BP_ME_DIR)/syn/reports
 
 # Default ROM to example
 DESIGN_NAME ?= bp_me_top
-ROM_NAME    ?= bp_example_rom
 TB          ?= bp_me_trace_demo
 
 ## End specific flags and variables
@@ -30,6 +29,18 @@ CPPFLAGS += -I$(BP_ME_TB_PATH)/include -I$(BP_ME_DIR)/src/include/c
 
 include $(BP_COMMON_DIR)/syn/Makefile.common
 include $(BP_COMMON_DIR)/syn/Makefile.dc
+include $(BP_COMMON_DIR)/syn/Makefile.regress
 include $(BP_COMMON_DIR)/syn/Makefile.verilator
 include $(BP_COMMON_DIR)/syn/Makefile.vcs
+
+regress: regress.me
+regress.me: 
+	$(MAKE) lint.v || true
+	$(MAKE) lint.sc || true
+	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_random_demo \
+	| tee -i $(LOG_PATH)/vcs/bp_me_random_stress_test.log
+	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_random_stress_test.log \
+	| tee -i $(REPORT_PATH)/vcs/bp_me_random_stress_test.rpt
+	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_random_stress_test.log \
+	|| echo "FAILED" >> $(REPORT_DIR)/bp_me_random_stress_test.err
 
