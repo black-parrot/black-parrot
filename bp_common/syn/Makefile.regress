@@ -60,5 +60,3 @@ RV64_ISA_TEST_ROMS   := $(addsuffix _rom, $(RV64_ISA_TESTS))
 RV64_BENCHMARK_ROMS  := $(addsuffix _rom, $(RV64_BENCHMARKS))
 RV64_REGRESSION_ROMS := $(RV64_ISA_TEST_ROMS) $(RV64_BENCHMARK_ROMS) 
 
-RV64_REGRESSION_ROMS := rv64ui_p_add_rom median_rom
-
