@@ -77,6 +77,7 @@ module bp_be_pipe_mem
 
    , output [reg_data_width_lp-1:0] result_o
    , output                         cache_miss_o
+   , output                         tlb_miss_o
 
    // CSR interface
    , input [mhartid_width_lp-1:0]   mhartid_i
@@ -149,6 +150,7 @@ always_comb
 // Output results of memory op
 assign mmu_resp_ready_o = 1'b1;
 assign cache_miss_o     = mmu_resp.exception.cache_miss_v;
+assign tlb_miss_o       = mmu_resp.exception.tlb_miss_v;
 assign mtvec_o          = rs1_r;
 assign mtvec_w_v_o      = decode_r.mtvec_rw_v & ~kill_mem3_v_i;
 assign mtval_o          = rs1_r;

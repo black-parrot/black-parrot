@@ -173,7 +173,7 @@ logic [reg_data_width_lp-1:0] bypass_frs1, bypass_frs2;
 logic [reg_data_width_lp-1:0] bypass_rs1 , bypass_rs2;
 
 // Exception signals
-logic illegal_instr_isd, cache_miss_mem3;
+logic illegal_instr_isd, cache_miss_mem3, tlb_miss_mem3;
 
 // Pipeline stage registers
 bp_be_pipe_stage_reg_s [pipe_stage_els_lp-1:0] calc_stage_r, calc_stage_n;
@@ -432,6 +432,7 @@ bp_be_pipe_mem
 
    ,.result_o(mem_calc_result.result)
    ,.cache_miss_o(cache_miss_mem3)
+   ,.tlb_miss_o(tlb_miss_mem3)
    );
 
 // Floating point pipe: 4 cycle latency
@@ -650,6 +651,7 @@ always_comb
     calc_status.mem3_pc           = calc_stage_r[2].instr_metadata.pc;
     // We don't want cache_miss itself to trigger the exception invalidation
     calc_status.mem3_cache_miss_v = cache_miss_mem3 & ~|exc_stage_r[2]; 
+    calc_status.mem3_tlb_miss_v   = tlb_miss_mem3 & ~|exc_stage_r[2]; 
     calc_status.mem3_exception_v  = calc_stage_r[2].decode.instr_v
                                     & exc_stage_r[2].illegal_instr_v
                                     & ~exc_stage_r[2].poison_v
@@ -690,6 +692,7 @@ always_comb
         exc_stage_n[2].roll_v          = exc_stage_r[1].roll_v   | chk_roll_i;
         // TODO: Unused, critical path 
         exc_stage_n[3].cache_miss_v    = cache_miss_mem3; 
+        exc_stage_n[3].tlb_miss_v      = tlb_miss_mem3; 
   end
 
 // Commit tracer

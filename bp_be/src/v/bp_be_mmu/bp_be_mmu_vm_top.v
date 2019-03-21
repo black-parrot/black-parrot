@@ -295,7 +295,8 @@ always_comb
     dcache_tlb_miss = (ptw_busy)? 1'b0 : tlb_miss;
     
     mmu_resp.data   = dcache_data;  
-    mmu_resp.exception.cache_miss_v = dcache_miss_v | tlb_miss; /* TODO: should change! */
+    mmu_resp.exception.cache_miss_v = dcache_miss_v;
+    mmu_resp.exception.tlb_miss_v = tlb_miss;
   end
 
 // Ready-valid handshakes

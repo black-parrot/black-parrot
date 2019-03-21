@@ -182,7 +182,8 @@ always_comb
 
 // Generate calculator control signals
 assign chk_dispatch_v_o = ~(data_haz_v | struct_haz_v);
-assign chk_roll_o       = calc_status.mem3_cache_miss_v;
+assign chk_roll_o       = calc_status.mem3_cache_miss_v
+                          | calc_status.mem3_tlb_miss_v;
 assign chk_poison_ex1_o = reset_i 
                           | mispredict_v
                           | calc_status.mem3_exception_v 

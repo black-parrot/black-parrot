@@ -90,6 +90,7 @@
     logic                                   mem3_v;                                                \
     logic[rv64_eaddr_width_gp-1:0]          mem3_pc;                                               \
     logic                                   mem3_cache_miss_v;                                     \
+    logic                                   mem3_tlb_miss_v;                                       \
     logic                                   mem3_exception_v;                                      \
     logic                                   mem3_ret_v;                                            \
                                                                                                    \
@@ -148,7 +149,7 @@
    + 5 * `bp_be_dep_status_width                                                                   \
    + 1                                                                                             \
    + rv64_eaddr_width_gp                                                                           \
-   + 4                                                                                             \
+   + 5                                                                                             \
    )                                                                                               
 
 `define bp_be_calc_result_width(branch_metadata_fwd_width_mp)                                      \
