@@ -150,9 +150,10 @@ typedef enum bit [1:0]
  * lru_way_id indicates the way within the target set that will be used to fill the miss in to
  * lru_dirty indicates if the LRU way was dirty or clean when the miss request was sent
  */
-`define declare_bp_lce_cce_req_s(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp) \
+`define declare_bp_lce_cce_req_s(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp, data_width_mp) \
   typedef struct packed                                         \
   {                                                             \
+    logic [data_width_mp-1:0]                    data;          \
     logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]      dst_id;        \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      src_id;        \
     bp_lce_cce_req_type_e                        msg_type;      \
@@ -192,7 +193,6 @@ typedef enum bit [2:0]
   ,e_lce_cmd_set_tag         = 3'b100
   ,e_lce_cmd_set_tag_wakeup  = 3'b101
   ,e_lce_cmd_invalidate_tag  = 3'b110
-  ,e_lce_cmd_nc_writeback    = 3'b111
 } bp_cce_lce_cmd_type_e;
 
 `define bp_cce_lce_cmd_type_width $bits(bp_cce_lce_cmd_type_e)
@@ -345,11 +345,10 @@ typedef enum bit [1:0]
  *   clean. The data field should be 0 and is invalid.
  */
 
-typedef enum logic [1:0]
+typedef enum logic
 {
-  e_lce_resp_wb              = 2'b00  // Normal Writeback Response (full data)
-  ,e_lce_resp_null_wb        = 2'b01  // Null Writeback Response (no data)
-  ,e_lce_resp_non_cacheable  = 2'b10  // non_cacheable data response (only 64-bit data)
+  e_lce_resp_wb              = 1'b0  // Normal Writeback Response (full data)
+  ,e_lce_resp_null_wb        = 1'b1  // Null Writeback Response (no data)
 } bp_lce_cce_resp_msg_type_e;
 
 `define bp_lce_cce_resp_msg_type_width $bits(bp_lce_cce_resp_msg_type_e)
