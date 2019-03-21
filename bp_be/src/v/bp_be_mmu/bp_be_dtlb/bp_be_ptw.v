@@ -109,9 +109,9 @@ module bp_be_ptw
   
   assign pte_leaf_v             = dcache_data.x | dcache_data.w | dcache_data.r;
   
-  assign level_cntr_en          = dcache_v_i & ~pte_leaf_v;
+  assign level_cntr_en          = busy_o & dcache_v_i & ~pte_leaf_v;
   
-  assign ppn_en                 = start | dcache_v_i;
+  assign ppn_en                 = start | (busy_o & dcache_v_i);
   assign ppn_n                  = (state_r == eIdle)? base_ppn_i : dcache_data.ppn;
   assign vpn_n                  = tlb_miss_vtag_i;
   
