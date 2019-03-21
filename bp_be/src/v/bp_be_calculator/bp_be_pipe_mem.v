@@ -22,16 +22,17 @@
  *
  *   mmu_resp_i       - Load / store response from the MMU.
  *   mmu_resp_v_i     - 'ready-then-valid' interface
- *   mmu_resp_ready_o   - 
+ *   mmu_resp_ready_o - 
 
  *
  * Outputs:
  *   mmu_cmd_o        -  Load / store command to the MMU
  *   mmu_cmd_v_o      -  'ready-then-valid' interface
- *   mmu_cmd_ready_i    - 
+ *   mmu_cmd_ready_i  - 
  * 
  *   result_o         - The calculated result of a load
- *   cache_miss_o     - Goes high when the result of the load is a cache miss 
+ *   cache_miss_o     - Goes high when the result of the load or store is a cache miss 
+ *   tlb_miss_o       - Goes high when the result of the load or store is a TLB miss 
  *   
  * Keywords:
  *   calculator, mem, mmu, load, store, rv64i, rv64f
