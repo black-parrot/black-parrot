@@ -156,7 +156,7 @@ int sc_main(int argc, char **argv)
     sc_start(CLK_TIME, SC_NS);
   }
 
-  lce_resp_i = createLceResp(0, 0, e_lce_cce_sync_ack, 0x0).to_uint();
+  lce_resp_i = createLceResp(0, 0, e_lce_cce_sync_ack, 0x0).to_uint64();
   lce_resp_v_i = 1;
   sc_start(CLK_TIME, SC_NS);
   lce_resp_i = 0;
@@ -187,7 +187,7 @@ int sc_main(int argc, char **argv)
     bp_lce_cce_req_type_e reqType = e_lce_req_type_rd;
     uint64_t reqAddr = rand() % ((uint64_t)1 << ADDR_WIDTH);
     uint32_t lruWay = rand() % (1 << LG_LCE_ASSOC);
-    lce_req_i = createLceReq(0, 0, reqType, reqAddr, e_lce_req_not_excl, lruWay, e_lce_req_lru_clean).to_uint();
+    lce_req_i = createLceReq(0, 0, reqType, reqAddr, e_lce_req_not_excl, lruWay, e_lce_req_lru_clean);
     lce_req_v_i = 1;
     sc_start(CLK_TIME, SC_NS);
     lce_req_i = 0;
@@ -244,6 +244,26 @@ int sc_main(int argc, char **argv)
     // something received, or stalled, pull ready low
     lce_cmd_ready_i = 0;
     sc_start(CLK_TIME, SC_NS);
+
+    // send coherence ack
+    stallDetect = 0;
+    while (!lce_resp_ready_o) {
+      stallDetect++;
+      if (stallDetect == STALL_MAX) {
+        cout << "@" << sc_time_stamp() << " STALL!" << endl;
+        wf->close();
+        return 0;
+      }
+      sc_start(CLK_TIME, SC_NS);
+    }
+
+    lce_resp_i = createLceResp(0, 0, e_lce_cce_coh_ack, reqAddr).to_uint64();
+    lce_resp_v_i = 1;
+    sc_start(CLK_TIME, SC_NS);
+    lce_resp_i = 0;
+    lce_resp_v_i = 0;
+    sc_start(CLK_TIME, SC_NS);
+
     cout << endl;
 
     sc_start(RST_TIME, SC_NS);
@@ -308,7 +328,7 @@ int sc_main(int argc, char **argv)
     sc_start(CLK_TIME, SC_NS);
   }
 
-  lce_resp_i = createLceResp(0, 0, e_lce_cce_sync_ack, 0).to_uint();
+  lce_resp_i = createLceResp(0, 0, e_lce_cce_sync_ack, 0).to_uint64();
   lce_resp_v_i = 1;
   sc_start(CLK_TIME, SC_NS);
   lce_resp_i = 0;
@@ -346,7 +366,7 @@ int sc_main(int argc, char **argv)
     uint64_t reqAddr = addrs[i];
     uint32_t lruWay = ways[i];
 
-    lce_req_i = createLceReq(0, 0, reqType, reqAddr, e_lce_req_excl, lruWay, (bp_lce_cce_lru_dirty_e)lruDirty[i]).to_uint();
+    lce_req_i = createLceReq(0, 0, reqType, reqAddr, e_lce_req_excl, lruWay, (bp_lce_cce_lru_dirty_e)lruDirty[i]);
     lce_req_v_i = 1;
     sc_start(CLK_TIME, SC_NS);
     lce_req_i = 0;
