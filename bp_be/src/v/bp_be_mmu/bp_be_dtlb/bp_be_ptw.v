@@ -48,7 +48,7 @@ module bp_be_mock_ptw
   `declare_bp_sv39_pte_s(pte_width_p, ppn_width_lp);
   `declare_bp_be_tlb_entry_s(ppn_width_lp);
   
-  typedef enum [2:0] { eIdle, eSendLoad, eSendPtag, eWaitLoad, eWriteBack, eStuck } state_e;
+  typedef enum bit [2:0] { eIdle, eSendLoad, eSendPtag, eWaitLoad, eWriteBack, eStuck } state_e;
   
   bp_be_dcache_pkt_s dcache_pkt;
   bp_sv39_pte_s      dcache_data;
@@ -68,7 +68,7 @@ module bp_be_mock_ptw
   logic [lg_page_table_depth_lp-1:0] [partial_vpn_width_lp-1:0] partial_ppn;
 
   genvar i;
-  generate begin
+  generate 
     for(i=0; i<page_table_depth_p; i++) begin
       assign partial_vpn[i] = vpn_r[partial_vpn_width_lp*i +: partial_vpn_width_lp];
     end
@@ -77,7 +77,6 @@ module bp_be_mock_ptw
 	  assign tlb_w_entry.ptag[partial_vpn_width_lp*i +: partial_vpn_width_lp] = (level_cntr > i)? partial_vpn[i] : partial_ppn[i];
     end
 	assign tlb_w_entry.ptag[ppn_width_lp-1 : (page_table_depth_p-1)*partial_vpn_width_lp] = ppn_r[ppn_width_lp-1 : (page_table_depth_p-1)*partial_vpn_width_lp];
-  end
   endgenerate
   
   assign dcache_pkt_o           = dcache_pkt;

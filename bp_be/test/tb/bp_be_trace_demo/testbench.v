@@ -139,6 +139,7 @@ logic [trace_rom_data_width_lp-1:0] tr_rom_data_lo;
 assign proc_cfg.mhartid   = 1'b0;
 assign proc_cfg.icache_id = 1'b1; // Unused
 assign proc_cfg.dcache_id = 1'b0;
+/*verilator coverage_on*/
 bp_be_top 
  #(.vaddr_width_p(vaddr_width_p)
    ,.paddr_width_p(paddr_width_p)
@@ -204,6 +205,7 @@ bp_be_top
    ,.cmt_mem_op_o(cmt_mem_op)
    ,.cmt_data_o(cmt_data)
    );
+/*verilator coverage_off*/
 
 if (trace_p)
   begin : fi1

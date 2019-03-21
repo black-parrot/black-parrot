@@ -128,6 +128,13 @@ always_comb
 
     // Default value
     fe_instr_metadata = '0;
+    issue_pkt.imm = '0;
+    issue_pkt.rs1_addr = '0;
+    issue_pkt.rs2_addr = '0;
+    issue_pkt.irs1_v = 1'b0; 
+    issue_pkt.irs2_v = 1'b0;
+    issue_pkt.frs1_v = 1'b0;
+    issue_pkt.frs2_v = 1'b0;
 
     case(fe_queue.msg_type)
       // Populate the issue packet with a valid pc/instruction pair.

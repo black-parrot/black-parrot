@@ -250,7 +250,8 @@ module bp_fe_lce
 
 
   bp_fe_lce_cmd #(
-    .data_width_p(data_width_p)
+     .paddr_width_p(paddr_width_p)
+    ,.data_width_p(data_width_p)
     ,.lce_addr_width_p(lce_addr_width_p)
     ,.lce_data_width_p(lce_data_width_p)
     ,.sets_p(sets_p)

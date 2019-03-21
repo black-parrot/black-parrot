@@ -260,8 +260,6 @@ module bp_rolly_lce_me
     ,.lce_sets_p(sets_p)
     ,.block_size_in_bytes_p(block_size_in_bytes_lp)
     ,.num_inst_ram_els_p(num_cce_inst_ram_els_p)
-    ,.boot_rom_width_p(lce_data_width_lp)
-    ,.boot_rom_els_p(boot_rom_els_p)
   ) me (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
