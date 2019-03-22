@@ -117,6 +117,7 @@ module bp_be_mmu_top
                                                          , num_lce_p
                                                          , paddr_width_p
                                                          , lce_assoc_p
+                                                         , reg_data_width_lp
                                                          )
    , localparam lce_resp_width_lp = `bp_lce_cce_resp_width(num_cce_p
                                                            , num_lce_p
