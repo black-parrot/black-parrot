@@ -151,41 +151,41 @@ bp_fe_top
 
        ,.icache_id_i(proc_cfg.icache_id)
 
-       ,.bp_fe_queue_o(fe_fe_queue)
-       ,.bp_fe_queue_v_o(fe_fe_queue_v)
-       ,.bp_fe_queue_ready_i(fe_fe_queue_rdy)
+       ,.fe_queue_o(fe_fe_queue)
+       ,.fe_queue_v_o(fe_fe_queue_v)
+       ,.fe_queue_ready_i(fe_fe_queue_rdy)
 
-       ,.bp_fe_cmd_i(fe_fe_cmd)
-       ,.bp_fe_cmd_v_i(fe_fe_cmd_v)
-       ,.bp_fe_cmd_ready_o(fe_fe_cmd_rdy)
+       ,.fe_cmd_i(fe_fe_cmd)
+       ,.fe_cmd_v_i(fe_fe_cmd_v)
+       ,.fe_cmd_ready_o(fe_fe_cmd_rdy)
 
-       ,.lce_cce_req_o(lce_cce_req)
-       ,.lce_cce_req_v_o(lce_cce_req_v)
-       ,.lce_cce_req_ready_i(lce_cce_req_rdy)
+       ,.lce_req_o(lce_cce_req)
+       ,.lce_req_v_o(lce_cce_req_v)
+       ,.lce_req_ready_i(lce_cce_req_rdy)
 
-       ,.lce_cce_resp_o(lce_cce_resp)
-       ,.lce_cce_resp_v_o(lce_cce_resp_v)
-       ,.lce_cce_resp_ready_i(lce_cce_resp_rdy)
+       ,.lce_resp_o(lce_cce_resp)
+       ,.lce_resp_v_o(lce_cce_resp_v)
+       ,.lce_resp_ready_i(lce_cce_resp_rdy)
 
-       ,.lce_cce_data_resp_o(lce_cce_data_resp)
-       ,.lce_cce_data_resp_v_o(lce_cce_data_resp_v)
-       ,.lce_cce_data_resp_ready_i(lce_cce_data_resp_rdy)
+       ,.lce_data_resp_o(lce_cce_data_resp)
+       ,.lce_data_resp_v_o(lce_cce_data_resp_v)
+       ,.lce_data_resp_ready_i(lce_cce_data_resp_rdy)
 
-       ,.cce_lce_cmd_i(cce_lce_cmd)
-       ,.cce_lce_cmd_v_i(cce_lce_cmd_v)
-       ,.cce_lce_cmd_ready_o(cce_lce_cmd_rdy)
+       ,.lce_cmd_i(cce_lce_cmd)
+       ,.lce_cmd_v_i(cce_lce_cmd_v)
+       ,.lce_cmd_ready_o(cce_lce_cmd_rdy)
 
-       ,.cce_lce_data_cmd_i(cce_lce_data_cmd)
-       ,.cce_lce_data_cmd_v_i(cce_lce_data_cmd_v)
-       ,.cce_lce_data_cmd_ready_o(cce_lce_data_cmd_rdy)
+       ,.lce_data_cmd_i(cce_lce_data_cmd)
+       ,.lce_data_cmd_v_i(cce_lce_data_cmd_v)
+       ,.lce_data_cmd_ready_o(cce_lce_data_cmd_rdy)
 
-       ,.lce_lce_tr_resp_i(local_lce_tr_resp)
-       ,.lce_lce_tr_resp_v_i(local_lce_tr_resp_v)
-       ,.lce_lce_tr_resp_ready_o(local_lce_tr_resp_rdy)
+       ,.lce_tr_resp_i(local_lce_tr_resp)
+       ,.lce_tr_resp_v_i(local_lce_tr_resp_v)
+       ,.lce_tr_resp_ready_o(local_lce_tr_resp_rdy)
 
-       ,.lce_lce_tr_resp_o(remote_lce_tr_resp)
-       ,.lce_lce_tr_resp_v_o(remote_lce_tr_resp_v)
-       ,.lce_lce_tr_resp_ready_i(remote_lce_tr_resp_rdy)
+       ,.lce_tr_resp_o(remote_lce_tr_resp)
+       ,.lce_tr_resp_v_o(remote_lce_tr_resp_v)
+       ,.lce_tr_resp_ready_i(remote_lce_tr_resp_rdy)
        );
 
 
@@ -326,8 +326,6 @@ bp_me_top
    ,.lce_sets_p(lce_sets_p)
    ,.block_size_in_bytes_p(cce_block_size_in_bytes_p)
    ,.num_inst_ram_els_p(cce_num_inst_ram_els_p)
-   ,.boot_rom_els_p(boot_rom_els_p)
-   ,.boot_rom_width_p(boot_rom_width_p)
    )
  me
   (.clk_i(clk_i)

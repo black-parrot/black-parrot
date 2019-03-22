@@ -116,8 +116,10 @@ module bp_be_checker_top
    // Checker pipeline control information
    , output                           chk_dispatch_v_o
    , output                           chk_roll_o
+   , output                           chk_poison_isd_o
    , output                           chk_poison_ex1_o
    , output                           chk_poison_ex2_o
+   , output                           chk_poison_ex3_o
 
    // CSR interface
    , input [reg_data_width_lp-1:0]    mtvec_i
@@ -187,8 +189,10 @@ bp_be_detector
 
    ,.chk_dispatch_v_o(chk_dispatch_v_o)
    ,.chk_roll_o(chk_roll_o)
+   ,.chk_poison_isd_o(chk_poison_isd_o)
    ,.chk_poison_ex1_o(chk_poison_ex1_o)
    ,.chk_poison_ex2_o(chk_poison_ex2_o)
+   ,.chk_poison_ex3_o(chk_poison_ex3_o)
    );
 
 bp_be_scheduler 

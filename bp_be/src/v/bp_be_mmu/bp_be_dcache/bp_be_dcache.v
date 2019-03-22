@@ -241,7 +241,7 @@ module bp_be_dcache
   logic [ways_p-1:0][data_mask_width_lp-1:0] data_mem_mask_li;
   logic [ways_p-1:0][data_width_p-1:0] data_mem_data_lo;
   
-  for (genvar i = 0; i < ways_p; i++) begin // TODO: MISSING GENERATE LABEL
+  for (genvar i = 0; i < ways_p; i++) begin: data_mem
     bsg_mem_1rw_sync_mask_write_byte
       #(.data_width_p(data_width_p)
         ,.els_p(sets_p*ways_p)
@@ -471,12 +471,13 @@ module bp_be_dcache
       );
   
   logic [way_id_width_lp-1:0] lru_encode;
-  bp_be_dcache_lru_encode
-    #(.ways_p(ways_p))
-    lru_encoder
-      (.lru_i(stat_mem_data_lo.lru)
-      ,.way_id_o(lru_encode)
-      );
+
+  bsg_lru_pseudo_tree_encode #(
+    .ways_p(ways_p)
+  ) lru_encoder (
+    .lru_i(stat_mem_data_lo.lru)
+    ,.way_id_o(lru_encode)
+  );
 
 
   logic invalid_exist;
@@ -768,13 +769,14 @@ module bp_be_dcache
   logic [ways_p-2:0] lru_decode_data_lo;
   logic [ways_p-2:0] lru_decode_mask_lo;
 
-  bp_be_dcache_lru_decode
-    #(.ways_p(ways_p))
-    lru_decode
-      (.way_id_i(lru_decode_way_li)
-      ,.data_o(lru_decode_data_lo)
-      ,.mask_o(lru_decode_mask_lo)
-      );
+  bsg_lru_pseudo_tree_decode #(
+    .ways_p(ways_p)
+  ) lru_decode (
+    .way_id_i(lru_decode_way_li)
+    ,.data_o(lru_decode_data_lo)
+    ,.mask_o(lru_decode_mask_lo)
+  );
+  
 
   logic [way_id_width_lp-1:0] dirty_mask_way_li;
   logic dirty_mask_v_li;

@@ -633,7 +633,7 @@ module bp_cce
       e_dir_way_sel_req_addr_way: dir_way_i = req_addr_way_r_o;
       e_dir_way_sel_lru_way_addr_way: dir_way_i = lru_way_r_o;
       e_dir_way_sel_sh_way_r0: dir_way_i = sharers_ways_r_o[gpr_r_o[e_gpr_r0][lg_num_lce_lp-1:0]];
-      default: dir_lce_i = '0;
+      default: dir_way_i = '0;
     endcase
     case (decoded_inst_o.dir_coh_state_sel)
       e_dir_coh_sel_next_coh_st: dir_coh_state_i = next_coh_state_r_o;
@@ -759,8 +759,11 @@ module bp_cce
       mov_src = '0;
     end
 
+  
+
     // ALU operand b select
     // TODO: set to 0 unless required by current operation
+    alu_opd_b_i = '0;
     case (decoded_inst_o.src_b)
       e_src_r0: alu_opd_b_i = gpr_r_o[e_gpr_r0];
       e_src_r1: alu_opd_b_i = gpr_r_o[e_gpr_r1];

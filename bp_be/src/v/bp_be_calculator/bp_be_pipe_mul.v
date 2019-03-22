@@ -15,10 +15,9 @@
  *   decode_i         - All of the stage register information needed for a dispatched instruction
  *   rs1_i            - Source register data for the dispatched instruction
  *   rs2_i            - Source register data for the dispatched instruction
- *   exc_i            - Exception information for a dispatched instruction
  *
  * Outputs:
- *   result_o         - The calculated result of the instruction
+ *   data_o           - The calculated result of the instruction
  *   
  * Keywords:
  *   calculator, mul, div, rv64m
@@ -31,7 +30,6 @@ module bp_be_pipe_mul
   import bp_be_rv64_pkg::*;
  #(// Generated parameters
    localparam decode_width_lp      = `bp_be_decode_width
-   , localparam exception_width_lp = `bp_be_exception_width
    // From RISC-V specifications
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )
@@ -39,35 +37,36 @@ module bp_be_pipe_mul
    , input                          reset_i
 
    // Common pipeline interface
+   , input                          kill_ex1_i
+   , input                          kill_ex2_i
+
    , input [decode_width_lp-1:0]    decode_i
    , input [reg_data_width_lp-1:0]  rs1_i
    , input [reg_data_width_lp-1:0]  rs2_i
-   , input [exception_width_lp-1:0] exc_i
 
    // Pipeline result
-   , output [reg_data_width_lp-1:0] result_o
+   , output logic [reg_data_width_lp-1:0] data_o
    );
 
 // Cast input and output ports 
 bp_be_decode_s    decode;
-bp_be_exception_s exc;
 
 assign decode = decode_i;
-assign exc    = exc_i;
 
 // Suppress unused signal warnings
 wire unused0 = clk_i;
 wire unused1 = reset_i;
+wire unused2 = kill_ex1_i;
+wire unused3 = kill_ex2_i;
 
-wire [decode_width_lp-1:0]    unused2 = decode_i;
-wire [reg_data_width_lp-1:0]  unused3 = rs1_i;
-wire [reg_data_width_lp-1:0]  unused4 = rs2_i;
-wire [exception_width_lp-1:0] unused5 = exc_i;
+wire [decode_width_lp-1:0]    unused4 = decode_i;
+wire [reg_data_width_lp-1:0]  unused5 = rs1_i;
+wire [reg_data_width_lp-1:0]  unused6 = rs2_i;
 
 // Submodule connections
 
 // Module instantiations
-assign result_o = '0;
+assign data_o = '0;
 
 always_comb 
   begin : runtime_assertions

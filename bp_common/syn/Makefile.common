@@ -1,0 +1,23 @@
+## Set common environment variables
+TOP ?= $(shell git rev-parse --show-toplevel)
+
+include $(TOP)/Makefile.common
+
+.PHONY: clean dve help
+
+.DEFAULT: help
+
+dve:
+	$(DVE) -full64 -vpd vcdplus.vpd &
+
+clean:
+	$(MAKE) clean.v clean.sc clean.syn
+	rm -rf logs
+	rm -rf reports
+
+help:
+	@echo 'usage: make [target] ...'
+	@echo ''
+	@echo 'targets:'
+	@egrep '^(.+)\:\ .*##\ (.+)' ${MAKEFILE_LIST} | sed 's/:.*##/#/' | column -t -c 2 -s '#'
+

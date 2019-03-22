@@ -345,9 +345,9 @@ module icache
 
   assign lru_bits = metadata_mem_data_lo;
 
-  bp_be_dcache_lru_encode #(
+  bsg_lru_pseudo_tree_encode #(
     .ways_p(ways_p)
-    ) lru_encoder (
+  ) lru_encoder (
     .lru_i(lru_bits)
     ,.way_id_o(lru_encode)
   );
@@ -529,13 +529,13 @@ module icache
   logic [ways_p-2:0]          lru_decode_data_lo;
   logic [ways_p-2:0]          lru_decode_mask_lo;
 
-   bp_be_dcache_lru_decode #(
+  bsg_lru_pseudo_tree_decode #(
      .ways_p(ways_p)
-   ) lru_decode (
+  ) lru_decode (
      .way_id_i(lru_decode_way_li)
      ,.data_o(lru_decode_data_lo)
      ,.mask_o(lru_decode_mask_lo)
-   );
+  );
 
   always_comb begin
     if (v_tv_r) begin

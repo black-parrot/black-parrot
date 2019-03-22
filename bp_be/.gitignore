@@ -1,7 +1,11 @@
+*.s
 ucli.key
+run_vcs
+run_dc
+run_verilator
+logs
+reports
 simv*
-*simout.txt
-*buildout.txt
 *stack.info*
 DVEfiles
 inter.vpd*

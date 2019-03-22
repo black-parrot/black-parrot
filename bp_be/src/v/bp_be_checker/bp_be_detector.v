@@ -69,8 +69,10 @@ module bp_be_detector
    // Pipeline control signals from the checker to the calculator
    , output                           chk_dispatch_v_o
    , output                           chk_roll_o
+   , output                           chk_poison_isd_o
    , output                           chk_poison_ex1_o
    , output                           chk_poison_ex2_o
+   , output                           chk_poison_ex3_o
   );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p
@@ -181,16 +183,34 @@ always_comb
   end
 
 // Generate calculator control signals
-assign chk_dispatch_v_o = ~(data_haz_v | struct_haz_v);
+assign chk_dispatch_v_o = ~(data_haz_v | struct_haz_v) 
+                          | calc_status.mem3_cache_miss_v
+                          | calc_status.mem3_tlb_miss_v;
+                          
 assign chk_roll_o       = calc_status.mem3_cache_miss_v
                           | calc_status.mem3_tlb_miss_v;
+                          
+assign chk_poison_isd_o = reset_i
+                          | calc_status.mem3_cache_miss_v
+                          | calc_status.mem3_tlb_miss_v
+                          | calc_status.mem3_exception_v 
+                          | calc_status.mem3_ret_v;
+
 assign chk_poison_ex1_o = reset_i 
                           | mispredict_v
+                          | calc_status.mem3_cache_miss_v
                           | calc_status.mem3_exception_v 
                           | calc_status.mem3_ret_v;
 
 assign chk_poison_ex2_o  = reset_i
+                           | calc_status.mem3_cache_miss_v
+                           | calc_status.mem3_exception_v 
+                           | calc_status.mem3_ret_v;
+
+assign chk_poison_ex3_o  = reset_i
+                           | calc_status.mem3_cache_miss_v
                            | calc_status.mem3_exception_v 
                            | calc_status.mem3_ret_v;
 
 endmodule : bp_be_detector
+

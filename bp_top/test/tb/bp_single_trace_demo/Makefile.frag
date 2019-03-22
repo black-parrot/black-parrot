@@ -11,12 +11,12 @@ DUT_PARAMS = -pvalue+vaddr_width_p=39                \
              -pvalue+lce_sets_p=64                   \
              -pvalue+cce_block_size_in_bytes_p=64    \
              -pvalue+cce_num_inst_ram_els_p=256      \
-             -pvalue+lce_assoc_p=8                   \
-             -pvalue+boot_rom_els_p=1024              \
+             -pvalue+lce_assoc_p=8
+
+TB_PARAMS =  -pvalue+trace_ring_width_p=129          \
+             -pvalue+trace_rom_addr_width_p=32       \
+             -pvalue+boot_rom_els_p=1024             \
              -pvalue+boot_rom_width_p=512            \
 						 -pvalue+mem_els_p=1024
-
-TB_PARAMS =  -pvalue+trace_ring_width_p=129     \
-             -pvalue+trace_rom_addr_width_p=32  \
 
 HDL_PARAMS = $(DUT_PARAMS) $(TB_PARAMS)
