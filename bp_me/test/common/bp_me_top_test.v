@@ -169,6 +169,7 @@ module bp_me_top_test
       ,.mem_els_p(mem_els_p)
       ,.boot_rom_width_p(boot_rom_width_p)
       ,.boot_rom_els_p(boot_rom_els_p)
+      ,.lce_req_data_width_p(lce_req_data_width_lp)
      )
      bp_mem
      (.clk_i(clk_i)
