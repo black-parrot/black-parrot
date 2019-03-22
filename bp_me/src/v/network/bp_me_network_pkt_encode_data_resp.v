@@ -40,8 +40,6 @@ module bp_me_network_pkt_encode_data_resp
       (wb_packet_width_lp/width_lp)+(wb_packet_width_lp%width_lp==0 ? 0 : 1)-1
     , localparam null_wb_len_lp = 
       (null_wb_packet_width_lp/width_lp)+(null_wb_packet_width_lp%width_lp==0 ? 0 : 1)-1
-    , localparam nc_len_lp = 
-      (nc_packet_width_lp/width_lp)+(nc_packet_width_lp%width_lp==0 ? 0 : 1)-1
   )
   (
     input [lce_cce_data_resp_width_lp-1:0] payload_i

@@ -186,8 +186,8 @@ module bp_be_dcache_lce
   logic tr_data_received;
   logic cce_data_received;
   logic uncached_data_received;
-  logic tag_set_li;
-  logic tag_set_wakeup_li;
+  logic set_tag_received;
+  logic set_tag_wakeup_received;
 
   bp_lce_cce_resp_s lce_req_to_lce_resp_lo;
   logic lce_req_to_lce_resp_v_lo;
@@ -202,7 +202,7 @@ module bp_be_dcache_lce
       ,.num_lce_p(num_lce_p)
       ,.ways_p(ways_p)
       )
-    lce_cce_req_inst
+    lce_req_inst
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
 
@@ -225,8 +225,8 @@ module bp_be_dcache_lce
       ,.tr_data_received_i(tr_data_received)
       ,.cce_data_received_i(cce_data_received)
       ,.uncached_data_received_i(uncached_data_received)
-      ,.tag_set_i(tag_set_li)
-      ,.tag_set_wakeup_i(tag_set_wakeup_li)
+      ,.set_tag_received_i(set_tag_received)
+      ,.set_tag_wakeup_received_i(set_tag_wakeup_received)
 
       ,.lce_req_o(lce_req)
       ,.lce_req_v_o(lce_req_v_o)
@@ -286,8 +286,8 @@ module bp_be_dcache_lce
       ,.lce_id_i(lce_id_i)
 
       ,.lce_sync_done_o(lce_sync_done_lo)
-      ,.tag_set_o(tag_set_li)
-      ,.tag_set_wakeup_o(tag_set_wakeup_li)
+      ,.set_tag_received_o(set_tag_received)
+      ,.set_tag_wakeup_received_o(set_tag_wakeup_received)
 
       ,.lce_cmd_i(lce_cmd_fifo_data_lo)
       ,.lce_cmd_v_i(lce_cmd_fifo_v_lo)

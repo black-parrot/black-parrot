@@ -362,7 +362,10 @@ module bp_be_dcache
   //
   logic uncached_load_req;
   logic uncached_store_req;
-  assign uncached_load_req = v_tv_r & load_op_tv_r & uncached_tv_r;
+  logic uncached_load_data_v_r;
+  logic [data_width_p-1:0] uncached_load_data_r;
+
+  assign uncached_load_req = v_tv_r & load_op_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
   assign uncached_store_req = v_tv_r & store_op_tv_r & uncached_tv_r;
 
   // write buffer
@@ -488,7 +491,6 @@ module bp_be_dcache
     ,.way_id_o(lru_encode)
   );
 
-
   logic invalid_exist;
   logic [way_id_width_lp-1:0] invalid_way;
   bsg_priority_encode
@@ -593,23 +595,27 @@ module bp_be_dcache
  
   // output stage
   //
-  logic [data_width_p-1:0] uncached_load_data_r;
-  logic uncached_load_data_v_r;
-
   always_comb begin
-    if (uncached_tv_r) begin
-      if (load_op_tv_r) begin
-        v_o = v_tv_r & uncached_load_data_v_r;
-      end
-      else if (store_op_tv_r) begin
-        v_o = v_tv_r & ~cache_miss_o;
+    if (v_tv_r) begin
+      if (uncached_tv_r) begin
+        if (load_op_tv_r) begin
+          v_o = uncached_load_data_v_r;
+        end
+        else if (store_op_tv_r) begin
+          // uncached store_op can be committed,
+          // as long as there is no cache_miss_o signal raised.
+          v_o = ~cache_miss_o;  
+        end
+        else begin
+          v_o = 1'b0; // this should never happen
+        end
       end
       else begin
-        v_o = 1'b0; // this should never happen
+        v_o = v_tv_r & ~cache_miss_o; // cached request
       end
     end
     else begin
-      v_o = v_tv_r & ~(load_miss_tv & store_miss_tv);
+      v_o = 1'b0;
     end
   end
 
@@ -704,12 +710,12 @@ module bp_be_dcache
   // data_mem
   //
   logic [ways_p-1:0] wbuf_data_mem_v;
-  bsg_decode
-    #(.num_out_p(ways_p))
-    wbuf_data_mem_v_decode
-    ( .i(wbuf_entry_out.way_id ^ wbuf_entry_out_word_offset)
-      ,.o(wbuf_data_mem_v)
-      );  
+  bsg_decode #(
+    .num_out_p(ways_p)
+  ) wbuf_data_mem_v_decode (
+    .i(wbuf_entry_out.way_id ^ wbuf_entry_out_word_offset)
+    ,.o(wbuf_data_mem_v)
+  );  
 
   logic lce_data_mem_v;
   assign lce_data_mem_v = (lce_data_mem_pkt.opcode != e_dcache_lce_data_mem_uncached)
@@ -876,11 +882,8 @@ module bp_be_dcache
   logic [way_id_width_lp-1:0] lce_data_mem_pkt_way_r;
 
   always_ff @ (posedge clk_i) begin
-    if (lce_data_mem_pkt_yumi
-      & (lce_data_mem_pkt.opcode == e_dcache_lce_data_mem_read)) begin
-
+    if (lce_data_mem_pkt_yumi & (lce_data_mem_pkt.opcode == e_dcache_lce_data_mem_read)) begin
       lce_data_mem_pkt_way_r <= lce_data_mem_pkt.way_id;
-
     end
   end
 
@@ -911,15 +914,14 @@ module bp_be_dcache
         uncached_load_data_v_r <= 1'b1;
       end
       else begin
-        // once uncached load request is replayed, and output is generated,
+        // once uncached load request is replayed, and v_o goes high,
         // cleared the valid bit.
-        if (v_tv_r & load_op_tv_r & uncached_tv_r) begin
+        if (v_o) begin
           uncached_load_data_v_r <= 1'b0;
         end
       end
     end
   end
-  
   
   // LCE tag_mem
   //
