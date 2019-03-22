@@ -25,7 +25,6 @@ endif
 GCC       ?= gcc
 VCS       ?= vcs
 URG       ?= urg
-DVE       ?= dve
 VERILATOR ?= verilator
 
 ## Needed for verilator g++ compilations

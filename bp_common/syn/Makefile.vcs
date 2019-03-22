@@ -82,6 +82,10 @@ $(RV64_REGRESSION_TGTS):
 	@grep "PASS" $(LOG_DIR)/regress/$(TB)_$(basename $@)_sim.log \
 	|| echo "$(basename $@): FAILED" >> $(REPORT_DIR)/regress_stats.err
 
+dve.v: deps.v
+	cd $(VCS_RUN_DIR); \
+	dve -full64 -vpd vcdplus.vpd &
+
 clean.v:
 	rm -rf run_vcs
 

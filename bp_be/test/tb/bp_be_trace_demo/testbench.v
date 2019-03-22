@@ -29,6 +29,9 @@ module testbench
    , parameter trace_ring_width_p       = "inv"
    , parameter trace_rom_addr_width_p   = "inv"
 
+   , parameter calc_debug_p      = 0
+   , parameter calc_debug_file_p = "inv"
+
    , localparam cce_block_size_in_bits_lp = 8 * cce_block_size_in_bytes_p
    , localparam trace_rom_data_width_lp   = trace_ring_width_p + 4
    , localparam lg_boot_rom_els_lp        = `BSG_SAFE_CLOG2(boot_rom_els_p)
@@ -151,6 +154,8 @@ bp_be_top
    ,.lce_sets_p(lce_sets_p)
    ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
    ,.trace_p(trace_p)
+   ,.calc_debug_p(calc_debug_p)
+   ,.calc_debug_file_p(calc_debug_file_p)
    )
  DUT
   (.clk_i(clk_i)
