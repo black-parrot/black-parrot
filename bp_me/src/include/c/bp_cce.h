@@ -43,6 +43,10 @@
 //BSG_SAFE_CLOG2(DATA_WIDTH_BYTES)
 #define DATA_WIDTH_BITS (DATA_WIDTH_BYTES*8)
 
+#ifndef NC_DATA_WIDTH
+#define NC_DATA_WIDTH 64
+#endif
+
 #ifndef ADDR_WIDTH
 #define ADDR_WIDTH 56
 #endif

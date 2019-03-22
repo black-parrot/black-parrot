@@ -17,6 +17,7 @@ module bp_cce
     , parameter lce_sets_p                 = "inv"
     , parameter block_size_in_bytes_p      = "inv"
     , parameter num_cce_inst_ram_els_p     = "inv"
+    , parameter lce_req_data_width_p       = "inv"
 
     // Default parameters
     , parameter harden_p                   = 0
@@ -40,7 +41,8 @@ module bp_cce
     , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                                ,num_lce_p
                                                                ,paddr_width_p
-                                                               ,lce_assoc_p)
+                                                               ,lce_assoc_p
+                                                               ,lce_req_data_width_p)
 
     , localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
                                                                  ,num_lce_p
@@ -223,6 +225,8 @@ module bp_cce
   logic [num_lce_p-1:0] sharers_hits_r_o;
   logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0] sharers_ways_r_o;
   logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0] sharers_coh_states_r_o;
+  logic [`bp_lce_cce_nc_req_size_width-1:0] nc_req_size_r_o;
+  logic [lce_req_data_width_p-1:0] nc_data_r_o;
 
   // LCE Command Queue
   logic [lg_num_lce_lp-1:0] lce_cmd_lce;
@@ -389,6 +393,7 @@ module bp_cce
       ,.lce_assoc_p(lce_assoc_p)
       ,.lce_sets_p(lce_sets_p)
       ,.block_size_in_bytes_p(block_size_in_bytes_p)
+      ,.lce_req_data_width_p(lce_req_data_width_p)
       )
     cce_reg
      (.clk_i(clk_i)
@@ -439,6 +444,8 @@ module bp_cce
       ,.sharers_hits_o(sharers_hits_r_o)
       ,.sharers_ways_o(sharers_ways_r_o)
       ,.sharers_coh_states_o(sharers_coh_states_r_o)
+      ,.nc_req_size_o(nc_req_size_r_o)
+      ,.nc_data_o(nc_data_r_o)
       );
 
   // A localparams and signals for output queue message formation
@@ -557,20 +564,34 @@ module bp_cce
 
     // LCE Data Command Queue Inputs
     lce_data_cmd_s_o.dst_id = req_lce_r_o;
-    lce_data_cmd_s_o.msg_type = e_lce_data_cmd_cce;
-    lce_data_cmd_s_o.way_id = lru_way_r_o;
-    lce_data_cmd_s_o.data = cache_block_data_r_o;
+    if (flags_r_o[e_flag_sel_ucf] == e_lce_req_non_cacheable) begin
+      lce_data_cmd_s_o.msg_type = e_lce_data_cmd_non_cacheable;
+      lce_data_cmd_s_o.way_id = '0;
+      lce_data_cmd_s_o.data = {(block_size_in_bits_lp-lce_req_data_width_p)'('0),nc_data_r_o};
+    end else begin
+      lce_data_cmd_s_o.msg_type = e_lce_data_cmd_cce;
+      lce_data_cmd_s_o.way_id = lru_way_r_o;
+      lce_data_cmd_s_o.data = cache_block_data_r_o;
+    end
 
     // Mem Command Queue Inputs
     mem_cmd_s_o.msg_type = bp_lce_cce_req_type_e'(flags_r_o[e_flag_sel_rqf]);
     mem_cmd_s_o.payload.lce_id = req_lce_r_o;
     mem_cmd_s_o.payload.way_id = lru_way_r_o;
     mem_cmd_s_o.addr = req_addr_r_o;
+    mem_cmd_s_o.non_cacheable = bp_lce_cce_req_non_cacheable_e'(flags_r_o[e_flag_sel_ucf]);
+    mem_cmd_s_o.nc_size = nc_req_size_r_o;
 
     // Mem Data Command Queue Inputs
     mem_data_cmd_s_o.msg_type = bp_lce_cce_req_type_e'(flags_r_o[e_flag_sel_rqf]);
     mem_data_cmd_s_o.addr = mem_data_cmd_addr;
-    mem_data_cmd_s_o.data = cache_block_data_r_o;
+    if (flags_r_o[e_flag_sel_ucf]) begin
+      mem_data_cmd_s_o.data = {(block_size_in_bits_lp-lce_req_data_width_p)'('0),nc_data_r_o};
+    end else begin
+      mem_data_cmd_s_o.data = cache_block_data_r_o;
+    end
+    mem_data_cmd_s_o.non_cacheable = bp_lce_cce_req_non_cacheable_e'(flags_r_o[e_flag_sel_ucf]);
+    mem_data_cmd_s_o.nc_size = nc_req_size_r_o;
     // Request data for return
     mem_data_cmd_s_o.payload.lce_id = req_lce_r_o;
     mem_data_cmd_s_o.payload.way_id = lru_way_r_o;
@@ -705,6 +726,9 @@ module bp_cce
       e_src_pcf: begin
         alu_opd_a_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_o[e_flag_sel_pcf]};
       end
+      e_src_ucf: begin
+        alu_opd_a_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_o[e_flag_sel_ucf]};
+      end
       e_src_const_0: begin
         alu_opd_a_i = '0;
       end
@@ -775,6 +799,7 @@ module bp_cce
       e_src_if: alu_opd_b_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_o[e_flag_sel_if]};
       e_src_ef: alu_opd_b_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_o[e_flag_sel_ef]};
       e_src_pcf: alu_opd_b_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_o[e_flag_sel_pcf]};
+      e_src_ucf: alu_opd_b_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_o[e_flag_sel_ucf]};
       e_src_const_0: alu_opd_b_i = '0;
       e_src_const_1: alu_opd_b_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, 1'b1};
       e_src_imm: alu_opd_b_i = decoded_inst_o.imm;

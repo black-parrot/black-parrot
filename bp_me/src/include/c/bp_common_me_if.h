@@ -73,7 +73,6 @@ typedef enum { // CCE to LCE Commands
   ,e_lce_cmd_set_tag         = 4
   ,e_lce_cmd_set_tag_wakeup  = 5
   ,e_lce_cmd_invalidate_tag  = 6
-  ,e_lce_cmd_nc_writeback    = 7
 } bp_cce_lce_cmd_type_e;
 
 #define bp_cce_lce_cmd_type_width 3
@@ -81,10 +80,9 @@ typedef enum { // CCE to LCE Commands
 typedef enum {
   e_lce_resp_wb              = 0 // Normal Writeback Response
   ,e_lce_resp_null_wb        = 1 // Null Writeback Response
-  ,e_lce_resp_non_cacheable  = 2 // Non cacheable data response (only 64-bit of data max)
 } bp_lce_cce_resp_msg_type_e;
 
-#define bp_lce_cce_resp_msg_type_width 2
+#define bp_lce_cce_resp_msg_type_width 1
 
 typedef enum {
   e_lce_data_cmd_transfer       = 0
@@ -122,7 +120,7 @@ typedef enum {
 
 #define bp_lce_cce_req_width (LG_N_CCE+LG_N_LCE+bp_lce_cce_req_type_width \
   +bp_lce_cce_req_non_excl_width+ADDR_WIDTH+LG_LCE_ASSOC+bp_lce_cce_lru_dirty_width \
-  +bp_lce_cce_req_non_cacheable_width+bp_lce_cce_nc_req_size_width)
+  +bp_lce_cce_req_non_cacheable_width+bp_lce_cce_nc_req_size_width+NC_DATA_WIDTH)
 
 #define bp_lce_cce_resp_width (LG_N_CCE+LG_N_LCE+bp_lce_cce_ack_type_width+ADDR_WIDTH)
 

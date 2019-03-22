@@ -179,6 +179,13 @@ module bp_cce_inst_decode
       decoded_inst_o.mem_cmd_v = mem_cmd_ready_i && pushq_op && (pushq_qsel == e_dst_q_mem_cmd);
       decoded_inst_o.mem_data_cmd_v = mem_data_cmd_ready_i && pushq_op
                                       && (pushq_qsel == e_dst_q_mem_data_cmd);
+
+      // Uncached data and request size register writes
+      decoded_inst_o.nc_data_lce_req = (popq_op) && (popq_qsel == e_src_q_lce_req);
+      decoded_inst_o.nc_data_mem_data_resp = (popq_op) && (popq_qsel == e_src_q_mem_data_resp);
+      decoded_inst_o.nc_data_w_v = (popq_op) && ((popq_qsel == e_src_q_lce_req)
+                                                 || (popq_qsel == e_src_q_mem_data_resp));
+      decoded_inst_o.nc_req_size_w_v = inst.flag_mask_w_v[e_flag_sel_ucf];
     end
 
     // Control for fetch
