@@ -72,7 +72,7 @@ module bp_be_dcache_lce
       `bp_be_dcache_lce_stat_mem_pkt_width(sets_p, ways_p)
     
     , localparam lce_cce_req_width_lp=
-      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, ways_p)
+      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, ways_p, data_width_p)
     , localparam lce_cce_resp_width_lp=
       `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
     , localparam lce_cce_data_resp_width_lp=
@@ -93,7 +93,12 @@ module bp_be_dcache_lce
 
     , input load_miss_i
     , input store_miss_i
+    , input uncached_load_req_i
+    , input uncached_store_req_i
+
     , input [paddr_width_p-1:0] miss_addr_i
+    , input [data_width_p-1:0] store_data_i
+    , input [1:0] size_op_i
 
     // data_mem
     , output logic data_mem_pkt_v_o
@@ -143,7 +148,7 @@ module bp_be_dcache_lce
 
   // casting structs
   //
-  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, ways_p);
+  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, ways_p, data_width_p);
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
   `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_p);
   `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, ways_p);
@@ -180,6 +185,7 @@ module bp_be_dcache_lce
   //
   logic tr_data_received;
   logic cce_data_received;
+  logic uncached_data_received;
   logic tag_set_li;
   logic tag_set_wakeup_li;
 
@@ -195,7 +201,6 @@ module bp_be_dcache_lce
       ,.num_cce_p(num_cce_p)
       ,.num_lce_p(num_lce_p)
       ,.ways_p(ways_p)
-      ,.sets_p(sets_p)
       )
     lce_cce_req_inst
       (.clk_i(clk_i)
@@ -205,14 +210,21 @@ module bp_be_dcache_lce
   
       ,.load_miss_i(load_miss_i)
       ,.store_miss_i(store_miss_i)
+      ,.uncached_load_req_i(uncached_load_req_i)
+      ,.uncached_store_req_i(uncached_store_req_i)
+
       ,.miss_addr_i(miss_addr_i)
       ,.lru_way_i(lru_way_i)
       ,.dirty_i(dirty_i)
+      ,.store_data_i(store_data_i)
+      ,.size_op_i(size_op_i)
+
       ,.cache_miss_o(cache_miss_o)
       ,.miss_addr_o(miss_addr_lo)
 
       ,.tr_data_received_i(tr_data_received)
       ,.cce_data_received_i(cce_data_received)
+      ,.uncached_data_received_i(uncached_data_received)
       ,.tag_set_i(tag_set_li)
       ,.tag_set_wakeup_i(tag_set_wakeup_li)
 
@@ -347,6 +359,7 @@ module bp_be_dcache_lce
     lce_data_cmd_inst
       (.cce_data_received_o(cce_data_received)
       ,.tr_data_received_o(tr_data_received)
+      ,.uncached_data_received_o(uncached_data_received)
 
       ,.miss_addr_i(miss_addr_lo)
      

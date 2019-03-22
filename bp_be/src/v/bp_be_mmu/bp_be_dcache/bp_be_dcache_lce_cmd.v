@@ -266,7 +266,7 @@ module bp_be_dcache_lce_cmd
           e_lce_cmd_transfer: begin
             data_mem_pkt.index = lce_cmd_addr_index;
             data_mem_pkt.way_id = lce_cmd.way_id;
-            data_mem_pkt.write_not_read = 1'b0;
+            data_mem_pkt.opcode = e_dcache_lce_data_mem_read;
             data_mem_pkt_v_o = lce_cmd_v_i;
 
             state_n = data_mem_pkt_yumi_i
@@ -383,7 +383,7 @@ module bp_be_dcache_lce_cmd
       e_lce_cmd_state_wb_dirty: begin
         data_mem_pkt.index = lce_cmd_addr_index;
         data_mem_pkt.way_id = lce_cmd.way_id;
-        data_mem_pkt.write_not_read = 1'b0;
+        data_mem_pkt.opcode = e_dcache_lce_data_mem_read;
         data_mem_pkt_v_o = ~wb_data_read_r;
         data_buf_n = wb_data_buffered_r
           ? data_buf_r

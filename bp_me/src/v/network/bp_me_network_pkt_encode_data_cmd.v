@@ -56,8 +56,8 @@ module bp_me_network_pkt_encode_data_cmd
   logic [len_width_lp-1:0] length;
 
   always_comb begin
-    y_cord = y_cord_width_lp'(1);
-    x_cord = x_cord_width_lp'(data_cmd.dst_id);
+    y_cord = y_cord_width_p'(1);
+    x_cord = x_cord_width_p'(data_cmd.dst_id);
 
     case (data_cmd.msg_type)
       e_lce_data_cmd_transfer: begin

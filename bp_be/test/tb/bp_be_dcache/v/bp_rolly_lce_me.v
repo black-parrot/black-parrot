@@ -84,7 +84,7 @@ module bp_rolly_lce_me
 
   // dcache
   //
-  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, ways_p);
+  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, ways_p, data_width_p);
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
   `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_lp);
   `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, ways_p);

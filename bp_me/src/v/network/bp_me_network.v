@@ -26,6 +26,7 @@ module bp_me_network
     , parameter paddr_width_p           = "inv"
     , parameter lce_assoc_p             = "inv"
     , parameter block_size_in_bytes_p   = "inv"
+    , parameter data_width_p            = "inv"
 
     // Default parameters
     , parameter data_cmd_max_num_flit_p  = 4
@@ -37,7 +38,7 @@ module bp_me_network
 
     // Coherence Message Widths
     , localparam bp_lce_cce_req_width_lp=
-      `bp_lce_cce_req_width(num_cce_p,num_lce_p,paddr_width_p,lce_assoc_p)
+      `bp_lce_cce_req_width(num_cce_p,num_lce_p,paddr_width_p,lce_assoc_p,data_width_p)
     , localparam bp_lce_cce_resp_width_lp=
       `bp_lce_cce_resp_width(num_cce_p,num_lce_p,paddr_width_p)
     , localparam bp_lce_cce_data_resp_width_lp=

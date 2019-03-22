@@ -77,7 +77,7 @@ module bp_be_dcache
     , localparam stat_info_width_lp=`bp_be_dcache_stat_info_width(ways_p)
     
     , localparam lce_cce_req_width_lp=
-      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, ways_p)
+      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, ways_p, data_width_p)
     , localparam lce_cce_resp_width_lp=
       `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
     , localparam lce_cce_data_resp_width_lp=
@@ -103,6 +103,7 @@ module bp_be_dcache
     // TLB interface
     , input tlb_miss_i
     , input [ptag_width_lp-1:0] ptag_i
+    , input uncached_i
 
     // ctrl
     , output logic cache_miss_o
@@ -145,6 +146,7 @@ module bp_be_dcache
   logic load_op;
   logic store_op;
   logic signed_op;
+  logic [1:0] size_op;
   logic double_op;
   logic word_op;
   logic half_op;
@@ -156,6 +158,7 @@ module bp_be_dcache
   assign store_op = dcache_pkt.opcode[3];
   assign signed_op = ~dcache_pkt.opcode[2];
   assign double_op = (dcache_pkt.opcode[1:0] == 2'b11);
+  assign size_op = dcache_pkt.opcode[1:0];
   assign word_op = (dcache_pkt.opcode[1:0] == 2'b10);
   assign half_op = (dcache_pkt.opcode[1:0] == 2'b01);
   assign byte_op = (dcache_pkt.opcode[1:0] == 2'b00);
@@ -169,6 +172,7 @@ module bp_be_dcache
   logic load_op_tl_r;
   logic store_op_tl_r;
   logic signed_op_tl_r;
+  logic [1:0] size_op_tl_r;
   logic double_op_tl_r;
   logic word_op_tl_r;
   logic half_op_tl_r;
@@ -188,6 +192,7 @@ module bp_be_dcache
         load_op_tl_r <= load_op;
         store_op_tl_r <= store_op;
         signed_op_tl_r <= signed_op;
+        size_op_tl_r <= size_op;
         double_op_tl_r <= double_op;
         word_op_tl_r <= word_op;
         half_op_tl_r <= half_op;
@@ -229,7 +234,7 @@ module bp_be_dcache
   // data_mem
   //
   logic [ways_p-1:0] data_mem_v_li;
-  logic [ways_p-1:0] data_mem_w_li;
+  logic data_mem_w_li;
   logic [ways_p-1:0][index_width_lp+word_offset_width_lp-1:0] data_mem_addr_li;
   logic [ways_p-1:0][data_width_p-1:0] data_mem_data_li;
   logic [ways_p-1:0][data_mask_width_lp-1:0] data_mem_mask_li;
@@ -244,7 +249,7 @@ module bp_be_dcache
         (.clk_i(clk_i)
         ,.reset_i(reset_i)
         ,.v_i(~reset_i & data_mem_v_li[i])
-        ,.w_i(data_mem_w_li[i])
+        ,.w_i(data_mem_w_li)
         ,.addr_i(data_mem_addr_li[i])
         ,.data_i(data_mem_data_li[i])
         ,.write_mask_i(data_mem_mask_li[i])
@@ -259,10 +264,12 @@ module bp_be_dcache
   logic load_op_tv_r;
   logic store_op_tv_r;
   logic signed_op_tv_r;
+  logic [1:0] size_op_tv_r;
   logic double_op_tv_r;
   logic word_op_tv_r;
   logic half_op_tv_r;
   logic byte_op_tv_r;
+  logic uncached_tv_r;
   logic [paddr_width_p-1:0] paddr_tv_r;
   logic [data_width_p-1:0] data_tv_r;
   bp_be_dcache_tag_info_s [ways_p-1:0] tag_info_tv_r;
@@ -283,13 +290,15 @@ module bp_be_dcache
       if (tv_we) begin
         load_op_tv_r <= load_op_tl_r;
         store_op_tv_r <= store_op_tl_r;
-        double_op_tv_r <= double_op_tl_r;
         signed_op_tv_r <= signed_op_tl_r;
+        size_op_tv_r <= size_op_tl_r;
+        double_op_tv_r <= double_op_tl_r;
         word_op_tv_r <= word_op_tl_r;
         half_op_tv_r <= half_op_tl_r;
         byte_op_tv_r <= byte_op_tl_r;
         paddr_tv_r <= {ptag_i, page_offset_tl_r};
         tag_info_tv_r <= tag_mem_data_lo;
+        uncached_tv_r <= uncached_i;
       end
 
       if (tv_we & load_op_tl_r) begin
@@ -346,9 +355,15 @@ module bp_be_dcache
       ,.addr_o(store_hit_way)
       );
 
-  assign load_miss_tv = ~load_hit & v_tv_r & load_op_tv_r;
-  assign store_miss_tv = ~store_hit & v_tv_r & store_op_tv_r;
+  assign load_miss_tv = ~load_hit & v_tv_r & load_op_tv_r & ~uncached_tv_r;
+  assign store_miss_tv = ~store_hit & v_tv_r & store_op_tv_r & ~uncached_tv_r;
 
+  // uncached req
+  //
+  logic uncached_load_req;
+  logic uncached_store_req;
+  assign uncached_load_req = v_tv_r & load_op_tv_r & uncached_tv_r;
+  assign uncached_store_req = v_tv_r & store_op_tv_r & uncached_tv_r;
 
   // write buffer
   //
@@ -527,10 +542,14 @@ module bp_be_dcache
 
       ,.ready_o(ready_o)
       ,.cache_miss_o(cache_miss_o)
-
+    
       ,.load_miss_i(load_miss_tv)
       ,.store_miss_i(store_miss_tv)
+      ,.uncached_load_req_i(uncached_load_req)
+      ,.uncached_store_req_i(uncached_store_req)
       ,.miss_addr_i(paddr_tv_r)
+      ,.size_op_i(size_op_tv_r)
+      ,.store_data_i(data_tv_r)
 
       ,.data_mem_pkt_v_o(lce_data_mem_pkt_v_lo)
       ,.data_mem_pkt_o(lce_data_mem_pkt)
@@ -574,7 +593,25 @@ module bp_be_dcache
  
   // output stage
   //
-  assign v_o = v_tv_r & ~(load_miss_tv | store_miss_tv) & (~reset_i); 
+  logic [data_width_p-1:0] uncached_load_data_r;
+  logic uncached_load_data_v_r;
+
+  always_comb begin
+    if (uncached_tv_r) begin
+      if (load_op_tv_r) begin
+        v_o = v_tv_r & uncached_load_data_v_r;
+      end
+      else if (store_op_tv_r) begin
+        v_o = v_tv_r & ~cache_miss_o;
+      end
+      else begin
+        v_o = 1'b0; // this should never happen
+      end
+    end
+    else begin
+      v_o = v_tv_r & ~(load_miss_tv & store_miss_tv);
+    end
+  end
 
   logic [data_width_p-1:0] ld_data_way_picked;
   logic [data_width_p-1:0] bypass_data_masked;
@@ -642,15 +679,23 @@ module bp_be_dcache
     assign half_sigext = signed_op_tv_r & data_half_selected[15]; 
     assign byte_sigext = signed_op_tv_r & data_byte_selected[7]; 
 
-    assign data_o = load_op_tv_r
-      ? (double_op_tv_r
-        ? bypass_data_masked
-        : (word_op_tv_r
-          ? {{32{word_sigext}}, data_word_selected}
-          : (half_op_tv_r
-            ? {{48{half_sigext}}, data_half_selected}
-            : {{56{byte_sigext}}, data_byte_selected})))
-      : 64'b0;
+    always_comb begin
+      if (uncached_load_data_v_r) begin
+        data_o = uncached_load_data_r;
+      end
+      else begin
+        data_o = load_op_tv_r
+          ? (double_op_tv_r
+            ? bypass_data_masked
+            : (word_op_tv_r
+              ? {{32{word_sigext}}, data_word_selected}
+              : (half_op_tv_r
+                ? {{48{half_sigext}}, data_half_selected}
+                : {{56{byte_sigext}}, data_byte_selected})))
+          : 64'b0;
+      end
+    end
+
   end
  
   // ctrl logic
@@ -666,13 +711,18 @@ module bp_be_dcache
       ,.o(wbuf_data_mem_v)
       );  
 
+  logic lce_data_mem_v;
+  assign lce_data_mem_v = (lce_data_mem_pkt.opcode != e_dcache_lce_data_mem_uncached)
+    & lce_data_mem_pkt_yumi_li;
+
   assign data_mem_v_li = (load_op & tl_we)
     ? {ways_p{1'b1}}
     : (wbuf_yumi_li
       ? wbuf_data_mem_v
-      : {ways_p{lce_data_mem_pkt_yumi_li}});
+      : {ways_p{lce_data_mem_v}});
 
-  assign data_mem_w_li = {ways_p{(wbuf_yumi_li | (lce_data_mem_pkt_yumi_li & lce_data_mem_pkt.write_not_read))}};
+  assign data_mem_w_li = wbuf_yumi_li
+    | (lce_data_mem_pkt_yumi_li & lce_data_mem_pkt.opcode == e_dcache_lce_data_mem_write);
 
   logic [ways_p-1:0][data_width_p-1:0] lce_data_mem_write_data;
 
@@ -747,7 +797,7 @@ module bp_be_dcache
 
   // stat_mem
   //
-  assign stat_mem_v_li = v_tv_r | lce_stat_mem_pkt_yumi_li;
+  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r) | lce_stat_mem_pkt_yumi_li;
   assign stat_mem_w_li = v_tv_r 
     ? ~(load_miss_tv | store_miss_tv)
     : lce_stat_mem_pkt_yumi_li & (lce_stat_mem_pkt.opcode != e_dcache_lce_stat_mem_read);
@@ -804,12 +854,6 @@ module bp_be_dcache
           stat_mem_mask_li.lru = {(ways_p-1){1'b0}};
           stat_mem_mask_li.dirty = dirty_mask_lo;
         end
-        e_dcache_lce_stat_mem_set_lru: begin
-          stat_mem_data_li.lru = ~lru_decode_data_lo;
-          stat_mem_data_li.dirty = {ways_p{1'b0}};
-          stat_mem_mask_li.lru = lru_decode_mask_lo;
-          stat_mem_mask_li.dirty = {ways_p{1'b0}};
-        end
         default: begin
           stat_mem_data_li = {(stat_info_width_lp){1'b0}};
           stat_mem_mask_li = {(stat_info_width_lp){1'b0}};
@@ -832,25 +876,50 @@ module bp_be_dcache
   logic [way_id_width_lp-1:0] lce_data_mem_pkt_way_r;
 
   always_ff @ (posedge clk_i) begin
-    if (lce_data_mem_pkt_v_lo & lce_data_mem_pkt_yumi_li & ~lce_data_mem_pkt.write_not_read) begin
+    if (lce_data_mem_pkt_yumi_li
+      & (lce_data_mem_pkt.opcode == e_dcache_lce_data_mem_read)) begin
+
       lce_data_mem_pkt_way_r <= lce_data_mem_pkt.way_id;
+
     end
   end
 
-  for (genvar i = 0; i < ways_p; i++) begin // TODO: MISSING GENERATE LABEL
-    bsg_mux 
-      #(.els_p(ways_p)
-        ,.width_p(data_width_p)
-        )
-      lce_data_mem_read_mux
-        (.data_i(data_mem_data_lo)
-        ,.sel_i(lce_data_mem_pkt_way_r ^ ((word_offset_width_lp)'(i)))
-        ,.data_o(lce_data_mem_data_li[i])
-        );
+  for (genvar i = 0; i < ways_p; i++) begin
+    bsg_mux #(
+      .els_p(ways_p)
+      ,.width_p(data_width_p)
+    ) lce_data_mem_read_mux (
+      .data_i(data_mem_data_lo)
+      ,.sel_i(lce_data_mem_pkt_way_r ^ ((word_offset_width_lp)'(i)))
+      ,.data_o(lce_data_mem_data_li[i])
+    );
   end
 
-  assign lce_data_mem_pkt_yumi_li = ~(load_op & tl_we)
-    & ~wbuf_v_lo & ~lce_snoop_match_lo & lce_data_mem_pkt_v_lo;
+  assign lce_data_mem_pkt_yumi_li = (lce_data_mem_pkt.opcode == e_dcache_lce_data_mem_uncached)
+    ? lce_data_mem_pkt_v_lo
+    : ~(load_op & tl_we) & ~wbuf_v_lo & ~lce_snoop_match_lo & lce_data_mem_pkt_v_lo;
+
+  //  uncached load data logic
+  //
+  always_ff @ (posedge clk_i) begin
+    if (reset_i) begin
+      uncached_load_data_v_r <= 1'b0;
+    end
+    else begin
+      if (lce_data_mem_pkt_yumi_li & (lce_data_mem_pkt.opcode == e_dcache_lce_data_mem_uncached)) begin
+        uncached_load_data_r <= lce_data_mem_pkt.data[0+:data_width_p];
+        uncached_load_data_v_r <= 1'b1;
+      end
+      else begin
+        // once uncached load request is replayed, and output is generated,
+        // cleared the valid bit.
+        if (v_tv_r & load_op_tv_r & uncached_tv_r) begin
+          uncached_load_data_v_r <= 1'b0;
+        end
+      end
+    end
+  end
+  
   
   // LCE tag_mem
   //
@@ -858,7 +927,7 @@ module bp_be_dcache
   
   // LCE stat_mem
   //
-  assign lce_stat_mem_pkt_yumi_li = ~v_tv_r & lce_stat_mem_pkt_v_lo;
+  assign lce_stat_mem_pkt_yumi_li = ~(v_tv_r & ~uncached_tv_r) & lce_stat_mem_pkt_v_lo;
 
   // synopsys translate_off
   if (debug_p) begin // TODO: MISSING GENERATE LABEL

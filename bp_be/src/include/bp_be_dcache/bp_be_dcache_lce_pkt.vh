@@ -16,11 +16,11 @@
     logic [`BSG_SAFE_CLOG2(sets_mp)-1:0] index; \
     logic [`BSG_SAFE_CLOG2(ways_mp)-1:0] way_id; \
     logic [data_width_mp-1:0] data; \
-    logic write_not_read; \
+    bp_be_dcache_lce_data_mem_opcode_e opcode; \
   } bp_be_dcache_lce_data_mem_pkt_s
 
 `define bp_be_dcache_lce_data_mem_pkt_width(sets_mp, ways_mp, data_width_mp) \
-  (`BSG_SAFE_CLOG2(sets_mp)+data_width_mp+`BSG_SAFE_CLOG2(ways_mp)+1)
+  (`BSG_SAFE_CLOG2(sets_mp)+data_width_mp+`BSG_SAFE_CLOG2(ways_mp)+2)
 
 
 //  tag_mem pkt

@@ -58,8 +58,8 @@ module bp_me_network_pkt_encode_data_resp
   logic [len_width_lp-1:0] length;
 
   always_comb begin
-    y_cord = y_cord_width_lp'(0);
-    x_cord = x_cord_width_lp'(data_resp.dst_id);
+    y_cord = y_cord_width_p'(0);
+    x_cord = x_cord_width_p'(data_resp.dst_id);
 
     case (data_resp.msg_type)
       e_lce_resp_wb: begin
@@ -68,10 +68,6 @@ module bp_me_network_pkt_encode_data_resp
 
       e_lce_resp_null_wb: begin
         length = len_width_lp'(null_wb_len_lp);
-      end
-
-      e_lce_resp_non_cacheable: begin
-        length = len_width_lp'(nc_len_lp);
       end
 
       default: begin

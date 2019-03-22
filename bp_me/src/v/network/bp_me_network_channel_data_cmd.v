@@ -71,24 +71,26 @@ module bp_me_network_channel_data_cmd
 
   logic [num_router_lp-1:0][x_cord_width_lp-1:0] local_x;
   logic [num_router_lp-1:0][y_cord_width_lp-1:0] local_y;
-  logic [num_router_lp-1:0][S:P] stub_in;
-  logic [num_router_lp-1:0][S:P] stub_out;
+
+  `define DATA_CMD_STUB_IN \
+    (i < num_cce_p ? 0 : 5'b10000) \
+    | (i < num_lce_p ? 0 : 5'b01000) \
+    | (i == num_router_lp-1 ? 5'b00100 : 0) \
+    | (i == 0 ? 5'b00010 : 0) \
+    | (5'b00001)                                
+      
+  `define DATA_CMD_STUB_OUT \
+    (5'b10000) \
+    | (5'b01000) \
+    | (i == num_router_lp-1 ? 5'b00100 : 0) \
+    | (i == 0 ? 5'b00010 : 0) \
+    | (i < num_lce_p ? 0 : 5'b00001)
 
   for (genvar i = 0; i < num_router_lp; i++) begin: router
 
     assign local_x[i] = x_cord_width_lp'(i);
     assign local_y[i] = y_cord_width_lp'(1);
     
-    assign stub_in[i][W] = (i == 0) ? 1'b1 : 1'b0;
-    assign stub_out[i][W] = (i == 0) ? 1'b1 : 1'b0;
-    assign stub_in[i][E] = (i == num_router_lp-1) ? 1'b1 : 1'b0;
-    assign stub_out[i][E] = (i == num_router_lp-1) ? 1'b1 : 1'b0;
-    assign stub_in[i][S] = (i < num_cce_p) ? 1'b0 : 1'b1;
-    assign stub_out[i][S] = 1'b1;
-    assign stub_in[i][N] = (i < num_lce_p) ? 1'b0 : 1'b1;
-    assign stub_out[i][N] = 1'b1;
-    assign stub_in[i][P] = 1'b1;
-    assign stub_out[i][P] = (i < num_lce_p) ? 1'b0 : 1'b1;
 
     bsg_wormhole_router #(
       .width_p(router_data_width_lp)
@@ -98,8 +100,8 @@ module bp_me_network_channel_data_cmd
       ,.enable_2d_routing_p(1)
       ,.enable_yx_routing_p(1)
       ,.header_on_lsb_p(1)
-      ,.stub_in_p(stub_in[i])
-      ,.stub_out_p(stub_out[i])
+      ,.stub_in_p(`DATA_CMD_STUB_IN)
+      ,.stub_out_p(`DATA_CMD_STUB_OUT)
     ) router (
       .clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -143,7 +145,7 @@ module bp_me_network_channel_data_cmd
       .num_lce_p(num_lce_p)
       ,.block_size_in_bits_p(block_size_in_bits_p)
       ,.lce_assoc_p(lce_assoc_p)
-      ,.max_num_flits_p(max_num_flits_p)
+      ,.max_num_flit_p(max_num_flit_p)
       ,.x_cord_width_p(x_cord_width_lp)
       ,.y_cord_width_p(y_cord_width_lp)
     ) lce_pkt_encode (
@@ -183,7 +185,7 @@ module bp_me_network_channel_data_cmd
       .num_lce_p(num_lce_p)
       ,.block_size_in_bits_p(block_size_in_bits_p)
       ,.lce_assoc_p(lce_assoc_p)
-      ,.max_num_flits_p(max_num_flits_p)
+      ,.max_num_flit_p(max_num_flit_p)
       ,.x_cord_width_p(x_cord_width_lp)
       ,.y_cord_width_p(y_cord_width_lp)
     ) cce_pkt_encode (
