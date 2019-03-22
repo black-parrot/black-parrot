@@ -540,10 +540,11 @@ typedef enum logic
  */
 
 // CCE-LCE Interface
-`define bp_lce_cce_req_width(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp) \
+`define bp_lce_cce_req_width(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp, data_width_mp) \
   (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_cce_req_type_width \
    +`bp_lce_cce_req_non_excl_width+addr_width_mp+`BSG_SAFE_CLOG2(lce_assoc_mp) \
-   +`bp_lce_cce_lru_dirty_width+`bp_lce_cce_req_non_cacheable_width+`bp_lce_cce_nc_req_size_width)
+   +`bp_lce_cce_lru_dirty_width+`bp_lce_cce_req_non_cacheable_width+`bp_lce_cce_nc_req_size_width \
+   +data_width_mp)
 
 `define bp_cce_lce_cmd_width(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp) \
   (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_cce_lce_cmd_type_width \
