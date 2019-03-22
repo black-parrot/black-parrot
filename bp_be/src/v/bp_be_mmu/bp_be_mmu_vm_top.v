@@ -1,6 +1,4 @@
 
-//TODO: may have to gate dcache poison signal
-
 module bp_be_mmu_vm_top 
   import bp_common_pkg::*;
   import bp_be_pkg::*;
@@ -164,7 +162,7 @@ assign base_ppn = 'h80008;    //TODO: pass from upper level modules
 bp_be_dcache_pkt_s            dcache_pkt;
 logic [reg_data_width_lp-1:0] dcache_data;
 logic [ptag_width_lp-1:0]     dcache_ptag;
-logic                         dcache_ready, dcache_miss_v, dcache_v, dcache_pkt_v, dcache_tlb_miss;
+logic                         dcache_ready, dcache_miss_v, dcache_v, dcache_pkt_v, dcache_tlb_miss, dcache_poison;
 
 bp_be_dtlb
   #(.vtag_width_p(vtag_width_lp)
@@ -245,7 +243,7 @@ bp_be_dcache
     ,.ptag_i(dcache_ptag)
 
     ,.cache_miss_o(dcache_miss_v)
-    ,.poison_i(chk_poison_ex_i)
+    ,.poison_i(dcache_poison)
 
     // LCE-CCE interface
     ,.lce_req_o(lce_req_o)
@@ -293,6 +291,7 @@ always_comb
     dcache_pkt_v    = (ptw_busy)? ptw_dcache_v : mmu_cmd_v_i;
     dcache_ptag     = (ptw_busy)? ptw_dcache_ptag : tlb_r_entry.ptag;
     dcache_tlb_miss = (ptw_busy)? 1'b0 : tlb_miss;
+    dcache_poison   = (ptw_busy)? 1'b0 : chk_poison_ex_i;
     
     mmu_resp.data   = dcache_data;  
     mmu_resp.exception.cache_miss_v = dcache_miss_v;

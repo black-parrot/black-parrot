@@ -581,7 +581,7 @@ bsg_counter_clear_up
    ,.reset_i(reset_i)
 
    ,.clear_i(1'b0)
-   ,.up_i(calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v & ~cache_miss_mem3)
+   ,.up_i(calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v & ~cache_miss_mem3 & ~tlb_miss_mem3)
 
    ,.count_o(instret_cnt_lo)
    );
