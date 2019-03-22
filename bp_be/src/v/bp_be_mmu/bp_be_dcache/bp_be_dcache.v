@@ -515,15 +515,15 @@ module bp_be_dcache
   bp_be_dcache_lce_tag_mem_pkt_s lce_tag_mem_pkt;
   bp_be_dcache_lce_stat_mem_pkt_s lce_stat_mem_pkt;
 
-  logic lce_data_mem_pkt_v_lo;
+  logic lce_data_mem_pkt_v;
   logic [ways_p-1:0][data_width_p-1:0] lce_data_mem_data_li;
-  logic lce_data_mem_pkt_yumi_li;
+  logic lce_data_mem_pkt_yumi;
 
-  logic lce_tag_mem_pkt_v_lo;
-  logic lce_tag_mem_pkt_yumi_li;
+  logic lce_tag_mem_pkt_v;
+  logic lce_tag_mem_pkt_yumi;
 
-  logic lce_stat_mem_pkt_v_lo;
-  logic lce_stat_mem_pkt_yumi_li;
+  logic lce_stat_mem_pkt_v;
+  logic lce_stat_mem_pkt_yumi;
  
   bp_be_dcache_lce
     #(.lce_data_width_p(ways_p*data_width_p)
@@ -551,20 +551,20 @@ module bp_be_dcache
       ,.size_op_i(size_op_tv_r)
       ,.store_data_i(data_tv_r)
 
-      ,.data_mem_pkt_v_o(lce_data_mem_pkt_v_lo)
+      ,.data_mem_pkt_v_o(lce_data_mem_pkt_v)
       ,.data_mem_pkt_o(lce_data_mem_pkt)
       ,.data_mem_data_i(lce_data_mem_data_li)
-      ,.data_mem_pkt_yumi_i(lce_data_mem_pkt_yumi_li)
+      ,.data_mem_pkt_yumi_i(lce_data_mem_pkt_yumi)
 
-      ,.tag_mem_pkt_v_o(lce_tag_mem_pkt_v_lo)
+      ,.tag_mem_pkt_v_o(lce_tag_mem_pkt_v)
       ,.tag_mem_pkt_o(lce_tag_mem_pkt)
-      ,.tag_mem_pkt_yumi_i(lce_tag_mem_pkt_yumi_li)
+      ,.tag_mem_pkt_yumi_i(lce_tag_mem_pkt_yumi)
 
-      ,.stat_mem_pkt_v_o(lce_stat_mem_pkt_v_lo)
+      ,.stat_mem_pkt_v_o(lce_stat_mem_pkt_v)
       ,.stat_mem_pkt_o(lce_stat_mem_pkt)
       ,.dirty_i(stat_mem_data_lo.dirty)
       ,.lru_way_i(lce_lru_way_li)
-      ,.stat_mem_pkt_yumi_i(lce_stat_mem_pkt_yumi_li)
+      ,.stat_mem_pkt_yumi_i(lce_stat_mem_pkt_yumi)
   
       ,.lce_req_o(lce_req_o)
       ,.lce_req_v_o(lce_req_v_o)
@@ -713,7 +713,7 @@ module bp_be_dcache
 
   logic lce_data_mem_v;
   assign lce_data_mem_v = (lce_data_mem_pkt.opcode != e_dcache_lce_data_mem_uncached)
-    & lce_data_mem_pkt_yumi_li;
+    & lce_data_mem_pkt_yumi;
 
   assign data_mem_v_li = (load_op & tl_we)
     ? {ways_p{1'b1}}
@@ -722,7 +722,7 @@ module bp_be_dcache
       : {ways_p{lce_data_mem_v}});
 
   assign data_mem_w_li = wbuf_yumi_li
-    | (lce_data_mem_pkt_yumi_li & lce_data_mem_pkt.opcode == e_dcache_lce_data_mem_write);
+    | (lce_data_mem_pkt_yumi & lce_data_mem_pkt.opcode == e_dcache_lce_data_mem_write);
 
   logic [ways_p-1:0][data_width_p-1:0] lce_data_mem_write_data;
 
@@ -754,8 +754,8 @@ module bp_be_dcache
  
   // tag_mem
   //
-  assign tag_mem_v_li = tl_we | lce_tag_mem_pkt_yumi_li; 
-  assign tag_mem_w_li = ~tl_we & lce_tag_mem_pkt_v_lo;
+  assign tag_mem_v_li = tl_we | lce_tag_mem_pkt_yumi; 
+  assign tag_mem_w_li = ~tl_we & lce_tag_mem_pkt_v;
   assign tag_mem_addr_li = tl_we 
     ? addr_index
     : lce_tag_mem_pkt.index;
@@ -797,10 +797,10 @@ module bp_be_dcache
 
   // stat_mem
   //
-  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r) | lce_stat_mem_pkt_yumi_li;
+  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r) | lce_stat_mem_pkt_yumi;
   assign stat_mem_w_li = v_tv_r 
     ? ~(load_miss_tv | store_miss_tv)
-    : lce_stat_mem_pkt_yumi_li & (lce_stat_mem_pkt.opcode != e_dcache_lce_stat_mem_read);
+    : lce_stat_mem_pkt_yumi & (lce_stat_mem_pkt.opcode != e_dcache_lce_stat_mem_read);
   assign stat_mem_addr_li = v_tv_r
     ? addr_index_tv
     : lce_stat_mem_pkt.index;
@@ -876,7 +876,7 @@ module bp_be_dcache
   logic [way_id_width_lp-1:0] lce_data_mem_pkt_way_r;
 
   always_ff @ (posedge clk_i) begin
-    if (lce_data_mem_pkt_yumi_li
+    if (lce_data_mem_pkt_yumi
       & (lce_data_mem_pkt.opcode == e_dcache_lce_data_mem_read)) begin
 
       lce_data_mem_pkt_way_r <= lce_data_mem_pkt.way_id;
@@ -895,9 +895,9 @@ module bp_be_dcache
     );
   end
 
-  assign lce_data_mem_pkt_yumi_li = (lce_data_mem_pkt.opcode == e_dcache_lce_data_mem_uncached)
-    ? lce_data_mem_pkt_v_lo
-    : ~(load_op & tl_we) & ~wbuf_v_lo & ~lce_snoop_match_lo & lce_data_mem_pkt_v_lo;
+  assign lce_data_mem_pkt_yumi = (lce_data_mem_pkt.opcode == e_dcache_lce_data_mem_uncached)
+    ? lce_data_mem_pkt_v
+    : ~(load_op & tl_we) & ~wbuf_v_lo & ~lce_snoop_match_lo & lce_data_mem_pkt_v;
 
   //  uncached load data logic
   //
@@ -906,7 +906,7 @@ module bp_be_dcache
       uncached_load_data_v_r <= 1'b0;
     end
     else begin
-      if (lce_data_mem_pkt_yumi_li & (lce_data_mem_pkt.opcode == e_dcache_lce_data_mem_uncached)) begin
+      if (lce_data_mem_pkt_yumi & (lce_data_mem_pkt.opcode == e_dcache_lce_data_mem_uncached)) begin
         uncached_load_data_r <= lce_data_mem_pkt.data[0+:data_width_p];
         uncached_load_data_v_r <= 1'b1;
       end
@@ -923,11 +923,11 @@ module bp_be_dcache
   
   // LCE tag_mem
   //
-  assign lce_tag_mem_pkt_yumi_li = lce_tag_mem_pkt_v_lo & ~tl_we;
+  assign lce_tag_mem_pkt_yumi = lce_tag_mem_pkt_v & ~tl_we;
   
   // LCE stat_mem
   //
-  assign lce_stat_mem_pkt_yumi_li = ~(v_tv_r & ~uncached_tv_r) & lce_stat_mem_pkt_v_lo;
+  assign lce_stat_mem_pkt_yumi = ~(v_tv_r & ~uncached_tv_r) & lce_stat_mem_pkt_v;
 
   // synopsys translate_off
   if (debug_p) begin // TODO: MISSING GENERATE LABEL
