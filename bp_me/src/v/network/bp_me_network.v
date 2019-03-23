@@ -170,7 +170,8 @@ module bp_me_network
   bp_me_network_channel_data_resp #(
     .num_lce_p(num_lce_p)
     ,.num_cce_p(num_cce_p)
-    ,.block_size_bits_p(block_size_in_bits_lp)
+    ,.paddr_width_p(paddr_width_p)
+    ,.block_size_in_bits_p(block_size_in_bits_lp)
     ,.max_num_flit_p(data_resp_max_num_flit_p)
   ) data_resp_channel (
     .clk_i(clk_i)

@@ -64,6 +64,9 @@ module bp_me_top_test
     ,output logic                                          lce_data_cmd_v_o
     ,input                                                 lce_data_cmd_ready_i
 
+    ,input [bp_cce_lce_data_cmd_width_lp-1:0]              lce_data_cmd_i
+    ,input                                                 lce_data_cmd_v_i
+    ,output logic                                          lce_data_cmd_ready_o
 
   );
 
@@ -104,24 +107,24 @@ module bp_me_top_test
       ,.data_o(cce_inst_boot_rom_data_o)
       );
 
-  bp_cce_top
+  bp_me_top
     #(.num_lce_p(num_lce_p)
       ,.num_cce_p(num_cce_p)
       ,.paddr_width_p(paddr_width_p)
       ,.lce_assoc_p(lce_assoc_p)
       ,.lce_sets_p(lce_sets_p)
       ,.block_size_in_bytes_p(block_size_in_bytes_p)
-      ,.num_cce_inst_ram_els_p(num_inst_ram_els_p)
-      ,.lce_req_data_width_p(lce_req_data_width_lp)
+      ,.num_inst_ram_els_p(num_inst_ram_els_p)
+      //,.lce_req_data_width_p(lce_req_data_width_lp)
      )
-     bp_cce_top
+     bp_me_top
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
 
-      ,.cce_id_i(cce_id)
+      //,.cce_id_i(cce_id)
 
-      ,.boot_rom_addr_o(cce_inst_boot_rom_addr_i)
-      ,.boot_rom_data_i(cce_inst_boot_rom_data_o)
+      ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr_i)
+      ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data_o)
 
       // To CCE
       ,.lce_req_i(lce_req_i)
@@ -141,6 +144,11 @@ module bp_me_top_test
       ,.lce_data_cmd_o(lce_data_cmd_o)
       ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
       ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
+
+      // Transfer from LCE to LCE
+      ,.lce_data_cmd_i(lce_data_cmd_i)
+      ,.lce_data_cmd_v_i(lce_data_cmd_v_i)
+      ,.lce_data_cmd_ready_o(lce_data_cmd_ready_o)
 
       // To CCE
       ,.mem_resp_i(mem_resp_i)
