@@ -549,6 +549,7 @@ module bp_be_dcache
       ,.store_miss_i(store_miss_tv)
       ,.uncached_load_req_i(uncached_load_req)
       ,.uncached_store_req_i(uncached_store_req)
+
       ,.miss_addr_i(paddr_tv_r)
       ,.size_op_i(size_op_tv_r)
       ,.store_data_i(data_tv_r)

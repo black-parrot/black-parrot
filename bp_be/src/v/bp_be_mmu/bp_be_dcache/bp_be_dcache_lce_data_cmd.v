@@ -30,10 +30,7 @@ module bp_be_dcache_lce_data_cmd
       `bp_be_dcache_lce_data_mem_pkt_width(sets_p, ways_p, lce_data_width_p)
   )
   (
-    input clk_i
-    , input reset_i
-  
-    , output logic cce_data_received_o
+    output logic cce_data_received_o
     , output logic tr_data_received_o
     , output logic uncached_data_received_o
 

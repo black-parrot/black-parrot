@@ -124,7 +124,7 @@ module bp_me_network_channel_data_resp
       assign data_li[i][W] = data_lo[i-1][E];
     end
 
-    if (i != num_router_lp) begin
+    if (i != num_router_lp-1) begin
       assign valid_li[i][E] = valid_lo[i+1][W];
       assign ready_li[i][E] = ready_lo[i+1][W];
       assign data_li[i][E] = data_lo[i+1][W];

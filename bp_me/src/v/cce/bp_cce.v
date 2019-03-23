@@ -580,7 +580,7 @@ module bp_cce
     mem_cmd_s_o.payload.way_id = lru_way_r_o;
     mem_cmd_s_o.addr = req_addr_r_o;
     mem_cmd_s_o.non_cacheable = bp_lce_cce_req_non_cacheable_e'(flags_r_o[e_flag_sel_ucf]);
-    mem_cmd_s_o.nc_size = nc_req_size_r_o;
+    mem_cmd_s_o.nc_size = bp_lce_cce_nc_req_size_e'(nc_req_size_r_o);
 
     // Mem Data Command Queue Inputs
     mem_data_cmd_s_o.msg_type = bp_lce_cce_req_type_e'(flags_r_o[e_flag_sel_rqf]);
@@ -591,7 +591,7 @@ module bp_cce
       mem_data_cmd_s_o.data = cache_block_data_r_o;
     end
     mem_data_cmd_s_o.non_cacheable = bp_lce_cce_req_non_cacheable_e'(flags_r_o[e_flag_sel_ucf]);
-    mem_data_cmd_s_o.nc_size = nc_req_size_r_o;
+    mem_data_cmd_s_o.nc_size = bp_lce_cce_nc_req_size_e'(nc_req_size_r_o);
     // Request data for return
     mem_data_cmd_s_o.payload.lce_id = req_lce_r_o;
     mem_data_cmd_s_o.payload.way_id = lru_way_r_o;

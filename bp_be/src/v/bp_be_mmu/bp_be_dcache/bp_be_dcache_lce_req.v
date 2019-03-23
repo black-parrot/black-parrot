@@ -56,7 +56,7 @@ module bp_be_dcache_lce_req
 
     , input uncached_load_req_i
     , input uncached_store_req_i
-    , input [data_width_p-1:0] uncached_store_data_i
+    , input [data_width_p-1:0] store_data_i
     , input [1:0] size_op_i
 
     , output logic cache_miss_o
@@ -127,7 +127,7 @@ module bp_be_dcache_lce_req
   assign set_tag_received = set_tag_received_r | set_tag_received_i;
   assign miss_addr_o = miss_addr_r;
 
-  assign lce_req.data = uncached_store_data_i;
+  assign lce_req.data = store_data_i;
   assign lce_req.src_id = (lce_id_width_lp)'(lce_id_i);
   assign lce_req.non_exclusive = e_lce_req_excl;
   assign lce_req.lru_way_id = dirty_lru_flopped_r

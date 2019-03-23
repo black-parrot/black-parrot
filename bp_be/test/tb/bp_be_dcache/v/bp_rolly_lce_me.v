@@ -142,6 +142,7 @@ module bp_rolly_lce_me
 
       ,.tlb_miss_i(dcache_tlb_miss_li[i])
       ,.ptag_i(dcache_ptag_li[i])
+      ,.uncached_i(1'b0)
 
       ,.cache_miss_o(cache_miss_lo[i])
       ,.poison_i(cache_miss_lo[i])
@@ -284,6 +285,7 @@ module bp_rolly_lce_me
         ,.block_size_in_bytes_p(lce_data_width_lp/8)
         ,.lce_sets_p(sets_p)
         ,.mem_els_p(mem_els_p)
+        ,.lce_req_data_width_p(64)
         ,.boot_rom_width_p(lce_data_width_lp)
         ,.boot_rom_els_p(boot_rom_els_p)
         )
