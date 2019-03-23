@@ -150,6 +150,9 @@ module testbench();
 
   initial begin
     wait(&dcache_done);
+    //for (int i = 0; i < 1000000; i++) begin
+    //  @(posedge clk);
+    //end
     $finish;
   end
 

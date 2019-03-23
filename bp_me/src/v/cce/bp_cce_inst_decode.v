@@ -174,7 +174,7 @@ module bp_cce_inst_decode
       // enqueue signals
       // Ready->Valid protocol
       decoded_inst_o.lce_cmd_v = lce_cmd_ready_i && pushq_op && (pushq_qsel == e_dst_q_lce_cmd);
-      decoded_inst_o.lce_data_cmd_v = lce_data_cmd_ready_i && pushq_op
+      decoded_inst_o.lce_data_cmd_v = pushq_op
                                       && (pushq_qsel == e_dst_q_lce_data_cmd);
       decoded_inst_o.mem_cmd_v = mem_cmd_ready_i && pushq_op && (pushq_qsel == e_dst_q_mem_cmd);
       decoded_inst_o.mem_data_cmd_v = mem_data_cmd_ready_i && pushq_op

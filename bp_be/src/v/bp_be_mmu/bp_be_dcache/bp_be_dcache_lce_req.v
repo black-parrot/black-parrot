@@ -127,7 +127,6 @@ module bp_be_dcache_lce_req
   assign set_tag_received = set_tag_received_r | set_tag_received_i;
   assign miss_addr_o = miss_addr_r;
 
-  assign lce_req.data = store_data_i;
   assign lce_req.src_id = (lce_id_width_lp)'(lce_id_i);
   assign lce_req.non_exclusive = e_lce_req_excl;
   assign lce_req.lru_way_id = dirty_lru_flopped_r
@@ -161,6 +160,7 @@ module bp_be_dcache_lce_req
     lce_req.non_cacheable = e_lce_req_cacheable;
     lce_req.msg_type = e_lce_req_type_rd;
     lce_req.nc_size = bp_lce_cce_nc_req_size_e'(size_op_i);
+    lce_req.data = '0;
 
     lce_resp_v_o = 1'b0;
     lce_resp.msg_type = e_lce_cce_tr_ack;
@@ -197,6 +197,7 @@ module bp_be_dcache_lce_req
           lce_req.msg_type = e_lce_req_type_rd;
           lce_req.non_cacheable = e_lce_req_non_cacheable;
           lce_req.nc_size = bp_lce_cce_nc_req_size_e'(size_op_i);
+          lce_req.data = store_data_i;
 
           cache_miss_o = ~lce_req_ready_i;
           state_n = e_READY;
