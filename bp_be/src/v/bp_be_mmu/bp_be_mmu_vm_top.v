@@ -132,14 +132,9 @@ module bp_be_mmu_vm_top
 // Cast input and output ports 
 bp_be_mmu_cmd_s        mmu_cmd;
 bp_be_mmu_resp_s       mmu_resp;
-bp_be_mmu_vaddr_s      mmu_cmd_vaddr;
 
 assign mmu_cmd    = mmu_cmd_i;
 assign mmu_resp_o = mmu_resp;
-
-// TODO: This struct is not working properly (mismatched widths in synth). Figure out why.
-//         This cast works, though
-assign mmu_cmd_vaddr = mmu_cmd.vaddr;
 
 /* Suppress warnings */
 logic unused0;
@@ -147,13 +142,13 @@ assign unused0 = mmu_resp_ready_i;
 
 /* Internal connections */
 /* TLB ports */
-logic                     tlb_en, tlb_miss, tlb_miss_r, tlb_r_v, tlb_w_v;
+logic                     tlb_en, tlb_miss, tlb_w_v;
 logic [vtag_width_lp-1:0] tlb_w_vtag, tlb_miss_vtag;
 bp_be_tlb_entry_s         tlb_r_entry, tlb_w_entry;
 
 /* PTW ports */
 logic [ptag_width_lp-1:0] base_ppn, ptw_dcache_ptag;
-logic                     ptw_dcache_v;
+logic                     ptw_dcache_v, ptw_busy;
 bp_be_dcache_pkt_s        ptw_dcache_pkt; 
 
 assign base_ppn = 'h80008;    //TODO: pass from upper level modules
@@ -174,8 +169,8 @@ bp_be_dtlb
    ,.reset_i(reset_i)
    ,.en_i(1'b1)
    
-   ,.r_v_i(tlb_r_v)
-   ,.r_vtag_i(mmu_cmd_vaddr.tag)
+   ,.r_v_i(mmu_cmd_v_i)
+   ,.r_vtag_i(mmu_cmd.vaddr.tag)
    
    ,.r_v_o()
    ,.r_entry_o(tlb_r_entry)
@@ -199,6 +194,7 @@ bp_be_ptw
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.base_ppn_i(base_ppn)
+   ,.busy_o(ptw_busy)
    
    ,.tlb_miss_v_i(tlb_miss)
    ,.tlb_miss_vtag_i(tlb_miss_vtag)
@@ -236,7 +232,7 @@ bp_be_dcache
     ,.ready_o(dcache_ready)
 
     ,.v_o(dcache_v)
-    ,.data_o(dcache_data/*mmu_resp.data*/)
+    ,.data_o(dcache_data)
 
     ,.tlb_miss_i(dcache_tlb_miss)
     ,.ptag_i(dcache_ptag)
@@ -275,41 +271,31 @@ bp_be_dcache
     ,.lce_tr_resp_v_o(lce_tr_resp_v_o)
     ,.lce_tr_resp_ready_i(lce_tr_resp_ready_i)
     );
-
-always_ff @(posedge clk_i) begin
-  if(reset_i) begin
-    tlb_miss_r <= 1'b0;
-  end
-  else begin
-    tlb_miss_r <= tlb_miss;
-  end
-end
     
 always_comb 
   begin
-    if(tlb_miss) begin
+    if(ptw_busy) begin
       dcache_pkt = ptw_dcache_pkt;
     end
     else begin
       dcache_pkt.opcode      = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
-      dcache_pkt.page_offset = {mmu_cmd_vaddr.index, mmu_cmd_vaddr.offset};
+      dcache_pkt.page_offset = {mmu_cmd.vaddr.index, mmu_cmd.vaddr.offset};
       dcache_pkt.data        = mmu_cmd.data;
     end
     
-    tlb_r_v         = (tlb_miss)? 1'b0 : mmu_cmd_v_i;
-    dcache_pkt_v    = (tlb_miss)? ptw_dcache_v : mmu_cmd_v_i;
-    dcache_ptag     = (tlb_miss)? ptw_dcache_ptag : tlb_r_entry.ptag;
-    dcache_tlb_miss = (tlb_miss)? 1'b0 : tlb_miss;
-    dcache_poison   = (tlb_miss)? 1'b0 : chk_poison_ex_i;
+    dcache_pkt_v    = (ptw_busy)? ptw_dcache_v : mmu_cmd_v_i;
+    dcache_ptag     = (ptw_busy)? ptw_dcache_ptag : tlb_r_entry.ptag;
+    dcache_tlb_miss = (ptw_busy)? 1'b0 : tlb_miss;
+    dcache_poison   = (ptw_busy)? 1'b0 : chk_poison_ex_i;
     
     mmu_resp.data   = dcache_data;  
     mmu_resp.exception.cache_miss_v = dcache_miss_v;
-    mmu_resp.exception.tlb_miss_v = tlb_miss_r;
+    mmu_resp.exception.tlb_miss_v = tlb_miss;
   end
 
 // Ready-valid handshakes
-assign mmu_resp_v_o    = (tlb_miss)? 1'b0: dcache_v;
-assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~tlb_miss_r;
+assign mmu_resp_v_o    = (ptw_busy)? 1'b0: dcache_v;
+assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~tlb_miss;
 
 endmodule : bp_be_mmu_vm_top
 

@@ -185,7 +185,7 @@ logic [reg_data_width_lp-1:0] bypass_frs1, bypass_frs2;
 logic [reg_data_width_lp-1:0] bypass_rs1 , bypass_rs2;
 
 // Exception signals
-logic illegal_instr_isd, csr_instr_isd, ret_instr_isd, cache_miss_mem3, tlb_miss_mem3;
+logic illegal_instr_isd, csr_instr_isd, ret_instr_isd, cache_miss_mem3, tlb_miss_mem2;
 
 // Pipeline stage registers
 bp_be_pipe_stage_reg_s [pipe_stage_els_lp-1:0] calc_stage_r;
@@ -404,7 +404,7 @@ bp_be_pipe_mem
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.kill_ex1_i(exc_stage_n[1].poison_v)
+   ,.kill_ex1_i(exc_stage_n[1].poison_v | exc_stage_n[2].tlb_miss_v)
    ,.kill_ex2_i(exc_stage_n[2].poison_v)
    ,.kill_ex3_i(exc_stage_n[3].poison_v) 
 
@@ -446,7 +446,7 @@ bp_be_pipe_mem
    ,.data_o(pipe_mem_data_lo)
 
    ,.cache_miss_o(cache_miss_mem3)
-   ,.tlb_miss_o(tlb_miss_mem3)
+   ,.tlb_miss_o(tlb_miss_mem2)
    );
 
 // Floating point pipe: 4 cycle latency
@@ -581,7 +581,7 @@ bsg_counter_clear_up
    ,.reset_i(reset_i)
 
    ,.clear_i(1'b0)
-   ,.up_i(calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v & ~cache_miss_mem3 & ~tlb_miss_mem3)
+   ,.up_i(calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v & ~cache_miss_mem3 & ~exc_stage_r[2].tlb_miss_v)
 
    ,.count_o(instret_cnt_lo)
    );
@@ -690,7 +690,7 @@ always_comb
     calc_status.mem3_pc           = calc_stage_r[2].instr_metadata.pc;
     // We don't want cache_miss itself to trigger the exception invalidation
     calc_status.mem3_cache_miss_v = cache_miss_mem3 & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v; 
-    calc_status.mem3_tlb_miss_v   = tlb_miss_mem3 & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v;
+    calc_status.mem3_tlb_miss_v   = exc_stage_r[2].tlb_miss_v & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v;
     calc_status.mem3_exception_v  = exc_stage_r[2].illegal_instr_v & ~exc_stage_r[2].poison_v;
     calc_status.mem3_ret_v        = exc_stage_r[2].ret_instr_v & ~exc_stage_r[2].poison_v;
     calc_status.instr_cmt_v       = calc_stage_r[2].instr_v & ~exc_stage_r[2].roll_v;
@@ -731,8 +731,8 @@ always_comb
         exc_stage_n[2].poison_v        = exc_stage_r[1].poison_v | chk_poison_ex2_i;
         exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | chk_poison_ex3_i;
 
+        exc_stage_n[2].tlb_miss_v      = tlb_miss_mem2; 
         exc_stage_n[3].cache_miss_v    = cache_miss_mem3; 
-        exc_stage_n[3].tlb_miss_v      = tlb_miss_mem3; 
   end
 
 if (trace_p)

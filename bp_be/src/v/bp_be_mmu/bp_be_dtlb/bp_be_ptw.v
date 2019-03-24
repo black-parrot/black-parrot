@@ -27,6 +27,7 @@ module bp_be_ptw
   (input                                    clk_i
    , input                                  reset_i
    , input [ppn_width_lp-1:0]               base_ppn_i
+   , output                                 busy_o
    
    // TLB connections
    , input                                  tlb_miss_v_i
@@ -102,13 +103,15 @@ module bp_be_ptw
   assign dcache_pkt.page_offset = {partial_vpn[level_cntr], (lg_pte_size_in_bytes_lp)'(0)};
   assign dcache_pkt.data        = '0;
     
+  assign busy_o                 = (state_r != eIdle);
+    
   assign start                  = (state_r == eIdle) & tlb_miss_v_i;
   
   assign pte_leaf_v             = dcache_data.x | dcache_data.w | dcache_data.r;
   
-  assign level_cntr_en          = (state_r != eIdle) & dcache_v_i & ~pte_leaf_v;
+  assign level_cntr_en          = busy_o & dcache_v_i & ~pte_leaf_v;
   
-  assign ppn_en                 = start | ((state_r != eIdle) & dcache_v_i);
+  assign ppn_en                 = start | (busy_o & dcache_v_i);
   assign ppn_n                  = (state_r == eIdle)? base_ppn_i : dcache_data.ppn;
   assign vpn_n                  = tlb_miss_vtag_i;
   
