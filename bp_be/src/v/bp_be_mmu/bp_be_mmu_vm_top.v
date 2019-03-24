@@ -147,13 +147,13 @@ assign unused0 = mmu_resp_ready_i;
 
 /* Internal connections */
 /* TLB ports */
-logic                     tlb_en, tlb_miss, tlb_w_v;
+logic                     tlb_en, tlb_miss, tlb_miss_r, tlb_r_v, tlb_w_v;
 logic [vtag_width_lp-1:0] tlb_w_vtag, tlb_miss_vtag;
 bp_be_tlb_entry_s         tlb_r_entry, tlb_w_entry;
 
 /* PTW ports */
 logic [ptag_width_lp-1:0] base_ppn, ptw_dcache_ptag;
-logic                     ptw_dcache_v, ptw_busy;
+logic                     ptw_dcache_v;
 bp_be_dcache_pkt_s        ptw_dcache_pkt; 
 
 assign base_ppn = 'h80008;    //TODO: pass from upper level modules
@@ -174,7 +174,7 @@ bp_be_dtlb
    ,.reset_i(reset_i)
    ,.en_i(1'b1)
    
-   ,.r_v_i(mmu_cmd_v_i)
+   ,.r_v_i(tlb_r_v)
    ,.r_vtag_i(mmu_cmd_vaddr.tag)
    
    ,.r_v_o()
@@ -202,7 +202,6 @@ bp_be_ptw
    
    ,.tlb_miss_v_i(tlb_miss)
    ,.tlb_miss_vtag_i(tlb_miss_vtag)
-   ,.busy_o(ptw_busy)
    
    ,.tlb_w_v_o(tlb_w_v)
    ,.tlb_w_vtag_o(tlb_w_vtag)
@@ -277,9 +276,18 @@ bp_be_dcache
     ,.lce_tr_resp_ready_i(lce_tr_resp_ready_i)
     );
 
+always_ff @(posedge clk_i) begin
+  if(reset_i) begin
+    tlb_miss_r <= 1'b0;
+  end
+  else begin
+    tlb_miss_r <= tlb_miss;
+  end
+end
+    
 always_comb 
   begin
-    if(ptw_busy) begin
+    if(tlb_miss) begin
       dcache_pkt = ptw_dcache_pkt;
     end
     else begin
@@ -288,19 +296,20 @@ always_comb
       dcache_pkt.data        = mmu_cmd.data;
     end
     
-    dcache_pkt_v    = (ptw_busy)? ptw_dcache_v : mmu_cmd_v_i;
-    dcache_ptag     = (ptw_busy)? ptw_dcache_ptag : tlb_r_entry.ptag;
-    dcache_tlb_miss = (ptw_busy)? 1'b0 : tlb_miss;
-    dcache_poison   = (ptw_busy)? 1'b0 : chk_poison_ex_i;
+    tlb_r_v         = (tlb_miss)? 1'b0 : mmu_cmd_v_i;
+    dcache_pkt_v    = (tlb_miss)? ptw_dcache_v : mmu_cmd_v_i;
+    dcache_ptag     = (tlb_miss)? ptw_dcache_ptag : tlb_r_entry.ptag;
+    dcache_tlb_miss = (tlb_miss)? 1'b0 : tlb_miss;
+    dcache_poison   = (tlb_miss)? 1'b0 : chk_poison_ex_i;
     
     mmu_resp.data   = dcache_data;  
     mmu_resp.exception.cache_miss_v = dcache_miss_v;
-    mmu_resp.exception.tlb_miss_v = tlb_miss;
+    mmu_resp.exception.tlb_miss_v = tlb_miss_r;
   end
 
 // Ready-valid handshakes
-assign mmu_resp_v_o    = (ptw_busy)? 1'b0: dcache_v;
-assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~tlb_miss;
+assign mmu_resp_v_o    = (tlb_miss)? 1'b0: dcache_v;
+assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~tlb_miss_r;
 
 endmodule : bp_be_mmu_vm_top
 
