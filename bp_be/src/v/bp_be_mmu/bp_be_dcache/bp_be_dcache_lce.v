@@ -249,27 +249,6 @@ module bp_be_dcache_lce
   logic lce_cmd_to_lce_resp_v_lo;
   logic lce_cmd_to_lce_resp_yumi_li;
 
-  logic lce_cmd_fifo_v_lo;
-  logic lce_cmd_fifo_yumi_li;
-  bp_cce_lce_cmd_s lce_cmd_fifo_data_lo;
-
-  // this two_fifo is needed to convert from valid-yumi to valid-ready interface.
-  bsg_two_fifo
-    #(.width_p(cce_lce_cmd_width_lp)
-      )
-    lce_cmd_fifo 
-      (.clk_i(clk_i)
-      ,.reset_i(reset_i)
-    
-      ,.ready_o(lce_cmd_ready_o)
-      ,.data_i(lce_cmd)
-      ,.v_i(lce_cmd_v_i)
-  
-      ,.v_o(lce_cmd_fifo_v_lo)
-      ,.data_o(lce_cmd_fifo_data_lo)
-      ,.yumi_i(lce_cmd_fifo_yumi_li)
-      );
-
   bp_be_dcache_lce_cmd
     #(.num_cce_p(num_cce_p)
       ,.num_lce_p(num_lce_p)
@@ -289,9 +268,9 @@ module bp_be_dcache_lce
       ,.set_tag_received_o(set_tag_received)
       ,.set_tag_wakeup_received_o(set_tag_wakeup_received)
 
-      ,.lce_cmd_i(lce_cmd_fifo_data_lo)
-      ,.lce_cmd_v_i(lce_cmd_fifo_v_lo)
-      ,.lce_cmd_yumi_o(lce_cmd_fifo_yumi_li)
+      ,.lce_cmd_i(lce_cmd)
+      ,.lce_cmd_v_i(lce_cmd_v_i)
+      ,.lce_cmd_yumi_o(lce_cmd_ready_o)
 
       ,.lce_resp_o(lce_cmd_to_lce_resp_lo)
       ,.lce_resp_v_o(lce_cmd_to_lce_resp_v_lo)
@@ -327,26 +306,6 @@ module bp_be_dcache_lce
   logic lce_data_cmd_data_mem_pkt_v_lo;
   logic lce_data_cmd_data_mem_pkt_yumi_li;
 
-  bp_lce_data_cmd_s lce_data_cmd_fifo_data_lo;
-  logic lce_data_cmd_fifo_v_lo;
-  logic lce_data_cmd_fifo_yumi_li;
-
-  // this two_fifo is needed to convert from valid-yumi to valid-ready interface.
-  bsg_two_fifo
-    #(.width_p(lce_data_cmd_width_lp))
-    lce_data_cmd_fifo
-      (.clk_i(clk_i)
-      ,.reset_i(reset_i)
-    
-      ,.ready_o(lce_data_cmd_ready_o)
-      ,.data_i(lce_data_cmd_in)
-      ,.v_i(lce_data_cmd_v_i)
-  
-      ,.v_o(lce_data_cmd_fifo_v_lo)
-      ,.data_o(lce_data_cmd_fifo_data_lo)
-      ,.yumi_i(lce_data_cmd_fifo_yumi_li)
-      );
-
   bp_be_dcache_lce_data_cmd
     #(.num_cce_p(num_cce_p)
       ,.num_lce_p(num_lce_p)
@@ -363,9 +322,9 @@ module bp_be_dcache_lce
 
       ,.miss_addr_i(miss_addr_lo)
      
-      ,.lce_data_cmd_i(lce_data_cmd_fifo_data_lo)
-      ,.lce_data_cmd_v_i(lce_data_cmd_fifo_v_lo)
-      ,.lce_data_cmd_yumi_o(lce_data_cmd_fifo_yumi_li)
+      ,.lce_data_cmd_i(lce_data_cmd_in)
+      ,.lce_data_cmd_v_i(lce_data_cmd_v_i)
+      ,.lce_data_cmd_yumi_o(lce_data_cmd_ready_o)
      
       ,.data_mem_pkt_o(lce_data_cmd_data_mem_pkt_lo)
       ,.data_mem_pkt_v_o(lce_data_cmd_data_mem_pkt_v_lo)
