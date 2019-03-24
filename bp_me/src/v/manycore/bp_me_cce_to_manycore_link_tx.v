@@ -149,10 +149,10 @@ module bp_cce_to_manycore_link_tx
     tx_pkt.op = `ePacketOp_remote_store;
     tx_pkt.op_ex = {link_mask_width_lp{1'b1}};
     tx_pkt.payload = mux_data_lo;
-    rx_pkt.src_y_cord = my_y_i;
-    rx_pkt.src_x_cord = my_x_i;
-    rx_pkt.y_cord = dram_y_i;
-    rx_pkt.x_cord = '0;
+    tx_pkt.src_y_cord = my_y_i;
+    tx_pkt.src_x_cord = my_x_i;
+    tx_pkt.y_cord = dram_y_i;
+    tx_pkt.x_cord = '0;
 
     case (tx_state_r)
 
