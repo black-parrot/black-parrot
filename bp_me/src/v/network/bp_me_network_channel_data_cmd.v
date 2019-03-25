@@ -168,7 +168,7 @@ module bp_me_network_channel_data_cmd
 
       ,.data_i(lce_packet_in[i])
       ,.v_i(lce_lce_data_cmd_v_i[i])
-      ,.yumi_o(lce_lce_data_cmd_ready_o[i])
+      ,.ready_o(lce_lce_data_cmd_ready_o[i])
 
       ,.data_o(data_li[i][N])
       ,.v_o(valid_li[i][N])
@@ -208,7 +208,7 @@ module bp_me_network_channel_data_cmd
 
       ,.data_i(cce_packet_in[i])
       ,.v_i(cce_lce_data_cmd_v_i[i])
-      ,.yumi_o(cce_lce_data_cmd_ready_o[i])
+      ,.ready_o(cce_lce_data_cmd_ready_o[i])
 
       ,.data_o(data_li[i][S])
       ,.v_o(valid_li[i][S])

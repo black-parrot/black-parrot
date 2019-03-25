@@ -165,7 +165,7 @@ module bp_me_network_channel_data_resp
 
       ,.data_i(lce_packet[i])
       ,.v_i(lce_data_resp_v_i[i])
-      ,.yumi_o(lce_data_resp_ready_o[i])
+      ,.ready_o(lce_data_resp_ready_o[i])
 
       ,.data_o(data_li[i][N])
       ,.v_o(valid_li[i][N])
