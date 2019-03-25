@@ -32,11 +32,11 @@ module bp_fe_lce_data_cmd
 
 
 
-    , parameter bp_lce_data_cmd_width_lp=`bp_lce_data_cmd_width(num_lce_p
+    , parameter lce_data_cmd_width_lp=`bp_lce_data_cmd_width(num_lce_p
                                                                 ,lce_data_width_p
                                                                 ,ways_p
                                                                )
-    , parameter bp_fe_icache_lce_data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(sets_p
+    , parameter data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(sets_p
                                                                                             ,ways_p
                                                                                             ,lce_data_width_p
                                                                                            )
@@ -51,7 +51,7 @@ module bp_fe_lce_data_cmd
     , output logic                                               lce_data_cmd_yumi_o
                  
     , output logic                                               data_mem_pkt_v_o
-    , output logic [bp_fe_icache_lce_data_mem_pkt_width_lp-1:0]  data_mem_pkt_o
+    , output logic [data_mem_pkt_width_lp-1:0]  data_mem_pkt_o
     , input                                                      data_mem_pkt_yumi_i
    );
 
@@ -63,8 +63,8 @@ module bp_fe_lce_data_cmd
    
 									       
   `declare_bp_lce_data_cmd_s(num_lce_p, lce_data_width_p, ways_p);
-  bp_lce_data_cmd_s lce_data_cmd_li;
-  assign lce_data_cmd_li = lce_data_cmd_i;
+  bp_lce_data_cmd_s lce_data_cmd;
+  assign lce_data_cmd = lce_data_cmd_i;
    
   `declare_bp_fe_icache_lce_data_mem_pkt_s(sets_p, ways_p, lce_data_width_p);
   bp_fe_icache_lce_data_mem_pkt_s data_mem_pkt_lo;
@@ -73,8 +73,8 @@ module bp_fe_lce_data_cmd
   assign data_mem_pkt_lo.index   = miss_addr_i[byte_offset_width_lp
                                                     +word_offset_width_lp
                                                     +:index_width_lp];
-  assign data_mem_pkt_lo.way_id  = lce_data_cmd_li.way_id;
-  assign data_mem_pkt_lo.data    = lce_data_cmd_li.data;
+  assign data_mem_pkt_lo.way_id  = lce_data_cmd.way_id;
+  assign data_mem_pkt_lo.data    = lce_data_cmd.data;
   assign data_mem_pkt_lo.we      = 1'b1;
   
   assign data_mem_pkt_v_o        = lce_data_cmd_v_i;

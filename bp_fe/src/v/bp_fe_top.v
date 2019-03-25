@@ -81,7 +81,7 @@ module bp_fe_top
 
    , input [bp_fe_cmd_width_lp-1:0]                   fe_cmd_i
    , input                                            fe_cmd_v_i
-   , output                                           fe_cmd_ready_o
+   , output                                         logic fe_cmd_ready_o
 
    , output [bp_fe_queue_width_lp-1:0]                fe_queue_o
    , output                                           fe_queue_v_o

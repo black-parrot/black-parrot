@@ -43,15 +43,15 @@ module bp_fe_lce_cmd
 
     , parameter timeout_max_limit_p=4
 
-    , parameter bp_fe_icache_lce_data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(sets_p 
+    , parameter data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(sets_p 
                                                                                             ,ways_p
                                                                                             ,lce_data_width_p
                                                                                            )
-    , parameter bp_fe_icache_lce_tag_mem_pkt_width_lp=`bp_fe_icache_lce_tag_mem_pkt_width(sets_p
+    , parameter tag_mem_pkt_width_lp=`bp_fe_icache_lce_tag_mem_pkt_width(sets_p
                                                                                           ,ways_p
                                                                                           ,tag_width_lp
                                                                                          )
-    , parameter bp_fe_icache_lce_metadata_mem_pkt_width_lp=`bp_fe_icache_lce_metadata_mem_pkt_width(sets_p
+    , parameter metadata_mem_pkt_width_lp=`bp_fe_icache_lce_metadata_mem_pkt_width(sets_p
                                                                                                       ,ways_p
                                                                                                      )
     , localparam bp_cce_lce_cmd_width_lp=
@@ -74,16 +74,16 @@ module bp_fe_lce_cmd
     , output logic                                               tag_set_wakeup_o
 
     , input [lce_data_width_p-1:0]                               data_mem_data_i
-    , output logic [bp_fe_icache_lce_data_mem_pkt_width_lp-1:0]  data_mem_pkt_o
+    , output logic [data_mem_pkt_width_lp-1:0]  data_mem_pkt_o
     , output logic                                               data_mem_pkt_v_o
     , input                                                      data_mem_pkt_yumi_i
 
-    , output logic [bp_fe_icache_lce_tag_mem_pkt_width_lp-1:0]   tag_mem_pkt_o
+    , output logic [tag_mem_pkt_width_lp-1:0]   tag_mem_pkt_o
     , output logic                                               tag_mem_pkt_v_o
     , input                                                      tag_mem_pkt_yumi_i
 
     , output logic                                               metadata_mem_pkt_v_o
-    , output logic [bp_fe_icache_lce_metadata_mem_pkt_width_lp-1:0] metadata_mem_pkt_o
+    , output logic [metadata_mem_pkt_width_lp-1:0] metadata_mem_pkt_o
     , input                                                      metadata_mem_pkt_yumi_i
 
     , output logic [bp_lce_cce_resp_width_lp-1:0]                lce_resp_o
@@ -114,7 +114,7 @@ module bp_fe_lce_cmd
    
 
   `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, ways_p);
-  bp_cce_lce_cmd_s lce_cmd_i;
+  bp_cce_lce_cmd_s lce_cmd;
 
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
   bp_lce_cce_resp_s lce_resp;
@@ -149,6 +149,7 @@ module bp_fe_lce_cmd
     lce_resp_v_o        = 1'b0;
     lce_cmd_yumi_o      = 1'b0;
     lce_data_resp_v_o   = 1'b0;
+    lce_data_cmd_v_o   = 1'b0;
 
     data_mem_pkt_v_o       = 1'b0;
     tag_mem_pkt_v_o        = 1'b0;
@@ -258,17 +259,16 @@ module bp_fe_lce_cmd
       end
 
       e_lce_cmd_transfer_tmp: begin //Todo: double check
-        flag_data_buffered_n       = ~lce_tr_ready_i;
+        flag_data_buffered_n       = ~lce_data_cmd_ready_i;
         data_n                     = flag_data_buffered_r ? data_r : data_mem_data_i;
         lce_data_cmd_out.dst_id  = lce_cmd.target;
         //is this needed?
-        lce_data_cmd_out.src_id  = id_i;
         lce_data_cmd_out.way_id  = lce_cmd.target_way_id;
-        lce_data_cmd_out.addr    = lce_cmd.addr;
+        lce_data_cmd_out.msg_type = e_lce_data_cmd_transfer;
         lce_data_cmd_out.data    = flag_data_buffered_r ? data_r : data_mem_data_i;
-        lce_cmd_yumi_o           = lce_tr_ready_i;
+        lce_cmd_yumi_o           = lce_data_cmd_ready_i;
         lce_data_cmd_v_o         = 1'b1;
-        state_n                  = lce_tr_ready_i ? e_lce_cmd_ready : e_lce_cmd_transfer_tmp;
+        state_n                  = lce_data_cmd_ready_i ? e_lce_cmd_ready : e_lce_cmd_transfer_tmp;
       end
 
       e_lce_cmd_reset: begin

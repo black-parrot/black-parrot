@@ -37,8 +37,7 @@ module bp_fe_lce_req
     , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                            ,num_lce_p
                                                            ,paddr_width_p
-                                                           ,ways_p
-                                                          )
+                                                           ,ways_p, data_width_p)
     , localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
 
     )
@@ -80,7 +79,7 @@ module bp_fe_lce_req
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
   bp_lce_cce_resp_s lce_resp_lo;
 
-  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, ways_p);
+  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, ways_p, data_width_p);
   bp_lce_cce_req_s lce_req_lo;
 
   assign lce_req_o  = lce_req_lo;
@@ -120,10 +119,13 @@ module bp_fe_lce_req
 
     lce_req_lo.src_id        = (lce_id_width_lp)'(id_i);
     lce_req_lo.non_exclusive = e_lce_req_not_excl; 
+    lce_req_lo.non_cacheable = e_lce_req_cacheable; 
+    lce_req_lo.nc_size = e_lce_nc_req_1; 
     lce_req_lo.msg_type      = e_lce_req_type_rd;
     lce_req_lo.addr          = miss_addr_r;
     lce_req_lo.lru_way_id    = lru_way_r;
     lce_req_lo.lru_dirty     = e_lce_req_lru_clean;
+    lce_req_lo.data = '0;
     lce_req_v_o              = 1'b0;
 
     lce_resp_lo.src_id       = id_i;
