@@ -53,36 +53,18 @@ module icache
     , localparam bp_fe_pc_gen_icache_width_lp=`bp_fe_pc_gen_icache_width(eaddr_width_p)
     , localparam bp_fe_itlb_icache_data_resp_width_lp=`bp_fe_itlb_icache_data_resp_width(tag_width_lp)
 
-    , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
-                                                              ,num_lce_p
-                                                              ,paddr_width_p
-                                                              ,ways_p
-                                                             )
-    , localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
-                                                                ,num_lce_p
-                                                                ,paddr_width_p
-                                                               )
-    , localparam bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p
-                                                                          ,num_lce_p
-                                                                          ,paddr_width_p
-                                                                          ,lce_data_width_lp
-                                                                         )
-    , localparam bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p
-                                                              ,num_lce_p
-                                                              ,paddr_width_p
-                                                              ,ways_p
-                                                             )
-    , localparam bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
-                                                                        ,num_lce_p
-                                                                        ,paddr_width_p
-                                                                        ,lce_data_width_lp
-                                                                        ,ways_p
-                                                                       )
-    , localparam bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p
-                                                                      ,paddr_width_p
-                                                                      ,lce_data_width_lp
-                                                                      ,ways_p
-                                                                     )
+
+    , localparam bp_lce_cce_req_width_lp=
+      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, ways_p, data_width_p)
+    , localparam bp_lce_cce_resp_width_lp=
+      `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
+    , localparam bp_lce_cce_data_resp_width_lp=
+      `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_lp)
+    , localparam bp_cce_lce_cmd_width_lp=
+      `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, ways_p)
+    , localparam bp_lce_data_cmd_width_lp=
+      `bp_lce_data_cmd_width(num_lce_p, lce_data_width_lp, ways_p)
+
 
     , localparam bp_fe_icache_tag_set_width_lp=`bp_fe_icache_tag_set_width(tag_width_lp
                                                                           ,ways_p
@@ -131,18 +113,13 @@ module icache
     , input                                            lce_cmd_v_i
     , output logic                                     lce_cmd_ready_o
 
-    , input [bp_cce_lce_data_cmd_width_lp-1:0]         lce_data_cmd_i
+    , input [bp_lce_data_cmd_width_lp-1:0]             lce_data_cmd_i
     , input                                            lce_data_cmd_v_i
     , output logic                                     lce_data_cmd_ready_o
 
-    , input [bp_lce_lce_tr_resp_width_lp-1:0]          lce_tr_resp_i
-    , input                                            lce_tr_resp_v_i
-    , output logic                                     lce_tr_resp_ready_o
-
-    , output logic [bp_lce_lce_tr_resp_width_lp-1:0]   lce_tr_resp_o
-    , output logic                                     lce_tr_resp_v_o
-    , input                                            lce_tr_resp_ready_i
-
+    , output logic [bp_lce_data_cmd_width_lp-1:0]      lce_data_cmd_o
+    , output logic                                     lce_data_cmd_v_o
+    , input                                            lce_data_cmd_ready_i 
  );
 
 
@@ -386,7 +363,6 @@ module icache
    .data_width_p(data_width_p)
    ,.paddr_width_p(paddr_width_p)
    ,.lce_data_width_p(lce_data_width_lp)
-   ,.lce_addr_width_p(paddr_width_p)
    ,.sets_p(sets_p)
    ,.ways_p(ways_p)
    ,.num_cce_p(num_cce_p)
@@ -437,13 +413,9 @@ module icache
    ,.lce_data_cmd_v_i(lce_data_cmd_v_i)
    ,.lce_data_cmd_ready_o(lce_data_cmd_ready_o)
 
-   ,.lce_tr_resp_i(lce_tr_resp_i)
-   ,.lce_tr_resp_v_i(lce_tr_resp_v_i)
-   ,.lce_tr_resp_ready_o(lce_tr_resp_ready_o)
-
-   ,.lce_tr_resp_o(lce_tr_resp_o)
-   ,.lce_tr_resp_v_o(lce_tr_resp_v_o)
-   ,.lce_tr_resp_ready_i(lce_tr_resp_ready_i)
+    ,.lce_data_cmd_o(lce_data_cmd_o)
+    ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
+    ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
   ); 
 
   // output stage

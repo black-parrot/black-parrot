@@ -18,7 +18,7 @@ module bp_fe_top
    , parameter lce_sets_p="inv"
    , parameter cce_block_size_in_bytes_p="inv"
 
-   , localparam reg_data_width_lp = rv64_reg_data_width_gp
+   , localparam data_width_p      = rv64_reg_data_width_gp
    , localparam eaddr_width_lp    = rv64_eaddr_width_gp
    , localparam instr_width_lp    = rv64_instr_width_gp   
 
@@ -27,7 +27,7 @@ module bp_fe_top
    , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)
    , localparam block_size_in_words_lp=lce_assoc_p
    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
-   , localparam data_mask_width_lp=(reg_data_width_lp>>3)
+   , localparam data_mask_width_lp=(data_width_p>>3)
    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
 
 
@@ -37,37 +37,21 @@ module bp_fe_top
 
    , localparam vaddr_offset_width_lp=(index_width_lp+lg_lce_assoc_lp+byte_offset_width_lp)
    , localparam addr_width_lp=(vaddr_offset_width_lp+tag_width_lp)
-   , localparam lce_data_width_lp=(lce_assoc_p*reg_data_width_lp)
-   , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p 
-                                                              ,num_lce_p
-                                                              ,addr_width_lp
-                                                              ,lce_assoc_p
-                                                             )
-   , localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
-                                                                ,num_lce_p
-                                                                ,addr_width_lp
-                                                               )
-   , localparam bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p
-                                                                          ,num_lce_p
-                                                                          ,addr_width_lp
-                                                                          ,lce_data_width_lp
-                                                                         )
-   , localparam bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p
-                                                              ,num_lce_p
-                                                              ,addr_width_lp
-                                                              ,lce_assoc_p
-                                                             )
-   , localparam bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
-                                                                        ,num_lce_p
-                                                                        ,addr_width_lp
-                                                                        ,lce_data_width_lp
-                                                                        ,lce_assoc_p
-                                                                       )
-   , localparam bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p
-                                                                      ,addr_width_lp
-                                                                      ,lce_data_width_lp
-                                                                      ,lce_assoc_p
-                                                                     )
+   , localparam lce_data_width_lp=(lce_assoc_p*data_width_p)
+   // need to change addr_width_lp and lce_data_width_lp
+   // , localparam lce_data_width_lp=(cce_block_size_in_bytes_p * 8)
+   , localparam bp_lce_cce_req_width_lp=
+     `bp_lce_cce_req_width(num_cce_p, num_lce_p, addr_width_lp, lce_assoc_p, data_width_p)
+   , localparam bp_lce_cce_resp_width_lp=
+     `bp_lce_cce_resp_width(num_cce_p, num_lce_p, addr_width_lp)
+   , localparam bp_lce_cce_data_resp_width_lp=
+     `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, addr_width_lp, lce_data_width_lp) 
+   , localparam bp_cce_lce_cmd_width_lp=
+     `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, addr_width_lp, lce_assoc_p)
+   , localparam bp_lce_data_cmd_width_lp=
+     `bp_lce_data_cmd_width(num_lce_p, lce_data_width_lp, lce_assoc_p)
+
+
   
    // pc gen related parameters
    , parameter btb_indx_width_p="inv"
@@ -97,39 +81,36 @@ module bp_fe_top
 
    , input [bp_fe_cmd_width_lp-1:0]                   fe_cmd_i
    , input                                            fe_cmd_v_i
-   , output logic                                     fe_cmd_ready_o
+   , output                                           fe_cmd_ready_o
 
-   , output logic [bp_fe_queue_width_lp-1:0]          fe_queue_o
-   , output logic                                     fe_queue_v_o
+   , output [bp_fe_queue_width_lp-1:0]                fe_queue_o
+   , output                                           fe_queue_v_o
    , input                                            fe_queue_ready_i
 
-   , output logic [bp_lce_cce_req_width_lp-1:0]       lce_req_o
-   , output logic                                     lce_req_v_o
+   , output [bp_lce_cce_req_width_lp-1:0]             lce_req_o
+   , output                                           lce_req_v_o
    , input                                            lce_req_ready_i
 
-   , output logic [bp_lce_cce_resp_width_lp-1:0]      lce_resp_o
-   , output logic                                     lce_resp_v_o
+   , output [bp_lce_cce_resp_width_lp-1:0]            lce_resp_o
+   , output                                           lce_resp_v_o
    , input                                            lce_resp_ready_i
 
-   , output logic [bp_lce_cce_data_resp_width_lp-1:0] lce_data_resp_o     
-   , output logic                                     lce_data_resp_v_o 
+   , output [bp_lce_cce_data_resp_width_lp-1:0]       lce_data_resp_o     
+   , output                                           lce_data_resp_v_o 
    , input                                            lce_data_resp_ready_i
 
    , input [bp_cce_lce_cmd_width_lp-1:0]              lce_cmd_i
    , input                                            lce_cmd_v_i
-   , output logic                                     lce_cmd_ready_o
+   , output                                           lce_cmd_ready_o
 
-   , input [bp_cce_lce_data_cmd_width_lp-1:0]         lce_data_cmd_i
+   , input [bp_lce_data_cmd_width_lp-1:0]             lce_data_cmd_i
    , input                                            lce_data_cmd_v_i
-   , output logic                                     lce_data_cmd_ready_o
+   , output                                           lce_data_cmd_ready_o
 
-   , input [bp_lce_lce_tr_resp_width_lp-1:0]          lce_tr_resp_i
-   , input                                            lce_tr_resp_v_i
-   , output logic                                     lce_tr_resp_ready_o
+   , output [bp_lce_data_cmd_width_lp-1:0]            lce_data_cmd_o
+   , output                                           lce_data_cmd_v_o
+   , input                                            lce_data_cmd_ready_i
 
-   , output logic[bp_lce_lce_tr_resp_width_lp-1:0]    lce_tr_resp_o
-   , output logic                                     lce_tr_resp_v_o
-   , input                                            lce_tr_resp_ready_i
    );
 
 
@@ -284,7 +265,7 @@ bp_fe_pc_gen
 icache 
  #(.eaddr_width_p(eaddr_width_lp)
    ,.paddr_width_p(paddr_width_p)
-   ,.data_width_p(reg_data_width_lp)
+   ,.data_width_p(data_width_p)
    ,.instr_width_p(instr_width_lp)
    ,.num_cce_p(num_cce_p)
    ,.num_lce_p(num_lce_p)
@@ -328,14 +309,11 @@ icache
    ,.lce_data_cmd_i(lce_data_cmd_i)
    ,.lce_data_cmd_v_i(lce_data_cmd_v_i)
    ,.lce_data_cmd_ready_o(lce_data_cmd_ready_o)
-         
-   ,.lce_tr_resp_i(lce_tr_resp_i)
-   ,.lce_tr_resp_v_i(lce_tr_resp_v_i)
-   ,.lce_tr_resp_ready_o(lce_tr_resp_ready_o)               
-         
-   ,.lce_tr_resp_o(lce_tr_resp_o)
-   ,.lce_tr_resp_v_o(lce_tr_resp_v_o)
-   ,.lce_tr_resp_ready_i(lce_tr_resp_ready_i)
+
+   ,.lce_data_cmd_o(lce_data_cmd_o)
+   ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
+   ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
+
          
    ,.cache_miss_o(cache_miss)
    ,.poison_i(poison)
