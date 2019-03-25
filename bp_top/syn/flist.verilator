@@ -92,7 +92,6 @@ $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_cmd.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_req.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_data_cmd.v
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_tr.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lru_decode.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lru_encode.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_wbuf.v
@@ -112,8 +111,7 @@ $BP_FE_DIR/src/v/bp_fe_icache.v
 $BP_FE_DIR/src/v/bp_fe_instr_scan.v
 $BP_FE_DIR/src/v/bp_fe_itlb.v
 $BP_FE_DIR/src/v/bp_fe_lce.v
-$BP_FE_DIR/src/v/bp_fe_lce_req.v
-$BP_FE_DIR/src/v/bp_fe_lce_tr_resp_in.v
+$BP_FE_DIR/src/v/bp_fe_lce_cce_req.v
 $BP_FE_DIR/src/v/bp_fe_pc_gen.v
 $BP_FE_DIR/src/v/bp_fe_top.v
 // ME files
