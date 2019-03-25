@@ -212,6 +212,7 @@ module testbench
 	        ,.mem_els_p(mem_els_p)
 	        ,.boot_rom_width_p(cce_block_size_in_bits_lp)
 	        ,.boot_rom_els_p(boot_rom_els_p)
+          ,.lce_req_data_width_p(reg_data_width_lp)
 	      )
         bp_mem
 	    (.clk_i(clk_i)

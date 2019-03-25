@@ -108,12 +108,11 @@ module bp_multi_top
 
 `declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
 
-`declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
+`declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, reg_data_width_lp);
 `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
 `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, cce_block_size_in_bits_lp);
 `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
-`declare_bp_cce_lce_data_cmd_s(num_cce_p, num_lce_p, paddr_width_p, cce_block_size_in_bits_lp, lce_assoc_p);
-`declare_bp_lce_lce_tr_resp_s(num_lce_p, paddr_width_p, cce_block_size_in_bits_lp, lce_assoc_p);
+`declare_bp_lce_data_cmd_s(num_lce_p, cce_block_size_in_bits_lp, lce_assoc_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p
                                    , paddr_width_p
                                    , asid_width_p
@@ -134,12 +133,11 @@ logic [core_els_p-1:0][1:0] lce_data_resp_v, lce_data_resp_ready;
 bp_cce_lce_cmd_s [core_els_p-1:0][1:0] lce_cmd;
 logic [core_els_p-1:0][1:0] lce_cmd_v, lce_cmd_ready;
 
-bp_cce_lce_data_cmd_s [core_els_p-1:0][1:0] lce_data_cmd;
-logic [core_els_p-1:0][1:0] lce_data_cmd_v, lce_data_cmd_ready;
+bp_lce_data_cmd_s [core_els_p-1:0][1:0] lce_data_cmd_li;
+logic [core_els_p-1:0][1:0] lce_data_cmd_v_li, lce_data_cmd_ready_lo;
 
-bp_lce_lce_tr_resp_s [core_els_p-1:0][1:0] lce_tr_resp_li, lce_tr_resp_lo;
-logic [core_els_p-1:0][1:0] lce_tr_resp_v_li, lce_tr_resp_ready_li;
-logic [core_els_p-1:0][1:0] lce_tr_resp_v_lo, lce_tr_resp_ready_lo;
+bp_lce_data_cmd_s [core_els_p-1:0][1:0] lce_data_cmd_lo;
+logic [core_els_p-1:0][1:0] lce_data_cmd_v_lo, lce_data_cmd_ready_li;
 
 bp_proc_cfg_s [core_els_p-1:0] proc_cfg;
 
@@ -163,6 +161,7 @@ for(core_id = 0; core_id < core_els_p; core_id++)
         ,.lce_sets_p(lce_sets_p)
         ,.lce_assoc_p(lce_assoc_p)
         ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
+        ,.data_width_p(reg_data_width_lp)
         ,.vaddr_width_p(vaddr_width_p)
         ,.paddr_width_p(paddr_width_p)
         ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
@@ -192,17 +191,13 @@ for(core_id = 0; core_id < core_els_p; core_id++)
         ,.lce_cmd_v_i(lce_cmd_v[core_id])
         ,.lce_cmd_ready_o(lce_cmd_ready[core_id])
 
-        ,.lce_data_cmd_i(lce_data_cmd[core_id])
-        ,.lce_data_cmd_v_i(lce_data_cmd_v[core_id])
-        ,.lce_data_cmd_ready_o(lce_data_cmd_ready[core_id])
+        ,.lce_data_cmd_i(lce_data_cmd_li[core_id])
+        ,.lce_data_cmd_v_i(lce_data_cmd_v_li[core_id])
+        ,.lce_data_cmd_ready_o(lce_data_cmd_ready_lo[core_id])
 
-        ,.lce_tr_resp_i(lce_tr_resp_li[core_id])
-        ,.lce_tr_resp_v_i(lce_tr_resp_v_li[core_id])
-        ,.lce_tr_resp_ready_o(lce_tr_resp_ready_lo[core_id])
-
-        ,.lce_tr_resp_o(lce_tr_resp_lo[core_id])
-        ,.lce_tr_resp_v_o(lce_tr_resp_v_lo[core_id])
-        ,.lce_tr_resp_ready_i(lce_tr_resp_ready_li[core_id])
+        ,.lce_data_cmd_o(lce_data_cmd_lo[core_id])
+        ,.lce_data_cmd_v_o(lce_data_cmd_v_lo[core_id])
+        ,.lce_data_cmd_ready_i(lce_data_cmd_ready_li[core_id])
 
         ,.cmt_rd_w_v_o(cmt_rd_w_v_o[core_id])
         ,.cmt_rd_addr_o(cmt_rd_addr_o[core_id])
@@ -244,17 +239,13 @@ bp_me_top
    ,.lce_cmd_v_o(lce_cmd_v)
    ,.lce_cmd_ready_i(lce_cmd_ready)
 
-   ,.lce_data_cmd_o(lce_data_cmd)
-   ,.lce_data_cmd_v_o(lce_data_cmd_v)
-   ,.lce_data_cmd_ready_i(lce_data_cmd_ready)
+   ,.lce_data_cmd_o(lce_data_cmd_li)
+   ,.lce_data_cmd_v_o(lce_data_cmd_v_li)
+   ,.lce_data_cmd_ready_i(lce_data_cmd_ready_lo)
 
-   ,.lce_tr_resp_i(lce_tr_resp_lo)
-   ,.lce_tr_resp_v_i(lce_tr_resp_v_lo)
-   ,.lce_tr_resp_ready_o(lce_tr_resp_ready_li)
-
-   ,.lce_tr_resp_o(lce_tr_resp_li)
-   ,.lce_tr_resp_v_o(lce_tr_resp_v_li)
-   ,.lce_tr_resp_ready_i(lce_tr_resp_ready_lo)
+   ,.lce_data_cmd_i(lce_data_cmd_lo)
+   ,.lce_data_cmd_v_i(lce_data_cmd_v_lo)
+   ,.lce_data_cmd_ready_o(lce_data_cmd_ready_li)
 
    ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr_o)
    ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data_i)

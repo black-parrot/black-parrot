@@ -1,78 +1,8 @@
 /**
  *
- * Name:
- *   bp_be_top.v
+ *  Name:
+ *    bp_be_top.v
  * 
- * Description:
- *
- * Parameters:
- *   vaddr_width_p               - FE-BE structure sizing parameter
- *   paddr_width_p               - ''
- *   asid_width_p                - ''
- *   branch_metadata_fwd_width_p - ''
- *
- *   num_cce_p                   - 
- *   num_lce_p                   - 
- *   lce_assoc_p                 - 
- *   lce_sets_p                  - 
- *   cce_block_size_in_bytes_p   - 
- * 
- * Inputs:
- *   clk_i                       -
- *   reset_i                     -
- *
- *   fe_queue_i                  -
- *   fe_queue_v_i                -
- *   fe_queue_ready_o              -
- *
- *   lce_cmd_i               -
- *   lce_cmd_v_i             -
- *   lce_cmd_ready_o           -
- *
- *   lce_data_cmd_i          -
- *   lce_data_cmd_v_i        -
- *   lce_data_cmd_ready_o      -
- * 
- *   lce_tr_resp_i           - 
- *   lce_tr_resp_v_i         -
- *   lce_tr_resp_ready_o       -
- * 
- *   proc_cfg_i
- *
- * Outputs:
- *   fe_cmd_o
- *   fe_cmd_v_o
- *   fe_cmd_ready_i
- *
- *   fe_queue_clr_o
- *   fe_queue_dequeue_inc_o
- *   fe_queue_rollback_o
- *
- *   lce_req_o
- *   lce_req_v_o
- *   lce_req_ready_i
- *
- *   lce_resp_o
- *   lce_resp_v_o
- *   lce_resp_ready_i
- *
- *   lce_data_resp_o
- *   lce_data_resp_v_o
- *   lce_data_resp_ready_i
- *
- *   lce_tr_resp_o
- *   lce_tr_resp_v_o
- *   lce_tr_resp_ready_i
- *
- *   cmt_trace_stage_reg_o
- *   cmt_trace_result_o
- *   cmt_trace_exc_o
- *
- *  Keywords:
- *   be, top
- * 
- *  Notes:
- *
  */
 
 
@@ -352,7 +282,6 @@ bp_be_mmu_top
 
     ,.mmu_resp_o(mmu_resp)
     ,.mmu_resp_v_o(mmu_resp_v)
-    ,.mmu_resp_ready_i(mmu_resp_rdy)      
 
     ,.lce_req_o(lce_req_o)
     ,.lce_req_v_o(lce_req_v_o)

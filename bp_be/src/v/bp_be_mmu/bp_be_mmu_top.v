@@ -76,6 +76,8 @@ module bp_be_mmu_top
    , output [mmu_resp_width_lp-1:0]        mmu_resp_o
    , output                                mmu_resp_v_o
 
+   , output [lce_req_width_lp-1:0] lce_req_o
+   , output lce_req_v_o
    , input                                 lce_req_ready_i
 
    , output [lce_resp_width_lp-1:0]        lce_resp_o

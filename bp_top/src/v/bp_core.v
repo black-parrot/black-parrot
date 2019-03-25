@@ -15,6 +15,7 @@ module bp_core
     , parameter lce_assoc_p                 = "inv"
     , parameter lce_sets_p                  = "inv"
     , parameter cce_block_size_in_bytes_p   = "inv"
+    , parameter data_width_p = "inv"
     , parameter vaddr_width_p               = "inv"
     , parameter paddr_width_p               = "inv"
     , parameter branch_metadata_fwd_width_p = "inv"
@@ -33,22 +34,21 @@ module bp_core
     , localparam fe_cmd_width_lp =    `bp_fe_cmd_width(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
     , localparam lce_cce_req_width_lp =
-      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p)
+      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, data_width_p)
     , localparam lce_cce_resp_width_lp =
       `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
     , localparam lce_cce_data_resp_width_lp =
       `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, cce_block_size_in_bits_lp)
     , localparam cce_lce_cmd_width_lp =
       `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p)
-    , localparam cce_lce_data_cmd_width_lp =
-      `bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, paddr_width_p, cce_block_size_in_bits_lp, lce_assoc_p)
-    , localparam lce_lce_tr_resp_width_lp =
-      `bp_lce_lce_tr_resp_width(num_lce_p, paddr_width_p, cce_block_size_in_bits_lp, lce_assoc_p)
-    , localparam fu_op_width_lp=`bp_be_fu_op_width
-    // From RISC-V specifications
+
     , localparam reg_data_width_lp = rv64_reg_data_width_gp
     , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
     , localparam eaddr_width_lp    = rv64_eaddr_width_gp
+
+    , localparam pipe_stage_reg_width_lp   = `bp_be_pipe_stage_reg_width(branch_metadata_fwd_width_p)
+    , localparam calc_result_width_lp      = `bp_be_calc_result_width(branch_metadata_fwd_width_p)
+    , localparam exception_width_lp        = `bp_be_exception_width
   )
   (
     input clk_i
@@ -74,18 +74,13 @@ module bp_core
     , input [1:0]                           lce_cmd_v_i
     , output [1:0]                          lce_cmd_ready_o
 
-    , input [1:0][cce_lce_data_cmd_width_lp-1:0]  lce_data_cmd_i
+    , input [1:0][lce_data_cmd_width_lp-1:0]  lce_data_cmd_i
     , input [1:0]                                 lce_data_cmd_v_i
     , output [1:0]                                lce_data_cmd_ready_o
 
-    // LCE-LCE interface
-    , input [1:0][lce_lce_tr_resp_width_lp-1:0] lce_tr_resp_i
-    , input [1:0]                               lce_tr_resp_v_i
-    , output [1:0]                              lce_tr_resp_ready_o
-
-    , output [1:0][lce_lce_tr_resp_width_lp-1:0] lce_tr_resp_o
-    , output [1:0]                               lce_tr_resp_v_o
-    , input [1:0]                                lce_tr_resp_ready_i 
+    , output [1:0][lce_data_cmd_width_lp-1:0]  lce_data_cmd_o
+    , output [1:0]                                 lce_data_cmd_v_o
+    , input [1:0]                                lce_data_cmd_ready_i
 
     // Commit tracer for trace replay
     , output                                  cmt_rd_w_v_o
@@ -161,13 +156,9 @@ module bp_core
       ,.lce_data_cmd_v_i(lce_data_cmd_v_i[0])
       ,.lce_data_cmd_ready_o(lce_data_cmd_ready_o[0])
 
-      ,.lce_tr_resp_i(lce_tr_resp_i[0])
-      ,.lce_tr_resp_v_i(lce_tr_resp_v_i[0])
-      ,.lce_tr_resp_ready_o(lce_tr_resp_ready_o[0])
-
-      ,.lce_tr_resp_o(lce_tr_resp_o[0])
-      ,.lce_tr_resp_v_o(lce_tr_resp_v_o[0])
-      ,.lce_tr_resp_ready_i(lce_tr_resp_ready_i[0])
+      ,.lce_data_cmd_o(lce_data_cmd_o[0])
+      ,.lce_data_cmd_v_o(lce_data_cmd_v_o[0])
+      ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i[0])
     );
 
     bsg_fifo_1r1w_rolly 
@@ -260,13 +251,9 @@ module bp_core
        ,.lce_data_cmd_v_i(lce_data_cmd_v_i[1])
        ,.lce_data_cmd_ready_o(lce_data_cmd_ready_o[1])
 
-       ,.lce_tr_resp_i(lce_tr_resp_i[1])
-       ,.lce_tr_resp_v_i(lce_tr_resp_v_i[1])
-       ,.lce_tr_resp_ready_o(lce_tr_resp_ready_o[1])
-
-       ,.lce_tr_resp_o(lce_tr_resp_o[1])
-       ,.lce_tr_resp_v_o(lce_tr_resp_v_o[1])
-       ,.lce_tr_resp_ready_i(lce_tr_resp_ready_i[1])
+       ,.lce_data_cmd_o(lce_data_cmd_o[1])
+       ,.lce_data_cmd_v_o(lce_data_cmd_v_o[1])
+       ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i[1])
 
        ,.cmt_rd_w_v_o(cmt_rd_w_v_o)
        ,.cmt_rd_addr_o(cmt_rd_addr_o)
