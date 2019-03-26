@@ -29,36 +29,27 @@ module bp_fe_lce_cmd
     , parameter ways_p="inv"
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
-    , parameter data_mask_width_lp=(data_width_p>>3)
-    , parameter byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
-    , parameter index_width_lp=`BSG_SAFE_CLOG2(sets_p)
+
+    , localparam data_mask_width_lp=(data_width_p>>3)
+    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
+    , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
     , localparam block_size_in_words_lp=ways_p
     , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
     , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
     , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
 
+    , localparam data_mem_pkt_width_lp=
+      `bp_fe_icache_lce_data_mem_pkt_width(sets_p,ways_p,lce_data_width_p)
+    , localparam tag_mem_pkt_width_lp=
+      `bp_fe_icache_lce_tag_mem_pkt_width(sets_p,ways_p,tag_width_lp)
+    , localparam metadata_mem_pkt_width_lp=
+      `bp_fe_icache_lce_metadata_mem_pkt_width(sets_p,ways_p)
 
-
-
-
-    , parameter timeout_max_limit_p=4
-
-    , parameter data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(sets_p 
-                                                                                            ,ways_p
-                                                                                            ,lce_data_width_p
-                                                                                           )
-    , parameter tag_mem_pkt_width_lp=`bp_fe_icache_lce_tag_mem_pkt_width(sets_p
-                                                                                          ,ways_p
-                                                                                          ,tag_width_lp
-                                                                                         )
-    , parameter metadata_mem_pkt_width_lp=`bp_fe_icache_lce_metadata_mem_pkt_width(sets_p
-                                                                                                      ,ways_p
-                                                                                                     )
-    , localparam bp_cce_lce_cmd_width_lp=
+    , localparam cce_lce_cmd_width_lp=
       `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, ways_p)
-    , localparam bp_lce_cce_resp_width_lp=
+    , localparam lce_cce_resp_width_lp=
       `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
-    , localparam bp_lce_cce_data_resp_width_lp=
+    , localparam lce_cce_data_resp_width_lp=
       `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_p)
     , localparam lce_data_cmd_width_lp=
       `bp_lce_data_cmd_width(num_lce_p, lce_data_width_p, ways_p)
@@ -74,27 +65,27 @@ module bp_fe_lce_cmd
     , output logic                                               tag_set_wakeup_o
 
     , input [lce_data_width_p-1:0]                               data_mem_data_i
-    , output logic [data_mem_pkt_width_lp-1:0]  data_mem_pkt_o
+    , output logic [data_mem_pkt_width_lp-1:0]                   data_mem_pkt_o
     , output logic                                               data_mem_pkt_v_o
     , input                                                      data_mem_pkt_yumi_i
 
-    , output logic [tag_mem_pkt_width_lp-1:0]   tag_mem_pkt_o
+    , output logic [tag_mem_pkt_width_lp-1:0]                    tag_mem_pkt_o
     , output logic                                               tag_mem_pkt_v_o
     , input                                                      tag_mem_pkt_yumi_i
 
     , output logic                                               metadata_mem_pkt_v_o
-    , output logic [metadata_mem_pkt_width_lp-1:0] metadata_mem_pkt_o
+    , output logic [metadata_mem_pkt_width_lp-1:0]               metadata_mem_pkt_o
     , input                                                      metadata_mem_pkt_yumi_i
 
-    , output logic [bp_lce_cce_resp_width_lp-1:0]                lce_resp_o
+    , output logic [lce_cce_resp_width_lp-1:0]                   lce_resp_o
     , output logic                                               lce_resp_v_o
     , input                                                      lce_resp_yumi_i
 
-    , output logic [bp_lce_cce_data_resp_width_lp-1:0]           lce_data_resp_o     
+    , output logic [lce_cce_data_resp_width_lp-1:0]              lce_data_resp_o     
     , output logic                                               lce_data_resp_v_o 
     , input                                                      lce_data_resp_ready_i
 
-    , input [bp_cce_lce_cmd_width_lp-1:0]                        lce_cmd_i
+    , input [cce_lce_cmd_width_lp-1:0]                           lce_cmd_i
     , input                                                      lce_cmd_v_i
     , output logic                                               lce_cmd_yumi_o
     
@@ -106,11 +97,10 @@ module bp_fe_lce_cmd
 
    );
 
-  logic [index_width_lp-1:0]                                   syn_ack_cnt_r, syn_ack_cnt_n;
-  logic [lce_data_width_p-1:0]                                 data_r, data_n;
-  logic                                                        flag_data_buffered_r, flag_data_buffered_n;
-  logic                                                        flag_invalidate_r, flag_invalidate_n;
-  logic                                                        flag_updated_lru_r, flag_updated_lru_n;
+  logic [index_width_lp-1:0] syn_ack_cnt_r, syn_ack_cnt_n;
+  logic [lce_data_width_p-1:0] data_r, data_n;
+  logic flag_data_buffered_r, flag_data_buffered_n;
+  logic flag_invalidate_r, flag_invalidate_n;
    
 
   `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, ways_p);
@@ -173,7 +163,6 @@ module bp_fe_lce_cmd
     syn_ack_cnt_n           = syn_ack_cnt_r;
     flag_data_buffered_n    = flag_data_buffered_r;
     flag_invalidate_n       = flag_invalidate_r;
-    flag_updated_lru_n      = flag_updated_lru_r;
            
     case (state_r)
       e_lce_cmd_ready: begin
@@ -226,36 +215,26 @@ module bp_fe_lce_cmd
           tag_set_wakeup_o      = tag_mem_pkt_yumi_i;
 
         end else if (lce_cmd.msg_type == e_lce_cmd_invalidate_tag) begin
-          tag_mem_pkt.index        = lce_cmd.addr[byte_offset_width_lp
-                                                            +word_offset_width_lp
-                                                            +:index_width_lp];
-          tag_mem_pkt.way_id       = lce_cmd.way_id;
-          tag_mem_pkt.state        = e_MESI_I;
-          tag_mem_pkt.opcode       = e_tag_mem_ivalidate;
-          tag_mem_pkt_v_o          = flag_invalidate_r ? 1'b0 : lce_cmd_v_i;
-          flag_invalidate_n        = lce_resp_yumi_i ? 1'b0 : (flag_invalidate_r ? 1'b1 : tag_mem_pkt_yumi_i);
+          tag_mem_pkt.index = lce_cmd.addr[block_offset_width_lp+:index_width_lp];
+          tag_mem_pkt.way_id = lce_cmd.way_id;
+          tag_mem_pkt.state = e_MESI_I;
+          tag_mem_pkt.opcode = e_tag_mem_invalidate;
+          tag_mem_pkt_v_o = flag_invalidate_r
+            ? 1'b0
+            : lce_cmd_v_i;
 
-          metadata_mem_pkt.index  = lce_cmd.addr[byte_offset_width_lp
-                                                            +word_offset_width_lp
-                                                            +:index_width_lp];
-          metadata_mem_pkt.way       = lce_cmd.way_id;
-          metadata_mem_pkt.opcode    = e_metadata_mem_set_lru;
-          metadata_mem_pkt_v_o       = flag_updated_lru_r
+          flag_invalidate_n = lce_resp_yumi_i
             ? 1'b0
-            : flag_invalidate_r | tag_mem_pkt_yumi_i;
-          flag_updated_lru_n          = lce_resp_yumi_i
-            ? 1'b0
-            : flag_updated_lru_r
-              ? 1'b1
-              : metadata_mem_pkt_yumi_i;
+            : (flag_invalidate_r
+                ? 1'b1  
+                : tag_mem_pkt_yumi_i);
 
           lce_resp.dst_id   = lce_cmd.src_id;
           lce_resp.src_id   = id_i;
           lce_resp.msg_type = e_lce_cce_inv_ack;
           lce_resp.addr     = lce_cmd.addr;
-          lce_resp_v_o      = (flag_invalidate_r | tag_mem_pkt_yumi_i)
-                                      &(flag_updated_lru_r | metadata_mem_pkt_yumi_i);
-          lce_cmd_yumi_o       = lce_resp_yumi_i;
+          lce_resp_v_o      = (flag_invalidate_r | tag_mem_pkt_yumi_i);
+          lce_cmd_yumi_o    = lce_resp_yumi_i;
          end
       end
 
@@ -314,14 +293,12 @@ module bp_fe_lce_cmd
       data_r               <= '0;
       flag_data_buffered_r <= 1'b0;
       flag_invalidate_r    <= 1'b0;
-      flag_updated_lru_r   <= 1'b0;
     end else begin
       state_r              <= state_n;
       syn_ack_cnt_r        <= syn_ack_cnt_n;
       data_r               <= data_n;
       flag_data_buffered_r <= flag_data_buffered_n;
       flag_invalidate_r    <= flag_invalidate_n;
-      flag_updated_lru_r   <= flag_updated_lru_n;
     end
   end
 endmodule

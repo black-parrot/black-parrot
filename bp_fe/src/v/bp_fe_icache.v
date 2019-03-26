@@ -477,7 +477,7 @@ module icache
         tag_mem_data_li    = '0;
         tag_mem_w_mask_li  = '1;
       end
-      e_tag_mem_ivalidate: begin
+      e_tag_mem_invalidate: begin
         tag_mem_data_li    = '0;
         tag_mem_w_mask_li  = {{cce_coh_bits_lp}{1'b1}}<<{tag_mem_pkt.way_id*bp_fe_icache_tag_state_width_lp+tag_width_lp};
       end
@@ -522,12 +522,6 @@ module icache
           metadata_mem_data_li = {(ways_p-1){1'b0}};
           metadata_mem_mask_li = {(ways_p-1){1'b1}};
         end
-        
-        e_metadata_mem_set_lru: begin
-          metadata_mem_data_li = ~lru_decode_data_lo;
-          metadata_mem_mask_li = lru_decode_mask_lo;
-        end
-
         default: begin
           metadata_mem_data_li = {(ways_p-1){1'b0}};
           metadata_mem_mask_li = {(ways_p-1){1'b0}};

@@ -34,11 +34,11 @@ module bp_fe_lce_req
 
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
     , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
-    , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
-                                                           ,num_lce_p
-                                                           ,paddr_width_p
-                                                           ,ways_p, data_width_p)
-    , localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
+
+    , localparam lce_cce_req_width_lp=
+      `bp_lce_cce_req_width(num_cce_p,num_lce_p,paddr_width_p,ways_p,data_width_p)
+    , localparam lce_cce_resp_width_lp=
+      `bp_lce_cce_resp_width(num_cce_p,num_lce_p,paddr_width_p)
 
     )
    (input                                      clk_i
