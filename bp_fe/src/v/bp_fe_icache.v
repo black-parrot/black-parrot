@@ -47,7 +47,7 @@ module icache
     , localparam lce_data_width_lp=(ways_p*data_width_p)
     , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
     , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
-    , localparam cce_coh_bits_lp=`bp_cce_coh_bits
+    , localparam coh_bits_lp=`bp_cce_coh_bits
     , parameter debug_p=0
 
     , localparam bp_fe_pc_gen_icache_width_lp=`bp_fe_pc_gen_icache_width(eaddr_width_p)
@@ -66,9 +66,6 @@ module icache
       `bp_lce_data_cmd_width(num_lce_p, lce_data_width_lp, ways_p)
 
 
-    , localparam bp_fe_icache_tag_set_width_lp=`bp_fe_icache_tag_set_width(tag_width_lp
-                                                                          ,ways_p
-                                                                         )
     , localparam bp_fe_icache_tag_state_width_lp=`bp_fe_icache_tag_state_width(tag_width_lp)
 
     , localparam bp_fe_icache_metadata_width_lp=`bp_fe_icache_metadata_width(ways_p)
@@ -170,15 +167,15 @@ module icache
   end
 
   // tag memory
-  logic [bp_fe_icache_tag_set_width_lp-1:0] tag_mem_data_li;
+  logic [ways_p-1:0][coh_bits_lp+tag_width_lp-1:0] tag_mem_data_li;
   logic [index_width_lp-1:0]                tag_mem_addr_li;
   logic                                     tag_mem_v_li;
-  logic [bp_fe_icache_tag_set_width_lp-1:0] tag_mem_w_mask_li;
+  logic [ways_p-1:0][coh_bits_lp+tag_width_lp-1:0] tag_mem_w_mask_li;
   logic                                     tag_mem_w_li;
-  logic [bp_fe_icache_tag_set_width_lp-1:0] tag_mem_data_lo;
+  logic [ways_p-1:0][coh_bits_lp+tag_width_lp-1:0] tag_mem_data_lo;
 
   bsg_mem_1rw_sync_mask_write_bit #(
-    .width_p(bp_fe_icache_tag_set_width_lp)
+    .width_p(ways_p*(coh_bits_lp+tag_width_lp))
     ,.els_p(sets_p)
   ) tag_mem (
     .clk_i(clk_i)
@@ -191,14 +188,12 @@ module icache
     ,.data_o(tag_mem_data_lo)
   );
 
-  logic [ways_p-1:0][cce_coh_bits_lp-1:0] state_tl;
+  logic [ways_p-1:0][coh_bits_lp-1:0] state_tl;
   logic [ways_p-1:0][tag_width_lp-1:0]      tag_tl;
 
-  for (genvar way = 0; way < ways_p; way++)
-  begin: state_tag
-    assign state_tl[way] = tag_mem_data_lo[(bp_fe_icache_tag_state_width_lp*way+tag_width_lp)
-                                              +:cce_coh_bits_lp];
-    assign tag_tl[way]   = tag_mem_data_lo[(bp_fe_icache_tag_state_width_lp*way)+:tag_width_lp];
+  for (genvar i = 0; i < ways_p; i++) begin
+    assign state_tl[i] = tag_mem_data_lo[i][tag_width_lp+:coh_bits_lp];
+    assign tag_tl[i]   = tag_mem_data_lo[i][0+:tag_width_lp];
   end
 
   // data memory
@@ -235,7 +230,7 @@ module icache
   logic [paddr_width_p-1:0]                     addr_tv_r;
   logic [eaddr_width_p-1:0]                     eaddr_tv_r; 
   logic [ways_p-1:0][tag_width_lp-1:0]          tag_tv_r;
-  logic [ways_p-1:0][cce_coh_bits_lp-1:0]       state_tv_r;
+  logic [ways_p-1:0][coh_bits_lp-1:0]       state_tv_r;
   logic [ways_p-1:0][data_width_p-1:0]          ld_data_tv_r;
   logic [tag_width_lp-1:0]                      addr_tag_tv;
   logic [index_width_lp-1:0]                    addr_index_tv;
@@ -471,19 +466,33 @@ module icache
   assign tag_mem_w_li = ~tl_we & tag_mem_pkt_v_lo;
   assign tag_mem_addr_li = tl_we ? vaddr_index : tag_mem_pkt.index;
 
+  logic [ways_p-1:0] lce_tag_mem_way_one_hot;
+  bsg_decode #(
+    .num_out_p(ways_p)
+  ) lce_tag_mem_way_decode (
+    .i(tag_mem_pkt.way_id)
+    ,.o(lce_tag_mem_way_one_hot)
+  );
+
   always_comb begin
     case (tag_mem_pkt.opcode)
       e_tag_mem_set_clear: begin
-        tag_mem_data_li    = '0;
-        tag_mem_w_mask_li  = '1;
+        for (integer i = 0 ; i < ways_p; i++) begin
+          tag_mem_data_li[i]    = '0;
+          tag_mem_w_mask_li[i]  = {(coh_bits_lp+tag_width_lp){1'b1}};
+        end
       end
       e_tag_mem_invalidate: begin
-        tag_mem_data_li    = '0;
-        tag_mem_w_mask_li  = {{cce_coh_bits_lp}{1'b1}}<<{tag_mem_pkt.way_id*bp_fe_icache_tag_state_width_lp+tag_width_lp};
+        for (integer i = 0; i < ways_p; i++) begin
+          tag_mem_data_li[i]    = '0;
+          tag_mem_w_mask_li[i] = {{coh_bits_lp{lce_tag_mem_way_one_hot[i]}}, {tag_width_lp{1'b0}}};
+        end
       end
       e_tag_mem_set_tag: begin
-         tag_mem_data_li   = {ways_p{tag_mem_pkt.state, tag_mem_pkt.tag}};
-         tag_mem_w_mask_li = {{bp_fe_icache_tag_state_width_lp}{1'b1}}<<{tag_mem_pkt.way_id*bp_fe_icache_tag_state_width_lp};
+        for (integer i = 0; i < ways_p; i++) begin
+          tag_mem_data_li[i]   = {tag_mem_pkt.state, tag_mem_pkt.tag};
+          tag_mem_w_mask_li[i] = {(coh_bits_lp+tag_width_lp){lce_tag_mem_way_one_hot[i]}};
+        end
       end
       default: begin
         tag_mem_data_li   = '0;
@@ -515,18 +524,8 @@ module icache
       metadata_mem_data_li = lru_decode_data_lo;
       metadata_mem_mask_li = lru_decode_mask_lo;
     end else begin
-      lru_decode_way_li = metadata_mem_pkt.way;
-
-      case (metadata_mem_pkt.opcode)
-        e_metadata_mem_set_clear: begin
-          metadata_mem_data_li = {(ways_p-1){1'b0}};
-          metadata_mem_mask_li = {(ways_p-1){1'b1}};
-        end
-        default: begin
-          metadata_mem_data_li = {(ways_p-1){1'b0}};
-          metadata_mem_mask_li = {(ways_p-1){1'b0}};
-        end
-      endcase
+      metadata_mem_data_li = {(ways_p-1){1'b0}};
+      metadata_mem_mask_li = {(ways_p-1){1'b1}};
     end
   end
    
