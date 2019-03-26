@@ -50,6 +50,7 @@ module bp_fe_lce_req
     , input [paddr_width_p-1:0]                miss_addr_i
     , input [way_id_width_lp-1:0]              lru_way_i
     , output logic                             cache_miss_o
+    , output logic [paddr_width_p-1:0] miss_addr_o
           
     , input                                    tr_received_i
     , input                                    cce_data_received_i
@@ -102,6 +103,8 @@ module bp_fe_lce_req
                                                 +word_offset_width_lp
                                                 +:cce_id_width_lp];
   end
+
+  assign miss_addr_o = miss_addr_r;
    
   // lce_req fsm
   always_comb begin : lce_req_fsm

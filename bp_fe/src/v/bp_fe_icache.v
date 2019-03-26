@@ -435,7 +435,7 @@ module icache
 
   `declare_bp_fe_icache_pc_gen_s(eaddr_width_p);
   bp_fe_icache_pc_gen_s icache_pc_gen_data_lo;
-  assign lower_upper_sel             = addr_tv_r[byte_offset_width_lp-1+:1];
+  assign lower_upper_sel             = addr_tv_r[byte_offset_width_lp-1];
   assign icache_pc_gen_data_lo.instr = lower_upper_sel
     ? ld_data_way_picked[instr_width_p+:instr_width_p]
     : ld_data_way_picked[instr_width_p-1:0];
@@ -539,7 +539,7 @@ module icache
   // LCE: data mem
   logic [way_id_width_lp-1:0] data_mem_pkt_way_r;
   always_ff @ (posedge clk_i) begin
-    data_mem_pkt_way_r <= (data_mem_pkt_v_lo & data_mem_pkt_yumi_li)
+    data_mem_pkt_way_r <= (data_mem_pkt_yumi_li & ~data_mem_pkt.we)
       ? data_mem_pkt.way_id
       : data_mem_pkt_way_r;
   end

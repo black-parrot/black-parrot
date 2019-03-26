@@ -158,6 +158,8 @@ module bp_fe_lce_cmd
     lce_resp               = '0;
     lce_data_resp          = '0;
 
+    lce_data_cmd_out = '0;
+
     data_mem_pkt           = '0;
     tag_mem_pkt            = '0;
     metadata_mem_pkt       = '0;
@@ -169,7 +171,6 @@ module bp_fe_lce_cmd
     state_n                 = state_r;
     data_n                  = data_r;
     syn_ack_cnt_n           = syn_ack_cnt_r;
-    data_n                  = data_n;
     flag_data_buffered_n    = flag_data_buffered_r;
     flag_invalidate_n       = flag_invalidate_r;
     flag_updated_lru_n      = flag_updated_lru_r;
@@ -178,7 +179,7 @@ module bp_fe_lce_cmd
       e_lce_cmd_ready: begin
         // Casting because these enums are different types, although they should be synchronized
         if (lce_cmd.msg_type == e_lce_cmd_transfer) begin
-          data_mem_pkt.index    = lce_cmd.addr[byte_offset_width_lp
+          data_mem_pkt.index  = lce_cmd.addr[byte_offset_width_lp
                                                        +word_offset_width_lp
                                                        +:index_width_lp];
           data_mem_pkt.way_id = lce_cmd.way_id;
@@ -258,11 +259,10 @@ module bp_fe_lce_cmd
          end
       end
 
-      e_lce_cmd_transfer_tmp: begin //Todo: double check
-        flag_data_buffered_n       = ~lce_data_cmd_ready_i;
-        data_n                     = flag_data_buffered_r ? data_r : data_mem_data_i;
+      e_lce_cmd_transfer_tmp: begin
+        flag_data_buffered_n     = ~lce_data_cmd_ready_i;
+        data_n                   = flag_data_buffered_r ? data_r : data_mem_data_i;
         lce_data_cmd_out.dst_id  = lce_cmd.target;
-        //is this needed?
         lce_data_cmd_out.way_id  = lce_cmd.target_way_id;
         lce_data_cmd_out.msg_type = e_lce_data_cmd_transfer;
         lce_data_cmd_out.data    = flag_data_buffered_r ? data_r : data_mem_data_i;

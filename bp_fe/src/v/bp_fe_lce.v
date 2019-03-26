@@ -43,10 +43,8 @@ module bp_fe_lce
     , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
     , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
 
-    , localparam bp_fe_icache_lce_data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(sets_p
-                                                                                            ,ways_p
-                                                                                            ,lce_data_width_p
-                                                                                           )
+    , localparam bp_fe_icache_lce_data_mem_pkt_width_lp=
+      `bp_fe_icache_lce_data_mem_pkt_width(sets_p,ways_p,lce_data_width_p)
     , localparam bp_fe_icache_lce_tag_mem_pkt_width_lp=`bp_fe_icache_lce_tag_mem_pkt_width(sets_p
                                                                                           ,ways_p
                                                                                           ,tag_width_lp
@@ -159,7 +157,8 @@ module bp_fe_lce
   logic tag_set_wakeup;
   logic lce_req_lce_resp_v_lo;
   logic lce_req_lce_resp_yumi_li;
-  
+  logic [paddr_width_p-1:0] miss_addr_lo; 
+
   bp_fe_lce_req #(
     .data_width_p(data_width_p)
     ,.paddr_width_p(paddr_width_p)
@@ -177,6 +176,7 @@ module bp_fe_lce
     ,.miss_addr_i(miss_addr_i)
     ,.lru_way_i(lru_way_i)
     ,.cache_miss_o(cache_miss_o)
+    ,.miss_addr_o(miss_addr_lo)
 
     ,.tr_received_i(tr_received)
     ,.cce_data_received_i(cce_data_received)
@@ -273,7 +273,7 @@ module bp_fe_lce
     .cce_data_received_o(cce_data_received)
     ,.tr_data_received_o(tr_received)
 
-    ,.miss_addr_i(miss_addr_i)
+    ,.miss_addr_i(miss_addr_lo)
      
     ,.lce_data_cmd_i(lce_data_cmd_in)
     ,.lce_data_cmd_v_i(lce_data_cmd_v_i)
