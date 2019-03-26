@@ -20,29 +20,22 @@ y *
 
 
 module bp_fe_lce_data_cmd
+  import bp_common_pkg::*;
   import bp_fe_icache_pkg::*;
   #(parameter data_width_p="inv"
     , parameter lce_addr_width_p="inv"
     , parameter lce_data_width_p="inv"
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
-    , parameter lce_sets_p="inv"
+    , parameter sets_p="inv"
     , parameter ways_p="inv"
-    , parameter block_size_in_bytes_p="inv"
-
-    , localparam data_mask_width_lp=(data_width_p>>3)
-    , localparam lg_data_mask_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
-
-    , localparam lg_lce_sets_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-    , localparam lg_block_size_in_bytes_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
-
-    , localparam bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
+    , parameter bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
                                                                         ,num_lce_p
                                                                         ,lce_addr_width_p
                                                                         ,lce_data_width_p
                                                                         ,ways_p
                                                                        )
-    , localparam bp_fe_icache_lce_data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(lce_sets_p
+    , parameter bp_fe_icache_lce_data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(sets_p
                                                                                             ,ways_p
                                                                                             ,lce_data_width_p
                                                                                            )
@@ -58,17 +51,24 @@ module bp_fe_lce_data_cmd
     , input                                                      data_mem_pkt_yumi_i
    );
 
+  localparam block_size_in_words_lp=ways_p; 
+  localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp);
+  localparam data_mask_width_lp=(data_width_p>>3);  
+  localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp); 
+  localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p);
+   
+									       
   `declare_bp_cce_lce_data_cmd_s(num_cce_p, num_lce_p, lce_addr_width_p, lce_data_width_p, ways_p);
   bp_cce_lce_data_cmd_s lce_data_cmd_li;
   assign lce_data_cmd_li = lce_data_cmd_i;
    
-  `declare_bp_fe_icache_lce_data_mem_pkt_s(lce_sets_p, ways_p, lce_data_width_p);
+  `declare_bp_fe_icache_lce_data_mem_pkt_s(sets_p, ways_p, lce_data_width_p);
   bp_fe_icache_lce_data_mem_pkt_s data_mem_pkt_lo;
   assign data_mem_pkt_o = data_mem_pkt_lo;
 
-  assign data_mem_pkt_lo.index   = lce_data_cmd_li.addr[lg_data_mask_width_lp
-                                                            +lg_block_size_in_bytes_lp
-                                                            +:lg_lce_sets_lp];
+  assign data_mem_pkt_lo.index   = lce_data_cmd_li.addr[byte_offset_width_lp
+                                                            +word_offset_width_lp
+                                                            +:index_width_lp];
   assign data_mem_pkt_lo.way_id  = lce_data_cmd_li.way_id;
   assign data_mem_pkt_lo.data    = lce_data_cmd_li.data;
   assign data_mem_pkt_lo.we      = 1'b1;
