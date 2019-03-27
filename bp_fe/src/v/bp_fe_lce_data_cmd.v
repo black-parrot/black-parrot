@@ -34,6 +34,7 @@ module bp_fe_lce_data_cmd
       `bp_lce_data_cmd_width(num_lce_p,lce_data_width_p,ways_p)
     , localparam data_mem_pkt_width_lp=
       `bp_fe_icache_lce_data_mem_pkt_width(sets_p,ways_p,lce_data_width_p)
+
     , localparam block_size_in_words_lp=ways_p
     , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
     , localparam data_mask_width_lp=(data_width_p>>3)

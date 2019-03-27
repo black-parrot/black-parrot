@@ -194,11 +194,11 @@ module bp_be_dcache_lce_cmd
     lce_cmd_yumi_o = 1'b0;
 
     lce_resp = '0;
-    lce_resp.src_id = (lce_id_width_lp)'(lce_id_i);
+    lce_resp.src_id = lce_id_i;
     lce_resp_v_o = 1'b0;
 
     lce_data_resp = '0;
-    lce_data_resp.src_id = (lce_id_width_lp)'(lce_id_i);
+    lce_data_resp.src_id = lce_id_i;
     lce_data_resp_v_o = 1'b0;
 
     lce_data_cmd_out = '0;

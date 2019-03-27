@@ -317,6 +317,7 @@ module bp_be_dcache
 
   // miss_detect
   //
+  logic [ways_p-1:0] tag_match_tv;
   logic [ways_p-1:0] load_hit_tv;
   logic [ways_p-1:0] store_hit_tv;
   logic [ways_p-1:0] invalid_tv;
@@ -327,11 +328,10 @@ module bp_be_dcache
   logic [way_id_width_lp-1:0] load_hit_way;
   logic [way_id_width_lp-1:0] store_hit_way;
 
-  for (genvar i = 0; i < ways_p; i++) begin // TODO: MISSING GENERATE LABEL
-    assign load_hit_tv[i] = (addr_tag_tv == tag_info_tv_r[i].tag)
-      & (tag_info_tv_r[i].coh_state != e_MESI_I);
-    assign store_hit_tv[i] = (addr_tag_tv == tag_info_tv_r[i].tag)
-      & (tag_info_tv_r[i].coh_state == e_MESI_E);
+  for (genvar i = 0; i < ways_p; i++) begin: tag_comp
+    assign tag_match_tv[i] = addr_tag_tv == tag_info_tv_r[i].tag;
+    assign load_hit_tv[i] = tag_match_tv[i] & (tag_info_tv_r[i].coh_state != e_MESI_I);
+    assign store_hit_tv[i] = tag_match_tv[i] & (tag_info_tv_r[i].coh_state == e_MESI_E);
     assign invalid_tv[i] = (tag_info_tv_r[i].coh_state == e_MESI_I);
   end
 
@@ -733,7 +733,7 @@ module bp_be_dcache
 
   logic [ways_p-1:0][data_width_p-1:0] lce_data_mem_write_data;
 
-  for (genvar i = 0; i < ways_p; i++) begin // TODO: MISSING GENERATE LABEL
+  for (genvar i = 0; i < ways_p; i++) begin
     assign data_mem_addr_li[i] = (load_op & tl_we)
       ? {addr_index, addr_word_offset}
       : (wbuf_yumi_li
@@ -756,7 +756,7 @@ module bp_be_dcache
   
     assign data_mem_mask_li[i] = wbuf_yumi_li
       ? wbuf_entry_out.mask
-      : {ways_p{1'b1}};
+      : {data_mask_width_lp{1'b1}};
   end
  
   // tag_mem
