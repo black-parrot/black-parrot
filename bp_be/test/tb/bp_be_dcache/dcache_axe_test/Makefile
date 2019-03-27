@@ -3,12 +3,6 @@
 #
 
 ## Setup CAD tools
-ifneq (,$(findstring xor,$(shell hostname)))
-  include $(BSG_CADENV_DIR)/cadenv.mk
-else
-  $(info Not on xor...VCS and DC not supported)
-endif
-
 BP_DIR = $(abspath ../../../../../)
 BP_COMMON_DIR = $(BP_DIR)/bp_common
 BP_BE_DIR = $(BP_DIR)/bp_be
