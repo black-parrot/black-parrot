@@ -506,21 +506,19 @@ module icache
   assign metadata_mem_w_li = (v_tv_r & ~miss_v) | metadata_mem_pkt_yumi_li;
   assign metadata_mem_addr_li = v_tv_r ? addr_index_tv : metadata_mem_pkt.index;
 
-  logic [way_id_width_lp-1:0] lru_decode_way_li;
   logic [ways_p-2:0]          lru_decode_data_lo;
   logic [ways_p-2:0]          lru_decode_mask_lo;
 
   bsg_lru_pseudo_tree_decode #(
      .ways_p(ways_p)
   ) lru_decode (
-     .way_id_i(lru_decode_way_li)
+     .way_id_i(hit_index)
      ,.data_o(lru_decode_data_lo)
      ,.mask_o(lru_decode_mask_lo)
   );
 
   always_comb begin
     if (v_tv_r) begin
-      lru_decode_way_li     = hit_index;
       metadata_mem_data_li = lru_decode_data_lo;
       metadata_mem_mask_li = lru_decode_mask_lo;
     end else begin
