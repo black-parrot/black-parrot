@@ -73,12 +73,6 @@ $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router_buffered.v
 ## ME files
 $BP_ME_DIR/test/common/bp_cce_test.v
 $BP_ME_DIR/src/v/bp_me_top.v
-$BP_ME_DIR/test/common/bp_mem.v
-# Note: This should be a testing rom, because it varies per testbench
-# You must change it for testbenches with different numbers of lce
-# In future, we want to load the internal ram rather than rely on the rom
-# directly
-$BP_ME_DIR/src/v/roms/demo-v2/bp_cce_inst_rom_demo-v2_lce2_wg64_assoc8.v
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce.v
 $BP_ME_DIR/src/v/cce/bp_cce_alu.v

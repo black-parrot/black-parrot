@@ -175,6 +175,8 @@ Assembler::parseSrcOpd(string &s) {
     return e_src_ef;
   } else if (!s.compare("pcf")) {
     return e_src_pcf;
+  } else if (!s.compare("ucf")) {
+    return e_src_ucf;
   } else if (!s.compare("reqlce")) {
     return e_src_req_lce;
   } else if (!s.compare("acktype")) {
@@ -233,6 +235,8 @@ Assembler::parseDstOpd(string &s) {
     return e_dst_ef;
   } else if (!s.compare("pcf")) {
     return e_dst_pcf;
+  } else if (!s.compare("ucf")) {
+    return e_dst_ucf;
   } else if (!s.compare("nextcohst")) {
     return e_dst_next_coh_state;
   } else {
@@ -376,6 +380,9 @@ Assembler::parseFlagSel(string &s) {
       break;
     case e_dst_pcf:
       return e_flag_pcf;
+      break;
+    case e_dst_ucf:
+      return e_flag_ucf;
       break;
     default:
       printf("Unknown Flag operand\n");

@@ -12,7 +12,7 @@
   typedef struct packed                                                                            \
   {                                                                                                \
     bp_be_fu_op_s                      mem_op;                                                     \
-    logic [vaddr_width_mp-1:0]         vaddr;                                                      \
+    bp_be_mmu_vaddr_s                  vaddr;                                                      \
     logic [rv64_reg_data_width_gp-1:0] data;                                                       \
   }  bp_be_mmu_cmd_s;                                                                              \
                                                                                                    \

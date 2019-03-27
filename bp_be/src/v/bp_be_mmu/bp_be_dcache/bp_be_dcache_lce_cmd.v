@@ -57,8 +57,8 @@ module bp_be_dcache_lce_cmd
     , input [lce_id_width_lp-1:0] lce_id_i
 
     , output logic lce_sync_done_o
-    , output logic tag_set_o
-    , output logic tag_set_wakeup_o
+    , output logic set_tag_received_o
+    , output logic set_tag_wakeup_received_o
 
     // CCE_LCE_cmd
     , input [cce_lce_cmd_width_lp-1:0] lce_cmd_i
@@ -188,12 +188,12 @@ module bp_be_dcache_lce_cmd
 
     data_buf_n = data_buf_r;
 
-    tag_set_o = 1'b0;
-    tag_set_wakeup_o = 1'b0;
+    set_tag_received_o = 1'b0;
+    set_tag_wakeup_received_o = 1'b0;
 
     lce_cmd_yumi_o = 1'b0;
 
-    lce_resp ='0;
+    lce_resp = '0;
     lce_resp.src_id = (lce_id_width_lp)'(lce_id_i);
     lce_resp_v_o = 1'b0;
 
@@ -266,7 +266,7 @@ module bp_be_dcache_lce_cmd
           e_lce_cmd_transfer: begin
             data_mem_pkt.index = lce_cmd_addr_index;
             data_mem_pkt.way_id = lce_cmd.way_id;
-            data_mem_pkt.write_not_read = 1'b0;
+            data_mem_pkt.opcode = e_dcache_lce_data_mem_read;
             data_mem_pkt_v_o = lce_cmd_v_i;
 
             state_n = data_mem_pkt_yumi_i
@@ -300,7 +300,7 @@ module bp_be_dcache_lce_cmd
 
             lce_cmd_yumi_o = tag_mem_pkt_yumi_i;
 
-            tag_set_o = tag_mem_pkt_yumi_i;
+            set_tag_received_o = tag_mem_pkt_yumi_i;
           end
 
           //  <set tag wakeup>
@@ -315,7 +315,7 @@ module bp_be_dcache_lce_cmd
 
             lce_cmd_yumi_o = tag_mem_pkt_yumi_i;
 
-            tag_set_wakeup_o = tag_mem_pkt_yumi_i;
+            set_tag_wakeup_received_o = tag_mem_pkt_yumi_i;
           end
 
           //  <invalidate tag>
@@ -383,7 +383,7 @@ module bp_be_dcache_lce_cmd
       e_lce_cmd_state_wb_dirty: begin
         data_mem_pkt.index = lce_cmd_addr_index;
         data_mem_pkt.way_id = lce_cmd.way_id;
-        data_mem_pkt.write_not_read = 1'b0;
+        data_mem_pkt.opcode = e_dcache_lce_data_mem_read;
         data_mem_pkt_v_o = ~wb_data_read_r;
         data_buf_n = wb_data_buffered_r
           ? data_buf_r
@@ -442,6 +442,7 @@ module bp_be_dcache_lce_cmd
           ? e_lce_cmd_state_ready
           : e_lce_cmd_state_wb_not_dirty;
       end      
+
       // we should never get in this state, but if we do, return to the sync state.
       default: begin 
         state_n = e_lce_cmd_state_sync;

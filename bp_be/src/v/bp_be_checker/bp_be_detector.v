@@ -47,6 +47,8 @@ module bp_be_detector
    , parameter asid_width_p                = "inv"
    , parameter branch_metadata_fwd_width_p = "inv"
 
+   , parameter load_to_use_forwarding_p = 1
+
    // Generated parameters
    , localparam calc_status_width_lp = `bp_be_calc_status_width(branch_metadata_fwd_width_p)
    // From BE specifications
@@ -68,7 +70,9 @@ module bp_be_detector
    , output                           chk_dispatch_v_o
    , output                           chk_roll_o
    , output                           chk_poison_isd_o
-   , output                           chk_poison_ex_o
+   , output                           chk_poison_ex1_o
+   , output                           chk_poison_ex2_o
+   , output                           chk_poison_ex3_o
   );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p
@@ -90,12 +94,12 @@ wire unused2 = reset_i;
 
 // Declare intermediate signals
 // Integer data hazards
-logic [1:0] irs1_data_haz_v , irs2_data_haz_v;
+logic [2:0] irs1_data_haz_v , irs2_data_haz_v;
 // Floating point data hazards
 logic [2:0] frs1_data_haz_v , frs2_data_haz_v;
 logic [2:0] rs1_match_vector, rs2_match_vector;
 
-logic data_haz_v, struct_haz_v, mispredict_v;
+logic stall_haz_v, data_haz_v, struct_haz_v, mispredict_v;
 
 always_comb 
   begin
@@ -138,35 +142,69 @@ always_comb
                          & (dep_status[1].mem_fwb_v | dep_status[1].fp_fwb_v);
 
     // Detect float data hazards for IWB. Integer dependencies can be handled by forwarding
+    if (load_to_use_forwarding_p == 0)
+      begin
+        irs1_data_haz_v[2] = (calc_status.isd_irs1_v & rs1_match_vector[2])
+                             & (dep_status[2].mem_iwb_v);
+
+        irs2_data_haz_v[2] = (calc_status.isd_irs2_v & rs2_match_vector[2])
+                             & (dep_status[2].mem_iwb_v);
+      end
+    else
+      begin
+        irs1_data_haz_v[2] = '0;
+        irs2_data_haz_v[2] = '0;
+      end
+
     frs1_data_haz_v[2] = (calc_status.isd_frs1_v & rs1_match_vector[2])
                          & (dep_status[2].fp_fwb_v);
 
     frs2_data_haz_v[2] = (calc_status.isd_frs2_v & rs2_match_vector[2])
                          & (dep_status[2].fp_fwb_v);
 
+    stall_haz_v        = dep_status[0].stall_v
+                         | dep_status[1].stall_v
+                         | dep_status[2].stall_v
+                         | dep_status[3].stall_v;
+
     // Combine all data hazard information
-    data_haz_v = (|irs1_data_haz_v) | (|irs2_data_haz_v) | (|frs1_data_haz_v) | (|frs2_data_haz_v);
+    data_haz_v = stall_haz_v
+                 | (|irs1_data_haz_v) 
+                 | (|irs2_data_haz_v) 
+                 | (|frs1_data_haz_v) 
+                 | (|frs2_data_haz_v);
 
     // Combine all structural hazard information
     struct_haz_v = ~mmu_cmd_ready_i;
 
     // Detect misprediction
-    mispredict_v = (calc_status.isd_v & (calc_status.isd_pc != expected_npc_i));
+    mispredict_v = (calc_status.ex1_v & (calc_status.ex1_pc != expected_npc_i));
 
   end
 
 // Generate calculator control signals
-assign chk_dispatch_v_o = ~(data_haz_v | struct_haz_v);
+assign chk_dispatch_v_o = ~(data_haz_v | struct_haz_v) | calc_status.mem3_cache_miss_v;
 assign chk_roll_o       = calc_status.mem3_cache_miss_v;
-assign chk_poison_isd_o = reset_i 
-                       | mispredict_v
-                       | calc_status.mem3_cache_miss_v 
-                       | calc_status.mem3_exception_v 
-                       | calc_status.mem3_ret_v;
+assign chk_poison_isd_o = reset_i
+                          | calc_status.mem3_cache_miss_v
+                          | calc_status.mem3_exception_v 
+                          | calc_status.mem3_ret_v;
 
-assign chk_poison_ex_o  = reset_i
-                       | calc_status.mem3_cache_miss_v 
-                       | calc_status.mem3_exception_v 
-                       | calc_status.mem3_ret_v;
+assign chk_poison_ex1_o = reset_i 
+                          | mispredict_v
+                          | calc_status.mem3_cache_miss_v
+                          | calc_status.mem3_exception_v 
+                          | calc_status.mem3_ret_v;
+
+assign chk_poison_ex2_o  = reset_i
+                           | calc_status.mem3_cache_miss_v
+                           | calc_status.mem3_exception_v 
+                           | calc_status.mem3_ret_v;
+
+assign chk_poison_ex3_o  = reset_i
+                           | calc_status.mem3_cache_miss_v
+                           | calc_status.mem3_exception_v 
+                           | calc_status.mem3_ret_v;
 
 endmodule : bp_be_detector
+

@@ -120,9 +120,9 @@ bsg_dff_reset_en
    ,.data_o(itag_r)
    );
 
-
-assign issue_pkt.instr_metadata = fe_instr_metadata;
-assign issue_pkt.instr          = fe_fetch_instr;
+assign issue_pkt.instr_metadata      = fe_instr_metadata;
+assign issue_pkt.branch_metadata_fwd = fe_fetch.branch_metadata_fwd;
+assign issue_pkt.instr               = fe_fetch_instr;
 always_comb 
   begin : fe_queue_extract
 
@@ -143,7 +143,6 @@ always_comb
           fe_instr_metadata.itag                   = itag_r;
           fe_instr_metadata.pc                     = fe_fetch.pc;
           fe_instr_metadata.fe_exception_not_instr = 1'b0;
-          fe_instr_metadata.branch_metadata_fwd    = fe_fetch.branch_metadata_fwd;
 
           // Decide whether to read from integer regfile (saves power)
           casez(fe_fetch_instr.opcode)
@@ -152,7 +151,7 @@ always_comb
                 issue_pkt.irs1_v = '0; 
                 issue_pkt.irs2_v = '0;
               end
-            `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP : 
+            `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP, `RV64_SYSTEM_OP :
               begin 
                 issue_pkt.irs1_v = '1; 
                 issue_pkt.irs2_v = '0;
@@ -199,8 +198,6 @@ always_comb
           fe_instr_metadata.pc                     = exception_eaddr;
           fe_instr_metadata.fe_exception_not_instr = 1'b1;
           fe_instr_metadata.fe_exception_code      = fe_exception.exception_code;
-          // branch_metadata is meaningless for a FE exception
-          fe_instr_metadata.branch_metadata_fwd    = '0; 
         end
 
       // Should not reach

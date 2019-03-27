@@ -88,6 +88,12 @@ typedef struct __attribute__((__packed__)) {
 
   uint16_t flag_mask_w_v : bp_cce_inst_num_flags;
 
+  // uncached requests
+  uint8_t nc_data_lce_req : 1;
+  uint8_t nc_data_mem_data_resp : 1;
+  uint8_t nc_data_w_v : 1;
+  uint8_t nc_req_size_w_v : 1;
+
   // dequeue signals
   uint8_t lce_req_ready : 1;
   uint8_t lce_resp_ready : 1;
@@ -149,6 +155,10 @@ typedef struct __attribute__((__packed__)) {
   + 1 \
   + 1 \
   + bp_cce_inst_num_flags \
+  + 1 \
+  + 1 \
+  + 1 \
+  + 1 \
   + 1 \
   + 1 \
   + 1 \

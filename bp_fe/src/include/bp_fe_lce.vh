@@ -15,7 +15,7 @@
 */
 typedef enum logic [1:0] {
   e_tag_mem_set_clear   = 2'b00
-  , e_tag_mem_ivalidate  = 2'b01
+  , e_tag_mem_invalidate  = 2'b01
   , e_tag_mem_set_tag    = 2'b10
 } bp_fe_icache_tag_mem_opcode_e;
 
@@ -23,7 +23,6 @@ typedef enum logic [1:0] {
 
 typedef enum logic {
   e_metadata_mem_set_clear = 1'b0
-  , e_metadata_mem_set_lru   = 1'b1
 } bp_fe_icache_metadata_mem_opcode_e;
 
 `define bp_fe_icache_metadata_mem_opcode_width $bits(bp_fe_icache_metadata_mem_opcode_e)

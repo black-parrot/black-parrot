@@ -39,13 +39,10 @@ module bp_be_instr_decoder
    )
   (input [instr_width_lp-1:0]     instr_i
 
-   // Various sources of nop
-   , input                        fe_nop_v_i
-   , input                        be_nop_v_i
-   , input                        me_nop_v_i
-
    , output [decode_width_lp-1:0] decode_o
    , output                       illegal_instr_o
+   , output                       ret_instr_o
+   , output                       csr_instr_o
    );
 
 // Cast input and output ports 
@@ -56,12 +53,14 @@ logic          illegal_instr;
 assign instr           = instr_i;
 assign decode_o        = decode;
 assign illegal_instr_o = illegal_instr;
+assign ret_instr_o     = decode.ret_v;
+assign csr_instr_o     = decode.csr_instr_v;
 
 // Decode logic 
 always_comb 
   begin
     // Set decoded defaults
-    // NOPs
+    // NOPs are set after bypassing for critical path reasons
     decode.fe_nop_v      = '0; 
     decode.be_nop_v      = '0; 
     decode.me_nop_v      = '0; 
@@ -78,7 +77,17 @@ always_comb
     decode.frf_w_v       = '0;
     decode.dcache_w_v    = '0;
     decode.dcache_r_v    = '0;
+
+    // CSR signals
+    decode.csr_instr_v   = '0;
     decode.mhartid_r_v   = '0;
+    decode.mcycle_r_v    = '0;
+    decode.mtime_r_v     = '0;
+    decode.minstret_r_v  = '0;
+    decode.mtvec_rw_v    = '0;
+    decode.mtval_rw_v    = '0;
+    decode.mepc_rw_v     = '0;
+    decode.mscratch_rw_v = '0;
 
     // Decode metadata
     decode.fp_not_int_v  = '0;
@@ -234,27 +243,74 @@ always_comb
           decode.pipe_int_v = 1'b1;
         end
       `RV64_SYSTEM_OP : 
+        // TODO: CSR support is extremely fragile right now.  We assume that software does exactly
+        //         what we want it to do. e.g. always R/W, always valid bits, etc.
         begin
-          decode.pipe_int_v = 1'b1;
+          decode.pipe_mem_v = 1'b1;
           unique case (instr[31:20])
             `RV64_MHARTID_CSR_ADDR : 
               begin 
-                decode.irf_w_v     = 1'b1;
-                decode.mhartid_r_v = 1'b1;
+                decode.csr_instr_v   = 1'b1;
+                decode.irf_w_v       = 1'b1;
+                decode.mhartid_r_v   = 1'b1;
               end
-            default : illegal_instr = 1'b1;
+            `RV64_MCYCLE_CSR_ADDR:
+              begin
+                decode.csr_instr_v   = 1'b1;
+                decode.irf_w_v       = 1'b1;
+                decode.mcycle_r_v    = 1'b1;
+              end
+            `RV64_MTIME_CSR_ADDR:
+              begin
+                decode.csr_instr_v   = 1'b1;
+                decode.irf_w_v       = 1'b1;
+                decode.mtime_r_v     = 1'b1;
+              end
+            `RV64_MINSTRET_CSR_ADDR: 
+              begin
+                decode.csr_instr_v   = 1'b1;
+                decode.irf_w_v       = 1'b1;
+                decode.minstret_r_v  = 1'b1;
+              end
+            `RV64_MTVEC_CSR_ADDR:
+              begin
+                decode.csr_instr_v   = 1'b1;
+                decode.irf_w_v       = 1'b1;
+                decode.mtvec_rw_v    = 1'b1;
+              end
+            `RV64_MTVAL_CSR_ADDR:
+              begin
+                decode.csr_instr_v   = 1'b1;
+                decode.irf_w_v       = 1'b1;
+                decode.mtval_rw_v    = 1'b1;
+              end
+            `RV64_MEPC_CSR_ADDR:
+              begin
+                decode.csr_instr_v   = 1'b1;
+                decode.irf_w_v       = 1'b1;
+                decode.mepc_rw_v     = 1'b1;
+              end
+            `RV64_MSCRATCH_CSR_ADDR:
+              begin
+                decode.csr_instr_v   = 1'b1;
+                decode.irf_w_v       = 1'b1;
+                decode.mscratch_rw_v = 1'b1;
+              end
+            `RV64_FUNCT12_MRET:
+              begin
+                decode.ret_v         = 1'b1;
+              end
+            default : illegal_instr  = 1'b1;
           endcase
         end
       default : illegal_instr = 1'b1;
     endcase
 
     /* If NOP or illegal instruction, dispatch the instruction directly to the completion pipe */
-    if (fe_nop_v_i | be_nop_v_i | me_nop_v_i | illegal_instr) 
+    if (illegal_instr) 
       begin
         decode             = '0;
-        decode.fe_nop_v    = fe_nop_v_i;
-        decode.be_nop_v    = be_nop_v_i;
-        decode.me_nop_v    = me_nop_v_i;
+        decode.instr_v     = 1'b1;
         decode.pipe_comp_v = 1'b1;
       end 
     else 

@@ -23,7 +23,7 @@ module bp_fe_lce_req
   import bp_common_pkg::*;
   import bp_fe_icache_pkg::*;
   #(parameter data_width_p="inv"
-    , parameter lce_addr_width_p="inv"
+    , parameter paddr_width_p="inv"
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
     , parameter sets_p="inv"
@@ -34,12 +34,11 @@ module bp_fe_lce_req
 
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
     , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
-    , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
-                                                           ,num_lce_p
-                                                           ,lce_addr_width_p
-                                                           ,ways_p
-                                                          )
-    , localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, lce_addr_width_p)
+
+    , localparam lce_cce_req_width_lp=
+      `bp_lce_cce_req_width(num_cce_p,num_lce_p,paddr_width_p,ways_p,data_width_p)
+    , localparam lce_cce_resp_width_lp=
+      `bp_lce_cce_resp_width(num_cce_p,num_lce_p,paddr_width_p)
 
     )
    (input                                      clk_i
@@ -48,9 +47,10 @@ module bp_fe_lce_req
     , input [lce_id_width_lp-1:0]              id_i
  
     , input                                    miss_i
-    , input [lce_addr_width_p-1:0]             miss_addr_i
+    , input [paddr_width_p-1:0]                miss_addr_i
     , input [way_id_width_lp-1:0]              lru_way_i
     , output logic                             cache_miss_o
+    , output logic [paddr_width_p-1:0] miss_addr_o
           
     , input                                    tr_received_i
     , input                                    cce_data_received_i
@@ -71,16 +71,16 @@ module bp_fe_lce_req
   localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp);
    
   bp_fe_lce_req_state_e                   state_r, state_n;
-  logic [lce_addr_width_p-1:0]            miss_addr_r, miss_addr_n;
+  logic [paddr_width_p-1:0]               miss_addr_r, miss_addr_n;
   logic                                   tr_received_r, tr_received_n, tr_received;
   logic                                   cce_data_received_r, cce_data_received_n, cce_data_received;
   logic                                   tag_set_r, tag_set_n, tag_set;
   logic [way_id_width_lp-1:0]             lru_way_r, lru_way_n;
 
-  `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, lce_addr_width_p);
+  `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
   bp_lce_cce_resp_s lce_resp_lo;
 
-  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, lce_addr_width_p, ways_p);
+  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, ways_p, data_width_p);
   bp_lce_cce_req_s lce_req_lo;
 
   assign lce_req_o  = lce_req_lo;
@@ -103,6 +103,8 @@ module bp_fe_lce_req
                                                 +word_offset_width_lp
                                                 +:cce_id_width_lp];
   end
+
+  assign miss_addr_o = miss_addr_r;
    
   // lce_req fsm
   always_comb begin : lce_req_fsm
@@ -120,10 +122,13 @@ module bp_fe_lce_req
 
     lce_req_lo.src_id        = (lce_id_width_lp)'(id_i);
     lce_req_lo.non_exclusive = e_lce_req_not_excl; 
+    lce_req_lo.non_cacheable = e_lce_req_cacheable; 
+    lce_req_lo.nc_size = e_lce_nc_req_1; 
     lce_req_lo.msg_type      = e_lce_req_type_rd;
     lce_req_lo.addr          = miss_addr_r;
     lce_req_lo.lru_way_id    = lru_way_r;
     lce_req_lo.lru_dirty     = e_lce_req_lru_clean;
+    lce_req_lo.data = '0;
     lce_req_v_o              = 1'b0;
 
     lce_resp_lo.src_id       = id_i;
