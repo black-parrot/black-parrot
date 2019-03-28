@@ -24,8 +24,8 @@ module bp_core
     , parameter bht_indx_width_p            = "inv"
     , parameter ras_addr_width_p            = "inv"
 
-    , parameter fe_queue_fifo_els_p = 16
-    , parameter fe_cmd_fifo_els_p = 8
+    , parameter fe_queue_fifo_els_p = 8
+    , parameter fe_cmd_fifo_els_p = 2
     , parameter trace_p=0
 
     , localparam cce_block_size_in_bits_lp =  8*cce_block_size_in_bytes_p
