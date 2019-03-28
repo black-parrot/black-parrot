@@ -27,6 +27,7 @@ module bp_multi_top
    , parameter cce_block_size_in_bytes_p = "inv"
    , parameter cce_num_inst_ram_els_p    = "inv"
  
+   , parameter trace_p = 0
    // Generated parameters
    , localparam lg_core_els_p      = `BSG_SAFE_CLOG2(core_els_p)
    , localparam lg_num_lce_p       = `BSG_SAFE_CLOG2(num_lce_p)
@@ -169,6 +170,7 @@ for(core_id = 0; core_id < core_els_p; core_id++)
         ,.btb_indx_width_p(btb_indx_width_p)
         ,.bht_indx_width_p(bht_indx_width_p)
         ,.ras_addr_width_p(ras_addr_width_p)
+        ,.trace_p(trace_p)
       ) core (
         .clk_i(clk_i)
         ,.reset_i(reset_i)

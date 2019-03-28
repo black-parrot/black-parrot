@@ -158,6 +158,7 @@ module testbench
 	   ,.lce_assoc_p(lce_assoc_p)
 	   ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
 	   ,.cce_num_inst_ram_els_p(cce_num_inst_ram_els_p)
+     ,.trace_p(1)
 	   )
     dut
         (.clk_i(clk_i)

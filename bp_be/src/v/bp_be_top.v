@@ -18,7 +18,7 @@ module bp_be_top
    , parameter core_els_p                  = "inv"
 
    , parameter load_to_use_forwarding_p    = 1
-   , parameter trace_p                     = 1
+   , parameter trace_p                     = 0
    , parameter calc_debug_p                = 0
    , parameter calc_debug_file_p           = "inv"
 
