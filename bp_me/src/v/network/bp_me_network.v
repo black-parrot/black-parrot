@@ -29,8 +29,8 @@ module bp_me_network
     , parameter data_width_p            = "inv"
 
     // Default parameters
-    , parameter data_cmd_max_num_flit_p  = 4
-    , parameter data_resp_max_num_flit_p = 4
+    , parameter data_cmd_max_num_flit_p  = bp_data_cmd_num_flit_gp
+    , parameter data_resp_max_num_flit_p = bp_data_resp_num_flit_gp
     , parameter debug_p                  = 0
 
     // Derived parameters
