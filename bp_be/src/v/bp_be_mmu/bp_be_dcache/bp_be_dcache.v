@@ -739,17 +739,6 @@ module bp_be_dcache
       : (wbuf_yumi_li
         ? {wbuf_entry_out_index, wbuf_entry_out_word_offset}
         : {lce_data_mem_pkt.index, lce_data_mem_pkt.way_id ^ ((word_offset_width_lp)'(i))});
-
-    bsg_mux
-      #(.els_p(ways_p)
-        ,.width_p(data_width_p)
-        )
-      lce_data_mem_write_mux
-        (.data_i(lce_data_mem_pkt.data)
-        ,.sel_i(lce_data_mem_pkt.way_id ^ ((word_offset_width_lp)'(i)))
-        ,.data_o(lce_data_mem_write_data[i])
-        );
-
     assign data_mem_data_li[i] = wbuf_yumi_li
       ? wbuf_entry_out.data
       : lce_data_mem_write_data[i];
@@ -758,6 +747,15 @@ module bp_be_dcache
       ? wbuf_entry_out.mask
       : {data_mask_width_lp{1'b1}};
   end
+
+  bsg_mux_butterfly#(
+    .width_p(data_width_p)
+    ,.els_p(ways_p)
+  ) write_mux_butterfly (
+    .data_i(lce_data_mem_pkt.data)
+    ,.sel_i(lce_data_mem_pkt.way_id)
+    ,.data_o(lce_data_mem_write_data)
+  );
  
   // tag_mem
   //
@@ -888,16 +886,14 @@ module bp_be_dcache
     end
   end
 
-  for (genvar i = 0; i < ways_p; i++) begin
-    bsg_mux #(
-      .els_p(ways_p)
-      ,.width_p(data_width_p)
-    ) lce_data_mem_read_mux (
-      .data_i(data_mem_data_lo)
-      ,.sel_i(lce_data_mem_pkt_way_r ^ ((word_offset_width_lp)'(i)))
-      ,.data_o(lce_data_mem_data_li[i])
-    );
-  end
+  bsg_mux_butterfly #(
+    .width_p(data_width_p)
+    ,.els_p(ways_p)
+  ) read_mux_butterfly (
+    .data_i(data_mem_data_lo)
+    ,.sel_i(lce_data_mem_pkt_way_r)
+    ,.data_o(lce_data_mem_data_li)
+  );
 
   assign lce_data_mem_pkt_yumi = (lce_data_mem_pkt.opcode == e_dcache_lce_data_mem_uncached)
     ? lce_data_mem_pkt_v

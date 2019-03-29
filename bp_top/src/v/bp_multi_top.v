@@ -10,22 +10,22 @@ module bp_multi_top
  import bp_be_rv64_pkg::*;
  import bp_cce_pkg::*;
  #(// System parameters
-   parameter core_els_p                    = "inv"
-   , parameter vaddr_width_p               = "inv"
-   , parameter paddr_width_p               = "inv"
-   , parameter asid_width_p                = "inv"
-   , parameter branch_metadata_fwd_width_p = "inv"
-   , parameter btb_indx_width_p            = "inv"
-   , parameter bht_indx_width_p            = "inv"
-   , parameter ras_addr_width_p            = "inv"
+   parameter core_els_p                    = 1
+   , parameter vaddr_width_p               = 39
+   , parameter paddr_width_p               = 34
+   , parameter asid_width_p                = 10
+   , parameter branch_metadata_fwd_width_p = 36
+   , parameter btb_indx_width_p            = 9
+   , parameter bht_indx_width_p            = 5
+   , parameter ras_addr_width_p            = 22
 
    // ME parameters
-   , parameter num_cce_p                 = "inv"
-   , parameter num_lce_p                 = "inv"
-   , parameter lce_assoc_p               = "inv"
-   , parameter lce_sets_p                = "inv"
-   , parameter cce_block_size_in_bytes_p = "inv"
-   , parameter cce_num_inst_ram_els_p    = "inv"
+   , parameter num_cce_p                 = 1
+   , parameter num_lce_p                 = 2
+   , parameter lce_assoc_p               = 8
+   , parameter lce_sets_p                = 64
+   , parameter cce_block_size_in_bytes_p = 64
+   , parameter cce_num_inst_ram_els_p    = 144
  
    , parameter trace_p = 0
    // Generated parameters

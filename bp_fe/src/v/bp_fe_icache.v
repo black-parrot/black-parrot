@@ -435,18 +435,18 @@ module icache
       ? {vaddr_index, vaddr_offset}
       : {data_mem_pkt.index, data_mem_pkt.way_id ^ ((word_offset_width_lp)'(i))};
 
-    bsg_mux #(
-      .els_p(ways_p)
-      ,.width_p(data_width_p)
-    ) data_mem_write_mux (
-      .data_i(data_mem_pkt.data)
-      ,.sel_i(data_mem_pkt.way_id ^ ((word_offset_width_lp)'(i)))
-      ,.data_o(data_mem_write_data[i])
-    );
-
     assign data_mem_bank_data_li[i] = data_mem_write_data[i];
     assign data_mem_bank_w_mask_li[i] = {data_mask_width_lp{1'b1}};
   end
+
+  bsg_mux_butterfly #(
+    .width_p(data_width_p)
+    ,.els_p(ways_p)
+  ) write_mux_butterfly (
+    .data_i(data_mem_pkt.data)
+    ,.sel_i(data_mem_pkt.way_id)
+    ,.data_o(data_mem_write_data)
+  );
    
   // tag_mem
   assign tag_mem_v_li = tl_we | tag_mem_pkt_yumi_li;
@@ -526,16 +526,14 @@ module icache
     end
   end
 
-  for (genvar i = 0; i < ways_p; i++) begin
-    bsg_mux #(
-      .els_p(ways_p)
-      ,.width_p(data_width_p)
-    ) lce_data_mem_read_mux (
-      .data_i(data_mem_bank_data_lo)
-      ,.sel_i(data_mem_pkt_way_r ^ ((word_offset_width_lp)'(i)))
-      ,.data_o(data_mem_data_li[i])
-    );
-  end
+  bsg_mux_butterfly #(
+    .width_p(data_width_p)
+    ,.els_p(ways_p)
+  ) read_mux_butterfly (
+    .data_i(data_mem_bank_data_lo)
+    ,.sel_i(data_mem_pkt_way_r)
+    ,.data_o(data_mem_data_li)
+  );
 
   assign data_mem_pkt_yumi_li = data_mem_pkt_v_lo & ~tl_we;
 
