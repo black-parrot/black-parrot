@@ -75,11 +75,17 @@ module bp_fe_top
    , parameter ras_addr_width_p="inv"
    , parameter asid_width_p="inv"
    , parameter bp_first_pc_p="inv"
-   , parameter branch_predictor_p=1
-
-    
+   , localparam instr_scan_width_lp=`bp_fe_instr_scan_width
+   , localparam branch_metadata_fwd_width_lp=eaddr_width_lp-2+bht_indx_width_p+ras_addr_width_p
+   , localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p
+                                                                ,branch_metadata_fwd_width_lp
+                                                               )
+   , localparam bp_fe_pc_gen_width_o_lp=`bp_fe_pc_gen_queue_width(vaddr_width_p
+                                                                  ,branch_metadata_fwd_width_lp
+                                                                 )
+  
    // be interfaces parameters
-   , localparam branch_metadata_fwd_width_lp=btb_indx_width_p+bht_indx_width_p+ras_addr_width_p
+//   , localparam branch_metadata_fwd_width_lp=btb_indx_width_p+bht_indx_width_p+ras_addr_width_p
    , localparam bp_fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_p
                                                     ,paddr_width_p
                                                     ,asid_width_p
@@ -264,7 +270,12 @@ assign itlb_entry_w.ptag = bp_fe_cmd.operands.itlb_fill_response.pte_entry_leaf.
 assign itlb_icache.ppn   = itlb_entry_r.ptag;
 
 always_ff @(posedge clk_i)
-  begin
+ if (reset_i)
+ begin
+    prev_tlb_miss <= '0;
+ end
+ else 
+ begin
     prev_tlb_miss <= tlb_miss_v;
   end
 
@@ -279,7 +290,6 @@ bp_fe_pc_gen
    ,.asid_width_p(asid_width_p)
    ,.bp_first_pc_p(bp_first_pc_p)
    ,.instr_width_p(instr_width_lp)
-   ,.branch_predictor_p(branch_predictor_p)
    ) 
  bp_fe_pc_gen_1
   (.clk_i(clk_i)

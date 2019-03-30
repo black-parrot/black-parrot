@@ -141,9 +141,10 @@ typedef struct packed
 `define declare_bp_fe_branch_metadata_fwd_s(btb_idx_width_mp,bht_idx_width_mp,ras_addr_width_mp) \
   typedef struct packed                                                                          \
   {                                                                                              \
-    logic [btb_idx_width_mp-1:0]    btb_indx;                                                    \
-    logic [bht_idx_width_mp-1:0]    bht_indx;                                                    \
-    logic [ras_addr_width_mp-1:0]   ras_addr;                                                    \
+    logic [rv64_eaddr_width_gp-btb_idx_width_mp-2-1:0] btb_tag;                                  \
+    logic [btb_idx_width_mp-1:0]                       btb_indx;                                 \
+    logic [bht_idx_width_mp-1:0]                       bht_indx;                                 \
+    logic [ras_addr_width_mp-1:0]                      ras_addr;                                 \
   }  bp_fe_branch_metadata_fwd_s;
 
 

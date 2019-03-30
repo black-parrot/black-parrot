@@ -100,8 +100,12 @@ bp_proc_cfg_s proc_cfg;
 
 logic chk_psn_ex;
 logic prev_trace_v;
+
+logic prev_tlb_miss;
    
 logic [reg_data_width_lp-1:0] next_btarget_r, next_btarget_n;
+
+logic redirect_pending_r;
 
 logic tlb_miss;
 
@@ -114,18 +118,18 @@ logic [63:0]  test_pc;
    
 
 always_comb begin : be_cmd_gen
-    bp_fe_cmd_v_o  = bp_fe_queue_v_i & trace_ready_i & (bp_fe_queue.msg.fetch.pc != next_btarget_r);
+    bp_fe_cmd_v_o  = bp_fe_queue_v_i & trace_ready_i & (bp_fe_queue.msg.fetch.pc != next_btarget_r) | (~prev_tlb_miss & tlb_miss);
     bp_fe_queue_clr_o = bp_fe_cmd_v_o;
-    bp_fe_cmd.opcode                                 = tlb_miss ? e_op_itlb_fill_response : e_op_pc_redirection;
+    bp_fe_cmd.opcode                                 = (tlb_miss | prev_tlb_miss) ? e_op_itlb_fill_response : e_op_pc_redirection;
     fe_cmd_pc_redirect_operands.pc                   = next_btarget_r;
     fe_cmd_pc_redirect_operands.subopcode            = e_subop_branch_mispredict;
-    fe_cmd_pc_redirect_operands.branch_metadata_fwd  = '0;    
+    fe_cmd_pc_redirect_operands.branch_metadata_fwd  = bp_fe_queue.msg.fetch.branch_metadata_fwd;
     fe_cmd_pc_redirect_operands.misprediction_reason = e_incorrect_prediction;
 
     fe_cmd_itlb_map.vaddr = tlb_miss_vaddr_i; //bp_fe_queue.msg.exception.vaddr
     fe_cmd_itlb_map.pte_entry_leaf.paddr = tlb_miss_vaddr_i;
 
-    if(~tlb_miss)
+    if(~tlb_miss | ~prev_tlb_miss)
       bp_fe_cmd.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
     else
       bp_fe_cmd.operands.itlb_fill_response   = fe_cmd_itlb_map;
@@ -136,10 +140,15 @@ assign trace_yumi_o = trace_v_i;
 always_ff @(posedge clk_i) begin
   if (reset_i) begin
     next_btarget_r <= '0;
-    prev_trace_v   <= '0; 
+    redirect_pending_r <= '0;
+    prev_tlb_miss <= 0; 
   end else begin
+    prev_tlb_miss  <= tlb_miss;
     next_btarget_r <= next_btarget_n;
-    prev_trace_v   <= trace_v_i; 
+    redirect_pending_r <= (bp_fe_cmd_v_o & bp_fe_cmd_ready_i)
+                          ? 1'b1
+                          : redirect_pending_r 
+                            & ~(bp_fe_queue_ready_o & (bp_fe_queue.msg.fetch.pc == next_btarget_r));
   end
 end
 
@@ -158,7 +167,9 @@ end
 always_comb begin : be_queue_gen
   trace_data_o = {bp_fe_queue.msg.fetch.pc, bp_fe_queue.msg.fetch.instr};
 
-  trace_v_o           = bp_fe_queue_v_i & trace_ready_i & (bp_fe_queue.msg.fetch.pc == next_btarget_r);
+  trace_v_o           = bp_fe_queue_v_i 
+                        & trace_ready_i 
+                        & (bp_fe_queue.msg.fetch.pc == next_btarget_r);
   bp_fe_queue_ready_o = bp_fe_queue_v_i; 
 end
 
