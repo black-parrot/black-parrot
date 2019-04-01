@@ -39,6 +39,10 @@ module bp_be_trace_replay_gen
 
 logic [reg_data_width_lp-1:0] mem_data;
 
+wire unused0 = clk_i;
+wire unused1 = reset_i;
+wire unused2 = ready_i;
+
 always_comb 
   begin
     // get size of the memory operation

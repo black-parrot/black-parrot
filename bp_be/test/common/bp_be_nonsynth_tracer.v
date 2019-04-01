@@ -1,7 +1,6 @@
 module bp_be_nonsynth_tracer
  import bp_common_pkg::*;
  import bp_be_pkg::*;
- import bp_common_pkg::*;
  import bp_be_rv64_pkg::*;
  #(parameter vaddr_width_p                 = "inv"
    , parameter paddr_width_p               = "inv"
@@ -61,6 +60,9 @@ assign issue_pkt = issue_pkt_i;
 assign dispatch_pkt = dispatch_pkt_i;
 
 assign cmt_trace_exc       = cmt_trace_exc_i;
+
+wire                         unused0 = ex1_btaken_i;
+wire [reg_data_width_lp-1:0] unused1 = fwb_result_i;
 
     bp_be_dispatch_pkt_s [pipe_stage_els_lp-1:0] dbg_stage_r;
 
