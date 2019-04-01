@@ -1,203 +1,247 @@
-`include "bsg_defines.v"
-
-`include "bp_common_me_if.vh"
-
-`include "bp_be_internal_if_defines.vh"
-`include "bp_be_rv64_defines.vh"
-
 module bp_be_nonsynth_tracer
- /* TODO: Get rid of this */
+ import bp_common_pkg::*;
  import bp_be_pkg::*;
+ import bp_common_pkg::*;
  import bp_be_rv64_pkg::*;
- #(parameter vaddr_width_p="inv"
-   , parameter paddr_width_p="inv"
-   , parameter asid_width_p="inv"
-   , parameter branch_metadata_fwd_width_p="inv"
+ #(parameter vaddr_width_p                 = "inv"
+   , parameter paddr_width_p               = "inv"
+   , parameter asid_width_p                = "inv"
+   , parameter branch_metadata_fwd_width_p = "inv"
+   , parameter core_els_p                  = "inv"
+   , parameter num_lce_p                   = "inv"
 
-   , parameter core_els_p="inv"
-   , parameter num_lce_p="inv"
+   // Default parameters
+   , parameter debug_file_p = "debug.log"
 
-   , localparam proc_cfg_width_lp = `bp_proc_cfg_width(core_els_p, num_lce_p)
+   // Calculated parameters
+   , localparam mhartid_width_lp      = `BSG_SAFE_CLOG2(core_els_p)
+   , localparam proc_cfg_width_lp     = `bp_proc_cfg_width(core_els_p, num_lce_p)
+   , localparam issue_pkt_width_lp    = `bp_be_issue_pkt_width(branch_metadata_fwd_width_p)
+   , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(branch_metadata_fwd_width_p)
+   , localparam exception_width_lp    = `bp_be_exception_width
 
-   , localparam pipe_stage_reg_width_lp=`bp_be_pipe_stage_reg_width(branch_metadata_fwd_width_p)
-   , localparam calc_result_width_lp=`bp_be_calc_result_width(branch_metadata_fwd_width_p)
-   , localparam exception_width_lp=`bp_be_exception_width
+   // Constants
+   , localparam pipe_stage_els_lp = 5
+
+   // From RISC-V specifications
+   , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )
-  (input logic                                 clk_i
-   , input logic                               reset_i
+  (input                                                   clk_i
+   , input                                                 reset_i
 
-   , input logic [proc_cfg_width_lp-1:0] proc_cfg_i
+   , input [mhartid_width_lp-1:0]                          mhartid_i
 
-   , input logic [pipe_stage_reg_width_lp-1:0] cmt_trace_stage_reg_i
-   , input logic [calc_result_width_lp-1:0]    cmt_trace_result_i
-   , input logic [exception_width_lp-1:0]      cmt_trace_exc_i 
+   , input [issue_pkt_width_lp-1:0]                        issue_pkt_i
+   , input                                                 issue_pkt_v_i
+
+   , input [dispatch_pkt_width_lp-1:0]                     dispatch_pkt_i
+   , input                                                 fe_nop_v_i
+   , input                                                 be_nop_v_i
+   , input                                                 me_nop_v_i
+
+   , input [reg_data_width_lp-1:0]                         ex1_br_tgt_i
+   , input                                                 ex1_btaken_i
+   , input [reg_data_width_lp-1:0]                         iwb_result_i
+   , input [reg_data_width_lp-1:0]                         fwb_result_i
+
+   , input [pipe_stage_els_lp-1:0][exception_width_lp-1:0] cmt_trace_exc_i 
    );
 
-`declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
 `declare_bp_be_internal_if_structs(vaddr_width_p
                                    , paddr_width_p
                                    , asid_width_p
                                    , branch_metadata_fwd_width_p
                                    );
-
 // Cast input and output ports
-bp_proc_cfg_s proc_cfg;
+bp_be_issue_pkt_s             issue_pkt;
+bp_be_dispatch_pkt_s          dispatch_pkt;
+bp_be_exception_s [pipe_stage_els_lp-1:0]             cmt_trace_exc;
 
-bp_be_pipe_stage_reg_s cmt_trace_stage_reg;
-bp_be_calc_result_s    cmt_trace_result;
-bp_be_exception_s      cmt_trace_exc;
+assign issue_pkt = issue_pkt_i;
+assign dispatch_pkt = dispatch_pkt_i;
 
-assign proc_cfg = proc_cfg_i;
-
-assign cmt_trace_stage_reg = cmt_trace_stage_reg_i;
-assign cmt_trace_result    = cmt_trace_result_i;
 assign cmt_trace_exc       = cmt_trace_exc_i;
 
+    bp_be_dispatch_pkt_s [pipe_stage_els_lp-1:0] dbg_stage_r;
 
-logic[1:0] reset_complete;
-logic      booted;
+    bsg_dff 
+     #(.width_p(dispatch_pkt_width_lp*pipe_stage_els_lp))
+     dbg_stage_reg
+      (.clk_i(clk_i)
+       ,.data_i({dbg_stage_r[0+:pipe_stage_els_lp-1], dispatch_pkt})
+       ,.data_o(dbg_stage_r)
+       );
+     
+    logic [reg_data_width_lp-1:0] iwb_br_tgt_r;
+    bsg_shift_reg
+     #(.width_p(reg_data_width_lp)
+       ,.stages_p(2)
+       )
+     dbg_shift_reg
+      (.clk(clk_i)
+       ,.reset_i(reset_i)
+       ,.valid_i(1'b1)
+       ,.valid_o(/* We don't care */)
+       ,.data_i(ex1_br_tgt_i)
+       ,.data_o(iwb_br_tgt_r)
+       );
 
+    integer file;
+    initial file = $fopen(debug_file_p, "w");
+
+    logic booted_r;
+
+    bsg_dff_reset_en
+     #(.width_p(1))
+     boot_reg
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
+       ,.en_i(issue_pkt_v_i)
+       ,.data_i(1'b1)
+       ,.data_o(booted_r)
+       );
+
+logic [4:0][2:0][7:0] stage_aliases;
+assign stage_aliases = {"FWB", "IWB", "EX2", "EX1"};
 always_ff @(posedge clk_i) begin
-    if(reset_i) begin
-        reset_complete  <= 2'b00;
-        booted          <= 1'b0;
-    end else if(~reset_i & (reset_complete != 2'b11)) begin
-        reset_complete <= reset_complete + 2'b01;
-    end
+    if(booted_r) begin
+            $fwrite(file, "-----\n");
+            if (issue_pkt_v_i)
+              $fwrite(file, "[ISS] core: %x pc: %x\n", mhartid_i, issue_pkt.instr_metadata.pc);
 
-    if(reset_complete == 2'b11) begin
-        if(cmt_trace_stage_reg.decode.fe_nop_v) begin
-            if(booted) begin
-                $display("[CORE%0x BUB] cause: FE"
-                         ,proc_cfg.mhartid
+            if (fe_nop_v_i)
+              $fwrite(file, "[ISD] core: %x bub (fe)\n", mhartid_i);
+            else if (be_nop_v_i)
+              $fwrite(file, "[ISD] core: %x bub (be)\n", mhartid_i);
+            else if (me_nop_v_i)
+              $fwrite(file, "[ISD] core: %x bub (me)\n", mhartid_i);
+            else 
+              $fwrite(file, "[ISD] core: %x pc: %x\n", mhartid_i, dispatch_pkt.instr_metadata.pc);
+
+for (integer i = 0; i < 4; i++)
+begin
+            if (cmt_trace_exc[i].roll_v)
+              $fwrite(file, "[%s] core: %x rolled\n", stage_aliases[i], mhartid_i);
+            else if (cmt_trace_exc[i].poison_v)
+              $fwrite(file, "[%s] core: %x poisoned\n", stage_aliases[i], mhartid_i);
+            else if (~dbg_stage_r[i].decode.instr_v)
+              $fwrite(file, "[%s] core: %x nop\n", stage_aliases[i], mhartid_i);
+            else
+              $fwrite(file, "[%s] core: %x pc: %x\n", stage_aliases[i], mhartid_i, dbg_stage_r[i].instr_metadata.pc);
+end
+            if(dbg_stage_r[2].decode.instr_v & ~cmt_trace_exc[2].poison_v) begin
+                $fwrite(file, "[CMT] core: %x itag: %x pc: %x instr: %x\n"
+                         ,mhartid_i
+                         ,dbg_stage_r[2].instr_metadata.itag
+                         ,dbg_stage_r[2].instr_metadata.pc
+                         ,dbg_stage_r[2].instr
                          );
-            end
-        end else if(cmt_trace_stage_reg.decode.be_nop_v) begin
-            if(booted) begin
-                $display("[CORE%0x BUB] cause: BE"
-                         ,proc_cfg.mhartid
-                         );
-            end
-        end else if(cmt_trace_stage_reg.decode.me_nop_v) begin
-            if(booted) begin
-                $display("[CORE%0x BUB] cause: ME"
-                         ,proc_cfg.mhartid
-                         );
-            end
-        end else begin
-            booted <= 1'b1;
-            if(cmt_trace_exc.cache_miss_v) begin
-                $display("[CORE%0x MIS] itag: %x pc: %x instr: %x"
-                         ,proc_cfg.mhartid
-                         ,cmt_trace_stage_reg.instr_metadata.itag
-                         ,cmt_trace_stage_reg.instr_metadata.pc
-                         ,cmt_trace_stage_reg.instr
-                         );
-            end else if(cmt_trace_exc.roll_v) begin
-                $display("[CORE%0x ROL] itag: %x pc: %x instr: %x"
-                         ,proc_cfg.mhartid
-                         ,cmt_trace_stage_reg.instr_metadata.itag
-                         ,cmt_trace_stage_reg.instr_metadata.pc
-                         ,cmt_trace_stage_reg.instr
-                         );
-            end else if(cmt_trace_exc.poison_v) begin
-                $display("[CORE%0x PSN] itag: %x pc: %x instr: %x"
-                         ,proc_cfg.mhartid
-                         ,cmt_trace_stage_reg.instr_metadata.itag
-                         ,cmt_trace_stage_reg.instr_metadata.pc
-                         ,cmt_trace_stage_reg.instr
-                         );
-            /* 
-             * TODO: Get exceptions from exception pipe 
-            end else if(cmt_trace_stage_reg.decode.exception_v) begin
-                $display("[CORE%0x EXC] itag: %x pc: %x instr: %x"
-                         ,proc_cfg.mhartid
-                         ,cmt_trace_stage_reg.instr_metadata.itag
-                         ,cmt_trace_stage_reg.instr_metadata.pc
-                         ,cmt_trace_stage_reg.instr
-                         );
-            */
-            end else begin
-                $display("[CORE%0x CMT] itag: %x pc: %x instr: %x"
-                         ,proc_cfg.mhartid
-                         ,cmt_trace_stage_reg.instr_metadata.itag
-                         ,cmt_trace_stage_reg.instr_metadata.pc
-                         ,cmt_trace_stage_reg.instr
-                         );
-                if(cmt_trace_stage_reg.decode.mhartid_r_v) begin
-                    $display("\t\t\top: csr sem: r%d <- mhartid {%x}"
-                             ,cmt_trace_stage_reg.decode.rd_addr
-                             ,cmt_trace_result.result
+                if(dbg_stage_r[2].decode.mhartid_r_v) begin
+                    $fwrite(file, "\t\top: csr sem: r%d <- mhartid {%x}\n"
+                             ,dbg_stage_r[2].decode.rd_addr
+                             ,iwb_result_i
                              );
-                end else if(cmt_trace_stage_reg.decode.dcache_r_v) begin
-                    $display("\t\t\top: load sem: r%d <- mem[%x] {%x}"
-                             ,cmt_trace_stage_reg.decode.rd_addr
-                             ,cmt_trace_stage_reg.instr_operands.rs1 
-                              + cmt_trace_stage_reg.instr_operands.imm
-                             ,cmt_trace_result.result
+                end else if(dbg_stage_r[2].decode.mtvec_rw_v) begin
+                    $fwrite(file, "\t\top: csr sem: r%d <- mtvec {%x} r%d {%x} -> mtvec\n"
+                             ,dbg_stage_r[2].decode.rd_addr
+                             ,iwb_result_i
+                             ,dbg_stage_r[2].decode.rs1_addr
+                             ,dbg_stage_r[2].rs1
                              );
-                end else if(cmt_trace_stage_reg.decode.dcache_w_v) begin
-                    if(cmt_trace_stage_reg.instr_operands.rs1
-                       +cmt_trace_stage_reg.instr_operands.imm==64'hc00dead0) begin
-                        if(cmt_trace_stage_reg.instr_operands.rs2[31:16]==16'h0000) begin
-                            $display("[CORE%0x PAS] TEST_NUM=%x"
-                                     ,proc_cfg.mhartid
-                                     ,cmt_trace_stage_reg.instr_operands.rs2[15:0]
+                end else if(dbg_stage_r[2].decode.mepc_rw_v) begin
+                    $fwrite(file, "\t\top: csr sem: r%d <- mepc {%x} r%d {%x} -> mepc\n"
+                             ,dbg_stage_r[2].decode.rd_addr
+                             ,iwb_result_i
+                             ,dbg_stage_r[2].decode.rs1_addr
+                             ,dbg_stage_r[2].rs1
+                             );
+                end else if(dbg_stage_r[2].decode.mscratch_rw_v) begin
+                    $fwrite(file, "\t\top: csr sem: r%d <- mscratch {%x} r%d {%x} -> mscratch\n"
+                             ,dbg_stage_r[2].decode.rd_addr
+                             ,iwb_result_i
+                             ,dbg_stage_r[2].decode.rs1_addr
+                             ,dbg_stage_r[2].rs1
+                             );
+                end else if(dbg_stage_r[2].decode.mtval_rw_v) begin
+                    $fwrite(file, "\t\top: csr sem: r%d <- mtval {%x} r%d {%x} -> mtval\n"
+                             ,dbg_stage_r[2].decode.rd_addr
+                             ,iwb_result_i
+                             ,dbg_stage_r[2].decode.rs1_addr
+                             ,dbg_stage_r[2].rs1
+                             );
+                end else if(dbg_stage_r[2].decode.ret_v) begin
+                    $fwrite(file, "\t\top: ret\n");
+                end else if(dbg_stage_r[2].decode.dcache_r_v) begin
+                    $fwrite(file, "\t\top: load sem: r%d <- mem[%x] {%x}\n"
+                             ,dbg_stage_r[2].decode.rd_addr
+                             ,dbg_stage_r[2].rs1 
+                              + dbg_stage_r[2].imm
+                             ,iwb_result_i
+                             );
+                end else if(dbg_stage_r[2].decode.dcache_w_v) begin
+                    if(dbg_stage_r[2].rs1
+                       +dbg_stage_r[2].imm==64'hc00dead0) begin
+                        if(dbg_stage_r[2].rs2[31:16]==16'h0000) begin
+                            $fwrite(file, "[CORE%0x PAS] TEST_NUM=%x\n"
+                                     ,mhartid_i
+                                     ,dbg_stage_r[2].rs2[15:0]
                                      );
-                        end else if(cmt_trace_stage_reg.instr_operands.rs2[31:16]==16'hFFFF) begin
-                            $display("[CORE%0x FAL] TEST_NUM=%x"
-                                     ,proc_cfg.mhartid
-                                     ,cmt_trace_stage_reg.instr_operands.rs2[15:0]
+                        end else if(dbg_stage_r[2].rs2[31:16]==16'hFFFF) begin
+                            $fwrite(file, "[CORE%0x FAL] TEST_NUM=%x\n"
+                                     ,mhartid_i
+                                     ,dbg_stage_r[2].rs2[15:0]
                                      );
                         end else begin
-                            $display("[CORE%0x ERR] STORE TO 0xC00DEAD0, change test address"
-                                     ,proc_cfg.mhartid
+                            $fwrite(file, "[CORE%0x ERR] STORE TO 0xC00DEAD0, change test address\n"
+                                     ,mhartid_i
                                      );
                         end
                         $finish();
-                    end else if(cmt_trace_stage_reg.instr_operands.rs1
-                                +cmt_trace_stage_reg.instr_operands.imm==64'h8FFF_FFFF) begin
-                        $display("[CORE%0x PRT] %d"
-                                 ,proc_cfg.mhartid
-                                 ,cmt_trace_stage_reg.instr_operands.rs2[0+:8]
+                    end else if(dbg_stage_r[2].rs1
+                                +dbg_stage_r[2].imm==64'h8FFF_FFFF) begin
+                        $fwrite(file, "[CORE%0x PRT] %x\n"
+                                 ,mhartid_i
+                                 ,dbg_stage_r[2].rs2[0+:8]
                                  );
-                    end else if(cmt_trace_stage_reg.instr_operands.rs1
-                                +cmt_trace_stage_reg.instr_operands.imm==64'h8FFF_EFFF) begin
-                        $display("[CORE%0x PRT] %c"
-                                 ,proc_cfg.mhartid
-                                 ,cmt_trace_stage_reg.instr_operands.rs2[0+:8]
+                    end else if(dbg_stage_r[2].rs1
+                                +dbg_stage_r[2].imm==64'h8FFF_EFFF) begin
+                        $fwrite(file, "[CORE%0x PRT] %c\n"
+                                 ,mhartid_i
+                                 ,dbg_stage_r[2].rs2[0+:8]
                                  );
                     end else begin
-                        $display("\t\t\top: store sem: mem[%x] <- r%d {%x}"
-                                 ,cmt_trace_stage_reg.instr_operands.rs1 
-                                  + cmt_trace_stage_reg.instr_operands.imm
-                                 ,cmt_trace_stage_reg.decode.rs2_addr
-                                 ,cmt_trace_stage_reg.instr_operands.rs2
+                        $fwrite(file, "\t\top: store sem: mem[%x] <- r%d {%x}\n"
+                                 ,dbg_stage_r[2].rs1 
+                                  + dbg_stage_r[2].imm
+                                 ,dbg_stage_r[2].decode.rs2_addr
+                                 ,dbg_stage_r[2].rs2
                                  );   
                     end
-                end else if(cmt_trace_stage_reg.decode.jmp_v) begin
-                    $display("\t\t\top: jump sem: pc <- {%x}, r%d <- {%x}"
-                             ,cmt_trace_result.br_tgt
-                             ,cmt_trace_stage_reg.decode.rd_addr
-                             ,cmt_trace_result.result
+                end else if(dbg_stage_r[2].decode.jmp_v) begin
+                    $fwrite(file, "\t\top: jump sem: pc <- {%x}, r%d <- {%x}\n"
+                             ,iwb_br_tgt_r
+                             ,dbg_stage_r[2].decode.rd_addr
+                             ,iwb_result_i
                              );
-                end else if(cmt_trace_stage_reg.decode.br_v) begin
-                    /* TODO: Expand on this trace to have all branch instructions */
-                    $display("\t\t\top: branch sem: pc <- {%x} rs1: %x cmp rs2: %x taken: %x"
-                             ,cmt_trace_result.br_tgt
-                             ,cmt_trace_stage_reg.instr_operands.rs1
-                             ,cmt_trace_stage_reg.instr_operands.rs2
-                             ,cmt_trace_result.result[0]
+                end else if(dbg_stage_r[2].decode.br_v) begin
+                    // TODO: Expand on this trace to have all branch instructions
+                    $fwrite(file, "\t\top: branch sem: pc <- {%x} rs1: %x cmp rs2: %x taken: %x\n"
+                             ,iwb_br_tgt_r
+                             ,dbg_stage_r[2].rs1
+                             ,dbg_stage_r[2].rs2
+                             ,iwb_result_i[0]
                              );
-                end else if(cmt_trace_stage_reg.decode.irf_w_v) begin
-                    /* TODO: Expand on this trace to have all integer instructions */
-                    $display("\t\t\top: integer sem: r%d <- {%x}"
-                             ,cmt_trace_stage_reg.decode.rd_addr
-                             ,cmt_trace_result.result
+                end else if(dbg_stage_r[2].decode.irf_w_v) begin
+                    // TODO: Expand on this trace to have all integer instructions
+                    $fwrite(file, "\t\top: integer sem: r%d <- {%x}\n"
+                             ,dbg_stage_r[2].decode.rd_addr
+                             ,iwb_result_i
                              );
                 end
             end
         end
-    end
+    //end
 end
+
 endmodule : bp_be_nonsynth_tracer
+

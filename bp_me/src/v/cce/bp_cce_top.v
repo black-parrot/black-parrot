@@ -18,6 +18,7 @@ module bp_cce_top
     , parameter lce_sets_p              = "inv"
     , parameter block_size_in_bytes_p   = "inv"
     , parameter num_cce_inst_ram_els_p  = "inv"
+    , parameter lce_req_data_width_p    = "inv"
 
     // Derived parameters
     , localparam block_size_in_bits_lp  = (block_size_in_bytes_p*8)
@@ -27,7 +28,8 @@ module bp_cce_top
     , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                                ,num_lce_p
                                                                ,paddr_width_p
-                                                               ,lce_assoc_p)
+                                                               ,lce_assoc_p
+                                                               ,lce_req_data_width_p)
 
     , localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
                                                                  ,num_lce_p
@@ -43,11 +45,9 @@ module bp_cce_top
                                                                ,paddr_width_p
                                                                ,lce_assoc_p)
 
-    , localparam bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
-                                                                         ,num_lce_p
-                                                                         ,paddr_width_p
-                                                                         ,block_size_in_bits_lp
-                                                                         ,lce_assoc_p)
+    , localparam bp_lce_data_cmd_width_lp=`bp_lce_data_cmd_width(num_lce_p
+                                                                 ,block_size_in_bits_lp
+                                                                 ,lce_assoc_p)
 
     , localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p
                                                                  ,num_lce_p
@@ -89,7 +89,7 @@ module bp_cce_top
    , output logic                                          lce_cmd_v_o
    , input                                                 lce_cmd_ready_i
 
-   , output logic [bp_cce_lce_data_cmd_width_lp-1:0]       lce_data_cmd_o
+   , output logic [bp_lce_data_cmd_width_lp-1:0]           lce_data_cmd_o
    , output logic                                          lce_data_cmd_v_o
    , input                                                 lce_data_cmd_ready_i
 
@@ -253,6 +253,7 @@ module bp_cce_top
       ,.lce_sets_p(lce_sets_p)
       ,.block_size_in_bytes_p(block_size_in_bytes_p)
       ,.num_cce_inst_ram_els_p(num_cce_inst_ram_els_p)
+      ,.lce_req_data_width_p(lce_req_data_width_p)
       )
     bp_cce
      (.clk_i(clk_i)

@@ -30,7 +30,7 @@
  *   mmu_cmd_v_o      -  'ready-then-valid' interface
  *   mmu_cmd_ready_i    - 
  * 
- *   result_o         - The calculated result of a load
+ *   data_o         - The calculated result of a load
  *   cache_miss_o     - Goes high when the result of the load is a cache miss 
  *   
  * Keywords:
@@ -46,11 +46,13 @@ module bp_be_pipe_mem
  #(parameter vaddr_width_p               = "inv"
    , parameter lce_sets_p                = "inv"
    , parameter cce_block_size_in_bytes_p = "inv"
+   , parameter core_els_p                = "inv"
    // Generated parameters
    , localparam decode_width_lp    = `bp_be_decode_width
    , localparam exception_width_lp = `bp_be_exception_width
    , localparam mmu_cmd_width_lp   = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam mmu_resp_width_lp  = `bp_be_mmu_resp_width
+   , localparam mhartid_width_lp   = `BSG_SAFE_CLOG2(core_els_p)
 
    // From RISC-V specifications
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
@@ -58,11 +60,13 @@ module bp_be_pipe_mem
   (input                            clk_i
    , input                          reset_i
 
+   , input                          kill_ex1_i
+   , input                          kill_ex2_i
+   , input                          kill_ex3_i
    , input [decode_width_lp-1:0]    decode_i
    , input [reg_data_width_lp-1:0]  rs1_i
    , input [reg_data_width_lp-1:0]  rs2_i
    , input [reg_data_width_lp-1:0]  imm_i
-   , input [exception_width_lp-1:0] exc_i
 
    , output [mmu_cmd_width_lp-1:0]  mmu_cmd_o
    , output                         mmu_cmd_v_o
@@ -72,8 +76,31 @@ module bp_be_pipe_mem
    , input                          mmu_resp_v_i
    , output                         mmu_resp_ready_o
 
-   , output [reg_data_width_lp-1:0] result_o
-   , output                         cache_miss_o
+   , output logic [reg_data_width_lp-1:0] data_o
+
+   , output                               cache_miss_o
+
+   // CSR interface
+   , input [mhartid_width_lp-1:0]   mhartid_i
+   , input [reg_data_width_lp-1:0]  mcycle_i
+   , input [reg_data_width_lp-1:0]  mtime_i
+   , input [reg_data_width_lp-1:0]  minstret_i
+
+   , output [reg_data_width_lp-1:0] mtvec_o
+   , output                         mtvec_w_v_o
+   , input  [reg_data_width_lp-1:0] mtvec_i
+
+   , output [reg_data_width_lp-1:0] mtval_o
+   , output                         mtval_w_v_o
+   , input [reg_data_width_lp-1:0]  mtval_i
+
+   , output [reg_data_width_lp-1:0] mepc_o
+   , output                         mepc_w_v_o
+   , input [reg_data_width_lp-1:0]  mepc_i
+
+   , output [reg_data_width_lp-1:0] mscratch_o
+   , output                         mscratch_w_v_o
+   , input  [reg_data_width_lp-1:0] mscratch_i
    );
 
 // Declare parameterizable structs
@@ -85,21 +112,40 @@ bp_be_exception_s exc;
 bp_be_mmu_cmd_s   mmu_cmd;
 bp_be_mmu_resp_s  mmu_resp;
 
+logic [vaddr_width_p-1:0] addr_li, addr_r;
+logic [reg_data_width_lp-1:0] result;
+
 assign decode    = decode_i;
-assign exc       = exc_i;
 assign mmu_cmd_o = mmu_cmd;
 assign mmu_resp  = mmu_resp_i;
 
 // Suppress unused signal warnings
-wire unused0 = clk_i;
-wire unused1 = reset_i;
+wire unused0 = kill_ex2_i;
+
+bp_be_decode_s                decode_r;
+logic [reg_data_width_lp-1:0] rs1_r;
+
+// Suppress unused signal warnings
 wire unused2 = mmu_cmd_ready_i;
-wire unused3 = mmu_resp_v_i;
 
+assign data_o  = result;
 
+// We only need to save one of: rs1, imm
+bsg_shift_reg
+ #(.width_p(decode_width_lp+reg_data_width_lp)
+   ,.stages_p(2)
+   )
+ csr_shift_reg
+  (.clk(clk_i)
+   ,.reset_i(reset_i)
+   ,.valid_i(1'b1)
+   ,.data_i({decode, rs1_i})
+   ,.valid_o(/* We rely on decode for valids */)
+   ,.data_o({decode_r, rs1_r})
+   );
 
 // Module instantiations
-assign mmu_cmd_v_o    = (decode.dcache_r_v | decode.dcache_w_v) & ~|exc;
+assign mmu_cmd_v_o = (decode.dcache_r_v | decode.dcache_w_v) & ~kill_ex1_i;
 always_comb 
   begin
     mmu_cmd.mem_op = decode.fu_op;
@@ -109,8 +155,33 @@ always_comb
 
 // Output results of memory op
 assign mmu_resp_ready_o = 1'b1;
-assign result_o         = mmu_resp.data;
 assign cache_miss_o     = mmu_resp.exception.cache_miss_v;
+assign mtvec_o          = rs1_r;
+assign mtvec_w_v_o      = decode_r.mtvec_rw_v & ~kill_ex3_i;
+assign mtval_o          = rs1_r;
+assign mtval_w_v_o      = decode_r.mtval_rw_v & ~kill_ex3_i;
+assign mepc_o           = rs1_r;
+assign mepc_w_v_o       = decode_r.mepc_rw_v & ~kill_ex3_i;
+assign mscratch_o       = rs1_r;
+assign mscratch_w_v_o   = decode_r.mscratch_rw_v & ~kill_ex3_i;
+
+always_comb
+  begin
+    if (mmu_resp_v_i)
+      result = mmu_resp.data;
+    else 
+      begin
+        unique if (decode_r.mhartid_r_v)   result = reg_data_width_lp'(mhartid_i);
+        else   if (decode_r.mcycle_r_v)    result = mcycle_i;
+        else   if (decode_r.mtime_r_v)     result = mtime_i;
+        else   if (decode_r.minstret_r_v)  result = minstret_i;
+        else   if (decode_r.mtvec_rw_v)    result = mtvec_i;
+        else   if (decode_r.mtval_rw_v)    result = mtval_i;
+        else   if (decode_r.mepc_rw_v)     result = mepc_i;
+        else   if (decode_r.mscratch_rw_v) result = mscratch_i;
+        else                               result = '0;
+      end
+  end
 
 endmodule : bp_be_pipe_mem
 

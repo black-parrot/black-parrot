@@ -58,6 +58,7 @@ $BSG_IP_CORES_DIR/bsg_misc/bsg_dff.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_dff_chain.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_dff_en.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_dff_reset.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_dff_reset_en.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_encode_one_hot.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_mux.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_mux_one_hot.v
@@ -66,8 +67,8 @@ $BSG_IP_CORES_DIR/bsg_misc/bsg_priority_encode.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_priority_encode_one_hot_out.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_round_robin_arb.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_scan.v
-$BSG_IP_CORES_DIR/bsg_misc/bsg_lru_pseudo_tree_encode.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_lru_pseudo_tree_decode.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_lru_pseudo_tree_encode.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router_buffered.v
 ## BE files
@@ -95,14 +96,12 @@ $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_req.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_data_cmd.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_tr.v
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lru_decode.v
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lru_encode.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_wbuf.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_wbuf_queue.v
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_tlb/bp_be_tlb.v
+$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dtlb/bp_be_dtlb.v
+$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dtlb/bp_be_dtlb_replacement.v
 # Common
 $BP_BE_DIR/src/v/common/bp_be_trace_replay_gen.v
-$BP_BE_DIR/src/v/common/bsg_dff_reset_en.v
 $BP_BE_DIR/src/v/common/bsg_fifo_1r1w_rolly.v
 ## FE files
 $BP_FE_DIR/src/v/bp_fe_bht.v

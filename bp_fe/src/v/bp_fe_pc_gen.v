@@ -290,6 +290,15 @@ bsg_dff_reset_en
    ,.data_i(fe_queue_branch_metadata)
    ,.data_o(fe_queue_branch_metadata_r)
    );
+/*
+always_ff @(posedge clk_i) 
+  begin
+    if (reset_i)
+      stalled_pc_redirect <= 1'b0;
+    else
+      stalled_pc_redirect <= stalled_pc_redirect_n;
+  end
+*/
 
 assign fe_cmd_branch_metadata = fe_pc_gen_cmd.branch_metadata_fwd;
 bp_fe_btb

@@ -4,6 +4,7 @@ ENTRY(_start)
 SECTIONS {
 . = 0x80000124;
 .text.init : { *(.text.init) }
+.text.emu . : { *(.text.emu) }
 .text : { *(.text) }
 .data : { *(.data) }
 .sdata : {
