@@ -16,8 +16,7 @@ DUT_PARAMS=-pvalue+core_els_p=1                        \
            -pvalue+cce_block_size_in_bytes_p=64        \
            -pvalue+lce_assoc_p=8                       \
            -pvalue+trace_p=1                           \
-           -pvalue+calc_debug_p=0                      \
-           -pvalue+calc_debug_file_p=\"calc_debug.log\"
+           -pvalue+calc_debug_p=1                      
 
 HDL_DEFINES=+define+BSG_CORE_CLOCK_PERIOD=10
 

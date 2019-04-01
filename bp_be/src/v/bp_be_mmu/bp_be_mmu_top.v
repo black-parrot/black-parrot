@@ -40,31 +40,43 @@ module bp_be_mmu_top
    , localparam dcache_pkt_width_lp    = `bp_be_dcache_pkt_width(page_offset_width_lp
                                                                  , data_width_p
                                                                  )
-   , localparam lce_id_width_lp = `BSG_SAFE_CLOG2(num_lce_p)
+   , localparam lce_id_width_lp        = `BSG_SAFE_CLOG2(num_lce_p)
 
    // MMU                                                              
    , localparam mmu_cmd_width_lp  = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam mmu_resp_width_lp = `bp_be_mmu_resp_width
-   , localparam vtag_width_lp=(vaddr_width_p-bp_page_offset_width_gp)
-   , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
+   , localparam vtag_width_lp     = (vaddr_width_p-bp_page_offset_width_gp)
+   , localparam ptag_width_lp     = (paddr_width_p-bp_page_offset_width_gp)
                                                       
    // ME
    , localparam cce_block_size_in_bits_lp = 8 * cce_block_size_in_bytes_p
 
-    , localparam lce_req_width_lp=
-      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, data_width_p)
-    , localparam lce_resp_width_lp=
-      `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
-    , localparam lce_data_resp_width_lp=
-      `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_lp)
-    , localparam lce_cmd_width_lp=
-      `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p)
-    , localparam lce_data_cmd_width_lp=
-      `bp_lce_data_cmd_width(num_lce_p, lce_data_width_lp, lce_assoc_p)
-
+    , localparam lce_req_width_lp         = `bp_lce_cce_req_width(num_cce_p
+                                                                  , num_lce_p
+                                                                  , paddr_width_p
+                                                                  , lce_assoc_p
+                                                                  , data_width_p
+                                                                  )
+    , localparam lce_resp_width_lp        = `bp_lce_cce_resp_width(num_cce_p
+                                                                   , num_lce_p
+                                                                   , paddr_width_p
+                                                                   )
+    , localparam lce_data_resp_width_lp   = `bp_lce_cce_data_resp_width(num_cce_p
+                                                                        , num_lce_p
+                                                                        , paddr_width_p
+                                                                        , lce_data_width_lp
+                                                                        )
+    , localparam lce_cmd_width_lp         = `bp_cce_lce_cmd_width(num_cce_p
+                                                                  , num_lce_p
+                                                                  , paddr_width_p
+                                                                  , lce_assoc_p)
+    , localparam lce_data_cmd_width_lp    = `bp_lce_data_cmd_width(num_lce_p
+                                                                 , lce_data_width_lp
+                                                                 , lce_assoc_p
+                                                                 )
    )
-  (input clk_i
-   , input reset_i
+  (input                                   clk_i
+   , input                                 reset_i
 
 
    , input [mmu_cmd_width_lp-1:0]          mmu_cmd_i
@@ -76,8 +88,8 @@ module bp_be_mmu_top
    , output [mmu_resp_width_lp-1:0]        mmu_resp_o
    , output                                mmu_resp_v_o
 
-   , output [lce_req_width_lp-1:0] lce_req_o
-   , output lce_req_v_o
+   , output [lce_req_width_lp-1:0]         lce_req_o
+   , output                                lce_req_v_o
    , input                                 lce_req_ready_i
 
    , output [lce_resp_width_lp-1:0]        lce_resp_o
@@ -92,13 +104,13 @@ module bp_be_mmu_top
    , input                                 lce_cmd_v_i
    , output                                lce_cmd_ready_o
 
-   , input [lce_data_cmd_width_lp-1:0] lce_data_cmd_i
-   , input lce_data_cmd_v_i
-   , output lce_data_cmd_ready_o
+   , input [lce_data_cmd_width_lp-1:0]     lce_data_cmd_i
+   , input                                 lce_data_cmd_v_i
+   , output                                lce_data_cmd_ready_o
 
-    , output logic [lce_data_cmd_width_lp-1:0] lce_data_cmd_o
-    , output logic lce_data_cmd_v_o
-    , input lce_data_cmd_ready_i 
+    , output [lce_data_cmd_width_lp-1:0]   lce_data_cmd_o
+    , output                               lce_data_cmd_v_o
+    , input                                lce_data_cmd_ready_i 
 
    , input [lce_id_width_lp-1:0]           dcache_id_i
    );
