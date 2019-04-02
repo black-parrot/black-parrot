@@ -15,8 +15,8 @@ module bp_be_nonsynth_tracer
    // Calculated parameters
    , localparam mhartid_width_lp      = `BSG_SAFE_CLOG2(core_els_p)
    , localparam proc_cfg_width_lp     = `bp_proc_cfg_width(core_els_p, num_lce_p)
-   , localparam issue_pkt_width_lp    = `bp_be_issue_pkt_width(branch_metadata_fwd_width_p)
-   , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(branch_metadata_fwd_width_p)
+   , localparam issue_pkt_width_lp    = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
+   , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam exception_width_lp    = `bp_be_exception_width
 
    // Constants
@@ -138,6 +138,13 @@ end
                          ,dbg_stage_r[2].instr_metadata.pc
                          ,dbg_stage_r[2].instr
                          );
+                if(dbg_stage_r[2].decode.csr_instr_v) begin
+                     $fwrite(file, "\t\top: csr sem: r%d <- csr {%x}\n"
+                             ,dbg_stage_r[2].decode.rd_addr
+                             ,iwb_result_i
+                             );
+                /*
+                 * TODO: Add back in CSR printing
                 if(dbg_stage_r[2].decode.mhartid_r_v) begin
                     $fwrite(file, "\t\top: csr sem: r%d <- mhartid {%x}\n"
                              ,dbg_stage_r[2].decode.rd_addr
@@ -171,6 +178,7 @@ end
                              ,dbg_stage_r[2].decode.rs1_addr
                              ,dbg_stage_r[2].rs1
                              );
+                */
                 end else if(dbg_stage_r[2].decode.ret_v) begin
                     $fwrite(file, "\t\top: ret\n");
                 end else if(dbg_stage_r[2].decode.dcache_r_v) begin
@@ -198,7 +206,6 @@ end
                                      ,mhartid_i
                                      );
                         end
-                        $finish();
                     end else if(dbg_stage_r[2].rs1
                                 +dbg_stage_r[2].imm==64'h8FFF_FFFF) begin
                         $fwrite(file, "[CORE%0x PRT] %x\n"

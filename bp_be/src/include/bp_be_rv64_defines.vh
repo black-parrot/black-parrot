@@ -88,17 +88,30 @@
 `define RV64_SRAW      `rv64_r_type(`RV64_OP_32_OP,3'b101,7'b0100000)
 `define RV64_OR        `rv64_r_type(`RV64_OP_OP,3'b110,7'b0000000)
 `define RV64_AND       `rv64_r_type(`RV64_OP_OP,3'b111,7'b0000000)
+`define RV64_CSRRW     `rv64_i_type(`RV64_SYSTEM_OP,3'b001)
+`define RV64_CSRRS     `rv64_i_type(`RV64_SYSTEM_OP,3'b010)
+`define RV64_CSRRC     `rv64_i_type(`RV64_SYSTEM_OP,3'b011)
+`define RV64_CSRRWI    `rv64_i_type(`RV64_SYSTEM_OP,3'b101)
+`define RV64_CSRRSI    `rv64_i_type(`RV64_SYSTEM_OP,3'b110)
+`define RV64_CSRRCI    `rv64_i_type(`RV64_SYSTEM_OP,3'b111)
 
 `define rv64_nop_instr 32'b0000000_00000_00000_000_00000_0010011
 
-`define RV64_MCYCLE_CSR_ADDR   12'hc00
-`define RV64_MTIME_CSR_ADDR    12'hc01
-`define RV64_MINSTRET_CSR_ADDR 12'hc02
-`define RV64_MHARTID_CSR_ADDR  12'hf14
-`define RV64_MTVEC_CSR_ADDR    12'h305
-`define RV64_MEPC_CSR_ADDR     12'h341
-`define RV64_MTVAL_CSR_ADDR    12'h343
-`define RV64_MSCRATCH_CSR_ADDR 12'h340
+`define RV64_MVENDORID_CSR_ADDR 12'hf11
+`define RV64_MARCHID_CSR_ADDR   12'hf12
+`define RV64_MIMPID_CSR_ADDR    12'hf12
+`define RV64_MHARTID_CSR_ADDR   12'hf14
+
+`define RV64_MTVEC_CSR_ADDR     12'h305
+
+`define RV64_MCYCLE_CSR_ADDR    12'hc00
+`define RV64_MTIME_CSR_ADDR     12'hc01
+`define RV64_MINSTRET_CSR_ADDR  12'hc02
+
+`define RV64_MSCRATCH_CSR_ADDR  12'h340
+`define RV64_MEPC_CSR_ADDR      12'h341
+`define RV64_MCAUSE_CSR_ADDR    12'h342
+`define RV64_MTVAL_CSR_ADDR     12'h343
 
 `define RV64_FUNCT12_MRET 12'b0011_0000_0010
 

@@ -39,12 +39,23 @@ typedef enum bit [3:0]
   ,e_sd  = 4'b1011
 } bp_be_mem_fu_op_e;
 
+typedef enum bit [3:0]
+{
+  e_csrrw   = 4'b0001
+  ,e_csrrs  = 4'b0010
+  ,e_csrrc  = 4'b0011
+  ,e_csrrwi = 4'b0101
+  ,e_csrrsi = 4'b0110
+  ,e_csrrci = 4'b0111
+} bp_be_csr_fu_op_e;
+
 typedef struct packed
 {
   union packed
   {
     bp_be_int_fu_op_e int_fu_op;
     bp_be_mem_fu_op_e mem_fu_op;
+    bp_be_csr_fu_op_e csr_fu_op;
   }  fu_op;
 }  bp_be_fu_op_s;
 
@@ -88,14 +99,6 @@ typedef struct packed
   logic                             irf_w_v;
   logic                             frf_w_v;
   logic                             csr_instr_v;
-  logic                             mhartid_r_v;
-  logic                             mcycle_r_v;
-  logic                             mtime_r_v;
-  logic                             minstret_r_v;
-  logic                             mtvec_rw_v;
-  logic                             mtval_rw_v;
-  logic                             mepc_rw_v;
-  logic                             mscratch_rw_v;
   logic                             dcache_w_v;
   logic                             dcache_r_v;
   logic                             fp_not_int_v;
@@ -105,6 +108,7 @@ typedef struct packed
   logic                             br_v;
   logic                             opw_v;
 
+  logic[rv64_csr_addr_width_gp-1:0] csr_addr;
   bp_be_fu_op_s                     fu_op;
   logic[rv64_reg_addr_width_gp-1:0] rs1_addr;
   logic[rv64_reg_addr_width_gp-1:0] rs2_addr;
@@ -121,6 +125,7 @@ typedef struct packed
   logic poison_v;
   logic roll_v;
   logic illegal_instr_v;
+  logic illegal_csr_v;
   logic ret_instr_v;
   logic csr_instr_v;
   logic tlb_miss_v;

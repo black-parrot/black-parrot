@@ -1,3 +1,5 @@
+TRACE_REPLAY?=1
+
 TB_PARAMS=-pvalue+cce_num_inst_ram_els_p=256           \
           -pvalue+boot_rom_els_p=512                   \
           -pvalue+boot_rom_width_p=512                 \
@@ -15,7 +17,7 @@ DUT_PARAMS=-pvalue+core_els_p=1                        \
            -pvalue+lce_sets_p=64                       \
            -pvalue+cce_block_size_in_bytes_p=64        \
            -pvalue+lce_assoc_p=8                       \
-           -pvalue+trace_p=1                           \
+           -pvalue+trace_p=$(TRACE_REPLAY)             \
            -pvalue+calc_debug_p=1                      
 
 HDL_DEFINES=+define+BSG_CORE_CLOCK_PERIOD=10

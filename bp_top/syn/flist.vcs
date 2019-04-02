@@ -96,6 +96,7 @@ $BP_BE_DIR/src/v/bp_be_checker/bp_be_detector.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_director.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_scheduler.v
 # MMU
+$BP_BE_DIR/src/v/bp_be_mmu/bp_be_csr.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_mmu_top.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache.v
 $BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_cmd.v
