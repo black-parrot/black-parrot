@@ -60,6 +60,7 @@ module bp_be_top
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
    , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
    , localparam eaddr_width_lp    = rv64_eaddr_width_gp
+   , localparam instr_width_lp    = rv64_instr_width_gp
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -136,19 +137,24 @@ logic issue_pkt_v, issue_pkt_rdy;
 bp_be_mmu_cmd_s mmu_cmd;
 logic mmu_cmd_v, mmu_cmd_rdy;
 
-bp_be_mmu_resp_s mmu_resp;
-logic mmu_resp_v, mmu_resp_rdy;
+bp_be_csr_cmd_s csr_cmd;
+logic csr_cmd_v, csr_cmd_rdy;
+
+bp_be_mem_resp_s mem_resp;
+logic mem_resp_v, mem_resp_rdy;
 
 bp_be_calc_status_s    calc_status;
 
 logic chk_dispatch_v, chk_poison_isd;
 logic chk_poison_ex1, chk_poison_ex2, chk_poison_ex3, chk_roll, chk_instr_dequeue_v;
 
-logic [reg_data_width_lp-1:0] chk_mtvec_li, chk_mtvec_lo;
-logic                         chk_mtvec_w_v_li;
+logic [reg_data_width_lp-1:0] chk_mtvec_li;
+logic [reg_data_width_lp-1:0] chk_mepc_li;
 
-logic [reg_data_width_lp-1:0] chk_mepc_li, chk_mepc_lo;
-logic                         chk_mepc_w_v_li;
+logic                      instret;
+logic [vaddr_width_p-1:0]  exception_pc;
+logic [instr_width_lp-1:0] exception_instr;
+logic                      exception_v;
 
 // Module instantiations
 bp_be_checker_top 
@@ -189,13 +195,8 @@ bp_be_checker_top
    ,.issue_pkt_v_o(issue_pkt_v)
    ,.issue_pkt_ready_i(issue_pkt_rdy)
 
-   ,.mtvec_i(chk_mtvec_li)
-   ,.mtvec_w_v_i(chk_mtvec_w_v_li)
-   ,.mtvec_o(chk_mtvec_lo)
-
    ,.mepc_i(chk_mepc_li)
-   ,.mepc_w_v_i(chk_mepc_w_v_li)
-   ,.mepc_o(chk_mepc_lo)
+   ,.mtvec_i(chk_mtvec_li)
    );
 
 bp_be_calculator_top 
@@ -236,11 +237,20 @@ bp_be_calculator_top
    ,.mmu_cmd_v_o(mmu_cmd_v)
    ,.mmu_cmd_ready_i(mmu_cmd_rdy)
 
-   ,.mmu_resp_i(mmu_resp) 
-   ,.mmu_resp_v_i(mmu_resp_v)
-   ,.mmu_resp_ready_o(mmu_resp_rdy)   
+   ,.csr_cmd_o(csr_cmd)
+   ,.csr_cmd_v_o(csr_cmd_v)
+   ,.csr_cmd_ready_i(csr_cmd_rdy)
 
-   ,.proc_cfg_i(proc_cfg_i)     
+   ,.mem_resp_i(mem_resp) 
+   ,.mem_resp_v_i(mem_resp_v)
+   ,.mem_resp_ready_o(mem_resp_rdy)   
+
+   ,.proc_cfg_i(proc_cfg_i)
+
+   ,.instret_o(instret)
+   ,.exception_pc_o(exception_pc)
+   ,.exception_instr_o(exception_instr)
+   ,.exception_v_o(exception_v)
 
    ,.cmt_rd_w_v_o(cmt_rd_w_v_o)
    ,.cmt_rd_addr_o(cmt_rd_addr_o)
@@ -248,18 +258,11 @@ bp_be_calculator_top
    ,.cmt_mem_addr_o(cmt_mem_addr_o)
    ,.cmt_mem_op_o(cmt_mem_op_o)
    ,.cmt_data_o(cmt_data_o)
-
-   ,.mtvec_o(chk_mtvec_li)
-   ,.mtvec_w_v_o(chk_mtvec_w_v_li)
-   ,.mtvec_i(chk_mtvec_lo)
-
-   ,.mepc_o(chk_mepc_li)
-   ,.mepc_w_v_o(chk_mepc_w_v_li)
-   ,.mepc_i(chk_mepc_lo)
    );
 
 bp_be_mmu_top
- #(.vaddr_width_p(vaddr_width_p)
+ #(.core_els_p(core_els_p)
+   ,.vaddr_width_p(vaddr_width_p)
    ,.paddr_width_p(paddr_width_p)
    ,.asid_width_p(asid_width_p)
    ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
@@ -274,14 +277,21 @@ bp_be_mmu_top
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
+    ,.proc_cfg_i(proc_cfg_i)
+
+    ,.chk_poison_ex_i(chk_poison_ex2)
+
     ,.mmu_cmd_i(mmu_cmd)
     ,.mmu_cmd_v_i(mmu_cmd_v)
     ,.mmu_cmd_ready_o(mmu_cmd_rdy)
 
-    ,.chk_poison_ex_i(chk_poison_ex2)
+    ,.csr_cmd_i(csr_cmd)
+    ,.csr_cmd_v_i(csr_cmd_v)
+    ,.csr_cmd_ready_o(csr_cmd_rdy)
 
-    ,.mmu_resp_o(mmu_resp)
-    ,.mmu_resp_v_o(mmu_resp_v)
+    ,.mem_resp_o(mem_resp)
+    ,.mem_resp_v_o(mem_resp_v)
+    ,.mem_resp_ready_i(mem_resp_rdy)
 
     ,.lce_req_o(lce_req_o)
     ,.lce_req_v_o(lce_req_v_o)
@@ -307,7 +317,13 @@ bp_be_mmu_top
     ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
     ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
 
-    ,.dcache_id_i(proc_cfg.dcache_id)
+    ,.instret_i(instret)
+    ,.exception_pc_i(exception_pc)
+    ,.exception_instr_i(exception_instr)
+    ,.exception_v_i(exception_v)
+
+    ,.mepc_o(chk_mepc_li)
+    ,.mtvec_o(chk_mtvec_li)
     );
 
 endmodule : bp_be_top

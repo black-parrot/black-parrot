@@ -85,12 +85,7 @@ module bp_be_director
 
    // CSR interface
    , input [reg_data_width_lp-1:0]    mtvec_i
-   , input                            mtvec_w_v_i
-   , output [reg_data_width_lp-1:0]   mtvec_o
-
    , input [reg_data_width_lp-1:0]    mepc_i
-   , input                            mepc_w_v_i
-   , output [reg_data_width_lp-1:0]   mepc_o
   );
 
 // Declare parameterized structures
@@ -188,7 +183,7 @@ bsg_mux
   /* TODO: MTVEC is not actually the 64 bit address, it's a subset of them where the
    *         last few bits are the vectorization mode 
    */
-  (.data_i({mepc_o, mtvec_o})
+  (.data_i({mepc_i, mtvec_i})
    ,.sel_i(calc_status.mem3_ret_v)
    ,.data_o(ret_mux_o)
    );
@@ -217,36 +212,6 @@ bsg_dff_reset_en
 
    ,.data_i(calc_status.int1_br_or_jmp)
    ,.data_o(attaboy_pending)
-   );
-
-bsg_dff_en
- #(.width_p(reg_data_width_lp))
- mtvec_csr_reg
-  (.clk_i(clk_i)
-   ,.en_i(mtvec_w_v_i)
-
-   ,.data_i(mtvec_i)
-   ,.data_o(mtvec_o)
-   );
-
-bsg_dff_en
- #(.width_p(reg_data_width_lp))
- mepc_csr_reg
-  (.clk_i(clk_i)
-   ,.en_i(mepc_w_v_i | calc_status.mem3_exception_v)
-
-   ,.data_i(mepc_mux_lo)
-   ,.data_o(mepc_o)
-   );
-
-bsg_mux
- #(.width_p(reg_data_width_lp)
-   ,.els_p(2)
-   )
- mepc_mux
-  (.data_i({calc_status.mem3_pc, mepc_i})
-   ,.sel_i(calc_status.mem3_exception_v)
-   ,.data_o(mepc_mux_lo)
    );
 
 // Generate control signals

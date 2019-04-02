@@ -261,6 +261,10 @@ if (trace_p)
        ,.data_o(tr_rom_data_lo)
        );
   end // fi1
+else
+  begin : fi2
+    assign test_done = 1'b0;
+  end // fi2
 
 bsg_fifo_1r1w_rolly 
  #(.width_p(fe_queue_width_lp)
