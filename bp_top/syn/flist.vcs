@@ -112,7 +112,7 @@ $BP_BE_DIR/src/v/common/bp_be_trace_replay_gen.v
 $BP_BE_DIR/src/v/common/bsg_fifo_1r1w_rolly.v
 ## FE files
 $BP_FE_DIR/src/v/bp_fe_bht.v
-$BP_FE_DIR/src/v/bp_fe_branch_predictor.v
+#$BP_FE_DIR/src/v/bp_fe_branch_predictor.v
 $BP_FE_DIR/src/v/bp_fe_btb.v
 $BP_FE_DIR/src/v/bp_fe_lce_cmd.v
 $BP_FE_DIR/src/v/bp_fe_lce_data_cmd.v

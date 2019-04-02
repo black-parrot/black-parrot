@@ -108,6 +108,7 @@ always_ff @(posedge clk_i)
         v_r <= v_r;
   end
 
+/*
 always_ff @(posedge clk_i)
   begin
     if (w_v_i)
@@ -127,5 +128,6 @@ always_ff @(posedge clk_i)
                  );
       end
   end
+*/
 
 endmodule

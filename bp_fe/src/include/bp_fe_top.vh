@@ -147,21 +147,6 @@ typedef struct packed
     logic [ras_addr_width_mp-1:0]   ras_addr;                                                    \
   }  bp_fe_branch_metadata_fwd_s;
 
-
-`define declare_bp_be_tlb_entry_s(ptag_width_mp) \
-  typedef struct packed {                        \
-    logic [ptag_width_mp-1:0]  ptag;             \
-    logic                      extent;           \
-    logic                      u;                \
-    logic                      g;                \
-    logic                      l;                \
-    logic                      x;                \
-  } bp_be_tlb_entry_s                            
-
-`define bp_be_tlb_entry_width(ptag_width_mp) \
-  (ptag_width_mp + 5) 
-
-
 /*
  *  All the opcode macros for the control flow instructions.  These opcodes are
  * used in the Frontend for scanning compressed instructions.

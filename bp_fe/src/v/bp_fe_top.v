@@ -62,7 +62,6 @@ module bp_fe_top
    , parameter bp_first_pc_p="inv"
    , localparam instr_scan_width_lp=`bp_fe_instr_scan_width
    , localparam branch_metadata_fwd_width_lp=`bp_fe_branch_metadata_fwd_width(btb_tag_width_p,btb_indx_width_p,bht_indx_width_p,ras_addr_width_p)
-   , localparam bp_fe_pc_gen_itlb_width_lp=`bp_fe_pc_gen_itlb_width(eaddr_width_p)
    , localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p
                                                                 ,branch_metadata_fwd_width_lp
                                                                )
@@ -89,13 +88,11 @@ module bp_fe_top
 
    , input [bp_fe_cmd_width_lp-1:0]                   fe_cmd_i
    , input                                            fe_cmd_v_i
-   , output                                         logic fe_cmd_ready_o
+   , output logic                                     fe_cmd_ready_o
 
    , output [bp_fe_queue_width_lp-1:0]                fe_queue_o
    , output                                           fe_queue_v_o
    , input                                            fe_queue_ready_i
-
-   , output logic [63:0]                              tlb_miss_vaddr_o
 
    , output logic [bp_lce_cce_req_width_lp-1:0]       lce_req_o
    , output logic                                     lce_req_v_o
@@ -211,7 +208,6 @@ assign fe_queue_o = bp_fe_queue;
 
 // pc_gen/itlb to fe
 assign itlb_miss_exception.vaddr          = tlb_miss_vaddr;
-assign tlb_miss_vaddr_o                   = tlb_miss_vaddr;
    
 assign itlb_miss_exception.exception_code = e_itlb_miss;
 assign itlb_miss_exception.padding        = '0;   
@@ -267,7 +263,7 @@ always_ff @(posedge clk_i)
 bp_fe_pc_gen 
  #(.vaddr_width_p(vaddr_width_p)
    ,.paddr_width_p(paddr_width_p)
-   ,.eaddr_width_p(eaddr_width_p)
+   ,.eaddr_width_p(eaddr_width_lp)
    ,.btb_tag_width_p(btb_tag_width_p)
    ,.btb_indx_width_p(btb_indx_width_p)
    ,.bht_indx_width_p(bht_indx_width_p)
@@ -366,7 +362,6 @@ icache
    );
 
    
-<<<<<<< HEAD
 bp_fe_itlb
  #(.vtag_width_p(vtag_width_lp)
    ,.ptag_width_p(ptag_width_lp)
