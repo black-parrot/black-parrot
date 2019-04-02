@@ -14,6 +14,7 @@ module bp_fe_pc_gen
  #(parameter vaddr_width_p="inv"
    , parameter paddr_width_p="inv"
    , parameter eaddr_width_p="inv"
+   , parameter btb_tag_width_p="inv"
    , parameter btb_indx_width_p="inv"
    , parameter bht_indx_width_p="inv"
    , parameter ras_addr_width_p="inv"
@@ -21,7 +22,7 @@ module bp_fe_pc_gen
    , parameter asid_width_p="inv"
    , parameter bp_first_pc_p="inv"
    , localparam instr_scan_width_lp=`bp_fe_instr_scan_width
-   , localparam branch_metadata_fwd_width_lp=eaddr_width_p-2+bht_indx_width_p+ras_addr_width_p
+   , localparam branch_metadata_fwd_width_lp=`bp_fe_branch_metadata_fwd_width(btb_tag_width_p,btb_indx_width_p,bht_indx_width_p,ras_addr_width_p)
    , localparam bp_fe_pc_gen_icache_width_lp=eaddr_width_p
    , localparam bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(eaddr_width_p)
    , localparam bp_fe_pc_gen_itlb_width_lp=`bp_fe_pc_gen_itlb_width(eaddr_width_p)
@@ -78,7 +79,7 @@ assign pc_gen_itlb_v_o = pc_gen_icache_v_o;
 //icache to pc_gen
 `declare_bp_fe_icache_pc_gen_s(eaddr_width_p);
 //the second level structs definitions
-`declare_bp_fe_branch_metadata_fwd_s(btb_indx_width_p,bht_indx_width_p,ras_addr_width_p);
+`declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p,btb_indx_width_p,bht_indx_width_p,ras_addr_width_p);
 
    
 //the first level structs instatiations
@@ -302,15 +303,20 @@ always_ff @(posedge clk_i)
 
 assign fe_cmd_branch_metadata = fe_pc_gen_cmd.branch_metadata_fwd;
 bp_fe_btb
- #(.btb_idx_width_p(btb_indx_width_p))
+ #(.vaddr_width_p(vaddr_width_p)
+   ,.btb_tag_width_p(btb_tag_width_p)
+   ,.btb_idx_width_p(btb_indx_width_p)
+   )
  btb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.r_addr_i(pc_n)
-   ,.r_v_i(1'b1) // ~stall
+   ,.r_v_i(1'b1) //~stall)
    ,.br_tgt_o(btb_br_tgt_lo)
    ,.br_tgt_v_o(btb_br_tgt_v_lo)
-   ,.w_addr_i({fe_cmd_branch_metadata.btb_tag, fe_cmd_branch_metadata.btb_indx, 2'b0})
+
+   ,.w_tag_i(fe_cmd_branch_metadata.btb_tag) 
+   ,.w_idx_i(fe_cmd_branch_metadata.btb_indx)
    ,.w_v_i(fe_pc_gen_cmd.pc_redirect_valid & fe_pc_gen_v_i & fe_pc_gen_ready_o)
    ,.br_tgt_i(fe_pc_gen_cmd.pc)
    );
@@ -328,6 +334,6 @@ assign is_br = icache_pc_gen_v_i & (scan_instr.instr_scan_class == e_rvi_branch)
 assign is_jal = icache_pc_gen_v_i & (scan_instr.instr_scan_class == e_rvi_jal);
 assign br_target = icache_pc_gen.addr + scan_instr.imm; 
 assign is_back_br = scan_instr.imm[63];
-assign predict_taken = pc_v_f2 & ((is_br & is_back_br) | (is_jal)) & icache_pc_gen_v_i;
+assign predict_taken = pc_v_f2 & ((is_br & is_back_br) | (is_jal)) & ~btb_pred_f1_r & icache_pc_gen_v_i;
 
 endmodule
