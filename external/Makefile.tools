@@ -1,3 +1,7 @@
+TOP ?= $(shell git rev-parse --show-toplevel)
+
+include $(TOP)/Makefile.common
+
 BIN_DIR     := $(BP_EXTERNAL_DIR)/bin
 LIB_DIR     := $(BP_EXTERNAL_DIR)/lib
 INCLUDE_DIR := $(BP_EXTERNAL_DIR)/include

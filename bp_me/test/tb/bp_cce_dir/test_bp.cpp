@@ -39,7 +39,7 @@ int sc_main(int argc, char **argv)
     sc_signal <uint32_t> r_cmd_i("r_cmd_i");
     sc_signal <bool>     r_v_i("r_v_i");
 
-    sc_signal <uint32_t> tag_i("tag_i");
+    sc_signal <uint64_t> tag_i("tag_i");
     sc_signal <uint32_t> coh_state_i("coh_state_i");
     sc_signal <bool>     pending_i("pending_i");
     sc_signal <uint32_t> w_cmd_i("w_cmd_i");
@@ -48,7 +48,7 @@ int sc_main(int argc, char **argv)
 
     sc_signal <bool>        pending_o("pending_o");
     sc_signal <bool>        pending_v_o("pending_v_o");
-    sc_signal <uint32_t>    tag_o("tag_o");
+    sc_signal <uint64_t>    tag_o("tag_o");
     sc_signal <uint32_t>    coh_state_o("coh_state_o");
     sc_signal <bool>        entry_v_o("entry_v_o");
     #if WG_WIDTH > 64
@@ -87,9 +87,11 @@ int sc_main(int argc, char **argv)
     DUT.way_group_o(way_group_o);
     DUT.way_group_v_o(way_group_v_o);
 
+    #if (DUMP == 1)
     VerilatedVcdSc* wf = new VerilatedVcdSc;
     DUT.trace(wf, TRACE_LEVELS);
     wf->open("dump.vcd");
+    #endif
 
     r_v_i = 0;
     w_v_i = 0;
@@ -143,7 +145,7 @@ int sc_main(int argc, char **argv)
     way_i = 0;
     sc_start(CLK_TIME, SC_NS);
 
-    uint32_t tag_cnt = 0;
+    uint64_t tag_cnt = 0;
     uint32_t coh_state_cnt = 0;
     w_v_i = 1;
     w_cmd_i = e_wde;
@@ -180,7 +182,9 @@ int sc_main(int argc, char **argv)
       cout << "@" << sc_time_stamp() << " RDP wg=" << way_group_i << endl;
       if (!pending_v_o || pending_o) {
             cout << "@" << sc_time_stamp() << " TEST FAILED" << endl;
+            #if (DUMP == 1)
             wf->close();
+            #endif
             return -1;
       }
     }
@@ -208,7 +212,9 @@ int sc_main(int argc, char **argv)
                << way_i << " : tag, st : " << tag_o << ", " << coh_state_o << endl;
           if (!entry_v_o || (coh_state_o != (coh_state_cnt & COH_ST_MASK)) || (tag_o != (tag_cnt & TAG_MASK))) {
             cout << "@" << sc_time_stamp() << " TEST FAILED" << endl;
+            #if (DUMP == 1)
             wf->close();
+            #endif
             return -1;
           }
         }
@@ -220,7 +226,9 @@ int sc_main(int argc, char **argv)
 
     cout << "TEST PASSED!" << endl;
 
+    #if (DUMP == 1)
     wf->close();
+    #endif
 
     return 0;
 }

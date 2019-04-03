@@ -19,6 +19,8 @@ $BSG_IP_CORES_DIR/bsg_misc/bsg_circular_ptr.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_counter_clear_up.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_lru_pseudo_tree_encode.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_lru_pseudo_tree_decode.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_mux_butterfly.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_swap.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router_buffered.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_adapter_in.v
