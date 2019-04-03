@@ -87,11 +87,11 @@ int sc_main(int argc, char **argv)
     DUT.way_group_o(way_group_o);
     DUT.way_group_v_o(way_group_v_o);
 
-		#if (DUMP == 1)
+    #if (DUMP == 1)
     VerilatedVcdSc* wf = new VerilatedVcdSc;
     DUT.trace(wf, TRACE_LEVELS);
     wf->open("dump.vcd");
-		#endif
+    #endif
 
     r_v_i = 0;
     w_v_i = 0;
@@ -182,9 +182,9 @@ int sc_main(int argc, char **argv)
       cout << "@" << sc_time_stamp() << " RDP wg=" << way_group_i << endl;
       if (!pending_v_o || pending_o) {
             cout << "@" << sc_time_stamp() << " TEST FAILED" << endl;
-						#if (DUMP == 1)
+            #if (DUMP == 1)
             wf->close();
-						#endif
+            #endif
             return -1;
       }
     }
@@ -212,9 +212,9 @@ int sc_main(int argc, char **argv)
                << way_i << " : tag, st : " << tag_o << ", " << coh_state_o << endl;
           if (!entry_v_o || (coh_state_o != (coh_state_cnt & COH_ST_MASK)) || (tag_o != (tag_cnt & TAG_MASK))) {
             cout << "@" << sc_time_stamp() << " TEST FAILED" << endl;
-						#if (DUMP == 1)
+            #if (DUMP == 1)
             wf->close();
-						#endif
+            #endif
             return -1;
           }
         }
@@ -226,9 +226,9 @@ int sc_main(int argc, char **argv)
 
     cout << "TEST PASSED!" << endl;
 
-		#if (DUMP == 1)
+    #if (DUMP == 1)
     wf->close();
-		#endif
+    #endif
 
     return 0;
 }

@@ -227,11 +227,11 @@ int sc_main(int argc, char **argv)
   DUT.sharers_ways_o(sh_ways_o);
   DUT.sharers_coh_states_o(sh_coh_states_o);
 
-	#if (DUMP == 1)
+  #if (DUMP == 1)
   VerilatedVcdSc* wf = new VerilatedVcdSc;
   DUT.trace(wf, TRACE_LEVELS);
   wf->open("dump.vcd");
-	#endif
+  #endif
 
   reset_i = 0;
   way_group_i = 0;
@@ -488,9 +488,9 @@ int sc_main(int argc, char **argv)
 
   cout << "TEST PASSED!" << endl;
 
-	#if (DUMP == 1)
+  #if (DUMP == 1)
   wf->close();
-	#endif
+  #endif
 
   return 0;
 }
