@@ -22,10 +22,10 @@
 #define LCE_ASSOC 4
 #define LG_LCE_ASSOC 2
 
-#define TAG_WIDTH 4
-
 #define LCE_SETS 4
 #define LG_LCE_SETS 2
+
+#define ADDR_WIDTH 12
 
 #include "bp_cce_verilator.h"
 #include "bp_cce.h"
@@ -227,9 +227,11 @@ int sc_main(int argc, char **argv)
   DUT.sharers_ways_o(sh_ways_o);
   DUT.sharers_coh_states_o(sh_coh_states_o);
 
+	#if (DUMP == 1)
   VerilatedVcdSc* wf = new VerilatedVcdSc;
   DUT.trace(wf, TRACE_LEVELS);
   wf->open("dump.vcd");
+	#endif
 
   reset_i = 0;
   way_group_i = 0;
@@ -486,7 +488,9 @@ int sc_main(int argc, char **argv)
 
   cout << "TEST PASSED!" << endl;
 
+	#if (DUMP == 1)
   wf->close();
+	#endif
 
   return 0;
 }
