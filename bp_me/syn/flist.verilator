@@ -7,11 +7,6 @@
 +incdir+$BSG_IP_CORES_DIR/bsg_noc
 // common includes
 +incdir+$BP_COMMON_DIR/src/include
-// fe includes
-+incdir+$BP_FE_DIR/src/include
-// be includes
-+incdir+$BP_BE_DIR/src/include
-+incdir+$BP_BE_DIR/src/include/bp_be_dcache
 // me includes 
 +incdir+$BP_ME_DIR/src/include/v
 // Packages
@@ -19,14 +14,6 @@
 $BSG_IP_CORES_DIR/bsg_noc/bsg_noc_pkg.v
 // Interface packages
 $BP_COMMON_DIR/src/include/bp_common_pkg.vh
-// FE packages
-$BP_FE_DIR/src/include/bp_fe_icache_pkg.vh
-$BP_FE_DIR/src/include/bp_fe_itlb_pkg.vh
-$BP_FE_DIR/src/include/bp_fe_pkg.vh
-// BE packages
-$BP_BE_DIR/src/include/bp_be_rv64_pkg.vh
-$BP_BE_DIR/src/include/bp_be_pkg.vh
-$BP_BE_DIR/src/include/bp_be_dcache/bp_be_dcache_pkg.vh
 // ME packages
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
 $BP_ME_DIR/src/include/v/bp_me_network_pkg.v
@@ -68,24 +55,3 @@ $BSG_IP_CORES_DIR/bsg_misc/bsg_round_robin_arb.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_scan.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router_buffered.v
-// Common
-$BP_BE_DIR/src/v/common/bp_be_trace_replay_gen.v
-// ME files
-$BP_ME_DIR/src/v/bp_me_top.v
-// CCE
-$BP_ME_DIR/src/v/cce/bp_cce.v
-$BP_ME_DIR/src/v/cce/bp_cce_alu.v
-$BP_ME_DIR/src/v/cce/bp_cce_dir.v
-$BP_ME_DIR/src/v/cce/bp_cce_gad.v
-$BP_ME_DIR/src/v/cce/bp_cce_inst_decode.v
-$BP_ME_DIR/src/v/cce/bp_cce_pc.v
-$BP_ME_DIR/src/v/cce/bp_cce_reg.v
-$BP_ME_DIR/src/v/cce/bp_cce_top.v
-// Network
-$BP_ME_DIR/src/v/network/bp_me_network.v
-$BP_ME_DIR/src/v/network/bp_me_network_channel_mesh.v
-$BP_ME_DIR/src/v/network/bp_me_network_channel_data_cmd.v
-$BP_ME_DIR/src/v/network/bp_me_network_channel_data_resp.v
-$BP_ME_DIR/src/v/network/bp_me_network_pkt_encode_data_cmd.v
-$BP_ME_DIR/src/v/network/bp_me_network_pkt_encode_data_resp.v
-// TOP
