@@ -12,7 +12,7 @@
 #include "systemc.h"
 #include "verilated_vcd_sc.h"
 
-#include "Vbp_cce_test.h"
+#include "Vbp_me_top_test.h"
 
 #include "bp_cce_verilator.h"
 #include "bp_cce.h"
@@ -36,7 +36,7 @@ std::map<uint64_t, uint32_t> MRU;
 
 int sc_main(int argc, char **argv) 
 {
-  sc_init("bp_cce_top", argc, argv);
+  sc_init("bp_me_top_test", argc, argv);
 
   sc_signal <bool>     reset_i("reset_i");
 
@@ -66,9 +66,13 @@ int sc_main(int argc, char **argv)
   sc_signal <bool>     lce_data_cmd_v_o("lce_data_cmd_v_o");
   sc_signal <bool>     lce_data_cmd_ready_i("lce_data_cmd_ready_i");
 
+  sc_signal <sc_bv<bp_lce_data_cmd_width> > lce_data_cmd_i("lce_data_cmd_i");
+  sc_signal <bool>     lce_data_cmd_v_i("lce_data_cmd_v_i");
+  sc_signal <bool>     lce_data_cmd_ready_o("lce_data_cmd_ready_o");
+
   sc_clock clock("clk", sc_time(CLK_TIME, SC_NS));
 
-  Vbp_cce_test DUT("DUT");
+  Vbp_me_top_test DUT("DUT");
 
   DUT.clk_i(clock);
   DUT.reset_i(reset_i);
@@ -93,6 +97,9 @@ int sc_main(int argc, char **argv)
   DUT.lce_data_cmd_v_o(lce_data_cmd_v_o);
   DUT.lce_data_cmd_ready_i(lce_data_cmd_ready_i);
 
+  DUT.lce_data_cmd_i(lce_data_cmd_i);
+  DUT.lce_data_cmd_v_i(lce_data_cmd_v_i);
+  DUT.lce_data_cmd_ready_o(lce_data_cmd_ready_o);
 
   #if (DUMP == 1)
   VerilatedVcdSc* wf = new VerilatedVcdSc;
@@ -109,6 +116,9 @@ int sc_main(int argc, char **argv)
   lce_data_resp_v_i = 0;
   lce_cmd_ready_i = 0;
   lce_data_cmd_ready_i = 0;
+
+  lce_data_cmd_i = 0;
+  lce_data_cmd_v_i = 0;
 
   cout << "@" << sc_time_stamp() << " Reset started..." << endl;
   reset_i = 1;
@@ -289,8 +299,6 @@ int sc_main(int argc, char **argv)
   }
 
 
-
-// TODO: below needs to be fixed still
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /*
   // reset
@@ -349,12 +357,14 @@ int sc_main(int argc, char **argv)
     sc_start(CLK_TIME, SC_NS);
   }
 
-  lce_resp_i = createLceResp(0, 0, e_lce_cce_sync_ack, 0).to_uint();
+  lce_resp_i = createLceResp(0, 0, e_lce_cce_sync_ack, 0).to_uint64();
   lce_resp_v_i = 1;
   sc_start(CLK_TIME, SC_NS);
   lce_resp_i = 0;
   lce_resp_v_i = 0;
   sc_start(CLK_TIME, SC_NS);
+
+  cout << "@" << sc_time_stamp() << " SYNC FINISHED!" << endl << endl;
 
   // Let the CCE finish initialization
   sc_start(CLK_TIME*1000, SC_NS);
@@ -385,7 +395,7 @@ int sc_main(int argc, char **argv)
     uint64_t reqAddr = addrs[i];
     uint32_t lruWay = ways[i];
 
-    lce_req_i = createLceReq(0, 0, reqType, reqAddr, e_lce_req_excl, lruWay, (bp_lce_cce_lru_dirty_e)lruDirty[i]).to_uint();
+    lce_req_i = createLceReq(0, 0, reqType, reqAddr, e_lce_req_excl, lruWay, (bp_lce_cce_lru_dirty_e)lruDirty[i]);
     lce_req_v_i = 1;
     sc_start(CLK_TIME, SC_NS);
     lce_req_i = 0;
@@ -393,7 +403,7 @@ int sc_main(int argc, char **argv)
     sc_start(CLK_TIME, SC_NS);
 
     if (lruDirty[i]) {
-      uint32_t lruAddr = addrs[0];
+      uint64_t lruAddr = addrs[0];
 
       // wait for and check cmd
       stallDetect = 0;
@@ -451,7 +461,7 @@ int sc_main(int argc, char **argv)
     }
 
     sc_bv<bp_lce_data_cmd_width> data_cmd(lce_data_cmd_o.read());
-    if (!checkCceDataCmd(data_cmd, 0, 0, reqAddr, lruWay, reqType, 0, false)) {
+    if (!checkCceDataCmd(data_cmd, 0, lruWay, e_lce_data_cmd_cce, 0, false)) {
       cout << "@" << sc_time_stamp() << " TEST FAILED!" << endl;
       wf->close();
       exit(-1);

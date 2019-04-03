@@ -12,4 +12,5 @@ clean:
 	rm -rf logs
 	rm -rf reports
 	rm -rf *.vpd
+	rm -rf run_verilator
 	

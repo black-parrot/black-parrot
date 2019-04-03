@@ -1,6 +1,7 @@
-HDL_SOURCE = \
-	$(BP_COMMON_PATH)/src/include/bp_common_pkg.vh \
-	$(BP_ME_INC_PATH)/bp_cce_pkg.v \
-	$(CCE_SRC_PATH)/bp_cce_alu.v
+TB_PARAMS= -pvalue+width_p=16
 
-HDL_PARAMS=-pvalue+width_p=16
+HDL_DEFINES=+define+BSG_CORE_CLOCK_PERIOD=10
+
+HDL_PARAMS=$(DUT_PARAMS) $(TB_PARAMS) $(HDL_DEFINES)
+
+TOP_MODULE=bp_cce_alu

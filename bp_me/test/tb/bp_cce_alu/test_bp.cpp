@@ -40,9 +40,11 @@ int sc_main(int argc, char **argv)
     DUT.res_o(res_o);
     DUT.branch_res_o(branch_res_o);
 
+    #if (DUMP == 1)
     VerilatedVcdSc* wf = new VerilatedVcdSc;
     DUT.trace(wf, TRACE_LEVELS);
     wf->open("dump.vcd");
+    #endif
 
     sc_start(0, SC_NS);
 
@@ -204,7 +206,9 @@ int sc_main(int argc, char **argv)
 
     cout << "TEST PASSED!" << endl;
 
+    #if (DUMP == 1)
     wf->close();
+    #endif
 
     return 0;
 }
