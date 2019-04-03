@@ -49,6 +49,10 @@ regress.me:
 	grep "PASSED" $(LOG_PATH)/verilator/bp_cce_gad_bp_example_rom_sim.log \
 	&& echo "bp_cce_gad: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_cce_gad: FAIL" >> $(LOG_PATH)/me_regress.log
+	$(MAKE) run.sc TB=bp_me_top_test
+	grep "PASSED" $(LOG_PATH)/verilator/bp_me_top_test_bp_example_rom_sim.log \
+	&& echo "bp_cce_gad: OK" >> $(LOG_PATH)/me_regress.log \
+	|| echo "bp_cce_gad: FAIL" >> $(LOG_PATH)/me_regress.log
 
 #	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_random_demo \
 #	| tee -i $(LOG_PATH)/vcs/bp_me_random_stress_test.log
