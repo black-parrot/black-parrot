@@ -66,6 +66,10 @@ int sc_main(int argc, char **argv)
   sc_signal <bool>     lce_data_cmd_v_o("lce_data_cmd_v_o");
   sc_signal <bool>     lce_data_cmd_ready_i("lce_data_cmd_ready_i");
 
+  sc_signal <sc_bv<bp_lce_data_cmd_width> > lce_data_cmd_i("lce_data_cmd_i");
+  sc_signal <bool>     lce_data_cmd_v_i("lce_data_cmd_v_i");
+  sc_signal <bool>     lce_data_cmd_ready_o("lce_data_cmd_ready_o");
+
   sc_clock clock("clk", sc_time(CLK_TIME, SC_NS));
 
   Vbp_me_top_test DUT("DUT");
@@ -93,6 +97,10 @@ int sc_main(int argc, char **argv)
   DUT.lce_data_cmd_v_o(lce_data_cmd_v_o);
   DUT.lce_data_cmd_ready_i(lce_data_cmd_ready_i);
 
+  DUT.lce_data_cmd_i(lce_data_cmd_i);
+  DUT.lce_data_cmd_v_i(lce_data_cmd_v_i);
+  DUT.lce_data_cmd_ready_o(lce_data_cmd_ready_o);
+
   VerilatedVcdSc* wf = new VerilatedVcdSc;
   DUT.trace(wf, TRACE_LEVELS);
   wf->open("dump.vcd");
@@ -106,6 +114,9 @@ int sc_main(int argc, char **argv)
   lce_data_resp_v_i = 0;
   lce_cmd_ready_i = 0;
   lce_data_cmd_ready_i = 0;
+
+  lce_data_cmd_i = 0;
+  lce_data_cmd_v_i = 0;
 
   cout << "@" << sc_time_stamp() << " Reset started..." << endl;
   reset_i = 1;
