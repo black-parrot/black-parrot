@@ -276,7 +276,7 @@ bsg_dff_reset_en
    ) 
  issue_reg
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_i | chk_roll_i)
    ,.en_i(issue_pkt_v_i | chk_dispatch_v_i)
 
    ,.data_i({issue_pkt_v_i, issue_pkt})
