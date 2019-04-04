@@ -22,9 +22,11 @@ CCE_ROM_PATH         = $(BP_ME_SRC_PATH)/roms
 CCE_SRC_PATH         = $(BP_ME_SRC_PATH)/cce
 NETWORK_PATH         = $(BP_ME_SRC_PATH)/network
 
-CPP_FLAGS += -I$(BP_ME_DIR)/common/include -I$(BP_ME_DIR)/src/include/c
-CPP_FLAGS += -DDUMP=1
-CPP_FLAGS += -O3
+CPPFLAGS += -I$(BP_ME_DIR)/test/include -I$(BP_ME_DIR)/src/include/c
+CPPFLAGS += -DDUMP=1
+CPPFLAGS += -O1
+
+OPT_FAST = -O1 -fstrict-aliasing
 
 .EXPORT_ALL_VARIABLES:
 
@@ -50,8 +52,7 @@ VV ?= $(VERILATOR)
 
 VV_OPTS = --sc
 VV_OPTS += -Wno-unoptflat
-#VV_OPTS += -O1 -fstrict-aliasing
-VV_OPTS += -O2
+VV_OPTS += -O1
 VV_OPTS += --trace --trace-structs
 
 BUILD_OPTS := --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --exe

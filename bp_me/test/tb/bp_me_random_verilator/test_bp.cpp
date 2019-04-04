@@ -12,7 +12,7 @@
 #include "systemc.h"
 #include "verilated_vcd_sc.h"
 
-#include "Vbp_me_random_demo.h"
+#include "Vbp_me_random_demo_top.h"
 
 #include "bp_cce_verilator.h"
 #include "bp_cce.h"
@@ -30,7 +30,7 @@ int sc_main(int argc, char **argv)
 
   sc_clock clock("clk", sc_time(CLK_TIME, SC_NS));
 
-  Vbp_me_top_test DUT("DUT");
+  Vbp_me_random_demo_top DUT("DUT");
 
   DUT.clk_i(clock);
   DUT.reset_i(reset_i);
