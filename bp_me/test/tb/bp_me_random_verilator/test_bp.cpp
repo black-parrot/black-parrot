@@ -49,6 +49,9 @@ int sc_main(int argc, char **argv)
   reset_i = 0;
   cout << "@" << sc_time_stamp() << " Reset finished!" << endl;
 
+  sc_start(CLK_TIME*1000000, SC_NS);
+
+  /*
   uint64_t MAX_CYCLES = UINT64_MAX;
   uint64_t cnt = 0;
   while (!done_o) {
@@ -59,8 +62,10 @@ int sc_main(int argc, char **argv)
       #endif
       exit(-1);
     }
+    sc_start(CLK_TIME, SC_NS);
     cnt++;
   }
+  */
 
   cout << "@" << sc_time_stamp() << " TEST PASSED!" << endl;
 

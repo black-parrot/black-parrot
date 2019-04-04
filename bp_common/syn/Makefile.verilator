@@ -29,7 +29,7 @@ endif
 ifeq ($(COVERAGE), 1)
   VV_OPTS += --coverage-line
   VV_OPTS += --coverage-toggle
-	COVERAGE_DAT ?= $(ROM_NAME)_coverage.dat
+  COVERAGE_DAT ?= $(ROM_NAME)_coverage.dat
 endif
 
 .PHONY: deps.sc lint.sc build.sc run.sc clean.sc
