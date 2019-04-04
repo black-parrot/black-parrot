@@ -14,6 +14,8 @@ module bp_mem
     ,parameter block_size_in_bits_lp=block_size_in_bytes_p*8
     ,parameter lce_sets_p="inv"
 
+    ,parameter lce_req_data_width_p="inv"
+
     ,parameter mem_els_p="inv"
     ,parameter boot_rom_width_p="inv"
     ,parameter boot_rom_els_p="inv"
@@ -27,6 +29,7 @@ module bp_mem
     ,parameter mem_addr_width_lp=`BSG_SAFE_CLOG2(mem_els_p)
     ,parameter block_offset_bits_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
     ,parameter byte_width_lp=8
+    ,localparam word_offset_bits_lp=`BSG_SAFE_CLOG2(lce_req_data_width_p/8)
   )
   (
     input clk_i
@@ -68,6 +71,7 @@ module bp_mem
   logic [mem_addr_width_lp-1:0] mem_addr_i, rd_addr, wr_addr;
   logic mem_v_i, mem_w_i;
   logic [block_size_in_bits_lp-1:0] mem_data_i, mem_data_o;
+  logic [lce_req_data_width_p-1:0] mem_nc_data, nc_data;
 
   bsg_mem_1rw_sync
     #(.width_p(block_size_in_bits_lp)
@@ -82,6 +86,7 @@ module bp_mem
      ,.data_o(mem_data_o)
     );
 
+  int k, j;
   always_comb begin
     mem_resp_o = mem_resp_s_o;
     mem_data_resp_o = mem_data_resp_s_o;
@@ -90,6 +95,22 @@ module bp_mem
 
     rd_addr = mem_addr_width_lp'(mem_cmd_i_s.addr >> block_offset_bits_lp);
     wr_addr = mem_addr_width_lp'(mem_data_cmd_i_s.addr >> block_offset_bits_lp);
+
+    // get the 64-bit chunk
+    k = mem_cmd_s_r.addr[block_offset_bits_lp-1:word_offset_bits_lp];
+    j = mem_cmd_s_r.addr[word_offset_bits_lp-1:0];
+    mem_nc_data = mem_data_o[(k*lce_req_data_width_p)+:lce_req_data_width_p];
+    if (mem_cmd_s_r.nc_size == e_lce_nc_req_1) begin
+      nc_data = {56'('0),mem_nc_data[(j*8)+:8]};
+    end else if (mem_cmd_s_r.nc_size == e_lce_nc_req_2) begin
+      nc_data = {48'('0),mem_nc_data[(j*8)+:16]};
+    end else if (mem_cmd_s_r.nc_size == e_lce_nc_req_4) begin
+      nc_data = {32'('0),mem_nc_data[(j*8)+:32]};
+    end else if (mem_cmd_s_r.nc_size == e_lce_nc_req_8) begin
+      nc_data = mem_nc_data;
+    end else begin
+      nc_data = '0;
+    end
   end
 
   typedef enum logic [2:0] {
@@ -197,7 +218,13 @@ module bp_mem
           mem_data_resp_s_o.payload.lce_id <= mem_cmd_s_r.payload.lce_id;
           mem_data_resp_s_o.payload.way_id <= mem_cmd_s_r.payload.way_id;
           mem_data_resp_s_o.addr <= mem_cmd_s_r.addr;
-          mem_data_resp_s_o.data <= mem_data_o;
+          if (mem_cmd_s_r.non_cacheable) begin
+            mem_data_resp_s_o.data <= {(block_size_in_bits_lp-lce_req_data_width_p)'('0),nc_data};
+          end else begin
+            mem_data_resp_s_o.data <= mem_data_o;
+          end
+          mem_data_resp_s_o.non_cacheable <= mem_cmd_s_r.non_cacheable;
+          mem_data_resp_s_o.nc_size <= mem_cmd_s_r.nc_size;
 
           // pull valid high
           mem_data_resp_v_o <= 1'b1;
@@ -207,6 +234,7 @@ module bp_mem
           mem_st <= READY;
 
           mem_resp_s_o.msg_type <= mem_data_cmd_s_r.msg_type;
+          mem_resp_s_o.addr <= mem_data_cmd_s_r.addr;
           mem_resp_s_o.payload.lce_id <= mem_data_cmd_s_r.payload.lce_id;
           mem_resp_s_o.payload.way_id <= mem_data_cmd_s_r.payload.way_id;
           mem_resp_s_o.payload.req_addr <= mem_data_cmd_s_r.payload.req_addr;
@@ -214,6 +242,8 @@ module bp_mem
           mem_resp_s_o.payload.tr_way_id <= mem_data_cmd_s_r.payload.tr_way_id;
           mem_resp_s_o.payload.transfer <= mem_data_cmd_s_r.payload.transfer;
           mem_resp_s_o.payload.replacement <= mem_data_cmd_s_r.payload.replacement;
+          mem_resp_s_o.non_cacheable <= mem_data_cmd_s_r.non_cacheable;
+          mem_resp_s_o.nc_size <= mem_data_cmd_s_r.nc_size;
 
           // pull valid high
           mem_resp_v_o <= 1'b1;

@@ -12,7 +12,7 @@ module test_bp
  #(parameter vaddr_width_p                 = "inv"
    , parameter paddr_width_p               = "inv"
    , parameter asid_width_p                = "inv"
-   , parameter branch_metadata_fwd_width_p = "inv"
+   , parameter btb_tag_width_p             = "inv"
    , parameter btb_indx_width_p            = "inv"
    , parameter bht_indx_width_p            = "inv"
    , parameter ras_addr_width_p            = "inv"
@@ -54,7 +54,7 @@ testbench
  #(.vaddr_width_p(vaddr_width_p)
    ,.paddr_width_p(paddr_width_p)
    ,.asid_width_p(asid_width_p)
-   ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+   ,.btb_tag_width_p(btb_tag_width_p)
    ,.btb_indx_width_p(btb_indx_width_p)
    ,.bht_indx_width_p(bht_indx_width_p)
    ,.ras_addr_width_p(ras_addr_width_p)

@@ -1,78 +1,8 @@
 /**
  *
- * Name:
- *   bp_be_top.v
+ *  Name:
+ *    bp_be_top.v
  * 
- * Description:
- *
- * Parameters:
- *   vaddr_width_p               - FE-BE structure sizing parameter
- *   paddr_width_p               - ''
- *   asid_width_p                - ''
- *   branch_metadata_fwd_width_p - ''
- *
- *   num_cce_p                   - 
- *   num_lce_p                   - 
- *   lce_assoc_p                 - 
- *   lce_sets_p                  - 
- *   cce_block_size_in_bytes_p   - 
- * 
- * Inputs:
- *   clk_i                       -
- *   reset_i                     -
- *
- *   fe_queue_i                  -
- *   fe_queue_v_i                -
- *   fe_queue_ready_o              -
- *
- *   lce_cmd_i               -
- *   lce_cmd_v_i             -
- *   lce_cmd_ready_o           -
- *
- *   lce_data_cmd_i          -
- *   lce_data_cmd_v_i        -
- *   lce_data_cmd_ready_o      -
- * 
- *   lce_tr_resp_i           - 
- *   lce_tr_resp_v_i         -
- *   lce_tr_resp_ready_o       -
- * 
- *   proc_cfg_i
- *
- * Outputs:
- *   fe_cmd_o
- *   fe_cmd_v_o
- *   fe_cmd_ready_i
- *
- *   fe_queue_clr_o
- *   fe_queue_dequeue_inc_o
- *   fe_queue_rollback_o
- *
- *   lce_req_o
- *   lce_req_v_o
- *   lce_req_ready_i
- *
- *   lce_resp_o
- *   lce_resp_v_o
- *   lce_resp_ready_i
- *
- *   lce_data_resp_o
- *   lce_data_resp_v_o
- *   lce_data_resp_ready_i
- *
- *   lce_tr_resp_o
- *   lce_tr_resp_v_o
- *   lce_tr_resp_ready_i
- *
- *   cmt_trace_stage_reg_o
- *   cmt_trace_result_o
- *   cmt_trace_exc_o
- *
- *  Keywords:
- *   be, top
- * 
- *  Notes:
- *
  */
 
 
@@ -88,7 +18,7 @@ module bp_be_top
    , parameter core_els_p                  = "inv"
 
    , parameter load_to_use_forwarding_p    = 1
-   , parameter trace_p                     = 1
+   , parameter trace_p                     = 0
    , parameter calc_debug_p                = 0
    , parameter calc_debug_file_p           = "inv"
 
@@ -100,7 +30,7 @@ module bp_be_top
    , parameter cce_block_size_in_bytes_p   = "inv"
  
    // Generated parameters
-   , localparam cce_block_size_in_bits_lp  = cce_block_size_in_bytes_p * rv64_byte_width_gp
+   , localparam lce_data_width_lp = cce_block_size_in_bytes_p * 8
    , localparam fe_queue_width_lp          = `bp_fe_queue_width(vaddr_width_p
                                                                 , branch_metadata_fwd_width_p)
    , localparam fe_cmd_width_lp            = `bp_fe_cmd_width(vaddr_width_p
@@ -108,36 +38,20 @@ module bp_be_top
                                                               , asid_width_p
                                                               , branch_metadata_fwd_width_p
                                                               )
-   , localparam lce_cce_req_width_lp       = `bp_lce_cce_req_width(num_cce_p
-                                                            , num_lce_p
-                                                            , paddr_width_p
-                                                            , lce_assoc_p
-                                                            )
-   , localparam lce_cce_resp_width_lp      = `bp_lce_cce_resp_width(num_cce_p
-                                                              , num_lce_p
-                                                              , paddr_width_p
-                                                              )
-   , localparam lce_cce_data_resp_width_lp = `bp_lce_cce_data_resp_width(num_cce_p
-                                                                        , num_lce_p
-                                                                        , paddr_width_p
-                                                                        , cce_block_size_in_bits_lp
-                                                                        )
-   , localparam cce_lce_cmd_width_lp       = `bp_cce_lce_cmd_width(num_cce_p
-                                                                   , num_lce_p
-                                                                   , paddr_width_p
-                                                                   , lce_assoc_p
-                                                                   )
-   , localparam cce_lce_data_cmd_width_lp  = `bp_cce_lce_data_cmd_width(num_cce_p
-                                                                       , num_lce_p
-                                                                       , paddr_width_p
-                                                                       , cce_block_size_in_bits_lp
-                                                                       , lce_assoc_p
-                                                                       )
-   , localparam lce_lce_tr_resp_width_lp   = `bp_lce_lce_tr_resp_width(num_lce_p
-                                                                       , paddr_width_p
-                                                                       , cce_block_size_in_bits_lp
-                                                                       , lce_assoc_p
-                                                                       )                                                               
+  , parameter data_width_p = rv64_reg_data_width_gp
+
+    , localparam lce_cce_req_width_lp=
+      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p,lce_assoc_p, data_width_p)
+    , localparam lce_cce_resp_width_lp=
+      `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
+    , localparam lce_cce_data_resp_width_lp=
+      `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_lp)
+    , localparam cce_lce_cmd_width_lp=
+      `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p)
+    , localparam lce_data_cmd_width_lp=
+      `bp_lce_data_cmd_width(num_lce_p, lce_data_width_lp, lce_assoc_p)
+
+
    , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(core_els_p, num_lce_p)
 
    , localparam fu_op_width_lp             = `bp_be_fu_op_width
@@ -181,17 +95,13 @@ module bp_be_top
    , input                                   lce_cmd_v_i
    , output                                  lce_cmd_ready_o
 
-   , input [cce_lce_data_cmd_width_lp-1:0]   lce_data_cmd_i
+   , input [lce_data_cmd_width_lp-1:0]   lce_data_cmd_i
    , input                                   lce_data_cmd_v_i
    , output                                  lce_data_cmd_ready_o
 
-   , input [lce_lce_tr_resp_width_lp-1:0]    lce_tr_resp_i
-   , input                                   lce_tr_resp_v_i
-   , output                                  lce_tr_resp_ready_o
-
-   , output [lce_lce_tr_resp_width_lp-1:0]   lce_tr_resp_o
-   , output                                  lce_tr_resp_v_o
-   , input                                   lce_tr_resp_ready_i
+   , output [lce_data_cmd_width_lp-1:0]   lce_data_cmd_o
+   , output                                   lce_data_cmd_v_o
+   , input                                  lce_data_cmd_ready_i
 
    // Processor configuration
    , input [proc_cfg_width_lp-1:0]           proc_cfg_i
@@ -372,7 +282,6 @@ bp_be_mmu_vm_top
 
     ,.mmu_resp_o(mmu_resp)
     ,.mmu_resp_v_o(mmu_resp_v)
-    ,.mmu_resp_ready_i(mmu_resp_rdy)      
 
     ,.lce_req_o(lce_req_o)
     ,.lce_req_v_o(lce_req_v_o)
@@ -394,13 +303,9 @@ bp_be_mmu_vm_top
     ,.lce_data_cmd_v_i(lce_data_cmd_v_i)
     ,.lce_data_cmd_ready_o(lce_data_cmd_ready_o)
 
-    ,.lce_tr_resp_i(lce_tr_resp_i)
-    ,.lce_tr_resp_v_i(lce_tr_resp_v_i)
-    ,.lce_tr_resp_ready_o(lce_tr_resp_ready_o)
-
-    ,.lce_tr_resp_o(lce_tr_resp_o)
-    ,.lce_tr_resp_v_o(lce_tr_resp_v_o)
-    ,.lce_tr_resp_ready_i(lce_tr_resp_ready_i)
+    ,.lce_data_cmd_o(lce_data_cmd_o)
+    ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
+    ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
 
     ,.dcache_id_i(proc_cfg.dcache_id)
     );

@@ -115,8 +115,7 @@ $BP_FE_DIR/src/v/bp_fe_icache.v
 $BP_FE_DIR/src/v/bp_fe_instr_scan.v
 $BP_FE_DIR/src/v/bp_fe_itlb.v
 $BP_FE_DIR/src/v/bp_fe_lce.v
-$BP_FE_DIR/src/v/bp_fe_lce_req.v
-$BP_FE_DIR/src/v/bp_fe_lce_tr_resp_in.v
+$BP_FE_DIR/src/v/bp_fe_lce_cce_req.v
 $BP_FE_DIR/src/v/bp_fe_pc_gen.v
 $BP_FE_DIR/src/v/bp_fe_top.v
 // ME files

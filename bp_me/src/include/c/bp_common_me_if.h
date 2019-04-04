@@ -35,6 +35,36 @@ typedef enum {
 
 #define bp_lce_cce_lru_dirty_width 1
 
+typedef enum {
+  e_lce_req_cacheable      = 0
+  ,e_lce_req_non_cacheable = 1
+} bp_lce_cce_req_non_cacheable_e;
+
+#define bp_lce_cce_req_non_cacheable_width 1
+
+typedef enum {
+  e_lce_nc_req_1     = 0
+  ,e_lce_nc_req_2    = 1
+  ,e_lce_nc_req_4    = 2
+  ,e_lce_nc_req_8    = 3
+} bp_lce_cce_nc_req_size_e;
+
+#define bp_lce_cce_nc_req_size_width 2
+
+uint32_t nc_req_size(bp_lce_cce_nc_req_size_e nc_req)
+{
+  if (nc_req == e_lce_nc_req_1) {
+    return 1;
+  } else if (nc_req == e_lce_nc_req_2) {
+    return 2;
+  } else if (nc_req == e_lce_nc_req_4) {
+    return 4;
+  } else if (nc_req == e_lce_nc_req_8) {
+    return 8;
+  }
+  return 0;
+}
+
 typedef enum { // CCE to LCE Commands
   e_lce_cmd_sync             = 0
   ,e_lce_cmd_set_clear       = 1
@@ -50,9 +80,17 @@ typedef enum { // CCE to LCE Commands
 typedef enum {
   e_lce_resp_wb              = 0 // Normal Writeback Response
   ,e_lce_resp_null_wb        = 1 // Null Writeback Response
-} bp_lce_cce_wb_resp_type_e;
+} bp_lce_cce_resp_msg_type_e;
 
-#define bp_lce_cce_wb_resp_type_width 1
+#define bp_lce_cce_resp_msg_type_width 1
+
+typedef enum {
+  e_lce_data_cmd_transfer       = 0
+  ,e_lce_data_cmd_cce           = 1
+  ,e_lce_data_cmd_non_cacheable = 2
+} bp_lce_data_cmd_type_e;
+
+#define bp_lce_data_cmd_type_width 2
 
 typedef enum {
   e_lce_cce_sync_ack         = 0 // Sync Ack
@@ -80,15 +118,19 @@ typedef enum {
 #define bp_cce_coh_bits 2
 
 
-#define bp_lce_cce_req_width (LG_N_CCE+LG_N_LCE+1+1+ADDR_WIDTH+LG_LCE_ASSOC+1)
+#define bp_lce_cce_req_width (LG_N_CCE+LG_N_LCE+bp_lce_cce_req_type_width \
+  +bp_lce_cce_req_non_excl_width+ADDR_WIDTH+LG_LCE_ASSOC+bp_lce_cce_lru_dirty_width \
+  +bp_lce_cce_req_non_cacheable_width+bp_lce_cce_nc_req_size_width+NC_DATA_WIDTH)
 
-#define bp_lce_cce_resp_width (LG_N_CCE+LG_N_LCE+2+ADDR_WIDTH)
+#define bp_lce_cce_resp_width (LG_N_CCE+LG_N_LCE+bp_lce_cce_ack_type_width+ADDR_WIDTH)
 
-#define bp_lce_cce_data_resp_width (LG_N_CCE+LG_N_LCE+1+ADDR_WIDTH+DATA_WIDTH_BITS)
+#define bp_lce_cce_data_resp_width (LG_N_CCE+LG_N_LCE+bp_lce_cce_resp_msg_type_width+ADDR_WIDTH \
+  +DATA_WIDTH_BITS)
 
-#define bp_cce_lce_cmd_width (LG_N_CCE+LG_N_LCE+3+ADDR_WIDTH+2*(LG_LCE_ASSOC)+LG_COH_ST+LG_N_LCE)
+#define bp_cce_lce_cmd_width (LG_N_CCE+LG_N_LCE+bp_cce_lce_cmd_type_width+ADDR_WIDTH \
+  +2*(LG_LCE_ASSOC)+bp_cce_coh_bits+LG_N_LCE)
 
-#define bp_cce_lce_data_cmd_width (LG_N_CCE+LG_N_LCE+1+LG_LCE_ASSOC+ADDR_WIDTH+DATA_WIDTH_BITS)
+#define bp_lce_data_cmd_width (LG_N_LCE+bp_lce_data_cmd_type_width+LG_LCE_ASSOC+DATA_WIDTH_BITS)
 
 #define bp_lce_lce_tr_resp_width (LG_N_LCE+LG_N_LCE+LG_LCE_ASSOC+ADDR_WIDTH+DATA_WIDTH_BITS)
 
@@ -96,12 +138,18 @@ typedef enum {
 
 #define bp_cce_mem_data_cmd_payload_width ((2*LG_N_LCE)+(2*LG_LCE_ASSOC)+ADDR_WIDTH+2)
 
-#define bp_cce_mem_cmd_width (1+ADDR_WIDTH+bp_cce_mem_cmd_payload_width)
+#define bp_cce_mem_cmd_width (bp_lce_cce_req_type_width+ADDR_WIDTH+bp_cce_mem_cmd_payload_width \
+  +bp_lce_cce_req_non_cacheable_width+bp_lce_cce_nc_req_size_width)
 
-#define bp_cce_mem_data_cmd_width (1+ADDR_WIDTH+DATA_WIDTH_BITS+bp_cce_mem_data_cmd_payload_width)
+#define bp_cce_mem_data_cmd_width (bp_lce_cce_req_type_width+ADDR_WIDTH+DATA_WIDTH_BITS \
+  +bp_cce_mem_data_cmd_payload_width \
+  +bp_lce_cce_req_non_cacheable_width+bp_lce_cce_nc_req_size_width)
 
-#define bp_mem_cce_resp_width (1+bp_cce_mem_data_cmd_payload_width)
+#define bp_mem_cce_resp_width (bp_lce_cce_req_type_width+ADDR_WIDTH \
+  +bp_cce_mem_data_cmd_payload_width \
+  +bp_lce_cce_req_non_cacheable_width+bp_lce_cce_nc_req_size_width)
 
-#define bp_mem_cce_data_resp_width (1+ADDR_WIDTH+DATA_WIDTH_BITS+bp_cce_mem_cmd_payload_width)
+#define bp_mem_cce_data_resp_width (bp_lce_cce_req_type_width+ADDR_WIDTH+DATA_WIDTH_BITS \
+  +bp_cce_mem_cmd_payload_width+bp_lce_cce_req_non_cacheable_width+bp_lce_cce_nc_req_size_width)
 
 #endif

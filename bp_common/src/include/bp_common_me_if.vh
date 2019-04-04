@@ -112,6 +112,32 @@ typedef enum bit
 `define bp_lce_cce_lru_dirty_width $bits(bp_lce_cce_lru_dirty_e)
 
 /*
+ * bp_lce_cce_req_non_cacheable_e specifies whether this load or store request is for a
+ * non-cacheable address.
+ */
+typedef enum bit
+{
+  e_lce_req_cacheable         = 1'b0 // Cacheable request
+  , e_lce_req_non_cacheable   = 1'b1 // Non-cacheable request
+} bp_lce_cce_req_non_cacheable_e;
+
+`define bp_lce_cce_req_non_cacheable_width $bits(bp_lce_cce_req_non_cacheable_e)
+
+/*
+ * bp_lce_cce_nc_req_size_e defines the size of a non-cacheable load or store request, in bytes.
+ *
+ */
+typedef enum bit [1:0]
+{
+  e_lce_nc_req_1   = 2'b00
+  , e_lce_nc_req_2 = 2'b01
+  , e_lce_nc_req_4 = 2'b10
+  , e_lce_nc_req_8 = 2'b11
+} bp_lce_cce_nc_req_size_e;
+
+`define bp_lce_cce_nc_req_size_width $bits(bp_lce_cce_nc_req_size_e)
+
+/*
  * bp_lce_cce_req_s defines an LCE request sent by an LCE to a CCE on a cache miss. An LCE enters
  *   a Stall state after sending a request, and it may not send another request until it is
  *   "woken up" by a Set Tag and Wakeup command from the CCE or after receiving a Set Tag command
@@ -124,9 +150,10 @@ typedef enum bit
  * lru_way_id indicates the way within the target set that will be used to fill the miss in to
  * lru_dirty indicates if the LRU way was dirty or clean when the miss request was sent
  */
-`define declare_bp_lce_cce_req_s(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp) \
+`define declare_bp_lce_cce_req_s(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp, data_width_mp) \
   typedef struct packed                                         \
   {                                                             \
+    logic [data_width_mp-1:0]                    data;          \
     logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]      dst_id;        \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      src_id;        \
     bp_lce_cce_req_type_e                        msg_type;      \
@@ -134,6 +161,8 @@ typedef enum bit
     logic [addr_width_mp-1:0]                    addr;          \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    lru_way_id;    \
     bp_lce_cce_lru_dirty_e                       lru_dirty;     \
+    bp_lce_cce_req_non_cacheable_e               non_cacheable; \
+    bp_lce_cce_nc_req_size_e                     nc_size;       \
   }  bp_lce_cce_req_s
 
 /*
@@ -226,33 +255,33 @@ typedef union packed
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    target_way_id; \
   }  bp_cce_lce_cmd_s
 
-/*
+
+/**
+ *  bp_lce_data_cmd_s is used to send cache block data from CCE to LCE or from LCE to LCE.
  *
- * CCE to LCE Data Command
- *
+ *  dst_id:   LCE receiving the cache block data
+ *  msg_type: indicates whether this is from CCE or from another LCE. LCE uses this field to decide
+ *            what type of lce_resp to send. or whether this is non_cacheable data_cmd from CCE.
+ *  way_id:   the way within the receiving LCE's target set to fill the data in to.
+ *  data:     the cache block data
  */
 
-/*
- * bp_cce_lce_data_cmd_s is used to send cache block data from an CCE to an LCE in response to a
- *   cache miss request. Once an LCE receives this message and a set tag message, it considers
- *   itself to be woken up and can resume normal execution.
- * dst_id is the LCE receiving the cache block data
- * src_id is the CCE sending the cache block data
- * msg_type indicates if this cache block data is in response to a read or write cache miss
- * way_id is the way within the receiving LCE's target set to fill the data in to
- * addr is the memory address of the cache miss
- * data is the cache block data
- */
-`define declare_bp_cce_lce_data_cmd_s(num_cce_mp, num_lce_mp, addr_width_mp, data_width_mp, lce_assoc_mp) \
+typedef enum logic [1:0] {
+  e_lce_data_cmd_transfer         // lce to lce transfer
+  ,e_lce_data_cmd_cce             // data refill from L2
+  ,e_lce_data_cmd_non_cacheable   // only 64-bit is valid
+} bp_lce_data_cmd_type_e;
+
+`define bp_lce_data_cmd_type_width $bits(bp_lce_data_cmd_type_e)
+
+`define declare_bp_lce_data_cmd_s(num_lce_mp, data_width_mp, lce_assoc_mp) \
   typedef struct packed                                    \
   {                                                        \
-    logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      dst_id;   \
-    logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]      src_id;   \
-    bp_lce_cce_req_type_e                        msg_type; \
-    logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id;   \
-    logic [addr_width_mp-1:0]                    addr;     \
     logic [data_width_mp-1:0]                    data;     \
-  }  bp_cce_lce_data_cmd_s
+    logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      dst_id;   \
+    bp_lce_data_cmd_type_e                       msg_type; \
+    logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id;   \
+  }  bp_lce_data_cmd_s
 
 /*
  *
@@ -300,30 +329,6 @@ typedef enum bit [1:0]
     logic [addr_width_mp-1:0]                    addr;     \
   } bp_lce_cce_resp_s
 
-/*
- *
- * LCE to LCE Transfer Response
- *
- */
-
-/*
- * bp_lce_lce_tr_resp_s is sent from one LCE to another to satisfy a transfer command from a CCE.
- *   This message performs a direct LCE to LCE data transfer.
- * dst_id is the LCE receiving the cache block transfer
- * src_id is the LCE sending the cache block transfer
- * way_id is the way within the receiving LCE's target set to fill the data in to
- * addr is the memory address of the cache block being written back
- * data is the cache block data (if this is not a null writeback)
- */
-`define declare_bp_lce_lce_tr_resp_s(num_lce_mp, addr_width_mp, data_width_mp, lce_assoc_mp) \
-  typedef struct packed                                  \
-  {                                                      \
-    logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      dst_id; \
-    logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      src_id; \
-    logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id; \
-    logic [addr_width_mp-1:0]                    addr;   \
-    logic [data_width_mp-1:0]                    data;   \
-  } bp_lce_lce_tr_resp_s
 
 /*
  *
@@ -332,20 +337,21 @@ typedef enum bit [1:0]
  */
 
 /*
- * bp_lce_cce_wb_resp_type_e is an enum that is used by the LCE when sending a writeback response
+ * bp_lce_cce_msg_type_e is an enum that is used by the LCE when sending a writeback response
  *   to indicate if the response contains valid data
  * e_lce_resp_wb indicates the data field (cache block data) is valid, and that the LCE ahd the
  *   cache block in a dirty state
  * e_lce_resp_null_wb indicates that the LCE never wrote to the cache block and the block is still
  *   clean. The data field should be 0 and is invalid.
  */
-typedef enum bit 
-{
-  e_lce_resp_wb              = 1'b0 // Normal Writeback Response
-  ,e_lce_resp_null_wb        = 1'b1 // Null Writeback Response
-} bp_lce_cce_wb_resp_type_e;
 
-`define bp_lce_cce_wb_resp_type_width $bits(bp_lce_cce_wb_resp_type_e)
+typedef enum logic
+{
+  e_lce_resp_wb              = 1'b0  // Normal Writeback Response (full data)
+  ,e_lce_resp_null_wb        = 1'b1  // Null Writeback Response (no data)
+} bp_lce_cce_resp_msg_type_e;
+
+`define bp_lce_cce_resp_msg_type_width $bits(bp_lce_cce_resp_msg_type_e)
 
 /*
  * bp_lce_cce_data_resp_s is used by an LCE to respond to a writeback command from the CCE
@@ -358,11 +364,11 @@ typedef enum bit
 `define declare_bp_lce_cce_data_resp_s(num_cce_mp, num_lce_mp, addr_width_mp, data_width_mp) \
   typedef struct packed                                    \
   {                                                        \
+    logic [data_width_mp-1:0]                    data;     \
     logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]      dst_id;   \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      src_id;   \
-    bp_lce_cce_wb_resp_type_e                    msg_type; \
+    bp_lce_cce_resp_msg_type_e                   msg_type; \
     logic [addr_width_mp-1:0]                    addr;     \
-    logic [data_width_mp-1:0]                    data;     \
   } bp_lce_cce_data_resp_s
 
 /*
@@ -406,6 +412,8 @@ typedef enum bit
     bp_lce_cce_req_type_e                        msg_type; \
     logic [addr_width_mp-1:0]                    addr;     \
     bp_cce_mem_cmd_payload_s                     payload;  \
+    bp_lce_cce_req_non_cacheable_e               non_cacheable; \
+    bp_lce_cce_nc_req_size_e                     nc_size;       \
   }  bp_cce_mem_cmd_s
 
 /*
@@ -427,6 +435,8 @@ typedef enum bit
     bp_lce_cce_req_type_e                        msg_type; \
     logic [addr_width_mp-1:0]                    addr;     \
     bp_cce_mem_cmd_payload_s                     payload;  \
+    bp_lce_cce_req_non_cacheable_e               non_cacheable; \
+    bp_lce_cce_nc_req_size_e                     nc_size;       \
     logic [data_width_mp-1:0]                    data;     \
   } bp_mem_cce_data_resp_s
 
@@ -480,6 +490,8 @@ typedef enum bit
     bp_lce_cce_req_type_e                        msg_type;    \
     logic [addr_width_mp-1:0]                    addr;        \
     bp_cce_mem_data_cmd_payload_s                payload;     \
+    bp_lce_cce_req_non_cacheable_e               non_cacheable; \
+    bp_lce_cce_nc_req_size_e                     nc_size;       \
     logic [data_width_mp-1:0]                    data;        \
   } bp_cce_mem_data_cmd_s
 
@@ -503,6 +515,8 @@ typedef enum bit
     bp_lce_cce_req_type_e                        msg_type;    \
     logic [addr_width_mp-1:0]                    addr;        \
     bp_cce_mem_data_cmd_payload_s                payload;     \
+    bp_lce_cce_req_non_cacheable_e               non_cacheable; \
+    bp_lce_cce_nc_req_size_e                     nc_size;       \
   } bp_mem_cce_resp_s
 
 /*
@@ -526,18 +540,19 @@ typedef enum bit
  */
 
 // CCE-LCE Interface
-`define bp_lce_cce_req_width(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp) \
+`define bp_lce_cce_req_width(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp, data_width_mp) \
   (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_cce_req_type_width \
    +`bp_lce_cce_req_non_excl_width+addr_width_mp+`BSG_SAFE_CLOG2(lce_assoc_mp) \
-   +`bp_lce_cce_lru_dirty_width)
+   +`bp_lce_cce_lru_dirty_width+`bp_lce_cce_req_non_cacheable_width+`bp_lce_cce_nc_req_size_width \
+   +data_width_mp)
 
 `define bp_cce_lce_cmd_width(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp) \
   (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_cce_lce_cmd_type_width \
    +addr_width_mp+(2*`BSG_SAFE_CLOG2(lce_assoc_mp))+`bp_cce_coh_bits+`BSG_SAFE_CLOG2(num_lce_mp))
 
-`define bp_cce_lce_data_cmd_width(num_cce_mp, num_lce_mp, addr_width_mp, data_width_mp, lce_assoc_mp) \
-  (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_cce_req_type_width \
-   +`BSG_SAFE_CLOG2(lce_assoc_mp)+addr_width_mp+data_width_mp)
+`define bp_lce_data_cmd_width(num_lce_mp, data_width_mp, lce_assoc_mp) \
+  (`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_data_cmd_type_width+`BSG_SAFE_CLOG2(lce_assoc_mp) \
+   +data_width_mp)
 
 `define bp_lce_cce_resp_width(num_cce_mp, num_lce_mp, addr_width_mp) \
   (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_cce_ack_type_width+addr_width_mp)
@@ -547,7 +562,7 @@ typedef enum bit
     +addr_width_mp+data_width_mp)
 
 `define bp_lce_cce_data_resp_width(num_cce_mp, num_lce_mp, addr_width_mp, data_width_mp) \
-  (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_cce_wb_resp_type_width \
+  (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_cce_resp_msg_type_width \
    +addr_width_mp+data_width_mp)
 
 // CCE-MEM Interface
@@ -558,18 +573,22 @@ typedef enum bit
   ((2*`BSG_SAFE_CLOG2(num_lce_mp))+(2*`BSG_SAFE_CLOG2(lce_assoc_mp))+addr_width_mp+2)
 
 `define bp_cce_mem_cmd_width(addr_width_mp, num_lce_mp, lce_assoc_mp) \
-  (`bp_lce_cce_req_type_width+addr_width_mp+`bp_cce_mem_cmd_payload_width(num_lce_mp, lce_assoc_mp))
+  (`bp_lce_cce_req_type_width+addr_width_mp+`bp_cce_mem_cmd_payload_width(num_lce_mp, lce_assoc_mp)\
+   +`bp_lce_cce_req_non_cacheable_width+`bp_lce_cce_nc_req_size_width)
 
 `define bp_cce_mem_data_cmd_width(addr_width_mp, data_width_mp, num_lce_mp, lce_assoc_mp) \
   (`bp_lce_cce_req_type_width+addr_width_mp+data_width_mp \
-   +`bp_cce_mem_data_cmd_payload_width(num_lce_mp, lce_assoc_mp, addr_width_mp))
+   +`bp_cce_mem_data_cmd_payload_width(num_lce_mp, lce_assoc_mp, addr_width_mp) \
+   +`bp_lce_cce_req_non_cacheable_width+`bp_lce_cce_nc_req_size_width)
 
 `define bp_mem_cce_resp_width(addr_width_mp, num_lce_mp, lce_assoc_mp) \
   (`bp_lce_cce_req_type_width+addr_width_mp \
-   +`bp_cce_mem_data_cmd_payload_width(num_lce_mp, lce_assoc_mp, addr_width_mp))
+   +`bp_cce_mem_data_cmd_payload_width(num_lce_mp, lce_assoc_mp, addr_width_mp) \
+   +`bp_lce_cce_req_non_cacheable_width+`bp_lce_cce_nc_req_size_width)
 
 `define bp_mem_cce_data_resp_width(addr_width_mp, data_width_mp, num_lce_mp, lce_assoc_mp) \
   (`bp_lce_cce_req_type_width+addr_width_mp+data_width_mp \
-   +`bp_cce_mem_cmd_payload_width(num_lce_mp, lce_assoc_mp))
+   +`bp_cce_mem_cmd_payload_width(num_lce_mp, lce_assoc_mp) \
+   +`bp_lce_cce_req_non_cacheable_width+`bp_lce_cce_nc_req_size_width)
 
 `endif

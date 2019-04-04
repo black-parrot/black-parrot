@@ -24,10 +24,13 @@ module bp_me_top
     , localparam lg_num_cce_lp         = `BSG_SAFE_CLOG2(num_cce_p)
     , localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_inst_ram_els_p)
 
+    // TODO: where should this param be defined?
+    , localparam lce_req_data_width_lp = 64
     , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                                ,num_lce_p
                                                                ,paddr_width_p
-                                                               ,lce_assoc_p)
+                                                               ,lce_assoc_p
+                                                               ,lce_req_data_width_lp)
 
     , localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
                                                                  ,num_lce_p
@@ -43,11 +46,9 @@ module bp_me_top
                                                                ,paddr_width_p
                                                                ,lce_assoc_p)
 
-    , localparam bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
-                                                                         ,num_lce_p
-                                                                         ,paddr_width_p
-                                                                         ,block_size_in_bits_lp
-                                                                         ,lce_assoc_p)
+    , localparam bp_lce_data_cmd_width_lp=`bp_lce_data_cmd_width(num_lce_p
+                                                                 ,block_size_in_bits_lp
+                                                                 ,lce_assoc_p)
 
     , localparam bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p
                                                                        ,paddr_width_p
@@ -94,18 +95,13 @@ module bp_me_top
    , output logic [num_lce_p-1:0]                                         lce_cmd_v_o
    , input [num_lce_p-1:0]                                                lce_cmd_ready_i
 
-   , output logic [num_lce_p-1:0][bp_cce_lce_data_cmd_width_lp-1:0]       lce_data_cmd_o
+   , output logic [num_lce_p-1:0][bp_lce_data_cmd_width_lp-1:0]           lce_data_cmd_o
    , output logic [num_lce_p-1:0]                                         lce_data_cmd_v_o
    , input [num_lce_p-1:0]                                                lce_data_cmd_ready_i
 
-   // LCE <-> LCE transfer networks
-   , input [num_lce_p-1:0][bp_lce_lce_tr_resp_width_lp-1:0]               lce_tr_resp_i
-   , input [num_lce_p-1:0]                                                lce_tr_resp_v_i
-   , output logic [num_lce_p-1:0]                                         lce_tr_resp_ready_o
-
-   , output logic [num_lce_p-1:0][bp_lce_lce_tr_resp_width_lp-1:0]        lce_tr_resp_o
-   , output logic [num_lce_p-1:0]                                         lce_tr_resp_v_o
-   , input [num_lce_p-1:0]                                                lce_tr_resp_ready_i
+   , input [num_lce_p-1:0][bp_lce_data_cmd_width_lp-1:0]                  lce_data_cmd_i
+   , input [num_lce_p-1:0]                                                lce_data_cmd_v_i
+   , output logic [num_lce_p-1:0]                                         lce_data_cmd_ready_o
 
   // cce inst boot rom
    , output logic [num_cce_p-1:0][inst_ram_addr_width_lp-1:0]       cce_inst_boot_rom_addr_o
@@ -148,18 +144,20 @@ module bp_me_top
   logic [num_cce_p-1:0]                                         lce_cmd_v_o_from_cce;
   logic [num_cce_p-1:0]                                         lce_cmd_ready_i_to_cce;
 
-  logic [num_cce_p-1:0][bp_cce_lce_data_cmd_width_lp-1:0]       lce_data_cmd_o_from_cce;
+  logic [num_cce_p-1:0][bp_lce_data_cmd_width_lp-1:0]           lce_data_cmd_o_from_cce;
   logic [num_cce_p-1:0]                                         lce_data_cmd_v_o_from_cce;
   logic [num_cce_p-1:0]                                         lce_data_cmd_ready_i_to_cce;
 
 
   // Coherence Network
-  bp_coherence_network
+  bp_me_network
     #(.num_lce_p(num_lce_p)
       ,.num_cce_p(num_cce_p)
       ,.paddr_width_p(paddr_width_p)
       ,.lce_assoc_p(lce_assoc_p)
       ,.block_size_in_bytes_p(block_size_in_bytes_p)
+      ,.data_width_p(lce_req_data_width_lp)
+      // TODO: number of flit param
       )
     network
      (.clk_i(clk_i)
@@ -180,10 +178,15 @@ module bp_me_top
       ,.lce_data_cmd_o(lce_data_cmd_o)
       ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
       ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
-      // (CCE side)
-      ,.lce_data_cmd_i(lce_data_cmd_o_from_cce)
-      ,.lce_data_cmd_v_i(lce_data_cmd_v_o_from_cce)
-      ,.lce_data_cmd_ready_o(lce_data_cmd_ready_i_to_cce)
+
+      ,.cce_lce_data_cmd_i(lce_data_cmd_o_from_cce)
+      ,.cce_lce_data_cmd_v_i(lce_data_cmd_v_o_from_cce)
+      ,.cce_lce_data_cmd_ready_o(lce_data_cmd_ready_i_to_cce)
+
+      ,.lce_lce_data_cmd_i(lce_data_cmd_i)
+      ,.lce_lce_data_cmd_v_i(lce_data_cmd_v_i)
+      ,.lce_lce_data_cmd_ready_o(lce_data_cmd_ready_o)
+      
 
       // LCE Request Network - (LCE->network->CCE)
       // (LCE side)
@@ -214,16 +217,6 @@ module bp_me_top
       ,.lce_data_resp_o(lce_data_resp_i_to_cce)
       ,.lce_data_resp_v_o(lce_data_resp_v_i_to_cce)
       ,.lce_data_resp_ready_i(lce_data_resp_ready_o_from_cce)
-
-      // LCE-LCE Transfer Network - (LCE(s)->network->LCE(d))
-      // (LCE source side)
-      ,.lce_tr_resp_i(lce_tr_resp_i)
-      ,.lce_tr_resp_v_i(lce_tr_resp_v_i)
-      ,.lce_tr_resp_ready_o(lce_tr_resp_ready_o)
-      // (LCE dest side)
-      ,.lce_tr_resp_o(lce_tr_resp_o)
-      ,.lce_tr_resp_v_o(lce_tr_resp_v_o)
-      ,.lce_tr_resp_ready_i(lce_tr_resp_ready_i)
       );
 
 
@@ -236,6 +229,7 @@ module bp_me_top
         ,.lce_sets_p(lce_sets_p)
         ,.block_size_in_bytes_p(block_size_in_bytes_p)
         ,.num_cce_inst_ram_els_p(num_inst_ram_els_p)
+        ,.lce_req_data_width_p(lce_req_data_width_lp)
         )
       bp_cce_top
        (.clk_i(clk_i)

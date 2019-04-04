@@ -16,6 +16,7 @@ module bp_cce_reg
     , parameter lce_assoc_p                 = "inv"
     , parameter lce_sets_p                  = "inv"
     , parameter block_size_in_bytes_p       = "inv"
+    , parameter lce_req_data_width_p        = "inv"
 
     // Derived parameters
     , localparam lg_num_lce_lp              = `BSG_SAFE_CLOG2(num_lce_p)
@@ -32,7 +33,8 @@ module bp_cce_reg
     , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                                ,num_lce_p
                                                                ,addr_width_p
-                                                               ,lce_assoc_p)
+                                                               ,lce_assoc_p
+                                                               ,lce_req_data_width_p)
 
     , localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
                                                                  ,num_lce_p
@@ -121,12 +123,15 @@ module bp_cce_reg
    , output logic [num_lce_p-1:0]                                          sharers_hits_o
    , output logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0]                     sharers_ways_o
    , output logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0]                    sharers_coh_states_o
+
+   , output logic [`bp_lce_cce_nc_req_size_width-1:0]                      nc_req_size_o
+   , output logic [lce_req_data_width_p-1:0]                               nc_data_o
   );
 
   wire unused = dir_pending_v_o_i;
 
   // Define structure variables for input queues
-  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p);
+  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p, lce_req_data_width_p);
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, addr_width_p);
   `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, addr_width_p, block_size_in_bits_lp);
 
@@ -178,6 +183,9 @@ module bp_cce_reg
   logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0] sharers_ways_r, sharers_ways_n;
   logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0] sharers_coh_states_r, sharers_coh_states_n;
 
+  logic [`bp_lce_cce_nc_req_size_width-1:0] nc_req_size_r, nc_req_size_n;
+  logic [lce_req_data_width_p-1:0] nc_data_r, nc_data_n;
+
   always_comb
   begin
     req_lce_o = req_lce_r;
@@ -219,6 +227,9 @@ module bp_cce_reg
     sharers_hits_o = sharers_hits_r;
     sharers_ways_o = sharers_ways_r;
     sharers_coh_states_o = sharers_coh_states_r;
+
+    nc_req_size_o = nc_req_size_r;
+    nc_data_o = nc_data_r;
   end
 
   int j;
@@ -337,12 +348,36 @@ module bp_cce_reg
     flags_n[e_flag_sel_pcf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
 
     case (decoded_inst_i.rqf_sel)
-      e_rqf_lce_req: flags_n[e_flag_sel_rqf] = lce_req_s_i.msg_type;
-      e_rqf_mem_resp: flags_n[e_flag_sel_rqf] = mem_resp_s_i.msg_type;
-      e_rqf_mem_data_resp: flags_n[e_flag_sel_rqf] = mem_data_resp_s_i.msg_type;
-      e_rqf_pending: flags_n[e_flag_sel_rqf] = '0; // TODO: v2
-      e_rqf_imm0: flags_n[e_flag_sel_rqf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
-      default: flags_n[e_flag_sel_rqf] = '0;
+      e_rqf_lce_req: begin
+        flags_n[e_flag_sel_rqf] = lce_req_s_i.msg_type;
+        flags_n[e_flag_sel_ucf] = lce_req_s_i.non_cacheable;
+        nc_req_size_n           = lce_req_s_i.nc_size;
+      end
+      e_rqf_mem_resp: begin
+        flags_n[e_flag_sel_rqf] = mem_resp_s_i.msg_type;
+        flags_n[e_flag_sel_ucf] = mem_resp_s_i.non_cacheable;
+        nc_req_size_n           = mem_resp_s_i.nc_size;
+      end
+      e_rqf_mem_data_resp: begin
+        flags_n[e_flag_sel_rqf] = mem_data_resp_s_i.msg_type;
+        flags_n[e_flag_sel_ucf] = mem_data_resp_s_i.non_cacheable;
+        nc_req_size_n           = mem_data_resp_s_i.nc_size;
+      end
+      e_rqf_pending: begin
+        flags_n[e_flag_sel_rqf] = '0; // TODO: v2
+        flags_n[e_flag_sel_ucf] = '0;
+        nc_req_size_n           = '0;
+      end
+      e_rqf_imm0: begin
+        flags_n[e_flag_sel_rqf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+        flags_n[e_flag_sel_ucf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+        nc_req_size_n           = '0;
+      end
+      default: begin
+        flags_n[e_flag_sel_rqf] = '0;
+        flags_n[e_flag_sel_ucf] = '0;
+        nc_req_size_n           = '0;
+      end
     endcase
 
     case (decoded_inst_i.nerldf_sel)
@@ -365,9 +400,19 @@ module bp_cce_reg
     endcase
 
     case (decoded_inst_i.nwbf_sel)
-      e_nwbf_lce_data_resp: flags_n[e_flag_sel_nwbf] = lce_data_resp_s_i.msg_type;
-      e_nwbf_imm0: flags_n[e_flag_sel_nwbf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
-      default: flags_n[e_flag_sel_nwbf] = '0;
+      e_nwbf_lce_data_resp: begin
+        if (lce_data_resp_s_i.msg_type == e_lce_resp_null_wb) begin
+          flags_n[e_flag_sel_nwbf] = 1'b1;
+        end else begin
+          flags_n[e_flag_sel_nwbf] = '0;
+        end
+      end
+      e_nwbf_imm0: begin
+        flags_n[e_flag_sel_nwbf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+      end
+      default: begin
+        flags_n[e_flag_sel_nwbf] = '0;
+      end
     endcase
 
     case (decoded_inst_i.tf_sel)
@@ -428,6 +473,15 @@ module bp_cce_reg
     sharers_hits_n = gad_sharers_hits_i;
     sharers_ways_n = gad_sharers_ways_i;
     sharers_coh_states_n = gad_sharers_coh_states_i;
+
+    // Uncached data
+    if (decoded_inst_i.nc_data_lce_req) begin
+      nc_data_n = lce_req_s_i.data;
+    end else if (decoded_inst_i.nc_data_mem_data_resp) begin
+      nc_data_n = mem_data_resp_s_i.data[0+:lce_req_data_width_p];
+    end else begin
+      nc_data_n = '0;
+    end
   end
 
 
@@ -509,6 +563,15 @@ module bp_cce_reg
         sharers_hits_r <= sharers_hits_n;
         sharers_ways_r <= sharers_ways_n;
         sharers_coh_states_r <= sharers_coh_states_n;
+      end
+
+      // Uncached data and request size
+      if (decoded_inst_i.nc_data_w_v) begin
+        nc_data_r <= nc_data_n;
+      end
+
+      if (decoded_inst_i.nc_req_size_w_v) begin
+        nc_req_size_r <= nc_req_size_n;
       end
 
     end // else

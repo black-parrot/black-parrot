@@ -1,7 +1,7 @@
 DUT_PARAMS = -pvalue+vaddr_width_p=39                \
              -pvalue+paddr_width_p=56                \
              -pvalue+asid_width_p=10                 \
-             -pvalue+branch_metadata_fwd_width_p=36  \
+             -pvalue+btb_tag_width_p=9               \
              -pvalue+btb_indx_width_p=9              \
              -pvalue+bht_indx_width_p=5              \
              -pvalue+ras_addr_width_p=22             \

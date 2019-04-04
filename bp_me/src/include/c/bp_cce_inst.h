@@ -102,12 +102,15 @@ typedef enum {
   ,e_src_if                      = 0xD
   ,e_src_ef                      = 0xE
   ,e_src_pcf                     = 0xF
-  ,e_src_const_0                 = 0x10
-  ,e_src_const_1                 = 0x11
-  ,e_src_imm                     = 0x12
-  ,e_src_req_lce                 = 0x13
-  ,e_src_ack_type                = 0x14
-  ,e_src_sharers_hit_r0          = 0x15
+  ,e_src_ucf                     = 0x10
+
+  ,e_src_const_0                 = 0x11
+  ,e_src_const_1                 = 0x12
+  ,e_src_imm                     = 0x13
+  ,e_src_req_lce                 = 0x14
+  ,e_src_ack_type                = 0x15
+  ,e_src_sharers_hit_r0          = 0x16
+
   ,e_src_lce_req_ready           = 0x18
   ,e_src_mem_resp_ready          = 0x19
   ,e_src_mem_data_resp_ready     = 0x1A
@@ -135,7 +138,8 @@ typedef enum {
   ,e_dst_if                      = 0xD
   ,e_dst_ef                      = 0xE
   ,e_dst_pcf                     = 0xF
-  ,e_dst_next_coh_state          = 0x10
+  ,e_dst_ucf                     = 0x10
+  ,e_dst_next_coh_state          = 0x11
 } bp_cce_inst_dst_e;
 
 #define bp_cce_inst_dst_width 5
@@ -163,9 +167,10 @@ typedef enum {
   ,e_flag_if                     = 512 // Invalidate Flag
   ,e_flag_ef                     = 1024 // Exclusive Flag
   ,e_flag_pcf                    = 2048 // Pending-Cleared Flag
+  ,e_flag_ucf                    = 4096 // Uncached Request Flag
 } bp_cce_inst_flag_e;
 
-#define bp_cce_inst_num_flags 12
+#define bp_cce_inst_num_flags 13
 
 typedef enum {
   e_flag_sel_rqf                 = 0x0 // Request Type Flag
@@ -180,6 +185,7 @@ typedef enum {
   ,e_flag_sel_if                 = 0x9 // Invalidate Flag
   ,e_flag_sel_ef                 = 0xA // Exclusive Flag
   ,e_flag_sel_pcf                = 0xB // Pending-Cleared Flag
+  ,e_flag_sel_ucf                = 0xC // Uncached Request Flag
 } bp_cce_inst_flag_sel_e;
 
 #define bp_cce_inst_flag_sel_width 4

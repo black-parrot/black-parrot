@@ -36,15 +36,15 @@ std::map<uint64_t, uint32_t> MRU;
 
 int sc_main(int argc, char **argv) 
 {
-  sc_init("bp_cce", argc, argv);
+  sc_init("bp_cce_top", argc, argv);
 
   sc_signal <bool>     reset_i("reset_i");
 
-  sc_signal <uint32_t> lce_req_i("lce_req_i");
+  sc_signal <sc_bv<bp_lce_cce_req_width> > lce_req_i("lce_req_i");
   sc_signal <bool>     lce_req_v_i("lce_req_v_i");
   sc_signal <bool>     lce_req_ready_o("lce_req_ready_o");
 
-  sc_signal <uint32_t> lce_resp_i("lce_resp_i");
+  sc_signal <uint64_t> lce_resp_i("lce_resp_i");
   sc_signal <bool>     lce_resp_v_i("lce_resp_v_i");
   sc_signal <bool>     lce_resp_ready_o("lce_resp_ready_o");
 
@@ -52,7 +52,9 @@ int sc_main(int argc, char **argv)
   sc_signal <bool>     lce_data_resp_v_i("lce_data_resp_v_i");
   sc_signal <bool>     lce_data_resp_ready_o("lce_data_resp_ready_o");
 
-  #if (bp_cce_lce_cmd_width > 32)
+  #if (bp_cce_lce_cmd_width > 64)
+  sc_signal <sc_bv<bp_cce_lce_cmd_width> > lce_cmd_o("lce_cmd_o");
+  #elif (bp_cce_lce_cmd_width > 32)
   sc_signal <uint64_t> lce_cmd_o("lce_cmd_o");
   #else
   sc_signal <uint32_t> lce_cmd_o("lce_cmd_o");
@@ -60,7 +62,7 @@ int sc_main(int argc, char **argv)
   sc_signal <bool>     lce_cmd_v_o("lce_cmd_v_o");
   sc_signal <bool>     lce_cmd_ready_i("lce_cmd_ready_i");
 
-  sc_signal <sc_bv<bp_cce_lce_data_cmd_width> > lce_data_cmd_o("lce_data_cmd_o");
+  sc_signal <sc_bv<bp_lce_data_cmd_width> > lce_data_cmd_o("lce_data_cmd_o");
   sc_signal <bool>     lce_data_cmd_v_o("lce_data_cmd_v_o");
   sc_signal <bool>     lce_data_cmd_ready_i("lce_data_cmd_ready_i");
 
@@ -92,9 +94,11 @@ int sc_main(int argc, char **argv)
   DUT.lce_data_cmd_ready_i(lce_data_cmd_ready_i);
 
 
+  #if (DUMP == 1)
   VerilatedVcdSc* wf = new VerilatedVcdSc;
   DUT.trace(wf, TRACE_LEVELS);
   wf->open("dump.vcd");
+  #endif
 
   // reset
   lce_req_i = 0;
@@ -124,7 +128,9 @@ int sc_main(int argc, char **argv)
       stallDetect++;
       if (stallDetect == STALL_MAX) {
         cout << "@" << sc_time_stamp() << " STALL!" << endl;
+        #if (DUMP == 1)
         wf->close();
+        #endif
         return 0;
       }
       sc_start(CLK_TIME, SC_NS);
@@ -149,13 +155,15 @@ int sc_main(int argc, char **argv)
     stallDetect++;
     if (stallDetect == STALL_MAX) {
       cout << "@" << sc_time_stamp() << " STALL!" << endl;
+      #if (DUMP == 1)
       wf->close();
+      #endif
       return 0;
     }
     sc_start(CLK_TIME, SC_NS);
   }
 
-  lce_resp_i = createLceResp(0, 0, e_lce_cce_sync_ack, 0x0).to_uint();
+  lce_resp_i = createLceResp(0, 0, e_lce_cce_sync_ack, 0x0).to_uint64();
   lce_resp_v_i = 1;
   sc_start(CLK_TIME, SC_NS);
   lce_resp_i = 0;
@@ -166,15 +174,19 @@ int sc_main(int argc, char **argv)
   sc_start(CLK_TIME*1000, SC_NS);
 
   // NOTE: at this point, all tags and states in directory should be 0
+  cout << "@" << sc_time_stamp() << " SYNC FINISHED!" << endl << endl;
 
   // Test non-exclusive request with clean LRU way
   for (int i = 0; i < TRACE_ITERS; i++) {
+    cout << "@" << sc_time_stamp() << " Iteration: " << i << endl;
     stallDetect = 0;
     while (!lce_req_ready_o) {
       stallDetect++;
       if (stallDetect == STALL_MAX) {
         cout << "@" << sc_time_stamp() << " STALL!" << endl;
+        #if (DUMP == 1)
         wf->close();
+        #endif
         return 0;
       }
       sc_start(CLK_TIME, SC_NS);
@@ -182,9 +194,9 @@ int sc_main(int argc, char **argv)
 
     // create and send a request
     bp_lce_cce_req_type_e reqType = e_lce_req_type_rd;
-    uint64_t reqAddr = rand() % (1 << ADDR_WIDTH);
+    uint64_t reqAddr = rand() % ((uint64_t)1 << ADDR_WIDTH);
     uint32_t lruWay = rand() % (1 << LG_LCE_ASSOC);
-    lce_req_i = createLceReq(0, 0, reqType, reqAddr, e_lce_req_not_excl, lruWay, e_lce_req_lru_clean).to_uint();
+    lce_req_i = createLceReq(0, 0, reqType, reqAddr, e_lce_req_not_excl, lruWay, e_lce_req_lru_clean);
     lce_req_v_i = 1;
     sc_start(CLK_TIME, SC_NS);
     lce_req_i = 0;
@@ -199,18 +211,22 @@ int sc_main(int argc, char **argv)
       stallDetect++;
       if (stallDetect == STALL_MAX) {
         cout << "@" << sc_time_stamp() << " STALL!" << endl;
+        #if (DUMP == 1)
         wf->close();
+        #endif
         return 0;
       }
     }
 
-    sc_bv<bp_cce_lce_data_cmd_width> data_cmd(lce_data_cmd_o.read());
-    if (!checkCceDataCmd(data_cmd, 0, 0, reqAddr, lruWay, reqType, 0, false)) {
+    sc_bv<bp_lce_data_cmd_width> data_cmd(lce_data_cmd_o.read());
+    if (!checkCceDataCmd(data_cmd, 0, lruWay, e_lce_data_cmd_cce, 0, false)) {
       cout << "@" << sc_time_stamp() << " TEST FAILED!" << endl;
+      #if (DUMP == 1)
       wf->close();
+      #endif
       exit(-1);
     } else {
-      cout << "@" << sc_time_stamp() << " lceDataCmd: " << lce_data_cmd_o.read().to_string() << endl;
+      cout << "@" << sc_time_stamp() << " lceDataCmd: " << data_cmd.to_string() << endl;
     }
 
     // something received, or stalled, pull ready low
@@ -225,15 +241,18 @@ int sc_main(int argc, char **argv)
       stallDetect++;
       if (stallDetect == STALL_MAX) {
         cout << "@" << sc_time_stamp() << " STALL!" << endl;
+        #if (DUMP == 1)
         wf->close();
+        #endif
         return 0;
       }
     }
     sc_bv<bp_cce_lce_cmd_width> cmd(lce_cmd_o.read());
-    bp_cce_coh_mesi_e cohSt = e_MESI_E;//(nonExclReq) ? e_MESI_S : e_MESI_E;
-    if (!checkCceCmd(cmd, 0, 0, reqAddr, lruWay, e_lce_cmd_set_tag, cohSt, 0, 0)) {
+    if (!checkCceCmd(cmd, 0, 0, reqAddr, lruWay, e_lce_cmd_set_tag, e_MESI_E, 0, 0)) {
       cout << "@" << sc_time_stamp() << " TEST FAILED!" << endl;
+      #if (DUMP == 1)
       wf->close();
+      #endif
       exit(-1);
     } else {
       cout << "@" << sc_time_stamp() << " lceCmd: " << cmd.to_string() << endl;
@@ -249,28 +268,29 @@ int sc_main(int argc, char **argv)
       stallDetect++;
       if (stallDetect == STALL_MAX) {
         cout << "@" << sc_time_stamp() << " STALL!" << endl;
+        #if (DUMP == 1)
         wf->close();
+        #endif
         return 0;
       }
       sc_start(CLK_TIME, SC_NS);
     }
 
-    // create and send coherence ack
-    bp_lce_cce_ack_type_e ackType = e_lce_cce_coh_ack;
-    sc_bv<bp_lce_cce_resp_width> lceResp = createLceResp(0, 0, ackType, reqAddr).to_uint();
-    cout << "@" << sc_time_stamp() << " Sending Coherence Ack: " << lceResp << endl;
-    //lce_resp_i = createLceResp(0, 0, ackType, reqAddr).to_uint();
-    lce_resp_i = lceResp.to_uint();
+    lce_resp_i = createLceResp(0, 0, e_lce_cce_coh_ack, reqAddr).to_uint64();
     lce_resp_v_i = 1;
     sc_start(CLK_TIME, SC_NS);
     lce_resp_i = 0;
     lce_resp_v_i = 0;
     sc_start(CLK_TIME, SC_NS);
 
+    cout << endl;
+
     sc_start(RST_TIME, SC_NS);
   }
 
 
+
+// TODO: below needs to be fixed still
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /*
   // reset
@@ -430,7 +450,7 @@ int sc_main(int argc, char **argv)
       }
     }
 
-    sc_bv<bp_cce_lce_data_cmd_width> data_cmd(lce_data_cmd_o.read());
+    sc_bv<bp_lce_data_cmd_width> data_cmd(lce_data_cmd_o.read());
     if (!checkCceDataCmd(data_cmd, 0, 0, reqAddr, lruWay, reqType, 0, false)) {
       cout << "@" << sc_time_stamp() << " TEST FAILED!" << endl;
       wf->close();
@@ -471,7 +491,9 @@ int sc_main(int argc, char **argv)
 
   cout << "@" << sc_time_stamp() << " TEST PASSED!" << endl;
 
+  #if (DUMP == 1)
   wf->close();
+  #endif
 
   return 0;
 }

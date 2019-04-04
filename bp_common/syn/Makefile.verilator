@@ -21,6 +21,7 @@ DUMP     ?= 0
 ifeq ($(DUMP), 1)
   VV_OPTS += --trace         # Dump a VCD
   VV_OPTS += --trace-structs # Dump struct information with VCD
+  CPP_FLAGS += -DDUMP=$(DUMP)
 endif
 
 ifeq ($(COVERAGE), 1)
@@ -72,8 +73,16 @@ build.sc: deps.sc verilate.sc
 run.sc: SIM_LOG ?= $(TB)_$(ROM_NAME)_sim.log
 run.sc: deps.sc build.sc
 	cd $(VERILATOR_RUN_DIR); \
-	$(VERILATOR_RUN_DIR)/obj_dir/V$(TOP_MODULE) $(ROM_NAME)_coverage.dat \
+	$(VERILATOR_RUN_DIR)/obj_dir/V$(TOP_MODULE) \
 	| tee $(LOG_DIR)/$(SIM_LOG)
+
+#TODO: if $(ROM_NAME)_coverage.dat does not exist, this command fails
+#run.sc: deps.sc build.sc
+#	cd $(VERILATOR_RUN_DIR); \
+#	$(VERILATOR_RUN_DIR)/obj_dir/V$(TOP_MODULE) $(ROM_NAME)_coverage.dat \
+#	| tee $(LOG_DIR)/$(SIM_LOG)
+
+
 
 cov.sc: COVERAGE = 1
 cov.sc: deps.sc regress.sc

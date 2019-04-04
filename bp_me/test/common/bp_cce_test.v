@@ -8,7 +8,7 @@ module bp_cce_test
   import bp_cce_pkg::*;
   #(parameter num_lce_p=1
     ,parameter num_cce_p=1
-    ,parameter addr_width_p=22 // 10 tag + 6 idx + 6 offset
+    ,parameter paddr_width_p=22 // 10 tag + 6 idx + 6 offset
     ,parameter lce_assoc_p=8
     ,parameter lce_sets_p=64
     ,parameter block_size_in_bytes_p=64
@@ -22,16 +22,48 @@ module bp_cce_test
     ,parameter boot_rom_els_p=512
     ,parameter lg_boot_rom_els_lp=`BSG_SAFE_CLOG2(boot_rom_els_p)
 
-    ,parameter bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p)
-    ,parameter bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, addr_width_p)
-    ,parameter bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, addr_width_p, block_size_in_bits_lp)
-    ,parameter bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p)
-    ,parameter bp_cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, addr_width_p, block_size_in_bits_lp, lce_assoc_p)
+		,localparam lce_req_data_width_lp=64
+    , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
+                                                               ,num_lce_p
+                                                               ,paddr_width_p
+                                                               ,lce_assoc_p
+                                                               ,lce_req_data_width_lp)
 
-    ,parameter bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(addr_width_p, num_lce_p, lce_assoc_p)
-    ,parameter bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
-    ,parameter bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(addr_width_p, num_lce_p, lce_assoc_p)
-    ,parameter bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    , localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
+                                                                 ,num_lce_p
+                                                                 ,paddr_width_p)
+
+    , localparam bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p
+                                                                           ,num_lce_p
+                                                                           ,paddr_width_p
+                                                                           ,block_size_in_bits_lp)
+
+    , localparam bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p
+                                                               ,num_lce_p
+                                                               ,paddr_width_p
+                                                               ,lce_assoc_p)
+
+    , localparam bp_lce_data_cmd_width_lp=`bp_lce_data_cmd_width(num_lce_p
+                                                                 ,block_size_in_bits_lp
+                                                                 ,lce_assoc_p)
+
+    , localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p
+                                                                 ,num_lce_p
+                                                                 ,lce_assoc_p)
+
+    , localparam bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(paddr_width_p
+                                                                           ,block_size_in_bits_lp
+                                                                           ,num_lce_p
+                                                                           ,lce_assoc_p)
+
+    , localparam bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(paddr_width_p
+                                                               ,num_lce_p
+                                                               ,lce_assoc_p)
+
+    , localparam bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_p
+                                                                         ,block_size_in_bits_lp
+                                                                         ,num_lce_p
+                                                                         ,lce_assoc_p)
 
     , localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_inst_ram_els_p)
   )
@@ -58,7 +90,7 @@ module bp_cce_test
     ,output logic                                          lce_cmd_v_o
     ,input                                                 lce_cmd_ready_i
 
-    ,output logic [bp_cce_lce_data_cmd_width_lp-1:0]       lce_data_cmd_o
+    ,output logic [bp_lce_data_cmd_width_lp-1:0]           lce_data_cmd_o
     ,output logic                                          lce_data_cmd_v_o
     ,input                                                 lce_data_cmd_ready_i
 
@@ -105,11 +137,12 @@ module bp_cce_test
   bp_cce_top
     #(.num_lce_p(num_lce_p)
       ,.num_cce_p(num_cce_p)
-      ,.paddr_width_p(addr_width_p)
+      ,.paddr_width_p(paddr_width_p)
       ,.lce_assoc_p(lce_assoc_p)
       ,.lce_sets_p(lce_sets_p)
       ,.block_size_in_bytes_p(block_size_in_bytes_p)
       ,.num_cce_inst_ram_els_p(num_inst_ram_els_p)
+			,.lce_req_data_width_p(lce_req_data_width_lp)
      )
      bp_cce_top
      (.clk_i(clk_i)
@@ -159,13 +192,14 @@ module bp_cce_test
   bp_mem
     #(.num_lce_p(num_lce_p)
       ,.num_cce_p(num_cce_p)
-      ,.paddr_width_p(addr_width_p)
+      ,.paddr_width_p(paddr_width_p)
       ,.lce_assoc_p(lce_assoc_p)
       ,.block_size_in_bytes_p(block_size_in_bytes_p)
       ,.lce_sets_p(lce_sets_p)
       ,.mem_els_p(mem_els_p)
       ,.boot_rom_width_p(boot_rom_width_p)
       ,.boot_rom_els_p(boot_rom_els_p)
+			,.lce_req_data_width_p(lce_req_data_width_lp)
      )
      bp_mem
      (.clk_i(clk_i)
