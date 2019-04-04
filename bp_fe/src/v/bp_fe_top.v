@@ -199,15 +199,13 @@ logic poison;
 //itlb
 logic [vtag_width_lp-1:0] tlb_miss_vtag;
 logic 		                tlb_miss_v, prev_tlb_miss;
-//for itlb trace-replay test
-logic [63:0]              tlb_miss_vaddr;
    
 // be interfaces
 assign bp_fe_cmd  = fe_cmd_i;
 assign fe_queue_o = bp_fe_queue;
 
 // pc_gen/itlb to fe
-assign itlb_miss_exception.vaddr          = tlb_miss_vaddr;
+assign itlb_miss_exception.vaddr          = '0;//tlb_miss_vaddr;
    
 assign itlb_miss_exception.exception_code = e_itlb_miss;
 assign itlb_miss_exception.padding        = '0;   
@@ -362,7 +360,7 @@ icache
    );
 
    
-bp_fe_itlb
+bp_be_dtlb
  #(.vtag_width_p(vtag_width_lp)
    ,.ptag_width_p(ptag_width_lp)
    ,.els_p(16)
@@ -375,7 +373,6 @@ bp_fe_itlb
 	       
    ,.r_v_i(pc_gen_itlb_v)
    ,.r_vtag_i(itlb_vaddr.tag)
-   ,.vaddr_i(pc_gen_itlb.virt_addr)
 	   
    ,.r_v_o(itlb_icache_data_resp_v)
    ,.r_entry_o(itlb_entry_r)
@@ -386,7 +383,6 @@ bp_fe_itlb
 
 	 ,.miss_v_o(tlb_miss_v)
 	 ,.miss_vtag_o(tlb_miss_vtag)
-   ,.miss_vaddr(tlb_miss_vaddr)
 	 );
 
 endmodule
