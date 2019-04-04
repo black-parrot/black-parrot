@@ -7,7 +7,9 @@
 module bp_me_random_demo_top
   import bp_common_pkg::*;
   import bp_be_dcache_pkg::*;
-  #()
+  #(parameter num_instr_p = "inv"
+		,parameter sets_p = "inv"
+  )
   (input clk_i
    ,input reset_i
    ,output logic done_o
@@ -15,14 +17,12 @@ module bp_me_random_demo_top
   // parameters
   //
   localparam data_width_p = 64;
-  localparam sets_p = 16;
   localparam ways_p = 8;
   localparam paddr_width_p = 56;
   localparam num_cce_p = 1;
   localparam num_lce_p = 1;
   localparam num_mem_p = 1;
-  localparam mem_els_p = 2*num_lce_p*sets_p*ways_p;
-  localparam instr_count = `NUM_INSTR_P;
+  localparam mem_els_p = 2*sets_p*ways_p;
   localparam num_cce_inst_ram_els_p = 256;
 
   localparam word_offset_width_lp=`BSG_SAFE_CLOG2(ways_p);
@@ -182,9 +182,9 @@ module bp_me_random_demo_top
       if (&tr_done_lo)
         begin
         $display("Bytes: %d Clocks: %d mBPC: %d "
-                 , instr_count*64
+                 , num_instr_p*64
                  , clock_cnt
-                 , (instr_count*64*1000) / clock_cnt
+                 , (num_instr_p*64*1000) / clock_cnt
                  );
         $finish(0);
         end
