@@ -61,7 +61,7 @@ HDL_PARAMS=\
 	-pvalue+num_instr_p=$(NUM_INSTR_P) \
 	-pvalue+sets_p=$(N_WG)
 
-all: clean sim
+all: clean run.sc
 
 bsg_trace_rom_%.tr:
 	python bsg_trace_rom.py -n $(NUM_INSTR_P) -s $(SEED_P) --sets $(N_WG) > $@
@@ -78,15 +78,12 @@ build.sc: verilate.sc
 	$(MAKE) -C obj_dir -f V$(TOP_MODULE).mk
 
 run.sc: build.sc
-	cd obj_dir
-	./V$(TOP_MODULE)
+	./obj_dir/V$(TOP_MODULE) > simout.txt
+	mv ./obj_dir/dump.vcd dump.vcd
 
 clean:
 	rm -rf obj_dir
 	rm -f bsg_trace_rom_*.v bsg_trace_rom_*.tr $(TRACE_AXE)
-
-#	rm -rf DVEfiles
-#	rm -rf csrc
-#	rm -rf simv.daidir simv.vdb stack.info.*
-#	rm -f ucli.key vcdplus.vpd simv cm.log *.tar.gz $(VCS_LOG)
+	rm -f dump.vcd
+	rm -f simout.txt
 
