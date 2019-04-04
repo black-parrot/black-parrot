@@ -9,7 +9,7 @@ VV_OPTS += -Wno-unoptflat       # Verilator has problems with false positive com
 #VV_OPTS += --debug --gdbbt     # Debugs and produces stack trace
 VV_OPTS += -O1
 
-OPT_FAST += -O1 -fstrict-aliasing # Fastest compile time options
+#OPT_FAST += -O1 -fstrict-aliasing # Fastest compile time options
 
 LINT_OPTS  := --lint-only
 BUILD_OPTS := --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --exe
