@@ -1,11 +1,13 @@
 ## Tool specific options
 VCS_OPTIONS  = +vcs+finish+5000000ps     # Change this to run longer / shorter
-VCS_OPTIONS += -timescale=1ps/1ps        # Set timescale
-VCS_OPTIONS += -full64 +vcs+lic+wait     # Run 64-bit and wait for license
-VCS_OPTIONS += +v2k -sverilog -debug_pp  # Enable SystemVerilog
+VCS_OPTIONS += +vcs+lic+wait             # Wait for license
 VCS_OPTIONS += +libext+.v+.vlib+.vh      # Find library files with these extensions
 VCS_OPTIONS += +vcs+vcdpluson            # Enable vcd dump
 VCS_OPTIONS += +vcs+loopreport +lint=TFIPC-L
+
+VCS_BUILD_OPTS += -full64 						# Compile a 64-bit executable
+VCS_BUILD_OPTS += -sverilog -debug_pp # Enable SystemVerilog
+VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
 
 LINT_OPTIONS = +lint=all,noSVA-UA,noVCDE,noSVA-NSVU
 
@@ -47,14 +49,16 @@ deps.v:
 lint.v: LINT_LOG ?= $(TB)_lint.log
 lint.v: deps.v
 	cd $(VCS_RUN_DIR); \
-	$(VCS) $(VCS_OPTIONS) $(LINT_OPTIONS) -top test_bp -f flist_design.vcs -f flist_test.vcs \
+	$(VCS) $(VCS_OPTIONS) $(VCS_BUILD_OPTS) $(LINT_OPTIONS) \
+		-top test_bp -f flist_design.vcs -f flist_test.vcs \
 		$(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.v \
 	| tee $(LOG_DIR)/$(LINT_LOG)
 
 build.v: BUILD_LOG ?= $(TB)_$(ROM_NAME)_build.log
 build.v: deps.v
 	cd $(VCS_RUN_DIR); \
-	$(VCS) $(VCS_OPTIONS) -top test_bp -f flist_design.vcs -f flist_test.vcs \
+	$(VCS) $(VCS_OPTIONS) $(VCS_BUILD_OPTS) \
+		-top test_bp -f flist_design.vcs -f flist_test.vcs \
 		$(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.v -o simv \
 	| tee $(LOG_DIR)/$(BUILD_LOG)
 
