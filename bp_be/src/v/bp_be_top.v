@@ -260,7 +260,7 @@ bp_be_calculator_top
    ,.cmt_data_o(cmt_data_o)
    );
 
-bp_be_mmu_top
+bp_be_mem_top
  #(.core_els_p(core_els_p)
    ,.vaddr_width_p(vaddr_width_p)
    ,.paddr_width_p(paddr_width_p)

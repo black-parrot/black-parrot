@@ -96,18 +96,18 @@ $BP_BE_DIR/src/v/bp_be_checker/bp_be_detector.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_director.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_scheduler.v
 # MMU
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_csr.v
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_mmu_top.v
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache.v
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_cmd.v
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce.v
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_req.v
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_lce_data_cmd.v
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_wbuf.v
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dcache/bp_be_dcache_wbuf_queue.v
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dtlb/bp_be_dtlb.v
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dtlb/bp_be_dtlb_replacement.v
-$BP_BE_DIR/src/v/bp_be_mmu/bp_be_dtlb/bp_be_ptw.v
+$BP_BE_DIR/src/v/bp_be_mem/bp_be_csr.v
+$BP_BE_DIR/src/v/bp_be_mem/bp_be_mem_top.v
+$BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache.v
+$BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_lce_cmd.v
+$BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_lce.v
+$BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_lce_req.v
+$BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_lce_data_cmd.v
+$BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf.v
+$BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf_queue.v
+$BP_BE_DIR/src/v/bp_be_mem/bp_be_dtlb/bp_be_dtlb.v
+$BP_BE_DIR/src/v/bp_be_mem/bp_be_dtlb/bp_be_dtlb_replacement.v
+$BP_BE_DIR/src/v/bp_be_mem/bp_be_dtlb/bp_be_ptw.v
 # Common
 $BP_BE_DIR/src/v/common/bp_be_trace_replay_gen.v
 $BP_BE_DIR/src/v/common/bsg_fifo_1r1w_rolly.v
