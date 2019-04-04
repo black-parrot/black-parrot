@@ -1,6 +1,11 @@
 #
 #		Makefile
 #
+
+TOP ?= $(shell git rev-parse --show-toplevel)
+
+include $(TOP)/Makefile.common
+
 ifneq (,$(findstring xor,$(shell hostname)))
   include $(BSG_CADENV_DIR)/cadenv.mk
 else
@@ -61,9 +66,13 @@ clean:
 	rm -f ucli.key vcdplus.vpd simv cm.log *.tar.gz $(VCS_LOG)
 	rm -f bsg_trace_rom_*.v bsg_trace_rom_*.tr $(TRACE_AXE)
 
-$(TRACE_AXE): $(VCS_LOG)
-	python $(BP_BE_DIR)/test/tb/bp_be_dcache/py/axe_trace_filter.py $(VCS_LOG) > $(TRACE_AXE)
+###################################################################################################
+# NOTE: AXE does not work with this test. This test is for single LCE and the trace replay script
+# generates a trace that checks all loads and stores for correctness.
 
-axe: $(TRACE_AXE)
-	cat $<
-	$(AXE) check TSO $(TRACE_AXE)
+#$(TRACE_AXE): $(VCS_LOG)
+#	python $(BP_BE_DIR)/test/tb/bp_be_dcache/py/axe_trace_filter.py $(VCS_LOG) > $(TRACE_AXE)
+
+#axe: $(TRACE_AXE)
+#	cat $<
+#	$(AXE) check TSO $(TRACE_AXE)

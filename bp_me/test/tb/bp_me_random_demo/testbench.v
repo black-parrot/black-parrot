@@ -17,7 +17,7 @@ module testbench();
   localparam num_cce_p = 1;
   localparam num_lce_p = 1;
   localparam num_mem_p = 1;
-  localparam mem_els_p = 2*num_lce_p*sets_p*ways_p;
+  localparam mem_els_p = 2*sets_p*ways_p;
   localparam instr_count = `NUM_INSTR_P;
   localparam num_cce_inst_ram_els_p = 256;
 
