@@ -46,7 +46,7 @@ module bp_be_scheduler
 
    // Generated parameters
    , localparam fe_queue_width_lp  = `bp_fe_queue_width(vaddr_width_p, branch_metadata_fwd_width_p)
-   , localparam issue_pkt_width_lp = `bp_be_issue_pkt_width(branch_metadata_fwd_width_p)
+   , localparam issue_pkt_width_lp = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    // From BP BE defines
    , localparam itag_width_lp     = bp_be_itag_width_gp
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
@@ -120,14 +120,21 @@ bsg_dff_reset_en
    ,.data_o(itag_r)
    );
 
-
-assign issue_pkt.instr_metadata = fe_instr_metadata;
-assign issue_pkt.instr          = fe_fetch_instr;
+assign issue_pkt.instr_metadata      = fe_instr_metadata;
+assign issue_pkt.branch_metadata_fwd = fe_fetch.branch_metadata_fwd;
+assign issue_pkt.instr               = fe_fetch_instr;
 always_comb 
   begin : fe_queue_extract
 
     // Default value
     fe_instr_metadata = '0;
+    issue_pkt.imm = '0;
+    issue_pkt.rs1_addr = '0;
+    issue_pkt.rs2_addr = '0;
+    issue_pkt.irs1_v = 1'b0; 
+    issue_pkt.irs2_v = 1'b0;
+    issue_pkt.frs1_v = 1'b0;
+    issue_pkt.frs2_v = 1'b0;
 
     case(fe_queue.msg_type)
       // Populate the issue packet with a valid pc/instruction pair.
@@ -136,7 +143,6 @@ always_comb
           fe_instr_metadata.itag                   = itag_r;
           fe_instr_metadata.pc                     = fe_fetch.pc;
           fe_instr_metadata.fe_exception_not_instr = 1'b0;
-          fe_instr_metadata.branch_metadata_fwd    = fe_fetch.branch_metadata_fwd;
 
           // Decide whether to read from integer regfile (saves power)
           casez(fe_fetch_instr.opcode)
@@ -145,7 +151,7 @@ always_comb
                 issue_pkt.irs1_v = '0; 
                 issue_pkt.irs2_v = '0;
               end
-            `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP : 
+            `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP, `RV64_SYSTEM_OP :
               begin 
                 issue_pkt.irs1_v = '1; 
                 issue_pkt.irs2_v = '0;
@@ -192,8 +198,6 @@ always_comb
           fe_instr_metadata.pc                     = exception_eaddr;
           fe_instr_metadata.fe_exception_not_instr = 1'b1;
           fe_instr_metadata.fe_exception_code      = fe_exception.exception_code;
-          // branch_metadata is meaningless for a FE exception
-          fe_instr_metadata.branch_metadata_fwd    = '0; 
         end
 
       // Should not reach

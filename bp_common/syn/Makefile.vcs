@@ -1,0 +1,96 @@
+## Tool specific options
+VCS_OPTIONS  = +vcs+finish+5000000ps     # Change this to run longer / shorter
+VCS_OPTIONS += +vcs+lic+wait             # Wait for license
+VCS_OPTIONS += +libext+.v+.vlib+.vh      # Find library files with these extensions
+VCS_OPTIONS += +vcs+vcdpluson            # Enable vcd dump
+VCS_OPTIONS += +vcs+loopreport +lint=TFIPC-L
+
+VCS_BUILD_OPTS += -full64 						# Compile a 64-bit executable
+VCS_BUILD_OPTS += -sverilog -debug_pp # Enable SystemVerilog
+VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
+
+LINT_OPTIONS = +lint=all,noSVA-UA,noVCDE,noSVA-NSVU
+
+VCS_RUN_DIR ?= $(SYN_PATH)/run_vcs
+
+ROM_NAME ?= bp_example_rom
+COVERAGE ?= 0
+DUMP     ?= 0
+
+ifeq ($(COVERAGE), 1)
+  VCS_OPTIONS += -cm_dir coverage/$(ROM_NAME)
+  VCS_OPTIONS += -cm line+tgl
+  VCS_OPTIONS += -cm_line contassign
+  VCS_OPTIONS += -cm_noconst
+  VCS_OPTIONS += -cm_seqnoconst
+  VCS_OPTIONS += -cm_hier $(SYN_PATH)/coverage_hier.vcs
+endif
+
+  URG_OPTIONS = -full64
+  URG_OPTIONS += -show tests
+  URG_OPTIONS += -dir coverage/*
+  URG_OPTIONS += -format both
+  URG_OPTIONS += -dbname coverage
+
+.PHONY: deps.v lint.v build.v run.v clean.v
+
+deps.v:
+	$(eval include $(TB_PATH)/$(TB)/Makefile.frag)
+	$(eval LOG_DIR := $(LOG_PATH)/vcs)
+	$(eval REPORT_DIR := $(REPORT_PATH)/vcs)
+	$(shell mkdir -p $(LOG_DIR)/regress)
+	$(shell mkdir -p $(REPORT_DIR))
+	$(shell mkdir -p $(VCS_RUN_DIR))
+	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs > $(VCS_RUN_DIR)/flist_design.vcs || true
+	@touch $(VCS_RUN_DIR)/flist_design.vcs
+	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs > $(VCS_RUN_DIR)/flist_test.vcs || true
+	@touch $(VCS_RUN_DIR)/flist_test.vcs
+
+lint.v: LINT_LOG ?= $(TB)_lint.log
+lint.v: deps.v
+	cd $(VCS_RUN_DIR); \
+	$(VCS) $(VCS_OPTIONS) $(VCS_BUILD_OPTS) $(LINT_OPTIONS) \
+		-top test_bp -f flist_design.vcs -f flist_test.vcs \
+		$(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.v \
+	| tee $(LOG_DIR)/$(LINT_LOG)
+
+build.v: BUILD_LOG ?= $(TB)_$(ROM_NAME)_build.log
+build.v: deps.v
+	cd $(VCS_RUN_DIR); \
+	$(VCS) $(VCS_OPTIONS) $(VCS_BUILD_OPTS) \
+		-top test_bp -f flist_design.vcs -f flist_test.vcs \
+		$(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.v -o simv \
+	| tee $(LOG_DIR)/$(BUILD_LOG)
+
+run.v: SIM_LOG ?= $(TB)_$(ROM_NAME)_sim.log
+run.v: deps.v build.v
+	cd $(VCS_RUN_DIR); \
+	$(VCS_RUN_DIR)/simv $(VCS_OPTIONS) \
+	| tee $(LOG_DIR)/$(SIM_LOG)
+
+cov.v: COVERAGE = 1
+cov.v: deps.v regress.v
+	cd $(VCS_RUN_DIR); \
+	$(URG) $(URG_OPTIONS) -log $(LOG_DIR)/$(TB)_coverage.log -report $(REPORT_DIR)/coverage \
+	&& cp $(REPORT_DIR)/coverage/tests.txt $(REPORT_DIR)/$(TB)_cov_tests.rpt \
+	&& cp $(REPORT_DIR)/coverage/hierarchy.txt $(REPORT_DIR)/$(TB)_cov_hier.rpt
+
+RV64_REGRESSION_TGTS := $(addsuffix .v, $(RV64_REGRESSION_ROMS))
+regress.v: deps.v $(RV64_REGRESSION_TGTS) 
+$(RV64_REGRESSION_TGTS): 
+	$(MAKE) run.v ROM_NAME=$(basename $@) \
+		BUILD_LOG=regress/$(TB)_$(basename $@)_build.log \
+		SIM_LOG=regress/$(TB)_$(basename $@)_sim.log || true
+	@echo $(basename $@) >> $(REPORT_DIR)/regress_stats.rpt
+	@grep "PASS" $(LOG_DIR)/regress/$(TB)_$(basename $@)_sim.log \
+	| tee -a $(REPORT_DIR)/regress_stats.rpt || true
+	@grep "PASS" $(LOG_DIR)/regress/$(TB)_$(basename $@)_sim.log \
+	|| echo "$(basename $@): FAILED" >> $(REPORT_DIR)/regress_stats.err
+
+dve.v: deps.v
+	cd $(VCS_RUN_DIR); \
+	dve -full64 -vpd vcdplus.vpd &
+
+clean.v:
+	rm -rf run_vcs
+

@@ -10,9 +10,9 @@
 */
 module bp_fe_bht
  import bp_fe_pkg::*; 
- #(localparam saturation_size_lp=2
-   , parameter bht_indx_width_p="inv"
+ #(parameter bht_indx_width_p="inv"
    , localparam els_lp=2**bht_indx_width_p
+   , localparam saturation_size_lp=2
    )
   (input                          clk_i
    , input                        en_i

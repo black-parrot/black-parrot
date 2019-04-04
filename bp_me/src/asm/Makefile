@@ -4,7 +4,7 @@ BP_INC_DIR=$(abspath ../include/c)
 INC_DIR=$(abspath ./include)
 SRC_DIR=$(abspath ./src)
 
-BSG_MEM_DIR=$(abspath ../../bsg_ip_cores/bsg_mem)
+BSG_MEM_DIR=$(abspath ../../basejump_stl/bsg_mem)
 
 CXX=g++
 COMMON_CFLAGS=-Wall -Wno-switch -Wno-format -Wno-unused-function

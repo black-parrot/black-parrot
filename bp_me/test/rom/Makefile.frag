@@ -7,7 +7,8 @@ BP_DEMOS = \
 	reloc_queue_demo_2 \
 	reloc_queue_demo_4 \
 	reloc_queue_demo_8 \
-	copy_example
+	copy_example       \
+	trap_demo
 
 RV64_BENCHMARKS = \
   median   \

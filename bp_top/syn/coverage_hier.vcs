@@ -1,0 +1,41 @@
+// ignore 0 -> 1 transition of reset
+-node 0to1 test_bp*.reset_*
+
+// removing tlb and floating point signals
+-node test_bp.dut.*itlb*
+-node test_bp.dut.rof1[0].be cmt_trace*
+-node test_bp.dut.rof1[0].be.be_calculator cmt*
+-node test_bp.dut.rof1[0].be.be_calculator mul*
+-node test_bp.dut.rof1[0].be.be_calculator fp*
+-node test_bp.dut.rof1[0].be.be_calculator frf*
+-node test_bp.dut.rof1[0].be.be_calculator decoded.frf*
+-node test_bp.dut.rof1[0].be.be_calculator decoded.amo*
+-node test_bp.dut.rof1[0].be.be_calculator decoded.ret*
+-node test_bp.dut.rof1[0].be.be_calculator decoded.fp*
+-node test_bp.dut.rof1[0].be.be_calculator calc_status.isd_frs*
+-node test_bp.dut.rof1[0].be.be_calculator mmu_cmd.vaddr.padding*
+-node test_bp.dut.rof1[0].be.be_checker.detector frs*
+-node test_bp.dut.rof1[0].be.be_checker.detector calc_status.isd_frs*
+-node test_bp.dut.rof1[0].be.be_checker.director calc_status.isd_frs*
+-node test_bp.dut.rof1[0].be.be_checker.director fe_cmd.operands.itlb* 
+-node test_bp.dut.rof1[0].be.be_checker.director *padding*
+-node test_bp.dut.rof1[0].fe *padding*
+-node test_bp.dut.rof1[0].fe *itlb*
+
+// reomve unused instances
+-tree test_bp.trace_rom
+-tree test_bp.dut.rof1[0].be.be_calculator.fp_bypass
+-tree test_bp.dut.rof1[0].be.be_calculator.pipe_mul
+-tree test_bp.cce_inst_rom
+-tree test_bp.rof1[0].me_boot_rom
+
+// ignore modules unused and outside of bp
+-moduletree bp_be_trace_replay_gen
+-moduletree bsg_fsb_node_trace_replay
+-moduletree bsg_counter_clear_up
+-moduletree bsg_nonsynth_clock_gen
+-moduletree bsg_nonsynth_reset_gen
+-moduletree itlb
+-moduletree bp_be_pipe_fp
+-moduletree bp_be_regfile
+

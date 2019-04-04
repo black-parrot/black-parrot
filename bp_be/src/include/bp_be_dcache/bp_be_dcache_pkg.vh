@@ -33,7 +33,23 @@ package bp_be_dcache_pkg;
 
   } bp_be_dcache_opcode_e;
 
-  //  tag_mem opcode
+
+  // LCE data_mem_pkt opcode
+  //
+  typedef enum logic [1:0] {
+   
+    // write cache block 
+    e_dcache_lce_data_mem_write,
+
+    // read cache block
+    e_dcache_lce_data_mem_read,
+
+    // write uncached load data
+    e_dcache_lce_data_mem_uncached
+    
+  } bp_be_dcache_lce_data_mem_opcode_e;
+
+  //  LCE tag_mem_pkt opcode
   //
   typedef enum logic [1:0] {
 
@@ -49,7 +65,7 @@ package bp_be_dcache_pkg;
   } bp_be_dcache_lce_tag_mem_opcode_e;
 
 
-  // stat_mem opcode
+  // LCE stat_mem_pkt opcode
   //
   typedef enum logic [1:0] {
 
@@ -60,10 +76,7 @@ package bp_be_dcache_pkg;
     e_dcache_lce_stat_mem_read,
     
     // clear dirty bit for given index and way_id.
-    e_dcache_lce_stat_mem_clear_dirty,
-    
-    // update LRU bits to point to a block with given index and way_id.
-    e_dcache_lce_stat_mem_set_lru
+    e_dcache_lce_stat_mem_clear_dirty
 
   } bp_be_dcache_lce_stat_mem_opcode_e;
 

@@ -1,36 +1,27 @@
-## Top level source directory should include 
-# bp_top, bp_fe, bp_be, bp_me, bp_common, bsg_ip_cores, verilator, systemc
-TOP            = $(CURDIR)/../..
-BP_TOP_PATH    = $(TOP)/bp_top
-BP_FE_PATH     = $(TOP)/bp_fe
-BP_BE_PATH     = $(TOP)/bp_be
-BP_ME_PATH     = $(TOP)/bp_me
-BP_COMMON_PATH = $(TOP)/bp_common
+## Set common environment variables
+TOP ?= $(shell git rev-parse --show-toplevel)
 
+include $(TOP)/Makefile.common
 
-BSG_CADENV_DIR    = $(TOP)/bsg_cadenv
-BSG_IP_PATH    = $(TOP)/bsg_ip_cores
-VERILATOR_PATH = $(TOP)/verilator
-SYSTEMC_PATH   = $(TOP)/systemc
+SYN_PATH    := $(BP_FE_DIR)/syn
+TB_PATH     := $(BP_FE_DIR)/test/tb
+LOG_PATH    := $(BP_FE_DIR)/syn/logs
+REPORT_PATH := $(BP_FE_DIR)/syn/reports
 
-SRC_PATH  = $(BP_FE_PATH)/src/v
-TB_PATH   = $(BP_FE_PATH)/test/tb
-SYN_PATH  = $(BP_FE_PATH)/syn
-INC_PATH  = $(BP_FE_PATH)/src/include
+# Default ROM to example
+DESIGN_NAME ?= bp_fe_top
+TB          ?= bp_fe_trace_demo
 
-VTB_PATH  = $(TB_PATH)/v
-SCTB_PATH = $(TB_PATH)/sc
+.EXPORT_ALL_VARIABLES:
 
-BP_TOP_DIR       = $(TOP)/bp_top
-BP_FE_DIR        = $(TOP)/bp_fe
-BP_BE_DIR        = $(TOP)/bp_be
-BP_ME_DIR        = $(TOP)/bp_me
-BP_COMMON_DIR    = $(TOP)/bp_common
-BSG_IP_CORES_DIR = $(TOP)/bsg_ip_cores
+include $(BP_COMMON_DIR)/syn/Makefile.common
+include $(BP_COMMON_DIR)/syn/Makefile.dc
+include $(BP_COMMON_DIR)/syn/Makefile.regress
+include $(BP_COMMON_DIR)/syn/Makefile.verilator
+include $(BP_COMMON_DIR)/syn/Makefile.vcs
 
-include $(SYN_PATH)/Makefile.vcs
-
-include $(SYN_PATH)/Makefile.dc
-
-include $(SYN_PATH)/Makefile.verilator
+regress.fe: regress
+regress: regress.v check_design.syn
+	$(MAKE) lint.v || true
+	$(MAKE) lint.sc || true
 

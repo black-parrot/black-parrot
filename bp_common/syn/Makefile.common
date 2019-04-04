@@ -1,0 +1,16 @@
+## Set common environment variables
+TOP ?= $(shell git rev-parse --show-toplevel)
+
+include $(TOP)/Makefile.common
+
+.PHONY: clean
+
+.DEFAULT: help
+
+clean:
+	$(MAKE) clean.v clean.sc clean.syn
+	rm -rf logs
+	rm -rf reports
+	rm -rf *.vpd
+	rm -rf run_verilator
+	

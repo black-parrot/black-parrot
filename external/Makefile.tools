@@ -1,0 +1,45 @@
+TOP ?= $(shell git rev-parse --show-toplevel)
+
+include $(TOP)/Makefile.common
+
+BIN_DIR     := $(BP_EXTERNAL_DIR)/bin
+LIB_DIR     := $(BP_EXTERNAL_DIR)/lib
+INCLUDE_DIR := $(BP_EXTERNAL_DIR)/include
+
+VERILATOR_DIR := $(BP_EXTERNAL_DIR)/verilator
+GNU_DIR       := $(BP_EXTERNAL_DIR)/riscv-gnu-toolchain
+FESVR_DIR     := $(BP_EXTERNAL_DIR)/riscv-fesvr
+SPIKE_DIR     := $(BP_EXTERNAL_DIR)/riscv-isa-sim
+AXE_DIR       := $(BP_EXTERNAL_DIR)/axe
+
+systemc:
+	wget http://www.accellera.org/images/downloads/standards/systemc/systemc-2.3.3.gz \
+	&& tar -xzf systemc-2.3.3.gz && rm systemc-2.3.3.gz \
+	&& cd systemc-2.3.3 && ./configure --prefix=$(BP_EXTERNAL_DIR) \
+	&& make && make install && make clean
+
+verilator:
+	cd $(VERILATOR_DIR); \
+	autoconf && ./configure --prefix=$(BP_EXTERNAL_DIR) \
+	&& make && make install
+
+spike:
+	cd $(SPIKE_DIR); \
+	./configure --with-fesvr=$(BP_EXTERNAL_DIR) --prefix=$(BP_EXTERNAL_DIR) \
+	&& make && make install && make clean
+
+axe: 
+	cd $(AXE_DIR)/src; \
+	./make.sh \
+	&& cp axe $(BIN_DIR) && ./clean.sh
+
+gnu:
+	cd $(GNU_DIR); \
+	./configure --prefix=$(BP_EXTERNAL_DIR) \
+	&& make && make install && make clean
+
+fesvr:
+	cd $(FESVR_DIR); \
+	./configure --prefix=$(BP_EXTERNAL_DIR) \
+	&& make && make install && make clean
+

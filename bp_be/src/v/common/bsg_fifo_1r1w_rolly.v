@@ -41,14 +41,14 @@ module bsg_fifo_1r1w_rolly
     assign rptr_jmp = roll_v_i 
                       ? (cptr_r - rptr_r) 
                       : deq 
-                         ? ('b1)
-                         : ('b0);
+                         ? (ptr_width_lp'(1))
+                         : (ptr_width_lp'(0));
 
     assign wptr_jmp = clr_v_i
                       ? (rptr_r - wptr_r)
                       : enq
-                         ? ('b1)
-                         : ('b0);
+                         ? (ptr_width_lp'(1))
+                         : (ptr_width_lp'(0));
 
     assign empty = (rptr_r[0+:ptr_width_lp] == wptr_r[0+:ptr_width_lp]) 
                    & (rptr_r[ptr_width_lp] == wptr_r[ptr_width_lp]);
@@ -63,8 +63,8 @@ module bsg_fifo_1r1w_rolly
     assign deq = yumi_i;
     assign clr = clr_v_i;
 
-    assign ready_o = ~reset_i & ~clr_v_i & ~full;
-    assign v_o     = ~reset_i & ~roll_v_i & ~empty;
+    assign ready_o = ~reset_i & ~clr_v_i  & ~full;
+    assign v_o     = ~reset_i & ~clr_v_i  & ~roll_v_i & ~empty;
 
   //always_ff @(posedge clk_i)
     //assert ((v_i & ~ready_o) !== 1) 

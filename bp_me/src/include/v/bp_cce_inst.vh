@@ -140,6 +140,7 @@ typedef enum logic [4:0] {
   ,e_src_r1                              = 5'b00001
   ,e_src_r2                              = 5'b00010
   ,e_src_r3                              = 5'b00011
+
   ,e_src_rqf                             = 5'b00100
   ,e_src_nerf                            = 5'b00101
   ,e_src_ldf                             = 5'b00110
@@ -152,12 +153,15 @@ typedef enum logic [4:0] {
   ,e_src_if                              = 5'b01101
   ,e_src_ef                              = 5'b01110
   ,e_src_pcf                             = 5'b01111
-  ,e_src_const_0                         = 5'b10000
-  ,e_src_const_1                         = 5'b10001
-  ,e_src_imm                             = 5'b10010
-  ,e_src_req_lce                         = 5'b10011
-  ,e_src_ack_type                        = 5'b10100
-  ,e_src_sharers_hit_r0                  = 5'b10101
+  ,e_src_ucf                             = 5'b10000
+
+  ,e_src_const_0                         = 5'b10001
+  ,e_src_const_1                         = 5'b10010
+  ,e_src_imm                             = 5'b10011
+  ,e_src_req_lce                         = 5'b10100
+  ,e_src_ack_type                        = 5'b10101
+  ,e_src_sharers_hit_r0                  = 5'b10110
+
   ,e_src_lce_req_ready                   = 5'b11000
   ,e_src_mem_resp_ready                  = 5'b11001
   ,e_src_mem_data_resp_ready             = 5'b11010
@@ -186,7 +190,8 @@ typedef enum logic [4:0] {
   ,e_dst_if                              = 5'b01101
   ,e_dst_ef                              = 5'b01110
   ,e_dst_pcf                             = 5'b01111
-  ,e_dst_next_coh_state                  = 5'b10000
+  ,e_dst_ucf                             = 5'b10000
+  ,e_dst_next_coh_state                  = 5'b10001
 } bp_cce_inst_dst_e;
 
 `define bp_cce_inst_dst_width $bits(bp_cce_inst_dst_e)
@@ -204,19 +209,20 @@ typedef enum logic [1:0] {
 `define bp_cce_inst_gpr_width 16
 
 // Flag Register One Hot
-typedef enum logic [11:0] {
-  e_flag_rqf                             = 12'b0000_0000_0001 // request type flag
-  ,e_flag_nerf                           = 12'b0000_0000_0010 // non-exclusive request flag
-  ,e_flag_ldf                            = 12'b0000_0000_0100 // lru dirty flag
-  ,e_flag_nwbf                           = 12'b0000_0000_1000 // null writeback flag
-  ,e_flag_tf                             = 12'b0000_0001_0000 // transfer flag
-  ,e_flag_rf                             = 12'b0000_0010_0000 // replacement flag
-  ,e_flag_rwbf                           = 12'b0000_0100_0000 // replacement writeback flag
-  ,e_flag_pf                             = 12'b0000_1000_0000 // pending flag
-  ,e_flag_uf                             = 12'b0001_0000_0000 // upgrade flag
-  ,e_flag_if                             = 12'b0010_0000_0000 // invalidate flag
-  ,e_flag_ef                             = 12'b0100_0000_0000 // exclusive flag
-  ,e_flag_pcf                            = 12'b1000_0000_0000 // pending-cleared flag
+typedef enum logic [12:0] {
+  e_flag_rqf                             = 13'b0_0000_0000_0001 // request type flag
+  ,e_flag_nerf                           = 13'b0_0000_0000_0010 // non-exclusive request flag
+  ,e_flag_ldf                            = 13'b0_0000_0000_0100 // lru dirty flag
+  ,e_flag_nwbf                           = 13'b0_0000_0000_1000 // null writeback flag
+  ,e_flag_tf                             = 13'b0_0000_0001_0000 // transfer flag
+  ,e_flag_rf                             = 13'b0_0000_0010_0000 // replacement flag
+  ,e_flag_rwbf                           = 13'b0_0000_0100_0000 // replacement writeback flag
+  ,e_flag_pf                             = 13'b0_0000_1000_0000 // pending flag
+  ,e_flag_uf                             = 13'b0_0001_0000_0000 // upgrade flag
+  ,e_flag_if                             = 13'b0_0010_0000_0000 // invalidate flag
+  ,e_flag_ef                             = 13'b0_0100_0000_0000 // exclusive flag
+  ,e_flag_pcf                            = 13'b0_1000_0000_0000 // pending-cleared flag
+  ,e_flag_ucf                            = 13'b1_0000_0000_0000 // uncached request flag
 } bp_cce_inst_flag_e;
 
 `define bp_cce_inst_num_flags $bits(bp_cce_inst_flag_e)
@@ -235,6 +241,7 @@ typedef enum logic [3:0] {
   ,e_flag_sel_if                         = 4'b1001 // invalidate flag
   ,e_flag_sel_ef                         = 4'b1010 // exclusive flag
   ,e_flag_sel_pcf                        = 4'b1011 // pending-cleared flag
+  ,e_flag_sel_ucf                        = 4'b1100 // uncached request flag
 } bp_cce_inst_flag_sel_e;
 
 `define bp_cce_inst_flag_sel_width $bits(bp_cce_inst_flag_sel_e)
@@ -606,6 +613,14 @@ typedef struct packed {
   logic                                    rde_op_w_v;
 
   logic [`bp_cce_inst_num_flags-1:0]       flag_mask_w_v;
+
+  // Write enables for uncached data and request size registers
+  logic                                    nc_data_lce_req;
+  logic                                    nc_data_mem_data_resp;
+  // data written on lce request or mem data response
+  logic                                    nc_data_w_v;
+  // request size written any time ucf (rqf) written
+  logic                                    nc_req_size_w_v;
 
   // dequeue signals
   logic                                    lce_req_ready;

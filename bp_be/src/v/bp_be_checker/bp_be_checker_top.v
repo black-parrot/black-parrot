@@ -66,6 +66,8 @@ module bp_be_checker_top
    , parameter asid_width_p                = "inv"
    , parameter branch_metadata_fwd_width_p = "inv"
 
+   , parameter load_to_use_forwarding_p = 1
+
    // Generated parameters
    , localparam calc_status_width_lp = `bp_be_calc_status_width(branch_metadata_fwd_width_p)
    , localparam fe_queue_width_lp    = `bp_fe_queue_width(vaddr_width_p
@@ -76,7 +78,7 @@ module bp_be_checker_top
                                                         , asid_width_p
                                                         , branch_metadata_fwd_width_p
                                                         )
-   , localparam issue_pkt_width_lp   = `bp_be_issue_pkt_width(branch_metadata_fwd_width_p)
+   , localparam issue_pkt_width_lp   = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
 
    // From BE specifications
    , localparam pc_entry_point_lp = bp_pc_entry_point_gp
@@ -115,7 +117,13 @@ module bp_be_checker_top
    , output                           chk_dispatch_v_o
    , output                           chk_roll_o
    , output                           chk_poison_isd_o
-   , output                           chk_poison_ex_o
+   , output                           chk_poison_ex1_o
+   , output                           chk_poison_ex2_o
+   , output                           chk_poison_ex3_o
+
+   // CSR interface
+   , input [reg_data_width_lp-1:0]    mtvec_i
+   , input [reg_data_width_lp-1:0]    mepc_i
    );
 
 // Declare parameterizable structures
@@ -149,6 +157,9 @@ bp_be_director
    ,.chk_dequeue_fe_o(chk_dequeue_fe_o)
    ,.chk_roll_fe_o(chk_roll_fe_o)
    ,.chk_flush_fe_o(chk_flush_fe_o)
+
+   ,.mtvec_i(mtvec_i)
+   ,.mepc_i(mepc_i)
    );
 
 bp_be_detector 
@@ -156,6 +167,7 @@ bp_be_detector
    ,.paddr_width_p(paddr_width_p)
    ,.asid_width_p(asid_width_p)
    ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+   ,.load_to_use_forwarding_p(load_to_use_forwarding_p)
    ) 
  detector
   (.clk_i(clk_i)
@@ -168,7 +180,9 @@ bp_be_detector
    ,.chk_dispatch_v_o(chk_dispatch_v_o)
    ,.chk_roll_o(chk_roll_o)
    ,.chk_poison_isd_o(chk_poison_isd_o)
-   ,.chk_poison_ex_o(chk_poison_ex_o)
+   ,.chk_poison_ex1_o(chk_poison_ex1_o)
+   ,.chk_poison_ex2_o(chk_poison_ex2_o)
+   ,.chk_poison_ex3_o(chk_poison_ex3_o)
    );
 
 bp_be_scheduler 

@@ -17,7 +17,7 @@ module testbench();
   localparam num_cce_p = 1;
   localparam num_lce_p = 1;
   localparam num_mem_p = 1;
-  localparam mem_els_p = 2*num_lce_p*sets_p*ways_p;
+  localparam mem_els_p = 2*sets_p*ways_p;
   localparam instr_count = `NUM_INSTR_P;
   localparam num_cce_inst_ram_els_p = 256;
 
@@ -31,11 +31,11 @@ module testbench();
   localparam lce_data_width_lp=ways_p*data_width_p;
   localparam bp_be_dcache_pkt_width_lp=`bp_be_dcache_pkt_width(page_offset_width_lp, data_width_p);
 
-  localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, ways_p);
+  localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, ways_p, data_width_p);
   localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p);
   localparam lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_lp);
   localparam cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, ways_p);
-  localparam cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_lp, ways_p);
+  localparam lce_data_cmd_width_lp=`bp_lce_data_cmd_width(num_lce_p, lce_data_width_lp, ways_p);
   localparam lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p, paddr_width_p, lce_data_width_lp, ways_p);
 
   localparam ring_width_p = data_width_p+paddr_width_p+4;

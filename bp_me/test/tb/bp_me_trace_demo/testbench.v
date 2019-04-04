@@ -58,6 +58,7 @@ module testbench
                                                                    , num_lce_p
                                                                    , paddr_width_p
                                                                    , lce_assoc_p
+                                                                   , data_width_lp
                                                                    )
    , localparam lce_cce_resp_width_lp      = `bp_lce_cce_resp_width(num_cce_p
                                                                     , num_lce_p
@@ -73,19 +74,22 @@ module testbench
                                                                    , paddr_width_p
                                                                    , lce_assoc_p
                                                                    )
-   , localparam cce_lce_data_cmd_width_lp  = `bp_cce_lce_data_cmd_width(num_cce_p
-                                                                        , num_lce_p
-                                                                        , paddr_width_p
-                                                                        , block_size_in_bytes_p
-                                                                        , lce_assoc_p
-                                                                        )
-   , localparam lce_lce_tr_resp_width_lp   = `bp_lce_lce_tr_resp_width(num_lce_p
-                                                                       , paddr_width_p
-                                                                       , block_size_in_bytes_p
-                                                                       , lce_assoc_p
-                                                                       )
+   , localparam lce_data_cmd_width_lp  = `bp_lce_data_cmd_width(num_lce_p
+                                                                , block_size_in_bytes_p
+                                                                , lce_assoc_p
+                                                                )
 
    , localparam cce_inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_inst_ram_els_p)
+
+   , localparam bp_mem_cce_resp_width_lp=
+     `bp_mem_cce_resp_width(paddr_width_p,num_lce_p,lce_assoc_p)
+   , localparam bp_mem_cce_data_resp_width_lp=
+     `bp_mem_cce_data_resp_width(paddr_width_p,block_size_in_bits_lp,num_lce_p,lce_assoc_p)
+   , localparam bp_cce_mem_cmd_width_lp=
+     `bp_cce_mem_cmd_width(paddr_width_p,num_lce_p,lce_assoc_p)
+   , localparam bp_cce_mem_data_cmd_width_lp=
+     `bp_cce_mem_data_cmd_width(paddr_width_p,block_size_in_bits_lp,num_lce_p,lce_assoc_p)
+
    )
   (input clk_i
    , input reset_i
@@ -97,12 +101,11 @@ module testbench
                                     , asid_width_p
                                     , branch_metadata_fwd_width_p
                                     )
-`declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
+`declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, data_width_lp);
 `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
 `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, block_size_in_bits_lp);
 `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
-`declare_bp_cce_lce_data_cmd_s(num_cce_p, num_lce_p, paddr_width_p, block_size_in_bits_lp, lce_assoc_p);
-`declare_bp_lce_lce_tr_resp_s(num_lce_p, paddr_width_p, block_size_in_bits_lp, lce_assoc_p);
+`declare_bp_lce_data_cmd_s(num_lce_p, block_size_in_bits_lp, lce_assoc_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p
                                    , paddr_width_p
                                    , asid_width_p
@@ -114,8 +117,11 @@ module testbench
 bp_cce_lce_cmd_s [1:0] cce_lce_cmd_li;
 logic [1:0] cce_lce_cmd_v_li, cce_lce_cmd_ready_lo;
 
-bp_cce_lce_data_cmd_s [1:0] cce_lce_data_cmd_li;
-logic [1:0] cce_lce_data_cmd_v_li, cce_lce_data_cmd_ready_lo;
+bp_lce_data_cmd_s [1:0] lce_data_cmd_li;
+logic [1:0] lce_data_cmd_v_li, lce_data_cmd_ready_lo;
+
+bp_lce_data_cmd_s [1:0] lce_data_cmd_lo;
+logic [1:0] lce_data_cmd_v_lo, lce_data_cmd_ready_li;
 
 bp_lce_cce_req_s [1:0] lce_cce_req_lo;
 logic [1:0] lce_cce_req_v_lo, lce_cce_req_ready_li;
@@ -125,12 +131,6 @@ logic [1:0] lce_cce_resp_v_lo, lce_cce_resp_ready_li;
 
 bp_lce_cce_data_resp_s [1:0] lce_cce_data_resp_lo;
 logic [1:0] lce_cce_data_resp_v_lo, lce_cce_data_resp_ready_li;
-
-bp_lce_lce_tr_resp_s [1:0] lce_tr_resp_li;
-logic [1:0] lce_tr_resp_v_li, lce_tr_resp_ready_lo;
-
-bp_lce_lce_tr_resp_s [1:0] lce_tr_resp_lo;
-logic [1:0] lce_tr_resp_v_lo, lce_tr_resp_ready_li;
 
 // Trace replay connections
 logic [trace_ring_width_p-1:0]      tr_data_li;
@@ -164,14 +164,31 @@ logic [1:0][ptag_width_lp-1:0] rolly_paddr_li;
 logic [1:0][ptag_width_lp-1:0] rolly_paddr_lo;
 
 // Boot ROM connection
-logic [lg_boot_rom_els_lp-1:0] boot_rom_addr_li;
-logic [boot_rom_width_p-1:0]   boot_rom_data_lo;
+logic [num_cce_p-1:0][lg_boot_rom_els_lp-1:0] boot_rom_addr_li;
+logic [num_cce_p-1:0][boot_rom_width_p-1:0]   boot_rom_data_lo;
 
 // CCE Inst Boot ROM
-logic [cce_inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
-logic [`bp_cce_inst_width-1:0]         cce_inst_boot_rom_data;
+logic [num_cce_p-1:0][cce_inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
+logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]         cce_inst_boot_rom_data;
 
 // Memory End
+
+logic [num_cce_p-1:0][bp_mem_cce_resp_width_lp-1:0] mem_resp;
+logic [num_cce_p-1:0] mem_resp_v;
+logic [num_cce_p-1:0] mem_resp_ready;
+
+logic [num_cce_p-1:0][bp_mem_cce_data_resp_width_lp-1:0] mem_data_resp;
+logic [num_cce_p-1:0] mem_data_resp_v;
+logic [num_cce_p-1:0] mem_data_resp_ready;
+
+logic [num_cce_p-1:0][bp_cce_mem_cmd_width_lp-1:0] mem_cmd;
+logic [num_cce_p-1:0] mem_cmd_v;
+logic [num_cce_p-1:0] mem_cmd_yumi;
+
+logic [num_cce_p-1:0][bp_cce_mem_data_cmd_width_lp-1:0] mem_data_cmd;
+logic [num_cce_p-1:0] mem_data_cmd_v;
+logic [num_cce_p-1:0] mem_data_cmd_yumi;
+
 bp_me_top 
  #(.num_lce_p(num_lce_p)
    ,.num_cce_p(num_cce_p)
@@ -180,9 +197,6 @@ bp_me_top
    ,.lce_sets_p(lce_sets_p)
    ,.block_size_in_bytes_p(block_size_in_bytes_p)
    ,.num_inst_ram_els_p(num_inst_ram_els_p)
-   ,.mem_els_p(mem_els_p)
-   ,.boot_rom_width_p(boot_rom_width_p)
-   ,.boot_rom_els_p(boot_rom_els_p)
    )
  DUT
   (.clk_i(clk_i)
@@ -192,9 +206,13 @@ bp_me_top
    ,.lce_cmd_v_o(cce_lce_cmd_v_li)
    ,.lce_cmd_ready_i(cce_lce_cmd_ready_lo)
 
-   ,.lce_data_cmd_o(cce_lce_data_cmd_li)
-   ,.lce_data_cmd_v_o(cce_lce_data_cmd_v_li)
-   ,.lce_data_cmd_ready_i(cce_lce_data_cmd_ready_lo)
+   ,.lce_data_cmd_o(lce_data_cmd_li)
+   ,.lce_data_cmd_v_o(lce_data_cmd_v_li)
+   ,.lce_data_cmd_ready_i(lce_data_cmd_ready_lo)
+
+   ,.lce_data_cmd_i(lce_data_cmd_lo)
+   ,.lce_data_cmd_v_i(lce_data_cmd_v_lo)
+   ,.lce_data_cmd_ready_o(lce_data_cmd_ready_li)
 
    ,.lce_req_i(lce_cce_req_lo)
    ,.lce_req_v_i(lce_cce_req_v_lo)
@@ -208,38 +226,85 @@ bp_me_top
    ,.lce_data_resp_v_i(lce_cce_data_resp_v_lo)
    ,.lce_data_resp_ready_o(lce_cce_data_resp_ready_li)
 
-   ,.lce_tr_resp_i(lce_tr_resp_li)
-   ,.lce_tr_resp_v_i(lce_tr_resp_v_li)
-   ,.lce_tr_resp_ready_o(lce_tr_resp_ready_lo)
-
-   ,.lce_tr_resp_o(lce_tr_resp_lo)
-   ,.lce_tr_resp_v_o(lce_tr_resp_v_lo)
-   ,.lce_tr_resp_ready_i(lce_tr_resp_ready_li)
-
-   ,.boot_rom_addr_o(boot_rom_addr_li)
-   ,.boot_rom_data_i(boot_rom_data_lo)
-
    ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr)
    ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data)
+
+   ,.mem_resp_i(mem_resp)
+   ,.mem_resp_v_i(mem_resp_v)
+   ,.mem_resp_ready_o(mem_resp_ready)
+
+   ,.mem_data_resp_i(mem_data_resp)
+   ,.mem_data_resp_v_i(mem_data_resp_v)
+   ,.mem_data_resp_ready_o(mem_data_resp_ready)
+
+   ,.mem_cmd_o(mem_cmd)
+   ,.mem_cmd_v_o(mem_cmd_v)
+   ,.mem_cmd_yumi_i(mem_cmd_yumi)
+
+   ,.mem_data_cmd_o(mem_data_cmd)
+   ,.mem_data_cmd_v_o(mem_data_cmd_v)
+   ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi)
+
    );
 
-bp_boot_rom
- #(.addr_width_p(lg_boot_rom_els_lp)
-   ,.width_p(boot_rom_width_p)
-   )
- mrom
-  (.addr_i(boot_rom_addr_li)
-   ,.data_o(boot_rom_data_lo)
-   );
+for (genvar i = 0; i < num_cce_p; i++) begin
 
 bp_cce_inst_rom
   #(.width_p(`bp_cce_inst_width)
     ,.addr_width_p(cce_inst_ram_addr_width_lp)
     )
   cce_inst_rom
-   (.addr_i(cce_inst_boot_rom_addr)
-    ,.data_o(cce_inst_boot_rom_data)
+   (.addr_i(cce_inst_boot_rom_addr[i])
+    ,.data_o(cce_inst_boot_rom_data[i])
     );
+
+bp_mem
+  #(.num_lce_p(num_lce_p)
+    ,.num_cce_p(num_cce_p)
+    ,.paddr_width_p(paddr_width_p)
+    ,.lce_assoc_p(lce_assoc_p)
+    ,.block_size_in_bytes_p(block_size_in_bits_lp/8)
+    ,.lce_sets_p(lce_sets_p)
+    ,.lce_req_data_width_p(data_width_lp)
+    ,.mem_els_p(mem_els_p)
+    ,.boot_rom_width_p(block_size_in_bits_lp)
+    ,.boot_rom_els_p(boot_rom_els_p)
+  )
+  bp_mem
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.mem_cmd_i(mem_cmd[i])
+   ,.mem_cmd_v_i(mem_cmd_v[i])
+   ,.mem_cmd_yumi_o(mem_cmd_yumi[i])
+
+   ,.mem_data_cmd_i(mem_data_cmd[i])
+   ,.mem_data_cmd_v_i(mem_data_cmd_v[i])
+   ,.mem_data_cmd_yumi_o(mem_data_cmd_yumi[i])
+
+   ,.mem_resp_o(mem_resp[i])
+   ,.mem_resp_v_o(mem_resp_v[i])
+   ,.mem_resp_ready_i(mem_resp_ready[i])
+
+   ,.mem_data_resp_o(mem_data_resp[i])
+   ,.mem_data_resp_v_o(mem_data_resp_v[i])
+   ,.mem_data_resp_ready_i(mem_data_resp_ready[i])
+
+   ,.boot_rom_addr_o(boot_rom_addr_li[i])
+   ,.boot_rom_data_i(boot_rom_data_lo[i])
+   );
+
+
+bp_boot_rom
+ #(.addr_width_p(lg_boot_rom_els_lp)
+   ,.width_p(boot_rom_width_p)
+   )
+ mrom
+  (.addr_i(boot_rom_addr_li[i])
+   ,.data_o(boot_rom_data_lo[i])
+   );
+
+end
 
 bsg_fsb_node_trace_replay 
  #(.ring_width_p(trace_ring_width_p)
@@ -298,6 +363,7 @@ bp_be_dcache
    ,.ptag_i(dcache_paddr_li[0])
 
    // ctrl
+   ,.uncached_i(1'b0)
    ,.cache_miss_o(dcache_miss_lo[0])
    ,.poison_i(dcache_miss_lo[0])
 
@@ -319,18 +385,13 @@ bp_be_dcache
    ,.lce_cmd_v_i(cce_lce_cmd_v_li[0])
    ,.lce_cmd_ready_o(cce_lce_cmd_ready_lo[0])
 
-   ,.lce_data_cmd_i(cce_lce_data_cmd_li[0])
-   ,.lce_data_cmd_v_i(cce_lce_data_cmd_v_li[0])
-   ,.lce_data_cmd_ready_o(cce_lce_data_cmd_ready_lo[0])
+   ,.lce_data_cmd_i(lce_data_cmd_li[0])
+   ,.lce_data_cmd_v_i(lce_data_cmd_v_li[0])
+   ,.lce_data_cmd_ready_o(lce_data_cmd_ready_lo[0])
 
-   // LCE-LCE interface
-   ,.lce_tr_resp_i(lce_tr_resp_lo[0])
-   ,.lce_tr_resp_v_i(lce_tr_resp_v_lo[0])
-   ,.lce_tr_resp_ready_o(lce_tr_resp_ready_li[0])
-
-   ,.lce_tr_resp_o(lce_tr_resp_li[0])
-   ,.lce_tr_resp_v_o(lce_tr_resp_v_li[0])
-   ,.lce_tr_resp_ready_i(lce_tr_resp_ready_lo[0])
+   ,.lce_data_cmd_o(lce_data_cmd_lo[0])
+   ,.lce_data_cmd_v_o(lce_data_cmd_v_lo[0])
+   ,.lce_data_cmd_ready_i(lce_data_cmd_ready_li[0])
    );
 
 
@@ -359,6 +420,7 @@ bp_be_dcache
    ,.ptag_i(dcache_paddr_li[1])
 
    // ctrl
+   ,.uncached_i(1'b0)
    ,.cache_miss_o(dcache_miss_lo[1])
    ,.poison_i(dcache_miss_lo[1])
 
@@ -380,18 +442,13 @@ bp_be_dcache
    ,.lce_cmd_v_i(cce_lce_cmd_v_li[1])
    ,.lce_cmd_ready_o(cce_lce_cmd_ready_lo[1])
 
-   ,.lce_data_cmd_i(cce_lce_data_cmd_li[1])
-   ,.lce_data_cmd_v_i(cce_lce_data_cmd_v_li[1])
-   ,.lce_data_cmd_ready_o(cce_lce_data_cmd_ready_lo[1])
+   ,.lce_data_cmd_i(lce_data_cmd_li[1])
+   ,.lce_data_cmd_v_i(lce_data_cmd_v_li[1])
+   ,.lce_data_cmd_ready_o(lce_data_cmd_ready_lo[1])
 
-   // LCE-LCE interface
-   ,.lce_tr_resp_i(lce_tr_resp_lo[1])
-   ,.lce_tr_resp_v_i(lce_tr_resp_v_lo[1])
-   ,.lce_tr_resp_ready_o(lce_tr_resp_ready_li[1])
-
-   ,.lce_tr_resp_o(lce_tr_resp_li[1])
-   ,.lce_tr_resp_v_o(lce_tr_resp_v_li[1])
-   ,.lce_tr_resp_ready_i(lce_tr_resp_ready_lo[1])
+   ,.lce_data_cmd_o(lce_data_cmd_lo[1])
+   ,.lce_data_cmd_v_o(lce_data_cmd_v_lo[1])
+   ,.lce_data_cmd_ready_i(lce_data_cmd_ready_li[1])
    );
 
 logic tr_icache_match, tr_dcache_match, tr_is_fetch;

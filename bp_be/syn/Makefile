@@ -1,15 +1,41 @@
-## Setup CAD tools
-ifneq (,$(findstring xor,$(shell hostname)))
-  include $(BSG_CADENV_DIR)/cadenv.mk
-else
-  $(info Not on xor...VCS and DC not supported)
-endif
+# Set common environment variables
+TOP ?= $(shell git rev-parse --show-toplevel)
 
-SYN_PATH = $(BP_BE_DIR)/syn
-TB_PATH  = $(BP_BE_DIR)/test/tb
+include $(TOP)/Makefile.common
 
-include $(SYN_PATH)/Makefile.vcs
-include $(SYN_PATH)/Makefile.dc
-include $(SYN_PATH)/Makefile.verilator
+SYN_PATH    := $(BP_BE_DIR)/syn
+TB_PATH     := $(BP_BE_DIR)/test/tb
+LOG_PATH    := $(BP_BE_DIR)/syn/logs
+REPORT_PATH := $(BP_BE_DIR)/syn/reports
 
+# Default ROM to example
+DESIGN_NAME ?= bp_be_top
+TB          ?= bp_be_trace_demo
+
+.EXPORT_ALL_VARIABLES:
+
+include $(BP_COMMON_DIR)/syn/Makefile.common
+include $(BP_COMMON_DIR)/syn/Makefile.dc
+include $(BP_COMMON_DIR)/syn/Makefile.regress
+include $(BP_COMMON_DIR)/syn/Makefile.verilator
+include $(BP_COMMON_DIR)/syn/Makefile.vcs
+
+DCACHE_AXE_TEST_DIR = $(BP_BE_DIR)/test/tb/bp_be_dcache/dcache_axe_test
+
+#regress.be: regress.v check_design.syn
+regress: regress.be
+regress.be: check_design.syn
+	$(MAKE) lint.v || true
+	$(MAKE) lint.sc || true
+	for lce in 2 4 8 16; do \
+		echo "Running $$lce LCE AXE TEST"; \
+		$(MAKE) -C $(DCACHE_AXE_TEST_DIR) NUM_LCE_P=$$lce NUM_INSTR_P=2500 \
+		| tee $(LOG_PATH)/vcs/dcache_axe_test_$$lce.sim.log; \
+		$(MAKE) -C $(DCACHE_AXE_TEST_DIR) axe \
+		| tee $(LOG_PATH)/vcs/dcache_axe_test_$$lce.axe.log; \
+		grep "OK" $(LOG_PATH)/vcs/dcache_axe_test_$$lce.axe.log \
+		&& echo "$$lce test: OK" >> $(REPORT_PATH)/vcs/dcache_axe_test.rpt \
+		|| echo "$$lce test: FAIL" >> $(REPORT_PATH)/vcs/dcache_axe_test.rpt; \
+		grep "FAIL" $(REPORT_PATH)/vcs/dcache_axe_test.rpt | tee -a $(REPORT_PATH)/vcs/dcache_axe_test.err; \
+	done
 
