@@ -93,6 +93,13 @@ typedef struct packed
     logic [ppn_width_mp-1:0] ppn;                           \
   }  bp_fe_itlb_icache_data_resp_s;
 
+`define declare_bp_fe_itlb_vaddr_s(vaddr_width_mp, sets_mp, block_size_in_bytes_mp)                \
+  typedef struct packed                                                                            \
+  {                                                                                                \
+    logic [vaddr_width_mp-`BSG_SAFE_CLOG2(sets_mp*block_size_in_bytes_mp)-1:0] tag;                \
+    logic [`BSG_SAFE_CLOG2(sets_mp)-1:0]                                       index;              \
+    logic [`BSG_SAFE_CLOG2(block_size_in_bytes_mp)-1:0]                        offset;             \
+  }  bp_fe_itlb_vaddr_s;   
 
 /*
  * The pc_gen logic recieves the commands from the backend if there is any
@@ -131,14 +138,14 @@ typedef struct packed
   }  bp_fe_pc_gen_itlb_s;
 
 
-`define declare_bp_fe_branch_metadata_fwd_s(btb_idx_width_mp,bht_idx_width_mp,ras_addr_width_mp) \
+`define declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_mp,btb_idx_width_mp,bht_idx_width_mp,ras_addr_width_mp) \
   typedef struct packed                                                                          \
   {                                                                                              \
+    logic [btb_tag_width_mp-1:0]    btb_tag;                                                     \
     logic [btb_idx_width_mp-1:0]    btb_indx;                                                    \
     logic [bht_idx_width_mp-1:0]    bht_indx;                                                    \
     logic [ras_addr_width_mp-1:0]   ras_addr;                                                    \
   }  bp_fe_branch_metadata_fwd_s;
-
 
 /*
  *  All the opcode macros for the control flow instructions.  These opcodes are
@@ -169,8 +176,8 @@ typedef struct packed
 
 `define bp_fe_instr_scan_width (1+`bp_fe_instr_scan_class_width+bp_eaddr_width_gp)
 
-`define bp_fe_branch_metadata_fwd_width(btb_idx_width_mp,bht_idx_width_mp,ras_addr_width_mp) \
-  (btb_idx_width_mp+bht_idx_width_mp+ras_addr_width_mp)
+`define bp_fe_branch_metadata_fwd_width(btb_tag_width_mp,btb_idx_width_mp,bht_idx_width_mp,ras_addr_width_mp) \
+(btb_tag_width_mp+btb_idx_width_mp+bht_idx_width_mp+ras_addr_width_mp)
 
 `define bp_fe_itlb_icache_data_resp_width(ppn_width_mp) \
   (ppn_width_mp)
@@ -180,5 +187,11 @@ typedef struct packed
 
 `define bp_fe_itlb_queue_width(vaddr_width_mp,branch_metadata_fwd_width_mp) \
   (`bp_fe_queue_width(vaddr_width_mp,branch_metadata_fwd_width_mp))
+
+`define bp_fe_vtag_width(vaddr_width_mp, sets_mp, block_size_in_bytes_mp) \
+  (vaddr_width_mp-`BSG_SAFE_CLOG2(sets_mp*block_size_in_bytes_mp))
+
+`define bp_fe_ptag_width(paddr_width_mp, sets_mp, block_size_in_bytes_mp) \
+  (paddr_width_mp-`BSG_SAFE_CLOG2(sets_mp*block_size_in_bytes_mp))
 
 `endif

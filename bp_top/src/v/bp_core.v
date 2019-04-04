@@ -18,8 +18,8 @@ module bp_core
     , parameter data_width_p = "inv"
     , parameter vaddr_width_p               = "inv"
     , parameter paddr_width_p               = "inv"
-    , parameter branch_metadata_fwd_width_p = "inv"
     , parameter asid_width_p                = "inv"
+    , parameter btb_tag_width_p             = "inv"
     , parameter btb_indx_width_p            = "inv"
     , parameter bht_indx_width_p            = "inv"
     , parameter ras_addr_width_p            = "inv"
@@ -31,8 +31,13 @@ module bp_core
     , localparam cce_block_size_in_bits_lp =  8*cce_block_size_in_bytes_p
     , localparam proc_cfg_width_lp =          `bp_proc_cfg_width(core_els_p, num_lce_p)
 
-    , localparam fe_queue_width_lp =  `bp_fe_queue_width(vaddr_width_p, branch_metadata_fwd_width_p)
-    , localparam fe_cmd_width_lp =    `bp_fe_cmd_width(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+    , localparam branch_metadata_fwd_width_lp = `bp_fe_branch_metadata_fwd_width(btb_tag_width_p
+                                                                                 , btb_indx_width_p
+                                                                                 , bht_indx_width_p
+                                                                                 , ras_addr_width_p)
+    
+    , localparam fe_queue_width_lp =  `bp_fe_queue_width(vaddr_width_p, branch_metadata_fwd_width_lp)
+    , localparam fe_cmd_width_lp =    `bp_fe_cmd_width(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_lp)
 
     , localparam lce_cce_req_width_lp =
       `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, data_width_p)
@@ -98,7 +103,7 @@ module bp_core
 `declare_bp_common_fe_be_if_structs(vaddr_width_p
                                     , paddr_width_p
                                     , asid_width_p
-                                    , branch_metadata_fwd_width_p
+                                    , branch_metadata_fwd_width_lp
                                     );
   bp_fe_queue_s fe_fe_queue, be_fe_queue;
   logic fe_fe_queue_v, be_fe_queue_v, fe_fe_queue_ready, be_fe_queue_ready;
@@ -111,6 +116,7 @@ module bp_core
   bp_fe_top
     #(.vaddr_width_p(vaddr_width_p)
       ,.paddr_width_p(paddr_width_p)
+      ,.btb_tag_width_p(btb_tag_width_p)
       ,.btb_indx_width_p(btb_indx_width_p)
       ,.bht_indx_width_p(bht_indx_width_p)
       ,.ras_addr_width_p(ras_addr_width_p)
@@ -205,7 +211,7 @@ module bp_core
      #(.vaddr_width_p(vaddr_width_p)
        ,.paddr_width_p(paddr_width_p)
        ,.asid_width_p(asid_width_p)
-       ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+       ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_lp)
        ,.core_els_p(core_els_p)
        ,.num_cce_p(num_cce_p)
        ,.num_lce_p(num_lce_p)

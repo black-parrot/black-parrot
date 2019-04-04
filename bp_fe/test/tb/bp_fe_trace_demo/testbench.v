@@ -125,7 +125,8 @@ logic [num_cce_p-1:0][boot_rom_width_p-1:0]   mrom_data;
 logic [num_cce_p-1:0][cce_inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
 logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]         cce_inst_boot_rom_data;
 
-
+logic [63:0] 				      tlb_miss_vaddr;
+   
 assign proc_cfg.mhartid   = 1'b0;
 assign proc_cfg.icache_id = 1'b0;
 assign proc_cfg.dcache_id = 1'b1; // Unused
@@ -143,8 +144,7 @@ bp_fe_top
        ,.lce_assoc_p(lce_assoc_p)
        ,.num_cce_p(num_cce_p)
        ,.num_lce_p(num_lce_p)
-       ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p) 
-
+       ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
        )
    DUT(.clk_i(clk_i)
        ,.reset_i(reset_i)
@@ -158,6 +158,8 @@ bp_fe_top
        ,.fe_cmd_i(fe_fe_cmd)
        ,.fe_cmd_v_i(fe_fe_cmd_v)
        ,.fe_cmd_ready_o(fe_fe_cmd_rdy)
+
+       ,.tlb_miss_vaddr_o(tlb_miss_vaddr)
 
        ,.lce_req_o(lce_cce_req)
        ,.lce_req_v_o(lce_cce_req_v)
@@ -265,6 +267,8 @@ mock_be_trace
    ,.trace_data_i(tr_data_lo)
    ,.trace_v_i(tr_v_lo)
    ,.trace_yumi_o(tr_yumi_li)
+
+   ,.tlb_miss_vaddr_i(tlb_miss_vaddr)
    );
 
 bsg_fsb_node_trace_replay

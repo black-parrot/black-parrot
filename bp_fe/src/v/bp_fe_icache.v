@@ -89,7 +89,8 @@ module icache
     , input [bp_fe_itlb_icache_data_resp_width_lp-1:0] itlb_icache_data_resp_i
     , input                                            itlb_icache_data_resp_v_i
     , output logic                                     itlb_icache_data_resp_ready_o
-
+    , input                                            itlb_icache_miss_i 
+    
     , output logic                                     cache_miss_o
     , input                                            poison_i
 
@@ -233,7 +234,7 @@ module icache
   logic [index_width_lp-1:0]                    addr_index_tv;
   logic [word_offset_width_lp-1:0]              addr_word_offset_tv;
 
-  assign tv_we = v_tl_r & ~poison_i & itlb_icache_data_resp_v_i;
+  assign tv_we = v_tl_r & ~poison_i & itlb_icache_data_resp_v_i & ~itlb_icache_miss_i;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin

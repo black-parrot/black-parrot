@@ -10,24 +10,24 @@ module bp_multi_top
  import bp_be_rv64_pkg::*;
  import bp_cce_pkg::*;
  #(// System parameters
-   parameter core_els_p                    = 1
-   , parameter vaddr_width_p               = 39
-   , parameter paddr_width_p               = 34
-   , parameter asid_width_p                = 10
-   , parameter branch_metadata_fwd_width_p = 36
-   , parameter btb_indx_width_p            = 9
-   , parameter bht_indx_width_p            = 5
-   , parameter ras_addr_width_p            = 22
+   parameter core_els_p                    = "inv" //1
+   , parameter vaddr_width_p               = "inv" //39
+   , parameter paddr_width_p               = "inv" //34
+   , parameter asid_width_p                = "inv" //10
+   , parameter btb_tag_width_p             = "inv" //9
+   , parameter btb_indx_width_p            = "inv" //9
+   , parameter bht_indx_width_p            = "inv" //5
+   , parameter ras_addr_width_p            = "inv" //22
 
    // ME parameters
-   , parameter num_cce_p                 = 1
-   , parameter num_lce_p                 = 2
-   , parameter lce_assoc_p               = 8
-   , parameter lce_sets_p                = 64
-   , parameter cce_block_size_in_bytes_p = 64
-   , parameter cce_num_inst_ram_els_p    = 144
+   , parameter num_cce_p                 = "inv" //1
+   , parameter num_lce_p                 = "inv" //2
+   , parameter lce_assoc_p               = "inv" //8
+   , parameter lce_sets_p                = "inv" //64
+   , parameter cce_block_size_in_bytes_p = "inv" //64
+   , parameter cce_num_inst_ram_els_p    = "inv" //144
  
-   , parameter trace_p = 0
+   , parameter trace_p                   = "inv"
    // Generated parameters
    , localparam lg_core_els_p      = `BSG_SAFE_CLOG2(core_els_p)
    , localparam lg_num_lce_p       = `BSG_SAFE_CLOG2(num_lce_p)
@@ -35,14 +35,7 @@ module bp_multi_top
    , localparam lce_id_width_lp    = `BSG_SAFE_CLOG2(num_lce_p)
 
    , localparam cce_block_size_in_bits_lp = 8*cce_block_size_in_bytes_p
-   , localparam fe_queue_width_lp         =`bp_fe_queue_width(vaddr_width_p
-                                                              , branch_metadata_fwd_width_p
-                                                              )
-   , localparam fe_cmd_width_lp           =`bp_fe_cmd_width(vaddr_width_p
-                                                            , paddr_width_p
-                                                            , asid_width_p
-                                                            , branch_metadata_fwd_width_p
-                                                            )
+
    , localparam proc_cfg_width_lp         = `bp_proc_cfg_width(core_els_p, num_lce_p)
 
    , localparam icache_lce_id_lp          = 0 // Base ID for icache
@@ -114,11 +107,6 @@ module bp_multi_top
 `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, cce_block_size_in_bits_lp);
 `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
 `declare_bp_lce_data_cmd_s(num_lce_p, cce_block_size_in_bits_lp, lce_assoc_p);
-`declare_bp_be_internal_if_structs(vaddr_width_p
-                                   , paddr_width_p
-                                   , asid_width_p
-                                   , branch_metadata_fwd_width_p
-                                   );
 
 // Top-level interface connections
 
@@ -165,8 +153,8 @@ for(core_id = 0; core_id < core_els_p; core_id++)
         ,.data_width_p(reg_data_width_lp)
         ,.vaddr_width_p(vaddr_width_p)
         ,.paddr_width_p(paddr_width_p)
-        ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
         ,.asid_width_p(asid_width_p)
+        ,.btb_tag_width_p(btb_tag_width_p)
         ,.btb_indx_width_p(btb_indx_width_p)
         ,.bht_indx_width_p(bht_indx_width_p)
         ,.ras_addr_width_p(ras_addr_width_p)

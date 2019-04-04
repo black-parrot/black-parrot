@@ -140,7 +140,6 @@ module bp_be_dcache_lce_req
   assign lce_resp.addr = miss_addr_r;
 
   always_comb begin
-
     cache_miss_o = 1'b0;
 
     state_n = state_r;
