@@ -1,5 +1,5 @@
 
-module bp_be_mmu_vm_top 
+module bp_be_mem_vm_top 
   import bp_common_pkg::*;
   import bp_be_pkg::*;
   import bp_be_rv64_pkg::*;
@@ -250,5 +250,5 @@ always_comb
 assign mmu_resp_v_o    = dcache_v;
 assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v;
 
-endmodule : bp_be_mmu_vm_top
+endmodule : bp_be_mem_vm_top
 

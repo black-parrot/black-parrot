@@ -1,14 +1,14 @@
 /**
  *
  *  Name:
- *    bp_be_mmu_top.v
+ *    bp_be_mem_top.v
  * 
  *  Description:
  *    memory management unit.
  *
  */
 
-module bp_be_mmu_top 
+module bp_be_mem_top 
   import bp_common_pkg::*;
   import bp_be_pkg::*;
   import bp_be_rv64_pkg::*;
@@ -276,5 +276,5 @@ always_comb
 assign mem_resp_v_o    = dcache_v | csr_cmd_v_i;
 assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v;
 
-endmodule : bp_be_mmu_top
+endmodule : bp_be_mem_top
 

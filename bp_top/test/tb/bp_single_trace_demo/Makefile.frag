@@ -1,3 +1,5 @@
+TRACE_REPLAY ?= 1
+
 DUT_PARAMS = -pvalue+vaddr_width_p=39                \
              -pvalue+paddr_width_p=56                \
              -pvalue+asid_width_p=10                 \
@@ -11,7 +13,8 @@ DUT_PARAMS = -pvalue+vaddr_width_p=39                \
              -pvalue+lce_sets_p=64                   \
              -pvalue+cce_block_size_in_bytes_p=64    \
              -pvalue+cce_num_inst_ram_els_p=256      \
-             -pvalue+lce_assoc_p=8
+             -pvalue+lce_assoc_p=8                   \
+						 -pvalue+trace_p=$(TRACE_REPLAY)
 
 TB_PARAMS =  -pvalue+trace_ring_width_p=129          \
              -pvalue+trace_rom_addr_width_p=32       \

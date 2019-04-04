@@ -1,5 +1,5 @@
-`ifndef BP_BE_MMU_DEFINES_VH
-`define BP_BE_MMU_DEFINES_VH
+`ifndef BP_BE_MEM_DEFINES_VH
+`define BP_BE_MEM_DEFINES_VH
 
 `define declare_bp_be_mmu_structs(vaddr_width_mp, sets_mp, block_size_in_bytes_mp) \
   typedef struct packed                                                                            \
@@ -31,10 +31,10 @@
 
 
 `define bp_be_vtag_width(vaddr_width_mp, sets_mp, block_size_in_bytes_mp) \
-  (vaddr_width_mp-`BSG_SAFE_CLOG2(sets_mp*block_size_in_bytes_mp))
+  (vaddr_width_mp - `BSG_SAFE_CLOG2(sets_mp*block_size_in_bytes_mp))
 
 `define bp_be_ptag_width(paddr_width_mp, sets_mp, block_size_in_bytes_mp) \
-  (paddr_width_mp-`BSG_SAFE_CLOG2(sets_mp*block_size_in_bytes_mp))
+  (paddr_width_mp - `BSG_SAFE_CLOG2(sets_mp*block_size_in_bytes_mp))
 
 `define bp_be_mmu_vaddr_width(vaddr_width_p, sets_mp, block_size_in_bytes_mp) \
   (`bp_be_vtag_width(vaddr_width_mp, sets_mp, block_size_in_bytes_mp)                              \
@@ -52,3 +52,4 @@
   (rv64_reg_data_width_gp + `bp_be_exception_width)
 
 `endif
+
