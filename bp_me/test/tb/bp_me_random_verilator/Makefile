@@ -68,28 +68,17 @@ bsg_trace_rom_%.tr:
 bsg_trace_rom_%.v: bsg_trace_rom_%.tr
 	python $(BSG_IP_CORES_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_trace_rom_$* > $@
 
-verilate.sc: $(TRACE_ROMS)
+verilate.sc: clean $(TRACE_ROMS)
 	$(VV) $(VV_OPTS) $(BUILD_OPTS) --top-module $(TOP_MODULE) \
 		-f $(BP_ME_DIR)/syn/flist.verilator -f flist.verilator $(CCE_ROM) $(TRACE_ROMS) \
 		$(HDL_PARAMS) test_bp.cpp
 
-#build.sc: verilate.sc
+build.sc: verilate.sc
+	$(MAKE) -C obj_dir -f V$(TOP_MODULE).mk
 
-run.sc: clean $(TRACE_ROMS) build.sc
-	$(VV) $(VV_OPTS) $(BUILD_OPTS) --top-module $(TOP_MODULE) \
-	$(HDL_PARAMS) testbench.v
-
-
-
-
-
-
-sim: clean $(TRACE_ROMS)
-	vcs +v2k -R +lint=all,noSVA-UA,noSVA-NSVU,noVCDE -sverilog -full64 \
-		$(INCDIR) -f sv.include $(TRACE_ROMS) $(CCE_ROM)  \
-		-debug_pp -timescale=1ps/1ps +vcs+vcdpluson +vcs+vcdplusmemon -l $(VCS_LOG) \
-		+vcs+vcdplusautoflushon +define+NUM_LCE_P=$(NUM_LCE_P) \
-		+define+NUM_INSTR_P=$(NUM_INSTR_P) | $(HIGHLIGHT)
+run.sc: build.sc
+	cd obj_dir
+	./V$(TOP_MODULE)
 
 clean:
 	rm -rf obj_dir
