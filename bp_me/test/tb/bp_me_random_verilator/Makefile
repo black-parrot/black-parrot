@@ -79,7 +79,6 @@ build.sc: verilate.sc
 
 run.sc: build.sc
 	./obj_dir/V$(TOP_MODULE) > simout.txt
-	mv ./obj_dir/dump.vcd dump.vcd
 
 clean:
 	rm -rf obj_dir
