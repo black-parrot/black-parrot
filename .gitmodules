@@ -1,9 +1,3 @@
-[submodule "bsg_ip_cores"]
-  path = bsg_ip_cores
-  url = https://bitbucket.org/taylor-bsg/bsg_ip_cores.git
-  branch = master
-  ignore = dirty
-
 [submodule "external/riscv-isa-sim"]
   path = external/riscv-isa-sim
   url = https://github.com/black-parrot/riscv-isa-sim.git
@@ -35,6 +29,12 @@
 [submodule "external/verilator"]
   path = external/verilator
   url = http://git.veripool.org/git/verilator
+  branch = master
+  ignore = dirty
+
+[submodule "basejump_stl"]
+	path = basejump_stl
+  url = https://github.com/bespoke-silicon-group/basejump_stl.git
   branch = master
   ignore = dirty
 
