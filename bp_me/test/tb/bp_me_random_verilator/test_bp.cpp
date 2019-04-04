@@ -49,7 +49,7 @@ int sc_main(int argc, char **argv)
   reset_i = 0;
   cout << "@" << sc_time_stamp() << " Reset finished!" << endl;
 
-  uint64_t MAX_CYCLES = 100000;
+  uint64_t MAX_CYCLES = UINT64_MAX;
   uint64_t cnt = 0;
   while (!done_o) {
     if (cnt == MAX_CYCLES) {
