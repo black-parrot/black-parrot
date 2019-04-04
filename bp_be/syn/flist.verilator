@@ -68,6 +68,9 @@ $BSG_IP_CORES_DIR/bsg_misc/bsg_round_robin_arb.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_scan.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router_buffered.v
+$BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router.v
+$BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_adapter_in.v
+$BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
 // BE files
 $BP_BE_DIR/src/v/bp_be_top.v
 // Calculator

@@ -35,6 +35,7 @@ module testbench
          , localparam cce_inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(cce_num_inst_ram_els_p)
 
          // Trace replay parameters
+         , parameter trace_p                     = "inv"
          , parameter trace_ring_width_p          = "inv"
          , parameter trace_rom_addr_width_p      = "inv"
          , localparam trace_rom_data_width_lp    = trace_ring_width_p + 4
@@ -142,7 +143,7 @@ module testbench
 	   ,.lce_sets_p(lce_sets_p)
 	   ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
 	   ,.cce_num_inst_ram_els_p(cce_num_inst_ram_els_p)
-     ,.trace_p(1)
+     ,.trace_p(trace_p)
 	   )
     dut
         (.clk_i(clk_i)

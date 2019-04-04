@@ -21,10 +21,13 @@ module mock_be_trace
    //trace_rom params
    , parameter trace_ring_width_p="inv"
 
+   , localparam reg_data_width_lp = rv64_reg_data_width_gp
+
    , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                            , num_lce_p
                                                            , paddr_width_p
                                                            , lce_assoc_p
+                                                           , reg_data_width_lp
                                                            )
    , localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
                                                              , num_lce_p
@@ -40,18 +43,15 @@ module mock_be_trace
                                                            , paddr_width_p
                                                            , lce_assoc_p
                                                            )
-   , localparam cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
-                                                                     , num_lce_p
-                                                                     , paddr_width_p
-                                                                     , cce_block_size_in_bits_lp
-                                                                     , lce_assoc_p
-                                                                     )
+   , localparam lce_data_cmd_width_lp=`bp_lce_data_cmd_width(num_lce_p
+                                                             , cce_block_size_in_bits_lp
+                                                             , lce_assoc_p
+                                                             )
    , localparam lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p
                                                                    , paddr_width_p
                                                                    , cce_block_size_in_bits_lp
                                                                    , lce_assoc_p
                                                                    )
-   , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )
  (input logic clk_i
   , input logic reset_i
