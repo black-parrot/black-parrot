@@ -19,18 +19,19 @@ module bp_me_top
     , parameter block_size_in_bytes_p  ="inv"
     , parameter num_inst_ram_els_p     ="inv"
 
+    // Default parameters
+    , parameter lce_req_data_width_p = 64
+
     // Derived parameters
     , localparam block_size_in_bits_lp = (block_size_in_bytes_p*8)
     , localparam lg_num_cce_lp         = `BSG_SAFE_CLOG2(num_cce_p)
     , localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_inst_ram_els_p)
 
-    // TODO: where should this param be defined?
-    , localparam lce_req_data_width_lp = 64
     , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                                ,num_lce_p
                                                                ,paddr_width_p
                                                                ,lce_assoc_p
-                                                               ,lce_req_data_width_lp)
+                                                               ,lce_req_data_width_p)
 
     , localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
                                                                  ,num_lce_p
@@ -156,7 +157,7 @@ module bp_me_top
       ,.paddr_width_p(paddr_width_p)
       ,.lce_assoc_p(lce_assoc_p)
       ,.block_size_in_bytes_p(block_size_in_bytes_p)
-      ,.data_width_p(lce_req_data_width_lp)
+      ,.data_width_p(lce_req_data_width_p)
       // TODO: number of flit param
       )
     network
@@ -229,7 +230,7 @@ module bp_me_top
         ,.lce_sets_p(lce_sets_p)
         ,.block_size_in_bytes_p(block_size_in_bytes_p)
         ,.num_cce_inst_ram_els_p(num_inst_ram_els_p)
-        ,.lce_req_data_width_p(lce_req_data_width_lp)
+        ,.lce_req_data_width_p(lce_req_data_width_p)
         )
       bp_cce_top
        (.clk_i(clk_i)
