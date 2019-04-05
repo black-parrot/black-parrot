@@ -885,7 +885,7 @@ void
 Assembler::assemble() {
   // Transform tokenized instructions into instruction struct, then write to output
   bp_cce_inst_s inst;
-  int i = 0;
+  unsigned int i = 0;
   while (i < tokens.size()) {
     inst = {};
     parseTokens(tokens.at(i), num_tokens.at(i), &inst);
