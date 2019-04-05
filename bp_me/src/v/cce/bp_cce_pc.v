@@ -13,6 +13,10 @@ module bp_cce_pc
   import bp_cce_pkg::*;
   #(parameter inst_ram_els_p             = "inv"
 
+    // Config channel
+    , parameter cfg_link_addr_width_p = "inv"
+    , parameter cfg_link_data_width_p = "inv"
+
     // Default parameters
     , parameter harden_p                 = 0
 
@@ -22,6 +26,17 @@ module bp_cce_pc
   )
   (input                                         clk_i
    , input                                       reset_i
+
+   // Config channel
+   , input [cfg_link_addr_width_p-2:0]           config_addr_i
+   , input [cfg_link_data_width_p-1:0]           config_data_i
+   , input                                       config_v_i
+   , input                                       config_w_i
+   , output logic                                config_ready_o
+
+   , output logic [cfg_link_data_width_p-1:0]    config_data_o
+   , output logic                                config_v_o
+   , input                                       config_ready_i
 
    // ALU branch result signal
    , input                                       alu_branch_res_i

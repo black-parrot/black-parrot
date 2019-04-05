@@ -19,6 +19,10 @@ module bp_me_top
     , parameter block_size_in_bytes_p  ="inv"
     , parameter num_inst_ram_els_p     ="inv"
 
+    // Config channel
+    , parameter cfg_link_addr_width_p = "inv"
+    , parameter cfg_link_data_width_p = "inv"
+
     // Default parameters
     , parameter lce_req_data_width_p = 64
 
@@ -76,6 +80,17 @@ module bp_me_top
   )
   (input  clk_i
    , input reset_i
+
+   // Config channel
+   , input [cfg_link_addr_width_p-2:0]        config_addr_i
+   , input [cfg_link_data_width_p-1:0]        config_data_i
+   , input                                    config_v_i
+   , input                                    config_w_i
+   , output logic                             config_ready_o
+
+   , output logic [cfg_link_data_width_p-1:0] config_data_o
+   , output logic                             config_v_o
+   , input                                    config_ready_i
 
    // LCE <-> Coherence Network Interface
    // inbound: ready->valid, helpful consumer
@@ -158,7 +173,6 @@ module bp_me_top
       ,.lce_assoc_p(lce_assoc_p)
       ,.block_size_in_bytes_p(block_size_in_bytes_p)
       ,.data_width_p(lce_req_data_width_p)
-      // TODO: number of flit param
       )
     network
      (.clk_i(clk_i)
@@ -231,12 +245,24 @@ module bp_me_top
         ,.block_size_in_bytes_p(block_size_in_bytes_p)
         ,.num_cce_inst_ram_els_p(num_inst_ram_els_p)
         ,.lce_req_data_width_p(lce_req_data_width_p)
+        ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
+        ,.cfg_link_data_width_p(cfg_link_data_width_p)
         )
       bp_cce_top
        (.clk_i(clk_i)
         ,.reset_i(reset_i)
 
         ,.cce_id_i((lg_num_cce_lp)'(i))
+
+        ,.config_addr_i(config_addr_i)
+        ,.config_data_i(config_data_i)
+        ,.config_v_i(config_v_i)
+        ,.config_w_i(config_w_i)
+        ,.config_ready_o(config_ready_o)
+
+        ,.config_data_o(config_data_o)
+        ,.config_v_o(config_v_o)
+        ,.config_ready_i(config_ready_i)
 
         ,.boot_rom_addr_o(cce_inst_boot_rom_addr_o[i])
         ,.boot_rom_data_i(cce_inst_boot_rom_data_i[i])
