@@ -57,6 +57,7 @@ module bp_cce_reg
   )
   (input                                                                   clk_i
    , input                                                                 reset_i
+   , input                                                                 freeze_i
 
    , input bp_cce_inst_decoded_s                                           decoded_inst_i
 

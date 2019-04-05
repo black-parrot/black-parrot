@@ -86,6 +86,7 @@ module bp_cce
   )
   (input                                               clk_i
    , input                                             reset_i
+   , input                                             freeze_i
 
    // Config channel
    , input [cfg_link_addr_width_p-2:0]                 config_addr_i
@@ -258,6 +259,7 @@ module bp_cce
     pc_inst_ram
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
+      ,.freeze_i(freeze_i)
 
       ,.config_addr_i(config_addr_i)
       ,.config_data_i(config_data_i)
@@ -290,6 +292,7 @@ module bp_cce
     inst_decode
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
+      ,.freeze_i(freeze_i)
 
       ,.inst_i(pc_inst_o)
       ,.inst_v_i(pc_inst_v_o)
@@ -353,6 +356,7 @@ module bp_cce
     directory
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
+      ,.freeze_i(freeze_i)
 
       ,.way_group_i(dir_way_group_i)
       ,.lce_i(dir_lce_i)
@@ -390,6 +394,7 @@ module bp_cce
     gad
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
+      ,.freeze_i(freeze_i)
       ,.way_group_i(way_group_r_o)
       ,.req_lce_i(req_lce_r_o)
       ,.req_tag_i(req_tag_r_o)
@@ -425,6 +430,7 @@ module bp_cce
     cce_reg
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
+      ,.freeze_i(freeze_i)
       ,.decoded_inst_i(decoded_inst_o)
       ,.lce_req_i(lce_req_i)
       ,.lce_data_resp_i(lce_data_resp_i)

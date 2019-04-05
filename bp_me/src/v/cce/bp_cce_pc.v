@@ -26,6 +26,7 @@ module bp_cce_pc
   )
   (input                                         clk_i
    , input                                       reset_i
+   , input                                       freeze_i
 
    // Config channel
    , input [cfg_link_addr_width_p-2:0]           config_addr_i

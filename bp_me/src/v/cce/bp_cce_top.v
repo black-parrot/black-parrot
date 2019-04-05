@@ -73,17 +73,18 @@ module bp_cce_top
   )
   (input                                                   clk_i
    , input                                                 reset_i
+   , input                                                 freeze_i
 
    // Config channel
-   , input [cfg_link_addr_width_p-2:0]        config_addr_i
-   , input [cfg_link_data_width_p-1:0]        config_data_i
-   , input                                    config_v_i
-   , input                                    config_w_i
-   , output logic                             config_ready_o
+   , input [cfg_link_addr_width_p-2:0]                     config_addr_i
+   , input [cfg_link_data_width_p-1:0]                     config_data_i
+   , input                                                 config_v_i
+   , input                                                 config_w_i
+   , output logic                                          config_ready_o
 
-   , output logic [cfg_link_data_width_p-1:0] config_data_o
-   , output logic                             config_v_o
-   , input                                    config_ready_i
+   , output logic [cfg_link_data_width_p-1:0]              config_data_o
+   , output logic                                          config_v_o
+   , input                                                 config_ready_i
 
    // LCE-CCE Interface
    // inbound: ready->valid, helpful consumer from demanding producer
@@ -275,6 +276,7 @@ module bp_cce_top
     bp_cce
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
+      ,.freeze_i(freeze_i)
 
       ,.cce_id_i(cce_id_i)
 

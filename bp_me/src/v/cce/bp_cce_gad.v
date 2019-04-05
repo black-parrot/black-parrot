@@ -28,6 +28,7 @@ module bp_cce_gad
   )
   (input                                                  clk_i
    , input                                                reset_i
+   , input                                                freeze_i
 
    , input [way_group_width_lp-1:0]                        way_group_i
    , input [lg_num_lce_lp-1:0]                             req_lce_i

@@ -39,6 +39,7 @@ module bp_cce_dir
   )
   (input                                     clk_i
    , input                                   reset_i
+   , input                                   freeze_i
 
    , input [lg_num_way_groups_lp-1:0]        way_group_i
    , input [lg_num_lce_lp-1:0]               lce_i
