@@ -33,12 +33,12 @@ module mock_be
     parameter vaddr_width_p="inv"
     ,parameter paddr_width_p="inv"
     ,parameter eaddr_width_p="inv"
-    ,parameter btb_indx_width_p="inv"
-    ,parameter bht_indx_width_p="inv"
-    ,parameter ras_addr_width_p="inv"
+    ,parameter btb_idx_width_p="inv"
+    ,parameter bht_idx_width_p="inv"
+    ,parameter ras_idx_width_p="inv"
     ,parameter asid_width_p="inv"
     ,parameter instr_width_p="inv"
-    ,parameter branch_metadata_fwd_width_lp=btb_indx_width_p+bht_indx_width_p+ras_addr_width_p
+    ,parameter branch_metadata_fwd_width_lp=btb_idx_width_p+bht_idx_width_p+ras_idx_width_p
     ,parameter bp_fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)
     ,parameter bp_fe_queue_width_lp=`bp_fe_queue_width(vaddr_width_p,branch_metadata_fwd_width_lp)
 )(
@@ -59,7 +59,7 @@ module mock_be
 // be fe interface udpate (not sure if this is needed)
   localparam branch_metadata_fwd_width_p = branch_metadata_fwd_width_lp; 
    `declare_bp_common_fe_be_if_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)
-    `declare_bp_fe_branch_metadata_fwd_s(btb_indx_width_p,bht_indx_width_p,ras_addr_width_p);
+    `declare_bp_fe_branch_metadata_fwd_s(btb_idx_width_p,bht_idx_width_p,ras_idx_width_p);
    bp_fe_branch_metadata_fwd_s                           branch_metadata_fwd;
 
 // fe to be

@@ -15,7 +15,7 @@ module bp_be_top
    , parameter asid_width_p                = "inv"
    , parameter branch_metadata_fwd_width_p = "inv"
 
-   , parameter core_els_p                  = "inv"
+   , parameter num_core_p                  = "inv"
 
    , parameter load_to_use_forwarding_p    = 1
    , parameter trace_p                     = 0
@@ -52,7 +52,7 @@ module bp_be_top
       `bp_lce_data_cmd_width(num_lce_p, lce_data_width_lp, lce_assoc_p)
 
 
-   , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(core_els_p, num_lce_p)
+   , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(num_core_p, num_lce_p)
 
    , localparam fu_op_width_lp             = `bp_be_fu_op_width
 
@@ -118,7 +118,7 @@ module bp_be_top
 
 // Declare parameterized structures
 `declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
-`declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
+`declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
 `declare_bp_be_internal_if_structs(vaddr_width_p
                                    , paddr_width_p
                                    , asid_width_p
@@ -210,7 +210,7 @@ bp_be_calculator_top
    ,.debug_p(calc_debug_p)
    ,.debug_file_p(calc_debug_file_p)
 
-   ,.core_els_p(core_els_p)
+   ,.num_core_p(num_core_p)
    ,.num_lce_p(num_lce_p)
    ,.lce_sets_p(lce_sets_p)
    ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
@@ -261,7 +261,7 @@ bp_be_calculator_top
    );
 
 bp_be_mem_top
- #(.core_els_p(core_els_p)
+ #(.num_core_p(num_core_p)
    ,.vaddr_width_p(vaddr_width_p)
    ,.paddr_width_p(paddr_width_p)
    ,.asid_width_p(asid_width_p)

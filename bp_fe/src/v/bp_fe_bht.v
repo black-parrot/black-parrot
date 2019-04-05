@@ -10,16 +10,16 @@
 */
 module bp_fe_bht
  import bp_fe_pkg::*; 
- #(parameter bht_indx_width_p="inv"
-   , localparam els_lp=2**bht_indx_width_p
+ #(parameter bht_idx_width_p="inv"
+   , localparam els_lp=2**bht_idx_width_p
    , localparam saturation_size_lp=2
    )
   (input                          clk_i
    , input                        en_i
    , input                        reset_i
     
-   , input [bht_indx_width_p-1:0] idx_r_i
-   , input [bht_indx_width_p-1:0] idx_w_i
+   , input [bht_idx_width_p-1:0] idx_r_i
+   , input [bht_idx_width_p-1:0] idx_w_i
     
    , input                        r_v_i
    , input                        w_v_i

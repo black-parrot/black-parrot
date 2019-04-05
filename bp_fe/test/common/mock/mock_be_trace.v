@@ -13,7 +13,7 @@ module mock_be_trace
    , parameter num_mem_p="inv"
    , parameter lce_assoc_p="inv"
    , parameter lce_sets_p="inv"
-   , parameter core_els_p="inv"
+   , parameter num_core_p="inv"
    , parameter cce_block_size_in_bytes_p="inv"
    , localparam cce_block_size_in_bits_lp=8*cce_block_size_in_bytes_p
    , parameter bp_fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)
@@ -81,7 +81,7 @@ module mock_be_trace
 
    
 `declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
-`declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
+`declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
 
 // the first level of structs
 `declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p);   

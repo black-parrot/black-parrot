@@ -7,7 +7,7 @@ TB_PARAMS=-pvalue+cce_num_inst_ram_els_p=256           \
           -pvalue+trace_rom_addr_width_p=32            \
           -pvalue+mem_els_p=512
 
-DUT_PARAMS=-pvalue+core_els_p=1                        \
+DUT_PARAMS=-pvalue+num_core_p=1                        \
            -pvalue+vaddr_width_p=39                    \
            -pvalue+paddr_width_p=56                    \
            -pvalue+asid_width_p=10                     \

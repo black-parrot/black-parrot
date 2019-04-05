@@ -13,10 +13,10 @@ module test_bp
    , parameter paddr_width_p               = "inv"
    , parameter asid_width_p                = "inv"
    , parameter btb_tag_width_p             = "inv"
-   , parameter btb_indx_width_p            = "inv"
-   , parameter bht_indx_width_p            = "inv"
-   , parameter ras_addr_width_p            = "inv"
-   , parameter core_els_p                  = "inv"
+   , parameter btb_idx_width_p            = "inv"
+   , parameter bht_idx_width_p            = "inv"
+   , parameter ras_idx_width_p            = "inv"
+   , parameter num_core_p                  = "inv"
    , parameter num_cce_p                   = "inv"
    , parameter num_lce_p                   = "inv"
    , parameter lce_sets_p                  = "inv"
@@ -55,10 +55,10 @@ testbench
    ,.paddr_width_p(paddr_width_p)
    ,.asid_width_p(asid_width_p)
    ,.btb_tag_width_p(btb_tag_width_p)
-   ,.btb_indx_width_p(btb_indx_width_p)
-   ,.bht_indx_width_p(bht_indx_width_p)
-   ,.ras_addr_width_p(ras_addr_width_p)
-   ,.core_els_p(core_els_p)
+   ,.btb_idx_width_p(btb_idx_width_p)
+   ,.bht_idx_width_p(bht_idx_width_p)
+   ,.ras_idx_width_p(ras_idx_width_p)
+   ,.num_core_p(num_core_p)
    ,.num_cce_p(num_cce_p)
    ,.num_lce_p(num_lce_p)
    ,.lce_sets_p(lce_sets_p)

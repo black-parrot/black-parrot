@@ -150,5 +150,6 @@ $BP_ME_DIR/src/v/network/bp_me_network_channel_data_resp.v
 $BP_ME_DIR/src/v/network/bp_me_network_pkt_encode_data_cmd.v
 $BP_ME_DIR/src/v/network/bp_me_network_pkt_encode_data_resp.v
 ## TOP
+$BP_TOP_DIR/src/v/bp_aviary.v
 $BP_TOP_DIR/src/v/bp_multi_top.v
 $BP_TOP_DIR/src/v/bp_core.v
