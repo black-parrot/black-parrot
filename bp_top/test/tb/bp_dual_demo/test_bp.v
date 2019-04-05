@@ -17,7 +17,7 @@ module test_bp
    ,parameter paddr_width_p="inv"
    ,parameter asid_width_p="inv"
    ,parameter branch_metadata_fwd_width_p="inv"
-   ,parameter core_els_p="inv"
+   ,parameter num_core_p="inv"
    ,parameter num_cce_p="inv"
    ,parameter num_lce_p="inv"
    ,parameter num_mem_p="inv"

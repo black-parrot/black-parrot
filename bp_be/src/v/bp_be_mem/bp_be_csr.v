@@ -1,7 +1,7 @@
 module bp_be_csr
   import bp_be_rv64_pkg::*;
   import bp_be_pkg::*;
-  #(parameter core_els_p = "inv"
+  #(parameter num_core_p = "inv"
     , parameter vaddr_width_p = "inv"
     , parameter lce_sets_p = "inv"
     , parameter cce_block_size_in_bytes_p = "inv"
@@ -15,7 +15,7 @@ module bp_be_csr
     , localparam fu_op_width_lp = `bp_be_fu_op_width
     , localparam csr_cmd_width_lp = `bp_be_csr_cmd_width
 
-    , localparam hartid_width_lp = `BSG_SAFE_CLOG2(core_els_p)
+    , localparam hartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
     , localparam reg_data_width_lp = rv64_reg_data_width_gp
     , localparam instr_width_lp = rv64_instr_width_gp
     , localparam csr_addr_width_lp = 12

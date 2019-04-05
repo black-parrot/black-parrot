@@ -18,9 +18,9 @@ parameter vaddr_width_p          ="inv"
 ,parameter num_lce_p             ="inv"
 ,parameter lce_id_p              ="inv"
 ,parameter block_size_in_bytes_p ="inv"
-,parameter btb_indx_width_p      ="inv"
-,parameter bht_indx_width_p      ="inv"
-,parameter ras_addr_width_p      ="inv"
+,parameter btb_idx_width_p      ="inv"
+,parameter bht_idx_width_p      ="inv"
+,parameter ras_idx_width_p      ="inv"
 ,parameter asid_width_p          ="inv"
 ,parameter instr_width_p         ="inv"
 ,parameter bp_first_pc_lp        =64'h00000000
@@ -61,7 +61,7 @@ localparam bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(eaddr_width_p
 
 // pc gen related parameters
 localparam instr_scan_width_lp=`bp_fe_instr_scan_width;
-localparam branch_metadata_fwd_width_lp=btb_indx_width_p+bht_indx_width_p+ras_addr_width_p;
+localparam branch_metadata_fwd_width_lp=btb_idx_width_p+bht_idx_width_p+ras_idx_width_p;
 localparam bp_fe_pc_gen_itlb_width_lp=`bp_fe_pc_gen_itlb_width(eaddr_width_p);
 localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p,branch_metadata_fwd_width_lp);
 localparam bp_fe_pc_gen_width_o_lp=`bp_fe_pc_gen_queue_width(vaddr_width_p,branch_metadata_fwd_width_lp);
@@ -236,9 +236,9 @@ mock_be
 .vaddr_width_p(vaddr_width_p)
 ,.paddr_width_p(paddr_width_p)
 ,.eaddr_width_p(eaddr_width_p)
-,.btb_indx_width_p(btb_indx_width_p)
-,.bht_indx_width_p(bht_indx_width_p)
-,.ras_addr_width_p(ras_addr_width_p)
+,.btb_idx_width_p(btb_idx_width_p)
+,.bht_idx_width_p(bht_idx_width_p)
+,.ras_idx_width_p(ras_idx_width_p)
 ,.asid_width_p(asid_width_p)
 ,.instr_width_p(instr_width_p)
 ) mock_be_1
@@ -259,9 +259,9 @@ bp_fe_top
 .vaddr_width_p(vaddr_width_p)
 ,.paddr_width_p(paddr_width_p)
 ,.eaddr_width_p(eaddr_width_p)
-,.btb_indx_width_p(btb_indx_width_p)
-,.bht_indx_width_p(bht_indx_width_p)
-,.ras_addr_width_p(ras_addr_width_p)
+,.btb_idx_width_p(btb_idx_width_p)
+,.bht_idx_width_p(bht_idx_width_p)
+,.ras_idx_width_p(ras_idx_width_p)
 ,.asid_width_p(asid_width_p)
 ,.bp_first_pc_p(bp_first_pc_lp)
 ,.instr_width_p(instr_width_p)

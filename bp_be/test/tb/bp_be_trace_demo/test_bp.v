@@ -9,7 +9,7 @@ module test_bp
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
  import bp_cce_pkg::*;
- #(parameter core_els_p                    = "inv"
+ #(parameter num_core_p                    = "inv"
    , parameter vaddr_width_p               = "inv"
    , parameter paddr_width_p               = "inv"
    , parameter asid_width_p                = "inv"

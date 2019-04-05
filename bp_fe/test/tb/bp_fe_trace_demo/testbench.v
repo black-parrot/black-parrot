@@ -9,7 +9,7 @@ module testbench
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
  import bp_cce_pkg::*;
- #(parameter core_els_p                    = "inv"
+ #(parameter num_core_p                    = "inv"
    , parameter vaddr_width_p               = "inv"
    , parameter paddr_width_p               = "inv"
    , parameter asid_width_p                = "inv"
@@ -23,9 +23,9 @@ module testbench
    , parameter cce_block_size_in_bytes_p   = "inv"
    , parameter cce_num_inst_ram_els_p      = "inv"
    , parameter btb_tag_width_p             = "inv"
-   , parameter btb_indx_width_p            = "inv"
-   , parameter bht_indx_width_p            = "inv"
-   , parameter ras_addr_width_p            = "inv"
+   , parameter btb_idx_width_p            = "inv"
+   , parameter bht_idx_width_p            = "inv"
+   , parameter ras_idx_width_p            = "inv"
 
    , parameter mem_els_p                   = "inv"
 
@@ -64,7 +64,7 @@ module testbench
    , input reset_i
    );
 
-`declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
+`declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
 `declare_bp_common_fe_be_if_structs(vaddr_width_p
                                     , paddr_width_p
                                     , asid_width_p
@@ -135,9 +135,9 @@ bp_fe_top
      #(.vaddr_width_p(vaddr_width_p)
        ,.paddr_width_p(paddr_width_p)
        ,.btb_tag_width_p(btb_tag_width_p)
-       ,.btb_indx_width_p(btb_indx_width_p)
-       ,.bht_indx_width_p(bht_indx_width_p)
-       ,.ras_addr_width_p(ras_addr_width_p)
+       ,.btb_idx_width_p(btb_idx_width_p)
+       ,.bht_idx_width_p(bht_idx_width_p)
+       ,.ras_idx_width_p(ras_idx_width_p)
        ,.asid_width_p(asid_width_p)
        ,.bp_first_pc_p(bp_first_pc_p) 
 
@@ -239,7 +239,7 @@ mock_be_trace
    ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
 
    ,.trace_ring_width_p(trace_ring_width_p)
-	,.core_els_p(core_els_p)
+	,.num_core_p(num_core_p)
   )
  be
   (.clk_i(clk_i)

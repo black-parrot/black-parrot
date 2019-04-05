@@ -1,6 +1,6 @@
 TB_PARAMS= -pvalue+trace_ring_width_p=124              \
            -pvalue+trace_rom_addr_width_p=32           \
-           -pvalue+core_els_p=1                        \
+           -pvalue+num_core_p=1                        \
            -pvalue+vaddr_width_p=39                    \
            -pvalue+asid_width_p=10                     \
            -pvalue+branch_metadata_fwd_width_p=36      \

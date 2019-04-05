@@ -13,7 +13,7 @@ module bp_be_mem_top
   import bp_be_pkg::*;
   import bp_be_rv64_pkg::*;
   import bp_be_dcache_pkg::*;
- #(parameter core_els_p                    = "inv"
+ #(parameter num_core_p                    = "inv"
    , parameter vaddr_width_p               = "inv"
    , parameter paddr_width_p               = "inv"
    , parameter asid_width_p                = "inv"
@@ -42,7 +42,7 @@ module bp_be_mem_top
    , localparam dcache_pkt_width_lp    = `bp_be_dcache_pkt_width(page_offset_width_lp
                                                                  , reg_data_width_lp
                                                                  )
-   , localparam proc_cfg_width_lp      = `bp_proc_cfg_width(core_els_p, num_lce_p)
+   , localparam proc_cfg_width_lp      = `bp_proc_cfg_width(num_core_p, num_lce_p)
    , localparam lce_id_width_lp        = `BSG_SAFE_CLOG2(num_lce_p)
 
    // MMU                                                              
@@ -138,7 +138,7 @@ module bp_be_mem_top
                                    , branch_metadata_fwd_width_p
                                    );
 
-`declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
+`declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
 `declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
 `declare_bp_be_dcache_pkt_s(page_offset_width_lp, reg_data_width_lp);
 
@@ -180,7 +180,7 @@ always_ff @(posedge clk_i)
 
 bp_be_csr
  #(.vaddr_width_p(vaddr_width_p)
-   ,.core_els_p(core_els_p)
+   ,.num_core_p(num_core_p)
    ,.lce_sets_p(lce_sets_p)
    ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
    )
