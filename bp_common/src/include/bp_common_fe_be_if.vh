@@ -29,7 +29,7 @@
 /*
  * Clients need only use this macro to declare all parameterized structs for FE<->BE interface.
  */
-`define declare_bp_common_fe_be_if_structs(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
+`define declare_bp_fe_be_if(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
   /*                                                                                               \
    *                                                                                               \
    * bp_fe_fetch_s contains the pc/instruction pair, along with additional                         \
@@ -183,6 +183,18 @@
       bp_fe_cmd_itlb_fence_s              itlb_fence;                                              \
     }  operands;                                                                                   \
   }  bp_fe_cmd_s;                                                                                  \
+
+
+/*
+ * Declare all fe-be widths at once as localparams
+ */
+`define declare_bp_fe_be_if_widths(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
+  , localparam fe_queue_width_lp=`bp_fe_queue_width(vaddr_width_mp,branch_metadata_fwd_width_mp) \
+  , localparam fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_mp                                   \
+                                                ,paddr_width_mp                                  \
+                                                ,asid_width_mp                                   \
+                                                ,branch_metadata_fwd_width_mp                    \
+                                                )
 
 /*
  * bp_fe_queue_s can either contain an instruction or exception.

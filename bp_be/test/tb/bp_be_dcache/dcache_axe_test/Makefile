@@ -7,7 +7,7 @@ BP_DIR = $(abspath ../../../../../)
 BP_COMMON_DIR = $(BP_DIR)/bp_common
 BP_BE_DIR = $(BP_DIR)/bp_be
 BP_ME_DIR = $(BP_DIR)/bp_me
-BSG_IP_CORES_DIR = $(BP_DIR)/bsg_ip_cores
+BSG_IP_CORES_DIR = $(BP_DIR)/basejump_stl
 EXTERNAL_DIR = $(BP_DIR)/external
 
 AXE = $(EXTERNAL_DIR)/bin/axe

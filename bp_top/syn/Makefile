@@ -7,10 +7,11 @@ SYN_PATH    := $(BP_TOP_DIR)/syn
 TB_PATH     := $(BP_TOP_DIR)/test/tb
 LOG_PATH    := $(BP_TOP_DIR)/syn/logs
 REPORT_PATH := $(BP_TOP_DIR)/syn/reports
+RUN_PATH    := $(BP_TOP_DIR)/syn/run
 
 # Default ROM to example
-DESIGN_NAME ?= bp_multi_top
-TB          ?= bp_single_trace_demo
+TB          ?= bp_top_trace_demo
+CFG         ?= e_bp_single_core_cfg
 
 .EXPORT_ALL_VARIABLES:
 

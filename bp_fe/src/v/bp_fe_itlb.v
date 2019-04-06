@@ -14,8 +14,7 @@ module bp_fe_itlb
    // Connections to ICache
    , input                             r_v_i
    , input [vtag_width_p-1:0]          r_vtag_i
-   , input [63:0]         vaddr_i
-   //, input [vaddr_width_p-1:0]         vaddr_i
+   , input [vaddr_width_p-1:0]         vaddr_i
      
    , output logic                      r_v_o
    , output logic [entry_width_lp-1:0] r_entry_o
@@ -27,8 +26,7 @@ module bp_fe_itlb
 
    , output logic                      miss_v_o
    , output logic [vtag_width_p-1:0]   miss_vtag_o
-   , output [63:0]                     miss_vaddr
-   //, output [vaddr_width_p-1:0]        miss_vaddr
+   , output [vaddr_width_p-1:0]        miss_vaddr
    );
 
 
@@ -44,7 +42,8 @@ assign miss_vaddr = itlb_miss_vaddr;
 
 always @(posedge clk_i)
   begin
-    ppn <= vaddr_i[ppn_start_bit_p+ptag_width_p-1:ppn_start_bit_p];
+    // TODO: This is a hack to fix.  Will get updated with real tlb
+    ppn <= ptag_width_p'(signed'(vaddr_i[ppn_start_bit_p+:vtag_width_p]));
     itlb_miss_vaddr <= vaddr_i;
   end
 

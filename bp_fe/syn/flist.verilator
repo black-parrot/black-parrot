@@ -19,6 +19,7 @@
 $BSG_IP_CORES_DIR/bsg_noc/bsg_noc_pkg.v
 // Interface packages
 $BP_COMMON_DIR/src/include/bp_common_pkg.vh
+$BP_COMMON_DIR/src/include/bp_common_aviary_pkg.vh
 // FE packages
 $BP_FE_DIR/src/include/bp_fe_icache_pkg.vh
 $BP_FE_DIR/src/include/bp_fe_itlb_pkg.vh
@@ -142,4 +143,4 @@ $BP_ME_DIR/src/v/network/bp_me_network_channel_data_resp.v
 $BP_ME_DIR/src/v/network/bp_me_network_pkt_encode_data_cmd.v
 $BP_ME_DIR/src/v/network/bp_me_network_pkt_encode_data_resp.v
 // TOP
-$BP_TOP_DIR/src/v/bp_multi_top.v
+$BP_TOP_DIR/src/v/bp_top.v
