@@ -1,5 +1,5 @@
 # Top-level module
-DESIGN_NAME ?= 
+DESIGN_NAME ?= wrapper
 
 # Run directory for DesignCompiler
 DC_RUN_DIR := $(SYN_PATH)/run_dc
@@ -15,7 +15,9 @@ deps.syn:
 	$(shell mkdir -p $(LOG_DIR))
 	$(shell mkdir -p $(REPORT_DIR))
 	$(shell mkdir -p $(DC_RUN_DIR))
-	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs > $(DC_RUN_DIR)/flist.vcs
+	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs > $(DC_RUN_DIR)/flist.vcs || true
+	@echo '$(DC_RUN_DIR)/wrapper.v' >> $(DC_RUN_DIR)/flist.vcs || true
+	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v > $(DC_RUN_DIR)/wrapper.v || true
 
 # Check if the design is synthesizable. This is not an actual synthesis run,
 # but rather runs analysis and elaboration on the design without linking any

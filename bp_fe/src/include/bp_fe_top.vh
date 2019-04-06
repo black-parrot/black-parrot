@@ -11,7 +11,7 @@
 
 
 `define declare_bp_fe_structs(vaddr_width_mp,paddr_width_mp,asid_width_mp,branch_metadata_fwd_width_mp)         \
-  `declare_bp_common_fe_be_if_structs(vaddr_width_mp,paddr_width_mp,asid_width_mp,branch_metadata_fwd_width_mp) \
+  `declare_bp_fe_be_if(vaddr_width_mp,paddr_width_mp,asid_width_mp,branch_metadata_fwd_width_mp) \
                                                                                                                 \
   typedef struct packed                                                                                         \
   {                                                                                                             \
