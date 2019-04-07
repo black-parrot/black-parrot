@@ -58,7 +58,7 @@ module bp_fe_pc_gen
    , input                                           fe_pc_gen_v_i
    , output logic                                    fe_pc_gen_ready_o
 
-   , input logic                                     tlb_miss_v_i
+   , input logic                                     itlb_miss_i
    );
 
 // Suppress unused signal warnings
@@ -122,8 +122,8 @@ logic                           icache_miss_recover;
 logic                           icache_miss_prev;
 
 // tlb miss recovery wires
-logic                           tlb_miss_recover;
-logic                           tlb_miss_prev;
+logic                           itlb_miss_recover;
+logic                           itlb_miss_r, itlb_miss_r2;
    
 logic [eaddr_width_p-1:0]       btb_target;
 logic [instr_width_p-1:0]       next_instr;
@@ -132,7 +132,6 @@ logic [instr_width_p-1:0]       last_instr;
 logic [instr_width_p-1:0]       instr_out;
 
 //control signals
-logic                          misalignment;
 logic                          predict;
 logic                          pc_redirect_after_icache_miss;
 logic                          stalled_pc_redirect;
@@ -140,6 +139,12 @@ logic                          bht_r_v_branch_jalr_inst;
 logic                          branch_inst;
 logic 		                     btb_r_v_i;
 logic 		                     previous_pc_gen_icache_v;
+
+//exceptions
+logic                          fe_exception_v;
+logic                          misalign_exception;
+logic                          itlb_miss_exception;
+
    
 bp_fe_branch_metadata_fwd_s fe_queue_branch_metadata, fe_queue_branch_metadata_r;
 
@@ -152,30 +157,34 @@ assign pc_gen_fe_o     = pc_gen_queue;
 assign fe_pc_gen_cmd   = fe_pc_gen_i;
 assign icache_pc_gen   = icache_pc_gen_i;
 
-assign misalignment    = fe_pc_gen_v_i
-                         && fe_pc_gen_cmd.pc_redirect_valid 
-                         && ~fe_pc_gen_cmd.pc[3:0] == 4'h0 
-                         && ~fe_pc_gen_cmd.pc[3:0] == 4'h4
-                         && ~fe_pc_gen_cmd.pc[3:0] == 4'h8
-                         && ~fe_pc_gen_cmd.pc[3:0] == 4'hC;
-
 assign btb_r_v_i       = previous_pc_gen_icache_v;
-   
+
+
+assign fe_exception_v     = misalign_exception | itlb_miss_exception;
+assign misalign_exception = fe_pc_gen_v_i
+                            & fe_pc_gen_cmd.pc_redirect_valid 
+                            & ~fe_pc_gen_cmd.pc[1:0] == 2'b00;
+                            
+assign itlb_miss_exception = ~itlb_miss_r2 & itlb_miss_r & itlb_miss_i;
 /* output wiring */
 // there should be fixes to the pc signal sent out according to the valid/ready signal pairs
-always_comb 
-  begin
-    pc_gen_queue.msg_type            = (misalignment) ?  e_fe_exception : e_fe_fetch;
-    pc_gen_exception.exception_code  = (misalignment) ? e_instr_addr_misaligned : e_illegal_instruction;
-    pc_gen_fetch.pc                  = icache_pc_gen.addr;
-    pc_gen_fetch.instr               = icache_pc_gen.instr;
-    pc_gen_fetch.branch_metadata_fwd = fe_queue_branch_metadata_r;
-    pc_gen_fetch.padding             = '0;
-    pc_gen_exception.padding         = '0;
-    pc_gen_queue.msg                 = (pc_gen_queue.msg_type == e_fe_fetch) ? pc_gen_fetch : pc_gen_exception;
-    pc_gen_icache.virt_addr          = pc_n;
-    pc_gen_itlb.virt_addr            = pc_n;
-  end
+
+assign pc_gen_queue.msg_type            = (fe_exception_v) ? e_fe_exception : e_fe_fetch;
+assign pc_gen_queue.msg                 = (fe_exception_v) ? pc_gen_exception : pc_gen_fetch;
+    
+assign pc_gen_exception.exception_code  = (misalign_exception) ? e_instr_addr_misaligned
+                                          : ((itlb_miss_exception)? e_itlb_miss
+                                          : e_illegal_instruction);
+assign pc_gen_exception.vaddr           = pc_f2[0+:vaddr_width_p];
+assign pc_gen_exception.padding         = '0;
+    
+assign pc_gen_fetch.pc                  = icache_pc_gen.addr;
+assign pc_gen_fetch.instr               = icache_pc_gen.instr;
+assign pc_gen_fetch.branch_metadata_fwd = fe_queue_branch_metadata_r;
+assign pc_gen_fetch.padding             = '0;
+    
+assign pc_gen_icache.virt_addr          = pc_n;
+assign pc_gen_itlb.virt_addr            = pc_n;
    
 //valid-ready signals assignments
 always_comb 
@@ -189,18 +198,18 @@ begin
   else 
     begin
       fe_pc_gen_ready_o = ~stall & fe_pc_gen_v_i;
-      pc_gen_fe_v_o     = pc_gen_fe_ready_i & icache_pc_gen_v_i & ~icache_miss_i & pc_v_f2 & ~tlb_miss_v_i;
-      pc_gen_icache_v_o = pc_gen_fe_ready_i && ~icache_miss_i;
+      pc_gen_fe_v_o     = pc_gen_fe_ready_i & pc_v_f2 & (icache_pc_gen_v_i | fe_exception_v);
+      pc_gen_icache_v_o = pc_gen_fe_ready_i & pc_gen_icache_ready_i & ~icache_miss_i & ~itlb_miss_i;
     end
 end
 
 assign pc_v_f1 = ~((predict_taken & ~btb_pred_f2_r));
 
 // stall logic
-assign stall = ~pc_gen_fe_ready_i | (~pc_gen_icache_ready_i &  ~tlb_miss_v_i) | icache_miss_i;
+assign stall = ~pc_gen_fe_ready_i | itlb_miss_r | icache_miss_i;
 
 assign icache_miss_recover = icache_miss_prev & (~icache_miss_i);
-assign tlb_miss_recover    = tlb_miss_prev & (~tlb_miss_v_i);
+assign itlb_miss_recover    = itlb_miss_r & (~itlb_miss_i);
    
 // icache and  itlb miss recover logic
 always_ff @(posedge clk_i)
@@ -208,12 +217,14 @@ begin
     if (reset_i)
     begin
         icache_miss_prev <= '0;
-        tlb_miss_prev    <= '0;
+        itlb_miss_r      <= '0;
+        itlb_miss_r2     <= '0;
     end
     else
     begin
         icache_miss_prev <= icache_miss_i;
-        tlb_miss_prev    <= tlb_miss_v_i;
+        itlb_miss_r      <= itlb_miss_i;
+        itlb_miss_r2     <= itlb_miss_r;
     end
 end
 
@@ -228,7 +239,7 @@ begin
         pc_n = fe_pc_gen_cmd.pc;
     end
     // if we've missed in the itlb
-    else if (tlb_miss_recover)
+    else if (itlb_miss_recover)
     begin
         pc_n = pc_f1; 
     end
