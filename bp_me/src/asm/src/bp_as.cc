@@ -318,8 +318,10 @@ Assembler::setImm(bp_cce_inst_s *inst, string &target_str) {
 
 void
 Assembler::parseBranch(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
+  // Branch Immediate
   if (tokens->size() == 2) {
     setImm(inst, tokens->at(1));
+  // Branch Flag or Branch Queue Ready
   } else if (tokens->size() == 3) {
     inst->src_a = parseSrcOpd(tokens->at(1));
     if (!strcmp("bf", tokens->at(0).c_str()) || !strcmp("bqr", tokens->at(0).c_str())) {
@@ -328,6 +330,7 @@ Assembler::parseBranch(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
       inst->src_b = e_src_const_0;
     }
     setImm(inst, tokens->at(2));
+  // Branch
   } else if (tokens->size() == 4) {
     if (!strcmp("bge", tokens->at(0).c_str()) || !strcmp("bgt", tokens->at(0).c_str())) {
       inst->src_a = parseSrcOpd(tokens->at(2));
