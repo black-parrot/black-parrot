@@ -185,7 +185,8 @@ logic [reg_data_width_lp-1:0] bypass_frs1, bypass_frs2;
 logic [reg_data_width_lp-1:0] bypass_rs1 , bypass_rs2;
 
 // Exception signals
-logic illegal_instr_isd, csr_instr_isd, ret_instr_isd, cache_miss_mem3, tlb_miss_mem2;
+logic illegal_instr_isd, csr_instr_isd, ret_instr_isd, itlb_fill_exc_isd;
+logic cache_miss_mem3, tlb_miss_mem2;
 
 // Pipeline stage registers
 bp_be_pipe_stage_reg_s [pipe_stage_els_lp-1:0] calc_stage_r;
@@ -285,13 +286,20 @@ bsg_dff_reset_en
 
 // Decode the dispatched instruction
 bp_be_instr_decoder
+ #(.vaddr_width_p(vaddr_width_p)
+   ,.paddr_width_p(paddr_width_p)
+   ,.asid_width_p(asid_width_p)
+   ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+   )
  instr_decoder
   (.instr_i(issue_pkt_r.instr)
+   ,.instr_metadata_i(issue_pkt_r.instr_metadata)
 
    ,.decode_o(decoded)
    ,.illegal_instr_o(illegal_instr_isd)
    ,.ret_instr_o(ret_instr_isd)
    ,.csr_instr_o(csr_instr_isd)
+   ,.itlb_fill_exc_o(itlb_fill_exc_isd)
    );
 
 // Bypass the instruction operands from written registers in the stack
@@ -720,6 +728,8 @@ always_comb
         exc_stage_n[0].illegal_instr_v = dispatch_pkt.decode.instr_v & illegal_instr_isd;
         exc_stage_n[0].ret_instr_v     = ret_instr_isd;
         exc_stage_n[0].csr_instr_v     = csr_instr_isd;
+        exc_stage_n[0].itlb_fill_v     = itlb_fill_exc_isd;
+        exc_stage_n[0].pc              = dispatch_pkt.instr_metadata.pc;
 
         exc_stage_n[0].roll_v          =                           chk_roll_i;
         exc_stage_n[1].roll_v          = exc_stage_r[0].roll_v   | chk_roll_i;
