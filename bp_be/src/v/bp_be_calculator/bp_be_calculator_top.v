@@ -690,6 +690,7 @@ always_comb
                                               & calc_stage_r[i].frf_w_v;
         calc_status.dep_status[i].rd_addr   = calc_stage_r[i].rd_addr;
         calc_status.dep_status[i].stall_v   = exc_stage_r[i].csr_instr_v
+                                              | exc_stage_r[i].itlb_fill_v
                                               | exc_stage_r[i].ret_instr_v;
       end
 
@@ -700,7 +701,8 @@ always_comb
     calc_status.mem3_cache_miss_v = cache_miss_mem3 & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v; 
     calc_status.mem2_tlb_miss_v   = exc_stage_r[1].tlb_miss_v & calc_stage_r[1].pipe_mem_v & ~exc_stage_r[1].poison_v;
     calc_status.mem3_tlb_miss_v   = exc_stage_r[2].tlb_miss_v & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v;
-    calc_status.mem3_exception_v  = exc_stage_r[2].illegal_instr_v & ~exc_stage_r[2].poison_v;
+    calc_status.mem3_exception_v  = ~exc_stage_r[2].poison_v & (exc_stage_r[2].illegal_instr_v
+                                                                | exc_stage_r[2].itlb_fill_v);
     calc_status.mem3_ret_v        = exc_stage_r[2].ret_instr_v & ~exc_stage_r[2].poison_v;
     calc_status.instr_cmt_v       = calc_stage_r[2].instr_v & ~exc_stage_r[2].roll_v;
           
@@ -726,11 +728,11 @@ always_comb
         exc_stage_n[i] = (i == 0) ? '0 : exc_stage_r[i-1];
       end
         // If there are new exceptions, add them to the list
-        exc_stage_n[0].illegal_instr_v = dispatch_pkt.decode.instr_v & illegal_instr_isd;
-        exc_stage_n[0].ret_instr_v     = ret_instr_isd;
-        exc_stage_n[0].csr_instr_v     = csr_instr_isd;
-        exc_stage_n[0].itlb_fill_v     = itlb_fill_exc_isd;
-        exc_stage_n[0].pc              = dispatch_pkt.instr_metadata.pc;
+        exc_stage_n[0].illegal_instr_v = (fe_nop_v | be_nop_v | me_nop_v)? '0 : dispatch_pkt.decode.instr_v & illegal_instr_isd;
+        exc_stage_n[0].ret_instr_v     = (fe_nop_v | be_nop_v | me_nop_v)? '0 : ret_instr_isd;
+        exc_stage_n[0].csr_instr_v     = (fe_nop_v | be_nop_v | me_nop_v)? '0 : csr_instr_isd;
+        exc_stage_n[0].itlb_fill_v     = (fe_nop_v | be_nop_v | me_nop_v)? '0 : itlb_fill_exc_isd;
+        exc_stage_n[0].pc              = (fe_nop_v | be_nop_v | me_nop_v)? '0 : dispatch_pkt.instr_metadata.pc;
 
         exc_stage_n[0].roll_v          =                           chk_roll_i;
         exc_stage_n[1].roll_v          = exc_stage_r[0].roll_v   | chk_roll_i;
