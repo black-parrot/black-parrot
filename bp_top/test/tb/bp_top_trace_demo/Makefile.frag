@@ -1,6 +1,6 @@
 TRACE_REPLAY ?= 1
 
-DUT_PARAMS = -pvalue+cce_num_inst_ram_els_p=256
+DUT_PARAMS = 
 
 TB_PARAMS =  -pvalue+trace_ring_width_p=129          \
              -pvalue+trace_rom_addr_width_p=32       \

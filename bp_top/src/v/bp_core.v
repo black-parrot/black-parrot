@@ -10,7 +10,7 @@ module bp_core
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
-  #(parameter bp_cfgs_e cfg_p = e_bp_inv_cfg
+  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p
                                 ,paddr_width_p
@@ -92,20 +92,8 @@ module bp_core
   bp_proc_cfg_s proc_cfg;
   assign proc_cfg = proc_cfg_i;
   bp_fe_top
-   #(.vaddr_width_p(vaddr_width_p)
-     ,.paddr_width_p(paddr_width_p)
-     ,.btb_tag_width_p(btb_tag_width_p)
-     ,.btb_idx_width_p(btb_idx_width_p)
-     ,.bht_idx_width_p(bht_idx_width_p)
-     ,.ras_idx_width_p(ras_idx_width_p)
-     ,.asid_width_p(asid_width_p)
+   #(.cfg_p(cfg_p)
      ,.bp_first_pc_p(bp_pc_entry_point_gp) /* TODO: Not ideal to couple to RISCV-tests */
-
-     ,.lce_sets_p(lce_sets_p)
-     ,.lce_assoc_p(lce_assoc_p)
-     ,.num_cce_p(num_cce_p)
-     ,.num_lce_p(num_lce_p)
-     ,.cce_block_size_in_bytes_p(cce_block_width_p/8) 
      ) 
    fe 
     (.clk_i(clk_i)
@@ -187,16 +175,7 @@ module bp_core
      );
 
   bp_be_top 
-   #(.vaddr_width_p(vaddr_width_p)
-     ,.paddr_width_p(paddr_width_p)
-     ,.asid_width_p(asid_width_p)
-     ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
-     ,.num_core_p(num_core_p)
-     ,.num_cce_p(num_cce_p)
-     ,.num_lce_p(num_lce_p)
-     ,.lce_assoc_p(lce_assoc_p)
-     ,.lce_sets_p(lce_sets_p)
-     ,.cce_block_size_in_bytes_p(cce_block_width_p/8)
+   #(.cfg_p(cfg_p)
      ,.trace_p(trace_p)
      )
    be

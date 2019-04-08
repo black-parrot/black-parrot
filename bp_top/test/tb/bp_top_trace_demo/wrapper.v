@@ -10,22 +10,19 @@ module wrapper
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_cce_pkg::*;
- #(parameter bp_cfgs_e cfg_p = BP_CFG_FLOWVAR
+ #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR
    `declare_bp_proc_params(cfg_p)
    `declare_bp_me_if_widths(paddr_width_p, dword_width_p, num_lce_p, lce_assoc_p)
 
    // Used to enable trace replay outputs for testbench
    , parameter trace_p = 1
-
-   // This will go away with the manycore bridge
-   , parameter cce_num_inst_ram_els_p = 144
    )
   (input                                                      clk_i
    , input                                                    reset_i
 
    // This will go away with the manycore bridge
-   , output logic [num_cce_p-1:0][`BSG_SAFE_CLOG2(cce_num_inst_ram_els_p)-1:0] cce_inst_boot_rom_addr_o
-   , input logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]                       cce_inst_boot_rom_data_i
+   , output logic [num_cce_p-1:0][`BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)-1:0] cce_inst_boot_rom_addr_o
+   , input logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]                        cce_inst_boot_rom_data_i
 
    , input [num_cce_p-1:0][mem_cce_resp_width_lp-1:0]         mem_resp_i
    , input [num_cce_p-1:0]                                    mem_resp_v_i
@@ -55,7 +52,6 @@ module wrapper
   bp_top 
    #(.cfg_p(cfg_p)
      ,.trace_p(trace_p)
-     ,.cce_num_inst_ram_els_p(cce_num_inst_ram_els_p)
      )
    dut
     (.*);

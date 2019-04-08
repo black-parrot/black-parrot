@@ -1,22 +1,17 @@
 /*                                  
-* bp_fe_top.v                                                                                                                                                                                          
-* */
+ * bp_fe_top.v 
+ */
 
 module bp_fe_top
  import bp_fe_pkg::*;
  import bp_common_pkg::*;
-/*TODO should this come from backend?*/
+ import bp_common_aviary_pkg::*;
  import bp_be_rv64_pkg::*;  
- #(parameter   vaddr_width_p="inv" 
-   , parameter paddr_width_p="inv" 
+ #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+   `declare_bp_proc_params(cfg_p)
 
-   // icache related parameters 
-   , parameter num_cce_p="inv"
-   , parameter num_lce_p="inv"
-   /*TODO change this based on other files*/
-   , parameter lce_assoc_p="inv"
-   , parameter lce_sets_p="inv"
-   , parameter cce_block_size_in_bytes_p="inv"
+   , parameter bp_first_pc_p             = "inv"
+   , parameter cce_block_size_in_bytes_p = cce_block_width_p / 8
 
    , localparam data_width_p      = rv64_reg_data_width_gp
    , localparam eaddr_width_lp    = rv64_eaddr_width_gp
@@ -54,12 +49,6 @@ module bp_fe_top
 
   
    // pc gen related parameters
-   , parameter btb_tag_width_p="inv"
-   , parameter btb_idx_width_p="inv"
-   , parameter bht_idx_width_p="inv"
-   , parameter ras_idx_width_p="inv"
-   , parameter asid_width_p="inv"
-   , parameter bp_first_pc_p="inv"
    , localparam instr_scan_width_lp=`bp_fe_instr_scan_width
    , localparam branch_metadata_fwd_width_lp=`bp_fe_branch_metadata_fwd_width(btb_tag_width_p,btb_idx_width_p,bht_idx_width_p,ras_idx_width_p)
    , localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p
