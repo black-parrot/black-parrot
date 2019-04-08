@@ -1,7 +1,6 @@
-TRACE_REPLAY?=1
+TRACE_REPLAY ?= 1
 
-TB_PARAMS=-pvalue+cce_num_inst_ram_els_p=256           \
-          -pvalue+boot_rom_els_p=512                   \
+TB_PARAMS=-pvalue+boot_rom_els_p=512                   \
           -pvalue+boot_rom_width_p=512                 \
           -pvalue+trace_ring_width_p=129               \
           -pvalue+trace_rom_addr_width_p=32            \
@@ -10,7 +9,6 @@ TB_PARAMS=-pvalue+cce_num_inst_ram_els_p=256           \
 DUT_PARAMS= \
            -pvalue+trace_p=$(TRACE_REPLAY)             \
            -pvalue+calc_debug_p=1                      \
-           -pvalue+bp_cfg_p=e_bp_single_core
 
 HDL_DEFINES=+define+BSG_CORE_CLOCK_PERIOD=10
 

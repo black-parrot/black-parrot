@@ -4,92 +4,48 @@
 
 module testbench
  import bp_common_pkg::*;
+ import bp_common_aviary_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
  import bp_be_dcache_pkg::*;
  import bp_cce_pkg::*;
- #(parameter vaddr_width_p                 = "inv"
-   , parameter paddr_width_p               = "inv"
-   , parameter asid_width_p                = "inv"
-   , parameter branch_metadata_fwd_width_p = "inv"
-   , parameter btb_idx_width_p            = "inv"
-   , parameter bht_idx_width_p            = "inv"
-   , parameter ras_idx_width_p            = "inv"
-   , parameter num_core_p                  = "inv"
-   , parameter num_cce_p                   = "inv"
-   , parameter num_lce_p                   = "inv"
-   , parameter lce_sets_p                  = "inv"
-   , parameter lce_assoc_p                 = "inv"
-   , parameter block_size_in_bytes_p       = "inv"
-   , parameter num_inst_ram_els_p          = "inv"
+ #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
+   `declare_bp_proc_params(cfg_p)
+   `declare_bp_me_if_widths(paddr_width_p, dword_width_p, num_lce_p, lce_assoc_p)
+   `declare_bp_lce_cce_if_widths(num_cce_p
+                                 ,num_lce_p
+                                 ,paddr_width_p
+                                 ,lce_assoc_p
+                                 ,dword_width_p
+                                 ,cce_block_width_p
+                                 )
+
    , parameter mem_els_p                   = "inv"
 
    // Trace replay parameters
    , parameter trace_ring_width_p          = "inv"
    , parameter trace_rom_addr_width_p      = "inv"
-   , localparam trace_rom_data_width_lp    = trace_ring_width_p + 4
+   , localparam trace_rom_dword_width_p    = trace_ring_width_p + 4
 
    // Test program related parameters
    , parameter boot_rom_els_p              = "inv"
    , parameter boot_rom_width_p            = "inv"
    , localparam lg_boot_rom_els_lp         = `BSG_SAFE_CLOG2(boot_rom_els_p)
 
-   // From RISC-V specifications
-   , localparam data_width_lp = rv64_dword_width_gp
-   , localparam word_width_lp = rv64_word_width_gp
-   , localparam half_width_lp = rv64_hword_width_gp
-   , localparam byte_width_lp = rv64_byte_width_gp
-
    // D$ calculated parameters
    , localparam word_offset_width_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
    , localparam index_width_lp       = `BSG_SAFE_CLOG2(lce_sets_p)
-   , localparam data_mask_width_lp   = (data_width_lp>>3)
+   , localparam data_mask_width_lp   = (dword_width_p>>3)
    , localparam byte_offset_width_lp = `BSG_SAFE_CLOG2(data_mask_width_lp)
    , localparam page_offset_width_lp = word_offset_width_lp+index_width_lp+byte_offset_width_lp
    , localparam ptag_width_lp        = paddr_width_p-page_offset_width_lp
 
    // For the D$, cache block size is number of ways multiplied by D$ "word" size
-   , localparam block_size_in_bits_lp = 8 * block_size_in_bytes_p
    , localparam bp_be_dcache_pkt_width_lp = `bp_be_dcache_pkt_width(page_offset_width_lp
-                                                                    , data_width_lp
+                                                                    , dword_width_p
                                                                     )
 
-   , localparam lce_cce_req_width_lp       = `bp_lce_cce_req_width(num_cce_p
-                                                                   , num_lce_p
-                                                                   , paddr_width_p
-                                                                   , lce_assoc_p
-                                                                   , data_width_lp
-                                                                   )
-   , localparam lce_cce_resp_width_lp      = `bp_lce_cce_resp_width(num_cce_p
-                                                                    , num_lce_p
-                                                                    , paddr_width_p
-                                                                    )
-   , localparam lce_cce_data_resp_width_lp = `bp_lce_cce_data_resp_width(num_cce_p
-                                                                         , num_lce_p
-                                                                         , paddr_width_p
-                                                                         , block_size_in_bytes_p
-                                                                         )
-   , localparam cce_lce_cmd_width_lp       = `bp_cce_lce_cmd_width(num_cce_p
-                                                                   , num_lce_p
-                                                                   , paddr_width_p
-                                                                   , lce_assoc_p
-                                                                   )
-   , localparam lce_data_cmd_width_lp  = `bp_lce_data_cmd_width(num_lce_p
-                                                                , block_size_in_bytes_p
-                                                                , lce_assoc_p
-                                                                )
-
-   , localparam cce_inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_inst_ram_els_p)
-
-   , localparam bp_mem_cce_resp_width_lp=
-     `bp_mem_cce_resp_width(paddr_width_p,num_lce_p,lce_assoc_p)
-   , localparam bp_mem_cce_data_resp_width_lp=
-     `bp_mem_cce_data_resp_width(paddr_width_p,block_size_in_bits_lp,num_lce_p,lce_assoc_p)
-   , localparam bp_cce_mem_cmd_width_lp=
-     `bp_cce_mem_cmd_width(paddr_width_p,num_lce_p,lce_assoc_p)
-   , localparam bp_cce_mem_data_cmd_width_lp=
-     `bp_cce_mem_data_cmd_width(paddr_width_p,block_size_in_bits_lp,num_lce_p,lce_assoc_p)
-
+   , localparam cce_inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
    )
   (input clk_i
    , input reset_i
@@ -101,17 +57,17 @@ module testbench
                                     , asid_width_p
                                     , branch_metadata_fwd_width_p
                                     )
-`declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, data_width_lp);
+`declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p);
 `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
-`declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, block_size_in_bits_lp);
+`declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, cce_block_width_p);
 `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
-`declare_bp_lce_data_cmd_s(num_lce_p, block_size_in_bits_lp, lce_assoc_p);
+`declare_bp_lce_data_cmd_s(num_lce_p, cce_block_width_p, lce_assoc_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p
                                    , paddr_width_p
                                    , asid_width_p
                                    , branch_metadata_fwd_width_p
                                    )
-`declare_bp_be_dcache_pkt_s(page_offset_width_lp, data_width_lp);
+`declare_bp_be_dcache_pkt_s(page_offset_width_lp, dword_width_p);
 
 // LCE-CCE connection
 bp_cce_lce_cmd_s [1:0] cce_lce_cmd_li;
@@ -140,7 +96,7 @@ logic [trace_ring_width_p-1:0]      tr_data_lo;
 logic tr_v_lo, tr_yumi_li;
 
 logic [trace_rom_addr_width_p-1:0]  tr_rom_addr_li;
-logic [trace_rom_data_width_lp-1:0] tr_rom_data_lo;
+logic [trace_rom_dword_width_p-1:0] tr_rom_data_lo;
 
 logic test_done;
 
@@ -150,7 +106,7 @@ logic [1:0] dcache_ready_lo;
 
 logic [1:0] [ptag_width_lp-1:0] dcache_paddr_li;
 
-logic [1:0] [data_width_lp-1:0] dcache_data_lo;
+logic [1:0] [dword_width_p-1:0] dcache_data_lo;
 logic [1:0]  dcache_v_lo;
 
 logic [1:0] dcache_miss_lo;
@@ -173,32 +129,25 @@ logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]         cce_inst_boot_rom_data;
 
 // Memory End
 
-logic [num_cce_p-1:0][bp_mem_cce_resp_width_lp-1:0] mem_resp;
+logic [num_cce_p-1:0][mem_cce_resp_width_lp-1:0] mem_resp;
 logic [num_cce_p-1:0] mem_resp_v;
 logic [num_cce_p-1:0] mem_resp_ready;
 
-logic [num_cce_p-1:0][bp_mem_cce_data_resp_width_lp-1:0] mem_data_resp;
+logic [num_cce_p-1:0][mem_cce_data_resp_width_lp-1:0] mem_data_resp;
 logic [num_cce_p-1:0] mem_data_resp_v;
 logic [num_cce_p-1:0] mem_data_resp_ready;
 
-logic [num_cce_p-1:0][bp_cce_mem_cmd_width_lp-1:0] mem_cmd;
+logic [num_cce_p-1:0][cce_mem_cmd_width_lp-1:0] mem_cmd;
 logic [num_cce_p-1:0] mem_cmd_v;
 logic [num_cce_p-1:0] mem_cmd_yumi;
 
-logic [num_cce_p-1:0][bp_cce_mem_data_cmd_width_lp-1:0] mem_data_cmd;
+logic [num_cce_p-1:0][cce_mem_data_cmd_width_lp-1:0] mem_data_cmd;
 logic [num_cce_p-1:0] mem_data_cmd_v;
 logic [num_cce_p-1:0] mem_data_cmd_yumi;
 
-bp_me_top 
- #(.num_lce_p(num_lce_p)
-   ,.num_cce_p(num_cce_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.lce_assoc_p(lce_assoc_p)
-   ,.lce_sets_p(lce_sets_p)
-   ,.block_size_in_bytes_p(block_size_in_bytes_p)
-   ,.num_inst_ram_els_p(num_inst_ram_els_p)
-   )
- DUT
+wrapper 
+ #(.cfg_p(cfg_p))
+ wrapper
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
@@ -263,11 +212,11 @@ bp_mem
     ,.num_cce_p(num_cce_p)
     ,.paddr_width_p(paddr_width_p)
     ,.lce_assoc_p(lce_assoc_p)
-    ,.block_size_in_bytes_p(block_size_in_bits_lp/8)
+    ,.block_size_in_bytes_p(cce_block_width_p/8)
     ,.lce_sets_p(lce_sets_p)
-    ,.lce_req_data_width_p(data_width_lp)
+    ,.lce_req_data_width_p(dword_width_p)
     ,.mem_els_p(mem_els_p)
-    ,.boot_rom_width_p(block_size_in_bits_lp)
+    ,.boot_rom_width_p(cce_block_width_p)
     ,.boot_rom_els_p(boot_rom_els_p)
   )
   bp_mem
@@ -340,7 +289,7 @@ bp_trace_rom
    );
 
 bp_be_dcache 
- #(.data_width_p(data_width_lp)
+ #(.data_width_p(dword_width_p)
    ,.sets_p(lce_sets_p)
    ,.ways_p(lce_assoc_p)
    ,.paddr_width_p(paddr_width_p)
@@ -397,7 +346,7 @@ bp_be_dcache
 
 
 bp_be_dcache 
- #(.data_width_p(data_width_lp)
+ #(.data_width_p(dword_width_p)
    ,.sets_p(lce_sets_p)
    ,.ways_p(lce_assoc_p)
    ,.paddr_width_p(paddr_width_p)
@@ -456,19 +405,19 @@ always_comb begin
       // Trace replay will not fail (only stall).  We could do better if the trace format 
       // was a little more advanced
       // This fetch thing is a hack, but is necessary unless we change the trace format
-      tr_is_fetch     = tr_data_lo[data_width_lp+paddr_width_p+:4]  == 4'b1111;
-      tr_icache_match = tr_data_lo[0+:data_width_lp] == dcache_data_lo[0];
-      tr_dcache_match = tr_data_lo[0+:data_width_lp] == dcache_data_lo[1];
+      tr_is_fetch     = tr_data_lo[dword_width_p+paddr_width_p+:4]  == 4'b1111;
+      tr_icache_match = tr_data_lo[0+:dword_width_p] == dcache_data_lo[0];
+      tr_dcache_match = tr_data_lo[0+:dword_width_p] == dcache_data_lo[1];
 
       rolly_dcache_pkt_li[0].opcode      = e_dcache_opcode_lwu;
-      rolly_dcache_pkt_li[0].page_offset = tr_data_lo[data_width_lp+:page_offset_width_lp];
-      rolly_dcache_pkt_li[0].data        = tr_data_lo[0+:data_width_lp];
-      rolly_paddr_li[0]                  = tr_data_lo[data_width_lp+page_offset_width_lp+:ptag_width_lp];
+      rolly_dcache_pkt_li[0].page_offset = tr_data_lo[dword_width_p+:page_offset_width_lp];
+      rolly_dcache_pkt_li[0].data        = tr_data_lo[0+:dword_width_p];
+      rolly_paddr_li[0]                  = tr_data_lo[dword_width_p+page_offset_width_lp+:ptag_width_lp];
 
-      rolly_dcache_pkt_li[1].opcode      = bp_be_dcache_opcode_e'(tr_data_lo[data_width_lp+paddr_width_p+:4]);
-      rolly_dcache_pkt_li[1].page_offset = tr_data_lo[data_width_lp+:page_offset_width_lp];
-      rolly_dcache_pkt_li[1].data        = tr_data_lo[0+:data_width_lp];
-      rolly_paddr_li[1]                  = tr_data_lo[data_width_lp+page_offset_width_lp+:ptag_width_lp];
+      rolly_dcache_pkt_li[1].opcode      = bp_be_dcache_opcode_e'(tr_data_lo[dword_width_p+paddr_width_p+:4]);
+      rolly_dcache_pkt_li[1].page_offset = tr_data_lo[dword_width_p+:page_offset_width_lp];
+      rolly_dcache_pkt_li[1].data        = tr_data_lo[0+:dword_width_p];
+      rolly_paddr_li[1]                  = tr_data_lo[dword_width_p+page_offset_width_lp+:ptag_width_lp];
 
   if (tr_icache_match)
     begin

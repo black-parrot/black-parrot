@@ -9,8 +9,8 @@ LOG_PATH    := $(BP_BE_DIR)/syn/logs
 REPORT_PATH := $(BP_BE_DIR)/syn/reports
 
 # Default ROM to example
-DESIGN_NAME ?= bp_be_top
 TB          ?= bp_be_trace_demo
+CFG         ?= e_bp_half_core_cfg
 
 .EXPORT_ALL_VARIABLES:
 

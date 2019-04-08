@@ -10,7 +10,7 @@ module testbench
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_cce_pkg::*;
- #(parameter bp_cfgs_e cfg_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
+ #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
    `declare_bp_proc_params(cfg_p)
    `declare_bp_me_if_widths(paddr_width_p, dword_width_p, num_lce_p, lce_assoc_p)
 
@@ -18,11 +18,10 @@ module testbench
    , parameter mem_els_p                   = "inv"
 
    // These should go away with the manycore bridge
-   , parameter boot_rom_width_p            = "inv"
-   , parameter boot_rom_els_p              = "inv"
-   , localparam lg_boot_rom_els_lp         = `BSG_SAFE_CLOG2(boot_rom_els_p)
-   , parameter cce_num_inst_ram_els_p      = "inv"
-   , localparam cce_inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(cce_num_inst_ram_els_p)
+   , parameter boot_rom_width_p             = "inv"
+   , parameter boot_rom_els_p               = "inv"
+   , localparam lg_boot_rom_els_lp          = `BSG_SAFE_CLOG2(boot_rom_els_p)
+   , localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
 
    // Trace replay parameters
    , parameter trace_p                     = "inv"
@@ -37,8 +36,8 @@ module testbench
 logic [num_cce_p-1:0][lg_boot_rom_els_lp-1:0] boot_rom_addr;
 logic [num_cce_p-1:0][boot_rom_width_p-1:0]   boot_rom_data;
 
-logic [num_cce_p-1:0][cce_inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
-logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]         cce_inst_boot_rom_data;
+logic [num_cce_p-1:0][cce_instr_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
+logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]          cce_inst_boot_rom_data;
 
 logic [num_core_p-1:0][trace_ring_width_p-1:0] tr_data_i;
 logic [num_core_p-1:0] tr_v_i, tr_ready_o;
@@ -68,7 +67,6 @@ logic [num_cce_p-1:0] mem_data_cmd_v, mem_data_cmd_yumi;
 
    wrapper
     #(.cfg_p(cfg_p)
-      ,.cce_num_inst_ram_els_p(cce_num_inst_ram_els_p)
       ,.trace_p(trace_p)
       )
     wrapper
@@ -142,7 +140,7 @@ logic [num_cce_p-1:0] mem_data_cmd_v, mem_data_cmd_yumi;
 
        bp_cce_inst_rom
         #(.width_p(`bp_cce_inst_width)
-          ,.addr_width_p(cce_inst_ram_addr_width_lp)
+          ,.addr_width_p(cce_instr_ram_addr_width_lp)
           )
         cce_inst_rom
          (.addr_i(cce_inst_boot_rom_addr[i])

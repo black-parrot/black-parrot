@@ -8,59 +8,31 @@
 
 module bp_be_top
  import bp_common_pkg::*;
+ import bp_common_aviary_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
- #(parameter vaddr_width_p                 = "inv"
-   , parameter paddr_width_p               = "inv"
-   , parameter asid_width_p                = "inv"
-   , parameter branch_metadata_fwd_width_p = "inv"
+ #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+    `declare_bp_proc_params(cfg_p)
+    `declare_bp_fe_be_if_widths(vaddr_width_p
+                                ,paddr_width_p
+                                ,asid_width_p
+                                ,branch_metadata_fwd_width_p
+                                )
+    `declare_bp_lce_cce_if_widths(num_cce_p
+                                  ,num_lce_p
+                                  ,paddr_width_p
+                                  ,lce_assoc_p
+                                  ,dword_width_p
+                                  ,cce_block_width_p
+                                  )
 
-   , parameter num_core_p                  = "inv"
-
+   // Default parameters 
    , parameter load_to_use_forwarding_p    = 1
    , parameter trace_p                     = 0
    , parameter calc_debug_p                = 0
    , parameter calc_debug_file_p           = "calc_debug.log"
 
-   // MMU parameters
-   , parameter num_cce_p                   = "inv"
-   , parameter num_lce_p                   = "inv"
-   , parameter lce_assoc_p                 = "inv"
-   , parameter lce_sets_p                  = "inv"
-   , parameter cce_block_size_in_bytes_p   = "inv"
- 
-   // Generated parameters
-   , localparam lce_data_width_lp = cce_block_size_in_bytes_p * 8
-   , localparam fe_queue_width_lp          = `bp_fe_queue_width(vaddr_width_p
-                                                                , branch_metadata_fwd_width_p)
-   , localparam fe_cmd_width_lp            = `bp_fe_cmd_width(vaddr_width_p
-                                                              , paddr_width_p
-                                                              , asid_width_p
-                                                              , branch_metadata_fwd_width_p
-                                                              )
-  , parameter data_width_p = rv64_reg_data_width_gp
-
-    , localparam lce_cce_req_width_lp=
-      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p,lce_assoc_p, data_width_p)
-    , localparam lce_cce_resp_width_lp=
-      `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
-    , localparam lce_cce_data_resp_width_lp=
-      `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_lp)
-    , localparam cce_lce_cmd_width_lp=
-      `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p)
-    , localparam lce_data_cmd_width_lp=
-      `bp_lce_data_cmd_width(num_lce_p, lce_data_width_lp, lce_assoc_p)
-
-
    , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(num_core_p, num_lce_p)
-
-   , localparam fu_op_width_lp             = `bp_be_fu_op_width
-
-   // From RISC-V specifications
-   , localparam reg_data_width_lp = rv64_reg_data_width_gp
-   , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
-   , localparam eaddr_width_lp    = rv64_eaddr_width_gp
-   , localparam instr_width_lp    = rv64_instr_width_gp
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -96,28 +68,28 @@ module bp_be_top
    , input                                   lce_cmd_v_i
    , output                                  lce_cmd_ready_o
 
-   , input [lce_data_cmd_width_lp-1:0]   lce_data_cmd_i
+   , input [lce_data_cmd_width_lp-1:0]       lce_data_cmd_i
    , input                                   lce_data_cmd_v_i
    , output                                  lce_data_cmd_ready_o
 
-   , output [lce_data_cmd_width_lp-1:0]   lce_data_cmd_o
-   , output                                   lce_data_cmd_v_o
-   , input                                  lce_data_cmd_ready_i
+   , output [lce_data_cmd_width_lp-1:0]      lce_data_cmd_o
+   , output                                  lce_data_cmd_v_o
+   , input                                   lce_data_cmd_ready_i
 
    // Processor configuration
    , input [proc_cfg_width_lp-1:0]           proc_cfg_i
 
    // Commit tracer for trace replay
    , output                                  cmt_rd_w_v_o
-   , output [reg_addr_width_lp-1:0]          cmt_rd_addr_o
+   , output [rv64_reg_addr_width_gp-1:0]     cmt_rd_addr_o
    , output                                  cmt_mem_w_v_o
-   , output [eaddr_width_lp-1:0]             cmt_mem_addr_o
-   , output [fu_op_width_lp-1:0]             cmt_mem_op_o
-   , output [reg_data_width_lp-1:0]          cmt_data_o
+   , output [dword_width_p-1:0]              cmt_mem_addr_o
+   , output [`bp_be_fu_op_width-1:0]         cmt_mem_op_o
+   , output [dword_width_p-1:0]              cmt_data_o
    );
 
 // Declare parameterized structures
-`declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
+`declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_width_p)
 `declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
 `declare_bp_be_internal_if_structs(vaddr_width_p
                                    , paddr_width_p
@@ -148,12 +120,12 @@ bp_be_calc_status_s    calc_status;
 logic chk_dispatch_v, chk_poison_isd;
 logic chk_poison_ex1, chk_poison_ex2, chk_poison_ex3, chk_roll, chk_instr_dequeue_v;
 
-logic [reg_data_width_lp-1:0] chk_mtvec_li;
-logic [reg_data_width_lp-1:0] chk_mepc_li;
+logic [dword_width_p-1:0] chk_mtvec_li;
+logic [dword_width_p-1:0] chk_mepc_li;
 
 logic                      instret;
 logic [vaddr_width_p-1:0]  exception_pc;
-logic [instr_width_lp-1:0] exception_instr;
+logic [instr_width_p-1:0]  exception_instr;
 logic                      exception_v;
 
 // Module instantiations
@@ -213,7 +185,7 @@ bp_be_calculator_top
    ,.num_core_p(num_core_p)
    ,.num_lce_p(num_lce_p)
    ,.lce_sets_p(lce_sets_p)
-   ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
+   ,.cce_block_size_in_bytes_p(cce_block_width_p)
    )
  be_calculator
   (.clk_i(clk_i)
@@ -269,7 +241,7 @@ bp_be_mem_top
 
    ,.num_cce_p(num_cce_p)
    ,.num_lce_p(num_lce_p)
-   ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
+   ,.cce_block_size_in_bytes_p(cce_block_width_p/8)
    ,.lce_assoc_p(lce_assoc_p)
    ,.lce_sets_p(lce_sets_p)
    )

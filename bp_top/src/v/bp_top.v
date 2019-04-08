@@ -10,7 +10,7 @@ module bp_top
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_cce_pkg::*;
- #(parameter bp_cfgs_e cfg_p = e_bp_inv_cfg
+ #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
    `declare_bp_me_if_widths(paddr_width_p, dword_width_p, num_lce_p, lce_assoc_p)
 
@@ -141,14 +141,7 @@ for(genvar core_id = 0; core_id < num_core_p; core_id++)
 endgenerate 
 
 bp_me_top 
- #(.num_lce_p(num_lce_p)
-   ,.num_cce_p(num_cce_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.lce_assoc_p(lce_assoc_p)
-   ,.lce_sets_p(lce_sets_p)
-   ,.block_size_in_bytes_p(cce_block_width_p/8)
-   ,.num_inst_ram_els_p(cce_num_inst_ram_els_p)
-   )
+ #(.cfg_p(cfg_p))
  me
   (.clk_i(clk_i)
    ,.reset_i(reset_i)

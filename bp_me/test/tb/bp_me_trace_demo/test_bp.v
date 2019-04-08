@@ -8,21 +8,7 @@ module test_bp
  import bp_be_pkg::*;
  import bp_be_dcache_pkg::*;
  import bp_cce_pkg::*;
- #(parameter vaddr_width_p                 = "inv"
-   , parameter paddr_width_p               = "inv"
-   , parameter asid_width_p                = "inv"
-   , parameter branch_metadata_fwd_width_p = "inv"
-   , parameter btb_idx_width_p            = "inv"
-   , parameter bht_idx_width_p            = "inv"
-   , parameter ras_idx_width_p            = "inv"
-   , parameter num_core_p                  = "inv"
-   , parameter num_cce_p                   = "inv"
-   , parameter num_lce_p                   = "inv"
-   , parameter lce_sets_p                  = "inv"
-   , parameter lce_assoc_p                 = "inv"
-   , parameter block_size_in_bytes_p       = "inv"
-   , parameter num_inst_ram_els_p          = "inv"
-   , parameter mem_els_p                   = "inv"
+ #(parameter mem_els_p                   = "inv"
 
    // Trace replay parameters
    , parameter trace_ring_width_p          = "inv"
@@ -55,21 +41,7 @@ bsg_nonsynth_reset_gen
    );
  
 testbench
- #(.vaddr_width_p(vaddr_width_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.asid_width_p(asid_width_p)
-   ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
-   ,.btb_idx_width_p(btb_idx_width_p)
-   ,.bht_idx_width_p(bht_idx_width_p)
-   ,.ras_idx_width_p(ras_idx_width_p)
-   ,.num_core_p(num_core_p)
-   ,.num_lce_p(num_lce_p)
-   ,.num_cce_p(num_cce_p)
-   ,.lce_assoc_p(lce_assoc_p)
-   ,.lce_sets_p(lce_sets_p)
-   ,.block_size_in_bytes_p(block_size_in_bytes_p)
-   ,.num_inst_ram_els_p(num_inst_ram_els_p)
-   ,.mem_els_p(mem_els_p)
+ #(.mem_els_p(mem_els_p)
    ,.boot_rom_width_p(boot_rom_width_p)
    ,.boot_rom_els_p(boot_rom_els_p)
 

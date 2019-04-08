@@ -10,8 +10,7 @@ module test_bp
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_cce_pkg::*;
- #(parameter cce_num_inst_ram_els_p        = "inv"
-   , parameter mem_els_p                   = "inv"
+ #(parameter mem_els_p                   = "inv"
 
    , parameter boot_rom_width_p            = "inv"
    , parameter boot_rom_els_p              = "inv"
@@ -39,8 +38,7 @@ bsg_nonsynth_reset_gen
    );
 
 testbench
- #(.cce_num_inst_ram_els_p(cce_num_inst_ram_els_p)
-   ,.mem_els_p(mem_els_p)
+ #(.mem_els_p(mem_els_p)
 
    ,.boot_rom_width_p(boot_rom_width_p)
    ,.boot_rom_els_p(boot_rom_els_p)

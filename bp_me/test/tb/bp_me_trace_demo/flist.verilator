@@ -39,5 +39,4 @@ $BP_ME_DIR/src/v/network/bp_me_network_pkt_encode_data_resp.v
 // top files
 $BP_ME_DIR/test/rom/v/$ROM_NAME.v
 $BP_ME_DIR/test/rom/v/$ROM_NAME.tr.v
-$BP_ME_DIR/test/tb/bp_me_trace_demo/testbench.v
 
