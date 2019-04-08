@@ -412,7 +412,7 @@ bp_be_pipe_mem
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.kill_ex1_i(exc_stage_n[1].poison_v | exc_stage_n[2].tlb_miss_v)
+   ,.kill_ex1_i(exc_stage_n[1].poison_v)
    ,.kill_ex2_i(exc_stage_n[2].poison_v)
    ,.kill_ex3_i(exc_stage_n[3].poison_v) 
 
@@ -698,6 +698,7 @@ always_comb
     calc_status.mem3_pc           = calc_stage_r[2].instr_metadata.pc;
     // We don't want cache_miss itself to trigger the exception invalidation
     calc_status.mem3_cache_miss_v = cache_miss_mem3 & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v; 
+    calc_status.mem2_tlb_miss_v   = exc_stage_r[1].tlb_miss_v & calc_stage_r[1].pipe_mem_v & ~exc_stage_r[1].poison_v;
     calc_status.mem3_tlb_miss_v   = exc_stage_r[2].tlb_miss_v & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v;
     calc_status.mem3_exception_v  = exc_stage_r[2].illegal_instr_v & ~exc_stage_r[2].poison_v;
     calc_status.mem3_ret_v        = exc_stage_r[2].ret_instr_v & ~exc_stage_r[2].poison_v;
