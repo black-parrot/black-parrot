@@ -53,7 +53,7 @@ module bp_be_director
    , parameter branch_metadata_fwd_width_p = "inv"
 
    // Generated parameters
-   , localparam calc_status_width_lp = `bp_be_calc_status_width(branch_metadata_fwd_width_p)
+   , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam fe_cmd_width_lp      = `bp_fe_cmd_width(vaddr_width_p
                                                         , paddr_width_p
                                                         , asid_width_p
@@ -291,6 +291,14 @@ always_comb
         fe_cmd.operands.attaboy = fe_cmd_attaboy;
 
         fe_cmd_v = fe_cmd_ready_i & ~chk_roll_fe_o & ~redirect_pending;
+      end
+    else if(calc_status.mem3_itlb_fill_v)
+      begin
+        fe_cmd.opcode = e_op_itlb_fill_response;
+        fe_cmd.operands.itlb_fill_response.vaddr = calc_status.mem3_itlb_fill_vaddr;
+        fe_cmd.operands.itlb_fill_response.pte_entry_leaf = calc_status.mem3_itlb_fill_entry; //TODO: fix struct definition
+      
+        fe_cmd_v = fe_cmd_ready_i & ~chk_roll_fe_o;
       end
   end
 endmodule : bp_be_director

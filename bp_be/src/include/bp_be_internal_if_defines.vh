@@ -108,6 +108,9 @@
     logic                                   mem3_tlb_miss_v;                                       \
     logic                                   mem3_exception_v;                                      \
     logic                                   mem3_ret_v;                                            \
+    logic                                   mem3_itlb_fill_v;                                      \
+    logic [vaddr_width_mp-1:0]              mem3_itlb_fill_vaddr;                                  \
+    logic [rv64_reg_data_width_gp-1:0]      mem3_itlb_fill_entry;                                  \
                                                                                                    \
     logic                                   instr_cmt_v;                                           \
   }  bp_be_calc_status_s;                                                                          \
@@ -151,7 +154,7 @@
 `define bp_be_dep_status_width                                                                     \
   (6 + rv64_reg_addr_width_gp)                                                                     
 
-`define bp_be_calc_status_width(branch_metadata_fwd_width_mp)                                      \
+`define bp_be_calc_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                      \
   (1                                                                                               \
    + rv64_eaddr_width_gp                                                                           \
    + 2                                                                                             \
@@ -164,6 +167,9 @@
    + 1                                                                                             \
    + rv64_eaddr_width_gp                                                                           \
    + 6                                                                                             \
+   + vaddr_width_mp                                                                                \
+   + rv64_reg_data_width_gp                                                                        \
+   + 1                                                                                             \
    )                                                                                               
 
 `endif

@@ -112,22 +112,30 @@ assign mmu_resp_o = mmu_resp;
 
 /* Internal connections */
 /* TLB ports */
-logic                     tlb_en, tlb_miss, tlb_w_v;
-logic [vtag_width_lp-1:0] tlb_w_vtag, tlb_miss_vtag;
-bp_be_tlb_entry_s         tlb_r_entry, tlb_w_entry;
+logic                     dtlb_en, dtlb_miss, dtlb_w_v, dtlb_r_v;
+logic [vtag_width_lp-1:0] dtlb_r_vtag, dtlb_w_vtag, dtlb_miss_vtag;
+bp_be_tlb_entry_s         dtlb_r_entry, dtlb_w_entry;
 
 /* PTW ports */
 logic [ptag_width_lp-1:0] base_ppn, ptw_dcache_ptag;
 logic                     ptw_dcache_v, ptw_busy;
 bp_be_dcache_pkt_s        ptw_dcache_pkt; 
+logic                     ptw_tlb_miss_v, ptw_tlb_w_v;
+logic [vtag_width_lp-1:0] ptw_tlb_w_vtag, ptw_tlb_miss_vtag;
+bp_be_tlb_entry_s         ptw_tlb_w_entry;
 
 assign base_ppn = 'h80008;    //TODO: pass from upper level modules
 
-/* D-Cache ports*/
-bp_be_dcache_pkt_s            dcache_pkt;
-logic [data_width_p-1:0] dcache_data;
-logic [ptag_width_lp-1:0]     dcache_ptag;
-logic                         dcache_ready, dcache_miss_v, dcache_v, dcache_pkt_v, dcache_tlb_miss, dcache_poison;
+/* D-Cache ports */
+bp_be_dcache_pkt_s        dcache_pkt;
+logic [data_width_p-1:0]  dcache_data;
+logic [ptag_width_lp-1:0] dcache_ptag;
+logic                     dcache_ready, dcache_miss_v, dcache_v, dcache_pkt_v, dcache_tlb_miss, dcache_poison;
+
+/* Control signals */
+logic itlb_fill_cmd_v, itlb_fill_resp_v;
+
+assign itlb_fill_cmd_v = mmu_cmd_v_i & (mmu_cmd.mem_op == e_ptw);
 
 bp_be_dtlb
   #(.vtag_width_p(vtag_width_lp)
@@ -139,19 +147,19 @@ bp_be_dtlb
    ,.reset_i(reset_i)
    ,.en_i(1'b1)
    
-   ,.r_v_i(mmu_cmd_v_i)
-   ,.r_vtag_i(mmu_cmd.vaddr.tag)
+   ,.r_v_i(dtlb_r_v)
+   ,.r_vtag_i(dtlb_r_vtag)
    
    ,.r_v_o()
-   ,.r_entry_o(tlb_r_entry)
+   ,.r_entry_o(dtlb_r_entry)
    
-   ,.w_v_i(tlb_w_v)
-   ,.w_vtag_i(tlb_w_vtag)
-   ,.w_entry_i(tlb_w_entry)
+   ,.w_v_i(dtlb_w_v)
+   ,.w_vtag_i(dtlb_w_vtag)
+   ,.w_entry_i(dtlb_w_entry)
    
    ,.miss_clear_i(1'b0)
-   ,.miss_v_o(tlb_miss)
-   ,.miss_vtag_o(tlb_miss_vtag)
+   ,.miss_v_o(dtlb_miss)
+   ,.miss_vtag_o(dtlb_miss_vtag)
   );
   
 bp_be_ptw
@@ -167,12 +175,15 @@ bp_be_ptw
    ,.base_ppn_i(base_ppn)
    ,.busy_o(ptw_busy)
    
-   ,.tlb_miss_v_i(tlb_miss)
-   ,.tlb_miss_vtag_i(tlb_miss_vtag)
+   ,.itlb_not_dtlb_i(itlb_fill_cmd_v)
+   ,.itlb_not_dtlb_o(itlb_fill_resp_v)
    
-   ,.tlb_w_v_o(tlb_w_v)
-   ,.tlb_w_vtag_o(tlb_w_vtag)
-   ,.tlb_w_entry_o(tlb_w_entry)
+   ,.tlb_miss_v_i(ptw_tlb_miss_v)
+   ,.tlb_miss_vtag_i(ptw_tlb_miss_vtag)
+   
+   ,.tlb_w_v_o(ptw_tlb_w_v)
+   ,.tlb_w_vtag_o(ptw_tlb_w_vtag)
+   ,.tlb_w_entry_o(ptw_tlb_w_entry)
 
    ,.dcache_v_i(dcache_v)
    ,.dcache_data_i(dcache_data)
@@ -238,7 +249,14 @@ bp_be_dcache
     ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
     ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
     );
-    
+
+// D-Cache connections
+assign dcache_ptag     = (ptw_busy)? ptw_dcache_ptag : dtlb_r_entry.ptag;
+assign dcache_tlb_miss = (ptw_busy)? 1'b0 : dtlb_miss;
+assign dcache_poison   = (ptw_busy)? 1'b0 : chk_poison_ex_i;
+assign dcache_pkt_v    = (ptw_busy)? ptw_dcache_v 
+                         : ((itlb_fill_cmd_v)? 1'b0
+                         : mmu_cmd_v_i);    
 always_comb 
   begin
     if(ptw_busy) begin
@@ -249,20 +267,31 @@ always_comb
       dcache_pkt.page_offset = {mmu_cmd.vaddr.index, mmu_cmd.vaddr.offset};
       dcache_pkt.data        = mmu_cmd.data;
     end
-    
-    dcache_pkt_v    = (ptw_busy)? ptw_dcache_v : mmu_cmd_v_i;
-    dcache_ptag     = (ptw_busy)? ptw_dcache_ptag : tlb_r_entry.ptag;
-    dcache_tlb_miss = (ptw_busy)? 1'b0 : tlb_miss;
-    dcache_poison   = (ptw_busy)? 1'b0 : chk_poison_ex_i;
-    
-    mmu_resp.data   = dcache_data;  
-    mmu_resp.exception.cache_miss_v = dcache_miss_v;
-    mmu_resp.exception.tlb_miss_v = tlb_miss;
-  end
+end
+
+// D-TLB connections
+assign dtlb_r_v     = (itlb_fill_cmd_v)? 1'b0 : mmu_cmd_v_i;
+assign dtlb_r_vtag  = mmu_cmd.vaddr.tag;
+assign dtlb_w_v     = ptw_tlb_w_v & ~itlb_fill_resp_v;
+assign dtlb_w_vtag  = ptw_tlb_w_vtag;
+assign dtlb_w_entry = ptw_tlb_w_entry;
+
+// PTW connections
+assign ptw_tlb_miss_v = dtlb_miss | itlb_fill_cmd_v;
+assign ptw_tlb_miss_vtag = (itlb_fill_cmd_v)? mmu_cmd.vaddr.tag : dtlb_miss_vtag;
+ 
+// MMU response connections
+assign mmu_resp.data   = (itlb_fill_resp_v)? ptw_tlb_w_entry : dcache_data;  
+assign mmu_resp.exception.cache_miss_v = dcache_miss_v;
+assign mmu_resp.exception.tlb_miss_v = dtlb_miss;
+assign mmu_resp.exception.itlb_fill_v = itlb_fill_resp_v;
+assign mmu_resp.exception.pc = {ptw_tlb_w_vtag, (page_offset_width_lp)'(0)};
 
 // Ready-valid handshakes
-assign mmu_resp_v_o    = (ptw_busy)? 1'b0: dcache_v;
-assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~tlb_miss;
+assign mmu_resp_v_o    = (itlb_fill_resp_v)? ptw_tlb_w_v
+                         : ((ptw_busy)? 1'b0 
+                         : dcache_v);
+assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~dtlb_miss & ~ptw_busy;
 
 endmodule : bp_be_mmu_vm_top
 

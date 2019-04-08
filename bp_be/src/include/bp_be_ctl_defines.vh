@@ -37,6 +37,8 @@ typedef enum bit [3:0]
   ,e_sh  = 4'b1001
   ,e_sw  = 4'b1010
   ,e_sd  = 4'b1011
+  
+  ,e_ptw = 4'b1100
 } bp_be_mem_fu_op_e;
 
 typedef struct packed
@@ -129,7 +131,7 @@ typedef struct packed
   logic cache_miss_v;
   logic itlb_fill_v;
   
-  logic [rv64_eaddr_width_gp] pc;
+  logic [rv64_eaddr_width_gp-1:0] pc;
 }  bp_be_exception_s;
 
 `define bp_be_fu_op_width                                                                          \

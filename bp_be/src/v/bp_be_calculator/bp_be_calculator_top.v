@@ -74,7 +74,7 @@ module bp_be_calculator_top
    // Generated parameters
    , localparam proc_cfg_width_lp       = `bp_proc_cfg_width(core_els_p, num_lce_p)
    , localparam issue_pkt_width_lp      = `bp_be_issue_pkt_width(branch_metadata_fwd_width_p)
-   , localparam calc_status_width_lp    = `bp_be_calc_status_width(branch_metadata_fwd_width_p)
+   , localparam calc_status_width_lp    = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam exception_width_lp      = `bp_be_exception_width
    , localparam mmu_cmd_width_lp        = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam mmu_resp_width_lp       = `bp_be_mmu_resp_width
@@ -161,13 +161,13 @@ module bp_be_calculator_top
 // Cast input and output ports 
 bp_be_issue_pkt_s   issue_pkt;
 bp_be_calc_status_s calc_status;
+logic               mmu_cmd_v;
 bp_be_mmu_cmd_s     mmu_cmd;
 bp_be_mmu_resp_s    mmu_resp;
 bp_proc_cfg_s       proc_cfg;
 
 assign issue_pkt     = issue_pkt_i;
 assign calc_status_o = calc_status;
-assign mmu_cmd_o     = mmu_cmd;
 assign mmu_resp      = mmu_resp_i;
 assign proc_cfg      = proc_cfg_i;
 
@@ -224,8 +224,22 @@ logic                         mtval_w_v_lo;
 logic [reg_data_width_lp-1:0] mscratch_lo, mscratch_li;
 logic                         mscratch_w_v_lo;
 
+// MMU signals
+logic           mmu_itlb_fill_cmd_v;
+bp_be_mmu_cmd_s mmu_itlb_fill_cmd;
+
 // Handshakes
 assign issue_pkt_ready_o = (chk_dispatch_v_i | ~issue_pkt_v_r);
+
+// MMU IO Muliplexing
+assign mmu_cmd_o = (mmu_itlb_fill_cmd_v)? mmu_itlb_fill_cmd : mmu_cmd;
+assign mmu_cmd_v_o = mmu_cmd_v | mmu_itlb_fill_cmd_v;
+
+assign mmu_itlb_fill_cmd_v = ~exc_stage_r[2].poison_v & exc_stage_r[2].itlb_fill_v;
+
+assign mmu_itlb_fill_cmd.mem_op = e_ptw;
+assign mmu_itlb_fill_cmd.vaddr = exc_stage_r[2].pc[0+:vaddr_width_p];
+assign mmu_itlb_fill_cmd.data = '0;
 
 // Module instantiations
 // Register files
@@ -422,7 +436,7 @@ bp_be_pipe_mem
    ,.imm_i(dispatch_pkt_r.imm)
 
    ,.mmu_cmd_o(mmu_cmd)
-   ,.mmu_cmd_v_o(mmu_cmd_v_o)
+   ,.mmu_cmd_v_o(mmu_cmd_v)
    ,.mmu_cmd_ready_i(mmu_cmd_ready_i)
 
    ,.mmu_resp_i(mmu_resp_i)
@@ -705,6 +719,11 @@ always_comb
                                                                 | exc_stage_r[2].itlb_fill_v);
     calc_status.mem3_ret_v        = exc_stage_r[2].ret_instr_v & ~exc_stage_r[2].poison_v;
     calc_status.instr_cmt_v       = calc_stage_r[2].instr_v & ~exc_stage_r[2].roll_v;
+    
+    calc_status.mem3_itlb_fill_v      = mmu_resp_v_i & (mmu_resp.exception.itlb_fill_v);
+    calc_status.mem3_itlb_fill_vaddr  = mmu_resp.exception.pc;
+    calc_status.mem3_itlb_fill_entry  = mmu_resp.data;
+
           
     // Slicing the completion pipe for Forwarding information
     for (integer i = 1; i < pipe_stage_els_lp; i++) 

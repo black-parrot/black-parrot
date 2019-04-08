@@ -69,7 +69,7 @@ module bp_be_checker_top
    , parameter load_to_use_forwarding_p = 1
 
    // Generated parameters
-   , localparam calc_status_width_lp = `bp_be_calc_status_width(branch_metadata_fwd_width_p)
+   , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam fe_queue_width_lp    = `bp_fe_queue_width(vaddr_width_p
                                                           , branch_metadata_fwd_width_p
                                                           )

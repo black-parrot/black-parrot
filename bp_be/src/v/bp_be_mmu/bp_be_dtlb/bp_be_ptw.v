@@ -29,6 +29,9 @@ module bp_be_ptw
    , input [ppn_width_lp-1:0]               base_ppn_i
    , output                                 busy_o
    
+   , input                                  itlb_not_dtlb_i
+   , output                                 itlb_not_dtlb_o
+   
    // TLB connections
    , input                                  tlb_miss_v_i
    , input [vpn_width_lp-1:0]               tlb_miss_vtag_i
@@ -157,6 +160,15 @@ module bp_be_ptw
      ,.en_i(start)
      ,.data_i(vpn_n)
      ,.data_o(vpn_r)
+    );
+    
+  bsg_dff_reset_en #(.width_p(1))
+    tlb_sel_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.en_i(start)
+     ,.data_i(itlb_not_dtlb_i)
+     ,.data_o(itlb_not_dtlb_o)
     );
   
   bsg_dff_reset_en #(.width_p(ppn_width_lp))
