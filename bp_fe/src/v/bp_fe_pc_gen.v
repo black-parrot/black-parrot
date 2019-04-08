@@ -206,7 +206,7 @@ end
 assign pc_v_f1 = ~((predict_taken & ~btb_pred_f2_r));
 
 // stall logic
-assign stall = ~pc_gen_fe_ready_i | itlb_miss_r | icache_miss_i;
+assign stall = ~(fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) & (~pc_gen_fe_ready_i | (itlb_miss_i & itlb_miss_r) | icache_miss_i);
 
 assign icache_miss_recover = icache_miss_prev & (~icache_miss_i);
 assign itlb_miss_recover    = itlb_miss_r & (~itlb_miss_i);

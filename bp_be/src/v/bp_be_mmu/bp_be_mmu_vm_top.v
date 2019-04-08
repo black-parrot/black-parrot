@@ -149,6 +149,7 @@ bp_be_dtlb
    ,.w_vtag_i(tlb_w_vtag)
    ,.w_entry_i(tlb_w_entry)
    
+   ,.miss_clear_i(1'b0)
    ,.miss_v_o(tlb_miss)
    ,.miss_vtag_o(tlb_miss_vtag)
   );
