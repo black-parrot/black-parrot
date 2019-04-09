@@ -715,8 +715,7 @@ always_comb
     calc_status.mem3_cache_miss_v = cache_miss_mem3 & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v; 
     calc_status.mem2_tlb_miss_v   = exc_stage_r[1].tlb_miss_v & calc_stage_r[1].pipe_mem_v & ~exc_stage_r[1].poison_v;
     calc_status.mem3_tlb_miss_v   = exc_stage_r[2].tlb_miss_v & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v;
-    calc_status.mem3_exception_v  = ~exc_stage_r[2].poison_v & (exc_stage_r[2].illegal_instr_v
-                                                                | exc_stage_r[2].itlb_fill_v);
+    calc_status.mem3_exception_v  = ~exc_stage_r[2].poison_v & exc_stage_r[2].illegal_instr_v;
     calc_status.mem3_ret_v        = exc_stage_r[2].ret_instr_v & ~exc_stage_r[2].poison_v;
     calc_status.instr_cmt_v       = calc_stage_r[2].instr_v & ~exc_stage_r[2].roll_v;
     

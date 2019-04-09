@@ -343,6 +343,10 @@ always_comb
         decode.instr_v     = 1'b1;
         decode.pipe_comp_v = 1'b1;
       end 
+    else if(instr_metadata.fe_exception_not_instr)
+      begin
+        decode.instr_v = 1'b0;
+      end
     else 
       begin 
         decode.instr_v = 1'b1;
