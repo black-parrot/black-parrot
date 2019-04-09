@@ -127,6 +127,7 @@ logic                      instret;
 logic [vaddr_width_p-1:0]  exception_pc;
 logic [instr_width_p-1:0]  exception_instr;
 logic                      exception_v;
+logic                      mret_v;
 
 // Module instantiations
 bp_be_checker_top 
@@ -223,6 +224,7 @@ bp_be_calculator_top
    ,.exception_pc_o(exception_pc)
    ,.exception_instr_o(exception_instr)
    ,.exception_v_o(exception_v)
+   ,.mret_v_o(mret_v)
 
    ,.cmt_rd_w_v_o(cmt_rd_w_v_o)
    ,.cmt_rd_addr_o(cmt_rd_addr_o)
@@ -293,6 +295,7 @@ bp_be_mem_top
     ,.exception_pc_i(exception_pc)
     ,.exception_instr_i(exception_instr)
     ,.exception_v_i(exception_v)
+    ,.mret_v_i(mret_v)
 
     ,.mepc_o(chk_mepc_li)
     ,.mtvec_o(chk_mtvec_li)

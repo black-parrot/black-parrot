@@ -127,6 +127,7 @@ module bp_be_mem_top
     , input [vaddr_width_p-1:0]            exception_pc_i
     , input [instr_width_lp-1:0]           exception_instr_i
     , input                                exception_v_i
+    , input                                mret_v_i
 
     , output [reg_data_width_lp-1:0]       mepc_o
     , output [reg_data_width_lp-1:0]       mtvec_o
@@ -172,6 +173,8 @@ logic dcache_ready, dcache_miss_v, dcache_v;
 logic [reg_data_width_lp-1:0] dcache_data_lo, csr_data_lo;
 logic                         csr_v_lo, illegal_csr_v;
 
+logic translation_en;
+
 // Passthrough TLB conversion
 always_ff @(posedge clk_i) 
   begin
@@ -201,9 +204,11 @@ bp_be_csr
    ,.exception_pc_i(exception_pc_i)
    ,.exception_instr_i(exception_instr_i)
    ,.exception_v_i(exception_v_i)
+   ,.mret_v_i(mret_v_i)
 
    ,.mepc_o(mepc_o)
    ,.mtvec_o(mtvec_o)
+   ,.translation_en_o(translation_en)
    );
 
 bp_be_dcache 

@@ -38,9 +38,11 @@ module bp_be_csr
     , input [vaddr_width_p-1:0]      exception_pc_i
     , input [instr_width_lp-1:0]     exception_instr_i
     , input                          exception_v_i
+    , input                          mret_v_i
 
     , output [reg_data_width_lp-1:0] mepc_o
     , output [reg_data_width_lp-1:0] mtvec_o
+    , output                         translation_en_o
     );
 
 // Declare parameterizable structs
@@ -89,6 +91,29 @@ logic [reg_data_width_lp-1:0] csr_data_li, csr_data_lo;
 `declare_rw_csr(mepc    , reg_data_width_lp, `RV64_MEPC_CSR_ADDR)
 `declare_rw_csr(mcause  , reg_data_width_lp, `RV64_MCAUSE_CSR_ADDR)
 `declare_rw_csr(mtval   , reg_data_width_lp, `RV64_MTVAL_CSR_ADDR)
+
+logic [1:0] priv_mode_n, priv_mode_r;
+logic priv_mode_w_v_li;
+assign priv_mode_n = exception_v_i
+                     ? `RV64_PRIV_M_MODE
+                     : mret_v_i
+                       ? `RV64_PRIV_S_MODE
+                       : priv_mode_r;
+assign priv_mode_w_v_li = exception_v_i | mret_v_i;
+assign translation_en_o = (priv_mode_r == `RV64_PRIV_S_MODE);
+
+bsg_dff_reset_en
+ #(.width_p(2)
+   ,.reset_val_p(`RV64_PRIV_M_MODE)
+   )
+  priv_mode_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(priv_mode_w_v_li)
+
+   ,.data_i(priv_mode_n)
+   ,.data_o(priv_mode_r)
+   );
 
 // CSR write enable
 always_comb 

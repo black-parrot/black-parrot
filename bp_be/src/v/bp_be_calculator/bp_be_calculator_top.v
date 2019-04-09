@@ -137,10 +137,11 @@ module bp_be_calculator_top
   , output                               mem_resp_ready_o
 
   // CSRs
-  , output                                instret_o
-  , output [vaddr_width_p-1:0]            exception_pc_o
-  , output [instr_width_lp-1:0]           exception_instr_o
-  , output                                exception_v_o
+  , output                               instret_o
+  , output [vaddr_width_p-1:0]           exception_pc_o
+  , output [instr_width_lp-1:0]          exception_instr_o
+  , output                               exception_v_o
+  , output                               mret_v_o
 
   // Commit tracer
   , output                               cmt_rd_w_v_o
@@ -647,6 +648,8 @@ assign instret_o = calc_stage_r[2].instr_v
 assign exception_pc_o = calc_stage_r[2].instr_metadata.pc;
 assign exception_instr_o = calc_stage_r[2].instr;
 assign exception_v_o = (illegal_csr_mem3 | exc_stage_r[2].illegal_instr_v) & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v & ~exc_stage_r[2].roll_v;
+// TODO: RET instr has to be for specific privilege levels
+assign mret_v_o = exc_stage_r[2].ret_instr_v & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v & ~exc_stage_r[2].roll_v;
 
 if (trace_p)
   begin

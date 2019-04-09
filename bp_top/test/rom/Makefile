@@ -46,6 +46,7 @@ benchmarks_rom: $(foreach x, $(subst -,_,$(RV64_BENCHMARKS)), $(x).v)
 benchmarks_rom: $(foreach x, $(subst -,_,$(RV64_BENCHMARKS)), $(x).trace)
 
 demos_rom: $(foreach x, $(subst -,_,$(BP_DEMOS)), $(x).v)
+demos_rom: $(foreach x, $(subst -,_,$(BP_DEMOS)), $(x).fake_trace)
 
 # This hacky code prints the dumped assembly into the test rom, which is nice for debugging
 %.v: %.bin
@@ -67,6 +68,9 @@ demos_rom: $(foreach x, $(subst -,_,$(BP_DEMOS)), $(x).v)
 	$(RISCV_SIM) -l $(SPIKE_OPTS) $(basename $@).elf 2>$(basename $@).spike
 	python $(SPIKE2TR) $(basename $@) 10
 	python $(BSG_ROM_GEN) $(basename $@).tr bp_trace_rom zero > $(ROM_DIR)/$(basename $@)_rom.tr.v
+
+%.fake_trace:
+	touch $(ROM_DIR)/$(basename $@)_rom.tr.v
 
 clean:
 	rm -f *.elf
