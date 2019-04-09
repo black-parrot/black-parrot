@@ -13,7 +13,7 @@ num_instr = int(sys.argv[3])
 seed_p = int(sys.argv[4]) + id_p if len(sys.argv) >= 5 else None
 random.seed(seed_p)
 
-tg = TraceGen(addr_width_p=56, data_width_p=64)
+tg = TraceGen(addr_width_p=39, data_width_p=64)
 
 # preamble  
 tg.print_header()

@@ -15,7 +15,7 @@ module testbench();
   localparam data_width_p = 64;
   localparam sets_p = 64;
   localparam ways_p = 8;
-  localparam paddr_width_p = bp_sv39_paddr_width_gp;
+  localparam paddr_width_p = 39;
   localparam num_cce_p = all_cfgs_gp[cfg_p].num_cce;
   localparam num_lce_p = `NUM_LCE_P;
   localparam mem_els_p = sets_p*ways_p*ways_p;
