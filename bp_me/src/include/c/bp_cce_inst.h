@@ -476,6 +476,7 @@ typedef struct __attribute__((__packed__)) {
   bp_cce_inst_dir_way_sel_e dir_way_sel : bp_cce_inst_dir_way_sel_width;
   bp_cce_inst_dir_coh_state_sel_e dir_coh_state_sel : bp_cce_inst_dir_coh_state_sel_width;
   bp_cce_inst_dir_tag_sel_e dir_tag_sel : bp_cce_inst_dir_tag_sel_width;
+  // TODO: need to specify where coherence state comes from? -- see assembler, parseWriteDir()
 } bp_cce_inst_write_dir_op_s;
 
 #define bp_cce_inst_write_dir_op_s_width \
@@ -527,8 +528,15 @@ typedef struct __attribute__((__packed__)) {
 // NOTE: pushq struct is the largest, so use that as the width of the queue op union
 #define bp_cce_inst_queue_op_u_width bp_cce_inst_pushq_s_width
 
+typedef union __attribute__((__packed__)) {
+  bp_cce_inst_pushq_s pushq;
+  bp_cce_inst_popq_s  popq;
+  bp_cce_inst_wfq_s   wfq;
+} bp_cce_inst_queue_op_u;
+
 typedef struct __attribute__((__packed__)) {
-  uint64_t op : bp_cce_inst_queue_op_u_width;
+  //uint64_t op : bp_cce_inst_queue_op_u_width;
+  bp_cce_inst_queue_op_u op;
 } bp_cce_inst_queue_op_s;
 
 #define bp_cce_inst_queue_op_s_width bp_cce_inst_queue_op_u_width
@@ -545,11 +553,22 @@ const int bp_cce_inst_type_u_width =
             MAX(bp_cce_inst_write_dir_op_s_width,
               MAX(bp_cce_inst_misc_op_s_width, bp_cce_inst_queue_op_s_width)))))));
 
+typedef union __attribute__((__packed__)) {
+  bp_cce_inst_alu_op_s       alu_op_s;
+  bp_cce_inst_branch_op_s    branch_op_s;
+  bp_cce_inst_mov_op_s       mov_op_s;
+  bp_cce_inst_flag_op_s      flag_op_s;
+  bp_cce_inst_read_dir_op_s  read_dir_op_s;
+  bp_cce_inst_write_dir_op_s write_dir_op_s;
+  bp_cce_inst_misc_op_s      misc_op_s;
+  bp_cce_inst_queue_op_s     queue_op_s;
+} bp_cce_inst_type_u;
+
 // CCE Microcode Instruction Struct
 typedef struct __attribute__((__packed__)) {
   bp_cce_inst_op_e op : bp_cce_inst_op_width;
   uint8_t minor_op : bp_cce_inst_minor_op_width;
-  uint64_t type_u : bp_cce_inst_type_u_width;
+  bp_cce_inst_type_u type_u;
 } bp_cce_inst_s;
 
 #define bp_cce_inst_s_width \

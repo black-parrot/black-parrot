@@ -64,7 +64,7 @@ protected:
 
   uint16_t parseImm(string &s);
   uint16_t parseCohStImm(string &s);
-  void setImm(bp_cce_inst_s *inst, string &target_str);
+  uint16_t getImm(string &target_str);
   bp_cce_inst_flag_e parseFlagSel(string &s);
   bp_cce_inst_dir_way_group_sel_e parseDirWgSel(string &s);
   bp_cce_inst_dir_lce_sel_e parseDirLceSel(string &s);
