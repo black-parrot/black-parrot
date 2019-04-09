@@ -8,6 +8,8 @@
 #ifndef BP_CCE_INST_H
 #define BP_CCE_INST_H
 
+#include "bp_common_me_if.h"
+
 // Major Op Codes
 typedef enum {
   e_op_alu                       = 0x0
@@ -28,6 +30,13 @@ typedef enum {
   ,e_inc                         = 0x0   // Increment by 1 // same as ADD, src_b = 1, dst = src_a
   ,e_sub                         = 0x1   // Subtract
   ,e_dec                         = 0x1   // Decrement by 1 // same as DEC, src_b = 1, dst = src_a
+// TODO: implement in assembler
+  ,e_lsh                         = 0x2   // Left shift
+  ,e_rsh                         = 0x3   // Right shift
+  ,e_and                         = 0x4   // Bit-wise AND
+  ,e_or                          = 0x5   // Bit-wise OR
+  ,e_xor                         = 0x6   // Bit-wise XOR
+  ,e_neg                         = 0x7   // Bit-wise negation (unary)
 } bp_cce_inst_minor_alu_op_e;
 
 typedef enum {
@@ -396,103 +405,156 @@ typedef enum {
 
 #define bp_cce_inst_mem_data_cmd_addr_sel_width 1
 
-// CCE Microcode Instruction Struct
-typedef struct __attribute__((__packed__)) {
-  bp_cce_inst_op_e op : bp_cce_inst_op_width;
-  uint8_t minor_op : bp_cce_inst_minor_op_width;
+#define bp_cce_inst_imm16_width 16
 
+// ALU Operation
+typedef struct __attribute__((__packed__)) {
+  bp_cce_inst_dst_e dst : bp_cce_inst_dst_width;
   bp_cce_inst_src_e src_a : bp_cce_inst_src_width;
   bp_cce_inst_src_e src_b : bp_cce_inst_src_width;
+  uint16_t imm : bp_cce_inst_imm16_width;
+} bp_cce_inst_alu_op_s;
+
+#define bp_cce_inst_alu_op_s_width \
+  bp_cce_inst_dst_width \
+  + bp_cce_inst_src_width \
+  + bp_cce_inst_src_width \
+  + bp_cce_inst_imm16_width
+
+// Branch Operation
+typedef struct __attribute__((__packed__)) {
+  bp_cce_inst_src_e src_a : bp_cce_inst_src_width;
+  bp_cce_inst_src_e src_b : bp_cce_inst_src_width;
+  uint16_t imm : bp_cce_inst_imm16_width;
+} bp_cce_inst_branch_op_s;
+
+#define bp_cce_inst_branch_op_s_width \
+  bp_cce_inst_src_width \
+  + bp_cce_inst_src_width \
+  + bp_cce_inst_imm16_width
+
+// Move Operation
+typedef struct __attribute__((__packed__)) {
   bp_cce_inst_dst_e dst : bp_cce_inst_dst_width;
-  uint16_t imm : bp_cce_inst_gpr_width;
+  bp_cce_inst_src_e src_a : bp_cce_inst_src_width;
+  bp_cce_inst_src_e src_b : bp_cce_inst_src_width;
+  uint16_t imm : bp_cce_inst_imm16_width;
+} bp_cce_inst_mov_op_s;
 
-  // Source selects
+#define bp_cce_inst_mov_op_s_width \
+  bp_cce_inst_dst_width \
+  + bp_cce_inst_src_width \
+  + bp_cce_inst_src_width \
+  + bp_cce_inst_imm16_width
 
-  // req_lce_r and req_lce_addr_r
-  bp_cce_inst_req_sel_e req_sel : bp_cce_inst_req_sel_width;
-  // req_addr_way_r
-  bp_cce_inst_req_addr_way_sel_e req_addr_way_sel : bp_cce_inst_req_addr_way_sel_width;
-  // lru_way_r
-  bp_cce_inst_lru_way_sel_e lru_way_sel : bp_cce_inst_lru_way_sel_width;
-  // transfer_lce_r and transfer_lce_way_r
-  bp_cce_inst_transfer_lce_sel_e transfer_lce_sel : bp_cce_inst_transfer_lce_sel_width;
-  // cache_block_data_r
-  bp_cce_inst_cache_block_data_sel_e cache_block_data_sel : bp_cce_inst_dat_sel_width;
+// Set Flag Operation
+typedef struct __attribute__((__packed__)) {
+  bp_cce_inst_dst_e dst : bp_cce_inst_dst_width;
+  uint8_t imm : 1;
+} bp_cce_inst_flag_op_s;
 
-  // RQF
-  bp_cce_inst_rq_flag_sel_e rqf_sel : bp_cce_inst_rq_flag_sel_width;
-  // NERF and LDF
-  bp_cce_inst_ner_ld_flag_sel_e nerldf_sel : bp_cce_inst_ner_ld_flag_sel_width;
-  // NWBF
-  bp_cce_inst_nwb_flag_sel_e nwbf_sel : bp_cce_inst_nwb_flag_sel_width;
-  // TF
-  bp_cce_inst_t_flag_sel_e tf_sel : bp_cce_inst_t_flag_sel_width;
-  // PF, RF, UF, IF, EF
-  bp_cce_inst_pruie_flag_sel_e pruief_sel : bp_cce_inst_pruie_flag_sel_width;
-  // RWBF
-  bp_cce_inst_rwb_flag_sel_e rwbf_sel : bp_cce_inst_rwb_flag_sel_width;
+#define bp_cce_inst_flag_op_s_width \
+  bp_cce_inst_dst_width \
+  + 1
 
-  // directory inputs
+// Read Directory Operation
+typedef struct __attribute__((__packed__)) {
+  bp_cce_inst_dir_way_group_sel_e dir_way_group_sel : bp_cce_inst_dir_way_group_sel_width;
+  bp_cce_inst_dir_lce_sel_e dir_lce_sel : bp_cce_inst_dir_lce_sel_width;
+  bp_cce_inst_dir_way_sel_e dir_way_sel : bp_cce_inst_dir_way_sel_width;
+} bp_cce_inst_read_dir_op_s;
+
+#define bp_cce_inst_read_dir_op_s_width \
+  bp_cce_inst_dir_way_group_sel_width \
+  + bp_cce_inst_dir_lce_sel_width \
+  + bp_cce_inst_dir_way_sel_width
+
+// Write Directory Operation
+typedef struct __attribute__((__packed__)) {
   bp_cce_inst_dir_way_group_sel_e dir_way_group_sel : bp_cce_inst_dir_way_group_sel_width;
   bp_cce_inst_dir_lce_sel_e dir_lce_sel : bp_cce_inst_dir_lce_sel_width;
   bp_cce_inst_dir_way_sel_e dir_way_sel : bp_cce_inst_dir_way_sel_width;
   bp_cce_inst_dir_coh_state_sel_e dir_coh_state_sel : bp_cce_inst_dir_coh_state_sel_width;
   bp_cce_inst_dir_tag_sel_e dir_tag_sel : bp_cce_inst_dir_tag_sel_width;
+} bp_cce_inst_write_dir_op_s;
 
-  // cce_lce_cmd_queue inputs
+#define bp_cce_inst_write_dir_op_s_width \
+  bp_cce_inst_dir_way_group_sel_width \
+  + bp_cce_inst_dir_lce_sel_width \
+  + bp_cce_inst_dir_way_sel_width \
+  + bp_cce_inst_dir_coh_state_sel_width \
+  + bp_cce_inst_dir_tag_sel_width
+
+// Misc Operation
+typedef struct __attribute__((__packed__)) {
+  uint8_t empty : 1;
+} bp_cce_inst_misc_op_s;
+
+#define bp_cce_inst_misc_op_s_width 1
+
+// Queue Operation
+typedef struct __attribute__((__packed__)) {
+  uint8_t dst_q : bp_cce_inst_dst_q_sel_width;
+  bp_cce_lce_cmd_type_e lce_cmd_cmd : bp_cce_lce_cmd_type_width;
   bp_cce_inst_lce_cmd_lce_sel_e lce_cmd_lce_sel : bp_cce_inst_lce_cmd_lce_sel_width;
   bp_cce_inst_lce_cmd_addr_sel_e lce_cmd_addr_sel : bp_cce_inst_lce_cmd_addr_sel_width;
   bp_cce_inst_lce_cmd_way_sel_e lce_cmd_way_sel : bp_cce_inst_lce_cmd_way_sel_width;
-
-  // mem_data_cmd_queue inputs
   bp_cce_inst_mem_data_cmd_addr_sel_e mem_data_cmd_addr_sel : bp_cce_inst_mem_data_cmd_addr_sel_width;
+} bp_cce_inst_pushq_s;
 
-  // Write enables
-  uint8_t req_w_v : 1; // req_lce, req_addr, req_tag
-  uint8_t req_addr_way_w_v : 1; // req_addr_way
-  uint8_t lru_way_w_v : 1;
-  uint8_t transfer_lce_w_v : 1; // transfer_lce, transfer_lce_way
-  uint8_t cache_block_data_w_v : 1;
-  uint8_t ack_type_w_v : 1;
+#define bp_cce_inst_pushq_s_width \
+  bp_cce_inst_dst_q_sel_width \
+  + bp_cce_lce_cmd_type_width \
+  + bp_cce_inst_lce_cmd_lce_sel_width \
+  + bp_cce_inst_lce_cmd_addr_sel_width \
+  + bp_cce_inst_lce_cmd_way_sel_width \
+  + bp_cce_inst_mem_data_cmd_addr_sel_width
 
-  // flag writes
-  uint16_t flag_mask_w_v : bp_cce_inst_num_flags;
+typedef struct __attribute__((__packed__)) {
+  uint8_t src_q : bp_cce_inst_src_q_sel_width;
+} bp_cce_inst_popq_s;
+
+#define bp_cce_inst_popq_s_width \
+  bp_cce_inst_src_q_sel_width
+
+typedef struct __attribute__((__packed__)) {
+  uint8_t qmask : bp_cce_num_src_q;
+} bp_cce_inst_wfq_s;
+
+#define bp_cce_inst_wfq_s_width \
+  bp_cce_num_src_q
+
+// NOTE: pushq struct is the largest, so use that as the width of the queue op union
+#define bp_cce_inst_queue_op_u_width bp_cce_inst_pushq_s_width
+
+typedef struct __attribute__((__packed__)) {
+  uint64_t op : bp_cce_inst_queue_op_u_width;
+} bp_cce_inst_queue_op_s;
+
+#define bp_cce_inst_queue_op_s_width bp_cce_inst_queue_op_u_width
+
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+
+const int bp_cce_inst_type_u_width =
+  MAX(bp_cce_inst_alu_op_s_width,
+    MAX(bp_cce_inst_branch_op_s_width,
+      MAX(bp_cce_inst_mov_op_s_width,
+        MAX(bp_cce_inst_flag_op_s_width,
+          MAX(bp_cce_inst_read_dir_op_s_width,
+            MAX(bp_cce_inst_write_dir_op_s_width,
+              MAX(bp_cce_inst_misc_op_s_width, bp_cce_inst_queue_op_s_width)))))));
+
+// CCE Microcode Instruction Struct
+typedef struct __attribute__((__packed__)) {
+  bp_cce_inst_op_e op : bp_cce_inst_op_width;
+  uint8_t minor_op : bp_cce_inst_minor_op_width;
+  uint64_t type_u : bp_cce_inst_type_u_width;
 } bp_cce_inst_s;
 
 #define bp_cce_inst_s_width \
   bp_cce_inst_op_width \
   + bp_cce_inst_minor_op_width \
-  + bp_cce_inst_src_width \
-  + bp_cce_inst_src_width \
-  + bp_cce_inst_dst_width \
-  + bp_cce_inst_gpr_width \
-  + bp_cce_inst_req_sel_width \
-  + bp_cce_inst_req_addr_way_sel_width \
-  + bp_cce_inst_lru_way_sel_width \
-  + bp_cce_inst_transfer_lce_sel_width \
-  + bp_cce_inst_dat_sel_width \
-  + bp_cce_inst_rq_flag_sel_width \
-  + bp_cce_inst_ner_ld_flag_sel_width \
-  + bp_cce_inst_nwb_flag_sel_width \
-  + bp_cce_inst_t_flag_sel_width \
-  + bp_cce_inst_pruie_flag_sel_width \
-  + bp_cce_inst_rwb_flag_sel_width \
-  + bp_cce_inst_dir_way_group_sel_width \
-  + bp_cce_inst_dir_lce_sel_width \
-  + bp_cce_inst_dir_way_sel_width \
-  + bp_cce_inst_dir_coh_state_sel_width \
-  + bp_cce_inst_dir_tag_sel_width \
-  + bp_cce_inst_lce_cmd_lce_sel_width \
-  + bp_cce_inst_lce_cmd_addr_sel_width \
-  + bp_cce_inst_lce_cmd_way_sel_width \
-  + bp_cce_inst_mem_data_cmd_addr_sel_width \
-  + 1 \
-  + 1 \
-  + 1 \
-  + 1 \
-  + 1 \
-  + 1 \
-  + bp_cce_inst_num_flags
-
+  + bp_cce_inst_type_u_width
 
 #endif
