@@ -151,37 +151,37 @@ module bp_cce_inst_decode
 
           // destination
           decoded_inst_o.dst = flag_op_s.dst;
-          if (flag_op_s.dst == e_flag_sel_rqf) begin
+          if (flag_op_s.dst == e_dst_rqf) begin
             decoded_inst_o.rqf_sel = e_rqf_imm0;
             decoded_inst_o.flag_mask_w_v = e_flag_rqf;
-          end else if (flag_op_s.dst == e_flag_sel_nerf) begin
+          end else if (flag_op_s.dst == e_dst_nerf) begin
             decoded_inst_o.nerldf_sel = e_nerldf_imm0;
             decoded_inst_o.flag_mask_w_v = e_flag_nerf;
-          end else if (flag_op_s.dst == e_flag_sel_ldf) begin
+          end else if (flag_op_s.dst == e_dst_ldf) begin
             decoded_inst_o.nerldf_sel = e_nerldf_imm0;
             decoded_inst_o.flag_mask_w_v = e_flag_ldf;
-          end else if (flag_op_s.dst == e_flag_sel_nwbf) begin
+          end else if (flag_op_s.dst == e_dst_nwbf) begin
             decoded_inst_o.nwbf_sel = e_nwbf_imm0;
             decoded_inst_o.flag_mask_w_v = e_flag_nwbf;
-          end else if (flag_op_s.dst == e_flag_sel_tf) begin
+          end else if (flag_op_s.dst == e_dst_tf) begin
             decoded_inst_o.tf_sel = e_tf_imm0;
             decoded_inst_o.flag_mask_w_v = e_flag_tf;
-          end else if (flag_op_s.dst == e_flag_sel_rf) begin
+          end else if (flag_op_s.dst == e_dst_rf) begin
             decoded_inst_o.pruief_sel = e_pruief_imm0;
             decoded_inst_o.flag_mask_w_v = e_flag_rf;
-          end else if (flag_op_s.dst == e_flag_sel_rwbf) begin
+          end else if (flag_op_s.dst == e_dst_rwbf) begin
             decoded_inst_o.rwbf_sel = e_rwbf_imm0;
             decoded_inst_o.flag_mask_w_v = e_flag_rwbf;
-          end else if (flag_op_s.dst == e_flag_sel_pf) begin
+          end else if (flag_op_s.dst == e_dst_pf) begin
             decoded_inst_o.pruief_sel = e_pruief_imm0;
             decoded_inst_o.flag_mask_w_v = e_flag_pf;
-          end else if (flag_op_s.dst == e_flag_sel_uf) begin
+          end else if (flag_op_s.dst == e_dst_uf) begin
             decoded_inst_o.pruief_sel = e_pruief_imm0;
             decoded_inst_o.flag_mask_w_v = e_flag_uf;
-          end else if (flag_op_s.dst == e_flag_sel_if) begin
+          end else if (flag_op_s.dst == e_dst_if) begin
             decoded_inst_o.pruief_sel = e_pruief_imm0;
             decoded_inst_o.flag_mask_w_v = e_flag_if;
-          end else if (flag_op_s.dst == e_flag_sel_ef) begin
+          end else if (flag_op_s.dst == e_dst_ef) begin
             decoded_inst_o.pruief_sel = e_pruief_imm0;
             decoded_inst_o.flag_mask_w_v = e_flag_ef;
           end
@@ -255,19 +255,21 @@ module bp_cce_inst_decode
           end
           if (minor_op_u.queue_minor_op == e_popq_op) begin
             // dequeue signals
-            decoded_inst_o.lce_req_ready = popq_op && (popq_qsel == e_src_q_lce_req);
-            decoded_inst_o.lce_resp_ready = popq_op && (popq_qsel == e_src_q_lce_resp);
-            decoded_inst_o.lce_data_resp_ready = popq_op && (popq_qsel == e_src_q_lce_data_resp);
-            decoded_inst_o.mem_resp_ready = popq_op && (popq_qsel == e_src_q_mem_resp);
-            decoded_inst_o.mem_data_resp_ready = popq_op && (popq_qsel == e_src_q_mem_data_resp);
+            decoded_inst_o.lce_req_ready = popq_op && (popq_qsel == e_src_q_sel_lce_req);
+            decoded_inst_o.lce_resp_ready = popq_op && (popq_qsel == e_src_q_sel_lce_resp);
+            decoded_inst_o.lce_data_resp_ready =
+              popq_op && (popq_qsel == e_src_q_sel_lce_data_resp);
+            decoded_inst_o.mem_resp_ready = popq_op && (popq_qsel == e_src_q_sel_mem_resp);
+            decoded_inst_o.mem_data_resp_ready =
+              popq_op && (popq_qsel == e_src_q_sel_mem_data_resp);
 
-            if (queue_op_s.op.popq.src_q == e_src_q_lce_data_resp) begin
+            if (queue_op_s.op.popq.src_q == e_src_q_sel_lce_data_resp) begin
               decoded_inst_o.cache_block_data_w_v = 1'b1;
               decoded_inst_o.cache_block_data_sel = e_data_sel_lce_data_resp;
               decoded_inst_o.nwbf_sel = e_nwbf_lce_data_resp;
               decoded_inst_o.flag_mask_w_v = e_flag_nwbf;
 
-            end else if (queue_op_s.op.popq.src_q == e_src_q_mem_data_resp) begin
+            end else if (queue_op_s.op.popq.src_q == e_src_q_sel_mem_data_resp) begin
               decoded_inst_o.cache_block_data_w_v = 1'b1;
               decoded_inst_o.cache_block_data_sel = e_data_sel_mem_data_resp;
               decoded_inst_o.req_sel = e_req_sel_mem_data_resp;
@@ -280,7 +282,7 @@ module bp_cce_inst_decode
               decoded_inst_o.nc_req_size_w_v = 1'b1;
               decoded_inst_o.flag_mask_w_v = e_flag_rqf;
 
-            end else if (queue_op_s.op.popq.src_q == e_src_q_mem_resp) begin
+            end else if (queue_op_s.op.popq.src_q == e_src_q_sel_mem_resp) begin
               decoded_inst_o.req_sel = e_req_sel_mem_resp;
               decoded_inst_o.transfer_lce_sel = e_tr_lce_sel_mem_resp;
               decoded_inst_o.lru_way_sel = e_lru_way_sel_mem_resp;
@@ -295,10 +297,10 @@ module bp_cce_inst_decode
               decoded_inst_o.nc_req_size_w_v = 1'b1;
               decoded_inst_o.flag_mask_w_v = (e_flag_rqf | e_flag_rwbf | e_flag_tf);
 
-            end else if (queue_op_s.op.popq.src_q == e_src_q_lce_resp) begin
+            end else if (queue_op_s.op.popq.src_q == e_src_q_sel_lce_resp) begin
               decoded_inst_o.ack_type_w_v = 1'b1;
 
-            end else if (queue_op_s.op.popq.src_q == e_src_q_lce_req) begin
+            end else if (queue_op_s.op.popq.src_q == e_src_q_sel_lce_req) begin
               decoded_inst_o.req_sel = e_req_sel_lce_req;
               decoded_inst_o.lru_way_sel = e_lru_way_sel_lce_req;
               decoded_inst_o.req_w_v = 1'b1; // req_lce, req_addr, req_tag
@@ -326,10 +328,10 @@ module bp_cce_inst_decode
       decoded_inst_o.gpr_w_v = |decoded_inst_o.gpr_w_mask;
 
       // Uncached data and request size register writes
-      decoded_inst_o.nc_data_lce_req = (popq_op) && (popq_qsel == e_src_q_lce_req);
-      decoded_inst_o.nc_data_mem_data_resp = (popq_op) && (popq_qsel == e_src_q_mem_data_resp);
-      decoded_inst_o.nc_data_w_v = (popq_op) && ((popq_qsel == e_src_q_lce_req)
-                                                 || (popq_qsel == e_src_q_mem_data_resp));
+      decoded_inst_o.nc_data_lce_req = (popq_op) && (popq_qsel == e_src_q_sel_lce_req);
+      decoded_inst_o.nc_data_mem_data_resp = (popq_op) && (popq_qsel == e_src_q_sel_mem_data_resp);
+      decoded_inst_o.nc_data_w_v = (popq_op) && ((popq_qsel == e_src_q_sel_lce_req)
+                                                 || (popq_qsel == e_src_q_sel_mem_data_resp));
 
     end
 
