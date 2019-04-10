@@ -16,20 +16,11 @@ module testbench();
   localparam sets_p = 64;
   localparam ways_p = 8;
   localparam paddr_width_p = 39;
-  localparam num_cce_p = all_cfgs_gp[cfg_p].num_cce;
   localparam num_lce_p = `NUM_LCE_P;
   localparam mem_els_p = sets_p*ways_p*ways_p;
   localparam instr_count = `NUM_INSTR_P;
-  localparam num_cce_inst_ram_els_p = 256;
 
-  localparam data_mask_width_lp=(data_width_p>>3);
-  localparam block_size_in_words_lp=ways_p;
-  localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp);
-  localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp);
-  localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p);
   localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp);
-
-  localparam lce_data_width_lp=(ways_p*data_width_p);
 
   localparam ring_width_p = data_width_p+paddr_width_p+4;
   localparam rom_addr_width_p = 20;

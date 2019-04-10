@@ -23,7 +23,7 @@ class TraceGen:
   def send_load(self, signed, size, addr):
     packet = "0001_"
     if (size == 8):
-      packet += "0111_"
+      packet += "0011_"
     else:
       if (signed):
         if (size == 1):
