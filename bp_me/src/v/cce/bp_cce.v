@@ -36,6 +36,7 @@ module bp_cce
     , localparam way_group_width_lp        = (tag_set_width_lp*num_lce_p)
     , localparam way_group_offset_high_lp  = (lg_block_size_in_bytes_lp+lg_lce_sets_lp)
     , localparam num_way_groups_lp         = (lce_sets_p/num_cce_p)
+    , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
     , localparam inst_ram_addr_width_lp    = `BSG_SAFE_CLOG2(num_cce_inst_ram_els_p)
 
     , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
@@ -184,7 +185,7 @@ module bp_cce
   logic [`bp_cce_coh_bits-1:0] dir_coh_state_o;
   logic [way_group_width_lp-1:0] dir_way_group_o;
 
-  logic [lg_lce_sets_lp-1:0] dir_way_group_i;
+  logic [lg_num_way_groups_lp-1:0] dir_way_group_i;
   logic [lg_num_lce_lp-1:0] dir_lce_i;
   logic [lg_lce_assoc_lp-1:0] dir_way_i;
   logic [tag_width_lp-1:0] dir_tag_i;
@@ -451,7 +452,8 @@ module bp_cce
   // A localparams and signals for output queue message formation
   // NOTE: num_cce_p must be a power of two
   localparam gpr_shift_lp = (num_cce_p == 1) ? 0 : lg_num_cce_lp;
-  localparam [paddr_width_p-1:0] lce_cmd_addr_0 = (paddr_width_p)'('0);
+  localparam [paddr_width_p-lg_lce_sets_lp-1:0] lce_cmd_addr_0 =
+    (paddr_width_p-lg_lce_sets_lp)'('0);
   logic [lg_lce_sets_lp-1:0] gpr_set;
 
   // Output queue message field inputs
@@ -610,22 +612,22 @@ module bp_cce
   begin
     case (decoded_inst_o.dir_way_group_sel)
       e_dir_wg_sel_r0: begin
-        dir_way_group_i = gpr_r_o[e_gpr_r0][lg_lce_sets_lp-1:0];
+        dir_way_group_i = gpr_r_o[e_gpr_r0][lg_num_way_groups_lp-1:0];
       end
       e_dir_wg_sel_r1: begin
-        dir_way_group_i = gpr_r_o[e_gpr_r1][lg_lce_sets_lp-1:0];
+        dir_way_group_i = gpr_r_o[e_gpr_r1][lg_num_way_groups_lp-1:0];
       end
       e_dir_wg_sel_r2: begin
-        dir_way_group_i = gpr_r_o[e_gpr_r2][lg_lce_sets_lp-1:0];
+        dir_way_group_i = gpr_r_o[e_gpr_r2][lg_num_way_groups_lp-1:0];
       end
       e_dir_wg_sel_r3: begin
-        dir_way_group_i = gpr_r_o[e_gpr_r3][lg_lce_sets_lp-1:0];
+        dir_way_group_i = gpr_r_o[e_gpr_r3][lg_num_way_groups_lp-1:0];
       end
       e_dir_wg_sel_req_addr: begin
-        dir_way_group_i = req_addr_r_o[way_group_offset_high_lp-1 -: lg_lce_sets_lp];
+        dir_way_group_i = req_addr_r_o[way_group_offset_high_lp-1 -: lg_num_way_groups_lp];
       end
       e_dir_wg_sel_lru_way_addr: begin
-        dir_way_group_i = lru_addr_r_o[way_group_offset_high_lp-1 -: lg_lce_sets_lp];
+        dir_way_group_i = lru_addr_r_o[way_group_offset_high_lp-1 -: lg_num_way_groups_lp];
       end
       default: begin
         dir_way_group_i = '0;
