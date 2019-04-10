@@ -7,7 +7,9 @@ VV_OPTS  = --sc                 # Output in SystemC rather than C++
 VV_OPTS += -Wno-unoptflat       # Verilator has problems with false positive combinatorial
                                 #   loop detection e.g. bit 0 drives bit 1 of struct
 #VV_OPTS += --debug --gdbbt     # Debugs and produces stack trace
-VVOPTS += -O1 -fstrict-aliasing # Fastest compile time options
+VV_OPTS += -O1
+
+#OPT_FAST += -O1 -fstrict-aliasing # Fastest compile time options
 
 LINT_OPTS  := --lint-only
 BUILD_OPTS := --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --exe
@@ -21,13 +23,13 @@ DUMP     ?= 0
 ifeq ($(DUMP), 1)
   VV_OPTS += --trace         # Dump a VCD
   VV_OPTS += --trace-structs # Dump struct information with VCD
-  CPP_FLAGS += -DDUMP=$(DUMP)
+  VV_OPTS += --trace-depth 10
 endif
 
 ifeq ($(COVERAGE), 1)
   VV_OPTS += --coverage-line
   VV_OPTS += --coverage-toggle
-	COVERAGE_DAT ?= $(ROM_NAME)_coverage.dat
+  COVERAGE_DAT ?= $(ROM_NAME)_coverage.dat
 endif
 
 .PHONY: deps.sc lint.sc build.sc run.sc clean.sc

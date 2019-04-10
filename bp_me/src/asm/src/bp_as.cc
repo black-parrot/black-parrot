@@ -279,14 +279,14 @@ Assembler::parseCohStImm(string &s) {
 void
 Assembler::parseALU(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
   if (tokens->size() == 2) {
-    inst->src_a = parseSrcOpd(tokens->at(1));
-    inst->src_b = e_src_const_1;
-    inst->dst = parseDstOpd(tokens->at(1));
+    inst->type_u.alu_op_s.src_a = parseSrcOpd(tokens->at(1));
+    inst->type_u.alu_op_s.src_b = e_src_const_1;
+    inst->type_u.alu_op_s.dst = parseDstOpd(tokens->at(1));
     //inst->imm = 1;
   } else if (tokens->size() == 4) {
-    inst->src_a = parseSrcOpd(tokens->at(1));
-    inst->src_b = parseSrcOpd(tokens->at(2));
-    inst->dst = parseDstOpd(tokens->at(3));
+    inst->type_u.alu_op_s.src_a = parseSrcOpd(tokens->at(1));
+    inst->type_u.alu_op_s.src_b = parseSrcOpd(tokens->at(2));
+    inst->type_u.alu_op_s.dst = parseDstOpd(tokens->at(3));
   } else {
     printf("Unknown ALU instruction: %s\n", tokens->at(0).c_str());
     exit(-1);
@@ -305,38 +305,41 @@ Assembler::parseTarget(string &s, bool &found) {
   return labelIt->second;
 }
 
-void
-Assembler::setImm(bp_cce_inst_s *inst, string &target_str) {
+uint16_t
+Assembler::getImm(string &target_str) {
   bool label_found = false;
   uint16_t target = parseTarget(target_str, label_found);
   if (label_found) {
-    inst->imm = target;
+    return target;
   } else {
-    inst->imm = parseImm(target_str);
+    return parseImm(target_str);
   }
 }
 
 void
 Assembler::parseBranch(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
+  // Branch Immediate
   if (tokens->size() == 2) {
-    setImm(inst, tokens->at(1));
+    inst->type_u.branch_op_s.imm = getImm(tokens->at(1));
+  // Branch Flag or Branch Queue Ready
   } else if (tokens->size() == 3) {
-    inst->src_a = parseSrcOpd(tokens->at(1));
+    inst->type_u.branch_op_s.src_a = parseSrcOpd(tokens->at(1));
     if (!strcmp("bf", tokens->at(0).c_str()) || !strcmp("bqr", tokens->at(0).c_str())) {
-      inst->src_b = e_src_const_1;
+      inst->type_u.branch_op_s.src_b = e_src_const_1;
     } else {
-      inst->src_b = e_src_const_0;
+      inst->type_u.branch_op_s.src_b = e_src_const_0;
     }
-    setImm(inst, tokens->at(2));
+    inst->type_u.branch_op_s.imm = getImm(tokens->at(2));
+  // Branch
   } else if (tokens->size() == 4) {
     if (!strcmp("bge", tokens->at(0).c_str()) || !strcmp("bgt", tokens->at(0).c_str())) {
-      inst->src_a = parseSrcOpd(tokens->at(2));
-      inst->src_b = parseSrcOpd(tokens->at(1));
+      inst->type_u.branch_op_s.src_a = parseSrcOpd(tokens->at(2));
+      inst->type_u.branch_op_s.src_b = parseSrcOpd(tokens->at(1));
     } else {
-      inst->src_a = parseSrcOpd(tokens->at(1));
-      inst->src_b = parseSrcOpd(tokens->at(2));
+      inst->type_u.branch_op_s.src_a = parseSrcOpd(tokens->at(1));
+      inst->type_u.branch_op_s.src_b = parseSrcOpd(tokens->at(2));
     }
-    setImm(inst, tokens->at(3));
+    inst->type_u.branch_op_s.imm = getImm(tokens->at(3));
   } else {
     printf("Unknown Branch instruction: %s\n", tokens->at(0).c_str());
   }
@@ -393,21 +396,23 @@ Assembler::parseFlagSel(string &s) {
 void
 Assembler::parseMove(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
   if (tokens->size() == 3) { // mov or movi
-    inst->dst = parseDstOpd(tokens->at(2));
+    inst->type_u.mov_op_s.dst = parseDstOpd(tokens->at(2));
     if (inst->minor_op == e_movi) {
-      inst->src_a = e_src_imm;
-      if (inst->dst == e_dst_next_coh_state) {
-        inst->imm = parseCohStImm(tokens->at(1));
+      inst->type_u.mov_op_s.src = e_src_imm;
+      if (inst->type_u.mov_op_s.dst == e_dst_next_coh_state) {
+        inst->type_u.mov_op_s.imm = parseCohStImm(tokens->at(1));
       } else {
-        inst->imm = parseImm(tokens->at(1));
+        inst->type_u.mov_op_s.imm = parseImm(tokens->at(1));
       }
     } else if (inst->minor_op == e_mov) {
-      inst->src_a = parseSrcOpd(tokens->at(1));
+      inst->type_u.mov_op_s.src = parseSrcOpd(tokens->at(1));
     } else {
       printf("Unknown Move instruction: %s\n", tokens->at(0).c_str());
       exit(-1);
     }
   } else if (tokens->size() == 2) { // sf or sfz
+    inst->type_u.flag_op_s.dst = parseDstOpd(tokens->at(1));
+    /*
     inst->rqf_sel = e_rqf_imm0;
     inst->nerldf_sel = e_nerldf_imm0;
     inst->nwbf_sel = e_nwbf_imm0;
@@ -415,10 +420,11 @@ Assembler::parseMove(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
     inst->pruief_sel = e_pruief_imm0;
     inst->rwbf_sel = e_rwbf_imm0;
     inst->flag_mask_w_v = parseFlagSel(tokens->at(1));
+    */
     if (!strcmp("sf", tokens->at(0).c_str())) {
-      inst->imm = 1;
+      inst->type_u.flag_op_s.imm = 1;
     } else if (!strcmp("sfz", tokens->at(0).c_str())) {
-      inst->imm = 0;
+      inst->type_u.flag_op_s.imm = 0;
     } else {
       printf("Unknown Flag instruction: %s\n", tokens->at(0).c_str());
       exit(-1);
@@ -516,13 +522,15 @@ Assembler::parseDirCohStSel(string &s) {
 
 void
 Assembler::parseReadDir(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
-  inst->dir_way_group_sel = parseDirWgSel(tokens->at(1));
+  inst->type_u.read_dir_op_s.dir_way_group_sel = parseDirWgSel(tokens->at(1));
   if (inst->minor_op == e_rdp || inst->minor_op == e_rdw) {
+    /*
     inst->pruief_sel = e_pruief_logic;
     inst->flag_mask_w_v = e_flag_pf;
+    */
   } else if (inst->minor_op == e_rde) {
-    inst->dir_lce_sel = parseDirLceSel(tokens->at(2));
-    inst->dir_way_sel = parseDirWaySel(tokens->at(3));
+    inst->type_u.read_dir_op_s.dir_lce_sel = parseDirLceSel(tokens->at(2));
+    inst->type_u.read_dir_op_s.dir_way_sel = parseDirWaySel(tokens->at(3));
   } else {
     printf("Unknown Read Directory instruction\n");
     exit(-1);
@@ -531,20 +539,20 @@ Assembler::parseReadDir(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
 
 void
 Assembler::parseWriteDir(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
-  inst->dir_way_group_sel = parseDirWgSel(tokens->at(1));
+  inst->type_u.write_dir_op_s.dir_way_group_sel = parseDirWgSel(tokens->at(1));
   if (inst->minor_op == e_wdp) {
-    inst->imm = (parseImm(tokens->at(2)) & 0x1);
+    inst->type_u.write_dir_op_s.imm = (uint8_t)(parseImm(tokens->at(2)) & 0x1);
   } else if (inst->minor_op == e_wde || inst->minor_op == e_wds) {
-    inst->dir_lce_sel = parseDirLceSel(tokens->at(2));
-    inst->dir_way_sel = parseDirWaySel(tokens->at(3));
+    inst->type_u.write_dir_op_s.dir_lce_sel = parseDirLceSel(tokens->at(2));
+    inst->type_u.write_dir_op_s.dir_way_sel = parseDirWaySel(tokens->at(3));
     if (inst->minor_op == e_wde) {
-      inst->dir_tag_sel = parseDirTagSel(tokens->at(4));
-      inst->dir_coh_state_sel = parseDirCohStSel(tokens->at(5));
-      if (inst->dir_coh_state_sel == e_dir_coh_sel_inst_imm) {
-        inst->imm = parseCohStImm(tokens->at(5));
+      inst->type_u.write_dir_op_s.dir_tag_sel = parseDirTagSel(tokens->at(4));
+      inst->type_u.write_dir_op_s.dir_coh_state_sel = parseDirCohStSel(tokens->at(5));
+      if (inst->type_u.write_dir_op_s.dir_coh_state_sel == e_dir_coh_sel_inst_imm) {
+        inst->type_u.write_dir_op_s.imm = (uint8_t)(parseCohStImm(tokens->at(5)) & 0x3);
       }
     } else if (inst->minor_op == e_wds) {
-      inst->dir_coh_state_sel = parseDirCohStSel(tokens->at(4));
+      inst->type_u.write_dir_op_s.dir_coh_state_sel = parseDirCohStSel(tokens->at(4));
     } else {
       printf("Unknown Write Directory instruction\n");
       exit(-1);
@@ -558,6 +566,7 @@ Assembler::parseWriteDir(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
 void
 Assembler::parseMisc(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
   if (inst->minor_op == e_gad) {
+    /*
     inst->transfer_lce_sel = e_tr_lce_sel_logic;
     inst->transfer_lce_w_v = 1;
     inst->req_addr_way_sel = e_req_addr_way_sel_logic;
@@ -565,6 +574,7 @@ Assembler::parseMisc(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
     inst->tf_sel = e_tf_logic;
     inst->pruief_sel = e_pruief_logic;
     inst->flag_mask_w_v = (e_flag_tf | e_flag_rf | e_flag_uf | e_flag_if | e_flag_ef);
+    */
   } else if (inst->minor_op != e_stall) {
     printf("Unknown Misc instruction: %s\n", tokens->at(0).c_str());
     exit(-1);
@@ -682,22 +692,22 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
       bp_cce_inst_src_q_sel_e q = parseSrcQueue(tokens->at(i));
       switch (q) {
         case e_src_q_lce_req:
-          inst->imm |= (1 << 5);
+          inst->type_u.queue_op_s.op.wfq.qmask |= (1 << 5);
           break;
         case e_src_q_lce_resp:
-          inst->imm |= (1 << 4);
+          inst->type_u.queue_op_s.op.wfq.qmask |= (1 << 4);
           break;
         case e_src_q_lce_data_resp:
-          inst->imm |= (1 << 3);
+          inst->type_u.queue_op_s.op.wfq.qmask |= (1 << 3);
           break;
         case e_src_q_mem_resp:
-          inst->imm |= (1 << 2);
+          inst->type_u.queue_op_s.op.wfq.qmask |= (1 << 2);
           break;
         case e_src_q_mem_data_resp:
-          inst->imm |= (1 << 1);
+          inst->type_u.queue_op_s.op.wfq.qmask |= (1 << 1);
           break;
         case e_src_q_pending:
-          inst->imm |= (1);
+          inst->type_u.queue_op_s.op.wfq.qmask |= (1);
           break;
         default:
           printf("Unknown src queue for WFQ\n");
@@ -706,7 +716,8 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
     }
   } else if (inst->minor_op == e_popq) {
     bp_cce_inst_src_q_sel_e srcQ = parseSrcQueue(tokens->at(1));
-    inst->imm = srcQ;
+    inst->type_u.queue_op_s.op.popq.src_q = srcQ;
+    /*
     switch (srcQ) {
       case e_src_q_lce_req:
         inst->req_sel = e_req_sel_lce_req;
@@ -765,26 +776,26 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
         printf("Unknown queue\n");
         exit(-1);
     }
+    */
   } else if (inst->minor_op == e_pushq) {
     bp_cce_inst_dst_q_sel_e dstQ = parseDstQueue(tokens->at(1));
-    inst->imm = ((uint16_t)dstQ << 3);
+    inst->type_u.queue_op_s.op.pushq.dst_q = dstQ;
     // set lce cmd lce, addr, and way select to the 0 select
-    inst->lce_cmd_lce_sel = e_lce_cmd_lce_0;
-    inst->lce_cmd_addr_sel = e_lce_cmd_addr_0;
-    inst->lce_cmd_way_sel = e_lce_cmd_way_0;
+    inst->type_u.queue_op_s.op.pushq.lce_cmd_lce_sel = e_lce_cmd_lce_0;
+    inst->type_u.queue_op_s.op.pushq.lce_cmd_addr_sel = e_lce_cmd_addr_0;
+    inst->type_u.queue_op_s.op.pushq.lce_cmd_way_sel = e_lce_cmd_way_0;
     // parse lce, addr, way, and mem_addr selects
     switch (dstQ) {
       case e_dst_q_lce_cmd:
-        // dstQ = imm[4:3], cmd = imm[2:0]
-        inst->imm |= (parseImm(tokens->at(2)) & 0x7);
+        inst->type_u.queue_op_s.op.pushq.cmd = (bp_cce_lce_cmd_type_e)(parseImm(tokens->at(2)) & 0x7);
         if (tokens->size() > 3) {
-          inst->lce_cmd_lce_sel = parseLceCmdLceSel(tokens->at(3));
+          inst->type_u.queue_op_s.op.pushq.lce_cmd_lce_sel = parseLceCmdLceSel(tokens->at(3));
         }
         if (tokens->size() > 4) {
-          inst->lce_cmd_addr_sel = parseLceCmdAddrSel(tokens->at(4));
+          inst->type_u.queue_op_s.op.pushq.lce_cmd_addr_sel = parseLceCmdAddrSel(tokens->at(4));
         }
         if (tokens->size() > 5) {
-          inst->lce_cmd_way_sel = parseLceCmdWaySel(tokens->at(5));
+          inst->type_u.queue_op_s.op.pushq.lce_cmd_way_sel = parseLceCmdWaySel(tokens->at(5));
         }
         break;
       case e_dst_q_lce_data_cmd:
@@ -794,7 +805,7 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
         // nothing special to set
         break;
       case e_dst_q_mem_data_cmd:
-        inst->mem_data_cmd_addr_sel = parseMemDataCmdAddrSel(tokens->at(2));
+        inst->type_u.queue_op_s.op.pushq.mem_data_cmd_addr_sel = parseMemDataCmdAddrSel(tokens->at(2));
         break;
       default:
         printf("Unknown queue\n");
@@ -822,7 +833,7 @@ Assembler::parseTokens(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
       parseBranch(tokens, n, inst);
       break;
     case e_op_move:
-    //case e_op_flag:
+    case e_op_flag:
       parseMove(tokens, n, inst);
       break;
     case e_op_read_dir:
@@ -847,6 +858,8 @@ Assembler::Assembler() {
   infp = stdin;
   outfp = stdout;
   line_number = 0;
+
+  printf("instruction length: %d\n", bp_cce_inst_s_width);
 }
 
 Assembler::~Assembler() {
@@ -885,7 +898,7 @@ void
 Assembler::assemble() {
   // Transform tokenized instructions into instruction struct, then write to output
   bp_cce_inst_s inst;
-  int i = 0;
+  unsigned int i = 0;
   while (i < tokens.size()) {
     inst = {};
     parseTokens(tokens.at(i), num_tokens.at(i), &inst);
@@ -975,6 +988,28 @@ Assembler::printLongField(uint16_t b, int bits, stringstream &ss) {
 }
 
 void
+Assembler::printField(uint64_t b, int bits, stringstream &ss) {
+  int i = 0;
+  uint64_t mask = (1 << (bits-1));
+  while (i < bits) {
+    if (b & mask) {
+      ss << "1";
+    } else {
+      ss << "0";
+    }
+    mask = mask >> 1;
+    ++i;
+  }
+}
+
+void
+Assembler::printPad(int bits, stringstream &ss) {
+  for (int i = 0; i < bits; i++) {
+    ss << "0";
+  }
+}
+
+void
 Assembler::writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &s) {
 
   stringstream ss;
@@ -984,6 +1019,73 @@ Assembler::writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &
   printShortField(inst->op, bp_cce_inst_op_width, ss);
   printShortField(inst->minor_op, bp_cce_inst_minor_op_width, ss);
 
+  switch (inst->op) {
+    case e_op_alu:
+      printShortField(inst->type_u.alu_op_s.dst, bp_cce_inst_dst_width, ss);
+      printShortField(inst->type_u.alu_op_s.src_a, bp_cce_inst_src_width, ss);
+      printShortField(inst->type_u.alu_op_s.src_b, bp_cce_inst_src_width, ss);
+      printLongField(inst->type_u.alu_op_s.imm, bp_cce_inst_imm16_width, ss);
+      printPad(bp_cce_inst_alu_pad, ss);
+      break;
+    case e_op_branch:
+      printShortField(inst->type_u.branch_op_s.src_a, bp_cce_inst_src_width, ss);
+      printShortField(inst->type_u.branch_op_s.src_b, bp_cce_inst_src_width, ss);
+      printLongField(inst->type_u.branch_op_s.imm, bp_cce_inst_imm16_width, ss);
+      printPad(bp_cce_inst_branch_pad, ss);
+      break;
+    case e_op_move:
+      printShortField(inst->type_u.mov_op_s.dst, bp_cce_inst_dst_width, ss);
+      printShortField(inst->type_u.mov_op_s.src, bp_cce_inst_src_width, ss);
+      printLongField(inst->type_u.mov_op_s.imm, bp_cce_inst_imm16_width, ss);
+      printPad(bp_cce_inst_mov_pad, ss);
+      break;
+    case e_op_flag:
+      printShortField(inst->type_u.flag_op_s.dst, bp_cce_inst_dst_width, ss);
+      printShortField(inst->type_u.flag_op_s.imm, 1, ss);
+      printPad(bp_cce_inst_flag_pad, ss);
+      break;
+    case e_op_read_dir:
+      printShortField(inst->type_u.read_dir_op_s.dir_way_group_sel, bp_cce_inst_dir_way_group_sel_width, ss);
+      printShortField(inst->type_u.read_dir_op_s.dir_lce_sel, bp_cce_inst_dir_lce_sel_width, ss);
+      printShortField(inst->type_u.read_dir_op_s.dir_way_sel, bp_cce_inst_dir_way_sel_width, ss);
+      printPad(bp_cce_inst_read_dir_pad, ss);
+      break;
+    case e_op_write_dir:
+      printShortField(inst->type_u.write_dir_op_s.dir_way_group_sel, bp_cce_inst_dir_way_group_sel_width, ss);
+      printShortField(inst->type_u.write_dir_op_s.dir_lce_sel, bp_cce_inst_dir_lce_sel_width, ss);
+      printShortField(inst->type_u.write_dir_op_s.dir_way_sel, bp_cce_inst_dir_way_sel_width, ss);
+      printShortField(inst->type_u.write_dir_op_s.dir_coh_state_sel, bp_cce_inst_dir_coh_state_sel_width, ss);
+      printShortField(inst->type_u.write_dir_op_s.dir_tag_sel, bp_cce_inst_dir_tag_sel_width, ss);
+      printShortField(inst->type_u.write_dir_op_s.imm, bp_cce_coh_bits, ss);
+      printPad(bp_cce_inst_write_dir_pad, ss);
+      break;
+    case e_op_misc:
+      printPad(bp_cce_inst_misc_pad, ss);
+      break;
+    case e_op_queue:
+      if (inst->minor_op == e_wfq) {
+        printShortField(inst->type_u.queue_op_s.op.wfq.qmask, bp_cce_num_src_q, ss);
+        printPad(bp_cce_inst_wfq_pad, ss);
+      } else if (inst->minor_op == e_pushq) {
+        printShortField(inst->type_u.queue_op_s.op.pushq.dst_q, bp_cce_inst_dst_q_sel_width, ss);
+        printShortField(inst->type_u.queue_op_s.op.pushq.cmd, bp_cce_lce_cmd_type_width, ss);
+        printShortField(inst->type_u.queue_op_s.op.pushq.lce_cmd_lce_sel, bp_cce_inst_lce_cmd_lce_sel_width, ss);
+        printShortField(inst->type_u.queue_op_s.op.pushq.lce_cmd_addr_sel, bp_cce_inst_lce_cmd_addr_sel_width, ss);
+        printShortField(inst->type_u.queue_op_s.op.pushq.lce_cmd_way_sel, bp_cce_inst_lce_cmd_way_sel_width, ss);
+        printShortField(inst->type_u.queue_op_s.op.pushq.mem_data_cmd_addr_sel, bp_cce_inst_mem_data_cmd_addr_sel_width, ss);
+        printPad(bp_cce_inst_pushq_pad, ss);
+      } else if (inst->minor_op == e_popq) {
+        printShortField(inst->type_u.queue_op_s.op.popq.src_q, bp_cce_inst_src_q_sel_width, ss);
+        printPad(bp_cce_inst_popq_pad, ss);
+      }
+      break;
+    default:
+      printf("Error parsing instruction\n");
+      printf("line: %d\n", line_number);
+      exit(-1);
+  }
+
+  /* TODO: print out of instructions based on type
   printShortField(inst->src_a, bp_cce_inst_src_width, ss);
   printShortField(inst->src_b, bp_cce_inst_src_width, ss);
   printShortField(inst->dst, bp_cce_inst_dst_width, ss);
@@ -1023,13 +1125,14 @@ Assembler::writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &
   printShortField(inst->ack_type_w_v, 1, ss);
 
   printLongField(inst->flag_mask_w_v, bp_cce_inst_num_flags, ss);
+  */
 
   switch (output_format) {
     case  output_format_ascii_binary:
       fprintf(outfp, "%s\n", ss.str().c_str());
       break;
     case  output_format_dbg:
-      fprintf(outfp, "(%02X) %s : %s\n", line_number, s.c_str(), ss.str().c_str());
+      fprintf(outfp, "(%02X) %5s : %s\n", line_number, s.c_str(), ss.str().c_str());
       break;
   }
 }

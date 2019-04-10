@@ -64,7 +64,7 @@ protected:
 
   uint16_t parseImm(string &s);
   uint16_t parseCohStImm(string &s);
-  void setImm(bp_cce_inst_s *inst, string &target_str);
+  uint16_t getImm(string &target_str);
   bp_cce_inst_flag_e parseFlagSel(string &s);
   bp_cce_inst_dir_way_group_sel_e parseDirWgSel(string &s);
   bp_cce_inst_dir_lce_sel_e parseDirLceSel(string &s);
@@ -85,6 +85,8 @@ protected:
 
   void printShortField(uint8_t b, int bits, stringstream &ss);
   void printLongField(uint16_t b, int bits, stringstream &ss);
+  void printField(uint64_t b, int bits, stringstream &ss);
+  void printPad(int bits, stringstream &ss);
   void writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &s);
 
   void parseALU(vector<string> *tokens, int n, bp_cce_inst_s *inst);
