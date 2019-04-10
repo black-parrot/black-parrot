@@ -36,7 +36,7 @@ int sc_main(int argc, char **argv)
   DUT.reset_i(reset_i);
   DUT.done_o(done_o);
 
-  #if (DUMP == 1)
+  #if (VM_TRACE == 1)
   VerilatedVcdSc* wf = new VerilatedVcdSc;
   DUT.trace(wf, TRACE_LEVELS);
   wf->open("dump.vcd");
@@ -57,7 +57,7 @@ int sc_main(int argc, char **argv)
   while (!done_o) {
     if (cnt == MAX_CYCLES) {
       cout << "@" << sc_time_stamp() << " TEST FAILED" << endl;
-      #if (DUMP == 1)
+      #if (VM_TRACE == 1)
       wf->close();
       #endif
       exit(-1);
@@ -69,7 +69,7 @@ int sc_main(int argc, char **argv)
 
   cout << "@" << sc_time_stamp() << " TEST PASSED!" << endl;
 
-  #if (DUMP == 1)
+  #if (VM_TRACE == 1)
   wf->close();
   #endif
 

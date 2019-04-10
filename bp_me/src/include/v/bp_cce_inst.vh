@@ -59,16 +59,11 @@ typedef enum logic [2:0] {
 typedef enum logic [2:0] {
   e_bi_op                                = 3'b111   // Branch Immediate (Unconditional)
 
-  ,e_beq_op                              = 3'b000   // Branch if A == B
-  ,e_bne_op                              = 3'b001   // Branch if A != B
+  ,e_beq_op                              = 3'b010   // Branch if A == B
+  ,e_bne_op                              = 3'b011   // Branch if A != B
 
   ,e_blt_op                              = 3'b100   // Branch if A < B
   ,e_ble_op                              = 3'b101   // Branch if A <= B
-
-
-  ,e_bf_op                               = 3'b010   // Branch if flag == 1
-  ,e_bfz_op                              = 3'b011   // Branch if flag == 0
-
 } bp_cce_inst_minor_branch_op_e;
 
 // Software supported branch operations
@@ -82,6 +77,9 @@ typedef enum logic [2:0] {
 //,e_bgt_op                              = 3'b100
 // Branch if A >= B // same as BLE, swap src_a and src_b
 //,e_bge_op                              = 3'b101
+// Branch if Flag == 1 or 0
+//,e_bf_op                               = 3'b010   // Branch if flag == 1
+//,e_bfz_op                              = 3'b010   // Branch if flag == 0
 
 // Minor Move Op Codes
 typedef enum logic [2:0] {

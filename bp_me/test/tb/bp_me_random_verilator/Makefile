@@ -23,7 +23,7 @@ CCE_SRC_PATH         = $(BP_ME_SRC_PATH)/cce
 NETWORK_PATH         = $(BP_ME_SRC_PATH)/network
 
 CPPFLAGS += -I$(BP_ME_DIR)/test/include -I$(BP_ME_DIR)/src/include/c
-CPPFLAGS += -DDUMP=1
+#CPPFLAGS += -DVM_TRACE=1
 CPPFLAGS += -O1
 
 OPT_FAST = -O1 -fstrict-aliasing

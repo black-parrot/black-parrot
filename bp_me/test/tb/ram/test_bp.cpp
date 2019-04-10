@@ -29,7 +29,7 @@ int sc_main(int argc, char **argv)
     DUT.clk_i(clock);
     DUT.reset_i(reset_i);
 
-    #if (DUMP == 1)
+    #if (VM_TRACE == 1)
     VerilatedVcdSc* wf = new VerilatedVcdSc;
     DUT.trace(wf, TRACE_LEVELS);
     wf->open("dump.vcd");
@@ -48,7 +48,7 @@ int sc_main(int argc, char **argv)
 
     cout << "TEST PASSED!" << endl;
 
-    #if (DUMP == 1)
+    #if (VM_TRACE == 1)
     wf->close();
     #endif
 

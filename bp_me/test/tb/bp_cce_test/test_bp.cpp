@@ -94,7 +94,7 @@ int sc_main(int argc, char **argv)
   DUT.lce_data_cmd_ready_i(lce_data_cmd_ready_i);
 
 
-  #if (DUMP == 1)
+  #if (VM_TRACE == 1)
   VerilatedVcdSc* wf = new VerilatedVcdSc;
   DUT.trace(wf, TRACE_LEVELS);
   wf->open("dump.vcd");
@@ -128,7 +128,7 @@ int sc_main(int argc, char **argv)
       stallDetect++;
       if (stallDetect == STALL_MAX) {
         cout << "@" << sc_time_stamp() << " STALL!" << endl;
-        #if (DUMP == 1)
+        #if (VM_TRACE == 1)
         wf->close();
         #endif
         return 0;
@@ -155,7 +155,7 @@ int sc_main(int argc, char **argv)
     stallDetect++;
     if (stallDetect == STALL_MAX) {
       cout << "@" << sc_time_stamp() << " STALL!" << endl;
-      #if (DUMP == 1)
+      #if (VM_TRACE == 1)
       wf->close();
       #endif
       return 0;
@@ -184,7 +184,7 @@ int sc_main(int argc, char **argv)
       stallDetect++;
       if (stallDetect == STALL_MAX) {
         cout << "@" << sc_time_stamp() << " STALL!" << endl;
-        #if (DUMP == 1)
+        #if (VM_TRACE == 1)
         wf->close();
         #endif
         return 0;
@@ -211,7 +211,7 @@ int sc_main(int argc, char **argv)
       stallDetect++;
       if (stallDetect == STALL_MAX) {
         cout << "@" << sc_time_stamp() << " STALL!" << endl;
-        #if (DUMP == 1)
+        #if (VM_TRACE == 1)
         wf->close();
         #endif
         return 0;
@@ -221,7 +221,7 @@ int sc_main(int argc, char **argv)
     sc_bv<bp_lce_data_cmd_width> data_cmd(lce_data_cmd_o.read());
     if (!checkCceDataCmd(data_cmd, 0, lruWay, e_lce_data_cmd_cce, 0, false)) {
       cout << "@" << sc_time_stamp() << " TEST FAILED!" << endl;
-      #if (DUMP == 1)
+      #if (VM_TRACE == 1)
       wf->close();
       #endif
       exit(-1);
@@ -241,7 +241,7 @@ int sc_main(int argc, char **argv)
       stallDetect++;
       if (stallDetect == STALL_MAX) {
         cout << "@" << sc_time_stamp() << " STALL!" << endl;
-        #if (DUMP == 1)
+        #if (VM_TRACE == 1)
         wf->close();
         #endif
         return 0;
@@ -250,7 +250,7 @@ int sc_main(int argc, char **argv)
     sc_bv<bp_cce_lce_cmd_width> cmd(lce_cmd_o.read());
     if (!checkCceCmd(cmd, 0, 0, reqAddr, lruWay, e_lce_cmd_set_tag, e_MESI_E, 0, 0)) {
       cout << "@" << sc_time_stamp() << " TEST FAILED!" << endl;
-      #if (DUMP == 1)
+      #if (VM_TRACE == 1)
       wf->close();
       #endif
       exit(-1);
@@ -268,7 +268,7 @@ int sc_main(int argc, char **argv)
       stallDetect++;
       if (stallDetect == STALL_MAX) {
         cout << "@" << sc_time_stamp() << " STALL!" << endl;
-        #if (DUMP == 1)
+        #if (VM_TRACE == 1)
         wf->close();
         #endif
         return 0;
@@ -491,7 +491,7 @@ int sc_main(int argc, char **argv)
 
   cout << "@" << sc_time_stamp() << " TEST PASSED!" << endl;
 
-  #if (DUMP == 1)
+  #if (VM_TRACE == 1)
   wf->close();
   #endif
 
