@@ -296,7 +296,7 @@ always_comb
         fe_cmd.opcode = e_op_state_reset;
         fe_cmd_reset_operands.pc = npc_r;
 
-        fe_cmd.operands.reset_operands = fe_cmd_reset_operands.pc;
+        fe_cmd.operands.reset_operands = fe_cmd_reset_operands;
         fe_cmd_v = fe_cmd_ready_i;
       end
     // Redirect the pc if there's an NPC mismatch
