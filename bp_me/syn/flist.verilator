@@ -14,6 +14,7 @@
 $BSG_IP_CORES_DIR/bsg_noc/bsg_noc_pkg.v
 // Interface packages
 $BP_COMMON_DIR/src/include/bp_common_pkg.vh
+$BP_COMMON_DIR/src/include/bp_common_aviary_pkg.vh
 // ME packages
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
 $BP_ME_DIR/src/include/v/bp_me_network_pkg.v

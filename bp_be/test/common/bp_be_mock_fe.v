@@ -51,7 +51,7 @@ module bp_be_mock_fe
    , input [boot_rom_width_p-1:0]      boot_rom_data_i
   );
   
-`declare_bp_common_fe_be_if_structs(vaddr_width_p
+`declare_bp_fe_be_if(vaddr_width_p
                                     , paddr_width_p
                                     , asid_width_p
                                     , branch_metadata_fwd_width_p

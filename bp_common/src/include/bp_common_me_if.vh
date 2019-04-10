@@ -510,11 +510,11 @@ typedef enum logic
  *
  */
 `define declare_bp_mem_cce_resp_s(addr_width_mp) \
-  typedef struct packed                                       \
-  {                                                           \
-    bp_lce_cce_req_type_e                        msg_type;    \
-    logic [addr_width_mp-1:0]                    addr;        \
-    bp_cce_mem_data_cmd_payload_s                payload;     \
+  typedef struct packed                                         \
+  {                                                             \
+    bp_lce_cce_req_type_e                        msg_type;      \
+    logic [addr_width_mp-1:0]                    addr;          \
+    bp_cce_mem_data_cmd_payload_s                payload;       \
     bp_lce_cce_req_non_cacheable_e               non_cacheable; \
     bp_lce_cce_nc_req_size_e                     nc_size;       \
   } bp_mem_cce_resp_s
@@ -523,17 +523,72 @@ typedef enum logic
  *
  * Memory End Interface Macro
  *
- * This macro defines all of the memory end interface structs at once
+ * This macro defines all of the memory end interface struct and port widths at once as localparams
  *
  */
 
-`define declare_bp_me_if(addr_width_mp, data_width_mp, num_lce_mp, lce_assoc_mp) \
-  `declare_bp_cce_mem_cmd_payload_s(num_lce_mp, lce_assoc_mp);                     \
-  `declare_bp_cce_mem_data_cmd_payload_s(num_lce_mp, lce_assoc_mp, addr_width_mp); \
-  `declare_bp_cce_mem_cmd_s(addr_width_mp);                                        \
-  `declare_bp_mem_cce_data_resp_s(addr_width_mp, data_width_mp);                   \
-  `declare_bp_cce_mem_data_cmd_s(addr_width_mp, data_width_mp);                    \
-  `declare_bp_mem_cce_resp_s(addr_width_mp);
+`define declare_bp_me_if(paddr_width_mp, data_width_mp, num_lce_mp, lce_assoc_mp) \
+  `declare_bp_cce_mem_cmd_payload_s(num_lce_mp, lce_assoc_mp);                      \
+  `declare_bp_cce_mem_data_cmd_payload_s(num_lce_mp, lce_assoc_mp, paddr_width_mp); \
+  `declare_bp_cce_mem_cmd_s(paddr_width_mp);                                        \
+  `declare_bp_mem_cce_data_resp_s(paddr_width_mp, data_width_mp);                   \
+  `declare_bp_cce_mem_data_cmd_s(paddr_width_mp, data_width_mp);                    \
+  `declare_bp_mem_cce_resp_s(paddr_width_mp);
+
+`define declare_bp_me_if_widths(paddr_width_mp, data_width_mp, num_lce_mp, lce_assoc_mp) \
+  , localparam cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(paddr_width_p,num_lce_p,lce_assoc_p)   \
+  , localparam mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(paddr_width_p              \
+                                                                      ,cce_block_width_p         \
+                                                                      ,num_lce_p                 \
+                                                                      ,lce_assoc_p               \
+                                                                      )                          \
+  , localparam cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_p                \
+                                                                    ,cce_block_width_p           \
+                                                                    ,num_lce_p                   \
+                                                                    ,lce_assoc_p                 \
+                                                                    )                            \
+  , localparam mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p,num_lce_p,lce_assoc_p)
+
+/*
+ * 
+ * LCE-CCE Interface Macro
+ *
+ * This macro defines all of the lce-cce interface stucts and port widths at once as localparams
+ *
+ */
+
+`define declare_bp_lce_cce_if(num_cce_mp, num_lce_mp, paddr_width_mp, lce_assoc_mp, data_width_mp, cce_block_width_mp) \
+  `declare_bp_lce_cce_req_s(num_cce_mp, num_lce_mp, paddr_width_mp, lce_assoc_mp, data_width_mp); \
+  `declare_bp_lce_cce_resp_s(num_cce_mp, num_lce_mp, paddr_width_mp);                             \
+  `declare_bp_lce_cce_data_resp_s(num_cce_mp, num_lce_mp, paddr_width_mp, cce_block_width_mp);    \
+  `declare_bp_cce_lce_cmd_s(num_cce_mp, num_lce_mp, paddr_width_mp, lce_assoc_mp);                \
+  `declare_bp_lce_data_cmd_s(num_lce_mp, cce_block_width_mp, lce_assoc_mp);
+
+`define declare_bp_lce_cce_if_widths(num_cce_mp, num_lce_mp, paddr_width_mp, lce_assoc_mp, data_width_mp, cce_block_width_mp) \
+    , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_mp                      \
+                                                            ,num_lce_mp                     \
+                                                            ,paddr_width_mp                 \
+                                                            ,lce_assoc_mp                   \
+                                                            ,data_width_mp                  \
+                                                            )                               \
+    , localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_mp                    \
+                                                              ,num_lce_mp                   \
+                                                              ,paddr_width_mp               \
+                                                              )                             \
+    , localparam lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_mp          \
+                                                                        ,num_lce_mp         \
+                                                                        ,paddr_width_mp     \
+                                                                        ,cce_block_width_mp \
+                                                                        )                   \
+    , localparam cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_mp                      \
+                                                            ,num_lce_mp                     \
+                                                            ,paddr_width_mp                 \
+                                                            ,lce_assoc_mp                   \
+                                                            )                               \
+    , localparam lce_data_cmd_width_lp=`bp_lce_data_cmd_width(num_lce_mp                    \
+                                                              ,cce_block_width_mp           \
+                                                              ,lce_assoc_mp                 \
+                                                              )
 
 /*
  * Width Macros

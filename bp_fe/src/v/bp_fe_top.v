@@ -1,22 +1,17 @@
 /*                                  
-* bp_fe_top.v                                                                                                                                                                                          
-* */
+ * bp_fe_top.v 
+ */
 
 module bp_fe_top
  import bp_fe_pkg::*;
  import bp_common_pkg::*;
-/*TODO should this come from backend?*/
+ import bp_common_aviary_pkg::*;
  import bp_be_rv64_pkg::*;  
- #(parameter   vaddr_width_p="inv" 
-   , parameter paddr_width_p="inv" 
+ #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+   `declare_bp_proc_params(cfg_p)
 
-   // icache related parameters 
-   , parameter num_cce_p="inv"
-   , parameter num_lce_p="inv"
-   /*TODO change this based on other files*/
-   , parameter lce_assoc_p="inv"
-   , parameter lce_sets_p="inv"
-   , parameter cce_block_size_in_bytes_p="inv"
+   , parameter bp_first_pc_p             = "inv"
+   , parameter cce_block_size_in_bytes_p = cce_block_width_p / 8
 
    , localparam data_width_p      = rv64_reg_data_width_gp
    , localparam eaddr_width_lp    = rv64_eaddr_width_gp
@@ -54,14 +49,8 @@ module bp_fe_top
 
   
    // pc gen related parameters
-   , parameter btb_tag_width_p="inv"
-   , parameter btb_indx_width_p="inv"
-   , parameter bht_indx_width_p="inv"
-   , parameter ras_addr_width_p="inv"
-   , parameter asid_width_p="inv"
-   , parameter bp_first_pc_p="inv"
    , localparam instr_scan_width_lp=`bp_fe_instr_scan_width
-   , localparam branch_metadata_fwd_width_lp=`bp_fe_branch_metadata_fwd_width(btb_tag_width_p,btb_indx_width_p,bht_indx_width_p,ras_addr_width_p)
+   , localparam branch_metadata_fwd_width_lp=`bp_fe_branch_metadata_fwd_width(btb_tag_width_p,btb_idx_width_p,bht_idx_width_p,ras_idx_width_p)
    , localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p
                                                                 ,branch_metadata_fwd_width_lp
                                                                )
@@ -70,7 +59,7 @@ module bp_fe_top
                                                                  )
   
    // be interfaces parameters
-//   , localparam branch_metadata_fwd_width_lp=btb_indx_width_p+bht_indx_width_p+ras_addr_width_p
+//   , localparam branch_metadata_fwd_width_lp=btb_idx_width_p+bht_idx_width_p+ras_idx_width_p
    , localparam bp_fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_p
                                                     ,paddr_width_p
                                                     ,asid_width_p
@@ -141,7 +130,7 @@ localparam ptag_width_lp=`bp_fe_ptag_width(paddr_width_p
 // pc_gen to icache
 `declare_bp_fe_pc_gen_icache_s(eaddr_width_lp);
 // pc_gen to itlb
-`declare_bp_fe_pc_gen_itlb_s(eaddr_width_lp);
+`declare_bp_fe_pc_gen_itlb_s(vaddr_width_p);
 `declare_bp_fe_itlb_vaddr_s(vaddr_width_p,lce_sets_p,cce_block_size_in_bytes_p) 
 `declare_bp_be_tlb_entry_s(ptag_width_lp);  
 // icache to pc_gen
@@ -200,7 +189,7 @@ logic poison;
 logic [vtag_width_lp-1:0] tlb_miss_vtag;
 logic 		                tlb_miss_v, prev_tlb_miss;
 //for itlb trace-replay test
-logic [63:0]              tlb_miss_vaddr;
+logic [vaddr_width_p-1:0] tlb_miss_vaddr;
    
 // be interfaces
 assign bp_fe_cmd  = fe_cmd_i;
@@ -265,9 +254,9 @@ bp_fe_pc_gen
    ,.paddr_width_p(paddr_width_p)
    ,.eaddr_width_p(eaddr_width_lp)
    ,.btb_tag_width_p(btb_tag_width_p)
-   ,.btb_indx_width_p(btb_indx_width_p)
-   ,.bht_indx_width_p(bht_indx_width_p)
-   ,.ras_addr_width_p(ras_addr_width_p)
+   ,.btb_idx_width_p(btb_idx_width_p)
+   ,.bht_idx_width_p(bht_idx_width_p)
+   ,.ras_idx_width_p(ras_idx_width_p)
    ,.asid_width_p(asid_width_p)
    ,.bp_first_pc_p(bp_first_pc_p)
    ,.instr_width_p(instr_width_lp)
@@ -363,7 +352,8 @@ icache
 
    
 bp_fe_itlb
- #(.vtag_width_p(vtag_width_lp)
+ #(.vaddr_width_p(vaddr_width_p)
+   ,.vtag_width_p(vtag_width_lp)
    ,.ptag_width_p(ptag_width_lp)
    ,.els_p(16)
    ,.ppn_start_bit_p(ppn_start_bit_lp)

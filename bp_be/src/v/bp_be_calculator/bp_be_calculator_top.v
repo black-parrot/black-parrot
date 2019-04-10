@@ -60,7 +60,7 @@ module bp_be_calculator_top
    , parameter asid_width_p                = "inv"
    , parameter branch_metadata_fwd_width_p = "inv"
 
-   , parameter core_els_p                  = "inv"
+   , parameter num_core_p                  = "inv"
    , parameter num_lce_p                   = "inv"
    , parameter lce_sets_p                  = "inv"
    , parameter cce_block_size_in_bytes_p   = "inv"
@@ -72,7 +72,7 @@ module bp_be_calculator_top
    , parameter debug_file_p             = "inv"
 
    // Generated parameters
-   , localparam proc_cfg_width_lp       = `bp_proc_cfg_width(core_els_p, num_lce_p)
+   , localparam proc_cfg_width_lp       = `bp_proc_cfg_width(num_core_p, num_lce_p)
    , localparam issue_pkt_width_lp      = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam calc_status_width_lp    = `bp_be_calc_status_width(branch_metadata_fwd_width_p)
    , localparam exception_width_lp      = `bp_be_exception_width
@@ -153,7 +153,7 @@ module bp_be_calculator_top
 
 // Declare parameterizable structs
 `declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
-`declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
+`declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
 `declare_bp_be_internal_if_structs(vaddr_width_p
                                    , paddr_width_p
                                    , asid_width_p
@@ -703,7 +703,7 @@ if (debug_p == 1)
        ,.asid_width_p(asid_width_p)
        ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
     
-       ,.core_els_p(core_els_p)
+       ,.num_core_p(num_core_p)
        ,.num_lce_p(num_lce_p)
        )
      tracer

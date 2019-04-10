@@ -10,19 +10,15 @@
 
 module bp_me_top
   import bp_common_pkg::*;
+  import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
-  #(parameter num_lce_p                ="inv"
-    , parameter num_cce_p              ="inv"
-    , parameter paddr_width_p          ="inv"
-    , parameter lce_assoc_p            ="inv"
-    , parameter lce_sets_p             ="inv"
-    , parameter block_size_in_bytes_p  ="inv"
-    , parameter num_inst_ram_els_p     ="inv"
+  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+    `declare_bp_proc_params(cfg_p)
 
     // Derived parameters
-    , localparam block_size_in_bits_lp = (block_size_in_bytes_p*8)
+    , localparam block_size_in_bytes_lp = cce_block_width_p/8
     , localparam lg_num_cce_lp         = `BSG_SAFE_CLOG2(num_cce_p)
-    , localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_inst_ram_els_p)
+    , localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
 
     // TODO: where should this param be defined?
     , localparam lce_req_data_width_lp = 64
@@ -39,7 +35,7 @@ module bp_me_top
     , localparam bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p
                                                                            ,num_lce_p
                                                                            ,paddr_width_p
-                                                                           ,block_size_in_bits_lp)
+                                                                           ,cce_block_width_p)
 
     , localparam bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p
                                                                ,num_lce_p
@@ -47,12 +43,12 @@ module bp_me_top
                                                                ,lce_assoc_p)
 
     , localparam bp_lce_data_cmd_width_lp=`bp_lce_data_cmd_width(num_lce_p
-                                                                 ,block_size_in_bits_lp
+                                                                 ,cce_block_width_p
                                                                  ,lce_assoc_p)
 
     , localparam bp_lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p
                                                                        ,paddr_width_p
-                                                                       ,block_size_in_bits_lp
+                                                                       ,cce_block_width_p
                                                                        ,lce_assoc_p)
 
     , localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p
@@ -60,7 +56,7 @@ module bp_me_top
                                                                  ,lce_assoc_p)
 
     , localparam bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(paddr_width_p
-                                                                           ,block_size_in_bits_lp
+                                                                           ,cce_block_width_p
                                                                            ,num_lce_p
                                                                            ,lce_assoc_p)
 
@@ -69,7 +65,7 @@ module bp_me_top
                                                                ,lce_assoc_p)
 
     , localparam bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_p
-                                                                         ,block_size_in_bits_lp
+                                                                         ,cce_block_width_p
                                                                          ,num_lce_p
                                                                          ,lce_assoc_p)
   )
@@ -155,7 +151,7 @@ module bp_me_top
       ,.num_cce_p(num_cce_p)
       ,.paddr_width_p(paddr_width_p)
       ,.lce_assoc_p(lce_assoc_p)
-      ,.block_size_in_bytes_p(block_size_in_bytes_p)
+      ,.block_size_in_bytes_p(block_size_in_bytes_lp)
       ,.data_width_p(lce_req_data_width_lp)
       // TODO: number of flit param
       )
@@ -227,8 +223,8 @@ module bp_me_top
         ,.paddr_width_p(paddr_width_p)
         ,.lce_assoc_p(lce_assoc_p)
         ,.lce_sets_p(lce_sets_p)
-        ,.block_size_in_bytes_p(block_size_in_bytes_p)
-        ,.num_cce_inst_ram_els_p(num_inst_ram_els_p)
+        ,.block_size_in_bytes_p(block_size_in_bytes_lp)
+        ,.num_cce_inst_ram_els_p(num_cce_instr_ram_els_p)
         ,.lce_req_data_width_p(lce_req_data_width_lp)
         )
       bp_cce_top

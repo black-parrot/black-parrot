@@ -31,12 +31,12 @@ import pc_gen_pkg::*;
 
 module mock_be_tb;
 
-localparam btb_indx_width_lp=9;
-localparam bht_indx_width_lp=5;
-localparam ras_addr_width_lp=bp_vaddr_width_gp;
+localparam btb_idx_width_lp=9;
+localparam bht_idx_width_lp=5;
+localparam ras_idx_width_lp=bp_vaddr_width_gp;
 localparam asid_width_lp=10;
 localparam instr_width_lp=32;
-localparam branch_metadata_fwd_width_lp=btb_indx_width_lp+bht_indx_width_lp+ras_addr_width_lp;
+localparam branch_metadata_fwd_width_lp=btb_idx_width_lp+bht_idx_width_lp+ras_idx_width_lp;
 localparam bp_fe_cmd_width_lp=`bp_fe_cmd_width(bp_vaddr_width_gp,bp_paddr_width_gp,asid_width_lp,branch_metadata_fwd_width_lp);
 localparam bp_fe_queue_width_lp=`bp_fe_queue_width(bp_vaddr_width_gp,branch_metadata_fwd_width_lp);
 
@@ -51,9 +51,9 @@ logic                                           bp_fe_queue_ready_o;
 
 mock_be
 #(
-.btb_indx_width_lp(btb_indx_width_lp)
-,.bht_indx_width_lp(bht_indx_width_lp)
-,.ras_addr_width_lp(ras_addr_width_lp)
+.btb_idx_width_lp(btb_idx_width_lp)
+,.bht_idx_width_lp(bht_idx_width_lp)
+,.ras_idx_width_lp(ras_idx_width_lp)
 ,.asid_width_lp(asid_width_lp)
 ,.instr_width_lp(instr_width_lp)
 ) mock_be_1

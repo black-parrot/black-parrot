@@ -1,4 +1,5 @@
 $BP_COMMON_DIR/src/include/bp_common_pkg.vh
+$BP_COMMON_DIR/src/include/bp_common_aviary_pkg.vh
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
 $BP_ME_DIR/src/include/v/bp_me_network_pkg.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_defines.v
@@ -67,4 +68,4 @@ $BP_BE_DIR/test/tb/bp_be_dcache/v/bp_rolly_lce_me.v
 $BP_BE_DIR/test/tb/bp_be_dcache/v/bp_dcache_axe_trace_gen.v
 $BP_BE_DIR/test/tb/bp_be_dcache/v/mock_tlb.v
 $BP_BE_DIR/test/tb/bp_be_dcache/v/bsg_trace_node_master.v
-testbench.v
+testbench_postsed.v
