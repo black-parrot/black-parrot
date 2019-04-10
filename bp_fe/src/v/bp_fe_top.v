@@ -355,11 +355,11 @@ bp_be_dtlb
    ,.r_v_o(itlb_icache_data_resp_v)
    ,.r_entry_o(itlb_entry_r)
 
-   ,.w_v_i(fe_cmd_v_i & fe_cmd.opcode == e_op_itlb_fill_response)
+   ,.w_v_i(itlb_miss & fe_cmd_v_i & fe_cmd.opcode == e_op_itlb_fill_response)
    ,.w_vtag_i(fe_cmd.operands.itlb_fill_response.vaddr[vaddr_width_p-1:ppn_start_bit_lp])
-	 ,.w_entry_i(itlb_entry_w)
+	 ,.w_entry_i(fe_cmd.operands.itlb_fill_response.pte_entry_leaf)
 
-   ,.miss_clear_i(fe_cmd_v_i & fe_cmd.opcode == e_op_pc_redirection)
+   ,.miss_clear_i(1'b0)
 	 ,.miss_v_o(itlb_miss)
 	 ,.miss_vtag_o(itlb_miss_vtag)
 	 );
