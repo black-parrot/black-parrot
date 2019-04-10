@@ -27,14 +27,12 @@ typedef enum logic [2:0] {
   e_op_alu                               = 3'b000
   ,e_op_branch                           = 3'b001
   ,e_op_move                             = 3'b010
+  ,e_op_flag                             = 3'b011
   ,e_op_read_dir                         = 3'b100
   ,e_op_write_dir                        = 3'b101
   ,e_op_misc                             = 3'b110
   ,e_op_queue                            = 3'b111
 } bp_cce_inst_op_e;
-
-// Set and Clear Flag are MOVI variants
-//,e_op_flag                             = 3'b010
 
 `define bp_cce_inst_op_width $bits(bp_cce_inst_op_e)
 
@@ -43,6 +41,12 @@ typedef enum logic [2:0] {
 typedef enum logic [2:0] {
   e_add_op                               = 3'b000   // Add
   ,e_sub_op                              = 3'b001   // Subtract
+  ,e_lsh_op                              = 3'b010   // Left Shift
+  ,e_rsh_op                              = 3'b011   // Right Shift
+  ,e_and_op                              = 3'b100   // Bit-wise AND
+  ,e_or_op                               = 3'b101   // Bit-wise OR
+  ,e_xor_op                              = 3'b110   // Bit-wise XOR
+  ,e_neg_op                              = 3'b111   // Bit-wise negation (unary)
 } bp_cce_inst_minor_alu_op_e;
 
 // Software supported ALU operations
@@ -67,16 +71,15 @@ typedef enum logic [2:0] {
 //,e_bz_op                               = 3'b010
 // Branch if A != 0 // same as BNE, src_b = 0
 //,e_bnz_op                              = 3'b011
-// Branch if Flag == 1 // same as BEQ, src_a = flag, src_b = 1
-//,e_bf_op                               = 3'b010
-// Branch if Flag == 0 // same as BEQ, src_a = flag, src_b = 0
-//,e_bfz_op                              = 3'b010
 // Branch if Queue.ready == 1 // same as BEQ src_a = queue.ready, src_b = 1
 //,e_bqr_op                              = 3'b010
 // Branch if A > B // same as BLT, swap src_a and src_b
 //,e_bgt_op                              = 3'b100
 // Branch if A >= B // same as BLE, swap src_a and src_b
 //,e_bge_op                              = 3'b101
+// Branch if Flag == 1 or 0
+//,e_bf_op                               = 3'b010   // Branch if flag == 1
+//,e_bfz_op                              = 3'b010   // Branch if flag == 0
 
 // Minor Move Op Codes
 typedef enum logic [2:0] {
@@ -196,19 +199,29 @@ typedef enum logic [4:0] {
 
 `define bp_cce_inst_dst_width $bits(bp_cce_inst_dst_e)
 
-// GPR Numbers
-typedef enum logic [1:0] {
-  e_gpr_r0                               = 2'b00
-  ,e_gpr_r1                              = 2'b01
-  ,e_gpr_r2                              = 2'b10
-  ,e_gpr_r3                              = 2'b11
-} bp_cce_gpr_e;
+// Flag register index select
+typedef enum logic [3:0] {
+  e_flag_sel_rqf                         = 4'b0000 // request type flag
+  ,e_flag_sel_nerf                       = 4'b0001 // non-exclusive request flag
+  ,e_flag_sel_ldf                        = 4'b0010 // lru dirty flag
+  ,e_flag_sel_nwbf                       = 4'b0011 // null writeback flag
+  ,e_flag_sel_tf                         = 4'b0100 // transfer flag
+  ,e_flag_sel_rf                         = 4'b0101 // replacement flag
+  ,e_flag_sel_rwbf                       = 4'b0110 // replacement writeback flag
+  ,e_flag_sel_pf                         = 4'b0111 // pending flag
+  ,e_flag_sel_uf                         = 4'b1000 // upgrade flag
+  ,e_flag_sel_if                         = 4'b1001 // invalidate flag
+  ,e_flag_sel_ef                         = 4'b1010 // exclusive flag
+  ,e_flag_sel_pcf                        = 4'b1011 // pending-cleared flag
+  ,e_flag_sel_ucf                        = 4'b1100 // uncached request flag
+  // unused 4'b1101
+  // unused 4'b1110
+  // unused 4'b1111
+} bp_cce_inst_flag_sel_e;
 
-// Note: number of gpr must be a power of 2
-`define bp_cce_inst_num_gpr (2**$bits(bp_cce_gpr_e))
-`define bp_cce_inst_gpr_width 16
+`define bp_cce_inst_flag_sel_width $bits(bp_cce_inst_flag_sel_e)
 
-// Flag Register One Hot
+// Flag register one hot
 typedef enum logic [12:0] {
   e_flag_rqf                             = 13'b0_0000_0000_0001 // request type flag
   ,e_flag_nerf                           = 13'b0_0000_0000_0010 // non-exclusive request flag
@@ -226,62 +239,6 @@ typedef enum logic [12:0] {
 } bp_cce_inst_flag_e;
 
 `define bp_cce_inst_num_flags $bits(bp_cce_inst_flag_e)
-
-// Flag Register Select
-typedef enum logic [3:0] {
-  e_flag_sel_rqf                         = 4'b0000 // request type flag
-  ,e_flag_sel_nerf                       = 4'b0001 // non-exclusive request flag
-  ,e_flag_sel_ldf                        = 4'b0010 // lru dirty flag
-  ,e_flag_sel_nwbf                       = 4'b0011 // null writeback flag
-  ,e_flag_sel_tf                         = 4'b0100 // transfer flag
-  ,e_flag_sel_rf                         = 4'b0101 // replacement flag
-  ,e_flag_sel_rwbf                       = 4'b0110 // replacement writeback flag
-  ,e_flag_sel_pf                         = 4'b0111 // pending flag
-  ,e_flag_sel_uf                         = 4'b1000 // upgrade flag
-  ,e_flag_sel_if                         = 4'b1001 // invalidate flag
-  ,e_flag_sel_ef                         = 4'b1010 // exclusive flag
-  ,e_flag_sel_pcf                        = 4'b1011 // pending-cleared flag
-  ,e_flag_sel_ucf                        = 4'b1100 // uncached request flag
-} bp_cce_inst_flag_sel_e;
-
-`define bp_cce_inst_flag_sel_width $bits(bp_cce_inst_flag_sel_e)
-
-// source select for reqlce and reqaddr registers writes
-typedef enum logic [1:0] {
-  e_req_sel_lce_req                      = 2'b00
-  ,e_req_sel_mem_resp                    = 2'b01
-  ,e_req_sel_mem_data_resp               = 2'b10
-  ,e_req_sel_pending                     = 2'b11
-} bp_cce_inst_req_sel_e;
-
-`define bp_cce_inst_req_sel_width $bits(bp_cce_inst_req_sel_e)
-
-// Source select for req_addr_way
-typedef enum logic [1:0] {
-  e_req_addr_way_sel_logic               = 2'b00
-  ,e_req_addr_way_sel_mem_resp           = 2'b01
-  ,e_req_addr_way_sel_mem_data_resp      = 2'b10
-} bp_cce_inst_req_addr_way_sel_e;
-
-`define bp_cce_inst_req_addr_way_sel_width $bits(bp_cce_inst_req_addr_way_sel_e)
-
-// Source select for lru_way
-typedef enum logic [1:0] {
-  e_lru_way_sel_lce_req                  = 2'b00
-  ,e_lru_way_sel_mem_resp                = 2'b01
-  ,e_lru_way_sel_mem_data_resp           = 2'b10
-  ,e_lru_way_sel_pending                 = 2'b11
-} bp_cce_inst_lru_way_sel_e;
-
-`define bp_cce_inst_lru_way_sel_width $bits(bp_cce_inst_lru_way_sel_e)
-
-// source select for cache block data register writes
-typedef enum logic {
-  e_data_sel_lce_data_resp               = 1'b0
-  ,e_data_sel_mem_data_resp              = 1'b1
-} bp_cce_inst_cache_block_data_sel_e;
-
-`define bp_cce_inst_dat_sel_width $bits(bp_cce_inst_cache_block_data_sel_e)
 
 // source select for directory way group input
 typedef enum logic [2:0] {
@@ -337,26 +294,31 @@ typedef enum logic [1:0] {
 
 `define bp_cce_inst_dir_tag_sel_width $bits(bp_cce_inst_dir_tag_sel_e)
 
-// source select for transfer lce register writes
-typedef enum logic {
-  e_tr_lce_sel_logic                     = 1'b0
-  ,e_tr_lce_sel_mem_resp                 = 1'b1
-} bp_cce_inst_transfer_lce_sel_e;
 
-`define bp_cce_inst_transfer_lce_sel_width $bits(bp_cce_inst_transfer_lce_sel_e)
+// Source queue one hot
+// order: {lceReq, lceResp, lceDataResp, memResp, memDataResp, pending}
+typedef enum logic [5:0] {
+  e_src_q_pending                        = 6'b00_0001
+  ,e_src_q_mem_data_resp                 = 6'b00_0010
+  ,e_src_q_mem_resp                      = 6'b00_0100
+  ,e_src_q_lce_data_resp                 = 6'b00_1000
+  ,e_src_q_lce_resp                      = 6'b01_0000
+  ,e_src_q_lce_req                       = 6'b10_0000
+} bp_cce_inst_src_q_e;
+
+`define bp_cce_num_src_q $bits(bp_cce_inst_src_q_e)
 
 // Source queue select
 typedef enum logic [2:0] {
-  e_src_q_lce_req                        = 3'b000
-  ,e_src_q_mem_resp                      = 3'b001
-  ,e_src_q_mem_data_resp                 = 3'b010
-  ,e_src_q_pending                       = 3'b011
-  ,e_src_q_lce_resp                      = 3'b100
-  ,e_src_q_lce_data_resp                 = 3'b101
+  e_src_q_sel_lce_req                    = 3'b000
+  ,e_src_q_sel_mem_resp                  = 3'b001
+  ,e_src_q_sel_mem_data_resp             = 3'b010
+  ,e_src_q_sel_pending                   = 3'b011
+  ,e_src_q_sel_lce_resp                  = 3'b100
+  ,e_src_q_sel_lce_data_resp             = 3'b101
 } bp_cce_inst_src_q_sel_e;
 
 `define bp_cce_inst_src_q_sel_width $bits(bp_cce_inst_src_q_sel_e)
-`define bp_cce_num_src_q 6
 
 // Destination queue select
 typedef enum logic [1:0] {
@@ -367,6 +329,108 @@ typedef enum logic [1:0] {
 } bp_cce_inst_dst_q_sel_e;
 
 `define bp_cce_inst_dst_q_sel_width $bits(bp_cce_inst_dst_q_sel_e)
+
+// LCE cmd lce_id source select
+typedef enum logic [2:0] {
+  e_lce_cmd_lce_r0                       = 3'b000
+  ,e_lce_cmd_lce_r1                      = 3'b001
+  ,e_lce_cmd_lce_r2                      = 3'b010
+  ,e_lce_cmd_lce_r3                      = 3'b011
+  ,e_lce_cmd_lce_req_lce                 = 3'b100
+  ,e_lce_cmd_lce_tr_lce                  = 3'b101
+  ,e_lce_cmd_lce_0                       = 3'b110
+} bp_cce_inst_lce_cmd_lce_sel_e;
+
+`define bp_cce_inst_lce_cmd_lce_sel_width $bits(bp_cce_inst_lce_cmd_lce_sel_e)
+
+// LCE cmd addr source select
+typedef enum logic [2:0] {
+  e_lce_cmd_addr_r0                      = 3'b000
+  ,e_lce_cmd_addr_r1                     = 3'b001
+  ,e_lce_cmd_addr_r2                     = 3'b010
+  ,e_lce_cmd_addr_r3                     = 3'b011
+  ,e_lce_cmd_addr_req_addr               = 3'b100
+  ,e_lce_cmd_addr_lru_way_addr           = 3'b101
+  ,e_lce_cmd_addr_0                      = 3'b110
+} bp_cce_inst_lce_cmd_addr_sel_e;
+
+`define bp_cce_inst_lce_cmd_addr_sel_width $bits(bp_cce_inst_lce_cmd_addr_sel_e)
+
+// LCE cmd way source select
+typedef enum logic [2:0] {
+  e_lce_cmd_way_req_addr_way             = 3'b000
+  ,e_lce_cmd_way_tr_addr_way             = 3'b001
+  ,e_lce_cmd_way_sh_list_r0              = 3'b010
+  ,e_lce_cmd_way_lru_addr_way            = 3'b011
+  ,e_lce_cmd_way_0                       = 3'b100
+} bp_cce_inst_lce_cmd_way_sel_e;
+
+`define bp_cce_inst_lce_cmd_way_sel_width $bits(bp_cce_inst_lce_cmd_way_sel_e)
+
+// Mem Data cmd addr source select
+typedef enum logic {
+  e_mem_data_cmd_addr_lru_way_addr       = 1'b0
+  ,e_mem_data_cmd_addr_req_addr          = 1'b1
+} bp_cce_inst_mem_data_cmd_addr_sel_e;
+
+`define bp_cce_inst_mem_data_cmd_addr_sel_width $bits(bp_cce_inst_mem_data_cmd_addr_sel_e)
+
+// GPR Numbers
+typedef enum logic [1:0] {
+  e_gpr_r0                               = 2'b00
+  ,e_gpr_r1                              = 2'b01
+  ,e_gpr_r2                              = 2'b10
+  ,e_gpr_r3                              = 2'b11
+} bp_cce_gpr_e;
+
+// Note: number of gpr must be a power of 2
+`define bp_cce_inst_num_gpr (2**$bits(bp_cce_gpr_e))
+`define bp_cce_inst_gpr_width 16
+
+// source select for reqlce and reqaddr registers writes
+typedef enum logic [1:0] {
+  e_req_sel_lce_req                      = 2'b00
+  ,e_req_sel_mem_resp                    = 2'b01
+  ,e_req_sel_mem_data_resp               = 2'b10
+  ,e_req_sel_pending                     = 2'b11
+} bp_cce_inst_req_sel_e;
+
+`define bp_cce_inst_req_sel_width $bits(bp_cce_inst_req_sel_e)
+
+// Source select for req_addr_way
+typedef enum logic [1:0] {
+  e_req_addr_way_sel_logic               = 2'b00
+  ,e_req_addr_way_sel_mem_resp           = 2'b01
+  ,e_req_addr_way_sel_mem_data_resp      = 2'b10
+} bp_cce_inst_req_addr_way_sel_e;
+
+`define bp_cce_inst_req_addr_way_sel_width $bits(bp_cce_inst_req_addr_way_sel_e)
+
+// Source select for lru_way
+typedef enum logic [1:0] {
+  e_lru_way_sel_lce_req                  = 2'b00
+  ,e_lru_way_sel_mem_resp                = 2'b01
+  ,e_lru_way_sel_mem_data_resp           = 2'b10
+  ,e_lru_way_sel_pending                 = 2'b11
+} bp_cce_inst_lru_way_sel_e;
+
+`define bp_cce_inst_lru_way_sel_width $bits(bp_cce_inst_lru_way_sel_e)
+
+// source select for cache block data register writes
+typedef enum logic {
+  e_data_sel_lce_data_resp               = 1'b0
+  ,e_data_sel_mem_data_resp              = 1'b1
+} bp_cce_inst_cache_block_data_sel_e;
+
+`define bp_cce_inst_dat_sel_width $bits(bp_cce_inst_cache_block_data_sel_e)
+
+// source select for transfer lce register writes
+typedef enum logic {
+  e_tr_lce_sel_logic                     = 1'b0
+  ,e_tr_lce_sel_mem_resp                 = 1'b1
+} bp_cce_inst_transfer_lce_sel_e;
+
+`define bp_cce_inst_transfer_lce_sel_width $bits(bp_cce_inst_transfer_lce_sel_e)
 
 // RQF flag source select
 typedef enum logic [2:0] {
@@ -421,123 +485,197 @@ typedef enum logic {
 
 `define bp_cce_inst_pruie_flag_sel_width $bits(bp_cce_inst_pruie_flag_sel_e)
 
-// LCE cmd lce_id source select
-typedef enum logic [2:0] {
-  e_lce_cmd_lce_r0                       = 3'b000
-  ,e_lce_cmd_lce_r1                      = 3'b001
-  ,e_lce_cmd_lce_r2                      = 3'b010
-  ,e_lce_cmd_lce_r3                      = 3'b011
-  ,e_lce_cmd_lce_req_lce                 = 3'b100
-  ,e_lce_cmd_lce_tr_lce                  = 3'b101
-  ,e_lce_cmd_lce_0                       = 3'b110
-} bp_cce_inst_lce_cmd_lce_sel_e;
-
-`define bp_cce_inst_lce_cmd_lce_sel_width $bits(bp_cce_inst_lce_cmd_lce_sel_e)
-
-// LCE cmd addr source select
-typedef enum logic [2:0] {
-  e_lce_cmd_addr_r0                      = 3'b000
-  ,e_lce_cmd_addr_r1                     = 3'b001
-  ,e_lce_cmd_addr_r2                     = 3'b010
-  ,e_lce_cmd_addr_r3                     = 3'b011
-  ,e_lce_cmd_addr_req_addr               = 3'b100
-  ,e_lce_cmd_addr_lru_way_addr           = 3'b101
-  ,e_lce_cmd_addr_0                      = 3'b110
-} bp_cce_inst_lce_cmd_addr_sel_e;
-
-`define bp_cce_inst_lce_cmd_addr_sel_width $bits(bp_cce_inst_lce_cmd_addr_sel_e)
-
-// LCE cmd way source select
-typedef enum logic [2:0] {
-  e_lce_cmd_way_req_addr_way             = 3'b000
-  ,e_lce_cmd_way_tr_addr_way             = 3'b001
-  ,e_lce_cmd_way_sh_list_r0              = 3'b010
-  ,e_lce_cmd_way_lru_addr_way            = 3'b011
-  ,e_lce_cmd_way_0                       = 3'b100
-} bp_cce_inst_lce_cmd_way_sel_e;
-
-`define bp_cce_inst_lce_cmd_way_sel_width $bits(bp_cce_inst_lce_cmd_way_sel_e)
-
-// Mem Data cmd addr source select
-typedef enum logic {
-  e_mem_data_cmd_addr_lru_way_addr       = 1'b0
-  ,e_mem_data_cmd_addr_req_addr          = 1'b1
-} bp_cce_inst_mem_data_cmd_addr_sel_e;
-
-`define bp_cce_inst_mem_data_cmd_addr_sel_width $bits(bp_cce_inst_mem_data_cmd_addr_sel_e)
-
 // Instruction immediate fields
+`define bp_cce_inst_imm16_width 16
 `define bp_cce_inst_flag_imm_bit 0
 
-/*
- * bp_cce_inst_s defines the CCE microcode instructions
- *
- */
-typedef struct packed {
-  bp_cce_inst_op_e                       op;
-  bp_cce_inst_minor_op_u                 minor_op;
 
+/*
+ * Instruction Struct Definitions
+ *
+ * Each instruction is capped at 48-bits (currently). The size is statically set to allow for
+ * proper padding to be inserted into the instruction structs, which helps normalize the microcode
+ * structs and formats.
+ *
+ * Each instruction contains:
+ *   op (3-bits)
+ *   minor_op (3-bits)
+ *   instruction type specific struct with padding (42-bits)
+ *
+ * Any changes made to this file must be reflected in the C version used by the assembler, and
+ * in the assembler itself.
+ */
+
+`define bp_cce_inst_width 48
+`define bp_cce_inst_type_u_width \
+  (`bp_cce_inst_width-`bp_cce_inst_op_width-`bp_cce_inst_minor_op_width)
+
+/*
+ * ALU Operation
+ */
+
+`define bp_cce_inst_alu_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_dst_width \
+  -(2*`bp_cce_inst_src_width)-`bp_cce_inst_imm16_width)
+
+typedef struct packed {
+  bp_cce_inst_dst_e                      dst;
   bp_cce_inst_src_e                      src_a;
   bp_cce_inst_src_e                      src_b;
+  logic [`bp_cce_inst_imm16_width-1:0]   imm;
+  logic [`bp_cce_inst_alu_pad-1:0]       pad;
+} bp_cce_inst_alu_op_s;
+
+/*
+ * Branch Operation
+ */
+
+`define bp_cce_inst_branch_pad (`bp_cce_inst_type_u_width-(2*`bp_cce_inst_src_width) \
+  -`bp_cce_inst_imm16_width)
+
+typedef struct packed {
+  bp_cce_inst_src_e                      src_a;
+  bp_cce_inst_src_e                      src_b;
+  logic [`bp_cce_inst_imm16_width-1:0]   target;
+  logic [`bp_cce_inst_branch_pad-1:0]    pad;
+} bp_cce_inst_branch_op_s;
+
+/*
+ * Move Operation
+ */
+
+`define bp_cce_inst_mov_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_dst_width \
+  -`bp_cce_inst_src_width-`bp_cce_inst_imm16_width)
+
+typedef struct packed {
   bp_cce_inst_dst_e                      dst;
-  logic [`bp_cce_inst_gpr_width-1:0]     imm;
+  bp_cce_inst_src_e                      src;
+  logic [`bp_cce_inst_imm16_width-1:0]   imm;
+  logic [`bp_cce_inst_mov_pad-1:0]       pad;
+} bp_cce_inst_mov_op_s;
 
-  // Source selects
+/*
+ * Set Flag Operation
+ *
+ */
 
-  // req_lce_r and req_lce_addr_r
-  bp_cce_inst_req_sel_e                  req_sel;
-  // req_addr_way_r
-  bp_cce_inst_req_addr_way_sel_e         req_addr_way_sel;
-  // lru_way_r
-  bp_cce_inst_lru_way_sel_e              lru_way_sel;
-  // transfer_lce_r and transfer_lce_way_r
-  bp_cce_inst_transfer_lce_sel_e         transfer_lce_sel;
-  // cache_block_data_r
-  bp_cce_inst_cache_block_data_sel_e     cache_block_data_sel;
+`define bp_cce_inst_flag_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_dst_width-1)
 
-  // RQF
-  bp_cce_inst_rq_flag_sel_e              rqf_sel;
-  // NERF and LDF
-  bp_cce_inst_ner_ld_flag_sel_e          nerldf_sel;
-  // NWBF
-  bp_cce_inst_nwb_flag_sel_e             nwbf_sel;
-  // TF
-  bp_cce_inst_t_flag_sel_e               tf_sel;
-  // PF, RF, UF, IF, EF
-  bp_cce_inst_pruie_flag_sel_e           pruief_sel;
-  // RWBF
-  bp_cce_inst_rwb_flag_sel_e             rwbf_sel;
+typedef struct packed {
+  bp_cce_inst_dst_e                      dst;
+  logic                                  val;
+  logic [`bp_cce_inst_flag_pad-1:0]      pad;
+} bp_cce_inst_flag_op_s;
 
+/*
+ * Read Directory Operation
+ */
+
+`define bp_cce_inst_read_dir_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_dir_way_group_sel_width \
+  -`bp_cce_inst_dir_lce_sel_width-`bp_cce_inst_dir_way_sel_width)
+
+typedef struct packed {
+  bp_cce_inst_dir_way_group_sel_e        dir_way_group_sel;
+  bp_cce_inst_dir_lce_sel_e              dir_lce_sel;
+  bp_cce_inst_dir_way_sel_e              dir_way_sel;
+  logic [`bp_cce_inst_read_dir_pad-1:0]  pad;
+} bp_cce_inst_read_dir_op_s;
+
+/*
+ * Write Directory Operation
+ */
+
+`define bp_cce_inst_write_dir_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_dir_way_group_sel_width \
+  -`bp_cce_inst_dir_lce_sel_width-`bp_cce_inst_dir_way_sel_width \
+  -`bp_cce_inst_dir_coh_state_sel_width-`bp_cce_inst_dir_tag_sel_width-`bp_cce_inst_imm16_width)
+
+typedef struct packed {
   // directory inputs
   bp_cce_inst_dir_way_group_sel_e        dir_way_group_sel;
   bp_cce_inst_dir_lce_sel_e              dir_lce_sel;
   bp_cce_inst_dir_way_sel_e              dir_way_sel;
   bp_cce_inst_dir_coh_state_sel_e        dir_coh_state_sel;
   bp_cce_inst_dir_tag_sel_e              dir_tag_sel;
+  logic [`bp_cce_coh_bits-1:0]           imm;
+  logic [`bp_cce_inst_write_dir_pad-1:0] pad;
+} bp_cce_inst_write_dir_op_s;
 
+/*
+ * Misc Operation
+ *
+ * Currently, Misc operations require nothing; the entire struct is padding
+ */
+
+typedef struct packed {
+  logic [`bp_cce_inst_type_u_width-1:0]  pad;
+} bp_cce_inst_misc_op_s;
+
+/*
+ * Queue Operation
+ */
+
+`define bp_cce_inst_pushq_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_dst_q_sel_width \
+  -`bp_cce_lce_cmd_type_width-`bp_cce_inst_lce_cmd_lce_sel_width \
+  -`bp_cce_inst_lce_cmd_addr_sel_width-`bp_cce_inst_lce_cmd_way_sel_width \
+  -`bp_cce_inst_mem_data_cmd_addr_sel_width)
+
+typedef struct packed {
+  bp_cce_inst_dst_q_sel_e                dst_q;
+  bp_cce_lce_cmd_type_e                  cmd;
   // cce_lce_cmd_queue inputs
   bp_cce_inst_lce_cmd_lce_sel_e          lce_cmd_lce_sel;
   bp_cce_inst_lce_cmd_addr_sel_e         lce_cmd_addr_sel;
   bp_cce_inst_lce_cmd_way_sel_e          lce_cmd_way_sel;
-
   // mem_data_cmd_queue inputs
   bp_cce_inst_mem_data_cmd_addr_sel_e    mem_data_cmd_addr_sel;
+  logic [`bp_cce_inst_pushq_pad-1:0]     pad;
+} bp_cce_inst_pushq_s;
 
-  // Write enable for req_lce, req_addr, req_tag registers
-  logic                                  req_w_v;
-  // Write enable for req_addr_way register
-  logic                                  req_addr_way_w_v;
-  logic                                  lru_way_w_v;
-  // Write enable for tr_lce and tr_lce_way register
-  logic                                  transfer_lce_w_v;
-  logic                                  cache_block_data_w_v;
-  logic                                  ack_type_w_v;
+`define bp_cce_inst_popq_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_src_q_sel_width)
 
-  // flag writes
-  logic [`bp_cce_inst_num_flags-1:0]     flag_mask_w_v;
+typedef struct packed {
+  bp_cce_inst_src_q_sel_e                src_q;
+  logic [`bp_cce_inst_popq_pad-1:0]      pad;
+} bp_cce_inst_popq_s;
+
+`define bp_cce_inst_wfq_pad (`bp_cce_inst_type_u_width-`bp_cce_num_src_q)
+
+typedef struct packed {
+  logic [`bp_cce_num_src_q-1:0]          qmask;
+  logic [`bp_cce_inst_wfq_pad-1:0]       pad;
+} bp_cce_inst_wfq_s;
+
+typedef union packed {
+  bp_cce_inst_pushq_s                    pushq;
+  bp_cce_inst_popq_s                     popq;
+  bp_cce_inst_wfq_s                      wfq;
+} bp_cce_inst_queue_op_u;
+
+typedef struct packed {
+  bp_cce_inst_queue_op_u                 op;
+} bp_cce_inst_queue_op_s;
+
+/*
+ * Instruction Type Struct Union
+ */
+
+typedef union packed {
+  bp_cce_inst_alu_op_s                   alu_op_s;
+  bp_cce_inst_branch_op_s                branch_op_s;
+  bp_cce_inst_mov_op_s                   mov_op_s;
+  bp_cce_inst_flag_op_s                  flag_op_s;
+  bp_cce_inst_read_dir_op_s              read_dir_op_s;
+  bp_cce_inst_write_dir_op_s             write_dir_op_s;
+  bp_cce_inst_misc_op_s                  misc_op_s;
+  bp_cce_inst_queue_op_s                 queue_op_s;
+} bp_cce_inst_type_u;
+
+typedef struct packed {
+  bp_cce_inst_op_e                       op;
+  bp_cce_inst_minor_op_u                 minor_op_u;
+  bp_cce_inst_type_u                     type_u;
 } bp_cce_inst_s;
 
-`define bp_cce_inst_width $bits(bp_cce_inst_s)
+`define bp_cce_inst_s_width $bits(bp_cce_inst_s)
 
 /*
  * bp_cce_inst_decoded_s defines the decoded form of the CCE microcode instructions
@@ -549,7 +687,7 @@ typedef struct packed {
   bp_cce_inst_src_e                        src_a;
   bp_cce_inst_src_e                        src_b;
   bp_cce_inst_dst_e                        dst;
-  logic [`bp_cce_inst_gpr_width-1:0]       imm;
+  logic [`bp_cce_inst_imm16_width-1:0]     imm;
 
   // alu valid in
   logic                                    alu_v;

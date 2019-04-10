@@ -23,7 +23,7 @@ DUMP     ?= 0
 ifeq ($(DUMP), 1)
   VV_OPTS += --trace         # Dump a VCD
   VV_OPTS += --trace-structs # Dump struct information with VCD
-  CPP_FLAGS += -DDUMP=$(DUMP)
+  VV_OPTS += --trace-depth 10
 endif
 
 ifeq ($(COVERAGE), 1)
