@@ -1,12 +1,14 @@
 /**
  *  Name:
- *    bp_cce_to_manycore_link_tx.v
+ *    bp_me_cce_to_manycore_link_tx.v
  *
  *  Description:
  *    TX module in manycore bridge.
  */
 
-module bp_cce_to_manycore_link_tx
+`include "bsg_manycore_packet.vh"
+
+module bp_me_cce_to_manycore_link_tx
   import bp_common_pkg::*;
   #(parameter link_data_width_p="inv"
     , parameter link_addr_width_p="inv"
@@ -25,6 +27,9 @@ module bp_cce_to_manycore_link_tx
     , localparam num_flits_lp=(block_size_in_bits_p/link_data_width_p)
     , localparam tx_counter_width_lp=`BSG_SAFE_CLOG2(num_flits_lp+1)
     , localparam lg_num_flits_lp=`BSG_SAFE_CLOG2(num_flits_lp)
+
+    , localparam x_cord_offset_lp = (link_byte_offset_width_lp+link_addr_width_p)
+    , localparam y_cord_offset_lp = (x_cord_offset_lp+x_cord_width_p)
 
     , localparam bp_cce_mem_data_cmd_width_lp=
       `bp_cce_mem_data_cmd_width(paddr_width_p,block_size_in_bits_p,num_lce_p,lce_assoc_p)
@@ -55,8 +60,6 @@ module bp_cce_to_manycore_link_tx
 
     , input [x_cord_width_p-1:0] my_x_i
     , input [y_cord_width_p-1:0] my_y_i
-    
-    , input [y_cord_width_p-1:0] dram_y_i
   );
 
   // manycore_packet struct
@@ -151,7 +154,7 @@ module bp_cce_to_manycore_link_tx
     tx_pkt.payload = mux_data_lo;
     tx_pkt.src_y_cord = my_y_i;
     tx_pkt.src_x_cord = my_x_i;
-    tx_pkt.y_cord = dram_y_i;
+    tx_pkt.y_cord = '0;
     tx_pkt.x_cord = '0;
 
     case (tx_state_r)
@@ -169,9 +172,8 @@ module bp_cce_to_manycore_link_tx
 
       SEND_WRITE_BLOCK: begin
         tx_pkt_v_o = 1'b1;
-        tx_pkt.y_cord = dram_y_i;
-        tx_pkt.x_cord =
-          mem_data_cmd_r.addr[link_byte_offset_width_lp+dram_bank_addr_width_p+:x_cord_width_p];
+        tx_pkt.y_cord = mem_data_cmd_r.addr[y_cord_offset_lp+:y_cord_width_p];
+        tx_pkt.x_cord = mem_data_cmd_r.addr[x_cord_offset_lp+:x_cord_width_p];
         tx_pkt.addr = {
           {(link_addr_width_p-dram_bank_addr_width_p){1'b0}},
           mem_data_cmd_r.addr[link_byte_offset_width_lp+lg_num_flits_lp+:dram_bank_addr_width_p-lg_num_flits_lp],

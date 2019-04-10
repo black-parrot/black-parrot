@@ -255,8 +255,6 @@ module bp_me_cce_to_manycore_link
 
     ,.my_x_i(my_x_i)
     ,.my_y_i(my_y_i)
-
-    ,.dram_y_i(dram_y_i)
   ); 
 
   // tx module
@@ -296,8 +294,6 @@ module bp_me_cce_to_manycore_link
 
     ,.my_x_i(my_x_i)
     ,.my_y_i(my_y_i)
-    
-    ,.dram_y_i(dram_y_i)
   );
 
   // manycore pkt arbiter
