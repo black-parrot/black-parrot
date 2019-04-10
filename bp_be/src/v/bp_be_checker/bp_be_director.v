@@ -110,6 +110,7 @@ bp_be_calc_status_s              calc_status;
 bp_fe_cmd_s                      fe_cmd;
 logic                            fe_cmd_v;
 bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
+bp_fe_cmd_reset_operands_s       fe_cmd_reset_operands;
 bp_fe_cmd_attaboy_s              fe_cmd_attaboy;
 
 assign calc_status = calc_status_i;
@@ -122,6 +123,9 @@ logic [eaddr_width_lp-1:0]              npc_n, npc_r;
 logic                                   npc_mismatch_v;
 logic [branch_metadata_fwd_width_p-1:0] branch_metadata_fwd_r;
 logic [reg_data_width_lp-1:0]           mepc_mux_lo;
+
+// Logic for handling coming out of reset
+enum bit [1:0] {e_reset, e_boot, e_run} state_n, state_r;
 
 // Control signals
 logic npc_w_v, btaken_v, redirect_pending, attaboy_pending;
@@ -259,14 +263,44 @@ assign chk_flush_fe_o = fe_cmd_v & (fe_cmd.opcode == e_op_pc_redirection);
 // Rollback the FE queue on a cache miss
 assign chk_roll_fe_o  = calc_status.mem3_cache_miss_v | calc_status.mem3_tlb_miss_v;
 
+// Boot logic 
+always_comb
+  begin
+    unique casez (state_r)
+      e_reset : state_n = e_boot;
+      e_boot  : state_n = fe_cmd_v ? e_run : e_boot;
+      e_run   : state_n = e_run;
+      default : state_n = e_reset;
+    endcase
+  end
+
+always_ff @(posedge clk_i) 
+  begin
+    if (reset_i)
+        state_r <= e_reset;
+    else
+      begin
+        state_r <= state_n;
+      end
+  end
+
 always_comb 
   begin : fe_cmd_adapter
     fe_cmd = 'b0;
     fe_cmd_v = 1'b0;
     fe_cmd_pc_redirect_operands = '0;
 
+    // Send one reset cmd on boot
+    if (state_r == e_boot) 
+      begin : fe_reset
+        fe_cmd.opcode = e_op_state_reset;
+        fe_cmd_reset_operands.pc = npc_r;
+
+        fe_cmd.operands.reset_operands = fe_cmd_reset_operands.pc;
+        fe_cmd_v = fe_cmd_ready_i;
+      end
     // Redirect the pc if there's an NPC mismatch
-    if(calc_status.ex1_v & npc_mismatch_v) 
+    else if(calc_status.ex1_v & npc_mismatch_v) 
       begin : pc_redirect
         fe_cmd.opcode                                   = e_op_pc_redirection;
         fe_cmd_pc_redirect_operands.pc                  = expected_npc_o;
@@ -302,3 +336,4 @@ always_comb
       end
   end
 endmodule : bp_be_director
+
