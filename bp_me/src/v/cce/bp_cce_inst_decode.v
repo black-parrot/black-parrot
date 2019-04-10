@@ -134,12 +134,12 @@ module bp_cce_inst_decode
           // source
           // move operation
           if (minor_op_u.mov_minor_op == e_mov_op) begin
-            decoded_inst_o.src_a = mov_op_s.src_u.src;
+            decoded_inst_o.src_a = mov_op_s.src;
           end
           // move immediate operation
           if (minor_op_u.mov_minor_op == e_movi_op) begin
             decoded_inst_o.src_a = e_src_imm;
-            decoded_inst_o.imm = mov_op_s.src_u.imm;
+            decoded_inst_o.imm = mov_op_s.imm;
           end
 
         end

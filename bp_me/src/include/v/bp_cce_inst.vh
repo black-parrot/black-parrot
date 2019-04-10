@@ -493,38 +493,66 @@ typedef enum logic {
 
 
 /*
+ * Instruction Struct Definitions
+ *
+ * Each instruction is capped at 48-bits (currently). The size is statically set to allow for
+ * proper padding to be inserted into the instruction structs, which helps normalize the microcode
+ * structs and formats.
+ *
+ * Each instruction contains:
+ *   op (3-bits)
+ *   minor_op (3-bits)
+ *   instruction type specific struct with padding (42-bits)
+ *
+ * Any changes made to this file must be reflected in the C version used by the assembler, and
+ * in the assembler itself.
+ */
+
+`define bp_cce_inst_width 48
+`define bp_cce_inst_type_u_width \
+  (`bp_cce_inst_width-`bp_cce_inst_op_width-`bp_cce_inst_minor_op_width)
+
+/*
  * ALU Operation
  */
+
+`define bp_cce_inst_alu_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_dst_width \
+  -(2*`bp_cce_inst_src_width)-`bp_cce_inst_imm16_width)
 
 typedef struct packed {
   bp_cce_inst_dst_e                      dst;
   bp_cce_inst_src_e                      src_a;
   bp_cce_inst_src_e                      src_b;
   logic [`bp_cce_inst_imm16_width-1:0]   imm;
+  logic [`bp_cce_inst_alu_pad-1:0]       pad;
 } bp_cce_inst_alu_op_s;
 
 /*
  * Branch Operation
  */
 
+`define bp_cce_inst_branch_pad (`bp_cce_inst_type_u_width-(2*`bp_cce_inst_src_width) \
+  -`bp_cce_inst_imm16_width)
+
 typedef struct packed {
   bp_cce_inst_src_e                      src_a;
   bp_cce_inst_src_e                      src_b;
   logic [`bp_cce_inst_imm16_width-1:0]   target;
+  logic [`bp_cce_inst_branch_pad-1:0]    pad;
 } bp_cce_inst_branch_op_s;
 
 /*
  * Move Operation
  */
 
-typedef union packed {
-  bp_cce_inst_src_e                      src;
-  logic [`bp_cce_inst_imm16_width-1:0]   imm;
-} bp_cce_inst_mov_src_u;
+`define bp_cce_inst_mov_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_dst_width \
+  -`bp_cce_inst_src_width-`bp_cce_inst_imm16_width)
 
 typedef struct packed {
   bp_cce_inst_dst_e                      dst;
-  bp_cce_inst_mov_src_u                  src_u;
+  bp_cce_inst_src_e                      src;
+  logic [`bp_cce_inst_imm16_width-1:0]   imm;
+  logic [`bp_cce_inst_mov_pad-1:0]       pad;
 } bp_cce_inst_mov_op_s;
 
 /*
@@ -532,24 +560,35 @@ typedef struct packed {
  *
  */
 
+`define bp_cce_inst_flag_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_dst_width-1)
+
 typedef struct packed {
   bp_cce_inst_dst_e                      dst;
   logic                                  val;
+  logic [`bp_cce_inst_flag_pad-1:0]      pad;
 } bp_cce_inst_flag_op_s;
 
 /*
  * Read Directory Operation
  */
 
+`define bp_cce_inst_read_dir_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_dir_way_group_sel_width \
+  -`bp_cce_inst_dir_lce_sel_width-`bp_cce_inst_dir_way_sel_width)
+
 typedef struct packed {
   bp_cce_inst_dir_way_group_sel_e        dir_way_group_sel;
   bp_cce_inst_dir_lce_sel_e              dir_lce_sel;
   bp_cce_inst_dir_way_sel_e              dir_way_sel;
+  logic [`bp_cce_inst_read_dir_pad-1:0]  pad;
 } bp_cce_inst_read_dir_op_s;
 
 /*
  * Write Directory Operation
  */
+
+`define bp_cce_inst_write_dir_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_dir_way_group_sel_width \
+  -`bp_cce_inst_dir_lce_sel_width-`bp_cce_inst_dir_way_sel_width \
+  -`bp_cce_inst_dir_coh_state_sel_width-`bp_cce_inst_dir_tag_sel_width-`bp_cce_inst_imm16_width)
 
 typedef struct packed {
   // directory inputs
@@ -559,52 +598,62 @@ typedef struct packed {
   bp_cce_inst_dir_coh_state_sel_e        dir_coh_state_sel;
   bp_cce_inst_dir_tag_sel_e              dir_tag_sel;
   logic [`bp_cce_coh_bits-1:0]           imm;
+  logic [`bp_cce_inst_write_dir_pad-1:0] pad;
 } bp_cce_inst_write_dir_op_s;
 
 /*
  * Misc Operation
  *
- * Currently, Misc operations require nothing, so we use a single bit struct to make the union
- * happy
+ * Currently, Misc operations require nothing; the entire struct is padding
  */
 
 typedef struct packed {
-  logic empty;
+  logic [`bp_cce_inst_type_u_width-1:0]  pad;
 } bp_cce_inst_misc_op_s;
 
 /*
  * Queue Operation
  */
 
+`define bp_cce_inst_pushq_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_dst_q_sel_width \
+  -`bp_cce_lce_cmd_type_width-`bp_cce_inst_lce_cmd_lce_sel_width \
+  -`bp_cce_inst_lce_cmd_addr_sel_width-`bp_cce_inst_lce_cmd_way_sel_width \
+  -`bp_cce_inst_mem_data_cmd_addr_sel_width)
+
 typedef struct packed {
   bp_cce_inst_dst_q_sel_e                dst_q;
   bp_cce_lce_cmd_type_e                  cmd;
-
   // cce_lce_cmd_queue inputs
   bp_cce_inst_lce_cmd_lce_sel_e          lce_cmd_lce_sel;
   bp_cce_inst_lce_cmd_addr_sel_e         lce_cmd_addr_sel;
   bp_cce_inst_lce_cmd_way_sel_e          lce_cmd_way_sel;
-
   // mem_data_cmd_queue inputs
   bp_cce_inst_mem_data_cmd_addr_sel_e    mem_data_cmd_addr_sel;
+  logic [`bp_cce_inst_pushq_pad-1:0]     pad;
 } bp_cce_inst_pushq_s;
 
-typedef struct packed {
-  bp_cce_inst_src_q_sel_e               src_q;
-} bp_cce_inst_popq_s;
+`define bp_cce_inst_popq_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_src_q_sel_width)
 
 typedef struct packed {
-  logic [`bp_cce_num_src_q-1:0]  qmask;
+  bp_cce_inst_src_q_sel_e                src_q;
+  logic [`bp_cce_inst_popq_pad-1:0]      pad;
+} bp_cce_inst_popq_s;
+
+`define bp_cce_inst_wfq_pad (`bp_cce_inst_type_u_width-`bp_cce_num_src_q)
+
+typedef struct packed {
+  logic [`bp_cce_num_src_q-1:0]          qmask;
+  logic [`bp_cce_inst_wfq_pad-1:0]       pad;
 } bp_cce_inst_wfq_s;
 
 typedef union packed {
-  bp_cce_inst_pushq_s                   pushq;
-  bp_cce_inst_popq_s                    popq;
-  bp_cce_inst_wfq_s                     wfq;
+  bp_cce_inst_pushq_s                    pushq;
+  bp_cce_inst_popq_s                     popq;
+  bp_cce_inst_wfq_s                      wfq;
 } bp_cce_inst_queue_op_u;
 
 typedef struct packed {
-  bp_cce_inst_queue_op_u                op;
+  bp_cce_inst_queue_op_u                 op;
 } bp_cce_inst_queue_op_s;
 
 /*
@@ -628,9 +677,7 @@ typedef struct packed {
   bp_cce_inst_type_u                     type_u;
 } bp_cce_inst_s;
 
-`define bp_cce_inst_width $bits(bp_cce_inst_s)
-
-
+`define bp_cce_inst_s_width $bits(bp_cce_inst_s)
 
 /*
  * bp_cce_inst_decoded_s defines the decoded form of the CCE microcode instructions

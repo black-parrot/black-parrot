@@ -398,14 +398,14 @@ Assembler::parseMove(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
   if (tokens->size() == 3) { // mov or movi
     inst->type_u.mov_op_s.dst = parseDstOpd(tokens->at(2));
     if (inst->minor_op == e_movi) {
-      inst->type_u.mov_op_s.src_a = e_src_imm;
+      inst->type_u.mov_op_s.src = e_src_imm;
       if (inst->type_u.mov_op_s.dst == e_dst_next_coh_state) {
         inst->type_u.mov_op_s.imm = parseCohStImm(tokens->at(1));
       } else {
         inst->type_u.mov_op_s.imm = parseImm(tokens->at(1));
       }
     } else if (inst->minor_op == e_mov) {
-      inst->type_u.mov_op_s.src_a = parseSrcOpd(tokens->at(1));
+      inst->type_u.mov_op_s.src = parseSrcOpd(tokens->at(1));
     } else {
       printf("Unknown Move instruction: %s\n", tokens->at(0).c_str());
       exit(-1);
@@ -860,6 +860,8 @@ Assembler::Assembler() {
   infp = stdin;
   outfp = stdout;
   line_number = 0;
+
+  printf("instruction length: %d\n", bp_cce_inst_s_width);
 }
 
 Assembler::~Assembler() {
@@ -988,6 +990,28 @@ Assembler::printLongField(uint16_t b, int bits, stringstream &ss) {
 }
 
 void
+Assembler::printField(uint64_t b, int bits, stringstream &ss) {
+  int i = 0;
+  uint64_t mask = (1 << (bits-1));
+  while (i < bits) {
+    if (b & mask) {
+      ss << "1";
+    } else {
+      ss << "0";
+    }
+    mask = mask >> 1;
+    ++i;
+  }
+}
+
+void
+Assembler::printPad(int bits, stringstream &ss) {
+  for (int i = 0; i < bits; i++) {
+    ss << "0";
+  }
+}
+
+void
 Assembler::writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &s) {
 
   stringstream ss;
@@ -996,6 +1020,70 @@ Assembler::writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &
 
   printShortField(inst->op, bp_cce_inst_op_width, ss);
   printShortField(inst->minor_op, bp_cce_inst_minor_op_width, ss);
+
+  switch (inst->op) {
+    case e_op_alu:
+      printShortField(inst->type_u.alu_op_s.dst, bp_cce_inst_dst_width, ss);
+      printShortField(inst->type_u.alu_op_s.src_a, bp_cce_inst_src_width, ss);
+      printShortField(inst->type_u.alu_op_s.src_b, bp_cce_inst_src_width, ss);
+      printLongField(inst->type_u.alu_op_s.imm, bp_cce_inst_imm16_width, ss);
+      printPad(bp_cce_inst_alu_pad, ss);
+      break;
+    case e_op_branch:
+      printShortField(inst->type_u.branch_op_s.src_a, bp_cce_inst_src_width, ss);
+      printShortField(inst->type_u.branch_op_s.src_b, bp_cce_inst_src_width, ss);
+      printLongField(inst->type_u.branch_op_s.imm, bp_cce_inst_imm16_width, ss);
+      printPad(bp_cce_inst_branch_pad, ss);
+      break;
+    case e_op_move:
+      printShortField(inst->type_u.mov_op_s.dst, bp_cce_inst_dst_width, ss);
+      printShortField(inst->type_u.mov_op_s.src, bp_cce_inst_src_width, ss);
+      printLongField(inst->type_u.mov_op_s.imm, bp_cce_inst_imm16_width, ss);
+      printPad(bp_cce_inst_mov_pad, ss);
+      break;
+    case e_op_flag:
+      printShortField(inst->type_u.flag_op_s.dst, bp_cce_inst_dst_width, ss);
+      printShortField(inst->type_u.flag_op_s.imm, 1, ss);
+      printPad(bp_cce_inst_flag_pad, ss);
+      break;
+    case e_op_read_dir:
+      printShortField(inst->type_u.read_dir_op_s.dir_way_group_sel, bp_cce_inst_dir_way_group_sel_width, ss);
+      printShortField(inst->type_u.read_dir_op_s.dir_lce_sel, bp_cce_inst_dir_lce_sel_width, ss);
+      printShortField(inst->type_u.read_dir_op_s.dir_way_sel, bp_cce_inst_dir_way_sel_width, ss);
+      printPad(bp_cce_inst_read_dir_pad, ss);
+      break;
+    case e_op_write_dir:
+      printShortField(inst->type_u.write_dir_op_s.dir_way_group_sel, bp_cce_inst_dir_way_group_sel_width, ss);
+      printShortField(inst->type_u.write_dir_op_s.dir_lce_sel, bp_cce_inst_dir_lce_sel_width, ss);
+      printShortField(inst->type_u.write_dir_op_s.dir_way_sel, bp_cce_inst_dir_way_sel_width, ss);
+      printShortField(inst->type_u.write_dir_op_s.dir_coh_state_sel, bp_cce_inst_dir_coh_state_sel_width, ss);
+      printShortField(inst->type_u.write_dir_op_s.dir_tag_sel, bp_cce_inst_dir_tag_sel_width, ss);
+      printShortField(inst->type_u.write_dir_op_s.imm, bp_cce_coh_bits, ss);
+      printPad(bp_cce_inst_write_dir_pad, ss);
+      break;
+    case e_op_misc:
+      printPad(bp_cce_inst_misc_pad, ss);
+      break;
+    case e_op_queue:
+      if (inst->minor_op == e_wfq) {
+        printShortField(inst->type_u.queue_op_s.op.wfq.qmask, bp_cce_num_src_q, ss);
+        printPad(bp_cce_inst_wfq_pad, ss);
+      } else if (inst->minor_op == e_pushq) {
+        printShortField(inst->type_u.queue_op_s.op.pushq.dst_q, bp_cce_inst_dst_q_sel_width, ss);
+        printShortField(inst->type_u.queue_op_s.op.pushq.lce_cmd_lce_sel, bp_cce_inst_lce_cmd_lce_sel_width, ss);
+        printShortField(inst->type_u.queue_op_s.op.pushq.lce_cmd_addr_sel, bp_cce_inst_lce_cmd_addr_sel_width, ss);
+        printShortField(inst->type_u.queue_op_s.op.pushq.lce_cmd_way_sel, bp_cce_inst_lce_cmd_way_sel_width, ss);
+        printShortField(inst->type_u.queue_op_s.op.pushq.mem_data_cmd_addr_sel, bp_cce_inst_mem_data_cmd_addr_sel_width, ss);
+        printPad(bp_cce_inst_pushq_pad, ss);
+      } else if (inst->minor_op == e_popq) {
+        printShortField(inst->type_u.queue_op_s.op.popq.src_q, bp_cce_inst_src_q_sel_width, ss);
+        printPad(bp_cce_inst_popq_pad, ss);
+      }
+      break;
+    default:
+      printf("Error parsing instruction\n");
+      exit(-1);
+  }
 
   /* TODO: print out of instructions based on type
   printShortField(inst->src_a, bp_cce_inst_src_width, ss);
