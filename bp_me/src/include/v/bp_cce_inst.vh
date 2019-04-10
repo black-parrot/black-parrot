@@ -558,7 +558,7 @@ typedef struct packed {
   bp_cce_inst_dir_way_sel_e              dir_way_sel;
   bp_cce_inst_dir_coh_state_sel_e        dir_coh_state_sel;
   bp_cce_inst_dir_tag_sel_e              dir_tag_sel;
-  logic                                  dir_pending_bit_val;
+  logic [`bp_cce_coh_bits-1:0]           imm;
 } bp_cce_inst_write_dir_op_s;
 
 /*

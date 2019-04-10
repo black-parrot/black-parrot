@@ -541,19 +541,18 @@ void
 Assembler::parseWriteDir(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
   inst->type_u.write_dir_op_s.dir_way_group_sel = parseDirWgSel(tokens->at(1));
   if (inst->minor_op == e_wdp) {
-    //inst->imm = (parseImm(tokens->at(2)) & 0x1);
+    inst->type_u.write_dir_op_s.imm = (uint8_t)(parseImm(tokens->at(2)) & 0x1);
   } else if (inst->minor_op == e_wde || inst->minor_op == e_wds) {
     inst->type_u.write_dir_op_s.dir_lce_sel = parseDirLceSel(tokens->at(2));
     inst->type_u.write_dir_op_s.dir_way_sel = parseDirWaySel(tokens->at(3));
     if (inst->minor_op == e_wde) {
       inst->type_u.write_dir_op_s.dir_tag_sel = parseDirTagSel(tokens->at(4));
       inst->type_u.write_dir_op_s.dir_coh_state_sel = parseDirCohStSel(tokens->at(5));
-      if (inst->dir_coh_state_sel == e_dir_coh_sel_inst_imm) {
-        // TODO: add to instruction
-        inst->imm = parseCohStImm(tokens->at(5));
+      if (inst->type_u.write_dir_op_s.dir_coh_state_sel == e_dir_coh_sel_inst_imm) {
+        inst->type_u.write_dir_op_s.imm = (uint8_t)(parseCohStImm(tokens->at(5)) & 0x3);
       }
     } else if (inst->minor_op == e_wds) {
-      inst->dir_coh_state_sel = parseDirCohStSel(tokens->at(4));
+      inst->type_u.write_dir_op_s.dir_coh_state_sel = parseDirCohStSel(tokens->at(4));
     } else {
       printf("Unknown Write Directory instruction\n");
       exit(-1);

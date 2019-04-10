@@ -5,6 +5,7 @@
  *
  */
 
+
 #ifndef BP_CCE_INST_H
 #define BP_CCE_INST_H
 
@@ -476,7 +477,7 @@ typedef struct __attribute__((__packed__)) {
   bp_cce_inst_dir_way_sel_e dir_way_sel : bp_cce_inst_dir_way_sel_width;
   bp_cce_inst_dir_coh_state_sel_e dir_coh_state_sel : bp_cce_inst_dir_coh_state_sel_width;
   bp_cce_inst_dir_tag_sel_e dir_tag_sel : bp_cce_inst_dir_tag_sel_width;
-  // TODO: need to specify where coherence state comes from? -- see assembler, parseWriteDir()
+  uint8_t imm : bp_cce_coh_bits;
 } bp_cce_inst_write_dir_op_s;
 
 #define bp_cce_inst_write_dir_op_s_width \
@@ -484,7 +485,8 @@ typedef struct __attribute__((__packed__)) {
   + bp_cce_inst_dir_lce_sel_width \
   + bp_cce_inst_dir_way_sel_width \
   + bp_cce_inst_dir_coh_state_sel_width \
-  + bp_cce_inst_dir_tag_sel_width
+  + bp_cce_inst_dir_tag_sel_width \
+  + bp_cce_coh_bits
 
 // Misc Operation
 typedef struct __attribute__((__packed__)) {
