@@ -780,7 +780,6 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
   } else if (inst->minor_op == e_pushq) {
     bp_cce_inst_dst_q_sel_e dstQ = parseDstQueue(tokens->at(1));
     inst->type_u.queue_op_s.op.pushq.dst_q = dstQ;
-    //inst->imm = ((uint16_t)dstQ << 3);
     // set lce cmd lce, addr, and way select to the 0 select
     inst->type_u.queue_op_s.op.pushq.lce_cmd_lce_sel = e_lce_cmd_lce_0;
     inst->type_u.queue_op_s.op.pushq.lce_cmd_addr_sel = e_lce_cmd_addr_0;
@@ -788,8 +787,7 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
     // parse lce, addr, way, and mem_addr selects
     switch (dstQ) {
       case e_dst_q_lce_cmd:
-        // dstQ = imm[4:3], cmd = imm[2:0]
-        //inst->imm |= (parseImm(tokens->at(2)) & 0x7);
+        inst->type_u.queue_op_s.op.pushq.cmd = (bp_cce_lce_cmd_type_e)(parseImm(tokens->at(2)) & 0x7);
         if (tokens->size() > 3) {
           inst->type_u.queue_op_s.op.pushq.lce_cmd_lce_sel = parseLceCmdLceSel(tokens->at(3));
         }
@@ -835,7 +833,7 @@ Assembler::parseTokens(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
       parseBranch(tokens, n, inst);
       break;
     case e_op_move:
-    //case e_op_flag:
+    case e_op_flag:
       parseMove(tokens, n, inst);
       break;
     case e_op_read_dir:
@@ -1070,6 +1068,7 @@ Assembler::writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &
         printPad(bp_cce_inst_wfq_pad, ss);
       } else if (inst->minor_op == e_pushq) {
         printShortField(inst->type_u.queue_op_s.op.pushq.dst_q, bp_cce_inst_dst_q_sel_width, ss);
+        printShortField(inst->type_u.queue_op_s.op.pushq.cmd, bp_cce_lce_cmd_type_width, ss);
         printShortField(inst->type_u.queue_op_s.op.pushq.lce_cmd_lce_sel, bp_cce_inst_lce_cmd_lce_sel_width, ss);
         printShortField(inst->type_u.queue_op_s.op.pushq.lce_cmd_addr_sel, bp_cce_inst_lce_cmd_addr_sel_width, ss);
         printShortField(inst->type_u.queue_op_s.op.pushq.lce_cmd_way_sel, bp_cce_inst_lce_cmd_way_sel_width, ss);
@@ -1082,6 +1081,7 @@ Assembler::writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &
       break;
     default:
       printf("Error parsing instruction\n");
+      printf("line: %d\n", line_number);
       exit(-1);
   }
 
@@ -1132,7 +1132,7 @@ Assembler::writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &
       fprintf(outfp, "%s\n", ss.str().c_str());
       break;
     case  output_format_dbg:
-      fprintf(outfp, "(%02X) %s : %s\n", line_number, s.c_str(), ss.str().c_str());
+      fprintf(outfp, "(%02X) %5s : %s\n", line_number, s.c_str(), ss.str().c_str());
       break;
   }
 }

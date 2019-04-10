@@ -31,7 +31,6 @@ typedef enum {
   ,e_inc                         = 0x0   // Increment by 1 // same as ADD, src_b = 1, dst = src_a
   ,e_sub                         = 0x1   // Subtract
   ,e_dec                         = 0x1   // Decrement by 1 // same as DEC, src_b = 1, dst = src_a
-// TODO: implement in assembler
   ,e_lsh                         = 0x2   // Left shift
   ,e_rsh                         = 0x3   // Right shift
   ,e_and                         = 0x4   // Bit-wise AND
@@ -520,7 +519,7 @@ typedef struct __attribute__((__packed__)) {
 
 typedef struct __attribute__((__packed__)) {
   uint8_t dst_q : bp_cce_inst_dst_q_sel_width;
-  bp_cce_lce_cmd_type_e lce_cmd_cmd : bp_cce_lce_cmd_type_width;
+  bp_cce_lce_cmd_type_e cmd : bp_cce_lce_cmd_type_width;
   bp_cce_inst_lce_cmd_lce_sel_e lce_cmd_lce_sel : bp_cce_inst_lce_cmd_lce_sel_width;
   bp_cce_inst_lce_cmd_addr_sel_e lce_cmd_addr_sel : bp_cce_inst_lce_cmd_addr_sel_width;
   bp_cce_inst_lce_cmd_way_sel_e lce_cmd_way_sel : bp_cce_inst_lce_cmd_way_sel_width;
