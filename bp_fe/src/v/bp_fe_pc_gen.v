@@ -97,6 +97,8 @@ bp_fe_fetch_s            pc_gen_fetch;
 bp_fe_exception_s        pc_gen_exception;
 bp_fe_instr_scan_s       scan_instr;
    
+// Logic for handling coming out of reset
+enum bit [0:0] {e_reset, e_run} state_n, state_r;
    
 // pipeline pc's
 logic [eaddr_width_p-1:0]       pc_f2;
@@ -132,6 +134,7 @@ logic [instr_width_p-1:0]       last_instr;
 logic [instr_width_p-1:0]       instr_out;
 
 //control signals
+logic                           state_reset_v;
 logic                           pc_redirect_v;
 
 //exceptions
@@ -144,6 +147,26 @@ bp_fe_branch_metadata_fwd_s fe_queue_branch_metadata, fe_queue_branch_metadata_r
 
 logic btb_pred_f1_r, btb_pred_f2_r;
 
+// Boot logic 
+always_comb
+  begin
+    unique casez (state_r)
+      e_reset : state_n = state_reset_v ? e_run : e_reset;
+      e_run   : state_n = e_run;
+      default : state_n = e_reset;
+    endcase
+  end
+
+always_ff @(posedge clk_i) 
+  begin
+    if (reset_i)
+        state_r <= e_reset;
+    else
+      begin
+        state_r <= state_n;
+      end
+  end
+
 //connect pc_gen to the rest of the FE submodules as well as FE top module   
 assign pc_gen_icache_o = pc_gen_icache;
 assign pc_gen_itlb_o   = pc_gen_itlb;
@@ -152,6 +175,7 @@ assign fe_pc_gen_cmd   = fe_pc_gen_i;
 assign icache_pc_gen   = icache_pc_gen_i;
 
 
+assign state_reset_v = fe_pc_gen_v_i & fe_pc_gen_cmd.reset_valid;
 assign pc_redirect_v = fe_pc_gen_v_i & fe_pc_gen_cmd.pc_redirect_valid;
 
 assign fe_exception_v     = misalign_exception | itlb_miss_exception;
@@ -199,7 +223,7 @@ end
 assign pc_v_f1 = ~((predict_taken & ~btb_pred_f2_r));
 
 // stall logic
-assign stall = ~pc_redirect_v & (~pc_gen_fe_ready_i | (itlb_miss_i & itlb_miss_r) | icache_miss_i);
+assign stall = (state_r == e_reset) | ~pc_gen_fe_ready_i | ~pc_gen_icache_ready_i | (itlb_miss_i & itlb_miss_r) | icache_miss_i;
 
 assign icache_miss_recover = icache_miss_prev & (~icache_miss_i);
 assign itlb_miss_recover    = itlb_miss_r & (~itlb_miss_i);
@@ -227,8 +251,12 @@ logic                     btb_br_tgt_v_lo;
 bp_fe_branch_metadata_fwd_s fe_cmd_branch_metadata;
 always_comb
 begin
+    // load boot pc on reset command
+    if(state_reset_v) begin
+        pc_n = fe_pc_gen_cmd.pc;
+    end
     // if we need to redirect
-    if (pc_redirect_v) begin
+    else if (pc_redirect_v) begin
         pc_n = fe_pc_gen_cmd.pc;
     end
     // if we've missed in the itlb

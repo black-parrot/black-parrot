@@ -189,7 +189,7 @@ logic icache_itlb_v;
 logic icache_itlb_ready;
 // reserved icache
 logic icache_miss;
-logic poison;
+logic poison_tl;
 
 //itlb
 logic [vtag_width_lp-1:0] itlb_miss_vtag;
@@ -207,6 +207,7 @@ assign fe_queue_v_o      = pc_gen_fe_v;
 // fe to pc_gen 
 always_comb
   begin
+    fe_pc_gen.reset_valid         = fe_cmd.opcode == e_op_state_reset;
     fe_pc_gen.pc_redirect_valid   = (fe_cmd.opcode == e_op_pc_redirection)
                                     && (fe_cmd.operands.pc_redirect_operands.subopcode
                                     == e_subop_branch_mispredict);
@@ -219,9 +220,11 @@ always_comb
                                     ? fe_cmd.operands.pc_redirect_operands.branch_metadata_fwd
                                     : '{default:'0};
     
-    fe_pc_gen.pc                  = fe_pc_gen.pc_redirect_valid 
+    fe_pc_gen.pc                  = (fe_pc_gen.reset_valid) 
+                                    ? fe_cmd.operands.reset_operands.pc
+                                    : (fe_pc_gen.pc_redirect_valid) 
                                     ? fe_cmd.operands.pc_redirect_operands.pc
-                                    : fe_cmd.operands.attaboy.pc;
+                                    : fe_cmd.operands.attaboy.pc ;
 
     fe_pc_gen_v                   = fe_cmd_v_i;
     fe_cmd_ready_o                = fe_pc_gen_ready;
@@ -229,7 +232,7 @@ always_comb
      
 
 // icache to icache
-assign poison = icache_miss && fe_cmd.opcode == e_op_icache_fence;
+assign poison_tl = icache_miss | fe_pc_gen.pc_redirect_valid & fe_pc_gen_v;
 
 //fe to itlb
 bp_be_tlb_entry_s  itlb_entry_r, itlb_entry_w;
@@ -335,7 +338,7 @@ icache
 
          
    ,.cache_miss_o(icache_miss)
-   ,.poison_i(poison)
+   ,.poison_tl_i(poison_tl)
    );
 
    
