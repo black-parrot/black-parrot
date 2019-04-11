@@ -27,10 +27,10 @@ benchmarks: benchmarks_pt benchmarks_elf benchmarks_rom clean
 demos: demos_elf demos_rom clean
 
 isa_pt: 
-	python $(PTGEN) src/isa/pt.S 0x80001000 0x80000000 1
+	python $(PTGEN) src/isa/pt.S 0x80009000 0x80000000 4
 
 benchmarks_pt: 
-	python $(PTGEN) src/benchmarks/pt.S 0x80008000 0x80000000,0x8fffc000 4,1
+	python $(PTGEN) src/benchmarks/pt.S 0x80009000 0x80000000,0x80008000 4,1
 
 isa_elf:
 	make -C src/isa
@@ -66,9 +66,9 @@ demos_rom: $(foreach x, $(subst -,_,$(BP_DEMOS)), $(x).v)
 %.bin: %.hex
 	python $(HEX2BIN) $< 512 > $@
 
-# 32 kB ROM with a 0x80000124 offset
+# 64 kB ROM with a 0x80000000 offset
 %.hex:
-	$(RISCV_ELF2HEX) 16 32768 $*.elf 2147483648  > $@
+	$(RISCV_ELF2HEX) 16 65536 $*.elf 2147483648  > $@
 
 %.trace: 
 	$(RISCV_SIM) -l $(SPIKE_OPTS) $(basename $@).elf 2>$(basename $@).spike

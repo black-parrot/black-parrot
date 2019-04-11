@@ -124,7 +124,7 @@ logic                     ptw_tlb_miss_v, ptw_tlb_w_v;
 logic [vtag_width_lp-1:0] ptw_tlb_w_vtag, ptw_tlb_miss_vtag;
 bp_be_tlb_entry_s         ptw_tlb_w_entry;
 
-assign base_ppn = 'h80008;    //TODO: pass from upper level modules
+assign base_ppn = 'h80009;    //TODO: pass from upper level modules
 
 /* D-Cache ports */
 bp_be_dcache_pkt_s        dcache_pkt;
