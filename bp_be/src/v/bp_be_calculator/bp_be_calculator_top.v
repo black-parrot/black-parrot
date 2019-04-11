@@ -587,6 +587,8 @@ always_comb
                                            | dispatch_pkt_r.decode.jmp_v;
     calc_status.ex1_v                    = dispatch_pkt_r.decode.instr_v;
     calc_status.ex1_pc                   = dispatch_pkt_r.instr_metadata.pc;
+    
+    calc_status.fe_exception_v           = exc_stage_r[0].itlb_fill_v & ~exc_stage_r[0].poison_v;
 
     // Dependency information for pipelines
     for (integer i = 0; i < pipe_stage_els_lp; i++) 

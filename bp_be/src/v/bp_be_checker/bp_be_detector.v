@@ -99,7 +99,7 @@ logic [2:0] irs1_data_haz_v , irs2_data_haz_v;
 logic [2:0] frs1_data_haz_v , frs2_data_haz_v;
 logic [2:0] rs1_match_vector, rs2_match_vector;
 
-logic stall_haz_v, data_haz_v, struct_haz_v, mispredict_v;
+logic stall_haz_v, data_haz_v, struct_haz_v, mispredict_poison_v;
 
 always_comb 
   begin
@@ -178,7 +178,7 @@ always_comb
     struct_haz_v = ~mmu_cmd_ready_i;
 
     // Detect misprediction
-    mispredict_v = (/*calc_status.ex1_v &*/ (calc_status.ex1_pc != expected_npc_i));
+    mispredict_poison_v = ((calc_status.ex1_v | calc_status.fe_exception_v) & (calc_status.ex1_pc != expected_npc_i));
 
   end
 
@@ -195,7 +195,7 @@ assign chk_poison_isd_o = reset_i
                           | calc_status.mem3_itlb_fill_v; 
 
 assign chk_poison_ex1_o = reset_i 
-                          | mispredict_v
+                          | mispredict_poison_v
                           | calc_status.mem3_cache_miss_v
                           | calc_status.mem2_tlb_miss_v
                           | calc_status.mem3_tlb_miss_v

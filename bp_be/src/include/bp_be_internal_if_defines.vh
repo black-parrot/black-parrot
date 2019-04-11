@@ -94,6 +94,8 @@
     logic                                    ex1_v;                                                \
     logic [rv64_eaddr_width_gp-1:0]          ex1_pc;                                               \
                                                                                                    \
+    logic                                    fe_exception_v;                                       \
+                                                                                                   \
     /*                                                                                             \
      * 5 is the number of stages in the pipeline.                                                  \
      * In fact, we don't need all of this dependency information, since some of the stages are     \
@@ -169,7 +171,7 @@
    + 6                                                                                             \
    + vaddr_width_mp                                                                                \
    + rv64_reg_data_width_gp                                                                        \
-   + 1                                                                                             \
+   + 2                                                                                             \
    )                                                                                               
 
 `endif
