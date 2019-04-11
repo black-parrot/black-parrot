@@ -41,7 +41,9 @@ module bp_be_instr_decoder
 
    , output [decode_width_lp-1:0] decode_o
    , output                       illegal_instr_o
-   , output                       ret_instr_o
+   , output                       mret_instr_o
+   , output                       sret_instr_o
+   , output                       uret_instr_o
    , output                       csr_instr_o
    );
 
@@ -53,7 +55,9 @@ logic          illegal_instr;
 assign instr           = instr_i;
 assign decode_o        = decode;
 assign illegal_instr_o = illegal_instr;
-assign ret_instr_o     = decode.ret_v;
+assign mret_instr_o    = decode.mret_v;
+assign sret_instr_o    = decode.sret_v;
+assign uret_instr_o    = decode.uret_v;
 assign csr_instr_o     = decode.csr_instr_v;
 
 // Decode logic 
@@ -83,7 +87,9 @@ always_comb
 
     // Decode metadata
     decode.fp_not_int_v  = '0;
-    decode.ret_v         = '0;
+    decode.mret_v        = '0;
+    decode.sret_v        = '0;
+    decode.uret_v        = '0;
     decode.amo_v         = '0;
     decode.jmp_v         = '0;
     decode.br_v          = '0;
@@ -236,16 +242,19 @@ always_comb
           decode.pipe_int_v = 1'b1;
         end
       `RV64_SYSTEM_OP : 
-        // TODO: CSR support is extremely fragile right now.  We assume that software does exactly
-        //         what we want it to do. e.g. always R/W, always valid bits, etc.
         begin
           decode.pipe_mem_v = 1'b1;
-          unique case (instr[31:20])
-            `RV64_FUNCT12_MRET:
-              begin
-                decode.ret_v         = 1'b1;
-              end
-            default : 
+          unique casez (instr)
+            `RV64_ECALL      : begin end // Implemented as NOP
+            `RV64_EBREAK     : begin end // Implemented as NOP
+            `RV64_URET       : begin end // Implemented as NOP
+            `RV64_SRET       : begin end // Implemented as NOP
+            `RV64_MRET       : decode.mret_v = 1'b1;
+            `RV64_SRET       : decode.sret_v = 1'b1;
+            `RV64_URET       : decode.uret_v = 1'b1;
+            `RV64_WFI        : begin end // Implemented as NOP
+            `RV64_SFENCE_VMA : begin end // Implemented as NOP
+            default: 
               begin
                 decode.csr_instr_v = 1'b1;
                 decode.irf_w_v     = 1'b1;

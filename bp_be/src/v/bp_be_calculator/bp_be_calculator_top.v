@@ -142,6 +142,8 @@ module bp_be_calculator_top
   , output [instr_width_lp-1:0]          exception_instr_o
   , output                               exception_v_o
   , output                               mret_v_o
+  , output                               sret_v_o
+  , output                               uret_v_o
 
   // Commit tracer
   , output                               cmt_rd_w_v_o
@@ -187,7 +189,7 @@ logic [reg_data_width_lp-1:0] bypass_frs1, bypass_frs2;
 logic [reg_data_width_lp-1:0] bypass_rs1 , bypass_rs2;
 
 // Exception signals
-logic illegal_instr_isd, csr_instr_isd, ret_instr_isd, cache_miss_mem3, illegal_csr_mem3;
+logic illegal_instr_isd, csr_instr_isd, mret_instr_isd, sret_instr_isd, uret_instr_isd, cache_miss_mem3, illegal_instr_mem3;
 
 // Pipeline stage registers
 bp_be_pipe_stage_reg_s [pipe_stage_els_lp-1:0] calc_stage_r;
@@ -282,7 +284,9 @@ bp_be_instr_decoder
 
    ,.decode_o(decoded)
    ,.illegal_instr_o(illegal_instr_isd)
-   ,.ret_instr_o(ret_instr_isd)
+   ,.mret_instr_o(mret_instr_isd)
+   ,.sret_instr_o(sret_instr_isd)
+   ,.uret_instr_o(uret_instr_isd)
    ,.csr_instr_o(csr_instr_isd)
    );
 
@@ -419,7 +423,7 @@ bp_be_pipe_mem
 
    ,.data_o(pipe_mem_data_lo)
 
-   ,.illegal_csr_o(illegal_csr_mem3)
+   ,.illegal_instr_o(illegal_instr_mem3)
    ,.cache_miss_o(cache_miss_mem3)
    );
 
@@ -588,7 +592,7 @@ always_comb
                                               & ~exc_stage_n[i+1].roll_v
                                               & calc_stage_r[i].frf_w_v;
         calc_status.dep_status[i].rd_addr   = calc_stage_r[i].rd_addr;
-        calc_status.dep_status[i].stall_v   = (exc_stage_r[i].csr_instr_v | exc_stage_r[i].ret_instr_v)
+        calc_status.dep_status[i].stall_v   = (exc_stage_r[i].csr_instr_v | exc_stage_r[i].mret_instr_v | exc_stage_r[i].sret_instr_v | exc_stage_r[i].uret_instr_v)
                                               & ~exc_stage_n[i+1].poison_v
                                               & ~exc_stage_n[i+1].roll_v;
       end
@@ -598,8 +602,10 @@ always_comb
     calc_status.mem3_pc           = calc_stage_r[2].instr_metadata.pc;
     // We don't want cache_miss itself to trigger the exception invalidation
     calc_status.mem3_cache_miss_v = cache_miss_mem3 & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v; 
-    calc_status.mem3_exception_v  = (illegal_csr_mem3 | exc_stage_r[2].illegal_instr_v) & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v & ~exc_stage_r[2].roll_v;
-    calc_status.mem3_ret_v        = exc_stage_r[2].ret_instr_v & ~exc_stage_r[2].poison_v;
+    calc_status.mem3_exception_v  = (illegal_instr_mem3 | exc_stage_r[2].illegal_instr_v) & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v & ~exc_stage_r[2].roll_v;
+    calc_status.mem3_ret_v        = (exc_stage_r[2].mret_instr_v | exc_stage_r[2].sret_instr_v | exc_stage_r[2].uret_instr_v) & ~exc_stage_r[2].poison_v;
+
+    calc_status.interrupt_v       = '0;
     calc_status.instr_cmt_v       = calc_stage_r[2].instr_v & ~exc_stage_r[2].roll_v;
           
     // Slicing the completion pipe for Forwarding information
@@ -625,7 +631,11 @@ always_comb
       end
         // If there are new exceptions, add them to the list
         exc_stage_n[0].illegal_instr_v = chk_dispatch_v_i & illegal_instr_isd;
-        exc_stage_n[0].ret_instr_v     = chk_dispatch_v_i & ret_instr_isd;
+        exc_stage_n[3].illegal_instr_v = exc_stage_r[2].illegal_instr_v | illegal_instr_mem3;
+
+        exc_stage_n[0].mret_instr_v    = chk_dispatch_v_i & mret_instr_isd;
+        exc_stage_n[0].sret_instr_v    = chk_dispatch_v_i & sret_instr_isd;
+        exc_stage_n[0].uret_instr_v    = chk_dispatch_v_i & uret_instr_isd;
         exc_stage_n[0].csr_instr_v     = chk_dispatch_v_i & csr_instr_isd;
 
         exc_stage_n[0].roll_v          =                           chk_roll_i;
@@ -638,7 +648,6 @@ always_comb
         exc_stage_n[2].poison_v        = exc_stage_r[1].poison_v | chk_poison_ex2_i;
         exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | chk_poison_ex3_i;
 
-        exc_stage_n[3].illegal_csr_v   = illegal_csr_mem3;
         exc_stage_n[3].cache_miss_v    = cache_miss_mem3; 
   end
 
@@ -647,9 +656,10 @@ assign instret_o = calc_stage_r[2].instr_v
                    & ~cache_miss_mem3;
 assign exception_pc_o = calc_stage_r[2].instr_metadata.pc;
 assign exception_instr_o = calc_stage_r[2].instr;
-assign exception_v_o = (illegal_csr_mem3 | exc_stage_r[2].illegal_instr_v) & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v & ~exc_stage_r[2].roll_v;
-// TODO: RET instr has to be for specific privilege levels
-assign mret_v_o = exc_stage_r[2].ret_instr_v & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v & ~exc_stage_r[2].roll_v;
+assign exception_v_o = (illegal_instr_mem3 | exc_stage_r[2].illegal_instr_v) & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v & ~exc_stage_r[2].roll_v;
+assign mret_v_o = exc_stage_r[2].mret_instr_v & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v & ~exc_stage_r[2].roll_v;
+assign sret_v_o = exc_stage_r[2].sret_instr_v & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v & ~exc_stage_r[2].roll_v;
+assign uret_v_o = exc_stage_r[2].uret_instr_v & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v & ~exc_stage_r[2].roll_v;
 
 if (trace_p)
   begin

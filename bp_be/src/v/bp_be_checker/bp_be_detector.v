@@ -178,23 +178,25 @@ always_comb
     struct_haz_v = ~mmu_cmd_ready_i;
 
     // Detect misprediction
-    mispredict_v = (calc_status.ex1_v & (calc_status.ex1_pc != expected_npc_i));
-
+    mispredict_v = (calc_status.ex1_pc != expected_npc_i);
   end
 
 // Generate calculator control signals
 assign chk_dispatch_v_o = ~(data_haz_v | struct_haz_v);
 assign chk_roll_o       = calc_status.mem3_cache_miss_v;
 assign chk_poison_isd_o = reset_i
-                          | calc_status.mem3_cache_miss_v
+                          | calc_status.interrupt_v
+                          | calc_status.mem3_cache_miss_v 
                           | calc_status.mem3_exception_v;
 
 assign chk_poison_ex1_o = reset_i 
                           | mispredict_v
+                          | calc_status.interrupt_v
                           | calc_status.mem3_cache_miss_v
                           | calc_status.mem3_exception_v;
 
 assign chk_poison_ex2_o  = reset_i
+                           | calc_status.interrupt_v
                            | calc_status.mem3_cache_miss_v
                            | calc_status.mem3_exception_v; 
 

@@ -122,6 +122,7 @@ module bp_be_checker_top
    , output                           chk_poison_ex3_o
 
    // CSR interface
+   , output [reg_data_width_lp-1:0]   pc_o
    , input [reg_data_width_lp-1:0]    mtvec_i
    , input [reg_data_width_lp-1:0]    mepc_i
    );
@@ -158,6 +159,7 @@ bp_be_director
    ,.chk_roll_fe_o(chk_roll_fe_o)
    ,.chk_flush_fe_o(chk_flush_fe_o)
 
+   ,.pc_o(pc_o)
    ,.mtvec_i(mtvec_i)
    ,.mepc_i(mepc_i)
    );

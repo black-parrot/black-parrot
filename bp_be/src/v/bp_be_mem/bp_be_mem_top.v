@@ -82,8 +82,6 @@ module bp_be_mem_top
   (input                                   clk_i
    , input                                 reset_i
 
-   , input [proc_cfg_width_lp-1:0]         proc_cfg_i
-
    , input [mmu_cmd_width_lp-1:0]          mmu_cmd_i
    , input                                 mmu_cmd_v_i
    , output                                mmu_cmd_ready_o
@@ -118,20 +116,30 @@ module bp_be_mem_top
    , input                                 lce_data_cmd_v_i
    , output                                lce_data_cmd_ready_o
 
-    , output [lce_data_cmd_width_lp-1:0]   lce_data_cmd_o
-    , output                               lce_data_cmd_v_o
-    , input                                lce_data_cmd_ready_i 
+   , output [lce_data_cmd_width_lp-1:0]    lce_data_cmd_o
+   , output                                lce_data_cmd_v_o
+   , input                                 lce_data_cmd_ready_i 
 
-    // CSRs
-    , input                                instret_i
-    , input [vaddr_width_p-1:0]            exception_pc_i
-    , input [instr_width_lp-1:0]           exception_instr_i
-    , input                                exception_v_i
-    , input                                mret_v_i
+   // CSRs
+   , input [proc_cfg_width_lp-1:0]         proc_cfg_i
+   , input                                 instret_i
 
-    , output [reg_data_width_lp-1:0]       mepc_o
-    , output [reg_data_width_lp-1:0]       mtvec_o
-    );
+   , input [vaddr_width_p-1:0]             exception_pc_i
+   , input [instr_width_lp-1:0]            exception_instr_i
+   , input                                 exception_v_i
+
+   , input                                 mret_v_i
+   , input                                 sret_v_i
+   , input                                 uret_v_i
+
+   , input                                 timer_int_i
+   , input                                 software_int_i
+   , input                                 external_int_i
+   , input [reg_data_width_lp-1:0]         interrupt_pc_i
+
+   , output [reg_data_width_lp-1:0]        mepc_o
+   , output [reg_data_width_lp-1:0]        mtvec_o
+   );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p
                                    , paddr_width_p
@@ -159,26 +167,30 @@ assign mem_resp_o = mem_resp;
 // Suppress unused signal warnings
 wire unused0 = mem_resp_ready_i;
 
-// TODO: This struct is not working properly (mismatched widths in synth). Figure out why.
-//         This cast works, though
-assign mmu_cmd_vaddr = mmu_cmd.vaddr;
-
 /* Internal connections */
 logic tlb_miss;
 logic [ptag_width_lp-1:0] ptag_r;
 
 bp_be_dcache_pkt_s dcache_pkt;
-logic dcache_ready, dcache_miss_v, dcache_v;
+logic dcache_ready, dcache_miss_v, dcache_v, dcache_pkt_v_li, dcache_poison_li;
+logic dcache_uncached_li;
 
 logic [reg_data_width_lp-1:0] dcache_data_lo, csr_data_lo;
-logic                         csr_v_lo, illegal_csr_v;
+logic                         csr_v_lo, illegal_instr_v;
 
-logic translation_en;
+rv64_satp_s satp_lo;
+logic       translation_en_lo;
 
 // Passthrough TLB conversion
 always_ff @(posedge clk_i) 
   begin
-    ptag_r <= ptag_width_lp'(mmu_cmd_vaddr.tag);
+    ptag_r <= ptag_width_lp'(mmu_cmd.vaddr.tag);
+  end
+
+always_comb
+  begin
+    dcache_uncached_li = ptag_r[ptag_width_lp-1]; 
+    dcache_poison_li   = chk_poison_ex_i;
   end
 
 bp_be_csr
@@ -197,18 +209,28 @@ bp_be_csr
 
    ,.data_o(csr_data_lo)
    ,.v_o(csr_v_lo)
-   ,.illegal_csr_o(illegal_csr_v)
+   ,.illegal_instr_o(illegal_instr_v)
 
    ,.hartid_i(proc_cfg.mhartid)
    ,.instret_i(instret_i)
+
    ,.exception_pc_i(exception_pc_i)
    ,.exception_instr_i(exception_instr_i)
    ,.exception_v_i(exception_v_i)
+
    ,.mret_v_i(mret_v_i)
+   ,.sret_v_i(sret_v_i)
+   ,.uret_v_i(uret_v_i)
+
+   ,.timer_int_i(timer_int_i)
+   ,.software_int_i(software_int_i)
+   ,.external_int_i(external_int_i)
+   ,.interrupt_pc_i(interrupt_pc_i)
 
    ,.mepc_o(mepc_o)
    ,.mtvec_o(mtvec_o)
-   ,.translation_en_o(translation_en)
+   ,.satp_o(satp_lo)
+   ,.translation_en_o(translation_en_lo)
    );
 
 bp_be_dcache 
@@ -226,7 +248,7 @@ bp_be_dcache
    ,.lce_id_i(proc_cfg.dcache_id)
 
    ,.dcache_pkt_i(dcache_pkt)
-   ,.v_i(mmu_cmd_v_i)
+   ,.v_i(dcache_pkt_v_li)
    ,.ready_o(dcache_ready)
 
    ,.v_o(dcache_v)
@@ -237,7 +259,7 @@ bp_be_dcache
    ,.uncached_i(1'b0)
 
    ,.cache_miss_o(dcache_miss_v)
-   ,.poison_i(chk_poison_ex_i)
+   ,.poison_i(dcache_poison_li)
 
    // LCE-CCE interface
    ,.lce_req_o(lce_req_o)
@@ -268,13 +290,16 @@ bp_be_dcache
 
 always_comb 
   begin
+    // Currently uncached I/O  is determined by high bit of translated address
+    dcache_pkt_v_li        = mmu_cmd_v_i;
+
     dcache_pkt.opcode      = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
-    dcache_pkt.page_offset = {mmu_cmd_vaddr.index, mmu_cmd_vaddr.offset};
+    dcache_pkt.page_offset = {mmu_cmd.vaddr.index, mmu_cmd.vaddr.offset};
     dcache_pkt.data        = mmu_cmd.data;
 
     mem_resp.data = dcache_v ? dcache_data_lo : csr_data_lo;
     mem_resp.exception.cache_miss_v = dcache_miss_v;
-    mem_resp.exception.illegal_instr_v = illegal_csr_v;
+    mem_resp.exception.illegal_instr_v = illegal_instr_v;
   end
 
 // Ready-valid handshakes

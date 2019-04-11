@@ -102,7 +102,9 @@ typedef struct packed
   logic                             dcache_w_v;
   logic                             dcache_r_v;
   logic                             fp_not_int_v;
-  logic                             ret_v;
+  logic                             mret_v;
+  logic                             sret_v;
+  logic                             uret_v;
   logic                             amo_v;
   logic                             jmp_v;
   logic                             br_v;
@@ -122,16 +124,23 @@ typedef struct packed
 
 typedef struct packed
 {
+  // BE exceptional conditions
   logic poison_v;
   logic roll_v;
-  logic illegal_instr_v;
-  logic illegal_csr_v;
-  logic ret_instr_v;
+
+  logic mret_instr_v;
+  logic sret_instr_v;
+  logic uret_instr_v;
   logic csr_instr_v;
   logic tlb_miss_v;
-  logic load_fault_v;
-  logic store_fault_v;
   logic cache_miss_v;
+
+  // RISC-V exceptions
+  logic instr_misaligned_v;
+  logic instr_fault_v;
+  logic illegal_instr_v;
+  logic breakpoint_v;
+  logic ecall_v;
 }  bp_be_exception_s;
 
 `define bp_be_fu_op_width                                                                          \

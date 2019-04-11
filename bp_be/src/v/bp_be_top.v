@@ -79,6 +79,10 @@ module bp_be_top
    // Processor configuration
    , input [proc_cfg_width_lp-1:0]           proc_cfg_i
 
+   , input                                   timer_int_i
+   , input                                   software_int_i
+   , input                                   external_int_i
+
    // Commit tracer for trace replay
    , output                                  cmt_rd_w_v_o
    , output [rv64_reg_addr_width_gp-1:0]     cmt_rd_addr_o
@@ -122,12 +126,15 @@ logic chk_poison_ex1, chk_poison_ex2, chk_poison_ex3, chk_roll, chk_instr_dequeu
 
 logic [dword_width_p-1:0] chk_mtvec_li;
 logic [dword_width_p-1:0] chk_mepc_li;
+logic [dword_width_p-1:0] chk_pc_lo;
 
 logic                      instret;
 logic [vaddr_width_p-1:0]  exception_pc;
 logic [instr_width_p-1:0]  exception_instr;
 logic                      exception_v;
 logic                      mret_v;
+logic                      sret_v;
+logic                      uret_v;
 
 // Module instantiations
 bp_be_checker_top 
@@ -168,6 +175,7 @@ bp_be_checker_top
    ,.issue_pkt_v_o(issue_pkt_v)
    ,.issue_pkt_ready_i(issue_pkt_rdy)
 
+   ,.pc_o(chk_pc_lo)
    ,.mepc_i(chk_mepc_li)
    ,.mtvec_i(chk_mtvec_li)
    );
@@ -225,6 +233,8 @@ bp_be_calculator_top
    ,.exception_instr_o(exception_instr)
    ,.exception_v_o(exception_v)
    ,.mret_v_o(mret_v)
+   ,.sret_v_o(sret_v)
+   ,.uret_v_o(uret_v)
 
    ,.cmt_rd_w_v_o(cmt_rd_w_v_o)
    ,.cmt_rd_addr_o(cmt_rd_addr_o)
@@ -250,8 +260,6 @@ bp_be_mem_top
  be_mmu
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
-
-    ,.proc_cfg_i(proc_cfg_i)
 
     ,.chk_poison_ex_i(chk_poison_ex2)
 
@@ -291,11 +299,21 @@ bp_be_mem_top
     ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
     ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
 
+    ,.proc_cfg_i(proc_cfg_i)
     ,.instret_i(instret)
+
     ,.exception_pc_i(exception_pc)
     ,.exception_instr_i(exception_instr)
     ,.exception_v_i(exception_v)
+
     ,.mret_v_i(mret_v)
+    ,.sret_v_i(sret_v)
+    ,.uret_v_i(uret_v)
+
+    ,.timer_int_i(timer_int_i)
+    ,.software_int_i(software_int_i)
+    ,.external_int_i(external_int_i)
+    ,.interrupt_pc_i(chk_pc_lo)
 
     ,.mepc_o(chk_mepc_li)
     ,.mtvec_o(chk_mtvec_li)

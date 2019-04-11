@@ -107,6 +107,7 @@
     logic                                   mem3_exception_v;                                      \
     logic                                   mem3_ret_v;                                            \
                                                                                                    \
+    logic                                   interrupt_v;                                           \
     logic                                   instr_cmt_v;                                           \
   }  bp_be_calc_status_s;                                                                          \
 
@@ -161,7 +162,7 @@
    + 5 * `bp_be_dep_status_width                                                                   \
    + 1                                                                                             \
    + rv64_eaddr_width_gp                                                                           \
-   + 4                                                                                             \
+   + 5                                                                                             \
    )                                                                                               
 
 `endif
