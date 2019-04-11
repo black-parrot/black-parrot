@@ -37,11 +37,11 @@ bp_be_tlb_entry_s r_entry, w_entry, r_entry_passthrough, ram_r_data;
 assign r_entry_o = r_entry;
 assign w_entry   = w_entry_i;
   
-logic [lg_els_lp-1:0] cam_w_addr, cam_r_addr, cam_empty_addr, victim_addr, ram_addr;
-logic                 cam_r_v, cam_empty_v;
+logic [lg_els_lp-1:0] cam_w_addr, cam_r_addr, victim_addr, ram_addr;
+logic                 cam_r_v;
 logic                 r_v_n, miss_v_n, en_r;
 
-assign cam_w_addr                 = (cam_empty_v)? cam_empty_addr : victim_addr;
+assign cam_w_addr                 = victim_addr;
 assign ram_addr                   = (w_v_i)? cam_w_addr : cam_r_addr;
 
 assign r_entry_passthrough.ptag   = {(ptag_width_p-vtag_width_p)'(0), miss_vtag_o};
@@ -122,8 +122,8 @@ bsg_cam_1r1w
    ,.r_v_o(cam_r_v)
    ,.r_addr_o(cam_r_addr)
    
-   ,.empty_v_o(cam_empty_v)
-   ,.empty_addr_o(cam_empty_addr)
+   ,.empty_v_o()
+   ,.empty_addr_o()
   );
 
 bsg_mem_1rw_sync
