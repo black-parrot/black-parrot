@@ -42,7 +42,7 @@ module bp_be_instr_decoder
    // Generated parameters
    , localparam instr_width_lp    = `bp_be_instr_width
    , localparam decode_width_lp = `bp_be_decode_width
-   , localparam instr_metadata_width_lp = `bp_be_instr_metadata_width
+   , localparam instr_metadata_width_lp = `bp_be_instr_metadata_width(vaddr_width_p)
    )
   (input [instr_width_lp-1:0]            instr_i
    , input [instr_metadata_width_lp-1:0] instr_metadata_i

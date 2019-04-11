@@ -367,13 +367,13 @@ assign ptw_tlb_miss_v = dtlb_miss | itlb_fill_cmd_v;
 assign ptw_tlb_miss_vtag = (itlb_fill_cmd_v)? mmu_cmd.vaddr.tag : dtlb_miss_vtag;
  
 // MMU response connections
-assign mmu_resp.data   = (itlb_fill_resp_v)? ptw_tlb_w_entry 
+assign mem_resp.data   = (itlb_fill_resp_v)? ptw_tlb_w_entry 
                          : ((dcache_v) ? dcache_data 
                          : csr_data_lo);  
-assign mmu_resp.exception.cache_miss_v = dcache_miss_v;
-assign mmu_resp.exception.tlb_miss_v = dtlb_miss;
-assign mmu_resp.exception.itlb_fill_v = itlb_fill_resp_v;
-assign mmu_resp.exception.pc = {ptw_tlb_w_vtag, (page_offset_width_lp)'(0)};
+assign mem_resp.exception.cache_miss_v = dcache_miss_v;
+assign mem_resp.exception.tlb_miss_v = dtlb_miss;
+assign mem_resp.exception.itlb_fill_v = itlb_fill_resp_v;
+assign mem_resp.exception.pc = {ptw_tlb_w_vtag, (page_offset_width_lp)'(0)};
 
 // Ready-valid handshakes
 assign mmu_resp_v_o    = (itlb_fill_resp_v)? ptw_tlb_w_v

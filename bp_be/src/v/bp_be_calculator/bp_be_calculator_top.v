@@ -24,9 +24,9 @@
  *   chk_poison_ex_i        - Checker poisons all uncommitted instructions
  *   chk_poison_isd_i       - Checker poisons the currently issued instruction as it's dispatched
  *
- *   mmu_resp_i             - An MMU response containing load data and exception codes
- *   mmu_resp_v_i           - "ready-then-valid" interface
- *   mmu_resp_ready_o       -
+ *   mem_resp_i             - An MMU response containing load data and exception codes
+ *   mem_resp_v_i           - "ready-then-valid" interface
+ *   mem_resp_ready_o       -
  *   
  * Outputs:
  *   calc_status_o          - Packet containing execution status of pipeline, including dependency
@@ -74,7 +74,7 @@ module bp_be_calculator_top
    // Generated parameters
    , localparam proc_cfg_width_lp       = `bp_proc_cfg_width(num_core_p, num_lce_p)
    , localparam issue_pkt_width_lp      = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
-   , localparam calc_status_width_lp    = `bp_be_calc_status_width(branch_metadata_fwd_width_p)
+   , localparam calc_status_width_lp    = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam exception_width_lp      = `bp_be_exception_width
    , localparam mmu_cmd_width_lp        = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam csr_cmd_width_lp        = `bp_be_csr_cmd_width
@@ -168,8 +168,6 @@ logic               mmu_cmd_v;
 bp_be_mmu_cmd_s     mmu_cmd;
 bp_be_mem_resp_s    mem_resp;
 bp_proc_cfg_s       proc_cfg;
-
-bp_be_calc_status_s calc_status;
 
 assign issue_pkt = issue_pkt_i;
 assign mem_resp = mem_resp_i;
@@ -630,9 +628,9 @@ always_comb
     calc_status.mem3_ret_v        = exc_stage_r[2].ret_instr_v & ~exc_stage_r[2].poison_v;
     calc_status.instr_cmt_v       = calc_stage_r[2].instr_v & ~exc_stage_r[2].roll_v;
     
-    calc_status.mem3_itlb_fill_v      = mmu_resp_v_i & (mmu_resp.exception.itlb_fill_v);
-    calc_status.mem3_itlb_fill_vaddr  = mmu_resp.exception.pc;
-    calc_status.mem3_itlb_fill_entry  = mmu_resp.data;
+    calc_status.mem3_itlb_fill_v      = mem_resp_v_i & (mem_resp.exception.itlb_fill_v);
+    calc_status.mem3_itlb_fill_vaddr  = mem_resp.exception.pc;
+    calc_status.mem3_itlb_fill_entry  = mem_resp.data;
 
           
     // Slicing the completion pipe for Forwarding information

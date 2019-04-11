@@ -249,27 +249,6 @@ always_ff @(posedge clk_i)
       end
   end
 
-// Boot logic 
-always_comb
-  begin
-    unique casez (state_r)
-      e_reset : state_n = e_boot;
-      e_boot  : state_n = fe_cmd_v ? e_run : e_boot;
-      e_run   : state_n = e_run;
-      default : state_n = e_reset;
-    endcase
-  end
-
-always_ff @(posedge clk_i) 
-  begin
-    if (reset_i)
-        state_r <= e_reset;
-    else
-      begin
-        state_r <= state_n;
-      end
-  end
-
 always_comb 
   begin : fe_cmd_adapter
     fe_cmd = 'b0;

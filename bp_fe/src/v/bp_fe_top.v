@@ -69,6 +69,9 @@ module bp_fe_top
                                                         ,branch_metadata_fwd_width_lp
                                                        )
    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
+   
+   , localparam vtag_width_lp = (vaddr_width_p-bp_page_offset_width_gp)
+   , localparam ptag_width_lp = (paddr_width_p-bp_page_offset_width_gp)
    )
   (input                                              clk_i
    , input                                            reset_i
@@ -109,19 +112,6 @@ module bp_fe_top
    , input                                            lce_data_cmd_ready_i
 
    );
-
-
-//ITLB related parameters
-localparam ppn_start_bit_lp=index_width_lp+word_offset_width_lp+lg_lce_assoc_lp;
-localparam vtag_width_lp=`bp_fe_vtag_width(vaddr_width_p
-                                           ,lce_sets_p
-                                           ,cce_block_size_in_bytes_p
-                                           );
-   
-localparam ptag_width_lp=`bp_fe_ptag_width(paddr_width_p
-                                           ,lce_sets_p
-                                           ,cce_block_size_in_bytes_p
-                                           );
       
 // the first level of structs
 `declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp);   
@@ -224,9 +214,8 @@ always_comb
 assign poison_tl = icache_miss | fe_pc_gen.pc_redirect_valid & fe_pc_gen_v;
 
 //fe to itlb
-bp_be_tlb_entry_s  itlb_entry_r, itlb_entry_w;
+bp_be_tlb_entry_s  itlb_entry_r;
 assign itlb_vaddr        = pc_gen_itlb.virt_addr;
-assign itlb_entry_w.ptag = fe_cmd.operands.itlb_fill_response.pte_entry_leaf.paddr[paddr_width_p-1:ppn_start_bit_lp];
 assign itlb_icache.ppn   = itlb_entry_r.ptag;
    
 bp_fe_pc_gen 
@@ -348,7 +337,7 @@ bp_be_dtlb
    ,.r_entry_o(itlb_entry_r)
 
    ,.w_v_i(itlb_miss & fe_cmd_v_i & fe_cmd.opcode == e_op_itlb_fill_response)
-   ,.w_vtag_i(fe_cmd.operands.itlb_fill_response.vaddr[vaddr_width_p-1:ppn_start_bit_lp])
+   ,.w_vtag_i(fe_cmd.operands.itlb_fill_response.vaddr[vaddr_width_p-1:bp_page_offset_width_gp])
 	 ,.w_entry_i(fe_cmd.operands.itlb_fill_response.pte_entry_leaf)
 
    ,.miss_clear_i(1'b0)
