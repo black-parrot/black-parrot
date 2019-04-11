@@ -1,7 +1,7 @@
 ## Set common environment variables
 TOP ?= $(shell git rev-parse --show-toplevel)
 
-BSG_IP_CORES_DIR ?= $(TOP)/bsg_ip_cores
+BSG_IP_CORES_DIR ?= $(TOP)/basejump_stl
 BP_COMMON_DIR    ?= $(TOP)/bp_common
 BP_FE_DIR        ?= $(TOP)/bp_fe
 BP_BE_DIR        ?= $(TOP)/bp_be

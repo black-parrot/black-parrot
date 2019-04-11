@@ -9,8 +9,8 @@ LOG_PATH    := $(BP_ME_DIR)/syn/logs
 REPORT_PATH := $(BP_ME_DIR)/syn/reports
 
 # Default ROM to example
-DESIGN_NAME ?= bp_me_top
 TB          ?= bp_me_trace_demo
+CFG         ?= e_bp_single_core_cfg
 
 ## End specific flags and variables
 BP_ME_SRC_PATH       = $(BP_ME_DIR)/src/v
@@ -38,23 +38,23 @@ regress.me:
 	$(MAKE) lint.v || true
 	$(MAKE) lint.sc || true
 	$(MAKE) run.sc TB=bp_cce_alu
-	grep "PASSED" $(LOG_PATH)/verilator/bp_cce_alu_bp_example_rom_sim.log \
+	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_alu_bp_example_rom_sim.log \
 	&& echo "bp_cce_alu: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_cce_alu: FAIL" >> $(LOG_PATH)/me_regress.log
 	$(MAKE) run.sc TB=bp_cce_dir
-	grep "PASSED" $(LOG_PATH)/verilator/bp_cce_dir_bp_example_rom_sim.log \
+	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_dir_bp_example_rom_sim.log \
 	&& echo "bp_cce_dir: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_cce_dir: FAIL" >> $(LOG_PATH)/me_regress.log
 	$(MAKE) run.sc TB=bp_cce_gad
-	grep "PASSED" $(LOG_PATH)/verilator/bp_cce_gad_bp_example_rom_sim.log \
+	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_gad_bp_example_rom_sim.log \
 	&& echo "bp_cce_gad: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_cce_gad: FAIL" >> $(LOG_PATH)/me_regress.log
 	$(MAKE) run.sc TB=bp_me_top_test
-	grep "PASSED" $(LOG_PATH)/verilator/bp_me_top_test_bp_example_rom_sim.log \
+	@grep "PASSED" $(LOG_PATH)/verilator/bp_me_top_test_bp_example_rom_sim.log \
 	&& echo "bp_me_top_test: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_me_top_test: FAIL" >> $(LOG_PATH)/me_regress.log
 	$(MAKE) run.sc TB=bp_cce_test
-	grep "PASSED" $(LOG_PATH)/verilator/bp_cce_test_bp_example_rom_sim.log \
+	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_test_bp_example_rom_sim.log \
 	&& echo "bp_cce_test: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_cce_test: FAIL" >> $(LOG_PATH)/me_regress.log
 	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_random_demo \
@@ -63,8 +63,7 @@ regress.me:
 	| tee -i $(REPORT_PATH)/vcs/bp_me_random_stress_test.rpt
 	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_random_stress_test.log \
 	|| echo "FAILED" >> $(REPORT_DIR)/bp_me_random_stress_test.err
-	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_random_demo axe
+	@grep "DONE" $(LOG_PATH)/vcs/bp_me_random_stress_test.log \
+	&& echo "bp_me_random_demo: OK" >> $(LOG_PATH)/me_regress.log \
+	|| echo "bp_me_random_demo: FAIL" >> $(LOG_PATH)/me_regress.log
 
-me-random:
-	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_random_demo NUM_INSTR_P=1024
-	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_random_demo axe

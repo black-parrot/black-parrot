@@ -5,110 +5,79 @@
  */
 
 module testbench
+ import bp_common_aviary_pkg::*;
  import bp_common_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
  import bp_cce_pkg::*;
- #(parameter core_els_p                    = "inv"
-   , parameter vaddr_width_p               = "inv"
-   , parameter paddr_width_p               = "inv"
-   , parameter asid_width_p                = "inv"
-   , parameter eaddr_width_p               = "inv"
-   , parameter branch_metadata_fwd_width_p = "inv"
-   , parameter num_cce_p                   = "inv"
-   , parameter num_lce_p                   = "inv"
-   , parameter num_mem_p                   = "inv"
-   , parameter lce_sets_p                  = "inv"
-   , parameter lce_assoc_p                 = "inv"
-   , parameter cce_block_size_in_bytes_p   = "inv"
-   , parameter cce_num_inst_ram_els_p      = "inv"
-   , parameter btb_indx_width_p            = "inv"
-   , parameter bht_indx_width_p            = "inv"
-   , parameter ras_addr_width_p            = "inv"
+ #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR
+   `declare_bp_proc_params(cfg_p)
+   `declare_bp_fe_be_if_widths(vaddr_width_p
+                               ,paddr_width_p
+                               ,asid_width_p
+                               ,branch_metadata_fwd_width_p
+                               )
+   `declare_bp_me_if_widths(paddr_width_p, dword_width_p, num_lce_p, lce_assoc_p)
 
-   , parameter mem_els_p                   = "inv"
-
-   , parameter bp_first_pc_p    = "inv"
-   , parameter boot_rom_width_p = "inv"
-   , parameter boot_rom_els_p   = "inv"
+   , parameter bp_first_pc_p          = "inv"
+   , parameter boot_rom_width_p       = "inv"
+   , parameter boot_rom_els_p         = "inv"
+   , parameter mem_els_p              = "inv"
 
    , parameter trace_ring_width_p     = "inv"
    , parameter trace_rom_addr_width_p = "inv"
 
    , localparam trace_rom_data_width_lp   = trace_ring_width_p + 4
-   , localparam cce_block_size_in_bits_lp = 8*cce_block_size_in_bytes_p
    , localparam lg_boot_rom_els_lp        = `BSG_SAFE_CLOG2(boot_rom_els_p)
 
-   , localparam fe_queue_width_lp = `bp_fe_queue_width(vaddr_width_p, branch_metadata_fwd_width_p)
-   , localparam fe_cmd_width_lp   = `bp_fe_cmd_width(vaddr_width_p
-                                                     , paddr_width_p
-                                                     , asid_width_p
-                                                     , branch_metadata_fwd_width_p
-                                                     )
-
-   , localparam cce_inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(cce_num_inst_ram_els_p)
-
-   , localparam bp_mem_cce_resp_width_lp=
-     `bp_mem_cce_resp_width(paddr_width_p,num_lce_p,lce_assoc_p)
-   , localparam bp_mem_cce_data_resp_width_lp=
-     `bp_mem_cce_data_resp_width(paddr_width_p,cce_block_size_in_bits_lp,num_lce_p,lce_assoc_p)
-   , localparam bp_cce_mem_cmd_width_lp=
-     `bp_cce_mem_cmd_width(paddr_width_p,num_lce_p,lce_assoc_p)
-   , localparam bp_cce_mem_data_cmd_width_lp=
-     `bp_cce_mem_data_cmd_width(paddr_width_p,cce_block_size_in_bits_lp,num_lce_p,lce_assoc_p)
-
+   , localparam cce_inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
+   , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )
   (input clk_i
    , input reset_i
    );
 
-`declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
-`declare_bp_common_fe_be_if_structs(vaddr_width_p
-                                    , paddr_width_p
-                                    , asid_width_p
-                                    , branch_metadata_fwd_width_p
-                                    )
-`declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
-`declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
-`declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, cce_block_size_in_bits_lp);
-`declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
-`declare_bp_cce_lce_data_cmd_s(num_cce_p, num_lce_p, paddr_width_p, cce_block_size_in_bits_lp, lce_assoc_p);
-`declare_bp_lce_lce_tr_resp_s(num_lce_p, paddr_width_p, cce_block_size_in_bits_lp, lce_assoc_p);
-`declare_bp_be_internal_if_structs(vaddr_width_p
-                                   , paddr_width_p
-                                   , asid_width_p
-                                   , branch_metadata_fwd_width_p
-                                   )
-
+`declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
+`declare_bp_fe_be_if(vaddr_width_p
+                     , paddr_width_p
+                     , asid_width_p
+                     , branch_metadata_fwd_width_p
+                     )
+`declare_bp_lce_cce_if(num_cce_p
+                       ,num_lce_p
+                       ,paddr_width_p
+                       ,lce_assoc_p
+                       ,dword_width_p
+                       ,cce_block_width_p
+                       )
 logic test_done;
 
 // Top-level interface connections
 bp_fe_queue_s fe_fe_queue, be_fe_queue;
-logic fe_fe_queue_v, be_fe_queue_v, fe_fe_queue_rdy, be_fe_queue_rdy;
+logic fe_fe_queue_v, be_fe_queue_v, fe_fe_queue_ready, be_fe_queue_ready;
 
 logic fe_queue_clr, fe_queue_dequeue, fe_queue_rollback;
 
 bp_fe_cmd_s fe_fe_cmd, be_fe_cmd;
-logic fe_fe_cmd_v, be_fe_cmd_v, fe_fe_cmd_rdy, be_fe_cmd_rdy;
+logic fe_fe_cmd_v, be_fe_cmd_v, fe_fe_cmd_ready, be_fe_cmd_ready;
 
 bp_lce_cce_req_s  lce_req, lce_cce_req;
-logic  lce_cce_req_v, lce_cce_req_rdy;
+logic  lce_cce_req_v, lce_cce_req_ready;
 
 bp_lce_cce_resp_s  lce_cce_resp;
-logic  lce_cce_resp_v, lce_cce_resp_rdy;
+logic  lce_cce_resp_v, lce_cce_resp_ready;
 
 bp_lce_cce_data_resp_s  lce_cce_data_resp;
-logic  lce_cce_data_resp_v, lce_cce_data_resp_rdy;
+logic  lce_cce_data_resp_v, lce_cce_data_resp_ready;
 
 bp_cce_lce_cmd_s  cce_lce_cmd;
-logic  cce_lce_cmd_v, cce_lce_cmd_rdy;
+logic  cce_lce_cmd_v, cce_lce_cmd_ready;
 
-bp_cce_lce_data_cmd_s  cce_lce_data_cmd;
-logic  cce_lce_data_cmd_v, cce_lce_data_cmd_rdy;
+bp_lce_data_cmd_s  lce_data_cmd_lo;
+logic  lce_data_cmd_v_lo, lce_data_cmd_ready_li;
 
-bp_lce_lce_tr_resp_s  local_lce_tr_resp, remote_lce_tr_resp;
-logic  local_lce_tr_resp_v, local_lce_tr_resp_rdy;
-logic  remote_lce_tr_resp_v, remote_lce_tr_resp_rdy;
+bp_lce_data_cmd_s  lce_data_cmd_li;
+logic  lce_data_cmd_v_li, lce_data_cmd_ready_lo;
 
 bp_proc_cfg_s proc_cfg;
 
@@ -131,63 +100,47 @@ assign proc_cfg.mhartid   = 1'b0;
 assign proc_cfg.icache_id = 1'b0;
 assign proc_cfg.dcache_id = 1'b1; // Unused
 
-bp_fe_top
-     #(.vaddr_width_p(vaddr_width_p)
-       ,.paddr_width_p(paddr_width_p)
-       ,.btb_indx_width_p(btb_indx_width_p)
-       ,.bht_indx_width_p(bht_indx_width_p)
-       ,.ras_addr_width_p(ras_addr_width_p)
-       ,.asid_width_p(asid_width_p)
+    wrapper
+     #(.cfg_p(cfg_p)
        ,.bp_first_pc_p(bp_first_pc_p) 
-
-       ,.lce_sets_p(lce_sets_p)
-       ,.lce_assoc_p(lce_assoc_p)
-       ,.num_cce_p(num_cce_p)
-       ,.num_lce_p(num_lce_p)
-       ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
        )
-   DUT(.clk_i(clk_i)
+     wrapper
+      (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
        ,.icache_id_i(proc_cfg.icache_id)
 
        ,.fe_queue_o(fe_fe_queue)
        ,.fe_queue_v_o(fe_fe_queue_v)
-       ,.fe_queue_ready_i(fe_fe_queue_rdy)
+       ,.fe_queue_ready_i(fe_fe_queue_ready)
 
        ,.fe_cmd_i(fe_fe_cmd)
        ,.fe_cmd_v_i(fe_fe_cmd_v)
-       ,.fe_cmd_ready_o(fe_fe_cmd_rdy)
-
-       ,.tlb_miss_vaddr_o(tlb_miss_vaddr)
+       ,.fe_cmd_ready_o(fe_fe_cmd_ready)
 
        ,.lce_req_o(lce_cce_req)
        ,.lce_req_v_o(lce_cce_req_v)
-       ,.lce_req_ready_i(lce_cce_req_rdy)
+       ,.lce_req_ready_i(lce_cce_req_ready)
 
        ,.lce_resp_o(lce_cce_resp)
        ,.lce_resp_v_o(lce_cce_resp_v)
-       ,.lce_resp_ready_i(lce_cce_resp_rdy)
+       ,.lce_resp_ready_i(lce_cce_resp_ready)
 
        ,.lce_data_resp_o(lce_cce_data_resp)
        ,.lce_data_resp_v_o(lce_cce_data_resp_v)
-       ,.lce_data_resp_ready_i(lce_cce_data_resp_rdy)
+       ,.lce_data_resp_ready_i(lce_cce_data_resp_ready)
 
        ,.lce_cmd_i(cce_lce_cmd)
        ,.lce_cmd_v_i(cce_lce_cmd_v)
-       ,.lce_cmd_ready_o(cce_lce_cmd_rdy)
+       ,.lce_cmd_ready_o(cce_lce_cmd_ready)
 
-       ,.lce_data_cmd_i(cce_lce_data_cmd)
-       ,.lce_data_cmd_v_i(cce_lce_data_cmd_v)
-       ,.lce_data_cmd_ready_o(cce_lce_data_cmd_rdy)
+       ,.lce_data_cmd_i(lce_data_cmd_li)
+       ,.lce_data_cmd_v_i(lce_data_cmd_v_li)
+       ,.lce_data_cmd_ready_o(lce_data_cmd_ready_lo)
 
-       ,.lce_tr_resp_i(local_lce_tr_resp)
-       ,.lce_tr_resp_v_i(local_lce_tr_resp_v)
-       ,.lce_tr_resp_ready_o(local_lce_tr_resp_rdy)
-
-       ,.lce_tr_resp_o(remote_lce_tr_resp)
-       ,.lce_tr_resp_v_o(remote_lce_tr_resp_v)
-       ,.lce_tr_resp_ready_i(remote_lce_tr_resp_rdy)
+       ,.lce_data_cmd_o(lce_data_cmd_lo)
+       ,.lce_data_cmd_v_o(lce_data_cmd_v_lo)
+       ,.lce_data_cmd_ready_i(lce_data_cmd_ready_li)
        );
 
 
@@ -201,16 +154,16 @@ bsg_fifo_1r1w_rolly
    ,.reset_i(reset_i) 
 
    ,.clr_v_i(1'b0) 
-   ,.ckpt_v_i((be_fe_queue_v & be_fe_queue_rdy))
+   ,.ckpt_v_i((be_fe_queue_v & be_fe_queue_ready))
    ,.roll_v_i(1'b0)
 
    ,.data_i(fe_fe_queue)
    ,.v_i(fe_fe_queue_v)
-   ,.ready_o(fe_fe_queue_rdy)
+   ,.ready_o(fe_fe_queue_ready)
 
    ,.data_o(be_fe_queue)
    ,.v_o(be_fe_queue_v)
-   ,.yumi_i(be_fe_queue_rdy)
+   ,.yumi_i(be_fe_queue_ready)
    );
 
 bsg_fifo_1r1w_small
@@ -224,11 +177,11 @@ bsg_fifo_1r1w_small
 
    ,.data_i(be_fe_cmd)
    ,.v_i(be_fe_cmd_v)
-   ,.ready_o(be_fe_cmd_rdy)
+   ,.ready_o(be_fe_cmd_ready)
 
    ,.data_o(fe_fe_cmd)
    ,.v_o(fe_fe_cmd_v)
-   ,.yumi_i(fe_fe_cmd_rdy)
+   ,.yumi_i(fe_fe_cmd_ready)
    );
 
 mock_be_trace 
@@ -236,29 +189,33 @@ mock_be_trace
    ,.paddr_width_p(paddr_width_p)
    ,.asid_width_p(asid_width_p)
    ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+   ,.btb_tag_width_p(btb_tag_width_p)
+   ,.btb_idx_width_p(btb_idx_width_p)
+   ,.bht_idx_width_p(bht_idx_width_p)
+   ,.ras_idx_width_p(ras_idx_width_p)
    ,.num_cce_p(num_cce_p)
    ,.num_lce_p(num_lce_p)
-   ,.num_mem_p(num_mem_p)
+   ,.num_mem_p(1)
    ,.lce_assoc_p(lce_assoc_p)
    ,.lce_sets_p(lce_sets_p)
-   ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
+   ,.cce_block_size_in_bytes_p(cce_block_width_p/8)
 
    ,.trace_ring_width_p(trace_ring_width_p)
-	,.core_els_p(core_els_p)
-  )
+	 ,.num_core_p(num_core_p)
+   )
  be
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
    ,.bp_fe_queue_i(be_fe_queue)
    ,.bp_fe_queue_v_i(be_fe_queue_v)
-   ,.bp_fe_queue_ready_o(be_fe_queue_rdy)
+   ,.bp_fe_queue_ready_o(be_fe_queue_ready)
 
    ,.bp_fe_queue_clr_o(fe_queue_clr)
 
    ,.bp_fe_cmd_o(be_fe_cmd)
    ,.bp_fe_cmd_v_o(be_fe_cmd_v)
-   ,.bp_fe_cmd_ready_i(be_fe_cmd_rdy)
+   ,.bp_fe_cmd_ready_i(be_fe_cmd_ready)
 
    ,.trace_data_o(tr_data_li)
    ,.trace_v_o(tr_v_li)
@@ -305,63 +262,52 @@ bp_trace_rom
    ,.data_o(tr_rom_data_lo)
    );
 
-logic [num_cce_p-1:0][bp_mem_cce_resp_width_lp-1:0] mem_resp;
+logic [num_cce_p-1:0][mem_cce_resp_width_lp-1:0] mem_resp;
 logic [num_cce_p-1:0] mem_resp_v;
 logic [num_cce_p-1:0] mem_resp_ready;
 
-logic [num_cce_p-1:0][bp_mem_cce_data_resp_width_lp-1:0] mem_data_resp;
+logic [num_cce_p-1:0][mem_cce_data_resp_width_lp-1:0] mem_data_resp;
 logic [num_cce_p-1:0] mem_data_resp_v;
 logic [num_cce_p-1:0] mem_data_resp_ready;
 
-logic [num_cce_p-1:0][bp_cce_mem_cmd_width_lp-1:0] mem_cmd;
+logic [num_cce_p-1:0][cce_mem_cmd_width_lp-1:0] mem_cmd;
 logic [num_cce_p-1:0] mem_cmd_v;
 logic [num_cce_p-1:0] mem_cmd_yumi;
 
-logic [num_cce_p-1:0][bp_cce_mem_data_cmd_width_lp-1:0] mem_data_cmd;
+logic [num_cce_p-1:0][cce_mem_data_cmd_width_lp-1:0] mem_data_cmd;
 logic [num_cce_p-1:0] mem_data_cmd_v;
 logic [num_cce_p-1:0] mem_data_cmd_yumi;
 
 
 bp_me_top 
- #(.num_lce_p(num_lce_p)
-   ,.num_cce_p(num_cce_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.lce_assoc_p(lce_assoc_p)
-   ,.lce_sets_p(lce_sets_p)
-   ,.block_size_in_bytes_p(cce_block_size_in_bytes_p)
-   ,.num_inst_ram_els_p(cce_num_inst_ram_els_p)
-   )
+ #(.cfg_p(cfg_p))
  me
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
    ,.lce_req_i(lce_cce_req)
    ,.lce_req_v_i(lce_cce_req_v)
-   ,.lce_req_ready_o(lce_cce_req_rdy)
+   ,.lce_req_ready_o(lce_cce_req_ready)
 
    ,.lce_resp_i(lce_cce_resp)
    ,.lce_resp_v_i(lce_cce_resp_v)
-   ,.lce_resp_ready_o(lce_cce_resp_rdy)        
+   ,.lce_resp_ready_o(lce_cce_resp_ready)        
 
    ,.lce_data_resp_i(lce_cce_data_resp)
    ,.lce_data_resp_v_i(lce_cce_data_resp_v)
-   ,.lce_data_resp_ready_o(lce_cce_data_resp_rdy)
+   ,.lce_data_resp_ready_o(lce_cce_data_resp_ready)
 
    ,.lce_cmd_o(cce_lce_cmd)
    ,.lce_cmd_v_o(cce_lce_cmd_v)
-   ,.lce_cmd_ready_i(cce_lce_cmd_rdy)
+   ,.lce_cmd_ready_i(cce_lce_cmd_ready)
 
-   ,.lce_data_cmd_o(cce_lce_data_cmd)
-   ,.lce_data_cmd_v_o(cce_lce_data_cmd_v)
-   ,.lce_data_cmd_ready_i(cce_lce_data_cmd_rdy)
+   ,.lce_data_cmd_o(lce_data_cmd_li)
+   ,.lce_data_cmd_v_o(lce_data_cmd_v_li)
+   ,.lce_data_cmd_ready_i(lce_data_cmd_ready_lo)
 
-   ,.lce_tr_resp_i(remote_lce_tr_resp)
-   ,.lce_tr_resp_v_i(remote_lce_tr_resp_v)
-   ,.lce_tr_resp_ready_o(remote_lce_tr_resp_rdy)
-
-   ,.lce_tr_resp_o(local_lce_tr_resp)
-   ,.lce_tr_resp_v_o(local_lce_tr_resp_v)
-   ,.lce_tr_resp_ready_i(local_lce_tr_resp_rdy)
+   ,.lce_data_cmd_i(lce_data_cmd_lo)
+   ,.lce_data_cmd_v_i(lce_data_cmd_v_lo)
+   ,.lce_data_cmd_ready_o(lce_data_cmd_ready_li)
 
    ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr)
    ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data)
@@ -399,11 +345,12 @@ bp_mem
     ,.num_cce_p(num_cce_p)
     ,.paddr_width_p(paddr_width_p)
     ,.lce_assoc_p(lce_assoc_p)
-    ,.block_size_in_bytes_p(cce_block_size_in_bits_lp/8)
+    ,.block_size_in_bytes_p(cce_block_width_p/8)
     ,.lce_sets_p(lce_sets_p)
     ,.mem_els_p(mem_els_p)
-    ,.boot_rom_width_p(cce_block_size_in_bits_lp)
+    ,.boot_rom_width_p(cce_block_width_p)
     ,.boot_rom_els_p(boot_rom_els_p)
+    ,.lce_req_data_width_p(reg_data_width_lp)
   )
   bp_mem
   (.clk_i(clk_i)

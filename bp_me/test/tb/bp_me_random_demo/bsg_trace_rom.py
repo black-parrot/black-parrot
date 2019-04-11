@@ -71,7 +71,7 @@ def read_memory(mem, addr, size):
   data = [mem[addr+i] if addr+i in mem else 0 for i in xrange(size-1, -1, -1)]
   val = 0
   for i in xrange(size):
-    #eprint('read: mem[{0}] == {1}'.format(addr+i, data[size-1-i]))
+    #eprint('read: mem[{0}] == {1:x}'.format(addr+i, data[size-1-i]))
     val = (val << 8) + data[i]
   return val
 
@@ -81,7 +81,7 @@ def write_memory(mem, addr, value, size):
   # bytes of value are stored into memory in Little Endian order
   for i in xrange(size):
     v = (value >> (i*8)) & 0xff
-    #eprint('write: mem[{0}] := {1}'.format(addr+i, v))
+    #eprint('write: mem[{0}] := {1:x}'.format(addr+i, v))
     mem[addr+i] = v
     
 #write_memory(byte_memory, 0, 256, 2)

@@ -15,7 +15,7 @@
   typedef struct packed                                                                            \
   {                                                                                                \
     logic [bp_be_itag_width_gp-1:0]          itag;                                                 \
-    logic [rv64_eaddr_width_gp-1:0]          pc;                                                   \
+    logic [vaddr_width_mp-1:0]               pc;                                                   \
     logic                                    fe_exception_not_instr;                               \
     bp_fe_exception_code_e                   fe_exception_code;                                    \
    } bp_be_instr_metadata_s;                                                                       \
@@ -120,15 +120,15 @@
  *   comes from literally counting bits in the struct definition, which is ugly, error-prone,
  *   and an unfortunate, necessary consequence of parameterized structs.
  */
-`define bp_be_instr_metadata_width                                                                 \
+`define bp_be_instr_metadata_width(vaddr_width_mp)                                                 \
   (bp_be_itag_width_gp                                                                             \
-   + rv64_eaddr_width_gp                                                                           \
+   + vaddr_width_mp                                                                                \
    + 1                                                                                             \
    + $bits(bp_fe_exception_code_e)                                                                 \
    )                                                                                               
 
-`define bp_be_issue_pkt_width(branch_metadata_fwd_width_mp)                                        \
-  (`bp_be_instr_metadata_width                                                                     \
+`define bp_be_issue_pkt_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                        \
+  (`bp_be_instr_metadata_width(vaddr_width_mp)                                                     \
    + branch_metadata_fwd_width_mp                                                                  \
    + rv64_instr_width_gp                                                                           \
    + 4                                                                                             \
@@ -136,19 +136,19 @@
    + rv64_reg_data_width_gp                                                                        \
    )                                                                                               
 
-`define bp_be_dispatch_pkt_width(branch_metadata_fwd_width_mp)                                     \
-  (`bp_be_instr_metadata_width                                                                     \
+`define bp_be_dispatch_pkt_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                     \
+  (`bp_be_instr_metadata_width(vaddr_width_mp)                                                     \
    + branch_metadata_fwd_width_mp                                                                  \
    + rv64_instr_width_gp                                                                           \
    + 3 * rv64_reg_data_width_gp                                                                    \
    + `bp_be_decode_width                                                                           \
    )                                                                                               
 
-`define bp_be_pipe_stage_reg_width                                                                 \
-  (`bp_be_instr_metadata_width                                                                     \
-   +rv64_instr_width_gp                                                                            \
-   +8                                                                                              \
-   +rv64_reg_addr_width_gp                                                                         \
+`define bp_be_pipe_stage_reg_width(vaddr_width_mp)                                                 \
+  (`bp_be_instr_metadata_width(vaddr_width_mp)                                                     \
+   + rv64_instr_width_gp                                                                           \
+   + 8                                                                                             \
+   + rv64_reg_addr_width_gp                                                                        \
    )
 
 `define bp_be_dep_status_width                                                                     \

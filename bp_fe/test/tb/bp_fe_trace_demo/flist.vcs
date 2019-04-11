@@ -7,11 +7,7 @@ $BSG_IP_CORES_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
 # fe files
 ## MOCK wrapper + test_bp 
 $BP_FE_DIR/test/common/mock/mock_be_trace.v 
-$BP_FE_DIR/test/common/mock/mock_cce.v
-$BP_FE_DIR/test/common/wrappers/bp_fe_mock_be_trace/bp_fe_mock_be_wrapper.v 
-$BP_FE_DIR/test/common/wrappers/bp_fe_top_wrapper.v
 # top files
 $BP_FE_DIR/test/rom/v/$ROM_NAME.v
 $BP_FE_DIR/test/rom/v/$ROM_NAME.tr.v
-$BP_FE_DIR/test/tb/bp_fe_trace_demo/testbench.v
 

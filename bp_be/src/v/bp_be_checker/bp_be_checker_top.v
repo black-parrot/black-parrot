@@ -78,7 +78,7 @@ module bp_be_checker_top
                                                         , asid_width_p
                                                         , branch_metadata_fwd_width_p
                                                         )
-   , localparam issue_pkt_width_lp   = `bp_be_issue_pkt_width(branch_metadata_fwd_width_p)
+   , localparam issue_pkt_width_lp   = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
 
    // From BE specifications
    , localparam pc_entry_point_lp = bp_pc_entry_point_gp
@@ -123,12 +123,7 @@ module bp_be_checker_top
 
    // CSR interface
    , input [reg_data_width_lp-1:0]    mtvec_i
-   , input                            mtvec_w_v_i
-   , output [reg_data_width_lp-1:0]   mtvec_o
-
    , input [reg_data_width_lp-1:0]    mepc_i
-   , input                            mepc_w_v_i
-   , output [reg_data_width_lp-1:0]   mepc_o
    );
 
 // Declare parameterizable structures
@@ -164,12 +159,7 @@ bp_be_director
    ,.chk_flush_fe_o(chk_flush_fe_o)
 
    ,.mtvec_i(mtvec_i)
-   ,.mtvec_w_v_i(mtvec_w_v_i)
-   ,.mtvec_o(mtvec_o)
-
    ,.mepc_i(mepc_i)
-   ,.mepc_w_v_i(mepc_w_v_i)
-   ,.mepc_o(mepc_o)
    );
 
 bp_be_detector 

@@ -1,6 +1,11 @@
 #
 #		Makefile
 #
+
+TOP ?= $(shell git rev-parse --show-toplevel)
+
+include $(TOP)/Makefile.common
+
 ifneq (,$(findstring xor,$(shell hostname)))
   include $(BSG_CADENV_DIR)/cadenv.mk
 else
@@ -29,12 +34,13 @@ SEED_P ?= 1
 
 # this test uses a single LCE since it checks the values of loads returned
 NUM_LCE_P := 1
+CFG        = e_bp_half_core_cfg
 
 NUMS = $(shell seq 0 `expr $(NUM_LCE_P) - 1`)
 BASE = bsg_trace_rom_
 TRACE_ROMS = $(addsuffix .v, $(addprefix $(BASE), $(NUMS)))
 
-CCE_ROM = $(BP_ME_DIR)/src/v/roms/ei-tr/bp_cce_inst_rom_ei-tr_lce$(NUM_LCE_P)_wg16_assoc8.v
+CCE_ROM = $(BP_ME_DIR)/src/v/roms/ei-tr/bp_cce_inst_rom_ei-tr_lce$(NUM_LCE_P)_wg64_assoc8.v
 
 all: clean sim
 
@@ -45,6 +51,7 @@ bsg_trace_rom_%.v: bsg_trace_rom_%.tr
 	python $(BSG_IP_CORES_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_trace_rom_$* > $@
 
 sim: clean $(TRACE_ROMS)
+	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" testbench.v > testbench_postsed.v
 	vcs +v2k -R +lint=all,noSVA-UA,noSVA-NSVU,noVCDE -sverilog -full64 \
 		$(INCDIR) -f sv.include $(TRACE_ROMS) $(CCE_ROM)  \
 		-debug_pp -timescale=1ps/1ps +vcs+vcdpluson +vcs+vcdplusmemon -l $(VCS_LOG) \
@@ -61,9 +68,13 @@ clean:
 	rm -f ucli.key vcdplus.vpd simv cm.log *.tar.gz $(VCS_LOG)
 	rm -f bsg_trace_rom_*.v bsg_trace_rom_*.tr $(TRACE_AXE)
 
-$(TRACE_AXE): $(VCS_LOG)
-	python $(BP_BE_DIR)/test/tb/bp_be_dcache/py/axe_trace_filter.py $(VCS_LOG) > $(TRACE_AXE)
+###################################################################################################
+# NOTE: AXE does not work with this test. This test is for single LCE and the trace replay script
+# generates a trace that checks all loads and stores for correctness.
 
-axe: $(TRACE_AXE)
-	cat $<
-	$(AXE) check TSO $(TRACE_AXE)
+#$(TRACE_AXE): $(VCS_LOG)
+#	python $(BP_BE_DIR)/test/tb/bp_be_dcache/py/axe_trace_filter.py $(VCS_LOG) > $(TRACE_AXE)
+
+#axe: $(TRACE_AXE)
+#	cat $<
+#	$(AXE) check TSO $(TRACE_AXE)

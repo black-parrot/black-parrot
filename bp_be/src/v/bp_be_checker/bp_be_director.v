@@ -85,16 +85,11 @@ module bp_be_director
 
    // CSR interface
    , input [reg_data_width_lp-1:0]    mtvec_i
-   , input                            mtvec_w_v_i
-   , output [reg_data_width_lp-1:0]   mtvec_o
-
    , input [reg_data_width_lp-1:0]    mepc_i
-   , input                            mepc_w_v_i
-   , output [reg_data_width_lp-1:0]   mepc_o
   );
 
 // Declare parameterized structures
-`declare_bp_common_fe_be_if_structs(vaddr_width_p
+`declare_bp_fe_be_if(vaddr_width_p
                                     , paddr_width_p
                                     , asid_width_p
                                     , branch_metadata_fwd_width_p
@@ -193,7 +188,7 @@ bsg_mux
   /* TODO: MTVEC is not actually the 64 bit address, it's a subset of them where the
    *         last few bits are the vectorization mode 
    */
-  (.data_i({mepc_o, mtvec_o})
+  (.data_i({mepc_i, mtvec_i})
    ,.sel_i(calc_status.mem3_ret_v)
    ,.data_o(ret_mux_o)
    );
@@ -224,36 +219,6 @@ bsg_dff_reset_en
    ,.data_o(attaboy_pending)
    );
 
-bsg_dff_en
- #(.width_p(reg_data_width_lp))
- mtvec_csr_reg
-  (.clk_i(clk_i)
-   ,.en_i(mtvec_w_v_i)
-
-   ,.data_i(mtvec_i)
-   ,.data_o(mtvec_o)
-   );
-
-bsg_dff_en
- #(.width_p(reg_data_width_lp))
- mepc_csr_reg
-  (.clk_i(clk_i)
-   ,.en_i(mepc_w_v_i | calc_status.mem3_exception_v)
-
-   ,.data_i(mepc_mux_lo)
-   ,.data_o(mepc_o)
-   );
-
-bsg_mux
- #(.width_p(reg_data_width_lp)
-   ,.els_p(2)
-   )
- mepc_mux
-  (.data_i({calc_status.mem3_pc, mepc_i})
-   ,.sel_i(calc_status.mem3_exception_v)
-   ,.data_o(mepc_mux_lo)
-   );
-
 // Generate control signals
 assign expected_npc_o = npc_r;
 // Increment the checkpoint if there's a committing instruction
@@ -262,6 +227,27 @@ assign chk_dequeue_fe_o = ~calc_status.mem3_cache_miss_v & ~calc_status.mem3_tlb
 assign chk_flush_fe_o = fe_cmd_v & (fe_cmd.opcode == e_op_pc_redirection);
 // Rollback the FE queue on a cache miss
 assign chk_roll_fe_o  = calc_status.mem3_cache_miss_v | calc_status.mem3_tlb_miss_v;
+
+// Boot logic 
+always_comb
+  begin
+    unique casez (state_r)
+      e_reset : state_n = e_boot;
+      e_boot  : state_n = fe_cmd_v ? e_run : e_boot;
+      e_run   : state_n = e_run;
+      default : state_n = e_reset;
+    endcase
+  end
+
+always_ff @(posedge clk_i) 
+  begin
+    if (reset_i)
+        state_r <= e_reset;
+    else
+      begin
+        state_r <= state_n;
+      end
+  end
 
 // Boot logic 
 always_comb

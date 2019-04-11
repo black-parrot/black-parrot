@@ -7,7 +7,7 @@
  *   Pipeline for RISC-V integer instructions. Handles integer computation.
  *
  * Parameters:
- *   core_els_p       - 
+ *   num_core_p       - 
  *
  * Inputs:
  *   clk_i            -
@@ -33,8 +33,10 @@
 module bp_be_pipe_int 
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
- #(// Generated parameters
-   localparam decode_width_lp        = `bp_be_decode_width
+ #(parameter vaddr_width_p = "inv"
+
+   // Generated parameters
+   , localparam decode_width_lp        = `bp_be_decode_width
    , localparam exception_width_lp   = `bp_be_exception_width
    // From RISC-V specifications
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
@@ -47,7 +49,7 @@ module bp_be_pipe_int
    , input                          kill_ex1_i
 
    , input [decode_width_lp-1:0]    decode_i
-   , input [reg_data_width_lp-1:0]  pc_i
+   , input [vaddr_width_p-1:0]      pc_i
    , input [reg_data_width_lp-1:0]  rs1_i
    , input [reg_data_width_lp-1:0]  rs2_i
    , input [reg_data_width_lp-1:0]  imm_i

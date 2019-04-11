@@ -192,8 +192,7 @@ assign chk_poison_isd_o = reset_i
                           | calc_status.mem2_tlb_miss_v
                           | calc_status.mem3_tlb_miss_v
                           | calc_status.mem3_exception_v 
-                          | calc_status.mem3_itlb_fill_v 
-                          | calc_status.mem3_ret_v;
+                          | calc_status.mem3_itlb_fill_v; 
 
 assign chk_poison_ex1_o = reset_i 
                           | mispredict_v
@@ -201,22 +200,19 @@ assign chk_poison_ex1_o = reset_i
                           | calc_status.mem2_tlb_miss_v
                           | calc_status.mem3_tlb_miss_v
                           | calc_status.mem3_exception_v 
-                          | calc_status.mem3_itlb_fill_v 
-                          | calc_status.mem3_ret_v;
+                          | calc_status.mem3_itlb_fill_v;
 
 assign chk_poison_ex2_o  = reset_i
                            | calc_status.mem3_cache_miss_v
                            | calc_status.mem3_tlb_miss_v
                            | calc_status.mem3_exception_v 
-                           | calc_status.mem3_itlb_fill_v 
-                           | calc_status.mem3_ret_v;
+                           | calc_status.mem3_itlb_fill_v;
 
 assign chk_poison_ex3_o  = reset_i
                            | calc_status.mem3_cache_miss_v
                            | calc_status.mem3_tlb_miss_v
                            | calc_status.mem3_exception_v 
-                           | calc_status.mem3_itlb_fill_v 
-                           | calc_status.mem3_ret_v;
+                           | calc_status.mem3_itlb_fill_v;
 
 endmodule : bp_be_detector
 

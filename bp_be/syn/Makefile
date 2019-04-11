@@ -9,8 +9,8 @@ LOG_PATH    := $(BP_BE_DIR)/syn/logs
 REPORT_PATH := $(BP_BE_DIR)/syn/reports
 
 # Default ROM to example
-DESIGN_NAME ?= bp_be_top
 TB          ?= bp_be_trace_demo
+CFG         ?= e_bp_half_core_cfg
 
 .EXPORT_ALL_VARIABLES:
 
@@ -22,8 +22,9 @@ include $(BP_COMMON_DIR)/syn/Makefile.vcs
 
 DCACHE_AXE_TEST_DIR = $(BP_BE_DIR)/test/tb/bp_be_dcache/dcache_axe_test
 
+#regress.be: regress.v check_design.syn
 regress: regress.be
-regress.be: regress.v check_design.syn
+regress.be: check_design.syn
 	$(MAKE) lint.v || true
 	$(MAKE) lint.sc || true
 	for lce in 2 4 8 16; do \

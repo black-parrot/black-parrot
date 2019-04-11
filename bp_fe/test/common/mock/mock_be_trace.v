@@ -7,24 +7,31 @@ module mock_be_trace
    , parameter paddr_width_p="inv"
    , parameter eaddr_width_p="inv"
    , parameter asid_width_p="inv"
-   , parameter branch_metadata_fwd_width_p="inv"
+   , parameter btb_tag_width_p="inv"
+   , parameter btb_idx_width_p="inv"
+   , parameter bht_idx_width_p="inv"
+   , parameter ras_idx_width_p="inv"
+   , parameter branch_metadata_fwd_width_p
    , parameter num_cce_p="inv"
    , parameter num_lce_p="inv"
    , parameter num_mem_p="inv"
    , parameter lce_assoc_p="inv"
    , parameter lce_sets_p="inv"
-   , parameter core_els_p="inv"
+   , parameter num_core_p="inv"
    , parameter cce_block_size_in_bytes_p="inv"
    , localparam cce_block_size_in_bits_lp=8*cce_block_size_in_bytes_p
-   , parameter bp_fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)
-   , parameter bp_fe_queue_width_lp=`bp_fe_queue_width(vaddr_width_p,branch_metadata_fwd_width_p)
+   , localparam bp_fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)
+   , localparam  bp_fe_queue_width_lp=`bp_fe_queue_width(vaddr_width_p,branch_metadata_fwd_width_p)
    //trace_rom params
    , parameter trace_ring_width_p="inv"
+
+   , localparam reg_data_width_lp = rv64_reg_data_width_gp
 
    , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
                                                            , num_lce_p
                                                            , paddr_width_p
                                                            , lce_assoc_p
+                                                           , reg_data_width_lp
                                                            )
    , localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
                                                              , num_lce_p
@@ -40,18 +47,15 @@ module mock_be_trace
                                                            , paddr_width_p
                                                            , lce_assoc_p
                                                            )
-   , localparam cce_lce_data_cmd_width_lp=`bp_cce_lce_data_cmd_width(num_cce_p
-                                                                     , num_lce_p
-                                                                     , paddr_width_p
-                                                                     , cce_block_size_in_bits_lp
-                                                                     , lce_assoc_p
-                                                                     )
+   , localparam lce_data_cmd_width_lp=`bp_lce_data_cmd_width(num_lce_p
+                                                             , cce_block_size_in_bits_lp
+                                                             , lce_assoc_p
+                                                             )
    , localparam lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p
                                                                    , paddr_width_p
                                                                    , cce_block_size_in_bits_lp
                                                                    , lce_assoc_p
                                                                    )
-   , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )
  (input logic clk_i
   , input logic reset_i
@@ -81,7 +85,7 @@ module mock_be_trace
 
    
 `declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
-`declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
+`declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
 
 // the first level of structs
 `declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p);   

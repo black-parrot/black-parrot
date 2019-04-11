@@ -15,23 +15,23 @@ module bp_fe_pc_gen
    , parameter paddr_width_p="inv"
    , parameter eaddr_width_p="inv"
    , parameter btb_tag_width_p="inv"
-   , parameter btb_indx_width_p="inv"
-   , parameter bht_indx_width_p="inv"
-   , parameter ras_addr_width_p="inv"
+   , parameter btb_idx_width_p="inv"
+   , parameter bht_idx_width_p="inv"
+   , parameter ras_idx_width_p="inv"
    , parameter instr_width_p="inv"
    , parameter asid_width_p="inv"
    , parameter bp_first_pc_p="inv"
    , localparam instr_scan_width_lp=`bp_fe_instr_scan_width
-   , localparam branch_metadata_fwd_width_lp=`bp_fe_branch_metadata_fwd_width(btb_tag_width_p,btb_indx_width_p,bht_indx_width_p,ras_addr_width_p)
+   , localparam branch_metadata_fwd_width_lp=`bp_fe_branch_metadata_fwd_width(btb_tag_width_p,btb_idx_width_p,bht_idx_width_p,ras_idx_width_p)
    , localparam bp_fe_pc_gen_icache_width_lp=eaddr_width_p
    , localparam bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(eaddr_width_p)
-   , localparam bp_fe_pc_gen_itlb_width_lp=`bp_fe_pc_gen_itlb_width(eaddr_width_p)
+   , localparam bp_fe_pc_gen_itlb_width_lp=`bp_fe_pc_gen_itlb_width(vaddr_width_p)
    , localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p,branch_metadata_fwd_width_lp)
    , localparam bp_fe_pc_gen_width_o_lp=`bp_fe_pc_gen_queue_width(vaddr_width_p,branch_metadata_fwd_width_lp)
    , parameter prediction_on_p=1
    , parameter branch_predictor_p="inv"
 
-   , localparam btb_tag_width_lp = eaddr_width_p - btb_indx_width_p - 2
+   , localparam btb_tag_width_lp = eaddr_width_p - btb_idx_width_p - 2
    )
   (input                                             clk_i
    , input                                           reset_i
@@ -79,7 +79,7 @@ assign pc_gen_itlb_v_o = pc_gen_icache_v_o;
 //icache to pc_gen
 `declare_bp_fe_icache_pc_gen_s(eaddr_width_p);
 //the second level structs definitions
-`declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p,btb_indx_width_p,bht_indx_width_p,ras_addr_width_p);
+`declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p,btb_idx_width_p,bht_idx_width_p,ras_idx_width_p);
 
    
 //the first level structs instatiations
@@ -309,8 +309,8 @@ begin
     end
 end
 
-assign fe_queue_branch_metadata = '{btb_tag: pc_gen_fetch.pc[2+btb_indx_width_p+:btb_tag_width_lp]
-                                    , btb_indx: pc_gen_fetch.pc[2+:btb_indx_width_p]
+assign fe_queue_branch_metadata = '{btb_tag: pc_gen_fetch.pc[2+btb_idx_width_p+:btb_tag_width_lp]
+                                    , btb_idx: pc_gen_fetch.pc[2+:btb_idx_width_p]
                                     , default: '0
                                     };
 bsg_dff_reset_en
@@ -328,7 +328,7 @@ assign fe_cmd_branch_metadata = fe_pc_gen_cmd.branch_metadata_fwd;
 bp_fe_btb
  #(.vaddr_width_p(vaddr_width_p)
    ,.btb_tag_width_p(btb_tag_width_p)
-   ,.btb_idx_width_p(btb_indx_width_p)
+   ,.btb_idx_width_p(btb_idx_width_p)
    )
  btb
   (.clk_i(clk_i)
@@ -339,7 +339,7 @@ bp_fe_btb
    ,.br_tgt_v_o(btb_br_tgt_v_lo)
 
    ,.w_tag_i(fe_cmd_branch_metadata.btb_tag) 
-   ,.w_idx_i(fe_cmd_branch_metadata.btb_indx)
+   ,.w_idx_i(fe_cmd_branch_metadata.btb_idx)
    ,.w_v_i(pc_redirect_v & fe_pc_gen_ready_o)
    ,.br_tgt_i(fe_pc_gen_cmd.pc)
    );

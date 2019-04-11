@@ -27,6 +27,7 @@ endif
 ifeq ($(COVERAGE), 1)
   VV_OPTS += --coverage-line
   VV_OPTS += --coverage-toggle
+	COVERAGE_DAT ?= $(ROM_NAME)_coverage.dat
 endif
 
 .PHONY: deps.sc lint.sc build.sc run.sc clean.sc
@@ -40,10 +41,13 @@ deps.sc:
 	$(shell mkdir -p $(REPORT_DIR))
 	$(shell mkdir -p $(LOG_DIR)/regress)
 	$(shell mkdir -p $(VERILATOR_RUN_DIR))
-	@grep -v -e "^\/\/" $(SYN_PATH)/flist.verilator > $(VERILATOR_RUN_DIR)/flist_design.verilator || true
-	@touch $(VERILATOR_RUN_DIR)/flist_design.verilator
-	@grep -v -e "^\/\/" $(TB_PATH)/$(TB)/flist.verilator > $(VERILATOR_RUN_DIR)/flist_test.verilator || true
-	@touch $(VERILATOR_RUN_DIR)/flist_test.verilator
+	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/testbench.v > $(VERILATOR_RUN_DIR)/testbench.v || true
+	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v > $(VERILATOR_RUN_DIR)/wrapper.v || true
+	@touch $(VERILATOR_RUN_DIR)/flist.verilator
+	@grep -v -e "^\/\/" $(SYN_PATH)/flist.verilator > $(VERILATOR_RUN_DIR)/flist.verilator || true
+	@grep -v -e "^\/\/" $(TB_PATH)/$(TB)/flist.verilator >> $(VERILATOR_RUN_DIR)/flist.verilator || true
+	@echo '$(VERILATOR_RUN_DIR)/wrapper.v'             >> $(VERILATOR_RUN_DIR)/flist.verilator || true
+	@echo '$(VERILATOR_RUN_DIR)/testbench.v'           >> $(VERILATOR_RUN_DIR)/flist.verilator || true
 	@cat $(SYN_PATH)/coverage_hier.verilator | envsubst > $(VERILATOR_RUN_DIR)/config.vlt || true
 	@touch $(VERILATOR_RUN_DIR)/config.vlt 
 
@@ -51,7 +55,7 @@ lint.sc: LINT_LOG ?= $(TB)_lint.log
 lint.sc: deps.sc
 	cd $(VERILATOR_RUN_DIR); \
 	$(VV) $(VV_OPTS) $(LINT_OPTS) --top-module $(TOP_MODULE) \
-		-f flist_design.verilator -f flist_test.verilator \
+		-f flist.verilator \
 		$(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.cpp \
 	| tee $(LOG_DIR)/$(LINT_LOG)
 
@@ -60,7 +64,7 @@ verilate.sc: deps.sc
 	cd $(VERILATOR_RUN_DIR); \
 	rm -rf obj_dir; \
 	$(VV) $(VV_OPTS) $(BUILD_OPTS) --top-module $(TOP_MODULE) \
-		config.vlt -f flist_design.verilator -f flist_test.verilator \
+		config.vlt -f flist.verilator \
 		$(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.cpp \
 		| tee $(LOG_DIR)/$(VBUILD_LOG)
 
@@ -73,16 +77,8 @@ build.sc: deps.sc verilate.sc
 run.sc: SIM_LOG ?= $(TB)_$(ROM_NAME)_sim.log
 run.sc: deps.sc build.sc
 	cd $(VERILATOR_RUN_DIR); \
-	$(VERILATOR_RUN_DIR)/obj_dir/V$(TOP_MODULE) \
+	$(VERILATOR_RUN_DIR)/obj_dir/V$(TOP_MODULE) $(COVERAGE_DAT) \
 	| tee $(LOG_DIR)/$(SIM_LOG)
-
-#TODO: if $(ROM_NAME)_coverage.dat does not exist, this command fails
-#run.sc: deps.sc build.sc
-#	cd $(VERILATOR_RUN_DIR); \
-#	$(VERILATOR_RUN_DIR)/obj_dir/V$(TOP_MODULE) $(ROM_NAME)_coverage.dat \
-#	| tee $(LOG_DIR)/$(SIM_LOG)
-
-
 
 cov.sc: COVERAGE = 1
 cov.sc: deps.sc regress.sc

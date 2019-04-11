@@ -6,33 +6,29 @@
 
 module bp_rolly_lce_me
   import bp_common_pkg::*;
+  import bp_common_aviary_pkg::*;
   import bp_be_dcache_pkg::*;
   import bp_cce_pkg::*;
-  #(parameter data_width_p="inv"
-    , parameter sets_p="inv"
-    , parameter ways_p="inv"
-    , parameter paddr_width_p="inv"
-    , parameter num_lce_p="inv"
-    , parameter num_cce_p="inv"
+  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+    `declare_bp_proc_params(cfg_p)
     , parameter mem_els_p="inv"
     , parameter boot_rom_els_p="inv"
-    , parameter num_cce_inst_ram_els_p="inv"
     
-    , localparam data_mask_width_lp=(data_width_p>>3)
-    , localparam block_size_in_words_lp=ways_p
+    , localparam data_mask_width_lp=(dword_width_p>>3)
+    , localparam block_size_in_words_lp=lce_assoc_p
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
     , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
-    , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
+    , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)
     , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
 
-    , localparam lce_data_width_lp=(ways_p*data_width_p)
+    , localparam lce_data_width_lp=(lce_assoc_p*dword_width_p)
     , localparam block_size_in_bytes_lp=(lce_data_width_lp / 8)
 
     , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
       
-    , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(bp_page_offset_width_gp,data_width_p)
+    , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(bp_page_offset_width_gp,dword_width_p)
 
-    , localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_inst_ram_els_p)
+    , localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
   )
   (
     input clk_i
@@ -44,12 +40,12 @@ module bp_rolly_lce_me
     , output logic [num_lce_p-1:0] dcache_pkt_ready_o
 
     , output logic [num_lce_p-1:0] v_o
-    , output logic [num_lce_p-1:0][data_width_p-1:0] data_o    
+    , output logic [num_lce_p-1:0][dword_width_p-1:0] data_o    
   );
 
   // casting structs
   //
-  `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp,data_width_p);
+  `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp,dword_width_p);
 
   // rolly fifo
   //
@@ -84,11 +80,11 @@ module bp_rolly_lce_me
 
   // dcache
   //
-  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, ways_p, data_width_p);
+  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p);
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
   `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_lp);
-  `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, ways_p);
-  `declare_bp_lce_data_cmd_s(num_lce_p, lce_data_width_lp, ways_p);
+  `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
+  `declare_bp_lce_data_cmd_s(num_lce_p, lce_data_width_lp, lce_assoc_p);
 
   bp_lce_cce_req_s [num_lce_p-1:0] lce_req_lo;
   logic [num_lce_p-1:0] lce_req_v_lo;
@@ -121,10 +117,10 @@ module bp_rolly_lce_me
 
   for (genvar i = 0; i < num_lce_p; i++) begin
     bp_be_dcache #(
-      .data_width_p(data_width_p)
+      .data_width_p(dword_width_p)
       ,.paddr_width_p(paddr_width_p)
-      ,.sets_p(sets_p)
-      ,.ways_p(ways_p)
+      ,.sets_p(lce_sets_p)
+      ,.ways_p(lce_assoc_p)
       ,.num_cce_p(num_cce_p)
       ,.num_lce_p(num_lce_p)
       ,.debug_p(1)
@@ -199,7 +195,7 @@ module bp_rolly_lce_me
 
   // Memory End
   //
-  `declare_bp_me_if(paddr_width_p,lce_data_width_lp,num_lce_p,ways_p); 
+  `declare_bp_me_if(paddr_width_p,lce_data_width_lp,num_lce_p,lce_assoc_p); 
 
   logic [num_cce_p-1:0][inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
   logic [num_cce_p-1:0][`bp_cce_inst_width-1:0] cce_inst_boot_rom_data;
@@ -221,13 +217,7 @@ module bp_rolly_lce_me
   logic [num_cce_p-1:0] mem_data_cmd_yumi;
 
   bp_me_top #(
-    .num_lce_p(num_lce_p)
-    ,.num_cce_p(num_cce_p)
-    ,.paddr_width_p(paddr_width_p)
-    ,.lce_assoc_p(ways_p)
-    ,.lce_sets_p(sets_p)
-    ,.block_size_in_bytes_p(block_size_in_bytes_lp)
-    ,.num_inst_ram_els_p(num_cce_inst_ram_els_p)
+    .cfg_p(cfg_p)
   ) me (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -281,11 +271,11 @@ module bp_rolly_lce_me
       #(.num_lce_p(num_lce_p)
         ,.num_cce_p(num_cce_p)
         ,.paddr_width_p(paddr_width_p)
-        ,.lce_assoc_p(ways_p)
+        ,.lce_assoc_p(lce_assoc_p)
         ,.block_size_in_bytes_p(lce_data_width_lp/8)
-        ,.lce_sets_p(sets_p)
+        ,.lce_sets_p(lce_sets_p)
         ,.mem_els_p(mem_els_p)
-        ,.lce_req_data_width_p(64)
+        ,.lce_req_data_width_p(dword_width_p)
         ,.boot_rom_width_p(lce_data_width_lp)
         ,.boot_rom_els_p(boot_rom_els_p)
         )

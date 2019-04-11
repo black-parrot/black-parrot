@@ -14,6 +14,7 @@
 $BSG_IP_CORES_DIR/bsg_noc/bsg_noc_pkg.v
 // Interface packages
 $BP_COMMON_DIR/src/include/bp_common_pkg.vh
+$BP_COMMON_DIR/src/include/bp_common_aviary_pkg.vh
 // ME packages
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
 $BP_ME_DIR/src/include/v/bp_me_network_pkg.v
@@ -55,3 +56,8 @@ $BSG_IP_CORES_DIR/bsg_misc/bsg_round_robin_arb.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_scan.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router_buffered.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_mux_butterfly.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_swap.v
+$BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router.v
+$BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_adapter_in.v
+$BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
