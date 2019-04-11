@@ -15,7 +15,7 @@ module bp_rolly_lce_me_manycore
     `declare_bp_proc_params(cfg_p)
 
     , parameter link_data_width_p=32
-    , parameter link_addr_width_p=12
+    , parameter link_addr_width_p=10
     , parameter load_id_width_p=11
     , parameter y_width_p=1
     , parameter x_width_p=4
@@ -406,7 +406,6 @@ module bp_rolly_lce_me_manycore
     ,.lce_assoc_p(lce_assoc_p)
     ,.block_size_in_bits_p(cce_block_width_p)
 
-    ,.dram_bank_addr_width_p(link_addr_width_p)
     ,.freeze_init_p(0)
   ) bridge (
     .link_clk_i(manycore_clk_i)

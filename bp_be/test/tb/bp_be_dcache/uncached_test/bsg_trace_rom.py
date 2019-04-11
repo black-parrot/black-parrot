@@ -5,7 +5,7 @@ from npa_addr_gen import NPAAddrGen
 
 
 tg = TraceGen(addr_width_p=39, data_width_p=64)
-npa = NPAAddrGen(y_cord_width_p=1, x_cord_width_p=2, epa_addr_width_p=12)
+npa = NPAAddrGen(y_cord_width_p=1, x_cord_width_p=2, epa_addr_width_p=10)
 
 tg.print_header()
 

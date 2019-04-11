@@ -20,7 +20,6 @@ module bp_me_cce_to_manycore_link_rx
     , parameter num_lce_p="inv"
     , parameter lce_assoc_p="inv"
     , parameter block_size_in_bits_p="inv"
-    , parameter dram_bank_addr_width_p="inv"
 
     , localparam link_byte_offset_width_lp=`BSG_SAFE_CLOG2(link_data_width_p>>3)
     , localparam link_mask_width_lp=(link_data_width_p>>3)
@@ -171,8 +170,7 @@ module bp_me_cce_to_manycore_link_rx
         rx_pkt.y_cord = mem_cmd_r.addr[y_cord_offset_lp+:y_cord_width_p];
         rx_pkt.x_cord = mem_cmd_r.addr[x_cord_offset_lp+:x_cord_width_p];
         rx_pkt.addr = {
-          {(link_addr_width_p-dram_bank_addr_width_p){1'b0}},
-          mem_cmd_r.addr[link_byte_offset_width_lp+lg_num_flits_lp+:dram_bank_addr_width_p-lg_num_flits_lp],
+          mem_cmd_r.addr[link_byte_offset_width_lp+lg_num_flits_lp+:link_addr_width_p-lg_num_flits_lp],
           count_r
         };
         
