@@ -50,3 +50,6 @@ clean:
 	rm -rf simv.daidir simv.vdb stack.info.*
 	rm -f ucli.key vcdplus.vpd simv cm.log *.tar.gz $(VCS_LOG)
 	rm -f $(TRACE_ROM_TR) $(TRACE_ROM_V)
+
+clean_rom:
+	rm -f $(TRACE_ROM_TR) $(TRACE_ROM_V)
