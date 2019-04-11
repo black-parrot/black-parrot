@@ -258,7 +258,7 @@ bp_be_calculator_top
    ,.mepc_i(chk_mepc_lo)
    );
 
-bp_be_mmu_vm_top
+bp_be_mmu_top
  #(.vaddr_width_p(vaddr_width_p)
    ,.paddr_width_p(paddr_width_p)
    ,.asid_width_p(asid_width_p)

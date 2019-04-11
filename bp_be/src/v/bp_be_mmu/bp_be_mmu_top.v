@@ -45,8 +45,8 @@ module bp_be_mmu_top
    // MMU                                                              
    , localparam mmu_cmd_width_lp  = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam mmu_resp_width_lp = `bp_be_mmu_resp_width
-   , localparam vtag_width_lp=(vaddr_width_p-bp_page_offset_width_gp)
-   , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
+   , localparam vtag_width_lp     = vaddr_width_p - page_offset_width_lp
+   , localparam ptag_width_lp     = paddr_width_p - page_offset_width_lp
                                                       
    // ME
    , localparam cce_block_size_in_bits_lp = 8 * cce_block_size_in_bytes_p
@@ -61,46 +61,44 @@ module bp_be_mmu_top
       `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p)
     , localparam lce_data_cmd_width_lp=
       `bp_lce_data_cmd_width(num_lce_p, lce_data_width_lp, lce_assoc_p)
-
    )
-  (input clk_i
-   , input reset_i
+  (input                                      clk_i
+   , input                                    reset_i
+    
+   , input [mmu_cmd_width_lp-1:0]             mmu_cmd_i
+   , input                                    mmu_cmd_v_i
+   , output                                   mmu_cmd_ready_o
+    
+   , input                                    chk_poison_ex_i
+    
+   , output [mmu_resp_width_lp-1:0]           mmu_resp_o
+   , output                                   mmu_resp_v_o
+    
+   , output [lce_req_width_lp-1:0]            lce_req_o
+   , output                                   lce_req_v_o
+   , input                                    lce_req_ready_i
+    
+   , output [lce_resp_width_lp-1:0]           lce_resp_o
+   , output                                   lce_resp_v_o
+   , input                                    lce_resp_ready_i                                 
+    
+   , output [lce_data_resp_width_lp-1:0]      lce_data_resp_o
+   , output                                   lce_data_resp_v_o
+   , input                                    lce_data_resp_ready_i
+    
+   , input [lce_cmd_width_lp-1:0]             lce_cmd_i
+   , input                                    lce_cmd_v_i
+   , output                                   lce_cmd_ready_o
 
+   , input [lce_data_cmd_width_lp-1:0]        lce_data_cmd_i
+   , input                                    lce_data_cmd_v_i
+   , output                                   lce_data_cmd_ready_o
 
-   , input [mmu_cmd_width_lp-1:0]          mmu_cmd_i
-   , input                                 mmu_cmd_v_i
-   , output                                mmu_cmd_ready_o
+   , output logic [lce_data_cmd_width_lp-1:0] lce_data_cmd_o
+   , output logic                             lce_data_cmd_v_o
+   , input                                    lce_data_cmd_ready_i
 
-   , input                                 chk_poison_ex_i
-
-   , output [mmu_resp_width_lp-1:0]        mmu_resp_o
-   , output                                mmu_resp_v_o
-
-   , output [lce_req_width_lp-1:0] lce_req_o
-   , output lce_req_v_o
-   , input                                 lce_req_ready_i
-
-   , output [lce_resp_width_lp-1:0]        lce_resp_o
-   , output                                lce_resp_v_o
-   , input                                 lce_resp_ready_i                                 
-
-   , output [lce_data_resp_width_lp-1:0]   lce_data_resp_o
-   , output                                lce_data_resp_v_o
-   , input                                 lce_data_resp_ready_i
-
-   , input [lce_cmd_width_lp-1:0]          lce_cmd_i
-   , input                                 lce_cmd_v_i
-   , output                                lce_cmd_ready_o
-
-   , input [lce_data_cmd_width_lp-1:0] lce_data_cmd_i
-   , input lce_data_cmd_v_i
-   , output lce_data_cmd_ready_o
-
-    , output logic [lce_data_cmd_width_lp-1:0] lce_data_cmd_o
-    , output logic lce_data_cmd_v_o
-    , input lce_data_cmd_ready_i 
-
-   , input [lce_id_width_lp-1:0]           dcache_id_i
+   , input [lce_id_width_lp-1:0]              dcache_id_i
    );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p
@@ -111,32 +109,100 @@ module bp_be_mmu_top
 
 `declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
 `declare_bp_be_dcache_pkt_s(page_offset_width_lp, data_width_p);
+`declare_bp_be_tlb_entry_s(ptag_width_lp);
 
 // Cast input and output ports 
 bp_be_mmu_cmd_s        mmu_cmd;
 bp_be_mmu_resp_s       mmu_resp;
-bp_be_mmu_vaddr_s      mmu_cmd_vaddr;
 
 assign mmu_cmd    = mmu_cmd_i;
 assign mmu_resp_o = mmu_resp;
 
-// TODO: This struct is not working properly (mismatched widths in synth). Figure out why.
-//         This cast works, though
-assign mmu_cmd_vaddr = mmu_cmd.vaddr;
 
 /* Internal connections */
-logic tlb_miss;
-logic [ptag_width_lp-1:0] ptag_r;
+/* TLB ports */
+logic                     dtlb_en, dtlb_miss, dtlb_w_v, dtlb_r_v;
+logic [vtag_width_lp-1:0] dtlb_r_vtag, dtlb_w_vtag, dtlb_miss_vtag;
+bp_be_tlb_entry_s         dtlb_r_entry, dtlb_w_entry;
 
-bp_be_dcache_pkt_s dcache_pkt;
-logic dcache_ready, dcache_miss_v, dcache_v;
+/* PTW ports */
+logic [ptag_width_lp-1:0] base_ppn, ptw_dcache_ptag;
+logic                     ptw_dcache_v, ptw_busy;
+bp_be_dcache_pkt_s        ptw_dcache_pkt; 
+logic                     ptw_tlb_miss_v, ptw_tlb_w_v;
+logic [vtag_width_lp-1:0] ptw_tlb_w_vtag, ptw_tlb_miss_vtag;
+bp_be_tlb_entry_s         ptw_tlb_w_entry;
 
+assign base_ppn = 'h80009;    //TODO: pass from upper level modules
 
-// Passthrough TLB conversion
-always_ff @(posedge clk_i) 
-  begin
-    ptag_r <= ptag_width_lp'(mmu_cmd_vaddr.tag);
-  end
+/* D-Cache ports */
+bp_be_dcache_pkt_s        dcache_pkt;
+logic [data_width_p-1:0]  dcache_data;
+logic [ptag_width_lp-1:0] dcache_ptag;
+logic                     dcache_ready, dcache_miss_v, dcache_v, dcache_pkt_v, dcache_tlb_miss, dcache_poison;
+
+/* Control signals */
+logic itlb_fill_cmd_v, itlb_fill_resp_v;
+
+assign itlb_fill_cmd_v = mmu_cmd_v_i & (mmu_cmd.mem_op == e_ptw);
+
+bp_be_dtlb
+  #(.vtag_width_p(vtag_width_lp)
+    ,.ptag_width_p(ptag_width_lp)
+	,.els_p(16)
+  )
+  dtlb
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(1'b1)
+   
+   ,.r_v_i(dtlb_r_v)
+   ,.r_vtag_i(dtlb_r_vtag)
+   
+   ,.r_v_o()
+   ,.r_entry_o(dtlb_r_entry)
+   
+   ,.w_v_i(dtlb_w_v)
+   ,.w_vtag_i(dtlb_w_vtag)
+   ,.w_entry_i(dtlb_w_entry)
+   
+   ,.miss_clear_i(1'b0)
+   ,.miss_v_o(dtlb_miss)
+   ,.miss_vtag_o(dtlb_miss_vtag)
+  );
+  
+bp_be_ptw
+  #(.pte_width_p(bp_sv39_pte_width_gp)
+    ,.vaddr_width_p(vaddr_width_p)
+    ,.paddr_width_p(paddr_width_p)
+    ,.page_offset_width_p(page_offset_width_lp)
+    ,.page_table_depth_p(bp_sv39_page_table_depth_gp)
+  )
+  ptw
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.base_ppn_i(base_ppn)
+   ,.busy_o(ptw_busy)
+   
+   ,.itlb_not_dtlb_i(itlb_fill_cmd_v)
+   ,.itlb_not_dtlb_o(itlb_fill_resp_v)
+   
+   ,.tlb_miss_v_i(ptw_tlb_miss_v)
+   ,.tlb_miss_vtag_i(ptw_tlb_miss_vtag)
+   
+   ,.tlb_w_v_o(ptw_tlb_w_v)
+   ,.tlb_w_vtag_o(ptw_tlb_w_vtag)
+   ,.tlb_w_entry_o(ptw_tlb_w_entry)
+
+   ,.dcache_v_i(dcache_v)
+   ,.dcache_data_i(dcache_data)
+   
+   ,.dcache_v_o(ptw_dcache_v)
+   ,.dcache_pkt_o(ptw_dcache_pkt)
+   ,.dcache_ptag_o(ptw_dcache_ptag)
+   ,.dcache_rdy_i(dcache_ready)
+   ,.dcache_miss_i(dcache_miss_v)
+  );
 
 bp_be_dcache 
   #(.data_width_p(data_width_p) 
@@ -153,18 +219,18 @@ bp_be_dcache
     ,.lce_id_i(dcache_id_i)
 
     ,.dcache_pkt_i(dcache_pkt)
-    ,.v_i(mmu_cmd_v_i)
+    ,.v_i(dcache_pkt_v)
     ,.ready_o(dcache_ready)
 
     ,.v_o(dcache_v)
-    ,.data_o(mmu_resp.data)
+    ,.data_o(dcache_data)
 
-    ,.tlb_miss_i(1'b0)
-    ,.ptag_i(ptag_r)
-    ,.uncached_i(1'b0)
+    ,.tlb_miss_i(dcache_tlb_miss)
+    ,.ptag_i(dcache_ptag)
+    ,.uncached_i(1'b0)                  
 
     ,.cache_miss_o(dcache_miss_v)
-    ,.poison_i(chk_poison_ex_i)
+    ,.poison_i(dcache_poison)
 
     // LCE-CCE interface
     ,.lce_req_o(lce_req_o)
@@ -193,18 +259,48 @@ bp_be_dcache
     ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
     );
 
+// D-Cache connections
+assign dcache_ptag     = (ptw_busy)? ptw_dcache_ptag : dtlb_r_entry.ptag;
+assign dcache_tlb_miss = (ptw_busy)? 1'b0 : dtlb_miss;
+assign dcache_poison   = (ptw_busy)? 1'b0 : chk_poison_ex_i;
+assign dcache_pkt_v    = (ptw_busy)? ptw_dcache_v 
+                         : ((itlb_fill_cmd_v)? 1'b0
+                         : mmu_cmd_v_i);    
 always_comb 
   begin
-    dcache_pkt.opcode      = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
-    dcache_pkt.page_offset = {mmu_cmd_vaddr.index, mmu_cmd_vaddr.offset};
-    dcache_pkt.data        = mmu_cmd.data;
+    if(ptw_busy) begin
+      dcache_pkt = ptw_dcache_pkt;
+    end
+    else begin
+      dcache_pkt.opcode      = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
+      dcache_pkt.page_offset = {mmu_cmd.vaddr.index, mmu_cmd.vaddr.offset};
+      dcache_pkt.data        = mmu_cmd.data;
+    end
+end
 
-    mmu_resp.exception.cache_miss_v = dcache_miss_v;
-  end
+// D-TLB connections
+assign dtlb_r_v     = (itlb_fill_cmd_v)? 1'b0 : mmu_cmd_v_i;
+assign dtlb_r_vtag  = mmu_cmd.vaddr.tag;
+assign dtlb_w_v     = ptw_tlb_w_v & ~itlb_fill_resp_v;
+assign dtlb_w_vtag  = ptw_tlb_w_vtag;
+assign dtlb_w_entry = ptw_tlb_w_entry;
+
+// PTW connections
+assign ptw_tlb_miss_v = dtlb_miss | itlb_fill_cmd_v;
+assign ptw_tlb_miss_vtag = (itlb_fill_cmd_v)? mmu_cmd.vaddr.tag : dtlb_miss_vtag;
+ 
+// MMU response connections
+assign mmu_resp.data   = (itlb_fill_resp_v)? ptw_tlb_w_entry : dcache_data;  
+assign mmu_resp.exception.cache_miss_v = dcache_miss_v;
+assign mmu_resp.exception.tlb_miss_v = dtlb_miss;
+assign mmu_resp.exception.itlb_fill_v = itlb_fill_resp_v;
+assign mmu_resp.exception.pc = {ptw_tlb_w_vtag, (page_offset_width_lp)'(0)};
 
 // Ready-valid handshakes
-assign mmu_resp_v_o    = dcache_v;
-assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v;
+assign mmu_resp_v_o    = (itlb_fill_resp_v)? ptw_tlb_w_v
+                         : ((ptw_busy)? 1'b0 
+                         : dcache_v);
+assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~dtlb_miss & ~ptw_busy;
 
 endmodule : bp_be_mmu_top
 
