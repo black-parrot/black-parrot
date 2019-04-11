@@ -623,28 +623,36 @@ module bp_be_dcache
   logic [data_width_p-1:0] ld_data_way_picked;
   logic [data_width_p-1:0] bypass_data_masked;
 
-  bsg_mux
-    #(.width_p(data_width_p)
-      ,.els_p(ways_p)
-      )
-    ld_data_set_select_mux
-      (.data_i(ld_data_tv_r)
-      ,.sel_i(load_hit_way ^ addr_word_offset_tv)
-      ,.data_o(ld_data_way_picked)
-      );
+  bsg_mux #(
+    .width_p(data_width_p)
+    ,.els_p(ways_p)
+  ) ld_data_set_select_mux (
+    .data_i(ld_data_tv_r)
+    ,.sel_i(load_hit_way ^ addr_word_offset_tv)
+    ,.data_o(ld_data_way_picked)
+  );
 
-  bsg_mux_segmented
-    #(.segments_p(data_mask_width_lp)
-      ,.segment_width_p(8)
-      )
-    bypass_mux_segmented
-      (.data0_i(ld_data_way_picked)
-      ,.data1_i(bypass_data_lo)
-      ,.sel_i(bypass_mask_lo)
-      ,.data_o(bypass_data_masked)
-      );
+  bsg_mux_segmented #(
+    .segments_p(data_mask_width_lp)
+    ,.segment_width_p(8)
+  ) bypass_mux_segmented (
+    .data0_i(ld_data_way_picked)
+    ,.data1_i(bypass_data_lo)
+    ,.sel_i(bypass_mask_lo)
+    ,.data_o(bypass_data_masked)
+  );
 
-  if (data_width_p == 64) begin // TODO: MISSING GENERATE LABEL
+  logic [data_width_p-1:0] final_data;
+  bsg_mux #(
+    .width_p(data_width_p)
+    ,.els_p(2)
+  ) final_data_mux (
+    .data_i({uncached_load_data_r, bypass_data_masked})
+    ,.sel_i(uncached_load_data_v_r)
+    ,.data_o(final_data)
+  );
+
+  if (data_width_p == 64) begin: output64
     logic [31:0] data_word_selected;
     logic [15:0] data_half_selected;
     logic [7:0] data_byte_selected;
@@ -652,56 +660,46 @@ module bp_be_dcache
     logic half_sigext;
     logic byte_sigext;
     
-    bsg_mux 
-      #(.width_p(32)
-        ,.els_p(2)
-        )
-      word_mux
-      (.data_i(bypass_data_masked)
+    bsg_mux #(
+      .width_p(32)
+      ,.els_p(2)
+    ) word_mux (
+      .data_i(final_data)
       ,.sel_i(paddr_tv_r[2])
       ,.data_o(data_word_selected)
-      );
+    );
     
-    bsg_mux
-      #(.width_p(16)
-        ,.els_p(4)
-        )
-      half_mux
-      (.data_i(bypass_data_masked)
+    bsg_mux #(
+      .width_p(16)
+      ,.els_p(4)
+    ) half_mux (
+      .data_i(final_data)
       ,.sel_i(paddr_tv_r[2:1])
       ,.data_o(data_half_selected)
-      );
+    );
 
-    bsg_mux
-      #(.width_p(8)
-        ,.els_p(8)
-      )
-      byte_mux
-      (.data_i(bypass_data_masked)
+    bsg_mux #(
+      .width_p(8)
+      ,.els_p(8)
+    ) byte_mux (
+      .data_i(final_data)
       ,.sel_i(paddr_tv_r[2:0])
       ,.data_o(data_byte_selected)
-      );
+    );
 
     assign word_sigext = signed_op_tv_r & data_word_selected[31]; 
     assign half_sigext = signed_op_tv_r & data_half_selected[15]; 
     assign byte_sigext = signed_op_tv_r & data_byte_selected[7]; 
 
-    always_comb begin
-      if (uncached_load_data_v_r) begin
-        data_o = uncached_load_data_r;
-      end
-      else begin
-        data_o = load_op_tv_r
-          ? (double_op_tv_r
-            ? bypass_data_masked
-            : (word_op_tv_r
-              ? {{32{word_sigext}}, data_word_selected}
-              : (half_op_tv_r
-                ? {{48{half_sigext}}, data_half_selected}
-                : {{56{byte_sigext}}, data_byte_selected})))
-          : 64'b0;
-      end
-    end
+    assign data_o = load_op_tv_r
+      ? (double_op_tv_r
+        ? final_data
+        : (word_op_tv_r
+          ? {{32{word_sigext}}, data_word_selected}
+          : (half_op_tv_r
+            ? {{48{half_sigext}}, data_half_selected}
+            : {{56{byte_sigext}}, data_byte_selected})))
+      : 64'b0;
 
   end
  
@@ -929,7 +927,7 @@ module bp_be_dcache
   assign lce_stat_mem_pkt_yumi = ~(v_tv_r & ~uncached_tv_r) & lce_stat_mem_pkt_v;
 
   // synopsys translate_off
-  if (debug_p) begin // TODO: MISSING GENERATE LABEL
+  if (debug_p) begin: axe
     bp_be_dcache_axe_trace_gen
       #(.addr_width_p(paddr_width_p)
         ,.data_width_p(data_width_p)

@@ -219,7 +219,7 @@ module bp_me_cce_to_manycore_link_rx
       WAIT_UNCACHED: begin
         mem_data_resp.data[block_size_in_bits_p-1:(2*link_data_width_p)] = '0;
         if (mem_cmd_r.nc_size == e_lce_nc_req_8) begin
-          mem_data_resp.data[0+:(2*link_data_width_p)] = sipo_data_lo[0+:(2*link_data_width_p)];
+          mem_data_resp.data[0+:(2*link_data_width_p)] = sipo_data_lo[1:0];
           mem_data_resp_v_o = (&sipo_valid_lo[1:0]);
           sipo_yumi_cnt_li = (&sipo_valid_lo[1:0]) & mem_data_resp_ready_i
             ? ($clog2(num_flits_lp+1))'(2)
@@ -229,7 +229,7 @@ module bp_me_cce_to_manycore_link_rx
             : WAIT_UNCACHED;
         end
         else begin
-          mem_data_resp.data[0+:(2*link_data_width_p)] = {2{sipo_data_lo[0+:link_data_width_p]}};
+          mem_data_resp.data[0+:(2*link_data_width_p)] = {2{sipo_data_lo[0]}};
           mem_data_resp_v_o = sipo_valid_lo[0];
           sipo_yumi_cnt_li = sipo_valid_lo[0] & mem_data_resp_ready_i
             ? ($clog2(num_flits_lp+1))'(1)
