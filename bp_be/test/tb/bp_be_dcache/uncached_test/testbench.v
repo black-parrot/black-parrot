@@ -132,10 +132,12 @@ module testbench();
 
 
   initial begin
-    //wait(tr_done);
+    wait(tr_done);
+    /*
     for (integer i = 0; i < 100000; i++) begin
       @(posedge bp_clk);
     end
+    */
     $finish;
   end
   
