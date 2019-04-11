@@ -373,10 +373,11 @@ assign mem_resp.data   = (itlb_fill_resp_v)? ptw_tlb_w_entry
 assign mem_resp.exception.cache_miss_v = dcache_miss_v;
 assign mem_resp.exception.tlb_miss_v = dtlb_miss;
 assign mem_resp.exception.itlb_fill_v = itlb_fill_resp_v;
+assign mem_resp.exception.illegal_instr_v = '0;     //TODO: connect to something!
 assign mem_resp.exception.pc = {ptw_tlb_w_vtag, (page_offset_width_lp)'(0)};
 
 // Ready-valid handshakes
-assign mmu_resp_v_o    = (itlb_fill_resp_v)? ptw_tlb_w_v
+assign mem_resp_v_o    = (itlb_fill_resp_v)? ptw_tlb_w_v
                          : ((ptw_busy)? 1'b0 
                          : (dcache_v | csr_cmd_v_i));
 assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~dtlb_miss & ~ptw_busy;
