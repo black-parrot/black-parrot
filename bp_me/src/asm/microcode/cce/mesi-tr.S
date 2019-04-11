@@ -187,10 +187,12 @@ bi ready
 uncached_req: bf rqf uncached_store
 pushq memCmd
 wfq memDataResp
+popq memDataResp
 pushq lceDataCmd
 bi ready
 uncached_store: pushq memDataCmd req
 wfq memResp
+popq memResp
 bi ready
 
 error: stall

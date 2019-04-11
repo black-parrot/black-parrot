@@ -7,6 +7,7 @@ BP_COMMON_DIR = $(BP_DIR)/bp_common
 BP_ME_DIR = $(BP_DIR)/bp_me
 BP_BE_DIR = $(BP_DIR)/bp_be
 BASEJUMP_STL_DIR = $(BP_DIR)/basejump_stl
+BSG_MANYCORE_DIR ?= $(BP_DIR)/bsg_manycore
 
 .EXPORT_ALL_VARIABLES:
 
