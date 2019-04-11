@@ -153,9 +153,9 @@ typedef enum bit [1:0]
 `define declare_bp_lce_cce_req_s(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp, data_width_mp) \
   typedef struct packed                                         \
   {                                                             \
-    logic [data_width_mp-1:0]                    data;          \
     logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]      dst_id;        \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      src_id;        \
+    logic [data_width_mp-1:0]                    data;          \
     bp_lce_cce_req_type_e                        msg_type;      \
     bp_lce_cce_req_non_excl_e                    non_exclusive; \
     logic [addr_width_mp-1:0]                    addr;          \
