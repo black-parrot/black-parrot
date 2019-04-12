@@ -77,16 +77,16 @@ createLceReq(uint32_t dst, uint32_t src, bp_lce_cce_req_type_e reqType, uint64_t
   msg.range(offset_hi, offset_lo) = (int)reqType;
 
   offset_lo = offset_hi+1;
+  offset_hi = offset_hi+64;
+  msg.range(offset_hi, offset_lo) = (uint64_t)0;
+
+  offset_lo = offset_hi+1;
   offset_hi = offset_hi+LG_N_LCE;
   msg.range(offset_hi, offset_lo) = src;
 
   offset_lo = offset_hi+1;
   offset_hi = offset_hi+LG_N_CCE;
   msg.range(offset_hi, offset_lo) = dst;
-
-  offset_lo = offset_hi+1;
-  offset_hi = offset_hi+64;
-  msg.range(offset_hi, offset_lo) = (uint64_t)0;
 
   cout << "lceReq(" << bp_lce_cce_req_width << "):  " << msg.to_string() << endl;
   cout << " dst(" << LG_N_CCE << "): " << dst
