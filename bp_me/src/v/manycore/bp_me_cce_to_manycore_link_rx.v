@@ -20,12 +20,14 @@ module bp_me_cce_to_manycore_link_rx
     , parameter num_lce_p="inv"
     , parameter lce_assoc_p="inv"
     , parameter block_size_in_bits_p="inv"
-    , parameter dram_bank_addr_width_p="inv"
 
     , localparam link_byte_offset_width_lp=`BSG_SAFE_CLOG2(link_data_width_p>>3)
     , localparam link_mask_width_lp=(link_data_width_p>>3)
     , localparam num_flits_lp=(block_size_in_bits_p/link_data_width_p)
     , localparam lg_num_flits_lp=`BSG_SAFE_CLOG2(num_flits_lp)
+
+    , localparam x_cord_offset_lp = (link_byte_offset_width_lp+link_addr_width_p)
+    , localparam y_cord_offset_lp = (x_cord_offset_lp+x_cord_width_p)
 
     , localparam packet_width_lp=
       `bsg_manycore_packet_width(link_addr_width_p,link_data_width_p,
@@ -61,8 +63,6 @@ module bp_me_cce_to_manycore_link_rx
 
     , input [x_cord_width_p-1:0] my_x_i
     , input [y_cord_width_p-1:0] my_y_i
-
-    , input [y_cord_width_p-1:0] dram_y_i
   );
 
   // manycore_packet struct
@@ -90,7 +90,7 @@ module bp_me_cce_to_manycore_link_rx
   logic sipo_ready_lo;
   logic [$clog2(num_flits_lp+1)-1:0] sipo_yumi_cnt_li;
   logic [num_flits_lp-1:0][link_data_width_p-1:0] sipo_data_lo;
-  logic sipo_valid_lo;
+  logic [num_flits_lp-1:0] sipo_valid_lo;
 
   bsg_serial_in_parallel_out #(
     .width_p(link_data_width_p)
@@ -150,7 +150,7 @@ module bp_me_cce_to_manycore_link_rx
     rx_pkt.payload = '0;
     rx_pkt.src_y_cord = my_y_i;
     rx_pkt.src_x_cord = my_x_i;
-    rx_pkt.y_cord = dram_y_i;
+    rx_pkt.y_cord = '0;
     rx_pkt.x_cord = '0;
     
     case (rx_state_r)
@@ -167,11 +167,10 @@ module bp_me_cce_to_manycore_link_rx
     
       SEND_READ_BLOCK: begin
         rx_pkt_v_o = 1'b1;
-        rx_pkt.y_cord = dram_y_i;
-        rx_pkt.x_cord = mem_cmd_r.addr[link_byte_offset_width_lp+dram_bank_addr_width_p+:x_cord_width_p];
+        rx_pkt.y_cord = mem_cmd_r.addr[y_cord_offset_lp+:y_cord_width_p];
+        rx_pkt.x_cord = mem_cmd_r.addr[x_cord_offset_lp+:x_cord_width_p];
         rx_pkt.addr = {
-          {(link_addr_width_p-dram_bank_addr_width_p){1'b0}},
-          mem_cmd_r.addr[link_byte_offset_width_lp+lg_num_flits_lp+:dram_bank_addr_width_p-lg_num_flits_lp],
+          mem_cmd_r.addr[link_byte_offset_width_lp+lg_num_flits_lp+:link_addr_width_p-lg_num_flits_lp],
           count_r
         };
         
@@ -187,7 +186,7 @@ module bp_me_cce_to_manycore_link_rx
         mem_data_resp.data = sipo_data_lo; 
         mem_data_resp_v_o = &sipo_valid_lo;
         sipo_yumi_cnt_li = (&sipo_valid_lo) & mem_data_resp_ready_i
-          ? ($clog2(num_flits_lp+1))'(num_flits_lp);
+          ? ($clog2(num_flits_lp+1))'(num_flits_lp)
           : '0;
         rx_state_n = (&sipo_valid_lo) & mem_data_resp_ready_i
           ? WAIT_CMD
@@ -196,10 +195,8 @@ module bp_me_cce_to_manycore_link_rx
 
       SEND_UNCACHED: begin
         rx_pkt_v_o = 1'b1;
-        rx_pkt.y_cord =
-          mem_cmd_r.addr[link_byte_offset_width_lp+link_addr_width_p+x_cord_width_p+:y_cord_width_p];
-        rx_pkt.x_cord =
-          mem_cmd_r.addr[link_byte_offset_width_lp+link_addr_width_p+:x_cord_width_p];
+        rx_pkt.y_cord = mem_cmd_r.addr[y_cord_offset_lp+:y_cord_width_p];
+        rx_pkt.x_cord = mem_cmd_r.addr[x_cord_offset_lp+:x_cord_width_p];
         rx_pkt.addr = (mem_cmd_r.nc_size == e_lce_nc_req_8)
           ? {mem_cmd_r.addr[link_byte_offset_width_lp+1+:link_addr_width_p-1], count_r[0]}
           : mem_cmd_r.addr[link_byte_offset_width_lp+:link_addr_width_p];
@@ -220,7 +217,7 @@ module bp_me_cce_to_manycore_link_rx
       WAIT_UNCACHED: begin
         mem_data_resp.data[block_size_in_bits_p-1:(2*link_data_width_p)] = '0;
         if (mem_cmd_r.nc_size == e_lce_nc_req_8) begin
-          mem_data_resp.data[0+:(2*link_data_width_p)] = sipo_data_lo[0+:(2*link_data_width_p)];
+          mem_data_resp.data[0+:(2*link_data_width_p)] = sipo_data_lo[1:0];
           mem_data_resp_v_o = (&sipo_valid_lo[1:0]);
           sipo_yumi_cnt_li = (&sipo_valid_lo[1:0]) & mem_data_resp_ready_i
             ? ($clog2(num_flits_lp+1))'(2)
@@ -230,7 +227,7 @@ module bp_me_cce_to_manycore_link_rx
             : WAIT_UNCACHED;
         end
         else begin
-          mem_data_resp.data[0+:(2*link_data_width_p)] = {2{sipo_data_lo[0+:link_data_width_p]}};
+          mem_data_resp.data[0+:(2*link_data_width_p)] = {2{sipo_data_lo[0]}};
           mem_data_resp_v_o = sipo_valid_lo[0];
           sipo_yumi_cnt_li = sipo_valid_lo[0] & mem_data_resp_ready_i
             ? ($clog2(num_flits_lp+1))'(1)

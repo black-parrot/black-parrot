@@ -24,8 +24,6 @@ module bp_me_cce_to_manycore_link
     , parameter lce_assoc_p="inv"
     , parameter block_size_in_bits_p="inv"
 
-    , parameter dram_bank_addr_width_p="inv" // in words
-   
     , parameter fifo_els_p=16
     , parameter max_out_credits_p=16
     , parameter freeze_init_p=1
@@ -231,8 +229,6 @@ module bp_me_cce_to_manycore_link
     ,.num_lce_p(num_lce_p)
     ,.lce_assoc_p(lce_assoc_p)
     ,.block_size_in_bits_p(block_size_in_bits_p)
-
-    ,.dram_bank_addr_width_p(dram_bank_addr_width_p)
   ) rx (
     .clk_i(bp_clk_i)
     ,.reset_i(bp_reset_r)
@@ -255,8 +251,6 @@ module bp_me_cce_to_manycore_link
 
     ,.my_x_i(my_x_i)
     ,.my_y_i(my_y_i)
-
-    ,.dram_y_i(dram_y_i)
   ); 
 
   // tx module
@@ -276,8 +270,6 @@ module bp_me_cce_to_manycore_link
     ,.num_lce_p(num_lce_p)
     ,.lce_assoc_p(lce_assoc_p)
     ,.block_size_in_bits_p(block_size_in_bits_p)
-
-    ,.dram_bank_addr_width_p(dram_bank_addr_width_p)
   ) tx (
     .clk_i(bp_clk_i)
     ,.reset_i(bp_reset_r)
@@ -296,8 +288,6 @@ module bp_me_cce_to_manycore_link
 
     ,.my_x_i(my_x_i)
     ,.my_y_i(my_y_i)
-    
-    ,.dram_y_i(dram_y_i)
   );
 
   // manycore pkt arbiter

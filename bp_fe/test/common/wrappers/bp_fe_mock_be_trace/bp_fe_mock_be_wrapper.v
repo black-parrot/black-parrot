@@ -11,7 +11,7 @@ module bp_fe_mock_be_wrapper
  import bp_cce_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
- #(parameter core_els_p="inv"
+ #(parameter num_core_p="inv"
    ,parameter vaddr_width_p="inv"
    ,parameter paddr_width_p="inv"
    ,parameter asid_width_p="inv"
@@ -32,7 +32,7 @@ module bp_fe_mock_be_wrapper
    ,parameter trace_addr_width_p="inv"
    ,parameter lg_trace_addr_els_p=`BSG_SAFE_CLOG2(trace_addr_width_p)
 
-   ,localparam lg_core_els_p=`BSG_SAFE_CLOG2(core_els_p)
+   ,localparam lg_num_core_p=`BSG_SAFE_CLOG2(num_core_p)
    ,localparam lg_num_lce_p=`BSG_SAFE_CLOG2(num_lce_p)
 
    ,localparam cce_block_size_in_bits_lp=8*cce_block_size_in_bytes_p
@@ -54,7 +54,7 @@ module bp_fe_mock_be_wrapper
    ,input logic                 reset_i
   );
 
-`declare_bp_common_fe_be_if_structs(vaddr_width_p,paddr_width_p,asid_width_p
+`declare_bp_fe_be_if(vaddr_width_p,paddr_width_p,asid_width_p
                                    ,branch_metadata_fwd_width_p);
 
 /* TODO: Change to monolithic declare in bp_common */
@@ -66,13 +66,13 @@ module bp_fe_mock_be_wrapper
 `declare_bp_lce_data_cmd_s(num_lce_p, cce_block_size_in_bits_lp, lce_assoc_p);
 
 // Top-level interface connections
-bp_fe_queue_s[core_els_p-1:0] fe_fe_queue, be_fe_queue;
-logic[core_els_p-1:0] fe_fe_queue_v, be_fe_queue_v, fe_fe_queue_rdy, be_fe_queue_rdy;
+bp_fe_queue_s[num_core_p-1:0] fe_fe_queue, be_fe_queue;
+logic[num_core_p-1:0] fe_fe_queue_v, be_fe_queue_v, fe_fe_queue_rdy, be_fe_queue_rdy;
 
-logic [core_els_p-1:0] fe_queue_clr, fe_queue_ckpt_inc, fe_queue_rollback;
+logic [num_core_p-1:0] fe_queue_clr, fe_queue_ckpt_inc, fe_queue_rollback;
 
-bp_fe_cmd_s[core_els_p-1:0] fe_fe_cmd, be_fe_cmd;
-logic [core_els_p-1:0] fe_fe_cmd_v, be_fe_cmd_v, fe_fe_cmd_rdy, be_fe_cmd_rdy;
+bp_fe_cmd_s[num_core_p-1:0] fe_fe_cmd, be_fe_cmd;
+logic [num_core_p-1:0] fe_fe_cmd_v, be_fe_cmd_v, fe_fe_cmd_rdy, be_fe_cmd_rdy;
 
 bp_lce_cce_req_s[num_lce_p-1:0] lce_req, lce_cce_req;
 logic [num_lce_p-1:0] lce_cce_req_v, lce_cce_req_rdy;
@@ -104,7 +104,7 @@ logic [`bp_cce_inst_width-1:0]         cce_inst_boot_rom_data;
 /* TODO: This is not multi-core scalable. */
 genvar core_id;
 generate
-for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
+for(core_id = 0; core_id < num_core_p; core_id = core_id + 1) begin
     localparam icache_id = core_id*2+icache_lce_id_lp;
     localparam dcache_id = core_id*2+dcache_lce_id_lp;
 
@@ -112,9 +112,9 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
      #(.vaddr_width_p(vaddr_width_p)
        ,.paddr_width_p(paddr_width_p)
        ,.eaddr_width_p(64)
-       ,.btb_indx_width_p(9)
-       ,.bht_indx_width_p(5)
-       ,.ras_addr_width_p(vaddr_width_p)
+       ,.btb_idx_width_p(9)
+       ,.bht_idx_width_p(5)
+       ,.ras_idx_width_p(vaddr_width_p)
        ,.asid_width_p(10)
        ,.instr_width_p(32)
        ,.bp_first_pc_p(bp_pc_entry_point_gp) /* TODO: Not ideal to couple to RISCV-tests */
@@ -174,7 +174,7 @@ for(core_id = 0; core_id < core_els_p; core_id = core_id + 1) begin
        ,.lce_assoc_p(lce_assoc_p)
        ,.lce_sets_p(lce_sets_p)
        ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
-       ,.core_els_p(core_els_p)
+       ,.num_core_p(num_core_p)
        )
      be
       (.clk_i(clk_i)

@@ -89,7 +89,7 @@ module bp_be_director
   );
 
 // Declare parameterized structures
-`declare_bp_common_fe_be_if_structs(vaddr_width_p
+`declare_bp_fe_be_if(vaddr_width_p
                                     , paddr_width_p
                                     , asid_width_p
                                     , branch_metadata_fwd_width_p

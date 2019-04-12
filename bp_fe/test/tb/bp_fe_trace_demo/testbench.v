@@ -5,82 +5,51 @@
  */
 
 module testbench
+ import bp_common_aviary_pkg::*;
  import bp_common_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
  import bp_cce_pkg::*;
- #(parameter core_els_p                    = "inv"
-   , parameter vaddr_width_p               = "inv"
-   , parameter paddr_width_p               = "inv"
-   , parameter asid_width_p                = "inv"
-   , parameter eaddr_width_p               = "inv"
-   , parameter branch_metadata_fwd_width_p = "inv"
-   , parameter num_cce_p                   = "inv"
-   , parameter num_lce_p                   = "inv"
-   , parameter num_mem_p                   = "inv"
-   , parameter lce_sets_p                  = "inv"
-   , parameter lce_assoc_p                 = "inv"
-   , parameter cce_block_size_in_bytes_p   = "inv"
-   , parameter cce_num_inst_ram_els_p      = "inv"
-   , parameter btb_tag_width_p             = "inv"
-   , parameter btb_indx_width_p            = "inv"
-   , parameter bht_indx_width_p            = "inv"
-   , parameter ras_addr_width_p            = "inv"
+ #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR
+   `declare_bp_proc_params(cfg_p)
+   `declare_bp_fe_be_if_widths(vaddr_width_p
+                               ,paddr_width_p
+                               ,asid_width_p
+                               ,branch_metadata_fwd_width_p
+                               )
+   `declare_bp_me_if_widths(paddr_width_p, dword_width_p, num_lce_p, lce_assoc_p)
 
-   , parameter mem_els_p                   = "inv"
-
-   , parameter bp_first_pc_p    = "inv"
-   , parameter boot_rom_width_p = "inv"
-   , parameter boot_rom_els_p   = "inv"
+   , parameter bp_first_pc_p          = "inv"
+   , parameter boot_rom_width_p       = "inv"
+   , parameter boot_rom_els_p         = "inv"
+   , parameter mem_els_p              = "inv"
 
    , parameter trace_ring_width_p     = "inv"
    , parameter trace_rom_addr_width_p = "inv"
 
    , localparam trace_rom_data_width_lp   = trace_ring_width_p + 4
-   , localparam cce_block_size_in_bits_lp = 8*cce_block_size_in_bytes_p
    , localparam lg_boot_rom_els_lp        = `BSG_SAFE_CLOG2(boot_rom_els_p)
 
-   , localparam fe_queue_width_lp = `bp_fe_queue_width(vaddr_width_p, branch_metadata_fwd_width_p)
-   , localparam fe_cmd_width_lp   = `bp_fe_cmd_width(vaddr_width_p
-                                                     , paddr_width_p
-                                                     , asid_width_p
-                                                     , branch_metadata_fwd_width_p
-                                                     )
-
-   , localparam cce_inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(cce_num_inst_ram_els_p)
-
-   , localparam bp_mem_cce_resp_width_lp=
-     `bp_mem_cce_resp_width(paddr_width_p,num_lce_p,lce_assoc_p)
-   , localparam bp_mem_cce_data_resp_width_lp=
-     `bp_mem_cce_data_resp_width(paddr_width_p,cce_block_size_in_bits_lp,num_lce_p,lce_assoc_p)
-   , localparam bp_cce_mem_cmd_width_lp=
-     `bp_cce_mem_cmd_width(paddr_width_p,num_lce_p,lce_assoc_p)
-   , localparam bp_cce_mem_data_cmd_width_lp=
-     `bp_cce_mem_data_cmd_width(paddr_width_p,cce_block_size_in_bits_lp,num_lce_p,lce_assoc_p)
-
+   , localparam cce_inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )
   (input clk_i
    , input reset_i
    );
 
-`declare_bp_common_proc_cfg_s(core_els_p, num_lce_p)
-`declare_bp_common_fe_be_if_structs(vaddr_width_p
-                                    , paddr_width_p
-                                    , asid_width_p
-                                    , branch_metadata_fwd_width_p
-                                    )
-`declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, reg_data_width_lp);
-`declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
-`declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, cce_block_size_in_bits_lp);
-`declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
-`declare_bp_lce_data_cmd_s(num_lce_p, cce_block_size_in_bits_lp, lce_assoc_p);
-`declare_bp_be_internal_if_structs(vaddr_width_p
-                                   , paddr_width_p
-                                   , asid_width_p
-                                   , branch_metadata_fwd_width_p
-                                   )
-
+`declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
+`declare_bp_fe_be_if(vaddr_width_p
+                     , paddr_width_p
+                     , asid_width_p
+                     , branch_metadata_fwd_width_p
+                     )
+`declare_bp_lce_cce_if(num_cce_p
+                       ,num_lce_p
+                       ,paddr_width_p
+                       ,lce_assoc_p
+                       ,dword_width_p
+                       ,cce_block_width_p
+                       )
 logic test_done;
 
 // Top-level interface connections
@@ -131,23 +100,12 @@ assign proc_cfg.mhartid   = 1'b0;
 assign proc_cfg.icache_id = 1'b0;
 assign proc_cfg.dcache_id = 1'b1; // Unused
 
-bp_fe_top
-     #(.vaddr_width_p(vaddr_width_p)
-       ,.paddr_width_p(paddr_width_p)
-       ,.btb_tag_width_p(btb_tag_width_p)
-       ,.btb_indx_width_p(btb_indx_width_p)
-       ,.bht_indx_width_p(bht_indx_width_p)
-       ,.ras_addr_width_p(ras_addr_width_p)
-       ,.asid_width_p(asid_width_p)
+    wrapper
+     #(.cfg_p(cfg_p)
        ,.bp_first_pc_p(bp_first_pc_p) 
-
-       ,.lce_sets_p(lce_sets_p)
-       ,.lce_assoc_p(lce_assoc_p)
-       ,.num_cce_p(num_cce_p)
-       ,.num_lce_p(num_lce_p)
-       ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
        )
-   DUT(.clk_i(clk_i)
+     wrapper
+      (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
        ,.icache_id_i(proc_cfg.icache_id)
@@ -231,16 +189,20 @@ mock_be_trace
    ,.paddr_width_p(paddr_width_p)
    ,.asid_width_p(asid_width_p)
    ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+   ,.btb_tag_width_p(btb_tag_width_p)
+   ,.btb_idx_width_p(btb_idx_width_p)
+   ,.bht_idx_width_p(bht_idx_width_p)
+   ,.ras_idx_width_p(ras_idx_width_p)
    ,.num_cce_p(num_cce_p)
    ,.num_lce_p(num_lce_p)
-   ,.num_mem_p(num_mem_p)
+   ,.num_mem_p(1)
    ,.lce_assoc_p(lce_assoc_p)
    ,.lce_sets_p(lce_sets_p)
-   ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
+   ,.cce_block_size_in_bytes_p(cce_block_width_p/8)
 
    ,.trace_ring_width_p(trace_ring_width_p)
-	,.core_els_p(core_els_p)
-  )
+	 ,.num_core_p(num_core_p)
+   )
  be
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -300,32 +262,25 @@ bp_trace_rom
    ,.data_o(tr_rom_data_lo)
    );
 
-logic [num_cce_p-1:0][bp_mem_cce_resp_width_lp-1:0] mem_resp;
+logic [num_cce_p-1:0][mem_cce_resp_width_lp-1:0] mem_resp;
 logic [num_cce_p-1:0] mem_resp_v;
 logic [num_cce_p-1:0] mem_resp_ready;
 
-logic [num_cce_p-1:0][bp_mem_cce_data_resp_width_lp-1:0] mem_data_resp;
+logic [num_cce_p-1:0][mem_cce_data_resp_width_lp-1:0] mem_data_resp;
 logic [num_cce_p-1:0] mem_data_resp_v;
 logic [num_cce_p-1:0] mem_data_resp_ready;
 
-logic [num_cce_p-1:0][bp_cce_mem_cmd_width_lp-1:0] mem_cmd;
+logic [num_cce_p-1:0][cce_mem_cmd_width_lp-1:0] mem_cmd;
 logic [num_cce_p-1:0] mem_cmd_v;
 logic [num_cce_p-1:0] mem_cmd_yumi;
 
-logic [num_cce_p-1:0][bp_cce_mem_data_cmd_width_lp-1:0] mem_data_cmd;
+logic [num_cce_p-1:0][cce_mem_data_cmd_width_lp-1:0] mem_data_cmd;
 logic [num_cce_p-1:0] mem_data_cmd_v;
 logic [num_cce_p-1:0] mem_data_cmd_yumi;
 
 
 bp_me_top 
- #(.num_lce_p(num_lce_p)
-   ,.num_cce_p(num_cce_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.lce_assoc_p(lce_assoc_p)
-   ,.lce_sets_p(lce_sets_p)
-   ,.block_size_in_bytes_p(cce_block_size_in_bytes_p)
-   ,.num_inst_ram_els_p(cce_num_inst_ram_els_p)
-   )
+ #(.cfg_p(cfg_p))
  me
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -390,10 +345,10 @@ bp_mem
     ,.num_cce_p(num_cce_p)
     ,.paddr_width_p(paddr_width_p)
     ,.lce_assoc_p(lce_assoc_p)
-    ,.block_size_in_bytes_p(cce_block_size_in_bits_lp/8)
+    ,.block_size_in_bytes_p(cce_block_width_p/8)
     ,.lce_sets_p(lce_sets_p)
     ,.mem_els_p(mem_els_p)
-    ,.boot_rom_width_p(cce_block_size_in_bits_lp)
+    ,.boot_rom_width_p(cce_block_width_p)
     ,.boot_rom_els_p(boot_rom_els_p)
     ,.lce_req_data_width_p(reg_data_width_lp)
   )

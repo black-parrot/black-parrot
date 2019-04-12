@@ -105,7 +105,7 @@ module bp_be_dcache_lce_req
   logic dirty_r, dirty_n;
   logic [paddr_width_p-1:0] miss_addr_r, miss_addr_n;
   logic dirty_lru_flopped_r, dirty_lru_flopped_n;
-  logic size_op_r, size_op_n;
+  logic [1:0] size_op_r, size_op_n;
 
   logic tr_data_received_r, tr_data_received_n, tr_data_received;
   logic cce_data_received_r, cce_data_received_n, cce_data_received;
@@ -132,9 +132,6 @@ module bp_be_dcache_lce_req
   assign lce_req.lru_way_id = dirty_lru_flopped_r
     ? lru_way_r
     : lru_way_i;
-  assign lce_req.lru_dirty = dirty_lru_flopped_r
-    ? bp_lce_cce_lru_dirty_e'(dirty_r)
-    : bp_lce_cce_lru_dirty_e'(dirty_i[lru_way_i]);
 
   assign lce_resp.src_id = (lce_id_width_lp)'(lce_id_i);
   assign lce_resp.addr = miss_addr_r;
@@ -160,6 +157,9 @@ module bp_be_dcache_lce_req
     lce_req.msg_type = e_lce_req_type_rd;
     lce_req.nc_size = bp_lce_cce_nc_req_size_e'(size_op_i);
     lce_req.data = '0;
+    lce_req.lru_dirty = dirty_lru_flopped_r
+    ? bp_lce_cce_lru_dirty_e'(dirty_r)
+    : bp_lce_cce_lru_dirty_e'(dirty_i[lru_way_i]);
 
     lce_resp_v_o = 1'b0;
     lce_resp.msg_type = e_lce_cce_tr_ack;
@@ -191,12 +191,13 @@ module bp_be_dcache_lce_req
           state_n = e_SEND_UNCACHED_LOAD_REQ;
         end
         else if (uncached_store_req_i) begin
-          lce_req_v_o = 1'b1;
+          lce_req_v_o =lce_req_ready_i;
           lce_req.addr = miss_addr_i;
-          lce_req.msg_type = e_lce_req_type_rd;
+          lce_req.msg_type = e_lce_req_type_wr;
           lce_req.non_cacheable = e_lce_req_non_cacheable;
           lce_req.nc_size = bp_lce_cce_nc_req_size_e'(size_op_i);
           lce_req.data = store_data_i;
+          lce_req.lru_dirty = bp_lce_cce_lru_dirty_e'(1'b0);
 
           cache_miss_o = ~lce_req_ready_i;
           state_n = e_READY;
@@ -234,6 +235,7 @@ module bp_be_dcache_lce_req
         lce_req.non_cacheable = e_lce_req_non_cacheable;
         lce_req.addr = miss_addr_r;
         lce_req.nc_size = bp_lce_cce_nc_req_size_e'(size_op_r);
+        lce_req.lru_dirty = bp_lce_cce_lru_dirty_e'(1'b0);
 
         cache_miss_o = 1'b1;
         state_n = lce_req_ready_i

@@ -1,4 +1,4 @@
-HDL_PARAMS=-pvalue+core_els_p=1                                      \
+HDL_PARAMS=-pvalue+num_core_p=1                                      \
                    -pvalue+vaddr_width_p=22 			     \
 		   -pvalue+paddr_width_p=22 			     \
 		   -pvalue+eaddr_width_p=64 			     \

@@ -282,7 +282,7 @@ module bp_cce_inst_decode
               decoded_inst_o.lru_way_w_v = 1'b1;
               decoded_inst_o.rqf_sel = e_rqf_mem_data_resp;
               decoded_inst_o.nc_req_size_w_v = 1'b1;
-              decoded_inst_o.flag_mask_w_v = e_flag_rqf;
+              decoded_inst_o.flag_mask_w_v = (e_flag_rqf | e_flag_ucf);
 
             end else if (queue_op_s.op.popq.src_q == e_src_q_sel_mem_resp) begin
               decoded_inst_o.req_sel = e_req_sel_mem_resp;
@@ -297,7 +297,7 @@ module bp_cce_inst_decode
               decoded_inst_o.tf_sel = e_tf_mem_resp;
               decoded_inst_o.rqf_sel = e_rqf_mem_resp;
               decoded_inst_o.nc_req_size_w_v = 1'b1;
-              decoded_inst_o.flag_mask_w_v = (e_flag_rqf | e_flag_rwbf | e_flag_tf);
+              decoded_inst_o.flag_mask_w_v = (e_flag_rqf | e_flag_rwbf | e_flag_tf | e_flag_ucf);
 
             end else if (queue_op_s.op.popq.src_q == e_src_q_sel_lce_resp) begin
               decoded_inst_o.ack_type_w_v = 1'b1;
@@ -310,7 +310,7 @@ module bp_cce_inst_decode
               decoded_inst_o.nerldf_sel = e_nerldf_lce_req;
               decoded_inst_o.rqf_sel = e_rqf_lce_req;
               decoded_inst_o.nc_req_size_w_v = 1'b1;
-              decoded_inst_o.flag_mask_w_v = (e_flag_rqf | e_flag_nerf | e_flag_ldf);
+              decoded_inst_o.flag_mask_w_v = (e_flag_rqf | e_flag_nerf | e_flag_ldf | e_flag_ucf);
             end
           end
         end

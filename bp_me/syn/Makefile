@@ -9,8 +9,8 @@ LOG_PATH    := $(BP_ME_DIR)/syn/logs
 REPORT_PATH := $(BP_ME_DIR)/syn/reports
 
 # Default ROM to example
-DESIGN_NAME ?= bp_me_top
 TB          ?= bp_me_trace_demo
+CFG         ?= e_bp_single_core_cfg
 
 ## End specific flags and variables
 BP_ME_SRC_PATH       = $(BP_ME_DIR)/src/v

@@ -60,6 +60,7 @@ bi error
 
 # LCE Request Routine
 lce_req: popq lceReq
+bf ucf uncached_req
 rdp req
 bf pf error
 rdw req
@@ -162,6 +163,18 @@ pushq lceDataCmd
 pushq lceCmd ST req req lru
 wfq lceResp
 popq lceResp
+bi ready
+
+# Uncached Request Routine
+uncached_req: bf rqf uncached_store
+pushq memCmd
+wfq memDataResp
+popq memDataResp
+pushq lceDataCmd
+bi ready
+uncached_store: pushq memDataCmd req
+wfq memResp
+popq memResp
 bi ready
 
 error: stall

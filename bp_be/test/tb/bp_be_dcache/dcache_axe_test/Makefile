@@ -4,10 +4,11 @@
 
 ## Setup CAD tools
 BP_DIR = $(abspath ../../../../../)
+include $(BP_DIR)/Makefile.common
 BP_COMMON_DIR = $(BP_DIR)/bp_common
 BP_BE_DIR = $(BP_DIR)/bp_be
 BP_ME_DIR = $(BP_DIR)/bp_me
-BSG_IP_CORES_DIR = $(BP_DIR)/bsg_ip_cores
+BSG_IP_CORES_DIR = $(BP_DIR)/basejump_stl
 EXTERNAL_DIR = $(BP_DIR)/external
 
 AXE = $(EXTERNAL_DIR)/bin/axe
@@ -29,12 +30,28 @@ VCS ?= vcs
 # testparam
 NUM_INSTR_P ?= 10000
 NUM_LCE_P ?= 2
+ifeq ($(NUM_LCE_P), 1)
+  CFG=e_bp_half_core_cfg
+  N_WG=64
+else ifeq ($(NUM_LCE_P), 2)
+  CFG=e_bp_single_core_cfg
+  N_WG=64
+else ifeq ($(NUM_LCE_P), 4) 
+  CFG=e_bp_dual_core_cfg
+  N_WG=32
+else ifeq ($(NUM_LCE_P), 8)
+  CFG=e_bp_quad_core_cfg
+  N_WG=16
+else ifeq ($(NUM_LCE_P), 16)
+  CFG=e_bp_oct_core_cfg
+  N_WG=8
+endif
 
 NUMS = $(shell seq 0 `expr $(NUM_LCE_P) - 1`)
 BASE = bsg_trace_rom_
 TRACE_ROMS = $(addsuffix .v, $(addprefix $(BASE), $(NUMS)))
 
-CCE_ROM = $(BP_ME_DIR)/src/v/roms/ei-tr/bp_cce_inst_rom_ei-tr_lce$(NUM_LCE_P)_wg16_assoc8.v
+CCE_ROM = $(BP_ME_DIR)/src/v/roms/ei-tr/bp_cce_inst_rom_ei-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.v
 
 all: clean sim
 
@@ -45,6 +62,7 @@ bsg_trace_rom_%.v: bsg_trace_rom_%.tr
 	python $(BSG_IP_CORES_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_trace_rom_$* > $@
 
 sim: clean $(TRACE_ROMS)
+	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" testbench.v > testbench_postsed.v
 	$(VCS) +v2k -R +lint=all,noSVA-UA,noSVA-NSVU,noVCDE -sverilog -full64 \
 		$(INCDIR) -f sv.include $(TRACE_ROMS) $(CCE_ROM)  \
 		-debug_pp -timescale=1ps/1ps +vcs+vcdpluson +vcs+vcdplusmemon -l $(VCS_LOG) \

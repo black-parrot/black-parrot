@@ -586,7 +586,8 @@ typedef struct packed {
 
 `define bp_cce_inst_write_dir_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_dir_way_group_sel_width \
   -`bp_cce_inst_dir_lce_sel_width-`bp_cce_inst_dir_way_sel_width \
-  -`bp_cce_inst_dir_coh_state_sel_width-`bp_cce_inst_dir_tag_sel_width-`bp_cce_inst_imm16_width)
+  -`bp_cce_inst_dir_coh_state_sel_width-`bp_cce_inst_dir_tag_sel_width \
+  -`bp_cce_coh_bits)
 
 typedef struct packed {
   // directory inputs

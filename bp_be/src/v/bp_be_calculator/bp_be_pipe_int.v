@@ -7,7 +7,7 @@
  *   Pipeline for RISC-V integer instructions. Handles integer computation.
  *
  * Parameters:
- *   core_els_p       - 
+ *   num_core_p       - 
  *
  * Inputs:
  *   clk_i            -

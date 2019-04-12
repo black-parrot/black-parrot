@@ -6,10 +6,12 @@
 
 module testbench();
   import bp_common_pkg::*;
+  import bp_common_aviary_pkg::*;
   import bp_be_dcache_pkg::*;
 
   // parameters
   //
+  localparam bp_cfg_e cfg_p = BP_CFG_FLOWVAR;
   localparam data_width_p = 64;
   localparam sets_p = 16;
   localparam ways_p = 8;
@@ -75,15 +77,9 @@ module testbench();
   logic [num_lce_p-1:0][data_width_p-1:0] dcache_data_lo;
 
   bp_rolly_lce_me #(
-    .data_width_p(data_width_p)
-    ,.sets_p(sets_p)
-    ,.ways_p(ways_p)
-    ,.paddr_width_p(paddr_width_p)
-    ,.num_lce_p(num_lce_p)
-    ,.num_cce_p(num_cce_p)
+    .cfg_p(cfg_p)
     ,.mem_els_p(mem_els_p)
     ,.boot_rom_els_p(mem_els_p)
-    ,.num_cce_inst_ram_els_p(num_cce_inst_ram_els_p)
   ) dcache_cce_mem (
     .clk_i(clk)
     ,.reset_i(reset)
