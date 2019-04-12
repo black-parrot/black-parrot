@@ -292,7 +292,7 @@ bp_fe_pc_gen
    );
 
    
-icache 
+bp_fe_icache 
  #(.eaddr_width_p(eaddr_width_lp)
    ,.paddr_width_p(paddr_width_p)
    ,.data_width_p(data_width_p)

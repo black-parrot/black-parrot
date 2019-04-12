@@ -23,7 +23,7 @@
  */
 
 
-module icache
+module bp_fe_icache
   import bp_common_pkg::*;
   import bp_fe_pkg::*;
   import bp_fe_icache_pkg::*;  
