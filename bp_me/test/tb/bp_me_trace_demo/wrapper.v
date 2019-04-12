@@ -15,12 +15,28 @@ module wrapper
                                   ,cce_block_width_p
                                   )
 
+    // Config link parameters
+    , parameter cfg_link_addr_width_p = "inv"
+    , parameter cfg_link_data_width_p = "inv"
+
     // Derived parameters
     , localparam lg_num_cce_lp         = `BSG_SAFE_CLOG2(num_cce_p)
     , localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
   )
   (input                                                         clk_i
    , input                                                       reset_i
+   , input                                                       freeze_i
+
+   // Config channel
+   , input [cfg_link_addr_width_p-2:0]                           config_addr_i
+   , input [cfg_link_data_width_p-1:0]                           config_data_i
+   , input                                                       config_v_i
+   , input                                                       config_w_i
+   , output logic                                                config_ready_o
+
+   , output logic [cfg_link_data_width_p-1:0]                    config_data_o
+   , output logic                                                config_v_o
+   , input                                                       config_ready_i
 
    // LCE <-> Coherence Network Interface
    // inbound: ready->valid, helpful consumer
@@ -71,6 +87,7 @@ module wrapper
    , input [num_cce_p-1:0]                                       mem_data_cmd_yumi_i
   );
 
+  /*
   // Coherence Network <-> CCE
   // To CCE
   logic [num_cce_p-1:0][lce_cce_req_width_lp-1:0]            lce_req_i_to_cce;
@@ -93,9 +110,13 @@ module wrapper
   logic [num_cce_p-1:0][lce_data_cmd_width_lp-1:0]           lce_data_cmd_o_from_cce;
   logic [num_cce_p-1:0]                                      lce_data_cmd_v_o_from_cce;
   logic [num_cce_p-1:0]                                      lce_data_cmd_ready_i_to_cce;
+  */
 
   bp_me_top 
-   #(.cfg_p(cfg_p))
+   #(.cfg_p(cfg_p)
+     ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
+     ,.cfg_link_data_width_p(cfg_link_data_width_p)
+    )
    dut
     (.*);
 
