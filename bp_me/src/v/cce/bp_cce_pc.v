@@ -100,9 +100,6 @@ module bp_cce_pc
     , parameter cfg_link_data_width_p = "inv"
     , parameter cfg_ram_base_addr_p = "inv"
 
-    // Default parameters
-    , parameter harden_p                 = 0
-
     // Derived parameters
     , localparam inst_width_lp           = `bp_cce_inst_width
     , localparam inst_ram_addr_width_lp  = `BSG_SAFE_CLOG2(inst_ram_els_p)

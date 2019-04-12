@@ -30,30 +30,16 @@ module bp_cce_reg
     , localparam tag_set_width_lp           = (entry_width_lp*lce_assoc_p)
     , localparam way_group_width_lp         = (tag_set_width_lp*num_lce_p)
 
-    , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
-                                                               ,num_lce_p
-                                                               ,addr_width_p
-                                                               ,lce_assoc_p
-                                                               ,lce_req_data_width_p)
-
-    , localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
-                                                                 ,num_lce_p
-                                                                 ,addr_width_p)
-
-    , localparam bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p
-                                                                           ,num_lce_p
-                                                                           ,addr_width_p
-                                                                           ,block_size_in_bits_lp)
-
-    , localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(addr_width_p
-                                                                 ,num_lce_p
-                                                                 ,lce_assoc_p)
-
-    , localparam bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(addr_width_p
-                                                                           ,block_size_in_bits_lp
-                                                                           ,num_lce_p
-                                                                           ,lce_assoc_p)
-
+    , localparam bp_lce_cce_req_width_lp=
+      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p)
+    , localparam bp_lce_cce_resp_width_lp=
+      `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
+    , localparam bp_lce_cce_data_resp_width_lp=
+      `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, block_size_in_bits_lp)
+    , localparam bp_mem_cce_resp_width_lp=
+      `bp_mem_cce_resp_width(paddr_width_p, num_lce_p, lce_assoc_p)
+    , localparam bp_mem_cce_data_resp_width_lp=
+      `bp_mem_cce_data_resp_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
   )
   (input                                                                   clk_i
    , input                                                                 reset_i
