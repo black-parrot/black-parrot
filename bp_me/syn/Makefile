@@ -67,5 +67,9 @@ regress.me:
 	&& echo "bp_me_random_demo: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_me_random_demo: FAIL" >> $(LOG_PATH)/me_regress.log
 
+clean: clean.me
+clean.me:
+	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_random_demo clean
+
 verilator-demo:
 	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_random_verilator

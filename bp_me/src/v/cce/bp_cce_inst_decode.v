@@ -17,7 +17,6 @@ module bp_cce_inst_decode
   )
   (input                                         clk_i
    , input                                       reset_i
-   , input                                       freeze_i
 
    // Instruction from bp_cce_pc
    , input [inst_width_p-1:0]                    inst_i

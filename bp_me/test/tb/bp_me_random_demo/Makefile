@@ -67,6 +67,7 @@ clean:
 	rm -rf simv.daidir simv.vdb stack.info.*
 	rm -f ucli.key vcdplus.vpd simv cm.log *.tar.gz $(VCS_LOG)
 	rm -f bsg_trace_rom_*.v bsg_trace_rom_*.tr $(TRACE_AXE)
+	rm -f testbench_postsed.v
 
 ###################################################################################################
 # NOTE: AXE does not work with this test. This test is for single LCE and the trace replay script

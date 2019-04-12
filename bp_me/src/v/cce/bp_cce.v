@@ -269,7 +269,6 @@ module bp_cce
     inst_decode
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.freeze_i(freeze_i)
 
       ,.inst_i(pc_inst_o)
       ,.inst_v_i(pc_inst_v_o)
@@ -332,7 +331,6 @@ module bp_cce
     directory
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.freeze_i(freeze_i)
 
       ,.way_group_i(dir_way_group_i)
       ,.lce_i(dir_lce_i)
@@ -369,7 +367,6 @@ module bp_cce
     gad
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.freeze_i(freeze_i)
       ,.way_group_i(way_group_r_o)
       ,.req_lce_i(req_lce_r_o)
       ,.req_tag_i(req_tag_r_o)
@@ -396,7 +393,7 @@ module bp_cce
   bp_cce_reg
     #(.num_lce_p(num_lce_p)
       ,.num_cce_p(num_cce_p)
-      ,.addr_width_p(paddr_width_p)
+      ,.paddr_width_p(paddr_width_p)
       ,.lce_assoc_p(lce_assoc_p)
       ,.lce_sets_p(lce_sets_p)
       ,.block_size_in_bytes_p(block_size_in_bytes_p)
@@ -405,7 +402,6 @@ module bp_cce
     cce_reg
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.freeze_i(freeze_i)
       ,.decoded_inst_i(decoded_inst_o)
       ,.lce_req_i(lce_req_i)
       ,.lce_data_resp_i(lce_data_resp_i)

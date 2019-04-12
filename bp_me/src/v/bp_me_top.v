@@ -218,7 +218,7 @@ module bp_me_top
         ,.lce_sets_p(lce_sets_p)
         ,.block_size_in_bytes_p(block_size_in_bytes_lp)
         ,.num_cce_inst_ram_els_p(num_cce_instr_ram_els_p)
-        ,.lce_req_data_width_p(lce_req_data_width_lp)
+        ,.lce_req_data_width_p(lce_req_data_width_p)
         ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
         ,.cfg_link_data_width_p(cfg_link_data_width_p)
         )
