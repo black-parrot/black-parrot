@@ -140,11 +140,29 @@ for(genvar core_id = 0; core_id < num_core_p; core_id++)
   end
 endgenerate 
 
+// Config link parameters
+localparam cfg_link_addr_width_p       = 16
+localparam cfg_link_data_width_p       = 32
+
 bp_me_top 
- #(.cfg_p(cfg_p))
+ #(.cfg_p(cfg_p)
+   ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
+   ,.cfg_link_data_width_p(cfg_link_data_width_p)
+ )
  me
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
+   ,.freeze_i('0)
+
+   ,.config_addr_i('0)
+   ,.config_data_i('0)
+   ,.config_v_i('0)
+   ,.config_w_i('0)
+   ,.config_ready_o()
+
+   ,.config_data_o()
+   ,.config_v_o()
+   ,.config_ready_i('0)
 
    ,.lce_req_i(lce_req_lo)
    ,.lce_req_v_i(lce_req_v_lo)
