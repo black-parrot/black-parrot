@@ -451,6 +451,8 @@ module bp_cce
 
   // A localparams and signals for output queue message formation
   // NOTE: num_cce_p must be a power of two
+  // TODO: the special logic to compute set index based on gpr value below can probably be put
+  // into microcode software
   localparam gpr_shift_lp = (num_cce_p == 1) ? 0 : lg_num_cce_lp;
   localparam [paddr_width_p-lg_lce_sets_lp-1:0] lce_cmd_addr_0 =
     (paddr_width_p-lg_lce_sets_lp)'('0);
@@ -749,6 +751,9 @@ module bp_cce
       e_src_sharers_hit_r0: begin
         alu_opd_a_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, sharers_hits_r0};
       end
+      e_src_cce_id: begin
+        alu_opd_a_i = {{(`bp_cce_inst_gpr_width-lg_num_cce_lp){1'b0}}, cce_id_i};
+      end
       e_src_lce_req_ready: begin
         alu_opd_a_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, lce_req_v_i};
       end
@@ -808,6 +813,7 @@ module bp_cce
       e_src_req_lce: alu_opd_b_i = {{(`bp_cce_inst_gpr_width-lg_num_lce_lp){1'b0}}, req_lce_r_o};
       e_src_ack_type: alu_opd_b_i = {gpr_ack_0, ack_type_r_o};
       e_src_sharers_hit_r0: alu_opd_b_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, sharers_hits_r0};
+      e_src_cce_id: alu_opd_b_i = {{(`bp_cce_inst_gpr_width-lg_num_cce_lp){1'b0}}, cce_id_i};
       e_src_lce_req_ready: alu_opd_b_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, lce_req_v_i};
       e_src_mem_resp_ready: alu_opd_b_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mem_resp_v_i};
       e_src_mem_data_resp_ready: alu_opd_b_i = {gpr_width_minus1_0, mem_data_resp_v_i};

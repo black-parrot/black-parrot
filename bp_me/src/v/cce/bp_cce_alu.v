@@ -55,6 +55,12 @@ module bp_cce_alu
     case (alu_op_i)
       e_add_op: res_o = opd_a_i + opd_b_i;
       e_sub_op: res_o = opd_a_i - opd_b_i;
+      e_lsh_op: res_o = opd_a_i << opd_b_i;
+      e_rsh_op: res_o = opd_a_i >> opd_b_i;
+      e_and_op: res_o = opd_a_i & opd_b_i;
+      e_or_op:  res_o = opd_a_i | opd_b_i;
+      e_xor_op: res_o = opd_a_i ^ opd_b_i;
+      e_neg_op: res_o = ~opd_a_i;
       default: res_o = '0;
     endcase
     end

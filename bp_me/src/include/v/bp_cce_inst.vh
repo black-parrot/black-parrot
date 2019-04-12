@@ -164,6 +164,7 @@ typedef enum logic [4:0] {
   ,e_src_req_lce                         = 5'b10100
   ,e_src_ack_type                        = 5'b10101
   ,e_src_sharers_hit_r0                  = 5'b10110
+  ,e_src_cce_id                          = 5'b10111
 
   ,e_src_lce_req_ready                   = 5'b11000
   ,e_src_mem_resp_ready                  = 5'b11001
