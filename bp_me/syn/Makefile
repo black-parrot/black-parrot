@@ -49,10 +49,6 @@ regress.me:
 	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_gad_bp_example_rom_sim.log \
 	&& echo "bp_cce_gad: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_cce_gad: FAIL" >> $(LOG_PATH)/me_regress.log
-	$(MAKE) run.sc TB=bp_me_top_test
-	@grep "PASSED" $(LOG_PATH)/verilator/bp_me_top_test_bp_example_rom_sim.log \
-	&& echo "bp_me_top_test: OK" >> $(LOG_PATH)/me_regress.log \
-	|| echo "bp_me_top_test: FAIL" >> $(LOG_PATH)/me_regress.log
 	$(MAKE) run.sc TB=bp_cce_test
 	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_test_bp_example_rom_sim.log \
 	&& echo "bp_cce_test: OK" >> $(LOG_PATH)/me_regress.log \
@@ -66,6 +62,10 @@ regress.me:
 	@grep "DONE" $(LOG_PATH)/vcs/bp_me_random_stress_test.log \
 	&& echo "bp_me_random_demo: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_me_random_demo: FAIL" >> $(LOG_PATH)/me_regress.log
+	$(MAKE) run.sc TB=bp_me_top_test
+	@grep "PASSED" $(LOG_PATH)/verilator/bp_me_top_test_bp_example_rom_sim.log \
+	&& echo "bp_me_top_test: OK" >> $(LOG_PATH)/me_regress.log \
+	|| echo "bp_me_top_test: FAIL" >> $(LOG_PATH)/me_regress.log
 
 clean: clean.me
 clean.me:
