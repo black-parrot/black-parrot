@@ -11,10 +11,14 @@ parser.add_argument('-S', dest='lce_sets', type=int, nargs='+', help='Number of 
 parser.add_argument('-C', dest='n_cce', type=int, nargs='+', help='Number of CCEs')
 parser.add_argument('-W', dest='n_wg', type=int, nargs='+', help='Number of Way-Groups per CCE')
 
-parser.add_argument('--bsg', dest='bsg', type=str, default='../../../basejump_stl/bsg_mem',
+parser.add_argument('--bsg', dest='bsg', type=str, default='../../../../basejump_stl/bsg_mem',
                     help='Path to basejump_stl/bsg_mem')
 parser.add_argument('--script', dest='script', type=str, default='bsg_ascii_to_rom.py',
                     help='Name of ROM generator script')
+parser.add_argument('--module', dest='module', type=str, default='bp_cce_inst_rom',
+                    help='CCE Instruction ROM module name')
+parser.add_argument('--outdir', dest='outdir', type=str, default='./out',
+                    help='Output directory path')
 
 args = parser.parse_args()
 
@@ -33,16 +37,19 @@ file_base = file_name.split('.')[0]
 pre_file = os.path.join(os.path.split(file_abs_path)[0], file_base + '.pre')
 mem_file = os.path.join(os.path.split(file_abs_path)[0], file_base + '.mem')
 
+out_dir = os.path.abspath(args.outdir)
+if not os.path.exists(out_dir):
+  os.makedirs(out_dir)
+
 for w in n_wg:
   for n in n_lce:
       for e in lce_assoc:
         cflags = 'CFLAGS="-DN_WG={0} -DN_LCE={1} -DLCE_ASSOC={2}"'.format(w, n, e)
         pre_cmd = 'make {0} {1}'.format(cflags, mem_file)
         os.system(pre_cmd)
-        rom_file_path = os.path.join(os.path.split(file_abs_path)[0], 'bp_cce_inst_rom_{0}_lce{1}_wg{2}_assoc{3}.v'.format(file_base, n, w, e))
+        rom_file_path = os.path.join(out_dir, 'bp_cce_inst_rom_{0}_lce{1}_wg{2}_assoc{3}.v'.format(file_base, n, w, e))
         bsg_script = os.path.join(os.path.abspath(args.bsg), args.script)
-        #rom_module = 'bp_cce_inst_rom_lce{0}_wg{1}_assoc{2}'.format(n, w, e)
-        rom_module = 'bp_cce_inst_rom'
+        rom_module=args.module
         rom_cmd = 'python2 {0} {1} {2} > {3}'.format(bsg_script, mem_file, rom_module, rom_file_path)
         os.system(rom_cmd)
         rm_cmd = 'rm {0}'.format(mem_file)
