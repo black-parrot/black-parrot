@@ -259,6 +259,7 @@ bp_be_ptw
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.base_ppn_i(base_ppn)
+   ,.translation_en_i(1'b0)
    ,.busy_o(ptw_busy)
    
    ,.itlb_not_dtlb_i(itlb_fill_cmd_v)

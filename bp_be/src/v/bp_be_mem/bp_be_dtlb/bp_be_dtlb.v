@@ -32,7 +32,7 @@ module bp_be_dtlb
   
 `declare_bp_be_tlb_entry_s(ptag_width_p);
 
-bp_be_tlb_entry_s r_entry, w_entry, r_entry_passthrough, ram_r_data;
+bp_be_tlb_entry_s r_entry, w_entry, ram_r_data;
 
 assign r_entry_o = r_entry;
 assign w_entry   = w_entry_i;
@@ -44,14 +44,7 @@ logic                 r_v_n, miss_v_n, en_r;
 assign cam_w_addr                 = victim_addr;
 assign ram_addr                   = (w_v_i)? cam_w_addr : cam_r_addr;
 
-assign r_entry_passthrough.ptag   = {(ptag_width_p-vtag_width_p)'(0), miss_vtag_o};
-assign r_entry_passthrough.g      = 1'b0;
-assign r_entry_passthrough.u      = 1'b0;
-assign r_entry_passthrough.x      = 1'b1;
-assign r_entry_passthrough.w      = 1'b1;
-assign r_entry_passthrough.r      = 1'b1;
-
-assign r_entry                    = (en_r)? ram_r_data : r_entry_passthrough;
+assign r_entry                    = (en_r)? ram_r_data : '0;
 assign r_v_n                      = (en_i)? (r_v_i & cam_r_v) : r_v_i;
 assign miss_v_n                   = (en_i)? ~cam_r_v : 1'b0;
 

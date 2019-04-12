@@ -1,7 +1,5 @@
 
-// TODO: add valid check and page-fault exceptions
-// TODO: add fe tlb fill service
-
+// TODO: add page-fault exceptions
 
 module bp_be_ptw
   import bp_common_pkg::*;
@@ -27,6 +25,7 @@ module bp_be_ptw
   (input                                    clk_i
    , input                                  reset_i
    , input [ppn_width_lp-1:0]               base_ppn_i
+   , input                                  translation_en_i
    , output                                 busy_o
    
    , input                                  itlb_not_dtlb_i
@@ -68,7 +67,7 @@ module bp_be_ptw
   logic [lg_page_table_depth_lp-1:0] level_cntr;
   logic                              level_cntr_en;
   logic [vpn_width_lp-1:0]           vpn_r, vpn_n;
-  logic [ppn_width_lp-1:0]           ppn_r, ppn_n;
+  logic [ppn_width_lp-1:0]           ppn_r, ppn_n, writeback_ppn;
   logic                              ppn_en;
   
   logic [page_table_depth_p-1:0] [partial_vpn_width_lp-1:0] partial_vpn;
@@ -81,9 +80,9 @@ module bp_be_ptw
     end
    for(i=0; i<page_table_depth_p-1; i++) begin
       assign partial_ppn[i] = ppn_r[partial_vpn_width_lp*i +: partial_vpn_width_lp];
-      assign tlb_w_entry.ptag[partial_vpn_width_lp*i +: partial_vpn_width_lp] = (level_cntr > i)? partial_vpn[i] : partial_ppn[i];
+      assign writeback_ppn[partial_vpn_width_lp*i +: partial_vpn_width_lp] = (level_cntr > i)? partial_vpn[i] : partial_ppn[i];
     end
-    assign tlb_w_entry.ptag[ppn_width_lp-1 : (page_table_depth_p-1)*partial_vpn_width_lp] = ppn_r[ppn_width_lp-1 : (page_table_depth_p-1)*partial_vpn_width_lp];
+    assign writeback_ppn[ppn_width_lp-1 : (page_table_depth_p-1)*partial_vpn_width_lp] = ppn_r[ppn_width_lp-1 : (page_table_depth_p-1)*partial_vpn_width_lp];
   end
   endgenerate
   
@@ -95,11 +94,12 @@ module bp_be_ptw
   assign tlb_w_vtag_o           = vpn_r;
   assign tlb_w_entry_o          = tlb_w_entry;
   
-  assign tlb_w_entry.g          = dcache_data.g;
-  assign tlb_w_entry.u          = dcache_data.u;
-  assign tlb_w_entry.x          = dcache_data.x;
-  assign tlb_w_entry.w          = dcache_data.w;
-  assign tlb_w_entry.r          = dcache_data.r;
+  assign tlb_w_entry.ptag       = translation_en_i ? writeback_ppn : {(paddr_width_p - vaddr_width_p)'(0), vpn_r};
+  assign tlb_w_entry.g          = translation_en_i ? dcache_data.g : 1'b0;
+  assign tlb_w_entry.u          = translation_en_i ? dcache_data.u : 1'b0;
+  assign tlb_w_entry.x          = translation_en_i ? dcache_data.x : 1'b1;
+  assign tlb_w_entry.w          = translation_en_i ? dcache_data.w : 1'b1;
+  assign tlb_w_entry.r          = translation_en_i ? dcache_data.r : 1'b1;
 
   assign dcache_v_o             = (state_r == eSendLoad);
   assign dcache_pkt.opcode      = e_dcache_opcode_ld;
@@ -121,7 +121,7 @@ module bp_be_ptw
   
   always_comb begin
     case(state_r)
-      eIdle:      state_n = (tlb_miss_v_i)? eSendLoad : eIdle;
+      eIdle:      state_n = (tlb_miss_v_i)? ((translation_en_i)? eSendLoad : eWriteBack) : eIdle;
       eSendLoad:  state_n = (dcache_rdy_i)? eWaitLoad : eSendLoad;
       eWaitLoad:  state_n = (dcache_miss_i)? eSendLoad :
                             (dcache_v_i)? ((pte_leaf_v)? eWriteBack : eSendLoad) :
