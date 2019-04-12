@@ -15,6 +15,9 @@
 #include "Vbp_me_top_test.h"
 
 #include "bp_cce_verilator.h"
+
+#define ADDR_WIDTH 39
+
 #include "bp_cce.h"
 #include "bp_common_me_if.h"
 #include "bp_cce_lce_msg_util.h"
@@ -39,6 +42,16 @@ int sc_main(int argc, char **argv)
   sc_init("bp_me_top_test", argc, argv);
 
   sc_signal <bool>     reset_i("reset_i");
+  sc_signal <bool>     freeze_i("freeze_i");
+
+  sc_signal <uint32_t> config_addr_i("config_addr_i");
+  sc_signal <uint32_t> config_data_i("config_data_i");
+  sc_signal <bool>     config_v_i("config_v_i");
+  sc_signal <bool>     config_w_i("config_w_i");
+  sc_signal <bool>     config_ready_o("config_ready_o");
+  sc_signal <uint32_t> config_data_o("config_data_o");
+  sc_signal <bool>     config_v_o("config_v_o");
+  sc_signal <bool>     config_ready_i("config_ready_i");
 
   sc_signal <sc_bv<bp_lce_cce_req_width> > lce_req_i("lce_req_i");
   sc_signal <bool>     lce_req_v_i("lce_req_v_i");
@@ -76,6 +89,18 @@ int sc_main(int argc, char **argv)
 
   DUT.clk_i(clock);
   DUT.reset_i(reset_i);
+  DUT.freeze_i(freeze_i);
+
+  // Config channel
+  DUT.config_addr_i(config_addr_i);
+  DUT.config_data_i(config_data_i);
+  DUT.config_v_i(config_v_i);
+  DUT.config_w_i(config_w_i);
+  DUT.config_ready_o(config_ready_o);
+
+  DUT.config_data_o(config_data_o);
+  DUT.config_v_o(config_v_o);
+  DUT.config_ready_i(config_ready_i);
 
   DUT.lce_req_i(lce_req_i);
   DUT.lce_req_v_i(lce_req_v_i);
@@ -108,6 +133,13 @@ int sc_main(int argc, char **argv)
   #endif
 
   // reset
+  freeze_i = 0;
+  config_addr_i = 0;
+  config_data_i = 0;
+  config_v_i = 0;
+  config_w_i = 0;
+  config_ready_i = 0;
+
   lce_req_i = 0;
   lce_req_v_i = 0;
   lce_resp_i = 0;
