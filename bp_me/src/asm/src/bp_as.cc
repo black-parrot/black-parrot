@@ -65,7 +65,9 @@ Assembler::_lowercase(char ch) {
 
 bp_cce_inst_op_e
 Assembler::getOp(const char* op) {
-  if (!strcmp("add", op) || !strcmp("inc", op) || !strcmp("sub", op) || !strcmp("dec", op)) {
+  if (!strcmp("add", op) || !strcmp("inc", op) || !strcmp("sub", op) || !strcmp("dec", op)
+      || !strcmp("lsh", op) || !strcmp("rsh", op) || !strcmp("and", op) || !strcmp("or", op)
+      || !strcmp("xor", op) || !strcmp("neg", op)) {
     return e_op_alu;
   } else if (!strcmp("bi", op) || !strcmp("beq", op) || !strcmp("bne", op) || !strcmp("bz", op)
              || !strcmp("bnz", op) || !strcmp("bf", op) || !strcmp("bfz", op) || !strcmp("bqr", op)
@@ -96,6 +98,18 @@ Assembler::getMinorOp(const char* op) {
     return e_add;
   } else if (!strcmp("sub", op) || !strcmp("dec", op)) {
     return e_sub;
+  } else if (!strcmp("lsh", op)) {
+    return e_lsh;
+  } else if (!strcmp("rsh", op)) {
+    return e_rsh;
+  } else if (!strcmp("and", op)) {
+    return e_and;
+  } else if (!strcmp("or", op)) {
+    return e_or;
+  } else if (!strcmp("xor", op)) {
+    return e_xor;
+  } else if (!strcmp("neg", op)) {
+    return e_neg;
   } else if (!strcmp("bi", op)) {
     return e_bi;
   } else if (!strcmp("beq", op) || !strcmp("bz", op) || !strcmp("bf", op) || !strcmp("bfz", op)
@@ -183,6 +197,8 @@ Assembler::parseSrcOpd(string &s) {
     return e_src_ack_type;
   } else if (!s.compare("shr0")) {
     return e_src_sharers_hit_r0;
+  } else if (!s.compare("cce_id")) {
+    return e_src_cce_id;
   } else if (!s.compare("lcereq")) {
     return e_src_lce_req_ready;
   } else if (!s.compare("memresp")) {
@@ -278,12 +294,22 @@ Assembler::parseCohStImm(string &s) {
 
 void
 Assembler::parseALU(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
-  if (tokens->size() == 2) {
+  if (tokens->size() == 2) { // inc, dec, neg
     inst->type_u.alu_op_s.src_a = parseSrcOpd(tokens->at(1));
-    inst->type_u.alu_op_s.src_b = e_src_const_1;
     inst->type_u.alu_op_s.dst = parseDstOpd(tokens->at(1));
-    //inst->imm = 1;
-  } else if (tokens->size() == 4) {
+    if (inst->minor_op == e_inc || inst->minor_op == e_dec) {
+      inst->type_u.alu_op_s.src_b = e_src_const_1;
+    } else if (inst->minor_op == e_neg) {
+      inst->type_u.alu_op.src_b = e_src_const_0;
+    } else {
+      printf("Unknown ALU instruction: %s\n", tokens->at(0).c_str());
+      exit(-1);
+    }
+  } else if (tokens->size() == 3) { // lsh, rsh
+    inst->type_u.alu_op_s.src_a = parseSrcOpd(tokens->at(1));
+    inst->type_u.alu_op_s.dst = parseDstOpd(tokens->at(1));
+    inst->type_u.alu_op.src_b = e_src_imm;
+  } else if (tokens->size() == 4) { // add, sub, and, or, xor
     inst->type_u.alu_op_s.src_a = parseSrcOpd(tokens->at(1));
     inst->type_u.alu_op_s.src_b = parseSrcOpd(tokens->at(2));
     inst->type_u.alu_op_s.dst = parseDstOpd(tokens->at(3));
