@@ -51,7 +51,7 @@ module bp_be_ptw
   );
   
   `declare_bp_be_dcache_pkt_s(page_offset_width_p, pte_width_p);
-  `declare_bp_sv39_pte_s(pte_width_p, ppn_width_lp);
+  `declare_bp_sv39_pte_s;
   `declare_bp_be_tlb_entry_s(ppn_width_lp);
   
   typedef enum bit [2:0] { eIdle, eSendLoad, eWaitLoad, eWriteBack, eStuck } state_e;
@@ -94,7 +94,7 @@ module bp_be_ptw
   assign tlb_w_vtag_o           = vpn_r;
   assign tlb_w_entry_o          = tlb_w_entry;
   
-  assign tlb_w_entry.ptag       = translation_en_i ? writeback_ppn : {(paddr_width_p - vaddr_width_p)'(0), vpn_r};
+  assign tlb_w_entry.ptag       = translation_en_i ? writeback_ppn : paddr_width_p'(vpn_r);
   assign tlb_w_entry.g          = translation_en_i ? dcache_data.g : 1'b0;
   assign tlb_w_entry.u          = translation_en_i ? dcache_data.u : 1'b0;
   assign tlb_w_entry.x          = translation_en_i ? dcache_data.x : 1'b1;
@@ -115,7 +115,7 @@ module bp_be_ptw
   assign level_cntr_en          = busy_o & dcache_v_i & ~pte_leaf_v;
   
   assign ppn_en                 = start | (busy_o & dcache_v_i);
-  assign ppn_n                  = (state_r == eIdle)? base_ppn_i : dcache_data.ppn;
+  assign ppn_n                  = (state_r == eIdle)? base_ppn_i : dcache_data.ppn[0+:ppn_width_lp];
   assign vpn_n                  = tlb_miss_vtag_i;
   
   
