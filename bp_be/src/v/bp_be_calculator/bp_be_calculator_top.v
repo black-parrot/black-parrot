@@ -188,7 +188,7 @@ logic [reg_data_width_lp-1:0] bypass_frs1, bypass_frs2;
 logic [reg_data_width_lp-1:0] bypass_rs1 , bypass_rs2;
 
 // Exception signals
-logic illegal_instr_isd, csr_instr_isd, ret_instr_isd, itlb_fill_exc_isd;
+logic illegal_instr_isd, csr_instr_isd, ret_instr_isd;
 logic cache_miss_mem3, tlb_miss_mem2, illegal_csr_mem3;
 
 // Pipeline stage registers
@@ -214,8 +214,8 @@ logic [pipe_stage_els_lp-1:1][reg_addr_width_lp-1:0] comp_stage_n_slice_rd_addr;
 logic [pipe_stage_els_lp-1:1][reg_data_width_lp-1:0] comp_stage_n_slice_rd;
 
 // NOPs
-bp_be_decode_s fe_nop, be_nop, me_nop, illegal_nop;
-logic fe_nop_v, be_nop_v, me_nop_v, illegal_nop_v;
+bp_be_decode_s fe_nop, be_nop, me_nop, illegal_nop, fe_exc_nop;
+logic fe_nop_v, be_nop_v, me_nop_v, illegal_nop_v, fe_exc_nop_v;
 
 // MMU signals
 logic           mmu_itlb_fill_cmd_v;
@@ -293,20 +293,13 @@ bsg_dff_reset_en
 
 // Decode the dispatched instruction
 bp_be_instr_decoder
- #(.vaddr_width_p(vaddr_width_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.asid_width_p(asid_width_p)
-   ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
-   )
  instr_decoder
   (.instr_i(issue_pkt_r.instr)
-   ,.instr_metadata_i(issue_pkt_r.instr_metadata)
 
    ,.decode_o(decoded)
    ,.illegal_instr_o(illegal_instr_isd)
    ,.ret_instr_o(ret_instr_isd)
    ,.csr_instr_o(csr_instr_isd)
-   ,.itlb_fill_exc_o(itlb_fill_exc_isd)
    );
 
 // Bypass the instruction operands from written registers in the stack
@@ -526,6 +519,7 @@ assign fe_nop_v      = ~issue_pkt_v_r & chk_dispatch_v_i;
 assign be_nop_v      = ~chk_dispatch_v_i &  mmu_cmd_ready_i;
 assign me_nop_v      = ~chk_dispatch_v_i & ~mmu_cmd_ready_i;
 assign illegal_nop_v = illegal_instr_isd;
+assign fe_exc_nop_v  = issue_pkt_v_r & chk_dispatch_v_i & issue_pkt_r.instr_metadata.fe_exception_not_instr;
 
 always_comb
   begin
@@ -533,6 +527,7 @@ always_comb
     fe_nop      = '0;
     me_nop      = '0;
     illegal_nop = '0;
+    fe_exc_nop  = '0;
 
     fe_nop.fe_nop_v       = 1'b1;
     be_nop.be_nop_v       = 1'b1;
@@ -550,10 +545,11 @@ always_comb
     dispatch_pkt.rs2                 = bypass_rs2;
     dispatch_pkt.imm                 = issue_pkt_r.imm;
 
-    unique if (fe_nop_v) dispatch_pkt.decode = fe_nop;
-      else if (be_nop_v) dispatch_pkt.decode = be_nop;
-      else if (me_nop_v) dispatch_pkt.decode = me_nop;
-      else               dispatch_pkt.decode = illegal_instr_isd ? illegal_nop : decoded;
+    unique if (fe_nop_v)     dispatch_pkt.decode = fe_nop;
+      else if (be_nop_v)     dispatch_pkt.decode = be_nop;
+      else if (me_nop_v)     dispatch_pkt.decode = me_nop;
+      else if (fe_exc_nop_v) dispatch_pkt.decode = fe_exc_nop;
+      else                   dispatch_pkt.decode = illegal_instr_isd ? illegal_nop : decoded;
 
     // Strip out elements of the dispatch packet that we want to save for later
     calc_stage_isd.instr_metadata = dispatch_pkt.instr_metadata;
@@ -652,10 +648,14 @@ always_comb
         exc_stage_n[i] = (i == 0) ? '0 : exc_stage_r[i-1];
       end
         // If there are new exceptions, add them to the list
-        exc_stage_n[0].illegal_instr_v = chk_dispatch_v_i & illegal_instr_isd;
+        exc_stage_n[0].illegal_instr_v = chk_dispatch_v_i 
+                                         & illegal_instr_isd
+                                         & ~issue_pkt_r.instr_metadata.fe_exception_not_instr;
         exc_stage_n[0].ret_instr_v     = chk_dispatch_v_i & ret_instr_isd;
         exc_stage_n[0].csr_instr_v     = chk_dispatch_v_i & csr_instr_isd;
-        exc_stage_n[0].itlb_fill_v     = chk_dispatch_v_i & itlb_fill_exc_isd;
+        exc_stage_n[0].itlb_fill_v     = chk_dispatch_v_i 
+                                         & issue_pkt_r.instr_metadata.fe_exception_not_instr 
+                                         & (issue_pkt_r.instr_metadata.fe_exception_code == e_itlb_miss);
 
         exc_stage_n[0].roll_v          =                           chk_roll_i;
         exc_stage_n[1].roll_v          = exc_stage_r[0].roll_v   | chk_roll_i;
