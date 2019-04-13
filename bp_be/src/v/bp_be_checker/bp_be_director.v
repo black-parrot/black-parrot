@@ -65,6 +65,10 @@ module bp_be_director
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
    , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
    , localparam eaddr_width_lp    = rv64_eaddr_width_gp
+      // VM parameters
+   , localparam vtag_width_lp     = (vaddr_width_p-bp_page_offset_width_gp)
+   , localparam ptag_width_lp     = (paddr_width_p-bp_page_offset_width_gp)
+   , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_lp)
    )
   (input                               clk_i
    , input                             reset_i
@@ -86,6 +90,11 @@ module bp_be_director
    // CSR interface
    , input [reg_data_width_lp-1:0]    mtvec_i
    , input [reg_data_width_lp-1:0]    mepc_i
+   
+   //iTLB fill interface
+   , input                           itlb_fill_v_i
+   , input [vtag_width_lp-1:0]       itlb_fill_vtag_i
+   , input [tlb_entry_width_lp-1:0]  itlb_fill_entry_i
   );
 
 // Declare parameterized structures
@@ -291,11 +300,11 @@ always_comb
 
         fe_cmd_v = fe_cmd_ready_i & ~chk_roll_fe_o & ~redirect_pending;
       end
-    else if(calc_status.mem3_itlb_fill_v)
+    else if(itlb_fill_v_i)
       begin
         fe_cmd.opcode = e_op_itlb_fill_response;
-        fe_cmd.operands.itlb_fill_response.vaddr = calc_status.mem3_itlb_fill_vaddr;
-        fe_cmd.operands.itlb_fill_response.pte_entry_leaf = calc_status.mem3_itlb_fill_entry; //TODO: fix struct definition
+        fe_cmd.operands.itlb_fill_response.vaddr = {itlb_fill_vtag_i, bp_page_offset_width_gp'(0)};
+        fe_cmd.operands.itlb_fill_response.pte_entry_leaf = itlb_fill_entry_i;
       
         fe_cmd_v = fe_cmd_ready_i & ~chk_roll_fe_o;
       end

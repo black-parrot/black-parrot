@@ -54,7 +54,7 @@ module bp_be_ptw
   `declare_bp_sv39_pte_s(pte_width_p, ppn_width_lp);
   `declare_bp_be_tlb_entry_s(ppn_width_lp);
   
-  typedef enum [2:0] { eIdle, eSendLoad, eWaitLoad, eWriteBack, eStuck } state_e;
+  typedef enum bit [2:0] { eIdle, eSendLoad, eWaitLoad, eWriteBack, eStuck } state_e;
   
   bp_be_dcache_pkt_s dcache_pkt;
   bp_sv39_pte_s      dcache_data;

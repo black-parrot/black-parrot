@@ -86,6 +86,10 @@ module bp_be_checker_top
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
    , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
    , localparam eaddr_width_lp    = rv64_eaddr_width_gp
+   // VM parameters
+   , localparam vtag_width_lp     = (vaddr_width_p-bp_page_offset_width_gp)
+   , localparam ptag_width_lp     = (paddr_width_p-bp_page_offset_width_gp)
+   , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_lp)
    )
   (input                              clk_i
    , input                            reset_i
@@ -124,6 +128,11 @@ module bp_be_checker_top
    // CSR interface
    , input [reg_data_width_lp-1:0]    mtvec_i
    , input [reg_data_width_lp-1:0]    mepc_i
+   
+   //iTLB fill interface
+    , input                           itlb_fill_v_i
+    , input [vtag_width_lp-1:0]       itlb_fill_vtag_i
+    , input [tlb_entry_width_lp-1:0]  itlb_fill_entry_i
    );
 
 // Declare parameterizable structures
@@ -160,6 +169,10 @@ bp_be_director
 
    ,.mtvec_i(mtvec_i)
    ,.mepc_i(mepc_i)
+
+   ,.itlb_fill_v_i(itlb_fill_v_i)
+   ,.itlb_fill_vtag_i(itlb_fill_vtag_i)
+   ,.itlb_fill_entry_i(itlb_fill_entry_i)
    );
 
 bp_be_detector 
@@ -176,6 +189,7 @@ bp_be_detector
    ,.calc_status_i(calc_status_i)
    ,.mmu_cmd_ready_i(mmu_cmd_ready_i)
    ,.expected_npc_i(expected_npc)
+   ,.itlb_fill_v_i(itlb_fill_v_i)
 
    ,.chk_dispatch_v_o(chk_dispatch_v_o)
    ,.chk_roll_o(chk_roll_o)

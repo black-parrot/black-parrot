@@ -134,9 +134,7 @@ typedef struct packed
   logic load_fault_v;
   logic store_fault_v;
   logic cache_miss_v;
-  logic itlb_fill_v;
-  
-  logic [rv64_eaddr_width_gp-1:0] pc;
+  logic itlb_fill_v;  
 }  bp_be_exception_s;
 
 `define bp_be_fu_op_width                                                                          \

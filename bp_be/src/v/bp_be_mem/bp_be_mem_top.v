@@ -51,6 +51,9 @@ module bp_be_mem_top
    , localparam mem_resp_width_lp = `bp_be_mem_resp_width
    , localparam vtag_width_lp     = (vaddr_width_p-bp_page_offset_width_gp)
    , localparam ptag_width_lp     = (paddr_width_p-bp_page_offset_width_gp)
+   
+   // VM
+   , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_lp)
                                                       
    // ME
    , localparam cce_block_size_in_bits_lp = 8 * cce_block_size_in_bytes_p
@@ -97,6 +100,11 @@ module bp_be_mem_top
    , output [mem_resp_width_lp-1:0]        mem_resp_o
    , output                                mem_resp_v_o
    , input                                 mem_resp_ready_i
+   
+   , output                                itlb_fill_v_o
+   , output [vtag_width_lp-1:0]            itlb_fill_vtag_o
+   , output [tlb_entry_width_lp-1:0]       itlb_fill_entry_o
+   
 
    , output [lce_req_width_lp-1:0]         lce_req_o
    , output                                lce_req_v_o
@@ -259,7 +267,7 @@ bp_be_ptw
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.base_ppn_i(base_ppn)
-   ,.translation_en_i(1'b0)
+   ,.translation_en_i(1'b1)
    ,.busy_o(ptw_busy)
    
    ,.itlb_not_dtlb_i(itlb_fill_cmd_v)
@@ -368,20 +376,18 @@ assign ptw_tlb_miss_v = dtlb_miss | itlb_fill_cmd_v;
 assign ptw_tlb_miss_vtag = (itlb_fill_cmd_v)? mmu_cmd.vaddr.tag : dtlb_miss_vtag;
  
 // MMU response connections
-assign mem_resp.data   = (itlb_fill_resp_v)? ptw_tlb_w_entry 
-                         : ((dcache_v) ? dcache_data 
-                         : csr_data_lo);  
+assign mem_resp.data   = (dcache_v) ? dcache_data : csr_data_lo;  
 assign mem_resp.exception.cache_miss_v = dcache_miss_v;
 assign mem_resp.exception.tlb_miss_v = dtlb_miss;
-assign mem_resp.exception.itlb_fill_v = itlb_fill_resp_v;
 assign mem_resp.exception.illegal_instr_v = '0;     //TODO: connect to something!
-assign mem_resp.exception.pc = {ptw_tlb_w_vtag, (page_offset_width_lp)'(0)};
 
 // Ready-valid handshakes
-assign mem_resp_v_o    = (itlb_fill_resp_v)? ptw_tlb_w_v
-                         : ((ptw_busy)? 1'b0 
-                         : (dcache_v | csr_cmd_v_i));
+assign mem_resp_v_o    = (ptw_busy)? 1'b0 : (dcache_v | csr_cmd_v_i);
 assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~dtlb_miss & ~ptw_busy;
+
+assign itlb_fill_v_o     = itlb_fill_resp_v & ptw_tlb_w_v;
+assign itlb_fill_vtag_o  = ptw_tlb_w_vtag;
+assign itlb_fill_entry_o = ptw_tlb_w_entry;
 
 endmodule : bp_be_mem_top
 

@@ -231,7 +231,7 @@ assign mmu_cmd_v_o = mmu_cmd_v | mmu_itlb_fill_cmd_v;
 assign mmu_itlb_fill_cmd_v = ~exc_stage_r[2].poison_v & exc_stage_r[2].itlb_fill_v;
 
 assign mmu_itlb_fill_cmd.mem_op = e_ptw;
-assign mmu_itlb_fill_cmd.vaddr = exc_stage_r[2].pc[0+:vaddr_width_p];
+assign mmu_itlb_fill_cmd.vaddr = calc_status.mem3_pc[0+:vaddr_width_p];
 assign mmu_itlb_fill_cmd.data = '0;
 
 // Module instantiations
@@ -630,11 +630,6 @@ always_comb
     calc_status.mem3_ret_v        = exc_stage_r[2].ret_instr_v & ~exc_stage_r[2].poison_v;
     calc_status.instr_cmt_v       = calc_stage_r[2].instr_v & ~exc_stage_r[2].roll_v;
     
-    calc_status.mem3_itlb_fill_v      = mem_resp_v_i & (mem_resp.exception.itlb_fill_v);
-    calc_status.mem3_itlb_fill_vaddr  = mem_resp.exception.pc;
-    calc_status.mem3_itlb_fill_entry  = mem_resp.data;
-
-          
     // Slicing the completion pipe for Forwarding information
     for (integer i = 1; i < pipe_stage_els_lp; i++) 
       begin : comp_stage_slice
@@ -661,7 +656,6 @@ always_comb
         exc_stage_n[0].ret_instr_v     = chk_dispatch_v_i & ret_instr_isd;
         exc_stage_n[0].csr_instr_v     = chk_dispatch_v_i & csr_instr_isd;
         exc_stage_n[0].itlb_fill_v     = chk_dispatch_v_i & itlb_fill_exc_isd;
-        exc_stage_n[0].pc              = dispatch_pkt.instr_metadata.pc;
 
         exc_stage_n[0].roll_v          =                           chk_roll_i;
         exc_stage_n[1].roll_v          = exc_stage_r[0].roll_v   | chk_roll_i;

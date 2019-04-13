@@ -65,6 +65,7 @@ module bp_be_detector
    , input [calc_status_width_lp-1:0]  calc_status_i
    , input [reg_data_width_lp-1:0]     expected_npc_i
    , input                             mmu_cmd_ready_i
+   , input                             itlb_fill_v_i
 
    // Pipeline control signals from the checker to the calculator
    , output                           chk_dispatch_v_o
@@ -192,7 +193,7 @@ assign chk_poison_isd_o = reset_i
                           | calc_status.mem2_tlb_miss_v
                           | calc_status.mem3_tlb_miss_v
                           | calc_status.mem3_exception_v 
-                          | calc_status.mem3_itlb_fill_v; 
+                          | itlb_fill_v_i; 
 
 assign chk_poison_ex1_o = reset_i 
                           | mispredict_poison_v
@@ -200,19 +201,19 @@ assign chk_poison_ex1_o = reset_i
                           | calc_status.mem2_tlb_miss_v
                           | calc_status.mem3_tlb_miss_v
                           | calc_status.mem3_exception_v 
-                          | calc_status.mem3_itlb_fill_v;
+                          | itlb_fill_v_i;
 
 assign chk_poison_ex2_o  = reset_i
                            | calc_status.mem3_cache_miss_v
                            | calc_status.mem3_tlb_miss_v
                            | calc_status.mem3_exception_v 
-                           | calc_status.mem3_itlb_fill_v;
+                           | itlb_fill_v_i;
 
 assign chk_poison_ex3_o  = reset_i
                            | calc_status.mem3_cache_miss_v
                            | calc_status.mem3_tlb_miss_v
                            | calc_status.mem3_exception_v 
-                           | calc_status.mem3_itlb_fill_v;
+                           | itlb_fill_v_i;
 
 endmodule : bp_be_detector
 
