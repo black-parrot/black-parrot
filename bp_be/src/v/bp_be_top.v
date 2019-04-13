@@ -33,6 +33,7 @@ module bp_be_top
    , parameter calc_debug_file_p           = "calc_debug.log"
 
    , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(num_core_p, num_lce_p)
+   , localparam ecode_dec_width_lp         = `bp_be_ecode_dec_width
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -131,6 +132,7 @@ logic [dword_width_p-1:0] chk_pc_lo;
 logic                      instret;
 logic [vaddr_width_p-1:0]  exception_pc;
 logic [instr_width_p-1:0]  exception_instr;
+logic [ecode_dec_width_lp-1:0] exception_ecode_dec;
 logic                      exception_v;
 logic                      mret_v;
 logic                      sret_v;
@@ -232,6 +234,8 @@ bp_be_calculator_top
    ,.exception_pc_o(exception_pc)
    ,.exception_instr_o(exception_instr)
    ,.exception_v_o(exception_v)
+   ,.exception_ecode_dec_o(exception_ecode_dec)
+
    ,.mret_v_o(mret_v)
    ,.sret_v_o(sret_v)
    ,.uret_v_o(uret_v)
@@ -305,6 +309,7 @@ bp_be_mem_top
     ,.exception_pc_i(exception_pc)
     ,.exception_instr_i(exception_instr)
     ,.exception_v_i(exception_v)
+    ,.exception_ecode_dec_i(exception_ecode_dec)
 
     ,.mret_v_i(mret_v)
     ,.sret_v_i(sret_v)

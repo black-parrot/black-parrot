@@ -29,6 +29,7 @@ module bp_be_mem_top
    , parameter reg_data_width_lp = rv64_reg_data_width_gp
    , parameter instr_width_lp    = rv64_instr_width_gp
 
+   , localparam ecode_dec_width_lp = `bp_be_ecode_dec_width
    // Generated parameters
    // D$   
    , localparam lce_data_width_lp = cce_block_size_in_bytes_p*8
@@ -127,6 +128,7 @@ module bp_be_mem_top
    , input [vaddr_width_p-1:0]             exception_pc_i
    , input [instr_width_lp-1:0]            exception_instr_i
    , input                                 exception_v_i
+   , input [ecode_dec_width_lp-1:0]        exception_ecode_dec_i
 
    , input                                 mret_v_i
    , input                                 sret_v_i
@@ -217,6 +219,7 @@ bp_be_csr
    ,.exception_pc_i(exception_pc_i)
    ,.exception_instr_i(exception_instr_i)
    ,.exception_v_i(exception_v_i)
+   ,.exception_ecode_dec_i(exception_ecode_dec_i)
 
    ,.mret_v_i(mret_v_i)
    ,.sret_v_i(sret_v_i)

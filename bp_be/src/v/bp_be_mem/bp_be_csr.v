@@ -8,6 +8,7 @@ module bp_be_csr
 
     , localparam fu_op_width_lp = `bp_be_fu_op_width
     , localparam csr_cmd_width_lp = `bp_be_csr_cmd_width
+    , localparam ecode_dec_width_lp = `bp_be_ecode_dec_width
 
     , localparam hartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
     , localparam instr_width_lp = rv64_instr_width_gp
@@ -29,9 +30,10 @@ module bp_be_csr
     , input [hartid_width_lp-1:0]    hartid_i
     , input                          instret_i
 
+    , input                          exception_v_i
     , input [vaddr_width_p-1:0]      exception_pc_i
     , input [instr_width_lp-1:0]     exception_instr_i
-    , input                          exception_v_i
+    , input [ecode_dec_width_lp-1:0] exception_ecode_dec_i
 
     , input                          mret_v_i
     , input                          sret_v_i
@@ -100,6 +102,19 @@ assign ret_u_to_u = (priv_mode_r == `RV64_PRIV_MODE_U) &                        
 assign ret_to_m = ret_m_to_m;
 assign ret_to_s = ret_m_to_s | ret_s_to_s;
 assign ret_to_u = ret_m_to_u | ret_s_to_u | ret_u_to_u;
+
+// TODO: Move this ecode stuff
+logic [3:0] exception_ecode_li;
+logic exception_v_li;
+bsg_priority_encode 
+ #(.width_p(ecode_dec_width_lp)
+   ,.lo_to_hi_p(1)
+   )
+ mcause_enc
+  (.i(exception_ecode_dec_i)
+   ,.addr_o(exception_ecode_li)
+   ,.v_o(exception_v_li)
+   );
 
 // Compute input CSR data
 always_comb 
@@ -377,26 +392,40 @@ always_comb
 
         if (exception_v_i) 
           begin
-            priv_mode_n    = `RV64_PRIV_MODE_M;
+            priv_mode_n         = `RV64_PRIV_MODE_M;
 
-            mstatus_n.mpp  = priv_mode_r;
-            mstatus_n.mpie = mstatus_r.mie;
-            mstatus_n.mie  = 1'b0;
+            mstatus_n.mpp       = priv_mode_r;
+            mstatus_n.mpie      = mstatus_r.mie;
+            mstatus_n.mie       = 1'b0;
 
-            mepc_n         = exception_pc_i;
-            mtval_n        = exception_instr_i;
+            mepc_n              = exception_pc_i;
+            mtval_n             = exception_instr_i;
+
+            mcause_n._interrupt = 1'b0;
+            mcause_n.ecode      = exception_ecode_li;
           end
 
         if (int_to_m)
           begin
-            priv_mode_n    = `RV64_PRIV_MODE_M;
+            priv_mode_n         = `RV64_PRIV_MODE_M;
 
-            mstatus_n.mpp  = priv_mode_r;
-            mstatus_n.mpie = mstatus_r.mie;
-            mstatus_n.mie  = 1'b0;
+            mstatus_n.mpp       = priv_mode_r;
+            mstatus_n.mpie      = mstatus_r.mie;
+            mstatus_n.mie       = 1'b0;
 
-            mepc_n         = exception_v_i ? exception_pc_i : interrupt_pc_i;
-            mtval_n        = '0;
+            mepc_n              = exception_v_i ? exception_pc_i : interrupt_pc_i;
+            mtval_n             = '0;
+            mcause_n._interrupt = 1'b1;
+            // I'm sure there's a more clever way to encode this. Revisit once 
+            //   we're implementing interrupts in other privilege modes.
+            // The values are based on mcause from the privileged spec.
+            mcause_n.ecode      = mip_r.meip
+                                  ? 4'd11
+                                  : mip_r.msip
+                                    ? 4'd3
+                                    : mip_r.mtip
+                                      ? 4'd7
+                                      : '0; // Should not get here
           end
         
         if (mret_v_i)

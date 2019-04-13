@@ -86,6 +86,7 @@ module bp_be_calculator_top
 
    // From BP BE specifications
    , localparam pipe_stage_els_lp = bp_be_pipe_stage_els_gp
+   , localparam ecode_dec_width_lp = `bp_be_ecode_dec_width
 
    // From RISC-V specifications
    , localparam instr_width_lp    = rv64_instr_width_gp
@@ -141,6 +142,7 @@ module bp_be_calculator_top
   , output [vaddr_width_p-1:0]           exception_pc_o
   , output [instr_width_lp-1:0]          exception_instr_o
   , output                               exception_v_o
+  , output [ecode_dec_width_lp-1:0]      exception_ecode_dec_o
   , output                               mret_v_o
   , output                               sret_v_o
   , output                               uret_v_o
@@ -573,28 +575,22 @@ always_comb
       begin : dep_status
         calc_status.dep_status[i].int_iwb_v = calc_stage_r[i].pipe_int_v 
                                               & ~exc_stage_n[i+1].poison_v
-                                              & ~exc_stage_n[i+1].roll_v
                                               & calc_stage_r[i].irf_w_v;
         calc_status.dep_status[i].mul_iwb_v = calc_stage_r[i].pipe_mul_v 
                                               & ~exc_stage_n[i+1].poison_v
-                                              & ~exc_stage_n[i+1].roll_v
                                               & calc_stage_r[i].irf_w_v;
         calc_status.dep_status[i].mem_iwb_v = calc_stage_r[i].pipe_mem_v 
                                               & ~exc_stage_n[i+1].poison_v
-                                              & ~exc_stage_n[i+1].roll_v
                                               & calc_stage_r[i].irf_w_v;
         calc_status.dep_status[i].mem_fwb_v = calc_stage_r[i].pipe_mem_v 
                                               & ~exc_stage_n[i+1].poison_v
-                                              & ~exc_stage_n[i+1].roll_v
                                               & calc_stage_r[i].frf_w_v;
         calc_status.dep_status[i].fp_fwb_v  = calc_stage_r[i].pipe_fp_v  
                                               & ~exc_stage_n[i+1].poison_v
-                                              & ~exc_stage_n[i+1].roll_v
                                               & calc_stage_r[i].frf_w_v;
         calc_status.dep_status[i].rd_addr   = calc_stage_r[i].rd_addr;
         calc_status.dep_status[i].stall_v   = (exc_stage_r[i].csr_instr_v | exc_stage_r[i].mret_instr_v | exc_stage_r[i].sret_instr_v | exc_stage_r[i].uret_instr_v)
-                                              & ~exc_stage_n[i+1].poison_v
-                                              & ~exc_stage_n[i+1].roll_v;
+                                              & ~exc_stage_n[i+1].poison_v;
       end
 
     // Additional commit point information
@@ -602,7 +598,7 @@ always_comb
     calc_status.mem3_pc           = calc_stage_r[2].instr_metadata.pc;
     // We don't want cache_miss itself to trigger the exception invalidation
     calc_status.mem3_cache_miss_v = cache_miss_mem3 & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v; 
-    calc_status.mem3_exception_v  = (illegal_instr_mem3 | exc_stage_r[2].illegal_instr_v) & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v & ~exc_stage_r[2].roll_v;
+    calc_status.mem3_exception_v  = (illegal_instr_mem3 | exc_stage_r[2].illegal_instr_v) & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v;
     calc_status.mem3_ret_v        = (exc_stage_r[2].mret_instr_v | exc_stage_r[2].sret_instr_v | exc_stage_r[2].uret_instr_v) & ~exc_stage_r[2].poison_v;
 
     calc_status.interrupt_v       = '0;
@@ -656,10 +652,11 @@ assign instret_o = calc_stage_r[2].instr_v
                    & ~cache_miss_mem3;
 assign exception_pc_o = calc_stage_r[2].instr_metadata.pc;
 assign exception_instr_o = calc_stage_r[2].instr;
-assign exception_v_o = (illegal_instr_mem3 | exc_stage_r[2].illegal_instr_v) & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v & ~exc_stage_r[2].roll_v;
-assign mret_v_o = exc_stage_r[2].mret_instr_v & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v & ~exc_stage_r[2].roll_v;
-assign sret_v_o = exc_stage_r[2].sret_instr_v & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v & ~exc_stage_r[2].roll_v;
-assign uret_v_o = exc_stage_r[2].uret_instr_v & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v & ~exc_stage_r[2].roll_v;
+assign exception_v_o = (illegal_instr_mem3 | exc_stage_r[2].illegal_instr_v) & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v;
+assign exception_ecode_dec_o = '0; // TODO: Fill in
+assign mret_v_o = exc_stage_r[2].mret_instr_v & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v;
+assign sret_v_o = exc_stage_r[2].sret_instr_v & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v;
+assign uret_v_o = exc_stage_r[2].uret_instr_v & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v;
 
 if (trace_p)
   begin
