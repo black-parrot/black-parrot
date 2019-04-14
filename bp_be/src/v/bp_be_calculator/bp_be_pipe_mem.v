@@ -83,8 +83,7 @@ module bp_be_pipe_mem
    , output logic [reg_data_width_lp-1:0] data_o
    , output                               cache_miss_o
    , output                               tlb_miss_o
-
-   , output                               illegal_csr_o
+   , output                               illegal_instr_o
    );
 
 // Declare parameterizable structs
@@ -158,7 +157,7 @@ always_comb
 assign mem_resp_ready_o = 1'b1;
 assign cache_miss_o     = mem_resp.exception.cache_miss_v;
 assign tlb_miss_o       = mem_resp.exception.tlb_miss_v;
-assign illegal_csr_o    = mem_resp_v_i & mem_resp.exception.illegal_instr_v;
+assign illegal_instr_o  = mem_resp_v_i & mem_resp.exception.illegal_instr_v;
 
 endmodule : bp_be_pipe_mem
 

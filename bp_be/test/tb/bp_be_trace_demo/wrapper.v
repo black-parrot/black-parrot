@@ -71,6 +71,10 @@ module wrapper
    , output                                  lce_data_cmd_v_o
    , input                                   lce_data_cmd_ready_i
 
+   , input                                   timer_int_i
+   , input                                   software_int_i
+   , input                                   external_int_i
+
    // Processor configuration
    , input [proc_cfg_width_lp-1:0]           proc_cfg_i
 

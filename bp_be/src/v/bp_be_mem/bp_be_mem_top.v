@@ -29,6 +29,7 @@ module bp_be_mem_top
    , parameter reg_data_width_lp = rv64_reg_data_width_gp
    , parameter instr_width_lp    = rv64_instr_width_gp
 
+   , localparam ecode_dec_width_lp = `bp_be_ecode_dec_width
    // Generated parameters
    // D$   
    , localparam lce_data_width_lp = cce_block_size_in_bytes_p*8
@@ -85,8 +86,6 @@ module bp_be_mem_top
   (input                                   clk_i
    , input                                 reset_i
 
-   , input [proc_cfg_width_lp-1:0]         proc_cfg_i
-
    , input [mmu_cmd_width_lp-1:0]          mmu_cmd_i
    , input                                 mmu_cmd_v_i
    , output                                mmu_cmd_ready_o
@@ -126,19 +125,30 @@ module bp_be_mem_top
    , input                                 lce_data_cmd_v_i
    , output                                lce_data_cmd_ready_o
 
-    , output [lce_data_cmd_width_lp-1:0]   lce_data_cmd_o
-    , output                               lce_data_cmd_v_o
-    , input                                lce_data_cmd_ready_i 
+   , output [lce_data_cmd_width_lp-1:0]    lce_data_cmd_o
+   , output                                lce_data_cmd_v_o
+   , input                                 lce_data_cmd_ready_i 
 
-    // CSRs
-    , input                                instret_i
-    , input [vaddr_width_p-1:0]            exception_pc_i
-    , input [instr_width_lp-1:0]           exception_instr_i
-    , input                                exception_v_i
-    , input                                mret_v_i
+   // CSRs
+   , input [proc_cfg_width_lp-1:0]         proc_cfg_i
+   , input                                 instret_i
 
-    , output [reg_data_width_lp-1:0]       mepc_o
-    , output [reg_data_width_lp-1:0]       mtvec_o
+   , input [vaddr_width_p-1:0]             exception_pc_i
+   , input [instr_width_lp-1:0]            exception_instr_i
+   , input                                 exception_v_i
+   , input [ecode_dec_width_lp-1:0]        exception_ecode_dec_i
+
+   , input                                 mret_v_i
+   , input                                 sret_v_i
+   , input                                 uret_v_i
+
+   , input                                 timer_int_i
+   , input                                 software_int_i
+   , input                                 external_int_i
+   , input [reg_data_width_lp-1:0]         interrupt_pc_i
+
+   , output [reg_data_width_lp-1:0]        mepc_o
+   , output [reg_data_width_lp-1:0]        mtvec_o
    );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p
@@ -168,6 +178,7 @@ assign mem_resp_o = mem_resp;
 // Suppress unused signal warnings
 wire unused0 = mem_resp_ready_i;
 
+<<<<<<< HEAD
 
 /* Internal connections */
 /* TLB ports */
@@ -193,7 +204,7 @@ logic                     dcache_ready, dcache_miss_v, dcache_v, dcache_pkt_v, d
 
 /* CSR signals */
 logic [reg_data_width_lp-1:0] csr_data_lo;
-logic                         csr_v_lo, illegal_csr_v;
+logic                         csr_v_lo, illegal_instr_v;
 logic translation_en;
 
 /* Control signals */
@@ -217,18 +228,29 @@ bp_be_csr
 
    ,.data_o(csr_data_lo)
    ,.v_o(csr_v_lo)
-   ,.illegal_csr_o(illegal_csr_v)
+   ,.illegal_instr_o(illegal_instr_v)
 
    ,.hartid_i(proc_cfg.mhartid)
    ,.instret_i(instret_i)
+
    ,.exception_pc_i(exception_pc_i)
    ,.exception_instr_i(exception_instr_i)
    ,.exception_v_i(exception_v_i)
+   ,.exception_ecode_dec_i(exception_ecode_dec_i)
+
    ,.mret_v_i(mret_v_i)
+   ,.sret_v_i(sret_v_i)
+   ,.uret_v_i(uret_v_i)
+
+   ,.timer_int_i(timer_int_i)
+   ,.software_int_i(software_int_i)
+   ,.external_int_i(external_int_i)
+   ,.interrupt_pc_i(interrupt_pc_i)
 
    ,.mepc_o(mepc_o)
    ,.mtvec_o(mtvec_o)
-   ,.translation_en_o(translation_en)
+   ,.satp_o(satp_lo)
+   ,.translation_en_o(translation_en_lo)
    );
 
 bp_be_dtlb
@@ -354,10 +376,13 @@ assign dcache_pkt_v    = (ptw_busy)? ptw_dcache_v
                          : mmu_cmd_v_i);    
 always_comb 
   begin
+<<<<<<< HEAD
     if(ptw_busy) begin
       dcache_pkt = ptw_dcache_pkt;
     end
     else begin
+      // Currently uncached I/O  is determined by high bit of translated address
+      // TODO: Add the uncached signal
       dcache_pkt.opcode      = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
       dcache_pkt.page_offset = {mmu_cmd.vaddr.index, mmu_cmd.vaddr.offset};
       dcache_pkt.data        = mmu_cmd.data;
@@ -379,7 +404,7 @@ assign ptw_tlb_miss_vtag = (itlb_fill_cmd_v)? mmu_cmd.vaddr.tag : dtlb_miss_vtag
 assign mem_resp.data   = (dcache_v) ? dcache_data : csr_data_lo;  
 assign mem_resp.exception.cache_miss_v = dcache_miss_v;
 assign mem_resp.exception.tlb_miss_v = dtlb_miss;
-assign mem_resp.exception.illegal_instr_v = '0;     //TODO: connect to something!
+assign mem_resp.exception.illegal_instr_v = illegal_instr_v;
 
 // Ready-valid handshakes
 assign mem_resp_v_o    = (ptw_busy)? 1'b0 : (dcache_v | csr_cmd_v_i);

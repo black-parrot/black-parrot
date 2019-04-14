@@ -88,6 +88,7 @@ module bp_be_director
    , output                            chk_roll_fe_o
 
    // CSR interface
+   , output [eaddr_width_lp-1:0]      pc_o 
    , input [reg_data_width_lp-1:0]    mtvec_i
    , input [reg_data_width_lp-1:0]    mepc_i
    
@@ -116,14 +117,16 @@ logic                            fe_cmd_v;
 bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
 bp_fe_cmd_reset_operands_s       fe_cmd_reset_operands;
 bp_fe_cmd_attaboy_s              fe_cmd_attaboy;
+rv64_mtvec_s                     mtvec;
 
 assign calc_status = calc_status_i;
 assign fe_cmd_o    = fe_cmd;
 assign fe_cmd_v_o  = fe_cmd_v;
+assign mtvec       = mtvec_i;
 
 // Declare intermediate signals
 logic [eaddr_width_lp-1:0]              npc_plus4;
-logic [eaddr_width_lp-1:0]              npc_n, npc_r;
+logic [eaddr_width_lp-1:0]              npc_n, npc_r, pc_r;
 logic                                   npc_mismatch_v;
 logic [branch_metadata_fwd_width_p-1:0] branch_metadata_fwd_r;
 logic [reg_data_width_lp-1:0]           mepc_mux_lo;
@@ -154,6 +157,17 @@ bsg_dff_reset_en
   
    ,.data_i(npc_n)
    ,.data_o(npc_r)
+   );
+
+bsg_dff_reset_en
+ #(.width_p(eaddr_width_lp))
+ pc
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(npc_w_v)
+
+   ,.data_i(npc_r)
+   ,.data_o(pc_r)
    );
 
 // NPC calculation
@@ -194,10 +208,7 @@ bsg_mux
    ,.els_p(2)
    )
  ret_mux
-  /* TODO: MTVEC is not actually the 64 bit address, it's a subset of them where the
-   *         last few bits are the vectorization mode 
-   */
-  (.data_i({mepc_i, mtvec_i})
+  (.data_i({mepc_i, {mtvec.base, 2'b00}})
    ,.sel_i(calc_status.mem3_ret_v)
    ,.data_o(ret_mux_o)
    );
@@ -236,6 +247,8 @@ assign chk_dequeue_fe_o = ~calc_status.mem3_cache_miss_v & ~calc_status.mem3_tlb
 assign chk_flush_fe_o = fe_cmd_v & (fe_cmd.opcode == e_op_pc_redirection);
 // Rollback the FE queue on a cache miss
 assign chk_roll_fe_o  = calc_status.mem3_cache_miss_v | calc_status.mem3_tlb_miss_v;
+// The current PC, used for interrupts
+assign pc_o = pc_r;
 
 // Boot logic 
 always_comb

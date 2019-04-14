@@ -110,6 +110,7 @@
     logic                                   mem3_exception_v;                                      \
     logic                                   mem3_ret_v;                                            \
                                                                                                    \
+    logic                                   interrupt_v;                                           \
     logic                                   instr_cmt_v;                                           \
   }  bp_be_calc_status_s;                                                                          \
 
