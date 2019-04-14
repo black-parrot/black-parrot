@@ -64,6 +64,10 @@ module bp_be_director
    , localparam vtag_width_lp     = (vaddr_width_p-bp_page_offset_width_gp)
    , localparam ptag_width_lp     = (paddr_width_p-bp_page_offset_width_gp)
    , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_lp)
+
+   // CSRs
+   , localparam mepc_width_lp  = `bp_mepc_width
+   , localparam mtvec_width_lp = `bp_mtvec_width
    )
   (input                               clk_i
    , input                             reset_i
@@ -84,8 +88,8 @@ module bp_be_director
 
    // CSR interface
    , output [vaddr_width_p-1:0]       pc_o 
-   , input [dword_width_p-1:0]        mtvec_i
-   , input [dword_width_p-1:0]        mepc_i
+   , input [mepc_width_lp-1:0]        mtvec_i
+   , input [mtvec_width_lp-1:0]       mepc_i
    
    //iTLB fill interface
    , input                           itlb_fill_v_i
@@ -112,19 +116,20 @@ logic                            fe_cmd_v;
 bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
 bp_fe_cmd_reset_operands_s       fe_cmd_reset_operands;
 bp_fe_cmd_attaboy_s              fe_cmd_attaboy;
-rv64_mtvec_s                     mtvec;
+bp_mtvec_s                       mtvec;
+bp_mepc_s                        mepc;
 
 assign calc_status = calc_status_i;
 assign fe_cmd_o    = fe_cmd;
 assign fe_cmd_v_o  = fe_cmd_v;
 assign mtvec       = mtvec_i;
+assign mepc        = mepc_i;
 
 // Declare intermediate signals
 logic [vaddr_width_p-1:0]               npc_plus4;
 logic [vaddr_width_p-1:0]               npc_n, npc_r, pc_r;
 logic                                   npc_mismatch_v;
 logic [branch_metadata_fwd_width_p-1:0] branch_metadata_fwd_r;
-logic [dword_width_p-1:0]               mepc_mux_lo;
 
 // Logic for handling coming out of reset
 enum bit [1:0] {e_reset, e_boot, e_run} state_n, state_r;

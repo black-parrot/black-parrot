@@ -10,6 +10,10 @@ module bp_be_csr
     , localparam csr_cmd_width_lp = `bp_be_csr_cmd_width
     , localparam ecode_dec_width_lp = `bp_be_ecode_dec_width
 
+    , localparam mepc_width_lp  = `bp_mepc_width
+    , localparam mtvec_width_lp = `bp_mtvec_width
+    , localparam satp_width_lp  = `bp_satp_width
+
     , localparam hartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
     , localparam instr_width_lp = rv64_instr_width_gp
     , localparam dword_width_p = rv64_reg_data_width_gp
@@ -44,9 +48,9 @@ module bp_be_csr
     , input                          external_int_i
     , input [vaddr_width_p-1:0]      interrupt_pc_i
 
-    , output [dword_width_p-1:0]     mepc_o
-    , output [dword_width_p-1:0]     mtvec_o
-    , output [dword_width_p-1:0]     satp_o
+    , output [mepc_width_lp-1:0]     mepc_o
+    , output [mtvec_width_lp-1:0]    mtvec_o
+    , output [satp_width_lp-1:0]     satp_o
     , output                         translation_en_o
     );
 

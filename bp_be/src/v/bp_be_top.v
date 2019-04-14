@@ -39,6 +39,10 @@ module bp_be_top
    , localparam vtag_width_lp     = (vaddr_width_p-bp_page_offset_width_gp)
    , localparam ptag_width_lp     = (paddr_width_p-bp_page_offset_width_gp)
    , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_lp)
+
+   // CSRs
+   , localparam mepc_width_lp  = `bp_mepc_width
+   , localparam mtvec_width_lp = `bp_mtvec_width
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -135,9 +139,9 @@ bp_be_calc_status_s    calc_status;
 logic chk_dispatch_v, chk_poison_isd;
 logic chk_poison_ex1, chk_poison_ex2, chk_poison_ex3, chk_roll, chk_instr_dequeue_v;
 
-logic [dword_width_p-1:0] chk_mtvec_li;
-logic [dword_width_p-1:0] chk_mepc_li;
-logic [vaddr_width_p-1:0] chk_pc_lo;
+logic [mtvec_width_lp-1:0] chk_mtvec_li;
+logic [mepc_width_lp-1:0]  chk_mepc_li;
+logic [vaddr_width_p-1:0]  chk_pc_lo;
 
 logic                      instret;
 logic [vaddr_width_p-1:0]  exception_pc;

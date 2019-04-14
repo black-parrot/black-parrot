@@ -188,6 +188,8 @@ typedef struct packed
   logic [26:0] ppn;
 }  bp_satp_s;
 
+`define bp_satp_width ($bits(bp_satp_s))
+
 `define compress_satp_s(data_cast_mp) \
   bp_satp_s'{mode: data_cast_mp.mode[3]   \
              ,ppn: data_cast_mp.ppn[26:0] \
@@ -337,6 +339,8 @@ typedef struct packed
 {
   logic [38:0] base;
 }  bp_mtvec_s;
+
+`define bp_mtvec_width ($bits(bp_mtvec_s))
 
 `define compress_mtvec_s(data_cast_mp) \
   bp_mtvec_s'{base: data_cast_mp.base[0+:39]}
@@ -497,6 +501,8 @@ typedef logic [38:0] bp_mtval_s;
 
 typedef logic [63:0] rv64_mepc_s;
 typedef logic [38:0] bp_mepc_s;
+
+`define bp_mepc_width ($bits(bp_mepc_s))
 
 `define compress_mepc_s(data_cast_mp) \
   data_cast_mp[0+:39]

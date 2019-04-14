@@ -48,6 +48,10 @@ module bp_be_mem_top
    
    // VM
    , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_lp)
+
+   // CSRs
+   , localparam mepc_width_lp  = `bp_mepc_width
+   , localparam mtvec_width_lp = `bp_mtvec_width
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -113,8 +117,8 @@ module bp_be_mem_top
    , input                                   external_int_i
    , input [vaddr_width_p-1:0]               interrupt_pc_i
 
-   , output [dword_width_p-1:0]              mepc_o
-   , output [dword_width_p-1:0]              mtvec_o
+   , output [mepc_width_lp-1:0]              mepc_o
+   , output [mtvec_width_lp-1:0]             mtvec_o
    );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p
@@ -168,9 +172,9 @@ logic                     dcache_ready, dcache_miss_v, dcache_v, dcache_pkt_v;
 logic                     dcache_tlb_miss, dcache_poison;
 
 /* CSR signals */
-logic [dword_width_p-1:0] satp_lo;
+bp_satp_s                 satp_lo;
 logic [dword_width_p-1:0] csr_data_lo;
-logic                         csr_v_lo, illegal_instr_v;
+logic                     csr_v_lo, illegal_instr_v;
 logic translation_en_lo;
 
 /* Control signals */
@@ -254,8 +258,8 @@ bp_be_ptw
   ptw
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.base_ppn_i(base_ppn)
-   ,.translation_en_i(1'b0)
+   ,.base_ppn_i(satp_lo.ppn)
+   ,.translation_en_i(translation_en_lo)
    ,.busy_o(ptw_busy)
    
    ,.itlb_not_dtlb_i(itlb_fill_cmd_v)
