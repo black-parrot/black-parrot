@@ -94,7 +94,7 @@
     logic                                    ex1_v;                                                \
     logic [rv64_eaddr_width_gp-1:0]          ex1_pc;                                               \
                                                                                                    \
-    logic                                    fe_exception_v;                                       \
+    logic                                    ex1_instr_v;                                          \
                                                                                                    \
     /*                                                                                             \
      * 5 is the number of stages in the pipeline.                                                  \

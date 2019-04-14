@@ -178,6 +178,7 @@ assign calc_status_o = calc_status;
 bp_be_issue_pkt_s       issue_pkt_r;
 logic                   issue_pkt_v_r;
 bp_be_dispatch_pkt_s    dispatch_pkt, dispatch_pkt_r;
+logic                   dispatch_pkt_v_r;
 bp_be_decode_s          decoded;
 
 // Register bypass network
@@ -469,11 +470,11 @@ bsg_dff
    );
 
 bsg_dff
- #(.width_p(dispatch_pkt_width_lp))
+ #(.width_p(1+dispatch_pkt_width_lp))
  dispatch_pkt_reg
   (.clk_i(clk_i)
-   ,.data_i(dispatch_pkt)
-   ,.data_o(dispatch_pkt_r)
+   ,.data_i({(issue_pkt_v_r & chk_dispatch_v_i), dispatch_pkt})
+   ,.data_o({dispatch_pkt_v_r, dispatch_pkt_r})
    );
 
 // If a pipeline has completed an instruction (pipe_xxx_v), then mux in the calculated result.
@@ -581,11 +582,10 @@ always_comb
                                            | dispatch_pkt_r.decode.jmp_v;
     calc_status.int1_br_or_jmp           = dispatch_pkt_r.decode.br_v 
                                            | dispatch_pkt_r.decode.jmp_v;
-    calc_status.ex1_v                    = dispatch_pkt_r.decode.instr_v;
+    calc_status.ex1_v                    = dispatch_pkt_v_r;
     calc_status.ex1_pc                   = dispatch_pkt_r.instr_metadata.pc;
+    calc_status.ex1_instr_v                  = dispatch_pkt_r.decode.instr_v;
     
-    calc_status.fe_exception_v           = exc_stage_r[0].itlb_fill_v & ~exc_stage_r[0].poison_v;
-
     // Dependency information for pipelines
     for (integer i = 0; i < pipe_stage_els_lp; i++) 
       begin : dep_status

@@ -138,7 +138,7 @@ logic [eaddr_width_lp-1:0] br_mux_o, roll_mux_o, ret_mux_o;
 
 // Module instantiations
 // Update the NPC on a valid instruction in ex1 or a cache miss or a tlb miss
-assign npc_w_v = (calc_status.ex1_v & ~npc_mismatch_v) 
+assign npc_w_v = (calc_status.ex1_instr_v & ~npc_mismatch_v) 
                  | (calc_status.mem3_cache_miss_v)
                  | (calc_status.mem3_tlb_miss_v)
                  | (calc_status.mem3_exception_v)
@@ -210,7 +210,7 @@ bsg_dff_reset_en
  redirect_pending_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(calc_status.ex1_v)
+   ,.en_i(calc_status.ex1_instr_v)
 
    ,.data_i(npc_mismatch_v)
    ,.data_o(redirect_pending)
@@ -222,7 +222,7 @@ bsg_dff_reset_en
  attaboy_pending_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(calc_status.ex1_v)
+   ,.en_i(calc_status.ex1_instr_v)
 
    ,.data_i(calc_status.int1_br_or_jmp)
    ,.data_o(attaboy_pending)
@@ -274,7 +274,7 @@ always_comb
         fe_cmd_v = fe_cmd_ready_i;
       end
     // Redirect the pc if there's an NPC mismatch
-    else if(calc_status.ex1_v & npc_mismatch_v) 
+    else if(calc_status.ex1_instr_v & npc_mismatch_v) 
       begin : pc_redirect
         fe_cmd.opcode                                   = e_op_pc_redirection;
         fe_cmd_pc_redirect_operands.pc                  = expected_npc_o;
@@ -290,7 +290,7 @@ always_comb
         fe_cmd_v = fe_cmd_ready_i & ~chk_roll_fe_o & ~redirect_pending;
       end 
     // Send an attaboy if there's a correct prediction
-    else if(calc_status.ex1_v & ~npc_mismatch_v & attaboy_pending) 
+    else if(calc_status.ex1_instr_v & ~npc_mismatch_v & attaboy_pending) 
       begin : attaboy
         fe_cmd.opcode                      = e_op_attaboy;
         fe_cmd_attaboy.pc                  = calc_status.ex1_pc;

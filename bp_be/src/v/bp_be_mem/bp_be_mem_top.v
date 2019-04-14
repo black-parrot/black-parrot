@@ -234,7 +234,7 @@ bp_be_csr
 bp_be_dtlb
   #(.vtag_width_p(vtag_width_lp)
     ,.ptag_width_p(ptag_width_lp)
-	,.els_p(16)
+    ,.els_p(16)
   )
   dtlb
   (.clk_i(clk_i)

@@ -179,7 +179,7 @@ always_comb
     struct_haz_v = ~mmu_cmd_ready_i;
 
     // Detect misprediction
-    mispredict_poison_v = ((calc_status.ex1_v | calc_status.fe_exception_v) & (calc_status.ex1_pc != expected_npc_i));
+    mispredict_poison_v = (calc_status.ex1_v & (calc_status.ex1_pc != expected_npc_i));
 
   end
 
