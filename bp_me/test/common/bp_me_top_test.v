@@ -7,15 +7,10 @@
 
 module bp_me_top_test
   import bp_common_pkg::*;
+  import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
-  #(parameter num_lce_p="inv"
-    ,parameter num_cce_p="inv"
-    ,parameter paddr_width_p="inv"
-    ,parameter lce_assoc_p="inv"
-    ,parameter lce_sets_p="inv"
-    ,parameter block_size_in_bytes_p="inv"
-    ,localparam block_size_in_bits_lp=(block_size_in_bytes_p*8)
-    ,parameter num_inst_ram_els_p="inv"
+  #(parameter bp_cfg_e cfg_p = e_bp_half_core_cfg
+    `declare_bp_proc_params(cfg_p)
 
     ,localparam lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
 
@@ -27,16 +22,16 @@ module bp_me_top_test
     ,localparam lce_req_data_width_lp = 64
     ,localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_lp)
     ,localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
-    ,localparam bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, block_size_in_bits_lp)
+    ,localparam bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, cce_block_width_p)
     ,localparam bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p)
-    ,localparam bp_cce_lce_data_cmd_width_lp=`bp_lce_data_cmd_width(num_lce_p, block_size_in_bits_lp, lce_assoc_p)
+    ,localparam bp_cce_lce_data_cmd_width_lp=`bp_lce_data_cmd_width(num_lce_p, cce_block_width_p, lce_assoc_p)
 
     ,localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p, num_lce_p, lce_assoc_p)
-    ,localparam bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    ,localparam bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
     ,localparam bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(paddr_width_p, num_lce_p, lce_assoc_p)
-    ,localparam bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    ,localparam bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
-    ,localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_inst_ram_els_p)
+    ,localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
   )
   (input                                                   clk_i
    ,input                                                  reset_i
@@ -108,15 +103,7 @@ module bp_me_top_test
       );
 
   bp_me_top
-    #(.num_lce_p(num_lce_p)
-      ,.num_cce_p(num_cce_p)
-      ,.paddr_width_p(paddr_width_p)
-      ,.lce_assoc_p(lce_assoc_p)
-      ,.lce_sets_p(lce_sets_p)
-      ,.block_size_in_bytes_p(block_size_in_bytes_p)
-      ,.num_inst_ram_els_p(num_inst_ram_els_p)
-      //,.lce_req_data_width_p(lce_req_data_width_lp)
-     )
+    #(.cfg_p(cfg_p))
      bp_me_top
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -172,7 +159,7 @@ module bp_me_top_test
       ,.num_cce_p(num_cce_p)
       ,.paddr_width_p(paddr_width_p)
       ,.lce_assoc_p(lce_assoc_p)
-      ,.block_size_in_bytes_p(block_size_in_bytes_p)
+      ,.block_size_in_bytes_p(cce_block_width_p/8)
       ,.lce_sets_p(lce_sets_p)
       ,.mem_els_p(mem_els_p)
       ,.boot_rom_width_p(boot_rom_width_p)
