@@ -267,7 +267,7 @@ bp_be_ptw
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.base_ppn_i(base_ppn)
-   ,.translation_en_i(1'b1)
+   ,.translation_en_i(1'b0)
    ,.busy_o(ptw_busy)
    
    ,.itlb_not_dtlb_i(itlb_fill_cmd_v)
@@ -350,7 +350,7 @@ assign dcache_ptag     = (ptw_busy)? ptw_dcache_ptag : dtlb_r_entry.ptag;
 assign dcache_tlb_miss = (ptw_busy)? 1'b0 : dtlb_miss;
 assign dcache_poison   = (ptw_busy)? 1'b0 : chk_poison_ex_i;
 assign dcache_pkt_v    = (ptw_busy)? ptw_dcache_v 
-                         : ((itlb_fill_cmd_v)? 1'b0
+                         : ((itlb_fill_cmd_v | dtlb_miss)? 1'b0
                          : mmu_cmd_v_i);    
 always_comb 
   begin
@@ -365,7 +365,7 @@ always_comb
 end
 
 // D-TLB connections
-assign dtlb_r_v     = (itlb_fill_cmd_v)? 1'b0 : mmu_cmd_v_i;
+assign dtlb_r_v     = (itlb_fill_cmd_v | dtlb_miss)? 1'b0 : mmu_cmd_v_i;
 assign dtlb_r_vtag  = mmu_cmd.vaddr.tag;
 assign dtlb_w_v     = ptw_tlb_w_v & ~itlb_fill_resp_v;
 assign dtlb_w_vtag  = ptw_tlb_w_vtag;

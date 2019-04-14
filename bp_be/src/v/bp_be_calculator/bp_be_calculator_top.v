@@ -620,7 +620,6 @@ always_comb
     calc_status.mem3_pc           = calc_stage_r[2].instr_metadata.pc;
     // We don't want cache_miss itself to trigger the exception invalidation
     calc_status.mem3_cache_miss_v = cache_miss_mem3 & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v; 
-    calc_status.mem2_tlb_miss_v   = exc_stage_n[2].tlb_miss_v & calc_stage_r[1].pipe_mem_v & ~exc_stage_n[2].poison_v;
     calc_status.mem3_tlb_miss_v   = exc_stage_r[2].tlb_miss_v & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v;
     calc_status.mem3_exception_v  = (illegal_csr_mem3 | exc_stage_r[2].illegal_instr_v) & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v & ~exc_stage_r[2].roll_v;
     calc_status.mem3_ret_v        = exc_stage_r[2].ret_instr_v & ~exc_stage_r[2].poison_v;
