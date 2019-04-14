@@ -28,10 +28,11 @@
  * Outputs:
  *   mmu_cmd_o        -  Load / store command to the MMU
  *   mmu_cmd_v_o      -  'ready-then-valid' interface
- *   mmu_cmd_ready_i    - 
+ *   mmu_cmd_ready_i  - 
  * 
- *   data_o         - The calculated result of a load
- *   cache_miss_o     - Goes high when the result of the load is a cache miss 
+ *   data_o         - The calculated result of a load 
+ *   cache_miss_o     - Goes high when the result of the load or store is a cache miss 
+ *   tlb_miss_o       - Goes high when the result of the load or store is a TLB miss 
  *   
  * Keywords:
  *   calculator, mem, mmu, load, store, rv64i, rv64f
@@ -80,8 +81,9 @@ module bp_be_pipe_mem
    , output                               mem_resp_ready_o
 
    , output logic [reg_data_width_lp-1:0] data_o
-
    , output                               cache_miss_o
+   , output                               tlb_miss_o
+
    , output                               illegal_csr_o
    );
 
@@ -155,6 +157,7 @@ always_comb
 // Output results of memory op
 assign mem_resp_ready_o = 1'b1;
 assign cache_miss_o     = mem_resp.exception.cache_miss_v;
+assign tlb_miss_o       = mem_resp.exception.tlb_miss_v;
 assign illegal_csr_o    = mem_resp_v_i & mem_resp.exception.illegal_instr_v;
 
 endmodule : bp_be_pipe_mem

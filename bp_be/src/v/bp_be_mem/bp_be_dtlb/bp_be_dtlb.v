@@ -25,32 +25,26 @@ module bp_be_dtlb
   , input [vtag_width_p-1:0]          w_vtag_i
   , input [entry_width_lp-1:0]        w_entry_i
   
+  , input                             miss_clear_i
   , output logic                      miss_v_o
   , output logic [vtag_width_p-1:0]   miss_vtag_o
  );
   
 `declare_bp_be_tlb_entry_s(ptag_width_p);
 
-bp_be_tlb_entry_s r_entry, w_entry, r_entry_passthrough, ram_r_data;
+bp_be_tlb_entry_s r_entry, w_entry, ram_r_data;
 
 assign r_entry_o = r_entry;
 assign w_entry   = w_entry_i;
   
-logic [lg_els_lp-1:0] cam_w_addr, cam_r_addr, cam_empty_addr, victim_addr, ram_addr;
-logic                 cam_r_v, cam_empty_v;
+logic [lg_els_lp-1:0] cam_w_addr, cam_r_addr, victim_addr, ram_addr;
+logic                 cam_r_v;
 logic                 r_v_n, miss_v_n, en_r;
 
-assign cam_w_addr                 = (cam_empty_v)? cam_empty_addr : victim_addr;
+assign cam_w_addr                 = victim_addr;
 assign ram_addr                   = (w_v_i)? cam_w_addr : cam_r_addr;
 
-assign r_entry_passthrough.ptag   = {(ptag_width_p-vtag_width_p)'(0), miss_vtag_o};
-assign r_entry_passthrough.extent = '0;
-assign r_entry_passthrough.u      = '0;
-assign r_entry_passthrough.g      = '0;
-assign r_entry_passthrough.l      = '0;
-assign r_entry_passthrough.x      = '0;
-
-assign r_entry                    = (en_r)? ram_r_data : r_entry_passthrough;
+assign r_entry                    = (en_r)? ram_r_data : '0;
 assign r_v_n                      = (en_i)? (r_v_i & cam_r_v) : r_v_i;
 assign miss_v_n                   = (en_i)? ~cam_r_v : 1'b0;
 
@@ -73,7 +67,7 @@ bsg_dff_reset #(.width_p(1))
 bsg_dff_reset_en #(.width_p(1))
   miss_v_reg
   (.clk_i(clk_i)
-   ,.reset_i(reset_i | w_v_i)
+   ,.reset_i(reset_i | miss_clear_i | w_v_i)
    ,.en_i(r_v_i)
    ,.data_i(miss_v_n)
    ,.data_o(miss_v_o)
@@ -102,8 +96,8 @@ bp_be_dtlb_replacement #(.ways_p(els_p))
 bsg_cam_1r1w 
   #(.els_p(els_p)
     ,.width_p(vtag_width_p)
-	,.multiple_entries_p(0)
-	,.find_empty_entry_p(1)
+    ,.multiple_entries_p(0)
+    ,.find_empty_entry_p(1)
   )
   vtag_cam
   (.clk_i(clk_i)
@@ -121,8 +115,8 @@ bsg_cam_1r1w
    ,.r_v_o(cam_r_v)
    ,.r_addr_o(cam_r_addr)
    
-   ,.empty_v_o(cam_empty_v)
-   ,.empty_addr_o(cam_empty_addr)
+   ,.empty_v_o()
+   ,.empty_addr_o()
   );
 
 bsg_mem_1rw_sync

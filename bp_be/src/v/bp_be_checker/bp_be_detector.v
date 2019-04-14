@@ -50,7 +50,7 @@ module bp_be_detector
    , parameter load_to_use_forwarding_p = 1
 
    // Generated parameters
-   , localparam calc_status_width_lp = `bp_be_calc_status_width(branch_metadata_fwd_width_p)
+   , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    // From BE specifications
    , localparam pc_entry_point_lp = bp_pc_entry_point_gp
    // From RISC-V specifications
@@ -65,6 +65,7 @@ module bp_be_detector
    , input [calc_status_width_lp-1:0]  calc_status_i
    , input [reg_data_width_lp-1:0]     expected_npc_i
    , input                             mmu_cmd_ready_i
+   , input                             itlb_fill_v_i
 
    // Pipeline control signals from the checker to the calculator
    , output                           chk_dispatch_v_o
@@ -99,7 +100,7 @@ logic [2:0] irs1_data_haz_v , irs2_data_haz_v;
 logic [2:0] frs1_data_haz_v , frs2_data_haz_v;
 logic [2:0] rs1_match_vector, rs2_match_vector;
 
-logic stall_haz_v, data_haz_v, struct_haz_v, mispredict_v;
+logic stall_haz_v, data_haz_v, struct_haz_v, mispredict_poison_v;
 
 always_comb 
   begin
@@ -178,29 +179,39 @@ always_comb
     struct_haz_v = ~mmu_cmd_ready_i;
 
     // Detect misprediction
-    mispredict_v = (calc_status.ex1_v & (calc_status.ex1_pc != expected_npc_i));
+    mispredict_poison_v = (calc_status.ex1_v & (calc_status.ex1_pc != expected_npc_i));
 
   end
 
 // Generate calculator control signals
-assign chk_dispatch_v_o = ~(data_haz_v | struct_haz_v);
-assign chk_roll_o       = calc_status.mem3_cache_miss_v;
+assign chk_dispatch_v_o = ~(data_haz_v | struct_haz_v); 
+assign chk_roll_o       = calc_status.mem3_cache_miss_v
+                          | calc_status.mem3_tlb_miss_v;
+                          
 assign chk_poison_isd_o = reset_i
                           | calc_status.mem3_cache_miss_v
-                          | calc_status.mem3_exception_v;
+                          | calc_status.mem3_tlb_miss_v
+                          | calc_status.mem3_exception_v 
+                          | itlb_fill_v_i; 
 
 assign chk_poison_ex1_o = reset_i 
-                          | mispredict_v
+                          | mispredict_poison_v
                           | calc_status.mem3_cache_miss_v
-                          | calc_status.mem3_exception_v;
+                          | calc_status.mem3_tlb_miss_v
+                          | calc_status.mem3_exception_v 
+                          | itlb_fill_v_i;
 
 assign chk_poison_ex2_o  = reset_i
                            | calc_status.mem3_cache_miss_v
-                           | calc_status.mem3_exception_v; 
+                           | calc_status.mem3_tlb_miss_v
+                           | calc_status.mem3_exception_v 
+                           | itlb_fill_v_i;
 
 assign chk_poison_ex3_o  = reset_i
                            | calc_status.mem3_cache_miss_v
-                           | calc_status.mem3_exception_v;
+                           | calc_status.mem3_tlb_miss_v
+                           | calc_status.mem3_exception_v 
+                           | itlb_fill_v_i;
 
 endmodule : bp_be_detector
 

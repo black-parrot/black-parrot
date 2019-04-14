@@ -53,7 +53,7 @@ module bp_be_director
    , parameter branch_metadata_fwd_width_p = "inv"
 
    // Generated parameters
-   , localparam calc_status_width_lp = `bp_be_calc_status_width(branch_metadata_fwd_width_p)
+   , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam fe_cmd_width_lp      = `bp_fe_cmd_width(vaddr_width_p
                                                         , paddr_width_p
                                                         , asid_width_p
@@ -65,6 +65,10 @@ module bp_be_director
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
    , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
    , localparam eaddr_width_lp    = rv64_eaddr_width_gp
+      // VM parameters
+   , localparam vtag_width_lp     = (vaddr_width_p-bp_page_offset_width_gp)
+   , localparam ptag_width_lp     = (paddr_width_p-bp_page_offset_width_gp)
+   , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_lp)
    )
   (input                               clk_i
    , input                             reset_i
@@ -86,6 +90,11 @@ module bp_be_director
    // CSR interface
    , input [reg_data_width_lp-1:0]    mtvec_i
    , input [reg_data_width_lp-1:0]    mepc_i
+   
+   //iTLB fill interface
+   , input                           itlb_fill_v_i
+   , input [vtag_width_lp-1:0]       itlb_fill_vtag_i
+   , input [tlb_entry_width_lp-1:0]  itlb_fill_entry_i
   );
 
 // Declare parameterized structures
@@ -128,9 +137,10 @@ logic npc_w_v, btaken_v, redirect_pending, attaboy_pending;
 logic [eaddr_width_lp-1:0] br_mux_o, roll_mux_o, ret_mux_o;
 
 // Module instantiations
-// Update the NPC on a valid instruction in ex1 or a cache miss
-assign npc_w_v = (calc_status.ex1_v & ~npc_mismatch_v) 
+// Update the NPC on a valid instruction in ex1 or a cache miss or a tlb miss
+assign npc_w_v = (calc_status.ex1_instr_v & ~npc_mismatch_v) 
                  | (calc_status.mem3_cache_miss_v)
+                 | (calc_status.mem3_tlb_miss_v)
                  | (calc_status.mem3_exception_v)
                  | (calc_status.mem3_ret_v);
 bsg_dff_reset_en 
@@ -163,7 +173,7 @@ bsg_mux
    )
  roll_mux
   (.data_i({calc_status.mem3_pc, br_mux_o})
-   ,.sel_i(calc_status.mem3_cache_miss_v)
+   ,.sel_i(calc_status.mem3_cache_miss_v | calc_status.mem3_tlb_miss_v)
    ,.data_o(roll_mux_o)
    );
 
@@ -200,7 +210,7 @@ bsg_dff_reset_en
  redirect_pending_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(calc_status.ex1_v)
+   ,.en_i(calc_status.ex1_instr_v)
 
    ,.data_i(npc_mismatch_v)
    ,.data_o(redirect_pending)
@@ -212,7 +222,7 @@ bsg_dff_reset_en
  attaboy_pending_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(calc_status.ex1_v)
+   ,.en_i(calc_status.ex1_instr_v)
 
    ,.data_i(calc_status.int1_br_or_jmp)
    ,.data_o(attaboy_pending)
@@ -221,11 +231,11 @@ bsg_dff_reset_en
 // Generate control signals
 assign expected_npc_o = npc_r;
 // Increment the checkpoint if there's a committing instruction
-assign chk_dequeue_fe_o = ~calc_status.mem3_cache_miss_v & calc_status.instr_cmt_v;
+assign chk_dequeue_fe_o = ~calc_status.mem3_cache_miss_v & ~calc_status.mem3_tlb_miss_v & calc_status.instr_cmt_v;
 // Flush the FE queue if there's a pc redirect
 assign chk_flush_fe_o = fe_cmd_v & (fe_cmd.opcode == e_op_pc_redirection);
 // Rollback the FE queue on a cache miss
-assign chk_roll_fe_o  = calc_status.mem3_cache_miss_v;
+assign chk_roll_fe_o  = calc_status.mem3_cache_miss_v | calc_status.mem3_tlb_miss_v;
 
 // Boot logic 
 always_comb
@@ -264,7 +274,7 @@ always_comb
         fe_cmd_v = fe_cmd_ready_i;
       end
     // Redirect the pc if there's an NPC mismatch
-    else if(calc_status.ex1_v & npc_mismatch_v) 
+    else if(calc_status.ex1_instr_v & npc_mismatch_v) 
       begin : pc_redirect
         fe_cmd.opcode                                   = e_op_pc_redirection;
         fe_cmd_pc_redirect_operands.pc                  = expected_npc_o;
@@ -280,7 +290,7 @@ always_comb
         fe_cmd_v = fe_cmd_ready_i & ~chk_roll_fe_o & ~redirect_pending;
       end 
     // Send an attaboy if there's a correct prediction
-    else if(calc_status.ex1_v & ~npc_mismatch_v & attaboy_pending) 
+    else if(calc_status.ex1_instr_v & ~npc_mismatch_v & attaboy_pending) 
       begin : attaboy
         fe_cmd.opcode                      = e_op_attaboy;
         fe_cmd_attaboy.pc                  = calc_status.ex1_pc;
@@ -289,6 +299,14 @@ always_comb
         fe_cmd.operands.attaboy = fe_cmd_attaboy;
 
         fe_cmd_v = fe_cmd_ready_i & ~chk_roll_fe_o & ~redirect_pending;
+      end
+    else if(itlb_fill_v_i)
+      begin
+        fe_cmd.opcode = e_op_itlb_fill_response;
+        fe_cmd.operands.itlb_fill_response.vaddr = {itlb_fill_vtag_i, bp_page_offset_width_gp'(0)};
+        fe_cmd.operands.itlb_fill_response.pte_entry_leaf = itlb_fill_entry_i;
+      
+        fe_cmd_v = fe_cmd_ready_i & ~chk_roll_fe_o;
       end
   end
 endmodule : bp_be_director

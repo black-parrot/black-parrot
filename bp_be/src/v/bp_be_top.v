@@ -33,6 +33,11 @@ module bp_be_top
    , parameter calc_debug_file_p           = "calc_debug.log"
 
    , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(num_core_p, num_lce_p)
+   
+   // VM parameters
+   , localparam vtag_width_lp     = (vaddr_width_p-bp_page_offset_width_gp)
+   , localparam ptag_width_lp     = (paddr_width_p-bp_page_offset_width_gp)
+   , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_lp)
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -96,6 +101,7 @@ module bp_be_top
                                    , asid_width_p
                                    , branch_metadata_fwd_width_p
                                    );
+`declare_bp_be_tlb_entry_s(ptag_width_lp);
 
 // Casting
 bp_proc_cfg_s proc_cfg;
@@ -114,6 +120,10 @@ logic csr_cmd_v, csr_cmd_rdy;
 
 bp_be_mem_resp_s mem_resp;
 logic mem_resp_v, mem_resp_rdy;
+
+bp_be_tlb_entry_s         itlb_fill_entry;
+logic [vtag_width_lp-1:0] itlb_fill_vtag;
+logic                     itlb_fill_v;
 
 bp_be_calc_status_s    calc_status;
 
@@ -170,6 +180,10 @@ bp_be_checker_top
 
    ,.mepc_i(chk_mepc_li)
    ,.mtvec_i(chk_mtvec_li)
+   
+   ,.itlb_fill_v_i(itlb_fill_v)
+   ,.itlb_fill_vtag_i(itlb_fill_vtag)
+   ,.itlb_fill_entry_i(itlb_fill_entry)
    );
 
 bp_be_calculator_top 
@@ -266,6 +280,10 @@ bp_be_mem_top
     ,.mem_resp_o(mem_resp)
     ,.mem_resp_v_o(mem_resp_v)
     ,.mem_resp_ready_i(mem_resp_rdy)
+    
+    ,.itlb_fill_v_o(itlb_fill_v)
+    ,.itlb_fill_vtag_o(itlb_fill_vtag)
+    ,.itlb_fill_entry_o(itlb_fill_entry)
 
     ,.lce_req_o(lce_req_o)
     ,.lce_req_v_o(lce_req_v_o)

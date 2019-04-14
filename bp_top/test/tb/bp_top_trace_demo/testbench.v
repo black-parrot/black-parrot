@@ -259,7 +259,7 @@ always_ff @(posedge clk_i)
     else
       begin
         // This should simply be based on frozen signal
-        booted <= booted | boot_rom_addr[0] == lg_boot_rom_els_lp'(511);
+        booted <= booted | (boot_rom_addr[0] == (boot_rom_els_p-1));
       end
    end 
 
