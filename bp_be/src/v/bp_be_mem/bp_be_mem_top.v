@@ -178,8 +178,6 @@ assign mem_resp_o = mem_resp;
 // Suppress unused signal warnings
 wire unused0 = mem_resp_ready_i;
 
-<<<<<<< HEAD
-
 /* Internal connections */
 /* TLB ports */
 logic                     dtlb_en, dtlb_miss, dtlb_w_v, dtlb_r_v;
@@ -194,7 +192,7 @@ logic                     ptw_tlb_miss_v, ptw_tlb_w_v;
 logic [vtag_width_lp-1:0] ptw_tlb_w_vtag, ptw_tlb_miss_vtag;
 bp_be_tlb_entry_s         ptw_tlb_w_entry;
 
-assign base_ppn = 'h80009;    //TODO: pass from upper level modules
+assign base_ppn = ptag_width_lp'('h80009);    //TODO: pass from upper level modules
 
 /* D-Cache ports */
 bp_be_dcache_pkt_s        dcache_pkt;
@@ -203,9 +201,10 @@ logic [ptag_width_lp-1:0] dcache_ptag;
 logic                     dcache_ready, dcache_miss_v, dcache_v, dcache_pkt_v, dcache_tlb_miss, dcache_poison;
 
 /* CSR signals */
+logic [reg_data_width_lp-1:0] satp_lo;
 logic [reg_data_width_lp-1:0] csr_data_lo;
 logic                         csr_v_lo, illegal_instr_v;
-logic translation_en;
+logic translation_en_lo;
 
 /* Control signals */
 logic itlb_fill_cmd_v, itlb_fill_resp_v;
@@ -376,7 +375,6 @@ assign dcache_pkt_v    = (ptw_busy)? ptw_dcache_v
                          : mmu_cmd_v_i);    
 always_comb 
   begin
-<<<<<<< HEAD
     if(ptw_busy) begin
       dcache_pkt = ptw_dcache_pkt;
     end

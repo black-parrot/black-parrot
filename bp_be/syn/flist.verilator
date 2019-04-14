@@ -102,6 +102,7 @@ $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf_queue.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dtlb/bp_be_dtlb.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dtlb/bp_be_dtlb_replacement.v
+$BP_BE_DIR/src/v/bp_be_mem/bp_be_dtlb/bp_be_ptw.v
 // Common
 $BP_BE_DIR/src/v/common/bp_be_trace_replay_gen.v
 $BP_BE_DIR/src/v/common/bsg_fifo_1r1w_rolly.v

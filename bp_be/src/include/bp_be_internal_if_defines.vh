@@ -92,9 +92,8 @@
     logic                                    int1_btaken;                                          \
                                                                                                    \
     logic                                    ex1_v;                                                \
-    logic [rv64_eaddr_width_gp-1:0]          ex1_pc;                                               \
-                                                                                                   \
     logic                                    ex1_instr_v;                                          \
+    logic [rv64_eaddr_width_gp-1:0]          ex1_pc;                                               \
                                                                                                    \
     /*                                                                                             \
      * 5 is the number of stages in the pipeline.                                                  \
@@ -159,7 +158,8 @@
    + 2                                                                                             \
    + rv64_reg_addr_width_gp                                                                        \
    + 2                                                                                             \
-   + rv64_reg_addr_width_gp+1                                                                      \
+   + rv64_reg_addr_width_gp                                                                        \
+   + 2                                                                                             \
    + rv64_eaddr_width_gp+branch_metadata_fwd_width_mp                                              \
    + 3                                                                                             \
    + 5 * `bp_be_dep_status_width                                                                   \

@@ -74,7 +74,7 @@ module bp_be_ptw
   logic [page_table_depth_p-2:0] [partial_vpn_width_lp-1:0] partial_ppn;
 
   genvar i;
-  generate begin
+  generate 
     for(i=0; i<page_table_depth_p; i++) begin
       assign partial_vpn[i] = vpn_r[partial_vpn_width_lp*i +: partial_vpn_width_lp];
     end
@@ -83,7 +83,6 @@ module bp_be_ptw
       assign writeback_ppn[partial_vpn_width_lp*i +: partial_vpn_width_lp] = (level_cntr > i)? partial_vpn[i] : partial_ppn[i];
     end
     assign writeback_ppn[ppn_width_lp-1 : (page_table_depth_p-1)*partial_vpn_width_lp] = ppn_r[ppn_width_lp-1 : (page_table_depth_p-1)*partial_vpn_width_lp];
-  end
   endgenerate
   
   assign dcache_pkt_o           = dcache_pkt;
@@ -94,7 +93,7 @@ module bp_be_ptw
   assign tlb_w_vtag_o           = vpn_r;
   assign tlb_w_entry_o          = tlb_w_entry;
   
-  assign tlb_w_entry.ptag       = translation_en_i ? writeback_ppn : paddr_width_p'(vpn_r);
+  assign tlb_w_entry.ptag       = translation_en_i ? writeback_ppn : ppn_width_lp'(vpn_r);
   assign tlb_w_entry.g          = translation_en_i ? dcache_data.g : 1'b0;
   assign tlb_w_entry.u          = translation_en_i ? dcache_data.u : 1'b0;
   assign tlb_w_entry.x          = translation_en_i ? dcache_data.x : 1'b1;
