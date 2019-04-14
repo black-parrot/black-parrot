@@ -3,7 +3,7 @@
  * bp_be_rv_defines.v
  * Based off of: https://bitbucket.org/taylor-bsg/bsg_manycore/src/master
  *                                           /v/vanilla_bean/parameters.v
- * TODO: Make opcodes into an enum
+ * TODO: Make opcodes into an enum, same with CSR defines
  */
 
 `ifndef BP_BE_RV_DEFINES_VH
@@ -39,80 +39,68 @@
 `define rv64_signext_j_imm(instr) {{44{``instr``[31]}},``instr``[19:12],``instr``[20] \
                                        ,``instr``[30:21], {1'b0}}
 
-`define RV64_LUI       `rv64_u_type(`RV64_LUI_OP)
-`define RV64_AUIPC     `rv64_u_type(`RV64_AUIPC_OP)
-`define RV64_JAL       `rv64_u_type(`RV64_JAL_OP)
-`define RV64_JALR      `rv64_i_type(`RV64_JALR_OP,3'b000)
-`define RV64_BEQ       `rv64_s_type(`RV64_BRANCH_OP,3'b000)
-`define RV64_BNE       `rv64_s_type(`RV64_BRANCH_OP,3'b001)
-`define RV64_BLT       `rv64_s_type(`RV64_BRANCH_OP,3'b100)
-`define RV64_BGE       `rv64_s_type(`RV64_BRANCH_OP,3'b101)
-`define RV64_BLTU      `rv64_s_type(`RV64_BRANCH_OP,3'b110)
-`define RV64_BGEU      `rv64_s_type(`RV64_BRANCH_OP,3'b111)
-`define RV64_LB        `rv64_i_type(`RV64_LOAD_OP,3'b000)
-`define RV64_LH        `rv64_i_type(`RV64_LOAD_OP,3'b001)
-`define RV64_LW        `rv64_i_type(`RV64_LOAD_OP,3'b010)
-`define RV64_LD        `rv64_i_type(`RV64_LOAD_OP,3'b011)
-`define RV64_LBU       `rv64_i_type(`RV64_LOAD_OP,3'b100)
-`define RV64_LHU       `rv64_i_type(`RV64_LOAD_OP,3'b101)
-`define RV64_LWU       `rv64_i_type(`RV64_LOAD_OP,3'b110)
-`define RV64_SB        `rv64_s_type(`RV64_STORE_OP,3'b000)
-`define RV64_SH        `rv64_s_type(`RV64_STORE_OP,3'b001)
-`define RV64_SW        `rv64_s_type(`RV64_STORE_OP,3'b010)
-`define RV64_SD        `rv64_s_type(`RV64_STORE_OP,3'b011)
-`define RV64_ADDI      `rv64_i_type(`RV64_OP_IMM_OP,3'b000)
-`define RV64_ADDIW     `rv64_i_type(`RV64_OP_IMM_32_OP,3'b000)
-`define RV64_SLTI      `rv64_i_type(`RV64_OP_IMM_OP,3'b010)
-`define RV64_SLTIU     `rv64_i_type(`RV64_OP_IMM_OP,3'b011)
-`define RV64_XORI      `rv64_i_type(`RV64_OP_IMM_OP,3'b100)
-`define RV64_ORI       `rv64_i_type(`RV64_OP_IMM_OP,3'b110)
-`define RV64_ANDI      `rv64_i_type(`RV64_OP_IMM_OP,3'b111)
-`define RV64_SLLI      `rv64_r_type(`RV64_OP_IMM_OP,3'b001,7'b000000?)
-`define RV64_SLLIW     `rv64_r_type(`RV64_OP_IMM_32_OP,3'b001,7'b000000?)
-`define RV64_SRLI      `rv64_r_type(`RV64_OP_IMM_OP,3'b101,7'b000000?)
-`define RV64_SRLIW     `rv64_r_type(`RV64_OP_IMM_32_OP,3'b101,7'b000000?)
-`define RV64_SRAI      `rv64_r_type(`RV64_OP_IMM_OP,3'b101,7'b010000?)
-`define RV64_SRAIW     `rv64_r_type(`RV64_OP_IMM_32_OP,3'b101,7'b010000?)
-`define RV64_ADD       `rv64_r_type(`RV64_OP_OP,3'b000,7'b0000000)
-`define RV64_ADDW      `rv64_r_type(`RV64_OP_32_OP,3'b000,7'b0000000)
-`define RV64_SUB       `rv64_r_type(`RV64_OP_OP,3'b000,7'b0100000)
-`define RV64_SUBW      `rv64_r_type(`RV64_OP_32_OP,3'b000,7'b0100000)
-`define RV64_SLL       `rv64_r_type(`RV64_OP_OP,3'b001,7'b0000000)
-`define RV64_SLLW      `rv64_r_type(`RV64_OP_32_OP,3'b001,7'b0000000)
-`define RV64_SLT       `rv64_r_type(`RV64_OP_OP,3'b010,7'b0000000)
-`define RV64_SLTU      `rv64_r_type(`RV64_OP_OP,3'b011,7'b0000000)
-`define RV64_XOR       `rv64_r_type(`RV64_OP_OP,3'b100,7'b0000000)
-`define RV64_SRL       `rv64_r_type(`RV64_OP_OP,3'b101,7'b0000000)
-`define RV64_SRLW      `rv64_r_type(`RV64_OP_32_OP,3'b101,7'b0000000)
-`define RV64_SRA       `rv64_r_type(`RV64_OP_OP,3'b101,7'b0100000)
-`define RV64_SRAW      `rv64_r_type(`RV64_OP_32_OP,3'b101,7'b0100000)
-`define RV64_OR        `rv64_r_type(`RV64_OP_OP,3'b110,7'b0000000)
-`define RV64_AND       `rv64_r_type(`RV64_OP_OP,3'b111,7'b0000000)
-`define RV64_CSRRW     `rv64_i_type(`RV64_SYSTEM_OP,3'b001)
-`define RV64_CSRRS     `rv64_i_type(`RV64_SYSTEM_OP,3'b010)
-`define RV64_CSRRC     `rv64_i_type(`RV64_SYSTEM_OP,3'b011)
-`define RV64_CSRRWI    `rv64_i_type(`RV64_SYSTEM_OP,3'b101)
-`define RV64_CSRRSI    `rv64_i_type(`RV64_SYSTEM_OP,3'b110)
-`define RV64_CSRRCI    `rv64_i_type(`RV64_SYSTEM_OP,3'b111)
-
-`define rv64_nop_instr 32'b0000000_00000_00000_000_00000_0010011
-
-`define RV64_MVENDORID_CSR_ADDR 12'hf11
-`define RV64_MARCHID_CSR_ADDR   12'hf12
-`define RV64_MIMPID_CSR_ADDR    12'hf12
-`define RV64_MHARTID_CSR_ADDR   12'hf14
-
-`define RV64_MTVEC_CSR_ADDR     12'h305
-
-`define RV64_MCYCLE_CSR_ADDR    12'hc00
-`define RV64_MTIME_CSR_ADDR     12'hc01
-`define RV64_MINSTRET_CSR_ADDR  12'hc02
-
-`define RV64_MSCRATCH_CSR_ADDR  12'h340
-`define RV64_MEPC_CSR_ADDR      12'h341
-`define RV64_MCAUSE_CSR_ADDR    12'h342
-`define RV64_MTVAL_CSR_ADDR     12'h343
-
-`define RV64_FUNCT12_MRET 12'b0011_0000_0010
+`define RV64_LUI        `rv64_u_type(`RV64_LUI_OP)
+`define RV64_AUIPC      `rv64_u_type(`RV64_AUIPC_OP)
+`define RV64_JAL        `rv64_u_type(`RV64_JAL_OP)
+`define RV64_JALR       `rv64_i_type(`RV64_JALR_OP,3'b000)
+`define RV64_BEQ        `rv64_s_type(`RV64_BRANCH_OP,3'b000)
+`define RV64_BNE        `rv64_s_type(`RV64_BRANCH_OP,3'b001)
+`define RV64_BLT        `rv64_s_type(`RV64_BRANCH_OP,3'b100)
+`define RV64_BGE        `rv64_s_type(`RV64_BRANCH_OP,3'b101)
+`define RV64_BLTU       `rv64_s_type(`RV64_BRANCH_OP,3'b110)
+`define RV64_BGEU       `rv64_s_type(`RV64_BRANCH_OP,3'b111)
+`define RV64_LB         `rv64_i_type(`RV64_LOAD_OP,3'b000)
+`define RV64_LH         `rv64_i_type(`RV64_LOAD_OP,3'b001)
+`define RV64_LW         `rv64_i_type(`RV64_LOAD_OP,3'b010)
+`define RV64_LD         `rv64_i_type(`RV64_LOAD_OP,3'b011)
+`define RV64_LBU        `rv64_i_type(`RV64_LOAD_OP,3'b100)
+`define RV64_LHU        `rv64_i_type(`RV64_LOAD_OP,3'b101)
+`define RV64_LWU        `rv64_i_type(`RV64_LOAD_OP,3'b110)
+`define RV64_SB         `rv64_s_type(`RV64_STORE_OP,3'b000)
+`define RV64_SH         `rv64_s_type(`RV64_STORE_OP,3'b001)
+`define RV64_SW         `rv64_s_type(`RV64_STORE_OP,3'b010)
+`define RV64_SD         `rv64_s_type(`RV64_STORE_OP,3'b011)
+`define RV64_ADDI       `rv64_i_type(`RV64_OP_IMM_OP,3'b000)
+`define RV64_ADDIW      `rv64_i_type(`RV64_OP_IMM_32_OP,3'b000)
+`define RV64_SLTI       `rv64_i_type(`RV64_OP_IMM_OP,3'b010)
+`define RV64_SLTIU      `rv64_i_type(`RV64_OP_IMM_OP,3'b011)
+`define RV64_XORI       `rv64_i_type(`RV64_OP_IMM_OP,3'b100)
+`define RV64_ORI        `rv64_i_type(`RV64_OP_IMM_OP,3'b110)
+`define RV64_ANDI       `rv64_i_type(`RV64_OP_IMM_OP,3'b111)
+`define RV64_SLLI       `rv64_r_type(`RV64_OP_IMM_OP,3'b001,7'b000000?)
+`define RV64_SLLIW      `rv64_r_type(`RV64_OP_IMM_32_OP,3'b001,7'b000000?)
+`define RV64_SRLI       `rv64_r_type(`RV64_OP_IMM_OP,3'b101,7'b000000?)
+`define RV64_SRLIW      `rv64_r_type(`RV64_OP_IMM_32_OP,3'b101,7'b000000?)
+`define RV64_SRAI       `rv64_r_type(`RV64_OP_IMM_OP,3'b101,7'b010000?)
+`define RV64_SRAIW      `rv64_r_type(`RV64_OP_IMM_32_OP,3'b101,7'b010000?)
+`define RV64_ADD        `rv64_r_type(`RV64_OP_OP,3'b000,7'b0000000)
+`define RV64_ADDW       `rv64_r_type(`RV64_OP_32_OP,3'b000,7'b0000000)
+`define RV64_SUB        `rv64_r_type(`RV64_OP_OP,3'b000,7'b0100000)
+`define RV64_SUBW       `rv64_r_type(`RV64_OP_32_OP,3'b000,7'b0100000)
+`define RV64_SLL        `rv64_r_type(`RV64_OP_OP,3'b001,7'b0000000)
+`define RV64_SLLW       `rv64_r_type(`RV64_OP_32_OP,3'b001,7'b0000000)
+`define RV64_SLT        `rv64_r_type(`RV64_OP_OP,3'b010,7'b0000000)
+`define RV64_SLTU       `rv64_r_type(`RV64_OP_OP,3'b011,7'b0000000)
+`define RV64_XOR        `rv64_r_type(`RV64_OP_OP,3'b100,7'b0000000)
+`define RV64_SRL        `rv64_r_type(`RV64_OP_OP,3'b101,7'b0000000)
+`define RV64_SRLW       `rv64_r_type(`RV64_OP_32_OP,3'b101,7'b0000000)
+`define RV64_SRA        `rv64_r_type(`RV64_OP_OP,3'b101,7'b0100000)
+`define RV64_SRAW       `rv64_r_type(`RV64_OP_32_OP,3'b101,7'b0100000)
+`define RV64_OR         `rv64_r_type(`RV64_OP_OP,3'b110,7'b0000000)
+`define RV64_AND        `rv64_r_type(`RV64_OP_OP,3'b111,7'b0000000)
+`define RV64_CSRRW      `rv64_i_type(`RV64_SYSTEM_OP,3'b001)
+`define RV64_CSRRS      `rv64_i_type(`RV64_SYSTEM_OP,3'b010)
+`define RV64_CSRRC      `rv64_i_type(`RV64_SYSTEM_OP,3'b011)
+`define RV64_CSRRWI     `rv64_i_type(`RV64_SYSTEM_OP,3'b101)
+`define RV64_CSRRSI     `rv64_i_type(`RV64_SYSTEM_OP,3'b110)
+`define RV64_CSRRCI     `rv64_i_type(`RV64_SYSTEM_OP,3'b111)
+`define RV64_ECALL      32'b0000_0000_0000_0000_0000_0000_0111_0011
+`define RV64_EBREAK     32'b0000_0000_0001_0000_0000_0000_0111_0011
+`define RV64_URET       32'b0000_0000_0010_0000_0000_0000_0111_0011
+`define RV64_SRET       32'b0001_0000_0010_0000_0000_0000_0111_0011
+`define RV64_MRET       32'b0011_0000_0010_0000_0000_0000_0111_0011
+`define RV64_WFI        32'b0001_0000_0101_0000_0000_0000_0111_0011
+`define RV64_SFENCE_VMA 32'b0001_001?_????_????_?000_0000_0111_0011
 
 `endif
+

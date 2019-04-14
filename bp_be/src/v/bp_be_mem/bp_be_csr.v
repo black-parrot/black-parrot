@@ -6,19 +6,13 @@ module bp_be_csr
     , parameter lce_sets_p = "inv"
     , parameter cce_block_size_in_bytes_p = "inv"
 
-    // Default parameters
-    // TODO: Should be set from bp_cfg when implemented
-    , parameter vendorid_p = 16'h1234
-    , parameter archid_p   = 16'h5678
-    , parameter impid_p    = 32'hdeadbeef
-
     , localparam fu_op_width_lp = `bp_be_fu_op_width
     , localparam csr_cmd_width_lp = `bp_be_csr_cmd_width
+    , localparam ecode_dec_width_lp = `bp_be_ecode_dec_width
 
     , localparam hartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
-    , localparam reg_data_width_lp = rv64_reg_data_width_gp
     , localparam instr_width_lp = rv64_instr_width_gp
-    , localparam csr_addr_width_lp = 12
+    , localparam dword_width_p = rv64_reg_data_width_gp
     )
    (input                            clk_i
     , input                          reset_i
@@ -28,19 +22,32 @@ module bp_be_csr
     , input                          csr_cmd_v_i
     , output                         csr_cmd_ready_o
 
-    , output [reg_data_width_lp-1:0] data_o
+    , output [dword_width_p-1:0]     data_o
     , output                         v_o
-    , output logic                   illegal_csr_o
+    , output logic                   illegal_instr_o
 
     // Misc interface
     , input [hartid_width_lp-1:0]    hartid_i
     , input                          instret_i
+
+    , input                          exception_v_i
     , input [vaddr_width_p-1:0]      exception_pc_i
     , input [instr_width_lp-1:0]     exception_instr_i
-    , input                          exception_v_i
+    , input [ecode_dec_width_lp-1:0] exception_ecode_dec_i
 
-    , output [reg_data_width_lp-1:0] mepc_o
-    , output [reg_data_width_lp-1:0] mtvec_o
+    , input                          mret_v_i
+    , input                          sret_v_i
+    , input                          uret_v_i
+
+    , input                          timer_int_i
+    , input                          software_int_i
+    , input                          external_int_i
+    , input [vaddr_width_p-1:0]      interrupt_pc_i
+
+    , output [dword_width_p-1:0]     mepc_o
+    , output [dword_width_p-1:0]     mtvec_o
+    , output [dword_width_p-1:0]     satp_o
+    , output                         translation_en_o
     );
 
 // Declare parameterizable structs
@@ -52,81 +59,62 @@ bp_be_csr_cmd_s csr_cmd;
 assign csr_cmd = csr_cmd_i;
 
 // The muxed and demuxed CSR outputs
-logic [reg_data_width_lp-1:0] csr_data_li, csr_data_lo;
+logic [dword_width_p-1:0] csr_data_li, csr_data_lo;
 
-`define declare_rw_csr(csr_name_mp, width_mp, addr_mp) \
-  logic [width_mp-1:0] ``csr_name_mp``_li, ``csr_name_mp``_lo;                      \
-  logic [0:0] ``csr_name_mp``_w_v_li;                                               \
-  wire [0:0] ``csr_name_mp``_match_v = csr_cmd_v_i & (csr_cmd.csr_addr == addr_mp); \
-      bsg_dff_reset_en                                                              \
-       #(.width_p(width_mp))                                                        \
-       ``csr_name_mp``                                                              \
-        (.clk_i(clk_i)                                                              \
-         ,.reset_i(reset_i)                                                         \
-         ,.en_i(``csr_name_mp``_w_v_li)                                             \
-                                                                                    \
-         ,.data_i(``csr_name_mp``_li)                                               \
-         ,.data_o(``csr_name_mp``_lo)                                               \
-         );
+logic int_m_to_m, tint_m_to_m, sint_m_to_m, eint_m_to_m;
+logic int_s_to_m, tint_s_to_m, sint_s_to_m, eint_s_to_m;
+logic int_u_to_m, tint_u_to_m, sint_u_to_m, eint_u_to_m;
 
-`define declare_ro_csr(csr_name_mp, width_mp, addr_mp) \
-  logic [width_mp-1:0] ``csr_name_mp``_li;                                          \
-  logic [0:0] ``csr_name_mp``_w_v_li;                                               \
-  wire [0:0] ``csr_name_mp``_match_v = csr_cmd_v_i & (csr_cmd.csr_addr == addr_mp); \
-  wire [width_mp-1:0] ``csr_name_mp``_lo = ``csr_name_mp``_li;
-  
-`declare_ro_csr(mvendorid, reg_data_width_lp, `RV64_MVENDORID_CSR_ADDR)
-`declare_ro_csr(marchid  , reg_data_width_lp, `RV64_MARCHID_CSR_ADDR)
-`declare_ro_csr(mimpid   , reg_data_width_lp, `RV64_MIMPID_CSR_ADDR)
-`declare_ro_csr(mhartid  , reg_data_width_lp, `RV64_MHARTID_CSR_ADDR)
+logic int_to_m;
 
-`declare_rw_csr(mcycle  , reg_data_width_lp, `RV64_MCYCLE_CSR_ADDR)
-`declare_rw_csr(minstret, reg_data_width_lp, `RV64_MINSTRET_CSR_ADDR)
+logic ret_m_to_m, ret_m_to_s, ret_m_to_u;
+logic ret_s_to_s, ret_s_to_u;
+logic ret_u_to_u;
 
-`declare_rw_csr(mtvec, reg_data_width_lp, `RV64_MTVEC_CSR_ADDR)
+logic ret_to_m, ret_to_s, ret_to_u;
 
-`declare_rw_csr(mscratch, reg_data_width_lp, `RV64_MSCRATCH_CSR_ADDR)
-`declare_rw_csr(mepc    , reg_data_width_lp, `RV64_MEPC_CSR_ADDR)
-`declare_rw_csr(mcause  , reg_data_width_lp, `RV64_MCAUSE_CSR_ADDR)
-`declare_rw_csr(mtval   , reg_data_width_lp, `RV64_MTVAL_CSR_ADDR)
+logic [1:0] priv_mode_n, priv_mode_r;
 
-// CSR write enable
-always_comb 
-  begin
-    mvendorid_w_v_li = '0; // Read-only
-    marchid_w_v_li   = '0; // Read-only
-    mimpid_w_v_li    = '0; // Read-only
-    mhartid_w_v_li   = '0; // Read-only
-    
-    mcycle_w_v_li    = mcycle_match_v   | 1'b1; // Always increment cycle counter
-    minstret_w_v_li  = minstret_match_v | instret_i;
-    
-    mtvec_w_v_li     = mtvec_match_v;
-    
-    mscratch_w_v_li  = mscratch_match_v;
-    mepc_w_v_li      = mepc_match_v   | exception_v_i;
-    mcause_w_v_li    = mcause_match_v | exception_v_i;
-    mtval_w_v_li     = mtval_match_v  | exception_v_i;
-  end
+assign tint_m_to_m  = (priv_mode_r == `RV64_PRIV_MODE_M) & mstatus_r.mie & mie_r.mtie & mip_r.mtip;
+assign sint_m_to_m  = (priv_mode_r == `RV64_PRIV_MODE_M) & mstatus_r.mie & mie_r.msie & mip_r.msip;
+assign eint_m_to_m  = (priv_mode_r == `RV64_PRIV_MODE_M) & mstatus_r.mie & mie_r.meie & mip_r.meip;
+assign int_m_to_m   = tint_m_to_m | sint_m_to_m | eint_m_to_m;
 
-// CSR data
-always_comb
-  begin
-    mvendorid_li = reg_data_width_lp'(vendorid_p);
-    marchid_li   = reg_data_width_lp'(archid_p);
-    mimpid_li    = reg_data_width_lp'(impid_p);
-    mhartid_li   = reg_data_width_lp'(hartid_i);
+assign tint_s_to_m  = (priv_mode_r == `RV64_PRIV_MODE_S) & mstatus_r.sie & mie_r.stie & mip_r.stip;
+assign sint_s_to_m  = (priv_mode_r == `RV64_PRIV_MODE_S) & mstatus_r.sie & mie_r.ssie & mip_r.ssip;
+assign eint_s_to_m  = (priv_mode_r == `RV64_PRIV_MODE_S) & mstatus_r.sie & mie_r.seie & mip_r.seip;
+assign int_s_to_m   = tint_s_to_m | sint_s_to_m | eint_s_to_m;
 
-    mcycle_li    = mcycle_match_v ? csr_data_li : csr_data_lo + reg_data_width_lp'(1);
-    minstret_li  = minstret_match_v ? csr_data_li : csr_data_lo + reg_data_width_lp'(instret_i);
+assign tint_u_to_m  = (priv_mode_r == `RV64_PRIV_MODE_U) & mstatus_r.uie & mie_r.utie & mip_r.utip;
+assign sint_u_to_m  = (priv_mode_r == `RV64_PRIV_MODE_U) & mstatus_r.uie & mie_r.usie & mip_r.usip;
+assign eint_u_to_m  = (priv_mode_r == `RV64_PRIV_MODE_U) & mstatus_r.uie & mie_r.ueie & mip_r.ueip;
+assign int_u_to_m   = tint_u_to_m | sint_u_to_m | eint_u_to_m;
 
-    mtvec_li    = csr_data_li;
+assign int_to_m = int_m_to_m | int_s_to_m | int_u_to_m;
 
-    mscratch_li = csr_data_li;
-    mepc_li     = exception_v_i ? exception_pc_i : csr_data_li;
-    mcause_li   = '0; // TODO: Unimplemented
-    mtval_li    = exception_v_i ? exception_instr_i : csr_data_li;
-  end
+assign ret_m_to_m = (priv_mode_r == `RV64_PRIV_MODE_M) & (mstatus_r.mpp == `RV64_PRIV_MODE_M) & (mret_v_i | sret_v_i | uret_v_i);
+assign ret_m_to_s = (priv_mode_r == `RV64_PRIV_MODE_M) & (mstatus_r.mpp == `RV64_PRIV_MODE_S) & (mret_v_i | sret_v_i | uret_v_i);
+assign ret_m_to_u = (priv_mode_r == `RV64_PRIV_MODE_M) & (mstatus_r.mpp == `RV64_PRIV_MODE_M) & (mret_v_i | sret_v_i | uret_v_i);
+assign ret_s_to_s = (priv_mode_r == `RV64_PRIV_MODE_S) & (mstatus_r.spp == 1'b1)              & (           sret_v_i | uret_v_i);
+assign ret_s_to_u = (priv_mode_r == `RV64_PRIV_MODE_S) & (mstatus_r.spp == 1'b0)              & (           sret_v_i | uret_v_i);
+assign ret_u_to_u = (priv_mode_r == `RV64_PRIV_MODE_U) &                                        (                      uret_v_i);
+
+assign ret_to_m = ret_m_to_m;
+assign ret_to_s = ret_m_to_s | ret_s_to_s;
+assign ret_to_u = ret_m_to_u | ret_s_to_u | ret_u_to_u;
+
+// TODO: Move this ecode stuff
+logic [3:0] exception_ecode_li;
+logic exception_v_li;
+bsg_priority_encode 
+ #(.width_p(ecode_dec_width_lp)
+   ,.lo_to_hi_p(1)
+   )
+ mcause_enc
+  (.i(exception_ecode_dec_i)
+   ,.addr_o(exception_ecode_li)
+   ,.v_o(exception_v_li)
+   );
 
 // Compute input CSR data
 always_comb 
@@ -143,38 +131,328 @@ always_comb
     endcase
   end
 
-// Mux output data
-always_comb 
+bp_satp_s       satp_n    , satp_r;
+
+bp_mstatus_s    mstatus_n , mstatus_r;
+bp_mie_s        mie_n     , mie_r;
+bp_mtvec_s      mtvec_n   , mtvec_r;
+
+bp_mscratch_s   mscratch_n, mscratch_r;
+bp_mepc_s       mepc_n    , mepc_r;
+bp_mcause_s     mcause_n  , mcause_r;
+bp_mtval_s      mtval_n   , mtval_r;
+bp_mip_s        mip_n     , mip_r;
+
+bp_pmpcfg_s     pmpcfg0_n , pmpcfg0_r;
+bp_pmpaddr_s    pmpaddr0_n, pmpaddr0_r;
+bp_pmpaddr_s    pmpaddr1_n, pmpaddr1_r;
+bp_pmpaddr_s    pmpaddr2_n, pmpaddr2_r;
+bp_pmpaddr_s    pmpaddr3_n, pmpaddr3_r;
+
+bp_mcounter_s   mcycle_n  , mcycle_r;
+bp_mcounter_s   minstret_n, minstret_r;
+
+rv64_satp_s     satp_li   , satp_lo;
+
+rv64_mstatus_s  mstatus_li, mstatus_lo;
+rv64_mie_s      mie_li    , mie_lo;
+rv64_mtvec_s    mtvec_li  , mtvec_lo;
+
+rv64_mscratch_s mscratch_li, mscratch_lo;
+rv64_mepc_s     mepc_li    , mepc_lo;
+rv64_mcause_s   mcause_li  , mcause_lo;
+rv64_mtval_s    mtval_li   , mtval_lo;
+rv64_mip_s      mip_li     , mip_lo;
+
+rv64_pmpcfg_s   pmpcfg0_li , pmpcfg0_lo;
+rv64_pmpaddr_s  pmpaddr0_li, pmpaddr0_lo;
+rv64_pmpaddr_s  pmpaddr1_li, pmpaddr1_lo;
+rv64_pmpaddr_s  pmpaddr2_li, pmpaddr2_lo;
+rv64_pmpaddr_s  pmpaddr3_li, pmpaddr3_lo;
+
+rv64_mcounter_s mcycle_li  , mcycle_lo;
+rv64_mcounter_s minstret_li, minstret_lo;
+
+always_ff @(posedge clk_i)
   begin
-    csr_data_lo   = '0;
-    illegal_csr_o = '0;
-    unique if (mvendorid_match_v) csr_data_lo = mvendorid_lo;
-      else if (marchid_match_v)   csr_data_lo = marchid_lo;
-      else if (mimpid_match_v)    csr_data_lo = mimpid_lo;
-      else if (mhartid_match_v)   csr_data_lo = mhartid_lo;
+    if (reset_i)
+      begin
+        priv_mode_r <= `RV64_PRIV_MODE_M;
 
-      else if (mcycle_match_v)    csr_data_lo = mcycle_lo;
-      else if (minstret_match_v)  csr_data_lo = minstret_lo;
+        satp_r      <= '0;
 
-      else if (mtvec_match_v)     csr_data_lo = mtvec_lo;
+        mstatus_r   <= '0;
+        mie_r       <= '0;
+        mtvec_r     <= '0;
 
-      else if (mscratch_match_v)  csr_data_lo = mscratch_lo;
-      else if (mepc_match_v)      csr_data_lo = mepc_lo;
-      else if (mcause_match_v)    csr_data_lo = mcause_lo;
-      else if (mtval_match_v)     csr_data_lo = mtval_lo;
-      else 
-        begin
-          illegal_csr_o = csr_cmd_v_i;
-        end
+        mscratch_r  <= '0;
+        mepc_r      <= '0;
+        mcause_r    <= '0;
+        mtval_r     <= '0;
+        mip_r       <= '0;
+
+        pmpcfg0_r   <= '0;
+        pmpaddr0_r  <= '0;
+        pmpaddr1_r  <= '0;
+        pmpaddr2_r  <= '0;
+        pmpaddr3_r  <= '0;
+
+        mcycle_r    <= '0;
+        minstret_r  <= '0;
+      end
+    else
+      begin
+        priv_mode_r <= priv_mode_n;
+
+        satp_r      <= satp_n;
+
+        mstatus_r   <= mstatus_n;
+        mie_r       <= mie_n;
+        mtvec_r     <= mtvec_n;
+
+        mscratch_r  <= mscratch_n;
+        mepc_r      <= mepc_n;
+        mcause_r    <= mcause_n;
+        mtval_r     <= mtval_n;
+        mip_r       <= mip_n;
+
+        pmpcfg0_r   <= pmpcfg0_n;
+        pmpaddr0_r  <= pmpaddr0_n;
+        pmpaddr1_r  <= pmpaddr1_n;
+        pmpaddr2_r  <= pmpaddr2_n;
+        pmpaddr3_r  <= pmpaddr3_n;
+
+        mcycle_r    <= mcycle_n;
+        minstret_r  <= minstret_n;
+      end
+  end
+
+// CSR data
+always_comb
+  begin
+    priv_mode_n = priv_mode_r;
+
+    satp_n     = satp_r;
+
+    mstatus_n  = mstatus_r;
+    mie_n      = mie_r;
+    mtvec_n    = mtvec_r;
+
+    mscratch_n = mscratch_r;
+    mepc_n     = mepc_r;
+    mcause_n   = mcause_r;
+    mtval_n    = mtval_r;
+    mip_n      = mip_r;
+
+    pmpcfg0_n  = pmpcfg0_r;
+    pmpaddr0_n = pmpaddr0_r;
+    pmpaddr1_n = pmpaddr1_r;
+    pmpaddr2_n = pmpaddr2_r;
+    pmpaddr3_n = pmpaddr3_r;
+
+    mcycle_n   = mcycle_r;
+    minstret_n = minstret_r;
+
+    illegal_instr_o = '0;
+
+    if (csr_cmd_v_i)
+      case (csr_cmd.csr_addr)
+        `RV64_CSR_ADDR_SATP: 
+          begin
+            satp_li     = rv64_satp_s'(csr_data_li);
+            satp_n      = `compress_satp_s(satp_li);
+            satp_lo     = `decompress_satp_s(satp_r);
+            csr_data_lo = satp_lo;
+          end
+        `RV64_CSR_ADDR_MHARTID:
+          begin
+            csr_data_lo = dword_width_p'(hartid_i);
+          end
+        `RV64_CSR_ADDR_MSTATUS: 
+          begin
+            mstatus_li  = rv64_mstatus_s'(csr_data_li);
+            mstatus_n   = `compress_mstatus_s(mstatus_li);
+            mstatus_lo  = `decompress_mstatus_s(mstatus_r);
+            csr_data_lo = mstatus_lo;
+          end
+        `RV64_CSR_ADDR_MIE: 
+          begin
+            mie_li      = rv64_mie_s'(csr_data_li);
+            mie_n       = `compress_mie_s(mie_li);
+            mie_lo      = `decompress_mie_s(mie_r);
+            csr_data_lo = mie_lo;
+          end
+        `RV64_CSR_ADDR_MTVEC: 
+          begin
+            mtvec_li    = rv64_mtvec_s'(csr_data_li);
+            mtvec_n     = `compress_mtvec_s(mtvec_li);
+            mtvec_lo    = `decompress_mtvec_s(mtvec_r);
+            csr_data_lo = mtvec_lo;
+          end
+        
+        `RV64_CSR_ADDR_MSCRATCH: 
+          begin
+            mscratch_li = rv64_mscratch_s'(csr_data_li);
+            mscratch_n  = `compress_mscratch_s(mscratch_li);
+            mscratch_lo = `decompress_mscratch_s(mscratch_r);
+            csr_data_lo = mscratch_lo;
+          end
+        `RV64_CSR_ADDR_MEPC: 
+          begin
+            mepc_li     = rv64_mepc_s'(csr_data_li);
+            mepc_n      = `compress_mepc_s(mepc_li);
+            mepc_lo     = `decompress_mepc_s(mepc_r);
+            csr_data_lo = mepc_lo;
+          end
+        `RV64_CSR_ADDR_MCAUSE: 
+          begin
+            mcause_li   = rv64_mcause_s'(csr_data_li);
+            mcause_n    = `compress_mcause_s(mcause_li);
+            mcause_lo   = `decompress_mcause_s(mcause_r);
+            csr_data_lo = mcause_lo;
+          end
+        `RV64_CSR_ADDR_MTVAL: 
+          begin
+            mtval_li    = rv64_mtval_s'(csr_data_li);
+            mtval_n     = `compress_mtval_s(mtval_li);
+            mtval_lo    = `decompress_mtval_s(mtval_r);
+            csr_data_lo = mtval_lo;
+          end
+        `RV64_CSR_ADDR_MIP: 
+          begin
+            mip_li      = rv64_mip_s'(csr_data_li);
+            mip_n       = `compress_mip_s(mip_li);
+            mip_lo      = `decompress_mip_s(mip_r);
+            csr_data_lo = mip_lo;
+          end
+
+        `RV64_CSR_ADDR_PMPCFG0: 
+          begin
+            pmpcfg0_li  = rv64_pmpcfg_s'(csr_data_li);
+            pmpcfg0_n   = `compress_pmpcfg_s(pmpcfg0_li);
+            pmpcfg0_lo  = `decompress_pmpcfg_s(pmpcfg0_r);
+            csr_data_lo = pmpcfg0_lo;
+          end
+        `RV64_CSR_ADDR_PMPADDR0: 
+          begin
+            pmpaddr0_li = rv64_pmpaddr_s'(csr_data_li);
+            pmpaddr0_n  = `compress_pmpaddr_s(pmpaddr0_li);
+            pmpaddr0_lo = `decompress_pmpaddr_s(pmpaddr0_r);
+            csr_data_lo = pmpaddr0_lo;
+          end
+        `RV64_CSR_ADDR_PMPADDR1: 
+          begin
+            pmpaddr1_li = rv64_pmpaddr_s'(csr_data_li);
+            pmpaddr1_n  = `compress_pmpaddr_s(pmpaddr1_li);
+            pmpaddr1_lo = `decompress_pmpaddr_s(pmpaddr1_r);
+            csr_data_lo = pmpaddr1_lo;
+          end
+        `RV64_CSR_ADDR_PMPADDR2: 
+          begin
+            pmpaddr2_li = rv64_pmpaddr_s'(csr_data_li);
+            pmpaddr2_n  = `compress_pmpaddr_s(pmpaddr2_li);
+            pmpaddr2_lo = `decompress_pmpaddr_s(pmpaddr2_r);
+            csr_data_lo = pmpaddr2_lo;
+          end
+        `RV64_CSR_ADDR_PMPADDR3: 
+          begin
+            pmpaddr3_li = rv64_pmpaddr_s'(csr_data_li);
+            pmpaddr3_n  = `compress_pmpaddr_s(pmpaddr3_li);
+            pmpaddr3_lo = `decompress_pmpaddr_s(pmpaddr3_r);
+            csr_data_lo = pmpaddr3_lo;
+          end
+
+        `RV64_CSR_ADDR_MCYCLE: 
+          begin
+            mcycle_li   = rv64_mcounter_s'(csr_data_li);
+            mcycle_n    = `compress_mcycle_s(mcycle_li);
+            mcycle_lo   = `decompress_mcounter_s(mcycle_r);
+            csr_data_lo = mcycle_lo;
+          end
+        `RV64_CSR_ADDR_MINSTRET: 
+          begin
+            mcycle_li   = rv64_mcounter_s'(csr_data_li);
+            minstret_n  = `compress_mcounter_s(minstret_li);
+            minstret_lo = `decompress_mcounter_s(minstret_r);
+            csr_data_lo = minstret_lo;
+          end
+
+        default : illegal_instr_o = 1'b1;
+      endcase
+    else 
+      begin
+        if (timer_int_i)
+            mip_li.mtip = 1'b1;
+
+        if (software_int_i)
+            mip_li.msip = 1'b1;
+
+        if (external_int_i)
+            mip_li.meip = 1'b1;
+
+        if (exception_v_i) 
+          begin
+            priv_mode_n         = `RV64_PRIV_MODE_M;
+
+            mstatus_n.mpp       = priv_mode_r;
+            mstatus_n.mpie      = mstatus_r.mie;
+            mstatus_n.mie       = 1'b0;
+
+            mepc_n              = exception_pc_i;
+            mtval_n             = exception_instr_i;
+
+            mcause_n._interrupt = 1'b0;
+            mcause_n.ecode      = exception_ecode_li;
+          end
+
+        if (int_to_m)
+          begin
+            priv_mode_n         = `RV64_PRIV_MODE_M;
+
+            mstatus_n.mpp       = priv_mode_r;
+            mstatus_n.mpie      = mstatus_r.mie;
+            mstatus_n.mie       = 1'b0;
+
+            mepc_n              = exception_v_i ? exception_pc_i : 64'(interrupt_pc_i);
+            mtval_n             = '0;
+            mcause_n._interrupt = 1'b1;
+            // I'm sure there's a more clever way to encode this. Revisit once 
+            //   we're implementing interrupts in other privilege modes.
+            // The values are based on mcause from the privileged spec.
+            mcause_n.ecode      = mip_r.meip
+                                  ? 4'd11
+                                  : mip_r.msip
+                                    ? 4'd3
+                                    : mip_r.mtip
+                                      ? 4'd7
+                                      : '0; // Should not get here
+          end
+        
+        if (mret_v_i)
+          begin
+            priv_mode_n    = mstatus_n.mpp;
+
+            mstatus_n.mpp  = `RV64_PRIV_MODE_M; // Should be U when U-mode is supported
+            mstatus_n.mpie = 1'b1;
+            mstatus_n.mie  = mstatus_r.mpie;
+
+            illegal_instr_o = (priv_mode_r != `RV64_PRIV_MODE_M);
+          end
+
+        mcycle_n    = mcycle_r   + dword_width_p'(1);
+        minstret_n  = minstret_r + dword_width_p'(instret_i);
+      end
   end
 
 // CSR slow paths
-assign mepc_o  = mepc_lo;
-assign mtvec_o = mtvec_lo;
+assign mepc_o           = mepc_r;
+assign mtvec_o          = mtvec_r;
+assign satp_o           = satp_r;
+assign translation_en_o = ~(priv_mode_r == `RV64_PRIV_MODE_M) & (satp_r.mode == 4'h8);
 
 assign csr_cmd_ready_o = 1'b1;
-assign data_o = reg_data_width_lp'(csr_data_lo);
-assign v_o = ~illegal_csr_o;
+assign data_o          = dword_width_p'(csr_data_lo);
+assign v_o             = ~illegal_instr_o;
 
 endmodule : bp_be_csr
 

@@ -92,7 +92,7 @@ module bp_fe_icache
     , input                                            itlb_icache_miss_i 
     
     , output logic                                     cache_miss_o
-    , input                                            poison_i
+    , input                                            poison_tl_i
 
     , output logic [bp_lce_cce_req_width_lp-1:0]       lce_req_o
     , output logic                                     lce_req_v_o
@@ -150,7 +150,7 @@ module bp_fe_icache
   logic [bp_page_offset_width_gp-1:0] vaddr_tl_r;
   logic [eaddr_width_p-1:0] eaddr_tl_r;
 
-  assign tl_we = pc_gen_icache_vaddr_v_i & pc_gen_icache_vaddr_ready_o & ~poison_i;
+  assign tl_we = pc_gen_icache_vaddr_v_i & pc_gen_icache_vaddr_ready_o;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -234,7 +234,7 @@ module bp_fe_icache
   logic [index_width_lp-1:0]                    addr_index_tv;
   logic [word_offset_width_lp-1:0]              addr_word_offset_tv;
 
-  assign tv_we = v_tl_r & ~poison_i & itlb_icache_data_resp_v_i & ~itlb_icache_miss_i;
+  assign tv_we = v_tl_r & ~poison_tl_i & itlb_icache_data_resp_v_i & ~itlb_icache_miss_i;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin

@@ -63,6 +63,10 @@ module bp_core
     , output [1:0]                                 lce_data_cmd_v_o
     , input [1:0]                                  lce_data_cmd_ready_i
 
+    , input                                        timer_int_i
+    , input                                        software_int_i
+    , input                                        external_int_i
+
     // Commit tracer for trace replay
     , output                                       cmt_rd_w_v_o
     , output [rv64_reg_addr_width_gp-1:0]          cmt_rd_addr_o
@@ -219,6 +223,10 @@ module bp_core
      ,.lce_data_cmd_o(lce_data_cmd_o[1])
      ,.lce_data_cmd_v_o(lce_data_cmd_v_o[1])
      ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i[1])
+
+     ,.timer_int_i(timer_int_i)
+     ,.software_int_i(software_int_i)
+     ,.external_int_i(external_int_i)
 
      ,.cmt_rd_w_v_o(cmt_rd_w_v_o)
      ,.cmt_rd_addr_o(cmt_rd_addr_o)

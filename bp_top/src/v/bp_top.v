@@ -43,6 +43,10 @@ module bp_top
    , output [num_cce_p-1:0]                                   mem_data_cmd_v_o
    , input [num_cce_p-1:0]                                    mem_data_cmd_yumi_i
 
+   , input                                                    timer_int_i
+   , input                                                    software_int_i
+   , input                                                    external_int_i
+
    // Commit tracer for trace replay
    , output [num_core_p-1:0]                                  cmt_rd_w_v_o
    , output [num_core_p-1:0][rv64_reg_addr_width_gp-1:0]      cmt_rd_addr_o
@@ -129,6 +133,10 @@ for(genvar core_id = 0; core_id < num_core_p; core_id++)
        ,.lce_data_cmd_o(lce_data_cmd_lo[core_id])
        ,.lce_data_cmd_v_o(lce_data_cmd_v_lo[core_id])
        ,.lce_data_cmd_ready_i(lce_data_cmd_ready_li[core_id])
+
+       ,.timer_int_i(timer_int_i)
+       ,.software_int_i(software_int_i)
+       ,.external_int_i(external_int_i)
 
        ,.cmt_rd_w_v_o(cmt_rd_w_v_o[core_id])
        ,.cmt_rd_addr_o(cmt_rd_addr_o[core_id])

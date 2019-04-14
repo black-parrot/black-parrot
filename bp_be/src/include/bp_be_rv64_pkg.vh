@@ -2,6 +2,7 @@
 package bp_be_rv64_pkg;
 
   `include "bp_be_rv64_defines.vh"
+  `include "bp_be_csr_defines.vh"
 
   localparam rv64_rf_els_gp         = 32;
   localparam rv64_instr_width_gp    = 32;

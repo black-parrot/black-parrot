@@ -92,6 +92,10 @@ logic [num_cce_p-1:0] mem_data_cmd_v, mem_data_cmd_yumi;
       ,.mem_data_cmd_v_o(mem_data_cmd_v)
       ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi)
 
+      ,.timer_int_i(1'b0)
+      ,.software_int_i(1'b0)
+      ,.external_int_i(1'b0)
+
       ,.cmt_rd_w_v_o(cmt_rd_w_v)
       ,.cmt_rd_addr_o(cmt_rd_addr)
       ,.cmt_mem_w_v_o(cmt_mem_w_v)
@@ -259,7 +263,7 @@ always_ff @(posedge clk_i)
     else
       begin
         // This should simply be based on frozen signal
-        booted <= booted | boot_rom_addr[0] == lg_boot_rom_els_lp'(511);
+        booted <= booted | (boot_rom_addr[0] == (boot_rom_els_p-1));
       end
    end 
 

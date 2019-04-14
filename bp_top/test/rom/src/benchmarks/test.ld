@@ -26,9 +26,11 @@ SECTIONS
    * JK it's because we use a different start file than for normal ISA tests
    * with incompatible stuff ripped out 
    */
+  
   . = 0x80000124;
-  .text.init : { *(.text.init) }
-
+  
+  .text.init : { *(.text.init) }  
+   
   . = ALIGN(0x1000);
   .tohost : { *(.tohost) }
 
@@ -66,5 +68,9 @@ SECTIONS
 
   /* End of uninitalized data segement */
   _end = .;
+  
+  . = 0x80009000;
+  .data.pt : { *(.data.pt) }
+  
 }
 

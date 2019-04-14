@@ -13,5 +13,7 @@ SECTIONS
   .data : { *(.data) }
   .bss : { *(.bss) }
   _end = .;
+  . = 0x80009000;
+  .data.pt : { *(.data.pt) }
 }
 

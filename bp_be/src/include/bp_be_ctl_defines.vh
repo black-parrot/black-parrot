@@ -37,6 +37,8 @@ typedef enum bit [3:0]
   ,e_sh  = 4'b1001
   ,e_sw  = 4'b1010
   ,e_sd  = 4'b1011
+  
+  ,e_ptw = 4'b1100
 } bp_be_mem_fu_op_e;
 
 typedef enum bit [3:0]
@@ -102,7 +104,9 @@ typedef struct packed
   logic                             dcache_w_v;
   logic                             dcache_r_v;
   logic                             fp_not_int_v;
-  logic                             ret_v;
+  logic                             mret_v;
+  logic                             sret_v;
+  logic                             uret_v;
   logic                             amo_v;
   logic                             jmp_v;
   logic                             br_v;
@@ -122,16 +126,42 @@ typedef struct packed
 
 typedef struct packed
 {
+  // RISC-V exceptions
+  logic instr_misaligned_v;
+  logic instr_fault_v;
+  logic illegal_instr_v;
+  logic breakpoint_v;
+  logic load_misaligned_v;
+  logic load_fault_v;
+  logic store_misaligned_v;
+  logic store_fault_v;
+  logic ecall_u_mode_v;
+  logic ecall_s_mode_v;
+  logic reserved1;
+  logic ecall_m_mode_v;
+  logic instr_page_fault;
+  logic load_page_fault;
+  logic reserved2;
+  logic store_page_fault;
+}  bp_be_ecode_dec_s;
+
+`define bp_be_ecode_dec_width \
+  ($bits(bp_be_ecode_dec_s))
+
+typedef struct packed
+{
+  // BE exceptional conditions
   logic poison_v;
   logic roll_v;
+
   logic illegal_instr_v;
-  logic illegal_csr_v;
-  logic ret_instr_v;
+  logic mret_instr_v;
+  logic sret_instr_v;
+  logic uret_instr_v;
   logic csr_instr_v;
   logic tlb_miss_v;
-  logic load_fault_v;
-  logic store_fault_v;
   logic cache_miss_v;
+  logic itlb_fill_v;  
 }  bp_be_exception_s;
 
 `define bp_be_fu_op_width                                                                          \

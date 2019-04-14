@@ -86,13 +86,14 @@
     logic [rv64_reg_addr_width_gp-1:0]       isd_rs2_addr;                                         \
                                                                                                    \
     logic                                    int1_v;                                               \
-    logic [rv64_eaddr_width_gp-1:0]          int1_br_tgt;                                          \
+    logic [vaddr_width_p-1:0]                int1_br_tgt;                                          \
     logic [branch_metadata_fwd_width_mp-1:0] int1_branch_metadata_fwd;                             \
     logic                                    int1_br_or_jmp;                                       \
     logic                                    int1_btaken;                                          \
                                                                                                    \
     logic                                    ex1_v;                                                \
-    logic [rv64_eaddr_width_gp-1:0]          ex1_pc;                                               \
+    logic                                    ex1_instr_v;                                          \
+    logic [vaddr_width_p-1:0]                ex1_pc;                                               \
                                                                                                    \
     /*                                                                                             \
      * 5 is the number of stages in the pipeline.                                                  \
@@ -102,11 +103,13 @@
     bp_be_dep_status_s[4:0]                 dep_status;                                            \
                                                                                                    \
     logic                                   mem3_v;                                                \
-    logic [rv64_eaddr_width_gp-1:0]         mem3_pc;                                               \
+    logic [vaddr_width_p-1:0]               mem3_pc;                                               \
     logic                                   mem3_cache_miss_v;                                     \
+    logic                                   mem3_tlb_miss_v;                                       \
     logic                                   mem3_exception_v;                                      \
     logic                                   mem3_ret_v;                                            \
                                                                                                    \
+    logic                                   interrupt_v;                                           \
     logic                                   instr_cmt_v;                                           \
   }  bp_be_calc_status_s;                                                                          \
 
@@ -149,19 +152,21 @@
 `define bp_be_dep_status_width                                                                     \
   (6 + rv64_reg_addr_width_gp)                                                                     
 
-`define bp_be_calc_status_width(branch_metadata_fwd_width_mp)                                      \
+`define bp_be_calc_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                      \
   (1                                                                                               \
-   + rv64_eaddr_width_gp                                                                           \
+   + vaddr_width_p                                                                                 \
    + 2                                                                                             \
    + rv64_reg_addr_width_gp                                                                        \
    + 2                                                                                             \
-   + rv64_reg_addr_width_gp+1                                                                      \
-   + rv64_eaddr_width_gp+branch_metadata_fwd_width_mp                                              \
+   + rv64_reg_addr_width_gp                                                                        \
+   + 2                                                                                             \
+   + vaddr_width_p                                                                                 \
+   + branch_metadata_fwd_width_mp                                                                  \
    + 3                                                                                             \
    + 5 * `bp_be_dep_status_width                                                                   \
    + 1                                                                                             \
-   + rv64_eaddr_width_gp                                                                           \
-   + 4                                                                                             \
+   + vaddr_width_p                                                                                 \
+   + 6                                                                                             \
    )                                                                                               
 
 `endif

@@ -131,7 +131,7 @@ always_comb begin : be_cmd_gen
     fe_cmd_pc_redirect_operands.misprediction_reason = e_incorrect_prediction;
 
     fe_cmd_itlb_map.vaddr = tlb_miss_vaddr_i; //bp_fe_queue.msg.exception.vaddr
-    fe_cmd_itlb_map.pte_entry_leaf.paddr = tlb_miss_vaddr_i;
+    fe_cmd_itlb_map.pte_entry_leaf.ptag = tlb_miss_vaddr_i;
 
     if(~tlb_miss | ~prev_tlb_miss)
       bp_fe_cmd.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
