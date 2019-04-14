@@ -12,19 +12,19 @@ module bp_be_top
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-    `declare_bp_proc_params(cfg_p)
-    `declare_bp_fe_be_if_widths(vaddr_width_p
-                                ,paddr_width_p
-                                ,asid_width_p
-                                ,branch_metadata_fwd_width_p
-                                )
-    `declare_bp_lce_cce_if_widths(num_cce_p
-                                  ,num_lce_p
-                                  ,paddr_width_p
-                                  ,lce_assoc_p
-                                  ,dword_width_p
-                                  ,cce_block_width_p
-                                  )
+   `declare_bp_proc_params(cfg_p)
+   `declare_bp_fe_be_if_widths(vaddr_width_p
+                               ,paddr_width_p
+                               ,asid_width_p
+                               ,branch_metadata_fwd_width_p
+                               )
+   `declare_bp_lce_cce_if_widths(num_cce_p
+                                 ,num_lce_p
+                                 ,paddr_width_p
+                                 ,lce_assoc_p
+                                 ,dword_width_p
+                                 ,cce_block_width_p
+                                 )
 
    // Default parameters 
    , parameter load_to_use_forwarding_p    = 1
@@ -137,7 +137,7 @@ logic chk_poison_ex1, chk_poison_ex2, chk_poison_ex3, chk_roll, chk_instr_dequeu
 
 logic [dword_width_p-1:0] chk_mtvec_li;
 logic [dword_width_p-1:0] chk_mepc_li;
-logic [dword_width_p-1:0] chk_pc_lo;
+logic [vaddr_width_p-1:0] chk_pc_lo;
 
 logic                      instret;
 logic [vaddr_width_p-1:0]  exception_pc;
@@ -150,10 +150,7 @@ logic                      uret_v;
 
 // Module instantiations
 bp_be_checker_top 
- #(.vaddr_width_p(vaddr_width_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.asid_width_p(asid_width_p)
-   ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+ #(.cfg_p(cfg_p)
 
    ,.load_to_use_forwarding_p(load_to_use_forwarding_p)
    )
@@ -197,20 +194,12 @@ bp_be_checker_top
    );
 
 bp_be_calculator_top 
- #(.vaddr_width_p(vaddr_width_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.asid_width_p(asid_width_p)
-   ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
-   
+ #(.cfg_p(cfg_p)
+
    ,.load_to_use_forwarding_p(load_to_use_forwarding_p)
    ,.trace_p(trace_p)
    ,.debug_p(calc_debug_p)
    ,.debug_file_p(calc_debug_file_p)
-
-   ,.num_core_p(num_core_p)
-   ,.num_lce_p(num_lce_p)
-   ,.lce_sets_p(lce_sets_p)
-   ,.cce_block_size_in_bytes_p(cce_block_width_p)
    )
  be_calculator
   (.clk_i(clk_i)
@@ -263,19 +252,8 @@ bp_be_calculator_top
    );
 
 bp_be_mem_top
- #(.num_core_p(num_core_p)
-   ,.vaddr_width_p(vaddr_width_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.asid_width_p(asid_width_p)
-   ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
-
-   ,.num_cce_p(num_cce_p)
-   ,.num_lce_p(num_lce_p)
-   ,.cce_block_size_in_bytes_p(cce_block_width_p/8)
-   ,.lce_assoc_p(lce_assoc_p)
-   ,.lce_sets_p(lce_sets_p)
-   )
- be_mmu
+ #(.cfg_p(cfg_p))
+ be_mem
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
 

@@ -59,33 +59,23 @@
 
 module bp_be_checker_top 
  import bp_common_pkg::*;
+ import bp_common_aviary_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
- #(parameter vaddr_width_p                 = "inv"
-   , parameter paddr_width_p               = "inv"
-   , parameter asid_width_p                = "inv"
-   , parameter branch_metadata_fwd_width_p = "inv"
+ #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+    `declare_bp_proc_params(cfg_p)
+    `declare_bp_fe_be_if_widths(vaddr_width_p
+                                ,paddr_width_p
+                                ,asid_width_p
+                                ,branch_metadata_fwd_width_p
+                                )
 
    , parameter load_to_use_forwarding_p = 1
 
    // Generated parameters
    , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
-   , localparam fe_queue_width_lp    = `bp_fe_queue_width(vaddr_width_p
-                                                          , branch_metadata_fwd_width_p
-                                                          )
-   , localparam fe_cmd_width_lp      = `bp_fe_cmd_width(vaddr_width_p
-                                                        , paddr_width_p
-                                                        , asid_width_p
-                                                        , branch_metadata_fwd_width_p
-                                                        )
    , localparam issue_pkt_width_lp   = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
 
-   // From BE specifications
-   , localparam pc_entry_point_lp = bp_pc_entry_point_gp
-   // From RISC-V specification
-   , localparam reg_data_width_lp = rv64_reg_data_width_gp
-   , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
-   , localparam eaddr_width_lp    = rv64_eaddr_width_gp
    // VM parameters
    , localparam vtag_width_lp     = (vaddr_width_p-bp_page_offset_width_gp)
    , localparam ptag_width_lp     = (paddr_width_p-bp_page_offset_width_gp)
@@ -126,9 +116,9 @@ module bp_be_checker_top
    , output                           chk_poison_ex3_o
 
    // CSR interface
-   , output [reg_data_width_lp-1:0]   pc_o
-   , input [reg_data_width_lp-1:0]    mtvec_i
-   , input [reg_data_width_lp-1:0]    mepc_i
+   , output [vaddr_width_p-1:0]       pc_o
+   , input [dword_width_p-1:0]        mtvec_i
+   , input [dword_width_p-1:0]        mepc_i
    
    //iTLB fill interface
     , input                           itlb_fill_v_i
@@ -144,15 +134,11 @@ module bp_be_checker_top
                                    ); 
 
 // Intermediate connections
-logic [eaddr_width_lp-1:0] expected_npc;
+logic [vaddr_width_p-1:0] expected_npc;
 
 // Datapath
 bp_be_director 
- #(.vaddr_width_p(vaddr_width_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.asid_width_p(asid_width_p)
-   ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
-   ) 
+ #(.cfg_p(cfg_p))
  director
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -178,10 +164,7 @@ bp_be_director
    );
 
 bp_be_detector 
- #(.vaddr_width_p(vaddr_width_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.asid_width_p(asid_width_p)
-   ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
+ #(.cfg_p(cfg_p)
    ,.load_to_use_forwarding_p(load_to_use_forwarding_p)
    ) 
  detector
@@ -191,7 +174,6 @@ bp_be_detector
    ,.calc_status_i(calc_status_i)
    ,.mmu_cmd_ready_i(mmu_cmd_ready_i)
    ,.expected_npc_i(expected_npc)
-   ,.itlb_fill_v_i(itlb_fill_v_i)
 
    ,.chk_dispatch_v_o(chk_dispatch_v_o)
    ,.chk_roll_o(chk_roll_o)
@@ -202,11 +184,7 @@ bp_be_detector
    );
 
 bp_be_scheduler 
- #(.vaddr_width_p(vaddr_width_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.asid_width_p(asid_width_p)
-   ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
-   )
+ #(.cfg_p(cfg_p))
  scheduler
   (.clk_i(clk_i)
    ,.reset_i(reset_i)

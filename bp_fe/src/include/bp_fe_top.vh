@@ -105,10 +105,10 @@ typedef struct packed
  * The pc_gen logic recieves the commands from the backend if there is any
  * exceptions. These commands are either pc_redirect or attaboy.
 */
-`define declare_bp_fe_pc_gen_cmd_s(branch_metadata_fwd_width_mp)  \
+`define declare_bp_fe_pc_gen_cmd_s(vaddr_width_mp, branch_metadata_fwd_width_mp)  \
   typedef struct packed                                           \
   {                                                               \
-    logic [bp_eaddr_width_gp-1:0]  pc;                            \
+    logic [vaddr_width_mp-1:0]     pc;                            \
     logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd; \
     logic reset_valid;                                            \
     logic pc_redirect_valid;                                      \
@@ -169,7 +169,7 @@ typedef struct packed
   (`bp_fe_queue_width(vaddr_width_mp,branch_metadata_fwd_width_mp)+`bp_fe_instr_scan_width)
 
 `define bp_fe_pc_gen_cmd_width(vaddr_width_mp,branch_metadata_fwd_width_mp) \
-  (bp_eaddr_width_gp+branch_metadata_fwd_width_mp+3)
+  (vaddr_width_mp+branch_metadata_fwd_width_mp+3)
 
 `define bp_fe_pc_gen_icache_width(vaddr_width_mp) (vaddr_width_mp)
 

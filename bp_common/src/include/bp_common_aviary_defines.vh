@@ -58,6 +58,8 @@ typedef struct packed
 
   integer dword_width;
   integer instr_width;
+  integer reg_addr_width;
+  integer page_offset_width;
 }  bp_proc_param_s;
 
 `define declare_bp_proc_params(bp_cfg_e_mp) \
@@ -84,8 +86,10 @@ typedef struct packed
   , localparam fe_queue_fifo_els_p = proc_param_lp.fe_queue_fifo_els                               \
   , localparam fe_cmd_fifo_els_p   = proc_param_lp.fe_cmd_fifo_els                                 \
                                                                                                    \
-  , localparam dword_width_p = proc_param_lp.dword_width                                           \
-  , localparam instr_width_p = proc_param_lp.instr_width
+  , localparam dword_width_p       = proc_param_lp.dword_width                                     \
+  , localparam instr_width_p       = proc_param_lp.instr_width                                     \
+  , localparam reg_addr_width_p    = proc_param_lp.reg_addr_width                                  \
+  , localparam page_offset_width_p = proc_param_lp.page_offset_width
 
 `endif
 

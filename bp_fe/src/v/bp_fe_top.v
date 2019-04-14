@@ -116,7 +116,7 @@ module bp_fe_top
 // the first level of structs
 `declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp);   
 // fe to pc_gen
-`declare_bp_fe_pc_gen_cmd_s(branch_metadata_fwd_width_lp);
+`declare_bp_fe_pc_gen_cmd_s(vaddr_width_p,branch_metadata_fwd_width_lp);
 // pc_gen to icache
 `declare_bp_fe_pc_gen_icache_s(eaddr_width_lp);
 // pc_gen to itlb

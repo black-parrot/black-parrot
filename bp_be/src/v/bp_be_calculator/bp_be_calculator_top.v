@@ -52,18 +52,23 @@
 
 module bp_be_calculator_top 
  import bp_common_pkg::*;
+ import bp_common_aviary_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
- #(// Structure sizing parameters
-   parameter vaddr_width_p                 = "inv"
-   , parameter paddr_width_p               = "inv"
-   , parameter asid_width_p                = "inv"
-   , parameter branch_metadata_fwd_width_p = "inv"
-
-   , parameter num_core_p                  = "inv"
-   , parameter num_lce_p                   = "inv"
-   , parameter lce_sets_p                  = "inv"
-   , parameter cce_block_size_in_bytes_p   = "inv"
+ #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+    `declare_bp_proc_params(cfg_p)
+    `declare_bp_fe_be_if_widths(vaddr_width_p
+                                ,paddr_width_p
+                                ,asid_width_p
+                                ,branch_metadata_fwd_width_p
+                                )
+    `declare_bp_lce_cce_if_widths(num_cce_p
+                                  ,num_lce_p
+                                  ,paddr_width_p
+                                  ,lce_assoc_p
+                                  ,dword_width_p
+                                  ,cce_block_width_p
+                                  )
 
    // Default parameters
    , parameter load_to_use_forwarding_p = 1
@@ -157,7 +162,7 @@ module bp_be_calculator_top
   );
 
 // Declare parameterizable structs
-`declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
+`declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_width_p / 8)
 `declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
 `declare_bp_be_internal_if_structs(vaddr_width_p
                                    , paddr_width_p
@@ -413,7 +418,7 @@ bp_be_pipe_mul
 bp_be_pipe_mem
  #(.vaddr_width_p(vaddr_width_p)
    ,.lce_sets_p(lce_sets_p)
-   ,.cce_block_size_in_bytes_p(cce_block_size_in_bytes_p)
+   ,.cce_block_size_in_bytes_p(cce_block_width_p / 8)
    )
  pipe_mem
   (.clk_i(clk_i)

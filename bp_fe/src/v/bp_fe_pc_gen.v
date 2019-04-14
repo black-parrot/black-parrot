@@ -71,11 +71,11 @@ assign pc_gen_itlb_v_o = pc_gen_icache_v_o;
 //the first level of structs
 `declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)
 //fe to pc_gen
-`declare_bp_fe_pc_gen_cmd_s(branch_metadata_fwd_width_lp);
+`declare_bp_fe_pc_gen_cmd_s(vaddr_width_p, branch_metadata_fwd_width_lp);
 //pc_gen to icache
 `declare_bp_fe_pc_gen_icache_s(eaddr_width_p);
 //pc_gen to itlb
-`declare_bp_fe_pc_gen_itlb_s(eaddr_width_p);
+`declare_bp_fe_pc_gen_itlb_s(vaddr_width_p);
 //icache to pc_gen
 `declare_bp_fe_icache_pc_gen_s(eaddr_width_p);
 //the second level structs definitions
@@ -108,7 +108,7 @@ logic [eaddr_width_p-1:0]       pc_f1;
 // done in the same cycle as when we know the instruction in f2 is
 // a branch
 logic                           pc_v_f1;
-logic [eaddr_width_p-1:0]       pc_n;
+logic [vaddr_width_p-1:0]       pc_n;
 
 logic                           stall;
 
@@ -245,7 +245,7 @@ begin
     end
 end
 
-logic [eaddr_width_p-1:0] btb_br_tgt_lo;
+logic [vaddr_width_p-1:0] btb_br_tgt_lo;
 logic                     btb_br_tgt_v_lo;
 
 bp_fe_branch_metadata_fwd_s fe_cmd_branch_metadata;

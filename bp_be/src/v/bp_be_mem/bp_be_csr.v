@@ -42,7 +42,7 @@ module bp_be_csr
     , input                          timer_int_i
     , input                          software_int_i
     , input                          external_int_i
-    , input [dword_width_p-1:0]      interrupt_pc_i
+    , input [vaddr_width_p-1:0]      interrupt_pc_i
 
     , output [dword_width_p-1:0]     mepc_o
     , output [dword_width_p-1:0]     mtvec_o
@@ -413,7 +413,7 @@ always_comb
             mstatus_n.mpie      = mstatus_r.mie;
             mstatus_n.mie       = 1'b0;
 
-            mepc_n              = exception_v_i ? exception_pc_i : interrupt_pc_i;
+            mepc_n              = exception_v_i ? exception_pc_i : 64'(interrupt_pc_i);
             mtval_n             = '0;
             mcause_n._interrupt = 1'b1;
             // I'm sure there's a more clever way to encode this. Revisit once 
