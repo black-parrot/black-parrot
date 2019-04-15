@@ -40,6 +40,8 @@ module bp_me_nonsynth_mock_lce
     input                                                   clk_i
     ,input                                                  reset_i
 
+    ,input [lg_num_lce_lp-1:0]                              lce_id_i
+
     // the input packets are the same as the dcache trace replay packets: {dcache_cmd, paddr, data}
     ,input [tr_ring_width_lp-1:0]                           tr_pkt_i
     ,input                                                  tr_pkt_v_i
@@ -73,58 +75,6 @@ module bp_me_nonsynth_mock_lce
     ,output logic                                           lce_data_cmd_ready_o
   );
 
-  // LCE-CCE interface structs
-  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, block_size_in_bits_lp);
-
-  // Structs for output messages
-  logic lce_req_v_n, lce_resp_v_n, lce_data_resp_v_n;
-  bp_lce_cce_req_s lce_req_s, lce_req_n;
-  bp_lce_cce_resp_s lce_resp_s, lce_resp_n;
-  bp_lce_cce_data_resp_s lce_data_resp_s, lce_data_resp_n;
-  assign lce_req_o = lce_req_s;
-  assign lce_resp_o = lce_resp_s;
-  assign lce_data_resp_o = lce_data_resp_s;
-
-  // FIFO to buffer LCE commands from ME
-  logic lce_cmd_v, lce_cmd_yumi, lce_cmd_yumi_n;
-  logic [bp_cce_lce_cmd_width_lp-1:0] lce_cmd_bits;
-  bp_cce_lce_cmd_s lce_cmd, lce_cmd_n;
-
-  bsg_two_fifo
-    #(.width_p(bp_cce_lce_cmd_width_lp))
-  lce_cmd_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     // to/from ME
-     ,.ready_o(lce_cmd_ready_o)
-     ,.data_i(lce_cmd_i)
-     ,.v_i(lce_cmd_v_i)
-     // to/from mock LCE
-     ,.v_o(lce_cmd_v)
-     ,.data_o(lce_cmd_bits)
-     ,.yumi_i(lce_cmd_yumi)
-    );
-
-  // FIFO to buffer LCE Data commands from ME
-  logic lce_data_cmd_v, lce_data_cmd_yumi, lce_data_cmd_yumi_n;
-  logic [bp_lce_dta_cmd_width_lp-1:0] lce_data_cmd_bits;
-  bp_lce_data_cmd_s lce_data_cmd, lce_data_cmd_n;
-
-  bsg_two_fifo
-    #(.width_p(bp_lce_data_cmd_width_lp))
-  lce_data_cmd_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     // to/from ME
-     ,.ready_o(lce_data_cmd_ready_o)
-     ,.data_i(lce_data_cmd_i)
-     ,.v_i(lce_data_cmd_v_i)
-     // to/from mock LCE
-     ,.v_o(lce_data_cmd_v)
-     ,.data_o(lce_data_cmd_bits)
-     ,.yumi_i(lce_data_cmd_yumi)
-    );
-
   typedef struct {
     logic [ptag_width_lp-1:0] tag;
     logic [bp_cce_coh_bits-1:0] coh_st;
@@ -147,7 +97,6 @@ module bp_me_nonsynth_mock_lce
 
   logic store_op, load_op, signed_op;
   logic [1:0] op_size;
-
   assign store_op = cmd_cmd[3];
   assign load_op = ~cmd_cmd[3];
   assign signed_op = ~cmd_cmd[2];
@@ -156,9 +105,9 @@ module bp_me_nonsynth_mock_lce
   typedef enum [7:0] {
     RESET
     ,INVALIDATE_CACHE
-    ,WAIT_SYNC
-    ,SEND_SYNC_ACK
+    ,SYNC
     ,READY
+
     ,SEND_REQ
     ,WAIT_TAG_OR_DATA
     ,WAIT_DATA
@@ -168,16 +117,73 @@ module bp_me_nonsynth_mock_lce
     ,RETURN_DATA
   } lce_state_e;
 
-  lce_state_e lce_state, lce_state_n;
+  lce_state_e lce_state;
+
+  // LCE-CCE interface structs
+  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, block_size_in_bits_lp);
+
+  // Structs for output messages
+  bp_lce_cce_req_s lce_req_s;
+  bp_lce_cce_resp_s lce_resp_s;
+  bp_lce_cce_data_resp_s lce_data_resp_s;
+  assign lce_req_o = lce_req_s;
+  assign lce_resp_o = lce_resp_s;
+  assign lce_data_resp_o = lce_data_resp_s;
+
+  // FIFO to buffer LCE commands from ME
+  logic lce_cmd_v, lce_cmd_yumi;
+  logic [bp_cce_lce_cmd_width_lp-1:0] lce_cmd_bits;
+  bp_cce_lce_cmd_s lce_cmd, lce_cmd_r;
+  assign lce_cmd = lce_cmd_bits;
+
+  bsg_two_fifo
+    #(.width_p(bp_cce_lce_cmd_width_lp))
+  lce_cmd_fifo
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     // to/from ME
+     ,.ready_o(lce_cmd_ready_o)
+     ,.data_i(lce_cmd_i)
+     ,.v_i(lce_cmd_v_i)
+     // to/from mock LCE
+     ,.v_o(lce_cmd_v)
+     ,.data_o(lce_cmd_bits)
+     ,.yumi_i(lce_cmd_yumi)
+    );
+
+  // FIFO to buffer LCE Data commands from ME
+  logic lce_data_cmd_v, lce_data_cmd_yumi;
+  logic [bp_lce_dta_cmd_width_lp-1:0] lce_data_cmd_bits;
+  bp_lce_data_cmd_s lce_data_cmd, lce_data_cmd_r;
+  assign lce_data_cmd = lce_data_cmd_bits;
+
+  bsg_two_fifo
+    #(.width_p(bp_lce_data_cmd_width_lp))
+  lce_data_cmd_fifo
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     // to/from ME
+     ,.ready_o(lce_data_cmd_ready_o)
+     ,.data_i(lce_data_cmd_i)
+     ,.v_i(lce_data_cmd_v_i)
+     // to/from mock LCE
+     ,.v_o(lce_data_cmd_v)
+     ,.data_o(lce_data_cmd_bits)
+     ,.yumi_i(lce_data_cmd_yumi)
+    );
+
+  logic [lg_lce_sets_lp-1:0] set_counter;
 
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
+      set_counter <= '0;
+
       lce_state <= RESET;
 
-      lce_cmd <= '0;
+      lce_cmd_r <= '0;
       lce_cmd_yumi <= '0;
 
-      lce_data_cmd <= '0;
+      lce_data_cmd_r <= '0;
       lce_data_cmd_yumi <= '0;
 
       lce_req_s <= '0;
@@ -191,56 +197,67 @@ module bp_me_nonsynth_mock_lce
 
       cmd_r <= '0;
     end else begin
-      lce_state <= lce_state_n;
+      set_counter <= '0;
 
-      lce_cmd <= lce_cmd_n;
-      lce_cmd_yumi <= lce_cmd_yumi_n;
+      lce_state <= RESET;
 
-      lce_data_cmd <= lce_data_cmd_n;
-      lce_data_cmd_yumi <= lce_data_cmd_yumi_n;
+      lce_cmd_r <= lce_cmd_r;
+      lce_cmd_yumi <= '0;
 
-      lce_req_s <= lce_req_n;
-      lce_req_v_o <= lce_req_v_n;
+      lce_data_cmd_r <= lce_data_cmd_r;
+      lce_data_cmd_yumi <= '0;
 
-      lce_resp_s <= lce_resp_n;
-      lce_resp_v_o <= lce_resp_v_n;
+      lce_req_s <= '0;
+      lce_req_v_o <= '0;
 
-      lce_data_resp_s <= lce_data_resp_n;
-      lce_data_resp_v_o <= lce_data_resp_v_n;
+      lce_resp_s <= '0;
+      lce_resp_v_o <= '0;
 
-      cmd_r <= cmd_r_n;
+      lce_data_resp_s <= '0;
+      lce_data_resp_v_o <= '0;
+
+      cmd_r <= cmd_r;
+
+      case (lce_state):
+        RESET: begin
+          lce_state <= INVALIDATE_CACHE;
+        end
+        INVALIDATE_CACHE: begin
+          if (lce_cmd_v && lce_cmd.msg_type == e_lce_cmd_set_clear) begin
+            set_counter <= set_counter + 'd1;
+
+            // dequeue the command
+            lce_cmd_yumi <= 1'b1;
+            lce_cmd_r <= lce_cmd;
+            // clear set in cache
+            tags[lce_cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp]] <= '0;
+            data[lce_cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp]] <= '0;
+
+            lce_state <= (set_counter == lce_sets_p-2) ? SYNC : INVALIDATE_CACHE;
+          end
+        end
+        SYNC: begin
+          if (lce_cmd_v && lce_cmd.msg_type == e_lce_cmd_sync) begin
+            lce_cmd_yumi <= 1'b1;
+            lce_cmd_r <= lce_cmd;
+            lce_state <= READY;
+
+            lce_resp_s.dst_id <= lce_cmd.src_id;
+            lce_resp_s.src_id <= lce_id_i;
+            lce_resp_s.msg_type <= e_lce_cce_sync_ack;
+            lce_resp_s.addr <= '0;
+          end
+        end
+        READY: begin
+          // accept lce cmd or trace replay cmd
+          lce_state <= READY;
+          $finish
+        end
+        default: begin
+          lce_state <= RESET;
+        end
+      endcase
     end
-  end
-
-  always_comb begin
-    lce_state_n = RESET;
-
-    // hold cmd and data cmd registers
-    lce_cmd_n = lce_cmd;
-    lce_data_cmd_n = lce_data_cmd;
-
-    lce_cmd_yumi_n = '0;
-    lce_data_cmd_yumi_n = '0;
-
-    lce_req_n = '0;
-    lce_resp_n = '0;
-    lce_data_resp_n = '0;
-
-    // valid signals are low by default
-    lce_req_v_n = '0;
-    lce_resp_v_n = '0;
-    lce_data_resp_v_n = '0;
-
-    // hold command
-    cmd_r_n = cmd_r;
-
-    case (lce_state):
-      RESET: begin
-        lce_state_n = INVALIDATE_CACHE;
-      end
-      INVALIDATE_CACHE: begin
-      end
-    endcase
   end
 
 endmodule
