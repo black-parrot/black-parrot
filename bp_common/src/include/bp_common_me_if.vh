@@ -592,20 +592,6 @@ typedef enum logic
 
 
 /*
- * LCE-CCE Interface Macro
- *
- * This macro defines all of the LCE-CCE interface structs at once
- *
- */
-`define declare_bp_lce_cce_if(num_cce_mp, num_lce_mp, paddr_width_mp, lce_assoc_mp, data_width_mp) \
-  `declare_bp_lce_cce_req_s(num_cce_mp, num_lce_mp, addr_width_mp, lce_assoc_mp);                  \
-  `declare_bp_lce_cce_resp_s(num_cce_mp, num_lce_mp, addr_width_mp);                               \
-  `declare_bp_lce_cce_data_resp_s(num_cce_mp, num_lce_mp, addr_width_mp, data_width_mp);           \
-  `declare_bp_cce_lce_cmd_s(num_cce_mp, num_lce_mp, paddr_width_mp, lce_assoc_mp);                 \
-  `declare_bp_lce_data_cmd_s(num_lce_mp, data_width_mp, lce_assoc_mp);
-
-
-/*
  * Width Macros
  */
 
