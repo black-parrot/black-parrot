@@ -1,5 +1,5 @@
 /**
- *  bp_rolly_lce_me.v
+ *  bp_me_mock_lce_me.v
  */ 
 
 `include "bp_be_dcache_pkt.vh"
@@ -26,6 +26,9 @@ module bp_me_mock_lce_me
     , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
       
     , localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
+
+    , localparam dcache_opcode_width_lp=$bits(bp_be_dcache_opcode_e)
+    , localparam tr_ring_width_lp=(dcache_opcode_width_lp+paddr_width_p+dword_width_p)
   )
   (
     input clk_i

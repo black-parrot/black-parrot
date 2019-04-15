@@ -15,7 +15,7 @@ parser.add_argument('-n', '--num-instr', dest='num_instr', type=int, default=8,
                     help='Number of memory operations to execute')
 parser.add_argument('-s', '--seed', dest='seed', type=int, default=1,
                     help='random number generator seed')
-parser.add_argument('-m', dest='paddr_width', type=int, default=56,
+parser.add_argument('-m', dest='paddr_width', type=int, default=39,
                     help='Physical address width in bits')
 parser.add_argument('-d', dest='data_width', type=int, default=64,
                     help='Data cache word size in bits')

@@ -12,10 +12,11 @@ module testbench();
   // parameters
   //
   localparam bp_cfg_e cfg_p = BP_CFG_FLOWVAR;
+
   localparam data_width_p = 64;
   localparam sets_p = 16;
   localparam ways_p = 8;
-  localparam paddr_width_p = 56;
+  localparam paddr_width_p = 39;
   localparam num_cce_p = 1;
   localparam num_lce_p = 1;
   localparam num_mem_p = 1;
@@ -79,7 +80,7 @@ module testbench();
     .cfg_p(cfg_p)
     ,.mem_els_p(mem_els_p)
     ,.boot_rom_els_p(mem_els_p)
-  ) dcache_cce_mem (
+  ) mock_lce_me (
     .clk_i(clk)
     ,.reset_i(reset)
  
@@ -120,7 +121,7 @@ module testbench();
     
   end
 
-  logic booted;
+  //logic booted;
 
   localparam max_clock_cnt_lp    = 2**30-1;
   localparam lg_max_clock_cnt_lp = `BSG_SAFE_CLOG2(max_clock_cnt_lp);
@@ -134,12 +135,12 @@ module testbench();
     (.clk_i(clk)
      ,.reset_i(reset)
 
-     ,.clear_i(~booted)
+     ,.clear_i(reset)
      ,.up_i(1'b1)
 
      ,.count_o(clock_cnt)
      );
-
+  /*
   always_ff @(posedge clk)
     begin
       if (reset)
@@ -149,9 +150,12 @@ module testbench();
           booted <= booted | (|dcache_pkt_ready_lo); // Booted when dcaches are ready
         end
     end
-
+  */
   always_ff @(posedge clk)
     begin
+      if (clock_cnt == 100000) begin
+        $finish(0);
+      end
       if (&tr_done_lo)
         begin
         $display("Bytes: %d Clocks: %d mBPC: %d "
