@@ -41,9 +41,6 @@ module bp_be_instr_decoder
 
    , output [decode_width_lp-1:0] decode_o
    , output                       illegal_instr_o
-   , output                       mret_instr_o
-   , output                       sret_instr_o
-   , output                       uret_instr_o
    , output                       csr_instr_o
    );
 
@@ -55,9 +52,6 @@ logic          illegal_instr;
 assign instr           = instr_i;
 assign decode_o        = decode;
 assign illegal_instr_o = illegal_instr;
-assign mret_instr_o    = decode.mret_v;
-assign sret_instr_o    = decode.sret_v;
-assign uret_instr_o    = decode.uret_v;
 assign csr_instr_o     = decode.csr_instr_v;
 
 // Decode logic 
@@ -87,16 +81,13 @@ always_comb
 
     // Decode metadata
     decode.fp_not_int_v  = '0;
-    decode.mret_v        = '0;
-    decode.sret_v        = '0;
-    decode.uret_v        = '0;
     decode.amo_v         = '0;
     decode.jmp_v         = '0;
     decode.br_v          = '0;
     decode.opw_v         = '0;
 
     // Decode operand addresses
-    decode.csr_addr      = instr[31:20]; // TODO: REMOVE
+    decode.csr_addr      = instr[31:20]; // TODO: Fold into imm and give to pipe_mem
     decode.rs1_addr      = instr.rs1_addr;
     decode.rs2_addr      = instr.rs2_addr;
     decode.rd_addr       = instr.rd_addr;
@@ -244,19 +235,19 @@ always_comb
       `RV64_SYSTEM_OP : 
         begin
           decode.pipe_mem_v = 1'b1;
+          decode.csr_instr_v = 1'b1;
           unique casez (instr)
             `RV64_ECALL      : begin end // Implemented as NOP
             `RV64_EBREAK     : begin end // Implemented as NOP
             `RV64_URET       : begin end // Implemented as NOP
             `RV64_SRET       : begin end // Implemented as NOP
-            `RV64_MRET       : decode.mret_v = 1'b1;
-            `RV64_SRET       : decode.sret_v = 1'b1;
-            `RV64_URET       : decode.uret_v = 1'b1;
+            `RV64_MRET       : decode.fu_op = e_mret;
+            `RV64_SRET       : decode.fu_op = e_sret;
+            `RV64_URET       : decode.fu_op = e_uret;
             `RV64_WFI        : begin end // Implemented as NOP
             `RV64_SFENCE_VMA : begin end // Implemented as NOP
             default: 
               begin
-                decode.csr_instr_v = 1'b1;
                 decode.irf_w_v     = 1'b1;
                 unique casez (instr)
                   `RV64_CSRRW  : decode.fu_op = e_csrrw;

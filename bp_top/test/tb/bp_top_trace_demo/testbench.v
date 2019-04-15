@@ -161,63 +161,66 @@ logic [num_cce_p-1:0] mem_data_cmd_v, mem_data_cmd_yumi;
            );
    end // rof1
 
-   for (genvar i = 0; i < num_core_p; i++)
-     begin : rof2
-       bp_be_trace_replay_gen
-        #(.vaddr_width_p(vaddr_width_p)
-          ,.paddr_width_p(paddr_width_p)
-          ,.asid_width_p(asid_width_p)
-          ,.trace_ring_width_p(trace_ring_width_p)
-          )
-        be_trace_gen
-         (.clk_i(clk_i)
-          ,.reset_i(reset_i)
+   if (trace_p)
+     begin : fi1
+       for (genvar i = 0; i < num_core_p; i++)
+         begin : rof2
+           bp_be_trace_replay_gen
+            #(.vaddr_width_p(vaddr_width_p)
+              ,.paddr_width_p(paddr_width_p)
+              ,.asid_width_p(asid_width_p)
+              ,.trace_ring_width_p(trace_ring_width_p)
+              )
+            be_trace_gen
+             (.clk_i(clk_i)
+              ,.reset_i(reset_i)
 
-          ,.cmt_rd_w_v_i(cmt_rd_w_v[i])
-          ,.cmt_rd_addr_i(cmt_rd_addr[i])
-          ,.cmt_mem_w_v_i(cmt_mem_w_v[i])
-          ,.cmt_mem_addr_i(cmt_mem_addr[i])
-          ,.cmt_mem_op_i(cmt_mem_op[i])
-          ,.cmt_data_i(cmt_data[i])
-                
-          ,.data_o(tr_data_i[i])
-          ,.v_o(tr_v_i[i])
-          ,.ready_i(tr_ready_o[i])
-          );
+              ,.cmt_rd_w_v_i(cmt_rd_w_v[i])
+              ,.cmt_rd_addr_i(cmt_rd_addr[i])
+              ,.cmt_mem_w_v_i(cmt_mem_w_v[i])
+              ,.cmt_mem_addr_i(cmt_mem_addr[i])
+              ,.cmt_mem_op_i(cmt_mem_op[i])
+              ,.cmt_data_i(cmt_data[i])
+                    
+              ,.data_o(tr_data_i[i])
+              ,.v_o(tr_v_i[i])
+              ,.ready_i(tr_ready_o[i])
+              );
 
-       bsg_fsb_node_trace_replay
-        #(.ring_width_p(trace_ring_width_p)
-          ,.rom_addr_width_p(trace_rom_addr_width_p)
-          )
-        trace_replay
-         (.clk_i(clk_i)
-          ,.reset_i(reset_i)
-          ,.en_i(1'b1)
+           bsg_fsb_node_trace_replay
+            #(.ring_width_p(trace_ring_width_p)
+              ,.rom_addr_width_p(trace_rom_addr_width_p)
+              )
+            trace_replay
+             (.clk_i(clk_i)
+              ,.reset_i(reset_i)
+              ,.en_i(1'b1)
 
-          ,.v_i(tr_v_i[i])
-          ,.data_i(tr_data_i[i])
-          ,.ready_o(tr_ready_o[i])
+              ,.v_i(tr_v_i[i])
+              ,.data_i(tr_data_i[i])
+              ,.ready_o(tr_ready_o[i])
 
-          ,.v_o()
-          ,.data_o()
-          ,.yumi_i(1'b0)
+              ,.v_o()
+              ,.data_o()
+              ,.yumi_i(1'b0)
 
-          ,.rom_addr_o(tr_rom_addr_i[i])
-          ,.rom_data_i(tr_rom_data_o[i])
+              ,.rom_addr_o(tr_rom_addr_i[i])
+              ,.rom_data_i(tr_rom_data_o[i])
 
-          ,.done_o(test_done[i])
-          ,.error_o()
-          );
+              ,.done_o(test_done[i])
+              ,.error_o()
+              );
 
-       bp_trace_rom
-        #(.width_p(trace_rom_data_width_lp)
-          ,.addr_width_p(trace_rom_addr_width_p)
-          )
-        trace_rom
-         (.addr_i(tr_rom_addr_i[i])
-          ,.data_o(tr_rom_data_o[i])
-          );
-    end // rof2
+           bp_trace_rom
+            #(.width_p(trace_rom_data_width_lp)
+              ,.addr_width_p(trace_rom_addr_width_p)
+              )
+            trace_rom
+             (.addr_i(tr_rom_addr_i[i])
+              ,.data_o(tr_rom_data_o[i])
+              );
+        end // rof2
+      end // fi1
 
 localparam max_instr_cnt_lp    = 2**30-1;
 localparam lg_max_instr_cnt_lp = `BSG_SAFE_CLOG2(max_instr_cnt_lp);

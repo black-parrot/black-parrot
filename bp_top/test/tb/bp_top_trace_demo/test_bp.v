@@ -10,14 +10,16 @@ module test_bp
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_cce_pkg::*;
- #(parameter mem_els_p                   = "inv"
+ #(parameter mem_els_p          = "inv"
 
-   , parameter boot_rom_width_p            = "inv"
-   , parameter boot_rom_els_p              = "inv"
-   
+   , parameter boot_rom_width_p = "inv"
+   , parameter boot_rom_els_p   = "inv"
+
+   , parameter trace_p          = "inv"
+  
    // Trace replay parameters
-   , parameter trace_ring_width_p          = "inv"
-   , parameter trace_rom_addr_width_p      = "inv"
+   , parameter trace_ring_width_p     = "inv"
+   , parameter trace_rom_addr_width_p = "inv"
  );
 
 logic clk, reset;
@@ -42,6 +44,8 @@ testbench
 
    ,.boot_rom_width_p(boot_rom_width_p)
    ,.boot_rom_els_p(boot_rom_els_p)
+
+   ,.trace_p(trace_p)
    )
  tb
   (.clk_i(clk)

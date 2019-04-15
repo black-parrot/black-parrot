@@ -87,6 +87,8 @@ module bp_be_director
    , output                            chk_roll_fe_o
 
    // CSR interface
+   , input                            trap_v_i
+   , input                            ret_v_i
    , output [vaddr_width_p-1:0]       pc_o 
    , input [mepc_width_lp-1:0]        mtvec_i
    , input [mtvec_width_lp-1:0]       mepc_i
@@ -142,10 +144,9 @@ logic [vaddr_width_p-1:0] br_mux_o, roll_mux_o, ret_mux_o;
 // Module instantiations
 // Update the NPC on a valid instruction in ex1 or a cache miss or a tlb miss
 assign npc_w_v = (calc_status.ex1_instr_v & ~npc_mismatch_v) 
-                 | (calc_status.mem3_cache_miss_v)
-                 | (calc_status.mem3_tlb_miss_v)
-                 | (calc_status.mem3_exception_v)
-                 | (calc_status.mem3_ret_v);
+                 | calc_status.mem3_miss_v
+                 | trap_v_i
+                 | ret_v_i;
 bsg_dff_reset_en 
  #(.width_p(vaddr_width_p)
    ,.reset_val_p(pc_entry_point_lp)     
@@ -177,7 +178,7 @@ bsg_mux
    )
  exception_mux
   (.data_i({ret_mux_o, roll_mux_o})
-   ,.sel_i(calc_status.mem3_exception_v | calc_status.mem3_ret_v)
+   ,.sel_i(trap_v_i | ret_v_i)
    ,.data_o(npc_n)
    );
 
@@ -187,7 +188,7 @@ bsg_mux
    )
  roll_mux
   (.data_i({calc_status.mem3_pc, br_mux_o})
-   ,.sel_i(calc_status.mem3_cache_miss_v | calc_status.mem3_tlb_miss_v)
+   ,.sel_i(calc_status.mem3_miss_v)
    ,.data_o(roll_mux_o)
    );
 
@@ -209,7 +210,7 @@ bsg_mux
    )
  ret_mux
   (.data_i({mepc_i[0+:vaddr_width_p], {mtvec.base[0+:vaddr_width_p-2], 2'b00}})
-   ,.sel_i(calc_status.mem3_ret_v)
+   ,.sel_i(ret_v_i)
    ,.data_o(ret_mux_o)
    );
 
@@ -242,11 +243,11 @@ bsg_dff_reset_en
 // Generate control signals
 assign expected_npc_o = npc_r;
 // Increment the checkpoint if there's a committing instruction
-assign chk_dequeue_fe_o = ~calc_status.mem3_cache_miss_v & ~calc_status.mem3_tlb_miss_v & calc_status.instr_cmt_v;
+assign chk_dequeue_fe_o = ~calc_status.mem3_miss_v & calc_status.instr_cmt_v;
 // Flush the FE queue if there's a pc redirect
 assign chk_flush_fe_o = fe_cmd_v & (fe_cmd.opcode == e_op_pc_redirection);
 // Rollback the FE queue on a cache miss
-assign chk_roll_fe_o  = calc_status.mem3_cache_miss_v | calc_status.mem3_tlb_miss_v;
+assign chk_roll_fe_o  = calc_status.mem3_miss_v;
 // The current PC, used for interrupts
 assign pc_o = pc_r;
 

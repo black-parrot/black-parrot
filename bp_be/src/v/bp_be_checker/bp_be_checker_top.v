@@ -117,9 +117,10 @@ module bp_be_checker_top
    , output                           chk_poison_isd_o
    , output                           chk_poison_ex1_o
    , output                           chk_poison_ex2_o
-   , output                           chk_poison_ex3_o
 
    // CSR interface
+   , input                            trap_v_i
+   , input                            ret_v_i
    , output [vaddr_width_p-1:0]       pc_o
    , input [mtvec_width_lp-1:0]       mtvec_i
    , input [mepc_width_lp-1:0]        mepc_i
@@ -158,6 +159,8 @@ bp_be_director
    ,.chk_roll_fe_o(chk_roll_fe_o)
    ,.chk_flush_fe_o(chk_flush_fe_o)
 
+   ,.trap_v_i(trap_v_i)
+   ,.ret_v_i(ret_v_i)
    ,.pc_o(pc_o)
    ,.mtvec_i(mtvec_i)
    ,.mepc_i(mepc_i)
@@ -179,12 +182,13 @@ bp_be_detector
    ,.mmu_cmd_ready_i(mmu_cmd_ready_i)
    ,.expected_npc_i(expected_npc)
 
+   ,.trap_v_i(trap_v_i)
+
    ,.chk_dispatch_v_o(chk_dispatch_v_o)
    ,.chk_roll_o(chk_roll_o)
    ,.chk_poison_isd_o(chk_poison_isd_o)
    ,.chk_poison_ex1_o(chk_poison_ex1_o)
    ,.chk_poison_ex2_o(chk_poison_ex2_o)
-   ,.chk_poison_ex3_o(chk_poison_ex3_o)
    );
 
 bp_be_scheduler 
