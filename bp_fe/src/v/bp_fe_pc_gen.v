@@ -189,9 +189,9 @@ assign itlb_miss_exception = ~itlb_miss_r2 & itlb_miss_r & itlb_miss_i;
 assign pc_gen_queue.msg_type            = (fe_exception_v) ? e_fe_exception : e_fe_fetch;
 assign pc_gen_queue.msg                 = (fe_exception_v) ? pc_gen_exception : pc_gen_fetch;
     
-assign pc_gen_exception.exception_code  = (misalign_exception) ? e_instr_addr_misaligned
+assign pc_gen_exception.exception_code  = (misalign_exception) ? e_instr_misaligned
                                           : ((itlb_miss_exception)? e_itlb_miss
-                                          : e_illegal_instruction);
+                                          : e_illegal_instr);
 assign pc_gen_exception.vaddr           = pc_f2[0+:vaddr_width_p];
 assign pc_gen_exception.padding         = '0;
     

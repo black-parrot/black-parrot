@@ -73,7 +73,6 @@ module bp_be_mem_top
    , output                                  itlb_fill_v_o
    , output [vtag_width_lp-1:0]              itlb_fill_vtag_o
    , output [tlb_entry_width_lp-1:0]         itlb_fill_entry_o
-   
 
    , output [lce_cce_req_width_lp-1:0]       lce_req_o
    , output                                  lce_req_v_o
@@ -105,18 +104,16 @@ module bp_be_mem_top
 
    , input [vaddr_width_p-1:0]               exception_pc_i
    , input [instr_width_p-1:0]               exception_instr_i
-   , input                                   exception_v_i
+   , input                                   exception_ecode_v_i
    , input [ecode_dec_width_lp-1:0]          exception_ecode_dec_i
-
-   , input                                   mret_v_i
-   , input                                   sret_v_i
-   , input                                   uret_v_i
 
    , input                                   timer_int_i
    , input                                   software_int_i
    , input                                   external_int_i
    , input [vaddr_width_p-1:0]               interrupt_pc_i
 
+   , output                                  trap_v_o
+   , output                                  ret_v_o
    , output [mepc_width_lp-1:0]              mepc_o
    , output [mtvec_width_lp-1:0]             mtvec_o
    );
@@ -155,14 +152,12 @@ logic [vtag_width_lp-1:0] dtlb_r_vtag, dtlb_w_vtag, dtlb_miss_vtag;
 bp_be_tlb_entry_s         dtlb_r_entry, dtlb_w_entry;
 
 /* PTW ports */
-logic [ptag_width_lp-1:0] base_ppn, ptw_dcache_ptag;
+logic [ptag_width_lp-1:0] ptw_dcache_ptag;
 logic                     ptw_dcache_v, ptw_busy;
 bp_be_dcache_pkt_s        ptw_dcache_pkt; 
 logic                     ptw_tlb_miss_v, ptw_tlb_w_v;
 logic [vtag_width_lp-1:0] ptw_tlb_w_vtag, ptw_tlb_miss_vtag;
 bp_be_tlb_entry_s         ptw_tlb_w_entry;
-
-assign base_ppn = ptag_width_lp'('h80009);    //TODO: pass from upper level modules
 
 /* D-Cache ports */
 bp_be_dcache_pkt_s        dcache_pkt;
@@ -172,10 +167,11 @@ logic                     dcache_ready, dcache_miss_v, dcache_v, dcache_pkt_v;
 logic                     dcache_tlb_miss, dcache_poison;
 
 /* CSR signals */
+logic                     illegal_instr;
 bp_satp_s                 satp_lo;
 logic [dword_width_p-1:0] csr_data_lo;
-logic                     csr_v_lo, illegal_instr_v;
-logic translation_en_lo;
+logic                     csr_v_lo;
+logic                     translation_en_lo;
 
 /* Control signals */
 logic itlb_fill_cmd_v, itlb_fill_resp_v;
@@ -198,25 +194,23 @@ bp_be_csr
 
    ,.data_o(csr_data_lo)
    ,.v_o(csr_v_lo)
-   ,.illegal_instr_o(illegal_instr_v)
+   ,.illegal_instr_o(illegal_instr)
 
    ,.hartid_i(proc_cfg.mhartid)
    ,.instret_i(instret_i)
 
    ,.exception_pc_i(exception_pc_i)
    ,.exception_instr_i(exception_instr_i)
-   ,.exception_v_i(exception_v_i)
+   ,.exception_ecode_v_i(exception_ecode_v_i)
    ,.exception_ecode_dec_i(exception_ecode_dec_i)
-
-   ,.mret_v_i(mret_v_i)
-   ,.sret_v_i(sret_v_i)
-   ,.uret_v_i(uret_v_i)
 
    ,.timer_int_i(timer_int_i)
    ,.software_int_i(software_int_i)
    ,.external_int_i(external_int_i)
    ,.interrupt_pc_i(interrupt_pc_i)
 
+   ,.trap_v_o(trap_v_o)
+   ,.ret_v_o(ret_v_o)
    ,.mepc_o(mepc_o)
    ,.mtvec_o(mtvec_o)
    ,.satp_o(satp_lo)
@@ -359,25 +353,33 @@ always_comb
 end
 
 // D-TLB connections
-assign dtlb_r_v     = (itlb_fill_cmd_v | dtlb_miss)? 1'b0 : mmu_cmd_v_i;
+assign dtlb_r_v     = (itlb_fill_cmd_v | dtlb_miss) ? 1'b0 : mmu_cmd_v_i;
 assign dtlb_r_vtag  = mmu_cmd.vaddr.tag;
 assign dtlb_w_v     = ptw_tlb_w_v & ~itlb_fill_resp_v;
 assign dtlb_w_vtag  = ptw_tlb_w_vtag;
 assign dtlb_w_entry = ptw_tlb_w_entry;
 
 // PTW connections
-assign ptw_tlb_miss_v = dtlb_miss | itlb_fill_cmd_v;
+assign ptw_tlb_miss_v    = dtlb_miss | itlb_fill_cmd_v;
 assign ptw_tlb_miss_vtag = (itlb_fill_cmd_v)? mmu_cmd.vaddr.tag : dtlb_miss_vtag;
  
 // MMU response connections
-assign mem_resp.data   = (dcache_v) ? dcache_data : csr_data_lo;  
-assign mem_resp.exception.cache_miss_v = dcache_miss_v;
-assign mem_resp.exception.tlb_miss_v = dtlb_miss;
-assign mem_resp.exception.illegal_instr_v = illegal_instr_v;
+// We delay the tlb miss signal by one cycle to synchronize with cache miss signal
+logic dtlb_miss_r;
+always_ff @(posedge clk_i)
+  dtlb_miss_r <= dtlb_miss;
 
-// Ready-valid handshakes
-assign mem_resp_v_o    = (ptw_busy)? 1'b0 : (dcache_v | csr_cmd_v_i);
-assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~dtlb_miss & ~ptw_busy;
+assign mem_resp.data                       = dcache_v ? dcache_data : csr_data_lo;
+assign mem_resp.exception.illegal_instr    = illegal_instr;
+assign mem_resp.exception.instr_fault      = 1'b0; // TODO: Fill in
+assign mem_resp.exception.load_fault       = 1'b0;
+assign mem_resp.exception.store_fault      = 1'b0;
+assign mem_resp.exception.instr_page_fault = 1'b0;
+assign mem_resp.exception.load_page_fault  = 1'b0;
+assign mem_resp.exception.store_page_fault = 1'b0;
+
+assign mem_resp_v_o    = ptw_busy ? 1'b0 : (dcache_v | csr_v_lo);
+assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~ptw_busy;
 
 assign itlb_fill_v_o     = itlb_fill_resp_v & ptw_tlb_w_v;
 assign itlb_fill_vtag_o  = ptw_tlb_w_vtag;

@@ -26,7 +26,7 @@ module bp_core
                                   )
 
     // Enables trace replay
-    , parameter trace_p = 1
+    , parameter trace_p = 0
 
     // Should go away with manycore bridge 
     , localparam proc_cfg_width_lp = `bp_proc_cfg_width(num_core_p, num_lce_p)

@@ -32,7 +32,6 @@
  * 
  *   data_o         - The calculated result of a load 
  *   cache_miss_o     - Goes high when the result of the load or store is a cache miss 
- *   tlb_miss_o       - Goes high when the result of the load or store is a TLB miss 
  *   
  * Keywords:
  *   calculator, mem, mmu, load, store, rv64i, rv64f
@@ -48,11 +47,12 @@ module bp_be_pipe_mem
    , parameter lce_sets_p                = "inv"
    , parameter cce_block_size_in_bytes_p = "inv"
    // Generated parameters
-   , localparam decode_width_lp    = `bp_be_decode_width
-   , localparam exception_width_lp = `bp_be_exception_width
-   , localparam mmu_cmd_width_lp   = `bp_be_mmu_cmd_width(vaddr_width_p)
-   , localparam csr_cmd_width_lp   = `bp_be_csr_cmd_width
-   , localparam mem_resp_width_lp  = `bp_be_mem_resp_width
+   , localparam decode_width_lp        = `bp_be_decode_width
+   , localparam exception_width_lp     = `bp_be_exception_width
+   , localparam mmu_cmd_width_lp       = `bp_be_mmu_cmd_width(vaddr_width_p)
+   , localparam csr_cmd_width_lp       = `bp_be_csr_cmd_width
+   , localparam mem_resp_width_lp      = `bp_be_mem_resp_width
+   , localparam mem_exception_width_lp = `bp_be_mem_exception_width
 
    // From RISC-V specifications
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
@@ -80,10 +80,9 @@ module bp_be_pipe_mem
    , input                                mem_resp_v_i
    , output                               mem_resp_ready_o
 
-   , output logic [reg_data_width_lp-1:0] data_o
-   , output                               cache_miss_o
-   , output                               tlb_miss_o
-   , output                               illegal_instr_o
+   , output logic                              v_o
+   , output logic [reg_data_width_lp-1:0]      data_o
+   , output logic [mem_exception_width_lp-1:0] mem_exception_o
    );
 
 // Declare parameterizable structs
@@ -95,9 +94,6 @@ bp_be_mmu_cmd_s   mmu_cmd;
 bp_be_csr_cmd_s   csr_cmd_li, csr_cmd_lo;
 bp_be_mem_resp_s  mem_resp;
 
-logic [vaddr_width_p-1:0] addr_li, addr_r;
-logic [reg_data_width_lp-1:0] result;
-
 assign decode = decode_i;
 assign mmu_cmd_o = mmu_cmd;
 assign mem_resp = mem_resp_i;
@@ -107,17 +103,13 @@ assign csr_cmd_o = csr_cmd_lo;
 wire unused0 = kill_ex2_i;
 
 logic csr_cmd_v_lo;
-bp_be_decode_s                decode_r;
-logic [reg_data_width_lp-1:0] rs1_r;
 
 // Suppress unused signal warnings
-wire unused1 = mem_resp_v_i;
 wire unused2 = mmu_cmd_ready_i;
 wire unused3 = csr_cmd_ready_i;
 
 assign data_o = mem_resp.data;
 
-// We only need to save one of: rs1, imm
 bsg_shift_reg
  #(.width_p(csr_cmd_width_lp)
    ,.stages_p(2)
@@ -133,7 +125,6 @@ bsg_shift_reg
    ,.data_o(csr_cmd_lo)
    );
 
-// Module instantiations
 assign mmu_cmd_v_o = (decode.dcache_r_v | decode.dcache_w_v) & ~kill_ex1_i;
 always_comb 
   begin
@@ -154,10 +145,9 @@ always_comb
   end
 
 // Output results of memory op
-assign mem_resp_ready_o = 1'b1;
-assign cache_miss_o     = mem_resp.exception.cache_miss_v;
-assign tlb_miss_o       = mem_resp.exception.tlb_miss_v;
-assign illegal_instr_o  = mem_resp_v_i & mem_resp.exception.illegal_instr_v;
+assign v_o                = mem_resp_v_i;
+assign mem_resp_ready_o   = 1'b1;
+assign mem_exception_o    = mem_resp.exception;
 
 endmodule : bp_be_pipe_mem
 

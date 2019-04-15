@@ -247,10 +247,10 @@ typedef enum bit
  */
 typedef enum bit [1:0]
 {
-  e_instr_addr_misaligned     = 0
-  ,e_itlb_miss                = 1
-  ,e_instruction_access_fault = 2
-  ,e_illegal_instruction      = 3
+  e_instr_misaligned    = 0
+  ,e_itlb_miss          = 1
+  ,e_instr_access_fault = 2
+  ,e_illegal_instr      = 3
 } bp_fe_exception_code_e;
 
 /*
