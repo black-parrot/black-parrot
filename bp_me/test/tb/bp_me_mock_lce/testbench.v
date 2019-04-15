@@ -66,40 +66,34 @@ module testbench();
  
   // mem subsystem under test
   //
-  `declare_bp_be_dcache_pkt_s(page_offset_width_lp, data_width_p);
-  bp_be_dcache_pkt_s [num_lce_p-1:0] dcache_pkt;
-  logic [num_lce_p-1:0] dcache_pkt_v_li;
-  logic [num_lce_p-1:0] dcache_pkt_ready_lo;
-  logic [num_lce_p-1:0][ptag_width_lp-1:0] paddr_li;
+  logic [num_lce_p-1:0] tr_v_li;
+  logic [num_lce_p-1:0][ring_width_p-1:0] tr_data_li;
+  logic [num_lce_p-1:0] tr_ready_lo;
 
-  logic [num_lce_p-1:0] dcache_v_lo;
-  logic [num_lce_p-1:0][data_width_p-1:0] dcache_data_lo;
+  logic [num_lce_p-1:0] tr_v_lo;
+  logic [num_lce_p-1:0][ring_width_p-1:0] tr_data_lo;
+  logic [num_lce_p-1:0] tr_yumi_li;
 
-  bp_rolly_lce_me #(
+
+  bp_me_mock_lce_me #(
     .cfg_p(cfg_p)
     ,.mem_els_p(mem_els_p)
     ,.boot_rom_els_p(mem_els_p)
   ) dcache_cce_mem (
     .clk_i(clk)
     ,.reset_i(reset)
-  
-    ,.dcache_pkt_i(dcache_pkt)
-    ,.dcache_pkt_v_i(dcache_pkt_v_li)
-    ,.dcache_pkt_ready_o(dcache_pkt_ready_lo)
-    ,.ptag_i(paddr_li)
+ 
+    ,.tr_pkt_i(tr_data_lo)
+    ,.tr_pkt_v_i(tr_v_lo)
+    ,.tr_pkt_yumi_o(tr_yumi_li)
 
-    ,.v_o(dcache_v_lo)
-    ,.data_o(dcache_data_lo)
+    ,.tr_pkt_o(tr_data_li)
+    ,.tr_pkt_v_o(tr_v_li)
+    ,.tr_pkt_ready_i(tr_ready_lo)
   );
 
   // trace node master
   //
-  logic [num_lce_p-1:0][ring_width_p-1:0] tr_data_li;
-
-  logic [num_lce_p-1:0] tr_v_lo;
-  logic [num_lce_p-1:0][ring_width_p-1:0] tr_data_lo;
-  logic [num_lce_p-1:0] tr_yumi_li;
-
   logic [num_lce_p-1:0] tr_done_lo;
   
   for (genvar i = 0; i < num_lce_p; i++) begin
@@ -113,9 +107,9 @@ module testbench();
       ,.reset_i(reset)
       ,.en_i(1'b1)
 
-      ,.v_i(dcache_v_lo[i])
+      ,.v_i(tr_v_li[i])
       ,.data_i(tr_data_li[i])
-      ,.ready_o()
+      ,.ready_o(tr_ready_lo[i])
 
       ,.v_o(tr_v_lo[i])
       ,.yumi_i(tr_yumi_li[i])
@@ -124,15 +118,6 @@ module testbench();
       ,.done_o(tr_done_lo[i])
     );
     
-    assign tr_yumi_li[i] = tr_v_lo[i] & dcache_pkt_ready_lo[i];
-    assign dcache_pkt[i].opcode = bp_be_dcache_opcode_e'(tr_data_lo[i][data_width_p+paddr_width_p+:4]);
-    assign paddr_li[i] = tr_data_lo[i][data_width_p+page_offset_width_lp+:ptag_width_lp];
-    assign dcache_pkt[i].page_offset = tr_data_lo[i][data_width_p+:page_offset_width_lp];
-    assign dcache_pkt[i].data = tr_data_lo[i][0+:data_width_p];
-    assign dcache_pkt_v_li[i] = tr_v_lo[i];
-
-    assign tr_data_li[i][data_width_p-1:0] = dcache_data_lo[i];
-    assign tr_data_li[i][ring_width_p-1:data_width_p] = '0;
   end
 
   logic booted;

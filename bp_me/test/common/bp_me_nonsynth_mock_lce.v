@@ -73,6 +73,10 @@ module bp_me_nonsynth_mock_lce
     ,input [bp_lce_data_cmd_width_lp-1:0]                   lce_data_cmd_i
     ,input                                                  lce_data_cmd_v_i
     ,output logic                                           lce_data_cmd_ready_o
+
+    ,output logic [bp_lce_data_cmd_width_lp-1:0]            lce_data_cmd_o
+    ,output logic                                           lce_data_cmd_v_o
+    ,input                                                  lce_data_cmd_ready_i
   );
 
   typedef struct {
@@ -126,9 +130,11 @@ module bp_me_nonsynth_mock_lce
   bp_lce_cce_req_s lce_req_s;
   bp_lce_cce_resp_s lce_resp_s;
   bp_lce_cce_data_resp_s lce_data_resp_s;
+  bp_lce_data_cmd_s lce_data_cmd_s;
   assign lce_req_o = lce_req_s;
   assign lce_resp_o = lce_resp_s;
   assign lce_data_resp_o = lce_data_resp_s;
+  assign lce_data_cmd_o = lce_data_cmd_s;
 
   // FIFO to buffer LCE commands from ME
   logic lce_cmd_v, lce_cmd_yumi;
@@ -250,8 +256,17 @@ module bp_me_nonsynth_mock_lce
         end
         READY: begin
           // accept lce cmd or trace replay cmd
-          lce_state <= READY;
-          $finish
+          if (tr_pkt_v_i) begin
+            tr_pkt_yumi_o <= 1'b1;
+            cmd_r <= tr_pkt_i;
+            lce_state <= TR_PKT;
+          end
+        end
+        TR_PKT: begin
+          // hit
+          // miss
+        end
+        LCE_CMD: begin
         end
         default: begin
           lce_state <= RESET;

@@ -19,66 +19,28 @@ module bp_me_mock_lce_me
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
     , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
     , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
 
     , localparam lce_data_width_lp=(lce_assoc_p*dword_width_p)
     , localparam block_size_in_bytes_lp=(lce_data_width_lp / 8)
 
     , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
       
-    , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(bp_page_offset_width_gp,dword_width_p)
-
     , localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
   )
   (
     input clk_i
     , input reset_i
   
-    , input [num_lce_p-1:0][dcache_pkt_width_lp-1:0] dcache_pkt_i
-    , input [num_lce_p-1:0][ptag_width_lp-1:0] ptag_i
-    , input [num_lce_p-1:0] dcache_pkt_v_i
-    , output logic [num_lce_p-1:0] dcache_pkt_ready_o
+    , input [num_lce_p-1:0][tr_ring_width_lp-1:0] tr_pkt_i
+    , input [num_lce_p-1:0] tr_pkt_v_i
+    , output logic [num_lce_p-1:0] tr_pkt_yumi_o
 
-    , output logic [num_lce_p-1:0] v_o
-    , output logic [num_lce_p-1:0][dword_width_p-1:0] data_o    
+    , input [num_lce_p-1:0] tr_pkt_ready_i
+    , output logic [num_lce_p-1:0] tr_pkt_v_o
+    , output logic [num_lce_p-1:0][tr_ring_width_lp-1:0] tr_pkt_o
   );
 
-  // casting structs
-  //
-  `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp,dword_width_p);
-
-  // rolly fifo
-  //
-  logic [num_lce_p-1:0] rollback_li;
-  logic [num_lce_p-1:0][ptag_width_lp-1:0] rolly_ptag_lo;
-  bp_be_dcache_pkt_s [num_lce_p-1:0] rolly_dcache_pkt_lo;
-  logic [num_lce_p-1:0] rolly_v_lo;
-  logic [num_lce_p-1:0] rolly_yumi_li;
-
-  for (genvar i = 0; i < num_lce_p; i++) begin
-    bsg_fifo_1r1w_rolly #(
-      .width_p(dcache_pkt_width_lp+ptag_width_lp)
-      ,.els_p(8)
-    ) rolly (
-      .clk_i(clk_i)
-      ,.reset_i(reset_i)
-
-      ,.roll_v_i(rollback_li[i])
-      ,.clr_v_i(1'b0)
-    
-      ,.ckpt_v_i(v_o[i])
-
-      ,.data_i({ptag_i[i], dcache_pkt_i[i]})
-      ,.v_i(dcache_pkt_v_i[i] & dcache_pkt_ready_o[i])
-      ,.ready_o(dcache_pkt_ready_o[i])
-  
-      ,.data_o({rolly_ptag_lo[i], rolly_dcache_pkt_lo[i]})
-      ,.v_o(rolly_v_lo[i])
-      ,.yumi_i(rolly_yumi_li[i])
-    );
-  end
-
-  // dcache
+  // LCE
   //
   `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p);
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
@@ -110,38 +72,27 @@ module bp_me_mock_lce_me
   logic [num_lce_p-1:0] lce_data_cmd_v_lo;
   logic [num_lce_p-1:0] lce_data_cmd_ready_li;
 
-  logic [num_lce_p-1:0] dcache_tlb_miss_li;
-  logic [num_lce_p-1:0][ptag_width_lp-1:0] dcache_ptag_li;
-  logic [num_lce_p-1:0] cache_miss_lo;
-  logic [num_lce_p-1:0] dcache_ready_lo;
-
   for (genvar i = 0; i < num_lce_p; i++) begin
-    bp_be_dcache #(
-      .data_width_p(dword_width_p)
-      ,.paddr_width_p(paddr_width_p)
-      ,.sets_p(lce_sets_p)
-      ,.ways_p(lce_assoc_p)
+    bp_me_nonsynth_mock_lce #(
+      .num_lce_p(num_lce_p)
       ,.num_cce_p(num_cce_p)
-      ,.num_lce_p(num_lce_p)
-      ,.debug_p(1)
-    ) dcache (
+      ,.paddr_width_p(paddr_width_p)
+      ,.lce_assoc_p(lce_assoc_p)
+      ,.lce_sets_p(lce_sets_p)
+      ,.block_size_in_bytes_p(lce_data_width_lp/8)
+      ,.dcache_word_size_bits_p(dword_width_p)
+    ) lce (
       .clk_i(clk_i)
       ,.reset_i(reset_i)
       ,.lce_id_i((lce_id_width_lp)'(i))
  
-      ,.dcache_pkt_i(rolly_dcache_pkt_lo[i])
-      ,.v_i(rolly_v_lo[i])
-      ,.ready_o(dcache_ready_lo[i])
+      ,.tr_pkt_i(tr_pkt_i[i])
+      ,.tr_pkt_v_i(tr_pkt_v_i[i])
+      ,.tr_pkt_yumi_o(tr_pkt_yumi_o[i])
 
-      ,.v_o(v_o[i])
-      ,.data_o(data_o[i])
-
-      ,.tlb_miss_i(dcache_tlb_miss_li[i])
-      ,.ptag_i(dcache_ptag_li[i])
-      ,.uncached_i(1'b0)
-
-      ,.cache_miss_o(cache_miss_lo[i])
-      ,.poison_i(cache_miss_lo[i])
+      ,.tr_pkt_v_o(tr_pkt_v_o[i])
+      ,.tr_pkt_o(tr_pkt_o[i])
+      ,.tr_pkt_ready_i(tr_pkt_ready_i[i])
 
       ,.lce_req_o(lce_req_lo[i])
       ,.lce_req_v_o(lce_req_v_lo[i])
@@ -168,28 +119,6 @@ module bp_me_mock_lce_me
       ,.lce_data_cmd_ready_i(lce_data_cmd_ready_li[i])
     );
   end
-
-  for (genvar i = 0; i < num_lce_p; i++) begin
-    assign rollback_li[i] = cache_miss_lo[i];
-    assign rolly_yumi_li[i] = rolly_v_lo[i] & dcache_ready_lo[i];
-  end
-
-  // mock tlb
-  //
-  for (genvar i = 0; i < num_lce_p; i++) begin
-    mock_tlb #(
-      .tag_width_p(ptag_width_lp)
-    ) tlb (
-      .clk_i(clk_i)
-
-      ,.v_i(rolly_yumi_li[i])
-      ,.tag_i(rolly_ptag_lo[i])
-
-      ,.tag_o(dcache_ptag_li[i])
-      ,.tlb_miss_o(dcache_tlb_miss_li[i])
-    );
-  end
-
 
   // CCE Boot ROM
 
