@@ -20,7 +20,6 @@ module bp_fe_pc_gen
    , parameter ras_idx_width_p="inv"
    , parameter instr_width_p="inv"
    , parameter asid_width_p="inv"
-   , parameter bp_first_pc_p="inv"
    , localparam instr_scan_width_lp=`bp_fe_instr_scan_width
    , localparam branch_metadata_fwd_width_lp=`bp_fe_branch_metadata_fwd_width(btb_tag_width_p,btb_idx_width_p,bht_idx_width_p,ras_idx_width_p)
    , localparam bp_fe_pc_gen_icache_width_lp=eaddr_width_p
@@ -30,8 +29,6 @@ module bp_fe_pc_gen
    , localparam bp_fe_pc_gen_width_o_lp=`bp_fe_pc_gen_queue_width(vaddr_width_p,branch_metadata_fwd_width_lp)
    , parameter prediction_on_p=1
    , parameter branch_predictor_p="inv"
-
-   , localparam btb_tag_width_lp = eaddr_width_p - btb_idx_width_p - 2
    )
   (input                                             clk_i
    , input                                           reset_i
@@ -309,7 +306,7 @@ begin
     end
 end
 
-assign fe_queue_branch_metadata = '{btb_tag: pc_gen_fetch.pc[2+btb_idx_width_p+:btb_tag_width_lp]
+assign fe_queue_branch_metadata = '{btb_tag: pc_gen_fetch.pc[2+btb_idx_width_p+:btb_tag_width_p]
                                     , btb_idx: pc_gen_fetch.pc[2+:btb_idx_width_p]
                                     , default: '0
                                     };

@@ -29,7 +29,7 @@ module bp_be_top
    // Default parameters 
    , parameter load_to_use_forwarding_p    = 1
    , parameter trace_p                     = 0
-   , parameter calc_debug_p                = 1
+   , parameter calc_debug_p                = 0
    , parameter calc_debug_file_p           = "calc_debug.log"
 
    , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(num_core_p, num_lce_p)

@@ -15,7 +15,8 @@ module bp_top
    `declare_bp_me_if_widths(paddr_width_p, dword_width_p, num_lce_p, lce_assoc_p)
 
    // Used to enable trace replay outputs for testbench
-   , parameter trace_p = 0
+   , parameter trace_p      = 0
+   , parameter calc_debug_p = 0
    )
   (input                                                      clk_i
    , input                                                    reset_i
@@ -100,6 +101,7 @@ for(genvar core_id = 0; core_id < num_core_p; core_id++)
     bp_core   
      #(.cfg_p(cfg_p)
        ,.trace_p(trace_p)
+       ,.calc_debug_p(calc_debug_p)
        )
      core 
       (.clk_i(clk_i)

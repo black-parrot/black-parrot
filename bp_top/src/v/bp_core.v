@@ -26,7 +26,8 @@ module bp_core
                                   )
 
     // Enables trace replay
-    , parameter trace_p = 0
+    , parameter trace_p      = 0
+    , parameter calc_debug_p = 0
 
     // Should go away with manycore bridge 
     , localparam proc_cfg_width_lp = `bp_proc_cfg_width(num_core_p, num_lce_p)
@@ -96,9 +97,7 @@ module bp_core
   bp_proc_cfg_s proc_cfg;
   assign proc_cfg = proc_cfg_i;
   bp_fe_top
-   #(.cfg_p(cfg_p)
-     ,.bp_first_pc_p(bp_pc_entry_point_gp) /* TODO: Not ideal to couple to RISCV-tests */
-     ) 
+   #(.cfg_p(cfg_p))
    fe 
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -181,6 +180,7 @@ module bp_core
   bp_be_top 
    #(.cfg_p(cfg_p)
      ,.trace_p(trace_p)
+     ,.calc_debug_p(calc_debug_p)
      )
    be
     (.clk_i(clk_i)

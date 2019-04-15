@@ -3,7 +3,8 @@ module mock_be_trace
  import bp_common_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
- #(parameter vaddr_width_p="inv"
+ #(parameter bp_first_pc_p="inv"
+   , parameter vaddr_width_p="inv"
    , parameter paddr_width_p="inv"
    , parameter eaddr_width_p="inv"
    , parameter asid_width_p="inv"
@@ -115,38 +116,44 @@ logic tlb_miss;
 
 assign tlb_miss = (bp_fe_queue.msg_type == e_fe_exception) & bp_fe_queue.msg.exception.exception_code == e_itlb_miss;
    
-// cmd block
-logic 	      just_for_test;
-logic         just_for_test2;
-logic [63:0]  test_pc;
-   
-
+enum bit [1:0] {e_reset, e_boot, e_run} state_n, state_r;
 always_comb begin : be_cmd_gen
-    bp_fe_cmd_v_o  = bp_fe_queue_v_i & trace_ready_i & (bp_fe_queue.msg.fetch.pc != next_btarget_r) | (~prev_tlb_miss & tlb_miss);
-    bp_fe_queue_clr_o = bp_fe_cmd_v_o;
-    bp_fe_cmd.opcode                                 = (tlb_miss | prev_tlb_miss) ? e_op_itlb_fill_response : e_op_pc_redirection;
-    fe_cmd_pc_redirect_operands.pc                   = next_btarget_r;
-    fe_cmd_pc_redirect_operands.subopcode            = e_subop_branch_mispredict;
-    fe_cmd_pc_redirect_operands.branch_metadata_fwd  = bp_fe_queue.msg.fetch.branch_metadata_fwd;
-    fe_cmd_pc_redirect_operands.misprediction_reason = e_incorrect_prediction;
+  if (state_r == e_boot)
+    begin
+      bp_fe_cmd_v_o = 1'b1;
 
-    fe_cmd_itlb_map.vaddr = tlb_miss_vaddr_i; //bp_fe_queue.msg.exception.vaddr
-    fe_cmd_itlb_map.pte_entry_leaf.ptag = tlb_miss_vaddr_i;
+      bp_fe_cmd.opcode = e_op_state_reset;
+      bp_fe_cmd.operands.reset_operands.pc = bp_first_pc_p; 
+    end
+  else
+    begin
+      bp_fe_cmd_v_o  = bp_fe_queue_v_i & trace_ready_i & (bp_fe_queue.msg.fetch.pc != next_btarget_r) | (~prev_tlb_miss & tlb_miss);
+      bp_fe_queue_clr_o = bp_fe_cmd_v_o;
+      bp_fe_cmd.opcode                                 = (tlb_miss | prev_tlb_miss) ? e_op_itlb_fill_response : e_op_pc_redirection;
+      fe_cmd_pc_redirect_operands.pc                   = next_btarget_r;
+      fe_cmd_pc_redirect_operands.subopcode            = e_subop_branch_mispredict;
+      fe_cmd_pc_redirect_operands.branch_metadata_fwd  = bp_fe_queue.msg.fetch.branch_metadata_fwd;
+      fe_cmd_pc_redirect_operands.misprediction_reason = e_incorrect_prediction;
 
-    if(~tlb_miss | ~prev_tlb_miss)
-      bp_fe_cmd.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
-    else
-      bp_fe_cmd.operands.itlb_fill_response   = fe_cmd_itlb_map;
+      fe_cmd_itlb_map.vaddr = tlb_miss_vaddr_i[38:12]; //bp_fe_queue.msg.exception.vaddr
+      fe_cmd_itlb_map.pte_entry_leaf.ptag = tlb_miss_vaddr_i;
+
+      if(~tlb_miss | ~prev_tlb_miss)
+        bp_fe_cmd.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
+      else
+        bp_fe_cmd.operands.itlb_fill_response   = fe_cmd_itlb_map;
+    end
 end
 
-   
 assign trace_yumi_o = trace_v_i;
 always_ff @(posedge clk_i) begin
   if (reset_i) begin
     next_btarget_r <= '0;
     redirect_pending_r <= '0;
     prev_tlb_miss <= 0; 
+    state_r <= e_reset;
   end else begin
+    state_r <= (state_r == e_reset) ? e_boot : e_run;
     prev_tlb_miss  <= tlb_miss;
     next_btarget_r <= next_btarget_n;
     redirect_pending_r <= (bp_fe_cmd_v_o & bp_fe_cmd_ready_i)
@@ -172,6 +179,7 @@ always_comb begin : be_queue_gen
   trace_data_o = {bp_fe_queue.msg.fetch.pc, bp_fe_queue.msg.fetch.instr};
 
   trace_v_o           = bp_fe_queue_v_i 
+                        & (bp_fe_queue.msg_type == e_fe_fetch)
                         & trace_ready_i 
                         & (bp_fe_queue.msg.fetch.pc == next_btarget_r);
   bp_fe_queue_ready_o = bp_fe_queue_v_i; 

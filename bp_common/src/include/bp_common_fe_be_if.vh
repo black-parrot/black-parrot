@@ -41,7 +41,7 @@
    */                                                                                              \
   typedef struct packed                                                                            \
   {                                                                                                \
-    logic [bp_eaddr_width_gp-1:0]             pc;                                                  \
+    logic [vaddr_width_mp-1:0]                pc;                                                  \
     logic [bp_instr_width_gp-1:0]             instr;                                               \
     logic [branch_metadata_fwd_width_mp-1:0]  branch_metadata_fwd;                                 \
                                                                                                    \
@@ -98,7 +98,7 @@
   */                                                                                               \
   typedef struct packed                                                                            \
   {                                                                                                \
-    logic [bp_eaddr_width_gp-1:0]            pc;                                                   \
+    logic [vaddr_width_mp-1:0]               pc;                                                   \
     bp_fe_command_queue_subopcodes_e         subopcode;                                            \
     logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                  \
     bp_fe_misprediction_reason_e             misprediction_reason;                                 \
@@ -114,7 +114,7 @@
    */                                                                                              \
   typedef struct packed                                                                            \
   {                                                                                                \
-    logic [bp_eaddr_width_gp-1:0]            pc;                                                   \
+    logic [vaddr_width_mp-1:0]            pc;                                                      \
     logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                  \
                                                                                                    \
     logic [`bp_fe_cmd_attaboy_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
@@ -340,21 +340,21 @@ typedef enum bit [2:0]
 /* Ensure all members of packed unions have the same size. If parameterized unions are desired,
  * examine this code carefully. Else, clients should not have to use these macros
  */
-`define bp_fe_fetch_width_no_padding(branch_metadata_fwd_width_mp)                                 \
-  (bp_eaddr_width_gp + bp_instr_width_gp + branch_metadata_fwd_width_mp)                           
+`define bp_fe_fetch_width_no_padding(vaddr_width_mp, branch_metadata_fwd_width_mp)                 \
+  (vaddr_width_mp + bp_instr_width_gp + branch_metadata_fwd_width_mp)                           
 
 `define bp_fe_exception_width_no_padding(vaddr_width_mp)                                           \
   (vaddr_width_mp + $bits(bp_fe_exception_code_e))                                                 
 
 `define bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                      \
-  (1 + `BSG_MAX(`bp_fe_fetch_width_no_padding(branch_metadata_fwd_width_mp)                        \
+  (1 + `BSG_MAX(`bp_fe_fetch_width_no_padding(vaddr_width_mp,branch_metadata_fwd_width_mp)         \
                 , `bp_fe_exception_width_no_padding(vaddr_width_mp)                                \
                 )                                                                                  \
    )                                                                                               
 
 `define bp_fe_fetch_padding_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                    \
   (`bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                          \
-   - `bp_fe_fetch_width_no_padding(branch_metadata_fwd_width_mp))                                  
+   - `bp_fe_fetch_width_no_padding(vaddr_width_mp,branch_metadata_fwd_width_mp))                                  
 
 `define bp_fe_exception_padding_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                \
   (`bp_fe_queue_msg_u_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                          \
@@ -363,12 +363,12 @@ typedef enum bit [2:0]
 `define bp_fe_cmd_reset_operands_width_no_padding(vaddr_width_mp) \
   (vaddr_width_mp)
 
-`define bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_mp)              \
-  (bp_eaddr_width_gp + $bits(bp_fe_command_queue_subopcodes_e)                                     \
+`define bp_fe_cmd_pc_redirect_operands_width_no_padding(vaddr_width_mp, branch_metadata_fwd_width_mp) \
+  (vaddr_width_mp + $bits(bp_fe_command_queue_subopcodes_e)                                        \
    + branch_metadata_fwd_width_mp + $bits(bp_fe_misprediction_reason_e) + 1)                       
 
-`define bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp)                           \
-  (bp_eaddr_width_gp + branch_metadata_fwd_width_mp)                                               
+`define bp_fe_cmd_attaboy_width_no_padding(vaddr_width_mp, branch_metadata_fwd_width_mp)           \
+  (vaddr_width_mp + branch_metadata_fwd_width_mp)                                               
 
 `define bp_fe_cmd_itlb_map_width_no_padding(vaddr_width_mp, paddr_width_mp)                        \
   (vaddr_width_mp + `bp_fe_pte_entry_leaf_width(paddr_width_mp))                                   
@@ -377,8 +377,12 @@ typedef enum bit [2:0]
   (vaddr_width_mp + asid_width_mp + 2)                                                             
 
 `define bp_fe_cmd_operands_u_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
-  (1+`BSG_MAX(`bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_mp)       \
-              ,`BSG_MAX(`bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp)          \
+  (1+`BSG_MAX(`bp_fe_cmd_pc_redirect_operands_width_no_padding(vaddr_width_mp                      \
+                                                               ,branch_metadata_fwd_width_mp       \
+                                                               )                                   \
+              ,`BSG_MAX(`bp_fe_cmd_attaboy_width_no_padding(vaddr_width_mp                         \
+                                                            ,branch_metadata_fwd_width_mp          \
+                                                            )                                      \
                         ,`BSG_MAX(`bp_fe_cmd_itlb_map_width_no_padding(vaddr_width_mp              \
                                                                        ,paddr_width_mp             \
                                                                        )                           \
@@ -407,7 +411,7 @@ typedef enum bit [2:0]
                                , asid_width_mp                                                     \
                                , branch_metadata_fwd_width_mp                                      \
                                )                                                                   \
-   - `bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_mp)                \
+   - `bp_fe_cmd_pc_redirect_operands_width_no_padding(vaddr_width_mp,branch_metadata_fwd_width_mp) \
    )                                                                                               
 
 `define bp_fe_cmd_attaboy_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
@@ -415,7 +419,7 @@ typedef enum bit [2:0]
                                , paddr_width_mp                                                    \
                                , asid_width_mp                                                     \
                                , branch_metadata_fwd_width_mp)                                     \
-   - `bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp)                             \
+   - `bp_fe_cmd_attaboy_width_no_padding(vaddr_width_mp, branch_metadata_fwd_width_mp)             \
    )                                                                                               
 
 `define bp_fe_cmd_itlb_map_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \

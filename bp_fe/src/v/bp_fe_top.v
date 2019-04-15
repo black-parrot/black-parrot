@@ -10,7 +10,6 @@ module bp_fe_top
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
 
-   , parameter bp_first_pc_p             = "inv"
    , parameter cce_block_size_in_bytes_p = cce_block_width_p / 8
 
    , localparam data_width_p      = rv64_reg_data_width_gp
@@ -227,7 +226,6 @@ bp_fe_pc_gen
    ,.bht_idx_width_p(bht_idx_width_p)
    ,.ras_idx_width_p(ras_idx_width_p)
    ,.asid_width_p(asid_width_p)
-   ,.bp_first_pc_p(bp_first_pc_p)
    ,.instr_width_p(instr_width_lp)
    ) 
  bp_fe_pc_gen_1

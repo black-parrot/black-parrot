@@ -101,9 +101,7 @@ assign proc_cfg.icache_id = 1'b0;
 assign proc_cfg.dcache_id = 1'b1; // Unused
 
     wrapper
-     #(.cfg_p(cfg_p)
-       ,.bp_first_pc_p(bp_first_pc_p) 
-       )
+     #(.cfg_p(cfg_p))
      wrapper
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
@@ -185,7 +183,8 @@ bsg_fifo_1r1w_small
    );
 
 mock_be_trace 
- #(.vaddr_width_p(vaddr_width_p)
+ #(.bp_first_pc_p(bp_first_pc_p)
+   ,.vaddr_width_p(vaddr_width_p)
    ,.paddr_width_p(paddr_width_p)
    ,.asid_width_p(asid_width_p)
    ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)

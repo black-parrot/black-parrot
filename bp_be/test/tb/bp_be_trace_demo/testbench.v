@@ -31,7 +31,6 @@ module testbench
    , parameter trace_rom_addr_width_p   = "inv"
 
    , parameter calc_debug_p      = 0
-   , parameter calc_debug_file_p = "inv"
    )
   (input clk_i
    , input reset_i
@@ -118,7 +117,6 @@ wrapper
  #(.cfg_p(cfg_p)
    ,.trace_p(trace_p)
    ,.calc_debug_p(calc_debug_p)
-   ,.calc_debug_file_p(calc_debug_file_p)
    )
  wrapper
   (.clk_i(clk_i)
