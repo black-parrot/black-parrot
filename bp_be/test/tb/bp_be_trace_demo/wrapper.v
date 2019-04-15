@@ -25,7 +25,6 @@ module wrapper
    , parameter load_to_use_forwarding_p    = 1
    , parameter trace_p                     = 0
    , parameter calc_debug_p                = 0
-   , parameter calc_debug_file_p           = "calc_debug.log"
 
    , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(num_core_p, num_lce_p)
    )
@@ -71,6 +70,10 @@ module wrapper
    , output                                  lce_data_cmd_v_o
    , input                                   lce_data_cmd_ready_i
 
+   , input                                   timer_int_i
+   , input                                   software_int_i
+   , input                                   external_int_i
+
    // Processor configuration
    , input [proc_cfg_width_lp-1:0]           proc_cfg_i
 
@@ -86,6 +89,7 @@ module wrapper
   bp_be_top
    #(.cfg_p(cfg_p)
      ,.trace_p(trace_p)
+     ,.calc_debug_p(calc_debug_p)
      )
    dut
     (.*);

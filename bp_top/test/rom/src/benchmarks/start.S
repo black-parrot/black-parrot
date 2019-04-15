@@ -2,9 +2,9 @@
 .globl _start
 
 _start:
-/* For benchmarks, our stack always starts at 0x8FFFCFF0 */
+/* For benchmarks, our stack always starts at 0x80008FF0 */
 /* Don't use like this for multicore */
-    li   sp, 0x8FFFCFF0
+    li   sp, 0x80008FF0
     
 /* 0 all registers */
     addi x1,  x0, 0

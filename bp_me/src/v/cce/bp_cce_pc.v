@@ -13,6 +13,11 @@ module bp_cce_pc
   import bp_cce_pkg::*;
   #(parameter inst_ram_els_p             = "inv"
 
+    // Config channel parameters
+    , parameter cfg_link_addr_width_p = "inv"
+    , parameter cfg_link_data_width_p = "inv"
+    , parameter cfg_ram_base_addr_p = "inv"
+
     // Default parameters
     , parameter harden_p                 = 0
 
@@ -22,6 +27,18 @@ module bp_cce_pc
   )
   (input                                         clk_i
    , input                                       reset_i
+   , input                                       freeze_i
+
+   // Config channel
+   , input [cfg_link_addr_width_p-2:0]           config_addr_i
+   , input [cfg_link_data_width_p-1:0]           config_data_i
+   , input                                       config_v_i
+   , input                                       config_w_i
+   , output logic                                config_ready_o
+
+   , output logic [cfg_link_data_width_p-1:0]    config_data_o
+   , output logic                                config_v_o
+   , input                                       config_ready_i
 
    // ALU branch result signal
    , input                                       alu_branch_res_i
@@ -48,8 +65,16 @@ module bp_cce_pc
   logic ram_w_r, ram_w_r_n;
   logic [inst_ram_addr_width_lp-1:0] ram_addr_i, ram_addr_r, ram_addr_r_n;
   logic [inst_width_lp-1:0] ram_data_i_r, ram_data_o, ram_data_i_r_n;
+  logic [inst_width_lp-1:0] ram_w_mask_i;
+  assign ram_w_mask_i = '1;
 
-  bsg_mem_1rw_sync
+  // config logic
+  logic config_ram_w_v;
+  assign config_ram_w_v = config_addr_i[cfg_link_addr_width_p-2];
+  logic config_ram_addr;
+  assign config_ram_addr = config_addr_i[0+:inst_ram_addr_width_lp];
+
+  bsg_mem_1rw_sync_mask_write_bit
     #(.width_p(inst_width_lp)
       ,.els_p(inst_ram_els_p)
       )
@@ -61,6 +86,7 @@ module bp_cce_pc
       ,.addr_i(ram_addr_i)
       ,.w_i(ram_w_r)
       ,.data_o(ram_data_o)
+      ,.w_mask_i(ram_w_mask_i)
       );
 
   typedef enum logic [1:0] {

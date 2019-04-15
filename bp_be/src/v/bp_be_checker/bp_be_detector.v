@@ -40,39 +40,37 @@
 
 module bp_be_detector 
  import bp_common_pkg::*;
+ import bp_common_aviary_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
- #(parameter vaddr_width_p                 = "inv"
-   , parameter paddr_width_p               = "inv"
-   , parameter asid_width_p                = "inv"
-   , parameter branch_metadata_fwd_width_p = "inv"
+ #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+   `declare_bp_proc_params(cfg_p)
 
    , parameter load_to_use_forwarding_p = 1
 
    // Generated parameters
-   , localparam calc_status_width_lp = `bp_be_calc_status_width(branch_metadata_fwd_width_p)
+   , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    // From BE specifications
    , localparam pc_entry_point_lp = bp_pc_entry_point_gp
    // From RISC-V specifications
-   , localparam reg_data_width_lp = rv64_reg_data_width_gp
    , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
-   , localparam eaddr_width_lp    = rv64_eaddr_width_gp
    )
   (input                               clk_i
    , input                             reset_i
 
    // Dependency information
    , input [calc_status_width_lp-1:0]  calc_status_i
-   , input [reg_data_width_lp-1:0]     expected_npc_i
+   , input [vaddr_width_p-1:0]         expected_npc_i
    , input                             mmu_cmd_ready_i
 
+   , input                             trap_v_i
+
    // Pipeline control signals from the checker to the calculator
-   , output                           chk_dispatch_v_o
-   , output                           chk_roll_o
-   , output                           chk_poison_isd_o
-   , output                           chk_poison_ex1_o
-   , output                           chk_poison_ex2_o
-   , output                           chk_poison_ex3_o
+   , output                            chk_dispatch_v_o
+   , output                            chk_roll_o
+   , output                            chk_poison_isd_o
+   , output                            chk_poison_ex1_o
+   , output                            chk_poison_ex2_o
   );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p
@@ -179,28 +177,24 @@ always_comb
 
     // Detect misprediction
     mispredict_v = (calc_status.ex1_v & (calc_status.ex1_pc != expected_npc_i));
-
   end
 
 // Generate calculator control signals
-assign chk_dispatch_v_o = ~(data_haz_v | struct_haz_v);
-assign chk_roll_o       = calc_status.mem3_cache_miss_v;
+assign chk_dispatch_v_o = ~(data_haz_v | struct_haz_v); 
+assign chk_roll_o       = calc_status.mem3_miss_v;
+                          
 assign chk_poison_isd_o = reset_i
-                          | calc_status.mem3_cache_miss_v
-                          | calc_status.mem3_exception_v;
+                          | trap_v_i
+                          | calc_status.mem3_miss_v;
 
 assign chk_poison_ex1_o = reset_i 
                           | mispredict_v
-                          | calc_status.mem3_cache_miss_v
-                          | calc_status.mem3_exception_v;
+                          | trap_v_i
+                          | calc_status.mem3_miss_v;
 
-assign chk_poison_ex2_o  = reset_i
-                           | calc_status.mem3_cache_miss_v
-                           | calc_status.mem3_exception_v; 
-
-assign chk_poison_ex3_o  = reset_i
-                           | calc_status.mem3_cache_miss_v
-                           | calc_status.mem3_exception_v;
+assign chk_poison_ex2_o = reset_i
+                          | trap_v_i
+                          | calc_status.mem3_miss_v;
 
 endmodule : bp_be_detector
 

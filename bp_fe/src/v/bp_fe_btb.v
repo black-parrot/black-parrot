@@ -28,15 +28,15 @@ module bp_fe_btb
    , input                        reset_i 
 
    // Synchronous read
-   , input [eaddr_width_lp-1:0]   r_addr_i
+   , input [vaddr_width_p-1:0]    r_addr_i
    , input                        r_v_i
-   , output [eaddr_width_lp-1:0]  br_tgt_o
+   , output [vaddr_width_p-1:0]   br_tgt_o
    , output                       br_tgt_v_o
 
    , input [btb_tag_width_p-1:0]  w_tag_i
    , input [btb_idx_width_p-1:0]  w_idx_i
    , input                        w_v_i
-   , input [eaddr_width_lp-1:0]   br_tgt_i
+   , input [vaddr_width_p-1:0]    br_tgt_i
    );
 
 localparam btb_els_lp = 2**btb_idx_width_p;
@@ -80,8 +80,7 @@ bsg_mem_1rw_sync
 
 
 assign tag_mem_v_lo = v_r[r_idx_r];
-// TODO: This is a hack due to vaddr being 22 bits, but the start address starting past that
-assign br_tgt_o   = eaddr_width_lp'(tgt_mem_lo) | 64'h0000000080000000;
+assign br_tgt_o   = tgt_mem_lo;
 assign br_tgt_v_o = tag_mem_v_lo & r_v_r & (tag_mem_lo == r_tag_r);
 
 always_ff @(posedge clk_i)

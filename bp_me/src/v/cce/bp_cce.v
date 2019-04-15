@@ -19,8 +19,9 @@ module bp_cce
     , parameter num_cce_inst_ram_els_p     = "inv"
     , parameter lce_req_data_width_p       = "inv"
 
-    // Default parameters
-    , parameter harden_p                   = 0
+    // Config channel
+    , parameter cfg_link_addr_width_p = "inv"
+    , parameter cfg_link_data_width_p = "inv"
 
     // Derived parameters
     , localparam lg_num_lce_lp             = `BSG_SAFE_CLOG2(num_lce_p)
@@ -39,50 +40,42 @@ module bp_cce
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
     , localparam inst_ram_addr_width_lp    = `BSG_SAFE_CLOG2(num_cce_inst_ram_els_p)
 
-    , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
-                                                               ,num_lce_p
-                                                               ,paddr_width_p
-                                                               ,lce_assoc_p
-                                                               ,lce_req_data_width_p)
+    , localparam bp_lce_cce_req_width_lp=
+      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p)
+    , localparam bp_lce_cce_resp_width_lp=
+      `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
+    , localparam bp_lce_cce_data_resp_width_lp=
+      `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, block_size_in_bits_lp)
+    , localparam bp_cce_lce_cmd_width_lp=
+      `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p)
+    , localparam bp_lce_data_cmd_width_lp=
+      `bp_lce_data_cmd_width(num_lce_p, block_size_in_bits_lp, lce_assoc_p)
+    , localparam bp_lce_lce_tr_resp_width_lp=
+      `bp_lce_lce_tr_resp_width(num_lce_p, paddr_width_p, block_size_in_bits_lp, lce_assoc_p)
 
-    , localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
-                                                                 ,num_lce_p
-                                                                 ,paddr_width_p)
-
-    , localparam bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p
-                                                                           ,num_lce_p
-                                                                           ,paddr_width_p
-                                                                           ,block_size_in_bits_lp)
-
-    , localparam bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p
-                                                               ,num_lce_p
-                                                               ,paddr_width_p
-                                                               ,lce_assoc_p)
-
-    , localparam bp_lce_data_cmd_width_lp=`bp_lce_data_cmd_width(num_lce_p
-                                                                 ,block_size_in_bits_lp
-                                                                 ,lce_assoc_p)
-
-    , localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p
-                                                                 ,num_lce_p
-                                                                 ,lce_assoc_p)
-
-    , localparam bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(paddr_width_p
-                                                                           ,block_size_in_bits_lp
-                                                                           ,num_lce_p
-                                                                           ,lce_assoc_p)
-
-    , localparam bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(paddr_width_p
-                                                               ,num_lce_p
-                                                               ,lce_assoc_p)
-
-    , localparam bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_p
-                                                                        ,block_size_in_bits_lp
-                                                                        ,num_lce_p
-                                                                        ,lce_assoc_p)
+    , localparam bp_mem_cce_resp_width_lp=
+      `bp_mem_cce_resp_width(paddr_width_p, num_lce_p, lce_assoc_p)
+    , localparam bp_mem_cce_data_resp_width_lp=
+      `bp_mem_cce_data_resp_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    , localparam bp_cce_mem_cmd_width_lp=
+      `bp_cce_mem_cmd_width(paddr_width_p, num_lce_p, lce_assoc_p)
+    , localparam bp_cce_mem_data_cmd_width_lp=
+      `bp_cce_mem_data_cmd_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
   )
   (input                                               clk_i
    , input                                             reset_i
+   , input                                             freeze_i
+
+   // Config channel
+   , input [cfg_link_addr_width_p-2:0]                 config_addr_i
+   , input [cfg_link_data_width_p-1:0]                 config_data_i
+   , input                                             config_v_i
+   , input                                             config_w_i
+   , output logic                                      config_ready_o
+
+   , output logic [cfg_link_data_width_p-1:0]          config_data_o
+   , output logic                                      config_v_o
+   , input                                             config_ready_i
 
    // LCE-CCE Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer
@@ -237,11 +230,23 @@ module bp_cce
   // PC Logic, Instruction RAM
   bp_cce_pc
     #(.inst_ram_els_p(num_cce_inst_ram_els_p)
-      ,.harden_p(harden_p)
+      ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
+      ,.cfg_link_data_width_p(cfg_link_data_width_p)
       )
     pc_inst_ram
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
+      ,.freeze_i(freeze_i)
+
+      ,.config_addr_i(config_addr_i)
+      ,.config_data_i(config_data_i)
+      ,.config_v_i(config_v_i)
+      ,.config_w_i(config_w_i)
+      ,.config_ready_o(config_ready_o)
+
+      ,.config_data_o(config_data_o)
+      ,.config_v_o(config_v_o)
+      ,.config_ready_i(config_ready_i)
 
       ,.alu_branch_res_i(alu_branch_res_o)
 
@@ -322,7 +327,6 @@ module bp_cce
       ,.num_lce_p(num_lce_p)
       ,.lce_assoc_p(lce_assoc_p)
       ,.tag_width_p(tag_width_lp)
-      ,.harden_p(harden_p)
       )
     directory
      (.clk_i(clk_i)
@@ -359,7 +363,6 @@ module bp_cce
       ,.num_lce_p(num_lce_p)
       ,.lce_assoc_p(lce_assoc_p)
       ,.tag_width_p(tag_width_lp)
-      ,.harden_p(harden_p)
       )
     gad
      (.clk_i(clk_i)
@@ -390,7 +393,7 @@ module bp_cce
   bp_cce_reg
     #(.num_lce_p(num_lce_p)
       ,.num_cce_p(num_cce_p)
-      ,.addr_width_p(paddr_width_p)
+      ,.paddr_width_p(paddr_width_p)
       ,.lce_assoc_p(lce_assoc_p)
       ,.lce_sets_p(lce_sets_p)
       ,.block_size_in_bytes_p(block_size_in_bytes_p)
@@ -451,6 +454,8 @@ module bp_cce
 
   // A localparams and signals for output queue message formation
   // NOTE: num_cce_p must be a power of two
+  // TODO: the special logic to compute set index based on gpr value below can probably be put
+  // into microcode software
   localparam gpr_shift_lp = (num_cce_p == 1) ? 0 : lg_num_cce_lp;
   localparam [paddr_width_p-lg_lce_sets_lp-1:0] lce_cmd_addr_0 =
     (paddr_width_p-lg_lce_sets_lp)'('0);
@@ -749,6 +754,9 @@ module bp_cce
       e_src_sharers_hit_r0: begin
         alu_opd_a_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, sharers_hits_r0};
       end
+      e_src_cce_id: begin
+        alu_opd_a_i = {{(`bp_cce_inst_gpr_width-lg_num_cce_lp){1'b0}}, cce_id_i};
+      end
       e_src_lce_req_ready: begin
         alu_opd_a_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, lce_req_v_i};
       end
@@ -808,6 +816,7 @@ module bp_cce
       e_src_req_lce: alu_opd_b_i = {{(`bp_cce_inst_gpr_width-lg_num_lce_lp){1'b0}}, req_lce_r_o};
       e_src_ack_type: alu_opd_b_i = {gpr_ack_0, ack_type_r_o};
       e_src_sharers_hit_r0: alu_opd_b_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, sharers_hits_r0};
+      e_src_cce_id: alu_opd_b_i = {{(`bp_cce_inst_gpr_width-lg_num_cce_lp){1'b0}}, cce_id_i};
       e_src_lce_req_ready: alu_opd_b_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, lce_req_v_i};
       e_src_mem_resp_ready: alu_opd_b_i = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mem_resp_v_i};
       e_src_mem_data_resp_ready: alu_opd_b_i = {gpr_width_minus1_0, mem_data_resp_v_i};

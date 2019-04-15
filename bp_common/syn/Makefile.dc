@@ -26,6 +26,8 @@ deps.syn:
 # designers catch issues with the design such as non-synthesizable code. The
 # wildcard in the target.
 
+check_design.syn: CALC_DEBUG=0
+check_design.syn: TRACE_REPLAY=0
 check_design.syn: deps.syn
 	cd $(DC_RUN_DIR); \
 	$(DC_SHELL) -64bit -f $(BP_COMMON_DIR)/syn/tcl/dc_elab.tcl | tee -i $(LOG_FILE)

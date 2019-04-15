@@ -12,6 +12,13 @@ add <src_a> <src_b> <dst>
 sub <src_a> <src_b> <dst>
 inc <gpr>
 dec <gpr>
+lsh <gpr> <imm>
+rsh <gpr> <imm>
+and <src_a> <src_b> <dst>
+or  <src_a> <src_b> <dst>
+xor <src_a> <src_b> <dst>
+neg <gpr>
+
 
 <gpr>             =   r0, r1, r2, r3
 <src_a>, <src_b>  =   <gpr>
@@ -46,7 +53,7 @@ bge <src_a> <src_b> <target>
 mov  <src> <dst>
 movi <imm> <dst>
 
-<src> = <gpr>
+<src> = <gpr>, cce_id
 <dst> = <gpr>, nextCohSt
 <imm> = const_16
 

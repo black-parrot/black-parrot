@@ -94,16 +94,12 @@ logic [num_cce_p-1:0][boot_rom_width_p-1:0]   mrom_data;
 logic [num_cce_p-1:0][cce_inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
 logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]         cce_inst_boot_rom_data;
 
-logic [63:0] 				      tlb_miss_vaddr;
-   
 assign proc_cfg.mhartid   = 1'b0;
 assign proc_cfg.icache_id = 1'b0;
 assign proc_cfg.dcache_id = 1'b1; // Unused
 
     wrapper
-     #(.cfg_p(cfg_p)
-       ,.bp_first_pc_p(bp_first_pc_p) 
-       )
+     #(.cfg_p(cfg_p))
      wrapper
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
@@ -185,7 +181,8 @@ bsg_fifo_1r1w_small
    );
 
 mock_be_trace 
- #(.vaddr_width_p(vaddr_width_p)
+ #(.bp_first_pc_p(bp_first_pc_p)
+   ,.vaddr_width_p(vaddr_width_p)
    ,.paddr_width_p(paddr_width_p)
    ,.asid_width_p(asid_width_p)
    ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
@@ -224,8 +221,6 @@ mock_be_trace
    ,.trace_data_i(tr_data_lo)
    ,.trace_v_i(tr_v_lo)
    ,.trace_yumi_o(tr_yumi_li)
-
-   ,.tlb_miss_vaddr_i(tlb_miss_vaddr)
    );
 
 bsg_fsb_node_trace_replay

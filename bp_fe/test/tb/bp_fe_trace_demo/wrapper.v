@@ -8,7 +8,6 @@ module wrapper
  import bp_common_pkg::*;
  import bp_be_rv64_pkg::*;  
  #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR
-   , parameter bp_first_pc_p = "inv"
    `declare_bp_proc_params(cfg_p)
    `declare_bp_fe_be_if_widths(vaddr_width_p
                                ,paddr_width_p
@@ -63,7 +62,7 @@ module wrapper
    );
 
   bp_fe_top
-  #(.cfg_p(cfg_p), .bp_first_pc_p(bp_first_pc_p))
+  #(.cfg_p(cfg_p)) 
   dut
    (.*);
 

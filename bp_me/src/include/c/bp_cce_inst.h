@@ -119,6 +119,7 @@ typedef enum {
   ,e_src_req_lce                 = 0x14
   ,e_src_ack_type                = 0x15
   ,e_src_sharers_hit_r0          = 0x16
+  ,e_src_cce_id                  = 0x17
 
   ,e_src_lce_req_ready           = 0x18
   ,e_src_mem_resp_ready          = 0x19

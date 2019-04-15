@@ -4,7 +4,7 @@ BP_INC_DIR=$(abspath ../include/c)
 INC_DIR=$(abspath ./include)
 SRC_DIR=$(abspath ./src)
 
-BSG_MEM_DIR=$(abspath ../../basejump_stl/bsg_mem)
+BSG_MEM_DIR=$(abspath ../../../basejump_stl/bsg_mem)
 
 CXX=g++
 COMMON_CFLAGS=-Wall -Wno-switch -Wno-format -Wno-unused-function
@@ -52,3 +52,8 @@ cce-dbg: as $(cce_DBG)
 
 clean:
 	rm -f $(AS) $(as_SRC:.cc=.o) $(cce_PRE_SRC) $(cce_MEM) $(cce_DBG)
+	rm -rf roms
+
+roms: as
+	python2 py/roms.py -i microcode/cce/ei-tr -N 1 2 4 8 16 32 -W 2 4 8 16 32 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/ei-tr
+	python2 py/roms.py -i microcode/cce/mesi-tr -N 1 2 4 8 16 32 -W 2 4 8 16 32 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/mesi-tr

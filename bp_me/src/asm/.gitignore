@@ -5,3 +5,4 @@ tmp
 *.pre.S
 *.pre
 *.dbg
+roms/

@@ -12,7 +12,7 @@ module bp_cce_reg
   import bp_cce_pkg::*;
   #(parameter num_lce_p                     = "inv"
     , parameter num_cce_p                   = "inv"
-    , parameter addr_width_p                = "inv"
+    , parameter paddr_width_p                = "inv"
     , parameter lce_assoc_p                 = "inv"
     , parameter lce_sets_p                  = "inv"
     , parameter block_size_in_bytes_p       = "inv"
@@ -25,35 +25,22 @@ module bp_cce_reg
     , localparam lg_block_size_in_bytes_lp  = `BSG_SAFE_CLOG2(block_size_in_bytes_p)
     , localparam lg_lce_assoc_lp            = `BSG_SAFE_CLOG2(lce_assoc_p)
     , localparam lg_lce_sets_lp             = `BSG_SAFE_CLOG2(lce_sets_p)
-    , localparam tag_width_lp               = (addr_width_p-lg_lce_sets_lp-lg_block_size_in_bytes_lp)
+    , localparam tag_width_lp               =
+      (paddr_width_p-lg_lce_sets_lp-lg_block_size_in_bytes_lp)
     , localparam entry_width_lp             = (tag_width_lp+`bp_cce_coh_bits)
     , localparam tag_set_width_lp           = (entry_width_lp*lce_assoc_p)
     , localparam way_group_width_lp         = (tag_set_width_lp*num_lce_p)
 
-    , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
-                                                               ,num_lce_p
-                                                               ,addr_width_p
-                                                               ,lce_assoc_p
-                                                               ,lce_req_data_width_p)
-
-    , localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
-                                                                 ,num_lce_p
-                                                                 ,addr_width_p)
-
-    , localparam bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p
-                                                                           ,num_lce_p
-                                                                           ,addr_width_p
-                                                                           ,block_size_in_bits_lp)
-
-    , localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(addr_width_p
-                                                                 ,num_lce_p
-                                                                 ,lce_assoc_p)
-
-    , localparam bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(addr_width_p
-                                                                           ,block_size_in_bits_lp
-                                                                           ,num_lce_p
-                                                                           ,lce_assoc_p)
-
+    , localparam bp_lce_cce_req_width_lp=
+      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p)
+    , localparam bp_lce_cce_resp_width_lp=
+      `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
+    , localparam bp_lce_cce_data_resp_width_lp=
+      `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, block_size_in_bits_lp)
+    , localparam bp_mem_cce_resp_width_lp=
+      `bp_mem_cce_resp_width(paddr_width_p, num_lce_p, lce_assoc_p)
+    , localparam bp_mem_cce_data_resp_width_lp=
+      `bp_mem_cce_data_resp_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
   )
   (input                                                                   clk_i
    , input                                                                 reset_i
@@ -95,7 +82,7 @@ module bp_cce_reg
    // Register value outputs
 
    , output logic [lg_num_lce_lp-1:0]                                      req_lce_o
-   , output logic [addr_width_p-1:0]                                       req_addr_o
+   , output logic [paddr_width_p-1:0]                                      req_addr_o
    , output logic [tag_width_lp-1:0]                                       req_tag_o
 
 
@@ -103,7 +90,7 @@ module bp_cce_reg
    , output logic [`bp_cce_coh_bits-1:0]                                   req_coh_state_o
 
    , output logic [lg_lce_assoc_lp-1:0]                                    lru_way_o
-   , output logic [addr_width_p-1:0]                                       lru_addr_o
+   , output logic [paddr_width_p-1:0]                                      lru_addr_o
 
    , output logic [lg_num_lce_lp-1:0]                                      transfer_lce_o
    , output logic [lg_lce_assoc_lp-1:0]                                    transfer_lce_way_o
@@ -131,12 +118,12 @@ module bp_cce_reg
   wire unused = dir_pending_v_o_i;
 
   // Define structure variables for input queues
-  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, addr_width_p, lce_assoc_p, lce_req_data_width_p);
-  `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, addr_width_p);
-  `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, addr_width_p, block_size_in_bits_lp);
+  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p);
+  `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
+  `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, block_size_in_bits_lp);
 
 
-  `declare_bp_me_if(addr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
+  `declare_bp_me_if(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
 
   bp_lce_cce_req_s lce_req_s_i;
   bp_lce_cce_resp_s lce_resp_s_i;
@@ -157,12 +144,12 @@ module bp_cce_reg
   // Registers
 
   logic [lg_num_lce_lp-1:0] req_lce_r, req_lce_n;
-  logic [addr_width_p-1:0] req_addr_r, req_addr_n;
+  logic [paddr_width_p-1:0] req_addr_r, req_addr_n;
   logic [lg_lce_assoc_lp-1:0] req_addr_way_r, req_addr_way_n;
   logic [`bp_cce_coh_bits-1:0] req_coh_state_r, req_coh_state_n;
 
   logic [lg_lce_assoc_lp-1:0] lru_way_r, lru_way_n;
-  logic [addr_width_p-1:0] lru_addr_r, lru_addr_n;
+  logic [paddr_width_p-1:0] lru_addr_r, lru_addr_n;
 
   logic [lg_num_lce_lp-1:0] transfer_lce_r, transfer_lce_n;
   logic [lg_lce_assoc_lp-1:0] transfer_lce_way_r, transfer_lce_way_n;
@@ -190,7 +177,7 @@ module bp_cce_reg
   begin
     req_lce_o = req_lce_r;
     req_addr_o = req_addr_r;
-    req_tag_o = req_addr_r[addr_width_p-1 -: tag_width_lp];
+    req_tag_o = req_addr_r[paddr_width_p-1 -: tag_width_lp];
     req_addr_way_o = req_addr_way_r;
     // coherence state from directory comes from synchronous RAM so forward new value to output
     // when writing from directory output

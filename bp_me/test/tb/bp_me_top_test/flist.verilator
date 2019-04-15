@@ -1,3 +1,7 @@
+// BE files
++incdir+$BP_BE_DIR/src/include
++incdir+$BP_BE_DIR/src/include/bp_be_dcache
+
 // ME files
 $BP_ME_DIR/src/v/bp_me_top.v
 // CCE

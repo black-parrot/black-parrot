@@ -22,6 +22,10 @@ module testbench
 
    , parameter mem_els_p                   = "inv"
 
+   // Config link parameters
+   , parameter cfg_link_addr_width_p       = "inv"
+   , parameter cfg_link_data_width_p       = "inv"
+
    // Trace replay parameters
    , parameter trace_ring_width_p          = "inv"
    , parameter trace_rom_addr_width_p      = "inv"
@@ -127,6 +131,10 @@ logic [num_cce_p-1:0][boot_rom_width_p-1:0]   boot_rom_data_lo;
 logic [num_cce_p-1:0][cce_inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
 logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]         cce_inst_boot_rom_data;
 
+// Config link
+logic freeze_i;
+assign freeze_i = '0;
+
 // Memory End
 
 logic [num_cce_p-1:0][mem_cce_resp_width_lp-1:0] mem_resp;
@@ -145,11 +153,26 @@ logic [num_cce_p-1:0][cce_mem_data_cmd_width_lp-1:0] mem_data_cmd;
 logic [num_cce_p-1:0] mem_data_cmd_v;
 logic [num_cce_p-1:0] mem_data_cmd_yumi;
 
+
 wrapper 
- #(.cfg_p(cfg_p))
+ #(.cfg_p(cfg_p)
+   ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
+   ,.cfg_link_data_width_p(cfg_link_data_width_p)
+   )
  wrapper
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
+   ,.freeze_i(freeze_i)
+
+   ,.config_addr_i('0)
+   ,.config_data_i('0)
+   ,.config_v_i('0)
+   ,.config_w_i('0)
+   ,.config_ready_o()
+
+   ,.config_data_o()
+   ,.config_v_o()
+   ,.config_ready_i('0)
 
    ,.lce_cmd_o(cce_lce_cmd_li)
    ,.lce_cmd_v_o(cce_lce_cmd_v_li)

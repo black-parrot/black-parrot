@@ -26,9 +26,6 @@ module bp_cce_dir
     , parameter lce_assoc_p            = "inv"
     , parameter tag_width_p            = "inv"
 
-    // Default parameters
-    , parameter harden_p               = 0
-
     // Derived parameters
     , localparam lg_num_way_groups_lp  = `BSG_SAFE_CLOG2(num_way_groups_p)
     , localparam lg_num_lce_lp         = `BSG_SAFE_CLOG2(num_lce_p)

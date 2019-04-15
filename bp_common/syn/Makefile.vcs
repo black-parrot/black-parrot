@@ -3,7 +3,7 @@ VCS_OPTIONS  = +vcs+finish+5000000ps     # Change this to run longer / shorter
 VCS_OPTIONS += +vcs+lic+wait             # Wait for license
 VCS_OPTIONS += +libext+.v+.vlib+.vh      # Find library files with these extensions
 VCS_OPTIONS += +vcs+vcdpluson            # Enable vcd dump
-VCS_OPTIONS += +vcs+loopreport +lint=TFIPC-L
+#VCS_OPTIONS += +vcs+loopreport +lint=TFIPC-L # Enable combinational loop detection
 
 VCS_BUILD_OPTS += -full64 						# Compile a 64-bit executable
 VCS_BUILD_OPTS += -sverilog -debug_pp # Enable SystemVerilog

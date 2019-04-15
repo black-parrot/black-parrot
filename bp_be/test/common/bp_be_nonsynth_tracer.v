@@ -38,7 +38,7 @@ module bp_be_nonsynth_tracer
    , input                                                 be_nop_v_i
    , input                                                 me_nop_v_i
 
-   , input [reg_data_width_lp-1:0]                         ex1_br_tgt_i
+   , input [vaddr_width_p-1:0]                             ex1_br_tgt_i
    , input                                                 ex1_btaken_i
    , input [reg_data_width_lp-1:0]                         iwb_result_i
    , input [reg_data_width_lp-1:0]                         fwb_result_i
@@ -74,9 +74,9 @@ wire [reg_data_width_lp-1:0] unused1 = fwb_result_i;
        ,.data_o(dbg_stage_r)
        );
      
-    logic [reg_data_width_lp-1:0] iwb_br_tgt_r;
+    logic [vaddr_width_p-1:0] iwb_br_tgt_r;
     bsg_shift_reg
-     #(.width_p(reg_data_width_lp)
+     #(.width_p(vaddr_width_p)
        ,.stages_p(2)
        )
      dbg_shift_reg
@@ -179,8 +179,12 @@ end
                              ,dbg_stage_r[2].rs1
                              );
                 */
-                end else if(dbg_stage_r[2].decode.ret_v) begin
-                    $fwrite(file, "\t\top: ret\n");
+                end else if(dbg_stage_r[2].decode.mret_v) begin
+                    $fwrite(file, "\t\top: mret\n");
+                end else if(dbg_stage_r[2].decode.sret_v) begin
+                    $fwrite(file, "\t\top: sret\n");
+                end else if(dbg_stage_r[2].decode.uret_v) begin
+                    $fwrite(file, "\t\top: uret\n");
                 end else if(dbg_stage_r[2].decode.dcache_r_v) begin
                     $fwrite(file, "\t\top: load sem: r%d <- mem[%x] {%x}\n"
                              ,dbg_stage_r[2].decode.rd_addr
