@@ -22,12 +22,17 @@ include Makefile.frag
 all: isa benchmarks demos
 
 isa: isa_elf isa_rom
+isa_v: isa_v_elf isa_v_rom
 benchmarks: benchmarks_elf benchmarks_rom
 demos: demos_elf demos_rom
 
 isa_elf:
 	make -C src/isa
-	mv src/isa/*.elf .
+	mv src/isa/rv64ui_p*.elf .
+
+isa_v_elf:
+	make -C src/isa
+	mv src/isa/rv64ui_v*.elf .
 
 benchmarks_elf:
 	make -C src/benchmarks
@@ -40,6 +45,9 @@ demos_elf:
 isa_rom: SPIKE_OPTS := 
 isa_rom: $(foreach x, $(subst -,_,$(RV64_TESTS)), $(x).v)
 isa_rom: $(foreach x, $(subst -,_,$(RV64_TESTS)), $(x).trace)
+
+isa_v_rom: SPIKE_OPTS := --pc=0x80000124
+isa_v_rom: $(foreach x, $(subst -,_,$(RV64_V_TESTS)), $(x).v)
 
 benchmarks_rom: SPIKE_OPTS := --pc=0x80000124 --end-pc=0x800001b0
 benchmarks_rom: $(foreach x, $(subst -,_,$(RV64_BENCHMARKS)), $(x).v)
