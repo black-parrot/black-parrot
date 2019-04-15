@@ -29,7 +29,13 @@ module bp_be_ptw
    , output                                 busy_o
    
    , input                                  itlb_not_dtlb_i
-   , output                                 itlb_not_dtlb_o
+   , output logic                           itlb_not_dtlb_o
+   
+   , input                                  store_not_load_i
+   
+   , output logic                           instr_page_fault_o
+   , output logic                           load_page_fault_o
+   , output logic                           store_page_fault_o
    
    // TLB connections
    , input                                  tlb_miss_v_i
@@ -62,7 +68,7 @@ module bp_be_ptw
   
   state_e state_r, state_n;
 
-  logic pte_leaf_v;
+  logic pte_is_leaf;
   logic start;
   logic [lg_page_table_depth_lp-1:0] level_cntr;
   logic                              level_cntr_en;
@@ -72,6 +78,9 @@ module bp_be_ptw
   
   logic [page_table_depth_p-1:0] [partial_vpn_width_lp-1:0] partial_vpn;
   logic [page_table_depth_p-2:0] [partial_vpn_width_lp-1:0] partial_ppn;
+  
+  logic store_not_load_r;
+  logic page_fault_v;
 
   genvar i;
   generate 
@@ -109,22 +118,32 @@ module bp_be_ptw
     
   assign start                  = (state_r == eIdle) & tlb_miss_v_i;
   
-  assign pte_leaf_v             = dcache_data.x | dcache_data.w | dcache_data.r;
+  assign pte_is_leaf            = dcache_data.x | dcache_data.w | dcache_data.r;
   
-  assign level_cntr_en          = busy_o & dcache_v_i & ~pte_leaf_v;
+  assign level_cntr_en          = busy_o & dcache_v_i & ~pte_is_leaf;
   
   assign ppn_en                 = start | (busy_o & dcache_v_i);
   assign ppn_n                  = (state_r == eIdle)? base_ppn_i : dcache_data.ppn[0+:ppn_width_lp];
   assign vpn_n                  = tlb_miss_vtag_i;
   
+  assign instr_page_fault_o       = busy_o & dcache_v_i & ((level_cntr == '0 & ~dcache_data.v) | (pte_is_leaf & itlb_not_dtlb_o & ~dcache_data.x));
+  assign load_page_fault_o        = busy_o & dcache_v_i & ((level_cntr == '0 & ~dcache_data.v) | (pte_is_leaf & ~store_not_load_r & ~dcache_data.r));
+  assign store_page_fault_o       = busy_o & dcache_v_i & ((level_cntr == '0 & ~dcache_data.v) | (pte_is_leaf & store_not_load_r & ~dcache_data.w));
+  assign page_fault_v           = instr_page_fault_o | load_page_fault_o | store_page_fault_o;
   
   always_comb begin
     case(state_r)
-      eIdle:      state_n = (tlb_miss_v_i)? ((translation_en_i)? eSendLoad : eWriteBack) : eIdle;
-      eSendLoad:  state_n = (dcache_rdy_i)? eWaitLoad : eSendLoad;
-      eWaitLoad:  state_n = (dcache_miss_i)? eSendLoad :
-                            (dcache_v_i)? ((pte_leaf_v)? eWriteBack : eSendLoad) :
-                            eWaitLoad;
+      eIdle:      state_n = tlb_miss_v_i 
+                             ? (translation_en_i ? eSendLoad : eWriteBack) 
+                             : eIdle;                           
+      eSendLoad:  state_n = dcache_rdy_i ? eWaitLoad : eSendLoad; 
+      eWaitLoad:  state_n = dcache_miss_i
+                            ? eSendLoad
+                            : (dcache_v_i
+                                ? (page_fault_v
+                                    ? eIdle
+                                    : (pte_is_leaf ? eWriteBack : eSendLoad))
+                                    : eWaitLoad);                                                             
       eWriteBack: state_n = eIdle;
       default: state_n = eStuck;
     endcase
@@ -160,6 +179,15 @@ module bp_be_ptw
      ,.data_i(vpn_n)
      ,.data_o(vpn_r)
     );
+  
+  bsg_dff_reset_en #(.width_p(ppn_width_lp))
+    ppn_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.en_i(ppn_en)
+     ,.data_i(ppn_n)
+     ,.data_o(ppn_r)
+    );
     
   bsg_dff_reset_en #(.width_p(1))
     tlb_sel_reg
@@ -169,14 +197,14 @@ module bp_be_ptw
      ,.data_i(itlb_not_dtlb_i)
      ,.data_o(itlb_not_dtlb_o)
     );
-  
-  bsg_dff_reset_en #(.width_p(ppn_width_lp))
-    ppn_reg
+    
+  bsg_dff_reset_en #(.width_p(1))
+    cmd_sel_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(ppn_en)
-     ,.data_i(ppn_n)
-     ,.data_o(ppn_r)
+     ,.en_i(start)
+     ,.data_i(store_not_load_i)
+     ,.data_o(store_not_load_r)
     );
  
 endmodule
