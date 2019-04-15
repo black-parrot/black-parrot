@@ -270,29 +270,3 @@ checkCceDataCmd(sc_bv<bp_lce_data_cmd_width> &msg, uint32_t dst, uint32_t way,
   cout << "exp msg:      " << exp.to_string() << endl;
   return !(msg.to_string().compare(exp.to_string()));
 }
-
-// LCE to LCE Transfer Response
-sc_bv<bp_lce_lce_tr_resp_width>
-createLceTrResp(uint32_t dst, uint32_t src, uint64_t addr, uint32_t way)
-{
-  sc_bv<bp_lce_lce_tr_resp_width> msg(0);
-  msg.range(DATA_WIDTH_BITS-1,0) = 0;
-  msg.range(DATA_WIDTH_BITS-ADDR_WIDTH-1,DATA_WIDTH_BITS) = addr;
-  msg.range(DATA_WIDTH_BITS-ADDR_WIDTH-LG_LCE_ASSOC-1,DATA_WIDTH_BITS-ADDR_WIDTH) = way;
-  msg.range(bp_lce_lce_tr_resp_width-LG_N_CCE-1, bp_lce_lce_tr_resp_width-LG_N_LCE-LG_N_LCE) = src;
-  msg.range(bp_lce_lce_tr_resp_width-1, bp_lce_lce_tr_resp_width-LG_N_LCE) = dst;
-
-  cout << "lceTrResp: " << msg.to_string() << endl;
-
-  return msg;
-}
-
-bool
-checkLceTrResp(sc_bv<bp_lce_lce_tr_resp_width> &msg, uint32_t dst, uint32_t src, uint64_t addr,
-               uint32_t way)
-{
-  sc_bv<bp_lce_lce_tr_resp_width> exp = createLceTrResp(dst, src, addr, way);
-  cout << "LCE Tr Resp: " << msg << endl;
-  cout << "exp msg:     " << exp.to_string() << endl;
-  return !(msg.to_string().compare(exp.to_string()));
-}
