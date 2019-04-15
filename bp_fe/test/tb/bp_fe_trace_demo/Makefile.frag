@@ -1,7 +1,7 @@
 DUT_PARAMS= \
-           "-pvalue+bp_first_pc_p=32\'h80000124"
 
 TB_PARAMS= \
+           "-pvalue+bp_first_pc_p=32\'h80000124"  \
            -pvalue+boot_rom_width_p=512           \
            -pvalue+boot_rom_els_p=512             \
            -pvalue+trace_ring_width_p=96          \

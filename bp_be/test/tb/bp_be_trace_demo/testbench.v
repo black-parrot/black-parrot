@@ -31,7 +31,6 @@ module testbench
    , parameter trace_rom_addr_width_p   = "inv"
 
    , parameter calc_debug_p      = 0
-   , parameter calc_debug_file_p = "inv"
    )
   (input clk_i
    , input reset_i
@@ -100,6 +99,8 @@ logic [dword_width_p-1:0]          cmt_mem_addr;
 logic [`bp_be_fu_op_width-1:0]     cmt_mem_op;
 logic [dword_width_p-1:0]          cmt_data;
 
+logic timer_int, software_int, external_int;
+
 bp_proc_cfg_s proc_cfg;
 
 logic [trace_ring_width_p-1:0] tr_data_li;
@@ -116,7 +117,6 @@ wrapper
  #(.cfg_p(cfg_p)
    ,.trace_p(trace_p)
    ,.calc_debug_p(calc_debug_p)
-   ,.calc_debug_file_p(calc_debug_file_p)
    )
  wrapper
   (.clk_i(clk_i)
@@ -159,6 +159,10 @@ wrapper
    ,.lce_data_cmd_ready_i(lce_data_cmd_rdy_li)
 
    ,.proc_cfg_i(proc_cfg)
+
+   ,.timer_int_i(timer_int)
+   ,.software_int_i(software_int)
+   ,.external_int_i(external_int)
 
    ,.cmt_rd_w_v_o(cmt_rd_w_v)
    ,.cmt_rd_addr_o(cmt_rd_addr)
@@ -465,6 +469,10 @@ logic [lg_max_clock_cnt_lp-1:0] clock_cnt;
 
      ,.count_o(clock_cnt)
      );
+
+assign timer_int    = '0 & (clock_cnt == 10000);
+assign software_int = '0 & (clock_cnt == 20000);
+assign external_int = '0 & (clock_cnt == 30000);
    
 always_ff @(posedge clk_i)
   begin

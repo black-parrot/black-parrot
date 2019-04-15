@@ -15,17 +15,15 @@ module bp_top
    `declare_bp_me_if_widths(paddr_width_p, dword_width_p, num_lce_p, lce_assoc_p)
 
    // Used to enable trace replay outputs for testbench
-   , parameter trace_p = 1
-
-   // This will go away with the manycore bridge
-   , parameter cce_num_inst_ram_els_p = 144
+   , parameter trace_p      = 0
+   , parameter calc_debug_p = 0
    )
   (input                                                      clk_i
    , input                                                    reset_i
 
    // This will go away with the manycore bridge
-   , output logic [num_cce_p-1:0][`BSG_SAFE_CLOG2(cce_num_inst_ram_els_p)-1:0] cce_inst_boot_rom_addr_o
-   , input logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]                       cce_inst_boot_rom_data_i
+   , output logic [num_cce_p-1:0][`BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)-1:0] cce_inst_boot_rom_addr_o
+   , input logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]                        cce_inst_boot_rom_data_i
 
    , input [num_cce_p-1:0][mem_cce_resp_width_lp-1:0]         mem_resp_i
    , input [num_cce_p-1:0]                                    mem_resp_v_i
@@ -42,6 +40,10 @@ module bp_top
    , output [num_cce_p-1:0][cce_mem_data_cmd_width_lp-1:0]    mem_data_cmd_o
    , output [num_cce_p-1:0]                                   mem_data_cmd_v_o
    , input [num_cce_p-1:0]                                    mem_data_cmd_yumi_i
+
+   , input                                                    timer_int_i
+   , input                                                    software_int_i
+   , input                                                    external_int_i
 
    // Commit tracer for trace replay
    , output [num_core_p-1:0]                                  cmt_rd_w_v_o
@@ -99,6 +101,7 @@ for(genvar core_id = 0; core_id < num_core_p; core_id++)
     bp_core   
      #(.cfg_p(cfg_p)
        ,.trace_p(trace_p)
+       ,.calc_debug_p(calc_debug_p)
        )
      core 
       (.clk_i(clk_i)
@@ -129,6 +132,10 @@ for(genvar core_id = 0; core_id < num_core_p; core_id++)
        ,.lce_data_cmd_o(lce_data_cmd_lo[core_id])
        ,.lce_data_cmd_v_o(lce_data_cmd_v_lo[core_id])
        ,.lce_data_cmd_ready_i(lce_data_cmd_ready_li[core_id])
+
+       ,.timer_int_i(timer_int_i)
+       ,.software_int_i(software_int_i)
+       ,.external_int_i(external_int_i)
 
        ,.cmt_rd_w_v_o(cmt_rd_w_v_o[core_id])
        ,.cmt_rd_addr_o(cmt_rd_addr_o[core_id])

@@ -37,7 +37,8 @@ bsg_nonsynth_reset_gen
    );
 
 testbench
- #(.mem_els_p(mem_els_p)
+ #(.bp_first_pc_p(bp_first_pc_p)
+   ,.mem_els_p(mem_els_p)
    ,.boot_rom_width_p(boot_rom_width_p)
    ,.boot_rom_els_p(boot_rom_els_p)
    ,.trace_ring_width_p(trace_ring_width_p)

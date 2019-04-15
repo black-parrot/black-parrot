@@ -5,17 +5,14 @@
 
 module bp_me_top_test
   import bp_common_pkg::*;
-  import bp_cce_pkg::*;
   import bp_common_aviary_pkg::*;
+  import bp_cce_pkg::*;
   #(parameter bp_cfg_e cfg_p = e_bp_half_core_cfg
     `declare_bp_proc_params(cfg_p)
 
     // Config channel
     ,parameter cfg_link_addr_width_p = "inv"
     ,parameter cfg_link_data_width_p = "inv"
-
-    ,localparam block_size_in_bytes_lp=(cce_block_width_p/8)
-    ,localparam num_inst_ram_els_p=num_cce_instr_ram_els_p
 
     ,localparam lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
 
@@ -185,7 +182,7 @@ module bp_me_top_test
       ,.num_cce_p(num_cce_p)
       ,.paddr_width_p(paddr_width_p)
       ,.lce_assoc_p(lce_assoc_p)
-      ,.block_size_in_bytes_p(block_size_in_bytes_lp)
+      ,.block_size_in_bytes_p(cce_block_width_p/8)
       ,.lce_sets_p(lce_sets_p)
       ,.mem_els_p(mem_els_p)
       ,.boot_rom_width_p(boot_rom_width_p)

@@ -37,7 +37,9 @@ typedef enum bit [3:0]
   ,e_sh  = 4'b1001
   ,e_sw  = 4'b1010
   ,e_sd  = 4'b1011
-} bp_be_mem_fu_op_e;
+  
+  ,e_ptw = 4'b1100
+} bp_be_mmu_fu_op_e;
 
 typedef enum bit [3:0]
 {
@@ -47,6 +49,10 @@ typedef enum bit [3:0]
   ,e_csrrwi = 4'b0101
   ,e_csrrsi = 4'b0110
   ,e_csrrci = 4'b0111
+
+  ,e_mret   = 4'b1011
+  ,e_sret   = 4'b1001
+  ,e_uret   = 4'b1000
 } bp_be_csr_fu_op_e;
 
 typedef struct packed
@@ -54,7 +60,7 @@ typedef struct packed
   union packed
   {
     bp_be_int_fu_op_e int_fu_op;
-    bp_be_mem_fu_op_e mem_fu_op;
+    bp_be_mmu_fu_op_e mmu_fu_op;
     bp_be_csr_fu_op_e csr_fu_op;
   }  fu_op;
 }  bp_be_fu_op_s;
@@ -102,7 +108,9 @@ typedef struct packed
   logic                             dcache_w_v;
   logic                             dcache_r_v;
   logic                             fp_not_int_v;
-  logic                             ret_v;
+  logic                             mret_v;
+  logic                             sret_v;
+  logic                             uret_v;
   logic                             amo_v;
   logic                             jmp_v;
   logic                             br_v;
@@ -122,20 +130,44 @@ typedef struct packed
 
 typedef struct packed
 {
+  // RISC-V exceptions
+  logic store_page_fault;
+  logic reserved2;
+  logic load_page_fault;
+  logic instr_page_fault;
+  logic ecall_m_mode;
+  logic reserved1;
+  logic ecall_s_mode;
+  logic ecall_u_mode;
+  logic store_fault;
+  logic store_misaligned;
+  logic load_fault;
+  logic load_misaligned;
+  logic breakpoint;
+  logic illegal_instr;
+  logic instr_fault;
+  logic instr_misaligned;
+}  bp_be_ecode_dec_s;
+
+`define bp_be_ecode_dec_width \
+  ($bits(bp_be_ecode_dec_s))
+
+typedef struct packed
+{
+  // BE exceptional conditions
   logic poison_v;
   logic roll_v;
-  logic illegal_instr_v;
-  logic illegal_csr_v;
-  logic ret_instr_v;
+
   logic csr_instr_v;
-  logic tlb_miss_v;
-  logic load_fault_v;
-  logic store_fault_v;
-  logic cache_miss_v;
+  logic itlb_fill_v;  
+
+  logic instr_misaligned_v;
+  logic instr_access_fault_v;
+  logic illegal_instr_v;
 }  bp_be_exception_s;
 
 `define bp_be_fu_op_width                                                                          \
-  (`BSG_MAX($bits(bp_be_int_fu_op_e), $bits(bp_be_mem_fu_op_e)))
+  (`BSG_MAX($bits(bp_be_int_fu_op_e), `BSG_MAX($bits(bp_be_mmu_fu_op_e), $bits(bp_be_mmu_fu_op_e))))
 
 `define bp_be_decode_width                                                                         \
   ($bits(bp_be_decode_s))

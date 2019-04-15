@@ -12,7 +12,7 @@
   typedef struct packed                                                                            \
   {                                                                                                \
     bp_be_fu_op_s                      mem_op;                                                     \
-    logic [vaddr_width_mp-1:0]         vaddr;                                                      \
+    bp_be_mmu_vaddr_s                  vaddr;                                                      \
     logic [rv64_reg_data_width_gp-1:0] data;                                                       \
   }  bp_be_mmu_cmd_s;                                                                              \
                                                                                                    \
@@ -26,9 +26,22 @@
   typedef struct packed                                                                            \
   {                                                                                                \
     logic [rv64_reg_data_width_gp-1:0] data;                                                       \
-    bp_be_exception_s                  exception;                                                  \
+    bp_be_mem_exception_s              exception;                                                  \
   }  bp_be_mem_resp_s;                                                                             \
 
+typedef struct packed 
+{
+  logic illegal_instr;
+  logic instr_fault;
+  logic load_fault;
+  logic store_fault;
+  logic instr_page_fault;
+  logic load_page_fault;
+  logic store_page_fault;
+}  bp_be_mem_exception_s;
+
+`define bp_be_mem_exception_width \
+  ($bits(bp_be_mem_exception_s))
 
 `define bp_be_vtag_width(vaddr_width_mp, sets_mp, block_size_in_bytes_mp) \
   (vaddr_width_mp - `BSG_SAFE_CLOG2(sets_mp*block_size_in_bytes_mp))
@@ -49,7 +62,7 @@
   (`bp_be_fu_op_width + rv64_csr_addr_width_gp + rv64_reg_data_width_gp)
 
 `define bp_be_mem_resp_width                                                                       \
-  (rv64_reg_data_width_gp + `bp_be_exception_width)
+  (rv64_reg_data_width_gp + `bp_be_mem_exception_width)
 
 `endif
 

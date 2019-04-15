@@ -26,7 +26,8 @@ module bp_core
                                   )
 
     // Enables trace replay
-    , parameter trace_p = 1
+    , parameter trace_p      = 0
+    , parameter calc_debug_p = 0
 
     // Should go away with manycore bridge 
     , localparam proc_cfg_width_lp = `bp_proc_cfg_width(num_core_p, num_lce_p)
@@ -63,6 +64,10 @@ module bp_core
     , output [1:0]                                 lce_data_cmd_v_o
     , input [1:0]                                  lce_data_cmd_ready_i
 
+    , input                                        timer_int_i
+    , input                                        software_int_i
+    , input                                        external_int_i
+
     // Commit tracer for trace replay
     , output                                       cmt_rd_w_v_o
     , output [rv64_reg_addr_width_gp-1:0]          cmt_rd_addr_o
@@ -92,9 +97,7 @@ module bp_core
   bp_proc_cfg_s proc_cfg;
   assign proc_cfg = proc_cfg_i;
   bp_fe_top
-   #(.cfg_p(cfg_p)
-     ,.bp_first_pc_p(bp_pc_entry_point_gp) /* TODO: Not ideal to couple to RISCV-tests */
-     ) 
+   #(.cfg_p(cfg_p))
    fe 
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -177,6 +180,7 @@ module bp_core
   bp_be_top 
    #(.cfg_p(cfg_p)
      ,.trace_p(trace_p)
+     ,.calc_debug_p(calc_debug_p)
      )
    be
     (.clk_i(clk_i)
@@ -219,6 +223,10 @@ module bp_core
      ,.lce_data_cmd_o(lce_data_cmd_o[1])
      ,.lce_data_cmd_v_o(lce_data_cmd_v_o[1])
      ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i[1])
+
+     ,.timer_int_i(timer_int_i)
+     ,.software_int_i(software_int_i)
+     ,.external_int_i(external_int_i)
 
      ,.cmt_rd_w_v_o(cmt_rd_w_v_o)
      ,.cmt_rd_addr_o(cmt_rd_addr_o)

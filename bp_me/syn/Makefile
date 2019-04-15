@@ -34,7 +34,7 @@ include $(BP_COMMON_DIR)/syn/Makefile.verilator
 include $(BP_COMMON_DIR)/syn/Makefile.vcs
 
 regress: regress.me
-regress.me: 
+regress.me: check_design.syn
 	$(MAKE) lint.v || true
 	$(MAKE) lint.sc || true
 	$(MAKE) run.sc TB=bp_cce_alu

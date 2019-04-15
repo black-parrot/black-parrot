@@ -23,11 +23,11 @@
  */
 
 
-module icache
+module bp_fe_icache
   import bp_common_pkg::*;
   import bp_fe_pkg::*;
   import bp_fe_icache_pkg::*;  
-  #(parameter eaddr_width_p="inv"
+  #(parameter vaddr_width_p="inv"
     , parameter paddr_width_p="inv"
     , parameter data_width_p="inv"
     , parameter instr_width_p="inv"
@@ -49,7 +49,7 @@ module icache
     , localparam coh_bits_lp=`bp_cce_coh_bits
     , parameter debug_p=0
 
-    , localparam bp_fe_pc_gen_icache_width_lp=`bp_fe_pc_gen_icache_width(eaddr_width_p)
+    , localparam bp_fe_pc_gen_icache_width_lp=`bp_fe_pc_gen_icache_width(vaddr_width_p)
     , localparam bp_fe_itlb_icache_data_resp_width_lp=`bp_fe_itlb_icache_data_resp_width(tag_width_lp)
 
 
@@ -69,7 +69,7 @@ module icache
 
     , localparam bp_fe_icache_metadata_width_lp=`bp_fe_icache_metadata_width(ways_p)
 
-    , parameter bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(eaddr_width_p)
+    , parameter bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(vaddr_width_p)
 
     , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
    )
@@ -92,7 +92,7 @@ module icache
     , input                                            itlb_icache_miss_i 
     
     , output logic                                     cache_miss_o
-    , input                                            poison_i
+    , input                                            poison_tl_i
 
     , output logic [bp_lce_cce_req_width_lp-1:0]       lce_req_o
     , output logic                                     lce_req_v_o
@@ -147,10 +147,10 @@ module icache
   // TL stage
   logic v_tl_r;
   logic tl_we;
-  logic [bp_page_offset_width_gp-1:0] vaddr_tl_r;
-  logic [eaddr_width_p-1:0] eaddr_tl_r;
+  logic [bp_page_offset_width_gp-1:0] page_offset_tl_r;
+  logic [vaddr_width_p-1:0]           vaddr_tl_r;
 
-  assign tl_we = pc_gen_icache_vaddr_v_i & pc_gen_icache_vaddr_ready_o & ~poison_i;
+  assign tl_we = pc_gen_icache_vaddr_v_i & pc_gen_icache_vaddr_ready_o;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -158,8 +158,8 @@ module icache
     end else begin
       v_tl_r       <= tl_we;
       if (tl_we) begin
-        vaddr_tl_r <= pc_gen_icache_vaddr_i[bp_page_offset_width_gp-1:0];
-        eaddr_tl_r <= pc_gen_icache_vaddr_i;
+        page_offset_tl_r <= pc_gen_icache_vaddr_i[bp_page_offset_width_gp-1:0];
+        vaddr_tl_r       <= pc_gen_icache_vaddr_i;
       end
     end
   end
@@ -226,7 +226,7 @@ module icache
   logic v_tv_r;
   logic tv_we;
   logic [paddr_width_p-1:0]                     addr_tv_r;
-  logic [eaddr_width_p-1:0]                     eaddr_tv_r; 
+  logic [vaddr_width_p-1:0]                     vaddr_tv_r; 
   logic [ways_p-1:0][tag_width_lp-1:0]          tag_tv_r;
   logic [ways_p-1:0][coh_bits_lp-1:0]       state_tv_r;
   logic [ways_p-1:0][data_width_p-1:0]          ld_data_tv_r;
@@ -234,7 +234,7 @@ module icache
   logic [index_width_lp-1:0]                    addr_index_tv;
   logic [word_offset_width_lp-1:0]              addr_word_offset_tv;
 
-  assign tv_we = v_tl_r & ~poison_i & itlb_icache_data_resp_v_i & ~itlb_icache_miss_i;
+  assign tv_we = v_tl_r & ~poison_tl_i & itlb_icache_data_resp_v_i & ~itlb_icache_miss_i;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -244,7 +244,7 @@ module icache
       v_tv_r <= tv_we;
       if (tv_we) begin
         addr_tv_r    <= {itlb_icache_data_resp_li.ppn, vaddr_tl_r};
-        eaddr_tv_r   <= eaddr_tl_r;
+        vaddr_tv_r   <= vaddr_tl_r;
         tag_tv_r     <= tag_tl;
         state_tv_r   <= state_tl;
         ld_data_tv_r <= data_mem_bank_data_lo;
@@ -416,13 +416,13 @@ module icache
 
   logic lower_upper_sel;
 
-  `declare_bp_fe_icache_pc_gen_s(eaddr_width_p);
+  `declare_bp_fe_icache_pc_gen_s(vaddr_width_p);
   bp_fe_icache_pc_gen_s icache_pc_gen_data_lo;
   assign lower_upper_sel             = addr_tv_r[byte_offset_width_lp-1];
   assign icache_pc_gen_data_lo.instr = lower_upper_sel
     ? ld_data_way_picked[instr_width_p+:instr_width_p]
     : ld_data_way_picked[instr_width_p-1:0];
-  assign icache_pc_gen_data_lo.addr  = eaddr_tv_r;
+  assign icache_pc_gen_data_lo.addr  = vaddr_tv_r;
   assign icache_pc_gen_data_o        = icache_pc_gen_data_lo;
 
 
