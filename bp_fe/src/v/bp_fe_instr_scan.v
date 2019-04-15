@@ -8,7 +8,7 @@
 module instr_scan
  import bp_common_pkg::*;
  import bp_fe_pkg::*; 
- #(parameter eaddr_width_p="inv"
+ #(parameter vaddr_width_p="inv"
    , parameter instr_width_p="inv"
    , localparam bp_fe_instr_scan_width_lp=`bp_fe_instr_scan_width 
   ) 

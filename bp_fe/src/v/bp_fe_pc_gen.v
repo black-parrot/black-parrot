@@ -13,7 +13,6 @@ module bp_fe_pc_gen
  import bp_fe_pkg::*;
  #(parameter vaddr_width_p="inv"
    , parameter paddr_width_p="inv"
-   , parameter eaddr_width_p="inv"
    , parameter btb_tag_width_p="inv"
    , parameter btb_idx_width_p="inv"
    , parameter bht_idx_width_p="inv"
@@ -22,8 +21,8 @@ module bp_fe_pc_gen
    , parameter asid_width_p="inv"
    , localparam instr_scan_width_lp=`bp_fe_instr_scan_width
    , localparam branch_metadata_fwd_width_lp=`bp_fe_branch_metadata_fwd_width(btb_tag_width_p,btb_idx_width_p,bht_idx_width_p,ras_idx_width_p)
-   , localparam bp_fe_pc_gen_icache_width_lp=eaddr_width_p
-   , localparam bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(eaddr_width_p)
+   , localparam bp_fe_pc_gen_icache_width_lp=vaddr_width_p
+   , localparam bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(vaddr_width_p)
    , localparam bp_fe_pc_gen_itlb_width_lp=`bp_fe_pc_gen_itlb_width(vaddr_width_p)
    , localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p,branch_metadata_fwd_width_lp)
    , localparam bp_fe_pc_gen_width_o_lp=`bp_fe_pc_gen_queue_width(vaddr_width_p,branch_metadata_fwd_width_lp)
@@ -70,11 +69,11 @@ assign pc_gen_itlb_v_o = pc_gen_icache_v_o;
 //fe to pc_gen
 `declare_bp_fe_pc_gen_cmd_s(vaddr_width_p, branch_metadata_fwd_width_lp);
 //pc_gen to icache
-`declare_bp_fe_pc_gen_icache_s(eaddr_width_p);
+`declare_bp_fe_pc_gen_icache_s(vaddr_width_p);
 //pc_gen to itlb
 `declare_bp_fe_pc_gen_itlb_s(vaddr_width_p);
 //icache to pc_gen
-`declare_bp_fe_icache_pc_gen_s(eaddr_width_p);
+`declare_bp_fe_icache_pc_gen_s(vaddr_width_p);
 //the second level structs definitions
 `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p,btb_idx_width_p,bht_idx_width_p,ras_idx_width_p);
 
@@ -98,9 +97,9 @@ bp_fe_instr_scan_s       scan_instr;
 enum bit [0:0] {e_reset, e_run} state_n, state_r;
    
 // pipeline pc's
-logic [eaddr_width_p-1:0]       pc_f2;
+logic [vaddr_width_p-1:0]       pc_f2;
 logic                           pc_v_f2;
-logic [eaddr_width_p-1:0]       pc_f1;
+logic [vaddr_width_p-1:0]       pc_f1;
 // pc_v_f1 is not a pipeline register, because the squash needs to be 
 // done in the same cycle as when we know the instruction in f2 is
 // a branch
@@ -112,7 +111,7 @@ logic                           stall;
 //branch prediction wires
 logic                           is_br;
 logic                           is_jal;
-logic [eaddr_width_p-1:0]       br_target;
+logic [vaddr_width_p-1:0]       br_target;
 logic                           is_back_br;
 logic                           predict_taken;
 
@@ -124,7 +123,7 @@ logic                           icache_miss_prev;
 logic                           itlb_miss_recover;
 logic                           itlb_miss_r, itlb_miss_r2;
    
-logic [eaddr_width_p-1:0]       btb_target;
+logic [vaddr_width_p-1:0]       btb_target;
 logic [instr_width_p-1:0]       next_instr;
 logic [instr_width_p-1:0]       instr;
 logic [instr_width_p-1:0]       last_instr;
@@ -342,7 +341,7 @@ bp_fe_btb
    );
  
 instr_scan 
- #(.eaddr_width_p(eaddr_width_p)
+ #(.vaddr_width_p(vaddr_width_p)
    ,.instr_width_p(instr_width_p)
    ) 
  instr_scan_1 
@@ -352,7 +351,7 @@ instr_scan
 
 assign is_br = icache_pc_gen_v_i & (scan_instr.instr_scan_class == e_rvi_branch);
 assign is_jal = icache_pc_gen_v_i & (scan_instr.instr_scan_class == e_rvi_jal);
-assign br_target = icache_pc_gen.addr + scan_instr.imm; 
+assign br_target = vaddr_width_p'(icache_pc_gen.addr + scan_instr.imm); 
 assign is_back_br = scan_instr.imm[63];
 assign predict_taken = pc_v_f2 & ((is_br & is_back_br) | (is_jal)) & ~btb_pred_f1_r & icache_pc_gen_v_i;
 

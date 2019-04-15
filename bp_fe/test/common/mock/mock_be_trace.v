@@ -80,8 +80,6 @@ module mock_be_trace
   , input  logic [trace_ring_width_p-1:0]                 trace_data_i
   , input  logic                                          trace_v_i
   , output logic                                          trace_yumi_o
-
-  , input logic [63:0]                                    tlb_miss_vaddr_i
 );
 
    
@@ -135,8 +133,8 @@ always_comb begin : be_cmd_gen
       fe_cmd_pc_redirect_operands.branch_metadata_fwd  = bp_fe_queue.msg.fetch.branch_metadata_fwd;
       fe_cmd_pc_redirect_operands.misprediction_reason = e_incorrect_prediction;
 
-      fe_cmd_itlb_map.vaddr = tlb_miss_vaddr_i[38:12]; //bp_fe_queue.msg.exception.vaddr
-      fe_cmd_itlb_map.pte_entry_leaf.ptag = tlb_miss_vaddr_i;
+      fe_cmd_itlb_map.vaddr = bp_fe_queue.msg.exception.vaddr;
+      fe_cmd_itlb_map.pte_entry_leaf.ptag = bp_fe_queue.msg.exception.vaddr[38:12];
 
       if(~tlb_miss | ~prev_tlb_miss)
         bp_fe_cmd.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;

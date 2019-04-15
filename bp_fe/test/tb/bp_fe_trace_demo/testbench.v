@@ -94,8 +94,6 @@ logic [num_cce_p-1:0][boot_rom_width_p-1:0]   mrom_data;
 logic [num_cce_p-1:0][cce_inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
 logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]         cce_inst_boot_rom_data;
 
-logic [63:0] 				      tlb_miss_vaddr;
-   
 assign proc_cfg.mhartid   = 1'b0;
 assign proc_cfg.icache_id = 1'b0;
 assign proc_cfg.dcache_id = 1'b1; // Unused
@@ -223,8 +221,6 @@ mock_be_trace
    ,.trace_data_i(tr_data_lo)
    ,.trace_v_i(tr_v_lo)
    ,.trace_yumi_o(tr_yumi_li)
-
-   ,.tlb_miss_vaddr_i(tlb_miss_vaddr)
    );
 
 bsg_fsb_node_trace_replay

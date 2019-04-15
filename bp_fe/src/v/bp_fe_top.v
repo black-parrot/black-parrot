@@ -13,7 +13,6 @@ module bp_fe_top
    , parameter cce_block_size_in_bytes_p = cce_block_width_p / 8
 
    , localparam data_width_p      = rv64_reg_data_width_gp
-   , localparam eaddr_width_lp    = rv64_eaddr_width_gp
    , localparam instr_width_lp    = rv64_instr_width_gp   
 
 
@@ -117,13 +116,13 @@ module bp_fe_top
 // fe to pc_gen
 `declare_bp_fe_pc_gen_cmd_s(vaddr_width_p,branch_metadata_fwd_width_lp);
 // pc_gen to icache
-`declare_bp_fe_pc_gen_icache_s(eaddr_width_lp);
+`declare_bp_fe_pc_gen_icache_s(vaddr_width_p);
 // pc_gen to itlb
 `declare_bp_fe_pc_gen_itlb_s(vaddr_width_p);
 `declare_bp_fe_itlb_vaddr_s(vaddr_width_p,lce_sets_p,cce_block_size_in_bytes_p) 
 `declare_bp_be_tlb_entry_s(ptag_width_lp);  
 // icache to pc_gen
-`declare_bp_fe_icache_pc_gen_s(eaddr_width_lp);
+`declare_bp_fe_icache_pc_gen_s(vaddr_width_p);
 // itlb to cache
 `declare_bp_fe_itlb_icache_data_resp_s(tag_width_lp);
    
@@ -220,7 +219,6 @@ assign itlb_icache.ppn   = itlb_entry_r.ptag;
 bp_fe_pc_gen 
  #(.vaddr_width_p(vaddr_width_p)
    ,.paddr_width_p(paddr_width_p)
-   ,.eaddr_width_p(eaddr_width_lp)
    ,.btb_tag_width_p(btb_tag_width_p)
    ,.btb_idx_width_p(btb_idx_width_p)
    ,.bht_idx_width_p(bht_idx_width_p)
@@ -260,7 +258,7 @@ bp_fe_pc_gen
 
    
 bp_fe_icache 
- #(.eaddr_width_p(eaddr_width_lp)
+ #(.vaddr_width_p(vaddr_width_p)
    ,.paddr_width_p(paddr_width_p)
    ,.data_width_p(data_width_p)
    ,.instr_width_p(instr_width_lp)
