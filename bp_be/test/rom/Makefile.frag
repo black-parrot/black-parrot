@@ -40,6 +40,7 @@ RV64_TESTS = \
 	rv64ui-p-lw 	   \
 	rv64ui-p-lwu 	   \
 	rv64ui-p-ld 	   \
+	rv64ui-p-lrsc    \
 	rv64ui-p-lui 	   \
 	rv64ui-p-or 	   \
 	rv64ui-p-ori 	   \

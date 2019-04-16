@@ -143,6 +143,8 @@ module bp_be_dcache
   bp_be_dcache_pkt_s dcache_pkt;
   assign dcache_pkt = dcache_pkt_i;
 
+  logic lr_op;
+  logic sc_op;
   logic load_op;
   logic store_op;
   logic signed_op;
@@ -154,14 +156,49 @@ module bp_be_dcache
   logic [index_width_lp-1:0] addr_index;
   logic [word_offset_width_lp-1:0] addr_word_offset;
 
-  assign load_op = ~dcache_pkt.opcode[3];
-  assign store_op = dcache_pkt.opcode[3];
-  assign signed_op = ~dcache_pkt.opcode[2];
-  assign double_op = (dcache_pkt.opcode[1:0] == 2'b11);
-  assign size_op = dcache_pkt.opcode[1:0];
-  assign word_op = (dcache_pkt.opcode[1:0] == 2'b10);
-  assign half_op = (dcache_pkt.opcode[1:0] == 2'b01);
-  assign byte_op = (dcache_pkt.opcode[1:0] == 2'b00);
+always_comb
+  begin
+    if ((dcache_pkt.opcode == e_dcache_opcode_lrw) | (dcache_pkt.opcode == e_dcache_opcode_lrd))
+      begin
+        lr_op     = 1'b1;
+        sc_op     = 1'b0;
+        load_op   = 1'b1;
+        store_op  = 1'b0;
+        signed_op = 1'b1;
+        double_op = (dcache_pkt.opcode == e_dcache_opcode_lrd);
+        word_op   = (dcache_pkt.opcode == e_dcache_opcode_lrw);
+        half_op   = 1'b0;
+        byte_op   = 1'b0;
+        size_op   = (dcache_pkt.opcode == e_dcache_opcode_lrd) ? 2'b11 : 2'b10;
+      end
+    else if ((dcache_pkt.opcode == e_dcache_opcode_scw) | (dcache_pkt.opcode == e_dcache_opcode_scd))
+      begin
+        lr_op     = 1'b0;
+        sc_op     = 1'b1;
+        load_op   = 1'b0;
+        store_op  = 1'b1;
+        signed_op = 1'b1;
+        double_op = (dcache_pkt.opcode == e_dcache_opcode_scd);
+        word_op   = (dcache_pkt.opcode == e_dcache_opcode_scw);
+        half_op   = 1'b0;
+        byte_op   = 1'b0;
+        size_op   = (dcache_pkt.opcode == e_dcache_opcode_scd) ? 2'b11 : 2'b10;
+      end
+    else
+      begin
+        lr_op = 1'b0;
+        sc_op = 1'b0;
+        load_op = ~dcache_pkt.opcode[3];
+        store_op = dcache_pkt.opcode[3];
+        signed_op = ~dcache_pkt.opcode[2];
+        double_op = (dcache_pkt.opcode[1:0] == 2'b11);
+        word_op = (dcache_pkt.opcode[1:0] == 2'b10);
+        half_op = (dcache_pkt.opcode[1:0] == 2'b01);
+        byte_op = (dcache_pkt.opcode[1:0] == 2'b00);
+        size_op = dcache_pkt.opcode[1:0];
+      end
+  end
+
   assign addr_index = dcache_pkt.page_offset[block_offset_width_lp+:index_width_lp];
   assign addr_word_offset = dcache_pkt.page_offset[byte_offset_width_lp+:word_offset_width_lp];
   
@@ -169,6 +206,8 @@ module bp_be_dcache
   //
   logic v_tl_r; // valid bit
   logic tl_we;
+  logic lr_op_tl_r;
+  logic sc_op_tl_r;
   logic load_op_tl_r;
   logic store_op_tl_r;
   logic signed_op_tl_r;
@@ -189,6 +228,8 @@ module bp_be_dcache
     else begin 
       v_tl_r <= tl_we;
       if (tl_we) begin
+        lr_op_tl_r <= lr_op;
+        sc_op_tl_r <= sc_op;
         load_op_tl_r <= load_op;
         store_op_tl_r <= store_op;
         signed_op_tl_r <= signed_op;
@@ -261,6 +302,8 @@ module bp_be_dcache
   //
   logic v_tv_r;
   logic tv_we;
+  logic lr_op_tv_r;
+  logic sc_op_tv_r;
   logic load_op_tv_r;
   logic store_op_tv_r;
   logic signed_op_tv_r;
@@ -288,6 +331,8 @@ module bp_be_dcache
       v_tv_r <= tv_we;
 
       if (tv_we) begin
+        lr_op_tv_r <= lr_op_tl_r;
+        sc_op_tv_r <= sc_op_tl_r;
         load_op_tv_r <= load_op_tl_r;
         store_op_tv_r <= store_op_tl_r;
         signed_op_tv_r <= signed_op_tl_r;
@@ -356,7 +401,7 @@ module bp_be_dcache
       );
 
   assign load_miss_tv = ~load_hit & v_tv_r & load_op_tv_r & ~uncached_tv_r;
-  assign store_miss_tv = ~store_hit & v_tv_r & store_op_tv_r & ~uncached_tv_r;
+  assign store_miss_tv = ~store_hit & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r;
 
   // uncached req
   //
@@ -365,6 +410,20 @@ module bp_be_dcache
   logic uncached_load_data_v_r;
   logic [data_width_p-1:0] uncached_load_data_r;
 
+  // load reserved / store conditional
+  logic upgrade_req;
+  logic sc_success;
+  logic sc_fail;
+  logic [ptag_width_lp-1:0]  load_reserved_tag_r;
+  logic [index_width_lp-1:0] load_reserved_index_r;
+  logic load_reserved_v_r;
+
+  // Upgrade if a load reserved and we don't have the line in exclusive state
+  assign upgrade_req = v_tv_r & lr_op_tv_r & load_hit & ~store_hit;
+  assign sc_success  = v_tv_r & sc_op_tv_r & store_hit & load_reserved_v_r 
+                       & (load_reserved_tag_r == addr_tag_tv)
+                       & (load_reserved_index_r == addr_index_tv);
+  assign sc_fail     = v_tv_r & sc_op_tv_r & ~sc_success;
   assign uncached_load_req = v_tv_r & load_op_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
   assign uncached_store_req = v_tv_r & store_op_tv_r & uncached_tv_r;
 
@@ -547,6 +606,7 @@ module bp_be_dcache
     
       ,.load_miss_i(load_miss_tv)
       ,.store_miss_i(store_miss_tv)
+      ,.upgrade_req_i(upgrade_req)
       ,.uncached_load_req_i(uncached_load_req)
       ,.uncached_store_req_i(uncached_store_req)
 
@@ -699,7 +759,9 @@ module bp_be_dcache
           : (half_op_tv_r
             ? {{48{half_sigext}}, data_half_selected}
             : {{56{byte_sigext}}, data_byte_selected})))
-      : 64'b0;
+      : (sc_op_tv_r & ~sc_success
+         ? 64'b1
+         : 64'b0);;
 
   end
  
@@ -868,7 +930,7 @@ module bp_be_dcache
 
   // write buffer
   //
-  assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit;
+  assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail;
   assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we);
   assign bypass_v_li = tv_we & load_op_tl_r;
   assign lce_snoop_index_li = lce_data_mem_pkt.index;
@@ -896,6 +958,26 @@ module bp_be_dcache
   assign lce_data_mem_pkt_yumi = (lce_data_mem_pkt.opcode == e_dcache_lce_data_mem_uncached)
     ? lce_data_mem_pkt_v
     : ~(load_op & tl_we) & ~wbuf_v_lo & ~lce_snoop_match_lo & lce_data_mem_pkt_v;
+
+  // load reservation logic
+  always_ff @ (posedge clk_i) begin
+    if (reset_i) begin
+      load_reserved_v_r <= 1'b0;
+    end
+    else begin
+      if (lr_op_tv_r & tv_we & ~upgrade_req) begin
+        load_reserved_v_r     <= 1'b1;
+        load_reserved_tag_r   <= paddr_tv_r[block_offset_width_lp+index_width_lp+:tag_width_lp];
+        load_reserved_index_r <= paddr_tv_r[block_offset_width_lp+:index_width_lp];
+      end else if (sc_op_tv_r) begin
+        load_reserved_v_r <= 1'b0;
+      end else if (lce_tag_mem_pkt_v & (lce_tag_mem_pkt.opcode == e_dcache_lce_tag_mem_invalidate) 
+                  & (lce_tag_mem_pkt.tag == load_reserved_tag_r) 
+                  & (lce_tag_mem_pkt.index == load_reserved_index_r)) begin
+        load_reserved_v_r <= 1'b0;
+      end
+    end
+  end
 
   //  uncached load data logic
   //
