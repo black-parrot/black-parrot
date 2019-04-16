@@ -29,7 +29,7 @@ TRACE_AXE = trace.axe
 VCS_LOG = vcs.log
 
 # testparam
-NUM_INSTR_P ?= 128
+NUM_INSTR_P ?= 4096
 SEED_P ?= 1
 
 # this test uses a single LCE since it checks the values of loads returned

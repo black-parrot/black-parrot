@@ -13,7 +13,7 @@ module tag_lookup
     , localparam tag_s_width_lp=(coh_bits_p+ptag_width_p)
     , localparam lg_lce_assoc_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
    )
-  (input [lg_lce_assoc_lp-1:0][tag_s_width_lp-1:0] tag_set_i
+  (input [lce_assoc_p-1:0][tag_s_width_lp-1:0] tag_set_i
    , input [ptag_width_p-1:0] ptag_i
    , output logic hit_o
    , output logic dirty_o
@@ -26,7 +26,7 @@ module tag_lookup
     logic [ptag_width_p-1:0] tag;
   } tag_s;
 
-  tag_s [lg_lce_assoc_lp-1:0] tags;
+  tag_s [lce_assoc_p-1:0] tags;
   assign tags = tag_set_i;
 
   logic [lce_assoc_p-1:0] hits;
@@ -136,13 +136,6 @@ module bp_me_nonsynth_mock_lce
   logic [lg_lce_sets_lp-1:0] tag_set;
   logic [lg_lce_assoc_lp-1:0] tag_way;
   assign tag_cur = tags[tag_set][tag_way];
-  /*
-  int ts;
-  assign ts = tag_set;
-  int tw;
-  assign tw = tag_way;
-  assign tag_cur = tags[ts][tw];
-  */
 
   logic [lce_sets_p-1:0][lce_assoc_p-1:0][cce_block_width_p-1:0] data;
   logic [cce_block_width_p-1:0] data_n, data_cur, data_mask;
@@ -150,13 +143,6 @@ module bp_me_nonsynth_mock_lce
   logic [lg_lce_sets_lp-1:0] data_set;
   logic [lg_lce_assoc_lp-1:0] data_way;
   assign data_cur = data[data_set][data_way];
-  /*
-  int ds;
-  assign ds = data_set;
-  int dw;
-  assign dw = data_way;
-  assign data_cur = data[ds][dw];
-  */
 
   // current command from trace replay
   logic [tr_ring_width_lp-1:0] cmd_r, cmd_n;
@@ -219,10 +205,10 @@ module bp_me_nonsynth_mock_lce
   assign half_sigext = signed_op & load_half[15]; 
   assign byte_sigext = signed_op & load_byte[7]; 
 
-  tag_s [lg_lce_assoc_lp-1:0] tag_set_li;
+  tag_s [lce_assoc_p-1:0] tag_set_li;
   logic [ptag_width_lp-1:0] ptag_li;
   logic tag_hit, tag_dirty, lru_dirty;
-  logic [lg_lce_assoc_lp-1:0] tag_hit_way, lru_way_r, lru_way_n;
+  logic [lg_lce_assoc_lp-1:0] tag_hit_way, lru_way_r, lru_way_n, lru_way_li;
   tag_lookup
     #(.lce_assoc_p(lce_assoc_p)
       ,.ptag_width_p(ptag_width_lp)
@@ -231,7 +217,7 @@ module bp_me_nonsynth_mock_lce
   lce_tag_lookup
     (.tag_set_i(tag_set_li)
      ,.ptag_i(ptag_li)
-     ,.lru_way_i(lru_way_r)
+     ,.lru_way_i(lru_way_li)
      ,.hit_o(tag_hit)
      ,.dirty_o(tag_dirty)
      ,.way_o(tag_hit_way)
@@ -402,6 +388,7 @@ module bp_me_nonsynth_mock_lce
 
       tag_set_li = '0;
       ptag_li = '0;
+      lru_way_li = '0;
 
       load_data = '0;
 
@@ -446,6 +433,7 @@ module bp_me_nonsynth_mock_lce
 
       tag_set_li = '0;
       ptag_li = '0;
+      lru_way_li = '0;
 
       load_data = '0;
 
@@ -647,65 +635,127 @@ module bp_me_nonsynth_mock_lce
           end
         end
         TR_CMD: begin
+          // set up tag lookup
           tag_set = cmd_paddr[block_offset_bits_lp +: lg_lce_sets_lp];
-          data_set = cmd_paddr[block_offset_bits_lp +: lg_lce_sets_lp];
           tag_set_li = tags[tag_set];
           ptag_li = cmd_paddr[paddr_width_p-1 -: ptag_width_lp];
+          lru_way_li = lru_way_r;
+
+          // consume output
           tag_way = tag_hit_way;
+
+          // process the trace replay command
+          data_set = cmd_paddr[block_offset_bits_lp +: lg_lce_sets_lp];
           data_way = tag_hit_way;
 
-          if (tag_hit && (load_op || (store_op && tag_cur.coh_st == e_MESI_M))) begin
-            // hit, do load or store
+          if (tag_hit && load_op) begin
+            // load hit
             if (tr_pkt_ready_i) begin
               tr_pkt_v_o = 1'b1;
               tr_pkt_o[tr_ring_width_lp-1:dword_width_p] = '0;
-              if (load_op) begin
-                // select data to return
-                load_data = data_cur[dword_offset*dword_width_p +: dword_width_p];
-                tr_pkt_o[0 +: dword_width_p] = double_op
-                  ? load_data
-                  : (word_op
-                    ? {{32{word_sigext}}, load_word}
-                    : (half_op
-                      ? {{48{half_sigext}}, load_half}
-                      : {{56{byte_sigext}}, load_byte}));
+              // select data to return
+              load_data = data_cur[dword_offset*dword_width_p +: dword_width_p];
+              tr_pkt_o[0 +: dword_width_p] = double_op
+                ? load_data
+                : (word_op
+                  ? {{32{word_sigext}}, load_word}
+                  : (half_op
+                    ? {{48{half_sigext}}, load_half}
+                    : {{56{byte_sigext}}, load_byte}));
 
-              end else begin
-                tr_pkt_o[0 +: dword_width_p] = '0;
-
-                // do the store
-                data_w = 1'b1;
-                data_mask = double_op
-                  ? {{(cce_block_width_p-64){1'b0}}, {64{1'b1}}} << (dword_offset*64)
-                  : word_op
-                    ? {{(cce_block_width_p-32){1'b0}}, {32{1'b1}}} << (dword_offset*64)
-                    : half_op
-                      ? {{(cce_block_width_p-16){1'b0}}, {16{1'b1}}} << (dword_offset*64)
-                      : {{(cce_block_width_p-8){1'b0}}, {8{1'b1}}} << (dword_offset*64);
-
-                data_n = double_op
-                  ? {{(cce_block_width_p-64){1'b0}}, cmd_data} << (dword_offset*64)
-                  : word_op
-                    ? {{(cce_block_width_p-32){1'b0}}, cmd_data[0+:32]} << (dword_offset*64)
-                    : half_op
-                      ? {{(cce_block_width_p-16){1'b0}}, cmd_data[0+:16]} << (dword_offset*64)
-                      : {{(cce_block_width_p-8){1'b0}}, cmd_data[0+:8]} << (dword_offset*64);
-              end
               lce_state_n = READY;
             end
-          end else begin
-            // miss, send lce request
+          end else if (~tag_hit && load_op) begin
+            // load miss, send lce request
             if (lce_req_ready_i) begin
               lce_req_v_o = 1'b1;
 
               lce_req_s.dst_id = '0;
               lce_req_s.src_id = lce_id_i;
               lce_req_s.data = '0;
-              lce_req_s.msg_type = (store_op) ? e_lce_req_type_wr : e_lce_req_type_rd;
+              lce_req_s.msg_type = e_lce_req_type_rd;
               lce_req_s.non_exclusive = e_lce_req_excl;
               lce_req_s.addr = cmd_paddr;
               lce_req_s.lru_way_id = lru_way_r;
-              lce_req_s.lru_dirty = lru_dirty ? e_lce_req_lru_dirty : e_lce_req_lru_clean;
+              lce_req_s.lru_dirty = (lru_dirty ? e_lce_req_lru_dirty : e_lce_req_lru_clean);
+              lce_req_s.non_cacheable = e_lce_req_cacheable;
+              lce_req_s.nc_size = e_lce_nc_req_1;
+
+              lce_state_n = READY;
+
+              miss_n = 1'b1;
+              tag_received_n = '0;
+              data_received_n = '0;
+            end
+          end else if (~tag_hit && store_op) begin
+            // store miss - block present, not writable
+            if (lce_req_ready_i) begin
+              lce_req_v_o = 1'b1;
+
+              lce_req_s.dst_id = '0;
+              lce_req_s.src_id = lce_id_i;
+              lce_req_s.data = '0;
+              lce_req_s.msg_type = e_lce_req_type_wr;
+              lce_req_s.non_exclusive = e_lce_req_excl;
+              lce_req_s.addr = cmd_paddr;
+              lce_req_s.lru_way_id = lru_way_r;
+              lce_req_s.lru_dirty = (lru_dirty ? e_lce_req_lru_dirty : e_lce_req_lru_clean);
+              lce_req_s.non_cacheable = e_lce_req_cacheable;
+              lce_req_s.nc_size = e_lce_nc_req_1;
+
+              lce_state_n = READY;
+
+              miss_n = 1'b1;
+              tag_received_n = '0;
+              data_received_n = '0;
+            end
+          end else if (tag_hit && store_op && ((tag_cur.coh_st == e_MESI_M) || (tag_cur.coh_st == e_MESI_E))) begin
+            // store hit
+            if (tr_pkt_ready_i) begin
+              tr_pkt_v_o = 1'b1;
+              // stores return 0 to trace replay
+              tr_pkt_o = '0;
+
+              // store hit on Exclusive forces upgrade to Modified
+              if (tag_cur.coh_st == e_MESI_E) begin
+                tag_w = 1'b1;
+                tag_n.coh_st = e_MESI_M;
+                tag_n.tag = tag_cur.tag;
+              end
+
+              // do the store
+              data_w = 1'b1;
+              data_mask = double_op
+                ? {{(cce_block_width_p-64){1'b0}}, {64{1'b1}}} << (dword_offset*64)
+                : word_op
+                  ? {{(cce_block_width_p-32){1'b0}}, {32{1'b1}}} << (dword_offset*64 + 32*byte_offset[2])
+                  : half_op
+                    ? {{(cce_block_width_p-16){1'b0}}, {16{1'b1}}} << (dword_offset*64 + 16*byte_offset[2:1])
+                    : {{(cce_block_width_p-8){1'b0}}, {8{1'b1}}} << (dword_offset*64 + 8*byte_offset[2:0]);
+
+              data_n = double_op
+                ? {{(cce_block_width_p-64){1'b0}}, cmd_data} << (dword_offset*64)
+                : word_op
+                  ? {{(cce_block_width_p-32){1'b0}}, cmd_data[0+:32]} << (dword_offset*64 + 32*byte_offset[2])
+                  : half_op
+                    ? {{(cce_block_width_p-16){1'b0}}, cmd_data[0+:16]} << (dword_offset*64 + 16*byte_offset[2:1])
+                    : {{(cce_block_width_p-8){1'b0}}, cmd_data[0+:8]} << (dword_offset*64 + 8*byte_offset[2:0]);
+
+              lce_state_n = READY;
+            end
+          end else if (tag_hit && store_op && (tag_cur.coh_st == e_MESI_S)) begin
+            // store miss - block present, not writable
+            if (lce_req_ready_i) begin
+              lce_req_v_o = 1'b1;
+
+              lce_req_s.dst_id = '0;
+              lce_req_s.src_id = lce_id_i;
+              lce_req_s.data = '0;
+              lce_req_s.msg_type = e_lce_req_type_wr;
+              lce_req_s.non_exclusive = e_lce_req_excl;
+              lce_req_s.addr = cmd_paddr;
+              lce_req_s.lru_way_id = tag_hit_way;
+              lce_req_s.lru_dirty = e_lce_req_lru_clean;
               lce_req_s.non_cacheable = e_lce_req_cacheable;
               lce_req_s.nc_size = e_lce_nc_req_1;
 
@@ -718,17 +768,23 @@ module bp_me_nonsynth_mock_lce
           end
         end
         FINISH_MISS: begin
+
           // send return packet back to TR after CCE handles the LCE miss request
           if (tr_pkt_ready_i) begin
             // rotate lru way
-            lru_way_n = lru_way_r + 'd1;
+            //lru_way_n = lru_way_r + 'd1;
 
             tr_pkt_v_o = 1'b1;
             tr_pkt_o[tr_ring_width_lp-1:dword_width_p] = '0;
             if (load_op) begin
               // select data to return
+              tag_set = cmd_paddr[block_offset_bits_lp +: lg_lce_sets_lp];
+              tag_set_li = tags[tag_set];
+              tag_way = tag_hit_way;
+              ptag_li = cmd_paddr[paddr_width_p-1 -: ptag_width_lp];
               data_set = cmd_paddr[block_offset_bits_lp +: lg_lce_sets_lp];
-              data_way = lru_way_r;
+              data_way = (tag_hit && store_op) ? tag_hit_way : lru_way_r;
+              //data_way = lru_way_r;
               load_data = data_cur[dword_offset*dword_width_p +: dword_width_p];
               tr_pkt_o[0 +: dword_width_p] = double_op
                 ? load_data
