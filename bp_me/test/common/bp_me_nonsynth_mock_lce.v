@@ -531,45 +531,47 @@ module bp_me_nonsynth_mock_lce
               end
             end else if (lce_cmd.msg_type == e_lce_cmd_transfer) begin
               // transfer cmd
+              lce_cmd_n = lce_cmd;
+
+              tag_set = lce_cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
+              tag_way = lce_cmd.way_id;
+
+              data_set = lce_cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
+              data_way = lce_cmd.way_id;
+
+              lce_data_cmd_s.data = data_cur;
+              lce_data_cmd_s.dst_id = lce_cmd.target;
+              lce_data_cmd_s.msg_type = e_lce_data_cmd_transfer;
+              lce_data_cmd_s.way_id = lce_cmd.target_way_id;
+              lce_data_cmd_v_o = 1'b1;
+
               if (lce_data_cmd_ready_i) begin
                 lce_cmd_yumi = 1'b1;
-                lce_cmd_n = lce_cmd;
-
-                tag_set = lce_cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
-                tag_way = lce_cmd.way_id;
-
-                data_set = lce_cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
-                data_way = lce_cmd.way_id;
-
-                lce_data_cmd_s.data = data_cur;
-                lce_data_cmd_s.dst_id = lce_cmd.target;
-                lce_data_cmd_s.msg_type = e_lce_data_cmd_transfer;
-                lce_data_cmd_s.way_id = lce_cmd.target_way_id;
-                lce_data_cmd_v_o = 1'b1;
               end
             end else if (lce_cmd.msg_type == e_lce_cmd_writeback) begin
               // writeback cmd
+              lce_cmd_n = lce_cmd;
+
+              tag_set = lce_cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
+              tag_way = lce_cmd.way_id;
+
+              data_set = lce_cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
+              data_way = lce_cmd.way_id;
+
+              if (tag_cur.coh_st == e_MESI_M) begin
+                lce_data_resp_s.data = data_cur;
+                lce_data_resp_s.msg_type = e_lce_resp_wb;
+              end else begin
+                lce_data_resp_s.data = '0;
+                lce_data_resp_s.msg_type = e_lce_resp_null_wb;
+              end
+              lce_data_resp_s.dst_id = lce_cmd.src_id;
+              lce_data_resp_s.src_id = lce_id_i;
+              lce_data_resp_s.addr = lce_cmd.addr;
+              lce_data_resp_v_o = 1'b1;
+
               if (lce_data_resp_ready_i) begin
                 lce_cmd_yumi = 1'b1;
-                lce_cmd_n = lce_cmd;
-
-                tag_set = lce_cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
-                tag_way = lce_cmd.way_id;
-
-                data_set = lce_cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
-                data_way = lce_cmd.way_id;
-
-                if (tag_cur.coh_st == e_MESI_M) begin
-                  lce_data_resp_s.data = data_cur;
-                  lce_data_resp_s.msg_type = e_lce_resp_wb;
-                end else begin
-                  lce_data_resp_s.data = '0;
-                  lce_data_resp_s.msg_type = e_lce_resp_null_wb;
-                end
-                lce_data_resp_s.dst_id = lce_cmd.src_id;
-                lce_data_resp_s.src_id = lce_id_i;
-                lce_data_resp_s.addr = lce_cmd.addr;
-                lce_data_resp_v_o = 1'b1;
               end
             end else if (lce_cmd.msg_type == e_lce_cmd_set_tag_wakeup) begin
               // response to miss - upgrade
