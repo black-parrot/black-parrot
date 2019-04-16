@@ -639,22 +639,22 @@ always_comb
       end
         // If there are new exceptions, add them to the list
         exc_stage_n[0].instr_misaligned_v = 
-          chk_dispatch_v_i 
+          (issue_pkt_v_r & chk_dispatch_v_i)
           & issue_pkt_r.instr_metadata.fe_exception_not_instr
           & (issue_pkt_r.instr_metadata.fe_exception_code == e_instr_misaligned);
 
         exc_stage_n[0].itlb_fill_v = 
-          chk_dispatch_v_i 
+          (issue_pkt_v_r & chk_dispatch_v_i)
           & issue_pkt_r.instr_metadata.fe_exception_not_instr 
           & (issue_pkt_r.instr_metadata.fe_exception_code == e_itlb_miss);
 
         exc_stage_n[0].instr_access_fault_v = 
-          chk_dispatch_v_i 
+          (issue_pkt_v_r & chk_dispatch_v_i )
           & issue_pkt_r.instr_metadata.fe_exception_not_instr 
           & (issue_pkt_r.instr_metadata.fe_exception_code == e_instr_access_fault);
 
         exc_stage_n[0].illegal_instr_v = 
-          (chk_dispatch_v_i & illegal_instr_isd & ~issue_pkt_r.instr_metadata.fe_exception_not_instr)
+          (issue_pkt_v_r & chk_dispatch_v_i & illegal_instr_isd & ~issue_pkt_r.instr_metadata.fe_exception_not_instr)
           | (chk_dispatch_v_i & issue_pkt_r.instr_metadata.fe_exception_not_instr 
              & issue_pkt_r.instr_metadata.fe_exception_code == e_illegal_instr
              ); 
