@@ -14,14 +14,7 @@ module bp_me_mock_lce_me
     , parameter mem_els_p="inv"
     , parameter boot_rom_els_p="inv"
     
-    , localparam data_mask_width_lp=(dword_width_p>>3)
-    , localparam block_size_in_words_lp=lce_assoc_p
-    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
-    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
-    , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-
-    , localparam lce_data_width_lp=(lce_assoc_p*dword_width_p)
-    , localparam block_size_in_bytes_lp=(lce_data_width_lp / 8)
+    , localparam block_size_in_bytes_lp=(cce_block_width_p / 8)
 
     , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
       
@@ -47,9 +40,9 @@ module bp_me_mock_lce_me
   //
   `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p);
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
-  `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_lp);
+  `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, cce_block_width_p);
   `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
-  `declare_bp_lce_data_cmd_s(num_lce_p, lce_data_width_lp, lce_assoc_p);
+  `declare_bp_lce_data_cmd_s(num_lce_p, cce_block_width_p, lce_assoc_p);
 
   bp_lce_cce_req_s [num_lce_p-1:0] lce_req_lo;
   logic [num_lce_p-1:0] lce_req_v_lo;
@@ -77,13 +70,7 @@ module bp_me_mock_lce_me
 
   for (genvar i = 0; i < num_lce_p; i++) begin
     bp_me_nonsynth_mock_lce #(
-      .num_lce_p(num_lce_p)
-      ,.num_cce_p(num_cce_p)
-      ,.paddr_width_p(paddr_width_p)
-      ,.lce_assoc_p(lce_assoc_p)
-      ,.lce_sets_p(lce_sets_p)
-      ,.block_size_in_bytes_p(lce_data_width_lp/8)
-      ,.dcache_word_size_bits_p(dword_width_p)
+      .cfg_p(cfg_p)
     ) lce (
       .clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -127,7 +114,7 @@ module bp_me_mock_lce_me
 
   // Memory End
   //
-  `declare_bp_me_if(paddr_width_p,lce_data_width_lp,num_lce_p,lce_assoc_p); 
+  `declare_bp_me_if(paddr_width_p,cce_block_width_p,num_lce_p,lce_assoc_p); 
 
   logic [num_cce_p-1:0][inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
   logic [num_cce_p-1:0][`bp_cce_inst_width-1:0] cce_inst_boot_rom_data;
@@ -218,11 +205,11 @@ module bp_me_mock_lce_me
         ,.num_cce_p(num_cce_p)
         ,.paddr_width_p(paddr_width_p)
         ,.lce_assoc_p(lce_assoc_p)
-        ,.block_size_in_bytes_p(lce_data_width_lp/8)
+        ,.block_size_in_bytes_p(block_size_in_bytes_lp)
         ,.lce_sets_p(lce_sets_p)
         ,.mem_els_p(mem_els_p)
         ,.lce_req_data_width_p(dword_width_p)
-        ,.boot_rom_width_p(lce_data_width_lp)
+        ,.boot_rom_width_p(cce_block_width_p)
         ,.boot_rom_els_p(boot_rom_els_p)
         )
       bp_mem
