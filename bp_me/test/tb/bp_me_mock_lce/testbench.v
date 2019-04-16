@@ -122,9 +122,11 @@ module testbench
 
   always_ff @(posedge clk)
     begin
-      if (clock_cnt == 100000) begin
+      /*
+      if (clock_cnt == 500000) begin
         $finish(0);
       end
+      */
       if (&tr_done_lo)
         begin
         $display("Bytes: %d Clocks: %d mBPC: %d "
