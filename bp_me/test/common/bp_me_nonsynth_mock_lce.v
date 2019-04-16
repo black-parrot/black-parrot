@@ -338,10 +338,11 @@ module bp_me_nonsynth_mock_lce
       if (data_w) begin
         if (clear_set) begin
           data[data_set] <= '0;
+        // TODO: writes not working
         end else begin
           for (integer i = 0; i < cce_block_width_p; i=i+1) begin
             if (data_mask[i]) begin
-              data[data_set][data_way] <= data_n;
+              data[data_set][data_way][i] <= data_n[i];
             end
           end
         end
@@ -808,6 +809,25 @@ module bp_me_nonsynth_mock_lce
         end
       endcase
     end
+  end
+
+  always_ff @(negedge clk_i) begin
+      case (lce_state)
+        TR_CMD: begin
+          if (tag_hit && load_op) begin
+            $display("Load hit: M[%d]", cmd_paddr);
+          end else if (~tag_hit && load_op) begin
+            $display("Load miss: M[%d]", cmd_paddr);
+          end else if (~tag_hit && store_op) begin
+            $display("Store miss: M[%d] := %d", cmd_paddr, cmd_data);
+          end else if (tag_hit && store_op && ((tag_cur.coh_st == e_MESI_M) || (tag_cur.coh_st == e_MESI_E))) begin
+            $display("Store hit: M[%d] := %d", cmd_paddr, cmd_data);
+          end else if (tag_hit && store_op && (tag_cur.coh_st == e_MESI_S)) begin
+            $display("Store miss: M[%d] := %d", cmd_paddr, cmd_data);
+          end
+        end
+      endcase
+
   end
 
 endmodule

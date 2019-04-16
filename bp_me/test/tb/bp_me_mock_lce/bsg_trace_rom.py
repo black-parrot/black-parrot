@@ -101,7 +101,8 @@ store_val = 1
 
 for i in range(args.num_instr):
   load = random.choice([True, False])
-  size = random.choice([1, 2, 4, 8])
+  size = 8
+  #size = random.choice([1, 2, 4, 8])
   size_shift = int(math.log(size, 2))
   # choose which cache block in memory to target
   block = random.randint(0, N_B_MEM-1)
