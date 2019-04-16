@@ -131,14 +131,14 @@ module bp_me_nonsynth_mock_lce
 
   // Tag and Data Arrays
   tag_s [lce_sets_p-1:0][lce_assoc_p-1:0] tags;
-  tag_s tag_n, tag_cur;
+  tag_s tag_r, tag_n, tag_cur;
   logic tag_w, clear_set;
   logic [lg_lce_sets_lp-1:0] tag_set;
   logic [lg_lce_assoc_lp-1:0] tag_way;
   assign tag_cur = tags[tag_set][tag_way];
 
   logic [lce_sets_p-1:0][lce_assoc_p-1:0][cce_block_width_p-1:0] data;
-  logic [cce_block_width_p-1:0] data_n, data_cur, data_mask;
+  logic [cce_block_width_p-1:0] data_r, data_n, data_cur, data_mask_r, data_mask_n;
   logic data_w;
   logic [lg_lce_sets_lp-1:0] data_set;
   logic [lg_lce_assoc_lp-1:0] data_way;
@@ -312,6 +312,10 @@ module bp_me_nonsynth_mock_lce
       tag_received_r <= '0;
       data_received_r <= '0;
 
+      tag_r <= '0;
+      data_r <= '0;
+      data_mask_r <= '0;
+
     end else begin
       set_counter <= set_counter_n;
 
@@ -328,11 +332,15 @@ module bp_me_nonsynth_mock_lce
       tag_received_r <= tag_received_n;
       data_received_r <= data_received_n;
 
+      tag_r <= tag_n;
+      data_r <= data_n;
+      data_mask_r <= data_mask_n;
+
       if (tag_w) begin
         if (clear_set) begin
           tags[tag_set] <= '0;
         end else begin
-          tags[tag_set][tag_way] <= tag_n;
+          tags[tag_set][tag_way] <= tag_r;
         end
       end
       if (data_w) begin
@@ -341,8 +349,8 @@ module bp_me_nonsynth_mock_lce
         // TODO: writes not working
         end else begin
           for (integer i = 0; i < cce_block_width_p; i=i+1) begin
-            if (data_mask[i]) begin
-              data[data_set][data_way][i] <= data_n[i];
+            if (data_mask_r[i]) begin
+              data[data_set][data_way][i] <= data_r[i];
             end
           end
         end
@@ -376,7 +384,7 @@ module bp_me_nonsynth_mock_lce
       data_set = '0;
       data_way = '0;
       data_w = '0;
-      data_mask = '0;
+      data_mask_n = '0;
 
       lce_req_v_o = '0;
       lce_req_s = '0;
@@ -421,7 +429,7 @@ module bp_me_nonsynth_mock_lce
       data_set = '0;
       data_way = '0;
       data_w = '0;
-      data_mask = '0;
+      data_mask_n = '0;
 
       lce_req_v_o = '0;
       lce_req_s = '0;
@@ -487,7 +495,7 @@ module bp_me_nonsynth_mock_lce
    
               data_w = 1'b1;
               // write the full cache block
-              data_mask = '1;
+              data_mask_n = '1;
               data_set = cmd_paddr[block_offset_bits_lp +: lg_lce_sets_lp];
               data_way = lce_data_cmd.way_id;
               data_n = lce_data_cmd.data;
@@ -728,7 +736,7 @@ module bp_me_nonsynth_mock_lce
 
               // do the store
               data_w = 1'b1;
-              data_mask = double_op
+              data_mask_n = double_op
                 ? {{(cce_block_width_p-64){1'b0}}, {64{1'b1}}} << (dword_offset*64)
                 : word_op
                   ? {{(cce_block_width_p-32){1'b0}}, {32{1'b1}}} << (dword_offset*64 + 32*byte_offset[2])
