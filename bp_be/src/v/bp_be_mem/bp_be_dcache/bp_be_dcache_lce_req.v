@@ -50,11 +50,11 @@ module bp_be_dcache_lce_req
 
     , input load_miss_i
     , input store_miss_i
+    , input lr_miss_i
     , input [paddr_width_p-1:0] miss_addr_i
     , input [way_id_width_lp-1:0] lru_way_i
     , input [ways_p-1:0] dirty_i
 
-    , input upgrade_req_i
     , input uncached_load_req_i
     , input uncached_store_req_i
     , input [data_width_p-1:0] store_data_i
@@ -181,10 +181,10 @@ module bp_be_dcache_lce_req
           cache_miss_o = 1'b1;
           state_n = e_SEND_CACHED_REQ;
         end
-        else if (upgrade_req_i) begin
+        else if (lr_miss_i) begin
           miss_addr_n = miss_addr_i;
           dirty_lru_flopped_n = 1'b0;
-          load_not_store_n = 1'b1; // We force a store miss on LR, to upgrade the block
+          load_not_store_n = 1'b0; // We force a store miss to upgrade the block to exclusive
           tr_data_received_n = 1'b0;
           cce_data_received_n = 1'b0;
           set_tag_received_n = 1'b0;

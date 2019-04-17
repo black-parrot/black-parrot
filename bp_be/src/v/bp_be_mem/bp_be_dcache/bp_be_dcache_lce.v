@@ -93,7 +93,7 @@ module bp_be_dcache_lce
 
     , input load_miss_i
     , input store_miss_i
-    , input upgrade_req_i
+    , input lr_miss_i
     , input uncached_load_req_i
     , input uncached_store_req_i
 
@@ -211,7 +211,7 @@ module bp_be_dcache_lce
   
       ,.load_miss_i(load_miss_i)
       ,.store_miss_i(store_miss_i)
-      ,.upgrade_req_i(upgrade_req_i)
+      ,.lr_miss_i(lr_miss_i)
       ,.uncached_load_req_i(uncached_load_req_i)
       ,.uncached_store_req_i(uncached_store_req_i)
 

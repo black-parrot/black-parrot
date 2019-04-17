@@ -61,16 +61,17 @@
  *    2) A second LR (this will not clear the reservation, but it will change the reservation
  *    address).
  *    3) An invalidate received from the LCE. This command covers all cases of losing exclusive
- *    access to the block in this hart.
- *
+ *    access to the block in this hart, including eviction and a cache miss.
+ 
  *    RISC-V guarantees forward progress for LR/SC sequences that match a set of conditions.
  *    Currently, BlackParrot makes no guarantees about these sequences, but one option to guarantee
  *    progress is to block reservation invalidates from other harts until a following SC. There is
  *    a design space exploration to be done between QoS and performance based on the backoff model
  *    used for these schemes.
  *
- *    LR/SC aq/rl semantics are irrelevant for BlackParrot. Since we are in-order single issue, all
- *    memory requests are inherently ordered within a hart.
+ *    LR/SC aq/rl semantics are irrelevant for BlackParrot. Since we are in-order single issue and
+ *    do not use a store buffer that allows stores before cache lines have been fetched,, all
+ *    memory requests are inherently ordered within a hart. 
  */
 
 module bp_be_dcache
@@ -182,49 +183,62 @@ module bp_be_dcache
   logic [index_width_lp-1:0] addr_index;
   logic [word_offset_width_lp-1:0] addr_word_offset;
 
-always_comb
-  begin
-    if ((dcache_pkt.opcode == e_dcache_opcode_lrw) | (dcache_pkt.opcode == e_dcache_opcode_lrd))
-      begin
+  always_comb begin
+    lr_op     = 1'b0;
+    sc_op     = 1'b0;
+    load_op   = 1'b0;
+    store_op  = 1'b0;
+    signed_op = 1'b1;
+    double_op = 1'b0;
+    word_op   = 1'b0;
+    half_op   = 1'b0;
+    byte_op   = 1'b0;
+    size_op   = 1'b0;
+
+    unique case (dcache_pkt.opcode)
+      e_dcache_opcode_lrw, e_dcache_opcode_lrd: begin
         // An LR is a load operation of either double word or word size, inherently signed
         lr_op     = 1'b1;
-        sc_op     = 1'b0;
         load_op   = 1'b1;
-        store_op  = 1'b0;
-        signed_op = 1'b1;
-        double_op = (dcache_pkt.opcode == e_dcache_opcode_lrd);
-        word_op   = (dcache_pkt.opcode == e_dcache_opcode_lrw);
-        half_op   = 1'b0;
-        byte_op   = 1'b0;
-        size_op   = (dcache_pkt.opcode == e_dcache_opcode_lrd) ? 2'b11 : 2'b10;
       end
-    else if ((dcache_pkt.opcode == e_dcache_opcode_scw) | (dcache_pkt.opcode == e_dcache_opcode_scd))
-      begin
+      e_dcache_opcode_scw, e_dcache_opcode_scd: begin
         // An SC is a store operation of either double word or word size, inherently signed
-        lr_op     = 1'b0;
         sc_op     = 1'b1;
-        load_op   = 1'b0;
         store_op  = 1'b1;
-        signed_op = 1'b1;
-        double_op = (dcache_pkt.opcode == e_dcache_opcode_scd);
-        word_op   = (dcache_pkt.opcode == e_dcache_opcode_scw);
-        half_op   = 1'b0;
-        byte_op   = 1'b0;
-        size_op   = (dcache_pkt.opcode == e_dcache_opcode_scd) ? 2'b11 : 2'b10;
       end
-    else
-      begin
-        lr_op = 1'b0;
-        sc_op = 1'b0;
-        load_op = ~dcache_pkt.opcode[3];
-        store_op = dcache_pkt.opcode[3];
-        signed_op = ~dcache_pkt.opcode[2];
-        double_op = (dcache_pkt.opcode[1:0] == 2'b11);
-        word_op = (dcache_pkt.opcode[1:0] == 2'b10);
-        half_op = (dcache_pkt.opcode[1:0] == 2'b01);
-        byte_op = (dcache_pkt.opcode[1:0] == 2'b00);
-        size_op = dcache_pkt.opcode[1:0];
+      e_dcache_opcode_ld, e_dcache_opcode_lw, e_dcache_opcode_lh, e_dcache_opcode_lb: begin
+        load_op   = 1'b1;
       end
+      e_dcache_opcode_lwu, e_dcache_opcode_lhu, e_dcache_opcode_lbu: begin
+        load_op   = 1'b1;
+        signed_op = 1'b0;
+      end
+      e_dcache_opcode_sd, e_dcache_opcode_sw, e_dcache_opcode_sh, e_dcache_opcode_sb: begin
+        store_op  = 1'b1;
+      end
+      default: begin end
+    endcase
+
+    unique case (dcache_pkt.opcode)
+      e_dcache_opcode_ld, e_dcache_opcode_lrd, e_dcache_opcode_sd, e_dcache_opcode_scd: begin
+        double_op = 1'b1;
+        size_op   = 2'b11;
+      end
+      e_dcache_opcode_lw, e_dcache_opcode_lwu, e_dcache_opcode_sw
+        , e_dcache_opcode_lrw, e_dcache_opcode_scw: begin
+        word_op = 1'b1;
+        size_op = 2'b10;
+      end
+      e_dcache_opcode_lh, e_dcache_opcode_lhu, e_dcache_opcode_sh: begin
+        half_op = 1'b1;
+        size_op = 2'b01;
+      end
+      e_dcache_opcode_lb, e_dcache_opcode_lbu, e_dcache_opcode_sb: begin
+        byte_op = 1'b1;
+        size_op = 2'b00;
+      end
+      default: begin end
+    endcase
   end
 
   assign addr_index = dcache_pkt.page_offset[block_offset_width_lp+:index_width_lp];
@@ -439,7 +453,7 @@ always_comb
   logic [data_width_p-1:0] uncached_load_data_r;
 
   // load reserved / store conditional
-  logic upgrade_req;
+  logic lr_miss_tv;
   logic sc_success;
   logic sc_fail;
   logic [ptag_width_lp-1:0]  load_reserved_tag_r;
@@ -447,7 +461,7 @@ always_comb
   logic load_reserved_v_r;
 
   // Upgrade if a load reserved and we don't have the line in exclusive state
-  assign upgrade_req = v_tv_r & lr_op_tv_r & load_hit & ~store_hit;
+  assign lr_miss_tv = v_tv_r & lr_op_tv_r & load_hit & ~store_hit;
   // Succeed if the address matches and we have a store hit
   assign sc_success  = v_tv_r & sc_op_tv_r & store_hit & load_reserved_v_r 
                        & (load_reserved_tag_r == addr_tag_tv)
@@ -636,7 +650,7 @@ always_comb
     
       ,.load_miss_i(load_miss_tv)
       ,.store_miss_i(store_miss_tv)
-      ,.upgrade_req_i(upgrade_req)
+      ,.lr_miss_i(lr_miss_tv)
       ,.uncached_load_req_i(uncached_load_req)
       ,.uncached_store_req_i(uncached_store_req)
 
@@ -996,7 +1010,7 @@ always_comb
     end
     else begin
       // The LR has successfully completed, without a cache miss or upgrade request
-      if (lr_op_tv_r & v_o & ~upgrade_req) begin
+      if (lr_op_tv_r & v_o & ~lr_miss_tv) begin
         load_reserved_v_r     <= 1'b1;
         load_reserved_tag_r   <= paddr_tv_r[block_offset_width_lp+index_width_lp+:tag_width_lp];
         load_reserved_index_r <= paddr_tv_r[block_offset_width_lp+:index_width_lp];
