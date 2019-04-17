@@ -165,6 +165,7 @@ logic [dword_width_p-1:0] dcache_data;
 logic [ptag_width_lp-1:0] dcache_ptag;
 logic                     dcache_ready, dcache_miss_v, dcache_v, dcache_pkt_v;
 logic                     dcache_tlb_miss, dcache_poison;
+logic                     dcache_uncached;
 
 /* CSR signals */
 logic                     illegal_instr;
@@ -299,7 +300,7 @@ bp_be_dcache
 
     ,.tlb_miss_i(dcache_tlb_miss)
     ,.ptag_i(dcache_ptag)
-    ,.uncached_i(1'b0)                  
+    ,.uncached_i(dcache_uncached)
 
     ,.cache_miss_o(dcache_miss_v)
     ,.poison_i(dcache_poison)
@@ -344,11 +345,12 @@ always_comb
       dcache_pkt = ptw_dcache_pkt;
     end
     else begin
-      // Currently uncached I/O  is determined by high bit of translated address
-      // TODO: Add the uncached signal
       dcache_pkt.opcode      = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
       dcache_pkt.page_offset = {mmu_cmd.vaddr.index, mmu_cmd.vaddr.offset};
       dcache_pkt.data        = mmu_cmd.data;
+
+      // Currently uncached I/O  is determined by high bit of translated address
+      dcache_uncached = dcache_ptag[ptag_width_lp-1];
     end
 end
 
@@ -384,6 +386,14 @@ assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~ptw_busy;
 assign itlb_fill_v_o     = itlb_fill_resp_v & ptw_tlb_w_v;
 assign itlb_fill_vtag_o  = ptw_tlb_w_vtag;
 assign itlb_fill_entry_o = ptw_tlb_w_entry;
+
+logic dcache_pkt_v_r;
+always_ff @(negedge clk_i)
+  begin
+    dcache_pkt_v_r <= dcache_pkt_v;
+    assert (~(dcache_pkt_v_r & dcache_uncached & mmu_cmd.mem_op inside {e_lrw, e_lrd, e_scw, e_scd}))
+      else $warning("LR/SC to uncached memory not supported");
+  end
 
 endmodule : bp_be_mem_top
 

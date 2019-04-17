@@ -45,6 +45,32 @@
  *    
  *    paddr_width = ptag_width + page_offset_width = tag_width + index_width
  *    + block_offset_width
+ *
+ *    Load reserved and store conditional are implemented at a cache line granularity.
+ *    A load reserved acts as a normal load with the following addtional properties:
+ *    1) If the block is not in an exclusive ownership state (M or E in MESI), then the cache
+ *    will send an upgrade request (store miss).
+ *    2) If the LR is successful, a reservation is placed on the cache line. This reservation is 
+ *    valid for the current hart only.
+ *    A store conditional will succeed (return 0) if there is a valid reservation on the address of
+ *    the SC. Else, it will fail (return nonzero and will not commit the store). A failing store 
+ *    conditional will not produce a cache miss.
+ *
+ *    The reservation can be cleared by:
+ *    1) Any SC to any address by this hart.
+ *    2) A second LR (this will not clear the reservation, but it will change the reservation
+ *    address).
+ *    3) An invalidate received from the LCE. This command covers all cases of losing exclusive
+ *    access to the block in this hart.
+ *
+ *    RISC-V guarantees forward progress for LR/SC sequences that match a set of conditions.
+ *    Currently, BlackParrot makes no guarantees about these sequences, but one option to guarantee
+ *    progress is to block reservation invalidates from other harts until a following SC. There is
+ *    a design space exploration to be done between QoS and performance based on the backoff model
+ *    used for these schemes.
+ *
+ *    LR/SC aq/rl semantics are irrelevant for BlackParrot. Since we are in-order single issue, all
+ *    memory requests are inherently ordered within a hart.
  */
 
 module bp_be_dcache
@@ -160,6 +186,7 @@ always_comb
   begin
     if ((dcache_pkt.opcode == e_dcache_opcode_lrw) | (dcache_pkt.opcode == e_dcache_opcode_lrd))
       begin
+        // An LR is a load operation of either double word or word size, inherently signed
         lr_op     = 1'b1;
         sc_op     = 1'b0;
         load_op   = 1'b1;
@@ -173,6 +200,7 @@ always_comb
       end
     else if ((dcache_pkt.opcode == e_dcache_opcode_scw) | (dcache_pkt.opcode == e_dcache_opcode_scd))
       begin
+        // An SC is a store operation of either double word or word size, inherently signed
         lr_op     = 1'b0;
         sc_op     = 1'b1;
         load_op   = 1'b0;
@@ -420,9 +448,11 @@ always_comb
 
   // Upgrade if a load reserved and we don't have the line in exclusive state
   assign upgrade_req = v_tv_r & lr_op_tv_r & load_hit & ~store_hit;
+  // Succeed if the address matches and we have a store hit
   assign sc_success  = v_tv_r & sc_op_tv_r & store_hit & load_reserved_v_r 
                        & (load_reserved_tag_r == addr_tag_tv)
                        & (load_reserved_index_r == addr_index_tv);
+  // Fail if we have a store conditional without success
   assign sc_fail     = v_tv_r & sc_op_tv_r & ~sc_success;
   assign uncached_load_req = v_tv_r & load_op_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
   assign uncached_store_req = v_tv_r & store_op_tv_r & uncached_tv_r;
@@ -965,12 +995,15 @@ always_comb
       load_reserved_v_r <= 1'b0;
     end
     else begin
+      // The LR has successfully completed, without a cache miss or upgrade request
       if (lr_op_tv_r & v_o & ~upgrade_req) begin
         load_reserved_v_r     <= 1'b1;
         load_reserved_tag_r   <= paddr_tv_r[block_offset_width_lp+index_width_lp+:tag_width_lp];
         load_reserved_index_r <= paddr_tv_r[block_offset_width_lp+:index_width_lp];
+      // All SCs clear the reservation (regardless of success)
       end else if (sc_op_tv_r) begin
         load_reserved_v_r <= 1'b0;
+      // Invalidates from other harts which match the reservation address clear the reservation
       end else if (lce_tag_mem_pkt_v & (lce_tag_mem_pkt.opcode == e_dcache_lce_tag_mem_invalidate) 
                   & (lce_tag_mem_pkt.tag == load_reserved_tag_r) 
                   & (lce_tag_mem_pkt.index == load_reserved_index_r)) begin
@@ -1033,6 +1066,8 @@ always_comb
         else $error("multiple load hit: %b. id = %0d", load_hit_tv, lce_id_i);
       assert($countones(store_hit_tv) <= 1)
         else $error("multiple store hit: %b. id = %0d", store_hit_tv, lce_id_i);
+      assert (~(sc_op_tv_r & load_reserved_v_r & (load_reserved_tag_r == addr_tag_tv) & (load_reserved_index_r == addr_index_tv)) | store_hit)
+          else $error("sc success without exclusive ownership of cache line: %x %x", load_reserved_tag_r, load_reserved_index_r);
     end
   end
 
