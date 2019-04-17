@@ -116,7 +116,7 @@ for i in range(args.num_instr):
   if load:
     tg.send_load(signed=0, size=size, addr=addr)
     val = read_memory(byte_memory, addr, size)
-    eprint(str(i) + ': mem[{0}:{1}] == {2}'.format(addr, size, val))
+    #eprint(str(i) + ': mem[{0}:{1}] == {2}'.format(addr, size, val))
     tg.recv_data(data=val)
   else:
     # NOTE: the value being stored will be truncated to size number of bytes
@@ -125,7 +125,7 @@ for i in range(args.num_instr):
       store_val_trunc = store_val_trunc & ~(~0 << (size*8))
     tg.send_store(size=size, addr=addr, data=store_val_trunc)
     write_memory(byte_memory, addr, store_val_trunc, size)
-    eprint(str(i) + ': mem[{0}:{1}] := {2}'.format(addr, size, store_val_trunc))
+    #eprint(str(i) + ': mem[{0}:{1}] := {2}'.format(addr, size, store_val_trunc))
     tg.recv_data(data=0)
     store_val += 1
 

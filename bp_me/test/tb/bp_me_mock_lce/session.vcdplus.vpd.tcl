@@ -1,15 +1,15 @@
 # Begin_DVE_Session_Save_Info
 # DVE full session
-# Saved on Tue Apr 16 14:51:45 2019
+# Saved on Wed Apr 17 14:34:42 2019
 # Designs open: 1
 #   V1: vcdplus.vpd
 # Toplevel windows open: 2
 # 	TopLevel.1
 # 	TopLevel.2
 #   Source.1: testbench
-#   Wave.1: 28 signals
+#   Wave.1: 57 signals
 #   Group count = 1
-#   Group Group1 signal count = 28
+#   Group Group1 signal count = 57
 # End_DVE_Session_Save_Info
 
 # DVE version: L-2016.06-SP2-15_Full64
@@ -68,7 +68,7 @@ if {![gui_exist_window -window TopLevel.1]} {
 } else { 
     set TopLevel.1 TopLevel.1
 }
-gui_show_window -window ${TopLevel.1} -show_state normal -rect {{2560 23} {4479 1049}}
+gui_show_window -window ${TopLevel.1} -show_state normal -rect {{2560 23} {4478 1022}}
 
 # ToolBar settings
 gui_set_toolbar_attributes -toolbar {TimeOperations} -dock_state top
@@ -109,23 +109,23 @@ gui_hide_toolbar -toolbar {Testbench}
 # End ToolBar settings
 
 # Docked window settings
-set HSPane.1 [gui_create_window -type HSPane -parent ${TopLevel.1} -dock_state left -dock_on_new_line true -dock_extent 457]
+set HSPane.1 [gui_create_window -type HSPane -parent ${TopLevel.1} -dock_state left -dock_on_new_line true -dock_extent 454]
 catch { set Hier.1 [gui_share_window -id ${HSPane.1} -type Hier] }
-gui_set_window_pref_key -window ${HSPane.1} -key dock_width -value_type integer -value 457
+gui_set_window_pref_key -window ${HSPane.1} -key dock_width -value_type integer -value 454
 gui_set_window_pref_key -window ${HSPane.1} -key dock_height -value_type integer -value -1
 gui_set_window_pref_key -window ${HSPane.1} -key dock_offset -value_type integer -value 0
-gui_update_layout -id ${HSPane.1} {{left 0} {top 0} {width 456} {height 715} {dock_state left} {dock_on_new_line true} {child_hier_colhier 341} {child_hier_coltype 126} {child_hier_colpd 0} {child_hier_col1 0} {child_hier_col2 1} {child_hier_col3 -1}}
-set DLPane.1 [gui_create_window -type DLPane -parent ${TopLevel.1} -dock_state left -dock_on_new_line true -dock_extent 810]
+gui_update_layout -id ${HSPane.1} {{left 0} {top 0} {width 453} {height 691} {dock_state left} {dock_on_new_line true} {child_hier_colhier 341} {child_hier_coltype 126} {child_hier_colpd 0} {child_hier_col1 0} {child_hier_col2 1} {child_hier_col3 -1}}
+set DLPane.1 [gui_create_window -type DLPane -parent ${TopLevel.1} -dock_state left -dock_on_new_line true -dock_extent 807]
 catch { set Data.1 [gui_share_window -id ${DLPane.1} -type Data] }
-gui_set_window_pref_key -window ${DLPane.1} -key dock_width -value_type integer -value 810
-gui_set_window_pref_key -window ${DLPane.1} -key dock_height -value_type integer -value 685
+gui_set_window_pref_key -window ${DLPane.1} -key dock_width -value_type integer -value 807
+gui_set_window_pref_key -window ${DLPane.1} -key dock_height -value_type integer -value 716
 gui_set_window_pref_key -window ${DLPane.1} -key dock_offset -value_type integer -value 0
-gui_update_layout -id ${DLPane.1} {{left 0} {top 0} {width 809} {height 715} {dock_state left} {dock_on_new_line true} {child_data_colvariable 245} {child_data_colvalue 523} {child_data_coltype 90} {child_data_col1 0} {child_data_col2 1} {child_data_col3 2}}
-set Console.1 [gui_create_window -type Console -parent ${TopLevel.1} -dock_state bottom -dock_on_new_line true -dock_extent 240]
-gui_set_window_pref_key -window ${Console.1} -key dock_width -value_type integer -value 1916
-gui_set_window_pref_key -window ${Console.1} -key dock_height -value_type integer -value 240
+gui_update_layout -id ${DLPane.1} {{left 0} {top 0} {width 806} {height 691} {dock_state left} {dock_on_new_line true} {child_data_colvariable 245} {child_data_colvalue 523} {child_data_coltype 90} {child_data_col1 0} {child_data_col2 1} {child_data_col3 2}}
+set Console.1 [gui_create_window -type Console -parent ${TopLevel.1} -dock_state bottom -dock_on_new_line true -dock_extent 237]
+gui_set_window_pref_key -window ${Console.1} -key dock_width -value_type integer -value 1919
+gui_set_window_pref_key -window ${Console.1} -key dock_height -value_type integer -value 237
 gui_set_window_pref_key -window ${Console.1} -key dock_offset -value_type integer -value 0
-gui_update_layout -id ${Console.1} {{left 0} {top 0} {width 1919} {height 239} {dock_state bottom} {dock_on_new_line true}}
+gui_update_layout -id ${Console.1} {{left 0} {top 0} {width 1918} {height 236} {dock_state bottom} {dock_on_new_line true}}
 #### Start - Readjusting docked view's offset / size
 set dockAreaList { top left right bottom }
 foreach dockArea $dockAreaList {
@@ -210,7 +210,7 @@ gui_sync_global -id ${TopLevel.2} -option true
 # MDI window settings
 set Wave.1 [gui_create_window -type {Wave}  -parent ${TopLevel.2}]
 gui_show_window -window ${Wave.1} -show_state maximized
-gui_update_layout -id ${Wave.1} {{show_state maximized} {dock_state undocked} {dock_on_new_line false} {child_wave_left 557} {child_wave_right 1357} {child_wave_colname 276} {child_wave_colvalue 276} {child_wave_col1 0} {child_wave_col2 1}}
+gui_update_layout -id ${Wave.1} {{show_state maximized} {dock_state undocked} {dock_on_new_line false} {child_wave_left 557} {child_wave_right 1357} {child_wave_colname 276} {child_wave_colvalue 277} {child_wave_col1 0} {child_wave_col2 1}}
 
 # End MDI window settings
 
@@ -255,7 +255,7 @@ set _session_group_1 Group1
 gui_sg_create "$_session_group_1"
 set Group1 "$_session_group_1"
 
-gui_sg_addsignal -group "$_session_group_1" { {testbench.mock_lce_me.genblk1[0].lce.clk_i} {testbench.mock_lce_me.genblk1[0].lce.reset_i} {testbench.mock_lce_me.genblk1[0].lce.cmd_r} {testbench.mock_lce_me.genblk1[0].lce.cmd_n} {testbench.mock_lce_me.genblk1[0].lce.cmd_cmd} {testbench.mock_lce_me.genblk1[0].lce.cmd_paddr} {testbench.mock_lce_me.genblk1[0].lce.cmd_data} {testbench.mock_lce_me.genblk1[0].lce.store_op} {testbench.mock_lce_me.genblk1[0].lce.load_op} {testbench.mock_lce_me.genblk1[0].lce.signed_op} {testbench.mock_lce_me.genblk1[0].lce.byte_op} {testbench.mock_lce_me.genblk1[0].lce.word_op} {testbench.mock_lce_me.genblk1[0].lce.double_op} {testbench.mock_lce_me.genblk1[0].lce.half_op} {testbench.mock_lce_me.genblk1[0].lce.lce_state} {testbench.mock_lce_me.genblk1[0].lce.load_data} {testbench.mock_lce_me.genblk1[0].lce.load_word} {testbench.mock_lce_me.genblk1[0].lce.load_half} {testbench.mock_lce_me.genblk1[0].lce.load_byte} {testbench.mock_lce_me.genblk1[0].lce.dword_offset} {testbench.mock_lce_me.genblk1[0].lce.byte_offset} {testbench.mock_lce_me.genblk1[0].lce.data} {testbench.mock_lce_me.genblk1[0].lce.data_n} {testbench.mock_lce_me.genblk1[0].lce.data_cur} {testbench.mock_lce_me.genblk1[0].lce.data_mask} {testbench.mock_lce_me.genblk1[0].lce.data_w} {testbench.mock_lce_me.genblk1[0].lce.data_set} {testbench.mock_lce_me.genblk1[0].lce.data_way} }
+gui_sg_addsignal -group "$_session_group_1" { {testbench.mock_lce_me.genblk1[0].lce.clk_i} {testbench.mock_lce_me.genblk1[0].lce.reset_i} {testbench.mock_lce_me.genblk1[0].lce.tr_pkt_i} {testbench.mock_lce_me.genblk1[0].lce.tr_pkt_v_i} {testbench.mock_lce_me.genblk1[0].lce.tr_pkt_yumi_o} {testbench.mock_lce_me.genblk1[0].lce.tr_pkt_o} {testbench.mock_lce_me.genblk1[0].lce.tr_pkt_v_o} {testbench.mock_lce_me.genblk1[0].lce.tr_pkt_ready_i} {testbench.mock_lce_me.genblk1[0].lce.lce_state} {testbench.mock_lce_me.genblk1[0].lce.tag_w} {testbench.mock_lce_me.genblk1[0].lce.tag_w_n} {testbench.mock_lce_me.genblk1[0].lce.tag_set} {testbench.mock_lce_me.genblk1[0].lce.tag_set_n} {testbench.mock_lce_me.genblk1[0].lce.tag_way} {testbench.mock_lce_me.genblk1[0].lce.tag_way_n} {testbench.mock_lce_me.genblk1[0].lce.data} {testbench.mock_lce_me.genblk1[0].lce.data_w} {testbench.mock_lce_me.genblk1[0].lce.data_w_n} {testbench.mock_lce_me.genblk1[0].lce.data_next} {testbench.mock_lce_me.genblk1[0].lce.data_next_n} {testbench.mock_lce_me.genblk1[0].lce.data_mask} {testbench.mock_lce_me.genblk1[0].lce.data_mask_n} {testbench.mock_lce_me.genblk1[0].lce.data_set} {testbench.mock_lce_me.genblk1[0].lce.data_set_n} {testbench.mock_lce_me.genblk1[0].lce.data_way} {testbench.mock_lce_me.genblk1[0].lce.data_way_n} {testbench.mock_lce_me.genblk1[0].lce.data_cur} {testbench.mock_lce_me.genblk1[0].lce.store_op} {testbench.mock_lce_me.genblk1[0].lce.load_op} {testbench.mock_lce_me.genblk1[0].lce.signed_op} {testbench.mock_lce_me.genblk1[0].lce.byte_op} {testbench.mock_lce_me.genblk1[0].lce.word_op} {testbench.mock_lce_me.genblk1[0].lce.double_op} {testbench.mock_lce_me.genblk1[0].lce.half_op} {testbench.mock_lce_me.genblk1[0].lce.op_size} {testbench.mock_lce_me.genblk1[0].lce.dword_offset} {testbench.mock_lce_me.genblk1[0].lce.byte_offset} {testbench.mock_lce_me.genblk1[0].lce.load_data} {testbench.mock_lce_me.genblk1[0].lce.load_word} {testbench.mock_lce_me.genblk1[0].lce.load_half} {testbench.mock_lce_me.genblk1[0].lce.load_byte} {testbench.mock_lce_me.genblk1[0].lce.tags} {testbench.mock_lce_me.genblk1[0].lce.tag_next} {testbench.mock_lce_me.genblk1[0].lce.tag_next_n} {testbench.mock_lce_me.genblk1[0].lce.tag_cur} {testbench.mock_lce_me.genblk1[0].lce.cmd} {testbench.mock_lce_me.genblk1[0].lce.cmd_n} {testbench.mock_lce_me.genblk1[0].lce.ptag_li} {testbench.mock_lce_me.genblk1[0].lce.lru_way_r} {testbench.mock_lce_me.genblk1[0].lce.lru_way_n} {testbench.mock_lce_me.genblk1[0].lce.lru_way_li} {testbench.mock_lce_me.genblk1[0].lce.tag_set_li} {testbench.mock_lce_me.genblk1[0].lce.tag_hit_lo} {testbench.mock_lce_me.genblk1[0].lce.tag_dirty_lo} {testbench.mock_lce_me.genblk1[0].lce.tag_hit_way_lo} {testbench.mock_lce_me.genblk1[0].lce.lru_dirty_lo} {testbench.mock_lce_me.genblk1[0].lce.tag_hit_state_lo} }
 
 # Global: Highlighting
 
@@ -265,7 +265,7 @@ gui_change_stack_mode -mode list
 # Post database loading setting...
 
 # Restore C1 time
-gui_set_time -C1_only 50010
+gui_set_time -C1_only 54145
 
 
 
@@ -301,8 +301,8 @@ gui_list_set_filter -id ${Data.1} -list { {Buffer 1} {Input 1} {Others 1} {Linka
 gui_list_set_filter -id ${Data.1} -text {*}
 gui_list_show_data -id ${Data.1} {testbench.mock_lce_me.genblk1[0].lce}
 gui_show_window -window ${Data.1}
-catch { gui_list_select -id ${Data.1} {{testbench.mock_lce_me.genblk1[0].lce.data} {testbench.mock_lce_me.genblk1[0].lce.data_n} {testbench.mock_lce_me.genblk1[0].lce.data_cur} {testbench.mock_lce_me.genblk1[0].lce.data_mask} {testbench.mock_lce_me.genblk1[0].lce.data_w} {testbench.mock_lce_me.genblk1[0].lce.data_set} {testbench.mock_lce_me.genblk1[0].lce.data_way} }}
-gui_view_scroll -id ${Data.1} -vertical -set 360
+catch { gui_list_select -id ${Data.1} {{testbench.mock_lce_me.genblk1[0].lce.tag_hit_lo} {testbench.mock_lce_me.genblk1[0].lce.tag_dirty_lo} {testbench.mock_lce_me.genblk1[0].lce.tag_hit_way_lo} {testbench.mock_lce_me.genblk1[0].lce.lru_dirty_lo} {testbench.mock_lce_me.genblk1[0].lce.tag_hit_state_lo} }}
+gui_view_scroll -id ${Data.1} -vertical -set 960
 gui_view_scroll -id ${Data.1} -horizontal -set 0
 gui_view_scroll -id ${Hier.1} -vertical -set 0
 gui_view_scroll -id ${Hier.1} -horizontal -set 0
@@ -323,8 +323,9 @@ gui_list_set_height -id Wave -height 25
 set origGroupCreationState [gui_list_create_group_when_add -wave]
 gui_list_create_group_when_add -wave -disable
 gui_marker_set_ref -id ${Wave.1}  C1
-gui_wv_zoom_timerange -id ${Wave.1} 49761 50250
+gui_wv_zoom_timerange -id ${Wave.1} 53914 54376
 gui_list_add_group -id ${Wave.1} -after {New Group} {Group1}
+gui_list_select -id ${Wave.1} {{testbench.mock_lce_me.genblk1[0].lce.data_w} }
 gui_seek_criteria -id ${Wave.1} {Any Edge}
 
 
@@ -339,10 +340,10 @@ if { $groupExD } {
  gui_msg_report -code DVWW028
 }
 gui_list_set_filter -id ${Wave.1} -list { {Buffer 1} {Input 1} {Others 1} {Linkage 1} {Output 1} {Parameter 1} {All 1} {Aggregate 1} {LibBaseMember 1} {Event 1} {Assertion 1} {Constant 1} {Interface 1} {BaseMembers 1} {Signal 1} {$unit 1} {Inout 1} {Variable 1} }
-gui_list_set_filter -id ${Wave.1} -reset
+gui_list_set_filter -id ${Wave.1} -text {*}
 gui_list_set_insertion_bar  -id ${Wave.1} -group Group1  -position in
 
-gui_marker_move -id ${Wave.1} {C1} 50010
+gui_marker_move -id ${Wave.1} {C1} 54145
 gui_view_scroll -id ${Wave.1} -vertical -set 0
 gui_show_grid -id ${Wave.1} -enable false
 # Restore toplevel window zorder
