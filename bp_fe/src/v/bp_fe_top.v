@@ -10,41 +10,33 @@ module bp_fe_top
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
 
+   `declare_bp_lce_cce_if_widths(num_cce_p
+                                 ,num_lce_p
+                                 ,paddr_width_p
+                                 ,lce_assoc_p
+                                 ,dword_width_p
+                                 ,cce_block_width_p
+                                 )
+
+   `declare_bp_fe_be_if_widths(vaddr_width_p
+                               ,paddr_width_p
+                               ,asid_width_p
+                               ,branch_metadata_fwd_width_p
+                               )
+
    , parameter cce_block_size_in_bytes_p = cce_block_width_p / 8
 
    , localparam data_width_p      = rv64_reg_data_width_gp
    , localparam instr_width_lp    = rv64_instr_width_gp   
 
-
-   , localparam lg_lce_assoc_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
    , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)
    , localparam block_size_in_words_lp=lce_assoc_p
    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
    , localparam data_mask_width_lp=(data_width_p>>3)
    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
-
-
-
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
+   //do we need this? come back to this
    , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
-
-   , localparam vaddr_offset_width_lp=(index_width_lp+lg_lce_assoc_lp+byte_offset_width_lp)
-   , localparam addr_width_lp=(vaddr_offset_width_lp+tag_width_lp)
-   , localparam lce_data_width_lp=(lce_assoc_p*data_width_p)
-   // need to change addr_width_lp and lce_data_width_lp
-   // , localparam lce_data_width_lp=(cce_block_size_in_bytes_p * 8)
-   , localparam bp_lce_cce_req_width_lp=
-     `bp_lce_cce_req_width(num_cce_p, num_lce_p, addr_width_lp, lce_assoc_p, data_width_p)
-   , localparam bp_lce_cce_resp_width_lp=
-     `bp_lce_cce_resp_width(num_cce_p, num_lce_p, addr_width_lp)
-   , localparam bp_lce_cce_data_resp_width_lp=
-     `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, addr_width_lp, lce_data_width_lp) 
-   , localparam bp_cce_lce_cmd_width_lp=
-     `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, addr_width_lp, lce_assoc_p)
-   , localparam bp_lce_data_cmd_width_lp=
-     `bp_lce_data_cmd_width(num_lce_p, lce_data_width_lp, lce_assoc_p)
-
-
   
    // pc gen related parameters
    , localparam instr_scan_width_lp=`bp_fe_instr_scan_width
@@ -56,16 +48,6 @@ module bp_fe_top
                                                                   ,branch_metadata_fwd_width_lp
                                                                  )
   
-   // be interfaces parameters
-//   , localparam branch_metadata_fwd_width_lp=btb_idx_width_p+bht_idx_width_p+ras_idx_width_p
-   , localparam bp_fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_p
-                                                    ,paddr_width_p
-                                                    ,asid_width_p
-                                                    ,branch_metadata_fwd_width_lp
-                                                   )
-   , localparam bp_fe_queue_width_lp=`bp_fe_queue_width(vaddr_width_p
-                                                        ,branch_metadata_fwd_width_lp
-                                                       )
    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
    
    , localparam vtag_width_lp = (vaddr_width_p-bp_page_offset_width_gp)
@@ -74,42 +56,45 @@ module bp_fe_top
   (input                                              clk_i
    , input                                            reset_i
 
+   //, input [proc_cfg_width_lp-1:0]                    proc_cfg_i
    , input [lce_id_width_lp-1:0]                      icache_id_i
-
-   , input [bp_fe_cmd_width_lp-1:0]                   fe_cmd_i
+   , input [fe_cmd_width_lp-1:0]                      fe_cmd_i
    , input                                            fe_cmd_v_i
    , output logic                                     fe_cmd_ready_o
 
-   , output [bp_fe_queue_width_lp-1:0]                fe_queue_o
+   , output [fe_queue_width_lp-1:0]                   fe_queue_o
    , output                                           fe_queue_v_o
    , input                                            fe_queue_ready_i
 
-   , output logic [bp_lce_cce_req_width_lp-1:0]       lce_req_o
+   , output logic [lce_cce_req_width_lp-1:0]          lce_req_o
    , output logic                                     lce_req_v_o
-
    , input                                            lce_req_ready_i
 
-   , output [bp_lce_cce_resp_width_lp-1:0]            lce_resp_o
+   , output [lce_cce_resp_width_lp-1:0]               lce_resp_o
    , output                                           lce_resp_v_o
    , input                                            lce_resp_ready_i
 
-   , output [bp_lce_cce_data_resp_width_lp-1:0]       lce_data_resp_o     
+   , output [lce_cce_data_resp_width_lp-1:0]          lce_data_resp_o     
    , output                                           lce_data_resp_v_o 
    , input                                            lce_data_resp_ready_i
 
-   , input [bp_cce_lce_cmd_width_lp-1:0]              lce_cmd_i
+   , input [cce_lce_cmd_width_lp-1:0]                 lce_cmd_i
    , input                                            lce_cmd_v_i
    , output                                           lce_cmd_ready_o
 
-   , input [bp_lce_data_cmd_width_lp-1:0]             lce_data_cmd_i
+   , input [lce_data_cmd_width_lp-1:0]                lce_data_cmd_i
    , input                                            lce_data_cmd_v_i
    , output                                           lce_data_cmd_ready_o
 
-   , output [bp_lce_data_cmd_width_lp-1:0]            lce_data_cmd_o
+   , output [lce_data_cmd_width_lp-1:0]               lce_data_cmd_o
    , output                                           lce_data_cmd_v_o
    , input                                            lce_data_cmd_ready_i
 
    );
+
+//getting rid of icache id
+//bp_proc_cfg_s proc_cfg;
+//assign proc_cfg = proc_cfg_i;
       
 // the first level of structs
 `declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp);   
@@ -180,6 +165,8 @@ assign fe_queue.msg_type = pc_gen_queue.msg_type;
 assign fe_queue.msg      = pc_gen_queue.msg;
 assign pc_gen_fe_ready   = fe_queue_ready_i;
 assign fe_queue_v_o      = pc_gen_fe_v;
+// processor parameters
+//`declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
 
 // fe to pc_gen 
 always_comb
