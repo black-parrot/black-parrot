@@ -71,7 +71,7 @@ module bp_cce_pc
   // config logic
   logic config_ram_w_v;
   assign config_ram_w_v = config_addr_i[cfg_link_addr_width_p-2];
-  logic config_ram_addr;
+  logic [inst_ram_addr_width_lp-1:0] config_ram_addr;
   assign config_ram_addr = config_addr_i[0+:inst_ram_addr_width_lp];
 
   bsg_mem_1rw_sync_mask_write_bit
