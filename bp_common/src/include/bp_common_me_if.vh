@@ -590,6 +590,7 @@ typedef enum logic
                                                               ,lce_assoc_mp                 \
                                                               )
 
+
 /*
  * Width Macros
  */
@@ -612,6 +613,8 @@ typedef enum logic
 `define bp_lce_cce_resp_width(num_cce_mp, num_lce_mp, addr_width_mp) \
   (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_cce_ack_type_width+addr_width_mp)
 
+// TODO: remove this macro - LCE to LCE TR Resp no longer exists
+// -- still used in FE tests somewhere
 `define bp_lce_lce_tr_resp_width(num_lce_mp, addr_width_mp, data_width_mp, lce_assoc_mp) \
   (`BSG_SAFE_CLOG2(num_lce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`BSG_SAFE_CLOG2(lce_assoc_mp) \
     +addr_width_mp+data_width_mp)

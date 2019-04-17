@@ -37,8 +37,6 @@ module bp_me_top
       `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p)
     , localparam bp_lce_data_cmd_width_lp=
       `bp_lce_data_cmd_width(num_lce_p, cce_block_width_p, lce_assoc_p)
-    , localparam bp_lce_lce_tr_resp_width_lp=
-      `bp_lce_lce_tr_resp_width(num_lce_p, paddr_width_p, cce_block_width_p, lce_assoc_p)
 
     , localparam bp_mem_cce_resp_width_lp=
       `bp_mem_cce_resp_width(paddr_width_p, num_lce_p, lce_assoc_p)
