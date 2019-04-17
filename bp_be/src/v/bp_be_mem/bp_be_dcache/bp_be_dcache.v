@@ -965,7 +965,7 @@ always_comb
       load_reserved_v_r <= 1'b0;
     end
     else begin
-      if (lr_op_tv_r & tv_we & ~upgrade_req) begin
+      if (lr_op_tv_r & v_o & ~upgrade_req) begin
         load_reserved_v_r     <= 1'b1;
         load_reserved_tag_r   <= paddr_tv_r[block_offset_width_lp+index_width_lp+:tag_width_lp];
         load_reserved_index_r <= paddr_tv_r[block_offset_width_lp+:index_width_lp];
