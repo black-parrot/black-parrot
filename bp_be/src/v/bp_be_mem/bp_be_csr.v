@@ -470,7 +470,7 @@ always_comb
 assign mepc_o           = mepc_r;
 assign mtvec_o          = mtvec_r;
 assign satp_o           = satp_r;
-assign translation_en_o = (priv_mode_r > `RV64_PRIV_MODE_M) & (satp_r.mode == 4'h8);
+assign translation_en_o = (priv_mode_r < `RV64_PRIV_MODE_M) & (satp_r.mode == 4'h8);
 
 assign csr_cmd_ready_o = 1'b1;
 assign data_o          = dword_width_p'(csr_data_lo);
