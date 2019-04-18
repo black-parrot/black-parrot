@@ -191,6 +191,7 @@ module bp_cce
   logic gad_upgrade_flag_lo;
   logic gad_invalidate_flag_lo;
   logic gad_exclusive_flag_lo;
+  logic gad_cached_flag_lo;
   logic [tag_width_lp-1:0] gad_lru_tag_lo;
   logic [`bp_cce_coh_bits-1:0] gad_coh_state_lo;
   logic [num_lce_p-1:0] gad_sharers_hits_lo;
@@ -386,6 +387,7 @@ module bp_cce
       ,.upgrade_flag_o(gad_upgrade_flag_lo)
       ,.invalidate_flag_o(gad_invalidate_flag_lo)
       ,.exclusive_flag_o(gad_exclusive_flag_lo)
+      ,.cached_flag_o(gad_cached_flag_lo)
       ,.sharers_hits_o(gad_sharers_hits_lo)
       ,.sharers_ways_o(gad_sharers_ways_lo)
       ,.sharers_coh_states_o(gad_sharers_coh_states_lo)
@@ -431,6 +433,7 @@ module bp_cce
       ,.gad_upgrade_flag_i(gad_upgrade_flag_lo)
       ,.gad_invalidate_flag_i(gad_invalidate_flag_lo)
       ,.gad_exclusive_flag_i(gad_exclusive_flag_lo)
+      ,.gad_cached_flag_i(gad_cached_flag_lo)
       // register state outputs
       ,.req_lce_o(req_lce_r_lo)
       ,.req_addr_o(req_addr_r_lo)
@@ -738,6 +741,9 @@ module bp_cce
       e_src_ucf: begin
         alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_ucf]};
       end
+      e_src_cf: begin
+        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_cf]};
+      end
       e_src_const_0: begin
         alu_opd_a_li = '0;
       end
@@ -812,6 +818,7 @@ module bp_cce
       e_src_ef: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_ef]};
       e_src_pcf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_pcf]};
       e_src_ucf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_ucf]};
+      e_src_cf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_cf]};
       e_src_const_0: alu_opd_b_li = '0;
       e_src_const_1: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, 1'b1};
       e_src_imm: alu_opd_b_li = decoded_inst_lo.imm;

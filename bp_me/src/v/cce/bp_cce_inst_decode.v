@@ -185,6 +185,9 @@ module bp_cce_inst_decode
           end else if (flag_op_s.dst == e_dst_ef) begin
             decoded_inst_o.pruief_sel = e_pruief_imm0;
             decoded_inst_o.flag_mask_w_v = e_flag_ef;
+          end else if (flag_op_s.dst == e_dst_cf) begin
+            decoded_inst_o.pruief_sel = e_pruief_imm0;
+            decoded_inst_o.flag_mask_w_v = e_flag_cf;
           end
 
         end
@@ -229,7 +232,7 @@ module bp_cce_inst_decode
             decoded_inst_o.tf_sel = e_tf_logic;
             decoded_inst_o.pruief_sel = e_pruief_logic;
             decoded_inst_o.flag_mask_w_v =
-              (e_flag_tf | e_flag_rf | e_flag_uf | e_flag_if | e_flag_ef);
+              (e_flag_tf | e_flag_rf | e_flag_uf | e_flag_if | e_flag_ef | e_flag_cf);
           end
         end
         e_op_queue: begin

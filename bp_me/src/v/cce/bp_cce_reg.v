@@ -78,6 +78,7 @@ module bp_cce_reg
    , input                                                                 gad_upgrade_flag_i
    , input                                                                 gad_invalidate_flag_i
    , input                                                                 gad_exclusive_flag_i
+   , input                                                                 gad_cached_flag_i
 
    // Register value outputs
 
@@ -416,6 +417,7 @@ module bp_cce_reg
         flags_n[e_flag_sel_uf] = gad_upgrade_flag_i;
         flags_n[e_flag_sel_if] = gad_invalidate_flag_i;
         flags_n[e_flag_sel_ef] = gad_exclusive_flag_i;
+        flags_n[e_flag_sel_cf] = gad_cached_flag_i;
       end
       e_pruief_imm0: begin
         flags_n[e_flag_sel_pf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
@@ -423,6 +425,7 @@ module bp_cce_reg
         flags_n[e_flag_sel_uf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
         flags_n[e_flag_sel_if] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
         flags_n[e_flag_sel_ef] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+        flags_n[e_flag_sel_cf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
       end
       default: begin
         flags_n[e_flag_sel_pf] = '0;
@@ -430,6 +433,7 @@ module bp_cce_reg
         flags_n[e_flag_sel_uf] = '0;
         flags_n[e_flag_sel_if] = '0;
         flags_n[e_flag_sel_ef] = '0;
+        flags_n[e_flag_sel_cf] = '0;
       end
     endcase
 

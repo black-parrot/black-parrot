@@ -331,7 +331,8 @@ module bp_be_dcache
   for (genvar i = 0; i < ways_p; i++) begin: tag_comp
     assign tag_match_tv[i] = addr_tag_tv == tag_info_tv_r[i].tag;
     assign load_hit_tv[i] = tag_match_tv[i] & (tag_info_tv_r[i].coh_state != e_MESI_I);
-    assign store_hit_tv[i] = tag_match_tv[i] & (tag_info_tv_r[i].coh_state == e_MESI_E);
+    assign store_hit_tv[i] = tag_match_tv[i] & ((tag_info_tv_r[i].coh_state == e_MESI_M)
+                                                || (tag_info_tv_r[i].coh_state == e_MESI_E));
     assign invalid_tv[i] = (tag_info_tv_r[i].coh_state == e_MESI_I);
   end
 

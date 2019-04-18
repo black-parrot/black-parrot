@@ -191,6 +191,8 @@ Assembler::parseSrcOpd(string &s) {
     return e_src_pcf;
   } else if (!s.compare("ucf")) {
     return e_src_ucf;
+  } else if (!s.compare("cf")) {
+    return e_src_cf;
   } else if (!s.compare("reqlce")) {
     return e_src_req_lce;
   } else if (!s.compare("acktype")) {
@@ -253,6 +255,8 @@ Assembler::parseDstOpd(string &s) {
     return e_dst_pcf;
   } else if (!s.compare("ucf")) {
     return e_dst_ucf;
+  } else if (!s.compare("cf")) {
+    return e_dst_cf;
   } else if (!s.compare("nextcohst")) {
     return e_dst_next_coh_state;
   } else {
@@ -413,6 +417,9 @@ Assembler::parseFlagSel(string &s) {
     case e_dst_ucf:
       return e_flag_ucf;
       break;
+    case e_dst_cf:
+      return e_flag_cf;
+      break;
     default:
       printf("Unknown Flag operand\n");
       exit(-1);
@@ -438,15 +445,6 @@ Assembler::parseMove(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
     }
   } else if (tokens->size() == 2) { // sf or sfz
     inst->type_u.flag_op_s.dst = parseDstOpd(tokens->at(1));
-    /*
-    inst->rqf_sel = e_rqf_imm0;
-    inst->nerldf_sel = e_nerldf_imm0;
-    inst->nwbf_sel = e_nwbf_imm0;
-    inst->tf_sel = e_tf_imm0;
-    inst->pruief_sel = e_pruief_imm0;
-    inst->rwbf_sel = e_rwbf_imm0;
-    inst->flag_mask_w_v = parseFlagSel(tokens->at(1));
-    */
     if (!strcmp("sf", tokens->at(0).c_str())) {
       inst->type_u.flag_op_s.imm = 1;
     } else if (!strcmp("sfz", tokens->at(0).c_str())) {

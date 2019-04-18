@@ -172,6 +172,8 @@ typedef enum logic [4:0] {
   ,e_src_pending_ready                   = 5'b11011
   ,e_src_lce_resp_ready                  = 5'b11100
   ,e_src_lce_data_resp_ready             = 5'b11101
+
+  ,e_src_cf                              = 5'b11110
 } bp_cce_inst_src_e;
 
 `define bp_cce_inst_src_width $bits(bp_cce_inst_src_e)
@@ -182,6 +184,7 @@ typedef enum logic [4:0] {
   ,e_dst_r1                              = 5'b00001
   ,e_dst_r2                              = 5'b00010
   ,e_dst_r3                              = 5'b00011
+
   ,e_dst_rqf                             = 5'b00100
   ,e_dst_nerf                            = 5'b00101
   ,e_dst_ldf                             = 5'b00110
@@ -195,7 +198,9 @@ typedef enum logic [4:0] {
   ,e_dst_ef                              = 5'b01110
   ,e_dst_pcf                             = 5'b01111
   ,e_dst_ucf                             = 5'b10000
-  ,e_dst_next_coh_state                  = 5'b10001
+  ,e_dst_cf                              = 5'b10001
+
+  ,e_dst_next_coh_state                  = 5'b10010
 } bp_cce_inst_dst_e;
 
 `define bp_cce_inst_dst_width $bits(bp_cce_inst_dst_e)
@@ -215,7 +220,7 @@ typedef enum logic [3:0] {
   ,e_flag_sel_ef                         = 4'b1010 // exclusive flag
   ,e_flag_sel_pcf                        = 4'b1011 // pending-cleared flag
   ,e_flag_sel_ucf                        = 4'b1100 // uncached request flag
-  // unused 4'b1101
+  ,e_flag_sel_cf                         = 4'b1101 // cached flag
   // unused 4'b1110
   // unused 4'b1111
 } bp_cce_inst_flag_sel_e;
@@ -223,20 +228,21 @@ typedef enum logic [3:0] {
 `define bp_cce_inst_flag_sel_width $bits(bp_cce_inst_flag_sel_e)
 
 // Flag register one hot
-typedef enum logic [12:0] {
-  e_flag_rqf                             = 13'b0_0000_0000_0001 // request type flag
-  ,e_flag_nerf                           = 13'b0_0000_0000_0010 // non-exclusive request flag
-  ,e_flag_ldf                            = 13'b0_0000_0000_0100 // lru dirty flag
-  ,e_flag_nwbf                           = 13'b0_0000_0000_1000 // null writeback flag
-  ,e_flag_tf                             = 13'b0_0000_0001_0000 // transfer flag
-  ,e_flag_rf                             = 13'b0_0000_0010_0000 // replacement flag
-  ,e_flag_rwbf                           = 13'b0_0000_0100_0000 // replacement writeback flag
-  ,e_flag_pf                             = 13'b0_0000_1000_0000 // pending flag
-  ,e_flag_uf                             = 13'b0_0001_0000_0000 // upgrade flag
-  ,e_flag_if                             = 13'b0_0010_0000_0000 // invalidate flag
-  ,e_flag_ef                             = 13'b0_0100_0000_0000 // exclusive flag
-  ,e_flag_pcf                            = 13'b0_1000_0000_0000 // pending-cleared flag
-  ,e_flag_ucf                            = 13'b1_0000_0000_0000 // uncached request flag
+typedef enum logic [13:0] {
+  e_flag_rqf                             = 14'b00_0000_0000_0001 // request type flag
+  ,e_flag_nerf                           = 14'b00_0000_0000_0010 // non-exclusive request flag
+  ,e_flag_ldf                            = 14'b00_0000_0000_0100 // lru dirty flag
+  ,e_flag_nwbf                           = 14'b00_0000_0000_1000 // null writeback flag
+  ,e_flag_tf                             = 14'b00_0000_0001_0000 // transfer flag
+  ,e_flag_rf                             = 14'b00_0000_0010_0000 // replacement flag
+  ,e_flag_rwbf                           = 14'b00_0000_0100_0000 // replacement writeback flag
+  ,e_flag_pf                             = 14'b00_0000_1000_0000 // pending flag
+  ,e_flag_uf                             = 14'b00_0001_0000_0000 // upgrade flag
+  ,e_flag_if                             = 14'b00_0010_0000_0000 // invalidate flag
+  ,e_flag_ef                             = 14'b00_0100_0000_0000 // exclusive flag
+  ,e_flag_pcf                            = 14'b00_1000_0000_0000 // pending-cleared flag
+  ,e_flag_ucf                            = 14'b01_0000_0000_0000 // uncached request flag
+  ,e_flag_cf                             = 14'b10_0000_0000_0000 // cached flag
 } bp_cce_inst_flag_e;
 
 `define bp_cce_inst_num_flags $bits(bp_cce_inst_flag_e)

@@ -4,26 +4,25 @@
 
 `include "bp_be_dcache_pkt.vh"
 
-module testbench();
+module testbench
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_be_dcache_pkg::*;
+  #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR
+    `declare_bp_proc_params(cfg_p)
 
-  // parameters
-  //
-  parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR;
-  localparam data_width_p = 64;
-  localparam sets_p = 64;
-  localparam ways_p = 8;
-  localparam paddr_width_p = 39;
-  localparam num_lce_p = `NUM_LCE_P;
-  localparam mem_els_p = sets_p*ways_p*ways_p;
-  localparam instr_count = `NUM_INSTR_P;
+    // parameters
+    //
+    //, localparam num_lce_p = `NUM_LCE_P
+    , localparam mem_els_p = 2*num_lce_p*lce_sets_p*lce_assoc_p
+    , localparam instr_count = `NUM_INSTR_P
 
-  localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp);
+    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
 
-  localparam ring_width_p = data_width_p+paddr_width_p+4;
-  localparam rom_addr_width_p = 20;
+    , localparam ring_width_p = dword_width_p+paddr_width_p+4
+    , localparam rom_addr_width_p = 20
+  )
+  ();
 
   // clock gen
   //
@@ -49,14 +48,14 @@ module testbench();
  
   // mem subsystem under test
   //
-  `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp, data_width_p);
+  `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp, dword_width_p);
   bp_be_dcache_pkt_s [num_lce_p-1:0] dcache_pkt;
   logic [num_lce_p-1:0] dcache_pkt_v_li;
   logic [num_lce_p-1:0] dcache_pkt_ready_lo;
   logic [num_lce_p-1:0][ptag_width_lp-1:0] ptag_li;
 
   logic [num_lce_p-1:0] dcache_v_lo;
-  logic [num_lce_p-1:0][data_width_p-1:0] dcache_data_lo;
+  logic [num_lce_p-1:0][dword_width_p-1:0] dcache_data_lo;
 
   bp_rolly_lce_me #(
     .cfg_p(cfg_p)
@@ -104,10 +103,10 @@ module testbench();
     );
     
     assign tr_yumi_li[i] = tr_v_lo[i] & dcache_pkt_ready_lo[i];
-    assign dcache_pkt[i].opcode = bp_be_dcache_opcode_e'(tr_data_lo[i][data_width_p+paddr_width_p+:4]);
-    assign ptag_li[i] = tr_data_lo[i][data_width_p+bp_page_offset_width_gp+:ptag_width_lp];
-    assign dcache_pkt[i].page_offset = tr_data_lo[i][data_width_p+:bp_page_offset_width_gp];
-    assign dcache_pkt[i].data = tr_data_lo[i][0+:data_width_p];
+    assign dcache_pkt[i].opcode = bp_be_dcache_opcode_e'(tr_data_lo[i][dword_width_p+paddr_width_p+:4]);
+    assign ptag_li[i] = tr_data_lo[i][dword_width_p+bp_page_offset_width_gp+:ptag_width_lp];
+    assign dcache_pkt[i].page_offset = tr_data_lo[i][dword_width_p+:bp_page_offset_width_gp];
+    assign dcache_pkt[i].data = tr_data_lo[i][0+:dword_width_p];
     assign dcache_pkt_v_li[i] = tr_v_lo[i];
   end
 
@@ -134,6 +133,21 @@ module testbench();
       dcache_done[i] = (dcache_v_count[i] == instr_count);
     end
   end
+
+  /*
+  logic [31:0] counter;
+  always_ff @(posedge clk) begin
+    if (reset) begin
+      counter <= '0;
+    end else begin
+      counter <= counter + 'd1;
+      if (counter == 1000000) begin
+        $error("stalled!");
+        $finish;
+      end
+    end
+  end
+  */
 
   initial begin
     wait(&dcache_done);

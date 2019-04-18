@@ -177,6 +177,7 @@ int sc_main(int argc, char **argv)
   sc_signal <bool>     uf_o("uf_o");
   sc_signal <bool>     if_o("if_o");
   sc_signal <bool>     ef_o("ef_o");
+  sc_signal <bool>     cf_o("cf_o");
   #if (N_LCE > 2)
   sc_signal <uint32_t> tr_lce_o("tr_lce_o");
   #else
@@ -222,6 +223,7 @@ int sc_main(int argc, char **argv)
   DUT.upgrade_flag_o(uf_o);
   DUT.invalidate_flag_o(if_o);
   DUT.exclusive_flag_o(ef_o);
+  DUT.cached_flag_o(cf_o);
 
   DUT.sharers_hits_o(sh_hits_o);
   DUT.sharers_ways_o(sh_ways_o);

@@ -29,7 +29,7 @@ TRACE_AXE = trace.axe
 VCS_LOG = vcs.log
 
 # testparam
-NUM_INSTR_P ?= 4096
+NUM_INSTR_P ?= 32768
 SEED_P ?= 1
 
 # this test uses a single LCE since it checks the values of loads returned
@@ -40,7 +40,7 @@ NUMS = $(shell seq 0 `expr $(NUM_LCE_P) - 1`)
 BASE = bsg_trace_rom_
 TRACE_ROMS = $(addsuffix .v, $(addprefix $(BASE), $(NUMS)))
 
-CCE_ROM = $(BP_ME_DIR)/src/v/roms/ei-tr/bp_cce_inst_rom_ei-tr_lce$(NUM_LCE_P)_wg64_assoc8.v
+CCE_ROM = $(BP_ME_DIR)/src/v/roms/mesi-tr/bp_cce_inst_rom_mesi-tr_lce$(NUM_LCE_P)_wg64_assoc8.v
 
 all: clean sim
 
