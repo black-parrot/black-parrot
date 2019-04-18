@@ -24,7 +24,7 @@ module bp_fe_top
                                ,branch_metadata_fwd_width_p
                                )
 
-   , parameter cce_block_size_in_bytes_p = cce_block_width_p / 8
+   `declare_bp_fe_pc_gen_if_widths(vaddr_width_p, branch_metadata_fwd_width_p)
 
    , localparam data_width_p      = rv64_reg_data_width_gp
    , localparam instr_width_lp    = rv64_instr_width_gp   
@@ -38,16 +38,6 @@ module bp_fe_top
    //do we need this? come back to this
    , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
   
-   // pc gen related parameters
-   , localparam instr_scan_width_lp=`bp_fe_instr_scan_width
-   , localparam branch_metadata_fwd_width_lp=`bp_fe_branch_metadata_fwd_width(btb_tag_width_p,btb_idx_width_p,bht_idx_width_p,ras_idx_width_p)
-   , localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p
-                                                                ,branch_metadata_fwd_width_lp
-                                                               )
-   , localparam bp_fe_pc_gen_width_o_lp=`bp_fe_pc_gen_queue_width(vaddr_width_p
-                                                                  ,branch_metadata_fwd_width_lp
-                                                                 )
-  
    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
    
    , localparam vtag_width_lp = (vaddr_width_p-bp_page_offset_width_gp)
@@ -56,7 +46,6 @@ module bp_fe_top
   (input                                              clk_i
    , input                                            reset_i
 
-   //, input [proc_cfg_width_lp-1:0]                    proc_cfg_i
    , input [lce_id_width_lp-1:0]                      icache_id_i
    , input [fe_cmd_width_lp-1:0]                      fe_cmd_i
    , input                                            fe_cmd_v_i
@@ -92,19 +81,15 @@ module bp_fe_top
 
    );
 
-//getting rid of icache id
-//bp_proc_cfg_s proc_cfg;
-//assign proc_cfg = proc_cfg_i;
-      
 // the first level of structs
-`declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp);   
+`declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p);   
 // fe to pc_gen
-`declare_bp_fe_pc_gen_cmd_s(vaddr_width_p,branch_metadata_fwd_width_lp);
+`declare_bp_fe_pc_gen_cmd_s(vaddr_width_p,branch_metadata_fwd_width_p);
 // pc_gen to icache
 `declare_bp_fe_pc_gen_icache_s(vaddr_width_p);
 // pc_gen to itlb
 `declare_bp_fe_pc_gen_itlb_s(vaddr_width_p);
-`declare_bp_fe_itlb_vaddr_s(vaddr_width_p,lce_sets_p,cce_block_size_in_bytes_p) 
+`declare_bp_fe_itlb_vaddr_s(vaddr_width_p,lce_sets_p,cce_block_width_p) 
 `declare_bp_be_tlb_entry_s(ptag_width_lp);  
 // icache to pc_gen
 `declare_bp_fe_icache_pc_gen_s(vaddr_width_p);
@@ -154,7 +139,7 @@ logic icache_miss;
 logic poison_tl;
 
 //itlb
-logic [vtag_width_lp-1:0] itlb_miss_vtag;
+logic [vtag_width_lp-1:0]       itlb_miss_vtag;
 logic 		                itlb_miss;
    
 // be interfaces
@@ -245,15 +230,7 @@ bp_fe_pc_gen
 
    
 bp_fe_icache 
- #(.vaddr_width_p(vaddr_width_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.data_width_p(data_width_p)
-   ,.instr_width_p(instr_width_lp)
-   ,.num_cce_p(num_cce_p)
-   ,.num_lce_p(num_lce_p)
-   ,.ways_p(lce_assoc_p)
-   ,.sets_p(lce_sets_p)
-   ) 
+ #(.cfg_p(cfg_p)) 
  icache_1
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -310,7 +287,7 @@ bp_be_dtlb
    )
  itlb
   (.clk_i(clk_i)
-	 ,.reset_i(reset_i)
+   ,.reset_i(reset_i)
    ,.en_i(1'b1)
 	       
    ,.r_v_i(pc_gen_itlb_v)
