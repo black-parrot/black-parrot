@@ -15,6 +15,7 @@
 #include "Vbp_cce_test.h"
 
 #include "bp_cce_verilator.h"
+
 #include "bp_cce.h"
 #include "bp_common_me_if.h"
 #include "bp_cce_lce_msg_util.h"
@@ -183,7 +184,7 @@ int sc_main(int argc, char **argv)
     while (!lce_req_ready_o) {
       stallDetect++;
       if (stallDetect == STALL_MAX) {
-        cout << "@" << sc_time_stamp() << " STALL!" << endl;
+        cout << "@" << sc_time_stamp() << " STALL! - lce_req_ready_o never went high" << endl;
         #if (VM_TRACE == 1)
         wf->close();
         #endif
@@ -210,7 +211,7 @@ int sc_main(int argc, char **argv)
       sc_start(CLK_TIME, SC_NS);
       stallDetect++;
       if (stallDetect == STALL_MAX) {
-        cout << "@" << sc_time_stamp() << " STALL!" << endl;
+        cout << "@" << sc_time_stamp() << " STALL! - lce_data_cmd_v_o never went high" << endl;
         #if (VM_TRACE == 1)
         wf->close();
         #endif
@@ -240,7 +241,7 @@ int sc_main(int argc, char **argv)
       sc_start(CLK_TIME, SC_NS);
       stallDetect++;
       if (stallDetect == STALL_MAX) {
-        cout << "@" << sc_time_stamp() << " STALL!" << endl;
+        cout << "@" << sc_time_stamp() << " STALL! - lce_cmd_v_o never went high" << endl;
         #if (VM_TRACE == 1)
         wf->close();
         #endif
@@ -267,7 +268,7 @@ int sc_main(int argc, char **argv)
     while (!lce_resp_ready_o) {
       stallDetect++;
       if (stallDetect == STALL_MAX) {
-        cout << "@" << sc_time_stamp() << " STALL!" << endl;
+        cout << "@" << sc_time_stamp() << " STALL! - lce_resp_ready_o never went high" << endl;
         #if (VM_TRACE == 1)
         wf->close();
         #endif

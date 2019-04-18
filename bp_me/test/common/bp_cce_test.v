@@ -8,7 +8,7 @@ module bp_cce_test
   import bp_cce_pkg::*;
   #(parameter num_lce_p=1
     ,parameter num_cce_p=1
-    ,parameter paddr_width_p=22 // 10 tag + 6 idx + 6 offset
+    ,parameter paddr_width_p=56
     ,parameter lce_assoc_p=8
     ,parameter lce_sets_p=64
     ,parameter block_size_in_bytes_p=64
@@ -72,8 +72,8 @@ module bp_cce_test
    ,input                                                  reset_i
 
     // LCE-CCE Interface
-    // inbound: ready->valid, helpful
-    // outbound: valid->ready (a.k.a., valid-yumi), helpful
+    // inbound: ready&valid
+    // outbound: ready&valid
     ,input [bp_lce_cce_req_width_lp-1:0]                   lce_req_i
     ,input                                                 lce_req_v_i
     ,output logic                                          lce_req_ready_o
