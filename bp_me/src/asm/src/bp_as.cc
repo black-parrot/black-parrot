@@ -300,7 +300,7 @@ Assembler::parseALU(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
     if (inst->minor_op == e_inc || inst->minor_op == e_dec) {
       inst->type_u.alu_op_s.src_b = e_src_const_1;
     } else if (inst->minor_op == e_neg) {
-      inst->type_u.alu_op.src_b = e_src_const_0;
+      inst->type_u.alu_op_s.src_b = e_src_const_0;
     } else {
       printf("Unknown ALU instruction: %s\n", tokens->at(0).c_str());
       exit(-1);
@@ -308,7 +308,7 @@ Assembler::parseALU(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
   } else if (tokens->size() == 3) { // lsh, rsh
     inst->type_u.alu_op_s.src_a = parseSrcOpd(tokens->at(1));
     inst->type_u.alu_op_s.dst = parseDstOpd(tokens->at(1));
-    inst->type_u.alu_op.src_b = e_src_imm;
+    inst->type_u.alu_op_s.src_b = e_src_imm;
   } else if (tokens->size() == 4) { // add, sub, and, or, xor
     inst->type_u.alu_op_s.src_a = parseSrcOpd(tokens->at(1));
     inst->type_u.alu_op_s.src_b = parseSrcOpd(tokens->at(2));
