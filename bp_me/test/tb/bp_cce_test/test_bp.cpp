@@ -226,7 +226,7 @@ int sc_main(int argc, char **argv)
     bp_lce_cce_req_type_e reqType = e_lce_req_type_rd;
     uint64_t reqAddr = rand() % ((uint64_t)1 << ADDR_WIDTH);
     uint32_t lruWay = rand() % (1 << LG_LCE_ASSOC);
-    lce_req_i = createLceReq(0, 0, reqType, reqAddr, e_lce_req_not_excl, lruWay, e_lce_req_lru_clean);
+    lce_req_i = createLceReq(0, 0, reqType, reqAddr, e_lce_req_excl, lruWay, e_lce_req_lru_clean);
     lce_req_v_i = 1;
     sc_start(CLK_TIME, SC_NS);
     lce_req_i = 0;
