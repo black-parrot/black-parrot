@@ -158,6 +158,8 @@ bp_be_dcache_pkt_s        ptw_dcache_pkt;
 logic                     ptw_tlb_miss_v, ptw_tlb_w_v;
 logic [vtag_width_lp-1:0] ptw_tlb_w_vtag, ptw_tlb_miss_vtag;
 bp_be_tlb_entry_s         ptw_tlb_w_entry;
+logic                     ptw_instr_page_fault_v, ptw_load_page_fault_v, ptw_store_page_fault_v;
+logic                     ptw_store_not_load;
 
 /* D-Cache ports */
 bp_be_dcache_pkt_s        dcache_pkt;
@@ -258,6 +260,12 @@ bp_be_ptw
    
    ,.itlb_not_dtlb_i(itlb_fill_cmd_v)
    ,.itlb_not_dtlb_o(itlb_fill_resp_v)
+   
+   ,.store_not_load_i(ptw_store_not_load)
+   
+   ,.instr_page_fault_o(ptw_instr_page_fault_v)
+   ,.load_page_fault_o(ptw_load_page_fault_v)
+   ,.store_page_fault_o(ptw_store_page_fault_v)
    
    ,.tlb_miss_v_i(ptw_tlb_miss_v)
    ,.tlb_miss_vtag_i(ptw_tlb_miss_vtag)
@@ -360,8 +368,12 @@ assign dtlb_w_vtag  = ptw_tlb_w_vtag;
 assign dtlb_w_entry = ptw_tlb_w_entry;
 
 // PTW connections
-assign ptw_tlb_miss_v    = dtlb_miss | itlb_fill_cmd_v;
-assign ptw_tlb_miss_vtag = (itlb_fill_cmd_v)? mmu_cmd.vaddr.tag : dtlb_miss_vtag;
+assign ptw_tlb_miss_v     = dtlb_miss | itlb_fill_cmd_v;
+assign ptw_tlb_miss_vtag  = (itlb_fill_cmd_v)? mmu_cmd.vaddr.tag : dtlb_miss_vtag;
+assign ptw_store_not_load =  mmu_cmd.mem_op == e_sb
+                             | mmu_cmd.mem_op == e_sh
+                             | mmu_cmd.mem_op == e_sw
+                             | mmu_cmd.mem_op == e_sd;
  
 // MMU response connections
 // We delay the tlb miss signal by one cycle to synchronize with cache miss signal
@@ -374,9 +386,9 @@ assign mem_resp.exception.illegal_instr    = illegal_instr;
 assign mem_resp.exception.instr_fault      = 1'b0; // TODO: Fill in
 assign mem_resp.exception.load_fault       = 1'b0;
 assign mem_resp.exception.store_fault      = 1'b0;
-assign mem_resp.exception.instr_page_fault = 1'b0;
-assign mem_resp.exception.load_page_fault  = 1'b0;
-assign mem_resp.exception.store_page_fault = 1'b0;
+assign mem_resp.exception.instr_page_fault = ptw_instr_page_fault_v;
+assign mem_resp.exception.load_page_fault  = ptw_load_page_fault_v;
+assign mem_resp.exception.store_page_fault = ptw_store_page_fault_v;
 
 assign mem_resp_v_o    = ptw_busy ? 1'b0 : (dcache_v | csr_v_lo);
 assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~ptw_busy;
