@@ -41,7 +41,7 @@ module bp_me_network_channel_mesh
     , localparam mesh_width_lp      = `BSG_MAX(num_src_p,num_dst_p)
     , localparam lg_mesh_width_lp   = `BSG_SAFE_CLOG2(mesh_width_lp)
     , localparam network_width_lp   = (packet_width_p+lg_mesh_width_lp+1)
-    , localparam bsg_ready_then_link_sif_width_lp=`bsg_ready_then_link_sif_width(network_width_lp)
+    , localparam bsg_ready_and_link_sif_width_lp=`bsg_ready_and_link_sif_width(network_width_lp)
     )
   (input                                              clk_i
    , input                                            reset_i
@@ -70,11 +70,11 @@ module bp_me_network_channel_mesh
     end
   end
 
-  `declare_bsg_ready_then_link_sif_s(network_width_lp,bsg_ready_then_link_sif_s);
+  `declare_bsg_ready_and_link_sif_s(network_width_lp,bsg_ready_and_link_sif_s);
   // Similar to dst_id_i, even though Dirs is logic[2:0], the router links follow this
   // [dirs_lp-1:0] format
-  bsg_ready_then_link_sif_s [mesh_width_lp-1:0][dirs_lp-1:0] link_i_stitch;
-  bsg_ready_then_link_sif_s [mesh_width_lp-1:0][dirs_lp-1:0] link_o_stitch;
+  bsg_ready_and_link_sif_s [mesh_width_lp-1:0][dirs_lp-1:0] link_i_stitch;
+  bsg_ready_and_link_sif_s [mesh_width_lp-1:0][dirs_lp-1:0] link_o_stitch;
 
   // South port
   logic [num_src_p-1:0][packet_width_p-1:0] src_data_i_stitch;
@@ -99,7 +99,7 @@ module bp_me_network_channel_mesh
     // Initialize no valid input data for stubbed North port
     assign link_i_stitch[i][N].data = {network_width_lp {1'b0}} ;
     assign link_i_stitch[i][N].v  =  1'b0;
-    assign link_i_stitch[i][N].ready_then_rev = 1'b0;
+    assign link_i_stitch[i][N].ready_and_rev = 1'b0;
 
     // Initialize no valid input data for Proc port
     assign link_i_stitch[i][P].data = {network_width_lp {1'b0}} ;
@@ -110,10 +110,10 @@ module bp_me_network_channel_mesh
       // Format data on router to {packet, y, x}
       assign link_i_stitch[i][S].data = {src_data_i_stitch[i], 1'b1, dst_id_i_stitch[i]};
       assign link_i_stitch[i][S].v  = src_v_i_stitch[i];
-      assign link_i_stitch[i][S].ready_then_rev = 1'b0;
+      assign link_i_stitch[i][S].ready_and_rev = 1'b0;
 
       // Routing ready signal for input source
-      assign src_ready_o_stitch[i] = link_o_stitch[i][S].ready_then_rev;
+      assign src_ready_o_stitch[i] = link_o_stitch[i][S].ready_and_rev;
     end
 
     // First node instantiation scenarios
@@ -122,7 +122,7 @@ module bp_me_network_channel_mesh
       // Initialize no valid input data for stubbed West port
       assign link_i_stitch[i][W].data = {network_width_lp {1'b0}};
       assign link_i_stitch[i][W].v  = 1'b0;
-      assign link_i_stitch[i][W].ready_then_rev = 1'b0;
+      assign link_i_stitch[i][W].ready_and_rev = 1'b0;
 
       // If first node is also the last node, Stub north east and west
       if( i == mesh_width_lp -1) begin: fi3
@@ -130,7 +130,7 @@ module bp_me_network_channel_mesh
         // Initialize no valid input data for stubbed East port
         assign link_i_stitch[i][E].data = {network_width_lp {1'b0}};
         assign link_i_stitch[i][E].v  = 1'b0;
-        assign link_i_stitch[i][E].ready_then_rev = 1'b0;
+        assign link_i_stitch[i][E].ready_and_rev = 1'b0;
 
         // Instantiate and stitch a mesh router unit
         bsg_mesh_router_buffered
@@ -141,7 +141,7 @@ module bp_me_network_channel_mesh
             ,.dirs_lp(dirs_lp)
             ,.stub_p(5'b01110) // SNEWP -> _NEW_
             ,.XY_order_p(0)
-            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
+            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_and_link_sif_width_lp)
             ,.repeater_output_p(repeater_output_p)
             )
           coherence_network_channel_node
@@ -166,7 +166,7 @@ module bp_me_network_channel_mesh
             ,.dirs_lp(dirs_lp)
             ,.XY_order_p(0)
             ,.stub_p(5'b01010) // SNEWP -> _N_W_
-            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
+            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_and_link_sif_width_lp)
             ,.repeater_output_p(repeater_output_p)
             )
           coherence_network_channel_node
@@ -198,7 +198,7 @@ module bp_me_network_channel_mesh
             ,.dirs_lp(dirs_lp)
             ,.XY_order_p(0)
             ,.stub_p(5'b01000)  // SNEWP -> _N___
-            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
+            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_and_link_sif_width_lp)
             ,.repeater_output_p(repeater_output_p)
             )
           coherence_network_channel_node
@@ -217,7 +217,7 @@ module bp_me_network_channel_mesh
         // Initialize no valid input data for stubbed East port
         assign link_i_stitch[i][E].data = {network_width_lp {1'b0}};
         assign link_i_stitch[i][E].v  = 1'b0;
-        assign link_i_stitch[i][E].ready_then_rev = 1'b0;
+        assign link_i_stitch[i][E].ready_and_rev = 1'b0;
 
         // Instantiate and stitch a mesh router unit
         bsg_mesh_router_buffered
@@ -228,7 +228,7 @@ module bp_me_network_channel_mesh
             ,.dirs_lp(dirs_lp)
             ,.XY_order_p(0)
             ,.stub_p(5'b01100)  // SNEWP -> _NE__
-            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
+            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_and_link_sif_width_lp)
             ,.repeater_output_p(repeater_output_p)
             )
           coherence_network_channel_node
@@ -255,7 +255,7 @@ module bp_me_network_channel_mesh
             ,.dirs_lp(dirs_lp)
             ,.XY_order_p(0)
             ,.stub_p(5'b01001) // SNEWP -> _N__P
-            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
+            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_and_link_sif_width_lp)
             ,.repeater_output_p(repeater_output_p)
             )
           coherence_network_channel_node
@@ -276,7 +276,7 @@ module bp_me_network_channel_mesh
         // Initialize no valid input data for stubbed East port
         assign link_i_stitch[i][E].data = {network_width_lp {1'b0}};
         assign link_i_stitch[i][E].v  = 1'b0;
-        assign link_i_stitch[i][E].ready_then_rev = 1'b0;
+        assign link_i_stitch[i][E].ready_and_rev = 1'b0;
 
         // Instantiate and stitch a mesh router unit
         bsg_mesh_router_buffered
@@ -287,7 +287,7 @@ module bp_me_network_channel_mesh
             ,.dirs_lp(dirs_lp)
             ,.XY_order_p(0)
             ,.stub_p(5'b01101) // SNEWP -> _NE_P
-            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
+            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_and_link_sif_width_lp)
             ,.repeater_output_p(repeater_output_p)
             )
           coherence_network_channel_node
@@ -306,7 +306,7 @@ module bp_me_network_channel_mesh
         // Initialize no valid input data for stubbed South port
         assign link_i_stitch[i][S].data = {network_width_lp {1'b0}};
         assign link_i_stitch[i][S].v  = 1'b0;
-        assign link_i_stitch[i][S].ready_then_rev = 1'b0;
+        assign link_i_stitch[i][S].ready_and_rev = 1'b0;
 
         // Instantiate and stitch a mesh router unit
         bsg_mesh_router_buffered
@@ -317,7 +317,7 @@ module bp_me_network_channel_mesh
             ,.dirs_lp(dirs_lp)
             ,.XY_order_p(0)
             ,.stub_p(5'b11000)  // SNEWP -> SN___
-            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
+            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_and_link_sif_width_lp)
             ,.repeater_output_p(repeater_output_p)
             )
           coherence_network_channel_node
@@ -336,12 +336,12 @@ module bp_me_network_channel_mesh
         // Initialize no valid input data for stubbed South port
         assign link_i_stitch[i][S].data = {network_width_lp {1'b0}};
         assign link_i_stitch[i][S].v  = 1'b0;
-        assign link_i_stitch[i][S].ready_then_rev = 1'b0;
+        assign link_i_stitch[i][S].ready_and_rev = 1'b0;
 
         // Initialize no valid input data for stubbed East port
         assign link_i_stitch[i][E].data = {network_width_lp {1'b0}};
         assign link_i_stitch[i][E].v  = 1'b0;
-        assign link_i_stitch[i][E].ready_then_rev = 1'b0;
+        assign link_i_stitch[i][E].ready_and_rev = 1'b0;
 
         // Instantiate and stitch a mesh router unit
         bsg_mesh_router_buffered
@@ -352,7 +352,7 @@ module bp_me_network_channel_mesh
             ,.dirs_lp(dirs_lp)
             ,.XY_order_p(0)
             ,.stub_p(5'b11100) // SNEWP -> SNE__
-            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_then_link_sif_width_lp)
+            ,.bsg_ready_and_link_sif_width_lp(bsg_ready_and_link_sif_width_lp)
             ,.repeater_output_p(repeater_output_p)
             )
           coherence_network_channel_node
@@ -370,9 +370,9 @@ module bp_me_network_channel_mesh
       assign dst_data_o_stitch[i] =
         link_o_stitch[i][P].data[(network_width_lp-1):(lg_mesh_width_lp+1)];
       assign dst_v_o_stitch[i] = link_o_stitch[i][P].v;
-      assign link_i_stitch[i][P].ready_then_rev = dst_ready_i[i];
+      assign link_i_stitch[i][P].ready_and_rev = dst_ready_i[i];
     end else begin
-      assign link_i_stitch[i][P].ready_then_rev  = 1'b0;
+      assign link_i_stitch[i][P].ready_and_rev  = 1'b0;
     end
 
   end // rof
