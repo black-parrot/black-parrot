@@ -65,7 +65,8 @@ module bp_cce_top
    , input                                                 config_ready_i
 
    // LCE-CCE Interface
-   // inbound: ready->valid, helpful consumer from demanding producer
+   // inbound: ready&valid
+   // Inputs to CCE from LCE are buffered by two element FIFOs
    , input [bp_lce_cce_req_width_lp-1:0]                   lce_req_i
    , input                                                 lce_req_v_i
    , output logic                                          lce_req_ready_o
@@ -78,7 +79,8 @@ module bp_cce_top
    , input                                                 lce_data_resp_v_i
    , output logic                                          lce_data_resp_ready_o
 
-   // outbound: ready->valid, demanding producer to helpful consumer
+   // outbound: ready&valid
+   // messages are not buffered by the CCE, and connection is directly to ME network
    , output logic [bp_cce_lce_cmd_width_lp-1:0]            lce_cmd_o
    , output logic                                          lce_cmd_v_o
    , input                                                 lce_cmd_ready_i
@@ -88,8 +90,9 @@ module bp_cce_top
    , input                                                 lce_data_cmd_ready_i
 
    // CCE-MEM Interface
-   // inbound: ready->valid, helpful consumer from demanding producer
+   // inbound: ready&valid, helpful consumer from demanding producer
    // outbound: valid->yumi, helpful producer to demanding consumer
+   // Both inbound and outbound messages are buffered by two element FIFOs
    , input [bp_mem_cce_resp_width_lp-1:0]                  mem_resp_i
    , input                                                 mem_resp_v_i
    , output logic                                          mem_resp_ready_o

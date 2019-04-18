@@ -73,3 +73,6 @@ clean.me:
 
 verilator-demo:
 	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_random_verilator
+
+mock-lce:
+	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_mock_lce NUM_INSTR_P=256

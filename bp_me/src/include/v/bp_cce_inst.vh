@@ -762,13 +762,13 @@ typedef struct packed {
   // request size written any time ucf (rqf) written
   logic                                    nc_req_size_w_v;
 
-  // dequeue signals
-  logic                                    lce_req_ready;
-  logic                                    lce_resp_ready;
-  logic                                    lce_data_resp_ready;
-  logic                                    mem_resp_ready;
-  logic                                    mem_data_resp_ready;
-  // enqueue signals
+  // inbound messages - yumi signals (to FIFOs)
+  logic                                    lce_req_yumi;
+  logic                                    lce_resp_yumi;
+  logic                                    lce_data_resp_yumi;
+  logic                                    mem_resp_yumi;
+  logic                                    mem_data_resp_yumi;
+  // outbound messages - ready signals
   logic                                    lce_cmd_v;
   logic                                    lce_data_cmd_v;
   logic                                    mem_cmd_v;

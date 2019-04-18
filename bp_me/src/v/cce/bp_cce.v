@@ -76,8 +76,8 @@ module bp_cce
    , input                                             config_ready_i
 
    // LCE-CCE Interface
-   // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer
-   // outbound: ready->valid, demanding producer
+   // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
+   // outbound: ready&valid (connects directly to ME network)
    , input [bp_lce_cce_req_width_lp-1:0]               lce_req_i
    , input                                             lce_req_v_i
    , output logic                                      lce_req_yumi_o
@@ -99,8 +99,8 @@ module bp_cce
    , input                                             lce_data_cmd_ready_i
 
    // CCE-MEM Interface
-   // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer
-   // outbound: ready->valid, demanding producer
+   // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
+   // outbound: ready&valid (connects to FIFO)
    , input [bp_mem_cce_resp_width_lp-1:0]              mem_resp_i
    , input                                             mem_resp_v_i
    , output logic                                      mem_resp_yumi_o
@@ -290,14 +290,18 @@ module bp_cce
       ,.pc_branch_target_o(pc_branch_target_lo)
       );
 
-  // assign ready and valid signals from decode to input/output queue ports
+  // Input messages to the CCE are buffered by two element FIFOs in bp_cce_top.v, thus
+  // the outbound valid signal is a yumi.
+  //
+  // Outbound queues all use ready&valid handshaking. Outbound messages going to LCEs are not
+  // buffered by bp_cce_top.v, but messages to memory are.
   always_comb
   begin
-    lce_req_yumi_o = decoded_inst_lo.lce_req_ready;
-    lce_resp_yumi_o = decoded_inst_lo.lce_resp_ready;
-    lce_data_resp_yumi_o = decoded_inst_lo.lce_data_resp_ready;
-    mem_resp_yumi_o = decoded_inst_lo.mem_resp_ready;
-    mem_data_resp_yumi_o = decoded_inst_lo.mem_data_resp_ready;
+    lce_req_yumi_o = decoded_inst_lo.lce_req_yumi;
+    lce_resp_yumi_o = decoded_inst_lo.lce_resp_yumi;
+    lce_data_resp_yumi_o = decoded_inst_lo.lce_data_resp_yumi;
+    mem_resp_yumi_o = decoded_inst_lo.mem_resp_yumi;
+    mem_data_resp_yumi_o = decoded_inst_lo.mem_data_resp_yumi;
 
     lce_cmd_v_o = decoded_inst_lo.lce_cmd_v;
     lce_data_cmd_v_o = decoded_inst_lo.lce_data_cmd_v;
