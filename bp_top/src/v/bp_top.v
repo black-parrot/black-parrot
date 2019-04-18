@@ -148,6 +148,7 @@ for(genvar core_id = 0; core_id < num_core_p; core_id++)
 endgenerate 
 
 // Config link parameters
+// TODO: move these into proc cfg?
 localparam cfg_link_addr_width_p       = 16;
 localparam cfg_link_data_width_p       = 32;
 

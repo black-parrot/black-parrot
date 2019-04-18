@@ -24,6 +24,9 @@ module testbench
    , parameter boot_rom_width_p            = "inv"
    , parameter boot_rom_els_p              = "inv"
    , localparam lg_boot_rom_els_lp         = `BSG_SAFE_CLOG2(boot_rom_els_p)
+   // Config link parameters
+   , parameter cfg_link_addr_width_p       = 16
+   , parameter cfg_link_data_width_p       = 32
 
    , parameter trace_p                  = 0
    , parameter trace_ring_width_p       = "inv"
@@ -326,10 +329,24 @@ logic [num_cce_p-1:0] mem_data_cmd_v;
 logic [num_cce_p-1:0] mem_data_cmd_yumi;
 
 bp_me_top 
- #(.cfg_p(cfg_p))
+ #(.cfg_p(cfg_p)
+   ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
+   ,.cfg_link_data_width_p(cfg_link_data_width_p)
+ )
  me
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
+   ,.freeze_i('0)
+
+   ,.config_addr_i('0)
+   ,.config_data_i('0)
+   ,.config_v_i('0)
+   ,.config_w_i('0)
+   ,.config_ready_o()
+
+   ,.config_data_o()
+   ,.config_v_o()
+   ,.config_ready_i('0)
 
    ,.lce_req_i(lce_cce_req)
    ,.lce_req_v_i(lce_cce_req_v)
