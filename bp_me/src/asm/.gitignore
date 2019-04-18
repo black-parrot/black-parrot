@@ -6,3 +6,4 @@ tmp
 *.pre
 *.dbg
 roms/
+*.addr
