@@ -26,18 +26,8 @@ module bp_fe_top
 
    `declare_bp_fe_pc_gen_if_widths(vaddr_width_p, branch_metadata_fwd_width_p)
 
-   , localparam data_width_p      = rv64_reg_data_width_gp
    , localparam instr_width_lp    = rv64_instr_width_gp   
 
-   , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-   , localparam block_size_in_words_lp=lce_assoc_p
-   , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
-   , localparam data_mask_width_lp=(data_width_p>>3)
-   , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
-   , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
-   //do we need this? come back to this
-   , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
-  
    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
    
    , localparam vtag_width_lp = (vaddr_width_p-bp_page_offset_width_gp)
@@ -94,7 +84,7 @@ module bp_fe_top
 // icache to pc_gen
 `declare_bp_fe_icache_pc_gen_s(vaddr_width_p);
 // itlb to cache
-`declare_bp_fe_itlb_icache_data_resp_s(tag_width_lp);
+`declare_bp_fe_itlb_icache_data_resp_s(ptag_width_lp);
    
 // fe to be
 bp_fe_queue_s                 fe_queue;
