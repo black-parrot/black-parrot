@@ -16,7 +16,7 @@ module bp_top
 
    // Used to enable trace replay outputs for testbench
    , parameter trace_p      = 0
-   , parameter calc_debug_p = 0
+   , parameter calc_debug_p = 1
    )
   (input                                                      clk_i
    , input                                                    reset_i

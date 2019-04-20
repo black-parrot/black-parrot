@@ -31,6 +31,7 @@ tools:
 	$(MAKE) fesvr     && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-fesvr
 	$(MAKE) spike     && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-isa-sim
 	$(MAKE) axe       && git submodule deinit -f $(BP_EXTERNAL_DIR)/axe
+	$(MAKE) dramsim2  && git submodule deinit -f $(BP_EXTERNAL_DIR)/DRAMSim2
 
 ## This target makes all of the test roms needed to test BlackParrot with trace-replay
 #  NOTE: There are many redundant boot roms generated. However, work is in progress to 

@@ -129,6 +129,8 @@ $BP_FE_DIR/src/v/bp_fe_top.v
 ## ME files
 $BP_ME_DIR/src/v/bp_me_top.v
 $BP_ME_DIR/test/common/bp_mem.v
+$BP_ME_DIR/test/common/bp_mem_dramsim2.v
+$BP_ME_DIR/test/common/dramsim2_wrapper.cpp
 # Note: This should be a testing rom, because it varies per testbench
 # You must change it for testbenches with different numbers of lce
 # In future, we want to load the internal ram rather than rely on the rom
@@ -153,3 +155,4 @@ $BP_ME_DIR/src/v/network/bp_me_network_pkt_encode_data_resp.v
 ## TOP
 $BP_TOP_DIR/src/v/bp_top.v
 $BP_TOP_DIR/src/v/bp_core.v
+

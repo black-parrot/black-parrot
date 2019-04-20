@@ -18,9 +18,6 @@ module testbench
    , parameter mem_els_p                   = "inv"
 
    // These should go away with the manycore bridge
-   , parameter boot_rom_width_p             = "inv"
-   , parameter boot_rom_els_p               = "inv"
-   , localparam lg_boot_rom_els_lp          = `BSG_SAFE_CLOG2(boot_rom_els_p)
    , localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
 
    // Trace replay parameters
@@ -32,9 +29,6 @@ module testbench
   (input clk_i
    , input reset_i
    );
-
-logic [num_cce_p-1:0][lg_boot_rom_els_lp-1:0] boot_rom_addr;
-logic [num_cce_p-1:0][boot_rom_width_p-1:0]   boot_rom_data;
 
 logic [num_cce_p-1:0][cce_instr_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
 logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]          cce_inst_boot_rom_data;
@@ -106,7 +100,7 @@ logic [num_cce_p-1:0] mem_data_cmd_v, mem_data_cmd_yumi;
 
    for (genvar i = 0; i < num_cce_p; i++) 
      begin : rof1
-       bp_mem
+       bp_mem_dramsim2
         #(.num_lce_p(num_lce_p)
           ,.num_cce_p(num_cce_p)
           ,.paddr_width_p(paddr_width_p)
@@ -114,8 +108,6 @@ logic [num_cce_p-1:0] mem_data_cmd_v, mem_data_cmd_yumi;
           ,.block_size_in_bytes_p(cce_block_width_p/8)
           ,.lce_sets_p(lce_sets_p)
           ,.mem_els_p(mem_els_p)
-          ,.boot_rom_width_p(cce_block_width_p)
-          ,.boot_rom_els_p(boot_rom_els_p)
           ,.lce_req_data_width_p(dword_width_p)
           )
         mem
@@ -137,9 +129,6 @@ logic [num_cce_p-1:0] mem_data_cmd_v, mem_data_cmd_yumi;
           ,.mem_data_resp_o(mem_data_resp[i])
           ,.mem_data_resp_v_o(mem_data_resp_v[i])
           ,.mem_data_resp_ready_i(mem_data_resp_ready[i])
-
-          ,.boot_rom_addr_o(boot_rom_addr[i])
-          ,.boot_rom_data_i(boot_rom_data[i])
           );
 
        bp_cce_inst_rom
@@ -150,15 +139,6 @@ logic [num_cce_p-1:0] mem_data_cmd_v, mem_data_cmd_yumi;
          (.addr_i(cce_inst_boot_rom_addr[i])
           ,.data_o(cce_inst_boot_rom_data[i])
           );
-
-        bp_boot_rom
-         #(.width_p(boot_rom_width_p)
-           ,.addr_width_p(lg_boot_rom_els_lp)
-           )
-         me_boot_rom
-          (.addr_i(boot_rom_addr[i])
-           ,.data_o(boot_rom_data[i])
-           );
    end // rof1
 
    if (trace_p)
@@ -266,7 +246,7 @@ always_ff @(posedge clk_i)
     else
       begin
         // This should simply be based on frozen signal
-        booted <= booted | (boot_rom_addr[0] == (boot_rom_els_p-1));
+        booted <= 1'b1;
       end
    end 
 

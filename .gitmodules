@@ -17,8 +17,8 @@
   ignore = dirty
 
 [submodule "external/riscv-gnu-toolchain"]
-	path = external/riscv-gnu-toolchain
-	url = https://github.com/riscv/riscv-gnu-toolchain.git
+  path = external/riscv-gnu-toolchain
+  url = https://github.com/riscv/riscv-gnu-toolchain.git
   branch = master
   ignore = dirty
 
@@ -29,14 +29,19 @@
   ignore = dirty
 
 [submodule "basejump_stl"]
-	path = basejump_stl
+  path = basejump_stl
   url = https://github.com/bespoke-silicon-group/basejump_stl.git
   branch = master
   ignore = dirty
 
 [submodule "riscv-gnu-toolchain"]
-	path = riscv-gnu-toolchain
+  path = riscv-gnu-toolchain
   url = https://github.com/riscv/riscv-gnu-toolchain.git
   branch = master
   ignore = dirty
 
+[submodule "external/DRAMSim2"]
+  path = external/DRAMSim2
+  url = https://github.com/umd-memsys/DRAMSim2.git
+  branch = master
+  ignore = dirty
