@@ -13,6 +13,8 @@ module bp_me_mock_lce_me
     `declare_bp_proc_params(cfg_p)
     , parameter mem_els_p="inv"
     , parameter boot_rom_els_p="inv"
+    , parameter trace_p = 0
+    , parameter axe_trace_p = 0
     
     , localparam block_size_in_bytes_lp=(cce_block_width_p / 8)
 
@@ -71,6 +73,7 @@ module bp_me_mock_lce_me
   for (genvar i = 0; i < num_lce_p; i++) begin
     bp_me_nonsynth_mock_lce #(
       .cfg_p(cfg_p)
+      ,.axe_trace_p(axe_trace_p)
     ) lce (
       .clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -139,6 +142,7 @@ module bp_me_mock_lce_me
     .cfg_p(cfg_p)
     ,.cfg_link_addr_width_p(16)
     ,.cfg_link_data_width_p(32)
+    ,.trace_p(trace_p)
   ) me (
     .clk_i(clk_i)
     ,.reset_i(reset_i)

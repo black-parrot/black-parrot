@@ -12,8 +12,7 @@ else
   $(info Not on xor...VCS not supported)
 endif
 
-EXTERNAL_DIR = $(BP_DIR)/external
-AXE = $(EXTERNAL_DIR)/bin/axe
+AXE = $(BP_EXTERNAL_DIR)/bin/axe
 
 .EXPORT_ALL_VARIABLES:
 
@@ -31,7 +30,7 @@ VCS_LOG = vcs.log
 
 # testparam
 NUM_INSTR_P ?= 32768
-NUM_LCE_P ?= 2
+NUM_LCE_P ?= 1
 ifeq ($(NUM_LCE_P), 1)
   CFG=e_bp_half_core_cfg
   N_WG=64
@@ -49,12 +48,21 @@ else ifeq ($(NUM_LCE_P), 16)
   N_WG=8
 endif
 SEED_P ?= 1
+TRACE_P ?= 0
+AXE_TRACE_P ?= 0
+
+# use EI instead of MESI protocol
+EI_P ?= 0
 
 NUMS = $(shell seq 0 `expr $(NUM_LCE_P) - 1`)
 BASE = bsg_trace_rom_
 TRACE_ROMS = $(addsuffix .v, $(addprefix $(BASE), $(NUMS)))
 
-CCE_ROM = $(BP_ME_DIR)/src/v/roms/mesi-tr/bp_cce_inst_rom_mesi-tr_lce$(NUM_LCE_P)_wg64_assoc8.v
+ifeq ($(EI_P), 1)
+  CCE_ROM = $(BP_ME_DIR)/src/v/roms/ei-tr/bp_cce_inst_rom_ei-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.v
+else
+  CCE_ROM = $(BP_ME_DIR)/src/v/roms/mesi-tr/bp_cce_inst_rom_mesi-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.v
+endif
 
 all: clean sim
 
@@ -70,18 +78,22 @@ sim: clean $(TRACE_ROMS)
 		$(INCDIR) -f sv.include $(TRACE_ROMS) $(CCE_ROM)  \
 		-debug_pp -timescale=1ps/1ps +vcs+vcdpluson +vcs+vcdplusmemon -l $(VCS_LOG) \
 		+vcs+vcdplusautoflushon +define+NUM_LCE_P=$(NUM_LCE_P) \
-		+define+NUM_INSTR_P=$(NUM_INSTR_P) | $(HIGHLIGHT)
+		+define+NUM_INSTR_P=$(NUM_INSTR_P) \
+		+define+AXE_TRACE_P=$(AXE_TRACE_P) \
+		+define+TRACE_P=$(TRACE_P) | $(HIGHLIGHT)
 
 dve:
 	dve -full64 -vpd vcdplus.vpd &
 
 clean:
-	rm -rf DVEfiles
 	rm -rf csrc
 	rm -rf simv.daidir simv.vdb stack.info.*
 	rm -f ucli.key vcdplus.vpd simv cm.log *.tar.gz $(VCS_LOG)
 	rm -f bsg_trace_rom_*.v bsg_trace_rom_*.tr $(TRACE_AXE)
 	rm -f testbench_postsed.v
+
+clean-dve:
+	rm -rf DVEfiles
 
 $(TRACE_AXE): $(VCS_LOG)
 	python $(BP_BE_DIR)/test/tb/bp_be_dcache/py/axe_trace_filter.py $(VCS_LOG) > $(TRACE_AXE)

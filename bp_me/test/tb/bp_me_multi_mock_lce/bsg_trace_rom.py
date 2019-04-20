@@ -10,7 +10,7 @@ from trace_gen import TraceGen
 num_lce_p = int(sys.argv[1])
 id_p = int(sys.argv[2])
 num_instr = int(sys.argv[3])
-seed_p = int(sys.argv[4]) + id_p if len(sys.argv) >= 5 else None
+seed_p = int(sys.argv[4]) + id_p if len(sys.argv) >= 5 else 0
 random.seed(seed_p)
 
 tg = TraceGen(addr_width_p=39, data_width_p=64)
@@ -25,13 +25,15 @@ store_val = num_lce_p if id_p == 0 else id_p
 
 for i in range(num_instr):
   load_not_store = random.randint(0,1)
-  tag = random.randint(0,4095) << 6
+  tag = random.randint(0,255) << 6
   block_offset = random.randint(0,7) << 3
   addr = tag + block_offset
   if (load_not_store):
     tg.send_load(size=8, addr=addr, signed=0)
+    tg.recv_data(data=0)
   else:
     tg.send_store(size=8, addr=addr, data=store_val)
+    tg.recv_data(data=0)
     store_val += num_lce_p
 
 

@@ -20,6 +20,9 @@ module testbench
     , localparam tr_ring_width_lp=(dcache_opcode_width_lp+paddr_width_p+dword_width_p)
     , localparam tr_rom_addr_width_p = 20
 
+		, parameter trace_p = `TRACE_P
+		, parameter axe_trace_p = `AXE_TRACE_P
+
 `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
   )
   ();
@@ -61,6 +64,8 @@ module testbench
     .cfg_p(cfg_p)
     ,.mem_els_p(mem_els_p)
     ,.boot_rom_els_p(mem_els_p)
+		,.trace_p(trace_p)
+		,.axe_trace_p(axe_trace_p)
   ) mock_lce_me (
     .clk_i(clk)
     ,.reset_i(reset)
