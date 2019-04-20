@@ -26,8 +26,6 @@ module bp_fe_top
 
    `declare_bp_fe_pc_gen_if_widths(vaddr_width_p, branch_metadata_fwd_width_p)
 
-   , localparam instr_width_lp    = rv64_instr_width_gp   
-
    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
    
    , localparam vtag_width_lp = (vaddr_width_p-bp_page_offset_width_gp)
@@ -179,15 +177,7 @@ assign itlb_vaddr        = pc_gen_itlb.virt_addr;
 assign itlb_icache.ppn   = itlb_entry_r.ptag;
    
 bp_fe_pc_gen 
- #(.vaddr_width_p(vaddr_width_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.btb_tag_width_p(btb_tag_width_p)
-   ,.btb_idx_width_p(btb_idx_width_p)
-   ,.bht_idx_width_p(bht_idx_width_p)
-   ,.ras_idx_width_p(ras_idx_width_p)
-   ,.asid_width_p(asid_width_p)
-   ,.instr_width_p(instr_width_lp)
-   ) 
+ #(.cfg_p(cfg_p)) 
  bp_fe_pc_gen_1
   (.clk_i(clk_i)
    ,.reset_i(reset_i)

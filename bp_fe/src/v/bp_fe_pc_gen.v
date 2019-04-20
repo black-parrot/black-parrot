@@ -11,23 +11,13 @@ module bp_fe_pc_gen
  import bp_common_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_fe_pkg::*;
- #(parameter vaddr_width_p="inv"
-   , parameter paddr_width_p="inv"
-   , parameter btb_tag_width_p="inv"
-   , parameter btb_idx_width_p="inv"
-   , parameter bht_idx_width_p="inv"
-   , parameter ras_idx_width_p="inv"
-   , parameter instr_width_p="inv"
-   , parameter asid_width_p="inv"
-   , localparam instr_scan_width_lp=`bp_fe_instr_scan_width
-   , localparam branch_metadata_fwd_width_lp=`bp_fe_branch_metadata_fwd_width(btb_tag_width_p,btb_idx_width_p,bht_idx_width_p,ras_idx_width_p)
-   , localparam bp_fe_pc_gen_icache_width_lp=vaddr_width_p
-   , localparam bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(vaddr_width_p)
-   , localparam bp_fe_pc_gen_itlb_width_lp=`bp_fe_pc_gen_itlb_width(vaddr_width_p)
-   , localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p,branch_metadata_fwd_width_lp)
-   , localparam bp_fe_pc_gen_width_o_lp=`bp_fe_pc_gen_queue_width(vaddr_width_p,branch_metadata_fwd_width_lp)
-   , parameter prediction_on_p=1
-   , parameter branch_predictor_p="inv"
+ import bp_common_aviary_pkg::*;
+ #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+   `declare_bp_proc_params(cfg_p)
+
+   `declare_bp_fe_pc_gen_if_widths(vaddr_width_p, branch_metadata_fwd_width_p)
+
+   , localparam instr_width_lp    = rv64_instr_width_gp
    )
   (input                                             clk_i
    , input                                           reset_i
@@ -65,9 +55,9 @@ assign icache_pc_gen_ready_o = '0;
 assign pc_gen_itlb_v_o = pc_gen_icache_v_o;
 
 //the first level of structs
-`declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_lp)
+`declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)
 //fe to pc_gen
-`declare_bp_fe_pc_gen_cmd_s(vaddr_width_p, branch_metadata_fwd_width_lp);
+`declare_bp_fe_pc_gen_cmd_s(vaddr_width_p, branch_metadata_fwd_width_p);
 //pc_gen to icache
 `declare_bp_fe_pc_gen_icache_s(vaddr_width_p);
 //pc_gen to itlb
@@ -124,10 +114,10 @@ logic                           itlb_miss_recover;
 logic                           itlb_miss_r, itlb_miss_r2;
    
 logic [vaddr_width_p-1:0]       btb_target;
-logic [instr_width_p-1:0]       next_instr;
-logic [instr_width_p-1:0]       instr;
-logic [instr_width_p-1:0]       last_instr;
-logic [instr_width_p-1:0]       instr_out;
+logic [instr_width_lp-1:0]      next_instr;
+logic [instr_width_lp-1:0]      instr;
+logic [instr_width_lp-1:0]      last_instr;
+logic [instr_width_lp-1:0]      instr_out;
 
 //control signals
 logic                           state_reset_v;
@@ -310,7 +300,7 @@ assign fe_queue_branch_metadata = '{btb_tag: pc_gen_fetch.pc[2+btb_idx_width_p+:
                                     , default: '0
                                     };
 bsg_dff_reset_en
- #(.width_p(branch_metadata_fwd_width_lp))
+ #(.width_p(branch_metadata_fwd_width_p))
  branch_metadata_fwd_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i) 
@@ -342,7 +332,7 @@ bp_fe_btb
  
 instr_scan 
  #(.vaddr_width_p(vaddr_width_p)
-   ,.instr_width_p(instr_width_p)
+   ,.instr_width_p(instr_width_lp)
    ) 
  instr_scan_1 
   (.instr_i(icache_pc_gen.instr)
