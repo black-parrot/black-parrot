@@ -17,6 +17,6 @@
   } bp_be_dcache_pkt_s
 
 `define bp_be_dcache_pkt_width(page_offset_width_mp, data_width_mp) \
-  (4+page_offset_width_mp+data_width_mp)
+  ($bits(bp_be_dcache_opcode_e)+page_offset_width_mp+data_width_mp)
 
 `endif

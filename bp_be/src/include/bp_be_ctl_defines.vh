@@ -37,8 +37,14 @@ typedef enum bit [3:0]
   ,e_sh  = 4'b1001
   ,e_sw  = 4'b1010
   ,e_sd  = 4'b1011
-  
-  ,e_ptw = 4'b1100
+
+  ,e_lrw = 4'b0111
+  ,e_scw = 4'b1100
+
+  ,e_lrd = 4'b1101
+  ,e_scd = 4'b1110
+ 
+  ,e_ptw = 4'b1111
 } bp_be_mmu_fu_op_e;
 
 typedef enum bit [3:0]
@@ -85,6 +91,12 @@ typedef enum bit
 
 typedef enum bit
 {
+  e_offset_is_imm   = 1'b0
+  ,e_offset_is_zero = 1'b1
+} bp_be_offset_e;
+
+typedef enum bit
+{
   e_result_from_alu       = 1'b0
   ,e_result_from_pc_plus4 = 1'b1
 } bp_be_result_e;
@@ -108,10 +120,6 @@ typedef struct packed
   logic                             dcache_w_v;
   logic                             dcache_r_v;
   logic                             fp_not_int_v;
-  logic                             mret_v;
-  logic                             sret_v;
-  logic                             uret_v;
-  logic                             amo_v;
   logic                             jmp_v;
   logic                             br_v;
   logic                             opw_v;
@@ -125,6 +133,7 @@ typedef struct packed
   bp_be_src1_e                      src1_sel;
   bp_be_src2_e                      src2_sel;
   bp_be_baddr_e                     baddr_sel;
+  bp_be_offset_e                    offset_sel;
   bp_be_result_e                    result_sel;
 }  bp_be_decode_s;
 

@@ -155,7 +155,7 @@ always_comb
                 issue_pkt.irs1_v = '1; 
                 issue_pkt.irs2_v = '0;
               end
-            `RV64_BRANCH_OP, `RV64_STORE_OP, `RV64_OP_OP, `RV64_OP_32_OP : 
+            `RV64_BRANCH_OP, `RV64_STORE_OP, `RV64_OP_OP, `RV64_OP_32_OP, `RV64_AMO_OP: 
               begin 
                 issue_pkt.irs1_v = '1; 
                 issue_pkt.irs2_v = '1; 

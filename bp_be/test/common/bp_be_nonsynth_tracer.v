@@ -179,12 +179,6 @@ end
                              ,dbg_stage_r[2].rs1
                              );
                 */
-                end else if(dbg_stage_r[2].decode.mret_v) begin
-                    $fwrite(file, "\t\top: mret\n");
-                end else if(dbg_stage_r[2].decode.sret_v) begin
-                    $fwrite(file, "\t\top: sret\n");
-                end else if(dbg_stage_r[2].decode.uret_v) begin
-                    $fwrite(file, "\t\top: uret\n");
                 end else if(dbg_stage_r[2].decode.dcache_r_v) begin
                     $fwrite(file, "\t\top: load sem: r%d <- mem[%x] {%x}\n"
                              ,dbg_stage_r[2].decode.rd_addr

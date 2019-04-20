@@ -45,6 +45,33 @@
  *    
  *    paddr_width = ptag_width + page_offset_width = tag_width + index_width
  *    + block_offset_width
+ *
+ *    Load reserved and store conditional are implemented at a cache line granularity.
+ *    A load reserved acts as a normal load with the following addtional properties:
+ *    1) If the block is not in an exclusive ownership state (M or E in MESI), then the cache
+ *    will send an upgrade request (store miss).
+ *    2) If the LR is successful, a reservation is placed on the cache line. This reservation is 
+ *    valid for the current hart only.
+ *    A store conditional will succeed (return 0) if there is a valid reservation on the address of
+ *    the SC. Else, it will fail (return nonzero and will not commit the store). A failing store 
+ *    conditional will not produce a cache miss.
+ *
+ *    The reservation can be cleared by:
+ *    1) Any SC to any address by this hart.
+ *    2) A second LR (this will not clear the reservation, but it will change the reservation
+ *    address).
+ *    3) An invalidate received from the LCE. This command covers all cases of losing exclusive
+ *    access to the block in this hart, including eviction and a cache miss.
+ 
+ *    RISC-V guarantees forward progress for LR/SC sequences that match a set of conditions.
+ *    Currently, BlackParrot makes no guarantees about these sequences, but one option to guarantee
+ *    progress is to block reservation invalidates from other harts until a following SC. There is
+ *    a design space exploration to be done between QoS and performance based on the backoff model
+ *    used for these schemes.
+ *
+ *    LR/SC aq/rl semantics are irrelevant for BlackParrot. Since we are in-order single issue and
+ *    do not use a store buffer that allows stores before cache lines have been fetched,, all
+ *    memory requests are inherently ordered within a hart. 
  */
 
 module bp_be_dcache
@@ -143,6 +170,8 @@ module bp_be_dcache
   bp_be_dcache_pkt_s dcache_pkt;
   assign dcache_pkt = dcache_pkt_i;
 
+  logic lr_op;
+  logic sc_op;
   logic load_op;
   logic store_op;
   logic signed_op;
@@ -154,14 +183,64 @@ module bp_be_dcache
   logic [index_width_lp-1:0] addr_index;
   logic [word_offset_width_lp-1:0] addr_word_offset;
 
-  assign load_op = ~dcache_pkt.opcode[3];
-  assign store_op = dcache_pkt.opcode[3];
-  assign signed_op = ~dcache_pkt.opcode[2];
-  assign double_op = (dcache_pkt.opcode[1:0] == 2'b11);
-  assign size_op = dcache_pkt.opcode[1:0];
-  assign word_op = (dcache_pkt.opcode[1:0] == 2'b10);
-  assign half_op = (dcache_pkt.opcode[1:0] == 2'b01);
-  assign byte_op = (dcache_pkt.opcode[1:0] == 2'b00);
+  always_comb begin
+    lr_op     = 1'b0;
+    sc_op     = 1'b0;
+    load_op   = 1'b0;
+    store_op  = 1'b0;
+    signed_op = 1'b1;
+    double_op = 1'b0;
+    word_op   = 1'b0;
+    half_op   = 1'b0;
+    byte_op   = 1'b0;
+    size_op   = 1'b0;
+
+    unique case (dcache_pkt.opcode)
+      e_dcache_opcode_lrw, e_dcache_opcode_lrd: begin
+        // An LR is a load operation of either double word or word size, inherently signed
+        lr_op     = 1'b1;
+        load_op   = 1'b1;
+      end
+      e_dcache_opcode_scw, e_dcache_opcode_scd: begin
+        // An SC is a store operation of either double word or word size, inherently signed
+        sc_op     = 1'b1;
+        store_op  = 1'b1;
+      end
+      e_dcache_opcode_ld, e_dcache_opcode_lw, e_dcache_opcode_lh, e_dcache_opcode_lb: begin
+        load_op   = 1'b1;
+      end
+      e_dcache_opcode_lwu, e_dcache_opcode_lhu, e_dcache_opcode_lbu: begin
+        load_op   = 1'b1;
+        signed_op = 1'b0;
+      end
+      e_dcache_opcode_sd, e_dcache_opcode_sw, e_dcache_opcode_sh, e_dcache_opcode_sb: begin
+        store_op  = 1'b1;
+      end
+      default: begin end
+    endcase
+
+    unique case (dcache_pkt.opcode)
+      e_dcache_opcode_ld, e_dcache_opcode_lrd, e_dcache_opcode_sd, e_dcache_opcode_scd: begin
+        double_op = 1'b1;
+        size_op   = 2'b11;
+      end
+      e_dcache_opcode_lw, e_dcache_opcode_lwu, e_dcache_opcode_sw
+        , e_dcache_opcode_lrw, e_dcache_opcode_scw: begin
+        word_op = 1'b1;
+        size_op = 2'b10;
+      end
+      e_dcache_opcode_lh, e_dcache_opcode_lhu, e_dcache_opcode_sh: begin
+        half_op = 1'b1;
+        size_op = 2'b01;
+      end
+      e_dcache_opcode_lb, e_dcache_opcode_lbu, e_dcache_opcode_sb: begin
+        byte_op = 1'b1;
+        size_op = 2'b00;
+      end
+      default: begin end
+    endcase
+  end
+
   assign addr_index = dcache_pkt.page_offset[block_offset_width_lp+:index_width_lp];
   assign addr_word_offset = dcache_pkt.page_offset[byte_offset_width_lp+:word_offset_width_lp];
   
@@ -169,6 +248,8 @@ module bp_be_dcache
   //
   logic v_tl_r; // valid bit
   logic tl_we;
+  logic lr_op_tl_r;
+  logic sc_op_tl_r;
   logic load_op_tl_r;
   logic store_op_tl_r;
   logic signed_op_tl_r;
@@ -189,6 +270,8 @@ module bp_be_dcache
     else begin 
       v_tl_r <= tl_we;
       if (tl_we) begin
+        lr_op_tl_r <= lr_op;
+        sc_op_tl_r <= sc_op;
         load_op_tl_r <= load_op;
         store_op_tl_r <= store_op;
         signed_op_tl_r <= signed_op;
@@ -261,6 +344,8 @@ module bp_be_dcache
   //
   logic v_tv_r;
   logic tv_we;
+  logic lr_op_tv_r;
+  logic sc_op_tv_r;
   logic load_op_tv_r;
   logic store_op_tv_r;
   logic signed_op_tv_r;
@@ -288,6 +373,8 @@ module bp_be_dcache
       v_tv_r <= tv_we;
 
       if (tv_we) begin
+        lr_op_tv_r <= lr_op_tl_r;
+        sc_op_tv_r <= sc_op_tl_r;
         load_op_tv_r <= load_op_tl_r;
         store_op_tv_r <= store_op_tl_r;
         signed_op_tv_r <= signed_op_tl_r;
@@ -356,7 +443,7 @@ module bp_be_dcache
       );
 
   assign load_miss_tv = ~load_hit & v_tv_r & load_op_tv_r & ~uncached_tv_r;
-  assign store_miss_tv = ~store_hit & v_tv_r & store_op_tv_r & ~uncached_tv_r;
+  assign store_miss_tv = ~store_hit & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r;
 
   // uncached req
   //
@@ -365,6 +452,22 @@ module bp_be_dcache
   logic uncached_load_data_v_r;
   logic [data_width_p-1:0] uncached_load_data_r;
 
+  // load reserved / store conditional
+  logic lr_miss_tv;
+  logic sc_success;
+  logic sc_fail;
+  logic [ptag_width_lp-1:0]  load_reserved_tag_r;
+  logic [index_width_lp-1:0] load_reserved_index_r;
+  logic load_reserved_v_r;
+
+  // Upgrade if a load reserved and we don't have the line in exclusive state
+  assign lr_miss_tv = v_tv_r & lr_op_tv_r & load_hit & ~store_hit;
+  // Succeed if the address matches and we have a store hit
+  assign sc_success  = v_tv_r & sc_op_tv_r & store_hit & load_reserved_v_r 
+                       & (load_reserved_tag_r == addr_tag_tv)
+                       & (load_reserved_index_r == addr_index_tv);
+  // Fail if we have a store conditional without success
+  assign sc_fail     = v_tv_r & sc_op_tv_r & ~sc_success;
   assign uncached_load_req = v_tv_r & load_op_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
   assign uncached_store_req = v_tv_r & store_op_tv_r & uncached_tv_r;
 
@@ -547,6 +650,7 @@ module bp_be_dcache
     
       ,.load_miss_i(load_miss_tv)
       ,.store_miss_i(store_miss_tv)
+      ,.lr_miss_i(lr_miss_tv)
       ,.uncached_load_req_i(uncached_load_req)
       ,.uncached_store_req_i(uncached_store_req)
 
@@ -699,7 +803,9 @@ module bp_be_dcache
           : (half_op_tv_r
             ? {{48{half_sigext}}, data_half_selected}
             : {{56{byte_sigext}}, data_byte_selected})))
-      : 64'b0;
+      : (sc_op_tv_r & ~sc_success
+         ? 64'b1
+         : 64'b0);;
 
   end
  
@@ -868,7 +974,7 @@ module bp_be_dcache
 
   // write buffer
   //
-  assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit;
+  assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail;
   assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we);
   assign bypass_v_li = tv_we & load_op_tl_r;
   assign lce_snoop_index_li = lce_data_mem_pkt.index;
@@ -896,6 +1002,29 @@ module bp_be_dcache
   assign lce_data_mem_pkt_yumi = (lce_data_mem_pkt.opcode == e_dcache_lce_data_mem_uncached)
     ? lce_data_mem_pkt_v
     : ~(load_op & tl_we) & ~wbuf_v_lo & ~lce_snoop_match_lo & lce_data_mem_pkt_v;
+
+  // load reservation logic
+  always_ff @ (posedge clk_i) begin
+    if (reset_i) begin
+      load_reserved_v_r <= 1'b0;
+    end
+    else begin
+      // The LR has successfully completed, without a cache miss or upgrade request
+      if (lr_op_tv_r & v_o & ~lr_miss_tv) begin
+        load_reserved_v_r     <= 1'b1;
+        load_reserved_tag_r   <= paddr_tv_r[block_offset_width_lp+index_width_lp+:tag_width_lp];
+        load_reserved_index_r <= paddr_tv_r[block_offset_width_lp+:index_width_lp];
+      // All SCs clear the reservation (regardless of success)
+      end else if (sc_op_tv_r) begin
+        load_reserved_v_r <= 1'b0;
+      // Invalidates from other harts which match the reservation address clear the reservation
+      end else if (lce_tag_mem_pkt_v & (lce_tag_mem_pkt.opcode == e_dcache_lce_tag_mem_invalidate) 
+                  & (lce_tag_mem_pkt.tag == load_reserved_tag_r) 
+                  & (lce_tag_mem_pkt.index == load_reserved_index_r)) begin
+        load_reserved_v_r <= 1'b0;
+      end
+    end
+  end
 
   //  uncached load data logic
   //
@@ -951,6 +1080,8 @@ module bp_be_dcache
         else $error("multiple load hit: %b. id = %0d", load_hit_tv, lce_id_i);
       assert($countones(store_hit_tv) <= 1)
         else $error("multiple store hit: %b. id = %0d", store_hit_tv, lce_id_i);
+      assert (~(sc_op_tv_r & load_reserved_v_r & (load_reserved_tag_r == addr_tag_tv) & (load_reserved_index_r == addr_index_tv)) | store_hit)
+          else $error("sc success without exclusive ownership of cache line: %x %x", load_reserved_tag_r, load_reserved_index_r);
     end
   end
 
