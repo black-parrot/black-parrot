@@ -1,6 +1,6 @@
 
 #include "svdpi.h"
-#include "svdpi_src.h"
+//#include "svdpi_src.h"
 
 #include <fstream>
 #include <iostream>
@@ -18,9 +18,8 @@ class bp_dram
   public:
     std::map<uint64_t, uint8_t> mem;
 
-    SV_BIT_PACKED_ARRAY(512, result_data);
+    svBitVecVal result_data [(512+31)>>5];
     bool result_pending;
-
 
   public:
     void read_hex(char *);

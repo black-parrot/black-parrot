@@ -3,7 +3,9 @@ $BSG_IP_CORES_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
 // be files
 $BP_BE_DIR/test/common/bp_be_nonsynth_tracer.v
 // me files
+$BP_ME_DIR/test/common/bp_mem_dramsim2.v
+$BP_ME_DIR/test/common/bp_mem.v
+$BP_ME_DIR/test/common/dramsim2_wrapper.cpp
 // top files
-$BP_TOP_DIR/test/rom/v/$ROM_NAME.v
-$BP_TOP_DIR/test/rom/v/$ROM_NAME.tr.v
+$BP_TOP_DIR/test/rom/v/$PROG.tr.v
 

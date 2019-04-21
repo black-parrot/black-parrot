@@ -61,25 +61,12 @@ module bp_mem_dramsim2
 
   // memory signals
   logic [paddr_width_p-1:0] block_rd_addr, block_wr_addr;
-  logic [mem_addr_width_lp-1:0] mem_addr_i, rd_addr, wr_addr;
-  logic mem_v_i, mem_w_i;
-  logic [block_size_in_bits_lp-1:0] mem_data_i, mem_data_o;
   logic [lce_req_data_width_p-1:0] mem_nc_data, nc_data;
 
-  /*
-  bsg_mem_1rw_sync
-    #(.width_p(block_size_in_bits_lp)
-      ,.els_p(mem_els_p)
-    ) mem
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.v_i(mem_v_i)
-     ,.data_i(mem_data_i)
-     ,.addr_i(mem_addr_i)
-     ,.w_i(mem_w_i)
-     ,.data_o()//mem_data_o)
-    );
-*/
+  logic [511:0] dramsim_data;
+  logic dramsim_valid;
+  logic [511:0] dramsim_data_n;
+
   int k, j;
   always_comb begin
     mem_resp_o = mem_resp_s_o;
@@ -87,16 +74,13 @@ module bp_mem_dramsim2
     mem_cmd_i_s = mem_cmd_i;
     mem_data_cmd_i_s = mem_data_cmd_i;
 
-    rd_addr = mem_addr_width_lp'(mem_cmd_i_s.addr >> block_offset_bits_lp);
-    wr_addr = mem_addr_width_lp'(mem_data_cmd_i_s.addr >> block_offset_bits_lp);
-
     block_rd_addr = {mem_cmd_i_s.addr[paddr_width_p-1:block_offset_bits_lp], block_offset_bits_lp'(0)};
     block_wr_addr = {mem_data_cmd_i_s.addr[paddr_width_p-1:block_offset_bits_lp], block_offset_bits_lp'(0)};
 
     // get the 64-bit chunk
     k = mem_cmd_s_r.addr[block_offset_bits_lp-1:word_offset_bits_lp];
     j = mem_cmd_s_r.addr[word_offset_bits_lp-1:0];
-    mem_nc_data = mem_data_o[(k*lce_req_data_width_p)+:lce_req_data_width_p];
+    mem_nc_data = dramsim_data[(k*lce_req_data_width_p)+:lce_req_data_width_p];
     if (mem_cmd_s_r.nc_size == e_lce_nc_req_1) begin
       nc_data = {56'('0),mem_nc_data[(j*8)+:8]};
     end else if (mem_cmd_s_r.nc_size == e_lce_nc_req_2) begin
@@ -120,16 +104,9 @@ module bp_mem_dramsim2
 
   mem_state_e mem_st;
 
-  logic [511:0] dramsim_data;
-  logic dramsim_valid;
   // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
-      mem_v_i <= '0;
-      mem_w_i <= '0;
-      mem_addr_i <= '0;
-      mem_data_i <= '0;
-
       mem_st <= RESET;
 
       // outputs
@@ -145,24 +122,14 @@ module bp_mem_dramsim2
       mem_cmd_yumi_o <= '0;
     end
     else begin
-      mem_v_i <= '0;
-      mem_w_i <= '0;
-      mem_addr_i <= '0;
-      mem_data_i <= '0;
-
       mem_resp_s_o <= '0;
       mem_resp_v_o <= '0;
       mem_data_resp_s_o <= '0;
       mem_data_resp_v_o <= '0;
 
       case (mem_st)
-        /* Boot RAM from ROM */
         RESET: begin
-          mem_v_i <= 1'b1;
-          mem_w_i <= 1'b1;
-
           mem_st <= READY;
-
         end
         READY: begin
           // mem data command - need to write data to memory
@@ -172,14 +139,7 @@ module bp_mem_dramsim2
             mem_st <= RD_DATA_CMD;
 
             // do the write to memory ram
-            mem_v_i <= 1'b1;
-            mem_w_i <= 1'b1;
-            mem_addr_i <= wr_addr;
-            assert(wr_addr < mem_els_p) else $error("Mem write address too high");
-            mem_data_i <= mem_data_cmd_i_s.data;
-
             mem_write_req(block_wr_addr, mem_data_cmd_i_s.data);
-            dramsim_valid <= 1'b0;
           // mem command - need to read data from memory
           end else if (mem_cmd_v_i && mem_data_resp_ready_i) begin
             mem_cmd_yumi_o <= 1'b1;
@@ -187,19 +147,12 @@ module bp_mem_dramsim2
             mem_st <= RD_MEM;
 
             // register the inputs for the memory, memory will consume them next cycle
-            mem_v_i <= 1'b1;
-            mem_addr_i <= rd_addr;
-            assert(rd_addr < mem_els_p) else $error("Mem read address too high");
-
             mem_read_req(block_rd_addr);
-            dramsim_valid <= 1'b0;
           end
         end
         RD_MEM: begin
           // read from memory, data will be available next cycle
           mem_cmd_yumi_o <= '0;
-          mem_v_i <= 1'b1;
-          mem_addr_i <= rd_addr;
           mem_st <= dramsim_valid ? RD_CMD : RD_MEM;
         end
         RD_CMD: begin
@@ -222,7 +175,7 @@ module bp_mem_dramsim2
         end
         RD_DATA_CMD: begin
           mem_data_cmd_yumi_o <= '0;
-          mem_st <= READY;
+          mem_st <= dramsim_valid ? READY : RD_DATA_CMD;
 
           mem_resp_s_o.msg_type <= mem_data_cmd_s_r.msg_type;
           mem_resp_s_o.addr <= mem_data_cmd_s_r.addr;
@@ -246,24 +199,21 @@ module bp_mem_dramsim2
     end
   end
 
-import "DPI" function void init(input longint clock_period);
-import "DPI" function void tick();
+import "DPI-C" function void init(input longint clock_period);
+import "DPI-C" function bit tick();
 
-import "DPI" function void mem_read_req(input longint addr);
-import "DPI" function void mem_write_req(input longint addr, input bit [511:0] data);
+import "DPI-C" function void mem_read_req(input longint addr);
+import "DPI-C" function void mem_write_req(input longint addr, input bit [511:0] data);
 
-import "DPI" function bit mem_read_poll(output bit [511:0] data);
-
-export "DPI" function read_resp;
-export "DPI" function write_resp;
+export "DPI-C" function read_resp;
+export "DPI-C" function write_resp;
 
 function void read_resp(input bit [511:0] data);
-  dramsim_data  <= data;
-  dramsim_valid <= 1'b1;
+  dramsim_data_n  = data;
 endfunction
 
 function void write_resp();
-  dramsim_valid <= 1'b1;
+
 endfunction
 
 initial 
@@ -271,10 +221,10 @@ initial
     init(1000); // TODO: Change me to clock period of system
   end
 
-always_ff @(negedge clk_i)
+always_ff @(posedge clk_i)
   begin
-    tick(); 
+    dramsim_valid <= tick(); 
+    dramsim_data  <= dramsim_data_n;
   end
 
 endmodule
-

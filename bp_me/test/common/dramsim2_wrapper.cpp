@@ -55,6 +55,7 @@ void bp_dram::read_complete(unsigned id, uint64_t addr, uint64_t cycle)
     dram.result_data[i] = word;
   }
 
+  dram.result_pending = true;
   read_resp(dram.result_data);
 }
 
@@ -71,6 +72,7 @@ extern "C" void mem_write_req(uint64_t addr, svBitVecVal *data)
 
 void bp_dram::write_complete(unsigned id, uint64_t addr, uint64_t cycle)
 {
+  dram.result_pending = true;
   write_resp();
 }
 
@@ -91,8 +93,14 @@ extern "C" void init(uint64_t clock_period_in_ps)
   dram.read_hex("prog.mem");
 }
 
-extern "C" void tick() 
+extern "C" bool tick() 
 {
   mem->update();
+
+  bool result = dram.result_pending;
+  
+  dram.result_pending = false;
+  
+  return result;
 }
 
