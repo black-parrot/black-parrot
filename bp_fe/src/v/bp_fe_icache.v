@@ -329,15 +329,8 @@ module bp_fe_icache
   logic                                     metadata_mem_pkt_yumi_li;
 
 
-  bp_fe_lce #(
-   .data_width_p(data_width_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.lce_data_width_p(lce_data_width_lp)
-   ,.sets_p(sets_p)
-   ,.ways_p(ways_p)
-   ,.num_cce_p(num_cce_p)
-   ,.num_lce_p(num_lce_p)
-  ) lce (
+  bp_fe_lce #(.cfg_p(cfg_p))
+lce (
    .clk_i(clk_i)
    ,.reset_i(reset_i)
 

@@ -95,4 +95,13 @@ typedef enum logic [1:0] {
 `define bp_fe_icache_lce_metadata_mem_pkt_width(sets_p, ways_p) \
   (`BSG_SAFE_CLOG2(sets_p)+`BSG_SAFE_CLOG2(ways_p)+$bits(bp_fe_icache_metadata_mem_opcode_e))
 
+/*
+ * Declare all lce widths at once as localparams
+ */
+`define declare_bp_fe_lce_widths(ways_mp, sets_mp, tag_width_mp, lce_data_width_mp)                                \
+    , localparam lce_data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(sets_mp,ways_mp,lce_data_width_mp) \
+    , localparam lce_tag_mem_pkt_width_lp=`bp_fe_icache_lce_tag_mem_pkt_width(sets_mp,ways_mp,tag_width_mp)        \
+    , localparam lce_metadata_mem_pkt_width_lp=`bp_fe_icache_lce_metadata_mem_pkt_width(sets_mp,ways_mp            \
+)
+
 `endif
