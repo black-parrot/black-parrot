@@ -17,7 +17,7 @@ module testbench
                                ,asid_width_p
                                ,branch_metadata_fwd_width_p
                                )
-   `declare_bp_me_if_widths(paddr_width_p, dword_width_p, num_lce_p, lce_assoc_p)
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
    , localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
    , parameter mem_els_p                   = "inv"

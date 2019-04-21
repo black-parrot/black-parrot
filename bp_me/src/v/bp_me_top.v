@@ -22,7 +22,7 @@ module bp_me_top
     // Default parameters
     , parameter lce_req_data_width_p = 64
 
-    , parameter trace_p              = 0
+    , parameter cce_trace_p           = 0
 
     // Derived parameters
     , localparam block_size_in_bytes_lp = cce_block_width_p/8
@@ -221,7 +221,7 @@ module bp_me_top
         ,.lce_req_data_width_p(lce_req_data_width_p)
         ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
         ,.cfg_link_data_width_p(cfg_link_data_width_p)
-        ,.trace_p(trace_p)
+        ,.cce_trace_p(cce_trace_p)
         )
       bp_cce_top
        (.clk_i(clk_i)

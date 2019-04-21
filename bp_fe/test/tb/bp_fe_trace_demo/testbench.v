@@ -17,7 +17,7 @@ module testbench
                                ,asid_width_p
                                ,branch_metadata_fwd_width_p
                                )
-   `declare_bp_me_if_widths(paddr_width_p, dword_width_p, num_lce_p, lce_assoc_p)
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
    , parameter bp_first_pc_p          = "inv"
    , parameter boot_rom_width_p       = "inv"
@@ -29,6 +29,10 @@ module testbench
 
    , localparam trace_rom_data_width_lp   = trace_ring_width_p + 4
    , localparam lg_boot_rom_els_lp        = `BSG_SAFE_CLOG2(boot_rom_els_p)
+
+   // Config link parameters
+   , parameter cfg_link_addr_width_p       = 16
+   , parameter cfg_link_data_width_p       = 32
 
    , localparam cce_inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
@@ -275,10 +279,24 @@ logic [num_cce_p-1:0] mem_data_cmd_yumi;
 
 
 bp_me_top 
- #(.cfg_p(cfg_p))
+ #(.cfg_p(cfg_p)
+   ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
+   ,.cfg_link_data_width_p(cfg_link_data_width_p)
+ )
  me
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
+   ,.freeze_i('0)
+
+   ,.config_addr_i('0)
+   ,.config_data_i('0)
+   ,.config_v_i('0)
+   ,.config_w_i('0)
+   ,.config_ready_o()
+
+   ,.config_data_o()
+   ,.config_v_o()
+   ,.config_ready_i('0)
 
    ,.lce_req_i(lce_cce_req)
    ,.lce_req_v_i(lce_cce_req_v)

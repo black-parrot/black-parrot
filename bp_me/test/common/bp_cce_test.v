@@ -15,6 +15,8 @@ module bp_cce_test
     ,parameter block_size_in_bits_lp=block_size_in_bytes_p*8
     ,parameter num_inst_ram_els_p=256
 
+    ,parameter cce_trace_p=0
+
     ,parameter lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
 
     ,parameter mem_els_p=512
@@ -161,6 +163,7 @@ module bp_cce_test
 			,.lce_req_data_width_p(lce_req_data_width_lp)
       ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
       ,.cfg_link_data_width_p(cfg_link_data_width_p)
+      ,.cce_trace_p(cce_trace_p)
      )
      bp_cce_top
      (.clk_i(clk_i)

@@ -48,7 +48,7 @@ else ifeq ($(NUM_LCE_P), 16)
   N_WG=8
 endif
 SEED_P ?= 1
-TRACE_P ?= 0
+CCE_TRACE_P ?= 0
 AXE_TRACE_P ?= 0
 
 # use EI instead of MESI protocol
@@ -80,7 +80,7 @@ sim: clean $(TRACE_ROMS)
 		+vcs+vcdplusautoflushon +define+NUM_LCE_P=$(NUM_LCE_P) \
 		+define+NUM_INSTR_P=$(NUM_INSTR_P) \
 		+define+AXE_TRACE_P=$(AXE_TRACE_P) \
-		+define+TRACE_P=$(TRACE_P) | $(HIGHLIGHT)
+		+define+CCE_TRACE_P=$(CCE_TRACE_P) | $(HIGHLIGHT)
 
 dve:
 	dve -full64 -vpd vcdplus.vpd &

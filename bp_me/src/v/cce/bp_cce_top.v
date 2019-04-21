@@ -24,7 +24,7 @@ module bp_cce_top
     , parameter cfg_link_addr_width_p   = "inv"
     , parameter cfg_link_data_width_p   = "inv"
 
-    , parameter trace_p                 = "inv"
+    , parameter cce_trace_p             = "inv"
 
     // Derived parameters
     , localparam block_size_in_bits_lp  = (block_size_in_bytes_p*8)
@@ -312,7 +312,7 @@ module bp_cce_top
       ,.mem_data_cmd_ready_i(mem_data_cmd_ready_to_cce)
       );
 
-if (trace_p) begin : cce_tracer
+if (cce_trace_p) begin : cce_tracer
   bp_cce_nonsynth_tracer
     #(.num_lce_p(num_lce_p)
       ,.num_cce_p(num_cce_p)

@@ -87,31 +87,6 @@ module wrapper
    , input [num_cce_p-1:0]                                       mem_data_cmd_yumi_i
   );
 
-  /*
-  // Coherence Network <-> CCE
-  // To CCE
-  logic [num_cce_p-1:0][lce_cce_req_width_lp-1:0]            lce_req_i_to_cce;
-  logic [num_cce_p-1:0]                                      lce_req_v_i_to_cce;
-  logic [num_cce_p-1:0]                                      lce_req_ready_o_from_cce;
-
-  logic [num_cce_p-1:0][lce_cce_resp_width_lp-1:0]           lce_resp_i_to_cce;
-  logic [num_cce_p-1:0]                                      lce_resp_v_i_to_cce;
-  logic [num_cce_p-1:0]                                      lce_resp_ready_o_from_cce;
-
-  logic [num_cce_p-1:0][lce_cce_data_resp_width_lp-1:0]      lce_data_resp_i_to_cce;
-  logic [num_cce_p-1:0]                                      lce_data_resp_v_i_to_cce;
-  logic [num_cce_p-1:0]                                      lce_data_resp_ready_o_from_cce;
-
-  // From CCE;
-  logic [num_cce_p-1:0][cce_lce_cmd_width_lp-1:0]            lce_cmd_o_from_cce;
-  logic [num_cce_p-1:0]                                      lce_cmd_v_o_from_cce;
-  logic [num_cce_p-1:0]                                      lce_cmd_ready_i_to_cce;
-
-  logic [num_cce_p-1:0][lce_data_cmd_width_lp-1:0]           lce_data_cmd_o_from_cce;
-  logic [num_cce_p-1:0]                                      lce_data_cmd_v_o_from_cce;
-  logic [num_cce_p-1:0]                                      lce_data_cmd_ready_i_to_cce;
-  */
-
   bp_me_top 
    #(.cfg_p(cfg_p)
      ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
