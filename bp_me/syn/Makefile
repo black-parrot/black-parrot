@@ -82,12 +82,6 @@ regress.me: check_design.syn
 	|| echo "bp_me_multi_mock_lce: FAIL" >> $(LOG_PATH)/me_regress.log
 
 
-# deprecating
-#	$(MAKE) run.sc TB=bp_me_top_test
-#	@grep "PASSED" $(LOG_PATH)/verilator/bp_me_top_test_bp_example_rom_sim.log \
-#	&& echo "bp_me_top_test: OK" >> $(LOG_PATH)/me_regress.log \
-#	|| echo "bp_me_top_test: FAIL" >> $(LOG_PATH)/me_regress.log
-
 clean: clean.me
 clean.me:
 	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_random_demo clean
