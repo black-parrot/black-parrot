@@ -6,8 +6,8 @@
 
 [submodule "external/axe"]
   path = external/axe
-  url = https://github.com/CTSRD-CHERI/axe.git
-  branch = master
+  url = https://github.com/black-parrot/axe
+  branch = blackparrot_mods
   ignore = dirty
 
 [submodule "external/riscv-fesvr"]
