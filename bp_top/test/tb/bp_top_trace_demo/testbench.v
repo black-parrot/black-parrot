@@ -15,7 +15,11 @@ module testbench
    `declare_bp_me_if_widths(paddr_width_p, dword_width_p, num_lce_p, lce_assoc_p)
 
    // Number of elements in the fake BlackParrot memory
-   , parameter mem_els_p                   = "inv"
+   , parameter clock_period_in_ps_p = 1000
+   , parameter prog_name_p = "prog.mem"
+   , parameter dram_cfg_p  = "DDR2_micron_16M_8b_x8_sg3E.ini"
+   , parameter dram_sys_cfg_p = "system.ini"
+   , parameter dram_capacity_p = 16384
 
    // These should go away with the manycore bridge
    , localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
@@ -101,13 +105,18 @@ logic [num_cce_p-1:0] mem_data_cmd_v, mem_data_cmd_yumi;
    for (genvar i = 0; i < num_cce_p; i++) 
      begin : rof1
        bp_mem_dramsim2
-        #(.num_lce_p(num_lce_p)
+        #(.mem_id_p(i)
+          ,.clock_period_in_ps_p(clock_period_in_ps_p)
+          ,.prog_name_p(prog_name_p)
+          ,.dram_cfg_p(dram_cfg_p)
+          ,.dram_sys_cfg_p(dram_sys_cfg_p)
+          ,.dram_capacity_p(dram_capacity_p)
+          ,.num_lce_p(num_lce_p)
           ,.num_cce_p(num_cce_p)
           ,.paddr_width_p(paddr_width_p)
           ,.lce_assoc_p(lce_assoc_p)
           ,.block_size_in_bytes_p(cce_block_width_p/8)
           ,.lce_sets_p(lce_sets_p)
-          ,.mem_els_p(mem_els_p)
           ,.lce_req_data_width_p(dword_width_p)
           )
         mem

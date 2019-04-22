@@ -6,7 +6,14 @@
 module bp_mem_dramsim2
   import bp_common_pkg::*;
   import bp_cce_pkg::*;
-  #(parameter num_lce_p="inv"
+  #(parameter mem_id_p="inv"
+    ,parameter clock_period_in_ps_p="inv"
+    ,parameter prog_name_p="inv"
+    ,parameter dram_cfg_p="inv"
+    ,parameter dram_sys_cfg_p="inv"
+    ,parameter dram_capacity_p="inv"
+
+    ,parameter num_lce_p="inv"
     ,parameter num_cce_p="inv"
     ,parameter paddr_width_p="inv"
     ,parameter lce_assoc_p="inv"
@@ -16,14 +23,11 @@ module bp_mem_dramsim2
 
     ,parameter lce_req_data_width_p="inv"
 
-    ,parameter mem_els_p="inv"
-
     ,parameter bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p, num_lce_p, lce_assoc_p)
     ,parameter bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
     ,parameter bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(paddr_width_p, num_lce_p, lce_assoc_p)
     ,parameter bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
 
-    ,parameter mem_addr_width_lp=`BSG_SAFE_CLOG2(mem_els_p)
     ,parameter block_offset_bits_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
     ,parameter byte_width_lp=8
     ,localparam word_offset_bits_lp=`BSG_SAFE_CLOG2(lce_req_data_width_p/8)
@@ -199,7 +203,12 @@ module bp_mem_dramsim2
     end
   end
 
-import "DPI-C" function void init(input longint clock_period);
+import "DPI-C" function void init(input longint clock_period
+                                  , input string prog_name
+                                  , input string dram_cfg_name
+                                  , input string system_cfg_name
+                                  , input longint dram_capacity
+                                  );
 import "DPI-C" function bit tick();
 
 import "DPI-C" function void mem_read_req(input longint addr);
@@ -218,7 +227,7 @@ endfunction
 
 initial 
   begin
-    init(1000); // TODO: Change me to clock period of system
+    init(clock_period_in_ps_p, prog_name_p, dram_cfg_p, dram_sys_cfg_p, dram_capacity_p); 
   end
 
 always_ff @(posedge clk_i)

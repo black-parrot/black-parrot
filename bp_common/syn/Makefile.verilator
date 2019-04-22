@@ -45,6 +45,9 @@ deps.sc:
 	$(shell mkdir -p $(LOG_DIR)/regress)
 	$(shell mkdir -p $(VERILATOR_RUN_DIR))
 	@cp $(MEM_PATH)/$(PROG).mem $(VERILATOR_RUN_DIR)/prog.mem || true
+	# TODO: Should set the dram parameters through the makefile flow
+	@cp $(BP_EXTERNAL_DIR)/DRAMSim2/ini/DDR2_micron_16M_8b_x8_sg3E.ini $(VERILATOR_RUN_DIR) || true
+	@cp $(BP_EXTERNAL_DIR)/DRAMSim2/system.ini.example $(VERILATOR_RUN_DIR)/system.ini || true
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/testbench.v > $(VERILATOR_RUN_DIR)/testbench.v || true
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v > $(VERILATOR_RUN_DIR)/wrapper.v || true
 	@touch $(VERILATOR_RUN_DIR)/flist.verilator
@@ -91,8 +94,8 @@ cov.sc: deps.sc regress.sc
 		--write $(REPORT_DIR)/coverage/total_coverage.dat --rank \
 	| tee $(REPORT_DIR)/$(TB)_cov.rpt
 
-regress.sc: deps.sc $(RV64_REGRESSION)
-$(RV64_REGRESSION_TGTS): build.sc
+regress.sc: build.sc $(RV64_REGRESSION)
+$(RV64_REGRESSION): 
 	@cp $(MEM_PATH)/$(PROG).mem $(VERILATOR_RUN_DIR)/prog.mem
 	$(MAKE) run.sc PROG=$(basename $@) \
 		CBUILD_LOG=regress/$(TB)_$(basename $@)_cbuild.log \

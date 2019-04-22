@@ -76,7 +76,12 @@ void bp_dram::write_complete(unsigned id, uint64_t addr, uint64_t cycle)
   write_resp();
 }
 
-extern "C" void init(uint64_t clock_period_in_ps)
+extern "C" void init(uint64_t clock_period_in_ps
+                     , char *prog_name
+                     , char *dram_cfg_name 
+                     , char *dram_sys_cfg_name
+                     , uint64_t dram_capacity
+                     )
 {
   TransactionCompleteCB *read_cb = 
     new Callback<bp_dram, void, unsigned, uint64_t, uint64_t>(&dram, &bp_dram::read_complete);
@@ -84,13 +89,12 @@ extern "C" void init(uint64_t clock_period_in_ps)
     new Callback<bp_dram, void, unsigned, uint64_t, uint64_t>(&dram, &bp_dram::write_complete);
 
   mem = 
-    getMemorySystemInstance("DDR2_micron_16M_8b_x8_sg3E.ini", "system.ini", "", "", 16384);
+    getMemorySystemInstance(dram_cfg_name, dram_sys_cfg_name, "", "", dram_capacity);
   mem->RegisterCallbacks(read_cb, write_cb, NULL);
 
-  // TODO: We 'tick' at CPU speed. I'm not sure what the conversion is here... think more
   uint64_t clock_freq_in_hz = (uint64_t) (1.0 / (clock_period_in_ps * 1.0E-12));
   mem->setCPUClockSpeed(clock_freq_in_hz); 
-  dram.read_hex("prog.mem");
+  dram.read_hex(prog_name);
 }
 
 extern "C" bool tick() 

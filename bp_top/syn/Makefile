@@ -23,7 +23,7 @@ include $(BP_COMMON_DIR)/syn/Makefile.verilator
 include $(BP_COMMON_DIR)/syn/Makefile.vcs
 
 regress.top: regress
-regress: regress.v check_design.syn
+regress: regress.v regress.sc check_design.syn
 	$(MAKE) lint.v || true
 	$(MAKE) lint.sc || true
 

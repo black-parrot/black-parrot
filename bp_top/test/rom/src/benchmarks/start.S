@@ -45,6 +45,12 @@ _start:
 /* to stop, make an ecall */
 loop:    
     nop
+    li t0, 0xc00dead0
+    beq x0, a0, pass
+    li t1, -1
+pass:
+    li t1, 0
+    sw t1, (t0) // Should print PAS if pass, FAL if fail
     j loop
 /* stupid, to keep the trace generation happy */
 .section ".tohost","aw",@progbits
