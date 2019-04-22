@@ -50,7 +50,7 @@ for w in n_wg:
         rom_file_path = os.path.join(out_dir, 'bp_cce_inst_rom_{0}_lce{1}_wg{2}_assoc{3}.v'.format(file_base, n, w, e))
         bsg_script = os.path.join(os.path.abspath(args.bsg), args.script)
         rom_module=args.module
-        rom_cmd = 'python2 {0} {1} {2} > {3}'.format(bsg_script, mem_file, rom_module, rom_file_path)
+        rom_cmd = 'python2 {0} {1} {2} zero > {3}'.format(bsg_script, mem_file, rom_module, rom_file_path)
         os.system(rom_cmd)
         rm_cmd = 'rm {0}'.format(mem_file)
         os.system(rm_cmd)

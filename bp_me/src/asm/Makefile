@@ -48,7 +48,7 @@ cce-dbg: as $(cce_DBG)
 	./$(AS) -d -i $< -o $@
 
 %.rom: %.mem
-	python2 $(BSG_MEM_DIR)/bsg_ascii_to_rom.py $< bp_cce_inst_rom > bp_cce_inst_rom.v
+	python2 $(BSG_MEM_DIR)/bsg_ascii_to_rom.py $< bp_cce_inst_rom zero > bp_cce_inst_rom.v
 
 clean:
 	rm -f $(AS) $(as_SRC:.cc=.o) $(cce_PRE_SRC) $(cce_MEM) $(cce_DBG)
@@ -57,3 +57,4 @@ clean:
 roms: as
 	python2 py/roms.py -i microcode/cce/ei-tr -N 1 2 4 8 16 32 -W 2 4 8 16 32 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/ei-tr
 	python2 py/roms.py -i microcode/cce/mesi-tr -N 1 2 4 8 16 32 -W 2 4 8 16 32 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/mesi-tr
+	python2 py/roms.py -i microcode/cce/msi-tr -N 1 2 4 8 16 32 -W 2 4 8 16 32 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/msi-tr
