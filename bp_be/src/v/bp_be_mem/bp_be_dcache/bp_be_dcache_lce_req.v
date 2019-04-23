@@ -251,7 +251,10 @@ module bp_be_dcache_lce_req
         cce_data_received_n = cce_data_received_i ? 1'b1 : cce_data_received_r;
         set_tag_received_n = set_tag_received_i ? 1'b1 : set_tag_received_r;
 
-        if (set_tag_wakeup_received_i | uncached_data_received_i) begin
+        if (set_tag_wakeup_received_i) begin
+          state_n = e_SEND_COH_ACK;
+        end
+        else if (uncached_data_received_i) begin
           state_n = e_READY;
         end
         else if (set_tag_received) begin

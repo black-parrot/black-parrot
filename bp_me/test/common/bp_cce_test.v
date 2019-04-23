@@ -8,12 +8,14 @@ module bp_cce_test
   import bp_cce_pkg::*;
   #(parameter num_lce_p=1
     ,parameter num_cce_p=1
-    ,parameter paddr_width_p=22 // 10 tag + 6 idx + 6 offset
+    ,parameter paddr_width_p=56
     ,parameter lce_assoc_p=8
     ,parameter lce_sets_p=64
     ,parameter block_size_in_bytes_p=64
     ,parameter block_size_in_bits_lp=block_size_in_bytes_p*8
     ,parameter num_inst_ram_els_p=256
+
+    ,parameter cce_trace_p=0
 
     ,parameter lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
 
@@ -21,6 +23,10 @@ module bp_cce_test
     ,parameter boot_rom_width_p=512
     ,parameter boot_rom_els_p=512
     ,parameter lg_boot_rom_els_lp=`BSG_SAFE_CLOG2(boot_rom_els_p)
+
+    // Config channel
+    ,parameter cfg_link_addr_width_p = "inv"
+    ,parameter cfg_link_data_width_p = "inv"
 
 		,localparam lce_req_data_width_lp=64
     , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
@@ -69,11 +75,23 @@ module bp_cce_test
   )
   (
     input                                                  clk_i
-   ,input                                                  reset_i
+    ,input                                                 reset_i
+    ,input                                                 freeze_i
+ 
+    // Config channel
+    , input [cfg_link_addr_width_p-2:0]                    config_addr_i
+    , input [cfg_link_data_width_p-1:0]                    config_data_i
+    , input                                                config_v_i
+    , input                                                config_w_i
+    , output logic                                         config_ready_o
+ 
+    , output logic [cfg_link_data_width_p-1:0]             config_data_o
+    , output logic                                         config_v_o
+    , input                                                config_ready_i
 
     // LCE-CCE Interface
-    // inbound: ready->valid, helpful
-    // outbound: valid->ready (a.k.a., valid-yumi), helpful
+    // inbound: ready&valid
+    // outbound: ready&valid
     ,input [bp_lce_cce_req_width_lp-1:0]                   lce_req_i
     ,input                                                 lce_req_v_i
     ,output logic                                          lce_req_ready_o
@@ -143,10 +161,23 @@ module bp_cce_test
       ,.block_size_in_bytes_p(block_size_in_bytes_p)
       ,.num_cce_inst_ram_els_p(num_inst_ram_els_p)
 			,.lce_req_data_width_p(lce_req_data_width_lp)
+      ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
+      ,.cfg_link_data_width_p(cfg_link_data_width_p)
+      ,.cce_trace_p(cce_trace_p)
      )
      bp_cce_top
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
+      ,.freeze_i(freeze_i)
+
+      ,.config_addr_i(config_addr_i)
+      ,.config_data_i(config_data_i)
+      ,.config_v_i(config_v_i)
+      ,.config_w_i(config_w_i)
+      ,.config_ready_o(config_ready_o)
+      ,.config_data_o(config_data_o)
+      ,.config_v_o(config_v_o)
+      ,.config_ready_i(config_ready_i)
 
       ,.cce_id_i(cce_id)
 

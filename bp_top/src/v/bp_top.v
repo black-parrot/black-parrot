@@ -12,7 +12,7 @@ module bp_top
  import bp_cce_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
-   `declare_bp_me_if_widths(paddr_width_p, dword_width_p, num_lce_p, lce_assoc_p)
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
    // Used to enable trace replay outputs for testbench
    , parameter trace_p      = 0
@@ -147,11 +147,30 @@ for(genvar core_id = 0; core_id < num_core_p; core_id++)
   end
 endgenerate 
 
+// Config link parameters
+// TODO: move these into proc cfg?
+localparam cfg_link_addr_width_p       = 16;
+localparam cfg_link_data_width_p       = 32;
+
 bp_me_top 
- #(.cfg_p(cfg_p))
+ #(.cfg_p(cfg_p)
+   ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
+   ,.cfg_link_data_width_p(cfg_link_data_width_p)
+ )
  me
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
+   ,.freeze_i('0)
+
+   ,.config_addr_i('0)
+   ,.config_data_i('0)
+   ,.config_v_i('0)
+   ,.config_w_i('0)
+   ,.config_ready_o()
+
+   ,.config_data_o()
+   ,.config_v_o()
+   ,.config_ready_i('0)
 
    ,.lce_req_i(lce_req_lo)
    ,.lce_req_v_i(lce_req_v_lo)

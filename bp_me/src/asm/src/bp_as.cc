@@ -65,7 +65,9 @@ Assembler::_lowercase(char ch) {
 
 bp_cce_inst_op_e
 Assembler::getOp(const char* op) {
-  if (!strcmp("add", op) || !strcmp("inc", op) || !strcmp("sub", op) || !strcmp("dec", op)) {
+  if (!strcmp("add", op) || !strcmp("inc", op) || !strcmp("sub", op) || !strcmp("dec", op)
+      || !strcmp("lsh", op) || !strcmp("rsh", op) || !strcmp("and", op) || !strcmp("or", op)
+      || !strcmp("xor", op) || !strcmp("neg", op)) {
     return e_op_alu;
   } else if (!strcmp("bi", op) || !strcmp("beq", op) || !strcmp("bne", op) || !strcmp("bz", op)
              || !strcmp("bnz", op) || !strcmp("bf", op) || !strcmp("bfz", op) || !strcmp("bqr", op)
@@ -96,6 +98,18 @@ Assembler::getMinorOp(const char* op) {
     return e_add;
   } else if (!strcmp("sub", op) || !strcmp("dec", op)) {
     return e_sub;
+  } else if (!strcmp("lsh", op)) {
+    return e_lsh;
+  } else if (!strcmp("rsh", op)) {
+    return e_rsh;
+  } else if (!strcmp("and", op)) {
+    return e_and;
+  } else if (!strcmp("or", op)) {
+    return e_or;
+  } else if (!strcmp("xor", op)) {
+    return e_xor;
+  } else if (!strcmp("neg", op)) {
+    return e_neg;
   } else if (!strcmp("bi", op)) {
     return e_bi;
   } else if (!strcmp("beq", op) || !strcmp("bz", op) || !strcmp("bf", op) || !strcmp("bfz", op)
@@ -177,12 +191,16 @@ Assembler::parseSrcOpd(string &s) {
     return e_src_pcf;
   } else if (!s.compare("ucf")) {
     return e_src_ucf;
+  } else if (!s.compare("cf")) {
+    return e_src_cf;
   } else if (!s.compare("reqlce")) {
     return e_src_req_lce;
   } else if (!s.compare("acktype")) {
     return e_src_ack_type;
   } else if (!s.compare("shr0")) {
     return e_src_sharers_hit_r0;
+  } else if (!s.compare("cce_id")) {
+    return e_src_cce_id;
   } else if (!s.compare("lcereq")) {
     return e_src_lce_req_ready;
   } else if (!s.compare("memresp")) {
@@ -237,6 +255,8 @@ Assembler::parseDstOpd(string &s) {
     return e_dst_pcf;
   } else if (!s.compare("ucf")) {
     return e_dst_ucf;
+  } else if (!s.compare("cf")) {
+    return e_dst_cf;
   } else if (!s.compare("nextcohst")) {
     return e_dst_next_coh_state;
   } else {
@@ -278,12 +298,22 @@ Assembler::parseCohStImm(string &s) {
 
 void
 Assembler::parseALU(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
-  if (tokens->size() == 2) {
+  if (tokens->size() == 2) { // inc, dec, neg
     inst->type_u.alu_op_s.src_a = parseSrcOpd(tokens->at(1));
-    inst->type_u.alu_op_s.src_b = e_src_const_1;
     inst->type_u.alu_op_s.dst = parseDstOpd(tokens->at(1));
-    //inst->imm = 1;
-  } else if (tokens->size() == 4) {
+    if (inst->minor_op == e_inc || inst->minor_op == e_dec) {
+      inst->type_u.alu_op_s.src_b = e_src_const_1;
+    } else if (inst->minor_op == e_neg) {
+      inst->type_u.alu_op_s.src_b = e_src_const_0;
+    } else {
+      printf("Unknown ALU instruction: %s\n", tokens->at(0).c_str());
+      exit(-1);
+    }
+  } else if (tokens->size() == 3) { // lsh, rsh
+    inst->type_u.alu_op_s.src_a = parseSrcOpd(tokens->at(1));
+    inst->type_u.alu_op_s.dst = parseDstOpd(tokens->at(1));
+    inst->type_u.alu_op_s.src_b = e_src_imm;
+  } else if (tokens->size() == 4) { // add, sub, and, or, xor
     inst->type_u.alu_op_s.src_a = parseSrcOpd(tokens->at(1));
     inst->type_u.alu_op_s.src_b = parseSrcOpd(tokens->at(2));
     inst->type_u.alu_op_s.dst = parseDstOpd(tokens->at(3));
@@ -387,6 +417,9 @@ Assembler::parseFlagSel(string &s) {
     case e_dst_ucf:
       return e_flag_ucf;
       break;
+    case e_dst_cf:
+      return e_flag_cf;
+      break;
     default:
       printf("Unknown Flag operand\n");
       exit(-1);
@@ -412,15 +445,6 @@ Assembler::parseMove(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
     }
   } else if (tokens->size() == 2) { // sf or sfz
     inst->type_u.flag_op_s.dst = parseDstOpd(tokens->at(1));
-    /*
-    inst->rqf_sel = e_rqf_imm0;
-    inst->nerldf_sel = e_nerldf_imm0;
-    inst->nwbf_sel = e_nwbf_imm0;
-    inst->tf_sel = e_tf_imm0;
-    inst->pruief_sel = e_pruief_imm0;
-    inst->rwbf_sel = e_rwbf_imm0;
-    inst->flag_mask_w_v = parseFlagSel(tokens->at(1));
-    */
     if (!strcmp("sf", tokens->at(0).c_str())) {
       inst->type_u.flag_op_s.imm = 1;
     } else if (!strcmp("sfz", tokens->at(0).c_str())) {

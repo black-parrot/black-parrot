@@ -331,7 +331,8 @@ module bp_be_dcache
   for (genvar i = 0; i < ways_p; i++) begin: tag_comp
     assign tag_match_tv[i] = addr_tag_tv == tag_info_tv_r[i].tag;
     assign load_hit_tv[i] = tag_match_tv[i] & (tag_info_tv_r[i].coh_state != e_MESI_I);
-    assign store_hit_tv[i] = tag_match_tv[i] & (tag_info_tv_r[i].coh_state == e_MESI_E);
+    assign store_hit_tv[i] = tag_match_tv[i] & ((tag_info_tv_r[i].coh_state == e_MESI_M)
+                                                || (tag_info_tv_r[i].coh_state == e_MESI_E));
     assign invalid_tv[i] = (tag_info_tv_r[i].coh_state == e_MESI_I);
   end
 
@@ -868,7 +869,7 @@ module bp_be_dcache
 
   // write buffer
   //
-  assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit;
+  assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~uncached_tv_r;
   assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we);
   assign bypass_v_li = tv_we & load_op_tl_r;
   assign lce_snoop_index_li = lce_data_mem_pkt.index;

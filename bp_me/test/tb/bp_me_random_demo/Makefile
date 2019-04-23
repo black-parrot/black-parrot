@@ -12,8 +12,6 @@ else
   $(info Not on xor...VCS not supported)
 endif
 
-AXE = axe
-
 .EXPORT_ALL_VARIABLES:
 
 INCDIR = +incdir+$(BP_COMMON_DIR)/src/include
@@ -40,7 +38,7 @@ NUMS = $(shell seq 0 `expr $(NUM_LCE_P) - 1`)
 BASE = bsg_trace_rom_
 TRACE_ROMS = $(addsuffix .v, $(addprefix $(BASE), $(NUMS)))
 
-CCE_ROM = $(BP_ME_DIR)/src/v/roms/ei-tr/bp_cce_inst_rom_ei-tr_lce$(NUM_LCE_P)_wg64_assoc8.v
+CCE_ROM = $(BP_ME_DIR)/src/v/roms/mesi-tr/bp_cce_inst_rom_mesi-tr_lce$(NUM_LCE_P)_wg64_assoc8.v
 
 all: clean sim
 
@@ -67,14 +65,5 @@ clean:
 	rm -rf simv.daidir simv.vdb stack.info.*
 	rm -f ucli.key vcdplus.vpd simv cm.log *.tar.gz $(VCS_LOG)
 	rm -f bsg_trace_rom_*.v bsg_trace_rom_*.tr $(TRACE_AXE)
+	rm -f testbench_postsed.v
 
-###################################################################################################
-# NOTE: AXE does not work with this test. This test is for single LCE and the trace replay script
-# generates a trace that checks all loads and stores for correctness.
-
-#$(TRACE_AXE): $(VCS_LOG)
-#	python $(BP_BE_DIR)/test/tb/bp_be_dcache/py/axe_trace_filter.py $(VCS_LOG) > $(TRACE_AXE)
-
-#axe: $(TRACE_AXE)
-#	cat $<
-#	$(AXE) check TSO $(TRACE_AXE)

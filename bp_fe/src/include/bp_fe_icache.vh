@@ -73,4 +73,16 @@
 `define bp_fe_icache_tag_state_width(tag_width_mp) \
   (`bp_cce_coh_bits+tag_width_mp)
 
+/*
+ * Declare all icache widths at once as localparams
+ */
+`define declare_bp_icache_widths(vaddr_width_mp, tag_width_mp, ways_mp)                                \
+    , localparam bp_fe_pc_gen_icache_width_lp=`bp_fe_pc_gen_icache_width(vaddr_width_mp)               \
+    , localparam bp_fe_itlb_icache_data_resp_width_lp=`bp_fe_itlb_icache_data_resp_width(tag_width_mp) \
+    , localparam bp_fe_icache_tag_state_width_lp=`bp_fe_icache_tag_state_width(tag_width_mp)           \
+    , localparam bp_fe_icache_metadata_width_lp=`bp_fe_icache_metadata_width(ways_mp)                  \
+    , localparam bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(vaddr_width_mp                \
+)
+
+
 `endif

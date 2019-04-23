@@ -27,6 +27,8 @@ TRACE_AXE = trace.axe
 VCS_LOG = vcs.log
 VCS ?= vcs
 
+TRACE_P ?= 0
+
 # testparam
 NUM_INSTR_P ?= 10000
 NUM_LCE_P ?= 2
@@ -46,12 +48,13 @@ else ifeq ($(NUM_LCE_P), 16)
   CFG=e_bp_oct_core_cfg
   N_WG=8
 endif
+SEED_P ?= 0
 
 NUMS = $(shell seq 0 `expr $(NUM_LCE_P) - 1`)
 BASE = bsg_trace_rom_
 TRACE_ROMS = $(addsuffix .v, $(addprefix $(BASE), $(NUMS)))
 
-CCE_ROM = $(BP_ME_DIR)/src/v/roms/ei-tr/bp_cce_inst_rom_ei-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.v
+CCE_ROM = $(BP_ME_DIR)/src/v/roms/mesi-tr/bp_cce_inst_rom_mesi-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.v
 
 all: clean sim
 
@@ -85,3 +88,5 @@ clean:
 	rm -rf simv.daidir simv.vdb stack.info.*
 	rm -f ucli.key vcdplus.vpd simv cm.log *.tar.gz $(VCS_LOG)
 	rm -f bsg_trace_rom_*.v bsg_trace_rom_*.tr $(TRACE_AXE)
+	rm -f testbench_postsed.v
+
