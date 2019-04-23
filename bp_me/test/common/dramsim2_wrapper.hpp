@@ -1,6 +1,5 @@
 
 #include "svdpi.h"
-//#include "svdpi_src.h"
 
 #include <fstream>
 #include <iostream>
@@ -18,7 +17,8 @@ class bp_dram
   public:
     std::map<uint64_t, uint8_t> mem;
 
-    svBitVecVal result_data [(512+31)>>5];
+    uint64_t result_size;
+    svBitVecVal *result_data;
     bool result_pending;
 
   public:

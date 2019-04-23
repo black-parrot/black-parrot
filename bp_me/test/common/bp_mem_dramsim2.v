@@ -208,16 +208,19 @@ import "DPI-C" function void init(input longint clock_period
                                   , input string dram_cfg_name
                                   , input string system_cfg_name
                                   , input longint dram_capacity
+                                  , input longint dram_req_width
                                   );
 import "DPI-C" function bit tick();
 
-import "DPI-C" function void mem_read_req(input longint addr);
-import "DPI-C" function void mem_write_req(input longint addr, input bit [511:0] data);
+import "DPI-C" context function void mem_read_req(input longint addr);
+import "DPI-C" context function void mem_write_req(input longint addr
+                                                   , input bit [block_size_in_bits_lp-1:0] data
+                                                   );
 
 export "DPI-C" function read_resp;
 export "DPI-C" function write_resp;
 
-function void read_resp(input bit [511:0] data);
+function void read_resp(input bit [block_size_in_bits_lp-1:0] data);
   dramsim_data_n  = data;
 endfunction
 
@@ -227,7 +230,7 @@ endfunction
 
 initial 
   begin
-    init(clock_period_in_ps_p, prog_name_p, dram_cfg_p, dram_sys_cfg_p, dram_capacity_p); 
+    init(clock_period_in_ps_p, prog_name_p, dram_cfg_p, dram_sys_cfg_p, dram_capacity_p, block_size_in_bits_lp); 
   end
 
 always_ff @(posedge clk_i)

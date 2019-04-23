@@ -47,7 +47,7 @@ extern "C" void mem_read_req(uint64_t addr)
 
 void bp_dram::read_complete(unsigned id, uint64_t addr, uint64_t cycle)
 {
-  for (int i = 0; i < 16; i++) {
+  for (int i = 0; i < dram.result_size/32; i++) {
     uint32_t word = 0;
     for (int j = 0; j < 4; j++) {
       word |= (dram.mem[addr+i*4+j] << (j*8));
@@ -61,7 +61,7 @@ void bp_dram::read_complete(unsigned id, uint64_t addr, uint64_t cycle)
 
 extern "C" void mem_write_req(uint64_t addr, svBitVecVal *data)
 {
-  for (int i = 0; i < 16; i++) {
+  for (int i = 0; i < dram.result_size/32; i++) {
     uint32_t word = data[i];
     for (int j = 0; j < 4; j++) {
       dram.mem[addr+i*4+j] = (word >> j*8) & (0xFFFFFF00);
@@ -81,8 +81,12 @@ extern "C" void init(uint64_t clock_period_in_ps
                      , char *dram_cfg_name 
                      , char *dram_sys_cfg_name
                      , uint64_t dram_capacity
+                     , uint64_t dram_req_width
                      )
 {
+  dram.result_size = dram_req_width;
+  dram.result_data = new svBitVecVal[(dram_req_width+31)>>5];
+
   TransactionCompleteCB *read_cb = 
     new Callback<bp_dram, void, unsigned, uint64_t, uint64_t>(&dram, &bp_dram::read_complete);
   TransactionCompleteCB *write_cb = 
