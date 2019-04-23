@@ -222,9 +222,9 @@ bsg_dff_reset_en
  redirect_pending_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(calc_status.ex1_instr_v)
+   ,.en_i(calc_status.ex1_instr_v | trap_v_i)
 
-   ,.data_i(npc_mismatch_v)
+   ,.data_i(npc_mismatch_v | trap_v_i)
    ,.data_o(redirect_pending)
    );
 
@@ -241,7 +241,7 @@ bsg_dff_reset_en
    );
 
 // Generate control signals
-assign expected_npc_o = npc_r;
+assign expected_npc_o = (trap_v_i)? npc_n : npc_r;
 // Increment the checkpoint if there's a committing instruction
 assign chk_dequeue_fe_o = ~calc_status.mem3_miss_v & calc_status.instr_cmt_v;
 // Flush the FE queue if there's a pc redirect
@@ -288,7 +288,7 @@ always_comb
         fe_cmd_v = fe_cmd_ready_i;
       end
     // Redirect the pc if there's an NPC mismatch
-    else if(calc_status.ex1_instr_v & npc_mismatch_v) 
+    else if((calc_status.ex1_instr_v & npc_mismatch_v) | trap_v_i) 
       begin : pc_redirect
         fe_cmd.opcode                                   = e_op_pc_redirection;
         fe_cmd_pc_redirect_operands.pc                  = expected_npc_o;
@@ -301,7 +301,7 @@ always_comb
 
         fe_cmd.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
 
-        fe_cmd_v = fe_cmd_ready_i & ~chk_roll_fe_o & ~redirect_pending;
+        fe_cmd_v = fe_cmd_ready_i & ~chk_roll_fe_o & (~redirect_pending | trap_v_i);
       end 
     // Send an attaboy if there's a correct prediction
     else if(calc_status.ex1_instr_v & ~npc_mismatch_v & attaboy_pending) 

@@ -126,9 +126,9 @@ module bp_be_ptw
   assign ppn_n                  = (state_r == eIdle)? base_ppn_i : dcache_data.ppn[0+:ppn_width_lp];
   assign vpn_n                  = tlb_miss_vtag_i;
   
-  assign instr_page_fault_o       = busy_o & dcache_v_i & ((level_cntr == '0 & ~dcache_data.v) | (pte_is_leaf & itlb_not_dtlb_o & ~dcache_data.x));
-  assign load_page_fault_o        = busy_o & dcache_v_i & ((level_cntr == '0 & ~dcache_data.v) | (pte_is_leaf & ~store_not_load_r & ~dcache_data.r));
-  assign store_page_fault_o       = busy_o & dcache_v_i & ((level_cntr == '0 & ~dcache_data.v) | (pte_is_leaf & store_not_load_r & ~dcache_data.w));
+  assign instr_page_fault_o     = busy_o & dcache_v_i & itlb_not_dtlb_o & ((level_cntr == '0 & ~dcache_data.v) | (pte_is_leaf & ~dcache_data.x));
+  assign load_page_fault_o      = busy_o & dcache_v_i & ~itlb_not_dtlb_o & ~store_not_load_r & ((level_cntr == '0 & ~dcache_data.v) | (pte_is_leaf & ~dcache_data.r));
+  assign store_page_fault_o     = busy_o & dcache_v_i & ~itlb_not_dtlb_o & store_not_load_r & ((level_cntr == '0 & ~dcache_data.v) | (pte_is_leaf & ~dcache_data.w));
   assign page_fault_v           = instr_page_fault_o | load_page_fault_o | store_page_fault_o;
   
   always_comb begin

@@ -25,7 +25,6 @@ module bp_be_dtlb
   , input [vtag_width_p-1:0]          w_vtag_i
   , input [entry_width_lp-1:0]        w_entry_i
   
-  , input                             miss_clear_i
   , output logic                      miss_v_o
   , output logic [vtag_width_p-1:0]   miss_vtag_o
  );
@@ -46,7 +45,7 @@ assign ram_addr                   = (w_v_i)? cam_w_addr : cam_r_addr;
 
 assign r_entry                    = (en_r)? ram_r_data : '0;
 assign r_v_n                      = (en_i)? (r_v_i & cam_r_v) : r_v_i;
-assign miss_v_n                   = (en_i)? ~cam_r_v : 1'b0;
+assign miss_v_n                   = (en_i)? (r_v_i & ~cam_r_v) : 1'b0;
 
 bsg_dff_reset #(.width_p(1))
   en_reg
@@ -64,20 +63,18 @@ bsg_dff_reset #(.width_p(1))
    ,.data_o(r_v_o)
   );
 
-bsg_dff_reset_en #(.width_p(1))
+bsg_dff_reset #(.width_p(1))
   miss_v_reg
   (.clk_i(clk_i)
-   ,.reset_i(reset_i | miss_clear_i | w_v_i)
-   ,.en_i(r_v_i)
+   ,.reset_i(reset_i)
    ,.data_i(miss_v_n)
    ,.data_o(miss_v_o)
   );
 
-bsg_dff_reset_en #(.width_p(vtag_width_p))
+bsg_dff_reset #(.width_p(vtag_width_p))
   miss_vtag_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(r_v_i)
    ,.data_i(r_vtag_i)
    ,.data_o(miss_vtag_o)
   );

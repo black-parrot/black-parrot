@@ -82,7 +82,7 @@ module bp_be_calculator_top
    , localparam exception_width_lp      = `bp_be_exception_width
    , localparam mmu_cmd_width_lp        = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam csr_cmd_width_lp        = `bp_be_csr_cmd_width
-   , localparam mem_resp_width_lp       = `bp_be_mem_resp_width
+   , localparam mem_resp_width_lp       = `bp_be_mem_resp_width(vaddr_width_p)
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam pipe_stage_reg_width_lp = `bp_be_pipe_stage_reg_width(vaddr_width_p)
    , localparam fu_op_width_lp          = `bp_be_fu_op_width
@@ -143,6 +143,7 @@ module bp_be_calculator_top
   // CSRs
   , output                               instret_o
   , output [vaddr_width_p-1:0]           exception_pc_o
+  , output [vaddr_width_p-1:0]           exception_vaddr_o
   , output [instr_width_lp-1:0]          exception_instr_o
   , output                               exception_ecode_v_o
   , output [ecode_dec_width_lp-1:0]      exception_ecode_dec_o
@@ -196,6 +197,7 @@ logic [reg_data_width_lp-1:0] bypass_rs1 , bypass_rs2;
 logic illegal_instr_isd, csr_instr_isd;
 logic load_misaligned_mem1, store_misaligned_mem3;
 bp_be_mem_exception_s mem_exception_mem3;
+logic [vaddr_width_p-1:0] mem_vaddr_mem3;
 
 // Pipeline stage registers
 bp_be_pipe_stage_reg_s [pipe_stage_els_lp-1:0] calc_stage_r;
@@ -225,21 +227,27 @@ bp_be_decode_s fe_nop, be_nop, me_nop, illegal_nop, fe_exc_nop;
 logic fe_nop_v, be_nop_v, me_nop_v, illegal_nop_v, fe_exc_nop_v;
 
 // MMU signals
-logic           mmu_itlb_fill_cmd_v;
-bp_be_mmu_cmd_s mmu_itlb_fill_cmd;
+logic           mmu_tlb_fill_cmd_v;
+bp_be_mmu_cmd_s mmu_tlb_fill_cmd;
 
 // Handshakes
 assign issue_pkt_ready_o = (chk_dispatch_v_i | ~issue_pkt_v_r);
 
 // MMU IO Muliplexing
-assign mmu_cmd_o = (mmu_itlb_fill_cmd_v)? mmu_itlb_fill_cmd : mmu_cmd;
-assign mmu_cmd_v_o = mmu_cmd_v | mmu_itlb_fill_cmd_v;
+assign mmu_cmd_o = (mmu_tlb_fill_cmd_v)? mmu_tlb_fill_cmd : mmu_cmd;
+assign mmu_cmd_v_o = mmu_cmd_v | mmu_tlb_fill_cmd_v;
 
-assign mmu_itlb_fill_cmd_v = ~exc_stage_r[2].poison_v & exc_stage_r[2].itlb_fill_v;
+assign mmu_tlb_fill_cmd_v = ~exc_stage_r[2].poison_v & (exc_stage_r[2].itlb_fill_v | mem_exception_mem3.dtlb_miss);
 
-assign mmu_itlb_fill_cmd.mem_op = e_ptw;
-assign mmu_itlb_fill_cmd.vaddr = calc_status.mem3_pc[0+:vaddr_width_p];
-assign mmu_itlb_fill_cmd.data = '0;
+assign mmu_tlb_fill_cmd.mem_op = exc_stage_r[2].itlb_fill_v 
+                                  ? e_ptw_i
+                                  : calc_stage_r[2].irf_w_v
+                                    ? e_ptw_l
+                                    : e_ptw_s;
+assign mmu_tlb_fill_cmd.vaddr = exc_stage_r[2].itlb_fill_v
+                                 ? calc_status.mem3_pc[0+:vaddr_width_p]
+                                 : mem_vaddr_mem3;
+assign mmu_tlb_fill_cmd.data = calc_status.mem3_pc[0+:vaddr_width_p];
 
 // Module instantiations
 // Register files
@@ -442,6 +450,7 @@ bp_be_pipe_mem
    ,.v_o(pipe_mem_v_lo)
    ,.data_o(pipe_mem_data_lo)
    ,.mem_exception_o(mem_exception_mem3)
+   ,.mem3_vaddr_o(mem_vaddr_mem3)
    );
 
 // Floating point pipe: 4 cycle latency
@@ -584,7 +593,7 @@ always_comb
                                            | dispatch_pkt_r.decode.jmp_v;
     calc_status.ex1_v                    = dispatch_pkt_v_r;
     calc_status.ex1_pc                   = dispatch_pkt_r.instr_metadata.pc;
-    calc_status.ex1_instr_v                  = dispatch_pkt_r.decode.instr_v;
+    calc_status.ex1_instr_v              = dispatch_pkt_r.decode.instr_v & ~exc_stage_r[0].poison_v;
     
     // Dependency information for pipelines
     for (integer i = 0; i < pipe_stage_els_lp; i++) 
@@ -674,7 +683,8 @@ always_comb
   end
 
 assign instret_o = calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v;
-assign exception_pc_o = calc_stage_r[2].instr_metadata.pc;
+assign exception_pc_o = exc_stage_n[3].illegal_instr_v ? calc_stage_r[2].instr_metadata.pc : mem_resp.data;
+assign exception_vaddr_o = mem_vaddr_mem3;
 assign exception_instr_o = calc_stage_r[2].instr;
 assign exception_ecode_v_o = |exception_ecode_dec_o & ~exc_stage_r[2].poison_v;
 assign exception_ecode_dec_o = 

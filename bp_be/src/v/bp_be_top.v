@@ -147,6 +147,7 @@ logic chk_trap_v_li, chk_ret_v_li;
 
 logic                          instret;
 logic [vaddr_width_p-1:0]      exception_pc;
+logic [vaddr_width_p-1:0]      exception_vaddr;
 logic [instr_width_p-1:0]      exception_instr;
 logic [ecode_dec_width_lp-1:0] exception_ecode_dec;
 logic                          exception_ecode_v;
@@ -237,6 +238,7 @@ bp_be_calculator_top
 
    ,.instret_o(instret)
    ,.exception_pc_o(exception_pc)
+   ,.exception_vaddr_o(exception_vaddr)
    ,.exception_instr_o(exception_instr)
    ,.exception_ecode_v_o(exception_ecode_v)
    ,.exception_ecode_dec_o(exception_ecode_dec)
@@ -301,6 +303,7 @@ bp_be_mem_top
     ,.instret_i(instret)
 
     ,.exception_pc_i(exception_pc)
+    ,.exception_vaddr_i(exception_vaddr)
     ,.exception_instr_i(exception_instr)
     ,.exception_ecode_v_i(exception_ecode_v)
     ,.exception_ecode_dec_i(exception_ecode_dec)

@@ -23,28 +23,30 @@ typedef enum bit [3:0]
   ,e_int_op_pass_src2 = 4'b1111
 } bp_be_int_fu_op_e;
 
-typedef enum bit [3:0]
+typedef enum bit [4:0]
 {
-  e_lb   = 4'b0000
-  ,e_lh  = 4'b0001
-  ,e_lw  = 4'b0010
-  ,e_lbu = 4'b0100
-  ,e_lhu = 4'b0101
-  ,e_lwu = 4'b0110
-  ,e_ld  = 4'b0011
+  e_lb     = 5'b00000
+  ,e_lh    = 5'b00001
+  ,e_lw    = 5'b00010
+  ,e_ld    = 5'b00011
+  ,e_lbu   = 5'b00100
+  ,e_lhu   = 5'b00101
+  ,e_lwu   = 5'b00110
 
-  ,e_sb  = 4'b1000
-  ,e_sh  = 4'b1001
-  ,e_sw  = 4'b1010
-  ,e_sd  = 4'b1011
+  ,e_sb    = 5'b00111
+  ,e_sh    = 5'b01000
+  ,e_sw    = 5'b01001
+  ,e_sd    = 5'b01010
 
-  ,e_lrw = 4'b0111
-  ,e_scw = 4'b1100
+  ,e_lrw   = 5'b01011
+  ,e_scw   = 5'b01100
 
-  ,e_lrd = 4'b1101
-  ,e_scd = 4'b1110
- 
-  ,e_ptw = 4'b1111
+  ,e_lrd   = 5'b01101
+  ,e_scd   = 5'b01110
+   
+  ,e_ptw_i = 5'b01111
+  ,e_ptw_l = 5'b10000
+  ,e_ptw_s = 5'b10001
 } bp_be_mmu_fu_op_e;
 
 typedef enum bit [3:0]
