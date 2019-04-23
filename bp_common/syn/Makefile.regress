@@ -56,7 +56,7 @@ RV64_BENCHMARKS := \
                    towers   \
                    vvadd
 
-RV64_ISA_TEST_ROMS   := $(addsuffix _rom, $(RV64_ISA_TESTS))
-RV64_BENCHMARK_ROMS  := $(addsuffix _rom, $(RV64_BENCHMARKS))
-RV64_REGRESSION_ROMS := $(RV64_ISA_TEST_ROMS) $(RV64_BENCHMARK_ROMS) 
+RV64_REGRESSION   := $(RV64_ISA_TESTS) $(RV64_BENCHMARKS) 
+RV64_REGRESSION_V  = $(addsuffix .v, $(RV64_REGRESSION))
+RV64_REGRESSION_SC = $(addsuffix .sc, $(RV64_REGRESSION))
 

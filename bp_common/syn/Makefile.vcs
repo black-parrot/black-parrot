@@ -3,22 +3,24 @@ VCS_OPTIONS  = +vcs+finish+5000000ps     # Change this to run longer / shorter
 VCS_OPTIONS += +vcs+lic+wait             # Wait for license
 VCS_OPTIONS += +libext+.v+.vlib+.vh      # Find library files with these extensions
 VCS_OPTIONS += +vcs+vcdpluson            # Enable vcd dump
-#VCS_OPTIONS += +vcs+loopreport +lint=TFIPC-L # Enable combinational loop detection
+# This throws a warning, but is necessary to load the dramsim library
+VCS_OPTIONS    += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
 
-VCS_BUILD_OPTS += -full64 						# Compile a 64-bit executable
+VCS_BUILD_OPTS += -full64             # Compile a 64-bit executable
 VCS_BUILD_OPTS += -sverilog -debug_pp # Enable SystemVerilog
 VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
+VCS_BUILD_OPTS += -CFLAGS "-I$(BP_EXTERNAL_DIR)/include -std=c++11"
 
 LINT_OPTIONS = +lint=all,noSVA-UA,noVCDE,noSVA-NSVU
 
 VCS_RUN_DIR ?= $(SYN_PATH)/run_vcs
 
-ROM_NAME ?= bp_example_rom
+PROG     ?= rv64ui_p_example
 COVERAGE ?= 0
 DUMP     ?= 0
 
 ifeq ($(COVERAGE), 1)
-  VCS_OPTIONS += -cm_dir coverage/$(ROM_NAME)
+  VCS_OPTIONS += -cm_dir coverage/$(PROG)
   VCS_OPTIONS += -cm line+tgl
   VCS_OPTIONS += -cm_line contassign
   VCS_OPTIONS += -cm_noconst
@@ -41,6 +43,10 @@ deps.v:
 	$(shell mkdir -p $(LOG_DIR)/regress)
 	$(shell mkdir -p $(REPORT_DIR))
 	$(shell mkdir -p $(VCS_RUN_DIR))
+	@cp $(MEM_PATH)/$(PROG).mem $(VCS_RUN_DIR)/prog.mem || true
+	# TODO: Should set the dram parameters through the makefile flow
+	@cp $(BP_EXTERNAL_DIR)/DRAMSim2/ini/DDR2_micron_16M_8b_x8_sg3E.ini $(VCS_RUN_DIR) || true
+	@cp $(BP_EXTERNAL_DIR)/DRAMSim2/system.ini.example $(VCS_RUN_DIR)/system.ini || true
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/testbench.v > $(VCS_RUN_DIR)/testbench.v || true
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v > $(VCS_RUN_DIR)/wrapper.v || true
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $(VCS_RUN_DIR)/flist.vcs || true
@@ -56,7 +62,7 @@ lint.v: deps.v
 		$(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.v \
 	| tee $(LOG_DIR)/$(LINT_LOG)
 
-build.v: BUILD_LOG ?= $(TB)_$(ROM_NAME)_build.log
+build.v: BUILD_LOG ?= $(TB)_build.log
 build.v: deps.v
 	cd $(VCS_RUN_DIR); \
 	$(VCS) $(VCS_OPTIONS) $(VCS_BUILD_OPTS) \
@@ -64,8 +70,8 @@ build.v: deps.v
 		$(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.v -o simv \
 	| tee $(LOG_DIR)/$(BUILD_LOG)
 
-run.v: SIM_LOG ?= $(TB)_$(ROM_NAME)_sim.log
-run.v: deps.v build.v
+run.v: SIM_LOG ?= $(TB)_$(PROG)_sim.log
+run.v: deps.v 
 	cd $(VCS_RUN_DIR); \
 	$(VCS_RUN_DIR)/simv $(VCS_OPTIONS) \
 	| tee $(LOG_DIR)/$(SIM_LOG)
@@ -77,11 +83,10 @@ cov.v: deps.v regress.v
 	&& cp $(REPORT_DIR)/coverage/tests.txt $(REPORT_DIR)/$(TB)_cov_tests.rpt \
 	&& cp $(REPORT_DIR)/coverage/hierarchy.txt $(REPORT_DIR)/$(TB)_cov_hier.rpt
 
-RV64_REGRESSION_TGTS := $(addsuffix .v, $(RV64_REGRESSION_ROMS))
-regress.v: deps.v $(RV64_REGRESSION_TGTS) 
-$(RV64_REGRESSION_TGTS): 
-	$(MAKE) run.v ROM_NAME=$(basename $@) \
-		BUILD_LOG=regress/$(TB)_$(basename $@)_build.log \
+regress.v: build.v $(RV64_REGRESSION_V)
+$(RV64_REGRESSION_V):
+	@cp $(MEM_PATH)/$(PROG).mem $(VCS_RUN_DIR)/prog.mem
+	$(MAKE) run.v PROG=$(basename $@) \
 		SIM_LOG=regress/$(TB)_$(basename $@)_sim.log || true
 	@echo $(basename $@) >> $(REPORT_DIR)/regress_stats.rpt
 	@grep "PASS" $(LOG_DIR)/regress/$(TB)_$(basename $@)_sim.log \

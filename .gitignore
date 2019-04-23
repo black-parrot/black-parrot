@@ -9,4 +9,7 @@ run_dc
 */syn/coverage
 *.bin
 *.hex
+*.mem
+*.riscv
 *.s
+*.tr.v
