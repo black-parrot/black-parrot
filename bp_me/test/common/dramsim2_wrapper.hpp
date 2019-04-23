@@ -9,6 +9,7 @@
 #include <string>
 #include <cstdlib>
 #include <map>
+#include <queue>
 
 #include "DRAMSim.h"
 
@@ -18,8 +19,11 @@ class bp_dram
     std::map<uint64_t, uint8_t> mem;
 
     uint64_t result_size;
-    svBitVecVal *result_data;
-    bool result_pending;
+
+    std::map<string, svBitVecVal *> result_data;
+    std::map<string, bool> result_pending;
+
+    std::map<uint64_t, std::queue<string>> addr_tracker;
 
   public:
     void read_hex(char *);

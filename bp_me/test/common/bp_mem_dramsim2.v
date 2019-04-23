@@ -210,7 +210,7 @@ import "DPI-C" function void init(input longint clock_period
                                   , input longint dram_capacity
                                   , input longint dram_req_width
                                   );
-import "DPI-C" function bit tick();
+import "DPI-C" context function bit tick();
 
 import "DPI-C" context function void mem_read_req(input longint addr);
 import "DPI-C" context function void mem_write_req(input longint addr
