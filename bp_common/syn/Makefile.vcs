@@ -62,7 +62,7 @@ lint.v: deps.v
 		$(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.v \
 	| tee $(LOG_DIR)/$(LINT_LOG)
 
-build.v: BUILD_LOG ?= $(TB)_$(PROG)_build.log
+build.v: BUILD_LOG ?= $(TB)_build.log
 build.v: deps.v
 	cd $(VCS_RUN_DIR); \
 	$(VCS) $(VCS_OPTIONS) $(VCS_BUILD_OPTS) \
@@ -83,12 +83,10 @@ cov.v: deps.v regress.v
 	&& cp $(REPORT_DIR)/coverage/tests.txt $(REPORT_DIR)/$(TB)_cov_tests.rpt \
 	&& cp $(REPORT_DIR)/coverage/hierarchy.txt $(REPORT_DIR)/$(TB)_cov_hier.rpt
 
-regress.v: build.v $(RV64_REGRESSION)
-$(RV64_REGRESSION):
-	@echo "TEST"
+regress.v: build.v $(RV64_REGRESSION_V)
+$(RV64_REGRESSION_V):
 	@cp $(MEM_PATH)/$(PROG).mem $(VCS_RUN_DIR)/prog.mem
 	$(MAKE) run.v PROG=$(basename $@) \
-		BUILD_LOG=regress/$(TB)_$(basename $@)_build.log \
 		SIM_LOG=regress/$(TB)_$(basename $@)_sim.log || true
 	@echo $(basename $@) >> $(REPORT_DIR)/regress_stats.rpt
 	@grep "PASS" $(LOG_DIR)/regress/$(TB)_$(basename $@)_sim.log \

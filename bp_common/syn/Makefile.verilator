@@ -66,7 +66,7 @@ lint.sc: deps.sc
 		$(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.cpp \
 	| tee $(LOG_DIR)/$(LINT_LOG)
 
-verilate.sc: VBUILD_LOG ?= $(TB)_$(PROG)_vbuild.log
+verilate.sc: VBUILD_LOG ?= $(TB)_vbuild.log
 verilate.sc: deps.sc
 	cd $(VERILATOR_RUN_DIR); \
 	rm -rf obj_dir; \
@@ -75,7 +75,7 @@ verilate.sc: deps.sc
 		$(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.cpp \
 		| tee $(LOG_DIR)/$(VBUILD_LOG)
 
-build.sc: CBUILD_LOG ?= $(TB)_$(PROG)_cbuild.log
+build.sc: CBUILD_LOG ?= $(TB)_cbuild.log
 build.sc: deps.sc verilate.sc
 	cd $(VERILATOR_RUN_DIR); \
 	$(MAKE) -C obj_dir -f V$(TOP_MODULE).mk \
@@ -94,12 +94,10 @@ cov.sc: deps.sc regress.sc
 		--write $(REPORT_DIR)/coverage/total_coverage.dat --rank \
 	| tee $(REPORT_DIR)/$(TB)_cov.rpt
 
-regress.sc: build.sc $(RV64_REGRESSION)
-$(RV64_REGRESSION): 
+regress.sc: build.sc $(RV64_REGRESSION_SC)
+$(RV64_REGRESSION_SC): 
 	@cp $(MEM_PATH)/$(PROG).mem $(VERILATOR_RUN_DIR)/prog.mem
 	$(MAKE) run.sc PROG=$(basename $@) \
-		CBUILD_LOG=regress/$(TB)_$(basename $@)_cbuild.log \
-		VBUILD_LOG=regress/$(TB)_$(basename $@)_vbuild.log \
 		SIM_LOG=regress/$(TB)_$(basename $@)_sim.log || true
 		@echo $(basename $@) >> $(REPORT_DIR)/regress_stats.rpt
 		@grep "PASS" $(LOG_DIR)/regress/$(TB)_$(basename $@)_sim.log \
