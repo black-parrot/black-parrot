@@ -53,7 +53,9 @@ _emu:
     # Save a pointer to the registers
     addi a0, sp, 8
     # Read the faulting instruction
-    csrr a1, mtval
+    csrr a1, mcause
+    # Read the trap value
+    csrr a2, mtval
     jal decode_illegal
 
     # Return address is the instruction after MEPC
@@ -65,7 +67,7 @@ _emu:
     addi sp, sp, 256
     ld x0, -248(sp)
     ld x1, -240(sp)
-    ld x2, -232(sp)
+    //ld x2, -232(sp)
     ld x3, -224(sp)
     ld x4, -216(sp)
     ld x5, -208(sp)
