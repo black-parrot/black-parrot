@@ -55,7 +55,7 @@ _emu:
     # Read the faulting instruction
     csrr a1, mcause
     # Read the trap value
-    csrr a2, mtval
+    csrr a2, mbadaddr
     jal decode_illegal
 
     # Return address is the instruction after MEPC

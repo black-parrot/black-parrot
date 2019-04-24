@@ -111,24 +111,3 @@ Disassembly of section .tohost:
 
 0000000080001040 <fromhost>:
 	...
-
-Disassembly of section .riscv.attributes:
-
-0000000000000000 <.riscv.attributes>:
-   0:	2d41                	c.addiw	x26,16
-   2:	0000                	c.unimp
-   4:	7200                	c.ld	x8,32(x12)
-   6:	7369                	c.lui	x6,0xffffa
-   8:	01007663          	bgeu	x0,x16,14 <_start-0x7fffffec>
-   c:	00000023          	sb	x0,0(x0) # 0 <_start-0x80000000>
-  10:	7205                	c.lui	x4,0xfffe1
-  12:	3676                	c.fldsp	f12,376(x2)
-  14:	6934                	c.ld	x13,80(x10)
-  16:	7032                	0x7032
-  18:	5f30                	c.lw	x12,120(x14)
-  1a:	326d                	c.addiw	x4,-5
-  1c:	3070                	c.fld	f12,224(x8)
-  1e:	615f 7032 5f30      	0x5f307032615f
-  24:	3266                	c.fldsp	f4,120(x2)
-  26:	3070                	c.fld	f12,224(x8)
-  28:	645f 7032 0030      	0x307032645f
