@@ -194,6 +194,9 @@ end
                                      ,mhartid_i
                                      ,dbg_stage_r[2].rs2[15:0]
                                      );
+                            // TODO: This should be part of the MMIO module
+                            $display("PASS\n");
+                            $finish();
                         end else if(dbg_stage_r[2].rs2[31:16]==16'hFFFF) begin
                             $fwrite(file, "[CORE%0x FAL] TEST_NUM=%x\n"
                                      ,mhartid_i

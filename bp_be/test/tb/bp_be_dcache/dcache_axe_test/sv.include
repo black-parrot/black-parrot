@@ -61,6 +61,7 @@ $BP_ME_DIR/src/v/cce/bp_cce_dir.v
 $BP_ME_DIR/src/v/cce/bp_cce_gad.v
 $BP_ME_DIR/src/v/cce/bp_cce_reg.v
 $BP_ME_DIR/src/v/cce/bp_cce.v
+$BP_ME_DIR/test/common/bp_cce_nonsynth_tracer.v
 $BP_ME_DIR/test/common/bp_mem.v
 $BP_ME_DIR/src/v/bp_me_top.v
 ../v/bp_rolly_lce_me.v

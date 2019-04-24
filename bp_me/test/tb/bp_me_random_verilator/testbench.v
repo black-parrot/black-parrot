@@ -40,7 +40,6 @@ module bp_me_random_demo_top
   localparam lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_lp);
   localparam cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, ways_p);
   localparam lce_data_cmd_width_lp=`bp_lce_data_cmd_width(num_lce_p, lce_data_width_lp, ways_p);
-  localparam lce_lce_tr_resp_width_lp=`bp_lce_lce_tr_resp_width(num_lce_p, paddr_width_p, lce_data_width_lp, ways_p);
 
   localparam ring_width_p = data_width_p+paddr_width_p+4;
   localparam rom_addr_width_p = 20;

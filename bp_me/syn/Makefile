@@ -35,8 +35,9 @@ include $(BP_COMMON_DIR)/syn/Makefile.vcs
 
 regress: regress.me
 regress.me: check_design.syn
-	$(MAKE) lint.v || true
-	$(MAKE) lint.sc || true
+	# TODO: The linter currently depends on the broken me_trace_tb
+	#$(MAKE) lint.v || true
+	#$(MAKE) lint.sc || true
 	$(MAKE) run.sc TB=bp_cce_alu
 	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_alu_bp_example_rom_sim.log \
 	&& echo "bp_cce_alu: OK" >> $(LOG_PATH)/me_regress.log \
@@ -49,10 +50,6 @@ regress.me: check_design.syn
 	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_gad_bp_example_rom_sim.log \
 	&& echo "bp_cce_gad: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_cce_gad: FAIL" >> $(LOG_PATH)/me_regress.log
-	$(MAKE) run.sc TB=bp_me_top_test
-	@grep "PASSED" $(LOG_PATH)/verilator/bp_me_top_test_bp_example_rom_sim.log \
-	&& echo "bp_me_top_test: OK" >> $(LOG_PATH)/me_regress.log \
-	|| echo "bp_me_top_test: FAIL" >> $(LOG_PATH)/me_regress.log
 	$(MAKE) run.sc TB=bp_cce_test
 	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_test_bp_example_rom_sim.log \
 	&& echo "bp_cce_test: OK" >> $(LOG_PATH)/me_regress.log \
@@ -66,6 +63,37 @@ regress.me: check_design.syn
 	@grep "DONE" $(LOG_PATH)/vcs/bp_me_random_stress_test.log \
 	&& echo "bp_me_random_demo: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_me_random_demo: FAIL" >> $(LOG_PATH)/me_regress.log
+	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_mock_lce \
+	| tee -i $(LOG_PATH)/vcs/bp_me_mock_lce.log
+	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_mock_lce.log \
+	| tee -i $(REPORT_PATH)/vcs/bp_me_mock_lce.rpt
+	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_mock_lce.log \
+	|| echo "FAILED" >> $(REPORT_DIR)/bp_me_mock_lce.err
+	@grep "DONE" $(LOG_PATH)/vcs/bp_me_mock_lce.log \
+	&& echo "bp_me_mock_lce: OK" >> $(LOG_PATH)/me_regress.log \
+	|| echo "bp_me_mock_lce: FAIL" >> $(LOG_PATH)/me_regress.log
+	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_multi_mock_lce NUM_LCE_P=8 \
+	| tee -i $(LOG_PATH)/vcs/bp_me_multi_mock_lce.log
+	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_multi_mock_lce.log \
+	| tee -i $(REPORT_PATH)/vcs/bp_me_multi_mock_lce.rpt
+	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_multi_mock_lce.log \
+	|| echo "FAILED" >> $(REPORT_DIR)/bp_me_multi_mock_lce.err
+	@grep "DONE" $(LOG_PATH)/vcs/bp_me_multi_mock_lce.log \
+	&& echo "bp_me_multi_mock_lce: OK" >> $(LOG_PATH)/me_regress.log \
+	|| echo "bp_me_multi_mock_lce: FAIL" >> $(LOG_PATH)/me_regress.log
+	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_multi_mock_lce axe \
+	| tee -i $(LOG_PATH)/vcs/bp_me_multi_mock_lce_axe.log
+	@grep "OK" $(LOG_PATH)/vcs/bp_me_multi_mock_lce_axe.log \
+	&& echo "bp_me_multi_mock_lce_axe: OK" >> $(LOG_PATH)/me_regress.log \
+	|| echo "bp_me_multi_mock_lce_axe: FAIL" >> $(LOG_PATH)/me_regress.log
+
+
+clean: clean.me
+clean.me:
+	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_random_demo clean
+	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_mock_lce clean
+	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_multi_mock_lce clean
 
 verilator-demo:
 	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_random_verilator
+

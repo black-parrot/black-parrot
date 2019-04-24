@@ -46,12 +46,14 @@ sync_top: bge r0 r1 ack_top
 pushq lceCmd SYNC r0
 inc r0
 bi sync_top
-ack_top: bz r0 reset_done
+ack_top: bz r0 ready
+# ack_top: bz r0 reset_done
 wfq lceResp
 popq lceResp
 dec r0
 bi ack_top
-reset_done: bi ready
+
+# reset_done: bi ready
 
 # Ready Routine
 ready: wfq lceReq
@@ -65,15 +67,16 @@ rdp req
 bf pf error
 rdw req
 gad
-bi next_coh_state
+# fall through
+#bi next_coh_state
 
 # Next Coherence State Routine
 # write request means set to M, else check non-exclusive request
 next_coh_state: bf rqf next_coh_set_m
 # check non-exclusive request (read-only) set to S, else check if block cached
 bf nerf next_coh_set_s
-# check if block cached by other reader
-bf if next_coh_set_s
+# block cached somewhere
+bf cf next_coh_set_s
 # invalidations not required, thus block not cache, set to E
 next_coh_set_e: movi E nextCohSt
 bi inv_check

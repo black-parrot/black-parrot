@@ -39,5 +39,4 @@ $BP_BE_DIR/test/tb/bp_be_dcache/v/bsg_trace_node_master.v
 
 $BP_ME_DIR/test/rom/v/bp_example_rom.v
 $BP_ME_TB_COMMON_PATH/bp_mem.v
-$BP_ME_TB_COMMON_PATH/bp_me_top_test.v
 testbench.v

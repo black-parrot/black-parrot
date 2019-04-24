@@ -95,11 +95,11 @@ typedef struct __attribute__((__packed__)) {
   uint8_t nc_req_size_w_v : 1;
 
   // dequeue signals
-  uint8_t lce_req_ready : 1;
-  uint8_t lce_resp_ready : 1;
-  uint8_t lce_data_resp_ready : 1;
-  uint8_t mem_resp_ready : 1;
-  uint8_t mem_data_resp_ready : 1;
+  uint8_t lce_req_yumi : 1;
+  uint8_t lce_resp_yumi : 1;
+  uint8_t lce_data_resp_yumi : 1;
+  uint8_t mem_resp_yumi : 1;
+  uint8_t mem_data_resp_yumi : 1;
   // enqueue signals
   uint8_t lce_cmd_v : 1;
   uint8_t lce_data_cmd_v : 1;
