@@ -35,8 +35,9 @@ include $(BP_COMMON_DIR)/syn/Makefile.vcs
 
 regress: regress.me
 regress.me: check_design.syn
-	$(MAKE) lint.v || true
-	$(MAKE) lint.sc || true
+	# TODO: The linter currently depends on the broken me_trace_tb
+	#$(MAKE) lint.v || true
+	#$(MAKE) lint.sc || true
 	$(MAKE) run.sc TB=bp_cce_alu
 	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_alu_bp_example_rom_sim.log \
 	&& echo "bp_cce_alu: OK" >> $(LOG_PATH)/me_regress.log \

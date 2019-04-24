@@ -12,11 +12,12 @@ VV_OPTS += -O1
 #OPT_FAST += -O1 -fstrict-aliasing # Fastest compile time options
 
 LINT_OPTS  := --lint-only
-BUILD_OPTS := --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --exe
+BUILD_OPTS := --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --exe -CFLAGS -std=c++11 -I$(BP_EXTERNAL_DIR)/share/verilator/include/vltstd/ -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
+#BUILD_OPTS := --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --exe -CFLAGS -std=c++11 -I$(BP_EXTERNAL_DIR)/share/verilator/include/vltstd/ -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
 
 TOP_MODULE ?= testbench
 
-ROM_NAME ?= bp_example_rom
+PROG     ?= rv64ui-p-simple
 COVERAGE ?= 0
 DUMP     ?= 0
 
@@ -29,7 +30,7 @@ endif
 ifeq ($(COVERAGE), 1)
   VV_OPTS += --coverage-line
   VV_OPTS += --coverage-toggle
-  COVERAGE_DAT ?= $(ROM_NAME)_coverage.dat
+  COVERAGE_DAT ?= $(PROG)_coverage.dat
 endif
 
 .PHONY: deps.sc lint.sc build.sc run.sc clean.sc
@@ -43,6 +44,10 @@ deps.sc:
 	$(shell mkdir -p $(REPORT_DIR))
 	$(shell mkdir -p $(LOG_DIR)/regress)
 	$(shell mkdir -p $(VERILATOR_RUN_DIR))
+	@cp $(MEM_PATH)/$(PROG).mem $(VERILATOR_RUN_DIR)/prog.mem || true
+	# TODO: Should set the dram parameters through the makefile flow
+	@cp $(BP_EXTERNAL_DIR)/DRAMSim2/ini/DDR2_micron_16M_8b_x8_sg3E.ini $(VERILATOR_RUN_DIR) || true
+	@cp $(BP_EXTERNAL_DIR)/DRAMSim2/system.ini.example $(VERILATOR_RUN_DIR)/system.ini || true
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/testbench.v > $(VERILATOR_RUN_DIR)/testbench.v || true
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v > $(VERILATOR_RUN_DIR)/wrapper.v || true
 	@touch $(VERILATOR_RUN_DIR)/flist.verilator
@@ -61,7 +66,7 @@ lint.sc: deps.sc
 		$(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.cpp \
 	| tee $(LOG_DIR)/$(LINT_LOG)
 
-verilate.sc: VBUILD_LOG ?= $(TB)_$(ROM_NAME)_vbuild.log
+verilate.sc: VBUILD_LOG ?= $(TB)_vbuild.log
 verilate.sc: deps.sc
 	cd $(VERILATOR_RUN_DIR); \
 	rm -rf obj_dir; \
@@ -70,14 +75,14 @@ verilate.sc: deps.sc
 		$(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.cpp \
 		| tee $(LOG_DIR)/$(VBUILD_LOG)
 
-build.sc: CBUILD_LOG ?= $(TB)_$(ROM_NAME)_cbuild.log
+build.sc: CBUILD_LOG ?= $(TB)_cbuild.log
 build.sc: deps.sc verilate.sc
 	cd $(VERILATOR_RUN_DIR); \
 	$(MAKE) -C obj_dir -f V$(TOP_MODULE).mk \
 	| tee $(LOG_DIR)/$(CBUILD_LOG)
 
-run.sc: SIM_LOG ?= $(TB)_$(ROM_NAME)_sim.log
-run.sc: deps.sc build.sc
+run.sc: SIM_LOG ?= $(TB)_$(PROG)_sim.log
+run.sc: deps.sc 
 	cd $(VERILATOR_RUN_DIR); \
 	$(VERILATOR_RUN_DIR)/obj_dir/V$(TOP_MODULE) $(COVERAGE_DAT) \
 	| tee $(LOG_DIR)/$(SIM_LOG)
@@ -89,12 +94,10 @@ cov.sc: deps.sc regress.sc
 		--write $(REPORT_DIR)/coverage/total_coverage.dat --rank \
 	| tee $(REPORT_DIR)/$(TB)_cov.rpt
 
-RV64_REGRESSION_TGTS := $(addsuffix .sc, $(RV64_REGRESSION_ROMS))
-regress.sc: deps.sc $(RV64_REGRESSION_TGTS)
-$(RV64_REGRESSION_TGTS):
-	$(MAKE) run.sc ROM_NAME=$(basename $@) \
-		CBUILD_LOG=regress/$(TB)_$(basename $@)_cbuild.log \
-		VBUILD_LOG=regress/$(TB)_$(basename $@)_vbuild.log \
+regress.sc: build.sc $(RV64_REGRESSION_SC)
+$(RV64_REGRESSION_SC): 
+	@cp $(MEM_PATH)/$(PROG).mem $(VERILATOR_RUN_DIR)/prog.mem
+	$(MAKE) run.sc PROG=$(basename $@) \
 		SIM_LOG=regress/$(TB)_$(basename $@)_sim.log || true
 		@echo $(basename $@) >> $(REPORT_DIR)/regress_stats.rpt
 		@grep "PASS" $(LOG_DIR)/regress/$(TB)_$(basename $@)_sim.log \
