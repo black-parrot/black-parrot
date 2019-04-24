@@ -4,7 +4,7 @@ TOP ?= $(shell git rev-parse --show-toplevel)
 include $(TOP)/Makefile.common
 include $(BP_EXTERNAL_DIR)/Makefile.tools
 
-.PHONY: update_submodules tools roms
+.PHONY: update_submodules tools progs
 
 .DEFAULT: update_submodules
 
@@ -33,15 +33,6 @@ tools:
 	$(MAKE) axe       && git submodule deinit -f $(BP_EXTERNAL_DIR)/axe
 	$(MAKE) dramsim2  && git submodule deinit -f $(BP_EXTERNAL_DIR)/DRAMSim2
 
-## This target makes all of the test roms needed to test BlackParrot with trace-replay
-#  NOTE: There are many redundant boot roms generated. However, work is in progress to 
-#          remove boot rooms entirely and load programs using trace-replay and FSB. Once
-#          these efforts are completed, we will only need to generate the trace roms per
-#          End.
-
-roms:
-	$(MAKE) -C $(BP_FE_DIR)/test/rom     all
-	$(MAKE) -C $(BP_BE_DIR)/test/rom     all
-	$(MAKE) -C $(BP_ME_DIR)/test/rom     all
-	$(MAKE) -C $(BP_TOP_DIR)/test/rom    all
+progs:
+	$(MAKE) -C $(BP_COMMON_DIR)/test all
 

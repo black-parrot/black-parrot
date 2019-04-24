@@ -8,5 +8,4 @@ $BP_ME_DIR/test/common/bp_mem.v
 $BP_ME_DIR/test/common/dramsim2_wrapper.cpp
 $BP_ME_DIR/test/common/bp_cce_nonsynth_tracer.v
 // top files
-$BP_TOP_DIR/test/rom/v/$PROG.tr.v
 

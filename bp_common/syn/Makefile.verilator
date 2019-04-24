@@ -17,7 +17,7 @@ BUILD_OPTS := --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --exe -CFLAGS
 
 TOP_MODULE ?= testbench
 
-PROG     ?= rv64ui_p_example
+PROG     ?= rv64ui-p-simple
 COVERAGE ?= 0
 DUMP     ?= 0
 

@@ -5,7 +5,7 @@ include $(TOP)/Makefile.common
 
 SYN_PATH    := $(BP_TOP_DIR)/syn
 TB_PATH     := $(BP_TOP_DIR)/test/tb
-MEM_PATH    := $(BP_TOP_DIR)/test/mem
+MEM_PATH    := $(BP_COMMON_DIR)/test/mem
 LOG_PATH    := $(BP_TOP_DIR)/syn/logs
 REPORT_PATH := $(BP_TOP_DIR)/syn/reports
 RUN_PATH    := $(BP_TOP_DIR)/syn/run

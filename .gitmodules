@@ -45,3 +45,10 @@
   url = https://github.com/umd-memsys/DRAMSim2.git
   branch = master
   ignore = dirty
+
+[submodule "bp_common/test/src/riscv-tests"]
+  path = bp_common/test/src/riscv-tests
+  url = https://github.com/black-parrot/riscv-tests.git
+  branch = blackparrot_mods
+  ignore = dirty
+
