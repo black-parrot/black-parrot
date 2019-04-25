@@ -70,7 +70,7 @@ void bp_dram::read_complete(unsigned id, uint64_t addr, uint64_t cycle)
   //for (int i = 63; i >= 0; i--) {
   //  printf("%x", dram.mem[addr+i]);
   //}
-  printf("\n");
+  //printf("\n");
 }
 
 extern "C" void mem_write_req(uint64_t addr, svBitVecVal *data)

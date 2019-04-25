@@ -2,29 +2,21 @@
 
 #include "emulation.h"
 
-uint64_t csr_array[4096];
-
 #define CSR_ADDR_MVENDORID  0xF11
 #define CSR_ADDR_MARCHID    0xF12
 #define CSR_ADDR_MIMPID     0xF13
 #define CSR_ADDR_MHARTID    0xF14
 
 #define RISCV_OPCODE_SYSTEM 0b1110011
+#define RISCV_OPCODE_ATOMIC 0b0101111
 
-typedef union {
-  uint64_t bits;
-  struct __attribute__((__packed__)) {
-    uint8_t  opcode  : 7;
-    uint8_t  rd      : 5;
-    uint8_t  funct3  : 3;
-    uint8_t  rs1     : 5;
-    uint8_t  rs2     : 5;
-    uint8_t  rl      : 1;
-    uint8_t  aq      : 1;
-    uint8_t  funct5  : 5;
-    uint32_t padding : 32;
-  } atomic;
-} riscv_instr_t;
+#define OPCODE(x)  ((x >> 0) & 0x7F)
+#define RD(x)      ((x >> 7) & 0x1F)
+#define FUNCT3(x)  ((x >> 12) & 0x7)
+#define RS1(x)     ((x >> 15) & 0x1F)
+#define RS2(x)     ((x >> 20) & 0x1F)
+#define FUNCT5(x)  ((x >> 27) & 0x1F)
+#define FUNCT11(x) ((x >> 20) & 0x7FF)
 
 uint8_t get_byte(uint64_t dword, uint8_t byte_idx)
 {
@@ -52,56 +44,47 @@ void print_reg(uint8_t reg, uint64_t dword)
   *print_address_c = ' ';
 }
 
+static uint64_t csr_array[4096];
+
+static uint64_t (*amow_jt[32])(uint64_t, uint64_t) =
+{
+  amo_addw, amo_swapw, 0, 0, amo_xorw, 0, 0, 0,
+  amo_orw, 0, 0, 0, amo_andw, 0, 0, 0,
+  amo_minw, 0, 0, 0, amo_maxw, 0, 0, 0,
+  amo_minuw, 0, 0, 0, amo_maxuw, 0, 0, 0,
+};
+
+static uint64_t (*amod_jt[32])(uint64_t, uint64_t) = 
+{
+  amo_addd, amo_swapd, 0, 0, amo_xord, 0, 0, 0,
+  amo_ord, 0, 0, 0, amo_andd, 0, 0, 0,
+  amo_mind, 0, 0, 0, amo_maxd, 0, 0, 0,
+  amo_minud, 0, 0, 0, amo_maxud, 0, 0, 0,
+};
+
+static uint64_t (**amo_jt[8])(uint64_t, uint64_t) = 
+{
+  0, 0, amow_jt, amod_jt, 0, 0, 0, 0
+};
+
 void decode_illegal(uint64_t *regs, uint64_t mcause, uint64_t instr) 
 {
-  riscv_instr_t riscv_instr;
-  riscv_instr.bits = instr;
-
-  uint8_t rs1_addr, rs2_addr, rd_addr;
-  uint64_t rs1_data, rs2_data, rd_data;
-
+  // TODO: We only emulate A extension for now
+  uint16_t funct11 = FUNCT11(instr);
+  uint8_t funct5 = FUNCT5(instr);
+  uint8_t rs2_addr = RS2(instr);
+  uint8_t rs1_addr = RS1(instr);
+  uint8_t funct3 = FUNCT3(instr);
+  uint8_t rd_addr = RD(instr);
+  uint8_t opcode = OPCODE(instr);
   
-  uint8_t *print_address_n = (uint8_t*) 0x8FFFFFFF;
+  uint64_t rs1_data = regs[rs1_addr];
+  uint64_t rs2_data = regs[rs2_addr];
 
-  //*print_address_n = get_byte((uint64_t) riscv_instr.bits, 3);
-  //*print_address_n = get_byte((uint64_t) riscv_instr.bits, 2);
-  //*print_address_n = get_byte((uint64_t) riscv_instr.bits, 1);
-  //*print_address_n = get_byte((uint64_t) riscv_instr.bits, 0);
-
-  //*print_address_n = get_byte(" ", 0);
-
-  //*print_address_n = get_byte((uint64_t)(riscv_instr.atomic.padding), 0);
-  //*print_address_n = get_byte((uint64_t)(riscv_instr.atomic.funct5), 0);
-  //*print_address_n = get_byte((uint64_t)(riscv_instr.atomic.aq), 0);
-  //*print_address_n = get_byte((uint64_t)(riscv_instr.atomic.rl), 0);
-  //*print_address_n = get_byte((uint64_t)(riscv_instr.atomic.rs1), 0);
-  //*print_address_n = get_byte((uint64_t)(riscv_instr.atomic.funct3), 0);
-  //*print_address_n = get_byte((uint64_t)(riscv_instr.atomic.rd), 0);
-  //*print_address_n = get_byte((uint64_t)(riscv_instr.atomic.opcode), 0);
-  
-
-  for (int i = 0; i < 32; i++) {
-    //print_reg(i, regs[i]);
-  }
-
-  // A extension
-  if (riscv_instr.atomic.opcode == 0x2f) { 
-    rs1_addr = riscv_instr.atomic.rs1;
-    rs2_addr = riscv_instr.atomic.rs2;
-    rd_addr  = riscv_instr.atomic.rd;
-    
-    rs1_data = regs[rs1_addr];
-    rs2_data = regs[rs2_addr];
-
-    //print_reg(rs1_addr, rs1_data);
-    //print_reg(rs2_addr, rs2_data);
-
-    uint64_t result = amo_addd(rs1_data, rs2_data);
-    regs[rd_addr] = result;
+  if (opcode == RISCV_OPCODE_ATOMIC) {
+    regs[rd_addr] = amo_jt[funct3][funct5](rs1_data, rs2_data);
   } else {
-    while (1); // Infinite loop because we don't have a 'we messed up' mechanism
+    while (1); // Infinite loop, since we don't have a truly illegal instruction handler
   }
-
-  return;
 }
 

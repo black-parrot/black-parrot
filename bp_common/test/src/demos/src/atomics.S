@@ -88,7 +88,7 @@ amo_andw:
 #   ra: Data originally in [a0]
 amo_andd:
   lr.d t0, (a0)
-  add  t1, t0, a1
+  and  t1, t0, a1
   sc.d t1, t1, (a0)
   bnez t1, amo_andd
   mv a0, t0
