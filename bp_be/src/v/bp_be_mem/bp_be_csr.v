@@ -476,5 +476,22 @@ assign csr_cmd_ready_o = 1'b1;
 assign data_o          = dword_width_p'(csr_data_lo);
 assign v_o             = csr_cmd_v_i;
 
+// synopsys translate_off
+  always_ff @(posedge clk_i)
+    if (csr_cmd_v_i & (csr_cmd.csr_addr == `BP_CSR_ADDR_UFINISH))
+      begin
+        if (csr_cmd.data == '0)
+          begin
+            $display("PASS\n");
+            $finish();
+          end
+        else 
+          begin
+            $display("FAIL\n");
+            $finish();
+          end
+      end
+// synopsys translate_on
+
 endmodule : bp_be_csr
 
