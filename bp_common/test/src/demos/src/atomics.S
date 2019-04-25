@@ -2,7 +2,15 @@
 .option nopic
 .text
 
-.global amo_addd
+.global amo_swapw, amo_swapd
+.global amo_addw, amo_addd
+.global amo_xorw, amo_xord
+.global amo_andw, amo_andd
+.global amo_orw, amo_ord
+.global amo_minw, amo_mind
+.global amo_maxw, amo_maxd
+.global amo_minuw, amo_minud
+.global amo_maxuw, amo_maxud
 
 # AMO_SWAP.W
 # Parameters

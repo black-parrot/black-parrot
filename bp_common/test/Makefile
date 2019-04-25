@@ -23,6 +23,8 @@ riscv_elf:
 	$(MAKE) -C $(TEST_DIR)/src/riscv-tests/
 	find $(TEST_DIR)/src/riscv-tests/isa/ -executable -name "rv64ui-*" -execdir mv {} $(MEM_DIR)/{}.riscv \;
 	find $(TEST_DIR)/src/riscv-tests/isa/ -name "rv64ui-*dump" -execdir mv {} $(MEM_DIR)/{} \;
+	find $(TEST_DIR)/src/riscv-tests/isa/ -executable -name "rv64ua-*" -execdir mv {} $(MEM_DIR)/{}.riscv \;
+	find $(TEST_DIR)/src/riscv-tests/isa/ -name "rv64ua-*dump" -execdir mv {} $(MEM_DIR)/{} \;
 	find $(TEST_DIR)/src/riscv-tests/isa/ -executable -name "rv64si-*" -execdir mv {} $(MEM_DIR)/{}.riscv \;
 	find $(TEST_DIR)/src/riscv-tests/isa/ -name "rv64si-*dump" -execdir mv {} $(MEM_DIR)/{} \;
 	find $(TEST_DIR)/src/riscv-tests/benchmarks/ -type f -executable -execdir mv {} $(MEM_DIR)/{} \;

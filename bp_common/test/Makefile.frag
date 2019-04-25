@@ -8,8 +8,8 @@ BP_DEMOS = \
   reloc_queue_demo_4 \
   reloc_queue_demo_8 \
   copy_example       \
-  trap_demo					 \
-	atomic_demo
+  trap_demo          \
+  atomic_demo
 
 RV64_BENCHMARKS = \
   median   \
@@ -31,7 +31,7 @@ RV64_TESTS = \
   rv64ui-p-blt     \
   rv64ui-p-bltu    \
   rv64ui-p-bne     \
-	rv64ui-p-fence_i \
+  rv64ui-p-fence_i \
   rv64ui-p-jal     \
   rv64ui-p-jalr    \
   rv64ui-p-lb      \
@@ -47,7 +47,7 @@ RV64_TESTS = \
   rv64ui-p-sb      \
   rv64ui-p-sd      \
   rv64ui-p-sh      \
-	rv64ui-p-simple  \
+  rv64ui-p-simple  \
   rv64ui-p-sll     \
   rv64ui-p-slli    \
   rv64ui-p-slliw   \
@@ -68,5 +68,25 @@ RV64_TESTS = \
   rv64ui-p-subw    \
   rv64ui-p-sw      \
   rv64ui-p-xor     \
-  rv64ui-p-xori
+  rv64ui-p-xori    \
+                     \
+  rv64ua-p-amoadd_d  \
+  rv64ua-p-amoadd_w  \
+  rv64ua-p-amoand_d  \
+  rv64ua-p-amoand_w  \
+  rv64ua-p-amomax_d  \
+  rv64ua-p-amomax_w  \
+  rv64ua-p-amomaxu_w \
+  rv64ua-p-amomaxu_d \
+  rv64ua-p-amomin_d  \
+  rv64ua-p-amomin_w  \
+  rv64ua-p-amominu_w \
+  rv64ua-p-amominu_d \
+  rv64ua-p-amoor_d   \
+  rv64ua-p-amoor_w   \
+  rv64ua-p-amoswap_d \
+  rv64ua-p-amoswap_w \
+  rv64ua-p-amoxor_d  \
+  rv64ua-p-amoxor_w  \
+  rv64ua-p-lrsc
 

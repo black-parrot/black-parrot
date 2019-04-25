@@ -2,12 +2,12 @@
 .option nopic
 .text
 .align 1
-.globl _emu
+.globl bp_mtvec_handler
 
 .globl decode_illegal
 .type  decode_illegal, @function
 
-_emu:
+bp_mtvec_handler:
     # Save the current stack pointer
     # Note: We only need to save the stack if we have a special emu stack. Security?
     csrw mscratch, sp
