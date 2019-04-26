@@ -4,23 +4,23 @@
 /* int_fu_op [2:0] is equivalent to funct3 in the RV instruction.
  * int_fu_op [3] is an alternate version of that operation.
  */
-typedef enum bit [3:0]
+typedef enum bit [4:0]
 {
-  e_int_op_add        = 4'b0000
-  ,e_int_op_sub       = 4'b1000
-  ,e_int_op_sll       = 4'b0001
-  ,e_int_op_slt       = 4'b0010
-  ,e_int_op_sge       = 4'b1010
-  ,e_int_op_sltu      = 4'b0011
-  ,e_int_op_sgeu      = 4'b1011
-  ,e_int_op_xor       = 4'b0100
-  ,e_int_op_eq        = 4'b1100
-  ,e_int_op_srl       = 4'b0101
-  ,e_int_op_sra       = 4'b1101
-  ,e_int_op_or        = 4'b0110
-  ,e_int_op_ne        = 4'b1110
-  ,e_int_op_and       = 4'b0111
-  ,e_int_op_pass_src2 = 4'b1111
+  e_int_op_add        = 5'b00000
+  ,e_int_op_sub       = 5'b01000
+  ,e_int_op_sll       = 5'b00001
+  ,e_int_op_slt       = 5'b00010
+  ,e_int_op_sge       = 5'b01010
+  ,e_int_op_sltu      = 5'b00011
+  ,e_int_op_sgeu      = 5'b01011
+  ,e_int_op_xor       = 5'b00100
+  ,e_int_op_eq        = 5'b01100
+  ,e_int_op_srl       = 5'b00101
+  ,e_int_op_sra       = 5'b01101
+  ,e_int_op_or        = 5'b00110
+  ,e_int_op_ne        = 5'b01110
+  ,e_int_op_and       = 5'b00111
+  ,e_int_op_pass_src2 = 5'b01111
 } bp_be_int_fu_op_e;
 
 typedef enum bit [4:0]
@@ -49,18 +49,18 @@ typedef enum bit [4:0]
   ,e_ptw_s = 5'b10001
 } bp_be_mmu_fu_op_e;
 
-typedef enum bit [3:0]
+typedef enum bit [4:0]
 {
-  e_csrrw   = 4'b0001
-  ,e_csrrs  = 4'b0010
-  ,e_csrrc  = 4'b0011
-  ,e_csrrwi = 4'b0101
-  ,e_csrrsi = 4'b0110
-  ,e_csrrci = 4'b0111
+  e_csrrw   = 5'b00001
+  ,e_csrrs  = 5'b00010
+  ,e_csrrc  = 5'b00011
+  ,e_csrrwi = 5'b00101
+  ,e_csrrsi = 5'b00110
+  ,e_csrrci = 5'b00111
 
-  ,e_mret   = 4'b1011
-  ,e_sret   = 4'b1001
-  ,e_uret   = 4'b1000
+  ,e_mret   = 5'b01011
+  ,e_sret   = 5'b01001
+  ,e_uret   = 5'b01000
 } bp_be_csr_fu_op_e;
 
 typedef struct packed
