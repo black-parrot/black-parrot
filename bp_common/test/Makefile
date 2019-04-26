@@ -17,6 +17,7 @@ include Makefile.frag
 all: riscv demos
 riscv: riscv_mem 
 demos: demos_mem 
+opensbi: opensbi_mem
 
 riscv_elf: 
 	cd $(TEST_DIR)/src/riscv-tests/ && ./configure
@@ -31,9 +32,14 @@ riscv_elf:
 	find $(TEST_DIR)/src/riscv-tests/benchmarks/ -type f -name "*dump" -execdir mv {} $(MEM_DIR)/{} \;
 
 demos_elf:
-	make -C src/demos
+	$(MAKE) -C $(TEST_DIR)/src/demos
 	find $(TEST_DIR)/src/demos/ -executable -type f -execdir mv {} $(MEM_DIR)/{} \;
 	find $(TEST_DIR)/src/demos/ -name "*.dump" -execdir mv {} $(MEM_DIR)/{} \;
+
+opensbi_elf:
+	$(MAKE) -C $(TEST_DIR)/src/opensbi PLATFORM=blackparrot CROSS_COMPILE=riscv64-unknown-elf- PLATFORM_RISCV_ISA=rv64ia
+	@cp $(TEST_DIR)/src/opensbi/build/platform/blackparrot/firmware/fw_jump.elf $(MEM_DIR)/opensbi.riscv
+	$(RISCV_OBJDUMP) $(MEM_DIR)/opensbi.riscv > $(MEM_DIR)/opensbi.riscv.dump
 
 riscv_mem: riscv_elf
 riscv_mem: $(foreach x, $(RV64_TESTS) $(RV64_BENCHMARKS), $(x).mem)
@@ -44,6 +50,11 @@ demos_mem: $(foreach x, $(BP_DEMOS), $(x).mem)
 # Need to kill spike at the end of demos for this to work
 #demos_mem: $(foreach x, $(BP_DEMOS), $(x).spike)
 
+opensbi_mem: opensbi_elf
+opensbi_mem: opensbi.mem
+# Need to kill spike at the end of opensbi boot for this to work
+#opensbi_mem: opensbi.spike
+
 %.mem: 
 	$(RISCV_OBJCOPY) $(MEM_DIR)/$*.riscv $(MEM_DIR)/$@
 
@@ -53,6 +64,7 @@ demos_mem: $(foreach x, $(BP_DEMOS), $(x).mem)
 clean:
 	$(MAKE) -C src/riscv-tests clean 
 	$(MAKE) -C src/demos clean
+	$(MAKE) -C src/opensbi clean
 	rm -f $(MEM_DIR)/*
 
 ####### These targets are not maintained at the moment
