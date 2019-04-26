@@ -241,7 +241,7 @@ bsg_dff_reset_en
    );
 
 // Generate control signals
-assign expected_npc_o = (trap_v_i)? npc_n : npc_r;
+assign expected_npc_o = npc_r;
 // Increment the checkpoint if there's a committing instruction
 assign chk_dequeue_fe_o = ~calc_status.mem3_miss_v & calc_status.instr_cmt_v;
 // Flush the FE queue if there's a pc redirect
@@ -291,7 +291,7 @@ always_comb
     else if((calc_status.ex1_instr_v & npc_mismatch_v) | trap_v_i) 
       begin : pc_redirect
         fe_cmd.opcode                                   = e_op_pc_redirection;
-        fe_cmd_pc_redirect_operands.pc                  = expected_npc_o;
+        fe_cmd_pc_redirect_operands.pc                  = trap_v_i ? npc_n : expected_npc_o;
         fe_cmd_pc_redirect_operands.subopcode           = e_subop_branch_mispredict;
         fe_cmd_pc_redirect_operands.branch_metadata_fwd =  calc_status.int1_branch_metadata_fwd;
 
