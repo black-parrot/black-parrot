@@ -69,7 +69,7 @@
 
 `define RV64_CSR_ADDR_MVENDORID     12'hf11
 `define RV64_CSR_ADDR_MARCHID       12'hf12
-`define RV64_CSR_ADDR_MIMPID        12'hf12
+`define RV64_CSR_ADDR_MIMPID        12'hf13
 `define RV64_CSR_ADDR_MHARTID       12'hf14
 
 `define RV64_CSR_ADDR_MSTATUS       12'h300

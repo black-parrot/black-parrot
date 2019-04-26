@@ -287,13 +287,30 @@ always_comb
         end
       else
         begin
-          case (csr_cmd.csr_addr)
+          unique casez (csr_cmd.csr_addr)
             `RV64_CSR_ADDR_SATP: 
               begin
                 satp_li     = rv64_satp_s'(csr_data_li);
                 satp_n      = `compress_satp_s(satp_li);
                 satp_lo     = `decompress_satp_s(satp_r);
                 csr_data_lo = satp_lo;
+              end
+            `RV64_CSR_ADDR_MISA:
+              begin
+                // 64 bit MXLEN, AISU extensions
+                csr_data_lo = {2'b10, 36'b0, 26'h140101};
+              end
+            `RV64_CSR_ADDR_MVENDORID:
+              begin
+                csr_data_lo = '0;
+              end
+            `RV64_CSR_ADDR_MARCHID:
+              begin
+                csr_data_lo = '0;
+              end
+            `RV64_CSR_ADDR_MIMPID:
+              begin
+                csr_data_lo = '0;
               end
             `RV64_CSR_ADDR_MHARTID:
               begin
@@ -306,13 +323,6 @@ always_comb
                 mstatus_lo  = `decompress_mstatus_s(mstatus_r);
                 csr_data_lo = mstatus_lo;
               end
-            `RV64_CSR_ADDR_MIE: 
-              begin
-                mie_li      = rv64_mie_s'(csr_data_li);
-                mie_n       = `compress_mie_s(mie_li);
-                mie_lo      = `decompress_mie_s(mie_r);
-                csr_data_lo = mie_lo;
-              end
             `RV64_CSR_ADDR_MTVEC: 
               begin
                 mtvec_li    = rv64_mtvec_s'(csr_data_li);
@@ -320,7 +330,32 @@ always_comb
                 mtvec_lo    = `decompress_mtvec_s(mtvec_r);
                 csr_data_lo = mtvec_lo;
               end
-            
+            `RV64_CSR_ADDR_MEDELEG:
+              begin
+                csr_data_lo = dword_width_p'(0);
+              end
+            `RV64_CSR_ADDR_MIDELEG:
+              begin
+                csr_data_lo = dword_width_p'(0);
+              end
+            `RV64_CSR_ADDR_MIP: 
+              begin
+                mip_li      = rv64_mip_s'(csr_data_li);
+                mip_n       = `compress_mip_s(mip_li);
+                mip_lo      = `decompress_mip_s(mip_r);
+                csr_data_lo = mip_lo;
+              end
+            `RV64_CSR_ADDR_MIE: 
+              begin
+                mie_li      = rv64_mie_s'(csr_data_li);
+                mie_n       = `compress_mie_s(mie_li);
+                mie_lo      = `decompress_mie_s(mie_r);
+                csr_data_lo = mie_lo;
+              end
+            `RV64_CSR_ADDR_MCOUNTEREN:
+              begin
+                csr_data_lo = dword_width_p'(0);
+              end
             `RV64_CSR_ADDR_MSCRATCH: 
               begin
                 mscratch_li = rv64_mscratch_s'(csr_data_li);
@@ -349,14 +384,6 @@ always_comb
                 mtval_lo    = `decompress_mtval_s(mtval_r);
                 csr_data_lo = mtval_lo;
               end
-            `RV64_CSR_ADDR_MIP: 
-              begin
-                mip_li      = rv64_mip_s'(csr_data_li);
-                mip_n       = `compress_mip_s(mip_li);
-                mip_lo      = `decompress_mip_s(mip_r);
-                csr_data_lo = mip_lo;
-              end
-
             `RV64_CSR_ADDR_PMPCFG0: 
               begin
                 pmpcfg0_li  = rv64_pmpcfg_s'(csr_data_li);
@@ -392,7 +419,6 @@ always_comb
                 pmpaddr3_lo = `decompress_pmpaddr_s(pmpaddr3_r);
                 csr_data_lo = pmpaddr3_lo;
               end
-
             `RV64_CSR_ADDR_MCYCLE: 
               begin
                 mcycle_li   = rv64_mcounter_s'(csr_data_li);
