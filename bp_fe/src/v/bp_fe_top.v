@@ -175,9 +175,21 @@ always_comb
 assign poison_tl = icache_miss | fe_pc_gen.pc_redirect_valid & fe_pc_gen_v;
 
 //fe to itlb
+logic itlb_fill_v, itlb_fill_r, itlb_w_v;
 bp_be_tlb_entry_s  itlb_entry_r;
 assign itlb_vaddr        = pc_gen_itlb.virt_addr;
 assign itlb_icache.ppn   = itlb_entry_r.ptag;
+assign itlb_fill_v       = fe_cmd_v_i & fe_cmd.opcode == e_op_itlb_fill_response;
+assign itlb_w_v          = itlb_fill_v & ~itlb_fill_r;
+
+always_ff @(posedge clk_i) begin
+  if(reset_i) begin
+    itlb_fill_r <= '0;
+  end
+  else begin
+    itlb_fill_r <= itlb_fill_v;
+  end
+end
    
 bp_fe_pc_gen 
  #(.vaddr_width_p(vaddr_width_p)
@@ -287,7 +299,7 @@ bp_be_dtlb
    ,.r_v_o(itlb_icache_data_resp_v)
    ,.r_entry_o(itlb_entry_r)
 
-   ,.w_v_i(fe_cmd_v_i & fe_cmd.opcode == e_op_itlb_fill_response)
+   ,.w_v_i(itlb_w_v)
    ,.w_vtag_i(fe_cmd.operands.itlb_fill_response.vaddr[vaddr_width_p-1:bp_page_offset_width_gp])
 	 ,.w_entry_i(fe_cmd.operands.itlb_fill_response.pte_entry_leaf)
 

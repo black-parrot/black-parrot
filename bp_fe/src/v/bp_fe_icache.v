@@ -230,7 +230,7 @@ module bp_fe_icache
     else begin
       v_tv_r <= tv_we;
       if (tv_we) begin
-        addr_tv_r    <= {itlb_icache_data_resp_li.ppn, vaddr_tl_r};
+        addr_tv_r    <= {itlb_icache_data_resp_li.ppn, vaddr_tl_r[0+:bp_page_offset_width_gp]};
         vaddr_tv_r   <= vaddr_tl_r;
         tag_tv_r     <= tag_tl;
         state_tv_r   <= state_tl;

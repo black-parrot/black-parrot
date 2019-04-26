@@ -121,7 +121,7 @@ logic                           icache_miss_prev;
 
 // tlb miss recovery wires
 logic                           itlb_miss_recover;
-logic                           itlb_miss_r, itlb_miss_r2, itlb_stall;
+logic                           itlb_stall, itlb_exception_sent, itlb_miss_r, itlb_miss_f1;
    
 logic [vaddr_width_p-1:0]       btb_target;
 logic [instr_width_p-1:0]       next_instr;
@@ -180,7 +180,7 @@ assign fe_exception_v     = misalign_exception | itlb_miss_exception;
 assign misalign_exception = pc_redirect_v 
                             & ~fe_pc_gen_cmd.pc[1:0] == 2'b00;
                             
-assign itlb_miss_exception = ~itlb_miss_r2 & itlb_miss_r & pc_v_f2;
+assign itlb_miss_exception = ~itlb_exception_sent & itlb_stall & pc_v_f2;
 /* output wiring */
 // there should be fixes to the pc signal sent out according to the valid/ready signal pairs
 
@@ -231,26 +231,45 @@ always_ff @(posedge clk_i)
 begin
     if (reset_i)
     begin
-        icache_miss_prev <= '0;
-        itlb_miss_r      <= '0;
-        itlb_miss_r2     <= '0;
+        icache_miss_prev    <= '0;
     end
     else
     begin
-        icache_miss_prev <= icache_miss_i;
-        itlb_miss_r      <= itlb_miss_i;
-        itlb_miss_r2     <= itlb_miss_r;
+        icache_miss_prev    <= icache_miss_i;
     end
+end
+
+always_ff @(posedge clk_i) begin
+  if(reset_i) begin
+    itlb_exception_sent <= '0;
+  end
+  else if(itlb_miss_exception) begin
+    itlb_exception_sent <= 1'b1;
+  end
+  else if(itlb_fill_v | pc_redirect_v) begin
+    itlb_exception_sent <= '0;
+  end
 end
 
 always_ff @(posedge clk_i) begin
   if(reset_i)
     itlb_stall <= '0;
-  else if(itlb_miss_i)
-    itlb_stall <= 1'b1;
+  else if(~stall)
+    itlb_stall <= itlb_miss_f1;
   else if(itlb_fill_v | pc_redirect_v)
     itlb_stall <= '0;
 end
+
+always_ff @(posedge clk_i) begin
+  if(reset_i)
+    itlb_miss_r <= '0;
+  else if((stall & ~itlb_miss_exception) & itlb_miss_i)
+    itlb_miss_r <= 1'b1;
+  else if(~stall)
+    itlb_miss_r <= '0;
+end
+
+assign itlb_miss_f1 = itlb_miss_r | itlb_miss_i;
 
 logic [vaddr_width_p-1:0] btb_br_tgt_lo;
 logic                     btb_br_tgt_v_lo;
