@@ -31,6 +31,11 @@ package bp_be_dcache_pkg;
     ,e_dcache_opcode_sw  = 4'b1010  // store word
     ,e_dcache_opcode_sd  = 4'b1011  // store double
 
+    ,e_dcache_opcode_lrw = 4'b0111  // load reserved word
+    ,e_dcache_opcode_scw = 4'b1100  // store conditional word
+
+    ,e_dcache_opcode_lrd = 4'b1101  // load reserved double
+    ,e_dcache_opcode_scd = 4'b1110  // store conditional double
   } bp_be_dcache_opcode_e;
 
 

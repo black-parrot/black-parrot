@@ -2,12 +2,12 @@
 .option nopic
 .text
 .align 1
-.globl _emu
+.globl bp_mtvec_handler
 
 .globl decode_illegal
 .type  decode_illegal, @function
 
-_emu:
+bp_mtvec_handler:
     # Save the current stack pointer
     # Note: We only need to save the stack if we have a special emu stack. Security?
     csrw mscratch, sp
@@ -53,7 +53,9 @@ _emu:
     # Save a pointer to the registers
     addi a0, sp, 8
     # Read the faulting instruction
-    csrr a1, mtval
+    csrr a1, mcause
+    # Read the trap value
+    csrr a2, mbadaddr
     jal decode_illegal
 
     # Return address is the instruction after MEPC
@@ -65,7 +67,7 @@ _emu:
     addi sp, sp, 256
     ld x0, -248(sp)
     ld x1, -240(sp)
-    ld x2, -232(sp)
+    //ld x2, -232(sp)
     ld x3, -224(sp)
     ld x4, -216(sp)
     ld x5, -208(sp)

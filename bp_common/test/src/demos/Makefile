@@ -1,7 +1,7 @@
 
 include Makefile.frag
 
-RISCV_GCC  =riscv64-unknown-elf-gcc -fPIC -march=rv64i -mabi=lp64 -mcmodel=medany 
+RISCV_GCC  =riscv64-unknown-elf-gcc -fPIC -march=rv64ia -mabi=lp64 -mcmodel=medany 
 RISCV_GCC += -static -nostdlib -nostartfiles -T src/riscv.ld
 
 RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -D -M no-aliases,numeric
@@ -14,7 +14,7 @@ bp-demo-riscv: $(foreach x,$(subst -,_,$(BP_DEMOS)),$(x).riscv)
 bp-demo-s    : $(foreach x,$(subst -,_,$(BP_DEMOS_C)),$(x).s)
 
 %.riscv:
-	$(RISCV_GCC) -o $@ src/$*.s src/start.S src/exception.S src/emulation.c
+	$(RISCV_GCC) -o $@ src/$*.s src/start.S src/exception.S src/atomics.S src/emulation.c
 	$(RISCV_OBJDUMP) $@ > $*.dump
 
 queue_demo_%.s:

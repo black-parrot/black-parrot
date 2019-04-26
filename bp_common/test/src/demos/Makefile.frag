@@ -7,7 +7,8 @@ BP_DEMOS_C = \
 	reloc_queue_demo_4 \
 	reloc_queue_demo_8 \
 	copy_example       \
-	trap_demo
+	trap_demo          \
+	atomic_demo
 
 BP_DEMOS_S = \
 	hello_world

@@ -639,22 +639,22 @@ always_comb
       end
         // If there are new exceptions, add them to the list
         exc_stage_n[0].instr_misaligned_v = 
-          chk_dispatch_v_i 
+          (issue_pkt_v_r & chk_dispatch_v_i)
           & issue_pkt_r.instr_metadata.fe_exception_not_instr
           & (issue_pkt_r.instr_metadata.fe_exception_code == e_instr_misaligned);
 
         exc_stage_n[0].itlb_fill_v = 
-          chk_dispatch_v_i 
+          (issue_pkt_v_r & chk_dispatch_v_i)
           & issue_pkt_r.instr_metadata.fe_exception_not_instr 
           & (issue_pkt_r.instr_metadata.fe_exception_code == e_itlb_miss);
 
         exc_stage_n[0].instr_access_fault_v = 
-          chk_dispatch_v_i 
+          (issue_pkt_v_r & chk_dispatch_v_i )
           & issue_pkt_r.instr_metadata.fe_exception_not_instr 
           & (issue_pkt_r.instr_metadata.fe_exception_code == e_instr_access_fault);
 
         exc_stage_n[0].illegal_instr_v = 
-          (chk_dispatch_v_i & illegal_instr_isd & ~issue_pkt_r.instr_metadata.fe_exception_not_instr)
+          (issue_pkt_v_r & chk_dispatch_v_i & illegal_instr_isd & ~issue_pkt_r.instr_metadata.fe_exception_not_instr)
           | (chk_dispatch_v_i & issue_pkt_r.instr_metadata.fe_exception_not_instr 
              & issue_pkt_r.instr_metadata.fe_exception_code == e_illegal_instr
              ); 
@@ -676,7 +676,7 @@ always_comb
 assign instret_o = calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v;
 assign exception_pc_o = calc_stage_r[2].instr_metadata.pc;
 assign exception_instr_o = calc_stage_r[2].instr;
-assign exception_ecode_v_o = |exception_ecode_dec_o & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v;
+assign exception_ecode_v_o = |exception_ecode_dec_o & ~exc_stage_r[2].poison_v;
 assign exception_ecode_dec_o = 
   bp_be_ecode_dec_s'{instr_misaligned : exc_stage_n[3].instr_misaligned_v
                      ,instr_fault     : mem_exception_mem3.instr_fault 
@@ -718,6 +718,12 @@ if (trace_p)
                  })
        ,.data_o({cmt_dcache_w_v_r, cmt_rs1_r, cmt_rs2_r, cmt_imm_r, cmt_mem_op_r})
        );
+  
+    // Detect if SC success or failure
+    //wire sc_succeed = (
+    //                  (calc_stage_r[pipe_stage_els_lp-1].fu_op == e_scw)
+    //                  | (calc_stage_r[pipe_stage_els_lp-1].fu_op == e_scd)
+    //                  );
 
     // Commit tracer
     assign cmt_rd_w_v_o   = calc_stage_r[pipe_stage_els_lp-1].irf_w_v
