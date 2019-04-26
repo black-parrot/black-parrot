@@ -12,12 +12,12 @@ RISCV_SIM      = spike
 RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -D -M no-aliases,numeric
 RISCV_OBJCOPY  = riscv64-unknown-elf-objcopy -O verilog
 
-include Makefile.frag
-
-all: riscv demos
+all: riscv demos bbl
 riscv: riscv_mem 
 demos: demos_mem 
-opensbi: opensbi_mem
+# OpenSBI requires hardfloat and does not support softfloat libraries, so the compilation will fail
+#opensbi: opensbi_mem
+bbl: bbl_mem
 
 riscv_elf: 
 	cd $(TEST_DIR)/src/riscv-tests/ && ./configure
@@ -37,9 +37,16 @@ demos_elf:
 	find $(TEST_DIR)/src/demos/ -name "*.dump" -execdir mv {} $(MEM_DIR)/{} \;
 
 opensbi_elf:
-	$(MAKE) -C $(TEST_DIR)/src/opensbi PLATFORM=blackparrot CROSS_COMPILE=riscv64-unknown-elf- PLATFORM_RISCV_ISA=rv64ia
+	$(MAKE) -C $(TEST_DIR)/src/opensbi PLATFORM=blackparrot CROSS_COMPILE=riscv64-unknown-elf- PLATFORM_RISCV_ISA=rv64imaf
 	@cp $(TEST_DIR)/src/opensbi/build/platform/blackparrot/firmware/fw_jump.elf $(MEM_DIR)/opensbi.riscv
 	$(RISCV_OBJDUMP) $(MEM_DIR)/opensbi.riscv > $(MEM_DIR)/opensbi.riscv.dump
+
+bbl_elf:
+	cd $(TEST_DIR)/src/riscv-pk/ && mkdir -p build && cd build \
+	&& ../configure --host=riscv64-unknown-elf --with-arch=rv64i
+	$(MAKE) -C $(TEST_DIR)/src/riscv-pk/build
+	@cp $(TEST_DIR)/src/riscv-pk/build/bbl $(MEM_DIR)/bbl.riscv
+	$(RISCV_OBJDUMP) $(MEM_DIR)/bbl.riscv > $(MEM_DIR)/bbl.riscv.dump
 
 riscv_mem: riscv_elf
 riscv_mem: $(foreach x, $(RV64_TESTS) $(RV64_BENCHMARKS), $(x).mem)
@@ -52,8 +59,13 @@ demos_mem: $(foreach x, $(BP_DEMOS), $(x).mem)
 
 opensbi_mem: opensbi_elf
 opensbi_mem: opensbi.mem
-# Need to kill spike at the end of opensbi boot for this to work
+# Need to kill spike at the end of opensbi payload for this to work
 #opensbi_mem: opensbi.spike
+
+bbl_mem: bbl_elf
+bbl_mem: bbl.mem
+# Need to kill spike at the end of bbl payload for this to work
+#bbl_mem: bbl.spike
 
 %.mem: 
 	$(RISCV_OBJCOPY) $(MEM_DIR)/$*.riscv $(MEM_DIR)/$@
