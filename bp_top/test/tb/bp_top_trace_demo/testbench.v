@@ -39,7 +39,6 @@ logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]          cce_inst_boot_rom_data;
 
 logic [num_core_p-1:0][trace_ring_width_p-1:0] tr_data_i;
 logic [num_core_p-1:0] tr_v_i, tr_ready_o;
-logic [num_core_p-1:0] test_done;
 
 logic [num_core_p-1:0][trace_rom_addr_width_p-1:0]  tr_rom_addr_i;
 logic [num_core_p-1:0][trace_rom_data_width_lp-1:0] tr_rom_data_o;
@@ -90,8 +89,6 @@ logic [num_cce_p-1:0] mem_data_cmd_v, mem_data_cmd_yumi;
       ,.mem_data_cmd_v_o(mem_data_cmd_v)
       ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi)
 
-      ,.timer_int_i(1'b0)
-      ,.software_int_i(1'b0)
       ,.external_int_i(1'b0)
 
       ,.cmt_rd_w_v_o(cmt_rd_w_v)
@@ -200,7 +197,8 @@ always_ff @(posedge clk_i)
 
 always_ff @(posedge clk_i)
   begin
-    if (&test_done)
+    // TODO: Detect end of test
+    if (0)
       begin
         $display("Test PASSed! Clocks: %d Instr: %d mIPC: %d", clock_cnt, instr_cnt, (1000*instr_cnt) / clock_cnt);
         $finish(0);
