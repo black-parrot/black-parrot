@@ -33,20 +33,20 @@ typedef enum bit [4:0]
   ,e_lhu   = 5'b00101
   ,e_lwu   = 5'b00110
 
-  ,e_sb    = 5'b00111
-  ,e_sh    = 5'b01000
-  ,e_sw    = 5'b01001
-  ,e_sd    = 5'b01010
+  ,e_sb    = 5'b01000
+  ,e_sh    = 5'b01001
+  ,e_sw    = 5'b01010
+  ,e_sd    = 5'b01011
 
-  ,e_lrw   = 5'b01011
+  ,e_lrw   = 5'b00111
   ,e_scw   = 5'b01100
 
   ,e_lrd   = 5'b01101
   ,e_scd   = 5'b01110
    
-  ,e_ptw_i = 5'b01111
-  ,e_ptw_l = 5'b10000
-  ,e_ptw_s = 5'b10001
+  ,e_ptw_i = 5'b10000
+  ,e_ptw_l = 5'b10001
+  ,e_ptw_s = 5'b10010
 } bp_be_mmu_fu_op_e;
 
 typedef enum bit [4:0]
