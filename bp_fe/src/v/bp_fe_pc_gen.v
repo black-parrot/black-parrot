@@ -246,7 +246,7 @@ always_ff @(posedge clk_i) begin
   else if(itlb_miss_exception) begin
     itlb_exception_sent <= 1'b1;
   end
-  else if(itlb_fill_v | pc_redirect_v) begin
+  else if(fe_pc_gen_v_i) begin
     itlb_exception_sent <= '0;
   end
 end
@@ -256,7 +256,7 @@ always_ff @(posedge clk_i) begin
     itlb_stall <= '0;
   else if(~stall)
     itlb_stall <= itlb_miss_f1;
-  else if(itlb_fill_v | pc_redirect_v)
+  else if(fe_pc_gen_v_i)
     itlb_stall <= '0;
 end
 
@@ -269,7 +269,7 @@ always_ff @(posedge clk_i) begin
     itlb_miss_r <= '0;
 end
 
-assign itlb_miss_f1 = itlb_miss_r | itlb_miss_i;
+assign itlb_miss_f1 = (itlb_miss_r | itlb_miss_i) & pc_v_f1;
 
 logic [vaddr_width_p-1:0] btb_br_tgt_lo;
 logic                     btb_br_tgt_v_lo;
