@@ -33,27 +33,34 @@ include $(BP_COMMON_DIR)/syn/Makefile.regress
 include $(BP_COMMON_DIR)/syn/Makefile.verilator
 include $(BP_COMMON_DIR)/syn/Makefile.vcs
 
-regress: regress.me
-regress.me: check_design.syn
+lint.me:
 	# TODO: The linter currently depends on the broken me_trace_tb
 	#$(MAKE) lint.v || true
 	#$(MAKE) lint.sc || true
+
+regress.me.sc:
+	$(MAKE) build.sc TB=bp_cce_alu
 	$(MAKE) run.sc TB=bp_cce_alu
-	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_alu_bp_example_rom_sim.log \
+	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_alu_rv64ui-p-simple_sim.log \
 	&& echo "bp_cce_alu: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_cce_alu: FAIL" >> $(LOG_PATH)/me_regress.log
+	$(MAKE) build.sc TB=bp_cce_dir
 	$(MAKE) run.sc TB=bp_cce_dir
-	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_dir_bp_example_rom_sim.log \
+	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_dir_rv64ui-p-simple_sim.log \
 	&& echo "bp_cce_dir: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_cce_dir: FAIL" >> $(LOG_PATH)/me_regress.log
+	$(MAKE) build.sc TB=bp_cce_gad
 	$(MAKE) run.sc TB=bp_cce_gad
-	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_gad_bp_example_rom_sim.log \
+	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_gad_rv64ui-p-simple_sim.log \
 	&& echo "bp_cce_gad: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_cce_gad: FAIL" >> $(LOG_PATH)/me_regress.log
+	$(MAKE) build.sc TB=bp_cce_test
 	$(MAKE) run.sc TB=bp_cce_test
-	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_test_bp_example_rom_sim.log \
+	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_test_rv64ui-p-simple_sim.log \
 	&& echo "bp_cce_test: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_cce_test: FAIL" >> $(LOG_PATH)/me_regress.log
+
+regress.me.v:
 	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_random_demo \
 	| tee -i $(LOG_PATH)/vcs/bp_me_random_stress_test.log
 	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_random_stress_test.log \
@@ -87,6 +94,8 @@ regress.me: check_design.syn
 	&& echo "bp_me_multi_mock_lce_axe: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_me_multi_mock_lce_axe: FAIL" >> $(LOG_PATH)/me_regress.log
 
+regress: lint.me regress.me
+regress.me: regress.me.sc regress.me.v check_design.syn
 
 clean: clean.me
 clean.me:
