@@ -71,6 +71,8 @@ module bp_mem_dramsim2
   logic dramsim_valid;
   logic [511:0] dramsim_data_n;
 
+  logic read_accepted, write_accepted;
+
   int k, j;
   always_comb begin
     mem_resp_o = mem_resp_s_o;
@@ -102,7 +104,6 @@ module bp_mem_dramsim2
     RESET
     ,READY
     ,RD_CMD
-    ,RD_MEM
     ,RD_DATA_CMD
   } mem_state_e;
 
@@ -131,6 +132,9 @@ module bp_mem_dramsim2
       mem_data_resp_s_o <= '0;
       mem_data_resp_v_o <= '0;
 
+      read_accepted = '0;
+      write_accepted = '0;
+
       case (mem_st)
         RESET: begin
           mem_st <= READY;
@@ -138,29 +142,24 @@ module bp_mem_dramsim2
         READY: begin
           // mem data command - need to write data to memory
           if (mem_data_cmd_v_i && mem_resp_ready_i) begin
-            mem_data_cmd_yumi_o <= 1'b1;
-            mem_data_cmd_s_r <= mem_data_cmd_i;
-            mem_st <= RD_DATA_CMD;
+            // do the write to memory ram if available
+            write_accepted = mem_write_req(block_rd_addr, mem_data_cmd_i_s.data);
 
-            // do the write to memory ram
-            mem_write_req(block_wr_addr, mem_data_cmd_i_s.data);
-          // mem command - need to read data from memory
+            mem_data_cmd_yumi_o <= write_accepted;
+            mem_data_cmd_s_r    <= mem_data_cmd_i;
+            mem_st              <= write_accepted ? RD_DATA_CMD : READY;
           end else if (mem_cmd_v_i && mem_data_resp_ready_i) begin
-            mem_cmd_yumi_o <= 1'b1;
-            mem_cmd_s_r <= mem_cmd_i;
-            mem_st <= RD_MEM;
+            // do the read from memory ram if available
+            read_accepted = mem_read_req(block_rd_addr);
 
-            // register the inputs for the memory, memory will consume them next cycle
-            mem_read_req(block_rd_addr);
+            mem_cmd_yumi_o <= read_accepted;
+            mem_cmd_s_r    <= mem_cmd_i;
+            mem_st         <= read_accepted ? RD_CMD : READY;
           end
         end
-        RD_MEM: begin
-          // read from memory, data will be available next cycle
-          mem_cmd_yumi_o <= '0;
-          mem_st <= dramsim_valid ? RD_CMD : RD_MEM;
-        end
         RD_CMD: begin
-          mem_st <= READY;
+          mem_cmd_yumi_o <= '0;
+          mem_st <= dramsim_valid ? READY : RD_CMD;
 
           mem_data_resp_s_o.msg_type <= mem_cmd_s_r.msg_type;
           mem_data_resp_s_o.payload.lce_id <= mem_cmd_s_r.payload.lce_id;
@@ -175,7 +174,7 @@ module bp_mem_dramsim2
           mem_data_resp_s_o.nc_size <= mem_cmd_s_r.nc_size;
 
           // pull valid high
-          mem_data_resp_v_o <= 1'b1;
+          mem_data_resp_v_o <= dramsim_valid;
         end
         RD_DATA_CMD: begin
           mem_data_cmd_yumi_o <= '0;
@@ -194,7 +193,7 @@ module bp_mem_dramsim2
           mem_resp_s_o.nc_size <= mem_data_cmd_s_r.nc_size;
 
           // pull valid high
-          mem_resp_v_o <= 1'b1;
+          mem_resp_v_o <= dramsim_valid;
         end
         default: begin
           mem_st <= RESET;
@@ -212,10 +211,10 @@ import "DPI-C" function void init(input longint clock_period
                                   );
 import "DPI-C" context function bit tick();
 
-import "DPI-C" context function void mem_read_req(input longint addr);
-import "DPI-C" context function void mem_write_req(input longint addr
-                                                   , input bit [block_size_in_bits_lp-1:0] data
-                                                   );
+import "DPI-C" context function bit mem_read_req(input longint addr);
+import "DPI-C" context function bit mem_write_req(input longint addr
+                                                  , input bit [block_size_in_bits_lp-1:0] data
+                                                  );
 
 export "DPI-C" function read_resp;
 export "DPI-C" function write_resp;
