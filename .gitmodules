@@ -34,12 +34,6 @@
   branch = master
   ignore = dirty
 
-[submodule "riscv-gnu-toolchain"]
-  path = riscv-gnu-toolchain
-  url = https://github.com/riscv/riscv-gnu-toolchain.git
-  branch = master
-  ignore = dirty
-
 [submodule "external/DRAMSim2"]
   path = external/DRAMSim2
   url = https://github.com/umd-memsys/DRAMSim2.git

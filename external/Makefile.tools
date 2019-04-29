@@ -16,7 +16,7 @@ DRAMSIM2_DIR  := $(BP_EXTERNAL_DIR)/DRAMSim2
 systemc:
 	wget http://www.accellera.org/images/downloads/standards/systemc/systemc-2.3.3.gz \
 	&& tar -xzf systemc-2.3.3.gz && rm systemc-2.3.3.gz \
-	&& cd systemc-2.3.3 && ./configure --prefix=$(BP_EXTERNAL_DIR) \
+	&& cd systemc-2.3.3 && ./configure --prefix=$(BP_EXTERNAL_DIR) CXXFLAGS="-std=c++11" \
 	&& make && make install && make clean
 
 verilator:
