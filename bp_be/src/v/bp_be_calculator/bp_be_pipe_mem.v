@@ -125,12 +125,16 @@ bsg_shift_reg
    ,.data_o(csr_cmd_lo)
    );
 
+logic [reg_data_width_lp-1:0] offset;
+
+assign offset = decode.offset_sel ? '0 : imm_i[0+:vaddr_width_p];
+
 assign mmu_cmd_v_o = (decode.dcache_r_v | decode.dcache_w_v) & ~kill_ex1_i;
 always_comb 
   begin
     mmu_cmd.mem_op      = decode.fu_op;
     mmu_cmd.data        = rs2_i;
-    mmu_cmd.vaddr       = (rs1_i + imm_i[0+:vaddr_width_p]);
+    mmu_cmd.vaddr       = (rs1_i + offset);
   end
 
 assign csr_cmd_v_o = csr_cmd_v_lo & ~kill_ex3_i;

@@ -1,7 +1,7 @@
 [submodule "external/riscv-isa-sim"]
   path = external/riscv-isa-sim
   url = https://github.com/black-parrot/riscv-isa-sim.git
-  branch = trace_replay_spike
+  branch = blackparrot_mods
   ignore = dirty
 
 [submodule "external/axe"]

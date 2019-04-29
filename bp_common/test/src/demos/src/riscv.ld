@@ -2,9 +2,10 @@ OUTPUT_ARCH( "riscv" )
 ENTRY(_start)
 
 SECTIONS {
-. = 0x80000124;
+. = 0x80000000;
 .text.init : { *(.text.init) }
 .text.emu . : { *(.text.emu) }
+.text.amo . : { *(.text.amo) }
 .text : { *(.text) }
 .data : { *(.data) }
 .sdata : {

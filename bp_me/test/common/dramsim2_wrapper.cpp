@@ -65,6 +65,12 @@ void bp_dram::read_complete(unsigned id, uint64_t addr, uint64_t cycle)
 
   dram.result_pending[scope] = true;
   read_resp(dram.result_data[scope]);
+
+  //printf("CACHELINE READ: %x\t", addr);
+  //for (int i = 63; i >= 0; i--) {
+  //  printf("%x", dram.mem[addr+i]);
+  //}
+  //printf("\n");
 }
 
 extern "C" void mem_write_req(uint64_t addr, svBitVecVal *data)
@@ -74,12 +80,18 @@ extern "C" void mem_write_req(uint64_t addr, svBitVecVal *data)
   for (int i = 0; i < dram.result_size/32; i++) {
     uint32_t word = data[i];
     for (int j = 0; j < 4; j++) {
-      dram.mem[addr+i*4+j] = (word >> j*8) & (0xFFFFFF00);
+      dram.mem[addr+i*4+j] = (word >> j*8) & (0x000000FF);
     }
   }
   mem->addTransaction(true, addr);
   dram.addr_tracker[addr].push(scope);
   dram.result_pending[scope] = false;
+  
+  //printf("CACHELINE WRITE: %x\t", addr);
+  //for (int i = 63; i >= 0; i--) {
+  //  printf("%x", dram.mem[addr+i]);
+  //}
+  printf("\n");
 }
 
 void bp_dram::write_complete(unsigned id, uint64_t addr, uint64_t cycle)

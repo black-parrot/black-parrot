@@ -14,3 +14,4 @@ run_dc
 *.s
 *.dump
 *.spike
+rv64ui-p-simple.*
