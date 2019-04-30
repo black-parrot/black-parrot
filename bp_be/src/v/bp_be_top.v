@@ -32,7 +32,7 @@ module bp_be_top
    , parameter calc_debug_p                = 0
    , parameter calc_debug_file_p           = "calc_debug.log"
 
-   , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(num_core_p, num_lce_p)
+   , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
    , localparam ecode_dec_width_lp         = `bp_be_ecode_dec_width
    
    // VM parameters
@@ -104,7 +104,7 @@ module bp_be_top
 
 // Declare parameterized structures
 `declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_width_p)
-`declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
+`declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
 `declare_bp_be_internal_if_structs(vaddr_width_p
                                    , paddr_width_p
                                    , asid_width_p

@@ -7,6 +7,7 @@ module bp_be_nonsynth_tracer
    , parameter asid_width_p                = "inv"
    , parameter branch_metadata_fwd_width_p = "inv"
    , parameter num_core_p                  = "inv"
+   , parameter num_cce_p                   = "inv"
    , parameter num_lce_p                   = "inv"
 
    // Default parameters
@@ -14,7 +15,7 @@ module bp_be_nonsynth_tracer
 
    // Calculated parameters
    , localparam mhartid_width_lp      = `BSG_SAFE_CLOG2(num_core_p)
-   , localparam proc_cfg_width_lp     = `bp_proc_cfg_width(num_core_p, num_lce_p)
+   , localparam proc_cfg_width_lp     = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
    , localparam issue_pkt_width_lp    = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam exception_width_lp    = `bp_be_exception_width

@@ -21,16 +21,17 @@
 // mhartid   - the hartid for the core. Since BP does not support SMT, hartid == coreid
 // icache_id - the lceid used for coherence operations
 // dcache_id - the lceid used for coherence operations 
-`define declare_bp_common_proc_cfg_s(num_core_mp, num_lce_mp)                                      \
+`define declare_bp_common_proc_cfg_s(num_core_mp, num_cce_mp, num_lce_mp)                          \
   typedef struct packed                                                                            \
   {                                                                                                \
-    logic[`BSG_SAFE_CLOG2(num_core_mp)-1:0] mhartid;                                               \
-    logic[`BSG_SAFE_CLOG2(num_lce_mp)-1:0]  icache_id;                                             \
-    logic[`BSG_SAFE_CLOG2(num_lce_mp)-1:0]  dcache_id;                                             \
+    logic [`BSG_SAFE_CLOG2(num_core_mp)-1:0] core_id;                                              \
+    logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]  cce_id;                                               \
+    logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]  icache_id;                                            \
+    logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]  dcache_id;                                            \
   }  bp_proc_cfg_s;
 
-`define bp_proc_cfg_width(num_core_mp, num_lce_mp)                                                 \
-  (`BSG_SAFE_CLOG2(num_core_mp) + 2 * `BSG_SAFE_CLOG2(num_lce_mp))
+`define bp_proc_cfg_width(num_core_mp, num_cce_mp, num_lce_mp)                                     \
+  (`BSG_SAFE_CLOG2(num_core_mp) + `BSG_SAFE_CLOG2(num_cce_mp) + 2 * `BSG_SAFE_CLOG2(num_lce_mp))
 
 typedef struct packed
 {
