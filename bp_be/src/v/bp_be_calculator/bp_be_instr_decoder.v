@@ -59,6 +59,7 @@ always_comb
   begin
     // Set decoded defaults
     // NOPs are set after bypassing for critical path reasons
+    decode               = '0;
     decode.fe_nop_v      = '0; 
     decode.be_nop_v      = '0; 
     decode.me_nop_v      = '0; 
