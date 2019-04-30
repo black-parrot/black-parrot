@@ -143,7 +143,7 @@ module bp_mem_dramsim2
           // mem data command - need to write data to memory
           if (mem_data_cmd_v_i && mem_resp_ready_i) begin
             // do the write to memory ram if available
-            write_accepted = mem_write_req(block_rd_addr, mem_data_cmd_i_s.data);
+            write_accepted = mem_write_req(block_wr_addr, mem_data_cmd_i_s.data);
 
             mem_data_cmd_yumi_o <= write_accepted;
             mem_data_cmd_s_r    <= mem_data_cmd_i;
