@@ -252,6 +252,7 @@ always_comb
     trap_v_o        = '0;
     ret_v_o         = '0;
     illegal_instr_o = '0;
+    csr_data_lo     = '0;
         
     if (csr_cmd_v_i)
       if (csr_cmd.csr_op == e_mret)

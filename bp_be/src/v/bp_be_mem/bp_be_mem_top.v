@@ -349,6 +349,9 @@ assign dcache_pkt_v    = (ptw_busy)? ptw_dcache_v
                          : mmu_cmd_v_i);    
 always_comb 
   begin
+    // Currently uncached I/O  is determined by high bit of translated address
+    dcache_uncached = dcache_ptag[ptag_width_lp-1];
+
     if(ptw_busy) begin
       dcache_pkt = ptw_dcache_pkt;
     end
@@ -356,9 +359,6 @@ always_comb
       dcache_pkt.opcode      = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
       dcache_pkt.page_offset = {mmu_cmd.vaddr.index, mmu_cmd.vaddr.offset};
       dcache_pkt.data        = mmu_cmd.data;
-
-      // Currently uncached I/O  is determined by high bit of translated address
-      dcache_uncached = dcache_ptag[ptag_width_lp-1];
     end
 end
 
