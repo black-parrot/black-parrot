@@ -60,7 +60,7 @@ regress.me.sc:
 	&& echo "bp_cce_test: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_cce_test: FAIL" >> $(LOG_PATH)/me_regress.log
 
-regress.me.v:
+regress.me.v: deps.v
 	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_random_demo \
 	| tee -i $(LOG_PATH)/vcs/bp_me_random_stress_test.log
 	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_random_stress_test.log \
@@ -94,8 +94,8 @@ regress.me.v:
 	&& echo "bp_me_multi_mock_lce_axe: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_me_multi_mock_lce_axe: FAIL" >> $(LOG_PATH)/me_regress.log
 
-regress: lint.me regress.me
-regress.me: regress.me.sc regress.me.v check_design.syn
+regress: regress.me
+regress.me: lint.me regress.me.sc regress.me.v check_design.syn
 
 clean: clean.me
 clean.me:
