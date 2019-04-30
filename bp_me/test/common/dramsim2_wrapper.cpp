@@ -40,14 +40,20 @@ void bp_dram::read_hex(char *filename)
   //}
 }
 
-extern "C" void mem_read_req(uint64_t addr)
+extern "C" bool mem_read_req(uint64_t addr)
 {
   string scope = svGetNameFromScope(svGetScope());
+
+  if (!mem->willAcceptTransaction()) {
+     return false;
+  }
 
   mem->addTransaction(false, addr);
   dram.addr_tracker[addr].push(scope);
   dram.result_pending[scope] = false;
   dram.result_data[scope] = new svBitVecVal[(dram.result_size+31)>>5];
+
+  return true;
 }
 
 void bp_dram::read_complete(unsigned id, uint64_t addr, uint64_t cycle)
@@ -73,9 +79,13 @@ void bp_dram::read_complete(unsigned id, uint64_t addr, uint64_t cycle)
   //printf("\n");
 }
 
-extern "C" void mem_write_req(uint64_t addr, svBitVecVal *data)
+extern "C" bool mem_write_req(uint64_t addr, svBitVecVal *data)
 {
   string scope = svGetNameFromScope(svGetScope());
+
+  if (!mem->willAcceptTransaction()) {
+     return false;
+  }
 
   for (int i = 0; i < dram.result_size/32; i++) {
     uint32_t word = data[i];
@@ -91,7 +101,9 @@ extern "C" void mem_write_req(uint64_t addr, svBitVecVal *data)
   //for (int i = 63; i >= 0; i--) {
   //  printf("%x", dram.mem[addr+i]);
   //}
-  printf("\n");
+  //printf("\n");
+
+  return true;
 }
 
 void bp_dram::write_complete(unsigned id, uint64_t addr, uint64_t cycle)
@@ -111,7 +123,7 @@ extern "C" void init(uint64_t clock_period_in_ps
                      , uint64_t dram_req_width
                      )
 {
-  //if (!mem) {
+  if (!mem) {
     dram.result_size = dram_req_width;
 
     TransactionCompleteCB *read_cb = 
@@ -126,7 +138,7 @@ extern "C" void init(uint64_t clock_period_in_ps
     uint64_t clock_freq_in_hz = (uint64_t) (1.0 / (clock_period_in_ps * 1.0E-12));
     mem->setCPUClockSpeed(clock_freq_in_hz); 
     dram.read_hex(prog_name);
-  //}
+  }
 }
 
 extern "C" bool tick() 
