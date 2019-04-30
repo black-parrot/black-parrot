@@ -392,6 +392,7 @@ always_comb
 
     if(ptw_busy) begin
       dcache_pkt = ptw_dcache_pkt;
+      dcache_uncached = '0;
     end
     else begin
       dcache_pkt.opcode      = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
