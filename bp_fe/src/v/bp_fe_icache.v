@@ -43,22 +43,11 @@ module bp_fe_icache
     , localparam sets_p = lce_sets_p
     , localparam data_width_p = dword_width_p
 
-    , localparam block_size_in_words_lp=ways_p
-    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
-    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
-    , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
-    , localparam data_mask_width_lp=(data_width_p>>3)
-    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
-    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
-    , localparam lce_data_width_lp=(ways_p*data_width_p)
-    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
-    , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
     , localparam coh_bits_lp=`bp_cce_coh_bits
     , parameter debug_p=0
 
+    `declare_bp_fe_tag_widths(ways_p, sets_p, num_lce_p, data_width_p, paddr_width_p)
     `declare_bp_icache_widths(vaddr_width_p, tag_width_lp, ways_p) 
-   
-    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
    )
    (
     input                                              clk_i
