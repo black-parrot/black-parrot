@@ -32,6 +32,7 @@
     logic [rv64_reg_addr_width_gp-1:0]       rs1_addr;                                             \
     logic [rv64_reg_addr_width_gp-1:0]       rs2_addr;                                             \
     logic [rv64_reg_data_width_gp-1:0]       imm;                                                  \
+    logic                                    iscompressed;                                          \
    } bp_be_issue_pkt_s;                                                                            \
                                                                                                    \
   typedef struct packed                                                                            \
@@ -108,6 +109,7 @@
     logic                                   mem3_ret_v;                                            \
                                                                                                    \
     logic                                   instr_cmt_v;                                           \
+    logic                                   iscompressed;                                           \
   }  bp_be_calc_status_s;                                                                          \
 
 /* Declare width macros so that clients can use structs in ports before struct declaration
@@ -126,7 +128,7 @@
   (`bp_be_instr_metadata_width(vaddr_width_mp)                                                     \
    + branch_metadata_fwd_width_mp                                                                  \
    + rv64_instr_width_gp                                                                           \
-   + 4                                                                                             \
+   + 5                                                                                             \
    + 2 * rv64_reg_addr_width_gp                                                                    \
    + rv64_reg_data_width_gp                                                                        \
    )                                                                                               
@@ -161,7 +163,7 @@
    + 5 * `bp_be_dep_status_width                                                                   \
    + 1                                                                                             \
    + rv64_eaddr_width_gp                                                                           \
-   + 4                                                                                             \
+   + 5                                                                                             \
    )                                                                                               
 
 `endif

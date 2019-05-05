@@ -68,7 +68,7 @@ module bp_be_calculator_top
    // Default parameters
    , parameter load_to_use_forwarding_p = 1
    , parameter trace_p                  = 0
-   , parameter debug_p                  = 0
+   , parameter debug_p                  = 1
    , parameter debug_file_p             = "inv"
 
    // Generated parameters
@@ -551,7 +551,9 @@ always_comb
     calc_status.isd_irs2_v   = issue_pkt_r.irs2_v;
     calc_status.isd_frs2_v   = issue_pkt_r.frs2_v;
     calc_status.isd_rs2_addr = issue_pkt_r.rs2_addr;
-
+    //zazad begins
+    calc_status.iscompressed = issue_pkt_r.iscompressed; 
+    //zazad ends
     // Calculator status EX1 information
     calc_status.int1_v                   = dispatch_pkt_r.decode.pipe_int_v;
     calc_status.int1_br_tgt              = br_tgt_int1;

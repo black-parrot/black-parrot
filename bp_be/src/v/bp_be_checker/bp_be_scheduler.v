@@ -85,14 +85,41 @@ bp_be_issue_pkt_s issue_pkt;
 assign fe_queue    = fe_queue_i;
 assign issue_pkt_o = issue_pkt;
 
-bp_fe_fetch_s      fe_fetch;
-bp_be_instr_s      fe_fetch_instr;
+bp_fe_fetch_s      fe_fetch, input_fe_fetch;
+bp_be_instr_s      fe_fetch_instr, compressed_fetch_instr, decompressed_fetch_instr;
+logic [31:0] test_compressed_fetch_instr, test_decompressed_fetch_instr;
 bp_fe_exception_s  fe_exception;
 
-assign fe_fetch           = fe_queue.msg.fetch;
-assign fe_fetch_instr     = fe_fetch.instr;
+assign input_fe_fetch     = fe_queue.msg.fetch;
 assign fe_exception       = fe_queue.msg.exception;
 
+
+//align and expand compressed instructions
+logic fe_queue_v_o, aligner_ready_o;   
+aligner #(.vaddr_width_p(vaddr_width_p),
+          .paddr_width_p(paddr_width_p),
+          .branch_metadata_fwd_width_p(branch_metadata_fwd_width_p),
+          .asid_width_p(asid_width_p)
+         )
+         alignment_unit (.clk_i(clk_i),
+                         .reset_i(reset_i),
+                         .input_fe_fetch_i(input_fe_fetch),
+                         .fe_fetch_o(fe_fetch),
+                         .fe_queue_v_i(fe_queue_v_i),
+                         .fe_queue_v_o(fe_queue_v_o),//to send to the expander
+                         .aligner_ready_o(aligner_ready_o)//to send to the queue (dequeue)
+                        );
+
+assign compressed_fetch_instr = fe_fetch.instr;
+assign test_compressed_fetch_instr = fe_fetch.instr;
+                         
+expander decompression_decoder(.clk_i(clk_i),
+                               .reset_i(reset_i),
+                               .inst_inp(compressed_fetch_instr), //16-bit input
+                               .inst_out(decompressed_fetch_instr)  //32-bit output
+                              );
+assign fe_fetch_instr = decompressed_fetch_instr;
+assign test_decompressed_fetch_instr = decompressed_fetch_instr;   
 // Declare intermediate signals
 bp_be_instr_metadata_s           fe_instr_metadata;
 bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
@@ -102,9 +129,11 @@ logic [reg_data_width_lp-1:0]    exception_eaddr;
 assign exception_eaddr = rv64_reg_data_width_gp'($signed(fe_exception.vaddr));
 
 // Interface handshakes
-assign fe_queue_ready_o = fe_queue_v_i & issue_pkt_ready_i;
-assign issue_pkt_v_o    = fe_queue_v_i & issue_pkt_ready_i;
-
+//zazad begins
+//connected to yumi_i of the queue (dequeue)
+assign fe_queue_ready_o = aligner_ready_o & issue_pkt_ready_i;
+assign issue_pkt_v_o    = fe_queue_v_o & issue_pkt_ready_i;
+//zazad ends
 // Module instantiations
 // Each issued instruction should get a new itag
 assign itag_n = itag_r + itag_width_lp'(1);
@@ -123,6 +152,9 @@ bsg_dff_reset_en
 assign issue_pkt.instr_metadata      = fe_instr_metadata;
 assign issue_pkt.branch_metadata_fwd = fe_fetch.branch_metadata_fwd;
 assign issue_pkt.instr               = fe_fetch_instr;
+//zazad begins
+assign issue_pkt.iscompressed               = fe_fetch.iscompressed;   
+//zazad ends
 always_comb 
   begin : fe_queue_extract
 

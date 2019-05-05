@@ -95,7 +95,7 @@ bp_fe_icache_pc_gen_s       icache_pc_gen;
 //the second level structs instatiations
 bp_fe_fetch_s            pc_gen_fetch;
 bp_fe_exception_s        pc_gen_exception;
-bp_fe_instr_scan_s       scan_instr;
+bp_fe_instr_scan_s [1:0]      scan_instr;
    
    
 // pipeline pc's
@@ -111,8 +111,10 @@ logic [eaddr_width_p-1:0]       pc_n;
 logic                           stall;
 
 //branch prediction wires
-logic                           is_br;
-logic                           is_jal;
+logic                           is_rvi_br;
+logic                           is_rvc_br;   
+logic                           is_rvi_jal;
+logic                           is_rvc_jal;
 logic [eaddr_width_p-1:0]       br_target;
 logic                           is_back_br;
 logic                           predict_taken;
@@ -124,12 +126,6 @@ logic                           icache_miss_prev;
 // tlb miss recovery wires
 logic                           tlb_miss_recover;
 logic                           tlb_miss_prev;
-   
-logic [eaddr_width_p-1:0]       btb_target;
-logic [instr_width_p-1:0]       next_instr;
-logic [instr_width_p-1:0]       instr;
-logic [instr_width_p-1:0]       last_instr;
-logic [instr_width_p-1:0]       instr_out;
 
 //control signals
 logic                          misalignment;
@@ -145,6 +141,73 @@ bp_fe_branch_metadata_fwd_s fe_queue_branch_metadata, fe_queue_branch_metadata_r
 
 logic btb_pred_f1_r, btb_pred_f2_r;
 
+//zazad begins
+logic [1:0] instr_is_compressed;
+// save the unaligned part of the instruction to this ff
+logic [15:0] unaligned_instr_d, unaligned_instr_q;
+// the last instruction was unaligned
+logic unaligned_d, unaligned_q;
+// register to save the unaligned address
+logic [eaddr_width_p-1:0] unaligned_address_d, unaligned_address_q;
+logic instruction_valid;
+logic [1:0][instr_width_p-1:0] instr;
+logic [1:0][eaddr_width_p-1:0] addr;
+   
+for (genvar i = 0; i < 2; i ++) begin
+   // LSB != 2'b11
+   assign instr_is_compressed[i] = ~&icache_pc_gen.instr[i * 16 +: 2];
+end
+   
+// Soft-realignment to do branch-prediction
+always_comb begin : re_align
+   unaligned_d = unaligned_q;
+   unaligned_address_d = unaligned_address_q;
+   unaligned_instr_d = unaligned_instr_q;
+   instruction_valid = icache_pc_gen_v_i;
+
+
+    // 32-bit can contain 2 instructions
+   instr[0] = icache_pc_gen.instr;
+   addr[0]  = icache_pc_gen.addr;
+
+   instr[1] = '0;
+   addr[1] = {icache_pc_gen.addr[63:2], 2'b10};
+
+   if (icache_pc_gen_v_i) begin
+      // last instruction was unaligned
+      if (unaligned_q) begin
+         instr[0] = {icache_pc_gen.instr[15:0], unaligned_instr_q};
+         addr[0] = unaligned_address_q;
+
+         unaligned_address_d = {icache_pc_gen.addr[63:2], 2'b10};
+         unaligned_instr_d = icache_pc_gen.instr[31:16]; // save the upper bits for next cycle
+
+         if (instr_is_compressed[1]) begin
+            unaligned_d = 1'b0;
+            instr[1] = {16'b0, icache_pc_gen.instr[31:16]};
+         end
+      
+      end else if (instr_is_compressed[0]) begin // instruction zero is RVC
+         if (instr_is_compressed[1]) begin
+            instr[1] = {16'b0, icache_pc_gen.instr[31:16]};
+         end else begin
+            unaligned_instr_d = icache_pc_gen.instr[31:16];
+            unaligned_address_d = {icache_pc_gen.addr[63:2], 2'b10};
+            unaligned_d = 1'b1;
+         end // else: !if(instr_is_compressed[1])
+      end // else -> normal fetch
+   end // if (icache_pc_gen_v_i)
+
+   if (icache_pc_gen_v_i && icache_pc_gen.addr[1] && !instr_is_compressed[1]) begin
+       instruction_valid = 1'b0;
+       unaligned_d = 1'b1;
+       unaligned_address_d = {icache_pc_gen.addr[63:2], 2'b10};
+       unaligned_instr_d = icache_pc_gen.instr[31:16];
+   end
+end      
+ 
+//zazad ends
+   
 //connect pc_gen to the rest of the FE submodules as well as FE top module   
 assign pc_gen_icache_o = pc_gen_icache;
 assign pc_gen_itlb_o   = pc_gen_itlb;
@@ -170,6 +233,9 @@ always_comb
     pc_gen_fetch.pc                  = icache_pc_gen.addr;
     pc_gen_fetch.instr               = icache_pc_gen.instr;
     pc_gen_fetch.branch_metadata_fwd = fe_queue_branch_metadata_r;
+    //zazad begins
+    pc_gen_fetch.valid_branch_taken  = predict_taken;
+    //zazad ends
     pc_gen_fetch.padding             = '0;
     pc_gen_exception.padding         = '0;
     pc_gen_queue.msg                 = (pc_gen_queue.msg_type == e_fe_fetch) ? pc_gen_fetch : pc_gen_exception;
@@ -320,20 +386,52 @@ bp_fe_btb
    ,.w_v_i(fe_pc_gen_cmd.pc_redirect_valid & fe_pc_gen_v_i & fe_pc_gen_ready_o)
    ,.br_tgt_i(fe_pc_gen_cmd.pc)
    );
- 
-instr_scan 
- #(.eaddr_width_p(eaddr_width_p)
-   ,.instr_width_p(instr_width_p)
-   ) 
- instr_scan_1 
-  (.instr_i(icache_pc_gen.instr)
-   ,.scan_o(scan_instr)
-   );
 
-assign is_br = icache_pc_gen_v_i & (scan_instr.instr_scan_class == e_rvi_branch);
-assign is_jal = icache_pc_gen_v_i & (scan_instr.instr_scan_class == e_rvi_jal);
-assign br_target = icache_pc_gen.addr + scan_instr.imm; 
-assign is_back_br = scan_instr.imm[63];
-assign predict_taken = pc_v_f2 & ((is_br & is_back_br) | (is_jal)) & ~btb_pred_f1_r & icache_pc_gen_v_i;
+//zazad begins
+for (genvar i = 0; i < 2; i++) begin
+   instr_scan 
+     #(.eaddr_width_p(eaddr_width_p)
+       ,.instr_width_p(instr_width_p)
+       ) 
+   instr_scan_1 
+     (.instr_i(instr[i]/*icache_pc_gen.instr*/)
+      ,.scan_o(scan_instr[i])
+      );
+end
+//zazad ends
 
+//zazad begins
+logic [2:0] taken;
+logic predict_taken_temp;   
+always_comb begin: branch_target_handling
+   taken = '0; 
+   for (int unsigned i = 0; i < 2; i++) begin
+      if (!taken[i]) begin
+         is_rvi_br = icache_pc_gen_v_i & (scan_instr[i].instr_scan_class == e_rvi_branch);
+         is_rvc_br = icache_pc_gen_v_i & (scan_instr[i].instr_scan_class == e_rvc_branch);
+         is_rvi_jal = icache_pc_gen_v_i & (scan_instr[i].instr_scan_class == e_rvi_jal);
+         is_rvc_jal = icache_pc_gen_v_i & (scan_instr[i].instr_scan_class == e_rvc_jal);
+         br_target = addr[i] + scan_instr[i].imm; 
+         is_back_br = scan_instr[i].imm[63];
+         predict_taken_temp = pc_v_f2 & ((is_rvi_br & is_back_br) | (is_rvi_jal)) | ((is_rvc_br & is_back_br) | (is_rvc_jal)) & ~btb_pred_f1_r & icache_pc_gen_v_i;
+         if(predict_taken_temp) begin
+            taken[i+1] = 1'b1;
+         end
+      end
+   end // for (int unsigned i = 0; i < 2; i++)
+end // block: branch_target_handling
+
+assign predict_taken = |taken;
+always_ff @(posedge clk_i) begin
+   if (reset_i || (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) || btb_br_tgt_v_lo || predict_taken) begin
+      unaligned_q          <= 1'b0;
+      unaligned_address_q  <= '0;
+      unaligned_instr_q    <= '0;
+   end else begin // if (~reset_i)
+      unaligned_q          <= unaligned_d;
+      unaligned_address_q  <= unaligned_address_d;
+      unaligned_instr_q    <= unaligned_instr_d;
+   end // else: !if(~reset_i)
+end
+//zazad ends
 endmodule

@@ -163,7 +163,7 @@ bsg_mux
    ,.data_o(roll_mux_o)
    );
 
-assign npc_plus4 = npc_r + eaddr_width_lp'(4);
+assign npc_plus4 = calc_status.iscompressed ? npc_r + eaddr_width_lp'(2) : npc_r + eaddr_width_lp'(4);
 assign btaken_v  = calc_status.int1_v & calc_status.int1_btaken;
 bsg_mux 
  #(.width_p(eaddr_width_lp)

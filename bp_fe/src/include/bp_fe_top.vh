@@ -61,6 +61,9 @@ typedef enum logic [3:0]
   e_rvi_branch
   , e_rvi_jalr
   , e_rvi_jal
+  , e_rvc_branch
+  , e_rvc_jal
+  , e_rvc_jalr
   , e_default
  } bp_fe_instr_scan_class_e;
 

@@ -29,7 +29,7 @@ module testbench
    , parameter trace_ring_width_p       = "inv"
    , parameter trace_rom_addr_width_p   = "inv"
 
-   , parameter calc_debug_p      = 0
+   , parameter calc_debug_p      = 1
    , parameter calc_debug_file_p = "inv"
 
    , localparam cce_block_size_in_bits_lp = 8 * cce_block_size_in_bytes_p

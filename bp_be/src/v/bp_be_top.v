@@ -19,7 +19,7 @@ module bp_be_top
 
    , parameter load_to_use_forwarding_p    = 1
    , parameter trace_p                     = 0
-   , parameter calc_debug_p                = 0
+   , parameter calc_debug_p                = 1
    , parameter calc_debug_file_p           = "calc_debug.log"
 
    // MMU parameters
