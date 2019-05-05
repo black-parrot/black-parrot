@@ -1,3 +1,8 @@
+# Branches
+
+dev branch contains the most recent development
+master branch contains most recent stable version
+
 # coming-soon
 Black Parrot is coming soon.
 
