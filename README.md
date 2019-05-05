@@ -1,10 +1,20 @@
-# Branches
+**The structure of the BlackParrot repository branches.**
 
-dev branch contains the most recent development
-master branch contains most recent stable version
+The *dev* branch contains the most recent development version, being tested internally
 
-# coming-soon
-Black Parrot is coming soon.
+The *master* branch contains most recent stable version
+
+The *fe_dev*, *be_dev*, and *me_dev* branches are used to do development on the three major components of the BlackParrot core. 
+
+**Development flow.**
+
+When a new feature is ready for wider use across the BlackParrot development team, it is pushed from *fe_dev*, *be_dev*, or *me_dev* to *dev*, so the wider team can test. When we are satisfied with *dev*, we push to *master* so the world can use it.
+
+**Project Status.**
+
+The next release of Black Parrot, v 0.5, is coming in June 2019, and will contain support for 1 to 8-way cache coherent multicore, and include baseline user and privilege mode functionality.
+
+<!---
 
 To setup the repo:
 ```
@@ -53,3 +63,4 @@ https://docs.google.com/document/d/1GOSp6NVQUzGAAk\_ahleAsANaQK2XJ0MUOZFPC9DLbLQ
 The preliminary BlackParrot microarchitecture spec is available at:
 https://docs.google.com/document/d/1UDGMtXfCCgmO62fothY-9x9TLF5AyTLUEURk-fDVeLM/edit
 
+--->
