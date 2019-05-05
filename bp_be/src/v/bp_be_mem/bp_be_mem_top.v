@@ -261,6 +261,7 @@ bp_be_dtlb
    ,.en_i(1'b1)
    
    ,.r_v_i(dtlb_r_v)
+   ,.r_ready_o()
    ,.r_vtag_i(dtlb_r_vtag)
    
    ,.r_v_o()

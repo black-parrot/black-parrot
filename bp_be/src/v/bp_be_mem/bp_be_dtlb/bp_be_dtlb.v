@@ -15,6 +15,7 @@ module bp_be_dtlb
   
   // Connections to Cache
   , input                             r_v_i
+  , output                            r_ready_o
   , input [vtag_width_p-1:0]          r_vtag_i
   
   , output logic                      r_v_o
@@ -35,6 +36,8 @@ bp_be_tlb_entry_s r_entry, w_entry, ram_r_data;
 
 assign r_entry_o = r_entry;
 assign w_entry   = w_entry_i;
+
+assign r_ready_o = ~w_v_i;
   
 logic [lg_els_lp-1:0] cam_w_addr, cam_r_addr, victim_addr, ram_addr;
 logic                 cam_r_v;
