@@ -1,8 +1,8 @@
 **The structure of the BlackParrot repository branches.**
 
-The *dev* branch contains the most recent development version, being tested internally
+The *dev* branch contains the most recent development version, being tested internally.
 
-The *master* branch contains most recent stable version
+The *master* branch contains most recent stable version.
 
 The *fe_dev*, *be_dev*, and *me_dev* branches are used to do development on the three major components of the BlackParrot core. 
 
