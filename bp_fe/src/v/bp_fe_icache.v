@@ -46,7 +46,7 @@ module bp_fe_icache
     , localparam coh_bits_lp=`bp_cce_coh_bits
     , parameter debug_p=0
 
-    `declare_bp_fe_tag_widths(ways_p, sets_p, num_lce_p, data_width_p, paddr_width_p)
+    `declare_bp_fe_tag_widths(ways_p, sets_p, num_lce_p, num_cce_p, data_width_p, paddr_width_p)
     `declare_bp_icache_widths(vaddr_width_p, tag_width_lp, ways_p) 
    )
    (

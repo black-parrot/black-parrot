@@ -40,7 +40,7 @@ module bp_fe_lce
 
     , parameter timeout_max_limit_p=4
 
-   `declare_bp_fe_tag_widths(ways_p, sets_p, num_lce_p, data_width_p, paddr_width_p)
+   `declare_bp_fe_tag_widths(ways_p, sets_p, num_lce_p, num_cce_p, data_width_p, paddr_width_p)
    `declare_bp_fe_lce_widths(ways_p, sets_p, tag_width_lp, lce_data_width_lp) 
   )
   (
@@ -55,17 +55,17 @@ module bp_fe_lce
     , input                                                      miss_i
     , input [paddr_width_p-1:0]                                  miss_addr_i
 
-    , input [lce_data_width_lp-1:0] data_mem_data_i
-    , output logic [lce_data_mem_pkt_width_lp-1:0]              data_mem_pkt_o
+    , input [lce_data_width_lp-1:0]                              data_mem_data_i
+    , output logic [data_mem_pkt_width_lp-1:0]                   data_mem_pkt_o
     , output logic                                               data_mem_pkt_v_o
     , input                                                      data_mem_pkt_yumi_i
 
-    , output logic [lce_tag_mem_pkt_width_lp-1:0]               tag_mem_pkt_o
+    , output logic [tag_mem_pkt_width_lp-1:0]                    tag_mem_pkt_o
     , output logic                                               tag_mem_pkt_v_o
     , input                                                      tag_mem_pkt_yumi_i
        
     , output logic                                               metadata_mem_pkt_v_o
-    , output logic [lce_metadata_mem_pkt_width_lp-1:0]           metadata_mem_pkt_o
+    , output logic [metadata_mem_pkt_width_lp-1:0]               metadata_mem_pkt_o
     , input [way_id_width_lp-1:0]                                lru_way_i
     , input                                                      metadata_mem_pkt_yumi_i
       
@@ -137,14 +137,8 @@ module bp_fe_lce
   logic lce_req_lce_resp_yumi_li;
   logic [paddr_width_p-1:0] miss_addr_lo; 
 
-  bp_fe_lce_req #(
-    .data_width_p(data_width_p)
-    ,.paddr_width_p(paddr_width_p)
-    ,.num_cce_p(num_cce_p)
-    ,.num_lce_p(num_lce_p)
-    ,.sets_p(sets_p)
-    ,.ways_p(ways_p)
-  ) lce_req_inst (
+  bp_fe_lce_req #(.cfg_p(cfg_p))
+    lce_req_inst (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
   
@@ -181,15 +175,8 @@ module bp_fe_lce
   logic lce_cmd_lce_resp_v_lo;
   logic lce_cmd_lce_resp_yumi_li;
 
-  bp_fe_lce_cmd #(
-    .data_width_p(data_width_p)
-    ,.paddr_width_p(paddr_width_p)
-    ,.lce_data_width_p(lce_data_width_lp)
-    ,.sets_p(sets_p)
-    ,.ways_p(ways_p)
-    ,.num_cce_p(num_cce_p)
-    ,.num_lce_p(num_lce_p)
-  ) lce_cmd_inst (
+  bp_fe_lce_cmd #(.cfg_p(cfg_p))
+    lce_cmd_inst (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
 
@@ -234,15 +221,8 @@ module bp_fe_lce
   logic lce_data_cmd_data_mem_pkt_v_lo;
   logic lce_data_cmd_data_mem_pkt_yumi_li;
 
-  bp_fe_lce_data_cmd #(
-    .data_width_p(data_width_p)
-    ,.paddr_width_p(paddr_width_p)
-    ,.lce_data_width_p(lce_data_width_lp)
-    ,.sets_p(sets_p)
-    ,.ways_p(ways_p)
-    ,.num_cce_p(num_cce_p)
-    ,.num_lce_p(num_lce_p)
-  ) lce_data_cmd (
+  bp_fe_lce_data_cmd #(.cfg_p(cfg_p)) 
+    lce_data_cmd (
     .cce_data_received_o(cce_data_received)
     ,.tr_data_received_o(tr_data_received)
 
