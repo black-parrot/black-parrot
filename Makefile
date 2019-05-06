@@ -32,7 +32,7 @@ tools:
 	$(MAKE) fesvr     && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-fesvr
 	$(MAKE) spike     && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-isa-sim
 	$(MAKE) axe       && git submodule deinit -f $(BP_EXTERNAL_DIR)/axe
-	$(MAKE) dramsim2  && git submodule deinit -f $(BP_EXTERNAL_DIR)/DRAMSim2
+	$(MAKE) dramsim2
 
 progs:
 	$(MAKE) -C $(BP_COMMON_DIR)/test all
