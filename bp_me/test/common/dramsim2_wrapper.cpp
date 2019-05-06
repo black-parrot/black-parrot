@@ -70,6 +70,8 @@ void bp_dram::read_complete(unsigned id, uint64_t addr, uint64_t cycle)
   }
 
   dram.result_pending[scope] = true;
+
+  svSetScope(svGetScopeFromName(scope.c_str()));
   read_resp(dram.result_data[scope]);
 
   //printf("CACHELINE READ: %x\t", addr);
@@ -112,6 +114,8 @@ void bp_dram::write_complete(unsigned id, uint64_t addr, uint64_t cycle)
   dram.addr_tracker[addr].pop();
 
   dram.result_pending[scope] = true;
+
+  svSetScope(svGetScopeFromName(scope.c_str()));
   write_resp();
 }
 
