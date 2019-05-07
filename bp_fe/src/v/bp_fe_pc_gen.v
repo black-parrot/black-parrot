@@ -152,6 +152,40 @@ logic [eaddr_width_p-1:0] unaligned_address_d, unaligned_address_q;
 logic instruction_valid;
 logic [1:0][instr_width_p-1:0] instr;
 logic [1:0][eaddr_width_p-1:0] addr;
+
+// Logic for handling coming out of reset
+enum bit [0:0] {e_stall, e_run} state_n, state_r;
+logic ready;  
+logic [eaddr_width_p-1:0] pc_resume;
+// zazad begins
+assign ready = pc_gen_fe_ready_i & pc_gen_icache_ready_i;   
+always_comb
+  begin
+     unique casez (state_r)
+       e_run   : state_n = ~ready ? e_stall : e_run;
+       e_stall : state_n = ready  ? e_run   : e_stall;
+       default : state_n = e_run;
+     endcase // casez (state_r)
+  end
+   
+always_ff @(posedge clk_i)
+  begin
+     if (reset_i)
+       state_r <= e_run;
+     else
+       state_r <= state_n;
+  end
+   
+always_ff @(posedge clk_i)
+  begin
+     if (state_r == e_run)
+       pc_resume <= pc_f2;
+     else if (fe_pc_gen_v_i && fe_pc_gen_cmd.pc_redirect_valid)
+       pc_resume <= fe_pc_gen_cmd.pc;
+     else
+       pc_resume <= pc_resume;
+  end
+//zazad ends
    
 for (genvar i = 0; i < 2; i ++) begin
    // LSB != 2'b11
@@ -255,7 +289,7 @@ begin
   else 
     begin
       fe_pc_gen_ready_o = ~stall & fe_pc_gen_v_i;
-      pc_gen_fe_v_o     = pc_gen_fe_ready_i & icache_pc_gen_v_i & ~icache_miss_i & pc_v_f2 & ~tlb_miss_v_i;
+      pc_gen_fe_v_o     = pc_gen_fe_ready_i & icache_pc_gen_v_i & ~icache_miss_i & pc_v_f2 & ~tlb_miss_v_i & (state_r != e_stall);
       pc_gen_icache_v_o = pc_gen_fe_ready_i && ~icache_miss_i;
     end
 end
@@ -290,7 +324,11 @@ bp_fe_branch_metadata_fwd_s fe_cmd_branch_metadata;
 always_comb
 begin
     // if we need to redirect
-    if (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) begin
+    if (state_r == e_stall)
+    begin
+        pc_n = pc_resume;
+    end
+    else if (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) begin
         pc_n = fe_pc_gen_cmd.pc;
     end
     // if we've missed in the itlb

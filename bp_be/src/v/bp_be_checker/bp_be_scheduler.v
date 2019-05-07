@@ -59,6 +59,7 @@ module bp_be_scheduler
    , input                           fe_queue_v_i
    , output                          fe_queue_ready_o
 
+   ,input                            pc_redirect_i
    // Issue interface
    , output [issue_pkt_width_lp-1:0] issue_pkt_o
    , output                          issue_pkt_v_o
@@ -107,7 +108,8 @@ aligner #(.vaddr_width_p(vaddr_width_p),
                          .fe_fetch_o(fe_fetch),
                          .fe_queue_v_i(fe_queue_v_i),
                          .fe_queue_v_o(fe_queue_v_o),//to send to the expander
-                         .aligner_ready_o(aligner_ready_o)//to send to the queue (dequeue)
+                         .aligner_ready_o(aligner_ready_o),//to send to the queue (dequeue)
+                         .pc_redirect_i(pc_redirect_i)
                         );
 
 assign compressed_fetch_instr = fe_fetch.instr;

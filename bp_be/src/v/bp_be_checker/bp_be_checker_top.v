@@ -136,6 +136,8 @@ module bp_be_checker_top
 // Intermediate connections
 logic [eaddr_width_lp-1:0] expected_npc;
 
+logic                   pc_redirect_o;
+   
 // Datapath
 bp_be_director 
  #(.vaddr_width_p(vaddr_width_p)
@@ -160,6 +162,8 @@ bp_be_director
 
    ,.mtvec_i(mtvec_i)
    ,.mepc_i(mepc_i)
+
+   ,.pc_redirect_o(pc_redirect_o)
    );
 
 bp_be_detector 
@@ -185,6 +189,7 @@ bp_be_detector
    ,.chk_poison_ex3_o(chk_poison_ex3_o)
    );
 
+    
 bp_be_scheduler 
  #(.vaddr_width_p(vaddr_width_p)
    ,.paddr_width_p(paddr_width_p)
@@ -199,6 +204,8 @@ bp_be_scheduler
    ,.fe_queue_v_i(fe_queue_v_i)
    ,.fe_queue_ready_o(fe_queue_ready_o)
 
+   ,.pc_redirect_i(pc_redirect_o)
+   
    ,.issue_pkt_o(issue_pkt_o)
    ,.issue_pkt_v_o(issue_pkt_v_o)
    ,.issue_pkt_ready_i(issue_pkt_ready_i)

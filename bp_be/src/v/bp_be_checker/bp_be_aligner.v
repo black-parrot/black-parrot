@@ -15,6 +15,7 @@ module aligner
   , input fe_queue_v_i
   , output logic fe_queue_v_o
   , output logic aligner_ready_o
+  , input pc_redirect_i
   );
 
 //bp_fe_fetch_s
@@ -151,7 +152,7 @@ end // block: realign_instr
    
    
 always_ff @(posedge clk_i) begin
-   if (reset_i || ~fe_queue_v_i) begin
+   if (reset_i || pc_redirect_i /*|| ~fe_queue_v_i*/) begin
       unaligned_q         <= 1'b0;
       unaligned_instr_q   <= 16'b0;
       unaligned_address_q <= 64'b0;

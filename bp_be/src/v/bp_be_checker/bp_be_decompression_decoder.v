@@ -745,9 +745,9 @@ always_comb begin
          `C_LUI: begin
                       format_u.imm[4:0]   = format_ci.imm2[4:0];
                       format_u.imm[5]     = format_ci.imm1;
-                      format_u.imm[19:6]  = 14'd0;
+                      format_u.imm[19:6]  = {14{format_ci.imm1}};
                       format_u.rd         = format_ci.rd_rs1;
-                      format_i.op         = 7'b0110111;
+                      format_u.op         = 7'b0110111;
          end
          `C_ADDI: begin
                       format_i.imm[11:6]  = 6'd0;
