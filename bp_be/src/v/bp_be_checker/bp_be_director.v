@@ -92,6 +92,7 @@ module bp_be_director
    , output [vaddr_width_p-1:0]       pc_o 
    , input [mepc_width_lp-1:0]        mtvec_i
    , input [mtvec_width_lp-1:0]       mepc_i
+   , input                            tlb_fence_i
    
    //iTLB fill interface
    , input                           itlb_fill_v_i
@@ -222,7 +223,7 @@ bsg_dff_reset_en
  redirect_pending_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(calc_status.ex1_instr_v | trap_v_i)
+   ,.en_i(calc_status.ex1_v | trap_v_i)
 
    ,.data_i(npc_mismatch_v | trap_v_i)
    ,.data_o(redirect_pending)
@@ -243,9 +244,10 @@ bsg_dff_reset_en
 // Generate control signals
 assign expected_npc_o = npc_r;
 // Increment the checkpoint if there's a committing instruction
-assign chk_dequeue_fe_o = ~calc_status.mem3_miss_v & calc_status.instr_cmt_v;
+assign chk_dequeue_fe_o = ~calc_status.mem3_miss_v & (calc_status.instr_cmt_v | itlb_fill_v_i);
 // Flush the FE queue if there's a pc redirect
-assign chk_flush_fe_o = fe_cmd_v & (fe_cmd.opcode == e_op_pc_redirection);
+assign chk_flush_fe_o = fe_cmd_v & (fe_cmd.opcode == e_op_pc_redirection
+                                    | fe_cmd.opcode == e_op_itlb_fence);
 // Rollback the FE queue on a cache miss
 assign chk_roll_fe_o  = calc_status.mem3_miss_v;
 // The current PC, used for interrupts
@@ -287,8 +289,22 @@ always_comb
         fe_cmd.operands.reset_operands = fe_cmd_reset_operands;
         fe_cmd_v = fe_cmd_ready_i;
       end
+    else if(itlb_fill_v_i)
+      begin : itlb_fill
+        fe_cmd.opcode = e_op_itlb_fill_response;
+        fe_cmd.operands.itlb_fill_response.vaddr = {itlb_fill_vtag_i, bp_page_offset_width_gp'(0)};
+        fe_cmd.operands.itlb_fill_response.pte_entry_leaf = itlb_fill_entry_i;
+      
+        fe_cmd_v = fe_cmd_ready_i;
+      end
+    else if(tlb_fence_i)
+      begin : tlb_fence
+        fe_cmd.opcode = e_op_itlb_fence;
+        
+        fe_cmd_v = fe_cmd_ready_i;
+      end
     // Redirect the pc if there's an NPC mismatch
-    else if((calc_status.ex1_instr_v & npc_mismatch_v) | trap_v_i) 
+    else if((calc_status.ex1_v & npc_mismatch_v) | trap_v_i) 
       begin : pc_redirect
         fe_cmd.opcode                                   = e_op_pc_redirection;
         fe_cmd_pc_redirect_operands.pc                  = trap_v_i ? npc_n : expected_npc_o;
@@ -313,14 +329,6 @@ always_comb
         fe_cmd.operands.attaboy = fe_cmd_attaboy;
 
         fe_cmd_v = fe_cmd_ready_i & ~chk_roll_fe_o & ~redirect_pending;
-      end
-    else if(itlb_fill_v_i)
-      begin
-        fe_cmd.opcode = e_op_itlb_fill_response;
-        fe_cmd.operands.itlb_fill_response.vaddr = {itlb_fill_vtag_i, bp_page_offset_width_gp'(0)};
-        fe_cmd.operands.itlb_fill_response.pte_entry_leaf = itlb_fill_entry_i;
-      
-        fe_cmd_v = fe_cmd_ready_i & ~chk_roll_fe_o;
       end
   end
 endmodule : bp_be_director

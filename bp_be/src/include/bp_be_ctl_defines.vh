@@ -61,6 +61,8 @@ typedef enum bit [4:0]
   ,e_mret   = 5'b01011
   ,e_sret   = 5'b01001
   ,e_uret   = 5'b01000
+  
+  ,e_sfence_vma = 5'b01100
 } bp_be_csr_fu_op_e;
 
 typedef struct packed
@@ -178,7 +180,7 @@ typedef struct packed
 }  bp_be_exception_s;
 
 `define bp_be_fu_op_width                                                                          \
-  (`BSG_MAX($bits(bp_be_int_fu_op_e), `BSG_MAX($bits(bp_be_mmu_fu_op_e), $bits(bp_be_mmu_fu_op_e))))
+  (`BSG_MAX($bits(bp_be_int_fu_op_e), `BSG_MAX($bits(bp_be_mmu_fu_op_e), $bits(bp_be_csr_fu_op_e))))
 
 `define bp_be_decode_width                                                                         \
   ($bits(bp_be_decode_s))

@@ -51,6 +51,7 @@ module bp_be_csr
     , output [mtvec_width_lp-1:0]    mtvec_o
     , output [satp_width_lp-1:0]     satp_o
     , output                         translation_en_o
+    , output logic                   tlb_fence_o
     );
 
 // Declare parameterizable structs
@@ -254,9 +255,15 @@ always_comb
     ret_v_o         = '0;
     illegal_instr_o = '0;
     csr_data_lo     = '0;
+    tlb_fence_o     = '0;
         
     if (csr_cmd_v_i)
-      if (csr_cmd.csr_op == e_mret)
+      if (csr_cmd.csr_op == e_sfence_vma)
+        begin
+          illegal_instr_o = (priv_mode_r < `RV64_PRIV_MODE_S);
+          tlb_fence_o     = ~illegal_instr_o;
+        end
+      else if (csr_cmd.csr_op == e_mret)
         begin
           priv_mode_n     = mstatus_r.mpp;
 

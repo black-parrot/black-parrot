@@ -240,13 +240,11 @@ always_comb
           unique casez (instr)
             `RV64_ECALL      : begin end // Implemented as NOP
             `RV64_EBREAK     : begin end // Implemented as NOP
-            `RV64_URET       : begin end // Implemented as NOP
-            `RV64_SRET       : begin end // Implemented as NOP
             `RV64_MRET       : decode.fu_op = e_mret;
             `RV64_SRET       : decode.fu_op = e_sret;
             `RV64_URET       : decode.fu_op = e_uret;
             `RV64_WFI        : begin end // Implemented as NOP
-            `RV64_SFENCE_VMA : begin end // Implemented as NOP
+            `RV64_SFENCE_VMA : decode.fu_op = e_sfence_vma;
             default: 
               begin
                 decode.irf_w_v     = 1'b1;

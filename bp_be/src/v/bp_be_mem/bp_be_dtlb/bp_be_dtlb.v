@@ -11,7 +11,7 @@ module bp_be_dtlb
  )
  (input                               clk_i
   , input                             reset_i
-  , input                             en_i
+  , input                             flush_i
   
   // Connections to Cache
   , input                             r_v_i
@@ -46,17 +46,9 @@ logic                 r_v_n, miss_v_n, en_r;
 assign cam_w_addr                 = victim_addr;
 assign ram_addr                   = (w_v_i)? cam_w_addr : cam_r_addr;
 
-assign r_entry                    = (en_r)? ram_r_data : '0;
-assign r_v_n                      = (en_i)? (r_v_i & cam_r_v) : r_v_i;
-assign miss_v_n                   = (en_i)? (r_v_i & ~cam_r_v) : 1'b0;
-
-bsg_dff_reset #(.width_p(1))
-  en_reg
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.data_i(en_i)
-   ,.data_o(en_r)
-  );
+assign r_entry                    = ram_r_data;
+assign r_v_n                      = r_v_i & cam_r_v;
+assign miss_v_n                   = r_v_i & ~cam_r_v;
 
 bsg_dff_reset #(.width_p(1))
   r_v_reg
@@ -85,7 +77,7 @@ bsg_dff_reset #(.width_p(vtag_width_p))
 bp_be_dtlb_replacement #(.ways_p(els_p))
   plru
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_i | flush_i)
    
    ,.v_i(cam_r_v)
    ,.way_i(cam_r_addr)
@@ -101,8 +93,8 @@ bsg_cam_1r1w
   )
   vtag_cam
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.en_i(en_i)
+   ,.reset_i(reset_i | flush_i)
+   ,.en_i(1'b1)
    
    ,.w_v_i(w_v_i)
    ,.w_set_not_clear_i(1'b1)
@@ -128,7 +120,7 @@ bsg_mem_1rw_sync
    ,.reset_i(reset_i)
    ,.data_i(w_entry)
    ,.addr_i(ram_addr)
-   ,.v_i(en_i & (cam_r_v | w_v_i))
+   ,.v_i(cam_r_v | w_v_i)
    ,.w_i(w_v_i)
    ,.data_o(ram_r_data)
   );

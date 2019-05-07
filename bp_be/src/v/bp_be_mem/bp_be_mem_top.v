@@ -117,6 +117,7 @@ module bp_be_mem_top
    , output                                  ret_v_o
    , output [mepc_width_lp-1:0]              mepc_o
    , output [mtvec_width_lp-1:0]             mtvec_o
+   , output                                  tlb_fence_o
    );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p
@@ -248,6 +249,7 @@ bp_be_csr
    ,.mtvec_o(mtvec_o)
    ,.satp_o(satp_lo)
    ,.translation_en_o(translation_en_lo)
+   ,.tlb_fence_o(tlb_fence_o)
    );
 
 bp_be_dtlb
@@ -258,7 +260,7 @@ bp_be_dtlb
   dtlb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(1'b1)
+   ,.flush_i(tlb_fence_o)
    
    ,.r_v_i(dtlb_r_v)
    ,.r_ready_o()
@@ -442,7 +444,7 @@ logic dcache_pkt_v_r;
 always_ff @(negedge clk_i)
   begin
     dcache_pkt_v_r <= dcache_pkt_v;
-    assert (~(dcache_pkt_v_r & dcache_uncached & mmu_cmd.mem_op inside {e_lrw, e_lrd, e_scw, e_scd}))
+    assert (~(dcache_pkt_v_r & dcache_uncached & ~dtlb_miss_v & mmu_cmd.mem_op inside {e_lrw, e_lrd, e_scw, e_scd}))
       else $warning("LR/SC to uncached memory not supported");
   end
 
