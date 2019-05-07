@@ -121,7 +121,7 @@ logic                           icache_miss_prev;
 
 // tlb miss recovery wires
 logic                           itlb_miss_recover;
-logic                           itlb_miss_r, itlb_miss_r2;
+logic                           itlb_stall, itlb_exception_sent, itlb_miss_r, itlb_miss_f1;
    
 logic [vaddr_width_p-1:0]       btb_target;
 logic [instr_width_p-1:0]       next_instr;
@@ -132,6 +132,7 @@ logic [instr_width_p-1:0]       instr_out;
 //control signals
 logic                           state_reset_v;
 logic                           pc_redirect_v;
+logic                           itlb_fill_v;
 
 //exceptions
 logic                          fe_exception_v;
@@ -173,12 +174,13 @@ assign icache_pc_gen   = icache_pc_gen_i;
 
 assign state_reset_v = fe_pc_gen_v_i & fe_pc_gen_cmd.reset_valid;
 assign pc_redirect_v = fe_pc_gen_v_i & fe_pc_gen_cmd.pc_redirect_valid;
+assign itlb_fill_v   = fe_pc_gen_v_i & fe_pc_gen_cmd.itlb_fill_valid;
 
 assign fe_exception_v     = misalign_exception | itlb_miss_exception;
 assign misalign_exception = pc_redirect_v 
                             & ~fe_pc_gen_cmd.pc[1:0] == 2'b00;
                             
-assign itlb_miss_exception = ~itlb_miss_r2 & itlb_miss_r & itlb_miss_i;
+assign itlb_miss_exception = ~itlb_exception_sent & itlb_stall & pc_v_f2;
 /* output wiring */
 // there should be fixes to the pc signal sent out according to the valid/ready signal pairs
 
@@ -211,7 +213,7 @@ begin
   else 
     begin
       fe_pc_gen_ready_o = ~stall & fe_pc_gen_v_i;
-      pc_gen_fe_v_o     = pc_gen_fe_ready_i & pc_v_f2 & (icache_pc_gen_v_i | fe_exception_v);
+      pc_gen_fe_v_o     = pc_gen_fe_ready_i & pc_v_f2 & (icache_pc_gen_v_i | fe_exception_v) & ~pc_redirect_v;
       pc_gen_icache_v_o = pc_gen_fe_ready_i & pc_gen_icache_ready_i & ~stall;
     end
 end
@@ -219,27 +221,55 @@ end
 assign pc_v_f1 = ~((predict_taken & ~btb_pred_f2_r));
 
 // stall logic
-assign stall = (state_r == e_reset) | ~pc_gen_fe_ready_i | ~pc_gen_icache_ready_i | (itlb_miss_i & itlb_miss_r) | icache_miss_i;
+assign stall = (state_r == e_reset) | ~pc_gen_fe_ready_i | ~pc_gen_icache_ready_i | itlb_stall | icache_miss_i;
 
 assign icache_miss_recover = icache_miss_prev & (~icache_miss_i);
-assign itlb_miss_recover    = itlb_miss_r & (~itlb_miss_i);
+assign itlb_miss_recover   = itlb_fill_v;
    
 // icache and  itlb miss recover logic
 always_ff @(posedge clk_i)
 begin
     if (reset_i)
     begin
-        icache_miss_prev <= '0;
-        itlb_miss_r      <= '0;
-        itlb_miss_r2     <= '0;
+        icache_miss_prev    <= '0;
     end
     else
     begin
-        icache_miss_prev <= icache_miss_i;
-        itlb_miss_r      <= itlb_miss_i & ~pc_redirect_v;
-        itlb_miss_r2     <= itlb_miss_r & ~pc_redirect_v;
+        icache_miss_prev    <= icache_miss_i;
     end
 end
+
+always_ff @(posedge clk_i) begin
+  if(reset_i) begin
+    itlb_exception_sent <= '0;
+  end
+  else if(itlb_miss_exception) begin
+    itlb_exception_sent <= 1'b1;
+  end
+  else if(fe_pc_gen_v_i) begin
+    itlb_exception_sent <= '0;
+  end
+end
+
+always_ff @(posedge clk_i) begin
+  if(reset_i)
+    itlb_stall <= '0;
+  else if(~stall)
+    itlb_stall <= itlb_miss_f1;
+  else if(fe_pc_gen_v_i)
+    itlb_stall <= '0;
+end
+
+always_ff @(posedge clk_i) begin
+  if(reset_i)
+    itlb_miss_r <= '0;
+  else if((stall & ~itlb_miss_exception) & itlb_miss_i)
+    itlb_miss_r <= 1'b1;
+  else if(~stall)
+    itlb_miss_r <= '0;
+end
+
+assign itlb_miss_f1 = (itlb_miss_r | itlb_miss_i) & pc_v_f1;
 
 logic [vaddr_width_p-1:0] btb_br_tgt_lo;
 logic                     btb_br_tgt_v_lo;

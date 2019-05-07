@@ -152,6 +152,7 @@ always_comb
                                     == e_subop_branch_mispredict);
        
     fe_pc_gen.attaboy_valid       = fe_cmd.opcode == e_op_attaboy;
+    fe_pc_gen.itlb_fill_valid     = fe_cmd.opcode == e_op_itlb_fill_response;
        
     fe_pc_gen.branch_metadata_fwd = (fe_cmd.opcode  == e_op_attaboy) 
                                     ? fe_cmd.operands.attaboy.branch_metadata_fwd
@@ -174,9 +175,22 @@ always_comb
 assign poison_tl = icache_miss | fe_pc_gen.pc_redirect_valid & fe_pc_gen_v;
 
 //fe to itlb
+logic itlb_fill_v, itlb_fill_r, itlb_w_v, itlb_fence_v;
 bp_be_tlb_entry_s  itlb_entry_r;
 assign itlb_vaddr        = pc_gen_itlb.virt_addr;
 assign itlb_icache.ppn   = itlb_entry_r.ptag;
+assign itlb_fill_v       = fe_cmd_v_i & fe_cmd.opcode == e_op_itlb_fill_response;
+assign itlb_w_v          = itlb_fill_v & ~itlb_fill_r;
+assign itlb_fence_v      = fe_cmd_v_i & fe_cmd.opcode == e_op_itlb_fence;
+
+always_ff @(posedge clk_i) begin
+  if(reset_i) begin
+    itlb_fill_r <= '0;
+  end
+  else begin
+    itlb_fill_r <= itlb_fill_v;
+  end
+end
    
 bp_fe_pc_gen 
  #(.vaddr_width_p(vaddr_width_p)
@@ -278,19 +292,19 @@ bp_be_dtlb
  itlb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(1'b1)
+   ,.flush_i(itlb_fence_v)
 	       
    ,.r_v_i(pc_gen_itlb_v)
+   ,.r_ready_o()
    ,.r_vtag_i(itlb_vaddr.tag)
 	   
    ,.r_v_o(itlb_icache_data_resp_v)
    ,.r_entry_o(itlb_entry_r)
 
-   ,.w_v_i(itlb_miss & fe_cmd_v_i & fe_cmd.opcode == e_op_itlb_fill_response)
+   ,.w_v_i(itlb_w_v)
    ,.w_vtag_i(fe_cmd.operands.itlb_fill_response.vaddr[vaddr_width_p-1:bp_page_offset_width_gp])
 	 ,.w_entry_i(fe_cmd.operands.itlb_fill_response.pte_entry_leaf)
 
-   ,.miss_clear_i(1'b0)
 	 ,.miss_v_o(itlb_miss)
 	 ,.miss_vtag_o(itlb_miss_vtag)
 	 );

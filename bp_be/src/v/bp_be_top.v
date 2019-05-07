@@ -143,10 +143,11 @@ logic [mtvec_width_lp-1:0] chk_mtvec_li;
 logic [mepc_width_lp-1:0]  chk_mepc_li;
 logic [vaddr_width_p-1:0]  chk_pc_lo;
 
-logic chk_trap_v_li, chk_ret_v_li;
+logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li;
 
 logic                          instret;
 logic [vaddr_width_p-1:0]      exception_pc;
+logic [vaddr_width_p-1:0]      exception_vaddr;
 logic [instr_width_p-1:0]      exception_instr;
 logic [ecode_dec_width_lp-1:0] exception_ecode_dec;
 logic                          exception_ecode_v;
@@ -191,6 +192,7 @@ bp_be_checker_top
    ,.pc_o(chk_pc_lo)
    ,.mepc_i(chk_mepc_li)
    ,.mtvec_i(chk_mtvec_li)
+   ,.tlb_fence_i(chk_tlb_fence_li)
    
    ,.itlb_fill_v_i(itlb_fill_v)
    ,.itlb_fill_vtag_i(itlb_fill_vtag)
@@ -237,6 +239,7 @@ bp_be_calculator_top
 
    ,.instret_o(instret)
    ,.exception_pc_o(exception_pc)
+   ,.exception_vaddr_o(exception_vaddr)
    ,.exception_instr_o(exception_instr)
    ,.exception_ecode_v_o(exception_ecode_v)
    ,.exception_ecode_dec_o(exception_ecode_dec)
@@ -301,6 +304,7 @@ bp_be_mem_top
     ,.instret_i(instret)
 
     ,.exception_pc_i(exception_pc)
+    ,.exception_vaddr_i(exception_vaddr)
     ,.exception_instr_i(exception_instr)
     ,.exception_ecode_v_i(exception_ecode_v)
     ,.exception_ecode_dec_i(exception_ecode_dec)
@@ -314,6 +318,7 @@ bp_be_mem_top
     ,.ret_v_o(chk_ret_v_li)
     ,.mepc_o(chk_mepc_li)
     ,.mtvec_o(chk_mtvec_li)
+    ,.tlb_fence_o(chk_tlb_fence_li)
     );
 
 endmodule : bp_be_top

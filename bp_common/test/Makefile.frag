@@ -17,7 +17,7 @@ RV64_BENCHMARKS = \
   towers   \
   vvadd
 
-RV64_TESTS = \
+RV64_P_TESTS = \
   rv64ui-p-add     \
   rv64ui-p-addi    \
   rv64ui-p-addiw   \
@@ -69,7 +69,7 @@ RV64_TESTS = \
   rv64ui-p-sw      \
   rv64ui-p-xor     \
   rv64ui-p-xori    \
-                     \
+                   \
   rv64ua-p-amoadd_d  \
   rv64ua-p-amoadd_w  \
   rv64ua-p-amoand_d  \
@@ -88,5 +88,58 @@ RV64_TESTS = \
   rv64ua-p-amoswap_w \
   rv64ua-p-amoxor_d  \
   rv64ua-p-amoxor_w  \
-  rv64ua-p-lrsc
+  rv64ua-p-lrsc  
 
+RV64_V_TESTS = \
+  rv64ui-v-add     \
+  rv64ui-v-addi    \
+  rv64ui-v-addiw   \
+  rv64ui-v-addw    \
+  rv64ui-v-and     \
+  rv64ui-v-andi    \
+  rv64ui-v-auipc   \
+  rv64ui-v-beq     \
+  rv64ui-v-bge     \
+  rv64ui-v-bgeu    \
+  rv64ui-v-blt     \
+  rv64ui-v-bltu    \
+  rv64ui-v-bne     \
+  rv64ui-v-fence_i \
+  rv64ui-v-jal     \
+  rv64ui-v-jalr    \
+  rv64ui-v-lb      \
+  rv64ui-v-lbu     \
+  rv64ui-v-ld      \
+  rv64ui-v-lh      \
+  rv64ui-v-lhu     \
+  rv64ui-v-lui     \
+  rv64ui-v-lw      \
+  rv64ui-v-lwu     \
+  rv64ui-v-or      \
+  rv64ui-v-ori     \
+  rv64ui-v-sb      \
+  rv64ui-v-sd      \
+  rv64ui-v-sh      \
+  rv64ui-v-simple  \
+  rv64ui-v-sll     \
+  rv64ui-v-slli    \
+  rv64ui-v-slliw   \
+  rv64ui-v-sllw    \
+  rv64ui-v-slt     \
+  rv64ui-v-slti    \
+  rv64ui-v-sltiu   \
+  rv64ui-v-sltu    \
+  rv64ui-v-sra     \
+  rv64ui-v-srai    \
+  rv64ui-v-sraiw   \
+  rv64ui-v-sraw    \
+  rv64ui-v-srl     \
+  rv64ui-v-srli    \
+  rv64ui-v-srliw   \
+  rv64ui-v-srlw    \
+  rv64ui-v-sub     \
+  rv64ui-v-subw    \
+  rv64ui-v-sw      \
+  rv64ui-v-xor     \
+  rv64ui-v-xori
+  

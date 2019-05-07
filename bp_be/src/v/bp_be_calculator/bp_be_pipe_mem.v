@@ -51,7 +51,7 @@ module bp_be_pipe_mem
    , localparam exception_width_lp     = `bp_be_exception_width
    , localparam mmu_cmd_width_lp       = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam csr_cmd_width_lp       = `bp_be_csr_cmd_width
-   , localparam mem_resp_width_lp      = `bp_be_mem_resp_width
+   , localparam mem_resp_width_lp      = `bp_be_mem_resp_width(vaddr_width_p)
    , localparam mem_exception_width_lp = `bp_be_mem_exception_width
 
    // From RISC-V specifications
@@ -83,6 +83,7 @@ module bp_be_pipe_mem
    , output logic                              v_o
    , output logic [reg_data_width_lp-1:0]      data_o
    , output logic [mem_exception_width_lp-1:0] mem_exception_o
+   , output logic [vaddr_width_p-1:0]          mem3_vaddr_o
    );
 
 // Declare parameterizable structs
@@ -152,6 +153,7 @@ always_comb
 assign v_o                = mem_resp_v_i;
 assign mem_resp_ready_o   = 1'b1;
 assign mem_exception_o    = mem_resp.exception;
+assign mem3_vaddr_o       = mem_resp.vaddr;
 
 endmodule : bp_be_pipe_mem
 

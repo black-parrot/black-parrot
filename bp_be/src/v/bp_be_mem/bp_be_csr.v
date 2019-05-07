@@ -35,6 +35,7 @@ module bp_be_csr
     , input                          instret_i
 
     , input [vaddr_width_p-1:0]      exception_pc_i
+    , input [vaddr_width_p-1:0]      exception_vaddr_i
     , input [instr_width_lp-1:0]     exception_instr_i
     , input                          exception_ecode_v_i
     , input [ecode_dec_width_lp-1:0] exception_ecode_dec_i
@@ -50,6 +51,7 @@ module bp_be_csr
     , output [mtvec_width_lp-1:0]    mtvec_o
     , output [satp_width_lp-1:0]     satp_o
     , output                         translation_en_o
+    , output logic                   tlb_fence_o
     );
 
 // Declare parameterizable structs
@@ -253,9 +255,15 @@ always_comb
     ret_v_o         = '0;
     illegal_instr_o = '0;
     csr_data_lo     = '0;
+    tlb_fence_o     = '0;
         
     if (csr_cmd_v_i)
-      if (csr_cmd.csr_op == e_mret)
+      if (csr_cmd.csr_op == e_sfence_vma)
+        begin
+          illegal_instr_o = (priv_mode_r < `RV64_PRIV_MODE_S);
+          tlb_fence_o     = ~illegal_instr_o;
+        end
+      else if (csr_cmd.csr_op == e_mret)
         begin
           priv_mode_n     = mstatus_r.mpp;
 
@@ -456,7 +464,7 @@ always_comb
         mstatus_n.mie       = 1'b0;
 
         mepc_n              = exception_pc_i;
-        mtval_n             = exception_instr_i;
+        mtval_n             = illegal_instr_o ? exception_instr_i : exception_vaddr_i;
 
         mcause_n._interrupt = 1'b0;
         mcause_n.ecode      = exception_ecode_li;
@@ -497,7 +505,8 @@ always_comb
 assign mepc_o           = mepc_r;
 assign mtvec_o          = mtvec_r;
 assign satp_o           = satp_r;
-assign translation_en_o = (priv_mode_r < `RV64_PRIV_MODE_M) & (satp_r.mode == 4'h8);
+// We only support SV39 so the mode can either be 0(off) or 1(SV39)
+assign translation_en_o = (priv_mode_r < `RV64_PRIV_MODE_M) & (satp_r.mode == 1'b1);
 
 assign csr_cmd_ready_o = 1'b1;
 assign data_o          = dword_width_p'(csr_data_lo);
