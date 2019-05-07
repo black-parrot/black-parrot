@@ -17,7 +17,7 @@ RV64_BENCHMARKS = \
   towers   \
   vvadd
 
-RV64_TESTS = \
+RV64_P_TESTS = \
   rv64ui-p-add     \
   rv64ui-p-addi    \
   rv64ui-p-addiw   \
