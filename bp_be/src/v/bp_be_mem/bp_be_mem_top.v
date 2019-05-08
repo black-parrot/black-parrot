@@ -36,7 +36,7 @@ module bp_be_mem_top
    , localparam dcache_pkt_width_lp    = `bp_be_dcache_pkt_width(page_offset_width_lp
                                                                  , dword_width_p
                                                                  )
-   , localparam proc_cfg_width_lp      = `bp_proc_cfg_width(num_core_p, num_lce_p)
+   , localparam proc_cfg_width_lp      = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
    , localparam lce_id_width_lp        = `BSG_SAFE_CLOG2(num_lce_p)
 
    // MMU                                                              
@@ -124,7 +124,7 @@ module bp_be_mem_top
                                    , branch_metadata_fwd_width_p
                                    );
 
-`declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
+`declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
 `declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_width_p/8)
 `declare_bp_be_dcache_pkt_s(page_offset_width_lp, dword_width_p);
 `declare_bp_be_tlb_entry_s(ptag_width_lp);
@@ -199,7 +199,7 @@ bp_be_csr
    ,.v_o(csr_v_lo)
    ,.illegal_instr_o(illegal_instr)
 
-   ,.hartid_i(proc_cfg.mhartid)
+   ,.hartid_i(proc_cfg.core_id)
    ,.instret_i(instret_i)
 
    ,.exception_pc_i(exception_pc_i)

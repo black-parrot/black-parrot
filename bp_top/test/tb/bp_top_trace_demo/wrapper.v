@@ -53,7 +53,7 @@ module wrapper
    , output [num_core_p-1:0][dword_width_p-1:0]               cmt_data_o
   );
 
-  bp_top 
+  bp_top
    #(.cfg_p(cfg_p)
      ,.trace_p(trace_p)
      )
