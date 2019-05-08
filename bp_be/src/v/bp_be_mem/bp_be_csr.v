@@ -464,7 +464,7 @@ always_comb
         mstatus_n.mie       = 1'b0;
 
         mepc_n              = exception_pc_i;
-        mtval_n             = illegal_instr_o ? exception_instr_i : exception_vaddr_i;
+        mtval_n             = exception_ecode_dec_li ? exception_instr_i : exception_vaddr_i;
 
         mcause_n._interrupt = 1'b0;
         mcause_n.ecode      = exception_ecode_li;
