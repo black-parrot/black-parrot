@@ -132,9 +132,6 @@ module bp_cce_test
   logic                                          mem_data_cmd_v_o;
   logic                                          mem_data_cmd_yumi_i;
 
-  logic [lg_boot_rom_els_lp-1:0]                 boot_rom_addr;
-  logic [boot_rom_width_p-1:0]                   boot_rom_data;
-
   logic [lg_num_cce_lp-1:0] cce_id;
   localparam cce_id_lp = 0;
   assign cce_id = cce_id_lp;
@@ -248,16 +245,8 @@ module bp_cce_test
       ,.mem_data_resp_v_o(mem_data_resp_v_i)
       ,.mem_data_resp_ready_i(mem_data_resp_ready_o)
 
-      ,.boot_rom_addr_o(boot_rom_addr)
-      ,.boot_rom_data_i(boot_rom_data)
+      ,.boot_rom_addr_o()
+      ,.boot_rom_data_i('0)
      );
-
-  bp_boot_rom #(
-    .width_p(boot_rom_width_p)
-    ,.addr_width_p(lg_boot_rom_els_lp)
-  ) boot_rom (
-    .addr_i(boot_rom_addr)
-    ,.data_o(boot_rom_data)
-  );
 
 endmodule
