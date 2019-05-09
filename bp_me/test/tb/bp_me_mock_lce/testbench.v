@@ -11,7 +11,6 @@ module testbench
   #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR
     `declare_bp_proc_params(cfg_p)
 
-    , localparam num_mem_p = 1
     , localparam mem_els_p = 2*lce_sets_p*lce_assoc_p
 
     , localparam instr_count = `NUM_INSTR_P
@@ -22,8 +21,6 @@ module testbench
 
     , parameter cce_trace_p = `CCE_TRACE_P
     , parameter axe_trace_p = `AXE_TRACE_P
-
-`declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
   )
   ();
 

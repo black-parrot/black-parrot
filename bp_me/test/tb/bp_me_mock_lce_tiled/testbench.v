@@ -11,7 +11,6 @@ module testbench
   #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR
     `declare_bp_proc_params(cfg_p)
 
-    , localparam num_mem_p = 1
     , localparam mem_els_p = 2*lce_sets_p*lce_assoc_p
 
     , localparam instr_count = `NUM_INSTR_P
@@ -22,8 +21,6 @@ module testbench
 
     , parameter cce_trace_p = `CCE_TRACE_P
     , parameter axe_trace_p = `AXE_TRACE_P
-
-`declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
   )
   ();
 
@@ -48,11 +45,11 @@ module testbench
     ,.async_reset_o(reset)
   );
 
- 
+
   // mem subsystem under test
   //
   logic [num_lce_p-1:0] tr_v_li;
-  logic [num_lce_p-1:0][tr_ring_width_lp-1:0] tr_data_li, tr_data_from_lce;
+  logic [num_lce_p-1:0][tr_ring_width_lp-1:0] tr_data_li;
   logic [num_lce_p-1:0] tr_ready_lo;
 
   logic [num_lce_p-1:0] tr_v_lo;
@@ -60,39 +57,29 @@ module testbench
   logic [num_lce_p-1:0] tr_yumi_li;
 
 
-  bp_me_mock_lce_me #(
+  bp_me_nonsynth_top_test #(
     .cfg_p(cfg_p)
     ,.mem_els_p(mem_els_p)
     ,.boot_rom_els_p(mem_els_p)
     ,.cce_trace_p(cce_trace_p)
     ,.axe_trace_p(axe_trace_p)
-  ) mock_lce_me (
+  ) me_top_test (
     .clk_i(clk)
     ,.reset_i(reset)
- 
+
     ,.tr_pkt_i(tr_data_lo)
     ,.tr_pkt_v_i(tr_v_lo)
     ,.tr_pkt_yumi_o(tr_yumi_li)
 
-    ,.tr_pkt_o(tr_data_from_lce)
+    ,.tr_pkt_o(tr_data_li)
     ,.tr_pkt_v_o(tr_v_li)
     ,.tr_pkt_ready_i(tr_ready_lo)
   );
 
-  // NOTE: when testing multiple LCEs, the bsg_trace_rom.py script doesn't know how to properly
-  // check data values from loads, so it assumes the data is 0. Here, we stitch the header and
-  // address of the trace replay packet being returned by the mock LCE (which has actual data in it)
-  // with null data to feed into the trace replay.
-  // TODO: add load/store tracing and then we can run axe on the outputs
-  for (genvar i = 0; i < num_lce_p; i++) begin
-    assign tr_data_li[i] = {tr_data_from_lce[i][tr_ring_width_lp-1:dword_width_p]
-                            , {dword_width_p'('0)}};
-  end
-
   // trace node master
   //
   logic [num_lce_p-1:0] tr_done_lo;
-  
+
   for (genvar i = 0; i < num_lce_p; i++) begin
 
     bsg_trace_node_master #(
@@ -114,7 +101,7 @@ module testbench
 
       ,.done_o(tr_done_lo[i])
     );
-    
+
   end
 
   localparam max_clock_cnt_lp    = 2**30-1;
@@ -137,11 +124,6 @@ module testbench
 
   always_ff @(posedge clk)
     begin
-      /*
-      if (clock_cnt == 100000) begin
-        $finish;
-      end
-      */
       if (&tr_done_lo)
         begin
         $display("Bytes: %d Clocks: %d mBPC: %d "
