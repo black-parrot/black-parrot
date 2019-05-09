@@ -80,6 +80,9 @@ always_comb
     // CSR signals
     decode.csr_instr_v   = '0;
 
+    // Fence signals
+    decode.fence_instr_v = '0;
+
     // Decode metadata
     decode.fp_not_int_v  = '0;
     decode.jmp_v         = '0;
@@ -230,9 +233,9 @@ always_comb
       `RV64_MISC_MEM_OP : 
         begin
           decode.pipe_mem_v = 1'b1;
-          decode.csr_instr_v = 1'b1;
+          decode.fence_instr_v    = 1'b1;
           unique casez (instr)
-            `RV64_FENCE   : decode.fu_op = e_nop; // Implemented as NOP
+            `RV64_FENCE   : decode.fu_op = e_mmu_nop; // Implemented as NOP
             `RV64_FENCE_I : decode.fu_op = e_fence_i;
             default       : illegal_instr = 1'b1;
           endcase
@@ -242,12 +245,12 @@ always_comb
           decode.pipe_mem_v = 1'b1;
           decode.csr_instr_v = 1'b1;
           unique casez (instr)
-            `RV64_ECALL      : decode.fu_op = e_nop; // Implemented as NOP
-            `RV64_EBREAK     : decode.fu_op = e_nop; // Implemented as NOP
+            `RV64_ECALL      : decode.fu_op = e_csr_nop; // Implemented as NOP
+            `RV64_EBREAK     : decode.fu_op = e_csr_nop; // Implemented as NOP
             `RV64_MRET       : decode.fu_op = e_mret;
             `RV64_SRET       : decode.fu_op = e_sret;
             `RV64_URET       : decode.fu_op = e_uret;
-            `RV64_WFI        : decode.fu_op = e_nop; // Implemented as NOP
+            `RV64_WFI        : decode.fu_op = e_csr_nop; // Implemented as NOP
             `RV64_SFENCE_VMA : decode.fu_op = e_sfence_vma;
             default: 
               begin

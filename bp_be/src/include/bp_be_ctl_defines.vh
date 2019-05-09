@@ -43,17 +43,20 @@ typedef enum bit [4:0]
 
   ,e_lrd   = 5'b01101
   ,e_scd   = 5'b01110
-   
+
   ,e_ptw_i = 5'b10000
   ,e_ptw_l = 5'b10001
   ,e_ptw_s = 5'b10010
+
+  ,e_fence   = 5'b10011
+  ,e_fence_i = 5'b10100
+
+  ,e_mmu_nop = 5'b11111
 } bp_be_mmu_fu_op_e;
 
 typedef enum bit [4:0]
 {
-  e_nop     = 5'b00000
-  
-  ,e_csrrw  = 5'b00001
+  e_csrrw   = 5'b00001
   ,e_csrrs  = 5'b00010
   ,e_csrrc  = 5'b00011
   ,e_csrrwi = 5'b00101
@@ -63,9 +66,10 @@ typedef enum bit [4:0]
   ,e_mret   = 5'b01011
   ,e_sret   = 5'b01001
   ,e_uret   = 5'b01000
-  
+
   ,e_sfence_vma = 5'b01100
-  ,e_fence_i    = 5'b01101
+
+  ,e_csr_nop    = 5'b11111
 } bp_be_csr_fu_op_e;
 
 typedef struct packed
@@ -124,6 +128,7 @@ typedef struct packed
   logic                             irf_w_v;
   logic                             frf_w_v;
   logic                             csr_instr_v;
+  logic                             fence_instr_v;
   logic                             dcache_w_v;
   logic                             dcache_r_v;
   logic                             fp_not_int_v;
@@ -175,6 +180,7 @@ typedef struct packed
   logic roll_v;
 
   logic csr_instr_v;
+  logic fence_instr_v;
   logic itlb_fill_v;  
 
   logic instr_misaligned_v;

@@ -171,8 +171,6 @@ module bp_be_calculator_top
 // Cast input and output ports 
 bp_be_issue_pkt_s   issue_pkt;
 bp_be_calc_status_s calc_status;
-logic               mmu_cmd_v;
-bp_be_mmu_cmd_s     mmu_cmd;
 bp_be_mem_resp_s    mem_resp;
 bp_proc_cfg_s       proc_cfg;
 
@@ -229,28 +227,8 @@ logic [pipe_stage_els_lp-1:1][reg_data_width_lp-1:0] comp_stage_n_slice_rd;
 bp_be_decode_s fe_nop, be_nop, me_nop, illegal_nop, fe_exc_nop;
 logic fe_nop_v, be_nop_v, me_nop_v, illegal_nop_v, fe_exc_nop_v;
 
-// MMU signals
-logic           mmu_tlb_fill_cmd_v;
-bp_be_mmu_cmd_s mmu_tlb_fill_cmd;
-
 // Handshakes
 assign issue_pkt_ready_o = (chk_dispatch_v_i | ~issue_pkt_v_r);
-
-// MMU IO Muliplexing
-assign mmu_cmd_o = (mmu_tlb_fill_cmd_v)? mmu_tlb_fill_cmd : mmu_cmd;
-assign mmu_cmd_v_o = mmu_cmd_v | mmu_tlb_fill_cmd_v;
-
-assign mmu_tlb_fill_cmd_v = ~exc_stage_r[2].poison_v & (exc_stage_r[2].itlb_fill_v | mem_exception_mem3.dtlb_miss);
-
-assign mmu_tlb_fill_cmd.mem_op = exc_stage_r[2].itlb_fill_v 
-                                  ? e_ptw_i
-                                  : calc_stage_r[2].irf_w_v
-                                    ? e_ptw_l
-                                    : e_ptw_s;
-assign mmu_tlb_fill_cmd.vaddr = exc_stage_r[2].itlb_fill_v
-                                 ? calc_status.mem3_pc[0+:vaddr_width_p]
-                                 : mem_vaddr_mem3;
-assign mmu_tlb_fill_cmd.data = calc_status.mem3_pc[0+:vaddr_width_p];
 
 // Module instantiations
 // Register files
@@ -446,13 +424,17 @@ bp_be_pipe_mem
    ,.kill_ex2_i(exc_stage_n[2].poison_v)
    ,.kill_ex3_i(exc_stage_r[2].poison_v) 
 
+   ,.mem3_itlb_fill_v_i(exc_stage_r[2].itlb_fill_v)
+   ,.mem3_store_not_load_i(calc_stage_r[2].irf_w_v)
+   ,.mem3_pc_i(calc_status.mem3_pc)
+
    ,.decode_i(dispatch_pkt_r.decode)
    ,.rs1_i(dispatch_pkt_r.rs1)
    ,.rs2_i(dispatch_pkt_r.rs2)
    ,.imm_i(dispatch_pkt_r.imm)
 
-   ,.mmu_cmd_o(mmu_cmd)
-   ,.mmu_cmd_v_o(mmu_cmd_v)
+   ,.mmu_cmd_o(mmu_cmd_o)
+   ,.mmu_cmd_v_o(mmu_cmd_v_o)
    ,.mmu_cmd_ready_i(mmu_cmd_ready_i)
 
    ,.csr_cmd_o(csr_cmd_o)
@@ -630,7 +612,9 @@ always_comb
                                               & ~exc_stage_n[i+1].poison_v
                                               & calc_stage_r[i].frf_w_v;
         calc_status.dep_status[i].rd_addr   = calc_stage_r[i].rd_addr;
-        calc_status.dep_status[i].stall_v   = (exc_stage_r[i].csr_instr_v | exc_stage_r[i].itlb_fill_v)
+        calc_status.dep_status[i].stall_v   = (exc_stage_r[i].csr_instr_v
+                                               | exc_stage_r[i].fence_instr_v
+                                               | exc_stage_r[i].itlb_fill_v)
                                               & ~exc_stage_n[i+1].poison_v;
       end
 
@@ -686,6 +670,7 @@ always_comb
         exc_stage_n[3].illegal_instr_v = exc_stage_r[2].illegal_instr_v | mem_exception_mem3.illegal_instr;
 
         exc_stage_n[0].csr_instr_v     = chk_dispatch_v_i & csr_instr_isd;
+        exc_stage_n[0].fence_instr_v   = chk_dispatch_v_i & dispatch_pkt.decode.fence_instr_v;
 
         exc_stage_n[0].roll_v          =                           chk_roll_i;
         exc_stage_n[1].roll_v          = exc_stage_r[0].roll_v   | chk_roll_i;
