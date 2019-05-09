@@ -232,7 +232,7 @@ always_comb
           decode.pipe_mem_v = 1'b1;
           decode.csr_instr_v = 1'b1;
           unique casez (instr)
-            `RV64_FENCE   : begin end // Implemented as NOP
+            `RV64_FENCE   : decode.fu_op = e_nop; // Implemented as NOP
             `RV64_FENCE_I : decode.fu_op = e_fence_i;
             default       : illegal_instr = 1'b1;
           endcase
@@ -242,12 +242,12 @@ always_comb
           decode.pipe_mem_v = 1'b1;
           decode.csr_instr_v = 1'b1;
           unique casez (instr)
-            `RV64_ECALL      : begin end // Implemented as NOP
-            `RV64_EBREAK     : begin end // Implemented as NOP
+            `RV64_ECALL      : decode.fu_op = e_nop; // Implemented as NOP
+            `RV64_EBREAK     : decode.fu_op = e_nop; // Implemented as NOP
             `RV64_MRET       : decode.fu_op = e_mret;
             `RV64_SRET       : decode.fu_op = e_sret;
             `RV64_URET       : decode.fu_op = e_uret;
-            `RV64_WFI        : begin end // Implemented as NOP
+            `RV64_WFI        : decode.fu_op = e_nop; // Implemented as NOP
             `RV64_SFENCE_VMA : decode.fu_op = e_sfence_vma;
             default: 
               begin

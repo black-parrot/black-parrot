@@ -300,7 +300,7 @@ always_comb
 
           ret_v_o         = 1'b1;
         end
-      else
+      else if(csr_cmd.csr_op != e_nop)
         begin
           unique casez (csr_cmd.csr_addr)
             `RV64_CSR_ADDR_SATP: 

@@ -51,7 +51,9 @@ typedef enum bit [4:0]
 
 typedef enum bit [4:0]
 {
-  e_csrrw   = 5'b00001
+  e_nop     = 5'b00000
+  
+  ,e_csrrw  = 5'b00001
   ,e_csrrs  = 5'b00010
   ,e_csrrc  = 5'b00011
   ,e_csrrwi = 5'b00101
