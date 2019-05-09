@@ -63,6 +63,7 @@ typedef enum bit [4:0]
   ,e_uret   = 5'b01000
   
   ,e_sfence_vma = 5'b01100
+  ,e_fence_i    = 5'b01101
 } bp_be_csr_fu_op_e;
 
 typedef struct packed

@@ -65,6 +65,7 @@ module bp_be_detector
 
    , input                             trap_v_i
    , input                             tlb_fence_i
+   , input                             ifence_i
 
    // Pipeline control signals from the checker to the calculator
    , output                            chk_dispatch_v_o
@@ -187,17 +188,20 @@ assign chk_roll_o       = calc_status.mem3_miss_v;
 assign chk_poison_isd_o = reset_i
                           | trap_v_i
                           | tlb_fence_i
+                          | ifence_i
                           | calc_status.mem3_miss_v;
 
 assign chk_poison_ex1_o = reset_i 
                           | mispredict_v
                           | trap_v_i
                           | tlb_fence_i
+                          | ifence_i
                           | calc_status.mem3_miss_v;
 
 assign chk_poison_ex2_o = reset_i
                           | trap_v_i
                           | tlb_fence_i
+                          | ifence_i
                           | calc_status.mem3_miss_v;
 
 endmodule : bp_be_detector

@@ -118,6 +118,7 @@ module bp_be_mem_top
    , output [mepc_width_lp-1:0]              mepc_o
    , output [mtvec_width_lp-1:0]             mtvec_o
    , output                                  tlb_fence_o
+   , output                                  ifence_o
    );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p
@@ -250,6 +251,7 @@ bp_be_csr
    ,.satp_o(satp_lo)
    ,.translation_en_o(translation_en_lo)
    ,.tlb_fence_o(tlb_fence_o)
+   ,.ifence_o(ifence_o)
    );
 
 bp_be_dtlb

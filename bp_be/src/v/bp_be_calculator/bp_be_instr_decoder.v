@@ -229,9 +229,13 @@ always_comb
         end
       `RV64_MISC_MEM_OP : 
         begin
-          // Fences are implemented as nops, since we are fully cache coherent between I$ and D$
-          //   They go through the integer pipe, so that pc still advances
-          decode.pipe_int_v = 1'b1;
+          decode.pipe_mem_v = 1'b1;
+          decode.csr_instr_v = 1'b1;
+          unique casez (instr)
+            `RV64_FENCE   : begin end // Implemented as NOP
+            `RV64_FENCE_I : decode.fu_op = e_fence_i;
+            default       : illegal_instr = 1'b1;
+          endcase
         end
       `RV64_SYSTEM_OP : 
         begin
