@@ -46,6 +46,7 @@
  *                                   non-blocking, this signal indicates that there will be no
  *                                   hazards from this point on
  *   chk_roll_o                  - Roll back all the instructions in the pipe
+ *   chk_poison_iss_o            - Poison the instruction currently in issue stage
  *   chk_poison_isd_o            - Poison the instruction currently in ISD stage
  *   chk_poison_ex_o             - Poison all instructions currently in the pipe 
  *                                   prior to the commit point
@@ -114,6 +115,7 @@ module bp_be_checker_top
    // Checker pipeline control information
    , output                           chk_dispatch_v_o
    , output                           chk_roll_o
+   , output                           chk_poison_iss_o
    , output                           chk_poison_isd_o
    , output                           chk_poison_ex1_o
    , output                           chk_poison_ex2_o
@@ -192,6 +194,7 @@ bp_be_detector
 
    ,.chk_dispatch_v_o(chk_dispatch_v_o)
    ,.chk_roll_o(chk_roll_o)
+   ,.chk_poison_iss_o(chk_poison_iss_o)
    ,.chk_poison_isd_o(chk_poison_isd_o)
    ,.chk_poison_ex1_o(chk_poison_ex1_o)
    ,.chk_poison_ex2_o(chk_poison_ex2_o)

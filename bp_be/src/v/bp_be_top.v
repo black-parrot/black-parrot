@@ -136,7 +136,7 @@ logic                     itlb_fill_v;
 
 bp_be_calc_status_s    calc_status;
 
-logic chk_dispatch_v, chk_poison_isd;
+logic chk_dispatch_v, chk_poison_iss, chk_poison_isd;
 logic chk_poison_ex1, chk_poison_ex2, chk_roll, chk_instr_dequeue_v;
 
 logic [mtvec_width_lp-1:0] chk_mtvec_li;
@@ -164,6 +164,7 @@ bp_be_checker_top
 
    ,.chk_dispatch_v_o(chk_dispatch_v)
    ,.chk_roll_o(chk_roll)
+   ,.chk_poison_iss_o(chk_poison_iss)
    ,.chk_poison_isd_o(chk_poison_isd)
    ,.chk_poison_ex1_o(chk_poison_ex1)
    ,.chk_poison_ex2_o(chk_poison_ex2)
@@ -220,6 +221,7 @@ bp_be_calculator_top
    ,.chk_dispatch_v_i(chk_dispatch_v)
 
    ,.chk_roll_i(chk_roll)
+   ,.chk_poison_iss_i(chk_poison_iss)
    ,.chk_poison_isd_i(chk_poison_isd)
    ,.chk_poison_ex1_i(chk_poison_ex1)
    ,.chk_poison_ex2_i(chk_poison_ex2)

@@ -23,6 +23,7 @@
  *   chk_roll_i             - Checker rolls back all uncommitted instructions
  *   chk_poison_ex_i        - Checker poisons all uncommitted instructions
  *   chk_poison_isd_i       - Checker poisons the currently issued instruction as it's dispatched
+ *   chk_poison_iss_i       - Checker poisons the instruction at the issue stage
  *
  *   mem_resp_i             - An MMU response containing load data and exception codes
  *   mem_resp_v_i           - "ready-then-valid" interface
@@ -121,6 +122,7 @@ module bp_be_calculator_top
    
   , input                                chk_dispatch_v_i
   , input                                chk_roll_i
+  , input                                chk_poison_iss_i
   , input                                chk_poison_isd_i
   , input                                chk_poison_ex1_i
   , input                                chk_poison_ex2_i
@@ -180,6 +182,7 @@ assign proc_cfg = proc_cfg_i;
 assign calc_status_o = calc_status;
 
 // Declare intermediate signals
+logic                   chk_poison_iss_r;
 bp_be_issue_pkt_s       issue_pkt_r;
 logic                   issue_pkt_v_r;
 bp_be_dispatch_pkt_s    dispatch_pkt, dispatch_pkt_r;
@@ -293,17 +296,30 @@ bp_be_regfile
    ,.rs2_data_o(frf_rs2)
    );
 
-// Issued instruction registere
+// Issued instruction register
 bsg_dff_reset_en 
  #(.width_p(1+issue_pkt_width_lp)
    ) 
  issue_reg
   (.clk_i(clk_i)
-   ,.reset_i(reset_i | chk_roll_i | chk_poison_isd_i)
+   ,.reset_i(reset_i | chk_roll_i)
    ,.en_i(issue_pkt_v_i | chk_dispatch_v_i)
 
    ,.data_i({issue_pkt_v_i, issue_pkt})
    ,.data_o({issue_pkt_v_r, issue_pkt_r})
+   );
+   
+// Register the issue poison
+bsg_dff_reset_en 
+ #(.width_p(1)
+   ) 
+ issue_psn_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(issue_pkt_v_i | chk_dispatch_v_i)
+
+   ,.data_i(chk_poison_iss_i)
+   ,.data_o(chk_poison_iss_r)
    );
 
 // Decode the dispatched instruction
@@ -676,7 +692,7 @@ always_comb
         exc_stage_n[2].roll_v          = exc_stage_r[1].roll_v   | chk_roll_i;
         exc_stage_n[3].roll_v          = exc_stage_r[2].roll_v   | chk_roll_i;
 
-        exc_stage_n[0].poison_v        =                           chk_poison_isd_i;
+        exc_stage_n[0].poison_v        = chk_poison_iss_r        | chk_poison_isd_i;
         exc_stage_n[1].poison_v        = exc_stage_r[0].poison_v | chk_poison_ex1_i;
         exc_stage_n[2].poison_v        = exc_stage_r[1].poison_v | chk_poison_ex2_i;
         exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | calc_status.mem3_miss_v | mem_exception_mem3.illegal_instr; 
