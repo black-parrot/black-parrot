@@ -5,86 +5,40 @@
 
 module bp_cce_test
   import bp_common_pkg::*;
+  import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
-  #(parameter num_lce_p=1
-    ,parameter num_cce_p=1
-    ,parameter paddr_width_p=56
-    ,parameter lce_assoc_p=8
-    ,parameter lce_sets_p=64
-    ,parameter block_size_in_bytes_p=64
-    ,parameter block_size_in_bits_lp=block_size_in_bytes_p*8
-    ,parameter num_inst_ram_els_p=256
+  #(parameter bp_cfg_e cfg_p = e_bp_half_core_cfg
+    `declare_bp_proc_params(cfg_p)
 
-    ,parameter cce_trace_p=0
+    , parameter cce_trace_p=0
 
-    ,parameter lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
+    , localparam mem_els_lp=2*lce_assoc_p*lce_sets_p
+    , localparam boot_rom_width_lp=cce_block_width_p
 
-    ,parameter mem_els_p=512
-    ,parameter boot_rom_width_p=512
-    ,parameter boot_rom_els_p=512
-    ,parameter lg_boot_rom_els_lp=`BSG_SAFE_CLOG2(boot_rom_els_p)
+    , localparam block_size_in_bytes_lp=(cce_block_width_p/8)
+    , localparam lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
+    , localparam inst_ram_addr_width_lp=`BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
 
     // Config channel
-    ,parameter cfg_link_addr_width_p = "inv"
-    ,parameter cfg_link_data_width_p = "inv"
+    , parameter cfg_link_addr_width_p = bp_cfg_link_addr_width_gp
+    , parameter cfg_link_data_width_p = bp_cfg_link_data_width_gp
 
-		,localparam lce_req_data_width_lp=64
-    , localparam bp_lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_p
-                                                               ,num_lce_p
-                                                               ,paddr_width_p
-                                                               ,lce_assoc_p
-                                                               ,lce_req_data_width_lp)
-
-    , localparam bp_lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_p
-                                                                 ,num_lce_p
-                                                                 ,paddr_width_p)
-
-    , localparam bp_lce_cce_data_resp_width_lp=`bp_lce_cce_data_resp_width(num_cce_p
-                                                                           ,num_lce_p
-                                                                           ,paddr_width_p
-                                                                           ,block_size_in_bits_lp)
-
-    , localparam bp_cce_lce_cmd_width_lp=`bp_cce_lce_cmd_width(num_cce_p
-                                                               ,num_lce_p
-                                                               ,paddr_width_p
-                                                               ,lce_assoc_p)
-
-    , localparam bp_lce_data_cmd_width_lp=`bp_lce_data_cmd_width(num_lce_p
-                                                                 ,block_size_in_bits_lp
-                                                                 ,lce_assoc_p)
-
-    , localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p
-                                                                 ,num_lce_p
-                                                                 ,lce_assoc_p)
-
-    , localparam bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(paddr_width_p
-                                                                           ,block_size_in_bits_lp
-                                                                           ,num_lce_p
-                                                                           ,lce_assoc_p)
-
-    , localparam bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(paddr_width_p
-                                                               ,num_lce_p
-                                                               ,lce_assoc_p)
-
-    , localparam bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_p
-                                                                         ,block_size_in_bits_lp
-                                                                         ,num_lce_p
-                                                                         ,lce_assoc_p)
-
-    , localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_inst_ram_els_p)
+    // interface widths
+    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
   )
   (
     input                                                  clk_i
     ,input                                                 reset_i
     ,input                                                 freeze_i
- 
+
     // Config channel
     , input [cfg_link_addr_width_p-2:0]                    config_addr_i
     , input [cfg_link_data_width_p-1:0]                    config_data_i
     , input                                                config_v_i
     , input                                                config_w_i
     , output logic                                         config_ready_o
- 
+
     , output logic [cfg_link_data_width_p-1:0]             config_data_o
     , output logic                                         config_v_o
     , input                                                config_ready_i
@@ -92,23 +46,23 @@ module bp_cce_test
     // LCE-CCE Interface
     // inbound: ready&valid
     // outbound: ready&valid
-    ,input [bp_lce_cce_req_width_lp-1:0]                   lce_req_i
+    ,input [lce_cce_req_width_lp-1:0]                      lce_req_i
     ,input                                                 lce_req_v_i
     ,output logic                                          lce_req_ready_o
 
-    ,input [bp_lce_cce_resp_width_lp-1:0]                  lce_resp_i
+    ,input [lce_cce_resp_width_lp-1:0]                     lce_resp_i
     ,input                                                 lce_resp_v_i
     ,output logic                                          lce_resp_ready_o
 
-    ,input [bp_lce_cce_data_resp_width_lp-1:0]             lce_data_resp_i
+    ,input [lce_cce_data_resp_width_lp-1:0]                lce_data_resp_i
     ,input                                                 lce_data_resp_v_i
     ,output logic                                          lce_data_resp_ready_o
 
-    ,output logic [bp_cce_lce_cmd_width_lp-1:0]            lce_cmd_o
+    ,output logic [cce_lce_cmd_width_lp-1:0]               lce_cmd_o
     ,output logic                                          lce_cmd_v_o
     ,input                                                 lce_cmd_ready_i
 
-    ,output logic [bp_lce_data_cmd_width_lp-1:0]           lce_data_cmd_o
+    ,output logic [lce_data_cmd_width_lp-1:0]              lce_data_cmd_o
     ,output logic                                          lce_data_cmd_v_o
     ,input                                                 lce_data_cmd_ready_i
 
@@ -116,19 +70,19 @@ module bp_cce_test
   );
 
   // CCE-MEM Interface
-  logic [bp_mem_cce_resp_width_lp-1:0]           mem_resp_i;
+  logic [mem_cce_resp_width_lp-1:0]              mem_resp_i;
   logic                                          mem_resp_v_i;
   logic                                          mem_resp_ready_o;
 
-  logic [bp_mem_cce_data_resp_width_lp-1:0]      mem_data_resp_i;
+  logic [mem_cce_data_resp_width_lp-1:0]         mem_data_resp_i;
   logic                                          mem_data_resp_v_i;
   logic                                          mem_data_resp_ready_o;
 
-  logic [bp_cce_mem_cmd_width_lp-1:0]            mem_cmd_o;
+  logic [cce_mem_cmd_width_lp-1:0]               mem_cmd_o;
   logic                                          mem_cmd_v_o;
   logic                                          mem_cmd_yumi_i;
 
-  logic [bp_cce_mem_data_cmd_width_lp-1:0]       mem_data_cmd_o;
+  logic [cce_mem_data_cmd_width_lp-1:0]          mem_data_cmd_o;
   logic                                          mem_data_cmd_v_o;
   logic                                          mem_data_cmd_yumi_i;
 
@@ -150,14 +104,7 @@ module bp_cce_test
       );
 
   bp_cce_top
-    #(.num_lce_p(num_lce_p)
-      ,.num_cce_p(num_cce_p)
-      ,.paddr_width_p(paddr_width_p)
-      ,.lce_assoc_p(lce_assoc_p)
-      ,.lce_sets_p(lce_sets_p)
-      ,.block_size_in_bytes_p(block_size_in_bytes_p)
-      ,.num_cce_inst_ram_els_p(num_inst_ram_els_p)
-			,.lce_req_data_width_p(lce_req_data_width_lp)
+    #(.cfg_p(cfg_p)
       ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
       ,.cfg_link_data_width_p(cfg_link_data_width_p)
       ,.cce_trace_p(cce_trace_p)
@@ -222,12 +169,12 @@ module bp_cce_test
       ,.num_cce_p(num_cce_p)
       ,.paddr_width_p(paddr_width_p)
       ,.lce_assoc_p(lce_assoc_p)
-      ,.block_size_in_bytes_p(block_size_in_bytes_p)
+      ,.block_size_in_bytes_p(block_size_in_bytes_lp)
       ,.lce_sets_p(lce_sets_p)
-      ,.mem_els_p(mem_els_p)
-      ,.boot_rom_width_p(boot_rom_width_p)
-      ,.boot_rom_els_p(boot_rom_els_p)
-			,.lce_req_data_width_p(lce_req_data_width_lp)
+      ,.mem_els_p(mem_els_lp)
+      ,.boot_rom_width_p(boot_rom_width_lp)
+      ,.boot_rom_els_p(mem_els_lp)
+      ,.lce_req_data_width_p(dword_width_p)
      )
      bp_mem
      (.clk_i(clk_i)
