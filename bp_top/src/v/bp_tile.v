@@ -25,6 +25,7 @@ module bp_tile
    , parameter trace_p      = 0
    , parameter calc_debug_p = 1
    , parameter debug_p      = 0 // Debug for the network (TODO: rename)
+   , parameter cce_trace_p  = 0
 
    , parameter x_cord_width_p = `BSG_SAFE_CLOG2(num_lce_p)
    , parameter y_cord_width_p = 1
@@ -645,17 +646,10 @@ bsg_wormhole_router_adapter_out
    );
 
 bp_cce_top
- #(.num_lce_p(num_lce_p)
-   ,.num_cce_p(num_cce_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.lce_assoc_p(lce_assoc_p)
-   ,.lce_sets_p(lce_sets_p)
-   ,.block_size_in_bytes_p(cce_block_width_p/8)
-   ,.num_cce_inst_ram_els_p(num_cce_instr_ram_els_p)
-   ,.lce_req_data_width_p(dword_width_p)
-   ,.cfg_link_addr_width_p(16) // TODO: move these into proc cfg?
-   ,.cfg_link_data_width_p(32)
-   ,.cce_trace_p(0)
+ #(.cfg_p(cfg_p)
+   ,.cfg_link_addr_width_p(bp_cfg_link_addr_width_gp)
+   ,.cfg_link_data_width_p(bp_cfg_link_data_width_gp)
+   ,.cce_trace_p(cce_trace_p)
    )
  cce
   (.clk_i(clk_i)
