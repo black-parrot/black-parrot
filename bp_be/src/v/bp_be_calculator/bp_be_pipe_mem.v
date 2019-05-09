@@ -130,6 +130,9 @@ bsg_shift_reg
    ,.data_o(csr_cmd_lo)
    );
 
+// TODO: we are using extra bits for this.
+// Can add this information to the calculator pipeline
+// And share them between CSR and MEM3 cmds
 bsg_shift_reg
  #(.width_p(mmu_cmd_width_lp)
    ,.stages_p(2)
@@ -172,7 +175,7 @@ always_comb
     else begin
       mem3_cmd.mem_op = mem3_cmd_lo.mem_op;
     end
-    mem3_cmd.vaddr = mem3_itlb_fill_v_i ? mem3_pc_i : mem3_vaddr_o;
+    mem3_cmd.vaddr = mem3_itlb_fill_v_i ? mem3_pc_i : mem_resp.vaddr;
     mem3_cmd.data  = mem3_pc_i;
   end
 
