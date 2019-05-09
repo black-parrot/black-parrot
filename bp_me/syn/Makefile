@@ -70,20 +70,20 @@ regress.me.v: deps.v
 	@grep "DONE" $(LOG_PATH)/vcs/bp_me_mock_lce.log \
 	&& echo "bp_me_mock_lce: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_me_mock_lce: FAIL" >> $(LOG_PATH)/me_regress.log
-	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_multi_mock_lce NUM_LCE_P=8 AXE_TRACE_P=1 \
-	| tee -i $(LOG_PATH)/vcs/bp_me_multi_mock_lce.log
-	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_multi_mock_lce.log \
-	| tee -i $(REPORT_PATH)/vcs/bp_me_multi_mock_lce.rpt
-	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_multi_mock_lce.log \
-	|| echo "FAILED" >> $(REPORT_DIR)/bp_me_multi_mock_lce.err
-	@grep "DONE" $(LOG_PATH)/vcs/bp_me_multi_mock_lce.log \
-	&& echo "bp_me_multi_mock_lce: OK" >> $(LOG_PATH)/me_regress.log \
-	|| echo "bp_me_multi_mock_lce: FAIL" >> $(LOG_PATH)/me_regress.log
-	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_multi_mock_lce axe \
-	| tee -i $(LOG_PATH)/vcs/bp_me_multi_mock_lce_axe.log
-	@grep "OK" $(LOG_PATH)/vcs/bp_me_multi_mock_lce_axe.log \
-	&& echo "bp_me_multi_mock_lce_axe: OK" >> $(LOG_PATH)/me_regress.log \
-	|| echo "bp_me_multi_mock_lce_axe: FAIL" >> $(LOG_PATH)/me_regress.log
+	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_mock_lce_tiled NUM_LCE_P=8 AXE_TRACE_P=1 \
+	| tee -i $(LOG_PATH)/vcs/bp_me_mock_lce_tiled.log
+	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_mock_lce_tiled.log \
+	| tee -i $(REPORT_PATH)/vcs/bp_me_mock_lce_tiled.rpt
+	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_mock_lce_tiled.log \
+	|| echo "FAILED" >> $(REPORT_DIR)/bp_me_mock_lce_tiled.err
+	@grep "DONE" $(LOG_PATH)/vcs/bp_me_mock_lce_tiled.log \
+	&& echo "bp_me_mock_lce_tiled: OK" >> $(LOG_PATH)/me_regress.log \
+	|| echo "bp_me_mock_lce_tiled: FAIL" >> $(LOG_PATH)/me_regress.log
+	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_mock_lce_tiled axe \
+	| tee -i $(LOG_PATH)/vcs/bp_me_mock_lce_tiled_axe.log
+	@grep "OK" $(LOG_PATH)/vcs/bp_me_mock_lce_tiled_axe.log \
+	&& echo "bp_me_mock_lce_tiled_axe: OK" >> $(LOG_PATH)/me_regress.log \
+	|| echo "bp_me_mock_lce_tiled_axe: FAIL" >> $(LOG_PATH)/me_regress.log
 
 regress: regress.me
 regress.me: lint.me regress.me.sc regress.me.v check_design.syn
@@ -91,7 +91,7 @@ regress.me: lint.me regress.me.sc regress.me.v check_design.syn
 clean: clean.me
 clean.me:
 	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_mock_lce clean
-	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_multi_mock_lce clean
+	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_mock_lce_tiled clean
 
 verilator-demo:
 	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_random_verilator
