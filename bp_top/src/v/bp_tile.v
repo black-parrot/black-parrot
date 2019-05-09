@@ -30,11 +30,11 @@ module bp_tile
    , parameter y_cord_width_p = 1
 
    , localparam lce_cce_req_network_width_lp = 
-       lce_cce_req_width_lp+`BSG_SAFE_CLOG2(x_cord_width_p)+1
+       lce_cce_req_width_lp+x_cord_width_p+1
    , localparam lce_cce_resp_network_width_lp = 
-       lce_cce_resp_width_lp+`BSG_SAFE_CLOG2(x_cord_width_p)+1
+       lce_cce_resp_width_lp+x_cord_width_p+1
    , localparam cce_lce_cmd_network_width_lp = 
-       cce_lce_cmd_width_lp+`BSG_SAFE_CLOG2(x_cord_width_p)+1
+       cce_lce_cmd_width_lp+x_cord_width_p+1
 
    , localparam lce_cce_data_resp_num_flits_lp = bp_data_resp_num_flit_gp
    , localparam lce_cce_data_resp_len_width_lp = `BSG_SAFE_CLOG2(lce_cce_data_resp_num_flits_lp)

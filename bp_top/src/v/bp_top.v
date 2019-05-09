@@ -29,9 +29,9 @@ module bp_top
    , parameter x_cord_width_p = `BSG_SAFE_CLOG2(num_lce_p)
    , parameter y_cord_width_p = 1
 
-   , localparam lce_cce_req_network_width_lp = lce_cce_req_width_lp+`BSG_SAFE_CLOG2(x_cord_width_p)+1
-   , localparam lce_cce_resp_network_width_lp = lce_cce_resp_width_lp+`BSG_SAFE_CLOG2(x_cord_width_p)+1
-   , localparam cce_lce_cmd_network_width_lp = cce_lce_cmd_width_lp+`BSG_SAFE_CLOG2(x_cord_width_p)+1
+   , localparam lce_cce_req_network_width_lp = lce_cce_req_width_lp+x_cord_width_p+1
+   , localparam lce_cce_resp_network_width_lp = lce_cce_resp_width_lp+x_cord_width_p+1
+   , localparam cce_lce_cmd_network_width_lp = cce_lce_cmd_width_lp+x_cord_width_p+1
 
    , localparam lce_cce_data_resp_num_flits_lp = bp_data_resp_num_flit_gp
    , localparam lce_cce_data_resp_len_width_lp = `BSG_SAFE_CLOG2(lce_cce_data_resp_num_flits_lp)
@@ -205,28 +205,28 @@ for(genvar i = 0; i <= num_core_p; i++)
          ,.lce_data_cmd_v_o(lce_data_cmd_v_lo[i+1])
          ,.lce_data_cmd_ready_i(lce_data_cmd_ready_li[i+1])
 
-         ,.mem_resp_i(mem_resp_i)
-         ,.mem_resp_v_i(mem_resp_v_i)
-         ,.mem_resp_ready_o(mem_resp_ready_o)
+         ,.mem_resp_i(mem_resp_i[i])
+         ,.mem_resp_v_i(mem_resp_v_i[i])
+         ,.mem_resp_ready_o(mem_resp_ready_o[i])
 
-         ,.mem_data_resp_i(mem_data_resp_i)
-         ,.mem_data_resp_v_i(mem_data_resp_v_i)
-         ,.mem_data_resp_ready_o(mem_data_resp_ready_o)
+         ,.mem_data_resp_i(mem_data_resp_i[i])
+         ,.mem_data_resp_v_i(mem_data_resp_v_i[i])
+         ,.mem_data_resp_ready_o(mem_data_resp_ready_o[i])
 
-         ,.mem_cmd_o(mem_cmd_o)
-         ,.mem_cmd_v_o(mem_cmd_v_o)
-         ,.mem_cmd_yumi_i(mem_cmd_yumi_i)
+         ,.mem_cmd_o(mem_cmd_o[i])
+         ,.mem_cmd_v_o(mem_cmd_v_o[i])
+         ,.mem_cmd_yumi_i(mem_cmd_yumi_i[i])
 
-         ,.mem_data_cmd_o(mem_data_cmd_o)
-         ,.mem_data_cmd_v_o(mem_data_cmd_v_o)
-         ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi_i)
+         ,.mem_data_cmd_o(mem_data_cmd_o[i])
+         ,.mem_data_cmd_v_o(mem_data_cmd_v_o[i])
+         ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi_i[i])
 
          ,.timer_int_i(timer_int_i)
          ,.software_int_i(software_int_i)
          ,.external_int_i(external_int_i)
 
-         ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr_o)
-         ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data_i)
+         ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr_o[i])
+         ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data_i[i])
 
          ,.cmt_rd_w_v_o(cmt_rd_w_v_o[i])
          ,.cmt_rd_addr_o(cmt_rd_addr_o[i])
