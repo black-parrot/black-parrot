@@ -20,8 +20,8 @@ module testbench
     , localparam tr_ring_width_lp=(dcache_opcode_width_lp+paddr_width_p+dword_width_p)
     , localparam tr_rom_addr_width_p = 20
 
-		, parameter cce_trace_p = `CCE_TRACE_P
-		, parameter axe_trace_p = `AXE_TRACE_P
+    , parameter cce_trace_p = `CCE_TRACE_P
+    , parameter axe_trace_p = `AXE_TRACE_P
 
 `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
   )
@@ -48,7 +48,7 @@ module testbench
     ,.async_reset_o(reset)
   );
 
- 
+
   // mem subsystem under test
   //
   logic [num_lce_p-1:0] tr_v_li;
@@ -60,16 +60,16 @@ module testbench
   logic [num_lce_p-1:0] tr_yumi_li;
 
 
-  bp_me_mock_lce_me #(
+  bp_me_nonsynth_top_test #(
     .cfg_p(cfg_p)
     ,.mem_els_p(mem_els_p)
     ,.boot_rom_els_p(mem_els_p)
-		,.cce_trace_p(cce_trace_p)
-		,.axe_trace_p(axe_trace_p)
-  ) mock_lce_me (
+    ,.cce_trace_p(cce_trace_p)
+    ,.axe_trace_p(axe_trace_p)
+  ) me_top_test (
     .clk_i(clk)
     ,.reset_i(reset)
- 
+
     ,.tr_pkt_i(tr_data_lo)
     ,.tr_pkt_v_i(tr_v_lo)
     ,.tr_pkt_yumi_o(tr_yumi_li)
@@ -82,7 +82,7 @@ module testbench
   // trace node master
   //
   logic [num_lce_p-1:0] tr_done_lo;
-  
+
   for (genvar i = 0; i < num_lce_p; i++) begin
 
     bsg_trace_node_master #(
@@ -104,7 +104,7 @@ module testbench
 
       ,.done_o(tr_done_lo[i])
     );
-    
+
   end
 
   localparam max_clock_cnt_lp    = 2**30-1;

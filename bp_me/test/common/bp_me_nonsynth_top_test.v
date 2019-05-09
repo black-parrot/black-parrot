@@ -1,10 +1,10 @@
 /**
- *  bp_me_mock_lce_me.v
+ *  bp_me_nonsynth_top_test.v
  */
 
 `include "bp_be_dcache_pkt.vh"
 
-module bp_me_mock_lce_me
+module bp_me_nonsynth_top_test
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_be_dcache_pkg::*;
@@ -38,83 +38,6 @@ module bp_me_mock_lce_me
     , output logic [num_lce_p-1:0][tr_ring_width_lp-1:0] tr_pkt_o
   );
 
-  // LCE
-  //
-  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p);
-  `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
-  `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, cce_block_width_p);
-  `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
-  `declare_bp_lce_data_cmd_s(num_lce_p, cce_block_width_p, lce_assoc_p);
-
-  bp_lce_cce_req_s [num_lce_p-1:0] lce_req_lo;
-  logic [num_lce_p-1:0] lce_req_v_lo;
-  logic [num_lce_p-1:0] lce_req_ready_li;
-
-  bp_lce_cce_resp_s [num_lce_p-1:0] lce_resp_lo;
-  logic [num_lce_p-1:0] lce_resp_v_lo;
-  logic [num_lce_p-1:0] lce_resp_ready_li;
-
-  bp_lce_cce_data_resp_s [num_lce_p-1:0] lce_data_resp_lo;
-  logic [num_lce_p-1:0] lce_data_resp_v_lo;
-  logic [num_lce_p-1:0] lce_data_resp_ready_li;
-
-  bp_cce_lce_cmd_s [num_lce_p-1:0] lce_cmd_li;
-  logic [num_lce_p-1:0] lce_cmd_v_li;
-  logic [num_lce_p-1:0] lce_cmd_ready_lo;
-
-  bp_lce_data_cmd_s [num_lce_p-1:0] lce_data_cmd_li;
-  logic [num_lce_p-1:0] lce_data_cmd_v_li;
-  logic [num_lce_p-1:0] lce_data_cmd_ready_lo;
-
-  bp_lce_data_cmd_s [num_lce_p-1:0] lce_data_cmd_lo;
-  logic [num_lce_p-1:0] lce_data_cmd_v_lo;
-  logic [num_lce_p-1:0] lce_data_cmd_ready_li;
-
-  for (genvar i = 0; i < num_lce_p; i++) begin
-    bp_me_nonsynth_mock_lce #(
-      .cfg_p(cfg_p)
-      ,.axe_trace_p(axe_trace_p)
-    ) lce (
-      .clk_i(clk_i)
-      ,.reset_i(reset_i)
-      ,.lce_id_i((lce_id_width_lp)'(i))
-
-      ,.tr_pkt_i(tr_pkt_i[i])
-      ,.tr_pkt_v_i(tr_pkt_v_i[i])
-      ,.tr_pkt_yumi_o(tr_pkt_yumi_o[i])
-
-      ,.tr_pkt_v_o(tr_pkt_v_o[i])
-      ,.tr_pkt_o(tr_pkt_o[i])
-      ,.tr_pkt_ready_i(tr_pkt_ready_i[i])
-
-      ,.lce_req_o(lce_req_lo[i])
-      ,.lce_req_v_o(lce_req_v_lo[i])
-      ,.lce_req_ready_i(lce_req_ready_li[i])
-
-      ,.lce_resp_o(lce_resp_lo[i])
-      ,.lce_resp_v_o(lce_resp_v_lo[i])
-      ,.lce_resp_ready_i(lce_resp_ready_li[i])
-
-      ,.lce_data_resp_o(lce_data_resp_lo[i])
-      ,.lce_data_resp_v_o(lce_data_resp_v_lo[i])
-      ,.lce_data_resp_ready_i(lce_data_resp_ready_li[i])
-
-      ,.lce_cmd_i(lce_cmd_li[i])
-      ,.lce_cmd_v_i(lce_cmd_v_li[i])
-      ,.lce_cmd_ready_o(lce_cmd_ready_lo[i])
-
-      ,.lce_data_cmd_i(lce_data_cmd_li[i])
-      ,.lce_data_cmd_v_i(lce_data_cmd_v_li[i])
-      ,.lce_data_cmd_ready_o(lce_data_cmd_ready_lo[i])
-
-      ,.lce_data_cmd_o(lce_data_cmd_lo[i])
-      ,.lce_data_cmd_v_o(lce_data_cmd_v_lo[i])
-      ,.lce_data_cmd_ready_i(lce_data_cmd_ready_li[i])
-    );
-  end
-
-  // CCE Boot ROM
-
   // Memory End
   //
   `declare_bp_me_if(paddr_width_p,cce_block_width_p,num_lce_p,lce_assoc_p);
@@ -138,53 +61,26 @@ module bp_me_mock_lce_me
   logic [num_cce_p-1:0] mem_data_cmd_v;
   logic [num_cce_p-1:0] mem_data_cmd_yumi;
 
-  bp_me_top #(
+  bp_me_nonsynth_top #(
     .cfg_p(cfg_p)
-    ,.cfg_link_addr_width_p(16)
-    ,.cfg_link_data_width_p(32)
+    ,.trace_p(0)
+    ,.calc_debug_p(0)
     ,.cce_trace_p(cce_trace_p)
-  ) me (
+    ,.axe_trace_p(axe_trace_p)
+  ) me_top (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
-    // TODO: add freeze
-    ,.freeze_i('0)
-
-    // TODO: hook up config port
-    ,.config_addr_i('0)
-    ,.config_data_i('0)
-    ,.config_v_i('0)
-    ,.config_w_i('0)
-    ,.config_ready_o()
-    ,.config_data_o()
-    ,.config_v_o()
-    ,.config_ready_i('0)
-
-    ,.lce_cmd_o(lce_cmd_li)
-    ,.lce_cmd_v_o(lce_cmd_v_li)
-    ,.lce_cmd_ready_i(lce_cmd_ready_lo)
-
-    ,.lce_data_cmd_o(lce_data_cmd_li)
-    ,.lce_data_cmd_v_o(lce_data_cmd_v_li)
-    ,.lce_data_cmd_ready_i(lce_data_cmd_ready_lo)
-
-    ,.lce_data_cmd_i(lce_data_cmd_lo)
-    ,.lce_data_cmd_v_i(lce_data_cmd_v_lo)
-    ,.lce_data_cmd_ready_o(lce_data_cmd_ready_li)
-
-    ,.lce_req_i(lce_req_lo)
-    ,.lce_req_v_i(lce_req_v_lo)
-    ,.lce_req_ready_o(lce_req_ready_li)
-
-    ,.lce_resp_i(lce_resp_lo)
-    ,.lce_resp_v_i(lce_resp_v_lo)
-    ,.lce_resp_ready_o(lce_resp_ready_li)
-
-    ,.lce_data_resp_i(lce_data_resp_lo)
-    ,.lce_data_resp_v_i(lce_data_resp_v_lo)
-    ,.lce_data_resp_ready_o(lce_data_resp_ready_li)
 
     ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr)
     ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data)
+
+    ,.tr_pkt_i(tr_pkt_i)
+    ,.tr_pkt_v_i(tr_pkt_v_i)
+    ,.tr_pkt_yumi_o(tr_pkt_yumi_o)
+
+    ,.tr_pkt_v_o(tr_pkt_v_o)
+    ,.tr_pkt_o(tr_pkt_o)
+    ,.tr_pkt_ready_i(tr_pkt_ready_i)
 
     ,.mem_resp_i(mem_resp)
     ,.mem_resp_v_i(mem_resp_v)
