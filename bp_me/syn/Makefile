@@ -61,15 +61,6 @@ regress.me.sc:
 	|| echo "bp_cce_test: FAIL" >> $(LOG_PATH)/me_regress.log
 
 regress.me.v: deps.v
-	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_random_demo \
-	| tee -i $(LOG_PATH)/vcs/bp_me_random_stress_test.log
-	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_random_stress_test.log \
-	| tee -i $(REPORT_PATH)/vcs/bp_me_random_stress_test.rpt
-	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_random_stress_test.log \
-	|| echo "FAILED" >> $(REPORT_DIR)/bp_me_random_stress_test.err
-	@grep "DONE" $(LOG_PATH)/vcs/bp_me_random_stress_test.log \
-	&& echo "bp_me_random_demo: OK" >> $(LOG_PATH)/me_regress.log \
-	|| echo "bp_me_random_demo: FAIL" >> $(LOG_PATH)/me_regress.log
 	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_mock_lce \
 	| tee -i $(LOG_PATH)/vcs/bp_me_mock_lce.log
 	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_mock_lce.log \
@@ -79,7 +70,7 @@ regress.me.v: deps.v
 	@grep "DONE" $(LOG_PATH)/vcs/bp_me_mock_lce.log \
 	&& echo "bp_me_mock_lce: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_me_mock_lce: FAIL" >> $(LOG_PATH)/me_regress.log
-	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_multi_mock_lce NUM_LCE_P=8 \
+	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_multi_mock_lce NUM_LCE_P=8 AXE_TRACE_P=1 \
 	| tee -i $(LOG_PATH)/vcs/bp_me_multi_mock_lce.log
 	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_multi_mock_lce.log \
 	| tee -i $(REPORT_PATH)/vcs/bp_me_multi_mock_lce.rpt
@@ -99,7 +90,6 @@ regress.me: lint.me regress.me.sc regress.me.v check_design.syn
 
 clean: clean.me
 clean.me:
-	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_random_demo clean
 	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_mock_lce clean
 	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_multi_mock_lce clean
 
