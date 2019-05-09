@@ -102,6 +102,49 @@ logic [num_cce_p-1:0] mem_data_cmd_v, mem_data_cmd_yumi;
       ,.cmt_data_o(cmt_data)
       );
 
+bind bp_be_calculator_top
+  bp_be_nonsynth_tracer
+   #(.cfg_p(cfg_p))
+   tracer
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.mhartid_i(proc_cfg.core_id)
+
+     ,.issue_pkt_i(issue_pkt)
+     ,.issue_pkt_v_i(issue_pkt_v_i)
+
+     ,.fe_nop_v_i(fe_nop_v)
+     ,.be_nop_v_i(be_nop_v)
+     ,.me_nop_v_i(me_nop_v)
+     ,.dispatch_pkt_i(dispatch_pkt)
+
+     ,.ex1_br_tgt_i(calc_status.int1_br_tgt)
+     ,.ex1_btaken_i(calc_status.int1_btaken)
+     ,.iwb_result_i(comp_stage_n[3])
+     ,.fwb_result_i(comp_stage_n[4])
+
+     ,.cmt_trace_exc_i(exc_stage_n[1+:pipe_stage_els_lp])
+     );
+
+bind bp_be_top
+  bp_be_nonsynth_perf
+   #(.cfg_p(cfg_p))
+   perf
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.fe_nop_i(be_calculator.exc_stage_r[2].fe_nop_v)
+     ,.be_nop_i(be_calculator.exc_stage_r[2].be_nop_v)
+     ,.me_nop_i(be_calculator.exc_stage_r[2].me_nop_v)
+     ,.poison_i(be_calculator.exc_stage_r[2].poison_v)
+     ,.roll_i(be_calculator.exc_stage_r[2].roll_v)
+     ,.instr_cmt_i(be_calculator.calc_status.instr_cmt_v)
+
+     ,.program_pass_i(be_mem.csr.program_pass)
+     ,.program_fail_i(be_mem.csr.program_fail)
+     );
+
    for (genvar i = 0; i < num_cce_p; i++) 
      begin : rof1
        bp_mem_dramsim2

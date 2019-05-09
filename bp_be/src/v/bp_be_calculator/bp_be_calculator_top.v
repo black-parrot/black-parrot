@@ -671,6 +671,10 @@ always_comb
 
         exc_stage_n[0].csr_instr_v     = chk_dispatch_v_i & csr_instr_isd;
 
+        exc_stage_n[0].fe_nop_v        = fe_nop_v;
+        exc_stage_n[0].be_nop_v        = be_nop_v;
+        exc_stage_n[0].me_nop_v        = me_nop_v;
+
         exc_stage_n[0].roll_v          =                           chk_roll_i;
         exc_stage_n[1].roll_v          = exc_stage_r[0].roll_v   | chk_roll_i;
         exc_stage_n[2].roll_v          = exc_stage_r[1].roll_v   | chk_roll_i;
@@ -756,42 +760,6 @@ else
     assign cmt_mem_op_o   = '0;
     assign cmt_data_o     = '0;
   end
-
-// Debug tracing
-if (debug_p == 1)
-  begin : fi
-    bp_be_nonsynth_tracer
-     #(.vaddr_width_p(vaddr_width_p)
-       ,.paddr_width_p(paddr_width_p)
-       ,.asid_width_p(asid_width_p)
-       ,.branch_metadata_fwd_width_p(branch_metadata_fwd_width_p)
-    
-       ,.num_core_p(num_core_p)
-       ,.num_cce_p(num_cce_p)
-       ,.num_lce_p(num_lce_p)
-       )
-     tracer
-      (.clk_i(clk_i)
-       ,.reset_i(reset_i)
-    
-       ,.mhartid_i(proc_cfg.core_id)
-
-       ,.issue_pkt_i(issue_pkt)
-       ,.issue_pkt_v_i(issue_pkt_v_i)
-
-       ,.fe_nop_v_i(fe_nop_v)
-       ,.be_nop_v_i(be_nop_v)
-       ,.me_nop_v_i(me_nop_v)
-       ,.dispatch_pkt_i(dispatch_pkt)
-
-       ,.ex1_br_tgt_i(calc_status.int1_br_tgt)
-       ,.ex1_btaken_i(calc_status.int1_btaken)
-       ,.iwb_result_i(comp_stage_n[3])
-       ,.fwb_result_i(comp_stage_n[4])
-
-       ,.cmt_trace_exc_i(exc_stage_n[1+:pipe_stage_els_lp])
-       );
-  end // fi
 
 endmodule : bp_be_calculator_top
 

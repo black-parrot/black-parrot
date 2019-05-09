@@ -17,7 +17,7 @@ int sc_main(int argc, char **argv)
 
   svSetScope(svGetScopeFromName("testbench.testbench.rof1[0].mem"));
   // Use me to find the correct scope of your DPI functions
-  // Verilated::scopesDump();
+  //Verilated::scopesDump();
 
   sc_clock clock("clk", sc_time(CLK_TIME, SC_NS));
   sc_signal <bool> reset("reset");

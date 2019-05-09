@@ -168,7 +168,7 @@ for(genvar i = 0; i <= num_core_p; i++)
       end
 
   if (i < num_core_p)
-    begin 
+    begin : fi1 
       bp_tile
        #(.cfg_p(cfg_p)
          ,.trace_p(trace_p)
@@ -235,7 +235,7 @@ for(genvar i = 0; i <= num_core_p; i++)
          ,.cmt_mem_op_o(cmt_mem_op_o[i])
          ,.cmt_data_o(cmt_data_o[i])
          );
-    end
+    end // fi1
   end // rof1
 
 endmodule : bp_top
