@@ -136,14 +136,14 @@ logic                     itlb_fill_v;
 
 bp_be_calc_status_s    calc_status;
 
-logic chk_dispatch_v, chk_poison_isd;
+logic chk_dispatch_v, chk_poison_iss, chk_poison_isd;
 logic chk_poison_ex1, chk_poison_ex2, chk_roll, chk_instr_dequeue_v;
 
 logic [mtvec_width_lp-1:0] chk_mtvec_li;
 logic [mepc_width_lp-1:0]  chk_mepc_li;
 logic [vaddr_width_p-1:0]  chk_pc_lo;
 
-logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li;
+logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li, chk_ifence_li;
 
 logic                          instret;
 logic [vaddr_width_p-1:0]      exception_pc;
@@ -164,6 +164,7 @@ bp_be_checker_top
 
    ,.chk_dispatch_v_o(chk_dispatch_v)
    ,.chk_roll_o(chk_roll)
+   ,.chk_poison_iss_o(chk_poison_iss)
    ,.chk_poison_isd_o(chk_poison_isd)
    ,.chk_poison_ex1_o(chk_poison_ex1)
    ,.chk_poison_ex2_o(chk_poison_ex2)
@@ -193,6 +194,7 @@ bp_be_checker_top
    ,.mepc_i(chk_mepc_li)
    ,.mtvec_i(chk_mtvec_li)
    ,.tlb_fence_i(chk_tlb_fence_li)
+   ,.ifence_i(chk_ifence_li)
    
    ,.itlb_fill_v_i(itlb_fill_v)
    ,.itlb_fill_vtag_i(itlb_fill_vtag)
@@ -219,6 +221,7 @@ bp_be_calculator_top
    ,.chk_dispatch_v_i(chk_dispatch_v)
 
    ,.chk_roll_i(chk_roll)
+   ,.chk_poison_iss_i(chk_poison_iss)
    ,.chk_poison_isd_i(chk_poison_isd)
    ,.chk_poison_ex1_i(chk_poison_ex1)
    ,.chk_poison_ex2_i(chk_poison_ex2)
@@ -319,6 +322,7 @@ bp_be_mem_top
     ,.mepc_o(chk_mepc_li)
     ,.mtvec_o(chk_mtvec_li)
     ,.tlb_fence_o(chk_tlb_fence_li)
+    ,.ifence_o(chk_ifence_li)
     );
 
 endmodule : bp_be_top
