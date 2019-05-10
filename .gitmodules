@@ -47,8 +47,14 @@
   ignore = dirty
 
 [submodule "bp_common/test/src/coremark"]
-	path = bp_common/test/src/coremark
+  path = bp_common/test/src/coremark
   url = https://github.com/black-parrot/coremark.git
   branch = blackparrot_mods
   ignore = dirty
  
+[submodule "bp_common/test/src/opensbi"]
+  path = bp_common/test/src/opensbi
+  url = https://github.com/black-parrot/opensbi
+  branch = blackparrot_mods
+  ignore = dirty
+

@@ -16,6 +16,7 @@ include Makefile.frag
 
 all: riscv demos
 riscv: riscv_mem 
+opensbi: opensbi_mem
 demos: demos_mem 
 
 riscv_elf: 
@@ -34,6 +35,9 @@ demos_elf:
 	make -C src/demos
 	find $(TEST_DIR)/src/demos/ -executable -type f -execdir mv {} $(MEM_DIR)/{} \;
 	find $(TEST_DIR)/src/demos/ -name "*.dump" -execdir mv {} $(MEM_DIR)/{} \;
+
+opensbi_elf:
+	make -C src/opensbi CROSS_COMPILE=riscv64-unknown-elf-  PLATFORM=blackparrot
 
 riscv_mem: riscv_elf
 riscv_mem: $(foreach x, $(RV64_P_TESTS) $(RV64_V_TESTS) $(RV64_BENCHMARKS), $(x).mem)
