@@ -83,6 +83,7 @@ module bp_me_cce_to_manycore_link
     , output logic config_ready_o
 
     , output logic reset_o
+    , output logic freeze_o
   );
 
   // synchronize reset signal
@@ -140,7 +141,6 @@ module bp_me_cce_to_manycore_link
 
   // endpoint_standard
   //
-  logic freeze;
 
   logic ep_in_v_lo;
   logic ep_in_yumi_li;
@@ -321,7 +321,7 @@ module bp_me_cce_to_manycore_link
   
     // black-parrot side
     ,.reset_o(reset_o)
-    ,.freeze_o(freeze)
+    ,.freeze_o(freeze_o)
 
     ,.config_addr_o(config_addr_o)
     ,.config_data_o(config_data_o)
