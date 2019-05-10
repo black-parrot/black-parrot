@@ -37,7 +37,6 @@ module bp_cce_gad
    , input                                                 gad_v_i
 
    , output logic [lg_lce_assoc_lp-1:0]                    req_addr_way_o
-   , output logic [`bp_cce_coh_bits-1:0]                   coh_state_o
 
    , output logic [tag_width_p-1:0]                        lru_tag_o
 
@@ -147,9 +146,6 @@ module bp_cce_gad
 
   assign req_addr_way_o = req_lce_cached
     ? lce_cached_way[req_lce_i]
-    : '0;
-  assign coh_state_o = req_lce_cached
-    ? tag_sets[req_lce_i][req_addr_way_o][0 +: `bp_cce_coh_bits]
     : '0;
 
   // request type

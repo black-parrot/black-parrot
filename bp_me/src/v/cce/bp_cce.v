@@ -173,7 +173,6 @@ module bp_cce
   logic gad_exclusive_flag_lo;
   logic gad_cached_flag_lo;
   logic [tag_width_lp-1:0] gad_lru_tag_lo;
-  logic [`bp_cce_coh_bits-1:0] gad_coh_state_lo;
   logic [num_lce_p-1:0] gad_sharers_hits_lo;
   logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0] gad_sharers_ways_lo;
   logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0] gad_sharers_coh_states_lo;
@@ -184,7 +183,6 @@ module bp_cce
   logic [paddr_width_p-1:0] req_addr_r_lo;
   logic [tag_width_lp-1:0] req_tag_r_lo;
   logic [lg_lce_assoc_lp-1:0] req_addr_way_r_lo;
-  logic [`bp_cce_coh_bits-1:0] req_coh_state_r_lo;
   logic [lg_lce_assoc_lp-1:0] lru_way_r_lo;
   logic [paddr_width_p-1:0] lru_addr_r_lo;
   logic [lg_num_lce_lp-1:0] transfer_lce_r_lo;
@@ -337,7 +335,6 @@ module bp_cce
       ,.lru_dirty_flag_i(flags_r_lo[e_flag_sel_ldf])
       ,.gad_v_i(gad_v_li)
       ,.req_addr_way_o(gad_req_addr_way_lo)
-      ,.coh_state_o(gad_coh_state_lo)
       ,.lru_tag_o(gad_lru_tag_lo)
       ,.transfer_flag_o(gad_transfer_flag_lo)
       ,.transfer_lce_o(gad_transfer_lce_lo)
@@ -375,15 +372,12 @@ module bp_cce
       ,.mov_src_i(mov_src)
       ,.dir_way_group_o_i(dir_way_group_lo)
       ,.dir_way_group_v_o_i(dir_way_group_v_lo)
-      ,.dir_coh_state_o_i(dir_coh_state_lo)
-      ,.dir_entry_v_o_i(dir_entry_v_lo)
       ,.dir_pending_o_i(dir_pending_lo)
       ,.dir_pending_v_o_i(dir_pending_v_lo)
       ,.gad_sharers_hits_i(gad_sharers_hits_lo)
       ,.gad_sharers_ways_i(gad_sharers_ways_lo)
       ,.gad_sharers_coh_states_i(gad_sharers_coh_states_lo)
       ,.gad_req_addr_way_i(gad_req_addr_way_lo)
-      ,.gad_coh_state_i(gad_coh_state_lo)
       ,.gad_lru_tag_i(gad_lru_tag_lo)
       ,.gad_transfer_lce_i(gad_transfer_lce_lo)
       ,.gad_transfer_lce_way_i(gad_transfer_lce_way_lo)
@@ -398,7 +392,6 @@ module bp_cce
       ,.req_addr_o(req_addr_r_lo)
       ,.req_tag_o(req_tag_r_lo)
       ,.req_addr_way_o(req_addr_way_r_lo)
-      ,.req_coh_state_o(req_coh_state_r_lo)
       ,.lru_way_o(lru_way_r_lo)
       ,.lru_addr_o(lru_addr_r_lo)
       ,.transfer_lce_o(transfer_lce_r_lo)

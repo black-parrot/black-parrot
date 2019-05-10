@@ -59,8 +59,6 @@ module bp_cce_reg
 
    , input [way_group_width_lp-1:0]                                        dir_way_group_o_i
    , input                                                                 dir_way_group_v_o_i
-   , input [`bp_cce_coh_bits-1:0]                                          dir_coh_state_o_i
-   , input                                                                 dir_entry_v_o_i
    , input                                                                 dir_pending_o_i
    , input                                                                 dir_pending_v_o_i
 
@@ -69,7 +67,6 @@ module bp_cce_reg
    , input [num_lce_p-1:0][`bp_cce_coh_bits-1:0]                           gad_sharers_coh_states_i
 
    , input [lg_lce_assoc_lp-1:0]                                           gad_req_addr_way_i
-   , input [`bp_cce_coh_bits-1:0]                                          gad_coh_state_i
    , input [tag_width_lp-1:0]                                              gad_lru_tag_i
    , input [lg_num_lce_lp-1:0]                                             gad_transfer_lce_i
    , input [lg_lce_assoc_lp-1:0]                                           gad_transfer_lce_way_i
@@ -88,7 +85,6 @@ module bp_cce_reg
 
 
    , output logic [lg_lce_assoc_lp-1:0]                                    req_addr_way_o
-   , output logic [`bp_cce_coh_bits-1:0]                                   req_coh_state_o
 
    , output logic [lg_lce_assoc_lp-1:0]                                    lru_way_o
    , output logic [paddr_width_p-1:0]                                      lru_addr_o
@@ -145,7 +141,6 @@ module bp_cce_reg
   logic [lg_num_lce_lp-1:0] req_lce_r, req_lce_n;
   logic [paddr_width_p-1:0] req_addr_r, req_addr_n;
   logic [lg_lce_assoc_lp-1:0] req_addr_way_r, req_addr_way_n;
-  logic [`bp_cce_coh_bits-1:0] req_coh_state_r, req_coh_state_n;
 
   logic [lg_lce_assoc_lp-1:0] lru_way_r, lru_way_n;
   logic [paddr_width_p-1:0] lru_addr_r, lru_addr_n;
@@ -176,13 +171,6 @@ module bp_cce_reg
     req_addr_o = req_addr_r;
     req_tag_o = req_addr_r[paddr_width_p-1 -: tag_width_lp];
     req_addr_way_o = req_addr_way_r;
-    // coherence state from directory comes from synchronous RAM so forward new value to output
-    // when writing from directory output
-    if (dir_entry_v_o_i) begin
-      req_coh_state_o = dir_coh_state_o_i;
-    end else begin
-      req_coh_state_o = req_coh_state_r;
-    end
 
     lru_way_o = lru_way_r;
     lru_addr_o = lru_addr_r;
@@ -256,16 +244,6 @@ module bp_cce_reg
         req_addr_way_n = '0;
       end
     endcase
-
-    // Req Coh State
-    // written by either RDE or GAD
-    if (decoded_inst_i.gad_op_w_v) begin // GAD has priority over RDE
-      req_coh_state_n = gad_coh_state_i;
-    end else if (dir_entry_v_o_i) begin
-      req_coh_state_n = dir_coh_state_o_i;
-    end else begin
-      req_coh_state_n = '0;
-    end
 
     // LRU Way
     case (decoded_inst_i.lru_way_sel)
@@ -464,7 +442,6 @@ module bp_cce_reg
       req_lce_r <= '0;
       req_addr_r <= '0;
       req_addr_way_r <= '0;
-      req_coh_state_r <= '0;
       lru_way_r <= '0;
       lru_addr_r <= '0;
       transfer_lce_r <= '0;
@@ -484,9 +461,6 @@ module bp_cce_reg
       end
       if (decoded_inst_i.req_addr_way_w_v) begin
         req_addr_way_r <= req_addr_way_n;
-      end
-      if (decoded_inst_i.gad_op_w_v || dir_entry_v_o_i) begin
-        req_coh_state_r <= req_coh_state_n;
       end
       if (decoded_inst_i.lru_way_w_v) begin
         lru_way_r <= lru_way_n;
