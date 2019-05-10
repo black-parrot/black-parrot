@@ -99,9 +99,6 @@ module bp_cce
    , input                                             mem_data_cmd_ready_i
 
    , input [lg_num_cce_lp-1:0]                         cce_id_i
-
-   , output logic [inst_ram_addr_width_lp-1:0]         boot_rom_addr_o
-   , input [`bp_cce_inst_width-1:0]                    boot_rom_data_i
   );
 
   initial begin
@@ -117,18 +114,18 @@ module bp_cce
                              ,cce_block_width_p
                              ,lce_assoc_p);
 
-  bp_cce_lce_cmd_s lce_cmd_s_o;
-  bp_lce_data_cmd_s lce_data_cmd_s_o;
-  bp_cce_mem_cmd_s mem_cmd_s_o;
-  bp_cce_mem_data_cmd_s mem_data_cmd_s_o;
+  bp_cce_lce_cmd_s lce_cmd;
+  bp_lce_data_cmd_s lce_data_cmd;
+  bp_cce_mem_cmd_s mem_cmd;
+  bp_cce_mem_data_cmd_s mem_data_cmd;
 
   // assign output queue ports to structure variables
   always_comb
   begin
-    lce_cmd_o = lce_cmd_s_o;
-    lce_data_cmd_o = lce_data_cmd_s_o;
-    mem_cmd_o = mem_cmd_s_o;
-    mem_data_cmd_o = mem_data_cmd_s_o;
+    lce_cmd_o = lce_cmd;
+    lce_data_cmd_o = lce_data_cmd;
+    mem_cmd_o = mem_cmd;
+    mem_data_cmd_o = mem_data_cmd;
   end
 
   // PC to Decode signals
@@ -138,6 +135,9 @@ module bp_cce
   // Decode to PC signals
   logic pc_stall_lo;
   logic [inst_ram_addr_width_lp-1:0] pc_branch_target_lo;
+
+  // PC output signals
+  bp_cce_mode_e cce_mode_lo;
 
   // ALU signals
   logic alu_v_lo;
@@ -236,8 +236,7 @@ module bp_cce
       ,.inst_o(pc_inst_lo)
       ,.inst_v_o(pc_inst_v_lo)
 
-      ,.boot_rom_addr_o(boot_rom_addr_o)
-      ,.boot_rom_data_i(boot_rom_data_i)
+      ,.cce_mode_o(cce_mode_lo)
       );
 
 
@@ -271,25 +270,6 @@ module bp_cce
       ,.pc_stall_o(pc_stall_lo)
       ,.pc_branch_target_o(pc_branch_target_lo)
       );
-
-  // Input messages to the CCE are buffered by two element FIFOs in bp_cce_top.v, thus
-  // the outbound valid signal is a yumi.
-  //
-  // Outbound queues all use ready&valid handshaking. Outbound messages going to LCEs are not
-  // buffered by bp_cce_top.v, but messages to memory are.
-  always_comb
-  begin
-    lce_req_yumi_o = decoded_inst_lo.lce_req_yumi;
-    lce_resp_yumi_o = decoded_inst_lo.lce_resp_yumi;
-    lce_data_resp_yumi_o = decoded_inst_lo.lce_data_resp_yumi;
-    mem_resp_yumi_o = decoded_inst_lo.mem_resp_yumi;
-    mem_data_resp_yumi_o = decoded_inst_lo.mem_data_resp_yumi;
-
-    lce_cmd_v_o = decoded_inst_lo.lce_cmd_v;
-    lce_data_cmd_v_o = decoded_inst_lo.lce_data_cmd_v;
-    mem_cmd_v_o = decoded_inst_lo.mem_cmd_v;
-    mem_data_cmd_v_o = decoded_inst_lo.mem_data_cmd_v;
-  end
 
   // ALU
   bp_cce_alu
@@ -533,66 +513,158 @@ module bp_cce
     endcase
   end
 
+  // Uncached access module
+  logic                                          lce_req_yumi_from_uc;
+  logic [lce_data_cmd_width_lp-1:0]              lce_data_cmd_from_uc;
+  logic                                          lce_data_cmd_v_from_uc;
+  logic                                          mem_resp_yumi_from_uc;
+  logic                                          mem_data_resp_yumi_from_uc;
+  logic [cce_mem_cmd_width_lp-1:0]               mem_cmd_from_uc;
+  logic                                          mem_cmd_v_from_uc;
+  logic [cce_mem_data_cmd_width_lp-1:0]          mem_data_cmd_from_uc;
+  logic                                          mem_data_cmd_v_from_uc;
+
+  bp_cce_uncached
+    #(.num_lce_p(num_lce_p)
+      ,.num_cce_p(num_cce_p)
+      ,.paddr_width_p(paddr_width_p)
+      ,.lce_assoc_p(lce_assoc_p)
+      ,.lce_sets_p(lce_sets_p)
+      ,.block_size_in_bytes_p(block_size_in_bytes_lp)
+      ,.lce_req_data_width_p(dword_width_p)
+      )
+    bp_cce_uncached
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+
+      ,.cce_mode_i(cce_mode_lo)
+
+      // To CCE
+      ,.lce_req_i(lce_req_i)
+      ,.lce_req_v_i(lce_req_v_i)
+      ,.lce_req_yumi_o(lce_req_yumi_from_uc)
+
+      // From CCE
+      ,.lce_data_cmd_o(lce_data_cmd_from_uc)
+      ,.lce_data_cmd_v_o(lce_data_cmd_v_from_uc)
+      ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
+
+      // To CCE
+      ,.mem_resp_i(mem_resp_i)
+      ,.mem_resp_v_i(mem_resp_v_i)
+      ,.mem_resp_yumi_o(mem_resp_yumi_from_uc)
+      ,.mem_data_resp_i(mem_data_resp_i)
+      ,.mem_data_resp_v_i(mem_data_resp_v_i)
+      ,.mem_data_resp_yumi_o(mem_data_resp_yumi_from_uc)
+
+      // From CCE
+      ,.mem_cmd_o(mem_cmd_from_uc)
+      ,.mem_cmd_v_o(mem_cmd_v_from_uc)
+      ,.mem_cmd_ready_i(mem_cmd_ready_i)
+      ,.mem_data_cmd_o(mem_data_cmd_from_uc)
+      ,.mem_data_cmd_v_o(mem_data_cmd_v_from_uc)
+      ,.mem_data_cmd_ready_i(mem_data_cmd_ready_i)
+      );
+
+  // Output Message Formation
+
+  // Input messages to the CCE are buffered by two element FIFOs in bp_cce_top.v, thus
+  // the outbound valid signal is a yumi.
+  //
+  // Outbound queues all use ready&valid handshaking. Outbound messages going to LCEs are not
+  // buffered by bp_cce_top.v, but messages to memory are.
   always_comb
   begin
-    // LCE Command Queue Inputs
-    lce_cmd_s_o.dst_id = lce_cmd_lce;
-    lce_cmd_s_o.src_id = (lg_num_cce_lp)'(cce_id_i);
-    lce_cmd_s_o.msg_type = decoded_inst_lo.lce_cmd_cmd;
-    lce_cmd_s_o.addr = lce_cmd_addr;
-    lce_cmd_s_o.way_id = lce_cmd_way;
-    if ((decoded_inst_lo.lce_cmd_cmd == e_lce_cmd_set_tag)
-        || (decoded_inst_lo.lce_cmd_cmd == e_lce_cmd_set_tag_wakeup)) begin
-      lce_cmd_s_o.state = next_coh_state_r_lo;
-    end else begin
-      lce_cmd_s_o.state = '0;
-    end
-    if (decoded_inst_lo.lce_cmd_cmd == e_lce_cmd_transfer) begin
-      lce_cmd_s_o.target = req_lce_r_lo;
-      lce_cmd_s_o.target_way_id = lru_way_r_lo;
-    end else begin
-      lce_cmd_s_o.target = '0;
-      lce_cmd_s_o.target_way_id = '0;
-    end
+    if (cce_mode_lo == e_cce_mode_uncached) begin
+      // In uncached mode, LCE resp, data resp, and cmd are never used
+      lce_resp_yumi_o = '0;
+      lce_data_resp_yumi_o = '0;
+      lce_cmd_v_o = '0;
 
-    // LCE Data Command Queue Inputs
-    lce_data_cmd_s_o.dst_id = req_lce_r_lo;
-    if (flags_r_lo[e_flag_sel_ucf] == e_lce_req_non_cacheable) begin
-      lce_data_cmd_s_o.msg_type = e_lce_data_cmd_non_cacheable;
-      lce_data_cmd_s_o.way_id = '0;
-      lce_data_cmd_s_o.data = {(cce_block_width_p-dword_width_p)'('0),nc_data_r_lo};
-    end else begin
-      lce_data_cmd_s_o.msg_type = e_lce_data_cmd_cce;
-      lce_data_cmd_s_o.way_id = lru_way_r_lo;
-      lce_data_cmd_s_o.data = cache_block_data_r_lo;
-    end
+      // Remainder of interface signals come from the uncached access module
+      lce_req_yumi_o = lce_req_yumi_from_uc;
+      mem_resp_yumi_o = mem_resp_yumi_from_uc;
+      mem_data_resp_yumi_o = mem_data_resp_yumi_from_uc;
+      lce_data_cmd_v_o = lce_data_cmd_v_from_uc;
+      mem_cmd_v_o = mem_cmd_v_from_uc;
+      mem_data_cmd_v_o = mem_data_cmd_v_from_uc;
 
-    // Mem Command Queue Inputs
-    mem_cmd_s_o.msg_type = bp_lce_cce_req_type_e'(flags_r_lo[e_flag_sel_rqf]);
-    mem_cmd_s_o.payload.lce_id = req_lce_r_lo;
-    mem_cmd_s_o.payload.way_id = lru_way_r_lo;
-    mem_cmd_s_o.addr = req_addr_r_lo;
-    mem_cmd_s_o.non_cacheable = bp_lce_cce_req_non_cacheable_e'(flags_r_lo[e_flag_sel_ucf]);
-    mem_cmd_s_o.nc_size = bp_lce_cce_nc_req_size_e'(nc_req_size_r_lo);
-
-    // Mem Data Command Queue Inputs
-    mem_data_cmd_s_o.msg_type = bp_lce_cce_req_type_e'(flags_r_lo[e_flag_sel_rqf]);
-    mem_data_cmd_s_o.addr = mem_data_cmd_addr;
-    if (flags_r_lo[e_flag_sel_ucf]) begin
-      mem_data_cmd_s_o.data = {(cce_block_width_p-dword_width_p)'('0),nc_data_r_lo};
+      lce_cmd = '0;
+      lce_data_cmd = lce_data_cmd_from_uc;
+      mem_data_cmd = mem_data_cmd_from_uc;
+      mem_cmd = mem_cmd_from_uc;
     end else begin
-      mem_data_cmd_s_o.data = cache_block_data_r_lo;
+      // Normal operation - control signals come from decoder
+      lce_req_yumi_o = decoded_inst_lo.lce_req_yumi;
+      lce_resp_yumi_o = decoded_inst_lo.lce_resp_yumi;
+      lce_data_resp_yumi_o = decoded_inst_lo.lce_data_resp_yumi;
+      mem_resp_yumi_o = decoded_inst_lo.mem_resp_yumi;
+      mem_data_resp_yumi_o = decoded_inst_lo.mem_data_resp_yumi;
+
+      lce_cmd_v_o = decoded_inst_lo.lce_cmd_v;
+      lce_data_cmd_v_o = decoded_inst_lo.lce_data_cmd_v;
+      mem_cmd_v_o = decoded_inst_lo.mem_cmd_v;
+      mem_data_cmd_v_o = decoded_inst_lo.mem_data_cmd_v;
+
+      // LCE Command Queue Inputs
+      lce_cmd.dst_id = lce_cmd_lce;
+      lce_cmd.src_id = (lg_num_cce_lp)'(cce_id_i);
+      lce_cmd.msg_type = decoded_inst_lo.lce_cmd_cmd;
+      lce_cmd.addr = lce_cmd_addr;
+      lce_cmd.way_id = lce_cmd_way;
+      if ((decoded_inst_lo.lce_cmd_cmd == e_lce_cmd_set_tag)
+          || (decoded_inst_lo.lce_cmd_cmd == e_lce_cmd_set_tag_wakeup)) begin
+        lce_cmd.state = next_coh_state_r_lo;
+      end else begin
+        lce_cmd.state = '0;
+      end
+      if (decoded_inst_lo.lce_cmd_cmd == e_lce_cmd_transfer) begin
+        lce_cmd.target = req_lce_r_lo;
+        lce_cmd.target_way_id = lru_way_r_lo;
+      end else begin
+        lce_cmd.target = '0;
+        lce_cmd.target_way_id = '0;
+      end
+
+      // LCE Data Command Queue Inputs
+      lce_data_cmd.dst_id = req_lce_r_lo;
+      if (flags_r_lo[e_flag_sel_ucf] == e_lce_req_non_cacheable) begin
+        lce_data_cmd.msg_type = e_lce_data_cmd_non_cacheable;
+        lce_data_cmd.way_id = '0;
+        lce_data_cmd.data = {(cce_block_width_p-dword_width_p)'('0),nc_data_r_lo};
+      end else begin
+        lce_data_cmd.msg_type = e_lce_data_cmd_cce;
+        lce_data_cmd.way_id = lru_way_r_lo;
+        lce_data_cmd.data = cache_block_data_r_lo;
+      end
+
+      // Mem Command Queue Inputs
+      mem_cmd.msg_type = bp_lce_cce_req_type_e'(flags_r_lo[e_flag_sel_rqf]);
+      mem_cmd.payload.lce_id = req_lce_r_lo;
+      mem_cmd.payload.way_id = lru_way_r_lo;
+      mem_cmd.addr = req_addr_r_lo;
+      mem_cmd.non_cacheable = bp_lce_cce_req_non_cacheable_e'(flags_r_lo[e_flag_sel_ucf]);
+      mem_cmd.nc_size = bp_lce_cce_nc_req_size_e'(nc_req_size_r_lo);
+
+      // Mem Data Command Queue Inputs
+      mem_data_cmd.msg_type = bp_lce_cce_req_type_e'(flags_r_lo[e_flag_sel_rqf]);
+      mem_data_cmd.addr = mem_data_cmd_addr;
+      if (flags_r_lo[e_flag_sel_ucf]) begin
+        mem_data_cmd.data = {(cce_block_width_p-dword_width_p)'('0),nc_data_r_lo};
+      end else begin
+        mem_data_cmd.data = cache_block_data_r_lo;
+      end
+      mem_data_cmd.non_cacheable = bp_lce_cce_req_non_cacheable_e'(flags_r_lo[e_flag_sel_ucf]);
+      mem_data_cmd.nc_size = bp_lce_cce_nc_req_size_e'(nc_req_size_r_lo);
+      // Request data for return
+      mem_data_cmd.payload.lce_id = req_lce_r_lo;
+      mem_data_cmd.payload.way_id = lru_way_r_lo;
+      mem_data_cmd.payload.req_addr = req_addr_r_lo;
+      mem_data_cmd.payload.tr_lce_id = transfer_lce_r_lo;
+      mem_data_cmd.payload.tr_way_id = transfer_lce_way_r_lo;
+      mem_data_cmd.payload.transfer = flags_r_lo[e_flag_sel_tf];
+      mem_data_cmd.payload.replacement = flags_r_lo[e_flag_sel_rf];
     end
-    mem_data_cmd_s_o.non_cacheable = bp_lce_cce_req_non_cacheable_e'(flags_r_lo[e_flag_sel_ucf]);
-    mem_data_cmd_s_o.nc_size = bp_lce_cce_nc_req_size_e'(nc_req_size_r_lo);
-    // Request data for return
-    mem_data_cmd_s_o.payload.lce_id = req_lce_r_lo;
-    mem_data_cmd_s_o.payload.way_id = lru_way_r_lo;
-    mem_data_cmd_s_o.payload.req_addr = req_addr_r_lo;
-    mem_data_cmd_s_o.payload.tr_lce_id = transfer_lce_r_lo;
-    mem_data_cmd_s_o.payload.tr_way_id = transfer_lce_way_r_lo;
-    mem_data_cmd_s_o.payload.transfer = flags_r_lo[e_flag_sel_tf];
-    mem_data_cmd_s_o.payload.replacement = flags_r_lo[e_flag_sel_rf];
   end
 
 
