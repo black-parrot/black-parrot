@@ -98,8 +98,6 @@ module bp_cce_reg
 
    , output logic [`bp_cce_coh_bits-1:0]                                   next_coh_state_o
 
-   , output logic [block_size_in_bits_lp-1:0]                              cache_block_data_o
-
    , output logic [`bp_cce_inst_num_flags-1:0]                             flags_o
 
    , output logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0]   gpr_o
@@ -157,8 +155,6 @@ module bp_cce_reg
 
   logic [`bp_cce_coh_bits-1:0] next_coh_state_r, next_coh_state_n;
 
-  logic [block_size_in_bits_lp-1:0] cache_block_data_r, cache_block_data_n;
-
   logic [`bp_cce_inst_num_flags-1:0] flags_r, flags_n;
 
   logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_r, gpr_n;
@@ -195,8 +191,6 @@ module bp_cce_reg
     transfer_lce_way_o = transfer_lce_way_r;
 
     next_coh_state_o = next_coh_state_r;
-
-    cache_block_data_o = cache_block_data_r;
 
     flags_o = flags_r;
 
@@ -313,19 +307,6 @@ module bp_cce_reg
       default: begin
         transfer_lce_n = '0;
         transfer_lce_way_n = '0;
-      end
-    endcase
-
-    // Cache block data
-    case (decoded_inst_i.cache_block_data_sel)
-      e_data_sel_lce_data_resp: begin
-        cache_block_data_n = lce_data_resp_s_i.data;
-      end
-      e_data_sel_mem_data_resp: begin
-        cache_block_data_n = mem_data_resp_s_i.data;
-      end
-      default: begin
-        cache_block_data_n = '0;
       end
     endcase
 
@@ -489,7 +470,6 @@ module bp_cce_reg
       transfer_lce_r <= '0;
       transfer_lce_way_r <= '0;
       next_coh_state_r <= '0;
-      cache_block_data_r <= '0;
       flags_r <= '0;
       gpr_r <= '0;
       ack_type_r <= '0;
@@ -517,9 +497,6 @@ module bp_cce_reg
       if (decoded_inst_i.transfer_lce_w_v) begin
         transfer_lce_r <= transfer_lce_n;
         transfer_lce_way_r <= transfer_lce_way_n;
-      end
-      if (decoded_inst_i.cache_block_data_w_v) begin
-        cache_block_data_r <= cache_block_data_n;
       end
       if (decoded_inst_i.ack_type_w_v) begin
         ack_type_r <= ack_type_n;

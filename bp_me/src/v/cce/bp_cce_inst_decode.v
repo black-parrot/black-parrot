@@ -270,14 +270,10 @@ module bp_cce_inst_decode
               && (popq_qsel == e_src_q_sel_mem_data_resp);
 
             if (queue_op_s.op.popq.src_q == e_src_q_sel_lce_data_resp) begin
-              decoded_inst_o.cache_block_data_w_v = 1'b1;
-              decoded_inst_o.cache_block_data_sel = e_data_sel_lce_data_resp;
               decoded_inst_o.nwbf_sel = e_nwbf_lce_data_resp;
               decoded_inst_o.flag_mask_w_v = e_flag_nwbf;
 
             end else if (queue_op_s.op.popq.src_q == e_src_q_sel_mem_data_resp) begin
-              decoded_inst_o.cache_block_data_w_v = 1'b1;
-              decoded_inst_o.cache_block_data_sel = e_data_sel_mem_data_resp;
               decoded_inst_o.req_sel = e_req_sel_mem_data_resp;
               decoded_inst_o.lru_way_sel = e_lru_way_sel_mem_data_resp;
               decoded_inst_o.req_addr_way_sel = e_req_addr_way_sel_mem_data_resp;

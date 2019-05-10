@@ -108,25 +108,24 @@ module bp_cce
   // Define structure variables for output queues
 
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
-
-  `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
-  `declare_bp_lce_data_cmd_s(num_lce_p
-                             ,cce_block_width_p
-                             ,lce_assoc_p);
+  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   bp_cce_lce_cmd_s lce_cmd;
   bp_lce_data_cmd_s lce_data_cmd;
   bp_cce_mem_cmd_s mem_cmd;
   bp_cce_mem_data_cmd_s mem_data_cmd;
+  bp_lce_cce_data_resp_s lce_data_resp;
+  bp_mem_cce_data_resp_s mem_data_resp;
 
   // assign output queue ports to structure variables
-  always_comb
-  begin
-    lce_cmd_o = lce_cmd;
-    lce_data_cmd_o = lce_data_cmd;
-    mem_cmd_o = mem_cmd;
-    mem_data_cmd_o = mem_data_cmd;
-  end
+  assign lce_cmd_o = lce_cmd;
+  assign lce_data_cmd_o = lce_data_cmd;
+  assign mem_cmd_o = mem_cmd;
+  assign mem_data_cmd_o = mem_data_cmd;
+
+  // cast input messages with data
+  assign lce_data_resp = lce_data_resp_i;
+  assign mem_data_resp = mem_data_resp_i;
 
   // PC to Decode signals
   logic [`bp_cce_inst_width-1:0] pc_inst_lo;
@@ -191,7 +190,6 @@ module bp_cce
   logic [lg_num_lce_lp-1:0] transfer_lce_r_lo;
   logic [lg_lce_assoc_lp-1:0] transfer_lce_way_r_lo;
   logic [`bp_cce_coh_bits-1:0] next_coh_state_r_lo;
-  logic [cce_block_width_p-1:0] cache_block_data_r_lo;
   logic [`bp_cce_inst_num_flags-1:0] flags_r_lo;
   logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_r_lo;
   logic [`bp_lce_cce_ack_type_width-1:0] ack_type_r_lo;
@@ -406,7 +404,6 @@ module bp_cce
       ,.transfer_lce_o(transfer_lce_r_lo)
       ,.transfer_lce_way_o(transfer_lce_way_r_lo)
       ,.next_coh_state_o(next_coh_state_r_lo)
-      ,.cache_block_data_o(cache_block_data_r_lo)
       ,.flags_o(flags_r_lo)
       ,.gpr_o(gpr_r_lo)
       ,.ack_type_o(ack_type_r_lo)
@@ -635,7 +632,7 @@ module bp_cce
       end else begin
         lce_data_cmd.msg_type = e_lce_data_cmd_cce;
         lce_data_cmd.way_id = lru_way_r_lo;
-        lce_data_cmd.data = cache_block_data_r_lo;
+        lce_data_cmd.data = mem_data_resp.data;
       end
 
       // Mem Command Queue Inputs
@@ -652,7 +649,7 @@ module bp_cce
       if (flags_r_lo[e_flag_sel_ucf]) begin
         mem_data_cmd.data = {(cce_block_width_p-dword_width_p)'('0),nc_data_r_lo};
       end else begin
-        mem_data_cmd.data = cache_block_data_r_lo;
+        mem_data_cmd.data = lce_data_resp.data;
       end
       mem_data_cmd.non_cacheable = bp_lce_cce_req_non_cacheable_e'(flags_r_lo[e_flag_sel_ucf]);
       mem_data_cmd.nc_size = bp_lce_cce_nc_req_size_e'(nc_req_size_r_lo);
