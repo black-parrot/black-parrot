@@ -8,9 +8,9 @@
  *
  * Configuration Link
  *   The config link is used to fill the instruction RAM, and to set the operating mode of the CCE.
- *   At startup, reset_i and freeze_i will both be high. After reset_i goes low, this module waits
- *   for an external source to write the instruction RAM and change the operating mode.
- *   The freeze_i signal is held high while the instruction RAM is written.
+ *   At startup, reset_i and freeze_i will both be high. After reset_i goes low, and while freeze_i
+ *   is still high, the CCE waits for the mode register to be written.
+ *
  *   After freeze_i goes low, the CCE begins operation.
  *
  *   config_addr_i specifies which address to read or write from. The address must be large enough
@@ -22,11 +22,15 @@
  *   that are sent to the CCE, they are used as follows:
  *
  *   The address arriving on config_addr_i is interpreted as follows (and is 15-bits wide)
- *   15 - 1 if address is for CCE
- *   14 - 1 if address is for CCE instruction RAM, 0 if control register
+ *   14 - 1 if address is for CCE
+ *   13 - 1 if address is for CCE instruction RAM, 0 if control register
+ *
+ *   For instruction RAM addresses (15'b11._...._...._....)
  *   1+:inst_ram_addr_width_lp - address into instruction RAM
- *   0+:cfg_reg_addr_width_lp - config register address
  *   0 - specifies if instruction RAM address is for lo (0) or hi (1) 32-bit chunk of instruction
+ *
+ *   For configuration register addresses (15'b10._...._...._....)
+ *   0+:cfg_reg_addr_width_lp - config register address
  *
  *   Current configuration registers:
  *   0 - cce_mode_r : controls the operating mode of the CCE
@@ -99,8 +103,6 @@ module bp_cce_pc
     ,INIT_CFG_REG_RESP
     ,INIT_RAM_RD_RESP
     ,INIT_END
-    ,BOOT
-    ,BOOT_END
     ,FETCH_1
     ,FETCH_2
     ,FETCH
@@ -238,11 +240,13 @@ module bp_cce_pc
         config_ready_o = 1'b1;
         pc_state_n = INIT;
         // init complete when freeze is low and cce mode is normal
+        // if freeze goes low, but mode is uncached, the CCE operates in uncached mode
+        // and this module stays in the INIT state and does not fetch microcode
         if (!freeze_i && (cce_mode_r == e_cce_mode_normal)) begin
           // finalize init, then start fetching microcode next
           pc_state_n = INIT_END;
         // only do something if the config link input is valid, and the address targets the CCE
-        end else if (freeze_i && config_v_i && config_cce_addr_v) begin
+        end else if (config_v_i && config_cce_addr_v) begin
           // address is setting a configuration register
           if (config_reg_addr_v) begin
             // only capture register on read
@@ -255,8 +259,8 @@ module bp_cce_pc
           // address is reading or writing the instruction RAM
           end else if (config_pc_ram_addr_v) begin
             // inputs to RAM are valid if config address high bit is set
-            ram_v_n = freeze_i & config_v_i;// & config_pc_ram_addr_v;
-            ram_w_n = freeze_i & config_w_i;// & config_pc_ram_addr_v & config_v_i;
+            ram_v_n = config_v_i;
+            ram_w_n = config_w_i;
             // lsb of config address specifies if write is first or second part, so ram addr
             // starts at bit 1
             ram_addr_n = config_addr_i[1+:inst_ram_addr_width_lp];
@@ -294,7 +298,7 @@ module bp_cce_pc
         pc_state_n = (config_ready_i) ? INIT : INIT_RAM_RD_RESP;
       end
       INIT_END: begin
-        // let the last cfg link write finish
+        // let the last cfg link write finish (if there is one)
         pc_state_n = FETCH_1;
       end
       FETCH_1: begin
