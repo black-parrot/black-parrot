@@ -7,6 +7,7 @@ module bp_be_nonsynth_tracer
    , parameter asid_width_p                = "inv"
    , parameter branch_metadata_fwd_width_p = "inv"
    , parameter num_core_p                  = "inv"
+   , parameter num_cce_p                   = "inv"
    , parameter num_lce_p                   = "inv"
 
    // Default parameters
@@ -14,7 +15,7 @@ module bp_be_nonsynth_tracer
 
    // Calculated parameters
    , localparam mhartid_width_lp      = `BSG_SAFE_CLOG2(num_core_p)
-   , localparam proc_cfg_width_lp     = `bp_proc_cfg_width(num_core_p, num_lce_p)
+   , localparam proc_cfg_width_lp     = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
    , localparam issue_pkt_width_lp    = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam exception_width_lp    = `bp_be_exception_width
@@ -138,6 +139,13 @@ end
                          ,dbg_stage_r[2].instr_metadata.pc
                          ,dbg_stage_r[2].instr
                          );
+                $fwrite(file, "\t\tinfo: rs1: %d {%x}, rs2: %d {%x}, imm: %x\n"
+                        ,dbg_stage_r[2].decode.rs1_addr
+                        ,dbg_stage_r[2].rs1
+                        ,dbg_stage_r[2].decode.rs2_addr
+                        ,dbg_stage_r[2].rs2
+                        ,dbg_stage_r[2].imm
+                        );
                 if(dbg_stage_r[2].decode.csr_instr_v) begin
                      $fwrite(file, "\t\top: csr sem: r%d <- csr {%x}\n"
                              ,dbg_stage_r[2].decode.rd_addr
@@ -179,13 +187,21 @@ end
                              ,dbg_stage_r[2].rs1
                              );
                 */
-                end else if(dbg_stage_r[2].decode.mret_v) begin
-                    $fwrite(file, "\t\top: mret\n");
-                end else if(dbg_stage_r[2].decode.sret_v) begin
-                    $fwrite(file, "\t\top: sret\n");
-                end else if(dbg_stage_r[2].decode.uret_v) begin
-                    $fwrite(file, "\t\top: uret\n");
                 end else if(dbg_stage_r[2].decode.dcache_r_v) begin
+                  if(dbg_stage_r[2].decode.fu_op == e_lrd)
+                    $fwrite(file, "\t\top: lr.d sem: r%d <- mem[%x] {%x}\n"
+                             ,dbg_stage_r[2].decode.rd_addr
+                             ,dbg_stage_r[2].rs1 
+                             ,iwb_result_i
+                             );
+                  else if(dbg_stage_r[2].decode.fu_op == e_scd)
+                        $fwrite(file, "\t\top: sc.d sem: mem[%x] <- r%d {%x}, success: %d \n"
+                                 ,dbg_stage_r[2].rs1 
+                                 ,dbg_stage_r[2].decode.rs2_addr
+                                 ,dbg_stage_r[2].rs2
+                                 ,iwb_result_i[0]
+                                 );   
+                  else
                     $fwrite(file, "\t\top: load sem: r%d <- mem[%x] {%x}\n"
                              ,dbg_stage_r[2].decode.rd_addr
                              ,dbg_stage_r[2].rs1 
@@ -194,25 +210,12 @@ end
                              );
                 end else if(dbg_stage_r[2].decode.dcache_w_v) begin
                     if(dbg_stage_r[2].rs1
-                       +dbg_stage_r[2].imm==64'hc00dead0) begin
-                        if(dbg_stage_r[2].rs2[31:16]==16'h0000) begin
-                            $fwrite(file, "[CORE%0x PAS] TEST_NUM=%x\n"
-                                     ,mhartid_i
-                                     ,dbg_stage_r[2].rs2[15:0]
-                                     );
-                        end else if(dbg_stage_r[2].rs2[31:16]==16'hFFFF) begin
-                            $fwrite(file, "[CORE%0x FAL] TEST_NUM=%x\n"
-                                     ,mhartid_i
-                                     ,dbg_stage_r[2].rs2[15:0]
-                                     );
-                        end else begin
-                            $fwrite(file, "[CORE%0x ERR] STORE TO 0xC00DEAD0, change test address\n"
-                                     ,mhartid_i
-                                     );
-                        end
-                    end else if(dbg_stage_r[2].rs1
                                 +dbg_stage_r[2].imm==64'h8FFF_FFFF) begin
                         $fwrite(file, "[CORE%0x PRT] %x\n"
+                                 ,mhartid_i
+                                 ,dbg_stage_r[2].rs2[0+:8]
+                                 );
+                        $display("[CORE%0x PRT] %x\n"
                                  ,mhartid_i
                                  ,dbg_stage_r[2].rs2[0+:8]
                                  );
@@ -222,7 +225,19 @@ end
                                  ,mhartid_i
                                  ,dbg_stage_r[2].rs2[0+:8]
                                  );
+                        $display("[CORE%0x PRT] %c\n"
+                                 ,mhartid_i
+                                 ,dbg_stage_r[2].rs2[0+:8]
+                                 );
                     end else begin
+                      if(dbg_stage_r[2].decode.fu_op == e_scd)
+                        $fwrite(file, "\t\top: sc.d sem: mem[%x] <- r%d {%x}, success: %d \n"
+                                 ,dbg_stage_r[2].rs1 
+                                 ,dbg_stage_r[2].decode.rs2_addr
+                                 ,dbg_stage_r[2].rs2
+                                 ,iwb_result_i
+                                 );   
+                      else
                         $fwrite(file, "\t\top: store sem: mem[%x] <- r%d {%x}\n"
                                  ,dbg_stage_r[2].rs1 
                                   + dbg_stage_r[2].imm

@@ -59,6 +59,7 @@ always_comb
   begin
     // Set decoded defaults
     // NOPs are set after bypassing for critical path reasons
+    decode               = '0;
     decode.fe_nop_v      = '0; 
     decode.be_nop_v      = '0; 
     decode.me_nop_v      = '0; 
@@ -81,7 +82,6 @@ always_comb
 
     // Decode metadata
     decode.fp_not_int_v  = '0;
-    decode.amo_v         = '0;
     decode.jmp_v         = '0;
     decode.br_v          = '0;
     decode.opw_v         = '0;
@@ -98,6 +98,7 @@ always_comb
     decode.src2_sel      = bp_be_src2_e'('0);
     decode.baddr_sel     = bp_be_baddr_e'('0);
     decode.result_sel    = bp_be_result_e'('0);
+    decode.offset_sel    = e_offset_is_imm;
 
     illegal_instr        = '0;
 
@@ -239,13 +240,11 @@ always_comb
           unique casez (instr)
             `RV64_ECALL      : begin end // Implemented as NOP
             `RV64_EBREAK     : begin end // Implemented as NOP
-            `RV64_URET       : begin end // Implemented as NOP
-            `RV64_SRET       : begin end // Implemented as NOP
             `RV64_MRET       : decode.fu_op = e_mret;
             `RV64_SRET       : decode.fu_op = e_sret;
             `RV64_URET       : decode.fu_op = e_uret;
             `RV64_WFI        : begin end // Implemented as NOP
-            `RV64_SFENCE_VMA : begin end // Implemented as NOP
+            `RV64_SFENCE_VMA : decode.fu_op = e_sfence_vma;
             default: 
               begin
                 decode.irf_w_v     = 1'b1;
@@ -259,6 +258,20 @@ always_comb
                   default : illegal_instr = 1'b1;
                 endcase
               end 
+          endcase
+        end
+      `RV64_AMO_OP:
+        begin
+          decode.pipe_mem_v = 1'b1;
+          decode.irf_w_v    = 1'b1;
+          decode.dcache_r_v = 1'b1;
+          decode.offset_sel = e_offset_is_zero;
+          unique casez (instr)
+            `RV64_LRW: decode.fu_op = e_lrw;
+            `RV64_SCW: decode.fu_op = e_scw;
+            `RV64_LRD: decode.fu_op = e_lrd;
+            `RV64_SCD: decode.fu_op = e_scd;
+            default : illegal_instr = 1'b1;
           endcase
         end
       default : illegal_instr = 1'b1;

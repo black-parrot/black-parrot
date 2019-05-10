@@ -37,13 +37,13 @@
  * 5. At this point, the CCE coordinates either reading a block from memory or directing an LCE
  *    to LCE transfer to satisfy the request.
  * 5a. In the case of reading from memory, the CCE will retrieve the block then send both a
- *     bp_cce_lce_cmd_s to set the tag and bp_cce_lce_data_cmd_s to provide the data block. Once
+ *     bp_cce_lce_cmd_s to set the tag and bp_lce_data_cmd_s to provide the data block. Once
  *     the LCE receives both messages, the LCE sends a coherence ack in a bp_lce_cce_resp_s message
  *     to the CCE. The cache miss is complete and the LCE is now "woken up".
  * 5b. In the case of an LCE to LCE transfer, the CCE sends a bp_cce_lce_cmd_s to the LCE that
  *     will provide the block to initiate a transfer to the requesting LCE, and then sends a
  *     bp_cce_lce_cmd_s set tag message to the requesting LCE. The LCE sending the transfer sends
- *     a bp_lce_lce_tr_resp_s to supply the requested data. Once the cache-missing LCE receives
+ *     a bp_lce_data_cmd_s to supply the requested data. Once the cache-missing LCE receives
  *     both the transfer response and set tag command, it sends a bp_lce_cce_resp_s to ack the
  *     receipt of the data transfer and set tag command, and it considers itself "woken up".
  * 6. If an LCE to LCE transfer occurred, the CCE will also perform a writeback of the block
@@ -52,9 +52,8 @@
  *    the memory.
  *
  * LCE Input Message Priorities (highest to lowest)
- * 1. bp_cce_lce_data_cmd_s
- * 2. bp_lce_lce_tr_resp_s
- * 3. bp_cce_lce_cmd_s
+ * 1. bp_lce_data_cmd_s
+ * 2. bp_cce_lce_cmd_s
  *
  * CCE Input Message Priorities
  * 1. bp_mem_cce_data_resp_s
@@ -536,18 +535,18 @@ typedef enum logic
   `declare_bp_mem_cce_resp_s(paddr_width_mp);
 
 `define declare_bp_me_if_widths(paddr_width_mp, data_width_mp, num_lce_mp, lce_assoc_mp) \
-  , localparam cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(paddr_width_p,num_lce_p,lce_assoc_p)   \
-  , localparam mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(paddr_width_p              \
-                                                                      ,cce_block_width_p         \
-                                                                      ,num_lce_p                 \
-                                                                      ,lce_assoc_p               \
-                                                                      )                          \
-  , localparam cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_p                \
-                                                                    ,cce_block_width_p           \
-                                                                    ,num_lce_p                   \
-                                                                    ,lce_assoc_p                 \
-                                                                    )                            \
-  , localparam mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p,num_lce_p,lce_assoc_p)
+  , localparam cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(paddr_width_mp,num_lce_mp,lce_assoc_mp) \
+  , localparam mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(paddr_width_mp              \
+                                                                      ,data_width_mp              \
+                                                                      ,num_lce_mp                 \
+                                                                      ,lce_assoc_mp               \
+                                                                      )                           \
+  , localparam cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_mp                \
+                                                                    ,data_width_mp                \
+                                                                    ,num_lce_mp                   \
+                                                                    ,lce_assoc_mp                 \
+                                                                    )                             \
+  , localparam mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_mp,num_lce_mp,lce_assoc_mp)
 
 /*
  * 
@@ -590,6 +589,7 @@ typedef enum logic
                                                               ,lce_assoc_mp                 \
                                                               )
 
+
 /*
  * Width Macros
  */
@@ -612,6 +612,8 @@ typedef enum logic
 `define bp_lce_cce_resp_width(num_cce_mp, num_lce_mp, addr_width_mp) \
   (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`bp_lce_cce_ack_type_width+addr_width_mp)
 
+// TODO: remove this macro - LCE to LCE TR Resp no longer exists
+// -- still used in FE tests somewhere
 `define bp_lce_lce_tr_resp_width(num_lce_mp, addr_width_mp, data_width_mp, lce_assoc_mp) \
   (`BSG_SAFE_CLOG2(num_lce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+`BSG_SAFE_CLOG2(lce_assoc_mp) \
     +addr_width_mp+data_width_mp)

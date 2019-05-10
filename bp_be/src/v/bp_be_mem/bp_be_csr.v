@@ -35,6 +35,7 @@ module bp_be_csr
     , input                          instret_i
 
     , input [vaddr_width_p-1:0]      exception_pc_i
+    , input [vaddr_width_p-1:0]      exception_vaddr_i
     , input [instr_width_lp-1:0]     exception_instr_i
     , input                          exception_ecode_v_i
     , input [ecode_dec_width_lp-1:0] exception_ecode_dec_i
@@ -50,6 +51,7 @@ module bp_be_csr
     , output [mtvec_width_lp-1:0]    mtvec_o
     , output [satp_width_lp-1:0]     satp_o
     , output                         translation_en_o
+    , output logic                   tlb_fence_o
     );
 
 // Declare parameterizable structs
@@ -252,9 +254,16 @@ always_comb
     trap_v_o        = '0;
     ret_v_o         = '0;
     illegal_instr_o = '0;
+    csr_data_lo     = '0;
+    tlb_fence_o     = '0;
         
     if (csr_cmd_v_i)
-      if (csr_cmd.csr_op == e_mret)
+      if (csr_cmd.csr_op == e_sfence_vma)
+        begin
+          illegal_instr_o = (priv_mode_r < `RV64_PRIV_MODE_S);
+          tlb_fence_o     = ~illegal_instr_o;
+        end
+      else if (csr_cmd.csr_op == e_mret)
         begin
           priv_mode_n     = mstatus_r.mpp;
 
@@ -287,13 +296,30 @@ always_comb
         end
       else
         begin
-          case (csr_cmd.csr_addr)
+          unique casez (csr_cmd.csr_addr)
             `RV64_CSR_ADDR_SATP: 
               begin
                 satp_li     = rv64_satp_s'(csr_data_li);
                 satp_n      = `compress_satp_s(satp_li);
                 satp_lo     = `decompress_satp_s(satp_r);
                 csr_data_lo = satp_lo;
+              end
+            `RV64_CSR_ADDR_MISA:
+              begin
+                // 64 bit MXLEN, AISU extensions
+                csr_data_lo = {2'b10, 36'b0, 26'h140101};
+              end
+            `RV64_CSR_ADDR_MVENDORID:
+              begin
+                csr_data_lo = '0;
+              end
+            `RV64_CSR_ADDR_MARCHID:
+              begin
+                csr_data_lo = '0;
+              end
+            `RV64_CSR_ADDR_MIMPID:
+              begin
+                csr_data_lo = '0;
               end
             `RV64_CSR_ADDR_MHARTID:
               begin
@@ -306,13 +332,6 @@ always_comb
                 mstatus_lo  = `decompress_mstatus_s(mstatus_r);
                 csr_data_lo = mstatus_lo;
               end
-            `RV64_CSR_ADDR_MIE: 
-              begin
-                mie_li      = rv64_mie_s'(csr_data_li);
-                mie_n       = `compress_mie_s(mie_li);
-                mie_lo      = `decompress_mie_s(mie_r);
-                csr_data_lo = mie_lo;
-              end
             `RV64_CSR_ADDR_MTVEC: 
               begin
                 mtvec_li    = rv64_mtvec_s'(csr_data_li);
@@ -320,7 +339,32 @@ always_comb
                 mtvec_lo    = `decompress_mtvec_s(mtvec_r);
                 csr_data_lo = mtvec_lo;
               end
-            
+            `RV64_CSR_ADDR_MEDELEG:
+              begin
+                csr_data_lo = dword_width_p'(0);
+              end
+            `RV64_CSR_ADDR_MIDELEG:
+              begin
+                csr_data_lo = dword_width_p'(0);
+              end
+            `RV64_CSR_ADDR_MIP: 
+              begin
+                mip_li      = rv64_mip_s'(csr_data_li);
+                mip_n       = `compress_mip_s(mip_li);
+                mip_lo      = `decompress_mip_s(mip_r);
+                csr_data_lo = mip_lo;
+              end
+            `RV64_CSR_ADDR_MIE: 
+              begin
+                mie_li      = rv64_mie_s'(csr_data_li);
+                mie_n       = `compress_mie_s(mie_li);
+                mie_lo      = `decompress_mie_s(mie_r);
+                csr_data_lo = mie_lo;
+              end
+            `RV64_CSR_ADDR_MCOUNTEREN:
+              begin
+                csr_data_lo = dword_width_p'(0);
+              end
             `RV64_CSR_ADDR_MSCRATCH: 
               begin
                 mscratch_li = rv64_mscratch_s'(csr_data_li);
@@ -349,14 +393,6 @@ always_comb
                 mtval_lo    = `decompress_mtval_s(mtval_r);
                 csr_data_lo = mtval_lo;
               end
-            `RV64_CSR_ADDR_MIP: 
-              begin
-                mip_li      = rv64_mip_s'(csr_data_li);
-                mip_n       = `compress_mip_s(mip_li);
-                mip_lo      = `decompress_mip_s(mip_r);
-                csr_data_lo = mip_lo;
-              end
-
             `RV64_CSR_ADDR_PMPCFG0: 
               begin
                 pmpcfg0_li  = rv64_pmpcfg_s'(csr_data_li);
@@ -392,7 +428,6 @@ always_comb
                 pmpaddr3_lo = `decompress_pmpaddr_s(pmpaddr3_r);
                 csr_data_lo = pmpaddr3_lo;
               end
-
             `RV64_CSR_ADDR_MCYCLE: 
               begin
                 mcycle_li   = rv64_mcounter_s'(csr_data_li);
@@ -429,7 +464,7 @@ always_comb
         mstatus_n.mie       = 1'b0;
 
         mepc_n              = exception_pc_i;
-        mtval_n             = exception_instr_i;
+        mtval_n             = exception_ecode_dec_li.illegal_instr ? exception_instr_i : exception_vaddr_i;
 
         mcause_n._interrupt = 1'b0;
         mcause_n.ecode      = exception_ecode_li;
@@ -470,11 +505,29 @@ always_comb
 assign mepc_o           = mepc_r;
 assign mtvec_o          = mtvec_r;
 assign satp_o           = satp_r;
-assign translation_en_o = (priv_mode_r > `RV64_PRIV_MODE_M) & (satp_r.mode == 4'h8);
+// We only support SV39 so the mode can either be 0(off) or 1(SV39)
+assign translation_en_o = (priv_mode_r < `RV64_PRIV_MODE_M) & (satp_r.mode == 1'b1);
 
 assign csr_cmd_ready_o = 1'b1;
 assign data_o          = dword_width_p'(csr_data_lo);
 assign v_o             = csr_cmd_v_i;
+
+// synopsys translate_off
+  always_ff @(posedge clk_i)
+    if (csr_cmd_v_i & (csr_cmd.csr_addr == `BP_CSR_ADDR_UFINISH))
+      begin
+        if (csr_cmd.data == '0)
+          begin
+            $display("PASS\n");
+            $finish();
+          end
+        else 
+          begin
+            $display("FAIL\n");
+            $finish();
+          end
+      end
+// synopsys translate_on
 
 endmodule : bp_be_csr
 

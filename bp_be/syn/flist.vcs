@@ -96,6 +96,7 @@ $BP_BE_DIR/src/v/bp_be_checker/bp_be_detector.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_director.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_scheduler.v
 # MMU
+$BP_BE_DIR/src/v/bp_be_mem/bp_be_ptw.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_csr.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_mem_top.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache.v
@@ -107,7 +108,6 @@ $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf_queue.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dtlb/bp_be_dtlb.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dtlb/bp_be_dtlb_replacement.v
-$BP_BE_DIR/src/v/bp_be_mem/bp_be_dtlb/bp_be_ptw.v
 # Common
 $BP_BE_DIR/src/v/common/bp_be_trace_replay_gen.v
 $BP_BE_DIR/src/v/common/bsg_fifo_1r1w_rolly.v
@@ -130,7 +130,7 @@ $BP_ME_DIR/test/common/bp_mem.v
 # You must change it for testbenches with different numbers of lce
 # In future, we want to load the internal ram rather than rely on the rom
 # directly
-$BP_ME_DIR/src/v/roms/ei-tr/bp_cce_inst_rom_ei-tr_lce1_wg64_assoc8.v
+$BP_ME_DIR/src/v/roms/mesi-tr/bp_cce_inst_rom_mesi-tr_lce1_wg64_assoc8.v
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce.v
 $BP_ME_DIR/src/v/cce/bp_cce_alu.v

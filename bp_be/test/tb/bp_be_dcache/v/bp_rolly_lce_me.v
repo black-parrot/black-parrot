@@ -218,9 +218,23 @@ module bp_rolly_lce_me
 
   bp_me_top #(
     .cfg_p(cfg_p)
+    ,.cfg_link_addr_width_p(16)
+    ,.cfg_link_data_width_p(32)
   ) me (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
+    // TODO: add freeze
+    ,.freeze_i('0)
+
+    // TODO: hook up config port
+    ,.config_addr_i('0)
+    ,.config_data_i('0)
+    ,.config_v_i('0)
+    ,.config_w_i('0)
+    ,.config_ready_o()
+    ,.config_data_o()
+    ,.config_v_o()
+    ,.config_ready_i('0)
 
     ,.lce_cmd_o(lce_cmd_li)
     ,.lce_cmd_v_o(lce_cmd_v_li)

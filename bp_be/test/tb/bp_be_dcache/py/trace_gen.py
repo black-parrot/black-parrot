@@ -87,7 +87,7 @@ class TraceGen:
     print("#### FINISH ####")
     self.wait(8)
     print("0100_" + (self.packet_len-4)*"0")
- 
+
   def test_done(self):
     print("#### DONE ####")
     self.wait(8)

@@ -32,7 +32,7 @@ module bp_be_top
    , parameter calc_debug_p                = 0
    , parameter calc_debug_file_p           = "calc_debug.log"
 
-   , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(num_core_p, num_lce_p)
+   , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
    , localparam ecode_dec_width_lp         = `bp_be_ecode_dec_width
    
    // VM parameters
@@ -104,7 +104,7 @@ module bp_be_top
 
 // Declare parameterized structures
 `declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_width_p)
-`declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
+`declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
 `declare_bp_be_internal_if_structs(vaddr_width_p
                                    , paddr_width_p
                                    , asid_width_p
@@ -143,10 +143,11 @@ logic [mtvec_width_lp-1:0] chk_mtvec_li;
 logic [mepc_width_lp-1:0]  chk_mepc_li;
 logic [vaddr_width_p-1:0]  chk_pc_lo;
 
-logic chk_trap_v_li, chk_ret_v_li;
+logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li;
 
 logic                          instret;
 logic [vaddr_width_p-1:0]      exception_pc;
+logic [vaddr_width_p-1:0]      exception_vaddr;
 logic [instr_width_p-1:0]      exception_instr;
 logic [ecode_dec_width_lp-1:0] exception_ecode_dec;
 logic                          exception_ecode_v;
@@ -191,6 +192,7 @@ bp_be_checker_top
    ,.pc_o(chk_pc_lo)
    ,.mepc_i(chk_mepc_li)
    ,.mtvec_i(chk_mtvec_li)
+   ,.tlb_fence_i(chk_tlb_fence_li)
    
    ,.itlb_fill_v_i(itlb_fill_v)
    ,.itlb_fill_vtag_i(itlb_fill_vtag)
@@ -237,6 +239,7 @@ bp_be_calculator_top
 
    ,.instret_o(instret)
    ,.exception_pc_o(exception_pc)
+   ,.exception_vaddr_o(exception_vaddr)
    ,.exception_instr_o(exception_instr)
    ,.exception_ecode_v_o(exception_ecode_v)
    ,.exception_ecode_dec_o(exception_ecode_dec)
@@ -301,6 +304,7 @@ bp_be_mem_top
     ,.instret_i(instret)
 
     ,.exception_pc_i(exception_pc)
+    ,.exception_vaddr_i(exception_vaddr)
     ,.exception_instr_i(exception_instr)
     ,.exception_ecode_v_i(exception_ecode_v)
     ,.exception_ecode_dec_i(exception_ecode_dec)
@@ -314,6 +318,7 @@ bp_be_mem_top
     ,.ret_v_o(chk_ret_v_li)
     ,.mepc_o(chk_mepc_li)
     ,.mtvec_o(chk_mtvec_li)
+    ,.tlb_fence_o(chk_tlb_fence_li)
     );
 
 endmodule : bp_be_top

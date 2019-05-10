@@ -13,6 +13,11 @@ module bp_cce_pc
   import bp_cce_pkg::*;
   #(parameter inst_ram_els_p             = "inv"
 
+    // Config channel parameters
+    , parameter cfg_link_addr_width_p = "inv"
+    , parameter cfg_link_data_width_p = "inv"
+    , parameter cfg_ram_base_addr_p = "inv"
+
     // Default parameters
     , parameter harden_p                 = 0
 
@@ -22,6 +27,18 @@ module bp_cce_pc
   )
   (input                                         clk_i
    , input                                       reset_i
+   , input                                       freeze_i
+
+   // Config channel
+   , input [cfg_link_addr_width_p-2:0]           config_addr_i
+   , input [cfg_link_data_width_p-1:0]           config_data_i
+   , input                                       config_v_i
+   , input                                       config_w_i
+   , output logic                                config_ready_o
+
+   , output logic [cfg_link_data_width_p-1:0]    config_data_o
+   , output logic                                config_v_o
+   , input                                       config_ready_i
 
    // ALU branch result signal
    , input                                       alu_branch_res_i
@@ -46,10 +63,18 @@ module bp_cce_pc
 
   logic ram_v_r, ram_v_r_n;
   logic ram_w_r, ram_w_r_n;
-  logic [inst_ram_addr_width_lp-1:0] ram_addr_i, ram_addr_r, ram_addr_r_n;
-  logic [inst_width_lp-1:0] ram_data_i_r, ram_data_o, ram_data_i_r_n;
+  logic [inst_ram_addr_width_lp-1:0] ram_addr_li, ram_addr_r, ram_addr_r_n;
+  logic [inst_width_lp-1:0] ram_data_li_r, ram_data_lo, ram_data_li_r_n;
+  logic [inst_width_lp-1:0] ram_w_mask_li;
+  assign ram_w_mask_li = '1;
 
-  bsg_mem_1rw_sync
+  // config logic
+  logic config_ram_w_v;
+  assign config_ram_w_v = config_addr_i[cfg_link_addr_width_p-2];
+  logic [inst_ram_addr_width_lp-1:0] config_ram_addr;
+  assign config_ram_addr = config_addr_i[0+:inst_ram_addr_width_lp];
+
+  bsg_mem_1rw_sync_mask_write_bit
     #(.width_p(inst_width_lp)
       ,.els_p(inst_ram_els_p)
       )
@@ -57,10 +82,11 @@ module bp_cce_pc
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
       ,.v_i(ram_v_r)
-      ,.data_i(ram_data_i_r)
-      ,.addr_i(ram_addr_i)
+      ,.data_i(ram_data_li_r)
+      ,.addr_i(ram_addr_li)
       ,.w_i(ram_w_r)
-      ,.data_o(ram_data_o)
+      ,.data_o(ram_data_lo)
+      ,.w_mask_i(ram_w_mask_li)
       );
 
   typedef enum logic [1:0] {
@@ -79,7 +105,7 @@ module bp_cce_pc
       ram_v_r <= '0;
       ram_w_r <= '0;
       ram_addr_r <= '0;
-      ram_data_i_r <= '0;
+      ram_data_li_r <= '0;
 
       boot_rom_addr_r <= '0;
 
@@ -92,7 +118,7 @@ module bp_cce_pc
       ram_v_r <= ram_v_r_n;
       ram_w_r <= ram_w_r_n;
       ram_addr_r <= ram_addr_r_n;
-      ram_data_i_r <= ram_data_i_r_n;
+      ram_data_li_r <= ram_data_li_r_n;
 
       boot_rom_addr_r <= boot_rom_addr_r_n;
 
@@ -106,16 +132,16 @@ module bp_cce_pc
     // outputs always come from registers or the instruction RAM
     boot_rom_addr_o = boot_rom_addr_r;
     inst_v_o = inst_v_r;
-    inst_o = ram_data_o;
+    inst_o = ram_data_lo;
 
     // by default, regardless of the pc_state, send the instruction ram the registered value
-    ram_addr_i = ram_addr_r;
+    ram_addr_li = ram_addr_r;
 
     // next values for registers
 
     // defaults
     ram_w_r_n = '0;
-    ram_data_i_r_n = '0;
+    ram_data_li_r_n = '0;
     boot_rom_addr_r_n = '0;
 
     case (pc_state)
@@ -127,7 +153,7 @@ module bp_cce_pc
         ram_v_r_n = 1'b1;
         ram_w_r_n = 1'b1;
         ram_addr_r_n = boot_rom_addr_r;
-        ram_data_i_r_n = boot_rom_data_i;
+        ram_data_li_r_n = boot_rom_data_i;
 
         ex_pc_r_n = '0;
         inst_v_r_n = '0;
@@ -185,14 +211,14 @@ module bp_cce_pc
           ex_pc_r_n = ex_pc_r;
           ram_addr_r_n = ram_addr_r;
           // feed the currently executing pc as input to instruction ram
-          ram_addr_i = ex_pc_r;
+          ram_addr_li = ex_pc_r;
         end else if (alu_branch_res_i) begin
           // when branching, the instruction executed next is the branch target
           ex_pc_r_n = pc_branch_target_i;
           // the following instruction to fetch is after the branch target
           ram_addr_r_n = pc_branch_target_i + 'd1;
           // if branching, use the branch target from the current instruction
-          ram_addr_i = pc_branch_target_i;
+          ram_addr_li = pc_branch_target_i;
         end else begin
           // normal execution, the instruction that will be executed is the one that will
           // be fetched in sequential order
@@ -200,7 +226,7 @@ module bp_cce_pc
           // the next instruction to fetch follows sequentially
           ram_addr_r_n = ram_addr_r + 'd1;
           // normally, use the address register (i.e., sequential execution)
-          ram_addr_i = ram_addr_r;
+          ram_addr_li = ram_addr_r;
         end
 
       end
@@ -209,7 +235,7 @@ module bp_cce_pc
         ram_v_r_n = '0;
         ram_w_r_n = '0;
         ram_addr_r_n = '0;
-        ram_data_i_r_n = '0;
+        ram_data_li_r_n = '0;
         ex_pc_r_n = '0;
         inst_v_r_n = '0;
         boot_rom_addr_r_n = '0;

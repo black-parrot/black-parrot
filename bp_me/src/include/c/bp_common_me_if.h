@@ -134,8 +134,6 @@ typedef enum {
 
 #define bp_lce_data_cmd_width (LG_N_LCE+bp_lce_data_cmd_type_width+LG_LCE_ASSOC+DATA_WIDTH_BITS)
 
-#define bp_lce_lce_tr_resp_width (LG_N_LCE+LG_N_LCE+LG_LCE_ASSOC+ADDR_WIDTH+DATA_WIDTH_BITS)
-
 #define bp_cce_mem_cmd_payload_width (LG_N_LCE+LG_LCE_ASSOC)
 
 #define bp_cce_mem_data_cmd_payload_width ((2*LG_N_LCE)+(2*LG_LCE_ASSOC)+ADDR_WIDTH+2)

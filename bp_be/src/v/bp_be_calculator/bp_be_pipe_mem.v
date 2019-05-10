@@ -51,7 +51,7 @@ module bp_be_pipe_mem
    , localparam exception_width_lp     = `bp_be_exception_width
    , localparam mmu_cmd_width_lp       = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam csr_cmd_width_lp       = `bp_be_csr_cmd_width
-   , localparam mem_resp_width_lp      = `bp_be_mem_resp_width
+   , localparam mem_resp_width_lp      = `bp_be_mem_resp_width(vaddr_width_p)
    , localparam mem_exception_width_lp = `bp_be_mem_exception_width
 
    // From RISC-V specifications
@@ -83,6 +83,7 @@ module bp_be_pipe_mem
    , output logic                              v_o
    , output logic [reg_data_width_lp-1:0]      data_o
    , output logic [mem_exception_width_lp-1:0] mem_exception_o
+   , output logic [vaddr_width_p-1:0]          mem3_vaddr_o
    );
 
 // Declare parameterizable structs
@@ -125,12 +126,16 @@ bsg_shift_reg
    ,.data_o(csr_cmd_lo)
    );
 
+logic [reg_data_width_lp-1:0] offset;
+
+assign offset = decode.offset_sel ? '0 : imm_i[0+:vaddr_width_p];
+
 assign mmu_cmd_v_o = (decode.dcache_r_v | decode.dcache_w_v) & ~kill_ex1_i;
 always_comb 
   begin
     mmu_cmd.mem_op      = decode.fu_op;
     mmu_cmd.data        = rs2_i;
-    mmu_cmd.vaddr       = (rs1_i + imm_i[0+:vaddr_width_p]);
+    mmu_cmd.vaddr       = (rs1_i + offset);
   end
 
 assign csr_cmd_v_o = csr_cmd_v_lo & ~kill_ex3_i;
@@ -148,6 +153,7 @@ always_comb
 assign v_o                = mem_resp_v_i;
 assign mem_resp_ready_o   = 1'b1;
 assign mem_exception_o    = mem_resp.exception;
+assign mem3_vaddr_o       = mem_resp.vaddr;
 
 endmodule : bp_be_pipe_mem
 
