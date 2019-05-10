@@ -54,7 +54,13 @@
  
 [submodule "bp_common/test/src/opensbi"]
   path = bp_common/test/src/opensbi
-  url = https://github.com/black-parrot/opensbi
+  url = https://github.com/black-parrot/opensbi.git
+  branch = blackparrot_mods
+  ignore = dirty
+
+[submodule "bp_common/test/src/riscv-pk"]
+  path = bp_common/test/src/riscv-pk
+  url = https://github.com/black-parrot/riscv-pk.git
   branch = blackparrot_mods
   ignore = dirty
 
