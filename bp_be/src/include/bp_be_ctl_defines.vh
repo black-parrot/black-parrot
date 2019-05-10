@@ -136,11 +136,7 @@ typedef struct packed
   logic                             br_v;
   logic                             opw_v;
 
-  logic[rv64_csr_addr_width_gp-1:0] csr_addr;
   bp_be_fu_op_s                     fu_op;
-  logic[rv64_reg_addr_width_gp-1:0] rs1_addr;
-  logic[rv64_reg_addr_width_gp-1:0] rs2_addr;
-  logic[rv64_reg_addr_width_gp-1:0] rd_addr;
 
   bp_be_src1_e                      src1_sel;
   bp_be_src2_e                      src2_sel;

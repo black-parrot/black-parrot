@@ -136,70 +136,70 @@ end
                          ,dbg_stage_r[2].instr
                          );
                 $fwrite(file, "\t\tinfo: rs1: %d {%x}, rs2: %d {%x}, imm: %x\n"
-                        ,dbg_stage_r[2].decode.rs1_addr
+                        ,dbg_stage_r[2].instr.fields.rtype.rs1_addr
                         ,dbg_stage_r[2].rs1
-                        ,dbg_stage_r[2].decode.rs2_addr
+                        ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
                         ,dbg_stage_r[2].rs2
                         ,dbg_stage_r[2].imm
                         );
                 if(dbg_stage_r[2].decode.csr_instr_v) begin
                      $fwrite(file, "\t\top: csr sem: r%d <- csr {%x}\n"
-                             ,dbg_stage_r[2].decode.rd_addr
+                             ,dbg_stage_r[2].instr.fields.rtype.rd_addr
                              ,iwb_result_i
                              );
                 /*
                  * TODO: Add back in CSR printing
                 if(dbg_stage_r[2].decode.mhartid_r_v) begin
                     $fwrite(file, "\t\top: csr sem: r%d <- mhartid {%x}\n"
-                             ,dbg_stage_r[2].decode.rd_addr
+                             ,dbg_stage_r[2].instr.fields.rtype.rd_addr
                              ,iwb_result_i
                              );
                 end else if(dbg_stage_r[2].decode.mtvec_rw_v) begin
                     $fwrite(file, "\t\top: csr sem: r%d <- mtvec {%x} r%d {%x} -> mtvec\n"
-                             ,dbg_stage_r[2].decode.rd_addr
+                             ,dbg_stage_r[2].instr.fields.rtype.rd_addr
                              ,iwb_result_i
-                             ,dbg_stage_r[2].decode.rs1_addr
+                             ,dbg_stage_r[2].instr.fields.rtype.rs1_addr
                              ,dbg_stage_r[2].rs1
                              );
                 end else if(dbg_stage_r[2].decode.mepc_rw_v) begin
                     $fwrite(file, "\t\top: csr sem: r%d <- mepc {%x} r%d {%x} -> mepc\n"
-                             ,dbg_stage_r[2].decode.rd_addr
+                             ,dbg_stage_r[2].instr.fields.rtype.rd_addr
                              ,iwb_result_i
-                             ,dbg_stage_r[2].decode.rs1_addr
+                             ,dbg_stage_r[2].instr.fields.rtype.rs1_addr
                              ,dbg_stage_r[2].rs1
                              );
                 end else if(dbg_stage_r[2].decode.mscratch_rw_v) begin
                     $fwrite(file, "\t\top: csr sem: r%d <- mscratch {%x} r%d {%x} -> mscratch\n"
-                             ,dbg_stage_r[2].decode.rd_addr
+                             ,dbg_stage_r[2].instr.fields.rtype.rd_addr
                              ,iwb_result_i
-                             ,dbg_stage_r[2].decode.rs1_addr
+                             ,dbg_stage_r[2].instr.fields.rtype.rs1_addr
                              ,dbg_stage_r[2].rs1
                              );
                 end else if(dbg_stage_r[2].decode.mtval_rw_v) begin
                     $fwrite(file, "\t\top: csr sem: r%d <- mtval {%x} r%d {%x} -> mtval\n"
-                             ,dbg_stage_r[2].decode.rd_addr
+                             ,dbg_stage_r[2].instr.fields.rtype.rd_addr
                              ,iwb_result_i
-                             ,dbg_stage_r[2].decode.rs1_addr
+                             ,dbg_stage_r[2].instr.fields.rtype.rs1_addr
                              ,dbg_stage_r[2].rs1
                              );
                 */
                 end else if(dbg_stage_r[2].decode.dcache_r_v) begin
                   if(dbg_stage_r[2].decode.fu_op == e_lrd)
                     $fwrite(file, "\t\top: lr.d sem: r%d <- mem[%x] {%x}\n"
-                             ,dbg_stage_r[2].decode.rd_addr
+                             ,dbg_stage_r[2].instr.fields.rtype.rd_addr
                              ,dbg_stage_r[2].rs1 
                              ,iwb_result_i
                              );
                   else if(dbg_stage_r[2].decode.fu_op == e_scd)
                         $fwrite(file, "\t\top: sc.d sem: mem[%x] <- r%d {%x}, success: %d \n"
                                  ,dbg_stage_r[2].rs1 
-                                 ,dbg_stage_r[2].decode.rs2_addr
+                                 ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
                                  ,dbg_stage_r[2].rs2
                                  ,iwb_result_i[0]
                                  );   
                   else
                     $fwrite(file, "\t\top: load sem: r%d <- mem[%x] {%x}\n"
-                             ,dbg_stage_r[2].decode.rd_addr
+                             ,dbg_stage_r[2].instr.fields.rtype.rd_addr
                              ,dbg_stage_r[2].rs1 
                               + dbg_stage_r[2].imm
                              ,iwb_result_i
@@ -229,7 +229,7 @@ end
                       if(dbg_stage_r[2].decode.fu_op == e_scd)
                         $fwrite(file, "\t\top: sc.d sem: mem[%x] <- r%d {%x}, success: %d \n"
                                  ,dbg_stage_r[2].rs1 
-                                 ,dbg_stage_r[2].decode.rs2_addr
+                                 ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
                                  ,dbg_stage_r[2].rs2
                                  ,iwb_result_i
                                  );   
@@ -237,14 +237,14 @@ end
                         $fwrite(file, "\t\top: store sem: mem[%x] <- r%d {%x}\n"
                                  ,dbg_stage_r[2].rs1 
                                   + dbg_stage_r[2].imm
-                                 ,dbg_stage_r[2].decode.rs2_addr
+                                 ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
                                  ,dbg_stage_r[2].rs2
                                  );   
                     end
                 end else if(dbg_stage_r[2].decode.jmp_v) begin
                     $fwrite(file, "\t\top: jump sem: pc <- {%x}, r%d <- {%x}\n"
                              ,iwb_br_tgt_r
-                             ,dbg_stage_r[2].decode.rd_addr
+                             ,dbg_stage_r[2].instr.fields.rtype.rd_addr
                              ,iwb_result_i
                              );
                 end else if(dbg_stage_r[2].decode.br_v) begin
@@ -258,7 +258,7 @@ end
                 end else if(dbg_stage_r[2].decode.irf_w_v) begin
                     // TODO: Expand on this trace to have all integer instructions
                     $fwrite(file, "\t\top: integer sem: r%d <- {%x}\n"
-                             ,dbg_stage_r[2].decode.rd_addr
+                             ,dbg_stage_r[2].instr.fields.rtype.rd_addr
                              ,iwb_result_i
                              );
                 end

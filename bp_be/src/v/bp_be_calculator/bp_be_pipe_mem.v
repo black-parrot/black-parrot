@@ -69,6 +69,7 @@ module bp_be_pipe_mem
    , input [vaddr_width_p-1:0]            mem3_pc_i
 
    , input [decode_width_lp-1:0]          decode_i
+   , input [rv64_instr_width_gp-1:0]      instr_i
    , input [reg_data_width_lp-1:0]        rs1_i
    , input [reg_data_width_lp-1:0]        rs2_i
    , input [reg_data_width_lp-1:0]        imm_i
@@ -99,10 +100,12 @@ bp_be_decode_s    decode;
 bp_be_mmu_cmd_s   mem1_cmd, mem3_cmd_li, mem3_cmd_lo, mem3_cmd;
 bp_be_csr_cmd_s   csr_cmd_li, csr_cmd_lo;
 bp_be_mem_resp_s  mem_resp;
+rv64_instr_s      instr;
 
 assign decode = decode_i;
 assign mem_resp = mem_resp_i;
 assign csr_cmd_o = csr_cmd_lo;
+assign instr = instr_i;
 
 // Suppress unused signal warnings
 wire unused0 = kill_ex2_i;
@@ -186,7 +189,7 @@ wire csr_imm_op = (decode.fu_op == e_csrrwi)
 always_comb
   begin
     csr_cmd_li.csr_op   = decode.fu_op;
-    csr_cmd_li.csr_addr = decode.csr_addr;
+    csr_cmd_li.csr_addr = instr.fields.itype.imm12;
     csr_cmd_li.data     = csr_imm_op ? imm_i : rs1_i;
   end
 

@@ -245,11 +245,11 @@ bp_be_regfile
    ,.rd_data_i(comp_stage_r[int_commit_point_lp])
 
    ,.rs1_r_v_i(issue_pkt.irs1_v)
-   ,.rs1_addr_i(issue_pkt.rs1_addr)
+   ,.rs1_addr_i(issue_pkt.instr.fields.rtype.rs1_addr)
    ,.rs1_data_o(irf_rs1)
 
    ,.rs2_r_v_i(issue_pkt.irs2_v)
-   ,.rs2_addr_i(issue_pkt.rs2_addr)
+   ,.rs2_addr_i(issue_pkt.instr.fields.rtype.rs2_addr)
    ,.rs2_data_o(irf_rs2)
    );
 
@@ -266,11 +266,11 @@ bp_be_regfile
    ,.rd_data_i(comp_stage_r[fp_commit_point_lp])
 
    ,.rs1_r_v_i(issue_pkt.frs1_v)
-   ,.rs1_addr_i(issue_pkt.rs1_addr)
+   ,.rs1_addr_i(issue_pkt.instr.fields.rtype.rs1_addr)
    ,.rs1_data_o(frf_rs1)
 
    ,.rs2_r_v_i(issue_pkt.frs2_v)
-   ,.rs2_addr_i(issue_pkt.rs2_addr)
+   ,.rs2_addr_i(issue_pkt.instr.fields.rtype.rs2_addr)
    ,.rs2_data_o(frf_rs2)
    );
 
@@ -317,11 +317,11 @@ bp_be_bypass
    ) 
  int_bypass 
   (.id_rs1_v_i(issue_pkt_r.irs1_v)
-   ,.id_rs1_addr_i(decoded.rs1_addr)
+   ,.id_rs1_addr_i(issue_pkt_r.instr.fields.rtype.rs1_addr)
    ,.id_rs1_i(irf_rs1)
 
    ,.id_rs2_v_i(issue_pkt_r.irs2_v)
-   ,.id_rs2_addr_i(decoded.rs2_addr)
+   ,.id_rs2_addr_i(issue_pkt_r.instr.fields.rtype.rs2_addr)
    ,.id_rs2_i(irf_rs2)
 
    ,.fwd_rd_v_i(comp_stage_n_slice_iwb_v)
@@ -338,11 +338,11 @@ bp_be_bypass
    ) 
  fp_bypass
   (.id_rs1_v_i(issue_pkt_r.frs1_v)
-   ,.id_rs1_addr_i(decoded.rs1_addr)
+   ,.id_rs1_addr_i(issue_pkt_r.instr.fields.rtype.rs1_addr)
    ,.id_rs1_i(frf_rs1)
 
    ,.id_rs2_v_i(issue_pkt_r.frs2_v)
-   ,.id_rs2_addr_i(decoded.rs2_addr)
+   ,.id_rs2_addr_i(issue_pkt_r.instr.fields.rtype.rs2_addr)
    ,.id_rs2_i(frf_rs2)
 
    ,.fwd_rd_v_i(comp_stage_n_slice_fwb_v)
@@ -429,6 +429,7 @@ bp_be_pipe_mem
    ,.mem3_pc_i(calc_status.mem3_pc)
 
    ,.decode_i(dispatch_pkt_r.decode)
+   ,.instr_i(dispatch_pkt_r.instr)
    ,.rs1_i(dispatch_pkt_r.rs1)
    ,.rs2_i(dispatch_pkt_r.rs2)
    ,.imm_i(dispatch_pkt_r.imm)
@@ -570,16 +571,16 @@ always_comb
     calc_stage_isd.pipe_fp_v      = dispatch_pkt.decode.pipe_fp_v;
     calc_stage_isd.irf_w_v        = dispatch_pkt.decode.irf_w_v;
     calc_stage_isd.frf_w_v        = dispatch_pkt.decode.frf_w_v;
-    calc_stage_isd.rd_addr        = dispatch_pkt.decode.rd_addr;
+    calc_stage_isd.rd_addr        = dispatch_pkt.instr.fields.rtype.rd_addr;
 
     // Calculator status ISD stage
     calc_status.isd_v        = issue_pkt_v_r;
     calc_status.isd_irs1_v   = issue_pkt_r.irs1_v;
     calc_status.isd_frs1_v   = issue_pkt_r.frs1_v;
-    calc_status.isd_rs1_addr = issue_pkt_r.rs1_addr;
+    calc_status.isd_rs1_addr = issue_pkt_r.instr.fields.rtype.rs1_addr;
     calc_status.isd_irs2_v   = issue_pkt_r.irs2_v;
     calc_status.isd_frs2_v   = issue_pkt_r.frs2_v;
-    calc_status.isd_rs2_addr = issue_pkt_r.rs2_addr;
+    calc_status.isd_rs2_addr = issue_pkt_r.instr.fields.rtype.rs2_addr;
 
     // Calculator status EX1 information
     calc_status.int1_v                   = dispatch_pkt_r.decode.pipe_int_v;

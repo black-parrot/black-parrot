@@ -34,7 +34,7 @@ module bp_be_instr_decoder
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
  #(// Generated parameters
-   localparam instr_width_lp    = `bp_be_instr_width
+   localparam instr_width_lp    = rv64_instr_width_gp
    , localparam decode_width_lp = `bp_be_decode_width
    )
   (input [instr_width_lp-1:0]     instr_i
@@ -45,7 +45,7 @@ module bp_be_instr_decoder
    );
 
 // Cast input and output ports 
-bp_be_instr_s  instr;
+rv64_instr_s   instr;
 bp_be_decode_s decode;
 logic          illegal_instr;
 
@@ -88,12 +88,6 @@ always_comb
     decode.jmp_v         = '0;
     decode.br_v          = '0;
     decode.opw_v         = '0;
-
-    // Decode operand addresses
-    decode.csr_addr      = instr[31:20]; // TODO: Fold into imm and give to pipe_mem
-    decode.rs1_addr      = instr.rs1_addr;
-    decode.rs2_addr      = instr.rs2_addr;
-    decode.rd_addr       = instr.rd_addr;
 
     // Decode control signals
     decode.fu_op         = bp_be_fu_op_s'(0);
