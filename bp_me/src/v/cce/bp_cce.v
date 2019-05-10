@@ -150,11 +150,6 @@ module bp_cce
   // Directory signals
   logic dir_pending_lo;
   logic dir_pending_v_lo;
-  logic dir_entry_v_lo;
-  logic dir_way_group_v_lo;
-  logic [tag_width_lp-1:0] dir_tag_lo;
-  logic [`bp_cce_coh_bits-1:0] dir_coh_state_lo;
-  logic [way_group_width_lp-1:0] dir_way_group_lo;
 
   logic [lg_num_way_groups_lp-1:0] dir_way_group_li;
   logic [lg_num_lce_lp-1:0] dir_lce_li;
@@ -191,7 +186,6 @@ module bp_cce
   logic [`bp_cce_inst_num_flags-1:0] flags_r_lo;
   logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_r_lo;
   logic [`bp_lce_cce_ack_type_width-1:0] ack_type_r_lo;
-  logic [way_group_width_lp-1:0] way_group_r_lo;
   logic [num_lce_p-1:0] sharers_hits_r_lo;
   logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0] sharers_ways_r_lo;
   logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0] sharers_coh_states_r_lo;
@@ -308,34 +302,29 @@ module bp_cce
 
       ,.pending_o(dir_pending_lo)
       ,.pending_v_o(dir_pending_v_lo)
-      ,.tag_o(dir_tag_lo)
-      ,.coh_state_o(dir_coh_state_lo)
-      ,.entry_v_o(dir_entry_v_lo)
-      ,.way_group_o(dir_way_group_lo)
-      ,.way_group_v_o(dir_way_group_v_lo)
       );
 
   // GAD logic - auxiliary directory information logic
   assign gad_v_li = decoded_inst_v_lo & decoded_inst_lo.gad_op_w_v;
 
   bp_cce_gad
-    #(.num_way_groups_p(num_way_groups_lp)
-      ,.num_lce_p(num_lce_p)
+    #(.num_lce_p(num_lce_p)
       ,.lce_assoc_p(lce_assoc_p)
-      ,.tag_width_p(tag_width_lp)
       )
     gad
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.way_group_i(way_group_r_lo)
+      ,.gad_v_i(gad_v_li)
+
+      ,.sharers_hits_i(gad_sharers_hits_li)
+      ,.sharers_ways_i(gad_sharers_ways_li)
+      ,.sharers_coh_states_i(gad_sharers_coh_states_li)
+
       ,.req_lce_i(req_lce_r_lo)
-      ,.req_tag_i(req_tag_r_lo)
-      ,.lru_way_i(lru_way_r_lo)
       ,.req_type_flag_i(flags_r_lo[e_flag_sel_rqf])
       ,.lru_dirty_flag_i(flags_r_lo[e_flag_sel_ldf])
-      ,.gad_v_i(gad_v_li)
-      ,.req_addr_way_o(gad_req_addr_way_lo)
-      ,.lru_tag_o(gad_lru_tag_lo)
+      ,.lru_cached_excl_i(lru_cached_excl_li)
+
       ,.transfer_flag_o(gad_transfer_flag_lo)
       ,.transfer_lce_o(gad_transfer_lce_lo)
       ,.transfer_way_o(gad_transfer_lce_way_lo)
@@ -344,9 +333,6 @@ module bp_cce
       ,.invalidate_flag_o(gad_invalidate_flag_lo)
       ,.exclusive_flag_o(gad_exclusive_flag_lo)
       ,.cached_flag_o(gad_cached_flag_lo)
-      ,.sharers_hits_o(gad_sharers_hits_lo)
-      ,.sharers_ways_o(gad_sharers_ways_lo)
-      ,.sharers_coh_states_o(gad_sharers_coh_states_lo)
       );
 
   // Registers
@@ -370,8 +356,6 @@ module bp_cce
       ,.mem_data_resp_i(mem_data_resp_i)
       ,.alu_res_i(alu_res_lo)
       ,.mov_src_i(mov_src)
-      ,.dir_way_group_o_i(dir_way_group_lo)
-      ,.dir_way_group_v_o_i(dir_way_group_v_lo)
       ,.dir_pending_o_i(dir_pending_lo)
       ,.dir_pending_v_o_i(dir_pending_v_lo)
       ,.gad_sharers_hits_i(gad_sharers_hits_lo)
@@ -400,7 +384,6 @@ module bp_cce
       ,.flags_o(flags_r_lo)
       ,.gpr_o(gpr_r_lo)
       ,.ack_type_o(ack_type_r_lo)
-      ,.way_group_o(way_group_r_lo)
       ,.sharers_hits_o(sharers_hits_r_lo)
       ,.sharers_ways_o(sharers_ways_r_lo)
       ,.sharers_coh_states_o(sharers_coh_states_r_lo)
