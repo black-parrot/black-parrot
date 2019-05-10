@@ -16,6 +16,8 @@
 
 #include "bp_cce_verilator.h"
 
+#define ADDR_WIDTH 39
+
 #include "bp_cce.h"
 #include "bp_common_me_if.h"
 #include "bp_cce_lce_msg_util.h"
@@ -35,7 +37,7 @@ uint64_t getSetIdx(uint64_t addr) {
 // most recently used way per set
 std::map<uint64_t, uint32_t> MRU;
 
-int sc_main(int argc, char **argv) 
+int sc_main(int argc, char **argv)
 {
   sc_init("bp_cce_top", argc, argv);
 

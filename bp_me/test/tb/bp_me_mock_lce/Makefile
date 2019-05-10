@@ -1,5 +1,5 @@
 #
-#		Makefile
+# Makefile
 #
 
 TOP ?= $(shell git rev-parse --show-toplevel)
@@ -12,14 +12,9 @@ else
   $(info Not on xor...VCS not supported)
 endif
 
-.EXPORT_ALL_VARIABLES:
+AXE = $(BP_EXTERNAL_DIR)/bin/axe
 
-INCDIR = +incdir+$(BP_COMMON_DIR)/src/include
-INCDIR += +incdir+$(BP_BE_DIR)/src/include/bp_be_dcache
-INCDIR += +incdir+$(BSG_IP_CORES_DIR)/bsg_misc
-INCDIR += +incdir+$(BSG_IP_CORES_DIR)/bsg_noc
-INCDIR += +incdir+$(BSG_IP_CORES_DIR)/bsg_mem
-INCDIR += +incdir+$(BP_ME_DIR)/src/include/v
+.EXPORT_ALL_VARIABLES:
 
 HIGHLIGHT = grep --color -E '^|Error|Warning|Implicit wire is used|Too few instance port connections|Port connection width mismatch|Width mismatch'
 
@@ -30,23 +25,22 @@ VCS_LOG = vcs.log
 NUM_INSTR_P ?= 32768
 SEED_P ?= 1
 CCE_TRACE_P ?= 0
-AXE_TRACE_P := 0
-
-# use EI instead of MESI protocol
-EI_P ?= 0
-
-# this test uses a single LCE since it checks the values of loads returned
+AXE_TRACE_P ?= 0
 NUM_LCE_P := 1
-CFG        = e_bp_half_core_cfg
+CFG=e_bp_half_core_cfg
+N_WG := 64
 
 NUMS = $(shell seq 0 `expr $(NUM_LCE_P) - 1`)
 BASE = bsg_trace_rom_
 TRACE_ROMS = $(addsuffix .v, $(addprefix $(BASE), $(NUMS)))
 
-ifeq ($(EI_P), 1)
-  CCE_ROM = $(BP_ME_DIR)/src/v/roms/ei-tr/bp_cce_inst_rom_ei-tr_lce$(NUM_LCE_P)_wg64_assoc8.v
-else
-  CCE_ROM = $(BP_ME_DIR)/src/v/roms/mesi-tr/bp_cce_inst_rom_mesi-tr_lce$(NUM_LCE_P)_wg64_assoc8.v
+COH_PROTO ?= mesi
+ifeq ($(COH_PROTO), ei)
+  CCE_ROM = $(BP_ME_DIR)/src/v/roms/ei-tr/bp_cce_inst_rom_ei-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.v
+else ifeq ($(COH_PROTO), msi)
+  CCE_ROM = $(BP_ME_DIR)/src/v/roms/msi-tr/bp_cce_inst_rom_msi-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.v
+else ifeq ($(COH_PROTO), mesi)
+  CCE_ROM = $(BP_ME_DIR)/src/v/roms/mesi-tr/bp_cce_inst_rom_mesi-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.v
 endif
 
 all: clean sim
@@ -60,7 +54,7 @@ bsg_trace_rom_%.v: bsg_trace_rom_%.tr
 sim: clean $(TRACE_ROMS)
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" testbench.v > testbench_postsed.v
 	vcs +v2k -R +lint=all,noSVA-UA,noSVA-NSVU,noVCDE -sverilog -full64 \
-		$(INCDIR) -f sv.include $(TRACE_ROMS) $(CCE_ROM)  \
+		-f sv.include $(TRACE_ROMS) $(CCE_ROM)  \
 		-debug_pp -timescale=1ps/1ps +vcs+vcdpluson +vcs+vcdplusmemon -l $(VCS_LOG) \
 		+vcs+vcdplusautoflushon +define+NUM_LCE_P=$(NUM_LCE_P) \
 		+define+NUM_INSTR_P=$(NUM_INSTR_P) \
@@ -77,3 +71,10 @@ clean:
 	rm -f ucli.key vcdplus.vpd simv cm.log *.tar.gz $(VCS_LOG)
 	rm -f bsg_trace_rom_*.v bsg_trace_rom_*.tr $(TRACE_AXE)
 	rm -f testbench_postsed.v
+
+$(TRACE_AXE): $(VCS_LOG)
+	python $(BP_BE_DIR)/test/tb/bp_be_dcache/py/axe_trace_filter.py $(VCS_LOG) > $(TRACE_AXE)
+
+axe: $(TRACE_AXE)
+	cat $<
+	$(AXE) check TSO $(TRACE_AXE)

@@ -48,16 +48,16 @@ module testbench
 
   // mem subsystem under test
   //
-  logic  tr_v_li;
-  logic [tr_ring_width_lp-1:0] tr_data_li;
-  logic  tr_ready_lo;
+  logic [num_lce_p-1:0] tr_v_li;
+  logic [num_lce_p-1:0][tr_ring_width_lp-1:0] tr_data_li;
+  logic [num_lce_p-1:0] tr_ready_lo;
 
-  logic  tr_v_lo;
-  logic [tr_ring_width_lp-1:0] tr_data_lo;
-  logic  tr_yumi_li;
+  logic [num_lce_p-1:0] tr_v_lo;
+  logic [num_lce_p-1:0][tr_ring_width_lp-1:0] tr_data_lo;
+  logic [num_lce_p-1:0] tr_yumi_li;
 
 
-  bp_me_mock_lce_me #(
+  bp_me_nonsynth_top_test #(
     .cfg_p(cfg_p)
     ,.mem_els_p(mem_els_p)
     ,.boot_rom_els_p(mem_els_p)
@@ -78,27 +78,31 @@ module testbench
 
   // trace node master
   //
-  logic tr_done_lo;
+  logic [num_lce_p-1:0] tr_done_lo;
 
-  bsg_trace_node_master #(
-    .id_p('0)
-    ,.ring_width_p(tr_ring_width_lp)
-    ,.rom_addr_width_p(tr_rom_addr_width_p)
-  ) trace_node_master (
-    .clk_i(clk)
-    ,.reset_i(reset)
-    ,.en_i(1'b1)
+  for (genvar i = 0; i < num_lce_p; i++) begin
 
-    ,.v_i(tr_v_li)
-    ,.data_i(tr_data_li)
-    ,.ready_o(tr_ready_lo)
+    bsg_trace_node_master #(
+      .id_p(i)
+      ,.ring_width_p(tr_ring_width_lp)
+      ,.rom_addr_width_p(tr_rom_addr_width_p)
+    ) trace_node_master (
+      .clk_i(clk)
+      ,.reset_i(reset)
+      ,.en_i(1'b1)
 
-    ,.v_o(tr_v_lo)
-    ,.yumi_i(tr_yumi_li)
-    ,.data_o(tr_data_lo)
+      ,.v_i(tr_v_li[i])
+      ,.data_i(tr_data_li[i])
+      ,.ready_o(tr_ready_lo[i])
 
-    ,.done_o(tr_done_lo)
-  );
+      ,.v_o(tr_v_lo[i])
+      ,.yumi_i(tr_yumi_li[i])
+      ,.data_o(tr_data_lo[i])
+
+      ,.done_o(tr_done_lo[i])
+    );
+
+  end
 
   localparam max_clock_cnt_lp    = 2**30-1;
   localparam lg_max_clock_cnt_lp = `BSG_SAFE_CLOG2(max_clock_cnt_lp);

@@ -9,25 +9,22 @@
 
 module bp_cce
   import bp_common_pkg::*;
+  import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
-  #(parameter num_lce_p                    = "inv"
-    , parameter num_cce_p                  = "inv"
-    , parameter paddr_width_p              = "inv"
-    , parameter lce_assoc_p                = "inv"
-    , parameter lce_sets_p                 = "inv"
-    , parameter block_size_in_bytes_p      = "inv"
-    , parameter num_cce_inst_ram_els_p     = "inv"
-    , parameter lce_req_data_width_p       = "inv"
+  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+    `declare_bp_proc_params(cfg_p)
 
     // Config channel
-    , parameter cfg_link_addr_width_p = "inv"
-    , parameter cfg_link_data_width_p = "inv"
+    , parameter cfg_link_addr_width_p = bp_cfg_link_addr_width_gp
+    , parameter cfg_link_data_width_p = bp_cfg_link_data_width_gp
+
+    , parameter cce_trace_p             = "inv"
 
     // Derived parameters
+    , localparam block_size_in_bytes_lp    = (cce_block_width_p/8)
     , localparam lg_num_lce_lp             = `BSG_SAFE_CLOG2(num_lce_p)
     , localparam lg_num_cce_lp             = `BSG_SAFE_CLOG2(num_cce_p)
-    , localparam block_size_in_bits_lp     = (block_size_in_bytes_p*8)
-    , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_p)
+    , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
     , localparam lg_lce_assoc_lp           = `BSG_SAFE_CLOG2(lce_assoc_p)
     , localparam lg_lce_sets_lp            = `BSG_SAFE_CLOG2(lce_sets_p)
     , localparam tag_width_lp              = (paddr_width_p-lg_lce_sets_lp
@@ -38,27 +35,11 @@ module bp_cce
     , localparam way_group_offset_high_lp  = (lg_block_size_in_bytes_lp+lg_lce_sets_lp)
     , localparam num_way_groups_lp         = (lce_sets_p/num_cce_p)
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
-    , localparam inst_ram_addr_width_lp    = `BSG_SAFE_CLOG2(num_cce_inst_ram_els_p)
+    , localparam inst_ram_addr_width_lp    = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
 
-    , localparam bp_lce_cce_req_width_lp=
-      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p)
-    , localparam bp_lce_cce_resp_width_lp=
-      `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
-    , localparam bp_lce_cce_data_resp_width_lp=
-      `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, block_size_in_bits_lp)
-    , localparam bp_cce_lce_cmd_width_lp=
-      `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p)
-    , localparam bp_lce_data_cmd_width_lp=
-      `bp_lce_data_cmd_width(num_lce_p, block_size_in_bits_lp, lce_assoc_p)
-
-    , localparam bp_mem_cce_resp_width_lp=
-      `bp_mem_cce_resp_width(paddr_width_p, num_lce_p, lce_assoc_p)
-    , localparam bp_mem_cce_data_resp_width_lp=
-      `bp_mem_cce_data_resp_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
-    , localparam bp_cce_mem_cmd_width_lp=
-      `bp_cce_mem_cmd_width(paddr_width_p, num_lce_p, lce_assoc_p)
-    , localparam bp_cce_mem_data_cmd_width_lp=
-      `bp_cce_mem_data_cmd_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    // interface widths
+    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
   )
   (input                                               clk_i
    , input                                             reset_i
@@ -78,42 +59,42 @@ module bp_cce
    // LCE-CCE Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
    // outbound: ready&valid (connects directly to ME network)
-   , input [bp_lce_cce_req_width_lp-1:0]               lce_req_i
+   , input [lce_cce_req_width_lp-1:0]                  lce_req_i
    , input                                             lce_req_v_i
    , output logic                                      lce_req_yumi_o
 
-   , input [bp_lce_cce_resp_width_lp-1:0]              lce_resp_i
+   , input [lce_cce_resp_width_lp-1:0]                 lce_resp_i
    , input                                             lce_resp_v_i
    , output logic                                      lce_resp_yumi_o
 
-   , input [bp_lce_cce_data_resp_width_lp-1:0]         lce_data_resp_i
+   , input [lce_cce_data_resp_width_lp-1:0]            lce_data_resp_i
    , input                                             lce_data_resp_v_i
    , output logic                                      lce_data_resp_yumi_o
 
-   , output logic [bp_cce_lce_cmd_width_lp-1:0]        lce_cmd_o
+   , output logic [cce_lce_cmd_width_lp-1:0]           lce_cmd_o
    , output logic                                      lce_cmd_v_o
    , input                                             lce_cmd_ready_i
 
-   , output logic [bp_lce_data_cmd_width_lp-1:0]       lce_data_cmd_o
+   , output logic [lce_data_cmd_width_lp-1:0]          lce_data_cmd_o
    , output logic                                      lce_data_cmd_v_o
    , input                                             lce_data_cmd_ready_i
 
    // CCE-MEM Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
    // outbound: ready&valid (connects to FIFO)
-   , input [bp_mem_cce_resp_width_lp-1:0]              mem_resp_i
+   , input [mem_cce_resp_width_lp-1:0]                 mem_resp_i
    , input                                             mem_resp_v_i
    , output logic                                      mem_resp_yumi_o
 
-   , input [bp_mem_cce_data_resp_width_lp-1:0]         mem_data_resp_i
+   , input [mem_cce_data_resp_width_lp-1:0]            mem_data_resp_i
    , input                                             mem_data_resp_v_i
    , output logic                                      mem_data_resp_yumi_o
 
-   , output logic [bp_cce_mem_cmd_width_lp-1:0]        mem_cmd_o
+   , output logic [cce_mem_cmd_width_lp-1:0]           mem_cmd_o
    , output logic                                      mem_cmd_v_o
    , input                                             mem_cmd_ready_i
 
-   , output logic [bp_cce_mem_data_cmd_width_lp-1:0]   mem_data_cmd_o
+   , output logic [cce_mem_data_cmd_width_lp-1:0]      mem_data_cmd_o
    , output logic                                      mem_data_cmd_v_o
    , input                                             mem_data_cmd_ready_i
 
@@ -129,11 +110,11 @@ module bp_cce
 
   // Define structure variables for output queues
 
-  `declare_bp_me_if(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
+  `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 
   `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
   `declare_bp_lce_data_cmd_s(num_lce_p
-                             ,block_size_in_bits_lp
+                             ,cce_block_width_p
                              ,lce_assoc_p);
 
   bp_cce_lce_cmd_s lce_cmd_s_o;
@@ -210,7 +191,7 @@ module bp_cce
   logic [lg_num_lce_lp-1:0] transfer_lce_r_lo;
   logic [lg_lce_assoc_lp-1:0] transfer_lce_way_r_lo;
   logic [`bp_cce_coh_bits-1:0] next_coh_state_r_lo;
-  logic [block_size_in_bits_lp-1:0] cache_block_data_r_lo;
+  logic [cce_block_width_p-1:0] cache_block_data_r_lo;
   logic [`bp_cce_inst_num_flags-1:0] flags_r_lo;
   logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_r_lo;
   logic [`bp_lce_cce_ack_type_width-1:0] ack_type_r_lo;
@@ -219,7 +200,7 @@ module bp_cce
   logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0] sharers_ways_r_lo;
   logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0] sharers_coh_states_r_lo;
   logic [`bp_lce_cce_nc_req_size_width-1:0] nc_req_size_r_lo;
-  logic [lce_req_data_width_p-1:0] nc_data_r_lo;
+  logic [dword_width_p-1:0] nc_data_r_lo;
 
   // LCE Command Queue
   logic [lg_num_lce_lp-1:0] lce_cmd_lce;
@@ -228,11 +209,11 @@ module bp_cce
 
   // PC Logic, Instruction RAM
   bp_cce_pc
-    #(.inst_ram_els_p(num_cce_inst_ram_els_p)
+    #(.inst_ram_els_p(num_cce_instr_ram_els_p)
       ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
       ,.cfg_link_data_width_p(cfg_link_data_width_p)
       )
-    pc_inst_ram
+    inst_ram
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
       ,.freeze_i(freeze_i)
@@ -400,10 +381,10 @@ module bp_cce
       ,.paddr_width_p(paddr_width_p)
       ,.lce_assoc_p(lce_assoc_p)
       ,.lce_sets_p(lce_sets_p)
-      ,.block_size_in_bytes_p(block_size_in_bytes_p)
-      ,.lce_req_data_width_p(lce_req_data_width_p)
+      ,.block_size_in_bytes_p(block_size_in_bytes_lp)
+      ,.lce_req_data_width_p(dword_width_p)
       )
-    cce_reg
+    registers
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
       ,.decoded_inst_i(decoded_inst_lo)
@@ -579,7 +560,7 @@ module bp_cce
     if (flags_r_lo[e_flag_sel_ucf] == e_lce_req_non_cacheable) begin
       lce_data_cmd_s_o.msg_type = e_lce_data_cmd_non_cacheable;
       lce_data_cmd_s_o.way_id = '0;
-      lce_data_cmd_s_o.data = {(block_size_in_bits_lp-lce_req_data_width_p)'('0),nc_data_r_lo};
+      lce_data_cmd_s_o.data = {(cce_block_width_p-dword_width_p)'('0),nc_data_r_lo};
     end else begin
       lce_data_cmd_s_o.msg_type = e_lce_data_cmd_cce;
       lce_data_cmd_s_o.way_id = lru_way_r_lo;
@@ -598,7 +579,7 @@ module bp_cce
     mem_data_cmd_s_o.msg_type = bp_lce_cce_req_type_e'(flags_r_lo[e_flag_sel_rqf]);
     mem_data_cmd_s_o.addr = mem_data_cmd_addr;
     if (flags_r_lo[e_flag_sel_ucf]) begin
-      mem_data_cmd_s_o.data = {(block_size_in_bits_lp-lce_req_data_width_p)'('0),nc_data_r_lo};
+      mem_data_cmd_s_o.data = {(cce_block_width_p-dword_width_p)'('0),nc_data_r_lo};
     end else begin
       mem_data_cmd_s_o.data = cache_block_data_r_lo;
     end

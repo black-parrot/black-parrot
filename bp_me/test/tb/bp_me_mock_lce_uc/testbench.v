@@ -11,7 +11,6 @@ module testbench
   #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR
     `declare_bp_proc_params(cfg_p)
 
-    , localparam num_mem_p = 1
     , localparam mem_els_p = 2*lce_sets_p*lce_assoc_p
 
     , localparam instr_count = `NUM_INSTR_P
@@ -22,8 +21,7 @@ module testbench
 
     , parameter cce_trace_p = `CCE_TRACE_P
     , parameter axe_trace_p = `AXE_TRACE_P
-
-`declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+    , parameter skip_ram_init_p = 1
   )
   ();
 
@@ -48,16 +46,16 @@ module testbench
     ,.async_reset_o(reset)
   );
 
- 
+
   // mem subsystem under test
   //
-  logic [num_lce_p-1:0] tr_v_li;
-  logic [num_lce_p-1:0][tr_ring_width_lp-1:0] tr_data_li, tr_data_from_lce;
-  logic [num_lce_p-1:0] tr_ready_lo;
+  logic  tr_v_li;
+  logic [tr_ring_width_lp-1:0] tr_data_li;
+  logic  tr_ready_lo;
 
-  logic [num_lce_p-1:0] tr_v_lo;
-  logic [num_lce_p-1:0][tr_ring_width_lp-1:0] tr_data_lo;
-  logic [num_lce_p-1:0] tr_yumi_li;
+  logic  tr_v_lo;
+  logic [tr_ring_width_lp-1:0] tr_data_lo;
+  logic  tr_yumi_li;
 
 
   bp_me_mock_lce_me #(
@@ -66,56 +64,43 @@ module testbench
     ,.boot_rom_els_p(mem_els_p)
     ,.cce_trace_p(cce_trace_p)
     ,.axe_trace_p(axe_trace_p)
+    ,.skip_ram_init_p(skip_ram_init_p)
   ) mock_lce_me (
     .clk_i(clk)
     ,.reset_i(reset)
- 
+
     ,.tr_pkt_i(tr_data_lo)
     ,.tr_pkt_v_i(tr_v_lo)
     ,.tr_pkt_yumi_o(tr_yumi_li)
 
-    ,.tr_pkt_o(tr_data_from_lce)
+    ,.tr_pkt_o(tr_data_li)
     ,.tr_pkt_v_o(tr_v_li)
     ,.tr_pkt_ready_i(tr_ready_lo)
   );
 
-  // NOTE: when testing multiple LCEs, the bsg_trace_rom.py script doesn't know how to properly
-  // check data values from loads, so it assumes the data is 0. Here, we stitch the header and
-  // address of the trace replay packet being returned by the mock LCE (which has actual data in it)
-  // with null data to feed into the trace replay.
-  // TODO: add load/store tracing and then we can run axe on the outputs
-  for (genvar i = 0; i < num_lce_p; i++) begin
-    assign tr_data_li[i] = {tr_data_from_lce[i][tr_ring_width_lp-1:dword_width_p]
-                            , {dword_width_p'('0)}};
-  end
-
   // trace node master
   //
-  logic [num_lce_p-1:0] tr_done_lo;
-  
-  for (genvar i = 0; i < num_lce_p; i++) begin
+  logic tr_done_lo;
 
-    bsg_trace_node_master #(
-      .id_p(i)
-      ,.ring_width_p(tr_ring_width_lp)
-      ,.rom_addr_width_p(tr_rom_addr_width_p)
-    ) trace_node_master (
-      .clk_i(clk)
-      ,.reset_i(reset)
-      ,.en_i(1'b1)
+  bsg_trace_node_master #(
+    .id_p('0)
+    ,.ring_width_p(tr_ring_width_lp)
+    ,.rom_addr_width_p(tr_rom_addr_width_p)
+  ) trace_node_master (
+    .clk_i(clk)
+    ,.reset_i(reset)
+    ,.en_i(1'b1)
 
-      ,.v_i(tr_v_li[i])
-      ,.data_i(tr_data_li[i])
-      ,.ready_o(tr_ready_lo[i])
+    ,.v_i(tr_v_li)
+    ,.data_i(tr_data_li)
+    ,.ready_o(tr_ready_lo)
 
-      ,.v_o(tr_v_lo[i])
-      ,.yumi_i(tr_yumi_li[i])
-      ,.data_o(tr_data_lo[i])
+    ,.v_o(tr_v_lo)
+    ,.yumi_i(tr_yumi_li)
+    ,.data_o(tr_data_lo)
 
-      ,.done_o(tr_done_lo[i])
-    );
-    
-  end
+    ,.done_o(tr_done_lo)
+  );
 
   localparam max_clock_cnt_lp    = 2**30-1;
   localparam lg_max_clock_cnt_lp = `BSG_SAFE_CLOG2(max_clock_cnt_lp);
@@ -142,7 +127,7 @@ module testbench
         $finish;
       end
       */
-      if (&tr_done_lo)
+      if (tr_done_lo)
         begin
         $display("Bytes: %d Clocks: %d mBPC: %d "
                  , instr_count*64
