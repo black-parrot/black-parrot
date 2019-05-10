@@ -57,7 +57,6 @@
                                                                                                    \
     logic                              irf_w_v;                                                    \
     logic                              frf_w_v;                                                    \
-    logic [rv64_reg_addr_width_gp-1:0] rd_addr;                                                    \
   }  bp_be_pipe_stage_reg_s;                                                                       \
                                                                                                    \
   typedef struct packed                                                                            \
@@ -137,7 +136,6 @@
   (`bp_be_instr_metadata_width(vaddr_width_mp)                                                     \
    + rv64_instr_width_gp                                                                           \
    + 7                                                                                             \
-   + rv64_reg_addr_width_gp                                                                        \
    )
 
 `define bp_be_dep_status_width                                                                     \
