@@ -13,14 +13,13 @@ module testbench
 
     , localparam mem_els_p = 2*lce_sets_p*lce_assoc_p
 
-    , localparam instr_count = `NUM_INSTR_P
-
     , localparam dcache_opcode_width_lp=$bits(bp_be_dcache_opcode_e)
     , localparam tr_ring_width_lp=(dcache_opcode_width_lp+paddr_width_p+dword_width_p)
     , localparam tr_rom_addr_width_p = 20
 
     , parameter cce_trace_p = `CCE_TRACE_P
     , parameter axe_trace_p = `AXE_TRACE_P
+
     , parameter skip_ram_init_p = 1
   )
   ();
@@ -65,7 +64,7 @@ module testbench
     ,.cce_trace_p(cce_trace_p)
     ,.axe_trace_p(axe_trace_p)
     ,.skip_ram_init_p(skip_ram_init_p)
-  ) mock_lce_me (
+  ) me_top_test (
     .clk_i(clk)
     ,.reset_i(reset)
 
@@ -122,18 +121,15 @@ module testbench
 
   always_ff @(posedge clk)
     begin
-      /*
-      if (clock_cnt == 100000) begin
-        $finish;
-      end
-      */
       if (tr_done_lo)
         begin
+        /*
         $display("Bytes: %d Clocks: %d mBPC: %d "
                  , instr_count*64
                  , clock_cnt
                  , (instr_count*64*1000) / clock_cnt
                  );
+        */
         $finish(0);
         end
     end
