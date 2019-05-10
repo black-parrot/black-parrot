@@ -115,6 +115,7 @@ wire [reg_data_width_lp-1:0] unused1 = fwb_result_i;
 logic [4:0][2:0][7:0] stage_aliases;
 assign stage_aliases = {"FWB", "IWB", "EX2", "EX1"};
 always_ff @(posedge clk_i) begin
+
     if(booted_r) begin
             $fwrite(file, "-----\n");
             if (issue_pkt_v_i)
