@@ -21,7 +21,8 @@ module testbench
    , parameter dram_sys_cfg_p = "system.ini"
    , parameter dram_capacity_p = 16384
 
-   // These should go away with the manycore bridge
+   , parameter cce_trace_p                 = "inv"
+
    , localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
 
    // Trace replay parameters
@@ -33,6 +34,18 @@ module testbench
   (input clk_i
    , input reset_i
    );
+
+// Config link
+logic [num_cce_p-1:0]                                  freeze_li;
+logic [num_cce_p-1:0][bp_cfg_link_addr_width_gp-2:0]   config_addr_li;
+logic [num_cce_p-1:0][bp_cfg_link_data_width_gp-1:0]   config_data_li;
+logic [num_cce_p-1:0]                                  config_v_li;
+logic [num_cce_p-1:0]                                  config_w_li;
+logic [num_cce_p-1:0]                                  config_ready_lo;
+
+logic [num_cce_p-1:0][bp_cfg_link_data_width_gp-1:0]   config_data_lo;
+logic [num_cce_p-1:0]                                  config_v_lo;
+logic [num_cce_p-1:0]                                  config_ready_li;
 
 logic [num_cce_p-1:0][cce_instr_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
 logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]          cce_inst_boot_rom_data;
@@ -66,13 +79,22 @@ logic [num_cce_p-1:0] mem_data_cmd_v, mem_data_cmd_yumi;
    wrapper
     #(.cfg_p(cfg_p)
       ,.trace_p(trace_p)
+      ,.cce_trace_p(cce_trace_p)
       )
     wrapper
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
+      ,.freeze_i(freeze_li)
 
-      ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr)
-      ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data)
+      ,.config_addr_i(config_addr_li)
+      ,.config_data_i(config_data_li)
+      ,.config_v_i(config_v_li)
+      ,.config_w_i(config_w_li)
+      ,.config_ready_o(config_ready_lo)
+
+      ,.config_data_o(config_data_lo)
+      ,.config_v_o(config_v_lo)
+      ,.config_ready_i(config_ready_li)
 
       ,.mem_resp_i(mem_resp)
       ,.mem_resp_v_i(mem_resp_v)
@@ -139,6 +161,30 @@ logic [num_cce_p-1:0] mem_data_cmd_v, mem_data_cmd_yumi;
           ,.mem_data_resp_v_o(mem_data_resp_v[i])
           ,.mem_data_resp_ready_i(mem_data_resp_ready[i])
           );
+
+       bp_cce_nonsynth_cfg_loader
+         #(.inst_width_p(`bp_cce_inst_width)
+           ,.inst_ram_addr_width_p(cce_instr_ram_addr_width_lp)
+           ,.inst_ram_els_p(num_cce_instr_ram_els_p)
+           ,.cfg_link_addr_width_p(bp_cfg_link_addr_width_gp)
+           ,.cfg_link_data_width_p(bp_cfg_link_data_width_gp)
+           ,.skip_ram_init_p('0)
+         )
+         cce_inst_ram_loader
+         (.clk_i(clk_i)
+          ,.reset_i(reset_i)
+          ,.freeze_o(freeze_li[i])
+          ,.boot_rom_addr_o(cce_inst_boot_rom_addr[i])
+          ,.boot_rom_data_i(cce_inst_boot_rom_data[i])
+          ,.config_addr_o(config_addr_li[i])
+          ,.config_data_o(config_data_li[i])
+          ,.config_v_o(config_v_li[i])
+          ,.config_w_o(config_w_li[i])
+          ,.config_ready_i(config_ready_lo[i])
+          ,.config_data_i(config_data_lo[i])
+          ,.config_v_i(config_v_lo[i])
+          ,.config_ready_o(config_ready_li[i])
+         );
 
        bp_cce_inst_rom
         #(.width_p(`bp_cce_inst_width)
