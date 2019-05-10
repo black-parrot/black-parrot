@@ -30,18 +30,7 @@ module bp_cce_test
   (
     input                                                  clk_i
     ,input                                                 reset_i
-    ,input                                                 freeze_i
-
-    // Config channel
-    , input [cfg_link_addr_width_p-2:0]                    config_addr_i
-    , input [cfg_link_data_width_p-1:0]                    config_data_i
-    , input                                                config_v_i
-    , input                                                config_w_i
-    , output logic                                         config_ready_o
-
-    , output logic [cfg_link_data_width_p-1:0]             config_data_o
-    , output logic                                         config_v_o
-    , input                                                config_ready_i
+    , output logic                                         freeze_o
 
     // LCE-CCE Interface
     // inbound: ready&valid
@@ -90,8 +79,9 @@ module bp_cce_test
   localparam cce_id_lp = 0;
   assign cce_id = cce_id_lp;
 
-  logic [inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr_i;
-  logic [`bp_cce_inst_width-1:0] cce_inst_boot_rom_data_o;
+  // CCE boot rom
+  logic [inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr_li;
+  logic [`bp_cce_inst_width-1:0] cce_inst_boot_rom_data_lo;
 
   // CCE Boot ROM
   bp_cce_inst_rom
@@ -99,9 +89,47 @@ module bp_cce_test
       ,.addr_width_p(inst_ram_addr_width_lp)
       )
     cce_inst_rom
-     (.addr_i(cce_inst_boot_rom_addr_i)
-      ,.data_o(cce_inst_boot_rom_data_o)
+     (.addr_i(cce_inst_boot_rom_addr_li)
+      ,.data_o(cce_inst_boot_rom_data_lo)
       );
+
+  logic freeze_lo;
+  assign freeze_o = freeze_lo;
+
+  // Config channel
+  logic [cfg_link_addr_width_p-2:0]   config_addr_li;
+  logic [cfg_link_data_width_p-1:0]   config_data_li;
+  logic                               config_v_li;
+  logic                               config_w_li;
+  logic                               config_ready_lo;
+
+  logic [cfg_link_data_width_p-1:0]   config_data_lo;
+  logic                               config_v_lo;
+  logic                               config_ready_li;
+
+  // CCE instruction RAM loader
+  bp_cce_nonsynth_cfg_loader
+    #(.inst_width_p(`bp_cce_inst_width)
+      ,.inst_ram_addr_width_p(inst_ram_addr_width_lp)
+      ,.inst_ram_els_p(num_cce_instr_ram_els_p)
+      ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
+      ,.cfg_link_data_width_p(cfg_link_data_width_p)
+    )
+    cce_inst_ram_loader
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.freeze_o(freeze_lo)
+     ,.boot_rom_addr_o(cce_inst_boot_rom_addr_li)
+     ,.boot_rom_data_i(cce_inst_boot_rom_data_lo)
+     ,.config_addr_o(config_addr_li)
+     ,.config_data_o(config_data_li)
+     ,.config_v_o(config_v_li)
+     ,.config_w_o(config_w_li)
+     ,.config_ready_i(config_ready_lo)
+     ,.config_data_i(config_data_lo)
+     ,.config_v_i(config_v_lo)
+     ,.config_ready_o(config_ready_li)
+    );
 
   bp_cce_top
     #(.cfg_p(cfg_p)
@@ -112,21 +140,18 @@ module bp_cce_test
      bp_cce_top
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.freeze_i(freeze_i)
+      ,.freeze_i(freeze_lo)
 
-      ,.config_addr_i(config_addr_i)
-      ,.config_data_i(config_data_i)
-      ,.config_v_i(config_v_i)
-      ,.config_w_i(config_w_i)
-      ,.config_ready_o(config_ready_o)
-      ,.config_data_o(config_data_o)
-      ,.config_v_o(config_v_o)
-      ,.config_ready_i(config_ready_i)
+      ,.config_addr_i(config_addr_li)
+      ,.config_data_i(config_data_li)
+      ,.config_v_i(config_v_li)
+      ,.config_w_i(config_w_li)
+      ,.config_ready_o(config_ready_lo)
+      ,.config_data_o(config_data_lo)
+      ,.config_v_o(config_v_lo)
+      ,.config_ready_i(config_ready_li)
 
       ,.cce_id_i(cce_id)
-
-      ,.boot_rom_addr_o(cce_inst_boot_rom_addr_i)
-      ,.boot_rom_data_i(cce_inst_boot_rom_data_o)
 
       // To CCE
       ,.lce_req_i(lce_req_i)
@@ -174,7 +199,7 @@ module bp_cce_test
       ,.mem_els_p(mem_els_lp)
       ,.boot_rom_width_p(boot_rom_width_lp)
       ,.boot_rom_els_p(mem_els_lp)
-      ,.lce_req_data_width_p(dword_width_p)
+			,.lce_req_data_width_p(dword_width_p)
      )
      bp_mem
      (.clk_i(clk_i)
