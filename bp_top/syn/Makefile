@@ -45,7 +45,12 @@ ccerom.v:
 	@echo $(CCE_ROM)
 	@echo $(CCE_ROM) >> $(VCS_RUN_DIR)/flist.vcs || true
 
+ccerom.sc:
+	@echo $(CCE_ROM)
+	@echo $(CCE_ROM) >> $(VERILATOR_RUN_DIR)/flist.verilator || true
+
 build.v: ccerom.v
+build.sc: ccerom.sc
 
 .EXPORT_ALL_VARIABLES:
 
