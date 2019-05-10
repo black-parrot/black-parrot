@@ -47,8 +47,6 @@ module bp_be_detector
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
 
-   , parameter load_to_use_forwarding_p = 1
-
    // Generated parameters
    , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    // From BE specifications
@@ -144,19 +142,8 @@ always_comb
                          & (dep_status[1].mem_fwb_v | dep_status[1].fp_fwb_v);
 
     // Detect float data hazards for IWB. Integer dependencies can be handled by forwarding
-    if (load_to_use_forwarding_p == 0)
-      begin
-        irs1_data_haz_v[2] = (calc_status.isd_irs1_v & rs1_match_vector[2])
-                             & (dep_status[2].mem_iwb_v);
-
-        irs2_data_haz_v[2] = (calc_status.isd_irs2_v & rs2_match_vector[2])
-                             & (dep_status[2].mem_iwb_v);
-      end
-    else
-      begin
-        irs1_data_haz_v[2] = '0;
-        irs2_data_haz_v[2] = '0;
-      end
+    irs1_data_haz_v[2] = '0;
+    irs2_data_haz_v[2] = '0;
 
     frs1_data_haz_v[2] = (calc_status.isd_frs1_v & rs1_match_vector[2])
                          & (dep_status[2].fp_fwb_v);

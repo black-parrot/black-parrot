@@ -115,9 +115,6 @@ typedef enum bit
 typedef struct packed
 {
   logic                             instr_v;
-  logic                             fe_nop_v;
-  logic                             be_nop_v;
-  logic                             me_nop_v;
 
   logic                             pipe_comp_v;
   logic                             pipe_int_v;
@@ -172,6 +169,7 @@ typedef struct packed
 typedef struct packed
 {
   // BE exceptional conditions
+  logic fe_exc_v;
   logic fe_nop_v;
   logic be_nop_v;
   logic me_nop_v;

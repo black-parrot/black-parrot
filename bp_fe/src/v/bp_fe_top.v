@@ -150,6 +150,8 @@ always_comb
     fe_pc_gen.pc_redirect_valid   = (fe_cmd.opcode == e_op_pc_redirection)
                                     && (fe_cmd.operands.pc_redirect_operands.subopcode
                                     == e_subop_branch_mispredict);
+    fe_pc_gen.icache_fence_valid  = fe_cmd.opcode == e_op_icache_fence;
+    fe_pc_gen.itlb_fence_valid    = fe_cmd.opcode == e_op_itlb_fence;
        
     fe_pc_gen.attaboy_valid       = fe_cmd.opcode == e_op_attaboy;
     fe_pc_gen.itlb_fill_valid     = fe_cmd.opcode == e_op_itlb_fill_response;
@@ -162,9 +164,11 @@ always_comb
     
     fe_pc_gen.pc                  = (fe_pc_gen.reset_valid) 
                                     ? fe_cmd.operands.reset_operands.pc
-                                    : (fe_pc_gen.pc_redirect_valid) 
-                                    ? fe_cmd.operands.pc_redirect_operands.pc
-                                    : fe_cmd.operands.attaboy.pc ;
+                                      : (fe_pc_gen.pc_redirect_valid) 
+                                      ? fe_cmd.operands.pc_redirect_operands.pc
+                                        : (fe_pc_gen.icache_fence_valid | fe_pc_gen.itlb_fence_valid)
+                                          ? fe_cmd.operands.icache_fence.pc
+                                          : fe_cmd.operands.attaboy.pc ;
 
     fe_pc_gen_v                   = fe_cmd_v_i;
     fe_cmd_ready_o                = fe_pc_gen_ready;

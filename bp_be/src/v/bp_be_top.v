@@ -27,7 +27,6 @@ module bp_be_top
                                  )
 
    // Default parameters 
-   , parameter load_to_use_forwarding_p    = 1
    , parameter trace_p                     = 0
    , parameter calc_debug_p                = 0
    , parameter calc_debug_file_p           = "calc_debug.log"
@@ -154,10 +153,7 @@ logic                          exception_ecode_v;
 
 // Module instantiations
 bp_be_checker_top 
- #(.cfg_p(cfg_p)
-
-   ,.load_to_use_forwarding_p(load_to_use_forwarding_p)
-   )
+ #(.cfg_p(cfg_p))
  be_checker
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -204,7 +200,6 @@ bp_be_checker_top
 bp_be_calculator_top 
  #(.cfg_p(cfg_p)
 
-   ,.load_to_use_forwarding_p(load_to_use_forwarding_p)
    ,.trace_p(trace_p)
    ,.debug_p(calc_debug_p)
    )

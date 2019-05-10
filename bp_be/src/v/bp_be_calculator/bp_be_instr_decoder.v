@@ -11,9 +11,6 @@
  *
  * Inputs:
  *   instr_i          - The RISC-V instruction to decode
- *   fe_nop_v_i       - Rather than decode the instruction, insert a nop caused by the FE
- *   be_nop_v_i       - Rather than decode the instruction, insert a nop caused by the BE
- *   me_nop_v_i       - Rather than decode the instruction, insert a nop caused by the ME
  *
  * Outputs:
  *   decode_o         - Control signals for the pipeline
@@ -60,9 +57,6 @@ always_comb
     // Set decoded defaults
     // NOPs are set after bypassing for critical path reasons
     decode               = '0;
-    decode.fe_nop_v      = '0; 
-    decode.be_nop_v      = '0; 
-    decode.me_nop_v      = '0; 
 
     // Destination pipe
     decode.pipe_comp_v   = '0;

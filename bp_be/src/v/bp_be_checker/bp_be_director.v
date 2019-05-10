@@ -301,7 +301,15 @@ always_comb
     else if(tlb_fence_i)
       begin : tlb_fence
         fe_cmd.opcode = e_op_itlb_fence;
+        fe_cmd.operands.icache_fence.pc = calc_status.mem3_pc;
         
+        fe_cmd_v = fe_cmd_ready_i;
+      end
+    else if(ifence_i)
+      begin : icache_fence
+        fe_cmd.opcode = e_op_icache_fence;
+        fe_cmd.operands.icache_fence.pc = calc_status.mem3_pc;
+
         fe_cmd_v = fe_cmd_ready_i;
       end
     // Redirect the pc if there's an NPC mismatch

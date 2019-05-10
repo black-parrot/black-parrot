@@ -24,6 +24,7 @@ module bp_be_nonsynth_perf
 logic booted;
 logic [63:0] clk_cnt_r;
 logic [63:0] instr_cnt_r;
+logic [63:0] fe_exc_cnt_r;
 logic [63:0] fe_nop_cnt_r;
 logic [63:0] be_nop_cnt_r;
 logic [63:0] me_nop_cnt_r;

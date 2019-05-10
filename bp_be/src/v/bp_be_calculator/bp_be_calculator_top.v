@@ -72,7 +72,6 @@ module bp_be_calculator_top
                                   )
 
    // Default parameters
-   , parameter load_to_use_forwarding_p = 1
    , parameter trace_p                  = 0
    , parameter debug_p                  = 0
 
@@ -222,10 +221,6 @@ logic [pipe_stage_els_lp-1:1]                        comp_stage_n_slice_iwb_v;
 logic [pipe_stage_els_lp-1:1]                        comp_stage_n_slice_fwb_v;
 logic [pipe_stage_els_lp-1:1][reg_addr_width_lp-1:0] comp_stage_n_slice_rd_addr;
 logic [pipe_stage_els_lp-1:1][reg_data_width_lp-1:0] comp_stage_n_slice_rd;
-
-// NOPs
-bp_be_decode_s fe_nop, be_nop, me_nop, illegal_nop, fe_exc_nop;
-logic fe_nop_v, be_nop_v, me_nop_v, illegal_nop_v, fe_exc_nop_v;
 
 // Handshakes
 assign issue_pkt_ready_o = (chk_dispatch_v_i | ~issue_pkt_v_r);
@@ -527,24 +522,10 @@ bsg_dff
    ,.data_o(exc_stage_r)
    );
 
-assign fe_nop_v      = chk_dispatch_v_i
-                       & (~issue_pkt_v_r | (chk_dispatch_v_i & issue_pkt_r.instr_metadata.fe_exception_not_instr));
-assign be_nop_v      = ~chk_dispatch_v_i &  mmu_cmd_ready_i;
-assign me_nop_v      = ~chk_dispatch_v_i & ~mmu_cmd_ready_i;
-assign illegal_nop_v = illegal_instr_isd;
-
-always_comb
-  begin
-    be_nop      = '0;
-    fe_nop      = '0;
-    me_nop      = '0;
-    illegal_nop = '0;
-
-    fe_nop.fe_nop_v       = 1'b1;
-    be_nop.be_nop_v       = 1'b1;
-    me_nop.me_nop_v       = 1'b1;
-    illegal_nop.instr_v   = 1'b1;
-  end
+wire fe_exc_v = chk_dispatch_v_i & issue_pkt_r.instr_metadata.fe_exception_not_instr;
+wire fe_nop_v = chk_dispatch_v_i & ~issue_pkt_v_r;
+wire be_nop_v = ~chk_dispatch_v_i &  mmu_cmd_ready_i;
+wire me_nop_v = ~chk_dispatch_v_i & ~mmu_cmd_ready_i;
 
 always_comb 
   begin
@@ -556,10 +537,11 @@ always_comb
     dispatch_pkt.rs2                 = bypass_rs2;
     dispatch_pkt.imm                 = issue_pkt_r.imm;
 
-           if (fe_nop_v) dispatch_pkt.decode = fe_nop;
-      else if (be_nop_v) dispatch_pkt.decode = be_nop;
-      else if (me_nop_v) dispatch_pkt.decode = me_nop;
-      else               dispatch_pkt.decode = illegal_instr_isd ? illegal_nop : decoded;
+           if (fe_exc_v) dispatch_pkt.decode = '0;
+      else if (fe_nop_v) dispatch_pkt.decode = '0;
+      else if (be_nop_v) dispatch_pkt.decode = '0;
+      else if (me_nop_v) dispatch_pkt.decode = '0;
+      else               dispatch_pkt.decode = decoded;
 
     // Strip out elements of the dispatch packet that we want to save for later
     calc_stage_isd.instr_metadata = dispatch_pkt.instr_metadata;
@@ -590,7 +572,7 @@ always_comb
                                            | dispatch_pkt_r.decode.jmp_v;
     calc_status.int1_br_or_jmp           = dispatch_pkt_r.decode.br_v 
                                            | dispatch_pkt_r.decode.jmp_v;
-    calc_status.ex1_v                    = dispatch_pkt_v_r;
+    calc_status.ex1_v                    = dispatch_pkt_v_r; 
     calc_status.ex1_pc                   = dispatch_pkt_r.instr_metadata.pc;
     calc_status.ex1_instr_v              = dispatch_pkt_r.decode.instr_v & ~exc_stage_r[0].poison_v;
     
@@ -634,8 +616,6 @@ always_comb
         comp_stage_n_slice_rd_addr[i] = calc_stage_r[i-1].rd_addr;
 
           comp_stage_n_slice_rd[i]    = comp_stage_n[i];
-        if ((load_to_use_forwarding_p == 0))
-          comp_stage_n_slice_rd[3]    = comp_stage_r[2];
       end
   end
 
@@ -673,6 +653,7 @@ always_comb
         exc_stage_n[0].csr_instr_v     = chk_dispatch_v_i & csr_instr_isd;
         exc_stage_n[0].fence_instr_v   = chk_dispatch_v_i & dispatch_pkt.decode.fence_instr_v;
 
+        exc_stage_n[0].fe_exc_v        = fe_exc_v;
         exc_stage_n[0].fe_nop_v        = fe_nop_v;
         exc_stage_n[0].be_nop_v        = be_nop_v;
         exc_stage_n[0].me_nop_v        = me_nop_v;
@@ -735,12 +716,6 @@ if (trace_p)
        ,.data_o({cmt_dcache_w_v_r, cmt_rs1_r, cmt_rs2_r, cmt_imm_r, cmt_mem_op_r})
        );
   
-    // Detect if SC success or failure
-    //wire sc_succeed = (
-    //                  (calc_stage_r[pipe_stage_els_lp-1].fu_op == e_scw)
-    //                  | (calc_stage_r[pipe_stage_els_lp-1].fu_op == e_scd)
-    //                  );
-
     // Commit tracer
     assign cmt_rd_w_v_o   = calc_stage_r[pipe_stage_els_lp-1].irf_w_v
                             & ~exc_stage_r[pipe_stage_els_lp-1].poison_v;

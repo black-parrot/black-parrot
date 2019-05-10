@@ -133,6 +133,8 @@ logic [instr_width_p-1:0]       instr_out;
 logic                           state_reset_v;
 logic                           pc_redirect_v;
 logic                           itlb_fill_v;
+logic                           icache_fence_v;
+logic                           itlb_fence_v;
 
 //exceptions
 logic                          fe_exception_v;
@@ -175,6 +177,8 @@ assign icache_pc_gen   = icache_pc_gen_i;
 assign state_reset_v = fe_pc_gen_v_i & fe_pc_gen_cmd.reset_valid;
 assign pc_redirect_v = fe_pc_gen_v_i & fe_pc_gen_cmd.pc_redirect_valid;
 assign itlb_fill_v   = fe_pc_gen_v_i & fe_pc_gen_cmd.itlb_fill_valid;
+assign icache_fence_v = fe_pc_gen_v_i & fe_pc_gen_cmd.icache_fence_valid;
+assign itlb_fence_v   = fe_pc_gen_v_i & fe_pc_gen_cmd.itlb_fence_valid;
 
 assign fe_exception_v     = misalign_exception | itlb_miss_exception;
 assign misalign_exception = pc_redirect_v 
@@ -213,7 +217,7 @@ begin
   else 
     begin
       fe_pc_gen_ready_o = ~stall & fe_pc_gen_v_i;
-      pc_gen_fe_v_o     = pc_gen_fe_ready_i & pc_v_f2 & (icache_pc_gen_v_i | fe_exception_v) & ~pc_redirect_v;
+      pc_gen_fe_v_o     = pc_gen_fe_ready_i & pc_v_f2 & (icache_pc_gen_v_i | fe_exception_v) & ~pc_redirect_v & ~icache_fence_v & ~itlb_fence_v;
       pc_gen_icache_v_o = pc_gen_fe_ready_i & pc_gen_icache_ready_i & ~stall;
     end
 end
@@ -282,7 +286,7 @@ begin
         pc_n = fe_pc_gen_cmd.pc;
     end
     // if we need to redirect
-    else if (pc_redirect_v) begin
+    else if (pc_redirect_v | icache_fence_v | itlb_fence_v) begin
         pc_n = fe_pc_gen_cmd.pc;
     end
     // if we've missed in the itlb
@@ -325,7 +329,7 @@ begin
         if (~stall)
         begin
             pc_f2 <= pc_f1;
-            pc_v_f2 <= pc_v_f1 & ~pc_redirect_v;
+            pc_v_f2 <= pc_v_f1 & ~pc_redirect_v & ~icache_fence_v & ~itlb_fence_v;
 
             pc_f1 <= pc_n;
 
