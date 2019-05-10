@@ -231,13 +231,13 @@ for(genvar i = 0; i <= num_core_p; i++)
          ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr_o[i])
          ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data_i[i])
 
-         ,.tr_pkt_i(tr_pkt_i[icache_id+:2])
-         ,.tr_pkt_v_i(tr_pkt_v_i[icache_id+:2])
-         ,.tr_pkt_yumi_o(tr_pkt_yumi_o[icache_id+:2])
+         ,.tr_pkt_i(tr_pkt_i[(i*2)+1 : (i*2)])
+         ,.tr_pkt_v_i(tr_pkt_v_i[(i*2)+1 : (i*2)])
+         ,.tr_pkt_yumi_o(tr_pkt_yumi_o[(i*2)+1 : (i*2)])
 
-         ,.tr_pkt_v_o(tr_pkt_v_o[icache_id+:2])
-         ,.tr_pkt_o(tr_pkt_o[icache_id+:2])
-         ,.tr_pkt_ready_i(tr_pkt_ready_i[icache_id+:2])
+         ,.tr_pkt_v_o(tr_pkt_v_o[(i*2)+1 : (i*2)])
+         ,.tr_pkt_o(tr_pkt_o[(i*2)+1 : (i*2)])
+         ,.tr_pkt_ready_i(tr_pkt_ready_i[(i*2)+1 : (i*2)])
 
          );
     end
