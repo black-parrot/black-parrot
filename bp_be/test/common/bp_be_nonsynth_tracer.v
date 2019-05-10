@@ -1,14 +1,10 @@
 module bp_be_nonsynth_tracer
  import bp_common_pkg::*;
+ import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
- #(parameter vaddr_width_p                 = "inv"
-   , parameter paddr_width_p               = "inv"
-   , parameter asid_width_p                = "inv"
-   , parameter branch_metadata_fwd_width_p = "inv"
-   , parameter num_core_p                  = "inv"
-   , parameter num_cce_p                   = "inv"
-   , parameter num_lce_p                   = "inv"
+ #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+   `declare_bp_proc_params(cfg_p)
 
    // Default parameters
    , parameter debug_file_p = "debug.log"

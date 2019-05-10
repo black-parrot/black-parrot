@@ -176,6 +176,9 @@ typedef struct packed
 typedef struct packed
 {
   // BE exceptional conditions
+  logic fe_nop_v;
+  logic be_nop_v;
+  logic me_nop_v;
   logic poison_v;
   logic roll_v;
 

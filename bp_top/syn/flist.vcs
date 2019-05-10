@@ -81,7 +81,6 @@ $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_adapter_in.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
 ## BE files
 $BP_BE_DIR/src/v/bp_be_top.v
-$BP_BE_DIR/test/common/bp_be_nonsynth_tracer.v
 # Calculator
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_bypass.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_calculator_top.v

@@ -513,19 +513,21 @@ assign data_o          = dword_width_p'(csr_data_lo);
 assign v_o             = csr_cmd_v_i;
 
 // synopsys translate_off
+  logic program_pass, program_fail;
   always_ff @(posedge clk_i)
     if (csr_cmd_v_i & (csr_cmd.csr_addr == `BP_CSR_ADDR_UFINISH))
       begin
         if (csr_cmd.data == '0)
-          begin
-            $display("PASS\n");
-            $finish();
-          end
+            program_pass <= 1'b1;
         else 
           begin
-            $display("FAIL\n");
-            $finish();
+            program_fail <= 1'b1;
           end
+      end
+    else
+      begin
+        program_pass <= 1'b0;
+        program_fail <= 1'b0;
       end
 // synopsys translate_on
 
