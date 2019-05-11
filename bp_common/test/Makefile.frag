@@ -14,6 +14,9 @@ BP_DEMOS = \
 RV64_BENCHMARKS = \
   median   \
   multiply \
+  qsort    \
+  rsort    \
+  spmv     \
   towers   \
   vvadd
 

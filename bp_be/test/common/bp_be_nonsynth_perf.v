@@ -87,13 +87,11 @@ always_ff @(posedge clk_i)
         $display("poison: %d", poison_cnt_r);
         $display("roll  : %d", roll_cnt_r);
         $display("mIPC  : %d", instr_cnt_r * 1000 / clk_cnt_r);
-        $fflush();
         $finish();
       end
     else if (program_fail_i)
       begin
         $display("FAIL");
-        $fflush();
         $finish();
       end
   end
