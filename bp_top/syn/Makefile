@@ -49,6 +49,10 @@ ccerom.sc:
 	@echo $(CCE_ROM)
 	@echo $(CCE_ROM) >> $(VERILATOR_RUN_DIR)/flist.verilator || true
 
+
+lint.v: ccerom.v
+lint.sc: ccerom.sc
+
 build.v: ccerom.v
 build.sc: ccerom.sc
 

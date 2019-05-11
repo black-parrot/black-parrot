@@ -12,6 +12,8 @@ RISCV_SIM      = spike
 RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -D -M no-aliases,numeric
 RISCV_OBJCOPY  = riscv64-unknown-elf-objcopy -O verilog
 
+include $(TEST_DIR)/Makefile.frag
+
 all: riscv demos bbl
 riscv: riscv_mem 
 opensbi: opensbi_mem
