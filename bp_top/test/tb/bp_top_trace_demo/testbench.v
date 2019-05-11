@@ -89,7 +89,7 @@ logic [num_cce_p-1:0] mem_data_cmd_v, mem_data_cmd_yumi;
       ,.mem_data_cmd_v_o(mem_data_cmd_v)
       ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi)
 
-      ,.external_int_i(1'b0)
+      ,.external_irq_i('0)
 
       ,.cmt_rd_w_v_o(cmt_rd_w_v)
       ,.cmt_rd_addr_o(cmt_rd_addr)

@@ -75,7 +75,7 @@ module bp_top
    , output [num_cce_p-1:0]                                   mem_data_cmd_v_o
    , input [num_cce_p-1:0]                                    mem_data_cmd_yumi_i
 
-   , input [num_core_p-1:0]                                   external_int_i
+   , input [num_core_p-1:0]                                   external_irq_i
 
    // Commit tracer for trace replay
    , output [num_core_p-1:0]                                  cmt_rd_w_v_o
@@ -118,7 +118,7 @@ logic                  [num_cce_p-1:0] me_mem_cmd_v_lo, me_mem_cmd_yumi_li;
 bp_cce_mem_data_cmd_s  [num_cce_p-1:0] me_mem_data_cmd_lo;
 logic                  [num_cce_p-1:0] me_mem_data_cmd_v_lo, me_mem_data_cmd_yumi_li;
 
-logic [num_core_p-1:0] timer_int_li, software_int_li;
+logic [num_core_p-1:0] timer_irq_lo, soft_irq_lo;
 
 for(genvar i = 0; i <= num_core_p; i++) 
   begin : rof1
@@ -241,9 +241,9 @@ for(genvar i = 0; i <= num_core_p; i++)
          ,.mem_data_cmd_v_o(me_mem_data_cmd_v_lo[i])
          ,.mem_data_cmd_yumi_i(me_mem_data_cmd_yumi_li[i])
 
-         ,.timer_int_i(timer_int_li[i])
-         ,.software_int_i(software_int_li[i])
-         ,.external_int_i(external_int_i[i])
+         ,.timer_int_i(timer_irq_lo[i])
+         ,.software_int_i(soft_irq_lo[i])
+         ,.external_int_i(external_irq_i[i])
 
          ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr_o[i])
          ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data_i[i])
@@ -258,172 +258,56 @@ for(genvar i = 0; i <= num_core_p; i++)
     end // fi1
   end // rof1
 
-bp_cce_mem_cmd_s        mtime_cmd_li;
-logic                   mtime_cmd_v_li, mtime_cmd_yumi_lo;
-bp_cce_mem_data_cmd_s   mtime_data_cmd_li;
-logic                   mtime_data_cmd_v_li, mtime_data_cmd_yumi_lo;
-bp_mem_cce_resp_s       mtime_resp_lo;
-logic                   mtime_resp_v_lo, mtime_resp_ready_li;
-bp_mem_cce_data_resp_s  mtime_data_resp_lo;
-logic                   mtime_data_resp_v_lo, mtime_data_resp_ready_li;
-
-bp_cce_mem_cmd_s [num_cce_p-1:0]       mtimecmp_cmd_li;
-logic [num_cce_p-1:0]                  mtimecmp_cmd_v_li, mtimecmp_cmd_yumi_lo;
-bp_cce_mem_data_cmd_s [num_cce_p-1:0]  mtimecmp_data_cmd_li;
-logic [num_cce_p-1:0]                  mtimecmp_data_cmd_v_li, mtimecmp_data_cmd_yumi_lo;
-bp_mem_cce_resp_s [num_cce_p-1:0]      mtimecmp_resp_lo;
-logic [num_cce_p-1:0]                  mtimecmp_resp_v_lo, mtimecmp_resp_ready_li;
-bp_mem_cce_data_resp_s [num_cce_p-1:0] mtimecmp_data_resp_lo;
-logic [num_cce_p-1:0]                  mtimecmp_data_resp_v_lo, mtimecmp_data_resp_ready_li;
-
-bp_cce_mem_cmd_s [num_cce_p-1:0]       msoftint_cmd_li;
-logic [num_cce_p-1:0]                  msoftint_cmd_v_li, msoftint_cmd_yumi_lo;
-bp_cce_mem_data_cmd_s [num_cce_p-1:0]  msoftint_data_cmd_li;
-logic [num_cce_p-1:0]                  msoftint_data_cmd_v_li, msoftint_data_cmd_yumi_lo;
-bp_mem_cce_resp_s [num_cce_p-1:0]      msoftint_resp_lo;
-logic [num_cce_p-1:0]                  msoftint_resp_v_lo, msoftint_resp_ready_li;
-bp_mem_cce_data_resp_s [num_cce_p-1:0] msoftint_data_resp_lo;
-logic [num_cce_p-1:0]                  msoftint_data_resp_v_lo, msoftint_data_resp_ready_li;
-
-// 1 softint, 1 timecmp per cce and then 1 global mtime
-localparam num_io_lp = (2*num_cce_p + 1);
-for (genvar i = 0; i < num_cce_p; i++)
-  begin : rof2
-    bp_cce_io_router
+    bp_clint
      #(.num_cce_p(num_cce_p)
        ,.paddr_width_p(paddr_width_p)
        ,.num_lce_p(num_lce_p)
        ,.block_size_in_bits_p(cce_block_width_p)
        ,.lce_assoc_p(lce_assoc_p)
-       ,.num_io_p(num_io_lp)
        )
-     mmio
+     clint
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
+       ,.rtc_i(clk_i) // We use the regular clock as the real time clock, here
+
        // ME side
-       ,.mem_cmd_i(me_mem_cmd_lo[i])
-       ,.mem_cmd_v_i(me_mem_cmd_v_lo[i])
-       ,.mem_cmd_yumi_o(me_mem_cmd_yumi_li[i])
+       ,.mem_cmd_i(me_mem_cmd_lo)
+       ,.mem_cmd_v_i(me_mem_cmd_v_lo)
+       ,.mem_cmd_yumi_o(me_mem_cmd_yumi_li)
 
-       ,.mem_data_cmd_i(me_mem_data_cmd_lo[i])
-       ,.mem_data_cmd_v_i(me_mem_data_cmd_v_lo[i])
-       ,.mem_data_cmd_yumi_o(me_mem_data_cmd_yumi_li[i])
+       ,.mem_data_cmd_i(me_mem_data_cmd_lo)
+       ,.mem_data_cmd_v_i(me_mem_data_cmd_v_lo)
+       ,.mem_data_cmd_yumi_o(me_mem_data_cmd_yumi_li)
 
-       ,.mem_resp_o(me_mem_resp_li[i])
-       ,.mem_resp_v_o(me_mem_resp_v_li[i])
-       ,.mem_resp_ready_i(me_mem_resp_ready_lo[i])
+       ,.mem_resp_o(me_mem_resp_li)
+       ,.mem_resp_v_o(me_mem_resp_v_li)
+       ,.mem_resp_ready_i(me_mem_resp_ready_lo)
 
-       ,.mem_data_resp_o(me_mem_data_resp_li[i])
-       ,.mem_data_resp_v_o(me_mem_data_resp_v_li[i])
-       ,.mem_data_resp_ready_i(me_mem_data_resp_ready_lo[i])
+       ,.mem_data_resp_o(me_mem_data_resp_li)
+       ,.mem_data_resp_v_o(me_mem_data_resp_v_li)
+       ,.mem_data_resp_ready_i(me_mem_data_resp_ready_lo)
 
        // Mem side
-       ,.mem_cmd_o(mem_cmd_o[i])
-       ,.mem_cmd_v_o(mem_cmd_v_o[i])
-       ,.mem_cmd_yumi_i(mem_cmd_yumi_i[i])
+       ,.mem_cmd_o(mem_cmd_o)
+       ,.mem_cmd_v_o(mem_cmd_v_o)
+       ,.mem_cmd_yumi_i(mem_cmd_yumi_i)
 
-       ,.mem_data_cmd_o(mem_data_cmd_o[i])
-       ,.mem_data_cmd_v_o(mem_data_cmd_v_o[i])
-       ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi_i[i])
+       ,.mem_data_cmd_o(mem_data_cmd_o)
+       ,.mem_data_cmd_v_o(mem_data_cmd_v_o)
+       ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi_i)
 
-       ,.mem_resp_i(mem_resp_i[i])
-       ,.mem_resp_v_i(mem_resp_v_i[i])
-       ,.mem_resp_ready_o(mem_resp_ready_o[i])
+       ,.mem_resp_i(mem_resp_i)
+       ,.mem_resp_v_i(mem_resp_v_i)
+       ,.mem_resp_ready_o(mem_resp_ready_o)
 
-       ,.mem_data_resp_i(mem_data_resp_i[i])
-       ,.mem_data_resp_v_i(mem_data_resp_v_i[i])
-       ,.mem_data_resp_ready_o(mem_data_resp_ready_o[i])
+       ,.mem_data_resp_i(mem_data_resp_i)
+       ,.mem_data_resp_v_i(mem_data_resp_v_i)
+       ,.mem_data_resp_ready_o(mem_data_resp_ready_o)
 
-       // IO side
-       ,.io_cmd_o({msoftint_cmd_li, mtimecmp_cmd_li, mtime_cmd_li})
-       ,.io_cmd_v_o({msoftint_cmd_v_li, mtimecmp_cmd_v_li, mtime_cmd_v_li})
-       ,.io_cmd_yumi_i({msoftint_cmd_yumi_lo, mtimecmp_cmd_yumi_lo, mtime_cmd_yumi_lo})
-
-       ,.io_data_cmd_o({msoftint_data_cmd_li, mtimecmp_data_cmd_li, mtime_data_cmd_li})
-       ,.io_data_cmd_v_o({msoftint_data_cmd_v_li, mtimecmp_data_cmd_v_li, mtime_data_cmd_v_li})
-       ,.io_data_cmd_yumi_i({msoftint_data_cmd_yumi_lo, mtimecmp_data_cmd_yumi_lo, mtime_data_cmd_yumi_lo})
-
-       ,.io_resp_i({msoftint_resp_lo, mtimecmp_resp_lo, mtime_resp_lo})
-       ,.io_resp_v_i({msoftint_resp_v_lo, mtimecmp_resp_v_lo, mtime_resp_v_lo})
-       ,.io_resp_ready_o({msoftint_resp_ready_li, mtimecmp_resp_ready_li, mtime_resp_ready_li})
-
-       ,.io_data_resp_i({msoftint_data_resp_lo, mtimecmp_data_resp_lo, mtime_data_resp_lo})
-       ,.io_data_resp_v_i({msoftint_data_resp_v_lo, mtimecmp_data_resp_v_lo, mtime_data_resp_v_lo})
-       ,.io_data_resp_ready_o({msoftint_data_resp_ready_li, mtimecmp_data_resp_ready_li, mtime_data_resp_ready_li})
+       ,.timer_irq_o(timer_irq_lo)
+       ,.soft_irq_o(soft_irq_lo)
        );
-  end
-
-bp_io_enclave
- #(.num_cce_p(num_cce_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.num_lce_p(num_lce_p)
-   ,.block_size_in_bits_p(cce_block_width_p)
-   ,.lce_assoc_p(lce_assoc_p)
-   ,.dword_width_p(dword_width_p)
-   )
- io_enclave
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-
-   // Real time clock input (currently tied to regular clock)
-   ,.rtc_i(clk_i)
-
-   // Timer read
-   ,.mtime_cmd_i(mtime_cmd_li)
-   ,.mtime_cmd_v_i(mtime_cmd_v_li)
-   ,.mtime_cmd_yumi_o(mtime_cmd_yumi_lo)
-
-   ,.mtime_data_cmd_i(mtime_data_cmd_li)
-   ,.mtime_data_cmd_v_i(mtime_data_cmd_v_li)
-   ,.mtime_data_cmd_yumi_o(mtime_data_cmd_yumi_lo)
-
-   ,.mtime_resp_o(mtime_resp_lo)
-   ,.mtime_resp_v_o(mtime_resp_v_lo)
-   ,.mtime_resp_ready_i(mtime_resp_ready_li)
-
-   ,.mtime_data_resp_o(mtime_data_resp_lo)
-   ,.mtime_data_resp_v_o(mtime_data_resp_v_lo)
-   ,.mtime_data_resp_ready_i(mtime_data_resp_ready_li)
-
-   // Timer compare
-   ,.mtimecmp_cmd_i(mtimecmp_cmd_li)
-   ,.mtimecmp_cmd_v_i(mtimecmp_cmd_v_li)
-   ,.mtimecmp_cmd_yumi_o(mtimecmp_cmd_yumi_lo)
-
-   ,.mtimecmp_data_cmd_i(mtimecmp_data_cmd_li)
-   ,.mtimecmp_data_cmd_v_i(mtimecmp_data_cmd_v_li)
-   ,.mtimecmp_data_cmd_yumi_o(mtimecmp_data_cmd_yumi_lo)
-
-   ,.mtimecmp_resp_o(mtimecmp_resp_lo)
-   ,.mtimecmp_resp_v_o(mtimecmp_resp_v_lo)
-   ,.mtimecmp_resp_ready_i(mtimecmp_resp_ready_li)
-
-   ,.mtimecmp_data_resp_o(mtimecmp_data_resp_lo)
-   ,.mtimecmp_data_resp_v_o(mtimecmp_data_resp_v_lo)
-   ,.mtimecmp_data_resp_ready_i(mtimecmp_data_resp_ready_li)
-
-   // Software interrupt
-   ,.msoftint_cmd_i(msoftint_cmd_li)
-   ,.msoftint_cmd_v_i(msoftint_cmd_v_li)
-   ,.msoftint_cmd_yumi_o(msoftint_cmd_yumi_lo)
-
-   ,.msoftint_data_cmd_i(msoftint_data_cmd_li)
-   ,.msoftint_data_cmd_v_i(msoftint_data_cmd_v_li)
-   ,.msoftint_data_cmd_yumi_o(msoftint_data_cmd_yumi_lo)
-
-   ,.msoftint_resp_o(msoftint_resp_lo)
-   ,.msoftint_resp_v_o(msoftint_resp_v_lo)
-   ,.msoftint_resp_ready_i(msoftint_resp_ready_li)
-
-   ,.msoftint_data_resp_o(msoftint_data_resp_lo)
-   ,.msoftint_data_resp_v_o(msoftint_data_resp_v_lo)
-   ,.msoftint_data_resp_ready_i(msoftint_data_resp_ready_li)
-
-   // Interrupts
-   ,.timer_int_o(timer_int_li)
-   ,.software_int_o(software_int_li)
-   );
 
 endmodule : bp_top
 
