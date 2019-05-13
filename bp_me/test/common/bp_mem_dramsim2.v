@@ -23,14 +23,16 @@ module bp_mem_dramsim2
 
     ,parameter lce_req_data_width_p="inv"
 
-    ,parameter bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p, num_lce_p, lce_assoc_p)
-    ,parameter bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
-    ,parameter bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(paddr_width_p, num_lce_p, lce_assoc_p)
-    ,parameter bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    ,localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p, num_lce_p, lce_assoc_p)
+    ,localparam bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    ,localparam bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(paddr_width_p, num_lce_p, lce_assoc_p)
+    ,localparam bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
 
-    ,parameter block_offset_bits_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
-    ,parameter byte_width_lp=8
-    ,localparam word_offset_bits_lp=`BSG_SAFE_CLOG2(lce_req_data_width_p/8)
+
+    ,localparam word_select_bits_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p/8)
+    ,localparam block_offset_bits_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
+    ,localparam byte_width_lp=8
+    ,localparam byte_offset_bits_lp=`BSG_SAFE_CLOG2(lce_req_data_width_p/8)
   )
   (
     input clk_i
@@ -63,42 +65,62 @@ module bp_mem_dramsim2
   bp_mem_cce_resp_s mem_resp_s_o;
   bp_mem_cce_data_resp_s mem_data_resp_s_o;
 
+  assign mem_resp_o = mem_resp_s_o;
+  assign mem_data_resp_o = mem_data_resp_s_o;
+  assign mem_cmd_i_s = mem_cmd_i;
+  assign mem_data_cmd_i_s = mem_data_cmd_i;
+
   // memory signals
   logic [paddr_width_p-1:0] block_rd_addr, block_wr_addr;
-  logic [lce_req_data_width_p-1:0] mem_nc_data, nc_data;
+  assign block_rd_addr = {mem_cmd_i_s.addr[paddr_width_p-1:block_offset_bits_lp], block_offset_bits_lp'(0)};
+  assign block_wr_addr = {mem_data_cmd_i_s.addr[paddr_width_p-1:block_offset_bits_lp], block_offset_bits_lp'(0)};
 
+  // signals for dramsim2
   logic [511:0] dramsim_data;
   logic dramsim_valid;
   logic [511:0] dramsim_data_n;
-
   logic read_accepted, write_accepted;
 
-  int k, j;
-  always_comb begin
-    mem_resp_o = mem_resp_s_o;
-    mem_data_resp_o = mem_data_resp_s_o;
-    mem_cmd_i_s = mem_cmd_i;
-    mem_data_cmd_i_s = mem_data_cmd_i;
+  // Uncached access read and write selection
+  logic [lce_req_data_width_p-1:0] mem_nc_data, nc_data;
 
-    block_rd_addr = {mem_cmd_i_s.addr[paddr_width_p-1:block_offset_bits_lp], block_offset_bits_lp'(0)};
-    block_wr_addr = {mem_data_cmd_i_s.addr[paddr_width_p-1:block_offset_bits_lp], block_offset_bits_lp'(0)};
+  // get the 64-bit word for reads
+  // address: [tag, set index, block offset] = [tag, word select, byte select]
+  int word_select;
+  assign word_select = mem_cmd_s_r.addr[byte_offset_bits_lp+:word_select_bits_lp];
 
-    // get the 64-bit chunk
-    k = mem_cmd_s_r.addr[block_offset_bits_lp-1:word_offset_bits_lp];
-    j = mem_cmd_s_r.addr[word_offset_bits_lp-1:0];
-    mem_nc_data = dramsim_data[(k*lce_req_data_width_p)+:lce_req_data_width_p];
-    if (mem_cmd_s_r.nc_size == e_lce_nc_req_1) begin
-      nc_data = {56'('0),mem_nc_data[(j*8)+:8]};
-    end else if (mem_cmd_s_r.nc_size == e_lce_nc_req_2) begin
-      nc_data = {48'('0),mem_nc_data[(j*8)+:16]};
-    end else if (mem_cmd_s_r.nc_size == e_lce_nc_req_4) begin
-      nc_data = {32'('0),mem_nc_data[(j*8)+:32]};
-    end else if (mem_cmd_s_r.nc_size == e_lce_nc_req_8) begin
-      nc_data = mem_nc_data;
-    end else begin
-      nc_data = '0;
-    end
-  end
+  int byte_select;
+  assign byte_select = mem_cmd_s_r.addr[0+:byte_offset_bits_lp];
+
+  assign mem_nc_data = dramsim_data[(word_select*lce_req_data_width_p)+:lce_req_data_width_p];
+
+  assign nc_data = (mem_cmd_s_r.nc_size == e_lce_nc_req_1)
+    ? {56'('0),mem_nc_data[(byte_select*8)+:8]}
+    : (mem_cmd_s_r.nc_size == e_lce_nc_req_2)
+      ? {48'('0),mem_nc_data[(byte_select*8)+:16]}
+      : (mem_cmd_s_r.nc_size == e_lce_nc_req_4)
+        ? {32'('0),mem_nc_data[(byte_select*8)+:32]}
+        : mem_nc_data;
+
+  // write shift - only set for non-cacheable writes
+  int wr_word_select;
+  assign wr_word_select = mem_data_cmd_i_s.addr[byte_offset_bits_lp+:word_select_bits_lp];
+
+  int wr_byte_select;
+  assign wr_byte_select = mem_data_cmd_i_s.addr[0+:byte_offset_bits_lp];
+
+  int wr_shift;
+  assign wr_shift = ((wr_word_select*lce_req_data_width_p) + (wr_byte_select*8));
+
+  logic [block_size_in_bits_lp-1:0] wr_mask;
+  assign wr_mask = (mem_data_cmd_i_s.nc_size == e_lce_nc_req_1)
+    ? {(block_size_in_bits_lp-8)'('0),8'('1)} << wr_shift
+    : (mem_data_cmd_i_s.nc_size == e_lce_nc_req_2)
+      ? {(block_size_in_bits_lp-16)'('0),16'('1)} << wr_shift
+      : (mem_data_cmd_i_s.nc_size == e_lce_nc_req_4)
+        ? {(block_size_in_bits_lp-32)'('0),32'('1)} << wr_shift
+        : {(block_size_in_bits_lp-64)'('0),64'('1)} << wr_shift;
+
 
   typedef enum logic [2:0] {
     RESET
@@ -143,7 +165,13 @@ module bp_mem_dramsim2
           // mem data command - need to write data to memory
           if (mem_data_cmd_v_i && mem_resp_ready_i) begin
             // do the write to memory ram if available
-            write_accepted = mem_write_req(block_wr_addr, mem_data_cmd_i_s.data);
+            write_accepted = '0;
+            if (mem_data_cmd_i_s.non_cacheable) begin
+              // TODO: uncached writes
+              write_accepted = '0;
+            end else begin
+              write_accepted = mem_write_req(block_wr_addr, mem_data_cmd_i_s.data);
+            end
 
             mem_data_cmd_yumi_o <= write_accepted;
             mem_data_cmd_s_r    <= mem_data_cmd_i;
@@ -214,6 +242,7 @@ import "DPI-C" context function bit tick();
 import "DPI-C" context function bit mem_read_req(input longint addr);
 import "DPI-C" context function bit mem_write_req(input longint addr
                                                   , input bit [block_size_in_bits_lp-1:0] data
+                                                  , input int reqSize = 0
                                                   );
 
 export "DPI-C" function read_resp;

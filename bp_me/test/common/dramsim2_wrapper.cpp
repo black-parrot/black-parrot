@@ -81,7 +81,7 @@ void bp_dram::read_complete(unsigned id, uint64_t addr, uint64_t cycle)
   //printf("\n");
 }
 
-extern "C" bool mem_write_req(uint64_t addr, svBitVecVal *data)
+extern "C" bool mem_write_req(uint64_t addr, svBitVecVal *data, int reqSize=0)
 {
   string scope = svGetNameFromScope(svGetScope());
 
