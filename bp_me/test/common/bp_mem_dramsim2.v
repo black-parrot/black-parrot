@@ -71,9 +71,10 @@ module bp_mem_dramsim2
   assign mem_data_cmd_i_s = mem_data_cmd_i;
 
   // memory signals
-  logic [paddr_width_p-1:0] block_rd_addr, block_wr_addr;
+  logic [paddr_width_p-1:0] block_rd_addr, wr_addr;
   assign block_rd_addr = {mem_cmd_i_s.addr[paddr_width_p-1:block_offset_bits_lp], block_offset_bits_lp'(0)};
-  assign block_wr_addr = {mem_data_cmd_i_s.addr[paddr_width_p-1:block_offset_bits_lp], block_offset_bits_lp'(0)};
+  // send full address on writes, let c++ code modify as needed based on cached or uncached
+  assign wr_addr = mem_data_cmd_i_s.addr;
 
   // signals for dramsim2
   logic [511:0] dramsim_data;
@@ -166,11 +167,20 @@ module bp_mem_dramsim2
           if (mem_data_cmd_v_i && mem_resp_ready_i) begin
             // do the write to memory ram if available
             write_accepted = '0;
+            // uncached write, send correct size
             if (mem_data_cmd_i_s.non_cacheable) begin
-              // TODO: uncached writes
-              write_accepted = '0;
+              write_accepted =
+                (mem_data_cmd_i_s.nc_size == e_lce_nc_req_1)
+                ? mem_write_req(wr_addr, mem_data_cmd_i_s.data, 1)
+                : (mem_data_cmd_i_s.nc_size == e_lce_nc_req_2)
+                  ? mem_write_req(wr_addr, mem_data_cmd_i_s.data, 2)
+                  : (mem_data_cmd_i_s.nc_size == e_lce_nc_req_4)
+                    ? mem_write_req(wr_addr, mem_data_cmd_i_s.data, 4)
+                    : mem_write_req(wr_addr, mem_data_cmd_i_s.data, 8);
+
             end else begin
-              write_accepted = mem_write_req(block_wr_addr, mem_data_cmd_i_s.data);
+              // cached access, size == 0 tells c++ code to write full cache block
+              write_accepted = mem_write_req(wr_addr, mem_data_cmd_i_s.data, 0);
             end
 
             mem_data_cmd_yumi_o <= write_accepted;
@@ -236,6 +246,7 @@ import "DPI-C" function void init(input longint clock_period
                                   , input string system_cfg_name
                                   , input longint dram_capacity
                                   , input longint dram_req_width
+                                  , input longint block_offset_bits
                                   );
 import "DPI-C" context function bit tick();
 
@@ -258,7 +269,7 @@ endfunction
 
 initial 
   begin
-    init(clock_period_in_ps_p, prog_name_p, dram_cfg_p, dram_sys_cfg_p, dram_capacity_p, block_size_in_bits_lp); 
+    init(clock_period_in_ps_p, prog_name_p, dram_cfg_p, dram_sys_cfg_p, dram_capacity_p, block_size_in_bits_lp, block_offset_bits_lp);
   end
 
 always_ff @(posedge clk_i)
