@@ -19,6 +19,7 @@ class bp_dram
     std::map<uint64_t, uint8_t> mem;
 
     uint64_t result_size;
+    uint64_t block_offset_bits;
 
     std::map<string, svBitVecVal *> result_data;
     std::map<string, bool> result_pending;

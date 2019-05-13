@@ -21,6 +21,8 @@ module testbench
 
     , parameter cce_trace_p = `CCE_TRACE_P
     , parameter axe_trace_p = `AXE_TRACE_P
+
+    , parameter skip_ram_init_p = 0
   )
   ();
 
@@ -63,6 +65,7 @@ module testbench
     ,.boot_rom_els_p(mem_els_p)
     ,.cce_trace_p(cce_trace_p)
     ,.axe_trace_p(axe_trace_p)
+    ,.skip_ram_init_p(skip_ram_init_p)
   ) me_top_test (
     .clk_i(clk)
     ,.reset_i(reset)
@@ -120,7 +123,7 @@ module testbench
 
   always_ff @(posedge clk)
     begin
-      if (&tr_done_lo)
+      if (tr_done_lo)
         begin
         $display("Bytes: %d Clocks: %d mBPC: %d "
                  , instr_count*64

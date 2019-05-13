@@ -42,8 +42,9 @@ int sc_main(int argc, char **argv)
   sc_init("bp_cce_top", argc, argv);
 
   sc_signal <bool>     reset_i("reset_i");
-  sc_signal <bool>     freeze_i("freeze_i");
+  sc_signal <bool>     freeze_o("freeze_o");
 
+  /*
   sc_signal <uint32_t> config_addr_i("config_addr_i");
   sc_signal <uint32_t> config_data_i("config_data_i");
   sc_signal <bool>     config_v_i("config_v_i");
@@ -52,6 +53,7 @@ int sc_main(int argc, char **argv)
   sc_signal <uint32_t> config_data_o("config_data_o");
   sc_signal <bool>     config_v_o("config_v_o");
   sc_signal <bool>     config_ready_i("config_ready_i");
+  */
 
   sc_signal <sc_bv<bp_lce_cce_req_width> > lce_req_i("lce_req_i");
   sc_signal <bool>     lce_req_v_i("lce_req_v_i");
@@ -85,8 +87,9 @@ int sc_main(int argc, char **argv)
 
   DUT.clk_i(clock);
   DUT.reset_i(reset_i);
-  DUT.freeze_i(freeze_i);
+  DUT.freeze_o(freeze_o);
 
+  /*
   // Config channel
   DUT.config_addr_i(config_addr_i);
   DUT.config_data_i(config_data_i);
@@ -97,6 +100,7 @@ int sc_main(int argc, char **argv)
   DUT.config_data_o(config_data_o);
   DUT.config_v_o(config_v_o);
   DUT.config_ready_i(config_ready_i);
+  */
 
   DUT.lce_req_i(lce_req_i);
   DUT.lce_req_v_i(lce_req_v_i);
@@ -126,12 +130,13 @@ int sc_main(int argc, char **argv)
   #endif
 
   // reset
-  freeze_i = 0;
+  /*
   config_addr_i = 0;
   config_data_i = 0;
   config_v_i = 0;
   config_w_i = 0;
   config_ready_i = 0;
+  */
 
   lce_req_i = 0;
   lce_req_v_i = 0;
@@ -150,6 +155,20 @@ int sc_main(int argc, char **argv)
 
   int stallDetect = 0;
 
+  // wait for freeze_o to go low, indicating CCE instruction RAM has been loaded
+  while (!freeze_o) {
+    stallDetect++;
+    if (stallDetect == STALL_MAX) {
+      cout << "@" << sc_time_stamp() << " STALL!" << endl;
+      #if (VM_TRACE == 1)
+      wf->close();
+      #endif
+      return 0;
+    }
+    sc_start(CLK_TIME, SC_NS);
+  }
+
+  stallDetect = 0;
   bool sync_rcvd = false;
   // loop until sync command received
   while (!sync_rcvd) {

@@ -25,6 +25,7 @@ module bp_top
    // Used to enable trace replay outputs for testbench
    , parameter trace_p      = 0
    , parameter calc_debug_p = 1
+   , parameter cce_trace_p  = 0
 
    , parameter x_cord_width_p = `BSG_SAFE_CLOG2(num_lce_p)
    , parameter y_cord_width_p = 1
@@ -48,9 +49,18 @@ module bp_top
   (input                                                      clk_i
    , input                                                    reset_i
 
-   // This will go away with the manycore bridge
-   , output logic [num_cce_p-1:0][`BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)-1:0] cce_inst_boot_rom_addr_o
-   , input logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]                        cce_inst_boot_rom_data_i
+   , input [num_cce_p-1:0]                                    freeze_i
+
+   // Config channel
+   , input [num_cce_p-1:0][bp_cfg_link_addr_width_gp-2:0]        config_addr_i
+   , input [num_cce_p-1:0][bp_cfg_link_data_width_gp-1:0]        config_data_i
+   , input [num_cce_p-1:0]                                       config_v_i
+   , input [num_cce_p-1:0]                                       config_w_i
+   , output logic [num_cce_p-1:0]                                config_ready_o
+
+   , output logic [num_cce_p-1:0][bp_cfg_link_data_width_gp-1:0] config_data_o
+   , output logic [num_cce_p-1:0]                                config_v_o
+   , input [num_cce_p-1:0]                                       config_ready_i
 
    , input [num_cce_p-1:0][mem_cce_resp_width_lp-1:0]         mem_resp_i
    , input [num_cce_p-1:0]                                    mem_resp_v_i
@@ -173,6 +183,7 @@ for(genvar i = 0; i <= num_core_p; i++)
        #(.cfg_p(cfg_p)
          ,.trace_p(trace_p)
          ,.calc_debug_p(calc_debug_p)
+         ,.cce_trace_p(cce_trace_p)
          )
        tile
         (.clk_i(clk_i)
@@ -182,6 +193,18 @@ for(genvar i = 0; i <= num_core_p; i++)
 
          ,.my_x_i(x_cord_width_p'(i))
          ,.my_y_i(y_cord_width_p'(1))
+
+         ,.freeze_i(freeze_i[i])
+
+         ,.config_addr_i(config_addr_i[i])
+         ,.config_data_i(config_data_i[i])
+         ,.config_v_i(config_v_i[i])
+         ,.config_w_i(config_w_i[i])
+         ,.config_ready_o(config_ready_o[i])
+
+         ,.config_data_o(config_data_o[i])
+         ,.config_v_o(config_v_o[i])
+         ,.config_ready_i(config_ready_i[i])
 
          // Router inputs
          ,.lce_req_link_i(lce_req_link_stitch_li[i])
@@ -224,9 +247,6 @@ for(genvar i = 0; i <= num_core_p; i++)
          ,.timer_int_i(timer_int_i)
          ,.software_int_i(software_int_i)
          ,.external_int_i(external_int_i)
-
-         ,.cce_inst_boot_rom_addr_o(cce_inst_boot_rom_addr_o[i])
-         ,.cce_inst_boot_rom_data_i(cce_inst_boot_rom_data_i[i])
 
          ,.cmt_rd_w_v_o(cmt_rd_w_v_o[i])
          ,.cmt_rd_addr_o(cmt_rd_addr_o[i])
