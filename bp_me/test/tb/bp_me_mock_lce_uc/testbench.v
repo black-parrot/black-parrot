@@ -19,6 +19,7 @@ module testbench
 
     , parameter cce_trace_p = `CCE_TRACE_P
     , parameter axe_trace_p = `AXE_TRACE_P
+		, parameter dramsim2_p = `DRAMSIM2_P
 
     , parameter skip_ram_init_p = 1
   )
@@ -63,6 +64,7 @@ module testbench
     ,.boot_rom_els_p(mem_els_p)
     ,.cce_trace_p(cce_trace_p)
     ,.axe_trace_p(axe_trace_p)
+		,.dramsim2_en_p(dramsim2_p)
     ,.skip_ram_init_p(skip_ram_init_p)
   ) me_top_test (
     .clk_i(clk)

@@ -29,6 +29,15 @@ module bp_me_mock_lce_me
 
     , localparam cfg_link_addr_width_p=bp_cfg_link_addr_width_gp
     , localparam cfg_link_data_width_p=bp_cfg_link_data_width_gp
+
+    // dramsim2 stuff
+    , parameter dramsim2_en_p = 0
+    , parameter clock_period_in_ps_p = 1000
+    , parameter prog_name_p = "null.mem"
+    , parameter dram_cfg_p  = "DDR2_micron_16M_8b_x8_sg3E.ini"
+    , parameter dram_sys_cfg_p = "system.ini"
+    , parameter dram_capacity_p = 16384
+
   )
   (
     input clk_i
@@ -214,6 +223,43 @@ module bp_me_mock_lce_me
     ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi)
   );
 
+  if (dramsim2_en_p) begin
+  bp_mem_dramsim2
+   #(.mem_id_p('0)
+     ,.clock_period_in_ps_p(clock_period_in_ps_p)
+     ,.prog_name_p(prog_name_p)
+     ,.dram_cfg_p(dram_cfg_p)
+     ,.dram_sys_cfg_p(dram_sys_cfg_p)
+     ,.dram_capacity_p(dram_capacity_p)
+     ,.num_lce_p(num_lce_p)
+     ,.num_cce_p(num_cce_p)
+     ,.paddr_width_p(paddr_width_p)
+     ,.lce_assoc_p(lce_assoc_p)
+     ,.block_size_in_bytes_p(block_size_in_bytes_lp)
+     ,.lce_sets_p(lce_sets_p)
+     ,.lce_req_data_width_p(dword_width_p)
+     )
+   mem
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.mem_cmd_i(mem_cmd)
+     ,.mem_cmd_v_i(mem_cmd_v)
+     ,.mem_cmd_yumi_o(mem_cmd_yumi)
+
+     ,.mem_data_cmd_i(mem_data_cmd)
+     ,.mem_data_cmd_v_i(mem_data_cmd_v)
+     ,.mem_data_cmd_yumi_o(mem_data_cmd_yumi)
+
+     ,.mem_resp_o(mem_resp)
+     ,.mem_resp_v_o(mem_resp_v)
+     ,.mem_resp_ready_i(mem_resp_ready)
+
+     ,.mem_data_resp_o(mem_data_resp)
+     ,.mem_data_resp_v_o(mem_data_resp_v)
+     ,.mem_data_resp_ready_i(mem_data_resp_ready)
+     );
+  end else begin
   bp_mem
     #(.num_lce_p(num_lce_p)
       ,.num_cce_p(num_cce_p)
@@ -249,6 +295,7 @@ module bp_me_mock_lce_me
       ,.boot_rom_addr_o()
       ,.boot_rom_data_i('0)
       );
+  end
 
   bp_cce_inst_rom
     #(.width_p(`bp_cce_inst_width)
