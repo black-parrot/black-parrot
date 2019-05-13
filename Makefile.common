@@ -16,6 +16,10 @@ ifneq (,$(findstring xor,$(shell hostname)))
   BSG_CADENV     ?= 1
   BSG_CADENV_DIR ?= $(TOP)/bsg_cadenv
   include $(BSG_CADENV_DIR)/cadenv.mk
+else ifneq (,$(findstring aoi,$(shell hostname)))
+  BSG_CADENV     ?= 1
+  BSG_CADENV_DIR ?= $(TOP)/bsg_cadenv
+  include $(BSG_CADENV_DIR)/cadenv.mk
 else
   BSG_CADENV ?= 0
   $(info Not on xor...VCS and DC not supported)
