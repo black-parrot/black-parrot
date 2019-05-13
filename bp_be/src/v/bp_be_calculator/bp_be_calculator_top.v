@@ -252,6 +252,8 @@ assign mmu_tlb_fill_cmd.data = calc_status.mem3_pc[0+:vaddr_width_p];
 // Module instantiations
 // Register files
 bp_be_regfile
+ #(.harden_p(1)
+   )
  int_regfile
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -273,6 +275,8 @@ bp_be_regfile
    );
 
 bp_be_regfile
+ #(.harden_p(0)
+   )
  float_regfile
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
