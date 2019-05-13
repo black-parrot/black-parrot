@@ -83,6 +83,9 @@ module bp_cce_pc
    // ALU branch result signal
    , input                                       alu_branch_res_i
 
+   // Directory busy reading signal
+   , input                                       dir_busy_i
+
    // control from decode
    , input                                       pc_stall_i
    , input [inst_ram_addr_width_lp-1:0]          pc_branch_target_i
@@ -346,7 +349,15 @@ module bp_cce_pc
         ram_v_n = 1'b1;
         // setup RAM address register and register tracking PC of instruction being executed
         // also, determine input address for RAM depending on stall and branch in execution
-        if (pc_stall_i) begin
+
+        // TODO: directory busy
+        if (dir_busy_i) begin
+          // hold at the instruction following the directory read, but don't execute it
+          ex_pc_n = ex_pc_r;
+          ram_addr_n = ram_addr_r;
+          ram_addr_li = ram_addr_r;
+          inst_v_n = 1'b0;
+        end else if (pc_stall_i) begin
           // when stalling, hold executing pc and ram addr registers constant
           ex_pc_n = ex_pc_r;
           ram_addr_n = ram_addr_r;

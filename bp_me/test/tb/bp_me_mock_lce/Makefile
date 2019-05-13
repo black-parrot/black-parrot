@@ -22,7 +22,7 @@ TRACE_AXE = trace.axe
 VCS_LOG = vcs.log
 
 # testparam
-NUM_INSTR_P ?= 32768
+NUM_INSTR_P ?= 16
 SEED_P ?= 1
 CCE_TRACE_P ?= 0
 AXE_TRACE_P ?= 0
@@ -65,12 +65,14 @@ dve:
 	dve -full64 -vpd vcdplus.vpd &
 
 clean:
-	rm -rf DVEfiles
 	rm -rf csrc
 	rm -rf simv.daidir simv.vdb stack.info.*
 	rm -f ucli.key vcdplus.vpd simv cm.log *.tar.gz $(VCS_LOG)
 	rm -f bsg_trace_rom_*.v bsg_trace_rom_*.tr $(TRACE_AXE)
 	rm -f testbench_postsed.v
+
+clean-dve:
+	rm -rf DVEfiles
 
 $(TRACE_AXE): $(VCS_LOG)
 	python $(BP_BE_DIR)/test/tb/bp_be_dcache/py/axe_trace_filter.py $(VCS_LOG) > $(TRACE_AXE)
