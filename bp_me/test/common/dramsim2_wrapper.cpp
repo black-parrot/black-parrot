@@ -111,7 +111,9 @@ extern "C" bool mem_write_req(uint64_t addr, svBitVecVal *data, int reqSize=0)
         dram.mem[addr+i*4+j] = (word >> j*8) & (0x000000FF);
       }
     }
-    return false;
+    mem->addTransaction(true, addr);
+    dram.addr_tracker[addr].push(scope);
+    dram.result_pending[scope] = false;
   }
   
   //printf("CACHELINE WRITE: %x\t", addr);
