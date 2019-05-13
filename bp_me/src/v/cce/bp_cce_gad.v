@@ -4,6 +4,11 @@
  *   bp_cce_gad.v
  *
  * Description:
+ *   The GAD (Generate Auxiliary Directory Information) module computes the values of a number of
+ *   control flags used by the CCE, based on the information stored in a way-group in the
+ *   coherence directory. The directory information is consolidated as it is read out of the
+ *   directory RAM into a few vectors that indicate for each LCE if there is a hit for the target
+ *   address, which way in the LCE the hit occurred in, and the coherence state of that entry.
  *
  */
 
@@ -32,6 +37,8 @@ module bp_cce_gad
    , input                                                 lru_dirty_flag_i
    , input                                                 lru_cached_excl_i
 
+   , output logic [lg_lce_assoc_lp-1:0]                    req_addr_way_o
+
    , output logic                                          transfer_flag_o
    , output logic [lg_num_lce_lp-1:0]                      transfer_lce_o
    , output logic [lg_lce_assoc_lp-1:0]                    transfer_way_o
@@ -58,7 +65,7 @@ module bp_cce_gad
 
   // Cache hit in E or M per LCE
   logic [num_lce_p-1:0] lce_cached_excl;
-  for (i = 0; i < num_lce_p; i=i+1) begin : lce_cached_excl_gen
+  for (genvar i = 0; i < num_lce_p; i=i+1) begin : lce_cached_excl_gen
     assign lce_cached_excl[i] = lce_cached[i] & ((sharers_coh_states_i[i] == e_MESI_E)
                                                  || (sharers_coh_states_i[i] == e_MESI_M));
   end
@@ -69,6 +76,10 @@ module bp_cce_gad
   assign req_lce_cached = lce_cached[req_lce_i];
   logic req_lce_cached_excl;
   assign req_lce_cached_excl = lce_cached_excl[req_lce_i];
+
+  assign req_addr_way_o = req_lce_cached
+    ? sharers_ways_i[req_lce_i]
+    : '0;
 
   logic other_lce_cached;
   assign other_lce_cached = |(lce_cached & ~lce_id_one_hot);
@@ -124,9 +135,9 @@ module bp_cce_gad
 
 
   // Debugging
+  /* TODO: cleanup and add synth guard
   always @(negedge clk_i) begin
     if (~reset_i & gad_v_i) begin
-    /*
 $info("@%0T LCE[%0d] addr[%H] req[%b] lruWay[%3H] lruDirty[%b]\n\
 \thit[%b] way[%0d] \n\
 \ttf[%b] ef[%b] rf[%b] uf[%b] if[%b]\n\
@@ -148,7 +159,6 @@ $info("@%0T LCE[%0d] addr[%H] req[%b] lruWay[%3H] lruDirty[%b]\n\
             , transfer_way_o
             , lce_id_one_hot
             );
-      */
       if (transfer_flag_o) begin
         assert(transfer_lce_v) else $error("Transfer LCE not valid, but hit detected");
       end
@@ -158,7 +168,7 @@ $info("@%0T LCE[%0d] addr[%H] req[%b] lruWay[%3H] lruDirty[%b]\n\
       if (transfer_flag_o) begin
         assert(!req_lce_cached) else $error("hit detected on transfer");
         if (req_lce_cached) begin
-          $info("lce_way_htis: %b\nlce_cached: %b\nlce_cached_excl: %b\nsharers_ways_i: %b", lce_way_hits, lce_cached, lce_cached_excl, sharers_ways_i);
+          $info("lce_way_hits: %b\nlce_cached: %b\nlce_cached_excl: %b\nsharers_ways_i: %b", lce_way_hits, lce_cached, lce_cached_excl, sharers_ways_i);
         end
         assert(!upgrade_flag_o) else $error("upgrade flag set on transfer");
       end
@@ -178,5 +188,6 @@ $info("@%0T LCE[%0d] addr[%H] req[%b] lruWay[%3H] lruDirty[%b]\n\
       end
     end
   end
+  */
 
 endmodule

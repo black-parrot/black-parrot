@@ -150,6 +150,14 @@ module bp_cce
   // Directory signals
   logic dir_pending_lo;
   logic dir_pending_v_lo;
+  logic dir_rd_done_lo;
+  logic dir_sharers_v_lo;
+  logic [num_lce_p-1:0] dir_sharers_hits_lo;
+  logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0] dir_sharers_ways_lo;
+  logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0] dir_sharers_coh_states_lo;
+  logic dir_lru_v_lo;
+  logic dir_lru_cached_excl_lo;
+  logic [tag_width_lp-1:0] dir_lru_tag_lo;
 
   logic [lg_num_way_groups_lp-1:0] dir_way_group_li;
   logic [lg_num_lce_lp-1:0] dir_lce_li;
@@ -158,6 +166,8 @@ module bp_cce
   logic [`bp_cce_coh_bits-1:0] dir_coh_state_li;
 
   // GAD signals
+  logic gad_v_li;
+
   logic [lg_lce_assoc_lp-1:0] gad_req_addr_way_lo;
   logic [lg_num_lce_lp-1:0] gad_transfer_lce_lo;
   logic [lg_lce_assoc_lp-1:0] gad_transfer_lce_way_lo;
@@ -167,11 +177,6 @@ module bp_cce
   logic gad_invalidate_flag_lo;
   logic gad_exclusive_flag_lo;
   logic gad_cached_flag_lo;
-  logic [tag_width_lp-1:0] gad_lru_tag_lo;
-  logic [num_lce_p-1:0] gad_sharers_hits_lo;
-  logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0] gad_sharers_ways_lo;
-  logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0] gad_sharers_coh_states_lo;
-  logic gad_v_li;
 
   // Register signals
   logic [lg_num_lce_lp-1:0] req_lce_r_lo;
@@ -191,6 +196,7 @@ module bp_cce
   logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0] sharers_coh_states_r_lo;
   logic [`bp_lce_cce_nc_req_size_width-1:0] nc_req_size_r_lo;
   logic [dword_width_p-1:0] nc_data_r_lo;
+  logic lru_cached_excl_r_lo;
 
   // LCE Command Queue
   logic [lg_num_lce_lp-1:0] lce_cmd_lce;
@@ -279,6 +285,7 @@ module bp_cce
   bp_cce_dir
     #(.num_way_groups_p(num_way_groups_lp)
       ,.num_lce_p(num_lce_p)
+      ,.num_cce_p(num_cce_p)
       ,.lce_assoc_p(lce_assoc_p)
       ,.tag_width_p(tag_width_lp)
       )
@@ -289,6 +296,7 @@ module bp_cce
       ,.way_group_i(dir_way_group_li)
       ,.lce_i(dir_lce_li)
       ,.way_i(dir_way_li)
+      ,.lru_way_i(lru_way_r_lo)
 
       ,.r_cmd_i(decoded_inst_lo.dir_r_cmd)
       ,.r_v_i(decoded_inst_lo.dir_r_v)
@@ -302,6 +310,18 @@ module bp_cce
 
       ,.pending_o(dir_pending_lo)
       ,.pending_v_o(dir_pending_v_lo)
+
+      ,.rd_done_o(dir_rd_done_lo)
+
+      ,.sharers_v_o(dir_sharers_v_lo)
+      ,.sharers_hits_o(dir_sharers_hits_lo)
+      ,.sharers_ways_o(dir_sharers_ways_lo)
+      ,.sharers_coh_states_o(dir_sharers_coh_states_lo)
+
+      ,.lru_v_o(dir_lru_v_lo)
+      ,.lru_cached_excl_o(dir_lru_cached_excl_lo)
+      ,.lru_tag_o(dir_lru_tag_lo)
+
       );
 
   // GAD logic - auxiliary directory information logic
@@ -316,14 +336,16 @@ module bp_cce
       ,.reset_i(reset_i)
       ,.gad_v_i(gad_v_li)
 
-      ,.sharers_hits_i(gad_sharers_hits_li)
-      ,.sharers_ways_i(gad_sharers_ways_li)
-      ,.sharers_coh_states_i(gad_sharers_coh_states_li)
+      ,.sharers_hits_i(sharers_hits_r_lo)
+      ,.sharers_ways_i(sharers_ways_r_lo)
+      ,.sharers_coh_states_i(sharers_coh_states_r_lo)
 
       ,.req_lce_i(req_lce_r_lo)
       ,.req_type_flag_i(flags_r_lo[e_flag_sel_rqf])
       ,.lru_dirty_flag_i(flags_r_lo[e_flag_sel_ldf])
-      ,.lru_cached_excl_i(lru_cached_excl_li)
+      ,.lru_cached_excl_i(lru_cached_excl_r_lo)
+
+      ,.req_addr_way_o(gad_req_addr_way_lo)
 
       ,.transfer_flag_o(gad_transfer_flag_lo)
       ,.transfer_lce_o(gad_transfer_lce_lo)
@@ -356,13 +378,18 @@ module bp_cce
       ,.mem_data_resp_i(mem_data_resp_i)
       ,.alu_res_i(alu_res_lo)
       ,.mov_src_i(mov_src)
+
       ,.dir_pending_o_i(dir_pending_lo)
       ,.dir_pending_v_o_i(dir_pending_v_lo)
-      ,.gad_sharers_hits_i(gad_sharers_hits_lo)
-      ,.gad_sharers_ways_i(gad_sharers_ways_lo)
-      ,.gad_sharers_coh_states_i(gad_sharers_coh_states_lo)
+      ,.dir_sharers_v_i(dir_sharers_v_lo)
+      ,.dir_sharers_hits_i(dir_sharers_hits_lo)
+      ,.dir_sharers_ways_i(dir_sharers_ways_lo)
+      ,.dir_sharers_coh_states_i(dir_sharers_coh_states_lo)
+      ,.dir_lru_v_i(dir_lru_v_lo)
+      ,.dir_lru_cached_excl_i(dir_lru_cached_excl_lo)
+      ,.dir_lru_tag_i(dir_lru_tag_lo)
+
       ,.gad_req_addr_way_i(gad_req_addr_way_lo)
-      ,.gad_lru_tag_i(gad_lru_tag_lo)
       ,.gad_transfer_lce_i(gad_transfer_lce_lo)
       ,.gad_transfer_lce_way_i(gad_transfer_lce_way_lo)
       ,.gad_transfer_flag_i(gad_transfer_flag_lo)
@@ -371,6 +398,7 @@ module bp_cce
       ,.gad_invalidate_flag_i(gad_invalidate_flag_lo)
       ,.gad_exclusive_flag_i(gad_exclusive_flag_lo)
       ,.gad_cached_flag_i(gad_cached_flag_lo)
+
       // register state outputs
       ,.req_lce_o(req_lce_r_lo)
       ,.req_addr_o(req_addr_r_lo)
@@ -389,6 +417,7 @@ module bp_cce
       ,.sharers_coh_states_o(sharers_coh_states_r_lo)
       ,.nc_req_size_o(nc_req_size_r_lo)
       ,.nc_data_o(nc_data_r_lo)
+      ,.lru_cached_excl_o(lru_cached_excl_r_lo)
       );
 
   // A localparams and signals for output queue message formation

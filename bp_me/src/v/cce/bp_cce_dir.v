@@ -34,7 +34,6 @@ module bp_cce_dir
     // Directory information widths
     , localparam entry_width_lp           = (tag_width_p+`bp_cce_coh_bits)
     , localparam tag_set_width_lp         = (entry_width_lp*lce_assoc_p)
-    , localparam way_group_width_lp       = (tag_set_width_lp*num_lce_p)
     // Directory physical organization
     , localparam dir_tag_sets_per_row_lp  = (num_lce_p/num_cce_p)
     , localparam lg_dir_tag_sets_per_row_lp = `BSG_SAFE_CLOG2(dir_tag_sets_per_row_lp)
@@ -75,6 +74,7 @@ module bp_cce_dir
 
    , output logic                                                 lru_v_o
    , output logic                                                 lru_cached_excl_o
+   , output logic [tag_width_p-1:0]                               lru_tag_o
 
   );
 
@@ -100,12 +100,11 @@ module bp_cce_dir
       if (pending_w_v) begin
         pending_bits_n[way_group_i] = pending_i;
       end
-    begin
+    end
   end
 
   assign pending_o = pending_bits_r[way_group_i];
   assign pending_v_o = pending_r_v;
-
 
   // Directory
   typedef struct packed {
@@ -137,7 +136,7 @@ module bp_cce_dir
 
   dir_state_e dir_state, dir_state_n;
 
-  logic [lg_dir_rows_per_wg_lp-1:0] dir_rd_cnt_r, dir_rd_cnt_n;
+  logic [lg_dir_rows_per_wg_lp:0] dir_rd_cnt_r, dir_rd_cnt_n;
   logic [lg_num_way_groups_lp-1:0]  way_group_r, way_group_n;
   logic [lg_num_lce_lp-1:0]         lce_r, lce_n;
   logic [lg_lce_assoc_lp-1:0]       way_r, way_n;
@@ -154,7 +153,7 @@ module bp_cce_dir
       lru_way_r <= '0;
       tag_r <= '0;
     end else begin
-      dir_state < = dir_state_n;
+      dir_state <= dir_state_n;
       dir_rd_cnt_r <= dir_rd_cnt_n;
       way_group_r <= way_group_n;
       lce_r <= lce_n;
@@ -199,7 +198,10 @@ module bp_cce_dir
   logic [`bp_cce_coh_bits-1:0] lru_coh_state;
   assign lru_coh_state = dir_row_entries[lce_r[0+:lg_dir_tag_sets_per_row_lp]][lru_way_r].state;
   assign lru_cached_excl_o = ((lru_coh_state == e_MESI_M) || (lru_coh_state == e_MESI_E));
-
+  assign lru_tag_o = dir_row_entries[lce_r[0+:lg_dir_tag_sets_per_row_lp]][lru_way_r].tag;
+  // TODO: lru outputs are valid if current directory row valid output contains tag set for lce_r
+  assign lru_v_o = (dir_state == READ || dir_state == FINISH_READ)
+                   && ((lce_r >> lg_dir_tag_sets_per_row_lp) < dir_rd_cnt_r);
 
   // Directory State Machine logic
   always_comb begin
@@ -227,7 +229,7 @@ module bp_cce_dir
 
     end else begin
       // hold state by default
-      dir_state_n = dir_state_r;
+      dir_state_n = dir_state;
       dir_rd_cnt_n = '0;
       dir_ram_w_mask = '0;
       dir_ram_w_data = '0;
@@ -344,12 +346,5 @@ module bp_cce_dir
       ,.v_i(dir_ram_v)
       ,.data_o(dir_row_lo)
       );
-
-
-  // sharers registers
-  logic [num_lce_p-1:0]                                 sharers_w_v;
-  logic [num_lce_p-1:0]                                 sharers_hits_r, sharers_hits_n;
-  logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0]            sharers_ways_r, sharers_ways_n;
-  logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0]           sharers_coh_states_r; sharers_coh_states_n;
 
 endmodule

@@ -29,7 +29,6 @@ module bp_cce_reg
       (paddr_width_p-lg_lce_sets_lp-lg_block_size_in_bytes_lp)
     , localparam entry_width_lp             = (tag_width_lp+`bp_cce_coh_bits)
     , localparam tag_set_width_lp           = (entry_width_lp*lce_assoc_p)
-    , localparam way_group_width_lp         = (tag_set_width_lp*num_lce_p)
 
     , localparam bp_lce_cce_req_width_lp=
       `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p)
@@ -57,17 +56,19 @@ module bp_cce_reg
    , input [`bp_cce_inst_gpr_width-1:0]                                    alu_res_i
    , input [`bp_cce_inst_gpr_width-1:0]                                    mov_src_i
 
-   , input [way_group_width_lp-1:0]                                        dir_way_group_o_i
-   , input                                                                 dir_way_group_v_o_i
    , input                                                                 dir_pending_o_i
    , input                                                                 dir_pending_v_o_i
 
-   , input [num_lce_p-1:0]                                                 gad_sharers_hits_i
-   , input [num_lce_p-1:0][lg_lce_assoc_lp-1:0]                            gad_sharers_ways_i
-   , input [num_lce_p-1:0][`bp_cce_coh_bits-1:0]                           gad_sharers_coh_states_i
+   , input                                                                 dir_sharers_v_i
+   , input [num_lce_p-1:0]                                                 dir_sharers_hits_i
+   , input [num_lce_p-1:0][lg_lce_assoc_lp-1:0]                            dir_sharers_ways_i
+   , input [num_lce_p-1:0][`bp_cce_coh_bits-1:0]                           dir_sharers_coh_states_i
+
+   , input                                                                 dir_lru_v_i
+   , input                                                                 dir_lru_cached_excl_i
+   , input [tag_width_lp-1:0]                                              dir_lru_tag_i
 
    , input [lg_lce_assoc_lp-1:0]                                           gad_req_addr_way_i
-   , input [tag_width_lp-1:0]                                              gad_lru_tag_i
    , input [lg_num_lce_lp-1:0]                                             gad_transfer_lce_i
    , input [lg_lce_assoc_lp-1:0]                                           gad_transfer_lce_way_i
    , input                                                                 gad_transfer_flag_i
@@ -100,14 +101,14 @@ module bp_cce_reg
 
    , output logic [`bp_lce_cce_ack_type_width-1:0]                         ack_type_o
 
-   , output logic [way_group_width_lp-1:0]                                 way_group_o
-
    , output logic [num_lce_p-1:0]                                          sharers_hits_o
    , output logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0]                     sharers_ways_o
    , output logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0]                    sharers_coh_states_o
 
    , output logic [`bp_lce_cce_nc_req_size_width-1:0]                      nc_req_size_o
    , output logic [lce_req_data_width_p-1:0]                               nc_data_o
+
+   , output logic                                                          lru_cached_excl_o
   );
 
   wire unused = dir_pending_v_o_i;
@@ -156,14 +157,14 @@ module bp_cce_reg
 
   logic [`bp_lce_cce_ack_type_width-1:0] ack_type_r, ack_type_n;
 
-  logic [way_group_width_lp-1:0] way_group_r, way_group_n;
-
   logic [num_lce_p-1:0] sharers_hits_r, sharers_hits_n;
   logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0] sharers_ways_r, sharers_ways_n;
   logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0] sharers_coh_states_r, sharers_coh_states_n;
 
   logic [`bp_lce_cce_nc_req_size_width-1:0] nc_req_size_r, nc_req_size_n;
   logic [lce_req_data_width_p-1:0] nc_data_r, nc_data_n;
+
+  logic lru_cached_excl_r, lru_cached_excl_n;
 
   always_comb
   begin
@@ -186,20 +187,14 @@ module bp_cce_reg
 
     ack_type_o = ack_type_r;
 
-    // Way group comes from synchronous RAM in directory, so forward new value to output when
-    // writing from directory output
-    if (dir_way_group_v_o_i) begin
-      way_group_o = way_group_n;
-    end else begin
-      way_group_o = way_group_r;
-    end
-
     sharers_hits_o = sharers_hits_r;
     sharers_ways_o = sharers_ways_r;
     sharers_coh_states_o = sharers_coh_states_r;
 
     nc_req_size_o = nc_req_size_r;
     nc_data_o = nc_data_r;
+
+    lru_cached_excl_o = lru_cached_excl_r;
   end
 
   int j;
@@ -263,14 +258,6 @@ module bp_cce_reg
         lru_way_n = '0;
       end
     endcase
-
-    // LRU Addr
-    if (decoded_inst_i.gad_op_w_v) begin
-      lru_addr_n = {gad_lru_tag_i, req_addr_r[lg_block_size_in_bytes_lp +: lg_lce_sets_lp],
-                    {lg_block_size_in_bytes_lp{1'b0}}};
-    end else begin
-      lru_addr_n = '0;
-    end
 
     // Transfer LCE and Transfer LCE Way
     case (decoded_inst_i.transfer_lce_sel)
@@ -416,13 +403,15 @@ module bp_cce_reg
     // Next Coh State
     next_coh_state_n = decoded_inst_i.imm[`bp_cce_coh_bits-1:0];
 
-    // Directory Way Group - comes from directory
-    way_group_n = dir_way_group_o_i;
+    // Sharers stuff - comes from directory
+    sharers_hits_n = dir_sharers_hits_i;
+    sharers_ways_n = dir_sharers_ways_i;
+    sharers_coh_states_n = dir_sharers_coh_states_i;
 
-    // Sharers stuff - comes from GAD
-    sharers_hits_n = gad_sharers_hits_i;
-    sharers_ways_n = gad_sharers_ways_i;
-    sharers_coh_states_n = gad_sharers_coh_states_i;
+    lru_cached_excl_n = dir_lru_cached_excl_i;
+    // LRU Addr
+    lru_addr_n = {dir_lru_tag_i, req_addr_r[lg_block_size_in_bytes_lp +: lg_lce_sets_lp],
+                  {lg_block_size_in_bytes_lp{1'b0}}};
 
     // Uncached data
     if (decoded_inst_i.nc_data_lce_req) begin
@@ -450,7 +439,6 @@ module bp_cce_reg
       flags_r <= '0;
       gpr_r <= '0;
       ack_type_r <= '0;
-      way_group_r <= '0;
       sharers_hits_r <= '0;
       sharers_ways_r <= '0;
       sharers_coh_states_r <= '0;
@@ -464,9 +452,6 @@ module bp_cce_reg
       end
       if (decoded_inst_i.lru_way_w_v) begin
         lru_way_r <= lru_way_n;
-      end
-      if (decoded_inst_i.gad_op_w_v) begin
-        lru_addr_r <= lru_addr_n;
       end
       if (decoded_inst_i.transfer_lce_w_v) begin
         transfer_lce_r <= transfer_lce_n;
@@ -495,16 +480,16 @@ module bp_cce_reg
         next_coh_state_r <= next_coh_state_n;
       end
 
-      // Dir Way Group
-      if (dir_way_group_v_o_i) begin
-        way_group_r <= way_group_n;
-      end
-
       // Sharers Info
-      if (decoded_inst_i.gad_op_w_v) begin
+      if (dir_sharers_v_i) begin
         sharers_hits_r <= sharers_hits_n;
         sharers_ways_r <= sharers_ways_n;
         sharers_coh_states_r <= sharers_coh_states_n;
+      end
+
+      if (dir_lru_v_i) begin
+        lru_cached_excl_r <= lru_cached_excl_n;
+        lru_addr_r <= lru_addr_n;
       end
 
       // Uncached data and request size
