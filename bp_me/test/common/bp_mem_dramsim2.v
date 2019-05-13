@@ -103,26 +103,6 @@ module bp_mem_dramsim2
         ? {32'('0),mem_nc_data[(byte_select*8)+:32]}
         : mem_nc_data;
 
-  // write shift - only set for non-cacheable writes
-  int wr_word_select;
-  assign wr_word_select = mem_data_cmd_i_s.addr[byte_offset_bits_lp+:word_select_bits_lp];
-
-  int wr_byte_select;
-  assign wr_byte_select = mem_data_cmd_i_s.addr[0+:byte_offset_bits_lp];
-
-  int wr_shift;
-  assign wr_shift = ((wr_word_select*lce_req_data_width_p) + (wr_byte_select*8));
-
-  logic [block_size_in_bits_lp-1:0] wr_mask;
-  assign wr_mask = (mem_data_cmd_i_s.nc_size == e_lce_nc_req_1)
-    ? {(block_size_in_bits_lp-8)'('0),8'('1)} << wr_shift
-    : (mem_data_cmd_i_s.nc_size == e_lce_nc_req_2)
-      ? {(block_size_in_bits_lp-16)'('0),16'('1)} << wr_shift
-      : (mem_data_cmd_i_s.nc_size == e_lce_nc_req_4)
-        ? {(block_size_in_bits_lp-32)'('0),32'('1)} << wr_shift
-        : {(block_size_in_bits_lp-64)'('0),64'('1)} << wr_shift;
-
-
   typedef enum logic [2:0] {
     RESET
     ,READY
