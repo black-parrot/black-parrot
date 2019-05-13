@@ -49,9 +49,7 @@ module wrapper
    , output [num_cce_p-1:0]                                   mem_data_cmd_v_o
    , input [num_cce_p-1:0]                                    mem_data_cmd_yumi_i
 
-   , input                                                    timer_int_i
-   , input                                                    software_int_i
-   , input                                                    external_int_i
+   , input [num_core_p-1:0]                                   external_irq_i
 
    // Commit tracer for trace replay
    , output [num_core_p-1:0]                                  cmt_rd_w_v_o

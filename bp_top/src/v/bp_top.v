@@ -36,14 +36,21 @@ module bp_top
 
    , localparam lce_cce_data_resp_num_flits_lp = bp_data_resp_num_flit_gp
    , localparam lce_cce_data_resp_len_width_lp = `BSG_SAFE_CLOG2(lce_cce_data_resp_num_flits_lp)
-   , localparam lce_cce_data_resp_packet_width_lp = lce_cce_data_resp_width_lp+x_cord_width_p+y_cord_width_p+lce_cce_data_resp_len_width_lp
-   , localparam lce_cce_data_resp_router_width_lp = (lce_cce_data_resp_packet_width_lp/lce_cce_data_resp_num_flits_lp) + ((lce_cce_data_resp_packet_width_lp%lce_cce_data_resp_num_flits_lp) == 0 ? 0 : 1)
-   , localparam lce_cce_data_resp_payload_offset_lp = (x_cord_width_p+y_cord_width_p+lce_cce_data_resp_len_width_lp)
+   , localparam lce_cce_data_resp_packet_width_lp = 
+       lce_cce_data_resp_width_lp+x_cord_width_p+y_cord_width_p+lce_cce_data_resp_len_width_lp
+   , localparam lce_cce_data_resp_router_width_lp = 
+       (lce_cce_data_resp_packet_width_lp/lce_cce_data_resp_num_flits_lp) 
+       + ((lce_cce_data_resp_packet_width_lp%lce_cce_data_resp_num_flits_lp) == 0 ? 0 : 1)
+   , localparam lce_cce_data_resp_payload_offset_lp = 
+       (x_cord_width_p+y_cord_width_p+lce_cce_data_resp_len_width_lp)
 
    , localparam lce_data_cmd_num_flits_lp = bp_data_cmd_num_flit_gp
    , localparam lce_data_cmd_len_width_lp = `BSG_SAFE_CLOG2(lce_data_cmd_num_flits_lp)
-   , localparam lce_data_cmd_packet_width_lp = lce_data_cmd_width_lp+x_cord_width_p+y_cord_width_p+lce_data_cmd_len_width_lp
-   , localparam lce_data_cmd_router_width_lp = (lce_data_cmd_packet_width_lp/lce_data_cmd_num_flits_lp) + ((lce_data_cmd_packet_width_lp%lce_data_cmd_num_flits_lp) == 0 ? 0 : 1)
+   , localparam lce_data_cmd_packet_width_lp = 
+       lce_data_cmd_width_lp+x_cord_width_p+y_cord_width_p+lce_data_cmd_len_width_lp
+   , localparam lce_data_cmd_router_width_lp = 
+       (lce_data_cmd_packet_width_lp/lce_data_cmd_num_flits_lp) 
+       + ((lce_data_cmd_packet_width_lp%lce_data_cmd_num_flits_lp) == 0 ? 0 : 1)
    , localparam lce_data_cmd_payload_offset_lp = (x_cord_width_p+y_cord_width_p+lce_data_cmd_len_width_lp)
    )
   (input                                                      clk_i
@@ -78,9 +85,7 @@ module bp_top
    , output [num_cce_p-1:0]                                   mem_data_cmd_v_o
    , input [num_cce_p-1:0]                                    mem_data_cmd_yumi_i
 
-   , input                                                    timer_int_i
-   , input                                                    software_int_i
-   , input                                                    external_int_i
+   , input [num_core_p-1:0]                                   external_irq_i
 
    // Commit tracer for trace replay
    , output [num_core_p-1:0]                                  cmt_rd_w_v_o
@@ -92,6 +97,7 @@ module bp_top
   );
 
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
+`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 `declare_bp_lce_cce_if(num_cce_p
                        ,num_lce_p
                        ,paddr_width_p
@@ -109,6 +115,20 @@ logic [num_core_p:0][E:W] lce_data_resp_v_lo, lce_data_resp_ready_li, lce_data_r
 
 logic [num_core_p:0][E:W][lce_data_cmd_router_width_lp-1:0] lce_data_cmd_lo, lce_data_cmd_li;
 logic [num_core_p:0][E:W] lce_data_cmd_v_lo, lce_data_cmd_ready_li, lce_data_cmd_v_li, lce_data_cmd_ready_lo;
+
+bp_mem_cce_resp_s      [num_cce_p-1:0] me_mem_resp_li;
+logic                  [num_cce_p-1:0] me_mem_resp_v_li, me_mem_resp_ready_lo;
+
+bp_mem_cce_data_resp_s [num_cce_p-1:0] me_mem_data_resp_li;
+logic                  [num_cce_p-1:0] me_mem_data_resp_v_li, me_mem_data_resp_ready_lo;
+
+bp_cce_mem_cmd_s       [num_cce_p-1:0] me_mem_cmd_lo;
+logic                  [num_cce_p-1:0] me_mem_cmd_v_lo, me_mem_cmd_yumi_li;
+
+bp_cce_mem_data_cmd_s  [num_cce_p-1:0] me_mem_data_cmd_lo;
+logic                  [num_cce_p-1:0] me_mem_data_cmd_v_lo, me_mem_data_cmd_yumi_li;
+
+logic [num_core_p-1:0] timer_irq_lo, soft_irq_lo;
 
 for(genvar i = 0; i <= num_core_p; i++) 
   begin : rof1
@@ -178,7 +198,7 @@ for(genvar i = 0; i <= num_core_p; i++)
       end
 
   if (i < num_core_p)
-    begin 
+    begin : fi1
       bp_tile
        #(.cfg_p(cfg_p)
          ,.trace_p(trace_p)
@@ -228,25 +248,25 @@ for(genvar i = 0; i <= num_core_p; i++)
          ,.lce_data_cmd_v_o(lce_data_cmd_v_lo[i+1])
          ,.lce_data_cmd_ready_i(lce_data_cmd_ready_li[i+1])
 
-         ,.mem_resp_i(mem_resp_i[i])
-         ,.mem_resp_v_i(mem_resp_v_i[i])
-         ,.mem_resp_ready_o(mem_resp_ready_o[i])
+         ,.mem_resp_i(me_mem_resp_li[i])
+         ,.mem_resp_v_i(me_mem_resp_v_li[i])
+         ,.mem_resp_ready_o(me_mem_resp_ready_lo[i])
 
-         ,.mem_data_resp_i(mem_data_resp_i[i])
-         ,.mem_data_resp_v_i(mem_data_resp_v_i[i])
-         ,.mem_data_resp_ready_o(mem_data_resp_ready_o[i])
+         ,.mem_data_resp_i(me_mem_data_resp_li[i])
+         ,.mem_data_resp_v_i(me_mem_data_resp_v_li[i])
+         ,.mem_data_resp_ready_o(me_mem_data_resp_ready_lo[i])
 
-         ,.mem_cmd_o(mem_cmd_o[i])
-         ,.mem_cmd_v_o(mem_cmd_v_o[i])
-         ,.mem_cmd_yumi_i(mem_cmd_yumi_i[i])
+         ,.mem_cmd_o(me_mem_cmd_lo[i])
+         ,.mem_cmd_v_o(me_mem_cmd_v_lo[i])
+         ,.mem_cmd_yumi_i(me_mem_cmd_yumi_li[i])
 
-         ,.mem_data_cmd_o(mem_data_cmd_o[i])
-         ,.mem_data_cmd_v_o(mem_data_cmd_v_o[i])
-         ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi_i[i])
+         ,.mem_data_cmd_o(me_mem_data_cmd_lo[i])
+         ,.mem_data_cmd_v_o(me_mem_data_cmd_v_lo[i])
+         ,.mem_data_cmd_yumi_i(me_mem_data_cmd_yumi_li[i])
 
-         ,.timer_int_i(timer_int_i)
-         ,.software_int_i(software_int_i)
-         ,.external_int_i(external_int_i)
+         ,.timer_int_i(timer_irq_lo[i])
+         ,.software_int_i(soft_irq_lo[i])
+         ,.external_int_i(external_irq_i[i])
 
          ,.cmt_rd_w_v_o(cmt_rd_w_v_o[i])
          ,.cmt_rd_addr_o(cmt_rd_addr_o[i])
@@ -255,8 +275,59 @@ for(genvar i = 0; i <= num_core_p; i++)
          ,.cmt_mem_op_o(cmt_mem_op_o[i])
          ,.cmt_data_o(cmt_data_o[i])
          );
-    end
+    end // fi1
   end // rof1
+
+    bp_clint
+     #(.num_cce_p(num_cce_p)
+       ,.paddr_width_p(paddr_width_p)
+       ,.num_lce_p(num_lce_p)
+       ,.block_size_in_bits_p(cce_block_width_p)
+       ,.lce_assoc_p(lce_assoc_p)
+       )
+     clint
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
+
+       ,.rtc_i(clk_i) // We use the regular clock as the real time clock, here
+
+       // ME side
+       ,.mem_cmd_i(me_mem_cmd_lo)
+       ,.mem_cmd_v_i(me_mem_cmd_v_lo)
+       ,.mem_cmd_yumi_o(me_mem_cmd_yumi_li)
+
+       ,.mem_data_cmd_i(me_mem_data_cmd_lo)
+       ,.mem_data_cmd_v_i(me_mem_data_cmd_v_lo)
+       ,.mem_data_cmd_yumi_o(me_mem_data_cmd_yumi_li)
+
+       ,.mem_resp_o(me_mem_resp_li)
+       ,.mem_resp_v_o(me_mem_resp_v_li)
+       ,.mem_resp_ready_i(me_mem_resp_ready_lo)
+
+       ,.mem_data_resp_o(me_mem_data_resp_li)
+       ,.mem_data_resp_v_o(me_mem_data_resp_v_li)
+       ,.mem_data_resp_ready_i(me_mem_data_resp_ready_lo)
+
+       // Mem side
+       ,.mem_cmd_o(mem_cmd_o)
+       ,.mem_cmd_v_o(mem_cmd_v_o)
+       ,.mem_cmd_yumi_i(mem_cmd_yumi_i)
+
+       ,.mem_data_cmd_o(mem_data_cmd_o)
+       ,.mem_data_cmd_v_o(mem_data_cmd_v_o)
+       ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi_i)
+
+       ,.mem_resp_i(mem_resp_i)
+       ,.mem_resp_v_i(mem_resp_v_i)
+       ,.mem_resp_ready_o(mem_resp_ready_o)
+
+       ,.mem_data_resp_i(mem_data_resp_i)
+       ,.mem_data_resp_v_i(mem_data_resp_v_i)
+       ,.mem_data_resp_ready_o(mem_data_resp_ready_o)
+
+       ,.timer_irq_o(timer_irq_lo)
+       ,.soft_irq_o(soft_irq_lo)
+       );
 
 endmodule : bp_top
 

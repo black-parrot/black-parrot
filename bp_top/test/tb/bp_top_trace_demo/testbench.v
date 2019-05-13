@@ -52,7 +52,6 @@ logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]          cce_inst_boot_rom_data;
 
 logic [num_core_p-1:0][trace_ring_width_p-1:0] tr_data_i;
 logic [num_core_p-1:0] tr_v_i, tr_ready_o;
-logic [num_core_p-1:0] test_done;
 
 logic [num_core_p-1:0][trace_rom_addr_width_p-1:0]  tr_rom_addr_i;
 logic [num_core_p-1:0][trace_rom_data_width_lp-1:0] tr_rom_data_o;
@@ -112,9 +111,7 @@ logic [num_cce_p-1:0] mem_data_cmd_v, mem_data_cmd_yumi;
       ,.mem_data_cmd_v_o(mem_data_cmd_v)
       ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi)
 
-      ,.timer_int_i(1'b0)
-      ,.software_int_i(1'b0)
-      ,.external_int_i(1'b0)
+      ,.external_irq_i('0)
 
       ,.cmt_rd_w_v_o(cmt_rd_w_v)
       ,.cmt_rd_addr_o(cmt_rd_addr)
@@ -123,6 +120,59 @@ logic [num_cce_p-1:0] mem_data_cmd_v, mem_data_cmd_yumi;
       ,.cmt_mem_op_o(cmt_mem_op)
       ,.cmt_data_o(cmt_data)
       );
+
+bind bp_be_top
+  bp_be_nonsynth_tracer
+   #(.cfg_p(cfg_p))
+   tracer
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.mhartid_i(be_calculator.proc_cfg.core_id)
+
+     ,.issue_pkt_i(be_calculator.issue_pkt)
+     ,.issue_pkt_v_i(be_calculator.issue_pkt_v_i)
+
+     ,.fe_nop_v_i(be_calculator.fe_nop_v)
+     ,.be_nop_v_i(be_calculator.be_nop_v)
+     ,.me_nop_v_i(be_calculator.me_nop_v)
+     ,.dispatch_pkt_i(be_calculator.dispatch_pkt)
+
+     ,.ex1_br_tgt_i(be_calculator.calc_status.int1_br_tgt)
+     ,.ex1_btaken_i(be_calculator.calc_status.int1_btaken)
+     ,.iwb_result_i(be_calculator.comp_stage_n[3])
+     ,.fwb_result_i(be_calculator.comp_stage_n[4])
+
+     ,.cmt_trace_exc_i(be_calculator.exc_stage_n[1+:5])
+
+     ,.trap_v_i(be_mem.csr.trap_v_o)
+     ,.mtvec_i(be_mem.csr.mtvec_n)
+     ,.mtval_i(be_mem.csr.mtval_n)
+     ,.ret_v_i(be_mem.csr.ret_v_o)
+     ,.mepc_i(be_mem.csr.mepc_n)
+     ,.mcause_i(be_mem.csr.mcause_n)
+
+     ,.priv_mode_i(be_mem.csr.priv_mode_n)
+     ,.mpp_i(be_mem.csr.mstatus_n.mpp)
+     );
+
+bind bp_be_top
+  bp_be_nonsynth_perf
+   #(.cfg_p(cfg_p))
+   perf
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.fe_nop_i(be_calculator.exc_stage_r[2].fe_nop_v)
+     ,.be_nop_i(be_calculator.exc_stage_r[2].be_nop_v)
+     ,.me_nop_i(be_calculator.exc_stage_r[2].me_nop_v)
+     ,.poison_i(be_calculator.exc_stage_r[2].poison_v)
+     ,.roll_i(be_calculator.exc_stage_r[2].roll_v)
+     ,.instr_cmt_i(be_calculator.calc_status.instr_cmt_v)
+
+     ,.program_pass_i(be_mem.csr.program_pass)
+     ,.program_fail_i(be_mem.csr.program_fail)
+     );
 
    for (genvar i = 0; i < num_cce_p; i++) 
      begin : rof1
@@ -246,7 +296,8 @@ always_ff @(posedge clk_i)
 
 always_ff @(posedge clk_i)
   begin
-    if (&test_done)
+    // TODO: Detect end of test
+    if (0)
       begin
         $display("Test PASSed! Clocks: %d Instr: %d mIPC: %d", clock_cnt, instr_cnt, (1000*instr_cnt) / clock_cnt);
         $finish(0);
