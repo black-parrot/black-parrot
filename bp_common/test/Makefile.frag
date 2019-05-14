@@ -16,10 +16,10 @@ RV64_BENCHMARKS = \
 	dhrystone \
   median   \
   multiply \
-  qsort    \
-  rsort    \
   towers   \
-  vvadd
+  vvadd    \
+  qsort    \
+  rsort
 
 RV64_P_TESTS = \
   rv64ui-p-add     \
