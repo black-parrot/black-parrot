@@ -22,7 +22,7 @@ else ifneq (,$(findstring aoi,$(shell hostname)))
   include $(BSG_CADENV_DIR)/cadenv.mk
 else
   BSG_CADENV ?= 0
-  $(info Not on xor...VCS and DC not supported)
+  $(info Not on xor or aoi...VCS and DC not supported)
 endif
 
 ## Override tool paths if needed
