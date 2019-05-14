@@ -11,7 +11,7 @@ DUT_PARAMS= \
            -pvalue+lce_sets_p=64                  \
            -pvalue+lce_assoc_p=8                  \
            -pvalue+cce_block_size_in_bytes_p=64   \
-           "-pvalue+bp_first_pc_p=32\'h80000124"
+           "-pvalue+bp_first_pc_p=32\'h80000108"
 
 TB_PARAMS= \
            -pvalue+core_els_p=1                   \

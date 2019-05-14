@@ -32,7 +32,9 @@
     logic [rv64_reg_addr_width_gp-1:0]       rs1_addr;                                             \
     logic [rv64_reg_addr_width_gp-1:0]       rs2_addr;                                             \
     logic [rv64_reg_data_width_gp-1:0]       imm;                                                  \
-    logic                                    iscompressed;                                          \
+    logic                                    iscompressed;                                         \
+    logic                                    isfirstinstr;                                         \
+    logic                                    hastwoinstrs;                                         \
    } bp_be_issue_pkt_s;                                                                            \
                                                                                                    \
   typedef struct packed                                                                            \
@@ -45,6 +47,7 @@
     logic [rv64_reg_data_width_gp-1:0]       rs1;                                                  \
     logic [rv64_reg_data_width_gp-1:0]       rs2;                                                  \
     logic [rv64_reg_data_width_gp-1:0]       imm;                                                  \
+    logic                                    iscompressed;                                         \
    } bp_be_dispatch_pkt_s;                                                                         \
                                                                                                    \
   typedef struct packed                                                                            \
@@ -62,6 +65,9 @@
     logic                              irf_w_v;                                                    \
     logic                              frf_w_v;                                                    \
     logic [rv64_reg_addr_width_gp-1:0] rd_addr;                                                    \
+    logic                              isfirstinstr;                                               \
+    logic                              iscompressed;                                               \
+    logic                              hastwoinstrs;                                               \
   }  bp_be_pipe_stage_reg_s;                                                                       \
                                                                                                    \
   typedef struct packed                                                                            \
@@ -109,7 +115,9 @@
     logic                                   mem3_ret_v;                                            \
                                                                                                    \
     logic                                   instr_cmt_v;                                           \
-    logic                                   iscompressed;                                           \
+    logic                                   iscompressed;                                          \
+    logic                                   isfirstinstr;                                          \
+    logic                                   hastwoinstrs;                                          \
   }  bp_be_calc_status_s;                                                                          \
 
 /* Declare width macros so that clients can use structs in ports before struct declaration
@@ -128,7 +136,7 @@
   (`bp_be_instr_metadata_width(vaddr_width_mp)                                                     \
    + branch_metadata_fwd_width_mp                                                                  \
    + rv64_instr_width_gp                                                                           \
-   + 5                                                                                             \
+   + 7                                                                                             \
    + 2 * rv64_reg_addr_width_gp                                                                    \
    + rv64_reg_data_width_gp                                                                        \
    )                                                                                               
@@ -139,12 +147,13 @@
    + rv64_instr_width_gp                                                                           \
    + 3 * rv64_reg_data_width_gp                                                                    \
    + `bp_be_decode_width                                                                           \
+   + 1                                                                                             \
    )                                                                                               
 
 `define bp_be_pipe_stage_reg_width(vaddr_width_mp)                                                 \
   (`bp_be_instr_metadata_width(vaddr_width_mp)                                                     \
    + rv64_instr_width_gp                                                                           \
-   + 8                                                                                             \
+   + 11                                                                                            \
    + rv64_reg_addr_width_gp                                                                        \
    )
 
@@ -163,7 +172,7 @@
    + 5 * `bp_be_dep_status_width                                                                   \
    + 1                                                                                             \
    + rv64_eaddr_width_gp                                                                           \
-   + 5                                                                                             \
+   + 7                                                                                             \
    )                                                                                               
 
 `endif

@@ -524,7 +524,8 @@ always_comb
     dispatch_pkt.rs1                 = bypass_rs1;
     dispatch_pkt.rs2                 = bypass_rs2;
     dispatch_pkt.imm                 = issue_pkt_r.imm;
-
+    dispatch_pkt.iscompressed        = issue_pkt_r.iscompressed;
+ 
     unique if (fe_nop_v) dispatch_pkt.decode = fe_nop;
       else if (be_nop_v) dispatch_pkt.decode = be_nop;
       else if (me_nop_v) dispatch_pkt.decode = me_nop;
@@ -542,7 +543,9 @@ always_comb
     calc_stage_isd.irf_w_v        = dispatch_pkt.decode.irf_w_v;
     calc_stage_isd.frf_w_v        = dispatch_pkt.decode.frf_w_v;
     calc_stage_isd.rd_addr        = dispatch_pkt.decode.rd_addr;
-
+    calc_stage_isd.iscompressed   = issue_pkt_r.iscompressed; //this info is coming from the decoder we have in aligner/comp decoder, so we dont need .decode.....
+    calc_stage_isd.isfirstinstr   = issue_pkt_r.isfirstinstr;
+    calc_stage_isd.hastwoinstrs   = issue_pkt_r.hastwoinstrs; 
     // Calculator status ISD stage
     calc_status.isd_v        = issue_pkt_v_r;
     calc_status.isd_irs1_v   = issue_pkt_r.irs1_v;
@@ -552,7 +555,8 @@ always_comb
     calc_status.isd_frs2_v   = issue_pkt_r.frs2_v;
     calc_status.isd_rs2_addr = issue_pkt_r.rs2_addr;
     //zazad begins
-    calc_status.iscompressed = issue_pkt_r.iscompressed; 
+    //calc_status.iscompressed   = issue_pkt_r.iscompressed;
+    //calc_status.issecondcommit = issue_pkt_r.issecondcommit;
     //zazad ends
     // Calculator status EX1 information
     calc_status.int1_v                   = dispatch_pkt_r.decode.pipe_int_v;
@@ -564,7 +568,7 @@ always_comb
                                            | dispatch_pkt_r.decode.jmp_v;
     calc_status.ex1_v                    = dispatch_pkt_r.decode.instr_v;
     calc_status.ex1_pc                   = dispatch_pkt_r.instr_metadata.pc;
-
+    calc_status.iscompressed             = dispatch_pkt_r.iscompressed;//dispatch_pkt.decode.iscompressed;//should it be issue_pkt_r==dispatch_pkt or dispatch_pkt_r  investigate
     // Dependency information for pipelines
     for (integer i = 0; i < pipe_stage_els_lp; i++) 
       begin : dep_status
@@ -601,7 +605,7 @@ always_comb
     calc_status.mem3_cache_miss_v = cache_miss_mem3 & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v; 
     calc_status.mem3_exception_v  = (illegal_csr_mem3 | exc_stage_r[2].illegal_instr_v) & calc_stage_r[2].pipe_mem_v & ~exc_stage_r[2].poison_v & ~exc_stage_r[2].roll_v;
     calc_status.mem3_ret_v        = exc_stage_r[2].ret_instr_v & ~exc_stage_r[2].poison_v;
-    calc_status.instr_cmt_v       = calc_stage_r[2].instr_v & ~exc_stage_r[2].roll_v;
+    calc_status.instr_cmt_v       = calc_stage_r[2].instr_v & ~exc_stage_r[2].roll_v & ~(calc_stage_r[2].isfirstinstr & calc_stage_r[2].hastwoinstrs);
           
     // Slicing the completion pipe for Forwarding information
     for (integer i = 1; i < pipe_stage_els_lp; i++) 

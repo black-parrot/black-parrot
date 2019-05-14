@@ -51,9 +51,9 @@ module bsg_fifo_1r1w_rolly
                          : (ptr_width_lp'(0));
 
     assign empty = (rptr_r[0+:ptr_width_lp] == wptr_r[0+:ptr_width_lp]) 
-                   & (rptr_r[ptr_width_lp] == wptr_r[ptr_width_lp]);
+                   & (rptr_r[ptr_width_lp] == wptr_r[ptr_width_lp])  ;
     assign full = (cptr_r[0+:ptr_width_lp] == wptr_r[0+:ptr_width_lp]) 
-                  & (cptr_r[ptr_width_lp] != wptr_r[ptr_width_lp]);
+                  & (cptr_r[ptr_width_lp] != wptr_r[ptr_width_lp]) & ~empty;
 
     if(ready_THEN_valid_p == 1) begin
         assign enq = v_i;

@@ -168,7 +168,7 @@ bsg_mux
 
 logic                   prev_iscomoressed;
    
-bsg_dff_reset_en
+/*bsg_dff_reset_en
    #(.width_p(1))
     iscompressed_reg
         (.clk_i(clk_i)
@@ -178,8 +178,8 @@ bsg_dff_reset_en
             ,.data_i(calc_status.iscompressed)
             ,.data_o(prev_iscomoressed)
          );
-   
-assign npc_plus4 = /*calc_status.iscompressed*/ prev_iscomoressed  ? npc_r + eaddr_width_lp'(2) : npc_r + eaddr_width_lp'(4);
+  */ 
+assign npc_plus4 = /*calc_status.iscompressed*/ calc_status.iscompressed  ? npc_r + eaddr_width_lp'(2) : npc_r + eaddr_width_lp'(4);
 assign btaken_v  = calc_status.int1_v & calc_status.int1_btaken;
 bsg_mux 
  #(.width_p(eaddr_width_lp)
@@ -233,7 +233,7 @@ bsg_dff_reset_en
 // Generate control signals
 assign expected_npc_o = npc_r;
 // Increment the checkpoint if there's a committing instruction
-assign chk_dequeue_fe_o = ~calc_status.mem3_cache_miss_v & calc_status.instr_cmt_v;
+   assign chk_dequeue_fe_o = ~calc_status.mem3_cache_miss_v & calc_status.instr_cmt_v /*& ~calc_status.issecondcommit*/; //cmt has ~isfirstinstr 
 // Flush the FE queue if there's a pc redirect
 assign chk_flush_fe_o = fe_cmd_v & (fe_cmd.opcode == e_op_pc_redirection);
 // Rollback the FE queue on a cache miss
@@ -274,6 +274,6 @@ always_comb
       end
   end // block: fe_cmd_adapter
 
-assign pc_redirect_o = (fe_cmd.opcode == e_op_pc_redirection);
+assign pc_redirect_o = (fe_cmd.opcode == e_op_pc_redirection) && fe_cmd_v;
    
 endmodule : bp_be_director

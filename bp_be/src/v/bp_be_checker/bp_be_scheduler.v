@@ -155,7 +155,10 @@ assign issue_pkt.instr_metadata      = fe_instr_metadata;
 assign issue_pkt.branch_metadata_fwd = fe_fetch.branch_metadata_fwd;
 assign issue_pkt.instr               = fe_fetch_instr;
 //zazad begins
-assign issue_pkt.iscompressed               = fe_fetch.iscompressed;   
+assign issue_pkt.iscompressed        = fe_fetch.iscompressed;
+assign issue_pkt.isfirstinstr        = fe_fetch.isfirstinstr;
+assign issue_pkt.hastwoinstrs        = fe_fetch.hastwoinstrs;
+   
 //zazad ends
 always_comb 
   begin : fe_queue_extract

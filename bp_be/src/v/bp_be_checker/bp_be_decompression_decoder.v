@@ -320,12 +320,12 @@ always_comb begin
                       instr_d            = format_j;
              
                   end
-         `C_JAL:
+         /*`C_JAL:
                   begin
                       format_cj          = instr_c;
                       instr_d_jal        = format_j;
                       instr_d            = format_j;
-                  end 
+                  end */ //is an RV32C-only instruction  
          `C_JR,`C_JALR,`C_MV,`C_ADD :
                   begin
                      if      (instr_c[12] == 1'b0 && instr_c[11:7] != 5'd0 && instr_c[6:2] == 5'd0) //JR
@@ -343,7 +343,7 @@ always_comb begin
                           format_cr          = instr_c;
                           instr_d            = format_i;
                        end
-                     else if (instr_c[12] == 1'b1 && instr_c[11:7] != 5'd0 && instr_c[6:2] == 5'd0) //ADD
+                     else if (instr_c[12] == 1'b1 && instr_c[11:7] != 5'd0 && instr_c[6:2] != 5'd0) //ADD
                        begin
                           format_cr          = instr_c;
                           instr_d            = format_r;
@@ -650,7 +650,7 @@ always_comb begin
                       format_j.rd         = `x0;
                       format_j.op         = 7'b1101111;
          end // case: `C_J
-         `C_JAL: begin
+         /*`C_JAL: begin
                       format_j.imm1       = 1'b0;
                       format_j.imm2[0]    = format_cj.jump_target[6];
                       format_j.imm2[1]    = format_cj.jump_target[10];
@@ -664,7 +664,7 @@ always_comb begin
                       format_j.imm4[7]    = format_cj.jump_target[7];
                       format_j.rd         = `x1;
                       format_j.op         = 7'b1101111;
-         end // case: `C_JAL
+         end*/ // case: `C_JAL
 //         `C_JR, `C_JALR: begin
 
          `C_JR,`C_JALR,`C_MV,`C_ADD : begin
@@ -693,7 +693,7 @@ always_comb begin
                            format_i.rd         = `x0;
                            format_i.op         = 7'b1100111;
                         end
-                      else if (instr_c[12] == 1'b1 && instr_c[11:7] != 5'd0 && instr_c[6:2] == 5'd0) //ADD
+                      else if (instr_c[12] == 1'b1 && instr_c[11:7] != 5'd0 && instr_c[6:2] != 5'd0) //ADD
                         begin
                            format_r.funct7       = 7'd0;
                            format_r.rs2          = format_cr.rs2;
@@ -734,7 +734,7 @@ always_comb begin
                       format_b.op         = 7'b1100011;      
          end // case: `C_BNEZ
          `C_LI: begin
-                      format_i.imm[11:6]  = 6'd0;
+                      format_i.imm[11:6]  = {6{format_ci.imm1}};
                       format_i.imm[5]     = format_ci.imm1;
                       format_i.imm[4:0]   = format_ci.imm2;
                       format_i.rs1        = `x0;
@@ -759,7 +759,7 @@ always_comb begin
                       format_i.op         = 7'b0010011;
          end
          `C_ADDIW: begin
-                      format_i.imm[11:6]  = 6'd0;
+                      format_i.imm[11:6]  = {6{format_ci.imm1}};
                       format_i.imm[5]     = format_ci.imm1;
                       format_i.imm[4:0]   = format_ci.imm2[4:0];
                       format_i.rs1        = format_ci.rd_rs1;
@@ -824,7 +824,7 @@ always_comb begin
                        end
                      else if (instr_c[11:10] == 2'b10) //ANDI
                        begin
-                          format_i.imm[11:6]  = 6'd0;
+                          format_i.imm[11:6]  = {6{format_cb.offset1[2]}};
                           format_i.imm[5]     = format_cb.offset1[2];
                           format_i.imm[4:0]   = format_cb.offset2[4:0];
                           s1_compressed_reg   = format_cb.rs1;
@@ -833,7 +833,7 @@ always_comb begin
                           format_i.funct3     = 3'b111;
                           format_i.op         = 7'b0010011;
                        end
-                     else if (instr_c[12] == 1'b0 && instr_c[11:10] == 2'b11 && instr_c[6:5] != 2'b00) //SUB
+                     else if (instr_c[12] == 1'b0 && instr_c[11:10] == 2'b11 && instr_c[6:5] == 2'b00) //SUB
                        begin
                           format_r.funct7       = 7'b0100000;
                           s2_compressed_reg     = format_cs.rs2;
@@ -844,7 +844,7 @@ always_comb begin
                           format_r.funct3       = 3'b000;  
                           format_r.op           = 7'b0110011;          
                        end
-                     else if (instr_c[12] == 1'b0 && instr_c[11:10] == 2'b11 && instr_c[6:5] != 2'b01) //XOR
+                     else if (instr_c[12] == 1'b0 && instr_c[11:10] == 2'b11 && instr_c[6:5] == 2'b01) //XOR
                        begin
                           format_r.funct7       = 7'd0;
                           s2_compressed_reg     = format_cs.rs2;
@@ -855,7 +855,7 @@ always_comb begin
                           format_r.funct3       = 3'b100;  
                           format_r.op           = 7'b0110011;          
                        end
-                     else if (instr_c[12] == 1'b0 && instr_c[11:10] == 2'b11 && instr_c[6:5] != 2'b10) //OR
+                     else if (instr_c[12] == 1'b0 && instr_c[11:10] == 2'b11 && instr_c[6:5] == 2'b10) //OR
                        begin
                           format_r.funct7       = 7'd0;
                           s2_compressed_reg     = format_cs.rs2;
@@ -866,7 +866,7 @@ always_comb begin
                           format_r.funct3       = 3'b110;  
                           format_r.op           = 7'b0110011;          
                        end
-                     else if (instr_c[12] == 1'b0 && instr_c[11:10] == 2'b11 && instr_c[6:5] != 2'b11) //AND
+                     else if (instr_c[12] == 1'b0 && instr_c[11:10] == 2'b11 && instr_c[6:5] == 2'b11) //AND
                        begin
                           format_r.funct7       = 7'd0;
                           s2_compressed_reg     = format_cs.rs2;

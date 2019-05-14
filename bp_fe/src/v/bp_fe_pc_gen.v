@@ -157,6 +157,7 @@ logic [1:0][eaddr_width_p-1:0] addr;
 enum bit [0:0] {e_stall, e_run} state_n, state_r;
 logic ready;  
 logic [eaddr_width_p-1:0] pc_resume;
+logic                  jump_second_half,  jump_second_half_prev;   
 // zazad begins
 assign ready = pc_gen_fe_ready_i & pc_gen_icache_ready_i;   
 always_comb
@@ -178,8 +179,10 @@ always_ff @(posedge clk_i)
    
 always_ff @(posedge clk_i)
   begin
-     if (state_r == e_run)
+     if (state_r == e_run /*&& ~predict_taken*/)
        pc_resume <= pc_f2;
+     /*else if (state_r == e_run && predict_taken)
+       pc_resume <= pc_n;*/
      else if (fe_pc_gen_v_i && fe_pc_gen_cmd.pc_redirect_valid)
        pc_resume <= fe_pc_gen_cmd.pc;
      else
@@ -219,9 +222,22 @@ always_comb begin : re_align
          if (instr_is_compressed[1]) begin
             unaligned_d = 1'b0;
             instr[1] = {16'b0, icache_pc_gen.instr[31:16]};
+            pc_gen_fetch.pc                  = icache_pc_gen.addr;
+            pc_gen_fetch.instr               = icache_pc_gen.instr;
+            
          end
+         else
+           begin
+              pc_gen_fetch.pc                  = icache_pc_gen.addr;
+              pc_gen_fetch.instr               = icache_pc_gen.instr;
+           end
       
       end else if (instr_is_compressed[0]) begin // instruction zero is RVC
+         pc_gen_fetch.pc                  = icache_pc_gen.addr;//new
+         pc_gen_fetch.instr               = icache_pc_gen.instr;
+        // if (icache_pc_gen.addr != {icache_pc_gen.addr[63:2], 2'b00})
+          // jump_second_half = 1'b1;
+         
          if (instr_is_compressed[1]) begin
             instr[1] = {16'b0, icache_pc_gen.instr[31:16]};
          end else begin
@@ -230,6 +246,11 @@ always_comb begin : re_align
             unaligned_d = 1'b1;
          end // else: !if(instr_is_compressed[1])
       end // else -> normal fetch
+      else
+        begin
+           pc_gen_fetch.pc                  = icache_pc_gen.addr;
+           pc_gen_fetch.instr               = icache_pc_gen.instr;
+        end // else: !if(instr_is_compressed[0])
    end // if (icache_pc_gen_v_i)
 
    if (icache_pc_gen_v_i && icache_pc_gen.addr[1] && !instr_is_compressed[1]) begin
@@ -264,8 +285,8 @@ always_comb
   begin
     pc_gen_queue.msg_type            = (misalignment) ?  e_fe_exception : e_fe_fetch;
     pc_gen_exception.exception_code  = (misalignment) ? e_instr_addr_misaligned : e_illegal_instruction;
-    pc_gen_fetch.pc                  = icache_pc_gen.addr;
-    pc_gen_fetch.instr               = icache_pc_gen.instr;
+//    pc_gen_fetch.pc                  = icache_pc_gen.addr;
+  //  pc_gen_fetch.instr               = icache_pc_gen.instr;
     pc_gen_fetch.branch_metadata_fwd = fe_queue_branch_metadata_r;
     //zazad begins
     pc_gen_fetch.valid_branch_taken  = predict_taken;
@@ -309,11 +330,13 @@ begin
     begin
         icache_miss_prev <= '0;
         tlb_miss_prev    <= '0;
+        jump_second_half_prev <= '0;
     end
     else
     begin
         icache_miss_prev <= icache_miss_i;
         tlb_miss_prev    <= tlb_miss_v_i;
+        jump_second_half_prev <= jump_second_half;
     end
 end
 
@@ -322,14 +345,25 @@ logic                     btb_br_tgt_v_lo;
 
 bp_fe_branch_metadata_fwd_s fe_cmd_branch_metadata;
 always_comb
-begin
+  begin
+     jump_second_half = 0;
+     
     // if we need to redirect
-    if (state_r == e_stall)
+    if (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) begin
+        pc_n = fe_pc_gen_cmd.pc;
+        if (pc_n[1])//branch to second half of 32-bit, so next pc should be + 2 and not + 4
+          jump_second_half = 1;
+    end
+    else if (state_r == e_stall)
     begin
         pc_n = pc_resume;
+        if (pc_n[1])//branch to second half of 32-bit, so next pc should be + 2 and not + 4
+          jump_second_half = 1;
     end
     else if (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) begin
         pc_n = fe_pc_gen_cmd.pc;
+        if (pc_n[1])//branch to second half of 32-bit, so next pc should be + 2 and not + 4
+          jump_second_half = 1;
     end
     // if we've missed in the itlb
     else if (tlb_miss_recover)
@@ -344,14 +378,18 @@ begin
     else if (btb_br_tgt_v_lo)
     begin
         pc_n = btb_br_tgt_lo;
+        if (pc_n[1])//branch to second half of 32-bit, so next pc should be + 2 and not + 4
+          jump_second_half = 1;
     end
     else if (predict_taken)
     begin
         pc_n = br_target;
+        if (pc_n[1])//branch to second half of 32-bit, so next pc should be + 2 and not + 4
+          jump_second_half = 1;
     end
     else
-    begin
-        pc_n = pc_f1 + 4;
+      begin
+        pc_n = jump_second_half_prev ?  pc_f1 + 2 : pc_f1 + 4;
     end
 end
 
