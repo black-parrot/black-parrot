@@ -14,11 +14,11 @@ BP_DEMOS = \
 RV64_BENCHMARKS = \
   median   \
   multiply \
+  towers   \
+  vvadd    \
   qsort    \
   rsort    \
-  spmv     \
-  towers   \
-  vvadd
+  dhrystone 
 
 RV64_P_TESTS = \
   rv64ui-p-add     \
