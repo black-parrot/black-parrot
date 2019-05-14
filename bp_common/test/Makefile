@@ -12,15 +12,13 @@ RISCV_SIM      = spike
 RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -D -M no-aliases,numeric
 RISCV_OBJCOPY  = riscv64-unknown-elf-objcopy -O verilog
 
-include $(TEST_DIR)/Makefile.frag
+include Makefile.frag
 
-all: riscv demos bbl
+all: riscv demos coremark
 riscv: riscv_mem riscv_spike
+coremark: coremark_mem coremark_spike
 opensbi: opensbi_mem 
 demos: demos_mem 
-# OpenSBI requires hardfloat and does not support softfloat libraries, so the compilation will fail
-#opensbi: opensbi_mem
-bbl: bbl_mem
 
 riscv_elf: 
 	cd $(TEST_DIR)/src/riscv-tests/ && ./configure
@@ -34,22 +32,15 @@ riscv_elf:
 	find $(TEST_DIR)/src/riscv-tests/benchmarks/ -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
 	find $(TEST_DIR)/src/riscv-tests/benchmarks/ -type f -name "*dump" -execdir mv {} $(MEM_DIR)/{} \;
 
+coremark_elf:
+	$(MAKE) -C $(TEST_DIR)/src/coremark/barebones/
+	find $(TEST_DIR)/src/coremark/barebones/ -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
+	find $(TEST_DIR)/src/coremark/barebones/ -type f -name "*dump" -execdir mv {} $(MEM_DIR)/{} \;
+
 demos_elf:
-	$(MAKE) -C $(TEST_DIR)/src/demos
+	make -C src/demos
 	find $(TEST_DIR)/src/demos/ -executable -type f -execdir mv {} $(MEM_DIR)/{} \;
 	find $(TEST_DIR)/src/demos/ -name "*.dump" -execdir mv {} $(MEM_DIR)/{} \;
-
-opensbi_elf:
-	$(MAKE) -C $(TEST_DIR)/src/opensbi PLATFORM=blackparrot CROSS_COMPILE=riscv64-unknown-elf- PLATFORM_RISCV_ISA=rv64imaf
-	@cp $(TEST_DIR)/src/opensbi/build/platform/blackparrot/firmware/fw_jump.elf $(MEM_DIR)/opensbi.riscv
-	$(RISCV_OBJDUMP) $(MEM_DIR)/opensbi.riscv > $(MEM_DIR)/opensbi.riscv.dump
-
-bbl_elf:
-	cd $(TEST_DIR)/src/riscv-pk/ && mkdir -p build && cd build \
-	&& ../configure --host=riscv64-unknown-elf --with-arch=rv64i
-	$(MAKE) -C $(TEST_DIR)/src/riscv-pk/build
-	@cp $(TEST_DIR)/src/riscv-pk/build/bbl $(MEM_DIR)/bbl.riscv
-	$(RISCV_OBJDUMP) $(MEM_DIR)/bbl.riscv > $(MEM_DIR)/bbl.riscv.dump
 
 riscv_mem: riscv_elf
 riscv_mem: $(foreach x, $(RV64_P_TESTS) $(RV64_V_TESTS) $(RV64_BENCHMARKS), $(x).mem)
@@ -70,6 +61,10 @@ bbl_mem: bbl.mem
 # Need to kill spike at the end of bbl payload for this to work
 #bbl_spike: bbl.spike
 
+coremark_mem: coremark_elf
+coremark_mem: coremark.mem
+coremark_spike: coremark.spike
+
 %.mem: 
 	$(RISCV_OBJCOPY) $(MEM_DIR)/$*.riscv $(MEM_DIR)/$@
 
@@ -79,7 +74,7 @@ bbl_mem: bbl.mem
 clean:
 	$(MAKE) -C src/riscv-tests clean 
 	$(MAKE) -C src/demos clean
-	$(MAKE) -C src/opensbi clean
+	$(MAKE) -C src/coremark/barebones clean
 	rm -f $(MEM_DIR)/*
 
 ####### These targets are not maintained at the moment
