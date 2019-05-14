@@ -14,8 +14,7 @@ module wrapper
    `declare_bp_proc_params(cfg_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
-   // Used to enable trace replay outputs for testbench
-   , parameter trace_p = 1
+   , parameter trace_p = 0
    , parameter cce_trace_p = 0
    )
   (input                                                      clk_i
