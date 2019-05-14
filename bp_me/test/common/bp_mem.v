@@ -21,15 +21,16 @@ module bp_mem
     ,parameter boot_rom_els_p="inv"
     ,parameter lg_boot_rom_els_lp=`BSG_SAFE_CLOG2(boot_rom_els_p)
 
-    ,parameter bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p, num_lce_p, lce_assoc_p)
-    ,parameter bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
-    ,parameter bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(paddr_width_p, num_lce_p, lce_assoc_p)
-    ,parameter bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    ,localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p, num_lce_p, lce_assoc_p)
+    ,localparam bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    ,localparam bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(paddr_width_p, num_lce_p, lce_assoc_p)
+    ,localparam bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
 
-    ,parameter mem_addr_width_lp=`BSG_SAFE_CLOG2(mem_els_p)
-    ,parameter block_offset_bits_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
-    ,parameter byte_width_lp=8
-    ,localparam word_offset_bits_lp=`BSG_SAFE_CLOG2(lce_req_data_width_p/8)
+    ,localparam mem_addr_width_lp=`BSG_SAFE_CLOG2(mem_els_p)
+    ,localparam block_offset_bits_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
+    ,localparam byte_width_lp=8
+    ,localparam byte_offset_bits_lp=`BSG_SAFE_CLOG2(lce_req_data_width_p/8)
+    ,localparam word_select_bits_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p/8)
   )
   (
     input clk_i
@@ -70,10 +71,10 @@ module bp_mem
   // memory signals
   logic [mem_addr_width_lp-1:0] mem_addr_i, rd_addr, wr_addr;
   logic mem_v_i, mem_w_i;
-  logic [block_size_in_bits_lp-1:0] mem_data_i, mem_data_o;
+  logic [block_size_in_bits_lp-1:0] mem_data_i, mem_data_o, mem_mask_i;
   logic [lce_req_data_width_p-1:0] mem_nc_data, nc_data;
 
-  bsg_mem_1rw_sync
+  bsg_mem_1rw_sync_mask_write_bit
     #(.width_p(block_size_in_bits_lp)
       ,.els_p(mem_els_p)
     ) mem
@@ -84,34 +85,54 @@ module bp_mem
      ,.addr_i(mem_addr_i)
      ,.w_i(mem_w_i)
      ,.data_o(mem_data_o)
+     ,.w_mask_i(mem_mask_i)
     );
 
-  int k, j;
-  always_comb begin
-    mem_resp_o = mem_resp_s_o;
-    mem_data_resp_o = mem_data_resp_s_o;
-    mem_cmd_i_s = mem_cmd_i;
-    mem_data_cmd_i_s = mem_data_cmd_i;
 
-    rd_addr = mem_addr_width_lp'(mem_cmd_i_s.addr >> block_offset_bits_lp);
-    wr_addr = mem_addr_width_lp'(mem_data_cmd_i_s.addr >> block_offset_bits_lp);
+  assign mem_resp_o = mem_resp_s_o;
+  assign mem_data_resp_o = mem_data_resp_s_o;
+  assign mem_cmd_i_s = mem_cmd_i;
+  assign mem_data_cmd_i_s = mem_data_cmd_i;
 
-    // get the 64-bit chunk
-    k = mem_cmd_s_r.addr[block_offset_bits_lp-1:word_offset_bits_lp];
-    j = mem_cmd_s_r.addr[word_offset_bits_lp-1:0];
-    mem_nc_data = mem_data_o[(k*lce_req_data_width_p)+:lce_req_data_width_p];
-    if (mem_cmd_s_r.nc_size == e_lce_nc_req_1) begin
-      nc_data = {56'('0),mem_nc_data[(j*8)+:8]};
-    end else if (mem_cmd_s_r.nc_size == e_lce_nc_req_2) begin
-      nc_data = {48'('0),mem_nc_data[(j*8)+:16]};
-    end else if (mem_cmd_s_r.nc_size == e_lce_nc_req_4) begin
-      nc_data = {32'('0),mem_nc_data[(j*8)+:32]};
-    end else if (mem_cmd_s_r.nc_size == e_lce_nc_req_8) begin
-      nc_data = mem_nc_data;
-    end else begin
-      nc_data = '0;
-    end
-  end
+  assign rd_addr = mem_addr_width_lp'(mem_cmd_i_s.addr >> block_offset_bits_lp);
+  assign wr_addr = mem_addr_width_lp'(mem_data_cmd_i_s.addr >> block_offset_bits_lp);
+
+  // get the 64-bit word for reads
+  // address: [tag, set index, block offset] = [tag, word select, byte select]
+  int word_select;
+  assign word_select = mem_cmd_s_r.addr[byte_offset_bits_lp+:word_select_bits_lp];
+
+  int byte_select;
+  assign byte_select = mem_cmd_s_r.addr[0+:byte_offset_bits_lp];
+
+  assign mem_nc_data = mem_data_o[(word_select*lce_req_data_width_p)+:lce_req_data_width_p];
+
+  assign nc_data = (mem_cmd_s_r.nc_size == e_lce_nc_req_1)
+    ? {56'('0),mem_nc_data[(byte_select*8)+:8]}
+    : (mem_cmd_s_r.nc_size == e_lce_nc_req_2)
+      ? {48'('0),mem_nc_data[(byte_select*8)+:16]}
+      : (mem_cmd_s_r.nc_size == e_lce_nc_req_4)
+        ? {32'('0),mem_nc_data[(byte_select*8)+:32]}
+        : mem_nc_data;
+
+  // write shift - only set for non-cacheable writes
+  int wr_word_select;
+  assign wr_word_select = mem_data_cmd_i_s.addr[byte_offset_bits_lp+:word_select_bits_lp];
+
+  int wr_byte_select;
+  assign wr_byte_select = mem_data_cmd_i_s.addr[0+:byte_offset_bits_lp];
+
+  int wr_shift;
+  assign wr_shift = ((wr_word_select*lce_req_data_width_p) + (wr_byte_select*8));
+
+  logic [block_size_in_bits_lp-1:0] wr_mask;
+  assign wr_mask = (mem_data_cmd_i_s.nc_size == e_lce_nc_req_1)
+    ? {(block_size_in_bits_lp-8)'('0),8'('1)} << wr_shift
+    : (mem_data_cmd_i_s.nc_size == e_lce_nc_req_2)
+      ? {(block_size_in_bits_lp-16)'('0),16'('1)} << wr_shift
+      : (mem_data_cmd_i_s.nc_size == e_lce_nc_req_4)
+        ? {(block_size_in_bits_lp-32)'('0),32'('1)} << wr_shift
+        : {(block_size_in_bits_lp-64)'('0),64'('1)} << wr_shift;
 
   typedef enum logic [2:0] {
     RESET
@@ -123,8 +144,6 @@ module bp_mem
 
   mem_state_e mem_st;
 
-  //logic [block_size_in_bits_lp-1:0] cnt;
-
   // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
@@ -132,11 +151,11 @@ module bp_mem
       mem_w_i <= '0;
       mem_addr_i <= '0;
       mem_data_i <= '0;
+      mem_mask_i <= '0;
 
       mem_st <= RESET;
       boot_count <= '0;
       boot_rom_addr_o <= '0;
-      //cnt <= '0;
 
       // outputs
       mem_resp_v_o <= '0;
@@ -156,6 +175,7 @@ module bp_mem
       mem_w_i <= '0;
       mem_addr_i <= '0;
       mem_data_i <= '0;
+      mem_mask_i <= '0;
 
       mem_resp_s_o <= '0;
       mem_resp_v_o <= '0;
@@ -167,9 +187,9 @@ module bp_mem
         RESET: begin
           mem_v_i <= 1'b1;
           mem_w_i <= 1'b1;
+          mem_mask_i <= '1;
           mem_addr_i <= boot_rom_addr_o;
           mem_data_i <= boot_rom_data_i;
-          //cnt <= cnt + 'd1;
 
           mem_st <= (boot_count == boot_rom_els_p-1)
             ? READY
@@ -191,7 +211,12 @@ module bp_mem
             mem_w_i <= 1'b1;
             mem_addr_i <= wr_addr;
             assert(wr_addr < mem_els_p) else $error("Mem write address too high");
-            mem_data_i <= mem_data_cmd_i_s.data;
+            mem_data_i <= (mem_data_cmd_i_s.non_cacheable == e_lce_req_cacheable)
+                          ? mem_data_cmd_i_s.data
+                          : (mem_data_cmd_i_s.data << wr_shift);
+            mem_mask_i <= (mem_data_cmd_i_s.non_cacheable == e_lce_req_cacheable)
+                          ? '1
+                          : wr_mask;
 
           // mem command - need to read data from memory
           end else if (mem_cmd_v_i && mem_data_resp_ready_i) begin

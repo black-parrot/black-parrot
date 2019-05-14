@@ -3,6 +3,10 @@
  *
  * This mock LCE behaves like a mock D$. It connects to a trace replay module and to the BP ME.
  * The trace replay format is the same as the trace replay format for the D$.
+ *
+ * Uncached access is determined by the memory address. If the MSB of the address is set, the
+ * access is for uncached memory, otherwise it is a cached access.
+ *
  */
 
 module tag_lookup
@@ -54,6 +58,7 @@ module tag_lookup
   assign way_o = addr_lo;
   assign dirty_o = (tags[way_o].coh_st == e_MESI_M);
   assign state_o = tags[way_o].coh_st;
+  // TODO: needs fixing?
   assign lru_dirty_o = dirty_bits_i[lru_way_i];//(tags[lru_way_i].coh_st == e_MESI_M);
 
 endmodule
@@ -285,6 +290,7 @@ module bp_me_nonsynth_mock_lce
     logic miss;
     logic [lg_num_cce_lp-1:0] cce;
     logic [paddr_width_p-1:0] paddr;
+    logic uncached;
     logic dirty;
     logic store_op;
     logic upgrade;
@@ -301,7 +307,7 @@ module bp_me_nonsynth_mock_lce
   mshr_s mshr_r, mshr_n;
 
   // current command being processed
-  tr_cmd_s cmd, cmd_n;
+  tr_cmd_s cmd, cmd_n, tr_cmd_pkt;
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
       cmd <= '0;
@@ -311,9 +317,11 @@ module bp_me_nonsynth_mock_lce
       mshr_r <= mshr_n;
     end
   end
+  assign tr_cmd_pkt = tr_pkt_i;
 
   // some useful signals from the current trace replay command
   logic store_op, load_op, signed_op, byte_op, word_op, double_op, half_op;
+  logic uncached_op;
   logic [1:0] op_size;
   logic [2:0] dword_offset;
   logic [2:0] byte_offset;
@@ -327,6 +335,7 @@ module bp_me_nonsynth_mock_lce
   assign byte_op = (cmd.cmd[1:0] == 2'b00);
   assign dword_offset = cmd.paddr[5:3];
   assign byte_offset = cmd.paddr[2:0];
+  assign uncached_op = cmd.paddr[paddr_width_p-1];
 
   // Data word (64-bit) targeted by current trace replay command
   logic [dword_width_p-1:0] load_data;
@@ -421,6 +430,11 @@ module bp_me_nonsynth_mock_lce
     ,SEND_SYNC
     ,READY
 
+    ,UNCACHED_ONLY
+    ,UNCACHED_TR_CMD
+    ,UNCACHED_SEND_REQ
+    ,UNCACHED_SEND_TR_RESP
+
     ,LCE_DATA_CMD
 
     ,LCE_CMD
@@ -457,10 +471,12 @@ module bp_me_nonsynth_mock_lce
 
   // init sync counter
   logic [lg_num_cce_lp:0] sync_counter_r, sync_counter_n;
+  logic lce_init_r, lce_init_n;
 
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
       lce_state <= RESET;
+      lce_init_r <= '0;
 
       lce_cmd_r <= '0;
       lce_data_cmd_r <= '0;
@@ -469,6 +485,7 @@ module bp_me_nonsynth_mock_lce
 
     end else begin
       lce_state <= lce_state_n;
+      lce_init_r <= lce_init_n;
 
       lce_cmd_r <= lce_cmd_n;
       lce_data_cmd_r <= lce_data_cmd_n;
@@ -482,6 +499,7 @@ module bp_me_nonsynth_mock_lce
   always_comb begin
     if (reset_i) begin
       lce_state_n = RESET;
+      lce_init_n = '0;
 
       // sync counter
       sync_counter_n = '0;
@@ -534,6 +552,7 @@ module bp_me_nonsynth_mock_lce
 
     end else begin
       lce_state_n = RESET;
+      lce_init_n = lce_init_r;
 
       // sync counter
       sync_counter_n = sync_counter_r;
@@ -586,7 +605,107 @@ module bp_me_nonsynth_mock_lce
 
       case (lce_state)
         RESET: begin
-          lce_state_n = INIT;
+          lce_state_n = UNCACHED_ONLY;
+        end
+        UNCACHED_ONLY: begin
+          lce_state_n = UNCACHED_ONLY;
+          if (lce_cmd_v && lce_cmd.msg_type == e_lce_cmd_set_clear) begin
+            // INIT routine starting, stop accepting uncached accesses and initialize
+            lce_state_n = INIT;
+          end else if (tr_pkt_v_i & ~mshr_r.miss) begin
+            // only process a new trace replay request if not already missing
+            // AND address is for uncached memory
+            if (tr_cmd_pkt.paddr[paddr_width_p-1]) begin
+              tr_pkt_yumi_o = 1'b1;
+              cmd_n = tr_pkt_i;
+              lce_state_n = UNCACHED_TR_CMD;
+              // new trace replay command, clear the mshr
+              mshr_n = '0;
+            end
+          end
+        end
+        UNCACHED_TR_CMD: begin
+          // uncached access - treat as miss
+          mshr_n.miss = 1'b1;
+          mshr_n.uncached = uncached_op;
+          assert(uncached_op) else $error("LCE received cached access command while uncached only");
+          // TODO: CCE selection only works for power of two number of CCEs
+          mshr_n.cce = (num_cce_p == 1) ? '0 : cmd.paddr[block_offset_bits_lp +: lg_num_cce_lp];
+          mshr_n.paddr = cmd.paddr;
+          mshr_n.dirty = '0;
+          mshr_n.store_op = store_op;
+          mshr_n.upgrade = '0;
+          mshr_n.lru_way = '0;
+          mshr_n.lru_dirty = '0;
+          mshr_n.tag_received = '0;
+          mshr_n.data_received = '0;
+          mshr_n.transfer_received = '0;
+
+          lce_state_n = UNCACHED_SEND_REQ;
+        end
+        UNCACHED_SEND_REQ: begin
+          // uncached access - send LCE request
+          lce_req_v_o = 1'b1;
+
+          lce_req_s.dst_id = mshr_r.cce;
+          lce_req_s.src_id = lce_id_i;
+          lce_req_s.data = (mshr_r.store_op) ? cmd.data : '0;
+          lce_req_s.msg_type = (mshr_r.store_op) ? e_lce_req_type_wr : e_lce_req_type_rd;
+          lce_req_s.non_exclusive = e_lce_req_excl;
+          lce_req_s.addr = mshr_r.paddr;
+          lce_req_s.lru_way_id = '0;
+          lce_req_s.lru_dirty = e_lce_req_lru_clean;
+          lce_req_s.non_cacheable = e_lce_req_non_cacheable;
+          lce_req_s.nc_size =
+            (double_op)
+            ? e_lce_nc_req_8
+            : (word_op)
+              ? e_lce_nc_req_4
+              : (half_op)
+                ? e_lce_nc_req_2
+                : e_lce_nc_req_1;
+
+          // wait for LCE req outbound to be ready (r&v), then wait for responses
+          lce_state_n = (lce_req_ready_i)
+                        ? UNCACHED_SEND_TR_RESP
+                        : UNCACHED_SEND_REQ; // not accepted, try again next cycle
+
+        end
+        UNCACHED_SEND_TR_RESP: begin
+          lce_state_n = UNCACHED_SEND_TR_RESP;
+          // send return packet to TR
+          if (mshr_r.store_op) begin
+            // store sends back null packet
+            tr_pkt_v_o = 1'b1;
+            tr_pkt_o = '0;
+            lce_state_n = (tr_pkt_ready_i)
+                          ? (lce_init_r)
+                            ? READY
+                            : UNCACHED_ONLY
+                          : UNCACHED_SEND_TR_RESP;
+
+            // clear miss handling state
+            mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
+
+          end else if (lce_data_cmd_v) begin
+            // load returns the data, and must wait for lce_data_cmd to return
+            tr_pkt_v_o = 1'b1;
+            tr_pkt_o[tr_ring_width_lp-1:dword_width_p] = '0;
+            tr_pkt_o[0 +: dword_width_p] = lce_data_cmd.data[0 +: dword_width_p];
+
+            lce_state_n = (tr_pkt_ready_i)
+                          ? (lce_init_r)
+                            ? READY
+                            : UNCACHED_ONLY
+                          : UNCACHED_SEND_TR_RESP;
+
+            // dequeue data cmd if TR accepts the outbound packet
+            lce_data_cmd_yumi = tr_pkt_ready_i;
+
+            // clear miss handling state
+            mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
+
+          end
         end
         INIT: begin
           // by default, stay in INIT, waiting for all set clear commands and sync commands to
@@ -594,6 +713,8 @@ module bp_me_nonsynth_mock_lce
           // after all set clear commands from CCE N. Commands from different CCEs can be
           // interleaved in any order.
           lce_state_n = (sync_counter_r == num_cce_p) ? READY : INIT;
+          // register that LCE is initialized after sending all sync acks
+          lce_init_n = (sync_counter_r == num_cce_p) ? 1'b1 : 1'b0;
           if (lce_cmd_v && lce_cmd.msg_type == e_lce_cmd_set_clear) begin
             // set clear command - LCE sinks the command and clears that set in the cache
 
@@ -882,9 +1003,8 @@ module bp_me_nonsynth_mock_lce
           // clear miss handling state
           mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
 
-          // TODO: implement lru way rotation
-          // update lru_way
-          //lru_way_n = lru_way_r + 'd1;
+          // update lru_way - global round robin
+          lru_way_n = lru_way_r + 'd1;
 
         end
         TR_CMD: begin
@@ -900,8 +1020,10 @@ module bp_me_nonsynth_mock_lce
 
           // setup miss handling information
           mshr_n.miss = ~tag_hit_lo;
+          // TODO: CCE selection only works for power of two number of CCEs
           mshr_n.cce = (num_cce_p == 1) ? '0 : cmd.paddr[block_offset_bits_lp +: lg_num_cce_lp];
           mshr_n.paddr = cmd.paddr;
+          mshr_n.uncached = uncached_op;
           mshr_n.dirty = tag_dirty_lo;
           mshr_n.store_op = store_op;
           mshr_n.upgrade = '0;
@@ -915,7 +1037,9 @@ module bp_me_nonsynth_mock_lce
         end
         TR_CMD_SWITCH: begin
           // process the trace replay command
-          if (~mshr_r.store_op) begin
+          if (mshr_r.uncached) begin
+              lce_state_n = UNCACHED_TR_CMD;
+          end else if (~mshr_r.store_op) begin
             if (mshr_r.miss) begin
               lce_state_n = TR_CMD_LD_MISS;
             end else begin
@@ -967,7 +1091,6 @@ module bp_me_nonsynth_mock_lce
           // load miss, send lce request
           lce_req_v_o = 1'b1;
 
-          // TODO: CCE selection only works for power of two number of CCE's in system
           lce_req_s.dst_id = mshr_r.cce;
           lce_req_s.src_id = lce_id_i;
           lce_req_s.data = '0;
@@ -1039,8 +1162,7 @@ module bp_me_nonsynth_mock_lce
           // store miss - block present, not writable
           lce_req_v_o = 1'b1;
 
-          // TODO: CCE selection only works for power of two number of CCE's in system
-          lce_req_s.dst_id = mshr_r.cce;//(num_cce_p == 1) ? '0 : cmd.paddr[block_offset_bits_lp +: lg_num_cce_lp];
+          lce_req_s.dst_id = mshr_r.cce;
           lce_req_s.src_id = lce_id_i;
           lce_req_s.data = '0;
           lce_req_s.msg_type = e_lce_req_type_wr;

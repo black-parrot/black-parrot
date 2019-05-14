@@ -93,6 +93,7 @@ module bp_be_director
    , input [mepc_width_lp-1:0]        mtvec_i
    , input [mtvec_width_lp-1:0]       mepc_i
    , input                            tlb_fence_i
+   , input                            ifence_i
    
    //iTLB fill interface
    , input                           itlb_fill_v_i
@@ -246,8 +247,8 @@ assign expected_npc_o = npc_r;
 // Increment the checkpoint if there's a committing instruction
 assign chk_dequeue_fe_o = ~calc_status.mem3_miss_v & (calc_status.instr_cmt_v | itlb_fill_v_i);
 // Flush the FE queue if there's a pc redirect
-assign chk_flush_fe_o = fe_cmd_v & (fe_cmd.opcode == e_op_pc_redirection
-                                    | fe_cmd.opcode == e_op_itlb_fence);
+assign chk_flush_fe_o = (fe_cmd_v & (fe_cmd.opcode == e_op_pc_redirection)) | tlb_fence_i | ifence_i;
+
 // Rollback the FE queue on a cache miss
 assign chk_roll_fe_o  = calc_status.mem3_miss_v;
 // The current PC, used for interrupts
@@ -300,7 +301,15 @@ always_comb
     else if(tlb_fence_i)
       begin : tlb_fence
         fe_cmd.opcode = e_op_itlb_fence;
+        fe_cmd.operands.icache_fence.pc = calc_status.mem3_pc;
         
+        fe_cmd_v = fe_cmd_ready_i;
+      end
+    else if(ifence_i)
+      begin : icache_fence
+        fe_cmd.opcode = e_op_icache_fence;
+        fe_cmd.operands.icache_fence.pc = calc_status.mem3_pc;
+
         fe_cmd_v = fe_cmd_ready_i;
       end
     // Redirect the pc if there's an NPC mismatch
