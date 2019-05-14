@@ -35,14 +35,13 @@ module bp_cce_dir
     , localparam entry_width_lp           = (tag_width_p+`bp_cce_coh_bits)
     , localparam tag_set_width_lp         = (entry_width_lp*lce_assoc_p)
     // Directory physical organization
-    // TODO: probably broken for 1 LCE case
     , localparam dir_tag_sets_per_row_lp  = (num_lce_p/num_cce_p)
     , localparam lg_dir_tag_sets_per_row_lp = `BSG_SAFE_CLOG2(dir_tag_sets_per_row_lp)
     , localparam dir_rows_per_wg_lp       = (num_lce_p / dir_tag_sets_per_row_lp)
     , localparam lg_dir_rows_per_wg_lp    = `BSG_SAFE_CLOG2(dir_rows_per_wg_lp)
+    , localparam dir_row_width_lp         = (tag_set_width_lp*dir_tag_sets_per_row_lp)
     , localparam dir_rows_lp              = (dir_rows_per_wg_lp*num_way_groups_p)
     , localparam lg_dir_rows_lp           = `BSG_SAFE_CLOG2(dir_rows_lp)
-    , localparam dir_row_width_lp         = (tag_set_width_lp*dir_tag_sets_per_row_lp)
 
     // number of entry (tag+state) per directory row
     , localparam dir_entry_per_row_lp     = (dir_tag_sets_per_row_lp*lce_assoc_p)
@@ -227,9 +226,8 @@ module bp_cce_dir
   assign lru_tag_o = (dir_rd_v_r)
                      ? dir_row_entries[lce_r[0+:lg_dir_tag_sets_per_row_lp]][lru_way_r].tag
                      : '0;
-  // TODO: lru outputs are valid if current directory row valid output contains tag set for lce_r
   int lce_rd_cnt;
-  assign lce_rd_cnt = (lce_r >> lg_dir_tag_sets_per_row_lp);
+  assign lce_rd_cnt = (num_lce_p == 1) ? lce_r : (lce_r >> lg_dir_tag_sets_per_row_lp);
   assign lru_v_o = (dir_rd_v_r)
                    && (lce_rd_cnt == dir_rd_cnt_r);
 
@@ -303,7 +301,7 @@ module bp_cce_dir
             tag_n = tag_i;
             dir_ram_r_v = 1'b1;
             dir_ram_v = 1'b1;
-            dir_ram_addr = {way_group_i, dir_rd_cnt_r};
+            dir_ram_addr = (num_lce_p == 1) ? way_group_i : {way_group_i, dir_rd_cnt_r};
             dir_rd_cnt_n = '0;
             dir_rd_v_n = 1'b1;
 
@@ -320,8 +318,8 @@ module bp_cce_dir
             dir_ram_v = 1'b1;
             dir_ram_w_v = 1'b1;
 
-            tag_set_select = lce_i[0+:lg_dir_tag_sets_per_row_lp];
-            dir_ram_addr = {way_group_i, tag_set_select};
+            tag_set_select = (num_lce_p == 1) ? '0 : lce_i[0+:lg_dir_tag_sets_per_row_lp];
+            dir_ram_addr = (num_lce_p == 1) ? way_group_i : {way_group_i, tag_set_select};
 
             if (w_cmd_i == e_wde_op) begin
               dir_ram_w_mask = {{(dir_row_width_lp-entry_width_lp){1'b0}},{entry_width_lp{1'b1}}}
@@ -346,6 +344,9 @@ module bp_cce_dir
 
           dir_rd_cnt_n = dir_rd_cnt_r + 'd1;
 
+          // do another read if required
+          // This only happens if there is more than 1 LCE, so dir_ram_addr doesn't need to check
+          // whether there is only 1 LCE, as it does in the READY state
           if (dir_rd_cnt_r < (dir_rows_per_wg_lp-1)) begin
             dir_ram_r_v = 1'b1;
             dir_ram_v = 1'b1;
