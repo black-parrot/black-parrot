@@ -74,9 +74,18 @@ module bp_me_nonsynth_tile
    , input [x_cord_width_p-1:0]                            my_x_i
    , input [y_cord_width_p-1:0]                            my_y_i
 
-   // This will go away with the manycore bridge
-   , output [`BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)-1:0] cce_inst_boot_rom_addr_o
-   , input [`bp_cce_inst_width-1:0]                        cce_inst_boot_rom_data_i
+   , input                                                 freeze_i
+
+   // Config channel
+   , input [bp_cfg_link_addr_width_gp-2:0]                 config_addr_i
+   , input [bp_cfg_link_data_width_gp-1:0]                 config_data_i
+   , input                                                 config_v_i
+   , input                                                 config_w_i
+   , output logic                                          config_ready_o
+
+   , output logic [bp_cfg_link_data_width_gp-1:0]          config_data_o
+   , output logic                                          config_v_o
+   , input                                                 config_ready_i
 
    // connections to trace replay units
    , input [1:0][tr_ring_width_lp-1:0]                     tr_pkt_i
@@ -658,17 +667,17 @@ bp_cce_top
  cce
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.freeze_i(1'b0)
+   ,.freeze_i(freeze_i)
 
-   ,.config_addr_i('0)
-   ,.config_data_i('0)
-   ,.config_v_i('0)
-   ,.config_w_i('0)
-   ,.config_ready_o()
+   ,.config_addr_i(config_addr_i)
+   ,.config_data_i(config_data_i)
+   ,.config_v_i(config_v_i)
+   ,.config_w_i(config_w_i)
+   ,.config_ready_o(config_ready_o)
 
-   ,.config_data_o()
-   ,.config_v_o()
-   ,.config_ready_i('0)
+   ,.config_data_o(config_data_o)
+   ,.config_v_o(config_v_o)
+   ,.config_ready_i(config_ready_i)
 
    // To CCE
    ,.lce_req_i(lce_req_li)
@@ -709,9 +718,6 @@ bp_cce_top
    ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi_i)
 
    ,.cce_id_i(proc_cfg_cast_i.cce_id)
-
-   ,.boot_rom_addr_o(cce_inst_boot_rom_addr_o)
-   ,.boot_rom_data_i(cce_inst_boot_rom_data_i)
    );
 
 endmodule : bp_me_nonsynth_tile
