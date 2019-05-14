@@ -272,7 +272,7 @@ module bp_be_dcache_lce
 
       ,.lce_cmd_i(lce_cmd)
       ,.lce_cmd_v_i(lce_cmd_v_i)
-      ,.lce_cmd_yumi_o(lce_cmd_ready_o)
+      ,.lce_cmd_ready_o(lce_cmd_ready_o)
 
       ,.lce_resp_o(lce_cmd_to_lce_resp_lo)
       ,.lce_resp_v_o(lce_cmd_to_lce_resp_v_lo)
@@ -318,7 +318,9 @@ module bp_be_dcache_lce
       ,.sets_p(sets_p)
       )
     lce_data_cmd_inst
-      (.cce_data_received_o(cce_data_received)
+      (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      ,.cce_data_received_o(cce_data_received)
       ,.tr_data_received_o(tr_data_received)
       ,.uncached_data_received_o(uncached_data_received)
 
@@ -326,7 +328,7 @@ module bp_be_dcache_lce
      
       ,.lce_data_cmd_i(lce_data_cmd_in)
       ,.lce_data_cmd_v_i(lce_data_cmd_v_i)
-      ,.lce_data_cmd_yumi_o(lce_data_cmd_ready_o)
+      ,.lce_data_cmd_ready_o(lce_data_cmd_ready_o)
      
       ,.data_mem_pkt_o(lce_data_cmd_data_mem_pkt_lo)
       ,.data_mem_pkt_v_o(lce_data_cmd_data_mem_pkt_v_lo)

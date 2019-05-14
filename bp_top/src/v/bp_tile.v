@@ -23,8 +23,7 @@ module bp_tile
 
    // Used to enable trace replay outputs for testbench
    , parameter trace_p      = 0
-   , parameter calc_debug_p = 1
-   , parameter debug_p      = 0 // Debug for the network (TODO: rename)
+   , parameter calc_debug_p = 0
    , parameter cce_trace_p  = 0
 
    , parameter x_cord_width_p = `BSG_SAFE_CLOG2(num_lce_p)
@@ -238,10 +237,11 @@ logic [1:0][dirs_lp-1:0] wh_lce_data_cmd_v_li, wh_lce_data_cmd_ready_lo;
 logic [1:0][dirs_lp-1:0] wh_lce_data_cmd_v_lo, wh_lce_data_cmd_ready_li;
 
 // Extract destination ids from packets
-wire [x_cord_width_p-1:0] lce_req_dst_x_cord_0_lo  = lce_req_lo[0].dst_id;
-wire [x_cord_width_p-1:0] lce_req_dst_x_cord_1_lo  = lce_req_lo[1].dst_id;
-wire [x_cord_width_p-1:0] lce_resp_dst_x_cord_0_lo = lce_resp_lo[0].dst_id;
-wire [x_cord_width_p-1:0] lce_resp_dst_x_cord_1_lo = lce_resp_lo[1].dst_id;
+// Note: We shift by 1 to make a CCE id of 1 -> x=2
+wire [x_cord_width_p-1:0] lce_req_dst_x_cord_0_lo  = lce_req_lo[0].dst_id << 1;
+wire [x_cord_width_p-1:0] lce_req_dst_x_cord_1_lo  = lce_req_lo[1].dst_id << 1;
+wire [x_cord_width_p-1:0] lce_resp_dst_x_cord_0_lo = lce_resp_lo[0].dst_id << 1;
+wire [x_cord_width_p-1:0] lce_resp_dst_x_cord_1_lo = lce_resp_lo[1].dst_id << 1;
 wire [x_cord_width_p-1:0] lce_cmd_dst_x_cord_lo    = lce_cmd_lo.dst_id;
 
 for (genvar i = 0; i < dirs_lp; i++)
@@ -296,7 +296,7 @@ for (genvar i = 0; i < dirs_lp; i++)
 
         assign wh_lce_data_cmd_li[0][W]   = lce_data_cmd_i[W];
         assign wh_lce_data_cmd_v_li[0][W] = lce_data_cmd_v_i[W];
-        assign lce_data_cmd_ready_o[W]    = wh_lce_data_cmd_ready_li[0][W];
+        assign lce_data_cmd_ready_o[W]    = wh_lce_data_cmd_ready_lo[0][W];
 
         assign lce_req_link_i_stitch[1][W]  = lce_req_link_o_stitch[0][E];
         assign lce_resp_link_i_stitch[1][W] = lce_resp_link_o_stitch[0][E];
@@ -357,12 +357,12 @@ for (genvar i = 0; i < dirs_lp; i++)
       end
     else if (i == S) // Source side
       begin : fi1_S
-        assign lce_req_link_i_stitch[0][S].data          = {lce_req_lo[0], 1'b1, lce_req_dst_x_cord_0_lo}; 
+        assign lce_req_link_i_stitch[0][S].data          = {lce_req_lo[0], 1'b0, lce_req_dst_x_cord_0_lo}; 
         assign lce_req_link_i_stitch[0][S].v             = lce_req_v_lo[0];
         assign lce_req_link_i_stitch[0][S].ready_and_rev = '0;
         assign lce_req_ready_li[0] = lce_req_link_o_stitch[0][S].ready_and_rev;
 
-        assign lce_resp_link_i_stitch[0][S].data          = {lce_resp_lo[0], 1'b1, lce_resp_dst_x_cord_0_lo};
+        assign lce_resp_link_i_stitch[0][S].data          = {lce_resp_lo[0], 1'b0, lce_resp_dst_x_cord_0_lo};
         assign lce_resp_link_i_stitch[0][S].v             = lce_resp_v_lo[0];
         assign lce_resp_link_i_stitch[0][S].ready_and_rev = '0;
         assign lce_resp_ready_li[0] = lce_resp_link_o_stitch[0][S].ready_and_rev;
@@ -371,7 +371,7 @@ for (genvar i = 0; i < dirs_lp; i++)
         assign wh_lce_data_resp_v_li[0][S]     = '0;
         assign wh_lce_data_resp_ready_li[0][S] = '0;
 
-        assign lce_cmd_link_i_stitch[0][S].data          = {lce_cmd_lo, 1'b1, lce_cmd_dst_x_cord_lo};
+        assign lce_cmd_link_i_stitch[0][S].data          = {lce_cmd_lo, 1'b0, lce_cmd_dst_x_cord_lo};
         assign lce_cmd_link_i_stitch[0][S].v             = lce_cmd_v_lo;
         assign lce_cmd_link_i_stitch[0][S].ready_and_rev = '0;
         assign lce_cmd_ready_li = lce_cmd_link_o_stitch[0][S].ready_and_rev;
@@ -379,12 +379,12 @@ for (genvar i = 0; i < dirs_lp; i++)
         // I$ data cmd wh router fed from adapter
         assign wh_lce_data_cmd_ready_li[0][S] = '0;
 
-        assign lce_req_link_i_stitch[1][S].data          = {lce_req_lo[1], 1'b1, lce_req_dst_x_cord_1_lo}; 
+        assign lce_req_link_i_stitch[1][S].data          = {lce_req_lo[1], 1'b0, lce_req_dst_x_cord_1_lo}; 
         assign lce_req_link_i_stitch[1][S].v             = lce_req_v_lo[1];
         assign lce_req_link_i_stitch[1][S].ready_and_rev = '0;
         assign lce_req_ready_li[1] = lce_req_link_o_stitch[1][S].ready_and_rev;
 
-        assign lce_resp_link_i_stitch[1][S].data          = {lce_resp_lo[1], 1'b1, lce_resp_dst_x_cord_1_lo}; 
+        assign lce_resp_link_i_stitch[1][S].data          = {lce_resp_lo[1], 1'b0, lce_resp_dst_x_cord_1_lo}; 
         assign lce_resp_link_i_stitch[1][S].v             = lce_resp_v_lo[1];
         assign lce_resp_link_i_stitch[1][S].ready_and_rev = '0;
         assign lce_resp_ready_li[1] = lce_resp_link_o_stitch[1][S].ready_and_rev;
@@ -431,7 +431,7 @@ for (genvar i = 0; i < 2; i++)
        ,.reset_i(reset_i)
        ,.link_i(lce_req_link_i_stitch[i])
        ,.link_o(lce_req_link_o_stitch[i])
-       ,.my_x_i(my_x_i+x_cord_width_p'(i))
+       ,.my_x_i(x_cord_width_p'(2*my_x_i+i))
        ,.my_y_i(my_y_i)
        );
     
@@ -446,7 +446,7 @@ for (genvar i = 0; i < 2; i++)
        ,.reset_i(reset_i)
        ,.link_i(lce_resp_link_i_stitch[i])
        ,.link_o(lce_resp_link_o_stitch[i])
-       ,.my_x_i(my_x_i+x_cord_width_p'(i))
+       ,.my_x_i(x_cord_width_p'(2*my_x_i+i))
        ,.my_y_i(my_y_i)
        );
     
@@ -461,7 +461,7 @@ for (genvar i = 0; i < 2; i++)
        ,.reset_i(reset_i)
        ,.link_i(lce_cmd_link_i_stitch[i])
        ,.link_o(lce_cmd_link_o_stitch[i])
-       ,.my_x_i(my_x_i+x_cord_width_p'(i))
+       ,.my_x_i(x_cord_width_p'(2*my_x_i+i))
        ,.my_y_i(my_y_i)
        );
 
@@ -503,14 +503,13 @@ for (genvar i = 0; i < 2; i++)
        ,.y_cord_width_p(y_cord_width_p)
        ,.len_width_p(lce_data_cmd_len_width_lp)
        ,.enable_2d_routing_p(1)
-       ,.enable_yx_routing_p(1)
        ,.header_on_lsb_p(1)
        )
      data_cmd_router
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
-       ,.local_x_cord_i(my_x_i+x_cord_width_p'(i))
+       ,.local_x_cord_i(x_cord_width_p'(2*my_x_i+i))
        ,.local_y_cord_i(my_y_i)
 
        ,.valid_i(wh_lce_data_cmd_v_li[i])
@@ -581,14 +580,13 @@ for (genvar i = 0; i < 2; i++)
        ,.y_cord_width_p(y_cord_width_p)
        ,.len_width_p(lce_cce_data_resp_len_width_lp)
        ,.enable_2d_routing_p(1)
-       ,.enable_yx_routing_p(1)
        ,.header_on_lsb_p(1)
        )
      data_resp_router
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
-       ,.local_x_cord_i(my_x_i+x_cord_width_p'(i))
+       ,.local_x_cord_i(x_cord_width_p'(2*my_x_i+i))
        ,.local_y_cord_i(my_y_i)
 
        ,.valid_i(wh_lce_data_resp_v_li[i])
