@@ -105,6 +105,7 @@ bi transfer_check
 # Replacement Routine
 replace: pushq lceCmd WB req lru lru
 wfq lceDataResp
+poph lceDataResp
 wdp req 1
 sf rwbf
 pushq memDataCmd lru
@@ -124,6 +125,7 @@ pushq lceCmd TR tr req tr
 pushq lceCmd WB tr req tr
 # wait for transfer WB response
 wfq lceDataResp
+poph lceDataResp
 bf nwbf complete_transfer
 # perform the transfer WB to mem
 wdp req 1
@@ -147,6 +149,7 @@ read_l2: wdp req 1
 wde req req lru req nextCohSt
 pushq memCmd
 wfq memDataResp
+poph memDataResp
 bi mem_data_resp
 
 # Memory Response Routine
@@ -169,6 +172,7 @@ bi ready
 uncached_req: bf rqf uncached_store
 pushq memCmd
 wfq memDataResp
+poph memDataResp
 pushq lceDataCmd
 popq memDataResp
 bi ready
