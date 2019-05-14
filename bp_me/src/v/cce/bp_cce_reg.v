@@ -187,9 +187,19 @@ module bp_cce_reg
 
     ack_type_o = ack_type_r;
 
-    sharers_hits_o = sharers_hits_r;
-    sharers_ways_o = sharers_ways_r;
-    sharers_coh_states_o = sharers_coh_states_r;
+    // Bypass sharers information being written to registers when it is being written.
+    // TODO: can eliminate if critical path-y
+    // This allows a one cycle reduction of the directory read operation latency
+    // If bypassing is removed, need to set busy signal in FINISH_READ in directory
+    if (dir_sharers_v_i) begin
+      sharers_hits_o = dir_sharers_hits_i;
+      sharers_ways_o = dir_sharers_ways_i;
+      sharers_coh_states_o = dir_sharers_coh_states_i;
+    end else begin
+      sharers_hits_o = sharers_hits_r;
+      sharers_ways_o = sharers_ways_r;
+      sharers_coh_states_o = sharers_coh_states_r;
+    end
 
     nc_req_size_o = nc_req_size_r;
     nc_data_o = nc_data_r;

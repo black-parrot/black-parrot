@@ -76,10 +76,10 @@ module bp_cce_dir
    , input [`bp_cce_inst_minor_op_width-1:0]                      w_cmd_i
    , input                                                        w_v_i
 
+   , output logic                                                 busy_o
+
    , output logic                                                 pending_o
    , output logic                                                 pending_v_o
-
-   , output logic                                                 done_o
 
    , output logic                                                 sharers_v_o
    , output logic [num_lce_p-1:0]                                 sharers_hits_o
@@ -126,9 +126,8 @@ module bp_cce_dir
   assign pending_v_o = pending_r_v;
 
   // Directory
-
   // read / write valid signals
-  logic dir_ram_w_v, dir_ram_r_v;
+  logic dir_ram_w_v;
   logic dir_ram_v;
   // read / write address
   logic [lg_dir_rows_lp-1:0] dir_ram_addr;
@@ -139,8 +138,6 @@ module bp_cce_dir
   dir_entry_s [dir_entry_per_row_lp-1:0] dir_row_lo;
   dir_entry_s [dir_tag_sets_per_row_lp-1:0][lce_assoc_p-1:0] dir_row_entries;
   assign dir_row_entries = dir_row_lo;
-
-  logic [lg_dir_tag_sets_per_row_lp-1:0] tag_set_select;
 
   typedef enum logic [2:0] {
     RESET
@@ -157,7 +154,11 @@ module bp_cce_dir
   logic [lg_lce_assoc_lp-1:0]       way_r, way_n;
   logic [lg_lce_assoc_lp-1:0]       lru_way_r, lru_way_n;
   logic [tag_width_p-1:0]           tag_r, tag_n;
-  logic dir_rd_v_r, dir_rd_v_n;
+  logic dir_data_o_v_r, dir_data_o_v_n;
+
+  logic [lg_dir_tag_sets_per_row_lp-1:0] wr_tag_set_select, rd_tag_set_select;
+  assign wr_tag_set_select = (num_lce_p == 1) ? '0 : lce_i[0+:lg_dir_tag_sets_per_row_lp];
+  assign rd_tag_set_select = (num_lce_p == 1) ? '0 : lce_r[0+:lg_dir_tag_sets_per_row_lp];
 
   logic [num_lce_p-1:0]                                 sharers_hits_r, sharers_hits_n;
   logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0]            sharers_ways_r, sharers_ways_n;
@@ -180,7 +181,7 @@ module bp_cce_dir
       way_r <= '0;
       lru_way_r <= '0;
       tag_r <= '0;
-      dir_rd_v_r <= '0;
+      dir_data_o_v_r <= '0;
 
       sharers_hits_r <= '0;
       sharers_ways_r <= '0;
@@ -194,7 +195,7 @@ module bp_cce_dir
       way_r <= way_n;
       lru_way_r <= lru_way_n;
       tag_r <= tag_n;
-      dir_rd_v_r <= dir_rd_v_n;
+      dir_data_o_v_r <= dir_data_o_v_n;
 
       sharers_hits_r <= sharers_hits_n;
       sharers_ways_r <= sharers_ways_n;
@@ -211,23 +212,21 @@ module bp_cce_dir
       dir_ram_w_mask = '0;
       dir_ram_w_data = '0;
       dir_ram_v = '0;
-      dir_ram_r_v = '0;
       dir_ram_w_v = '0;
       way_group_n = '0;
       lce_n = '0;
       way_n = '0;
       lru_way_n = '0;
       tag_n = '0;
-      dir_rd_v_n = '0;
+      dir_data_o_v_n = '0;
 
-      done_o = '0;
       sharers_v_o = '0;
 
       sharers_hits_n = '0;
       sharers_ways_n = '0;
       sharers_coh_states_n = '0;
 
-      tag_set_select = '0;
+      busy_o = '0;
 
     end else begin
       // hold state by default
@@ -236,23 +235,21 @@ module bp_cce_dir
       dir_ram_w_mask = '0;
       dir_ram_w_data = '0;
       dir_ram_v = '0;
-      dir_ram_r_v = '0;
       dir_ram_w_v = '0;
       way_group_n = way_group_r;
       lce_n = lce_r;
       way_n = way_r;
       lru_way_n = lru_way_r;
       tag_n = tag_r;
-      dir_rd_v_n = '0;
+      dir_data_o_v_n = '0;
 
-      done_o = '0;
       sharers_v_o = '0;
 
       sharers_hits_n = sharers_hits_r;
       sharers_ways_n = sharers_ways_r;
       sharers_coh_states_n = sharers_coh_states_r;
 
-      tag_set_select = '0;
+      busy_o = '0;
 
       case (dir_state)
         RESET: begin
@@ -266,18 +263,35 @@ module bp_cce_dir
           // first row will be valid on output of directory next cycle (in READ)
           if (r_v_i & (r_cmd_i == e_rdw_op)) begin
             dir_state_n = READ;
+
+            // capture inputs into registers
             way_group_n = way_group_i;
             lce_n = lce_i;
             way_n = way_i;
             lru_way_n = lru_way_i;
             tag_n = tag_i;
-            dir_ram_r_v = 1'b1;
-            dir_ram_v = 1'b1;
-            dir_ram_addr = (dir_rows_per_wg_lp == 1) ? way_group_i : {way_group_i, dir_rd_cnt_r};
-            dir_rd_cnt_n = '0;
-            dir_rd_v_n = 1'b1;
 
-            // reset the sharers vectors for the new read
+            // setup the read
+            dir_ram_v = 1'b1;
+            // TODO: add a comment here
+            // The address or reads depends on how many rows per way group there are.
+            // If there is only one row per wg, then the input way group is the address.
+            // If there is more than one row per wg, then the input way group is the high bits
+            // of the address and the read count register is the low bits.
+            // This results in entries 0..N-1 being for WG 0, N..(2*N)-1 for WG 1, etc.
+            dir_ram_addr = (dir_rows_per_wg_lp == 1) ? way_group_i : {way_group_i, dir_rd_cnt_r};
+
+            // reset read counter to 0; this counter (zero-based) indicates which RAM row from the
+            // target way-group is being output by the directory.
+            // Next cycle (when the first row is valid), the counter will have value 0, and will
+            // increment by 1 each cycle until all the reads are complete.
+            dir_rd_cnt_n = '0;
+
+            // next cycle, the data coming out of the RAM will be valid
+            dir_data_o_v_n = 1'b1;
+
+            // reset the sharers vectors for the new read; new values will be prepared for writing
+            // starting in the next cycle, when the first read data is valid
             sharers_hits_n = '0;
             sharers_ways_n = '0;
             sharers_coh_states_n = '0;
@@ -288,24 +302,26 @@ module bp_cce_dir
             dir_ram_v = 1'b1;
             dir_ram_w_v = 1'b1;
 
-            tag_set_select = (num_lce_p == 1) ? '0 : lce_i[0+:lg_dir_tag_sets_per_row_lp];
-            dir_ram_addr = (dir_rows_per_wg_lp == 1) ? way_group_i : {way_group_i, tag_set_select};
+            dir_ram_addr = (dir_rows_per_wg_lp == 1) ? way_group_i : {way_group_i, wr_tag_set_select};
 
             if (w_cmd_i == e_wde_op) begin
               dir_ram_w_mask = {{(dir_row_width_lp-entry_width_lp){1'b0}},{entry_width_lp{1'b1}}}
-                              << (tag_set_select*tag_set_width_lp + way_i*entry_width_lp);
+                              << (wr_tag_set_select*tag_set_width_lp + way_i*entry_width_lp);
             end else if (w_cmd_i == e_wds_op) begin
               dir_ram_w_mask = {{(dir_row_width_lp-`bp_cce_coh_bits){1'b0}},{`bp_cce_coh_bits{1'b1}}}
-                              << (tag_set_select*tag_set_width_lp + way_i*entry_width_lp);
+                              << (wr_tag_set_select*tag_set_width_lp + way_i*entry_width_lp);
             end else begin
               dir_ram_w_mask = '0;
             end
 
             dir_ram_w_data = {{(dir_row_width_lp-entry_width_lp){1'b0}},{tag_i, coh_state_i}}
-                             << (tag_set_select*tag_set_width_lp + way_i*entry_width_lp);
+                             << (wr_tag_set_select*tag_set_width_lp + way_i*entry_width_lp);
           end
         end
         READ: begin
+
+          // directory is busy
+          busy_o = 1'b1;
 
           for(int i = 0; i < dir_tag_sets_per_row_lp; i++) begin
             sharers_hits_n[(dir_rd_cnt_r << sh_assign_shift_lp) + i] = sharers_ways[i];
@@ -319,10 +335,9 @@ module bp_cce_dir
           // This only happens if there is more than 1 LCE, so dir_ram_addr doesn't need to check
           // whether there is only 1 LCE, as it does in the READY state
           if (dir_rd_cnt_r < (dir_rows_per_wg_lp-1)) begin
-            dir_ram_r_v = 1'b1;
             dir_ram_v = 1'b1;
             dir_ram_addr = {way_group_r, dir_rd_cnt_r};
-            dir_rd_v_n = 1'b1;
+            dir_data_o_v_n = 1'b1;
             dir_state_n = READ;
           end else begin
             dir_state_n = FINISH_READ;
@@ -332,8 +347,9 @@ module bp_cce_dir
           // output the sharers vectors registers
           sharers_v_o = 1'b1;
 
-          // and give the register file a cycle to capture the outputs
-          done_o = 1'b1;
+          // TODO: need to set busy if sharers register bypassing is removed
+          // directory still busy
+          //busy_o = 1'b1;
 
           // go back to READY state
           dir_state_n = READY;
@@ -373,7 +389,7 @@ module bp_cce_dir
      )
     tag_checker
      (.row_i(dir_row_lo)
-      ,.row_v_i(dir_rd_v_r)
+      ,.row_v_i(dir_data_o_v_r)
       ,.tag_i(tag_r)
       ,.sharers_hits_o(sharers_hits)
       ,.sharers_ways_o(sharers_ways)
@@ -393,7 +409,7 @@ module bp_cce_dir
      )
     lru_extract
      (.row_i(dir_row_lo)
-      ,.row_v_i(dir_rd_v_r)
+      ,.row_v_i(dir_data_o_v_r)
       ,.wg_row_i(dir_rd_cnt_r)
       ,.lce_i(lce_r)
       ,.lru_way_i(lru_way_r)
@@ -407,7 +423,7 @@ module bp_cce_dir
     if (~reset_i) begin
       if (dir_ram_w_v & dir_ram_v) begin
         $display("%0T: writing directory addr[%H] wg[%0d] lce[%0d] way[%0d] ts[%0d] tag[%H] cs[%2b]\n%H\n%H"
-                 , $time, dir_ram_addr, way_group_i, lce_i, way_i, tag_set_select, tag_i, coh_state_i
+                 , $time, dir_ram_addr, way_group_i, lce_i, way_i, wr_tag_set_select, tag_i, coh_state_i
                  , dir_ram_w_mask, dir_ram_w_data);
       end
     end

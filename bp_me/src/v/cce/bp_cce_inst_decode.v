@@ -36,9 +36,6 @@ module bp_cce_inst_decode
    , input                                       mem_cmd_ready_i
    , input                                       mem_data_cmd_ready_i
 
-   // directory read done signal
-   , input                                       dir_done_i
-
    // Decoded instruction
    , output bp_cce_inst_decoded_s                decoded_inst_o
    , output logic                                decoded_inst_v_o
@@ -128,7 +125,7 @@ module bp_cce_inst_decode
         e_op_branch: begin
           // Next PC computation
           decoded_inst_o.imm = branch_op_s.target;
-          pc_branch_target_o = branch_op_s.target[inst_addr_width_p-1:0];
+          pc_branch_target_o = branch_op_s.target[0+:inst_addr_width_p];
           decoded_inst_o.src_a = branch_op_s.src_a;
           decoded_inst_o.src_b = branch_op_s.src_b;
 
@@ -357,9 +354,8 @@ module bp_cce_inst_decode
     wfq_q_ready = |(wfq_mask & wfq_v_vec);
 
     // stall PC if WFQ instruction and none of the target queues are ready
-    // also stall if current instruction is directory rde or rdw until directory indicates read
-    // is done
-    pc_stall_o = stall_op | (wfq_op & ~wfq_q_ready) | (rd_dir_op & ~dir_done_i);
+    // stall outputs a valid instruction, but does not advance the PC
+    pc_stall_o = stall_op | (wfq_op & ~wfq_q_ready);
 
     // stall PC if PUSHQ instruction and target output queue is not ready for data
     if (pushq_op) begin
