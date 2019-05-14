@@ -150,7 +150,7 @@ module bp_cce
   // Directory signals
   logic dir_pending_lo;
   logic dir_pending_v_lo;
-  logic dir_busy_lo;
+  logic dir_done_lo;
   logic dir_sharers_v_lo;
   logic [num_lce_p-1:0] dir_sharers_hits_lo;
   logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0] dir_sharers_ways_lo;
@@ -226,8 +226,6 @@ module bp_cce
 
       ,.alu_branch_res_i(alu_branch_res_lo)
 
-      ,.dir_busy_i(dir_busy_lo)
-
       ,.pc_stall_i(pc_stall_lo)
       ,.pc_branch_target_i(pc_branch_target_lo)
 
@@ -261,6 +259,8 @@ module bp_cce
       ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
       ,.mem_cmd_ready_i(mem_cmd_ready_i)
       ,.mem_data_cmd_ready_i(mem_data_cmd_ready_i)
+
+      ,.dir_done_i(dir_done_lo)
 
       ,.decoded_inst_o(decoded_inst_lo)
       ,.decoded_inst_v_o(decoded_inst_v_lo)
@@ -313,7 +313,7 @@ module bp_cce
       ,.pending_o(dir_pending_lo)
       ,.pending_v_o(dir_pending_v_lo)
 
-      ,.busy_o(dir_busy_lo)
+      ,.done_o(dir_done_lo)
 
       ,.sharers_v_o(dir_sharers_v_lo)
       ,.sharers_hits_o(dir_sharers_hits_lo)

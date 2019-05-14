@@ -36,6 +36,9 @@ module bp_cce_inst_decode
    , input                                       mem_cmd_ready_i
    , input                                       mem_data_cmd_ready_i
 
+   // directory read done signal
+   , input                                       dir_done_i
+
    // Decoded instruction
    , output bp_cce_inst_decoded_s                decoded_inst_o
    , output logic                                decoded_inst_v_o
@@ -73,6 +76,7 @@ module bp_cce_inst_decode
   logic wfq_q_ready;
   logic stall_op;
   logic gpr_w_v;
+  logic rd_dir_op;
 
   // Control outputs
   always_comb
@@ -340,6 +344,7 @@ module bp_cce_inst_decode
     // Control for fetch
     wfq_op = (op == e_op_queue) && (minor_op_u.queue_minor_op == e_wfq_op);
     stall_op = (op == e_op_misc) && (minor_op_u.misc_minor_op == e_stall_op);
+    rd_dir_op = (op == e_op_read_dir) && (minor_op_u.read_dir_minor_op != e_rdp_op);
 
     // vector of input queue valid signals
     wfq_v_vec = {lce_req_v_i, lce_resp_v_i, lce_data_resp_v_i, mem_resp_v_i, mem_data_resp_v_i,
@@ -352,7 +357,9 @@ module bp_cce_inst_decode
     wfq_q_ready = |(wfq_mask & wfq_v_vec);
 
     // stall PC if WFQ instruction and none of the target queues are ready
-    pc_stall_o = stall_op | (wfq_op & ~wfq_q_ready);
+    // also stall if current instruction is directory rde or rdw until directory indicates read
+    // is done
+    pc_stall_o = stall_op | (wfq_op & ~wfq_q_ready) | (rd_dir_op & ~dir_done_i);
 
     // stall PC if PUSHQ instruction and target output queue is not ready for data
     if (pushq_op) begin
