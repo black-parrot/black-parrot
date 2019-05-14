@@ -142,7 +142,6 @@ bf nwbf complete_transfer
 wdp req 1
 sfz rwbf
 pushq memDataCmd req
-popq lceDataResp
 wfq memResp
 popq memResp
 wdp req 0
