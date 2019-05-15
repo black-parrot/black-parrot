@@ -324,7 +324,7 @@ module bp_cce_dir
           busy_o = 1'b1;
 
           for(int i = 0; i < dir_tag_sets_per_row_lp; i++) begin
-            sharers_hits_n[(dir_rd_cnt_r << sh_assign_shift_lp) + i] = sharers_ways[i];
+            sharers_hits_n[(dir_rd_cnt_r << sh_assign_shift_lp) + i] = sharers_hits[i];
             sharers_ways_n[(dir_rd_cnt_r << sh_assign_shift_lp) + i] = sharers_ways[i];
             sharers_coh_states_n[(dir_rd_cnt_r << sh_assign_shift_lp) + i] = sharers_coh_states[i];
           end
