@@ -21,12 +21,11 @@ module testbench
    , parameter dram_sys_cfg_p = "system.ini"
    , parameter dram_capacity_p = 16384
 
-   , parameter cce_trace_p                 = "inv"
-
    , localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
 
    // Trace replay parameters
    , parameter trace_p                     = "inv"
+   , parameter cce_trace_p                 = "inv"
    , parameter trace_ring_width_p          = "inv"
    , parameter trace_rom_addr_width_p      = "inv"
    , localparam trace_rom_data_width_lp    = trace_ring_width_p + 4
