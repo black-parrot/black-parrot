@@ -22,7 +22,7 @@ TRACE_AXE = trace.axe
 VCS_LOG = vcs.log
 
 # testparam
-NUM_INSTR_P ?= 16
+NUM_INSTR_P ?= 32768
 SEED_P ?= 1
 CCE_TRACE_P ?= 0
 AXE_TRACE_P ?= 0

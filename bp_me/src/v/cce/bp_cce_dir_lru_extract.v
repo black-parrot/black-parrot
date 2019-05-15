@@ -22,6 +22,9 @@ module bp_cce_dir_lru_extract
     , localparam lg_lce_assoc_lp          = `BSG_SAFE_CLOG2(lce_assoc_p)
     , localparam lg_tag_sets_per_row_lp   = `BSG_SAFE_CLOG2(tag_sets_per_row_p)
     , localparam lg_rows_per_wg_lp        = `BSG_SAFE_CLOG2(rows_per_wg_p)
+
+    , localparam lce_wg_offset_lp = (rows_per_wg_p == 1) ? 0 : lg_tag_sets_per_row_lp
+    , localparam lce_wg_bits_lp = (rows_per_wg_p == 1) ? 1 : lg_rows_per_wg_lp
   )
   (
    // input row from directory RAM
@@ -57,7 +60,7 @@ module bp_cce_dir_lru_extract
   assign lru_v_o = (row_v_i) 
                    ? (rows_per_wg_p == 1)
                      ? 1'b1
-                     : (lce_i[lg_tag_sets_per_row_lp+:lg_rows_per_wg_lp] == wg_row_i)
+                     : (lce_i[lce_wg_offset_lp+:lce_wg_bits_lp] == wg_row_i)
                        ? 1'b1
                        : 1'b0
                    : 1'b0;

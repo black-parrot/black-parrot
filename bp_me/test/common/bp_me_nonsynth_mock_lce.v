@@ -1000,11 +1000,11 @@ module bp_me_nonsynth_mock_lce
           // wait until TR accepts packet (r&v), then go to READY
           lce_state_n = (tr_pkt_ready_i) ? READY : FINISH_MISS_SEND;
 
-          // clear miss handling state
+          // clear miss handling state, only if TR packet accepted
           mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
 
-          // update lru_way - global round robin
-          lru_way_n = lru_way_r + 'd1;
+          // update lru_way - global round robin, only if TR packet accepted
+          lru_way_n = (tr_pkt_ready_i) ? (lru_way_r + 'd1) : lru_way_r;
 
         end
         TR_CMD: begin
