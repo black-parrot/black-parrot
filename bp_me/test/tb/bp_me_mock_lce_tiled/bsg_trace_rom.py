@@ -25,8 +25,12 @@ store_val = num_lce_p if id_p == 0 else id_p
 
 for i in range(num_instr):
   load_not_store = random.randint(0,1)
-  tag = random.randint(0,255) << 6
+  #tag = random.randint(0,255) << 12
+  #tag = random.randint(0,7) << 12
+  tag = random.randint(0,1) << 12
+  #block = random.randint(0,63) << 6
   block_offset = random.randint(0,7) << 3
+  #addr = tag + block + block_offset
   addr = tag + block_offset
   if (load_not_store):
     tg.send_load(size=8, addr=addr, signed=0)
