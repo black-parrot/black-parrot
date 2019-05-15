@@ -57,7 +57,7 @@ module bp_me_network_pkt_encode_data_resp
 
   always_comb begin
     y_cord = y_cord_width_p'(1);
-    x_cord = x_cord_width_p'(data_resp.dst_id);
+    x_cord = x_cord_width_p'(data_resp.dst_id << 1);
 
     case (data_resp.msg_type)
       e_lce_resp_wb: begin

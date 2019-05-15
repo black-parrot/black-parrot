@@ -16,3 +16,5 @@ run_dc
 *.spike
 *.pl
 rv64ui-p-simple.*
+*_gendata.pl
+

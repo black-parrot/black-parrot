@@ -118,6 +118,7 @@ module bp_be_mem_top
    , output [mepc_width_lp-1:0]              mepc_o
    , output [mtvec_width_lp-1:0]             mtvec_o
    , output                                  tlb_fence_o
+   , output                                  ifence_o
    );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p
@@ -155,7 +156,7 @@ bp_be_tlb_entry_s         dtlb_r_entry, dtlb_w_entry;
 
 /* PTW ports */
 logic [ptag_width_lp-1:0] ptw_dcache_ptag;
-logic                     ptw_dcache_v, ptw_busy;
+logic                     ptw_dcache_v, ptw_busy, ptw_store_not_load;
 bp_be_dcache_pkt_s        ptw_dcache_pkt; 
 logic                     ptw_tlb_miss_v, ptw_tlb_w_v;
 logic [vtag_width_lp-1:0] ptw_tlb_w_vtag, ptw_tlb_miss_vtag;
@@ -178,16 +179,11 @@ logic                     csr_v_lo;
 logic                     translation_en_lo;
 
 /* Control signals */
-logic itlb_fill_cmd_v, dtlb_fill_cmd_v, store_not_load;
+logic dcache_cmd_v, itlb_fill_cmd_v, dtlb_fill_cmd_v, fence_i_cmd_v, nop_cmd_v;
 logic itlb_not_dtlb_resp;
 logic dtlb_miss_r;
 logic [vaddr_width_p-1:0] vaddr_r, vaddr_r2, fault_vaddr;
 logic [dword_width_p-1:0] fault_pc;
-
-assign itlb_fill_cmd_v = mmu_cmd_v_i & (mmu_cmd.mem_op == e_ptw_i);
-assign dtlb_fill_cmd_v = mmu_cmd_v_i & (mmu_cmd.mem_op == e_ptw_l 
-                                        | mmu_cmd.mem_op == e_ptw_s);
-assign store_not_load = mmu_cmd_v_i & (mmu_cmd.mem_op == e_ptw_s);
 
 always_ff @(posedge clk_i) begin
   if(reset_i) begin
@@ -294,7 +290,7 @@ bp_be_ptw
    ,.itlb_not_dtlb_i(itlb_fill_cmd_v)
    ,.itlb_not_dtlb_o(itlb_not_dtlb_resp)
    
-   ,.store_not_load_i(store_not_load)
+   ,.store_not_load_i(ptw_store_not_load)
    
    ,.instr_page_fault_o(ptw_instr_page_fault_v)
    ,.load_page_fault_o(ptw_load_page_fault_v)
@@ -382,11 +378,22 @@ always_ff @(posedge clk_i) begin
   end
 end
     
+// Decode cmd type
+assign itlb_fill_cmd_v = mmu_cmd_v_i & (mmu_cmd.mem_op == e_ptw_i);
+assign dtlb_fill_cmd_v = mmu_cmd_v_i & (mmu_cmd.mem_op == e_ptw_l | mmu_cmd.mem_op == e_ptw_s);
+assign fence_i_cmd_v   = mmu_cmd_v_i & (mmu_cmd.mem_op == e_fence_i);
+assign nop_cmd_v       = mmu_cmd_v_i & (mmu_cmd.mem_op == e_mmu_nop);
+assign dcache_cmd_v    = mmu_cmd_v_i & ~(itlb_fill_cmd_v
+                                         | dtlb_fill_cmd_v
+                                         | fence_i_cmd_v
+                                         | nop_cmd_v);
+
+
 // D-Cache connections
 assign dcache_ptag     = (ptw_busy)? ptw_dcache_ptag : dtlb_r_entry.ptag;
 assign dcache_tlb_miss = (ptw_busy)? 1'b0 : dtlb_miss_v;
 assign dcache_poison   = (ptw_busy)? 1'b0 : chk_poison_ex_i;
-assign dcache_pkt_v    = (ptw_busy)? ptw_dcache_v : mmu_cmd_v_i & ~ptw_tlb_miss_v;
+assign dcache_pkt_v    = (ptw_busy)? ptw_dcache_v : dcache_cmd_v;
 
 always_comb 
   begin
@@ -405,7 +412,7 @@ always_comb
 end
 
 // D-TLB connections
-assign dtlb_r_v     = mmu_cmd_v_i & ~ptw_tlb_miss_v;
+assign dtlb_r_v     = dcache_cmd_v;
 assign dtlb_r_vtag  = mmu_cmd.vaddr.tag;
 assign dtlb_w_v     = ptw_tlb_w_v & ~itlb_not_dtlb_resp;
 assign dtlb_w_vtag  = ptw_tlb_w_vtag;
@@ -415,6 +422,7 @@ assign dtlb_w_entry = ptw_tlb_w_entry;
 assign ptw_tlb_miss_v    = itlb_fill_cmd_v | dtlb_fill_cmd_v;
 assign ptw_tlb_miss_vtag = mmu_cmd.vaddr.tag;
 assign ptw_page_fault_v  = ptw_instr_page_fault_v | ptw_load_page_fault_v | ptw_store_page_fault_v;
+assign ptw_store_not_load = mmu_cmd_v_i & (mmu_cmd.mem_op == e_ptw_s);
  
 // MMU response connections
 assign mem_resp.data                       = ptw_page_fault_v
@@ -433,12 +441,14 @@ assign mem_resp.exception.store_page_fault = ptw_store_page_fault_v;
 assign mem_resp.exception.dtlb_miss        = dtlb_miss_r;
 assign mem_resp.exception.dcache_miss      = dcache_miss_v;
 
-assign mem_resp_v_o    = ptw_busy ? 1'b0 : (dcache_v | csr_v_lo);
+assign mem_resp_v_o    = ptw_busy ? 1'b0 : (dcache_v | csr_v_lo | fence_i_cmd_v | nop_cmd_v);
 assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~ptw_busy;
 
 assign itlb_fill_v_o     = ptw_tlb_w_v & itlb_not_dtlb_resp;
 assign itlb_fill_vtag_o  = ptw_tlb_w_vtag;
 assign itlb_fill_entry_o = ptw_tlb_w_entry;
+
+assign ifence_o = fence_i_cmd_v;
 
 logic dcache_pkt_v_r;
 always_ff @(negedge clk_i)

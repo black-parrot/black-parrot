@@ -109,12 +109,25 @@
   }  bp_fe_cmd_pc_redirect_operands_s;                                                             \
                                                                                                    \
   /*                                                                                               \
+   * bp_fe_icache_fence_s provides a synchronization event between the instruction fetch and data  \
+   * streams. Since the I$ is coherent, this command needs to flush the fe pipeline and            \
+   * restart instruction fetch from the provided vaddr                                             \
+   */                                                                                              \
+  typedef struct packed                                                                            \
+  {                                                                                                \
+    logic [vaddr_width_mp-1:0] pc;                                                                 \
+                                                                                                   \
+    logic [`bp_fe_cmd_icache_fence_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
+                               padding;                                                            \
+  }  bp_fe_cmd_icache_fence_s;                                                                     \
+                                                                                                   \
+  /*                                                                                               \
    * bp_fe_attaboy_s provides branch prediction metadata back to the FE on the case of             \
    * correct prediction, so that the FE can update its predictors accordingly.                     \
    */                                                                                              \
   typedef struct packed                                                                            \
   {                                                                                                \
-    logic [vaddr_width_mp-1:0]            pc;                                                      \
+    logic [vaddr_width_mp-1:0]               pc;                                                   \
     logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                  \
                                                                                                    \
     logic [`bp_fe_cmd_attaboy_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
@@ -178,6 +191,7 @@
     {                                                                                              \
       bp_fe_cmd_reset_operands_s          reset_operands;                                          \
       bp_fe_cmd_pc_redirect_operands_s    pc_redirect_operands;                                    \
+      bp_fe_cmd_icache_fence_s            icache_fence;                                            \
       bp_fe_cmd_attaboy_s                 attaboy;                                                 \
       bp_fe_cmd_itlb_map_s                itlb_fill_response;                                      \
       bp_fe_cmd_itlb_fence_s              itlb_fence;                                              \
@@ -367,6 +381,9 @@ typedef enum bit [2:0]
   (vaddr_width_mp + $bits(bp_fe_command_queue_subopcodes_e)                                        \
    + branch_metadata_fwd_width_mp + $bits(bp_fe_misprediction_reason_e) + 1)                       
 
+`define bp_fe_cmd_icache_fence_width_no_padding(vaddr_width_mp) \
+  (vaddr_width_mp)
+
 `define bp_fe_cmd_attaboy_width_no_padding(vaddr_width_mp, branch_metadata_fwd_width_mp)           \
   (vaddr_width_mp + branch_metadata_fwd_width_mp)                                               
 
@@ -377,23 +394,25 @@ typedef enum bit [2:0]
   (vaddr_width_mp + asid_width_mp + 2)                                                             
 
 `define bp_fe_cmd_operands_u_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
-  (1+`BSG_MAX(`bp_fe_cmd_pc_redirect_operands_width_no_padding(vaddr_width_mp                      \
-                                                               ,branch_metadata_fwd_width_mp       \
-                                                               )                                   \
-              ,`BSG_MAX(`bp_fe_cmd_attaboy_width_no_padding(vaddr_width_mp                         \
-                                                            ,branch_metadata_fwd_width_mp          \
-                                                            )                                      \
-                        ,`BSG_MAX(`bp_fe_cmd_itlb_map_width_no_padding(vaddr_width_mp              \
-                                                                       ,paddr_width_mp             \
-                                                                       )                           \
-                                  ,`BSG_MAX(`bp_fe_cmd_reset_operands_width_no_padding(vaddr_width_mp) \
-                                            ,`bp_fe_cmd_itlb_fence_width_no_padding(vaddr_width_mp \
-                                                                                    ,asid_width_mp \
-                                                                                    )              \
-                                            )                                                      \
-                                     )                                                             \
-                           )                                                                       \
-                )                                                                                  \
+  (1+`BSG_MAX(`bp_fe_cmd_pc_redirect_operands_width_no_padding(vaddr_width_mp                                    \
+                                                               ,branch_metadata_fwd_width_mp                     \
+                                                               )                                                 \
+              ,`BSG_MAX(`bp_fe_cmd_icache_fence_width_no_padding(vaddr_width_mp)                                 \
+                        ,`BSG_MAX(`bp_fe_cmd_attaboy_width_no_padding(vaddr_width_mp                             \
+                                                                      ,branch_metadata_fwd_width_mp              \
+                                                                      )                                          \
+                                  ,`BSG_MAX(`bp_fe_cmd_itlb_map_width_no_padding(vaddr_width_mp                  \
+                                                                                 ,paddr_width_mp                 \
+                                                                                 )                               \
+                                            ,`BSG_MAX(`bp_fe_cmd_reset_operands_width_no_padding(vaddr_width_mp) \
+                                                      ,`bp_fe_cmd_itlb_fence_width_no_padding(vaddr_width_mp     \
+                                                                                              ,asid_width_mp     \
+                                                                                              )                  \
+                                                      )                                                          \
+                                            )                                                                    \
+                                  )                                                                              \
+                        )                                                                                        \
+              )                                                                                                  \
    )                                                                                               
 
 `define bp_fe_cmd_reset_operands_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
@@ -413,6 +432,14 @@ typedef enum bit [2:0]
                                )                                                                   \
    - `bp_fe_cmd_pc_redirect_operands_width_no_padding(vaddr_width_mp,branch_metadata_fwd_width_mp) \
    )                                                                                               
+
+`define bp_fe_cmd_icache_fence_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
+  (`bp_fe_cmd_operands_u_width(vaddr_width_mp                                                      \
+                               , paddr_width_mp                                                    \
+                               , asid_width_mp                                                     \
+                               , branch_metadata_fwd_width_mp)                                     \
+   - `bp_fe_cmd_icache_fence_width_no_padding(vaddr_width_mp)                                      \
+   )
 
 `define bp_fe_cmd_attaboy_padding_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
   (`bp_fe_cmd_operands_u_width(vaddr_width_mp                                                      \

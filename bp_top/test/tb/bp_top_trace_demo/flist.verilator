@@ -2,10 +2,12 @@
 $BSG_IP_CORES_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
 // be files
 $BP_BE_DIR/test/common/bp_be_nonsynth_tracer.v
+$BP_BE_DIR/test/common/bp_be_nonsynth_perf.v
 // me files
 $BP_ME_DIR/test/common/bp_mem_dramsim2.v
 $BP_ME_DIR/test/common/bp_mem.v
 $BP_ME_DIR/test/common/dramsim2_wrapper.cpp
 $BP_ME_DIR/test/common/bp_cce_nonsynth_tracer.v
+$BP_ME_DIR/test/common/bp_cce_nonsynth_cfg_loader.v
 // top files
 

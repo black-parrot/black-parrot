@@ -19,16 +19,54 @@ package bp_be_rv64_pkg;
   localparam rv64_funct3_width_gp   = 3;
   localparam rv64_funct7_width_gp   = 7;
   localparam rv64_csr_addr_width_gp = 12;
+  localparam rv64_imm20_width_gp    = 20;
+  localparam rv64_imm12_width_gp    = 12;
+  localparam rv64_imm11to5_width_gp = 7;
+  localparam rv64_imm4to0_width_gp  = 5;
 
-  typedef struct packed                                                                           
-  {                                                                                               
-    logic[rv64_funct7_width_gp-1:0]   funct7;                                                     
-    logic[rv64_reg_addr_width_gp-1:0] rs2_addr;                                                    
-    logic[rv64_reg_addr_width_gp-1:0] rs1_addr;                                                    
-    logic[rv64_funct3_width_gp-1:0]   funct3;                                                      
-    logic[rv64_reg_addr_width_gp-1:0] rd_addr;                                                     
-    logic[rv64_opcode_width_gp-1:0]   opcode;                                                      
-  }  bp_be_instr_s;
+  typedef struct packed
+  {
+    logic [rv64_funct7_width_gp-1:0]   funct7;
+    logic [rv64_reg_addr_width_gp-1:0] rs2_addr;
+    logic [rv64_reg_addr_width_gp-1:0] rs1_addr;
+    logic [rv64_funct3_width_gp-1:0]   funct3;
+    logic [rv64_reg_addr_width_gp-1:0] rd_addr;
+  }  rv64_instr_rtype_s;
+
+  typedef struct packed
+  {
+    logic [rv64_imm12_width_gp-1:0]    imm12;
+    logic [rv64_reg_addr_width_gp-1:0] rs1;
+    logic [rv64_funct3_width_gp-1:0]   funct3;
+    logic [rv64_reg_addr_width_gp-1:0] rd_addr;
+  }  rv64_instr_itype_s;
+
+  typedef struct packed
+  {
+    logic [rv64_imm11to5_width_gp-1:0] imm11to5;
+    logic [rv64_reg_addr_width_gp-1:0] rs2;
+    logic [rv64_reg_addr_width_gp-1:0] rs1;
+    logic [rv64_funct3_width_gp-1:0]   funct3;
+    logic [rv64_imm4to0_width_gp-1:0]  imm4to0;
+  }  rv64_instr_stype_s;
+
+  typedef struct packed 
+  {
+    logic [rv64_imm20_width_gp-1:0]    imm20;
+    logic [rv64_reg_addr_width_gp-1:0] rd_addr;
+  }  rv64_instr_utype_s;
+
+  typedef struct packed
+  {
+    union packed
+    {
+      rv64_instr_rtype_s rtype;
+      rv64_instr_itype_s itype;
+      rv64_instr_stype_s stype;
+      rv64_instr_utype_s utype;
+    }  fields;
+    logic [rv64_opcode_width_gp-1:0]   opcode;
+  }  rv64_instr_s;
 
   `define bp_be_instr_width \
     ($bits(bp_be_instr_s))
