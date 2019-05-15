@@ -26,8 +26,7 @@ module bp_me_nonsynth_tile
 
    // Used to enable trace replay outputs for testbench
    , parameter trace_p      = 0
-   , parameter calc_debug_p = 1
-   , parameter debug_p      = 0 // Debug for the network (TODO: rename)
+   , parameter calc_debug_p = 0
    , parameter cce_trace_p  = 0
    , parameter axe_trace_p = 0
 
@@ -242,10 +241,11 @@ logic [1:0][dirs_lp-1:0] wh_lce_data_cmd_v_li, wh_lce_data_cmd_ready_lo;
 logic [1:0][dirs_lp-1:0] wh_lce_data_cmd_v_lo, wh_lce_data_cmd_ready_li;
 
 // Extract destination ids from packets
-wire [x_cord_width_p-1:0] lce_req_dst_x_cord_0_lo  = lce_req_lo[0].dst_id;
-wire [x_cord_width_p-1:0] lce_req_dst_x_cord_1_lo  = lce_req_lo[1].dst_id;
-wire [x_cord_width_p-1:0] lce_resp_dst_x_cord_0_lo = lce_resp_lo[0].dst_id;
-wire [x_cord_width_p-1:0] lce_resp_dst_x_cord_1_lo = lce_resp_lo[1].dst_id;
+// Note: We shift by 1 to make a CCE id of 1 -> x=2
+wire [x_cord_width_p-1:0] lce_req_dst_x_cord_0_lo  = lce_req_lo[0].dst_id << 1;
+wire [x_cord_width_p-1:0] lce_req_dst_x_cord_1_lo  = lce_req_lo[1].dst_id << 1;
+wire [x_cord_width_p-1:0] lce_resp_dst_x_cord_0_lo = lce_resp_lo[0].dst_id << 1;
+wire [x_cord_width_p-1:0] lce_resp_dst_x_cord_1_lo = lce_resp_lo[1].dst_id << 1;
 wire [x_cord_width_p-1:0] lce_cmd_dst_x_cord_lo    = lce_cmd_lo.dst_id;
 
 for (genvar i = 0; i < dirs_lp; i++)
@@ -435,7 +435,7 @@ for (genvar i = 0; i < 2; i++)
        ,.reset_i(reset_i)
        ,.link_i(lce_req_link_i_stitch[i])
        ,.link_o(lce_req_link_o_stitch[i])
-       ,.my_x_i(my_x_i+x_cord_width_p'(i))
+       ,.my_x_i(x_cord_width_p'(2*my_x_i+i))
        ,.my_y_i(my_y_i)
        );
 
@@ -450,7 +450,7 @@ for (genvar i = 0; i < 2; i++)
        ,.reset_i(reset_i)
        ,.link_i(lce_resp_link_i_stitch[i])
        ,.link_o(lce_resp_link_o_stitch[i])
-       ,.my_x_i(my_x_i+x_cord_width_p'(i))
+       ,.my_x_i(x_cord_width_p'(2*my_x_i+i))
        ,.my_y_i(my_y_i)
        );
 
@@ -465,7 +465,7 @@ for (genvar i = 0; i < 2; i++)
        ,.reset_i(reset_i)
        ,.link_i(lce_cmd_link_i_stitch[i])
        ,.link_o(lce_cmd_link_o_stitch[i])
-       ,.my_x_i(my_x_i+x_cord_width_p'(i))
+       ,.my_x_i(x_cord_width_p'(2*my_x_i+i))
        ,.my_y_i(my_y_i)
        );
 
@@ -514,7 +514,7 @@ for (genvar i = 0; i < 2; i++)
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
-       ,.local_x_cord_i(my_x_i+x_cord_width_p'(i))
+       ,.local_x_cord_i(x_cord_width_p'(2*my_x_i+i))
        ,.local_y_cord_i(my_y_i)
 
        ,.valid_i(wh_lce_data_cmd_v_li[i])
@@ -592,7 +592,7 @@ for (genvar i = 0; i < 2; i++)
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
-       ,.local_x_cord_i(my_x_i+x_cord_width_p'(i))
+       ,.local_x_cord_i(x_cord_width_p'(2*my_x_i+i))
        ,.local_y_cord_i(my_y_i)
 
        ,.valid_i(wh_lce_data_resp_v_li[i])
