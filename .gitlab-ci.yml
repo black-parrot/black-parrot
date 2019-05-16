@@ -31,4 +31,9 @@ regress-job:
     - exit 0
 
   artifacts:
+    when: always
+    untracked: true
+    paths:
+      - bp_top/syn/reports/
+      - bp_top/syn/logs/
 
