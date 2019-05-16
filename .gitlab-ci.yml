@@ -4,7 +4,8 @@ variables:
   GIT_SUBMODULE_STRATEGY: none
 
 before_script:
-  - pwd 
+  - echo "Building test programs"
+  - make progs
 
 # Only needed if not using the provided Gitlab docker image
 install_dependencies:
