@@ -19,7 +19,7 @@ regress-job:
     - git submodule update --init -- basejump_stl
     - echo "Linking external tools"
     - rm -rf external
-    - ln -sf /bp-tools/ external/
+    - ln -sf /bp-tools/ external
     - echo "Building test programs"
     - make progs
 
