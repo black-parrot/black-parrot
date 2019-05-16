@@ -226,6 +226,7 @@ assign issue_pkt_ready_o = (chk_dispatch_v_i | ~issue_pkt_v_r);
 // Module instantiations
 // Register files
 bp_be_regfile
+#(.harden_p(1))
  int_regfile
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -249,6 +250,7 @@ bp_be_regfile
 if (fp_en_p)
   begin : fp_rf
     bp_be_regfile
+    #(.harden_p(0))
      float_regfile
       (.clk_i(clk_i)
        ,.reset_i(reset_i)

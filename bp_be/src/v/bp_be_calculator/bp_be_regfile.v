@@ -48,6 +48,7 @@ module bp_be_regfile
  import bp_be_rv64_pkg::*;
  #(// Default parameters
    parameter w_to_r_fwd_p = 0
+   , parameter harden_p = 1
    
    // Generated parameters
    // From RISC-V specifications
@@ -98,6 +99,7 @@ bsg_mem_2r1w_sync
    ,.read_write_same_addr_p(1) // We can't actually read/write the same address, but this should 
                                //   be taken care of by forwarding and otherwise the assertion is
                                //   annoying
+   ,.harden_p(harden_p)
    )
  rf
   (.clk_i(clk_i)
