@@ -550,11 +550,13 @@ Assembler::parseDirCohStSel(string &s) {
 void
 Assembler::parseReadDir(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
   inst->type_u.read_dir_op_s.dir_way_group_sel = parseDirWgSel(tokens->at(1));
-  if (inst->minor_op == e_rdp || inst->minor_op == e_rdw) {
+  if (inst->minor_op == e_rdp) {
     /*
     inst->pruief_sel = e_pruief_logic;
     inst->flag_mask_w_v = e_flag_pf;
     */
+  } else if (inst->minor_op == e_rdw) {
+    inst->type_u.read_dir_op_s.dir_lce_sel = parseDirLceSel(tokens->at(2));
   } else if (inst->minor_op == e_rde) {
     inst->type_u.read_dir_op_s.dir_lce_sel = parseDirLceSel(tokens->at(2));
     inst->type_u.read_dir_op_s.dir_way_sel = parseDirWaySel(tokens->at(3));

@@ -65,7 +65,6 @@ module bp_cce_dir_lru_extract
                        : 1'b0
                    : 1'b0;
 
-  logic [`bp_cce_coh_bits-1:0] lru_coh_state;
   assign lru_coh_state_o = (row_v_i)
                            ? row[lce_i[0+:lg_tag_sets_per_row_lp]][lru_way_i].state
                            : '0;

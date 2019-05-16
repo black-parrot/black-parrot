@@ -1,9 +1,9 @@
 /**
- * bp_mem.v
+ * bp_mem_nonsynth_tracer.v
  *
  */
 
-module bp_mem
+module bp_mem_nonsynth_tracer
   import bp_common_pkg::*;
   import bp_cce_pkg::*;
   #(parameter num_lce_p="inv"
@@ -279,4 +279,26 @@ module bp_mem
       endcase
     end
   end
+
+  always_ff @(negedge clk_i) begin
+    if (~reset_i) begin
+      case (mem_st)
+        READY: begin
+          if (mem_data_cmd_v_i && mem_resp_ready_i) begin
+            $display("%0T: MEM DATA CMD M[%H:%0d] %H", $time, mem_data_cmd_i_s.addr, wr_addr, mem_data_cmd_i_s.data);
+          end else if (mem_cmd_v_i && mem_data_resp_ready_i) begin
+            $display("%0T: MEM CMD M[%H:%0d]", $time, mem_cmd_i_s.addr, rd_addr);
+          end
+        end
+        RD_CMD: begin
+          $display("%0T: MEM DATA RESP M[%H] %H", $time, mem_cmd_s_r.addr, mem_data_o);
+        end
+        RD_DATA_CMD: begin
+          $display("%0T: MEM RESP M[%H]", $time, mem_data_cmd_s_r.addr);
+        end
+      endcase
+    end
+  end
+
 endmodule
+

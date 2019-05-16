@@ -132,8 +132,9 @@ module bp_cce_nonsynth_tracer
                  , $time, cce_id_i, lce_resp.src_id, lce_resp.addr, lce_resp.msg_type);
       end
       if (lce_data_resp_v_i & lce_data_resp_yumi_i) begin
-        $display("%0T: CCE[%0d] DATA RESP LCE[%0d] addr[%H] null_wb[%0b]"
-                 , $time, cce_id_i, lce_data_resp.src_id, lce_data_resp.addr, lce_data_resp.msg_type);
+        $display("%0T: CCE[%0d] DATA RESP LCE[%0d] addr[%H] null_wb[%0b]\n%H"
+                 , $time, cce_id_i, lce_data_resp.src_id, lce_data_resp.addr, lce_data_resp.msg_type
+                 , lce_data_resp.data);
       end
       if (mem_resp_v_i & mem_resp_yumi_i) begin
         $display("%0T: CCE[%0d] MEM RESP wr[%0b] addr[%H] lce[%0d] way[%0d] req_addr[%H] nc[%0b]"

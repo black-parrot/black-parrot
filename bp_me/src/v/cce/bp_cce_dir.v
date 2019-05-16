@@ -419,6 +419,7 @@ module bp_cce_dir
       ,.lru_tag_o(lru_tag_o)
      );
 
+  /*
   always_ff @(negedge clk_i) begin
     if (~reset_i) begin
       if (dir_ram_w_v & dir_ram_v) begin
@@ -428,5 +429,6 @@ module bp_cce_dir
       end
     end
   end
+  */
 
 endmodule

@@ -1185,26 +1185,6 @@ module bp_me_nonsynth_mock_lce
     end
   end
 
-  /*
-  always_ff @(negedge clk_i) begin
-      case (lce_state)
-        TR_CMD: begin
-          if (tag_hit_lo && load_op) begin
-            $display("LCE[%0d] Load hit: M[%d]", lce_id_i, cmd.paddr);
-          end else if (~tag_hit_lo && load_op) begin
-            $display("LCE[%0d] Load miss: M[%d]", lce_id_i, cmd.paddr);
-          end else if (~tag_hit_lo && store_op) begin
-            $display("LCE[%0d] Store miss: M[%d] := %d", lce_id_i, cmd.paddr, cmd.data);
-          end else if (tag_hit_lo && store_op && ((tag_cur.coh_st == e_MESI_M) || (tag_cur.coh_st == e_MESI_E))) begin
-            $display("LCE[%0d] Store hit: M[%d] := %d", lce_id_i, cmd.paddr, cmd.data);
-          end else if (tag_hit_lo && store_op && (tag_cur.coh_st == e_MESI_S)) begin
-            $display("LCE[%0d] Store miss: M[%d] := %d", lce_id_i, cmd.paddr, cmd.data);
-          end
-        end
-      endcase
-  end
-  */
-
   always_ff @(posedge clk_i) begin
     if (axe_trace_p) begin
     case (lce_state)

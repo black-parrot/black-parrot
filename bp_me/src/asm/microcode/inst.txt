@@ -63,7 +63,7 @@ sfz <flag>
 
 # Read Directory
 rdp <wg>
-rdw <wg>
+rdw <wg> <lce>
 rde <wg> <lce> <way>
 
 # Write Directory

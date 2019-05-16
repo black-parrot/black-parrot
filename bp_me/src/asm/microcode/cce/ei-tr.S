@@ -62,7 +62,7 @@ lce_req: popq lceReq
 bf ucf uncached_req
 rdp req
 bf pf error
-rdw req
+rdw req req
 gad
 # fall through
 
