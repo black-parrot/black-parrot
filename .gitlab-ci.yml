@@ -15,7 +15,7 @@ variables:
 
 regress-job:
   image:
-    - "registry.gitlab.com/dpetrisko/pre-alpha-release:latest"
+    name: "registry.gitlab.com/dpetrisko/pre-alpha-release:latest"
   before_script:
     - echo "Fetching Basejump STL"
     - git submodule update --init -- basejump_stl
