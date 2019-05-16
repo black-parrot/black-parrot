@@ -160,6 +160,10 @@ module bp_cce_dir
   assign wr_tag_set_select = (num_lce_p == 1) ? '0 : lce_i[0+:lg_dir_tag_sets_per_row_lp];
   assign rd_tag_set_select = (num_lce_p == 1) ? '0 : lce_r[0+:lg_dir_tag_sets_per_row_lp];
 
+  logic [lg_dir_rows_per_wg_lp-1:0] wr_wg_row_select, rd_wg_row_select;
+  assign wr_wg_row_select = (num_lce_p == 1) ? '0 : lce_i[(lg_num_lce_lp-1)-:lg_dir_rows_per_wg_lp];
+  assign rd_wg_row_select = (num_lce_p == 1) ? '0 : lce_r[(lg_num_lce_lp-1)-:lg_dir_rows_per_wg_lp];
+
   logic [num_lce_p-1:0]                                 sharers_hits_r, sharers_hits_n;
   logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0]            sharers_ways_r, sharers_ways_n;
   logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0]           sharers_coh_states_r, sharers_coh_states_n;
@@ -213,6 +217,7 @@ module bp_cce_dir
       dir_ram_w_data = '0;
       dir_ram_v = '0;
       dir_ram_w_v = '0;
+      dir_ram_addr = '0;
       way_group_n = '0;
       lce_n = '0;
       way_n = '0;
@@ -236,6 +241,7 @@ module bp_cce_dir
       dir_ram_w_data = '0;
       dir_ram_v = '0;
       dir_ram_w_v = '0;
+      dir_ram_addr = '0;
       way_group_n = way_group_r;
       lce_n = lce_r;
       way_n = way_r;
@@ -302,7 +308,7 @@ module bp_cce_dir
             dir_ram_v = 1'b1;
             dir_ram_w_v = 1'b1;
 
-            dir_ram_addr = (dir_rows_per_wg_lp == 1) ? way_group_i : {way_group_i, wr_tag_set_select};
+            dir_ram_addr = (dir_rows_per_wg_lp == 1) ? way_group_i : {way_group_i, wr_wg_row_select};
 
             if (w_cmd_i == e_wde_op) begin
               dir_ram_w_mask = {{(dir_row_width_lp-entry_width_lp){1'b0}},{entry_width_lp{1'b1}}}
@@ -336,7 +342,7 @@ module bp_cce_dir
           // whether there is only 1 LCE, as it does in the READY state
           if (dir_rd_cnt_r < (dir_rows_per_wg_lp-1)) begin
             dir_ram_v = 1'b1;
-            dir_ram_addr = {way_group_r, dir_rd_cnt_r};
+            dir_ram_addr = {way_group_r, dir_rd_cnt_n};
             dir_data_o_v_n = 1'b1;
             dir_state_n = READ;
           end else begin
