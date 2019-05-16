@@ -27,5 +27,8 @@ regress-job:
     - echo "Running Verilator regression"
     - cd bp_top/syn
     - make regress.sc
+    - grep -cr "FAIL" reports/ && exit 1
     - exit 0
+
+  artifacts:
 
