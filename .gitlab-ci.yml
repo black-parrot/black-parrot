@@ -17,10 +17,11 @@ regress-job:
   before_script:
     - echo "Fetching Basejump STL"
     - git submodule update --init -- basejump_stl
-    - echo "Building test programs"
-    - make progs
+    - echo "Linking external tools"
     - rm -rf external
     - ln -sf /bp-tools/ external/
+    - echo "Building test programs"
+    - make progs
 
   script:
     - echo "Running Verilator regression"
