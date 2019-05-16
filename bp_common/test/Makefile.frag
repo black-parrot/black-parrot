@@ -16,7 +16,6 @@ RV64_BENCHMARKS = \
   multiply \
   qsort    \
   rsort    \
-  spmv     \
   towers   \
   vvadd
 

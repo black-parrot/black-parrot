@@ -1,4 +1,7 @@
 # coming-soon
+[![Gitlab
+CI](https://gitlab.com/black-parrot/pre-alpha-release/badges/dev_feature_ci/build.svg)](https://gitlab.com/black-parrot/pre-alpha-release/pipelines)
+
 Black Parrot is coming soon.
 
 To setup the repo:
