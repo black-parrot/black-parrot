@@ -45,8 +45,8 @@ deps.v:
 	$(shell mkdir -p $(VCS_RUN_DIR))
 	@cp $(MEM_PATH)/$(PROG).mem $(VCS_RUN_DIR)/prog.mem || true
 	# TODO: Should set the dram parameters through the makefile flow
-	@cp $(BP_COMMON)/test/cfg/DDR2_micron_16M_8b_x8_sg3E.ini $(VCS_RUN_DIR) || true
-	@cp $(BP_COMMON)/test/cfg/system.ini $(VCS_RUN_DIR)/system.ini || true
+	@cp $(BP_COMMON_DIR)/test/cfg/DDR2_micron_16M_8b_x8_sg3E.ini $(VCS_RUN_DIR) || true
+	@cp $(BP_COMMON_DIR)/test/cfg/system.ini $(VCS_RUN_DIR)/system.ini || true
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/testbench.v > $(VCS_RUN_DIR)/testbench.v || true
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v > $(VCS_RUN_DIR)/wrapper.v || true
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $(VCS_RUN_DIR)/flist.vcs || true
