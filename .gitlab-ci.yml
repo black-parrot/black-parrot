@@ -32,7 +32,6 @@ regress-job:
 
   artifacts:
     when: always
-    untracked: true
     paths:
       - bp_top/syn/reports/
       - bp_top/syn/logs/
