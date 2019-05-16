@@ -15,6 +15,8 @@ pass-job:
 
 regress-job:
   before_script:
+    - echo "Fetching Basejump STL"
+    - git submodule update --init -- basejump_stl
     - echo "Building test programs"
     - make progs
 
