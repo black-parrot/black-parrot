@@ -19,6 +19,8 @@ regress-job:
     - git submodule update --init -- basejump_stl
     - echo "Building test programs"
     - make progs
+    - rm -rf external
+    - ln -sf /bp-tools/ external/
 
   script:
     - echo "Running Verilator regression"
