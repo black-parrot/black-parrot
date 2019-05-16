@@ -3,10 +3,10 @@ variables:
   GIT_STRATEGY: fetch
   GIT_SUBMODULE_STRATEGY: none
 
-pass-job:
-  script:
-    - echo "Passing job 1"
-    - exit 0
+#pass-job:
+#  script:
+#    - echo "Passing job 1"
+#    - exit 0
 
 #fail-job:
 #  script:
@@ -14,6 +14,8 @@ pass-job:
 #    - exit 1 
 
 regress-job:
+  image:
+    - registry.gitlab.com/dpetrisko/pre-alpha-release
   before_script:
     - echo "Fetching Basejump STL"
     - git submodule update --init -- basejump_stl
