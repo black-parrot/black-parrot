@@ -45,8 +45,8 @@ deps.sc:
 	$(shell mkdir -p $(VERILATOR_RUN_DIR))
 	@cp $(MEM_PATH)/$(PROG).mem $(VERILATOR_RUN_DIR)/prog.mem || true
 	# TODO: Should set the dram parameters through the makefile flow
-	@cp $(BP_EXTERNAL_DIR)/DRAMSim2/ini/DDR2_micron_16M_8b_x8_sg3E.ini $(VERILATOR_RUN_DIR) || true
-	@cp $(BP_EXTERNAL_DIR)/DRAMSim2/system.ini.example $(VERILATOR_RUN_DIR)/system.ini || true
+	@cp $(BP_COMMON)/test/cfg/DDR2_micron_16M_8b_x8_sg3E.ini $(VERILATOR_RUN_DIR) || true
+	@cp $(BP_COMMON)/test/cfg/system.ini $(VERILATOR_RUN_DIR)/system.ini || true
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/testbench.v > $(VERILATOR_RUN_DIR)/testbench.v || true
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v > $(VERILATOR_RUN_DIR)/wrapper.v || true
 	@touch $(VERILATOR_RUN_DIR)/flist.verilator

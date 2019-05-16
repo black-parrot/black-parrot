@@ -3,33 +3,24 @@ variables:
   GIT_STRATEGY: fetch
   GIT_SUBMODULE_STRATEGY: none
 
-before_script:
-  - echo "Building test programs"
-  - make progs
-
-# Only needed if not using the provided Gitlab docker image
-install_dependencies:
-  when:
-    manual
-  script:
-    - $(pwd)
-    - if [ "${BUILD_DEPS}" == "1"]; then source setup_env tools;
-    - if [ "${BUILD_ROMS}" == "1"]; then source setup_env roms;
-
 pass-job:
   script:
     - echo "Passing job 1"
-    - exit 0
-
-regress-job:
-  script:
-    - echo "Running Verilator regression"
-    - cd bp_top/syn
-    - make regress.sc
     - exit 0
 
 #fail-job:
 #  script:
 #    - echo "Failing job 2"
 #    - exit 1 
+
+regress-job:
+  before_script:
+    - echo "Building test programs"
+    - make progs
+
+  script:
+    - echo "Running Verilator regression"
+    - cd bp_top/syn
+    - make regress.sc
+    - exit 0
 
