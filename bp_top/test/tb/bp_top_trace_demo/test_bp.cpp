@@ -29,6 +29,7 @@ int sc_main(int argc, char **argv)
   VerilatedVcdSc* wf = new VerilatedVcdSc;
   tb->trace(wf, 10);
   wf->open("vcdplus.vpd");
+  std::cout << "TESTTESTTEST" << std::endl;
 #endif
 
   reset = 1;
