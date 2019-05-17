@@ -204,7 +204,7 @@ for(genvar i = 0; i < num_core_p; i++)
        ,.proc_cfg_i(proc_cfg)
 
        ,.my_x_i(x_cord_width_p'(i))
-       ,.my_y_i(y_cord_width_p'(1))
+       ,.my_y_i(y_cord_width_p'(0))
 
        ,.freeze_i(freeze_i[i])
 
