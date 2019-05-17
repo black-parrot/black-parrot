@@ -277,7 +277,7 @@ always @* begin : stall_state_comb
    endcase // case (stall_state)
 end
 
-assign pc_v_f1_n = (stall_state != 2'd0) & pc_gen_itlb_ready_i & pc_gen_fe_ready_i & pc_gen_icache_ready_i;
+assign pc_v_f1_n = (stall_state != e_wait) & pc_gen_itlb_ready_i & pc_gen_fe_ready_i & pc_gen_icache_ready_i;
 
 always @(posedge clk_i) begin
    if (reset_i) begin
@@ -288,7 +288,7 @@ always @(posedge clk_i) begin
 end
 
 always @* begin
-   if (stall_state == 2'd1) begin
+   if (stall_state == e_runs) begin
       // Run
       nxt_pc_resume = pc_f2;
    end else begin
@@ -407,7 +407,7 @@ begin
     end
     else 
     begin
-        if ((stall_state == 1'd1) | (nxt_stall_state == 2'd1))
+        if ((stall_state == e_runs) | (nxt_stall_state == e_runs))
         begin
             pc_f2 <= pc_f1;
             pc_v_f2 <= pc_v_f1 & ~pc_redirect_v & ~icache_fence_v & ~itlb_fence_v;
