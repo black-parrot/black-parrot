@@ -296,7 +296,7 @@ for (genvar i = 0; i < dirs_lp; i++)
 
         assign wh_lce_data_resp_li[0][W]   = lce_data_resp_i[W];
         assign wh_lce_data_resp_v_li[0][W] = lce_data_resp_v_i[W];
-        assign lce_data_resp_ready_o[W]    = wh_lce_data_resp_ready_li[0][W];
+        assign lce_data_resp_ready_o[W]    = wh_lce_data_resp_ready_lo[0][W];
 
         assign wh_lce_data_cmd_li[0][W]   = lce_data_cmd_i[W];
         assign wh_lce_data_cmd_v_li[0][W] = lce_data_cmd_v_i[W];
@@ -361,12 +361,12 @@ for (genvar i = 0; i < dirs_lp; i++)
       end
     else if (i == S) // Source side
       begin : fi1_S
-        assign lce_req_link_i_stitch[0][S].data          = {lce_req_lo[0], 1'b1, lce_req_dst_x_cord_0_lo};
+        assign lce_req_link_i_stitch[0][S].data          = {lce_req_lo[0], 1'b0, lce_req_dst_x_cord_0_lo};
         assign lce_req_link_i_stitch[0][S].v             = lce_req_v_lo[0];
         assign lce_req_link_i_stitch[0][S].ready_and_rev = '0;
         assign lce_req_ready_li[0] = lce_req_link_o_stitch[0][S].ready_and_rev;
 
-        assign lce_resp_link_i_stitch[0][S].data          = {lce_resp_lo[0], 1'b1, lce_resp_dst_x_cord_0_lo};
+        assign lce_resp_link_i_stitch[0][S].data          = {lce_resp_lo[0], 1'b0, lce_resp_dst_x_cord_0_lo};
         assign lce_resp_link_i_stitch[0][S].v             = lce_resp_v_lo[0];
         assign lce_resp_link_i_stitch[0][S].ready_and_rev = '0;
         assign lce_resp_ready_li[0] = lce_resp_link_o_stitch[0][S].ready_and_rev;
@@ -375,7 +375,7 @@ for (genvar i = 0; i < dirs_lp; i++)
         assign wh_lce_data_resp_v_li[0][S]     = '0;
         assign wh_lce_data_resp_ready_li[0][S] = '0;
 
-        assign lce_cmd_link_i_stitch[0][S].data          = {lce_cmd_lo, 1'b1, lce_cmd_dst_x_cord_lo};
+        assign lce_cmd_link_i_stitch[0][S].data          = {lce_cmd_lo, 1'b0, lce_cmd_dst_x_cord_lo};
         assign lce_cmd_link_i_stitch[0][S].v             = lce_cmd_v_lo;
         assign lce_cmd_link_i_stitch[0][S].ready_and_rev = '0;
         assign lce_cmd_ready_li = lce_cmd_link_o_stitch[0][S].ready_and_rev;
@@ -383,12 +383,12 @@ for (genvar i = 0; i < dirs_lp; i++)
         // I$ data cmd wh router fed from adapter
         assign wh_lce_data_cmd_ready_li[0][S] = '0;
 
-        assign lce_req_link_i_stitch[1][S].data          = {lce_req_lo[1], 1'b1, lce_req_dst_x_cord_1_lo};
+        assign lce_req_link_i_stitch[1][S].data          = {lce_req_lo[1], 1'b0, lce_req_dst_x_cord_1_lo};
         assign lce_req_link_i_stitch[1][S].v             = lce_req_v_lo[1];
         assign lce_req_link_i_stitch[1][S].ready_and_rev = '0;
         assign lce_req_ready_li[1] = lce_req_link_o_stitch[1][S].ready_and_rev;
 
-        assign lce_resp_link_i_stitch[1][S].data          = {lce_resp_lo[1], 1'b1, lce_resp_dst_x_cord_1_lo};
+        assign lce_resp_link_i_stitch[1][S].data          = {lce_resp_lo[1], 1'b0, lce_resp_dst_x_cord_1_lo};
         assign lce_resp_link_i_stitch[1][S].v             = lce_resp_v_lo[1];
         assign lce_resp_link_i_stitch[1][S].ready_and_rev = '0;
         assign lce_resp_ready_li[1] = lce_resp_link_o_stitch[1][S].ready_and_rev;
@@ -507,7 +507,6 @@ for (genvar i = 0; i < 2; i++)
        ,.y_cord_width_p(y_cord_width_p)
        ,.len_width_p(lce_data_cmd_len_width_lp)
        ,.enable_2d_routing_p(1)
-       ,.enable_yx_routing_p(1)
        ,.header_on_lsb_p(1)
        )
      data_cmd_router
@@ -585,7 +584,6 @@ for (genvar i = 0; i < 2; i++)
        ,.y_cord_width_p(y_cord_width_p)
        ,.len_width_p(lce_cce_data_resp_len_width_lp)
        ,.enable_2d_routing_p(1)
-       ,.enable_yx_routing_p(1)
        ,.header_on_lsb_p(1)
        )
      data_resp_router
