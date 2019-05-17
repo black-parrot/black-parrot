@@ -289,7 +289,7 @@ bp_be_dtlb
    ,.flush_i(itlb_fence_v)
 	       
    ,.r_v_i(pc_gen_itlb_v)
-   ,.r_ready_o()
+   ,.r_ready_o(pc_gen_itlb_ready)
    ,.r_vtag_i(itlb_vaddr.tag)
 	   
    ,.r_v_o(itlb_icache_data_resp_v)
