@@ -83,10 +83,8 @@ bp_fe_fetch_s            pc_gen_fetch;
 bp_fe_exception_s        pc_gen_exception;
 bp_fe_instr_scan_s       scan_instr;
    
-// Logic for handling coming out of reset
-enum bit [0:0] {e_reset, e_run} state_n, state_r;
-
-enum bit [1:0] {e_wait=2'd0, e_runs=2'd1, e_stall=2'd2} stall_state, nxt_stall_state;
+// FSM Variables
+enum bit [1:0] {e_wait=2'd0, e_runs=2'd1, e_stall=2'd2} state_n, state_r;
    
 // pipeline pc's
 logic [vaddr_width_p-1:0]       pc_f2;
@@ -100,8 +98,6 @@ logic [vaddr_width_p-1:0]       nxt_pc_resume;
 logic                           pc_v_f1;
 logic                           pc_v_f1_n;
 logic [vaddr_width_p-1:0]       pc_n;
-
-logic                           stall;
 
 //branch prediction wires
 logic                           is_br;
@@ -140,26 +136,6 @@ logic                          itlb_miss_exception;
 bp_fe_branch_metadata_fwd_s fe_queue_branch_metadata, fe_queue_branch_metadata_r;
 
 logic btb_pred_f1_r, btb_pred_f2_r;
-
-// Boot logic 
-always_comb
-  begin
-    unique casez (state_r)
-      e_reset : state_n = state_reset_v ? e_run : e_reset;
-      e_run   : state_n = e_run;
-      default : state_n = e_reset;
-    endcase
-  end
-
-always_ff @(posedge clk_i) 
-  begin
-    if (reset_i)
-        state_r <= e_reset;
-    else
-      begin
-        state_r <= state_n;
-      end
-  end
 
 //connect pc_gen to the rest of the FE submodules as well as FE top module   
 assign pc_gen_icache_o = pc_gen_icache;
@@ -219,65 +195,61 @@ end
 
 assign pc_v_f1 = ~((predict_taken & ~btb_pred_f2_r));
 
-// stall logic
-assign stall = (state_r == e_reset) | ~pc_gen_fe_ready_i | ~pc_gen_icache_ready_i | itlb_stall | icache_miss_i;
-
-
 // Stall FSM
-always @(posedge clk_i) begin : stall_state_seq
+always @(posedge clk_i) begin : state_r_seq
    if (reset_i) begin
-      stall_state <= e_wait;
+      state_r <= e_wait;
    end else begin
-      stall_state <= nxt_stall_state;
+      state_r <= state_n;
    end
 end
 
-always @* begin : stall_state_comb
-   case (stall_state)
+always @* begin : state_r_comb
+   case (state_r)
      e_wait : begin : w8
         // In the wait state
 	if (fe_pc_gen_v_i && ~fe_pc_gen_cmd.attaboy_valid) begin
 	   // FE command received
-	   nxt_stall_state = e_stall;
+	   state_n = e_stall;
 	end else begin
 	   // FE command not received
-	   nxt_stall_state = e_wait;
+	   state_n = e_wait;
 	end
      end
      e_runs : begin : run
 	// In the run state
 	if (pc_v_f2 && itlb_miss_f2) begin
-	   nxt_stall_state = e_wait;
+	   state_n = e_wait;
 	end else begin
 	   if ((pc_v_f2 && !icache_pc_gen_v_i) || pc_gen_icache_ready_i) begin
-	      nxt_stall_state = e_stall;
+	      state_n = e_stall;
 	   end else begin
-	      nxt_stall_state = e_runs;
+	      state_n = e_runs;
 	   end
 	end
      end
      e_stall : begin : stall
 	// In the stall state
 	if (pc_v_f1_n) begin
-	   nxt_stall_state = e_runs;
+	   state_n = e_runs;
 	end else begin
-	   nxt_stall_state = e_stall;
+	   state_n = e_stall;
 	end
      end
      default : begin : default_wait
 	// In the wait state
 	if (fe_pc_gen_v_i && ~fe_pc_gen_cmd.attaboy_valid) begin
 	   // FE command received
-	   nxt_stall_state = e_stall;
+	   state_n = e_stall;
 	end else begin
 	   // FE command not received
-	   nxt_stall_state = e_wait;
+	   state_n = e_wait;
 	end
      end
-   endcase // case (stall_state)
+   endcase // case (state_r)
 end
 
-assign pc_v_f1_n = (stall_state != e_wait) & pc_gen_itlb_ready_i & pc_gen_fe_ready_i & pc_gen_icache_ready_i;
+assign pc_v_f1_n = (state_r != e_wait) & pc_gen_itlb_ready_i & pc_gen_fe_ready_i & pc_gen_icache_ready_i;
 
 always @(posedge clk_i) begin
    if (reset_i) begin
@@ -288,7 +260,7 @@ always @(posedge clk_i) begin
 end
 
 always @* begin
-   if (stall_state == e_runs) begin
+   if (state_r == e_runs) begin
       // Run
       nxt_pc_resume = pc_f2;
    end else begin
@@ -331,7 +303,7 @@ end
 always_ff @(posedge clk_i) begin
   if(reset_i)
     itlb_stall <= '0;
-  else if(~stall)
+  else if(state_r == e_runs)
     itlb_stall <= itlb_miss_f1;
   else if(fe_pc_gen_v_i)
     itlb_stall <= '0;
@@ -340,9 +312,9 @@ end
 always_ff @(posedge clk_i) begin
   if(reset_i)
     itlb_miss_r <= '0;
-  else if((stall & ~itlb_miss_exception) & itlb_miss_i)
+  else if(((state_n == e_stall) & ~itlb_miss_exception) & itlb_miss_i)
     itlb_miss_r <= 1'b1;
-  else if(~stall)
+  else if(state_n == e_runs)
     itlb_miss_r <= '0;
 end
 
@@ -407,7 +379,7 @@ begin
     end
     else 
     begin
-        if ((stall_state == e_runs) | (nxt_stall_state == e_runs))
+        if ((state_r == e_runs) | (state_n == e_runs))
         begin
             pc_f2 <= pc_f1;
             pc_v_f2 <= pc_v_f1 & ~pc_redirect_v & ~icache_fence_v & ~itlb_fence_v;
