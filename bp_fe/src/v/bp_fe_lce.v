@@ -233,7 +233,7 @@ module bp_fe_lce
 
     ,.lce_cmd_i(lce_cmd)
     ,.lce_cmd_v_i(lce_cmd_v_i)
-    ,.lce_cmd_yumi_o(lce_cmd_ready_o)
+    ,.lce_cmd_ready_o(lce_cmd_ready_o)
 
     ,.lce_resp_o(lce_cmd_lce_resp_lo)
     ,.lce_resp_v_o(lce_cmd_lce_resp_v_lo)
@@ -262,14 +262,17 @@ module bp_fe_lce
     ,.num_cce_p(num_cce_p)
     ,.num_lce_p(num_lce_p)
   ) lce_data_cmd (
-    .cce_data_received_o(cce_data_received)
+    .clk_i(clk_i)
+    ,.reset_i(reset_i)
+
+    ,.cce_data_received_o(cce_data_received)
     ,.tr_data_received_o(tr_data_received)
 
     ,.miss_addr_i(miss_addr_lo)
      
     ,.lce_data_cmd_i(lce_data_cmd_in)
     ,.lce_data_cmd_v_i(lce_data_cmd_v_i)
-    ,.lce_data_cmd_yumi_o(lce_data_cmd_ready_o)
+    ,.lce_data_cmd_ready_o(lce_data_cmd_ready_o)
      
     ,.data_mem_pkt_o(lce_data_cmd_data_mem_pkt_lo)
     ,.data_mem_pkt_v_o(lce_data_cmd_data_mem_pkt_v_lo)
