@@ -296,7 +296,7 @@ for (genvar i = 0; i < dirs_lp; i++)
 
         assign wh_lce_data_cmd_li[0][W]   = lce_data_cmd_i[W];
         assign wh_lce_data_cmd_v_li[0][W] = lce_data_cmd_v_i[W];
-        assign lce_data_cmd_ready_o[W]    = wh_lce_data_cmd_ready_li[0][W];
+        assign lce_data_cmd_ready_o[W]    = wh_lce_data_cmd_ready_lo[0][W];
 
         assign lce_req_link_i_stitch[1][W]  = lce_req_link_o_stitch[0][E];
         assign lce_resp_link_i_stitch[1][W] = lce_resp_link_o_stitch[0][E];
