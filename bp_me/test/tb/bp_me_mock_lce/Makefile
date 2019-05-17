@@ -6,12 +6,6 @@ TOP ?= $(shell git rev-parse --show-toplevel)
 
 include $(TOP)/Makefile.common
 
-ifneq (,$(findstring xor,$(shell hostname)))
-  include $(BSG_CADENV_DIR)/cadenv.mk
-else
-  $(info Not on xor...VCS not supported)
-endif
-
 AXE = $(BP_EXTERNAL_DIR)/bin/axe
 
 .EXPORT_ALL_VARIABLES:
