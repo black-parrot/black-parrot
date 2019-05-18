@@ -30,7 +30,7 @@ module bp_core
     , parameter calc_debug_p = 0
 
     // Should go away with manycore bridge 
-    , localparam proc_cfg_width_lp = `bp_proc_cfg_width(num_core_p, num_lce_p)
+    , localparam proc_cfg_width_lp = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
     )
    (
     input                                          clk_i
@@ -77,7 +77,7 @@ module bp_core
     , output [dword_width_p-1:0]                   cmt_data_o
     );
 
-  `declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
+  `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
   `declare_bp_fe_be_if(vaddr_width_p
                        ,paddr_width_p
                        ,asid_width_p

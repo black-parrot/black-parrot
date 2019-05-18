@@ -1,0 +1,52 @@
+variables:
+  DOCKER_DRIVER: overlay2
+  GIT_STRATEGY: fetch
+  GIT_SUBMODULE_STRATEGY: none
+
+#pass-job:
+#  script:
+#    - echo "Passing job 1"
+#    - exit 0
+
+#fail-job:
+#  script:
+#    - echo "Failing job 2"
+#    - exit 1 
+
+func-regress-verilator-job:
+  image:
+    name: "registry.gitlab.com/black-parrot/pre-alpha-release:latest"
+
+  only:
+    - master
+    - dev
+    - fe_dev
+    - be_dev
+    - me_dev
+
+  before_script:
+    - echo "Linking external tools"
+    - rm -rf external
+    - ln -sf /bp-tools external
+    - mkdir /pre-alpha-release/
+    - ln -sf /bp-tools /pre-alpha-release/external
+    - echo "Fetching Basejump STL"
+    - git submodule update --init -- basejump_stl
+    - echo "Fetching riscv-tests"
+    - git submodule update --init --recursive -- bp_common/test/src/riscv-tests
+    - echo "Building test programs"
+    - make -C bp_common/test riscv_mem
+
+  script:
+    - echo "Running Verilator regression"
+    - cd bp_top/syn
+    - make regress.sc
+    - grep -cr "FAIL" reports/ && exit 1
+    - exit 0
+
+  artifacts:
+    when: always
+    paths:
+      - bp_top/syn/reports/
+      - bp_top/syn/logs/
+

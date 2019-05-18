@@ -11,9 +11,6 @@
  *
  * Inputs:
  *   instr_i          - The RISC-V instruction to decode
- *   fe_nop_v_i       - Rather than decode the instruction, insert a nop caused by the FE
- *   be_nop_v_i       - Rather than decode the instruction, insert a nop caused by the BE
- *   me_nop_v_i       - Rather than decode the instruction, insert a nop caused by the ME
  *
  * Outputs:
  *   decode_o         - Control signals for the pipeline
@@ -34,7 +31,7 @@ module bp_be_instr_decoder
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
  #(// Generated parameters
-   localparam instr_width_lp    = `bp_be_instr_width
+   localparam instr_width_lp    = rv64_instr_width_gp
    , localparam decode_width_lp = `bp_be_decode_width
    )
   (input [instr_width_lp-1:0]     instr_i
@@ -45,7 +42,7 @@ module bp_be_instr_decoder
    );
 
 // Cast input and output ports 
-bp_be_instr_s  instr;
+rv64_instr_s   instr;
 bp_be_decode_s decode;
 logic          illegal_instr;
 
@@ -59,9 +56,7 @@ always_comb
   begin
     // Set decoded defaults
     // NOPs are set after bypassing for critical path reasons
-    decode.fe_nop_v      = '0; 
-    decode.be_nop_v      = '0; 
-    decode.me_nop_v      = '0; 
+    decode               = '0;
 
     // Destination pipe
     decode.pipe_comp_v   = '0;
@@ -79,18 +74,14 @@ always_comb
     // CSR signals
     decode.csr_instr_v   = '0;
 
+    // Fence signals
+    decode.fence_instr_v = '0;
+
     // Decode metadata
     decode.fp_not_int_v  = '0;
-    decode.amo_v         = '0;
     decode.jmp_v         = '0;
     decode.br_v          = '0;
     decode.opw_v         = '0;
-
-    // Decode operand addresses
-    decode.csr_addr      = instr[31:20]; // TODO: Fold into imm and give to pipe_mem
-    decode.rs1_addr      = instr.rs1_addr;
-    decode.rs2_addr      = instr.rs2_addr;
-    decode.rd_addr       = instr.rd_addr;
 
     // Decode control signals
     decode.fu_op         = bp_be_fu_op_s'(0);
@@ -98,6 +89,7 @@ always_comb
     decode.src2_sel      = bp_be_src2_e'('0);
     decode.baddr_sel     = bp_be_baddr_e'('0);
     decode.result_sel    = bp_be_result_e'('0);
+    decode.offset_sel    = e_offset_is_imm;
 
     illegal_instr        = '0;
 
@@ -228,24 +220,26 @@ always_comb
         end
       `RV64_MISC_MEM_OP : 
         begin
-          // Fences are implemented as nops, since we are fully cache coherent between I$ and D$
-          //   They go through the integer pipe, so that pc still advances
-          decode.pipe_int_v = 1'b1;
+          decode.pipe_mem_v = 1'b1;
+          decode.fence_instr_v    = 1'b1;
+          unique casez (instr)
+            `RV64_FENCE   : decode.fu_op = e_mmu_nop; // Implemented as NOP
+            `RV64_FENCE_I : decode.fu_op = e_fence_i;
+            default       : illegal_instr = 1'b1;
+          endcase
         end
       `RV64_SYSTEM_OP : 
         begin
           decode.pipe_mem_v = 1'b1;
           decode.csr_instr_v = 1'b1;
           unique casez (instr)
-            `RV64_ECALL      : begin end // Implemented as NOP
-            `RV64_EBREAK     : begin end // Implemented as NOP
-            `RV64_URET       : begin end // Implemented as NOP
-            `RV64_SRET       : begin end // Implemented as NOP
+            `RV64_ECALL      : decode.fu_op = e_csr_nop; // Implemented as NOP
+            `RV64_EBREAK     : decode.fu_op = e_csr_nop; // Implemented as NOP
             `RV64_MRET       : decode.fu_op = e_mret;
             `RV64_SRET       : decode.fu_op = e_sret;
             `RV64_URET       : decode.fu_op = e_uret;
-            `RV64_WFI        : begin end // Implemented as NOP
-            `RV64_SFENCE_VMA : begin end // Implemented as NOP
+            `RV64_WFI        : decode.fu_op = e_csr_nop; // Implemented as NOP
+            `RV64_SFENCE_VMA : decode.fu_op = e_sfence_vma;
             default: 
               begin
                 decode.irf_w_v     = 1'b1;
@@ -259,6 +253,20 @@ always_comb
                   default : illegal_instr = 1'b1;
                 endcase
               end 
+          endcase
+        end
+      `RV64_AMO_OP:
+        begin
+          decode.pipe_mem_v = 1'b1;
+          decode.irf_w_v    = 1'b1;
+          decode.dcache_r_v = 1'b1;
+          decode.offset_sel = e_offset_is_zero;
+          unique casez (instr)
+            `RV64_LRW: decode.fu_op = e_lrw;
+            `RV64_SCW: decode.fu_op = e_scw;
+            `RV64_LRD: decode.fu_op = e_lrd;
+            `RV64_SCD: decode.fu_op = e_scd;
+            default : illegal_instr = 1'b1;
           endcase
         end
       default : illegal_instr = 1'b1;

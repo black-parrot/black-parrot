@@ -1,13 +1,13 @@
 [submodule "external/riscv-isa-sim"]
   path = external/riscv-isa-sim
   url = https://github.com/black-parrot/riscv-isa-sim.git
-  branch = trace_replay_spike
+  branch = blackparrot_mods
   ignore = dirty
 
 [submodule "external/axe"]
   path = external/axe
-  url = https://github.com/CTSRD-CHERI/axe.git
-  branch = master
+  url = https://github.com/black-parrot/axe
+  branch = blackparrot_mods
   ignore = dirty
 
 [submodule "external/riscv-fesvr"]
@@ -17,8 +17,8 @@
   ignore = dirty
 
 [submodule "external/riscv-gnu-toolchain"]
-	path = external/riscv-gnu-toolchain
-	url = https://github.com/riscv/riscv-gnu-toolchain.git
+  path = external/riscv-gnu-toolchain
+  url = https://github.com/riscv/riscv-gnu-toolchain.git
   branch = master
   ignore = dirty
 
@@ -29,14 +29,38 @@
   ignore = dirty
 
 [submodule "basejump_stl"]
-	path = basejump_stl
+  path = basejump_stl
   url = https://github.com/bespoke-silicon-group/basejump_stl.git
   branch = master
   ignore = dirty
 
-[submodule "riscv-gnu-toolchain"]
-	path = riscv-gnu-toolchain
-  url = https://github.com/riscv/riscv-gnu-toolchain.git
+[submodule "external/DRAMSim2"]
+  path = external/DRAMSim2
+  url = https://github.com/umd-memsys/DRAMSim2.git
   branch = master
+  ignore = dirty
+
+[submodule "bp_common/test/src/riscv-tests"]
+  path = bp_common/test/src/riscv-tests
+  url = https://github.com/black-parrot/riscv-tests.git
+  branch = blackparrot_mods
+  ignore = dirty
+
+[submodule "bp_common/test/src/coremark"]
+  path = bp_common/test/src/coremark
+  url = https://github.com/black-parrot/coremark.git
+  branch = blackparrot_mods
+  ignore = dirty
+ 
+[submodule "bp_common/test/src/opensbi"]
+  path = bp_common/test/src/opensbi
+  url = https://github.com/black-parrot/opensbi.git
+  branch = blackparrot_mods
+  ignore = dirty
+
+[submodule "bp_common/test/src/riscv-pk"]
+  path = bp_common/test/src/riscv-pk
+  url = https://github.com/black-parrot/riscv-pk.git
+  branch = blackparrot_mods
   ignore = dirty
 

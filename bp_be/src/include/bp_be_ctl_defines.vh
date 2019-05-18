@@ -4,55 +4,72 @@
 /* int_fu_op [2:0] is equivalent to funct3 in the RV instruction.
  * int_fu_op [3] is an alternate version of that operation.
  */
-typedef enum bit [3:0]
+typedef enum bit [4:0]
 {
-  e_int_op_add        = 4'b0000
-  ,e_int_op_sub       = 4'b1000
-  ,e_int_op_sll       = 4'b0001
-  ,e_int_op_slt       = 4'b0010
-  ,e_int_op_sge       = 4'b1010
-  ,e_int_op_sltu      = 4'b0011
-  ,e_int_op_sgeu      = 4'b1011
-  ,e_int_op_xor       = 4'b0100
-  ,e_int_op_eq        = 4'b1100
-  ,e_int_op_srl       = 4'b0101
-  ,e_int_op_sra       = 4'b1101
-  ,e_int_op_or        = 4'b0110
-  ,e_int_op_ne        = 4'b1110
-  ,e_int_op_and       = 4'b0111
-  ,e_int_op_pass_src2 = 4'b1111
+  e_int_op_add        = 5'b00000
+  ,e_int_op_sub       = 5'b01000
+  ,e_int_op_sll       = 5'b00001
+  ,e_int_op_slt       = 5'b00010
+  ,e_int_op_sge       = 5'b01010
+  ,e_int_op_sltu      = 5'b00011
+  ,e_int_op_sgeu      = 5'b01011
+  ,e_int_op_xor       = 5'b00100
+  ,e_int_op_eq        = 5'b01100
+  ,e_int_op_srl       = 5'b00101
+  ,e_int_op_sra       = 5'b01101
+  ,e_int_op_or        = 5'b00110
+  ,e_int_op_ne        = 5'b01110
+  ,e_int_op_and       = 5'b00111
+  ,e_int_op_pass_src2 = 5'b01111
 } bp_be_int_fu_op_e;
 
-typedef enum bit [3:0]
+typedef enum bit [4:0]
 {
-  e_lb   = 4'b0000
-  ,e_lh  = 4'b0001
-  ,e_lw  = 4'b0010
-  ,e_lbu = 4'b0100
-  ,e_lhu = 4'b0101
-  ,e_lwu = 4'b0110
-  ,e_ld  = 4'b0011
+  e_lb     = 5'b00000
+  ,e_lh    = 5'b00001
+  ,e_lw    = 5'b00010
+  ,e_ld    = 5'b00011
+  ,e_lbu   = 5'b00100
+  ,e_lhu   = 5'b00101
+  ,e_lwu   = 5'b00110
 
-  ,e_sb  = 4'b1000
-  ,e_sh  = 4'b1001
-  ,e_sw  = 4'b1010
-  ,e_sd  = 4'b1011
-  
-  ,e_ptw = 4'b1100
+  ,e_sb    = 5'b01000
+  ,e_sh    = 5'b01001
+  ,e_sw    = 5'b01010
+  ,e_sd    = 5'b01011
+
+  ,e_lrw   = 5'b00111
+  ,e_scw   = 5'b01100
+
+  ,e_lrd   = 5'b01101
+  ,e_scd   = 5'b01110
+
+  ,e_ptw_i = 5'b10000
+  ,e_ptw_l = 5'b10001
+  ,e_ptw_s = 5'b10010
+
+  ,e_fence   = 5'b10011
+  ,e_fence_i = 5'b10100
+
+  ,e_mmu_nop = 5'b11111
 } bp_be_mmu_fu_op_e;
 
-typedef enum bit [3:0]
+typedef enum bit [4:0]
 {
-  e_csrrw   = 4'b0001
-  ,e_csrrs  = 4'b0010
-  ,e_csrrc  = 4'b0011
-  ,e_csrrwi = 4'b0101
-  ,e_csrrsi = 4'b0110
-  ,e_csrrci = 4'b0111
+  e_csrrw   = 5'b00001
+  ,e_csrrs  = 5'b00010
+  ,e_csrrc  = 5'b00011
+  ,e_csrrwi = 5'b00101
+  ,e_csrrsi = 5'b00110
+  ,e_csrrci = 5'b00111
 
-  ,e_mret   = 4'b1011
-  ,e_sret   = 4'b1001
-  ,e_uret   = 4'b1000
+  ,e_mret   = 5'b01011
+  ,e_sret   = 5'b01001
+  ,e_uret   = 5'b01000
+
+  ,e_sfence_vma = 5'b01100
+
+  ,e_csr_nop    = 5'b11111
 } bp_be_csr_fu_op_e;
 
 typedef struct packed
@@ -85,6 +102,12 @@ typedef enum bit
 
 typedef enum bit
 {
+  e_offset_is_imm   = 1'b0
+  ,e_offset_is_zero = 1'b1
+} bp_be_offset_e;
+
+typedef enum bit
+{
   e_result_from_alu       = 1'b0
   ,e_result_from_pc_plus4 = 1'b1
 } bp_be_result_e;
@@ -92,9 +115,6 @@ typedef enum bit
 typedef struct packed
 {
   logic                             instr_v;
-  logic                             fe_nop_v;
-  logic                             be_nop_v;
-  logic                             me_nop_v;
 
   logic                             pipe_comp_v;
   logic                             pipe_int_v;
@@ -105,26 +125,20 @@ typedef struct packed
   logic                             irf_w_v;
   logic                             frf_w_v;
   logic                             csr_instr_v;
+  logic                             fence_instr_v;
   logic                             dcache_w_v;
   logic                             dcache_r_v;
   logic                             fp_not_int_v;
-  logic                             mret_v;
-  logic                             sret_v;
-  logic                             uret_v;
-  logic                             amo_v;
   logic                             jmp_v;
   logic                             br_v;
   logic                             opw_v;
 
-  logic[rv64_csr_addr_width_gp-1:0] csr_addr;
   bp_be_fu_op_s                     fu_op;
-  logic[rv64_reg_addr_width_gp-1:0] rs1_addr;
-  logic[rv64_reg_addr_width_gp-1:0] rs2_addr;
-  logic[rv64_reg_addr_width_gp-1:0] rd_addr;
 
   bp_be_src1_e                      src1_sel;
   bp_be_src2_e                      src2_sel;
   bp_be_baddr_e                     baddr_sel;
+  bp_be_offset_e                    offset_sel;
   bp_be_result_e                    result_sel;
 }  bp_be_decode_s;
 
@@ -155,10 +169,15 @@ typedef struct packed
 typedef struct packed
 {
   // BE exceptional conditions
+  logic fe_exc_v;
+  logic fe_nop_v;
+  logic be_nop_v;
+  logic me_nop_v;
   logic poison_v;
   logic roll_v;
 
   logic csr_instr_v;
+  logic fence_instr_v;
   logic itlb_fill_v;  
 
   logic instr_misaligned_v;
@@ -167,7 +186,7 @@ typedef struct packed
 }  bp_be_exception_s;
 
 `define bp_be_fu_op_width                                                                          \
-  (`BSG_MAX($bits(bp_be_int_fu_op_e), `BSG_MAX($bits(bp_be_mmu_fu_op_e), $bits(bp_be_mmu_fu_op_e))))
+  (`BSG_MAX($bits(bp_be_int_fu_op_e), `BSG_MAX($bits(bp_be_mmu_fu_op_e), $bits(bp_be_csr_fu_op_e))))
 
 `define bp_be_decode_width                                                                         \
   ($bits(bp_be_decode_s))

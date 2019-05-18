@@ -85,7 +85,7 @@ assign fe_queue    = fe_queue_i;
 assign issue_pkt_o = issue_pkt;
 
 bp_fe_fetch_s      fe_fetch;
-bp_be_instr_s      fe_fetch_instr;
+rv64_instr_s       fe_fetch_instr;
 bp_fe_exception_s  fe_exception;
 
 assign fe_fetch           = fe_queue.msg.fetch;
@@ -128,8 +128,6 @@ always_comb
     // Default value
     fe_instr_metadata = '0;
     issue_pkt.imm = '0;
-    issue_pkt.rs1_addr = '0;
-    issue_pkt.rs2_addr = '0;
     issue_pkt.irs1_v = 1'b0; 
     issue_pkt.irs2_v = 1'b0;
     issue_pkt.frs1_v = 1'b0;
@@ -155,7 +153,7 @@ always_comb
                 issue_pkt.irs1_v = '1; 
                 issue_pkt.irs2_v = '0;
               end
-            `RV64_BRANCH_OP, `RV64_STORE_OP, `RV64_OP_OP, `RV64_OP_32_OP : 
+            `RV64_BRANCH_OP, `RV64_STORE_OP, `RV64_OP_OP, `RV64_OP_32_OP, `RV64_AMO_OP: 
               begin 
                 issue_pkt.irs1_v = '1; 
                 issue_pkt.irs2_v = '1; 
@@ -171,10 +169,6 @@ always_comb
           // Decide whether to read from floating point regfile (saves power)
           issue_pkt.frs1_v = '0;
           issue_pkt.frs2_v = '0;
-
-          // Register addresses are always in the same place in the instruction
-          issue_pkt.rs1_addr = fe_fetch_instr.rs1_addr;
-          issue_pkt.rs2_addr = fe_fetch_instr.rs2_addr;
 
           // Immediate extraction
           casez(fe_fetch_instr.opcode)

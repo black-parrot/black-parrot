@@ -93,18 +93,19 @@ typedef struct packed
     logic [ppn_width_mp-1:0] ppn;                           \
   }  bp_fe_itlb_icache_data_resp_s;
 
-`define declare_bp_fe_itlb_vaddr_s(vaddr_width_mp, sets_mp, block_size_in_bytes_mp)                \
+`define declare_bp_fe_itlb_vaddr_s(vaddr_width_mp, sets_mp, cce_block_width_mp)                    \
   typedef struct packed                                                                            \
   {                                                                                                \
-    logic [vaddr_width_mp-`BSG_SAFE_CLOG2(sets_mp*block_size_in_bytes_mp)-1:0] tag;                \
+    logic [vaddr_width_mp-`BSG_SAFE_CLOG2(sets_mp*cce_block_width_p/8)-1:0]    tag;                \
     logic [`BSG_SAFE_CLOG2(sets_mp)-1:0]                                       index;              \
-    logic [`BSG_SAFE_CLOG2(block_size_in_bytes_mp)-1:0]                        offset;             \
+    logic [`BSG_SAFE_CLOG2(cce_block_width_p/8)-1:0]                           offset;             \
   }  bp_fe_itlb_vaddr_s;   
 
 /*
  * The pc_gen logic recieves the commands from the backend if there is any
  * exceptions. These commands are either pc_redirect or attaboy.
 */
+
 `define declare_bp_fe_pc_gen_cmd_s(vaddr_width_mp, branch_metadata_fwd_width_mp)  \
   typedef struct packed                                           \
   {                                                               \
@@ -113,6 +114,9 @@ typedef struct packed
     logic reset_valid;                                            \
     logic pc_redirect_valid;                                      \
     logic attaboy_valid;                                          \
+    logic itlb_fill_valid;                                        \
+    logic icache_fence_valid;                                     \
+    logic itlb_fence_valid;                                       \
   }  bp_fe_pc_gen_cmd_s;
 
 
@@ -148,6 +152,16 @@ typedef struct packed
     logic [ras_idx_width_mp-1:0]   ras_idx;                                                    \
   }  bp_fe_branch_metadata_fwd_s;
 
+
+
+/*
+ * Declare all fe-pc_gen widths at once as localparams
+ */
+`define declare_bp_fe_pc_gen_if_widths(vaddr_width_mp, branch_metadata_fwd_width_mp) \
+  , localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_mp,branch_metadata_fwd_width_mp) \
+  , localparam bp_fe_pc_gen_width_o_lp=`bp_fe_pc_gen_queue_width(vaddr_width_mp, branch_metadata_fwd_width_mp \
+)
+
 /*
  *  All the opcode macros for the control flow instructions.  These opcodes are
  * used in the Frontend for scanning compressed instructions.
@@ -165,11 +179,15 @@ typedef struct packed
 `define bp_fe_not_compressed 0
 
 
+
+
+
+
 `define bp_fe_pc_gen_queue_width(vaddr_width_mp,branch_metadata_fwd_width_mp) \
   (`bp_fe_queue_width(vaddr_width_mp,branch_metadata_fwd_width_mp)+`bp_fe_instr_scan_width)
 
 `define bp_fe_pc_gen_cmd_width(vaddr_width_mp,branch_metadata_fwd_width_mp) \
-  (vaddr_width_mp+branch_metadata_fwd_width_mp+3)
+  (vaddr_width_mp+branch_metadata_fwd_width_mp+6)
 
 `define bp_fe_pc_gen_icache_width(vaddr_width_mp) (vaddr_width_mp)
 

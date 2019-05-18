@@ -1,23 +1,21 @@
 module bp_be_nonsynth_tracer
  import bp_common_pkg::*;
+ import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
- #(parameter vaddr_width_p                 = "inv"
-   , parameter paddr_width_p               = "inv"
-   , parameter asid_width_p                = "inv"
-   , parameter branch_metadata_fwd_width_p = "inv"
-   , parameter num_core_p                  = "inv"
-   , parameter num_lce_p                   = "inv"
+ #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+   `declare_bp_proc_params(cfg_p)
 
    // Default parameters
    , parameter debug_file_p = "debug.log"
 
    // Calculated parameters
    , localparam mhartid_width_lp      = `BSG_SAFE_CLOG2(num_core_p)
-   , localparam proc_cfg_width_lp     = `bp_proc_cfg_width(num_core_p, num_lce_p)
+   , localparam proc_cfg_width_lp     = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
    , localparam issue_pkt_width_lp    = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam exception_width_lp    = `bp_be_exception_width
+   , localparam ecode_dec_width_lp    = `bp_be_ecode_dec_width
 
    // Constants
    , localparam pipe_stage_els_lp = 5
@@ -44,6 +42,16 @@ module bp_be_nonsynth_tracer
    , input [reg_data_width_lp-1:0]                         fwb_result_i
 
    , input [pipe_stage_els_lp-1:0][exception_width_lp-1:0] cmt_trace_exc_i 
+
+   , input                                                 trap_v_i
+   , input [vaddr_width_p-1:0]                             mtvec_i
+   , input [vaddr_width_p-1:0]                             mtval_i
+   , input                                                 ret_v_i
+   , input [vaddr_width_p-1:0]                             mepc_i
+   , input [5-1:0]                                         mcause_i
+
+   , input [1:0]                                           priv_mode_i
+   , input [1:0]                                           mpp_i
    );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p
@@ -103,9 +111,11 @@ wire [reg_data_width_lp-1:0] unused1 = fwb_result_i;
        ,.data_o(booted_r)
        );
 
+
 logic [4:0][2:0][7:0] stage_aliases;
 assign stage_aliases = {"FWB", "IWB", "EX2", "EX1"};
 always_ff @(posedge clk_i) begin
+
     if(booted_r) begin
             $fwrite(file, "-----\n");
             if (issue_pkt_v_i)
@@ -131,6 +141,15 @@ begin
             else
               $fwrite(file, "[%s] core: %x pc: %x\n", stage_aliases[i], mhartid_i, dbg_stage_r[i].instr_metadata.pc);
 end
+
+            if (trap_v_i) begin
+              $fwrite(file, "[TRP] core: %x pc: %x", mhartid_i, dbg_stage_r[2].instr_metadata.pc);
+                $fwrite(file, "\n\ninfo: priv: %x mpp: %x mcause: %x mtvec: %x mtval: %x\n", priv_mode_i, mpp_i, mcause_i, mtvec_i, mtval_i);
+            end
+            if (ret_v_i) begin
+              $fwrite(file, "[RET] core: %x pc: %x", mhartid_i, dbg_stage_r[2].instr_metadata.pc);
+                $fwrite(file, "\n\ninfo: priv: %x mpp: %x\n", priv_mode_i, mpp_i);
+            end
             if(dbg_stage_r[2].decode.instr_v & ~cmt_trace_exc[2].poison_v) begin
                 $fwrite(file, "[CMT] core: %x itag: %x pc: %x instr: %x\n"
                          ,mhartid_i
@@ -138,81 +157,47 @@ end
                          ,dbg_stage_r[2].instr_metadata.pc
                          ,dbg_stage_r[2].instr
                          );
+                $fwrite(file, "\t\tinfo: rs1: %d {%x}, rs2: %d {%x}, imm: %x\n"
+                        ,dbg_stage_r[2].instr.fields.rtype.rs1_addr
+                        ,dbg_stage_r[2].rs1
+                        ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
+                        ,dbg_stage_r[2].rs2
+                        ,dbg_stage_r[2].imm
+                        );
                 if(dbg_stage_r[2].decode.csr_instr_v) begin
                      $fwrite(file, "\t\top: csr sem: r%d <- csr {%x}\n"
-                             ,dbg_stage_r[2].decode.rd_addr
+                             ,dbg_stage_r[2].instr.fields.rtype.rd_addr
                              ,iwb_result_i
                              );
-                /*
-                 * TODO: Add back in CSR printing
-                if(dbg_stage_r[2].decode.mhartid_r_v) begin
-                    $fwrite(file, "\t\top: csr sem: r%d <- mhartid {%x}\n"
-                             ,dbg_stage_r[2].decode.rd_addr
-                             ,iwb_result_i
-                             );
-                end else if(dbg_stage_r[2].decode.mtvec_rw_v) begin
-                    $fwrite(file, "\t\top: csr sem: r%d <- mtvec {%x} r%d {%x} -> mtvec\n"
-                             ,dbg_stage_r[2].decode.rd_addr
-                             ,iwb_result_i
-                             ,dbg_stage_r[2].decode.rs1_addr
-                             ,dbg_stage_r[2].rs1
-                             );
-                end else if(dbg_stage_r[2].decode.mepc_rw_v) begin
-                    $fwrite(file, "\t\top: csr sem: r%d <- mepc {%x} r%d {%x} -> mepc\n"
-                             ,dbg_stage_r[2].decode.rd_addr
-                             ,iwb_result_i
-                             ,dbg_stage_r[2].decode.rs1_addr
-                             ,dbg_stage_r[2].rs1
-                             );
-                end else if(dbg_stage_r[2].decode.mscratch_rw_v) begin
-                    $fwrite(file, "\t\top: csr sem: r%d <- mscratch {%x} r%d {%x} -> mscratch\n"
-                             ,dbg_stage_r[2].decode.rd_addr
-                             ,iwb_result_i
-                             ,dbg_stage_r[2].decode.rs1_addr
-                             ,dbg_stage_r[2].rs1
-                             );
-                end else if(dbg_stage_r[2].decode.mtval_rw_v) begin
-                    $fwrite(file, "\t\top: csr sem: r%d <- mtval {%x} r%d {%x} -> mtval\n"
-                             ,dbg_stage_r[2].decode.rd_addr
-                             ,iwb_result_i
-                             ,dbg_stage_r[2].decode.rs1_addr
-                             ,dbg_stage_r[2].rs1
-                             );
-                */
-                end else if(dbg_stage_r[2].decode.mret_v) begin
-                    $fwrite(file, "\t\top: mret\n");
-                end else if(dbg_stage_r[2].decode.sret_v) begin
-                    $fwrite(file, "\t\top: sret\n");
-                end else if(dbg_stage_r[2].decode.uret_v) begin
-                    $fwrite(file, "\t\top: uret\n");
                 end else if(dbg_stage_r[2].decode.dcache_r_v) begin
+                  if(dbg_stage_r[2].decode.fu_op == e_lrd)
+                    $fwrite(file, "\t\top: lr.d sem: r%d <- mem[%x] {%x}\n"
+                             ,dbg_stage_r[2].instr.fields.rtype.rd_addr
+                             ,dbg_stage_r[2].rs1 
+                             ,iwb_result_i
+                             );
+                  else if(dbg_stage_r[2].decode.fu_op == e_scd)
+                        $fwrite(file, "\t\top: sc.d sem: mem[%x] <- r%d {%x}, success: %d \n"
+                                 ,dbg_stage_r[2].rs1 
+                                 ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
+                                 ,dbg_stage_r[2].rs2
+                                 ,iwb_result_i[0]
+                                 );   
+                  else
                     $fwrite(file, "\t\top: load sem: r%d <- mem[%x] {%x}\n"
-                             ,dbg_stage_r[2].decode.rd_addr
+                             ,dbg_stage_r[2].instr.fields.rtype.rd_addr
                              ,dbg_stage_r[2].rs1 
                               + dbg_stage_r[2].imm
                              ,iwb_result_i
                              );
                 end else if(dbg_stage_r[2].decode.dcache_w_v) begin
                     if(dbg_stage_r[2].rs1
-                       +dbg_stage_r[2].imm==64'hc00dead0) begin
-                        if(dbg_stage_r[2].rs2[31:16]==16'h0000) begin
-                            $fwrite(file, "[CORE%0x PAS] TEST_NUM=%x\n"
-                                     ,mhartid_i
-                                     ,dbg_stage_r[2].rs2[15:0]
-                                     );
-                        end else if(dbg_stage_r[2].rs2[31:16]==16'hFFFF) begin
-                            $fwrite(file, "[CORE%0x FAL] TEST_NUM=%x\n"
-                                     ,mhartid_i
-                                     ,dbg_stage_r[2].rs2[15:0]
-                                     );
-                        end else begin
-                            $fwrite(file, "[CORE%0x ERR] STORE TO 0xC00DEAD0, change test address\n"
-                                     ,mhartid_i
-                                     );
-                        end
-                    end else if(dbg_stage_r[2].rs1
                                 +dbg_stage_r[2].imm==64'h8FFF_FFFF) begin
                         $fwrite(file, "[CORE%0x PRT] %x\n"
+                                 ,mhartid_i
+                                 ,dbg_stage_r[2].rs2[0+:8]
+                                 );
+                        $display("[CORE%0x PRT] %x\n"
                                  ,mhartid_i
                                  ,dbg_stage_r[2].rs2[0+:8]
                                  );
@@ -222,18 +207,30 @@ end
                                  ,mhartid_i
                                  ,dbg_stage_r[2].rs2[0+:8]
                                  );
+                        $display("[CORE%0x PRT] %c\n"
+                                 ,mhartid_i
+                                 ,dbg_stage_r[2].rs2[0+:8]
+                                 );
                     end else begin
+                      if(dbg_stage_r[2].decode.fu_op == e_scd)
+                        $fwrite(file, "\t\top: sc.d sem: mem[%x] <- r%d {%x}, success: %d \n"
+                                 ,dbg_stage_r[2].rs1 
+                                 ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
+                                 ,dbg_stage_r[2].rs2
+                                 ,iwb_result_i
+                                 );   
+                      else
                         $fwrite(file, "\t\top: store sem: mem[%x] <- r%d {%x}\n"
                                  ,dbg_stage_r[2].rs1 
                                   + dbg_stage_r[2].imm
-                                 ,dbg_stage_r[2].decode.rs2_addr
+                                 ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
                                  ,dbg_stage_r[2].rs2
                                  );   
                     end
                 end else if(dbg_stage_r[2].decode.jmp_v) begin
                     $fwrite(file, "\t\top: jump sem: pc <- {%x}, r%d <- {%x}\n"
                              ,iwb_br_tgt_r
-                             ,dbg_stage_r[2].decode.rd_addr
+                             ,dbg_stage_r[2].instr.fields.rtype.rd_addr
                              ,iwb_result_i
                              );
                 end else if(dbg_stage_r[2].decode.br_v) begin
@@ -247,7 +244,7 @@ end
                 end else if(dbg_stage_r[2].decode.irf_w_v) begin
                     // TODO: Expand on this trace to have all integer instructions
                     $fwrite(file, "\t\top: integer sem: r%d <- {%x}\n"
-                             ,dbg_stage_r[2].decode.rd_addr
+                             ,dbg_stage_r[2].instr.fields.rtype.rd_addr
                              ,iwb_result_i
                              );
                 end

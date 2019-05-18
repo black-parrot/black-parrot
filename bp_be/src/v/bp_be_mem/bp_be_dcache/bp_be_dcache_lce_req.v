@@ -50,6 +50,7 @@ module bp_be_dcache_lce_req
 
     , input load_miss_i
     , input store_miss_i
+    , input lr_miss_i
     , input [paddr_width_p-1:0] miss_addr_i
     , input [way_id_width_lp-1:0] lru_way_i
     , input [ways_p-1:0] dirty_i
@@ -180,6 +181,17 @@ module bp_be_dcache_lce_req
           cache_miss_o = 1'b1;
           state_n = e_SEND_CACHED_REQ;
         end
+        else if (lr_miss_i) begin
+          miss_addr_n = miss_addr_i;
+          dirty_lru_flopped_n = 1'b0;
+          load_not_store_n = 1'b0; // We force a store miss to upgrade the block to exclusive
+          tr_data_received_n = 1'b0;
+          cce_data_received_n = 1'b0;
+          set_tag_received_n = 1'b0;
+
+          cache_miss_o = 1'b1;
+          state_n = e_SEND_CACHED_REQ;
+        end
         else if (uncached_load_req_i) begin
           miss_addr_n = miss_addr_i;
           size_op_n = size_op_i;
@@ -251,7 +263,10 @@ module bp_be_dcache_lce_req
         cce_data_received_n = cce_data_received_i ? 1'b1 : cce_data_received_r;
         set_tag_received_n = set_tag_received_i ? 1'b1 : set_tag_received_r;
 
-        if (set_tag_wakeup_received_i | uncached_data_received_i) begin
+        if (set_tag_wakeup_received_i) begin
+          state_n = e_SEND_COH_ACK;
+        end
+        else if (uncached_data_received_i) begin
           state_n = e_READY;
         end
         else if (set_tag_received) begin

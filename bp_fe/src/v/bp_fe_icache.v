@@ -25,16 +25,23 @@
 
 module bp_fe_icache
   import bp_common_pkg::*;
+  import bp_common_aviary_pkg::*;
   import bp_fe_pkg::*;
   import bp_fe_icache_pkg::*;  
-  #(parameter vaddr_width_p="inv"
-    , parameter paddr_width_p="inv"
-    , parameter data_width_p="inv"
-    , parameter instr_width_p="inv"
-    , parameter num_cce_p="inv"
-    , parameter num_lce_p="inv"
-    , parameter ways_p="inv"
-    , parameter sets_p="inv"
+  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+   `declare_bp_proc_params(cfg_p)
+   `declare_bp_lce_cce_if_widths(num_cce_p
+                                 ,num_lce_p
+                                 ,paddr_width_p
+                                 ,lce_assoc_p
+                                 ,dword_width_p
+                                 ,cce_block_width_p
+                                 )
+
+    // these will go away once the naming convention is decided on
+    , localparam ways_p = lce_assoc_p
+    , localparam sets_p = lce_sets_p
+    , localparam data_width_p = dword_width_p
 
     , localparam block_size_in_words_lp=ways_p
     , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
@@ -49,28 +56,8 @@ module bp_fe_icache
     , localparam coh_bits_lp=`bp_cce_coh_bits
     , parameter debug_p=0
 
-    , localparam bp_fe_pc_gen_icache_width_lp=`bp_fe_pc_gen_icache_width(vaddr_width_p)
-    , localparam bp_fe_itlb_icache_data_resp_width_lp=`bp_fe_itlb_icache_data_resp_width(tag_width_lp)
-
-
-    , localparam bp_lce_cce_req_width_lp=
-      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, ways_p, data_width_p)
-    , localparam bp_lce_cce_resp_width_lp=
-      `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
-    , localparam bp_lce_cce_data_resp_width_lp=
-      `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_lp)
-    , localparam bp_cce_lce_cmd_width_lp=
-      `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, ways_p)
-    , localparam bp_lce_data_cmd_width_lp=
-      `bp_lce_data_cmd_width(num_lce_p, lce_data_width_lp, ways_p)
-
-
-    , localparam bp_fe_icache_tag_state_width_lp=`bp_fe_icache_tag_state_width(tag_width_lp)
-
-    , localparam bp_fe_icache_metadata_width_lp=`bp_fe_icache_metadata_width(ways_p)
-
-    , parameter bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(vaddr_width_p)
-
+    `declare_bp_icache_widths(vaddr_width_p, tag_width_lp, ways_p) 
+   
     , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
    )
    (
@@ -94,27 +81,27 @@ module bp_fe_icache
     , output logic                                     cache_miss_o
     , input                                            poison_tl_i
 
-    , output logic [bp_lce_cce_req_width_lp-1:0]       lce_req_o
+    , output logic [lce_cce_req_width_lp-1:0]          lce_req_o
     , output logic                                     lce_req_v_o
     , input                                            lce_req_ready_i
 
-    , output logic [bp_lce_cce_resp_width_lp-1:0]      lce_resp_o
+    , output logic [lce_cce_resp_width_lp-1:0]         lce_resp_o
     , output logic                                     lce_resp_v_o
     , input                                            lce_resp_ready_i
 
-    , output logic [bp_lce_cce_data_resp_width_lp-1:0] lce_data_resp_o     
+    , output logic [lce_cce_data_resp_width_lp-1:0]    lce_data_resp_o     
     , output logic                                     lce_data_resp_v_o 
     , input                                            lce_data_resp_ready_i
 
-    , input [bp_cce_lce_cmd_width_lp-1:0]              lce_cmd_i
+    , input [cce_lce_cmd_width_lp-1:0]                 lce_cmd_i
     , input                                            lce_cmd_v_i
     , output logic                                     lce_cmd_ready_o
 
-    , input [bp_lce_data_cmd_width_lp-1:0]             lce_data_cmd_i
+    , input [lce_data_cmd_width_lp-1:0]                lce_data_cmd_i
     , input                                            lce_data_cmd_v_i
     , output logic                                     lce_data_cmd_ready_o
 
-    , output logic [bp_lce_data_cmd_width_lp-1:0]      lce_data_cmd_o
+    , output logic [lce_data_cmd_width_lp-1:0]         lce_data_cmd_o
     , output logic                                     lce_data_cmd_v_o
     , input                                            lce_data_cmd_ready_i 
  );
@@ -243,7 +230,7 @@ module bp_fe_icache
     else begin
       v_tv_r <= tv_we;
       if (tv_we) begin
-        addr_tv_r    <= {itlb_icache_data_resp_li.ppn, vaddr_tl_r};
+        addr_tv_r    <= {itlb_icache_data_resp_li.ppn, vaddr_tl_r[0+:bp_page_offset_width_gp]};
         vaddr_tv_r   <= vaddr_tl_r;
         tag_tv_r     <= tag_tl;
         state_tv_r   <= state_tl;

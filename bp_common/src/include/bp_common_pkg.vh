@@ -11,6 +11,7 @@
 package bp_common_pkg;
 
   `include "bsg_defines.v"
+  `include "bp_common_defines.vh"
   `include "bp_common_fe_be_if.vh"
   `include "bp_common_me_if.vh"
 
@@ -36,6 +37,9 @@ package bp_common_pkg;
 
   parameter bp_data_resp_num_flit_gp = 4;
   parameter bp_data_cmd_num_flit_gp = 4;
+
+  parameter bp_cfg_link_addr_width_gp = 16;
+  parameter bp_cfg_link_data_width_gp = 32;
 
 endpackage : bp_common_pkg
 

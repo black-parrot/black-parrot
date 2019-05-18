@@ -9,4 +9,12 @@ run_dc
 */syn/coverage
 *.bin
 *.hex
+*.mem
+*.riscv
 *.s
+*.dump
+*.spike
+*.pl
+rv64ui-p-simple.*
+*_gendata.pl
+

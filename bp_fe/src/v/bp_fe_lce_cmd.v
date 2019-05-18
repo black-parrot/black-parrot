@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_fe_lce_cmd.v
+ *   bp_fe_lce_cmd_li.v
  * 
  * Description:
  *   To be updated
@@ -89,7 +89,7 @@ module bp_fe_lce_cmd
 
     , input [cce_lce_cmd_width_lp-1:0]                           lce_cmd_i
     , input                                                      lce_cmd_v_i
-    , output logic                                               lce_cmd_yumi_o
+    , output logic                                               lce_cmd_ready_o
     
     , output logic [lce_data_cmd_width_lp-1:0]                   lce_data_cmd_o
     , output logic                                               lce_data_cmd_v_o
@@ -103,20 +103,20 @@ module bp_fe_lce_cmd
   `declare_bp_lce_data_cmd_s(num_lce_p, lce_data_width_p, ways_p);
   `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_p);
 
-  bp_cce_lce_cmd_s lce_cmd;
+  bp_cce_lce_cmd_s lce_cmd_li;
+  logic lce_cmd_v_li, lce_cmd_yumi_lo;
   bp_lce_cce_resp_s lce_resp;
   bp_lce_data_cmd_s lce_data_cmd_out;
   bp_lce_cce_data_resp_s lce_data_resp;
 
-  assign lce_cmd            = lce_cmd_i;
   assign lce_resp_o         = lce_resp;
   assign lce_data_resp_o    = lce_data_resp;
   assign lce_data_cmd_o     = lce_data_cmd_out;
  
   logic [index_width_lp-1:0] lce_cmd_addr_index;
   logic [tag_width_lp-1:0] lce_cmd_addr_tag;
-  assign lce_cmd_addr_index = lce_cmd.addr[block_offset_width_lp+:index_width_lp];
-  assign lce_cmd_addr_tag = lce_cmd.addr[block_offset_width_lp+index_width_lp+:tag_width_lp];
+  assign lce_cmd_addr_index = lce_cmd_li.addr[block_offset_width_lp+:index_width_lp];
+  assign lce_cmd_addr_tag = lce_cmd_li.addr[block_offset_width_lp+index_width_lp+:tag_width_lp];
  
   // lce pkt
   //
@@ -145,7 +145,7 @@ module bp_fe_lce_cmd
   // lce_cmd fsm
   always_comb begin
 
-    lce_cmd_yumi_o = 1'b0;
+    lce_cmd_yumi_lo = 1'b0;
 
     lce_resp = '0;
     lce_resp.src_id = id_i;
@@ -177,93 +177,93 @@ module bp_fe_lce_cmd
            
     case (state_r)
       e_lce_cmd_ready: begin
-        if (lce_cmd.msg_type == e_lce_cmd_transfer) begin
+        if (lce_cmd_li.msg_type == e_lce_cmd_transfer) begin
           data_mem_pkt.index  = lce_cmd_addr_index;
-          data_mem_pkt.way_id = lce_cmd.way_id;
+          data_mem_pkt.way_id = lce_cmd_li.way_id;
           data_mem_pkt.we     = 1'b0;
-          data_mem_pkt_v_o    = lce_cmd_v_i;
+          data_mem_pkt_v_o    = lce_cmd_v_li;
           state_n             = data_mem_pkt_yumi_i ? e_lce_cmd_transfer_tmp : e_lce_cmd_ready;
 
-        end else if (lce_cmd.msg_type == e_lce_cmd_writeback) begin
-          lce_data_resp.dst_id   = lce_cmd.src_id;
+        end else if (lce_cmd_li.msg_type == e_lce_cmd_writeback) begin
+          lce_data_resp.dst_id   = lce_cmd_li.src_id;
           lce_data_resp.msg_type = e_lce_resp_null_wb;
-          lce_data_resp.addr     = lce_cmd.addr;
-          lce_data_resp_v_o      = lce_cmd_v_i;
-          lce_cmd_yumi_o         = lce_data_resp_ready_i & lce_data_resp_v_o;
+          lce_data_resp.addr     = lce_cmd_li.addr;
+          lce_data_resp_v_o      = lce_cmd_v_li;
+          lce_cmd_yumi_lo         = lce_data_resp_ready_i & lce_data_resp_v_o;
 
-        end else if (lce_cmd.msg_type == e_lce_cmd_set_tag) begin
+        end else if (lce_cmd_li.msg_type == e_lce_cmd_set_tag) begin
           tag_mem_pkt.index  = lce_cmd_addr_index;
-          tag_mem_pkt.way_id = lce_cmd.way_id;
-          tag_mem_pkt.state  = lce_cmd.state;
+          tag_mem_pkt.way_id = lce_cmd_li.way_id;
+          tag_mem_pkt.state  = lce_cmd_li.state;
           tag_mem_pkt.tag    = lce_cmd_addr_tag;
           tag_mem_pkt.opcode = e_tag_mem_set_tag;
-          tag_mem_pkt_v_o    = lce_cmd_v_i;
+          tag_mem_pkt_v_o    = lce_cmd_v_li;
 
-          lce_cmd_yumi_o     = tag_mem_pkt_yumi_i;
+          lce_cmd_yumi_lo     = tag_mem_pkt_yumi_i;
           set_tag_received_o          = tag_mem_pkt_yumi_i;
 
-        end else if (lce_cmd.msg_type == e_lce_cmd_set_tag_wakeup) begin
+        end else if (lce_cmd_li.msg_type == e_lce_cmd_set_tag_wakeup) begin
           tag_mem_pkt.index  = lce_cmd_addr_index;
-          tag_mem_pkt.way_id = lce_cmd.way_id;
-          tag_mem_pkt.state  = lce_cmd.state;
+          tag_mem_pkt.way_id = lce_cmd_li.way_id;
+          tag_mem_pkt.state  = lce_cmd_li.state;
           tag_mem_pkt.tag    = lce_cmd_addr_tag;
           tag_mem_pkt.opcode = e_tag_mem_set_tag;
-          tag_mem_pkt_v_o    = lce_cmd_v_i;
+          tag_mem_pkt_v_o    = lce_cmd_v_li;
 
-          lce_cmd_yumi_o     = tag_mem_pkt_yumi_i;
+          lce_cmd_yumi_lo     = tag_mem_pkt_yumi_i;
           set_tag_wakeup_received_o   = tag_mem_pkt_yumi_i;
 
-        end else if (lce_cmd.msg_type == e_lce_cmd_invalidate_tag) begin
+        end else if (lce_cmd_li.msg_type == e_lce_cmd_invalidate_tag) begin
           tag_mem_pkt.index = lce_cmd_addr_index;
-          tag_mem_pkt.way_id = lce_cmd.way_id;
+          tag_mem_pkt.way_id = lce_cmd_li.way_id;
           tag_mem_pkt.state = e_MESI_I;
           tag_mem_pkt.opcode = e_tag_mem_invalidate;
           tag_mem_pkt_v_o = flag_invalidate_r
             ? 1'b0
-            : lce_cmd_v_i;
+            : lce_cmd_v_li;
           flag_invalidate_n = lce_resp_yumi_i
             ? 1'b0
             : (flag_invalidate_r
                 ? 1'b1  
                 : tag_mem_pkt_yumi_i);
 
-          lce_resp.dst_id = lce_cmd.src_id;
+          lce_resp.dst_id = lce_cmd_li.src_id;
           lce_resp.msg_type = e_lce_cce_inv_ack;
-          lce_resp.addr = lce_cmd.addr;
+          lce_resp.addr = lce_cmd_li.addr;
           lce_resp_v_o = (flag_invalidate_r | tag_mem_pkt_yumi_i);
-          lce_cmd_yumi_o = lce_resp_yumi_i;
+          lce_cmd_yumi_lo = lce_resp_yumi_i;
         end
       end
 
       e_lce_cmd_transfer_tmp: begin
         flag_data_buffered_n     = ~lce_data_cmd_ready_i;
         data_n                   = flag_data_buffered_r ? data_r : data_mem_data_i;
-        lce_data_cmd_out.dst_id  = lce_cmd.target;
-        lce_data_cmd_out.way_id  = lce_cmd.target_way_id;
+        lce_data_cmd_out.dst_id  = lce_cmd_li.target;
+        lce_data_cmd_out.way_id  = lce_cmd_li.target_way_id;
         lce_data_cmd_out.msg_type = e_lce_data_cmd_transfer;
         lce_data_cmd_out.data    = flag_data_buffered_r ? data_r : data_mem_data_i;
-        lce_cmd_yumi_o           = lce_data_cmd_ready_i;
+        lce_cmd_yumi_lo           = lce_data_cmd_ready_i;
         lce_data_cmd_v_o         = 1'b1;
         state_n                  = lce_data_cmd_ready_i ? e_lce_cmd_ready : e_lce_cmd_transfer_tmp;
       end
 
       e_lce_cmd_reset: begin
-        if (lce_cmd.msg_type == e_lce_cmd_set_clear) begin
+        if (lce_cmd_li.msg_type == e_lce_cmd_set_clear) begin
           tag_mem_pkt.index        = lce_cmd_addr_index;
           tag_mem_pkt.state        = e_MESI_I;
           tag_mem_pkt.tag          = '0;
           tag_mem_pkt.opcode       = e_tag_mem_set_clear;
-          tag_mem_pkt_v_o          = lce_cmd_v_i;
+          tag_mem_pkt_v_o          = lce_cmd_v_li;
           metadata_mem_pkt.index   = lce_cmd_addr_index;
           metadata_mem_pkt.opcode  = e_metadata_mem_set_clear;
-          metadata_mem_pkt_v_o     = lce_cmd_v_i;
-          lce_cmd_yumi_o           = tag_mem_pkt_yumi_i;
+          metadata_mem_pkt_v_o     = lce_cmd_v_li;
+          lce_cmd_yumi_lo           = tag_mem_pkt_yumi_i;
 
-        end else if (lce_cmd.msg_type == e_lce_cmd_sync) begin
-          lce_resp.dst_id = lce_cmd.src_id;
+        end else if (lce_cmd_li.msg_type == e_lce_cmd_sync) begin
+          lce_resp.dst_id = lce_cmd_li.src_id;
           lce_resp.msg_type = e_lce_cce_sync_ack;
-          lce_resp_v_o = lce_cmd_v_i;
-          lce_cmd_yumi_o = lce_resp_yumi_i;
+          lce_resp_v_o = lce_cmd_v_li;
+          lce_cmd_yumi_lo = lce_resp_yumi_i;
           syn_ack_cnt_n = lce_resp_yumi_i
             ? syn_ack_cnt_r + 1
             : syn_ack_cnt_r;
@@ -293,4 +293,23 @@ module bp_fe_lce_cmd
       flag_invalidate_r    <= flag_invalidate_n;
     end
   end
+
+  // We need this converter because the LCE expects this interface to be valid-yumi, while
+  // the network links are ready-and-valid. It's possible that we could modify the LCE to 
+  // be helpful and avoid this
+  bsg_two_fifo 
+   #(.width_p(cce_lce_cmd_width_lp))
+   rv_adapter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i(lce_cmd_i)
+     ,.v_i(lce_cmd_v_i)
+     ,.ready_o(lce_cmd_ready_o)
+
+     ,.data_o(lce_cmd_li)
+     ,.v_o(lce_cmd_v_li)
+     ,.yumi_i(lce_cmd_yumi_lo)
+     );
+
 endmodule

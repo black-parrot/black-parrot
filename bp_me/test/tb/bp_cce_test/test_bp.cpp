@@ -15,6 +15,9 @@
 #include "Vbp_cce_test.h"
 
 #include "bp_cce_verilator.h"
+
+#define ADDR_WIDTH 39
+
 #include "bp_cce.h"
 #include "bp_common_me_if.h"
 #include "bp_cce_lce_msg_util.h"
@@ -34,11 +37,23 @@ uint64_t getSetIdx(uint64_t addr) {
 // most recently used way per set
 std::map<uint64_t, uint32_t> MRU;
 
-int sc_main(int argc, char **argv) 
+int sc_main(int argc, char **argv)
 {
   sc_init("bp_cce_top", argc, argv);
 
   sc_signal <bool>     reset_i("reset_i");
+  sc_signal <bool>     freeze_o("freeze_o");
+
+  /*
+  sc_signal <uint32_t> config_addr_i("config_addr_i");
+  sc_signal <uint32_t> config_data_i("config_data_i");
+  sc_signal <bool>     config_v_i("config_v_i");
+  sc_signal <bool>     config_w_i("config_w_i");
+  sc_signal <bool>     config_ready_o("config_ready_o");
+  sc_signal <uint32_t> config_data_o("config_data_o");
+  sc_signal <bool>     config_v_o("config_v_o");
+  sc_signal <bool>     config_ready_i("config_ready_i");
+  */
 
   sc_signal <sc_bv<bp_lce_cce_req_width> > lce_req_i("lce_req_i");
   sc_signal <bool>     lce_req_v_i("lce_req_v_i");
@@ -72,6 +87,20 @@ int sc_main(int argc, char **argv)
 
   DUT.clk_i(clock);
   DUT.reset_i(reset_i);
+  DUT.freeze_o(freeze_o);
+
+  /*
+  // Config channel
+  DUT.config_addr_i(config_addr_i);
+  DUT.config_data_i(config_data_i);
+  DUT.config_v_i(config_v_i);
+  DUT.config_w_i(config_w_i);
+  DUT.config_ready_o(config_ready_o);
+
+  DUT.config_data_o(config_data_o);
+  DUT.config_v_o(config_v_o);
+  DUT.config_ready_i(config_ready_i);
+  */
 
   DUT.lce_req_i(lce_req_i);
   DUT.lce_req_v_i(lce_req_v_i);
@@ -101,6 +130,14 @@ int sc_main(int argc, char **argv)
   #endif
 
   // reset
+  /*
+  config_addr_i = 0;
+  config_data_i = 0;
+  config_v_i = 0;
+  config_w_i = 0;
+  config_ready_i = 0;
+  */
+
   lce_req_i = 0;
   lce_req_v_i = 0;
   lce_resp_i = 0;
@@ -118,6 +155,20 @@ int sc_main(int argc, char **argv)
 
   int stallDetect = 0;
 
+  // wait for freeze_o to go low, indicating CCE instruction RAM has been loaded
+  while (!freeze_o) {
+    stallDetect++;
+    if (stallDetect == STALL_MAX) {
+      cout << "@" << sc_time_stamp() << " STALL!" << endl;
+      #if (VM_TRACE == 1)
+      wf->close();
+      #endif
+      return 0;
+    }
+    sc_start(CLK_TIME, SC_NS);
+  }
+
+  stallDetect = 0;
   bool sync_rcvd = false;
   // loop until sync command received
   while (!sync_rcvd) {
@@ -183,7 +234,7 @@ int sc_main(int argc, char **argv)
     while (!lce_req_ready_o) {
       stallDetect++;
       if (stallDetect == STALL_MAX) {
-        cout << "@" << sc_time_stamp() << " STALL!" << endl;
+        cout << "@" << sc_time_stamp() << " STALL! - lce_req_ready_o never went high" << endl;
         #if (VM_TRACE == 1)
         wf->close();
         #endif
@@ -196,7 +247,7 @@ int sc_main(int argc, char **argv)
     bp_lce_cce_req_type_e reqType = e_lce_req_type_rd;
     uint64_t reqAddr = rand() % ((uint64_t)1 << ADDR_WIDTH);
     uint32_t lruWay = rand() % (1 << LG_LCE_ASSOC);
-    lce_req_i = createLceReq(0, 0, reqType, reqAddr, e_lce_req_not_excl, lruWay, e_lce_req_lru_clean);
+    lce_req_i = createLceReq(0, 0, reqType, reqAddr, e_lce_req_excl, lruWay, e_lce_req_lru_clean);
     lce_req_v_i = 1;
     sc_start(CLK_TIME, SC_NS);
     lce_req_i = 0;
@@ -204,13 +255,12 @@ int sc_main(int argc, char **argv)
     sc_start(CLK_TIME, SC_NS);
 
     // wait for and check data cmd
-    lce_data_cmd_ready_i = 1;
     stallDetect = 0;
     while (!lce_data_cmd_v_o) {
       sc_start(CLK_TIME, SC_NS);
       stallDetect++;
       if (stallDetect == STALL_MAX) {
-        cout << "@" << sc_time_stamp() << " STALL!" << endl;
+        cout << "@" << sc_time_stamp() << " STALL! - lce_data_cmd_v_o never went high" << endl;
         #if (VM_TRACE == 1)
         wf->close();
         #endif
@@ -218,6 +268,7 @@ int sc_main(int argc, char **argv)
       }
     }
 
+    lce_data_cmd_ready_i = 1;
     sc_bv<bp_lce_data_cmd_width> data_cmd(lce_data_cmd_o.read());
     if (!checkCceDataCmd(data_cmd, 0, lruWay, e_lce_data_cmd_cce, 0, false)) {
       cout << "@" << sc_time_stamp() << " TEST FAILED!" << endl;
@@ -230,23 +281,23 @@ int sc_main(int argc, char **argv)
     }
 
     // something received, or stalled, pull ready low
-    lce_data_cmd_ready_i = 0;
     sc_start(CLK_TIME, SC_NS);
+    lce_data_cmd_ready_i = 0;
 
     // wait for and check cmd
-    lce_cmd_ready_i = 1;
     stallDetect = 0;
     while (!lce_cmd_v_o) {
       sc_start(CLK_TIME, SC_NS);
       stallDetect++;
       if (stallDetect == STALL_MAX) {
-        cout << "@" << sc_time_stamp() << " STALL!" << endl;
+        cout << "@" << sc_time_stamp() << " STALL! - lce_cmd_v_o never went high" << endl;
         #if (VM_TRACE == 1)
         wf->close();
         #endif
         return 0;
       }
     }
+    lce_cmd_ready_i = 1;
     sc_bv<bp_cce_lce_cmd_width> cmd(lce_cmd_o.read());
     if (!checkCceCmd(cmd, 0, 0, reqAddr, lruWay, e_lce_cmd_set_tag, e_MESI_E, 0, 0)) {
       cout << "@" << sc_time_stamp() << " TEST FAILED!" << endl;
@@ -259,15 +310,15 @@ int sc_main(int argc, char **argv)
     }
 
     // something received, or stalled, pull ready low
-    lce_cmd_ready_i = 0;
     sc_start(CLK_TIME, SC_NS);
+    lce_cmd_ready_i = 0;
 
     // send coherence ack
     stallDetect = 0;
     while (!lce_resp_ready_o) {
       stallDetect++;
       if (stallDetect == STALL_MAX) {
-        cout << "@" << sc_time_stamp() << " STALL!" << endl;
+        cout << "@" << sc_time_stamp() << " STALL! - lce_resp_ready_o never went high" << endl;
         #if (VM_TRACE == 1)
         wf->close();
         #endif

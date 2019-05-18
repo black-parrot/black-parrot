@@ -23,6 +23,7 @@
 `define RV64_SYSTEM_OP     7'b1110011
 `define RV64_OP_IMM_32_OP  7'b0011011
 `define RV64_OP_32_OP      7'b0111011
+`define RV64_AMO_OP        7'b0101111
 
 // Some useful RV64 instruction macros
 `define rv64_r_type(op, funct3, funct7) {``funct7``,{5{1'b?}},{5{1'b?}},``funct3``,{5{1'b?}},``op``}
@@ -101,6 +102,13 @@
 `define RV64_MRET       32'b0011_0000_0010_0000_0000_0000_0111_0011
 `define RV64_WFI        32'b0001_0000_0101_0000_0000_0000_0111_0011
 `define RV64_SFENCE_VMA 32'b0001_001?_????_????_?000_0000_0111_0011
+`define RV64_FENCE_I    32'b0000_0000_0000_0000_0001_0000_0000_1111
+`define RV64_FENCE      32'b0000_????_????_0000_0000_0000_0000_1111
+
+`define RV64_LRW        32'b0001_0??0_0000_????_?010?_????_010_1111
+`define RV64_SCW        32'b0001_1???_????_????_?010?_????_010_1111
+`define RV64_LRD        32'b0001_0??0_0000_????_?011?_????_010_1111
+`define RV64_SCD        32'b0001_1???_????_????_?011?_????_010_1111
 
 `endif
 

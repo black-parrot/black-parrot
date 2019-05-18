@@ -23,9 +23,7 @@ class TraceGen:
   def send_load(self, signed, size, addr):
     packet = "0001_"
     if (size == 8):
-      packet += "0111_"
-    elif (size == 15):
-      packet += "1111_"
+      packet += "0011_"
     else:
       if (signed):
         if (size == 1):
@@ -98,4 +96,3 @@ class TraceGen:
   # wait for a single cycle
   def nop(self):
     print("0000_" + "0"*(self.packet_len-4))
-

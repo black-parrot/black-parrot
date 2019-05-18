@@ -25,6 +25,7 @@
  *                                   non-blocking, this signal indicates that there will be no
  *                                   hazards from this point on
  *   chk_roll_o                  - Roll back all the instructions in the pipe
+ *   chk_poison_iss_o            - Poison the instruction currently in issue stage
  *   chk_poison_isd_o            - Poison the instruction currently in ISD stage
  *   chk_poison_ex_o             - Poison all instructions currently in the pipe
  *   
@@ -46,8 +47,6 @@ module bp_be_detector
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
 
-   , parameter load_to_use_forwarding_p = 1
-
    // Generated parameters
    , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    // From BE specifications
@@ -64,10 +63,13 @@ module bp_be_detector
    , input                             mmu_cmd_ready_i
 
    , input                             trap_v_i
+   , input                             tlb_fence_i
+   , input                             ifence_i
 
    // Pipeline control signals from the checker to the calculator
    , output                            chk_dispatch_v_o
    , output                            chk_roll_o
+   , output                            chk_poison_iss_o
    , output                            chk_poison_isd_o
    , output                            chk_poison_ex1_o
    , output                            chk_poison_ex2_o
@@ -140,19 +142,8 @@ always_comb
                          & (dep_status[1].mem_fwb_v | dep_status[1].fp_fwb_v);
 
     // Detect float data hazards for IWB. Integer dependencies can be handled by forwarding
-    if (load_to_use_forwarding_p == 0)
-      begin
-        irs1_data_haz_v[2] = (calc_status.isd_irs1_v & rs1_match_vector[2])
-                             & (dep_status[2].mem_iwb_v);
-
-        irs2_data_haz_v[2] = (calc_status.isd_irs2_v & rs2_match_vector[2])
-                             & (dep_status[2].mem_iwb_v);
-      end
-    else
-      begin
-        irs1_data_haz_v[2] = '0;
-        irs2_data_haz_v[2] = '0;
-      end
+    irs1_data_haz_v[2] = '0;
+    irs2_data_haz_v[2] = '0;
 
     frs1_data_haz_v[2] = (calc_status.isd_frs1_v & rs1_match_vector[2])
                          & (dep_status[2].fp_fwb_v);
@@ -182,18 +173,30 @@ always_comb
 // Generate calculator control signals
 assign chk_dispatch_v_o = ~(data_haz_v | struct_haz_v); 
 assign chk_roll_o       = calc_status.mem3_miss_v;
+
+assign chk_poison_iss_o = reset_i
+                          | trap_v_i
+                          | tlb_fence_i
+                          | ifence_i
+                          | calc_status.mem3_miss_v;
                           
 assign chk_poison_isd_o = reset_i
                           | trap_v_i
+                          | tlb_fence_i
+                          | ifence_i
                           | calc_status.mem3_miss_v;
 
 assign chk_poison_ex1_o = reset_i 
                           | mispredict_v
                           | trap_v_i
+                          | tlb_fence_i
+                          | ifence_i
                           | calc_status.mem3_miss_v;
 
 assign chk_poison_ex2_o = reset_i
                           | trap_v_i
+                          | tlb_fence_i
+                          | ifence_i
                           | calc_status.mem3_miss_v;
 
 endmodule : bp_be_detector

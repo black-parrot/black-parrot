@@ -37,6 +37,7 @@ check_design.syn: deps.syn
 	@grep --color      "unresolved references."               $(LOG_FILE) | tee -a $(ERR_FILE) || true
 	@grep --color      "Cannot find the design"               $(LOG_FILE) | tee -a $(ERR_FILE) || true
 	@grep --color      "undeclared symbol"                    $(LOG_FILE) | tee -a $(ERR_FILE) || true
+	@grep --color      "(ELAB-395)"                           $(LOG_FILE) | tee -a $(ERR_FILE) || true
 	if [[ -s $(ERR_FILE) ]]; then \
 		echo "Design Compiler check_synth: FAILED" | tee $(REPORT_DIR)/$(TB)_check_synth.rpt; \
 		cp $(ERR_FILE) $(REPORT_DIR)/$(TB)_check_synth_err.rpt; \

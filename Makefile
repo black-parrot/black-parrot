@@ -2,9 +2,9 @@
 TOP ?= $(shell git rev-parse --show-toplevel)
 
 include $(TOP)/Makefile.common
-include $(BP_EXTERNAL_DIR)/Makefile.tools
+-include $(BP_EXTERNAL_DIR)/Makefile.tools
 
-.PHONY: update_submodules tools roms
+.PHONY: update_submodules tools progs
 
 .DEFAULT: update_submodules
 
@@ -26,21 +26,15 @@ update_submodules:
 
 tools:
 	cd $(TOP) && git submodule update --init --recursive
-	$(MAKE) verilator systemc && rm -rf systemc*
+	$(MAKE) systemc && rm -rf systemc*
+	$(MAKE) verilator
 	$(MAKE) gnu       && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-gnu-toolchain
 	$(MAKE) fesvr     && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-fesvr
 	$(MAKE) spike     && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-isa-sim
 	$(MAKE) axe       && git submodule deinit -f $(BP_EXTERNAL_DIR)/axe
+	$(MAKE) dramsim2
 
-## This target makes all of the test roms needed to test BlackParrot with trace-replay
-#  NOTE: There are many redundant boot roms generated. However, work is in progress to 
-#          remove boot rooms entirely and load programs using trace-replay and FSB. Once
-#          these efforts are completed, we will only need to generate the trace roms per
-#          End.
-
-roms:
-	$(MAKE) -C $(BP_FE_DIR)/test/rom     all
-	$(MAKE) -C $(BP_BE_DIR)/test/rom     all
-	$(MAKE) -C $(BP_ME_DIR)/test/rom     all
-	$(MAKE) -C $(BP_TOP_DIR)/test/rom    all
+progs:
+	git submodule update --init --recursive -- bp_common/test/*
+	$(MAKE) -C $(BP_COMMON_DIR)/test all
 

@@ -23,9 +23,9 @@ include $(BP_COMMON_DIR)/syn/Makefile.vcs
 DCACHE_AXE_TEST_DIR = $(BP_BE_DIR)/test/tb/bp_be_dcache/dcache_axe_test
 
 regress: regress.be
-regress.be: regress.v check_design.syn
-	$(MAKE) lint.v || true
-	$(MAKE) lint.sc || true
+regress.be: check_design.syn
+	#$(MAKE) lint.v || true
+	#$(MAKE) lint.sc || true
 	for lce in 2 4 8 16; do \
 		echo "Running $$lce LCE AXE TEST"; \
 		$(MAKE) -C $(DCACHE_AXE_TEST_DIR) NUM_LCE_P=$$lce NUM_INSTR_P=2500 \
