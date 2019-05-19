@@ -15,8 +15,8 @@ RISCV_OBJCOPY  = riscv64-unknown-elf-objcopy -O verilog
 include $(TEST_DIR)/Makefile.frag
 
 all: riscv demos bbl
-riscv: riscv_mem 
-opensbi: opensbi_mem
+riscv: riscv_mem riscv_spike
+opensbi: opensbi_mem 
 demos: demos_mem 
 # OpenSBI requires hardfloat and does not support softfloat libraries, so the compilation will fail
 #opensbi: opensbi_mem
@@ -53,22 +53,22 @@ bbl_elf:
 
 riscv_mem: riscv_elf
 riscv_mem: $(foreach x, $(RV64_P_TESTS) $(RV64_V_TESTS) $(RV64_BENCHMARKS), $(x).mem)
-riscv_mem: $(foreach x, $(RV64_P_TESTS) $(RV64_V_TESTS) $(RV64_BENCHMARKS), $(x).spike)
+riscv_spike: $(foreach x, $(RV64_P_TESTS) $(RV64_V_TESTS) $(RV64_BENCHMARKS), $(x).spike)
 
 demos_mem: demos_elf
 demos_mem: $(foreach x, $(BP_DEMOS), $(x).mem)
 # Need to kill spike at the end of demos for this to work
-#demos_mem: $(foreach x, $(BP_DEMOS), $(x).spike)
+#demos_spike: $(foreach x, $(BP_DEMOS), $(x).spike)
 
 opensbi_mem: opensbi_elf
 opensbi_mem: opensbi.mem
 # Need to kill spike at the end of opensbi payload for this to work
-#opensbi_mem: opensbi.spike
+#opensbi_spike: opensbi.spike
 
 bbl_mem: bbl_elf
 bbl_mem: bbl.mem
 # Need to kill spike at the end of bbl payload for this to work
-#bbl_mem: bbl.spike
+#bbl_spike: bbl.spike
 
 %.mem: 
 	$(RISCV_OBJCOPY) $(MEM_DIR)/$*.riscv $(MEM_DIR)/$@

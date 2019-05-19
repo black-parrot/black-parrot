@@ -372,7 +372,7 @@ module bp_be_dcache_lce_cmd
       // <WRITEBACK state>
       // Determine if the block is dirty or not.
       e_lce_cmd_state_wb: begin
-        state_n = dirty_i[lce_cmd_li.way_id]
+        state_n = dirty_i[lce_cmd_li.way_id] 
           ? e_lce_cmd_state_wb_dirty
           : e_lce_cmd_state_wb_not_dirty;
       end
@@ -476,9 +476,9 @@ module bp_be_dcache_lce_cmd
   end
 
   // We need this converter because the LCE expects this interface to be valid-yumi, while
-  // the network links are ready-and-valid. It's possible that we could modify the LCE to
+  // the network links are ready-and-valid. It's possible that we could modify the LCE to 
   // be helpful and avoid this
-  bsg_two_fifo
+  bsg_two_fifo 
    #(.width_p(cce_lce_cmd_width_lp))
    rv_adapter
     (.clk_i(clk_i)

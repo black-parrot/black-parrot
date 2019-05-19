@@ -77,9 +77,9 @@ module bp_fe_lce_data_cmd
   assign tr_data_received_o = data_mem_pkt_yumi_i & (lce_data_cmd_li.msg_type == e_lce_data_cmd_transfer);
 
   // We need this converter because the LCE expects this interface to be valid-yumi, while
-  // the network links are ready-and-valid. It's possible that we could modify the LCE to
+  // the network links are ready-and-valid. It's possible that we could modify the LCE to 
   // be helpful and avoid this
-  bsg_two_fifo
+  bsg_two_fifo 
    #(.width_p(lce_data_cmd_width_lp))
    rv_adapter
     (.clk_i(clk_i)
