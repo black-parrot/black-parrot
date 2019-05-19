@@ -149,6 +149,7 @@ module bp_be_calculator_top
   , output [eaddr_width_lp-1:0]          cmt_mem_addr_o
   , output [fu_op_width_lp-1:0]          cmt_mem_op_o
   , output [reg_data_width_lp-1:0]       cmt_data_o
+  , output                               cache_miss_mem3_o
   );
 
 // Declare parameterizable structs
@@ -422,6 +423,7 @@ bp_be_pipe_mem
    ,.cache_miss_o(cache_miss_mem3)
    );
 
+assign cache_miss_mem3_o = cache_miss_mem3;   
 // Floating point pipe: 4 cycle latency
 bp_be_pipe_fp 
  pipe_fp

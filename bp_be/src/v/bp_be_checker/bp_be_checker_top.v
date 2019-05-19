@@ -124,6 +124,8 @@ module bp_be_checker_top
    // CSR interface
    , input [reg_data_width_lp-1:0]    mtvec_i
    , input [reg_data_width_lp-1:0]    mepc_i
+
+   , input cache_miss_mem3_i
    );
 
 // Declare parameterizable structures
@@ -209,6 +211,8 @@ bp_be_scheduler
    ,.issue_pkt_o(issue_pkt_o)
    ,.issue_pkt_v_o(issue_pkt_v_o)
    ,.issue_pkt_ready_i(issue_pkt_ready_i)
+
+   ,.cache_miss_mem3_i(cache_miss_mem3_i)
    );
 
 endmodule : bp_be_checker_top

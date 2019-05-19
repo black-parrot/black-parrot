@@ -16,6 +16,7 @@ module aligner
   , output logic fe_queue_v_o
   , output logic aligner_ready_o
   , input pc_redirect_i
+  , input cache_miss_i
   );
 
 //bp_fe_fetch_s
@@ -40,30 +41,32 @@ module aligner
                                    );
 
    
-bp_fe_fetch_s fe_fetch, fe_fetch_out;   
+bp_fe_fetch_s fe_fetch, fe_fetch_out, test_fe_fetch;   
 assign fe_fetch   = input_fe_fetch_i;
+assign test_fe_fetch = input_fe_fetch_i;   
 assign fe_fetch_o = fe_fetch_out;
    
 
 logic unaligned_n, unaligned_q;
 logic [15:0] unaligned_instr_n, unaligned_instr_q;
 logic compressed_n, compressed_q;
-logic [63:0] unaligned_address_n, unaligned_address_q;
+logic [63:0] unaligned_address_n, unaligned_address_q, prev_v_pc;
 logic jump_unaligned_half_word;
 logic prev_aligner_ready;
-   
+logic is_br_destination;   
 
 logic kill_upper_16_bit;
 assign kill_upper_16_bit = fe_fetch.valid_branch_taken;//[0];
 
-
+logic prev_cache_miss;
+   
 always_comb begin : realign_instr
    unaligned_n          = unaligned_q;
    unaligned_instr_n    = unaligned_instr_q;
    compressed_n         = compressed_q;
    unaligned_address_n  = unaligned_address_q;
           
-   fe_fetch_out.pc                  = fe_fetch.pc;
+   fe_fetch_out.pc                  = test_fe_fetch.pc;
    fe_fetch_out.instr               = fe_fetch.instr;
    fe_fetch_out.branch_metadata_fwd = fe_fetch.branch_metadata_fwd;
    fe_fetch_out.valid_branch_taken  = fe_fetch.valid_branch_taken;
@@ -71,7 +74,7 @@ always_comb begin : realign_instr
    fe_fetch_out.isfirstinstr        = 0;
    fe_fetch_out.hastwoinstrs        = 0;
    aligner_ready_o                  = fe_queue_v_i;
-   fe_queue_v_o                     = fe_queue_v_i;
+   fe_queue_v_o                     = ((cache_miss_i || prev_cache_miss) && unaligned_q) ? 0 : fe_queue_v_i;
    jump_unaligned_half_word = 1'b0;
 
    if (fe_queue_v_i /*&& prev_aligner_ready*/ && !compressed_q) begin
@@ -99,7 +102,7 @@ always_comb begin : realign_instr
                end
             end
          end//!unaligned_q       
-         else if (unaligned_q) begin
+         else if (unaligned_q && !is_br_destination) begin
             fe_fetch_out.pc = unaligned_address_q;
             fe_fetch_out.instr = {fe_fetch.instr[15:0], unaligned_instr_q};
             fe_fetch_out.iscompressed = 1'b0;
@@ -156,7 +159,7 @@ always_comb begin : realign_instr
       fe_fetch_out.hastwoinstrs = 1;
       
       fe_fetch_out.pc = {fe_fetch.pc[63:2], 2'b10};
-      fe_queue_v_o = 1'b1;
+      fe_queue_v_o = ((cache_miss_i || prev_cache_miss) && unaligned_q) ? 0 : 1'b1;
    end // if (compressed_q)
    
 
@@ -167,9 +170,7 @@ always_comb begin : realign_instr
       unaligned_address_n = unaligned_address_q;
    end
 
-end // block: realign_instr
-   
-   
+end // block: realign_instr    
 always_ff @(posedge clk_i) begin
    if (reset_i || pc_redirect_i /*|| ~fe_queue_v_i*/) begin
       unaligned_q         <= 1'b0;
@@ -183,7 +184,24 @@ always_ff @(posedge clk_i) begin
       unaligned_address_q <= unaligned_address_n;
       compressed_q        <= compressed_n;
       prev_aligner_ready  <= aligner_ready_o;
+   end // else: !if(reset_i || pc_redirect_i...
+
+   if (reset_i) begin
+     prev_v_pc <= '0;
+     prev_cache_miss <= 0;
+   end else if (fe_queue_v_i) begin
+     prev_v_pc <= fe_fetch.pc;
+     prev_cache_miss <= cache_miss_i;
    end
-end    
+end // always_ff @
+   
+assign is_br_destination = (fe_fetch.pc - prev_v_pc) > 64'h4 ? fe_queue_v_o :
+                           (fe_fetch.pc - prev_v_pc) < 0    ? fe_queue_v_o : 0 ;
+
+   logic f_con, s_con;
+   logic [63:0] test;
+   assign test = fe_fetch.pc - prev_v_pc;
+   assign f_con = (fe_fetch.pc - prev_v_pc) > 64'h4;
+   assign s_con = (fe_fetch.pc - prev_v_pc) < 0 ;
     
 endmodule : aligner

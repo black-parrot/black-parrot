@@ -156,6 +156,8 @@ logic [vaddr_width_p-1:0]  exception_pc;
 logic [instr_width_lp-1:0] exception_instr;
 logic                      exception_v;
 
+logic                   cache_miss_mem3_o;
+   
 // Module instantiations
 bp_be_checker_top 
  #(.vaddr_width_p(vaddr_width_p)
@@ -197,6 +199,8 @@ bp_be_checker_top
 
    ,.mepc_i(chk_mepc_li)
    ,.mtvec_i(chk_mtvec_li)
+
+   ,.cache_miss_mem3_i(cache_miss_mem3_o)
    );
 
 bp_be_calculator_top 
@@ -258,6 +262,8 @@ bp_be_calculator_top
    ,.cmt_mem_addr_o(cmt_mem_addr_o)
    ,.cmt_mem_op_o(cmt_mem_op_o)
    ,.cmt_data_o(cmt_data_o)
+
+   ,.cache_miss_mem3_o(cache_miss_mem3_o)
    );
 
 bp_be_mem_top

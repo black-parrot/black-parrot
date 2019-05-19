@@ -99,7 +99,7 @@ bp_fe_instr_scan_s [1:0]      scan_instr;
    
    
 // pipeline pc's
-logic [eaddr_width_p-1:0]       pc_f2;
+logic [eaddr_width_p-1:0]       pc_f2, prev_pc_f2;
 logic                           pc_v_f2;
 logic [eaddr_width_p-1:0]       pc_f1;
 // pc_v_f1 is not a pipeline register, because the squash needs to be 
@@ -116,6 +116,7 @@ logic                           is_rvc_br;
 logic                           is_rvi_jal;
 logic                           is_rvc_jal;
 logic [eaddr_width_p-1:0]       br_target;
+logic [eaddr_width_p-1:0]       prev_br_target;
 logic                           is_back_br;
 logic                           predict_taken;
 
@@ -140,7 +141,9 @@ logic 		                     previous_pc_gen_icache_v;
 bp_fe_branch_metadata_fwd_s fe_queue_branch_metadata, fe_queue_branch_metadata_r;
 
 logic btb_pred_f1_r, btb_pred_f2_r;
-
+logic br_predict_taken_f1, br_predict_taken_f2;
+logic prev_cycle_jump, jump;
+        
 //zazad begins
 logic [1:0] instr_is_compressed;
 // save the unaligned part of the instruction to this ff
@@ -158,6 +161,8 @@ enum bit [0:0] {e_stall, e_run} state_n, state_r;
 logic ready;  
 logic [eaddr_width_p-1:0] pc_resume;
 logic                  jump_second_half,  jump_second_half_prev;   
+logic               prev_predict_taken;   
+   
 // zazad begins
 assign ready = pc_gen_fe_ready_i & pc_gen_icache_ready_i;   
 always_comb
@@ -169,7 +174,7 @@ always_comb
      endcase // casez (state_r)
   end
    
-always_ff @(posedge clk_i)
+ always_ff @(posedge clk_i)
   begin
      if (reset_i)
        state_r <= e_run;
@@ -179,15 +184,17 @@ always_ff @(posedge clk_i)
    
 always_ff @(posedge clk_i)
   begin
-     if (state_r == e_run /*&& ~predict_taken*/)
-       pc_resume <= pc_f2;
-     /*else if (state_r == e_run && predict_taken)
-       pc_resume <= pc_n;*/
+     if (state_r == e_run && predict_taken && stall)
+       pc_resume <= br_target;
+     else if (state_r == e_run && ~prev_predict_taken)
+       pc_resume <= pc_f2; 
+     else if (state_r == e_run && prev_predict_taken)
+       pc_resume <= prev_br_target;
      else if (fe_pc_gen_v_i && fe_pc_gen_cmd.pc_redirect_valid)
        pc_resume <= fe_pc_gen_cmd.pc;
      else
        pc_resume <= pc_resume;
-  end
+  end 
 //zazad ends
    
 for (genvar i = 0; i < 2; i ++) begin
@@ -315,7 +322,7 @@ begin
     end
 end
 
-assign pc_v_f1 = ~((predict_taken & ~btb_pred_f2_r));
+assign pc_v_f1 = (~((predict_taken & ~btb_pred_f2_r))) | prev_predict_taken;
 
 // stall logic
 assign stall = ~pc_gen_fe_ready_i | (~pc_gen_icache_ready_i &  ~tlb_miss_v_i) | icache_miss_i;
@@ -354,14 +361,9 @@ always_comb
         if (pc_n[1])//branch to second half of 32-bit, so next pc should be + 2 and not + 4
           jump_second_half = 1;
     end
-    else if (state_r == e_stall)
+     else if (state_r == e_stall)
     begin
         pc_n = pc_resume;
-        if (pc_n[1])//branch to second half of 32-bit, so next pc should be + 2 and not + 4
-          jump_second_half = 1;
-    end
-    else if (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) begin
-        pc_n = fe_pc_gen_cmd.pc;
         if (pc_n[1])//branch to second half of 32-bit, so next pc should be + 2 and not + 4
           jump_second_half = 1;
     end
@@ -375,13 +377,13 @@ always_comb
     begin
         pc_n = pc_f2;
     end
-    else if (btb_br_tgt_v_lo)
+    /*else if (btb_br_tgt_v_lo && ~unaligned_q && (pc_n != btb_br_tgt_lo))
     begin
         pc_n = btb_br_tgt_lo;
         if (pc_n[1])//branch to second half of 32-bit, so next pc should be + 2 and not + 4
           jump_second_half = 1;
-    end
-    else if (predict_taken)
+    end*/
+    else if (predict_taken && ~prev_cycle_jump)
     begin
         pc_n = br_target;
         if (pc_n[1])//branch to second half of 32-bit, so next pc should be + 2 and not + 4
@@ -403,6 +405,8 @@ begin
 
         btb_pred_f1_r <= '0;
         btb_pred_f2_r <= '0;
+        br_predict_taken_f1 <= 0;
+        br_predict_taken_f2 <= 0;
     end
     else 
     begin
@@ -415,6 +419,9 @@ begin
 
             btb_pred_f1_r <= btb_br_tgt_v_lo;
             btb_pred_f2_r <= btb_pred_f1_r;
+            br_predict_taken_f1 <= predict_taken;
+            br_predict_taken_f2 <= br_predict_taken_f1;
+           
         end
     end
 end
@@ -490,9 +497,12 @@ always_comb begin: branch_target_handling
          br_target = addr[i] + scan_instr[i].imm; 
          is_back_br = scan_instr[i].imm[63];
          predict_taken_temp = pc_v_f2 & ((is_rvi_br & is_back_br) | (is_rvi_jal)) | ((is_rvc_br & is_back_br) | (is_rvc_jal)) & ~btb_pred_f1_r & icache_pc_gen_v_i;
-         if(predict_taken_temp) begin
+         if(predict_taken_temp && ~(icache_pc_gen_v_i && br_predict_taken_f2 && (i==0) && (icache_pc_gen.addr[1:0] == 2'b10))) begin//not the destination of jump to the second half of 32-bit
             taken[i+1] = 1'b1;
+            jump = 1'b1;
          end
+         else
+           jump = 0;
       end
    end // for (int unsigned i = 0; i < 2; i++)
 end // block: branch_target_handling
@@ -503,11 +513,33 @@ always_ff @(posedge clk_i) begin
       unaligned_q          <= 1'b0;
       unaligned_address_q  <= '0;
       unaligned_instr_q    <= '0;
+   end else if (~pc_gen_fe_v_o) begin
+      unaligned_q <= unaligned_q;
+      unaligned_address_q  <= unaligned_address_q;
+      unaligned_instr_q    <= unaligned_instr_q;
    end else begin // if (~reset_i)
       unaligned_q          <= unaligned_d;
       unaligned_address_q  <= unaligned_address_d;
       unaligned_instr_q    <= unaligned_instr_d;
    end // else: !if(~reset_i)
+
+   if (reset_i || (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i)) begin
+     prev_predict_taken <= 0;
+     prev_br_target     <= '0;
+     prev_pc_f2         <= 0;
+     prev_cycle_jump <= 0;
+      
+//     FEQNR_BT       <= 0; //branch was taken but fe queue not ready, make sure you wont skape the second half of branch instruction, needs to be sent to BE, otherwise BE has no idea it was a branch and it needs to reset unaligned singla for the next half instrs (branch trget)
+   end else begin
+     prev_predict_taken <= predict_taken;
+     prev_br_target     <= br_target;
+     prev_pc_f2         <= pc_f2;
+     prev_cycle_jump <= jump; 
+  /*   if (!FEQNR_BT && predict_taken && !pc_gen_fe_ready_i)
+       FEQNR_BT <= 1;
+     else if (FEQNR_BT && pc_gen_fe_ready_i)
+       FEQNR_BT <= 0;*/
+   end
 end
 //zazad ends
 endmodule

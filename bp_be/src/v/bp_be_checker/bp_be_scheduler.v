@@ -64,6 +64,8 @@ module bp_be_scheduler
    , output [issue_pkt_width_lp-1:0] issue_pkt_o
    , output                          issue_pkt_v_o
    , input                           issue_pkt_ready_i
+ 
+   , input cache_miss_mem3_i
    );
 
 // Declare parameterizable structures
@@ -80,8 +82,8 @@ module bp_be_scheduler
                                    );
 
 // Cast input and output ports 
-bp_fe_queue_s     fe_queue;
-bp_be_issue_pkt_s issue_pkt;
+bp_fe_queue_s        fe_queue;
+bp_be_issue_pkt_s    issue_pkt;
 
 assign fe_queue    = fe_queue_i;
 assign issue_pkt_o = issue_pkt;
@@ -109,7 +111,8 @@ aligner #(.vaddr_width_p(vaddr_width_p),
                          .fe_queue_v_i(fe_queue_v_i),
                          .fe_queue_v_o(fe_queue_v_o),//to send to the expander
                          .aligner_ready_o(aligner_ready_o),//to send to the queue (dequeue)
-                         .pc_redirect_i(pc_redirect_i)
+                         .pc_redirect_i(pc_redirect_i),
+                         .cache_miss_i(cache_miss_mem3_i)
                         );
 
 assign compressed_fetch_instr = fe_fetch.instr;
