@@ -284,18 +284,18 @@ module bp_cce_dir
             // setup the read
             dir_ram_v = 1'b1;
 
-            // reset read counter to 0; this counter (zero-based) indicates which RAM row from the
-            // target way-group is being output by the directory.
-            // Next cycle (when the first row is valid), the counter will have value 0, and will
-            // increment by 1 each cycle until all the reads are complete.
-            dir_rd_cnt_n = '0;
-
             // The address to read depends on how many rows per way group there are.
             // If there is only one row per wg, then the input way group is the address.
             // If there is more than one row per wg, then the input way group is the high bits
             // and the read count register is the low bits.
             // This results in entries 0..N-1 being for WG 0, N..(2*N)-1 for WG 1, etc.
-            dir_ram_addr = (dir_rows_per_wg_lp == 1) ? way_group_i : {way_group_i, dir_rd_cnt_n};
+            dir_ram_addr = (dir_rows_per_wg_lp == 1) ? way_group_i : {way_group_i, dir_rd_cnt_r};
+
+            // reset read counter to 0; this counter (zero-based) indicates which RAM row from the
+            // target way-group is being output by the directory.
+            // Next cycle (when the first row is valid), the counter will have value 0, and will
+            // increment by 1 each cycle until all the reads are complete.
+            dir_rd_cnt_n = '0;
 
             // next cycle, the data coming out of the RAM will be valid
             dir_data_o_v_n = 1'b1;

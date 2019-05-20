@@ -79,7 +79,7 @@ regress.me.v: deps.v
 	@grep "DONE" $(LOG_PATH)/vcs/bp_me_mock_lce_uc.log \
 	&& echo "bp_me_mock_lce_uc: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_me_mock_lce_uc: FAIL" >> $(LOG_PATH)/me_regress.log
-	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_mock_lce_tiled NUM_LCE_P=16 AXE_TRACE_P=1 NUM_INSTR_P=8192 \
+	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_mock_lce_tiled NUM_LCE_P=16 AXE_TRACE_P=1 NUM_INSTR_P=4096 \
 	| tee -i $(LOG_PATH)/vcs/bp_me_mock_lce_tiled.log
 	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_mock_lce_tiled.log \
 	| tee -i $(REPORT_PATH)/vcs/bp_me_mock_lce_tiled.rpt
