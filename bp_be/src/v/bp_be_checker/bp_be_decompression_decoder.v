@@ -360,10 +360,15 @@ always_comb begin
                       instr_d            = format_i;
                   end
          `C_LUI:
-                  begin
+           begin
+              if(instr_c[11:7] == 5'd2 && {instr_c[12], instr_c[6:2]} != '0) begin //C.ADDI16SP
+                      format_ci          = instr_c;
+                      instr_d            = format_i;      
+              end else begin //C_LUI
                       format_ci          = instr_c;
                       instr_d            = format_u;
-                  end
+              end
+          end
          `C_ADDI,`C_ADDIW,`C_ADDI16SP:
                   begin
                       format_ci          = instr_c;
@@ -381,12 +386,12 @@ always_comb begin
                   end
          `C_SRLI,`C_SRAI,`C_ANDI,`C_AND,`C_OR,`C_XOR,`C_SUB,`C_ADDW,`C_SUBW:
                   begin
-                     if      (instr_c[12] != 1'b0 && instr_c[11:10] == 2'b00 && instr_c[6:2] != 5'd0) //SRLI
+                     if      (instr_c[11:10] == 2'b00 && {instr_c[12],instr_c[6:2]} != 6'd0) //SRLI
                        begin
                           format_cb          = instr_c;
                           instr_d            = format_i;
                        end
-                     else if (instr_c[12] != 1'b0 && instr_c[11:10] == 2'b01 && instr_c[6:2] != 5'd0) //SRAI
+                     else if (instr_c[11:10] == 2'b01 && {instr_c[12],instr_c[6:2]} != 6'd0) //SRAI
                        begin
                           format_cb          = instr_c;
                           instr_d            = format_i;
@@ -396,32 +401,32 @@ always_comb begin
                           format_cb          = instr_c;
                           instr_d            = format_i;
                        end
-                     else if (instr_c[12] == 1'b0 && instr_c[11:10] == 2'b11 && instr_c[6:5] != 2'b00) //SUB
+                     else if (instr_c[12] == 1'b0 && instr_c[11:10] == 2'b11 && instr_c[6:5] == 2'b00) //SUB
                        begin
                           format_cs          = instr_c; 
                           instr_d            = format_r;
                        end
-                     else if (instr_c[12] == 1'b0 && instr_c[11:10] == 2'b11 && instr_c[6:5] != 2'b01) //XOR
+                     else if (instr_c[12] == 1'b0 && instr_c[11:10] == 2'b11 && instr_c[6:5] == 2'b01) //XOR
                        begin
                           format_cs          = instr_c; 
                           instr_d            = format_r;
                        end
-                     else if (instr_c[12] == 1'b0 && instr_c[11:10] == 2'b11 && instr_c[6:5] != 2'b10) //OR
+                     else if (instr_c[12] == 1'b0 && instr_c[11:10] == 2'b11 && instr_c[6:5] == 2'b10) //OR
                        begin
                           format_cs          = instr_c; 
                           instr_d            = format_r;
                        end
-                     else if (instr_c[12] == 1'b0 && instr_c[11:10] == 2'b11 && instr_c[6:5] != 2'b11) //AND
+                     else if (instr_c[12] == 1'b0 && instr_c[11:10] == 2'b11 && instr_c[6:5] == 2'b11) //AND
                        begin
                           format_cs          = instr_c; 
                           instr_d            = format_r;
                        end
-                     else if (instr_c[12] == 1'b1 && instr_c[11:10] == 2'b11 && instr_c[6:5] != 2'b00) //SUBW
+                     else if (instr_c[12] == 1'b1 && instr_c[11:10] == 2'b11 && instr_c[6:5] == 2'b00) //SUBW
                        begin
                           format_cs          = instr_c; 
                           instr_d            = format_r;
                        end
-                     else if (instr_c[12] == 1'b1 && instr_c[11:10] == 2'b11 && instr_c[6:5] != 2'b01) //ADDW
+                     else if (instr_c[12] == 1'b1 && instr_c[11:10] == 2'b11 && instr_c[6:5] == 2'b01) //ADDW
                        begin
                           format_cs          = instr_c; 
                           instr_d            = format_r;
@@ -464,8 +469,8 @@ always_comb begin
                       format_i.op        = 7'b0000011;
          end // case: `C_LDSP
          `C_FLWSP: begin
-                      format_i.imm[7:6]  = format_ci.imm2[3:2];
-                      format_i.imm[4:2]  = format_ci.imm2[6:4];
+                      format_i.imm[7:6]  = format_ci.imm2[1:0];
+                      format_i.imm[4:2]  = format_ci.imm2[4:2];
                       format_i.imm[5]    = format_ci.imm1;
                       format_i.imm[2:0]  = 2'b00;
                       format_i.imm[11:8] = 4'b0000;
@@ -475,8 +480,8 @@ always_comb begin
                       format_i.op        = 7'b0000111;
          end // case: `C_FLWSP
          `C_FLDSP: begin
-                      format_i.imm[8:6]  = format_ci.imm2[4:2];
-                      format_i.imm[4:3]  = format_ci.imm2[6:5];
+                      format_i.imm[8:6]  = format_ci.imm2[2:0];
+                      format_i.imm[4:3]  = format_ci.imm2[4:3];
                       format_i.imm[5]    = format_ci.imm1;
                       format_i.imm[2:0]  = 3'b000;
                       format_i.imm[11:9] = 3'b000;
@@ -497,14 +502,14 @@ always_comb begin
                       format_s.op         = 7'b0100011;
          end // case: `C_SWSP
          `C_SDSP: begin
+                      format_s.imm2[4:3]  = format_css.imm[4:3];
                       format_s.imm1[0]    = format_css.imm[5];
                       format_s.imm1[3:1]  = format_css.imm[2:0];
+                      format_s.imm2[2:0]  = 3'b000;
                       format_s.imm1[6:4]  = 3'b000;
                       format_s.rs2        = format_css.rs2;
                       format_s.rs1        = `x2;
                       format_s.funct3      = 3'b011; 
-                      format_s.imm2[1:0]  = 2'b00;
-                      format_s.imm2[4:3]  = format_css.imm[4:3];
                       format_s.op         = 7'b0100011;
          end // case: `C_SDSP
          `C_FSWSP: begin
@@ -636,7 +641,17 @@ always_comb begin
                       format_s.op         = 7'b0100111;
          end // case: `C_FSD
          `C_J: begin
-                      format_j.imm1       = 1'b0;
+                      format_j.imm2[2:0]  = format_cj.jump_target[3:1];
+                      format_j.imm2[3]    = format_cj.jump_target[9];
+                      format_j.imm2[4]    = format_cj.jump_target[0];
+                      format_j.imm2[5]    = format_cj.jump_target[5];
+                      format_j.imm2[6]    = format_cj.jump_target[4];
+                      format_j.imm2[8:7]  = format_cj.jump_target[8:7];
+                      format_j.imm2[9]    = format_cj.jump_target[6];
+                      format_j.imm3       = format_cj.jump_target[10];
+                      format_j.imm4       = {8{format_cj.jump_target[10]}};
+                      format_j.imm1       = format_cj.jump_target[10];
+            /*
                       format_j.imm2[0]    = format_cj.jump_target[6];
                       format_j.imm2[1]    = format_cj.jump_target[10];
                       format_j.imm2[9:2]  = 8'h00;
@@ -646,7 +661,7 @@ always_comb begin
                       format_j.imm4[4]    = format_cj.jump_target[0];
                       format_j.imm4[5]    = format_cj.jump_target[5];
                       format_j.imm4[6]    = format_cj.jump_target[4];
-                      format_j.imm4[7]    = format_cj.jump_target[7];
+                      format_j.imm4[7]    = format_cj.jump_target[7];*/
                       format_j.rd         = `x0;
                       format_j.op         = 7'b1101111;
          end // case: `C_J
@@ -743,14 +758,28 @@ always_comb begin
                       format_i.op         = 7'b0010011;
          end 
          `C_LUI: begin
+            if((instr_c[11:7] == 5'd2) && ({instr_c[12], instr_c[6:2]} != '0)) begin //C.ADDI16SP
+                      format_i.imm[11:10]  = {2{format_ci.imm1}};
+                      format_i.imm[9]     = format_ci.imm1;
+                      format_i.imm[8:7]   = format_ci.imm2[2:1];
+                      format_i.imm[6]     = format_ci.imm2[3];
+                      format_i.imm[5]     = format_ci.imm2[0];
+                      format_i.imm[4]     = format_ci.imm2[4];
+                      format_i.imm[3:0]   = 4'd0;
+                      format_i.rs1        = format_ci.rd_rs1;
+                      format_i.funct3     = 3'b000;
+                      format_i.rd         = format_ci.rd_rs1;
+                      format_i.op         = 7'b0010011;
+             end else begin
                       format_u.imm[4:0]   = format_ci.imm2[4:0];
                       format_u.imm[5]     = format_ci.imm1;
                       format_u.imm[19:6]  = {14{format_ci.imm1}};
                       format_u.rd         = format_ci.rd_rs1;
                       format_u.op         = 7'b0110111;
+             end
          end
          `C_ADDI: begin
-                      format_i.imm[11:6]  = 6'd0;
+                      format_i.imm[11:6]  = {6{format_ci.imm1}};
                       format_i.imm[5]     = format_ci.imm1;
                       format_i.imm[4:0]   = format_ci.imm2[4:0];
                       format_i.rs1        = format_ci.rd_rs1;
@@ -802,7 +831,7 @@ always_comb begin
                       format_i.op         = 7'b0010011;
          end // case: `C_SLLI
          `C_SRLI,`C_SRAI,`C_ANDI,`C_AND,`C_SUB,`C_XOR, `C_OR,`C_ADDW,`C_SUBW: begin
-                     if      (instr_c[12] != 1'b0 && instr_c[11:10] == 2'b00 && instr_c[6:2] != 5'd0) //SRLI
+                     if      (instr_c[11:10] == 2'b00 && {instr_c[12],instr_c[6:2]} != 6'd0) //SRLI
                        begin
                           format_i.imm[11:5]  = 7'd0;
                           format_i.imm[4:0]   = format_cb.offset2[4:0];
@@ -812,7 +841,7 @@ always_comb begin
                           format_i.funct3     = 3'b101;
                           format_i.op         = 7'b0010011;
                        end
-                     else if (instr_c[12] != 1'b0 && instr_c[11:10] == 2'b01 && instr_c[6:2] != 5'd0) //SRAI
+                     else if (instr_c[11:10] == 2'b01 && {instr_c[12],instr_c[6:2]} != 6'd0) //SRAI
                        begin
                           format_i.imm[11:5]  = 7'b0100000;
                           format_i.imm[4:0]   = format_cb.offset2[4:0];
@@ -877,7 +906,7 @@ always_comb begin
                           format_r.funct3       = 3'b111;  
                           format_r.op           = 7'b0110011;          
                        end
-                     else if (instr_c[12] == 1'b1 && instr_c[11:10] == 2'b11 && instr_c[6:5] != 2'b00) //SUBW
+                     else if (instr_c[12] == 1'b1 && instr_c[11:10] == 2'b11 && instr_c[6:5] == 2'b00) //SUBW
                        begin
                           format_r.funct7       = 7'b0100000;
                           s2_compressed_reg     = format_cs.rs2;
@@ -888,9 +917,9 @@ always_comb begin
                           format_r.funct3       = 3'b000;  
                           format_r.op           = 7'b0111011;          
                        end
-                     else if (instr_c[12] == 1'b1 && instr_c[11:10] == 2'b11 && instr_c[6:5] != 2'b01) //ADDW
+                     else if (instr_c[12] == 1'b1 && instr_c[11:10] == 2'b11 && instr_c[6:5] == 2'b01) //ADDW
                        begin
-                          format_r.funct7       = 7'b0100000;
+                          format_r.funct7       = 7'd0;
                           s2_compressed_reg     = format_cs.rs2;
                           format_r.rs2          = s2_decompressed_reg;
                           s1_compressed_reg     = format_cs.rs1;

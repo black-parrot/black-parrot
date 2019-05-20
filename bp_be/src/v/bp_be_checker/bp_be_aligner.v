@@ -56,7 +56,7 @@ logic prev_aligner_ready;
 logic is_br_destination;   
 
 logic kill_upper_16_bit;
-assign kill_upper_16_bit = fe_fetch.valid_branch_taken;//[0];
+assign kill_upper_16_bit = fe_fetch.valid_branch_taken[0];//[0];
 
 logic prev_cache_miss;
    
@@ -86,8 +86,8 @@ always_comb begin : realign_instr
                fe_fetch_out.iscompressed = 1'b1;
                fe_fetch_out.isfirstinstr = 1;
                fe_fetch_out.hastwoinstrs = 0;
-               if (!fe_fetch.valid_branch_taken/*[0]*/)
-                 fe_fetch_out.valid_branch_taken = 1'b0;
+               if (!fe_fetch.valid_branch_taken[0]/*[0]*/)
+                 fe_fetch_out.valid_branch_taken[0] = 1'b0;
                if (!kill_upper_16_bit) begin
                   if (fe_fetch.instr[17:16] != 2'b11) begin
                      compressed_n = 1'b1;
@@ -114,8 +114,8 @@ always_comb begin : realign_instr
                   aligner_ready_o = 1'b0;
                   unaligned_n = 1'b0;
                   fe_fetch_out.hastwoinstrs = 1;
-                  if (!fe_fetch.valid_branch_taken/*[0]*/)
-                    fe_fetch_out.valid_branch_taken = 1'b0;
+                  if (!fe_fetch.valid_branch_taken[0]/*[0]*/)
+                    fe_fetch_out.valid_branch_taken[0] = 1'b0;
                end else if (!kill_upper_16_bit) begin // if (fetch_entry_i.instruction[17:16] != 2'b11)
                   unaligned_instr_n = fe_fetch.instr[31:16];
                   unaligned_address_n = {fe_fetch.pc[63:2], 2'b10};
@@ -123,7 +123,7 @@ always_comb begin : realign_instr
                   fe_fetch_out.hastwoinstrs = 0;
                end // if (!kill_upper_16_bit)
             end // if (!kill_upper_16_bit)
-            else if (fe_fetch.valid_branch_taken) begin
+            else if (fe_fetch.valid_branch_taken[0]) begin
                unaligned_n = 1'b0;
             end
          end   

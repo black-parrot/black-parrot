@@ -146,6 +146,7 @@ logic prev_cycle_jump, jump;
         
 //zazad begins
 logic [1:0] instr_is_compressed;
+logic [2:0] taken;
 // save the unaligned part of the instruction to this ff
 logic [15:0] unaligned_instr_d, unaligned_instr_q;
 // the last instruction was unaligned
@@ -155,7 +156,8 @@ logic [eaddr_width_p-1:0] unaligned_address_d, unaligned_address_q;
 logic instruction_valid;
 logic [1:0][instr_width_p-1:0] instr;
 logic [1:0][eaddr_width_p-1:0] addr;
-
+logic [1:0]                 valid;
+   
 // Logic for handling coming out of reset
 enum bit [0:0] {e_stall, e_run} state_n, state_r;
 logic ready;  
@@ -184,7 +186,9 @@ always_comb
    
 always_ff @(posedge clk_i)
   begin
-     if (state_r == e_run && predict_taken && stall)
+     if (state_r == e_run && predict_taken && stall && unaligned_q)
+       pc_resume <= pc_f2;
+     else if (state_r == e_run && predict_taken && stall)
        pc_resume <= br_target;
      else if (state_r == e_run && ~prev_predict_taken)
        pc_resume <= pc_f2; 
@@ -213,15 +217,17 @@ always_comb begin : re_align
     // 32-bit can contain 2 instructions
    instr[0] = icache_pc_gen.instr;
    addr[0]  = icache_pc_gen.addr;
-
+   valid[0] = 1;
+   
    instr[1] = '0;
    addr[1] = {icache_pc_gen.addr[63:2], 2'b10};
-
+   valid[1] = 1;
+  
    if (icache_pc_gen_v_i) begin
       // last instruction was unaligned
       if (unaligned_q) begin
          instr[0] = {icache_pc_gen.instr[15:0], unaligned_instr_q};
-         addr[0] = unaligned_address_q;
+         addr[0]  = unaligned_address_q;
 
          unaligned_address_d = {icache_pc_gen.addr[63:2], 2'b10};
          unaligned_instr_d = icache_pc_gen.instr[31:16]; // save the upper bits for next cycle
@@ -242,6 +248,8 @@ always_comb begin : re_align
       end else if (instr_is_compressed[0]) begin // instruction zero is RVC
          pc_gen_fetch.pc                  = icache_pc_gen.addr;//new
          pc_gen_fetch.instr               = icache_pc_gen.instr;
+         if(icache_pc_gen.addr[1])
+           valid[0]=0;
         // if (icache_pc_gen.addr != {icache_pc_gen.addr[63:2], 2'b00})
           // jump_second_half = 1'b1;
          
@@ -296,7 +304,8 @@ always_comb
   //  pc_gen_fetch.instr               = icache_pc_gen.instr;
     pc_gen_fetch.branch_metadata_fwd = fe_queue_branch_metadata_r;
     //zazad begins
-    pc_gen_fetch.valid_branch_taken  = predict_taken;
+     pc_gen_fetch.valid_branch_taken[0]  = taken[1];//predict_taken;
+     pc_gen_fetch.valid_branch_taken[1]  = taken[2];
     //zazad ends
     pc_gen_fetch.padding             = '0;
     pc_gen_exception.padding         = '0;
@@ -484,7 +493,6 @@ end
 //zazad ends
 
 //zazad begins
-logic [2:0] taken;
 logic predict_taken_temp;   
 always_comb begin: branch_target_handling
    taken = '0; 
@@ -507,7 +515,7 @@ always_comb begin: branch_target_handling
    end // for (int unsigned i = 0; i < 2; i++)
 end // block: branch_target_handling
 
-assign predict_taken = |taken;
+assign predict_taken = taken[2] | (taken[1] & valid[0]);
 always_ff @(posedge clk_i) begin
    if (reset_i || (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) || btb_br_tgt_v_lo || predict_taken) begin
       unaligned_q          <= 1'b0;
