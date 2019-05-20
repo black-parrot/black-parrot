@@ -373,7 +373,9 @@ module bp_cce_pc
           // normally, use the address register (i.e., sequential execution)
           ram_addr_li = ram_addr_r;
         end
-
+      end
+      default: begin
+        pc_state_n = RESET;
       end
     endcase
   end

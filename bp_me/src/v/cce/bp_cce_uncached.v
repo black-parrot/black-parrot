@@ -209,6 +209,9 @@ module bp_cce_uncached
         // clear registers if transaction complete
         lce_req_n = (mem_resp_v_i) ? '0 : lce_req_r;
       end
+      default: begin
+        uc_state_n = READY;
+      end
       endcase
     end
   end

@@ -133,6 +133,9 @@ module bp_cce_nonsynth_cfg_loader
           freeze_n = '0;
           state_n = DONE;
         end
+        default: begin
+          state_n = RESET;
+        end
       endcase
     end
   end
