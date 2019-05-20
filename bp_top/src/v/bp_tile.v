@@ -292,7 +292,7 @@ for (genvar i = 0; i < dirs_lp; i++)
 
         assign wh_lce_data_resp_li[0][W]   = lce_data_resp_i[W];
         assign wh_lce_data_resp_v_li[0][W] = lce_data_resp_v_i[W];
-        assign lce_data_resp_ready_o[W]    = wh_lce_data_resp_ready_li[0][W];
+        assign lce_data_resp_ready_o[W]    = wh_lce_data_resp_ready_lo[0][W];
 
         assign wh_lce_data_cmd_li[0][W]   = lce_data_cmd_i[W];
         assign wh_lce_data_cmd_v_li[0][W] = lce_data_cmd_v_i[W];

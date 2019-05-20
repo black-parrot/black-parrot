@@ -63,7 +63,7 @@ module bp_cce_inst_decode
   bp_cce_inst_misc_op_s        misc_op_s;
   bp_cce_inst_queue_op_s       queue_op_s;
 
-  logic pushq_op, popq_op;
+  logic pushq_op, popq_op, poph_op;
   bp_cce_inst_dst_q_sel_e pushq_qsel;
   bp_cce_inst_src_q_sel_e popq_qsel;
 
@@ -73,6 +73,7 @@ module bp_cce_inst_decode
   logic wfq_q_ready;
   logic stall_op;
   logic gpr_w_v;
+  logic rd_dir_op;
 
   // Control outputs
   always_comb
@@ -100,6 +101,7 @@ module bp_cce_inst_decode
     // Pushq and Popq operation details - used for decoding and fetch control
     pushq_op = (op == e_op_queue) && (minor_op_u == e_pushq_op);
     popq_op = (op == e_op_queue) && (minor_op_u == e_popq_op);
+    poph_op = (op == e_op_queue) && (minor_op_u == e_poph_op);
     pushq_qsel = queue_op_s.op.pushq.dst_q;
     popq_qsel = queue_op_s.op.popq.src_q;
 
@@ -124,7 +126,7 @@ module bp_cce_inst_decode
         e_op_branch: begin
           // Next PC computation
           decoded_inst_o.imm = branch_op_s.target;
-          pc_branch_target_o = branch_op_s.target[inst_addr_width_p-1:0];
+          pc_branch_target_o = branch_op_s.target[0+:inst_addr_width_p];
           decoded_inst_o.src_a = branch_op_s.src_a;
           decoded_inst_o.src_b = branch_op_s.src_b;
 
@@ -256,28 +258,29 @@ module bp_cce_inst_decode
       
 
           end
-          if (minor_op_u.queue_minor_op == e_popq_op) begin
-            // Input queue yumi signals (to FIFOs)
-            // Input messages are buffered by FIFOs, and dequeueing uses valid->yumi protocol
-            // Input from LCE (valid->yumi)
-            decoded_inst_o.lce_req_yumi = lce_req_v_i && (popq_qsel == e_src_q_sel_lce_req);
-            decoded_inst_o.lce_resp_yumi = lce_resp_v_i && (popq_qsel == e_src_q_sel_lce_resp);
-            decoded_inst_o.lce_data_resp_yumi = lce_data_resp_v_i
-              && (popq_qsel == e_src_q_sel_lce_data_resp);
-            // Input from Mem (valid->yumi)
-            decoded_inst_o.mem_resp_yumi = mem_resp_v_i && (popq_qsel == e_src_q_sel_mem_resp);
-            decoded_inst_o.mem_data_resp_yumi = mem_data_resp_v_i
-              && (popq_qsel == e_src_q_sel_mem_data_resp);
+          if ((minor_op_u.queue_minor_op == e_popq_op)
+              || (minor_op_u.queue_minor_op == e_poph_op)) begin
+
+            // only dequeue if actually a POPQ op, not a POPH op
+            if (minor_op_u.queue_minor_op == e_popq_op) begin
+              // Input queue yumi signals (to FIFOs)
+              // Input messages are buffered by FIFOs, and dequeueing uses valid->yumi protocol
+              // Input from LCE (valid->yumi)
+              decoded_inst_o.lce_req_yumi = lce_req_v_i && (popq_qsel == e_src_q_sel_lce_req);
+              decoded_inst_o.lce_resp_yumi = lce_resp_v_i && (popq_qsel == e_src_q_sel_lce_resp);
+              decoded_inst_o.lce_data_resp_yumi = lce_data_resp_v_i
+                && (popq_qsel == e_src_q_sel_lce_data_resp);
+              // Input from Mem (valid->yumi)
+              decoded_inst_o.mem_resp_yumi = mem_resp_v_i && (popq_qsel == e_src_q_sel_mem_resp);
+              decoded_inst_o.mem_data_resp_yumi = mem_data_resp_v_i
+                && (popq_qsel == e_src_q_sel_mem_data_resp);
+            end
 
             if (queue_op_s.op.popq.src_q == e_src_q_sel_lce_data_resp) begin
-              decoded_inst_o.cache_block_data_w_v = 1'b1;
-              decoded_inst_o.cache_block_data_sel = e_data_sel_lce_data_resp;
               decoded_inst_o.nwbf_sel = e_nwbf_lce_data_resp;
               decoded_inst_o.flag_mask_w_v = e_flag_nwbf;
 
             end else if (queue_op_s.op.popq.src_q == e_src_q_sel_mem_data_resp) begin
-              decoded_inst_o.cache_block_data_w_v = 1'b1;
-              decoded_inst_o.cache_block_data_sel = e_data_sel_mem_data_resp;
               decoded_inst_o.req_sel = e_req_sel_mem_data_resp;
               decoded_inst_o.lru_way_sel = e_lru_way_sel_mem_data_resp;
               decoded_inst_o.req_addr_way_sel = e_req_addr_way_sel_mem_data_resp;
@@ -344,6 +347,7 @@ module bp_cce_inst_decode
     // Control for fetch
     wfq_op = (op == e_op_queue) && (minor_op_u.queue_minor_op == e_wfq_op);
     stall_op = (op == e_op_misc) && (minor_op_u.misc_minor_op == e_stall_op);
+    rd_dir_op = (op == e_op_read_dir) && (minor_op_u.read_dir_minor_op != e_rdp_op);
 
     // vector of input queue valid signals
     wfq_v_vec = {lce_req_v_i, lce_resp_v_i, lce_data_resp_v_i, mem_resp_v_i, mem_data_resp_v_i,
@@ -356,6 +360,7 @@ module bp_cce_inst_decode
     wfq_q_ready = |(wfq_mask & wfq_v_vec);
 
     // stall PC if WFQ instruction and none of the target queues are ready
+    // stall outputs a valid instruction, but does not advance the PC
     pc_stall_o = stall_op | (wfq_op & ~wfq_q_ready);
 
     // stall PC if PUSHQ instruction and target output queue is not ready for data
@@ -370,7 +375,8 @@ module bp_cce_inst_decode
     end
 
     // stall PC if POPQ instruction and target input queue has no valid data
-    if (popq_op) begin
+    // also stall if POPH and target queue is not valid
+    if (popq_op || poph_op) begin
     case (popq_qsel)
       e_src_q_sel_lce_req: pc_stall_o |= ~lce_req_v_i;
       e_src_q_sel_mem_resp: pc_stall_o |= ~mem_resp_v_i;

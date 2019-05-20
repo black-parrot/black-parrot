@@ -121,6 +121,7 @@ typedef enum logic [2:0] {
   e_wfq_op                               = 3'b000   // Wait for Queue Ready
   ,e_pushq_op                            = 3'b001   // Push Queue
   ,e_popq_op                             = 3'b010   // Pop Queue
+  ,e_poph_op                             = 3'b011   // Pop Header From Queue - does not pop message
 } bp_cce_inst_minor_queue_op_e;
 
 // Minor Op Code Union

@@ -90,6 +90,7 @@ typedef enum {
   e_wfq                          = 0x0   // Wait for Queue Ready
   ,e_pushq                       = 0x1   // Push Queue
   ,e_popq                        = 0x2   // Pop Queue
+  ,e_poph                        = 0x3   // Pop Header
 } bp_cce_inst_minor_queue_op_e;
 
 #define bp_cce_inst_minor_op_width 3

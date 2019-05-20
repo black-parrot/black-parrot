@@ -84,7 +84,8 @@ Assembler::getOp(const char* op) {
     return e_op_write_dir;
   } else if (!strcmp("gad", op) || !strcmp("stall", op)) {
     return e_op_misc;
-  } else if (!strcmp("wfq", op) || !strcmp("pushq", op) || !strcmp("popq", op)) {
+  } else if (!strcmp("wfq", op) || !strcmp("pushq", op) || !strcmp("popq", op)
+             || !strcmp("poph", op)) {
     return e_op_queue;
   } else {
     printf("Bad Op: %s\n", op);
@@ -149,6 +150,8 @@ Assembler::getMinorOp(const char* op) {
     return e_pushq;
   } else if (!strcmp("popq", op)) {
     return e_popq;
+  } else if (!strcmp("poph", op)) {
+    return e_poph;
   } else {
     printf("Bad Minor Op: %s\n", op);
     exit(-1);
@@ -547,11 +550,13 @@ Assembler::parseDirCohStSel(string &s) {
 void
 Assembler::parseReadDir(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
   inst->type_u.read_dir_op_s.dir_way_group_sel = parseDirWgSel(tokens->at(1));
-  if (inst->minor_op == e_rdp || inst->minor_op == e_rdw) {
+  if (inst->minor_op == e_rdp) {
     /*
     inst->pruief_sel = e_pruief_logic;
     inst->flag_mask_w_v = e_flag_pf;
     */
+  } else if (inst->minor_op == e_rdw) {
+    inst->type_u.read_dir_op_s.dir_lce_sel = parseDirLceSel(tokens->at(2));
   } else if (inst->minor_op == e_rde) {
     inst->type_u.read_dir_op_s.dir_lce_sel = parseDirLceSel(tokens->at(2));
     inst->type_u.read_dir_op_s.dir_way_sel = parseDirWaySel(tokens->at(3));
@@ -738,7 +743,7 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
           exit(-1);
       }
     }
-  } else if (inst->minor_op == e_popq) {
+  } else if (inst->minor_op == e_popq || inst->minor_op == e_poph) {
     bp_cce_inst_src_q_sel_e srcQ = parseSrcQueue(tokens->at(1));
     inst->type_u.queue_op_s.op.popq.src_q = srcQ;
     /*
@@ -1098,7 +1103,7 @@ Assembler::writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &
         printShortField(inst->type_u.queue_op_s.op.pushq.lce_cmd_way_sel, bp_cce_inst_lce_cmd_way_sel_width, ss);
         printShortField(inst->type_u.queue_op_s.op.pushq.mem_data_cmd_addr_sel, bp_cce_inst_mem_data_cmd_addr_sel_width, ss);
         printPad(bp_cce_inst_pushq_pad, ss);
-      } else if (inst->minor_op == e_popq) {
+      } else if (inst->minor_op == e_popq || inst->minor_op == e_poph) {
         printShortField(inst->type_u.queue_op_s.op.popq.src_q, bp_cce_inst_src_q_sel_width, ss);
         printPad(bp_cce_inst_popq_pad, ss);
       }
