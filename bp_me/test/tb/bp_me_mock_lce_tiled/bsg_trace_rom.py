@@ -29,7 +29,7 @@ store_val = num_lce_p if id_p == 0 else id_p
 
 for i in range(num_instr):
   load_not_store = random.randint(0,1)
-  word = random.randint(0,8191)
+  word = random.randint(0,max_word_addr)
   addr = word << 3
   if (load_not_store):
     tg.send_load(size=8, addr=addr, signed=0)
