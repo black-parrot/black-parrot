@@ -88,16 +88,18 @@ enum bit [1:0] {e_wait=2'd0, e_run=2'd1, e_stall=2'd2} state_n, state_r;
    
 // pipeline pc's
 logic [vaddr_width_p-1:0]       pc_f2;
-logic                           pc_v_f2;
 logic [vaddr_width_p-1:0]       pc_f1;
+logic [vaddr_width_p-1:0]       pc_n;
 logic [vaddr_width_p-1:0]       pc_resume_r;
 logic [vaddr_width_p-1:0]       pc_resume_n;
-// pc_v_f1 is not a pipeline register, because the squash needs to be 
-// done in the same cycle as when we know the instruction in f2 is
-// a branch
+
+logic                           pc_v_f2;
 logic                           pc_v_f1;
 logic                           pc_v_f1_n;
-logic [vaddr_width_p-1:0]       pc_n;
+
+logic                           flush_f1;
+logic                           flush_f2;
+logic                           fe_instr_v;
 
 //branch prediction wires
 logic                           is_br;
@@ -106,11 +108,7 @@ logic [vaddr_width_p-1:0]       br_target;
 logic                           is_back_br;
 logic                           predict_taken;
 
-// icache miss recovery wires
-logic                           icache_miss_prev;
-
-// tlb miss recovery wires
-logic                           itlb_stall, itlb_exception_sent, itlb_miss_r, itlb_miss_f1;
+// tlb miss wires
 logic                           itlb_miss_f2;
 
 logic [vaddr_width_p-1:0]       btb_target;
@@ -149,11 +147,12 @@ assign itlb_fill_v   = fe_pc_gen_v_i & fe_pc_gen_cmd.itlb_fill_valid;
 assign icache_fence_v = fe_pc_gen_v_i & fe_pc_gen_cmd.icache_fence_valid;
 assign itlb_fence_v   = fe_pc_gen_v_i & fe_pc_gen_cmd.itlb_fence_valid;
 
+assign fe_instr_v         = pc_v_f2 & ~flush_f1;
 assign fe_exception_v     = misalign_exception | itlb_miss_exception;
 assign misalign_exception = pc_redirect_v 
                             & ~fe_pc_gen_cmd.pc[1:0] == 2'b00;
                             
-assign itlb_miss_exception = ~itlb_exception_sent & itlb_stall & pc_v_f2;
+assign itlb_miss_exception = pc_v_f2 & itlb_miss_f2;
 /* output wiring */
 // there should be fixes to the pc signal sent out according to the valid/ready signal pairs
 
@@ -185,21 +184,13 @@ begin
     end 
   else 
     begin
-      fe_pc_gen_ready_o = ~stall & fe_pc_gen_v_i;
-      pc_gen_fe_v_o     = pc_gen_fe_ready_i & pc_v_f2 & (icache_pc_gen_v_i | fe_exception_v) & ~pc_redirect_v & ~icache_fence_v & ~itlb_fence_v;
-      pc_gen_icache_v_o = pc_gen_fe_ready_i & pc_gen_icache_ready_i & ~stall;
+      fe_pc_gen_ready_o = fe_pc_gen_v_i;
+      pc_gen_fe_v_o     = fe_instr_v | fe_exception_v;
+      pc_gen_icache_v_o = pc_v_f1_n;
     end
 end
 
-always_ff @(posedge clk_i) begin
-   if (reset_i) begin
-      pc_v_f1 = 'd0;
-   end else begin
-      pc_v_f1 = pc_v_f1_n;
-   end
-end
-
-// Stall FSM
+// FSM
 always_ff @(posedge clk_i) begin
    if (reset_i) begin
       state_r <= e_wait;
@@ -209,110 +200,66 @@ always_ff @(posedge clk_i) begin
 end
 
 always_comb begin
-   state_n = e_wait;
+  state_n = e_wait;
 
-   case (state_r)
-     e_wait : begin
-        // In the wait state
-	if (fe_pc_gen_v_i & ~fe_pc_gen_cmd.attaboy_valid) begin
-	   // FE command received
-	   state_n = e_stall;
-	end else begin
-	   // FE command not received
-	   state_n = e_wait;
-	end
-     end
-     e_run : begin
-	// In the run state
-	if (pc_v_f2 & itlb_miss_f2) begin
-	   state_n = e_wait;
-	end else begin
-	   if ((pc_v_f2 & !icache_pc_gen_v_i) || ~pc_gen_icache_ready_i) begin
-	      state_n = e_stall;
-	   end else begin
-	      state_n = e_run;
-	   end
-	end
-     end
-     e_stall : begin
-	// In the stall state
-	if (pc_v_f1_n) begin
-	   state_n = e_run;
-	end else begin
-	   state_n = e_stall;
-	end
-     end
-
-   endcase // case (state_r)
+  case (state_r)
+    e_wait : begin
+      // In the wait state
+      if (fe_pc_gen_v_i & ~fe_pc_gen_cmd.attaboy_valid) begin
+        // FE command received
+        if(pc_v_f1_n)
+          state_n = e_run;
+        else
+          state_n = e_stall;
+      end else begin
+        // FE command not received
+        state_n = e_wait;
+      end
+    end
+    e_run : begin
+      // In the run state
+      if (pc_v_f2 & itlb_miss_f2) begin
+        state_n = e_wait;
+      end else begin
+        if ((pc_v_f2 & !icache_pc_gen_v_i) || ~pc_gen_icache_ready_i) begin //CHECK: should it be "if ((pc_v_f2 & !icache_pc_gen_v_i) || ~pc_v_f1_n)"?
+            state_n = e_stall;
+        end else begin
+            state_n = e_run;
+        end
+      end
+    end
+    e_stall : begin
+      // In the stall state
+      if (pc_v_f1_n) begin
+        state_n = e_run;
+      end else begin
+        state_n = e_stall;
+      end
+    end
+  endcase // case (state_r)
 end
-
-assign pc_v_f1_n = (state_r != e_wait) & pc_gen_itlb_ready_i & pc_gen_fe_ready_i & pc_gen_icache_ready_i;
 
 always_ff @(posedge clk_i) begin
   pc_resume_r <= pc_resume_n;
 end
 
 always_comb begin
-   if (state_r == e_run) begin
-      // Run
-      pc_resume_n = pc_f2;
-   end else begin
-      if (fe_pc_gen_v_i) begin
-	 pc_resume_n = fe_pc_gen_cmd.pc;
-      end else begin
-	 pc_resume_n = pc_resume_r;
-      end
-   end
-end
-   
-// icache and  itlb miss recover logic
-always_ff @(posedge clk_i)
-begin
-    if (reset_i)
-    begin
-        icache_miss_prev    <= '0;
-    end
-    else
-    begin
-        icache_miss_prev    <= icache_miss_i;
-    end
-end
-
-always_ff @(posedge clk_i) begin
-  if(reset_i) begin
-    itlb_exception_sent <= '0;
+  if(fe_pc_gen_v_i & ~fe_pc_gen_cmd.attaboy_valid) begin
+    pc_resume_n = fe_pc_gen_cmd.pc;
   end
-  else if(itlb_miss_exception) begin
-    itlb_exception_sent <= 1'b1;
+  else if(state_r == e_run) begin
+    pc_resume_n = pc_f2;
   end
-  else if(fe_pc_gen_v_i) begin
-    itlb_exception_sent <= '0;
+  else begin
+    pc_resume_n = pc_resume_r;
   end
 end
-
-always_ff @(posedge clk_i) begin
-  if(reset_i)
-    itlb_stall <= '0;
-  else if(state_r == e_run)
-    itlb_stall <= itlb_miss_f1;
-  else if(fe_pc_gen_v_i)
-    itlb_stall <= '0;
-end
-
-always_ff @(posedge clk_i) begin
-  if(reset_i)
-    itlb_miss_r <= '0;
-  else if(((state_n == e_stall) & ~itlb_miss_exception))
-    itlb_miss_r <= 1'b1;
-end
-
-assign itlb_miss_f1 = (itlb_miss_r | itlb_miss_i) & pc_v_f1;
 
 always_ff @(posedge clk_i) begin
    if (reset_i) begin
       itlb_miss_f2 <= 1'd0;
    end else begin
-      itlb_miss_f2 <= itlb_miss_f1;
+      itlb_miss_f2 <= itlb_miss_i & ~flush_f2;
    end
 end
 
@@ -326,12 +273,12 @@ begin
     if(state_reset_v) begin
         pc_n = fe_pc_gen_cmd.pc;
     end
-    else if (state_r == e_stall) begin
-	pc_n = pc_resume_r;
-    end
     // if we need to redirect
     else if (pc_redirect_v | icache_fence_v | itlb_fence_v) begin
         pc_n = fe_pc_gen_cmd.pc;
+    end
+    else if (state_r != e_run) begin
+        pc_n = pc_resume_r;
     end
     else if (btb_br_tgt_v_lo)
     begin
@@ -347,39 +294,32 @@ begin
     end
 end
 
+assign flush_f1 = itlb_miss_f2 | icache_miss_i;   //CHECK: should it be "(itlb_miss_f2 | icache_miss_i) & ~pc_redirect_v"?
+assign flush_f2 = itlb_miss_f2 | icache_miss_i | pc_redirect_v;
+assign pc_v_f1_n = pc_gen_itlb_ready_i & pc_gen_fe_ready_i & pc_gen_icache_ready_i;
 always_ff @(posedge clk_i) begin
   if (reset_i) begin
-    pc_f2 <= '0;
     pc_f1 <= '0;
+    pc_f2 <= '0;
 
-<<<<<<< HEAD
-        btb_pred_f1_r <= '0;
-        btb_pred_f2_r <= '0;
-    end
-    else 
-    begin
-        if ((state_r == e_runs) | (state_n == e_runs))
-        begin
-            pc_f2 <= pc_f1;
-            pc_v_f2 <= pc_v_f1 & ~pc_redirect_v & ~icache_fence_v & ~itlb_fence_v;
-=======
+    pc_v_f1 <= '0;
     pc_v_f2 <= '0;
 
     btb_pred_f1_r <= '0;
     btb_pred_f2_r <= '0;
   end else begin
-    pc_v_f2 <= pc_v_f1 & ~pc_redirect_v;
->>>>>>> Updated based on peer review comments. median and rv64-add tests no longer pass.
+    pc_v_f1 <= pc_v_f1_n & ~flush_f1;
+    pc_v_f2 <= pc_v_f1   & ~flush_f2;
 
-    if (state_r == e_stall) begin
-      pc_f2 <= pc_f2;
+    if (state_n != e_run) begin
       pc_f1 <= pc_f1;
+      pc_f2 <= pc_f2;
 
       btb_pred_f1_r <= btb_pred_f1_r;
       btb_pred_f2_r <= btb_pred_f2_r;
     end else begin
-      pc_f2 <= pc_f1;
       pc_f1 <= pc_n;
+      pc_f2 <= pc_f1;
 
       btb_pred_f1_r <= btb_br_tgt_v_lo;
       btb_pred_f2_r <= btb_pred_f1_r;
@@ -412,7 +352,7 @@ bp_fe_btb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.r_addr_i(pc_n)
-   ,.r_v_i(1'b1) //~stall)
+   ,.r_v_i(pc_v_f1_n)
    ,.br_tgt_o(btb_br_tgt_lo)
    ,.br_tgt_v_o()
 
