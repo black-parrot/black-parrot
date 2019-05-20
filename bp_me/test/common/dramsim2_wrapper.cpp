@@ -81,7 +81,7 @@ void bp_dram::read_complete(unsigned id, uint64_t addr, uint64_t cycle)
   //printf("\n");
 }
 
-extern "C" bool mem_write_req(uint64_t addr, svBitVecVal *data)
+extern "C" bool mem_write_req(uint64_t addr, svBitVecVal *data, int reqSize=0)
 {
   string scope = svGetNameFromScope(svGetScope());
 
@@ -89,15 +89,32 @@ extern "C" bool mem_write_req(uint64_t addr, svBitVecVal *data)
      return false;
   }
 
-  for (int i = 0; i < dram.result_size/32; i++) {
-    uint32_t word = data[i];
-    for (int j = 0; j < 4; j++) {
-      dram.mem[addr+i*4+j] = (word >> j*8) & (0x000000FF);
+  if (reqSize == 0) {
+    uint64_t addr_mask = ~((uint64_t)0) << dram.block_offset_bits;
+    addr = addr & addr_mask;
+    for (int i = 0; i < dram.result_size/32; i++) {
+      uint32_t word = data[i];
+      for (int j = 0; j < 4; j++) {
+        dram.mem[addr+i*4+j] = (word >> j*8) & (0x000000FF);
+      }
     }
+    mem->addTransaction(true, addr);
+    dram.addr_tracker[addr].push(scope);
+    dram.result_pending[scope] = false;
+  } else {
+    // number of 32-bit words
+    int words = (reqSize == 8) ? 2 : 1;
+    int jMax = (reqSize == 8 || reqSize == 4) ? 4 : reqSize;
+    for (int i = 0; i < words; i++) {
+      uint32_t word = data[i];
+      for (int j = 0; j < jMax; j++) {
+        dram.mem[addr+i*4+j] = (word >> j*8) & (0x000000FF);
+      }
+    }
+    mem->addTransaction(true, addr);
+    dram.addr_tracker[addr].push(scope);
+    dram.result_pending[scope] = false;
   }
-  mem->addTransaction(true, addr);
-  dram.addr_tracker[addr].push(scope);
-  dram.result_pending[scope] = false;
   
   //printf("CACHELINE WRITE: %x\t", addr);
   //for (int i = 63; i >= 0; i--) {
@@ -125,10 +142,12 @@ extern "C" void init(uint64_t clock_period_in_ps
                      , char *dram_sys_cfg_name
                      , uint64_t dram_capacity
                      , uint64_t dram_req_width
+                     , uint64_t block_offset_bits
                      )
 {
   if (!mem) {
     dram.result_size = dram_req_width;
+    dram.block_offset_bits = block_offset_bits;
 
     TransactionCompleteCB *read_cb = 
       new Callback<bp_dram, void, unsigned, uint64_t, uint64_t>(&dram, &bp_dram::read_complete);

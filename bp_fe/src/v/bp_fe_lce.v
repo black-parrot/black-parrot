@@ -201,7 +201,7 @@ module bp_fe_lce
 
     ,.lce_cmd_i(lce_cmd)
     ,.lce_cmd_v_i(lce_cmd_v_i)
-    ,.lce_cmd_yumi_o(lce_cmd_ready_o)
+    ,.lce_cmd_ready_o(lce_cmd_ready_o)
 
     ,.lce_resp_o(lce_cmd_lce_resp_lo)
     ,.lce_resp_v_o(lce_cmd_lce_resp_v_lo)
@@ -221,21 +221,25 @@ module bp_fe_lce
   logic lce_data_cmd_data_mem_pkt_v_lo;
   logic lce_data_cmd_data_mem_pkt_yumi_li;
 
-  bp_fe_lce_data_cmd #(.cfg_p(cfg_p)) 
-    lce_data_cmd (
-    .cce_data_received_o(cce_data_received)
-    ,.tr_data_received_o(tr_data_received)
+  bp_fe_lce_data_cmd 
+   #(.cfg_p(cfg_p)) 
+    lce_data_cmd 
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-    ,.miss_addr_i(miss_addr_lo)
-     
-    ,.lce_data_cmd_i(lce_data_cmd_in)
-    ,.lce_data_cmd_v_i(lce_data_cmd_v_i)
-    ,.lce_data_cmd_yumi_o(lce_data_cmd_ready_o)
-     
-    ,.data_mem_pkt_o(lce_data_cmd_data_mem_pkt_lo)
-    ,.data_mem_pkt_v_o(lce_data_cmd_data_mem_pkt_v_lo)
-    ,.data_mem_pkt_yumi_i(lce_data_cmd_data_mem_pkt_yumi_li)
-  );
+     ,.cce_data_received_o(cce_data_received)
+     ,.tr_data_received_o(tr_data_received)
+
+     ,.miss_addr_i(miss_addr_lo)
+      
+     ,.lce_data_cmd_i(lce_data_cmd_in)
+     ,.lce_data_cmd_v_i(lce_data_cmd_v_i)
+     ,.lce_data_cmd_ready_o(lce_data_cmd_ready_o)
+      
+     ,.data_mem_pkt_o(lce_data_cmd_data_mem_pkt_lo)
+     ,.data_mem_pkt_v_o(lce_data_cmd_data_mem_pkt_v_lo)
+     ,.data_mem_pkt_yumi_i(lce_data_cmd_data_mem_pkt_yumi_li)
+     );
 
    
   // data_mem_pkt arbiter

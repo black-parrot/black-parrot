@@ -115,6 +115,8 @@ typedef struct packed
     logic pc_redirect_valid;                                      \
     logic attaboy_valid;                                          \
     logic itlb_fill_valid;                                        \
+    logic icache_fence_valid;                                     \
+    logic itlb_fence_valid;                                       \
   }  bp_fe_pc_gen_cmd_s;
 
 
@@ -189,7 +191,7 @@ typedef struct packed
   (`bp_fe_queue_width(vaddr_width_mp,branch_metadata_fwd_width_mp)+`bp_fe_instr_scan_width)
 
 `define bp_fe_pc_gen_cmd_width(vaddr_width_mp,branch_metadata_fwd_width_mp) \
-  (vaddr_width_mp+branch_metadata_fwd_width_mp+4)
+  (vaddr_width_mp+branch_metadata_fwd_width_mp+6)
 
 `define bp_fe_pc_gen_icache_width(vaddr_width_mp) (vaddr_width_mp)
 

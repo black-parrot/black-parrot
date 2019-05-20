@@ -2,7 +2,7 @@
 TOP ?= $(shell git rev-parse --show-toplevel)
 
 include $(TOP)/Makefile.common
-include $(BP_EXTERNAL_DIR)/Makefile.tools
+-include $(BP_EXTERNAL_DIR)/Makefile.tools
 
 .PHONY: update_submodules tools progs
 
@@ -35,5 +35,6 @@ tools:
 	$(MAKE) dramsim2
 
 progs:
+	git submodule update --init --recursive -- bp_common/test/*
 	$(MAKE) -C $(BP_COMMON_DIR)/test all
 

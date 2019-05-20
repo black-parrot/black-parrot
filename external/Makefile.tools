@@ -17,34 +17,34 @@ systemc:
 	wget http://www.accellera.org/images/downloads/standards/systemc/systemc-2.3.3.gz \
 	&& tar -xzf systemc-2.3.3.gz && rm systemc-2.3.3.gz \
 	&& cd systemc-2.3.3 && ./configure --prefix=$(BP_EXTERNAL_DIR) CXXFLAGS="-std=c++11" \
-	&& make && make install && make clean
+	&& $(MAKE) && $(MAKE) install && $(MAKE) clean
 
 verilator:
 	cd $(VERILATOR_DIR); \
 	autoconf && ./configure --prefix=$(BP_EXTERNAL_DIR) \
-	&& make && make install
+	&& $(MAKE) && $(MAKE) install
 
 spike:
 	cd $(SPIKE_DIR); \
 	./configure --with-fesvr=$(BP_EXTERNAL_DIR) --prefix=$(BP_EXTERNAL_DIR) \
-	&& make && make install && make clean
+	&& $(MAKE) && $(MAKE) install && $(MAKE) clean
 
 axe: 
 	cd $(AXE_DIR)/src; \
-	./make.sh \
+	./$(MAKE).sh \
 	&& cp axe $(BIN_DIR) && ./clean.sh
 
 gnu:
 	cd $(GNU_DIR); \
-	./configure --prefix=$(BP_EXTERNAL_DIR) \
-	&& make && make install && make clean
+	./configure --prefix=$(BP_EXTERNAL_DIR) --with-arch=rv64ia \
+	&& $(MAKE) && $(MAKE) install && $(MAKE) clean
 
 fesvr:
 	cd $(FESVR_DIR); \
 	./configure --prefix=$(BP_EXTERNAL_DIR) \
-	&& make && make install && make clean
+	&& $(MAKE) && $(MAKE) install && $(MAKE) clean
 
 dramsim2:
 	cd $(DRAMSIM2_DIR); \
-	make libdramsim.so && cp libdramsim.so $(LIB_DIR) && cp *.h $(INCLUDE_DIR)
+	$(MAKE) libdramsim.so && cp libdramsim.so $(LIB_DIR) && cp *.h $(INCLUDE_DIR)
 
