@@ -25,8 +25,8 @@ module bp_me_nonsynth_top
 
    // Used to enable trace replay outputs for testbench
    , parameter trace_p      = 0
-   , parameter calc_debug_p = 1
-   , parameter cce_trace_p  = 1
+   , parameter calc_debug_p = 0
+   , parameter cce_trace_p  = 0
    , parameter axe_trace_p  = 0
 
    , parameter x_cord_width_p = `BSG_SAFE_CLOG2(num_lce_p)

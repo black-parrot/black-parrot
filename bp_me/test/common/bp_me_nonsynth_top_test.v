@@ -49,11 +49,11 @@ module bp_me_nonsynth_top_test
   logic [num_cce_p-1:0]                                  config_v_li;
   logic [num_cce_p-1:0]                                  config_w_li;
   logic [num_cce_p-1:0]                                  config_ready_lo;
-  
+
   logic [num_cce_p-1:0][bp_cfg_link_data_width_gp-1:0]   config_data_lo;
   logic [num_cce_p-1:0]                                  config_v_lo;
   logic [num_cce_p-1:0]                                  config_ready_li;
-  
+
   logic [num_cce_p-1:0][cce_instr_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
   logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]          cce_inst_boot_rom_data;
 
