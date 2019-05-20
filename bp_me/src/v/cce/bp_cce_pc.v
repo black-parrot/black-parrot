@@ -94,10 +94,12 @@ module bp_cce_pc
    , output logic                                inst_v_o
   );
 
+  //synopsys translate_off
   initial begin
     assert(cfg_link_addr_width_p == 16) else $error("config link address not 16-bits");
     assert(cfg_link_data_width_p == 32) else $error("config link data not 32-bits");
   end
+  //synopsys translate_on
 
   typedef enum logic [3:0] {
     RESET

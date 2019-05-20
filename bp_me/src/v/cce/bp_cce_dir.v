@@ -9,12 +9,15 @@
  *   pending bits for a way-group, reading a way-group or entry, and writing an entry's
  *   coherence state and tag.
  *
- *   The way-group memory in the directory is a synchronous read 1RW memories.
+ *   The directory is a synchronous read 1RW memory.
  *   The pending bits are stored in flops and may be read asynchronously.
  *
- *   All writes take 1 cycle
- *   RDW and RDE instructions present valid data in the next cycle (synchronous reads)
- *   RDP presents valid data in same cycle (asynchronous reads)
+ *   All writes take 1 cycle. RDP presents valid data in same cycle (asynchronous reads),
+ *   while RDW operations take multiple cycles. RDW reads out the way-group and performs
+ *   tag comparisons and coherence state extraction, which are output in the sharers vectors.
+ *   The RDW operation also produces information about the LRU way provided by the requesting LCE.
+ *
+ *   RDE is currently not supported.
  *
  */
 
@@ -27,6 +30,12 @@ module bp_cce_dir
     , parameter lce_assoc_p               = "inv"
     , parameter tag_width_p               = "inv"
 
+    // Default parameters
+
+    // 1 LCE : 1 tag set per row
+    // 2, 4, 8, 16 LCE : 2 tag sets per row
+    , parameter dir_tag_sets_per_row_lp  = (num_lce_p / num_cce_p)
+
     // Derived parameters
     , localparam lg_num_way_groups_lp     = `BSG_SAFE_CLOG2(num_way_groups_p)
     , localparam lg_num_lce_lp            = `BSG_SAFE_CLOG2(num_lce_p)
@@ -36,10 +45,6 @@ module bp_cce_dir
     , localparam entry_width_lp           = (tag_width_p+`bp_cce_coh_bits)
     , localparam tag_set_width_lp         = (entry_width_lp*lce_assoc_p)
 
-    // TODO: tag sets per row could be an input parameter
-    // 1 LCE : 1 tag set per row
-    // 2, 4, 8, 16 LCE : 2 tag sets per row
-    , localparam dir_tag_sets_per_row_lp  = (num_lce_p / num_cce_p)
     , localparam lg_dir_tag_sets_per_row_lp = `BSG_SAFE_CLOG2(dir_tag_sets_per_row_lp)
     // Width of each directory RAM row
     , localparam dir_row_width_lp         = (tag_set_width_lp*dir_tag_sets_per_row_lp)
@@ -263,7 +268,6 @@ module bp_cce_dir
         end
         READY: begin
           dir_state_n = READY;
-          // TODO: RDE not supported at the moment
 
           // initiate directory read of first row of way group
           // first row will be valid on output of directory next cycle (in READ)
@@ -279,19 +283,19 @@ module bp_cce_dir
 
             // setup the read
             dir_ram_v = 1'b1;
-            // TODO: add a comment here
-            // The address or reads depends on how many rows per way group there are.
-            // If there is only one row per wg, then the input way group is the address.
-            // If there is more than one row per wg, then the input way group is the high bits
-            // of the address and the read count register is the low bits.
-            // This results in entries 0..N-1 being for WG 0, N..(2*N)-1 for WG 1, etc.
-            dir_ram_addr = (dir_rows_per_wg_lp == 1) ? way_group_i : {way_group_i, dir_rd_cnt_r};
 
             // reset read counter to 0; this counter (zero-based) indicates which RAM row from the
             // target way-group is being output by the directory.
             // Next cycle (when the first row is valid), the counter will have value 0, and will
             // increment by 1 each cycle until all the reads are complete.
             dir_rd_cnt_n = '0;
+
+            // The address to read depends on how many rows per way group there are.
+            // If there is only one row per wg, then the input way group is the address.
+            // If there is more than one row per wg, then the input way group is the high bits
+            // and the read count register is the low bits.
+            // This results in entries 0..N-1 being for WG 0, N..(2*N)-1 for WG 1, etc.
+            dir_ram_addr = (dir_rows_per_wg_lp == 1) ? way_group_i : {way_group_i, dir_rd_cnt_n};
 
             // next cycle, the data coming out of the RAM will be valid
             dir_data_o_v_n = 1'b1;
@@ -353,8 +357,7 @@ module bp_cce_dir
           // output the sharers vectors registers
           sharers_v_o = 1'b1;
 
-          // TODO: need to set busy if sharers register bypassing is removed
-          // directory still busy
+          // Note: need to set busy here if sharers register bypassing is removed from bp_cce_reg
           //busy_o = 1'b1;
 
           // go back to READY state
@@ -402,9 +405,6 @@ module bp_cce_dir
       ,.sharers_coh_states_o(sharers_coh_states)
      );
 
-  // TODO: currently unused, maybe for debug
-  logic [`bp_cce_coh_bits-1:0] lru_coh_state_lo;
-
   bp_cce_dir_lru_extract
     #(.tag_sets_per_row_p(dir_tag_sets_per_row_lp)
       ,.rows_per_wg_p(dir_rows_per_wg_lp)
@@ -420,21 +420,8 @@ module bp_cce_dir
       ,.lce_i(lce_r)
       ,.lru_way_i(lru_way_r)
       ,.lru_v_o(lru_v_o)
-      ,.lru_coh_state_o(lru_coh_state_lo)
       ,.lru_cached_excl_o(lru_cached_excl_o)
       ,.lru_tag_o(lru_tag_o)
      );
-
-  /*
-  always_ff @(negedge clk_i) begin
-    if (~reset_i) begin
-      if (dir_ram_w_v & dir_ram_v) begin
-        $display("%0T: writing directory addr[%H] wg[%0d] lce[%0d] way[%0d] ts[%0d] tag[%H] cs[%2b]\n%H\n%H"
-                 , $time, dir_ram_addr, way_group_i, lce_i, way_i, wr_tag_set_select, tag_i, coh_state_i
-                 , dir_ram_w_mask, dir_ram_w_data);
-      end
-    end
-  end
-  */
 
 endmodule

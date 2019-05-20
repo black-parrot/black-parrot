@@ -17,7 +17,6 @@ module bp_cce_dir_tag_checker
     , parameter lce_assoc_p               = "inv"
     , parameter tag_width_p               = "inv"
 
-    , localparam lg_rows_per_wg_lp        = `BSG_SAFE_CLOG2(rows_per_wg_p)
     , localparam lg_lce_assoc_lp          = `BSG_SAFE_CLOG2(lce_assoc_p)
   )
   (

@@ -38,7 +38,6 @@ module bp_cce_dir_lru_extract
    , input [lg_lce_assoc_lp-1:0]                                  lru_way_i
 
    , output logic                                                 lru_v_o
-   , output logic [`bp_cce_coh_bits-1:0]                          lru_coh_state_o
    , output logic                                                 lru_cached_excl_o
    , output logic [tag_width_p-1:0]                               lru_tag_o
 
@@ -65,10 +64,11 @@ module bp_cce_dir_lru_extract
                        : 1'b0
                    : 1'b0;
 
-  assign lru_coh_state_o = (row_v_i)
-                           ? row[lce_i[0+:lg_tag_sets_per_row_lp]][lru_way_i].state
-                           : '0;
-  assign lru_cached_excl_o = ((lru_coh_state_o == e_MESI_M) || (lru_coh_state_o == e_MESI_E));
+  logic [`bp_cce_coh_bits-1:0] lru_coh_state;
+  assign lru_coh_state = (row_v_i)
+                         ? row[lce_i[0+:lg_tag_sets_per_row_lp]][lru_way_i].state
+                         : '0;
+  assign lru_cached_excl_o = ((lru_coh_state == e_MESI_M) || (lru_coh_state == e_MESI_E));
   assign lru_tag_o = (row_v_i)
                      ? row[lce_i[0+:lg_tag_sets_per_row_lp]][lru_way_i].tag
                      : '0;

@@ -101,9 +101,13 @@ module bp_cce
    , input [lg_num_cce_lp-1:0]                         cce_id_i
   );
 
+  //synopsys translate_off
   initial begin
     assert (lce_sets_p > 1) else $error("Number of LCE sets must be greater than 1");
+    assert (num_cce_p >= 1 && `BSG_IS_POW2(num_cce_p))
+      else $error("Number of CCE must be power of two");
   end
+  //synopsys translate_on
 
   // Define structure variables for output queues
 
@@ -422,16 +426,13 @@ module bp_cce
       ,.lru_cached_excl_o(lru_cached_excl_r_lo)
       );
 
-  // A localparams and signals for output queue message formation
   // NOTE: num_cce_p must be a power of two
-  // TODO: the special logic to compute set index based on gpr value below can probably be put
-  // into microcode software
   localparam gpr_shift_lp = (num_cce_p == 1) ? 0 : lg_num_cce_lp;
   localparam [paddr_width_p-lg_lce_sets_lp-1:0] lce_cmd_addr_0 =
     (paddr_width_p-lg_lce_sets_lp)'('0);
-  logic [lg_lce_sets_lp-1:0] gpr_set;
 
   // Output queue message field inputs
+  logic [lg_lce_sets_lp-1:0] gpr_set;
   always_comb
   begin
     gpr_set = '0;
