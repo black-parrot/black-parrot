@@ -14,7 +14,7 @@ bp-demo-riscv: $(foreach x,$(subst -,_,$(BP_DEMOS)),$(x).riscv)
 bp-demo-s    : $(foreach x,$(subst -,_,$(BP_DEMOS_C)),$(x).s)
 
 %.riscv:
-	$(RISCV_GCC) -o $@ src/$*.s src/start.S src/exception.S src/atomics.S src/emulation.c
+	$(RISCV_GCC) -o $@ src/$*.s src/start.S src/exception.S src/atomics.S src/emulation.c src/bp_utils.h src/bp_utils.c
 	$(RISCV_OBJDUMP) $@ > $*.dump
 
 queue_demo_%.s:

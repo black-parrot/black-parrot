@@ -1,5 +1,6 @@
 BP_DEMOS = \
   hello_world        \
+  atomic_queue_demo  \
   basic_demo         \
   queue_demo_2       \
   queue_demo_4       \
@@ -9,7 +10,8 @@ BP_DEMOS = \
   reloc_queue_demo_8 \
   copy_example       \
   trap_demo          \
-  atomic_demo
+  atomic_demo        \
+  hello_world_atomic
 
 RV64_BENCHMARKS = \
   median   \
