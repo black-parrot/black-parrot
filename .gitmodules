@@ -31,7 +31,7 @@
 [submodule "basejump_stl"]
   path = basejump_stl
   url = https://github.com/bespoke-silicon-group/basejump_stl.git
-  branch = master
+  branch = wormhole_bsg_noc_link
   ignore = dirty
 
 [submodule "external/DRAMSim2"]
