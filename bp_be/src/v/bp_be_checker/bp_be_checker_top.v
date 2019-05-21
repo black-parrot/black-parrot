@@ -142,6 +142,7 @@ module bp_be_checker_top
 
 // Intermediate connections
 logic [vaddr_width_p-1:0] expected_npc;
+logic flush;
 
 // Datapath
 bp_be_director 
@@ -152,6 +153,7 @@ bp_be_director
 
    ,.calc_status_i(calc_status_i) 
    ,.expected_npc_o(expected_npc)
+   ,.flush_o(flush)
 
    ,.fe_cmd_o(fe_cmd_o)
    ,.fe_cmd_v_o(fe_cmd_v_o)
@@ -184,9 +186,7 @@ bp_be_detector
    ,.mmu_cmd_ready_i(mmu_cmd_ready_i)
    ,.expected_npc_i(expected_npc)
 
-   ,.trap_v_i(trap_v_i)
-   ,.tlb_fence_i(tlb_fence_i)
-   ,.ifence_i(ifence_i)
+   ,.flush_i(flush)
 
    ,.chk_dispatch_v_o(chk_dispatch_v_o)
    ,.chk_roll_o(chk_roll_o)

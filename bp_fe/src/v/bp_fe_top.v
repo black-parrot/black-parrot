@@ -35,6 +35,7 @@ module bp_fe_top
    , input                                            reset_i
 
    , input [lce_id_width_lp-1:0]                      icache_id_i
+
    , input [fe_cmd_width_lp-1:0]                      fe_cmd_i
    , input                                            fe_cmd_v_i
    , output logic                                     fe_cmd_ready_o
@@ -134,12 +135,16 @@ logic 		                itlb_miss;
 assign fe_cmd          = fe_cmd_i;
 assign fe_queue_o      = fe_queue;
 
-assign fe_queue.msg_type = pc_gen_queue.msg_type;
-assign fe_queue.msg      = pc_gen_queue.msg;
-assign pc_gen_fe_ready   = fe_queue_ready_i;
-assign fe_queue_v_o      = pc_gen_fe_v;
-// processor parameters
-//`declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
+assign fe_queue.msg_type  = pc_gen_queue.msg_type;
+assign fe_queue.msg       = pc_gen_queue.msg;
+assign pc_gen_fe_ready    = fe_queue_ready_i;
+assign fe_queue_v_o       = pc_gen_fe_v;
+
+// FE cmd fencing is not implemented yet
+// We lower the fence the same cycle that we get the command off of the fifo. 
+// If there are any operations that take more than one cycle, we should delay sending this signal
+// and move into a stall state in pc_gen, pending on completing the fe_cmd operation
+//assign fe_cmd_fence_clr_o = fe_cmd_ready_o & ~(fe_cmd.opcode == e_op_attaboy); 
 
 // fe to pc_gen 
 always_comb

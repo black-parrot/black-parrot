@@ -75,6 +75,7 @@ module bp_be_director
    // Dependency information
    , input [calc_status_width_lp-1:0]  calc_status_i
    , output [vaddr_width_p-1:0]        expected_npc_o
+   , output                            flush_o
 
    // FE-BE interface
    , output [fe_cmd_width_lp-1:0]      fe_cmd_o
@@ -245,9 +246,11 @@ bsg_dff_reset_en
 // Generate control signals
 assign expected_npc_o = npc_r;
 // Increment the checkpoint if there's a committing instruction
-assign chk_dequeue_fe_o = ~calc_status.mem3_miss_v & (calc_status.instr_cmt_v | itlb_fill_v_i);
+// The itlb fill is strictly unnecessary, but we would need to work the rollback logic to work
+// without it
+assign chk_dequeue_fe_o = ~calc_status.mem3_miss_v & calc_status.instr_cmt_v | itlb_fill_v_i;
 // Flush the FE queue if there's a pc redirect
-assign chk_flush_fe_o = (fe_cmd_v & (fe_cmd.opcode == e_op_pc_redirection)) | tlb_fence_i | ifence_i;
+assign chk_flush_fe_o = (fe_cmd_v & (fe_cmd.opcode != e_op_attaboy));
 
 // Rollback the FE queue on a cache miss
 assign chk_roll_fe_o  = calc_status.mem3_miss_v;
@@ -274,6 +277,13 @@ always_ff @(posedge clk_i)
         state_r <= state_n;
       end
   end
+
+// Set the fence if we have a cmd which is not an attaboy
+// FE fencing is not supported yet
+//assign fe_cmd_fence_set_o = fe_cmd_v & ~(fe_cmd.opcode == e_op_attaboy);
+
+// TODO: Simplify assignments
+assign flush_o = fe_cmd_v & (fe_cmd.opcode != e_op_attaboy) & ((fe_cmd.opcode != e_op_pc_redirection) | trap_v_i);
 
 always_comb 
   begin : fe_cmd_adapter

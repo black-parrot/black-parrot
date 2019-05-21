@@ -62,9 +62,7 @@ module bp_be_detector
    , input [vaddr_width_p-1:0]         expected_npc_i
    , input                             mmu_cmd_ready_i
 
-   , input                             trap_v_i
-   , input                             tlb_fence_i
-   , input                             ifence_i
+   , input                             flush_i
 
    // Pipeline control signals from the checker to the calculator
    , output                            chk_dispatch_v_o
@@ -175,28 +173,24 @@ assign chk_dispatch_v_o = ~(data_haz_v | struct_haz_v);
 assign chk_roll_o       = calc_status.mem3_miss_v;
 
 assign chk_poison_iss_o = reset_i
-                          | trap_v_i
-                          | tlb_fence_i
-                          | ifence_i
+                          | flush_i
+                          | calc_status.mem3_fe_exc_v
                           | calc_status.mem3_miss_v;
                           
 assign chk_poison_isd_o = reset_i
-                          | trap_v_i
-                          | tlb_fence_i
-                          | ifence_i
+                          | flush_i
+                          | calc_status.mem3_fe_exc_v
                           | calc_status.mem3_miss_v;
 
 assign chk_poison_ex1_o = reset_i 
                           | mispredict_v
-                          | trap_v_i
-                          | tlb_fence_i
-                          | ifence_i
+                          | flush_i
+                          | calc_status.mem3_fe_exc_v
                           | calc_status.mem3_miss_v;
 
 assign chk_poison_ex2_o = reset_i
-                          | trap_v_i
-                          | tlb_fence_i
-                          | ifence_i
+                          | flush_i
+                          | calc_status.mem3_fe_exc_v
                           | calc_status.mem3_miss_v;
 
 endmodule : bp_be_detector

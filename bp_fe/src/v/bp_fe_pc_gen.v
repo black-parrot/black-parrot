@@ -81,10 +81,9 @@ bp_fe_instr_scan_s       scan_instr;
 enum bit [1:0] {e_wait=2'd0, e_run=2'd1, e_stall=2'd2} state_n, state_r;
    
 // pc pipeline
-logic [vaddr_width_p-1:0]       pc_n, pc_f1, pc_f2;
+logic [vaddr_width_p-1:0]       pc_f1_n, pc_f1_r, pc_f2_r;
 logic [vaddr_width_p-1:0]       pc_resume_r, pc_resume_n;
-logic                           pc_v_f1_n, pc_v_f1, pc_v_f2;
-logic                           flush_f1, flush_f2;
+logic                           pc_v_f1_n, pc_v_f2_n, pc_v_f1_r, pc_v_f2_r;
 // branch prediction wires
 logic                           is_br;
 logic                           is_jal;
@@ -105,6 +104,8 @@ logic                           fe_exception_v, misalign_exception, itlb_miss_ex
 
 bp_fe_branch_metadata_fwd_s fe_queue_branch_metadata, fe_queue_branch_metadata_r;
 
+logic flush;
+
 logic btb_pred_f1_r;
 
 //connect pc_gen to the rest of the FE submodules as well as FE top module   
@@ -114,19 +115,20 @@ assign pc_gen_fe_o     = pc_gen_queue;
 assign fe_pc_gen_cmd   = fe_pc_gen_i;
 assign icache_pc_gen   = icache_pc_gen_i;
 
-
 assign state_reset_v = fe_pc_gen_v_i & fe_pc_gen_cmd.reset_valid;
 assign pc_redirect_v = fe_pc_gen_v_i & fe_pc_gen_cmd.pc_redirect_valid;
 assign itlb_fill_v   = fe_pc_gen_v_i & fe_pc_gen_cmd.itlb_fill_valid;
 assign icache_fence_v = fe_pc_gen_v_i & fe_pc_gen_cmd.icache_fence_valid;
 assign itlb_fence_v   = fe_pc_gen_v_i & fe_pc_gen_cmd.itlb_fence_valid;
 
-assign fe_instr_v         = pc_v_f2 & ~flush_f2;
-assign fe_exception_v     = misalign_exception | itlb_miss_exception;
-assign misalign_exception = pc_redirect_v 
-                            & ~fe_pc_gen_cmd.pc[1:0] == 2'b00;
+assign fe_instr_v         = pc_v_f2_r & ~flush;
+assign fe_exception_v     = pc_v_f2_r & (misalign_exception | itlb_miss_exception) & ~(fe_pc_gen_v_i & ~fe_pc_gen_cmd.attaboy_valid);
+// TODO: This is wrong, Should not send misaligned immediately upon redirect. Zeroing out for now
+assign misalign_exception = 1'b0;
+//                            pc_redirect_v 
+//                            & ~fe_pc_gen_cmd.pc[1:0] == 2'b00;
                             
-assign itlb_miss_exception = pc_v_f2 & itlb_miss_f2;
+assign itlb_miss_exception = pc_v_f2_r & itlb_miss_f2;
 /* output wiring */
 // there should be fixes to the pc signal sent out according to the valid/ready signal pairs
 
@@ -136,7 +138,7 @@ assign pc_gen_queue.msg                 = (fe_exception_v) ? pc_gen_exception : 
 assign pc_gen_exception.exception_code  = (misalign_exception) ? e_instr_misaligned
                                           : ((itlb_miss_exception)? e_itlb_miss
                                           : e_illegal_instr);
-assign pc_gen_exception.vaddr           = pc_f2[0+:vaddr_width_p];
+assign pc_gen_exception.vaddr           = pc_f2_r;
 assign pc_gen_exception.padding         = '0;
     
 assign pc_gen_fetch.pc                  = icache_pc_gen.addr;
@@ -144,8 +146,8 @@ assign pc_gen_fetch.instr               = icache_pc_gen.instr;
 assign pc_gen_fetch.branch_metadata_fwd = fe_queue_branch_metadata_r;
 assign pc_gen_fetch.padding             = '0;
     
-assign pc_gen_icache.virt_addr          = pc_n;
-assign pc_gen_itlb.virt_addr            = pc_n;
+assign pc_gen_icache.virt_addr          = pc_f1_n;
+assign pc_gen_itlb.virt_addr            = pc_f1_n;
    
 //valid-ready signals assignments
 assign fe_pc_gen_ready_o     = fe_pc_gen_v_i;
@@ -171,19 +173,15 @@ always_comb begin
       // In the wait state
       if (fe_pc_gen_v_i & ~fe_pc_gen_cmd.attaboy_valid) begin
         // FE command received
-        if(pc_v_f1_n)
-          state_n = e_run;
-        else
-          state_n = e_stall;
-      end
+        state_n = e_stall;
+      end 
     end
     e_run : begin
       // In the run state
-      if (pc_v_f2 & itlb_miss_f2) begin
+      if (pc_v_f2_r & itlb_miss_f2)
         state_n = e_wait;
-      end
-      else if(pc_v_f2 & !icache_pc_gen_v_i) begin
-            state_n = e_stall;
+      else if (pc_v_f2_r & ~pc_gen_fe_v_o) begin
+        state_n = e_stall;
       end
     end
     e_stall : begin
@@ -204,7 +202,7 @@ always_comb begin
     pc_resume_n = fe_pc_gen_cmd.pc;
   end
   else if(state_r == e_run) begin
-    pc_resume_n = pc_f2;
+    pc_resume_n = pc_f2_r;
   end
   else begin
     pc_resume_n = pc_resume_r;
@@ -215,61 +213,54 @@ always_ff @(posedge clk_i) begin
    if (reset_i) begin
       itlb_miss_f2 <= 1'd0;
    end else begin
-      itlb_miss_f2 <= itlb_miss_i & ~flush_f2;
+      itlb_miss_f2 <= itlb_miss_i & pc_v_f1_r;
    end
 end
 
 always_comb
 begin
     // load boot pc on reset command
-    if(state_reset_v) begin
-        pc_n = fe_pc_gen_cmd.pc;
-    end
+    if(state_reset_v)
+        pc_f1_n = fe_pc_gen_cmd.pc;
     // if we need to redirect
-    else if (pc_redirect_v | icache_fence_v | itlb_fence_v) begin
-        pc_n = fe_pc_gen_cmd.pc;
-    end
-    else if (state_r != e_run) begin
-        pc_n = pc_resume_r;
-    end
+    else if (pc_redirect_v | icache_fence_v | itlb_fence_v)
+        pc_f1_n = fe_pc_gen_cmd.pc;
+    else if (state_r != e_run) 
+        pc_f1_n = pc_resume_r;
     else if (btb_br_tgt_v_lo)
-    begin
-        pc_n = btb_br_tgt_lo;
-    end
+        pc_f1_n = btb_br_tgt_lo;
     else if (predict_taken)
-    begin
-        pc_n = br_target;
-    end
+        pc_f1_n = br_target;
     else
-    begin
-        pc_n = pc_f1 + 4;
-    end
+      begin
+        pc_f1_n = pc_f1_r + 4;
+      end
 end
 
-assign flush_f1 = (itlb_miss_f2 | icache_miss_i) & ~(pc_redirect_v | icache_fence_v | itlb_fence_v);
-assign flush_f2 = itlb_miss_f2 | icache_miss_i | pc_redirect_v | icache_fence_v | itlb_fence_v;
-assign pc_v_f1_n = pc_gen_itlb_ready_i & pc_gen_fe_ready_i & pc_gen_icache_ready_i;
+assign flush = (itlb_miss_f2 | icache_miss_i | (pc_v_f2_r & ~pc_gen_fe_ready_i) | (fe_pc_gen_v_i & ~fe_pc_gen_cmd.attaboy_valid));
+assign pc_v_f2_n = pc_v_f1_r & ~flush;
+assign pc_v_f1_n = ~(state_r == e_wait) & pc_gen_itlb_ready_i & pc_gen_fe_ready_i & pc_gen_icache_ready_i;
 always_ff @(posedge clk_i) begin
   if (reset_i) begin
-    pc_f1 <= '0;
-    pc_f2 <= '0;
+    pc_f1_r <= '0;
+    pc_f2_r <= '0;
 
-    pc_v_f1 <= '0;
-    pc_v_f2 <= '0;
+    pc_v_f1_r <= '0;
+    pc_v_f2_r <= '0;
 
     btb_pred_f1_r <= '0;
   end else begin
-    pc_v_f1 <= pc_v_f1_n & ~flush_f1;
-    pc_v_f2 <= pc_v_f1   & ~flush_f2;
+    pc_v_f1_r <= pc_v_f1_n;
+    pc_v_f2_r <= pc_v_f2_n;
 
     if (state_n != e_run) begin
-      pc_f1 <= pc_f1;
-      pc_f2 <= pc_f2;
+      pc_f1_r <= pc_f1_r;
+      pc_f2_r <= pc_f2_r;
 
       btb_pred_f1_r <= btb_pred_f1_r;
     end else begin
-      pc_f1 <= pc_n;
-      pc_f2 <= pc_f1;
+      pc_f1_r <= pc_f1_n;
+      pc_f2_r <= pc_f1_r;
 
       btb_pred_f1_r <= btb_br_tgt_v_lo;
     end
@@ -300,7 +291,7 @@ bp_fe_btb
  btb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.r_addr_i(pc_n)
+   ,.r_addr_i(pc_f1_n)
    ,.r_v_i(pc_v_f1_n)
    ,.br_tgt_o(btb_br_tgt_lo)
    ,.br_tgt_v_o(btb_br_tgt_v_lo)
@@ -324,6 +315,7 @@ assign is_br = icache_pc_gen_v_i & (scan_instr.instr_scan_class == e_rvi_branch)
 assign is_jal = icache_pc_gen_v_i & (scan_instr.instr_scan_class == e_rvi_jal);
 assign br_target = vaddr_width_p'(icache_pc_gen.addr + scan_instr.imm); 
 assign is_back_br = scan_instr.imm[63];
-assign predict_taken = pc_v_f2 & ((is_br & is_back_br) | (is_jal)) & ~btb_pred_f1_r & icache_pc_gen_v_i;
+// TODO: This functionality is broken. Should predict taken branches and override BTB
+assign predict_taken = 1'b0; //pc_v_f2_r & ~flush & ((is_br & is_back_br) | (is_jal)) & ~btb_pred_f1_r & icache_pc_gen_v_i;
 
 endmodule
