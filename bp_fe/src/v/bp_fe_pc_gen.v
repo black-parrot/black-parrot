@@ -50,9 +50,6 @@ module bp_fe_pc_gen
 // Suppress unused signal warnings
 wire unused0 = v_i;
 
-assign icache_pc_gen_ready_o = '0;
-assign pc_gen_itlb_v_o = pc_gen_icache_v_o;
-
 //the first level of structs
 `declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)
 //fe to pc_gen
@@ -74,9 +71,7 @@ bp_fe_pc_gen_icache_s       pc_gen_icache;
 bp_fe_pc_gen_itlb_s         pc_gen_itlb;
 bp_fe_branch_metadata_fwd_s branch_metadata_fwd_o;
 bp_fe_icache_pc_gen_s       icache_pc_gen;
-   
 
-   
 //the second level structs instatiations
 bp_fe_fetch_s            pc_gen_fetch;
 bp_fe_exception_s        pc_gen_exception;
@@ -85,52 +80,32 @@ bp_fe_instr_scan_s       scan_instr;
 // FSM Variables
 enum bit [1:0] {e_wait=2'd0, e_run=2'd1, e_stall=2'd2} state_n, state_r;
    
-// pipeline pc's
-logic [vaddr_width_p-1:0]       pc_f2;
-logic [vaddr_width_p-1:0]       pc_f1;
-logic [vaddr_width_p-1:0]       pc_n;
-logic [vaddr_width_p-1:0]       pc_resume_r;
-logic [vaddr_width_p-1:0]       pc_resume_n;
-
-logic                           pc_v_f2;
-logic                           pc_v_f1;
-logic                           pc_v_f1_n;
-
-logic                           flush_f1;
-logic                           flush_f2;
-logic                           fe_instr_v;
-
-//branch prediction wires
+// pc pipeline
+logic [vaddr_width_p-1:0]       pc_n, pc_f1, pc_f2;
+logic [vaddr_width_p-1:0]       pc_resume_r, pc_resume_n;
+logic                           pc_v_f1_n, pc_v_f1, pc_v_f2;
+logic                           flush_f1, flush_f2;
+// branch prediction wires
 logic                           is_br;
 logic                           is_jal;
 logic [vaddr_width_p-1:0]       br_target;
 logic                           is_back_br;
 logic                           predict_taken;
-
-// tlb miss wires
+// btb io
+bp_fe_branch_metadata_fwd_s     fe_cmd_branch_metadata;
+logic [vaddr_width_p-1:0]       btb_br_tgt_lo;
+logic                           btb_br_tgt_v_lo;
+// miss wires
 logic                           itlb_miss_f2;
-
-logic [vaddr_width_p-1:0]       btb_target;
-logic [instr_width_lp-1:0]      next_instr;
-logic [instr_width_lp-1:0]      instr;
-logic [instr_width_lp-1:0]      last_instr;
-logic [instr_width_lp-1:0]      instr_out;
-
-//control signals
-logic                           state_reset_v;
-logic                           pc_redirect_v;
-logic                           itlb_fill_v;
-logic                           icache_fence_v;
-logic                           itlb_fence_v;
-
-//exceptions
-logic                          fe_exception_v;
-logic                          misalign_exception;
-logic                          itlb_miss_exception;
+//command control signals
+logic                           state_reset_v, pc_redirect_v, itlb_fill_v, icache_fence_v, itlb_fence_v;
+//instr and exception valid
+logic                           fe_instr_v;
+logic                           fe_exception_v, misalign_exception, itlb_miss_exception;
 
 bp_fe_branch_metadata_fwd_s fe_queue_branch_metadata, fe_queue_branch_metadata_r;
 
-logic btb_pred_f1_r, btb_pred_f2_r;
+logic btb_pred_f1_r;
 
 //connect pc_gen to the rest of the FE submodules as well as FE top module   
 assign pc_gen_icache_o = pc_gen_icache;
@@ -173,21 +148,11 @@ assign pc_gen_icache.virt_addr          = pc_n;
 assign pc_gen_itlb.virt_addr            = pc_n;
    
 //valid-ready signals assignments
-always_comb 
-begin
-  if (reset_i) 
-    begin
-      pc_gen_fe_v_o     = 1'b0;
-      fe_pc_gen_ready_o = 1'b0;
-      pc_gen_icache_v_o = 1'b0;
-    end 
-  else 
-    begin
-      fe_pc_gen_ready_o = fe_pc_gen_v_i;
-      pc_gen_fe_v_o     = (fe_instr_v | fe_exception_v) & pc_gen_fe_ready_i;
-      pc_gen_icache_v_o = pc_v_f1_n;
-    end
-end
+assign fe_pc_gen_ready_o     = fe_pc_gen_v_i;
+assign pc_gen_fe_v_o         = (fe_instr_v | fe_exception_v) & pc_gen_fe_ready_i;
+assign pc_gen_icache_v_o     = pc_v_f1_n & pc_gen_icache_ready_i;
+assign icache_pc_gen_ready_o = 1'b1;
+assign pc_gen_itlb_v_o       = pc_gen_icache_v_o & pc_gen_itlb_ready_i;
 
 // FSM
 always_ff @(posedge clk_i) begin
@@ -199,7 +164,7 @@ always_ff @(posedge clk_i) begin
 end
 
 always_comb begin
-  state_n = e_wait;
+  state_n = state_r;
 
   case (state_r)
     e_wait : begin
@@ -210,32 +175,24 @@ always_comb begin
           state_n = e_run;
         else
           state_n = e_stall;
-      end else begin
-        // FE command not received
-        state_n = e_wait;
       end
     end
     e_run : begin
       // In the run state
       if (pc_v_f2 & itlb_miss_f2) begin
         state_n = e_wait;
-      end else begin
-        if ((pc_v_f2 & !icache_pc_gen_v_i) || ~pc_gen_icache_ready_i) begin //CHECK: should it be "if ((pc_v_f2 & !icache_pc_gen_v_i) || ~pc_v_f1_n)"?
+      end
+      else if(pc_v_f2 & !icache_pc_gen_v_i) begin
             state_n = e_stall;
-        end else begin
-            state_n = e_run;
-        end
       end
     end
     e_stall : begin
       // In the stall state
-      if (pc_v_f1_n) begin
+      if (pc_v_f1_n)
         state_n = e_run;
-      end else begin
-        state_n = e_stall;
-      end
     end
-  endcase // case (state_r)
+    default: state_n = e_wait;
+  endcase
 end
 
 always_ff @(posedge clk_i) begin
@@ -262,10 +219,6 @@ always_ff @(posedge clk_i) begin
    end
 end
 
-logic [vaddr_width_p-1:0] btb_br_tgt_lo;
-logic                     btb_br_tgt_v_lo=0;
-
-bp_fe_branch_metadata_fwd_s fe_cmd_branch_metadata;
 always_comb
 begin
     // load boot pc on reset command
@@ -305,7 +258,6 @@ always_ff @(posedge clk_i) begin
     pc_v_f2 <= '0;
 
     btb_pred_f1_r <= '0;
-    btb_pred_f2_r <= '0;
   end else begin
     pc_v_f1 <= pc_v_f1_n & ~flush_f1;
     pc_v_f2 <= pc_v_f1   & ~flush_f2;
@@ -315,13 +267,11 @@ always_ff @(posedge clk_i) begin
       pc_f2 <= pc_f2;
 
       btb_pred_f1_r <= btb_pred_f1_r;
-      btb_pred_f2_r <= btb_pred_f2_r;
     end else begin
       pc_f1 <= pc_n;
       pc_f2 <= pc_f1;
 
       btb_pred_f1_r <= btb_br_tgt_v_lo;
-      btb_pred_f2_r <= btb_pred_f1_r;
     end
   end
 end
@@ -353,7 +303,7 @@ bp_fe_btb
    ,.r_addr_i(pc_n)
    ,.r_v_i(pc_v_f1_n)
    ,.br_tgt_o(btb_br_tgt_lo)
-   ,.br_tgt_v_o()
+   ,.br_tgt_v_o(btb_br_tgt_v_lo)
 
    ,.w_tag_i(fe_cmd_branch_metadata.btb_tag) 
    ,.w_idx_i(fe_cmd_branch_metadata.btb_idx)
