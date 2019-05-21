@@ -2,13 +2,24 @@
 .globl _start
 
 _start:
-/* setup stack pointer. Stacks start at 0x8FFF_DFFF */
-/* We then subtract off 4K*coreID */
+/* setup stack pointers. Stacks start at 0x8FFF_CFFF */
+/* We then subtract off 8K*coreID. The top 4K is for the core emulation stack
+ * the lower 4K is for the program TODO: Maybe larger stack value? */
     li   sp, 0x8FFFCFF0
-    
     csrr x1, mhartid 
+    slli x1, x1, 13
+    sub  sp, sp, x1
+
+/* save the stack pointer to mscratch, so it can be used on first trap entry*/
+    csrw mscratch, sp
+/* get 4K and subtract it off to get the program stack pointer */
+    li   x1, 1
     slli x1, x1, 12
     sub  sp, sp, x1 
+
+/* setup mtvec */ 
+   la x1, bp_mtvec_handler
+   csrw mtvec, x1
 
 /* 0 all registers */
     addi x1,  x0, 0
@@ -42,6 +53,7 @@ _start:
     addi x29, x0, 0
     addi x30, x0, 0
     addi x31, x0, 0
+
 
 /* jump to main */
     jal main
