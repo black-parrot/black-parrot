@@ -129,7 +129,7 @@ module bp_be_checker_top
    
    //iTLB fill interface
     , input                           itlb_fill_v_i
-    , input [vtag_width_lp-1:0]       itlb_fill_vtag_i
+    , input [vaddr_width_p-1:0]       itlb_fill_vaddr_i
     , input [tlb_entry_width_lp-1:0]  itlb_fill_entry_i
    );
 
@@ -170,7 +170,7 @@ bp_be_director
    ,.ifence_i(ifence_i)
 
    ,.itlb_fill_v_i(itlb_fill_v_i)
-   ,.itlb_fill_vtag_i(itlb_fill_vtag_i)
+   ,.itlb_fill_vaddr_i(itlb_fill_vaddr_i)
    ,.itlb_fill_entry_i(itlb_fill_entry_i)
    );
 

@@ -97,7 +97,7 @@ module bp_be_director
    
    //iTLB fill interface
    , input                           itlb_fill_v_i
-   , input [vtag_width_lp-1:0]       itlb_fill_vtag_i
+   , input [vaddr_width_p-1:0]       itlb_fill_vaddr_i
    , input [tlb_entry_width_lp-1:0]  itlb_fill_entry_i
   );
 
@@ -293,7 +293,7 @@ always_comb
     else if(itlb_fill_v_i)
       begin : itlb_fill
         fe_cmd.opcode = e_op_itlb_fill_response;
-        fe_cmd.operands.itlb_fill_response.vaddr = {itlb_fill_vtag_i, bp_page_offset_width_gp'(0)};
+        fe_cmd.operands.itlb_fill_response.vaddr = itlb_fill_vaddr_i;
         fe_cmd.operands.itlb_fill_response.pte_entry_leaf = itlb_fill_entry_i;
       
         fe_cmd_v = fe_cmd_ready_i;
