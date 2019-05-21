@@ -166,7 +166,9 @@ always_comb
                                       ? fe_cmd.operands.pc_redirect_operands.pc
                                         : (fe_pc_gen.icache_fence_valid | fe_pc_gen.itlb_fence_valid)
                                           ? fe_cmd.operands.icache_fence.pc
-                                          : fe_cmd.operands.attaboy.pc ;
+                                          : (fe_pc_gen.itlb_fill_valid)
+                                            ? fe_cmd.operands.itlb_fill_response.vaddr
+                                            : fe_cmd.operands.attaboy.pc;
 
     fe_pc_gen_v                   = fe_cmd_v_i;
     fe_cmd_ready_o                = fe_pc_gen_ready;

@@ -49,7 +49,6 @@ module bp_fe_pc_gen
 
 // Suppress unused signal warnings
 wire unused0 = v_i;
-wire unused1 = pc_gen_itlb_ready_i;
 
 assign icache_pc_gen_ready_o = '0;
 assign pc_gen_itlb_v_o = pc_gen_icache_v_o;
@@ -147,7 +146,7 @@ assign itlb_fill_v   = fe_pc_gen_v_i & fe_pc_gen_cmd.itlb_fill_valid;
 assign icache_fence_v = fe_pc_gen_v_i & fe_pc_gen_cmd.icache_fence_valid;
 assign itlb_fence_v   = fe_pc_gen_v_i & fe_pc_gen_cmd.itlb_fence_valid;
 
-assign fe_instr_v         = pc_v_f2 & ~flush_f1;
+assign fe_instr_v         = pc_v_f2 & ~flush_f2;
 assign fe_exception_v     = misalign_exception | itlb_miss_exception;
 assign misalign_exception = pc_redirect_v 
                             & ~fe_pc_gen_cmd.pc[1:0] == 2'b00;
@@ -185,7 +184,7 @@ begin
   else 
     begin
       fe_pc_gen_ready_o = fe_pc_gen_v_i;
-      pc_gen_fe_v_o     = fe_instr_v | fe_exception_v;
+      pc_gen_fe_v_o     = (fe_instr_v | fe_exception_v) & pc_gen_fe_ready_i;
       pc_gen_icache_v_o = pc_v_f1_n;
     end
 end
@@ -294,8 +293,8 @@ begin
     end
 end
 
-assign flush_f1 = itlb_miss_f2 | icache_miss_i;   //CHECK: should it be "(itlb_miss_f2 | icache_miss_i) & ~pc_redirect_v"?
-assign flush_f2 = itlb_miss_f2 | icache_miss_i | pc_redirect_v;
+assign flush_f1 = (itlb_miss_f2 | icache_miss_i) & ~(pc_redirect_v | icache_fence_v | itlb_fence_v);
+assign flush_f2 = itlb_miss_f2 | icache_miss_i | pc_redirect_v | icache_fence_v | itlb_fence_v;
 assign pc_v_f1_n = pc_gen_itlb_ready_i & pc_gen_fe_ready_i & pc_gen_icache_ready_i;
 always_ff @(posedge clk_i) begin
   if (reset_i) begin
