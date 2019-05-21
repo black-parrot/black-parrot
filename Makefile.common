@@ -11,9 +11,9 @@ BP_EXTERNAL_DIR  ?= $(TOP)/external
 
 ## Setup CAD tools
 
-# If the machine you are working on is bsg_cadenv complient, then you do not
+# If the machine you are working on is bsg_cadenv compliant, then you do not
 # need to setup the cad tools, simply put bsg_cadenv in the same root dir.
-include $(TOP)/bsg_cadenv/cadenv.mk
+-include $(TOP)/bsg_cadenv/cadenv.mk
 
 ## Sepcify license path if needed
 LM_LICENSE_FILE ?=
