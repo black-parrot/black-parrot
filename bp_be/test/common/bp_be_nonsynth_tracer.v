@@ -7,7 +7,7 @@ module bp_be_nonsynth_tracer
    `declare_bp_proc_params(cfg_p)
 
    // Default parameters
-   , parameter debug_file_p = "debug.log"
+   , parameter debug_file_p = "debug"
 
    // Calculated parameters
    , localparam mhartid_width_lp      = `BSG_SAFE_CLOG2(num_core_p)
@@ -97,7 +97,12 @@ wire [reg_data_width_lp-1:0] unused1 = fwb_result_i;
        );
 
     integer file;
-    initial file = $fopen(debug_file_p, "w");
+    string file_name;
+
+    always_ff @(negedge reset_i) begin
+        file_name = $sformatf("%s_%x.log", debug_file_p, mhartid_i);
+        file = $fopen(file_name, "w");
+    end
 
     logic booted_r;
 
