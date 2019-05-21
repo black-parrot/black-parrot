@@ -20,9 +20,6 @@ bp-demo-s    : $(foreach x,$(subst -,_,$(BP_DEMOS_C)),$(x).s)
 queue_demo_%.s:
 	$(RISCV_GCC) -DNUM_CORES=$(notdir $*) -S -o src/queue_demo_$(notdir $*).s src/queue_demo.c
 
-reloc_queue_demo_%.s:
-	$(RISCV_GCC) -DNUM_CORES=$(notdir $*) -S -o src/reloc_queue_demo_$(notdir $*).s src/reloc_queue_demo.c
-
 %.s:
 	$(RISCV_GCC) -S -o src/$@ src/$*.c 
 

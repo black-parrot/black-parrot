@@ -4,9 +4,6 @@ BP_DEMOS_C = \
 	queue_demo_2       \
 	queue_demo_4       \
 	queue_demo_8       \
-	reloc_queue_demo_2 \
-	reloc_queue_demo_4 \
-	reloc_queue_demo_8 \
 	copy_example       \
 	trap_demo          \
 	atomic_demo		   \

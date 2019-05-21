@@ -1,3 +1,7 @@
+/*
+ * THIS DEMO IS NO LONGER SUPPORTED AND IS HERE ONLY FOR REFERENCE
+ */
+
 #include <stdint.h>
 
 #define QUEUE_LENGTH 32
