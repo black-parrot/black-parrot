@@ -448,7 +448,7 @@ bp_be_pipe_mem
    ,.mem_resp_ready_o(mem_resp_ready_o)
 
    ,.mem3_itlb_fill_v_i(exc_stage_r[2].itlb_fill_v)
-   ,.mem3_store_not_load_i(calc_stage_r[2].irf_w_v)
+   ,.mem3_store_not_load_i(~calc_stage_r[2].irf_w_v)
    ,.mem3_pc_i(calc_status.mem3_pc)
 
    ,.v_o(pipe_mem_v_lo)
