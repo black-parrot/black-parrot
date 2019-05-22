@@ -66,6 +66,7 @@ module bp_be_scheduler
    , input                           issue_pkt_ready_i
  
    , input cache_miss_mem3_i
+   , input roll_i
    );
 
 // Declare parameterizable structures
@@ -112,8 +113,9 @@ aligner #(.vaddr_width_p(vaddr_width_p),
                          .fe_queue_v_o(fe_queue_v_o),//to send to the expander
                          .aligner_ready_o(aligner_ready_o),//to send to the queue (dequeue)
                          .pc_redirect_i(pc_redirect_i),
-                         .cache_miss_i(cache_miss_mem3_i)
-                        );
+                         .cache_miss_i(cache_miss_mem3_i),
+                         .roll_i(roll_i)
+                 );
 
 assign compressed_fetch_instr = fe_fetch.instr;
 assign test_compressed_fetch_instr = fe_fetch.instr;

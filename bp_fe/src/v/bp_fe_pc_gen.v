@@ -515,7 +515,7 @@ always_comb begin: branch_target_handling
    end // for (int unsigned i = 0; i < 2; i++)
 end // block: branch_target_handling
 
-assign predict_taken = taken[2] | (taken[1] & valid[0]);
+assign predict_taken = taken[2] | (taken[1] & valid[0]); //valid[0]==1 jump to second half, invalidate the first half
 always_ff @(posedge clk_i) begin
    if (reset_i || (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) || btb_br_tgt_v_lo || predict_taken) begin
       unaligned_q          <= 1'b0;

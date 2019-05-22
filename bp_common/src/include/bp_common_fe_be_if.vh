@@ -44,7 +44,7 @@
     logic [bp_eaddr_width_gp-1:0]             pc;                                                  \
     logic [bp_instr_width_gp-1:0]             instr;                                               \
     logic [branch_metadata_fwd_width_mp-1:0]  branch_metadata_fwd;                                 \
-    logic                                     valid_branch_taken;                                  \
+    logic [1:0]                               valid_branch_taken;                                  \
     logic                                     iscompressed;                                        \
     logic                                     isfirstinstr;                                        \
     logic                                     hastwoinstrs;                                        \
@@ -334,7 +334,7 @@ typedef enum bit [2:0]
 //zazad begins 
 
 `define bp_fe_fetch_width_no_padding(branch_metadata_fwd_width_mp)                                 \
-  (bp_eaddr_width_gp + bp_instr_width_gp + branch_metadata_fwd_width_mp+4)                           
+  (bp_eaddr_width_gp + bp_instr_width_gp + branch_metadata_fwd_width_mp+5)                           
 
 //zazad ends
 

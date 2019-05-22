@@ -213,6 +213,7 @@ bp_be_scheduler
    ,.issue_pkt_ready_i(issue_pkt_ready_i)
 
    ,.cache_miss_mem3_i(cache_miss_mem3_i)
+   ,.roll_i(chk_roll_o)
    );
 
 endmodule : bp_be_checker_top
