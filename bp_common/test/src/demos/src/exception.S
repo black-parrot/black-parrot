@@ -8,9 +8,9 @@
 .type  decode_illegal, @function
 
 bp_mtvec_handler:
-    # Save the current stack pointer
+    # Swap in the machine mode stack pointer
     # Note: We only need to save the stack if we have a special emu stack. Security?
-    csrw mscratch, sp
+    csrrw sp, mscratch, sp 
 
     # Push temp registers onto stack
     sd x31, 0(sp)
@@ -42,7 +42,11 @@ bp_mtvec_handler:
     sd x5, -208(sp)
     sd x4, -216(sp)
     sd x3, -224(sp)
-    sd x2, -232(sp)
+    /* the user stack pointer needs to be saved slightly differently since it's in mscratch 
+     * at this point. On the upside, we can clobber almost anything we want now
+     */
+    csrr t0, mscratch
+    sd t0, -232(sp)
     sd x1, -240(sp)
     sd x0, -248(sp)
 
@@ -65,9 +69,14 @@ bp_mtvec_handler:
 
     # Pop temp registers from stack
     addi sp, sp, 256
+    # Save the machine mode scratch pointer in mscratch
+    csrw mscratch, sp
+
     ld x0, -248(sp)
     ld x1, -240(sp)
-    //ld x2, -232(sp)
+    /* we need to restore the user stack pointer at the end, so we can finish restoring
+     * user registers
+     */
     ld x3, -224(sp)
     ld x4, -216(sp)
     ld x5, -208(sp)
@@ -98,8 +107,8 @@ bp_mtvec_handler:
     ld x30, -8(sp)
     ld x31,  0(sp)
 
-    # Restore the stack pointer to restore registers
-    csrr sp, mscratch
+    # Restore the user stack pointer as the last thing we do
+    ld x2, -232(sp)
 
     # Return from the trap
     mret

@@ -14,14 +14,14 @@ bp-demo-riscv: $(foreach x,$(subst -,_,$(BP_DEMOS)),$(x).riscv)
 bp-demo-s    : $(foreach x,$(subst -,_,$(BP_DEMOS_C)),$(x).s)
 
 %.riscv:
-	$(RISCV_GCC) -o $@ src/$*.s src/start.S src/exception.S src/atomics.S src/emulation.c
+	$(RISCV_GCC) -o $@ src/$*.s src/start.S src/exception.S src/atomics.S src/emulation.c src/bp_utils.h src/bp_utils.c
 	$(RISCV_OBJDUMP) $@ > $*.dump
 
 queue_demo_%.s:
 	$(RISCV_GCC) -DNUM_CORES=$(notdir $*) -S -o src/queue_demo_$(notdir $*).s src/queue_demo.c
 
-reloc_queue_demo_%.s:
-	$(RISCV_GCC) -DNUM_CORES=$(notdir $*) -S -o src/reloc_queue_demo_$(notdir $*).s src/reloc_queue_demo.c
+atomic_queue_demo_%.s:
+	$(RISCV_GCC) -DNUM_CORES=$(notdir $*) -S -o src/atomic_queue_demo_$(notdir $*).s src/atomic_queue_demo.c
 
 %.s:
 	$(RISCV_GCC) -S -o src/$@ src/$*.c 
