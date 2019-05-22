@@ -624,7 +624,7 @@ always_comb
                                      & ~exc_stage_n[3].illegal_instr_v; 
     // TODO: Handles dequeueing both healthy and poisoned instructions from the queue. 
     //   Should rename for descriptiveness
-    calc_status.instr_cmt_v       = calc_stage_r[2].instr_v & ~exc_stage_r[2].roll_v;
+    calc_status.instr_cmt_v       = (calc_stage_r[2].instr_v | exc_stage_r[2].fe_exc_v) & ~exc_stage_r[2].roll_v;
     calc_status.mem3_fe_exc_v     = exc_stage_r[2].fe_exc_v & ~exc_stage_r[2].poison_v;
     
     // Slicing the completion pipe for Forwarding information

@@ -248,7 +248,7 @@ assign expected_npc_o = npc_r;
 // Increment the checkpoint if there's a committing instruction
 // The itlb fill is strictly unnecessary, but we would need to work the rollback logic to work
 // without it
-assign chk_dequeue_fe_o = ~calc_status.mem3_miss_v & calc_status.instr_cmt_v | itlb_fill_v_i;
+assign chk_dequeue_fe_o = ~calc_status.mem3_miss_v & calc_status.instr_cmt_v;
 // Flush the FE queue if there's a pc redirect
 assign chk_flush_fe_o = (fe_cmd_v & (fe_cmd.opcode != e_op_attaboy));
 
