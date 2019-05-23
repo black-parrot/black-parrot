@@ -572,6 +572,8 @@ always_comb
 
     // Calculator status ISD stage
     calc_status.isd_v        = issue_pkt_v_r;
+    calc_status.isd_fence_v  = issue_pkt_r.fence_v;
+    calc_status.isd_mem_v    = issue_pkt_r.mem_v;
     calc_status.isd_irs1_v   = issue_pkt_r.irs1_v;
     calc_status.isd_frs1_v   = issue_pkt_r.frs1_v;
     calc_status.isd_rs1_addr = issue_pkt_r.instr.fields.rtype.rs1_addr;
@@ -610,9 +612,12 @@ always_comb
                                               & ~exc_stage_n[i+1].poison_v
                                               & calc_stage_r[i].frf_w_v;
         calc_status.dep_status[i].rd_addr   = calc_stage_r[i].instr.fields.rtype.rd_addr;
+        calc_status.dep_status[i].mem_v     = calc_stage_r[i].pipe_mem_v
+                                              & ~exc_stage_n[i+1].poison_v;
         calc_status.dep_status[i].stall_v   = (exc_stage_r[i].csr_instr_v
-                                               | exc_stage_r[i].fence_instr_v
-                                               | exc_stage_r[i].itlb_fill_v)
+                                               | exc_stage_r[i].ifence_v
+                                               | exc_stage_r[i].itlb_fill_v
+                                               )
                                               & ~exc_stage_n[i+1].poison_v;
       end
 
@@ -670,7 +675,7 @@ always_comb
         exc_stage_n[3].illegal_instr_v = exc_stage_r[2].illegal_instr_v | mem_exception_mem3.illegal_instr;
 
         exc_stage_n[0].csr_instr_v     = chk_dispatch_v_i & csr_instr_isd;
-        exc_stage_n[0].fence_instr_v   = chk_dispatch_v_i & dispatch_pkt.decode.fence_instr_v;
+        exc_stage_n[0].ifence_v        = chk_dispatch_v_i & (dispatch_pkt.decode.ifence_v | dispatch_pkt.decode.fence_v);
 
         exc_stage_n[0].fe_exc_v        = fe_exc_v;
         exc_stage_n[0].fe_nop_v        = fe_nop_v;

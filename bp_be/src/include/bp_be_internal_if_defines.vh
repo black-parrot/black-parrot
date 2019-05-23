@@ -25,6 +25,8 @@
     bp_be_instr_metadata_s                   instr_metadata;                                       \
     logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                  \
     rv64_instr_s                             instr;                                                \
+    logic                                    fence_v;                                              \
+    logic                                    mem_v;                                                \
     logic                                    irs1_v;                                               \
     logic                                    irs2_v;                                               \
     logic                                    frs1_v;                                               \
@@ -67,6 +69,7 @@
     logic                              mem_fwb_v;                                                  \
     logic                              fp_fwb_v;                                                   \
     logic                              stall_v;                                                    \
+    logic                              mem_v;                                                      \
                                                                                                    \
     logic [rv64_reg_addr_width_gp-1:0] rd_addr;                                                    \
    } bp_be_dep_status_s;                                                                           \
@@ -74,6 +77,8 @@
   typedef struct packed                                                                            \
   {                                                                                                \
     logic                                    isd_v;                                                \
+    logic                                    isd_fence_v;                                          \
+    logic                                    isd_mem_v;                                            \
     logic                                    isd_irs1_v;                                           \
     logic                                    isd_frs1_v;                                           \
     logic [rv64_reg_addr_width_gp-1:0]       isd_rs1_addr;                                         \
@@ -121,7 +126,7 @@
   (`bp_be_instr_metadata_width(vaddr_width_mp)                                                     \
    + branch_metadata_fwd_width_mp                                                                  \
    + rv64_instr_width_gp                                                                           \
-   + 4                                                                                             \
+   + 6                                                                                             \
    + rv64_reg_data_width_gp                                                                        \
    )                                                                                               
 
@@ -140,10 +145,10 @@
    )
 
 `define bp_be_dep_status_width                                                                     \
-  (6 + rv64_reg_addr_width_gp)                                                                     
+  (7 + rv64_reg_addr_width_gp)                                                                     
 
 `define bp_be_calc_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                      \
-  (1                                                                                               \
+  (3                                                                                               \
    + vaddr_width_p                                                                                 \
    + 2                                                                                             \
    + rv64_reg_addr_width_gp                                                                        \

@@ -125,7 +125,8 @@ typedef struct packed
   logic                             irf_w_v;
   logic                             frf_w_v;
   logic                             csr_instr_v;
-  logic                             fence_instr_v;
+  logic                             ifence_v;
+  logic                             fence_v;
   logic                             dcache_w_v;
   logic                             dcache_r_v;
   logic                             fp_not_int_v;
@@ -177,7 +178,7 @@ typedef struct packed
   logic roll_v;
 
   logic csr_instr_v;
-  logic fence_instr_v;
+  logic ifence_v;
   logic itlb_fill_v;  
 
   logic instr_misaligned_v;

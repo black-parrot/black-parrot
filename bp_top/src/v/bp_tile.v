@@ -119,6 +119,9 @@ module bp_tile
    , output                                    mem_data_cmd_v_o
    , input                                     mem_data_cmd_yumi_i
 
+   , input                                     credits_full_i
+   , input                                     credits_empty_i
+
    // Interrupts
    , input                                     timer_int_i
    , input                                     software_int_i
@@ -201,6 +204,9 @@ bp_core
    ,.lce_data_cmd_o(lce_lce_data_cmd_lo)
    ,.lce_data_cmd_v_o(lce_lce_data_cmd_v_lo)
    ,.lce_data_cmd_ready_i(lce_lce_data_cmd_ready_li)
+    
+   ,.credits_full_i(credits_full_i)
+   ,.credits_empty_i(credits_empty_i)
 
    ,.timer_int_i(timer_int_i)
    ,.software_int_i(software_int_i)

@@ -75,7 +75,8 @@ always_comb
     decode.csr_instr_v   = '0;
 
     // Fence signals
-    decode.fence_instr_v = '0;
+    decode.ifence_v      = '0;
+    decode.fence_v       = '0;
 
     // Decode metadata
     decode.fp_not_int_v  = '0;
@@ -221,10 +222,17 @@ always_comb
       `RV64_MISC_MEM_OP : 
         begin
           decode.pipe_mem_v = 1'b1;
-          decode.fence_instr_v    = 1'b1;
           unique casez (instr)
-            `RV64_FENCE   : decode.fu_op = e_mmu_nop; // Implemented as NOP
-            `RV64_FENCE_I : decode.fu_op = e_fence_i;
+            `RV64_FENCE   : 
+              begin
+                decode.fence_v = 1'b1;
+                decode.fu_op = e_mmu_nop; // Implemented as NOP
+              end
+            `RV64_FENCE_I : 
+              begin
+                decode.fence_v = 1'b1;
+                decode.fu_op = e_fence_i; // TODO: Should decode into flag
+              end
             default       : illegal_instr = 1'b1;
           endcase
         end

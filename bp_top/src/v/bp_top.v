@@ -256,6 +256,10 @@ for(genvar i = 0; i < num_core_p; i++)
        ,.mem_data_cmd_v_o(me_mem_data_cmd_v_lo[i])
        ,.mem_data_cmd_yumi_i(me_mem_data_cmd_yumi_li[i])
 
+       // TODO: We stub these out for now
+       ,.credits_full_i(1'b0)
+       ,.credits_empty_i(1'b1)
+
        ,.timer_int_i(timer_irq_lo[i])
        ,.software_int_i(soft_irq_lo[i])
        ,.external_int_i(external_irq_i[i])

@@ -61,6 +61,8 @@ module bp_be_detector
    , input [calc_status_width_lp-1:0]  calc_status_i
    , input [vaddr_width_p-1:0]         expected_npc_i
    , input                             mmu_cmd_ready_i
+   , input                             credits_full_i
+   , input                             credits_empty_i
 
    , input                             flush_i
 
@@ -97,7 +99,7 @@ logic [2:0] irs1_data_haz_v , irs2_data_haz_v;
 logic [2:0] frs1_data_haz_v , frs2_data_haz_v;
 logic [2:0] rs1_match_vector, rs2_match_vector;
 
-logic stall_haz_v, data_haz_v, struct_haz_v, mispredict_v;
+logic fence_haz_v, stall_haz_v, data_haz_v, struct_haz_v, mispredict_v, mem_in_pipe_v;
 
 always_comb 
   begin
@@ -149,12 +151,17 @@ always_comb
     frs2_data_haz_v[2] = (calc_status.isd_frs2_v & rs2_match_vector[2])
                          & (dep_status[2].fp_fwb_v);
 
+    mem_in_pipe_v      = dep_status[0].mem_v | dep_status[1].mem_v | dep_status[2].mem_v;
+    fence_haz_v        = (calc_status.isd_fence_v & (~credits_empty_i | mem_in_pipe_v))
+                         | (calc_status.isd_mem_v & credits_full_i);
+
     stall_haz_v        = dep_status[0].stall_v
                          | dep_status[1].stall_v
                          | dep_status[2].stall_v
                          | dep_status[3].stall_v;
 
     // Combine all data hazard information
+    // TODO: Parameterize away floating point data hazards without hardware support
     data_haz_v = stall_haz_v
                  | (|irs1_data_haz_v) 
                  | (|irs2_data_haz_v) 
@@ -162,7 +169,7 @@ always_comb
                  | (|frs2_data_haz_v);
 
     // Combine all structural hazard information
-    struct_haz_v = ~mmu_cmd_ready_i;
+    struct_haz_v = ~mmu_cmd_ready_i | fence_haz_v;
 
     // Detect misprediction
     mispredict_v = (calc_status.ex1_v & (calc_status.ex1_pc != expected_npc_i));

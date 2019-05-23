@@ -109,6 +109,8 @@ module bp_be_checker_top
    // Dependency information
    , input [calc_status_width_lp-1:0] calc_status_i
    , input                            mmu_cmd_ready_i
+   , input                            credits_full_i
+   , input                            credits_empty_i
 
    // Checker pipeline control information
    , output                           chk_dispatch_v_o
@@ -182,9 +184,11 @@ bp_be_detector
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
+   ,.expected_npc_i(expected_npc)
    ,.calc_status_i(calc_status_i)
    ,.mmu_cmd_ready_i(mmu_cmd_ready_i)
-   ,.expected_npc_i(expected_npc)
+   ,.credits_full_i(credits_full_i)
+   ,.credits_empty_i(credits_empty_i)
 
    ,.flush_i(flush)
 

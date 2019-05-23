@@ -163,7 +163,7 @@ always_comb
     mem1_cmd.vaddr  = (rs1_i + offset);
   end
 
-assign mem3_cmd_v_li = decode.fence_instr_v & ~kill_ex1_i;
+assign mem3_cmd_v_li = (decode.fence_v | decode.ifence_v) & ~kill_ex1_i;
 assign mem3_cmd_v    = (mem3_cmd_v_lo | mem_resp.exception.dtlb_miss | mem3_itlb_fill_v_i) & ~kill_ex3_i;
 always_comb
   begin
