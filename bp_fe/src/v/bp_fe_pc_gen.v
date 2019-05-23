@@ -21,7 +21,6 @@ module bp_fe_pc_gen
    )
   (input                                             clk_i
    , input                                           reset_i
-   , input                                           v_i
     
    , output logic [bp_fe_pc_gen_icache_width_lp-1:0] pc_gen_icache_o
    , output logic                                    pc_gen_icache_v_o
@@ -47,228 +46,165 @@ module bp_fe_pc_gen
    , input logic                                     itlb_miss_i
    );
 
-// Suppress unused signal warnings
-wire unused0 = v_i;
-
 //the first level of structs
 `declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p)
-//fe to pc_gen
 `declare_bp_fe_pc_gen_cmd_s(vaddr_width_p, branch_metadata_fwd_width_p);
-//pc_gen to icache
 `declare_bp_fe_pc_gen_icache_s(vaddr_width_p);
-//pc_gen to itlb
 `declare_bp_fe_pc_gen_itlb_s(vaddr_width_p);
-//icache to pc_gen
 `declare_bp_fe_icache_pc_gen_s(vaddr_width_p);
-//the second level structs definitions
 `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p,btb_idx_width_p,bht_idx_width_p,ras_idx_width_p);
 
-   
-//the first level structs instatiations
-bp_fe_pc_gen_queue_s        pc_gen_queue;
-bp_fe_pc_gen_cmd_s          fe_pc_gen_cmd;
-bp_fe_pc_gen_icache_s       pc_gen_icache;
-bp_fe_pc_gen_itlb_s         pc_gen_itlb;
-bp_fe_branch_metadata_fwd_s branch_metadata_fwd_o;
-bp_fe_icache_pc_gen_s       icache_pc_gen;
-
-//the second level structs instatiations
-bp_fe_fetch_s            pc_gen_fetch;
-bp_fe_exception_s        pc_gen_exception;
-bp_fe_instr_scan_s       scan_instr;
-   
-// FSM Variables
-enum bit [1:0] {e_wait=2'd0, e_run=2'd1, e_stall=2'd2} state_n, state_r;
-   
 // pc pipeline
-logic [vaddr_width_p-1:0]       pc_f1_n, pc_f1_r, pc_f2_r;
-logic [vaddr_width_p-1:0]       pc_resume_r, pc_resume_n;
-logic                           pc_v_f1_n, pc_v_f2_n, pc_v_f1_r, pc_v_f2_r;
+logic [vaddr_width_p-1:0]       pc_if1_n, pc_if1_r, pc_if2_r;
+logic                           pc_v_if1_n, pc_v_if2_n, pc_v_if1_r, pc_v_if2_r;
 // branch prediction wires
-logic                           is_br;
-logic                           is_jal;
 logic [vaddr_width_p-1:0]       br_target;
-logic                           is_back_br;
-logic                           predict_taken;
+logic                           ovr_taken, ovr_ntaken;
 // btb io
-bp_fe_branch_metadata_fwd_s     fe_cmd_branch_metadata;
 logic [vaddr_width_p-1:0]       btb_br_tgt_lo;
 logic                           btb_br_tgt_v_lo;
-// miss wires
-logic                           itlb_miss_f2;
-//command control signals
-logic                           state_reset_v, pc_redirect_v, itlb_fill_v, icache_fence_v, itlb_fence_v;
-//instr and exception valid
-logic                           fe_instr_v;
-logic                           fe_exception_v, misalign_exception, itlb_miss_exception;
 
-bp_fe_branch_metadata_fwd_s fe_queue_branch_metadata, fe_queue_branch_metadata_r;
+logic itlb_miss_if2_r;
+logic btb_v_if1_r;
 
-logic flush;
+// Port casting
+bp_fe_pc_gen_queue_s  pc_gen_queue;
+bp_fe_pc_gen_cmd_s    fe_pc_gen_cmd;
+bp_fe_pc_gen_icache_s pc_gen_icache;
+bp_fe_pc_gen_itlb_s   pc_gen_itlb;
+bp_fe_icache_pc_gen_s icache_pc_gen;
 
-logic btb_pred_f1_r;
-
-//connect pc_gen to the rest of the FE submodules as well as FE top module   
-assign pc_gen_icache_o = pc_gen_icache;
-assign pc_gen_itlb_o   = pc_gen_itlb;
 assign pc_gen_fe_o     = pc_gen_queue;
 assign fe_pc_gen_cmd   = fe_pc_gen_i;
+assign pc_gen_icache_o = pc_gen_icache;
+assign pc_gen_itlb_o   = pc_gen_itlb;
 assign icache_pc_gen   = icache_pc_gen_i;
 
-assign state_reset_v = fe_pc_gen_v_i & fe_pc_gen_cmd.reset_valid;
-assign pc_redirect_v = fe_pc_gen_v_i & fe_pc_gen_cmd.pc_redirect_valid;
-assign itlb_fill_v   = fe_pc_gen_v_i & fe_pc_gen_cmd.itlb_fill_valid;
-assign icache_fence_v = fe_pc_gen_v_i & fe_pc_gen_cmd.icache_fence_valid;
-assign itlb_fence_v   = fe_pc_gen_v_i & fe_pc_gen_cmd.itlb_fence_valid;
+// Flags for valid FE commands
+wire state_reset_v    = fe_pc_gen_v_i & fe_pc_gen_cmd.reset_valid;
+wire pc_redirect_v    = fe_pc_gen_v_i & fe_pc_gen_cmd.pc_redirect_valid;
+wire itlb_fill_v      = fe_pc_gen_v_i & fe_pc_gen_cmd.itlb_fill_valid;
+wire icache_fence_v   = fe_pc_gen_v_i & fe_pc_gen_cmd.icache_fence_valid;
+wire itlb_fence_v     = fe_pc_gen_v_i & fe_pc_gen_cmd.itlb_fence_valid;
+wire attaboy_v        = fe_pc_gen_v_i & fe_pc_gen_cmd.attaboy_valid;
+wire cmd_nonattaboy_v = fe_pc_gen_v_i & ~fe_pc_gen_cmd.attaboy_valid;
 
-assign fe_instr_v         = pc_v_f2_r & ~flush;
-assign fe_exception_v     = pc_v_f2_r & (misalign_exception | itlb_miss_exception) & ~(fe_pc_gen_v_i & ~fe_pc_gen_cmd.attaboy_valid);
-// TODO: This is wrong, Should not send misaligned immediately upon redirect. Zeroing out for now
-assign misalign_exception = 1'b0;
-//                            pc_redirect_v 
-//                            & ~fe_pc_gen_cmd.pc[1:0] == 2'b00;
-                            
-assign itlb_miss_exception = pc_v_f2_r & itlb_miss_f2;
-/* output wiring */
-// there should be fixes to the pc signal sent out according to the valid/ready signal pairs
+// Until we support C, must be aligned to 4 bytes
+// There's also an interesting question about physical alignment (I/O devices, etc)
+//   But let's punt that for now...
+wire misalign_exception  = pc_if2_r[1:0] != 2'b00; 
+wire itlb_miss_exception = pc_v_if2_r & itlb_miss_if2_r;
 
-assign pc_gen_queue.msg_type            = (fe_exception_v) ? e_fe_exception : e_fe_fetch;
-assign pc_gen_queue.msg                 = (fe_exception_v) ? pc_gen_exception : pc_gen_fetch;
-    
-assign pc_gen_exception.exception_code  = (misalign_exception) ? e_instr_misaligned
-                                          : ((itlb_miss_exception)? e_itlb_miss
-                                          : e_illegal_instr);
-assign pc_gen_exception.vaddr           = pc_f2_r;
-assign pc_gen_exception.padding         = '0;
-    
-assign pc_gen_fetch.pc                  = icache_pc_gen.addr;
-assign pc_gen_fetch.instr               = icache_pc_gen.instr;
-assign pc_gen_fetch.branch_metadata_fwd = fe_queue_branch_metadata_r;
-assign pc_gen_fetch.padding             = '0;
-    
-assign pc_gen_icache.virt_addr          = pc_f1_n;
-assign pc_gen_itlb.virt_addr            = pc_f1_n;
-   
-//valid-ready signals assignments
-assign fe_pc_gen_ready_o     = fe_pc_gen_v_i;
-assign pc_gen_fe_v_o         = (fe_instr_v | fe_exception_v) & pc_gen_fe_ready_i;
-assign pc_gen_icache_v_o     = pc_v_f1_n & pc_gen_icache_ready_i;
-assign icache_pc_gen_ready_o = 1'b1;
-assign pc_gen_itlb_v_o       = pc_gen_icache_v_o & pc_gen_itlb_ready_i;
+wire fetch_fail     = pc_v_if2_r & ~pc_gen_fe_v_o;
+wire queue_miss     = pc_v_if2_r & ~pc_gen_fe_ready_i;
+wire flush          = itlb_miss_if2_r | icache_miss_i | queue_miss | cmd_nonattaboy_v;
+wire fe_instr_v     = pc_v_if2_r & ~flush;
+wire fe_exception_v = pc_v_if2_r & (misalign_exception | itlb_miss_exception) & ~cmd_nonattaboy_v;
 
 // FSM
-always_ff @(posedge clk_i) begin
-   if (reset_i) begin
-      state_r <= e_wait;
-   end else begin
-      state_r <= state_n;
-   end
-end
+enum bit [1:0] {e_wait=2'd0, e_run, e_stall} state_n, state_r;
+logic [vaddr_width_p-1:0] pc_resume_r, pc_resume_n;
 
-always_comb begin
-  state_n = state_r;
-
-  case (state_r)
-    e_wait : begin
-      // In the wait state
-      if (fe_pc_gen_v_i & ~fe_pc_gen_cmd.attaboy_valid) begin
-        // FE command received
-        state_n = e_stall;
-      end 
-    end
-    e_run : begin
-      // In the run state
-      if (pc_v_f2_r & itlb_miss_f2)
-        state_n = e_wait;
-      else if (pc_v_f2_r & ~pc_gen_fe_v_o) begin
-        state_n = e_stall;
-      end
-    end
-    e_stall : begin
-      // In the stall state
-      if (pc_v_f1_n)
-        state_n = e_run;
-    end
-    default: state_n = e_wait;
-  endcase
-end
-
-always_ff @(posedge clk_i) begin
-  pc_resume_r <= pc_resume_n;
-end
-
-always_comb begin
-  if(fe_pc_gen_v_i & ~fe_pc_gen_cmd.attaboy_valid) begin
-    pc_resume_n = fe_pc_gen_cmd.pc;
-  end
-  else if(state_r == e_run) begin
-    pc_resume_n = pc_f2_r;
-  end
-  else begin
-    pc_resume_n = pc_resume_r;
-  end
-end
-
-always_ff @(posedge clk_i) begin
-   if (reset_i) begin
-      itlb_miss_f2 <= 1'd0;
-   end else begin
-      itlb_miss_f2 <= itlb_miss_i & pc_v_f1_r;
-   end
-end
+// Decoded state signals
+wire is_wait  = (state_r == e_wait);
+wire is_run   = (state_r == e_run);
+wire is_stall = (state_r == e_stall);
 
 always_comb
-begin
-    // load boot pc on reset command
-    if(state_reset_v)
-        pc_f1_n = fe_pc_gen_cmd.pc;
-    // if we need to redirect
-    else if (pc_redirect_v | icache_fence_v | itlb_fence_v)
-        pc_f1_n = fe_pc_gen_cmd.pc;
-    else if (state_r != e_run) 
-        pc_f1_n = pc_resume_r;
-    else if (btb_br_tgt_v_lo)
-        pc_f1_n = btb_br_tgt_lo;
-    else if (predict_taken)
-        pc_f1_n = br_target;
+  begin
+    // Change the resume pc on redirect command, else save the PC in IF2 while running
+    pc_resume_n = cmd_nonattaboy_v ? fe_pc_gen_cmd.pc : is_run ? pc_if2_r : pc_resume_r;
+
+    case (state_r)
+      // Wait for FE cmd
+      e_wait : state_n = cmd_nonattaboy_v ? e_stall : e_wait;
+      // Stall until we can start valid fetch
+      e_stall: state_n = pc_v_if1_n ? e_run : e_stall;
+      // Run state -- PCs are actually being fetched
+      // Transition to wait if there's a TLB miss while we wait for fill
+      // Transition to stall if we don't successfully complete the fetch for whatever reason
+      e_run  : state_n = itlb_miss_exception ? e_wait : fetch_fail ? e_stall : e_run;
+      default: state_n = e_wait;
+    endcase
+  end
+
+// Register state logic
+always_ff @(posedge clk_i)
+  begin
+    pc_resume_r <= pc_resume_n;
+
+    if (reset_i)
+        state_r  <= e_wait;
     else
       begin
-        pc_f1_n = pc_f1_r + 4;
+        state_r <= state_n;
       end
-end
-
-assign flush = (itlb_miss_f2 | icache_miss_i | (pc_v_f2_r & ~pc_gen_fe_ready_i) | (fe_pc_gen_v_i & ~fe_pc_gen_cmd.attaboy_valid));
-assign pc_v_f2_n = pc_v_f1_r & ~flush;
-assign pc_v_f1_n = ~(state_r == e_wait) & pc_gen_itlb_ready_i & pc_gen_fe_ready_i & pc_gen_icache_ready_i;
-always_ff @(posedge clk_i) begin
-  if (reset_i) begin
-    pc_f1_r <= '0;
-    pc_f2_r <= '0;
-
-    pc_v_f1_r <= '0;
-    pc_v_f2_r <= '0;
-
-    btb_pred_f1_r <= '0;
-  end else begin
-    pc_v_f1_r <= pc_v_f1_n;
-    pc_v_f2_r <= pc_v_f2_n;
-
-    if (state_n != e_run) begin
-      pc_f1_r <= pc_f1_r;
-      pc_f2_r <= pc_f2_r;
-
-      btb_pred_f1_r <= btb_pred_f1_r;
-    end else begin
-      pc_f1_r <= pc_f1_n;
-      pc_f2_r <= pc_f1_r;
-
-      btb_pred_f1_r <= btb_br_tgt_v_lo;
-    end
   end
-end
 
-assign fe_queue_branch_metadata = '{btb_tag: pc_gen_fetch.pc[2+btb_idx_width_p+:btb_tag_width_p]
-                                    , btb_idx: pc_gen_fetch.pc[2+:btb_idx_width_p]
+// Next PC calculation
+always_comb
+  // load boot pc on reset command
+  if(state_reset_v)
+      pc_if1_n = fe_pc_gen_cmd.pc;
+  // if we need to redirect
+  else if (pc_redirect_v | icache_fence_v | itlb_fence_v)
+      pc_if1_n = fe_pc_gen_cmd.pc;
+  else if (state_r != e_run) 
+      pc_if1_n = pc_resume_r;
+  else if (btb_br_tgt_v_lo)
+      pc_if1_n = btb_br_tgt_lo;
+  else if (ovr_taken)
+      pc_if1_n = br_target;
+  else if (ovr_ntaken)
+      pc_if1_n = pc_if2_r + 4;
+  else
+    begin
+      pc_if1_n = pc_if1_r + 4;
+    end
+
+// PC pipeline
+// We can't fetch from wait state, only run and coming out of stall
+assign pc_v_if1_n = ~is_wait & pc_gen_itlb_ready_i & pc_gen_fe_ready_i & pc_gen_icache_ready_i;
+assign pc_v_if2_n = pc_v_if1_r & ~flush;
+
+// We use reset flops for status signals in the pipeline
+always_ff @(posedge clk_i) 
+  begin
+    if (reset_i) 
+      begin
+        pc_v_if1_r      <= '0;
+        pc_v_if2_r      <= '0;
+        btb_v_if1_r     <= '0;
+        itlb_miss_if2_r <= '0;
+      end
+    else
+      begin
+        pc_v_if1_r      <= pc_v_if1_n;
+        pc_v_if2_r      <= pc_v_if2_n;
+        btb_v_if1_r     <= btb_br_tgt_v_lo;
+        itlb_miss_if2_r <= itlb_miss_i;
+      end
+  end
+
+// We gate the PC data pipeline for power
+always_ff @(posedge clk_i) 
+  if (reset_i)
+    begin
+      pc_if1_r <= '0;
+      pc_if2_r <= '0;
+    end
+  else if (state_n == e_run) 
+    begin
+      pc_if1_r <= pc_if1_n;
+      pc_if2_r <= pc_if1_r;
+    end
+
+
+// Branch prediction logic
+bp_fe_branch_metadata_fwd_s fe_queue_branch_metadata, fe_queue_branch_metadata_r;
+
+assign fe_queue_branch_metadata = '{btb_tag: icache_pc_gen.addr[2+btb_idx_width_p+:btb_tag_width_p]
+                                    , btb_idx: icache_pc_gen.addr[2+:btb_idx_width_p]
                                     , default: '0
                                     };
 bsg_dff_reset_en
@@ -282,6 +218,8 @@ bsg_dff_reset_en
    ,.data_o(fe_queue_branch_metadata_r)
    );
 
+// Casting branch metadata forwarded from BE
+bp_fe_branch_metadata_fwd_s fe_cmd_branch_metadata;
 assign fe_cmd_branch_metadata = fe_pc_gen_cmd.branch_metadata_fwd;
 bp_fe_btb
  #(.vaddr_width_p(vaddr_width_p)
@@ -291,8 +229,8 @@ bp_fe_btb
  btb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.r_addr_i(pc_f1_n)
-   ,.r_v_i(pc_v_f1_n)
+   ,.r_addr_i(pc_if1_n)
+   ,.r_v_i(pc_v_if1_n)
    ,.br_tgt_o(btb_br_tgt_lo)
    ,.br_tgt_v_o(btb_br_tgt_v_lo)
 
@@ -302,6 +240,7 @@ bp_fe_btb
    ,.br_tgt_i(fe_pc_gen_cmd.pc)
    );
  
+bp_fe_instr_scan_s scan_instr;
 instr_scan 
  #(.vaddr_width_p(vaddr_width_p)
    ,.instr_width_p(instr_width_lp)
@@ -311,11 +250,51 @@ instr_scan
    ,.scan_o(scan_instr)
    );
 
-assign is_br = icache_pc_gen_v_i & (scan_instr.instr_scan_class == e_rvi_branch);
-assign is_jal = icache_pc_gen_v_i & (scan_instr.instr_scan_class == e_rvi_jal);
-assign br_target = vaddr_width_p'(icache_pc_gen.addr + scan_instr.imm); 
-assign is_back_br = scan_instr.imm[63];
-// TODO: This functionality is broken. Should predict taken branches and override BTB
-assign predict_taken = 1'b0; //pc_v_f2_r & ~flush & ((is_br & is_back_br) | (is_jal)) & ~btb_pred_f1_r & icache_pc_gen_v_i;
+// TODO: Should use an instruction cast
+//   We don't want to wait until after expanding the immediate, though
+// TODO: This functionality is broken. Should predict taken branches based on BHT and override BTB
+wire is_br      = icache_pc_gen_v_i & (scan_instr.instr_scan_class == e_rvi_branch);
+wire is_jal     = icache_pc_gen_v_i & (scan_instr.instr_scan_class == e_rvi_jal);
+wire is_back_br = icache_pc_gen.instr[instr_width_lp-1];
+assign ovr_taken  = 1'b0; //pc_v_if2_r & ~flush & ((is_br & is_back_br) | (is_jal)) & ~btb_v_if1_r & icache_pc_gen_v_i;
+assign ovr_ntaken = 1'b0; 
+assign br_target  = vaddr_width_p'(icache_pc_gen.addr + icache_pc_gen.instr[20+:12]); 
+
+// Organize the FE queue message
+always_comb
+  begin
+    // Set padding to 0
+    pc_gen_queue = '0;
+
+    // TODO: Don't need to be structs, just send out pc_o from pc_gen
+    pc_gen_icache.virt_addr = pc_if1_n;
+    pc_gen_itlb.virt_addr   = pc_if1_n;
+
+    if (fe_exception_v)
+      begin
+        pc_gen_queue.msg_type                     = e_fe_exception;
+        pc_gen_queue.msg.exception.vaddr          = pc_if2_r; 
+        pc_gen_queue.msg.exception.exception_code = misalign_exception
+                                                    ? e_instr_misaligned
+                                                    : itlb_miss_exception
+                                                      ? e_itlb_miss
+                                                      : e_illegal_instr;
+      end
+    else 
+      begin
+        pc_gen_queue.msg_type                      = e_fe_fetch;
+        pc_gen_queue.msg.fetch.pc                  = icache_pc_gen.addr;
+        pc_gen_queue.msg.fetch.instr               = icache_pc_gen.instr;
+        pc_gen_queue.msg.fetch.branch_metadata_fwd = fe_queue_branch_metadata_r;
+      end
+  end
+   
+// Handshaking signals
+assign fe_pc_gen_ready_o     = fe_pc_gen_v_i; // Always accept FE commands
+assign pc_gen_fe_v_o         = pc_gen_fe_ready_i & (fe_instr_v | fe_exception_v);
+assign pc_gen_icache_v_o     = pc_gen_icache_ready_i & pc_v_if1_n;
+assign icache_pc_gen_ready_o = 1'b1; // Always ready for icache data return
+assign pc_gen_itlb_v_o       = pc_gen_itlb_ready_i & pc_v_if1_n;
 
 endmodule
+

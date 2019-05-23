@@ -207,8 +207,6 @@ bp_fe_pc_gen
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
                
-   ,.v_i(1'b1)
-               
    ,.pc_gen_icache_o(pc_gen_icache)
    ,.pc_gen_icache_v_o(pc_gen_icache_v)
    ,.pc_gen_icache_ready_i(pc_gen_icache_ready)
