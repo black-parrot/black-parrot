@@ -110,6 +110,9 @@ module bp_tile
    , output                                    mem_data_cmd_v_o
    , input                                     mem_data_cmd_yumi_i
 
+   , input                                     credits_full_i
+   , input                                     credits_empty_i
+
    // Interrupts
    , input                                     timer_int_i
    , input                                     software_int_i
