@@ -57,6 +57,8 @@
     logic                              pipe_mem_v;                                                 \
     logic                              pipe_fp_v;                                                  \
                                                                                                    \
+    logic                              fencei_v;                                                   \
+                                                                                                   \
     logic                              irf_w_v;                                                    \
     logic                              frf_w_v;                                                    \
   }  bp_be_pipe_stage_reg_s;                                                                       \
@@ -105,6 +107,7 @@
                                                                                                    \
     logic [vaddr_width_p-1:0]               mem3_pc;                                               \
     logic                                   mem3_miss_v;                                           \
+    logic                                   mem3_fencei_v;                                         \
                                                                                                    \
     logic                                   instr_cmt_v;                                           \
     logic                                   mem3_fe_exc_v;                                         \
@@ -141,7 +144,7 @@
 `define bp_be_pipe_stage_reg_width(vaddr_width_mp)                                                 \
   (`bp_be_instr_metadata_width(vaddr_width_mp)                                                     \
    + rv64_instr_width_gp                                                                           \
-   + 7                                                                                             \
+   + 8                                                                                             \
    )
 
 `define bp_be_dep_status_width                                                                     \
@@ -160,7 +163,7 @@
    + 3                                                                                             \
    + 5 * `bp_be_dep_status_width                                                                   \
    + vaddr_width_p                                                                                 \
-   + 3                                                                                             \
+   + 4                                                                                             \
    )                                                                                               
 
 `endif

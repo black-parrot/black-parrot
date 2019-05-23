@@ -89,25 +89,16 @@ module bp_be_top
    , input                                   timer_int_i
    , input                                   software_int_i
    , input                                   external_int_i
-
-   // Commit tracer for trace replay
-   , output                                  cmt_rd_w_v_o
-   , output [rv64_reg_addr_width_gp-1:0]     cmt_rd_addr_o
-   , output                                  cmt_mem_w_v_o
-   , output [dword_width_p-1:0]              cmt_mem_addr_o
-   , output [`bp_be_fu_op_width-1:0]         cmt_mem_op_o
-   , output [dword_width_p-1:0]              cmt_data_o
    );
 
 // Declare parameterized structures
-`declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_width_p)
+`declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p)
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
 `declare_bp_be_internal_if_structs(vaddr_width_p
                                    , paddr_width_p
                                    , asid_width_p
                                    , branch_metadata_fwd_width_p
                                    );
-`declare_bp_be_tlb_entry_s(ptag_width_lp);
 
 // Casting
 bp_proc_cfg_s proc_cfg;
@@ -123,6 +114,9 @@ logic mmu_cmd_v, mmu_cmd_rdy;
 
 bp_be_csr_cmd_s csr_cmd;
 logic csr_cmd_v, csr_cmd_rdy;
+
+bp_be_tlb_fill_cmd_s tlb_fill_cmd;
+logic tlb_fill_cmd_v, tlb_fill_cmd_rdy;
 
 bp_be_mem_resp_s mem_resp;
 logic mem_resp_v, mem_resp_rdy;
@@ -192,7 +186,6 @@ bp_be_checker_top
    ,.mepc_i(chk_mepc_li)
    ,.mtvec_i(chk_mtvec_li)
    ,.tlb_fence_i(chk_tlb_fence_li)
-   ,.ifence_i(chk_ifence_li)
    
    ,.itlb_fill_v_i(itlb_fill_v)
    ,.itlb_fill_vaddr_i(itlb_fill_vaddr)
@@ -229,6 +222,10 @@ bp_be_calculator_top
    ,.csr_cmd_v_o(csr_cmd_v)
    ,.csr_cmd_ready_i(csr_cmd_rdy)
 
+   ,.tlb_fill_cmd_o(tlb_fill_cmd)
+   ,.tlb_fill_cmd_v_o(tlb_fill_cmd_v)
+   ,.tlb_fill_cmd_ready_i(tlb_fill_cmd_rdy)
+
    ,.mem_resp_i(mem_resp) 
    ,.mem_resp_v_i(mem_resp_v)
    ,.mem_resp_ready_o(mem_resp_rdy)   
@@ -239,13 +236,6 @@ bp_be_calculator_top
    ,.exception_instr_o(exception_instr)
    ,.exception_ecode_v_o(exception_ecode_v)
    ,.exception_ecode_dec_o(exception_ecode_dec)
-
-   ,.cmt_rd_w_v_o(cmt_rd_w_v_o)
-   ,.cmt_rd_addr_o(cmt_rd_addr_o)
-   ,.cmt_mem_w_v_o(cmt_mem_w_v_o)
-   ,.cmt_mem_addr_o(cmt_mem_addr_o)
-   ,.cmt_mem_op_o(cmt_mem_op_o)
-   ,.cmt_data_o(cmt_data_o)
    );
 
 bp_be_mem_top
@@ -263,6 +253,10 @@ bp_be_mem_top
     ,.csr_cmd_i(csr_cmd)
     ,.csr_cmd_v_i(csr_cmd_v)
     ,.csr_cmd_ready_o(csr_cmd_rdy)
+
+    ,.tlb_fill_cmd_i(tlb_fill_cmd)
+    ,.tlb_fill_cmd_v_i(tlb_fill_cmd_v)
+    ,.tlb_fill_cmd_ready_o(tlb_fill_cmd_rdy)
 
     ,.mem_resp_o(mem_resp)
     ,.mem_resp_v_o(mem_resp_v)
@@ -318,7 +312,6 @@ bp_be_mem_top
     ,.mepc_o(chk_mepc_li)
     ,.mtvec_o(chk_mtvec_li)
     ,.tlb_fence_o(chk_tlb_fence_li)
-    ,.ifence_o(chk_ifence_li)
     );
 
 endmodule : bp_be_top

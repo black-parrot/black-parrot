@@ -42,6 +42,7 @@ module bp_be_mem_top
    // MMU                                                              
    , localparam mmu_cmd_width_lp  = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam csr_cmd_width_lp  = `bp_be_csr_cmd_width
+   , localparam tlb_fill_cmd_width_lp  = `bp_be_tlb_fill_cmd_width(vaddr_width_p)
    , localparam mem_resp_width_lp = `bp_be_mem_resp_width(vaddr_width_p)
    , localparam vtag_width_lp     = (vaddr_width_p-bp_page_offset_width_gp)
    , localparam ptag_width_lp     = (paddr_width_p-bp_page_offset_width_gp)
@@ -63,6 +64,10 @@ module bp_be_mem_top
    , input [csr_cmd_width_lp-1:0]            csr_cmd_i
    , input                                   csr_cmd_v_i
    , output                                  csr_cmd_ready_o
+
+   , input [tlb_fill_cmd_width_lp-1:0]       tlb_fill_cmd_i
+   , input                                   tlb_fill_cmd_v_i
+   , output                                  tlb_fill_cmd_ready_o
 
    , input                                   chk_poison_ex_i
 
@@ -121,7 +126,6 @@ module bp_be_mem_top
    , output [mepc_width_lp-1:0]              mepc_o
    , output [mtvec_width_lp-1:0]             mtvec_o
    , output                                  tlb_fence_o
-   , output                                  ifence_o
    );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p
@@ -131,20 +135,21 @@ module bp_be_mem_top
                                    );
 
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
-`declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_width_p/8)
+`declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
 `declare_bp_be_dcache_pkt_s(page_offset_width_lp, dword_width_p);
-`declare_bp_be_tlb_entry_s(ptag_width_lp);
 
 // Cast input and output ports 
 bp_proc_cfg_s          proc_cfg;
 bp_be_mmu_cmd_s        mmu_cmd;
 bp_be_csr_cmd_s        csr_cmd;
+bp_be_tlb_fill_cmd_s   tlb_fill_cmd;
 bp_be_mem_resp_s       mem_resp;
 bp_be_mmu_vaddr_s      mmu_cmd_vaddr;
 
 assign proc_cfg = proc_cfg_i;
 assign mmu_cmd = mmu_cmd_i;
 assign csr_cmd = csr_cmd_i;
+assign tlb_fill_cmd = tlb_fill_cmd_i;
 
 assign mem_resp_o = mem_resp;
 
@@ -182,7 +187,7 @@ logic                     csr_v_lo;
 logic                     translation_en_lo;
 
 /* Control signals */
-logic dcache_cmd_v, itlb_fill_cmd_v, dtlb_fill_cmd_v, fence_i_cmd_v, nop_cmd_v;
+logic dcache_cmd_v, itlb_fill_cmd_v, dtlb_fill_cmd_v;
 logic itlb_not_dtlb_resp;
 logic dtlb_miss_r;
 logic [vaddr_width_p-1:0] vaddr_r, vaddr_r2, fault_vaddr;
@@ -204,9 +209,9 @@ always_ff @(posedge clk_i) begin
     fault_vaddr <= '0;
     fault_pc    <= '0; 
   end
-  else if(mmu_cmd_v_i) begin
-    fault_vaddr <= mmu_cmd.vaddr;
-    fault_pc    <= mmu_cmd.data; 
+  else if(tlb_fill_cmd_v_i) begin
+    fault_vaddr <= tlb_fill_cmd.vaddr;
+    fault_pc    <= tlb_fill_cmd.pc; 
   end
 end
 
@@ -277,7 +282,8 @@ bp_be_dtlb
   );
   
 bp_be_ptw
-  #(.pte_width_p(bp_sv39_pte_width_gp)
+  #(.cfg_p(cfg_p)
+    ,.pte_width_p(bp_sv39_pte_width_gp)
     ,.vaddr_width_p(vaddr_width_p)
     ,.paddr_width_p(paddr_width_p)
     ,.page_offset_width_p(page_offset_width_lp)
@@ -386,15 +392,10 @@ always_ff @(posedge clk_i) begin
 end
     
 // Decode cmd type
-assign itlb_fill_cmd_v = mmu_cmd_v_i & (mmu_cmd.mem_op == e_ptw_i);
-assign dtlb_fill_cmd_v = mmu_cmd_v_i & (mmu_cmd.mem_op == e_ptw_l | mmu_cmd.mem_op == e_ptw_s);
-assign fence_i_cmd_v   = mmu_cmd_v_i & (mmu_cmd.mem_op == e_fence_i);
+assign itlb_fill_cmd_v = tlb_fill_cmd_v_i & (tlb_fill_cmd.fill_op == e_ptw_i);
+assign dtlb_fill_cmd_v = tlb_fill_cmd_v_i & (tlb_fill_cmd.fill_op == e_ptw_l | tlb_fill_cmd.fill_op == e_ptw_s);
 assign nop_cmd_v       = mmu_cmd_v_i & (mmu_cmd.mem_op == e_mmu_nop);
-assign dcache_cmd_v    = mmu_cmd_v_i & ~(itlb_fill_cmd_v
-                                         | dtlb_fill_cmd_v
-                                         | fence_i_cmd_v
-                                         | nop_cmd_v);
-
+assign dcache_cmd_v    = mmu_cmd_v_i & ~(itlb_fill_cmd_v | dtlb_fill_cmd_v);
 
 // D-Cache connections
 assign dcache_ptag     = (ptw_busy)? ptw_dcache_ptag : dtlb_r_entry.ptag;
@@ -427,9 +428,9 @@ assign dtlb_w_entry = ptw_tlb_w_entry;
 
 // PTW connections
 assign ptw_tlb_miss_v    = itlb_fill_cmd_v | dtlb_fill_cmd_v;
-assign ptw_tlb_miss_vtag = mmu_cmd.vaddr.tag;
+assign ptw_tlb_miss_vtag = tlb_fill_cmd.vaddr.tag;
 assign ptw_page_fault_v  = ptw_instr_page_fault_v | ptw_load_page_fault_v | ptw_store_page_fault_v;
-assign ptw_store_not_load = mmu_cmd_v_i & (mmu_cmd.mem_op == e_ptw_s);
+assign ptw_store_not_load = tlb_fill_cmd_v_i & (tlb_fill_cmd.fill_op == e_ptw_s);
  
 // MMU response connections
 assign mem_resp.data                       = ptw_page_fault_v
@@ -448,14 +449,12 @@ assign mem_resp.exception.store_page_fault = ptw_store_page_fault_v;
 assign mem_resp.exception.dtlb_miss        = dtlb_miss_r;
 assign mem_resp.exception.dcache_miss      = dcache_miss_v;
 
-assign mem_resp_v_o    = ptw_busy ? 1'b0 : (dcache_v | csr_v_lo | fence_i_cmd_v | nop_cmd_v);
+assign mem_resp_v_o    = ptw_busy ? 1'b0 : (dcache_v | csr_v_lo);
 assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~ptw_busy;
 
 assign itlb_fill_v_o     = ptw_tlb_w_v & itlb_not_dtlb_resp;
 assign itlb_fill_vaddr_o = fault_vaddr;
 assign itlb_fill_entry_o = ptw_tlb_w_entry;
-
-assign ifence_o = fence_i_cmd_v;
 
 logic dcache_pkt_v_r;
 always_ff @(negedge clk_i)

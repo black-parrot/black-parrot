@@ -49,14 +49,6 @@ module wrapper
    , input [num_cce_p-1:0]                                    mem_data_cmd_yumi_i
 
    , input [num_core_p-1:0]                                   external_irq_i
-
-   // Commit tracer for trace replay
-   , output [num_core_p-1:0]                                  cmt_rd_w_v_o
-   , output [num_core_p-1:0][rv64_reg_addr_width_gp-1:0]      cmt_rd_addr_o
-   , output [num_core_p-1:0]                                  cmt_mem_w_v_o
-   , output [num_core_p-1:0][dword_width_p-1:0]               cmt_mem_addr_o
-   , output [num_core_p-1:0][`bp_be_fu_op_width-1:0]          cmt_mem_op_o
-   , output [num_core_p-1:0][dword_width_p-1:0]               cmt_data_o
   );
 
   bp_top

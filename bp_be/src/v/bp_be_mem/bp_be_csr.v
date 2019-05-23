@@ -55,7 +55,7 @@ module bp_be_csr
     );
 
 // Declare parameterizable structs
-`declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
+`declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_size_in_bytes_p)
 
 // Casting input and output ports
 bp_be_csr_cmd_s csr_cmd;

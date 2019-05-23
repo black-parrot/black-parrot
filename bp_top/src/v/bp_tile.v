@@ -114,14 +114,6 @@ module bp_tile
    , input                                     timer_int_i
    , input                                     software_int_i
    , input                                     external_int_i
-
-   // Commit tracer for trace replay
-   , output                                   cmt_rd_w_v_o
-   , output [rv64_reg_addr_width_gp-1:0]      cmt_rd_addr_o
-   , output                                   cmt_mem_w_v_o
-   , output [dword_width_p-1:0]               cmt_mem_addr_o
-   , output [`bp_be_fu_op_width-1:0]          cmt_mem_op_o
-   , output [dword_width_p-1:0]               cmt_data_o
   );
 
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
@@ -195,13 +187,6 @@ bp_core
    ,.timer_int_i(timer_int_i)
    ,.software_int_i(software_int_i)
    ,.external_int_i(external_int_i)
-
-   ,.cmt_rd_w_v_o(cmt_rd_w_v_o)
-   ,.cmt_rd_addr_o(cmt_rd_addr_o)
-   ,.cmt_mem_w_v_o(cmt_mem_w_v_o)
-   ,.cmt_mem_addr_o(cmt_mem_addr_o)
-   ,.cmt_mem_op_o(cmt_mem_op_o)
-   ,.cmt_data_o(cmt_data_o)
    );
 
 // Declare the routing links

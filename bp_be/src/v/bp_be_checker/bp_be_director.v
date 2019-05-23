@@ -94,7 +94,6 @@ module bp_be_director
    , input [mepc_width_lp-1:0]        mtvec_i
    , input [mtvec_width_lp-1:0]       mepc_i
    , input                            tlb_fence_i
-   , input                            ifence_i
    
    //iTLB fill interface
    , input                           itlb_fill_v_i
@@ -315,7 +314,7 @@ always_comb
         
         fe_cmd_v = fe_cmd_ready_i;
       end
-    else if(ifence_i)
+    else if(calc_status.mem3_fencei_v)
       begin : icache_fence
         fe_cmd.opcode = e_op_icache_fence;
         fe_cmd.operands.icache_fence.pc = calc_status.mem3_pc;

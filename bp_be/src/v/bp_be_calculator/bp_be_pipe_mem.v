@@ -64,10 +64,6 @@ module bp_be_pipe_mem
    , input                                kill_ex2_i
    , input                                kill_ex3_i
 
-   , input                                mem3_itlb_fill_v_i
-   , input                                mem3_store_not_load_i
-   , input [vaddr_width_p-1:0]            mem3_pc_i
-
    , input [decode_width_lp-1:0]          decode_i
    , input [rv64_instr_width_gp-1:0]      instr_i
    , input [reg_data_width_lp-1:0]        rs1_i
@@ -93,7 +89,7 @@ module bp_be_pipe_mem
    );
 
 // Declare parameterizable structs
-`declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
+`declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_size_in_bytes_p)
 
 // Cast input and output ports 
 bp_be_decode_s    decode;
@@ -110,7 +106,7 @@ assign instr = instr_i;
 // Suppress unused signal warnings
 wire unused0 = kill_ex2_i;
 
-logic csr_cmd_v_lo, mem3_cmd_v_li, mem3_cmd_v_lo, mem3_cmd_v, mem1_cmd_v;
+logic csr_cmd_v_lo, mem1_cmd_v;
 
 // Suppress unused signal warnings
 wire unused2 = mmu_cmd_ready_i;
@@ -133,24 +129,6 @@ bsg_shift_reg
    ,.data_o(csr_cmd_lo)
    );
 
-// TODO: we are using extra bits for this.
-// Can add this information to the calculator pipeline
-// And share them between CSR and MEM3 cmds
-bsg_shift_reg
- #(.width_p(mmu_cmd_width_lp)
-   ,.stages_p(2)
-   )
- mem3_shift_reg
-  (.clk(clk_i)
-   ,.reset_i(reset_i)
-
-   ,.valid_i(mem3_cmd_v_li)
-   ,.data_i(mem3_cmd_li)
-
-   ,.valid_o(mem3_cmd_v_lo)
-   ,.data_o(mem3_cmd_lo)
-   );
-
 logic [reg_data_width_lp-1:0] offset;
 
 assign offset = decode.offset_sel ? '0 : imm_i[0+:vaddr_width_p];
@@ -161,25 +139,6 @@ always_comb
     mem1_cmd.mem_op = decode.fu_op;
     mem1_cmd.data   = rs2_i;
     mem1_cmd.vaddr  = (rs1_i + offset);
-  end
-
-assign mem3_cmd_v_li = (decode.fence_v | decode.ifence_v) & ~kill_ex1_i;
-assign mem3_cmd_v    = (mem3_cmd_v_lo | mem_resp.exception.dtlb_miss | mem3_itlb_fill_v_i) & ~kill_ex3_i;
-always_comb
-  begin
-    mem3_cmd_li.mem_op = decode.fu_op;
-
-    if(mem3_itlb_fill_v_i) begin
-      mem3_cmd.mem_op = e_ptw_i;
-    end
-    else if(mem_resp.exception.dtlb_miss) begin
-      mem3_cmd.mem_op = mem3_store_not_load_i ? e_ptw_s : e_ptw_l;
-    end
-    else begin
-      mem3_cmd.mem_op = mem3_cmd_lo.mem_op;
-    end
-    mem3_cmd.vaddr = mem3_itlb_fill_v_i ? mem3_pc_i : mem_resp.vaddr;
-    mem3_cmd.data  = mem3_pc_i;
   end
 
 assign csr_cmd_v_o = csr_cmd_v_lo & ~kill_ex3_i;
@@ -200,8 +159,8 @@ assign mem_exception_o    = mem_resp.exception;
 assign mem3_vaddr_o       = mem_resp.vaddr;
 
 // Set MMU cmd signal
-assign mmu_cmd_v_o = mem1_cmd_v | mem3_cmd_v;
-assign mmu_cmd_o = mem3_cmd_v ? mem3_cmd : mem1_cmd;
+assign mmu_cmd_v_o = mem1_cmd_v;
+assign mmu_cmd_o = mem1_cmd;
 
 endmodule : bp_be_pipe_mem
 

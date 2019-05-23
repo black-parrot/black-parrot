@@ -72,8 +72,6 @@ module bp_be_calculator_top
                                   )
 
    // Default parameters
-   , parameter trace_p                  = 0
-   , parameter debug_p                  = 0
    , parameter fp_en_p                  = 0
 
    // Generated parameters
@@ -83,6 +81,7 @@ module bp_be_calculator_top
    , localparam exception_width_lp      = `bp_be_exception_width
    , localparam mmu_cmd_width_lp        = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam csr_cmd_width_lp        = `bp_be_csr_cmd_width
+   , localparam tlb_fill_cmd_width_lp   = `bp_be_tlb_fill_cmd_width(vaddr_width_p)
    , localparam mem_resp_width_lp       = `bp_be_mem_resp_width(vaddr_width_p)
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam pipe_stage_reg_width_lp = `bp_be_pipe_stage_reg_width(vaddr_width_p)
@@ -138,6 +137,10 @@ module bp_be_calculator_top
   , output                               csr_cmd_v_o
   , input                                csr_cmd_ready_i
 
+  , output [tlb_fill_cmd_width_lp-1:0]   tlb_fill_cmd_o
+  , output                               tlb_fill_cmd_v_o
+  , input                                tlb_fill_cmd_ready_i
+
   , input [mem_resp_width_lp-1:0]        mem_resp_i
   , input                                mem_resp_v_i
   , output                               mem_resp_ready_o
@@ -149,18 +152,10 @@ module bp_be_calculator_top
   , output [instr_width_lp-1:0]          exception_instr_o
   , output                               exception_ecode_v_o
   , output [ecode_dec_width_lp-1:0]      exception_ecode_dec_o
-
-  // Commit tracer
-  , output                               cmt_rd_w_v_o
-  , output [reg_addr_width_lp-1:0]       cmt_rd_addr_o
-  , output                               cmt_mem_w_v_o
-  , output [eaddr_width_lp-1:0]          cmt_mem_addr_o
-  , output [fu_op_width_lp-1:0]          cmt_mem_op_o
-  , output [reg_data_width_lp-1:0]       cmt_data_o
   );
 
 // Declare parameterizable structs
-`declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_width_p / 8)
+`declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p / 8)
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
 `declare_bp_be_internal_if_structs
   (vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -169,10 +164,12 @@ module bp_be_calculator_top
 bp_be_issue_pkt_s   issue_pkt;
 bp_be_calc_status_s calc_status;
 bp_be_mem_resp_s    mem_resp;
+bp_be_tlb_fill_cmd_s tlb_fill_cmd;
 bp_proc_cfg_s       proc_cfg;
 
 assign issue_pkt = issue_pkt_i;
 assign mem_resp = mem_resp_i;
+assign tlb_fill_cmd_o = tlb_fill_cmd;
 assign proc_cfg = proc_cfg_i;
 assign calc_status_o = calc_status;
 
@@ -447,10 +444,6 @@ bp_be_pipe_mem
    ,.mem_resp_v_i(mem_resp_v_i)
    ,.mem_resp_ready_o(mem_resp_ready_o)
 
-   ,.mem3_itlb_fill_v_i(exc_stage_r[2].itlb_fill_v)
-   ,.mem3_store_not_load_i(~calc_stage_r[2].irf_w_v)
-   ,.mem3_pc_i(calc_status.mem3_pc)
-
    ,.v_o(pipe_mem_v_lo)
    ,.data_o(pipe_mem_data_lo)
    ,.mem_exception_o(mem_exception_mem3)
@@ -567,6 +560,7 @@ always_comb
     calc_stage_isd.pipe_mul_v     = dispatch_pkt.decode.pipe_mul_v;
     calc_stage_isd.pipe_mem_v     = dispatch_pkt.decode.pipe_mem_v;
     calc_stage_isd.pipe_fp_v      = dispatch_pkt.decode.pipe_fp_v;
+    calc_stage_isd.fencei_v       = dispatch_pkt.decode.fencei_v;
     calc_stage_isd.irf_w_v        = dispatch_pkt.decode.irf_w_v;
     calc_stage_isd.frf_w_v        = dispatch_pkt.decode.frf_w_v;
 
@@ -615,10 +609,9 @@ always_comb
         calc_status.dep_status[i].mem_v     = calc_stage_r[i].pipe_mem_v
                                               & ~exc_stage_n[i+1].poison_v;
         calc_status.dep_status[i].stall_v   = (exc_stage_r[i].csr_instr_v
-                                               | exc_stage_r[i].ifence_v
+                                               | calc_stage_r[i].fencei_v
                                                | exc_stage_r[i].itlb_fill_v
-                                               )
-                                              & ~exc_stage_n[i+1].poison_v;
+                                               ) & ~exc_stage_n[i+i].poison_v;
       end
 
     // Additional commit point information
@@ -627,6 +620,7 @@ always_comb
     calc_status.mem3_miss_v       = (~pipe_mem_v_lo & calc_stage_r[2].pipe_mem_v)
                                      & ~exc_stage_r[2].poison_v 
                                      & ~exc_stage_n[3].illegal_instr_v; 
+    calc_status.mem3_fencei_v     = calc_stage_r[2].fencei_v & ~exc_stage_r[2].poison_v;
     // TODO: Handles dequeueing both healthy and poisoned instructions from the queue. 
     //   Should rename for descriptiveness
     calc_status.instr_cmt_v       = (calc_stage_r[2].instr_v | exc_stage_r[2].fe_exc_v) & ~exc_stage_r[2].roll_v;
@@ -675,7 +669,6 @@ always_comb
         exc_stage_n[3].illegal_instr_v = exc_stage_r[2].illegal_instr_v | mem_exception_mem3.illegal_instr;
 
         exc_stage_n[0].csr_instr_v     = chk_dispatch_v_i & csr_instr_isd;
-        exc_stage_n[0].ifence_v        = chk_dispatch_v_i & (dispatch_pkt.decode.ifence_v | dispatch_pkt.decode.fence_v);
 
         exc_stage_n[0].fe_exc_v        = fe_exc_v;
         exc_stage_n[0].fe_nop_v        = fe_nop_v;
@@ -692,6 +685,20 @@ always_comb
         exc_stage_n[2].poison_v        = exc_stage_r[1].poison_v | chk_poison_ex2_i;
         exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | calc_status.mem3_miss_v | mem_exception_mem3.illegal_instr; 
   end
+
+assign tlb_fill_cmd_v_o = (exc_stage_r[2].itlb_fill_v | mem_resp.exception.dtlb_miss) & ~exc_stage_r[2].poison_v;
+always_comb
+  begin
+    tlb_fill_cmd.fill_op = exc_stage_r[2].itlb_fill_v
+                           ? e_ptw_i
+                           : ~calc_stage_r[2].irf_w_v
+                             ? e_ptw_s
+                             : e_ptw_l;
+    // We're already saving this, we don't need it in the resp
+    tlb_fill_cmd.vaddr   = exc_stage_r[2].itlb_fill_v ? calc_stage_r[2].instr_metadata.pc : mem_resp.vaddr;
+    tlb_fill_cmd.pc      = calc_stage_r[2].instr_metadata.pc;
+  end
+
 
 assign instret_o = calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v;
 assign exception_pc_o = exc_stage_n[3].illegal_instr_v ? calc_stage_r[2].instr_metadata.pc : mem_resp.data;
@@ -715,52 +722,6 @@ assign exception_ecode_dec_o =
                      ,store_page_fault: mem_exception_mem3.store_page_fault
                      ,default         : 1'b0
                      };
-
-if (trace_p)
-  begin
-    logic                         cmt_dcache_w_v_r;
-    logic [fu_op_width_lp-1:0]    cmt_mem_op_r;
-    logic [reg_data_width_lp-1:0] cmt_rs1_r, cmt_rs2_r, cmt_imm_r;
-
-    bsg_shift_reg
-     #(.width_p(1+3*reg_data_width_lp+fu_op_width_lp)
-       ,.stages_p(pipe_stage_els_lp)
-       )
-     cmt_shift_reg
-      (.clk(clk_i)
-       ,.reset_i(reset_i)
-       ,.valid_i(1'b1)
-       ,.valid_o(/* We don't care */)
-       ,.data_i({dispatch_pkt.decode.dcache_w_v
-                 , dispatch_pkt.rs1
-                 , dispatch_pkt.rs2
-                 , dispatch_pkt.imm
-                 , dispatch_pkt.decode.fu_op
-                 })
-       ,.data_o({cmt_dcache_w_v_r, cmt_rs1_r, cmt_rs2_r, cmt_imm_r, cmt_mem_op_r})
-       );
-  
-    // Commit tracer
-    assign cmt_rd_w_v_o   = calc_stage_r[pipe_stage_els_lp-1].irf_w_v
-                            & ~exc_stage_r[pipe_stage_els_lp-1].poison_v;
-    assign cmt_rd_addr_o  = calc_stage_r[pipe_stage_els_lp-1].instr.fields.rtype.rd_addr;
-    assign cmt_mem_w_v_o  = cmt_dcache_w_v_r
-                            & ~exc_stage_r[pipe_stage_els_lp-1].poison_v;
-    assign cmt_mem_addr_o = cmt_rs1_r + cmt_imm_r;
-    assign cmt_mem_op_o   = cmt_mem_op_r;
-    assign cmt_data_o     = cmt_dcache_w_v_r
-                            ? cmt_rs2_r
-                            : comp_stage_r[pipe_stage_els_lp-1];
-  end
-else
-  begin
-    assign cmt_rd_w_v_o   = '0;
-    assign cmt_rd_addr_o  = '0;
-    assign cmt_mem_w_v_o  = '0;
-    assign cmt_mem_addr_o = '0;
-    assign cmt_mem_op_o   = '0;
-    assign cmt_data_o     = '0;
-  end
 
 endmodule : bp_be_calculator_top
 

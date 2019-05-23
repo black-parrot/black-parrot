@@ -75,7 +75,7 @@ always_comb
     decode.csr_instr_v   = '0;
 
     // Fence signals
-    decode.ifence_v      = '0;
+    decode.fencei_v      = '0;
     decode.fence_v       = '0;
 
     // Decode metadata
@@ -221,7 +221,7 @@ always_comb
         end
       `RV64_MISC_MEM_OP : 
         begin
-          decode.pipe_mem_v = 1'b1;
+          decode.pipe_comp_v = 1'b1;
           unique casez (instr)
             `RV64_FENCE   : 
               begin
@@ -230,8 +230,8 @@ always_comb
               end
             `RV64_FENCE_I : 
               begin
-                decode.fence_v = 1'b1;
-                decode.fu_op = e_fence_i; // TODO: Should decode into flag
+                decode.fencei_v = 1'b1;
+                decode.fu_op = e_mmu_nop; 
               end
             default       : illegal_instr = 1'b1;
           endcase

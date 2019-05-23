@@ -44,15 +44,18 @@ typedef enum bit [4:0]
   ,e_lrd   = 5'b01101
   ,e_scd   = 5'b01110
 
-  ,e_ptw_i = 5'b10000
-  ,e_ptw_l = 5'b10001
-  ,e_ptw_s = 5'b10010
-
   ,e_fence   = 5'b10011
   ,e_fence_i = 5'b10100
 
   ,e_mmu_nop = 5'b11111
 } bp_be_mmu_fu_op_e;
+
+typedef enum bit [4:0]
+{
+  e_ptw_i  = 5'b10000
+  ,e_ptw_l = 5'b10001
+  ,e_ptw_s = 5'b10010
+} bp_be_fill_fu_op_e;
 
 typedef enum bit [4:0]
 {
@@ -125,7 +128,6 @@ typedef struct packed
   logic                             irf_w_v;
   logic                             frf_w_v;
   logic                             csr_instr_v;
-  logic                             ifence_v;
   logic                             fence_v;
   logic                             dcache_w_v;
   logic                             dcache_r_v;
@@ -177,10 +179,11 @@ typedef struct packed
   logic poison_v;
   logic roll_v;
 
+  // These signals are just used for stalls
   logic csr_instr_v;
-  logic ifence_v;
   logic itlb_fill_v;  
 
+  // Actual exceptions
   logic instr_misaligned_v;
   logic instr_access_fault_v;
   logic illegal_instr_v;
