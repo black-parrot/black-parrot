@@ -168,6 +168,10 @@ module bp_be_dcache
     , output credits_empty_o
   );
 
+  // TODO: Attach to uncached store credits counter
+  assign credits_full_o  = 1'b0;
+  assign credits_empty_o = 1'b1;
+
   // packet decoding
   //
   `declare_bp_be_dcache_pkt_s(bp_page_offset_width_gp, data_width_p);
