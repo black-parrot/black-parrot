@@ -64,3 +64,9 @@
   branch = blackparrot_mods
   ignore = dirty
 
+[submodule "bp_common/test/src/beebs"]
+  path = bp_common/test/src/beebs
+  url = https://github.com/black-parrot/beebs.git
+  branch = blackparrot_mods
+  ignore = dirty
+
