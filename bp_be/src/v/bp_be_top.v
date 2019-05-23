@@ -85,9 +85,6 @@ module bp_be_top
    , output                                  lce_data_cmd_v_o
    , input                                   lce_data_cmd_ready_i
 
-   , input                                   credits_full_i
-   , input                                   credits_empty_i
-
    // Processor configuration
    , input [proc_cfg_width_lp-1:0]           proc_cfg_i
 
@@ -147,6 +144,8 @@ logic [vaddr_width_p-1:0]  chk_pc_lo;
 
 logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li, chk_ifence_li;
 
+logic credits_full_lo, credits_empty_lo;
+
 logic                          instret;
 logic [vaddr_width_p-1:0]      exception_pc;
 logic [vaddr_width_p-1:0]      exception_vaddr;
@@ -170,8 +169,8 @@ bp_be_checker_top
 
    ,.calc_status_i(calc_status)
    ,.mmu_cmd_ready_i(mmu_cmd_rdy)
-   ,.credits_full_i(credits_full_i)
-   ,.credits_empty_i(credits_empty_i)
+   ,.credits_full_i(credits_full_lo)
+   ,.credits_empty_i(credits_empty_lo)
 
    ,.fe_cmd_o(fe_cmd_o)
    ,.fe_cmd_v_o(fe_cmd_v_o)
@@ -311,6 +310,9 @@ bp_be_mem_top
     ,.exception_instr_i(exception_instr)
     ,.exception_ecode_v_i(exception_ecode_v)
     ,.exception_ecode_dec_i(exception_ecode_dec)
+
+    ,.credits_full_o(credits_full_lo)
+    ,.credits_empty_o(credits_empty_lo)
 
     ,.timer_int_i(timer_int_i)
     ,.software_int_i(software_int_i)

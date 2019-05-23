@@ -162,7 +162,14 @@ module bp_be_dcache
     , output logic [lce_data_cmd_width_lp-1:0] lce_data_cmd_o
     , output logic lce_data_cmd_v_o
     , input lce_data_cmd_ready_i 
+
+    , output credits_full_o
+    , output credits_empty_o
   );
+
+  // TODO: Attach to uncached store credits counter
+  assign credits_full_o  = 1'b0;
+  assign credits_empty_o = 1'b1;
 
   // packet decoding
   //

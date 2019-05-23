@@ -57,6 +57,8 @@ typedef struct packed
   integer fe_queue_fifo_els;
   integer fe_cmd_fifo_els;
 
+  integer max_credits;
+
   integer dword_width;
   integer instr_width;
   integer reg_addr_width;
@@ -65,6 +67,7 @@ typedef struct packed
 
 `define declare_bp_proc_params(bp_cfg_e_mp) \
   , localparam bp_proc_param_s proc_param_lp = all_cfgs_gp[bp_cfg_e_mp]                            \
+                                                                                                   \
   , localparam num_core_p = proc_param_lp.num_core                                                 \
   , localparam num_cce_p  = proc_param_lp.num_cce                                                  \
   , localparam num_lce_p  = proc_param_lp.num_lce                                                  \
@@ -86,6 +89,8 @@ typedef struct packed
                                                                                                    \
   , localparam fe_queue_fifo_els_p = proc_param_lp.fe_queue_fifo_els                               \
   , localparam fe_cmd_fifo_els_p   = proc_param_lp.fe_cmd_fifo_els                                 \
+                                                                                                   \
+  , localparam max_credits_p = proc_param_lp.max_credits                                           \
                                                                                                    \
   , localparam dword_width_p       = proc_param_lp.dword_width                                     \
   , localparam instr_width_p       = proc_param_lp.instr_width                                     \

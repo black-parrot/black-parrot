@@ -98,6 +98,9 @@ module bp_be_mem_top
    , output                                  lce_data_cmd_v_o
    , input                                   lce_data_cmd_ready_i 
 
+   , output                                  credits_full_o
+   , output                                  credits_empty_o
+
    // CSRs
    , input [proc_cfg_width_lp-1:0]           proc_cfg_i
    , input                                   instret_i
@@ -366,6 +369,9 @@ bp_be_dcache
     ,.lce_data_cmd_o(lce_data_cmd_o)
     ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
     ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
+
+    ,.credits_full_o(credits_full_o)
+    ,.credits_empty_o(credits_empty_o)
     );
 
 // We delay the tlb miss signal by one cycle to synchronize with cache miss signal

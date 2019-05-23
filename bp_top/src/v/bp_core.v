@@ -64,9 +64,6 @@ module bp_core
     , output [1:0]                                 lce_data_cmd_v_o
     , input [1:0]                                  lce_data_cmd_ready_i
 
-    , input                                        credits_full_i
-    , input                                        credits_empty_i
-
     , input                                        timer_int_i
     , input                                        software_int_i
     , input                                        external_int_i
@@ -231,9 +228,6 @@ module bp_core
      ,.lce_data_cmd_o(lce_data_cmd_o[1])
      ,.lce_data_cmd_v_o(lce_data_cmd_v_o[1])
      ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i[1])
-
-     ,.credits_full_i(credits_full_i)
-     ,.credits_empty_i(credits_empty_i)
 
      ,.timer_int_i(timer_int_i)
      ,.software_int_i(software_int_i)
