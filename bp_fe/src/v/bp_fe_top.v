@@ -35,6 +35,7 @@ module bp_fe_top
    , input                                            reset_i
 
    , input [lce_id_width_lp-1:0]                      icache_id_i
+
    , input [fe_cmd_width_lp-1:0]                      fe_cmd_i
    , input                                            fe_cmd_v_i
    , output logic                                     fe_cmd_ready_o
@@ -134,12 +135,16 @@ logic 		                itlb_miss;
 assign fe_cmd          = fe_cmd_i;
 assign fe_queue_o      = fe_queue;
 
-assign fe_queue.msg_type = pc_gen_queue.msg_type;
-assign fe_queue.msg      = pc_gen_queue.msg;
-assign pc_gen_fe_ready   = fe_queue_ready_i;
-assign fe_queue_v_o      = pc_gen_fe_v;
-// processor parameters
-//`declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
+assign fe_queue.msg_type  = pc_gen_queue.msg_type;
+assign fe_queue.msg       = pc_gen_queue.msg;
+assign pc_gen_fe_ready    = fe_queue_ready_i;
+assign fe_queue_v_o       = pc_gen_fe_v;
+
+// FE cmd fencing is not implemented yet
+// We lower the fence the same cycle that we get the command off of the fifo. 
+// If there are any operations that take more than one cycle, we should delay sending this signal
+// and move into a stall state in pc_gen, pending on completing the fe_cmd operation
+//assign fe_cmd_fence_clr_o = fe_cmd_ready_o & ~(fe_cmd.opcode == e_op_attaboy); 
 
 // fe to pc_gen 
 always_comb
@@ -166,7 +171,9 @@ always_comb
                                       ? fe_cmd.operands.pc_redirect_operands.pc
                                         : (fe_pc_gen.icache_fence_valid | fe_pc_gen.itlb_fence_valid)
                                           ? fe_cmd.operands.icache_fence.pc
-                                          : fe_cmd.operands.attaboy.pc ;
+                                          : (fe_pc_gen.itlb_fill_valid)
+                                            ? fe_cmd.operands.itlb_fill_response.vaddr
+                                            : fe_cmd.operands.attaboy.pc;
 
     fe_pc_gen_v                   = fe_cmd_v_i;
     fe_cmd_ready_o                = fe_pc_gen_ready;
@@ -199,8 +206,6 @@ bp_fe_pc_gen
  bp_fe_pc_gen_1
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-               
-   ,.v_i(1'b1)
                
    ,.pc_gen_icache_o(pc_gen_icache)
    ,.pc_gen_icache_v_o(pc_gen_icache_v)
@@ -289,7 +294,7 @@ bp_be_dtlb
    ,.flush_i(itlb_fence_v)
 	       
    ,.r_v_i(pc_gen_itlb_v)
-   ,.r_ready_o()
+   ,.r_ready_o(pc_gen_itlb_ready)
    ,.r_vtag_i(itlb_vaddr.tag)
 	   
    ,.r_v_o(itlb_icache_data_resp_v)
