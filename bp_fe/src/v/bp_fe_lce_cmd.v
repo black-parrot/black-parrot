@@ -22,40 +22,24 @@
 module bp_fe_lce_cmd
   import bp_common_pkg::*;
   import bp_fe_icache_pkg::*;
-  #(parameter data_width_p="inv"
-    , parameter paddr_width_p="inv"
-    , parameter lce_data_width_p="inv"
-    , parameter sets_p="inv"
-    , parameter ways_p="inv"
-    , parameter num_cce_p="inv"
-    , parameter num_lce_p="inv"
+  import bp_fe_pkg::*; 
+  import bp_common_aviary_pkg::*;
+  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+   `declare_bp_proc_params(cfg_p)
+   `declare_bp_lce_cce_if_widths(num_cce_p
+                                 ,num_lce_p
+                                 ,paddr_width_p
+                                 ,lce_assoc_p
+                                 ,dword_width_p
+                                 ,cce_block_width_p
+                                 )
+    // these will go away once the naming convention is decided on
+    , localparam ways_p = lce_assoc_p
+    , localparam sets_p = lce_sets_p
+    , localparam data_width_p = dword_width_p
 
-    , localparam block_size_in_words_lp=ways_p
-    , localparam data_mask_width_lp=(data_width_p>>3)
-    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)
-    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
-    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
-    , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
-    , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
-
-    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
-    , localparam cce_id_width_lp=`BSG_SAFE_CLOG2(num_cce_p)
-
-    , localparam data_mem_pkt_width_lp=
-      `bp_fe_icache_lce_data_mem_pkt_width(sets_p,ways_p,lce_data_width_p)
-    , localparam tag_mem_pkt_width_lp=
-      `bp_fe_icache_lce_tag_mem_pkt_width(sets_p,ways_p,tag_width_lp)
-    , localparam metadata_mem_pkt_width_lp=
-      `bp_fe_icache_lce_metadata_mem_pkt_width(sets_p,ways_p)
-
-    , localparam cce_lce_cmd_width_lp=
-      `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, ways_p)
-    , localparam lce_cce_resp_width_lp=
-      `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
-    , localparam lce_cce_data_resp_width_lp=
-      `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_p)
-    , localparam lce_data_cmd_width_lp=
-      `bp_lce_data_cmd_width(num_lce_p, lce_data_width_p, ways_p)
+   `declare_bp_fe_tag_widths(ways_p, sets_p, num_lce_p, num_cce_p, data_width_p, paddr_width_p)
+   `declare_bp_fe_lce_widths(ways_p, sets_p, tag_width_lp, lce_data_width_lp)
   )
   (
     input                                                        clk_i
@@ -66,7 +50,7 @@ module bp_fe_lce_cmd
     , output logic                                               set_tag_received_o
     , output logic                                               set_tag_wakeup_received_o
 
-    , input [lce_data_width_p-1:0]                               data_mem_data_i
+    , input [lce_data_width_lp-1:0]                               data_mem_data_i
     , output logic [data_mem_pkt_width_lp-1:0]                   data_mem_pkt_o
     , output logic                                               data_mem_pkt_v_o
     , input                                                      data_mem_pkt_yumi_i
@@ -100,8 +84,8 @@ module bp_fe_lce_cmd
   //
   `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, ways_p);
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
-  `declare_bp_lce_data_cmd_s(num_lce_p, lce_data_width_p, ways_p);
-  `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_p);
+  `declare_bp_lce_data_cmd_s(num_lce_p, lce_data_width_lp, ways_p);
+  `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_lp);
 
   bp_cce_lce_cmd_s lce_cmd_li;
   logic lce_cmd_v_li, lce_cmd_yumi_lo;
@@ -120,7 +104,7 @@ module bp_fe_lce_cmd
  
   // lce pkt
   //
-  `declare_bp_fe_icache_lce_data_mem_pkt_s(sets_p, ways_p, lce_data_width_p);
+  `declare_bp_fe_icache_lce_data_mem_pkt_s(sets_p, ways_p, lce_data_width_lp);
   `declare_bp_fe_icache_lce_tag_mem_pkt_s(sets_p, ways_p, tag_width_lp);
   `declare_bp_fe_icache_lce_metadata_mem_pkt_s(sets_p, ways_p);
 
@@ -135,7 +119,7 @@ module bp_fe_lce_cmd
   // states
   //
   logic [cce_id_width_lp-1:0] syn_ack_cnt_r, syn_ack_cnt_n;
-  logic [lce_data_width_p-1:0] data_r, data_n;
+  logic [lce_data_width_lp-1:0] data_r, data_n;
   logic flag_data_buffered_r, flag_data_buffered_n;
   logic flag_invalidate_r, flag_invalidate_n;
 

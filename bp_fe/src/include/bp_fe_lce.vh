@@ -95,4 +95,30 @@ typedef enum logic [1:0] {
 `define bp_fe_icache_lce_metadata_mem_pkt_width(sets_p, ways_p) \
   (`BSG_SAFE_CLOG2(sets_p)+`BSG_SAFE_CLOG2(ways_p)+$bits(bp_fe_icache_metadata_mem_opcode_e))
 
+/*
+ * Declare all lce widths at once as localparams
+ */
+`define declare_bp_fe_lce_widths(ways_mp, sets_mp, tag_width_mp, lce_data_width_mp)                                \
+    , localparam data_mem_pkt_width_lp=`bp_fe_icache_lce_data_mem_pkt_width(sets_mp,ways_mp,lce_data_width_mp) \
+    , localparam tag_mem_pkt_width_lp=`bp_fe_icache_lce_tag_mem_pkt_width(sets_mp,ways_mp,tag_width_mp)        \
+    , localparam metadata_mem_pkt_width_lp=`bp_fe_icache_lce_metadata_mem_pkt_width(sets_mp,ways_mp            \
+)
+
+/*
+ * Declare all icache-lce-cce width calculations at once as localparams
+ */
+`define declare_bp_fe_tag_widths(ways_mp, sets_mp, num_lce_mp, num_cce_mp, data_width_mp, paddr_width_mp)   \
+    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_mp)                                                   \
+    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_mp)                                                \
+    , localparam cce_id_width_lp=`BSG_SAFE_CLOG2(num_cce_mp)                                                \
+    , localparam lce_data_width_lp=(ways_mp*data_width_mp)                                                  \
+    , localparam block_size_in_words_lp=ways_mp                                                             \
+    , localparam data_mask_width_lp=(data_width_mp>>3)                                                      \
+    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)                                   \
+    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)                               \
+    , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_mp)                                                    \
+    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)                          \
+    , localparam tag_width_lp=(paddr_width_mp-block_offset_width_lp-index_width_lp                          \
+)       
+
 `endif

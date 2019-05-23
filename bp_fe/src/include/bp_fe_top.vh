@@ -155,11 +155,15 @@ typedef struct packed
 
 
 /*
- * Declare all fe-pc_gen widths at once as localparams
+ * Declare all pc_gen widths at once as localparams
+ * TODO: should this be in this file?
  */
 `define declare_bp_fe_pc_gen_if_widths(vaddr_width_mp, branch_metadata_fwd_width_mp) \
-  , localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_mp,branch_metadata_fwd_width_mp) \
-  , localparam bp_fe_pc_gen_width_o_lp=`bp_fe_pc_gen_queue_width(vaddr_width_mp, branch_metadata_fwd_width_mp \
+  , localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_mp,branch_metadata_fwd_width_mp)    \
+  , localparam bp_fe_pc_gen_width_o_lp=`bp_fe_pc_gen_queue_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
+  , localparam bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(vaddr_width_mp)                         \
+  , localparam bp_fe_pc_gen_icache_width_lp=vaddr_width_mp                                                     \
+  , localparam bp_fe_pc_gen_itlb_width_lp=`bp_fe_pc_gen_itlb_width(vaddr_width_mp                              \
 )
 
 /*

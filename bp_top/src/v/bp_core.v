@@ -159,7 +159,7 @@ module bp_core
      ,.yumi_i(fe_queue_ready_li)
      );
 
-  bsg_fifo_1r1w_small 
+  bsg_fifo_1r1w_fence
    #(.width_p(fe_cmd_width_lp)
      ,.els_p(fe_cmd_fifo_els_p)
      ,.ready_THEN_valid_p(1)
@@ -167,7 +167,12 @@ module bp_core
    fe_cmd_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-                        
+      
+     // FE cmd fencing is not implemented at the moment     
+     ,.fence_set_i(1'b0)
+     ,.fence_clr_i(1'b0)
+     ,.fence_o()
+
      ,.data_i(fe_cmd_li)
      ,.v_i(fe_cmd_v_li)
      ,.ready_o(fe_cmd_ready_lo)

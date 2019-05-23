@@ -102,6 +102,7 @@
     logic                                   mem3_miss_v;                                           \
                                                                                                    \
     logic                                   instr_cmt_v;                                           \
+    logic                                   mem3_fe_exc_v;                                         \
   }  bp_be_calc_status_s;                                                                          \
 
 /* Declare width macros so that clients can use structs in ports before struct declaration
@@ -154,7 +155,7 @@
    + 3                                                                                             \
    + 5 * `bp_be_dep_status_width                                                                   \
    + vaddr_width_p                                                                                 \
-   + 2                                                                                             \
+   + 3                                                                                             \
    )                                                                                               
 
 `endif

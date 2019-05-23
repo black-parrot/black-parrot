@@ -71,7 +71,7 @@ module bp_be_mem_top
    , input                                   mem_resp_ready_i
    
    , output                                  itlb_fill_v_o
-   , output [vtag_width_lp-1:0]              itlb_fill_vtag_o
+   , output [vaddr_width_p-1:0]              itlb_fill_vaddr_o
    , output [tlb_entry_width_lp-1:0]         itlb_fill_entry_o
 
    , output [lce_cce_req_width_lp-1:0]       lce_req_o
@@ -445,7 +445,7 @@ assign mem_resp_v_o    = ptw_busy ? 1'b0 : (dcache_v | csr_v_lo | fence_i_cmd_v 
 assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~ptw_busy;
 
 assign itlb_fill_v_o     = ptw_tlb_w_v & itlb_not_dtlb_resp;
-assign itlb_fill_vtag_o  = ptw_tlb_w_vtag;
+assign itlb_fill_vaddr_o = fault_vaddr;
 assign itlb_fill_entry_o = ptw_tlb_w_entry;
 
 assign ifence_o = fence_i_cmd_v;
