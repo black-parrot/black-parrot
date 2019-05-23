@@ -448,7 +448,7 @@ bp_be_pipe_mem
    ,.mem_resp_ready_o(mem_resp_ready_o)
 
    ,.mem3_itlb_fill_v_i(exc_stage_r[2].itlb_fill_v)
-   ,.mem3_store_not_load_i(calc_stage_r[2].irf_w_v)
+   ,.mem3_store_not_load_i(~calc_stage_r[2].irf_w_v)
    ,.mem3_pc_i(calc_status.mem3_pc)
 
    ,.v_o(pipe_mem_v_lo)
@@ -554,9 +554,9 @@ always_comb
     dispatch_pkt.imm                 = issue_pkt_r.imm;
 
            if (fe_exc_v) dispatch_pkt.decode = '0;
-      else if (fe_nop_v) dispatch_pkt.decode = '0;
-      else if (be_nop_v) dispatch_pkt.decode = '0;
-      else if (me_nop_v) dispatch_pkt.decode = '0;
+      else if (fe_nop_v) dispatch_pkt = '0;
+      else if (be_nop_v) dispatch_pkt = '0;
+      else if (me_nop_v) dispatch_pkt = '0;
       else               dispatch_pkt.decode = decoded;
 
     // Strip out elements of the dispatch packet that we want to save for later
@@ -618,10 +618,14 @@ always_comb
 
     // Additional commit point information
     calc_status.mem3_pc           = calc_stage_r[2].instr_metadata.pc;
+    // This should actually be reliant on not begin a fill request
     calc_status.mem3_miss_v       = (~pipe_mem_v_lo & calc_stage_r[2].pipe_mem_v)
                                      & ~exc_stage_r[2].poison_v 
                                      & ~exc_stage_n[3].illegal_instr_v; 
-    calc_status.instr_cmt_v       = calc_stage_r[2].instr_v & ~exc_stage_r[2].roll_v;
+    // TODO: Handles dequeueing both healthy and poisoned instructions from the queue. 
+    //   Should rename for descriptiveness
+    calc_status.instr_cmt_v       = (calc_stage_r[2].instr_v | exc_stage_r[2].fe_exc_v) & ~exc_stage_r[2].roll_v;
+    calc_status.mem3_fe_exc_v     = exc_stage_r[2].fe_exc_v & ~exc_stage_r[2].poison_v;
     
     // Slicing the completion pipe for Forwarding information
     for (integer i = 1; i < pipe_stage_els_lp; i++) 

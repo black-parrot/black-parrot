@@ -130,7 +130,7 @@ bp_be_mem_resp_s mem_resp;
 logic mem_resp_v, mem_resp_rdy;
 
 bp_be_tlb_entry_s         itlb_fill_entry;
-logic [vtag_width_lp-1:0] itlb_fill_vtag;
+logic [vaddr_width_p-1:0] itlb_fill_vaddr;
 logic                     itlb_fill_v;
 
 bp_be_calc_status_s    calc_status;
@@ -193,7 +193,7 @@ bp_be_checker_top
    ,.ifence_i(chk_ifence_li)
    
    ,.itlb_fill_v_i(itlb_fill_v)
-   ,.itlb_fill_vtag_i(itlb_fill_vtag)
+   ,.itlb_fill_vaddr_i(itlb_fill_vaddr)
    ,.itlb_fill_entry_i(itlb_fill_entry)
    );
 
@@ -271,7 +271,7 @@ bp_be_mem_top
     ,.mem_resp_ready_i(mem_resp_rdy)
     
     ,.itlb_fill_v_o(itlb_fill_v)
-    ,.itlb_fill_vtag_o(itlb_fill_vtag)
+    ,.itlb_fill_vaddr_o(itlb_fill_vaddr)
     ,.itlb_fill_entry_o(itlb_fill_entry)
 
     ,.lce_req_o(lce_req_o)
