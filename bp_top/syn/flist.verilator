@@ -74,6 +74,8 @@ $BSG_IP_CORES_DIR/bsg_misc/bsg_lru_pseudo_tree_encode.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_lru_pseudo_tree_decode.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router_buffered.v
+$BSG_IP_CORES_DIR/bsg_dataflow/bsg_flow_counter.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_counter_up_down.v
 // BE files
 $BP_BE_DIR/src/v/bp_be_top.v
 // Calculator

@@ -323,6 +323,7 @@ bp_be_dcache
     ,.paddr_width_p(paddr_width_p)
     ,.num_cce_p(num_cce_p)
     ,.num_lce_p(num_lce_p)
+    ,.max_credits_p(max_credits_p)
     )
   dcache
    (.clk_i(clk_i)

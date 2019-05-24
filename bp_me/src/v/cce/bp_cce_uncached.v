@@ -35,6 +35,7 @@ module bp_cce_uncached
   (input                                               clk_i
    , input                                             reset_i
 
+   , input [lg_num_cce_lp-1:0]                         cce_id_i
    , input bp_cce_mode_e                               cce_mode_i
 
    // LCE-CCE Interface
@@ -43,6 +44,10 @@ module bp_cce_uncached
    , input [lce_cce_req_width_lp-1:0]                  lce_req_i
    , input                                             lce_req_v_i
    , output logic                                      lce_req_yumi_o
+
+   , output logic [cce_lce_cmd_width_lp-1:0]           lce_cmd_o
+   , output logic                                      lce_cmd_v_o
+   , input                                             lce_cmd_ready_i
 
    , output logic [lce_data_cmd_width_lp-1:0]          lce_data_cmd_o
    , output logic                                      lce_data_cmd_v_o
@@ -78,11 +83,13 @@ module bp_cce_uncached
   bp_mem_cce_data_resp_s mem_data_resp;
 
   // outbound
+  bp_cce_lce_cmd_s lce_cmd;
   bp_lce_data_cmd_s lce_data_cmd;
   bp_cce_mem_cmd_s mem_cmd;
   bp_cce_mem_data_cmd_s mem_data_cmd;
 
   // cast output queue messages from structure variables
+  assign lce_cmd_o = lce_cmd;
   assign lce_data_cmd_o = lce_data_cmd;
   assign mem_cmd_o = mem_cmd;
   assign mem_data_cmd_o = mem_data_cmd;
@@ -99,6 +106,7 @@ module bp_cce_uncached
     ,SEND_LCE_DATA_CMD
     ,SEND_MEM_DATA_CMD
     ,WAIT_MEM_RESP
+    ,SEND_LCE_CMD
   } uc_state_e;
 
   uc_state_e uc_state, uc_state_n;
@@ -125,6 +133,8 @@ module bp_cce_uncached
     mem_resp_yumi_o = '0;
     mem_data_resp_yumi_o = '0;
 
+    lce_cmd_v_o = '0;
+    lce_cmd = '0;
     lce_data_cmd_v_o = '0;
     lce_data_cmd = '0;
     mem_cmd_v_o = '0;
@@ -201,13 +211,23 @@ module bp_cce_uncached
         uc_state_n = (mem_data_cmd_ready_i) ? WAIT_MEM_RESP : SEND_MEM_DATA_CMD;
       end
       WAIT_MEM_RESP: begin
-        // memory response comes after uncached store. As soon as response is recieved, CCE
-        // can process next LCE request (go to READY).
-        mem_resp_yumi_o = mem_resp_v_i;
-        uc_state_n = (mem_resp_v_i) ? READY : WAIT_MEM_RESP;
+        // memory response comes after uncached store
+        // need to send LCE command to requestor to acknowledge store complete
+        uc_state_n = (mem_resp_v_i) ? SEND_LCE_CMD : WAIT_MEM_RESP;
+      end
+      SEND_LCE_CMD: begin
+        // after store response is received, need to send uncached store done command to LCE
+        lce_cmd_v_o = 1'b1;
+        lce_cmd.dst_id = mem_resp.payload.lce_id;
+        lce_cmd.src_id = (lg_num_cce_lp)'(cce_id_i);
+        lce_cmd.msg_type = e_lce_cmd_uc_st_done;
+        lce_cmd.addr = mem_resp.payload.req_addr;
+        uc_state_n = (lce_cmd_ready_i) ? READY : SEND_LCE_CMD;
+        // dequeue the mem data response if outbound lce data cmd is accepted
+        mem_resp_yumi_o = lce_cmd_ready_i;
 
         // clear registers if transaction complete
-        lce_req_n = (mem_resp_v_i) ? '0 : lce_req_r;
+        lce_req_n = (lce_cmd_ready_i) ? '0 : lce_req_r;
       end
       default: begin
         uc_state_n = READY;

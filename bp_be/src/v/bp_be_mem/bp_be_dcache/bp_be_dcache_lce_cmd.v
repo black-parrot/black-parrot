@@ -59,6 +59,7 @@ module bp_be_dcache_lce_cmd
     , output logic lce_sync_done_o
     , output logic set_tag_received_o
     , output logic set_tag_wakeup_received_o
+    , output logic uncached_store_done_received_o
 
     // CCE_LCE_cmd
     , input [cce_lce_cmd_width_lp-1:0] lce_cmd_i
@@ -190,6 +191,7 @@ module bp_be_dcache_lce_cmd
 
     set_tag_received_o = 1'b0;
     set_tag_wakeup_received_o = 1'b0;
+    uncached_store_done_received_o = 1'b0;
 
     lce_cmd_yumi_lo = 1'b0;
 
@@ -339,6 +341,13 @@ module bp_be_dcache_lce_cmd
             lce_resp.addr = lce_cmd_li.addr;
             lce_resp_v_o = invalidated_tag_r | tag_mem_pkt_yumi_i;
             lce_cmd_yumi_lo = lce_resp_yumi_i;
+          end
+
+          //  <uncached store done>
+          //  Uncached store done from CCE - decrement flow counter
+          e_lce_cmd_uc_st_done: begin
+            lce_cmd_yumi_lo = lce_cmd_v_li;
+            uncached_store_done_received_o = lce_cmd_v_li;
           end
 
           // for other message types in this state, use default as defined at top.
