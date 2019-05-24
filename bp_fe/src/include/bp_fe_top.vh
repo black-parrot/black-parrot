@@ -40,7 +40,7 @@
     }  operands;                                                                                                \
   }  bp_fe_itlb_cmd_s;                                                                                          \
                                                                                                                 \
-   typedef struct packed                                                                                        \
+  typedef struct packed                                                                                        \
   {                                                                                                             \
     bp_fe_queue_type_e   msg_type;                                                                              \
     union packed                                                                                                \
@@ -48,7 +48,13 @@
       bp_fe_fetch_s      fetch;                                                                                 \
       bp_fe_exception_s  exception;                                                                             \
     }  msg;                                                                                                     \
-  }  bp_fe_itlb_queue_s;
+  }  bp_fe_itlb_queue_s;                                                                                        \
+                                                                                                                \
+  typedef struct packed{                                                                                        \
+   logic valid;                                                                                                 \
+   logic [15:0] instr;                                                                                          \
+   logic [rv64_eaddr_width_gp-1:0] address;                                                                     \
+ } bp_be_unaligned_instr_metadata;
 
 
 
@@ -166,6 +172,12 @@ typedef struct packed
 `define bp_fe_is_compressed  1
 `define bp_fe_not_compressed 0
 
+`define bp_be_instr_metadata_width(vaddr_width_mp)\
+ (bp_be_itag_width_gp                             \
+   + vaddr_width_mp                               \
+   + 1                                            \
+   + $bits(bp_fe_exception_code_e)                \
+   )
 
 `define bp_fe_pc_gen_queue_width(vaddr_width_mp,branch_metadata_fwd_width_mp) \
   (`bp_fe_queue_width(vaddr_width_mp,branch_metadata_fwd_width_mp)+`bp_fe_instr_scan_width)

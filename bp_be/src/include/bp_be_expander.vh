@@ -249,11 +249,5 @@ typedef struct packed{
     logic [`op_ris_width_p-1:0]     op;
 } format_u_s;
 
-typedef struct packed{
-  logic valid;
-  logic [15:0] instr;
-  logic [63:0] address;
-} unaligned_instr_metadata;
-
 `endif
 

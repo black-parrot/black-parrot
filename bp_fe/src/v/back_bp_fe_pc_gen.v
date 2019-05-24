@@ -28,6 +28,7 @@ module bp_fe_pc_gen
    , localparam bp_fe_pc_gen_itlb_width_lp=`bp_fe_pc_gen_itlb_width(eaddr_width_p)
    , localparam bp_fe_pc_gen_width_i_lp=`bp_fe_pc_gen_cmd_width(vaddr_width_p,branch_metadata_fwd_width_lp)
    , localparam bp_fe_pc_gen_width_o_lp=`bp_fe_pc_gen_queue_width(vaddr_width_p,branch_metadata_fwd_width_lp)
+   , localparam unaligned_instr_metadata_width_lp = `bp_be_unaligned_instr_metadata_width
    , parameter prediction_on_p=1
    , parameter branch_predictor_p="inv"
 
@@ -89,6 +90,7 @@ bp_fe_pc_gen_icache_s       pc_gen_icache;
 bp_fe_pc_gen_itlb_s         pc_gen_itlb;
 bp_fe_branch_metadata_fwd_s branch_metadata_fwd_o;
 bp_fe_icache_pc_gen_s       icache_pc_gen;
+bp_be_unaligned_instr_metadata  unaligned_instr, unaligned_instr_r;
    
 
    
@@ -142,23 +144,28 @@ bp_fe_branch_metadata_fwd_s fe_queue_branch_metadata, fe_queue_branch_metadata_r
 
 logic btb_pred_f1_r, btb_pred_f2_r;
 logic br_predict_taken_f1, br_predict_taken_f2;
-logic prev_jump, jump;
+logic prev_cycle_jump, jump;
         
-
-logic [1:0] RVC;
-logic [2:0] valid_branch_taken;
-bp_be_unaligned_instr_metadata  unaligned_instr, unaligned_instr_r;
+//zazad begins
+logic [1:0] instr_is_compressed;
+logic [2:0] taken;
+// save the unaligned part of the instruction to this ff
+//logic [15:0] unaligned_instr_d, unaligned_instr_q;
+// the last instruction was unaligned
+//logic unaligned_d, unaligned_q;
+// register to save the unaligned address
+//logic [eaddr_width_p-1:0] unaligned_address_d, unaligned_address_q;
 logic instruction_valid;
 logic [1:0][instr_width_p-1:0] instr;
 logic [1:0][eaddr_width_p-1:0] addr;
-logic [1:0] valid;
+logic [1:0]                 valid;
    
 // Logic for handling coming out of reset
 enum bit [0:0] {e_stall, e_run} state_n, state_r;
 logic ready;  
 logic [eaddr_width_p-1:0] pc_resume;
-logic jump_second_half,  jump_second_half_prev;   
-logic prev_predict_taken;   
+logic                  jump_second_half,  jump_second_half_prev;   
+logic               prev_predict_taken;   
    
 
 assign ready = pc_gen_fe_ready_i & pc_gen_icache_ready_i;   
@@ -198,30 +205,36 @@ always_ff @(posedge clk_i)
    
 for (genvar i = 0; i < 2; i ++) begin
    // LSB != 2'b11
-   assign RVC[i] = ~&icache_pc_gen.instr[i * 16 +: 2];
+   assign instr_is_compressed[i] = ~&icache_pc_gen.instr[i * 16 +: 2];
 end
    
-// Realignment for branch-prediction
-always_comb begin : realigner
+// FE realignment to do branch-prediction
+always_comb begin : re_align
    unaligned_instr.valid = unaligned_instr_r.valid;
    unaligned_instr.address = unaligned_instr_r.address;
    unaligned_instr.instr = unaligned_instr_r.instr;
    instruction_valid = icache_pc_gen_v_i;
+
+
+    // 2 16-bit instructions
    instr[0] = icache_pc_gen.instr;
    addr[0]  = icache_pc_gen.addr;
    valid[0] = 1;
+   
    instr[1] = '0;
    addr[1] = {icache_pc_gen.addr[63:2], 2'b10};
    valid[1] = 1;
   
    if (icache_pc_gen_v_i) begin
+      // last instruction was unaligned
       if (unaligned_instr_r.valid) begin
          instr[0] = {icache_pc_gen.instr[15:0], unaligned_instr_r.instr};
          addr[0]  = unaligned_instr_r.address;
-         unaligned_instr.address = {icache_pc_gen.addr[63:2], 2'b10};
-         unaligned_instr.instr = icache_pc_gen.instr[31:16]; 
 
-         if (RVC[1]) begin
+         unaligned_instr.address = {icache_pc_gen.addr[63:2], 2'b10};
+         unaligned_instr.instr = icache_pc_gen.instr[31:16]; // save the upper bits for next cycle
+
+         if (instr_is_compressed[1]) begin
             unaligned_instr.valid = 1'b0;
             instr[1] = {16'b0, icache_pc_gen.instr[31:16]};
             pc_gen_fetch.pc                  = icache_pc_gen.addr;
@@ -234,13 +247,12 @@ always_comb begin : realigner
               pc_gen_fetch.instr               = icache_pc_gen.instr;
            end
       
-      end else if (RVC[0]) begin // RVC
+      end else if (instr_is_compressed[0]) begin // RVC
          pc_gen_fetch.pc                  = icache_pc_gen.addr;
          pc_gen_fetch.instr               = icache_pc_gen.instr;
          if(icache_pc_gen.addr[1])
            valid[0]=0;
-         
-         if (RVC[1]) begin
+         if (instr_is_compressed[1]) begin
             instr[1] = {16'b0, icache_pc_gen.instr[31:16]};
          end else begin
             unaligned_instr.instr = icache_pc_gen.instr[31:16];
@@ -255,7 +267,7 @@ always_comb begin : realigner
         end 
    end 
 
-   if (icache_pc_gen_v_i && icache_pc_gen.addr[1] && !RVC[1]) begin
+   if (icache_pc_gen_v_i && icache_pc_gen.addr[1] && !instr_is_compressed[1]) begin
        instruction_valid = 1'b0;
        unaligned_instr.valid = 1'b1;
        unaligned_instr.address = {icache_pc_gen.addr[63:2], 2'b10};
@@ -263,6 +275,7 @@ always_comb begin : realigner
    end
 end      
  
+
    
 //connect pc_gen to the rest of the FE submodules as well as FE top module   
 assign pc_gen_icache_o = pc_gen_icache;
@@ -284,15 +297,15 @@ assign btb_r_v_i       = previous_pc_gen_icache_v;
 // there should be fixes to the pc signal sent out according to the valid/ready signal pairs
 always_comb 
   begin
-    pc_gen_queue.msg_type               = (misalignment) ?  e_fe_exception : e_fe_fetch;
-    pc_gen_exception.exception_code     = (misalignment) ? e_instr_addr_misaligned : e_illegal_instruction;
-    pc_gen_fetch.branch_metadata_fwd    = fe_queue_branch_metadata_r;
-    pc_gen_fetch.valid_branch_taken     = valid_branch_taken[2:1];
-    pc_gen_fetch.padding                = '0;
-    pc_gen_exception.padding            = '0;
-    pc_gen_queue.msg                    = (pc_gen_queue.msg_type == e_fe_fetch) ? pc_gen_fetch : pc_gen_exception;
-    pc_gen_icache.virt_addr             = pc_n;
-    pc_gen_itlb.virt_addr               = pc_n;
+    pc_gen_queue.msg_type            = (misalignment) ?  e_fe_exception : e_fe_fetch;
+    pc_gen_exception.exception_code  = (misalignment) ? e_instr_addr_misaligned : e_illegal_instruction;
+    pc_gen_fetch.branch_metadata_fwd = fe_queue_branch_metadata_r;
+    pc_gen_fetch.valid_branch_taken  = taken;
+    pc_gen_fetch.padding             = '0;
+    pc_gen_exception.padding         = '0;
+    pc_gen_queue.msg                 = (pc_gen_queue.msg_type == e_fe_fetch) ? pc_gen_fetch : pc_gen_exception;
+    pc_gen_icache.virt_addr          = pc_n;
+    pc_gen_itlb.virt_addr            = pc_n;
   end
    
 //valid-ready signals assignments
@@ -348,13 +361,13 @@ always_comb
     // if we need to redirect
     if (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) begin
         pc_n = fe_pc_gen_cmd.pc;
-        if (pc_n[1]) //next pc has to be +2 rather +4
+        if (pc_n[1]) //next pc has to be +2 rather than +4
           jump_second_half = 1;
     end
      else if (state_r == e_stall)
     begin
         pc_n = pc_resume;
-        if (pc_n[1]) //next pc has to be +2 rather +4
+        if (pc_n[1]) //next pc has to be +2 rather than +4
           jump_second_half = 1;
     end
     // if we've missed in the itlb
@@ -367,10 +380,10 @@ always_comb
     begin
         pc_n = pc_f2;
     end
-    else if (predict_taken && ~prev_jump)
+    else if (predict_taken && ~prev_cycle_jump)
     begin
         pc_n = br_target;
-        if (pc_n[1]) //next pc has to be +2 rather +4
+        if (pc_n[1]) //next pc has to be +2 rather than +4
           jump_second_half = 1;
     end
     else
@@ -398,9 +411,7 @@ begin
         begin
             pc_f2 <= pc_f1;
             pc_v_f2 <= pc_v_f1 & ~(fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i);
-
             pc_f1 <= pc_n;
-
             btb_pred_f1_r <= btb_br_tgt_v_lo;
             btb_pred_f2_r <= btb_pred_f1_r;
             br_predict_taken_f1 <= predict_taken;
@@ -425,6 +436,7 @@ bsg_dff_reset_en
    ,.data_o(fe_queue_branch_metadata_r)
    );
 
+
 assign fe_cmd_branch_metadata = fe_pc_gen_cmd.branch_metadata_fwd;
 bp_fe_btb
  #(.vaddr_width_p(vaddr_width_p)
@@ -446,6 +458,7 @@ bp_fe_btb
    );
 
 
+   
 for (genvar i = 0; i < 2; i++) begin
    instr_scan 
      #(.eaddr_width_p(eaddr_width_p)
@@ -456,13 +469,11 @@ for (genvar i = 0; i < 2; i++) begin
       ,.scan_o(scan_instr[i])
       );
 end
-
-
 logic predict_taken_temp;   
 always_comb begin: branch_target_handling
-   valid_branch_taken = '0; 
+   taken = '0; 
    for (int unsigned i = 0; i < 2; i++) begin
-      if (!valid_branch_taken[i]) begin
+      if (!taken[i]) begin
          is_rvi_br = icache_pc_gen_v_i & (scan_instr[i].instr_scan_class == e_rvi_branch);
          is_rvc_br = icache_pc_gen_v_i & (scan_instr[i].instr_scan_class == e_rvc_branch);
          is_rvi_jal = icache_pc_gen_v_i & (scan_instr[i].instr_scan_class == e_rvi_jal);
@@ -470,45 +481,66 @@ always_comb begin: branch_target_handling
          br_target = addr[i] + scan_instr[i].imm; 
          is_back_br = scan_instr[i].imm[63];
          predict_taken_temp = pc_v_f2 & ((is_rvi_br & is_back_br) | (is_rvi_jal)) | ((is_rvc_br & is_back_br) | (is_rvc_jal)) & ~btb_pred_f1_r & icache_pc_gen_v_i;
-         if(predict_taken_temp && ~(icache_pc_gen_v_i && br_predict_taken_f2 && (i==0) && (icache_pc_gen.addr[1] == '1))) begin
-            valid_branch_taken[i+1] = 1'b1;
+         if(predict_taken_temp && ~(icache_pc_gen_v_i && br_predict_taken_f2 && (i==0) && (icache_pc_gen.addr[1:0] == 2'b10))) begin
+            taken[i+1] = 1'b1;
             jump = 1'b1;
          end
          else
            jump = 0;
       end
-   end 
-end
+   end
+end 
 
-assign predict_taken = valid_branch_taken[2] | (valid_branch_taken[1] & valid[0]);
+   
+assign predict_taken = taken[2] | (taken[1] & valid[0]);
 always_ff @(posedge clk_i) begin
 
-    if (reset_i || (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) || btb_br_tgt_v_lo || predict_taken) begin
-       unaligned_instr_r.valid          <= 1'b0;
-       unaligned_instr_r.address  <= '0;
-       unaligned_instr_r.instr    <= '0;
-    end else if (~pc_gen_fe_v_o) begin
-       unaligned_instr_r.valid  <= unaligned_instr_r.valid ;
-       unaligned_instr_r.address  <= unaligned_instr_r.address;
-       unaligned_instr_r.instr    <= unaligned_instr_r.instr;
-        end else begin
-           unaligned_instr_r.valid           <= unaligned_instr.valid ;
-           unaligned_instr_r.address  <= unaligned_instr.address;
-           unaligned_instr_r.instr    <= unaligned_instr.instr;
-        end 
+ if (reset_i || (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) || btb_br_tgt_v_lo || predict_taken) begin
+    unaligned_instr_r.valid          <= 1'b0;
+
+    unaligned_instr_r.address  <= '0;
+
+    unaligned_instr_r.instr    <= '0;
+
+ end else if (~pc_gen_fe_v_o) begin
+    unaligned_instr_r.valid  <= unaligned_instr_r.valid ;
+
+    unaligned_instr_r.address  <= unaligned_instr_r.address;
+
+    unaligned_instr_r.instr    <= unaligned_instr_r.instr;
+
+       end else begin // if (~reset_i)
+          unaligned_instr_r.valid           <= unaligned_instr.valid ;
+
+          unaligned_instr_r.address  <= unaligned_instr.address;
+
+          unaligned_instr_r.instr    <= unaligned_instr.instr;
+
+             end // else: !if(~reset_i)
 
    if (reset_i || (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i)) begin
      prev_predict_taken <= 0;
      prev_br_target     <= '0;
      prev_pc_f2         <= 0;
-     prev_jump    <= 0;      
+     prev_cycle_jump    <= 0;      
    end else begin
      prev_predict_taken <= predict_taken;
      prev_br_target     <= br_target;
      prev_pc_f2         <= pc_f2;
-     prev_jump    <= jump; 
+     prev_cycle_jump    <= jump; 
    end
 end
 
+/*bsg_dff_reset_en
+ #(.width_p(unaligned_instr_metadata_width_lp)
+  ) unaligned_instr_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i || (fe_pc_gen_cmd.pc_redirect_valid && fe_pc_gen_v_i) || btb_br_tgt_v_lo || predict_taken)
+   ,.en_i(pc_gen_fe_v_o)
+
+   ,.data_i( unaligned_instr)
+   ,.data_o( unaligned_instr_r)
+   );
+  */ 
 endmodule
 

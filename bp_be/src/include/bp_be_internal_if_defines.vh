@@ -119,6 +119,20 @@
     logic                                   isfirstinstr;                                          \
     logic                                   hastwoinstrs;                                          \
   }  bp_be_calc_status_s;                                                                          \
+                                                                                                   \
+  typedef struct packed{                                                                           \
+    logic valid;                                                                                   \
+    logic [15:0] instr;                                                                            \
+    logic [rv64_eaddr_width_gp-1:0] address;                                                       \
+  } bp_be_unaligned_instr_metadata;
+
+
+`define bp_be_unaligned_instr_metadata_width          \
+  (rv64_eaddr_width_gp                                \
+   + 16                                               \
+   + 1                                                \
+  )  
+  
 
 /* Declare width macros so that clients can use structs in ports before struct declaration
  * Each of these macros needs to be kept in sync with the struct definition. The computation

@@ -3,43 +3,41 @@ module expander
   import bp_be_rv64_pkg::*;
   import bp_be_pkg::*;
  
-(    input logic clk_i
-    ,input logic reset_i
+(input logic clk_i
+ ,input logic reset_i
     
-    ,input  logic [31:0]        inst_inp
-    ,output logic [31:0]        inst_out
-   
+ ,input  logic [31:0] inst_inp
+ ,output logic [31:0] inst_out  
 );
    
 
 
-logic [32:0]                                                instr_c;
-logic [31:0]                                                instr_d;
-logic [31:0]                                                instr_d_jal;
-logic [31:0]                                                instr_d_j;
-   
-logic [2:0]                                                 s1_compressed_reg;
-logic [4:0]                                                 s1_decompressed_reg;
-logic [2:0]                                                 d_compressed_reg;
-logic [4:0]                                                 d_decompressed_reg;
-logic [2:0]                                                 s2_compressed_reg;
-logic [4:0]                                                 s2_decompressed_reg;
-   
-format_cr_s                                                 format_cr;
-format_ci_s                                                 format_ci;
-format_css_s                                                format_css;
-format_ciw_s                                                format_ciw;
-format_cl_s                                                 format_cl;
-format_cs_s                                                 format_cs;
-format_cb_s                                                 format_cb;
-format_cj_s                                                 format_cj;
+logic [32:0]  instr_c;
+logic [31:0]  instr_d;
 
-format_r_s                                                  format_r;
-format_i_s                                                  format_i;
-format_s_s                                                  format_s;
-format_j_s                                                  format_j;
-format_b_s                                                  format_b;
-format_u_s                                                  format_u;
+   
+logic [2:0]   s1_compressed_reg;
+logic [4:0]   s1_decompressed_reg;
+logic [2:0]   d_compressed_reg;
+logic [4:0]   d_decompressed_reg;
+logic [2:0]   s2_compressed_reg;
+logic [4:0]   s2_decompressed_reg;
+   
+format_cr_s   format_cr;
+format_ci_s   format_ci;
+format_css_s  format_css;
+format_ciw_s  format_ciw;
+format_cl_s   format_cl;
+format_cs_s   format_cs;
+format_cb_s   format_cb;
+format_cj_s   format_cj;
+
+format_r_s    format_r;
+format_i_s    format_i;
+format_s_s    format_s;
+format_j_s    format_j;
+format_b_s    format_b;
+format_u_s    format_u;
 
 assign instr_c = inst_inp;  
    
@@ -69,16 +67,8 @@ always_comb begin
          `C_J:
                   begin
                       format_cj          = instr_c;
-                      instr_d_j          = format_j;
-                      instr_d            = format_j;
-             
+                      instr_d            = format_j;             
                   end
-         /*`C_JAL:
-                  begin
-                      format_cj          = instr_c;
-                      instr_d_jal        = format_j;
-                      instr_d            = format_j;
-                  end */ //is an RV32C-only instruction  
          `C_JR,`C_JALR,`C_MV,`C_ADD :
                   begin
                      if      (instr_c[12] == 1'b0 && instr_c[11:7] != 5'd0 && instr_c[6:2] == 5'd0) //JR
@@ -404,37 +394,9 @@ always_comb begin
                       format_j.imm3       = format_cj.jump_target[10];
                       format_j.imm4       = {8{format_cj.jump_target[10]}};
                       format_j.imm1       = format_cj.jump_target[10];
-            /*
-                      format_j.imm2[0]    = format_cj.jump_target[6];
-                      format_j.imm2[1]    = format_cj.jump_target[10];
-                      format_j.imm2[9:2]  = 8'h00;
-                      format_j.imm3       = format_cj.jump_target[8];
-                      format_j.imm4[2:0]  = format_cj.jump_target[3:1];
-                      format_j.imm4[3]    = format_cj.jump_target[9];
-                      format_j.imm4[4]    = format_cj.jump_target[0];
-                      format_j.imm4[5]    = format_cj.jump_target[5];
-                      format_j.imm4[6]    = format_cj.jump_target[4];
-                      format_j.imm4[7]    = format_cj.jump_target[7];*/
                       format_j.rd         = `x0;
                       format_j.op         = 7'b1101111;
          end // case: `C_J
-         /*`C_JAL: begin
-                      format_j.imm1       = 1'b0;
-                      format_j.imm2[0]    = format_cj.jump_target[6];
-                      format_j.imm2[1]    = format_cj.jump_target[10];
-                      format_j.imm2[9:2]  = 8'h00;
-                      format_j.imm3       = format_cj.jump_target[8];
-                      format_j.imm4[2:0]  = format_cj.jump_target[3:1];
-                      format_j.imm4[3]    = format_cj.jump_target[9];
-                      format_j.imm4[4]    = format_cj.jump_target[0];
-                      format_j.imm4[5]    = format_cj.jump_target[5];
-                      format_j.imm4[6]    = format_cj.jump_target[4];
-                      format_j.imm4[7]    = format_cj.jump_target[7];
-                      format_j.rd         = `x1;
-                      format_j.op         = 7'b1101111;
-         end*/ // case: `C_JAL
-//         `C_JR, `C_JALR: begin
-
          `C_JR,`C_JALR,`C_MV,`C_ADD : begin
                       if      (instr_c[12] == 1'b0 && instr_c[11:7] != 5'd0 && instr_c[6:2] == 5'd0) //JR
                         begin
@@ -696,7 +658,6 @@ end // always_comb begin
 //endtask
 
 //decoding registers for CIW, CL, CS, and CB formats
-//change it to task
 always_comb begin
    case (s1_compressed_reg)
         3'b000:  s1_decompressed_reg = `x8;
