@@ -17,18 +17,15 @@ module testbench
    // Number of elements in the fake BlackParrot memory
    , parameter clock_period_in_ps_p = 1000
    , parameter prog_name_p = "prog.mem"
-   , parameter dram_cfg_p  = "DDR2_micron_16M_8b_x8_sg3E.ini"
-   , parameter dram_sys_cfg_p = "system.ini"
+   , parameter dram_cfg_p  = "dram_ch.ini"
+   , parameter dram_sys_cfg_p = "dram_sys.ini"
    , parameter dram_capacity_p = 16384
 
    , localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
 
    // Trace replay parameters
-   , parameter trace_p                     = "inv"
-   , parameter cce_trace_p                 = "inv"
-   , parameter trace_ring_width_p          = "inv"
-   , parameter trace_rom_addr_width_p      = "inv"
-   , localparam trace_rom_data_width_lp    = trace_ring_width_p + 4
+   , parameter trace_p                     = 0
+   , parameter cce_trace_p                 = 0
    )
   (input clk_i
    , input reset_i
@@ -48,12 +45,6 @@ logic [num_cce_p-1:0]                                  config_ready_li;
 
 logic [num_cce_p-1:0][cce_instr_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
 logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]          cce_inst_boot_rom_data;
-
-logic [num_core_p-1:0][trace_ring_width_p-1:0] tr_data_i;
-logic [num_core_p-1:0] tr_v_i, tr_ready_o;
-
-logic [num_core_p-1:0][trace_rom_addr_width_p-1:0]  tr_rom_addr_i;
-logic [num_core_p-1:0][trace_rom_data_width_lp-1:0] tr_rom_data_o;
 
 logic [num_core_p-1:0]                              cmt_rd_w_v;
 logic [num_core_p-1:0][rv64_reg_addr_width_gp-1:0]  cmt_rd_addr;

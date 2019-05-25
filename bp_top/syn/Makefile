@@ -3,12 +3,13 @@ TOP ?= $(shell git rev-parse --show-toplevel)
 
 include $(TOP)/Makefile.common
 
-SYN_PATH    := $(BP_TOP_DIR)/syn
-TB_PATH     := $(BP_TOP_DIR)/test/tb
-MEM_PATH    := $(BP_COMMON_DIR)/test/mem
-LOG_PATH    := $(BP_TOP_DIR)/syn/logs
-REPORT_PATH := $(BP_TOP_DIR)/syn/reports
-RUN_PATH    := $(BP_TOP_DIR)/syn/run
+SYN_PATH     := $(BP_TOP_DIR)/syn
+TB_PATH      := $(BP_TOP_DIR)/test/tb
+MEM_PATH     := $(BP_COMMON_DIR)/test/mem
+
+LOG_PATH     := $(BP_TOP_DIR)/syn/logs
+RESULTS_PATH := $(BP_TOP_DIR)/syn/results
+REPORT_PATH  := $(BP_TOP_DIR)/syn/reports
 
 # Default ROM to example
 TB          ?= bp_top_trace_demo
@@ -32,29 +33,12 @@ else ifeq ($(CFG), e_bp_oct_core_cfg)
   N_WG=8
 endif
 
-COH_PROTO ?= mesi
-ifeq ($(COH_PROTO), mesi)
-  CCE_ROM=$(BP_ME_DIR)/src/v/roms/mesi-tr/bp_cce_inst_rom_mesi-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.v
-else ifeq ($(COH_PROTO), msi)
-  CCE_ROM=$(BP_ME_DIR)/src/v/roms/msi-tr/bp_cce_inst_rom_msi-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.v
-else ifeq ($(COH_PROTO), ei)
-  CCE_ROM=$(BP_ME_DIR)/src/v/roms/ei-tr/bp_cce_inst_rom_ei-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.v
-endif
+COH_PROTO   ?= mesi
+CCE_ROM_PATH = $(BP_ME_DIR)/src/v/roms/$(COH_PROTO)-tr
+CCE_ROM      = bp_cce_inst_rom_$(COH_PROTO)-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.v
 
-ccerom.v:
-	@echo $(CCE_ROM)
-	@echo $(CCE_ROM) >> $(VCS_RUN_DIR)/flist.vcs || true
-
-ccerom.sc:
-	@echo $(CCE_ROM)
-	@echo $(CCE_ROM) >> $(VERILATOR_RUN_DIR)/flist.verilator || true
-
-
-lint.v: ccerom.v
-lint.sc: ccerom.sc
-
-build.v: ccerom.v
-build.sc: ccerom.sc
+DRAMSIM_CH_CFG  ?= DDR2_micron_16M_8b_x8_sg3E.ini
+DRAMSIM_SYS_CFG ?= system.ini
 
 .EXPORT_ALL_VARIABLES:
 

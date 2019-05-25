@@ -14,6 +14,7 @@ BP_DEMOS = \
   hello_world_atomic
 
 RV64_BENCHMARKS = \
+	dhrystone \
   median   \
   multiply \
   qsort    \

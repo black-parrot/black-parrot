@@ -24,6 +24,7 @@ func-regress-verilator-job:
     - be_dev
     - me_dev
     - top_dev
+    - common_dev
     - sw_dev
 
   before_script:
