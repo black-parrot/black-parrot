@@ -4,9 +4,6 @@ external/*
 *.pyc
 *.log
 *.s
-setup_env.sh
-run_dc
-*/syn/coverage
 *.bin
 *.hex
 *.mem
@@ -15,6 +12,8 @@ run_dc
 *.dump
 *.spike
 *.pl
-rv64ui-p-simple.*
 *_gendata.pl
+results/
+reports/
+logs/
 

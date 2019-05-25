@@ -127,7 +127,6 @@ $BP_FE_DIR/src/v/bp_fe_top.v
 // You must change it for testbenches with different numbers of lce
 // In future, we want to load the internal ram rather than rely on the rom
 // directly
-$BP_ME_DIR/src/v/roms/mesi-tr/bp_cce_inst_rom_mesi-tr_lce2_wg64_assoc8.v
 // CCE
 $BP_ME_DIR/src/v/cce/bp_cce.v
 $BP_ME_DIR/src/v/cce/bp_cce_alu.v

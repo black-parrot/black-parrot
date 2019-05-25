@@ -7,6 +7,7 @@ SYN_PATH    := $(BP_ME_DIR)/syn
 TB_PATH     := $(BP_ME_DIR)/test/tb
 LOG_PATH    := $(BP_ME_DIR)/syn/logs
 REPORT_PATH := $(BP_ME_DIR)/syn/reports
+RESULTS_PATH := $(BP_ME_DIR)/syn/results
 
 # Default ROM to example
 TB          ?= bp_me_trace_demo
@@ -38,7 +39,7 @@ lint.me:
 	#$(MAKE) lint.v || true
 	#$(MAKE) lint.sc || true
 
-regress.me.sc:
+regress.me.sc: dirs.sc
 	$(MAKE) build.sc TB=bp_cce_alu
 	$(MAKE) run.sc TB=bp_cce_alu
 	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_alu_rv64ui-p-simple_sim.log \
@@ -60,7 +61,7 @@ regress.me.sc:
 	&& echo "bp_cce_test: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_cce_test: FAIL" >> $(LOG_PATH)/me_regress.log
 
-regress.me.v: deps.v
+regress.me.v: dirs.v
 	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_mock_lce \
 	| tee -i $(LOG_PATH)/vcs/bp_me_mock_lce.log
 	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_mock_lce.log \
