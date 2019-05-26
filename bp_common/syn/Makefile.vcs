@@ -94,7 +94,7 @@ sim.v: dirs.v
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "PASS" -A 8 $(SIM_LOG) > $(SIM_REPORT)
 
-regress.v: build.v $(RV64_REGRESSION_V) cov.v lint.v
+regress.v: build.v $(RV64_REGRESSION_V) 
 $(RV64_REGRESSION_V):
 	$(MAKE) sim.v PROG=$(basename $@)
 
