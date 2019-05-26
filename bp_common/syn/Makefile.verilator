@@ -107,7 +107,7 @@ sim.sc: dirs.sc
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "PASS" -A 8 $(SIM_LOG) > $(SIM_REPORT)
 
-regress.sc: build.sc $(RV64_REGRESSION_SC) cov.sc lint.sc
+regress.sc: build.sc $(RV64_REGRESSION_SC) 
 $(RV64_REGRESSION_SC):
 	$(MAKE) sim.sc PROG=$(basename $@)
 
