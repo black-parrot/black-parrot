@@ -43,7 +43,7 @@ func-regress-verilator-job:
   script:
     - echo "Running Verilator regression"
     - cd bp_top/syn
-    - make regress.sc
+    - make regress.sc DUMP=0 COV=0
     - grep -cr "FAIL" reports/ && exit 1
     - exit 0
 
