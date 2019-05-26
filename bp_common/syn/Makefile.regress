@@ -85,7 +85,6 @@ RV64_V_ISA_TESTS := \
   rv64ui-v-blt     \
   rv64ui-v-bltu    \
   rv64ui-v-bne     \
-  rv64ui-v-j       \
   rv64ui-v-jal     \
   rv64ui-v-jalr    \
   rv64ui-v-lb      \

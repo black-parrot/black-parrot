@@ -15,7 +15,6 @@ int sc_main(int argc, char **argv)
 
   Vtestbench *tb = new Vtestbench("testbench");
 
-  svSetScope(svGetScopeFromName("testbench.testbench.rof1[0].mem"));
   // Use me to find the correct scope of your DPI functions
   //Verilated::scopesDump();
 
@@ -29,7 +28,6 @@ int sc_main(int argc, char **argv)
   VerilatedVcdSc* wf = new VerilatedVcdSc;
   tb->trace(wf, 10);
   wf->open("vcdplus.vpd");
-  std::cout << "TESTTESTTEST" << std::endl;
 #endif
 
   reset = 1;
