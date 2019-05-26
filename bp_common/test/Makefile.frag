@@ -13,13 +13,18 @@ BP_DEMOS = \
   hello_world_atomic
 
 RV64_BENCHMARKS = \
-	dhrystone \
   median   \
   multiply \
   towers   \
   vvadd    \
   qsort    \
-  rsort
+  rsort    \
+  dhrystone #\
+  mm \
+  spmv \
+  mt-vvadd \
+  mt-matmul \
+  pmp 
 
 RV64_P_TESTS = \
   rv64ui-p-add     \
@@ -146,4 +151,86 @@ RV64_V_TESTS = \
   rv64ui-v-sw      \
   rv64ui-v-xor     \
   rv64ui-v-xori
-  
+
+
+#Removed from beebs testsuite - 
+#ctl, matmul, sglib-arraysort, trio due to beebs configure -> makefile -> make bug (no exe made)
+#crc32, ctl-string, dtoa, rijndael fail in spike 
+BEEBS_TESTS = \
+  aha-compress \
+  aha-mont64 \
+  bs \
+  bubblesort \
+  cnt \
+  compress \
+  cover \
+  crc \
+  ctl-stack \
+  ctl-vector \
+  cubic \
+  dijkstra \
+  duff \
+  edn \
+  expint \
+  fac \
+  fasta \
+  fdct \
+  fibcall \
+  fir \
+  frac \
+  huffbench \
+  insertsort \
+  janne_complex \
+  jfdctint \
+  lcdnum \
+  levenshtein \
+  ludcmp \
+  matmult-float \
+  matmult-int \
+  mergesort \
+  miniz \
+  minver \
+  nbody \
+  ndes \
+  nettle-aes \
+  nettle-arcfour \
+  nettle-cast128 \
+  nettle-des \
+  nettle-md5 \
+  nettle-sha256 \
+  newlib-exp \
+  newlib-log \
+  newlib-mod \
+  newlib-sqrt \
+  ns \
+  nsichneu \
+  picojpeg \
+  prime \
+  qrduino \
+  qsort \
+  qurt \
+  recursion \
+  select \
+  sglib-arraybinsearch \
+  sglib-arrayheapsort \
+  sglib-arrayquicksort \
+  sglib-dllist \
+  sglib-hashtable \
+  sglib-listinsertsort \
+  sglib-listsort \
+  sglib-queue \
+  sglib-rbtree \
+  slre \
+  sqrt \
+  st \
+  statemate \
+  stb_perlin \
+  stringsearch1 \
+  strstr \
+  tarai \
+  template \
+  trio-snprintf \
+  trio-sscanf \
+  ud \
+  whetstone \
+  wikisort

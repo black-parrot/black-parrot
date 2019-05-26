@@ -12,12 +12,16 @@ RISCV_SIM      = spike
 RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -D -M no-aliases,numeric
 RISCV_OBJCOPY  = riscv64-unknown-elf-objcopy -O verilog
 
-include Makefile.frag
+include $(TEST_DIR)/Makefile.frag
 
-all: riscv demos coremark
+all: riscv demos coremark littlefs_test beebs
 riscv: riscv_mem riscv_spike
 coremark: coremark_mem coremark_spike
-opensbi: opensbi_mem 
+beebs: beebs_mem beebs_spike
+littlefs_test: littlefs_test_mem littlefs_test_spike
+# OpenSBI requires hardfloat and does not support softfloat libraries, so the compilation will fail
+#opensbi: opensbi_mem
+bbl: bbl_mem
 demos: demos_mem 
 
 riscv_elf: 
@@ -38,9 +42,33 @@ coremark_elf:
 	find $(TEST_DIR)/src/coremark/barebones/ -type f -name "*dump" -execdir mv {} $(MEM_DIR)/{} \;
 
 demos_elf:
-	make -C src/demos
+	$(MAKE) -C $(TEST_DIR)/src/demos
 	find $(TEST_DIR)/src/demos/ -executable -type f -execdir mv {} $(MEM_DIR)/{} \;
 	find $(TEST_DIR)/src/demos/ -name "*.dump" -execdir mv {} $(MEM_DIR)/{} \;
+
+opensbi_elf:
+	$(MAKE) -C $(TEST_DIR)/src/opensbi PLATFORM=blackparrot CROSS_COMPILE=riscv64-unknown-elf- PLATFORM_RISCV_ISA=rv64imaf
+	@cp $(TEST_DIR)/src/opensbi/build/platform/blackparrot/firmware/fw_jump.elf $(MEM_DIR)/opensbi.riscv
+	$(RISCV_OBJDUMP) $(MEM_DIR)/opensbi.riscv > $(MEM_DIR)/opensbi.riscv.dump
+
+bbl_elf:
+	cd $(TEST_DIR)/src/riscv-pk/ && mkdir -p build && cd build \
+	&& ../configure --host=riscv64-unknown-elf --with-arch=rv64ia --with-abi=lp64 --includedir=$(TEST_DIR)/src/riscv-pk/machine/
+	$(MAKE) -C $(TEST_DIR)/src/riscv-pk/build
+	@cp $(TEST_DIR)/src/riscv-pk/build/bbl $(MEM_DIR)/bbl.riscv
+	$(RISCV_OBJDUMP) $(MEM_DIR)/bbl.riscv > $(MEM_DIR)/bbl.riscv.dump
+
+littlefs_test_elf:
+	$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test/fhello/
+	find $(TEST_DIR)/src/littlefs_newlib_test/fhello/ -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
+	find $(TEST_DIR)/src/littlefs_newlib_test/fhello/ -type f -name "*dump" -execdir mv {} $(MEM_DIR)/{} \;
+
+#Change the number of iterations per test by changing BOARD_REPEAT_FACTOR in beebs/support/support.h
+beebs_elf:
+	cd $(TEST_DIR)/src/beebs/ && ./configure --host=riscv64 --with-chip=black-parrot
+	$(MAKE) -C $(TEST_DIR)/src/beebs/
+	find $(TEST_DIR)/src/beebs/src/ -type f -executable -execdir mv {} $(MEM_DIR)/{}.riscv \;
+
 
 riscv_mem: riscv_elf
 riscv_mem: $(foreach x, $(RV64_P_TESTS) $(RV64_V_TESTS) $(RV64_BENCHMARKS), $(x).mem)
@@ -50,6 +78,14 @@ demos_mem: demos_elf
 demos_mem: $(foreach x, $(BP_DEMOS), $(x).mem)
 # Need to kill spike at the end of demos for this to work
 #demos_spike: $(foreach x, $(BP_DEMOS), $(x).spike)
+
+coremark_mem: coremark_elf
+coremark_mem: coremark.mem
+coremark_spike: coremark.spike
+
+littlefs_test_mem: littlefs_test_elf
+littlefs_test_mem: littlefs_test.mem
+littlefs_test_spike: littlefs_test.spike
 
 opensbi_mem: opensbi_elf
 opensbi_mem: opensbi.mem
@@ -61,9 +97,9 @@ bbl_mem: bbl.mem
 # Need to kill spike at the end of bbl payload for this to work
 #bbl_spike: bbl.spike
 
-coremark_mem: coremark_elf
-coremark_mem: coremark.mem
-coremark_spike: coremark.spike
+beebs_mem: beebs_elf
+beebs_mem: $(foreach x, $(BEEBS_TESTS), $(x).mem)
+beebs_spike: $(foreach x, $(BEEBS_TESTS), $(x).spike)
 
 %.mem: 
 	$(RISCV_OBJCOPY) $(MEM_DIR)/$*.riscv $(MEM_DIR)/$@
@@ -72,9 +108,12 @@ coremark_spike: coremark.spike
 	$(RISCV_SIM) -l $(MEM_DIR)/$*.riscv 2> $(MEM_DIR)/$@
 
 clean:
-	$(MAKE) -C src/riscv-tests clean 
-	$(MAKE) -C src/demos clean
-	$(MAKE) -C src/coremark/barebones clean
+	$(MAKE) -C $(TEST_DIR)/src/riscv-tests/benchmarks clean 
+	$(MAKE) -C $(TEST_DIR)/src/demos clean
+	$(MAKE) -C $(TEST_DIR)/src/opensbi clean
+	$(MAKE) -C $(TEST_DIR)/src/coremark/barebones clean
+	$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test/fhello clean
+	$(MAKE) -C src/beebs clean
 	rm -f $(MEM_DIR)/*
 
 ####### These targets are not maintained at the moment
