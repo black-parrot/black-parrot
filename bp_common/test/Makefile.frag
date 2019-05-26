@@ -1,6 +1,5 @@
 BP_DEMOS = \
   hello_world        	\
-  atomic_queue_demo  	\
   basic_demo         	\
   atomic_queue_demo_2	\
   atomic_queue_demo_4	\
