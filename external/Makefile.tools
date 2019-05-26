@@ -34,10 +34,17 @@ axe:
 	./make.sh \
 	&& cp axe $(BIN_DIR) && ./clean.sh
 
+#Added git instructions swap out the default newlib for the BP newlib from BSG
+#A workaround to get our newlib in the tool chain until we modify our own barebones toolchain
 gnu:
 	cd $(GNU_DIR); \
+	rm -rf riscv-newlib; \
+	git clone https://bitbucket.org/taylor-bsg/bsg_hammerblade_newlib.git ./riscv-newlib; \
+	cd ./riscv-newlib; \
+	git checkout bsg_manycore_newlib; \
+	cd ..; \
 	./configure --prefix=$(BP_EXTERNAL_DIR) --with-arch=rv64ia --with-abi=lp64 --with-cmodel=medany \
-	&& make && make install && make clean
+	&& make && make install
 
 fesvr:
 	cd $(FESVR_DIR); \
