@@ -41,11 +41,11 @@
  */
 
 module bp_be_pipe_mem 
+ import bp_common_aviary_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
- #(parameter vaddr_width_p               = "inv"
-   , parameter lce_sets_p                = "inv"
-   , parameter cce_block_size_in_bytes_p = "inv"
+ #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+   `declare_bp_proc_params(cfg_p)
    // Generated parameters
    , localparam decode_width_lp        = `bp_be_decode_width
    , localparam exception_width_lp     = `bp_be_exception_width
@@ -89,7 +89,7 @@ module bp_be_pipe_mem
    );
 
 // Declare parameterizable structs
-`declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_size_in_bytes_p)
+`declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
 
 // Cast input and output ports 
 bp_be_decode_s    decode;

@@ -1,10 +1,9 @@
 module bp_be_csr
+  import bp_common_aviary_pkg::*;
   import bp_be_rv64_pkg::*;
   import bp_be_pkg::*;
-  #(parameter num_core_p = "inv"
-    , parameter vaddr_width_p = "inv"
-    , parameter lce_sets_p = "inv"
-    , parameter cce_block_size_in_bytes_p = "inv"
+  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+    `declare_bp_proc_params(cfg_p)
 
     , localparam fu_op_width_lp = `bp_be_fu_op_width
     , localparam csr_cmd_width_lp = `bp_be_csr_cmd_width
@@ -15,8 +14,6 @@ module bp_be_csr
     , localparam satp_width_lp  = `bp_satp_width
 
     , localparam hartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
-    , localparam instr_width_lp = rv64_instr_width_gp
-    , localparam dword_width_p = rv64_reg_data_width_gp
     )
    (input                            clk_i
     , input                          reset_i
@@ -36,7 +33,7 @@ module bp_be_csr
 
     , input [vaddr_width_p-1:0]      exception_pc_i
     , input [vaddr_width_p-1:0]      exception_vaddr_i
-    , input [instr_width_lp-1:0]     exception_instr_i
+    , input [instr_width_p-1:0]      exception_instr_i
     , input                          exception_ecode_v_i
     , input [ecode_dec_width_lp-1:0] exception_ecode_dec_i
 
@@ -55,7 +52,7 @@ module bp_be_csr
     );
 
 // Declare parameterizable structs
-`declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_size_in_bytes_p)
+`declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
 
 // Casting input and output ports
 bp_be_csr_cmd_s csr_cmd;
@@ -294,7 +291,12 @@ always_comb
 
           ret_v_o         = 1'b1;
         end
-      else if(csr_cmd.csr_op != e_csr_nop)
+      else if (csr_cmd.csr_op inside {e_ebreak, e_ecall, e_wfi})
+        begin
+          // TODO: NOPs for now. EBREAK and WFI are likely to remain a NOP for a while, whereas
+          //   ECALL should be implemented
+        end
+      else 
         begin
           unique casez (csr_cmd.csr_addr)
             `RV64_CSR_ADDR_SATP: 

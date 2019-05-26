@@ -169,10 +169,7 @@ for(genvar i = 0; i < num_core_p; i++)
 
     bp_tile
      #(.cfg_p(cfg_p)
-<<<<<<< HEAD
        ,.calc_trace_p(calc_trace_p)
-=======
->>>>>>> Adding core-level fence support with credit counting
        ,.cce_trace_p(cce_trace_p)
        )
      tile

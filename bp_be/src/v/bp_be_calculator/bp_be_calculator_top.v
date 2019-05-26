@@ -414,10 +414,7 @@ bp_be_pipe_mul
 
 // Memory pipe: 3 cycle latency
 bp_be_pipe_mem
- #(.vaddr_width_p(vaddr_width_p)
-   ,.lce_sets_p(lce_sets_p)
-   ,.cce_block_size_in_bytes_p(cce_block_width_p / 8)
-   )
+ #(.cfg_p(cfg_p))
  pipe_mem
   (.clk_i(clk_i)
    ,.reset_i(reset_i)

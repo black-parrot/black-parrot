@@ -172,13 +172,9 @@ module bp_core
      );
 
   bp_be_top 
-<<<<<<< HEAD
    #(.cfg_p(cfg_p)
      ,.calc_trace_p(calc_trace_p)
      )
-=======
-   #(.cfg_p(cfg_p))
->>>>>>> Adding core-level fence support with credit counting
    be
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

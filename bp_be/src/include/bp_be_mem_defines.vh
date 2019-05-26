@@ -37,6 +37,9 @@
     bp_be_mmu_vaddr_s                  vaddr;                                                      \
   }  bp_be_mem_resp_s;                                                                             \
                                                                                                    \
+
+
+`define declare_bp_be_tlb_entry_s(ppn_width_mp) \
   typedef struct packed                                                                            \
   {                                                                                                \
     logic [ppn_width_mp-1:0]   ptag;                                                               \
@@ -45,7 +48,8 @@
     logic                      x;                                                                  \
     logic                      w;                                                                  \
     logic                      r;                                                                  \
-  } bp_be_tlb_entry_s;
+  } bp_be_tlb_entry_s;                                                                             \
+                                                                                                   \
 
 `define bp_be_tlb_entry_width(ppn_width_mp)     \
   (ppn_width_mp + 5)                            

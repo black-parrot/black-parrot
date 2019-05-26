@@ -1,11 +1,13 @@
 module bp_fe_itlb
- #(parameter vaddr_width_p = "inv"
-   , parameter vtag_width_p  = "inv"
-   , parameter ptag_width_p = "inv"
+ import bp_be_pkg::*;
+ import bp_be_rv64_pkg::*;
+ import bp_common_aviary_pkg::*;
+ #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+   `declare_bp_proc_params(cfg_p)
    , parameter els_p = "inv"
    , localparam lg_els_lp = `BSG_SAFE_CLOG2(els_p)
    , localparam entry_width_lp = `bp_be_tlb_entry_width(ptag_width_p)
-   , parameter ppn_start_bit_p ="inv"
+   , parameter ptag_start_bit_p ="inv"
    )
   (input                               clk_i
    , input                             reset_i
@@ -29,9 +31,7 @@ module bp_fe_itlb
    , output [vaddr_width_p-1:0]        miss_vaddr
    );
 
-
-`declare_bp_be_tlb_entry_s(ptag_width_p);
-
+`declare_bp_be_tlb_entry_s(ptag_width_p)
 bp_be_tlb_entry_s r_entry, w_entry, r_entry_passthrough, ram_r_data;
 
 logic [ptag_width_p-1:0] ppn;
@@ -43,7 +43,7 @@ assign miss_vaddr = itlb_miss_vaddr;
 always @(posedge clk_i)
   begin
     // TODO: This is a hack to fix.  Will get updated with real tlb
-    ppn <= ptag_width_p'(signed'(vaddr_i[ppn_start_bit_p+:vtag_width_p]));
+    ppn <= ptag_width_p'(signed'(vaddr_i[ptag_start_bit_p+:vtag_width_p]));
     itlb_miss_vaddr <= vaddr_i;
   end
 

@@ -44,11 +44,9 @@ module bp_be_mem_top
    , localparam csr_cmd_width_lp  = `bp_be_csr_cmd_width
    , localparam tlb_fill_cmd_width_lp  = `bp_be_tlb_fill_cmd_width(vaddr_width_p)
    , localparam mem_resp_width_lp = `bp_be_mem_resp_width(vaddr_width_p)
-   , localparam vtag_width_lp     = (vaddr_width_p-bp_page_offset_width_gp)
-   , localparam ptag_width_lp     = (paddr_width_p-bp_page_offset_width_gp)
    
    // VM
-   , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_lp)
+   , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_p)
 
    // CSRs
    , localparam mepc_width_lp  = `bp_mepc_width
@@ -135,7 +133,8 @@ module bp_be_mem_top
                                    );
 
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
-`declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
+`declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p/8)
+`declare_bp_be_tlb_entry_s(ptag_width_p)
 `declare_bp_be_dcache_pkt_s(page_offset_width_lp, dword_width_p);
 
 // Cast input and output ports 
@@ -155,26 +154,27 @@ assign mem_resp_o = mem_resp;
 
 // Suppress unused signal warnings
 wire unused0 = mem_resp_ready_i;
+assign tlb_fill_cmd_ready_o = 1'b1;
 
 /* Internal connections */
 /* TLB ports */
-logic                     dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_r_v;
-logic [vtag_width_lp-1:0] dtlb_r_vtag, dtlb_w_vtag, dtlb_miss_vtag;
-bp_be_tlb_entry_s         dtlb_r_entry, dtlb_w_entry;
+logic                    dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_r_v;
+logic [vtag_width_p-1:0] dtlb_r_vtag, dtlb_w_vtag, dtlb_miss_vtag;
+bp_be_tlb_entry_s        dtlb_r_entry, dtlb_w_entry;
 
 /* PTW ports */
-logic [ptag_width_lp-1:0] ptw_dcache_ptag;
+logic [ptag_width_p-1:0]  ptw_dcache_ptag;
 logic                     ptw_dcache_v, ptw_busy, ptw_store_not_load;
 bp_be_dcache_pkt_s        ptw_dcache_pkt; 
 logic                     ptw_tlb_miss_v, ptw_tlb_w_v;
-logic [vtag_width_lp-1:0] ptw_tlb_w_vtag, ptw_tlb_miss_vtag;
+logic [vtag_width_p-1:0]  ptw_tlb_w_vtag, ptw_tlb_miss_vtag;
 bp_be_tlb_entry_s         ptw_tlb_w_entry;
 logic                     ptw_page_fault_v, ptw_instr_page_fault_v, ptw_load_page_fault_v, ptw_store_page_fault_v;
 
 /* D-Cache ports */
 bp_be_dcache_pkt_s        dcache_pkt;
 logic [dword_width_p-1:0] dcache_data;
-logic [ptag_width_lp-1:0] dcache_ptag;
+logic [ptag_width_p-1:0]  dcache_ptag;
 logic                     dcache_ready, dcache_miss_v, dcache_v, dcache_pkt_v;
 logic                     dcache_tlb_miss, dcache_poison;
 logic                     dcache_uncached;
@@ -216,11 +216,7 @@ always_ff @(posedge clk_i) begin
 end
 
 bp_be_csr
- #(.vaddr_width_p(vaddr_width_p)
-   ,.num_core_p(num_core_p)
-   ,.lce_sets_p(lce_sets_p)
-   ,.cce_block_size_in_bytes_p(cce_block_width_p/8)
-   )
+ #(.cfg_p(cfg_p))
   csr
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -257,8 +253,7 @@ bp_be_csr
    );
 
 bp_be_dtlb
-  #(.vtag_width_p(vtag_width_lp)
-    ,.ptag_width_p(ptag_width_lp)
+  #(.cfg_p(cfg_p)
     ,.els_p(16)
   )
   dtlb
@@ -282,11 +277,10 @@ bp_be_dtlb
   );
   
 bp_be_ptw
-  #(.cfg_p(cfg_p)
-    ,.pte_width_p(bp_sv39_pte_width_gp)
+  #(.pte_width_p(bp_sv39_pte_width_gp)
     ,.vaddr_width_p(vaddr_width_p)
     ,.paddr_width_p(paddr_width_p)
-    ,.page_offset_width_p(page_offset_width_lp)
+    ,.page_offset_width_p(page_offset_width_p)
     ,.page_table_depth_p(bp_sv39_page_table_depth_gp)
   )
   ptw
@@ -394,7 +388,6 @@ end
 // Decode cmd type
 assign itlb_fill_cmd_v = tlb_fill_cmd_v_i & (tlb_fill_cmd.fill_op == e_ptw_i);
 assign dtlb_fill_cmd_v = tlb_fill_cmd_v_i & (tlb_fill_cmd.fill_op == e_ptw_l | tlb_fill_cmd.fill_op == e_ptw_s);
-assign nop_cmd_v       = mmu_cmd_v_i & (mmu_cmd.mem_op == e_mmu_nop);
 assign dcache_cmd_v    = mmu_cmd_v_i & ~(itlb_fill_cmd_v | dtlb_fill_cmd_v);
 
 // D-Cache connections
@@ -406,7 +399,7 @@ assign dcache_pkt_v    = (ptw_busy)? ptw_dcache_v : dcache_cmd_v;
 always_comb 
   begin
     // Currently uncached I/O  is determined by high bit of translated address
-    dcache_uncached = dcache_ptag[ptag_width_lp-1];
+    dcache_uncached = dcache_ptag[ptag_width_p-1];
 
     if(ptw_busy) begin
       dcache_pkt = ptw_dcache_pkt;

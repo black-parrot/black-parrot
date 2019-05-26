@@ -1,9 +1,11 @@
 
 module bp_be_dtlb
   import bp_common_pkg::*;
+  import bp_common_aviary_pkg::*;
   import bp_be_pkg::*;
- #(parameter vtag_width_p  = "inv"
-   ,parameter ptag_width_p = "inv"
+  import bp_be_rv64_pkg::*;
+ #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+   `declare_bp_proc_params(cfg_p)
    ,parameter els_p         = "inv"
    
    ,localparam lg_els_lp      = `BSG_SAFE_CLOG2(els_p)
@@ -30,8 +32,10 @@ module bp_be_dtlb
   , output logic [vtag_width_p-1:0]   miss_vtag_o
  );
   
-`declare_bp_be_tlb_entry_s(ptag_width_p);
+// Declare parameterizable structs
+`declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p/8)
 
+`declare_bp_be_tlb_entry_s(ptag_width_p)
 bp_be_tlb_entry_s r_entry, w_entry, ram_r_data;
 
 assign r_entry_o = r_entry;

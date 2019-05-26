@@ -223,17 +223,9 @@ always_comb
         begin
           decode.pipe_comp_v = 1'b1;
           unique casez (instr)
-            `RV64_FENCE   : 
-              begin
-                decode.fence_v = 1'b1;
-                decode.fu_op = e_mmu_nop; // Implemented as NOP
-              end
-            `RV64_FENCE_I : 
-              begin
-                decode.fencei_v = 1'b1;
-                decode.fu_op = e_mmu_nop; 
-              end
-            default       : illegal_instr = 1'b1;
+            `RV64_FENCE   : decode.fence_v = 1'b1;
+            `RV64_FENCE_I : decode.fencei_v = 1'b1;
+            default : illegal_instr = 1'b1;
           endcase
         end
       `RV64_SYSTEM_OP : 
@@ -241,12 +233,12 @@ always_comb
           decode.pipe_mem_v = 1'b1;
           decode.csr_instr_v = 1'b1;
           unique casez (instr)
-            `RV64_ECALL      : decode.fu_op = e_csr_nop; // Implemented as NOP
-            `RV64_EBREAK     : decode.fu_op = e_csr_nop; // Implemented as NOP
+            `RV64_ECALL      : decode.fu_op = e_ecall;
+            `RV64_EBREAK     : decode.fu_op = e_ebreak;
             `RV64_MRET       : decode.fu_op = e_mret;
             `RV64_SRET       : decode.fu_op = e_sret;
             `RV64_URET       : decode.fu_op = e_uret;
-            `RV64_WFI        : decode.fu_op = e_csr_nop; // Implemented as NOP
+            `RV64_WFI        : decode.fu_op = e_wfi;
             `RV64_SFENCE_VMA : decode.fu_op = e_sfence_vma;
             default: 
               begin
@@ -269,6 +261,8 @@ always_comb
           decode.irf_w_v    = 1'b1;
           decode.dcache_r_v = 1'b1;
           decode.offset_sel = e_offset_is_zero;
+          // Note: could do a more efficent decoding here by having atomic be a flag
+          //   And having the op simply taken from funct3
           unique casez (instr)
             `RV64_LRW: decode.fu_op = e_lrw;
             `RV64_SCW: decode.fu_op = e_scw;

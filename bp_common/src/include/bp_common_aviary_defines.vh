@@ -97,8 +97,8 @@ typedef struct packed
   , localparam reg_addr_width_p    = proc_param_lp.reg_addr_width                                  \
   , localparam page_offset_width_p = proc_param_lp.page_offset_width                               \
                                                                                                    \
-  , localparam vpn_width_p         = proc_param_lp.vaddr_width - proc_param_lp.page_offset_width   \
-  , localparam ppn_width_p         = proc_param_lp.paddr_width - proc_param_lp.page_offset_width
+  , localparam vtag_width_p        = proc_param_lp.vaddr_width - proc_param_lp.page_offset_width   \
+  , localparam ptag_width_p        = proc_param_lp.paddr_width - proc_param_lp.page_offset_width
 
 `endif
 
