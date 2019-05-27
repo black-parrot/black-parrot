@@ -129,8 +129,9 @@ module bp_mem_wormhole_dramsim2
   assign wr_addr = data_i_cast_r.addr;
         
 
-  typedef enum logic [2:0] {
-     READY
+  typedef enum logic [3:0] {
+     RESET
+    ,READY
     ,LOAD
     ,POST_LOAD
     ,PRE_STORE
@@ -138,6 +139,7 @@ module bp_mem_wormhole_dramsim2
     ,POST_STORE
     ,PRE_LOAD_RESP
     ,LOAD_RESP
+    ,STORE_ACK
   } mem_state_e;
 
   mem_state_e state_r, state_n;
@@ -145,14 +147,14 @@ module bp_mem_wormhole_dramsim2
   logic [word_select_bits_lp-1:0] word_sel_r, word_sel_n;
   
   
-  assign data_o = (state_r == PRE_LOAD_RESP)? data_o_cast : 
-        data_o_r[(word_sel_r*lce_req_data_width_p)+:lce_req_data_width_p];
+  assign data_o = (state_r == LOAD_RESP)? 
+        data_o_r[(word_sel_r*lce_req_data_width_p)+:lce_req_data_width_p] : data_o_cast;
   
   
   always @(posedge clk_i) begin
   
     if (reset_i) begin
-        state_r <= READY;
+        state_r <= RESET;
         counter_r <= 0;
         word_sel_r <= 0;
         data_i_cast_r <= 0;
@@ -186,22 +188,23 @@ module bp_mem_wormhole_dramsim2
     data_o_cast.dummy = data_i_cast_r.dummy;
     data_o_cast.src_x_cord = 0;
     data_o_cast.src_y_cord = 0;
-    data_o_cast.write_en = 0;
+    data_o_cast.write_en = data_i_cast_r.write_en;
     data_o_cast.non_cacheable = data_i_cast_r.non_cacheable;
     data_o_cast.nc_size = data_i_cast_r.nc_size;
     data_o_cast.addr = data_i_cast_r.addr;
-    data_o_cast.len = (data_i_cast_r.non_cacheable)? 1 : 
-            (block_size_in_bits_lp/lce_req_data_width_p);
     
     valid_o = 0;
     ready_o = 0;
     
-    if (reset_i) begin
+    if (state_r == RESET) begin
+    
         read_accepted = '0;
         write_accepted = '0;
+        state_n = READY;
+        
     end
     
-    if (state_r == READY) begin
+    else if (state_r == READY) begin
     
         ready_o = 1;
         if (valid_i) begin
@@ -283,13 +286,15 @@ module bp_mem_wormhole_dramsim2
     else if (state_r == POST_STORE) begin
     
         if (dramsim_valid) begin
-            state_n = READY;
+            state_n = STORE_ACK;
         end
     
     end
     
     else if (state_r == PRE_LOAD_RESP) begin
     
+        data_o_cast.len = (data_i_cast_r.non_cacheable)? 1 : 
+            (block_size_in_bits_lp/lce_req_data_width_p);
         valid_o = 1;
         if (ready_i) begin
             state_n = LOAD_RESP;
@@ -306,6 +311,16 @@ module bp_mem_wormhole_dramsim2
             if (counter_r == 1) begin
                 state_n = READY;
             end
+        end
+    
+    end
+    
+    else if (state_r == STORE_ACK) begin
+    
+        data_o_cast.len = 0;
+        valid_o = 1;
+        if (ready_i) begin
+            state_n = READY;
         end
     
     end

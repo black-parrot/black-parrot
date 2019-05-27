@@ -128,6 +128,7 @@ module bp_me_cce_to_wormhole_link
     ,LOAD
     ,STORE
     ,LOAD_RESP
+    ,PRE_STORE_ACK
     ,STORE_ACK
   } mem_state_e;
 
@@ -296,7 +297,7 @@ module bp_me_cce_to_wormhole_link
             counter_n = counter_r - 1;
             write_word_sel_n = write_word_sel_r + 1;
             if (counter_r == 1) begin
-                state_n = STORE_ACK;
+                state_n = PRE_STORE_ACK;
             end
         end
         
@@ -307,6 +308,14 @@ module bp_me_cce_to_wormhole_link
         if (mem_data_resp_ready_i) begin
             mem_data_resp_v_o = 1;
             state_n = READY;
+        end
+    
+    end
+    
+    else if (state_r == PRE_STORE_ACK) begin
+    
+        if (valid_i) begin
+            state_n = STORE_ACK;
         end
     
     end
