@@ -14,14 +14,16 @@ RISCV_OBJCOPY  = riscv64-unknown-elf-objcopy -O verilog
 
 include $(TEST_DIR)/Makefile.frag
 
-all: riscv demos coremark littlefs_test beebs
+all: riscv coremark littlefs_test beebs
+all_mem: riscv_mem coremark_mem beebs_mem littlefs_test_mem
 riscv: riscv_mem riscv_spike
 coremark: coremark_mem coremark_spike
 beebs: beebs_mem beebs_spike
 littlefs_test: littlefs_test_mem littlefs_test_spike
+
 # OpenSBI requires hardfloat and does not support softfloat libraries, so the compilation will fail
 #opensbi: opensbi_mem
-bbl: bbl_mem
+#bbl: bbl_mem
 demos: demos_mem 
 
 riscv_elf: 
@@ -108,13 +110,13 @@ beebs_spike: $(foreach x, $(BEEBS_TESTS), $(x).spike)
 	$(RISCV_SIM) -l $(MEM_DIR)/$*.riscv 2> $(MEM_DIR)/$@
 
 clean:
-	$(MAKE) -C $(TEST_DIR)/src/riscv-tests/benchmarks clean 
-	$(MAKE) -C $(TEST_DIR)/src/demos clean
-	$(MAKE) -C $(TEST_DIR)/src/opensbi clean
-	$(MAKE) -C $(TEST_DIR)/src/coremark/barebones clean
-	$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test/fhello clean
-	$(MAKE) -C src/beebs clean
-	rm -f $(MEM_DIR)/*
+	-$(MAKE) -C $(TEST_DIR)/src/riscv-tests/benchmarks clean 
+	-$(MAKE) -C $(TEST_DIR)/src/demos clean
+	-$(MAKE) -C $(TEST_DIR)/src/opensbi clean
+	-$(MAKE) -C $(TEST_DIR)/src/coremark/barebones clean
+	-$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test/fhello clean
+	-$(MAKE) -C $(TEST_DIR)/src/beebs clean
+	-rm -ff $(MEM_DIR)/*
 
 ####### These targets are not maintained at the moment
 #

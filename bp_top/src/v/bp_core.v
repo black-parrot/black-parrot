@@ -24,10 +24,7 @@ module bp_core
                                   ,dword_width_p
                                   ,cce_block_width_p
                                   )
-
-    // Enables trace replay
-    , parameter trace_p      = 0
-    , parameter calc_debug_p = 0
+    , parameter calc_trace_p = 0
 
     // Should go away with manycore bridge 
     , localparam proc_cfg_width_lp = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
@@ -184,8 +181,7 @@ module bp_core
 
   bp_be_top 
    #(.cfg_p(cfg_p)
-     ,.trace_p(trace_p)
-     ,.calc_debug_p(calc_debug_p)
+     ,.calc_trace_p(calc_trace_p)
      )
    be
     (.clk_i(clk_i)

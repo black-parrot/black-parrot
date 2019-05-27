@@ -22,8 +22,7 @@ module bp_tile
    , localparam dirs_lp = 5 // S (Mem side) EW (LCE sides), P (Proc side)
 
    // Used to enable trace replay outputs for testbench
-   , parameter trace_p      = 0
-   , parameter calc_debug_p = 0
+   , parameter calc_trace_p = 0
    , parameter cce_trace_p  = 0
 
    , parameter x_cord_width_p = `BSG_SAFE_CLOG2(num_lce_p)
@@ -161,8 +160,7 @@ assign proc_cfg_cast_i = proc_cfg_i;
 // Module instantiations
 bp_core   
  #(.cfg_p(cfg_p)
-   ,.trace_p(trace_p)
-   ,.calc_debug_p(calc_debug_p)
+   ,.calc_trace_p(calc_trace_p)
    )
  core 
   (.clk_i(clk_i)
