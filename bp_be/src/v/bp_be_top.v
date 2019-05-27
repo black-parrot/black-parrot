@@ -26,11 +26,9 @@ module bp_be_top
                                  ,cce_block_width_p
                                  )
 
-   // Default parameters 
-   , parameter trace_p                     = 0
-   , parameter calc_debug_p                = 0
-   , parameter calc_debug_file_p           = "calc_debug.log"
+   , parameter calc_trace_p = 0
 
+   // Default parameters 
    , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
    , localparam ecode_dec_width_lp         = `bp_be_ecode_dec_width
    
@@ -198,11 +196,7 @@ bp_be_checker_top
    );
 
 bp_be_calculator_top 
- #(.cfg_p(cfg_p)
-
-   ,.trace_p(trace_p)
-   ,.debug_p(calc_debug_p)
-   )
+ #(.cfg_p(cfg_p))
  be_calculator
   (.clk_i(clk_i)
    ,.reset_i(reset_i)

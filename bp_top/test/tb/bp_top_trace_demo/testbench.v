@@ -25,6 +25,7 @@ module testbench
 
    // Trace replay parameters
    , parameter trace_p                     = 0
+   , parameter calc_trace_p                = 0
    , parameter cce_trace_p                 = 0
    )
   (input clk_i
@@ -67,7 +68,7 @@ logic [num_cce_p-1:0] mem_data_cmd_v, mem_data_cmd_yumi;
 
    wrapper
     #(.cfg_p(cfg_p)
-      ,.trace_p(trace_p)
+      ,.calc_trace_p(calc_trace_p)
       ,.cce_trace_p(cce_trace_p)
       )
     wrapper
