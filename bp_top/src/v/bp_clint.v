@@ -173,7 +173,6 @@ bsg_decode_with_v
    ,.o(plic_w_v_li)
    );
 
-// Could replace with bsg_cycle_counter if it provided a way to sideload a value
 logic [dword_width_p-1:0] mtime_n, mtime_r;
 wire mtime_w_v_li = mtime_data_cmd_v;
 assign mtime_n    = mtime_w_v_li 
@@ -194,9 +193,19 @@ logic [num_core_p-1:0]                    mipi_n    , mipi_r;
 logic [num_core_p-1:0]                    plic_n    , plic_r;
 
 // cfg link to tile
-wire cfg_link_w_v_li = cfg_link_data_cmd_v;
-wire [cfg_addr_width_p-1:0] cfg_link_addr_li = mem_data_cmd_cast_i.data[cfg_data_width_p+:cfg_addr_width_p];
-wire [cfg_data_width_p-1:0] cfg_link_data_li = mem_data_cmd_cast_i.data[0+:cfg_data_width_p];
+logic [num_core_p-1:0]      cfg_link_w_v_li;
+wire [cfg_core_width_p-1:0] cfg_link_core_li      = mem_data_cmd_cast_i.data[cfg_data_width_p+cfg_addr_width_p+:cfg_core_width_p];
+wire [cfg_addr_width_p-1:0] cfg_link_addr_li      = mem_data_cmd_cast_i.data[cfg_data_width_p+:cfg_addr_width_p];
+wire [cfg_data_width_p-1:0] cfg_link_data_li      = mem_data_cmd_cast_i.data[0+:cfg_data_width_p];
+wire                        cfg_link_broadcast_li = cfg_link_data_cmd_v & (cfg_link_core_li == '1);
+
+bsg_decode_with_v
+ #(.num_out_p(num_core_p))
+ cfg_link_decoder
+  (.v_i(cfg_link_data_cmd_v)
+   ,.i(cfg_link_core_li[0+:`BSG_SAFE_CLOG2(num_core_p)])
+   ,.o(cfg_link_w_v_li)
+   );
 
 for (genvar i = 0; i < num_core_p; i++)
   begin : rof1
@@ -277,10 +286,9 @@ for (genvar i = 0; i < num_core_p; i++)
      cfg_link_pipe
       (.clk_i(clk_i)
 
-       ,.data_i({cfg_link_w_v_li, cfg_link_addr_li, cfg_link_data_li})
+       ,.data_i({(cfg_link_w_v_li | cfg_link_broadcast_li), cfg_link_addr_li, cfg_link_data_li})
        ,.data_o({cfg_link_w_v_o[i], cfg_link_addr_o[i], cfg_link_data_o[i]})
        );
-
   end // rof1
 
 logic mipi_lo;
