@@ -88,9 +88,9 @@ module bp_mem_wormhole_dramsim2
   
   
   // Registered data
-  bp_mem_wormhole_header_s data_i_cast_r, data_i_cast_n;
-  logic [block_size_in_bits_lp-1:0] data_i_r, data_i_n;
-  logic [block_size_in_bits_lp-1:0] data_o_r, data_o_n;
+  bp_mem_wormhole_header_s data_i_cast_r;
+  logic [block_size_in_bits_lp-1:0] data_i_r;
+  logic [block_size_in_bits_lp-1:0] data_o_r;
 
 
   // signals for dramsim2
@@ -142,189 +142,132 @@ module bp_mem_wormhole_dramsim2
     ,STORE_ACK
   } mem_state_e;
 
-  mem_state_e state_r, state_n;
-  logic [3:0] counter_r, counter_n;
-  logic [word_select_bits_lp-1:0] word_sel_r, word_sel_n;
+  mem_state_e state_r;
+  logic [3:0] counter_r;
+  logic [word_select_bits_lp-1:0] word_sel_r;
   
   
   assign data_o = (state_r == LOAD_RESP)? 
         data_o_r[(word_sel_r*lce_req_data_width_p)+:lce_req_data_width_p] : data_o_cast;
   
+  assign valid_o = (state_r == PRE_LOAD_RESP) | (state_r == LOAD_RESP) | (state_r == STORE_ACK);
+  assign ready_o = (state_r == READY) | (state_r == PRE_STORE);
+    
+  assign data_o_cast.reserved = data_i_cast_r.reserved;
+  assign data_o_cast.x_cord = data_i_cast_r.src_x_cord;
+  assign data_o_cast.y_cord = data_i_cast_r.src_y_cord;
+  assign data_o_cast.dummy = data_i_cast_r.dummy;
+  assign data_o_cast.src_x_cord = 0;
+  assign data_o_cast.src_y_cord = 0;
+  assign data_o_cast.write_en = data_i_cast_r.write_en;
+  assign data_o_cast.non_cacheable = data_i_cast_r.non_cacheable;
+  assign data_o_cast.nc_size = data_i_cast_r.nc_size;
+  assign data_o_cast.addr = data_i_cast_r.addr;
+  assign data_o_cast.len = (state_r == PRE_LOAD_RESP)
+                            ? ((data_i_cast_r.non_cacheable)? 1 : (block_size_in_bits_lp/lce_req_data_width_p))
+                            : '0;
   
-  always @(posedge clk_i) begin
-  
-    if (reset_i) begin
-        state_r <= RESET;
-        counter_r <= 0;
-        word_sel_r <= 0;
-        data_i_cast_r <= 0;
-        data_i_r <= 0;
-        data_o_r <= 0;
-    end else begin
-        state_r <= state_n;
-        counter_r <= counter_n;
-        word_sel_r <= word_sel_n;
-        data_i_cast_r <= data_i_cast_n;
-        data_i_r <= data_i_n;
-        data_o_r <= data_o_n;
+  always_ff @(posedge clk_i) begin
+    if(reset_i) begin
+      state_r <= RESET;
+      counter_r <= 0;
+      word_sel_r <= 0;
+      data_i_cast_r <= 0;
+      data_i_r <= 0;
+      data_o_r <= 0;
     end
-
-  end
-  
-  
-  always_comb begin
-  
-    state_n = state_r;
-    counter_n = counter_r;
-    word_sel_n = word_sel_r;
-    
-    data_i_cast_n = data_i_cast_r;
-    data_i_n = data_i_r;
-    data_o_n = data_o_r;
-    
-    data_o_cast.reserved = data_i_cast_r.reserved;
-    data_o_cast.x_cord = data_i_cast_r.src_x_cord;
-    data_o_cast.y_cord = data_i_cast_r.src_x_cord;
-    data_o_cast.dummy = data_i_cast_r.dummy;
-    data_o_cast.src_x_cord = 0;
-    data_o_cast.src_y_cord = 0;
-    data_o_cast.write_en = data_i_cast_r.write_en;
-    data_o_cast.non_cacheable = data_i_cast_r.non_cacheable;
-    data_o_cast.nc_size = data_i_cast_r.nc_size;
-    data_o_cast.addr = data_i_cast_r.addr;
-    
-    valid_o = 0;
-    ready_o = 0;
-    
-    if (state_r == RESET) begin
-    
-        read_accepted = '0;
-        write_accepted = '0;
-        state_n = READY;
-        
-    end
-    
-    else if (state_r == READY) begin
-    
-        ready_o = 1;
+    else begin
+      read_accepted = '0;
+      write_accepted = '0;
+      if (state_r == RESET) begin
+        state_r <= READY;
+      end
+      else if (state_r == READY) begin
         if (valid_i) begin
-            data_i_cast_n = data_i_cast;
-            counter_n = (data_i_cast.non_cacheable)? 1 : 
-                    (block_size_in_bits_lp/lce_req_data_width_p);
-            word_sel_n = (data_i_cast.non_cacheable)? 
-                    data_i_cast.addr[byte_offset_bits_lp+:word_select_bits_lp] : 0;
-            state_n = (data_i_cast.write_en)? PRE_STORE : LOAD;
+          data_i_cast_r <= data_i_cast;
+          counter_r <= (data_i_cast.non_cacheable)? 1 : 
+                  (block_size_in_bits_lp/lce_req_data_width_p);
+          word_sel_r <= (data_i_cast.non_cacheable)? 
+                  data_i_cast.addr[byte_offset_bits_lp+:word_select_bits_lp] : 0;
+          state_r <= (data_i_cast.write_en)? PRE_STORE : LOAD;
         end
-    
-    end
-    
-    else if (state_r == LOAD) begin
-        
-        if (!read_accepted) begin
-            // do the read from memory ram if available
-            read_accepted = mem_read_req(block_rd_addr);
-        end else begin
-            read_accepted = '0;
-            state_n = POST_LOAD;
-        end
-        
-    end
-    
-    else if (state_r == POST_LOAD) begin
-    
+      end
+      
+      else if (state_r == LOAD) begin
+        read_accepted = mem_read_req(block_rd_addr);
+        state_r <= read_accepted ? POST_LOAD : LOAD;
+      end
+      
+      else if (state_r == POST_LOAD) begin
         if (dramsim_valid) begin
-            if (data_i_cast_r.non_cacheable) begin
-                data_o_n = {(block_size_in_bits_lp-lce_req_data_width_p)'('0),nc_data};
-                word_sel_n = 0;
-            end else begin
-                data_o_n = dramsim_data;
-            end 
-            state_n = PRE_LOAD_RESP;
+          if (data_i_cast_r.non_cacheable) begin
+            data_o_r <= {(block_size_in_bits_lp-lce_req_data_width_p)'('0),nc_data};
+            word_sel_r <= 0;
+          end else begin
+            data_o_r <= dramsim_data;
+          end 
+          state_r <= PRE_LOAD_RESP;
         end
-    
-    end
-    
-    else if (state_r == PRE_STORE) begin
-    
-        ready_o = 1;
+      end
+      
+      else if (state_r == PRE_STORE) begin
         if (valid_i) begin
-            data_i_n[(word_sel_r*lce_req_data_width_p)+:lce_req_data_width_p] = data_i;
-            counter_n = counter_r - 1;
-            word_sel_n = word_sel_r + 1;
-            if (counter_r == 1) begin
-                state_n = STORE;
-            end
+          data_i_r[(word_sel_r*lce_req_data_width_p)+:lce_req_data_width_p] <= data_i;
+          counter_r <= counter_r - 1;
+          word_sel_r <= word_sel_r + 1;
+          if (counter_r == 1) begin
+            state_r <= STORE;
+          end
         end
-    
-    end
-    
-    else if (state_r == STORE) begin
-        
-        if (!write_accepted) begin
-            // do the write to memory ram if available
-            // uncached write, send correct size
-            if (data_i_cast_r.non_cacheable) begin
-              write_accepted =
-                (data_i_cast_r.nc_size == e_lce_nc_req_1)
-                ? mem_write_req(wr_addr, data_i_r, 1)
-                : (data_i_cast_r.nc_size == e_lce_nc_req_2)
-                  ? mem_write_req(wr_addr, data_i_r, 2)
-                  : (data_i_cast_r.nc_size == e_lce_nc_req_4)
-                    ? mem_write_req(wr_addr, data_i_r, 4)
-                    : mem_write_req(wr_addr, data_i_r, 8);
-            end else begin
-              // cached access, size == 0 tells c++ code to write full cache block
-              write_accepted = mem_write_req(wr_addr, data_i_r, 0);
-            end
+      end
+      
+      else if (state_r == STORE) begin
+        // do the write to memory ram if available
+        // uncached write, send correct size
+        if (data_i_cast_r.non_cacheable) begin
+          write_accepted =
+            (data_i_cast_r.nc_size == e_lce_nc_req_1)
+            ? mem_write_req(wr_addr, data_i_r, 1)
+            : (data_i_cast_r.nc_size == e_lce_nc_req_2)
+              ? mem_write_req(wr_addr, data_i_r, 2)
+              : (data_i_cast_r.nc_size == e_lce_nc_req_4)
+                ? mem_write_req(wr_addr, data_i_r, 4)
+                : mem_write_req(wr_addr, data_i_r, 8);
         end else begin
-            write_accepted = '0;
-            state_n = POST_STORE;
+          // cached access, size == 0 tells c++ code to write full cache block
+          write_accepted = mem_write_req(wr_addr, data_i_r, 0);
         end
-    
-    end
-    
-    else if (state_r == POST_STORE) begin
-    
+        state_r <= write_accepted ? POST_STORE : STORE;
+      end
+      
+      else if (state_r == POST_STORE) begin
         if (dramsim_valid) begin
-            state_n = STORE_ACK;
+          state_r <= STORE_ACK;
         end
-    
-    end
-    
-    else if (state_r == PRE_LOAD_RESP) begin
-    
-        data_o_cast.len = (data_i_cast_r.non_cacheable)? 1 : 
-            (block_size_in_bits_lp/lce_req_data_width_p);
-        valid_o = 1;
+      end
+      
+      else if (state_r == PRE_LOAD_RESP) begin
         if (ready_i) begin
-            state_n = LOAD_RESP;
+          state_r <= LOAD_RESP;
         end
-    
-    end
-    
-    else if (state_r == LOAD_RESP) begin
-    
-        valid_o = 1;
+      end
+      
+      else if (state_r == LOAD_RESP) begin
         if (ready_i) begin
-            counter_n = counter_r - 1;
-            word_sel_n = word_sel_r + 1;
-            if (counter_r == 1) begin
-                state_n = READY;
-            end
+          counter_r <= counter_r - 1;
+          word_sel_r <= word_sel_r + 1;
+          if (counter_r == 1) begin
+            state_r <= READY;
+          end
         end
-    
-    end
-    
-    else if (state_r == STORE_ACK) begin
-    
-        data_o_cast.len = 0;
-        valid_o = 1;
+      end
+      
+      else if (state_r == STORE_ACK) begin
         if (ready_i) begin
-            state_n = READY;
+          state_r <= READY;
         end
-    
+      end
     end
-  
   end
   
 

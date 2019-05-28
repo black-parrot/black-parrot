@@ -14,7 +14,7 @@
       logic [x_cord_width_p-1:0] x_cord;                                  \
       logic [y_cord_width_p-1:0] y_cord;                                  \
       logic [len_width_p-1:0] len;                                        \
-      logic [width_p-reserved_width_p-x_cord_width_p-y_cord_width_p       \
+      logic [width_p-reserved_width_p-(2*x_cord_width_p)-(2*y_cord_width_p)       \
             -len_width_p-nc_size_width_p-paddr_width_p-2-1:0] dummy;      \
       logic [x_cord_width_p-1:0] src_x_cord;                              \
       logic [y_cord_width_p-1:0] src_y_cord;                              \

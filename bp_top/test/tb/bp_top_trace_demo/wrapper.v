@@ -37,8 +37,8 @@ module wrapper
    , output logic [num_cce_p-1:0]                                config_v_o
    , input [num_cce_p-1:0]                                       config_ready_i
 
-    ,input [num_cce_p-1:0][bsg_ready_and_link_sif_width_lp-1:0] link_i
-    ,output [num_cce_p-1:0][bsg_ready_and_link_sif_width_lp-1:0] link_o
+    ,input [bsg_ready_and_link_sif_width_lp-1:0]              link_i
+    ,output [bsg_ready_and_link_sif_width_lp-1:0]             link_o
 
    , input [num_core_p-1:0]                                   external_irq_i
   );

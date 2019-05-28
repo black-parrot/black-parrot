@@ -32,8 +32,12 @@ module testbench
    , parameter trace_rom_addr_width_p      = "inv"
    , localparam trace_rom_data_width_lp    = trace_ring_width_p + 4
    
-   ,parameter width_p = 64
-   ,localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(width_p)
+   , parameter width_p = 64
+   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(width_p)
+   
+   , localparam noc_x_cord_width_lp = `BSG_SAFE_CLOG2(num_cce_p)
+   , localparam noc_y_cord_width_lp = 1
+   
    )
   (input clk_i
    , input reset_i
@@ -54,8 +58,8 @@ logic [num_cce_p-1:0]                                  config_ready_li;
 logic [num_cce_p-1:0][cce_instr_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
 logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]          cce_inst_boot_rom_data;
 
-logic [num_cce_p-1:0][bsg_ready_and_link_sif_width_lp-1:0] cce_link_li;
-logic [num_cce_p-1:0][bsg_ready_and_link_sif_width_lp-1:0] cce_link_lo;
+logic [bsg_ready_and_link_sif_width_lp-1:0] noc_link_li;
+logic [bsg_ready_and_link_sif_width_lp-1:0] noc_link_lo;
 
    wrapper
     #(.cfg_p(cfg_p)
@@ -78,8 +82,8 @@ logic [num_cce_p-1:0][bsg_ready_and_link_sif_width_lp-1:0] cce_link_lo;
       ,.config_v_o(config_v_lo)
       ,.config_ready_i(config_ready_li)
 
-      ,.link_i(cce_link_li)
-      ,.link_o(cce_link_lo)
+      ,.link_i(noc_link_li)
+      ,.link_o(noc_link_lo)
 
       ,.external_irq_i('0)
       );
@@ -137,69 +141,71 @@ bind bp_be_top
      ,.program_fail_i(be_mem.csr.program_fail)
      );
 
-   for (genvar i = 0; i < num_cce_p; i++) 
-     begin : rof1
-       bp_mem_wormhole_dramsim2
-        #(.mem_id_p(i)
-          ,.clock_period_in_ps_p(clock_period_in_ps_p)
-          ,.prog_name_p(prog_name_p)
-          ,.dram_cfg_p(dram_cfg_p)
-          ,.dram_sys_cfg_p(dram_sys_cfg_p)
-          ,.dram_capacity_p(dram_capacity_p)
-          ,.num_lce_p(num_lce_p)
-          ,.num_cce_p(num_cce_p)
-          ,.paddr_width_p(paddr_width_p)
-          ,.lce_assoc_p(lce_assoc_p)
-          ,.block_size_in_bytes_p(cce_block_width_p/8)
-          ,.lce_sets_p(lce_sets_p)
-          ,.lce_req_data_width_p(dword_width_p)
-          
-          ,.width_p(width_p)
-          ,.x_cord_width_p(3)
-          ,.y_cord_width_p(3)
-          ,.len_width_p(4)
-          ,.reserved_width_p(2))
-        mem
-         (.clk_i(clk_i)
-          ,.reset_i(reset_i)
+bp_mem_wormhole_dramsim2
+ #(.mem_id_p(0)
+   ,.clock_period_in_ps_p(clock_period_in_ps_p)
+   ,.prog_name_p(prog_name_p)
+   ,.dram_cfg_p(dram_cfg_p)
+   ,.dram_sys_cfg_p(dram_sys_cfg_p)
+   ,.dram_capacity_p(dram_capacity_p)
+   ,.num_lce_p(num_lce_p)
+   ,.num_cce_p(num_cce_p)
+   ,.paddr_width_p(paddr_width_p)
+   ,.lce_assoc_p(lce_assoc_p)
+   ,.block_size_in_bytes_p(cce_block_width_p/8)
+   ,.lce_sets_p(lce_sets_p)
+   ,.lce_req_data_width_p(dword_width_p)
+   
+   ,.width_p(width_p)
+   ,.x_cord_width_p(noc_x_cord_width_lp)
+   ,.y_cord_width_p(noc_y_cord_width_lp)
+   ,.len_width_p(4)
+   ,.reserved_width_p(2)
+   )
+ mem
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
 
-          ,.link_i(cce_link_lo[i])
-          ,.link_o(cce_link_li[i]));
-          
+   ,.link_i(noc_link_lo)
+   ,.link_o(noc_link_li)
+   );
+     
+     
+for (genvar i = 0; i < num_cce_p; i++) 
+  begin : rof1
+    bp_cce_nonsynth_cfg_loader
+      #(.inst_width_p(`bp_cce_inst_width)
+        ,.inst_ram_addr_width_p(cce_instr_ram_addr_width_lp)
+        ,.inst_ram_els_p(num_cce_instr_ram_els_p)
+        ,.cfg_link_addr_width_p(bp_cfg_link_addr_width_gp)
+        ,.cfg_link_data_width_p(bp_cfg_link_data_width_gp)
+        ,.skip_ram_init_p('0)
+      )
+      cce_inst_ram_loader
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
+       ,.freeze_o(freeze_li[i])
+       ,.boot_rom_addr_o(cce_inst_boot_rom_addr[i])
+       ,.boot_rom_data_i(cce_inst_boot_rom_data[i])
+       ,.config_addr_o(config_addr_li[i])
+       ,.config_data_o(config_data_li[i])
+       ,.config_v_o(config_v_li[i])
+       ,.config_w_o(config_w_li[i])
+       ,.config_ready_i(config_ready_lo[i])
+       ,.config_data_i(config_data_lo[i])
+       ,.config_v_i(config_v_lo[i])
+       ,.config_ready_o(config_ready_li[i])
+      );
 
-       bp_cce_nonsynth_cfg_loader
-         #(.inst_width_p(`bp_cce_inst_width)
-           ,.inst_ram_addr_width_p(cce_instr_ram_addr_width_lp)
-           ,.inst_ram_els_p(num_cce_instr_ram_els_p)
-           ,.cfg_link_addr_width_p(bp_cfg_link_addr_width_gp)
-           ,.cfg_link_data_width_p(bp_cfg_link_data_width_gp)
-           ,.skip_ram_init_p('0)
-         )
-         cce_inst_ram_loader
-         (.clk_i(clk_i)
-          ,.reset_i(reset_i)
-          ,.freeze_o(freeze_li[i])
-          ,.boot_rom_addr_o(cce_inst_boot_rom_addr[i])
-          ,.boot_rom_data_i(cce_inst_boot_rom_data[i])
-          ,.config_addr_o(config_addr_li[i])
-          ,.config_data_o(config_data_li[i])
-          ,.config_v_o(config_v_li[i])
-          ,.config_w_o(config_w_li[i])
-          ,.config_ready_i(config_ready_lo[i])
-          ,.config_data_i(config_data_lo[i])
-          ,.config_v_i(config_v_lo[i])
-          ,.config_ready_o(config_ready_li[i])
-         );
-
-       bp_cce_inst_rom
-        #(.width_p(`bp_cce_inst_width)
-          ,.addr_width_p(cce_instr_ram_addr_width_lp)
-          )
-        cce_inst_rom
-         (.addr_i(cce_inst_boot_rom_addr[i])
-          ,.data_o(cce_inst_boot_rom_data[i])
-          );
-   end // rof1
+    bp_cce_inst_rom
+     #(.width_p(`bp_cce_inst_width)
+       ,.addr_width_p(cce_instr_ram_addr_width_lp)
+       )
+     cce_inst_rom
+      (.addr_i(cce_inst_boot_rom_addr[i])
+       ,.data_o(cce_inst_boot_rom_data[i])
+       );
+end // rof1
 
 endmodule : testbench
 
