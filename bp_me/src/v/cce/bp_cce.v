@@ -181,6 +181,7 @@ module bp_cce
   logic gad_invalidate_flag_lo;
   logic gad_exclusive_flag_lo;
   logic gad_cached_flag_lo;
+  logic gad_error_lo;
 
   // Register signals
   `declare_bp_cce_mshr_s(num_lce_p, lce_assoc_p, paddr_width_p);
@@ -221,6 +222,7 @@ module bp_cce
       ,.alu_branch_res_i(alu_branch_res_lo)
 
       ,.dir_busy_i(dir_busy_lo)
+      ,.gad_error_i(gad_error_lo)
 
       ,.pc_stall_i(pc_stall_lo)
       ,.pc_branch_target_i(pc_branch_target_lo)
@@ -332,6 +334,7 @@ module bp_cce
       ,.reset_i(reset_i)
       ,.gad_v_i(gad_v_li)
 
+      ,.sharers_v_i(sharers_v_lo)
       ,.sharers_hits_i(sharers_hits_lo)
       ,.sharers_ways_i(sharers_ways_lo)
       ,.sharers_coh_states_i(sharers_coh_states_lo)
@@ -351,6 +354,8 @@ module bp_cce
       ,.invalidate_flag_o(gad_invalidate_flag_lo)
       ,.exclusive_flag_o(gad_exclusive_flag_lo)
       ,.cached_flag_o(gad_cached_flag_lo)
+
+      ,.error_o(gad_error_lo)
       );
 
   // Registers

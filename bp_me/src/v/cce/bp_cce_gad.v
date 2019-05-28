@@ -28,6 +28,7 @@ module bp_cce_gad
    // high if the current op is a GAD op
    , input                                                 gad_v_i
 
+   , input                                                 sharers_v_i
    , input [num_lce_p-1:0]                                 sharers_hits_i
    , input [num_lce_p-1:0][lg_lce_assoc_lp-1:0]            sharers_ways_i
    , input [num_lce_p-1:0][`bp_cce_coh_bits-1:0]           sharers_coh_states_i
@@ -47,7 +48,11 @@ module bp_cce_gad
    , output logic                                          invalidate_flag_o
    , output logic                                          exclusive_flag_o
    , output logic                                          cached_flag_o
+
+   , output logic                                          error_o
   );
+
+  assign error_o = gad_v_i & ~sharers_v_i;
 
   // one hot decoding of request LCE ID
   logic [num_lce_p-1:0] lce_id_one_hot;
