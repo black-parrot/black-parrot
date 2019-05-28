@@ -183,16 +183,9 @@ module bp_cce
   logic gad_cached_flag_lo;
 
   // Register signals
-  logic [lg_num_lce_lp-1:0] req_lce_r_lo;
-  logic [paddr_width_p-1:0] req_addr_r_lo;
-  logic [tag_width_lp-1:0] req_tag_r_lo;
-  logic [lg_lce_assoc_lp-1:0] req_addr_way_r_lo;
-  logic [lg_lce_assoc_lp-1:0] lru_way_r_lo;
-  logic [paddr_width_p-1:0] lru_addr_r_lo;
-  logic [lg_num_lce_lp-1:0] transfer_lce_r_lo;
-  logic [lg_lce_assoc_lp-1:0] transfer_lce_way_r_lo;
-  logic [`bp_cce_coh_bits-1:0] next_coh_state_r_lo;
-  logic [`bp_cce_inst_num_flags-1:0] flags_r_lo;
+  `declare_bp_cce_mshr_s(num_lce_p, lce_assoc_p, paddr_width_p);
+  bp_cce_mshr_s mshr;
+
   logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_r_lo;
   logic [`bp_lce_cce_ack_type_width-1:0] ack_type_r_lo;
   logic [num_lce_p-1:0] sharers_hits_r_lo;
@@ -302,7 +295,7 @@ module bp_cce
       ,.way_group_i(dir_way_group_li)
       ,.lce_i(dir_lce_li)
       ,.way_i(dir_way_li)
-      ,.lru_way_i(lru_way_r_lo)
+      ,.lru_way_i(mshr.lru_way_id)
 
       ,.r_cmd_i(decoded_inst_lo.dir_r_cmd)
       ,.r_v_i(decoded_inst_lo.dir_r_v)
@@ -346,9 +339,9 @@ module bp_cce
       ,.sharers_ways_i(sharers_ways_r_lo)
       ,.sharers_coh_states_i(sharers_coh_states_r_lo)
 
-      ,.req_lce_i(req_lce_r_lo)
-      ,.req_type_flag_i(flags_r_lo[e_flag_sel_rqf])
-      ,.lru_dirty_flag_i(flags_r_lo[e_flag_sel_ldf])
+      ,.req_lce_i(mshr.lce_id)
+      ,.req_type_flag_i(mshr.flags[e_flag_sel_rqf])
+      ,.lru_dirty_flag_i(mshr.flags[e_flag_sel_ldf])
       ,.lru_cached_excl_i(lru_cached_excl_r_lo)
 
       ,.req_addr_way_o(gad_req_addr_way_lo)
@@ -406,16 +399,7 @@ module bp_cce
       ,.gad_cached_flag_i(gad_cached_flag_lo)
 
       // register state outputs
-      ,.req_lce_o(req_lce_r_lo)
-      ,.req_addr_o(req_addr_r_lo)
-      ,.req_tag_o(req_tag_r_lo)
-      ,.req_addr_way_o(req_addr_way_r_lo)
-      ,.lru_way_o(lru_way_r_lo)
-      ,.lru_addr_o(lru_addr_r_lo)
-      ,.transfer_lce_o(transfer_lce_r_lo)
-      ,.transfer_lce_way_o(transfer_lce_way_r_lo)
-      ,.next_coh_state_o(next_coh_state_r_lo)
-      ,.flags_o(flags_r_lo)
+      ,.mshr_o(mshr)
       ,.gpr_o(gpr_r_lo)
       ,.ack_type_o(ack_type_r_lo)
       ,.sharers_hits_o(sharers_hits_r_lo)
@@ -441,8 +425,8 @@ module bp_cce
       e_lce_cmd_lce_r1: lce_cmd_lce = gpr_r_lo[e_gpr_r1][lg_num_lce_lp-1:0];
       e_lce_cmd_lce_r2: lce_cmd_lce = gpr_r_lo[e_gpr_r2][lg_num_lce_lp-1:0];
       e_lce_cmd_lce_r3: lce_cmd_lce = gpr_r_lo[e_gpr_r3][lg_num_lce_lp-1:0];
-      e_lce_cmd_lce_req_lce: lce_cmd_lce = req_lce_r_lo;
-      e_lce_cmd_lce_tr_lce: lce_cmd_lce = transfer_lce_r_lo;
+      e_lce_cmd_lce_req_lce: lce_cmd_lce = mshr.lce_id;
+      e_lce_cmd_lce_tr_lce: lce_cmd_lce = mshr.tr_lce_id;
       e_lce_cmd_lce_0: lce_cmd_lce = '0;
       default: lce_cmd_lce = '0;
     endcase
@@ -474,10 +458,10 @@ module bp_cce
                        << lg_block_size_in_bytes_lp;
       end
       e_lce_cmd_addr_req_addr: begin
-        lce_cmd_addr = req_addr_r_lo;
+        lce_cmd_addr = mshr.paddr;
       end
       e_lce_cmd_addr_lru_way_addr: begin
-        lce_cmd_addr = lru_addr_r_lo;
+        lce_cmd_addr = mshr.lru_paddr;
       end
       e_lce_cmd_addr_0: begin
         lce_cmd_addr = '0;
@@ -488,16 +472,16 @@ module bp_cce
     endcase
     case (decoded_inst_lo.lce_cmd_way_sel)
       e_lce_cmd_way_req_addr_way: begin
-        lce_cmd_way = req_addr_way_r_lo;
+        lce_cmd_way = mshr.way_id;
       end
       e_lce_cmd_way_tr_addr_way: begin
-        lce_cmd_way = transfer_lce_way_r_lo;
+        lce_cmd_way = mshr.tr_way_id;
       end
       e_lce_cmd_way_sh_list_r0: begin
         lce_cmd_way = sharers_ways_r_lo[gpr_r_lo[e_gpr_r0][lg_num_lce_lp-1:0]];
       end
       e_lce_cmd_way_lru_addr_way: begin
-        lce_cmd_way = lru_way_r_lo;
+        lce_cmd_way = mshr.lru_way_id;
       end
       e_lce_cmd_way_0: begin
         lce_cmd_way = '0;
@@ -512,8 +496,8 @@ module bp_cce
   always_comb
   begin
     case (decoded_inst_lo.mem_data_cmd_addr_sel)
-      e_mem_data_cmd_addr_lru_way_addr: mem_data_cmd_addr = lru_addr_r_lo;
-      e_mem_data_cmd_addr_req_addr: mem_data_cmd_addr = req_addr_r_lo;
+      e_mem_data_cmd_addr_lru_way_addr: mem_data_cmd_addr = mshr.lru_paddr;
+      e_mem_data_cmd_addr_req_addr: mem_data_cmd_addr = mshr.paddr;
       default mem_data_cmd_addr = '0;
     endcase
   end
@@ -619,56 +603,56 @@ module bp_cce
       lce_cmd.way_id = lce_cmd_way;
       if ((decoded_inst_lo.lce_cmd_cmd == e_lce_cmd_set_tag)
           || (decoded_inst_lo.lce_cmd_cmd == e_lce_cmd_set_tag_wakeup)) begin
-        lce_cmd.state = next_coh_state_r_lo;
+        lce_cmd.state = mshr.next_coh_state;
       end else begin
         lce_cmd.state = '0;
       end
       if (decoded_inst_lo.lce_cmd_cmd == e_lce_cmd_transfer) begin
-        lce_cmd.target = req_lce_r_lo;
-        lce_cmd.target_way_id = lru_way_r_lo;
+        lce_cmd.target = mshr.lce_id;
+        lce_cmd.target_way_id = mshr.lru_way_id;
       end else begin
         lce_cmd.target = '0;
         lce_cmd.target_way_id = '0;
       end
 
       // LCE Data Command Queue Inputs
-      lce_data_cmd.dst_id = req_lce_r_lo;
-      if (flags_r_lo[e_flag_sel_ucf] == e_lce_req_non_cacheable) begin
+      lce_data_cmd.dst_id = mshr.lce_id;
+      if (mshr.flags[e_flag_sel_ucf] == e_lce_req_non_cacheable) begin
         lce_data_cmd.msg_type = e_lce_data_cmd_non_cacheable;
         lce_data_cmd.way_id = '0;
         lce_data_cmd.data = {(cce_block_width_p-dword_width_p)'('0),nc_data_r_lo};
       end else begin
         lce_data_cmd.msg_type = e_lce_data_cmd_cce;
-        lce_data_cmd.way_id = lru_way_r_lo;
+        lce_data_cmd.way_id = mshr.lru_way_id;
         lce_data_cmd.data = mem_data_resp.data;
       end
 
       // Mem Command Queue Inputs
-      mem_cmd.msg_type = bp_lce_cce_req_type_e'(flags_r_lo[e_flag_sel_rqf]);
-      mem_cmd.payload.lce_id = req_lce_r_lo;
-      mem_cmd.payload.way_id = lru_way_r_lo;
-      mem_cmd.addr = req_addr_r_lo;
-      mem_cmd.non_cacheable = bp_lce_cce_req_non_cacheable_e'(flags_r_lo[e_flag_sel_ucf]);
+      mem_cmd.msg_type = bp_lce_cce_req_type_e'(mshr.flags[e_flag_sel_rqf]);
+      mem_cmd.payload.lce_id = mshr.lce_id;
+      mem_cmd.payload.way_id = mshr.lru_way_id;
+      mem_cmd.addr = mshr.paddr;
+      mem_cmd.non_cacheable = bp_lce_cce_req_non_cacheable_e'(mshr.flags[e_flag_sel_ucf]);
       mem_cmd.nc_size = bp_lce_cce_nc_req_size_e'(nc_req_size_r_lo);
 
       // Mem Data Command Queue Inputs
-      mem_data_cmd.msg_type = bp_lce_cce_req_type_e'(flags_r_lo[e_flag_sel_rqf]);
+      mem_data_cmd.msg_type = bp_lce_cce_req_type_e'(mshr.flags[e_flag_sel_rqf]);
       mem_data_cmd.addr = mem_data_cmd_addr;
-      if (flags_r_lo[e_flag_sel_ucf]) begin
+      if (mshr.flags[e_flag_sel_ucf]) begin
         mem_data_cmd.data = {(cce_block_width_p-dword_width_p)'('0),nc_data_r_lo};
       end else begin
         mem_data_cmd.data = lce_data_resp.data;
       end
-      mem_data_cmd.non_cacheable = bp_lce_cce_req_non_cacheable_e'(flags_r_lo[e_flag_sel_ucf]);
+      mem_data_cmd.non_cacheable = bp_lce_cce_req_non_cacheable_e'(mshr.flags[e_flag_sel_ucf]);
       mem_data_cmd.nc_size = bp_lce_cce_nc_req_size_e'(nc_req_size_r_lo);
       // Request data for return
-      mem_data_cmd.payload.lce_id = req_lce_r_lo;
-      mem_data_cmd.payload.way_id = lru_way_r_lo;
-      mem_data_cmd.payload.req_addr = req_addr_r_lo;
-      mem_data_cmd.payload.tr_lce_id = transfer_lce_r_lo;
-      mem_data_cmd.payload.tr_way_id = transfer_lce_way_r_lo;
-      mem_data_cmd.payload.transfer = flags_r_lo[e_flag_sel_tf];
-      mem_data_cmd.payload.replacement = flags_r_lo[e_flag_sel_rf];
+      mem_data_cmd.payload.lce_id = mshr.lce_id;
+      mem_data_cmd.payload.way_id = mshr.lru_way_id;
+      mem_data_cmd.payload.req_addr = mshr.paddr;
+      mem_data_cmd.payload.tr_lce_id = mshr.tr_lce_id;
+      mem_data_cmd.payload.tr_way_id = mshr.tr_way_id;
+      mem_data_cmd.payload.transfer = mshr.flags[e_flag_sel_tf];
+      mem_data_cmd.payload.replacement = mshr.flags[e_flag_sel_rf];
     end
   end
 
@@ -692,10 +676,10 @@ module bp_cce
         dir_way_group_li = gpr_r_lo[e_gpr_r3][lg_num_way_groups_lp-1:0];
       end
       e_dir_wg_sel_req_addr: begin
-        dir_way_group_li = req_addr_r_lo[way_group_offset_high_lp-1 -: lg_num_way_groups_lp];
+        dir_way_group_li = mshr.paddr[way_group_offset_high_lp-1 -: lg_num_way_groups_lp];
       end
       e_dir_wg_sel_lru_way_addr: begin
-        dir_way_group_li = lru_addr_r_lo[way_group_offset_high_lp-1 -: lg_num_way_groups_lp];
+        dir_way_group_li = mshr.lru_paddr[way_group_offset_high_lp-1 -: lg_num_way_groups_lp];
       end
       default: begin
         dir_way_group_li = '0;
@@ -706,8 +690,8 @@ module bp_cce
       e_dir_lce_sel_r1: dir_lce_li = gpr_r_lo[e_gpr_r1][lg_num_lce_lp-1:0];
       e_dir_lce_sel_r2: dir_lce_li = gpr_r_lo[e_gpr_r2][lg_num_lce_lp-1:0];
       e_dir_lce_sel_r3: dir_lce_li = gpr_r_lo[e_gpr_r3][lg_num_lce_lp-1:0];
-      e_dir_lce_sel_req_lce: dir_lce_li = req_lce_r_lo;
-      e_dir_lce_sel_transfer_lce: dir_lce_li = transfer_lce_r_lo;
+      e_dir_lce_sel_req_lce: dir_lce_li = mshr.lce_id;
+      e_dir_lce_sel_transfer_lce: dir_lce_li = mshr.tr_lce_id;
       default: dir_lce_li = '0;
     endcase
     case (decoded_inst_lo.dir_way_sel)
@@ -715,19 +699,19 @@ module bp_cce
       e_dir_way_sel_r1: dir_way_li = gpr_r_lo[e_gpr_r1][lg_lce_assoc_lp-1:0];
       e_dir_way_sel_r2: dir_way_li = gpr_r_lo[e_gpr_r2][lg_lce_assoc_lp-1:0];
       e_dir_way_sel_r3: dir_way_li = gpr_r_lo[e_gpr_r3][lg_lce_assoc_lp-1:0];
-      e_dir_way_sel_req_addr_way: dir_way_li = req_addr_way_r_lo;
-      e_dir_way_sel_lru_way_addr_way: dir_way_li = lru_way_r_lo;
+      e_dir_way_sel_req_addr_way: dir_way_li = mshr.way_id;
+      e_dir_way_sel_lru_way_addr_way: dir_way_li = mshr.lru_way_id;
       e_dir_way_sel_sh_way_r0: dir_way_li = sharers_ways_r_lo[gpr_r_lo[e_gpr_r0][lg_num_lce_lp-1:0]];
       default: dir_way_li = '0;
     endcase
     case (decoded_inst_lo.dir_coh_state_sel)
-      e_dir_coh_sel_next_coh_st: dir_coh_state_li = next_coh_state_r_lo;
+      e_dir_coh_sel_next_coh_st: dir_coh_state_li = mshr.next_coh_state;
       e_dir_coh_sel_inst_imm: dir_coh_state_li = decoded_inst_lo.imm[`bp_cce_coh_bits-1:0];
       default: dir_coh_state_li = '0;
     endcase
     case (decoded_inst_lo.dir_tag_sel)
-      e_dir_tag_sel_req_addr: dir_tag_li = req_addr_r_lo[paddr_width_p-1 -: tag_width_lp];
-      e_dir_tag_sel_lru_way_addr: dir_tag_li = lru_addr_r_lo[paddr_width_p-1 -: tag_width_lp];
+      e_dir_tag_sel_req_addr: dir_tag_li = mshr.paddr[paddr_width_p-1 -: tag_width_lp];
+      e_dir_tag_sel_lru_way_addr: dir_tag_li = mshr.lru_paddr[paddr_width_p-1 -: tag_width_lp];
       e_dir_tag_sel_const_0: dir_tag_li = '0;
       default: dir_tag_li = '0;
     endcase
@@ -761,46 +745,46 @@ module bp_cce
         alu_opd_a_li = gpr_r_lo[e_gpr_r3];
       end
       e_src_rqf: begin
-        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_rqf]};
+        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_rqf]};
       end
       e_src_nerf: begin
-        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_nerf]};
+        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_nerf]};
       end
       e_src_ldf: begin
-        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_ldf]};
+        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_ldf]};
       end
       e_src_nwbf: begin
-        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_nwbf]};
+        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_nwbf]};
       end
       e_src_tf: begin
-        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_tf]};
+        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_tf]};
       end
       e_src_rf: begin
-        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_rf]};
+        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_rf]};
       end
       e_src_rwbf: begin
-        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_rwbf]};
+        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_rwbf]};
       end
       e_src_pf: begin
-        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_pf]};
+        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_pf]};
       end
       e_src_uf: begin
-        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_uf]};
+        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_uf]};
       end
       e_src_if: begin
-        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_if]};
+        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_if]};
       end
       e_src_ef: begin
-        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_ef]};
+        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_ef]};
       end
       e_src_pcf: begin
-        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_pcf]};
+        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_pcf]};
       end
       e_src_ucf: begin
-        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_ucf]};
+        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_ucf]};
       end
       e_src_cf: begin
-        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_cf]};
+        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_cf]};
       end
       e_src_const_0: begin
         alu_opd_a_li = '0;
@@ -812,7 +796,7 @@ module bp_cce
         alu_opd_a_li = decoded_inst_lo.imm;
       end
       e_src_req_lce: begin
-        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-lg_num_lce_lp){1'b0}}, req_lce_r_lo};
+        alu_opd_a_li = {{(`bp_cce_inst_gpr_width-lg_num_lce_lp){1'b0}}, mshr.lce_id};
       end
       e_src_ack_type: begin
         alu_opd_a_li = {gpr_ack_0, ack_type_r_lo};
@@ -863,24 +847,24 @@ module bp_cce
       e_src_r1: alu_opd_b_li = gpr_r_lo[e_gpr_r1];
       e_src_r2: alu_opd_b_li = gpr_r_lo[e_gpr_r2];
       e_src_r3: alu_opd_b_li = gpr_r_lo[e_gpr_r3];
-      e_src_rqf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_rqf]};
-      e_src_nerf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_nerf]};
-      e_src_ldf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_ldf]};
-      e_src_nwbf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_nwbf]};
-      e_src_tf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_tf]};
-      e_src_rf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_rf]};
-      e_src_rwbf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_rwbf]};
-      e_src_pf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_pf]};
-      e_src_uf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_uf]};
-      e_src_if: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_if]};
-      e_src_ef: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_ef]};
-      e_src_pcf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_pcf]};
-      e_src_ucf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_ucf]};
-      e_src_cf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, flags_r_lo[e_flag_sel_cf]};
+      e_src_rqf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_rqf]};
+      e_src_nerf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_nerf]};
+      e_src_ldf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_ldf]};
+      e_src_nwbf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_nwbf]};
+      e_src_tf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_tf]};
+      e_src_rf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_rf]};
+      e_src_rwbf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_rwbf]};
+      e_src_pf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_pf]};
+      e_src_uf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_uf]};
+      e_src_if: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_if]};
+      e_src_ef: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_ef]};
+      e_src_pcf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_pcf]};
+      e_src_ucf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_ucf]};
+      e_src_cf: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, mshr.flags[e_flag_sel_cf]};
       e_src_const_0: alu_opd_b_li = '0;
       e_src_const_1: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, 1'b1};
       e_src_imm: alu_opd_b_li = decoded_inst_lo.imm;
-      e_src_req_lce: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-lg_num_lce_lp){1'b0}}, req_lce_r_lo};
+      e_src_req_lce: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-lg_num_lce_lp){1'b0}}, mshr.lce_id};
       e_src_ack_type: alu_opd_b_li = {gpr_ack_0, ack_type_r_lo};
       e_src_sharers_hit_r0: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-1){1'b0}}, sharers_hits_r0};
       e_src_cce_id: alu_opd_b_li = {{(`bp_cce_inst_gpr_width-lg_num_cce_lp){1'b0}}, cce_id_i};
