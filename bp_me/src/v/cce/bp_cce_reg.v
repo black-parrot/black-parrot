@@ -61,11 +61,6 @@ module bp_cce_reg
    , input                                                                 dir_pending_o_i
    , input                                                                 dir_pending_v_o_i
 
-   , input                                                                 dir_sharers_v_i
-   , input [num_lce_p-1:0]                                                 dir_sharers_hits_i
-   , input [num_lce_p-1:0][lg_lce_assoc_lp-1:0]                            dir_sharers_ways_i
-   , input [num_lce_p-1:0][`bp_cce_coh_bits-1:0]                           dir_sharers_coh_states_i
-
    , input                                                                 dir_lru_v_i
    , input                                                                 dir_lru_cached_excl_i
    , input [tag_width_lp-1:0]                                              dir_lru_tag_i
@@ -86,10 +81,6 @@ module bp_cce_reg
    , output logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0]   gpr_o
 
    , output logic [`bp_lce_cce_ack_type_width-1:0]                         ack_type_o
-
-   , output logic [num_lce_p-1:0]                                          sharers_hits_o
-   , output logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0]                     sharers_ways_o
-   , output logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0]                    sharers_coh_states_o
 
    , output logic [`bp_lce_cce_nc_req_size_width-1:0]                      nc_req_size_o
    , output logic [lce_req_data_width_p-1:0]                               nc_data_o
@@ -132,10 +123,6 @@ module bp_cce_reg
 
   logic [`bp_lce_cce_ack_type_width-1:0] ack_type_r, ack_type_n;
 
-  logic [num_lce_p-1:0] sharers_hits_r, sharers_hits_n;
-  logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0] sharers_ways_r, sharers_ways_n;
-  logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0] sharers_coh_states_r, sharers_coh_states_n;
-
   logic [`bp_lce_cce_nc_req_size_width-1:0] nc_req_size_r, nc_req_size_n;
   logic [lce_req_data_width_p-1:0] nc_data_r, nc_data_n;
 
@@ -148,20 +135,6 @@ module bp_cce_reg
     gpr_o = gpr_r;
 
     ack_type_o = ack_type_r;
-
-    // Bypass sharers information being written to registers when it is being written.
-    // TODO: can eliminate if critical path-y
-    // This allows a one cycle reduction of the directory read operation latency
-    // If bypassing is removed, need to set busy signal in FINISH_READ in directory
-    if (dir_sharers_v_i) begin
-      sharers_hits_o = dir_sharers_hits_i;
-      sharers_ways_o = dir_sharers_ways_i;
-      sharers_coh_states_o = dir_sharers_coh_states_i;
-    end else begin
-      sharers_hits_o = sharers_hits_r;
-      sharers_ways_o = sharers_ways_r;
-      sharers_coh_states_o = sharers_coh_states_r;
-    end
 
     nc_req_size_o = nc_req_size_r;
     nc_data_o = nc_data_r;
@@ -378,11 +351,6 @@ module bp_cce_reg
     //next_coh_state_n = decoded_inst_i.imm[`bp_cce_coh_bits-1:0];
     mshr_n.next_coh_state = decoded_inst_i.imm[`bp_cce_coh_bits-1:0];
 
-    // Sharers stuff - comes from directory
-    sharers_hits_n = dir_sharers_hits_i;
-    sharers_ways_n = dir_sharers_ways_i;
-    sharers_coh_states_n = dir_sharers_coh_states_i;
-
     lru_cached_excl_n = dir_lru_cached_excl_i;
     // LRU Addr
     mshr_n.lru_paddr = {dir_lru_tag_i, mshr_r.paddr[lg_block_size_in_bytes_lp +: lg_lce_sets_lp],
@@ -406,9 +374,6 @@ module bp_cce_reg
       mshr_r <= '0;
       gpr_r <= '0;
       ack_type_r <= '0;
-      sharers_hits_r <= '0;
-      sharers_ways_r <= '0;
-      sharers_coh_states_r <= '0;
     end else begin
       if (decoded_inst_i.req_w_v) begin
         mshr_r.lce_id <= mshr_n.lce_id;
@@ -445,13 +410,6 @@ module bp_cce_reg
       // Next Coh State
       if (decoded_inst_i.mov_dst_w_v && decoded_inst_i.dst == e_dst_next_coh_state) begin
         mshr_r.next_coh_state <= mshr_n.next_coh_state;
-      end
-
-      // Sharers Info
-      if (dir_sharers_v_i) begin
-        sharers_hits_r <= sharers_hits_n;
-        sharers_ways_r <= sharers_ways_n;
-        sharers_coh_states_r <= sharers_coh_states_n;
       end
 
       if (dir_lru_v_i) begin

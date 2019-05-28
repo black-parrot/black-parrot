@@ -154,10 +154,10 @@ module bp_cce
   // Directory signals
   logic dir_pending_lo;
   logic dir_pending_v_lo;
-  logic dir_sharers_v_lo;
-  logic [num_lce_p-1:0] dir_sharers_hits_lo;
-  logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0] dir_sharers_ways_lo;
-  logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0] dir_sharers_coh_states_lo;
+  logic sharers_v_lo;
+  logic [num_lce_p-1:0] sharers_hits_lo;
+  logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0] sharers_ways_lo;
+  logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0] sharers_coh_states_lo;
   logic dir_lru_v_lo;
   logic dir_lru_cached_excl_lo;
   logic [tag_width_lp-1:0] dir_lru_tag_lo;
@@ -188,9 +188,6 @@ module bp_cce
 
   logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_r_lo;
   logic [`bp_lce_cce_ack_type_width-1:0] ack_type_r_lo;
-  logic [num_lce_p-1:0] sharers_hits_r_lo;
-  logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0] sharers_ways_r_lo;
-  logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0] sharers_coh_states_r_lo;
   logic [`bp_lce_cce_nc_req_size_width-1:0] nc_req_size_r_lo;
   logic [dword_width_p-1:0] nc_data_r_lo;
   logic lru_cached_excl_r_lo;
@@ -310,10 +307,10 @@ module bp_cce
       ,.pending_o(dir_pending_lo)
       ,.pending_v_o(dir_pending_v_lo)
 
-      ,.sharers_v_o(dir_sharers_v_lo)
-      ,.sharers_hits_o(dir_sharers_hits_lo)
-      ,.sharers_ways_o(dir_sharers_ways_lo)
-      ,.sharers_coh_states_o(dir_sharers_coh_states_lo)
+      ,.sharers_v_o(sharers_v_lo)
+      ,.sharers_hits_o(sharers_hits_lo)
+      ,.sharers_ways_o(sharers_ways_lo)
+      ,.sharers_coh_states_o(sharers_coh_states_lo)
 
       ,.lru_v_o(dir_lru_v_lo)
       ,.lru_cached_excl_o(dir_lru_cached_excl_lo)
@@ -335,9 +332,9 @@ module bp_cce
       ,.reset_i(reset_i)
       ,.gad_v_i(gad_v_li)
 
-      ,.sharers_hits_i(sharers_hits_r_lo)
-      ,.sharers_ways_i(sharers_ways_r_lo)
-      ,.sharers_coh_states_i(sharers_coh_states_r_lo)
+      ,.sharers_hits_i(sharers_hits_lo)
+      ,.sharers_ways_i(sharers_ways_lo)
+      ,.sharers_coh_states_i(sharers_coh_states_lo)
 
       ,.req_lce_i(mshr.lce_id)
       ,.req_type_flag_i(mshr.flags[e_flag_sel_rqf])
@@ -380,10 +377,6 @@ module bp_cce
 
       ,.dir_pending_o_i(dir_pending_lo)
       ,.dir_pending_v_o_i(dir_pending_v_lo)
-      ,.dir_sharers_v_i(dir_sharers_v_lo)
-      ,.dir_sharers_hits_i(dir_sharers_hits_lo)
-      ,.dir_sharers_ways_i(dir_sharers_ways_lo)
-      ,.dir_sharers_coh_states_i(dir_sharers_coh_states_lo)
       ,.dir_lru_v_i(dir_lru_v_lo)
       ,.dir_lru_cached_excl_i(dir_lru_cached_excl_lo)
       ,.dir_lru_tag_i(dir_lru_tag_lo)
@@ -402,9 +395,6 @@ module bp_cce
       ,.mshr_o(mshr)
       ,.gpr_o(gpr_r_lo)
       ,.ack_type_o(ack_type_r_lo)
-      ,.sharers_hits_o(sharers_hits_r_lo)
-      ,.sharers_ways_o(sharers_ways_r_lo)
-      ,.sharers_coh_states_o(sharers_coh_states_r_lo)
       ,.nc_req_size_o(nc_req_size_r_lo)
       ,.nc_data_o(nc_data_r_lo)
       ,.lru_cached_excl_o(lru_cached_excl_r_lo)
@@ -478,7 +468,7 @@ module bp_cce
         lce_cmd_way = mshr.tr_way_id;
       end
       e_lce_cmd_way_sh_list_r0: begin
-        lce_cmd_way = sharers_ways_r_lo[gpr_r_lo[e_gpr_r0][lg_num_lce_lp-1:0]];
+        lce_cmd_way = sharers_ways_lo[gpr_r_lo[e_gpr_r0][lg_num_lce_lp-1:0]];
       end
       e_lce_cmd_way_lru_addr_way: begin
         lce_cmd_way = mshr.lru_way_id;
@@ -701,7 +691,7 @@ module bp_cce
       e_dir_way_sel_r3: dir_way_li = gpr_r_lo[e_gpr_r3][lg_lce_assoc_lp-1:0];
       e_dir_way_sel_req_addr_way: dir_way_li = mshr.way_id;
       e_dir_way_sel_lru_way_addr_way: dir_way_li = mshr.lru_way_id;
-      e_dir_way_sel_sh_way_r0: dir_way_li = sharers_ways_r_lo[gpr_r_lo[e_gpr_r0][lg_num_lce_lp-1:0]];
+      e_dir_way_sel_sh_way_r0: dir_way_li = sharers_ways_lo[gpr_r_lo[e_gpr_r0][lg_num_lce_lp-1:0]];
       default: dir_way_li = '0;
     endcase
     case (decoded_inst_lo.dir_coh_state_sel)
@@ -720,7 +710,7 @@ module bp_cce
   // ALU
 
   logic sharers_hits_r0;
-  assign sharers_hits_r0 = sharers_hits_r_lo[gpr_r_lo[e_gpr_r0][lg_num_lce_lp-1:0]];
+  assign sharers_hits_r0 = sharers_hits_lo[gpr_r_lo[e_gpr_r0][lg_num_lce_lp-1:0]];
   localparam [`bp_cce_inst_gpr_width-`bp_lce_cce_ack_type_width-1:0] gpr_ack_0 =
     (`bp_cce_inst_gpr_width-`bp_lce_cce_ack_type_width)'('0);
   localparam [`bp_cce_inst_gpr_width-2:0] gpr_width_minus1_0 = (`bp_cce_inst_gpr_width-1)'('0);

@@ -169,10 +169,12 @@ module bp_cce_dir
   assign wr_wg_row_select = (num_lce_p == 1) ? '0 : lce_i[(lg_num_lce_lp-1)-:lg_dir_rows_per_wg_lp];
   assign rd_wg_row_select = (num_lce_p == 1) ? '0 : lce_r[(lg_num_lce_lp-1)-:lg_dir_rows_per_wg_lp];
 
+  logic                                                 sharers_v_r, sharers_v_n;
   logic [num_lce_p-1:0]                                 sharers_hits_r, sharers_hits_n;
   logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0]            sharers_ways_r, sharers_ways_n;
   logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0]           sharers_coh_states_r, sharers_coh_states_n;
 
+  assign sharers_v_o = sharers_v_r;
   assign sharers_hits_o = sharers_hits_r;
   assign sharers_ways_o = sharers_ways_r;
   assign sharers_coh_states_o = sharers_coh_states_r;
@@ -192,6 +194,7 @@ module bp_cce_dir
       tag_r <= '0;
       dir_data_o_v_r <= '0;
 
+      sharers_v_r <= '0;
       sharers_hits_r <= '0;
       sharers_ways_r <= '0;
       sharers_coh_states_r <= '0;
@@ -206,6 +209,7 @@ module bp_cce_dir
       tag_r <= tag_n;
       dir_data_o_v_r <= dir_data_o_v_n;
 
+      sharers_v_r <= sharers_v_n;
       sharers_hits_r <= sharers_hits_n;
       sharers_ways_r <= sharers_ways_n;
       sharers_coh_states_r <= sharers_coh_states_n;
@@ -230,8 +234,7 @@ module bp_cce_dir
       tag_n = '0;
       dir_data_o_v_n = '0;
 
-      sharers_v_o = '0;
-
+      sharers_v_n = '0;
       sharers_hits_n = '0;
       sharers_ways_n = '0;
       sharers_coh_states_n = '0;
@@ -254,8 +257,7 @@ module bp_cce_dir
       tag_n = tag_r;
       dir_data_o_v_n = '0;
 
-      sharers_v_o = '0;
-
+      sharers_v_n = sharers_v_r;
       sharers_hits_n = sharers_hits_r;
       sharers_ways_n = sharers_ways_r;
       sharers_coh_states_n = sharers_coh_states_r;
@@ -302,12 +304,17 @@ module bp_cce_dir
 
             // reset the sharers vectors for the new read; new values will be prepared for writing
             // starting in the next cycle, when the first read data is valid
+            sharers_v_n = '0;
             sharers_hits_n = '0;
             sharers_ways_n = '0;
             sharers_coh_states_n = '0;
 
           // directory write
           end else if (w_v_i & ((w_cmd_i == e_wde_op) | (w_cmd_i == e_wds_op))) begin
+            // mark sharers info as invalid after a write, since it is possible the write
+            // changes data in the way-group that generated the sharers vectors
+            sharers_v_n = '0;
+
             dir_state_n = READY;
             dir_ram_v = 1'b1;
             dir_ram_w_v = 1'b1;
@@ -351,12 +358,11 @@ module bp_cce_dir
             dir_state_n = READ;
           end else begin
             dir_state_n = FINISH_READ;
+            // sharers will be valid next cycle
+            sharers_v_n = 1'b1;
           end
         end
         FINISH_READ: begin
-          // output the sharers vectors registers
-          sharers_v_o = 1'b1;
-
           // Note: need to set busy here if sharers register bypassing is removed from bp_cce_reg
           //busy_o = 1'b1;
 
