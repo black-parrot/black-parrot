@@ -250,11 +250,11 @@ module bp_cce_pc
         // init complete when freeze is low and cce mode is normal
         // if freeze goes low, but mode is uncached, the CCE operates in uncached mode
         // and this module stays in the INIT state and does not fetch microcode
-        if (!freeze_i && (cce_mode_r == e_cce_mode_normal)) begin
+        if (~freeze_i & (cce_mode_r == e_cce_mode_normal)) begin
           // finalize init, then start fetching microcode next
           pc_state_n = INIT_END;
         // only do something if the config link input is valid, and the address targets the CCE
-        end else if (config_v_i && config_cce_addr_v) begin
+        end else if (config_v_i & config_cce_addr_v) begin
           // address is setting a configuration register
           if (config_reg_addr_v) begin
             // only capture register on read

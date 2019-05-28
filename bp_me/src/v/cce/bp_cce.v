@@ -607,7 +607,7 @@ module bp_cce
       lce_cmd.addr = lce_cmd_addr;
       lce_cmd.way_id = lce_cmd_way;
       if ((decoded_inst_lo.lce_cmd_cmd == e_lce_cmd_set_tag)
-          || (decoded_inst_lo.lce_cmd_cmd == e_lce_cmd_set_tag_wakeup)) begin
+          | (decoded_inst_lo.lce_cmd_cmd == e_lce_cmd_set_tag_wakeup)) begin
         lce_cmd.state = mshr.next_coh_state;
       end else begin
         lce_cmd.state = '0;

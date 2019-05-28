@@ -38,7 +38,7 @@ module bp_cce_alu
     if (v_i) begin
     case (alu_op_i)
       e_beq_op: branch_res_o = equal;
-      e_bne_op: branch_res_o = !equal;
+      e_bne_op: branch_res_o = ~equal;
       e_blt_op: branch_res_o = less;
       e_ble_op: branch_res_o = less | equal;
       e_bi_op:  branch_res_o = 1'b1;

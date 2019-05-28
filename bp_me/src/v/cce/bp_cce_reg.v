@@ -402,7 +402,7 @@ module bp_cce_reg
       end
 
       // Next Coh State
-      if (decoded_inst_i.mov_dst_w_v && decoded_inst_i.dst == e_dst_next_coh_state) begin
+      if (decoded_inst_i.mov_dst_w_v & (decoded_inst_i.dst == e_dst_next_coh_state)) begin
         mshr_r.next_coh_state <= mshr_n.next_coh_state;
       end
 

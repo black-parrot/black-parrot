@@ -72,7 +72,7 @@ module bp_cce_gad
   logic [num_lce_p-1:0] lce_cached_excl;
   for (genvar i = 0; i < num_lce_p; i=i+1) begin : lce_cached_excl_gen
     assign lce_cached_excl[i] = lce_cached[i] & ((sharers_coh_states_i[i] == e_MESI_E)
-                                                 || (sharers_coh_states_i[i] == e_MESI_M));
+                                                 | (sharers_coh_states_i[i] == e_MESI_M));
   end
 
   // hit in requesting LCE

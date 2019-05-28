@@ -99,13 +99,13 @@ module bp_cce_inst_decode
     pc_branch_target_o = '0;
 
     // Pushq and Popq operation details - used for decoding and fetch control
-    pushq_op = (op == e_op_queue) && (minor_op_u == e_pushq_op);
-    popq_op = (op == e_op_queue) && (minor_op_u == e_popq_op);
-    poph_op = (op == e_op_queue) && (minor_op_u == e_poph_op);
+    pushq_op = (op == e_op_queue) & (minor_op_u == e_pushq_op);
+    popq_op = (op == e_op_queue) & (minor_op_u == e_popq_op);
+    poph_op = (op == e_op_queue) & (minor_op_u == e_poph_op);
     pushq_qsel = queue_op_s.op.pushq.dst_q;
     popq_qsel = queue_op_s.op.popq.src_q;
 
-    if (reset_i || ~inst_v_i) begin
+    if (reset_i | ~inst_v_i) begin
       decoded_inst_v_o = '0;
     end else begin
       decoded_inst_v_o = inst_v_i;
@@ -259,21 +259,21 @@ module bp_cce_inst_decode
 
           end
           if ((minor_op_u.queue_minor_op == e_popq_op)
-              || (minor_op_u.queue_minor_op == e_poph_op)) begin
+              | (minor_op_u.queue_minor_op == e_poph_op)) begin
 
             // only dequeue if actually a POPQ op, not a POPH op
             if (minor_op_u.queue_minor_op == e_popq_op) begin
               // Input queue yumi signals (to FIFOs)
               // Input messages are buffered by FIFOs, and dequeueing uses valid->yumi protocol
               // Input from LCE (valid->yumi)
-              decoded_inst_o.lce_req_yumi = lce_req_v_i && (popq_qsel == e_src_q_sel_lce_req);
-              decoded_inst_o.lce_resp_yumi = lce_resp_v_i && (popq_qsel == e_src_q_sel_lce_resp);
+              decoded_inst_o.lce_req_yumi = lce_req_v_i & (popq_qsel == e_src_q_sel_lce_req);
+              decoded_inst_o.lce_resp_yumi = lce_resp_v_i & (popq_qsel == e_src_q_sel_lce_resp);
               decoded_inst_o.lce_data_resp_yumi = lce_data_resp_v_i
-                && (popq_qsel == e_src_q_sel_lce_data_resp);
+                & (popq_qsel == e_src_q_sel_lce_data_resp);
               // Input from Mem (valid->yumi)
-              decoded_inst_o.mem_resp_yumi = mem_resp_v_i && (popq_qsel == e_src_q_sel_mem_resp);
+              decoded_inst_o.mem_resp_yumi = mem_resp_v_i & (popq_qsel == e_src_q_sel_mem_resp);
               decoded_inst_o.mem_data_resp_yumi = mem_data_resp_v_i
-                && (popq_qsel == e_src_q_sel_mem_data_resp);
+                & (popq_qsel == e_src_q_sel_mem_data_resp);
             end
 
             if (queue_op_s.op.popq.src_q == e_src_q_sel_lce_data_resp) begin
@@ -337,17 +337,17 @@ module bp_cce_inst_decode
       decoded_inst_o.gpr_w_v = |decoded_inst_o.gpr_w_mask;
 
       // Uncached data and request size register writes
-      decoded_inst_o.nc_data_lce_req = (popq_op) && (popq_qsel == e_src_q_sel_lce_req);
-      decoded_inst_o.nc_data_mem_data_resp = (popq_op) && (popq_qsel == e_src_q_sel_mem_data_resp);
-      decoded_inst_o.nc_data_w_v = (popq_op) && ((popq_qsel == e_src_q_sel_lce_req)
-                                                 || (popq_qsel == e_src_q_sel_mem_data_resp));
+      decoded_inst_o.nc_data_lce_req = (popq_op) & (popq_qsel == e_src_q_sel_lce_req);
+      decoded_inst_o.nc_data_mem_data_resp = (popq_op) & (popq_qsel == e_src_q_sel_mem_data_resp);
+      decoded_inst_o.nc_data_w_v = (popq_op) & ((popq_qsel == e_src_q_sel_lce_req)
+                                                 | (popq_qsel == e_src_q_sel_mem_data_resp));
 
     end
 
     // Control for fetch
-    wfq_op = (op == e_op_queue) && (minor_op_u.queue_minor_op == e_wfq_op);
-    stall_op = (op == e_op_misc) && (minor_op_u.misc_minor_op == e_stall_op);
-    rd_dir_op = (op == e_op_read_dir) && (minor_op_u.read_dir_minor_op != e_rdp_op);
+    wfq_op = (op == e_op_queue) & (minor_op_u.queue_minor_op == e_wfq_op);
+    stall_op = (op == e_op_misc) & (minor_op_u.misc_minor_op == e_stall_op);
+    rd_dir_op = (op == e_op_read_dir) & (minor_op_u.read_dir_minor_op != e_rdp_op);
 
     // vector of input queue valid signals
     wfq_v_vec = {lce_req_v_i, lce_resp_v_i, lce_data_resp_v_i, mem_resp_v_i, mem_data_resp_v_i,
@@ -376,7 +376,7 @@ module bp_cce_inst_decode
 
     // stall PC if POPQ instruction and target input queue has no valid data
     // also stall if POPH and target queue is not valid
-    if (popq_op || poph_op) begin
+    if (popq_op | poph_op) begin
     case (popq_qsel)
       e_src_q_sel_lce_req: pc_stall_o |= ~lce_req_v_i;
       e_src_q_sel_mem_resp: pc_stall_o |= ~mem_resp_v_i;

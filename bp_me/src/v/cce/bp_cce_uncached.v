@@ -105,7 +105,7 @@ module bp_cce_uncached
 
   always_ff @(posedge clk_i) begin
     // This module only operates when reset is low and CCE is in uncached mode
-    if (reset_i || (cce_mode_i != e_cce_mode_uncached)) begin
+    if (reset_i | (cce_mode_i != e_cce_mode_uncached)) begin
       uc_state <= READY;
       lce_req_r <= '0;
     end else begin
@@ -138,7 +138,7 @@ module bp_cce_uncached
     uc_state_n = READY;
 
     // only operate if not in reset and cce mode is uncached
-    if (!reset_i && (cce_mode_i == e_cce_mode_uncached)) begin
+    if (~reset_i & (cce_mode_i == e_cce_mode_uncached)) begin
       case (uc_state)
       READY: begin
         lce_req_n = (lce_req_v_i) ? lce_req : '0;
@@ -149,7 +149,7 @@ module bp_cce_uncached
                        ? SEND_MEM_CMD
                        : SEND_MEM_DATA_CMD
                      : READY;
-        if (lce_req_v_i && (lce_req.non_cacheable == e_lce_req_cacheable)) begin
+        if (lce_req_v_i & (lce_req.non_cacheable == e_lce_req_cacheable)) begin
           $warning("Cacheable request received while in uncached mode");
         end
       end
