@@ -49,8 +49,8 @@ module bp_cce_reg
    , input bp_cce_inst_decoded_s                                           decoded_inst_i
 
    , input [bp_lce_cce_req_width_lp-1:0]                                   lce_req_i
-   , input [bp_lce_cce_data_resp_width_lp-1:0]                             lce_data_resp_i
-   , input [bp_lce_cce_resp_width_lp-1:0]                                  lce_resp_i
+   , input bp_lce_cce_resp_msg_type_e                                      null_wb_flag_i
+   , input bp_lce_cce_ack_type_e                                           resp_ack_type_i
 
    , input [bp_mem_cce_resp_width_lp-1:0]                                  mem_resp_i
    , input [bp_mem_cce_data_resp_width_lp-1:0]                             mem_data_resp_i
@@ -92,26 +92,20 @@ module bp_cce_reg
 
   // Define structure variables for input queues
   `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p);
-  `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
   `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, block_size_in_bits_lp);
-
 
   `declare_bp_me_if(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
 
-  bp_lce_cce_req_s lce_req_s_i;
-  bp_lce_cce_resp_s lce_resp_s_i;
-  bp_lce_cce_data_resp_s lce_data_resp_s_i;
-  bp_mem_cce_resp_s mem_resp_s_i;
-  bp_mem_cce_data_resp_s mem_data_resp_s_i;
+  bp_lce_cce_req_s lce_req;
+  bp_mem_cce_resp_s mem_resp;
+  bp_mem_cce_data_resp_s mem_data_resp;
 
   // assign input and output queues to/from structure variables
   always_comb
   begin
-    lce_req_s_i = lce_req_i;
-    lce_resp_s_i = lce_resp_i;
-    lce_data_resp_s_i = lce_data_resp_i;
-    mem_resp_s_i = mem_resp_i;
-    mem_data_resp_s_i = mem_data_resp_i;
+    lce_req = lce_req_i;
+    mem_resp = mem_resp_i;
+    mem_data_resp = mem_data_resp_i;
   end
 
   // Registers
@@ -150,16 +144,16 @@ module bp_cce_reg
     // Request LCE, address, tag
     case (decoded_inst_i.req_sel)
       e_req_sel_lce_req: begin
-        mshr_n.lce_id = lce_req_s_i.src_id;
-        mshr_n.paddr = lce_req_s_i.addr;
+        mshr_n.lce_id = lce_req.src_id;
+        mshr_n.paddr = lce_req.addr;
       end
       e_req_sel_mem_resp: begin
-        mshr_n.lce_id = mem_resp_s_i.payload.lce_id;
-        mshr_n.paddr = mem_resp_s_i.payload.req_addr;
+        mshr_n.lce_id = mem_resp.payload.lce_id;
+        mshr_n.paddr = mem_resp.payload.req_addr;
       end
       e_req_sel_mem_data_resp: begin
-        mshr_n.lce_id = mem_data_resp_s_i.payload.lce_id;
-        mshr_n.paddr = mem_data_resp_s_i.addr;
+        mshr_n.lce_id = mem_data_resp.payload.lce_id;
+        mshr_n.paddr = mem_data_resp.addr;
       end
       e_req_sel_pending: begin // TODO: v2
         mshr_n.lce_id = '0;
@@ -177,10 +171,10 @@ module bp_cce_reg
         mshr_n.way_id = gad_req_addr_way_i;
       end
       e_req_addr_way_sel_mem_resp: begin
-        mshr_n.way_id = mem_resp_s_i.payload.way_id;
+        mshr_n.way_id = mem_resp.payload.way_id;
       end
       e_req_addr_way_sel_mem_data_resp: begin
-        mshr_n.way_id = mem_data_resp_s_i.payload.way_id;
+        mshr_n.way_id = mem_data_resp.payload.way_id;
       end
       default: begin
         mshr_n.way_id = '0;
@@ -190,13 +184,13 @@ module bp_cce_reg
     // LRU Way
     case (decoded_inst_i.lru_way_sel)
       e_lru_way_sel_lce_req: begin
-        mshr_n.lru_way_id = lce_req_s_i.lru_way_id;
+        mshr_n.lru_way_id = lce_req.lru_way_id;
       end
       e_lru_way_sel_mem_resp: begin
-        mshr_n.lru_way_id = mem_resp_s_i.payload.way_id;
+        mshr_n.lru_way_id = mem_resp.payload.way_id;
       end
       e_lru_way_sel_mem_data_resp: begin
-        mshr_n.lru_way_id = mem_data_resp_s_i.payload.way_id;
+        mshr_n.lru_way_id = mem_data_resp.payload.way_id;
       end
       e_lru_way_sel_pending: begin
         mshr_n.lru_way_id = '0; // TODO: v2
@@ -213,8 +207,8 @@ module bp_cce_reg
         mshr_n.tr_way_id = gad_transfer_lce_way_i;
       end
       e_tr_lce_sel_mem_resp: begin
-        mshr_n.tr_lce_id = mem_resp_s_i.payload.tr_lce_id;
-        mshr_n.tr_way_id = mem_resp_s_i.payload.tr_way_id;
+        mshr_n.tr_lce_id = mem_resp.payload.tr_lce_id;
+        mshr_n.tr_way_id = mem_resp.payload.tr_way_id;
       end
       default: begin
         mshr_n.tr_lce_id = '0;
@@ -223,26 +217,26 @@ module bp_cce_reg
     endcase
 
     // ACK Type
-    ack_type_n = lce_resp_s_i.msg_type;
+    ack_type_n = resp_ack_type_i;
 
     // Flags
     mshr_n.flags[e_flag_sel_pcf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
 
     case (decoded_inst_i.rqf_sel)
       e_rqf_lce_req: begin
-        mshr_n.flags[e_flag_sel_rqf] = lce_req_s_i.msg_type;
-        mshr_n.flags[e_flag_sel_ucf] = lce_req_s_i.non_cacheable;
-        nc_req_size_n           = lce_req_s_i.nc_size;
+        mshr_n.flags[e_flag_sel_rqf] = lce_req.msg_type;
+        mshr_n.flags[e_flag_sel_ucf] = lce_req.non_cacheable;
+        nc_req_size_n           = lce_req.nc_size;
       end
       e_rqf_mem_resp: begin
-        mshr_n.flags[e_flag_sel_rqf] = mem_resp_s_i.msg_type;
-        mshr_n.flags[e_flag_sel_ucf] = mem_resp_s_i.non_cacheable;
-        nc_req_size_n           = mem_resp_s_i.nc_size;
+        mshr_n.flags[e_flag_sel_rqf] = mem_resp.msg_type;
+        mshr_n.flags[e_flag_sel_ucf] = mem_resp.non_cacheable;
+        nc_req_size_n           = mem_resp.nc_size;
       end
       e_rqf_mem_data_resp: begin
-        mshr_n.flags[e_flag_sel_rqf] = mem_data_resp_s_i.msg_type;
-        mshr_n.flags[e_flag_sel_ucf] = mem_data_resp_s_i.non_cacheable;
-        nc_req_size_n           = mem_data_resp_s_i.nc_size;
+        mshr_n.flags[e_flag_sel_rqf] = mem_data_resp.msg_type;
+        mshr_n.flags[e_flag_sel_ucf] = mem_data_resp.non_cacheable;
+        nc_req_size_n           = mem_data_resp.nc_size;
       end
       e_rqf_pending: begin
         mshr_n.flags[e_flag_sel_rqf] = '0; // TODO: v2
@@ -263,8 +257,8 @@ module bp_cce_reg
 
     case (decoded_inst_i.nerldf_sel)
       e_nerldf_lce_req: begin
-        mshr_n.flags[e_flag_sel_nerf] = lce_req_s_i.non_exclusive;
-        mshr_n.flags[e_flag_sel_ldf] = lce_req_s_i.lru_dirty;
+        mshr_n.flags[e_flag_sel_nerf] = lce_req.non_exclusive;
+        mshr_n.flags[e_flag_sel_ldf] = lce_req.lru_dirty;
       end
       e_nerldf_pending: begin
         mshr_n.flags[e_flag_sel_nerf] = '0; // TODO: v2
@@ -282,7 +276,7 @@ module bp_cce_reg
 
     case (decoded_inst_i.nwbf_sel)
       e_nwbf_lce_data_resp: begin
-        if (lce_data_resp_s_i.msg_type == e_lce_resp_null_wb) begin
+        if (null_wb_flag_i == e_lce_resp_null_wb) begin
           mshr_n.flags[e_flag_sel_nwbf] = 1'b1;
         end else begin
           mshr_n.flags[e_flag_sel_nwbf] = '0;
@@ -298,7 +292,7 @@ module bp_cce_reg
 
     case (decoded_inst_i.tf_sel)
       e_tf_logic: mshr_n.flags[e_flag_sel_tf] = gad_transfer_flag_i;
-      e_tf_mem_resp: mshr_n.flags[e_flag_sel_tf] = mem_resp_s_i.payload.transfer;
+      e_tf_mem_resp: mshr_n.flags[e_flag_sel_tf] = mem_resp.payload.transfer;
       e_tf_imm0: mshr_n.flags[e_flag_sel_tf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
       default: mshr_n.flags[e_flag_sel_tf] = '0;
     endcase
@@ -331,7 +325,7 @@ module bp_cce_reg
     endcase
 
     case (decoded_inst_i.rwbf_sel)
-      e_rwbf_mem_resp: mshr_n.flags[e_flag_sel_rwbf] = mem_resp_s_i.payload.replacement;
+      e_rwbf_mem_resp: mshr_n.flags[e_flag_sel_rwbf] = mem_resp.payload.replacement;
       e_rwbf_imm0: mshr_n.flags[e_flag_sel_rwbf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
       default: mshr_n.flags[e_flag_sel_rwbf] = '0;
     endcase
@@ -358,9 +352,9 @@ module bp_cce_reg
 
     // Uncached data
     if (decoded_inst_i.nc_data_lce_req) begin
-      nc_data_n = lce_req_s_i.data;
+      nc_data_n = lce_req.data;
     end else if (decoded_inst_i.nc_data_mem_data_resp) begin
-      nc_data_n = mem_data_resp_s_i.data[0+:lce_req_data_width_p];
+      nc_data_n = mem_data_resp.data[0+:lce_req_data_width_p];
     end else begin
       nc_data_n = '0;
     end

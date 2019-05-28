@@ -120,6 +120,7 @@ module bp_cce
   bp_cce_mem_data_cmd_s mem_data_cmd;
   bp_lce_cce_data_resp_s lce_data_resp;
   bp_mem_cce_data_resp_s mem_data_resp;
+  bp_lce_cce_resp_s lce_resp;
 
   // assign output queue ports to structure variables
   assign lce_cmd_o = lce_cmd;
@@ -130,6 +131,7 @@ module bp_cce
   // cast input messages with data
   assign lce_data_resp = lce_data_resp_i;
   assign mem_data_resp = mem_data_resp_i;
+  assign lce_resp = lce_resp_i;
 
   // PC to Decode signals
   logic [`bp_cce_inst_width-1:0] pc_inst_lo;
@@ -187,6 +189,14 @@ module bp_cce
   `declare_bp_cce_mshr_s(num_lce_p, lce_assoc_p, paddr_width_p);
   bp_cce_mshr_s mshr;
 
+  bp_lce_cce_resp_msg_type_e null_wb_flag_li;
+  assign null_wb_flag_li = lce_data_resp_v_i
+                           ? (lce_data_resp.msg_type)
+                           : bp_lce_cce_resp_msg_type_e'('0);
+  bp_lce_cce_ack_type_e resp_ack_type_li;
+  assign resp_ack_type_li = lce_resp_v_i
+                            ? (lce_resp.msg_type)
+                            : bp_lce_cce_ack_type_e'('0);
   logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_r_lo;
   logic [`bp_lce_cce_ack_type_width-1:0] ack_type_r_lo;
   logic [`bp_lce_cce_nc_req_size_width-1:0] nc_req_size_r_lo;
@@ -373,8 +383,8 @@ module bp_cce
       ,.reset_i(reset_i)
       ,.decoded_inst_i(decoded_inst_lo)
       ,.lce_req_i(lce_req_i)
-      ,.lce_data_resp_i(lce_data_resp_i)
-      ,.lce_resp_i(lce_resp_i)
+      ,.null_wb_flag_i(null_wb_flag_li)
+      ,.resp_ack_type_i(resp_ack_type_li)
       ,.mem_resp_i(mem_resp_i)
       ,.mem_data_resp_i(mem_data_resp_i)
       ,.alu_res_i(alu_res_lo)
