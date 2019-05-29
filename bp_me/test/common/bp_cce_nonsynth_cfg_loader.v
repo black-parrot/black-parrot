@@ -11,6 +11,7 @@ module bp_cce_nonsynth_cfg_loader
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
+  import bp_be_dcache_pkg::*;
   #(parameter inst_width_p            = "inv"
     , parameter inst_ram_addr_width_p = "inv"
     , parameter cfg_link_addr_width_p = bp_cfg_link_addr_width_gp
@@ -59,6 +60,7 @@ module bp_cce_nonsynth_cfg_loader
     ,PAUSE
     ,SEND_RAM
     ,SEND_CFG_NORMAL
+    ,SEND_LCE_CFG_NORMAL
     ,DONE
   } cfg_state_e;
 
@@ -110,7 +112,7 @@ module bp_cce_nonsynth_cfg_loader
           state_n = (reset_i) ? RESET : PAUSE;
         end
         PAUSE: begin
-          state_n = (skip_ram_init_p) ? PAUSE : SEND_RAM;
+          state_n = (skip_ram_init_p) ? DONE : SEND_RAM;
         end
         SEND_RAM: begin
           config_v_o = 1'b1;
@@ -134,7 +136,16 @@ module bp_cce_nonsynth_cfg_loader
           config_w_o = 1'b1;
           config_addr_o = cfg_addr_r;
           config_data_o = {(cfg_link_data_width_p-`bp_cce_mode_bits)'('0), e_cce_mode_normal};
-          state_n = config_ready_i ? DONE : SEND_CFG_NORMAL;
+          state_n = config_ready_i ? SEND_LCE_CFG_NORMAL : SEND_CFG_NORMAL;
+          // address of D$ config register is 15'h1
+          cfg_addr_n = config_ready_i ? 15'h1 : cfg_addr_r;
+        end
+        SEND_LCE_CFG_NORMAL: begin
+          config_v_o = 1'b1;
+          config_w_o = 1'b1;
+          config_addr_o = cfg_addr_r;
+          config_data_o = {(cfg_link_data_width_p-`bp_be_dcache_lce_mode_bits)'('0), e_dcache_lce_mode_normal};
+          state_n = DONE;
         end
         DONE: begin
           freeze_n = '0;

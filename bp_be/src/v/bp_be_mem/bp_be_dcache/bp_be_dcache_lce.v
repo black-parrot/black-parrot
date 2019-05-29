@@ -82,10 +82,14 @@ module bp_be_dcache_lce
       `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, ways_p)
     , localparam lce_data_cmd_width_lp=
       `bp_lce_data_cmd_width(num_lce_p, lce_data_width_p, ways_p)
+
+    , parameter cfg_link_addr_width_p = bp_cfg_link_addr_width_gp
+    , parameter cfg_link_data_width_p = bp_cfg_link_data_width_gp
   )
   (
     input clk_i
     , input reset_i
+    , input freeze_i
 
     , input [lce_id_width_lp-1:0] lce_id_i
 
@@ -149,7 +153,45 @@ module bp_be_dcache_lce
 
     , output credits_full_o
     , output credits_empty_o
+
+    // config link
+   , input [cfg_link_addr_width_p-2:0]           config_addr_i
+   , input [cfg_link_data_width_p-1:0]           config_data_i
+   , input                                       config_v_i
+   , input                                       config_w_i
+   , output logic                                config_ready_o
+
+   , output logic [cfg_link_data_width_p-1:0]    config_data_o
+   , output logic                                config_v_o
+   , input                                       config_ready_i
   );
+
+  // LCE Mode control
+  // TODO: reads not supported
+  wire unused = config_ready_i;
+  assign config_data_o = '0;
+  assign config_v_o = '0;
+
+  bp_be_dcache_lce_mode_e lce_mode_r, lce_mode_n;
+  // TODO: The LCE has a single config register, thus the unit is always ready. Writes should only
+  // happen when reset_i is low and freeze_i is high. If these conditions are true, the LCE
+  // simply snoops the config link and writes the mode register when targeted by a valid write
+  // command on the link.
+  assign config_ready_o = 1'b1;
+  logic lce_mode_w_v, lce_mode_addr_v;
+  assign lce_mode_addr_v = (config_addr_i == 15'h1);
+  assign lce_mode_w_v = freeze_i & config_v_i & config_w_i & lce_mode_addr_v;
+  assign lce_mode_n = bp_be_dcache_lce_mode_e'(config_data_i[0+:`bp_be_dcache_lce_mode_bits]);
+
+  always_ff @(posedge clk_i) begin
+    if (reset_i) begin
+      lce_mode_r <= e_dcache_lce_mode_uncached;
+    end else begin
+      if (lce_mode_w_v) begin
+        lce_mode_r <= lce_mode_n;
+      end
+    end
+  end
 
   // casting structs
   //
@@ -288,8 +330,10 @@ module bp_be_dcache_lce
     lce_cmd_inst
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
+      ,.freeze_i(freeze_i)
 
       ,.lce_id_i(lce_id_i)
+      ,.lce_mode_i(lce_mode_r)
 
       ,.lce_sync_done_o(lce_sync_done_lo)
       ,.set_tag_received_o(set_tag_received)
@@ -435,6 +479,13 @@ module bp_be_dcache_lce
     end
   end
 
-  assign ready_o = lce_sync_done_lo & ~timeout & ~cache_miss_o; 
+  // LCE Ready Signal
+  // The LCE ready signal depends on the mode of operation.
+  // In uncached only mode, the signal goes high once freeze_i goes low.
+  // In normal mode, the signal goes high after the LCE CMD unit signals that the CCE has
+  // completed the initialization sequence.
+  logic lce_ready;
+  assign lce_ready = (lce_mode_r == e_dcache_lce_mode_uncached) ? ~freeze_i : lce_sync_done_lo;
+  assign ready_o = lce_ready & ~timeout & ~cache_miss_o; 
 
 endmodule

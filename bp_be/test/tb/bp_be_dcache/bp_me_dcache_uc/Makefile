@@ -26,6 +26,8 @@ NUMS = $(shell seq 0 `expr $(NUM_LCE_P) - 1`)
 BASE = bsg_trace_rom_
 TRACE_ROMS = $(addsuffix .v, $(addprefix $(BASE), $(NUMS)))
 
+CFG_INIT_P ?= 0
+
 COH_PROTO ?= mesi
 ifeq ($(COH_PROTO), ei)
   CCE_ROM = $(BP_ME_DIR)/src/v/roms/ei-tr/bp_cce_inst_rom_ei-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.v
@@ -55,6 +57,7 @@ sim: clean $(TRACE_ROMS)
 		+vcs+vcdplusautoflushon +define+NUM_LCE_P=$(NUM_LCE_P) \
 		+define+AXE_TRACE_P=$(AXE_TRACE_P) \
 		+define+DRAMSIM2_P=$(DRAMSIM2_P) \
+		+define+CFG_INIT_P=$(CFG_INIT_P) \
 		+define+CCE_TRACE_P=$(CCE_TRACE_P) | $(HIGHLIGHT)
 
 dve:

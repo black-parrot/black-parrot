@@ -114,10 +114,14 @@ module bp_be_dcache
       `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, ways_p)
     , localparam lce_data_cmd_width_lp=
       `bp_lce_data_cmd_width(num_lce_p, lce_data_width_lp, ways_p)
+
+    , parameter cfg_link_addr_width_p = bp_cfg_link_addr_width_gp
+    , parameter cfg_link_data_width_p = bp_cfg_link_data_width_gp
   )
   (
     input clk_i
     , input reset_i
+    , input freeze_i
     
     , input [lce_id_width_lp-1:0] lce_id_i
 
@@ -166,6 +170,17 @@ module bp_be_dcache
 
     , output credits_full_o
     , output credits_empty_o
+
+    // config link
+   , input [cfg_link_addr_width_p-2:0]           config_addr_i
+   , input [cfg_link_data_width_p-1:0]           config_data_i
+   , input                                       config_v_i
+   , input                                       config_w_i
+   , output logic                                config_ready_o
+
+   , output logic [cfg_link_data_width_p-1:0]    config_data_o
+   , output logic                                config_v_o
+   , input                                       config_ready_i
   );
 
   // packet decoding
@@ -648,6 +663,7 @@ module bp_be_dcache
     lce
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
+      ,.freeze_i(freeze_i)
     
       ,.lce_id_i(lce_id_i)
 
@@ -705,6 +721,16 @@ module bp_be_dcache
 
       ,.credits_full_o(credits_full_o)
       ,.credits_empty_o(credits_empty_o)
+
+      ,.config_addr_i(config_addr_i)
+      ,.config_data_i(config_data_i)
+      ,.config_v_i(config_v_i)
+      ,.config_w_i(config_w_i)
+      ,.config_ready_o(config_ready_o)
+
+      ,.config_data_o(config_data_o)
+      ,.config_v_o(config_v_o)
+      ,.config_ready_i(config_ready_i)
       );
  
   // output stage

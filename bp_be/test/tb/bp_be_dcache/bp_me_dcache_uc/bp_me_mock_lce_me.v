@@ -56,6 +56,18 @@ module bp_me_mock_lce_me
     , output logic [tr_ring_width_lp-1:0] tr_pkt_o
   );
 
+  // Config link
+  logic [num_cce_p-1:0]                              freeze_li;
+  logic [num_cce_p-1:0][cfg_link_addr_width_p-2:0]   config_addr_li;
+  logic [num_cce_p-1:0][cfg_link_data_width_p-1:0]   config_data_li;
+  logic [num_cce_p-1:0]                              config_v_li;
+  logic [num_cce_p-1:0]                              config_w_li;
+  logic [num_cce_p-1:0]                              config_ready_lo;
+
+  logic [num_cce_p-1:0][cfg_link_data_width_p-1:0]   config_data_lo;
+  logic [num_cce_p-1:0]                              config_v_lo;
+  logic [num_cce_p-1:0]                              config_ready_li;
+
   // LCE
   //
   `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p);
@@ -159,6 +171,7 @@ module bp_me_mock_lce_me
   ) dcache (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
+    ,.freeze_i(freeze_li)
     ,.lce_id_i(lce_id_width_lp'(0))
 
     ,.dcache_pkt_i(rolly_dcache_pkt_lo)
@@ -201,6 +214,16 @@ module bp_me_mock_lce_me
 
     ,.credits_full_o(credits_full_lo)
     ,.credits_empty_o(credits_empty_lo)
+
+    ,.config_addr_i(config_addr_li)
+    ,.config_data_i(config_data_li)
+    ,.config_v_i(config_v_li)
+    ,.config_w_i(config_w_li)
+    ,.config_ready_o()
+    ,.config_data_o()
+    ,.config_v_o()
+    ,.config_ready_i(config_ready_li)
+
   );
 
   // mock tlb
@@ -266,18 +289,6 @@ module bp_me_mock_lce_me
   bp_cce_mem_data_cmd_s [num_cce_p-1:0] mem_data_cmd;
   logic [num_cce_p-1:0] mem_data_cmd_v;
   logic [num_cce_p-1:0] mem_data_cmd_yumi;
-
-  // Config link
-  logic [num_cce_p-1:0]                              freeze_li;
-  logic [num_cce_p-1:0][cfg_link_addr_width_p-2:0]   config_addr_li;
-  logic [num_cce_p-1:0][cfg_link_data_width_p-1:0]   config_data_li;
-  logic [num_cce_p-1:0]                              config_v_li;
-  logic [num_cce_p-1:0]                              config_w_li;
-  logic [num_cce_p-1:0]                              config_ready_lo;
-
-  logic [num_cce_p-1:0][cfg_link_data_width_p-1:0]   config_data_lo;
-  logic [num_cce_p-1:0]                              config_v_lo;
-  logic [num_cce_p-1:0]                              config_ready_li;
 
   bp_cce_top #(
     .cfg_p(cfg_p)
