@@ -98,12 +98,13 @@ sim.sc: COVERAGE_DAT ?= $(PROG)_coverage.dat
 sim.sc: dirs.sc 
 	$(shell mkdir -p $(SIM_DIR))
 	$(shell mkdir -p $(COV_DIR))
+	$(eval include $(TB_PATH)/$(TB)/Makefile.frag)
 	-@ln -sf $(BUILD_DIR)/obj_dir/V$(TOP_MODULE) $(SIM_DIR)/simsc
 	-@cp $(MEM_PATH)/$(PROG).mem $(SIM_DIR)/prog.mem
 	-@touch $(SIM_DIR)/prog.mem
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(SIM_DIR)/dram_ch.ini
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(SIM_DIR)/dram_sys.ini
-	cd $(SIM_DIR); ./simsc $(COV_DIR)/$(PROG).dat | tee $(SIM_LOG)
+	cd $(SIM_DIR); ./simsc | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "PASS" -A 8 $(SIM_LOG) > $(SIM_REPORT)
 
