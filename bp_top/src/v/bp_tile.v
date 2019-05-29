@@ -158,6 +158,7 @@ bp_core
  core 
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
+   ,.freeze_i(freeze_i)
 
    ,.proc_cfg_i(proc_cfg_i)
 
@@ -188,6 +189,18 @@ bp_core
    ,.timer_int_i(timer_int_i)
    ,.software_int_i(software_int_i)
    ,.external_int_i(external_int_i)
+
+   // config link
+   ,.config_addr_i(config_addr_i)
+   ,.config_data_i(config_data_i)
+   ,.config_v_i(config_v_i)
+   ,.config_w_i(config_w_i)
+   ,.config_ready_o()
+
+   ,.config_data_o()
+   ,.config_v_o()
+   ,.config_ready_i(config_ready_i)
+
    );
 
 // Declare the routing links

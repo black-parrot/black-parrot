@@ -172,15 +172,15 @@ module bp_be_dcache
     , output credits_empty_o
 
     // config link
-   , input [cfg_link_addr_width_p-2:0]           config_addr_i
-   , input [cfg_link_data_width_p-1:0]           config_data_i
-   , input                                       config_v_i
-   , input                                       config_w_i
-   , output logic                                config_ready_o
-
-   , output logic [cfg_link_data_width_p-1:0]    config_data_o
-   , output logic                                config_v_o
-   , input                                       config_ready_i
+    , input [cfg_link_addr_width_p-2:0]           config_addr_i
+    , input [cfg_link_data_width_p-1:0]           config_data_i
+    , input                                       config_v_i
+    , input                                       config_w_i
+    , output logic                                config_ready_o
+ 
+    , output logic [cfg_link_data_width_p-1:0]    config_data_o
+    , output logic                                config_v_o
+    , input                                       config_ready_i
   );
 
   // packet decoding

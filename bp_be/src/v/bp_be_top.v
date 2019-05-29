@@ -43,6 +43,7 @@ module bp_be_top
    )
   (input                                     clk_i
    , input                                   reset_i
+   , input                                   freeze_i
 
    // FE queue interface
    , input [fe_queue_width_lp-1:0]           fe_queue_i
@@ -89,6 +90,17 @@ module bp_be_top
    , input                                   timer_int_i
    , input                                   software_int_i
    , input                                   external_int_i
+
+   // config link
+   , input [bp_cfg_link_addr_width_gp-2:0]           config_addr_i
+   , input [bp_cfg_link_data_width_gp-1:0]           config_data_i
+   , input                                           config_v_i
+   , input                                           config_w_i
+   , output logic                                    config_ready_o
+
+   , output logic [bp_cfg_link_data_width_gp-1:0]    config_data_o
+   , output logic                                    config_v_o
+   , input                                           config_ready_i
    );
 
 // Declare parameterized structures
@@ -233,6 +245,7 @@ bp_be_mem_top
  be_mem
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
+    ,.freeze_i(freeze_i)
 
     ,.chk_poison_ex_i(chk_poison_ex2)
 
@@ -298,6 +311,16 @@ bp_be_mem_top
     ,.mepc_o(chk_mepc_li)
     ,.mtvec_o(chk_mtvec_li)
     ,.tlb_fence_o(chk_tlb_fence_li)
+
+    ,.config_addr_i(config_addr_i)
+    ,.config_data_i(config_data_i)
+    ,.config_v_i(config_v_i)
+    ,.config_w_i(config_w_i)
+    ,.config_ready_o(config_ready_o)
+
+    ,.config_data_o(config_data_o)
+    ,.config_v_o(config_v_o)
+    ,.config_ready_i(config_ready_i)
     );
 
 endmodule : bp_be_top
