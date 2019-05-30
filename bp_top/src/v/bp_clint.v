@@ -58,16 +58,6 @@ assign mem_data_cmd_cast_i  = mem_data_cmd_i;
 assign mem_data_resp_o      = mem_data_resp_cast_o;
 assign mem_resp_o           = mem_resp_cast_o;
 
-// TODO: Should put in a common header so that the network adapter can use it
-localparam cfg_link_dev_base_addr_gp = paddr_width_p'(32'h01??_????);
-localparam clint_dev_base_addr_gp    = paddr_width_p'(32'h02??_????);
-localparam plic_dev_base_addr_gp     = paddr_width_p'(32'h0c??_????);
-
-localparam mipi_reg_base_addr_gp     = paddr_width_p'(32'h0200_0???);
-localparam mtimecmp_reg_base_addr_gp = paddr_width_p'(32'h0200_4???);
-localparam mtime_reg_addr_gp         = paddr_width_p'(32'h0200_bff8);
-localparam plic_reg_base_addr_gp     = paddr_width_p'(32'h0c00_0???);
-
 localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
 
 logic cfg_link_data_cmd_v;
@@ -278,7 +268,7 @@ for (genvar i = 0; i < num_core_p; i++)
      ,.data_o({cfg_link_w_v_o, cfg_link_addr_o, cfg_link_data_o})
      );
 
-logic [num_core_p-1:0] mipi_lo;
+logic mipi_lo;
 bsg_mux_one_hot
  #(.width_p(1)
    ,.els_p(num_core_p) 
@@ -289,7 +279,7 @@ bsg_mux_one_hot
    ,.data_o(mipi_lo)
    );
 
-logic [num_core_p-1:0][dword_width_p-1:0] mtimecmp_lo;
+logic [dword_width_p-1:0] mtimecmp_lo;
 bsg_mux_one_hot
  #(.width_p(dword_width_p)
    ,.els_p(num_core_p)
@@ -300,7 +290,7 @@ bsg_mux_one_hot
    ,.data_o(mtimecmp_lo)
    );
 
-logic [num_core_p-1:0] plic_lo;
+logic plic_lo;
 bsg_mux_one_hot
  #(.width_p(1)
    ,.els_p(num_core_p)
