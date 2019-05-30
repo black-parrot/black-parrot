@@ -141,6 +141,61 @@ bind bp_be_top
      ,.program_fail_i(be_mem.csr.program_fail)
      );
 
+
+`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)     
+     
+bp_mem_cce_resp_s      mem_resp_li;
+logic                  mem_resp_v_li, mem_resp_ready_lo;
+
+bp_mem_cce_data_resp_s mem_data_resp_li;
+logic                  mem_data_resp_v_li, mem_data_resp_ready_lo;
+
+bp_cce_mem_cmd_s       mem_cmd_lo;
+logic                  mem_cmd_v_lo, mem_cmd_yumi_li;
+
+bp_cce_mem_data_cmd_s  mem_data_cmd_lo;
+logic                  mem_data_cmd_v_lo, mem_data_cmd_yumi_li;
+
+     
+bp_me_cce_to_wormhole_link_client
+ #(.num_lce_p(num_lce_p)
+  ,.paddr_width_p(paddr_width_p)
+  ,.lce_assoc_p(lce_assoc_p)
+  ,.block_size_in_bytes_p(cce_block_width_p/8)
+  ,.lce_req_data_width_p(dword_width_p)
+  ,.width_p(width_p)
+  ,.x_cord_width_p(noc_x_cord_width_lp)
+  ,.y_cord_width_p(noc_y_cord_width_lp)
+  ,.len_width_p(4)
+  ,.reserved_width_p(2))
+  wh_mem_link_client
+  (.clk_i(clk_i)
+  ,.reset_i(reset_i)
+
+  ,.mem_cmd_o(mem_cmd_lo)
+  ,.mem_cmd_v_o(mem_cmd_v_lo)
+  ,.mem_cmd_yumi_i(mem_cmd_yumi_li)
+
+  ,.mem_data_cmd_o(mem_data_cmd_lo)
+  ,.mem_data_cmd_v_o(mem_data_cmd_v_lo)
+  ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi_li)
+
+  ,.mem_resp_i(mem_resp_li)
+  ,.mem_resp_v_i(mem_resp_v_li)
+  ,.mem_resp_ready_o(mem_resp_ready_lo)
+
+  ,.mem_data_resp_i(mem_data_resp_li)
+  ,.mem_data_resp_v_i(mem_data_resp_v_li)
+  ,.mem_data_resp_ready_o(mem_data_resp_ready_lo)
+  
+  ,.my_x_i(noc_x_cord_width_lp'(0))
+  ,.my_y_i(noc_y_cord_width_lp'(1))
+  
+  ,.link_i(noc_link_lo)
+  ,.link_o(noc_link_li)
+  );
+     
+/*
 bp_mem_wormhole_dramsim2
  #(.mem_id_p(0)
    ,.clock_period_in_ps_p(clock_period_in_ps_p)
@@ -169,6 +224,44 @@ bp_mem_wormhole_dramsim2
    ,.link_i(noc_link_lo)
    ,.link_o(noc_link_li)
    );
+*/
+
+
+bp_mem_dramsim2
+#(.mem_id_p(0)
+   ,.clock_period_in_ps_p(clock_period_in_ps_p)
+   ,.prog_name_p(prog_name_p)
+   ,.dram_cfg_p(dram_cfg_p)
+   ,.dram_sys_cfg_p(dram_sys_cfg_p)
+   ,.dram_capacity_p(dram_capacity_p)
+   ,.num_lce_p(num_lce_p)
+   ,.num_cce_p(num_cce_p)
+   ,.paddr_width_p(paddr_width_p)
+   ,.lce_assoc_p(lce_assoc_p)
+   ,.block_size_in_bytes_p(cce_block_width_p/8)
+   ,.lce_sets_p(lce_sets_p)
+   ,.lce_req_data_width_p(dword_width_p)
+  )
+mem
+ (.clk_i(clk_i)
+  ,.reset_i(reset_i)
+
+  ,.mem_cmd_i(mem_cmd_lo)
+  ,.mem_cmd_v_i(mem_cmd_v_lo)
+  ,.mem_cmd_yumi_o(mem_cmd_yumi_li)
+
+  ,.mem_data_cmd_i(mem_data_cmd_lo)
+  ,.mem_data_cmd_v_i(mem_data_cmd_v_lo)
+  ,.mem_data_cmd_yumi_o(mem_data_cmd_yumi_li)
+
+  ,.mem_resp_o(mem_resp_li)
+  ,.mem_resp_v_o(mem_resp_v_li)
+  ,.mem_resp_ready_i(mem_resp_ready_lo)
+
+  ,.mem_data_resp_o(mem_data_resp_li)
+  ,.mem_data_resp_v_o(mem_data_resp_v_li)
+  ,.mem_data_resp_ready_i(mem_data_resp_ready_lo)
+  );
      
      
 for (genvar i = 0; i < num_cce_p; i++) 

@@ -80,7 +80,7 @@ module bp_top
     // bsg_noc_wormhole interface
     ,input [bsg_ready_and_link_sif_width_lp-1:0]              link_i
     ,output [bsg_ready_and_link_sif_width_lp-1:0]             link_o
-  );
+    );
 
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
@@ -116,12 +116,7 @@ logic                  [num_cce_p-1:0] mem_cmd_v_lo, mem_cmd_yumi_li;
 bp_cce_mem_data_cmd_s  [num_cce_p-1:0] mem_data_cmd_lo;
 logic                  [num_cce_p-1:0] mem_data_cmd_v_lo, mem_data_cmd_yumi_li;
   
-logic [num_core_p-1:0] timer_irq_lo, soft_irq_lo, external_irq_lo;
-
-// TODO: Connect me to CLINT
-assign timer_irq_lo = '0;
-assign soft_irq_lo = '0;
-assign external_irq_lo = '0;
+logic [num_core_p-1:0] timer_irq_lo, soft_irq_lo;
 
   assign lce_req_link_stitch_li[0][W]                  = '0;
   assign lce_resp_link_stitch_li[0][W]                 = '0;
@@ -134,8 +129,6 @@ assign external_irq_lo = '0;
   assign lce_data_resp_link_stitch_li[num_core_p-1][E] = '0;
   assign lce_cmd_link_stitch_li[num_core_p-1][E]       = '0;
   assign lce_data_cmd_link_stitch_li[num_core_p-1][E]  = '0;
-
-bp_clint #(.cfg_p(cfg_p)) ();
 
 for(genvar i = 0; i < num_core_p; i++) 
   begin : rof1
@@ -258,11 +251,9 @@ for(genvar i = 0; i < num_core_p; i++)
        
     bp_me_cce_to_wormhole_link_master
      #(.num_lce_p(num_lce_p)
-      ,.num_cce_p(num_cce_p)
       ,.paddr_width_p(paddr_width_p)
       ,.lce_assoc_p(lce_assoc_p)
       ,.block_size_in_bytes_p(cce_block_width_p/8)
-      ,.lce_sets_p(lce_sets_p)
       ,.lce_req_data_width_p(dword_width_p)
       ,.width_p(width_p)
       ,.x_cord_width_p(noc_x_cord_width_lp)

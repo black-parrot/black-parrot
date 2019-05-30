@@ -11,13 +11,9 @@ module bp_me_cce_to_wormhole_link_master
   import bp_cce_pkg::*;
   
   #(parameter num_lce_p="inv"
-    ,parameter num_cce_p="inv"
     ,parameter paddr_width_p="inv"
     ,parameter lce_assoc_p="inv"
     ,parameter block_size_in_bytes_p="inv"
-    ,localparam block_size_in_bits_lp=block_size_in_bytes_p*8
-    ,parameter lce_sets_p="inv"
-
     ,parameter lce_req_data_width_p="inv"
     
     // wormhole parameters
@@ -26,8 +22,10 @@ module bp_me_cce_to_wormhole_link_master
     ,parameter y_cord_width_p = "inv"
     ,parameter len_width_p = "inv"
     ,parameter reserved_width_p = "inv"
+    
+    ,localparam block_size_in_bits_lp=block_size_in_bytes_p*8
     ,localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(width_p)
-
+    
     ,localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p, num_lce_p, lce_assoc_p)
     ,localparam bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
     ,localparam bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(paddr_width_p, num_lce_p, lce_assoc_p)
@@ -151,7 +149,7 @@ module bp_me_cce_to_wormhole_link_master
   logic [word_select_bits_lp-1:0] read_word_sel_r, read_word_sel_n;
   
   
-  always @(posedge clk_i) begin
+  always_ff @(posedge clk_i) begin
   
     if (reset_i) begin
         state_r <= RESET;
@@ -187,6 +185,15 @@ module bp_me_cce_to_wormhole_link_master
     data_o_cast.dummy = 0;
     data_o_cast.src_x_cord = my_x_i;
     data_o_cast.src_y_cord = my_y_i;
+    
+    // Default state is mem_cmd
+    data_o_cast.x_cord = mem_cmd_dest_x_i;
+    data_o_cast.y_cord = mem_cmd_dest_y_i;
+    data_o_cast.write_en = 0;
+    data_o_cast.non_cacheable = mem_cmd.non_cacheable;
+    data_o_cast.nc_size = mem_cmd.nc_size;
+    data_o_cast.addr = mem_cmd.addr;
+    data_o_cast.len = 0;
     
     mem_cmd_yumi_o = 0;
     mem_data_cmd_yumi_o = 0;
@@ -241,14 +248,6 @@ module bp_me_cce_to_wormhole_link_master
             end
             
         end else if (mem_cmd_v_i) begin
-            
-            data_o_cast.x_cord = mem_cmd_dest_x_i;
-            data_o_cast.y_cord = mem_cmd_dest_y_i;
-            data_o_cast.write_en = 0;
-            data_o_cast.non_cacheable = mem_cmd.non_cacheable;
-            data_o_cast.nc_size = mem_cmd.nc_size;
-            data_o_cast.addr = mem_cmd.addr;
-            data_o_cast.len = 0;
             
             mem_data_resp_n.msg_type = mem_cmd.msg_type;
             mem_data_resp_n.payload.lce_id = mem_cmd.payload.lce_id;
@@ -337,4 +336,3 @@ module bp_me_cce_to_wormhole_link_master
   end
   
 endmodule
-
