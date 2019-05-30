@@ -35,6 +35,11 @@ module bp_cce_nonsynth_cfg_loader
    , output logic [cce_mem_data_cmd_width_lp-1:0]    mem_data_cmd_o
    , output logic                                    mem_data_cmd_v_o
    , input                                           mem_data_cmd_yumi_i
+
+   // We don't need a response from the cfg network
+   //, input [mem_cce_resp_width_lp-1:0]               mem_resp_i
+   //, input                                           mem_resp_v_i
+   //, output                                          mem_resp_ready_o
    );
 
  `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);

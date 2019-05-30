@@ -37,6 +37,7 @@ module bp_clint
    // Local interrupts
    , output [num_core_p-1:0]                       soft_irq_o
    , output [num_core_p-1:0]                       timer_irq_o
+   , output [num_core_p-1:0]                       external_irq_o
 
    // Core config link
    , output                                        cfg_link_w_v_o
@@ -58,85 +59,124 @@ assign mem_data_resp_o      = mem_data_resp_cast_o;
 assign mem_resp_o           = mem_resp_cast_o;
 
 // TODO: Should put in a common header so that the network adapter can use it
-localparam clint_base_addr_gp       = paddr_width_p'(32'h200_0000);
-localparam clint_offset_width_gp    = 24;
-localparam cfg_link_base_addr_gp    = paddr_width_p'(32'h400_0000);
-localparam cfg_link_offset_width_gp = 24;
+localparam cfg_link_dev_base_addr_gp = paddr_width_p'(32'h01??_????);
+localparam clint_dev_base_addr_gp    = paddr_width_p'(32'h02??_????);
+localparam plic_dev_base_addr_gp     = paddr_width_p'(32'h0c??_????);
 
-// Each CLINT CSR is base + mhartid * 8
-localparam mipi_base_offset_gp     = 16'h0000;
-localparam mtimecmp_base_offset_gp = 16'h4000;
-localparam mtime_offset_gp         = 16'hbff8;
-
-// Each CLINT CSR type has 12 bit address space, 8-byte aligned
-localparam clint_reg_width_gp        = 12;
-localparam clint_reg_base_width_gp   = 9;
-localparam clint_reg_offset_width_gp = 3; 
+localparam mipi_reg_base_addr_gp     = paddr_width_p'(32'h0200_0???);
+localparam mtimecmp_reg_base_addr_gp = paddr_width_p'(32'h0200_4???);
+localparam mtime_reg_addr_gp         = paddr_width_p'(32'h0200_bff8);
+localparam plic_reg_base_addr_gp     = paddr_width_p'(32'h0c00_0???);
 
 localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
 
-wire clint_cmd_v      = mem_cmd_cast_i.addr[vaddr_width_p-1:clint_offset_width_gp] == clint_base_addr_gp;
-wire clint_data_cmd_v = mem_data_cmd_cast_i.addr[vaddr_width_p-1:clint_reg_width_gp] == clint_base_addr_gp;
+logic cfg_link_data_cmd_v;
+logic mipi_cmd_v, mipi_data_cmd_v;
+logic mtimecmp_cmd_v, mtimecmp_data_cmd_v;
+logic mtime_cmd_v, mtime_data_cmd_v;
+logic plic_cmd_v, plic_data_cmd_v;
 
-wire cfg_link_data_cmd_v = mem_data_cmd_cast_i.addr[vaddr_width_p-1:clint_reg_width_gp] == cfg_link_base_addr_gp;
+always_comb
+  begin
+    mipi_cmd_v          = 1'b0;
+    mtimecmp_cmd_v      = 1'b0;
+    mtime_cmd_v         = 1'b0;
+    plic_cmd_v          = 1'b0;
 
-wire [clint_reg_base_width_gp-1:0] mem_cmd_clint_reg_base = 
-  mem_cmd_cast_i.addr[clint_reg_offset_width_gp+:clint_reg_base_width_gp];
-wire [lg_num_core_lp-1:0] mem_cmd_clint_reg_offset = 
-  mem_cmd_cast_i.addr[0+:lg_num_core_lp];
+    unique 
+    casez (mem_cmd_cast_i.addr)
+      mipi_reg_base_addr_gp    : mipi_cmd_v     = mem_cmd_v_i;
+      mtimecmp_reg_base_addr_gp: mtimecmp_cmd_v = mem_cmd_v_i;
+      mtime_reg_addr_gp        : mtime_cmd_v    = mem_cmd_v_i;
+      plic_reg_base_addr_gp    : plic_cmd_v     = mem_cmd_v_i;
+      default: begin end
+    endcase
 
-wire [clint_reg_base_width_gp-1:0] mem_data_cmd_clint_reg_base = 
-  mem_data_cmd_cast_i.addr[clint_reg_offset_width_gp+:clint_reg_base_width_gp];
-wire [lg_num_core_lp-1:0] mem_data_cmd_clint_reg_offset = 
-  mem_data_cmd_cast_i.addr[0+:lg_num_core_lp];
+    cfg_link_data_cmd_v = 1'b0;
+    mipi_data_cmd_v     = 1'b0;
+    mtimecmp_data_cmd_v = 1'b0;
+    mtime_data_cmd_v    = 1'b0;
+    plic_data_cmd_v     = 1'b0;
+
+    unique 
+    casez (mem_data_cmd_cast_i.addr)
+      cfg_link_dev_base_addr_gp: cfg_link_data_cmd_v = mem_data_cmd_v_i;
+      mipi_reg_base_addr_gp    : mipi_data_cmd_v     = mem_data_cmd_v_i;
+      mtimecmp_reg_base_addr_gp: mtimecmp_data_cmd_v = mem_data_cmd_v_i;
+      mtime_reg_addr_gp        : mtime_data_cmd_v    = mem_data_cmd_v_i;
+      plic_reg_base_addr_gp    : plic_data_cmd_v     = mem_data_cmd_v_i;
+      default: begin end
+    endcase
+  end
 
 logic [num_core_p-1:0] mtimecmp_r_v_li, mtimecmp_w_v_li;
 logic [num_core_p-1:0] mipi_r_v_li    , mipi_w_v_li;
+logic [num_core_p-1:0] plic_r_v_li    , plic_w_v_li;
 
-wire mipi_cmd_v = clint_cmd_v & (mem_cmd_clint_reg_base == mipi_base_offset_gp);
+// Memory-mapped I/O is 64 bit aligned
+localparam byte_offset_width_lp = 3;
+wire [lg_num_core_lp-1:0] mem_cmd_core_enc = 
+  mem_cmd_cast_i.addr[byte_offset_width_lp+:lg_num_core_lp];
+wire [lg_num_core_lp-1:0] mem_data_cmd_core_enc = 
+  mem_data_cmd_cast_i.addr[byte_offset_width_lp+:lg_num_core_lp];
+
 bsg_decode_with_v
  #(.num_out_p(num_core_p))
  mipi_cmd_decoder
   (.v_i(mipi_cmd_v)
-   ,.i(mem_cmd_clint_reg_offset)
+   ,.i(mem_cmd_core_enc)
    
    ,.o(mipi_r_v_li)
    );
 
-wire mipi_data_cmd_v = clint_data_cmd_v & (mem_data_cmd_clint_reg_base == mipi_base_offset_gp);
 bsg_decode_with_v
  #(.num_out_p(num_core_p))
  mipi_data_cmd_decoder
   (.v_i(mipi_data_cmd_v)
-   ,.i(mem_data_cmd_clint_reg_offset)
+   ,.i(mem_data_cmd_core_enc)
 
    ,.o(mipi_w_v_li)
    );
 
-wire mtimecmp_cmd_v = clint_cmd_v & (mem_cmd_clint_reg_base == mtimecmp_base_offset_gp);
 bsg_decode_with_v
  #(.num_out_p(num_core_p))
  mtimecmp_cmd_decoder
   (.v_i(mtimecmp_cmd_v)
-   ,.i(mem_cmd_clint_reg_offset)
+   ,.i(mem_cmd_core_enc)
    
    ,.o(mtimecmp_r_v_li)
    );
 
-wire mtimecmp_data_cmd_v = clint_data_cmd_v & (mem_data_cmd_clint_reg_base == mtimecmp_base_offset_gp);
 bsg_decode_with_v
  #(.num_out_p(num_core_p))
  mtimecmp_data_cmd_decoder
   (.v_i(mtimecmp_data_cmd_v)
-   ,.i(mem_data_cmd_clint_reg_offset)
+   ,.i(mem_data_cmd_core_enc)
 
    ,.o(mtimecmp_w_v_li)
    );
 
+bsg_decode_with_v
+ #(.num_out_p(num_core_p))
+ plic_cmd_decoder
+  (.v_i(plic_cmd_v)
+   ,.i(mem_cmd_core_enc)
+
+   ,.o(plic_r_v_li)
+   );
+
+bsg_decode_with_v
+ #(.num_out_p(num_core_p))
+ plic_data_cmd_decoder
+  (.v_i(plic_data_cmd_v)
+   ,.i(mem_data_cmd_core_enc)
+
+   ,.o(plic_w_v_li)
+   );
+
 // Could replace with bsg_cycle_counter if it provided a way to sideload a value
 logic [dword_width_p-1:0] mtime_n, mtime_r;
-wire mtime_r_v_li = clint_cmd_v & (mem_cmd_cast_i.addr[0+:clint_reg_width_gp] == mtime_offset_gp);
-wire mtime_w_v_li = clint_data_cmd_v & (mem_data_cmd_cast_i.addr[0+:clint_reg_width_gp] == mtime_offset_gp);
+wire mtime_w_v_li = mtime_data_cmd_v;
 assign mtime_n    = mtime_w_v_li ? mem_data_cmd_cast_i.data : mtime_r + dword_width_p'(1);
   bsg_dff_reset
    #(.width_p(dword_width_p))
@@ -150,6 +190,7 @@ assign mtime_n    = mtime_w_v_li ? mem_data_cmd_cast_i.data : mtime_r + dword_wi
 
 logic [num_core_p-1:0][dword_width_p-1:0] mtimecmp_n, mtimecmp_r;
 logic [num_core_p-1:0]                    mipi_n    , mipi_r;
+logic [num_core_p-1:0]                    plic_n    , plic_r;
 for (genvar i = 0; i < num_core_p; i++)
   begin : rof1
     assign mtimecmp_n[i] = mem_data_cmd_cast_i.data[0+:dword_width_p];
@@ -198,6 +239,29 @@ for (genvar i = 0; i < num_core_p; i++)
        ,.data_o(soft_irq_o[i])
        );
 
+    assign plic_n[i] = mem_data_cmd_cast_i.data[0];
+    bsg_dff_reset_en
+     #(.width_p(1))
+     plic_reg
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
+       ,.en_i(plic_w_v_li[i])
+
+       ,.data_i(plic_n[i])
+       ,.data_o(plic_r[i])
+       );
+
+    bsg_dff_chain
+     #(.width_p(1)
+       ,.num_stages_p(irq_pipe_depth_p)
+       )
+     external_irq_pipe
+      (.clk_i(clk_i)
+
+       ,.data_i(plic_r[i])
+       ,.data_o(external_irq_o[i])
+       );
+
   end // rof1
 
   wire cfg_link_w_v_li = cfg_link_data_cmd_v;
@@ -236,7 +300,24 @@ bsg_mux_one_hot
    ,.data_o(mtimecmp_lo)
    );
 
-wire [dword_width_p-1:0] rdata_lo = mipi_cmd_v ? mipi_lo : mtimecmp_cmd_v ? mtimecmp_lo : mtime_r;
+logic [num_core_p-1:0] plic_lo;
+bsg_mux_one_hot
+ #(.width_p(1)
+   ,.els_p(num_core_p)
+   )
+ plic_mux_one_hot
+  (.data_i(plic_r)
+   ,.sel_one_hot_i(plic_r_v_li)
+   ,.data_o(plic_lo)
+   );
+
+wire [dword_width_p-1:0] rdata_lo = plic_cmd_v 
+                                    ? plic_lo 
+                                    : mipi_cmd_v 
+                                      ? mipi_lo 
+                                      : mtimecmp_cmd_v 
+                                        ? mtimecmp_lo 
+                                        : mtime_r;
 always_comb
   begin
     mem_data_resp_cast_o.msg_type      = mem_cmd_cast_i.msg_type;
