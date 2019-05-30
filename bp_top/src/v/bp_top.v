@@ -251,7 +251,7 @@ for(genvar i = 0; i < num_core_p; i++)
       assign wh_link_li[i][E] = wh_link_lo[i+1][W];
     end
        
-    bp_me_cce_to_wormhole_link
+    bp_me_cce_to_wormhole_link_master
      #(.num_lce_p(num_lce_p)
       ,.num_cce_p(num_cce_p)
       ,.paddr_width_p(paddr_width_p)
@@ -286,8 +286,11 @@ for(genvar i = 0; i < num_core_p; i++)
       
       ,.my_x_i(noc_x_cord_width_lp'(i))
       ,.my_y_i(noc_y_cord_width_lp'(0))
-      ,.dest_x_i(noc_x_cord_width_lp'(0))
-      ,.dest_y_i(noc_y_cord_width_lp'(1))
+      
+      ,.mem_cmd_dest_x_i(noc_x_cord_width_lp'(0))
+      ,.mem_cmd_dest_y_i(noc_y_cord_width_lp'(1))
+      ,.mem_data_cmd_dest_x_i(noc_x_cord_width_lp'(0))
+      ,.mem_data_cmd_dest_y_i(noc_y_cord_width_lp'(1))
       
       ,.link_i(wh_link_lo[i][P])
       ,.link_o(wh_link_li[i][P])
