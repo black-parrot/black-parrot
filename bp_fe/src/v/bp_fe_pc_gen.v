@@ -123,7 +123,7 @@ always_comb
       // Run state -- PCs are actually being fetched
       // Transition to wait if there's a TLB miss while we wait for fill
       // Transition to stall if we don't successfully complete the fetch for whatever reason
-      e_run  : state_n = itlb_miss_exception ? e_wait : fetch_fail ? e_stall : e_run;
+      e_run  : state_n = fetch_fail ? e_stall : itlb_miss_exception ? e_wait : e_run;
       default: state_n = e_wait;
     endcase
   end
