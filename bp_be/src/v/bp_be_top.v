@@ -316,11 +316,6 @@ bp_be_mem_top
     ,.config_data_i(config_data_i)
     ,.config_v_i(config_v_i)
     ,.config_w_i(config_w_i)
-    ,.config_ready_o(config_ready_o)
-
-    ,.config_data_o(config_data_o)
-    ,.config_v_o(config_v_o)
-    ,.config_ready_i(config_ready_i)
     );
 
 endmodule : bp_be_top

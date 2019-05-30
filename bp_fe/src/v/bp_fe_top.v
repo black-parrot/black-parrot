@@ -123,6 +123,7 @@ logic icache_itlb_v;
 logic icache_itlb_ready;
 // reserved icache
 logic icache_miss;
+logic instr_access_fault;
 logic poison_tl;
 
 //itlb
@@ -213,6 +214,7 @@ bp_fe_pc_gen
    ,.icache_pc_gen_v_i(icache_pc_gen_v)
    ,.icache_pc_gen_ready_o(icache_pc_gen_ready)
    ,.icache_miss_i(icache_miss)
+   ,.instr_access_fault_i(instr_access_fault)
                
    ,.pc_gen_itlb_o(pc_gen_itlb)
    ,.pc_gen_itlb_v_o(pc_gen_itlb_v)
@@ -275,7 +277,7 @@ bp_fe_icache
    ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
    ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
 
-         
+   ,.instr_access_fault_o(instr_access_fault)
    ,.cache_miss_o(icache_miss)
    ,.poison_tl_i(poison_tl)
    );

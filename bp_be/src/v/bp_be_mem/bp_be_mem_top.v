@@ -125,11 +125,6 @@ module bp_be_mem_top
    , input [bp_cfg_link_data_width_gp-1:0]           config_data_i
    , input                                           config_v_i
    , input                                           config_w_i
-   , output logic                                    config_ready_o
-
-   , output logic [bp_cfg_link_data_width_gp-1:0]    config_data_o
-   , output logic                                    config_v_o
-   , input                                           config_ready_i
    );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p
@@ -191,6 +186,8 @@ logic [dword_width_p-1:0] csr_data_lo;
 logic                     csr_v_lo;
 logic                     translation_en_lo;
 
+logic load_access_fault_v, store_access_fault_v;
+
 /* Control signals */
 logic dcache_cmd_v;
 logic itlb_not_dtlb_resp;
@@ -245,9 +242,9 @@ assign exception_ecode_dec_li =
     ,illegal_instr   : (ecode_v_mem3_r & (ecode_mem3_r == e_illegal_instr))
     ,breakpoint      : (csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak))
     ,load_misaligned : 1'b0
-    ,load_fault      : 1'b0
+    ,load_fault      : load_access_fault_v
     ,store_misaligned: 1'b0
-    ,store_fault     : 1'b0
+    ,store_fault     : store_access_fault_v
     ,ecall_u_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `RV64_PRIV_MODE_U)
     ,ecall_s_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `RV64_PRIV_MODE_S)
     ,ecall_m_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `RV64_PRIV_MODE_M)
@@ -417,16 +414,14 @@ bp_be_dcache
 
     ,.credits_full_o(credits_full_o)
     ,.credits_empty_o(credits_empty_o)
+  
+    ,.load_access_fault_o(load_access_fault_v)
+    ,.store_access_fault_o(store_access_fault_v)
 
     ,.config_addr_i(config_addr_i)
     ,.config_data_i(config_data_i)
     ,.config_v_i(config_v_i)
     ,.config_w_i(config_w_i)
-    ,.config_ready_o(config_ready_o)
-
-    ,.config_data_o(config_data_o)
-    ,.config_v_o(config_v_o)
-    ,.config_ready_i(config_ready_i)
     );
 
 // We delay the tlb miss signal by one cycle to synchronize with cache miss signal

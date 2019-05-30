@@ -68,6 +68,7 @@ module bp_fe_icache
     , input                                            itlb_icache_miss_i 
     
     , output logic                                     cache_miss_o
+    , output logic                                     instr_access_fault_o
     , input                                            poison_tl_i
 
     , output logic [lce_cce_req_width_lp-1:0]          lce_req_o
@@ -95,6 +96,8 @@ module bp_fe_icache
     , input                                            lce_data_cmd_ready_i 
  );
 
+ // TODO: Assign me
+ assign instr_access_fault_o = '0;
 
   logic [index_width_lp-1:0]            vaddr_index;
   // Suppress unused signal warnings

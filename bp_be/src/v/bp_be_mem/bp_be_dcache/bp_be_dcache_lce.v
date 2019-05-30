@@ -82,9 +82,6 @@ module bp_be_dcache_lce
       `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, ways_p)
     , localparam lce_data_cmd_width_lp=
       `bp_lce_data_cmd_width(num_lce_p, lce_data_width_p, ways_p)
-
-    , parameter cfg_link_addr_width_p = bp_cfg_link_addr_width_gp
-    , parameter cfg_link_data_width_p = bp_cfg_link_data_width_gp
   )
   (
     input clk_i
@@ -155,29 +152,23 @@ module bp_be_dcache_lce
     , output credits_empty_o
 
     // config link
-   , input [cfg_link_addr_width_p-2:0]           config_addr_i
-   , input [cfg_link_data_width_p-1:0]           config_data_i
-   , input                                       config_v_i
-   , input                                       config_w_i
-   , output logic                                config_ready_o
+    , input [bp_cfg_link_addr_width_gp-2:0]       config_addr_i
+    , input [bp_cfg_link_data_width_gp-1:0]       config_data_i
+    , input                                       config_v_i
+    , input                                       config_w_i
 
-   , output logic [cfg_link_data_width_p-1:0]    config_data_o
-   , output logic                                config_v_o
-   , input                                       config_ready_i
+    // LCE Mode
+    , output bp_be_dcache_lce_mode_e              lce_mode_o
   );
 
   // LCE Mode control
-  // TODO: reads not supported
-  wire unused = config_ready_i;
-  assign config_data_o = '0;
-  assign config_v_o = '0;
-
   bp_be_dcache_lce_mode_e lce_mode_r, lce_mode_n;
-  // TODO: The LCE has a single config register, thus the unit is always ready. Writes should only
+  assign lce_mode_o = lce_mode_r;
+
+  // The LCE has a single config register, thus the unit is always ready. Writes should only
   // happen when reset_i is low and freeze_i is high. If these conditions are true, the LCE
   // simply snoops the config link and writes the mode register when targeted by a valid write
   // command on the link.
-  assign config_ready_o = 1'b1;
   logic lce_mode_w_v, lce_mode_addr_v;
   assign lce_mode_addr_v = (config_addr_i == 15'h1);
   assign lce_mode_w_v = freeze_i & config_v_i & config_w_i & lce_mode_addr_v;

@@ -30,6 +30,7 @@ module bp_fe_pc_gen
    , input                                           icache_pc_gen_v_i
    , output logic                                    icache_pc_gen_ready_o
    , input                                           icache_miss_i
+   , input                                           instr_access_fault_i
 
    , output logic [bp_fe_pc_gen_itlb_width_lp-1:0]   pc_gen_itlb_o
    , output logic                                    pc_gen_itlb_v_o
@@ -92,14 +93,15 @@ wire cmd_nonattaboy_v = fe_pc_gen_v_i & ~fe_pc_gen_cmd.attaboy_valid;
 // Until we support C, must be aligned to 4 bytes
 // There's also an interesting question about physical alignment (I/O devices, etc)
 //   But let's punt that for now...
-wire misalign_exception  = pc_if2_r[1:0] != 2'b00; 
+wire misalign_exception  = pc_v_if2_r & (pc_if2_r[1:0] != 2'b00); 
 wire itlb_miss_exception = pc_v_if2_r & itlb_miss_if2_r;
+wire instr_access_fault_exception = pc_v_if2_r & instr_access_fault_i;
 
 wire fetch_fail     = pc_v_if2_r & ~pc_gen_fe_v_o & ~cmd_nonattaboy_v;
 wire queue_miss     = pc_v_if2_r & ~pc_gen_fe_ready_i;
 wire flush          = itlb_miss_if2_r | icache_miss_i | queue_miss | cmd_nonattaboy_v;
 wire fe_instr_v     = pc_v_if2_r & ~flush;
-wire fe_exception_v = pc_v_if2_r & (misalign_exception | itlb_miss_exception) & ~cmd_nonattaboy_v;
+wire fe_exception_v = pc_v_if2_r & (instr_access_fault_exception | misalign_exception | itlb_miss_exception) & ~cmd_nonattaboy_v;
 
 // FSM
 enum bit [1:0] {e_wait=2'd0, e_run, e_stall} state_n, state_r;
@@ -123,7 +125,7 @@ always_comb
       // Run state -- PCs are actually being fetched
       // Transition to wait if there's a TLB miss while we wait for fill
       // Transition to stall if we don't successfully complete the fetch for whatever reason
-      e_run  : state_n = fetch_fail ? e_stall : itlb_miss_exception ? e_wait : e_run;
+      e_run  : state_n = fetch_fail ? e_stall : fe_exception_v ? e_wait : e_run;
       default: state_n = e_wait;
     endcase
   end
