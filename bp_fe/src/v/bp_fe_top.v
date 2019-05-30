@@ -31,6 +31,7 @@ module bp_fe_top
    )
   (input                                              clk_i
    , input                                            reset_i
+   , input                                            freeze_i
 
    , input [lce_id_width_lp-1:0]                      icache_id_i
 
@@ -65,6 +66,12 @@ module bp_fe_top
    , output [lce_data_cmd_width_lp-1:0]               lce_data_cmd_o
    , output                                           lce_data_cmd_v_o
    , input                                            lce_data_cmd_ready_i
+
+   // config link
+   , input [bp_cfg_link_addr_width_gp-2:0]           config_addr_i
+   , input [bp_cfg_link_data_width_gp-1:0]           config_data_i
+   , input                                           config_v_i
+   , input                                           config_w_i
 
    );
 
@@ -191,6 +198,10 @@ assign itlb_fill_v       = fe_cmd_v_i & fe_cmd.opcode == e_op_itlb_fill_response
 assign itlb_w_v          = itlb_fill_v & ~itlb_fill_r;
 assign itlb_fence_v      = fe_cmd_v_i & fe_cmd.opcode == e_op_itlb_fence;
 
+// currently, uncached I/O is determined by high bit of translated address
+logic icache_uncached;
+assign icache_uncached = itlb_entry_r.ptag[ptag_width_p-1];
+
 always_ff @(posedge clk_i) begin
   if(reset_i) begin
     itlb_fill_r <= '0;
@@ -231,12 +242,12 @@ bp_fe_pc_gen
    ,.itlb_miss_i(itlb_miss)
    );
 
-   
 bp_fe_icache 
  #(.cfg_p(cfg_p)) 
- icache_1
+ icache
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
+   ,.freeze_i(freeze_i)
 
    ,.id_i(icache_id_i)         
 
@@ -252,6 +263,7 @@ bp_fe_icache
    ,.itlb_icache_data_resp_v_i(itlb_icache_data_resp_v)
    ,.itlb_icache_data_resp_ready_o(itlb_icache_data_resp_ready)
    ,.itlb_icache_miss_i(itlb_miss) 
+   ,.uncached_i(icache_uncached)
   
    ,.lce_req_o(lce_req_o)
    ,.lce_req_v_o(lce_req_v_o)
@@ -280,6 +292,11 @@ bp_fe_icache
    ,.instr_access_fault_o(instr_access_fault)
    ,.cache_miss_o(icache_miss)
    ,.poison_tl_i(poison_tl)
+
+   ,.config_addr_i(config_addr_i)
+   ,.config_data_i(config_data_i)
+   ,.config_v_i(config_v_i)
+   ,.config_w_i(config_w_i)
    );
 
    

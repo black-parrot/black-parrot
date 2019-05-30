@@ -102,6 +102,7 @@ module bp_core
    fe 
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+     ,.freeze_i(freeze_i)
 
      ,.icache_id_i(proc_cfg.icache_id)
 
@@ -136,6 +137,11 @@ module bp_core
      ,.lce_data_cmd_o(lce_data_cmd_o[0])
      ,.lce_data_cmd_v_o(lce_data_cmd_v_o[0])
      ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i[0])
+
+     ,.config_addr_i(config_addr_i)
+     ,.config_data_i(config_data_i)
+     ,.config_v_i(config_v_i)
+     ,.config_w_i(config_w_i)
      );
 
   bsg_fifo_1r1w_rolly 
@@ -238,11 +244,6 @@ module bp_core
      ,.config_data_i(config_data_i)
      ,.config_v_i(config_v_i)
      ,.config_w_i(config_w_i)
-     ,.config_ready_o(config_ready_o)
- 
-     ,.config_data_o(config_data_o)
-     ,.config_v_o(config_v_o)
-     ,.config_ready_i(config_ready_i)
      );
 
 endmodule : bp_core

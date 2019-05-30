@@ -96,11 +96,6 @@ module bp_be_top
    , input [bp_cfg_link_data_width_gp-1:0]           config_data_i
    , input                                           config_v_i
    , input                                           config_w_i
-   , output logic                                    config_ready_o
-
-   , output logic [bp_cfg_link_data_width_gp-1:0]    config_data_o
-   , output logic                                    config_v_o
-   , input                                           config_ready_i
    );
 
 // Declare parameterized structures

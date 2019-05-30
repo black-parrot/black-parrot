@@ -46,6 +46,7 @@ module bp_fe_lce
   (
     input                                                        clk_i
     , input                                                      reset_i
+    , input                                                      freeze_i
 
     , input [lce_id_width_lp-1:0]                                id_i
 
@@ -54,6 +55,8 @@ module bp_fe_lce
 
     , input                                                      miss_i
     , input [paddr_width_p-1:0]                                  miss_addr_i
+
+    , input                                                      uncached_req_i
 
     , input [lce_data_width_lp-1:0]                              data_mem_data_i
     , output logic [data_mem_pkt_width_lp-1:0]                   data_mem_pkt_o
@@ -64,10 +67,10 @@ module bp_fe_lce
     , output logic                                               tag_mem_pkt_v_o
     , input                                                      tag_mem_pkt_yumi_i
        
-    , output logic                                               metadata_mem_pkt_v_o
-    , output logic [metadata_mem_pkt_width_lp-1:0]               metadata_mem_pkt_o
+    , output logic                                               stat_mem_pkt_v_o
+    , output logic [stat_mem_pkt_width_lp-1:0]                   stat_mem_pkt_o
     , input [way_id_width_lp-1:0]                                lru_way_i
-    , input                                                      metadata_mem_pkt_yumi_i
+    , input                                                      stat_mem_pkt_yumi_i
       
     // LCE-CCE interface 
     , output logic [lce_cce_req_width_lp-1:0] lce_req_o
@@ -93,7 +96,35 @@ module bp_fe_lce
     , output logic [lce_data_cmd_width_lp-1:0] lce_data_cmd_o
     , output logic lce_data_cmd_v_o
     , input lce_data_cmd_ready_i
+
+    // config link
+    , input [bp_cfg_link_addr_width_gp-2:0]           config_addr_i
+    , input [bp_cfg_link_data_width_gp-1:0]           config_data_i
+    , input                                           config_v_i
+    , input                                           config_w_i
+
+    , output bp_fe_icache_lce_mode_e                  lce_mode_o
   );
+
+  // LCE Mode control
+  bp_fe_icache_lce_mode_e lce_mode_r, lce_mode_n;
+  assign lce_mode_o = lce_mode_r;
+
+  logic lce_mode_w_v, lce_mode_addr_v;
+  assign lce_mode_addr_v = (config_addr_i == 15'h1);
+  assign lce_mode_w_v = freeze_i & config_v_i & config_w_i & lce_mode_addr_v;
+  assign lce_mode_n = bp_fe_icache_lce_mode_e'(config_data_i[0+:`bp_fe_icache_lce_mode_bits]);
+
+  always_ff @(posedge clk_i) begin
+    if (reset_i) begin
+      lce_mode_r <= e_icache_lce_mode_uncached;
+    end else begin
+      if (lce_mode_w_v) begin
+        lce_mode_r <= lce_mode_n;
+      end
+    end
+  end
+
 
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
   `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, ways_p, data_width_p);
@@ -103,7 +134,7 @@ module bp_fe_lce
 
   `declare_bp_fe_icache_lce_data_mem_pkt_s(sets_p, ways_p, lce_data_width_lp);
   `declare_bp_fe_icache_lce_tag_mem_pkt_s(sets_p, ways_p, tag_width_lp);
-  `declare_bp_fe_icache_lce_metadata_mem_pkt_s(sets_p, ways_p);
+  `declare_bp_fe_icache_lce_stat_mem_pkt_s(sets_p, ways_p);
 
   bp_lce_cce_req_s lce_req;
   bp_lce_cce_resp_s lce_resp;
@@ -114,7 +145,7 @@ module bp_fe_lce
 
   bp_fe_icache_lce_data_mem_pkt_s data_mem_pkt;
   bp_fe_icache_lce_tag_mem_pkt_s tag_mem_pkt;
-  bp_fe_icache_lce_metadata_mem_pkt_s metadata_mem_pkt;
+  bp_fe_icache_lce_stat_mem_pkt_s stat_mem_pkt;
 
   assign lce_req_o           = lce_req;
   assign lce_resp_o          = lce_resp;
@@ -125,12 +156,13 @@ module bp_fe_lce
 
   assign data_mem_pkt_o        = data_mem_pkt;
   assign tag_mem_pkt_o         = tag_mem_pkt;
-  assign metadata_mem_pkt_o    = metadata_mem_pkt;
+  assign stat_mem_pkt_o    = stat_mem_pkt;
 
   // lce_REQ
   bp_lce_cce_resp_s lce_req_lce_resp_lo;
   logic tr_data_received;
   logic cce_data_received;
+  logic uncached_data_received;
   logic set_tag_received;
   logic set_tag_wakeup_received;
   logic lce_req_lce_resp_v_lo;
@@ -147,11 +179,14 @@ module bp_fe_lce
     ,.miss_i(miss_i)
     ,.miss_addr_i(miss_addr_i)
     ,.lru_way_i(lru_way_i)
+    ,.uncached_req_i(uncached_req_i)
+
     ,.cache_miss_o(cache_miss_o)
     ,.miss_addr_o(miss_addr_lo)
 
     ,.tr_data_received_i(tr_data_received)
     ,.cce_data_received_i(cce_data_received)
+    ,.uncached_data_received_i(uncached_data_received)
     ,.set_tag_received_i(set_tag_received)
     ,.set_tag_wakeup_received_i(set_tag_wakeup_received)
 
@@ -195,9 +230,9 @@ module bp_fe_lce
     ,.tag_mem_pkt_v_o(tag_mem_pkt_v_o)
     ,.tag_mem_pkt_yumi_i(tag_mem_pkt_yumi_i)                 
 
-    ,.metadata_mem_pkt_v_o(metadata_mem_pkt_v_o)
-    ,.metadata_mem_pkt_o(metadata_mem_pkt)
-    ,.metadata_mem_pkt_yumi_i(metadata_mem_pkt_yumi_i)
+    ,.stat_mem_pkt_v_o(stat_mem_pkt_v_o)
+    ,.stat_mem_pkt_o(stat_mem_pkt)
+    ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_i)
 
     ,.lce_cmd_i(lce_cmd)
     ,.lce_cmd_v_i(lce_cmd_v_i)
@@ -229,6 +264,7 @@ module bp_fe_lce
 
      ,.cce_data_received_o(cce_data_received)
      ,.tr_data_received_o(tr_data_received)
+     ,.uncached_data_received_o(uncached_data_received)
 
      ,.miss_addr_i(miss_addr_lo)
       
@@ -291,8 +327,8 @@ module bp_fe_lce
       timeout_cnt_n = '0;
     end
     else begin
-      if (data_mem_pkt_v_o | tag_mem_pkt_v_o | metadata_mem_pkt_v_o) begin
-        timeout_cnt_n = ~(data_mem_pkt_yumi_i | tag_mem_pkt_yumi_i | metadata_mem_pkt_yumi_i)
+      if (data_mem_pkt_v_o | tag_mem_pkt_v_o | stat_mem_pkt_v_o) begin
+        timeout_cnt_n = ~(data_mem_pkt_yumi_i | tag_mem_pkt_yumi_i | stat_mem_pkt_yumi_i)
           ? (timeout_cnt_r + 1)
           : '0;
       end
@@ -311,6 +347,8 @@ module bp_fe_lce
     end
   end
 
-  assign ready_o = lce_ready_lo & ~timeout & ~cache_miss_o;
+  logic lce_ready;
+  assign lce_ready = (lce_mode_r == e_icache_lce_mode_uncached) ? ~freeze_i : lce_ready_lo;
+  assign ready_o = lce_ready & ~timeout & ~cache_miss_o;
  
 endmodule
