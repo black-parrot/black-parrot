@@ -107,8 +107,15 @@ sim.sc: dirs.sc
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "PASS" -A 8 $(SIM_LOG) > $(SIM_REPORT)
 
-regress.sc: build.sc $(RV64_REGRESSION_SC) 
+regress.sc: build.sc $(RV64_REGRESSION_SC) $(COREMARK_REGRESSION_SC) 
 $(RV64_REGRESSION_SC):
+	$(MAKE) sim.sc PROG=$(basename $@)
+$(COREMARK_REGRESSION_SC):
+	$(MAKE) sim.sc PROG=$(basename $@)
+
+#Seperated due to longer runtime
+regress_beebs.sc: build.sc $(BEEBS_REGRESSION_SC) 
+$(BEEBS_REGRESSION_SC):
 	$(MAKE) sim.sc PROG=$(basename $@)
 
 cov.sc: COV_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).cov.log
