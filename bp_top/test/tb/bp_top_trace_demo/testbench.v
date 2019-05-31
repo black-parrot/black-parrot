@@ -255,7 +255,7 @@ for (genvar i = 0; i < num_cce_p; i++)
       cce_inst_ram_loader
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
-       ,.freeze_o(freeze_li[i])
+       ,.freeze_o()
        ,.boot_rom_addr_o(cce_inst_boot_rom_addr[i])
        ,.boot_rom_data_i(cce_inst_boot_rom_data[i])
       );

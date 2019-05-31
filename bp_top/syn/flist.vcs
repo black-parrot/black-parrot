@@ -14,6 +14,8 @@
 +incdir+$BP_BE_DIR/src/include/bp_be_dcache
 # me includes 
 +incdir+$BP_ME_DIR/src/include/v
+# top includes
++incdir+$BP_TOP_DIR/src/include
 ## Packages
 # bsg_ip_cores packages
 $BSG_IP_CORES_DIR/bsg_noc/bsg_noc_pkg.v
@@ -31,6 +33,8 @@ $BP_BE_DIR/src/include/bp_be_dcache/bp_be_dcache_pkg.vh
 # ME packages
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
 $BP_ME_DIR/src/include/v/bp_me_network_pkg.v
+# Top packages
+$BP_TOP_DIR/src/include/bp_cfg_link_pkg.vh
 ## bsg_ip_cores files
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_fifo_1r1w_small.v
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_fifo_tracker.v
