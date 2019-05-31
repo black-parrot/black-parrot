@@ -44,6 +44,7 @@ gnu:
 	git checkout bsg_manycore_newlib; \
 	cd ..; \
 	./configure --prefix=$(BP_EXTERNAL_DIR) --with-arch=rv64ia --with-abi=lp64 --with-cmodel=medany \
+	  --enable-languages=c \
 	&& make && make install
 
 fesvr:
