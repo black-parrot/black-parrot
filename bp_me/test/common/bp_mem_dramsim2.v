@@ -183,7 +183,9 @@ module bp_mem_dramsim2
           mem_data_resp_s_o.payload <= mem_cmd_s_r.payload;
           mem_data_resp_s_o.addr <= mem_cmd_s_r.addr;
           if (mem_cmd_s_r.non_cacheable) begin
-            mem_data_resp_s_o.data <= {(block_size_in_bits_lp-lce_req_data_width_p)'('0),nc_data};
+            // return the full 64-bit dword containing the LCE's requested bytes
+            // The LCE must perform extraction to return the requested 1, 2, 4, or 8 bytes
+            mem_data_resp_s_o.data <= {(block_size_in_bits_lp-lce_req_data_width_p)'('0),mem_nc_data};
           end else begin
             mem_data_resp_s_o.data <= dramsim_data;
           end

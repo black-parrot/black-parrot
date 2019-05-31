@@ -694,7 +694,16 @@ module bp_me_nonsynth_mock_lce
             // load returns the data, and must wait for lce_data_cmd to return
             tr_pkt_v_o = 1'b1;
             tr_pkt_o[tr_ring_width_lp-1:dword_width_p] = '0;
-            tr_pkt_o[0 +: dword_width_p] = lce_data_cmd.data[0 +: dword_width_p];
+            // TODO: not portable, assumes 64-bit dwords
+            // Extract the desired bits from the returned 64-bit dword
+            tr_pkt_o[0 +: dword_width_p] =
+              double_op
+                ? lce_data_cmd.data[0 +: 64]
+                : word_op
+                  ? {32'('0), lce_data_cmd.data[8*byte_offset +: 32]}
+                  : half_op
+                    ? {48'('0), lce_data_cmd.data[8*byte_offset +: 16]}
+                    : {56'('0), lce_data_cmd.data[8*byte_offset +: 8]};
 
             lce_state_n = (tr_pkt_ready_i)
                           ? (lce_init_r)
