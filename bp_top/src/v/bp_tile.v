@@ -66,21 +66,15 @@ module bp_tile
    , input                                                 freeze_i
 
    // Config channel
-   , input [bp_cfg_link_addr_width_gp-2:0]                 config_addr_i
-   , input [bp_cfg_link_data_width_gp-1:0]                 config_data_i
-   , input                                                 config_v_i
-   , input                                                 config_w_i
-   , output logic                                          config_ready_o
-
-   , output logic [bp_cfg_link_data_width_gp-1:0]          config_data_o
-   , output logic                                          config_v_o
-   , input                                                 config_ready_i
+   , input                                                 cfg_w_v_i
+   , input [bp_cfg_link_addr_width_gp-1:0]                 cfg_addr_i
+   , input [bp_cfg_link_data_width_gp-1:0]                 cfg_data_i
 
    // Router - Inputs 
    // Connected on east and west
    , input [E:W][2+lce_cce_req_network_width_lp-1:0]       lce_req_link_i
    , input [E:W][2+lce_cce_resp_network_width_lp-1:0]      lce_resp_link_i
-   , input [E:W][2+lce_cce_data_resp_router_width_lp-1:0]      lce_data_resp_link_i
+   , input [E:W][2+lce_cce_data_resp_router_width_lp-1:0]  lce_data_resp_link_i
    , input [E:W][2+cce_lce_cmd_network_width_lp-1:0]       lce_cmd_link_i
    , input [E:W][2+lce_data_cmd_router_width_lp-1:0]       lce_data_cmd_link_i
 
@@ -578,15 +572,9 @@ bp_cce_top
    ,.reset_i(reset_i)
    ,.freeze_i(freeze_i)
 
-   ,.config_addr_i(config_addr_i)
-   ,.config_data_i(config_data_i)
-   ,.config_v_i(config_v_i)
-   ,.config_w_i(config_w_i)
-   ,.config_ready_o(config_ready_o)
-
-   ,.config_data_o(config_data_o)
-   ,.config_v_o(config_v_o)
-   ,.config_ready_i(config_ready_i)
+   ,.cfg_w_v_i(cfg_w_v_i)
+   ,.cfg_addr_i(cfg_addr_i)
+   ,.cfg_data_i(cfg_data_i)
 
    // To CCE
    ,.lce_req_i(lce_req_li)

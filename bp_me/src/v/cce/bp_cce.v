@@ -46,15 +46,9 @@ module bp_cce
    , input                                             freeze_i
 
    // Config channel
-   , input [cfg_link_addr_width_p-2:0]                 config_addr_i
-   , input [cfg_link_data_width_p-1:0]                 config_data_i
-   , input                                             config_v_i
-   , input                                             config_w_i
-   , output logic                                      config_ready_o
-
-   , output logic [cfg_link_data_width_p-1:0]          config_data_o
-   , output logic                                      config_v_o
-   , input                                             config_ready_i
+   , input                                             cfg_w_v_i
+   , input [cfg_link_addr_width_p-1:0]                 cfg_addr_i
+   , input [cfg_link_data_width_p-1:0]                 cfg_data_i
 
    // LCE-CCE Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
@@ -219,15 +213,9 @@ module bp_cce
       ,.reset_i(reset_i)
       ,.freeze_i(freeze_i)
 
-      ,.config_addr_i(config_addr_i)
-      ,.config_data_i(config_data_i)
-      ,.config_v_i(config_v_i)
-      ,.config_w_i(config_w_i)
-      ,.config_ready_o(config_ready_o)
-
-      ,.config_data_o(config_data_o)
-      ,.config_v_o(config_v_o)
-      ,.config_ready_i(config_ready_i)
+      ,.cfg_w_v_i(cfg_w_v_i)
+      ,.cfg_addr_i(cfg_addr_i)
+      ,.cfg_data_i(cfg_data_i)
 
       ,.alu_branch_res_i(alu_branch_res_lo)
 

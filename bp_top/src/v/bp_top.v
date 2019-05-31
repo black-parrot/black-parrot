@@ -64,19 +64,6 @@ module bp_top
   (input                                                      clk_i
    , input                                                    reset_i
 
-   , input [num_cce_p-1:0]                                    freeze_i
-
-   // Config channel
-   , input [num_cce_p-1:0][bp_cfg_link_addr_width_gp-2:0]        config_addr_i
-   , input [num_cce_p-1:0][bp_cfg_link_data_width_gp-1:0]        config_data_i
-   , input [num_cce_p-1:0]                                       config_v_i
-   , input [num_cce_p-1:0]                                       config_w_i
-   , output logic [num_cce_p-1:0]                                config_ready_o
-
-   , output logic [num_cce_p-1:0][bp_cfg_link_data_width_gp-1:0] config_data_o
-   , output logic [num_cce_p-1:0]                                config_v_o
-   , input [num_cce_p-1:0]                                       config_ready_i
-
     // bsg_noc_wormhole interface
     ,input [bsg_ready_and_link_sif_width_lp-1:0]              link_i
     ,output [bsg_ready_and_link_sif_width_lp-1:0]             link_o
@@ -222,17 +209,11 @@ for(genvar i = 0; i < num_core_p; i++)
        ,.my_x_i(x_cord_width_p'(i))
        ,.my_y_i(y_cord_width_p'(0))
 
-       ,.freeze_i(freeze_i[i])
+       ,.freeze_i()
 
-       ,.config_addr_i(config_addr_i[i])
-       ,.config_data_i(config_data_i[i])
-       ,.config_v_i(config_v_i[i])
-       ,.config_w_i(config_w_i[i])
-       ,.config_ready_o(config_ready_o[i])
-
-       ,.config_data_o(config_data_o[i])
-       ,.config_v_o(config_v_o[i])
-       ,.config_ready_i(config_ready_i[i])
+       ,.cfg_w_v_i()
+       ,.cfg_addr_i()
+       ,.cfg_data_i()
 
        // Router inputs
        ,.lce_req_link_i(lce_req_link_stitch_li[i])

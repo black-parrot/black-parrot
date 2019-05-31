@@ -67,15 +67,9 @@ module bp_cce_pc
    , input                                       freeze_i
 
    // Config channel
-   , input [cfg_link_addr_width_p-2:0]           config_addr_i
-   , input [cfg_link_data_width_p-1:0]           config_data_i
-   , input                                       config_v_i
-   , input                                       config_w_i
-   , output logic                                config_ready_o
-
-   , output logic [cfg_link_data_width_p-1:0]    config_data_o
-   , output logic                                config_v_o
-   , input                                       config_ready_i
+   , input                                       cfg_w_v_i
+   , input [cfg_link_addr_width_p-1:0]           cfg_addr_i
+   , input [cfg_link_data_width_p-1:0]           cfg_data_i
 
    // CCE mode output
    , output bp_cce_mode_e                        cce_mode_o
@@ -131,7 +125,7 @@ module bp_cce_pc
   logic [inst_width_lp-1:0] ram_w_mask_r, ram_w_mask_n;
 
   logic cfg_hi_not_lo_r, cfg_hi_not_lo_n;
-
+/*
   bsg_mem_1rw_sync_mask_write_bit
     #(.width_p(inst_width_lp)
       ,.els_p(inst_ram_els_p)
@@ -214,11 +208,6 @@ module bp_cce_pc
   assign inst_o = (inst_v_o) ? ram_data_lo : '0;
 
   always_comb begin
-    // config link outputs default to 0
-    config_ready_o = '0;
-    config_v_o = '0;
-    config_data_o = '0;
-
     // by default, regardless of the pc_state, send the instruction ram the registered value
     ram_addr_li = ram_addr_r;
 
@@ -245,7 +234,6 @@ module bp_cce_pc
       end
       INIT: begin
         // In INIT, the CCE waits for commands to arrive on the configuration link
-        config_ready_o = 1'b1;
         pc_state_n = INIT;
         // init complete when freeze is low and cce mode is normal
         // if freeze goes low, but mode is uncached, the CCE operates in uncached mode
@@ -284,26 +272,6 @@ module bp_cce_pc
                          : (ram_v_n) ? INIT_RAM_RD_RESP : INIT;
           end
         end
-      end
-      INIT_CFG_REG_RESP: begin
-        config_v_o = 1'b1;
-        config_data_o = (config_reg_addr_r == '0)
-                        ? {(cfg_link_data_width_p-`bp_cce_mode_bits)'('0), cce_mode_r}
-                        : '0;
-        // wait for ready&valid handshake to occur
-        pc_state_n = (config_ready_i) ? INIT : INIT_CFG_REG_RESP;
-        // hold register value until message sent
-        config_reg_addr_n = (config_ready_i) ? '0 : config_reg_addr_r;
-      end
-      INIT_RAM_RD_RESP: begin
-        // hold the read valid until cfg link accepts the outbound packet
-        ram_v_n = ~config_ready_i;
-        ram_addr_n = ram_addr_r;
-        config_v_o = 1'b1;
-        config_data_o = (cfg_hi_not_lo_r)
-          ? {(cfg_link_hi_pad_width_lp)'('0),ram_data_lo[0+:cfg_link_hi_data_width_lp]}
-          : ram_data_lo[0+:cfg_link_data_width_p];
-        pc_state_n = (config_ready_i) ? INIT : INIT_RAM_RD_RESP;
       end
       INIT_END: begin
         // let the last cfg link write finish (if there is one)
@@ -383,5 +351,5 @@ module bp_cce_pc
       end
     endcase
   end
-
+*/
 endmodule

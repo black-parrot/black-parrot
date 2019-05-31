@@ -24,18 +24,6 @@ module wrapper
    )
   (input                                                      clk_i
    , input                                                    reset_i
-   , input [num_cce_p-1:0]                                    freeze_i
-
-   // Config channel
-   , input [num_cce_p-1:0][bp_cfg_link_addr_width_gp-2:0]        config_addr_i
-   , input [num_cce_p-1:0][bp_cfg_link_data_width_gp-1:0]        config_data_i
-   , input [num_cce_p-1:0]                                       config_v_i
-   , input [num_cce_p-1:0]                                       config_w_i
-   , output logic [num_cce_p-1:0]                                config_ready_o
-
-   , output logic [num_cce_p-1:0][bp_cfg_link_data_width_gp-1:0] config_data_o
-   , output logic [num_cce_p-1:0]                                config_v_o
-   , input [num_cce_p-1:0]                                       config_ready_i
 
     ,input [bsg_ready_and_link_sif_width_lp-1:0]              link_i
     ,output [bsg_ready_and_link_sif_width_lp-1:0]             link_o
