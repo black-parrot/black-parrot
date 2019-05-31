@@ -2,6 +2,7 @@
 VCS_OPTIONS ?= +vcs+finish+500000000ps   # Change this to run longer / shorter
 VCS_OPTIONS += +vcs+lic+wait             # Wait for license
 VCS_OPTIONS += +libext+.v+.vlib+.vh      # Find library files with these extensions
+VCS_OPTIONS += +vcs+loopdetect
 
 VCS_BUILD_OPTS += -full64             # Compile a 64-bit executable
 VCS_BUILD_OPTS += -sverilog -debug_pp # Enable SystemVerilog
@@ -72,7 +73,7 @@ build.v: dirs.v
 	-@echo $(BUILD_DIR)/testbench.v               >> $(BUILD_DIR)/flist.vcs
 	-@echo $(BUILD_DIR)/test_bp.v                 >> $(BUILD_DIR)/flist.vcs
 	-@echo $(BUILD_DIR)/cce_rom.v                 >> $(BUILD_DIR)/flist.vcs
-	-cd $(BUILD_DIR); $(VCS) $(VCS_OPTIONS) $(VCS_BUILD_OPTS) -top test_bp -f flist.vcs -o simv \
+	-cd $(BUILD_DIR); $(VCS) $(VCS_OPTIONS) $(HDL_PARAMS) $(VCS_BUILD_OPTS) -top test_bp -f flist.vcs -o simv \
 	| tee $(BUILD_LOG)
 	-@grep "Error" -A 5 $(BUILD_LOG) > $(BUILD_ERROR);
 	-@tail -n 2 $(BUILD_LOG) > $(BUILD_REPORT)
