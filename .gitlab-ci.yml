@@ -37,10 +37,11 @@ func-regress-verilator-job:
     - git submodule update --init -- basejump_stl
     - echo "Fetching riscv-tests"
     - git submodule update --init --recursive -- bp_common/test/src/riscv-tests
-    - echo "Fetching coremark"
-    - git submodule update --init --recursive -- bp_common/test/src/coremark
+    # We need to update riscv-gnu-toolchain in order to build coremark
+    #- echo "Fetching coremark"
+    #- git submodule update --init --recursive -- bp_common/test/src/coremark
     - echo "Building test programs"
-    - make -C bp_common/test riscv_mem coremark_mem
+    - make -C bp_common/test riscv_mem 
 
   script:
     - echo "Running Verilator regression"
