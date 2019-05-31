@@ -39,7 +39,7 @@ axe:
 gnu:
 	cd $(GNU_DIR); \
 	rm -rf riscv-newlib; \
-	git clone https://bitbucket.org/taylor-bsg/bsg_hammerblade_newlib.git ./riscv-newlib; \
+	git clone https://github.com/bespoke-silicon-group/bsg_newlib_dramfs ./riscv-newlib; \
 	cd ./riscv-newlib; \
 	git checkout bsg_manycore_newlib; \
 	cd ..; \
