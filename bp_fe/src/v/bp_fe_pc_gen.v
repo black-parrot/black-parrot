@@ -95,7 +95,7 @@ wire cmd_nonattaboy_v = fe_pc_gen_v_i & ~fe_pc_gen_cmd.attaboy_valid;
 wire misalign_exception  = pc_if2_r[1:0] != 2'b00; 
 wire itlb_miss_exception = pc_v_if2_r & itlb_miss_if2_r;
 
-wire fetch_fail     = pc_v_if2_r & ~pc_gen_fe_v_o;
+wire fetch_fail     = pc_v_if2_r & ~pc_gen_fe_v_o & ~cmd_nonattaboy_v;
 wire queue_miss     = pc_v_if2_r & ~pc_gen_fe_ready_i;
 wire flush          = itlb_miss_if2_r | icache_miss_i | queue_miss | cmd_nonattaboy_v;
 wire fe_instr_v     = pc_v_if2_r & ~flush;
@@ -123,7 +123,7 @@ always_comb
       // Run state -- PCs are actually being fetched
       // Transition to wait if there's a TLB miss while we wait for fill
       // Transition to stall if we don't successfully complete the fetch for whatever reason
-      e_run  : state_n = itlb_miss_exception ? e_wait : fetch_fail ? e_stall : e_run;
+      e_run  : state_n = fetch_fail ? e_stall : itlb_miss_exception ? e_wait : e_run;
       default: state_n = e_wait;
     endcase
   end

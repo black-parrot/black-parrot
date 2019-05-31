@@ -1,5 +1,5 @@
 ## Tool specific options
-VCS_OPTIONS ?= +vcs+finish+5000000ps     # Change this to run longer / shorter
+VCS_OPTIONS ?= +vcs+finish+50000000ps     # Change this to run longer / shorter
 VCS_OPTIONS += +vcs+lic+wait             # Wait for license
 VCS_OPTIONS += +libext+.v+.vlib+.vh      # Find library files with these extensions
 

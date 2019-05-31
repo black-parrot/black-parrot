@@ -538,7 +538,7 @@ bsg_dff
    ,.data_o(exc_stage_r)
    );
 
-wire fe_exc_v = chk_dispatch_v_i & issue_pkt_r.instr_metadata.fe_exception_not_instr;
+wire fe_exc_v = chk_dispatch_v_i & issue_pkt_v_r & issue_pkt_r.instr_metadata.fe_exception_not_instr;
 wire fe_nop_v = chk_dispatch_v_i & ~issue_pkt_v_r;
 wire be_nop_v = ~chk_dispatch_v_i &  mmu_cmd_ready_i;
 wire me_nop_v = ~chk_dispatch_v_i & ~mmu_cmd_ready_i;
