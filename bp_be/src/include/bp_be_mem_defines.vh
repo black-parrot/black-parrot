@@ -14,14 +14,9 @@
     bp_be_fu_op_s                      mem_op;                                                     \
     bp_be_mmu_vaddr_s                  vaddr;                                                      \
     logic [rv64_reg_data_width_gp-1:0] data;                                                       \
+    logic                              fe_exc_v;                                                   \
+    bp_fe_exception_code_e             fe_ecode;                                                   \
   }  bp_be_mmu_cmd_s;                                                                              \
-                                                                                                   \
-  typedef struct packed                                                                            \
-  {                                                                                                \
-    bp_be_fu_op_s                      fill_op;                                                    \
-    bp_be_mmu_vaddr_s                  vaddr;                                                      \
-    logic [rv64_reg_data_width_gp-1:0] pc;                                                         \
-  }  bp_be_tlb_fill_cmd_s;                                                                         \
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
@@ -33,11 +28,7 @@
   typedef struct packed                                                                            \
   {                                                                                                \
     logic [rv64_reg_data_width_gp-1:0] data;                                                       \
-    bp_be_mem_exception_s              exception;                                                  \
-    bp_be_mmu_vaddr_s                  vaddr;                                                      \
   }  bp_be_mem_resp_s;                                                                             \
-                                                                                                   \
-
 
 `define declare_bp_be_tlb_entry_s(ppn_width_mp) \
   typedef struct packed                                                                            \
@@ -71,25 +62,6 @@
 
 `define bp_sv39_pte_width ($bits(bp_sv39_pte_s))
 
-typedef struct packed 
-{
-  // Exceptions
-  logic illegal_instr;
-  logic instr_fault;
-  logic load_fault;
-  logic store_fault;
-  logic instr_page_fault;
-  logic load_page_fault;
-  logic store_page_fault;
-
-  // Invalid conditions
-  logic dtlb_miss;
-  logic dcache_miss;
-}  bp_be_mem_exception_s;
-
-`define bp_be_mem_exception_width \
-  ($bits(bp_be_mem_exception_s))
-
 `define bp_be_vtag_width(vaddr_width_mp, sets_mp, block_size_in_bytes_mp) \
   (vaddr_width_mp - `BSG_SAFE_CLOG2(sets_mp*block_size_in_bytes_mp))
 
@@ -103,16 +75,13 @@ typedef struct packed
    )
 
 `define bp_be_mmu_cmd_width(vaddr_width_mp) \
-  (`bp_be_fu_op_width + vaddr_width_mp + rv64_reg_data_width_gp)
-
-`define bp_be_tlb_fill_cmd_width(vaddr_width_mp) \
-  (`bp_be_fu_op_width + vaddr_width_mp + rv64_reg_data_width_gp)
+  (`bp_be_fu_op_width + vaddr_width_mp + rv64_reg_data_width_gp + 1 + $bits(bp_fe_exception_code_e))
 
 `define bp_be_csr_cmd_width \
   (`bp_be_fu_op_width + rv64_csr_addr_width_gp + rv64_reg_data_width_gp)
 
 `define bp_be_mem_resp_width(vaddr_width_mp)                                                                     \
-  (rv64_reg_data_width_gp + `bp_be_mem_exception_width + vaddr_width_mp)
+  (rv64_reg_data_width_gp)
 
 `endif
 

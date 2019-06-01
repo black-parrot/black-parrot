@@ -81,7 +81,6 @@ module bp_be_calculator_top
    , localparam exception_width_lp      = `bp_be_exception_width
    , localparam mmu_cmd_width_lp        = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam csr_cmd_width_lp        = `bp_be_csr_cmd_width
-   , localparam tlb_fill_cmd_width_lp   = `bp_be_tlb_fill_cmd_width(vaddr_width_p)
    , localparam mem_resp_width_lp       = `bp_be_mem_resp_width(vaddr_width_p)
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam pipe_stage_reg_width_lp = `bp_be_pipe_stage_reg_width(vaddr_width_p)
@@ -137,21 +136,15 @@ module bp_be_calculator_top
   , output                               csr_cmd_v_o
   , input                                csr_cmd_ready_i
 
-  , output [tlb_fill_cmd_width_lp-1:0]   tlb_fill_cmd_o
-  , output                               tlb_fill_cmd_v_o
-  , input                                tlb_fill_cmd_ready_i
-
   , input [mem_resp_width_lp-1:0]        mem_resp_i
   , input                                mem_resp_v_i
   , output                               mem_resp_ready_o
 
   // CSRs
-  , output                               instret_o
-  , output [vaddr_width_p-1:0]           exception_pc_o
-  , output [vaddr_width_p-1:0]           exception_vaddr_o
-  , output [instr_width_lp-1:0]          exception_instr_o
-  , output                               exception_ecode_v_o
-  , output [ecode_dec_width_lp-1:0]      exception_ecode_dec_o
+  , output                               instret_mem3_o
+  , output [vaddr_width_p-1:0]           pc_mem3_o
+  , output [instr_width_lp-1:0]          instr_mem3_o
+  , output                               pc_v_mem3_o
   );
 
 // Declare parameterizable structs
@@ -164,12 +157,10 @@ module bp_be_calculator_top
 bp_be_issue_pkt_s   issue_pkt;
 bp_be_calc_status_s calc_status;
 bp_be_mem_resp_s    mem_resp;
-bp_be_tlb_fill_cmd_s tlb_fill_cmd;
 bp_proc_cfg_s       proc_cfg;
 
 assign issue_pkt = issue_pkt_i;
 assign mem_resp = mem_resp_i;
-assign tlb_fill_cmd_o = tlb_fill_cmd;
 assign proc_cfg = proc_cfg_i;
 assign calc_status_o = calc_status;
 
@@ -189,10 +180,7 @@ logic [reg_data_width_lp-1:0] bypass_frs1, bypass_frs2;
 logic [reg_data_width_lp-1:0] bypass_rs1 , bypass_rs2;
 
 // Exception signals
-logic illegal_instr_isd, csr_instr_isd;
 logic load_misaligned_mem1, store_misaligned_mem3;
-bp_be_mem_exception_s mem_exception_mem3;
-logic [vaddr_width_p-1:0] mem_vaddr_mem3;
 
 // Pipeline stage registers
 bp_be_pipe_stage_reg_s [pipe_stage_els_lp-1:0] calc_stage_r;
@@ -345,13 +333,19 @@ bsg_dff_reset_en
    );
 
 // Decode the dispatched instruction
+logic                  fe_exc_not_instr_isd;
+bp_fe_exception_code_e fe_exc_isd;
+// Decode the dispatched instruction
 bp_be_instr_decoder
  instr_decoder
-  (.instr_i(issue_pkt_r.instr)
+  (.instr_v_i(issue_pkt_v_r)
+   ,.instr_i(issue_pkt_r.instr)
+   ,.fe_exc_not_instr_i(issue_pkt_r.fe_exception_not_instr)
+   ,.fe_exc_i(issue_pkt_r.fe_exception_code)
 
    ,.decode_o(decoded)
-   ,.illegal_instr_o(illegal_instr_isd)
-   ,.csr_instr_o(csr_instr_isd)
+   ,.fe_exc_not_instr_o(fe_exc_not_instr_isd)
+   ,.fe_exc_o(fe_exc_isd)
    );
 
 // Bypass the instruction operands from written registers in the stack
@@ -383,10 +377,10 @@ bp_be_pipe_int
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
  
-   ,.kill_ex1_i(|exc_stage_n[1])
+   ,.kill_ex1_i(exc_stage_n[1].poison_v)
 
    ,.decode_i(dispatch_pkt_r.decode)
-   ,.pc_i(dispatch_pkt_r.instr_metadata.pc)
+   ,.pc_i(dispatch_pkt_r.pc)
    ,.rs1_i(dispatch_pkt_r.rs1)
    ,.rs2_i(dispatch_pkt_r.rs2)
    ,.imm_i(dispatch_pkt_r.imm)
@@ -424,6 +418,9 @@ bp_be_pipe_mem
    ,.kill_ex3_i(exc_stage_r[2].poison_v) 
 
    ,.decode_i(dispatch_pkt_r.decode)
+   ,.exc_v_i(dispatch_pkt_r.fe_exception_not_instr)
+   ,.exc_i(dispatch_pkt_r.fe_exception_code)
+   ,.pc_i(dispatch_pkt_r.pc)
    ,.instr_i(dispatch_pkt_r.instr)
    ,.rs1_i(dispatch_pkt_r.rs1)
    ,.rs2_i(dispatch_pkt_r.rs2)
@@ -443,8 +440,6 @@ bp_be_pipe_mem
 
    ,.v_o(pipe_mem_v_lo)
    ,.data_o(pipe_mem_data_lo)
-   ,.mem_exception_o(mem_exception_mem3)
-   ,.mem3_vaddr_o(mem_vaddr_mem3)
    );
 
   // Floating point pipe: 4 cycle latency
@@ -528,7 +523,7 @@ bsg_dff
    ,.data_o(exc_stage_r)
    );
 
-wire fe_exc_v = chk_dispatch_v_i & issue_pkt_v_r & issue_pkt_r.instr_metadata.fe_exception_not_instr;
+wire fe_exc_v = chk_dispatch_v_i & issue_pkt_v_r & fe_exc_not_instr_isd;
 wire fe_nop_v = chk_dispatch_v_i & ~issue_pkt_v_r;
 wire be_nop_v = ~chk_dispatch_v_i &  mmu_cmd_ready_i;
 wire me_nop_v = ~chk_dispatch_v_i & ~mmu_cmd_ready_i;
@@ -536,21 +531,27 @@ wire me_nop_v = ~chk_dispatch_v_i & ~mmu_cmd_ready_i;
 always_comb 
   begin
     // Form dispatch packet
-    dispatch_pkt.instr_metadata      = issue_pkt_r.instr_metadata;
+    dispatch_pkt.pc                  = issue_pkt_r.pc;
+    dispatch_pkt.fe_exception_not_instr = fe_exc_not_instr_isd;
+    dispatch_pkt.fe_exception_code   = fe_exc_isd;
     dispatch_pkt.branch_metadata_fwd = issue_pkt_r.branch_metadata_fwd;
     dispatch_pkt.instr               = issue_pkt_r.instr;
     dispatch_pkt.rs1                 = bypass_rs1;
     dispatch_pkt.rs2                 = bypass_rs2;
     dispatch_pkt.imm                 = issue_pkt_r.imm;
 
-           if (fe_exc_v) dispatch_pkt.decode = '0;
+           if (fe_exc_v) 
+             begin
+               dispatch_pkt.decode = '0;
+               dispatch_pkt.decode.pipe_mem_v = 1'b1;
+             end
       else if (fe_nop_v) dispatch_pkt = '0;
       else if (be_nop_v) dispatch_pkt = '0;
       else if (me_nop_v) dispatch_pkt = '0;
       else               dispatch_pkt.decode = decoded;
 
     // Strip out elements of the dispatch packet that we want to save for later
-    calc_stage_isd.instr_metadata = dispatch_pkt.instr_metadata;
+    calc_stage_isd.pc             = dispatch_pkt.pc;
     calc_stage_isd.instr          = dispatch_pkt.instr;
     calc_stage_isd.instr_v        = dispatch_pkt.decode.instr_v;
     calc_stage_isd.pipe_int_v     = dispatch_pkt.decode.pipe_int_v;
@@ -581,7 +582,7 @@ always_comb
     calc_status.int1_br_or_jmp           = dispatch_pkt_r.decode.br_v 
                                            | dispatch_pkt_r.decode.jmp_v;
     calc_status.ex1_v                    = dispatch_pkt_v_r; 
-    calc_status.ex1_pc                   = dispatch_pkt_r.instr_metadata.pc;
+    calc_status.ex1_pc                   = dispatch_pkt_r.pc;
     calc_status.ex1_instr_v              = dispatch_pkt_r.decode.instr_v & ~exc_stage_r[0].poison_v;
     
     // Dependency information for pipelines
@@ -606,17 +607,15 @@ always_comb
         calc_status.dep_status[i].mem_v     = calc_stage_r[i].pipe_mem_v
                                               & ~exc_stage_n[i+1].poison_v;
         calc_status.dep_status[i].stall_v   = (exc_stage_r[i].csr_instr_v
-                                               | calc_stage_r[i].fencei_v
-                                               | exc_stage_r[i].itlb_fill_v
-                                               ) & ~exc_stage_n[i+i].poison_v;
+                                              | calc_stage_r[i].fencei_v
+                                              ) & ~exc_stage_n[i+1].poison_v;
       end
 
     // Additional commit point information
-    calc_status.mem3_pc           = calc_stage_r[2].instr_metadata.pc;
+    calc_status.mem3_pc           = calc_stage_r[2].pc;
     // This should actually be reliant on not begin a fill request
     calc_status.mem3_miss_v       = (~pipe_mem_v_lo & calc_stage_r[2].pipe_mem_v)
-                                     & ~exc_stage_r[2].poison_v 
-                                     & ~exc_stage_n[3].illegal_instr_v; 
+                                     & ~exc_stage_r[2].poison_v;
     calc_status.mem3_fencei_v     = calc_stage_r[2].fencei_v & ~exc_stage_r[2].poison_v;
     // TODO: Handles dequeueing both healthy and poisoned instructions from the queue. 
     //   Should rename for descriptiveness
@@ -643,29 +642,7 @@ always_comb
         exc_stage_n[i] = (i == 0) ? '0 : exc_stage_r[i-1];
       end
         // If there are new exceptions, add them to the list
-        exc_stage_n[0].instr_misaligned_v = 
-          (issue_pkt_v_r & chk_dispatch_v_i)
-          & issue_pkt_r.instr_metadata.fe_exception_not_instr
-          & (issue_pkt_r.instr_metadata.fe_exception_code == e_instr_misaligned);
-
-        exc_stage_n[0].itlb_fill_v = 
-          (issue_pkt_v_r & chk_dispatch_v_i)
-          & issue_pkt_r.instr_metadata.fe_exception_not_instr 
-          & (issue_pkt_r.instr_metadata.fe_exception_code == e_itlb_miss);
-
-        exc_stage_n[0].instr_access_fault_v = 
-          (issue_pkt_v_r & chk_dispatch_v_i )
-          & issue_pkt_r.instr_metadata.fe_exception_not_instr 
-          & (issue_pkt_r.instr_metadata.fe_exception_code == e_instr_access_fault);
-
-        exc_stage_n[0].illegal_instr_v = 
-          (issue_pkt_v_r & chk_dispatch_v_i & illegal_instr_isd & ~issue_pkt_r.instr_metadata.fe_exception_not_instr)
-          | (chk_dispatch_v_i & issue_pkt_r.instr_metadata.fe_exception_not_instr 
-             & issue_pkt_r.instr_metadata.fe_exception_code == e_illegal_instr
-             ); 
-        exc_stage_n[3].illegal_instr_v = exc_stage_r[2].illegal_instr_v | mem_exception_mem3.illegal_instr;
-
-        exc_stage_n[0].csr_instr_v     = chk_dispatch_v_i & csr_instr_isd;
+        exc_stage_n[0].csr_instr_v     = chk_dispatch_v_i & dispatch_pkt.decode.csr_instr_v;
 
         exc_stage_n[0].fe_exc_v        = fe_exc_v;
         exc_stage_n[0].fe_nop_v        = fe_nop_v;
@@ -680,45 +657,13 @@ always_comb
         exc_stage_n[0].poison_v        = chk_poison_iss_r        | chk_poison_isd_i;
         exc_stage_n[1].poison_v        = exc_stage_r[0].poison_v | chk_poison_ex1_i;
         exc_stage_n[2].poison_v        = exc_stage_r[1].poison_v | chk_poison_ex2_i;
-        exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | calc_status.mem3_miss_v | mem_exception_mem3.illegal_instr; 
+        exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | calc_status.mem3_miss_v; 
   end
 
-assign tlb_fill_cmd_v_o = (exc_stage_r[2].itlb_fill_v | mem_resp.exception.dtlb_miss) & ~exc_stage_r[2].poison_v;
-always_comb
-  begin
-    tlb_fill_cmd.fill_op = exc_stage_r[2].itlb_fill_v
-                           ? e_ptw_i
-                           : ~calc_stage_r[2].irf_w_v
-                             ? e_ptw_s
-                             : e_ptw_l;
-    // We're already saving this, we don't need it in the resp
-    tlb_fill_cmd.vaddr   = exc_stage_r[2].itlb_fill_v ? calc_stage_r[2].instr_metadata.pc : mem_resp.vaddr;
-    tlb_fill_cmd.pc      = calc_stage_r[2].instr_metadata.pc;
-  end
-
-
-assign instret_o = calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v;
-assign exception_pc_o = exc_stage_n[3].illegal_instr_v ? calc_stage_r[2].instr_metadata.pc : mem_resp.data;
-assign exception_vaddr_o = mem_vaddr_mem3;
-assign exception_instr_o = calc_stage_r[2].instr;
-assign exception_ecode_v_o = |exception_ecode_dec_o & ~exc_stage_r[2].poison_v;
-assign exception_ecode_dec_o = 
-  bp_be_ecode_dec_s'{instr_misaligned : exc_stage_n[3].instr_misaligned_v
-                     ,instr_fault     : mem_exception_mem3.instr_fault 
-                     ,illegal_instr   : exc_stage_n[3].illegal_instr_v
-                     ,breakpoint      : 1'b0 // From to exc pipe
-                     ,load_misaligned : 1'b0 // Think about what should raise this
-                     ,load_fault      : mem_exception_mem3.load_fault 
-                     ,store_misaligned: 1'b0 // Think about what should raise this
-                     ,store_fault     : mem_exception_mem3.store_fault 
-                     ,ecall_u_mode    : 1'b0 // From exc_pipe
-                     ,ecall_s_mode    : 1'b0 // From exc_pipe
-                     ,ecall_m_mode    : 1'b0 // From exc_pipe
-                     ,instr_page_fault: mem_exception_mem3.instr_page_fault 
-                     ,load_page_fault : mem_exception_mem3.load_page_fault 
-                     ,store_page_fault: mem_exception_mem3.store_page_fault
-                     ,default         : 1'b0
-                     };
+assign instret_mem3_o = calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v;
+assign pc_mem3_o      = calc_stage_r[2].pc;
+assign pc_v_mem3_o    = (calc_stage_r[2].instr_v | exc_stage_r[2].fe_exc_v) & ~exc_stage_r[2].poison_v;
+assign instr_mem3_o   = calc_stage_r[2].instr;
 
 endmodule : bp_be_calculator_top
 

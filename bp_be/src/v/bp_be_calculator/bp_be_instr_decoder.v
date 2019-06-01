@@ -28,28 +28,31 @@
  */
 
 module bp_be_instr_decoder 
+ import bp_common_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
  #(// Generated parameters
    localparam instr_width_lp    = rv64_instr_width_gp
    , localparam decode_width_lp = `bp_be_decode_width
    )
-  (input [instr_width_lp-1:0]     instr_i
+  (input                             instr_v_i
+   , input [instr_width_lp-1:0]      instr_i
+   , input                           fe_exc_not_instr_i
+   , input bp_fe_exception_code_e    fe_exc_i
 
-   , output [decode_width_lp-1:0] decode_o
-   , output                       illegal_instr_o
-   , output                       csr_instr_o
+   , output [decode_width_lp-1:0]    decode_o
+   , output logic                    fe_exc_not_instr_o
+   , output bp_fe_exception_code_e   fe_exc_o
    );
 
 // Cast input and output ports 
 rv64_instr_s   instr;
 bp_be_decode_s decode;
-logic          illegal_instr;
 
 assign instr           = instr_i;
 assign decode_o        = decode;
-assign illegal_instr_o = illegal_instr;
-assign csr_instr_o     = decode.csr_instr_v;
+
+logic illegal_instr;
 
 // Decode logic 
 always_comb 
@@ -57,6 +60,7 @@ always_comb
     // Set decoded defaults
     // NOPs are set after bypassing for critical path reasons
     decode               = '0;
+    decode.instr_v       = 1'b1;
 
     // Destination pipe
     decode.pipe_comp_v   = '0;
@@ -274,25 +278,8 @@ always_comb
       default : illegal_instr = 1'b1;
     endcase
 
-    /* If NOP or illegal instruction, dispatch the instruction directly to the completion pipe */
-    if (illegal_instr) 
-      begin
-        decode             = '0;
-        decode.instr_v     = 1'b1;
-        decode.pipe_comp_v = 1'b1;
-      end 
-    else 
-      begin 
-        decode.instr_v = 1'b1;
-      end
-  end
-
-// Runtime assertions
-always_comb 
-  begin
-    /* TODO: Re-enable when less annoying */
-    //assert (~(decode.instr_v & (instr.opcode == `RV64_MISC_MEM_OP)))
-    //  else $warning("RV64 misc-mem ops are not currently implemented");
+    fe_exc_not_instr_o = fe_exc_not_instr_i | (instr_v_i & illegal_instr);
+    fe_exc_o           = fe_exc_not_instr_i ? fe_exc_i : e_illegal_instr;
   end
 
 endmodule : bp_be_instr_decoder

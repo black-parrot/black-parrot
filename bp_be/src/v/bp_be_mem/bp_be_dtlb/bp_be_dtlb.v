@@ -6,9 +6,8 @@ module bp_be_dtlb
   import bp_be_rv64_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
-   ,parameter els_p         = "inv"
    
-   ,localparam lg_els_lp      = `BSG_SAFE_CLOG2(els_p)
+   ,localparam lg_els_lp      = `BSG_SAFE_CLOG2(dtlb_els_p)
    ,localparam entry_width_lp = `bp_be_tlb_entry_width(ptag_width_p)
  )
  (input                               clk_i
@@ -78,7 +77,7 @@ bsg_dff_reset #(.width_p(vtag_width_p))
    ,.data_o(miss_vtag_o)
   );
   
-bp_be_dtlb_replacement #(.ways_p(els_p))
+bp_be_dtlb_replacement #(.ways_p(dtlb_els_p))
   plru
   (.clk_i(clk_i)
    ,.reset_i(reset_i | flush_i)
@@ -90,7 +89,7 @@ bp_be_dtlb_replacement #(.ways_p(els_p))
   ); 
   
 bsg_cam_1r1w 
-  #(.els_p(els_p)
+  #(.els_p(dtlb_els_p)
     ,.width_p(vtag_width_p)
     ,.multiple_entries_p(0)
     ,.find_empty_entry_p(1)
@@ -117,7 +116,7 @@ bsg_cam_1r1w
 
 bsg_mem_1rw_sync
   #(.width_p(entry_width_lp)
-    ,.els_p(els_p)
+    ,.els_p(dtlb_els_p)
   )
   entry_ram
   (.clk_i(clk_i)

@@ -41,6 +41,7 @@
  */
 
 module bp_be_pipe_mem 
+ import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
@@ -52,7 +53,6 @@ module bp_be_pipe_mem
    , localparam mmu_cmd_width_lp       = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam csr_cmd_width_lp       = `bp_be_csr_cmd_width
    , localparam mem_resp_width_lp      = `bp_be_mem_resp_width(vaddr_width_p)
-   , localparam mem_exception_width_lp = `bp_be_mem_exception_width
 
    // From RISC-V specifications
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
@@ -64,7 +64,10 @@ module bp_be_pipe_mem
    , input                                kill_ex2_i
    , input                                kill_ex3_i
 
+   , input bp_fe_exception_code_e         exc_i
+   , input                                exc_v_i
    , input [decode_width_lp-1:0]          decode_i
+   , input [vaddr_width_p-1:0]            pc_i
    , input [rv64_instr_width_gp-1:0]      instr_i
    , input [reg_data_width_lp-1:0]        rs1_i
    , input [reg_data_width_lp-1:0]        rs2_i
@@ -84,8 +87,6 @@ module bp_be_pipe_mem
 
    , output logic                              v_o
    , output logic [reg_data_width_lp-1:0]      data_o
-   , output logic [mem_exception_width_lp-1:0] mem_exception_o
-   , output logic [vaddr_width_p-1:0]          mem3_vaddr_o
    );
 
 // Declare parameterizable structs
@@ -133,12 +134,14 @@ logic [reg_data_width_lp-1:0] offset;
 
 assign offset = decode.offset_sel ? '0 : imm_i[0+:vaddr_width_p];
 
-assign mem1_cmd_v = (decode.dcache_r_v | decode.dcache_w_v) & ~kill_ex1_i;
+assign mem1_cmd_v = decode.pipe_mem_v & ~decode.csr_instr_v & ~kill_ex1_i;
 always_comb 
   begin
-    mem1_cmd.mem_op = decode.fu_op;
-    mem1_cmd.data   = rs2_i;
-    mem1_cmd.vaddr  = (rs1_i + offset);
+    mem1_cmd.mem_op   = decode.fu_op;
+    mem1_cmd.data     = rs2_i;
+    mem1_cmd.vaddr    = exc_v_i ? pc_i : (rs1_i + offset);
+    mem1_cmd.fe_exc_v = exc_v_i;
+    mem1_cmd.fe_ecode = exc_i;
   end
 
 assign csr_cmd_v_o = csr_cmd_v_lo & ~kill_ex3_i;
@@ -155,8 +158,6 @@ always_comb
 // Output results of memory op
 assign v_o                = mem_resp_v_i;
 assign mem_resp_ready_o   = 1'b1;
-assign mem_exception_o    = mem_resp.exception;
-assign mem3_vaddr_o       = mem_resp.vaddr;
 
 // Set MMU cmd signal
 assign mmu_cmd_v_o = mem1_cmd_v;

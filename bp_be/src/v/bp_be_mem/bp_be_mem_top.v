@@ -42,7 +42,6 @@ module bp_be_mem_top
    // MMU                                                              
    , localparam mmu_cmd_width_lp  = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam csr_cmd_width_lp  = `bp_be_csr_cmd_width
-   , localparam tlb_fill_cmd_width_lp  = `bp_be_tlb_fill_cmd_width(vaddr_width_p)
    , localparam mem_resp_width_lp = `bp_be_mem_resp_width(vaddr_width_p)
    
    // VM
@@ -63,20 +62,16 @@ module bp_be_mem_top
    , input                                   csr_cmd_v_i
    , output                                  csr_cmd_ready_o
 
-   , input [tlb_fill_cmd_width_lp-1:0]       tlb_fill_cmd_i
-   , input                                   tlb_fill_cmd_v_i
-   , output                                  tlb_fill_cmd_ready_o
-
    , input                                   chk_poison_ex_i
 
    , output [mem_resp_width_lp-1:0]          mem_resp_o
    , output                                  mem_resp_v_o
    , input                                   mem_resp_ready_i
-   
+
    , output                                  itlb_fill_v_o
    , output [vaddr_width_p-1:0]              itlb_fill_vaddr_o
    , output [tlb_entry_width_lp-1:0]         itlb_fill_entry_o
-
+   
    , output [lce_cce_req_width_lp-1:0]       lce_req_o
    , output                                  lce_req_v_o
    , input                                   lce_req_ready_i
@@ -108,17 +103,16 @@ module bp_be_mem_top
    , input [proc_cfg_width_lp-1:0]           proc_cfg_i
    , input                                   instret_i
 
-   , input [vaddr_width_p-1:0]               exception_pc_i
-   , input [vaddr_width_p-1:0]               exception_vaddr_i
-   , input [instr_width_p-1:0]               exception_instr_i
-   , input                                   exception_ecode_v_i
-   , input [ecode_dec_width_lp-1:0]          exception_ecode_dec_i
+   , input [vaddr_width_p-1:0]               pc_mem3_i
+   , input [instr_width_p-1:0]               instr_mem3_i
+   , input                                   pc_v_mem3_i
 
    , input                                   timer_int_i
    , input                                   software_int_i
    , input                                   external_int_i
    , input [vaddr_width_p-1:0]               interrupt_pc_i
 
+   , output [rv64_priv_width_gp-1:0]         priv_mode_o
    , output                                  trap_v_o
    , output                                  ret_v_o
    , output [mepc_width_lp-1:0]              mepc_o
@@ -141,20 +135,19 @@ module bp_be_mem_top
 bp_proc_cfg_s          proc_cfg;
 bp_be_mmu_cmd_s        mmu_cmd;
 bp_be_csr_cmd_s        csr_cmd;
-bp_be_tlb_fill_cmd_s   tlb_fill_cmd;
 bp_be_mem_resp_s       mem_resp;
 bp_be_mmu_vaddr_s      mmu_cmd_vaddr;
+bp_be_mmu_vaddr_s      pc_mem3_cast_i;
 
 assign proc_cfg = proc_cfg_i;
 assign mmu_cmd = mmu_cmd_i;
 assign csr_cmd = csr_cmd_i;
-assign tlb_fill_cmd = tlb_fill_cmd_i;
 
 assign mem_resp_o = mem_resp;
+assign pc_mem3_cast_i = pc_mem3_i;
 
 // Suppress unused signal warnings
 wire unused0 = mem_resp_ready_i;
-assign tlb_fill_cmd_ready_o = 1'b1;
 
 /* Internal connections */
 /* TLB ports */
@@ -187,34 +180,73 @@ logic                     csr_v_lo;
 logic                     translation_en_lo;
 
 /* Control signals */
-logic dcache_cmd_v, itlb_fill_cmd_v, dtlb_fill_cmd_v;
+logic dcache_cmd_v;
 logic itlb_not_dtlb_resp;
 logic dtlb_miss_r;
-logic [vaddr_width_p-1:0] vaddr_r, vaddr_r2, fault_vaddr;
-logic [dword_width_p-1:0] fault_pc;
+bp_be_mmu_vaddr_s vaddr_mem3, fault_vaddr;
+logic is_store_mem3;
+logic [vaddr_width_p-1:0] fault_pc;
 
-always_ff @(posedge clk_i) begin
-  if(reset_i) begin
-    vaddr_r <= '0;
-    vaddr_r2 <= '0;
-  end
-  else begin
-    vaddr_r <= mmu_cmd.vaddr;
-    vaddr_r2 <= vaddr_r;
-  end
-end
+logic ecode_v_mem3_r;
+bp_fe_exception_code_e ecode_mem3_r;
 
-always_ff @(posedge clk_i) begin
-  if(reset_i) begin
-    fault_vaddr <= '0;
-    fault_pc    <= '0; 
-  end
-  else if(tlb_fill_cmd_v_i) begin
-    fault_vaddr <= tlb_fill_cmd.vaddr;
-    fault_pc    <= tlb_fill_cmd.pc; 
-  end
-end
+wire itlb_fill_cmd_v = (ecode_mem3_r == e_itlb_miss) & pc_v_mem3_i;
+wire dtlb_fill_cmd_v = dtlb_miss_r & pc_v_mem3_i;
 
+bsg_dff_en
+ #(.width_p(2*vaddr_width_p))
+ fault_reg
+  (.clk_i(clk_i)
+   ,.en_i(itlb_fill_cmd_v | dtlb_fill_cmd_v)
+
+   ,.data_i({vaddr_mem3, pc_mem3_i})
+   ,.data_o({fault_vaddr, fault_pc})
+   );
+
+wire is_store = mmu_cmd.mem_op inside {e_sb, e_sh, e_sw, e_sd};
+bsg_dff_chain
+ #(.width_p(1+vaddr_width_p)
+   ,.num_stages_p(2)
+   )
+ fill_pipe
+  (.clk_i(clk_i)
+   
+   ,.data_i({mmu_cmd.vaddr, is_store})
+   ,.data_o({vaddr_mem3, is_store_mem3})
+   );
+
+bsg_dff_chain
+ #(.width_p(1+$bits(bp_fe_exception_code_e))
+   ,.num_stages_p(2)
+   )
+ fe_exception_pipe
+  (.clk_i(clk_i)
+
+   ,.data_i({mmu_cmd_v_i & mmu_cmd.fe_exc_v, mmu_cmd.fe_ecode})
+   ,.data_o({ecode_v_mem3_r, ecode_mem3_r})
+   );
+
+bp_be_ecode_dec_s exception_ecode_dec_li;
+assign exception_ecode_dec_li = 
+  '{instr_misaligned : (ecode_v_mem3_r & (ecode_mem3_r == e_instr_misaligned))
+    ,instr_fault     : (ecode_v_mem3_r & (ecode_mem3_r == e_instr_access_fault))
+    ,illegal_instr   : (ecode_v_mem3_r & (ecode_mem3_r == e_illegal_instr))
+    ,breakpoint      : (csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak))
+    ,load_misaligned : 1'b0
+    ,load_fault      : 1'b0
+    ,store_misaligned: 1'b0
+    ,store_fault     : 1'b0
+    ,ecall_u_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `RV64_PRIV_MODE_U)
+    ,ecall_s_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `RV64_PRIV_MODE_S)
+    ,ecall_m_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `RV64_PRIV_MODE_M)
+    ,instr_page_fault: ptw_instr_page_fault_v
+    ,load_page_fault : ptw_load_page_fault_v
+    ,store_page_fault: ptw_store_page_fault_v
+    ,default: '0
+    };
+
+wire [vaddr_width_p-1:0] pc_mem3_li = pc_v_mem3_i ? pc_mem3_i : fault_pc;
+wire [vaddr_width_p-1:0] exception_vaddr_li = pc_v_mem3_i ? vaddr_mem3 : fault_vaddr;
 bp_be_csr
  #(.cfg_p(cfg_p))
   csr
@@ -232,17 +264,18 @@ bp_be_csr
    ,.hartid_i(proc_cfg.core_id)
    ,.instret_i(instret_i)
 
-   ,.exception_pc_i(exception_pc_i)
-   ,.exception_vaddr_i(exception_vaddr_i)
-   ,.exception_instr_i(exception_instr_i)
-   ,.exception_ecode_v_i(exception_ecode_v_i)
-   ,.exception_ecode_dec_i(exception_ecode_dec_i)
+   ,.exception_v_i(pc_v_mem3_i | ptw_page_fault_v)
+   ,.exception_pc_i(pc_mem3_li)
+   ,.exception_vaddr_i(exception_vaddr_li)
+   ,.exception_instr_i(instr_mem3_i)
+   ,.exception_ecode_dec_i(exception_ecode_dec_li)
 
    ,.timer_int_i(timer_int_i)
    ,.software_int_i(software_int_i)
    ,.external_int_i(external_int_i)
    ,.interrupt_pc_i(interrupt_pc_i)
 
+   ,.priv_mode_o(priv_mode_o)
    ,.trap_v_o(trap_v_o)
    ,.ret_v_o(ret_v_o)
    ,.mepc_o(mepc_o)
@@ -253,9 +286,7 @@ bp_be_csr
    );
 
 bp_be_dtlb
-  #(.cfg_p(cfg_p)
-    ,.els_p(16)
-  )
+  #(.cfg_p(cfg_p))
   dtlb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -386,8 +417,6 @@ always_ff @(posedge clk_i) begin
 end
     
 // Decode cmd type
-assign itlb_fill_cmd_v = tlb_fill_cmd_v_i & (tlb_fill_cmd.fill_op == e_ptw_i);
-assign dtlb_fill_cmd_v = tlb_fill_cmd_v_i & (tlb_fill_cmd.fill_op == e_ptw_l | tlb_fill_cmd.fill_op == e_ptw_s);
 assign dcache_cmd_v    = mmu_cmd_v_i & ~(itlb_fill_cmd_v | dtlb_fill_cmd_v);
 
 // D-Cache connections
@@ -421,28 +450,16 @@ assign dtlb_w_entry = ptw_tlb_w_entry;
 
 // PTW connections
 assign ptw_tlb_miss_v    = itlb_fill_cmd_v | dtlb_fill_cmd_v;
-assign ptw_tlb_miss_vtag = tlb_fill_cmd.vaddr.tag;
+assign ptw_tlb_miss_vtag = vaddr_mem3.tag;
 assign ptw_page_fault_v  = ptw_instr_page_fault_v | ptw_load_page_fault_v | ptw_store_page_fault_v;
-assign ptw_store_not_load = tlb_fill_cmd_v_i & (tlb_fill_cmd.fill_op == e_ptw_s);
+assign ptw_store_not_load = dtlb_fill_cmd_v & is_store_mem3;
  
 // MMU response connections
-assign mem_resp.data                       = ptw_page_fault_v
-                                              ? fault_pc
-                                              : dcache_v
-                                                 ? dcache_data
-                                                 : csr_data_lo;
-assign mem_resp.vaddr                      = ptw_page_fault_v ? fault_vaddr : vaddr_r2;
-assign mem_resp.exception.illegal_instr    = illegal_instr;
-assign mem_resp.exception.instr_fault      = 1'b0; // TODO: Fill in
-assign mem_resp.exception.load_fault       = 1'b0;
-assign mem_resp.exception.store_fault      = 1'b0;
-assign mem_resp.exception.instr_page_fault = ptw_instr_page_fault_v;
-assign mem_resp.exception.load_page_fault  = ptw_load_page_fault_v;
-assign mem_resp.exception.store_page_fault = ptw_store_page_fault_v;
-assign mem_resp.exception.dtlb_miss        = dtlb_miss_r;
-assign mem_resp.exception.dcache_miss      = dcache_miss_v;
+assign mem_resp.data   = dcache_v
+                         ? dcache_data
+                         : csr_data_lo;
 
-assign mem_resp_v_o    = ptw_busy ? 1'b0 : (dcache_v | csr_v_lo);
+assign mem_resp_v_o    = ptw_busy ? 1'b0 : (dcache_v | csr_v_lo | itlb_fill_cmd_v | |exception_ecode_dec_li);
 assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~ptw_busy;
 
 assign itlb_fill_v_o     = ptw_tlb_w_v & itlb_not_dtlb_resp;

@@ -116,9 +116,6 @@ logic mmu_cmd_v, mmu_cmd_rdy;
 bp_be_csr_cmd_s csr_cmd;
 logic csr_cmd_v, csr_cmd_rdy;
 
-bp_be_tlb_fill_cmd_s tlb_fill_cmd;
-logic tlb_fill_cmd_v, tlb_fill_cmd_rdy;
-
 bp_be_mem_resp_s mem_resp;
 logic mem_resp_v, mem_resp_rdy;
 
@@ -139,12 +136,10 @@ logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li, chk_ifence_li;
 
 logic credits_full_lo, credits_empty_lo;
 
-logic                          instret;
-logic [vaddr_width_p-1:0]      exception_pc;
-logic [vaddr_width_p-1:0]      exception_vaddr;
-logic [instr_width_p-1:0]      exception_instr;
-logic [ecode_dec_width_lp-1:0] exception_ecode_dec;
-logic                          exception_ecode_v;
+logic                     instret_mem3;
+logic                     pc_v_mem3;
+logic [vaddr_width_p-1:0] pc_mem3;
+logic [instr_width_p-1:0] instr_mem3;
 
 // Module instantiations
 bp_be_checker_top 
@@ -223,20 +218,14 @@ bp_be_calculator_top
    ,.csr_cmd_v_o(csr_cmd_v)
    ,.csr_cmd_ready_i(csr_cmd_rdy)
 
-   ,.tlb_fill_cmd_o(tlb_fill_cmd)
-   ,.tlb_fill_cmd_v_o(tlb_fill_cmd_v)
-   ,.tlb_fill_cmd_ready_i(tlb_fill_cmd_rdy)
-
    ,.mem_resp_i(mem_resp) 
    ,.mem_resp_v_i(mem_resp_v)
    ,.mem_resp_ready_o(mem_resp_rdy)   
 
-   ,.instret_o(instret)
-   ,.exception_pc_o(exception_pc)
-   ,.exception_vaddr_o(exception_vaddr)
-   ,.exception_instr_o(exception_instr)
-   ,.exception_ecode_v_o(exception_ecode_v)
-   ,.exception_ecode_dec_o(exception_ecode_dec)
+   ,.instret_mem3_o(instret_mem3)
+   ,.pc_v_mem3_o(pc_v_mem3)
+   ,.pc_mem3_o(pc_mem3)
+   ,.instr_mem3_o(instr_mem3)
    );
 
 bp_be_mem_top
@@ -254,10 +243,6 @@ bp_be_mem_top
     ,.csr_cmd_i(csr_cmd)
     ,.csr_cmd_v_i(csr_cmd_v)
     ,.csr_cmd_ready_o(csr_cmd_rdy)
-
-    ,.tlb_fill_cmd_i(tlb_fill_cmd)
-    ,.tlb_fill_cmd_v_i(tlb_fill_cmd_v)
-    ,.tlb_fill_cmd_ready_o(tlb_fill_cmd_rdy)
 
     ,.mem_resp_o(mem_resp)
     ,.mem_resp_v_o(mem_resp_v)
@@ -292,13 +277,11 @@ bp_be_mem_top
     ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
 
     ,.proc_cfg_i(proc_cfg_i)
-    ,.instret_i(instret)
+    ,.instret_i(instret_mem3)
 
-    ,.exception_pc_i(exception_pc)
-    ,.exception_vaddr_i(exception_vaddr)
-    ,.exception_instr_i(exception_instr)
-    ,.exception_ecode_v_i(exception_ecode_v)
-    ,.exception_ecode_dec_i(exception_ecode_dec)
+    ,.pc_v_mem3_i(pc_v_mem3)
+    ,.pc_mem3_i(pc_mem3)
+    ,.instr_mem3_i(instr_mem3)
 
     ,.credits_full_o(credits_full_lo)
     ,.credits_empty_o(credits_empty_lo)
@@ -308,6 +291,8 @@ bp_be_mem_top
     ,.external_int_i(external_int_i)
     ,.interrupt_pc_i(chk_pc_lo)
 
+    // Should connect priv mode to checker for shadow privilege mode
+    ,.priv_mode_o()
     ,.trap_v_o(chk_trap_v_li)
     ,.ret_v_o(chk_ret_v_li)
     ,.mepc_o(chk_mepc_li)

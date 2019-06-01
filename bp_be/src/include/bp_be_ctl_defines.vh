@@ -47,13 +47,6 @@ typedef enum bit [3:0]
 
 typedef enum bit [3:0]
 {
-  e_ptw_i  = 4'b0000
-  ,e_ptw_l = 4'b0001
-  ,e_ptw_s = 4'b0010
-} bp_be_fill_fu_op_e;
-
-typedef enum bit [3:0]
-{
   e_csrrw   = 4'b0001
   ,e_csrrs  = 4'b0010
   ,e_csrrc  = 4'b0011
@@ -178,14 +171,10 @@ typedef struct packed
   logic poison_v;
   logic roll_v;
 
-  // These signals are just used for stalls
+  // We stall on csr instructions because they might have
+  //  side effects. Of course, we could progress on some CSRs
+  //  (*scratch, for example)
   logic csr_instr_v;
-  logic itlb_fill_v;  
-
-  // Actual exceptions
-  logic instr_misaligned_v;
-  logic instr_access_fault_v;
-  logic illegal_instr_v;
 }  bp_be_exception_s;
 
 `define bp_be_fu_op_width                                                                          \

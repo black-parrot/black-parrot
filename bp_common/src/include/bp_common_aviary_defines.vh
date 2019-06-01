@@ -49,6 +49,9 @@ typedef struct packed
   integer bht_idx_width;
   integer ras_idx_width;
 
+  integer itlb_els;
+  integer dtlb_els;
+
   integer lce_sets;
   integer lce_assoc;
   integer cce_block_width;
@@ -81,6 +84,9 @@ typedef struct packed
   , localparam btb_idx_width_p             = proc_param_lp.btb_idx_width                           \
   , localparam bht_idx_width_p             = proc_param_lp.bht_idx_width                           \
   , localparam ras_idx_width_p             = proc_param_lp.ras_idx_width                           \
+                                                                                                   \
+  , localparam itlb_els_p              = proc_param_lp.itlb_els                                    \
+  , localparam dtlb_els_p              = proc_param_lp.dtlb_els                                    \
                                                                                                    \
   , localparam lce_sets_p              = proc_param_lp.lce_sets                                    \
   , localparam lce_assoc_p             = proc_param_lp.lce_assoc                                   \

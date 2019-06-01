@@ -282,9 +282,7 @@ bp_fe_icache
 
    
 bp_be_dtlb
- #(.cfg_p(cfg_p)
-   ,.els_p(16)
-   )
+ #(.cfg_p(cfg_p))
  itlb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)

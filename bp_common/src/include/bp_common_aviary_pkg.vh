@@ -23,6 +23,9 @@ package bp_common_aviary_pkg;
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
       ,ras_idx_width            : 2
+
+      ,itlb_els             : 8
+      ,dtlb_els             : 8
       
       ,lce_sets             : 64
       ,lce_assoc            : 8
@@ -55,6 +58,9 @@ package bp_common_aviary_pkg;
       ,bht_idx_width            : 9
       ,ras_idx_width            : 2
       
+      ,itlb_els             : 8
+      ,dtlb_els             : 8
+      
       ,lce_sets             : 64
       ,lce_assoc            : 8
       ,cce_block_width      : 512
@@ -85,6 +91,9 @@ package bp_common_aviary_pkg;
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
       ,ras_idx_width            : 2
+      
+      ,itlb_els             : 8
+      ,dtlb_els             : 8
       
       ,lce_sets             : 64
       ,lce_assoc            : 8
@@ -117,6 +126,9 @@ package bp_common_aviary_pkg;
       ,bht_idx_width            : 9
       ,ras_idx_width            : 2
       
+      ,itlb_els             : 8
+      ,dtlb_els             : 8
+      
       ,lce_sets             : 64
       ,lce_assoc            : 8
       ,cce_block_width      : 512
@@ -147,6 +159,9 @@ package bp_common_aviary_pkg;
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
       ,ras_idx_width            : 2
+      
+      ,itlb_els             : 8
+      ,dtlb_els             : 8
       
       ,lce_sets             : 64
       ,lce_assoc            : 8
@@ -179,6 +194,9 @@ package bp_common_aviary_pkg;
       ,bht_idx_width            : 9
       ,ras_idx_width            : 2
 
+      ,itlb_els             : 8
+      ,dtlb_els             : 8
+      
       ,lce_sets             : 64
       ,lce_assoc            : 8
       ,cce_block_width      : 512
