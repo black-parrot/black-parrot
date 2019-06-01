@@ -25,11 +25,15 @@ module wrapper
   (input                                                      clk_i
    , input                                                    reset_i
 
-    ,input [bsg_ready_and_link_sif_width_lp-1:0]              link_i
-    ,output [bsg_ready_and_link_sif_width_lp-1:0]             link_o
-
-   , input [num_core_p-1:0]                                   external_irq_i
-  );
+   // channel tunnel interface
+   , input [width_p-1:0] multi_data_i
+   , input multi_v_i
+   , output multi_ready_o
+   
+   , output [width_p-1:0] multi_data_o
+   , output multi_v_o
+   , input multi_yumi_i
+   );
 
   bp_top
    #(.cfg_p(cfg_p)

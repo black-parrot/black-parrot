@@ -6,6 +6,7 @@ module bp_clint
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
+ import bp_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
@@ -26,8 +27,8 @@ module bp_clint
    , input                                         mem_data_cmd_v_i
    , output logic                                  mem_data_cmd_yumi_o
 
-   , output [mem_cce_resp_width_lp-1:0]            mem_resp_o
-   , output                                        mem_resp_v_o
+   , output logic [mem_cce_resp_width_lp-1:0]      mem_resp_o
+   , output logic                                  mem_resp_v_o
    , input                                         mem_resp_ready_i
 
    , output logic [mem_cce_data_resp_width_lp-1:0] mem_data_resp_o
@@ -50,13 +51,21 @@ module bp_clint
 // Cast ports
 bp_cce_mem_cmd_s       mem_cmd_cast_i;
 bp_cce_mem_data_cmd_s  mem_data_cmd_cast_i;
-bp_mem_cce_resp_s      mem_resp_cast_o;
-bp_mem_cce_data_resp_s mem_data_resp_cast_o;
+bp_mem_cce_resp_s      mem_resp_r, mem_resp_n;
+bp_mem_cce_data_resp_s mem_data_resp_r, mem_data_resp_n;
 
 assign mem_cmd_cast_i       = mem_cmd_i;
 assign mem_data_cmd_cast_i  = mem_data_cmd_i;
-assign mem_data_resp_o      = mem_data_resp_cast_o;
-assign mem_resp_o           = mem_resp_cast_o;
+assign mem_data_resp_o      = mem_data_resp_r;
+assign mem_resp_o           = mem_resp_r;
+
+typedef enum logic [2:0] {
+  READY
+  ,LOAD_RESP
+  ,STORE_ACK
+} state_e;
+
+state_e state_r, state_n;
 
 localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
 
@@ -255,8 +264,8 @@ for (genvar i = 0; i < num_core_p; i++)
   end // rof1
 
   wire cfg_link_w_v_li = cfg_link_data_cmd_v;
-  wire [bp_cfg_link_addr_width_gp-1:0] cfg_link_addr_li = mem_data_cmd_cast_i.addr[0+:bp_cfg_link_addr_width_gp-1];
-  wire [bp_cfg_link_data_width_gp-1:0] cfg_link_data_li = mem_data_cmd_cast_i.data[0+:bp_cfg_link_data_width_gp-1];
+  wire [bp_cfg_link_addr_width_gp-1:0] cfg_link_addr_li = mem_data_cmd_cast_i.data[bp_cfg_link_data_width_gp+:bp_cfg_link_addr_width_gp];
+  wire [bp_cfg_link_data_width_gp-1:0] cfg_link_data_li = mem_data_cmd_cast_i.data[0+:bp_cfg_link_data_width_gp];
   bsg_dff_chain
    #(.width_p(1+bp_cfg_link_addr_width_gp+bp_cfg_link_data_width_gp)
      ,.num_stages_p(cfg_link_pipe_depth_p)
@@ -308,28 +317,69 @@ wire [dword_width_p-1:0] rdata_lo = plic_cmd_v
                                       : mtimecmp_cmd_v 
                                         ? mtimecmp_lo 
                                         : mtime_r;
-always_comb
-  begin
-    mem_data_resp_cast_o.msg_type      = mem_cmd_cast_i.msg_type;
-    mem_data_resp_cast_o.addr          = mem_cmd_cast_i.addr;
-    mem_data_resp_cast_o.payload       = mem_cmd_cast_i.payload;
-    mem_data_resp_cast_o.non_cacheable = mem_cmd_cast_i.non_cacheable;
-    mem_data_resp_cast_o.nc_size       = mem_cmd_cast_i.nc_size;
-    mem_data_resp_cast_o.data          = rdata_lo;
 
-    mem_resp_cast_o.msg_type           = mem_data_cmd_cast_i.msg_type;
-    mem_resp_cast_o.addr               = mem_data_cmd_cast_i.addr;
-    mem_resp_cast_o.payload            = mem_data_cmd_cast_i.payload;
-    mem_resp_cast_o.non_cacheable      = mem_data_cmd_cast_i.non_cacheable;
-    mem_resp_cast_o.nc_size            = mem_data_cmd_cast_i.nc_size;
+always_comb begin
+
+  state_n = state_r;
+  mem_resp_n = mem_resp_r;
+  mem_data_resp_n = mem_data_resp_r;
+  
+  mem_cmd_yumi_o      = '0;
+  mem_data_cmd_yumi_o = '0;
+  mem_resp_v_o        = '0;
+  mem_data_resp_v_o   = '0;
+  
+  if(state_r == READY) begin
+    if(mem_cmd_v_i) begin
+    
+      mem_data_resp_n.msg_type      = mem_cmd_cast_i.msg_type;
+      mem_data_resp_n.addr          = mem_cmd_cast_i.addr;
+      mem_data_resp_n.payload       = mem_cmd_cast_i.payload;
+      mem_data_resp_n.non_cacheable = mem_cmd_cast_i.non_cacheable;
+      mem_data_resp_n.nc_size       = mem_cmd_cast_i.nc_size;
+      mem_data_resp_n.data          = rdata_lo;
+      
+      mem_cmd_yumi_o = 1'b1;
+      
+      state_n = LOAD_RESP;
+    end
+    else if(mem_data_cmd_v_i) begin
+    
+      mem_resp_n.msg_type           = mem_data_cmd_cast_i.msg_type;
+      mem_resp_n.addr               = mem_data_cmd_cast_i.addr;
+      mem_resp_n.payload            = mem_data_cmd_cast_i.payload;
+      mem_resp_n.non_cacheable      = mem_data_cmd_cast_i.non_cacheable;
+      mem_resp_n.nc_size            = mem_data_cmd_cast_i.nc_size;
+      
+      mem_data_cmd_yumi_o = 1'b1;
+      
+      state_n = STORE_ACK;
+    end
   end
-
-// Always accept incoming commands and data commands if the network is ready
-assign mem_data_resp_v_o = mem_cmd_v_i & mem_data_resp_ready_i;
-assign mem_cmd_yumi_o    = mem_cmd_v_i & mem_data_resp_ready_i;
-
-assign mem_resp_v_o        = mem_data_cmd_v_i & mem_resp_ready_i;
-assign mem_data_cmd_yumi_o = mem_data_cmd_v_i & mem_resp_ready_i;
+  else if(state_r == LOAD_RESP) begin
+    if(mem_data_resp_ready_i) begin
+      mem_data_resp_v_o = 1'b1;
+      state_n = READY;
+    end
+  end
+  else if(state_r == STORE_ACK) begin
+    if(mem_resp_ready_i) begin
+      mem_resp_v_o = 1'b1;
+      state_n = READY;
+    end
+  end
+end
+  
+always_ff @(posedge clk_i) begin
+  if(reset_i) begin
+    state_r <= READY;
+  end
+  else begin
+    state_r <= state_n;
+  end
+  mem_resp_r      <= mem_resp_n;
+  mem_data_resp_r <= mem_data_resp_n;
+end
 
 endmodule : bp_clint
 

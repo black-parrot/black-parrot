@@ -203,8 +203,8 @@ module bp_me_cce_to_wormhole_link_client
     
     mem_cmd_v_o = 0;
     mem_data_cmd_v_o = 0;
-    mem_resp_ready_o = 1;
-    mem_data_resp_ready_o = 1;
+    mem_resp_ready_o = 0;
+    mem_data_resp_ready_o = 0;
     
     mem_cmd_r = 0;
     mem_cmd_r.non_cacheable = bp_lce_cce_req_non_cacheable_e'(data_i_cast_r.non_cacheable);
@@ -248,7 +248,7 @@ module bp_me_cce_to_wormhole_link_client
     end
     
     else if (state_r == POST_LOAD) begin
-    
+        mem_data_resp_ready_o = 1'b1;
         if (mem_data_resp_v_i) begin
             data_o_n = mem_data_resp.data;
             state_n = PRE_LOAD_RESP;
@@ -280,7 +280,7 @@ module bp_me_cce_to_wormhole_link_client
     end
     
     else if (state_r == POST_STORE) begin
-    
+        mem_resp_ready_o = 1'b1;
         if (mem_resp_v_i) begin
             state_n = STORE_ACK;
         end

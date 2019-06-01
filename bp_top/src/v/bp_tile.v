@@ -11,6 +11,7 @@ module bp_tile
  import bp_be_rv64_pkg::*;
  import bp_cce_pkg::*;
  import bsg_noc_pkg::*;
+ import bp_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
@@ -64,6 +65,7 @@ module bp_tile
    , input [y_cord_width_p-1:0]                            my_y_i
 
    , input                                                 freeze_i
+   , input [vaddr_width_p-1:0]                             pc_entry_point_i
 
    // Config channel
    , input                                                 cfg_w_v_i
@@ -151,6 +153,8 @@ bp_core
  core 
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
+   ,.freeze_i(freeze_i)
+   ,.pc_entry_point_i(pc_entry_point_i)
 
    ,.proc_cfg_i(proc_cfg_i)
 

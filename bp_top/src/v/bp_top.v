@@ -13,6 +13,7 @@ module bp_top
  import bp_be_rv64_pkg::*;
  import bp_cce_pkg::*;
  import bsg_noc_pkg::*;
+ import bp_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
@@ -64,10 +65,15 @@ module bp_top
   (input                                                      clk_i
    , input                                                    reset_i
 
-    // bsg_noc_wormhole interface
-    ,input [bsg_ready_and_link_sif_width_lp-1:0]              link_i
-    ,output [bsg_ready_and_link_sif_width_lp-1:0]             link_o
-    );
+   // channel tunnel interface
+   , input [width_p-1:0] multi_data_i
+   , input multi_v_i
+   , output multi_ready_o
+   
+   , output [width_p-1:0] multi_data_o
+   , output multi_v_o
+   , input multi_yumi_i
+  );
 
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
@@ -79,11 +85,6 @@ module bp_top
                        ,cce_block_width_p
                        )
 `declare_bsg_ready_and_link_sif_s(width_p,bsg_ready_and_link_sif_s);
-
-bsg_ready_and_link_sif_s link_i_cast, link_o_cast;
-
-assign link_o = link_o_cast;
-assign link_i_cast = link_i;
 
 logic [num_core_p-1:0][E:W][2+lce_cce_req_network_width_lp-1:0] lce_req_link_stitch_lo, lce_req_link_stitch_li;
 logic [num_core_p-1:0][E:W][2+lce_cce_resp_network_width_lp-1:0] lce_resp_link_stitch_lo, lce_resp_link_stitch_li;
@@ -132,7 +133,15 @@ logic                  clint_cmd_v_li, clint_cmd_yumi_lo;
 bp_cce_mem_data_cmd_s  clint_data_cmd_li;
 logic                  clint_data_cmd_v_li, clint_data_cmd_yumi_lo;
 
+logic                                 cfg_link_w_v_lo;
+logic [bp_cfg_link_addr_width_gp-1:0] cfg_link_addr_lo;
+logic [bp_cfg_link_data_width_gp-1:0] cfg_link_data_lo;
+
 bsg_ready_and_link_sif_s client_wh_link_li, client_wh_link_lo;
+bsg_ready_and_link_sif_s [1:0] ct_link_li, ct_link_lo;
+
+logic reset_li, freeze_li;
+logic [vaddr_width_p-1:0] pc_entry_point_li;
 
 localparam clint_x_cord_lp = (num_core_p/2)-1;
 localparam clint_y_cord_lp = 1;
@@ -155,6 +164,24 @@ assign lce_resp_link_stitch_li[num_core_p-1][E]      = '0;
 assign lce_data_resp_link_stitch_li[num_core_p-1][E] = '0;
 assign lce_cmd_link_stitch_li[num_core_p-1][E]       = '0;
 assign lce_data_cmd_link_stitch_li[num_core_p-1][E]  = '0;
+
+// Config Registers
+always_ff @(posedge clk_i) begin
+  if(cfg_link_w_v_lo) begin
+    if(cfg_link_addr_lo == bp_cfg_reg_reset_gp) begin
+      reset_li <= cfg_link_data_lo[0];
+    end
+    else if(cfg_link_addr_lo == bp_cfg_reg_freeze_gp) begin
+      freeze_li <= cfg_link_data_lo[0];
+    end
+    else if(cfg_link_addr_lo == bp_cfg_reg_start_pc_lo_gp) begin
+      pc_entry_point_li[bp_cfg_link_data_width_gp-1:0] <= cfg_link_data_lo;
+    end
+    else if(cfg_link_addr_lo == bp_cfg_reg_start_pc_hi_gp) begin
+      pc_entry_point_li[vaddr_width_p-1:bp_cfg_link_data_width_gp] <= cfg_link_data_lo;
+    end
+  end
+end
 
 
 // BP Tiles
@@ -202,18 +229,19 @@ for(genvar i = 0; i < num_core_p; i++)
        )
      tile
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_li)
 
        ,.proc_cfg_i(proc_cfg)
 
        ,.my_x_i(x_cord_width_p'(i))
        ,.my_y_i(y_cord_width_p'(0))
 
-       ,.freeze_i()
+       ,.freeze_i(freeze_li)
+       ,.pc_entry_point_i(pc_entry_point_li)
 
-       ,.cfg_w_v_i()
-       ,.cfg_addr_i()
-       ,.cfg_data_i()
+       ,.cfg_w_v_i(cfg_link_w_v_lo)
+       ,.cfg_addr_i(cfg_link_addr_lo)
+       ,.cfg_data_i(cfg_link_data_lo)
 
        // Router inputs
        ,.lce_req_link_i(lce_req_link_stitch_li[i])
@@ -366,9 +394,9 @@ bp_clint
    ,.timer_irq_o(timer_irq_lo)
    ,.external_irq_o(external_irq_lo)
    
-   ,.cfg_link_w_v_o()
-   ,.cfg_link_addr_o()
-   ,.cfg_link_data_o()
+   ,.cfg_link_w_v_o(cfg_link_w_v_lo)
+   ,.cfg_link_addr_o(cfg_link_addr_lo)
+   ,.cfg_link_data_o(cfg_link_data_lo)
    );
 
 bp_me_cce_to_wormhole_link_client
@@ -382,7 +410,7 @@ bp_me_cce_to_wormhole_link_client
   ,.y_cord_width_p(noc_y_cord_width_lp)
   ,.len_width_p(4)
   ,.reserved_width_p(2))   
-  master_link
+  client_link
   (.clk_i(clk_i)
   ,.reset_i(reset_i)
    
@@ -410,12 +438,7 @@ bp_me_cce_to_wormhole_link_client
   );   
   
 // Routers
-assign link_o_cast.v = cmd_wh_link_lo[dram_x_cord_lp][S].v;
-assign link_o_cast.data = cmd_wh_link_lo[dram_x_cord_lp][S].data;
-assign link_o_cast.ready_and_rev = resp_wh_link_lo[dram_x_cord_lp][S].ready_and_rev;
-   
 // Command Routers
-assign cmd_wh_link_li[dram_x_cord_lp][S].ready_and_rev = link_i_cast.ready_and_rev;
 assign cmd_wh_link_li[clint_x_cord_lp][S].ready_and_rev = client_wh_link_lo.ready_and_rev;
 for(genvar i = 0; i < num_core_p; i++) 
   begin : cmd_wh
@@ -434,7 +457,8 @@ for(genvar i = 0; i < num_core_p; i++)
     localparam stub_out_lp = stub_out_P_lp | stub_out_NS_lp | stub_out_E_lp | stub_out_W_lp;
     
     //Proc
-    assign cmd_wh_link_li[i][P] = master_wh_link_lo[i];
+    assign cmd_wh_link_li[i][P].v = master_wh_link_lo[i].v;
+    assign cmd_wh_link_li[i][P].data = master_wh_link_lo[i].data;
     //West
     if(i > 0) begin
       assign cmd_wh_link_li[i][W] = cmd_wh_link_lo[i-1][E];
@@ -477,8 +501,6 @@ end
 
 
 //Response Routers
-assign resp_wh_link_li[dram_x_cord_lp][S].v = link_i_cast.v;
-assign resp_wh_link_li[dram_x_cord_lp][S].data = link_i_cast.data;
 assign resp_wh_link_li[clint_x_cord_lp][S].v = client_wh_link_lo.v;
 assign resp_wh_link_li[clint_x_cord_lp][S].data = client_wh_link_lo.data;
 
@@ -538,6 +560,39 @@ for(genvar i = 0; i < num_core_p; i++)
         ,.my_y_i(noc_y_cord_width_lp'(0))
        );
 end
+
+
+//Channel Tunnel
+assign ct_link_li = {resp_wh_link_lo[dram_x_cord_lp][S], cmd_wh_link_lo[dram_x_cord_lp][S]};
+assign {cmd_wh_link_li[dram_x_cord_lp][S], resp_wh_link_li[dram_x_cord_lp][S]} = ct_link_lo;
+
+bsg_channel_tunnel_wormhole
+ #(.width_p(width_p)
+   ,.x_cord_width_p(noc_x_cord_width_lp)
+   ,.y_cord_width_p(noc_y_cord_width_lp)
+   ,.len_width_p(4)
+   ,.reserved_width_p(2)
+   ,.num_in_p(2)
+   ,.remote_credits_p(16)
+   ,.max_len_p(8)
+   ,.lg_credit_decimation_p(2)
+  )
+ channel_tunnel
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   
+   ,.multi_data_i(multi_data_i)
+   ,.multi_v_i(multi_v_i)
+   ,.multi_ready_o(multi_ready_o)
+   
+   ,.multi_data_o(multi_data_o)
+   ,.multi_v_o(multi_v_o)
+   ,.multi_yumi_i(multi_yumi_i)
+   
+   ,.link_i(ct_link_li)
+   ,.link_o(ct_link_lo)
+   );
+
 
 endmodule : bp_top
 

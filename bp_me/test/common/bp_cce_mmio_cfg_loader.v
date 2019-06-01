@@ -1,14 +1,14 @@
 /**
  *
  * Name:
- *   bp_cce_nonsysnth_cfg_loader.v
+ *   bp_cce_mmio_cfg_loader.v
  *
  * Description:
  *
  */
 
-module bp_cce_nonsynth_cfg_loader
-  import bsg_tag_pkg::*;
+module bp_cce_mmio_cfg_loader
+//  import bsg_tag_pkg::*;
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
@@ -24,6 +24,8 @@ module bp_cce_nonsynth_cfg_loader
     , parameter cfg_link_data_width_p = bp_cfg_link_data_width_gp
     , parameter inst_ram_els_p        = "inv"
     , parameter skip_ram_init_p       = 0
+    
+    , localparam bp_pc_entry_point_gp=39'h00_8000_0000
     )
   (input                                             clk_i
    , input                                           reset_i
@@ -37,16 +39,24 @@ module bp_cce_nonsynth_cfg_loader
    , input                                           mem_data_cmd_yumi_i
 
    // We don't need a response from the cfg network
-   //, input [mem_cce_resp_width_lp-1:0]               mem_resp_i
-   //, input                                           mem_resp_v_i
-   //, output                                          mem_resp_ready_o
+   , input [mem_cce_resp_width_lp-1:0]               mem_resp_i
+   , input                                           mem_resp_v_i
+   , output                                          mem_resp_ready_o
    );
 
+  wire [mem_cce_resp_width_lp-1:0] unused0 = mem_resp_i;
+  wire unused1 = mem_resp_v_i;
+  assign mem_resp_ready_o = 1'b1;
+   
  `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 
   bp_cce_mem_data_cmd_s mem_data_cmd_cast_o;
 
   assign mem_data_cmd_o = mem_data_cmd_cast_o;
+  
+  logic                                 cfg_v_lo;
+  logic [bp_cfg_link_data_width_gp-1:0] cfg_addr_lo;
+  logic [bp_cfg_link_data_width_gp-1:0] cfg_data_lo;
 
   enum logic [3:0] {
     RESET
@@ -73,36 +83,33 @@ module bp_cce_nonsynth_cfg_loader
      ,.reset_i(reset_i)
 
      ,.clear_i(ucode_cnt_clr)
-     ,.up_i(ucode_cnt_inc)
+     ,.up_i(ucode_cnt_inc & mem_data_cmd_yumi_i)
 
      ,.count_o(ucode_cnt_r)
      );
 
-  wire ucode_prog_done = (ucode_cnt_r == inst_ram_els_p);
+  wire ucode_prog_done = (ucode_cnt_r == inst_ram_els_p-1);
 
   always_ff @(posedge clk_i) 
     begin
       if (reset_i)
         state_r <= RESET;
-      else if (mem_data_cmd_yumi_i)
+      else if (mem_data_cmd_yumi_i || (state_r == RESET))
         state_r <= state_n;
     end
 
   assign boot_rom_addr_o = (cfg_addr_lo >> 1);
-
-  logic [bp_cfg_link_addr_width_gp-1:0] cfg_addr_lo;
-  logic [bp_cfg_link_data_width_gp-1:0] cfg_data_lo;
 
   always_comb
     begin
       mem_data_cmd_v_o = cfg_v_lo;
 
       mem_data_cmd_cast_o.msg_type      = e_lce_req_type_wr;
-      mem_data_cmd_cast_o.addr          = cfg_addr_lo;
+      mem_data_cmd_cast_o.addr          = bp_cfg_base_addr_gp;
       mem_data_cmd_cast_o.payload       = '0;
-      mem_data_cmd_cast_o.non_cacheable = 1'b0;
-      mem_data_cmd_cast_o.nc_size       = e_lce_req_non_cacheable;
-      mem_data_cmd_cast_o.data          = cfg_data_lo;
+      mem_data_cmd_cast_o.non_cacheable = e_lce_req_non_cacheable;
+      mem_data_cmd_cast_o.nc_size       = e_lce_nc_req_8;
+      mem_data_cmd_cast_o.data          = {cfg_addr_lo, cfg_data_lo};
     end
 
   always_comb 
@@ -155,7 +162,7 @@ module bp_cce_nonsynth_cfg_loader
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_mem_base_cce_ucode_gp + (ucode_cnt_r << 1) + 1'b1;
-          cfg_data_lo = boot_rom_data_i[cfg_link_data_width_p+:cfg_link_data_width_p];
+          cfg_data_lo = cfg_link_data_width_p'(boot_rom_data_i[inst_width_p-1:cfg_link_data_width_p]);
         end
         SEND_CFG_NORMAL: begin
           state_n = SEND_PC_LO;
@@ -176,7 +183,7 @@ module bp_cce_nonsynth_cfg_loader
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_start_pc_hi_gp;
-          cfg_data_lo = bp_pc_entry_point_gp[cfg_link_data_width_p+:cfg_link_data_width_p];
+          cfg_data_lo = cfg_link_data_width_p'(bp_pc_entry_point_gp[vaddr_width_p-1:cfg_link_data_width_p]);
         end
         BP_FREEZE_CLR: begin
           state_n = DONE;

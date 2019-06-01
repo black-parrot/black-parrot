@@ -58,8 +58,6 @@ module bp_be_director
 
    // Generated parameters
    , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
-   // From BE specifications
-   , localparam pc_entry_point_lp = bp_pc_entry_point_gp
    // VM parameters
    , localparam vtag_width_lp     = (vaddr_width_p-bp_page_offset_width_gp)
    , localparam ptag_width_lp     = (paddr_width_p-bp_page_offset_width_gp)
@@ -71,6 +69,8 @@ module bp_be_director
    )
   (input                               clk_i
    , input                             reset_i
+   , input                             freeze_i
+   , input [vaddr_width_p-1:0]         pc_entry_point_i
 
    // Dependency information
    , input [calc_status_width_lp-1:0]  calc_status_i
@@ -141,21 +141,20 @@ enum bit [1:0] {e_reset, e_boot, e_run} state_n, state_r;
 // Control signals
 logic npc_w_v, btaken_v, redirect_pending, attaboy_pending;
 
-logic [vaddr_width_p-1:0] br_mux_o, roll_mux_o, ret_mux_o;
+logic [vaddr_width_p-1:0] br_mux_o, roll_mux_o, ret_mux_o, exc_mux_o;
 
 // Module instantiations
 // Update the NPC on a valid instruction in ex1 or a cache miss or a tlb miss
-assign npc_w_v = (calc_status.ex1_instr_v & ~npc_mismatch_v) 
+assign npc_w_v = freeze_i
+                 |(calc_status.ex1_instr_v & ~npc_mismatch_v) 
                  | calc_status.mem3_miss_v
                  | trap_v_i
                  | ret_v_i;
-bsg_dff_reset_en 
+bsg_dff_en 
  #(.width_p(vaddr_width_p)
-   ,.reset_val_p(pc_entry_point_lp)     
    ) 
  npc
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
    ,.en_i(npc_w_v)
   
    ,.data_i(npc_n)
@@ -178,10 +177,20 @@ bsg_mux
  #(.width_p(vaddr_width_p)
    ,.els_p(2)   
    )
+ init_mux
+  (.data_i({pc_entry_point_i, exc_mux_o})
+   ,.sel_i(freeze_i)
+   ,.data_o(npc_n)
+   );
+
+bsg_mux 
+ #(.width_p(vaddr_width_p)
+   ,.els_p(2)   
+   )
  exception_mux
   (.data_i({ret_mux_o, roll_mux_o})
    ,.sel_i(trap_v_i | ret_v_i)
-   ,.data_o(npc_n)
+   ,.data_o(exc_mux_o)
    );
 
 bsg_mux 
@@ -260,7 +269,7 @@ assign pc_o = pc_r;
 always_comb
   begin
     unique casez (state_r)
-      e_reset : state_n = e_boot;
+      e_reset : state_n = freeze_i ? e_reset : e_boot;
       e_boot  : state_n = fe_cmd_v ? e_run : e_boot;
       e_run   : state_n = e_run;
       default : state_n = e_reset;

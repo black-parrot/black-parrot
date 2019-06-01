@@ -43,6 +43,8 @@ module bp_be_top
    )
   (input                                     clk_i
    , input                                   reset_i
+   , input                                   freeze_i
+   , input [vaddr_width_p-1:0]               pc_entry_point_i
 
    // FE queue interface
    , input [fe_queue_width_lp-1:0]           fe_queue_i
@@ -147,6 +149,8 @@ bp_be_checker_top
  be_checker
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
+   ,.freeze_i(freeze_i)
+   ,.pc_entry_point_i(pc_entry_point_i)
 
    ,.chk_dispatch_v_o(chk_dispatch_v)
    ,.chk_roll_o(chk_roll)

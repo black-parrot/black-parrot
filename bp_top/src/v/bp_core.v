@@ -32,6 +32,8 @@ module bp_core
    (
     input                                          clk_i
     , input                                        reset_i
+    , input                                        freeze_i
+    , input [vaddr_width_p-1:0]                    pc_entry_point_i
 
     , input [proc_cfg_width_lp-1:0]                proc_cfg_i
 
@@ -178,7 +180,9 @@ module bp_core
    be
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-
+     ,.freeze_i(freeze_i)
+     ,.pc_entry_point_i(pc_entry_point_i)
+     
      ,.proc_cfg_i(proc_cfg_i)
 
      ,.fe_queue_i(fe_queue_lo)

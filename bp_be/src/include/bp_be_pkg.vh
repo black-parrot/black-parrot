@@ -8,7 +8,6 @@ package bp_be_pkg;
   `include "bp_be_mem_defines.vh"
   `include "bp_be_internal_if_defines.vh"
 
-  localparam bp_pc_entry_point_gp     = 39'h00_8000_0000;
   // TODO: Arbitrary addresses, should probably think about these
   //         2nd from top bit indicates MMIO
   localparam bp_mmio_mtime_addr_gp         = 39'h6f_ffff_0000;

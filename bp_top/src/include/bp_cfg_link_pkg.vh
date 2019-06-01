@@ -22,6 +22,7 @@ package bp_cfg_link_pkg;
   localparam bp_cfg_link_addr_width_gp = 16;
   localparam bp_cfg_link_data_width_gp = 32;
 
+  localparam bp_cfg_base_addr_gp          = 32'h0100_0000;
   localparam bp_cfg_reg_clk_osc_gp        = 16'h0000;
   localparam bp_cfg_reg_reset_gp          = 16'h0001;
   localparam bp_cfg_reg_freeze_gp         = 16'h0002;
