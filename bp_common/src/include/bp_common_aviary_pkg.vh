@@ -35,6 +35,7 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
+      ,noc_width  : 64
       ,max_credits: 4
 
       ,dword_width      : 64
@@ -69,6 +70,7 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
+      ,noc_width  : 64
       ,max_credits: 4
 
       ,dword_width      : 64
@@ -103,6 +105,7 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
+      ,noc_width  : 64
       ,max_credits: 4
 
       ,dword_width      : 64
@@ -137,6 +140,7 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
+      ,noc_width  : 64
       ,max_credits: 4
 
       ,dword_width      : 64
@@ -171,6 +175,7 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
+      ,noc_width  : 64
       ,max_credits: 4
 
       ,dword_width      : 64
@@ -205,6 +210,7 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
+      ,noc_width  : 64
       ,max_credits: 4
 
       ,dword_width      : 64

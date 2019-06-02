@@ -41,9 +41,9 @@ module bp_clint
    , output [num_core_p-1:0]                       external_irq_o
 
    // Core config link
-   , output                                        cfg_link_w_v_o
-   , output [bp_cfg_link_addr_width_gp-1:0]        cfg_link_addr_o
-   , output [bp_cfg_link_data_width_gp-1:0]        cfg_link_data_o
+   , output [num_core_p-1:0]                                cfg_link_w_v_o
+   , output [num_core_p-1:0][bp_cfg_link_addr_width_gp-1:0] cfg_link_addr_o
+   , output [num_core_p-1:0][bp_cfg_link_data_width_gp-1:0] cfg_link_data_o
    );
 
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
@@ -261,21 +261,21 @@ for (genvar i = 0; i < num_core_p; i++)
        ,.data_o(external_irq_o[i])
        );
 
+    wire cfg_link_w_v_li = cfg_link_data_cmd_v;
+    wire [bp_cfg_link_addr_width_gp-1:0] cfg_link_addr_li = mem_data_cmd_cast_i.data[bp_cfg_link_data_width_gp+:bp_cfg_link_addr_width_gp];
+    wire [bp_cfg_link_data_width_gp-1:0] cfg_link_data_li = mem_data_cmd_cast_i.data[0+:bp_cfg_link_data_width_gp];
+    bsg_dff_chain
+     #(.width_p(1+bp_cfg_link_addr_width_gp+bp_cfg_link_data_width_gp)
+       ,.num_stages_p(cfg_link_pipe_depth_p)
+       )
+     cfg_link_pipe
+      (.clk_i(clk_i)
+
+       ,.data_i({cfg_link_w_v_li, cfg_link_addr_li, cfg_link_data_li})
+       ,.data_o({cfg_link_w_v_o[i], cfg_link_addr_o[i], cfg_link_data_o[i]})
+       );
+
   end // rof1
-
-  wire cfg_link_w_v_li = cfg_link_data_cmd_v;
-  wire [bp_cfg_link_addr_width_gp-1:0] cfg_link_addr_li = mem_data_cmd_cast_i.data[bp_cfg_link_data_width_gp+:bp_cfg_link_addr_width_gp];
-  wire [bp_cfg_link_data_width_gp-1:0] cfg_link_data_li = mem_data_cmd_cast_i.data[0+:bp_cfg_link_data_width_gp];
-  bsg_dff_chain
-   #(.width_p(1+bp_cfg_link_addr_width_gp+bp_cfg_link_data_width_gp)
-     ,.num_stages_p(cfg_link_pipe_depth_p)
-     )
-   cfg_link_pipe
-    (.clk_i(clk_i)
-
-     ,.data_i({cfg_link_w_v_li, cfg_link_addr_li, cfg_link_data_li})
-     ,.data_o({cfg_link_w_v_o, cfg_link_addr_o, cfg_link_data_o})
-     );
 
 logic mipi_lo;
 bsg_mux_one_hot

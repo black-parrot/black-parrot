@@ -64,9 +64,6 @@ module bp_tile
    , input [x_cord_width_p-1:0]                            my_x_i
    , input [y_cord_width_p-1:0]                            my_y_i
 
-   , input                                                 freeze_i
-   , input [vaddr_width_p-1:0]                             pc_entry_point_i
-
    // Config channel
    , input                                                 cfg_w_v_i
    , input [bp_cfg_link_addr_width_gp-1:0]                 cfg_addr_i
@@ -145,6 +142,13 @@ logic                        cce_lce_data_cmd_v_lo, cce_lce_data_cmd_ready_li;
 bp_proc_cfg_s proc_cfg_cast_i;
 assign proc_cfg_cast_i = proc_cfg_i;
 
+logic freeze_r;
+always_ff @(posedge clk_i)
+  begin
+    if (cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_freeze_gp))
+      freeze_r <= cfg_data_i[0];
+  end
+
 // Module instantiations
 bp_core   
  #(.cfg_p(cfg_p)
@@ -153,10 +157,13 @@ bp_core
  core 
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.freeze_i(freeze_i)
-   ,.pc_entry_point_i(pc_entry_point_i)
 
+   ,.freeze_i(freeze_r)
    ,.proc_cfg_i(proc_cfg_i)
+
+   ,.cfg_w_v_i(cfg_w_v_i)
+   ,.cfg_addr_i(cfg_addr_i)
+   ,.cfg_data_i(cfg_data_i)
 
    ,.lce_req_o(lce_req_lo)
    ,.lce_req_v_o(lce_req_v_lo)
@@ -574,7 +581,7 @@ bp_cce_top
  cce
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.freeze_i(freeze_i)
+   ,.freeze_i(freeze_r)
 
    ,.cfg_w_v_i(cfg_w_v_i)
    ,.cfg_addr_i(cfg_addr_i)

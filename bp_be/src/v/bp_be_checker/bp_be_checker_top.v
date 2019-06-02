@@ -63,6 +63,7 @@ module bp_be_checker_top
  import bp_common_aviary_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
+ import bp_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p
@@ -87,7 +88,11 @@ module bp_be_checker_top
   (input                              clk_i
    , input                            reset_i
    , input                            freeze_i
-   , input [vaddr_width_p-1:0]        pc_entry_point_i
+
+   // Config channel
+   , input                                   cfg_w_v_i
+   , input [bp_cfg_link_addr_width_gp-1:0]   cfg_addr_i
+   , input [bp_cfg_link_data_width_gp-1:0]   cfg_data_i
 
    // FE cmd interface
    , output [fe_cmd_width_lp-1:0]     fe_cmd_o
@@ -154,7 +159,10 @@ bp_be_director
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.freeze_i(freeze_i)
-   ,.pc_entry_point_i(pc_entry_point_i)
+
+   ,.cfg_w_v_i(cfg_w_v_i)
+   ,.cfg_addr_i(cfg_addr_i)
+   ,.cfg_data_i(cfg_data_i)
 
    ,.calc_status_i(calc_status_i) 
    ,.expected_npc_o(expected_npc)

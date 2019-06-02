@@ -30,10 +30,13 @@ wire unused1 = reset_i;
 
 logic clint_not_dram;
 
-assign clint_not_dram = (paddr_i == paddr_width_p'(cfg_link_dev_base_addr_gp)
-                         | paddr_i == paddr_width_p'(clint_dev_base_addr_gp)
-                         | paddr_i == paddr_width_p'(plic_dev_base_addr_gp)
-                        );
+always_comb
+  casez (paddr_i)
+    cfg_link_dev_base_addr_gp, clint_dev_base_addr_gp, plic_dev_base_addr_gp:
+             clint_not_dram = 1'b1;
+    default: clint_not_dram = 1'b0;
+  endcase
+
 assign dest_x_o = clint_not_dram ? clint_x_cord_i : dram_x_cord_i;
 assign dest_y_o = clint_not_dram ? clint_y_cord_i : dram_y_cord_i;
 

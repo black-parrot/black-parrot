@@ -48,6 +48,7 @@ module bp_be_director
  import bp_common_aviary_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
+ import bp_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
    `declare_bp_fe_be_if_widths(vaddr_width_p
@@ -70,7 +71,11 @@ module bp_be_director
   (input                               clk_i
    , input                             reset_i
    , input                             freeze_i
-   , input [vaddr_width_p-1:0]         pc_entry_point_i
+
+   // Config channel
+   , input                                 cfg_w_v_i
+   , input [bp_cfg_link_addr_width_gp-1:0] cfg_addr_i
+   , input [bp_cfg_link_data_width_gp-1:0] cfg_data_i
 
    // Dependency information
    , input [calc_status_width_lp-1:0]  calc_status_i
@@ -143,9 +148,18 @@ logic npc_w_v, btaken_v, redirect_pending, attaboy_pending;
 
 logic [vaddr_width_p-1:0] br_mux_o, roll_mux_o, ret_mux_o, exc_mux_o;
 
+logic [vaddr_width_p-1:0] start_pc_part_li;
+
+wire cfg_pc_lo_w_v = cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_start_pc_lo_gp);
+wire cfg_pc_hi_w_v = cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_start_pc_hi_gp);
+wire [vaddr_width_p-1:0] cfg_pc_part_li = 
+  cfg_pc_hi_w_v
+  ? {cfg_data_i[0+:vaddr_width_p-bp_cfg_link_data_width_gp], npc_r[0+:bp_cfg_link_data_width_gp]}
+  : {npc_r[vaddr_width_p-1:bp_cfg_link_data_width_gp], cfg_data_i[0+:bp_cfg_link_data_width_gp]};
+
 // Module instantiations
 // Update the NPC on a valid instruction in ex1 or a cache miss or a tlb miss
-assign npc_w_v = freeze_i
+assign npc_w_v = (cfg_pc_lo_w_v | cfg_pc_hi_w_v)
                  |(calc_status.ex1_instr_v & ~npc_mismatch_v) 
                  | calc_status.mem3_miss_v
                  | trap_v_i
@@ -173,12 +187,13 @@ bsg_dff_reset_en
    );
 
 // NPC calculation
+
 bsg_mux 
  #(.width_p(vaddr_width_p)
    ,.els_p(2)   
    )
  init_mux
-  (.data_i({pc_entry_point_i, exc_mux_o})
+  (.data_i({cfg_pc_part_li, exc_mux_o})
    ,.sel_i(freeze_i)
    ,.data_o(npc_n)
    );

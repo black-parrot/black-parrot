@@ -33,8 +33,7 @@ module testbench
    , parameter trace_rom_addr_width_p      = "inv"
    , localparam trace_rom_data_width_lp    = trace_ring_width_p + 4
    
-   , parameter width_p = 64
-   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(width_p)
+   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(noc_width_p)
    
    , localparam noc_x_cord_width_lp = `BSG_SAFE_CLOG2(num_core_p)
    , localparam noc_y_cord_width_lp = 1
@@ -49,7 +48,7 @@ localparam clint_y_cord_lp = 1;
 localparam dram_x_cord_lp  = (num_core_p/2);
 localparam dram_y_cord_lp  = 1;
    
-`declare_bsg_ready_and_link_sif_s(width_p,bsg_ready_and_link_sif_s);
+`declare_bsg_ready_and_link_sif_s(noc_width_p, bsg_ready_and_link_sif_s);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)     
 
 bsg_ready_and_link_sif_s [1:0] ct_link_li, ct_link_lo;
@@ -62,7 +61,7 @@ assign {cfg_link_li, mem_link_li} = ct_link_lo;
 logic [cce_instr_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
 logic [`bp_cce_inst_width-1:0]          cce_inst_boot_rom_data;
 
-logic [width_p-1:0] multi_data_li, multi_data_lo;
+logic [noc_width_p-1:0] multi_data_li, multi_data_lo;
 logic multi_v_li, multi_v_lo;
 logic multi_ready_lo, multi_yumi_li;
      
@@ -83,9 +82,8 @@ logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 // Chip
 wrapper
  #(.cfg_p(cfg_p)
-   ,.trace_p(trace_p)
+   ,.calc_trace_p(calc_trace_p)
    ,.cce_trace_p(cce_trace_p)
-   ,.width_p(width_p)
    )
  wrapper
   (.clk_i(clk_i)
@@ -101,14 +99,14 @@ wrapper
    );
    
 bsg_channel_tunnel_wormhole
- #(.width_p(width_p)
+ #(.width_p(noc_width_p)
    ,.x_cord_width_p(noc_x_cord_width_lp)
    ,.y_cord_width_p(noc_y_cord_width_lp)
    ,.len_width_p(4)
    ,.reserved_width_p(2)
    ,.num_in_p(2)
    ,.remote_credits_p(16)
-   ,.max_len_p(8)
+   ,.max_payload_flits_p(8)
    ,.lg_credit_decimation_p(2)
   )
  channel_tunnel
@@ -126,7 +124,7 @@ bsg_channel_tunnel_wormhole
    ,.link_i(ct_link_li)
    ,.link_o(ct_link_lo)
    );
-      
+
 bind bp_be_top
   bp_be_nonsynth_tracer
    #(.cfg_p(cfg_p))
@@ -187,7 +185,7 @@ bp_me_cce_to_wormhole_link_client
   ,.lce_assoc_p(lce_assoc_p)
   ,.block_size_in_bytes_p(cce_block_width_p/8)
   ,.lce_req_data_width_p(dword_width_p)
-  ,.width_p(width_p)
+  ,.width_p(noc_width_p)
   ,.x_cord_width_p(noc_x_cord_width_lp)
   ,.y_cord_width_p(noc_y_cord_width_lp)
   ,.len_width_p(4)
@@ -262,7 +260,7 @@ bp_me_cce_to_wormhole_link_master
   ,.lce_assoc_p(lce_assoc_p)
   ,.block_size_in_bytes_p(cce_block_width_p/8)
   ,.lce_req_data_width_p(dword_width_p)
-  ,.width_p(width_p)
+  ,.width_p(noc_width_p)
   ,.x_cord_width_p(noc_x_cord_width_lp)
   ,.y_cord_width_p(noc_y_cord_width_lp)
   ,.len_width_p(4)

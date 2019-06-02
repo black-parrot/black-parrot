@@ -60,6 +60,7 @@ typedef struct packed
   integer fe_queue_fifo_els;
   integer fe_cmd_fifo_els;
 
+  integer noc_width;
   integer max_credits;
 
   integer dword_width;
@@ -96,6 +97,7 @@ typedef struct packed
   , localparam fe_queue_fifo_els_p = proc_param_lp.fe_queue_fifo_els                               \
   , localparam fe_cmd_fifo_els_p   = proc_param_lp.fe_cmd_fifo_els                                 \
                                                                                                    \
+  , localparam noc_width_p   = proc_param_lp.noc_width                                             \
   , localparam max_credits_p = proc_param_lp.max_credits                                           \
                                                                                                    \
   , localparam dword_width_p       = proc_param_lp.dword_width                                     \

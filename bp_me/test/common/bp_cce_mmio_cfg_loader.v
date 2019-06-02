@@ -55,7 +55,8 @@ module bp_cce_mmio_cfg_loader
   assign mem_data_cmd_o = mem_data_cmd_cast_o;
   
   logic                                 cfg_v_lo;
-  logic [bp_cfg_link_data_width_gp-1:0] cfg_addr_lo;
+  logic [bp_cfg_link_core_width_gp-1:0] cfg_core_lo;
+  logic [bp_cfg_link_addr_width_gp-1:0] cfg_addr_lo;
   logic [bp_cfg_link_data_width_gp-1:0] cfg_data_lo;
 
   enum logic [3:0] {
@@ -109,7 +110,7 @@ module bp_cce_mmio_cfg_loader
       mem_data_cmd_cast_o.payload       = '0;
       mem_data_cmd_cast_o.non_cacheable = e_lce_req_non_cacheable;
       mem_data_cmd_cast_o.nc_size       = e_lce_nc_req_8;
-      mem_data_cmd_cast_o.data          = {cfg_addr_lo, cfg_data_lo};
+      mem_data_cmd_cast_o.data          = {cfg_core_lo, cfg_addr_lo, cfg_data_lo};
     end
 
   always_comb 
@@ -118,6 +119,7 @@ module bp_cce_mmio_cfg_loader
       ucode_cnt_inc = 1'b0;
 
       cfg_v_lo = '0;
+      cfg_core_lo = 8'hff;
       cfg_addr_lo = '0;
       cfg_data_lo = '0;
 

@@ -36,6 +36,20 @@ $BP_ME_DIR/src/include/v/bp_me_network_pkg.v
 // Top packages
 $BP_TOP_DIR/src/include/bp_cfg_link_pkg.vh
 // bsg_ip_cores files
+$BSG_IP_CORES_DIR/bsg_dataflow/bsg_channel_tunnel_wormhole.v
+$BSG_IP_CORES_DIR/bsg_dataflow/bsg_channel_tunnel.v
+$BSG_IP_CORES_DIR/bsg_dataflow/bsg_channel_tunnel_in.v
+$BSG_IP_CORES_DIR/bsg_dataflow/bsg_channel_tunnel_out.v
+$BSG_IP_CORES_DIR/bsg_dataflow/bsg_1_to_n_tagged_fifo.v
+$BSG_IP_CORES_DIR/bsg_dataflow/bsg_1_to_n_tagged.v
+$BSG_IP_CORES_DIR/bsg_dataflow/bsg_fifo_1r1w_large.v
+$BSG_IP_CORES_DIR/bsg_dataflow/bsg_fifo_1rw_large.v
+$BSG_IP_CORES_DIR/bsg_dataflow/bsg_flow_counter.v
+$BSG_IP_CORES_DIR/bsg_dataflow/bsg_serial_in_parallel_out.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_thermometer_count.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_counter_up_down_variable.v
+$BSG_IP_CORES_DIR/bsg_dataflow/bsg_round_robin_2_to_2.v
+$BSG_IP_CORES_DIR/bsg_dataflow/bsg_fifo_1r1w_pseudo_large.v
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_fifo_1r1w_small.v
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_fifo_tracker.v
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_round_robin_n_to_1.v
@@ -56,8 +70,9 @@ $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_2r1w_sync.v
 $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_2r1w_sync_synth.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_adder_ripple_carry.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_circular_ptr.v
-$BSG_IP_CORES_DIR/bsg_misc/bsg_counter_clear_up.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_crossbar_o_by_i.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_counter_clear_up.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_counter_up_down.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_cycle_counter.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_decode.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_decode_with_v.v
@@ -76,10 +91,15 @@ $BSG_IP_CORES_DIR/bsg_misc/bsg_round_robin_arb.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_scan.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_lru_pseudo_tree_encode.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_lru_pseudo_tree_decode.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_clkgate_optional.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_dlatch.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_mux_butterfly.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_swap.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router_buffered.v
-$BSG_IP_CORES_DIR/bsg_dataflow/bsg_flow_counter.v
-$BSG_IP_CORES_DIR/bsg_misc/bsg_counter_up_down.v
+$BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router.v
+$BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_adapter_in.v
+$BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
 // BE files
 $BP_BE_DIR/src/v/bp_be_top.v
 // Calculator
@@ -115,22 +135,19 @@ $BP_BE_DIR/src/v/common/bsg_fifo_1r1w_fence.v
 $BP_BE_DIR/src/v/common/bsg_fifo_1r1w_rolly.v
 // FE files
 $BP_FE_DIR/src/v/bp_fe_bht.v
+//$BP_FE_DIR/src/v/bp_fe_branch_predictor.v
 $BP_FE_DIR/src/v/bp_fe_btb.v
 $BP_FE_DIR/src/v/bp_fe_lce_cmd.v
 $BP_FE_DIR/src/v/bp_fe_lce_data_cmd.v
 $BP_FE_DIR/src/v/bp_fe_icache.v
 $BP_FE_DIR/src/v/bp_fe_instr_scan.v
-$BP_FE_DIR/src/v/bp_fe_itlb.v
 $BP_FE_DIR/src/v/bp_fe_itlb_replacement.v
+$BP_FE_DIR/src/v/bp_fe_itlb.v
 $BP_FE_DIR/src/v/bp_fe_lce.v
 $BP_FE_DIR/src/v/bp_fe_lce_req.v
 $BP_FE_DIR/src/v/bp_fe_pc_gen.v
 $BP_FE_DIR/src/v/bp_fe_top.v
 // ME files
-// Note: This should be a testing rom, because it varies per testbench
-// You must change it for testbenches with different numbers of lce
-// In future, we want to load the internal ram rather than rely on the rom
-// directly
 // CCE
 $BP_ME_DIR/src/v/cce/bp_cce.v
 $BP_ME_DIR/src/v/cce/bp_cce_alu.v
@@ -146,9 +163,13 @@ $BP_ME_DIR/src/v/cce/bp_cce_top.v
 // Network
 $BP_ME_DIR/src/v/network/bp_me_network_pkt_encode_data_cmd.v
 $BP_ME_DIR/src/v/network/bp_me_network_pkt_encode_data_resp.v
+$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_master.v
+$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_client.v
 // TOP
 $BP_TOP_DIR/src/v/bp_top.v
-$BP_TOP_DIR/src/v/bp_clint.v
+$BP_TOP_DIR/src/v/bp_multi_top.v
 $BP_TOP_DIR/src/v/bp_core.v
 $BP_TOP_DIR/src/v/bp_tile.v
+$BP_TOP_DIR/src/v/bp_clint.v
+$BP_TOP_DIR/src/v/bp_addr_map.v
 

@@ -19,30 +19,41 @@ module wrapper
    , parameter calc_trace_p = 0
    , parameter cce_trace_p = 0
    
-   ,parameter width_p = "inv"
-   ,localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(width_p)
+   ,localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(noc_width_p)
    )
   (input                                                      clk_i
    , input                                                    reset_i
 
    // channel tunnel interface
-   , input [width_p-1:0] multi_data_i
+   , input [noc_width_p-1:0] multi_data_i
    , input multi_v_i
    , output multi_ready_o
    
-   , output [width_p-1:0] multi_data_o
+   , output [noc_width_p-1:0] multi_data_o
    , output multi_v_o
    , input multi_yumi_i
    );
 
-  bp_top
-   #(.cfg_p(cfg_p)
-     ,.calc_trace_p(calc_trace_p)
-     ,.cce_trace_p(cce_trace_p)
-     ,.width_p(width_p)
-     )
-   dut
-    (.*);
+  if (num_core_p > 1)
+    begin : fi1
+      bp_multi_top
+       #(.cfg_p(cfg_p)
+         ,.calc_trace_p(calc_trace_p)
+         ,.cce_trace_p(cce_trace_p)
+         )
+       dut
+        (.*);
+    end // fi1
+  else
+    begin : fi1
+      bp_top
+       #(.cfg_p(cfg_p)
+         ,.calc_trace_p(calc_trace_p)
+         ,.cce_trace_p(cce_trace_p)
+         )
+       dut
+        (.*);
+    end // fi1
 
 endmodule : wrapper
 
