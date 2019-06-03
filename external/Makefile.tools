@@ -17,34 +17,42 @@ systemc:
 	wget http://www.accellera.org/images/downloads/standards/systemc/systemc-2.3.3.gz \
 	&& tar -xzf systemc-2.3.3.gz && rm systemc-2.3.3.gz \
 	&& cd systemc-2.3.3 && ./configure --prefix=$(BP_EXTERNAL_DIR) CXXFLAGS="-std=c++11" \
-	&& $(MAKE) && $(MAKE) install && $(MAKE) clean
+	&& make && make install && make clean
 
 verilator:
 	cd $(VERILATOR_DIR); \
 	autoconf && ./configure --prefix=$(BP_EXTERNAL_DIR) \
-	&& $(MAKE) && $(MAKE) install
+	&& make && make install
 
 spike:
 	cd $(SPIKE_DIR); \
 	./configure --with-fesvr=$(BP_EXTERNAL_DIR) --prefix=$(BP_EXTERNAL_DIR) \
-	&& $(MAKE) && $(MAKE) install && $(MAKE) clean
+	&& make && make install && make clean
 
 axe: 
 	cd $(AXE_DIR)/src; \
-	./$(MAKE).sh \
+	./make.sh \
 	&& cp axe $(BIN_DIR) && ./clean.sh
 
+#Added git instructions swap out the default newlib for the BP newlib from BSG
+#A workaround to get our newlib in the tool chain until we modify our own barebones toolchain
 gnu:
 	cd $(GNU_DIR); \
-	./configure --prefix=$(BP_EXTERNAL_DIR) --with-arch=rv64ia \
-	&& $(MAKE) && $(MAKE) install && $(MAKE) clean
+	rm -rf riscv-newlib; \
+	git clone https://github.com/bespoke-silicon-group/bsg_newlib_dramfs ./riscv-newlib; \
+	cd ./riscv-newlib; \
+	git checkout bsg_manycore_newlib; \
+	cd ..; \
+	./configure --prefix=$(BP_EXTERNAL_DIR) --with-arch=rv64ia --with-abi=lp64 --with-cmodel=medany \
+	  --enable-languages=c \
+	&& make && make install
 
 fesvr:
 	cd $(FESVR_DIR); \
 	./configure --prefix=$(BP_EXTERNAL_DIR) \
-	&& $(MAKE) && $(MAKE) install && $(MAKE) clean
+	&& make && make install && make clean
 
 dramsim2:
 	cd $(DRAMSIM2_DIR); \
-	$(MAKE) libdramsim.so && cp libdramsim.so $(LIB_DIR) && cp *.h $(INCLUDE_DIR)
+	make libdramsim.so && cp libdramsim.so $(LIB_DIR) && cp *.h $(INCLUDE_DIR)
 

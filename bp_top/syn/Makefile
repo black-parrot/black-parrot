@@ -16,6 +16,7 @@ TB          ?= bp_top_trace_demo
 CFG         ?= e_bp_single_core_cfg
 
 # Select CCE ROM based on CFG and Coherence Protocol
+# TODO: is there a more scalable way to do this?
 ifeq ($(CFG), e_bp_half_core_cfg)
   NUM_LCE_P=1
   N_WG=64
@@ -31,6 +32,9 @@ else ifeq ($(CFG), e_bp_quad_core_cfg)
 else ifeq ($(CFG), e_bp_oct_core_cfg)
   NUM_LCE_P=16
   N_WG=8
+else ifeq ($(CFG), e_bp_sexta_core_cfg)
+  NUM_LCE_P=32
+  N_WG=4
 endif
 
 COH_PROTO   ?= mesi

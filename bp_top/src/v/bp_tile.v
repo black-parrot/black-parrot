@@ -22,8 +22,7 @@ module bp_tile
    , localparam dirs_lp = 5 // S (Mem side) EW (LCE sides), P (Proc side)
 
    // Used to enable trace replay outputs for testbench
-   , parameter trace_p      = 0
-   , parameter calc_debug_p = 0
+   , parameter calc_trace_p = 0
    , parameter cce_trace_p  = 0
 
    , parameter x_cord_width_p = `BSG_SAFE_CLOG2(num_lce_p)
@@ -115,14 +114,6 @@ module bp_tile
    , input                                     timer_int_i
    , input                                     software_int_i
    , input                                     external_int_i
-
-   // Commit tracer for trace replay
-   , output                                   cmt_rd_w_v_o
-   , output [rv64_reg_addr_width_gp-1:0]      cmt_rd_addr_o
-   , output                                   cmt_mem_w_v_o
-   , output [dword_width_p-1:0]               cmt_mem_addr_o
-   , output [`bp_be_fu_op_width-1:0]          cmt_mem_op_o
-   , output [dword_width_p-1:0]               cmt_data_o
   );
 
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
@@ -161,8 +152,7 @@ assign proc_cfg_cast_i = proc_cfg_i;
 // Module instantiations
 bp_core   
  #(.cfg_p(cfg_p)
-   ,.trace_p(trace_p)
-   ,.calc_debug_p(calc_debug_p)
+   ,.calc_trace_p(calc_trace_p)
    )
  core 
   (.clk_i(clk_i)
@@ -193,17 +183,10 @@ bp_core
    ,.lce_data_cmd_o(lce_lce_data_cmd_lo)
    ,.lce_data_cmd_v_o(lce_lce_data_cmd_v_lo)
    ,.lce_data_cmd_ready_i(lce_lce_data_cmd_ready_li)
-
+    
    ,.timer_int_i(timer_int_i)
    ,.software_int_i(software_int_i)
    ,.external_int_i(external_int_i)
-
-   ,.cmt_rd_w_v_o(cmt_rd_w_v_o)
-   ,.cmt_rd_addr_o(cmt_rd_addr_o)
-   ,.cmt_mem_w_v_o(cmt_mem_w_v_o)
-   ,.cmt_mem_addr_o(cmt_mem_addr_o)
-   ,.cmt_mem_op_o(cmt_mem_op_o)
-   ,.cmt_data_o(cmt_data_o)
    );
 
 // Declare the routing links

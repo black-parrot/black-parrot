@@ -6,7 +6,8 @@ module bp_fe_top
  import bp_fe_pkg::*;
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- import bp_be_rv64_pkg::*;  
+ import bp_be_rv64_pkg::*;
+ import bp_be_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
 
@@ -27,9 +28,6 @@ module bp_fe_top
    `declare_bp_fe_pc_gen_if_widths(vaddr_width_p, branch_metadata_fwd_width_p)
 
    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
-   
-   , localparam vtag_width_lp = (vaddr_width_p-bp_page_offset_width_gp)
-   , localparam ptag_width_lp = (paddr_width_p-bp_page_offset_width_gp)
    )
   (input                                              clk_i
    , input                                            reset_i
@@ -79,11 +77,11 @@ module bp_fe_top
 // pc_gen to itlb
 `declare_bp_fe_pc_gen_itlb_s(vaddr_width_p);
 `declare_bp_fe_itlb_vaddr_s(vaddr_width_p,lce_sets_p,cce_block_width_p) 
-`declare_bp_be_tlb_entry_s(ptag_width_lp);  
+`declare_bp_be_tlb_entry_s(ptag_width_p);
 // icache to pc_gen
 `declare_bp_fe_icache_pc_gen_s(vaddr_width_p);
 // itlb to cache
-`declare_bp_fe_itlb_icache_data_resp_s(ptag_width_lp);
+`declare_bp_fe_itlb_icache_data_resp_s(ptag_width_p);
    
 // fe to be
 bp_fe_queue_s                 fe_queue;
@@ -128,7 +126,7 @@ logic icache_miss;
 logic poison_tl;
 
 //itlb
-logic [vtag_width_lp-1:0]       itlb_miss_vtag;
+logic [vtag_width_p-1:0]  itlb_miss_vtag;
 logic 		                itlb_miss;
    
 // be interfaces
@@ -284,10 +282,7 @@ bp_fe_icache
 
    
 bp_be_dtlb
- #(.vtag_width_p(vtag_width_lp)
-   ,.ptag_width_p(ptag_width_lp)
-   ,.els_p(16)
-   )
+ #(.cfg_p(cfg_p))
  itlb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)

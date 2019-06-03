@@ -675,18 +675,21 @@ module bp_me_nonsynth_mock_lce
           lce_state_n = UNCACHED_SEND_TR_RESP;
           // send return packet to TR
           if (mshr_r.store_op) begin
-            // store sends back null packet
-            tr_pkt_v_o = 1'b1;
-            tr_pkt_o = '0;
-            lce_state_n = (tr_pkt_ready_i)
-                          ? (lce_init_r)
-                            ? READY
-                            : UNCACHED_ONLY
-                          : UNCACHED_SEND_TR_RESP;
+            if (lce_cmd_v) begin
+              // store sends back null packet when it receives lce_cmd back
+              tr_pkt_v_o = 1'b1;
+              tr_pkt_o = '0;
+              lce_state_n = (tr_pkt_ready_i)
+                            ? (lce_init_r)
+                              ? READY
+                              : UNCACHED_ONLY
+                            : UNCACHED_SEND_TR_RESP;
 
-            // clear miss handling state
-            mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
+              lce_cmd_yumi = tr_pkt_ready_i;
 
+              // clear miss handling state
+              mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
+            end
           end else if (lce_data_cmd_v) begin
             // load returns the data, and must wait for lce_data_cmd to return
             tr_pkt_v_o = 1'b1;

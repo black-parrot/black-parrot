@@ -7,7 +7,6 @@ package bp_be_pkg;
   `include "bp_be_ctl_defines.vh"
   `include "bp_be_mem_defines.vh"
   `include "bp_be_internal_if_defines.vh"
-  `include "bp_be_vm_defines.vh"
 
   localparam bp_pc_entry_point_gp     = 39'h00_8000_0000;
   // TODO: Arbitrary addresses, should probably think about these
