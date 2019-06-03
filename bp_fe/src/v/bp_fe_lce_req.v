@@ -184,6 +184,7 @@ module bp_fe_lce_req
         lce_req.addr = {miss_addr_r[paddr_width_p-1:byte_offset_width_lp]
                         , {byte_offset_width_lp{1'b0}}};
         lce_req.nc_size = e_lce_nc_req_8;
+        lce_req.lru_way_id = '0;
         lce_req.non_cacheable = e_lce_req_non_cacheable;
         state_n = lce_req_ready_i
           ? e_lce_req_sleep 
