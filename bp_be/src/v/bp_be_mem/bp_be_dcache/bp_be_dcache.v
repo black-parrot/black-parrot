@@ -382,6 +382,21 @@ module bp_be_dcache
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       v_tv_r <= 1'b0;
+
+      lr_op_tv_r <= '0;
+      sc_op_tv_r <= '0;
+      load_op_tv_r <= '0;
+      store_op_tv_r <= '0;
+      uncached_tv_r <= '0;
+      signed_op_tv_r <= '0;
+      size_op_tv_r <= '0;
+      double_op_tv_r <= '0;
+      word_op_tv_r <= '0;
+      half_op_tv_r <= '0;
+      byte_op_tv_r <= '0;
+      paddr_tv_r <= '0;
+      tag_info_tv_r <= '0;
+
     end
     else begin
       v_tv_r <= tv_we;
