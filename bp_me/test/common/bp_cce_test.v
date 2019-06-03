@@ -19,10 +19,6 @@ module bp_cce_test
     , localparam lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
     , localparam inst_ram_addr_width_lp=`BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
 
-    // Config channel
-    , parameter cfg_link_addr_width_p = bp_cfg_link_addr_width_gp
-    , parameter cfg_link_data_width_p = bp_cfg_link_data_width_gp
-
     // interface widths
     `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
@@ -97,23 +93,23 @@ module bp_cce_test
   assign freeze_o = freeze_lo;
 
   // Config channel
-  logic [cfg_link_addr_width_p-2:0]   config_addr_li;
-  logic [cfg_link_data_width_p-1:0]   config_data_li;
-  logic                               config_v_li;
-  logic                               config_w_li;
-  logic                               config_ready_lo;
+  logic [cfg_addr_width_p-1:0] config_addr_li;
+  logic [cfg_data_width_p-1:0] config_data_li;
+  logic                        config_v_li;
+  logic                        config_w_li;
+  logic                        config_ready_lo;
 
-  logic [cfg_link_data_width_p-1:0]   config_data_lo;
-  logic                               config_v_lo;
-  logic                               config_ready_li;
+  logic [cfg_data_width_p-1:0] config_data_lo;
+  logic                        config_v_lo;
+  logic                        config_ready_li;
 
   // CCE instruction RAM loader
   bp_cce_nonsynth_cfg_loader
     #(.inst_width_p(`bp_cce_inst_width)
       ,.inst_ram_addr_width_p(inst_ram_addr_width_lp)
       ,.inst_ram_els_p(num_cce_instr_ram_els_p)
-      ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
-      ,.cfg_link_data_width_p(cfg_link_data_width_p)
+      ,.cfg_link_addr_width_p(cfg_addr_width_p)
+      ,.cfg_link_data_width_p(cfg_data_width_p)
     )
     cce_inst_ram_loader
     (.clk_i(clk_i)
@@ -133,8 +129,6 @@ module bp_cce_test
 
   bp_cce_top
     #(.cfg_p(cfg_p)
-      ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
-      ,.cfg_link_data_width_p(cfg_link_data_width_p)
       ,.cce_trace_p(cce_trace_p)
      )
      bp_cce_top

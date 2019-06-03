@@ -19,18 +19,14 @@ package bp_cfg_link_pkg;
   //   16'h0060      = cce_mode
   //   16'h8000-8fff = cce ucode
 
-  localparam bp_cfg_link_core_width_gp = 8;
-  localparam bp_cfg_link_addr_width_gp = 16;
-  localparam bp_cfg_link_data_width_gp = 32;
-
-  localparam bp_cfg_base_addr_gp          = 32'h0100_0000;
-  localparam bp_cfg_reg_clk_osc_gp        = 16'h0000;
-  localparam bp_cfg_reg_reset_gp          = 16'h0001;
-  localparam bp_cfg_reg_freeze_gp         = 16'h0002;
-  localparam bp_cfg_reg_start_pc_lo_gp    = 16'h0040;
-  localparam bp_cfg_reg_start_pc_hi_gp    = 16'h0041;
-  localparam bp_cfg_reg_cce_mode_gp       = 16'h0060;
-  localparam bp_cfg_mem_base_cce_ucode_gp = 16'h8000;
+  localparam bp_cfg_base_addr_gp          = 'h0100_0000;
+  localparam bp_cfg_reg_clk_osc_gp        = 'h0000;
+  localparam bp_cfg_reg_reset_gp          = 'h0001;
+  localparam bp_cfg_reg_freeze_gp         = 'h0002;
+  localparam bp_cfg_reg_start_pc_lo_gp    = 'h0040;
+  localparam bp_cfg_reg_start_pc_hi_gp    = 'h0041;
+  localparam bp_cfg_reg_cce_mode_gp       = 'h0060;
+  localparam bp_cfg_mem_base_cce_ucode_gp = 'h8000;
 
 endpackage
 

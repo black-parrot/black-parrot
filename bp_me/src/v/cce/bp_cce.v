@@ -15,10 +15,6 @@ module bp_cce
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
 
-    // Config channel
-    , parameter cfg_link_addr_width_p = bp_cfg_link_addr_width_gp
-    , parameter cfg_link_data_width_p = bp_cfg_link_data_width_gp
-
     , parameter cce_trace_p             = "inv"
 
     // Derived parameters
@@ -48,8 +44,8 @@ module bp_cce
 
    // Config channel
    , input                                             cfg_w_v_i
-   , input [cfg_link_addr_width_p-1:0]                 cfg_addr_i
-   , input [cfg_link_data_width_p-1:0]                 cfg_data_i
+   , input [cfg_addr_width_p-1:0]                      cfg_addr_i
+   , input [cfg_data_width_p-1:0]                      cfg_data_i
 
    // LCE-CCE Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
@@ -206,8 +202,8 @@ module bp_cce
   // PC Logic, Instruction RAM
   bp_cce_pc
     #(.inst_ram_els_p(num_cce_instr_ram_els_p)
-      ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
-      ,.cfg_link_data_width_p(cfg_link_data_width_p)
+      ,.cfg_link_addr_width_p(cfg_addr_width_p)
+      ,.cfg_link_data_width_p(cfg_data_width_p)
       )
     inst_ram
      (.clk_i(clk_i)

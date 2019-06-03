@@ -16,10 +16,6 @@ module bp_cce_top
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
 
-    // Config channel
-    , parameter cfg_link_addr_width_p = bp_cfg_link_addr_width_gp
-    , parameter cfg_link_data_width_p = bp_cfg_link_data_width_gp
-
     , parameter cce_trace_p             = "inv"
 
     // Derived parameters
@@ -37,8 +33,8 @@ module bp_cce_top
 
    // Config channel
    , input                                                 cfg_w_v_i
-   , input [cfg_link_addr_width_p-1:0]                     cfg_addr_i
-   , input [cfg_link_data_width_p-1:0]                     cfg_data_i
+   , input [cfg_addr_width_p-1:0]                          cfg_addr_i
+   , input [cfg_data_width_p-1:0]                          cfg_data_i
 
    // LCE-CCE Interface
    // inbound: ready&valid
@@ -217,8 +213,6 @@ module bp_cce_top
 
   bp_cce
     #(.cfg_p(cfg_p)
-      ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
-      ,.cfg_link_data_width_p(cfg_link_data_width_p)
       ,.cce_trace_p(cce_trace_p)
       )
     bp_cce

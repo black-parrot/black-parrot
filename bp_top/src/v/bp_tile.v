@@ -66,8 +66,8 @@ module bp_tile
 
    // Config channel
    , input                                                 cfg_w_v_i
-   , input [bp_cfg_link_addr_width_gp-1:0]                 cfg_addr_i
-   , input [bp_cfg_link_data_width_gp-1:0]                 cfg_data_i
+   , input [cfg_addr_width_p-1:0]                          cfg_addr_i
+   , input [cfg_data_width_p-1:0]                          cfg_data_i
 
    // Router - Inputs 
    // Connected on east and west
@@ -574,8 +574,6 @@ bsg_wormhole_router_adapter_out
 
 bp_cce_top
  #(.cfg_p(cfg_p)
-   ,.cfg_link_addr_width_p(bp_cfg_link_addr_width_gp)
-   ,.cfg_link_data_width_p(bp_cfg_link_data_width_gp)
    ,.cce_trace_p(cce_trace_p)
    )
  cce

@@ -73,9 +73,9 @@ module bp_be_director
    , input                             freeze_i
 
    // Config channel
-   , input                                 cfg_w_v_i
-   , input [bp_cfg_link_addr_width_gp-1:0] cfg_addr_i
-   , input [bp_cfg_link_data_width_gp-1:0] cfg_data_i
+   , input                             cfg_w_v_i
+   , input [cfg_addr_width_p-1:0]      cfg_addr_i
+   , input [cfg_data_width_p-1:0]      cfg_data_i
 
    // Dependency information
    , input [calc_status_width_lp-1:0]  calc_status_i
@@ -154,8 +154,8 @@ wire cfg_pc_lo_w_v = cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_start_pc_lo_gp);
 wire cfg_pc_hi_w_v = cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_start_pc_hi_gp);
 wire [vaddr_width_p-1:0] cfg_pc_part_li = 
   cfg_pc_hi_w_v
-  ? {cfg_data_i[0+:vaddr_width_p-bp_cfg_link_data_width_gp], npc_r[0+:bp_cfg_link_data_width_gp]}
-  : {npc_r[vaddr_width_p-1:bp_cfg_link_data_width_gp], cfg_data_i[0+:bp_cfg_link_data_width_gp]};
+  ? {cfg_data_i[0+:vaddr_width_p-cfg_data_width_p], npc_r[0+:cfg_data_width_p]}
+  : {npc_r[vaddr_width_p-1:cfg_data_width_p], cfg_data_i[0+:cfg_data_width_p]};
 
 // Module instantiations
 // Update the NPC on a valid instruction in ex1 or a cache miss or a tlb miss

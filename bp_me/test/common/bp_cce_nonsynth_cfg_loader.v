@@ -13,8 +13,8 @@ module bp_cce_nonsynth_cfg_loader
   import bp_cce_pkg::*;
   #(parameter inst_width_p            = "inv"
     , parameter inst_ram_addr_width_p = "inv"
-    , parameter cfg_link_addr_width_p = bp_cfg_link_addr_width_gp
-    , parameter cfg_link_data_width_p = bp_cfg_link_data_width_gp
+    , parameter cfg_link_addr_width_p = cfg_addr_width_p
+    , parameter cfg_link_data_width_p = cfg_data_width_p
     , parameter inst_ram_els_p        = "inv"
     , parameter skip_ram_init_p       = 0
     , localparam cfg_writes_lp = (2*inst_ram_els_p)

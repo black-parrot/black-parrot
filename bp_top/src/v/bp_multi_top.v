@@ -133,9 +133,9 @@ logic                  clint_cmd_v_li, clint_cmd_yumi_lo;
 bp_cce_mem_data_cmd_s  clint_data_cmd_li;
 logic                  clint_data_cmd_v_li, clint_data_cmd_yumi_lo;
 
-logic [num_core_p-1:0]                                cfg_link_w_v_lo;
-logic [num_core_p-1:0][bp_cfg_link_addr_width_gp-1:0] cfg_link_addr_lo;
-logic [num_core_p-1:0][bp_cfg_link_data_width_gp-1:0] cfg_link_data_lo;
+logic [num_core_p-1:0]                       cfg_link_w_v_lo;
+logic [num_core_p-1:0][cfg_addr_width_p-1:0] cfg_link_addr_lo;
+logic [num_core_p-1:0][cfg_data_width_p-1:0] cfg_link_data_lo;
 
 bsg_ready_and_link_sif_s client_wh_link_li, client_wh_link_lo;
 bsg_ready_and_link_sif_s [1:0] ct_link_li, ct_link_lo;

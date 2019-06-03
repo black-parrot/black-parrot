@@ -41,9 +41,9 @@ module bp_clint
    , output [num_core_p-1:0]                       external_irq_o
 
    // Core config link
-   , output [num_core_p-1:0]                                cfg_link_w_v_o
-   , output [num_core_p-1:0][bp_cfg_link_addr_width_gp-1:0] cfg_link_addr_o
-   , output [num_core_p-1:0][bp_cfg_link_data_width_gp-1:0] cfg_link_data_o
+   , output [num_core_p-1:0]                       cfg_link_w_v_o
+   , output [num_core_p-1:0][cfg_addr_width_p-1:0] cfg_link_addr_o
+   , output [num_core_p-1:0][cfg_data_width_p-1:0] cfg_link_data_o
    );
 
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
@@ -262,10 +262,10 @@ for (genvar i = 0; i < num_core_p; i++)
        );
 
     wire cfg_link_w_v_li = cfg_link_data_cmd_v;
-    wire [bp_cfg_link_addr_width_gp-1:0] cfg_link_addr_li = mem_data_cmd_cast_i.data[bp_cfg_link_data_width_gp+:bp_cfg_link_addr_width_gp];
-    wire [bp_cfg_link_data_width_gp-1:0] cfg_link_data_li = mem_data_cmd_cast_i.data[0+:bp_cfg_link_data_width_gp];
+    wire [cfg_addr_width_p-1:0] cfg_link_addr_li = mem_data_cmd_cast_i.data[cfg_data_width_p+:cfg_addr_width_p];
+    wire [cfg_data_width_p-1:0] cfg_link_data_li = mem_data_cmd_cast_i.data[0+:cfg_data_width_p];
     bsg_dff_chain
-     #(.width_p(1+bp_cfg_link_addr_width_gp+bp_cfg_link_data_width_gp)
+     #(.width_p(1+cfg_addr_width_p+cfg_data_width_p)
        ,.num_stages_p(cfg_link_pipe_depth_p)
        )
      cfg_link_pipe

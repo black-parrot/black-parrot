@@ -47,7 +47,6 @@ module bp_be_scheduler
    , localparam fe_queue_width_lp  = `bp_fe_queue_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam issue_pkt_width_lp = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    // From BP BE defines
-   , localparam itag_width_lp     = bp_be_itag_width_gp
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )
   (input                             clk_i

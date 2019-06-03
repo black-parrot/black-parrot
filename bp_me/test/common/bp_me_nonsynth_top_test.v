@@ -44,13 +44,13 @@ module bp_me_nonsynth_top_test
 
   // Config link
   logic [num_cce_p-1:0]                                  freeze_li;
-  logic [num_cce_p-1:0][bp_cfg_link_addr_width_gp-2:0]   config_addr_li;
-  logic [num_cce_p-1:0][bp_cfg_link_data_width_gp-1:0]   config_data_li;
+  logic [num_cce_p-1:0][cfg_addr_width_p-2:0]   config_addr_li;
+  logic [num_cce_p-1:0][cfg_data_width_p-1:0]   config_data_li;
   logic [num_cce_p-1:0]                                  config_v_li;
   logic [num_cce_p-1:0]                                  config_w_li;
   logic [num_cce_p-1:0]                                  config_ready_lo;
 
-  logic [num_cce_p-1:0][bp_cfg_link_data_width_gp-1:0]   config_data_lo;
+  logic [num_cce_p-1:0][cfg_data_width_p-1:0]   config_data_lo;
   logic [num_cce_p-1:0]                                  config_v_lo;
   logic [num_cce_p-1:0]                                  config_ready_li;
 
@@ -160,8 +160,8 @@ module bp_me_nonsynth_top_test
         #(.inst_width_p(`bp_cce_inst_width)
           ,.inst_ram_addr_width_p(cce_instr_ram_addr_width_lp)
           ,.inst_ram_els_p(num_cce_instr_ram_els_p)
-          ,.cfg_link_addr_width_p(bp_cfg_link_addr_width_gp)
-          ,.cfg_link_data_width_p(bp_cfg_link_data_width_gp)
+          ,.cfg_link_addr_width_p(cfg_addr_width_p)
+          ,.cfg_link_data_width_p(cfg_data_width_p)
           ,.skip_ram_init_p('0)
         )
         cce_inst_ram_loader

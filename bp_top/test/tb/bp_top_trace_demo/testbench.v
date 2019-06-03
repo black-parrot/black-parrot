@@ -301,8 +301,6 @@ bp_cce_mmio_cfg_loader
   #(.cfg_p(cfg_p)
     ,.inst_width_p(`bp_cce_inst_width)
     ,.inst_ram_addr_width_p(cce_instr_ram_addr_width_lp)
-    ,.cfg_link_addr_width_p(bp_cfg_link_addr_width_gp)
-    ,.cfg_link_data_width_p(bp_cfg_link_data_width_gp)
     ,.inst_ram_els_p(num_cce_instr_ram_els_p)
     ,.skip_ram_init_p('0)
   )

@@ -35,8 +35,11 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
-      ,noc_width  : 64
-      ,max_credits: 4
+      ,cfg_core_width: 8
+      ,cfg_addr_width: 16
+      ,cfg_data_width: 32
+      ,noc_width     : 64
+      ,max_credits   : 4
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -70,8 +73,11 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
-      ,noc_width  : 64
-      ,max_credits: 4
+      ,cfg_core_width: 8
+      ,cfg_addr_width: 16
+      ,cfg_data_width: 32
+      ,noc_width     : 64
+      ,max_credits   : 4
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -105,8 +111,11 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
-      ,noc_width  : 64
-      ,max_credits: 4
+      ,cfg_core_width: 8
+      ,cfg_addr_width: 16
+      ,cfg_data_width: 32
+      ,noc_width     : 64
+      ,max_credits   : 4
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -140,8 +149,11 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
-      ,noc_width  : 64
-      ,max_credits: 4
+      ,cfg_core_width: 8
+      ,cfg_addr_width: 16
+      ,cfg_data_width: 32
+      ,noc_width     : 64
+      ,max_credits   : 4
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -175,8 +187,11 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
-      ,noc_width  : 64
-      ,max_credits: 4
+      ,cfg_core_width: 8
+      ,cfg_addr_width: 16
+      ,cfg_data_width: 32
+      ,noc_width     : 64
+      ,max_credits   : 4
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -210,8 +225,11 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
-      ,noc_width  : 64
-      ,max_credits: 4
+      ,cfg_core_width: 8
+      ,cfg_addr_width: 16
+      ,cfg_data_width: 32
+      ,noc_width     : 64
+      ,max_credits   : 4
 
       ,dword_width      : 64
       ,instr_width      : 32

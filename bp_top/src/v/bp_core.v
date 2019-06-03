@@ -39,8 +39,8 @@ module bp_core
 
     // Config channel
     , input                                        cfg_w_v_i
-    , input [bp_cfg_link_addr_width_gp-1:0]        cfg_addr_i
-    , input [bp_cfg_link_data_width_gp-1:0]        cfg_data_i
+    , input [cfg_addr_width_p-1:0]                 cfg_addr_i
+    , input [cfg_data_width_p-1:0]                 cfg_data_i
 
     // LCE-CCE interface
     , output [1:0][lce_cce_req_width_lp-1:0]       lce_req_o

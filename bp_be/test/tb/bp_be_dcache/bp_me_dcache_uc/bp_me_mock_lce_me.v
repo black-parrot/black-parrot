@@ -28,8 +28,8 @@ module bp_me_mock_lce_me
     , localparam dcache_opcode_width_lp=$bits(bp_be_dcache_opcode_e)
     , localparam tr_ring_width_lp=(dcache_opcode_width_lp+paddr_width_p+dword_width_p)
 
-    , localparam cfg_link_addr_width_p=bp_cfg_link_addr_width_gp
-    , localparam cfg_link_data_width_p=bp_cfg_link_data_width_gp
+    , localparam cfg_link_addr_width_p=cfg_addr_width_p
+    , localparam cfg_link_data_width_p=cfg_data_width_p
 
     , localparam dcache_pkt_width_lp=
       `bp_be_dcache_pkt_width(bp_page_offset_width_gp,dword_width_p)
@@ -281,8 +281,8 @@ module bp_me_mock_lce_me
 
   bp_cce_top #(
     .cfg_p(cfg_p)
-    ,.cfg_link_addr_width_p(bp_cfg_link_addr_width_gp)
-    ,.cfg_link_data_width_p(bp_cfg_link_data_width_gp)
+    ,.cfg_link_addr_width_p(cfg_addr_width_p)
+    ,.cfg_link_data_width_p(cfg_data_width_p)
     ,.cce_trace_p(cce_trace_p)
   ) cce (
     .clk_i(clk_i)

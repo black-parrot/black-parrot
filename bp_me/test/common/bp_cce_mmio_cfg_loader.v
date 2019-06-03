@@ -20,8 +20,6 @@ module bp_cce_mmio_cfg_loader
 
     , parameter inst_width_p          = "inv"
     , parameter inst_ram_addr_width_p = "inv"
-    , parameter cfg_link_addr_width_p = bp_cfg_link_addr_width_gp
-    , parameter cfg_link_data_width_p = bp_cfg_link_data_width_gp
     , parameter inst_ram_els_p        = "inv"
     , parameter skip_ram_init_p       = 0
     
@@ -55,9 +53,9 @@ module bp_cce_mmio_cfg_loader
   assign mem_data_cmd_o = mem_data_cmd_cast_o;
   
   logic                                 cfg_v_lo;
-  logic [bp_cfg_link_core_width_gp-1:0] cfg_core_lo;
-  logic [bp_cfg_link_addr_width_gp-1:0] cfg_addr_lo;
-  logic [bp_cfg_link_data_width_gp-1:0] cfg_data_lo;
+  logic [cfg_core_width_p-1:0] cfg_core_lo;
+  logic [cfg_addr_width_p-1:0] cfg_addr_lo;
+  logic [cfg_data_width_p-1:0] cfg_data_lo;
 
   enum logic [3:0] {
     RESET
@@ -73,10 +71,10 @@ module bp_cce_mmio_cfg_loader
     ,DONE
   } state_n, state_r;
 
-  logic [cfg_link_addr_width_p:0] ucode_cnt_r;
+  logic [cfg_addr_width_p:0] ucode_cnt_r;
   logic ucode_cnt_clr, ucode_cnt_inc;
   bsg_counter_clear_up
-   #(.max_val_p(2**cfg_link_addr_width_p)
+   #(.max_val_p(2**cfg_addr_width_p)
      ,.init_val_p(0)
      )
    ucode_counter
@@ -155,7 +153,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_mem_base_cce_ucode_gp + (ucode_cnt_r << 1);
-          cfg_data_lo = boot_rom_data_i[0+:cfg_link_data_width_p];
+          cfg_data_lo = boot_rom_data_i[0+:cfg_data_width_p];
         end
         SEND_RAM_HI: begin
           state_n = ucode_prog_done ? SEND_CFG_NORMAL : SEND_RAM_LO;
@@ -164,28 +162,28 @@ module bp_cce_mmio_cfg_loader
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_mem_base_cce_ucode_gp + (ucode_cnt_r << 1) + 1'b1;
-          cfg_data_lo = cfg_link_data_width_p'(boot_rom_data_i[inst_width_p-1:cfg_link_data_width_p]);
+          cfg_data_lo = cfg_data_width_p'(boot_rom_data_i[inst_width_p-1:cfg_data_width_p]);
         end
         SEND_CFG_NORMAL: begin
           state_n = SEND_PC_LO;
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_cce_mode_gp;
-          cfg_data_lo = cfg_link_data_width_p'(e_cce_mode_normal);
+          cfg_data_lo = cfg_data_width_p'(e_cce_mode_normal);
         end
         SEND_PC_LO: begin
           state_n = SEND_PC_HI;
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_start_pc_lo_gp;
-          cfg_data_lo = bp_pc_entry_point_gp[0+:cfg_link_data_width_p];
+          cfg_data_lo = bp_pc_entry_point_gp[0+:cfg_data_width_p];
         end
         SEND_PC_HI: begin
           state_n = BP_FREEZE_CLR;
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_start_pc_hi_gp;
-          cfg_data_lo = cfg_link_data_width_p'(bp_pc_entry_point_gp[vaddr_width_p-1:cfg_link_data_width_p]);
+          cfg_data_lo = cfg_data_width_p'(bp_pc_entry_point_gp[vaddr_width_p-1:cfg_data_width_p]);
         end
         BP_FREEZE_CLR: begin
           state_n = DONE;

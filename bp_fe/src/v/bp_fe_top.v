@@ -37,8 +37,8 @@ module bp_fe_top
 
    // Config channel
    , input                                            cfg_w_v_i
-   , input [bp_cfg_link_addr_width_gp-1:0]            cfg_addr_i
-   , input [bp_cfg_link_data_width_gp-1:0]            cfg_data_i
+   , input [cfg_addr_width_p-1:0]                     cfg_addr_i
+   , input [cfg_data_width_p-1:0]                     cfg_data_i
 
    , input [fe_cmd_width_lp-1:0]                      fe_cmd_i
    , input                                            fe_cmd_v_i
