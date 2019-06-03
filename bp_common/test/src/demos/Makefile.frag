@@ -14,6 +14,8 @@ BP_DEMOS_C = \
   hello_world_atomic
 
 BP_DEMOS_S = \
+	simple                \
+	uc_simple             \
   hello_world
 
 BP_DEMOS = $(BP_DEMOS_S) $(BP_DEMOS_C)

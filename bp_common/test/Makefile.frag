@@ -1,4 +1,6 @@
 BP_DEMOS = \
+	uc_simple           \
+	simple              \
   hello_world         \
   basic_demo          \
   atomic_queue_demo_2 \
