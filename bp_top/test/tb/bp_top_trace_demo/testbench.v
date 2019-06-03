@@ -27,6 +27,7 @@ module testbench
    // Trace replay parameters
    , parameter calc_trace_p                = 0
    , parameter cce_trace_p                 = 0
+   , parameter skip_init_p                 = 0
    )
   (input clk_i
    , input reset_i
@@ -195,7 +196,7 @@ bind bp_be_top
            ,.inst_ram_els_p(num_cce_instr_ram_els_p)
            ,.cfg_link_addr_width_p(bp_cfg_link_addr_width_gp)
            ,.cfg_link_data_width_p(bp_cfg_link_data_width_gp)
-           ,.skip_ram_init_p('0)
+           ,.skip_ram_init_p(skip_init_p)
          )
          cce_inst_ram_loader
          (.clk_i(clk_i)
