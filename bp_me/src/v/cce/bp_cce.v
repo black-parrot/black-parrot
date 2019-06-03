@@ -511,6 +511,8 @@ module bp_cce
   logic                                          lce_req_yumi_from_uc;
   logic [lce_data_cmd_width_lp-1:0]              lce_data_cmd_from_uc;
   logic                                          lce_data_cmd_v_from_uc;
+  logic [cce_lce_cmd_width_lp-1:0]               lce_cmd_from_uc;
+  logic                                          lce_cmd_v_from_uc;
   logic                                          mem_resp_yumi_from_uc;
   logic                                          mem_data_resp_yumi_from_uc;
   logic [cce_mem_cmd_width_lp-1:0]               mem_cmd_from_uc;
@@ -531,6 +533,7 @@ module bp_cce
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
 
+      ,.cce_id_i(cce_id_i)
       ,.cce_mode_i(cce_mode_lo)
 
       // To CCE
@@ -539,6 +542,10 @@ module bp_cce
       ,.lce_req_yumi_o(lce_req_yumi_from_uc)
 
       // From CCE
+      ,.lce_cmd_o(lce_cmd_from_uc)
+      ,.lce_cmd_v_o(lce_cmd_v_from_uc)
+      ,.lce_cmd_ready_i(lce_cmd_ready_i)
+
       ,.lce_data_cmd_o(lce_data_cmd_from_uc)
       ,.lce_data_cmd_v_o(lce_data_cmd_v_from_uc)
       ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
@@ -573,17 +580,17 @@ module bp_cce
       // In uncached mode, LCE resp, data resp, and cmd are never used
       lce_resp_yumi_o = '0;
       lce_data_resp_yumi_o = '0;
-      lce_cmd_v_o = '0;
 
       // Remainder of interface signals come from the uncached access module
       lce_req_yumi_o = lce_req_yumi_from_uc;
       mem_resp_yumi_o = mem_resp_yumi_from_uc;
       mem_data_resp_yumi_o = mem_data_resp_yumi_from_uc;
+      lce_cmd_v_o = lce_cmd_v_from_uc;
       lce_data_cmd_v_o = lce_data_cmd_v_from_uc;
       mem_cmd_v_o = mem_cmd_v_from_uc;
       mem_data_cmd_v_o = mem_data_cmd_v_from_uc;
 
-      lce_cmd = '0;
+      lce_cmd = lce_cmd_from_uc;
       lce_data_cmd = lce_data_cmd_from_uc;
       mem_data_cmd = mem_data_cmd_from_uc;
       mem_cmd = mem_cmd_from_uc;
@@ -625,7 +632,8 @@ module bp_cce
       if (mshr.flags[e_flag_sel_ucf] == e_lce_req_non_cacheable) begin
         lce_data_cmd.msg_type = e_lce_data_cmd_non_cacheable;
         lce_data_cmd.way_id = '0;
-        lce_data_cmd.data = {(cce_block_width_p-dword_width_p)'('0),nc_data_r_lo};
+        lce_data_cmd.data = {(cce_block_width_p-dword_width_p)'('0)
+                             , mem_data_resp.data[0+:dword_width_p]};
       end else begin
         lce_data_cmd.msg_type = e_lce_data_cmd_cce;
         lce_data_cmd.way_id = mshr.lru_way_id;

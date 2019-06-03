@@ -20,5 +20,6 @@
 #define ST 4
 #define STW 5
 #define INV 6
+#define UCST 7
 
 #endif

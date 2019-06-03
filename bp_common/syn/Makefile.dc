@@ -41,7 +41,7 @@ check_design.syn: dirs.syn
 	-@grep --color      "undeclared symbol"                    $(CHK_LOG) | tee -a $(CHK_ERROR)
 	-@grep --color      "(ELAB-395)"                           $(CHK_LOG) | tee -a $(CHK_ERROR)
 	-@test -s $(CHK_ERROR) && echo "Design Compiler check_synth: FAILED" > $(CHK_REPORT) \
-	|| echo "Design Compiler check_synth: PASSED" > $(CHK_REPORT) && rm $(CHK_ERROR)
+	|| (echo "Design Compiler check_synth: PASSED" > $(CHK_REPORT) && rm $(CHK_ERROR))
 
 # This target allows users to look up commands and message codes for
 # DesignCompiler. If there is a message with a code (e.g. LINT-1) then you can

@@ -94,7 +94,6 @@ module bp_be_director
    , input [mepc_width_lp-1:0]        mtvec_i
    , input [mtvec_width_lp-1:0]       mepc_i
    , input                            tlb_fence_i
-   , input                            ifence_i
    
    //iTLB fill interface
    , input                           itlb_fill_v_i
@@ -315,7 +314,7 @@ always_comb
         
         fe_cmd_v = fe_cmd_ready_i;
       end
-    else if(ifence_i)
+    else if(calc_status.mem3_fencei_v)
       begin : icache_fence
         fe_cmd.opcode = e_op_icache_fence;
         fe_cmd.operands.icache_fence.pc = calc_status.mem3_pc;
@@ -323,10 +322,11 @@ always_comb
         fe_cmd_v = fe_cmd_ready_i;
       end
     // Redirect the pc if there's an NPC mismatch
-    else if((calc_status.ex1_v & npc_mismatch_v) | trap_v_i) 
+    // Should not lump trap and ret into branch misprediction
+    else if((calc_status.ex1_v & npc_mismatch_v) | trap_v_i | ret_v_i) 
       begin : pc_redirect
         fe_cmd.opcode                                   = e_op_pc_redirection;
-        fe_cmd_pc_redirect_operands.pc                  = trap_v_i ? npc_n : expected_npc_o;
+        fe_cmd_pc_redirect_operands.pc                  = (trap_v_i | ret_v_i) ? npc_n : expected_npc_o;
         fe_cmd_pc_redirect_operands.subopcode           = e_subop_branch_mispredict;
         fe_cmd_pc_redirect_operands.branch_metadata_fwd =  calc_status.int1_branch_metadata_fwd;
 
@@ -336,7 +336,7 @@ always_comb
 
         fe_cmd.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
 
-        fe_cmd_v = fe_cmd_ready_i & ~chk_roll_fe_o & (~redirect_pending | trap_v_i);
+        fe_cmd_v = fe_cmd_ready_i & ~chk_roll_fe_o & (~redirect_pending | trap_v_i | ret_v_i);
       end 
     // Send an attaboy if there's a correct prediction
     else if(calc_status.ex1_instr_v & ~npc_mismatch_v & attaboy_pending) 

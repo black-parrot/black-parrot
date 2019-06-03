@@ -83,6 +83,7 @@ module bp_be_dcache
     , parameter ways_p="inv"
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
+    , parameter max_credits_p="inv"
    
     , parameter debug_p=0 
  
@@ -162,7 +163,14 @@ module bp_be_dcache
     , output logic [lce_data_cmd_width_lp-1:0] lce_data_cmd_o
     , output logic lce_data_cmd_v_o
     , input lce_data_cmd_ready_i 
+
+    , output credits_full_o
+    , output credits_empty_o
   );
+
+  // TODO: Attach to uncached store credits counter
+  assign credits_full_o  = 1'b0;
+  assign credits_empty_o = 1'b1;
 
   // packet decoding
   //
@@ -639,6 +647,7 @@ module bp_be_dcache
       ,.ways_p(ways_p)
       ,.num_cce_p(num_cce_p)
       ,.num_lce_p(num_lce_p)
+      ,.max_credits_p(max_credits_p)
       )
     lce
       (.clk_i(clk_i)
@@ -697,6 +706,9 @@ module bp_be_dcache
       ,.lce_data_cmd_o(lce_data_cmd_o)
       ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
       ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
+
+      ,.credits_full_o(credits_full_o)
+      ,.credits_empty_o(credits_empty_o)
       );
  
   // output stage

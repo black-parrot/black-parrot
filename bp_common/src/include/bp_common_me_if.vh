@@ -192,6 +192,7 @@ typedef enum bit [2:0]
   ,e_lce_cmd_set_tag         = 3'b100
   ,e_lce_cmd_set_tag_wakeup  = 3'b101
   ,e_lce_cmd_invalidate_tag  = 3'b110
+  ,e_lce_cmd_uc_st_done      = 3'b111
 } bp_cce_lce_cmd_type_e;
 
 `define bp_cce_lce_cmd_type_width $bits(bp_cce_lce_cmd_type_e)

@@ -24,7 +24,7 @@ module testbench
    , localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
 
    // Trace replay parameters
-   , parameter trace_p                     = 0
+   , parameter calc_trace_p                = 0
    , parameter cce_trace_p                 = 0
    )
   (input clk_i
@@ -46,13 +46,6 @@ logic [num_cce_p-1:0]                                  config_ready_li;
 logic [num_cce_p-1:0][cce_instr_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
 logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]          cce_inst_boot_rom_data;
 
-logic [num_core_p-1:0]                              cmt_rd_w_v;
-logic [num_core_p-1:0][rv64_reg_addr_width_gp-1:0]  cmt_rd_addr;
-logic [num_core_p-1:0]                              cmt_mem_w_v;
-logic [num_core_p-1:0][dword_width_p-1:0]           cmt_mem_addr;
-logic [num_core_p-1:0][`bp_be_fu_op_width-1:0]      cmt_mem_op;
-logic [num_core_p-1:0][dword_width_p-1:0]           cmt_data;
-
 logic [num_cce_p-1:0][mem_cce_resp_width_lp-1:0] mem_resp;
 logic [num_cce_p-1:0] mem_resp_v, mem_resp_ready;
 
@@ -67,7 +60,7 @@ logic [num_cce_p-1:0] mem_data_cmd_v, mem_data_cmd_yumi;
 
    wrapper
     #(.cfg_p(cfg_p)
-      ,.trace_p(trace_p)
+      ,.calc_trace_p(calc_trace_p)
       ,.cce_trace_p(cce_trace_p)
       )
     wrapper
@@ -102,13 +95,6 @@ logic [num_cce_p-1:0] mem_data_cmd_v, mem_data_cmd_yumi;
       ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi)
 
       ,.external_irq_i('0)
-
-      ,.cmt_rd_w_v_o(cmt_rd_w_v)
-      ,.cmt_rd_addr_o(cmt_rd_addr)
-      ,.cmt_mem_w_v_o(cmt_mem_w_v)
-      ,.cmt_mem_addr_o(cmt_mem_addr)
-      ,.cmt_mem_op_o(cmt_mem_op)
-      ,.cmt_data_o(cmt_data)
       );
 
 bind bp_be_top
@@ -236,62 +222,5 @@ bind bp_be_top
           );
    end // rof1
 
-localparam max_instr_cnt_lp    = 2**30-1;
-localparam lg_max_instr_cnt_lp = `BSG_SAFE_CLOG2(max_instr_cnt_lp);
-logic [lg_max_instr_cnt_lp-1:0] instr_cnt;
-     
-   bsg_counter_clear_up
-    #(.max_val_p(max_instr_cnt_lp)
-      ,.init_val_p(0)
-      )
-    instr_counter
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
-
-      ,.clear_i(1'b0)
-      ,.up_i(|{cmt_rd_w_v | cmt_mem_w_v})
-
-      ,.count_o(instr_cnt)
-      );
-
-localparam max_clock_cnt_lp    = 2**30-1;
-localparam lg_max_clock_cnt_lp = `BSG_SAFE_CLOG2(max_clock_cnt_lp);
-logic [lg_max_clock_cnt_lp-1:0] clock_cnt;
-logic booted;
-
-  bsg_counter_clear_up
-   #(.max_val_p(max_clock_cnt_lp)
-     ,.init_val_p(0)
-     )
-   clock_counter
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.clear_i(~booted)
-     ,.up_i(1'b1)
-
-     ,.count_o(clock_cnt)
-     );
-
-always_ff @(posedge clk_i)
-  begin
-    if (reset_i)
-        booted <= 1'b0;
-    else
-      begin
-        // This should simply be based on frozen signal
-        booted <= 1'b1;
-      end
-   end 
-
-always_ff @(posedge clk_i)
-  begin
-    // TODO: Detect end of test
-    if (0)
-      begin
-        $display("Test PASSed! Clocks: %d Instr: %d mIPC: %d", clock_cnt, instr_cnt, (1000*instr_cnt) / clock_cnt);
-        $finish(0);
-      end
-   end
-
 endmodule : testbench
+
