@@ -12,6 +12,11 @@
  *   Load: LCE REQ -> MEM CMD -> MEM DATA RESP -> LCE DATA CMD
  *   Store: LCE REQ -> MEM DATA CMD -> MEM RESP
  *
+ * Priority ordering
+ * 1. Mem Data Cmd
+ * 2. Mem Resp
+ * 3. LCE Req
+ *
  */
 
 module bp_cce_uncached
@@ -99,14 +104,10 @@ module bp_cce_uncached
   assign mem_resp = mem_resp_i;
   assign mem_data_resp = mem_data_resp_i;
 
-  typedef enum logic [3:0] {
+  typedef enum logic [1:0] {
     READY
     ,SEND_MEM_CMD
-    ,WAIT_MEM_DATA_RESP
-    ,SEND_LCE_DATA_CMD
     ,SEND_MEM_DATA_CMD
-    ,WAIT_MEM_RESP
-    ,SEND_LCE_CMD
   } uc_state_e;
 
   uc_state_e uc_state, uc_state_n;
@@ -151,16 +152,37 @@ module bp_cce_uncached
     if (~reset_i & (cce_mode_i == e_cce_mode_uncached)) begin
       case (uc_state)
       READY: begin
-        lce_req_n = (lce_req_v_i) ? lce_req : '0;
-        lce_req_yumi_o = lce_req_v_i;
-        // uncached read first sends a memory cmd, uncached store sends memory data cmd
-        uc_state_n = lce_req_v_i
-                     ? (lce_req.msg_type == e_lce_req_type_rd)
+        uc_state_n = READY;
+
+        if (mem_data_resp_v_i & lce_data_cmd_ready_i) begin
+          // after load response is received, need to send data back to LCE
+          lce_data_cmd_v_o = 1'b1;
+          lce_data_cmd.data = mem_data_resp.data;
+          lce_data_cmd.dst_id = mem_data_resp.payload.lce_id;
+          lce_data_cmd.msg_type = e_lce_data_cmd_non_cacheable;
+          lce_data_cmd.way_id = mem_data_resp.payload.way_id;
+
+          // dequeue the mem data response if outbound lce data cmd is accepted
+          mem_data_resp_yumi_o = lce_data_cmd_ready_i;
+
+        end else if (mem_resp_v_i & lce_cmd_ready_i) begin
+          // after store response is received, need to send uncached store done command to LCE
+          lce_cmd_v_o = 1'b1;
+          lce_cmd.dst_id = mem_resp.payload.lce_id;
+          lce_cmd.src_id = (lg_num_cce_lp)'(cce_id_i);
+          lce_cmd.msg_type = e_lce_cmd_uc_st_done;
+          lce_cmd.addr = mem_resp.payload.req_addr;
+
+          // dequeue the mem data response if outbound lce data cmd is accepted
+          mem_resp_yumi_o = lce_cmd_ready_i;
+
+        end else if (lce_req_v_i) begin
+          lce_req_n = lce_req;
+          lce_req_yumi_o = lce_req_v_i;
+          // uncached read first sends a memory cmd, uncached store sends memory data cmd
+          uc_state_n = (lce_req.msg_type == e_lce_req_type_rd)
                        ? SEND_MEM_CMD
-                       : SEND_MEM_DATA_CMD
-                     : READY;
-        if (lce_req_v_i & (lce_req.non_cacheable == e_lce_req_cacheable)) begin
-          $warning("Cacheable request received while in uncached mode");
+                       : SEND_MEM_DATA_CMD;
         end
       end
       SEND_MEM_CMD: begin
@@ -172,26 +194,10 @@ module bp_cce_uncached
         mem_cmd.payload.way_id = lce_req_r.lru_way_id;
         mem_cmd.non_cacheable = lce_req_r.non_cacheable;
         mem_cmd.nc_size = lce_req_r.nc_size;
-        uc_state_n = (mem_cmd_ready_i) ? WAIT_MEM_DATA_RESP : SEND_MEM_CMD;
-      end
-      WAIT_MEM_DATA_RESP: begin
-        // uncached load response from memory
-        // do not dequeue message from queue yet to avoid having an internal buffer for cache block
-        uc_state_n = (mem_data_resp_v_i) ? SEND_LCE_DATA_CMD : WAIT_MEM_DATA_RESP;
-      end
-      SEND_LCE_DATA_CMD: begin
-        // after load response is received, need to send data back to LCE
-        lce_data_cmd_v_o = 1'b1;
-        lce_data_cmd.data = mem_data_resp.data;
-        lce_data_cmd.dst_id = mem_data_resp.payload.lce_id;
-        lce_data_cmd.msg_type = e_lce_data_cmd_non_cacheable;
-        lce_data_cmd.way_id = mem_data_resp.payload.way_id;
-        uc_state_n = (lce_data_cmd_ready_i) ? READY : SEND_LCE_DATA_CMD;
-        // dequeue the mem data response if outbound lce data cmd is accepted
-        mem_data_resp_yumi_o = lce_data_cmd_ready_i;
 
-        // clear registers if transaction complete
-        lce_req_n = (lce_data_cmd_ready_i) ? '0 : lce_req_r;
+        lce_req_n = (mem_cmd_ready_i) ? '0 : lce_req_r;
+
+        uc_state_n = (mem_cmd_ready_i) ? READY : SEND_MEM_CMD;
       end
       SEND_MEM_DATA_CMD: begin
         // uncached store, send memory data cmd
@@ -208,26 +214,10 @@ module bp_cce_uncached
         mem_data_cmd.non_cacheable = lce_req_r.non_cacheable;
         mem_data_cmd.nc_size = lce_req_r.nc_size;
         mem_data_cmd.data = {(block_size_in_bits_lp-lce_req_data_width_p)'('0),lce_req_r.data};
-        uc_state_n = (mem_data_cmd_ready_i) ? WAIT_MEM_RESP : SEND_MEM_DATA_CMD;
-      end
-      WAIT_MEM_RESP: begin
-        // memory response comes after uncached store
-        // need to send LCE command to requestor to acknowledge store complete
-        uc_state_n = (mem_resp_v_i) ? SEND_LCE_CMD : WAIT_MEM_RESP;
-      end
-      SEND_LCE_CMD: begin
-        // after store response is received, need to send uncached store done command to LCE
-        lce_cmd_v_o = 1'b1;
-        lce_cmd.dst_id = mem_resp.payload.lce_id;
-        lce_cmd.src_id = (lg_num_cce_lp)'(cce_id_i);
-        lce_cmd.msg_type = e_lce_cmd_uc_st_done;
-        lce_cmd.addr = mem_resp.payload.req_addr;
-        uc_state_n = (lce_cmd_ready_i) ? READY : SEND_LCE_CMD;
-        // dequeue the mem data response if outbound lce data cmd is accepted
-        mem_resp_yumi_o = lce_cmd_ready_i;
 
-        // clear registers if transaction complete
-        lce_req_n = (lce_cmd_ready_i) ? '0 : lce_req_r;
+        lce_req_n = (mem_data_cmd_ready_i) ? '0 : lce_req_r;
+
+        uc_state_n = (mem_data_cmd_ready_i) ? READY : SEND_MEM_DATA_CMD;
       end
       default: begin
         uc_state_n = READY;
