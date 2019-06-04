@@ -58,9 +58,6 @@ bsg_ready_and_link_sif_s cfg_link_li, cfg_link_lo;
 assign ct_link_li = {cfg_link_lo, mem_link_lo};
 assign {cfg_link_li, mem_link_li} = ct_link_lo;
    
-logic [cce_instr_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
-logic [`bp_cce_inst_width-1:0]          cce_inst_boot_rom_data;
-
 logic [noc_width_p-1:0] multi_data_li, multi_data_lo;
 logic multi_v_li, multi_v_lo;
 logic multi_ready_lo, multi_yumi_li;
@@ -308,9 +305,6 @@ bp_cce_mmio_cfg_loader
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    
-   ,.boot_rom_addr_o(cce_inst_boot_rom_addr)
-   ,.boot_rom_data_i(cce_inst_boot_rom_data)
-   
    ,.mem_data_cmd_o(cfg_data_cmd_lo)
    ,.mem_data_cmd_v_o(cfg_data_cmd_v_lo)
    ,.mem_data_cmd_yumi_i(cfg_data_cmd_yumi_li)
@@ -319,15 +313,6 @@ bp_cce_mmio_cfg_loader
    ,.mem_resp_v_i(cfg_resp_v_li)
    ,.mem_resp_ready_o(cfg_resp_ready_lo)
   );
-
-bp_cce_inst_rom
- #(.width_p(`bp_cce_inst_width)
-   ,.addr_width_p(cce_instr_ram_addr_width_lp)
-   )
- cce_inst_rom
-  (.addr_i(cce_inst_boot_rom_addr)
-   ,.data_o(cce_inst_boot_rom_data)
-   );
 
 endmodule : testbench
 

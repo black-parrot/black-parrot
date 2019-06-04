@@ -21,15 +21,13 @@ module bp_cce_mmio_cfg_loader
     , parameter inst_width_p          = "inv"
     , parameter inst_ram_addr_width_p = "inv"
     , parameter inst_ram_els_p        = "inv"
+    , parameter cce_ucode_filename_p  = "cce_ucode.mem"
     , parameter skip_ram_init_p       = 0
     
     , localparam bp_pc_entry_point_gp=39'h00_8000_0000
     )
   (input                                             clk_i
    , input                                           reset_i
-
-   , output logic [inst_ram_addr_width_p-1:0]        boot_rom_addr_o
-   , input [inst_width_p-1:0]                        boot_rom_data_i
 
    // Config channel
    , output logic [cce_mem_data_cmd_width_lp-1:0]    mem_data_cmd_o
@@ -52,7 +50,15 @@ module bp_cce_mmio_cfg_loader
 
   assign mem_data_cmd_o = mem_data_cmd_cast_o;
   
-  logic                                 cfg_v_lo;
+  logic [`bp_cce_inst_width-1:0]    cce_inst_boot_rom [0:inst_ram_els_p-1];
+  logic [inst_ram_addr_width_p-1:0] cce_inst_boot_rom_addr;
+  logic [`bp_cce_inst_width-1:0]    cce_inst_boot_rom_data;
+  
+  initial $readmemb(cce_ucode_filename_p, cce_inst_boot_rom);
+
+  assign cce_inst_boot_rom_data = cce_inst_boot_rom[cce_inst_boot_rom_addr];
+
+  logic                        cfg_v_lo;
   logic [cfg_core_width_p-1:0] cfg_core_lo;
   logic [cfg_addr_width_p-1:0] cfg_addr_lo;
   logic [cfg_data_width_p-1:0] cfg_data_lo;
@@ -97,7 +103,8 @@ module bp_cce_mmio_cfg_loader
         state_r <= state_n;
     end
 
-  assign boot_rom_addr_o = (cfg_addr_lo >> 1);
+  wire [7:0] unused;
+  assign {unused, cce_inst_boot_rom_addr} = cfg_addr_lo >> 1'b1;
 
   always_comb
     begin
@@ -153,7 +160,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_mem_base_cce_ucode_gp + (ucode_cnt_r << 1);
-          cfg_data_lo = boot_rom_data_i[0+:cfg_data_width_p];
+          cfg_data_lo = cce_inst_boot_rom_data[0+:cfg_data_width_p];
         end
         SEND_RAM_HI: begin
           state_n = ucode_prog_done ? SEND_CFG_NORMAL : SEND_RAM_LO;
@@ -162,7 +169,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_mem_base_cce_ucode_gp + (ucode_cnt_r << 1) + 1'b1;
-          cfg_data_lo = cfg_data_width_p'(boot_rom_data_i[inst_width_p-1:cfg_data_width_p]);
+          cfg_data_lo = cfg_data_width_p'(cce_inst_boot_rom_data[inst_width_p-1:cfg_data_width_p]);
         end
         SEND_CFG_NORMAL: begin
           state_n = SEND_PC_LO;

@@ -40,6 +40,8 @@ endif
 COH_PROTO   ?= mesi
 CCE_ROM_PATH = $(BP_ME_DIR)/src/v/roms/$(COH_PROTO)-tr
 CCE_ROM      = bp_cce_inst_rom_$(COH_PROTO)-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.v
+CCE_MEM_PATH = $(BP_ME_DIR)/src/asm/roms/$(COH_PROTO)-tr
+CCE_MEM      = bp_cce_inst_rom_$(COH_PROTO)-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.mem
 
 DRAMSIM_CH_CFG  ?= DDR2_micron_16M_8b_x8_sg3E.ini
 DRAMSIM_SYS_CFG ?= system.ini

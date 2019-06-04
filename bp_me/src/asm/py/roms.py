@@ -48,9 +48,16 @@ for w in n_wg:
         pre_cmd = 'make {0} {1}'.format(cflags, mem_file)
         os.system(pre_cmd)
         rom_file_path = os.path.join(out_dir, 'bp_cce_inst_rom_{0}_lce{1}_wg{2}_assoc{3}.v'.format(file_base, n, w, e))
+        mem_file_path = os.path.join(out_dir, 'bp_cce_inst_rom_{0}_lce{1}_wg{2}_assoc{3}.mem'.format(file_base, n, w, e))
+        cp_cmd = 'cp {0} {1}'.format(mem_file, mem_file_path)
+        os.system(cp_cmd)
+        bin_file_path = os.path.join(out_dir, 'bp_cce_inst_rom_{0}_lce{1}_wg{2}_assoc{3}.bin'.format(file_base, n, w, e))
+        bin_cmd = 'xxd -r -p {0} > {1}'.format(mem_file_path, bin_file_path)
+        os.system(bin_cmd)
         bsg_script = os.path.join(os.path.abspath(args.bsg), args.script)
         rom_module=args.module
         rom_cmd = 'python2 {0} {1} {2} zero > {3}'.format(bsg_script, mem_file, rom_module, rom_file_path)
         os.system(rom_cmd)
         rm_cmd = 'rm {0}'.format(mem_file)
         os.system(rm_cmd)
+

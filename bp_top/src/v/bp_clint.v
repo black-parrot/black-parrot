@@ -176,7 +176,9 @@ bsg_decode_with_v
 // Could replace with bsg_cycle_counter if it provided a way to sideload a value
 logic [dword_width_p-1:0] mtime_n, mtime_r;
 wire mtime_w_v_li = mtime_data_cmd_v;
-assign mtime_n    = mtime_w_v_li ? mem_data_cmd_cast_i.data : mtime_r + dword_width_p'(1);
+assign mtime_n    = mtime_w_v_li 
+                    ? mem_data_cmd_cast_i.data[0+:dword_width_p] 
+                    : mtime_r + dword_width_p'(1);
   bsg_dff_reset
    #(.width_p(dword_width_p))
    mtime_reg
