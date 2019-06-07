@@ -38,10 +38,11 @@ package bp_cce_pkg;
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]     tr_way_id;              \
     logic [`bp_cce_coh_bits-1:0]                  next_coh_state;         \
     logic [`bp_cce_inst_num_flags-1:0]            flags;                  \
+    logic [`bp_lce_cce_nc_req_size_width-1:0]     nc_req_size;            \
   } bp_cce_mshr_s
 
   `define bp_cce_mshr_width(num_lce_mp, lce_assoc_mp, paddr_width_mp) \
     ((2*`BSG_SAFE_CLOG2(num_lce_mp))+(3*`BSG_SAFE_CLOG2(lce_assoc_mp))+(2*paddr_width_mp) \
-     +`bp_cce_coh_bits+`bp_cce_inst_num_flags)
+     +`bp_cce_coh_bits+`bp_cce_inst_num_flags+`bp_lce_cce_nc_req_size_width)
 
 endpackage : bp_cce_pkg

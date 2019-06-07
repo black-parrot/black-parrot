@@ -33,8 +33,9 @@ module bp_cce_uncached
     // Derived parameters
     , localparam lg_num_cce_lp             = `BSG_SAFE_CLOG2(num_cce_p)
     , localparam block_size_in_bits_lp     = (block_size_in_bytes_p*8)
+    , localparam mshr_width_lp = `bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
     `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p, block_size_in_bits_lp)
-    `declare_bp_me_if_widths(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    `declare_bp_me_if_widths(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p, mshr_width_lp)
 
   )
   (input                                               clk_i
@@ -78,7 +79,7 @@ module bp_cce_uncached
    , input                                             mem_data_cmd_ready_i
   );
 
-  `declare_bp_me_if(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
+  `declare_bp_me_if(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p, mshr_width_lp);
   `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p, block_size_in_bits_lp);
 
   // structures for casting
@@ -103,6 +104,10 @@ module bp_cce_uncached
   assign lce_req = lce_req_i;
   assign mem_resp = mem_resp_i;
   assign mem_data_resp = mem_data_resp_i;
+
+  `declare_bp_cce_mshr_s(num_lce_p, lce_assoc_p, paddr_width_p);
+  bp_cce_mshr_s mem_resp_payload, mem_data_cmd_payload;
+  assign mem_resp_payload = mem_resp.payload;
 
   typedef enum logic [1:0] {
     READY
@@ -146,6 +151,8 @@ module bp_cce_uncached
     // register next value defaults
     lce_req_n = lce_req_r;
 
+    mem_data_cmd_payload = '0;
+
     uc_state_n = READY;
 
     // only operate if not in reset and cce mode is uncached
@@ -168,10 +175,10 @@ module bp_cce_uncached
         end else if (mem_resp_v_i & lce_cmd_ready_i) begin
           // after store response is received, need to send uncached store done command to LCE
           lce_cmd_v_o = 1'b1;
-          lce_cmd.dst_id = mem_resp.payload.lce_id;
+          lce_cmd.dst_id = mem_resp_payload.lce_id;
           lce_cmd.src_id = (lg_num_cce_lp)'(cce_id_i);
           lce_cmd.msg_type = e_lce_cmd_uc_st_done;
-          lce_cmd.addr = mem_resp.payload.req_addr;
+          lce_cmd.addr = mem_resp_payload.paddr;
 
           // dequeue the mem data response if outbound lce data cmd is accepted
           mem_resp_yumi_o = lce_cmd_ready_i;
@@ -204,13 +211,9 @@ module bp_cce_uncached
         mem_data_cmd_v_o = 1'b1;
         mem_data_cmd.msg_type = lce_req_r.msg_type;
         mem_data_cmd.addr = lce_req_r.addr;
-        mem_data_cmd.payload.lce_id = lce_req_r.src_id;
-        mem_data_cmd.payload.way_id = '0;
-        mem_data_cmd.payload.req_addr = lce_req_r.addr;
-        mem_data_cmd.payload.tr_lce_id = '0;
-        mem_data_cmd.payload.tr_way_id = '0;
-        mem_data_cmd.payload.transfer = '0;
-        mem_data_cmd.payload.replacement = '0;
+        mem_data_cmd_payload.lce_id = lce_req_r.src_id;
+        mem_data_cmd_payload.paddr = lce_req_r.addr;
+        mem_data_cmd.payload = mem_data_cmd_payload;
         mem_data_cmd.non_cacheable = lce_req_r.non_cacheable;
         mem_data_cmd.nc_size = lce_req_r.nc_size;
         mem_data_cmd.data = {(block_size_in_bits_lp-lce_req_data_width_p)'('0),lce_req_r.data};

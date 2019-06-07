@@ -81,6 +81,7 @@ wds <wg> <lce> <way> <coh_st>
 
 # Misc
 gad
+clm # clear mshr
 stall
 
 # Queue

@@ -22,4 +22,9 @@
 #define INV 6
 #define UCST 7
 
+#define SYNC_ACK 0
+#define INV_ACK 1
+#define TR_ACK 2
+#define COH_ACK 3
+
 #endif

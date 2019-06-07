@@ -36,7 +36,7 @@ module bp_cce_gad
    , input [lg_num_lce_lp-1:0]                             req_lce_i
    , input                                                 req_type_flag_i
    , input                                                 lru_dirty_flag_i
-   , input                                                 lru_cached_excl_i
+   , input                                                 lru_cached_excl_flag_i
 
    , output logic [lg_lce_assoc_lp-1:0]                    req_addr_way_o
 
@@ -51,6 +51,9 @@ module bp_cce_gad
 
    , output logic                                          error_o
   );
+
+  wire unused0 = clk_i;
+  wire unused1 = reset_i;
 
   assign error_o = gad_v_i & ~sharers_v_i;
 
@@ -111,7 +114,7 @@ module bp_cce_gad
   assign exclusive_flag_o = other_lce_cached_excl;
   assign transfer_flag_o = exclusive_flag_o;
   assign upgrade_flag_o = (req_wr) ? (req_lce_cached & ~req_lce_cached_excl) : 1'b0;
-  assign replacement_flag_o = (~upgrade_flag_o & lru_cached_excl_i & lru_dirty_flag_i);
+  assign replacement_flag_o = (~upgrade_flag_o & lru_cached_excl_flag_i & lru_dirty_flag_i);
 
   // TODO: future version of CCE will not necessarily invalidate the transfer LCE, but
   // for now, if the request results in a transfer, we invalidate the other LCE

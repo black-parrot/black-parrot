@@ -5,17 +5,15 @@
  *
  * Description:
  *   The directory stores the coherence state and tags for all cache blocks tracked by
- *   a CCE. The directory supports a small set of operations such as reading and writing
- *   pending bits for a way-group, reading a way-group or entry, and writing an entry's
- *   coherence state and tag.
+ *   a CCE. The directory supports a small set of operations such as reading a way-group or entry,
+ *   and writing an entry's coherence state and tag.
  *
  *   The directory is a synchronous read 1RW memory.
- *   The pending bits are stored in flops and may be read asynchronously.
  *
- *   All writes take 1 cycle. RDP presents valid data in same cycle (asynchronous reads),
- *   while RDW operations take multiple cycles. RDW reads out the way-group and performs
- *   tag comparisons and coherence state extraction, which are output in the sharers vectors.
- *   The RDW operation also produces information about the LRU way provided by the requesting LCE.
+ *   All writes take 1 cycle. RDW operations take multiple cycles. RDW reads out the way-group and
+ *   performs tag comparisons and coherence state extraction, which are output in the sharers
+ *   vectors. The RDW operation also produces information about the LRU way provided by the
+ *   requesting LCE.
  *
  *   RDE is currently not supported.
  *
@@ -77,14 +75,10 @@ module bp_cce_dir
 
    , input [tag_width_p-1:0]                                      tag_i
    , input [`bp_cce_coh_bits-1:0]                                 coh_state_i
-   , input                                                        pending_i
    , input [`bp_cce_inst_minor_op_width-1:0]                      w_cmd_i
    , input                                                        w_v_i
 
    , output logic                                                 busy_o
-
-   , output logic                                                 pending_o
-   , output logic                                                 pending_v_o
 
    , output logic                                                 sharers_v_o
    , output logic [num_lce_p-1:0]                                 sharers_hits_o
@@ -101,34 +95,6 @@ module bp_cce_dir
     logic [tag_width_p-1:0]      tag;
     logic [`bp_cce_coh_bits-1:0] state;
   } dir_entry_s;
-
-  // pending bits
-  logic [num_way_groups_p-1:0] pending_bits_r, pending_bits_n;
-  logic pending_w_v, pending_r_v;
-  assign pending_w_v = w_v_i & (w_cmd_i == e_wdp_op);
-  assign pending_r_v = r_v_i & (r_cmd_i == e_rdp_op);
-
-  always_ff @(posedge clk_i) begin
-    if (reset_i) begin
-      pending_bits_r <= '0;
-    end else begin
-      pending_bits_r <= pending_bits_n;
-    end
-  end
-
-  always_comb begin
-    if (reset_i) begin
-      pending_bits_n = '0;
-    end else begin
-      pending_bits_n = pending_bits_r;
-      if (pending_w_v) begin
-        pending_bits_n[way_group_i] = pending_i;
-      end
-    end
-  end
-
-  assign pending_o = pending_bits_r[way_group_i];
-  assign pending_v_o = pending_r_v;
 
   // Directory
   // read / write valid signals

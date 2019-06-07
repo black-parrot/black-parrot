@@ -113,6 +113,7 @@ typedef enum logic [2:0] {
 // Minor Misc Op Codes
 typedef enum logic [2:0] {
   e_gad_op                               = 3'b000   // Generate Auxiliary Data
+  ,e_clm_op                              = 3'b001   // Clear MSHR register
   ,e_stall_op                            = 3'b111   // Stall PC
 } bp_cce_inst_minor_misc_op_e;
 
@@ -175,6 +176,7 @@ typedef enum logic [4:0] {
   ,e_src_lce_data_resp_ready             = 5'b11101
 
   ,e_src_cf                              = 5'b11110
+  ,e_src_lef                             = 5'b11111
 } bp_cce_inst_src_e;
 
 `define bp_cce_inst_src_width $bits(bp_cce_inst_src_e)
@@ -200,8 +202,9 @@ typedef enum logic [4:0] {
   ,e_dst_pcf                             = 5'b01111
   ,e_dst_ucf                             = 5'b10000
   ,e_dst_cf                              = 5'b10001
+  ,e_dst_lef                             = 5'b10010
 
-  ,e_dst_next_coh_state                  = 5'b10010
+  ,e_dst_next_coh_state                  = 5'b11111
 } bp_cce_inst_dst_e;
 
 `define bp_cce_inst_dst_width $bits(bp_cce_inst_dst_e)
@@ -222,28 +225,29 @@ typedef enum logic [3:0] {
   ,e_flag_sel_pcf                        = 4'b1011 // pending-cleared flag
   ,e_flag_sel_ucf                        = 4'b1100 // uncached request flag
   ,e_flag_sel_cf                         = 4'b1101 // cached flag
-  // unused 4'b1110
+  ,e_flag_sel_lef                        = 4'b1110 // lru cached exclusive flag
   // unused 4'b1111
 } bp_cce_inst_flag_sel_e;
 
 `define bp_cce_inst_flag_sel_width $bits(bp_cce_inst_flag_sel_e)
 
 // Flag register one hot
-typedef enum logic [13:0] {
-  e_flag_rqf                             = 14'b00_0000_0000_0001 // request type flag
-  ,e_flag_nerf                           = 14'b00_0000_0000_0010 // non-exclusive request flag
-  ,e_flag_ldf                            = 14'b00_0000_0000_0100 // lru dirty flag
-  ,e_flag_nwbf                           = 14'b00_0000_0000_1000 // null writeback flag
-  ,e_flag_tf                             = 14'b00_0000_0001_0000 // transfer flag
-  ,e_flag_rf                             = 14'b00_0000_0010_0000 // replacement flag
-  ,e_flag_rwbf                           = 14'b00_0000_0100_0000 // replacement writeback flag
-  ,e_flag_pf                             = 14'b00_0000_1000_0000 // pending flag
-  ,e_flag_uf                             = 14'b00_0001_0000_0000 // upgrade flag
-  ,e_flag_if                             = 14'b00_0010_0000_0000 // invalidate flag
-  ,e_flag_ef                             = 14'b00_0100_0000_0000 // exclusive flag
-  ,e_flag_pcf                            = 14'b00_1000_0000_0000 // pending-cleared flag
-  ,e_flag_ucf                            = 14'b01_0000_0000_0000 // uncached request flag
-  ,e_flag_cf                             = 14'b10_0000_0000_0000 // cached flag
+typedef enum logic [14:0] {
+  e_flag_rqf                             = 15'b000_0000_0000_0001 // request type flag
+  ,e_flag_nerf                           = 15'b000_0000_0000_0010 // non-exclusive request flag
+  ,e_flag_ldf                            = 15'b000_0000_0000_0100 // lru dirty flag
+  ,e_flag_nwbf                           = 15'b000_0000_0000_1000 // null writeback flag
+  ,e_flag_tf                             = 15'b000_0000_0001_0000 // transfer flag
+  ,e_flag_rf                             = 15'b000_0000_0010_0000 // replacement flag
+  ,e_flag_rwbf                           = 15'b000_0000_0100_0000 // replacement writeback flag
+  ,e_flag_pf                             = 15'b000_0000_1000_0000 // pending flag
+  ,e_flag_uf                             = 15'b000_0001_0000_0000 // upgrade flag
+  ,e_flag_if                             = 15'b000_0010_0000_0000 // invalidate flag
+  ,e_flag_ef                             = 15'b000_0100_0000_0000 // exclusive flag
+  ,e_flag_pcf                            = 15'b000_1000_0000_0000 // pending-cleared flag
+  ,e_flag_ucf                            = 15'b001_0000_0000_0000 // uncached request flag
+  ,e_flag_cf                             = 15'b010_0000_0000_0000 // cached flag
+  ,e_flag_lef                            = 15'b100_0000_0000_0000 // lru cached exclusive flag
 } bp_cce_inst_flag_e;
 
 `define bp_cce_inst_num_flags $bits(bp_cce_inst_flag_e)
@@ -692,14 +696,23 @@ typedef struct packed {
  */
 typedef struct packed {
 
+  // Basic operation information
   bp_cce_inst_minor_op_u                   minor_op_u;
   bp_cce_inst_src_e                        src_a;
   bp_cce_inst_src_e                        src_b;
   bp_cce_inst_dst_e                        dst;
   logic [`bp_cce_inst_imm16_width-1:0]     imm;
 
-  // alu valid in
+  // Module enable signals
+
+  // op uses alu
   logic                                    alu_v;
+  // op uses gad module
+  logic                                    gad_op;
+  // Pending Bit Read Operation
+  logic                                    pending_r_v;
+  // Pending Bit Write Operation
+  logic                                    pending_w_v;
 
   // Register source selects
   bp_cce_inst_req_sel_e                    req_sel;
@@ -728,6 +741,7 @@ typedef struct packed {
   logic [`bp_cce_inst_minor_op_width-1:0]  dir_w_cmd;
   logic                                    dir_w_v;
 
+
   // LCE command queue input selects
   bp_cce_inst_lce_cmd_lce_sel_e            lce_cmd_lce_sel;
   bp_cce_inst_lce_cmd_addr_sel_e           lce_cmd_addr_sel;
@@ -743,7 +757,6 @@ typedef struct packed {
   logic                                    mov_dst_w_v;
   logic                                    alu_dst_w_v;
   logic [`bp_cce_inst_num_gpr-1:0]         gpr_w_mask;
-  logic                                    gpr_w_v;
 
   // Write enable for req_lce, req_addr, req_tab registers
   logic                                    req_w_v;
@@ -752,19 +765,12 @@ typedef struct packed {
   logic                                    lru_way_w_v;
   // Write enable for tr_lce and tr_lce_way registers
   logic                                    transfer_lce_w_v;
-  logic                                    cache_block_data_w_v;
   logic                                    ack_type_w_v;
-
-  logic                                    gad_op_w_v;
-  logic                                    rdw_op_w_v;
-  logic                                    rde_op_w_v;
 
   logic [`bp_cce_inst_num_flags-1:0]       flag_mask_w_v;
 
   // Write enables for uncached data and request size registers
-  logic                                    nc_data_lce_req;
-  logic                                    nc_data_mem_data_resp;
-  // data written on lce request or mem data response
+  // data written on lce request
   logic                                    nc_data_w_v;
   // request size written any time ucf (rqf) written
   logic                                    nc_req_size_w_v;
@@ -775,6 +781,12 @@ typedef struct packed {
   logic                                    lce_data_resp_yumi;
   logic                                    mem_resp_yumi;
   logic                                    mem_data_resp_yumi;
+
+  // restore mshr from mem resp queue
+  logic                                    mshr_restore;
+  // clear mshr
+  logic                                    mshr_clear;
+
   // outbound messages - ready signals
   logic                                    lce_cmd_v;
   logic                                    lce_data_cmd_v;

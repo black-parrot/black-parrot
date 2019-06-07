@@ -41,6 +41,7 @@ bi lce_top
 
 # send sync messages
 sync_init: movi 0 r0
+movi SYNC_ACK r2
 movi N_LCE r1
 sync_top: bge r0 r1 ack_top
 pushq lceCmd SYNC r0
@@ -48,46 +49,59 @@ inc r0
 bi sync_top
 ack_top: bz r0 ready
 popq lceResp
+bne r2 ackType error
 dec r0
 bi ack_top
 
 # Ready Routine
-ready: wfq lceReq
+# In ready state, the CCE can process lce responses, memory response, or new lce requests
+ready: wfq lceReq memResp lceResp
+bqr lceResp ack_pop
+bqr memResp mem_resp
 bqr lceReq lce_req
+stall
+
+ack_pop: popq lceResp
+movi COH_ACK r0
+beq r0 ackType ready
+movi TR_ACK r1
+beq r1 ackType ready
+# coming from the ready state, the CCE should only receive COH or TR acks
 bi error
 
+# Memory Response Routine
+# A memory response returns after a replacement writeback or a transfer writeback
+mem_resp: popq memResp
+bf rwbf transfer_check
+bi ready
+
 # LCE Request Routine
-lce_req: popq lceReq
+lce_req: clm
+poph lceReq
 bf ucf uncached_req
 rdp req
-bf pf error
+bf pf ready
+popq lceReq
 rdw req req
 gad
 # fall through
 
 # Next Coherence State Routine
-# write request means set to M, else check non-exclusive request
+# write request means set to M, else read means set to S
 next_coh_state: bf rqf next_coh_set_m
-# check non-exclusive request (read-only) set to S, else check if block cached
-bf nerf next_coh_set_s
-# block cached somewhere
-bf cf next_coh_set_s
-# invalidations not required, thus block not cache, set to E
-next_coh_set_e: movi E nextCohSt
-bi inv_check
 next_coh_set_s: movi S nextCohSt
 bi inv_check
 next_coh_set_m: movi M nextCohSt
 # fall through to inv_check
 
 # Invalidation Check
-inv_check: bf if invalidate
-bi upgrade_check
+inv_check: bfz if upgrade_check
 
 # Invalidation Routine
 invalidate: movi 0 r0
 movi N_LCE r1
 movi 0 r2
+movi INV_ACK r3
 inv_top: bge r0 r1 inv_ack_top
 bz shR0 inv_inc_lce
 beq reqLce r0 inv_inc_lce
@@ -97,23 +111,28 @@ wds req r0 shWayR0 I
 inv_inc_lce: inc r0
 bi inv_top
 inv_ack_top: bz r2 upgrade_check
-popq lceResp
+# pop the lce response
+inv_ack_pop: popq lceResp
+# check the response type; if it is an invalidation, decrement the counter and continue looping
+# non invalidation acks get popped, and then the PC jumps back to wait for invalidation acks
+bne r3 ackType inv_ack_pop
 dec r2
 bi inv_ack_top
 
 # Upgrade Check Routine
-upgrade_check: bf uf upgrade
-bi replace_check
+upgrade_check: bfz uf set_entry
 
 # Upgrade Routine
 upgrade: wds req req req nextCohSt
 pushq lceCmd STW req req req
-popq lceResp
 bi ready
 
+# write directory entry before memory messages may occur
+# next_coh_state is not saved/restored across memory access
+set_entry: wde req req lru req nextCohSt
+
 # Replacement Check Routine
-replace_check: bf rf replace
-bi transfer_check
+replace_check: bfz rf transfer_check
 
 # Replacement Routine
 replace: pushq lceCmd WB req lru lru
@@ -122,48 +141,37 @@ sf rwbf
 pushq memDataCmd lru
 popq lceDataResp
 sfz rwbf
-bi mem_resp
+bi ready
 
 # Transfer Check
-transfer_check: bf tf transfer
-bi read_l2
+transfer_check: bfz tf read_l2
 
 # Transfer routine - other cache has block in E/M
-transfer: wde req req lru req nextCohSt
-pushq lceCmd ST req req lru
+transfer: pushq lceCmd ST req req lru
 pushq lceCmd TR tr req tr
 pushq lceCmd WB tr req tr
 # wait for transfer WB response
 poph lceDataResp
-bf nwbf complete_transfer
+bf nwbf complete_nwb_transfer
 # perform the transfer WB to mem
 sfz rwbf
 pushq memDataCmd req
-popq memResp
-sf pcf
+popq lceDataResp
+bi ready
 
-# wait for the transfer ack
-complete_transfer: popq lceDataResp
-popq lceResp
+# Null transfer writeback, pop the data response and the transfer ack
+complete_nwb_transfer: popq lceDataResp
 bi ready
 
 # Read Line from L2 Routine
 read_l2: wde req req lru req nextCohSt
 pushq memCmd
 pushq lceCmd ST req req lru
-popq lceResp
-bi ready
-
-# Memory Response Routine
-mem_resp: popq memResp
-bf rwbf transfer_check
-sf pcf
 bi ready
 
 # Uncached Request Routine
 uncached_req: bf rqf uncached_store
 pushq memCmd
-wfq memDataResp
 bi ready
 uncached_store: pushq memDataCmd req
 popq memResp
