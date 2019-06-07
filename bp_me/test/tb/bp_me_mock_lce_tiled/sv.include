@@ -5,6 +5,7 @@
 +incdir+$BP_ME_DIR/src/include/v
 +incdir+$BP_BE_DIR/src/include
 +incdir+$BP_BE_DIR/src/include/bp_be_dcache
++incdir+$BP_ME_DIR/test/common
 $BP_COMMON_DIR/src/include/bp_common_pkg.vh
 $BP_COMMON_DIR/src/include/bp_common_aviary_pkg.vh
 $BP_BE_DIR/src/include/bp_be_rv64_pkg.vh
@@ -47,8 +48,12 @@ $BP_ME_DIR/src/v/cce/bp_cce_dir_tag_checker.v
 $BP_ME_DIR/src/v/cce/bp_cce_gad.v
 $BP_ME_DIR/src/v/cce/bp_cce_reg.v
 $BP_ME_DIR/src/v/cce/bp_cce_uncached.v
+$BP_ME_DIR/src/v/cce/bp_cce_msg.v
+$BP_ME_DIR/src/v/cce/bp_cce_pending.v
 $BP_ME_DIR/src/v/cce/bp_cce.v
 $BP_ME_DIR/test/common/bp_mem.v
+$BP_ME_DIR/test/common/bp_mem_dramsim2.v
+$BP_ME_DIR/test/common/dramsim2_wrapper.cpp
 $BP_BE_DIR/test/tb/bp_be_dcache/v/bsg_trace_node_master.v
 $BP_ME_DIR/test/common/bp_me_nonsynth_mock_lce.v
 $BP_ME_DIR/test/common/bp_cce_nonsynth_tracer.v

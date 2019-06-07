@@ -30,6 +30,8 @@ module bp_me_mock_lce_me
     , localparam cfg_link_addr_width_p=bp_cfg_link_addr_width_gp
     , localparam cfg_link_data_width_p=bp_cfg_link_data_width_gp
 
+    , localparam mshr_width_lp=`bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
+
     // dramsim2 stuff
     , parameter dramsim2_en_p = 0
     , parameter clock_period_in_ps_p = 1000
@@ -131,7 +133,7 @@ module bp_me_mock_lce_me
 
   // Memory End
   //
-  `declare_bp_me_if(paddr_width_p,cce_block_width_p,num_lce_p,lce_assoc_p);
+  `declare_bp_me_if(paddr_width_p,cce_block_width_p,num_lce_p,lce_assoc_p,mshr_width_lp);
 
   logic [num_cce_p-1:0][inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
   logic [num_cce_p-1:0][`bp_cce_inst_width-1:0] cce_inst_boot_rom_data;

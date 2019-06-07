@@ -13,10 +13,12 @@ HIGHLIGHT = grep --color -E '^|Error|Warning|Implicit wire is used|Too few insta
 VCS_LOG = vcs.log
 
 # testparam
+NUM_INSTR_P := 102
 SEED_P ?= 1
 CCE_TRACE_P ?= 0
 AXE_TRACE_P ?= 0
 DRAMSIM2_P ?= 0
+SKIP_INIT_P := 1
 NUM_LCE_P := 1
 CFG=e_bp_half_core_cfg
 N_WG := 64
@@ -50,8 +52,10 @@ sim: clean $(TRACE_ROMS)
 		-f sv.include $(TRACE_ROMS) $(CCE_ROM)  \
 		-debug_pp -timescale=1ps/1ps +vcs+vcdpluson +vcs+vcdplusmemon -l $(VCS_LOG) \
 		+vcs+vcdplusautoflushon +define+NUM_LCE_P=$(NUM_LCE_P) \
+		+define+NUM_INSTR_P=$(NUM_INSTR_P) \
 		+define+AXE_TRACE_P=$(AXE_TRACE_P) \
 		+define+DRAMSIM2_P=$(DRAMSIM2_P) \
+		+define+SKIP_INIT_P=$(SKIP_INIT_P) \
 		+define+CCE_TRACE_P=$(CCE_TRACE_P) | $(HIGHLIGHT)
 
 dve:

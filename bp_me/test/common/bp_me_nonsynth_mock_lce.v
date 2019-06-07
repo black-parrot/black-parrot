@@ -948,7 +948,7 @@ module bp_me_nonsynth_mock_lce
           cur_set_n = mshr_r.paddr[block_offset_bits_lp +: lg_lce_sets_lp];
           cur_way_n = mshr_r.lru_way;
 
-          if (store_op) begin
+          if (mshr_r.store_op) begin
             // do the store
             data_w_n[cur_set_n][cur_way_n] = 1'b1;
             data_mask_n = double_op
@@ -1210,7 +1210,7 @@ module bp_me_nonsynth_mock_lce
       end
       FINISH_MISS_SEND: begin
         if (tr_pkt_ready_i) begin
-          if (store_op) begin
+          if (mshr_r.store_op) begin
             $display("#AXE %0d: M[%0d] := %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), cmd.data);
           end else begin
             $display("#AXE %0d: M[%0d] == %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), load_data);
@@ -1219,6 +1219,7 @@ module bp_me_nonsynth_mock_lce
       end
     endcase
     end
+
   end
 
 
