@@ -40,13 +40,7 @@ BASE = bsg_trace_rom_
 TRACE_ROMS = $(addsuffix .v, $(addprefix $(BASE), $(NUMS)))
 
 COH_PROTO ?= mesi
-ifeq ($(COH_PROTO), ei)
-  CCE_ROM = $(BP_ME_DIR)/src/v/roms/ei-tr/bp_cce_inst_rom_ei-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.v
-else ifeq ($(COH_PROTO), msi)
-  CCE_ROM = $(BP_ME_DIR)/src/v/roms/msi-tr/bp_cce_inst_rom_msi-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.v
-else ifeq ($(COH_PROTO), mesi)
-  CCE_ROM = $(BP_ME_DIR)/src/v/roms/mesi-tr/bp_cce_inst_rom_mesi-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.v
-endif
+CCE_MEM = $(BP_ME_DIR)/src/asm/roms/$(COH_PROTO)-tr/bp_cce_inst_rom_$(COH_PROTO)-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.mem
 
 all: clean sim
 
@@ -60,8 +54,9 @@ bsg_trace_rom_%.v: bsg_trace_rom_%.tr
 
 sim: clean $(TRACE_ROMS)
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" testbench.v > testbench_postsed.v
+	@cp $(CCE_MEM) cce_ucode.mem
 	vcs +v2k -R +lint=all,noSVA-UA,noSVA-NSVU,noVCDE -sverilog -full64 \
-		-f sv.include $(TRACE_ROMS) $(CCE_ROM)  \
+		-f sv.include $(TRACE_ROMS) \
 		-debug_pp -timescale=1ps/1ps +vcs+vcdpluson +vcs+vcdplusmemon -l $(VCS_LOG) \
 		+vcs+vcdplusautoflushon +define+NUM_LCE_P=$(NUM_LCE_P) \
 		+define+NUM_INSTR_P=$(NUM_INSTR_P) \

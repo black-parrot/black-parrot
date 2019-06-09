@@ -29,7 +29,6 @@ BASE = bsg_trace_rom_
 TRACE_ROMS = $(addsuffix .v, $(addprefix $(BASE), $(NUMS)))
 
 COH_PROTO ?= mesi
-COH_PROTO ?= mesi
 CCE_MEM = $(BP_ME_DIR)/src/asm/roms/$(COH_PROTO)-tr/bp_cce_inst_rom_$(COH_PROTO)-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.mem
 
 all: clean sim

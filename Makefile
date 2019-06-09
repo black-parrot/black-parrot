@@ -38,3 +38,6 @@ progs:
 	git submodule update --init --recursive -- bp_common/test/*
 	$(MAKE) -C $(BP_COMMON_DIR)/test all
 
+ucode:
+	$(MAKE) -C $(BP_ME_DIR)/src/asm roms
+
