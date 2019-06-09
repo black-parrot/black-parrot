@@ -185,7 +185,7 @@ always_comb
      
 
 // icache to icache
-assign poison_tl = icache_miss | fe_pc_gen.pc_redirect_valid & fe_pc_gen_v;
+assign poison_tl = icache_miss | (fe_pc_gen_v & ~fe_pc_gen.attaboy_valid);
 
 //fe to itlb
 logic itlb_fill_v, itlb_fill_r, itlb_w_v, itlb_fence_v;
