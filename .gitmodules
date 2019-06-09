@@ -10,12 +10,6 @@
   branch = blackparrot_mods
   ignore = dirty
 
-[submodule "external/riscv-fesvr"]
-  path = external/riscv-fesvr
-  url = https://github.com/riscv/riscv-fesvr.git
-  branch = master
-  ignore = dirty
-
 [submodule "external/riscv-gnu-toolchain"]
   path = external/riscv-gnu-toolchain
   url = https://github.com/riscv/riscv-gnu-toolchain.git
@@ -67,6 +61,12 @@
 [submodule "bp_common/test/src/beebs"]
   path = bp_common/test/src/beebs
   url = https://github.com/black-parrot/beebs.git
+  branch = blackparrot_mods
+  ignore = dirty
+
+[submodule "bp_common/test/src/riscv-dv"]
+  path = bp_common/test/src/riscv-dv
+  url = https://github.com/black-parrot/riscv-dv.git
   branch = blackparrot_mods
   ignore = dirty
 

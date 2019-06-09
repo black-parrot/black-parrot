@@ -26,7 +26,7 @@ verilator:
 
 spike:
 	cd $(SPIKE_DIR); \
-	./configure --with-fesvr=$(BP_EXTERNAL_DIR) --prefix=$(BP_EXTERNAL_DIR) \
+	./configure --enable-commitlog --enable-histogram --prefix=$(BP_EXTERNAL_DIR) \
 	&& make && make install && make clean
 
 axe: 
