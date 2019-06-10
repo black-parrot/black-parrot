@@ -201,8 +201,6 @@ bind bp_be_top
          (.clk_i(clk_i)
           ,.reset_i(reset_i)
           ,.freeze_o(freeze_li[i])
-          ,.boot_rom_addr_o(cce_inst_boot_rom_addr[i])
-          ,.boot_rom_data_i(cce_inst_boot_rom_data[i])
           ,.config_addr_o(config_addr_li[i])
           ,.config_data_o(config_data_li[i])
           ,.config_v_o(config_v_li[i])
@@ -213,14 +211,6 @@ bind bp_be_top
           ,.config_ready_o(config_ready_li[i])
          );
 
-       bp_cce_inst_rom
-        #(.width_p(`bp_cce_inst_width)
-          ,.addr_width_p(cce_instr_ram_addr_width_lp)
-          )
-        cce_inst_rom
-         (.addr_i(cce_inst_boot_rom_addr[i])
-          ,.data_o(cce_inst_boot_rom_data[i])
-          );
    end // rof1
 
 endmodule : testbench
