@@ -61,6 +61,9 @@ module bp_multi_top
    , localparam lce_data_cmd_payload_offset_lp = (x_cord_width_p+y_cord_width_p+lce_data_cmd_len_width_lp)
    
    , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(noc_width_p)
+
+   // Arbitrarily set, should be set based on PD constraints
+   , localparam reset_pipe_depth_lp = 10
    )
   (input                                                      clk_i
    , input                                                    reset_i
@@ -162,17 +165,16 @@ assign lce_data_resp_link_stitch_li[num_core_p-1][E] = '0;
 assign lce_cmd_link_stitch_li[num_core_p-1][E]       = '0;
 assign lce_data_cmd_link_stitch_li[num_core_p-1][E]  = '0;
 
-// Individual core reset or global?
-// bsg_tag vs cfg_link?
 logic reset_r;
-always_ff @(posedge clk_i) 
-  begin
-    if (reset_i)
-      reset_r <= 1'b0;
-    else if (cfg_link_w_v_lo[0] & (cfg_link_addr_lo[0] == bp_cfg_reg_reset_gp)) 
-      reset_r <= cfg_link_data_lo[0];
-  end
-
+bsg_dff_chain
+ #(.width_p(1)
+   ,.num_stages_p(reset_pipe_depth_lp)
+   )
+ reset_pipe
+  (.clk_i(clk_i)
+   ,.data_i(reset_i)
+   ,.data_o(reset_r)
+   );
 
 // BP Tiles
 for(genvar i = 0; i < num_core_p; i++) 
@@ -272,7 +274,7 @@ for(genvar i = 0; i < num_core_p; i++)
        )
      mem_cmd_addr_map
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
        
        ,.paddr_i(mem_cmd_lo[i].addr)
        
@@ -292,7 +294,7 @@ for(genvar i = 0; i < num_core_p; i++)
        )
      mem_data_cmd_addr_map
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
        
        ,.paddr_i(mem_data_cmd_lo[i].addr)
        
@@ -318,7 +320,7 @@ for(genvar i = 0; i < num_core_p; i++)
       ,.reserved_width_p(noc_reserved_width_p))
       master_link
       (.clk_i(clk_i)
-      ,.reset_i(reset_i)
+      ,.reset_i(reset_r)
 
       ,.mem_cmd_i(mem_cmd_lo[i])
       ,.mem_cmd_v_i(mem_cmd_v_lo[i])
@@ -359,7 +361,7 @@ bp_clint
    )
  clint
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
    
    ,.mem_cmd_i(clint_cmd_li)
    ,.mem_cmd_v_i(clint_cmd_v_li)
@@ -399,7 +401,7 @@ bp_me_cce_to_wormhole_link_client
   ,.reserved_width_p(noc_reserved_width_p))   
   client_link
   (.clk_i(clk_i)
-  ,.reset_i(reset_i)
+  ,.reset_i(reset_r)
    
   ,.mem_cmd_o(clint_cmd_li)
   ,.mem_cmd_v_o(clint_cmd_v_li)
@@ -475,7 +477,7 @@ for(genvar i = 0; i < num_core_p; i++)
      cmd_wh_router
       (
         .clk_i(clk_i)
-        ,.reset_i(reset_i)
+        ,.reset_i(reset_r)
         
         ,.link_i(cmd_wh_link_li[i])
         ,.link_o(cmd_wh_link_lo[i])
@@ -536,7 +538,7 @@ for(genvar i = 0; i < num_core_p; i++)
      resp_wh_router
       (
         .clk_i(clk_i)
-        ,.reset_i(reset_i)
+        ,.reset_i(reset_r)
         
         ,.link_i(resp_wh_link_li[i])
         ,.link_o(resp_wh_link_lo[i])
@@ -564,7 +566,7 @@ bsg_channel_tunnel_wormhole
   )
  channel_tunnel
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
    
    ,.multi_data_i(multi_data_i)
    ,.multi_v_i(multi_v_i)

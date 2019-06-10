@@ -149,6 +149,16 @@ always_ff @(posedge clk_i)
       freeze_r <= cfg_data_i[0];
   end
 
+logic reset_r;
+bsg_dff
+ #(.width_p(1))
+ reset_reg
+  (.clk_i(clk_i)
+   ,.data_i(reset_i)
+   ,.data_o(reset_r)
+   );
+
+
 // Module instantiations
 bp_core   
  #(.cfg_p(cfg_p)
@@ -156,7 +166,7 @@ bp_core
    )
  core 
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
 
    ,.freeze_i(freeze_r)
    ,.proc_cfg_i(proc_cfg_i)
@@ -362,7 +372,7 @@ for (genvar i = 0; i < 2; i++)
        )
      req_router
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
        ,.link_i(lce_req_link_i_stitch[i])
        ,.link_o(lce_req_link_o_stitch[i])
        ,.my_x_i(x_cord_width_p'(2*my_x_i+i))
@@ -377,7 +387,7 @@ for (genvar i = 0; i < 2; i++)
        )
      resp_router
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
        ,.link_i(lce_resp_link_i_stitch[i])
        ,.link_o(lce_resp_link_o_stitch[i])
        ,.my_x_i(x_cord_width_p'(2*my_x_i+i))
@@ -392,7 +402,7 @@ for (genvar i = 0; i < 2; i++)
        )
      cmd_router
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
        ,.link_i(lce_cmd_link_i_stitch[i])
        ,.link_o(lce_cmd_link_o_stitch[i])
        ,.my_x_i(x_cord_width_p'(2*my_x_i+i))
@@ -420,7 +430,7 @@ for (genvar i = 0; i < 2; i++)
        )
      data_cmd_adapter_in
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
 
        ,.data_i(lce_lce_data_cmd_packet[i])
        ,.v_i(lce_lce_data_cmd_v_lo[i])
@@ -440,7 +450,7 @@ for (genvar i = 0; i < 2; i++)
        )
      data_cmd_router
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
 
        ,.my_x_i(x_cord_width_p'(2*my_x_i+i))
        ,.my_y_i(my_y_i)
@@ -458,7 +468,7 @@ for (genvar i = 0; i < 2; i++)
        )
      data_cmd_adapter_out
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
     
        ,.link_i(lce_data_cmd_link_o_stitch[i][P])
        ,.link_o(lce_data_cmd_link_i_stitch[i][P])
@@ -490,7 +500,7 @@ for (genvar i = 0; i < 2; i++)
        )
      data_resp_adapter_in
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
 
        ,.data_i(lce_data_resp_packet[i])
        ,.v_i(lce_data_resp_v_lo[i])
@@ -510,7 +520,7 @@ for (genvar i = 0; i < 2; i++)
        )
      data_resp_router
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
 
        ,.my_x_i(x_cord_width_p'(2*my_x_i+i))
        ,.my_y_i(my_y_i)
@@ -543,7 +553,7 @@ bsg_wormhole_router_adapter_in
    )
  data_cmd_adapter_in
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
 
    ,.data_i(cce_lce_data_cmd_packet)
    ,.v_i(cce_lce_data_cmd_v_lo)
@@ -562,7 +572,7 @@ bsg_wormhole_router_adapter_out
    )
  data_resp_adapter_out
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
 
    ,.link_i(lce_data_resp_link_o_stitch[0][P])
    ,.link_o(lce_data_resp_link_i_stitch[0][P])
@@ -578,7 +588,7 @@ bp_cce_top
    )
  cce
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
    ,.freeze_i(freeze_r)
 
    ,.cfg_w_v_i(cfg_w_v_i)
