@@ -63,9 +63,6 @@ module bp_me_nonsynth_top_test
   logic [num_cce_p-1:0]                                  config_v_lo;
   logic [num_cce_p-1:0]                                  config_ready_li;
 
-  logic [num_cce_p-1:0][cce_instr_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
-  logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]          cce_inst_boot_rom_data;
-
   bp_mem_cce_resp_s [num_cce_p-1:0] mem_resp;
   logic [num_cce_p-1:0] mem_resp_v;
   logic [num_cce_p-1:0] mem_resp_ready;
@@ -215,8 +212,6 @@ module bp_me_nonsynth_top_test
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
        ,.freeze_o(freeze_li[i])
-       ,.boot_rom_addr_o(cce_inst_boot_rom_addr[i])
-       ,.boot_rom_data_i(cce_inst_boot_rom_data[i])
        ,.config_addr_o(config_addr_li[i])
        ,.config_data_o(config_data_li[i])
        ,.config_v_o(config_v_li[i])
@@ -225,14 +220,6 @@ module bp_me_nonsynth_top_test
        ,.config_data_i(config_data_lo[i])
        ,.config_v_i(config_v_lo[i])
        ,.config_ready_o(config_ready_li[i])
-      );
-
-    bp_cce_inst_rom
-      #(.width_p(`bp_cce_inst_width)
-        ,.addr_width_p(cce_instr_ram_addr_width_lp)
-      ) cce_inst_rom (
-        .addr_i(cce_inst_boot_rom_addr[i])
-        ,.data_o(cce_inst_boot_rom_data[i])
       );
 
   end

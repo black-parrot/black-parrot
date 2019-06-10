@@ -17,6 +17,7 @@ module bp_cce_nonsynth_cfg_loader
     , parameter cfg_link_data_width_p = bp_cfg_link_data_width_gp
     , parameter inst_ram_els_p        = "inv"
     , parameter skip_ram_init_p       = 0
+    , parameter cce_ucode_filename_p = "cce_ucode.mem"
     , localparam cfg_writes_lp = (2*inst_ram_els_p)
     , localparam data_hi_width_lp = (inst_width_p-cfg_link_data_width_p)
     , localparam data_hi_pad_lp = (cfg_link_data_width_p-data_hi_width_lp)
@@ -24,9 +25,6 @@ module bp_cce_nonsynth_cfg_loader
   (input                                             clk_i
    , input                                           reset_i
    , output logic                                    freeze_o
-
-   , output logic [inst_ram_addr_width_p-1:0]        boot_rom_addr_o
-   , input [inst_width_p-1:0]                        boot_rom_data_i
 
    // Config channel
    , output logic [cfg_link_addr_width_p-2:0]        config_addr_o
@@ -40,6 +38,15 @@ module bp_cce_nonsynth_cfg_loader
    , output logic                                    config_ready_o
 
   );
+
+
+  logic [`bp_cce_inst_width-1:0] cce_inst_boot_rom [0:inst_ram_els_p-1];
+  logic [inst_ram_addr_width_p-1:0] cce_inst_boot_rom_addr;
+  logic [`bp_cce_inst_width-1:0] cce_inst_boot_rom_data;
+
+  initial $readmemb(cce_ucode_filename_p, cce_inst_boot_rom);
+
+  assign cce_inst_boot_rom_data = cce_inst_boot_rom[cce_inst_boot_rom_addr];
 
   // TODO: reads if we want
   wire unused1;
@@ -75,7 +82,7 @@ module bp_cce_nonsynth_cfg_loader
 
   logic cfg_hi;
   assign cfg_hi = cfg_addr_r[0];
-  assign boot_rom_addr_o = cfg_addr_r[1+:inst_ram_addr_width_p];
+  assign cce_inst_boot_rom_addr = cfg_addr_r[1+:inst_ram_addr_width_p];
 
   always_comb begin
     if (reset_i) begin
@@ -110,8 +117,8 @@ module bp_cce_nonsynth_cfg_loader
           config_w_o = 1'b1;
           config_addr_o = cfg_addr_r;
           config_data_o = (cfg_hi)
-            ? {(data_hi_pad_lp)'('0),boot_rom_data_i[cfg_link_data_width_p+:data_hi_width_lp]}
-            : boot_rom_data_i[0+:cfg_link_data_width_p];
+            ? {(data_hi_pad_lp)'('0),cce_inst_boot_rom_data[cfg_link_data_width_p+:data_hi_width_lp]}
+            : cce_inst_boot_rom_data[0+:cfg_link_data_width_p];
           if (config_ready_i) begin
             cfg_addr_n = (cfg_addr_r[0+:(inst_ram_addr_width_p+1)] == (cfg_writes_lp-1))
                          ? {1'b1, (cfg_link_addr_width_p-2)'('0)} // set address to write mode reg
