@@ -29,7 +29,6 @@ tools:
 	$(MAKE) systemc && rm -rf systemc*
 	$(MAKE) verilator
 	$(MAKE) gnu
-	$(MAKE) fesvr     && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-fesvr
 	$(MAKE) spike     && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-isa-sim
 	$(MAKE) axe       && git submodule deinit -f $(BP_EXTERNAL_DIR)/axe
 	$(MAKE) dramsim2
