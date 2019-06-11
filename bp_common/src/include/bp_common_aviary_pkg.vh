@@ -38,7 +38,12 @@ package bp_common_aviary_pkg;
       ,cfg_core_width: 8
       ,cfg_addr_width: 16
       ,cfg_data_width: 32
-      ,noc_width     : 64
+      ,noc_width     : 32
+      ,noc_len_width : 5
+      ,noc_reserved_width: 2
+      ,ct_remote_credits: 32
+      ,ct_max_payload_flits: 20
+      ,ct_lg_credit_decimation: 3
       ,max_credits   : 4
 
       ,dword_width      : 64
@@ -76,7 +81,12 @@ package bp_common_aviary_pkg;
       ,cfg_core_width: 8
       ,cfg_addr_width: 16
       ,cfg_data_width: 32
-      ,noc_width     : 64
+      ,noc_width     : 32
+      ,noc_len_width : 5
+      ,noc_reserved_width: 2
+      ,ct_remote_credits: 32
+      ,ct_max_payload_flits: 20
+      ,ct_lg_credit_decimation: 3
       ,max_credits   : 4
 
       ,dword_width      : 64
@@ -114,7 +124,12 @@ package bp_common_aviary_pkg;
       ,cfg_core_width: 8
       ,cfg_addr_width: 16
       ,cfg_data_width: 32
-      ,noc_width     : 64
+      ,noc_width     : 32
+      ,noc_len_width : 5
+      ,noc_reserved_width: 2
+      ,ct_remote_credits: 32
+      ,ct_max_payload_flits: 20
+      ,ct_lg_credit_decimation: 3
       ,max_credits   : 4
 
       ,dword_width      : 64
@@ -152,7 +167,12 @@ package bp_common_aviary_pkg;
       ,cfg_core_width: 8
       ,cfg_addr_width: 16
       ,cfg_data_width: 32
-      ,noc_width     : 64
+      ,noc_width     : 32
+      ,noc_len_width : 5
+      ,noc_reserved_width: 2
+      ,ct_remote_credits: 32
+      ,ct_max_payload_flits: 20
+      ,ct_lg_credit_decimation: 3
       ,max_credits   : 4
 
       ,dword_width      : 64
@@ -190,7 +210,12 @@ package bp_common_aviary_pkg;
       ,cfg_core_width: 8
       ,cfg_addr_width: 16
       ,cfg_data_width: 32
-      ,noc_width     : 64
+      ,noc_width     : 32
+      ,noc_len_width : 5
+      ,noc_reserved_width: 2
+      ,ct_remote_credits: 32
+      ,ct_max_payload_flits: 20
+      ,ct_lg_credit_decimation: 3
       ,max_credits   : 4
 
       ,dword_width      : 64
@@ -228,7 +253,12 @@ package bp_common_aviary_pkg;
       ,cfg_core_width: 8
       ,cfg_addr_width: 16
       ,cfg_data_width: 32
-      ,noc_width     : 64
+      ,noc_width     : 32
+      ,noc_len_width : 5
+      ,noc_reserved_width: 2
+      ,ct_remote_credits: 32
+      ,ct_max_payload_flits: 20
+      ,ct_lg_credit_decimation: 3
       ,max_credits   : 4
 
       ,dword_width      : 64

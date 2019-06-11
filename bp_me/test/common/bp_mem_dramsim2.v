@@ -134,6 +134,9 @@ module bp_mem_dramsim2
       mem_resp_v_o <= '0;
       mem_data_resp_s_o <= '0;
       mem_data_resp_v_o <= '0;
+      
+      mem_data_cmd_yumi_o <= '0;
+      mem_cmd_yumi_o <= '0;
 
       read_accepted = '0;
       write_accepted = '0;
@@ -177,7 +180,6 @@ module bp_mem_dramsim2
         end
         RD_CMD: begin
           if(mem_data_resp_ready_i) begin
-            mem_cmd_yumi_o <= '0;
             mem_st <= dramsim_valid ? READY : RD_CMD;
   
             mem_data_resp_s_o.msg_type <= mem_cmd_s_r.msg_type;
@@ -198,7 +200,6 @@ module bp_mem_dramsim2
         end
         RD_DATA_CMD: begin
           if(mem_resp_ready_i) begin
-            mem_data_cmd_yumi_o <= '0;
             mem_st <= dramsim_valid ? READY : RD_DATA_CMD;
   
             mem_resp_s_o.msg_type <= mem_data_cmd_s_r.msg_type;

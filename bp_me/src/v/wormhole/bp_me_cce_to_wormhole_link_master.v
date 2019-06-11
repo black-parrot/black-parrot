@@ -2,7 +2,6 @@
  * bp_me_cce_to_wormhole_link_master.v
  */
  
-`include "bsg_noc_links.vh"
 `include "bp_mem_wormhole.vh"
 
 module bp_me_cce_to_wormhole_link_master
@@ -99,240 +98,269 @@ module bp_me_cce_to_wormhole_link_master
   
   
   // CCE-MEM interface packets
-  
   `declare_bp_me_if(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
   
-  logic [block_size_in_bits_lp-1:0] mem_data_cmd_data_r, mem_data_cmd_data_n;
-  bp_cce_mem_cmd_s mem_cmd;
-  bp_cce_mem_data_cmd_s mem_data_cmd;
-  bp_mem_cce_resp_s mem_resp_r, mem_resp_n;
-  bp_mem_cce_data_resp_s mem_data_resp_r, mem_data_resp_n;
+  // Wormhole packet definition
+  `declare_bp_mem_wormhole_packet_s(reserved_width_p, x_cord_width_p, y_cord_width_p, len_width_p, bp_cce_mem_data_cmd_width_lp, bp_send_wormhole_packet_s);
+  `declare_bp_mem_wormhole_packet_s(reserved_width_p, x_cord_width_p, y_cord_width_p, len_width_p, bp_mem_cce_data_resp_width_lp, bp_receive_wormhole_packet_s);
+  
+  // Wormhole packet length
+  localparam nc_offset_lp = block_size_in_bits_lp-lce_req_data_width_p;
+  
+  localparam cmd_wormhole_packet_width_lp = `bp_mem_wormhole_packet_width(reserved_width_p, x_cord_width_p, y_cord_width_p, len_width_p, bp_cce_mem_cmd_width_lp);
+  localparam data_cmd_wormhole_packet_width_lp = `bp_mem_wormhole_packet_width(reserved_width_p, x_cord_width_p, y_cord_width_p, len_width_p, bp_cce_mem_data_cmd_width_lp);
+  localparam data_cmd_nc_wormhole_packet_width_lp = data_cmd_wormhole_packet_width_lp-nc_offset_lp;
 
+  localparam cmd_ratio_lp = `BSG_CDIV(cmd_wormhole_packet_width_lp, width_p);
+  localparam data_cmd_ratio_lp = `BSG_CDIV(data_cmd_wormhole_packet_width_lp, width_p);
+  localparam data_cmd_nc_ratio_lp = `BSG_CDIV(data_cmd_nc_wormhole_packet_width_lp, width_p);
+  
+
+  /********************** Sending Side ***********************/
+  
+  bp_cce_mem_cmd_s mem_cmd, mem_cmd_r, mem_cmd_n;
+  bp_cce_mem_data_cmd_s mem_data_cmd, mem_data_cmd_r, mem_data_cmd_n;
+  
   assign mem_cmd = mem_cmd_i;
   assign mem_data_cmd = mem_data_cmd_i;
-  assign mem_resp_o = mem_resp_r;
-  assign mem_data_resp_o = mem_data_resp_r;
   
+  typedef enum logic [1:0] {
+     SEND_RESET
+    ,SEND_READY
+    ,SEND_LOAD
+    ,SEND_STORE
+  } send_state_e;
   
-  // BP mem wormhole packets
+  send_state_e send_state_r, send_state_n;
+  logic [len_width_p-1:0] send_counter_r, send_counter_n;
   
-  `declare_bp_mem_wormhole_header_s(width_p, reserved_width_p, x_cord_width_p, y_cord_width_p, len_width_p, `bp_lce_cce_nc_req_size_width, paddr_width_p, bp_mem_wormhole_header_s);
+  logic [word_select_bits_lp-1:0] send_sel_lo;
+  assign send_sel_lo = mem_data_cmd_r.addr[byte_offset_bits_lp+:word_select_bits_lp];
   
-  bp_mem_wormhole_header_s data_o_cast;
+  bp_cce_mem_data_cmd_s mem_data_cmd_r_cast;
+  assign mem_data_cmd_r_cast.msg_type = mem_data_cmd_r.msg_type;
+  assign mem_data_cmd_r_cast.addr = mem_data_cmd_r.addr;
+  assign mem_data_cmd_r_cast.payload = mem_data_cmd_r.payload;
+  assign mem_data_cmd_r_cast.non_cacheable = mem_data_cmd_r.non_cacheable;
+  assign mem_data_cmd_r_cast.nc_size = mem_data_cmd_r.nc_size;
+  assign mem_data_cmd_r_cast.data = mem_data_cmd_r.data;
   
-
-  typedef enum logic [2:0] {
-     RESET
-    ,READY
-    ,PRE_LOAD
-    ,LOAD
-    ,STORE
-    ,LOAD_RESP
-    ,PRE_STORE_ACK
-    ,STORE_ACK
-  } mem_state_e;
-
-
-  mem_state_e state_r, state_n;
-  logic [3:0] counter_r, counter_n;
+  bp_cce_mem_data_cmd_s mem_data_cmd_nc_r_cast;
+  assign mem_data_cmd_nc_r_cast.msg_type = mem_data_cmd_r.msg_type;
+  assign mem_data_cmd_nc_r_cast.addr = mem_data_cmd_r.addr;
+  assign mem_data_cmd_nc_r_cast.payload = mem_data_cmd_r.payload;
+  assign mem_data_cmd_nc_r_cast.non_cacheable = mem_data_cmd_r.non_cacheable;
+  assign mem_data_cmd_nc_r_cast.nc_size = mem_data_cmd_r.nc_size;
+  assign mem_data_cmd_nc_r_cast.data = {mem_data_cmd_r.data[(send_sel_lo*lce_req_data_width_p)+:lce_req_data_width_p], nc_offset_lp'(0)};
   
+  bp_send_wormhole_packet_s send_wormhole_packet_lo;
+  logic [data_cmd_ratio_lp*width_p-1:0] send_wormhole_packet_lo_padded;
   
-  // Select write word
+  assign send_wormhole_packet_lo_padded = {'0, send_wormhole_packet_lo};
+  assign data_o = send_wormhole_packet_lo_padded[(send_counter_r*width_p)+:width_p];
   
-  logic [word_select_bits_lp-1:0] write_word_sel_r, write_word_sel_n;
-  assign data_o = (state_r == READY)? data_o_cast : 
-        mem_data_cmd_data_r[(write_word_sel_r*lce_req_data_width_p)+:lce_req_data_width_p];
-  
-  
-  // Select read word
-  
-  logic [word_select_bits_lp-1:0] read_word_sel_r, read_word_sel_n;
-  
-  
-  always_ff @(posedge clk_i) begin
-  
-    if (reset_i) begin
-        state_r <= RESET;
-        counter_r <= 0;
-        write_word_sel_r <= 0;
-        read_word_sel_r <= 0;
-    end else begin
-        state_r <= state_n;
-        counter_r <= counter_n;
-        write_word_sel_r <= write_word_sel_n;
-        read_word_sel_r <= read_word_sel_n;
-    end
-    
-    mem_data_cmd_data_r <= mem_data_cmd_data_n;
-    mem_resp_r <= mem_resp_n;
-    mem_data_resp_r <= mem_data_resp_n;
-  
+  always_ff @(posedge clk_i) 
+  begin
+    if (reset_i) 
+      begin
+        send_state_r <= SEND_RESET;
+        send_counter_r <= '0;
+      end 
+    else 
+      begin
+        send_state_r <= send_state_n;
+        send_counter_r <= send_counter_n;
+      end
+    mem_cmd_r <= mem_cmd_n;
+    mem_data_cmd_r <= mem_data_cmd_n;
   end
   
+  always_comb 
+  begin
   
-  always_comb begin
-  
-    state_n = state_r;
-    counter_n = counter_r;
-    write_word_sel_n = write_word_sel_r;
-    read_word_sel_n = read_word_sel_r;
+    send_state_n = send_state_r;
+    send_counter_n = send_counter_r;
     
-    mem_data_cmd_data_n = mem_data_cmd_data_r;
-    mem_resp_n = mem_resp_r;
-    mem_data_resp_n = mem_data_resp_r;
+    mem_cmd_n = mem_cmd_r;
+    mem_data_cmd_n = mem_data_cmd_r;
     
-    data_o_cast.reserved = 0;
-    data_o_cast.dummy = 0;
-    data_o_cast.src_x_cord = my_x_i;
-    data_o_cast.src_y_cord = my_y_i;
+    send_wormhole_packet_lo.reserved = '0;
+    send_wormhole_packet_lo.src_x_cord = my_x_i;
+    send_wormhole_packet_lo.src_y_cord = my_y_i;
     
     // Default state is mem_cmd
-    data_o_cast.x_cord = mem_cmd_dest_x_i;
-    data_o_cast.y_cord = mem_cmd_dest_y_i;
-    data_o_cast.write_en = 0;
-    data_o_cast.non_cacheable = mem_cmd.non_cacheable;
-    data_o_cast.nc_size = mem_cmd.nc_size;
-    data_o_cast.addr = mem_cmd.addr;
-    data_o_cast.len = 0;
+    send_wormhole_packet_lo.x_cord = mem_cmd_dest_x_i;
+    send_wormhole_packet_lo.y_cord = mem_cmd_dest_y_i;
+    send_wormhole_packet_lo.write_en = 1'b0;
+    send_wormhole_packet_lo.non_cacheable = mem_cmd_r.non_cacheable;
+    send_wormhole_packet_lo.data = mem_cmd_r;
+    send_wormhole_packet_lo.len = cmd_ratio_lp-1;
     
-    mem_cmd_yumi_o = 0;
-    mem_data_cmd_yumi_o = 0;
-    mem_resp_v_o = 0;
-    mem_data_resp_v_o = 0;
+    mem_cmd_yumi_o = 1'b0;
+    mem_data_cmd_yumi_o = 1'b0;
+    valid_o = 1'b0;
     
-    valid_o = 0;
-    ready_o = 1;
+    if (send_state_r == SEND_RESET) 
+      begin
+        send_state_n = SEND_READY;
+      end
+    else if (send_state_r == SEND_READY) 
+      begin
+        if (mem_data_cmd_v_i) 
+          begin
+            mem_data_cmd_n = mem_data_cmd;
+            mem_data_cmd_yumi_o = 1'b1;
+            send_state_n = SEND_STORE;
+          end 
+        else if (mem_cmd_v_i) 
+          begin
+            mem_cmd_n = mem_cmd;
+            mem_cmd_yumi_o = 1'b1;
+            send_state_n = SEND_LOAD;
+          end
+      end
+    else if (send_state_r == SEND_LOAD) 
+      begin
+        valid_o = 1'b1;
+        if (ready_i) 
+          begin
+            send_counter_n = send_counter_r + 1'b1;
+            if (send_counter_r == cmd_ratio_lp-1) 
+              begin
+                send_counter_n = 1'b0;
+                send_state_n = SEND_READY;
+              end
+          end
+      end
+    else if (send_state_r == SEND_STORE) 
+      begin
+        send_wormhole_packet_lo.x_cord = mem_data_cmd_dest_x_i;
+        send_wormhole_packet_lo.y_cord = mem_data_cmd_dest_y_i;
+        send_wormhole_packet_lo.write_en = 1'b1;
+        send_wormhole_packet_lo.non_cacheable = mem_data_cmd_r.non_cacheable;
+        send_wormhole_packet_lo.data = (mem_data_cmd_r.non_cacheable)? mem_data_cmd_nc_r_cast[bp_cce_mem_data_cmd_width_lp-1:nc_offset_lp] : mem_data_cmd_r_cast;
+        send_wormhole_packet_lo.len = (mem_data_cmd_r.non_cacheable)? data_cmd_nc_ratio_lp-1 : data_cmd_ratio_lp-1;
+        valid_o = 1'b1;
+        if (ready_i)
+          begin
+            send_counter_n = send_counter_r + 1'b1;
+            if (send_counter_r==data_cmd_ratio_lp-1 & ~mem_data_cmd_r.non_cacheable
+              | send_counter_r==data_cmd_nc_ratio_lp-1 & mem_data_cmd_r.non_cacheable) 
+              begin
+                send_counter_n = 1'b0;
+                send_state_n = SEND_READY;
+              end
+          end
+      end
     
-    if (state_r == RESET) begin
-    
-        state_n = READY;
-        
-    end
+  end
 
-    else if (state_r == READY) begin
-    
-        if (mem_data_cmd_v_i) begin
-            
-            data_o_cast.x_cord = mem_data_cmd_dest_x_i;
-            data_o_cast.y_cord = mem_data_cmd_dest_y_i;
-            data_o_cast.write_en = 1;
-            data_o_cast.non_cacheable = mem_data_cmd.non_cacheable;
-            data_o_cast.nc_size = mem_data_cmd.nc_size;
-            data_o_cast.addr = mem_data_cmd.addr;
-            data_o_cast.len = (mem_data_cmd.non_cacheable)? 1 : 
-                    (block_size_in_bits_lp/lce_req_data_width_p);
-            
-            mem_data_cmd_data_n = mem_data_cmd.data;
-            
-            mem_resp_n.msg_type = mem_data_cmd.msg_type;
-            mem_resp_n.addr = mem_data_cmd.addr;
-            mem_resp_n.payload.lce_id = mem_data_cmd.payload.lce_id;
-            mem_resp_n.payload.way_id = mem_data_cmd.payload.way_id;
-            mem_resp_n.payload.req_addr = mem_data_cmd.payload.req_addr;
-            mem_resp_n.payload.tr_lce_id = mem_data_cmd.payload.tr_lce_id;
-            mem_resp_n.payload.tr_way_id = mem_data_cmd.payload.tr_way_id;
-            mem_resp_n.payload.transfer = mem_data_cmd.payload.transfer;
-            mem_resp_n.payload.replacement = mem_data_cmd.payload.replacement;
-            mem_resp_n.non_cacheable = mem_data_cmd.non_cacheable;
-            mem_resp_n.nc_size = mem_data_cmd.nc_size;
-            
-            counter_n = (mem_data_cmd.non_cacheable)? 1 : 
-                    (block_size_in_bits_lp/lce_req_data_width_p);
-            write_word_sel_n = (mem_data_cmd.non_cacheable)?
-                mem_data_cmd.addr[byte_offset_bits_lp+:word_select_bits_lp] : 0;
-            
-            valid_o = 1;
-            if (ready_i) begin
-                mem_data_cmd_yumi_o = 1;
-                state_n = STORE;
-            end
-            
-        end else if (mem_cmd_v_i) begin
-            
-            mem_data_resp_n.msg_type = mem_cmd.msg_type;
-            mem_data_resp_n.payload.lce_id = mem_cmd.payload.lce_id;
-            mem_data_resp_n.payload.way_id = mem_cmd.payload.way_id;
-            mem_data_resp_n.addr = mem_cmd.addr;
-            mem_data_resp_n.data = 0;
-            mem_data_resp_n.non_cacheable = mem_cmd.non_cacheable;
-            mem_data_resp_n.nc_size = mem_cmd.nc_size;
-            
-            counter_n = (mem_cmd.non_cacheable)? 1 : 
-                    (block_size_in_bits_lp/lce_req_data_width_p);
-            read_word_sel_n = 0;
-            
-            valid_o = 1;
-            if (ready_i) begin
-                mem_cmd_yumi_o = 1;
-                state_n = PRE_LOAD;
-            end
-            
-        end
-    
-    end
-
-    else if (state_r == PRE_LOAD) begin
-    
-        if (valid_i) begin
-            state_n = LOAD;
-        end
-    
-    end
-    
-    else if (state_r == LOAD) begin
-    
-        if (valid_i) begin
-            mem_data_resp_n.data[(read_word_sel_r*lce_req_data_width_p)+:lce_req_data_width_p] 
-                = data_i;
-            counter_n = counter_r - 1;
-            read_word_sel_n = read_word_sel_r + 1;
-            if (counter_r == 1) begin
-                state_n = LOAD_RESP;
-            end
-        end
-    
-    end
-    
-    else if (state_r == STORE) begin
-        
-        valid_o = 1;
-        if (ready_i) begin
-            counter_n = counter_r - 1;
-            write_word_sel_n = write_word_sel_r + 1;
-            if (counter_r == 1) begin
-                state_n = PRE_STORE_ACK;
-            end
-        end
-        
-    end
-    
-    else if (state_r == LOAD_RESP) begin
-    
-        if (mem_data_resp_ready_i) begin
-            mem_data_resp_v_o = 1;
-            state_n = READY;
-        end
-    
-    end
-    
-    else if (state_r == PRE_STORE_ACK) begin
-    
-        if (valid_i) begin
-            state_n = STORE_ACK;
-        end
-    
-    end
-    
-    else if (state_r == STORE_ACK) begin
-    
-        if (mem_resp_ready_i) begin
-            mem_resp_v_o = 1;
-            state_n = READY;
-        end
-    
-    end
-    
+  /********************** Receiving Side ***********************/
   
+  bp_mem_cce_data_resp_s mem_data_resp;
+  assign mem_data_resp_o = mem_data_resp;
+  
+  typedef enum logic [1:0] {
+     RECEIVE_RESET
+    ,RECEIVE_READY
+    ,RECEIVE_RESP
+  } receive_state_e;
+  
+  receive_state_e receive_state_r, receive_state_n;
+  logic [len_width_p-1:0] receive_counter_r, receive_counter_n;
+  
+  bp_receive_wormhole_packet_s receive_wormhole_packet_r, receive_wormhole_packet_n;
+  
+  assign mem_resp_o = bp_mem_cce_resp_width_lp'(receive_wormhole_packet_r.data);
+  
+  bp_mem_cce_data_resp_s mem_data_resp_nc_cast;
+  assign mem_data_resp_nc_cast = {receive_wormhole_packet_r.data, nc_offset_lp'(0)};
+  
+  always_comb
+  begin
+    if (receive_wormhole_packet_r.non_cacheable)
+      begin
+        mem_data_resp.msg_type = mem_data_resp_nc_cast.msg_type;
+        mem_data_resp.addr = mem_data_resp_nc_cast.addr;
+        mem_data_resp.payload = mem_data_resp_nc_cast.payload;
+        mem_data_resp.non_cacheable = mem_data_resp_nc_cast.non_cacheable;
+        mem_data_resp.nc_size = mem_data_resp_nc_cast.nc_size;
+        mem_data_resp.data = {'0, mem_data_resp_nc_cast.data[nc_offset_lp+: lce_req_data_width_p]};
+      end
+    else
+      begin
+        mem_data_resp = receive_wormhole_packet_r.data;
+      end
   end
   
+  always_ff @(posedge clk_i) 
+  begin
+    if (reset_i)
+      begin
+        receive_state_r <= RECEIVE_RESET;
+        receive_counter_r <= '0;
+        receive_wormhole_packet_r <= '0;
+      end
+    else 
+      begin
+        receive_state_r <= receive_state_n;
+        receive_counter_r <= receive_counter_n;
+        receive_wormhole_packet_r <= receive_wormhole_packet_n;
+      end
+  end
+  
+  always_comb 
+  begin
+  
+    receive_state_n = receive_state_r;
+    receive_counter_n = receive_counter_r;
+    
+    receive_wormhole_packet_n = receive_wormhole_packet_r;
+    
+    mem_resp_v_o = 1'b0;
+    mem_data_resp_v_o = 1'b0;
+    ready_o = 1'b0;
+    
+    if (receive_state_r == RECEIVE_RESET)
+      begin
+        receive_state_n = RECEIVE_READY;
+      end
+    else if (receive_state_r == RECEIVE_READY)
+      begin
+        ready_o = 1'b1;
+        if (valid_i) 
+          begin
+            receive_wormhole_packet_n[(receive_counter_r*width_p)+:width_p] = data_i;
+            receive_counter_n = receive_counter_r + 1'b1;
+            if (receive_counter_r == receive_wormhole_packet_n.len)
+              begin
+                receive_counter_n = 1'b0;
+                receive_state_n = RECEIVE_RESP;
+              end
+          end
+      end
+    else if (receive_state_r == RECEIVE_RESP) 
+      begin
+        if (receive_wormhole_packet_r.write_en) 
+          begin
+            mem_resp_v_o = 1'b1;
+            if (mem_resp_ready_i)
+              begin
+                receive_wormhole_packet_n = '0;
+                receive_state_n = RECEIVE_READY;
+              end
+          end
+        else
+          begin
+            mem_data_resp_v_o = 1'b1;
+            if (mem_data_resp_ready_i)
+              begin
+                receive_wormhole_packet_n = '0;
+                receive_state_n = RECEIVE_READY;
+              end
+          end
+      end
+ 
+  end
+
 endmodule
