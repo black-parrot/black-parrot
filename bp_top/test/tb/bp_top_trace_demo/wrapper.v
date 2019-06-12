@@ -15,7 +15,6 @@ module wrapper
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
    , parameter calc_trace_p = 0
-   , parameter calc_print_p = 0
    , parameter cce_trace_p  = 0
    )
   (input                                                      clk_i
@@ -55,7 +54,6 @@ module wrapper
   bp_top
    #(.cfg_p(cfg_p)
      ,.calc_trace_p(calc_trace_p)
-     ,.calc_print_p(calc_print_p)
      ,.cce_trace_p(cce_trace_p)
      )
    dut

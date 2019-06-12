@@ -9,7 +9,6 @@ module bp_be_nonsynth_tracer
    // Default parameters
    , parameter calc_trace_p = 0
    , parameter calc_trace_file_p = "debug"
-   , parameter calc_print_p = 0
 
    // Calculated parameters
    , localparam mhartid_width_lp      = `BSG_SAFE_CLOG2(num_core_p)
@@ -104,18 +103,16 @@ wire [reg_data_width_lp-1:0] unused1 = fwb_result_i;
 
 //Shared logic 
 logic booted_r;
-if (calc_trace_p | calc_print_p) begin
 
-    bsg_dff_reset_en
-     #(.width_p(1))
-     boot_reg
-      (.clk_i(clk_i)
-       ,.reset_i(reset_i)
-       ,.en_i(issue_pkt_v_i)
-       ,.data_i(1'b1)
-       ,.data_o(booted_r)
-       );
-end
+bsg_dff_reset_en
+ #(.width_p(1))
+ boot_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(issue_pkt_v_i)
+   ,.data_i(1'b1)
+   ,.data_o(booted_r)
+   );
 
 
 if (calc_trace_p) 
@@ -265,9 +262,8 @@ end
     end
 end //fi1
 
-//If you want to print without creating the log
-else if(calc_print_p)
-  begin : fi2
+//If you want to print without creating the log, this is the default
+else begin
     always_ff @(posedge clk_i) begin
 
         if(booted_r) begin
@@ -292,7 +288,7 @@ else if(calc_print_p)
             end
         end
     end
-end // fi2
+end
 
 endmodule : bp_be_nonsynth_tracer
 

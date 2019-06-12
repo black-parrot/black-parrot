@@ -23,7 +23,6 @@ module bp_top
                                  )
 
    , parameter calc_trace_p = 0
-   , parameter calc_print_p = 0
    , parameter cce_trace_p  = 0
 
    , parameter x_cord_width_p = `BSG_SAFE_CLOG2(num_lce_p)
@@ -171,7 +170,6 @@ for(genvar i = 0; i < num_core_p; i++)
     bp_tile
      #(.cfg_p(cfg_p)
        ,.calc_trace_p(calc_trace_p)
-       ,.calc_print_p(calc_print_p)
        ,.cce_trace_p(cce_trace_p)
        )
      tile

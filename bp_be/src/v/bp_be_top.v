@@ -27,8 +27,7 @@ module bp_be_top
                                  )
 
    , parameter calc_trace_p = 0
-   , parameter calc_print_p = 0
-
+ 
 
    // Default parameters 
    , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)

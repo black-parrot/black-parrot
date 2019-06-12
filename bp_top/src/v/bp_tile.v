@@ -23,7 +23,6 @@ module bp_tile
 
    // Used to enable trace replay outputs for testbench
    , parameter calc_trace_p = 0
-   , parameter calc_print_p = 0
    , parameter cce_trace_p  = 0
 
    , parameter x_cord_width_p = `BSG_SAFE_CLOG2(num_lce_p)
@@ -154,7 +153,6 @@ assign proc_cfg_cast_i = proc_cfg_i;
 bp_core   
  #(.cfg_p(cfg_p)
    ,.calc_trace_p(calc_trace_p)
-   ,.calc_print_p(calc_print_p)
    )
  core 
   (.clk_i(clk_i)
