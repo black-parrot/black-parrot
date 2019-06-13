@@ -47,7 +47,7 @@ $BSG_IP_CORES_DIR/bsg_dataflow/bsg_fifo_1rw_large.v
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_serial_in_parallel_out.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_thermometer_count.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_counter_up_down_variable.v
-$BSG_IP_CORES_DIR/bsg_misc/bsg_counter_generic.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_counter_set_down.v
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_round_robin_2_to_2.v
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_fifo_1r1w_pseudo_large.v
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_fifo_1r1w_small.v
