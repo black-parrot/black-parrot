@@ -236,3 +236,7 @@ BEEBS_TESTS = \
   ud \
   whetstone \
   wikisort
+
+BP_SPEC = \
+  vpr
+

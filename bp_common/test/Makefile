@@ -20,6 +20,7 @@ riscv: riscv_mem riscv_spike
 coremark: coremark_mem coremark_spike
 beebs: beebs_mem beebs_spike
 littlefs_test: littlefs_test_mem littlefs_test_spike
+spec: spec_mem spec_spike
 
 # OpenSBI requires hardfloat and does not support softfloat libraries, so the compilation will fail
 #opensbi: opensbi_mem
@@ -71,6 +72,11 @@ beebs_elf:
 	$(MAKE) -C $(TEST_DIR)/src/beebs/
 	find $(TEST_DIR)/src/beebs/src/ -type f -executable -execdir mv {} $(MEM_DIR)/{}.riscv \;
 
+#Be sure to read the README and clone spec first
+spec_elf:
+	$(MAKE) -C $(TEST_DIR)/src/spec/spec2000/benchmarks/spec2000/CINT2000/175.vpr/src.raw/ 
+	find $(TEST_DIR)/src/spec/spec2000/benchmarks/spec2000/CINT2000/175.vpr/src.raw/  -executable -type f -execdir mv {} $(MEM_DIR)/{} \;
+	find $(TEST_DIR)/src/spec/spec2000/benchmarks/spec2000/CINT2000/175.vpr/src.raw/  -name "*.dump" -execdir mv {} $(MEM_DIR)/{} \;
 
 riscv_mem: riscv_elf
 riscv_mem: $(foreach x, $(RV64_P_TESTS) $(RV64_V_TESTS) $(RV64_BENCHMARKS), $(x).mem)
@@ -103,6 +109,10 @@ beebs_mem: beebs_elf
 beebs_mem: $(foreach x, $(BEEBS_TESTS), $(x).mem)
 beebs_spike: $(foreach x, $(BEEBS_TESTS), $(x).spike)
 
+spec_mem: spec_elf
+spec_mem: $(foreach x, $(BP_SPEC), $(x).mem)
+spec_spike: $(foreach x, $(BP_SPEC), $(x).spike)
+
 %.mem: 
 	$(RISCV_OBJCOPY) $(MEM_DIR)/$*.riscv $(MEM_DIR)/$@
 
@@ -116,6 +126,7 @@ clean:
 	-$(MAKE) -C $(TEST_DIR)/src/coremark/barebones clean
 	-$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test/fhello clean
 	-$(MAKE) -C $(TEST_DIR)/src/beebs clean
+	-$(MAKE) -C $(TEST_DIR)/src/spec/spec2000/benchmarks/spec2000/CINT2000/175.vpr/src.raw/ clean
 	-rm -ff $(MEM_DIR)/*
 
 ####### These targets are not maintained at the moment
