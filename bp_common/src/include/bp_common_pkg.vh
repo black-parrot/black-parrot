@@ -40,6 +40,7 @@ package bp_common_pkg;
   
   localparam cfg_link_dev_base_addr_gp = 32'h01??_????;
   localparam clint_dev_base_addr_gp    = 32'h02??_????;
+  localparam host_dev_base_addr_gp     = 32'h03??_????;
   localparam plic_dev_base_addr_gp     = 32'h0c??_????;
   
   localparam mipi_reg_base_addr_gp     = 32'h0200_0???;

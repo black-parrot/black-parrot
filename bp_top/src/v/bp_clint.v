@@ -56,16 +56,6 @@ bp_mem_cce_data_resp_s mem_data_resp_r, mem_data_resp_n;
 
 assign mem_cmd_cast_i       = mem_cmd_i;
 assign mem_data_cmd_cast_i  = mem_data_cmd_i;
-assign mem_data_resp_o      = mem_data_resp_r;
-assign mem_resp_o           = mem_resp_r;
-
-typedef enum logic [2:0] {
-  READY
-  ,LOAD_RESP
-  ,STORE_ACK
-} state_e;
-
-state_e state_r, state_n;
 
 localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
 
@@ -320,68 +310,60 @@ wire [dword_width_p-1:0] rdata_lo = plic_cmd_v
                                         ? mtimecmp_lo 
                                         : mtime_r;
 
-always_comb begin
+// Possibly unnecessary, if we convert the WH adapter to buffer in both directions,
+//   rather than sending in 1 cycle and receiving in the next
+bp_mem_cce_data_resp_s mem_data_resp_lo;
+logic mem_data_resp_ready_lo;
+assign mem_cmd_yumi_o = mem_cmd_v_i & mem_data_resp_ready_lo;
+bsg_one_fifo
+ #(.width_p(mem_cce_data_resp_width_lp))
+ mem_data_resp_buffer
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   
+   ,.data_i(mem_data_resp_lo)
+   ,.v_i(mem_cmd_yumi_o)
+   ,.ready_o(mem_data_resp_ready_lo)
 
-  state_n = state_r;
-  mem_resp_n = mem_resp_r;
-  mem_data_resp_n = mem_data_resp_r;
-  
-  mem_cmd_yumi_o      = '0;
-  mem_data_cmd_yumi_o = '0;
-  mem_resp_v_o        = '0;
-  mem_data_resp_v_o   = '0;
-  
-  if(state_r == READY) begin
-    if(mem_cmd_v_i) begin
-    
-      mem_data_resp_n.msg_type      = mem_cmd_cast_i.msg_type;
-      mem_data_resp_n.addr          = mem_cmd_cast_i.addr;
-      mem_data_resp_n.payload       = mem_cmd_cast_i.payload;
-      mem_data_resp_n.non_cacheable = mem_cmd_cast_i.non_cacheable;
-      mem_data_resp_n.nc_size       = mem_cmd_cast_i.nc_size;
-      mem_data_resp_n.data          = rdata_lo;
-      
-      mem_cmd_yumi_o = 1'b1;
-      
-      state_n = LOAD_RESP;
-    end
-    else if(mem_data_cmd_v_i) begin
-    
-      mem_resp_n.msg_type           = mem_data_cmd_cast_i.msg_type;
-      mem_resp_n.addr               = mem_data_cmd_cast_i.addr;
-      mem_resp_n.payload            = mem_data_cmd_cast_i.payload;
-      mem_resp_n.non_cacheable      = mem_data_cmd_cast_i.non_cacheable;
-      mem_resp_n.nc_size            = mem_data_cmd_cast_i.nc_size;
-      
-      mem_data_cmd_yumi_o = 1'b1;
-      
-      state_n = STORE_ACK;
-    end
-  end
-  else if(state_r == LOAD_RESP) begin
-    if(mem_data_resp_ready_i) begin
-      mem_data_resp_v_o = 1'b1;
-      state_n = READY;
-    end
-  end
-  else if(state_r == STORE_ACK) begin
-    if(mem_resp_ready_i) begin
-      mem_resp_v_o = 1'b1;
-      state_n = READY;
-    end
-  end
-end
-  
-always_ff @(posedge clk_i) begin
-  if(reset_i) begin
-    state_r <= READY;
-  end
-  else begin
-    state_r <= state_n;
-  end
-  mem_resp_r      <= mem_resp_n;
-  mem_data_resp_r <= mem_data_resp_n;
-end
+   ,.data_o(mem_data_resp_o)
+   ,.v_o(mem_data_resp_v_o)
+   ,.yumi_i(mem_data_resp_ready_i & mem_data_resp_v_o)
+   );
+
+bp_mem_cce_resp_s mem_resp_lo;
+logic mem_resp_ready_lo;
+assign mem_data_cmd_yumi_o = mem_data_cmd_v_i & mem_resp_ready_lo;
+bsg_one_fifo
+ #(.width_p(mem_cce_resp_width_lp))
+ mem_resp_buffer
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.data_i(mem_resp_lo)
+   ,.v_i(mem_data_cmd_yumi_o)
+   ,.ready_o(mem_resp_ready_lo)
+
+   ,.data_o(mem_resp_o)
+   ,.v_o(mem_resp_v_o)
+   ,.yumi_i(mem_resp_ready_i & mem_resp_v_o)
+   );
+
+assign mem_data_resp_lo = 
+  {msg_type       : mem_cmd_cast_i.msg_type
+   ,addr          : mem_cmd_cast_i.addr
+   ,payload       : mem_cmd_cast_i.payload
+   ,non_cacheable : mem_cmd_cast_i.non_cacheable
+   ,nc_size       : mem_cmd_cast_i.nc_size
+   ,data          : rdata_lo
+   };
+
+assign mem_resp_lo =
+  {msg_type       : mem_data_cmd_cast_i.msg_type
+   ,addr          : mem_data_cmd_cast_i.addr
+   ,payload       : mem_data_cmd_cast_i.payload
+   ,non_cacheable : mem_data_cmd_cast_i.non_cacheable
+   ,nc_size       : mem_data_cmd_cast_i.nc_size
+   };
 
 endmodule : bp_clint
 

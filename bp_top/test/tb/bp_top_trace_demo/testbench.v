@@ -250,6 +250,24 @@ mem
   ,.mem_data_resp_ready_i(mem_data_resp_ready_lo)
   );
 
+// TODO: Should actually arbitrate between DRAM write and host write, but this should cause no 
+//   harm except slowdown. As consequence, we don't connect resp from the host_mmio, even though
+//   it does raise one
+bp_nonsynth_host
+ #(.cfg_p(cfg_p))
+ host_mmio
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.mem_data_cmd_i(mem_data_cmd_lo)
+   ,.mem_data_cmd_v_i(mem_data_cmd_v_lo)
+   ,.mem_data_cmd_yumi_o()
+
+   ,.mem_resp_o()
+   ,.mem_resp_v_o()
+   ,.mem_resp_ready_i(mem_resp_ready_lo)
+   );
+
 // CFG loader + rom + link
 bp_me_cce_to_wormhole_link_master
  #(.num_lce_p(num_lce_p)

@@ -40,8 +40,7 @@ module bp_cce_mmio_cfg_loader
    , output                                          mem_resp_ready_o
    );
 
-  wire [mem_cce_resp_width_lp-1:0] unused0 = mem_resp_i;
-  wire unused1 = mem_resp_v_i;
+  wire unused0 = &{mem_resp_i, mem_resp_v_i};
   assign mem_resp_ready_o = 1'b1;
    
  `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
