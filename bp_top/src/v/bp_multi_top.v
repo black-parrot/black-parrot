@@ -266,59 +266,13 @@ for(genvar i = 0; i < num_core_p; i++)
        ,.software_int_i(soft_irq_lo[i])
        ,.external_int_i(external_irq_lo[i])
        );
-       
-    bp_addr_map
-     #(.cfg_p(cfg_p)
-       ,.x_cord_width_p(noc_x_cord_width_lp)
-       ,.y_cord_width_p(noc_y_cord_width_lp)
-       )
-     mem_cmd_addr_map
-      (.clk_i(clk_i)
-       ,.reset_i(reset_r)
-       
-       ,.paddr_i(mem_cmd_lo[i].addr)
-       
-       ,.clint_x_cord_i(clint_x_cord)
-       ,.clint_y_cord_i(clint_y_cord)
-       ,.dram_x_cord_i(dram_x_cord)
-       ,.dram_y_cord_i(dram_y_cord)
-       
-       ,.dest_x_o(mem_cmd_dest_x[i])
-       ,.dest_y_o(mem_cmd_dest_y[i])
-       );
-       
-    bp_addr_map
-     #(.cfg_p(cfg_p)
-       ,.x_cord_width_p(noc_x_cord_width_lp)
-       ,.y_cord_width_p(noc_y_cord_width_lp)
-       )
-     mem_data_cmd_addr_map
-      (.clk_i(clk_i)
-       ,.reset_i(reset_r)
-       
-       ,.paddr_i(mem_data_cmd_lo[i].addr)
-       
-       ,.clint_x_cord_i(clint_x_cord)
-       ,.clint_y_cord_i(clint_y_cord)
-       ,.dram_x_cord_i(dram_x_cord)
-       ,.dram_y_cord_i(dram_y_cord)
-       
-       ,.dest_x_o(mem_data_cmd_dest_x[i])
-       ,.dest_y_o(mem_data_cmd_dest_y[i])
-       );
     
-    bp_me_cce_to_wormhole_link_master
-     #(.num_lce_p(num_lce_p)
-      ,.paddr_width_p(paddr_width_p)
-      ,.lce_assoc_p(lce_assoc_p)
-      ,.block_size_in_bytes_p(cce_block_width_p/8)
-      ,.lce_req_data_width_p(dword_width_p)
-      ,.width_p(noc_width_p)
+    bp_me_cce_to_wormhole_link_async_master
+     #(.cfg_p(cfg_p)
       ,.x_cord_width_p(noc_x_cord_width_lp)
       ,.y_cord_width_p(noc_y_cord_width_lp)
-      ,.len_width_p(noc_len_width_p)
-      ,.reserved_width_p(noc_reserved_width_p))
-      master_link
+      )
+      master_async_link
       (.clk_i(clk_i)
       ,.reset_i(reset_r)
 
@@ -341,10 +295,15 @@ for(genvar i = 0; i < num_core_p; i++)
       ,.my_x_i(noc_x_cord_width_lp'(i))
       ,.my_y_i(noc_y_cord_width_lp'(0))
       
-      ,.mem_cmd_dest_x_i(mem_cmd_dest_x[i])
-      ,.mem_cmd_dest_y_i(mem_cmd_dest_y[i])
-      ,.mem_data_cmd_dest_x_i(mem_data_cmd_dest_x[i])
-      ,.mem_data_cmd_dest_y_i(mem_data_cmd_dest_y[i])
+      ,.clint_x_cord_i(clint_x_cord)
+      ,.clint_y_cord_i(clint_y_cord)
+      
+      ,.dram_x_cord_i(dram_x_cord)
+      ,.dram_y_cord_i(dram_y_cord)
+      
+      // FIXME: connect to another clock domain
+      ,.wormhole_clk_i(clk_i)
+      ,.wormhole_reset_i(reset_r)
       
       ,.link_i(master_wh_link_li[i])
       ,.link_o(master_wh_link_lo[i])
@@ -388,17 +347,11 @@ bp_clint
    ,.cfg_link_data_o(cfg_link_data_lo)
    );
 
-bp_me_cce_to_wormhole_link_client
- #(.num_lce_p(num_lce_p)
-  ,.paddr_width_p(paddr_width_p)
-  ,.lce_assoc_p(lce_assoc_p)
-  ,.block_size_in_bytes_p(cce_block_width_p/8)
-  ,.lce_req_data_width_p(dword_width_p)
-  ,.width_p(noc_width_p)
+bp_me_cce_to_wormhole_link_async_client
+ #(.cfg_p(cfg_p)
   ,.x_cord_width_p(noc_x_cord_width_lp)
   ,.y_cord_width_p(noc_y_cord_width_lp)
-  ,.len_width_p(noc_len_width_p)
-  ,.reserved_width_p(noc_reserved_width_p))   
+  )
   client_link
   (.clk_i(clk_i)
   ,.reset_i(reset_r)
@@ -421,6 +374,10 @@ bp_me_cce_to_wormhole_link_client
      
   ,.my_x_i(clint_x_cord)
   ,.my_y_i(clint_y_cord)
+     
+  // FIXME: connect to another clock domain
+  ,.wormhole_clk_i(clk_i)
+  ,.wormhole_reset_i(reset_r)
      
   ,.link_i(client_wh_link_li)
   ,.link_o(client_wh_link_lo)

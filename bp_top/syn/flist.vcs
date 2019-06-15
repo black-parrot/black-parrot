@@ -36,6 +36,9 @@ $BP_ME_DIR/src/include/v/bp_me_network_pkg.v
 # Top packages
 $BP_TOP_DIR/src/include/bp_cfg_link_pkg.vh
 ## bsg_ip_cores files
+$BSG_IP_CORES_DIR/bsg_async/bsg_async_fifo.v
+$BSG_IP_CORES_DIR/bsg_async/bsg_launch_sync_sync.v
+$BSG_IP_CORES_DIR/bsg_async/bsg_async_ptr_gray.v
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_channel_tunnel_wormhole.v
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_channel_tunnel.v
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_channel_tunnel_in.v
@@ -166,6 +169,8 @@ $BP_ME_DIR/src/v/network/bp_me_network_pkt_encode_data_cmd.v
 $BP_ME_DIR/src/v/network/bp_me_network_pkt_encode_data_resp.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_master.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_client.v
+$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_async_master.v
+$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_async_client.v
 ## TOP
 $BP_TOP_DIR/src/v/bp_top.v
 $BP_TOP_DIR/src/v/bp_multi_top.v

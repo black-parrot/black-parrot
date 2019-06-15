@@ -177,20 +177,14 @@ bind bp_be_top
 
 // DRAM + link 
 bp_me_cce_to_wormhole_link_client
- #(.num_lce_p(num_lce_p)
-  ,.paddr_width_p(paddr_width_p)
-  ,.lce_assoc_p(lce_assoc_p)
-  ,.block_size_in_bytes_p(cce_block_width_p/8)
-  ,.lce_req_data_width_p(dword_width_p)
-  ,.width_p(noc_width_p)
+ #(.cfg_p(cfg_p)
   ,.x_cord_width_p(noc_x_cord_width_lp)
   ,.y_cord_width_p(noc_y_cord_width_lp)
-  ,.len_width_p(noc_len_width_p)
-  ,.reserved_width_p(noc_reserved_width_p))
+  )
   client_link
   (.clk_i(clk_i)
   ,.reset_i(reset_i)
-
+   
   ,.mem_cmd_o(mem_cmd_lo)
   ,.mem_cmd_v_o(mem_cmd_v_lo)
   ,.mem_cmd_yumi_i(mem_cmd_yumi_li)
@@ -206,10 +200,10 @@ bp_me_cce_to_wormhole_link_client
   ,.mem_data_resp_i(mem_data_resp_li)
   ,.mem_data_resp_v_i(mem_data_resp_v_li)
   ,.mem_data_resp_ready_o(mem_data_resp_ready_lo)
-  
+     
   ,.my_x_i(noc_x_cord_width_lp'(dram_x_cord_lp))
   ,.my_y_i(noc_y_cord_width_lp'(dram_y_cord_lp))
-  
+     
   ,.link_i(mem_link_li)
   ,.link_o(mem_link_lo)
   );
@@ -270,16 +264,10 @@ bp_nonsynth_host
 
 // CFG loader + rom + link
 bp_me_cce_to_wormhole_link_master
- #(.num_lce_p(num_lce_p)
-  ,.paddr_width_p(paddr_width_p)
-  ,.lce_assoc_p(lce_assoc_p)
-  ,.block_size_in_bytes_p(cce_block_width_p/8)
-  ,.lce_req_data_width_p(dword_width_p)
-  ,.width_p(noc_width_p)
+ #(.cfg_p(cfg_p)
   ,.x_cord_width_p(noc_x_cord_width_lp)
   ,.y_cord_width_p(noc_y_cord_width_lp)
-  ,.len_width_p(noc_len_width_p)
-  ,.reserved_width_p(noc_reserved_width_p))
+  )
   master_link
   (.clk_i(clk_i)
   ,.reset_i(reset_i)
@@ -305,6 +293,7 @@ bp_me_cce_to_wormhole_link_master
   
   ,.mem_cmd_dest_x_i(noc_x_cord_width_lp'(0))
   ,.mem_cmd_dest_y_i(noc_y_cord_width_lp'(0))
+  
   ,.mem_data_cmd_dest_x_i(noc_x_cord_width_lp'(clint_x_cord_lp))
   ,.mem_data_cmd_dest_y_i(noc_y_cord_width_lp'(clint_y_cord_lp))
   
