@@ -365,7 +365,7 @@ module bp_cce_msg
       // Data is copied directly from MemDataResp
       // For uncached responses, only the least significant 64-bits will be valid
       lce_data_cmd.data = mem_data_resp.data;
-      if (mshr.flags[e_flag_sel_ucf] == e_lce_req_non_cacheable) begin
+      if (mem_data_resp.non_cacheable == e_lce_req_non_cacheable) begin
         lce_data_cmd.msg_type = e_lce_data_cmd_non_cacheable;
         lce_data_cmd.way_id = '0;
       end else begin
