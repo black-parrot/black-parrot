@@ -80,7 +80,7 @@ assign fwd_link_lo.ready_and_rev = mem_link_lo.ready_and_rev;
    
 logic [noc_width_p-1:0] multi_data_li, multi_data_lo;
 logic multi_v_li, multi_v_lo;
-logic multi_ready_lo, multi_yumi_li;
+logic multi_ready_lo, multi_ready_li;
      
 bp_mem_cce_resp_s      mem_resp_li;
 logic                  mem_resp_v_li, mem_resp_ready_lo;
@@ -112,7 +112,7 @@ wrapper
 
    ,.multi_data_o(multi_data_lo)
    ,.multi_v_o(multi_v_lo)
-   ,.multi_yumi_i(multi_yumi_li & multi_v_lo)
+   ,.multi_yumi_i(multi_ready_li & multi_v_lo)
    );
    
 bsg_channel_tunnel_wormhole
@@ -132,7 +132,7 @@ bsg_channel_tunnel_wormhole
    
    ,.multi_data_i(multi_data_lo)
    ,.multi_v_i(multi_v_lo)
-   ,.multi_ready_o(multi_yumi_li)
+   ,.multi_ready_o(multi_ready_li)
    
    ,.multi_data_o(multi_data_li)
    ,.multi_v_o(multi_v_li)

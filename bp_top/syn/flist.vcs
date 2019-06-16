@@ -103,6 +103,8 @@ $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_adapter_in.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_flow_counter.v
+$BSG_IP_CORES_DIR/bsg_dataflow/bsg_serial_in_parallel_out_dynamic.v
+$BSG_IP_CORES_DIR/bsg_dataflow/bsg_parallel_in_serial_out_dynamic.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_counter_up_down.v
 ## BE files
 $BP_BE_DIR/src/v/bp_be_top.v

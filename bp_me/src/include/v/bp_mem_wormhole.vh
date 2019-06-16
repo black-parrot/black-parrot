@@ -24,5 +24,13 @@
       logic [y_cord_width-1:0]   y_cord;                                \
       logic [x_cord_width-1:0]   x_cord;                                \
     } in_struct_name
+    
+`define declare_wormhole_header_flit_s(flit_width, x_cord_width, y_cord_width, len_width, in_struct_name) \
+    typedef struct packed {                                             \
+      logic [flit_width-x_cord_width-y_cord_width-len_width-1:0] data;  \
+      logic [len_width-1:0]      len;                                   \
+      logic [y_cord_width-1:0]   y_cord;                                \
+      logic [x_cord_width-1:0]   x_cord;                                \
+    } in_struct_name
 
 `endif
