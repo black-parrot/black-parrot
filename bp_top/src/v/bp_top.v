@@ -165,8 +165,11 @@ assign lce_data_cmd_link_stitch_li[E]  = '0;
 logic reset_r;
 always_ff @(posedge clk_i) 
   begin
-    if (cfg_link_w_v_lo & (cfg_link_addr_lo == bp_cfg_reg_reset_gp)) 
-      reset_r <= cfg_link_data_lo[0];
+    if (reset_i)
+        reset_r <= 1'b1;
+    else
+        if (cfg_link_w_v_lo & (cfg_link_addr_lo == bp_cfg_reg_reset_gp)) 
+            reset_r <= cfg_link_data_lo[0];
   end
 
 // BP Tiles
