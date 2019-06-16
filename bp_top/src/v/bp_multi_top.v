@@ -507,7 +507,7 @@ end
 
 
 //Channel Tunnel
-assign ct_link_li = {resp_wh_link_lo[dram_x_cord_lp][S], cmd_wh_link_lo[dram_x_cord_lp][S]};
+assign ct_link_li = {cmd_wh_link_lo[dram_x_cord_lp][S], resp_wh_link_lo[dram_x_cord_lp][S]};
 assign {cmd_wh_link_li[dram_x_cord_lp][S], resp_wh_link_li[dram_x_cord_lp][S]} = ct_link_lo;
 
 bsg_channel_tunnel_wormhole

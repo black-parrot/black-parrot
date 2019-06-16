@@ -52,11 +52,31 @@ localparam dram_y_cord_lp  = 1;
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)     
 
 bsg_ready_and_link_sif_s [1:0] ct_link_li, ct_link_lo;
+
+bsg_ready_and_link_sif_s fwd_link_li, fwd_link_lo;
+bsg_ready_and_link_sif_s rev_link_li, rev_link_lo;
 bsg_ready_and_link_sif_s mem_link_li, mem_link_lo;
 bsg_ready_and_link_sif_s cfg_link_li, cfg_link_lo;
 
-assign ct_link_li = {cfg_link_lo, mem_link_lo};
-assign {cfg_link_li, mem_link_li} = ct_link_lo;
+assign ct_link_li = {fwd_link_lo, rev_link_lo};
+assign {fwd_link_li, rev_link_li} = ct_link_lo;
+
+// Fix bug
+assign mem_link_li.v = fwd_link_li.v;
+assign mem_link_li.data = fwd_link_li.data;
+assign mem_link_li.ready_and_rev = rev_link_li.ready_and_rev;
+
+assign cfg_link_li.v = rev_link_li.v;
+assign cfg_link_li.data = rev_link_li.data;
+assign cfg_link_li.ready_and_rev = fwd_link_li.ready_and_rev;
+
+assign rev_link_lo.v = mem_link_lo.v;
+assign rev_link_lo.data = mem_link_lo.data;
+assign rev_link_lo.ready_and_rev = cfg_link_lo.ready_and_rev;
+
+assign fwd_link_lo.v = cfg_link_lo.v;
+assign fwd_link_lo.data = cfg_link_lo.data;
+assign fwd_link_lo.ready_and_rev = mem_link_lo.ready_and_rev;
    
 logic [noc_width_p-1:0] multi_data_li, multi_data_lo;
 logic multi_v_li, multi_v_lo;

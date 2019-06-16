@@ -355,7 +355,6 @@ assign cmd_wh_link_li[E].ready_and_rev = client_wh_link_lo.ready_and_rev;
     assign cmd_wh_link_li[P].v = master_wh_link_lo.v;
     assign cmd_wh_link_li[P].data = master_wh_link_lo.data;
     //West
-    assign cmd_wh_link_li[N] = '0;
 
     bsg_wormhole_router
      #(
@@ -396,7 +395,6 @@ assign resp_wh_link_li[E].data = client_wh_link_lo.data;
     assign resp_wh_link_li[P].ready_and_rev = master_wh_link_lo.ready_and_rev; 
     //West
     //North
-    assign resp_wh_link_li[N] = '0;
     
     bsg_wormhole_router
      #(
@@ -411,7 +409,7 @@ assign resp_wh_link_li[E].data = client_wh_link_lo.data;
         //,.debug_p(2)
         
         ,.stub_in_p(5'b01011)
-        ,.stub_out_p(5'b01010)
+        ,.stub_out_p(5'b01110)
        )
      resp_wh_router
       (
@@ -427,7 +425,7 @@ assign resp_wh_link_li[E].data = client_wh_link_lo.data;
 
 
 //Channel Tunnel
-assign ct_link_li = {resp_wh_link_lo[S], cmd_wh_link_lo[S]};
+assign ct_link_li = {cmd_wh_link_lo[S], resp_wh_link_lo[S]};
 assign {cmd_wh_link_li[S], resp_wh_link_li[S]} = ct_link_lo;
 
 bsg_channel_tunnel_wormhole
