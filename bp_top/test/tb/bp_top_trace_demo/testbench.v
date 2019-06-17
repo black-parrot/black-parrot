@@ -35,52 +35,63 @@ module testbench
    
    , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(noc_width_p)
    
-   , localparam noc_x_cord_width_lp = `BSG_SAFE_CLOG2(num_core_p)
+   , localparam noc_x_cord_width_lp = `BSG_SAFE_CLOG2(num_core_p+2)
    , localparam noc_y_cord_width_lp = 1
+   
+   // FIXME: not needed when IO complex is used
+   , localparam link_width_lp = noc_width_p+2
    
    )
   (input clk_i
    , input reset_i
    );
 
-localparam clint_x_cord_lp = (num_core_p/2)-1;
-localparam clint_y_cord_lp = 1;
-localparam dram_x_cord_lp  = (num_core_p/2);
-localparam dram_y_cord_lp  = 1;
+// Wormhole router coordinate IDs
+// FIXME: hardcoded router coordinates, should be replaced with bsg_tag_clients
+localparam clint_x_cord_lp = `BSG_CDIV(num_core_p, 2);
+localparam clint_y_cord_lp = 0;
+
+localparam dram_x_cord_lp  = num_core_p+1;
+localparam dram_y_cord_lp  = 0;
    
 `declare_bsg_ready_and_link_sif_s(noc_width_p, bsg_ready_and_link_sif_s);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)     
 
 bsg_ready_and_link_sif_s [1:0] ct_link_li, ct_link_lo;
 
-bsg_ready_and_link_sif_s fwd_link_li, fwd_link_lo;
-bsg_ready_and_link_sif_s rev_link_li, rev_link_lo;
+bsg_ready_and_link_sif_s cmd_link_li, cmd_link_lo;
+bsg_ready_and_link_sif_s resp_link_li, resp_link_lo;
 bsg_ready_and_link_sif_s mem_link_li, mem_link_lo;
 bsg_ready_and_link_sif_s cfg_link_li, cfg_link_lo;
 
-assign ct_link_li = {fwd_link_lo, rev_link_lo};
-assign {fwd_link_li, rev_link_li} = ct_link_lo;
+assign ct_link_li = {cmd_link_lo, resp_link_lo};
+assign {cmd_link_li, resp_link_li} = ct_link_lo;
 
 // Fix bug
-assign mem_link_li.v = fwd_link_li.v;
-assign mem_link_li.data = fwd_link_li.data;
-assign mem_link_li.ready_and_rev = rev_link_li.ready_and_rev;
+assign mem_link_li.v = cmd_link_li.v;
+assign mem_link_li.data = cmd_link_li.data;
+assign mem_link_li.ready_and_rev = resp_link_li.ready_and_rev;
 
-assign cfg_link_li.v = rev_link_li.v;
-assign cfg_link_li.data = rev_link_li.data;
-assign cfg_link_li.ready_and_rev = fwd_link_li.ready_and_rev;
+assign cfg_link_li.v = resp_link_li.v;
+assign cfg_link_li.data = resp_link_li.data;
+assign cfg_link_li.ready_and_rev = cmd_link_li.ready_and_rev;
 
-assign rev_link_lo.v = mem_link_lo.v;
-assign rev_link_lo.data = mem_link_lo.data;
-assign rev_link_lo.ready_and_rev = cfg_link_lo.ready_and_rev;
+assign resp_link_lo.v = mem_link_lo.v;
+assign resp_link_lo.data = mem_link_lo.data;
+assign resp_link_lo.ready_and_rev = cfg_link_lo.ready_and_rev;
 
-assign fwd_link_lo.v = cfg_link_lo.v;
-assign fwd_link_lo.data = cfg_link_lo.data;
-assign fwd_link_lo.ready_and_rev = mem_link_lo.ready_and_rev;
+assign cmd_link_lo.v = cfg_link_lo.v;
+assign cmd_link_lo.data = cfg_link_lo.data;
+assign cmd_link_lo.ready_and_rev = mem_link_lo.ready_and_rev;
+
    
-logic [noc_width_p-1:0] multi_data_li, multi_data_lo;
+logic [link_width_lp-1:0] multi_data_li, multi_data_lo;
 logic multi_v_li, multi_v_lo;
-logic multi_ready_lo, multi_ready_li;
+logic multi_yumi_lo, multi_yumi_li;
+
+logic [1:0] ct_fifo_valid_lo, ct_fifo_yumi_li;
+logic [1:0] ct_fifo_valid_li, ct_fifo_yumi_lo;
+logic [1:0][noc_width_p-1:0] ct_fifo_data_lo, ct_fifo_data_li;
      
 bp_mem_cce_resp_s      mem_resp_li;
 logic                  mem_resp_v_li, mem_resp_ready_lo;
@@ -96,6 +107,8 @@ logic                  cfg_data_cmd_v_lo, cfg_data_cmd_yumi_li;
 bp_mem_cce_resp_s      cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
+genvar i;
+
 // Chip
 wrapper
  #(.cfg_p(cfg_p)
@@ -108,39 +121,64 @@ wrapper
    
    ,.multi_data_i(multi_data_li)
    ,.multi_v_i(multi_v_li)
-   ,.multi_ready_o(multi_ready_lo)
+   ,.multi_yumi_o(multi_yumi_lo)
 
    ,.multi_data_o(multi_data_lo)
    ,.multi_v_o(multi_v_lo)
-   ,.multi_yumi_i(multi_ready_li & multi_v_lo)
+   ,.multi_yumi_i(multi_yumi_li)
    );
-   
-bsg_channel_tunnel_wormhole
- #(.width_p(noc_width_p)
-   ,.x_cord_width_p(noc_x_cord_width_lp)
-   ,.y_cord_width_p(noc_y_cord_width_lp)
-   ,.len_width_p(noc_len_width_p)
-   ,.reserved_width_p(noc_reserved_width_p)
-   ,.num_in_p(2)
-   ,.remote_credits_p(ct_remote_credits_p)
-   ,.max_payload_flits_p(ct_max_payload_flits_p)
-   ,.lg_credit_decimation_p(ct_lg_credit_decimation_p)
+
+  bsg_channel_tunnel 
+ #(.width_p                (noc_width_p)
+  ,.num_in_p               (2)
+  ,.remote_credits_p       (ct_remote_credits_p)
+  ,.use_pseudo_large_fifo_p(1)
+  ,.lg_credit_decimation_p (ct_lg_credit_decimation_p)
   )
- channel_tunnel
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   
-   ,.multi_data_i(multi_data_lo)
-   ,.multi_v_i(multi_v_lo)
-   ,.multi_ready_o(multi_ready_li)
-   
-   ,.multi_data_o(multi_data_li)
-   ,.multi_v_o(multi_v_li)
-   ,.multi_yumi_i(multi_ready_lo & multi_v_li)
-   
-   ,.link_i(ct_link_li)
-   ,.link_o(ct_link_lo)
-   );
+  ct
+  (.clk_i  (clk_i)
+  ,.reset_i(reset_i)
+
+  // incoming multiplexed data
+  ,.multi_data_i(multi_data_lo)
+  ,.multi_v_i   (multi_v_lo)
+  ,.multi_yumi_o(multi_yumi_li)
+
+  // outgoing multiplexed data
+  ,.multi_data_o(multi_data_li)
+  ,.multi_v_o   (multi_v_li)
+  ,.multi_yumi_i(multi_yumi_lo)
+
+  // incoming demultiplexed data
+  ,.data_i(ct_fifo_data_lo)
+  ,.v_i   (ct_fifo_valid_lo)
+  ,.yumi_o(ct_fifo_yumi_li)
+
+  // outgoing demultiplexed data
+  ,.data_o(ct_fifo_data_li)
+  ,.v_o   (ct_fifo_valid_li)
+  ,.yumi_i(ct_fifo_yumi_lo)
+  );
+  
+  for (i = 0; i < 2; i++) 
+  begin: rof0
+    // Must add a fifo here, convert yumi_o to ready_o
+    bsg_two_fifo
+   #(.width_p(noc_width_p)
+    ) ct_fifo
+    (.clk_i  (clk_i  )
+    ,.reset_i(reset_i)
+    ,.ready_o(ct_link_lo[i].ready_and_rev)
+    ,.data_i (ct_link_li[i].data         )
+    ,.v_i    (ct_link_li[i].v            )
+    ,.v_o    (ct_fifo_valid_lo[i])
+    ,.data_o (ct_fifo_data_lo [i])
+    ,.yumi_i (ct_fifo_yumi_li [i])
+    );
+    assign ct_link_lo     [i].v    = ct_fifo_valid_li[i];
+    assign ct_link_lo     [i].data = ct_fifo_data_li [i];
+    assign ct_fifo_yumi_lo[i]      = ct_link_lo[i].v & ct_link_li[i].ready_and_rev;
+  end
 
 bind bp_be_top
   bp_be_nonsynth_tracer
@@ -311,8 +349,8 @@ bp_me_cce_to_wormhole_link_master
   ,.my_x_i(noc_x_cord_width_lp'(dram_x_cord_lp))
   ,.my_y_i(noc_y_cord_width_lp'(dram_y_cord_lp))
   
-  ,.mem_cmd_dest_x_i(noc_x_cord_width_lp'(0))
-  ,.mem_cmd_dest_y_i(noc_y_cord_width_lp'(0))
+  ,.mem_cmd_dest_x_i('0)
+  ,.mem_cmd_dest_y_i('0)
   
   ,.mem_data_cmd_dest_x_i(noc_x_cord_width_lp'(clint_x_cord_lp))
   ,.mem_data_cmd_dest_y_i(noc_y_cord_width_lp'(clint_y_cord_lp))
@@ -320,6 +358,17 @@ bp_me_cce_to_wormhole_link_master
   ,.link_i(cfg_link_li)
   ,.link_o(cfg_link_lo)
   );
+  
+logic reset_r;
+bsg_dff_chain
+ #(.width_p(1)
+   ,.num_stages_p(10)
+   )
+ reset_pipe
+  (.clk_i(clk_i)
+   ,.data_i(reset_i)
+   ,.data_o(reset_r)
+   );
 
 bp_cce_mmio_cfg_loader
   #(.cfg_p(cfg_p)
@@ -330,7 +379,7 @@ bp_cce_mmio_cfg_loader
   )
   cfg_loader
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
    
    ,.mem_data_cmd_o(cfg_data_cmd_lo)
    ,.mem_data_cmd_v_o(cfg_data_cmd_v_lo)
