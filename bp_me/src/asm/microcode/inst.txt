@@ -63,7 +63,7 @@ sfz <flag>
 
 # Read Directory
 rdp <wg>
-rdw <wg>
+rdw <wg> <lce>
 rde <wg> <lce> <way>
 
 # Write Directory
@@ -81,6 +81,7 @@ wds <wg> <lce> <way> <coh_st>
 
 # Misc
 gad
+clm # clear mshr
 stall
 
 # Queue

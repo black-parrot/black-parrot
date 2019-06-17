@@ -23,9 +23,11 @@ module bp_cce_test
     , parameter cfg_link_addr_width_p = bp_cfg_link_addr_width_gp
     , parameter cfg_link_data_width_p = bp_cfg_link_data_width_gp
 
+    , localparam mshr_width_lp=`bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
+
     // interface widths
     `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mshr_width_lp)
   )
   (
     input                                                  clk_i
@@ -79,20 +81,6 @@ module bp_cce_test
   localparam cce_id_lp = 0;
   assign cce_id = cce_id_lp;
 
-  // CCE boot rom
-  logic [inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr_li;
-  logic [`bp_cce_inst_width-1:0] cce_inst_boot_rom_data_lo;
-
-  // CCE Boot ROM
-  bp_cce_inst_rom
-    #(.width_p(`bp_cce_inst_width)
-      ,.addr_width_p(inst_ram_addr_width_lp)
-      )
-    cce_inst_rom
-     (.addr_i(cce_inst_boot_rom_addr_li)
-      ,.data_o(cce_inst_boot_rom_data_lo)
-      );
-
   logic freeze_lo;
   assign freeze_o = freeze_lo;
 
@@ -119,8 +107,6 @@ module bp_cce_test
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.freeze_o(freeze_lo)
-     ,.boot_rom_addr_o(cce_inst_boot_rom_addr_li)
-     ,.boot_rom_data_i(cce_inst_boot_rom_data_lo)
      ,.config_addr_o(config_addr_li)
      ,.config_data_o(config_data_li)
      ,.config_v_o(config_v_li)

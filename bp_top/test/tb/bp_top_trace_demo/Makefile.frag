@@ -1,12 +1,12 @@
-TRACE_REPLAY ?= 1
+CCE_TRACE_P  ?= 0
+CALC_TRACE_P ?= 0
+SKIP_INIT_P ?= 0
 
-CCE_TRACE_P ?= 0
+DUT_PARAMS = -pvalue+calc_trace_p=$(CALC_TRACE_P) \
+             -pvalue+cce_trace_p=$(CCE_TRACE_P) \
+             -pvalue+skip_init_p=$(SKIP_INIT_P)
 
-DUT_PARAMS = -pvalue+trace_p=$(TRACE_REPLAY)         \
-             -pvalue+cce_trace_p=$(CCE_TRACE_P)
-
-TB_PARAMS  = -pvalue+trace_ring_width_p=129          \
-             -pvalue+trace_rom_addr_width_p=32
+TB_PARAMS  = 
 
 HDL_PARAMS  = $(DUT_PARAMS) $(TB_PARAMS)
 

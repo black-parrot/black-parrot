@@ -109,6 +109,8 @@ module bp_be_checker_top
    // Dependency information
    , input [calc_status_width_lp-1:0] calc_status_i
    , input                            mmu_cmd_ready_i
+   , input                            credits_full_i
+   , input                            credits_empty_i
 
    // Checker pipeline control information
    , output                           chk_dispatch_v_o
@@ -125,11 +127,10 @@ module bp_be_checker_top
    , input [mtvec_width_lp-1:0]       mtvec_i
    , input [mepc_width_lp-1:0]        mepc_i
    , input                            tlb_fence_i
-   , input                            ifence_i
    
    //iTLB fill interface
     , input                           itlb_fill_v_i
-    , input [vtag_width_lp-1:0]       itlb_fill_vtag_i
+    , input [vaddr_width_p-1:0]       itlb_fill_vaddr_i
     , input [tlb_entry_width_lp-1:0]  itlb_fill_entry_i
    );
 
@@ -142,6 +143,7 @@ module bp_be_checker_top
 
 // Intermediate connections
 logic [vaddr_width_p-1:0] expected_npc;
+logic flush;
 
 // Datapath
 bp_be_director 
@@ -152,6 +154,7 @@ bp_be_director
 
    ,.calc_status_i(calc_status_i) 
    ,.expected_npc_o(expected_npc)
+   ,.flush_o(flush)
 
    ,.fe_cmd_o(fe_cmd_o)
    ,.fe_cmd_v_o(fe_cmd_v_o)
@@ -167,10 +170,9 @@ bp_be_director
    ,.mtvec_i(mtvec_i)
    ,.mepc_i(mepc_i)
    ,.tlb_fence_i(tlb_fence_i)
-   ,.ifence_i(ifence_i)
 
    ,.itlb_fill_v_i(itlb_fill_v_i)
-   ,.itlb_fill_vtag_i(itlb_fill_vtag_i)
+   ,.itlb_fill_vaddr_i(itlb_fill_vaddr_i)
    ,.itlb_fill_entry_i(itlb_fill_entry_i)
    );
 
@@ -180,13 +182,13 @@ bp_be_detector
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
+   ,.expected_npc_i(expected_npc)
    ,.calc_status_i(calc_status_i)
    ,.mmu_cmd_ready_i(mmu_cmd_ready_i)
-   ,.expected_npc_i(expected_npc)
+   ,.credits_full_i(credits_full_i)
+   ,.credits_empty_i(credits_empty_i)
 
-   ,.trap_v_i(trap_v_i)
-   ,.tlb_fence_i(tlb_fence_i)
-   ,.ifence_i(ifence_i)
+   ,.flush_i(flush)
 
    ,.chk_dispatch_v_o(chk_dispatch_v_o)
    ,.chk_roll_o(chk_roll_o)

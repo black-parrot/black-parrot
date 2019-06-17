@@ -28,7 +28,7 @@ tools:
 	cd $(TOP) && git submodule update --init --recursive
 	$(MAKE) systemc && rm -rf systemc*
 	$(MAKE) verilator
-	$(MAKE) gnu       && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-gnu-toolchain
+	$(MAKE) gnu
 	$(MAKE) fesvr     && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-fesvr
 	$(MAKE) spike     && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-isa-sim
 	$(MAKE) axe       && git submodule deinit -f $(BP_EXTERNAL_DIR)/axe
@@ -38,3 +38,5 @@ progs:
 	git submodule update --init --recursive -- bp_common/test/*
 	$(MAKE) -C $(BP_COMMON_DIR)/test all
 
+ucode:
+	$(MAKE) -C $(BP_ME_DIR)/src/asm roms

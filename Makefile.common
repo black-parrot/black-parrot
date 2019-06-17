@@ -10,22 +10,21 @@ BP_TOP_DIR       ?= $(TOP)/bp_top
 BP_EXTERNAL_DIR  ?= $(TOP)/external
 
 ## Setup CAD tools
-# BSG currently hosts its CAD tools on xor. If BSG_CADENV is not set, then we should 
-#   default to using free tools such as verilator
-ifneq (,$(findstring xor,$(shell hostname)))
-  BSG_CADENV     ?= 1
-  BSG_CADENV_DIR ?= $(TOP)/bsg_cadenv
-  include $(BSG_CADENV_DIR)/cadenv.mk
-else
-  BSG_CADENV ?= 0
-  $(info Not on xor...VCS and DC not supported)
-endif
+
+# If the machine you are working on is bsg_cadenv compliant, then you do not
+# need to setup the cad tools, simply put bsg_cadenv in the same root dir.
+-include $(TOP)/bsg_cadenv/cadenv.mk
+
+## Sepcify license path if needed
+LM_LICENSE_FILE ?=
 
 ## Override tool paths if needed
 GCC       ?= gcc
+VCS_HOME  ?=
 VCS       ?= vcs
 URG       ?= urg
 VERILATOR ?= verilator
+DC_SHELL  ?= dc_shell
 
 ## Needed for verilator g++ compilations
 SYSTEMC_INCLUDE ?= $(BP_EXTERNAL_DIR)/include

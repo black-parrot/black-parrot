@@ -85,7 +85,6 @@ RV64_V_ISA_TESTS := \
   rv64ui-v-blt     \
   rv64ui-v-bltu    \
   rv64ui-v-bne     \
-  rv64ui-v-j       \
   rv64ui-v-jal     \
   rv64ui-v-jalr    \
   rv64ui-v-lb      \
@@ -126,12 +125,97 @@ RV64_V_ISA_TESTS := \
 RV64_BENCHMARKS := \
   median   \
   multiply \
-	qsort    \
-	rsort    \
+  qsort    \
+  rsort    \
   towers   \
-  vvadd
+  vvadd    \
+  dhrystone
 
-RV64_REGRESSION   := $(RV64_P_ISA_TESTS) $(RV64_V_ISA_TESTS) $(RV64_BENCHMARKS) 
+COREMARK := coremark
+
+BEEBS_TESTS = \
+  aha-compress \
+  aha-mont64 \
+  bs \
+  bubblesort \
+  cnt \
+  compress \
+  cover \
+  crc \
+  ctl-stack \
+  ctl-vector \
+  cubic \
+  dijkstra \
+  duff \
+  edn \
+  expint \
+  fac \
+  fasta \
+  fdct \
+  fibcall \
+  fir \
+  frac \
+  huffbench \
+  insertsort \
+  janne_complex \
+  jfdctint \
+  lcdnum \
+  levenshtein \
+  ludcmp \
+  matmult-float \
+  matmult-int \
+  mergesort \
+  miniz \
+  minver \
+  nbody \
+  ndes \
+  nettle-aes \
+  nettle-arcfour \
+  nettle-cast128 \
+  nettle-des \
+  nettle-md5 \
+  nettle-sha256 \
+  newlib-exp \
+  newlib-log \
+  newlib-mod \
+  newlib-sqrt \
+  ns \
+  nsichneu \
+  picojpeg \
+  prime \
+  qrduino \
+  qsort \
+  qurt \
+  recursion \
+  select \
+  sglib-arraybinsearch \
+  sglib-arrayheapsort \
+  sglib-arrayquicksort \
+  sglib-dllist \
+  sglib-hashtable \
+  sglib-listinsertsort \
+  sglib-listsort \
+  sglib-queue \
+  sglib-rbtree \
+  slre \
+  sqrt \
+  st \
+  statemate \
+  stb_perlin \
+  stringsearch1 \
+  strstr \
+  tarai \
+  template \
+  trio-snprintf \
+  trio-sscanf \
+  ud \
+  whetstone \
+  wikisort
+
+RV64_REGRESSION   := $(RV64_P_ISA_TESTS) $(RV64_V_ISA_TESTS) $(RV64_BENCHMARKS)
 RV64_REGRESSION_V  = $(addsuffix .v, $(RV64_REGRESSION))
 RV64_REGRESSION_SC = $(addsuffix .sc, $(RV64_REGRESSION))
-
+COREMARK_REGRESSION_V = $(addsuffix .v, $(COREMARK))
+COREMARK_REGRESSION_SC = $(addsuffix .sc, $(COREMARK))
+BEEBS_REGRESSION_V = $(addsuffix .v, $(BEEBS_TESTS))
+BEEBS_REGRESSION_SC = $(addsuffix .sc, $(BEEBS_TESTS))

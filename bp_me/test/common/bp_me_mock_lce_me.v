@@ -30,6 +30,8 @@ module bp_me_mock_lce_me
     , localparam cfg_link_addr_width_p=bp_cfg_link_addr_width_gp
     , localparam cfg_link_data_width_p=bp_cfg_link_data_width_gp
 
+    , localparam mshr_width_lp=`bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
+
     // dramsim2 stuff
     , parameter dramsim2_en_p = 0
     , parameter clock_period_in_ps_p = 1000
@@ -131,7 +133,7 @@ module bp_me_mock_lce_me
 
   // Memory End
   //
-  `declare_bp_me_if(paddr_width_p,cce_block_width_p,num_lce_p,lce_assoc_p);
+  `declare_bp_me_if(paddr_width_p,cce_block_width_p,num_lce_p,lce_assoc_p,mshr_width_lp);
 
   logic [num_cce_p-1:0][inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
   logic [num_cce_p-1:0][`bp_cce_inst_width-1:0] cce_inst_boot_rom_data;
@@ -297,14 +299,6 @@ module bp_me_mock_lce_me
       );
   end
 
-  bp_cce_inst_rom
-    #(.width_p(`bp_cce_inst_width)
-      ,.addr_width_p(inst_ram_addr_width_lp)
-    ) cce_inst_rom (
-      .addr_i(cce_inst_boot_rom_addr)
-      ,.data_o(cce_inst_boot_rom_data)
-    );
-
   bp_cce_nonsynth_cfg_loader
     #(.inst_width_p(`bp_cce_inst_width)
       ,.inst_ram_addr_width_p(inst_ram_addr_width_lp)
@@ -317,8 +311,6 @@ module bp_me_mock_lce_me
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.freeze_o(freeze_li)
-     ,.boot_rom_addr_o(cce_inst_boot_rom_addr)
-     ,.boot_rom_data_i(cce_inst_boot_rom_data)
      ,.config_addr_o(config_addr_li)
      ,.config_data_o(config_data_li)
      ,.config_v_o(config_v_li)

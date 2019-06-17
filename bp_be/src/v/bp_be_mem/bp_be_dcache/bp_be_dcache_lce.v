@@ -51,6 +51,7 @@ module bp_be_dcache_lce
     , parameter ways_p="inv"
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
+    , parameter max_credits_p="inv"
     
     , parameter timeout_max_limit_p=4
    
@@ -85,6 +86,7 @@ module bp_be_dcache_lce
   (
     input clk_i
     , input reset_i
+    , input freeze_i
 
     , input [lce_id_width_lp-1:0] lce_id_i
 
@@ -145,7 +147,42 @@ module bp_be_dcache_lce
     , output logic [lce_data_cmd_width_lp-1:0] lce_data_cmd_o
     , output logic lce_data_cmd_v_o
     , input lce_data_cmd_ready_i
+
+    , output credits_full_o
+    , output credits_empty_o
+
+    // config link
+    , input [bp_cfg_link_addr_width_gp-2:0]       config_addr_i
+    , input [bp_cfg_link_data_width_gp-1:0]       config_data_i
+    , input                                       config_v_i
+    , input                                       config_w_i
+
+    // LCE Mode
+    , output bp_be_dcache_lce_mode_e              lce_mode_o
   );
+
+  // LCE Mode control
+  bp_be_dcache_lce_mode_e lce_mode_r, lce_mode_n;
+  assign lce_mode_o = lce_mode_r;
+
+  // The LCE has a single config register, thus the unit is always ready. Writes should only
+  // happen when reset_i is low and freeze_i is high. If these conditions are true, the LCE
+  // simply snoops the config link and writes the mode register when targeted by a valid write
+  // command on the link.
+  logic lce_mode_w_v, lce_mode_addr_v;
+  assign lce_mode_addr_v = (config_addr_i == 15'h1);
+  assign lce_mode_w_v = freeze_i & config_v_i & config_w_i & lce_mode_addr_v;
+  assign lce_mode_n = bp_be_dcache_lce_mode_e'(config_data_i[0+:`bp_be_dcache_lce_mode_bits]);
+
+  always_ff @(posedge clk_i) begin
+    if (reset_i) begin
+      lce_mode_r <= e_dcache_lce_mode_uncached;
+    end else begin
+      if (lce_mode_w_v) begin
+        lce_mode_r <= lce_mode_n;
+      end
+    end
+  end
 
   // casting structs
   //
@@ -180,6 +217,27 @@ module bp_be_dcache_lce
   assign data_mem_pkt_o = data_mem_pkt;
   assign tag_mem_pkt_o = tag_mem_pkt;
   assign stat_mem_pkt_o = stat_mem_pkt;
+
+  // Outstanding Uncached Store Counter
+  logic uncached_store_done_received;
+  logic [`BSG_WIDTH(max_credits_p)-1:0] credit_count_lo;
+  logic credit_v_li, credit_ready_li;
+  assign credit_v_li = uncached_store_req_i & lce_req_v_o;
+  assign credit_ready_li = lce_req_ready_i;
+  bsg_flow_counter
+    #(.els_p(max_credits_p))
+    uncached_store_counter
+      (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      // incremenent, when uncached store req is sent on LCE REQ
+      ,.v_i(credit_v_li)
+      ,.ready_i(credit_ready_li)
+      // decrement, when LCE CMD processes UC_ST_DONE_CMD
+      ,.yumi_i(uncached_store_done_received)
+      ,.count_o(credit_count_lo)
+      );
+  assign credits_full_o = (credit_count_lo == max_credits_p);
+  assign credits_empty_o = (credit_count_lo == 0);
 
 
   // LCE_CCE_req
@@ -263,12 +321,15 @@ module bp_be_dcache_lce
     lce_cmd_inst
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
+      ,.freeze_i(freeze_i)
 
       ,.lce_id_i(lce_id_i)
+      ,.lce_mode_i(lce_mode_r)
 
       ,.lce_sync_done_o(lce_sync_done_lo)
       ,.set_tag_received_o(set_tag_received)
       ,.set_tag_wakeup_received_o(set_tag_wakeup_received)
+      ,.uncached_store_done_received_o(uncached_store_done_received)
 
       ,.lce_cmd_i(lce_cmd)
       ,.lce_cmd_v_i(lce_cmd_v_i)
@@ -409,6 +470,13 @@ module bp_be_dcache_lce
     end
   end
 
-  assign ready_o = lce_sync_done_lo & ~timeout & ~cache_miss_o; 
+  // LCE Ready Signal
+  // The LCE ready signal depends on the mode of operation.
+  // In uncached only mode, the signal goes high once freeze_i goes low.
+  // In normal mode, the signal goes high after the LCE CMD unit signals that the CCE has
+  // completed the initialization sequence.
+  logic lce_ready;
+  assign lce_ready = (lce_mode_r == e_dcache_lce_mode_uncached) ? ~freeze_i : lce_sync_done_lo;
+  assign ready_o = lce_ready & ~timeout & ~cache_miss_o; 
 
 endmodule

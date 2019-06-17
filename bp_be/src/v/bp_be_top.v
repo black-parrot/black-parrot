@@ -26,11 +26,9 @@ module bp_be_top
                                  ,cce_block_width_p
                                  )
 
-   // Default parameters 
-   , parameter trace_p                     = 0
-   , parameter calc_debug_p                = 0
-   , parameter calc_debug_file_p           = "calc_debug.log"
+   , parameter calc_trace_p = 0
 
+   // Default parameters 
    , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
    , localparam ecode_dec_width_lp         = `bp_be_ecode_dec_width
    
@@ -45,6 +43,7 @@ module bp_be_top
    )
   (input                                     clk_i
    , input                                   reset_i
+   , input                                   freeze_i
 
    // FE queue interface
    , input [fe_queue_width_lp-1:0]           fe_queue_i
@@ -92,24 +91,22 @@ module bp_be_top
    , input                                   software_int_i
    , input                                   external_int_i
 
-   // Commit tracer for trace replay
-   , output                                  cmt_rd_w_v_o
-   , output [rv64_reg_addr_width_gp-1:0]     cmt_rd_addr_o
-   , output                                  cmt_mem_w_v_o
-   , output [dword_width_p-1:0]              cmt_mem_addr_o
-   , output [`bp_be_fu_op_width-1:0]         cmt_mem_op_o
-   , output [dword_width_p-1:0]              cmt_data_o
+   // config link
+   , input [bp_cfg_link_addr_width_gp-2:0]           config_addr_i
+   , input [bp_cfg_link_data_width_gp-1:0]           config_data_i
+   , input                                           config_v_i
+   , input                                           config_w_i
    );
 
 // Declare parameterized structures
-`declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_width_p)
+`declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p)
+`declare_bp_be_tlb_entry_s(ptag_width_p)
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
 `declare_bp_be_internal_if_structs(vaddr_width_p
                                    , paddr_width_p
                                    , asid_width_p
                                    , branch_metadata_fwd_width_p
                                    );
-`declare_bp_be_tlb_entry_s(ptag_width_lp);
 
 // Casting
 bp_proc_cfg_s proc_cfg;
@@ -130,7 +127,7 @@ bp_be_mem_resp_s mem_resp;
 logic mem_resp_v, mem_resp_rdy;
 
 bp_be_tlb_entry_s         itlb_fill_entry;
-logic [vtag_width_lp-1:0] itlb_fill_vtag;
+logic [vaddr_width_p-1:0] itlb_fill_vaddr;
 logic                     itlb_fill_v;
 
 bp_be_calc_status_s    calc_status;
@@ -144,12 +141,12 @@ logic [vaddr_width_p-1:0]  chk_pc_lo;
 
 logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li, chk_ifence_li;
 
-logic                          instret;
-logic [vaddr_width_p-1:0]      exception_pc;
-logic [vaddr_width_p-1:0]      exception_vaddr;
-logic [instr_width_p-1:0]      exception_instr;
-logic [ecode_dec_width_lp-1:0] exception_ecode_dec;
-logic                          exception_ecode_v;
+logic credits_full_lo, credits_empty_lo;
+
+logic                     instret_mem3;
+logic                     pc_v_mem3;
+logic [vaddr_width_p-1:0] pc_mem3;
+logic [instr_width_p-1:0] instr_mem3;
 
 // Module instantiations
 bp_be_checker_top 
@@ -167,6 +164,8 @@ bp_be_checker_top
 
    ,.calc_status_i(calc_status)
    ,.mmu_cmd_ready_i(mmu_cmd_rdy)
+   ,.credits_full_i(credits_full_lo)
+   ,.credits_empty_i(credits_empty_lo)
 
    ,.fe_cmd_o(fe_cmd_o)
    ,.fe_cmd_v_o(fe_cmd_v_o)
@@ -190,19 +189,14 @@ bp_be_checker_top
    ,.mepc_i(chk_mepc_li)
    ,.mtvec_i(chk_mtvec_li)
    ,.tlb_fence_i(chk_tlb_fence_li)
-   ,.ifence_i(chk_ifence_li)
    
    ,.itlb_fill_v_i(itlb_fill_v)
-   ,.itlb_fill_vtag_i(itlb_fill_vtag)
+   ,.itlb_fill_vaddr_i(itlb_fill_vaddr)
    ,.itlb_fill_entry_i(itlb_fill_entry)
    );
 
 bp_be_calculator_top 
- #(.cfg_p(cfg_p)
-
-   ,.trace_p(trace_p)
-   ,.debug_p(calc_debug_p)
-   )
+ #(.cfg_p(cfg_p))
  be_calculator
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -235,19 +229,10 @@ bp_be_calculator_top
    ,.mem_resp_v_i(mem_resp_v)
    ,.mem_resp_ready_o(mem_resp_rdy)   
 
-   ,.instret_o(instret)
-   ,.exception_pc_o(exception_pc)
-   ,.exception_vaddr_o(exception_vaddr)
-   ,.exception_instr_o(exception_instr)
-   ,.exception_ecode_v_o(exception_ecode_v)
-   ,.exception_ecode_dec_o(exception_ecode_dec)
-
-   ,.cmt_rd_w_v_o(cmt_rd_w_v_o)
-   ,.cmt_rd_addr_o(cmt_rd_addr_o)
-   ,.cmt_mem_w_v_o(cmt_mem_w_v_o)
-   ,.cmt_mem_addr_o(cmt_mem_addr_o)
-   ,.cmt_mem_op_o(cmt_mem_op_o)
-   ,.cmt_data_o(cmt_data_o)
+   ,.instret_mem3_o(instret_mem3)
+   ,.pc_v_mem3_o(pc_v_mem3)
+   ,.pc_mem3_o(pc_mem3)
+   ,.instr_mem3_o(instr_mem3)
    );
 
 bp_be_mem_top
@@ -255,6 +240,7 @@ bp_be_mem_top
  be_mem
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
+    ,.freeze_i(freeze_i)
 
     ,.chk_poison_ex_i(chk_poison_ex2)
 
@@ -271,7 +257,7 @@ bp_be_mem_top
     ,.mem_resp_ready_i(mem_resp_rdy)
     
     ,.itlb_fill_v_o(itlb_fill_v)
-    ,.itlb_fill_vtag_o(itlb_fill_vtag)
+    ,.itlb_fill_vaddr_o(itlb_fill_vaddr)
     ,.itlb_fill_entry_o(itlb_fill_entry)
 
     ,.lce_req_o(lce_req_o)
@@ -299,25 +285,32 @@ bp_be_mem_top
     ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
 
     ,.proc_cfg_i(proc_cfg_i)
-    ,.instret_i(instret)
+    ,.instret_i(instret_mem3)
 
-    ,.exception_pc_i(exception_pc)
-    ,.exception_vaddr_i(exception_vaddr)
-    ,.exception_instr_i(exception_instr)
-    ,.exception_ecode_v_i(exception_ecode_v)
-    ,.exception_ecode_dec_i(exception_ecode_dec)
+    ,.pc_v_mem3_i(pc_v_mem3)
+    ,.pc_mem3_i(pc_mem3)
+    ,.instr_mem3_i(instr_mem3)
+
+    ,.credits_full_o(credits_full_lo)
+    ,.credits_empty_o(credits_empty_lo)
 
     ,.timer_int_i(timer_int_i)
     ,.software_int_i(software_int_i)
     ,.external_int_i(external_int_i)
     ,.interrupt_pc_i(chk_pc_lo)
 
+    // Should connect priv mode to checker for shadow privilege mode
+    ,.priv_mode_o()
     ,.trap_v_o(chk_trap_v_li)
     ,.ret_v_o(chk_ret_v_li)
     ,.mepc_o(chk_mepc_li)
     ,.mtvec_o(chk_mtvec_li)
     ,.tlb_fence_o(chk_tlb_fence_li)
-    ,.ifence_o(chk_ifence_li)
+
+    ,.config_addr_i(config_addr_i)
+    ,.config_data_i(config_data_i)
+    ,.config_v_i(config_v_i)
+    ,.config_w_i(config_w_i)
     );
 
 endmodule : bp_be_top

@@ -1,10 +1,10 @@
 module bp_be_csr
+  import bp_common_pkg::*;
+  import bp_common_aviary_pkg::*;
   import bp_be_rv64_pkg::*;
   import bp_be_pkg::*;
-  #(parameter num_core_p = "inv"
-    , parameter vaddr_width_p = "inv"
-    , parameter lce_sets_p = "inv"
-    , parameter cce_block_size_in_bytes_p = "inv"
+  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+    `declare_bp_proc_params(cfg_p)
 
     , localparam fu_op_width_lp = `bp_be_fu_op_width
     , localparam csr_cmd_width_lp = `bp_be_csr_cmd_width
@@ -15,8 +15,6 @@ module bp_be_csr
     , localparam satp_width_lp  = `bp_satp_width
 
     , localparam hartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
-    , localparam instr_width_lp = rv64_instr_width_gp
-    , localparam dword_width_p = rv64_reg_data_width_gp
     )
    (input                            clk_i
     , input                          reset_i
@@ -34,10 +32,10 @@ module bp_be_csr
     , input [hartid_width_lp-1:0]    hartid_i
     , input                          instret_i
 
+    , input                          exception_v_i
     , input [vaddr_width_p-1:0]      exception_pc_i
     , input [vaddr_width_p-1:0]      exception_vaddr_i
-    , input [instr_width_lp-1:0]     exception_instr_i
-    , input                          exception_ecode_v_i
+    , input [instr_width_p-1:0]      exception_instr_i
     , input [ecode_dec_width_lp-1:0] exception_ecode_dec_i
 
     , input                          timer_int_i
@@ -45,6 +43,7 @@ module bp_be_csr
     , input                          external_int_i
     , input [vaddr_width_p-1:0]      interrupt_pc_i
 
+    , output [rv64_priv_width_gp-1:0] priv_mode_o
     , output logic                   trap_v_o
     , output logic                   ret_v_o
     , output [mepc_width_lp-1:0]     mepc_o
@@ -55,52 +54,38 @@ module bp_be_csr
     );
 
 // Declare parameterizable structs
-`declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
+`declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
 
 // Casting input and output ports
 bp_be_csr_cmd_s csr_cmd;
+bp_be_ecode_dec_s exception_ecode_dec_cast_i;
 
 assign csr_cmd = csr_cmd_i;
+assign exception_ecode_dec_cast_i = exception_ecode_dec_i;
 
 // The muxed and demuxed CSR outputs
 logic [dword_width_p-1:0] csr_data_li, csr_data_lo;
 
-logic int_m_to_m, tint_m_to_m, sint_m_to_m, eint_m_to_m;
-logic int_s_to_m, tint_s_to_m, sint_s_to_m, eint_s_to_m;
-logic int_u_to_m, tint_u_to_m, sint_u_to_m, eint_u_to_m;
-
-logic int_to_m;
-
-logic ret_to_m, ret_to_s, ret_to_u;
-
 logic [1:0] priv_mode_n, priv_mode_r;
 
-assign tint_m_to_m  = (priv_mode_r == `RV64_PRIV_MODE_M) & mstatus_r.mie & mie_r.mtie & mip_r.mtip;
-assign sint_m_to_m  = (priv_mode_r == `RV64_PRIV_MODE_M) & mstatus_r.mie & mie_r.msie & mip_r.msip;
-assign eint_m_to_m  = (priv_mode_r == `RV64_PRIV_MODE_M) & mstatus_r.mie & mie_r.meie & mip_r.meip;
-assign int_m_to_m   = tint_m_to_m | sint_m_to_m | eint_m_to_m;
+assign priv_mode_o = priv_mode_r;
 
-assign tint_s_to_m  = (priv_mode_r == `RV64_PRIV_MODE_S) & mstatus_r.sie & mie_r.stie & mip_r.stip;
-assign sint_s_to_m  = (priv_mode_r == `RV64_PRIV_MODE_S) & mstatus_r.sie & mie_r.ssie & mip_r.ssip;
-assign eint_s_to_m  = (priv_mode_r == `RV64_PRIV_MODE_S) & mstatus_r.sie & mie_r.seie & mip_r.seip;
-assign int_s_to_m   = tint_s_to_m | sint_s_to_m | eint_s_to_m;
+wire tint_m_to_m  = (priv_mode_r == `RV64_PRIV_MODE_M) & mstatus_r.mie & mie_r.mtie & mip_r.mtip;
+wire sint_m_to_m  = (priv_mode_r == `RV64_PRIV_MODE_M) & mstatus_r.mie & mie_r.msie & mip_r.msip;
+wire eint_m_to_m  = (priv_mode_r == `RV64_PRIV_MODE_M) & mstatus_r.mie & mie_r.meie & mip_r.meip;
+wire int_m_to_m   = tint_m_to_m | sint_m_to_m | eint_m_to_m;
 
-assign tint_u_to_m  = (priv_mode_r == `RV64_PRIV_MODE_U) & mstatus_r.uie & mie_r.utie & mip_r.utip;
-assign sint_u_to_m  = (priv_mode_r == `RV64_PRIV_MODE_U) & mstatus_r.uie & mie_r.usie & mip_r.usip;
-assign eint_u_to_m  = (priv_mode_r == `RV64_PRIV_MODE_U) & mstatus_r.uie & mie_r.ueie & mip_r.ueip;
-assign int_u_to_m   = tint_u_to_m | sint_u_to_m | eint_u_to_m;
+wire tint_s_to_m  = (priv_mode_r == `RV64_PRIV_MODE_S) & mstatus_r.sie & mie_r.stie & mip_r.stip;
+wire sint_s_to_m  = (priv_mode_r == `RV64_PRIV_MODE_S) & mstatus_r.sie & mie_r.ssie & mip_r.ssip;
+wire eint_s_to_m  = (priv_mode_r == `RV64_PRIV_MODE_S) & mstatus_r.sie & mie_r.seie & mip_r.seip;
+wire int_s_to_m   = tint_s_to_m | sint_s_to_m | eint_s_to_m;
 
-assign int_to_m = int_m_to_m | int_s_to_m | int_u_to_m;
+wire tint_u_to_m  = (priv_mode_r == `RV64_PRIV_MODE_U) & mstatus_r.uie & mie_r.utie & mip_r.utip;
+wire sint_u_to_m  = (priv_mode_r == `RV64_PRIV_MODE_U) & mstatus_r.uie & mie_r.usie & mip_r.usip;
+wire eint_u_to_m  = (priv_mode_r == `RV64_PRIV_MODE_U) & mstatus_r.uie & mie_r.ueie & mip_r.ueip;
+wire int_u_to_m   = tint_u_to_m | sint_u_to_m | eint_u_to_m;
 
-bp_be_ecode_dec_s exception_ecode_dec_li;
-always_comb
-  begin
-    exception_ecode_dec_li = exception_ecode_dec_i;
-
-    exception_ecode_dec_li.ecall_m_mode &= (priv_mode_r == `RV64_PRIV_MODE_M);
-    exception_ecode_dec_li.ecall_s_mode &= (priv_mode_r == `RV64_PRIV_MODE_S);
-    exception_ecode_dec_li.ecall_u_mode &= (priv_mode_r == `RV64_PRIV_MODE_U);
-  end
+wire int_to_m = int_m_to_m | int_s_to_m | int_u_to_m;
 
 logic [3:0] exception_ecode_li;
 logic       exception_ecode_v_li;
@@ -109,7 +94,7 @@ bsg_priority_encode
    ,.lo_to_hi_p(1)
    )
  mcause_enc
-  (.i(exception_ecode_dec_li)
+  (.i(exception_ecode_dec_i)
    ,.addr_o(exception_ecode_li)
    ,.v_o(exception_ecode_v_li)
    );
@@ -294,7 +279,12 @@ always_comb
 
           ret_v_o         = 1'b1;
         end
-      else if(csr_cmd.csr_op != e_csr_nop)
+      else if (csr_cmd.csr_op inside {e_ebreak, e_ecall, e_wfi})
+        begin
+          // TODO: NOPs for now. EBREAK and WFI are likely to remain a NOP for a while, whereas
+          //   ECALL should be implemented
+        end
+      else 
         begin
           unique casez (csr_cmd.csr_addr)
             `RV64_CSR_ADDR_SATP: 
@@ -455,7 +445,7 @@ always_comb
     if (external_int_i)
         mip_li.meip = 1'b1;
 
-    if (exception_ecode_v_i & exception_ecode_v_li) 
+    if (exception_v_i & exception_ecode_v_li) 
       begin
         priv_mode_n         = `RV64_PRIV_MODE_M;
 
@@ -464,7 +454,7 @@ always_comb
         mstatus_n.mie       = 1'b0;
 
         mepc_n              = exception_pc_i;
-        mtval_n             = exception_ecode_dec_li.illegal_instr ? exception_instr_i : exception_vaddr_i;
+        mtval_n             = exception_ecode_dec_cast_i.illegal_instr ? exception_instr_i : exception_vaddr_i;
 
         mcause_n._interrupt = 1'b0;
         mcause_n.ecode      = exception_ecode_li;
@@ -480,7 +470,7 @@ always_comb
         mstatus_n.mpie      = mstatus_r.mie;
         mstatus_n.mie       = 1'b0;
 
-        mepc_n              = exception_ecode_v_i ? exception_pc_i : 64'(interrupt_pc_i);
+        mepc_n              = (exception_v_i & exception_ecode_v_li) ? exception_pc_i : 64'(interrupt_pc_i);
         mtval_n             = '0;
         mcause_n._interrupt = 1'b1;
         // I'm sure there's a more clever way to encode this. Revisit once 

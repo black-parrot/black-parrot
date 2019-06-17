@@ -1,103 +1,124 @@
 ## Tool specific options
-VCS_OPTIONS  = +vcs+finish+5000000ps     # Change this to run longer / shorter
+VCS_OPTIONS ?= +vcs+finish+500000000ps   # Change this to run longer / shorter
 VCS_OPTIONS += +vcs+lic+wait             # Wait for license
 VCS_OPTIONS += +libext+.v+.vlib+.vh      # Find library files with these extensions
-VCS_OPTIONS += +vcs+vcdpluson            # Enable vcd dump
-# This throws a warning, but is necessary to load the dramsim library
-VCS_OPTIONS    += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
+VCS_OPTIONS += +vcs+loopdetect
 
 VCS_BUILD_OPTS += -full64             # Compile a 64-bit executable
 VCS_BUILD_OPTS += -sverilog -debug_pp # Enable SystemVerilog
 VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
 VCS_BUILD_OPTS += -CFLAGS "-I$(BP_EXTERNAL_DIR)/include -std=c++11"
+VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
 
 LINT_OPTIONS = +lint=all,noSVA-UA,noVCDE,noSVA-NSVU
 
-VCS_RUN_DIR ?= $(SYN_PATH)/run_vcs
+DUMP ?= 0
+COV  ?= 0
 
-PROG     ?= rv64ui-p-simple
-COVERAGE ?= 0
-DUMP     ?= 0
-
-ifeq ($(COVERAGE), 1)
-  VCS_OPTIONS += -cm_dir coverage/$(PROG)
-  VCS_OPTIONS += -cm line+tgl
-  VCS_OPTIONS += -cm_line contassign
-  VCS_OPTIONS += -cm_noconst
-  VCS_OPTIONS += -cm_seqnoconst
-  VCS_OPTIONS += -cm_hier $(SYN_PATH)/coverage_hier.vcs
+ifeq ($(DUMP), 1)
+VCS_OPTIONS += +vcs+vcdpluson # Enable vcd dump
+VCS_OPTIONS += +memcbk        # Dump memory 
 endif
 
-  URG_OPTIONS = -full64
-  URG_OPTIONS += -show tests
-  URG_OPTIONS += -dir coverage/*
-  URG_OPTIONS += -format both
-  URG_OPTIONS += -dbname coverage
+ifeq ($(COV), 1)
+VCS_OPTIONS += -cm line+tgl
+VCS_OPTIONS += -cm_dir $(COV_DIR)/$(PROG)
+VCS_BUILD_OPTS += -cm_hier $(SYN_PATH)/coverage_hier.vcs
+VCS_BUILD_OPTS += -cm_line contassign
+VCS_BUILD_OPTS += -cm_noconst
+VCS_BUILD_OPTS += -cm_seqnoconst
 
-.PHONY: deps.v lint.v build.v run.v clean.v
+URG_OPTIONS = -full64
+URG_OPTIONS += -show tests
+URG_OPTIONS += -dir $(COV_DIR)/*
+URG_OPTIONS += -format both
+URG_OPTIONS += -dbname coverage
+endif
 
-deps.v:
-	$(eval include $(TB_PATH)/$(TB)/Makefile.frag)
-	$(eval LOG_DIR := $(LOG_PATH)/vcs)
-	$(eval REPORT_DIR := $(REPORT_PATH)/vcs)
-	$(shell mkdir -p $(LOG_DIR)/regress)
+.PHONY: deps.v lint.v build.v run.v sim.v clean.v
+
+# Alias run.v to sim.v
+run.v: sim.v
+
+dirs.v:
+	$(eval RESULTS_DIR := $(RESULTS_PATH)/vcs)
+	$(eval REPORT_DIR  := $(REPORT_PATH)/vcs)
+	$(eval SIM_DIR     := $(RESULTS_DIR)/$(TB).$(CFG).sim/$(PROG))
+	$(eval BUILD_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).build)
+	$(eval COV_DIR     := $(RESULTS_DIR)/$(TB).$(CFG).cov)
+	$(eval LOG_DIR     := $(LOG_PATH)/vcs)
+
+	$(shell mkdir -p $(LOG_DIR))
 	$(shell mkdir -p $(REPORT_DIR))
-	$(shell mkdir -p $(VCS_RUN_DIR))
-	@cp $(MEM_PATH)/$(PROG).mem $(VCS_RUN_DIR)/prog.mem || true
-	# TODO: Should set the dram parameters through the makefile flow
-	@cp $(BP_COMMON_DIR)/test/cfg/DDR2_micron_16M_8b_x8_sg3E.ini $(VCS_RUN_DIR) || true
-	@cp $(BP_COMMON_DIR)/test/cfg/system.ini $(VCS_RUN_DIR)/system.ini || true
-	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/testbench.v > $(VCS_RUN_DIR)/testbench.v || true
-	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v > $(VCS_RUN_DIR)/wrapper.v || true
-	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $(VCS_RUN_DIR)/flist.vcs || true
-	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $(VCS_RUN_DIR)/flist.vcs || true
-	@echo '$(VCS_RUN_DIR)/wrapper.v'             >> $(VCS_RUN_DIR)/flist.vcs || true
-	@echo '$(VCS_RUN_DIR)/testbench.v'           >> $(VCS_RUN_DIR)/flist.vcs || true
 
-lint.v: LINT_LOG ?= $(TB)_lint.log
-lint.v: deps.v
-	cd $(VCS_RUN_DIR); \
-	$(VCS) $(VCS_OPTIONS) $(VCS_BUILD_OPTS) $(LINT_OPTIONS) \
-		-top test_bp -f flist.vcs \
-		$(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.v \
-	| tee $(LOG_DIR)/$(LINT_LOG)
+lint.v: VCS_BUILD_OPTS += $(LINT_OPTIONS)
+lint.v: override BUILD_LOG    = $(LOG_DIR)/$(TB).$(CFG).lint.log
+lint.v: override BUILD_REPORT = $(REPORT_DIR)/$(TB).$(CFG).lint.rpt
+lint.v: override BUILD_ERROR  = $(REPORT_DIR)/$(TB).$(CFG).lint.err
+lint.v: build.v
 
-build.v: BUILD_LOG ?= $(TB)_build.log
-build.v: deps.v
-	cd $(VCS_RUN_DIR); \
-	$(VCS) $(VCS_OPTIONS) $(VCS_BUILD_OPTS) \
-		-top test_bp -f flist.vcs \
-		$(HDL_PARAMS) $(TB_PATH)/$(TB)/test_bp.v -o simv \
-	| tee $(LOG_DIR)/$(BUILD_LOG)
+BUILD_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).build.log
+BUILD_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).build.rpt
+BUILD_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).build.err
+build.v: dirs.v 
+	$(shell mkdir -p $(BUILD_DIR))
+	$(eval include $(TB_PATH)/$(TB)/Makefile.frag) 
+	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/testbench.v > $(BUILD_DIR)/testbench.v
+	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v   > $(BUILD_DIR)/wrapper.v
+	-@cp $(TB_PATH)/$(TB)/test_bp.v $(BUILD_DIR)/test_bp.v
+	-@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $(BUILD_DIR)/flist.vcs 
+	-@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $(BUILD_DIR)/flist.vcs
+	-@echo $(BUILD_DIR)/wrapper.v                 >> $(BUILD_DIR)/flist.vcs
+	-@echo $(BUILD_DIR)/testbench.v               >> $(BUILD_DIR)/flist.vcs
+	-@echo $(BUILD_DIR)/test_bp.v                 >> $(BUILD_DIR)/flist.vcs
+	-cd $(BUILD_DIR); $(VCS) $(VCS_OPTIONS) $(VCS_BUILD_OPTS) $(HDL_PARAMS) -top test_bp -f flist.vcs -o simv \
+	| tee $(BUILD_LOG)
+	-@grep "Error" -A 5 $(BUILD_LOG) > $(BUILD_ERROR);
+	-@tail -n 2 $(BUILD_LOG) > $(BUILD_REPORT)
+	-@test -s $(BUILD_ERROR) && echo "FAILED" >> $(BUILD_REPORT) \
+	|| rm $(BUILD_ERROR)
 
-run.v: SIM_LOG ?= $(TB)_$(PROG)_sim.log
-run.v: deps.v 
-	cd $(VCS_RUN_DIR); \
-	$(VCS_RUN_DIR)/simv $(VCS_OPTIONS) \
-	| tee $(LOG_DIR)/$(SIM_LOG)
+sim.v: SIM_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).sim.$(PROG).log
+sim.v: SIM_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).sim.$(PROG).rpt
+sim.v: SIM_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).sim.$(PROG).err
+sim.v: PROG ?= rv64ui-p-simple
+sim.v: dirs.v
+	$(shell mkdir -p $(SIM_DIR))
+	-@ln -sf $(BUILD_DIR)/simv $(SIM_DIR)/simv
+	-@ln -sf $(BUILD_DIR)/simv.daidir $(SIM_DIR)/simv.daidir
+	-@cp $(MEM_PATH)/$(PROG).mem $(SIM_DIR)/prog.mem
+	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(SIM_DIR)/dram_ch.ini
+	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(SIM_DIR)/dram_sys.ini
+	-@cp $(CCE_MEM_PATH)/$(CCE_MEM) $(SIM_DIR)/cce_ucode.mem
+	-cd $(SIM_DIR); ./simv $(VCS_OPTIONS) | tee $(SIM_LOG) 
+	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
+	-@grep "PASS" -A 8 $(SIM_LOG) > $(SIM_REPORT)
 
-cov.v: COVERAGE = 1
-cov.v: deps.v regress.v
-	cd $(VCS_RUN_DIR); \
-	$(URG) $(URG_OPTIONS) -log $(LOG_DIR)/$(TB)_coverage.log -report $(REPORT_DIR)/coverage \
-	&& cp $(REPORT_DIR)/coverage/tests.txt $(REPORT_DIR)/$(TB)_cov_tests.rpt \
-	&& cp $(REPORT_DIR)/coverage/hierarchy.txt $(REPORT_DIR)/$(TB)_cov_hier.rpt
-
-regress.v: build.v $(RV64_REGRESSION_V)
+regress.v: $(RV64_REGRESSION_V) 
 $(RV64_REGRESSION_V):
-	@cp $(MEM_PATH)/$(PROG).mem $(VCS_RUN_DIR)/prog.mem
-	$(MAKE) run.v PROG=$(basename $@) \
-		SIM_LOG=regress/$(TB)_$(basename $@)_sim.log || true
-	@echo $(basename $@) >> $(REPORT_DIR)/regress_stats.rpt
-	@grep "PASS" $(LOG_DIR)/regress/$(TB)_$(basename $@)_sim.log \
-	| tee -a $(REPORT_DIR)/regress_stats.rpt || true
-	@grep "PASS" $(LOG_DIR)/regress/$(TB)_$(basename $@)_sim.log \
-	|| echo "$(basename $@): FAILED" >> $(REPORT_DIR)/regress_stats.err
+	$(MAKE) sim.v PROG=$(basename $@)
+$(COREMARK_REGRESSION_V):
+	$(MAKE) sim.v PROG=$(basename $@)
+regress_beebs.v: $(BEEBS_REGRESSION_V)
+$(BEEBS_REGRESSION_V):
+	$(MAKE) sim.v PROG=$(basename $@)
 
-dve.v: deps.v
-	cd $(VCS_RUN_DIR); \
-	dve -full64 -vpd vcdplus.vpd &
+cov.v: COV_LOG     ?= $(LOG_DIR)/$(TB).$(CFG).cov.log
+cov.v: COV_REPORT  ?= $(REPORT_DIR)/$(TB).$(CFG).cov
+cov.v: COV_HREPORT ?= $(REPORT_DIR)/$(TB).$(CFG).cov.hier.rpt
+cov.v: COV_TREPORT ?= $(REPORT_DIR)/$(TB).$(CFG).cov.test.rpt
+cov.v: COV_ERROR   ?= $(REPORT_DIR)/$(TB).$(CFG).cov.err
+cov.v: dirs.v
+	$(shell mkdir -p $(COV_DIR))
+	cd $(COV_DIR); $(URG) $(URG_OPTIONS) -log $(COV_LOG) -report $(COV_REPORT)
+	@cp $(COV_REPORT)/tests.txt $(COV_TREPORT)
+	@cp $(COV_REPORT)/hierarchy.txt $(COV_HREPORT) 
+
+dve.v: dirs.v
+	cd $(SIM_DIR); dve -full64 -vpd vcdplus.vpd &
 
 clean.v:
-	rm -rf run_vcs
+	@rm -rf results/vcs
+	@rm -rf reports/vcs
+	@rm -rf logs/vcs
 

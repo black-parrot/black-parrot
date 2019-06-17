@@ -74,6 +74,8 @@ $BSG_IP_CORES_DIR/bsg_misc/bsg_lru_pseudo_tree_encode.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_lru_pseudo_tree_decode.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router_buffered.v
+$BSG_IP_CORES_DIR/bsg_dataflow/bsg_flow_counter.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_counter_up_down.v
 // BE files
 $BP_BE_DIR/src/v/bp_be_top.v
 // Calculator
@@ -105,7 +107,7 @@ $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf_queue.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dtlb/bp_be_dtlb.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dtlb/bp_be_dtlb_replacement.v
 // Common
-$BP_BE_DIR/src/v/common/bp_be_trace_replay_gen.v
+$BP_BE_DIR/src/v/common/bsg_fifo_1r1w_fence.v
 $BP_BE_DIR/src/v/common/bsg_fifo_1r1w_rolly.v
 // FE files
 $BP_FE_DIR/src/v/bp_fe_bht.v
@@ -125,16 +127,19 @@ $BP_FE_DIR/src/v/bp_fe_top.v
 // You must change it for testbenches with different numbers of lce
 // In future, we want to load the internal ram rather than rely on the rom
 // directly
-$BP_ME_DIR/src/v/roms/mesi-tr/bp_cce_inst_rom_mesi-tr_lce2_wg64_assoc8.v
 // CCE
 $BP_ME_DIR/src/v/cce/bp_cce.v
 $BP_ME_DIR/src/v/cce/bp_cce_alu.v
 $BP_ME_DIR/src/v/cce/bp_cce_dir.v
+$BP_ME_DIR/src/v/cce/bp_cce_dir_tag_checker.v
+$BP_ME_DIR/src/v/cce/bp_cce_dir_lru_extract.v
 $BP_ME_DIR/src/v/cce/bp_cce_gad.v
 $BP_ME_DIR/src/v/cce/bp_cce_inst_decode.v
 $BP_ME_DIR/src/v/cce/bp_cce_pc.v
 $BP_ME_DIR/src/v/cce/bp_cce_reg.v
 $BP_ME_DIR/src/v/cce/bp_cce_uncached.v
+$BP_ME_DIR/src/v/cce/bp_cce_msg.v
+$BP_ME_DIR/src/v/cce/bp_cce_pending.v
 $BP_ME_DIR/src/v/cce/bp_cce_top.v
 // Network
 $BP_ME_DIR/src/v/network/bp_me_network_pkt_encode_data_cmd.v

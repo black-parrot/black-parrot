@@ -83,6 +83,7 @@ module bp_be_dcache
     , parameter ways_p="inv"
     , parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
+    , parameter max_credits_p="inv"
    
     , parameter debug_p=0 
  
@@ -117,6 +118,7 @@ module bp_be_dcache
   (
     input clk_i
     , input reset_i
+    , input freeze_i
     
     , input [lce_id_width_lp-1:0] lce_id_i
 
@@ -162,6 +164,18 @@ module bp_be_dcache
     , output logic [lce_data_cmd_width_lp-1:0] lce_data_cmd_o
     , output logic lce_data_cmd_v_o
     , input lce_data_cmd_ready_i 
+
+    , output credits_full_o
+    , output credits_empty_o
+
+    , output load_access_fault_o
+    , output store_access_fault_o
+
+    // config link
+    , input [bp_cfg_link_addr_width_gp-2:0]       config_addr_i
+    , input [bp_cfg_link_data_width_gp-1:0]       config_data_i
+    , input                                       config_v_i
+    , input                                       config_w_i
   );
 
   // packet decoding
@@ -368,6 +382,21 @@ module bp_be_dcache
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       v_tv_r <= 1'b0;
+
+      lr_op_tv_r <= '0;
+      sc_op_tv_r <= '0;
+      load_op_tv_r <= '0;
+      store_op_tv_r <= '0;
+      uncached_tv_r <= '0;
+      signed_op_tv_r <= '0;
+      size_op_tv_r <= '0;
+      double_op_tv_r <= '0;
+      word_op_tv_r <= '0;
+      half_op_tv_r <= '0;
+      byte_op_tv_r <= '0;
+      paddr_tv_r <= '0;
+      tag_info_tv_r <= '0;
+
     end
     else begin
       v_tv_r <= tv_we;
@@ -630,6 +659,8 @@ module bp_be_dcache
 
   logic lce_stat_mem_pkt_v;
   logic lce_stat_mem_pkt_yumi;
+
+  bp_be_dcache_lce_mode_e lce_mode_lo;
  
   bp_be_dcache_lce
     #(.lce_data_width_p(ways_p*data_width_p)
@@ -639,10 +670,12 @@ module bp_be_dcache
       ,.ways_p(ways_p)
       ,.num_cce_p(num_cce_p)
       ,.num_lce_p(num_lce_p)
+      ,.max_credits_p(max_credits_p)
       )
     lce
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
+      ,.freeze_i(freeze_i)
     
       ,.lce_id_i(lce_id_i)
 
@@ -697,8 +730,26 @@ module bp_be_dcache
       ,.lce_data_cmd_o(lce_data_cmd_o)
       ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
       ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
+
+      ,.credits_full_o(credits_full_o)
+      ,.credits_empty_o(credits_empty_o)
+
+      ,.config_addr_i(config_addr_i)
+      ,.config_data_i(config_data_i)
+      ,.config_v_i(config_v_i)
+      ,.config_w_i(config_w_i)
+
+      ,.lce_mode_o(lce_mode_lo)
       );
- 
+
+  // Fault if in uncached mode but access is not for an uncached address
+  assign load_access_fault_o  = (lce_mode_lo == e_dcache_lce_mode_uncached)
+    ? (load_op_tv_r & ~uncached_tv_r)
+    : 1'b0;
+  assign store_access_fault_o = (lce_mode_lo == e_dcache_lce_mode_uncached)
+    ? (store_op_tv_r & ~uncached_tv_r)
+    : 1'b0;
+
   // output stage
   //
   always_comb begin

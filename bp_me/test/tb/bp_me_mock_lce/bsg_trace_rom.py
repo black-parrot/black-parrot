@@ -21,7 +21,7 @@ parser.add_argument('-d', dest='data_width', type=int, default=64,
                     help='Data cache word size in bits')
 parser.add_argument('-e', dest='assoc', type=int, default=8,
                     help='Data cache associativity')
-parser.add_argument('--sets', dest='sets', type=int, default=16,
+parser.add_argument('--sets', dest='sets', type=int, default=64,
                     help='Data cache number of sets')
 parser.add_argument('--mem-size', dest='mem_size', type=int, default=2,
                     help='Size of backing memory, given as integer multiple of D$ size')

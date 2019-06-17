@@ -47,13 +47,9 @@ pushq lceCmd SYNC r0
 inc r0
 bi sync_top
 ack_top: bz r0 ready
-# ack_top: bz r0 reset_done
-wfq lceResp
 popq lceResp
 dec r0
 bi ack_top
-
-# reset_done: bi ready
 
 # Ready Routine
 ready: wfq lceReq
@@ -65,10 +61,9 @@ lce_req: popq lceReq
 bf ucf uncached_req
 rdp req
 bf pf error
-rdw req
+rdw req req
 gad
 # fall through
-#bi next_coh_state
 
 # Next Coherence State Routine
 # write request means set to M, else check non-exclusive request
@@ -101,13 +96,10 @@ pushq lceCmd INV r0 req shWayR0
 wds req r0 shWayR0 I
 inv_inc_lce: inc r0
 bi inv_top
-inv_ack_top: bz r2 inv_end
-wfq lceResp
+inv_ack_top: bz r2 upgrade_check
 popq lceResp
-# TODO: check ack_type
 dec r2
 bi inv_ack_top
-inv_end: bi upgrade_check
 
 # Upgrade Check Routine
 upgrade_check: bf uf upgrade
@@ -116,7 +108,6 @@ bi replace_check
 # Upgrade Routine
 upgrade: wds req req req nextCohSt
 pushq lceCmd STW req req req
-wfq lceResp
 popq lceResp
 bi ready
 
@@ -126,13 +117,11 @@ bi transfer_check
 
 # Replacement Routine
 replace: pushq lceCmd WB req lru lru
-wfq lceDataResp
-popq lceDataResp
-wdp req 1
+poph lceDataResp
 sf rwbf
 pushq memDataCmd lru
+popq lceDataResp
 sfz rwbf
-wfq memResp
 bi mem_resp
 
 # Transfer Check
@@ -145,57 +134,40 @@ pushq lceCmd ST req req lru
 pushq lceCmd TR tr req tr
 pushq lceCmd WB tr req tr
 # wait for transfer WB response
-wfq lceDataResp
-popq lceDataResp
+poph lceDataResp
 bf nwbf complete_transfer
 # perform the transfer WB to mem
-wdp req 1
 sfz rwbf
 pushq memDataCmd req
-wfq memResp
 popq memResp
-wdp req 0
 sf pcf
 
 # wait for the transfer ack
-complete_transfer: wfq lceResp
+complete_transfer: popq lceDataResp
 popq lceResp
-# TODO: ack_type == transfer_ack
 bi ready
 
 # Read Line from L2 Routine
-read_l2: wdp req 1
-wde req req lru req nextCohSt
+read_l2: wde req req lru req nextCohSt
 pushq memCmd
-wfq memDataResp
-bi mem_data_resp
+pushq lceCmd ST req req lru
+popq lceResp
+bi ready
 
 # Memory Response Routine
 mem_resp: popq memResp
-wdp req 0
 bf rwbf transfer_check
 sf pcf
-bi ready
-
-# Memory Data Response Routine
-mem_data_resp: popq memDataResp
-wdp req 0
-pushq lceDataCmd
-pushq lceCmd ST req req lru
-wfq lceResp
-popq lceResp
 bi ready
 
 # Uncached Request Routine
 uncached_req: bf rqf uncached_store
 pushq memCmd
 wfq memDataResp
-popq memDataResp
-pushq lceDataCmd
 bi ready
 uncached_store: pushq memDataCmd req
-wfq memResp
 popq memResp
+pushq lceCmd UCST req req req
 bi ready
 
 error: stall

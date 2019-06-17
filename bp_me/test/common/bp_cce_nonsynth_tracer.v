@@ -33,8 +33,9 @@ module bp_cce_nonsynth_tracer
     , localparam way_group_offset_high_lp  = (lg_block_size_in_bytes_lp+lg_lce_sets_lp)
     , localparam num_way_groups_lp         = (lce_sets_p/num_cce_p)
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
+    , localparam mshr_width_lp=`bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
 
-`declare_bp_me_if_widths(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+`declare_bp_me_if_widths(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p, mshr_width_lp)
 `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p, block_size_in_bits_lp)
   )
   (input                                        clk_i
@@ -93,7 +94,7 @@ module bp_cce_nonsynth_tracer
 
   // Define structure variables for output queues
 
-  `declare_bp_me_if(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
+  `declare_bp_me_if(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p, mshr_width_lp);
   `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p, block_size_in_bits_lp);
 
   bp_lce_cce_req_s           lce_req;
@@ -117,6 +118,11 @@ module bp_cce_nonsynth_tracer
   assign mem_resp            = mem_resp_i;
   assign mem_data_resp       = mem_data_resp_i;
 
+  `declare_bp_cce_mshr_s(num_lce_p, lce_assoc_p, paddr_width_p);
+  bp_cce_mshr_s mem_resp_payload, mem_data_cmd_payload;
+  assign mem_resp_payload = mem_resp.payload;
+  assign mem_data_cmd_payload = mem_data_cmd.payload;
+
   // Tracer
   always_ff @(negedge clk_i) begin
     if (~reset_i) begin
@@ -132,14 +138,15 @@ module bp_cce_nonsynth_tracer
                  , $time, cce_id_i, lce_resp.src_id, lce_resp.addr, lce_resp.msg_type);
       end
       if (lce_data_resp_v_i & lce_data_resp_yumi_i) begin
-        $display("%0T: CCE[%0d] DATA RESP LCE[%0d] addr[%H] null_wb[%0b]"
-                 , $time, cce_id_i, lce_data_resp.src_id, lce_data_resp.addr, lce_data_resp.msg_type);
+        $display("%0T: CCE[%0d] DATA RESP LCE[%0d] addr[%H] null_wb[%0b]\n%H"
+                 , $time, cce_id_i, lce_data_resp.src_id, lce_data_resp.addr, lce_data_resp.msg_type
+                 , lce_data_resp.data);
       end
       if (mem_resp_v_i & mem_resp_yumi_i) begin
         $display("%0T: CCE[%0d] MEM RESP wr[%0b] addr[%H] lce[%0d] way[%0d] req_addr[%H] nc[%0b]"
                  , $time, cce_id_i, mem_resp.msg_type, mem_resp.addr
-                 , mem_resp.payload.lce_id, mem_resp.payload.way_id
-                 , mem_resp.payload.req_addr, mem_resp.non_cacheable);
+                 , mem_resp_payload.lce_id, mem_resp_payload.way_id
+                 , mem_resp_payload.paddr, mem_resp.non_cacheable);
       end
       if (mem_data_resp_v_i & mem_data_resp_yumi_i) begin
         $display("%0T: CCE[%0d] MEM DATA RESP wr[%0b] addr[%H] lce[%0d] way[%0d] nc[%0b]\n%H"
@@ -165,8 +172,8 @@ module bp_cce_nonsynth_tracer
       if (mem_data_cmd_v_i & mem_data_cmd_ready_i) begin
         $display("%0T: CCE[%0d] MEM DATA CMD wr[%0b] addr[%H] lce[%0d] way[%0d] req_addr[%H] nc[%0b]\n%H"
                  , $time, cce_id_i, mem_data_cmd.msg_type, mem_data_cmd.addr
-                 , mem_data_cmd.payload.lce_id, mem_data_cmd.payload.way_id
-                 , mem_data_cmd.payload.req_addr, mem_data_cmd.non_cacheable, mem_data_cmd.data);
+                 , mem_data_cmd_payload.lce_id, mem_data_cmd_payload.way_id
+                 , mem_data_cmd_payload.paddr, mem_data_cmd.non_cacheable, mem_data_cmd.data);
       end
     end
   end

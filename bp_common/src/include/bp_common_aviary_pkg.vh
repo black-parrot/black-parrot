@@ -23,6 +23,9 @@ package bp_common_aviary_pkg;
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
       ,ras_idx_width            : 2
+
+      ,itlb_els             : 8
+      ,dtlb_els             : 8
       
       ,lce_sets             : 64
       ,lce_assoc            : 8
@@ -31,6 +34,8 @@ package bp_common_aviary_pkg;
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
+
+      ,max_credits: 4
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -53,6 +58,9 @@ package bp_common_aviary_pkg;
       ,bht_idx_width            : 9
       ,ras_idx_width            : 2
       
+      ,itlb_els             : 8
+      ,dtlb_els             : 8
+      
       ,lce_sets             : 64
       ,lce_assoc            : 8
       ,cce_block_width      : 512
@@ -60,6 +68,8 @@ package bp_common_aviary_pkg;
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
+
+      ,max_credits: 4
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -82,6 +92,9 @@ package bp_common_aviary_pkg;
       ,bht_idx_width            : 9
       ,ras_idx_width            : 2
       
+      ,itlb_els             : 8
+      ,dtlb_els             : 8
+      
       ,lce_sets             : 64
       ,lce_assoc            : 8
       ,cce_block_width      : 512
@@ -89,6 +102,8 @@ package bp_common_aviary_pkg;
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
+
+      ,max_credits: 4
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -111,6 +126,9 @@ package bp_common_aviary_pkg;
       ,bht_idx_width            : 9
       ,ras_idx_width            : 2
       
+      ,itlb_els             : 8
+      ,dtlb_els             : 8
+      
       ,lce_sets             : 64
       ,lce_assoc            : 8
       ,cce_block_width      : 512
@@ -118,6 +136,8 @@ package bp_common_aviary_pkg;
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
+
+      ,max_credits: 4
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -140,6 +160,9 @@ package bp_common_aviary_pkg;
       ,bht_idx_width            : 9
       ,ras_idx_width            : 2
       
+      ,itlb_els             : 8
+      ,dtlb_els             : 8
+      
       ,lce_sets             : 64
       ,lce_assoc            : 8
       ,cce_block_width      : 512
@@ -147,6 +170,42 @@ package bp_common_aviary_pkg;
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
+
+      ,max_credits: 4
+
+      ,dword_width      : 64
+      ,instr_width      : 32
+      ,reg_addr_width   : 5
+      ,page_offset_width: 12
+      };
+
+  localparam bp_proc_param_s bp_sexta_core_cfg_p =
+    '{num_core: 16
+      ,num_cce: 16
+      ,num_lce: 32
+
+      ,vaddr_width: 39
+      ,paddr_width: 39
+      ,asid_width : 1
+
+      ,branch_metadata_fwd_width: 27
+      ,btb_tag_width            : 10
+      ,btb_idx_width            : 6
+      ,bht_idx_width            : 9
+      ,ras_idx_width            : 2
+
+      ,itlb_els             : 8
+      ,dtlb_els             : 8
+      
+      ,lce_sets             : 64
+      ,lce_assoc            : 8
+      ,cce_block_width      : 512
+      ,num_cce_instr_ram_els: 256
+
+      ,fe_queue_fifo_els: 8
+      ,fe_cmd_fifo_els  : 2
+
+      ,max_credits: 4
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -156,7 +215,8 @@ package bp_common_aviary_pkg;
 
   typedef enum bit [lg_max_cfgs-1:0] 
   {
-    e_bp_oct_core_cfg     = 5
+    e_bp_sexta_core_cfg   = 6
+    ,e_bp_oct_core_cfg    = 5
     ,e_bp_quad_core_cfg   = 4
     ,e_bp_dual_core_cfg   = 3
     ,e_bp_single_core_cfg = 2
@@ -166,7 +226,8 @@ package bp_common_aviary_pkg;
 
   parameter bp_proc_param_s [max_cfgs-1:0] all_cfgs_gp =
   {
-    bp_oct_core_cfg_p
+    bp_sexta_core_cfg_p
+    ,bp_oct_core_cfg_p
     ,bp_quad_core_cfg_p
     ,bp_dual_core_cfg_p
     ,bp_single_core_cfg_p

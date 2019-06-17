@@ -6,7 +6,8 @@ module bp_fe_top
  import bp_fe_pkg::*;
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- import bp_be_rv64_pkg::*;  
+ import bp_be_rv64_pkg::*;
+ import bp_be_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
 
@@ -26,17 +27,14 @@ module bp_fe_top
 
    `declare_bp_fe_pc_gen_if_widths(vaddr_width_p, branch_metadata_fwd_width_p)
 
-   , localparam instr_width_lp    = rv64_instr_width_gp   
-
    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
-   
-   , localparam vtag_width_lp = (vaddr_width_p-bp_page_offset_width_gp)
-   , localparam ptag_width_lp = (paddr_width_p-bp_page_offset_width_gp)
    )
   (input                                              clk_i
    , input                                            reset_i
+   , input                                            freeze_i
 
    , input [lce_id_width_lp-1:0]                      icache_id_i
+
    , input [fe_cmd_width_lp-1:0]                      fe_cmd_i
    , input                                            fe_cmd_v_i
    , output logic                                     fe_cmd_ready_o
@@ -69,6 +67,12 @@ module bp_fe_top
    , output                                           lce_data_cmd_v_o
    , input                                            lce_data_cmd_ready_i
 
+   // config link
+   , input [bp_cfg_link_addr_width_gp-2:0]           config_addr_i
+   , input [bp_cfg_link_data_width_gp-1:0]           config_data_i
+   , input                                           config_v_i
+   , input                                           config_w_i
+
    );
 
 // the first level of structs
@@ -80,11 +84,11 @@ module bp_fe_top
 // pc_gen to itlb
 `declare_bp_fe_pc_gen_itlb_s(vaddr_width_p);
 `declare_bp_fe_itlb_vaddr_s(vaddr_width_p,lce_sets_p,cce_block_width_p) 
-`declare_bp_be_tlb_entry_s(ptag_width_lp);  
+`declare_bp_be_tlb_entry_s(ptag_width_p);
 // icache to pc_gen
 `declare_bp_fe_icache_pc_gen_s(vaddr_width_p);
 // itlb to cache
-`declare_bp_fe_itlb_icache_data_resp_s(ptag_width_lp);
+`declare_bp_fe_itlb_icache_data_resp_s(ptag_width_p);
    
 // fe to be
 bp_fe_queue_s                 fe_queue;
@@ -126,22 +130,27 @@ logic icache_itlb_v;
 logic icache_itlb_ready;
 // reserved icache
 logic icache_miss;
+logic instr_access_fault;
 logic poison_tl;
 
 //itlb
-logic [vtag_width_lp-1:0]       itlb_miss_vtag;
+logic [vtag_width_p-1:0]  itlb_miss_vtag;
 logic 		                itlb_miss;
    
 // be interfaces
 assign fe_cmd          = fe_cmd_i;
 assign fe_queue_o      = fe_queue;
 
-assign fe_queue.msg_type = pc_gen_queue.msg_type;
-assign fe_queue.msg      = pc_gen_queue.msg;
-assign pc_gen_fe_ready   = fe_queue_ready_i;
-assign fe_queue_v_o      = pc_gen_fe_v;
-// processor parameters
-//`declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
+assign fe_queue.msg_type  = pc_gen_queue.msg_type;
+assign fe_queue.msg       = pc_gen_queue.msg;
+assign pc_gen_fe_ready    = fe_queue_ready_i;
+assign fe_queue_v_o       = pc_gen_fe_v;
+
+// FE cmd fencing is not implemented yet
+// We lower the fence the same cycle that we get the command off of the fifo. 
+// If there are any operations that take more than one cycle, we should delay sending this signal
+// and move into a stall state in pc_gen, pending on completing the fe_cmd operation
+//assign fe_cmd_fence_clr_o = fe_cmd_ready_o & ~(fe_cmd.opcode == e_op_attaboy); 
 
 // fe to pc_gen 
 always_comb
@@ -168,7 +177,9 @@ always_comb
                                       ? fe_cmd.operands.pc_redirect_operands.pc
                                         : (fe_pc_gen.icache_fence_valid | fe_pc_gen.itlb_fence_valid)
                                           ? fe_cmd.operands.icache_fence.pc
-                                          : fe_cmd.operands.attaboy.pc ;
+                                          : (fe_pc_gen.itlb_fill_valid)
+                                            ? fe_cmd.operands.itlb_fill_response.vaddr
+                                            : fe_cmd.operands.attaboy.pc;
 
     fe_pc_gen_v                   = fe_cmd_v_i;
     fe_cmd_ready_o                = fe_pc_gen_ready;
@@ -187,6 +198,10 @@ assign itlb_fill_v       = fe_cmd_v_i & fe_cmd.opcode == e_op_itlb_fill_response
 assign itlb_w_v          = itlb_fill_v & ~itlb_fill_r;
 assign itlb_fence_v      = fe_cmd_v_i & fe_cmd.opcode == e_op_itlb_fence;
 
+// currently, uncached I/O is determined by high bit of translated address
+logic icache_uncached;
+assign icache_uncached = itlb_entry_r.ptag[ptag_width_p-1];
+
 always_ff @(posedge clk_i) begin
   if(reset_i) begin
     itlb_fill_r <= '0;
@@ -197,20 +212,10 @@ always_ff @(posedge clk_i) begin
 end
    
 bp_fe_pc_gen 
- #(.vaddr_width_p(vaddr_width_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.btb_tag_width_p(btb_tag_width_p)
-   ,.btb_idx_width_p(btb_idx_width_p)
-   ,.bht_idx_width_p(bht_idx_width_p)
-   ,.ras_idx_width_p(ras_idx_width_p)
-   ,.asid_width_p(asid_width_p)
-   ,.instr_width_p(instr_width_lp)
-   ) 
+ #(.cfg_p(cfg_p)) 
  bp_fe_pc_gen_1
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-               
-   ,.v_i(1'b1)
                
    ,.pc_gen_icache_o(pc_gen_icache)
    ,.pc_gen_icache_v_o(pc_gen_icache_v)
@@ -220,6 +225,7 @@ bp_fe_pc_gen
    ,.icache_pc_gen_v_i(icache_pc_gen_v)
    ,.icache_pc_gen_ready_o(icache_pc_gen_ready)
    ,.icache_miss_i(icache_miss)
+   ,.instr_access_fault_i(instr_access_fault)
                
    ,.pc_gen_itlb_o(pc_gen_itlb)
    ,.pc_gen_itlb_v_o(pc_gen_itlb_v)
@@ -236,12 +242,12 @@ bp_fe_pc_gen
    ,.itlb_miss_i(itlb_miss)
    );
 
-   
 bp_fe_icache 
  #(.cfg_p(cfg_p)) 
- icache_1
+ icache
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
+   ,.freeze_i(freeze_i)
 
    ,.id_i(icache_id_i)         
 
@@ -257,6 +263,7 @@ bp_fe_icache
    ,.itlb_icache_data_resp_v_i(itlb_icache_data_resp_v)
    ,.itlb_icache_data_resp_ready_o(itlb_icache_data_resp_ready)
    ,.itlb_icache_miss_i(itlb_miss) 
+   ,.uncached_i(icache_uncached)
   
    ,.lce_req_o(lce_req_o)
    ,.lce_req_v_o(lce_req_v_o)
@@ -282,24 +289,26 @@ bp_fe_icache
    ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
    ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
 
-         
+   ,.instr_access_fault_o(instr_access_fault)
    ,.cache_miss_o(icache_miss)
    ,.poison_tl_i(poison_tl)
+
+   ,.config_addr_i(config_addr_i)
+   ,.config_data_i(config_data_i)
+   ,.config_v_i(config_v_i)
+   ,.config_w_i(config_w_i)
    );
 
    
 bp_be_dtlb
- #(.vtag_width_p(vtag_width_lp)
-   ,.ptag_width_p(ptag_width_lp)
-   ,.els_p(16)
-   )
+ #(.cfg_p(cfg_p))
  itlb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.flush_i(itlb_fence_v)
 	       
    ,.r_v_i(pc_gen_itlb_v)
-   ,.r_ready_o()
+   ,.r_ready_o(pc_gen_itlb_ready)
    ,.r_vtag_i(itlb_vaddr.tag)
 	   
    ,.r_v_o(itlb_icache_data_resp_v)

@@ -13,7 +13,8 @@ module bp_top
  import bsg_noc_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+   , localparam cce_mshr_width_lp = `bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, cce_mshr_width_lp)
    `declare_bp_lce_cce_if_widths(num_cce_p
                                  ,num_lce_p
                                  ,paddr_width_p
@@ -22,10 +23,8 @@ module bp_top
                                  ,cce_block_width_p
                                  )
 
-   // Used to enable trace replay outputs for testbench
-   , parameter trace_p      = 0
-   , parameter calc_debug_p = 1
-   , parameter cce_trace_p  = 1
+   , parameter calc_trace_p = 0
+   , parameter cce_trace_p  = 0
 
    , parameter x_cord_width_p = `BSG_SAFE_CLOG2(num_lce_p)
    , parameter y_cord_width_p = 1
@@ -86,18 +85,10 @@ module bp_top
    , input [num_cce_p-1:0]                                    mem_data_cmd_yumi_i
 
    , input [num_core_p-1:0]                                   external_irq_i
-
-   // Commit tracer for trace replay
-   , output [num_core_p-1:0]                                  cmt_rd_w_v_o
-   , output [num_core_p-1:0][rv64_reg_addr_width_gp-1:0]      cmt_rd_addr_o
-   , output [num_core_p-1:0]                                  cmt_mem_w_v_o
-   , output [num_core_p-1:0][dword_width_p-1:0]               cmt_mem_addr_o
-   , output [num_core_p-1:0][`bp_be_fu_op_width-1:0]          cmt_mem_op_o
-   , output [num_core_p-1:0][dword_width_p-1:0]               cmt_data_o
   );
 
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, cce_mshr_width_lp)
 `declare_bp_lce_cce_if(num_cce_p
                        ,num_lce_p
                        ,paddr_width_p
@@ -108,7 +99,9 @@ module bp_top
 
 logic [num_core_p-1:0][E:W][2+lce_cce_req_network_width_lp-1:0] lce_req_link_stitch_lo, lce_req_link_stitch_li;
 logic [num_core_p-1:0][E:W][2+lce_cce_resp_network_width_lp-1:0] lce_resp_link_stitch_lo, lce_resp_link_stitch_li;
+logic [num_core_p-1:0][E:W][2+lce_cce_data_resp_router_width_lp-1:0] lce_data_resp_link_stitch_lo, lce_data_resp_link_stitch_li;
 logic [num_core_p-1:0][E:W][2+cce_lce_cmd_network_width_lp-1:0] lce_cmd_link_stitch_lo, lce_cmd_link_stitch_li;
+logic [num_core_p-1:0][E:W][2+lce_data_cmd_router_width_lp-1:0] lce_data_cmd_link_stitch_lo, lce_data_cmd_link_stitch_li;
 
 logic [num_core_p-1:0][E:W][lce_cce_data_resp_router_width_lp-1:0] lce_data_resp_lo, lce_data_resp_li;
 logic [num_core_p-1:0][E:W] lce_data_resp_v_lo, lce_data_resp_ready_li, lce_data_resp_v_li, lce_data_resp_ready_lo;
@@ -130,25 +123,17 @@ logic                  [num_cce_p-1:0] me_mem_data_cmd_v_lo, me_mem_data_cmd_yum
 
 logic [num_core_p-1:0] timer_irq_lo, soft_irq_lo;
 
-  assign lce_req_link_stitch_li[0][W]             = '0;
-  assign lce_resp_link_stitch_li[0][W]            = '0;
-  assign lce_data_resp_li[0][W]                   = '0;
-  assign lce_data_resp_v_li[0][W]                 = '0;
-  assign lce_data_resp_ready_li[0][W]             = '0;
-  assign lce_cmd_link_stitch_li[0][W]             = '0;
-  assign lce_data_cmd_li[0][W]                    = '0;
-  assign lce_data_cmd_v_li[0][W]                  = '0;
-  assign lce_data_cmd_ready_li[0][W]              = '0;
+  assign lce_req_link_stitch_li[0][W]                  = '0;
+  assign lce_resp_link_stitch_li[0][W]                 = '0;
+  assign lce_data_resp_link_stitch_li[0][W]            = '0;
+  assign lce_cmd_link_stitch_li[0][W]                  = '0;
+  assign lce_data_cmd_link_stitch_li[0][W]             = '0;
 
-  assign lce_req_link_stitch_li[num_core_p-1][E]  = '0;
-  assign lce_resp_link_stitch_li[num_core_p-1][E] = '0;
-  assign lce_data_resp_li[num_core_p-1][E]        = '0;
-  assign lce_data_resp_v_li[num_core_p-1][E]      = '0;
-  assign lce_data_resp_ready_li[num_core_p-1][E]  = '0;
-  assign lce_cmd_link_stitch_li[num_core_p-1][E]  = '0;
-  assign lce_data_cmd_li[num_core_p-1][E]         = '0;
-  assign lce_data_cmd_v_li[num_core_p-1][E]       = '0;
-  assign lce_data_cmd_ready_li[num_core_p-1][E]   = '0;
+  assign lce_req_link_stitch_li[num_core_p-1][E]       = '0;
+  assign lce_resp_link_stitch_li[num_core_p-1][E]      = '0;
+  assign lce_data_resp_link_stitch_li[num_core_p-1][E] = '0;
+  assign lce_cmd_link_stitch_li[num_core_p-1][E]       = '0;
+  assign lce_data_cmd_link_stitch_li[num_core_p-1][E]  = '0;
 
 for(genvar i = 0; i < num_core_p; i++) 
   begin : rof1
@@ -170,31 +155,22 @@ for(genvar i = 0; i < num_core_p; i++)
     if (i > 0) begin
     assign lce_req_link_stitch_li[i][W]  = lce_req_link_stitch_lo[i-1][E];
     assign lce_resp_link_stitch_li[i][W] = lce_resp_link_stitch_lo[i-1][E];
-    assign lce_data_resp_li[i][W]        = lce_data_resp_lo[i-1][E];
-    assign lce_data_resp_v_li[i][W]      = lce_data_resp_v_lo[i-1][E];
-    assign lce_data_resp_ready_li[i][W]  = lce_data_resp_ready_lo[i-1][E];
+    assign lce_data_resp_link_stitch_li[i][W] = lce_data_resp_link_stitch_lo[i-1][E];
     assign lce_cmd_link_stitch_li[i][W]  = lce_cmd_link_stitch_lo[i-1][E];
-    assign lce_data_cmd_li[i][W]         = lce_data_cmd_lo[i-1][E];
-    assign lce_data_cmd_v_li[i][W]       = lce_data_cmd_v_lo[i-1][E];
-    assign lce_data_cmd_ready_li[i][W]   = lce_data_cmd_ready_lo[i-1][E];
+    assign lce_data_cmd_link_stitch_li[i][W]  = lce_data_cmd_link_stitch_lo[i-1][E];
     end
 
     if (i < num_core_p-1) begin
     assign lce_req_link_stitch_li[i][E]  = lce_req_link_stitch_lo[i+1][W];
     assign lce_resp_link_stitch_li[i][E] = lce_resp_link_stitch_lo[i+1][W];
-    assign lce_data_resp_li[i][E]        = lce_data_resp_lo[i+1][W];
-    assign lce_data_resp_v_li[i][E]      = lce_data_resp_v_lo[i+1][W];
-    assign lce_data_resp_ready_li[i][E]  = lce_data_resp_ready_lo[i+1][W];
+    assign lce_data_resp_link_stitch_li[i][E] = lce_data_resp_link_stitch_lo[i+1][W];
     assign lce_cmd_link_stitch_li[i][E]  = lce_cmd_link_stitch_lo[i+1][W];
-    assign lce_data_cmd_li[i][E]         = lce_data_cmd_lo[i+1][W];
-    assign lce_data_cmd_v_li[i][E]       = lce_data_cmd_v_lo[i+1][W];
-    assign lce_data_cmd_ready_li[i][E]   = lce_data_cmd_ready_lo[i+1][W];
+    assign lce_data_cmd_link_stitch_li[i][E]  = lce_data_cmd_link_stitch_lo[i+1][W];
     end
 
     bp_tile
      #(.cfg_p(cfg_p)
-       ,.trace_p(trace_p)
-       ,.calc_debug_p(calc_debug_p)
+       ,.calc_trace_p(calc_trace_p)
        ,.cce_trace_p(cce_trace_p)
        )
      tile
@@ -221,24 +197,16 @@ for(genvar i = 0; i < num_core_p; i++)
        // Router inputs
        ,.lce_req_link_i(lce_req_link_stitch_li[i])
        ,.lce_resp_link_i(lce_resp_link_stitch_li[i])
-       ,.lce_data_resp_i(lce_data_resp_li[i])
-       ,.lce_data_resp_v_i(lce_data_resp_v_li[i])
-       ,.lce_data_resp_ready_o(lce_data_resp_ready_lo[i])
+       ,.lce_data_resp_link_i(lce_data_resp_link_stitch_li[i])
        ,.lce_cmd_link_i(lce_cmd_link_stitch_li[i])
-       ,.lce_data_cmd_i(lce_data_cmd_li[i])
-       ,.lce_data_cmd_v_i(lce_data_cmd_v_li[i])
-       ,.lce_data_cmd_ready_o(lce_data_cmd_ready_lo[i])
+       ,.lce_data_cmd_link_i(lce_data_cmd_link_stitch_li[i])
 
        // Router outputs
        ,.lce_req_link_o(lce_req_link_stitch_lo[i])
        ,.lce_resp_link_o(lce_resp_link_stitch_lo[i])
-       ,.lce_data_resp_o(lce_data_resp_lo[i])
-       ,.lce_data_resp_v_o(lce_data_resp_v_lo[i])
-       ,.lce_data_resp_ready_i(lce_data_resp_ready_li[i])
+       ,.lce_data_resp_link_o(lce_data_resp_link_stitch_lo[i])
        ,.lce_cmd_link_o(lce_cmd_link_stitch_lo[i])
-       ,.lce_data_cmd_o(lce_data_cmd_lo[i])
-       ,.lce_data_cmd_v_o(lce_data_cmd_v_lo[i])
-       ,.lce_data_cmd_ready_i(lce_data_cmd_ready_li[i])
+       ,.lce_data_cmd_link_o(lce_data_cmd_link_stitch_lo[i])
 
        ,.mem_resp_i(me_mem_resp_li[i])
        ,.mem_resp_v_i(me_mem_resp_v_li[i])
@@ -259,13 +227,6 @@ for(genvar i = 0; i < num_core_p; i++)
        ,.timer_int_i(timer_irq_lo[i])
        ,.software_int_i(soft_irq_lo[i])
        ,.external_int_i(external_irq_i[i])
-
-       ,.cmt_rd_w_v_o(cmt_rd_w_v_o[i])
-       ,.cmt_rd_addr_o(cmt_rd_addr_o[i])
-       ,.cmt_mem_w_v_o(cmt_mem_w_v_o[i])
-       ,.cmt_mem_addr_o(cmt_mem_addr_o[i])
-       ,.cmt_mem_op_o(cmt_mem_op_o[i])
-       ,.cmt_data_o(cmt_data_o[i])
        );
     end
 

@@ -81,6 +81,8 @@ $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router_buffered.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_adapter_in.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
+$BSG_IP_CORES_DIR/bsg_dataflow/bsg_flow_counter.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_counter_up_down.v
 ## BE files
 $BP_BE_DIR/src/v/bp_be_top.v
 # Calculator
@@ -112,7 +114,7 @@ $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf_queue.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dtlb/bp_be_dtlb.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dtlb/bp_be_dtlb_replacement.v
 # Common
-$BP_BE_DIR/src/v/common/bp_be_trace_replay_gen.v
+$BP_BE_DIR/src/v/common/bsg_fifo_1r1w_fence.v
 $BP_BE_DIR/src/v/common/bsg_fifo_1r1w_rolly.v
 ## FE files
 $BP_FE_DIR/src/v/bp_fe_bht.v
@@ -138,11 +140,15 @@ $BP_FE_DIR/src/v/bp_fe_top.v
 $BP_ME_DIR/src/v/cce/bp_cce.v
 $BP_ME_DIR/src/v/cce/bp_cce_alu.v
 $BP_ME_DIR/src/v/cce/bp_cce_dir.v
+$BP_ME_DIR/src/v/cce/bp_cce_dir_tag_checker.v
+$BP_ME_DIR/src/v/cce/bp_cce_dir_lru_extract.v
 $BP_ME_DIR/src/v/cce/bp_cce_gad.v
 $BP_ME_DIR/src/v/cce/bp_cce_inst_decode.v
 $BP_ME_DIR/src/v/cce/bp_cce_pc.v
 $BP_ME_DIR/src/v/cce/bp_cce_reg.v
 $BP_ME_DIR/src/v/cce/bp_cce_uncached.v
+$BP_ME_DIR/src/v/cce/bp_cce_msg.v
+$BP_ME_DIR/src/v/cce/bp_cce_pending.v
 $BP_ME_DIR/src/v/cce/bp_cce_top.v
 # Network
 $BP_ME_DIR/src/v/network/bp_me_network_pkt_encode_data_cmd.v

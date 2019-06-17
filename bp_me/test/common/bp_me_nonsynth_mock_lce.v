@@ -45,17 +45,18 @@ module tag_lookup
   endgenerate
 
   logic hit_lo;
-  logic [lg_lce_assoc_lp-1:0] addr_lo;
+  logic [lg_lce_assoc_lp-1:0] way_lo;
   bsg_encode_one_hot
     #(.width_p(lce_assoc_p))
   hits_to_way_id
     (.i(hits)
-     ,.addr_o(addr_lo)
+     ,.addr_o(way_lo)
      ,.v_o(hit_lo)
     );
 
+  // hit_o is set if tag matched and coherence state was any valid state
   assign hit_o = |hits;
-  assign way_o = addr_lo;
+  assign way_o = way_lo;
   assign dirty_o = (tags[way_o].coh_st == e_MESI_M);
   assign state_o = tags[way_o].coh_st;
   // TODO: needs fixing?
@@ -582,8 +583,8 @@ module bp_me_nonsynth_mock_lce
       lce_data_cmd_yumi = '0;
 
       // miss handling
-      lru_way_n = lru_way_r;
       mshr_n = mshr_r;
+      lru_way_n = lru_way_r;
 
       // tag, data, and dirty bit arrays
       tag_next_n = '0;
@@ -595,7 +596,6 @@ module bp_me_nonsynth_mock_lce
       dirty_bits_n = '0;
 
       // tag lookup module
-      lru_way_n = lru_way_r;
       tag_hit_way_n = tag_hit_way_r;
       tag_hit_state_n = tag_hit_state_r;
 
@@ -675,23 +675,35 @@ module bp_me_nonsynth_mock_lce
           lce_state_n = UNCACHED_SEND_TR_RESP;
           // send return packet to TR
           if (mshr_r.store_op) begin
-            // store sends back null packet
-            tr_pkt_v_o = 1'b1;
-            tr_pkt_o = '0;
-            lce_state_n = (tr_pkt_ready_i)
-                          ? (lce_init_r)
-                            ? READY
-                            : UNCACHED_ONLY
-                          : UNCACHED_SEND_TR_RESP;
+            if (lce_cmd_v) begin
+              // store sends back null packet when it receives lce_cmd back
+              tr_pkt_v_o = 1'b1;
+              tr_pkt_o = '0;
+              lce_state_n = (tr_pkt_ready_i)
+                            ? (lce_init_r)
+                              ? READY
+                              : UNCACHED_ONLY
+                            : UNCACHED_SEND_TR_RESP;
 
-            // clear miss handling state
-            mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
+              lce_cmd_yumi = tr_pkt_ready_i;
 
+              // clear miss handling state
+              mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
+            end
           end else if (lce_data_cmd_v) begin
             // load returns the data, and must wait for lce_data_cmd to return
             tr_pkt_v_o = 1'b1;
             tr_pkt_o[tr_ring_width_lp-1:dword_width_p] = '0;
-            tr_pkt_o[0 +: dword_width_p] = lce_data_cmd.data[0 +: dword_width_p];
+            // TODO: not portable, assumes 64-bit dwords
+            // Extract the desired bits from the returned 64-bit dword
+            tr_pkt_o[0 +: dword_width_p] =
+              double_op
+                ? lce_data_cmd.data[0 +: 64]
+                : word_op
+                  ? {32'('0), lce_data_cmd.data[8*byte_offset +: 32]}
+                  : half_op
+                    ? {48'('0), lce_data_cmd.data[8*byte_offset +: 16]}
+                    : {56'('0), lce_data_cmd.data[8*byte_offset +: 8]};
 
             lce_state_n = (tr_pkt_ready_i)
                           ? (lce_init_r)
@@ -945,7 +957,7 @@ module bp_me_nonsynth_mock_lce
           cur_set_n = mshr_r.paddr[block_offset_bits_lp +: lg_lce_sets_lp];
           cur_way_n = mshr_r.lru_way;
 
-          if (store_op) begin
+          if (mshr_r.store_op) begin
             // do the store
             data_w_n[cur_set_n][cur_way_n] = 1'b1;
             data_mask_n = double_op
@@ -1000,11 +1012,16 @@ module bp_me_nonsynth_mock_lce
           // wait until TR accepts packet (r&v), then go to READY
           lce_state_n = (tr_pkt_ready_i) ? READY : FINISH_MISS_SEND;
 
-          // clear miss handling state
+          // clear miss handling state, only if TR packet accepted
           mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
 
-          // update lru_way - global round robin
-          lru_way_n = lru_way_r + 'd1;
+          // update lru_way - global round robin, only if TR packet accepted
+          // do not update for an upgrade
+          lru_way_n = (tr_pkt_ready_i)
+                      ? (mshr_r.upgrade)
+                        ? lru_way_r
+                        : (lru_way_r + 'd1)
+                      : lru_way_r;
 
         end
         TR_CMD: begin
@@ -1054,6 +1071,8 @@ module bp_me_nonsynth_mock_lce
               // upgrade counts as a miss - update the mshr
               mshr_n.miss = 1'b1;
               mshr_n.upgrade = 1'b1;
+              // use the tag hit way found during tag lookup as the LRU way since this is an upgrade
+              mshr_n.lru_way = tag_hit_way_r;
               lce_state_n = TR_CMD_ST_MISS;
             end else begin
               lce_state_n = RESET;
@@ -1169,7 +1188,8 @@ module bp_me_nonsynth_mock_lce
           lce_req_s.non_exclusive = e_lce_req_excl;
           lce_req_s.addr = mshr_r.paddr;
 
-          lce_req_s.lru_way_id = mshr_r.lru_way;//(mshr_r.upgrade) ? tag_hit_way_r : mshr_r.lru_way;
+          // for upgrades, the mshr_r.lru_way is set appropriately to be the hit way
+          lce_req_s.lru_way_id = mshr_r.lru_way;
           lce_req_s.lru_dirty = (mshr_r.upgrade) ? e_lce_req_lru_clean :
             ((mshr_r.lru_dirty) ? e_lce_req_lru_dirty : e_lce_req_lru_clean);
           
@@ -1186,26 +1206,6 @@ module bp_me_nonsynth_mock_lce
     end
   end
 
-  /*
-  always_ff @(negedge clk_i) begin
-      case (lce_state)
-        TR_CMD: begin
-          if (tag_hit_lo && load_op) begin
-            $display("LCE[%0d] Load hit: M[%d]", lce_id_i, cmd.paddr);
-          end else if (~tag_hit_lo && load_op) begin
-            $display("LCE[%0d] Load miss: M[%d]", lce_id_i, cmd.paddr);
-          end else if (~tag_hit_lo && store_op) begin
-            $display("LCE[%0d] Store miss: M[%d] := %d", lce_id_i, cmd.paddr, cmd.data);
-          end else if (tag_hit_lo && store_op && ((tag_cur.coh_st == e_MESI_M) || (tag_cur.coh_st == e_MESI_E))) begin
-            $display("LCE[%0d] Store hit: M[%d] := %d", lce_id_i, cmd.paddr, cmd.data);
-          end else if (tag_hit_lo && store_op && (tag_cur.coh_st == e_MESI_S)) begin
-            $display("LCE[%0d] Store miss: M[%d] := %d", lce_id_i, cmd.paddr, cmd.data);
-          end
-        end
-      endcase
-  end
-  */
-
   always_ff @(posedge clk_i) begin
     if (axe_trace_p) begin
     case (lce_state)
@@ -1219,7 +1219,7 @@ module bp_me_nonsynth_mock_lce
       end
       FINISH_MISS_SEND: begin
         if (tr_pkt_ready_i) begin
-          if (store_op) begin
+          if (mshr_r.store_op) begin
             $display("#AXE %0d: M[%0d] := %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), cmd.data);
           end else begin
             $display("#AXE %0d: M[%0d] == %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), load_data);
@@ -1228,6 +1228,7 @@ module bp_me_nonsynth_mock_lce
       end
     endcase
     end
+
   end
 
 

@@ -42,7 +42,7 @@
 #endif
 
 #ifndef ADDR_WIDTH
-#define ADDR_WIDTH 56
+#define ADDR_WIDTH 39
 #endif
 
 #define TAG_WIDTH (ADDR_WIDTH-LG_LCE_SETS-LG_DATA_WIDTH_BYTES)

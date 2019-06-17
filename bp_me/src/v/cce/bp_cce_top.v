@@ -6,6 +6,20 @@
  * Description:
  *   This is the top level module for the CCE.
  *
+ * Notes:
+ *   All inputs from the LCE are buffered. LCE Responses require a FIFO that can hold up to
+ *   N responses where N is the number of way groups managed per CCE. Future optimizations could
+ *   lessen this requirement to a 1 or 2 element FIFO. All other inputs use 2-FIFOs.
+ *
+ *   All input and output between the CCE and Memory are buffered. 2-FIFOs are used except for
+ *   the Mem Response network, where N entries are required (N defined same as above). N entries
+ *   are required because there may be up to 1 outstanding memory transaction per way group
+ *   from the CCE, and the CCE may not immediately sink the message. Sinking depends on the current
+ *   state of the microcode (e.g., the CCE could be processing some other request). The response
+ *   contains information that is needed to resume processing an LCE's request, so it can not be
+ *   automatically sunk without requiring additional storage buffers in the CCE itself.
+ *
+ *   Currently, it is assumed that N is the same for all CCEs in the system.
  */
 
 module bp_cce_top
@@ -24,10 +38,12 @@ module bp_cce_top
     // Derived parameters
     , localparam block_size_in_bytes_lp = (cce_block_width_p/8)
     , localparam lg_num_cce_lp         = `BSG_SAFE_CLOG2(num_cce_p)
+    , localparam mshr_width_lp = `bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
+    , localparam wg_per_cce_lp = (lce_sets_p / num_cce_p)
 
     // interface widths
     `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mshr_width_lp)
 
   )
   (input                                                   clk_i
@@ -130,8 +146,10 @@ module bp_cce_top
       ,.yumi_i(lce_req_yumi_from_cce)
       );
 
-  bsg_two_fifo
+  bsg_fifo_1r1w_small
     #(.width_p(lce_cce_resp_width_lp)
+      // See top comments about sizing
+      ,.els_p(wg_per_cce_lp)
       )
     lce_cce_resp_fifo
      (.clk_i(clk_i)
@@ -159,8 +177,10 @@ module bp_cce_top
       );
 
   // Inbound Mem to CCE
-  bsg_two_fifo
+  bsg_fifo_1r1w_small
     #(.width_p(mem_cce_resp_width_lp)
+      // See top comments about sizing
+      ,.els_p(wg_per_cce_lp)
       )
     mem_cce_resp_fifo
      (.clk_i(clk_i)
