@@ -55,6 +55,11 @@ module bp_be_mem_top
    , input                                   reset_i
    , input                                   freeze_i
 
+   // Config channel
+   , input                                   cfg_w_v_i
+   , input [cfg_addr_width_p-1:0]            cfg_addr_i
+   , input [cfg_data_width_p-1:0]            cfg_data_i
+
    , input [mmu_cmd_width_lp-1:0]            mmu_cmd_i
    , input                                   mmu_cmd_v_i
    , output                                  mmu_cmd_ready_o
@@ -119,12 +124,6 @@ module bp_be_mem_top
    , output [mepc_width_lp-1:0]              mepc_o
    , output [mtvec_width_lp-1:0]             mtvec_o
    , output                                  tlb_fence_o
-
-   // config link
-   , input [bp_cfg_link_addr_width_gp-2:0]           config_addr_i
-   , input [bp_cfg_link_data_width_gp-1:0]           config_data_i
-   , input                                           config_v_i
-   , input                                           config_w_i
    );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p
@@ -357,20 +356,16 @@ bp_be_ptw
   );
 
 bp_be_dcache 
-  #(.data_width_p(dword_width_p) 
-    ,.sets_p(lce_sets_p)
-    ,.ways_p(lce_assoc_p)
-    ,.paddr_width_p(paddr_width_p)
-    ,.num_cce_p(num_cce_p)
-    ,.num_lce_p(num_lce_p)
-    ,.max_credits_p(max_credits_p)
-    )
+  #(.cfg_p(cfg_p))
   dcache
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
     ,.freeze_i(freeze_i)
 
     ,.lce_id_i(proc_cfg.dcache_id)
+    ,.cfg_w_v_i(cfg_w_v_i)
+    ,.cfg_addr_i(cfg_addr_i)
+    ,.cfg_data_i(cfg_data_i)
 
     ,.dcache_pkt_i(dcache_pkt)
     ,.v_i(dcache_pkt_v)
@@ -417,11 +412,6 @@ bp_be_dcache
   
     ,.load_access_fault_o(load_access_fault_v)
     ,.store_access_fault_o(store_access_fault_v)
-
-    ,.config_addr_i(config_addr_i)
-    ,.config_data_i(config_data_i)
-    ,.config_v_i(config_v_i)
-    ,.config_w_i(config_w_i)
     );
 
 // We delay the tlb miss signal by one cycle to synchronize with cache miss signal

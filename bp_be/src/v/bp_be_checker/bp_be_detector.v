@@ -49,8 +49,6 @@ module bp_be_detector
 
    // Generated parameters
    , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
-   // From BE specifications
-   , localparam pc_entry_point_lp = bp_pc_entry_point_gp
    // From RISC-V specifications
    , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
    )

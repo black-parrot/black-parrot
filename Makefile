@@ -40,3 +40,4 @@ progs:
 
 ucode:
 	$(MAKE) -C $(BP_ME_DIR)/src/asm roms
+

@@ -85,23 +85,23 @@ module bp_cce_test
   assign freeze_o = freeze_lo;
 
   // Config channel
-  logic [cfg_link_addr_width_p-2:0]   config_addr_li;
-  logic [cfg_link_data_width_p-1:0]   config_data_li;
-  logic                               config_v_li;
-  logic                               config_w_li;
-  logic                               config_ready_lo;
+  logic [cfg_addr_width_p-1:0] config_addr_li;
+  logic [cfg_data_width_p-1:0] config_data_li;
+  logic                        config_v_li;
+  logic                        config_w_li;
+  logic                        config_ready_lo;
 
-  logic [cfg_link_data_width_p-1:0]   config_data_lo;
-  logic                               config_v_lo;
-  logic                               config_ready_li;
+  logic [cfg_data_width_p-1:0] config_data_lo;
+  logic                        config_v_lo;
+  logic                        config_ready_li;
 
   // CCE instruction RAM loader
   bp_cce_nonsynth_cfg_loader
     #(.inst_width_p(`bp_cce_inst_width)
       ,.inst_ram_addr_width_p(inst_ram_addr_width_lp)
       ,.inst_ram_els_p(num_cce_instr_ram_els_p)
-      ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
-      ,.cfg_link_data_width_p(cfg_link_data_width_p)
+      ,.cfg_link_addr_width_p(cfg_addr_width_p)
+      ,.cfg_link_data_width_p(cfg_data_width_p)
     )
     cce_inst_ram_loader
     (.clk_i(clk_i)
@@ -119,8 +119,6 @@ module bp_cce_test
 
   bp_cce_top
     #(.cfg_p(cfg_p)
-      ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
-      ,.cfg_link_data_width_p(cfg_link_data_width_p)
       ,.cce_trace_p(cce_trace_p)
      )
      bp_cce_top

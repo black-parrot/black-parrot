@@ -24,6 +24,7 @@ module bp_fe_lce
   import bp_fe_pkg::*;
   import bp_fe_icache_pkg::*;
   import bp_common_aviary_pkg::*;
+  import bp_cfg_link_pkg::*;
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
    `declare_bp_lce_cce_if_widths(num_cce_p
@@ -47,6 +48,11 @@ module bp_fe_lce
     input                                                        clk_i
     , input                                                      reset_i
     , input                                                      freeze_i
+
+    // Config channel
+    , input                                                      cfg_w_v_i
+    , input [cfg_addr_width_p-1:0]                               cfg_addr_i
+    , input [cfg_data_width_p-1:0]                               cfg_data_i
 
     , input [lce_id_width_lp-1:0]                                id_i
 
@@ -97,12 +103,6 @@ module bp_fe_lce
     , output logic lce_data_cmd_v_o
     , input lce_data_cmd_ready_i
 
-    // config link
-    , input [bp_cfg_link_addr_width_gp-2:0]           config_addr_i
-    , input [bp_cfg_link_data_width_gp-1:0]           config_data_i
-    , input                                           config_v_i
-    , input                                           config_w_i
-
     , output bp_fe_icache_lce_mode_e                  lce_mode_o
   );
 
@@ -111,9 +111,9 @@ module bp_fe_lce
   assign lce_mode_o = lce_mode_r;
 
   logic lce_mode_w_v, lce_mode_addr_v;
-  assign lce_mode_addr_v = (config_addr_i == 15'h1);
-  assign lce_mode_w_v = freeze_i & config_v_i & config_w_i & lce_mode_addr_v;
-  assign lce_mode_n = bp_fe_icache_lce_mode_e'(config_data_i[0+:`bp_fe_icache_lce_mode_bits]);
+  assign lce_mode_addr_v = (cfg_addr_i == bp_cfg_reg_icache_mode_gp);
+  assign lce_mode_w_v = freeze_i & cfg_w_v_i & lce_mode_addr_v;
+  assign lce_mode_n = bp_fe_icache_lce_mode_e'(cfg_data_i[0+:`bp_fe_icache_lce_mode_bits]);
 
   always_ff @(posedge clk_i) begin
     if (reset_i) begin

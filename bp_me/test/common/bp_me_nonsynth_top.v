@@ -66,13 +66,13 @@ module bp_me_nonsynth_top
    , input [num_cce_p-1:0]                                    freeze_i
 
    // Config channel
-   , input [num_cce_p-1:0][bp_cfg_link_addr_width_gp-2:0]        config_addr_i
-   , input [num_cce_p-1:0][bp_cfg_link_data_width_gp-1:0]        config_data_i
+   , input [num_cce_p-1:0][cfg_addr_width_p-2:0]        config_addr_i
+   , input [num_cce_p-1:0][cfg_data_width_p-1:0]        config_data_i
    , input [num_cce_p-1:0]                                       config_v_i
    , input [num_cce_p-1:0]                                       config_w_i
    , output logic [num_cce_p-1:0]                                config_ready_o
 
-   , output logic [num_cce_p-1:0][bp_cfg_link_data_width_gp-1:0] config_data_o
+   , output logic [num_cce_p-1:0][cfg_data_width_p-1:0] config_data_o
    , output logic [num_cce_p-1:0]                                config_v_o
    , input [num_cce_p-1:0]                                       config_ready_i
 

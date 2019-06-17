@@ -3,6 +3,8 @@
  * wrapper.v
  *
  */
+ 
+`include "bsg_noc_links.vh"
 
 module wrapper
  import bp_common_pkg::*;
@@ -16,43 +18,27 @@ module wrapper
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, cce_mshr_width_lp)
 
    , parameter calc_trace_p = 0
-   , parameter cce_trace_p  = 0
+   , parameter cce_trace_p = 0
+   
+   // FIXME: not needed when IO complex is used
+   , localparam link_width_lp = noc_width_p+2
+   
+   ,localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(noc_width_p)
    )
   (input                                                      clk_i
    , input                                                    reset_i
-   , input [num_cce_p-1:0]                                    freeze_i
 
-   // Config channel
-   , input [num_cce_p-1:0][bp_cfg_link_addr_width_gp-2:0]        config_addr_i
-   , input [num_cce_p-1:0][bp_cfg_link_data_width_gp-1:0]        config_data_i
-   , input [num_cce_p-1:0]                                       config_v_i
-   , input [num_cce_p-1:0]                                       config_w_i
-   , output logic [num_cce_p-1:0]                                config_ready_o
+   // channel tunnel interface
+   , input [link_width_lp-1:0] multi_data_i
+   , input multi_v_i
+   , output multi_yumi_o
+   
+   , output [link_width_lp-1:0] multi_data_o
+   , output multi_v_o
+   , input multi_yumi_i
+   );
 
-   , output logic [num_cce_p-1:0][bp_cfg_link_data_width_gp-1:0] config_data_o
-   , output logic [num_cce_p-1:0]                                config_v_o
-   , input [num_cce_p-1:0]                                       config_ready_i
-
-   , input [num_cce_p-1:0][mem_cce_resp_width_lp-1:0]         mem_resp_i
-   , input [num_cce_p-1:0]                                    mem_resp_v_i
-   , output [num_cce_p-1:0]                                   mem_resp_ready_o
-
-   , input [num_cce_p-1:0][mem_cce_data_resp_width_lp-1:0]    mem_data_resp_i
-   , input [num_cce_p-1:0]                                    mem_data_resp_v_i
-   , output [num_cce_p-1:0]                                   mem_data_resp_ready_o
-
-   , output [num_cce_p-1:0][cce_mem_cmd_width_lp-1:0]         mem_cmd_o
-   , output [num_cce_p-1:0]                                   mem_cmd_v_o
-   , input [num_cce_p-1:0]                                    mem_cmd_yumi_i
-
-   , output [num_cce_p-1:0][cce_mem_data_cmd_width_lp-1:0]    mem_data_cmd_o
-   , output [num_cce_p-1:0]                                   mem_data_cmd_v_o
-   , input [num_cce_p-1:0]                                    mem_data_cmd_yumi_i
-
-   , input [num_core_p-1:0]                                   external_irq_i
-  );
-
-  bp_top
+  bp_multi_top
    #(.cfg_p(cfg_p)
      ,.calc_trace_p(calc_trace_p)
      ,.cce_trace_p(cce_trace_p)

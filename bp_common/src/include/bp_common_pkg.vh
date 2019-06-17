@@ -37,9 +37,16 @@ package bp_common_pkg;
 
   parameter bp_data_resp_num_flit_gp = 4;
   parameter bp_data_cmd_num_flit_gp = 4;
-
-  parameter bp_cfg_link_addr_width_gp = 16;
-  parameter bp_cfg_link_data_width_gp = 32;
+  
+  localparam cfg_link_dev_base_addr_gp = 32'h01??_????;
+  localparam clint_dev_base_addr_gp    = 32'h02??_????;
+  localparam host_dev_base_addr_gp     = 32'h03??_????;
+  localparam plic_dev_base_addr_gp     = 32'h0c??_????;
+  
+  localparam mipi_reg_base_addr_gp     = 32'h0200_0???;
+  localparam mtimecmp_reg_base_addr_gp = 32'h0200_4???;
+  localparam mtime_reg_addr_gp         = 32'h0200_bff8;
+  localparam plic_reg_base_addr_gp     = 32'h0c00_0???;
 
 endpackage : bp_common_pkg
 
