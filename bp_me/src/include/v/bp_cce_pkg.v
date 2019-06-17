@@ -45,4 +45,7 @@ package bp_cce_pkg;
     ((2*`BSG_SAFE_CLOG2(num_lce_mp))+(3*`BSG_SAFE_CLOG2(lce_assoc_mp))+(2*paddr_width_mp) \
      +`bp_cce_coh_bits+`bp_cce_inst_num_flags+`bp_lce_cce_nc_req_size_width)
 
+  // MSHR width for BP is:
+  // 2*LOG(num_lce) + (9 + 78 + 2 + 15 + 2) = 2*LOG(num_lce) + 106
+
 endpackage : bp_cce_pkg

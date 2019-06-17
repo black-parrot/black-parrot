@@ -66,6 +66,8 @@ typedef struct packed
   integer instr_width;
   integer reg_addr_width;
   integer page_offset_width;
+
+  integer mem_payload_width;
 }  bp_proc_param_s;
 
 `define declare_bp_proc_params(bp_cfg_e_mp) \
@@ -104,7 +106,9 @@ typedef struct packed
   , localparam page_offset_width_p = proc_param_lp.page_offset_width                               \
                                                                                                    \
   , localparam vtag_width_p        = proc_param_lp.vaddr_width - proc_param_lp.page_offset_width   \
-  , localparam ptag_width_p        = proc_param_lp.paddr_width - proc_param_lp.page_offset_width
+  , localparam ptag_width_p        = proc_param_lp.paddr_width - proc_param_lp.page_offset_width   \
+                                                                                                   \
+  , localparam mem_payload_width_p = proc_param_lp.mem_payload_width
 
 `endif
 

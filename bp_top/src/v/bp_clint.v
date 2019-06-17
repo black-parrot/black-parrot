@@ -13,16 +13,16 @@ module bp_clint
 
    , parameter dword_width_p = 64
 
-   , localparam cce_mshr_width_lp = `bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
+   , parameter mem_payload_width_p = "inv"
 
    , localparam mem_resp_width_lp=
-      `bp_mem_cce_resp_width(paddr_width_p,cce_mshr_width_lp)
+      `bp_mem_cce_resp_width(paddr_width_p,mem_payload_width_p)
    , localparam mem_data_resp_width_lp=
       `bp_mem_cce_data_resp_width(paddr_width_p,block_size_in_bits_p,num_lce_p,lce_assoc_p)
    , localparam mem_cmd_width_lp=
       `bp_cce_mem_cmd_width(paddr_width_p,num_lce_p,lce_assoc_p)
    , localparam mem_data_cmd_width_lp=
-      `bp_cce_mem_data_cmd_width(paddr_width_p,block_size_in_bits_p,cce_mshr_width_lp)
+      `bp_cce_mem_data_cmd_width(paddr_width_p,block_size_in_bits_p,mem_payload_width_p)
    )
   (input clk_i
    , input reset_i
@@ -68,7 +68,7 @@ module bp_clint
     , output [num_cce_p-1:0] timer_irq_o
    );
 
-`declare_bp_me_if(paddr_width_p,block_size_in_bits_p,num_lce_p,lce_assoc_p,cce_mshr_width_lp);
+`declare_bp_me_if(paddr_width_p,block_size_in_bits_p,num_lce_p,lce_assoc_p,mem_payload_width_p);
 
 bp_cce_mem_cmd_s [num_cce_p-1:0] mem_cmd_cast_i;
 bp_cce_mem_data_cmd_s [num_cce_p-1:0] mem_data_cmd_cast_i;
