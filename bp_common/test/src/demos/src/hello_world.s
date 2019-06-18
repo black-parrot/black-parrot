@@ -5,7 +5,7 @@
 .globl main
 .type  main, @function
 main:
-    li x3, 0x8FFFEFFF
+    li x3, 0x03001000
 
     /* H */
     li x2, 0x48

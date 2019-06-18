@@ -199,7 +199,7 @@ end
                              );
                 end else if(dbg_stage_r[2].decode.dcache_w_v) begin
                     if(dbg_stage_r[2].rs1
-                                +dbg_stage_r[2].imm==64'h8FFF_FFFF) begin
+                                +dbg_stage_r[2].imm==32'h0300_0000) begin
                         $fwrite(file, "[CORE%0x PRT] %x\n"
                                  ,mhartid_i
                                  ,dbg_stage_r[2].rs2[0+:8]
@@ -209,7 +209,7 @@ end
                                  ,dbg_stage_r[2].rs2[0+:8]
                                  );
                     end else if(dbg_stage_r[2].rs1
-                                +dbg_stage_r[2].imm==64'h8FFF_EFFF) begin
+                                +dbg_stage_r[2].imm==64'h0300_1000) begin
                         $fwrite(file, "[CORE%0x PRT] %c\n"
                                  ,mhartid_i
                                  ,dbg_stage_r[2].rs2[0+:8]

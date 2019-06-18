@@ -197,9 +197,7 @@ assign itlb_fill_v       = fe_cmd_v_i & fe_cmd.opcode == e_op_itlb_fill_response
 assign itlb_w_v          = itlb_fill_v & ~itlb_fill_r;
 assign itlb_fence_v      = fe_cmd_v_i & fe_cmd.opcode == e_op_itlb_fence;
 
-// currently, uncached I/O is determined by high bit of translated address
-logic icache_uncached;
-assign icache_uncached = itlb_entry_r.ptag[ptag_width_p-1];
+wire icache_uncached = itlb_entry_r.uc;
 
 always_ff @(posedge clk_i) begin
   if(reset_i) begin

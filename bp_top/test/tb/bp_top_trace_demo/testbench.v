@@ -102,6 +102,24 @@ logic                  mem_cmd_v_lo, mem_cmd_yumi_li;
 bp_cce_mem_data_cmd_s  mem_data_cmd_lo;
 logic                  mem_data_cmd_v_lo, mem_data_cmd_yumi_li;
 
+bp_mem_cce_resp_s      dram_resp_lo;
+logic                  dram_resp_v_lo, dram_resp_ready_li;
+bp_mem_cce_data_resp_s dram_data_resp_lo;
+logic                  dram_data_resp_v_lo, dram_data_resp_ready_li;
+bp_cce_mem_cmd_s       dram_cmd_li;
+logic                  dram_cmd_v_li, dram_cmd_yumi_lo;
+bp_cce_mem_data_cmd_s  dram_data_cmd_li;
+logic                  dram_data_cmd_v_li, dram_data_cmd_yumi_lo;
+
+bp_mem_cce_resp_s      host_resp_lo;
+logic                  host_resp_v_lo, host_resp_ready_li;
+bp_mem_cce_data_resp_s host_data_resp_lo;
+logic                  host_data_resp_v_lo, host_data_resp_ready_li;
+bp_cce_mem_cmd_s       host_cmd_li;
+logic                  host_cmd_v_li, host_cmd_yumi_lo;
+bp_cce_mem_data_cmd_s  host_data_cmd_li;
+logic                  host_data_cmd_v_li, host_data_cmd_yumi_lo;
+
 bp_cce_mem_data_cmd_s  cfg_data_cmd_lo;
 logic                  cfg_data_cmd_v_lo, cfg_data_cmd_yumi_li;
 bp_mem_cce_resp_s      cfg_resp_li;
@@ -285,40 +303,71 @@ mem
  (.clk_i(clk_i)
   ,.reset_i(reset_i)
 
-  ,.mem_cmd_i(mem_cmd_lo)
-  ,.mem_cmd_v_i(mem_cmd_v_lo)
-  ,.mem_cmd_yumi_o(mem_cmd_yumi_li)
+  ,.mem_cmd_i(dram_cmd_li)
+  ,.mem_cmd_v_i(dram_cmd_v_li)
+  ,.mem_cmd_yumi_o(dram_cmd_yumi_lo)
 
-  ,.mem_data_cmd_i(mem_data_cmd_lo)
-  ,.mem_data_cmd_v_i(mem_data_cmd_v_lo)
-  ,.mem_data_cmd_yumi_o(mem_data_cmd_yumi_li)
+  ,.mem_data_cmd_i(dram_data_cmd_li)
+  ,.mem_data_cmd_v_i(dram_data_cmd_v_li)
+  ,.mem_data_cmd_yumi_o(dram_data_cmd_yumi_lo)
 
-  ,.mem_resp_o(mem_resp_li)
-  ,.mem_resp_v_o(mem_resp_v_li)
-  ,.mem_resp_ready_i(mem_resp_ready_lo)
+  ,.mem_resp_o(dram_resp_lo)
+  ,.mem_resp_v_o(dram_resp_v_lo)
+  ,.mem_resp_ready_i(dram_resp_ready_li)
 
-  ,.mem_data_resp_o(mem_data_resp_li)
-  ,.mem_data_resp_v_o(mem_data_resp_v_li)
-  ,.mem_data_resp_ready_i(mem_data_resp_ready_lo)
+  ,.mem_data_resp_o(dram_data_resp_lo)
+  ,.mem_data_resp_v_o(dram_data_resp_v_lo)
+  ,.mem_data_resp_ready_i(dram_data_resp_ready_li)
   );
 
-// TODO: Should actually arbitrate between DRAM write and host write, but this should cause no 
-//   harm except slowdown. As consequence, we don't connect resp from the host_mmio, even though
-//   it does raise one
+
+assign host_cmd_yumi_o     = '0;
+assign host_data_resp_o    = '0;
+assign host_data_resp_v_lo = '0;
 bp_nonsynth_host
  #(.cfg_p(cfg_p))
  host_mmio
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.mem_data_cmd_i(mem_data_cmd_lo)
-   ,.mem_data_cmd_v_i(mem_data_cmd_v_lo)
-   ,.mem_data_cmd_yumi_o()
+   ,.mem_data_cmd_i(host_data_cmd_li)
+   ,.mem_data_cmd_v_i(host_data_cmd_v_li)
+   ,.mem_data_cmd_yumi_o(host_data_cmd_yumi_lo)
 
-   ,.mem_resp_o()
-   ,.mem_resp_v_o()
-   ,.mem_resp_ready_i(mem_resp_ready_lo)
+   ,.mem_resp_o(host_resp_lo)
+   ,.mem_resp_v_o(host_resp_v_lo)
+   ,.mem_resp_ready_i(host_resp_ready_li)
    );
+
+// MMIO arbitration
+wire host_data_cmd_not_dram = mem_data_cmd_v_lo & (mem_data_cmd_lo.addr < dram_base_addr_gp);
+wire host_cmd_not_dram      = mem_cmd_v_lo & (mem_cmd_lo.addr < dram_base_addr_gp);
+
+assign host_cmd_li          = mem_cmd_lo;
+assign host_cmd_v_li        = mem_cmd_v_lo & host_cmd_not_dram;
+assign dram_cmd_li          = mem_cmd_lo;
+assign dram_cmd_v_li        = mem_cmd_v_lo & ~host_cmd_not_dram;
+assign mem_cmd_yumi_li      = host_cmd_not_dram 
+                              ? host_cmd_yumi_lo 
+                              : dram_cmd_yumi_lo;
+
+assign host_data_cmd_li     = mem_data_cmd_lo;
+assign host_data_cmd_v_li   = mem_data_cmd_v_lo & host_data_cmd_not_dram;
+assign dram_data_cmd_li     = mem_data_cmd_lo;
+assign dram_data_cmd_v_li   = mem_data_cmd_v_lo & ~host_data_cmd_not_dram;
+assign mem_data_cmd_yumi_li = host_data_cmd_not_dram 
+                              ? host_data_cmd_yumi_lo 
+                              : dram_data_cmd_yumi_lo;
+
+assign mem_resp_li = host_resp_v_lo ? host_resp_lo : dram_resp_lo;
+assign mem_resp_v_li = host_resp_v_lo | dram_resp_v_lo;
+assign host_resp_ready_li = mem_resp_ready_lo;
+assign dram_resp_ready_li = mem_resp_ready_lo;
+
+assign mem_data_resp_li = host_data_resp_v_lo ? host_data_resp_lo : dram_data_resp_lo;
+assign mem_data_resp_v_li = host_data_resp_v_lo | dram_data_resp_v_lo;
+assign host_data_resp_ready_li = mem_data_resp_ready_lo;
+assign dram_data_resp_ready_li = mem_data_resp_ready_lo;
 
 // CFG loader + rom + link
 bp_me_cce_to_wormhole_link_master

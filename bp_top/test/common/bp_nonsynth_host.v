@@ -112,13 +112,13 @@ always_ff @(negedge clk_i)
   begin
     for (integer i = 0; i < num_core_p; i++)
       begin
-        if (hprint_w_v_li[i])
+        if (hprint_w_v_li[i] & mem_data_cmd_yumi_o)
           $display("[CORE%0x PRT] %x", i, mem_data_cmd_cast_i.data[0+:8]);
-        if (cprint_w_v_li[i])
-          $display("[CORE%0x PRT] %x", i, mem_data_cmd_cast_i.data[0+:8]);
-        if (finish_w_v_li[i] & ~mem_data_cmd_cast_i.data[0])
+        if (cprint_w_v_li[i] & mem_data_cmd_yumi_o)
+          $display("[CORE%0x PRT] %c", i, mem_data_cmd_cast_i.data[0+:8]);
+        if (finish_w_v_li[i] & mem_data_cmd_yumi_o & ~mem_data_cmd_cast_i.data[0])
           $display("[CORE%0x FSH] PASS", i);
-        if (finish_w_v_li[i] & ~mem_data_cmd_cast_i.data[0])
+        if (finish_w_v_li[i] & mem_data_cmd_yumi_o & ~mem_data_cmd_cast_i.data[0])
           $display("[CORE%0x FSH] FAIL", i);
       end
 
