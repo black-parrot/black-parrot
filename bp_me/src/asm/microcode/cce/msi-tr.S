@@ -40,16 +40,20 @@ lce_inc: inc r0
 bi lce_top
 
 # send sync messages
+# r0 counts up from 0 number of sync messages sent
+# r1 holds constant N_LCE
+# r3 stores the constant SYNC_ACK to check response ack type against
+# The CCE waits for sync ack after each sync command. This avoids additional buffering being
+# required in the CCE, at a small "performance" cost during startup
 sync_init: movi 0 r0
 movi N_LCE r1
-sync_top: bge r0 r1 ack_top
+movi SYNC_ACK r3
+sync_top: bge r0 r1 ready
 pushq lceCmd SYNC r0
+popq lceResp
+bne r3 ackType error
 inc r0
 bi sync_top
-ack_top: bz r0 ready
-popq lceResp
-dec r0
-bi ack_top
 
 # Ready Routine
 ready: wfq lceReq
