@@ -6,6 +6,7 @@ BP_DEMOS = \
   atomic_queue_demo_2 \
   atomic_queue_demo_4 \
   atomic_queue_demo_8 \
+  atomic_queue_demo_16 \
   queue_demo_2  \
   queue_demo_4  \
   queue_demo_8  \
