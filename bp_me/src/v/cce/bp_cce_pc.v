@@ -213,10 +213,10 @@ module bp_cce_pc
           pc_state_n = INIT_END;
         // only do something if the config link input is valid, and the address targets the CCE
         // address is setting a configuration register
-        end else if (cfg_cce_mode_addr_v) begin
+        end else if (cfg_w_v_i & cfg_cce_mode_addr_v) begin
           cce_mode_n = bp_cce_mode_e'(cfg_data_i[0+:`bp_cce_mode_bits]);
         // address is reading or writing the instruction RAM
-        end else if (cfg_cce_ucode_addr_v) begin
+        end else if (cfg_w_v_i & cfg_cce_ucode_addr_v) begin
           // inputs to RAM are valid if config address high bit is set
           ram_v_n = cfg_w_v_i;
           ram_w_n = cfg_w_v_i;

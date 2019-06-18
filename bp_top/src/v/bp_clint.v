@@ -199,32 +199,6 @@ logic [num_core_p-1:0]                    plic_n    , plic_r;
 wire cfg_link_w_v_li = cfg_link_data_cmd_v;
 wire [cfg_addr_width_p-1:0] cfg_link_addr_li = mem_data_cmd_cast_i.data[cfg_data_width_p+:cfg_addr_width_p];
 wire [cfg_data_width_p-1:0] cfg_link_data_li = mem_data_cmd_cast_i.data[0+:cfg_data_width_p];
-    
-// Must hold cfg addr and data value in register!
-//
-// cfg_addr_reg and cfg_data_reg is used regardless of cfg_v_reg
-// cfg_v_reg is used to write into RAM, need 1 cycle delay to align with addr and data
-//
-logic cfg_v_reg;
-logic [cfg_addr_width_p-1:0] cfg_addr_reg;
-logic [cfg_data_width_p-1:0] cfg_data_reg;
-    
-  bsg_dff_en 
-   #(.width_p(cfg_addr_width_p+cfg_data_width_p)
-    ) cfg_dff
-    (.clk_i(clk_i)
-    ,.data_i({cfg_link_addr_li, cfg_link_data_li})
-    ,.en_i(cfg_link_w_v_li)
-    ,.data_o({cfg_addr_reg, cfg_data_reg})
-    );
-    
-  bsg_dff 
-   #(.width_p(1)
-    ) cfg_v_dff
-    (.clk_i(clk_i)
-    ,.data_i(cfg_link_w_v_li)
-    ,.data_o(cfg_v_reg)
-    );
 
 for (genvar i = 0; i < num_core_p; i++)
   begin : rof1
@@ -305,7 +279,7 @@ for (genvar i = 0; i < num_core_p; i++)
      cfg_link_pipe
       (.clk_i(clk_i)
 
-       ,.data_i({cfg_v_reg, cfg_addr_reg, cfg_data_reg})
+       ,.data_i({cfg_link_w_v_li, cfg_link_addr_li, cfg_link_data_li})
        ,.data_o({cfg_link_w_v_o[i], cfg_link_addr_o[i], cfg_link_data_o[i]})
        );
 
