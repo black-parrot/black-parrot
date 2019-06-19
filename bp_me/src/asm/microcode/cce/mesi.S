@@ -177,7 +177,8 @@ pushq lceCmd ST req req lru
 bi ready
 
 # Uncached Request Routine
-uncached_req: bf rqf uncached_store
+uncached_req: popq lceReq
+bf rqf uncached_store
 pushq memCmd
 bi ready
 uncached_store: pushq memDataCmd req

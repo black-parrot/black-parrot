@@ -22,6 +22,8 @@ module bp_nonsynth_host
    , output logic [mem_cce_resp_width_lp-1:0]      mem_resp_o
    , output logic                                  mem_resp_v_o
    , input                                         mem_resp_ready_i
+
+   , output [num_core_p-1:0]                       program_finish_o
    );
 
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, cce_mshr_width_lp);
@@ -108,21 +110,34 @@ bsg_dff_reset
    ,.data_o(finish_r)
    );
 
+logic all_finished_r;
+bsg_dff_reset
+ #(.width_p(1))
+ all_finished_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.data_i(&finish_r)
+   ,.data_o(all_finished_r)
+   );
+
+assign program_finish_o = finish_r;
+
 always_ff @(negedge clk_i)
   begin
     for (integer i = 0; i < num_core_p; i++)
       begin
-        if (hprint_w_v_li[i])
+        if (hprint_w_v_li[i] & mem_data_cmd_yumi_o)
           $display("[CORE%0x PRT] %x", i, mem_data_cmd_cast_i.data[0+:8]);
-        if (cprint_w_v_li[i])
-          $display("[CORE%0x PRT] %x", i, mem_data_cmd_cast_i.data[0+:8]);
-        if (finish_w_v_li[i] & ~mem_data_cmd_cast_i.data[0])
+        if (cprint_w_v_li[i] & mem_data_cmd_yumi_o)
+          $display("[CORE%0x PRT] %c", i, mem_data_cmd_cast_i.data[0+:8]);
+        if (finish_w_v_li[i] & mem_data_cmd_yumi_o & ~mem_data_cmd_cast_i.data[0])
           $display("[CORE%0x FSH] PASS", i);
-        if (finish_w_v_li[i] & ~mem_data_cmd_cast_i.data[0])
+        if (finish_w_v_li[i] & mem_data_cmd_yumi_o &  mem_data_cmd_cast_i.data[0])
           $display("[CORE%0x FSH] FAIL", i);
       end
 
-    if (&finish_r)
+    if (all_finished_r)
       begin
         $display("All cores finished! Terminating...");
         $finish();

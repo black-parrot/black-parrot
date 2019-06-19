@@ -289,6 +289,8 @@ module bp_be_dcache_lce
       ,.lce_resp_o(lce_req_to_lce_resp_lo)
       ,.lce_resp_v_o(lce_req_to_lce_resp_v_lo)
       ,.lce_resp_yumi_i(lce_req_to_lce_resp_yumi_li)
+
+      ,.credits_full_i(credits_full_o)
       );
 
   // LCE cmd
