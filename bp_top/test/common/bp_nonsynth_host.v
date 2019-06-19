@@ -163,12 +163,12 @@ bsg_one_fifo
    );
 
 assign mem_resp_lo =
-  {msg_type       : mem_data_cmd_cast_i.msg_type
-   ,addr          : mem_data_cmd_cast_i.addr
-   ,payload       : mem_data_cmd_cast_i.payload
-   ,non_cacheable : mem_data_cmd_cast_i.non_cacheable
-   ,nc_size       : mem_data_cmd_cast_i.nc_size
-   };
+  '{msg_type       : mem_data_cmd_cast_i.msg_type
+    ,addr          : mem_data_cmd_cast_i.addr
+    ,payload       : mem_data_cmd_cast_i.payload
+    ,non_cacheable : mem_data_cmd_cast_i.non_cacheable
+    ,nc_size       : mem_data_cmd_cast_i.nc_size
+    };
 
 
 endmodule : bp_nonsynth_host

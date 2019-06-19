@@ -10,18 +10,16 @@ module bp_clint
  import bp_cce_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
-   , localparam cce_mshr_width_lp = `bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, cce_mshr_width_lp)
-
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mem_payload_width_p)
 
    , localparam mem_resp_width_lp=
-      `bp_mem_cce_resp_width(paddr_width_p,cce_mshr_width_lp)
+      `bp_mem_cce_resp_width(paddr_width_p,mem_payload_width_p)
    , localparam mem_data_resp_width_lp=
       `bp_mem_cce_data_resp_width(paddr_width_p,cce_block_width_p,num_lce_p,lce_assoc_p)
    , localparam mem_cmd_width_lp=
       `bp_cce_mem_cmd_width(paddr_width_p,num_lce_p,lce_assoc_p)
    , localparam mem_data_cmd_width_lp=
-      `bp_cce_mem_data_cmd_width(paddr_width_p,cce_block_width_p,cce_mshr_width_lp)
+      `bp_cce_mem_data_cmd_width(paddr_width_p,cce_block_width_p,mem_payload_width_p)
 
    // Arbitrary default, should be set based on PD constraints
    , parameter irq_pipe_depth_p = 4
@@ -58,7 +56,7 @@ module bp_clint
    , output [num_core_p-1:0][cfg_data_width_p-1:0] cfg_link_data_o
    );
 
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, cce_mshr_width_lp);
+`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mem_payload_width_p);
 
 // Cast ports
 bp_cce_mem_cmd_s       mem_cmd_cast_i;
@@ -365,21 +363,21 @@ bsg_one_fifo
    );
 
 assign mem_data_resp_lo = 
-  {msg_type       : mem_cmd_cast_i.msg_type
-   ,addr          : mem_cmd_cast_i.addr
-   ,payload       : mem_cmd_cast_i.payload
-   ,non_cacheable : mem_cmd_cast_i.non_cacheable
-   ,nc_size       : mem_cmd_cast_i.nc_size
-   ,data          : rdata_lo
-   };
+  '{msg_type       : mem_cmd_cast_i.msg_type
+    ,addr          : mem_cmd_cast_i.addr
+    ,payload       : mem_cmd_cast_i.payload
+    ,non_cacheable : mem_cmd_cast_i.non_cacheable
+    ,nc_size       : mem_cmd_cast_i.nc_size
+    ,data          : rdata_lo
+    };
 
 assign mem_resp_lo =
-  {msg_type       : mem_data_cmd_cast_i.msg_type
-   ,addr          : mem_data_cmd_cast_i.addr
-   ,payload       : mem_data_cmd_cast_i.payload
-   ,non_cacheable : mem_data_cmd_cast_i.non_cacheable
-   ,nc_size       : mem_data_cmd_cast_i.nc_size
-   };
+  '{msg_type       : mem_data_cmd_cast_i.msg_type
+    ,addr          : mem_data_cmd_cast_i.addr
+    ,payload       : mem_data_cmd_cast_i.payload
+    ,non_cacheable : mem_data_cmd_cast_i.non_cacheable
+    ,nc_size       : mem_data_cmd_cast_i.nc_size
+    };
 
 endmodule : bp_clint
 

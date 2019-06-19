@@ -42,8 +42,6 @@ module bp_cce_reg
       `bp_mem_cce_resp_width(paddr_width_p, mshr_width_lp)
     , localparam bp_mem_cce_data_resp_width_lp=
       `bp_mem_cce_data_resp_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
-
-    , localparam bp_cce_mshr_width_lp=`bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
   )
   (input                                                                   clk_i
    , input                                                                 reset_i
@@ -54,7 +52,7 @@ module bp_cce_reg
    , input bp_lce_cce_resp_msg_type_e                                      null_wb_flag_i
    , input bp_lce_cce_ack_type_e                                           resp_ack_type_i
 
-   , input [bp_cce_mshr_width_lp-1:0]                                      mem_resp_payload_i
+   , input [mshr_width_lp-1:0]                                             mem_resp_payload_i
 
    , input [`bp_cce_inst_gpr_width-1:0]                                    alu_res_i
    , input [`bp_cce_inst_gpr_width-1:0]                                    mov_src_i
@@ -77,7 +75,7 @@ module bp_cce_reg
    , input                                                                 gad_cached_flag_i
 
    // Register value outputs
-   , output logic [bp_cce_mshr_width_lp-1:0]                               mshr_o
+   , output logic [mshr_width_lp-1:0]                                      mshr_o
 
    , output logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0]   gpr_o
 

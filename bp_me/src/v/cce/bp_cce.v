@@ -98,6 +98,8 @@ module bp_cce
     assert (lce_sets_p > 1) else $error("Number of LCE sets must be greater than 1");
     assert (num_cce_p >= 1 && `BSG_IS_POW2(num_cce_p))
       else $error("Number of CCE must be power of two");
+    assert (mshr_width_lp == mem_payload_width_p)
+      else $error("MSHR width mismatch");
   end
   //synopsys translate_on
 
