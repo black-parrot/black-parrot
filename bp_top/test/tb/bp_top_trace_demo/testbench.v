@@ -240,6 +240,8 @@ bind bp_be_top
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
+     ,.mhartid_i(be_calculator.proc_cfg.core_id)
+
      ,.fe_nop_i(be_calculator.exc_stage_r[2].fe_nop_v)
      ,.be_nop_i(be_calculator.exc_stage_r[2].be_nop_v)
      ,.me_nop_i(be_calculator.exc_stage_r[2].me_nop_v)
@@ -247,8 +249,7 @@ bind bp_be_top
      ,.roll_i(be_calculator.exc_stage_r[2].roll_v)
      ,.instr_cmt_i(be_calculator.calc_status.instr_cmt_v)
 
-     ,.program_pass_i(be_mem.csr.program_pass)
-     ,.program_fail_i(be_mem.csr.program_fail)
+     ,.program_finish_i(testbench.program_finish)
      );
 
 // DRAM + link 
@@ -324,6 +325,7 @@ mem
 assign host_cmd_yumi_o     = '0;
 assign host_data_resp_o    = '0;
 assign host_data_resp_v_lo = '0;
+logic program_finish;
 bp_nonsynth_host
  #(.cfg_p(cfg_p))
  host_mmio
@@ -337,6 +339,8 @@ bp_nonsynth_host
    ,.mem_resp_o(host_resp_lo)
    ,.mem_resp_v_o(host_resp_v_lo)
    ,.mem_resp_ready_i(host_resp_ready_li)
+
+   ,.program_finish_o(program_finish)
    );
 
 // MMIO arbitration

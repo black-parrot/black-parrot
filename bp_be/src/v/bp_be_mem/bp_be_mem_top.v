@@ -157,7 +157,7 @@ wire unused0 = mem_resp_ready_i;
 
 /* Internal connections */
 /* TLB ports */
-logic                    dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_r_v;
+logic                    dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_r_v, dtlb_r_v_lo;
 logic [vtag_width_p-1:0] dtlb_r_vtag, dtlb_w_vtag, dtlb_miss_vtag;
 bp_be_tlb_entry_s        dtlb_r_entry, dtlb_w_entry;
 
@@ -304,7 +304,7 @@ bp_be_dtlb
    ,.r_ready_o()
    ,.r_vtag_i(dtlb_r_vtag)
    
-   ,.r_v_o()
+   ,.r_v_o(dtlb_r_v_lo)
    ,.r_entry_o(dtlb_r_entry)
    
    ,.w_v_i(dtlb_w_v)
@@ -442,7 +442,7 @@ always_comb
       dcache_uncached = '0;
     end
     else begin
-      dcache_uncached        = dtlb_r_entry.uc;
+      dcache_uncached        = dtlb_r_v_lo & dtlb_r_entry.uc;
       dcache_pkt.opcode      = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
       dcache_pkt.page_offset = {mmu_cmd.vaddr.index, mmu_cmd.vaddr.offset};
       dcache_pkt.data        = mmu_cmd.data;

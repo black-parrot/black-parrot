@@ -198,28 +198,7 @@ end
                              ,iwb_result_i
                              );
                 end else if(dbg_stage_r[2].decode.dcache_w_v) begin
-                    if(dbg_stage_r[2].rs1
-                                +dbg_stage_r[2].imm==32'h0300_0000) begin
-                        $fwrite(file, "[CORE%0x PRT] %x\n"
-                                 ,mhartid_i
-                                 ,dbg_stage_r[2].rs2[0+:8]
-                                 );
-                        $display("[CORE%0x PRT] %x\n"
-                                 ,mhartid_i
-                                 ,dbg_stage_r[2].rs2[0+:8]
-                                 );
-                    end else if(dbg_stage_r[2].rs1
-                                +dbg_stage_r[2].imm==64'h0300_1000) begin
-                        $fwrite(file, "[CORE%0x PRT] %c\n"
-                                 ,mhartid_i
-                                 ,dbg_stage_r[2].rs2[0+:8]
-                                 );
-                        $display("[CORE%0x PRT] %c\n"
-                                 ,mhartid_i
-                                 ,dbg_stage_r[2].rs2[0+:8]
-                                 );
-                    end else begin
-                      if(dbg_stage_r[2].decode.fu_op == e_scd)
+                    if(dbg_stage_r[2].decode.fu_op == e_scd)
                         $fwrite(file, "\t\top: sc.d sem: mem[%x] <- r%d {%x}, success: %d \n"
                                  ,dbg_stage_r[2].rs1 
                                  ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
@@ -233,7 +212,6 @@ end
                                  ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
                                  ,dbg_stage_r[2].rs2
                                  );   
-                    end
                 end else if(dbg_stage_r[2].decode.jmp_v) begin
                     $fwrite(file, "\t\top: jump sem: pc <- {%x}, r%d <- {%x}\n"
                              ,iwb_br_tgt_r
