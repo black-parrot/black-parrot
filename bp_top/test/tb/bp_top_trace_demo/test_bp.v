@@ -35,5 +35,12 @@ testbench
    ,.reset_i(reset)
    );
 
+initial 
+  begin
+    $assertoff();
+    @(negedge reset)
+    $asserton();
+  end
+
 endmodule : test_bp
 

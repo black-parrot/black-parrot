@@ -38,6 +38,7 @@ int sc_main(int argc, char **argv)
   }
 
   reset = 0;
+  Verilated::assertOn(true);
 
   while (!Verilated::gotFinish()) {
     sc_start(CLK_TIME, SC_NS);
