@@ -63,6 +63,7 @@ module bp_be_checker_top
  import bp_common_aviary_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
+ import bp_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p
@@ -86,6 +87,12 @@ module bp_be_checker_top
    )
   (input                              clk_i
    , input                            reset_i
+   , input                            freeze_i
+
+   // Config channel
+   , input                            cfg_w_v_i
+   , input [cfg_addr_width_p-1:0]     cfg_addr_i
+   , input [cfg_data_width_p-1:0]     cfg_data_i
 
    // FE cmd interface
    , output [fe_cmd_width_lp-1:0]     fe_cmd_o
@@ -109,6 +116,8 @@ module bp_be_checker_top
    // Dependency information
    , input [calc_status_width_lp-1:0] calc_status_i
    , input                            mmu_cmd_ready_i
+   , input                            credits_full_i
+   , input                            credits_empty_i
 
    // Checker pipeline control information
    , output                           chk_dispatch_v_o
@@ -125,7 +134,6 @@ module bp_be_checker_top
    , input [mtvec_width_lp-1:0]       mtvec_i
    , input [mepc_width_lp-1:0]        mepc_i
    , input                            tlb_fence_i
-   , input                            ifence_i
    
    //iTLB fill interface
     , input                           itlb_fill_v_i
@@ -150,6 +158,11 @@ bp_be_director
  director
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
+   ,.freeze_i(freeze_i)
+
+   ,.cfg_w_v_i(cfg_w_v_i)
+   ,.cfg_addr_i(cfg_addr_i)
+   ,.cfg_data_i(cfg_data_i)
 
    ,.calc_status_i(calc_status_i) 
    ,.expected_npc_o(expected_npc)
@@ -169,7 +182,6 @@ bp_be_director
    ,.mtvec_i(mtvec_i)
    ,.mepc_i(mepc_i)
    ,.tlb_fence_i(tlb_fence_i)
-   ,.ifence_i(ifence_i)
 
    ,.itlb_fill_v_i(itlb_fill_v_i)
    ,.itlb_fill_vaddr_i(itlb_fill_vaddr_i)
@@ -182,9 +194,11 @@ bp_be_detector
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
+   ,.expected_npc_i(expected_npc)
    ,.calc_status_i(calc_status_i)
    ,.mmu_cmd_ready_i(mmu_cmd_ready_i)
-   ,.expected_npc_i(expected_npc)
+   ,.credits_full_i(credits_full_i)
+   ,.credits_empty_i(credits_empty_i)
 
    ,.flush_i(flush)
 

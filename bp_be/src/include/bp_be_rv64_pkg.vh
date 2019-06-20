@@ -23,6 +23,7 @@ package bp_be_rv64_pkg;
   localparam rv64_imm12_width_gp    = 12;
   localparam rv64_imm11to5_width_gp = 7;
   localparam rv64_imm4to0_width_gp  = 5;
+  localparam rv64_priv_width_gp     = 2;
 
   typedef struct packed
   {

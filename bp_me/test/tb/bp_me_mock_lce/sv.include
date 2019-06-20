@@ -5,18 +5,30 @@
 +incdir+$BP_ME_DIR/src/include/v
 +incdir+$BP_BE_DIR/src/include
 +incdir+$BP_BE_DIR/src/include/bp_be_dcache
+<<<<<<< HEAD
++incdir+$BP_ME_DIR/test/common
+=======
++incdir+$BP_TOP_DIR/src/include/
+>>>>>>> dev_feature_on_chip_network
 $BP_COMMON_DIR/src/include/bp_common_pkg.vh
 $BP_COMMON_DIR/src/include/bp_common_aviary_pkg.vh
 $BP_BE_DIR/src/include/bp_be_rv64_pkg.vh
 $BP_BE_DIR/src/include/bp_be_pkg.vh
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
 $BP_ME_DIR/src/include/v/bp_me_network_pkg.v
+$BP_TOP_DIR/src/include/bp_cfg_link_pkg.vh
 $BSG_IP_CORES_DIR/bsg_misc/bsg_defines.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_noc_pkg.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_mux.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_dlatch.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_clkgate_optional.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_decode.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_dff.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_dff_reset_en.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_dff_reset.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_dff_chain.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_mux_one_hot.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_decode_with_v.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_encode_one_hot.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_counter_clear_up.v
 $BSG_IP_CORES_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
@@ -38,11 +50,21 @@ $BP_ME_DIR/src/v/cce/bp_cce_dir_lru_extract.v
 $BP_ME_DIR/src/v/cce/bp_cce_gad.v
 $BP_ME_DIR/src/v/cce/bp_cce_reg.v
 $BP_ME_DIR/src/v/cce/bp_cce_uncached.v
+$BP_ME_DIR/src/v/cce/bp_cce_msg.v
+$BP_ME_DIR/src/v/cce/bp_cce_pending.v
 $BP_ME_DIR/src/v/cce/bp_cce.v
+<<<<<<< HEAD
 $BP_ME_DIR/test/common/bp_mem.v
+$BP_ME_DIR/test/common/bp_mem_dramsim2.v
+$BP_ME_DIR/test/common/dramsim2_wrapper.cpp
+=======
+>>>>>>> dev_feature_on_chip_network
 $BP_ME_DIR/test/common/bsg_trace_node_master.v
 $BP_ME_DIR/test/common/bp_me_nonsynth_mock_lce.v
 $BP_ME_DIR/test/common/bp_cce_nonsynth_tracer.v
 $BP_ME_DIR/test/common/bp_me_mock_lce_me.v
-$BP_ME_DIR/test/common/bp_cce_nonsynth_cfg_loader.v
+$BP_ME_DIR/test/common/bp_mem_dramsim2.v
+$BP_ME_DIR/test/common/bp_cce_mmio_cfg_loader.v
+$BP_ME_DIR/test/common/dramsim2_wrapper.cpp
+$BP_TOP_DIR/src/v/bp_clint.v
 testbench_postsed.v

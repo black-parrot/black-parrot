@@ -6,28 +6,41 @@
  * Description:
  *   This is the top level module for the CCE.
  *
+ * Notes:
+ *   All inputs from the LCE are buffered. LCE Responses require a FIFO that can hold up to
+ *   N responses where N is the number of way groups managed per CCE. Future optimizations could
+ *   lessen this requirement to a 1 or 2 element FIFO. All other inputs use 2-FIFOs.
+ *
+ *   All input and output between the CCE and Memory are buffered. 2-FIFOs are used except for
+ *   the Mem Response network, where N entries are required (N defined same as above). N entries
+ *   are required because there may be up to 1 outstanding memory transaction per way group
+ *   from the CCE, and the CCE may not immediately sink the message. Sinking depends on the current
+ *   state of the microcode (e.g., the CCE could be processing some other request). The response
+ *   contains information that is needed to resume processing an LCE's request, so it can not be
+ *   automatically sunk without requiring additional storage buffers in the CCE itself.
+ *
+ *   Currently, it is assumed that N is the same for all CCEs in the system.
  */
 
 module bp_cce_top
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
+  import bp_cfg_link_pkg::*;
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
-
-    // Config channel
-    , parameter cfg_link_addr_width_p = bp_cfg_link_addr_width_gp
-    , parameter cfg_link_data_width_p = bp_cfg_link_data_width_gp
 
     , parameter cce_trace_p             = "inv"
 
     // Derived parameters
     , localparam block_size_in_bytes_lp = (cce_block_width_p/8)
     , localparam lg_num_cce_lp         = `BSG_SAFE_CLOG2(num_cce_p)
+    , localparam mshr_width_lp = `bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
+    , localparam wg_per_cce_lp = (lce_sets_p / num_cce_p)
 
     // interface widths
     `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mshr_width_lp)
 
   )
   (input                                                   clk_i
@@ -35,15 +48,9 @@ module bp_cce_top
    , input                                                 freeze_i
 
    // Config channel
-   , input [cfg_link_addr_width_p-2:0]                     config_addr_i
-   , input [cfg_link_data_width_p-1:0]                     config_data_i
-   , input                                                 config_v_i
-   , input                                                 config_w_i
-   , output logic                                          config_ready_o
-
-   , output logic [cfg_link_data_width_p-1:0]              config_data_o
-   , output logic                                          config_v_o
-   , input                                                 config_ready_i
+   , input                                                 cfg_w_v_i
+   , input [cfg_addr_width_p-1:0]                          cfg_addr_i
+   , input [cfg_data_width_p-1:0]                          cfg_data_i
 
    // LCE-CCE Interface
    // inbound: ready&valid
@@ -130,8 +137,10 @@ module bp_cce_top
       ,.yumi_i(lce_req_yumi_from_cce)
       );
 
-  bsg_two_fifo
+  bsg_fifo_1r1w_small
     #(.width_p(lce_cce_resp_width_lp)
+      // See top comments about sizing
+      ,.els_p(wg_per_cce_lp)
       )
     lce_cce_resp_fifo
      (.clk_i(clk_i)
@@ -159,8 +168,10 @@ module bp_cce_top
       );
 
   // Inbound Mem to CCE
-  bsg_two_fifo
+  bsg_fifo_1r1w_small
     #(.width_p(mem_cce_resp_width_lp)
+      // See top comments about sizing
+      ,.els_p(wg_per_cce_lp)
       )
     mem_cce_resp_fifo
      (.clk_i(clk_i)
@@ -222,8 +233,6 @@ module bp_cce_top
 
   bp_cce
     #(.cfg_p(cfg_p)
-      ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
-      ,.cfg_link_data_width_p(cfg_link_data_width_p)
       ,.cce_trace_p(cce_trace_p)
       )
     bp_cce
@@ -233,15 +242,9 @@ module bp_cce_top
 
       ,.cce_id_i(cce_id_i)
 
-      ,.config_addr_i(config_addr_i)
-      ,.config_data_i(config_data_i)
-      ,.config_v_i(config_v_i)
-      ,.config_w_i(config_w_i)
-      ,.config_ready_o(config_ready_o)
-
-      ,.config_data_o(config_data_o)
-      ,.config_v_o(config_v_o)
-      ,.config_ready_i(config_ready_i)
+      ,.cfg_w_v_i(cfg_w_v_i)
+      ,.cfg_addr_i(cfg_addr_i)
+      ,.cfg_data_i(cfg_data_i)
 
       // To CCE
       ,.lce_req_i(lce_req_to_cce)

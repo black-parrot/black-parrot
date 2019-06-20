@@ -54,14 +54,11 @@ verilate.sc: dirs.sc
 	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v > $(BUILD_DIR)/wrapper.v
 	-@cat $(SYN_PATH)/coverage_hier.verilator | envsubst > $(BUILD_DIR)/config.vlt
 	-@cp $(TB_PATH)/$(TB)/test_bp.cpp $(BUILD_DIR)/test_bp.cpp
-	-@cp $(CCE_ROM_PATH)/$(CCE_ROM) $(BUILD_DIR)/cce_rom.v
-	-@touch $(BUILD_DIR)/cce_rom.v
 	-@grep -v -e "^\#" $(SYN_PATH)/flist.verilator       > $(BUILD_DIR)/flist.verilator 
 	-@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.verilator >> $(BUILD_DIR)/flist.verilator
 	-@echo $(BUILD_DIR)/wrapper.v                 >> $(BUILD_DIR)/flist.verilator
 	-@echo $(BUILD_DIR)/testbench.v               >> $(BUILD_DIR)/flist.verilator
 	-@echo $(BUILD_DIR)/test_bp.cpp                >> $(BUILD_DIR)/flist.verilator
-	-@echo $(BUILD_DIR)/cce_rom.v                 >> $(BUILD_DIR)/flist.verilator
 	cd $(BUILD_DIR); $(VV) $(VV_OPTS) $(BUILD_OPTS) --top-module $(TOP_MODULE) \
 		config.vlt -f flist.verilator $(HDL_PARAMS) | tee $(VBUILD_LOG)
 	-@grep "Error" -A 5 $(VBUILD_LOG) > $(VBUILD_ERROR);
@@ -98,17 +95,24 @@ sim.sc: COVERAGE_DAT ?= $(PROG)_coverage.dat
 sim.sc: dirs.sc 
 	$(shell mkdir -p $(SIM_DIR))
 	$(shell mkdir -p $(COV_DIR))
+	$(eval include $(TB_PATH)/$(TB)/Makefile.frag)
 	-@ln -sf $(BUILD_DIR)/obj_dir/V$(TOP_MODULE) $(SIM_DIR)/simsc
 	-@cp $(MEM_PATH)/$(PROG).mem $(SIM_DIR)/prog.mem
 	-@touch $(SIM_DIR)/prog.mem
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(SIM_DIR)/dram_ch.ini
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(SIM_DIR)/dram_sys.ini
-	cd $(SIM_DIR); ./simsc $(COV_DIR)/$(PROG).dat | tee $(SIM_LOG)
+	-@cp $(CCE_MEM_PATH)/$(CCE_MEM) $(SIM_DIR)/cce_ucode.mem
+	cd $(SIM_DIR); ./simsc | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "PASS" -A 8 $(SIM_LOG) > $(SIM_REPORT)
 
-regress.sc: build.sc $(RV64_REGRESSION_SC) 
+regress.sc: $(RV64_REGRESSION_SC) 
 $(RV64_REGRESSION_SC):
+	$(MAKE) sim.sc PROG=$(basename $@)
+$(COREMARK_REGRESSION_SC):
+	$(MAKE) sim.sc PROG=$(basename $@)
+regress_beebs.sc: $(BEEBS_REGRESSION_SC) 
+$(BEEBS_REGRESSION_SC):
 	$(MAKE) sim.sc PROG=$(basename $@)
 
 cov.sc: COV_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).cov.log

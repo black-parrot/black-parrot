@@ -16,8 +16,8 @@ module bp_me_top
     `declare_bp_proc_params(cfg_p)
 
     // Config channel
-    , parameter cfg_link_addr_width_p = bp_cfg_link_addr_width_gp
-    , parameter cfg_link_data_width_p = bp_cfg_link_data_width_gp
+    , parameter cfg_link_addr_width_p = cfg_addr_width_p
+    , parameter cfg_link_data_width_p = cfg_data_width_p
 
     // Default parameters
     , parameter cce_trace_p           = 0

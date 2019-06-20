@@ -68,7 +68,7 @@ module bp_cce_dir_lru_extract
   assign lru_coh_state = (row_v_i)
                          ? row[lce_i[0+:lg_tag_sets_per_row_lp]][lru_way_i].state
                          : '0;
-  assign lru_cached_excl_o = ((lru_coh_state == e_MESI_M) || (lru_coh_state == e_MESI_E));
+  assign lru_cached_excl_o = ((lru_coh_state == e_MESI_M) | (lru_coh_state == e_MESI_E));
   assign lru_tag_o = (row_v_i)
                      ? row[lce_i[0+:lg_tag_sets_per_row_lp]][lru_way_i].tag
                      : '0;

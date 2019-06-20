@@ -10,6 +10,7 @@ module bp_core
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
+ import bp_cfg_link_pkg::*;
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p
@@ -24,10 +25,7 @@ module bp_core
                                   ,dword_width_p
                                   ,cce_block_width_p
                                   )
-
-    // Enables trace replay
-    , parameter trace_p      = 0
-    , parameter calc_debug_p = 0
+    , parameter calc_trace_p = 0
 
     // Should go away with manycore bridge 
     , localparam proc_cfg_width_lp = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
@@ -35,8 +33,14 @@ module bp_core
    (
     input                                          clk_i
     , input                                        reset_i
+    , input                                        freeze_i
 
     , input [proc_cfg_width_lp-1:0]                proc_cfg_i
+
+    // Config channel
+    , input                                        cfg_w_v_i
+    , input [cfg_addr_width_p-1:0]                 cfg_addr_i
+    , input [cfg_data_width_p-1:0]                 cfg_data_i
 
     // LCE-CCE interface
     , output [1:0][lce_cce_req_width_lp-1:0]       lce_req_o
@@ -67,14 +71,6 @@ module bp_core
     , input                                        timer_int_i
     , input                                        software_int_i
     , input                                        external_int_i
-
-    // Commit tracer for trace replay
-    , output                                       cmt_rd_w_v_o
-    , output [rv64_reg_addr_width_gp-1:0]          cmt_rd_addr_o
-    , output                                       cmt_mem_w_v_o
-    , output [dword_width_p-1:0]                   cmt_mem_addr_o
-    , output [`bp_be_fu_op_width-1:0]              cmt_mem_op_o
-    , output [dword_width_p-1:0]                   cmt_data_o
     );
 
   `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
@@ -101,8 +97,13 @@ module bp_core
    fe 
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+     ,.freeze_i(freeze_i)
 
      ,.icache_id_i(proc_cfg.icache_id)
+
+     ,.cfg_w_v_i(cfg_w_v_i)
+     ,.cfg_addr_i(cfg_addr_i)
+     ,.cfg_data_i(cfg_data_i)
 
      ,.fe_queue_o(fe_queue_li)
      ,.fe_queue_v_o(fe_queue_v_li)
@@ -184,14 +185,18 @@ module bp_core
 
   bp_be_top 
    #(.cfg_p(cfg_p)
-     ,.trace_p(trace_p)
-     ,.calc_debug_p(calc_debug_p)
+     ,.calc_trace_p(calc_trace_p)
      )
    be
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-
+     ,.freeze_i(freeze_i)
+     
      ,.proc_cfg_i(proc_cfg_i)
+
+     ,.cfg_w_v_i(cfg_w_v_i)
+     ,.cfg_addr_i(cfg_addr_i)
+     ,.cfg_data_i(cfg_data_i)
 
      ,.fe_queue_i(fe_queue_lo)
      ,.fe_queue_v_i(fe_queue_v_lo)
@@ -232,13 +237,6 @@ module bp_core
      ,.timer_int_i(timer_int_i)
      ,.software_int_i(software_int_i)
      ,.external_int_i(external_int_i)
-
-     ,.cmt_rd_w_v_o(cmt_rd_w_v_o)
-     ,.cmt_rd_addr_o(cmt_rd_addr_o)
-     ,.cmt_mem_w_v_o(cmt_mem_w_v_o)
-     ,.cmt_mem_addr_o(cmt_mem_addr_o)
-     ,.cmt_mem_op_o(cmt_mem_op_o)
-     ,.cmt_data_o(cmt_data_o)
      );
 
 endmodule : bp_core

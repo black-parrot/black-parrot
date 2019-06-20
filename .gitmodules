@@ -31,7 +31,7 @@
 [submodule "basejump_stl"]
   path = basejump_stl
   url = https://github.com/bespoke-silicon-group/basejump_stl.git
-  branch = master
+  branch = dev-wormhole-network-freeze
   ignore = dirty
 
 [submodule "external/DRAMSim2"]
@@ -61,6 +61,12 @@
 [submodule "bp_common/test/src/riscv-pk"]
   path = bp_common/test/src/riscv-pk
   url = https://github.com/black-parrot/riscv-pk.git
+  branch = blackparrot_mods
+  ignore = dirty
+
+[submodule "bp_common/test/src/beebs"]
+  path = bp_common/test/src/beebs
+  url = https://github.com/black-parrot/beebs.git
   branch = blackparrot_mods
   ignore = dirty
 

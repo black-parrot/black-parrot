@@ -82,7 +82,7 @@ Assembler::getOp(const char* op) {
     return e_op_read_dir;
   } else if (!strcmp("wdp", op) || !strcmp("wde", op) || !strcmp("wds", op)) {
     return e_op_write_dir;
-  } else if (!strcmp("gad", op) || !strcmp("stall", op)) {
+  } else if (!strcmp("gad", op) || !strcmp("stall", op) || !strcmp("clm", op)) {
     return e_op_misc;
   } else if (!strcmp("wfq", op) || !strcmp("pushq", op) || !strcmp("popq", op)
              || !strcmp("poph", op)) {
@@ -144,6 +144,8 @@ Assembler::getMinorOp(const char* op) {
     return e_gad;
   } else if (!strcmp("stall", op)) {
     return e_stall;
+  } else if (!strcmp("clm", op)) {
+    return e_clm;
   } else if (!strcmp("wfq", op)) {
     return e_wfq;
   } else if (!strcmp("pushq", op)) {
@@ -594,17 +596,7 @@ Assembler::parseWriteDir(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
 
 void
 Assembler::parseMisc(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
-  if (inst->minor_op == e_gad) {
-    /*
-    inst->transfer_lce_sel = e_tr_lce_sel_logic;
-    inst->transfer_lce_w_v = 1;
-    inst->req_addr_way_sel = e_req_addr_way_sel_logic;
-    inst->req_addr_way_w_v = 1;
-    inst->tf_sel = e_tf_logic;
-    inst->pruief_sel = e_pruief_logic;
-    inst->flag_mask_w_v = (e_flag_tf | e_flag_rf | e_flag_uf | e_flag_if | e_flag_ef);
-    */
-  } else if (inst->minor_op != e_stall) {
+  if (inst->minor_op != e_gad && inst->minor_op != e_stall && inst->minor_op != e_clm) {
     printf("Unknown Misc instruction: %s\n", tokens->at(0).c_str());
     exit(-1);
   }

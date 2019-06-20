@@ -23,11 +23,11 @@ module bp_mem_dramsim2
 
     ,parameter lce_req_data_width_p="inv"
 
-    ,localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p, num_lce_p, lce_assoc_p)
+    ,localparam mshr_width_lp=`bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
+    ,localparam bp_mem_cce_resp_width_lp=`bp_mem_cce_resp_width(paddr_width_p, mshr_width_lp)
     ,localparam bp_mem_cce_data_resp_width_lp=`bp_mem_cce_data_resp_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
     ,localparam bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(paddr_width_p, num_lce_p, lce_assoc_p)
-    ,localparam bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
-
+    ,localparam bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_p, block_size_in_bits_lp, mshr_width_lp)
 
     ,localparam word_select_bits_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p/8)
     ,localparam block_offset_bits_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
@@ -58,7 +58,7 @@ module bp_mem_dramsim2
     ,input logic mem_data_resp_ready_i
   );
 
-  `declare_bp_me_if(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
+  `declare_bp_me_if(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p, mshr_width_lp);
 
   bp_cce_mem_cmd_s mem_cmd_s_r, mem_cmd_i_s;
   bp_cce_mem_data_cmd_s mem_data_cmd_s_r, mem_data_cmd_i_s;
@@ -134,6 +134,9 @@ module bp_mem_dramsim2
       mem_resp_v_o <= '0;
       mem_data_resp_s_o <= '0;
       mem_data_resp_v_o <= '0;
+      
+      mem_data_cmd_yumi_o <= '0;
+      mem_cmd_yumi_o <= '0;
 
       read_accepted = '0;
       write_accepted = '0;
@@ -144,7 +147,7 @@ module bp_mem_dramsim2
         end
         READY: begin
           // mem data command - need to write data to memory
-          if (mem_data_cmd_v_i && mem_resp_ready_i) begin
+          if (mem_data_cmd_v_i) begin
             // do the write to memory ram if available
             write_accepted = '0;
             // uncached write, send correct size
@@ -166,7 +169,7 @@ module bp_mem_dramsim2
             mem_data_cmd_yumi_o <= write_accepted;
             mem_data_cmd_s_r    <= mem_data_cmd_i;
             mem_st              <= write_accepted ? RD_DATA_CMD : READY;
-          end else if (mem_cmd_v_i && mem_data_resp_ready_i) begin
+          end else if (mem_cmd_v_i) begin
             // do the read from memory ram if available
             read_accepted = mem_read_req(block_rd_addr);
 
@@ -176,42 +179,37 @@ module bp_mem_dramsim2
           end
         end
         RD_CMD: begin
-          mem_cmd_yumi_o <= '0;
-          mem_st <= dramsim_valid ? READY : RD_CMD;
-
-          mem_data_resp_s_o.msg_type <= mem_cmd_s_r.msg_type;
-          mem_data_resp_s_o.payload.lce_id <= mem_cmd_s_r.payload.lce_id;
-          mem_data_resp_s_o.payload.way_id <= mem_cmd_s_r.payload.way_id;
-          mem_data_resp_s_o.addr <= mem_cmd_s_r.addr;
-          if (mem_cmd_s_r.non_cacheable) begin
-            mem_data_resp_s_o.data <= {(block_size_in_bits_lp-lce_req_data_width_p)'('0),nc_data};
-          end else begin
-            mem_data_resp_s_o.data <= dramsim_data;
+          if(mem_data_resp_ready_i) begin
+            mem_st <= dramsim_valid ? READY : RD_CMD;
+  
+            mem_data_resp_s_o.msg_type <= mem_cmd_s_r.msg_type;
+            mem_data_resp_s_o.payload <= mem_cmd_s_r.payload;
+            mem_data_resp_s_o.addr <= mem_cmd_s_r.addr;
+            if (mem_cmd_s_r.non_cacheable) begin
+              mem_data_resp_s_o.data <= {(block_size_in_bits_lp-lce_req_data_width_p)'('0),nc_data};
+            end else begin
+              mem_data_resp_s_o.data <= dramsim_data;
+            end
+            mem_data_resp_s_o.non_cacheable <= mem_cmd_s_r.non_cacheable;
+            mem_data_resp_s_o.nc_size <= mem_cmd_s_r.nc_size;
+  
+            // pull valid high
+            mem_data_resp_v_o <= dramsim_valid;
           end
-          mem_data_resp_s_o.non_cacheable <= mem_cmd_s_r.non_cacheable;
-          mem_data_resp_s_o.nc_size <= mem_cmd_s_r.nc_size;
-
-          // pull valid high
-          mem_data_resp_v_o <= dramsim_valid;
         end
         RD_DATA_CMD: begin
-          mem_data_cmd_yumi_o <= '0;
-          mem_st <= dramsim_valid ? READY : RD_DATA_CMD;
-
-          mem_resp_s_o.msg_type <= mem_data_cmd_s_r.msg_type;
-          mem_resp_s_o.addr <= mem_data_cmd_s_r.addr;
-          mem_resp_s_o.payload.lce_id <= mem_data_cmd_s_r.payload.lce_id;
-          mem_resp_s_o.payload.way_id <= mem_data_cmd_s_r.payload.way_id;
-          mem_resp_s_o.payload.req_addr <= mem_data_cmd_s_r.payload.req_addr;
-          mem_resp_s_o.payload.tr_lce_id <= mem_data_cmd_s_r.payload.tr_lce_id;
-          mem_resp_s_o.payload.tr_way_id <= mem_data_cmd_s_r.payload.tr_way_id;
-          mem_resp_s_o.payload.transfer <= mem_data_cmd_s_r.payload.transfer;
-          mem_resp_s_o.payload.replacement <= mem_data_cmd_s_r.payload.replacement;
-          mem_resp_s_o.non_cacheable <= mem_data_cmd_s_r.non_cacheable;
-          mem_resp_s_o.nc_size <= mem_data_cmd_s_r.nc_size;
-
-          // pull valid high
-          mem_resp_v_o <= dramsim_valid;
+          if(mem_resp_ready_i) begin
+            mem_st <= dramsim_valid ? READY : RD_DATA_CMD;
+  
+            mem_resp_s_o.msg_type <= mem_data_cmd_s_r.msg_type;
+            mem_resp_s_o.addr <= mem_data_cmd_s_r.addr;
+            mem_resp_s_o.payload <= mem_data_cmd_s_r.payload;
+            mem_resp_s_o.non_cacheable <= mem_data_cmd_s_r.non_cacheable;
+            mem_resp_s_o.nc_size <= mem_data_cmd_s_r.nc_size;
+  
+            // pull valid high
+            mem_resp_v_o <= dramsim_valid;
+          end
         end
         default: begin
           mem_st <= RESET;

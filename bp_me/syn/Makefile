@@ -9,22 +9,39 @@ LOG_PATH    := $(BP_ME_DIR)/syn/logs
 REPORT_PATH := $(BP_ME_DIR)/syn/reports
 RESULTS_PATH := $(BP_ME_DIR)/syn/results
 
-# Default ROM to example
+## End specific flags and variables
+
+# C includes used by verilator
+CPPFLAGS += -I$(BP_ME_DIR)/test/include -I$(BP_ME_DIR)/src/include/c
+
 TB          ?= bp_me_trace_demo
 CFG         ?= e_bp_single_core_cfg
 
-## End specific flags and variables
-BP_ME_SRC_PATH       = $(BP_ME_DIR)/src/v
-BP_ME_INC_PATH       = $(BP_ME_DIR)/src/include/v
-BP_ME_TB_PATH        = $(BP_ME_DIR)/test
-BP_ME_TB_COMMON_PATH = $(BP_ME_TB_PATH)/common
-BP_ME_SYN_PATH       = $(BP_ME_DIR)/syn
-CCE_ROM_PATH         = $(BP_ME_SRC_PATH)/roms
-CCE_SRC_PATH         = $(BP_ME_SRC_PATH)/cce
-NETWORK_PATH         = $(BP_ME_SRC_PATH)/network
+# Select CCE ROM based on CFG and Coherence Protocol
+ifeq ($(CFG), e_bp_half_core_cfg)
+  NUM_LCE_P=1
+  N_WG=64
+else ifeq ($(CFG), e_bp_single_core_cfg)
+  NUM_LCE_P=2
+  N_WG=64
+else ifeq ($(CFG), e_bp_dual_core_cfg)
+  NUM_LCE_P=4
+  N_WG=32
+else ifeq ($(CFG), e_bp_quad_core_cfg)
+  NUM_LCE_P=8
+  N_WG=16
+else ifeq ($(CFG), e_bp_oct_core_cfg)
+  NUM_LCE_P=16
+  N_WG=8
+endif
 
-# C includes used by verilator
-CPPFLAGS += -I$(BP_ME_TB_PATH)/include -I$(BP_ME_DIR)/src/include/c
+
+COH_PROTO   ?= mesi
+CCE_ROM_PATH = $(BP_ME_DIR)/src/v/roms/$(COH_PROTO)-tr
+CCE_ROM      = bp_cce_inst_rom_$(COH_PROTO)-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.v
+
+DRAMSIM_CH_CFG  ?= DDR2_micron_16M_8b_x8_sg3E.ini
+DRAMSIM_SYS_CFG ?= system.ini
 
 .EXPORT_ALL_VARIABLES:
 
@@ -41,23 +58,23 @@ lint.me:
 
 regress.me.sc: dirs.sc
 	$(MAKE) build.sc TB=bp_cce_alu
-	$(MAKE) run.sc TB=bp_cce_alu
-	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_alu_rv64ui-p-simple_sim.log \
+	$(MAKE) sim.sc TB=bp_cce_alu
+	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_alu.e_bp_single_core_cfg.sim.rv64ui-p-simple.log \
 	&& echo "bp_cce_alu: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_cce_alu: FAIL" >> $(LOG_PATH)/me_regress.log
 	$(MAKE) build.sc TB=bp_cce_dir
-	$(MAKE) run.sc TB=bp_cce_dir
-	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_dir_rv64ui-p-simple_sim.log \
+	$(MAKE) sim.sc TB=bp_cce_dir
+	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_dir.e_bp_single_core_cfg.sim.rv64ui-p-simple.log \
 	&& echo "bp_cce_dir: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_cce_dir: FAIL" >> $(LOG_PATH)/me_regress.log
 	$(MAKE) build.sc TB=bp_cce_gad
-	$(MAKE) run.sc TB=bp_cce_gad
-	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_gad_rv64ui-p-simple_sim.log \
+	$(MAKE) sim.sc TB=bp_cce_gad
+	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_gad.e_bp_single_core_cfg.sim.rv64ui-p-simple.log \
 	&& echo "bp_cce_gad: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_cce_gad: FAIL" >> $(LOG_PATH)/me_regress.log
-	$(MAKE) build.sc TB=bp_cce_test
-	$(MAKE) run.sc TB=bp_cce_test
-	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_test_rv64ui-p-simple_sim.log \
+	$(MAKE) build.sc TB=bp_cce_test CFG=e_bp_half_core_cfg
+	$(MAKE) sim.sc TB=bp_cce_test CFG=e_bp_half_core_cfg
+	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_test.e_bp_half_core_cfg.sim.rv64ui-p-simple.log \
 	&& echo "bp_cce_test: OK" >> $(LOG_PATH)/me_regress.log \
 	|| echo "bp_cce_test: FAIL" >> $(LOG_PATH)/me_regress.log
 

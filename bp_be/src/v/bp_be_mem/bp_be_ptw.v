@@ -1,6 +1,4 @@
 
-// TODO: add page-fault exceptions
-
 module bp_be_ptw
   import bp_common_pkg::*;
   import bp_be_rv64_pkg::*;
@@ -57,7 +55,6 @@ module bp_be_ptw
   );
   
   `declare_bp_be_dcache_pkt_s(page_offset_width_p, pte_width_p);
-  `declare_bp_sv39_pte_s;
   `declare_bp_be_tlb_entry_s(ppn_width_lp);
   
   typedef enum bit [2:0] { eIdle, eSendLoad, eWaitLoad, eWriteBack, eStuck } state_e;
@@ -108,6 +105,9 @@ module bp_be_ptw
   assign tlb_w_entry.x          = translation_en_i ? dcache_data.x : 1'b1;
   assign tlb_w_entry.w          = translation_en_i ? dcache_data.w : 1'b1;
   assign tlb_w_entry.r          = translation_en_i ? dcache_data.r : 1'b1;
+
+  // PMA attributes
+  assign tlb_w_entry.uc         = (tlb_w_entry.ptag < (dram_base_addr_gp >> page_offset_width_p));
 
   assign dcache_v_o             = (state_r == eSendLoad);
   assign dcache_pkt.opcode      = e_dcache_opcode_ld;

@@ -7,7 +7,8 @@ module bp_be_nonsynth_tracer
    `declare_bp_proc_params(cfg_p)
 
    // Default parameters
-   , parameter debug_file_p = "debug"
+   , parameter calc_trace_p = 0
+   , parameter calc_trace_file_p = "debug"
 
    // Calculated parameters
    , localparam mhartid_width_lp      = `BSG_SAFE_CLOG2(num_core_p)
@@ -99,8 +100,10 @@ wire [reg_data_width_lp-1:0] unused1 = fwb_result_i;
     integer file;
     string file_name;
 
+if (calc_trace_p) 
+  begin : fi1
     always_ff @(negedge reset_i) begin
-        file_name = $sformatf("%s_%x.log", debug_file_p, mhartid_i);
+        file_name = $sformatf("%s_%x.log", calc_trace_file_p, mhartid_i);
         file = $fopen(file_name, "w");
     end
 
@@ -124,7 +127,7 @@ always_ff @(posedge clk_i) begin
     if(booted_r) begin
             $fwrite(file, "-----\n");
             if (issue_pkt_v_i)
-              $fwrite(file, "[ISS] core: %x pc: %x\n", mhartid_i, issue_pkt.instr_metadata.pc);
+              $fwrite(file, "[ISS] core: %x pc: %x\n", mhartid_i, issue_pkt.pc);
 
             if (fe_nop_v_i)
               $fwrite(file, "[ISD] core: %x bub (fe)\n", mhartid_i);
@@ -133,7 +136,7 @@ always_ff @(posedge clk_i) begin
             else if (me_nop_v_i)
               $fwrite(file, "[ISD] core: %x bub (me)\n", mhartid_i);
             else 
-              $fwrite(file, "[ISD] core: %x pc: %x\n", mhartid_i, dispatch_pkt.instr_metadata.pc);
+              $fwrite(file, "[ISD] core: %x pc: %x\n", mhartid_i, dispatch_pkt.pc);
 
 for (integer i = 0; i < 4; i++)
 begin
@@ -144,22 +147,21 @@ begin
             else if (~dbg_stage_r[i].decode.instr_v)
               $fwrite(file, "[%s] core: %x nop\n", stage_aliases[i], mhartid_i);
             else
-              $fwrite(file, "[%s] core: %x pc: %x\n", stage_aliases[i], mhartid_i, dbg_stage_r[i].instr_metadata.pc);
+              $fwrite(file, "[%s] core: %x pc: %x\n", stage_aliases[i], mhartid_i, dbg_stage_r[i].pc);
 end
 
             if (trap_v_i) begin
-              $fwrite(file, "[TRP] core: %x pc: %x", mhartid_i, dbg_stage_r[2].instr_metadata.pc);
+              $fwrite(file, "[TRP] core: %x pc: %x", mhartid_i, dbg_stage_r[2].pc);
                 $fwrite(file, "\n\ninfo: priv: %x mpp: %x mcause: %x mtvec: %x mtval: %x\n", priv_mode_i, mpp_i, mcause_i, mtvec_i, mtval_i);
             end
             if (ret_v_i) begin
-              $fwrite(file, "[RET] core: %x pc: %x", mhartid_i, dbg_stage_r[2].instr_metadata.pc);
+              $fwrite(file, "[RET] core: %x pc: %x", mhartid_i, dbg_stage_r[2].pc);
                 $fwrite(file, "\n\ninfo: priv: %x mpp: %x\n", priv_mode_i, mpp_i);
             end
             if(dbg_stage_r[2].decode.instr_v & ~cmt_trace_exc[2].poison_v) begin
-                $fwrite(file, "[CMT] core: %x itag: %x pc: %x instr: %x\n"
+                $fwrite(file, "[CMT] core: %x pc: %x instr: %x\n"
                          ,mhartid_i
-                         ,dbg_stage_r[2].instr_metadata.itag
-                         ,dbg_stage_r[2].instr_metadata.pc
+                         ,dbg_stage_r[2].pc
                          ,dbg_stage_r[2].instr
                          );
                 $fwrite(file, "\t\tinfo: rs1: %d {%x}, rs2: %d {%x}, imm: %x\n"
@@ -196,28 +198,7 @@ end
                              ,iwb_result_i
                              );
                 end else if(dbg_stage_r[2].decode.dcache_w_v) begin
-                    if(dbg_stage_r[2].rs1
-                                +dbg_stage_r[2].imm==64'h8FFF_FFFF) begin
-                        $fwrite(file, "[CORE%0x PRT] %x\n"
-                                 ,mhartid_i
-                                 ,dbg_stage_r[2].rs2[0+:8]
-                                 );
-                        $display("[CORE%0x PRT] %x\n"
-                                 ,mhartid_i
-                                 ,dbg_stage_r[2].rs2[0+:8]
-                                 );
-                    end else if(dbg_stage_r[2].rs1
-                                +dbg_stage_r[2].imm==64'h8FFF_EFFF) begin
-                        $fwrite(file, "[CORE%0x PRT] %c\n"
-                                 ,mhartid_i
-                                 ,dbg_stage_r[2].rs2[0+:8]
-                                 );
-                        $display("[CORE%0x PRT] %c\n"
-                                 ,mhartid_i
-                                 ,dbg_stage_r[2].rs2[0+:8]
-                                 );
-                    end else begin
-                      if(dbg_stage_r[2].decode.fu_op == e_scd)
+                    if(dbg_stage_r[2].decode.fu_op == e_scd)
                         $fwrite(file, "\t\top: sc.d sem: mem[%x] <- r%d {%x}, success: %d \n"
                                  ,dbg_stage_r[2].rs1 
                                  ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
@@ -231,7 +212,6 @@ end
                                  ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
                                  ,dbg_stage_r[2].rs2
                                  );   
-                    end
                 end else if(dbg_stage_r[2].decode.jmp_v) begin
                     $fwrite(file, "\t\top: jump sem: pc <- {%x}, r%d <- {%x}\n"
                              ,iwb_br_tgt_r
@@ -255,8 +235,8 @@ end
                 end
             end
         end
-    //end
-end
+    end
+end // fi1
 
 endmodule : bp_be_nonsynth_tracer
 

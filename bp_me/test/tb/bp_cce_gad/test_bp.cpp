@@ -97,16 +97,17 @@ int sc_main(int argc, char **argv)
   sc_clock clock("clk", sc_time(CLK_TIME, SC_NS));
   sc_signal <bool>     reset_i("reset_i");
   sc_signal <bool>     gad_v_i("gad_v_i");
+  sc_signal <bool>     error_o("error_o");
 
+  sc_signal <bool>     sh_v_i("sh_v_i");
   sc_signal <uint32_t> sh_hits_i("sh_hits_i");
   sc_signal <uint32_t> sh_ways_i("sh_ways_i");
   sc_signal <uint32_t> sh_coh_states_i("sh_coh_states_i");
-
  
   sc_signal <uint32_t> req_lce_i("req_lce_i");
   sc_signal <bool>     rqf_i("rqf_i");
   sc_signal <bool>     ldf_i("ldf_i");
-  sc_signal <bool>     lru_cached_excl_i("lru_cached_excl_i");
+  sc_signal <bool>     lru_cached_excl_flag_i("lru_cached_excl_flag_i");
 
   sc_signal <uint32_t> req_addr_way_o("req_addr_way_o");
 
@@ -125,7 +126,9 @@ int sc_main(int argc, char **argv)
   DUT.clk_i(clock);
   DUT.reset_i(reset_i);
   DUT.gad_v_i(gad_v_i);
+  DUT.error_o(error_o);
 
+  DUT.sharers_v_i(sh_v_i);
   DUT.sharers_hits_i(sh_hits_i);
   DUT.sharers_ways_i(sh_ways_i);
   DUT.sharers_coh_states_i(sh_coh_states_i);
@@ -133,7 +136,7 @@ int sc_main(int argc, char **argv)
   DUT.req_lce_i(req_lce_i);
   DUT.req_type_flag_i(rqf_i);
   DUT.lru_dirty_flag_i(ldf_i);
-  DUT.lru_cached_excl_i(lru_cached_excl_i);
+  DUT.lru_cached_excl_flag_i(lru_cached_excl_flag_i);
 
   DUT.req_addr_way_o(req_addr_way_o);
 
@@ -161,11 +164,12 @@ int sc_main(int argc, char **argv)
   req_lce_i = 0;
   rqf_i = 0;
   ldf_i = 0;
-  lru_cached_excl_i = 0;
+  lru_cached_excl_flag_i = 0;
 
   sc_start(RST_TIME, SC_NS);
 
   gad_v_i = 1;
+  sh_v_i = 1;
 
   // Test block in I, read request
   cout << endl << "Starting Invalid Read Request Tests..." << endl;

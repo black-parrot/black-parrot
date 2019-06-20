@@ -2,3 +2,4 @@ bsg_trace_rom_*.v
 bsg_trace_rom_*.tr
 trace.axe
 testbench_postsed.v
+vc_hdrs.h

@@ -75,6 +75,7 @@ typedef enum { // CCE to LCE Commands
   ,e_lce_cmd_set_tag         = 4
   ,e_lce_cmd_set_tag_wakeup  = 5
   ,e_lce_cmd_invalidate_tag  = 6
+  ,e_lce_cmd_uc_st_done      = 7
 } bp_cce_lce_cmd_type_e;
 
 #define bp_cce_lce_cmd_type_width 3

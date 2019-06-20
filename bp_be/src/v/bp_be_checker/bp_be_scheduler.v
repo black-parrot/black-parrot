@@ -47,7 +47,6 @@ module bp_be_scheduler
    , localparam fe_queue_width_lp  = `bp_fe_queue_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam issue_pkt_width_lp = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    // From BP BE defines
-   , localparam itag_width_lp     = bp_be_itag_width_gp
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )
   (input                             clk_i
@@ -65,17 +64,11 @@ module bp_be_scheduler
    );
 
 // Declare parameterizable structures
-`declare_bp_fe_be_if(vaddr_width_p
-                                    , paddr_width_p
-                                    , asid_width_p
-                                    , branch_metadata_fwd_width_p
-                                    );
+`declare_bp_fe_be_if
+  (vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-`declare_bp_be_internal_if_structs(vaddr_width_p
-                                   , paddr_width_p
-                                   , asid_width_p
-                                   , branch_metadata_fwd_width_p
-                                   );
+`declare_bp_be_internal_if_structs
+  (vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
 // Cast input and output ports 
 bp_fe_queue_s     fe_queue;
@@ -92,110 +85,87 @@ assign fe_fetch           = fe_queue.msg.fetch;
 assign fe_fetch_instr     = fe_fetch.instr;
 assign fe_exception       = fe_queue.msg.exception;
 
-// Declare intermediate signals
-bp_be_instr_metadata_s           fe_instr_metadata;
-bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
-logic [itag_width_lp-1:0]        itag_n, itag_r;
-logic [reg_data_width_lp-1:0]    exception_eaddr;
-
-assign exception_eaddr = rv64_reg_data_width_gp'($signed(fe_exception.vaddr));
-
 // Interface handshakes
 assign fe_queue_ready_o = fe_queue_v_i & issue_pkt_ready_i;
 assign issue_pkt_v_o    = fe_queue_v_i & issue_pkt_ready_i;
 
 // Module instantiations
-// Each issued instruction should get a new itag
-assign itag_n = itag_r + itag_width_lp'(1);
-bsg_dff_reset_en 
- #(.width_p(itag_width_lp)
-   )
- itag_reg
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.en_i((issue_pkt_ready_i & issue_pkt_v_o))
-
-   ,.data_i(itag_n)
-   ,.data_o(itag_r)
-   );
-
-assign issue_pkt.instr_metadata      = fe_instr_metadata;
-assign issue_pkt.branch_metadata_fwd = fe_fetch.branch_metadata_fwd;
-assign issue_pkt.instr               = fe_fetch_instr;
 always_comb 
-  begin : fe_queue_extract
-
+  begin 
     // Default value
-    fe_instr_metadata = '0;
-    issue_pkt.imm = '0;
-    issue_pkt.irs1_v = 1'b0; 
-    issue_pkt.irs2_v = 1'b0;
-    issue_pkt.frs1_v = 1'b0;
-    issue_pkt.frs2_v = 1'b0;
+    issue_pkt = '0;
 
-    case(fe_queue.msg_type)
-      // Populate the issue packet with a valid pc/instruction pair.
-      e_fe_fetch : 
-        begin
-          fe_instr_metadata.itag                   = itag_r;
-          fe_instr_metadata.pc                     = fe_fetch.pc;
-          fe_instr_metadata.fe_exception_not_instr = 1'b0;
+    if (fe_queue_v_i)
+      case(fe_queue.msg_type)
+        // Populate the issue packet with a valid pc/instruction pair.
+        e_fe_fetch : 
+          begin
+            issue_pkt.pc = fe_fetch.pc;
+            issue_pkt.branch_metadata_fwd = fe_fetch.branch_metadata_fwd;
+            issue_pkt.instr = fe_fetch.instr;
 
-          // Decide whether to read from integer regfile (saves power)
-          casez(fe_fetch_instr.opcode)
-            `RV64_LUI_OP, `RV64_AUIPC_OP, `RV64_JAL_OP : 
-              begin 
-                issue_pkt.irs1_v = '0; 
-                issue_pkt.irs2_v = '0;
-              end
-            `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP, `RV64_SYSTEM_OP :
-              begin 
-                issue_pkt.irs1_v = '1; 
-                issue_pkt.irs2_v = '0;
-              end
-            `RV64_BRANCH_OP, `RV64_STORE_OP, `RV64_OP_OP, `RV64_OP_32_OP, `RV64_AMO_OP: 
-              begin 
-                issue_pkt.irs1_v = '1; 
-                issue_pkt.irs2_v = '1; 
-              end
-            default : 
-              begin
-                // Should not reach
-                issue_pkt.irs1_v = '0;
-                issue_pkt.irs2_v = '0;
-              end
-          endcase
+            // Decide whether to read from integer regfile (saves power)
+            casez(fe_fetch_instr.opcode)
+              `RV64_LUI_OP, `RV64_AUIPC_OP, `RV64_JAL_OP : 
+                begin 
+                  issue_pkt.irs1_v = '0; 
+                  issue_pkt.irs2_v = '0;
+                end
+              `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP, `RV64_SYSTEM_OP :
+                begin 
+                  issue_pkt.irs1_v = '1; 
+                  issue_pkt.irs2_v = '0;
+                end
+              `RV64_BRANCH_OP, `RV64_STORE_OP, `RV64_OP_OP, `RV64_OP_32_OP, `RV64_AMO_OP: 
+                begin 
+                  issue_pkt.irs1_v = '1; 
+                  issue_pkt.irs2_v = '1; 
+                end
+              default : 
+                begin
+                  // Should not reach
+                  issue_pkt.irs1_v = '0;
+                  issue_pkt.irs2_v = '0;
+                end
+            endcase
 
-          // Decide whether to read from floating point regfile (saves power)
-          issue_pkt.frs1_v = '0;
-          issue_pkt.frs2_v = '0;
+            // Decide whether to read from floating point regfile (saves power)
+            issue_pkt.frs1_v = '0;
+            issue_pkt.frs2_v = '0;
 
-          // Immediate extraction
-          casez(fe_fetch_instr.opcode)
-            `RV64_LUI_OP, `RV64_AUIPC_OP : issue_pkt.imm = `rv64_signext_u_imm(fe_fetch_instr);
-            `RV64_JAL_OP                 : issue_pkt.imm = `rv64_signext_j_imm(fe_fetch_instr);
-            `RV64_BRANCH_OP              : issue_pkt.imm = `rv64_signext_b_imm(fe_fetch_instr);
-            `RV64_STORE_OP               : issue_pkt.imm = `rv64_signext_s_imm(fe_fetch_instr);
-            `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP 
-                                         : issue_pkt.imm = `rv64_signext_i_imm(fe_fetch_instr);
-                                         
-            // Should not reach
-            default : issue_pkt.imm = '0;
-          endcase
-        end
+            issue_pkt.fence_v = (fe_fetch_instr.opcode == `RV64_MISC_MEM_OP);
+            
+            casez(fe_fetch_instr.opcode)
+              `RV64_STORE_OP, `RV64_LOAD_OP, `RV64_AMO_OP: 
+                       issue_pkt.mem_v = 1'b1;
+              default: issue_pkt.mem_v = 1'b0;
+            endcase
+                      
+            // Immediate extraction
+            casez(fe_fetch_instr.opcode)
+              `RV64_LUI_OP, `RV64_AUIPC_OP : issue_pkt.imm = `rv64_signext_u_imm(fe_fetch_instr);
+              `RV64_JAL_OP                 : issue_pkt.imm = `rv64_signext_j_imm(fe_fetch_instr);
+              `RV64_BRANCH_OP              : issue_pkt.imm = `rv64_signext_b_imm(fe_fetch_instr);
+              `RV64_STORE_OP               : issue_pkt.imm = `rv64_signext_s_imm(fe_fetch_instr);
+              `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP 
+                                           : issue_pkt.imm = `rv64_signext_i_imm(fe_fetch_instr);
+                                           
+              // Should not reach
+              default : issue_pkt.imm = '0;
+            endcase
+          end
 
-      // FE exceptions only have an exception address, code and flag. All of these fields 
-      //   are in instr_metadata field of the issue packet.
-      e_fe_exception : 
-        begin
-          fe_instr_metadata.pc                     = exception_eaddr;
-          fe_instr_metadata.fe_exception_not_instr = 1'b1;
-          fe_instr_metadata.fe_exception_code      = fe_exception.exception_code;
-        end
+        // FE exceptions only have an exception address, code and flag. 
+        e_fe_exception : 
+          begin
+            issue_pkt.pc = fe_exception.vaddr;
+            issue_pkt.fe_exception_not_instr = 1'b1;
+            issue_pkt.fe_exception_code = fe_exception.exception_code;
+          end
 
-      // Should not reach
-      default : begin end
-    endcase
+        // Should not reach
+        default : begin end
+      endcase
   end
 
 endmodule : bp_be_scheduler

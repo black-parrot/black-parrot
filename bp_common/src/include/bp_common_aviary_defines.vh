@@ -49,6 +49,9 @@ typedef struct packed
   integer bht_idx_width;
   integer ras_idx_width;
 
+  integer itlb_els;
+  integer dtlb_els;
+
   integer lce_sets;
   integer lce_assoc;
   integer cce_block_width;
@@ -57,14 +60,28 @@ typedef struct packed
   integer fe_queue_fifo_els;
   integer fe_cmd_fifo_els;
 
+  integer cfg_core_width;
+  integer cfg_addr_width;
+  integer cfg_data_width;
+  integer noc_width;
+  integer noc_len_width;
+  integer noc_reserved_width;
+  integer ct_remote_credits;
+  integer ct_max_payload_flits;
+  integer ct_lg_credit_decimation;
+  integer max_credits;
+
   integer dword_width;
   integer instr_width;
   integer reg_addr_width;
   integer page_offset_width;
+
+  integer mem_payload_width;
 }  bp_proc_param_s;
 
 `define declare_bp_proc_params(bp_cfg_e_mp) \
   , localparam bp_proc_param_s proc_param_lp = all_cfgs_gp[bp_cfg_e_mp]                            \
+                                                                                                   \
   , localparam num_core_p = proc_param_lp.num_core                                                 \
   , localparam num_cce_p  = proc_param_lp.num_cce                                                  \
   , localparam num_lce_p  = proc_param_lp.num_lce                                                  \
@@ -79,6 +96,9 @@ typedef struct packed
   , localparam bht_idx_width_p             = proc_param_lp.bht_idx_width                           \
   , localparam ras_idx_width_p             = proc_param_lp.ras_idx_width                           \
                                                                                                    \
+  , localparam itlb_els_p              = proc_param_lp.itlb_els                                    \
+  , localparam dtlb_els_p              = proc_param_lp.dtlb_els                                    \
+                                                                                                   \
   , localparam lce_sets_p              = proc_param_lp.lce_sets                                    \
   , localparam lce_assoc_p             = proc_param_lp.lce_assoc                                   \
   , localparam cce_block_width_p       = proc_param_lp.cce_block_width                             \
@@ -87,10 +107,26 @@ typedef struct packed
   , localparam fe_queue_fifo_els_p = proc_param_lp.fe_queue_fifo_els                               \
   , localparam fe_cmd_fifo_els_p   = proc_param_lp.fe_cmd_fifo_els                                 \
                                                                                                    \
+  , localparam cfg_core_width_p = proc_param_lp.cfg_core_width                                     \
+  , localparam cfg_addr_width_p = proc_param_lp.cfg_addr_width                                     \
+  , localparam cfg_data_width_p = proc_param_lp.cfg_data_width                                     \
+  , localparam noc_width_p               = proc_param_lp.noc_width                                          \
+  , localparam noc_len_width_p           = proc_param_lp.noc_len_width                                          \
+  , localparam noc_reserved_width_p      = proc_param_lp.noc_reserved_width                                          \
+  , localparam ct_remote_credits_p       = proc_param_lp.ct_remote_credits                                          \
+  , localparam ct_max_payload_flits_p    = proc_param_lp.ct_max_payload_flits                                          \
+  , localparam ct_lg_credit_decimation_p = proc_param_lp.ct_lg_credit_decimation                                          \
+  , localparam max_credits_p    = proc_param_lp.max_credits                                        \
+                                                                                                   \
   , localparam dword_width_p       = proc_param_lp.dword_width                                     \
   , localparam instr_width_p       = proc_param_lp.instr_width                                     \
   , localparam reg_addr_width_p    = proc_param_lp.reg_addr_width                                  \
-  , localparam page_offset_width_p = proc_param_lp.page_offset_width
+  , localparam page_offset_width_p = proc_param_lp.page_offset_width                               \
+                                                                                                   \
+  , localparam vtag_width_p        = proc_param_lp.vaddr_width - proc_param_lp.page_offset_width   \
+  , localparam ptag_width_p        = proc_param_lp.paddr_width - proc_param_lp.page_offset_width   \
+                                                                                                   \
+  , localparam mem_payload_width_p = proc_param_lp.mem_payload_width
 
 `endif
 

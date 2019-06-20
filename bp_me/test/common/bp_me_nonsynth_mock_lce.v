@@ -675,23 +675,35 @@ module bp_me_nonsynth_mock_lce
           lce_state_n = UNCACHED_SEND_TR_RESP;
           // send return packet to TR
           if (mshr_r.store_op) begin
-            // store sends back null packet
-            tr_pkt_v_o = 1'b1;
-            tr_pkt_o = '0;
-            lce_state_n = (tr_pkt_ready_i)
-                          ? (lce_init_r)
-                            ? READY
-                            : UNCACHED_ONLY
-                          : UNCACHED_SEND_TR_RESP;
+            if (lce_cmd_v) begin
+              // store sends back null packet when it receives lce_cmd back
+              tr_pkt_v_o = 1'b1;
+              tr_pkt_o = '0;
+              lce_state_n = (tr_pkt_ready_i)
+                            ? (lce_init_r)
+                              ? READY
+                              : UNCACHED_ONLY
+                            : UNCACHED_SEND_TR_RESP;
 
-            // clear miss handling state
-            mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
+              lce_cmd_yumi = tr_pkt_ready_i;
 
+              // clear miss handling state
+              mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
+            end
           end else if (lce_data_cmd_v) begin
             // load returns the data, and must wait for lce_data_cmd to return
             tr_pkt_v_o = 1'b1;
             tr_pkt_o[tr_ring_width_lp-1:dword_width_p] = '0;
-            tr_pkt_o[0 +: dword_width_p] = lce_data_cmd.data[0 +: dword_width_p];
+            // TODO: not portable, assumes 64-bit dwords
+            // Extract the desired bits from the returned 64-bit dword
+            tr_pkt_o[0 +: dword_width_p] =
+              double_op
+                ? lce_data_cmd.data[0 +: 64]
+                : word_op
+                  ? {32'('0), lce_data_cmd.data[8*byte_offset +: 32]}
+                  : half_op
+                    ? {48'('0), lce_data_cmd.data[8*byte_offset +: 16]}
+                    : {56'('0), lce_data_cmd.data[8*byte_offset +: 8]};
 
             lce_state_n = (tr_pkt_ready_i)
                           ? (lce_init_r)
@@ -945,7 +957,7 @@ module bp_me_nonsynth_mock_lce
           cur_set_n = mshr_r.paddr[block_offset_bits_lp +: lg_lce_sets_lp];
           cur_way_n = mshr_r.lru_way;
 
-          if (store_op) begin
+          if (mshr_r.store_op) begin
             // do the store
             data_w_n[cur_set_n][cur_way_n] = 1'b1;
             data_mask_n = double_op
@@ -1207,7 +1219,7 @@ module bp_me_nonsynth_mock_lce
       end
       FINISH_MISS_SEND: begin
         if (tr_pkt_ready_i) begin
-          if (store_op) begin
+          if (mshr_r.store_op) begin
             $display("#AXE %0d: M[%0d] := %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), cmd.data);
           end else begin
             $display("#AXE %0d: M[%0d] == %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), load_data);
@@ -1216,6 +1228,7 @@ module bp_me_nonsynth_mock_lce
       end
     endcase
     end
+
   end
 
 
