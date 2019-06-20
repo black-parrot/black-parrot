@@ -280,10 +280,6 @@ for (genvar i = 0; i < num_core_p; i++)
        ,.data_i({cfg_link_w_v_li, cfg_link_addr_li, cfg_link_data_li})
        ,.data_o({cfg_link_w_v_o[i], cfg_link_addr_o[i], cfg_link_data_o[i]})
        );
-
-       ,.data_i(msoftint_r[i])
-       ,.data_o(soft_irq_o[i])
-       );
   end // rof1
 
 logic mipi_lo;
