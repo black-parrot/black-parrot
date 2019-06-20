@@ -145,7 +145,9 @@ assign proc_cfg_cast_i = proc_cfg_i;
 logic freeze_r;
 always_ff @(posedge clk_i)
   begin
-    if (cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_freeze_gp))
+    if (reset_i)
+      freeze_r <= 1'b1;
+    else if (cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_freeze_gp))
       freeze_r <= cfg_data_i[0];
   end
 
