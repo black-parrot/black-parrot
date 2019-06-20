@@ -11,9 +11,10 @@ module bp_tile
  import bp_be_rv64_pkg::*;
  import bp_cce_pkg::*;
  import bsg_noc_pkg::*;
+ import bp_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mem_payload_width_p)
    `declare_bp_lce_cce_if_widths
      (num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
@@ -63,24 +64,16 @@ module bp_tile
    , input [x_cord_width_p-1:0]                            my_x_i
    , input [y_cord_width_p-1:0]                            my_y_i
 
-   , input                                                 freeze_i
-
    // Config channel
-   , input [bp_cfg_link_addr_width_gp-2:0]                 config_addr_i
-   , input [bp_cfg_link_data_width_gp-1:0]                 config_data_i
-   , input                                                 config_v_i
-   , input                                                 config_w_i
-   , output logic                                          config_ready_o
-
-   , output logic [bp_cfg_link_data_width_gp-1:0]          config_data_o
-   , output logic                                          config_v_o
-   , input                                                 config_ready_i
+   , input                                                 cfg_w_v_i
+   , input [cfg_addr_width_p-1:0]                          cfg_addr_i
+   , input [cfg_data_width_p-1:0]                          cfg_data_i
 
    // Router - Inputs 
    // Connected on east and west
    , input [E:W][2+lce_cce_req_network_width_lp-1:0]       lce_req_link_i
    , input [E:W][2+lce_cce_resp_network_width_lp-1:0]      lce_resp_link_i
-   , input [E:W][2+lce_cce_data_resp_router_width_lp-1:0]      lce_data_resp_link_i
+   , input [E:W][2+lce_cce_data_resp_router_width_lp-1:0]  lce_data_resp_link_i
    , input [E:W][2+cce_lce_cmd_network_width_lp-1:0]       lce_cmd_link_i
    , input [E:W][2+lce_data_cmd_router_width_lp-1:0]       lce_data_cmd_link_i
 
@@ -149,6 +142,25 @@ logic                        cce_lce_data_cmd_v_lo, cce_lce_data_cmd_ready_li;
 bp_proc_cfg_s proc_cfg_cast_i;
 assign proc_cfg_cast_i = proc_cfg_i;
 
+logic freeze_r;
+always_ff @(posedge clk_i)
+  begin
+    if (reset_i)
+      freeze_r <= 1'b1;
+    else if (cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_freeze_gp))
+      freeze_r <= cfg_data_i[0];
+  end
+
+logic reset_r;
+bsg_dff
+ #(.width_p(1))
+ reset_reg
+  (.clk_i(clk_i)
+   ,.data_i(reset_i)
+   ,.data_o(reset_r)
+   );
+
+
 // Module instantiations
 bp_core   
  #(.cfg_p(cfg_p)
@@ -156,9 +168,14 @@ bp_core
    )
  core 
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
 
+   ,.freeze_i(freeze_r)
    ,.proc_cfg_i(proc_cfg_i)
+
+   ,.cfg_w_v_i(cfg_w_v_i)
+   ,.cfg_addr_i(cfg_addr_i)
+   ,.cfg_data_i(cfg_data_i)
 
    ,.lce_req_o(lce_req_lo)
    ,.lce_req_v_o(lce_req_v_lo)
@@ -357,7 +374,7 @@ for (genvar i = 0; i < 2; i++)
        )
      req_router
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
        ,.link_i(lce_req_link_i_stitch[i])
        ,.link_o(lce_req_link_o_stitch[i])
        ,.my_x_i(x_cord_width_p'(2*my_x_i+i))
@@ -372,7 +389,7 @@ for (genvar i = 0; i < 2; i++)
        )
      resp_router
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
        ,.link_i(lce_resp_link_i_stitch[i])
        ,.link_o(lce_resp_link_o_stitch[i])
        ,.my_x_i(x_cord_width_p'(2*my_x_i+i))
@@ -387,7 +404,7 @@ for (genvar i = 0; i < 2; i++)
        )
      cmd_router
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
        ,.link_i(lce_cmd_link_i_stitch[i])
        ,.link_o(lce_cmd_link_o_stitch[i])
        ,.my_x_i(x_cord_width_p'(2*my_x_i+i))
@@ -415,7 +432,7 @@ for (genvar i = 0; i < 2; i++)
        )
      data_cmd_adapter_in
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
 
        ,.data_i(lce_lce_data_cmd_packet[i])
        ,.v_i(lce_lce_data_cmd_v_lo[i])
@@ -435,7 +452,7 @@ for (genvar i = 0; i < 2; i++)
        )
      data_cmd_router
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
 
        ,.my_x_i(x_cord_width_p'(2*my_x_i+i))
        ,.my_y_i(my_y_i)
@@ -453,7 +470,7 @@ for (genvar i = 0; i < 2; i++)
        )
      data_cmd_adapter_out
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
     
        ,.link_i(lce_data_cmd_link_o_stitch[i][P])
        ,.link_o(lce_data_cmd_link_i_stitch[i][P])
@@ -485,7 +502,7 @@ for (genvar i = 0; i < 2; i++)
        )
      data_resp_adapter_in
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
 
        ,.data_i(lce_data_resp_packet[i])
        ,.v_i(lce_data_resp_v_lo[i])
@@ -505,7 +522,7 @@ for (genvar i = 0; i < 2; i++)
        )
      data_resp_router
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
 
        ,.my_x_i(x_cord_width_p'(2*my_x_i+i))
        ,.my_y_i(my_y_i)
@@ -538,7 +555,7 @@ bsg_wormhole_router_adapter_in
    )
  data_cmd_adapter_in
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
 
    ,.data_i(cce_lce_data_cmd_packet)
    ,.v_i(cce_lce_data_cmd_v_lo)
@@ -557,7 +574,7 @@ bsg_wormhole_router_adapter_out
    )
  data_resp_adapter_out
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
 
    ,.link_i(lce_data_resp_link_o_stitch[0][P])
    ,.link_o(lce_data_resp_link_i_stitch[0][P])
@@ -569,24 +586,16 @@ bsg_wormhole_router_adapter_out
 
 bp_cce_top
  #(.cfg_p(cfg_p)
-   ,.cfg_link_addr_width_p(bp_cfg_link_addr_width_gp)
-   ,.cfg_link_data_width_p(bp_cfg_link_data_width_gp)
    ,.cce_trace_p(cce_trace_p)
    )
  cce
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.freeze_i(freeze_i)
+   ,.reset_i(reset_r)
+   ,.freeze_i(freeze_r)
 
-   ,.config_addr_i(config_addr_i)
-   ,.config_data_i(config_data_i)
-   ,.config_v_i(config_v_i)
-   ,.config_w_i(config_w_i)
-   ,.config_ready_o(config_ready_o)
-
-   ,.config_data_o(config_data_o)
-   ,.config_v_o(config_v_o)
-   ,.config_ready_i(config_ready_i)
+   ,.cfg_w_v_i(cfg_w_v_i)
+   ,.cfg_addr_i(cfg_addr_i)
+   ,.cfg_data_i(cfg_data_i)
 
    // To CCE
    ,.lce_req_i(lce_req_li)

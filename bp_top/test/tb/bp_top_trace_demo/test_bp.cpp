@@ -12,6 +12,7 @@ int sc_main(int argc, char **argv)
 {
   Verilated::commandArgs(argc, argv);
   Verilated::traceEverOn(VM_TRACE);
+  Verilated::assertOn(false);
 
   Vtestbench *tb = new Vtestbench("testbench");
 
@@ -32,14 +33,12 @@ int sc_main(int argc, char **argv)
 
   reset = 1;
 
-  sc_start(CLK_TIME, SC_NS);
-  sc_start(CLK_TIME, SC_NS);
-  sc_start(CLK_TIME, SC_NS);
-  sc_start(CLK_TIME, SC_NS);
-  sc_start(CLK_TIME, SC_NS);
-  sc_start(CLK_TIME, SC_NS);
+  for (int i = 0; i < 20; i++) {
+    sc_start(CLK_TIME, SC_NS);
+  }
 
   reset = 0;
+  Verilated::assertOn(true);
 
   while (!Verilated::gotFinish()) {
     sc_start(CLK_TIME, SC_NS);

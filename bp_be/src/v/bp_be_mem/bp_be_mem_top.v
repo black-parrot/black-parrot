@@ -53,6 +53,12 @@ module bp_be_mem_top
    )
   (input                                     clk_i
    , input                                   reset_i
+   , input                                   freeze_i
+
+   // Config channel
+   , input                                   cfg_w_v_i
+   , input [cfg_addr_width_p-1:0]            cfg_addr_i
+   , input [cfg_data_width_p-1:0]            cfg_data_i
 
    , input [mmu_cmd_width_lp-1:0]            mmu_cmd_i
    , input                                   mmu_cmd_v_i
@@ -151,7 +157,7 @@ wire unused0 = mem_resp_ready_i;
 
 /* Internal connections */
 /* TLB ports */
-logic                    dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_r_v;
+logic                    dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_r_v, dtlb_r_v_lo;
 logic [vtag_width_p-1:0] dtlb_r_vtag, dtlb_w_vtag, dtlb_miss_vtag;
 bp_be_tlb_entry_s        dtlb_r_entry, dtlb_w_entry;
 
@@ -178,6 +184,8 @@ bp_satp_s                 satp_lo;
 logic [dword_width_p-1:0] csr_data_lo;
 logic                     csr_v_lo;
 logic                     translation_en_lo;
+
+logic load_access_fault_v, store_access_fault_v;
 
 /* Control signals */
 logic dcache_cmd_v;
@@ -233,9 +241,9 @@ assign exception_ecode_dec_li =
     ,illegal_instr   : (ecode_v_mem3_r & (ecode_mem3_r == e_illegal_instr))
     ,breakpoint      : (csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak))
     ,load_misaligned : 1'b0
-    ,load_fault      : 1'b0
+    ,load_fault      : load_access_fault_v
     ,store_misaligned: 1'b0
-    ,store_fault     : 1'b0
+    ,store_fault     : store_access_fault_v
     ,ecall_u_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `RV64_PRIV_MODE_U)
     ,ecall_s_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `RV64_PRIV_MODE_S)
     ,ecall_m_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `RV64_PRIV_MODE_M)
@@ -296,7 +304,7 @@ bp_be_dtlb
    ,.r_ready_o()
    ,.r_vtag_i(dtlb_r_vtag)
    
-   ,.r_v_o()
+   ,.r_v_o(dtlb_r_v_lo)
    ,.r_entry_o(dtlb_r_entry)
    
    ,.w_v_i(dtlb_w_v)
@@ -348,19 +356,16 @@ bp_be_ptw
   );
 
 bp_be_dcache 
-  #(.data_width_p(dword_width_p) 
-    ,.sets_p(lce_sets_p)
-    ,.ways_p(lce_assoc_p)
-    ,.paddr_width_p(paddr_width_p)
-    ,.num_cce_p(num_cce_p)
-    ,.num_lce_p(num_lce_p)
-    ,.max_credits_p(max_credits_p)
-    )
+  #(.cfg_p(cfg_p))
   dcache
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
+    ,.freeze_i(freeze_i)
 
     ,.lce_id_i(proc_cfg.dcache_id)
+    ,.cfg_w_v_i(cfg_w_v_i)
+    ,.cfg_addr_i(cfg_addr_i)
+    ,.cfg_data_i(cfg_data_i)
 
     ,.dcache_pkt_i(dcache_pkt)
     ,.v_i(dcache_pkt_v)
@@ -404,6 +409,9 @@ bp_be_dcache
 
     ,.credits_full_o(credits_full_o)
     ,.credits_empty_o(credits_empty_o)
+  
+    ,.load_access_fault_o(load_access_fault_v)
+    ,.store_access_fault_o(store_access_fault_v)
     );
 
 // We delay the tlb miss signal by one cycle to synchronize with cache miss signal
@@ -427,14 +435,14 @@ assign dcache_pkt_v    = (ptw_busy)? ptw_dcache_v : dcache_cmd_v;
 
 always_comb 
   begin
-    // Currently uncached I/O  is determined by high bit of translated address
-    dcache_uncached = dcache_ptag[ptag_width_p-1];
-
+    // TODO: Should we allow uncached accesses during PTW?
+    //   I don't see why not, but it's something to think about...
     if(ptw_busy) begin
       dcache_pkt = ptw_dcache_pkt;
       dcache_uncached = '0;
     end
     else begin
+      dcache_uncached        = dtlb_r_v_lo & dtlb_r_entry.uc;
       dcache_pkt.opcode      = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
       dcache_pkt.page_offset = {mmu_cmd.vaddr.index, mmu_cmd.vaddr.offset};
       dcache_pkt.data        = mmu_cmd.data;

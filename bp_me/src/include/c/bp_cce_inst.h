@@ -83,6 +83,7 @@ typedef enum {
 
 typedef enum {
   e_gad                          = 0x0   // Generate Auxiliary Data
+  ,e_clm                         = 0x1   // Clear MSHR register
   ,e_stall                       = 0x7   // Stall PC - used for errors
 } bp_cce_inst_minor_misc_op_e;
 
@@ -130,6 +131,7 @@ typedef enum {
   ,e_src_lce_data_resp_ready     = 0x1D
 
   ,e_src_cf                      = 0x1E
+  ,e_src_lef                     = 0x1F
 } bp_cce_inst_src_e;
 
 #define bp_cce_inst_src_width 5
@@ -153,7 +155,8 @@ typedef enum {
   ,e_dst_pcf                     = 0xF
   ,e_dst_ucf                     = 0x10
   ,e_dst_cf                      = 0x11
-  ,e_dst_next_coh_state          = 0x12
+  ,e_dst_lef                     = 0x12
+  ,e_dst_next_coh_state          = 0x1F
 } bp_cce_inst_dst_e;
 
 #define bp_cce_inst_dst_width 5
@@ -183,9 +186,10 @@ typedef enum {
   ,e_flag_pcf                    = 2048 // Pending-Cleared Flag
   ,e_flag_ucf                    = 4096 // Uncached Request Flag
   ,e_flag_cf                     = 8192 // Cached Flag
+  ,e_flag_lef                    = 16384 // LRU Cached Exclusive Flag
 } bp_cce_inst_flag_e;
 
-#define bp_cce_inst_num_flags 14
+#define bp_cce_inst_num_flags 15
 
 typedef enum {
   e_flag_sel_rqf                 = 0x0 // Request Type Flag
@@ -202,6 +206,7 @@ typedef enum {
   ,e_flag_sel_pcf                = 0xB // Pending-Cleared Flag
   ,e_flag_sel_ucf                = 0xC // Uncached Request Flag
   ,e_flag_sel_cf                 = 0xD // Cached Flag
+  ,e_flag_sel_lef                = 0xE // LRU Cached Exclusive Flag
 } bp_cce_inst_flag_sel_e;
 
 #define bp_cce_inst_flag_sel_width 4

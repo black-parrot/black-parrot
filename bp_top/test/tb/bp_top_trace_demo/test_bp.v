@@ -22,7 +22,7 @@ bsg_nonsynth_clock_gen
 bsg_nonsynth_reset_gen 
  #(.num_clocks_p(1)
    ,.reset_cycles_lo_p(1)
-   ,.reset_cycles_hi_p(10)
+   ,.reset_cycles_hi_p(20)
    )
  reset_gen
   (.clk_i(clk)
@@ -34,6 +34,13 @@ testbench
   (.clk_i(clk)
    ,.reset_i(reset)
    );
+
+initial 
+  begin
+    $assertoff();
+    @(negedge reset)
+    $asserton();
+  end
 
 endmodule : test_bp
 

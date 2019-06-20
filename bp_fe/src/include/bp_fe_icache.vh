@@ -22,14 +22,14 @@
   {                                                  \
     logic [bp_instr_width_gp-1:0] instr;             \
     logic [eaddr_width_mp-1:0]     addr;              \
-  }  bp_fe_icache_pc_gen_s                           
+  }  bp_fe_icache_pc_gen_s
 
 `define bp_fe_icache_pc_gen_width(eaddr_width_mp)     \
   (bp_instr_width_gp+eaddr_width_mp)
 
 /*
  *
- * bp_fe_icache_metadata_s is the struct that specifies the format of the
+ * bp_fe_icache_stat_s is the struct that specifies the format of the
  * I-Cache meta-data array. The meta-data array contains the auxiliary
  * information, i.e., dirty bits and LRU bits. A dirty bit indicates whether the
  * corresponding line is dirty. The LRU bits are used to track the recency of
@@ -41,13 +41,13 @@
  * LCE transmits the meta-data (including LRU and dirty bits) information of the
  * tag set to the CCE, and the CCE makes the necessary decisions. 
 */
-`define declare_bp_fe_icache_metadata_s(ways_mp) \
+`define declare_bp_fe_icache_stat_s(ways_mp) \
   typedef struct packed                         \
   {                                             \
     logic [ways_mp-2:0] way;                     \
-  }  bp_fe_icache_metadata_s                     
+  }  bp_fe_icache_stat_s
 
-`define bp_fe_icache_metadata_width(ways_mp) \
+`define bp_fe_icache_stat_width(ways_mp) \
   (ways_mp-1)
 
 /*
@@ -80,7 +80,7 @@
     , localparam bp_fe_pc_gen_icache_width_lp=`bp_fe_pc_gen_icache_width(vaddr_width_mp)               \
     , localparam bp_fe_itlb_icache_data_resp_width_lp=`bp_fe_itlb_icache_data_resp_width(tag_width_mp) \
     , localparam bp_fe_icache_tag_state_width_lp=`bp_fe_icache_tag_state_width(tag_width_mp)           \
-    , localparam bp_fe_icache_metadata_width_lp=`bp_fe_icache_metadata_width(ways_mp)                  \
+    , localparam bp_fe_icache_stat_width_lp=`bp_fe_icache_stat_width(ways_mp)                  \
     , localparam bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(vaddr_width_mp                \
 )
 

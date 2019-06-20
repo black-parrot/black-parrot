@@ -21,7 +21,7 @@ module testbench
     , parameter axe_trace_p = `AXE_TRACE_P
 		, parameter dramsim2_p = `DRAMSIM2_P
 
-    , parameter skip_ram_init_p = 0
+    , parameter skip_ram_init_p = (`CFG_INIT_P == 1) ? 0 : 1
   )
   ();
 

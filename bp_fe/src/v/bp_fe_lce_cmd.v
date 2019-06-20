@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_fe_lce_cmd_li.v
+ *   bp_fe_lce_cmd.v
  * 
  * Description:
  *   To be updated
@@ -50,7 +50,7 @@ module bp_fe_lce_cmd
     , output logic                                               set_tag_received_o
     , output logic                                               set_tag_wakeup_received_o
 
-    , input [lce_data_width_lp-1:0]                               data_mem_data_i
+    , input [lce_data_width_lp-1:0]                              data_mem_data_i
     , output logic [data_mem_pkt_width_lp-1:0]                   data_mem_pkt_o
     , output logic                                               data_mem_pkt_v_o
     , input                                                      data_mem_pkt_yumi_i
@@ -59,9 +59,9 @@ module bp_fe_lce_cmd
     , output logic                                               tag_mem_pkt_v_o
     , input                                                      tag_mem_pkt_yumi_i
 
-    , output logic                                               metadata_mem_pkt_v_o
-    , output logic [metadata_mem_pkt_width_lp-1:0]               metadata_mem_pkt_o
-    , input                                                      metadata_mem_pkt_yumi_i
+    , output logic                                               stat_mem_pkt_v_o
+    , output logic [stat_mem_pkt_width_lp-1:0]                   stat_mem_pkt_o
+    , input                                                      stat_mem_pkt_yumi_i
 
     , output logic [lce_cce_resp_width_lp-1:0]                   lce_resp_o
     , output logic                                               lce_resp_v_o
@@ -106,15 +106,15 @@ module bp_fe_lce_cmd
   //
   `declare_bp_fe_icache_lce_data_mem_pkt_s(sets_p, ways_p, lce_data_width_lp);
   `declare_bp_fe_icache_lce_tag_mem_pkt_s(sets_p, ways_p, tag_width_lp);
-  `declare_bp_fe_icache_lce_metadata_mem_pkt_s(sets_p, ways_p);
+  `declare_bp_fe_icache_lce_stat_mem_pkt_s(sets_p, ways_p);
 
   bp_fe_icache_lce_data_mem_pkt_s data_mem_pkt;
   bp_fe_icache_lce_tag_mem_pkt_s tag_mem_pkt;
-  bp_fe_icache_lce_metadata_mem_pkt_s metadata_mem_pkt;
+  bp_fe_icache_lce_stat_mem_pkt_s stat_mem_pkt;
 
   assign data_mem_pkt_o     = data_mem_pkt;
   assign tag_mem_pkt_o      = tag_mem_pkt;
-  assign metadata_mem_pkt_o = metadata_mem_pkt;
+  assign stat_mem_pkt_o = stat_mem_pkt;
 
   // states
   //
@@ -146,8 +146,8 @@ module bp_fe_lce_cmd
     data_mem_pkt_v_o = 1'b0;
     tag_mem_pkt = '0;
     tag_mem_pkt_v_o = 1'b0;
-    metadata_mem_pkt = '0;
-    metadata_mem_pkt_v_o = 1'b0;
+    stat_mem_pkt = '0;
+    stat_mem_pkt_v_o = 1'b0;
 
     lce_ready_o             = (state_r != e_lce_cmd_reset);
     set_tag_received_o               = 1'b0;
@@ -164,7 +164,7 @@ module bp_fe_lce_cmd
         if (lce_cmd_li.msg_type == e_lce_cmd_transfer) begin
           data_mem_pkt.index  = lce_cmd_addr_index;
           data_mem_pkt.way_id = lce_cmd_li.way_id;
-          data_mem_pkt.we     = 1'b0;
+          data_mem_pkt.opcode = e_icache_lce_data_mem_read;
           data_mem_pkt_v_o    = lce_cmd_v_li;
           state_n             = data_mem_pkt_yumi_i ? e_lce_cmd_transfer_tmp : e_lce_cmd_ready;
 
@@ -238,10 +238,10 @@ module bp_fe_lce_cmd
           tag_mem_pkt.tag          = '0;
           tag_mem_pkt.opcode       = e_tag_mem_set_clear;
           tag_mem_pkt_v_o          = lce_cmd_v_li;
-          metadata_mem_pkt.index   = lce_cmd_addr_index;
-          metadata_mem_pkt.opcode  = e_metadata_mem_set_clear;
-          metadata_mem_pkt_v_o     = lce_cmd_v_li;
-          lce_cmd_yumi_lo           = tag_mem_pkt_yumi_i;
+          stat_mem_pkt.index       = lce_cmd_addr_index;
+          stat_mem_pkt.opcode      = e_stat_mem_set_clear;
+          stat_mem_pkt_v_o         = lce_cmd_v_li;
+          lce_cmd_yumi_lo          = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
 
         end else if (lce_cmd_li.msg_type == e_lce_cmd_sync) begin
           lce_resp.dst_id = lce_cmd_li.src_id;

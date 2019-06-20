@@ -46,6 +46,7 @@ module bp_fe_lce_data_cmd
 
     , output logic                                               cce_data_received_o
     , output logic                                               tr_data_received_o
+    , output logic                                               uncached_data_received_o
 
     , input [paddr_width_p-1:0]                                  miss_addr_i
               
@@ -69,12 +70,15 @@ module bp_fe_lce_data_cmd
   assign data_mem_pkt_lo.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
   assign data_mem_pkt_lo.way_id  = lce_data_cmd_li.way_id;
   assign data_mem_pkt_lo.data    = lce_data_cmd_li.data;
-  assign data_mem_pkt_lo.we      = 1'b1;
+  assign data_mem_pkt_lo.opcode  = (lce_data_cmd_li.msg_type == e_lce_data_cmd_non_cacheable)
+    ? e_icache_lce_data_mem_uncached
+    : e_icache_lce_data_mem_write;
   
   assign data_mem_pkt_v_o        = lce_data_cmd_v_li;
   assign lce_data_cmd_yumi_lo    = data_mem_pkt_yumi_i;
   assign cce_data_received_o = data_mem_pkt_yumi_i & (lce_data_cmd_li.msg_type == e_lce_data_cmd_cce);
   assign tr_data_received_o = data_mem_pkt_yumi_i & (lce_data_cmd_li.msg_type == e_lce_data_cmd_transfer);
+  assign uncached_data_received_o = data_mem_pkt_yumi_i & (lce_data_cmd_li.msg_type == e_lce_data_cmd_non_cacheable);
 
   // We need this converter because the LCE expects this interface to be valid-yumi, while
   // the network links are ready-and-valid. It's possible that we could modify the LCE to 

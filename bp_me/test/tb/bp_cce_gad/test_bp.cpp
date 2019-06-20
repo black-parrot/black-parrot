@@ -107,7 +107,7 @@ int sc_main(int argc, char **argv)
   sc_signal <uint32_t> req_lce_i("req_lce_i");
   sc_signal <bool>     rqf_i("rqf_i");
   sc_signal <bool>     ldf_i("ldf_i");
-  sc_signal <bool>     lru_cached_excl_i("lru_cached_excl_i");
+  sc_signal <bool>     lru_cached_excl_flag_i("lru_cached_excl_flag_i");
 
   sc_signal <uint32_t> req_addr_way_o("req_addr_way_o");
 
@@ -136,7 +136,7 @@ int sc_main(int argc, char **argv)
   DUT.req_lce_i(req_lce_i);
   DUT.req_type_flag_i(rqf_i);
   DUT.lru_dirty_flag_i(ldf_i);
-  DUT.lru_cached_excl_i(lru_cached_excl_i);
+  DUT.lru_cached_excl_flag_i(lru_cached_excl_flag_i);
 
   DUT.req_addr_way_o(req_addr_way_o);
 
@@ -164,7 +164,7 @@ int sc_main(int argc, char **argv)
   req_lce_i = 0;
   rqf_i = 0;
   ldf_i = 0;
-  lru_cached_excl_i = 0;
+  lru_cached_excl_flag_i = 0;
 
   sc_start(RST_TIME, SC_NS);
 

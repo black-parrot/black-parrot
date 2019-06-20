@@ -17,6 +17,10 @@ bp-demo-s    : $(foreach x,$(subst -,_,$(BP_DEMOS_C)),$(x).s)
 	$(RISCV_GCC) -o $@ src/$*.s src/start.S src/exception.S src/atomics.S src/emulation.c src/bp_utils.h src/bp_utils.c
 	$(RISCV_OBJDUMP) $@ > $*.dump
 
+uc_simple.riscv:
+	$(RISCV_GCC) -o $@ src/uc_simple.s src/uc_start.S
+	$(RISCV_OBJDUMP) $@ > uc_simple.dump
+
 queue_demo_%.s:
 	$(RISCV_GCC) -DNUM_CORES=$(notdir $*) -S -o src/queue_demo_$(notdir $*).s src/queue_demo.c
 

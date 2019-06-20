@@ -85,4 +85,12 @@ package bp_be_dcache_pkg;
 
   } bp_be_dcache_lce_stat_mem_opcode_e;
 
+  // LCE Mode
+  typedef enum logic {
+    e_dcache_lce_mode_uncached
+    ,e_dcache_lce_mode_normal
+  } bp_be_dcache_lce_mode_e;
+
+  `define bp_be_dcache_lce_mode_bits $bits(bp_be_dcache_lce_mode_e)
+
 endpackage

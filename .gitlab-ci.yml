@@ -42,6 +42,7 @@ func-regress-verilator-job:
     #- git submodule update --init --recursive -- bp_common/test/src/coremark
     - echo "Building test programs"
     - make -C bp_common/test riscv_mem 
+    - make ucode
 
   script:
     - echo "Running Verilator regression"

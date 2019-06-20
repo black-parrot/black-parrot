@@ -7,6 +7,7 @@ VCS_OPTIONS += +vcs+loopdetect
 VCS_BUILD_OPTS += -full64             # Compile a 64-bit executable
 VCS_BUILD_OPTS += -sverilog -debug_pp # Enable SystemVerilog
 VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
+#VCS_BUILD_OPTS += -assert svaext      # Enable elaboration system tasks
 VCS_BUILD_OPTS += -CFLAGS "-I$(BP_EXTERNAL_DIR)/include -std=c++11"
 VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
 VCS_BUILD_OPTS += -assert svaext
@@ -67,13 +68,11 @@ build.v: dirs.v
 	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/testbench.v > $(BUILD_DIR)/testbench.v
 	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v   > $(BUILD_DIR)/wrapper.v
 	-@cp $(TB_PATH)/$(TB)/test_bp.v $(BUILD_DIR)/test_bp.v
-	-@cp $(CCE_ROM_PATH)/$(CCE_ROM) $(BUILD_DIR)/cce_rom.v
 	-@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $(BUILD_DIR)/flist.vcs 
 	-@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $(BUILD_DIR)/flist.vcs
 	-@echo $(BUILD_DIR)/wrapper.v                 >> $(BUILD_DIR)/flist.vcs
 	-@echo $(BUILD_DIR)/testbench.v               >> $(BUILD_DIR)/flist.vcs
 	-@echo $(BUILD_DIR)/test_bp.v                 >> $(BUILD_DIR)/flist.vcs
-	-@echo $(BUILD_DIR)/cce_rom.v                 >> $(BUILD_DIR)/flist.vcs
 	-cd $(BUILD_DIR); $(VCS) $(VCS_OPTIONS) $(VCS_BUILD_OPTS) $(HDL_PARAMS) -top test_bp -f flist.vcs -o simv \
 	| tee $(BUILD_LOG)
 	-@grep "Error" -A 5 $(BUILD_LOG) > $(BUILD_ERROR);
@@ -92,6 +91,7 @@ sim.v: dirs.v
 	-@cp $(MEM_PATH)/$(PROG).mem $(SIM_DIR)/prog.mem
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(SIM_DIR)/dram_ch.ini
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(SIM_DIR)/dram_sys.ini
+	-@cp $(CCE_MEM_PATH)/$(CCE_MEM) $(SIM_DIR)/cce_ucode.mem
 	-cd $(SIM_DIR); ./simv $(VCS_OPTIONS) | tee $(SIM_LOG) 
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "PASS" -A 8 $(SIM_LOG) > $(SIM_REPORT)

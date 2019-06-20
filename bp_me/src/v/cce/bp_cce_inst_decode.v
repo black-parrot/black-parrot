@@ -73,7 +73,7 @@ module bp_cce_inst_decode
   logic wfq_q_ready;
   logic stall_op;
   logic gpr_w_v;
-  logic rd_dir_op;
+  logic wdp_op;
 
   // Control outputs
   always_comb
@@ -88,12 +88,14 @@ module bp_cce_inst_decode
     alu_op_s = op_type_u.alu_op_s;
     branch_op_s = op_type_u.branch_op_s;
     mov_op_s = op_type_u.mov_op_s;
+    flag_op_s = op_type_u.flag_op_s;
     read_dir_op_s = op_type_u.read_dir_op_s;
     write_dir_op_s = op_type_u.write_dir_op_s;
     misc_op_s = op_type_u.misc_op_s;
     queue_op_s = op_type_u.queue_op_s;
 
     // Defaults for outputs
+    decoded_inst_v_o = '0;
     decoded_inst_o = '0;
     pc_stall_o = '0;
     pc_branch_target_o = '0;
@@ -111,12 +113,10 @@ module bp_cce_inst_decode
       decoded_inst_v_o = inst_v_i;
       decoded_inst_o.minor_op_u = minor_op_u;
 
-      decoded_inst_o.alu_v = (op == e_op_alu) | (op == e_op_branch);
-      decoded_inst_o.alu_dst_w_v = (op == e_op_alu);
-      decoded_inst_o.mov_dst_w_v = (op == e_op_move);
-
       case (op)
         e_op_alu: begin
+          decoded_inst_o.alu_dst_w_v = 1'b1;
+          decoded_inst_o.alu_v = 1'b1;
           decoded_inst_o.imm = alu_op_s.imm;
           decoded_inst_o.dst = alu_op_s.dst;
           decoded_inst_o.src_a = alu_op_s.src_a;
@@ -124,6 +124,7 @@ module bp_cce_inst_decode
 
         end
         e_op_branch: begin
+          decoded_inst_o.alu_v = 1'b1;
           // Next PC computation
           decoded_inst_o.imm = branch_op_s.target;
           pc_branch_target_o = branch_op_s.target[0+:inst_addr_width_p];
@@ -132,6 +133,7 @@ module bp_cce_inst_decode
 
         end
         e_op_move: begin
+          decoded_inst_o.mov_dst_w_v = 1'b1;
           // destination
           decoded_inst_o.dst = mov_op_s.dst;
           // source
@@ -200,16 +202,15 @@ module bp_cce_inst_decode
           decoded_inst_o.dir_way_sel = read_dir_op_s.dir_way_sel;
 
           decoded_inst_o.dir_r_cmd = minor_op_u;
-          decoded_inst_o.dir_r_v = 1'b1;
           if (minor_op_u.read_dir_minor_op == e_rdp_op) begin
+            decoded_inst_o.pending_r_v = 1'b1;
             decoded_inst_o.flag_mask_w_v = e_flag_pf;
           end
           if (minor_op_u.read_dir_minor_op == e_rdw_op) begin
-            decoded_inst_o.rdw_op_w_v = 1'b1;
-            decoded_inst_o.flag_mask_w_v = e_flag_pf;
+            decoded_inst_o.dir_r_v = 1'b1;
           end
           if (minor_op_u.read_dir_minor_op == e_rde_op) begin
-            decoded_inst_o.rde_op_w_v = 1'b1;
+            decoded_inst_o.dir_r_v = 1'b1;
           end
         end
         e_op_write_dir: begin
@@ -222,10 +223,17 @@ module bp_cce_inst_decode
 
           decoded_inst_o.dir_w_cmd = minor_op_u;
           decoded_inst_o.dir_w_v = 1'b1;
+
+          decoded_inst_o.imm = {{(`bp_cce_inst_imm16_width-`bp_cce_coh_bits){1'b0}}
+                                , write_dir_op_s.imm};
+
+          if (minor_op_u.write_dir_minor_op == e_wdp_op) begin
+            decoded_inst_o.pending_w_v = 1'b1;
+          end
         end
         e_op_misc: begin
           if (minor_op_u.misc_minor_op == e_gad_op) begin
-            decoded_inst_o.gad_op_w_v = 1'b1;
+            decoded_inst_o.gad_op = 1'b1;
             decoded_inst_o.transfer_lce_w_v = 1'b1; // transfer_lce, transfer_lce_way
             decoded_inst_o.transfer_lce_sel = e_tr_lce_sel_logic;
             decoded_inst_o.req_addr_way_sel = e_req_addr_way_sel_logic;
@@ -235,6 +243,9 @@ module bp_cce_inst_decode
             decoded_inst_o.pruief_sel = e_pruief_logic;
             decoded_inst_o.flag_mask_w_v =
               (e_flag_tf | e_flag_rf | e_flag_uf | e_flag_if | e_flag_ef | e_flag_cf);
+          end
+          else if (minor_op_u.misc_minor_op == e_clm_op) begin
+            decoded_inst_o.mshr_clear = 1'b1;
           end
         end
         e_op_queue: begin
@@ -281,30 +292,11 @@ module bp_cce_inst_decode
               decoded_inst_o.flag_mask_w_v = e_flag_nwbf;
 
             end else if (queue_op_s.op.popq.src_q == e_src_q_sel_mem_data_resp) begin
-              decoded_inst_o.req_sel = e_req_sel_mem_data_resp;
-              decoded_inst_o.lru_way_sel = e_lru_way_sel_mem_data_resp;
-              decoded_inst_o.req_addr_way_sel = e_req_addr_way_sel_mem_data_resp;
-              decoded_inst_o.req_w_v = 1'b1; // req_lce, req_addr, req_tag
-              decoded_inst_o.req_addr_way_w_v = 1'b1; // req_addr_way
-              decoded_inst_o.lru_way_w_v = 1'b1;
-              decoded_inst_o.rqf_sel = e_rqf_mem_data_resp;
-              decoded_inst_o.nc_req_size_w_v = 1'b1;
-              decoded_inst_o.flag_mask_w_v = (e_flag_rqf | e_flag_ucf);
+              // Mem Data Resp is handled by bp_cce_msg, and does not write any state in the CCE
 
             end else if (queue_op_s.op.popq.src_q == e_src_q_sel_mem_resp) begin
-              decoded_inst_o.req_sel = e_req_sel_mem_resp;
-              decoded_inst_o.transfer_lce_sel = e_tr_lce_sel_mem_resp;
-              decoded_inst_o.lru_way_sel = e_lru_way_sel_mem_resp;
-              decoded_inst_o.req_addr_way_sel = e_req_addr_way_sel_mem_resp;
-              decoded_inst_o.req_w_v = 1'b1; // req_lce, req_addr, req_tag
-              decoded_inst_o.req_addr_way_w_v = 1'b1; // req_addr_way
-              decoded_inst_o.lru_way_w_v = 1'b1;
-              decoded_inst_o.transfer_lce_w_v = 1'b1; // transfer_lce, transfer_lce_way
-              decoded_inst_o.rwbf_sel = e_rwbf_mem_resp;
-              decoded_inst_o.tf_sel = e_tf_mem_resp;
-              decoded_inst_o.rqf_sel = e_rqf_mem_resp;
-              decoded_inst_o.nc_req_size_w_v = 1'b1;
-              decoded_inst_o.flag_mask_w_v = (e_flag_rqf | e_flag_rwbf | e_flag_tf | e_flag_ucf);
+              // Mem Resp does a full restore of the MSHR register from the message payload
+              decoded_inst_o.mshr_restore = 1'b1;
 
             end else if (queue_op_s.op.popq.src_q == e_src_q_sel_lce_resp) begin
               decoded_inst_o.ack_type_w_v = 1'b1;
@@ -334,20 +326,16 @@ module bp_cce_inst_decode
         ,(decoded_inst_o.dst == e_dst_r1) & (gpr_w_v)
         ,(decoded_inst_o.dst == e_dst_r0) & (gpr_w_v)
         };
-      decoded_inst_o.gpr_w_v = |decoded_inst_o.gpr_w_mask;
 
-      // Uncached data and request size register writes
-      decoded_inst_o.nc_data_lce_req = (popq_op) & (popq_qsel == e_src_q_sel_lce_req);
-      decoded_inst_o.nc_data_mem_data_resp = (popq_op) & (popq_qsel == e_src_q_sel_mem_data_resp);
-      decoded_inst_o.nc_data_w_v = (popq_op) & ((popq_qsel == e_src_q_sel_lce_req)
-                                                 | (popq_qsel == e_src_q_sel_mem_data_resp));
+      // Uncached data
+      decoded_inst_o.nc_data_w_v = (popq_op) & (popq_qsel == e_src_q_sel_lce_req);
 
     end
 
     // Control for fetch
     wfq_op = (op == e_op_queue) & (minor_op_u.queue_minor_op == e_wfq_op);
     stall_op = (op == e_op_misc) & (minor_op_u.misc_minor_op == e_stall_op);
-    rd_dir_op = (op == e_op_read_dir) & (minor_op_u.read_dir_minor_op != e_rdp_op);
+    wdp_op = (op == e_op_write_dir) & (minor_op_u.write_dir_minor_op == e_wdp_op);
 
     // vector of input queue valid signals
     wfq_v_vec = {lce_req_v_i, lce_resp_v_i, lce_data_resp_v_i, mem_resp_v_i, mem_data_resp_v_i,
@@ -374,8 +362,7 @@ module bp_cce_inst_decode
     endcase
     end
 
-    // stall PC if POPQ instruction and target input queue has no valid data
-    // also stall if POPH and target queue is not valid
+    // stall PC if POPQ or POPH instruction and target queue has no valid data on its output
     if (popq_op | poph_op) begin
     case (popq_qsel)
       e_src_q_sel_lce_req: pc_stall_o |= ~lce_req_v_i;
@@ -387,7 +374,32 @@ module bp_cce_inst_decode
     endcase
     end
 
-  end
+    // stall if mem data resp is valid (currently being processed by bp_cce_msg) and trying
+    // to push mem cmd or mem data cmd, or trying to pop mem resp
+    // This avoids conflicts on the pending bit write port
+    // The pending bit write only occurs when mem_data_resp_v_i and lce_data_cmd_ready_i are both
+    // high. The microcode can write the pending bit in any other cycle.
+    if (popq_op & mem_data_resp_v_i & lce_data_cmd_ready_i
+        & (popq_qsel == e_src_q_sel_mem_resp)) begin
+      pc_stall_o = 1'b1;
+      // do not assert the yumi signal so the message remains in the queue
+      decoded_inst_o.mem_resp_yumi = 1'b0;
+    end
+    if (pushq_op & mem_data_resp_v_i & lce_data_cmd_ready_i
+        & ((pushq_qsel == e_dst_q_mem_cmd) | (pushq_qsel == e_dst_q_mem_data_cmd))) begin
+      pc_stall_o = 1'b1;
+      // do not assert the valid signal so the outbound messages do not send
+      decoded_inst_o.mem_cmd_v = 1'b0;
+      decoded_inst_o.mem_data_cmd_v = 1'b0;
+    end
 
+    // stall if current op is WDP and there is a valid memory data response
+    // The pending bit write only occurs when mem_data_resp_v_i and lce_data_cmd_ready_i
+    if (wdp_op & mem_data_resp_v_i & lce_data_cmd_ready_i) begin
+      pc_stall_o = 1'b1;
+    end
+
+
+  end
 
 endmodule

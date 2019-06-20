@@ -43,50 +43,51 @@
 
 module bp_be_dcache_lce
   import bp_common_pkg::*;
+  import bp_common_aviary_pkg::*;
+  import bp_cfg_link_pkg::*;
   import bp_be_dcache_pkg::*;
-  #(parameter data_width_p="inv"
-    , parameter paddr_width_p="inv"
-    , parameter lce_data_width_p="inv"
-    , parameter sets_p="inv"
-    , parameter ways_p="inv"
-    , parameter num_cce_p="inv"
-    , parameter num_lce_p="inv"
-    , parameter max_credits_p="inv"
+ #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+   `declare_bp_proc_params(cfg_p)
     
     , parameter timeout_max_limit_p=4
    
-    , localparam block_size_in_words_lp=ways_p
-    , localparam data_mask_width_lp=(data_width_p>>3)
-    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_width_p>>3)
+    , localparam block_size_in_words_lp=lce_assoc_p
+    , localparam data_mask_width_lp=(dword_width_p>>3)
+    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
     , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
     , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
-    , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
+    , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)
     , localparam tag_width_lp=(paddr_width_p-index_width_lp-block_offset_width_lp)
-    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
+    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
     , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
   
     , localparam dcache_lce_data_mem_pkt_width_lp=
-      `bp_be_dcache_lce_data_mem_pkt_width(sets_p, ways_p, lce_data_width_p)
+      `bp_be_dcache_lce_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
     , localparam dcache_lce_tag_mem_pkt_width_lp=
-      `bp_be_dcache_lce_tag_mem_pkt_width(sets_p, ways_p, tag_width_lp)
+      `bp_be_dcache_lce_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, tag_width_lp)
     , localparam dcache_lce_stat_mem_pkt_width_lp=
-      `bp_be_dcache_lce_stat_mem_pkt_width(sets_p, ways_p)
+      `bp_be_dcache_lce_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
     
     , localparam lce_cce_req_width_lp=
-      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, ways_p, data_width_p)
+      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p)
     , localparam lce_cce_resp_width_lp=
       `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
     , localparam lce_cce_data_resp_width_lp=
-      `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_p)
+      `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, cce_block_width_p)
     , localparam cce_lce_cmd_width_lp=
-      `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, ways_p)
+      `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p)
     , localparam lce_data_cmd_width_lp=
-      `bp_lce_data_cmd_width(num_lce_p, lce_data_width_p, ways_p)
+      `bp_lce_data_cmd_width(num_lce_p, cce_block_width_p, lce_assoc_p)
   )
   (
     input clk_i
     , input reset_i
+    , input freeze_i
 
+    // Config channel
+    , input                        cfg_w_v_i
+    , input [cfg_addr_width_p-1:0] cfg_addr_i
+    , input [cfg_data_width_p-1:0] cfg_data_i
     , input [lce_id_width_lp-1:0] lce_id_i
 
     , output logic ready_o
@@ -99,13 +100,13 @@ module bp_be_dcache_lce
     , input uncached_store_req_i
 
     , input [paddr_width_p-1:0] miss_addr_i
-    , input [data_width_p-1:0] store_data_i
+    , input [dword_width_p-1:0] store_data_i
     , input [1:0] size_op_i
 
     // data_mem
     , output logic data_mem_pkt_v_o
     , output logic [dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
-    , input [lce_data_width_p-1:0] data_mem_data_i
+    , input [cce_block_width_p-1:0] data_mem_data_i
     , input data_mem_pkt_yumi_i
   
     // tag_mem
@@ -117,7 +118,7 @@ module bp_be_dcache_lce
     , output logic stat_mem_pkt_v_o
     , output logic [dcache_lce_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
     , input [way_id_width_lp-1:0] lru_way_i
-    , input [ways_p-1:0] dirty_i
+    , input [lce_assoc_p-1:0] dirty_i
     , input stat_mem_pkt_yumi_i
 
     // LCE-CCE interface
@@ -149,19 +150,45 @@ module bp_be_dcache_lce
 
     , output credits_full_o
     , output credits_empty_o
+
+    // LCE Mode
+    , output bp_be_dcache_lce_mode_e              lce_mode_o
   );
+
+  // LCE Mode control
+  bp_be_dcache_lce_mode_e lce_mode_r, lce_mode_n;
+  assign lce_mode_o = lce_mode_r;
+
+  // The LCE has a single config register, thus the unit is always ready. Writes should only
+  // happen when reset_i is low and freeze_i is high. If these conditions are true, the LCE
+  // simply snoops the config link and writes the mode register when targeted by a valid write
+  // command on the link.
+  logic lce_mode_w_v, lce_mode_addr_v;
+  assign lce_mode_addr_v = (cfg_addr_i == bp_cfg_reg_dcache_mode_gp);
+  assign lce_mode_w_v = freeze_i & cfg_w_v_i & lce_mode_addr_v;
+  assign lce_mode_n = bp_be_dcache_lce_mode_e'(cfg_data_i[0+:`bp_be_dcache_lce_mode_bits]);
+
+  always_ff @(posedge clk_i) begin
+    if (reset_i) begin
+      lce_mode_r <= e_dcache_lce_mode_uncached;
+    end else begin
+      if (lce_mode_w_v) begin
+        lce_mode_r <= lce_mode_n;
+      end
+    end
+  end
 
   // casting structs
   //
-  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, ways_p, data_width_p);
+  `declare_bp_lce_cce_req_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p);
   `declare_bp_lce_cce_resp_s(num_cce_p, num_lce_p, paddr_width_p);
-  `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_p);
-  `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, ways_p);
-  `declare_bp_lce_data_cmd_s(num_lce_p, lce_data_width_p, ways_p);
+  `declare_bp_lce_cce_data_resp_s(num_cce_p, num_lce_p, paddr_width_p, cce_block_width_p);
+  `declare_bp_cce_lce_cmd_s(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p);
+  `declare_bp_lce_data_cmd_s(num_lce_p, cce_block_width_p, lce_assoc_p);
 
-  `declare_bp_be_dcache_lce_data_mem_pkt_s(sets_p, ways_p, lce_data_width_p);
-  `declare_bp_be_dcache_lce_tag_mem_pkt_s(sets_p, ways_p, tag_width_lp);
-  `declare_bp_be_dcache_lce_stat_mem_pkt_s(sets_p, ways_p);
+  `declare_bp_be_dcache_lce_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
+  `declare_bp_be_dcache_lce_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, tag_width_lp);
+  `declare_bp_be_dcache_lce_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
  
   bp_lce_cce_req_s lce_req;
   bp_lce_cce_resp_s lce_resp;
@@ -222,11 +249,11 @@ module bp_be_dcache_lce
   logic [paddr_width_p-1:0] miss_addr_lo;
 
   bp_be_dcache_lce_req
-    #(.data_width_p(data_width_p)
+    #(.data_width_p(dword_width_p)
       ,.paddr_width_p(paddr_width_p)
       ,.num_cce_p(num_cce_p)
       ,.num_lce_p(num_lce_p)
-      ,.ways_p(ways_p)
+      ,.ways_p(lce_assoc_p)
       )
     lce_req_inst
       (.clk_i(clk_i)
@@ -262,6 +289,8 @@ module bp_be_dcache_lce
       ,.lce_resp_o(lce_req_to_lce_resp_lo)
       ,.lce_resp_v_o(lce_req_to_lce_resp_v_lo)
       ,.lce_resp_yumi_i(lce_req_to_lce_resp_yumi_li)
+
+      ,.credits_full_i(credits_full_o)
       );
 
   // LCE cmd
@@ -280,16 +309,18 @@ module bp_be_dcache_lce
     #(.num_cce_p(num_cce_p)
       ,.num_lce_p(num_lce_p)
       ,.paddr_width_p(paddr_width_p)
-      ,.lce_data_width_p(lce_data_width_p)
-      ,.ways_p(ways_p)
-      ,.sets_p(sets_p)
-      ,.data_width_p(data_width_p)
+      ,.lce_data_width_p(cce_block_width_p)
+      ,.ways_p(lce_assoc_p)
+      ,.sets_p(lce_sets_p)
+      ,.data_width_p(dword_width_p)
       )
     lce_cmd_inst
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
+      ,.freeze_i(freeze_i)
 
       ,.lce_id_i(lce_id_i)
+      ,.lce_mode_i(lce_mode_r)
 
       ,.lce_sync_done_o(lce_sync_done_lo)
       ,.set_tag_received_o(set_tag_received)
@@ -337,11 +368,11 @@ module bp_be_dcache_lce
   bp_be_dcache_lce_data_cmd
     #(.num_cce_p(num_cce_p)
       ,.num_lce_p(num_lce_p)
-      ,.data_width_p(data_width_p)
+      ,.data_width_p(dword_width_p)
       ,.paddr_width_p(paddr_width_p)
-      ,.lce_data_width_p(lce_data_width_p)
-      ,.ways_p(ways_p)
-      ,.sets_p(sets_p)
+      ,.lce_data_width_p(cce_block_width_p)
+      ,.ways_p(lce_assoc_p)
+      ,.sets_p(lce_sets_p)
       )
     lce_data_cmd_inst
       (.clk_i(clk_i)
@@ -435,6 +466,13 @@ module bp_be_dcache_lce
     end
   end
 
-  assign ready_o = lce_sync_done_lo & ~timeout & ~cache_miss_o; 
+  // LCE Ready Signal
+  // The LCE ready signal depends on the mode of operation.
+  // In uncached only mode, the signal goes high once freeze_i goes low.
+  // In normal mode, the signal goes high after the LCE CMD unit signals that the CCE has
+  // completed the initialization sequence.
+  logic lce_ready;
+  assign lce_ready = (lce_mode_r == e_dcache_lce_mode_uncached) ? ~freeze_i : lce_sync_done_lo;
+  assign ready_o = lce_ready & ~timeout & ~cache_miss_o; 
 
 endmodule

@@ -8,6 +8,7 @@ module bp_fe_top
  import bp_common_aviary_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
+ import bp_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
 
@@ -31,8 +32,14 @@ module bp_fe_top
    )
   (input                                              clk_i
    , input                                            reset_i
+   , input                                            freeze_i
 
    , input [lce_id_width_lp-1:0]                      icache_id_i
+
+   // Config channel
+   , input                                            cfg_w_v_i
+   , input [cfg_addr_width_p-1:0]                     cfg_addr_i
+   , input [cfg_data_width_p-1:0]                     cfg_data_i
 
    , input [fe_cmd_width_lp-1:0]                      fe_cmd_i
    , input                                            fe_cmd_v_i
@@ -65,7 +72,6 @@ module bp_fe_top
    , output [lce_data_cmd_width_lp-1:0]               lce_data_cmd_o
    , output                                           lce_data_cmd_v_o
    , input                                            lce_data_cmd_ready_i
-
    );
 
 // the first level of structs
@@ -123,6 +129,7 @@ logic icache_itlb_v;
 logic icache_itlb_ready;
 // reserved icache
 logic icache_miss;
+logic instr_access_fault;
 logic poison_tl;
 
 //itlb
@@ -179,7 +186,7 @@ always_comb
      
 
 // icache to icache
-assign poison_tl = icache_miss | fe_pc_gen.pc_redirect_valid & fe_pc_gen_v;
+assign poison_tl = icache_miss | (fe_pc_gen_v & ~fe_pc_gen.attaboy_valid);
 
 //fe to itlb
 logic itlb_fill_v, itlb_fill_r, itlb_w_v, itlb_fence_v;
@@ -189,6 +196,8 @@ assign itlb_icache.ppn   = itlb_entry_r.ptag;
 assign itlb_fill_v       = fe_cmd_v_i & fe_cmd.opcode == e_op_itlb_fill_response;
 assign itlb_w_v          = itlb_fill_v & ~itlb_fill_r;
 assign itlb_fence_v      = fe_cmd_v_i & fe_cmd.opcode == e_op_itlb_fence;
+
+wire icache_uncached = itlb_entry_r.uc;
 
 always_ff @(posedge clk_i) begin
   if(reset_i) begin
@@ -213,6 +222,7 @@ bp_fe_pc_gen
    ,.icache_pc_gen_v_i(icache_pc_gen_v)
    ,.icache_pc_gen_ready_o(icache_pc_gen_ready)
    ,.icache_miss_i(icache_miss)
+   ,.instr_access_fault_i(instr_access_fault)
                
    ,.pc_gen_itlb_o(pc_gen_itlb)
    ,.pc_gen_itlb_v_o(pc_gen_itlb_v)
@@ -229,14 +239,17 @@ bp_fe_pc_gen
    ,.itlb_miss_i(itlb_miss)
    );
 
-   
 bp_fe_icache 
  #(.cfg_p(cfg_p)) 
- icache_1
+ icache
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
+   ,.freeze_i(freeze_i)
 
    ,.id_i(icache_id_i)         
+   ,.cfg_w_v_i(cfg_w_v_i)
+   ,.cfg_addr_i(cfg_addr_i)
+   ,.cfg_data_i(cfg_data_i)
 
    ,.pc_gen_icache_vaddr_i(pc_gen_icache)
    ,.pc_gen_icache_vaddr_v_i(pc_gen_icache_v)
@@ -250,6 +263,7 @@ bp_fe_icache
    ,.itlb_icache_data_resp_v_i(itlb_icache_data_resp_v)
    ,.itlb_icache_data_resp_ready_o(itlb_icache_data_resp_ready)
    ,.itlb_icache_miss_i(itlb_miss) 
+   ,.uncached_i(icache_uncached)
   
    ,.lce_req_o(lce_req_o)
    ,.lce_req_v_o(lce_req_v_o)
@@ -275,7 +289,7 @@ bp_fe_icache
    ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
    ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
 
-         
+   ,.instr_access_fault_o(instr_access_fault)
    ,.cache_miss_o(icache_miss)
    ,.poison_tl_i(poison_tl)
    );
