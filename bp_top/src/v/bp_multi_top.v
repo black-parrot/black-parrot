@@ -146,9 +146,9 @@ logic                  clint_cmd_v_li, clint_cmd_yumi_lo;
 bp_cce_mem_data_cmd_s  clint_data_cmd_li;
 logic                  clint_data_cmd_v_li, clint_data_cmd_yumi_lo;
 
-logic [num_core_p-1:0]                       cfg_link_w_v_lo;
-logic [num_core_p-1:0][cfg_addr_width_p-1:0] cfg_link_addr_lo;
-logic [num_core_p-1:0][cfg_data_width_p-1:0] cfg_link_data_lo;
+logic [num_core_p-1:0]                       cfg_w_v_lo;
+logic [num_core_p-1:0][cfg_addr_width_p-1:0] cfg_addr_lo;
+logic [num_core_p-1:0][cfg_data_width_p-1:0] cfg_data_lo;
 
 bsg_ready_and_link_sif_s [num_core_p-1:0] master_wh_link_li, master_wh_link_lo;
 bsg_ready_and_link_sif_s                  client_wh_link_li, client_wh_link_lo;
@@ -230,9 +230,9 @@ bp_clint
    ,.timer_irq_o(timer_irq_lo)
    ,.external_irq_o(external_irq_lo)
    
-   ,.cfg_link_w_v_o(cfg_link_w_v_lo)
-   ,.cfg_link_addr_o(cfg_link_addr_lo)
-   ,.cfg_link_data_o(cfg_link_data_lo)
+   ,.cfg_w_v_o(cfg_w_v_lo)
+   ,.cfg_addr_o(cfg_addr_lo)
+   ,.cfg_data_o(cfg_data_lo)
    );
 
 bp_me_cce_to_wormhole_link_async_client
@@ -286,98 +286,47 @@ assign resp_link_li[clint_pos_lp][P].ready_and_rev = 1'b1;
 
 
 /************************* BP Tiles *************************/
+bp_top
+ #(.cfg_p(cfg_p)
+   ,.calc_trace_p(calc_trace_p)
+   ,.cce_trace_p(cce_trace_p)
+   )
+ bp_top
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
 
-for(i = 0; i < num_core_p; i++) 
-  begin : rof1
-  
-    // Mapping tile-index to router-pos
-    // Tiles with index >= clint_pos_lp has position (index+1)
-    localparam tile_pos_lp = i + (i / clint_pos_lp);
-  
-    localparam core_id   = i;
-    localparam cce_id    = i;
-    localparam icache_id = (i * 2 + 0);
-    localparam dcache_id = (i * 2 + 1);
+   ,.cfg_w_v_i(cfg_w_v_lo)
+   ,.cfg_addr_i(cfg_addr_lo)
+   ,.cfg_data_i(cfg_data_lo)
 
-    localparam core_id_width_lp = `BSG_SAFE_CLOG2(num_core_p);
-    localparam cce_id_width_lp  = `BSG_SAFE_CLOG2(num_cce_p);
-    localparam lce_id_width_lp  = `BSG_SAFE_CLOG2(num_lce_p);
+   ,.mem_resp_i(mem_resp_li)
+   ,.mem_resp_v_i(mem_resp_v_li)
+   ,.mem_resp_ready_o(mem_resp_ready_lo)
 
-    bp_proc_cfg_s proc_cfg;
-    assign proc_cfg.core_id   = core_id[0+:core_id_width_lp];
-    assign proc_cfg.cce_id    = cce_id[0+:cce_id_width_lp];
-    assign proc_cfg.icache_id = icache_id[0+:lce_id_width_lp];
-    assign proc_cfg.dcache_id = dcache_id[0+:lce_id_width_lp];
+   ,.mem_data_resp_i(mem_data_resp_li)
+   ,.mem_data_resp_v_i(mem_data_resp_v_li)
+   ,.mem_data_resp_ready_o(mem_data_resp_ready_lo)
 
-    if (i > 0) begin
-    assign lce_req_link_stitch_li[i][W]  = lce_req_link_stitch_lo[i-1][E];
-    assign lce_resp_link_stitch_li[i][W] = lce_resp_link_stitch_lo[i-1][E];
-    assign lce_data_resp_link_stitch_li[i][W] = lce_data_resp_link_stitch_lo[i-1][E];
-    assign lce_cmd_link_stitch_li[i][W]  = lce_cmd_link_stitch_lo[i-1][E];
-    assign lce_data_cmd_link_stitch_li[i][W]  = lce_data_cmd_link_stitch_lo[i-1][E];
-    end
+   ,.mem_cmd_o(mem_cmd_lo)
+   ,.mem_cmd_v_o(mem_cmd_v_lo)
+   ,.mem_cmd_yumi_i(mem_cmd_yumi_li)
 
-    if (i < num_core_p-1) begin
-    assign lce_req_link_stitch_li[i][E]  = lce_req_link_stitch_lo[i+1][W];
-    assign lce_resp_link_stitch_li[i][E] = lce_resp_link_stitch_lo[i+1][W];
-    assign lce_data_resp_link_stitch_li[i][E] = lce_data_resp_link_stitch_lo[i+1][W];
-    assign lce_cmd_link_stitch_li[i][E]  = lce_cmd_link_stitch_lo[i+1][W];
-    assign lce_data_cmd_link_stitch_li[i][E]  = lce_data_cmd_link_stitch_lo[i+1][W];
-    end
+   ,.mem_data_cmd_o(mem_data_cmd_lo)
+   ,.mem_data_cmd_v_o(mem_data_cmd_v_lo)
+   ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi_li)
 
-    bp_tile
-     #(.cfg_p(cfg_p)
-       ,.calc_trace_p(calc_trace_p)
-       ,.cce_trace_p(cce_trace_p)
-       )
-     tile
-      (.clk_i(clk_i)
-       ,.reset_i(reset_r)
+   ,.timer_irq_i(timer_irq_lo)
+   ,.soft_irq_i(soft_irq_lo)
+   ,.external_irq_i(external_irq_lo)
+   );
 
-       ,.proc_cfg_i(proc_cfg)
+for(i = 0; i < num_core_p; i++)
+begin : rof1
 
-       ,.my_x_i(x_cord_width_p'(i))
-       ,.my_y_i(y_cord_width_p'(0))
+// Mapping tile-index to router-pos
+// Tiles with index >= clint_pos_lp has position (index+1)
+localparam tile_pos_lp = i + (i / clint_pos_lp);
 
-       ,.cfg_w_v_i(cfg_link_w_v_lo[i])
-       ,.cfg_addr_i(cfg_link_addr_lo[i])
-       ,.cfg_data_i(cfg_link_data_lo[i])
-
-       // Router inputs
-       ,.lce_req_link_i(lce_req_link_stitch_li[i])
-       ,.lce_resp_link_i(lce_resp_link_stitch_li[i])
-       ,.lce_data_resp_link_i(lce_data_resp_link_stitch_li[i])
-       ,.lce_cmd_link_i(lce_cmd_link_stitch_li[i])
-       ,.lce_data_cmd_link_i(lce_data_cmd_link_stitch_li[i])
-
-       // Router outputs
-       ,.lce_req_link_o(lce_req_link_stitch_lo[i])
-       ,.lce_resp_link_o(lce_resp_link_stitch_lo[i])
-       ,.lce_data_resp_link_o(lce_data_resp_link_stitch_lo[i])
-       ,.lce_cmd_link_o(lce_cmd_link_stitch_lo[i])
-       ,.lce_data_cmd_link_o(lce_data_cmd_link_stitch_lo[i])
-
-       ,.mem_resp_i(mem_resp_li[i])
-       ,.mem_resp_v_i(mem_resp_v_li[i])
-       ,.mem_resp_ready_o(mem_resp_ready_lo[i])
-
-       ,.mem_data_resp_i(mem_data_resp_li[i])
-       ,.mem_data_resp_v_i(mem_data_resp_v_li[i])
-       ,.mem_data_resp_ready_o(mem_data_resp_ready_lo[i])
-
-       ,.mem_cmd_o(mem_cmd_lo[i])
-       ,.mem_cmd_v_o(mem_cmd_v_lo[i])
-       ,.mem_cmd_yumi_i(mem_cmd_yumi_li[i])
-
-       ,.mem_data_cmd_o(mem_data_cmd_lo[i])
-       ,.mem_data_cmd_v_o(mem_data_cmd_v_lo[i])
-       ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi_li[i])
-
-       ,.timer_int_i(timer_irq_lo[i])
-       ,.software_int_i(soft_irq_lo[i])
-       ,.external_int_i(external_irq_lo[i])
-       );
-    
     bp_me_cce_to_wormhole_link_async_master
      #(.cfg_p(cfg_p)
       ,.x_cord_width_p(noc_x_cord_width_lp)
