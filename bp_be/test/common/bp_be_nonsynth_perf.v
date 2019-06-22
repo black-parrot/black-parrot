@@ -76,19 +76,20 @@ always_ff @(posedge clk_i)
         poison_cnt_r <= poison_cnt_r + blame_poison;
         roll_cnt_r <= roll_cnt_r + blame_roll;
       end
+  end
 
-    if (program_finish_i[mhartid_i]) 
-      begin
-        $display("[CORE%0x STATS]", mhartid_i);
-        $display("\tclk   : %d", clk_cnt_r);
-        $display("\tinstr : %d", instr_cnt_r);
-        $display("\tfe_nop: %d", fe_nop_cnt_r);
-        $display("\tbe_nop: %d", be_nop_cnt_r);
-        $display("\tme_nop: %d", me_nop_cnt_r);
-        $display("\tpoison: %d", poison_cnt_r);
-        $display("\troll  : %d", roll_cnt_r);
-        $display("\tmIPC  : %d", instr_cnt_r * 1000 / clk_cnt_r);
-      end
+initial
+  begin
+    @(posedge program_finish_i[mhartid_i]);
+    $display("[CORE%0x STATS]", mhartid_i);
+    $display("\tclk   : %d", clk_cnt_r);
+    $display("\tinstr : %d", instr_cnt_r);
+    $display("\tfe_nop: %d", fe_nop_cnt_r);
+    $display("\tbe_nop: %d", be_nop_cnt_r);
+    $display("\tme_nop: %d", me_nop_cnt_r);
+    $display("\tpoison: %d", poison_cnt_r);
+    $display("\troll  : %d", roll_cnt_r);
+    $display("\tmIPC  : %d", instr_cnt_r * 1000 / clk_cnt_r);
   end
 
 endmodule : bp_be_nonsynth_perf
