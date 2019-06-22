@@ -19,7 +19,7 @@ module bp_be_nonsynth_perf
 
    , input instr_cmt_i
 
-   , input program_finish_i
+   , input [num_core_p-1:0] program_finish_i
    );
 
 logic booted;
@@ -77,7 +77,7 @@ always_ff @(posedge clk_i)
         roll_cnt_r <= roll_cnt_r + blame_roll;
       end
 
-    if (program_finish_i) 
+    if (program_finish_i[mhartid_i]) 
       begin
         $display("[CORE%0x STATS]", mhartid_i);
         $display("\tclk   : %d", clk_cnt_r);
