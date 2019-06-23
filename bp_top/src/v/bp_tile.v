@@ -12,6 +12,7 @@ module bp_tile
  import bp_cce_pkg::*;
  import bsg_noc_pkg::*;
  import bp_cfg_link_pkg::*;
+ import bsg_wormhole_router_pkg::StrictYX;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mem_payload_width_p)
@@ -55,6 +56,12 @@ module bp_tile
        + ((lce_data_cmd_packet_width_lp%lce_data_cmd_num_flits_lp) == 0 ? 0 : 1)
    , localparam lce_data_cmd_payload_offset_lp = 
        (x_cord_width_p+y_cord_width_p+lce_data_cmd_len_width_lp)
+
+   // Generalized Wormhole Router parameters
+   , localparam dims_lp = 2
+   , localparam int cord_markers_pos_lp[dims_lp:0] =
+       '{ x_cord_width_p+y_cord_width_p, x_cord_width_p, 0 }
+
    )
   (input                                                   clk_i
    , input                                                 reset_i
@@ -276,6 +283,7 @@ for (genvar i = 0; i < dirs_lp; i++)
       end
     else if (i == P) // Destination side
       begin : fi1_P
+        // To CCE - attached at I$ (x-cord 0)
         assign lce_req_li   = lce_req_link_o_stitch[0][P].data[1+x_cord_width_p+:lce_cce_req_width_lp];
         assign lce_req_v_li = lce_req_link_o_stitch[0][P].v;
         assign lce_req_link_i_stitch[0][P] = '{ready_and_rev: lce_req_ready_lo, default: '0};
@@ -284,28 +292,24 @@ for (genvar i = 0; i < dirs_lp; i++)
         assign lce_resp_v_li = lce_resp_link_o_stitch[0][P].v;
         assign lce_resp_link_i_stitch[0][P] = '{ready_and_rev: lce_resp_ready_lo, default: '0};
 
-        // Driven by wormhole adapter
-        //assign lce_data_resp_link_i_stitch[0][P] = '{ready_and_rev: lce_data_resp_ready_lo, default: '0};
+        // LCE Data Response at x=0 driven by wormhole adapter
+        // LCE Data Command at x=0 driven by wormhole adapter
 
+        // To I$
         assign lce_cmd_li[0]   = lce_cmd_link_o_stitch[0][P].data[1+x_cord_width_p+:cce_lce_cmd_width_lp]; 
         assign lce_cmd_v_li[0] = lce_cmd_link_o_stitch[0][P].v;
         assign lce_cmd_link_i_stitch[0][P]  = '{ready_and_rev: lce_cmd_ready_lo[0], default: '0};
 
-        // Driven by wormhole adapter
-        //assign lce_data_cmd_link_i_stitch[0][P] = '{ready_and_rev: lce_data_cmd_ready_lo[0], default: '0};
-
-        assign lce_req_link_i_stitch[1][P] = '{ready_and_rev: lce_req_ready_lo, default: '0};
-        assign lce_resp_link_i_stitch[1][P] = '{ready_and_rev: lce_resp_ready_lo, default: '0};
-
-        // Driven by wormhole adapter
-        //assign lce_data_resp_link_i_stitch[1][P] = '{ready_and_rev: lce_data_resp_ready_lo[1], default: '0};
+        // CCE doesn't connect on P at x=1 (D$) location, stub the input links
+        assign lce_req_link_i_stitch[1][P] = '0;
+        assign lce_resp_link_i_stitch[1][P] = '0;
+        assign lce_data_resp_link_i_stitch[1][P] = '0;
 
         assign lce_cmd_li[1]   = lce_cmd_link_o_stitch[1][P].data[1+x_cord_width_p+:cce_lce_cmd_width_lp]; 
         assign lce_cmd_v_li[1] = lce_cmd_link_o_stitch[1][P].v;
         assign lce_cmd_link_i_stitch[1][P]  = '{ready_and_rev: lce_cmd_ready_lo[1], default: '0};
 
-        // Driven by wormhole adapter
-        //assign lce_data_cmd_link_i_stitch[1][P] = '{ready_and_rev: lce_data_cmd_ready_lo[1], default: '0};
+        // LCE Data Command at x=1 driven by wormhole adapter
       end
     else if (i == S) // Source side
       begin : fi1_S
@@ -319,15 +323,15 @@ for (genvar i = 0; i < dirs_lp; i++)
         assign lce_resp_link_i_stitch[0][S].ready_and_rev = '0;
         assign lce_resp_ready_li[0] = lce_resp_link_o_stitch[0][S].ready_and_rev;
 
-        assign lce_data_resp_link_i_stitch[0][S] = '0;
-
         assign lce_cmd_link_i_stitch[0][S].data          = {lce_cmd_lo, 1'b0, lce_cmd_dst_x_cord_lo};
         assign lce_cmd_link_i_stitch[0][S].v             = lce_cmd_v_lo;
         assign lce_cmd_link_i_stitch[0][S].ready_and_rev = '0;
         assign lce_cmd_ready_li = lce_cmd_link_o_stitch[0][S].ready_and_rev;
 
-        // I$ data cmd wh router fed from adapter
-        //assign lce_data_cmd_link_i_stitch[0][S] = '0;
+        // LCE Data Command at x=0 driven by wormhole adapter
+
+        // LCE Data Response is sent on North port
+        assign lce_data_resp_link_i_stitch[0][S] = '0;
 
         assign lce_req_link_i_stitch[1][S].data          = {lce_req_lo[1], 1'b0, lce_req_dst_x_cord_1_lo}; 
         assign lce_req_link_i_stitch[1][S].v             = lce_req_v_lo[1];
@@ -339,10 +343,12 @@ for (genvar i = 0; i < dirs_lp; i++)
         assign lce_resp_link_i_stitch[1][S].ready_and_rev = '0;
         assign lce_resp_ready_li[1] = lce_resp_link_o_stitch[1][S].ready_and_rev;
 
-        // CCE is attached to icache exclusively
-        assign lce_data_resp_link_i_stitch[1][S]       = '0;
+        // CCE is attached at x=0 only
         assign lce_cmd_link_i_stitch[1][S]             = '0;
         assign lce_data_cmd_link_i_stitch[1][S]        = '0;
+
+        // LCE Data Response is sent on North port
+        assign lce_data_resp_link_i_stitch[1][S]       = '0;
       end
     else
       begin : fi_N
@@ -442,23 +448,24 @@ for (genvar i = 0; i < 2; i++)
        ,.link_i(lce_data_cmd_link_o_stitch[i][N])
        );
 
-    bsg_wormhole_router 
-     #(.width_p(lce_data_cmd_router_width_lp)
-       ,.x_cord_width_p(x_cord_width_p)
-       ,.y_cord_width_p(y_cord_width_p)
+    // StrictYX routing, route Y first (allows N/S sending to E/W)
+    // LCEs send from N, CCEs (on even numbered routers) send from S.
+    bsg_wormhole_router_generalized
+     #(.flit_width_p(lce_data_cmd_router_width_lp)
+       ,.dims_p(dims_lp)
+       ,.cord_markers_pos_p(cord_markers_pos_lp)
+       ,.routing_matrix_p(StrictYX)
+       ,.reverse_order_p(1)
        ,.len_width_p(lce_data_cmd_len_width_lp)
-       ,.enable_2d_routing_p(1)
-       ,.header_on_lsb_p(1)
        )
      data_cmd_router
       (.clk_i(clk_i)
        ,.reset_i(reset_r)
 
-       ,.my_x_i(x_cord_width_p'(2*my_x_i+i))
-       ,.my_y_i(my_y_i)
-
        ,.link_i(lce_data_cmd_link_i_stitch[i])
        ,.link_o(lce_data_cmd_link_o_stitch[i])
+
+       ,.my_cord_i({my_y_i, {x_cord_width_p'(2*my_x_i+i)}})
        );
 
   wire [lce_data_cmd_payload_offset_lp-1:0] lce_data_cmd_nonpayload;
@@ -512,24 +519,23 @@ for (genvar i = 0; i < 2; i++)
        ,.link_i(lce_data_resp_link_o_stitch[i][N])
        );
 
-    bsg_wormhole_router 
-     #(.width_p(lce_cce_data_resp_router_width_lp)
-       ,.x_cord_width_p(x_cord_width_p)
-       ,.y_cord_width_p(y_cord_width_p)
+    // StrictYX routing, route Y first (allows N/S sending to E/W)
+    bsg_wormhole_router_generalized
+     #(.flit_width_p(lce_cce_data_resp_router_width_lp)
+       ,.dims_p(dims_lp)
+       ,.cord_markers_pos_p(cord_markers_pos_lp)
+       ,.routing_matrix_p(StrictYX)
+       ,.reverse_order_p(1)
        ,.len_width_p(lce_cce_data_resp_len_width_lp)
-       ,.enable_2d_routing_p(1)
-       ,.header_on_lsb_p(1)
        )
      data_resp_router
       (.clk_i(clk_i)
        ,.reset_i(reset_r)
 
-       ,.my_x_i(x_cord_width_p'(2*my_x_i+i))
-       ,.my_y_i(my_y_i)
-
-
        ,.link_i(lce_data_resp_link_i_stitch[i])
        ,.link_o(lce_data_resp_link_o_stitch[i])
+
+       ,.my_cord_i({my_y_i, {x_cord_width_p'(2*my_x_i+i)}})
        );
 
   end // rof3    

@@ -325,7 +325,7 @@ mem
 assign host_cmd_yumi_o     = '0;
 assign host_data_resp_o    = '0;
 assign host_data_resp_v_lo = '0;
-logic program_finish;
+logic [num_core_p-1:0] program_finish;
 bp_nonsynth_host
  #(.cfg_p(cfg_p))
  host_mmio
@@ -343,22 +343,35 @@ bp_nonsynth_host
    ,.program_finish_o(program_finish)
    );
 
-// MMIO arbitration
+// MMIO arbitration 
+//   Should this be on its own I/O router?
+logic req_outstanding_r;
+bsg_dff_reset_en
+ #(.width_p(1))
+ req_outstanding_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(mem_cmd_yumi_li | mem_data_cmd_yumi_li | mem_resp_v_li | mem_data_resp_v_li)
+
+   ,.data_i(mem_cmd_yumi_li | mem_data_cmd_yumi_li)
+   ,.data_o(req_outstanding_r)
+   );
+
 wire host_data_cmd_not_dram = mem_data_cmd_v_lo & (mem_data_cmd_lo.addr < dram_base_addr_gp);
 wire host_cmd_not_dram      = mem_cmd_v_lo & (mem_cmd_lo.addr < dram_base_addr_gp);
 
 assign host_cmd_li          = mem_cmd_lo;
-assign host_cmd_v_li        = mem_cmd_v_lo & host_cmd_not_dram;
+assign host_cmd_v_li        = mem_cmd_v_lo & host_cmd_not_dram & ~req_outstanding_r;
 assign dram_cmd_li          = mem_cmd_lo;
-assign dram_cmd_v_li        = mem_cmd_v_lo & ~host_cmd_not_dram;
+assign dram_cmd_v_li        = mem_cmd_v_lo & ~host_cmd_not_dram & ~req_outstanding_r;
 assign mem_cmd_yumi_li      = host_cmd_not_dram 
                               ? host_cmd_yumi_lo 
                               : dram_cmd_yumi_lo;
 
 assign host_data_cmd_li     = mem_data_cmd_lo;
-assign host_data_cmd_v_li   = mem_data_cmd_v_lo & host_data_cmd_not_dram;
+assign host_data_cmd_v_li   = mem_data_cmd_v_lo & host_data_cmd_not_dram & ~req_outstanding_r;
 assign dram_data_cmd_li     = mem_data_cmd_lo;
-assign dram_data_cmd_v_li   = mem_data_cmd_v_lo & ~host_data_cmd_not_dram;
+assign dram_data_cmd_v_li   = mem_data_cmd_v_lo & ~host_data_cmd_not_dram & ~req_outstanding_r;
 assign mem_data_cmd_yumi_li = host_data_cmd_not_dram 
                               ? host_data_cmd_yumi_lo 
                               : dram_data_cmd_yumi_lo;
