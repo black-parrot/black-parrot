@@ -36,7 +36,7 @@ module testbench
    
    , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(noc_width_p)
    
-   , localparam noc_x_cord_width_lp = `BSG_SAFE_CLOG2(num_core_p+2)
+   , localparam noc_x_cord_width_lp = 8
    , localparam noc_y_cord_width_lp = 1
    
    // FIXME: not needed when IO complex is used
