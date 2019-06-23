@@ -23,7 +23,7 @@ module bp_clint
 
    // Arbitrary default, should be set based on PD constraints
    , parameter irq_pipe_depth_p = 4
-   , parameter cfg_link_pipe_depth_p = 4
+   , parameter cfg_pipe_depth_p = 4
    )
   (input                                           clk_i
    , input                                         reset_i
@@ -51,9 +51,9 @@ module bp_clint
    , output [num_core_p-1:0]                       external_irq_o
 
    // Core config link
-   , output [num_core_p-1:0]                       cfg_link_w_v_o
-   , output [num_core_p-1:0][cfg_addr_width_p-1:0] cfg_link_addr_o
-   , output [num_core_p-1:0][cfg_data_width_p-1:0] cfg_link_data_o
+   , output [num_core_p-1:0]                       cfg_w_v_o
+   , output [num_core_p-1:0][cfg_addr_width_p-1:0] cfg_addr_o
+   , output [num_core_p-1:0][cfg_data_width_p-1:0] cfg_data_o
    );
 
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mem_payload_width_p);
@@ -69,7 +69,7 @@ assign mem_data_cmd_cast_i  = mem_data_cmd_i;
 
 localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
 
-logic cfg_link_data_cmd_v;
+logic cfg_data_cmd_v;
 logic mipi_cmd_v, mipi_data_cmd_v;
 logic mtimecmp_cmd_v, mtimecmp_data_cmd_v;
 logic mtime_cmd_v, mtime_data_cmd_v;
@@ -91,7 +91,7 @@ always_comb
       default: begin end
     endcase
 
-    cfg_link_data_cmd_v = 1'b0;
+    cfg_data_cmd_v = 1'b0;
     mipi_data_cmd_v     = 1'b0;
     mtimecmp_data_cmd_v = 1'b0;
     mtime_data_cmd_v    = 1'b0;
@@ -99,7 +99,7 @@ always_comb
 
     unique 
     casez (mem_data_cmd_cast_i.addr)
-      cfg_link_dev_base_addr_gp: cfg_link_data_cmd_v = mem_data_cmd_v_i;
+      cfg_link_dev_base_addr_gp: cfg_data_cmd_v      = mem_data_cmd_v_i;
       mipi_reg_base_addr_gp    : mipi_data_cmd_v     = mem_data_cmd_v_i;
       mtimecmp_reg_base_addr_gp: mtimecmp_data_cmd_v = mem_data_cmd_v_i;
       mtime_reg_addr_gp        : mtime_data_cmd_v    = mem_data_cmd_v_i;
@@ -173,7 +173,6 @@ bsg_decode_with_v
    ,.o(plic_w_v_li)
    );
 
-// Could replace with bsg_cycle_counter if it provided a way to sideload a value
 logic [dword_width_p-1:0] mtime_n, mtime_r;
 wire mtime_w_v_li = mtime_data_cmd_v;
 assign mtime_n    = mtime_w_v_li 
@@ -194,9 +193,19 @@ logic [num_core_p-1:0]                    mipi_n    , mipi_r;
 logic [num_core_p-1:0]                    plic_n    , plic_r;
 
 // cfg link to tile
-wire cfg_link_w_v_li = cfg_link_data_cmd_v;
-wire [cfg_addr_width_p-1:0] cfg_link_addr_li = mem_data_cmd_cast_i.data[cfg_data_width_p+:cfg_addr_width_p];
-wire [cfg_data_width_p-1:0] cfg_link_data_li = mem_data_cmd_cast_i.data[0+:cfg_data_width_p];
+logic [num_core_p-1:0]      cfg_w_v_li;
+wire [cfg_core_width_p-1:0] cfg_core_li      = mem_data_cmd_cast_i.data[cfg_data_width_p+cfg_addr_width_p+:cfg_core_width_p];
+wire [cfg_addr_width_p-1:0] cfg_addr_li      = mem_data_cmd_cast_i.data[cfg_data_width_p+:cfg_addr_width_p];
+wire [cfg_data_width_p-1:0] cfg_data_li      = mem_data_cmd_cast_i.data[0+:cfg_data_width_p];
+wire                        cfg_broadcast_li = cfg_data_cmd_v & (cfg_core_li == '1);
+
+bsg_decode_with_v
+ #(.num_out_p(num_core_p))
+ cfg_link_decoder
+  (.v_i(cfg_data_cmd_v)
+   ,.i(cfg_core_li[0+:`BSG_SAFE_CLOG2(num_core_p)])
+   ,.o(cfg_w_v_li)
+   );
 
 for (genvar i = 0; i < num_core_p; i++)
   begin : rof1
@@ -272,13 +281,13 @@ for (genvar i = 0; i < num_core_p; i++)
     // cfg link dff chain
     bsg_dff_chain
      #(.width_p(1+cfg_addr_width_p+cfg_data_width_p)
-       ,.num_stages_p(cfg_link_pipe_depth_p)
+       ,.num_stages_p(cfg_pipe_depth_p)
        )
-     cfg_link_pipe
+     cfg_pipe
       (.clk_i(clk_i)
 
-       ,.data_i({cfg_link_w_v_li, cfg_link_addr_li, cfg_link_data_li})
-       ,.data_o({cfg_link_w_v_o[i], cfg_link_addr_o[i], cfg_link_data_o[i]})
+       ,.data_i({(cfg_w_v_li[i] | cfg_broadcast_li), cfg_addr_li, cfg_data_li})
+       ,.data_o({cfg_w_v_o[i], cfg_addr_o[i], cfg_data_o[i]})
        );
   end // rof1
 

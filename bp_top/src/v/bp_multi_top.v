@@ -105,18 +105,6 @@ module bp_multi_top
                        )
 `declare_bsg_ready_and_link_sif_s(noc_width_p,bsg_ready_and_link_sif_s);
 
-logic [num_core_p-1:0][E:W][2+lce_cce_req_network_width_lp-1:0] lce_req_link_stitch_lo, lce_req_link_stitch_li;
-logic [num_core_p-1:0][E:W][2+lce_cce_resp_network_width_lp-1:0] lce_resp_link_stitch_lo, lce_resp_link_stitch_li;
-logic [num_core_p-1:0][E:W][2+lce_cce_data_resp_router_width_lp-1:0] lce_data_resp_link_stitch_lo, lce_data_resp_link_stitch_li;
-logic [num_core_p-1:0][E:W][2+cce_lce_cmd_network_width_lp-1:0] lce_cmd_link_stitch_lo, lce_cmd_link_stitch_li;
-logic [num_core_p-1:0][E:W][2+lce_data_cmd_router_width_lp-1:0] lce_data_cmd_link_stitch_lo, lce_data_cmd_link_stitch_li;
-
-logic [num_core_p-1:0][E:W][lce_cce_data_resp_router_width_lp-1:0] lce_data_resp_lo, lce_data_resp_li;
-logic [num_core_p-1:0][E:W] lce_data_resp_v_lo, lce_data_resp_ready_li, lce_data_resp_v_li, lce_data_resp_ready_lo;
-
-logic [num_core_p-1:0][E:W][lce_data_cmd_router_width_lp-1:0] lce_data_cmd_lo, lce_data_cmd_li;
-logic [num_core_p-1:0][E:W] lce_data_cmd_v_lo, lce_data_cmd_ready_li, lce_data_cmd_v_li, lce_data_cmd_ready_lo;
-
 bp_mem_cce_resp_s      [num_cce_p-1:0] mem_resp_li;
 logic                  [num_cce_p-1:0] mem_resp_v_li, mem_resp_ready_lo;
 
@@ -134,21 +122,9 @@ logic [num_core_p-1:0] timer_irq_lo, soft_irq_lo, external_irq_lo;
 bsg_ready_and_link_sif_s [num_routers_lp-1:0][dirs_lp-1:0] cmd_link_li,  cmd_link_lo;
 bsg_ready_and_link_sif_s [num_routers_lp-1:0][dirs_lp-1:0] resp_link_li, resp_link_lo;
 
-bp_mem_cce_resp_s      clint_resp_lo;
-logic                  clint_resp_v_lo, clint_resp_ready_li;
-
-bp_mem_cce_data_resp_s clint_data_resp_lo;
-logic                  clint_data_resp_v_lo, clint_data_resp_ready_li;
-
-bp_cce_mem_cmd_s       clint_cmd_li;
-logic                  clint_cmd_v_li, clint_cmd_yumi_lo;
-
-bp_cce_mem_data_cmd_s  clint_data_cmd_li;
-logic                  clint_data_cmd_v_li, clint_data_cmd_yumi_lo;
-
-logic [num_core_p-1:0]                       cfg_link_w_v_lo;
-logic [num_core_p-1:0][cfg_addr_width_p-1:0] cfg_link_addr_lo;
-logic [num_core_p-1:0][cfg_data_width_p-1:0] cfg_link_data_lo;
+logic [num_core_p-1:0]                       cfg_w_v_lo;
+logic [num_core_p-1:0][cfg_addr_width_p-1:0] cfg_addr_lo;
+logic [num_core_p-1:0][cfg_data_width_p-1:0] cfg_data_lo;
 
 bsg_ready_and_link_sif_s [num_core_p-1:0] master_wh_link_li, master_wh_link_lo;
 bsg_ready_and_link_sif_s                  client_wh_link_li, client_wh_link_lo;
@@ -157,20 +133,6 @@ bsg_ready_and_link_sif_s [1:0] ct_link_li, ct_link_lo;
 logic [1:0] ct_fifo_valid_lo, ct_fifo_yumi_li;
 logic [1:0] ct_fifo_valid_li, ct_fifo_yumi_lo;
 logic [1:0][noc_width_p-1:0] ct_fifo_data_lo, ct_fifo_data_li;
-
-assign lce_req_link_stitch_li[0][W]                  = '0;
-assign lce_resp_link_stitch_li[0][W]                 = '0;
-assign lce_data_resp_link_stitch_li[0][W]            = '0;
-assign lce_cmd_link_stitch_li[0][W]                  = '0;
-assign lce_data_cmd_link_stitch_li[0][W]             = '0;
-
-assign lce_req_link_stitch_li[num_core_p-1][E]       = '0;
-assign lce_resp_link_stitch_li[num_core_p-1][E]      = '0;
-assign lce_data_resp_link_stitch_li[num_core_p-1][E] = '0;
-assign lce_cmd_link_stitch_li[num_core_p-1][E]       = '0;
-assign lce_data_cmd_link_stitch_li[num_core_p-1][E]  = '0;
-
-genvar i;
 
 /************************* RESET *************************/
 
@@ -190,255 +152,45 @@ bsg_dff_chain
 
 // FIXME: hardcoded router IDs, should replace with bsg_tag_clients
 logic [num_routers_lp-1:0][cord_width_lp-1:0] my_cord_lo, dest_cord_lo;
-for (i = 0; i < num_routers_lp; i++)
+for (genvar i = 0; i < num_routers_lp; i++)
   begin
     assign my_cord_lo  [i] = cord_width_lp'(i);
     assign dest_cord_lo[i] = cord_width_lp'(num_routers_lp);
   end
 
+bsg_ready_and_link_sif_s [num_routers_lp-1:0] cc_cmd_link_li, cc_cmd_link_lo;
+bsg_ready_and_link_sif_s [num_routers_lp-1:0] cc_resp_link_li, cc_resp_link_lo;
 
-/************************* Clint Node *************************/
-
-// Mapping clint to router-pos
-// Clint is in the middle of chain, for single core it is at position 1
-localparam clint_pos_lp = `BSG_CDIV(num_core_p, 2);
-
-bp_clint
- #(.cfg_p(cfg_p)
-   )
- clint
-  (.clk_i(clk_i)
-   ,.reset_i(reset_r)
-   
-   ,.mem_cmd_i(clint_cmd_li)
-   ,.mem_cmd_v_i(clint_cmd_v_li)
-   ,.mem_cmd_yumi_o(clint_cmd_yumi_lo)
-   
-   ,.mem_data_cmd_i(clint_data_cmd_li)
-   ,.mem_data_cmd_v_i(clint_data_cmd_v_li)
-   ,.mem_data_cmd_yumi_o(clint_data_cmd_yumi_lo)
-   
-   ,.mem_resp_o(clint_resp_lo)
-   ,.mem_resp_v_o(clint_resp_v_lo)
-   ,.mem_resp_ready_i(clint_resp_ready_li)
-   
-   ,.mem_data_resp_o(clint_data_resp_lo)
-   ,.mem_data_resp_v_o(clint_data_resp_v_lo)
-   ,.mem_data_resp_ready_i(clint_data_resp_ready_li)
-   
-   ,.soft_irq_o(soft_irq_lo)
-   ,.timer_irq_o(timer_irq_lo)
-   ,.external_irq_o(external_irq_lo)
-   
-   ,.cfg_link_w_v_o(cfg_link_w_v_lo)
-   ,.cfg_link_addr_o(cfg_link_addr_lo)
-   ,.cfg_link_data_o(cfg_link_data_lo)
-   );
-
-bp_me_cce_to_wormhole_link_async_client
- #(.cfg_p(cfg_p)
-  ,.x_cord_width_p(noc_x_cord_width_lp)
-  ,.y_cord_width_p(noc_y_cord_width_lp)
-  )
-  client_link
-  (.clk_i(clk_i)
-  ,.reset_i(reset_r)
-   
-  ,.mem_cmd_o(clint_cmd_li)
-  ,.mem_cmd_v_o(clint_cmd_v_li)
-  ,.mem_cmd_yumi_i(clint_cmd_yumi_lo)
-   
-  ,.mem_data_cmd_o(clint_data_cmd_li)
-  ,.mem_data_cmd_v_o(clint_data_cmd_v_li)
-  ,.mem_data_cmd_yumi_i(clint_data_cmd_yumi_lo)
-   
-  ,.mem_resp_i(clint_resp_lo)
-  ,.mem_resp_v_i(clint_resp_v_lo)
-  ,.mem_resp_ready_o(clint_resp_ready_li)
-   
-  ,.mem_data_resp_i(clint_data_resp_lo)
-  ,.mem_data_resp_v_i(clint_data_resp_v_lo)
-  ,.mem_data_resp_ready_o(clint_data_resp_ready_li)
-     
-  ,.my_x_i(my_cord_lo[clint_pos_lp][noc_x_cord_width_lp-1:0])
-  ,.my_y_i(noc_y_cord_width_lp'(0))
-     
-  // FIXME: connect to another clock domain
-  ,.wormhole_clk_i(clk_i)
-  ,.wormhole_reset_i(reset_r)
-     
-  ,.link_i(client_wh_link_li)
-  ,.link_o(client_wh_link_lo)
-  );  
-  
-// Clint client link
-// cmd
-assign client_wh_link_li.v                         = cmd_link_lo[clint_pos_lp][P].v;
-assign client_wh_link_li.data                      = cmd_link_lo[clint_pos_lp][P].data;
-assign cmd_link_li [clint_pos_lp][P].ready_and_rev = client_wh_link_lo.ready_and_rev;
-// resp                                            
-assign resp_link_li[clint_pos_lp][P].v             = client_wh_link_lo.v;
-assign resp_link_li[clint_pos_lp][P].data          = client_wh_link_lo.data;
-assign client_wh_link_li.ready_and_rev             = resp_link_lo[clint_pos_lp][P].ready_and_rev;
-// stub
-assign cmd_link_li [clint_pos_lp][P].v             = 1'b0;
-assign resp_link_li[clint_pos_lp][P].ready_and_rev = 1'b1;
-
-
-/************************* BP Tiles *************************/
-
-for(i = 0; i < num_core_p; i++) 
+for (genvar i = 0; i < num_routers_lp; i++)
   begin : rof1
-  
-    // Mapping tile-index to router-pos
-    // Tiles with index >= clint_pos_lp has position (index+1)
-    localparam tile_pos_lp = i + (i / clint_pos_lp);
-  
-    localparam core_id   = i;
-    localparam cce_id    = i;
-    localparam icache_id = (i * 2 + 0);
-    localparam dcache_id = (i * 2 + 1);
-
-    localparam core_id_width_lp = `BSG_SAFE_CLOG2(num_core_p);
-    localparam cce_id_width_lp  = `BSG_SAFE_CLOG2(num_cce_p);
-    localparam lce_id_width_lp  = `BSG_SAFE_CLOG2(num_lce_p);
-
-    bp_proc_cfg_s proc_cfg;
-    assign proc_cfg.core_id   = core_id[0+:core_id_width_lp];
-    assign proc_cfg.cce_id    = cce_id[0+:cce_id_width_lp];
-    assign proc_cfg.icache_id = icache_id[0+:lce_id_width_lp];
-    assign proc_cfg.dcache_id = dcache_id[0+:lce_id_width_lp];
-
-    if (i > 0) begin
-    assign lce_req_link_stitch_li[i][W]  = lce_req_link_stitch_lo[i-1][E];
-    assign lce_resp_link_stitch_li[i][W] = lce_resp_link_stitch_lo[i-1][E];
-    assign lce_data_resp_link_stitch_li[i][W] = lce_data_resp_link_stitch_lo[i-1][E];
-    assign lce_cmd_link_stitch_li[i][W]  = lce_cmd_link_stitch_lo[i-1][E];
-    assign lce_data_cmd_link_stitch_li[i][W]  = lce_data_cmd_link_stitch_lo[i-1][E];
-    end
-
-    if (i < num_core_p-1) begin
-    assign lce_req_link_stitch_li[i][E]  = lce_req_link_stitch_lo[i+1][W];
-    assign lce_resp_link_stitch_li[i][E] = lce_resp_link_stitch_lo[i+1][W];
-    assign lce_data_resp_link_stitch_li[i][E] = lce_data_resp_link_stitch_lo[i+1][W];
-    assign lce_cmd_link_stitch_li[i][E]  = lce_cmd_link_stitch_lo[i+1][W];
-    assign lce_data_cmd_link_stitch_li[i][E]  = lce_data_cmd_link_stitch_lo[i+1][W];
-    end
-
-    bp_tile
-     #(.cfg_p(cfg_p)
-       ,.calc_trace_p(calc_trace_p)
-       ,.cce_trace_p(cce_trace_p)
-       )
-     tile
-      (.clk_i(clk_i)
-       ,.reset_i(reset_r)
-
-       ,.proc_cfg_i(proc_cfg)
-
-       ,.my_x_i(x_cord_width_p'(i))
-       ,.my_y_i(y_cord_width_p'(0))
-
-       ,.cfg_w_v_i(cfg_link_w_v_lo[i])
-       ,.cfg_addr_i(cfg_link_addr_lo[i])
-       ,.cfg_data_i(cfg_link_data_lo[i])
-
-       // Router inputs
-       ,.lce_req_link_i(lce_req_link_stitch_li[i])
-       ,.lce_resp_link_i(lce_resp_link_stitch_li[i])
-       ,.lce_data_resp_link_i(lce_data_resp_link_stitch_li[i])
-       ,.lce_cmd_link_i(lce_cmd_link_stitch_li[i])
-       ,.lce_data_cmd_link_i(lce_data_cmd_link_stitch_li[i])
-
-       // Router outputs
-       ,.lce_req_link_o(lce_req_link_stitch_lo[i])
-       ,.lce_resp_link_o(lce_resp_link_stitch_lo[i])
-       ,.lce_data_resp_link_o(lce_data_resp_link_stitch_lo[i])
-       ,.lce_cmd_link_o(lce_cmd_link_stitch_lo[i])
-       ,.lce_data_cmd_link_o(lce_data_cmd_link_stitch_lo[i])
-
-       ,.mem_resp_i(mem_resp_li[i])
-       ,.mem_resp_v_i(mem_resp_v_li[i])
-       ,.mem_resp_ready_o(mem_resp_ready_lo[i])
-
-       ,.mem_data_resp_i(mem_data_resp_li[i])
-       ,.mem_data_resp_v_i(mem_data_resp_v_li[i])
-       ,.mem_data_resp_ready_o(mem_data_resp_ready_lo[i])
-
-       ,.mem_cmd_o(mem_cmd_lo[i])
-       ,.mem_cmd_v_o(mem_cmd_v_lo[i])
-       ,.mem_cmd_yumi_i(mem_cmd_yumi_li[i])
-
-       ,.mem_data_cmd_o(mem_data_cmd_lo[i])
-       ,.mem_data_cmd_v_o(mem_data_cmd_v_lo[i])
-       ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi_li[i])
-
-       ,.timer_int_i(timer_irq_lo[i])
-       ,.software_int_i(soft_irq_lo[i])
-       ,.external_int_i(external_irq_lo[i])
-       );
-    
-    bp_me_cce_to_wormhole_link_async_master
-     #(.cfg_p(cfg_p)
-      ,.x_cord_width_p(noc_x_cord_width_lp)
-      ,.y_cord_width_p(noc_y_cord_width_lp)
-      )
-      master_async_link
-      (.clk_i(clk_i)
-      ,.reset_i(reset_r)
-
-      ,.mem_cmd_i(mem_cmd_lo[i])
-      ,.mem_cmd_v_i(mem_cmd_v_lo[i])
-      ,.mem_cmd_yumi_o(mem_cmd_yumi_li[i])
-
-      ,.mem_data_cmd_i(mem_data_cmd_lo[i])
-      ,.mem_data_cmd_v_i(mem_data_cmd_v_lo[i])
-      ,.mem_data_cmd_yumi_o(mem_data_cmd_yumi_li[i])
-
-      ,.mem_resp_o(mem_resp_li[i])
-      ,.mem_resp_v_o(mem_resp_v_li[i])
-      ,.mem_resp_ready_i(mem_resp_ready_lo[i])
-
-      ,.mem_data_resp_o(mem_data_resp_li[i])
-      ,.mem_data_resp_v_o(mem_data_resp_v_li[i])
-      ,.mem_data_resp_ready_i(mem_data_resp_ready_lo[i])
-      
-      ,.my_x_i(my_cord_lo[tile_pos_lp][noc_x_cord_width_lp-1:0])
-      ,.my_y_i(noc_y_cord_width_lp'(0))
-      
-      ,.clint_x_cord_i(my_cord_lo[clint_pos_lp][noc_x_cord_width_lp-1:0])
-      ,.clint_y_cord_i(noc_y_cord_width_lp'(0))
-      
-      ,.dram_x_cord_i(dest_cord_lo[tile_pos_lp][noc_x_cord_width_lp-1:0])
-      ,.dram_y_cord_i(noc_y_cord_width_lp'(0))
-      
-      // FIXME: connect to another clock domain
-      ,.wormhole_clk_i(clk_i)
-      ,.wormhole_reset_i(reset_r)
-      
-      ,.link_i(master_wh_link_li[i])
-      ,.link_o(master_wh_link_lo[i])
-      );
-      
-    // BP Tile master link
-    // cmd
-    assign cmd_link_li[tile_pos_lp][P].v              = master_wh_link_lo[i].v;
-    assign cmd_link_li[tile_pos_lp][P].data           = master_wh_link_lo[i].data;
-    assign master_wh_link_li[i].ready_and_rev         = cmd_link_lo[tile_pos_lp][P].ready_and_rev;
-    // resp
-    assign master_wh_link_li[i].v                     = resp_link_lo[tile_pos_lp][P].v;
-    assign master_wh_link_li[i].data                  = resp_link_lo[tile_pos_lp][P].data;
-    assign resp_link_li[tile_pos_lp][P].ready_and_rev = master_wh_link_lo[i].ready_and_rev;
-    // stub
-    assign cmd_link_li [tile_pos_lp][P].ready_and_rev = 1'b1;
-    assign resp_link_li[tile_pos_lp][P].v             = 1'b0;
-      
+    assign cc_cmd_link_li[i]  = cmd_link_lo[i][P];
+    assign cmd_link_li[i][P]  = cc_cmd_link_lo[i];
+    assign cc_resp_link_li[i] = resp_link_lo[i][P];
+    assign resp_link_li[i][P] = cc_resp_link_lo[i];
   end
 
+bp_core_complex
+ #(.cfg_p(cfg_p)
+   ,.calc_trace_p(calc_trace_p)
+   ,.cce_trace_p(cce_trace_p)
+   )
+  cc
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.my_cord_i(my_cord_lo)
+   ,.dest_cord_i(dest_cord_lo)
+
+   ,.cmd_link_i(cc_cmd_link_li)
+   ,.cmd_link_o(cc_cmd_link_lo)
+
+   ,.resp_link_i(cc_resp_link_li)
+   ,.resp_link_o(cc_resp_link_lo)
+   );
 
 /************************* Wormhole Router *************************/
 
-for (i = 0; i < num_routers_lp; i++)
+for (genvar i = 0; i < num_routers_lp; i++)
   begin: wh_router
     // cmd router
     bsg_wormhole_router_generalized
@@ -495,7 +247,7 @@ assign resp_link_li[0][W].ready_and_rev = 1'b1;
 assign ct_link_li = {cmd_link_lo[num_routers_lp-1][E], resp_link_lo[num_routers_lp-1][E]};
 assign {cmd_link_li[num_routers_lp-1][E], resp_link_li[num_routers_lp-1][E]} = ct_link_lo;
 
-  for (i = 0; i < 2; i++) 
+  for (genvar i = 0; i < 2; i++) 
   begin: rof0
     // Must add a fifo here, convert yumi_o to ready_o
     bsg_two_fifo
