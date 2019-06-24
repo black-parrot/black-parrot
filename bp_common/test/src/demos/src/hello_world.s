@@ -5,7 +5,10 @@
 .globl main
 .type  main, @function
 main:
+    csrr x4, mhartid
+    slli x4, x4, 3
     li x3, 0x03001000
+    add x3, x3, x4
 
     /* H */
     li x2, 0x48
@@ -46,6 +49,11 @@ main:
     /* \0 */
     sb x0, 0(x3)
     /* return back to the start code to finish the simulation */
+
+    li x5, 0x03002000
+    add x5, x5, x4
+    li x6, 0
+    sb x6, 0(x5)
     jalr x0, x1
     nop
     nop

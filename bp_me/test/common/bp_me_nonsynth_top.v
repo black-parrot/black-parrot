@@ -125,17 +125,7 @@ logic [num_core_p-1:0][E:W] lce_data_resp_v_lo, lce_data_resp_ready_li, lce_data
 logic [num_core_p-1:0][E:W][lce_data_cmd_router_width_lp-1:0] lce_data_cmd_lo, lce_data_cmd_li;
 logic [num_core_p-1:0][E:W] lce_data_cmd_v_lo, lce_data_cmd_ready_li, lce_data_cmd_v_li, lce_data_cmd_ready_lo;
 
-bp_mem_cce_resp_s      [num_cce_p-1:0] me_mem_resp_li;
-logic                  [num_cce_p-1:0] me_mem_resp_v_li, me_mem_resp_ready_lo;
-
-bp_mem_cce_data_resp_s [num_cce_p-1:0] me_mem_data_resp_li;
-logic                  [num_cce_p-1:0] me_mem_data_resp_v_li, me_mem_data_resp_ready_lo;
-
-bp_cce_mem_cmd_s       [num_cce_p-1:0] me_mem_cmd_lo;
-logic                  [num_cce_p-1:0] me_mem_cmd_v_lo, me_mem_cmd_yumi_li;
-
-bp_cce_mem_data_cmd_s  [num_cce_p-1:0] me_mem_data_cmd_lo;
-logic                  [num_cce_p-1:0] me_mem_data_cmd_v_lo, me_mem_data_cmd_yumi_li;
+logic [num_core_p-1:0] timer_irq_lo, soft_irq_lo;
 
   assign lce_req_link_stitch_li[0][W]                  = '0;
   assign lce_resp_link_stitch_li[0][W]                 = '0;
@@ -247,7 +237,6 @@ for(genvar i = 0; i < num_core_p; i++)
        ,.tr_pkt_v_o(tr_pkt_v_o[(i*2)+1 : (i*2)])
        ,.tr_pkt_o(tr_pkt_o[(i*2)+1 : (i*2)])
        ,.tr_pkt_ready_i(tr_pkt_ready_i[(i*2)+1 : (i*2)])
-
        );
 
   end // rof1
