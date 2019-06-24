@@ -36,7 +36,7 @@ module testbench
    
    , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(noc_width_p)
    
-   , localparam noc_x_cord_width_lp = 8
+   , localparam noc_x_cord_width_lp = 7
    , localparam noc_y_cord_width_lp = 1
    
    // FIXME: not needed when IO complex is used
@@ -322,8 +322,8 @@ mem
   );
 
 
-assign host_cmd_yumi_o     = '0;
-assign host_data_resp_o    = '0;
+assign host_cmd_yumi_lo    = '0;
+assign host_data_resp_lo   = '0;
 assign host_data_resp_v_lo = '0;
 logic [num_core_p-1:0] program_finish;
 bp_nonsynth_host
