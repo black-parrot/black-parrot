@@ -163,8 +163,6 @@ module bp_me_cce_to_wormhole_link_client
   // Wormhole packet format: {data_cmd_data, data_cmd_hdr}
   // Need to swizzle
   //
-  logic [word_select_bits_lp-1:0] receive_sel_lo;
-  assign receive_sel_lo = mem_data_cmd.addr[byte_offset_bits_lp+:word_select_bits_lp];
   
   assign mem_data_cmd[cce_block_width_p+:data_cmd_hdr_width_lp] = 
         receive_wormhole_packet_lo.data[0+:data_cmd_hdr_width_lp];
@@ -174,7 +172,7 @@ module bp_me_cce_to_wormhole_link_client
     if (receive_wormhole_packet_lo.non_cacheable)
       begin
         mem_data_cmd.data          = '0;
-        mem_data_cmd.data[(receive_sel_lo*dword_width_p)+:dword_width_p] = 
+        mem_data_cmd.data[0+:dword_width_p] = 
             receive_wormhole_packet_lo.data[data_cmd_hdr_width_lp+:dword_width_p];
       end
     else

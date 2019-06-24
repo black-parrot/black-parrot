@@ -135,7 +135,6 @@ module bp_me_cce_to_wormhole_link_master
   // Assemble send data
   // Two cases: non_cacheable data and cacheable data
   // data is on LOW BITS of cce packet!
-  logic [word_select_bits_lp-1:0]                    send_sel_lo;
   logic [cce_mem_data_cmd_width_lp-1:0]              send_data_lo;
   logic [cce_mem_data_cmd_width_lp-nc_offset_lp-1:0] send_nc_data_lo;
   
@@ -143,9 +142,9 @@ module bp_me_cce_to_wormhole_link_master
   // Wormhole packet format: {data_cmd_data, data_cmd_hdr}
   // Need to swizzle
   //
-  assign send_sel_lo     = mem_data_cmd.addr[byte_offset_bits_lp+:word_select_bits_lp];
   assign send_data_lo    = {mem_data_cmd.data, mem_data_cmd[cce_block_width_p+:data_cmd_hdr_width_lp]};
-  assign send_nc_data_lo = {mem_data_cmd.data[(send_sel_lo*dword_width_p)+:dword_width_p], mem_data_cmd[cce_block_width_p+:data_cmd_hdr_width_lp]};
+  // Uncached data is ALWAYS in the least significant 64-bits of the mem data cmd's data field
+  assign send_nc_data_lo = {mem_data_cmd.data[0+:dword_width_p], mem_data_cmd[cce_block_width_p+:data_cmd_hdr_width_lp]};
 
   always_comb
   begin
