@@ -74,6 +74,7 @@ bi error
 # Memory Response Routine
 # A memory response returns after a replacement writeback or a transfer writeback
 mem_resp: popq memResp
+bf ucf uc_mem_resp
 bf rwbf transfer_check
 bi ready
 
@@ -177,8 +178,9 @@ bf rqf uncached_store
 pushq memCmd
 bi ready
 uncached_store: pushq memDataCmd req
-popq memResp
-pushq lceCmd UCST req req req
+bi ready
+
+uc_mem_resp: pushq lceCmd UCST req req req
 bi ready
 
 error: stall
