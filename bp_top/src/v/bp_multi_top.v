@@ -28,14 +28,14 @@ module bp_multi_top
                                  )
 
    // Used to enable trace replay outputs for testbench
-   , parameter calc_trace_p = 1
-   , parameter cce_trace_p  = 1
+   , parameter calc_trace_p = 0
+   , parameter cce_trace_p  = 0
 
    , parameter x_cord_width_p = `BSG_SAFE_CLOG2(num_lce_p)
    , parameter y_cord_width_p = 1
    
    // FIXME: hardcoded
-   , localparam noc_x_cord_width_lp = `BSG_SAFE_CLOG2(num_core_p+2)
+   , localparam noc_x_cord_width_lp = 7
    , localparam noc_y_cord_width_lp = 1
 
    // Wormhole parameters

@@ -21,14 +21,14 @@ module bp_core_complex
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
    // Used to enable trace replay outputs for testbench
-   , parameter calc_trace_p = 1
-   , parameter cce_trace_p  = 1
+   , parameter calc_trace_p = 0
+   , parameter cce_trace_p  = 0
 
    , localparam x_cord_width_lp = `BSG_SAFE_CLOG2(num_lce_p)
    , localparam y_cord_width_lp = 1
    
    // FIXME: hardcoded
-   , localparam noc_x_cord_width_lp = `BSG_SAFE_CLOG2(num_core_p+2)
+   , localparam noc_x_cord_width_lp = 7
    , localparam noc_y_cord_width_lp = 1
 
    // Wormhole parameters

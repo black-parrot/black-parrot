@@ -185,7 +185,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_icache_mode_gp;
-          cfg_data_lo = cfg_data_width_p'(e_icache_lce_mode_normal);
+          cfg_data_lo = cfg_data_width_p'(e_dcache_lce_mode_normal); // TODO: tapeout hack, change to icache
         end
         SEND_DCACHE_NORMAL: begin
           state_n = SEND_PC_LO;

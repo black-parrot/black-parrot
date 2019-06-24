@@ -145,7 +145,7 @@ always_ff @(negedge clk_i)
   end
 
 bp_mem_cce_resp_s mem_resp_lo;
-logic mem_resp_ready_lo;
+logic mem_resp_v_lo, mem_resp_ready_lo;
 assign mem_data_cmd_yumi_o = mem_data_cmd_v_i & mem_resp_ready_lo;
 bsg_one_fifo
  #(.width_p(mem_cce_resp_width_lp))
@@ -158,9 +158,10 @@ bsg_one_fifo
    ,.ready_o(mem_resp_ready_lo)
 
    ,.data_o(mem_resp_o)
-   ,.v_o(mem_resp_v_o)
-   ,.yumi_i(mem_resp_ready_i & mem_resp_v_o)
+   ,.v_o(mem_resp_v_lo)
+   ,.yumi_i(mem_resp_ready_i & mem_resp_v_lo)
    );
+assign mem_resp_v_o = mem_resp_v_lo & mem_resp_ready_i;
 
 assign mem_resp_lo =
   '{msg_type       : mem_data_cmd_cast_i.msg_type
