@@ -89,16 +89,14 @@ initial
 logic                         rs1_read_v     , rs2_read_v;
 logic                         rs1_issue_v    , rs2_issue_v;
 logic [reg_data_width_lp-1:0] rs1_reg_data   , rs2_reg_data;
-logic [reg_addr_width_lp-1:0] rs1_addr_r     , rs2_addr_r;
+logic [reg_addr_width_lp-1:0] rs1_addr_r     , rs2_addr_r,      rd_addr_r;
 logic [reg_addr_width_lp-1:0] rs1_reread_addr, rs2_reread_addr;
+logic [reg_data_width_lp-1:0] rd_data_r;
 
 // Datapath
 bsg_mem_2r1w_sync 
  #(.width_p(reg_data_width_lp)
    ,.els_p(rf_els_lp)
-   ,.read_write_same_addr_p(1) // We can't actually read/write the same address, but this should 
-                               //   be taken care of by forwarding and otherwise the assertion is
-                               //   annoying
    ,.harden_p(harden_p)
    )
  rf
@@ -119,24 +117,37 @@ bsg_mem_2r1w_sync
    );
 
 // Save the last issued register addresses
-bsg_dff_en 
- #(.width_p(reg_addr_width_lp)
-   )
+bsg_dff_reset_en 
+ #(.width_p(reg_addr_width_lp))
  rs1_addr
   (.clk_i(clk_i)
+   ,.reset_i(reset_i)
    ,.en_i(rs1_issue_v)
+
    ,.data_i(rs1_addr_i)
    ,.data_o(rs1_addr_r)
    );
 
-bsg_dff_en 
- #(.width_p(reg_addr_width_lp)
-   )
+bsg_dff_reset_en 
+ #(.width_p(reg_addr_width_lp))
  rs2_addr
   (.clk_i(clk_i)
+   ,.reset_i(reset_i)
    ,.en_i(rs2_issue_v)
+
    ,.data_i(rs2_addr_i)
    ,.data_o(rs2_addr_r)
+   );
+
+logic fwd_rs1_r, fwd_rs2_r;
+wire fwd_rs1 = rd_w_v_i & (rd_addr_i == rs1_reread_addr);
+wire fwd_rs2 = rd_w_v_i & (rd_addr_i == rs2_reread_addr);
+bsg_dff
+ #(.width_p(2+reg_data_width_lp))
+ rw_fwd_reg
+  (.clk_i(clk_i)
+   ,.data_i({fwd_rs1, fwd_rs2, rd_data_i})
+   ,.data_o({fwd_rs1_r, fwd_rs2_r, rd_data_r})
    );
 
 always_comb 
@@ -146,8 +157,8 @@ always_comb
     rs2_issue_v = (issue_v_i & rs2_r_v_i);
   
     // We need to read from the regfile if we have issued a new request, or if we have stalled
-    rs1_read_v = rs1_issue_v | ~dispatch_v_i;
-    rs2_read_v = rs2_issue_v | ~dispatch_v_i;
+    rs1_read_v = (rs1_issue_v | ~dispatch_v_i) & ~fwd_rs1;
+    rs2_read_v = (rs2_issue_v | ~dispatch_v_i) & ~fwd_rs2;
   
     // If we have issued a new instruction, use input address to read, 
     //   else use last request address to read
@@ -157,8 +168,8 @@ always_comb
 end
 
 // RISC-V defines x0 as 0. Else, pass out the register data
-assign rs1_data_o = (rs1_addr_r == '0) ? '0 : rs1_reg_data;
-assign rs2_data_o = (rs2_addr_r == '0) ? '0 : rs2_reg_data;
+assign rs1_data_o = (rs1_addr_r == '0) ? '0 : fwd_rs1_r ? rd_data_r : rs1_reg_data;
+assign rs2_data_o = (rs2_addr_r == '0) ? '0 : fwd_rs2_r ? rd_data_r : rs2_reg_data;
 
 endmodule : bp_be_regfile
 

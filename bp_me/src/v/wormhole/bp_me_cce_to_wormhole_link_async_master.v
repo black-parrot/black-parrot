@@ -3,6 +3,8 @@
  * bp_me_cce_to_wormhole_link_async_master.v
  */
 
+`include "bsg_noc_links.vh"
+
 module bp_me_cce_to_wormhole_link_async_master
 
   import bp_cce_pkg::*;
