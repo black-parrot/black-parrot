@@ -262,7 +262,7 @@ module bp_cce
       ,.alu_branch_res_i(alu_branch_res_lo)
 
       ,.dir_busy_i(dir_busy_lo)
-      ,.gad_error_i(gad_error_lo)
+      ,.gad_error_i(1'b0)
 
       ,.pc_stall_i(pc_stall_lo)
       ,.pc_branch_target_i(pc_branch_target_lo)
