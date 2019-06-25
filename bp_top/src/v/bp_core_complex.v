@@ -250,9 +250,9 @@ for (genvar i = 0; i < num_routers_lp; i++)
     cmd_map
      (.paddr_i(mem_cmd_li.addr)
      /* TODO: Genericize */
-     ,.clint_x_cord_i(clint_pos_lp[0+:noc_x_cord_width_lp])
+     ,.clint_x_cord_i(my_cord_i[clint_pos_lp][0+:noc_x_cord_width_lp])
      ,.clint_y_cord_i(1'b0)
-     ,.dram_x_cord_i(num_routers_lp[0+:noc_x_cord_width_lp])
+     ,.dram_x_cord_i(dest_cord_i[i][0+:noc_x_cord_width_lp])
      ,.dram_y_cord_i(1'b0)
 
      ,.dest_x_o(cmd_dest_x_lo)
@@ -268,9 +268,9 @@ for (genvar i = 0; i < num_routers_lp; i++)
       )
     data_cmd_map
      (.paddr_i(mem_data_cmd_li.addr)
-      ,.clint_x_cord_i(clint_pos_lp[0+:noc_x_cord_width_lp])
+      ,.clint_x_cord_i(my_cord_i[clint_pos_lp][0+:noc_x_cord_width_lp])
       ,.clint_y_cord_i(1'b0)
-      ,.dram_x_cord_i(num_routers_lp[0+:noc_x_cord_width_lp])
+      ,.dram_x_cord_i(dest_cord_i[i][0+:noc_x_cord_width_lp])
       ,.dram_y_cord_i(1'b0)
 
       ,.dest_x_o(data_cmd_dest_x_lo)
