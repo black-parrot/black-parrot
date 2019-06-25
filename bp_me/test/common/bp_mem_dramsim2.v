@@ -95,6 +95,8 @@ module bp_mem_dramsim2
 
   assign mem_nc_data = dramsim_data[(word_select*lce_req_data_width_p)+:lce_req_data_width_p];
 
+  // do not select out the requested bytes, send back the full 64-bits
+  /*
   assign nc_data = (mem_cmd_s_r.nc_size == e_lce_nc_req_1)
     ? {56'('0),mem_nc_data[(byte_select*8)+:8]}
     : (mem_cmd_s_r.nc_size == e_lce_nc_req_2)
@@ -102,6 +104,10 @@ module bp_mem_dramsim2
       : (mem_cmd_s_r.nc_size == e_lce_nc_req_4)
         ? {32'('0),mem_nc_data[(byte_select*8)+:32]}
         : mem_nc_data;
+  */
+  assign nc_data = mem_nc_data;
+
+  int wr_size;
 
   typedef enum logic [2:0] {
     RESET
@@ -152,15 +158,17 @@ module bp_mem_dramsim2
             write_accepted = '0;
             // uncached write, send correct size
             if (mem_data_cmd_i_s.non_cacheable) begin
-              write_accepted =
-                (mem_data_cmd_i_s.nc_size == e_lce_nc_req_1)
-                ? mem_write_req(wr_addr, mem_data_cmd_i_s.data, 1)
-                : (mem_data_cmd_i_s.nc_size == e_lce_nc_req_2)
-                  ? mem_write_req(wr_addr, mem_data_cmd_i_s.data, 2)
-                  : (mem_data_cmd_i_s.nc_size == e_lce_nc_req_4)
-                    ? mem_write_req(wr_addr, mem_data_cmd_i_s.data, 4)
-                    : mem_write_req(wr_addr, mem_data_cmd_i_s.data, 8);
 
+              wr_size = 
+                (mem_data_cmd_i_s.nc_size == e_lce_nc_req_1)
+                ? 1
+                : (mem_data_cmd_i_s.nc_size == e_lce_nc_req_2)
+                  ? 2
+                  : (mem_data_cmd_i_s.nc_size == e_lce_nc_req_4)
+                    ? 4
+                    : 8;
+
+              write_accepted = mem_write_req(wr_addr, mem_data_cmd_i_s.data, wr_size);
             end else begin
               // cached access, size == 0 tells c++ code to write full cache block
               write_accepted = mem_write_req(wr_addr, mem_data_cmd_i_s.data, 0);
@@ -250,10 +258,16 @@ initial
     init(clock_period_in_ps_p, prog_name_p, dram_cfg_p, dram_sys_cfg_p, dram_capacity_p, block_size_in_bits_lp, block_offset_bits_lp);
   end
 
+// TODO: This is horrifying verilog / DPI glue. Should fix for best practices
 always_ff @(posedge clk_i)
   begin
-    dramsim_valid <= tick(); 
-    dramsim_data  <= dramsim_data_n;
+    if (mem_st == RD_CMD || mem_st == RD_DATA_CMD)
+      begin
+        dramsim_valid <= dramsim_valid == '0 ? tick() : dramsim_valid;
+        dramsim_data <= dramsim_data_n;
+      end
+    else
+      dramsim_valid <= tick();
   end
 
 endmodule

@@ -70,3 +70,8 @@
   branch = blackparrot_mods
   ignore = dirty
 
+[submodule "external/cmurphi"]
+	path = external/cmurphi
+	url = git@github.com:black-parrot/cmurphi.git
+  branch = master
+  ignore = dirty

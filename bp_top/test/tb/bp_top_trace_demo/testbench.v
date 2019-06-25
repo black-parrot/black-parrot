@@ -30,6 +30,7 @@ module testbench
    // Trace replay parameters
    , parameter calc_trace_p                = 0
    , parameter cce_trace_p                 = 0
+   , parameter skip_init_p                 = 0
    , parameter trace_ring_width_p          = "inv"
    , parameter trace_rom_addr_width_p      = "inv"
    , localparam trace_rom_data_width_lp    = trace_ring_width_p + 4
@@ -252,6 +253,53 @@ bind bp_be_top
      ,.program_finish_i(testbench.program_finish)
      );
 
+bind bp_cce_top
+  bp_cce_nonsynth_tracer
+    #(.cfg_p(cfg_p)
+      ,.cce_trace_p(cce_trace_p)
+      )
+    bp_cce_tracer
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+
+      ,.cce_id_i(cce_id_i)
+
+      // To CCE
+      ,.lce_req_i(lce_req_to_cce)
+      ,.lce_req_v_i(lce_req_v_to_cce)
+      ,.lce_req_yumi_i(lce_req_yumi_from_cce)
+      ,.lce_resp_i(lce_resp_to_cce)
+      ,.lce_resp_v_i(lce_resp_v_to_cce)
+      ,.lce_resp_yumi_i(lce_resp_yumi_from_cce)
+      ,.lce_data_resp_i(lce_data_resp_to_cce)
+      ,.lce_data_resp_v_i(lce_data_resp_v_to_cce)
+      ,.lce_data_resp_yumi_i(lce_data_resp_yumi_from_cce)
+
+      // From CCE
+      ,.lce_cmd_i(lce_cmd_o)
+      ,.lce_cmd_v_i(lce_cmd_v_o)
+      ,.lce_cmd_ready_i(lce_cmd_ready_i)
+      ,.lce_data_cmd_i(lce_data_cmd_o)
+      ,.lce_data_cmd_v_i(lce_data_cmd_v_o)
+      ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
+
+      // To CCE
+      ,.mem_resp_i(mem_resp_to_cce)
+      ,.mem_resp_v_i(mem_resp_v_to_cce)
+      ,.mem_resp_yumi_i(mem_resp_yumi_from_cce)
+      ,.mem_data_resp_i(mem_data_resp_to_cce)
+      ,.mem_data_resp_v_i(mem_data_resp_v_to_cce)
+      ,.mem_data_resp_yumi_i(mem_data_resp_yumi_from_cce)
+
+      // From CCE
+      ,.mem_cmd_i(mem_cmd_from_cce)
+      ,.mem_cmd_v_i(mem_cmd_v_from_cce)
+      ,.mem_cmd_ready_i(mem_cmd_ready_to_cce)
+      ,.mem_data_cmd_i(mem_data_cmd_from_cce)
+      ,.mem_data_cmd_v_i(mem_data_cmd_v_from_cce)
+      ,.mem_data_cmd_ready_i(mem_data_cmd_ready_to_cce)
+      );
+
 // DRAM + link 
 bp_me_cce_to_wormhole_link_client
  #(.cfg_p(cfg_p)
@@ -441,7 +489,7 @@ bp_cce_mmio_cfg_loader
     ,.inst_width_p(`bp_cce_inst_width)
     ,.inst_ram_addr_width_p(cce_instr_ram_addr_width_lp)
     ,.inst_ram_els_p(num_cce_instr_ram_els_p)
-    ,.skip_ram_init_p('0)
+    ,.skip_ram_init_p(skip_init_p)
   )
   cfg_loader
   (.clk_i(clk_i)

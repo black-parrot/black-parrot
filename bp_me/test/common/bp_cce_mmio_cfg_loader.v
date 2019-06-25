@@ -132,7 +132,7 @@ module bp_cce_mmio_cfg_loader
 
       case (state_r)
         RESET: begin
-          state_n = skip_ram_init_p ? DONE: BP_RESET_SET;
+          state_n = skip_ram_init_p ? BP_FREEZE_CLR : BP_RESET_SET;
 
           ucode_cnt_clr = 1'b1;
         end

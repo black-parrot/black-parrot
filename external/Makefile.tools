@@ -12,6 +12,7 @@ FESVR_DIR     := $(BP_EXTERNAL_DIR)/riscv-fesvr
 SPIKE_DIR     := $(BP_EXTERNAL_DIR)/riscv-isa-sim
 AXE_DIR       := $(BP_EXTERNAL_DIR)/axe
 DRAMSIM2_DIR  := $(BP_EXTERNAL_DIR)/DRAMSim2
+CMURPHI_DIR   := $(BP_EXTERNAL_DIR)/cmurphi
 
 systemc:
 	wget http://www.accellera.org/images/downloads/standards/systemc/systemc-2.3.3.gz \
@@ -56,3 +57,6 @@ dramsim2:
 	cd $(DRAMSIM2_DIR); \
 	make libdramsim.so && cp libdramsim.so $(LIB_DIR) && cp *.h $(INCLUDE_DIR)
 
+cmurphi:
+	cd $(CMURPHI_DIR)/src; \
+	make mu && make clean
