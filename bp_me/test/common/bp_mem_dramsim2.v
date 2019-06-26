@@ -250,10 +250,16 @@ initial
     init(clock_period_in_ps_p, prog_name_p, dram_cfg_p, dram_sys_cfg_p, dram_capacity_p, block_size_in_bits_lp, block_offset_bits_lp);
   end
 
+// TODO: This is horrifying verilog / DPI glue. Should fix for best practices
 always_ff @(posedge clk_i)
   begin
-    dramsim_valid <= tick(); 
-    dramsim_data  <= dramsim_data_n;
+    if (mem_st == RD_CMD || mem_st == RD_DATA_CMD)
+      begin
+        dramsim_valid <= dramsim_valid == '0 ? tick() : dramsim_valid;
+        dramsim_data <= dramsim_data_n;
+      end
+    else 
+      dramsim_valid <= tick();
   end
 
 endmodule
