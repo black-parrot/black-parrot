@@ -1,6 +1,5 @@
 
 package bp_common_aviary_pkg;
-  `include "bsg_defines.v"
   `include "bp_common_aviary_defines.vh"
 
   // Suitably high enough to not run out of configs.
