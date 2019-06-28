@@ -9,8 +9,10 @@ TEST_DIR       = $(BP_COMMON_DIR)/test
 MEM_DIR        = $(TEST_DIR)/mem
 
 RISCV_SIM      = spike
-RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -D -M no-aliases,numeric
+RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -D
 RISCV_OBJCOPY  = riscv64-unknown-elf-objcopy -O verilog
+RISCV_OBJCOPY_BIN = riscv64-unknown-elf-objcopy -O binary
+MKLFS = bsg_newlib_mklfs
 
 include $(TEST_DIR)/Makefile.frag
 
@@ -18,9 +20,10 @@ all: riscv coremark littlefs_test beebs
 all_mem: riscv_mem coremark_mem beebs_mem littlefs_test_mem
 riscv: riscv_mem riscv_spike
 coremark: coremark_mem coremark_spike
-beebs: beebs_mem beebs_spike
+beebs: beebs_mem beebs_dump
 littlefs_test: littlefs_test_mem littlefs_test_spike
 spec: spec_mem spec_spike
+mtest: mtest_mem mtest_spike
 
 # OpenSBI requires hardfloat and does not support softfloat libraries, so the compilation will fail
 #opensbi: opensbi_mem
@@ -66,6 +69,16 @@ littlefs_test_elf:
 	find $(TEST_DIR)/src/littlefs_newlib_test/fhello/ -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
 	find $(TEST_DIR)/src/littlefs_newlib_test/fhello/ -type f -name "*dump" -execdir mv {} $(MEM_DIR)/{} \;
 
+mtest_lfs: $(foreach x, $(BEEBS_TESTS), $(x).bin)
+	cd $(MEM_DIR) && $(MKLFS) 128 204800 $(foreach x, $(BEEBS_TESTS), $(x).bin) > $(TEST_DIR)/src/mtest/src/lfs.c
+	rm $(foreach x, $(BEEBS_TESTS), $(MEM_DIR)/$(x).bin)
+	python $(TEST_DIR)/src/mtest/py/testgen.py $(NC) $(PROGS) > $(TEST_DIR)/src/mtest/src/benchmarks.h
+
+mtest_elf:
+	$(MAKE) -C $(TEST_DIR)/src/mtest/
+	find $(TEST_DIR)/src/mtest -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
+	find $(TEST_DIR)/src/mtest -type f -name "*dump" -execdir mv {} $(MEM_DIR)/{} \;
+
 #Change the number of iterations per test by changing BOARD_REPEAT_FACTOR in beebs/support/support.h
 beebs_elf:
 	cd $(TEST_DIR)/src/beebs/ && ./configure --host=riscv64 --with-chip=black-parrot
@@ -95,6 +108,12 @@ littlefs_test_mem: littlefs_test_elf
 littlefs_test_mem: littlefs_test.mem
 littlefs_test_spike: littlefs_test.spike
 
+mtest_mem: beebs_elf
+mtest_mem: mtest_lfs
+mtest_mem: mtest_elf
+mtest_mem: mtest.mem
+mtest_spike: mtest.spike
+
 opensbi_mem: opensbi_elf
 opensbi_mem: opensbi.mem
 # Need to kill spike at the end of opensbi payload for this to work
@@ -107,6 +126,7 @@ bbl_mem: bbl.mem
 
 beebs_mem: beebs_elf
 beebs_mem: $(foreach x, $(BEEBS_TESTS), $(x).mem)
+beebs_dump: $(foreach x, $(BEEBS_TESTS), $(x).dump)
 beebs_spike: $(foreach x, $(BEEBS_TESTS), $(x).spike)
 
 spec_mem: spec_elf
@@ -116,8 +136,14 @@ spec_spike: $(foreach x, $(BP_SPEC), $(x).spike)
 %.mem: 
 	$(RISCV_OBJCOPY) $(MEM_DIR)/$*.riscv $(MEM_DIR)/$@
 
+%.bin: 
+	$(RISCV_OBJCOPY_BIN) $(MEM_DIR)/$*.riscv $(MEM_DIR)/$@
+
+%.dump:
+	$(RISCV_OBJDUMP) $(MEM_DIR)/$*.riscv > $(MEM_DIR)/$@
+
 %.spike:
-	$(RISCV_SIM) -l $(MEM_DIR)/$*.riscv 2> $(MEM_DIR)/$@
+	$(RISCV_SIM) -p2 -l $(MEM_DIR)/$*.riscv 2> $(MEM_DIR)/$@
 
 clean:
 	-$(MAKE) -C $(TEST_DIR)/src/riscv-tests/benchmarks clean 

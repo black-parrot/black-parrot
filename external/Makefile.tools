@@ -45,7 +45,7 @@ gnu:
 	./configure --prefix=$(BP_EXTERNAL_DIR) --with-arch=rv64ia --with-abi=lp64 --with-cmodel=medany \
 	  --enable-languages=c \
 	&& make && make install \
-        && cp riscv64-unknown-elf/bin/bsg_newlib_mklfs bin/.
+        && cp $(BP_EXTERNAL_DIR)/riscv64-unknown-elf/bin/bsg_newlib_mklfs $(BIN_DIR)
 
 dramsim2:
 	cd $(DRAMSIM2_DIR); \
