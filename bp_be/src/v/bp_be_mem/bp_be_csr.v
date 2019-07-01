@@ -156,6 +156,7 @@ rv64_pmpaddr_s  pmpaddr3_li, pmpaddr3_lo;
 rv64_mcounter_s mcycle_li  , mcycle_lo;
 rv64_mcounter_s minstret_li, minstret_lo;
 
+//synopsys sync_set_reset "reset_i"
 always_ff @(posedge clk_i)
   begin
     if (reset_i)

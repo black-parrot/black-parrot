@@ -196,6 +196,7 @@ always_ff @(posedge clk_i)
   end
 
 // We gate the PC data pipeline for power
+//synopsys sync_set_reset "reset_i"
 always_ff @(posedge clk_i) 
   if (reset_i)
     begin
