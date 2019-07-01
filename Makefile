@@ -27,11 +27,11 @@ update_submodules:
 tools:
 	cd $(TOP) && git submodule update --init --recursive
 	$(MAKE) systemc && rm -rf systemc*
-	$(MAKE) verilator
-	$(MAKE) gnu
+	$(MAKE) verilator 
+	$(MAKE) gnu       && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-gnu-toolchain
 	$(MAKE) spike     && git submodule deinit -f $(BP_EXTERNAL_DIR)/riscv-isa-sim
 	$(MAKE) axe       && git submodule deinit -f $(BP_EXTERNAL_DIR)/axe
-	$(MAKE) dramsim2
+	$(MAKE) dramsim2  && git submodule deinit -f $(BP_EXTERNAL_DIR)/dramsim2
 
 progs:
 	git submodule update --init --recursive -- bp_common/test/*

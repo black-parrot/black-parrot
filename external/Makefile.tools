@@ -37,11 +37,6 @@ axe:
 #A workaround to get our newlib in the tool chain until we modify our own barebones toolchain
 gnu:
 	cd $(GNU_DIR); \
-	rm -rf riscv-newlib; \
-	git clone https://github.com/bespoke-silicon-group/bsg_newlib_dramfs ./riscv-newlib; \
-	cd ./riscv-newlib; \
-	git checkout bsg_manycore_newlib; \
-	cd ..; \
 	./configure --prefix=$(BP_EXTERNAL_DIR) --with-arch=rv64ia --with-abi=lp64 --with-cmodel=medany \
 	  --enable-languages=c \
 	&& make && make install \

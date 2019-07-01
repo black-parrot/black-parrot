@@ -70,3 +70,6 @@
   branch = blackparrot_mods
   ignore = dirty
 
+[submodule "bp_common/test/src/bsg_newlib_dramfs"]
+	path = bp_common/test/src/bsg_newlib_dramfs
+	url = https://github.com/bespoke-silicon-group/bsg_newlib_dramfs

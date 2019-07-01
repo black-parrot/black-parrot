@@ -26,11 +26,24 @@ beebs: beebs_mem beebs_dump beebs_spike
 littlefs_test: littlefs_test_mem littlefs_test_spike
 spec: spec_mem spec_spike
 mtest: mtest_mem mtest_spike
+bsg_newlib: bsg_newlib_mem 
 
 # OpenSBI requires hardfloat and does not support softfloat libraries, so the compilation will fail
 #opensbi: opensbi_mem
 #bbl: bbl_mem
 demos: demos_mem 
+
+bsg_newlib_mem:
+	mkdir -p $(TEST_DIR)/src/bsg_newlib_dramfs/build-newlib
+	mkdir -p $(TEST_DIR)/src/bsg_newlib_dramfs/install-newlib
+	cd $(TEST_DIR)/src/bsg_newlib_dramfs/build-newlib; \
+		../configure \
+		--prefix=`(pwd)`/../install-newlib \
+		--host=riscv64-unknown-elf \
+		--target=riscv64-unknown-elf \
+		--with-newlib
+	$(MAKE) -C $(TEST_DIR)/src/bsg_newlib_dramfs/build-newlib all install
+	@cp -r $(TEST_DIR)/src/bsg_newlib_dramfs/install-newlib/riscv64-unknown-elf/* $(TEST_DIR)
 
 riscv_elf: 
 	cd $(TEST_DIR)/src/riscv-tests/ && ./configure
@@ -83,7 +96,7 @@ mtest_elf:
 
 #Change the number of iterations per test by changing BOARD_REPEAT_FACTOR in beebs/support/support.h
 beebs_elf:
-	cd $(TEST_DIR)/src/beebs/ && ./configure --host=riscv64 --with-chip=black-parrot
+	cd $(TEST_DIR)/src/beebs/ && ./configure --host=riscv64 --with-chip=black-parrot --libdir=$(TEST_DIR)/lib --includedir=$(TEST_DIR)/include --with-newlib LDFLAGS=-L$(TEST_DIR)/lib CFLAGS=-I$(TEST_DIR)/include
 	$(MAKE) -C $(TEST_DIR)/src/beebs/
 	find $(TEST_DIR)/src/beebs/src/ -type f -executable -execdir mv {} $(MEM_DIR)/{}.riscv \;
 
