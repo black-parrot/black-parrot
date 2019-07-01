@@ -291,6 +291,7 @@ always_comb
     endcase
   end
 
+//synopsys sync_set_reset "reset_i"
 always_ff @(posedge clk_i) 
   begin
     if (reset_i)

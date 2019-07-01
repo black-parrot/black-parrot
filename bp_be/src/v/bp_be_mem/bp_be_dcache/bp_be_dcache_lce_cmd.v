@@ -496,6 +496,7 @@ module bp_be_dcache_lce_cmd
 
   // sequential logic
   //
+  //synopsys sync_set_reset "reset_i"
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       state_r <= e_lce_cmd_state_uncached;
