@@ -14,6 +14,8 @@ RISCV_OBJCOPY  = riscv64-unknown-elf-objcopy -O verilog
 RISCV_OBJCOPY_BIN = riscv64-unknown-elf-objcopy -O binary
 MKLFS = bsg_newlib_mklfs
 
+NC ?= 1
+
 include $(TEST_DIR)/Makefile.frag
 
 all: riscv coremark littlefs_test beebs
@@ -69,9 +71,9 @@ littlefs_test_elf:
 	find $(TEST_DIR)/src/littlefs_newlib_test/fhello/ -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
 	find $(TEST_DIR)/src/littlefs_newlib_test/fhello/ -type f -name "*dump" -execdir mv {} $(MEM_DIR)/{} \;
 
-mtest_lfs: $(foreach x, $(BEEBS_TESTS), $(x).bin)
-	cd $(MEM_DIR) && $(MKLFS) 128 204800 $(foreach x, $(BEEBS_TESTS), $(x).bin) > $(TEST_DIR)/src/mtest/src/lfs.c
-	rm $(foreach x, $(BEEBS_TESTS), $(MEM_DIR)/$(x).bin)
+mtest_lfs: $(foreach x, $(PROGS), $(x).bin)
+	cd $(MEM_DIR) && $(MKLFS) 128 204800 $(foreach x, $(PROGS), $(x).bin) > $(TEST_DIR)/src/mtest/src/lfs.c
+	rm $(foreach x, $(PROGS), $(MEM_DIR)/$(x).bin)
 	python $(TEST_DIR)/src/mtest/py/testgen.py $(NC) $(PROGS) > $(TEST_DIR)/src/mtest/src/benchmarks.h
 
 mtest_elf:
@@ -143,7 +145,7 @@ spec_spike: $(foreach x, $(BP_SPEC), $(x).spike)
 	$(RISCV_OBJDUMP) $(MEM_DIR)/$*.riscv > $(MEM_DIR)/$@
 
 %.spike:
-	$(RISCV_SIM) -p2 -l $(MEM_DIR)/$*.riscv 2> $(MEM_DIR)/$@
+	$(RISCV_SIM) -p$(NC) -l $(MEM_DIR)/$*.riscv 2> $(MEM_DIR)/$@
 
 clean:
 	-$(MAKE) -C $(TEST_DIR)/src/riscv-tests/benchmarks clean 

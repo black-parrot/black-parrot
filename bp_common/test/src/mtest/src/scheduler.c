@@ -36,9 +36,6 @@ int scheduler(int hartid) {
         printf("Cannot open file: %d\n", i);
         return -1;
       }
-      else {
-        printf("Opened file: %d\n", i);
-      }
       
       uint64_t flen = lseek(file, 0, SEEK_END);
       lseek(file, 0, SEEK_SET);
