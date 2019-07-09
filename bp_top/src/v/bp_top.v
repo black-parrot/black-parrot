@@ -95,21 +95,16 @@ module bp_top
    , input [num_core_p-1:0]                                    external_irq_i
 
    // Memory side connection
-   , input  [num_core_p-1:0][mem_cce_resp_width_lp-1:0]        mem_resp_i
-   , input  [num_core_p-1:0]                                   mem_resp_v_i
-   , output [num_core_p-1:0]                                   mem_resp_ready_o
+   , input [num_core_p-1:0][cord_width_lp-1:0]                 my_cord_i
+   , input [num_core_p-1:0][cord_width_lp-1:0]                 dest_cord_i
+   , input [cord_width_lp-1:0]                                 clint_cord_i
 
-   , input  [num_core_p-1:0][mem_cce_data_resp_width_lp-1:0]   mem_data_resp_i
-   , input  [num_core_p-1:0]                                   mem_data_resp_v_i
-   , output [num_core_p-1:0]                                   mem_data_resp_ready_o
+   , input [num_core_p-1:0][bsg_ready_and_link_sif_width_lp-1:0]  cmd_link_i
+   , output [num_core_p-1:0][bsg_ready_and_link_sif_width_lp-1:0] cmd_link_o
 
-   , output [num_core_p-1:0][cce_mem_cmd_width_lp-1:0]         mem_cmd_o
-   , output [num_core_p-1:0]                                   mem_cmd_v_o
-   , input  [num_core_p-1:0]                                   mem_cmd_yumi_i
+   , input [num_core_p-1:0][bsg_ready_and_link_sif_width_lp-1:0]  resp_link_i
+   , output [num_core_p-1:0][bsg_ready_and_link_sif_width_lp-1:0] resp_link_o
 
-   , output [num_core_p-1:0][cce_mem_data_cmd_width_lp-1:0]    mem_data_cmd_o
-   , output [num_core_p-1:0]                                   mem_data_cmd_v_o
-   , input  [num_core_p-1:0]                                   mem_data_cmd_yumi_i
   );
 
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
@@ -176,6 +171,8 @@ for(genvar i = 0; i < num_core_p; i++)
      #(.cfg_p(cfg_p)
        ,.calc_trace_p(calc_trace_p)
        ,.cce_trace_p(cce_trace_p)
+       ,.noc_x_cord_width_p(noc_x_cord_width_lp)
+       ,.noc_y_cord_width_p(noc_y_cord_width_lp)
        )
      tile
       (.clk_i(clk_i)
@@ -204,21 +201,15 @@ for(genvar i = 0; i < num_core_p; i++)
        ,.lce_cmd_link_o(lce_cmd_link_stitch_lo[i])
        ,.lce_data_cmd_link_o(lce_data_cmd_link_stitch_lo[i])
 
-       ,.mem_resp_i(mem_resp_i[i])
-       ,.mem_resp_v_i(mem_resp_v_i[i])
-       ,.mem_resp_ready_o(mem_resp_ready_o[i])
+       // CCE-MEM IF
+       ,.my_cord_i(my_cord_i[i])
+       ,.dest_cord_i(dest_cord_i[i])
+       ,.clint_cord_i(clint_cord_i)
 
-       ,.mem_data_resp_i(mem_data_resp_i[i])
-       ,.mem_data_resp_v_i(mem_data_resp_v_i[i])
-       ,.mem_data_resp_ready_o(mem_data_resp_ready_o[i])
-
-       ,.mem_cmd_o(mem_cmd_o[i])
-       ,.mem_cmd_v_o(mem_cmd_v_o[i])
-       ,.mem_cmd_yumi_i(mem_cmd_yumi_i[i])
-
-       ,.mem_data_cmd_o(mem_data_cmd_o[i])
-       ,.mem_data_cmd_v_o(mem_data_cmd_v_o[i])
-       ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi_i[i])
+       ,.cmd_link_i(cmd_link_i[i])
+       ,.cmd_link_o(cmd_link_o[i])
+       ,.resp_link_i(resp_link_i[i])
+       ,.resp_link_o(resp_link_o[i])
 
        ,.timer_int_i(timer_irq_i[i])
        ,.software_int_i(soft_irq_i[i])

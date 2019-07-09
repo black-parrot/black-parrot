@@ -64,24 +64,6 @@ module bp_core_complex
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mem_payload_width_p)
 `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
-bp_cce_mem_cmd_s       [num_core_p-1:0] tile_cmd_lo;
-logic                  [num_core_p-1:0] tile_cmd_v_lo, tile_cmd_yumi_li;
-bp_cce_mem_data_cmd_s  [num_core_p-1:0] tile_data_cmd_lo;
-logic                  [num_core_p-1:0] tile_data_cmd_v_lo, tile_data_cmd_yumi_li;
-bp_mem_cce_resp_s      [num_core_p-1:0] tile_resp_li;
-logic                  [num_core_p-1:0] tile_resp_v_li, tile_resp_ready_lo;
-bp_mem_cce_data_resp_s [num_core_p-1:0] tile_data_resp_li;
-logic                  [num_core_p-1:0] tile_data_resp_v_li, tile_data_resp_ready_lo;
-  
-bp_cce_mem_cmd_s       clint_cmd_li;
-logic                  clint_cmd_v_li, clint_cmd_yumi_lo;
-bp_cce_mem_data_cmd_s  clint_data_cmd_li;
-logic                  clint_data_cmd_v_li, clint_data_cmd_yumi_lo;
-bp_mem_cce_resp_s      clint_resp_lo;
-logic                  clint_resp_v_lo, clint_resp_ready_li;
-bp_mem_cce_data_resp_s clint_data_resp_lo;
-logic                  clint_data_resp_v_lo, clint_data_resp_ready_li;
-
 logic [num_core_p-1:0] timer_irq_lo, soft_irq_lo, external_irq_lo;
 
 logic [num_core_p-1:0]                       cfg_w_v_lo;
@@ -115,6 +97,18 @@ bsg_dff_chain
 // Clint is in the middle of chain, for single core it is at position 1
 localparam clint_pos_lp = `BSG_CDIV(num_core_p, 2);
 
+logic [num_core_p-1:0][bsg_ready_and_link_sif_width_lp-1:0]  tile_cmd_link_i;
+logic  [num_core_p-1:0][bsg_ready_and_link_sif_width_lp-1:0] tile_cmd_link_o;
+logic [num_core_p-1:0][bsg_ready_and_link_sif_width_lp-1:0]  tile_resp_link_i;
+logic  [num_core_p-1:0][bsg_ready_and_link_sif_width_lp-1:0] tile_resp_link_o;
+logic [num_core_p-1:0][cord_width_lp-1:0]                    top_my_cord_li;
+logic [num_core_p-1:0][cord_width_lp-1:0]                    top_dest_cord_li;
+
+logic [bsg_ready_and_link_sif_width_lp-1:0]                  clint_cmd_link_i;
+logic [bsg_ready_and_link_sif_width_lp-1:0]                  clint_cmd_link_o;
+logic [bsg_ready_and_link_sif_width_lp-1:0]                  clint_resp_link_i;
+logic [bsg_ready_and_link_sif_width_lp-1:0]                  clint_resp_link_o;
+
 bp_top
  #(.cfg_p(cfg_p)
    ,.calc_trace_p(calc_trace_p)
@@ -132,25 +126,21 @@ bp_top
    ,.soft_irq_i(soft_irq_lo)
    ,.external_irq_i(external_irq_lo)
 
-   ,.mem_cmd_o(tile_cmd_lo)
-   ,.mem_cmd_v_o(tile_cmd_v_lo)
-   ,.mem_cmd_yumi_i(tile_cmd_yumi_li)
+   ,.my_cord_i(top_my_cord_li)
+   ,.dest_cord_i(top_dest_cord_li)
+   ,.clint_cord_i(my_cord_i[clint_pos_lp])
 
-   ,.mem_data_cmd_o(tile_data_cmd_lo)
-   ,.mem_data_cmd_v_o(tile_data_cmd_v_lo)
-   ,.mem_data_cmd_yumi_i(tile_data_cmd_yumi_li)
-
-   ,.mem_resp_i(tile_resp_li)
-   ,.mem_resp_v_i(tile_resp_v_li)
-   ,.mem_resp_ready_o(tile_resp_ready_lo)
-
-   ,.mem_data_resp_i(tile_data_resp_li)
-   ,.mem_data_resp_v_i(tile_data_resp_v_li)
-   ,.mem_data_resp_ready_o(tile_data_resp_ready_lo)
+   ,.cmd_link_i(tile_cmd_link_i)
+   ,.cmd_link_o(tile_cmd_link_o)
+   ,.resp_link_i(tile_resp_link_i)
+   ,.resp_link_o(tile_resp_link_o)
    );
 
 bp_clint
- #(.cfg_p(cfg_p))
+ #(.cfg_p(cfg_p)
+   ,.noc_x_cord_width_p(noc_x_cord_width_lp)
+   ,.noc_y_cord_width_p(noc_y_cord_width_lp)
+   )
  clint
   (.clk_i(clk_i)
    ,.reset_i(reset_r)
@@ -163,210 +153,43 @@ bp_clint
    ,.timer_irq_o(timer_irq_lo)
    ,.external_irq_o(external_irq_lo)
 
-   ,.mem_cmd_i(clint_cmd_li)
-   ,.mem_cmd_v_i(clint_cmd_v_li)
-   ,.mem_cmd_yumi_o(clint_cmd_yumi_lo)
-   
-   ,.mem_data_cmd_i(clint_data_cmd_li)
-   ,.mem_data_cmd_v_i(clint_data_cmd_v_li)
-   ,.mem_data_cmd_yumi_o(clint_data_cmd_yumi_lo)
-   
-   ,.mem_resp_o(clint_resp_lo)
-   ,.mem_resp_v_o(clint_resp_v_lo)
-   ,.mem_resp_ready_i(clint_resp_ready_li)
-   
-   ,.mem_data_resp_o(clint_data_resp_lo)
-   ,.mem_data_resp_v_o(clint_data_resp_v_lo)
-   ,.mem_data_resp_ready_i(clint_data_resp_ready_li)
+   ,.my_cord_i(my_cord_i[clint_pos_lp])
+   ,.dest_cord_i(dest_cord_i[clint_pos_lp])
+   ,.clint_cord_i(my_cord_i[clint_pos_lp])
+
+   ,.cmd_link_i(clint_cmd_link_i)
+   ,.cmd_link_o(clint_cmd_link_o)
+   ,.resp_link_i(clint_resp_link_i)
+   ,.resp_link_o(clint_resp_link_o)
    );
 
-/************************* Adapters to wormhole *************************/
+/************************* Wormhole Link Stitching *************************/
 for (genvar i = 0; i < num_routers_lp; i++)
   begin : rof1
-    bp_cce_mem_cmd_s       mem_cmd_li;
-    logic                  mem_cmd_v_li, mem_cmd_yumi_lo;
-    bp_cce_mem_data_cmd_s  mem_data_cmd_li;
-    logic                  mem_data_cmd_v_li, mem_data_cmd_yumi_lo;
-    bp_mem_cce_resp_s      mem_resp_lo;
-    logic                  mem_resp_v_lo, mem_resp_ready_li;
-    bp_mem_cce_data_resp_s mem_data_resp_lo;
-    logic                  mem_data_resp_v_lo, mem_data_resp_ready_li;
-
-    bp_cce_mem_cmd_s       mem_cmd_lo;
-    logic                  mem_cmd_v_lo, mem_cmd_yumi_li;
-    bp_cce_mem_data_cmd_s  mem_data_cmd_lo;
-    logic                  mem_data_cmd_v_lo, mem_data_cmd_yumi_li;
-    bp_mem_cce_resp_s      mem_resp_li;
-    logic                  mem_resp_v_li, mem_resp_ready_lo;
-    bp_mem_cce_data_resp_s mem_data_resp_li;
-    logic                  mem_data_resp_v_li, mem_data_resp_ready_lo;
-    
     if (i == clint_pos_lp)
       begin : fi1
-        // Master link
-        assign {mem_cmd_li, mem_cmd_v_li} = '0;
-        assign {mem_data_cmd_li, mem_data_cmd_v_li} = '0;
-        assign mem_resp_ready_li = 1'b1;
-        assign mem_data_resp_ready_li = 1'b1;
-
-        // Client link
-        assign {clint_cmd_li, clint_cmd_v_li, mem_cmd_yumi_li} =
-          {mem_cmd_lo, mem_cmd_v_lo, clint_cmd_yumi_lo};
-        assign {clint_data_cmd_li, clint_data_cmd_v_li, mem_data_cmd_yumi_li} =
-          {mem_data_cmd_lo, mem_data_cmd_v_lo, clint_data_cmd_yumi_lo};
-        assign {mem_resp_li, mem_resp_v_li, clint_resp_ready_li} = 
-          {clint_resp_lo, clint_resp_v_lo, mem_resp_ready_lo};
-        assign {mem_data_resp_li, mem_data_resp_v_li, clint_data_resp_ready_li} = 
-          {clint_data_resp_lo, clint_data_resp_v_lo, mem_data_resp_ready_lo};
+        assign resp_link_cast_o[i] = clint_resp_link_o;
+        assign cmd_link_cast_o[i] = clint_cmd_link_o;
+        assign clint_cmd_link_i = cmd_link_cast_i[i];
+        assign clint_resp_link_i = resp_link_cast_i[i];
       end
     else
       begin : fi1
         // We subtract 1 if we're past the clint, so that the slice lines up with bp_top
         localparam core_id_lp = (i < clint_pos_lp) ? i : i-1;
-        // Master link
-        assign {mem_cmd_li, mem_cmd_v_li, tile_cmd_yumi_li[core_id_lp]} =
-          {tile_cmd_lo[core_id_lp], tile_cmd_v_lo[core_id_lp], mem_cmd_yumi_lo};
-        assign {mem_data_cmd_li, mem_data_cmd_v_li, tile_data_cmd_yumi_li[core_id_lp]} =
-          {tile_data_cmd_lo[core_id_lp], tile_data_cmd_v_lo[core_id_lp], mem_data_cmd_yumi_lo};
-        assign {tile_resp_li[core_id_lp], tile_resp_v_li[core_id_lp], mem_resp_ready_li} =
-          {mem_resp_lo, mem_resp_v_lo, tile_resp_ready_lo[core_id_lp]};
-        assign {tile_data_resp_li[core_id_lp], tile_data_resp_v_li[core_id_lp], mem_data_resp_ready_li} =
-          {mem_data_resp_lo, mem_data_resp_v_lo, tile_data_resp_ready_lo[core_id_lp]};
 
-        // Client link
-        assign mem_cmd_yumi_li = '0;
-        assign mem_data_cmd_yumi_li = '0;
-        assign {mem_resp_li, mem_resp_v_li} = '0;
-        assign {mem_data_resp_li, mem_data_resp_v_li} = '0;
+        // assign the coordinate inputs for bp_top
+        // These assignments transform the my_cord_i vector, which is num_routers_lp wide, into
+        // the top_my_cord_li vector, which is num_core_p wide, effectively splicing out the
+        // clint coordinate entry
+        assign top_my_cord_li[core_id_lp] = my_cord_i[i];
+        assign top_dest_cord_li[core_id_lp] = dest_cord_i[i];
+
+        assign resp_link_cast_o[i] = tile_resp_link_o[core_id_lp];
+        assign cmd_link_cast_o[i] = tile_cmd_link_o[core_id_lp];
+        assign tile_cmd_link_i[core_id_lp] = cmd_link_cast_i[i];
+        assign tile_resp_link_i[core_id_lp] = resp_link_cast_i[i];
       end
-
-   logic [noc_x_cord_width_lp-1:0] cmd_dest_x_lo;
-   logic [noc_y_cord_width_lp-1:0] cmd_dest_y_lo;
-   bp_addr_map
-    #(.cfg_p(cfg_p)
-      ,.x_cord_width_p(noc_x_cord_width_lp)
-      ,.y_cord_width_p(noc_y_cord_width_lp)
-      )
-    cmd_map
-     (.paddr_i(mem_cmd_li.addr)
-     /* TODO: Genericize */
-     ,.clint_x_cord_i(my_cord_i[clint_pos_lp][0+:noc_x_cord_width_lp])
-     ,.clint_y_cord_i(1'b0)
-     ,.dram_x_cord_i(dest_cord_i[i][0+:noc_x_cord_width_lp])
-     ,.dram_y_cord_i(1'b0)
-
-     ,.dest_x_o(cmd_dest_x_lo)
-     ,.dest_y_o(cmd_dest_y_lo)
-     );
-       
-   logic [noc_x_cord_width_lp-1:0] data_cmd_dest_x_lo;
-   logic [noc_y_cord_width_lp-1:0] data_cmd_dest_y_lo;
-   bp_addr_map
-    #(.cfg_p(cfg_p)
-      ,.x_cord_width_p(noc_x_cord_width_lp)
-      ,.y_cord_width_p(noc_y_cord_width_lp)
-      )
-    data_cmd_map
-     (.paddr_i(mem_data_cmd_li.addr)
-      ,.clint_x_cord_i(my_cord_i[clint_pos_lp][0+:noc_x_cord_width_lp])
-      ,.clint_y_cord_i(1'b0)
-      ,.dram_x_cord_i(dest_cord_i[i][0+:noc_x_cord_width_lp])
-      ,.dram_y_cord_i(1'b0)
-
-      ,.dest_x_o(data_cmd_dest_x_lo)
-      ,.dest_y_o(data_cmd_dest_y_lo)
-      );
- 
-    bsg_ready_and_link_sif_s wh_master_link_li, wh_master_link_lo;
-    bp_me_cce_to_wormhole_link_master
-     #(.cfg_p(cfg_p)
-       ,.x_cord_width_p(noc_x_cord_width_lp)
-       ,.y_cord_width_p(noc_y_cord_width_lp)
-       )
-     master_link
-      (.clk_i(clk_i)
-       ,.reset_i(reset_r)
-
-       ,.mem_cmd_i(mem_cmd_li)
-       ,.mem_cmd_v_i(mem_cmd_v_li)
-       ,.mem_cmd_yumi_o(mem_cmd_yumi_lo)
-
-       ,.mem_data_cmd_i(mem_data_cmd_li)
-       ,.mem_data_cmd_v_i(mem_data_cmd_v_li)
-       ,.mem_data_cmd_yumi_o(mem_data_cmd_yumi_lo)
-
-       ,.mem_resp_o(mem_resp_lo)
-       ,.mem_resp_v_o(mem_resp_v_lo)
-       ,.mem_resp_ready_i(mem_resp_ready_li)
-
-       ,.mem_data_resp_o(mem_data_resp_lo)
-       ,.mem_data_resp_v_o(mem_data_resp_v_lo)
-       ,.mem_data_resp_ready_i(mem_data_resp_ready_li)
-      
-       // TODO: Should change adapter to accept new wormhole coord format directly
-       ,.my_x_i(my_cord_i[i][0+:noc_x_cord_width_lp])
-       ,.my_y_i('0)
-      
-       // TODO: Split out addr map into generic 'dest_map' with variable number of dests
-       ,.mem_cmd_dest_x_i(cmd_dest_x_lo)
-       ,.mem_cmd_dest_y_i(cmd_dest_y_lo)
-      
-       ,.mem_data_cmd_dest_x_i(data_cmd_dest_x_lo)
-       ,.mem_data_cmd_dest_y_i(data_cmd_dest_y_lo)
-
-       ,.link_i(wh_master_link_li)
-       ,.link_o(wh_master_link_lo)
-       );
-
-    bsg_ready_and_link_sif_s wh_client_link_li, wh_client_link_lo;
-    bp_me_cce_to_wormhole_link_client
-     #(.cfg_p(cfg_p)
-       ,.x_cord_width_p(noc_x_cord_width_lp)
-       ,.y_cord_width_p(noc_y_cord_width_lp)
-       )
-    client_link
-      (.clk_i(clk_i)
-       ,.reset_i(reset_r)
-        
-       ,.mem_cmd_o(mem_cmd_lo)
-       ,.mem_cmd_v_o(mem_cmd_v_lo)
-       ,.mem_cmd_yumi_i(mem_cmd_yumi_li)
-        
-       ,.mem_data_cmd_o(mem_data_cmd_lo)
-       ,.mem_data_cmd_v_o(mem_data_cmd_v_lo)
-       ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi_li)
-        
-       ,.mem_resp_i(mem_resp_li)
-       ,.mem_resp_v_i(mem_resp_v_li)
-       ,.mem_resp_ready_o(mem_resp_ready_lo)
-        
-       ,.mem_data_resp_i(mem_data_resp_li)
-       ,.mem_data_resp_v_i(mem_data_resp_v_li)
-       ,.mem_data_resp_ready_o(mem_data_resp_ready_lo)
-          
-       // TODO: Should change adapter to accept new wormhole coord format directly
-       ,.my_x_i(my_cord_i[i][0+:noc_x_cord_width_lp])
-       ,.my_y_i('0)
-          
-       ,.link_i(wh_client_link_li)
-       ,.link_o(wh_client_link_lo)
-       );
-
-    assign wh_client_link_li.v             = cmd_link_cast_i[i].v;
-    assign wh_client_link_li.data          = cmd_link_cast_i[i].data;
-    assign wh_client_link_li.ready_and_rev = resp_link_cast_i[i].ready_and_rev;
-
-    assign wh_master_link_li.v             = resp_link_cast_i[i].v;
-    assign wh_master_link_li.data          = resp_link_cast_i[i].data;
-    assign wh_master_link_li.ready_and_rev = cmd_link_cast_i[i].ready_and_rev;
-
-    assign resp_link_cast_o[i].v = wh_client_link_lo.v;
-    assign resp_link_cast_o[i].data = wh_client_link_lo.data;
-    assign resp_link_cast_o[i].ready_and_rev = wh_master_link_lo.ready_and_rev;
-
-    assign cmd_link_cast_o[i].v = wh_master_link_lo.v;
-    assign cmd_link_cast_o[i].data = wh_master_link_lo.data;
-    assign cmd_link_cast_o[i].ready_and_rev = wh_client_link_lo.ready_and_rev;
   end
 
 endmodule : bp_core_complex
