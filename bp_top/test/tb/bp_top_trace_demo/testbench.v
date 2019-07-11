@@ -343,6 +343,11 @@ bp_nonsynth_host
    ,.program_finish_o(program_finish)
    );
 
+bp_nonsynth_if_verif
+ #(.cfg_p(cfg_p))
+ if_verif
+  ();
+
 // MMIO arbitration 
 //   Should this be on its own I/O router?
 logic req_outstanding_r;
