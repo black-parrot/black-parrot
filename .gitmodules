@@ -71,7 +71,7 @@
   ignore = dirty
 
 [submodule "external/cmurphi"]
-	path = external/cmurphi
-	url = git@github.com:black-parrot/cmurphi.git
+  path = external/cmurphi
+  url = https://github.com/black-parrot/cmurphi.git
   branch = master
   ignore = dirty
