@@ -388,7 +388,7 @@ module bp_cce_fsm
   assign lce_resp_yumi_o = sync_ack_yumi | inv_ack_yumi | coh_ack_yumi;
 
   // Transfer and Coherence Acks are dequeued automatically unless state machine is in INV_ACK
-  assign coh_ack_yumi = lce_resp_v_i & (state_r != INV_ACK)
+  assign coh_ack_yumi = lce_resp_v_i
     & ((lce_resp.msg_type == e_lce_cce_coh_ack) | (lce_resp.msg_type == e_lce_cce_tr_ack));
 
   always_comb begin
@@ -564,7 +564,6 @@ module bp_cce_fsm
             mshr_n.flags[e_flag_sel_rwbf] = 1'b0;
           end
         end else if (lce_req_v_i) begin
-          lce_req_yumi_o = 1'b1;
           mshr_n.lce_id = lce_req.src_id;
           mshr_n.paddr = lce_req.addr;
           mshr_n.lru_way_id = lce_req.lru_way_id;
@@ -589,6 +588,7 @@ module bp_cce_fsm
           mem_data_cmd.non_cacheable = bp_lce_cce_req_non_cacheable_e'(mshr_r.flags[e_flag_sel_ucf]);
           mem_data_cmd.nc_size = bp_lce_cce_nc_req_size_e'(mshr_r.nc_req_size);
           state_n = (mem_data_cmd_ready_i) ? READY : UC_REQ;
+          lce_req_yumi_o = mem_data_cmd_ready_i;
 
         // Uncached Load
         end else begin
@@ -600,6 +600,7 @@ module bp_cce_fsm
           mem_cmd.non_cacheable = bp_lce_cce_req_non_cacheable_e'(mshr_r.flags[e_flag_sel_ucf]);
           mem_cmd.nc_size = bp_lce_cce_nc_req_size_e'(mshr_r.nc_req_size);
           state_n = (mem_cmd_ready_i) ? READY : UC_REQ;
+          lce_req_yumi_o = mem_cmd_ready_i;
         end
       end
       READ_PENDING: begin
@@ -611,6 +612,7 @@ module bp_cce_fsm
                   : ERROR;
       end
       READ_DIR: begin
+        lce_req_yumi_o = 1'b1;
         // initiate the directory read
         // At the earliest, data will be valid in the next cycle
         dir_r_v = 1'b1;
@@ -720,13 +722,13 @@ module bp_cce_fsm
 
       end
       INV_ACK: begin
-        inv_ack_yumi = lce_resp_v_i;
-        cnt_inc = lce_resp_v_i;
+        inv_ack_yumi = (lce_resp_v_i & (lce_resp.msg_type == e_lce_cce_inv_ack));
+        cnt_inc = inv_ack_yumi;
         // cnt counter holds the number of invalidation acks received so far
         // ack_cnt holds the number that the CCE needs to wait for
         // Transition to another state if there is a valid request and all but the last ack has
         // been received - since the last ack is being dequeued this cycle!
-        state_n = (lce_resp_v_i & (cnt == (ack_cnt-1)))
+        state_n = (inv_ack_yumi & (cnt == (ack_cnt-1)))
                   ? (mshr_r.flags[e_flag_sel_uf])
                     ? UPGRADE_STW_CMD
                     : (mshr_r.flags[e_flag_sel_rf])
@@ -735,11 +737,6 @@ module bp_cce_fsm
                         ? TRANSFER_CMD
                         : READ_MEM
                   : INV_ACK;
-
-        // error check the state
-        state_n = (lce_resp_v_i & (lce_resp.msg_type != e_lce_cce_inv_ack))
-                  ? ERROR
-                  : state_n;
 
         // clear counter and ack count register if all acks received
         cnt_clr = (state_n != INV_ACK);
@@ -759,6 +756,10 @@ module bp_cce_fsm
           state_n = (mshr_r.flags[e_flag_sel_tf])
                     ? TRANSFER_CMD
                     : READ_MEM;
+
+          // clear the replacement writeback flag
+          mshr_n.flags[e_flag_sel_rwbf] = 1'b0;
+
         end else if (~(mem_data_resp_v_i & lce_data_cmd_ready_i)) begin
         // Mem Data Cmd needs to write pending bit, so only send if Mem Data Resp / LCE Data Cmd is
         // not writing the pending bit
