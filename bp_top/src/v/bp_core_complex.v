@@ -95,7 +95,11 @@ bsg_dff_chain
 /************************* Router nodes *************************/
 // Mapping clint to router-pos
 // Clint is in the middle of chain, for single core it is at position 1
-localparam clint_pos_lp = `BSG_CDIV(num_core_p, 2);
+// `BSG_CDIV(num_core_p, 2);
+localparam clint_pos_lp = (cfg_p == e_bp_oct_core_cfg)
+                          ? 6
+                          : `BSG_CDIV(num_core_p, 2);
+
 
 logic [num_core_p-1:0][bsg_ready_and_link_sif_width_lp-1:0]  tile_cmd_link_i;
 logic  [num_core_p-1:0][bsg_ready_and_link_sif_width_lp-1:0] tile_cmd_link_o;
