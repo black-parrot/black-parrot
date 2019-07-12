@@ -10,12 +10,6 @@
   branch = blackparrot_mods
   ignore = dirty
 
-[submodule "external/riscv-fesvr"]
-  path = external/riscv-fesvr
-  url = https://github.com/riscv/riscv-fesvr.git
-  branch = master
-  ignore = dirty
-
 [submodule "external/riscv-gnu-toolchain"]
   path = external/riscv-gnu-toolchain
   url = https://github.com/riscv/riscv-gnu-toolchain.git
@@ -80,5 +74,11 @@
   path = bp_common/test/src/bsg_newlib_dramfs
   url = https://github.com/bespoke-silicon-group/bsg_newlib_dramfs.git
   branch = bsg_manycore_newlib
+  ignore = dirty
+
+[submodule "external/cmurphi"]
+  path = external/cmurphi
+  url = https://github.com/black-parrot/cmurphi.git
+  branch = master
   ignore = dirty
 

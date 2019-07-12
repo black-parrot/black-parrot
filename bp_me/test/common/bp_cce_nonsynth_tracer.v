@@ -9,20 +9,18 @@
 
 module bp_cce_nonsynth_tracer
   import bp_common_pkg::*;
+  import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
-  #(parameter num_lce_p                    = "inv"
-    , parameter num_cce_p                  = "inv"
-    , parameter paddr_width_p              = "inv"
-    , parameter lce_assoc_p                = "inv"
-    , parameter lce_sets_p                 = "inv"
-    , parameter block_size_in_bytes_p      = "inv"
-    , parameter lce_req_data_width_p       = "inv"
+  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+    `declare_bp_proc_params(cfg_p)
+
+    , parameter cce_trace_p = 0
 
     // Derived parameters
+    , localparam block_size_in_bytes_lp      = (cce_block_width_p/8)
     , localparam lg_num_lce_lp             = `BSG_SAFE_CLOG2(num_lce_p)
     , localparam lg_num_cce_lp             = `BSG_SAFE_CLOG2(num_cce_p)
-    , localparam block_size_in_bits_lp     = (block_size_in_bytes_p*8)
-    , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_p)
+    , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
     , localparam lg_lce_assoc_lp           = `BSG_SAFE_CLOG2(lce_assoc_p)
     , localparam lg_lce_sets_lp            = `BSG_SAFE_CLOG2(lce_sets_p)
     , localparam tag_width_lp              = (paddr_width_p-lg_lce_sets_lp
@@ -35,8 +33,8 @@ module bp_cce_nonsynth_tracer
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
     , localparam mshr_width_lp=`bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
 
-`declare_bp_me_if_widths(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p, mshr_width_lp)
-`declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p, block_size_in_bits_lp)
+`declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mshr_width_lp)
+`declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
   )
   (input                                        clk_i
    , input                                      reset_i
@@ -94,8 +92,8 @@ module bp_cce_nonsynth_tracer
 
   // Define structure variables for output queues
 
-  `declare_bp_me_if(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p, mshr_width_lp);
-  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p, block_size_in_bits_lp);
+  `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mshr_width_lp);
+  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   bp_lce_cce_req_s           lce_req;
   bp_lce_cce_resp_s          lce_resp;
@@ -125,7 +123,7 @@ module bp_cce_nonsynth_tracer
 
   // Tracer
   always_ff @(negedge clk_i) begin
-    if (~reset_i) begin
+    if (~reset_i & cce_trace_p) begin
       // inbound messages
       if (lce_req_v_i & lce_req_yumi_i) begin
         $display("%0T: CCE[%0d] REQ LCE[%0d] addr[%H] wr[%0b] ne[%0b] nc[%0b] lruWay[%0d] lruDirty[%0b] tag[%H] set[%0d]"

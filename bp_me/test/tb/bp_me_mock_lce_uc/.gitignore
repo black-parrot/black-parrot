@@ -1,6 +1,0 @@
-bsg_trace_rom_*.v
-bsg_trace_rom_*.tr
-trace.axe
-testbench_postsed.v
-results/
-vc_hdrs.h

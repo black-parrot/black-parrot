@@ -1,6 +1,11 @@
 # cmurphi protocol verification
 
-CMURPHI_DIR = $(abspath ./cmurphi5.4.9.1)
+TOP ?= $(shell git rev-parse --show-toplevel)
+
+include $(TOP)/Makefile.common
+
+CMURPHI_DIR = $(TOP)/external/cmurphi
+##$(abspath ./cmurphi5.4.9.1)
 CMURPHI_SRC_DIR = $(CMURPHI_DIR)/src
 CMURPHI = $(CMURPHI_SRC_DIR)/mu
 CMURPHI_INC_DIR = $(CMURPHI_DIR)/include
