@@ -161,7 +161,7 @@ module bp_cce_uncached
       READY: begin
         uc_state_n = READY;
 
-        if (mem_data_resp_v_i & lce_data_cmd_ready_i) begin
+        if (mem_data_resp_v_i) begin
           // after load response is received, need to send data back to LCE
           lce_data_cmd_v_o = 1'b1;
           lce_data_cmd.data = mem_data_resp.data;
@@ -172,7 +172,7 @@ module bp_cce_uncached
           // dequeue the mem data response if outbound lce data cmd is accepted
           mem_data_resp_yumi_o = lce_data_cmd_ready_i;
 
-        end else if (mem_resp_v_i & lce_cmd_ready_i) begin
+        end else if (mem_resp_v_i) begin
           // after store response is received, need to send uncached store done command to LCE
           lce_cmd_v_o = 1'b1;
           lce_cmd.dst_id = mem_resp_payload.lce_id;

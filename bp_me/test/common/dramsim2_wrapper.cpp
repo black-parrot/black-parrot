@@ -102,6 +102,7 @@ extern "C" bool mem_write_req(uint64_t addr, svBitVecVal *data, int reqSize=0)
     dram.addr_tracker[addr].push(scope);
     dram.result_pending[scope] = false;
   } else {
+    //printf("uncached write addr[%lu] reqSize[%d]\n", addr, reqSize);
     // number of 32-bit words
     int words = (reqSize == 8) ? 2 : 1;
     int jMax = (reqSize == 8 || reqSize == 4) ? 4 : reqSize;

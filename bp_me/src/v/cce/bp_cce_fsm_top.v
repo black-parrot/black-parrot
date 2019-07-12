@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_top.v
+ *   bp_cce_fsm_top.v
  *
  * Description:
  *   This is the top level module for the CCE.
@@ -22,7 +22,7 @@
  *   Currently, it is assumed that N is the same for all CCEs in the system.
  */
 
-module bp_cce_top
+module bp_cce_fsm_top
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
@@ -231,7 +231,7 @@ module bp_cce_top
 
   // CCE
 
-  bp_cce
+  bp_cce_fsm
     #(.cfg_p(cfg_p)
       ,.cce_trace_p(cce_trace_p)
       )
