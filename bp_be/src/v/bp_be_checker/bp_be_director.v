@@ -130,7 +130,7 @@ bp_mepc_s                        mepc;
 
 assign calc_status = calc_status_i;
 assign fe_cmd_o    = fe_cmd;
-assign fe_cmd_v_o  = fe_cmd_v;
+assign fe_cmd_v_o  = (freeze_i)? 1'b0 : fe_cmd_v;
 assign mtvec       = mtvec_i;
 assign mepc        = mepc_i;
 
