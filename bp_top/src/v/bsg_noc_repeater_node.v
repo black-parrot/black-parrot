@@ -44,7 +44,10 @@ module bsg_noc_repeater_node
   // pipelines reset
   logic [num_nodes_p:0] reset_r;
   assign reset_r[0] = side_A_reset_i;
-  
+ 
+  if (num_nodes_p == 0)
+    wire unused = &{clk_i};
+
   for (i = 0; i < num_in_p; i++)
     begin: ch
       

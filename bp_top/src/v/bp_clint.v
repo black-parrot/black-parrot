@@ -27,23 +27,15 @@ module bp_clint
    , parameter irq_pipe_depth_p = 4
    , parameter cfg_pipe_depth_p = 4
 
-   // CCE-MEM Wormhole link parameters
-   , parameter noc_x_cord_width_p = "inv"
-   , parameter noc_y_cord_width_p = "inv"
-   // Wormhole parameters
-   , localparam dims_lp = 1
-   , localparam int cord_markers_pos_lp[dims_lp:0] = '{noc_x_cord_width_p+noc_y_cord_width_p, 0}
-   , localparam cord_width_lp = cord_markers_pos_lp[dims_lp]
-
    , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(noc_width_p)
    )
   (input                                           clk_i
    , input                                         reset_i
 
    // BP side
-   , input [cord_width_lp-1:0]                     my_cord_i
-   , input [cord_width_lp-1:0]                     dest_cord_i
-   , input [cord_width_lp-1:0]                     clint_cord_i
+   , input [noc_cord_width_p-1:0]                  my_cord_i
+   , input [noc_cord_width_p-1:0]                  dram_cord_i
+   , input [noc_cord_width_p-1:0]                  clint_cord_i
 
    , input [bsg_ready_and_link_sif_width_lp-1:0]   cmd_link_i
    , output [bsg_ready_and_link_sif_width_lp-1:0]  cmd_link_o
@@ -416,51 +408,11 @@ assign cmd_link_o       = cmd_link_cast_o;
 assign resp_link_cast_i = resp_link_i;
 assign resp_link_o      = resp_link_cast_o;
 
-logic [noc_x_cord_width_p-1:0] cmd_dest_x_lo;
-logic [noc_y_cord_width_p-1:0] cmd_dest_y_lo;
-bp_addr_map
- #(.cfg_p(cfg_p)
-   ,.x_cord_width_p(noc_x_cord_width_p)
-   ,.y_cord_width_p(noc_y_cord_width_p)
-   )
- cmd_map
-  (.paddr_i('0)
-  /* TODO: Genericize */
-  ,.clint_x_cord_i(clint_cord_i[0+:noc_x_cord_width_p])
-  ,.clint_y_cord_i(1'b0)
-  ,.dram_x_cord_i(dest_cord_i[0+:noc_x_cord_width_p])
-  ,.dram_y_cord_i(1'b0)
-
-  ,.dest_x_o(cmd_dest_x_lo)
-  ,.dest_y_o(cmd_dest_y_lo)
-  );
-
-logic [noc_x_cord_width_p-1:0] data_cmd_dest_x_lo;
-logic [noc_y_cord_width_p-1:0] data_cmd_dest_y_lo;
-bp_addr_map
- #(.cfg_p(cfg_p)
-   ,.x_cord_width_p(noc_x_cord_width_p)
-   ,.y_cord_width_p(noc_y_cord_width_p)
-   )
- data_cmd_map
-  (.paddr_i('0)
-   ,.clint_x_cord_i(clint_cord_i[0+:noc_x_cord_width_p])
-   ,.clint_y_cord_i(1'b0)
-   ,.dram_x_cord_i(dest_cord_i[0+:noc_x_cord_width_p])
-   ,.dram_y_cord_i(1'b0)
-
-   ,.dest_x_o(data_cmd_dest_x_lo)
-   ,.dest_y_o(data_cmd_dest_y_lo)
-   );
-
 // Not used at the moment by bp_clint, stubbed
 bsg_ready_and_link_sif_s wh_master_link_li, wh_master_link_lo;
 bp_me_cce_to_wormhole_link_master
- #(.cfg_p(cfg_p)
-   ,.x_cord_width_p(noc_x_cord_width_p)
-   ,.y_cord_width_p(noc_y_cord_width_p)
-   )
-master_link
+ #(.cfg_p(cfg_p))
+ master_link
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
@@ -474,22 +426,15 @@ master_link
 
    ,.mem_resp_o()
    ,.mem_resp_v_o()
-   ,.mem_resp_ready_i('0)
+   ,.mem_resp_ready_i('1)
 
    ,.mem_data_resp_o()
    ,.mem_data_resp_v_o()
-   ,.mem_data_resp_ready_i('0)
+   ,.mem_data_resp_ready_i('1)
 
-   // TODO: Should change adapter to accept new wormhole coord format directly
-   ,.my_x_i(my_cord_i[0+:noc_x_cord_width_p])
-   ,.my_y_i('0)
-
-   // TODO: Split out addr map into generic 'dest_map' with variable number of dests
-   ,.mem_cmd_dest_x_i(cmd_dest_x_lo)
-   ,.mem_cmd_dest_y_i(cmd_dest_y_lo)
-
-   ,.mem_data_cmd_dest_x_i(data_cmd_dest_x_lo)
-   ,.mem_data_cmd_dest_y_i(data_cmd_dest_y_lo)
+   ,.my_cord_i(my_cord_i)
+   ,.mem_cmd_dest_cord_i('0)
+   ,.mem_data_cmd_dest_cord_i('0)
 
    ,.link_i(wh_master_link_li)
    ,.link_o(wh_master_link_lo)
@@ -497,11 +442,8 @@ master_link
 
 bsg_ready_and_link_sif_s wh_client_link_li, wh_client_link_lo;
 bp_me_cce_to_wormhole_link_client
- #(.cfg_p(cfg_p)
-   ,.x_cord_width_p(noc_x_cord_width_p)
-   ,.y_cord_width_p(noc_y_cord_width_p)
-   )
-client_link
+ #(.cfg_p(cfg_p))
+ client_link
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
@@ -521,9 +463,7 @@ client_link
    ,.mem_data_resp_v_i(mem_data_resp_v_o)
    ,.mem_data_resp_ready_o(mem_data_resp_ready_i)
 
-   // TODO: Should change adapter to accept new wormhole coord format directly
-   ,.my_x_i(my_cord_i[0+:noc_x_cord_width_p])
-   ,.my_y_i('0)
+   ,.my_cord_i(my_cord_i)
 
    ,.link_i(wh_client_link_li)
    ,.link_o(wh_client_link_lo)
