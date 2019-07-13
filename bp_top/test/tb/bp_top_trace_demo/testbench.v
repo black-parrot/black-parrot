@@ -47,14 +47,6 @@ module testbench
    , input reset_i
    );
 
-// Wormhole router coordinate IDs
-// FIXME: hardcoded router coordinates, should be replaced with bsg_tag_clients
-localparam clint_x_cord_lp = `BSG_CDIV(num_core_p, 2);
-localparam clint_y_cord_lp = 0;
-
-localparam dram_x_cord_lp  = num_core_p+1;
-localparam dram_y_cord_lp  = 0;
-   
 `declare_bsg_ready_and_link_sif_s(noc_width_p, bsg_ready_and_link_sif_s);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, cce_mshr_width_lp)     
 
@@ -65,10 +57,6 @@ bsg_ready_and_link_sif_s resp_link_li, resp_link_lo;
 bsg_ready_and_link_sif_s mem_link_li, mem_link_lo;
 bsg_ready_and_link_sif_s cfg_link_li, cfg_link_lo;
 
-assign ct_link_li = {cmd_link_lo, resp_link_lo};
-assign {cmd_link_li, resp_link_li} = ct_link_lo;
-
-// Fix bug
 assign mem_link_li.v = cmd_link_li.v;
 assign mem_link_li.data = cmd_link_li.data;
 assign mem_link_li.ready_and_rev = resp_link_li.ready_and_rev;
@@ -126,7 +114,15 @@ logic                  cfg_data_cmd_v_lo, cfg_data_cmd_yumi_li;
 bp_mem_cce_resp_s      cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
-genvar i;
+logic [noc_cord_width_p-1:0]                 dram_cord_lo, clint_cord_lo;
+logic [num_core_p-1:0][noc_cord_width_p-1:0] tile_cord_lo;
+
+assign dram_cord_lo  = num_core_p+1;
+assign clint_cord_lo = clint_pos_p;
+for (genvar i = 0; i < num_core_p; i++)
+  begin : rof1
+    assign tile_cord_lo[i] = (i < clint_pos_p) ? i : i+1;
+  end
 
 // Chip
 wrapper
@@ -138,66 +134,16 @@ wrapper
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    
-   ,.multi_data_i(multi_data_li)
-   ,.multi_v_i(multi_v_li)
-   ,.multi_yumi_o(multi_yumi_lo)
+   ,.tile_cord_i(tile_cord_lo)
+   ,.dram_cord_i(dram_cord_lo)
+   ,.clint_cord_i(clint_cord_lo)
 
-   ,.multi_data_o(multi_data_lo)
-   ,.multi_v_o(multi_v_lo)
-   ,.multi_yumi_i(multi_yumi_li)
+   ,.cmd_link_i(cmd_link_lo)
+   ,.cmd_link_o(cmd_link_li)
+
+   ,.resp_link_i(resp_link_lo)
+   ,.resp_link_o(resp_link_li)
    );
-
-  bsg_channel_tunnel 
- #(.width_p                (noc_width_p)
-  ,.num_in_p               (2)
-  ,.remote_credits_p       (ct_remote_credits_p)
-  ,.use_pseudo_large_fifo_p(1)
-  ,.lg_credit_decimation_p (ct_lg_credit_decimation_p)
-  )
-  ct
-  (.clk_i  (clk_i)
-  ,.reset_i(reset_i)
-
-  // incoming multiplexed data
-  ,.multi_data_i(multi_data_lo)
-  ,.multi_v_i   (multi_v_lo)
-  ,.multi_yumi_o(multi_yumi_li)
-
-  // outgoing multiplexed data
-  ,.multi_data_o(multi_data_li)
-  ,.multi_v_o   (multi_v_li)
-  ,.multi_yumi_i(multi_yumi_lo)
-
-  // incoming demultiplexed data
-  ,.data_i(ct_fifo_data_lo)
-  ,.v_i   (ct_fifo_valid_lo)
-  ,.yumi_o(ct_fifo_yumi_li)
-
-  // outgoing demultiplexed data
-  ,.data_o(ct_fifo_data_li)
-  ,.v_o   (ct_fifo_valid_li)
-  ,.yumi_i(ct_fifo_yumi_lo)
-  );
-  
-  for (i = 0; i < 2; i++) 
-  begin: rof0
-    // Must add a fifo here, convert yumi_o to ready_o
-    bsg_two_fifo
-   #(.width_p(noc_width_p)
-    ) ct_fifo
-    (.clk_i  (clk_i  )
-    ,.reset_i(reset_i)
-    ,.ready_o(ct_link_lo[i].ready_and_rev)
-    ,.data_i (ct_link_li[i].data         )
-    ,.v_i    (ct_link_li[i].v            )
-    ,.v_o    (ct_fifo_valid_lo[i])
-    ,.data_o (ct_fifo_data_lo [i])
-    ,.yumi_i (ct_fifo_yumi_li [i])
-    );
-    assign ct_link_lo     [i].v    = ct_fifo_valid_li[i];
-    assign ct_link_lo     [i].data = ct_fifo_data_li [i];
-    assign ct_fifo_yumi_lo[i]      = ct_link_lo[i].v & ct_link_li[i].ready_and_rev;
-  end
 
 bind bp_be_top
   bp_be_nonsynth_tracer
@@ -302,10 +248,7 @@ bind bp_cce_top
 
 // DRAM + link 
 bp_me_cce_to_wormhole_link_client
- #(.cfg_p(cfg_p)
-  ,.x_cord_width_p(noc_x_cord_width_lp)
-  ,.y_cord_width_p(noc_y_cord_width_lp)
-  )
+ #(.cfg_p(cfg_p))
   client_link
   (.clk_i(clk_i)
   ,.reset_i(reset_i)
@@ -326,8 +269,7 @@ bp_me_cce_to_wormhole_link_client
   ,.mem_data_resp_v_i(mem_data_resp_v_li)
   ,.mem_data_resp_ready_o(mem_data_resp_ready_lo)
      
-  ,.my_x_i(noc_x_cord_width_lp'(dram_x_cord_lp))
-  ,.my_y_i(noc_y_cord_width_lp'(dram_y_cord_lp))
+  ,.my_cord_i(dram_cord_lo)
      
   ,.link_i(mem_link_li)
   ,.link_o(mem_link_lo)
@@ -391,6 +333,11 @@ bp_nonsynth_host
    ,.program_finish_o(program_finish)
    );
 
+bp_nonsynth_if_verif
+ #(.cfg_p(cfg_p))
+ if_verif
+  ();
+
 // MMIO arbitration 
 //   Should this be on its own I/O router?
 logic req_outstanding_r;
@@ -436,10 +383,7 @@ assign dram_data_resp_ready_li = mem_data_resp_ready_lo;
 
 // CFG loader + rom + link
 bp_me_cce_to_wormhole_link_master
- #(.cfg_p(cfg_p)
-  ,.x_cord_width_p(noc_x_cord_width_lp)
-  ,.y_cord_width_p(noc_y_cord_width_lp)
-  )
+ #(.cfg_p(cfg_p))
   master_link
   (.clk_i(clk_i)
   ,.reset_i(reset_i)
@@ -460,30 +404,16 @@ bp_me_cce_to_wormhole_link_master
   ,.mem_data_resp_v_o()
   ,.mem_data_resp_ready_i(1'b1)
   
-  ,.my_x_i(noc_x_cord_width_lp'(dram_x_cord_lp))
-  ,.my_y_i(noc_y_cord_width_lp'(dram_y_cord_lp))
+  ,.my_cord_i(dram_cord_lo)
   
-  ,.mem_cmd_dest_x_i('0)
-  ,.mem_cmd_dest_y_i('0)
+  ,.mem_cmd_dest_cord_i('0)
   
-  ,.mem_data_cmd_dest_x_i(noc_x_cord_width_lp'(clint_x_cord_lp))
-  ,.mem_data_cmd_dest_y_i(noc_y_cord_width_lp'(clint_y_cord_lp))
+  ,.mem_data_cmd_dest_cord_i(clint_cord_lo)
   
   ,.link_i(cfg_link_li)
   ,.link_o(cfg_link_lo)
   );
   
-logic reset_r;
-bsg_dff_chain
- #(.width_p(1)
-   ,.num_stages_p(10)
-   )
- reset_pipe
-  (.clk_i(clk_i)
-   ,.data_i(reset_i)
-   ,.data_o(reset_r)
-   );
-
 bp_cce_mmio_cfg_loader
   #(.cfg_p(cfg_p)
     ,.inst_width_p(`bp_cce_inst_width)
@@ -493,7 +423,7 @@ bp_cce_mmio_cfg_loader
   )
   cfg_loader
   (.clk_i(clk_i)
-   ,.reset_i(reset_r)
+   ,.reset_i(reset_i)
    
    ,.mem_data_cmd_o(cfg_data_cmd_lo)
    ,.mem_data_cmd_v_o(cfg_data_cmd_v_lo)

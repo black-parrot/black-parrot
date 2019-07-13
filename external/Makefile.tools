@@ -19,6 +19,7 @@ systemc:
 	&& tar -xzf systemc-2.3.3.gz && rm systemc-2.3.3.gz \
 	&& cd systemc-2.3.3 && ./configure --prefix=$(BP_EXTERNAL_DIR) CXXFLAGS="-std=c++11" \
 	&& make && make install && make clean
+	rm -rf systemc-2.3.3
 
 verilator:
 	cd $(VERILATOR_DIR); \
@@ -27,7 +28,7 @@ verilator:
 
 spike:
 	cd $(SPIKE_DIR); \
-	./configure --with-fesvr=$(BP_EXTERNAL_DIR) --prefix=$(BP_EXTERNAL_DIR) \
+	./configure --enable-commitlog --enable-histogram --prefix=$(BP_EXTERNAL_DIR) \
 	&& make && make install && make clean
 
 axe: 
@@ -40,18 +41,10 @@ axe:
 gnu:
 	cd $(GNU_DIR); \
 	rm -rf riscv-newlib; \
-	git clone https://github.com/bespoke-silicon-group/bsg_newlib_dramfs ./riscv-newlib; \
-	cd ./riscv-newlib; \
-	git checkout bsg_manycore_newlib; \
-	cd ..; \
+	git clone -b bsg_manycore_newlib https://github.com/bespoke-silicon-group/bsg_newlib_dramfs ./riscv-newlib; \
 	./configure --prefix=$(BP_EXTERNAL_DIR) --with-arch=rv64ia --with-abi=lp64 --with-cmodel=medany \
-	  --enable-languages=c \
 	&& make && make install
-
-fesvr:
-	cd $(FESVR_DIR); \
-	./configure --prefix=$(BP_EXTERNAL_DIR) \
-	&& make && make install && make clean
+	rm -rf riscv-newlib;
 
 dramsim2:
 	cd $(DRAMSIM2_DIR); \
@@ -60,3 +53,4 @@ dramsim2:
 cmurphi:
 	cd $(CMURPHI_DIR)/src; \
 	make mu && make clean
+

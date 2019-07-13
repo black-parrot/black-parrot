@@ -20,25 +20,23 @@ module wrapper
    , parameter calc_trace_p = 0
    , parameter cce_trace_p = 0
    
-   // FIXME: not needed when IO complex is used
-   , localparam link_width_lp = noc_width_p+2
-   
    ,localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(noc_width_p)
    )
-  (input                                                      clk_i
-   , input                                                    reset_i
+  (input                                       clk_i
+   , input                                     reset_i
 
-   // channel tunnel interface
-   , input [link_width_lp-1:0] multi_data_i
-   , input multi_v_i
-   , output multi_yumi_o
-   
-   , output [link_width_lp-1:0] multi_data_o
-   , output multi_v_o
-   , input multi_yumi_i
+   , input [num_core_p-1:0][noc_cord_width_p-1:0] tile_cord_i
+   , input [noc_cord_width_p-1:0]                 dram_cord_i
+   , input [noc_cord_width_p-1:0]                 clint_cord_i
+
+   , input  [bsg_ready_and_link_sif_width_lp-1:0] cmd_link_i
+   , output [bsg_ready_and_link_sif_width_lp-1:0] cmd_link_o
+
+   , input  [bsg_ready_and_link_sif_width_lp-1:0] resp_link_i
+   , output [bsg_ready_and_link_sif_width_lp-1:0] resp_link_o
    );
 
-  bp_multi_top
+  bp_chip
    #(.cfg_p(cfg_p)
      ,.calc_trace_p(calc_trace_p)
      ,.cce_trace_p(cce_trace_p)

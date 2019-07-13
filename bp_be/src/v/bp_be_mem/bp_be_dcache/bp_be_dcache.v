@@ -1067,6 +1067,7 @@ module bp_be_dcache
 
   //  uncached load data logic
   //
+  //synopsys sync_set_reset "reset_i"
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       uncached_load_data_v_r <= 1'b0;

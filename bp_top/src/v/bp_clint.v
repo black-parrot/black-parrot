@@ -8,6 +8,8 @@ module bp_clint
  import bp_be_pkg::*;
  import bp_cfg_link_pkg::*;
  import bp_cce_pkg::*;
+ import bsg_noc_pkg::*;
+ import bsg_wormhole_router_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mem_payload_width_p)
@@ -24,26 +26,22 @@ module bp_clint
    // Arbitrary default, should be set based on PD constraints
    , parameter irq_pipe_depth_p = 4
    , parameter cfg_pipe_depth_p = 4
+
+   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(noc_width_p)
    )
   (input                                           clk_i
    , input                                         reset_i
 
    // BP side
-   , input [cce_mem_cmd_width_lp-1:0]              mem_cmd_i
-   , input                                         mem_cmd_v_i
-   , output logic                                  mem_cmd_yumi_o
+   , input [noc_cord_width_p-1:0]                  my_cord_i
+   , input [noc_cord_width_p-1:0]                  dram_cord_i
+   , input [noc_cord_width_p-1:0]                  clint_cord_i
 
-   , input [cce_mem_data_cmd_width_lp-1:0]         mem_data_cmd_i
-   , input                                         mem_data_cmd_v_i
-   , output logic                                  mem_data_cmd_yumi_o
+   , input [bsg_ready_and_link_sif_width_lp-1:0]   cmd_link_i
+   , output [bsg_ready_and_link_sif_width_lp-1:0]  cmd_link_o
 
-   , output logic [mem_cce_resp_width_lp-1:0]      mem_resp_o
-   , output logic                                  mem_resp_v_o
-   , input                                         mem_resp_ready_i
-
-   , output logic [mem_cce_data_resp_width_lp-1:0] mem_data_resp_o
-   , output logic                                  mem_data_resp_v_o
-   , input                                         mem_data_resp_ready_i
+   , input [bsg_ready_and_link_sif_width_lp-1:0]   resp_link_i
+   , output [bsg_ready_and_link_sif_width_lp-1:0]  resp_link_o
 
    // Local interrupts
    , output [num_core_p-1:0]                       soft_irq_o
@@ -57,6 +55,15 @@ module bp_clint
    );
 
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mem_payload_width_p);
+
+bp_cce_mem_cmd_s       mem_cmd_i;
+logic                  mem_cmd_v_i, mem_cmd_yumi_o;
+bp_cce_mem_data_cmd_s  mem_data_cmd_i;
+logic                  mem_data_cmd_v_i, mem_data_cmd_yumi_o;
+bp_mem_cce_resp_s      mem_resp_o;
+logic                  mem_resp_v_o, mem_resp_ready_i;
+bp_mem_cce_data_resp_s mem_data_resp_o;
+logic                  mem_data_resp_v_o, mem_data_resp_ready_i;
 
 // Cast ports
 bp_cce_mem_cmd_s       mem_cmd_cast_i;
@@ -388,6 +395,95 @@ assign mem_resp_lo =
     ,non_cacheable : mem_data_cmd_cast_i.non_cacheable
     ,nc_size       : mem_data_cmd_cast_i.nc_size
     };
+
+
+// CCE-MEM IF to wormhole link conversion
+`declare_bsg_ready_and_link_sif_s(noc_width_p, bsg_ready_and_link_sif_s);
+bsg_ready_and_link_sif_s cmd_link_cast_i, cmd_link_cast_o;
+bsg_ready_and_link_sif_s resp_link_cast_i, resp_link_cast_o;
+
+assign cmd_link_cast_i  = cmd_link_i;
+assign cmd_link_o       = cmd_link_cast_o;
+
+assign resp_link_cast_i = resp_link_i;
+assign resp_link_o      = resp_link_cast_o;
+
+// Not used at the moment by bp_clint, stubbed
+bsg_ready_and_link_sif_s wh_master_link_li, wh_master_link_lo;
+bp_me_cce_to_wormhole_link_master
+ #(.cfg_p(cfg_p))
+ master_link
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.mem_cmd_i('0)
+   ,.mem_cmd_v_i('0)
+   ,.mem_cmd_yumi_o()
+
+   ,.mem_data_cmd_i('0)
+   ,.mem_data_cmd_v_i('0)
+   ,.mem_data_cmd_yumi_o()
+
+   ,.mem_resp_o()
+   ,.mem_resp_v_o()
+   ,.mem_resp_ready_i('1)
+
+   ,.mem_data_resp_o()
+   ,.mem_data_resp_v_o()
+   ,.mem_data_resp_ready_i('1)
+
+   ,.my_cord_i(my_cord_i)
+   ,.mem_cmd_dest_cord_i('0)
+   ,.mem_data_cmd_dest_cord_i('0)
+
+   ,.link_i(wh_master_link_li)
+   ,.link_o(wh_master_link_lo)
+   );
+
+bsg_ready_and_link_sif_s wh_client_link_li, wh_client_link_lo;
+bp_me_cce_to_wormhole_link_client
+ #(.cfg_p(cfg_p))
+ client_link
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.mem_cmd_o(mem_cmd_i)
+   ,.mem_cmd_v_o(mem_cmd_v_i)
+   ,.mem_cmd_yumi_i(mem_cmd_yumi_o)
+
+   ,.mem_data_cmd_o(mem_data_cmd_i)
+   ,.mem_data_cmd_v_o(mem_data_cmd_v_i)
+   ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi_o)
+
+   ,.mem_resp_i(mem_resp_o)
+   ,.mem_resp_v_i(mem_resp_v_o)
+   ,.mem_resp_ready_o(mem_resp_ready_i)
+
+   ,.mem_data_resp_i(mem_data_resp_o)
+   ,.mem_data_resp_v_i(mem_data_resp_v_o)
+   ,.mem_data_resp_ready_o(mem_data_resp_ready_i)
+
+   ,.my_cord_i(my_cord_i)
+
+   ,.link_i(wh_client_link_li)
+   ,.link_o(wh_client_link_lo)
+   );
+
+assign wh_client_link_li.v             = cmd_link_cast_i.v;
+assign wh_client_link_li.data          = cmd_link_cast_i.data;
+assign wh_client_link_li.ready_and_rev = resp_link_cast_i.ready_and_rev;
+
+assign wh_master_link_li.v             = resp_link_cast_i.v;
+assign wh_master_link_li.data          = resp_link_cast_i.data;
+assign wh_master_link_li.ready_and_rev = cmd_link_cast_i.ready_and_rev;
+
+assign resp_link_cast_o.v = wh_client_link_lo.v;
+assign resp_link_cast_o.data = wh_client_link_lo.data;
+assign resp_link_cast_o.ready_and_rev = wh_master_link_lo.ready_and_rev;
+
+assign cmd_link_cast_o.v = wh_master_link_lo.v;
+assign cmd_link_cast_o.data = wh_master_link_lo.data;
+assign cmd_link_cast_o.ready_and_rev = wh_client_link_lo.ready_and_rev;
 
 endmodule : bp_clint
 
