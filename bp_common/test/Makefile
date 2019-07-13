@@ -18,8 +18,8 @@ NC ?= 1
 
 include $(TEST_DIR)/Makefile.frag
 
-all: riscv coremark littlefs_test beebs
-all_mem: riscv_mem coremark_mem beebs_mem littlefs_test_mem
+all: riscv coremark littlefs_test beebs demos
+all_mem: riscv_mem coremark_mem beebs_mem littlefs_test_mem demos_mem
 riscv: riscv_mem riscv_spike
 coremark: coremark_mem coremark_spike
 beebs: beebs_mem beebs_dump beebs_spike
@@ -31,6 +31,7 @@ bsg_newlib: bsg_newlib_mem
 # OpenSBI requires hardfloat and does not support softfloat libraries, so the compilation will fail
 #opensbi: opensbi_mem
 #bbl: bbl_mem
+# We don't run demos on spike because a lot of them don't terminate
 demos: demos_mem 
 
 bsg_newlib_mem:

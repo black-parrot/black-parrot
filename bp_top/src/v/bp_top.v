@@ -34,17 +34,6 @@ module bp_top
    , parameter x_cord_width_p = `BSG_SAFE_CLOG2(num_lce_p)
    , parameter y_cord_width_p = 1
    
-   // FIXME: hardcoded
-   , localparam noc_x_cord_width_lp = 7
-   , localparam noc_y_cord_width_lp = 1
-
-   // Wormhole parameters
-   , localparam dims_lp = 1
-   , localparam int cord_markers_pos_lp[dims_lp:0] = '{noc_x_cord_width_lp+noc_y_cord_width_lp, 0}
-   , localparam cord_width_lp = cord_markers_pos_lp[dims_lp]
-   , localparam dirs_lp = dims_lp*2+1
-   , localparam bit [1:0][dirs_lp-1:0][dirs_lp-1:0] routing_matrix_lp = StrictX
-   
    // Tile parameters
    , localparam num_tiles_lp = num_core_p
    , localparam num_routers_lp = num_tiles_lp+1
@@ -99,9 +88,9 @@ module bp_top
    , input [num_core_p-1:0]                                    external_irq_i
 
    // Memory side connection
-   , input [num_core_p-1:0][cord_width_lp-1:0]                 my_cord_i
-   , input [num_core_p-1:0][cord_width_lp-1:0]                 dest_cord_i
-   , input [cord_width_lp-1:0]                                 clint_cord_i
+   , input [num_core_p-1:0][noc_cord_width_p-1:0]                 tile_cord_i
+   , input [num_core_p-1:0][noc_cord_width_p-1:0]                 dram_cord_i
+   , input [noc_cord_width_p-1:0]                                 clint_cord_i
 
    , input [num_core_p-1:0][bsg_ready_and_link_sif_width_lp-1:0]  cmd_link_i
    , output [num_core_p-1:0][bsg_ready_and_link_sif_width_lp-1:0] cmd_link_o
@@ -228,8 +217,6 @@ for(genvar i = 0; i < num_core_p; i++)
      #(.cfg_p(cfg_p)
        ,.calc_trace_p(calc_trace_p)
        ,.cce_trace_p(cce_trace_p)
-       ,.noc_x_cord_width_p(noc_x_cord_width_lp)
-       ,.noc_y_cord_width_p(noc_y_cord_width_lp)
        )
      tile
       (.clk_i(clk_i)
@@ -259,8 +246,8 @@ for(genvar i = 0; i < num_core_p; i++)
        ,.lce_data_cmd_link_o(lce_data_cmd_link_stitch_li[i])
 
        // CCE-MEM IF
-       ,.my_cord_i(my_cord_i[i])
-       ,.dest_cord_i(dest_cord_i[i])
+       ,.my_cord_i(tile_cord_i[i])
+       ,.dram_cord_i(dram_cord_i[i])
        ,.clint_cord_i(clint_cord_i)
 
        ,.cmd_link_i(cmd_link_i[i])

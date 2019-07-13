@@ -1,6 +1,6 @@
 BP_DEMOS = \
-	uc_simple           \
-	simple              \
+  uc_simple           \
+  simple              \
   hello_world         \
   basic_demo          \
   atomic_queue_demo_2 \
@@ -212,7 +212,6 @@ BEEBS_TESTS = \
   picojpeg \
   prime \
   qrduino \
-  qsort \
   qurt \
   recursion \
   select \
@@ -239,6 +238,9 @@ BEEBS_TESTS = \
   ud \
   whetstone \
   wikisort
+  # qsort works, but there's a name conflict with riscv-tests. We should fix this
+  #   by putting each test suite in its own mem directory
+  #qsort \
 
 BP_SPEC = \
   vpr
