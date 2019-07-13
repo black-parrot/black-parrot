@@ -121,7 +121,7 @@ assign dram_cord_lo  = num_core_p+1;
 assign clint_cord_lo = clint_pos_p;
 for (genvar i = 0; i < num_core_p; i++)
   begin : rof1
-    assign tile_cord_lo = (i < clint_pos_p) ? i : i-1;
+    assign tile_cord_lo[i] = (i < clint_pos_p) ? i : i+1;
   end
 
 // Chip

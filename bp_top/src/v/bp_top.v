@@ -89,7 +89,7 @@ module bp_top
 
    // Memory side connection
    , input [num_core_p-1:0][noc_cord_width_p-1:0]                 tile_cord_i
-   , input [num_core_p-1:0][noc_cord_width_p-1:0]                 dram_cord_i
+   , input [noc_cord_width_p-1:0]                                 dram_cord_i
    , input [noc_cord_width_p-1:0]                                 clint_cord_i
 
    , input [num_core_p-1:0][bsg_ready_and_link_sif_width_lp-1:0]  cmd_link_i
@@ -247,7 +247,7 @@ for(genvar i = 0; i < num_core_p; i++)
 
        // CCE-MEM IF
        ,.my_cord_i(tile_cord_i[i])
-       ,.dram_cord_i(dram_cord_i[i])
+       ,.dram_cord_i(dram_cord_i)
        ,.clint_cord_i(clint_cord_i)
 
        ,.cmd_link_i(cmd_link_i[i])
