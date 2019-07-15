@@ -74,6 +74,7 @@ module bp_me_nonsynth_mock_lce
     `declare_bp_proc_params(cfg_p)
 
     , parameter axe_trace_p = 0
+    , parameter perf_trace_p = 0
 
     , localparam block_size_in_bytes_lp=(cce_block_width_p / 8)
 
@@ -96,6 +97,7 @@ module bp_me_nonsynth_mock_lce
   (
     input                                                   clk_i
     ,input                                                  reset_i
+    ,input                                                  freeze_i
 
     ,input [lg_num_lce_lp-1:0]                              lce_id_i
 
@@ -612,9 +614,10 @@ module bp_me_nonsynth_mock_lce
           if (lce_cmd_v && lce_cmd.msg_type == e_lce_cmd_set_clear) begin
             // INIT routine starting, stop accepting uncached accesses and initialize
             lce_state_n = INIT;
-          end else if (tr_pkt_v_i & ~mshr_r.miss) begin
+          end else if (~freeze_i & tr_pkt_v_i & ~mshr_r.miss) begin
             // only process a new trace replay request if not already missing
             // AND address is for uncached memory
+            // LCE will only consume a trace replay request once freeze goes low
             if (tr_cmd_pkt.paddr[paddr_width_p-1]) begin
               tr_pkt_yumi_o = 1'b1;
               cmd_n = tr_pkt_i;
@@ -1207,6 +1210,7 @@ module bp_me_nonsynth_mock_lce
   end
 
   always_ff @(posedge clk_i) begin
+    // LCE AXE / Memory Consistency Tracing
     if (axe_trace_p) begin
     case (lce_state)
       TR_CMD_LD_HIT_RESP: begin
@@ -1227,7 +1231,7 @@ module bp_me_nonsynth_mock_lce
         end
       end
     endcase
-    end
+    end // axe_trace
 
   end
 

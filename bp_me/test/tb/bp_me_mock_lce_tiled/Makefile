@@ -42,11 +42,7 @@ BASE = bsg_trace_rom_
 TRACE_ROMS = $(addsuffix .v, $(addprefix $(BASE), $(NUMS)))
 
 COH_PROTO ?= mesi
-<<<<<<< HEAD
 CCE_MEM = $(BP_ME_DIR)/src/asm/roms/$(COH_PROTO)/bp_cce_inst_rom_$(COH_PROTO)_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.mem
-=======
-CCE_MEM = $(BP_ME_DIR)/src/asm/roms/$(COH_PROTO)-tr/bp_cce_inst_rom_$(COH_PROTO)-tr_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.mem
->>>>>>> dev_feature_on_chip_network
 
 all: clean sim
 
@@ -60,11 +56,8 @@ sim: clean $(TRACE_ROMS)
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" testbench.v > testbench_postsed.v
 	@cp $(CCE_MEM) cce_ucode.mem
 	vcs +v2k -R +lint=all,noSVA-UA,noSVA-NSVU,noVCDE -sverilog -full64 \
-<<<<<<< HEAD
 		-CFLAGS "-I$(BP_EXTERNAL_DIR)/include -std=c++11" \
 		-LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib" \
-=======
->>>>>>> dev_feature_on_chip_network
 		-f sv.include $(TRACE_ROMS) \
 		-debug_pp -timescale=1ps/1ps +vcs+vcdpluson +vcs+vcdplusmemon -l $(VCS_LOG) \
 		+vcs+vcdplusautoflushon +define+NUM_LCE_P=$(NUM_LCE_P) \

@@ -12,29 +12,40 @@ RISCV_SIM      = spike
 RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -D
 RISCV_OBJCOPY  = riscv64-unknown-elf-objcopy -O verilog
 RISCV_OBJCOPY_BIN = riscv64-unknown-elf-objcopy -O binary
-MKLFS = bsg_newlib_mklfs
+MKLFS = $(TEST_DIR)/bin/bsg_newlib_mklfs
 
 NC ?= 1
 
 include $(TEST_DIR)/Makefile.frag
 
-all: riscv coremark littlefs_test beebs demos
+all: bsg_newlib
+all: all_mem all_dump all_spike
+
+all_mem: bsg_newlib_lib
 all_mem: riscv_mem coremark_mem beebs_mem littlefs_test_mem demos_mem
+
+all_dump: riscv_dump coremark_dump beebs_dump littlefs_test_dump demos_dump
+
+all_spike: riscv_spike coremark_spike beebs_spike littlefs_test_spike
+
+bsg_newlib: bsg_newlib_lib 
 riscv: riscv_mem riscv_dump riscv_spike
 coremark: coremark_mem coremark_dump coremark_spike
 beebs: beebs_mem beebs_dump beebs_spike
 littlefs_test: littlefs_test_mem littlefs_test_dump littlefs_test_spike
-spec: spec_mem spec_dump spec_spike
-mtest: mtest_mem mtest_dump mtest_spike
-bsg_newlib: bsg_newlib_mem bsg_newlib_dump
-
-# OpenSBI requires hardfloat and does not support softfloat libraries, so the compilation will fail
-#opensbi: opensbi_mem
-#bbl: bbl_mem
-# We don't run demos on spike because a lot of them don't terminate
 demos: demos_mem demos_dump
+# OpenSBI requires hardfloat and does not support softfloat libraries, so the compilation will fail
+#opensbi: opensbi_mem opensbi_dump
+#bbl: bbl_mem bbl_dump
+# We don't run demos on spike because a lot of them don't terminate
 
-bsg_newlib_mem:
+# Spec is separate because it is proprietary
+spec: spec_mem spec_dump spec_spike
+
+# mtest is separate because there's not a good default
+mtest: mtest_mem mtest_dump mtest_spike
+
+bsg_newlib_lib:
 	mkdir -p $(TEST_DIR)/src/bsg_newlib_dramfs/build-newlib
 	mkdir -p $(TEST_DIR)/src/bsg_newlib_dramfs/install-newlib
 	cd $(TEST_DIR)/src/bsg_newlib_dramfs/build-newlib; \
@@ -119,7 +130,7 @@ littlefs_test_mem: littlefs_test.mem
 littlefs_test_spike: littlefs_test.spike
 littlefs_test_dump: littlefs_test.dump
 
-mtest_mem: beebs_elf
+#mtest_mem: beebs_elf
 mtest_mem: mtest_lfs
 mtest_mem: mtest_elf
 mtest_mem: mtest.mem
