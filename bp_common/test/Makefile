@@ -95,7 +95,7 @@ spec_elf:
 
 riscv_mem: riscv_elf
 riscv_mem: $(foreach x, $(RV64_P_TESTS) $(RV64_V_TESTS) $(RV64_BENCHMARKS), $(x).mem)
-riscv_spike: $(foreach x, $(RV64_P_TESTS) $(RV64_BENCHMARKS), $(x).spike)
+riscv_spike: $(foreach x, $(RV64_P_TESTS) $(RV64_V_TESTS) $(RV64_BENCHMARKS), $(x).spike)
 
 demos_mem: demos_elf
 demos_mem: $(foreach x, $(BP_DEMOS), $(x).mem)
