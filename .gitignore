@@ -13,6 +13,8 @@ external/*
 *.spike
 *.pl
 *_gendata.pl
+*.o
+*.a
 results/
 reports/
 logs/

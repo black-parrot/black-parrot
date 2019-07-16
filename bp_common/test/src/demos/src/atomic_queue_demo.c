@@ -110,10 +110,7 @@ uint64_t dequeue(uint64_t core_id, queue_item *dequeue_item) {
     // enqueue, the item will have already been copied out
     queue.head_index = (queue.head_index + 1) % QUEUE_LENGTH;
     print_item = *dequeue_item;
-    uint64_t mhartid;
-    __asm__ volatile("csrr %0, mhartid": "=r"(mhartid): :);
-    uint64_t print_addr = (uint64_t)0x03000000 + (mhartid << 3);
-    __asm__ volatile("sb %0, 0(%1)": : "r"(print_item), "r"(print_addr):);
+    bp_hprint(print_item);
 
 done_dequeue:
     unlock_queue(core_id);
@@ -175,6 +172,6 @@ uint64_t main(uint64_t argc, char * argv[]) {
     }
     thread_main();
 
-    barrier_end(&end_barrier_mem, NUM_CORES);
+    bp_barrier_end(&end_barrier_mem, NUM_CORES);
     return 0;
 }

@@ -45,6 +45,11 @@ spec: spec_mem spec_dump spec_spike
 # mtest is separate because there's not a good default
 mtest: mtest_mem mtest_dump mtest_spike
 
+perch:
+	$(MAKE) -C $(TEST_DIR)/src/perch
+	cp $(TEST_DIR)/src/perch/libperch.a $(TEST_DIR)/lib
+	cp $(TEST_DIR)/src/perch/*.h $(TEST_DIR)/include
+
 bsg_newlib_lib:
 	mkdir -p $(TEST_DIR)/src/bsg_newlib_dramfs/build-newlib
 	mkdir -p $(TEST_DIR)/src/bsg_newlib_dramfs/install-newlib
@@ -175,6 +180,7 @@ spec_dump: $(foreach x, $(BP_SPEC), $(x).dump)
 	$(RISCV_OBJDUMP) $(MEM_DIR)/$*.riscv > $(MEM_DIR)/$@
 
 clean:
+	-$(MAKE) -C $(TEST_DIR)/src/perch clean
 	-$(MAKE) -C $(TEST_DIR)/src/riscv-tests/benchmarks clean 
 	-$(MAKE) -C $(TEST_DIR)/src/demos clean
 	-$(MAKE) -C $(TEST_DIR)/src/opensbi clean
@@ -185,8 +191,6 @@ clean:
 	-rm -rf $(TEST_DIR)/src/bsg_newlib_dramfs/build-newlib 
 	-rm -rf $(TEST_DIR)/src/bsg_newlib_dramfs/install-newlib
 	-rm -ff $(MEM_DIR)/*
-
-#.EXPORT_ALL_VARIABLES:
 
 ####### These targets are not maintained at the moment
 #
