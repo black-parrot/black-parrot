@@ -132,7 +132,7 @@ module bp_cce_mmio_cfg_loader
 
       case (state_r)
         RESET: begin
-          state_n = skip_ram_init_p ? DONE: BP_RESET_SET;
+          state_n = skip_ram_init_p ? BP_FREEZE_CLR : BP_RESET_SET;
 
           ucode_cnt_clr = 1'b1;
         end
@@ -163,6 +163,8 @@ module bp_cce_mmio_cfg_loader
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_mem_base_cce_ucode_gp + (ucode_cnt_r << 1);
           cfg_data_lo = cce_inst_boot_rom_data[0+:cfg_data_width_p];
+          // TODO: This is nonsynth, won't work on FPGA
+          cfg_data_lo = (|cfg_data_lo === 'X) ? '0 : cfg_data_lo;
         end
         SEND_RAM_HI: begin
           state_n = ucode_prog_done ? SEND_CCE_NORMAL : SEND_RAM_LO;
@@ -172,6 +174,8 @@ module bp_cce_mmio_cfg_loader
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_mem_base_cce_ucode_gp + (ucode_cnt_r << 1) + 1'b1;
           cfg_data_lo = cfg_data_width_p'(cce_inst_boot_rom_data[inst_width_p-1:cfg_data_width_p]);
+          // TODO: This is nonsynth, won't work on FPGA
+          cfg_data_lo = (|cfg_data_lo === 'X) ? '0 : cfg_data_lo;
         end
         SEND_CCE_NORMAL: begin
           state_n = SEND_ICACHE_NORMAL;

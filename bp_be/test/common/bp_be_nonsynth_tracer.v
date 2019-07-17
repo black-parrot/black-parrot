@@ -70,8 +70,7 @@ assign dispatch_pkt = dispatch_pkt_i;
 
 assign cmt_trace_exc       = cmt_trace_exc_i;
 
-wire                         unused0 = ex1_btaken_i;
-wire [reg_data_width_lp-1:0] unused1 = fwb_result_i;
+wire unused = &{ex1_btaken_i, fwb_result_i, trap_v_i, mtvec_i, mtval_i, ret_v_i, mepc_i, mcause_i};
 
     bp_be_dispatch_pkt_s [pipe_stage_els_lp-1:0] dbg_stage_r;
 

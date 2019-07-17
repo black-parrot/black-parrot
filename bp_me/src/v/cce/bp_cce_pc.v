@@ -140,6 +140,7 @@ module bp_cce_pc
       ,.w_mask_i(ram_w_mask_r)
       );
 
+  //synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
       pc_state_r <= RESET;

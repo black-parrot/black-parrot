@@ -255,6 +255,7 @@ module bp_fe_lce_req
     endcase
   end
 
+  //synopsys sync_set_reset "reset_i"
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       state_r              <= e_lce_req_ready;

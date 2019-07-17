@@ -47,7 +47,7 @@ lint.sc: verilate.sc
 VBUILD_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).vbuild.log
 VBUILD_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).vbuild.rpt
 VBUILD_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).vbuild.err
-verilate.sc: dirs.sc
+pre-verilate.sc: dirs.sc
 	$(shell mkdir -p $(BUILD_DIR))
 	$(eval include $(TB_PATH)/$(TB)/Makefile.frag)
 	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/testbench.v > $(BUILD_DIR)/testbench.v
@@ -59,6 +59,8 @@ verilate.sc: dirs.sc
 	-@echo $(BUILD_DIR)/wrapper.v                 >> $(BUILD_DIR)/flist.verilator
 	-@echo $(BUILD_DIR)/testbench.v               >> $(BUILD_DIR)/flist.verilator
 	-@echo $(BUILD_DIR)/test_bp.cpp                >> $(BUILD_DIR)/flist.verilator
+
+verilate.sc: pre-verilate.sc
 	cd $(BUILD_DIR); $(VV) $(VV_OPTS) $(BUILD_OPTS) --top-module $(TOP_MODULE) \
 		config.vlt -f flist.verilator $(HDL_PARAMS) | tee $(VBUILD_LOG)
 	-@grep "Error" -A 5 $(VBUILD_LOG) > $(VBUILD_ERROR);
