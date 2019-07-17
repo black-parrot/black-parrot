@@ -68,11 +68,11 @@ module bp_top
    , localparam reset_pipe_depth_lp = 10
 
    // TODO: This is hardcoded, should be set based on topology
-   , localparam int repeater_depth_lp [15:0] = {0, 0, 0, 0
-                                               ,2, 0, 0, 0
-                                               ,2, 0, 0, 0
-                                               ,2, 0, 0, 0
-                                               }
+   , localparam int repeater_depth_lp [15:0] = '{0, 0, 0, 0
+                                                ,2, 0, 0, 0
+                                                ,2, 0, 0, 0
+                                                ,2, 0, 0, 0
+                                                }
    )
   (input                                                       clk_i
    , input                                                     reset_i

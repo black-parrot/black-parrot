@@ -54,6 +54,7 @@ wire blame_me     = me_nop_i & ~poison_i & ~roll_i;
 wire blame_poison = poison_i & ~roll_i;
 wire blame_roll   = roll_i;
 
+logic [num_core_p-1:0] program_finish_r;
 always_ff @(posedge clk_i)
   begin
     if (~booted) 
@@ -65,6 +66,8 @@ always_ff @(posedge clk_i)
         me_nop_cnt_r <= '0;
         poison_cnt_r <= '0;
         roll_cnt_r <= '0;
+
+        program_finish_r <= '0;
       end
     else 
       begin
@@ -75,21 +78,25 @@ always_ff @(posedge clk_i)
         me_nop_cnt_r <= me_nop_cnt_r + blame_me;
         poison_cnt_r <= poison_cnt_r + blame_poison;
         roll_cnt_r <= roll_cnt_r + blame_roll;
+
+        program_finish_r <= program_finish_i;
       end
   end
 
-initial
+always_ff @(negedge clk_i)
   begin
-    @(posedge program_finish_i[mhartid_i]);
-    $display("[CORE%0x STATS]", mhartid_i);
-    $display("\tclk   : %d", clk_cnt_r);
-    $display("\tinstr : %d", instr_cnt_r);
-    $display("\tfe_nop: %d", fe_nop_cnt_r);
-    $display("\tbe_nop: %d", be_nop_cnt_r);
-    $display("\tme_nop: %d", me_nop_cnt_r);
-    $display("\tpoison: %d", poison_cnt_r);
-    $display("\troll  : %d", roll_cnt_r);
-    $display("\tmIPC  : %d", instr_cnt_r * 1000 / clk_cnt_r);
+    if (program_finish_i[mhartid_i] & ~program_finish_r[mhartid_i])
+      begin
+        $display("[CORE%0x STATS]", mhartid_i);
+        $display("\tclk   : %d", clk_cnt_r);
+        $display("\tinstr : %d", instr_cnt_r);
+        $display("\tfe_nop: %d", fe_nop_cnt_r);
+        $display("\tbe_nop: %d", be_nop_cnt_r);
+        $display("\tme_nop: %d", me_nop_cnt_r);
+        $display("\tpoison: %d", poison_cnt_r);
+        $display("\troll  : %d", roll_cnt_r);
+        $display("\tmIPC  : %d", instr_cnt_r * 1000 / clk_cnt_r);
+      end
   end
 
 endmodule : bp_be_nonsynth_perf

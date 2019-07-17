@@ -22,8 +22,9 @@ systemc:
 	rm -rf systemc-2.3.3*
 
 verilator:
-	cd $(VERILATOR_DIR); \
-		autoconf && ./configure --prefix=$(BP_EXTERNAL_DIR) \
+	-cd $(VERILATOR_DIR); \
+		autoconf; \
+		./configure --prefix=$(BP_EXTERNAL_DIR)
 	$(MAKE) -C $(VERILATOR_DIR)
 	$(MAKE) -C $(VERILATOR_DIR) install
 

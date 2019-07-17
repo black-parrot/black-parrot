@@ -184,7 +184,6 @@ BEEBS_TESTS = \
   picojpeg \
   prime \
   qrduino \
-  qsort \
   qurt \
   recursion \
   select \
@@ -211,6 +210,8 @@ BEEBS_TESTS = \
   ud \
   whetstone \
   wikisort
+## We do support qsort, but there is a name conflict currently
+#qsort \
 
 RV64_REGRESSION   := $(RV64_P_ISA_TESTS) $(RV64_V_ISA_TESTS) $(RV64_BENCHMARKS)
 RV64_REGRESSION_V  = $(addsuffix .v, $(RV64_REGRESSION))
