@@ -18,17 +18,15 @@ NC ?= 1
 
 include $(TEST_DIR)/Makefile.frag
 
-all: bsg_newlib
 all: all_mem all_dump all_spike
 
-all_mem: bsg_newlib_lib
+all_mem: perch
 all_mem: riscv_mem coremark_mem beebs_mem littlefs_test_mem demos_mem
 
 all_dump: riscv_dump coremark_dump beebs_dump littlefs_test_dump demos_dump
 
 all_spike: riscv_spike coremark_spike beebs_spike littlefs_test_spike
 
-bsg_newlib: bsg_newlib_lib 
 riscv: riscv_mem riscv_dump riscv_spike
 coremark: coremark_mem coremark_dump coremark_spike
 beebs: beebs_mem beebs_dump beebs_spike
@@ -47,22 +45,10 @@ mtest: mtest_mem mtest_dump mtest_spike
 
 perch:
 	$(MAKE) -C $(TEST_DIR)/src/perch
+	mkdir -p $(TEST_DIR)/lib
+	mkdir -p $(TEST_DIR)/include
 	cp $(TEST_DIR)/src/perch/libperch.a $(TEST_DIR)/lib
 	cp $(TEST_DIR)/src/perch/*.h $(TEST_DIR)/include
-
-bsg_newlib_lib:
-	mkdir -p $(TEST_DIR)/src/bsg_newlib_dramfs/build-newlib
-	mkdir -p $(TEST_DIR)/src/bsg_newlib_dramfs/install-newlib
-	cd $(TEST_DIR)/src/bsg_newlib_dramfs/build-newlib; \
-		../configure \
-		CFLAGS='-mcmodel=medany ' \
-		--prefix=`(pwd)`/../install-newlib \
-		--build=x86_64-pc-linux-gnu \
-		--host=riscv64-unknown-elf \
-		--target=riscv64-unknown-elf \
-		--with-newlib
-	$(MAKE) -C $(TEST_DIR)/src/bsg_newlib_dramfs/build-newlib all install
-	@cp -r $(TEST_DIR)/src/bsg_newlib_dramfs/install-newlib/riscv64-unknown-elf/* $(TEST_DIR)
 
 riscv_elf: 
 	cd $(TEST_DIR)/src/riscv-tests/ && ./configure

@@ -23,7 +23,8 @@ update_tests:
 #    you already have a copy of. If your version of a tool significantly differs from 
 #    our submodule version, use at your own risk.
 #
-tools: update_submodules 
+#tools: update_submodules 
+tools:
 	$(MAKE) systemc
 	$(MAKE) verilator
 	$(MAKE) gnu
