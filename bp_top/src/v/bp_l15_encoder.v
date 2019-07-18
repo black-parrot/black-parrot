@@ -22,12 +22,14 @@ module bp_l15_encoder
    // L1.5 -> BP
    , input [mem_cce_resp_width_lp-1:0]                 mem_resp_i
    , input                                             mem_resp_v_i
-   , output logic                                      mem_resp_yumi_o
+   , output                                            mem_resp_ready_o
 
    , input [mem_cce_data_resp_width_lp-1:0]            mem_data_resp_i
    , input                                             mem_data_resp_v_i
-   , output logic                                      mem_data_resp_yumi_o
+   , output                                            mem_data_resp_ready_o
    );
+
+
 
 endmodule 
   

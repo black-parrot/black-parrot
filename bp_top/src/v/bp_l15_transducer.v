@@ -13,11 +13,11 @@ module bp_l15_transducer
    // BP -> L1.5 
    , input [cce_mem_cmd_width_lp-1:0]                  mem_cmd_i
    , input                                             mem_cmd_v_i
-   , output                                            mem_cmd_ready_o
+   , output                                            mem_cmd_yumi_o
 
    , input [cce_mem_data_cmd_width_lp-1:0]             mem_data_cmd_i
    , input                                             mem_data_cmd_v_i
-   , output                                            mem_data_cmd_ready_o
+   , output                                            mem_data_cmd_yumi_o
 
    // OpenPiton side
    , output [4:0]                                      transducer_l15_rqtype
@@ -49,11 +49,11 @@ module bp_l15_transducer
    // L1.5 -> BP
    , input [mem_cce_resp_width_lp-1:0]                 mem_resp_i
    , input                                             mem_resp_v_i
-   , output logic                                      mem_resp_yumi_o
+   , output                                            mem_resp_ready_o
 
    , input [mem_cce_data_resp_width_lp-1:0]            mem_data_resp_i
    , input                                             mem_data_resp_v_i
-   , output logic                                      mem_data_resp_yumi_o
+   , output                                            mem_data_resp_ready_o
    );
 
 // BP -> L1.15

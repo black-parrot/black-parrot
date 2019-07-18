@@ -12,11 +12,11 @@ module bp_l15_decoder
    // BP -> L1.5 
    , input [cce_mem_cmd_width_lp-1:0]                  mem_cmd_i
    , input                                             mem_cmd_v_i
-   , output                                            mem_cmd_ready_o
+   , output                                            mem_cmd_yumi_o
 
    , input [cce_mem_data_cmd_width_lp-1:0]             mem_data_cmd_i
    , input                                             mem_data_cmd_v_i
-   , output                                            mem_data_cmd_ready_o
+   , output                                            mem_data_cmd_yumi_o
 
    // OpenPiton side
    , output [4:0]                                      transducer_l15_rqtype
@@ -80,80 +80,42 @@ module bp_l15_decoder
   
   wire unused = &{l15_transducer_header_ack};
   
-  bp_cce_mem_cmd_s mem_cmd_lo;
-  logic mem_cmd_v_lo, mem_cmd_yumi_li;
-  bsg_one_fifo
-   #(.width_p(cce_mem_cmd_width_lp)
-     ,.ready_THEN_valid_p(1)
-     )
-   mem_cmd_buf
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-  
-     ,.data_i(mem_cmd_i)
-     ,.v_i(mem_cmd_v_i)
-     ,.ready_o(mem_cmd_ready_o)
-  
-     ,.data_o(mem_cmd_lo)
-     ,.v_o(mem_cmd_v_lo)
-     ,.yumi_i(mem_cmd_yumi_li)
-     );
-  
-  bp_cce_mem_data_cmd_s mem_data_cmd_lo;
-  logic mem_data_cmd_v_lo, mem_data_cmd_yumi_li;
-  bsg_one_fifo
-   #(.width_p(cce_mem_data_cmd_width_lp)
-     ,.ready_THEN_valid_p(1)
-     )
-   mem_data_cmd_buf
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-  
-     ,.data_i(mem_data_cmd_i)
-     ,.v_i(mem_data_cmd_v_i)
-     ,.ready_o(mem_data_cmd_ready_o)
-  
-     ,.data_o(mem_data_cmd_lo)
-     ,.v_o(mem_data_cmd_v_lo)
-     ,.yumi_i(mem_data_cmd_yumi_li)
-     );
-  
   always_comb
     begin
-      if (mem_cmd_v_lo)
+      if (mem_cmd_v_i)
         begin
-          transducer_l15_rqtype  = (mem_cmd_lo.msg_type == e_lce_req_type_rd) ? `LOAD_RQ : `STORE_RQ;
-          case (mem_cmd_lo.nc_size)
+          transducer_l15_rqtype  = (mem_cmd_cast_i.msg_type == e_lce_req_type_rd) ? `LOAD_RQ : `STORE_RQ;
+          case (mem_cmd_cast_i.nc_size)
             e_lce_nc_req_1: transducer_l15_size = `PCX_SZ_1B;
             e_lce_nc_req_2: transducer_l15_size = `PCX_SZ_2B;
             e_lce_nc_req_4: transducer_l15_size = `PCX_SZ_4B;
             e_lce_nc_req_8: transducer_l15_size = `PCX_SZ_8B;
             default: transducer_l15_size = '0;
           endcase
-          transducer_l15_address = mem_cmd_lo.addr;
+          transducer_l15_address = mem_cmd_cast_i.addr;
           transducer_l15_data    = '0;
           transducer_l15_nc      = '0; // Always cache in OpenPiton for now
         end
       else
         begin
-          transducer_l15_rqtype  = (mem_data_cmd_lo.msg_type == e_lce_req_type_rd) ? `LOAD_RQ : `STORE_RQ;
-          case (mem_data_cmd_lo.nc_size)
+          transducer_l15_rqtype  = (mem_data_cmd_cast_i.msg_type == e_lce_req_type_rd) ? `LOAD_RQ : `STORE_RQ;
+          case (mem_data_cmd_cast_i.nc_size)
             e_lce_nc_req_1: transducer_l15_size = `PCX_SZ_1B;
             e_lce_nc_req_2: transducer_l15_size = `PCX_SZ_2B;
             e_lce_nc_req_4: transducer_l15_size = `PCX_SZ_4B;
             e_lce_nc_req_8: transducer_l15_size = `PCX_SZ_8B;
             default: transducer_l15_size = '0;
           endcase
-          transducer_l15_address = mem_data_cmd_lo.addr;
-          transducer_l15_data    = mem_data_cmd_lo.data;
+          transducer_l15_address = mem_data_cmd_cast_i.addr;
+          transducer_l15_data    = mem_data_cmd_cast_i.data;
           transducer_l15_nc      = '0; // Always cache in OpenPiton for now
         end
     end
   
   // Assume that we will always service cmd over data_cmd
-  assign transducer_l15_val    = mem_cmd_v_lo | mem_data_cmd_v_lo;
-  assign mem_cmd_yumi_li       = l15_transducer_ack & mem_cmd_v_lo;
-  assign mem_data_cmd_yumi_li  = l15_transducer_ack & ~mem_cmd_v_lo;
+  assign transducer_l15_val   = mem_cmd_v_i | mem_data_cmd_v_i;
+  assign mem_cmd_yumi_o       = l15_transducer_ack & mem_cmd_v_i;
+  assign mem_data_cmd_yumi_o  = l15_transducer_ack & ~mem_cmd_v_i;
   
   // Tie off unused signals
   assign transducer_l15_amo_op                 = '0;
