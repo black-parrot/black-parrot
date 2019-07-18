@@ -79,6 +79,7 @@ module bp_chip
    , input [num_core_p-1:0][cord_width_lp-1:0]    tile_cord_i
    , input [cord_width_lp-1:0]                    dram_cord_i
    , input [cord_width_lp-1:0]                    clint_cord_i
+   , input [cord_width_lp-1:0]                    openpiton_cord_i
 
    , input  [bsg_ready_and_link_sif_width_lp-1:0] cmd_link_i
    , output [bsg_ready_and_link_sif_width_lp-1:0] cmd_link_o
@@ -110,6 +111,7 @@ bp_core_complex
    ,.tile_cord_i(tile_cord_i)
    ,.dram_cord_i(dram_cord_i)
    ,.clint_cord_i(clint_cord_i)
+   ,.openpiton_cord_i(openpiton_cord_i)
 
    ,.cmd_link_i(cc_cmd_link_li)
    ,.cmd_link_o(cc_cmd_link_lo)

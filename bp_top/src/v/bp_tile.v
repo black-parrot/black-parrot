@@ -98,14 +98,15 @@ module bp_tile
    // Connected on east and west
    , output [E:W][2+lce_cce_req_network_width_lp-1:0]      lce_req_link_o
    , output [E:W][2+lce_cce_resp_network_width_lp-1:0]     lce_resp_link_o
-   , output [E:W][2+lce_cce_data_resp_router_width_lp-1:0]     lce_data_resp_link_o
+   , output [E:W][2+lce_cce_data_resp_router_width_lp-1:0] lce_data_resp_link_o
    , output [E:W][2+cce_lce_cmd_network_width_lp-1:0]      lce_cmd_link_o
    , output [E:W][2+lce_data_cmd_router_width_lp-1:0]      lce_data_cmd_link_o
 
    // Memory side connection
-   , input [noc_cord_width_p-1:0]                             my_cord_i
-   , input [noc_cord_width_p-1:0]                             dram_cord_i
-   , input [noc_cord_width_p-1:0]                             clint_cord_i
+   , input [noc_cord_width_p-1:0]                          my_cord_i
+   , input [noc_cord_width_p-1:0]                          dram_cord_i
+   , input [noc_cord_width_p-1:0]                          clint_cord_i
+   , input [noc_cord_width_p-1:0]                          openpiton_cord_i
 
    , input [bsg_ready_and_link_sif_width_lp-1:0]           cmd_link_i
    , output [bsg_ready_and_link_sif_width_lp-1:0]          cmd_link_o
@@ -678,6 +679,7 @@ bp_addr_map
 
   ,.clint_cord_i(clint_cord_i)
   ,.dram_cord_i(dram_cord_i)
+  ,.openpiton_cord_i(openpiton_cord_i)
 
   ,.dest_cord_o(cmd_dest_cord_lo)
   );
@@ -689,6 +691,7 @@ bp_addr_map
   (.paddr_i(mem_data_cmd_lo.addr)
    ,.clint_cord_i(clint_cord_i)
    ,.dram_cord_i(dram_cord_i)
+   ,.openpiton_cord_i(openpiton_cord_i)
 
    ,.dest_cord_o(data_cmd_dest_cord_lo)
    );

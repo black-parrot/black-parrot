@@ -42,6 +42,7 @@ module bp_core_complex
    , input [num_core_p-1:0][noc_cord_width_p-1:0]                     tile_cord_i
    , input [noc_cord_width_p-1:0]                                     dram_cord_i
    , input [noc_cord_width_p-1:0]                                     clint_cord_i
+   , input [noc_cord_width_p-1:0]                                     openpiton_cord_i
 
    , input [num_routers_lp-1:0][bsg_ready_and_link_sif_width_lp-1:0]  cmd_link_i
    , output [num_routers_lp-1:0][bsg_ready_and_link_sif_width_lp-1:0] cmd_link_o
@@ -90,6 +91,7 @@ bp_top
    ,.tile_cord_i(tile_cord_i)
    ,.dram_cord_i(dram_cord_i)
    ,.clint_cord_i(clint_cord_i)
+   ,.openpiton_cord_i(openpiton_cord_i)
 
    ,.cmd_link_i(tile_cmd_link_li)
    ,.cmd_link_o(tile_cmd_link_lo)

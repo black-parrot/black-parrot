@@ -159,6 +159,7 @@ bp_addr_map
 
   ,.clint_cord_i(clint_cord_i)
   ,.dram_cord_i(dram_cord_i)
+  ,.openpiton_cord_i(openpiton_cord_i)
 
   ,.dest_cord_o(cmd_dest_cord_lo)
   );
@@ -170,6 +171,7 @@ bp_addr_map
   (.paddr_i(op_mem_data_cmd_lo.addr)
    ,.clint_cord_i(clint_cord_i)
    ,.dram_cord_i(dram_cord_i)
+   ,.openpiton_cord_i(openpiton_cord_i)
 
    ,.dest_cord_o(data_cmd_dest_cord_lo)
    );

@@ -8,6 +8,7 @@ module bp_addr_map
   (// Destination nodes address
    input [noc_cord_width_p-1:0]    clint_cord_i
    , input [noc_cord_width_p-1:0]  dram_cord_i
+   , input [noc_cord_width_p-1:0]  openpiton_cord_i
 
    // Command physical address
    , input [paddr_width_p-1:0]     paddr_i
