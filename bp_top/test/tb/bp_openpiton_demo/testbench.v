@@ -145,6 +145,22 @@ wrapper
 
    ,.resp_link_i(resp_link_lo)
    ,.resp_link_o(resp_link_li)
+
+   ,.op_mem_cmd_o()
+   ,.op_mem_cmd_v_o()
+   ,.op_mem_cmd_yumi_i('0)
+
+   ,.op_mem_data_cmd_o()
+   ,.op_mem_data_cmd_v_o()
+   ,.op_mem_data_cmd_yumi_i('0)
+
+   ,.op_mem_resp_i('0)
+   ,.op_mem_resp_v_i('0)
+   ,.op_mem_resp_ready_o()
+
+   ,.op_mem_data_resp_i('0)
+   ,.op_mem_data_resp_v_i('0)
+   ,.op_mem_data_resp_ready_o()
    );
 
 bind bp_be_top

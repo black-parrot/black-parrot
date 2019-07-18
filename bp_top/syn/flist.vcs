@@ -190,4 +190,10 @@ $BP_TOP_DIR/src/v/bp_core_complex.v
 $BP_TOP_DIR/src/v/bp_tile.v
 $BP_TOP_DIR/src/v/bp_clint.v
 $BP_TOP_DIR/src/v/bp_addr_map.v
+
+## OpenPiton stuff
 $BP_TOP_DIR/src/v/bp_openpiton_tile.v
+$BP_TOP_DIR/src/v/bp_l15_transducer.v
+$BP_TOP_DIR/src/v/bp_l15_encoder.v
+$BP_TOP_DIR/src/v/bp_l15_decoder.v
+

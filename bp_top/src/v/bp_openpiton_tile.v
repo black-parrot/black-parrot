@@ -10,6 +10,7 @@ module bp_openpiton_tile
  import bp_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mem_payload_width_p)
 
    , parameter calc_trace_p = 0
    , parameter cce_trace_p  = 0
@@ -31,12 +32,31 @@ module bp_openpiton_tile
    , input [cord_width_lp-1:0]                 clint_cord_i
    , input [cord_width_lp-1:0]                 openpiton_cord_i
 
-   // L1.5 
+   // BP DRAM
+   // TODO: Attach internally
    , input  [bsg_ready_and_link_sif_width_lp-1:0] cmd_link_i
    , output [bsg_ready_and_link_sif_width_lp-1:0] cmd_link_o
 
    , input  [bsg_ready_and_link_sif_width_lp-1:0]  resp_link_i
    , output [bsg_ready_and_link_sif_width_lp-1:0]  resp_link_o
+
+   // OpenPiton Bus
+   // BP -> L1.5
+   , output [cce_mem_cmd_width_lp-1:0]               op_mem_cmd_o
+   , output                                          op_mem_cmd_v_o
+   , input                                           op_mem_cmd_yumi_i
+
+   , output [cce_mem_data_cmd_width_lp-1:0]          op_mem_data_cmd_o
+   , output                                          op_mem_data_cmd_v_o
+   , input                                           op_mem_data_cmd_yumi_i
+   // L1.5 -> BP
+   , input [mem_cce_resp_width_lp-1:0]               op_mem_resp_i
+   , input                                           op_mem_resp_v_i
+   , output                                          op_mem_resp_ready_o
+
+   , input [mem_cce_data_resp_width_lp-1:0]          op_mem_data_resp_i
+   , input                                           op_mem_data_resp_v_i
+   , output                                          op_mem_data_resp_ready_o
    );
 
 `declare_bsg_ready_and_link_sif_s(noc_width_p, bsg_ready_and_link_sif_s);
@@ -190,21 +210,21 @@ bp_me_cce_to_wormhole_link_client
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.mem_cmd_o(op_mem_cmd_li)
-   ,.mem_cmd_v_o(op_mem_cmd_v_li)
-   ,.mem_cmd_yumi_i(op_mem_cmd_yumi_lo)
+   ,.mem_cmd_o(op_mem_cmd_o)
+   ,.mem_cmd_v_o(op_mem_cmd_v_o)
+   ,.mem_cmd_yumi_i(op_mem_cmd_yumi_i)
 
-   ,.mem_data_cmd_o(op_mem_data_cmd_li)
-   ,.mem_data_cmd_v_o(op_mem_data_cmd_v_li)
-   ,.mem_data_cmd_yumi_i(op_mem_data_cmd_yumi_lo)
+   ,.mem_data_cmd_o(op_mem_data_cmd_o)
+   ,.mem_data_cmd_v_o(op_mem_data_cmd_v_o)
+   ,.mem_data_cmd_yumi_i(op_mem_data_cmd_yumi_i)
 
-   ,.mem_resp_i(op_mem_resp_lo)
-   ,.mem_resp_v_i(op_mem_resp_v_lo)
-   ,.mem_resp_ready_o(op_mem_resp_ready_li)
+   ,.mem_resp_i(op_mem_resp_i)
+   ,.mem_resp_v_i(op_mem_resp_v_i)
+   ,.mem_resp_ready_o(op_mem_resp_ready_o)
 
-   ,.mem_data_resp_i(op_mem_data_resp_lo)
-   ,.mem_data_resp_v_i(op_mem_data_resp_v_lo)
-   ,.mem_data_resp_ready_o(op_mem_data_resp_ready_li)
+   ,.mem_data_resp_i(op_mem_data_resp_i)
+   ,.mem_data_resp_v_i(op_mem_data_resp_v_i)
+   ,.mem_data_resp_ready_o(op_mem_data_resp_ready_o)
 
    ,.my_cord_i(openpiton_cord_i)
 
@@ -228,16 +248,11 @@ assign cmd_link_li[P].v = op_master_link_lo.v;
 assign cmd_link_li[P].data = op_master_link_lo.data;
 assign cmd_link_li[P].ready_and_rev = op_client_link_lo.ready_and_rev;
 
-// TODO: Fill in
+// TODO: Disconnected, reconnect with hier coh
+assign op_mem_data_resp_ready_lo = '0;
+assign op_mem_resp_ready_lo = '0;
 assign op_mem_cmd_v_lo = '0;
 assign op_mem_data_cmd_v_lo = '0;
-assign op_mem_resp_v_lo = '0;
-assign op_mem_data_resp_v_lo = '0;
-
-assign op_mem_cmd_yumi_lo = '0;
-assign op_mem_data_cmd_yumi_lo = '0;
-assign op_mem_resp_ready_lo = '0;
-assign op_mem_data_resp_ready_lo = '0;
 
 endmodule
 
