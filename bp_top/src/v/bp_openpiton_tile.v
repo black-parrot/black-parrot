@@ -101,6 +101,7 @@ bp_chip
    ,.tile_cord_i(tile_cord_i)
    ,.dram_cord_i(dram_cord_i)
    ,.clint_cord_i(clint_cord_i)
+   ,.openpiton_cord_i(openpiton_cord_i)
 
    ,.cmd_link_i(chip_cmd_link_li)
    ,.cmd_link_o(chip_cmd_link_lo)
