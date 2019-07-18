@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include "bp_utils.h"
 
-void barrier_end(volatile uint64_t * barrier_address, uint64_t total_num_cores) {
+void bp_barrier_end(volatile uint64_t * barrier_address, uint64_t total_num_cores) {
     uint64_t core_id;
     uint64_t atomic_inc = 1;
     uint64_t atomic_result;
@@ -27,8 +27,31 @@ void barrier_end(volatile uint64_t * barrier_address, uint64_t total_num_cores) 
 
             
         }
-        __asm__ volatile("csrw 0x800, 0;": 
-                                        : "r"(finish_value)
-                                        :);
+        bp_finish(0);
     }
 }
+
+void bp_finish(uint8_t code) {
+  uint64_t core_id;
+
+  __asm__ volatile("csrr %0, mhartid": "=r"(core_id): :);
+
+  *(FINISH_BASE_ADDR+core_id*8) = code;
+}
+
+void bp_hprint(uint8_t hex) {
+  uint64_t core_id;
+
+  __asm__ volatile("csrr %0, mhartid": "=r"(core_id): :);
+
+  *(HPRINT_BASE_ADDR+core_id*8) = hex;
+}
+
+void bp_cprint(uint8_t ch) {
+  uint64_t core_id;
+
+  __asm__ volatile("csrr %0, mhartid": "=r"(core_id): :);
+
+  *(CPRINT_BASE_ADDR+core_id*8) = ch;
+}
+

@@ -6,14 +6,31 @@
 #include <stdio.h>
 #include <limits.h>
 #include <sys/signal.h>
-#include "util.h"
+#include "encoding.h"
 
 #define SYS_write 64
 
 #undef strcmp
+#undef putchar
 
 extern volatile uint64_t tohost;
 extern volatile uint64_t fromhost;
+
+volatile int exclusion = 0;
+
+extern int scheduler(int cid);
+
+void lock() {
+  while (__sync_lock_test_and_set(&exclusion, 1)) {
+    // Do nothing. This GCC builtin instruction
+    // ensures memory barrier.
+  }
+}
+
+void unlock() {
+  __sync_synchronize(); // Memory barrier.
+  exclusion = 0;
+}
 
 static uintptr_t syscall(uintptr_t which, uint64_t arg0, uint64_t arg1, uint64_t arg2)
 {
@@ -72,6 +89,7 @@ void exit(int code)
   while (1);
 }
 
+// BlackParrot putchar
 int putchar(int c) {
   char ch = (char)c;
   uint64_t mhartid = read_csr(mhartid);
@@ -80,90 +98,26 @@ int putchar(int c) {
   return 0;
 }
 
-void abort()
+// Spike putchar
+//int putchar(int ch)
+//{
+//  static char buf[64] __attribute__((aligned(64)));
+//  static int buflen = 0;
+//  buf[buflen++] = ch;
+//
+//  if (ch == '\n' || buflen == sizeof(buf))
+//  {
+//    syscall(SYS_write, 1, (uintptr_t)buf, buflen);
+//    buflen = 0;
+//  }
+//
+//  return 0;
+//}
+
+void _init(int cid)
 {
-  exit(128 + SIGABRT);
-}
-
-void printstr(const char* s)
-{
-  syscall(SYS_write, 1, (uintptr_t)s, strlen(s));
-}
-
-void __attribute__((weak)) thread_entry(int cid, int nc)
-{
-  // multi-threaded programs override this function.
-  // for the case of single-threaded programs, only let core 0 proceed.
-  while (cid != 0);
-}
-
-int __attribute__((weak)) main(int argc, char** argv)
-{
-  // single-threaded programs override this function.
-  printstr("Implement main(), foo!\n");
-  return -1;
-}
-
-static void init_tls()
-{
-  register void* thread_pointer asm("tp");
-  extern char _tls_data;
-  extern __thread char _tdata_begin, _tdata_end, _tbss_end;
-  size_t tdata_size = &_tdata_end - &_tdata_begin;
-  memcpy(thread_pointer, &_tls_data, tdata_size);
-  size_t tbss_size = &_tbss_end - &_tdata_end;
-  memset(thread_pointer + tdata_size, 0, tbss_size);
-}
-
-void _init(int cid, int nc)
-{
-  init_tls();
-  thread_entry(cid, nc);
-
-  // only single-threaded programs should ever get here.
-  int ret = main(0, 0);
-
-  char buf[NUM_COUNTERS * 32] __attribute__((aligned(64)));
-  char* pbuf = buf;
-  for (int i = 0; i < NUM_COUNTERS; i++)
-    if (counters[i])
-      pbuf += sprintf(pbuf, "%s = %d\n", counter_names[i], counters[i]);
-  if (pbuf != buf)
-    printstr(buf);
-
+  int ret = scheduler(cid);
   exit(ret);
-}
-/*
-#undef putchar
-int putchar(int ch)
-{
-  static __thread char buf[64] __attribute__((aligned(64)));
-  static __thread int buflen = 0;
-
-  buf[buflen++] = ch;
-
-  if (ch == '\n' || buflen == sizeof(buf))
-  {
-    syscall(SYS_write, 1, (uintptr_t)buf, buflen);
-    buflen = 0;
-  }
-
-  return 0;
-}
-*/
-
-void printhex(uint64_t x)
-{
-  char str[17];
-  int i;
-  for (i = 0; i < 16; i++)
-  {
-    str[15-i] = (x & 0xF) + ((x & 0xF) < 10 ? '0' : 'a'-10);
-    x >>= 4;
-  }
-  str[16] = 0;
-
-  printstr(str);
 }
 
 static inline void printnum(void (*putch)(int, void**), void **putdat,
@@ -329,7 +283,6 @@ static void vprintfmt(void (*putch)(int, void**), void **putdat, const char *fmt
 
     // pointer
     case 'p':
-      static_assert(sizeof(long) == sizeof(void*));
       lflag = 1;
       putch('0', putdat);
       putch('x', putdat);
@@ -359,34 +312,16 @@ static void vprintfmt(void (*putch)(int, void**), void **putdat, const char *fmt
 }
 
 int printf(const char* fmt, ...)
-{
+{  
+  lock();
   va_list ap;
   va_start(ap, fmt);
 
   vprintfmt((void*)putchar, 0, fmt, ap);
 
   va_end(ap);
+  unlock();
   return 0; // incorrect return value, but who cares, anyway?
-}
-
-int sprintf(char* str, const char* fmt, ...)
-{
-  va_list ap;
-  char* str0 = str;
-  va_start(ap, fmt);
-
-  void sprintf_putch(int ch, void** data)
-  {
-    char** pstr = (char**)data;
-    **pstr = ch;
-    (*pstr)++;
-  }
-
-  vprintfmt(sprintf_putch, (void**)&str, fmt, ap);
-  *str = 0;
-
-  va_end(ap);
-  return str - str0;
 }
 
 void* memcpy(void* dest, const void* src, size_t len)

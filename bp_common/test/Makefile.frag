@@ -237,7 +237,11 @@ BEEBS_TESTS = \
   trio-sscanf \
   ud \
   whetstone \
-  wikisort 
+  wikisort
   # qsort works, but there's a name conflict with riscv-tests. We should fix this
   #   by putting each test suite in its own mem directory
   #qsort \
+
+BP_SPEC = \
+  vpr
+

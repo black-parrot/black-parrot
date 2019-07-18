@@ -4,8 +4,8 @@ TOP ?= $(shell git rev-parse --show-toplevel)
 include $(TOP)/Makefile.common
 include $(BP_EXTERNAL_DIR)/Makefile.tools
 
-.PHONY: update_submodules tools progs ucode
-
+.NOTPARALLEL:
+.PHONY: update_submodules update_tests tools progs ucode
 .DEFAULT: update_submodules
 
 ## This target updates submodules needed for building BlackParrot.
@@ -22,15 +22,18 @@ update_tests:
 #    to test BlackParrot. By default, all tools are built but comment any tools that 
 #    you already have a copy of. If your version of a tool significantly differs from 
 #    our submodule version, use at your own risk.
-#  TODO: Submodules can be deinit-ed after successful build to save space
-#  NOTE: spike is a forked version which includes support for generating traces
-#          for use in our trace-replay testing infrastructure
 #
-
-tools: update_submodules systemc verilator gnu spike axe dramsim2 cmurphi
+tools: update_submodules 
+	$(MAKE) gnu
+	$(MAKE) systemc
+	$(MAKE) verilator
+	$(MAKE) spike
+	$(MAKE) axe
+	$(MAKE) dramsim2
+	$(MAKE) cmurphi
 
 progs: update_tests
-	$(MAKE) -C $(BP_COMMON_DIR)/test all_mem
+	$(MAKE) -C $(BP_COMMON_DIR)/test all_mem all_dump
 
 ucode:
 	$(MAKE) -C $(BP_ME_DIR)/src/asm roms

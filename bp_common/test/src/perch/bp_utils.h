@@ -1,0 +1,18 @@
+#ifndef BP_UTILS_H
+#define BP_UTILS_H
+#include <stdint.h>
+
+#define HOST_DEV_BASE_ADDR ((char *)(0x03000000))
+#define HPRINT_BASE_ADDR ((char *)(HOST_DEV_BASE_ADDR+0x0000))
+#define CPRINT_BASE_ADDR ((char *)(HOST_DEV_BASE_ADDR+0x1000))
+#define FINISH_BASE_ADDR ((char *)(HOST_DEV_BASE_ADDR+0x2000))
+
+void bp_barrier_end(volatile uint64_t *barrier_address, uint64_t total_num_cores);
+
+void bp_hprint(uint8_t hex);
+
+void bp_cprint(uint8_t ch);
+
+void bp_finish(uint8_t code);
+
+#endif

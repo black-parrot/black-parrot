@@ -20,8 +20,6 @@ void bsg_newlib_exit(int exit_status) {
 
 void bsg_newlib_sendchar(char ch) {
   char* ch_ptr;
-  ch_ptr = (char *)0x8FFFEFFF;
+  ch_ptr = (char*)0x8FFFEFFF;
   *ch_ptr = ch;
-  //putchar(ch);
-
 }
