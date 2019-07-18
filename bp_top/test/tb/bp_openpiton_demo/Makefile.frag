@@ -1,0 +1,6 @@
+DUT_PARAMS = 
+
+TB_PARAMS  = 
+
+HDL_PARAMS  = $(DUT_PARAMS) $(TB_PARAMS)
+

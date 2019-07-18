@@ -190,4 +190,4 @@ $BP_TOP_DIR/src/v/bp_core_complex.v
 $BP_TOP_DIR/src/v/bp_tile.v
 $BP_TOP_DIR/src/v/bp_clint.v
 $BP_TOP_DIR/src/v/bp_addr_map.v
-
+$BP_TOP_DIR/src/v/bp_openpiton_tile.v
