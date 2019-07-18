@@ -137,12 +137,13 @@ module bp_cce_fsm
   bp_cce_mode_e cce_mode_r, cce_mode_n;
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
-      cce_mode_r <= e_cce_mode_uncached;
+      cce_mode_r <= e_cce_mode_normal;
     end else begin
       cce_mode_r <= cce_mode_n;
     end
   end
 
+  /*
   wire cfg_cce_mode_addr_v = (cfg_addr_i == bp_cfg_reg_cce_mode_gp);
   always_comb begin
     cce_mode_n = cce_mode_r;
@@ -150,7 +151,7 @@ module bp_cce_fsm
       cce_mode_n = bp_cce_mode_e'(cfg_data_i[0+:`bp_cce_mode_bits]);
     end
   end
-
+  */
 
   // CCE FSM
   // The FSM handles LCE Requests, Responses, Data Responses, Mem Responses
