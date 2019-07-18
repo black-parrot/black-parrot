@@ -76,6 +76,8 @@ module bp_be_dcache_lce_req
     , output logic [lce_cce_resp_width_lp-1:0] lce_resp_o
     , output logic lce_resp_v_o
     , input lce_resp_yumi_i
+
+    , input credits_full_i
   );
 
   // casting struct
@@ -203,7 +205,7 @@ module bp_be_dcache_lce_req
           state_n = e_SEND_UNCACHED_LOAD_REQ;
         end
         else if (uncached_store_req_i) begin
-          lce_req_v_o =lce_req_ready_i;
+          lce_req_v_o = lce_req_ready_i & ~credits_full_i;
           lce_req.addr = miss_addr_i;
           lce_req.msg_type = e_lce_req_type_wr;
           lce_req.non_cacheable = e_lce_req_non_cacheable;
@@ -211,7 +213,7 @@ module bp_be_dcache_lce_req
           lce_req.data = store_data_i;
           lce_req.lru_dirty = bp_lce_cce_lru_dirty_e'(1'b0);
 
-          cache_miss_o = ~lce_req_ready_i;
+          cache_miss_o = ~lce_req_ready_i | credits_full_i;
           state_n = e_READY;
         end
         else begin

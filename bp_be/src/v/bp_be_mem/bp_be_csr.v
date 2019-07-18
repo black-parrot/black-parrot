@@ -156,6 +156,7 @@ rv64_pmpaddr_s  pmpaddr3_li, pmpaddr3_lo;
 rv64_mcounter_s mcycle_li  , mcycle_lo;
 rv64_mcounter_s minstret_li, minstret_lo;
 
+//synopsys sync_set_reset "reset_i"
 always_ff @(posedge clk_i)
   begin
     if (reset_i)
@@ -432,6 +433,13 @@ always_comb
                 minstret_lo = `decompress_mcounter_s(minstret_r);
                 csr_data_lo = minstret_lo;
               end
+            `BP_CSR_ADDR_UFINISH:
+              begin
+                // Needed as a patch for using the same termination sequence for spike
+                //   and BP.  Implemented as nop so we don't choke. Ideally, we'll hack in 
+                //   our MMIO host controller into spike.
+                csr_data_lo = '0;
+              end
             default : illegal_instr_o = 1'b1;
           endcase
         end
@@ -501,25 +509,6 @@ assign translation_en_o = (priv_mode_r < `RV64_PRIV_MODE_M) & (satp_r.mode == 1'
 assign csr_cmd_ready_o = 1'b1;
 assign data_o          = dword_width_p'(csr_data_lo);
 assign v_o             = csr_cmd_v_i;
-
-// synopsys translate_off
-  logic program_pass, program_fail;
-  always_ff @(posedge clk_i)
-    if (csr_cmd_v_i & (csr_cmd.csr_addr == `BP_CSR_ADDR_UFINISH))
-      begin
-        if (csr_cmd.data == '0)
-            program_pass <= 1'b1;
-        else 
-          begin
-            program_fail <= 1'b1;
-          end
-      end
-    else
-      begin
-        program_pass <= 1'b0;
-        program_fail <= 1'b0;
-      end
-// synopsys translate_on
 
 endmodule : bp_be_csr
 

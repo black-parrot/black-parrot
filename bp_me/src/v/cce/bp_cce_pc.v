@@ -40,6 +40,7 @@
 module bp_cce_pc
   import bp_common_pkg::*;
   import bp_cce_pkg::*;
+  import bp_cfg_link_pkg::*;
   #(parameter inst_ram_els_p             = "inv"
 
     // Config channel parameters
@@ -67,15 +68,9 @@ module bp_cce_pc
    , input                                       freeze_i
 
    // Config channel
-   , input [cfg_link_addr_width_p-2:0]           config_addr_i
-   , input [cfg_link_data_width_p-1:0]           config_data_i
-   , input                                       config_v_i
-   , input                                       config_w_i
-   , output logic                                config_ready_o
-
-   , output logic [cfg_link_data_width_p-1:0]    config_data_o
-   , output logic                                config_v_o
-   , input                                       config_ready_i
+   , input                                       cfg_w_v_i
+   , input [cfg_link_addr_width_p-1:0]           cfg_addr_i
+   , input [cfg_link_data_width_p-1:0]           cfg_data_i
 
    // CCE mode output
    , output bp_cce_mode_e                        cce_mode_o
@@ -116,7 +111,7 @@ module bp_cce_pc
     ,FETCH
   } pc_state_e;
 
-  pc_state_e pc_state, pc_state_n;
+  pc_state_e pc_state_r, pc_state_n;
 
   // CCE mode register
   bp_cce_mode_e cce_mode_r, cce_mode_n;
@@ -129,8 +124,6 @@ module bp_cce_pc
   logic [inst_ram_addr_width_lp-1:0] ram_addr_li, ram_addr_r, ram_addr_n;
   logic [inst_width_lp-1:0] ram_data_r, ram_data_n, ram_data_lo;
   logic [inst_width_lp-1:0] ram_w_mask_r, ram_w_mask_n;
-
-  logic cfg_hi_not_lo_r, cfg_hi_not_lo_n;
 
   bsg_mem_1rw_sync_mask_write_bit
     #(.width_p(inst_width_lp)
@@ -147,9 +140,10 @@ module bp_cce_pc
       ,.w_mask_i(ram_w_mask_r)
       );
 
+  //synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
-      pc_state <= RESET;
+      pc_state_r <= RESET;
 
       ex_pc_r <= '0;
       inst_v_r <= '0;
@@ -159,12 +153,10 @@ module bp_cce_pc
       ram_data_r <= '0;
       ram_w_mask_r <= '0;
 
-      cfg_hi_not_lo_r <= '0;
-
       cce_mode_r <= e_cce_mode_uncached;
 
     end else begin
-      pc_state <= pc_state_n;
+      pc_state_r <= pc_state_n;
 
       ex_pc_r <= ex_pc_n;
       inst_v_r <= inst_v_n;
@@ -174,58 +166,30 @@ module bp_cce_pc
       ram_data_r <= ram_data_n;
       ram_w_mask_r <= ram_w_mask_n;
 
-      cfg_hi_not_lo_r <= cfg_hi_not_lo_n;
-
       cce_mode_r <= cce_mode_n;
-
     end
   end
 
   // config logic
 
   // address is for CCE if high bit is set
-  logic config_cce_addr_v;
-  assign config_cce_addr_v = config_addr_i[cfg_link_addr_width_p-2];
-
-  // address is for a control register in CCE - if top two bits are "10"
-  logic config_reg_addr_v;
-  assign config_reg_addr_v = config_cce_addr_v & ~config_addr_i[cfg_link_addr_width_p-3];
-
-  logic [cfg_reg_addr_width_lp-1:0] config_reg_addr, config_reg_addr_r, config_reg_addr_n;
-  assign config_reg_addr = config_addr_i[0+:cfg_reg_addr_width_lp];
-  always_ff @(posedge clk_i) begin
-    if (reset_i) begin
-      config_reg_addr_r <= '0;
-    end else begin
-      config_reg_addr_r <= config_reg_addr_n;
-    end
-  end
-
-  // address is for CCE instruction RAM if top two bits are set
-  logic config_pc_ram_addr_v;
-  assign config_pc_ram_addr_v = config_cce_addr_v & config_addr_i[cfg_link_addr_width_p-3];
+  // We should probably use a casez address matching here...
+  wire cfg_cce_ucode_addr_v = cfg_addr_i[cfg_link_addr_width_p-1];
+  wire cfg_cce_mode_addr_v  = cfg_addr_i == bp_cfg_reg_cce_mode_gp;
 
   // lsb of address determines if command is for lo or hi chunk of instruction RAM address
   // note: only used if this is an instruction RAM read or write
-  logic config_hi;
-  assign config_hi = config_pc_ram_addr_v & config_addr_i[0];
+  wire config_hi = cfg_addr_i[0];
 
   assign inst_v_o = (dir_busy_i | gad_error_i) ? 1'b0 : inst_v_r;
   assign inst_o = (inst_v_o) ? ram_data_lo : '0;
 
   always_comb begin
-    // config link outputs default to 0
-    config_ready_o = '0;
-    config_v_o = '0;
-    config_data_o = '0;
-
     // by default, regardless of the pc_state, send the instruction ram the registered value
     ram_addr_li = ram_addr_r;
 
-    // next values for registers
-
     // defaults
-    pc_state_n = RESET;
+    pc_state_n = pc_state_r;
     ex_pc_n = '0;
     inst_v_n = '0;
     ram_v_n = '0;
@@ -233,20 +197,15 @@ module bp_cce_pc
     ram_addr_n = ram_addr_r;
     ram_data_n = '0;
     ram_w_mask_n = '0;
-    cfg_hi_not_lo_n = cfg_hi_not_lo_r;
-
-    config_reg_addr_n = '0;
 
     cce_mode_n = cce_mode_r;
 
-    case (pc_state)
+    case (pc_state_r)
       RESET: begin
-        pc_state_n = (reset_i) ? RESET : INIT;
+        pc_state_n = INIT;
       end
       INIT: begin
         // In INIT, the CCE waits for commands to arrive on the configuration link
-        config_ready_o = 1'b1;
-        pc_state_n = INIT;
         // init complete when freeze is low and cce mode is normal
         // if freeze goes low, but mode is uncached, the CCE operates in uncached mode
         // and this module stays in the INIT state and does not fetch microcode
@@ -254,56 +213,25 @@ module bp_cce_pc
           // finalize init, then start fetching microcode next
           pc_state_n = INIT_END;
         // only do something if the config link input is valid, and the address targets the CCE
-        end else if (config_v_i & config_cce_addr_v) begin
-          // address is setting a configuration register
-          if (config_reg_addr_v) begin
-            // only capture register on read
-            config_reg_addr_n = config_w_i ? '0 : config_reg_addr;
-            if (config_reg_addr == '0) begin
-              cce_mode_n = config_w_i ? bp_cce_mode_e'(config_data_i[0+:`bp_cce_mode_bits])
-                                      : cce_mode_r;
-              pc_state_n = config_w_i ? INIT : INIT_CFG_REG_RESP;
-            end
-          // address is reading or writing the instruction RAM
-          end else if (config_pc_ram_addr_v) begin
-            // inputs to RAM are valid if config address high bit is set
-            ram_v_n = config_v_i;
-            ram_w_n = config_w_i;
-            // lsb of config address specifies if write is first or second part, so ram addr
-            // starts at bit 1
-            ram_addr_n = config_addr_i[1+:inst_ram_addr_width_lp];
-            cfg_hi_not_lo_n = config_hi;
-            if (config_hi) begin
-              ram_w_mask_n = {(cfg_link_hi_data_width_lp)'('1),(cfg_link_data_width_p)'('0)};
-              ram_data_n = {config_data_i[0+:cfg_link_hi_data_width_lp],(cfg_link_data_width_p)'('0)};
-            end else begin
-              ram_w_mask_n = {(cfg_link_hi_data_width_lp)'('0),(cfg_link_data_width_p)'('1)};
-              ram_data_n = {(cfg_link_hi_data_width_lp)'('0),config_data_i};
-            end
-            pc_state_n = (ram_v_n & ram_w_n) ? INIT
-                         : (ram_v_n) ? INIT_RAM_RD_RESP : INIT;
+        // address is setting a configuration register
+        end else if (cfg_w_v_i & cfg_cce_mode_addr_v) begin
+          cce_mode_n = bp_cce_mode_e'(cfg_data_i[0+:`bp_cce_mode_bits]);
+        // address is reading or writing the instruction RAM
+        end else if (cfg_w_v_i & cfg_cce_ucode_addr_v) begin
+          // inputs to RAM are valid if config address high bit is set
+          ram_v_n = cfg_w_v_i;
+          ram_w_n = cfg_w_v_i;
+          // lsb of config address specifies if write is first or second part, so ram addr
+          // starts at bit 1
+          ram_addr_n = cfg_addr_i[1+:inst_ram_addr_width_lp];
+          if (cfg_addr_i[0]) begin
+            ram_w_mask_n = {(cfg_link_hi_data_width_lp)'('1),(cfg_link_data_width_p)'('0)};
+            ram_data_n = {cfg_data_i[0+:cfg_link_hi_data_width_lp],(cfg_link_data_width_p)'('0)};
+          end else begin
+            ram_w_mask_n = {(cfg_link_hi_data_width_lp)'('0),(cfg_link_data_width_p)'('1)};
+            ram_data_n = {(cfg_link_hi_data_width_lp)'('0),cfg_data_i};
           end
         end
-      end
-      INIT_CFG_REG_RESP: begin
-        config_v_o = 1'b1;
-        config_data_o = (config_reg_addr_r == '0)
-                        ? {(cfg_link_data_width_p-`bp_cce_mode_bits)'('0), cce_mode_r}
-                        : '0;
-        // wait for ready&valid handshake to occur
-        pc_state_n = (config_ready_i) ? INIT : INIT_CFG_REG_RESP;
-        // hold register value until message sent
-        config_reg_addr_n = (config_ready_i) ? '0 : config_reg_addr_r;
-      end
-      INIT_RAM_RD_RESP: begin
-        // hold the read valid until cfg link accepts the outbound packet
-        ram_v_n = ~config_ready_i;
-        ram_addr_n = ram_addr_r;
-        config_v_o = 1'b1;
-        config_data_o = (cfg_hi_not_lo_r)
-          ? {(cfg_link_hi_pad_width_lp)'('0),ram_data_lo[0+:cfg_link_hi_data_width_lp]}
-          : ram_data_lo[0+:cfg_link_data_width_p];
-        pc_state_n = (config_ready_i) ? INIT : INIT_RAM_RD_RESP;
       end
       INIT_END: begin
         // let the last cfg link write finish (if there is one)
@@ -383,5 +311,5 @@ module bp_cce_pc
       end
     endcase
   end
-
 endmodule
+

@@ -35,12 +35,25 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
-      ,max_credits: 4
+      ,cfg_core_width: 8
+      ,cfg_addr_width: 16
+      ,cfg_data_width: 32
+      ,noc_width     : 30
+      ,noc_len_width : 5
+      ,noc_reserved_width: 2
+      ,ct_remote_credits: 32
+      ,ct_max_payload_flits: 20
+      ,ct_lg_credit_decimation: 3
+      ,max_credits   : 4
+      ,clint_pos : 1
+      ,noc_cord_width: 9
 
       ,dword_width      : 64
       ,instr_width      : 32
       ,reg_addr_width   : 5
       ,page_offset_width: 12
+
+      ,mem_payload_width: 108
       };
 
   localparam bp_proc_param_s bp_single_core_cfg_p = 
@@ -69,12 +82,25 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
-      ,max_credits: 4
+      ,cfg_core_width: 8
+      ,cfg_addr_width: 16
+      ,cfg_data_width: 32
+      ,noc_width     : 30
+      ,noc_len_width : 5
+      ,noc_reserved_width: 2
+      ,ct_remote_credits: 32
+      ,ct_max_payload_flits: 20
+      ,ct_lg_credit_decimation: 3
+      ,max_credits   : 4
+      ,clint_pos : 1
+      ,noc_cord_width: 9
 
       ,dword_width      : 64
       ,instr_width      : 32
       ,reg_addr_width   : 5
       ,page_offset_width: 12
+
+      ,mem_payload_width: 108
       };
 
   localparam bp_proc_param_s bp_dual_core_cfg_p = 
@@ -103,12 +129,25 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
-      ,max_credits: 4
+      ,cfg_core_width: 8
+      ,cfg_addr_width: 16
+      ,cfg_data_width: 32
+      ,noc_width     : 30
+      ,noc_len_width : 5
+      ,noc_reserved_width: 2
+      ,ct_remote_credits: 32
+      ,ct_max_payload_flits: 20
+      ,ct_lg_credit_decimation: 3
+      ,max_credits   : 4
+      ,clint_pos : 1
+      ,noc_cord_width: 9
 
       ,dword_width      : 64
       ,instr_width      : 32
       ,reg_addr_width   : 5
       ,page_offset_width: 12
+
+      ,mem_payload_width: 110
       };
 
   localparam bp_proc_param_s bp_quad_core_cfg_p = 
@@ -137,12 +176,25 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
-      ,max_credits: 4
+      ,cfg_core_width: 8
+      ,cfg_addr_width: 16
+      ,cfg_data_width: 32
+      ,noc_width     : 30
+      ,noc_len_width : 5
+      ,noc_reserved_width: 2
+      ,ct_remote_credits: 32
+      ,ct_max_payload_flits: 20
+      ,ct_lg_credit_decimation: 3
+      ,max_credits   : 4
+      ,clint_pos : 2
+      ,noc_cord_width: 9
 
       ,dword_width      : 64
       ,instr_width      : 32
       ,reg_addr_width   : 5
       ,page_offset_width: 12
+
+      ,mem_payload_width: 112
       };
 
   localparam bp_proc_param_s bp_oct_core_cfg_p = 
@@ -171,12 +223,25 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
-      ,max_credits: 4
+      ,cfg_core_width: 8
+      ,cfg_addr_width: 16
+      ,cfg_data_width: 32
+      ,noc_width     : 30
+      ,noc_len_width : 5
+      ,noc_reserved_width: 2
+      ,ct_remote_credits: 32
+      ,ct_max_payload_flits: 20
+      ,ct_lg_credit_decimation: 3
+      ,max_credits   : 4
+      ,clint_pos : 6
+      ,noc_cord_width: 9
 
       ,dword_width      : 64
       ,instr_width      : 32
       ,reg_addr_width   : 5
       ,page_offset_width: 12
+
+      ,mem_payload_width: 114
       };
 
   localparam bp_proc_param_s bp_sexta_core_cfg_p =
@@ -205,12 +270,25 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
-      ,max_credits: 4
+      ,cfg_core_width: 8
+      ,cfg_addr_width: 16
+      ,cfg_data_width: 32
+      ,noc_width     : 30
+      ,noc_len_width : 5
+      ,noc_reserved_width: 2
+      ,ct_remote_credits: 64
+      ,ct_max_payload_flits: 20
+      ,ct_lg_credit_decimation: 4
+      ,max_credits   : 4
+      ,clint_pos : 6
+      ,noc_cord_width: 9
 
       ,dword_width      : 64
       ,instr_width      : 32
       ,reg_addr_width   : 5
       ,page_offset_width: 12
+
+      ,mem_payload_width: 116
       };
 
   typedef enum bit [lg_max_cfgs-1:0] 

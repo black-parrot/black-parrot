@@ -77,13 +77,13 @@ module bp_me_nonsynth_tile
    , input                                                 freeze_i
 
    // Config channel
-   , input [bp_cfg_link_addr_width_gp-2:0]                 config_addr_i
-   , input [bp_cfg_link_data_width_gp-1:0]                 config_data_i
+   , input [cfg_addr_width_p-2:0]                 config_addr_i
+   , input [cfg_data_width_p-1:0]                 config_data_i
    , input                                                 config_v_i
    , input                                                 config_w_i
    , output logic                                          config_ready_o
 
-   , output logic [bp_cfg_link_data_width_gp-1:0]          config_data_o
+   , output logic [cfg_data_width_p-1:0]          config_data_o
    , output logic                                          config_v_o
    , input                                                 config_ready_i
 
@@ -591,8 +591,8 @@ bsg_wormhole_router_adapter_out
 
 bp_cce_top
  #(.cfg_p(cfg_p)
-   ,.cfg_link_addr_width_p(bp_cfg_link_addr_width_gp)
-   ,.cfg_link_data_width_p(bp_cfg_link_data_width_gp)
+   ,.cfg_link_addr_width_p(cfg_addr_width_p)
+   ,.cfg_link_data_width_p(cfg_data_width_p)
    ,.cce_trace_p(cce_trace_p)
    )
  cce

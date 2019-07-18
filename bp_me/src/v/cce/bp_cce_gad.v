@@ -56,6 +56,8 @@ module bp_cce_gad
   wire unused1 = reset_i;
 
   assign error_o = gad_v_i & ~sharers_v_i;
+  // Suppress unused signal warnings
+  wire unused = &{clk_i, reset_i};
 
   // one hot decoding of request LCE ID
   logic [num_lce_p-1:0] lce_id_one_hot;

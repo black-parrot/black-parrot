@@ -147,6 +147,7 @@
     logic                                              x;                                          \
     logic                                              w;                                          \
     logic                                              r;                                          \
+    logic                                              uc;                                         \
   }  bp_fe_pte_entry_leaf_s;                                                                       \
                                                                                                    \
   /*                                                                                               \
@@ -341,7 +342,7 @@ typedef enum bit [2:0]
    )                                                                                               
 
 `define bp_fe_pte_entry_leaf_width(paddr_width_mp)                                                 \
-  (paddr_width_mp - bp_page_offset_width_gp + 5)                                                                             
+  (paddr_width_mp - bp_page_offset_width_gp + 6)                                                                             
 
 `define bp_fe_cmd_itlb_fence_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
   (`bp_fe_cmd_operands_u_width(vaddr_width_mp                                                      \

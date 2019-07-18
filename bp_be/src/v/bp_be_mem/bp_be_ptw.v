@@ -1,6 +1,4 @@
 
-// TODO: add page-fault exceptions
-
 module bp_be_ptw
   import bp_common_pkg::*;
   import bp_be_rv64_pkg::*;
@@ -108,6 +106,9 @@ module bp_be_ptw
   assign tlb_w_entry.w          = translation_en_i ? dcache_data.w : 1'b1;
   assign tlb_w_entry.r          = translation_en_i ? dcache_data.r : 1'b1;
 
+  // PMA attributes
+  assign tlb_w_entry.uc         = (tlb_w_entry.ptag < (dram_base_addr_gp >> page_offset_width_p));
+
   assign dcache_v_o             = (state_r == eSendLoad);
   assign dcache_pkt.opcode      = e_dcache_opcode_ld;
   assign dcache_pkt.page_offset = {partial_vpn[level_cntr], (lg_pte_size_in_bytes_lp)'(0)};
@@ -161,6 +162,7 @@ module bp_be_ptw
     end
   end
   
+  //synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i) begin
     if(reset_i) begin
       state_r <= eIdle;

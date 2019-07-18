@@ -70,8 +70,7 @@ assign dispatch_pkt = dispatch_pkt_i;
 
 assign cmt_trace_exc       = cmt_trace_exc_i;
 
-wire                         unused0 = ex1_btaken_i;
-wire [reg_data_width_lp-1:0] unused1 = fwb_result_i;
+wire unused = &{ex1_btaken_i, fwb_result_i, trap_v_i, mtvec_i, mtval_i, ret_v_i, mepc_i, mcause_i};
 
     bp_be_dispatch_pkt_s [pipe_stage_els_lp-1:0] dbg_stage_r;
 
@@ -100,25 +99,27 @@ wire [reg_data_width_lp-1:0] unused1 = fwb_result_i;
     integer file;
     string file_name;
 
+
+//Shared logic 
+logic booted_r;
+
+bsg_dff_reset_en
+ #(.width_p(1))
+ boot_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(issue_pkt_v_i)
+   ,.data_i(1'b1)
+   ,.data_o(booted_r)
+   );
+
+
 if (calc_trace_p) 
   begin : fi1
     always_ff @(negedge reset_i) begin
         file_name = $sformatf("%s_%x.log", calc_trace_file_p, mhartid_i);
         file = $fopen(file_name, "w");
     end
-
-    logic booted_r;
-
-    bsg_dff_reset_en
-     #(.width_p(1))
-     boot_reg
-      (.clk_i(clk_i)
-       ,.reset_i(reset_i)
-       ,.en_i(issue_pkt_v_i)
-       ,.data_i(1'b1)
-       ,.data_o(booted_r)
-       );
-
 
 logic [4:0][2:0][7:0] stage_aliases;
 assign stage_aliases = {"FWB", "IWB", "EX2", "EX1"};
@@ -198,28 +199,7 @@ end
                              ,iwb_result_i
                              );
                 end else if(dbg_stage_r[2].decode.dcache_w_v) begin
-                    if(dbg_stage_r[2].rs1
-                                +dbg_stage_r[2].imm==64'h8FFF_FFFF) begin
-                        $fwrite(file, "[CORE%0x PRT] %x\n"
-                                 ,mhartid_i
-                                 ,dbg_stage_r[2].rs2[0+:8]
-                                 );
-                        $display("[CORE%0x PRT] %x\n"
-                                 ,mhartid_i
-                                 ,dbg_stage_r[2].rs2[0+:8]
-                                 );
-                    end else if(dbg_stage_r[2].rs1
-                                +dbg_stage_r[2].imm==64'h8FFF_EFFF) begin
-                        $fwrite(file, "[CORE%0x PRT] %c\n"
-                                 ,mhartid_i
-                                 ,dbg_stage_r[2].rs2[0+:8]
-                                 );
-                        $display("[CORE%0x PRT] %c\n"
-                                 ,mhartid_i
-                                 ,dbg_stage_r[2].rs2[0+:8]
-                                 );
-                    end else begin
-                      if(dbg_stage_r[2].decode.fu_op == e_scd)
+                    if(dbg_stage_r[2].decode.fu_op == e_scd)
                         $fwrite(file, "\t\top: sc.d sem: mem[%x] <- r%d {%x}, success: %d \n"
                                  ,dbg_stage_r[2].rs1 
                                  ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
@@ -233,7 +213,6 @@ end
                                  ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
                                  ,dbg_stage_r[2].rs2
                                  );   
-                    end
                 end else if(dbg_stage_r[2].decode.jmp_v) begin
                     $fwrite(file, "\t\top: jump sem: pc <- {%x}, r%d <- {%x}\n"
                              ,iwb_br_tgt_r
@@ -258,7 +237,35 @@ end
             end
         end
     end
-end // fi1
+end //fi1
+
+//If you want to print without creating the log, this is the default
+else begin
+    always_ff @(posedge clk_i) begin
+
+        if(booted_r) begin
+            if(dbg_stage_r[2].decode.instr_v & ~cmt_trace_exc[2].poison_v) begin
+                if(~dbg_stage_r[2].decode.csr_instr_v & ~dbg_stage_r[2].decode.dcache_r_v) begin
+                    if(dbg_stage_r[2].decode.dcache_w_v) begin
+                        if(dbg_stage_r[2].rs1
+                                    +dbg_stage_r[2].imm==64'h8FFF_FFFF) begin
+                            $display("[CORE%0x PRT] %x\n"
+                                     ,mhartid_i
+                                     ,dbg_stage_r[2].rs2[0+:8]
+                                     );
+                        end else if(dbg_stage_r[2].rs1
+                                    +dbg_stage_r[2].imm==64'h8FFF_EFFF) begin
+                            $display("[CORE%0x PRT] %c\n"
+                                     ,mhartid_i
+                                     ,dbg_stage_r[2].rs2[0+:8]
+                                    );
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
 
 endmodule : bp_be_nonsynth_tracer
 

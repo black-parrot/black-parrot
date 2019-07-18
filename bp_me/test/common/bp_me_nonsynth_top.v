@@ -66,13 +66,13 @@ module bp_me_nonsynth_top
    , input [num_cce_p-1:0]                                    freeze_i
 
    // Config channel
-   , input [num_cce_p-1:0][bp_cfg_link_addr_width_gp-2:0]        config_addr_i
-   , input [num_cce_p-1:0][bp_cfg_link_data_width_gp-1:0]        config_data_i
+   , input [num_cce_p-1:0][cfg_addr_width_p-2:0]        config_addr_i
+   , input [num_cce_p-1:0][cfg_data_width_p-1:0]        config_data_i
    , input [num_cce_p-1:0]                                       config_v_i
    , input [num_cce_p-1:0]                                       config_w_i
    , output logic [num_cce_p-1:0]                                config_ready_o
 
-   , output logic [num_cce_p-1:0][bp_cfg_link_data_width_gp-1:0] config_data_o
+   , output logic [num_cce_p-1:0][cfg_data_width_p-1:0] config_data_o
    , output logic [num_cce_p-1:0]                                config_v_o
    , input [num_cce_p-1:0]                                       config_ready_i
 
@@ -125,17 +125,7 @@ logic [num_core_p-1:0][E:W] lce_data_resp_v_lo, lce_data_resp_ready_li, lce_data
 logic [num_core_p-1:0][E:W][lce_data_cmd_router_width_lp-1:0] lce_data_cmd_lo, lce_data_cmd_li;
 logic [num_core_p-1:0][E:W] lce_data_cmd_v_lo, lce_data_cmd_ready_li, lce_data_cmd_v_li, lce_data_cmd_ready_lo;
 
-bp_mem_cce_resp_s      [num_cce_p-1:0] me_mem_resp_li;
-logic                  [num_cce_p-1:0] me_mem_resp_v_li, me_mem_resp_ready_lo;
-
-bp_mem_cce_data_resp_s [num_cce_p-1:0] me_mem_data_resp_li;
-logic                  [num_cce_p-1:0] me_mem_data_resp_v_li, me_mem_data_resp_ready_lo;
-
-bp_cce_mem_cmd_s       [num_cce_p-1:0] me_mem_cmd_lo;
-logic                  [num_cce_p-1:0] me_mem_cmd_v_lo, me_mem_cmd_yumi_li;
-
-bp_cce_mem_data_cmd_s  [num_cce_p-1:0] me_mem_data_cmd_lo;
-logic                  [num_cce_p-1:0] me_mem_data_cmd_v_lo, me_mem_data_cmd_yumi_li;
+logic [num_core_p-1:0] timer_irq_lo, soft_irq_lo;
 
   assign lce_req_link_stitch_li[0][W]                  = '0;
   assign lce_resp_link_stitch_li[0][W]                 = '0;
@@ -247,7 +237,6 @@ for(genvar i = 0; i < num_core_p; i++)
        ,.tr_pkt_v_o(tr_pkt_v_o[(i*2)+1 : (i*2)])
        ,.tr_pkt_o(tr_pkt_o[(i*2)+1 : (i*2)])
        ,.tr_pkt_ready_i(tr_pkt_ready_i[(i*2)+1 : (i*2)])
-
        );
 
   end // rof1

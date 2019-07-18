@@ -1,10 +1,8 @@
 
 include Makefile.frag
 
-RISCV_GCC  =riscv64-unknown-elf-gcc -fPIC -march=rv64ia -mabi=lp64 -mcmodel=medany 
-RISCV_GCC += -static -nostdlib -nostartfiles -T src/riscv.ld
-
-RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -D -M no-aliases,numeric
+RISCV_GCC  = riscv64-unknown-elf-gcc --static -nostdlib -nostartfiles -fPIC -march=rv64ia -mabi=lp64 -mcmodel=medany -I$(TEST_DIR)/include
+RISCV_LINK = -static -nostdlib -nostartfiles -L$(TEST_DIR)/lib -T src/riscv.ld 
 
 .PHONY: all bp-demo-riscv bp-demo-s
 
@@ -14,12 +12,10 @@ bp-demo-riscv: $(foreach x,$(subst -,_,$(BP_DEMOS)),$(x).riscv)
 bp-demo-s    : $(foreach x,$(subst -,_,$(BP_DEMOS_C)),$(x).s)
 
 %.riscv:
-	$(RISCV_GCC) -o $@ src/$*.s src/start.S src/exception.S src/atomics.S src/emulation.c src/bp_utils.h src/bp_utils.c
-	$(RISCV_OBJDUMP) $@ > $*.dump
+	$(RISCV_GCC) $(RISCV_LINK) -o $@ src/$*.s -lperch
 
 uc_simple.riscv:
 	$(RISCV_GCC) -o $@ src/uc_simple.s src/uc_start.S
-	$(RISCV_OBJDUMP) $@ > uc_simple.dump
 
 queue_demo_%.s:
 	$(RISCV_GCC) -DNUM_CORES=$(notdir $*) -S -o src/queue_demo_$(notdir $*).s src/queue_demo.c
@@ -28,9 +24,8 @@ atomic_queue_demo_%.s:
 	$(RISCV_GCC) -DNUM_CORES=$(notdir $*) -S -o src/atomic_queue_demo_$(notdir $*).s src/atomic_queue_demo.c
 
 %.s:
-	$(RISCV_GCC) -S -o src/$@ src/$*.c 
+	$(RISCV_GCC) -S -o src/$@ src/$*.c
 
 clean:
 	rm -f *.riscv
-	rm -f *.dump
 

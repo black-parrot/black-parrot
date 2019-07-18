@@ -10,6 +10,7 @@ module bp_core
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_be_rv64_pkg::*;
+ import bp_cfg_link_pkg::*;
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p
@@ -35,6 +36,11 @@ module bp_core
     , input                                        freeze_i
 
     , input [proc_cfg_width_lp-1:0]                proc_cfg_i
+
+    // Config channel
+    , input                                        cfg_w_v_i
+    , input [cfg_addr_width_p-1:0]                 cfg_addr_i
+    , input [cfg_data_width_p-1:0]                 cfg_data_i
 
     // LCE-CCE interface
     , output [1:0][lce_cce_req_width_lp-1:0]       lce_req_o
@@ -65,17 +71,6 @@ module bp_core
     , input                                        timer_int_i
     , input                                        software_int_i
     , input                                        external_int_i
-
-    // config link
-    , input [bp_cfg_link_addr_width_gp-2:0]           config_addr_i
-    , input [bp_cfg_link_data_width_gp-1:0]           config_data_i
-    , input                                           config_v_i
-    , input                                           config_w_i
-    , output logic                                    config_ready_o
- 
-    , output logic [bp_cfg_link_data_width_gp-1:0]    config_data_o
-    , output logic                                    config_v_o
-    , input                                           config_ready_i
     );
 
   `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
@@ -105,6 +100,10 @@ module bp_core
      ,.freeze_i(freeze_i)
 
      ,.icache_id_i(proc_cfg.icache_id)
+
+     ,.cfg_w_v_i(cfg_w_v_i)
+     ,.cfg_addr_i(cfg_addr_i)
+     ,.cfg_data_i(cfg_data_i)
 
      ,.fe_queue_o(fe_queue_li)
      ,.fe_queue_v_o(fe_queue_v_li)
@@ -137,11 +136,6 @@ module bp_core
      ,.lce_data_cmd_o(lce_data_cmd_o[0])
      ,.lce_data_cmd_v_o(lce_data_cmd_v_o[0])
      ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i[0])
-
-     ,.config_addr_i(config_addr_i)
-     ,.config_data_i(config_data_i)
-     ,.config_v_i(config_v_i)
-     ,.config_w_i(config_w_i)
      );
 
   bsg_fifo_1r1w_rolly 
@@ -197,8 +191,12 @@ module bp_core
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.freeze_i(freeze_i)
-
+     
      ,.proc_cfg_i(proc_cfg_i)
+
+     ,.cfg_w_v_i(cfg_w_v_i)
+     ,.cfg_addr_i(cfg_addr_i)
+     ,.cfg_data_i(cfg_data_i)
 
      ,.fe_queue_i(fe_queue_lo)
      ,.fe_queue_v_i(fe_queue_v_lo)
@@ -239,11 +237,6 @@ module bp_core
      ,.timer_int_i(timer_int_i)
      ,.software_int_i(software_int_i)
      ,.external_int_i(external_int_i)
-
-     ,.config_addr_i(config_addr_i)
-     ,.config_data_i(config_data_i)
-     ,.config_v_i(config_v_i)
-     ,.config_w_i(config_w_i)
      );
 
 endmodule : bp_core

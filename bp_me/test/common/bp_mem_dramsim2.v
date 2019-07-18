@@ -95,6 +95,8 @@ module bp_mem_dramsim2
 
   assign mem_nc_data = dramsim_data[(word_select*lce_req_data_width_p)+:lce_req_data_width_p];
 
+  // do not select out the requested bytes, send back the full 64-bits
+  /*
   assign nc_data = (mem_cmd_s_r.nc_size == e_lce_nc_req_1)
     ? {56'('0),mem_nc_data[(byte_select*8)+:8]}
     : (mem_cmd_s_r.nc_size == e_lce_nc_req_2)
@@ -102,6 +104,10 @@ module bp_mem_dramsim2
       : (mem_cmd_s_r.nc_size == e_lce_nc_req_4)
         ? {32'('0),mem_nc_data[(byte_select*8)+:32]}
         : mem_nc_data;
+  */
+  assign nc_data = mem_nc_data;
+
+  int wr_size;
 
   typedef enum logic [2:0] {
     RESET
@@ -134,6 +140,9 @@ module bp_mem_dramsim2
       mem_resp_v_o <= '0;
       mem_data_resp_s_o <= '0;
       mem_data_resp_v_o <= '0;
+      
+      mem_data_cmd_yumi_o <= '0;
+      mem_cmd_yumi_o <= '0;
 
       read_accepted = '0;
       write_accepted = '0;
@@ -144,20 +153,22 @@ module bp_mem_dramsim2
         end
         READY: begin
           // mem data command - need to write data to memory
-          if (mem_data_cmd_v_i && mem_resp_ready_i) begin
+          if (mem_data_cmd_v_i) begin
             // do the write to memory ram if available
             write_accepted = '0;
             // uncached write, send correct size
             if (mem_data_cmd_i_s.non_cacheable) begin
-              write_accepted =
-                (mem_data_cmd_i_s.nc_size == e_lce_nc_req_1)
-                ? mem_write_req(wr_addr, mem_data_cmd_i_s.data, 1)
-                : (mem_data_cmd_i_s.nc_size == e_lce_nc_req_2)
-                  ? mem_write_req(wr_addr, mem_data_cmd_i_s.data, 2)
-                  : (mem_data_cmd_i_s.nc_size == e_lce_nc_req_4)
-                    ? mem_write_req(wr_addr, mem_data_cmd_i_s.data, 4)
-                    : mem_write_req(wr_addr, mem_data_cmd_i_s.data, 8);
 
+              wr_size = 
+                (mem_data_cmd_i_s.nc_size == e_lce_nc_req_1)
+                ? 1
+                : (mem_data_cmd_i_s.nc_size == e_lce_nc_req_2)
+                  ? 2
+                  : (mem_data_cmd_i_s.nc_size == e_lce_nc_req_4)
+                    ? 4
+                    : 8;
+
+              write_accepted = mem_write_req(wr_addr, mem_data_cmd_i_s.data, wr_size);
             end else begin
               // cached access, size == 0 tells c++ code to write full cache block
               write_accepted = mem_write_req(wr_addr, mem_data_cmd_i_s.data, 0);
@@ -166,7 +177,7 @@ module bp_mem_dramsim2
             mem_data_cmd_yumi_o <= write_accepted;
             mem_data_cmd_s_r    <= mem_data_cmd_i;
             mem_st              <= write_accepted ? RD_DATA_CMD : READY;
-          end else if (mem_cmd_v_i && mem_data_resp_ready_i) begin
+          end else if (mem_cmd_v_i) begin
             // do the read from memory ram if available
             read_accepted = mem_read_req(block_rd_addr);
 
@@ -176,37 +187,37 @@ module bp_mem_dramsim2
           end
         end
         RD_CMD: begin
-          mem_cmd_yumi_o <= '0;
-          mem_st <= dramsim_valid ? READY : RD_CMD;
-
-          mem_data_resp_s_o.msg_type <= mem_cmd_s_r.msg_type;
-          mem_data_resp_s_o.payload <= mem_cmd_s_r.payload;
-          mem_data_resp_s_o.addr <= mem_cmd_s_r.addr;
-          if (mem_cmd_s_r.non_cacheable) begin
-            // return the full 64-bit dword containing the LCE's requested bytes
-            // The LCE must perform extraction to return the requested 1, 2, 4, or 8 bytes
-            mem_data_resp_s_o.data <= {(block_size_in_bits_lp-lce_req_data_width_p)'('0),mem_nc_data};
-          end else begin
-            mem_data_resp_s_o.data <= dramsim_data;
+          if(mem_data_resp_ready_i) begin
+            mem_st <= dramsim_valid ? READY : RD_CMD;
+  
+            mem_data_resp_s_o.msg_type <= mem_cmd_s_r.msg_type;
+            mem_data_resp_s_o.payload <= mem_cmd_s_r.payload;
+            mem_data_resp_s_o.addr <= mem_cmd_s_r.addr;
+            if (mem_cmd_s_r.non_cacheable) begin
+              mem_data_resp_s_o.data <= {(block_size_in_bits_lp-lce_req_data_width_p)'('0),nc_data};
+            end else begin
+              mem_data_resp_s_o.data <= dramsim_data;
+            end
+            mem_data_resp_s_o.non_cacheable <= mem_cmd_s_r.non_cacheable;
+            mem_data_resp_s_o.nc_size <= mem_cmd_s_r.nc_size;
+  
+            // pull valid high
+            mem_data_resp_v_o <= dramsim_valid;
           end
-          mem_data_resp_s_o.non_cacheable <= mem_cmd_s_r.non_cacheable;
-          mem_data_resp_s_o.nc_size <= mem_cmd_s_r.nc_size;
-
-          // pull valid high
-          mem_data_resp_v_o <= dramsim_valid;
         end
         RD_DATA_CMD: begin
-          mem_data_cmd_yumi_o <= '0;
-          mem_st <= dramsim_valid ? READY : RD_DATA_CMD;
-
-          mem_resp_s_o.msg_type <= mem_data_cmd_s_r.msg_type;
-          mem_resp_s_o.addr <= mem_data_cmd_s_r.addr;
-          mem_resp_s_o.payload <= mem_data_cmd_s_r.payload;
-          mem_resp_s_o.non_cacheable <= mem_data_cmd_s_r.non_cacheable;
-          mem_resp_s_o.nc_size <= mem_data_cmd_s_r.nc_size;
-
-          // pull valid high
-          mem_resp_v_o <= dramsim_valid;
+          if(mem_resp_ready_i) begin
+            mem_st <= dramsim_valid ? READY : RD_DATA_CMD;
+  
+            mem_resp_s_o.msg_type <= mem_data_cmd_s_r.msg_type;
+            mem_resp_s_o.addr <= mem_data_cmd_s_r.addr;
+            mem_resp_s_o.payload <= mem_data_cmd_s_r.payload;
+            mem_resp_s_o.non_cacheable <= mem_data_cmd_s_r.non_cacheable;
+            mem_resp_s_o.nc_size <= mem_data_cmd_s_r.nc_size;
+  
+            // pull valid high
+            mem_resp_v_o <= dramsim_valid;
+          end
         end
         default: begin
           mem_st <= RESET;
@@ -247,10 +258,16 @@ initial
     init(clock_period_in_ps_p, prog_name_p, dram_cfg_p, dram_sys_cfg_p, dram_capacity_p, block_size_in_bits_lp, block_offset_bits_lp);
   end
 
+// TODO: This is horrifying verilog / DPI glue. Should fix for best practices
 always_ff @(posedge clk_i)
   begin
-    dramsim_valid <= tick(); 
-    dramsim_data  <= dramsim_data_n;
+    if (mem_st == RD_CMD || mem_st == RD_DATA_CMD)
+      begin
+        dramsim_valid <= dramsim_valid == '0 ? tick() : dramsim_valid;
+        dramsim_data <= dramsim_data_n;
+      end
+    else
+      dramsim_valid <= tick();
   end
 
 endmodule

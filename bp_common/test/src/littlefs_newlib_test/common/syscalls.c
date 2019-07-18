@@ -66,20 +66,19 @@ uintptr_t __attribute__((weak)) handle_trap(uintptr_t cause, uintptr_t epc, uint
 
 void exit(int code)
 {
-  if (!code)
-    write_csr(0x800, 0);
-  else
-    write_csr(0x800, -1);
-  tohost_exit(code);
+  uint64_t mhartid = read_csr(mhartid);
+  uint64_t *finish_address = (uint64_t*)(0x03002000 + (mhartid << 3));
+  *finish_address = code;
+  while (1);
 }
-/*
-void bp_putchar(char c)
-{
-  //writes a character to bp's magic print address
-  char* ch_ptr;
-  ch_ptr = 0x8FFFFFFF;
-  *ch_ptr = c;
-} */
+
+int putchar(int c) {
+  char ch = (char)c;
+  uint64_t mhartid = read_csr(mhartid);
+  char* ch_ptr = (char*)(0x03001000 + (mhartid << 3));
+  *ch_ptr = ch;
+  return 0;
+}
 
 void abort()
 {

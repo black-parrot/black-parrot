@@ -9,6 +9,8 @@ module bp_be_nonsynth_perf
   (input   clk_i
    , input reset_i
 
+   , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
+
    , input fe_nop_i
    , input be_nop_i
    , input me_nop_i
@@ -17,8 +19,7 @@ module bp_be_nonsynth_perf
 
    , input instr_cmt_i
 
-   , input program_pass_i
-   , input program_fail_i
+   , input [num_core_p-1:0] program_finish_i
    );
 
 logic booted;
@@ -53,6 +54,7 @@ wire blame_me     = me_nop_i & ~poison_i & ~roll_i;
 wire blame_poison = poison_i & ~roll_i;
 wire blame_roll   = roll_i;
 
+logic [num_core_p-1:0] program_finish_r;
 always_ff @(posedge clk_i)
   begin
     if (~booted) 
@@ -64,6 +66,8 @@ always_ff @(posedge clk_i)
         me_nop_cnt_r <= '0;
         poison_cnt_r <= '0;
         roll_cnt_r <= '0;
+
+        program_finish_r <= '0;
       end
     else 
       begin
@@ -74,25 +78,24 @@ always_ff @(posedge clk_i)
         me_nop_cnt_r <= me_nop_cnt_r + blame_me;
         poison_cnt_r <= poison_cnt_r + blame_poison;
         roll_cnt_r <= roll_cnt_r + blame_roll;
-      end
 
-    if (program_pass_i) 
-      begin
-        $display("PASS");
-        $display("clk   : %d", clk_cnt_r);
-        $display("instr : %d", instr_cnt_r);
-        $display("fe_nop: %d", fe_nop_cnt_r);
-        $display("be_nop: %d", be_nop_cnt_r);
-        $display("me_nop: %d", me_nop_cnt_r);
-        $display("poison: %d", poison_cnt_r);
-        $display("roll  : %d", roll_cnt_r);
-        $display("mIPC  : %d", instr_cnt_r * 1000 / clk_cnt_r);
-        $finish();
+        program_finish_r <= program_finish_i;
       end
-    else if (program_fail_i)
+  end
+
+always_ff @(negedge clk_i)
+  begin
+    if (program_finish_i[mhartid_i] & ~program_finish_r[mhartid_i])
       begin
-        $display("FAIL");
-        $finish();
+        $display("[CORE%0x STATS]", mhartid_i);
+        $display("\tclk   : %d", clk_cnt_r);
+        $display("\tinstr : %d", instr_cnt_r);
+        $display("\tfe_nop: %d", fe_nop_cnt_r);
+        $display("\tbe_nop: %d", be_nop_cnt_r);
+        $display("\tme_nop: %d", me_nop_cnt_r);
+        $display("\tpoison: %d", poison_cnt_r);
+        $display("\troll  : %d", roll_cnt_r);
+        $display("\tmIPC  : %d", instr_cnt_r * 1000 / clk_cnt_r);
       end
   end
 

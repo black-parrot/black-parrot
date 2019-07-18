@@ -8,51 +8,51 @@ INCLUDE_DIR := $(BP_EXTERNAL_DIR)/include
 
 VERILATOR_DIR := $(BP_EXTERNAL_DIR)/verilator
 GNU_DIR       := $(BP_EXTERNAL_DIR)/riscv-gnu-toolchain
-FESVR_DIR     := $(BP_EXTERNAL_DIR)/riscv-fesvr
 SPIKE_DIR     := $(BP_EXTERNAL_DIR)/riscv-isa-sim
 AXE_DIR       := $(BP_EXTERNAL_DIR)/axe
 DRAMSIM2_DIR  := $(BP_EXTERNAL_DIR)/DRAMSim2
+CMURPHI_DIR   := $(BP_EXTERNAL_DIR)/cmurphi
 
 systemc:
 	wget http://www.accellera.org/images/downloads/standards/systemc/systemc-2.3.3.gz \
-	&& tar -xzf systemc-2.3.3.gz && rm systemc-2.3.3.gz \
-	&& cd systemc-2.3.3 && ./configure --prefix=$(BP_EXTERNAL_DIR) CXXFLAGS="-std=c++11" \
-	&& make && make install && make clean
+		&& tar -xzf systemc-2.3.3.gz 
+	cd systemc-2.3.3 && ./configure --prefix=$(BP_EXTERNAL_DIR) CXXFLAGS="-std=c++11"
+	$(MAKE) -C systemc-2.3.3
+	$(MAKE) -C systemc-2.3.3 install
+	rm -rf systemc-2.3.3*
 
 verilator:
-	cd $(VERILATOR_DIR); \
-	autoconf && ./configure --prefix=$(BP_EXTERNAL_DIR) \
-	&& make && make install
+	-cd $(VERILATOR_DIR); \
+		autoconf; \
+		./configure --prefix=$(BP_EXTERNAL_DIR)
+	$(MAKE) -C $(VERILATOR_DIR)
+	$(MAKE) -C $(VERILATOR_DIR) install
 
 spike:
 	cd $(SPIKE_DIR); \
-	./configure --with-fesvr=$(BP_EXTERNAL_DIR) --prefix=$(BP_EXTERNAL_DIR) \
-	&& make && make install && make clean
+		./configure --enable-commitlog --enable-histogram --prefix=$(BP_EXTERNAL_DIR)
+	$(MAKE) -C $(SPIKE_DIR)
+	$(MAKE) -C $(SPIKE_DIR) install
 
 axe: 
 	cd $(AXE_DIR)/src; \
-	./make.sh \
-	&& cp axe $(BIN_DIR) && ./clean.sh
+		./make.sh \
+	cp $(AXE_DIR)/axe $(BIN_DIR)
 
-#Added git instructions swap out the default newlib for the BP newlib from BSG
-#A workaround to get our newlib in the tool chain until we modify our own barebones toolchain
 gnu:
 	cd $(GNU_DIR); \
-	rm -rf riscv-newlib; \
-	git clone https://github.com/bespoke-silicon-group/bsg_newlib_dramfs ./riscv-newlib; \
-	cd ./riscv-newlib; \
-	git checkout bsg_manycore_newlib; \
-	cd ..; \
-	./configure --prefix=$(BP_EXTERNAL_DIR) --with-arch=rv64ia --with-abi=lp64 --with-cmodel=medany \
-	  --enable-languages=c \
-	&& make && make install
-
-fesvr:
-	cd $(FESVR_DIR); \
-	./configure --prefix=$(BP_EXTERNAL_DIR) \
-	&& make && make install && make clean
+		rm -rf riscv-newlib; \
+		git clone -b bsg_manycore_newlib https://github.com/bespoke-silicon-group/bsg_newlib_dramfs.git riscv-newlib; \
+		./configure --prefix=$(BP_EXTERNAL_DIR) --with-arch=rv64ia --with-abi=lp64 --with-cmodel=medany
+	$(MAKE) -C $(GNU_DIR)
+	$(MAKE) -C $(GNU_DIR) install
+	cp $(BP_EXTERNAL_DIR)/riscv64-unknown-elf/bin/bsg_newlib_mklfs $(BIN_DIR)
 
 dramsim2:
-	cd $(DRAMSIM2_DIR); \
-	make libdramsim.so && cp libdramsim.so $(LIB_DIR) && cp *.h $(INCLUDE_DIR)
+	$(MAKE) -C $(DRAMSIM2_DIR) libdramsim.so
+	cp $(DRAMSIM2_DIR)/libdramsim.so $(LIB_DIR) 
+	cp $(DRAMSIM2_DIR)/*.h $(INCLUDE_DIR)
+
+cmurphi:
+	$(MAKE) -C $(CMURPHI_DIR)/src mu 
 

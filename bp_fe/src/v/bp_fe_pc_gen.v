@@ -97,11 +97,11 @@ wire misalign_exception  = pc_v_if2_r & (pc_if2_r[1:0] != 2'b00);
 wire itlb_miss_exception = pc_v_if2_r & itlb_miss_if2_r;
 wire instr_access_fault_exception = pc_v_if2_r & instr_access_fault_i;
 
-wire fetch_fail     = pc_v_if2_r & ~pc_gen_fe_v_o & ~cmd_nonattaboy_v;
+wire fetch_fail     = pc_v_if2_r & ~pc_gen_fe_v_o;
 wire queue_miss     = pc_v_if2_r & ~pc_gen_fe_ready_i;
 wire flush          = itlb_miss_if2_r | icache_miss_i | queue_miss | cmd_nonattaboy_v;
 wire fe_instr_v     = pc_v_if2_r & ~flush;
-wire fe_exception_v = pc_v_if2_r & (instr_access_fault_exception | misalign_exception | itlb_miss_exception) & ~cmd_nonattaboy_v;
+wire fe_exception_v = pc_v_if2_r & (instr_access_fault_exception | misalign_exception | itlb_miss_exception);
 
 // FSM
 enum bit [1:0] {e_wait=2'd0, e_run, e_stall} state_n, state_r;
@@ -123,9 +123,16 @@ always_comb
       // Stall until we can start valid fetch
       e_stall: state_n = pc_v_if1_n ? e_run : e_stall;
       // Run state -- PCs are actually being fetched
+      // Stay in run if there's an incoming cmd, the next pc will automatically be valid 
       // Transition to wait if there's a TLB miss while we wait for fill
       // Transition to stall if we don't successfully complete the fetch for whatever reason
-      e_run  : state_n = fetch_fail ? e_stall : fe_exception_v ? e_wait : e_run;
+      e_run  : state_n = cmd_nonattaboy_v 
+                         ? e_run 
+                         : fetch_fail 
+                           ? e_stall 
+                           : fe_exception_v 
+                             ? e_wait 
+                             : e_run;
       default: state_n = e_wait;
     endcase
   end
@@ -189,6 +196,7 @@ always_ff @(posedge clk_i)
   end
 
 // We gate the PC data pipeline for power
+//synopsys sync_set_reset "reset_i"
 always_ff @(posedge clk_i) 
   if (reset_i)
     begin

@@ -8,6 +8,7 @@ module bp_fe_top
  import bp_common_aviary_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
+ import bp_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
 
@@ -34,6 +35,11 @@ module bp_fe_top
    , input                                            freeze_i
 
    , input [lce_id_width_lp-1:0]                      icache_id_i
+
+   // Config channel
+   , input                                            cfg_w_v_i
+   , input [cfg_addr_width_p-1:0]                     cfg_addr_i
+   , input [cfg_data_width_p-1:0]                     cfg_data_i
 
    , input [fe_cmd_width_lp-1:0]                      fe_cmd_i
    , input                                            fe_cmd_v_i
@@ -66,13 +72,6 @@ module bp_fe_top
    , output [lce_data_cmd_width_lp-1:0]               lce_data_cmd_o
    , output                                           lce_data_cmd_v_o
    , input                                            lce_data_cmd_ready_i
-
-   // config link
-   , input [bp_cfg_link_addr_width_gp-2:0]           config_addr_i
-   , input [bp_cfg_link_data_width_gp-1:0]           config_data_i
-   , input                                           config_v_i
-   , input                                           config_w_i
-
    );
 
 // the first level of structs
@@ -187,7 +186,7 @@ always_comb
      
 
 // icache to icache
-assign poison_tl = icache_miss | fe_pc_gen.pc_redirect_valid & fe_pc_gen_v;
+assign poison_tl = icache_miss | (fe_pc_gen_v & ~fe_pc_gen.attaboy_valid);
 
 //fe to itlb
 logic itlb_fill_v, itlb_fill_r, itlb_w_v, itlb_fence_v;
@@ -198,9 +197,7 @@ assign itlb_fill_v       = fe_cmd_v_i & fe_cmd.opcode == e_op_itlb_fill_response
 assign itlb_w_v          = itlb_fill_v & ~itlb_fill_r;
 assign itlb_fence_v      = fe_cmd_v_i & fe_cmd.opcode == e_op_itlb_fence;
 
-// currently, uncached I/O is determined by high bit of translated address
-logic icache_uncached;
-assign icache_uncached = itlb_entry_r.ptag[ptag_width_p-1];
+wire icache_uncached = itlb_entry_r.uc;
 
 always_ff @(posedge clk_i) begin
   if(reset_i) begin
@@ -250,6 +247,9 @@ bp_fe_icache
    ,.freeze_i(freeze_i)
 
    ,.id_i(icache_id_i)         
+   ,.cfg_w_v_i(cfg_w_v_i)
+   ,.cfg_addr_i(cfg_addr_i)
+   ,.cfg_data_i(cfg_data_i)
 
    ,.pc_gen_icache_vaddr_i(pc_gen_icache)
    ,.pc_gen_icache_vaddr_v_i(pc_gen_icache_v)
@@ -292,11 +292,6 @@ bp_fe_icache
    ,.instr_access_fault_o(instr_access_fault)
    ,.cache_miss_o(icache_miss)
    ,.poison_tl_i(poison_tl)
-
-   ,.config_addr_i(config_addr_i)
-   ,.config_data_i(config_data_i)
-   ,.config_v_i(config_v_i)
-   ,.config_w_i(config_w_i)
    );
 
    

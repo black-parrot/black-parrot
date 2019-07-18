@@ -11,6 +11,7 @@ module bp_be_top
  import bp_common_aviary_pkg::*;
  import bp_be_rv64_pkg::*;
  import bp_be_pkg::*;
+ import bp_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
    `declare_bp_fe_be_if_widths(vaddr_width_p
@@ -27,6 +28,7 @@ module bp_be_top
                                  )
 
    , parameter calc_trace_p = 0
+ 
 
    // Default parameters 
    , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
@@ -44,6 +46,11 @@ module bp_be_top
   (input                                     clk_i
    , input                                   reset_i
    , input                                   freeze_i
+
+   // Config channel
+   , input                                   cfg_w_v_i
+   , input [cfg_addr_width_p-1:0]            cfg_addr_i
+   , input [cfg_data_width_p-1:0]            cfg_data_i
 
    // FE queue interface
    , input [fe_queue_width_lp-1:0]           fe_queue_i
@@ -90,12 +97,6 @@ module bp_be_top
    , input                                   timer_int_i
    , input                                   software_int_i
    , input                                   external_int_i
-
-   // config link
-   , input [bp_cfg_link_addr_width_gp-2:0]           config_addr_i
-   , input [bp_cfg_link_data_width_gp-1:0]           config_data_i
-   , input                                           config_v_i
-   , input                                           config_w_i
    );
 
 // Declare parameterized structures
@@ -154,6 +155,11 @@ bp_be_checker_top
  be_checker
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
+   ,.freeze_i(freeze_i)
+
+   ,.cfg_w_v_i(cfg_w_v_i)
+   ,.cfg_addr_i(cfg_addr_i)
+   ,.cfg_data_i(cfg_data_i)
 
    ,.chk_dispatch_v_o(chk_dispatch_v)
    ,.chk_roll_o(chk_roll)
@@ -242,6 +248,10 @@ bp_be_mem_top
     ,.reset_i(reset_i)
     ,.freeze_i(freeze_i)
 
+    ,.cfg_w_v_i(cfg_w_v_i)
+    ,.cfg_addr_i(cfg_addr_i)
+    ,.cfg_data_i(cfg_data_i)
+
     ,.chk_poison_ex_i(chk_poison_ex2)
 
     ,.mmu_cmd_i(mmu_cmd)
@@ -306,11 +316,6 @@ bp_be_mem_top
     ,.mepc_o(chk_mepc_li)
     ,.mtvec_o(chk_mtvec_li)
     ,.tlb_fence_o(chk_tlb_fence_li)
-
-    ,.config_addr_i(config_addr_i)
-    ,.config_data_i(config_data_i)
-    ,.config_v_i(config_v_i)
-    ,.config_w_i(config_w_i)
     );
 
 endmodule : bp_be_top

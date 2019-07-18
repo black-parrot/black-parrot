@@ -56,6 +56,11 @@ module bp_fe_icache
 
     , input [lce_id_width_lp-1:0]                      id_i
 
+    // Config channel
+    , input                                            cfg_w_v_i
+    , input [cfg_addr_width_p-1:0]                     cfg_addr_i
+    , input [cfg_data_width_p-1:0]                     cfg_data_i
+
     , input [bp_fe_pc_gen_icache_width_lp-1:0]         pc_gen_icache_vaddr_i
     , input                                            pc_gen_icache_vaddr_v_i
     , output logic                                     pc_gen_icache_vaddr_ready_o
@@ -97,12 +102,6 @@ module bp_fe_icache
     , output logic [lce_data_cmd_width_lp-1:0]         lce_data_cmd_o
     , output logic                                     lce_data_cmd_v_o
     , input                                            lce_data_cmd_ready_i 
-
-    // config link
-    , input [bp_cfg_link_addr_width_gp-2:0]            config_addr_i
-    , input [bp_cfg_link_data_width_gp-1:0]            config_data_i
-    , input                                            config_v_i
-    , input                                            config_w_i
  );
 
   logic [index_width_lp-1:0]            vaddr_index;
@@ -342,6 +341,10 @@ module bp_fe_icache
      ,.reset_i(reset_i)
      ,.freeze_i(freeze_i)
 
+     ,.cfg_w_v_i(cfg_w_v_i)
+     ,.cfg_addr_i(cfg_addr_i)
+     ,.cfg_data_i(cfg_data_i)
+
      ,.id_i(id_i)
 
      ,.ready_o(pc_gen_icache_vaddr_ready_o)
@@ -389,11 +392,6 @@ module bp_fe_icache
      ,.lce_data_cmd_o(lce_data_cmd_o)
      ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
      ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
-
-     ,.config_addr_i(config_addr_i)
-     ,.config_data_i(config_data_i)
-     ,.config_v_i(config_v_i)
-     ,.config_w_i(config_w_i)
 
      ,.lce_mode_o(lce_mode_lo)
      ); 

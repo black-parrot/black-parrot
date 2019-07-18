@@ -88,7 +88,6 @@ done_enqueue:
 // the item is returned in dequeue_item
 uint64_t dequeue(uint64_t core_id, queue_item *dequeue_item) {
     uint64_t status = 0;
-    uint64_t print_addr = (uint64_t)(0x000000008FFFFFFF);
     uint64_t print_item;
 
     // we actually don't care if the tail index changes between
@@ -111,8 +110,7 @@ uint64_t dequeue(uint64_t core_id, queue_item *dequeue_item) {
     // enqueue, the item will have already been copied out
     queue.head_index = (queue.head_index + 1) % QUEUE_LENGTH;
     print_item = *dequeue_item;
-    //printf("Core %d dequeued %d\n", core_id, *dequeue_item);
-    __asm__ volatile("sb %0, 0(%1)": : "r"(print_item), "r"(print_addr):);
+    bp_hprint(print_item);
 
 done_dequeue:
     unlock_queue(core_id);
@@ -174,6 +172,6 @@ uint64_t main(uint64_t argc, char * argv[]) {
     }
     thread_main();
 
-    barrier_end(&end_barrier_mem, NUM_CORES);
+    bp_barrier_end(&end_barrier_mem, NUM_CORES);
     return 0;
 }

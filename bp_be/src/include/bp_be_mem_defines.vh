@@ -39,11 +39,13 @@
     logic                      x;                                                                  \
     logic                      w;                                                                  \
     logic                      r;                                                                  \
+                                                                                                   \
+    logic                      uc;                                                                 \
   } bp_be_tlb_entry_s;                                                                             \
                                                                                                    \
 
 `define bp_be_tlb_entry_width(ppn_width_mp)     \
-  (ppn_width_mp + 5)                            
+  (ppn_width_mp + 6)                            
   
   typedef struct packed 
   {
