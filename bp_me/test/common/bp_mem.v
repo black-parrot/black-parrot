@@ -6,11 +6,7 @@
 module bp_mem
   import bp_common_pkg::*;
   import bp_cce_pkg::*;
-  #(parameter mem_id_p="inv"
-    ,parameter clock_period_in_ps_p="inv"
-    ,parameter prog_name_p="inv"
-    ,parameter dram_cfg_p="inv"
-    ,parameter dram_sys_cfg_p="inv"
+  #(parameter prog_name_p="inv"
     ,parameter dram_capacity_p="inv"
 
     ,parameter num_lce_p="inv"
