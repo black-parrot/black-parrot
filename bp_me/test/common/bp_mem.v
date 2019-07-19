@@ -7,6 +7,7 @@ module bp_mem
   import bp_common_pkg::*;
   import bp_cce_pkg::*;
   #(parameter prog_name_p="inv"
+    ,parameter load_from_program_p=0
     ,parameter dram_capacity_p="inv"
 
     ,parameter num_lce_p="inv"
@@ -25,14 +26,14 @@ module bp_mem
     ,localparam bp_cce_mem_cmd_width_lp=`bp_cce_mem_cmd_width(paddr_width_p, num_lce_p, lce_assoc_p)
     ,localparam bp_cce_mem_data_cmd_width_lp=`bp_cce_mem_data_cmd_width(paddr_width_p, block_size_in_bits_lp, mshr_width_lp)
 
+    // TODO: for now, use the dram capacity as number of cache blocks
+    ,localparam mem_els_lp=dram_capacity_p
+
     ,localparam mem_addr_width_lp=`BSG_SAFE_CLOG2(mem_els_lp)
     ,localparam word_select_bits_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p/8)
     ,localparam block_offset_bits_lp=`BSG_SAFE_CLOG2(block_size_in_bytes_p)
     ,localparam byte_width_lp=8
     ,localparam byte_offset_bits_lp=`BSG_SAFE_CLOG2(lce_req_data_width_p/8)
-
-    // TODO: for now, use the dram capacity as number of cache blocks
-    ,localparam mem_els_lp=dram_capacity_p
   )
   (
     input clk_i
@@ -71,16 +72,21 @@ module bp_mem
   logic [block_size_in_bits_lp-1:0] mem_data_i, mem_data_o, mem_mask_i, mem_data_n;
   logic [lce_req_data_width_p-1:0] mem_nc_data;
 
+  logic [block_size_in_bits_lp-1:0] mem [0:mem_els_lp];
+
   for (genvar i = 0; i < block_size_in_bits_lp; i++) begin : mem_rof
     assign mem_data_n[i] = mem_mask_i[i] ? mem_data_i[i] : mem[mem_addr_i][i];
   end
 
   // memory
-  logic [mem_els_lp-1:0][block_size_in_bits_lp-1:0] mem;
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
-      mem <= '0;
       mem_addr_r <= '0;
+      if (load_from_program_p)
+        $readmemh(prog_name_p, mem);
+      else
+        for (integer i = 0; i < mem_els_lp; i++)
+          mem[i] <= '0;
     end else begin
       if (mem_v_i & ~mem_w_i) begin
         mem_addr_r <= mem_addr_i;

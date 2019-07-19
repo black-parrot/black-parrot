@@ -1,41 +1,26 @@
-## Includes
-# bsg_ip_cores includes
 +incdir+$BSG_IP_CORES_DIR/bsg_dataflow
 +incdir+$BSG_IP_CORES_DIR/bsg_mem
 +incdir+$BSG_IP_CORES_DIR/bsg_misc
 +incdir+$BSG_IP_CORES_DIR/bsg_test
 +incdir+$BSG_IP_CORES_DIR/bsg_noc
-# common includes
 +incdir+$BP_COMMON_DIR/src/include
-# fe includes
 +incdir+$BP_FE_DIR/src/include
-# be includes
 +incdir+$BP_BE_DIR/src/include
 +incdir+$BP_BE_DIR/src/include/bp_be_dcache
-# me includes 
 +incdir+$BP_ME_DIR/src/include/v
-# top includes
 +incdir+$BP_TOP_DIR/src/include
-## Packages
-# bsg_ip_cores packages
 $BSG_IP_CORES_DIR/bsg_noc/bsg_noc_pkg.v
-# Interface packages
 $BP_COMMON_DIR/src/include/bp_common_pkg.vh
 $BP_COMMON_DIR/src/include/bp_common_aviary_pkg.vh
-# FE packages
 $BP_FE_DIR/src/include/bp_fe_icache_pkg.vh
 $BP_FE_DIR/src/include/bp_fe_itlb_pkg.vh
 $BP_FE_DIR/src/include/bp_fe_pkg.vh
-# BE packages
 $BP_BE_DIR/src/include/bp_be_rv64_pkg.vh
 $BP_BE_DIR/src/include/bp_be_pkg.vh
 $BP_BE_DIR/src/include/bp_be_dcache/bp_be_dcache_pkg.vh
-# ME packages
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
 $BP_ME_DIR/src/include/v/bp_me_network_pkg.v
-# Top packages
 $BP_TOP_DIR/src/include/bp_cfg_link_pkg.vh
-## bsg_ip_cores files
 $BSG_IP_CORES_DIR/bsg_async/bsg_async_fifo.v
 $BSG_IP_CORES_DIR/bsg_async/bsg_launch_sync_sync.v
 $BSG_IP_CORES_DIR/bsg_async/bsg_async_ptr_gray.v
@@ -114,9 +99,7 @@ $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_input_control.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_output_control.v 
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_pkg.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_generalized.v
-## BE files
 $BP_BE_DIR/src/v/bp_be_top.v
-# Calculator
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_bypass.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_calculator_top.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_instr_decoder.v
@@ -126,12 +109,10 @@ $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_int.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mem.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mul.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_regfile.v
-# Checker
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_checker_top.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_detector.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_director.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_scheduler.v
-# MMU
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_ptw.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_csr.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_mem_top.v
@@ -144,12 +125,9 @@ $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf_queue.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dtlb/bp_be_dtlb.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dtlb/bp_be_dtlb_replacement.v
-# Common
 $BP_BE_DIR/src/v/common/bsg_fifo_1r1w_fence.v
 $BP_BE_DIR/src/v/common/bsg_fifo_1r1w_rolly.v
-## FE files
 $BP_FE_DIR/src/v/bp_fe_bht.v
-#$BP_FE_DIR/src/v/bp_fe_branch_predictor.v
 $BP_FE_DIR/src/v/bp_fe_btb.v
 $BP_FE_DIR/src/v/bp_fe_lce_cmd.v
 $BP_FE_DIR/src/v/bp_fe_lce_data_cmd.v
@@ -161,8 +139,6 @@ $BP_FE_DIR/src/v/bp_fe_lce.v
 $BP_FE_DIR/src/v/bp_fe_lce_req.v
 $BP_FE_DIR/src/v/bp_fe_pc_gen.v
 $BP_FE_DIR/src/v/bp_fe_top.v
-## ME files
-# CCE
 $BP_ME_DIR/src/v/cce/bp_cce.v
 $BP_ME_DIR/src/v/cce/bp_cce_alu.v
 $BP_ME_DIR/src/v/cce/bp_cce_dir.v
@@ -176,12 +152,10 @@ $BP_ME_DIR/src/v/cce/bp_cce_uncached.v
 $BP_ME_DIR/src/v/cce/bp_cce_msg.v
 $BP_ME_DIR/src/v/cce/bp_cce_pending.v
 $BP_ME_DIR/src/v/cce/bp_cce_top.v
-# Network
 $BP_ME_DIR/src/v/network/bp_me_network_pkt_encode_data_cmd.v
 $BP_ME_DIR/src/v/network/bp_me_network_pkt_encode_data_resp.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_master.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_client.v
-## TOP
 $BP_TOP_DIR/src/v/bsg_noc_repeater_node.v
 $BP_TOP_DIR/src/v/bp_chip.v
 $BP_TOP_DIR/src/v/bp_core.v
@@ -190,10 +164,6 @@ $BP_TOP_DIR/src/v/bp_core_complex.v
 $BP_TOP_DIR/src/v/bp_tile.v
 $BP_TOP_DIR/src/v/bp_clint.v
 $BP_TOP_DIR/src/v/bp_addr_map.v
-
-## OpenPiton stuff
 $BP_TOP_DIR/src/v/bp_openpiton_tile.v
-$BP_TOP_DIR/src/v/bp_l15_transducer.v
-$BP_TOP_DIR/src/v/bp_l15_encoder.v
-$BP_TOP_DIR/src/v/bp_l15_decoder.v
+$BP_ME_DIR/test/common/bp_mem.v
 

@@ -8,7 +8,7 @@ module bp_openpiton_tile
  import bsg_noc_pkg::*;
  import bsg_wormhole_router_pkg::*;
  import bp_cfg_link_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_dual_core_cfg
+ #(parameter bp_cfg_e cfg_p = e_bp_piton_cfg
    `declare_bp_proc_params(cfg_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mem_payload_width_p)
 
@@ -60,6 +60,9 @@ bsg_ready_and_link_sif_s chip_resp_link_li, chip_resp_link_lo;
 bsg_ready_and_link_sif_s op_master_link_li, op_master_link_lo;
 bsg_ready_and_link_sif_s op_client_link_li, op_client_link_lo;
 
+bsg_ready_and_link_sif_s dram_master_link_li, dram_master_link_lo;
+bsg_ready_and_link_sif_s dram_client_link_li, dram_client_link_lo;
+
 bsg_ready_and_link_sif_s [1:0][E:P] cmd_link_li, cmd_link_lo;
 bsg_ready_and_link_sif_s [1:0][E:P] resp_link_li, resp_link_lo;
 
@@ -102,20 +105,39 @@ bp_chip
    ,.resp_link_o(chip_resp_link_lo)
    );
 
-bsg_wormhole_router_generalized
- #(.flit_width_p(noc_width_p)
-   ,.dims_p(dims_lp)
-   ,.cord_markers_pos_p(cord_markers_pos_lp)
-   ,.routing_matrix_p(routing_matrix_lp)
-   ,.len_width_p(noc_len_width_p)
-   )
- cmd_router
- (.clk_i(clk_i)
-  ,.reset_i(reset_i)
-  ,.my_cord_i(openpiton_cord_i)
-  ,.link_i(cmd_link_li)
-  ,.link_o(cmd_link_lo)
-  );
+for (genvar i = 0; i < 2; i++)
+  begin : rof1
+    bsg_wormhole_router_generalized
+     #(.flit_width_p(noc_width_p)
+       ,.dims_p(dims_lp)
+       ,.cord_markers_pos_p(cord_markers_pos_lp)
+       ,.routing_matrix_p(routing_matrix_lp)
+       ,.len_width_p(noc_len_width_p)
+       )
+     cmd_router
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      ,.my_cord_i(openpiton_cord_i)
+      ,.link_i(cmd_link_li[i])
+      ,.link_o(cmd_link_lo[i])
+      );
+    
+    
+    bsg_wormhole_router_generalized
+     #(.flit_width_p(noc_width_p)
+       ,.dims_p(dims_lp)
+       ,.cord_markers_pos_p(cord_markers_pos_lp)
+       ,.routing_matrix_p(routing_matrix_lp)
+       ,.len_width_p(noc_len_width_p)
+       )
+     resp_router
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
+       ,.my_cord_i(openpiton_cord_i)
+       ,.link_i(resp_link_li[i])
+       ,.link_o(resp_link_lo[i])
+       );
+  end
 
 assign cmd_link_li[0][W] = chip_cmd_link_lo;
 assign cmd_link_li[1][W] = cmd_link_lo[1][E];
@@ -123,21 +145,6 @@ assign cmd_link_li[1][W] = cmd_link_lo[1][E];
 assign cmd_link_li[1][E] = '0;
 assign cmd_link_li[0][E] = cmd_link_lo[1][W];
 assign chip_cmd_link_li = cmd_link_lo[0][W];
-
-bsg_wormhole_router_generalized
- #(.flit_width_p(noc_width_p)
-   ,.dims_p(dims_lp)
-   ,.cord_markers_pos_p(cord_markers_pos_lp)
-   ,.routing_matrix_p(routing_matrix_lp)
-   ,.len_width_p(noc_len_width_p)
-   )
- resp_router
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.my_cord_i(openpiton_cord_i)
-   ,.link_i(resp_link_li)
-   ,.link_o(resp_link_lo)
-   );
 
 assign resp_link_li[0][W] = chip_resp_link_lo;
 assign resp_link_li[1][W] = resp_link_lo[1][E];
@@ -251,14 +258,14 @@ assign op_mem_resp_ready_lo = '0;
 assign op_mem_cmd_v_lo = '0;
 assign op_mem_data_cmd_v_lo = '0;
 
-bp_cce_mem_cmd_s       dram_mem_cmd_li;
-logic                  dram_mem_cmd_v_li, dram_mem_cmd_yumi_lo;
-bp_cce_mem_data_cmd_s  dram_mem_data_cmd_li;
-logic                  dram_mem_data_cmd_v_li, dram_mem_data_cmd_yumi_lo;
-bp_mem_cce_resp_s      dram_mem_resp_lo;
-logic                  dram_mem_resp_v_lo, dram_mem_resp_ready_li;
-bp_mem_cce_data_resp_s dram_mem_data_resp_lo;
-logic                  dram_mem_data_resp_v_lo, dram_mem_data_resp_ready_li;
+bp_cce_mem_cmd_s       dram_cmd_li;
+logic                  dram_cmd_v_li, dram_cmd_yumi_lo;
+bp_cce_mem_data_cmd_s  dram_data_cmd_li;
+logic                  dram_data_cmd_v_li, dram_data_cmd_yumi_lo;
+bp_mem_cce_resp_s      dram_resp_lo;
+logic                  dram_resp_v_lo, dram_resp_ready_li;
+bp_mem_cce_data_resp_s dram_data_resp_lo;
+logic                  dram_data_resp_v_lo, dram_data_resp_ready_li;
 // TODO: Nonsynnth DRAM used for testing
 bp_mem
  #(.prog_name_p("inv") // Doesn't support program loading right now
@@ -268,7 +275,7 @@ bp_mem
    ,.num_cce_p(num_cce_p)
    ,.paddr_width_p(paddr_width_p)
    ,.lce_assoc_p(lce_assoc_p)
-   ,.block_size_in_bytes(cce_block_width_p/8)
+   ,.block_size_in_bytes_p(cce_block_width_p/8)
    ,.lce_sets_p(lce_sets_p)
    ,.lce_req_data_width_p(dword_width_p)
    )
@@ -314,7 +321,7 @@ bp_me_cce_to_wormhole_link_client
    ,.mem_resp_ready_o(dram_resp_ready_li)
 
    ,.mem_data_resp_i(dram_data_resp_lo)
-   ,.mem_data_resp_v_i(dram_data_resp_v_li)
+   ,.mem_data_resp_v_i(dram_data_resp_v_lo)
    ,.mem_data_resp_ready_o(dram_data_resp_ready_li)
 
    ,.my_cord_i(dram_cord_i)
