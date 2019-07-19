@@ -202,7 +202,7 @@ module bp_cce_fsm
 
   logic [lg_num_way_groups_lp-1:0] dir_way_group_li;
   logic [lg_num_lce_lp-1:0] dir_lce_li;
-  logic [lg_lce_assoc_lp-1:0] dir_way_li;
+  logic [lg_lce_assoc_lp-1:0] dir_way_li, dir_lru_way_li;
   logic [ptag_width_lp-1:0] dir_tag_li;
   logic [`bp_cce_coh_bits-1:0] dir_coh_state_li;
 
@@ -235,7 +235,7 @@ module bp_cce_fsm
       ,.way_group_i(dir_way_group_li)
       ,.lce_i(dir_lce_li)
       ,.way_i(dir_way_li)
-      ,.lru_way_i(mshr_r.lru_way_id)
+      ,.lru_way_i(dir_lru_way_li)
 
       ,.r_cmd_i(dir_r_cmd)
       ,.r_v_i(dir_r_v)
@@ -433,6 +433,7 @@ module bp_cce_fsm
     dir_way_group_li = mshr_r.paddr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
     dir_lce_li = mshr_r.lce_id;
     dir_way_li = mshr_r.way_id;
+    dir_lru_way_li = mshr_r.lru_way_id;
     dir_tag_li = mshr_r.paddr[(paddr_width_p-1) -: ptag_width_lp];
     dir_coh_state_li = mshr_r.next_coh_state;
 
@@ -619,7 +620,7 @@ module bp_cce_fsm
         dir_way_group_li = mshr_r.paddr[way_group_offset_high_lp-1 -: lg_num_way_groups_lp];
         dir_r_cmd = e_rdw_op;
         dir_lce_li = mshr_r.lce_id;
-        //dir_lru_way_li = mshr_r.lru_way_id; // this input is hardwired
+        dir_lru_way_li = mshr_r.lru_way_id;
         state_n = WAIT_DIR_GAD;
       end
       WAIT_DIR_GAD: begin
@@ -713,6 +714,15 @@ module bp_cce_fsm
 
           // increment the Ack counting register if the command is sent
           ack_cnt_inc = (lce_cmd_ready_i);
+
+          // invalidate the entry in the directory
+          dir_w_v = 1'b1;
+          dir_lce_li = cnt[0+:lg_num_lce_lp];
+          dir_way_group_li = mshr_r.paddr[way_group_offset_high_lp-1 -: lg_num_way_groups_lp];
+          dir_coh_state_li = e_MESI_I;
+          dir_w_cmd = e_wde_op;
+          dir_tag_li = '0;
+          dir_way_li = sharers_ways_lo[cnt];
 
         end else begin
           cnt_clr = (cnt == (num_lce_p-1));
