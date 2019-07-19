@@ -6,7 +6,7 @@
 module bp_mem
   import bp_common_pkg::*;
   import bp_cce_pkg::*;
-  #(parameter prog_name_p="inv"
+  #(parameter prog_name_p="prog.mem"
     ,parameter load_from_program_p=0
     ,parameter dram_capacity_p="inv"
 
@@ -72,10 +72,16 @@ module bp_mem
   logic [block_size_in_bits_lp-1:0] mem_data_i, mem_data_o, mem_mask_i, mem_data_n;
   logic [lce_req_data_width_p-1:0] mem_nc_data;
 
-  logic [block_size_in_bits_lp-1:0] mem [0:mem_els_lp];
+  logic [block_size_in_bits_lp-1:0] mem [*];
 
-  for (genvar i = 0; i < block_size_in_bits_lp; i++) begin : mem_rof
-    assign mem_data_n[i] = mem_mask_i[i] ? mem_data_i[i] : mem[mem_addr_i][i];
+  wire [mem_addr_width_lp-1:0] mem_addr_li = (|mem_addr_i === 'X) ? '0 : mem_addr_i;
+  wire [mem_addr_width_lp-1:0] mem_addr_r_li = (|mem_addr_r === 'X) ? '0 : mem_addr_r;
+
+  always_comb begin
+    for (integer i = 0; i < block_size_in_bits_lp; i++)
+      mem_data_n[i] = mem_mask_i[i] ? mem_data_i[i] : mem[mem_addr_li][i];
+
+    mem_data_o = mem[mem_addr_r_li];
   end
 
   // memory
@@ -96,7 +102,7 @@ module bp_mem
       end
     end
   end
-  assign mem_data_o = mem[mem_addr_r];
+  
 
   /*
   bsg_mem_1rw_sync_mask_write_bit

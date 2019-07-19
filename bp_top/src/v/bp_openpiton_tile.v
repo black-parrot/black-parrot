@@ -268,7 +268,8 @@ bp_mem_cce_data_resp_s dram_data_resp_lo;
 logic                  dram_data_resp_v_lo, dram_data_resp_ready_li;
 // TODO: Nonsynnth DRAM used for testing
 bp_mem
- #(.prog_name_p("inv") // Doesn't support program loading right now
+ #(.prog_name_p("prog.mem") 
+   ,.load_from_program_p(1)
    ,.dram_capacity_p(16384)
 
    ,.num_lce_p(num_lce_p)
