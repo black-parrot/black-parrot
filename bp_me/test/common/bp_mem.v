@@ -72,7 +72,7 @@ module bp_mem
   logic [block_size_in_bits_lp-1:0] mem_data_i, mem_data_o, mem_mask_i, mem_data_n;
   logic [lce_req_data_width_p-1:0] mem_nc_data;
 
-  logic [block_size_in_bits_lp-1:0] mem [*];
+  logic [block_size_in_bits_lp-1:0] mem [0:mem_els_lp-1];
 
   wire [mem_addr_width_lp-1:0] mem_addr_li = (|mem_addr_i === 'X) ? '0 : mem_addr_i;
   wire [mem_addr_width_lp-1:0] mem_addr_r_li = (|mem_addr_r === 'X) ? '0 : mem_addr_r;
@@ -206,7 +206,7 @@ module bp_mem
       case (mem_st)
         READY: begin
           // mem data command - need to write data to memory
-          if (mem_data_cmd_v_i && mem_resp_ready_i) begin
+          if (mem_data_cmd_v_i) begin
             mem_data_cmd_yumi_o <= 1'b1;
             mem_data_cmd_s_r <= mem_data_cmd_i;
             mem_st <= RD_DATA_CMD;
@@ -224,7 +224,7 @@ module bp_mem
                           : wr_mask;
 
           // mem command - need to read data from memory
-          end else if (mem_cmd_v_i && mem_data_resp_ready_i) begin
+          end else if (mem_cmd_v_i) begin
             mem_cmd_yumi_o <= 1'b1;
             mem_cmd_s_r <= mem_cmd_i;
             mem_st <= RD_MEM;

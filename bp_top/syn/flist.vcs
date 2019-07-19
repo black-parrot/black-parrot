@@ -166,4 +166,5 @@ $BP_TOP_DIR/src/v/bp_clint.v
 $BP_TOP_DIR/src/v/bp_addr_map.v
 $BP_TOP_DIR/src/v/bp_openpiton_tile.v
 $BP_ME_DIR/test/common/bp_mem.v
+$BP_ME_DIR/test/common/bp_cce_mmio_cfg_loader.v
 
