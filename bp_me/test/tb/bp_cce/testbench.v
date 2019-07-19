@@ -47,8 +47,13 @@ module testbench
    , input reset_i
    );
 
+`declare_bsg_ready_and_link_sif_s(noc_width_p, bsg_ready_and_link_sif_s);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mem_payload_width_p);
 `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
+
+logic [noc_cord_width_p-1:0]                 dram_cord_lo, clint_cord_lo;
+assign dram_cord_lo  = num_core_p+1;
+assign clint_cord_lo = clint_pos_p;
 
 // CFG IF
 bp_cce_mem_data_cmd_s  cfg_data_cmd_lo;
@@ -290,6 +295,7 @@ mem
   ,.mem_data_resp_ready_i(mem_data_resp_ready)
   );
 
+// CFG Loader
 bp_cce_mmio_cfg_loader
 #(.cfg_p(cfg_p)
   ,.inst_width_p(`bp_cce_inst_width)
@@ -310,15 +316,16 @@ cfg_loader
   ,.mem_resp_ready_o(cfg_resp_ready_lo)
   );
 
-// We use the clint just as a config loader converter
-bp_clint
-#(.cfg_p(cfg_p))
-clint
- (.clk_i(clk_i)
+// CFG Loader Master
+bsg_ready_and_link_sif_s cfg_link_li, cfg_link_lo;
+bp_me_cce_to_wormhole_link_master
+ #(.cfg_p(cfg_p))
+  master_link
+  (.clk_i(clk_i)
   ,.reset_i(reset_i)
 
   ,.mem_cmd_i('0)
-  ,.mem_cmd_v_i(1'b0)
+  ,.mem_cmd_v_i('0)
   ,.mem_cmd_yumi_o()
 
   ,.mem_data_cmd_i(cfg_data_cmd_lo)
@@ -331,17 +338,71 @@ clint
 
   ,.mem_data_resp_o()
   ,.mem_data_resp_v_o()
-  ,.mem_data_resp_ready_i(1'b0)
-
-  ,.soft_irq_o()
-  ,.timer_irq_o()
-  ,.external_irq_o()
-
-  ,.cfg_w_v_o(config_v_li)
-  ,.cfg_addr_o(config_addr_li)
-  ,.cfg_data_o(config_data_li)
+  ,.mem_data_resp_ready_i(1'b1)
+  
+  ,.my_cord_i(dram_cord_lo)
+  
+  ,.mem_cmd_dest_cord_i('0)
+  
+  ,.mem_data_cmd_dest_cord_i(clint_cord_lo)
+  
+  ,.link_i(cfg_link_li)
+  ,.link_o(cfg_link_lo)
   );
+ 
+// We use the clint just as a config loader converter
+bsg_ready_and_link_sif_s clint_cmd_link_i;
+bsg_ready_and_link_sif_s clint_cmd_link_o;
+bsg_ready_and_link_sif_s clint_resp_link_i;
+bsg_ready_and_link_sif_s clint_resp_link_o;
 
+
+// CLINT sends nothing to CFG
+assign cfg_link_li.v = '0;
+assign cfg_link_li.data = '0;
+// Ready signal to master, from CLINT client
+assign cfg_link_li.ready_and_rev = clint_cmd_link_o.ready_and_rev;
+
+// command to clint comes from cfg_link_lo
+assign clint_cmd_link_i.v = cfg_link_lo.v;
+assign clint_cmd_link_i.data = cfg_link_lo.data;
+assign clint_cmd_link_i.ready_and_rev = '0;
+
+// clint has no responses inbound
+assign clint_resp_link_i.v = '0;
+assign clint_resp_link_i.data = '0;
+assign clint_resp_link_i.ready_and_rev = cfg_link_lo.ready_and_rev;
+
+bp_clint
+ #(.cfg_p(cfg_p))
+ clint
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   
+   ,.cfg_w_v_o(config_v_li)
+   ,.cfg_addr_o(config_addr_li)
+   ,.cfg_data_o(config_data_li)
+
+   ,.soft_irq_o()
+   ,.timer_irq_o()
+   ,.external_irq_o()
+
+   ,.my_cord_i(clint_cord_lo)
+   ,.dram_cord_i(dram_cord_lo)
+   ,.clint_cord_i(clint_cord_lo)
+
+   // to client
+   ,.cmd_link_i(clint_cmd_link_i)
+   // from master - unused
+   ,.cmd_link_o(clint_cmd_link_o)
+   // to master - unused
+   ,.resp_link_i(clint_resp_link_i)
+   // from client
+   ,.resp_link_o(clint_resp_link_o)
+   );
+
+
+// Program done info
 localparam max_clock_cnt_lp    = 2**30-1;
 localparam lg_max_clock_cnt_lp = `BSG_SAFE_CLOG2(max_clock_cnt_lp);
 logic [lg_max_clock_cnt_lp-1:0] clock_cnt;
