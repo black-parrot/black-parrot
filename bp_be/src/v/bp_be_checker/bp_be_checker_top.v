@@ -131,8 +131,8 @@ module bp_be_checker_top
    , input                            trap_v_i
    , input                            ret_v_i
    , output [vaddr_width_p-1:0]       pc_o
-   , input [mtvec_width_lp-1:0]       mtvec_i
-   , input [mepc_width_lp-1:0]        mepc_i
+   , input [mtvec_width_lp-1:0]       tvec_i
+   , input [mepc_width_lp-1:0]        epc_i
    , input                            tlb_fence_i
    
    //iTLB fill interface
@@ -179,8 +179,8 @@ bp_be_director
    ,.trap_v_i(trap_v_i)
    ,.ret_v_i(ret_v_i)
    ,.pc_o(pc_o)
-   ,.mtvec_i(mtvec_i)
-   ,.mepc_i(mepc_i)
+   ,.tvec_i(tvec_i)
+   ,.epc_i(epc_i)
    ,.tlb_fence_i(tlb_fence_i)
 
    ,.itlb_fill_v_i(itlb_fill_v_i)

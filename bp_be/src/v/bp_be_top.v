@@ -136,8 +136,8 @@ bp_be_calc_status_s    calc_status;
 logic chk_dispatch_v, chk_poison_iss, chk_poison_isd;
 logic chk_poison_ex1, chk_poison_ex2, chk_roll, chk_instr_dequeue_v;
 
-logic [mtvec_width_lp-1:0] chk_mtvec_li;
-logic [mepc_width_lp-1:0]  chk_mepc_li;
+logic [mtvec_width_lp-1:0] chk_tvec_li;
+logic [mepc_width_lp-1:0]  chk_epc_li;
 logic [vaddr_width_p-1:0]  chk_pc_lo;
 
 logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li, chk_ifence_li;
@@ -192,8 +192,8 @@ bp_be_checker_top
    ,.trap_v_i(chk_trap_v_li)
    ,.ret_v_i(chk_ret_v_li)
    ,.pc_o(chk_pc_lo)
-   ,.mepc_i(chk_mepc_li)
-   ,.mtvec_i(chk_mtvec_li)
+   ,.epc_i(chk_epc_li)
+   ,.tvec_i(chk_tvec_li)
    ,.tlb_fence_i(chk_tlb_fence_li)
    
    ,.itlb_fill_v_i(itlb_fill_v)
@@ -313,8 +313,8 @@ bp_be_mem_top
     ,.priv_mode_o()
     ,.trap_v_o(chk_trap_v_li)
     ,.ret_v_o(chk_ret_v_li)
-    ,.mepc_o(chk_mepc_li)
-    ,.mtvec_o(chk_mtvec_li)
+    ,.epc_o(chk_epc_li)
+    ,.tvec_o(chk_tvec_li)
     ,.tlb_fence_o(chk_tlb_fence_li)
     );
 
