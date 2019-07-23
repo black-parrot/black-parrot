@@ -12,7 +12,7 @@ When a new feature is ready for wider use across the BlackParrot development tea
 
 **Project Status.**
 
-The next release of Black Parrot, v 0.5, is coming in June 2019, and will contain support for 1 to 8-way cache coherent multicore, and include baseline user and privilege mode functionality.
+The next release of Black Parrot, v 0.5, is coming in July 2019, and will contain support for 1 to 8-way cache coherent multicore, and include baseline user and privilege mode functionality.
 
 **CI**
 
