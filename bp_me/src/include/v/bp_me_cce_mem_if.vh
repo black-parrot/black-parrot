@@ -19,15 +19,15 @@
 /*
  * bp_cce_mem_cmd_type_e specifies the memory command from the CCE
  */
-typedef enum bit [2:0]
+typedef enum bit [3:0]
 {
-  e_cce_mem_rd       = 3'b000  // Read-miss request
-  ,e_cce_mem_wr      = 3'b001  // Write-miss request
-  ,e_cce_mem_uc_rd   = 3'b010  // Uncached load
-  ,e_cce_mem_uc_wr   = 3'b011  // Uncached store
-  ,e_cce_mem_wb      = 3'b100  // Cache block Writeback
-  ,e_mem_cce_inv     = 3'b101  // Invalidate block (from Mem to CCE)
-  // 3'b110 - 3'b111 reserved / custom
+  e_cce_mem_rd       = 4'b0000  // Read-miss request
+  ,e_cce_mem_wr      = 4'b0001  // Write-miss request
+  ,e_cce_mem_uc_rd   = 4'b0010  // Uncached load
+  ,e_cce_mem_uc_wr   = 4'b0011  // Uncached store
+  ,e_cce_mem_wb      = 4'b0100  // Cache block Writeback
+  ,e_mem_cce_inv     = 4'b0101  // Invalidate block (from Mem to CCE)
+  // 4'b0110 - 4'b1111 reserved / custom
 } bp_cce_mem_cmd_type_e;
 
 `define bp_cce_mem_cmd_type_width $bits(bp_cce_mem_cmd_type_e)

@@ -3,15 +3,6 @@
 
 #include "microcode.h"
 
-# Reset Routine
-# clear pending bits for every way-group
-rst_wdp_init: movi 0 r0
-movi N_WG r1
-rst_wdp_check: bge r0 r1 rst_wg_init
-wdp r0 0
-inc r0
-bi rst_wdp_check
-
 # invalidate every entry in directory
 rst_wg_init: movi N_WG r0
 rst_wg_check: bz r0 set_clear_init
@@ -50,33 +41,22 @@ movi N_LCE r1
 movi SYNC_ACK r3
 sync_top: bge r0 r1 ready
 pushq lceCmd SYNC r0
-popq lceResp
-bne r3 ackType error
+popq lceResp r4
+bne r3 r4 error
 inc r0
 bi sync_top
 
 # Ready Routine
-# In ready state, the CCE can process lce responses, memory response, or new lce requests
-ready: wfq lceReq memResp lceResp
-bqr lceResp ack_pop
-bqr memResp mem_resp
+ready: wfq lceReq lceResp
+bqr lceResp resp_pop
 bqr lceReq lce_req
 stall
 
-ack_pop: popq lceResp
+resp_pop: popq lceResp r4
 movi COH_ACK r0
-beq r0 ackType ready
-movi TR_ACK r1
-beq r1 ackType ready
-# coming from the ready state, the CCE should only receive COH or TR acks
+beq r0 r4 ready
+# coming from the ready state, the CCE should only receive COH ack
 bi error
-
-# Memory Response Routine
-# A memory response returns after a replacement writeback or a transfer writeback
-mem_resp: popq memResp
-bf ucf uc_mem_resp
-bf rwbf transfer_check
-bi ready
 
 # LCE Request Routine
 lce_req: clm
@@ -101,7 +81,7 @@ movi N_LCE r1
 movi 0 r2
 movi INV_ACK r3
 inv_top: bge r0 r1 inv_ack_top
-bz shR0 inv_inc_lce
+bz shHitr0 inv_inc_lce
 beq reqLce r0 inv_inc_lce
 inc r2
 pushq lceCmd INV r0 req shWayR0
@@ -110,10 +90,10 @@ inv_inc_lce: inc r0
 bi inv_top
 inv_ack_top: bz r2 upgrade_check
 # pop the lce response
-inv_ack_pop: popq lceResp
+inv_ack_pop: popq lceResp r4
 # check the response type; if it is an invalidation, decrement the counter and continue looping
 # non invalidation acks get popped, and then the PC jumps back to wait for invalidation acks
-bne r3 ackType inv_ack_pop
+bne r3 r4 inv_ack_pop
 dec r2
 bi inv_ack_top
 
@@ -132,12 +112,11 @@ replace_check: bfz rf transfer_check
 
 # Replacement Routine
 replace: pushq lceCmd WB req lru lru
-poph lceDataResp
-sf rwbf
-pushq memDataCmd lru
-popq lceDataResp
-sfz rwbf
-bi ready
+poph lceResp r0
+pushq memCmd MEM_CMD_WB lru
+popq lceResp r0
+# replacement done, explicitly set replacement flag to 0
+sfz rf
 
 # Transfer Check
 transfer_check: bfz tf read_l2
@@ -147,33 +126,31 @@ transfer: pushq lceCmd ST req req lru
 pushq lceCmd TR tr req tr
 pushq lceCmd WB tr req tr
 # wait for transfer WB response
-poph lceDataResp
+poph lceResp r0
 bf nwbf complete_nwb_transfer
 # perform the transfer WB to mem
-sfz rwbf
-pushq memDataCmd req
-popq lceDataResp
+pushq memCmd MEM_CMD_WB req
+popq lceResp r0
 bi ready
 
 # Null transfer writeback, pop the data response and the transfer ack
-complete_nwb_transfer: popq lceDataResp
+complete_nwb_transfer: popq lceResp r0
 bi ready
 
 # Read Line from L2 Routine
-read_l2: wde req req lru req nextCohSt
-pushq memCmd
+# TODO: move memory request earlier to hide some latency
+read_l2: pushq memCmd
 pushq lceCmd ST req req lru
 bi ready
 
 # Uncached Request Routine
+# TODO: collapse, hardware detects if it is load/store for the memCmd based on rqf
+# but, it might be better to change HW to require a command type and addr sel in ucode for every memCmd
 uncached_req: popq lceReq
 bf rqf uncached_store
 pushq memCmd
 bi ready
-uncached_store: pushq memDataCmd req
-bi ready
-
-uc_mem_resp: pushq lceCmd UCST req req req
+uncached_store: pushq memCmd
 bi ready
 
 error: stall

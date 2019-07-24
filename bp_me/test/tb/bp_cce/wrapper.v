@@ -13,13 +13,14 @@ module wrapper
  import bp_be_rv64_pkg::*;
  import bp_cce_pkg::*;
  import bp_cfg_link_pkg::*;
+ import bp_me_pkg::*;
  #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR
    `declare_bp_proc_params(cfg_p)
    , localparam lg_num_cce_lp = `BSG_SAFE_CLOG2(num_cce_p)
 
    // interface widths
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mem_payload_width_p)
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
    , parameter cce_trace_p = 0
    )
@@ -43,19 +44,11 @@ module wrapper
    , input                                                 lce_resp_v_i
    , output logic                                          lce_resp_ready_o
 
-   , input [lce_cce_data_resp_width_lp-1:0]                lce_data_resp_i
-   , input                                                 lce_data_resp_v_i
-   , output logic                                          lce_data_resp_ready_o
-
    // outbound: ready&valid
    // messages are not buffered by the CCE, and connection is directly to ME network
-   , output logic [cce_lce_cmd_width_lp-1:0]               lce_cmd_o
+   , output logic [lce_cmd_width_lp-1:0]                   lce_cmd_o
    , output logic                                          lce_cmd_v_o
    , input                                                 lce_cmd_ready_i
-
-   , output logic [lce_data_cmd_width_lp-1:0]              lce_data_cmd_o
-   , output logic                                          lce_data_cmd_v_o
-   , input                                                 lce_data_cmd_ready_i
 
    // CCE-MEM Interface
    // inbound: ready&valid, helpful consumer from demanding producer
@@ -65,17 +58,9 @@ module wrapper
    , input                                                 mem_resp_v_i
    , output logic                                          mem_resp_ready_o
 
-   , input [mem_cce_data_resp_width_lp-1:0]                mem_data_resp_i
-   , input                                                 mem_data_resp_v_i
-   , output logic                                          mem_data_resp_ready_o
-
    , output logic [cce_mem_cmd_width_lp-1:0]               mem_cmd_o
    , output logic                                          mem_cmd_v_o
    , input                                                 mem_cmd_yumi_i
-
-   , output logic [cce_mem_data_cmd_width_lp-1:0]          mem_data_cmd_o
-   , output logic                                          mem_data_cmd_v_o
-   , input                                                 mem_data_cmd_yumi_i
 
    , input [lg_num_cce_lp-1:0]                             cce_id_i
   );
@@ -105,33 +90,24 @@ bind bp_cce_top
       ,.lce_resp_i(lce_resp_to_cce)
       ,.lce_resp_v_i(lce_resp_v_to_cce)
       ,.lce_resp_yumi_i(lce_resp_yumi_from_cce)
-      ,.lce_data_resp_i(lce_data_resp_to_cce)
-      ,.lce_data_resp_v_i(lce_data_resp_v_to_cce)
-      ,.lce_data_resp_yumi_i(lce_data_resp_yumi_from_cce)
 
       // From CCE
       ,.lce_cmd_i(lce_cmd_o)
       ,.lce_cmd_v_i(lce_cmd_v_o)
       ,.lce_cmd_ready_i(lce_cmd_ready_i)
-      ,.lce_data_cmd_i(lce_data_cmd_o)
-      ,.lce_data_cmd_v_i(lce_data_cmd_v_o)
-      ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
 
       // To CCE
       ,.mem_resp_i(mem_resp_to_cce)
       ,.mem_resp_v_i(mem_resp_v_to_cce)
       ,.mem_resp_yumi_i(mem_resp_yumi_from_cce)
-      ,.mem_data_resp_i(mem_data_resp_to_cce)
-      ,.mem_data_resp_v_i(mem_data_resp_v_to_cce)
-      ,.mem_data_resp_yumi_i(mem_data_resp_yumi_from_cce)
 
       // From CCE
       ,.mem_cmd_i(mem_cmd_from_cce)
       ,.mem_cmd_v_i(mem_cmd_v_from_cce)
       ,.mem_cmd_ready_i(mem_cmd_ready_to_cce)
-      ,.mem_data_cmd_i(mem_data_cmd_from_cce)
-      ,.mem_data_cmd_v_i(mem_data_cmd_v_from_cce)
-      ,.mem_data_cmd_ready_i(mem_data_cmd_ready_to_cce)
+
+      ,.stall_i((bp_cce.decoded_inst_lo.op == '0)
+                & (bp_cce.decoded_inst_lo.minor_op_u.misc_minor_op == 3'b111))
       );
 
 endmodule : wrapper

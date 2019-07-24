@@ -97,8 +97,6 @@ module bp_cce_fsm
   bp_lce_cce_req_req_s lce_req_req;
   bp_lce_cce_req_uc_req_s lce_req_uc_req;
   bp_lce_cce_resp_s lce_resp;
-  bp_lce_cce_resp_resp_s lce_resp_resp;
-  bp_lce_cce_resp_data_s lce_resp_data;
   bp_lce_cmd_s lce_cmd;
   bp_lce_cmd_cmd_s lce_cmd_cmd;
 
@@ -112,8 +110,6 @@ module bp_cce_fsm
   // cast input messages with data
   assign mem_resp = mem_resp_i;
   assign lce_resp = lce_resp_i;
-  assign lce_resp_resp = lce_resp.msg.resp;
-  assign lce_resp_data = lce_resp.msg.data_resp;
   assign lce_req = lce_req_i;
   assign lce_req_req = lce_req.msg.req;
   assign lce_req_uc_req = lce_req.msg.uc_req;
@@ -201,9 +197,10 @@ module bp_cce_fsm
   logic gad_replacement_flag_lo;
   logic gad_upgrade_flag_lo;
   logic gad_invalidate_flag_lo;
-  logic gad_exclusive_flag_lo;
   logic gad_cached_flag_lo;
-  logic gad_error_lo;
+  logic gad_cached_exclusive_flag_lo;
+  logic gad_cached_owned_flag_lo;
+  logic gad_cached_dirty_flag_lo;
 
   // Directory
   bp_cce_fsm_dir
@@ -273,10 +270,10 @@ module bp_cce_fsm
       ,.replacement_flag_o(gad_replacement_flag_lo)
       ,.upgrade_flag_o(gad_upgrade_flag_lo)
       ,.invalidate_flag_o(gad_invalidate_flag_lo)
-      ,.exclusive_flag_o(gad_exclusive_flag_lo)
       ,.cached_flag_o(gad_cached_flag_lo)
-
-      ,.error_o(gad_error_lo)
+      ,.cached_exclusive_flag_o(gad_cached_exclusive_flag_lo)
+      ,.cached_owned_flag_o(gad_cached_owned_flag_lo)
+      ,.cached_dirty_flag_o(gad_cached_dirty_flag_lo)
       );
 
 
@@ -446,7 +443,7 @@ module bp_cce_fsm
       if (mem_resp.msg_type == e_cce_mem_uc_rd) begin
         lce_cmd.msg_type = e_lce_cmd_uc_data;
         lce_cmd.way_id = '0;
-        lce_cmd.msg.data[dword_width_p] = mem_resp.data[0+:dword_width_p];
+        lce_cmd.msg.data[0+:dword_width_p] = mem_resp.data[0+:dword_width_p];
       end else begin
         lce_cmd.msg_type = e_lce_cmd_data;
         lce_cmd.way_id = mem_resp.payload.way_id;
@@ -469,8 +466,7 @@ module bp_cce_fsm
 
     // Dequeue coherence ack when it arrives
     // Does not conflict with other dequeues of LCE Response
-    if (lce_resp_v_i & (lce_resp.msg_type == e_lce_cce_resp_ack)
-        & (lce_resp_resp.msg_type == e_lce_cce_coh_ack)) begin
+    if (lce_resp_v_i & (lce_resp.msg_type == e_lce_cce_coh_ack)) begin
         lce_resp_yumi_o = 1'b1;
     end
 
@@ -517,10 +513,9 @@ module bp_cce_fsm
 
         // LCE Cmd Common Fields
         lce_cmd.dst_id = cnt[0+:lg_num_lce_lp];
-        lce_cmd.msg_type = e_lce_cmd_cmd;
+        lce_cmd.msg_type = e_lce_cmd_set_clear;
 
         // Sub message fields
-        lce_cmd_cmd.msg_type = e_lce_cmd_set_clear;
         // sc_cnt holds the current way-group being targeted by the set clear command, which
         // needs to be translated into an LCE relative set index
         lce_cmd_cmd.addr = ((paddr_width_p'(sc_cnt) << set_shift_lp) + paddr_width_p'(cce_id_i))
@@ -552,10 +547,7 @@ module bp_cce_fsm
 
         // LCE Cmd Common Fields
         lce_cmd.dst_id = cnt[0+:lg_num_lce_lp];
-        lce_cmd.msg_type = e_lce_cmd_cmd;
-
-        // Sub message fields
-        lce_cmd_cmd.msg_type = e_lce_cmd_sync;
+        lce_cmd.msg_type = e_lce_cmd_sync;
 
         // Assign Command subtype to msg field
         lce_cmd.msg.cmd = lce_cmd_cmd;
@@ -570,8 +562,7 @@ module bp_cce_fsm
                     ? READY
                     : SEND_SYNC
                   : SYNC_ACK;
-        state_n = (lce_resp_v_i & ((lce_resp.msg_type != e_lce_cce_resp_ack)
-                   | (lce_resp_resp.msg_type != e_lce_cce_sync_ack)))
+        state_n = (lce_resp_v_i & (lce_resp.msg_type != e_lce_cce_sync_ack))
                   ? ERROR
                   : state_n;
         ack_cnt_clr = (state_n == READY);
@@ -592,10 +583,9 @@ module bp_cce_fsm
 
             // LCE Cmd Common Fields
             lce_cmd.dst_id = mem_resp.payload.lce_id;
-            lce_cmd.msg_type = e_lce_cmd_cmd;
+            lce_cmd.msg_type = e_lce_cmd_uc_st_done;
 
             // Sub message fields
-            lce_cmd_cmd.msg_type = e_lce_cmd_uc_st_done;
             lce_cmd_cmd.addr = mem_resp.addr;
 
             // Assign Command subtype to msg field
@@ -604,7 +594,6 @@ module bp_cce_fsm
             mem_resp_yumi_o = lce_cmd_ready_i;
             state_n = READY;
           end
-
         end else if (lce_req_v_i) begin
           mshr_n.lce_id = lce_req.src_id;
           state_n = ERROR;
@@ -710,13 +699,14 @@ module bp_cce_fsm
 
           mshr_n.way_id = gad_req_addr_way_lo;
 
+          mshr_n.flags[e_flag_sel_tf] = gad_transfer_flag_lo;
           mshr_n.flags[e_flag_sel_rf] = gad_replacement_flag_lo;
-          mshr_n.flags[e_flag_sel_rwbf] = gad_replacement_flag_lo;
           mshr_n.flags[e_flag_sel_uf] = gad_upgrade_flag_lo;
           mshr_n.flags[e_flag_sel_if] = gad_invalidate_flag_lo;
-          mshr_n.flags[e_flag_sel_ef] = gad_exclusive_flag_lo;
           mshr_n.flags[e_flag_sel_cf] = gad_cached_flag_lo;
-          mshr_n.flags[e_flag_sel_tf] = gad_transfer_flag_lo;
+          mshr_n.flags[e_flag_sel_cef] = gad_cached_exclusive_flag_lo;
+          mshr_n.flags[e_flag_sel_cof] = gad_cached_owned_flag_lo;
+          mshr_n.flags[e_flag_sel_cdf] = gad_cached_dirty_flag_lo;
 
           mshr_n.tr_lce_id = gad_transfer_lce_lo;
           mshr_n.tr_way_id = gad_transfer_lce_way_lo;
@@ -775,11 +765,10 @@ module bp_cce_fsm
 
           // LCE Cmd Common Fields
           lce_cmd.dst_id = cnt[0+:lg_num_lce_lp];
-          lce_cmd.msg_type = e_lce_cmd_cmd;
+          lce_cmd.msg_type = e_lce_cmd_invalidate_tag;
           lce_cmd.way_id = sharers_ways_lo[cnt];
 
           // Sub message fields
-          lce_cmd_cmd.msg_type = e_lce_cmd_invalidate_tag;
           lce_cmd_cmd.addr = mshr_r.paddr;
 
           // Assign Command subtype to msg field
@@ -810,8 +799,7 @@ module bp_cce_fsm
 
       end
       INV_ACK: begin
-        if (lce_resp_v_i & (lce_resp.msg_type == e_lce_cce_resp_ack)
-            & (lce_resp_resp.msg_type == e_lce_cce_inv_ack)) begin
+        if (lce_resp_v_i & (lce_resp.msg_type == e_lce_cce_inv_ack)) begin
           lce_resp_yumi_o = 1'b1;
           cnt_inc = 1'b1;
 
@@ -840,11 +828,10 @@ module bp_cce_fsm
 
         // LCE Cmd Common Fields
         lce_cmd.dst_id = mshr_r.lce_id;
-        lce_cmd.msg_type = e_lce_cmd_cmd;
+        lce_cmd.msg_type = e_lce_cmd_writeback;
         lce_cmd.way_id = mshr_r.lru_way_id;
 
         // Sub message fields
-        lce_cmd_cmd.msg_type = e_lce_cmd_writeback;
         lce_cmd_cmd.addr = mshr_r.lru_paddr;
 
         // Assign Command subtype to msg field
@@ -853,17 +840,17 @@ module bp_cce_fsm
         state_n = (lce_cmd_ready_i) ? REPLACEMENT_WB_RESP : REPLACEMENT;
       end
       REPLACEMENT_WB_RESP: begin
-        if (lce_resp_v_i & (lce_resp.msg_type == e_lce_cce_resp_data)) begin
-          if (lce_resp_data.msg_type == e_lce_cce_resp_null_wb) begin
+        if (lce_resp_v_i) begin
+          if (lce_resp.msg_type == e_lce_cce_resp_null_wb) begin
             lce_resp_yumi_o = 1'b1;
             state_n = (mshr_r.flags[e_flag_sel_tf])
                       ? TRANSFER_CMD
                       : READ_MEM;
             // clear the replacement writeback flag
-            mshr_n.flags[e_flag_sel_rwbf] = 1'b0;
+            mshr_n.flags[e_flag_sel_nwbf] = 1'b1;
 
           end
-          else if ((lce_resp_data.msg_type == e_lce_cce_resp_wb) & ~pending_busy) begin
+          else if ((lce_resp.msg_type == e_lce_cce_resp_wb) & ~pending_busy) begin
             // Mem Data Cmd needs to write pending bit, so only send if Mem Data Resp / LCE Data Cmd is
             // not writing the pending bit
             mem_cmd_v_o = lce_resp_v_i;
@@ -873,7 +860,7 @@ module bp_cce_fsm
             mem_cmd.addr = lce_resp.addr;
             mem_cmd.payload.lce_id = mshr_r.lce_id;
             mem_cmd.payload.way_id = '0;
-            mem_cmd.data = lce_resp_data.data;
+            mem_cmd.data = lce_resp.data;
 
             state_n = (lce_resp_yumi_o)
                       ? (mshr_r.flags[e_flag_sel_tf])
@@ -895,11 +882,10 @@ module bp_cce_fsm
 
         // LCE Cmd Common Fields
         lce_cmd.dst_id = mshr_r.tr_lce_id;
-        lce_cmd.msg_type = e_lce_cmd_cmd;
+        lce_cmd.msg_type = e_lce_cmd_transfer;
         lce_cmd.way_id = mshr_r.tr_way_id;
 
         // Sub message fields
-        lce_cmd_cmd.msg_type = e_lce_cmd_transfer;
         lce_cmd_cmd.addr = mshr_r.paddr;
         lce_cmd_cmd.target = mshr_r.lce_id;
         lce_cmd_cmd.target_way_id = mshr_r.lru_way_id;
@@ -914,11 +900,10 @@ module bp_cce_fsm
 
         // LCE Cmd Common Fields
         lce_cmd.dst_id = mshr_r.lce_id;
-        lce_cmd.msg_type = e_lce_cmd_cmd;
+        lce_cmd.msg_type = e_lce_cmd_set_tag;
         lce_cmd.way_id = mshr_r.lru_way_id;
 
         // Sub message fields
-        lce_cmd_cmd.msg_type = e_lce_cmd_set_tag;
         lce_cmd_cmd.addr = mshr_r.paddr;
         lce_cmd_cmd.state = mshr_r.next_coh_state;
 
@@ -932,11 +917,10 @@ module bp_cce_fsm
 
         // LCE Cmd Common Fields
         lce_cmd.dst_id = mshr_r.tr_lce_id;
-        lce_cmd.msg_type = e_lce_cmd_cmd;
+        lce_cmd.msg_type = e_lce_cmd_writeback;
         lce_cmd.way_id = mshr_r.tr_way_id;
 
         // Sub message fields
-        lce_cmd_cmd.msg_type = e_lce_cmd_writeback;
         lce_cmd_cmd.addr = mshr_r.paddr;
 
         // Assign Command subtype to msg field
@@ -945,14 +929,14 @@ module bp_cce_fsm
         state_n = (lce_cmd_ready_i) ? TRANSFER_WB_RESP : TRANSFER_WB_CMD;
       end
       TRANSFER_WB_RESP: begin
-        if (lce_resp_v_i & lce_resp.msg_type == e_lce_cce_resp_data) begin
-          if (lce_resp_data.msg_type == e_lce_cce_resp_null_wb) begin
+        if (lce_resp_v_i) begin
+          if (lce_resp.msg_type == e_lce_cce_resp_null_wb) begin
             lce_resp_yumi_o = 1'b1;
             state_n = READY;
             mshr_n = '0;
 
           end
-          else if ((lce_resp_data.msg_type == e_lce_cce_resp_wb) & ~pending_busy) begin
+          else if ((lce_resp.msg_type == e_lce_cce_resp_wb) & ~pending_busy) begin
             // Mem Data Cmd needs to write pending bit, so only send if Mem Data Resp / LCE Data Cmd is
             // not writing the pending bit
             mem_cmd_v_o = lce_resp_v_i;
@@ -962,7 +946,7 @@ module bp_cce_fsm
             mem_cmd.addr = lce_resp.addr;
             mem_cmd.payload.lce_id = mshr_r.lce_id;
             mem_cmd.payload.way_id = '0;
-            mem_cmd.data = lce_resp_data.data;
+            mem_cmd.data = lce_resp.data;
 
             state_n = (lce_resp_yumi_o) ? READY : TRANSFER_WB_RESP;
 
@@ -980,11 +964,10 @@ module bp_cce_fsm
 
         // LCE Cmd Common Fields
         lce_cmd.dst_id = mshr_r.lce_id;
-        lce_cmd.msg_type = e_lce_cmd_cmd;
+        lce_cmd.msg_type = e_lce_cmd_set_tag_wakeup;
         lce_cmd.way_id = mshr_r.lru_way_id;
 
         // Sub message fields
-        lce_cmd_cmd.msg_type = e_lce_cmd_set_tag_wakeup;
         lce_cmd_cmd.addr = mshr_r.paddr;
         lce_cmd_cmd.state = mshr_r.next_coh_state;
 
@@ -1017,11 +1000,10 @@ module bp_cce_fsm
 
         // LCE Cmd Common Fields
         lce_cmd.dst_id = mshr_r.lce_id;
-        lce_cmd.msg_type = e_lce_cmd_cmd;
+        lce_cmd.msg_type = e_lce_cmd_set_tag;
         lce_cmd.way_id = mshr_r.lru_way_id;
 
         // Sub message fields
-        lce_cmd_cmd.msg_type = e_lce_cmd_set_tag;
         lce_cmd_cmd.addr = mshr_r.paddr;
         lce_cmd_cmd.state = mshr_r.next_coh_state;
 

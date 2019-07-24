@@ -72,11 +72,13 @@ Assembler::getOp(const char* op) {
   } else if (!strcmp("bi", op) || !strcmp("beq", op) || !strcmp("bne", op) || !strcmp("bz", op)
              || !strcmp("bnz", op) || !strcmp("bf", op) || !strcmp("bfz", op) || !strcmp("bqr", op)
              || !strcmp("blt", op) || !strcmp("ble", op) || !strcmp("bgt", op) || !strcmp("bge", op)
+             || !strcmp("beqi", op)
             ) {
     return e_op_branch;
-  } else if (!strcmp("mov", op) || !strcmp("movi", op)) {
+  } else if (!strcmp("mov", op) || !strcmp("movi", op) || !strcmp("movf", op) || !strcmp("movsg", op)
+             || !strcmp("movgs", op)) {
     return e_op_move;
-  } else if (!strcmp("sf", op) || !strcmp("sfz", op)) {
+  } else if (!strcmp("sf", op) || !strcmp("sfz", op) || !strcmp("andf", op) || !strcmp("orf", op)) {
     return e_op_flag;
   } else if (!strcmp("rdp", op) || !strcmp("rdw", op) || !strcmp("rde", op)) {
     return e_op_read_dir;
@@ -113,9 +115,12 @@ Assembler::getMinorOp(const char* op) {
     return e_neg;
   } else if (!strcmp("bi", op)) {
     return e_bi;
-  } else if (!strcmp("beq", op) || !strcmp("bz", op) || !strcmp("bf", op) || !strcmp("bfz", op)
-             || !strcmp("bqr", op)) {
+  } else if (!strcmp("beq", op) || !strcmp("bz", op) || !strcmp("beqi", op)) {
     return e_beq;
+  } else if (!strcmp("bqr", op)) {
+    return e_bqr;
+  } else if (!strcmp("bf", op) || !strcmp("bfz", op)) {
+    return e_bf;
   } else if (!strcmp("bne", op) || !strcmp("bnz", op)) {
     return e_bne;
   } else if (!strcmp("blt", op) || !strcmp("bgt", op)) {
@@ -126,8 +131,18 @@ Assembler::getMinorOp(const char* op) {
     return e_mov;
   } else if (!strcmp("movi", op)) {
     return e_movi;
+  } else if (!strcmp("movf", op)) {
+    return e_movf;
+  } else if (!strcmp("movsg", op)) {
+    return e_movsg;
+  } else if (!strcmp("movgs", op)) {
+    return e_movgs;
   } else if (!strcmp("sf", op) || !strcmp("sfz", op)) {
     return e_sf;
+  } else if (!strcmp("andf", op)) {
+    return e_andf;
+  } else if (!strcmp("orf", op)) {
+    return e_orf;
   } else if (!strcmp("rdp", op)) {
     return e_rdp;
   } else if (!strcmp("rdw", op)) {
@@ -170,54 +185,60 @@ Assembler::parseSrcOpd(string &s) {
     return e_src_r2;
   } else if (!s.compare("r3")) {
     return e_src_r3;
-  } else if (!s.compare("rqf")) {
-    return e_src_rqf;
-  } else if (!s.compare("nerf")) {
-    return e_src_nerf;
-  } else if (!s.compare("ldf")) {
-    return e_src_ldf;
-  } else if (!s.compare("nwbf")) {
-    return e_src_nwbf;
-  } else if (!s.compare("tf")) {
-    return e_src_tf;
-  } else if (!s.compare("rf")) {
-    return e_src_rf;
-  } else if (!s.compare("rwbf")) {
-    return e_src_rwbf;
-  } else if (!s.compare("pf")) {
-    return e_src_pf;
-  } else if (!s.compare("uf")) {
-    return e_src_uf;
-  } else if (!s.compare("if")) {
-    return e_src_if;
-  } else if (!s.compare("ef")) {
-    return e_src_ef;
-  } else if (!s.compare("pcf")) {
-    return e_src_pcf;
-  } else if (!s.compare("ucf")) {
-    return e_src_ucf;
-  } else if (!s.compare("cf")) {
-    return e_src_cf;
+  } else if (!s.compare("r4")) {
+    return e_src_r4;
+  } else if (!s.compare("r5")) {
+    return e_src_r5;
+  } else if (!s.compare("r6")) {
+    return e_src_r6;
+  } else if (!s.compare("r7")) {
+    return e_src_r7;
+  } else if (!s.compare("shhitr0")) {
+    return e_src_sharers_hit_r0;
+  } else if (!s.compare("shwayr1")) {
+    return e_src_sharers_way_r1;
+  } else if (!s.compare("shstr2")) {
+    return e_src_sharers_state_r2;
   } else if (!s.compare("reqlce")) {
     return e_src_req_lce;
-  } else if (!s.compare("acktype")) {
-    return e_src_ack_type;
-  } else if (!s.compare("shr0")) {
-    return e_src_sharers_hit_r0;
-  } else if (!s.compare("cce_id")) {
-    return e_src_cce_id;
   } else if (!s.compare("lcereq")) {
     return e_src_lce_req_ready;
   } else if (!s.compare("memresp")) {
     return e_src_mem_resp_ready;
-  } else if (!s.compare("memdataresp")) {
-    return e_src_mem_data_resp_ready;
   } else if (!s.compare("pending")) {
     return e_src_pending_ready;
   } else if (!s.compare("lceresp")) {
     return e_src_lce_resp_ready;
-  } else if (!s.compare("lcedataresp")) {
-    return e_src_lce_data_resp_ready;
+  } else if (!s.compare("rqf")) {
+    return e_src_rqf;
+  } else if (!s.compare("ucf")) {
+    return e_src_ucf;
+  } else if (!s.compare("nerf")) {
+    return e_src_nerf;
+  } else if (!s.compare("ldf")) {
+    return e_src_ldf;
+  } else if (!s.compare("pf")) {
+    return e_src_pf;
+  } else if (!s.compare("lef")) {
+    return e_src_lef;
+  } else if (!s.compare("cf")) {
+    return e_src_cf;
+  } else if (!s.compare("cef")) {
+    return e_src_cef;
+  } else if (!s.compare("cof")) {
+    return e_src_cof;
+  } else if (!s.compare("cdf")) {
+    return e_src_cdf;
+  } else if (!s.compare("tf")) {
+    return e_src_tf;
+  } else if (!s.compare("rf")) {
+    return e_src_rf;
+  } else if (!s.compare("uf")) {
+    return e_src_uf;
+  } else if (!s.compare("if")) {
+    return e_src_if;
+  } else if (!s.compare("nwbf")) {
+    return e_src_nwbf;
   } else {
     printf("Unknown source operand: %s\n", s.c_str());
     exit(-1);
@@ -234,70 +255,93 @@ Assembler::parseDstOpd(string &s) {
     return e_dst_r2;
   } else if (!s.compare("r3")) {
     return e_dst_r3;
+  } else if (!s.compare("r4")) {
+    return e_dst_r4;
+  } else if (!s.compare("r5")) {
+    return e_dst_r5;
+  } else if (!s.compare("r6")) {
+    return e_dst_r6;
+  } else if (!s.compare("r7")) {
+    return e_dst_r7;
+  } else if (!s.compare("nextcohst")) {
+    return e_dst_next_coh_state;
   } else if (!s.compare("rqf")) {
     return e_dst_rqf;
+  } else if (!s.compare("ucf")) {
+    return e_dst_ucf;
   } else if (!s.compare("nerf")) {
     return e_dst_nerf;
   } else if (!s.compare("ldf")) {
     return e_dst_ldf;
-  } else if (!s.compare("nwbf")) {
-    return e_dst_nwbf;
+  } else if (!s.compare("pf")) {
+    return e_dst_pf;
+  } else if (!s.compare("lef")) {
+    return e_dst_lef;
+  } else if (!s.compare("cf")) {
+    return e_dst_cf;
+  } else if (!s.compare("cef")) {
+    return e_dst_cef;
+  } else if (!s.compare("cof")) {
+    return e_dst_cof;
+  } else if (!s.compare("cdf")) {
+    return e_dst_cdf;
   } else if (!s.compare("tf")) {
     return e_dst_tf;
   } else if (!s.compare("rf")) {
     return e_dst_rf;
-  } else if (!s.compare("rwbf")) {
-    return e_dst_rwbf;
-  } else if (!s.compare("pf")) {
-    return e_dst_pf;
   } else if (!s.compare("uf")) {
     return e_dst_uf;
   } else if (!s.compare("if")) {
     return e_dst_if;
-  } else if (!s.compare("ef")) {
-    return e_dst_ef;
-  } else if (!s.compare("pcf")) {
-    return e_dst_pcf;
-  } else if (!s.compare("ucf")) {
-    return e_dst_ucf;
-  } else if (!s.compare("cf")) {
-    return e_dst_cf;
-  } else if (!s.compare("nextcohst")) {
-    return e_dst_next_coh_state;
+  } else if (!s.compare("nwbf")) {
+    return e_dst_nwbf;
   } else {
     printf("Unknown destination operand: %s\n", s.c_str());
     exit(-1);
   }
 }
 
-uint16_t
-Assembler::parseImm(string &s) {
+uint32_t
+Assembler::parseImm(string &s, int immSize) {
   int stoi_res = stoi(s, nullptr, 0);
-  if (stoi_res > UINT16_MAX || stoi_res < 0) {
-    printf("Bad immediate: %d\n", stoi_res);
-    exit(-1);
-  } else {
-    return (uint16_t)stoi_res;
+  if (immSize == 16) {
+    if (stoi_res > UINT16_MAX) {
+      printf("Bad immediate: %ld\n", stoi_res);
+    } else {
+      return (uint32_t)stoi_res;
+    }
+  } else if (immSize == 32) {
+    if ((uint32_t)stoi_res > UINT32_MAX) {
+      printf("Bad immediate: %ld\n", stoi_res);
+    } else {
+      return (uint32_t)stoi_res;
+    }
   }
+  printf("Bad immediate: size: %d, %ld\n", immSize, stoi_res);
+  exit(-1);
 }
 
-uint16_t
+uint32_t
 Assembler::parseCohStImm(string &s) {
   if (!s.compare("m")) {
-    return 3;
+    return 6;
   } else if (!s.compare("e")) {
     return 2;
   } else if (!s.compare("s")) {
     return 1;
   } else if (!s.compare("i")) {
     return 0;
+  } else if (!s.compare("o")) {
+    return 7;
+  } else if (!s.compare("f")) {
+    return 3;
   }
   int stoi_res = stoi(s, nullptr, 0);
-  if (stoi_res > 3 || stoi_res < 0) {
+  if (stoi_res > 7 || stoi_res < 0 || stoi_res == 4 || stoi_res == 5) {
     printf("Bad coh state immediate: %d\n", stoi_res);
     exit(-1);
   } else {
-    return (uint16_t)stoi_res;
+    return (uint32_t)stoi_res;
   }
 }
 
@@ -307,9 +351,11 @@ Assembler::parseALU(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
     inst->type_u.alu_op_s.src_a = parseSrcOpd(tokens->at(1));
     inst->type_u.alu_op_s.dst = parseDstOpd(tokens->at(1));
     if (inst->minor_op == e_inc || inst->minor_op == e_dec) {
-      inst->type_u.alu_op_s.src_b = e_src_const_1;
+      inst->type_u.alu_op_s.src_b = e_src_imm;
+      inst->type_u.alu_op_s.imm = 1;
     } else if (inst->minor_op == e_neg) {
-      inst->type_u.alu_op_s.src_b = e_src_const_0;
+      inst->type_u.alu_op_s.src_b = e_src_imm;
+      inst->type_u.alu_op_s.imm = 0;
     } else {
       printf("Unknown ALU instruction: %s\n", tokens->at(0).c_str());
       exit(-1);
@@ -341,13 +387,13 @@ Assembler::parseTarget(string &s, bool &found) {
 }
 
 uint16_t
-Assembler::getImm(string &target_str) {
+Assembler::getBranchTarget(string &target_str) {
   bool label_found = false;
   uint16_t target = parseTarget(target_str, label_found);
   if (label_found) {
     return target;
   } else {
-    return parseImm(target_str);
+    return (uint16_t)parseImm(target_str, 16);
   }
 }
 
@@ -355,26 +401,32 @@ void
 Assembler::parseBranch(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
   // Branch Immediate
   if (tokens->size() == 2) {
-    inst->type_u.branch_op_s.imm = getImm(tokens->at(1));
-  // Branch Flag or Branch Queue Ready
+    inst->type_u.branch_op_s.target = getBranchTarget(tokens->at(1));
+  // Branch Flag, Branch Queue Ready, Branch Zero, Branch Not Zero
   } else if (tokens->size() == 3) {
     inst->type_u.branch_op_s.src_a = parseSrcOpd(tokens->at(1));
     if (!strcmp("bf", tokens->at(0).c_str()) || !strcmp("bqr", tokens->at(0).c_str())) {
-      inst->type_u.branch_op_s.src_b = e_src_const_1;
-    } else {
-      inst->type_u.branch_op_s.src_b = e_src_const_0;
+      inst->type_u.branch_op_s.src_b = e_src_imm;
+      inst->type_u.branch_op_s.imm = 1;
+    } else { // bfz, bz, bnz
+      inst->type_u.branch_op_s.src_b = e_src_imm;
+      inst->type_u.branch_op_s.imm = 0;
     }
-    inst->type_u.branch_op_s.imm = getImm(tokens->at(2));
-  // Branch
+    inst->type_u.branch_op_s.target = getBranchTarget(tokens->at(2));
+  // Branch comparing two sources, or Branch Equal Immediate
   } else if (tokens->size() == 4) {
-    if (!strcmp("bge", tokens->at(0).c_str()) || !strcmp("bgt", tokens->at(0).c_str())) {
+    if (!strcmp("beqi", tokens->at(0).c_str())) {
+      inst->type_u.branch_op_s.src_a = parseSrcOpd(tokens->at(1));
+      inst->type_u.branch_op_s.src_b = e_src_imm;
+      inst->type_u.branch_op_s.imm = (uint16_t)parseImm(tokens->at(2), 16);
+    } else if (!strcmp("bge", tokens->at(0).c_str()) || !strcmp("bgt", tokens->at(0).c_str())) {
       inst->type_u.branch_op_s.src_a = parseSrcOpd(tokens->at(2));
       inst->type_u.branch_op_s.src_b = parseSrcOpd(tokens->at(1));
-    } else {
+    } else { // blt, ble
       inst->type_u.branch_op_s.src_a = parseSrcOpd(tokens->at(1));
       inst->type_u.branch_op_s.src_b = parseSrcOpd(tokens->at(2));
     }
-    inst->type_u.branch_op_s.imm = getImm(tokens->at(3));
+    inst->type_u.branch_op_s.target = getBranchTarget(tokens->at(3));
   } else {
     printf("Unknown Branch instruction: %s\n", tokens->at(0).c_str());
   }
@@ -386,14 +438,32 @@ Assembler::parseFlagSel(string &s) {
     case e_dst_rqf:
       return e_flag_rqf;
       break;
+    case e_dst_ucf:
+      return e_flag_ucf;
+      break;
     case e_dst_nerf:
       return e_flag_nerf;
       break;
     case e_dst_ldf:
       return e_flag_ldf;
       break;
-    case e_dst_nwbf:
-      return e_flag_nwbf;
+    case e_dst_pf:
+      return e_flag_pf;
+      break;
+    case e_dst_lef:
+      return e_flag_lef;
+      break;
+    case e_dst_cf:
+      return e_flag_cf;
+      break;
+    case e_dst_cef:
+      return e_flag_cef;
+      break;
+    case e_dst_cof:
+      return e_flag_cof;
+      break;
+    case e_dst_cdf:
+      return e_flag_cdf;
       break;
     case e_dst_tf:
       return e_flag_tf;
@@ -401,29 +471,14 @@ Assembler::parseFlagSel(string &s) {
     case e_dst_rf:
       return e_flag_rf;
       break;
-    case e_dst_rwbf:
-      return e_flag_rwbf;
-      break;
-    case e_dst_pf:
-      return e_flag_pf;
-      break;
     case e_dst_uf:
       return e_flag_uf;
       break;
     case e_dst_if:
       return e_flag_if;
       break;
-    case e_dst_ef:
-      return e_flag_ef;
-      break;
-    case e_dst_pcf:
-      return e_flag_pcf;
-      break;
-    case e_dst_ucf:
-      return e_flag_ucf;
-      break;
-    case e_dst_cf:
-      return e_flag_cf;
+    case e_dst_nwbf:
+      return e_flag_nwbf;
       break;
     default:
       printf("Unknown Flag operand\n");
@@ -437,10 +492,13 @@ Assembler::parseMove(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
     inst->type_u.mov_op_s.dst = parseDstOpd(tokens->at(2));
     if (inst->minor_op == e_movi) {
       inst->type_u.mov_op_s.src = e_src_imm;
-      if (inst->type_u.mov_op_s.dst == e_dst_next_coh_state) {
+      if (!strcmp("nextcohst", tokens->at(2).c_str())) {
         inst->type_u.mov_op_s.imm = parseCohStImm(tokens->at(1));
+        // moving immediate to nextCohSt requires that the destination is a special register,
+        // so modify the minor op to movgs. GPR source can be an immediate.
+        inst->minor_op = e_movgs;
       } else {
-        inst->type_u.mov_op_s.imm = parseImm(tokens->at(1));
+        inst->type_u.mov_op_s.imm = (uint32_t)parseImm(tokens->at(1), 32);
       }
     } else if (inst->minor_op == e_mov) {
       inst->type_u.mov_op_s.src = parseSrcOpd(tokens->at(1));
@@ -553,10 +611,7 @@ void
 Assembler::parseReadDir(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
   inst->type_u.read_dir_op_s.dir_way_group_sel = parseDirWgSel(tokens->at(1));
   if (inst->minor_op == e_rdp) {
-    /*
-    inst->pruief_sel = e_pruief_logic;
-    inst->flag_mask_w_v = e_flag_pf;
-    */
+    // nothing special to set
   } else if (inst->minor_op == e_rdw) {
     inst->type_u.read_dir_op_s.dir_lce_sel = parseDirLceSel(tokens->at(2));
   } else if (inst->minor_op == e_rde) {
@@ -572,7 +627,7 @@ void
 Assembler::parseWriteDir(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
   inst->type_u.write_dir_op_s.dir_way_group_sel = parseDirWgSel(tokens->at(1));
   if (inst->minor_op == e_wdp) {
-    inst->type_u.write_dir_op_s.imm = (uint8_t)(parseImm(tokens->at(2)) & 0x1);
+    inst->type_u.write_dir_op_s.imm = (uint8_t)(parseImm(tokens->at(2), 16) & 0x1);
   } else if (inst->minor_op == e_wde || inst->minor_op == e_wds) {
     inst->type_u.write_dir_op_s.dir_lce_sel = parseDirLceSel(tokens->at(2));
     inst->type_u.write_dir_op_s.dir_way_sel = parseDirWaySel(tokens->at(3));
@@ -580,7 +635,7 @@ Assembler::parseWriteDir(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
       inst->type_u.write_dir_op_s.dir_tag_sel = parseDirTagSel(tokens->at(4));
       inst->type_u.write_dir_op_s.dir_coh_state_sel = parseDirCohStSel(tokens->at(5));
       if (inst->type_u.write_dir_op_s.dir_coh_state_sel == e_dir_coh_sel_inst_imm) {
-        inst->type_u.write_dir_op_s.imm = (uint8_t)(parseCohStImm(tokens->at(5)) & 0x3);
+        inst->type_u.write_dir_op_s.imm = (uint8_t)(parseCohStImm(tokens->at(5)) & 0x7);
       }
     } else if (inst->minor_op == e_wds) {
       inst->type_u.write_dir_op_s.dir_coh_state_sel = parseDirCohStSel(tokens->at(4));
@@ -608,14 +663,10 @@ Assembler::parseSrcQueue(string &s) {
     return e_src_q_lce_req;
   } else if (!s.compare("memresp")) {
     return e_src_q_mem_resp;
-  } else if (!s.compare("memdataresp")) {
-    return e_src_q_mem_data_resp;
   } else if (!s.compare("pending")) {
     return e_src_q_pending;
   } else if (!s.compare("lceresp")) {
     return e_src_q_lce_resp;
-  } else if (!s.compare("lcedataresp")) {
-    return e_src_q_lce_data_resp;
   } else {
     printf("Unknown src queue select operand: %s\n", s.c_str());
     exit(-1);
@@ -626,12 +677,8 @@ bp_cce_inst_dst_q_sel_e
 Assembler::parseDstQueue(string &s) {
   if (!s.compare("lcecmd")) {
     return e_dst_q_lce_cmd;
-  } else if (!s.compare("lcedatacmd")) {
-    return e_dst_q_lce_data_cmd;
   } else if (!s.compare("memcmd")) {
     return e_dst_q_mem_cmd;
-  } else if (!s.compare("memdatacmd")) {
-    return e_dst_q_mem_data_cmd;
   } else {
     printf("Unknown dst queue select operand: %s\n", s.c_str());
     exit(-1);
@@ -694,12 +741,12 @@ Assembler::parseLceCmdWaySel(string &s) {
   }
 }
 
-bp_cce_inst_mem_data_cmd_addr_sel_e
-Assembler::parseMemDataCmdAddrSel(string &s) {
+bp_cce_inst_mem_cmd_addr_sel_e
+Assembler::parseMemCmdAddrSel(string &s) {
   if (!s.compare("req")) {
-   return e_mem_data_cmd_addr_req_addr;
+   return e_mem_cmd_addr_req_addr;
   } else if (!s.compare("lru")) {
-   return e_mem_data_cmd_addr_lru_way_addr;
+   return e_mem_cmd_addr_lru_way_addr;
   } else {
    printf("Bad Mem Cmd Addr select operand\n");
    exit(-1);
@@ -713,18 +760,12 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
       bp_cce_inst_src_q_sel_e q = parseSrcQueue(tokens->at(i));
       switch (q) {
         case e_src_q_lce_req:
-          inst->type_u.queue_op_s.op.wfq.qmask |= (1 << 5);
-          break;
-        case e_src_q_lce_resp:
-          inst->type_u.queue_op_s.op.wfq.qmask |= (1 << 4);
-          break;
-        case e_src_q_lce_data_resp:
           inst->type_u.queue_op_s.op.wfq.qmask |= (1 << 3);
           break;
-        case e_src_q_mem_resp:
+        case e_src_q_lce_resp:
           inst->type_u.queue_op_s.op.wfq.qmask |= (1 << 2);
           break;
-        case e_src_q_mem_data_resp:
+        case e_src_q_mem_resp:
           inst->type_u.queue_op_s.op.wfq.qmask |= (1 << 1);
           break;
         case e_src_q_pending:
@@ -738,66 +779,9 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
   } else if (inst->minor_op == e_popq || inst->minor_op == e_poph) {
     bp_cce_inst_src_q_sel_e srcQ = parseSrcQueue(tokens->at(1));
     inst->type_u.queue_op_s.op.popq.src_q = srcQ;
-    /*
-    switch (srcQ) {
-      case e_src_q_lce_req:
-        inst->req_sel = e_req_sel_lce_req;
-        inst->req_w_v = 1;
-        inst->lru_way_sel = e_lru_way_sel_lce_req;
-        inst->lru_way_w_v = 1;
-        inst->rqf_sel = e_rqf_lce_req;
-        inst->nerldf_sel = e_nerldf_lce_req;
-        inst->flag_mask_w_v = (e_flag_rqf | e_flag_nerf | e_flag_ldf);
-        break;
-      case e_src_q_mem_resp:
-        inst->req_sel = e_req_sel_mem_resp;
-        inst->req_w_v = 1;
-        inst->req_addr_way_sel = e_req_addr_way_sel_mem_resp;
-        inst->req_addr_way_w_v = 1;
-        inst->lru_way_sel = e_lru_way_sel_mem_resp;
-        inst->lru_way_w_v = 1;
-        inst->transfer_lce_sel = e_tr_lce_sel_mem_resp;
-        inst->transfer_lce_w_v = 1;
-        inst->rqf_sel = e_rqf_mem_resp;
-        inst->rwbf_sel = e_rwbf_mem_resp;
-        inst->tf_sel = e_tf_mem_resp;
-        inst->flag_mask_w_v = (e_flag_rqf | e_flag_rwbf | e_flag_tf);
-        break;
-      case e_src_q_mem_data_resp:
-        inst->req_sel = e_req_sel_mem_data_resp;
-        inst->req_w_v = 1;
-        inst->req_addr_way_sel = e_req_addr_way_sel_mem_data_resp;
-        inst->req_addr_way_w_v = 1;
-        inst->lru_way_sel = e_lru_way_sel_mem_data_resp;
-        inst->lru_way_w_v = 1;
-        inst->cache_block_data_sel = e_data_sel_mem_data_resp;
-        inst->cache_block_data_w_v = 1;
-        inst->rqf_sel = e_rqf_mem_data_resp;
-        inst->flag_mask_w_v = (e_flag_rqf);
-        break;
-      case e_src_q_pending:
-        inst->req_sel = e_req_sel_pending;
-        inst->req_w_v = 1;
-        inst->lru_way_sel = e_lru_way_sel_pending;
-        inst->lru_way_w_v = 1;
-        inst->rqf_sel = e_rqf_pending;
-        inst->nerldf_sel = e_nerldf_pending;
-        inst->flag_mask_w_v = (e_flag_rqf | e_flag_nerf | e_flag_ldf);
-        break;
-      case e_src_q_lce_resp:
-        inst->ack_type_w_v = 1;
-        break;
-      case e_src_q_lce_data_resp:
-        inst->cache_block_data_sel = e_data_sel_lce_data_resp;
-        inst->cache_block_data_w_v = 1;
-        inst->nwbf_sel = e_nwbf_lce_data_resp;
-        inst->flag_mask_w_v = (e_flag_nwbf);
-        break;
-      default:
-        printf("Unknown queue\n");
-        exit(-1);
+    if (srcQ == e_src_q_lce_resp) {
+      inst->type_u.queue_op_s.op.popq.dst = parseDstOpd(tokens->at(2));
     }
-    */
   } else if (inst->minor_op == e_pushq) {
     bp_cce_inst_dst_q_sel_e dstQ = parseDstQueue(tokens->at(1));
     inst->type_u.queue_op_s.op.pushq.dst_q = dstQ;
@@ -805,10 +789,13 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
     inst->type_u.queue_op_s.op.pushq.lce_cmd_lce_sel = e_lce_cmd_lce_0;
     inst->type_u.queue_op_s.op.pushq.lce_cmd_addr_sel = e_lce_cmd_addr_0;
     inst->type_u.queue_op_s.op.pushq.lce_cmd_way_sel = e_lce_cmd_way_0;
+    // TODO: default to req addr for mem command, since only writeback uses lru_addr
+    inst->type_u.queue_op_s.op.pushq.mem_cmd_addr_sel = e_mem_cmd_addr_req_addr;
     // parse lce, addr, way, and mem_addr selects
     switch (dstQ) {
       case e_dst_q_lce_cmd:
-        inst->type_u.queue_op_s.op.pushq.cmd = (bp_cce_lce_cmd_type_e)(parseImm(tokens->at(2)) & 0x7);
+        inst->type_u.queue_op_s.op.pushq.cmd.lce_cmd =
+          (bp_lce_cmd_type_e)(parseImm(tokens->at(2), 16) & 0xF);
         if (tokens->size() > 3) {
           inst->type_u.queue_op_s.op.pushq.lce_cmd_lce_sel = parseLceCmdLceSel(tokens->at(3));
         }
@@ -819,14 +806,16 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
           inst->type_u.queue_op_s.op.pushq.lce_cmd_way_sel = parseLceCmdWaySel(tokens->at(5));
         }
         break;
-      case e_dst_q_lce_data_cmd:
-        // nothing special to set
-        break;
       case e_dst_q_mem_cmd:
-        // nothing special to set
-        break;
-      case e_dst_q_mem_data_cmd:
-        inst->type_u.queue_op_s.op.pushq.mem_data_cmd_addr_sel = parseMemDataCmdAddrSel(tokens->at(2));
+        if (tokens->size() > 2) {
+          inst->type_u.queue_op_s.op.pushq.cmd.mem_cmd =
+            (bp_cce_mem_cmd_type_e)(parseImm(tokens->at(2), 16) & 0xF);
+        } else {
+          inst->type_u.queue_op_s.op.pushq.cmd.mem_cmd = (bp_cce_mem_cmd_type_e)(0);
+        }
+        if (tokens->size() > 3) {
+          inst->type_u.queue_op_s.op.pushq.mem_cmd_addr_sel = parseMemCmdAddrSel(tokens->at(3));
+        }
         break;
       default:
         printf("Unknown queue\n");
@@ -1009,9 +998,9 @@ Assembler::printLongField(uint16_t b, int bits, stringstream &ss) {
 }
 
 void
-Assembler::printField(uint64_t b, int bits, stringstream &ss) {
+Assembler::printField(uint32_t b, int bits, stringstream &ss) {
   int i = 0;
-  uint64_t mask = (1 << (bits-1));
+  uint32_t mask = (1 << (bits-1));
   while (i < bits) {
     if (b & mask) {
       ss << "1";
@@ -1051,17 +1040,20 @@ Assembler::writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &
     case e_op_branch:
       printShortField(inst->type_u.branch_op_s.src_a, bp_cce_inst_src_width, ss);
       printShortField(inst->type_u.branch_op_s.src_b, bp_cce_inst_src_width, ss);
+      printLongField(inst->type_u.branch_op_s.target, bp_cce_inst_imm16_width, ss);
       printLongField(inst->type_u.branch_op_s.imm, bp_cce_inst_imm16_width, ss);
-      printPad(bp_cce_inst_branch_pad, ss);
+      //printPad(bp_cce_inst_branch_pad, ss);
       break;
     case e_op_move:
       printShortField(inst->type_u.mov_op_s.dst, bp_cce_inst_dst_width, ss);
       printShortField(inst->type_u.mov_op_s.src, bp_cce_inst_src_width, ss);
-      printLongField(inst->type_u.mov_op_s.imm, bp_cce_inst_imm16_width, ss);
-      printPad(bp_cce_inst_mov_pad, ss);
+      printField(inst->type_u.mov_op_s.imm, bp_cce_inst_imm32_width, ss);
+      //printPad(bp_cce_inst_mov_pad, ss);
       break;
     case e_op_flag:
       printShortField(inst->type_u.flag_op_s.dst, bp_cce_inst_dst_width, ss);
+      printShortField(inst->type_u.flag_op_s.src_a, bp_cce_inst_src_width, ss);
+      printShortField(inst->type_u.flag_op_s.src_b, bp_cce_inst_src_width, ss);
       printShortField(inst->type_u.flag_op_s.imm, 1, ss);
       printPad(bp_cce_inst_flag_pad, ss);
       break;
@@ -1089,14 +1081,19 @@ Assembler::writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &
         printPad(bp_cce_inst_wfq_pad, ss);
       } else if (inst->minor_op == e_pushq) {
         printShortField(inst->type_u.queue_op_s.op.pushq.dst_q, bp_cce_inst_dst_q_sel_width, ss);
-        printShortField(inst->type_u.queue_op_s.op.pushq.cmd, bp_cce_lce_cmd_type_width, ss);
+        if (inst->type_u.queue_op_s.op.pushq.dst_q == e_dst_q_mem_cmd) {
+          printShortField(inst->type_u.queue_op_s.op.pushq.cmd.lce_cmd, bp_lce_cmd_type_width, ss);
+        } else {
+          printShortField(inst->type_u.queue_op_s.op.pushq.cmd.mem_cmd, bp_cce_mem_cmd_type_width, ss);
+        }
         printShortField(inst->type_u.queue_op_s.op.pushq.lce_cmd_lce_sel, bp_cce_inst_lce_cmd_lce_sel_width, ss);
         printShortField(inst->type_u.queue_op_s.op.pushq.lce_cmd_addr_sel, bp_cce_inst_lce_cmd_addr_sel_width, ss);
         printShortField(inst->type_u.queue_op_s.op.pushq.lce_cmd_way_sel, bp_cce_inst_lce_cmd_way_sel_width, ss);
-        printShortField(inst->type_u.queue_op_s.op.pushq.mem_data_cmd_addr_sel, bp_cce_inst_mem_data_cmd_addr_sel_width, ss);
+        printShortField(inst->type_u.queue_op_s.op.pushq.mem_cmd_addr_sel, bp_cce_inst_mem_cmd_addr_sel_width, ss);
         printPad(bp_cce_inst_pushq_pad, ss);
       } else if (inst->minor_op == e_popq || inst->minor_op == e_poph) {
         printShortField(inst->type_u.queue_op_s.op.popq.src_q, bp_cce_inst_src_q_sel_width, ss);
+        printShortField(inst->type_u.queue_op_s.op.popq.dst, bp_cce_inst_dst_width, ss);
         printPad(bp_cce_inst_popq_pad, ss);
       }
       break;
@@ -1105,48 +1102,6 @@ Assembler::writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &
       printf("line: %d\n", line_number);
       exit(-1);
   }
-
-  /* TODO: print out of instructions based on type
-  printShortField(inst->src_a, bp_cce_inst_src_width, ss);
-  printShortField(inst->src_b, bp_cce_inst_src_width, ss);
-  printShortField(inst->dst, bp_cce_inst_dst_width, ss);
-
-  printLongField(inst->imm, bp_cce_inst_gpr_width, ss);
-
-  printShortField(inst->req_sel, bp_cce_inst_req_sel_width, ss);
-  printShortField(inst->req_addr_way_sel, bp_cce_inst_req_addr_way_sel_width, ss);
-  printShortField(inst->lru_way_sel, bp_cce_inst_lru_way_sel_width, ss);
-  printShortField(inst->transfer_lce_sel, bp_cce_inst_transfer_lce_sel_width, ss);
-  printShortField(inst->cache_block_data_sel, bp_cce_inst_dat_sel_width, ss);
-
-  printShortField(inst->rqf_sel, bp_cce_inst_rq_flag_sel_width, ss);
-  printShortField(inst->nerldf_sel, bp_cce_inst_ner_ld_flag_sel_width, ss);
-  printShortField(inst->nwbf_sel, bp_cce_inst_nwb_flag_sel_width, ss);
-  printShortField(inst->tf_sel, bp_cce_inst_t_flag_sel_width, ss);
-  printShortField(inst->pruief_sel, bp_cce_inst_pruie_flag_sel_width, ss);
-  printShortField(inst->rwbf_sel, bp_cce_inst_rwb_flag_sel_width, ss);
-
-  printShortField(inst->dir_way_group_sel, bp_cce_inst_dir_way_group_sel_width, ss);
-  printShortField(inst->dir_lce_sel, bp_cce_inst_dir_lce_sel_width, ss);
-  printShortField(inst->dir_way_sel, bp_cce_inst_dir_way_sel_width, ss);
-  printShortField(inst->dir_coh_state_sel, bp_cce_inst_dir_coh_state_sel_width, ss);
-  printShortField(inst->dir_tag_sel, bp_cce_inst_dir_tag_sel_width, ss);
-
-  printShortField(inst->lce_cmd_lce_sel, bp_cce_inst_lce_cmd_lce_sel_width, ss);
-  printShortField(inst->lce_cmd_addr_sel, bp_cce_inst_lce_cmd_addr_sel_width, ss);
-  printShortField(inst->lce_cmd_way_sel, bp_cce_inst_lce_cmd_way_sel_width, ss);
-
-  printShortField(inst->mem_data_cmd_addr_sel, bp_cce_inst_mem_data_cmd_addr_sel_width, ss);
-
-  printShortField(inst->req_w_v, 1, ss);
-  printShortField(inst->req_addr_way_w_v, 1, ss);
-  printShortField(inst->lru_way_w_v, 1, ss);
-  printShortField(inst->transfer_lce_w_v, 1, ss);
-  printShortField(inst->cache_block_data_w_v, 1, ss);
-  printShortField(inst->ack_type_w_v, 1, ss);
-
-  printLongField(inst->flag_mask_w_v, bp_cce_inst_num_flags, ss);
-  */
 
   switch (output_format) {
     case  output_format_ascii_binary:

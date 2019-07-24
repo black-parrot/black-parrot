@@ -247,8 +247,8 @@ module bp_fe_icache
   logic                       miss_tv;
 
   for (genvar i = 0; i < ways_p; i++) begin: tag_comp
-    assign hit_v[i]   = (tag_tv_r[i] == addr_tag_tv) && (state_tv_r[i] != e_MESI_I);
-    assign way_v[i]   = (state_tv_r[i] != e_MESI_I);
+    assign hit_v[i]   = (tag_tv_r[i] == addr_tag_tv) && (state_tv_r[i] != e_COH_I);
+    assign way_v[i]   = (state_tv_r[i] != e_COH_I);
   end
 
   bsg_priority_encode #(

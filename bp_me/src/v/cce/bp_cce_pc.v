@@ -81,9 +81,6 @@ module bp_cce_pc
    // Directory busy signal
    , input                                       dir_busy_i
 
-   // GAD error signal
-   , input                                       gad_error_i
-
    // control from decode
    , input                                       pc_stall_i
    , input [inst_ram_addr_width_lp-1:0]          pc_branch_target_i
@@ -181,7 +178,7 @@ module bp_cce_pc
   // note: only used if this is an instruction RAM read or write
   wire config_hi = cfg_addr_i[0];
 
-  assign inst_v_o = (dir_busy_i | gad_error_i) ? 1'b0 : inst_v_r;
+  assign inst_v_o = (dir_busy_i) ? 1'b0 : inst_v_r;
   assign inst_o = (inst_v_o) ? ram_data_lo : '0;
 
   always_comb begin
@@ -283,7 +280,7 @@ module bp_cce_pc
         // setup RAM address register and register tracking PC of instruction being executed
         // also, determine input address for RAM depending on stall and branch in execution
 
-        if (pc_stall_i | dir_busy_i | gad_error_i) begin
+        if (pc_stall_i | dir_busy_i) begin
           // when stalling, hold executing pc and ram addr registers constant
           ex_pc_n = ex_pc_r;
           ram_addr_n = ram_addr_r;

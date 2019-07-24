@@ -118,7 +118,7 @@ checkLceReq(sc_bv<bp_lce_cce_req_width> &msg, uint32_t dst, uint32_t src,
 // CCE to LCE Command
 sc_bv<bp_cce_lce_cmd_width>
 createCceCmd(uint32_t dst, uint32_t src, bp_cce_lce_cmd_type_e cmd, uint64_t addr, uint32_t way,
-             bp_cce_coh_mesi_e state, uint32_t target, uint32_t target_way)
+             bp_cce_coh_states_e state, uint32_t target, uint32_t target_way)
 {
   sc_bv<bp_cce_lce_cmd_width> msg(0);
 
@@ -170,7 +170,7 @@ void printCceCmd(sc_bv<bp_cce_lce_cmd_width> &msg)
 
 bool
 checkCceCmd(sc_bv<bp_cce_lce_cmd_width> &msg, uint32_t dst, uint32_t src, uint64_t addr,
-            uint32_t way, bp_cce_lce_cmd_type_e cmd, bp_cce_coh_mesi_e state, uint32_t target,
+            uint32_t way, bp_cce_lce_cmd_type_e cmd, bp_cce_coh_states_e state, uint32_t target,
             uint32_t target_way)
 {
   cout << "Checking CCE Cmd..." << endl;

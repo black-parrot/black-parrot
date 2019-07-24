@@ -52,8 +52,6 @@ package bp_common_aviary_pkg;
       ,instr_width      : 32
       ,reg_addr_width   : 5
       ,page_offset_width: 12
-
-      ,mem_payload_width: 108
       };
 
   localparam bp_proc_param_s bp_single_core_cfg_p = 
@@ -99,8 +97,6 @@ package bp_common_aviary_pkg;
       ,instr_width      : 32
       ,reg_addr_width   : 5
       ,page_offset_width: 12
-
-      ,mem_payload_width: 108
       };
 
   localparam bp_proc_param_s bp_dual_core_cfg_p = 
@@ -146,8 +142,6 @@ package bp_common_aviary_pkg;
       ,instr_width      : 32
       ,reg_addr_width   : 5
       ,page_offset_width: 12
-
-      ,mem_payload_width: 110
       };
 
   localparam bp_proc_param_s bp_quad_core_cfg_p = 
@@ -193,8 +187,6 @@ package bp_common_aviary_pkg;
       ,instr_width      : 32
       ,reg_addr_width   : 5
       ,page_offset_width: 12
-
-      ,mem_payload_width: 112
       };
 
   localparam bp_proc_param_s bp_oct_core_cfg_p = 
@@ -240,8 +232,6 @@ package bp_common_aviary_pkg;
       ,instr_width      : 32
       ,reg_addr_width   : 5
       ,page_offset_width: 12
-
-      ,mem_payload_width: 114
       };
 
   localparam bp_proc_param_s bp_sexta_core_cfg_p =
@@ -287,8 +277,6 @@ package bp_common_aviary_pkg;
       ,instr_width      : 32
       ,reg_addr_width   : 5
       ,page_offset_width: 12
-
-      ,mem_payload_width: 116
       };
 
   typedef enum bit [lg_max_cfgs-1:0] 

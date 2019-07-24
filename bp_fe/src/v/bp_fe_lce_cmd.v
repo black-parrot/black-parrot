@@ -200,7 +200,7 @@ module bp_fe_lce_cmd
         end else if (lce_cmd_li.msg_type == e_lce_cmd_invalidate_tag) begin
           tag_mem_pkt.index = lce_cmd_addr_index;
           tag_mem_pkt.way_id = lce_cmd_li.way_id;
-          tag_mem_pkt.state = e_MESI_I;
+          tag_mem_pkt.state = e_COH_I;
           tag_mem_pkt.opcode = e_tag_mem_invalidate;
           tag_mem_pkt_v_o = flag_invalidate_r
             ? 1'b0
@@ -234,7 +234,7 @@ module bp_fe_lce_cmd
       e_lce_cmd_reset: begin
         if (lce_cmd_li.msg_type == e_lce_cmd_set_clear) begin
           tag_mem_pkt.index        = lce_cmd_addr_index;
-          tag_mem_pkt.state        = e_MESI_I;
+          tag_mem_pkt.state        = e_COH_I;
           tag_mem_pkt.tag          = '0;
           tag_mem_pkt.opcode       = e_tag_mem_set_clear;
           tag_mem_pkt_v_o          = lce_cmd_v_li;

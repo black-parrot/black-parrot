@@ -12,6 +12,7 @@
 module bp_cce_inst_decode
   import bp_common_pkg::*;
   import bp_cce_pkg::*;
+  import bp_me_pkg::*;
   #(parameter inst_width_p        = "inv"
     , parameter inst_addr_width_p = "inv"
   )
@@ -22,19 +23,21 @@ module bp_cce_inst_decode
    , input [inst_width_p-1:0]                    inst_i
    , input                                       inst_v_i
 
+   // Pending bit write busy from bp_cce_msg
+   , input                                       pending_w_busy_i
+   // LCE Command busy from bp_cce_msg
+   , input                                       lce_cmd_busy_i
+
    // input queue valid signals
    , input                                       lce_req_v_i
    , input                                       lce_resp_v_i
-   , input                                       lce_data_resp_v_i
+   , input bp_lce_cce_resp_type_e                lce_resp_type_i
    , input                                       mem_resp_v_i
-   , input                                       mem_data_resp_v_i
    , input                                       pending_v_i
 
    // ready_i signals for output queues
    , input                                       lce_cmd_ready_i
-   , input                                       lce_data_cmd_ready_i
    , input                                       mem_cmd_ready_i
-   , input                                       mem_data_cmd_ready_i
 
    // Decoded instruction
    , output bp_cce_inst_decoded_s                decoded_inst_o
@@ -111,87 +114,153 @@ module bp_cce_inst_decode
       decoded_inst_v_o = '0;
     end else begin
       decoded_inst_v_o = inst_v_i;
+      decoded_inst_o.op = op;
       decoded_inst_o.minor_op_u = minor_op_u;
 
       case (op)
         e_op_alu: begin
-          decoded_inst_o.alu_dst_w_v = 1'b1;
           decoded_inst_o.alu_v = 1'b1;
-          decoded_inst_o.imm = alu_op_s.imm;
-          decoded_inst_o.dst = alu_op_s.dst;
-          decoded_inst_o.src_a = alu_op_s.src_a;
-          decoded_inst_o.src_b = alu_op_s.src_b;
+          // All ALU arithmetic operations write a GPR destination
+          decoded_inst_o.alu_dst_w_v = 1'b1;
+          decoded_inst_o.imm[0+:`bp_cce_inst_imm16_width] = alu_op_s.imm;
+          // Dst and Src fields are GPRs or immediate (src only)
+          decoded_inst_o.dst.gpr = alu_op_s.dst;
+          decoded_inst_o.src_a.gpr = alu_op_s.src_a;
+          decoded_inst_o.src_b.gpr = alu_op_s.src_b;
+
+          decoded_inst_o.dst_sel = e_dst_sel_gpr;
+          decoded_inst_o.src_a_sel = e_src_sel_gpr;
+          decoded_inst_o.src_b_sel = e_src_sel_gpr;
 
         end
         e_op_branch: begin
-          decoded_inst_o.alu_v = 1'b1;
+          decoded_inst_o.branch_v = 1'b1;
           // Next PC computation
-          decoded_inst_o.imm = branch_op_s.target;
+          decoded_inst_o.imm[0+:`bp_cce_inst_imm16_width] = branch_op_s.imm;
           pc_branch_target_o = branch_op_s.target[0+:inst_addr_width_p];
-          decoded_inst_o.src_a = branch_op_s.src_a;
-          decoded_inst_o.src_b = branch_op_s.src_b;
+
+          // Default to GPR sources
+          decoded_inst_o.src_a.gpr = branch_op_s.src_a.gpr;
+          decoded_inst_o.src_b.gpr = branch_op_s.src_b.gpr;
+          decoded_inst_o.src_a_sel = e_src_sel_gpr;
+          decoded_inst_o.src_b_sel = e_src_sel_gpr;
+
+          // Flag ops use flag as source A, immediate of 1 or 0 as source B
+          if (minor_op_u.branch_minor_op == e_bf_op) begin
+            decoded_inst_o.src_a.flag = branch_op_s.src_a.flag;
+            decoded_inst_o.src_a_sel = e_src_sel_flag;
+
+          // Branch if queue.ready set, source B is immediate set to 1
+          end else if (minor_op_u.branch_minor_op == e_bqr_op) begin
+            decoded_inst_o.src_a.special = branch_op_s.src_a.special;
+            decoded_inst_o.src_a_sel = e_src_sel_special;
+          end
 
         end
         e_op_move: begin
           decoded_inst_o.mov_dst_w_v = 1'b1;
-          // destination
-          decoded_inst_o.dst = mov_op_s.dst;
-          // source
-          // move operation
-          if (minor_op_u.mov_minor_op == e_mov_op) begin
-            decoded_inst_o.src_a = mov_op_s.src;
+
+          // Dst and Src fields are GPRs or immediate (src only) by default
+          decoded_inst_o.dst.gpr = mov_op_s.dst.gpr;
+          decoded_inst_o.src_a.gpr = mov_op_s.src.gpr;
+          decoded_inst_o.dst_sel = e_dst_sel_gpr;
+          decoded_inst_o.src_a_sel = e_src_sel_gpr;
+
+          // always set the immediate field
+          decoded_inst_o.imm[0+:`bp_cce_inst_imm32_width] = mov_op_s.imm;
+
+          // move flag to gpr - src_a is a flag
+          if (minor_op_u.mov_minor_op == e_movf_op) begin
+            decoded_inst_o.src_a.flag = mov_op_s.src.flag;
+            decoded_inst_o.src_a_sel = e_src_sel_flag;
           end
-          // move immediate operation
-          if (minor_op_u.mov_minor_op == e_movi_op) begin
-            decoded_inst_o.src_a = e_src_imm;
-            decoded_inst_o.imm = mov_op_s.imm;
+          // move special register to gpr - src_a is a special register
+          else if (minor_op_u.mov_minor_op == e_movsg_op) begin
+            decoded_inst_o.src_a.special = mov_op_s.src.special;
+            decoded_inst_o.src_a_sel = e_src_sel_special;
+          end
+          // move gpr to special register - dst is a special register
+          else if (minor_op_u.mov_minor_op == e_movgs_op) begin
+            decoded_inst_o.dst.special = mov_op_s.dst.special;
+            decoded_inst_o.dst_sel = e_dst_sel_special;
           end
 
         end
         e_op_flag: begin
 
-          // source - always from immediate bit 0
-          decoded_inst_o.src_a = e_src_imm;
-          decoded_inst_o.imm = {{(`bp_cce_inst_imm16_width-1){1'b0}}, flag_op_s.val};
+          // Flag ops always use flag for src_a and src_b
+          decoded_inst_o.src_a.flag = flag_op_s.src_a;
+          decoded_inst_o.src_a_sel = e_src_sel_flag;
 
-          // destination
-          decoded_inst_o.dst = flag_op_s.dst;
-          if (flag_op_s.dst == e_dst_rqf) begin
-            decoded_inst_o.rqf_sel = e_rqf_imm0;
-            decoded_inst_o.flag_mask_w_v = e_flag_rqf;
-          end else if (flag_op_s.dst == e_dst_nerf) begin
-            decoded_inst_o.nerldf_sel = e_nerldf_imm0;
-            decoded_inst_o.flag_mask_w_v = e_flag_nerf;
-          end else if (flag_op_s.dst == e_dst_ldf) begin
-            decoded_inst_o.nerldf_sel = e_nerldf_imm0;
-            decoded_inst_o.flag_mask_w_v = e_flag_ldf;
-          end else if (flag_op_s.dst == e_dst_nwbf) begin
-            decoded_inst_o.nwbf_sel = e_nwbf_imm0;
-            decoded_inst_o.flag_mask_w_v = e_flag_nwbf;
-          end else if (flag_op_s.dst == e_dst_tf) begin
-            decoded_inst_o.tf_sel = e_tf_imm0;
-            decoded_inst_o.flag_mask_w_v = e_flag_tf;
-          end else if (flag_op_s.dst == e_dst_rf) begin
-            decoded_inst_o.pruief_sel = e_pruief_imm0;
-            decoded_inst_o.flag_mask_w_v = e_flag_rf;
-          end else if (flag_op_s.dst == e_dst_rwbf) begin
-            decoded_inst_o.rwbf_sel = e_rwbf_imm0;
-            decoded_inst_o.flag_mask_w_v = e_flag_rwbf;
-          end else if (flag_op_s.dst == e_dst_pf) begin
-            decoded_inst_o.pruief_sel = e_pruief_imm0;
-            decoded_inst_o.flag_mask_w_v = e_flag_pf;
-          end else if (flag_op_s.dst == e_dst_uf) begin
-            decoded_inst_o.pruief_sel = e_pruief_imm0;
-            decoded_inst_o.flag_mask_w_v = e_flag_uf;
-          end else if (flag_op_s.dst == e_dst_if) begin
-            decoded_inst_o.pruief_sel = e_pruief_imm0;
-            decoded_inst_o.flag_mask_w_v = e_flag_if;
-          end else if (flag_op_s.dst == e_dst_ef) begin
-            decoded_inst_o.pruief_sel = e_pruief_imm0;
-            decoded_inst_o.flag_mask_w_v = e_flag_ef;
-          end else if (flag_op_s.dst == e_dst_cf) begin
-            decoded_inst_o.pruief_sel = e_pruief_imm0;
-            decoded_inst_o.flag_mask_w_v = e_flag_cf;
+          decoded_inst_o.src_b.flag = flag_op_s.src_b;
+          decoded_inst_o.src_b_sel = e_src_sel_flag;
+
+          // immediate bit 0 always from instruction immediate
+          decoded_inst_o.imm[0] = flag_op_s.val;
+
+          // destination - by default, destination is a flag register
+          decoded_inst_o.dst.flag = flag_op_s.dst.flag;
+          decoded_inst_o.dst_sel = e_dst_sel_flag;
+
+          if (minor_op_u.flag_minor_op == e_andf_op) begin
+            decoded_inst_o.minor_op_u.alu_minor_op = e_and_op;
+            decoded_inst_o.dst.gpr = flag_op_s.dst.gpr;
+            decoded_inst_o.dst_sel = e_dst_sel_gpr;
+            decoded_inst_o.alu_v = 1'b1;
+            decoded_inst_o.alu_dst_w_v = 1'b1;
+          end else if (minor_op_u.flag_minor_op == e_orf_op) begin
+            decoded_inst_o.minor_op_u.alu_minor_op = e_or_op;
+            decoded_inst_o.dst.gpr = flag_op_s.dst.gpr;
+            decoded_inst_o.dst_sel = e_dst_sel_gpr;
+            decoded_inst_o.alu_v = 1'b1;
+            decoded_inst_o.alu_dst_w_v = 1'b1;
+          end else begin
+            if (flag_op_s.dst == e_dst_rqf) begin
+              decoded_inst_o.rqf_sel = e_rqf_imm0;
+              decoded_inst_o.flag_mask_w_v = e_flag_rqf;
+            end else if (flag_op_s.dst == e_dst_ucf) begin
+              decoded_inst_o.rqf_sel = e_rqf_imm0;
+              decoded_inst_o.flag_mask_w_v = e_flag_ucf;
+            end else if (flag_op_s.dst == e_dst_nerf) begin
+              decoded_inst_o.nerf_sel = e_nerf_imm0;
+              decoded_inst_o.flag_mask_w_v = e_flag_nerf;
+            end else if (flag_op_s.dst == e_dst_ldf) begin
+              decoded_inst_o.ldf_sel = e_ldf_imm0;
+              decoded_inst_o.flag_mask_w_v = e_flag_ldf;
+            end else if (flag_op_s.dst == e_dst_nwbf) begin
+              decoded_inst_o.nwbf_sel = e_nwbf_imm0;
+              decoded_inst_o.flag_mask_w_v = e_flag_nwbf;
+            end else if (flag_op_s.dst == e_dst_tf) begin
+              decoded_inst_o.tf_sel = e_tf_imm0;
+              decoded_inst_o.flag_mask_w_v = e_flag_tf;
+            end else if (flag_op_s.dst == e_dst_rf) begin
+              decoded_inst_o.rf_sel = e_rf_imm0;
+              decoded_inst_o.flag_mask_w_v = e_flag_rf;
+            end else if (flag_op_s.dst == e_dst_pf) begin
+              decoded_inst_o.pf_sel = e_pf_imm0;
+              decoded_inst_o.flag_mask_w_v = e_flag_pf;
+            end else if (flag_op_s.dst == e_dst_uf) begin
+              decoded_inst_o.uf_sel = e_uf_imm0;
+              decoded_inst_o.flag_mask_w_v = e_flag_uf;
+            end else if (flag_op_s.dst == e_dst_if) begin
+              decoded_inst_o.if_sel = e_if_imm0;
+              decoded_inst_o.flag_mask_w_v = e_flag_if;
+            end else if (flag_op_s.dst == e_dst_cf) begin
+              decoded_inst_o.cf_sel = e_cf_imm0;
+              decoded_inst_o.flag_mask_w_v = e_flag_cf;
+            end else if (flag_op_s.dst == e_dst_cef) begin
+              decoded_inst_o.cef_sel = e_cef_imm0;
+              decoded_inst_o.flag_mask_w_v = e_flag_cef;
+            end else if (flag_op_s.dst == e_dst_cof) begin
+              decoded_inst_o.cof_sel = e_cof_imm0;
+              decoded_inst_o.flag_mask_w_v = e_flag_cof;
+            end else if (flag_op_s.dst == e_dst_cdf) begin
+              decoded_inst_o.cdf_sel = e_cdf_imm0;
+              decoded_inst_o.flag_mask_w_v = e_flag_cdf;
+            end else if (flag_op_s.dst == e_dst_ucf) begin
+              decoded_inst_o.ucf_sel = e_ucf_imm0;
+              decoded_inst_o.flag_mask_w_v = e_flag_ucf;
+            end
           end
 
         end
@@ -224,8 +293,7 @@ module bp_cce_inst_decode
           decoded_inst_o.dir_w_cmd = minor_op_u;
           decoded_inst_o.dir_w_v = 1'b1;
 
-          decoded_inst_o.imm = {{(`bp_cce_inst_imm16_width-`bp_cce_coh_bits){1'b0}}
-                                , write_dir_op_s.imm};
+          decoded_inst_o.imm[0+:`bp_coh_bits] = write_dir_op_s.imm;
 
           if (minor_op_u.write_dir_minor_op == e_wdp_op) begin
             decoded_inst_o.pending_w_v = 1'b1;
@@ -233,16 +301,21 @@ module bp_cce_inst_decode
         end
         e_op_misc: begin
           if (minor_op_u.misc_minor_op == e_gad_op) begin
-            decoded_inst_o.gad_op = 1'b1;
+            decoded_inst_o.gad_v = 1'b1;
             decoded_inst_o.transfer_lce_w_v = 1'b1; // transfer_lce, transfer_lce_way
-            decoded_inst_o.transfer_lce_sel = e_tr_lce_sel_logic;
-            decoded_inst_o.req_addr_way_sel = e_req_addr_way_sel_logic;
             decoded_inst_o.req_addr_way_w_v = 1'b1; // req_addr_way
             decoded_inst_o.transfer_lce_w_v = 1'b1; // transfer_lce, transfer_lce_way
             decoded_inst_o.tf_sel = e_tf_logic;
-            decoded_inst_o.pruief_sel = e_pruief_logic;
+            decoded_inst_o.rf_sel = e_rf_logic;
+            decoded_inst_o.uf_sel = e_uf_logic;
+            decoded_inst_o.if_sel = e_if_logic;
+            decoded_inst_o.cf_sel = e_cf_logic;
+            decoded_inst_o.cef_sel = e_cef_logic;
+            decoded_inst_o.cof_sel = e_cof_logic;
+            decoded_inst_o.cdf_sel = e_cdf_logic;
             decoded_inst_o.flag_mask_w_v =
-              (e_flag_tf | e_flag_rf | e_flag_uf | e_flag_if | e_flag_ef | e_flag_cf);
+              (e_flag_tf | e_flag_rf | e_flag_uf | e_flag_if | e_flag_cf | e_flag_cef
+               | e_flag_cof | e_flag_cdf);
           end
           else if (minor_op_u.misc_minor_op == e_clm_op) begin
             decoded_inst_o.mshr_clear = 1'b1;
@@ -251,21 +324,21 @@ module bp_cce_inst_decode
         e_op_queue: begin
           if (minor_op_u.queue_minor_op == e_pushq_op) begin
             // lce cmd
-            decoded_inst_o.lce_cmd_cmd = queue_op_s.op.pushq.cmd;
+            decoded_inst_o.lce_cmd = queue_op_s.op.pushq.cmd.lce_cmd;
             // cce_lce_cmd_queue inputs
             decoded_inst_o.lce_cmd_lce_sel = queue_op_s.op.pushq.lce_cmd_lce_sel;
             decoded_inst_o.lce_cmd_addr_sel = queue_op_s.op.pushq.lce_cmd_addr_sel;
             decoded_inst_o.lce_cmd_way_sel = queue_op_s.op.pushq.lce_cmd_way_sel;
-            // mem_data_cmd_queue inputs
-            decoded_inst_o.mem_data_cmd_addr_sel = queue_op_s.op.pushq.mem_data_cmd_addr_sel;
+            // mem cmd
+            decoded_inst_o.mem_cmd = queue_op_s.op.pushq.cmd.mem_cmd;
+            // mem_cmd_queue inputs
+            decoded_inst_o.mem_cmd_addr_sel = queue_op_s.op.pushq.mem_cmd_addr_sel;
 
             // Output queue data valid signals
             // Output to LCE (ready&valid)
             decoded_inst_o.lce_cmd_v = (pushq_qsel == e_dst_q_lce_cmd);
-            decoded_inst_o.lce_data_cmd_v = (pushq_qsel == e_dst_q_lce_data_cmd);
             // Output to Mem (ready&valid), connects to FIFO buffer
             decoded_inst_o.mem_cmd_v = (pushq_qsel == e_dst_q_mem_cmd);
-            decoded_inst_o.mem_data_cmd_v = (pushq_qsel == e_dst_q_mem_data_cmd);
       
 
           end
@@ -279,35 +352,29 @@ module bp_cce_inst_decode
               // Input from LCE (valid->yumi)
               decoded_inst_o.lce_req_yumi = lce_req_v_i & (popq_qsel == e_src_q_sel_lce_req);
               decoded_inst_o.lce_resp_yumi = lce_resp_v_i & (popq_qsel == e_src_q_sel_lce_resp);
-              decoded_inst_o.lce_data_resp_yumi = lce_data_resp_v_i
-                & (popq_qsel == e_src_q_sel_lce_data_resp);
               // Input from Mem (valid->yumi)
               decoded_inst_o.mem_resp_yumi = mem_resp_v_i & (popq_qsel == e_src_q_sel_mem_resp);
-              decoded_inst_o.mem_data_resp_yumi = mem_data_resp_v_i
-                & (popq_qsel == e_src_q_sel_mem_data_resp);
             end
 
-            if (queue_op_s.op.popq.src_q == e_src_q_sel_lce_data_resp) begin
-              decoded_inst_o.nwbf_sel = e_nwbf_lce_data_resp;
+            if (queue_op_s.op.popq.src_q == e_src_q_sel_lce_resp) begin
+              decoded_inst_o.nwbf_sel = e_nwbf_lce_resp;
               decoded_inst_o.flag_mask_w_v = e_flag_nwbf;
-
-            end else if (queue_op_s.op.popq.src_q == e_src_q_sel_mem_data_resp) begin
-              // Mem Data Resp is handled by bp_cce_msg, and does not write any state in the CCE
+              decoded_inst_o.dst.gpr = queue_op_s.op.popq.dst;
+              decoded_inst_o.dst_sel = e_dst_sel_gpr;
+              decoded_inst_o.resp_type_w_v = 1'b1;
 
             end else if (queue_op_s.op.popq.src_q == e_src_q_sel_mem_resp) begin
-              // Mem Resp does a full restore of the MSHR register from the message payload
-              decoded_inst_o.mshr_restore = 1'b1;
-
-            end else if (queue_op_s.op.popq.src_q == e_src_q_sel_lce_resp) begin
-              decoded_inst_o.ack_type_w_v = 1'b1;
+              // do nothing
 
             end else if (queue_op_s.op.popq.src_q == e_src_q_sel_lce_req) begin
               decoded_inst_o.req_sel = e_req_sel_lce_req;
               decoded_inst_o.lru_way_sel = e_lru_way_sel_lce_req;
-              decoded_inst_o.req_w_v = 1'b1; // req_lce, req_addr, req_tag
+              decoded_inst_o.req_w_v = 1'b1; // req_lce, req_addr
               decoded_inst_o.lru_way_w_v = 1'b1;
-              decoded_inst_o.nerldf_sel = e_nerldf_lce_req;
+              decoded_inst_o.nerf_sel = e_nerf_lce_req;
+              decoded_inst_o.ldf_sel = e_ldf_lce_req;
               decoded_inst_o.rqf_sel = e_rqf_lce_req;
+              decoded_inst_o.ucf_sel = e_ucf_lce_req;
               decoded_inst_o.nc_req_size_w_v = 1'b1;
               decoded_inst_o.flag_mask_w_v = (e_flag_rqf | e_flag_nerf | e_flag_ldf | e_flag_ucf);
             end
@@ -318,13 +385,21 @@ module bp_cce_inst_decode
       endcase
 
       // Write enables
-      gpr_w_v = decoded_inst_o.mov_dst_w_v | decoded_inst_o.alu_dst_w_v;
+
+      // GPR writes occur for mov op, alu op, and LCE Response type pop - only if dst_sel is GPR
+      gpr_w_v = (decoded_inst_o.mov_dst_w_v | decoded_inst_o.alu_dst_w_v
+                 | decoded_inst_o.resp_type_w_v)
+                & (decoded_inst_o.dst_sel == e_dst_sel_gpr);
       decoded_inst_o.gpr_w_mask =
         {
-        (decoded_inst_o.dst == e_dst_r3) & (gpr_w_v)
-        ,(decoded_inst_o.dst == e_dst_r2) & (gpr_w_v)
-        ,(decoded_inst_o.dst == e_dst_r1) & (gpr_w_v)
-        ,(decoded_inst_o.dst == e_dst_r0) & (gpr_w_v)
+        (decoded_inst_o.dst.gpr == e_dst_r7) & (gpr_w_v)
+        ,(decoded_inst_o.dst.gpr == e_dst_r6) & (gpr_w_v)
+        ,(decoded_inst_o.dst.gpr == e_dst_r5) & (gpr_w_v)
+        ,(decoded_inst_o.dst.gpr == e_dst_r4) & (gpr_w_v)
+        ,(decoded_inst_o.dst.gpr == e_dst_r3) & (gpr_w_v)
+        ,(decoded_inst_o.dst.gpr == e_dst_r2) & (gpr_w_v)
+        ,(decoded_inst_o.dst.gpr == e_dst_r1) & (gpr_w_v)
+        ,(decoded_inst_o.dst.gpr == e_dst_r0) & (gpr_w_v)
         };
 
       // Uncached data
@@ -338,8 +413,7 @@ module bp_cce_inst_decode
     wdp_op = (op == e_op_write_dir) & (minor_op_u.write_dir_minor_op == e_wdp_op);
 
     // vector of input queue valid signals
-    wfq_v_vec = {lce_req_v_i, lce_resp_v_i, lce_data_resp_v_i, mem_resp_v_i, mem_data_resp_v_i,
-                 pending_v_i};
+    wfq_v_vec = {lce_req_v_i, lce_resp_v_i, mem_resp_v_i, pending_v_i};
     // WFQ mask from instruction immediate
     wfq_mask = queue_op_s.op.wfq.qmask;
 
@@ -355,9 +429,7 @@ module bp_cce_inst_decode
     if (pushq_op) begin
     case (pushq_qsel)
       e_dst_q_lce_cmd: pc_stall_o |= ~lce_cmd_ready_i;
-      e_dst_q_lce_data_cmd: pc_stall_o |= ~lce_data_cmd_ready_i;
       e_dst_q_mem_cmd: pc_stall_o |= ~mem_cmd_ready_i;
-      e_dst_q_mem_data_cmd: pc_stall_o |= ~mem_data_cmd_ready_i;
       default: pc_stall_o = pc_stall_o;
     endcase
     end
@@ -367,38 +439,19 @@ module bp_cce_inst_decode
     case (popq_qsel)
       e_src_q_sel_lce_req: pc_stall_o |= ~lce_req_v_i;
       e_src_q_sel_mem_resp: pc_stall_o |= ~mem_resp_v_i;
-      e_src_q_sel_mem_data_resp: pc_stall_o |= ~mem_data_resp_v_i;
       e_src_q_sel_lce_resp: pc_stall_o |= ~lce_resp_v_i;
-      e_src_q_sel_lce_data_resp: pc_stall_o |= ~lce_data_resp_v_i;
       default: pc_stall_o = pc_stall_o;
     endcase
     end
 
-    // stall if mem data resp is valid (currently being processed by bp_cce_msg) and trying
-    // to push mem cmd or mem data cmd, or trying to pop mem resp
-    // This avoids conflicts on the pending bit write port
-    // The pending bit write only occurs when mem_data_resp_v_i and lce_data_cmd_ready_i are both
-    // high. The microcode can write the pending bit in any other cycle.
-    if (popq_op & mem_data_resp_v_i & lce_data_cmd_ready_i
-        & (popq_qsel == e_src_q_sel_mem_resp)) begin
-      pc_stall_o = 1'b1;
-      // do not assert the yumi signal so the message remains in the queue
-      decoded_inst_o.mem_resp_yumi = 1'b0;
-    end
-    if (pushq_op & mem_data_resp_v_i & lce_data_cmd_ready_i
-        & ((pushq_qsel == e_dst_q_mem_cmd) | (pushq_qsel == e_dst_q_mem_data_cmd))) begin
-      pc_stall_o = 1'b1;
-      // do not assert the valid signal so the outbound messages do not send
-      decoded_inst_o.mem_cmd_v = 1'b0;
-      decoded_inst_o.mem_data_cmd_v = 1'b0;
-    end
+    // stall if trying to push mem_cmd but bp_cce_msg is using the pending bit
+    pc_stall_o |= (pushq_op & (pushq_qsel == e_dst_q_mem_cmd) & pending_w_busy_i);
 
-    // stall if current op is WDP and there is a valid memory data response
-    // The pending bit write only occurs when mem_data_resp_v_i and lce_data_cmd_ready_i
-    if (wdp_op & mem_data_resp_v_i & lce_data_cmd_ready_i) begin
-      pc_stall_o = 1'b1;
-    end
+    // stall if trying to push lce_cmd but bp_cce_msg is sending an lce_cmd
+    pc_stall_o |= (pushq_op & (pushq_qsel == e_dst_q_lce_cmd) & lce_cmd_busy_i);
 
+    // stall if current op is WDP but bp_cce_msg is writing the pending bits
+    pc_stall_o |= (wdp_op & pending_w_busy_i);
 
   end
 

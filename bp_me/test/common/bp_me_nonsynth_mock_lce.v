@@ -59,8 +59,7 @@ module tag_lookup
   assign way_o = way_lo;
   assign dirty_o = (tags[way_o].coh_st == e_COH_M);
   assign state_o = tags[way_o].coh_st;
-  // TODO: needs fixing?
-  assign lru_dirty_o = dirty_bits_i[lru_way_i];//(tags[lru_way_i].coh_st == e_COH_M);
+  assign lru_dirty_o = dirty_bits_i[lru_way_i];
 
 endmodule
 
@@ -144,8 +143,6 @@ module bp_me_nonsynth_mock_lce
   // Sub-type structs for output messages
   bp_lce_cce_req_req_s lce_req_req_lo;
   bp_lce_cce_req_uc_req_s lce_req_uc_req_lo;
-  bp_lce_cce_resp_resp_s lce_resp_resp_lo;
-  bp_lce_cce_resp_data_s lce_resp_data_lo;
 
   // FIFO to buffer LCE commands from ME
   logic lce_cmd_v, lce_cmd_yumi;
@@ -511,8 +508,6 @@ module bp_me_nonsynth_mock_lce
 
       lce_req_req_lo = '0;
       lce_req_uc_req_lo = '0;
-      lce_resp_resp_lo = '0;
-      lce_resp_data_lo = '0;
 
       // inbound queues
       lce_cmd_n = '0;
@@ -565,8 +560,6 @@ module bp_me_nonsynth_mock_lce
 
       lce_req_req_lo = '0;
       lce_req_uc_req_lo = '0;
-      lce_resp_resp_lo = '0;
-      lce_resp_data_lo = '0;
 
       // inbound queues
       lce_cmd_n = lce_cmd_r;
@@ -599,7 +592,7 @@ module bp_me_nonsynth_mock_lce
         end
         UNCACHED_ONLY: begin
           lce_state_n = UNCACHED_ONLY;
-          if (~freeze_i & lce_cmd_v & lce_cmd.msg_type == e_lce_cmd_cmd & lce_cmd_cmd.msg_type == e_lce_cmd_set_clear) begin
+          if (~freeze_i & lce_cmd_v & lce_cmd.msg_type == e_lce_cmd_set_clear) begin
             // INIT routine starting, stop accepting uncached accesses and initialize
             lce_state_n = INIT;
           end else if (~freeze_i & tr_pkt_v_i & ~mshr_r.miss) begin
@@ -668,7 +661,7 @@ module bp_me_nonsynth_mock_lce
           lce_state_n = UNCACHED_SEND_TR_RESP;
           // send return packet to TR
           if (mshr_r.store_op) begin
-            if (lce_cmd_v & lce_cmd.msg_type == e_lce_cmd_cmd & lce_cmd_cmd.msg_type == e_lce_cmd_uc_st_done) begin
+            if (lce_cmd_v & lce_cmd.msg_type == e_lce_cmd_uc_st_done) begin
               // store sends back null packet when it receives lce_cmd back
               tr_pkt_v_o = 1'b1;
               tr_pkt_o = '0;
@@ -720,7 +713,7 @@ module bp_me_nonsynth_mock_lce
           lce_state_n = (sync_counter_r == num_cce_p) ? READY : INIT;
           // register that LCE is initialized after sending all sync acks
           lce_init_n = (sync_counter_r == num_cce_p) ? 1'b1 : 1'b0;
-          if (lce_cmd_v & lce_cmd.msg_type == e_lce_cmd_cmd & lce_cmd_cmd.msg_type == e_lce_cmd_set_clear) begin
+          if (lce_cmd_v & lce_cmd.msg_type == e_lce_cmd_set_clear) begin
             // set clear command - LCE sinks the command and clears that set in the cache
 
             // dequeue the command
@@ -736,7 +729,7 @@ module bp_me_nonsynth_mock_lce
             dirty_bits_n[cur_set_n] = '0;
 
             lce_state_n = INIT;
-          end else if (lce_cmd_v & lce_cmd.msg_type == e_lce_cmd_cmd &  lce_cmd_cmd.msg_type == e_lce_cmd_sync) begin
+          end else if (lce_cmd_v & lce_cmd.msg_type == e_lce_cmd_sync) begin
             // dequeue the command, go to SEND_SYNC
             lce_cmd_yumi = 1'b1;
             lce_cmd_n = lce_cmd;
@@ -750,14 +743,8 @@ module bp_me_nonsynth_mock_lce
           // Common LCE Resp fields
           lce_resp_lo.dst_id = lce_cmd_r_cmd.src_id;
           lce_resp_lo.src_id = lce_id_i;
-          lce_resp_lo.msg_type = e_lce_cce_resp_ack;
+          lce_resp_lo.msg_type = e_lce_cce_sync_ack;
           lce_resp_lo.addr = '0;
-
-          // LCE Response Ack fields
-          lce_resp_resp_lo.msg_type = e_lce_cce_sync_ack;
-
-          // Assign ack response to msg field of LCE Resp
-          lce_resp_lo.msg.resp = lce_resp_resp_lo;
 
           lce_resp_v_o = 1'b1;
 
@@ -776,21 +763,19 @@ module bp_me_nonsynth_mock_lce
               lce_state_n = LCE_DATA_CMD;
 
             // non-data command
-            end else if (lce_cmd.msg_type == e_lce_cmd_cmd) begin
-              if (lce_cmd_cmd.msg_type == e_lce_cmd_invalidate_tag) begin
-                lce_state_n = LCE_CMD_INV;
-              end else if (lce_cmd_cmd.msg_type == e_lce_cmd_transfer) begin
-                lce_state_n = LCE_CMD_TR_RD;
-              end else if (lce_cmd_cmd.msg_type == e_lce_cmd_writeback) begin
-                lce_state_n = LCE_CMD_WB_RD;
-              end else if (lce_cmd_cmd.msg_type == e_lce_cmd_set_tag) begin
-                lce_state_n = LCE_CMD_ST;
-              end else if (lce_cmd_cmd.msg_type == e_lce_cmd_set_tag_wakeup) begin
-                lce_state_n = LCE_CMD_STW;
-              end else begin
-                lce_state_n = RESET;
-                $error("unrecognized LCE command received");
-              end
+            end else if (lce_cmd.msg_type == e_lce_cmd_invalidate_tag) begin
+              lce_state_n = LCE_CMD_INV;
+            end else if (lce_cmd.msg_type == e_lce_cmd_transfer) begin
+              lce_state_n = LCE_CMD_TR_RD;
+            end else if (lce_cmd.msg_type == e_lce_cmd_writeback) begin
+              lce_state_n = LCE_CMD_WB_RD;
+            end else if (lce_cmd.msg_type == e_lce_cmd_set_tag) begin
+              lce_state_n = LCE_CMD_ST;
+            end else if (lce_cmd.msg_type == e_lce_cmd_set_tag_wakeup) begin
+              lce_state_n = LCE_CMD_STW;
+            end else begin
+              lce_state_n = RESET;
+              $error("unrecognized LCE command received");
             end
 
           end else if (tr_pkt_v_i & ~mshr_r.miss) begin
@@ -842,14 +827,8 @@ module bp_me_nonsynth_mock_lce
           // Common LCE Resp fields
           lce_resp_lo.dst_id = lce_cmd_r_cmd.src_id;
           lce_resp_lo.src_id = lce_id_i;
-          lce_resp_lo.msg_type = e_lce_cce_resp_ack;
+          lce_resp_lo.msg_type = e_lce_cce_inv_ack;
           lce_resp_lo.addr = lce_cmd_r_cmd.addr;
-
-          // LCE Response Ack fields
-          lce_resp_resp_lo.msg_type = e_lce_cce_inv_ack;
-
-          // Assign ack response to msg field of LCE Resp
-          lce_resp_lo.msg.resp = lce_resp_resp_lo;
 
           // make the LCE response valid
           lce_resp_v_o = 1'b1;
@@ -894,12 +873,11 @@ module bp_me_nonsynth_mock_lce
 
           lce_resp_lo.dst_id = lce_cmd_r_cmd.src_id;
           lce_resp_lo.src_id = lce_id_i;
-          lce_resp_lo.msg_type = e_lce_cce_resp_data;
           lce_resp_lo.addr = lce_cmd_r_cmd.addr;
 
           if (dirty_bits[cur_set][cur_way]) begin
-            lce_resp_data_lo.data = data_cur;
-            lce_resp_data_lo.msg_type = e_lce_cce_resp_wb;
+            lce_resp_lo.data = data_cur;
+            lce_resp_lo.msg_type = e_lce_cce_resp_wb;
 
             // clear the dirty bit - but only do the write if the data response is accepted
             // (this prevents the dirty bit from being cleared before the response is sent, which
@@ -908,12 +886,10 @@ module bp_me_nonsynth_mock_lce
             dirty_bits_n[cur_set][cur_way] = 1'b0;
 
           end else begin
-            lce_resp_data_lo.data = '0;
-            lce_resp_data_lo.msg_type = e_lce_cce_resp_null_wb;
+            lce_resp_lo.data = '0;
+            lce_resp_lo.msg_type = e_lce_cce_resp_null_wb;
 
           end
-
-          lce_resp_lo.msg.data_resp = lce_resp_data_lo;
 
           lce_resp_v_o = 1'b1;
 
@@ -945,14 +921,8 @@ module bp_me_nonsynth_mock_lce
           // Common LCE Resp fields
           lce_resp_lo.dst_id = mshr_r.cce;
           lce_resp_lo.src_id = lce_id_i;
-          lce_resp_lo.msg_type = e_lce_cce_resp_ack;
+          lce_resp_lo.msg_type = e_lce_cce_coh_ack;
           lce_resp_lo.addr = mshr_r.paddr;
-
-          // LCE Response Ack fields
-          lce_resp_resp_lo.msg_type = e_lce_cce_coh_ack;
-
-          // Assign ack response to msg field of LCE Resp
-          lce_resp_lo.msg.resp = lce_resp_resp_lo;
 
           // make the LCE response valid
           lce_resp_v_o = 1'b1;
@@ -982,14 +952,8 @@ module bp_me_nonsynth_mock_lce
           // Common LCE Resp fields
           lce_resp_lo.dst_id = lce_cmd_r_cmd.src_id;
           lce_resp_lo.src_id = lce_id_i;
-          lce_resp_lo.msg_type = e_lce_cce_resp_ack;
+          lce_resp_lo.msg_type = e_lce_cce_coh_ack;
           lce_resp_lo.addr = lce_cmd_r_cmd.addr;
-
-          // LCE Response Ack fields
-          lce_resp_resp_lo.msg_type = e_lce_cce_coh_ack;
-
-          // Assign ack response to msg field of LCE Resp
-          lce_resp_lo.msg.resp = lce_resp_resp_lo;
 
           // make the LCE response valid
           lce_resp_v_o = 1'b1;

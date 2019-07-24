@@ -14,6 +14,7 @@
 module bp_cce_msg
   import bp_common_pkg::*;
   import bp_cce_pkg::*;
+  import bp_me_pkg::*;
   #(parameter num_lce_p                    = "inv"
     , parameter num_cce_p                  = "inv"
     , parameter paddr_width_p              = "inv"
@@ -56,17 +57,9 @@ module bp_cce_msg
    , input                                             lce_resp_v_i
    , output logic                                      lce_resp_yumi_o
 
-   , input [lce_cce_data_resp_width_lp-1:0]            lce_data_resp_i
-   , input                                             lce_data_resp_v_i
-   , output logic                                      lce_data_resp_yumi_o
-
-   , output logic [cce_lce_cmd_width_lp-1:0]           lce_cmd_o
+   , output logic [lce_cmd_width_lp-1:0]               lce_cmd_o
    , output logic                                      lce_cmd_v_o
    , input                                             lce_cmd_ready_i
-
-   , output logic [lce_data_cmd_width_lp-1:0]          lce_data_cmd_o
-   , output logic                                      lce_data_cmd_v_o
-   , input                                             lce_data_cmd_ready_i
 
    // CCE-MEM Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
@@ -75,17 +68,9 @@ module bp_cce_msg
    , input                                             mem_resp_v_i
    , output logic                                      mem_resp_yumi_o
 
-   , input [mem_cce_data_resp_width_lp-1:0]            mem_data_resp_i
-   , input                                             mem_data_resp_v_i
-   , output logic                                      mem_data_resp_yumi_o
-
    , output logic [cce_mem_cmd_width_lp-1:0]           mem_cmd_o
    , output logic                                      mem_cmd_v_o
    , input                                             mem_cmd_ready_i
-
-   , output logic [cce_mem_data_cmd_width_lp-1:0]      mem_data_cmd_o
-   , output logic                                      mem_data_cmd_v_o
-   , input                                             mem_data_cmd_ready_i
 
    // MSHR
    , input [mshr_width_lp-1:0]                         mshr_i
@@ -97,6 +82,10 @@ module bp_cce_msg
    , output logic                                      pending_w_v_o
    , output logic [lg_num_way_groups_lp-1:0]           pending_w_way_group_o
    , output logic                                      pending_o
+
+   // arbitration signals to instruction decode
+   , output logic                                      pending_w_busy_o
+   , output logic                                      lce_cmd_busy_o
 
    , input [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_i
 
@@ -114,30 +103,23 @@ module bp_cce_msg
   `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p, block_size_in_bits_lp);
 
   // structures for casting
-  bp_lce_cce_data_resp_s lce_data_resp;
-  bp_cce_lce_cmd_s lce_cmd;
-  bp_lce_data_cmd_s lce_data_cmd;
+  bp_lce_cmd_s lce_cmd;
+  bp_lce_cmd_cmd_s lce_cmd_cmd;
+  bp_lce_cce_resp_s lce_resp;
 
   bp_mem_cce_resp_s mem_resp;
-  bp_cce_mshr_s mem_resp_payload;
-  bp_mem_cce_data_resp_s mem_data_resp;
   bp_cce_mem_cmd_s mem_cmd;
-  bp_cce_mem_data_cmd_s mem_data_cmd;
 
   // cast output queue messages from structure variables
   assign lce_cmd_o = lce_cmd;
-  assign lce_data_cmd_o = lce_data_cmd;
   assign mem_cmd_o = mem_cmd;
-  assign mem_data_cmd_o = mem_data_cmd;
 
   // cast input queue messages to structure variables
-  assign lce_data_resp = lce_data_resp_i;
   assign mem_resp = mem_resp_i;
-  assign mem_resp_payload = mem_resp.payload;
-  assign mem_data_resp = mem_data_resp_i;
+  assign lce_resp = lce_resp_i;
 
   // signals for setting fields in outbound messages
-  logic [paddr_width_p-1:0] mem_data_cmd_addr;
+  logic [paddr_width_p-1:0] mem_cmd_addr;
   logic [lg_num_lce_lp-1:0] lce_cmd_lce;
   logic [paddr_width_p-1:0] lce_cmd_addr;
   logic [lg_lce_assoc_lp-1:0] lce_cmd_way;
@@ -153,28 +135,126 @@ module bp_cce_msg
     // defaults
     mem_cmd_v_o = '0;
     mem_cmd = '0;
-    mem_data_cmd_v_o = '0;
-    mem_data_cmd = '0;
 
     lce_cmd_v_o = '0;
     lce_cmd = '0;
-    lce_data_cmd_v_o = '0;
-    lce_data_cmd = '0;
+    lce_cmd_cmd = '0;
 
     lce_req_yumi_o = '0;
     lce_resp_yumi_o = '0;
-    lce_data_resp_yumi_o = '0;
     mem_resp_yumi_o = '0;
-    mem_data_resp_yumi_o = '0;
 
     pending_w_v_o = '0;
     pending_w_way_group_o = '0;
     pending_o = '0;
 
-    case (decoded_inst_i.mem_data_cmd_addr_sel)
-      e_mem_data_cmd_addr_lru_way_addr: mem_data_cmd_addr = mshr.lru_paddr;
-      e_mem_data_cmd_addr_req_addr: mem_data_cmd_addr = mshr.paddr;
-      default mem_data_cmd_addr = '0;
+    pending_w_busy_o = '0;
+    lce_cmd_busy_o = '0;
+
+
+    /*
+     * Memory Responses
+     *
+     * Most memory responses are dequeued automatically, without the ucode engine explicitly processing them.
+     *
+     * LCE Command network feeds to a wormhole router, so command must be held valid until ready_i signal goes high.
+     * The pending bit is written in the cycle that ready_i goes high. If the ucode engine tries to write the pending
+     * bits in the same cycle, the ucode engine will stall for one cycle.
+     */
+
+    if (mem_resp_v_i) begin
+
+      // Memory Response with data (cache block or uncached load)
+      if ((mem_resp.msg_type == e_cce_mem_rd) | (mem_resp.msg_type == e_cce_mem_wr)
+          | (mem_resp.msg_type == e_cce_mem_uc_rd)) begin
+
+        // handshaking
+        lce_cmd_v_o = mem_resp_v_i;
+        mem_resp_yumi_o = lce_cmd_ready_i;
+
+        // inform ucode decode that this unit is using the LCE Command network
+        lce_cmd_busy_o = 1'b1;
+
+        // output command message
+
+        lce_cmd.dst_id = mem_resp.payload.lce_id;
+
+        // Data is copied directly from the Mem Data Response
+        // For uncached responses, only the least significant 64-bits will be valid
+        if (mem_resp.msg_type == e_cce_mem_uc_rd) begin
+          lce_cmd.msg_type = e_lce_cmd_uc_data;
+          lce_cmd.way_id = '0;
+          lce_cmd.msg.data[0+:dword_width_p] = mem_resp.data[0+:dword_width_p];
+        end else begin
+          lce_cmd.msg_type = e_lce_cmd_data;
+          lce_cmd.way_id = mem_resp.payload.way_id;
+          lce_cmd.msg.data = mem_resp.data;
+        end
+
+        // Clear the pending bit in the cycle that the LCE Command ready_i goes high
+        // Pending bit only cleared if this is a cached request response
+        if (lce_cmd_ready_i & ~(mem_resp.msg_type == e_cce_mem_uc_rd)) begin
+          pending_w_v_o = lce_cmd_ready_i;
+          pending_w_way_group_o =
+            mem_resp.addr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
+          pending_o = 1'b0;
+          // TODO: only blocking on cycle that message sends because Mem Cmd are sent to a full width buffer, so it only
+          // takes a single cycle to send Mem Cmd.
+          // If mem_cmd is sent directly to a wormhole router (i.e., the output buffers are removed, the arbitration logic
+          // for pending bits needs to be reworked. Would it be safe to have one or more cycle gap between flits in a WH routed
+          // message?
+          pending_w_busy_o = 1'b1;
+        end
+      end
+
+      // Writeback response - clears the pending bit
+      else if (mem_resp.msg_type == e_cce_mem_wb) begin
+        mem_resp_yumi_o = 1'b1;
+        pending_w_v_o = 1'b1;
+        pending_w_way_group_o =
+          mem_resp.addr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
+        pending_o = 1'b0;
+        pending_w_busy_o = 1'b1;
+      end
+
+      // Uncached store response - send uncached store done command on LCE Command
+      // This transaction does not modify the pending bits
+      else if (mem_resp_v_i & (mem_resp.msg_type == e_cce_mem_uc_wr)) begin
+        // after store response is received, need to send uncached store done command to LCE
+        lce_cmd_v_o = 1'b1;
+
+        // inform ucode decode that this unit is using the LCE Command network
+        lce_cmd_busy_o = 1'b1;
+
+        lce_cmd.dst_id = mem_resp.payload.lce_id;
+        lce_cmd.msg_type = e_lce_cmd_uc_st_done;
+        lce_cmd.way_id = '0;
+
+        lce_cmd_cmd.src_id = (lg_num_cce_lp)'(cce_id_i);
+        lce_cmd_cmd.addr = mem_resp.addr;
+
+        lce_cmd.msg.cmd = lce_cmd_cmd;
+
+        // dequeue the mem data response if outbound lce data cmd is accepted
+        mem_resp_yumi_o = lce_cmd_ready_i;
+
+      end
+
+      // TODO: does e_mem_cce_inv command (could arrive on mem_resp network) need to be handled here?
+      // TODO: determine if we have both _i/_o for mem_cmd and mem_resp networks, or if mem_resp can carry a command to CCE
+
+    end
+
+
+    /*
+     * Microcode message send/receive
+     *
+     */
+
+    case (decoded_inst_i.mem_cmd_addr_sel)
+      e_mem_cmd_addr_lru_way_addr: mem_cmd_addr = mshr.lru_paddr;
+      e_mem_cmd_addr_req_addr: mem_cmd_addr = mshr.paddr;
+      default mem_cmd_addr = '0;
     endcase
 
     gpr_set = '0;
@@ -251,77 +331,87 @@ module bp_cce_msg
       end
     endcase
 
-    // Mem Resp
-    if (decoded_inst_i.mem_resp_yumi) begin
-      mem_resp_yumi_o = decoded_inst_i.mem_resp_yumi;
-
-      // clear the pending bit
-      // yumi is only set in decoded instruction if the mem_resp is valid, so it is safe to write
-      // this cycle
-      pending_w_v_o = 1'b1;
-      pending_w_way_group_o =
-        mem_resp.addr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
-      pending_o = 1'b0;
-    end
     // Mem Command
-    else if (decoded_inst_i.mem_cmd_v) begin
-      mem_cmd_v_o = decoded_inst_i.mem_cmd_v;
-      mem_cmd.msg_type = bp_lce_cce_req_type_e'(mshr.flags[e_flag_sel_rqf]);
+    if (decoded_inst_i.mem_cmd_v) begin
+
+      // set some defaults - cached load/store miss request
+      mem_cmd.msg_type = (mshr.flags[e_flag_sel_rqf]) ? e_cce_mem_wr : e_cce_mem_rd;
+      mem_cmd.addr = mem_cmd_addr;
+      mem_cmd.size = e_mem_size_64;
       mem_cmd.payload.lce_id = mshr.lce_id;
       mem_cmd.payload.way_id = mshr.lru_way_id;
-      mem_cmd.addr = mshr.paddr;
-      mem_cmd.non_cacheable = bp_lce_cce_req_non_cacheable_e'(mshr.flags[e_flag_sel_ucf]);
-      mem_cmd.nc_size = bp_lce_cce_nc_req_size_e'(mshr.nc_req_size);
+      mem_cmd.data = '0;
 
-      // set pending bit -- only if mem_cmd is accepted
-      pending_w_v_o = mem_cmd_ready_i;
-      pending_w_way_group_o =
-        mshr.paddr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
-      pending_o = 1'b1;
-    end
-    // Mem Data Command
-    else if (decoded_inst_i.mem_data_cmd_v) begin
-      mem_data_cmd_v_o = decoded_inst_i.mem_data_cmd_v;
-      mem_data_cmd.msg_type = bp_lce_cce_req_type_e'(mshr.flags[e_flag_sel_rqf]);
-      mem_data_cmd.addr = mem_data_cmd_addr;
+      // Uncached command - no need to block on pending_w_busy_o because uncached access does not use pending bits
       if (mshr.flags[e_flag_sel_ucf]) begin
-        mem_data_cmd.data = {(cce_block_width_p-dword_width_p)'('0),nc_data_i};
-      end else begin
-        mem_data_cmd.data = lce_data_resp.data;
-      end
-      mem_data_cmd.non_cacheable = bp_lce_cce_req_non_cacheable_e'(mshr.flags[e_flag_sel_ucf]);
-      mem_data_cmd.nc_size = bp_lce_cce_nc_req_size_e'(mshr.nc_req_size);
-      // Request data for return
-      mem_data_cmd.payload = mshr;
+        mem_cmd_v_o = 1'b1;
+        // load or store
+        if (mshr.flags[e_flag_sel_rqf]) begin
+          mem_cmd.msg_type = e_cce_mem_uc_wr;
+          mem_cmd.data = {(cce_block_width_p-dword_width_p)'('0),nc_data_i};
+        end else begin
+          mem_cmd.msg_type = e_cce_mem_uc_rd;
+        end
 
-      // set pending bit -- only if mem_data_cmd is accepted
-      pending_w_v_o = mem_data_cmd_ready_i;
-      pending_w_way_group_o =
-        mem_data_cmd_addr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
-      pending_o = 1'b1;
+        mem_cmd.size =
+          (mshr.uc_req_size == e_lce_uc_req_1)
+          ? e_mem_size_1
+          : (mshr.uc_req_size == e_lce_uc_req_2)
+            ? e_mem_size_2
+            : (mshr.uc_req_size == e_lce_uc_req_4)
+              ? e_mem_size_4
+              : e_mem_size_8
+          ;
+
+      end
+
+      // Cached request - only send if this module isn't already writing the pending bits
+      else if (~pending_w_busy_o) begin
+        mem_cmd_v_o = 1'b1;
+
+        // Writeback command - override default command fields as needed
+        if (decoded_inst_i.mem_cmd == e_cce_mem_wb) begin
+          mem_cmd.msg_type = e_cce_mem_wb;
+          mem_cmd.data = lce_resp.data;
+          mem_cmd.payload.lce_id = lce_resp.src_id;
+          mem_cmd.payload.way_id = '0;
+        end
+
+        // Load or store miss request uses defaults defined above
+
+        // write pending bit
+        pending_w_v_o = mem_cmd_ready_i;
+        pending_w_way_group_o =
+          mem_cmd_addr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
+        pending_o = 1'b1;
+
+      end
 
     end
     // LCE Command
-    else if (decoded_inst_i.lce_cmd_v) begin
-      lce_cmd_v_o = decoded_inst_i.lce_cmd_v;
+    else if (decoded_inst_i.lce_cmd_v & ~lce_cmd_busy_o) begin
+      lce_cmd_v_o = 1'b1;
+
       lce_cmd.dst_id = lce_cmd_lce;
-      lce_cmd.src_id = (lg_num_cce_lp)'(cce_id_i);
-      lce_cmd.msg_type = decoded_inst_i.lce_cmd_cmd;
-      lce_cmd.addr = lce_cmd_addr;
+      lce_cmd.msg_type = decoded_inst_i.lce_cmd;
       lce_cmd.way_id = lce_cmd_way;
-      if ((decoded_inst_i.lce_cmd_cmd == e_lce_cmd_set_tag)
-          | (decoded_inst_i.lce_cmd_cmd == e_lce_cmd_set_tag_wakeup)) begin
-        lce_cmd.state = mshr.next_coh_state;
+
+      lce_cmd_cmd.src_id = (lg_num_cce_lp)'(cce_id_i);
+      lce_cmd_cmd.addr = lce_cmd_addr;
+      if ((decoded_inst_i.lce_cmd == e_lce_cmd_set_tag)
+          | (decoded_inst_i.lce_cmd == e_lce_cmd_set_tag_wakeup)) begin
+        lce_cmd_cmd.state = mshr.next_coh_state;
       end else begin
-        lce_cmd.state = '0;
+        lce_cmd_cmd.state = '0;
       end
-      if (decoded_inst_i.lce_cmd_cmd == e_lce_cmd_transfer) begin
-        lce_cmd.target = mshr.lce_id;
-        lce_cmd.target_way_id = mshr.lru_way_id;
+      if (decoded_inst_i.lce_cmd == e_lce_cmd_transfer) begin
+        lce_cmd_cmd.target = mshr.lce_id;
+        lce_cmd_cmd.target_way_id = mshr.lru_way_id;
       end else begin
-        lce_cmd.target = '0;
-        lce_cmd.target_way_id = '0;
+        lce_cmd_cmd.target = '0;
+        lce_cmd_cmd.target_way_id = '0;
       end
+      lce_cmd.msg.cmd = lce_cmd_cmd;
     end
     // LCE Request
     else if (decoded_inst_i.lce_req_yumi) begin
@@ -330,48 +420,6 @@ module bp_cce_msg
     // LCE Response
     else if (decoded_inst_i.lce_resp_yumi) begin
       lce_resp_yumi_o = decoded_inst_i.lce_resp_yumi;
-    end
-    // LCE Data Response
-    else if (decoded_inst_i.lce_data_resp_yumi) begin
-      lce_data_resp_yumi_o = decoded_inst_i.lce_data_resp_yumi;
-    end
-
-    // Mem Data Resp and LCE Data Cmd
-
-    // LCE Data Cmd feeds a wormhole router, so v_o must be held high for a number of cycles.
-    // It is possible that in the middle of sending a message, a  mem_cmd or mem_data_cmd could also
-    // try to send via the microcode, or a mem_resp could arrive and the CCE would try to process it.
-    // If this happens, the CCE needs to stall the microcode operation until the lce_data_cmd finishes
-    // sending and the mem_data_resp is consumed. This avoids contention on the pending bit write port.
-
-    // Sending the LCE Data Cmd has priority over any action regarding memory messages that the CCE
-    // microcode may take. Arbitration is handled by the microcode instruction decoder.
-
-    // connect Mem Data Resp to LCE Data Cmd
-    if (mem_data_resp_v_i) begin
-      lce_data_cmd_v_o = mem_data_resp_v_i;
-      mem_data_resp_yumi_o = lce_data_cmd_ready_i;
-      // clear the pending bit in the cycle that the lce data cmd finishes sending
-      // This is the only cycle that this module will block the microcode from writing the pending
-      // bit, which causes the microcode engine to stall the current instruction and try to execute
-      // it again in the next cycle
-      if (lce_data_cmd_ready_i) begin
-        pending_w_v_o = lce_data_cmd_ready_i;
-        pending_w_way_group_o =
-          mem_data_resp.addr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
-        pending_o = 1'b0;
-      end
-      lce_data_cmd.dst_id = mem_data_resp.payload.lce_id;
-      // Data is copied directly from MemDataResp
-      // For uncached responses, only the least significant 64-bits will be valid
-      lce_data_cmd.data = mem_data_resp.data;
-      if (mem_data_resp.non_cacheable == e_lce_req_non_cacheable) begin
-        lce_data_cmd.msg_type = e_lce_data_cmd_non_cacheable;
-        lce_data_cmd.way_id = '0;
-      end else begin
-        lce_data_cmd.msg_type = e_lce_data_cmd_cce;
-        lce_data_cmd.way_id = mem_data_resp.payload.way_id;
-      end
     end
 
   end

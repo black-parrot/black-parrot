@@ -72,6 +72,8 @@ module bp_cce_nonsynth_tracer
    , input                                      mem_cmd_ready_i
 
    , input [lg_num_cce_lp-1:0]                  cce_id_i
+
+   , input                                      stall_i
   );
 
   // Define structure variables for output queues
@@ -83,8 +85,6 @@ module bp_cce_nonsynth_tracer
   bp_lce_cce_req_req_s       lce_req_req;
   bp_lce_cce_req_uc_req_s    lce_req_uc_req;
   bp_lce_cce_resp_s          lce_resp;
-  bp_lce_cce_resp_resp_s     lce_resp_resp;
-  bp_lce_cce_resp_data_s     lce_resp_data;
   bp_lce_cmd_s               lce_cmd;
   bp_lce_cmd_cmd_s           lce_cmd_cmd;
 
@@ -95,8 +95,6 @@ module bp_cce_nonsynth_tracer
   assign lce_req_req         = lce_req.msg.req;
   assign lce_req_uc_req      = lce_req.msg.uc_req;
   assign lce_resp            = lce_resp_i;
-  assign lce_resp_resp       = lce_resp.msg.resp;
-  assign lce_resp_data       = lce_resp.msg.data_resp;
   assign lce_cmd             = lce_cmd_i;
   assign lce_cmd_cmd         = lce_cmd.msg.cmd;
   assign mem_cmd             = mem_cmd_i;
@@ -105,6 +103,11 @@ module bp_cce_nonsynth_tracer
   // Tracer
   always_ff @(negedge clk_i) begin
     if (~reset_i & cce_trace_p) begin
+      if (stall_i) begin
+        $display("%T: stall detected!", $time);
+        $finish(0);
+      end
+
       // inbound messages
       if (lce_req_v_i & lce_req_yumi_i) begin
         if (lce_req.msg_type == e_lce_req_type_rd | lce_req.msg_type == e_lce_req_type_wr) begin
@@ -127,14 +130,18 @@ module bp_cce_nonsynth_tracer
         end
       end
       if (lce_resp_v_i & lce_resp_yumi_i) begin
-        if (lce_resp.msg_type == e_lce_cce_resp_ack) begin
+        if ((lce_resp.msg_type == e_lce_cce_sync_ack)
+            | (lce_resp.msg_type == e_lce_cce_inv_ack)
+            | (lce_resp.msg_type == e_lce_cce_coh_ack)) begin
         $display("%0T: CCE[%0d] RESP LCE[%0d] addr[%H] ack[%3b]"
-                 , $time, cce_id_i, lce_resp.src_id, lce_resp.addr, lce_resp_resp.msg_type);
+                 , $time, cce_id_i, lce_resp.src_id, lce_resp.addr, lce_resp.msg_type);
         end
-        if (lce_resp.msg_type == e_lce_cce_resp_data) begin
+        if ((lce_resp.msg_type == e_lce_cce_resp_wb)
+            | (lce_resp.msg_type == e_lce_cce_resp_null_wb)) begin
         $display("%0T: CCE[%0d] DATA RESP LCE[%0d] addr[%H] null_wb[%0b]\n%H"
-                 , $time, cce_id_i, lce_resp.src_id, lce_resp.addr, lce_resp_data.msg_type
-                 , lce_resp_data.data);
+                 , $time, cce_id_i, lce_resp.src_id, lce_resp.addr
+                 , (lce_resp.msg_type == e_lce_cce_resp_null_wb)
+                 , lce_resp.data);
         end
       end
       if (mem_resp_v_i & mem_resp_yumi_i) begin
@@ -155,20 +162,21 @@ module bp_cce_nonsynth_tracer
       end
       // outbound messages
       if (lce_cmd_v_i & lce_cmd_ready_i) begin
-        if (lce_cmd.msg_type == e_lce_cmd_cmd) begin
-        $display("%0T: CCE[%0d] CMD LCE[%0d] addr[%H] cmd[%3b] way[%0d] st[%2b] tgt[%0d] tgtWay[%0d]"
-                 , $time, cce_id_i, lce_cmd.dst_id, lce_cmd_cmd.addr, lce_cmd_cmd.msg_type, lce_cmd.way_id
-                 , lce_cmd_cmd.state, lce_cmd_cmd.target, lce_cmd_cmd.target_way_id);
-        end
         if (lce_cmd.msg_type == e_lce_cmd_data) begin
         $display("%0T: CCE[%0d] DATA CMD LCE[%0d] cmd[%2b] way[%0d]\n%H"
                  , $time, cce_id_i, lce_cmd.dst_id, lce_cmd.msg_type, lce_cmd.way_id
                  , lce_cmd.msg.data);
         end
-        if (lce_cmd.msg_type == e_lce_cmd_uc_data) begin
+        else if (lce_cmd.msg_type == e_lce_cmd_uc_data) begin
         $display("%0T: CCE[%0d] DATA CMD LCE[%0d] cmd[%2b] way[%0d]\n%H"
                  , $time, cce_id_i, lce_cmd.dst_id, lce_cmd.msg_type, lce_cmd.way_id
-                 , lce_cmd.msg.data[dword_width_p]);
+                 , lce_cmd.msg.data);
+        end
+
+        else begin
+        $display("%0T: CCE[%0d] CMD LCE[%0d] addr[%H] cmd[%3b] way[%0d] st[%2b] tgt[%0d] tgtWay[%0d]"
+                 , $time, cce_id_i, lce_cmd.dst_id, lce_cmd_cmd.addr, lce_cmd.msg_type, lce_cmd.way_id
+                 , lce_cmd_cmd.state, lce_cmd_cmd.target, lce_cmd_cmd.target_way_id);
         end
       end
       if (mem_cmd_v_i & mem_cmd_ready_i) begin

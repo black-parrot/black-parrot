@@ -114,7 +114,6 @@
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      target;                                                 \
     logic [`bp_coh_bits-1:0]                     state;                                                  \
     logic [paddr_width_mp-1:0]                   addr;                                                   \
-    bp_cce_lce_cmd_type_e                        msg_type;                                               \
     logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]      src_id;                                                 \
   }  bp_lce_cmd_cmd_s;                                                                                   \
                                                                                                          \
@@ -137,30 +136,13 @@
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      dst_id;                                                 \
   } bp_lce_cmd_s;                                                                                        \
                                                                                                          \
-  typedef struct packed                                                                                  \
-  {                                                                                                      \
-    logic[`bp_lce_resp_pad(cce_block_width_mp)-1:0]   pad;                                               \
-    bp_lce_cce_ack_type_e                             msg_type;                                          \
-  } bp_lce_cce_resp_resp_s;                                                                              \
-                                                                                                         \
-  typedef struct packed                                                                                  \
-  {                                                                                                      \
-    logic [cce_block_width_mp-1:0]               data;                                                   \
-    bp_lce_cce_resp_data_msg_type_e              msg_type;                                               \
-  } bp_lce_cce_resp_data_s;                                                                              \
-                                                                                                         \
 /**                                                                                                      \
  *  bp_lce_cce_resp_s is the generic message for LCE Response and LCE Data Response messages on the      \
- *  Response network from LCE to CCE. The 'msg_type' indicates if the response is an Ack or              \
- *  Data message.                                                                                        \
+ *  Response network from LCE to CCE. The data field is only used for Data Response messages.            \
  */                                                                                                      \
   typedef struct packed                                                                                  \
   {                                                                                                      \
-    union packed                                                                                         \
-    {                                                                                                    \
-      bp_lce_cce_resp_data_s  data_resp;                                                                 \
-      bp_lce_cce_resp_resp_s  resp;                                                                      \
-    }                                            msg;                                                    \
+    logic [cce_block_width_mp-1:0]               data;                                                   \
     logic [paddr_width_mp-1:0]                   addr;                                                   \
     bp_lce_cce_resp_type_e                       msg_type;                                               \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      src_id;                                                 \
@@ -226,33 +208,6 @@ typedef enum bit [1:0]
 } bp_lce_cce_uc_req_size_e;
 
 /*
- * bp_cce_lce_cmd_type_e defines the various commands that an CCE may issue to an LCE
- * e_lce_cmd_sync is used at the end of reset to direct the LCE to inform the CCE it is ready
- * e_lce_cmd_set_clear is sent by the CCE to invalidate an entire cache set in the LCE
- * e_lce_cmd_transfer is sent to command an LCE to transfer an entire cache block to another LCE
- * e_lce_cmd_set_tag is sent to update the tag and coherence state of a single cache line
- * e_lce_cmd_set_tag_wakeup is the same as e_lce_cmd_set_tag, plus it tells the LCE to wake up
- *   and resume normal execution. This is sent only when the CCE detects a write-miss request
- *   is actually an upgrade request.
- * e_lce_cmd_invalidate_tag is sent to invalidate a single cache entry. This command results in
- *   the coherence state of the specified entry being changed to Invalid (no read or write
- *   permissions)
- */
-typedef enum bit [3:0] 
-{
-  e_lce_cmd_sync             = 4'b0000
-  ,e_lce_cmd_set_clear       = 4'b0001
-  ,e_lce_cmd_transfer        = 4'b0010
-  ,e_lce_cmd_writeback       = 4'b0011
-  ,e_lce_cmd_set_tag         = 4'b0100
-  ,e_lce_cmd_set_tag_wakeup  = 4'b0101
-  ,e_lce_cmd_invalidate_tag  = 4'b0110
-  ,e_lce_cmd_uc_st_done      = 4'b0111
-  // 4'b1000 - 4'b1111 reserved / custom
-} bp_cce_lce_cmd_type_e;
-
-
-/*
  * bp_cce_coh_states_e defines the coherence states available in BlackParrot. Each bit represents
  * a property of the cache block as defined below:
  * 0: Shared (not Exclusive)
@@ -280,57 +235,53 @@ typedef enum bit [2:0]
 
 `define bp_coh_bits $bits(bp_coh_states_e)
 
-// LCE Command Network Message Types
-typedef enum logic [1:0] {
-  e_lce_cmd_cmd            // command
-  ,e_lce_cmd_data          // cache block data to LCE, i.e., cache block fill
-  ,e_lce_cmd_uc_data       // unached data to LCE, i.e, up to 64-bits data
+/*
+ * bp_cce_lce_cmd_type_e defines the various commands that an CCE may issue to an LCE
+ * e_lce_cmd_sync is used at the end of reset to direct the LCE to inform the CCE it is ready
+ * e_lce_cmd_set_clear is sent by the CCE to invalidate an entire cache set in the LCE
+ * e_lce_cmd_transfer is sent to command an LCE to transfer an entire cache block to another LCE
+ * e_lce_cmd_set_tag is sent to update the tag and coherence state of a single cache line
+ * e_lce_cmd_set_tag_wakeup is the same as e_lce_cmd_set_tag, plus it tells the LCE to wake up
+ *   and resume normal execution. This is sent only when the CCE detects a write-miss request
+ *   is actually an upgrade request.
+ * e_lce_cmd_invalidate_tag is sent to invalidate a single cache entry. This command results in
+ *   the coherence state of the specified entry being changed to Invalid (no read or write
+ *   permissions)
+ */
+typedef enum bit [3:0] 
+{
+  e_lce_cmd_sync             = 4'b0000
+  ,e_lce_cmd_set_clear       = 4'b0001
+  ,e_lce_cmd_transfer        = 4'b0010
+  ,e_lce_cmd_writeback       = 4'b0011
+  ,e_lce_cmd_set_tag         = 4'b0100
+  ,e_lce_cmd_set_tag_wakeup  = 4'b0101
+  ,e_lce_cmd_invalidate_tag  = 4'b0110
+  ,e_lce_cmd_uc_st_done      = 4'b0111
+  ,e_lce_cmd_data            = 4'b1000 // cache block data to LCE, i.e., cache block fill
+  ,e_lce_cmd_uc_data         = 4'b1001 // unached data to LCE, i.e, up to 64-bits data
+  // 4'b1000 - 4'b1111 reserved / custom
 } bp_lce_cmd_type_e;
 
-/*
- * bp_lce_cce_ack_type_e defines the types of ACK messages that an LCE may send to an CCE
- *   in an bp_lce_cce_resp_s response message
+/* bp_lce_cce_resp_type_e defines the different LCE-CCE response messages
  * e_lce_cce_sync_ack acknowledges receipt and processing of a Sync command
  * e_lce_cce_inv_ack acknowledges that an LCE has processed an Invalidation command
  * e_lce_cce_coh_ack acknowledges than an LCE has received both a set tag command AND a data
  *   command, or a set tag and wakeup command from the CCE. The sending LCE considers itself woken
  *   up after sending this ACK.
+ * e_lce_resp_wb indicates the data field (cache block data) is valid, and that the LCE ahd the
+ *   cache block in a dirty state
+ * e_lce_resp_null_wb indicates that the LCE never wrote to the cache block and the block is still
+ *   clean. The data field should be 0 and is invalid.
  */
 typedef enum bit [2:0] 
 {
   e_lce_cce_sync_ack         = 3'b000
   ,e_lce_cce_inv_ack         = 3'b001
   ,e_lce_cce_coh_ack         = 3'b010
-  // 3'b011 - 3'b111 reserved / custom
-} bp_lce_cce_ack_type_e;
-
-/*
- * bp_lce_cce_msg_type_e is an enum that is used by the LCE when sending a writeback response
- *   to indicate if the response contains valid data
- * e_lce_resp_wb indicates the data field (cache block data) is valid, and that the LCE ahd the
- *   cache block in a dirty state
- * e_lce_resp_null_wb indicates that the LCE never wrote to the cache block and the block is still
- *   clean. The data field should be 0 and is invalid.
- */
-typedef enum logic
-{
-  e_lce_cce_resp_wb              = 1'b0  // Normal Writeback Response (full data)
-  ,e_lce_cce_resp_null_wb        = 1'b1  // Null Writeback Response (no data)
-} bp_lce_cce_resp_data_msg_type_e;
-
-
-/*
- * bp_lce_cce_data_resp_s is used by an LCE to respond to a writeback command from the CCE
- * dst_id is the CCE that commanded the writeback
- * src_id is the LCE responding to the command
- * msg_type indicates if the target cache block was dirty or clean in the LCE
- * addr is the memory address of the cache block being written back
- * data is the cache block data (if this is not a null writeback)
- */
-typedef enum logic
-{
-  e_lce_cce_resp_ack               = 1'b0  // Acks, other responses
-  ,e_lce_cce_resp_data             = 1'b1  // Data Response
+  ,e_lce_cce_resp_wb         = 3'b011  // Normal Writeback Response (full data)
+  ,e_lce_cce_resp_null_wb    = 3'b100  // Null Writeback Response (no data)
+  // 3'b101 - 3'b111 reserved / custom
 } bp_lce_cce_resp_type_e;
 
 /*
@@ -350,7 +301,7 @@ typedef enum logic
   (`bp_lce_uc_req_width(data_width_mp))
 
 `define bp_lce_cmd_no_pad_width(num_cce_mp, num_lce_mp, lce_assoc_mp, paddr_width_mp)       \
-  (`BSG_SAFE_CLOG2(num_cce_mp)+$bits(bp_cce_lce_cmd_type_e)+paddr_width_mp+`bp_coh_bits     \
+  (`BSG_SAFE_CLOG2(num_cce_mp)+paddr_width_mp+`bp_coh_bits     \
    +`BSG_SAFE_CLOG2(num_lce_mp)+`BSG_SAFE_CLOG2(lce_assoc_mp))
 
 `define bp_lce_cmd_pad(num_cce_mp, num_lce_mp, lce_assoc_mp, paddr_width_mp, cce_block_width_mp) \
@@ -359,14 +310,6 @@ typedef enum logic
 `define bp_lce_cmd_msg_u_width(cce_block_width_mp) \
   (cce_block_width_mp)
 
-`define bp_lce_resp_data_width(cce_block_width_mp) \
-  (cce_block_width_mp+$bits(bp_lce_cce_resp_data_msg_type_e))
-
-`define bp_lce_resp_pad(cce_block_width_mp) \
-  (`bp_lce_resp_data_width(cce_block_width_mp)-$bits(bp_lce_cce_ack_type_e))
-
-`define bp_lce_resp_msg_u_width(cce_block_width_mp) \
-  (`bp_lce_resp_data_width(cce_block_width_mp))
 
 /*
  * Width macros for LCE-CCE Message Networks
@@ -382,7 +325,7 @@ typedef enum logic
 
 `define bp_lce_cce_resp_width(num_cce_mp, num_lce_mp, paddr_width_mp, cce_block_width_mp) \
   (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+$bits(bp_lce_cce_resp_type_e) \
-   +paddr_width_mp+`bp_lce_resp_msg_u_width(cce_block_width_mp))
+   +paddr_width_mp+cce_block_width_mp)
 
 `define declare_bp_lce_cce_if_widths(num_cce_mp, num_lce_mp, paddr_width_mp, lce_assoc_mp, data_width_mp, cce_block_width_mp) \
     , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_mp                         \
