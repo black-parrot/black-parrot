@@ -1,6 +1,8 @@
 ## Tools
 CC ?= $(GCC)
 VV ?= $(VERILATOR)
+PYTHON    ?= python
+TRACEDIFF ?= $(BP_COMMON_DIR)/test/software/tracediff.py
 
 ## Tool options
 VV_OPTS  = --sc                 # Output in SystemC rather than C++
@@ -100,13 +102,27 @@ sim.sc: dirs.sc
 	$(eval include $(TB_PATH)/$(TB)/Makefile.frag)
 	-@ln -sf $(BUILD_DIR)/obj_dir/V$(TOP_MODULE) $(SIM_DIR)/simsc
 	-@cp $(MEM_PATH)/$(PROG).mem $(SIM_DIR)/prog.mem
-	-@touch $(SIM_DIR)/prog.mem
+	-@cp $(MEM_PATH)/$(PROG).dump $(SIM_DIR)/prog.dump
+	-@cp $(MEM_PATH)/$(PROG).spike $(SIM_DIR)/prog.spike
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(SIM_DIR)/dram_ch.ini
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(SIM_DIR)/dram_sys.ini
 	-@cp $(CCE_MEM_PATH)/$(CCE_MEM) $(SIM_DIR)/cce_ucode.mem
-	cd $(SIM_DIR); ./simsc | tee $(SIM_LOG)
+	-cd $(SIM_DIR); ./simsc | tee $(SIM_LOG)
+	-cd $(SIM_DIR); $(PYTHON) $(TRACEDIFF) prog.spike prog.trace $(START_PC) --tolerance=$(TOLERANCE) \
+	 	| tee -a $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
+	-@grep "MATCH" $(SIM_LOG) || echo "FAILED TO MATCH" >> $(SIM_ERROR)
 	-@grep "PASS" -A 8 $(SIM_LOG) > $(SIM_REPORT)
+
+match.sc: MATCH_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).match.$(PROG).log
+match.sc: MATCH_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).match.$(PROG).rpt
+match.sc: MATCH_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).match.$(PROG).err
+match.sc: PROG ?= rv64ui-p-simple
+match.sc: dirs.sc
+	-cd $(SIM_DIR); $(PYTHON) $(TRACEDIFF) prog.spike prog.trace $(START_PC) --tolerance=$(TOLERANCE) \
+		| tee -a $(MATCH_LOG)
+	-@grep "MATCH" $(MATCH_LOG) || echo "MISMATCHED" >> $(MATCH_ERROR)
+	-@grep "MATCH" -A 4 $(MATCH_LOG) > $(MATCH_REPORT)
 
 regress.sc: $(RV64_REGRESSION_SC) 
 $(RV64_REGRESSION_SC):

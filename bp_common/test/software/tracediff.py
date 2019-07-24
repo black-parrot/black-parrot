@@ -55,7 +55,10 @@ class SimLogEntry:
     else:
       self.rf_instr = False
     if len(commit_string) > 5 and self.rf_instr:
-      self.rd_data = int(commit_string[5], 16)
+      try:
+        self.rd_data = int(commit_string[5], 16)
+      except:
+        self.rd_data = 0
 
   def __eq__(self, rhs):
     pc_match = self.pc == rhs.pc
@@ -75,7 +78,7 @@ class SimLogEntry:
 
 
 def compare_trace(spike_entries, sim_entries, start_pc):
-  mismatch = False
+  mismatches = 0
   spike_index = 0
   sim_index = 0
 
@@ -100,15 +103,13 @@ def compare_trace(spike_entries, sim_entries, start_pc):
   while True:
     if sim_index >= len(sim_entries):
       print("Sim trace finished!")
-      print("MATCH")
       break
     if spike_index >= len(spike_entries):
       print("Spike trace finished!")
-      print("MATCH")
       break
 
     if spike_entries[spike_index] != sim_entries[sim_index]:
-      mismatch = True
+      mismatches += 1
       print("Mismatch! PC: {} ITAG: {} DASM: {}".format(
         hex(spike_entries[spike_index].pc),
         hex(sim_entries[sim_index].itag),
@@ -117,7 +118,7 @@ def compare_trace(spike_entries, sim_entries, start_pc):
     sim_index += 1
     spike_index += 1
 
-  return mismatch
+  return mismatches
 
 
 if __name__ == "__main__":
@@ -125,11 +126,13 @@ if __name__ == "__main__":
   parser.add_argument('spike_log')
   parser.add_argument('sim_log')
   parser.add_argument('start_pc')
+  parser.add_argument('--tolerance', nargs='?', default=0)
 
   args = parser.parse_args()
   spike_log = args.spike_log
   sim_log = args.sim_log
   start_pc = int(args.start_pc, 16)
+  tolerance = int(args.tolerance)
 
   spike_entries = []
   with open(spike_log, 'r') as f:
@@ -145,7 +148,16 @@ if __name__ == "__main__":
     for entry in entries:
       sim_entries.append(SimLogEntry(entry))
 
-  ecode = compare_trace(spike_entries, sim_entries, start_pc)
+  mismatches = compare_trace(spike_entries, sim_entries, start_pc)
+  if mismatches > tolerance:
+    print("Mismatch! {} errors, tolerance={}".format(mismatches, tolerance))
+    exit(1)
+  else:
+    print("MATCH")
+    print("# spike instrs: {}".format(len(spike_entries)))
+    print("# sim   instrs: {}".format(len(sim_entries)))
+    print("# mismatch    : {}".format(mismatches))
+    print("tolerance     : {}".format(tolerance))
+    exit(0)
 
-  exit(ecode)
 
