@@ -142,12 +142,10 @@ bp_lce_cce_req_s             lce_req_li;
 logic                        lce_req_v_li, lce_req_ready_lo;
 bp_lce_cce_resp_s            lce_resp_li;
 logic                        lce_resp_v_li, lce_resp_ready_lo;
-bp_lce_cce_data_resp_s       lce_data_resp_li;
-logic                        lce_data_resp_v_li, lce_data_resp_ready_lo;
 bp_cce_lce_cmd_s             lce_cmd_lo;
 logic                        lce_cmd_v_lo, lce_cmd_ready_li;
-bp_lce_data_cmd_s            cce_lce_data_cmd_lo;
-logic                        cce_lce_data_cmd_v_lo, cce_lce_data_cmd_ready_li;
+bp_lce_data_cmd_s            lce_cmd_lo;
+logic                        lce_cmd_v_lo, lce_cmd_ready_li;
 
 bp_proc_cfg_s proc_cfg_cast_i;
 assign proc_cfg_cast_i = proc_cfg_i;
@@ -195,21 +193,13 @@ bp_core
    ,.lce_resp_v_o(lce_resp_v_lo)
    ,.lce_resp_ready_i(lce_resp_ready_li)
 
-   ,.lce_data_resp_o(lce_data_resp_lo)
-   ,.lce_data_resp_v_o(lce_data_resp_v_lo)
-   ,.lce_data_resp_ready_i(lce_data_resp_ready_li)
-
    ,.lce_cmd_i(lce_cmd_li)
    ,.lce_cmd_v_i(lce_cmd_v_li)
    ,.lce_cmd_ready_o(lce_cmd_ready_lo)
 
-   ,.lce_data_cmd_i(lce_data_cmd_li)
-   ,.lce_data_cmd_v_i(lce_data_cmd_v_li)
-   ,.lce_data_cmd_ready_o(lce_data_cmd_ready_lo)
-
-   ,.lce_data_cmd_o(lce_lce_data_cmd_lo)
-   ,.lce_data_cmd_v_o(lce_lce_data_cmd_v_lo)
-   ,.lce_data_cmd_ready_i(lce_lce_data_cmd_ready_li)
+   ,.lce_cmd_o(lce__cmd_lo)
+   ,.lce_cmd_v_o(lce_cmd_v_lo)
+   ,.lce_cmd_ready_i(lce_cmd_ready_li)
     
    ,.timer_int_i(timer_int_i)
    ,.software_int_i(software_int_i)
@@ -593,15 +583,11 @@ bsg_wormhole_router_adapter_out
    ,.ready_i(lce_data_resp_ready_lo)
    );
 
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mem_payload_width_p)
+`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 bp_cce_mem_cmd_s       mem_cmd_lo;
 logic                  mem_cmd_v_lo, mem_cmd_yumi_li;
-bp_cce_mem_data_cmd_s  mem_data_cmd_lo;
-logic                  mem_data_cmd_v_lo, mem_data_cmd_yumi_li;
 bp_mem_cce_resp_s      mem_resp_li;
 logic                  mem_resp_v_li, mem_resp_ready_lo;
-bp_mem_cce_data_resp_s mem_data_resp_li;
-logic                  mem_data_resp_v_li, mem_data_resp_ready_lo;
 
 bp_cce_top
  #(.cfg_p(cfg_p)
@@ -642,17 +628,11 @@ bp_cce_top
    ,.mem_resp_i(mem_resp_li)
    ,.mem_resp_v_i(mem_resp_v_li)
    ,.mem_resp_ready_o(mem_resp_ready_lo)
-   ,.mem_data_resp_i(mem_data_resp_li)
-   ,.mem_data_resp_v_i(mem_data_resp_v_li)
-   ,.mem_data_resp_ready_o(mem_data_resp_ready_lo)
 
    // From CCE
    ,.mem_cmd_o(mem_cmd_lo)
    ,.mem_cmd_v_o(mem_cmd_v_lo)
    ,.mem_cmd_yumi_i(mem_cmd_yumi_li)
-   ,.mem_data_cmd_o(mem_data_cmd_lo)
-   ,.mem_data_cmd_v_o(mem_data_cmd_v_lo)
-   ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi_li)
 
    ,.cce_id_i(proc_cfg_cast_i.cce_id) 
    );
@@ -682,17 +662,6 @@ bp_addr_map
   ,.dest_cord_o(cmd_dest_cord_lo)
   );
 
-logic [noc_cord_width_p-1:0] data_cmd_dest_cord_lo;
-bp_addr_map
- #(.cfg_p(cfg_p))
- data_cmd_map
-  (.paddr_i(mem_data_cmd_lo.addr)
-   ,.clint_cord_i(clint_cord_i)
-   ,.dram_cord_i(dram_cord_i)
-
-   ,.dest_cord_o(data_cmd_dest_cord_lo)
-   );
-
 bsg_ready_and_link_sif_s wh_master_link_li, wh_master_link_lo;
 bp_me_cce_to_wormhole_link_master
  #(.cfg_p(cfg_p))
@@ -704,21 +673,12 @@ master_link
    ,.mem_cmd_v_i(mem_cmd_v_lo)
    ,.mem_cmd_yumi_o(mem_cmd_yumi_li)
 
-   ,.mem_data_cmd_i(mem_data_cmd_lo)
-   ,.mem_data_cmd_v_i(mem_data_cmd_v_lo)
-   ,.mem_data_cmd_yumi_o(mem_data_cmd_yumi_li)
-
    ,.mem_resp_o(mem_resp_li)
    ,.mem_resp_v_o(mem_resp_v_li)
    ,.mem_resp_ready_i(mem_resp_ready_lo)
 
-   ,.mem_data_resp_o(mem_data_resp_li)
-   ,.mem_data_resp_v_o(mem_data_resp_v_li)
-   ,.mem_data_resp_ready_i(mem_data_resp_ready_lo)
-
    ,.my_cord_i(my_cord_i)
    ,.mem_cmd_dest_cord_i(cmd_dest_cord_lo)
-   ,.mem_data_cmd_dest_cord_i(data_cmd_dest_cord_lo)
 
    ,.link_i(wh_master_link_li)
    ,.link_o(wh_master_link_lo)
@@ -736,17 +696,9 @@ client_link
    ,.mem_cmd_v_o()
    ,.mem_cmd_yumi_i('0)
 
-   ,.mem_data_cmd_o()
-   ,.mem_data_cmd_v_o()
-   ,.mem_data_cmd_yumi_i('0)
-
    ,.mem_resp_i('0)
    ,.mem_resp_v_i('0)
    ,.mem_resp_ready_o()
-
-   ,.mem_data_resp_i('0)
-   ,.mem_data_resp_v_i('0)
-   ,.mem_data_resp_ready_o()
 
    ,.my_cord_i(my_cord_i)
 
