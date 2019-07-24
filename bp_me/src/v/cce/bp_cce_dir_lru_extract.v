@@ -45,7 +45,7 @@ module bp_cce_dir_lru_extract
 
   typedef struct packed {
     logic [tag_width_p-1:0]      tag;
-    logic [`bp_cce_coh_bits-1:0] state;
+    logic [`bp_coh_bits-1:0]     state;
   } dir_entry_s;
 
   // Directory RAM row cast
@@ -64,11 +64,11 @@ module bp_cce_dir_lru_extract
                        : 1'b0
                    : 1'b0;
 
-  logic [`bp_cce_coh_bits-1:0] lru_coh_state;
+  logic [`bp_coh_bits-1:0] lru_coh_state;
   assign lru_coh_state = (row_v_i)
                          ? row[lce_i[0+:lg_tag_sets_per_row_lp]][lru_way_i].state
                          : '0;
-  assign lru_cached_excl_o = ((lru_coh_state == e_MESI_M) | (lru_coh_state == e_MESI_E));
+  assign lru_cached_excl_o = ((lru_coh_state == e_COH_M) | (lru_coh_state == e_COH_E));
   assign lru_tag_o = (row_v_i)
                      ? row[lce_i[0+:lg_tag_sets_per_row_lp]][lru_way_i].tag
                      : '0;
