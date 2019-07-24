@@ -30,6 +30,7 @@ module testbench
    // Trace replay parameters
    , parameter calc_trace_p                = 0
    , parameter cce_trace_p                 = 0
+   , parameter cmt_trace_p                 = 0
    , parameter skip_init_p                 = 0
    , parameter trace_ring_width_p          = "inv"
    , parameter trace_rom_addr_width_p      = "inv"
@@ -145,10 +146,28 @@ wrapper
    ,.resp_link_o(resp_link_li)
    );
 
+if (cmt_trace_p)
+  bind bp_be_top
+    bp_nonsynth_commit_tracer
+     #(.cfg_p(cfg_p))
+     commit_tracer
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
+  
+       ,.mhartid_i(be_calculator.proc_cfg.core_id)
+  
+       ,.commit_v_i(be_calculator.instret_mem3_o)
+       ,.commit_pc_i(be_calculator.pc_mem3_o)
+       ,.commit_instr_i(be_calculator.instr_mem3_o)
+       ,.rd_w_v_i(be_calculator.int_regfile.rd_w_v_i)
+       ,.rd_addr_i(be_calculator.int_regfile.rd_addr_i)
+       ,.rd_data_i(be_calculator.int_regfile.rd_data_i)
+       );
+
 bind bp_be_top
   bp_be_nonsynth_tracer
    #(.cfg_p(cfg_p))
-   tracer
+   debug_tracer
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 

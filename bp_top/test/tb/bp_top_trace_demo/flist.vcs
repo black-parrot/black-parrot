@@ -14,3 +14,4 @@ $BP_ME_DIR/test/common/bp_cce_nonsynth_tracer.v
 # top files
 $BP_TOP_DIR/test/common/bp_nonsynth_host.v
 $BP_TOP_DIR/test/common/bp_nonsynth_if_verif.v
+$BP_TOP_DIR/test/common/bp_nonsynth_commit_tracer.v
