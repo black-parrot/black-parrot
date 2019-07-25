@@ -38,7 +38,7 @@ func-regress-verilator-job:
     - echo "Fetching riscv-tests"
     - git submodule update --init --recursive -- bp_common/test/src/riscv-tests
     - echo "Building test programs"
-    - make -C bp_common/test perch riscv_mem 
+    - make -C bp_common/test perch riscv_mem riscv_dump riscv_spike
     - make ucode
 
   script:
