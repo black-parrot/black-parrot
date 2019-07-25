@@ -111,7 +111,6 @@ sim.sc: dirs.sc
 	-cd $(SIM_DIR); $(PYTHON) $(TRACEDIFF) prog.spike prog.trace $(START_PC) --tolerance=$(TOLERANCE) \
 	 	| tee -a $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
-	-@grep "MATCH" $(SIM_LOG) || echo "FAILED TO MATCH" >> $(SIM_ERROR)
 	-@grep "PASS" -A 8 $(SIM_LOG) > $(SIM_REPORT)
 
 match.sc: MATCH_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).match.$(PROG).log
