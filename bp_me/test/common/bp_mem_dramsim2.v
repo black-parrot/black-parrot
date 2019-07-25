@@ -6,6 +6,7 @@
 module bp_mem_dramsim2
   import bp_common_pkg::*;
   import bp_cce_pkg::*;
+  import bp_me_pkg::*;
   #(parameter mem_id_p="inv"
     ,parameter clock_period_in_ps_p="inv"
     ,parameter prog_name_p="inv"
@@ -133,11 +134,11 @@ module bp_mem_dramsim2
             if (mem_uc_cmd) begin
 
               wr_size = 
-                (mem_cmd_i_s.uc_size == e_lce_uc_req_1)
+                (mem_cmd_i_s.size == e_mem_size_1)
                 ? 1
-                : (mem_cmd_i_s.uc_size == e_lce_uc_req_2)
+                : (mem_cmd_i_s.size == e_mem_size_2)
                   ? 2
-                  : (mem_cmd_i_s.uc_size == e_lce_uc_req_4)
+                  : (mem_cmd_i_s.size == e_mem_size_4)
                     ? 4
                     : 8;
 
@@ -173,7 +174,7 @@ module bp_mem_dramsim2
             end else begin
               mem_resp_s_o.data <= dramsim_data;
             end
-            mem_resp_s_o.uc_size <= mem_cmd_s_r.uc_size;
+            mem_resp_s_o.size <= mem_cmd_s_r.size;
   
             // pull valid high
             mem_resp_v_o <= dramsim_valid;
@@ -186,7 +187,7 @@ module bp_mem_dramsim2
             mem_resp_s_o.msg_type <= mem_cmd_s_r.msg_type;
             mem_resp_s_o.addr <= mem_cmd_s_r.addr;
             mem_resp_s_o.payload <= mem_cmd_s_r.payload;
-            mem_resp_s_o.uc_size <= mem_cmd_s_r.uc_size;
+            mem_resp_s_o.size <= mem_cmd_s_r.size;
             mem_resp_s_o.data <= '0;
   
             // pull valid high

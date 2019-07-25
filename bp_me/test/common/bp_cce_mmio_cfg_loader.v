@@ -14,6 +14,7 @@ module bp_cce_mmio_cfg_loader
   import bp_cfg_link_pkg::*;
   import bp_be_pkg::*;
   import bp_be_dcache_pkg::*;
+  import bp_me_pkg::*;
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
@@ -115,7 +116,7 @@ module bp_cce_mmio_cfg_loader
       mem_cmd_cast_o.msg_type      = e_cce_mem_uc_wr;
       mem_cmd_cast_o.addr          = bp_cfg_base_addr_gp;
       mem_cmd_cast_o.payload       = '0;
-      mem_cmd_cast_o.uc_size       = e_lce_uc_req_8;
+      mem_cmd_cast_o.size          = e_mem_size_8;
       mem_cmd_cast_o.data          = {cfg_core_lo, cfg_addr_lo, cfg_data_lo};
     end
 

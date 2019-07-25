@@ -9,6 +9,7 @@ module bp_me_cce_to_wormhole_link_master
   import bp_cce_pkg::*;
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
+  import bp_me_pkg::*;
   
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
   

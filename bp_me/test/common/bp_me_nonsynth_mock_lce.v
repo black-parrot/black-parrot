@@ -131,7 +131,7 @@ module bp_me_nonsynth_mock_lce
   );
 
   // LCE-CCE interface structs
-  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p, lce_cce_req_msg_width_lp, lce_cmd_msg_width_lp, lce_cce_resp_msg_width_lp);
+  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   // Structs for output messages
   bp_lce_cce_req_s lce_req_lo;
@@ -144,7 +144,6 @@ module bp_me_nonsynth_mock_lce
   // Sub-type structs for output messages
   bp_lce_cce_req_req_s lce_req_req_lo;
   bp_lce_cce_req_uc_req_s lce_req_uc_req_lo;
-  bp_lce_cmd_data_s lce_cmd_data_lo;
   bp_lce_cce_resp_resp_s lce_resp_resp_lo;
   bp_lce_cce_resp_data_s lce_resp_data_lo;
 
@@ -171,16 +170,16 @@ module bp_me_nonsynth_mock_lce
 
   // LCE Command Message Types
   bp_lce_cmd_cmd_s lce_cmd_cmd, lce_cmd_r_cmd;
-  bp_lce_cmd_data_s lce_cmd_data, lce_cmd_r_data;
-  bp_lce_cmd_uc_data_s lce_cmd_uc_data, lce_cmd_r_uc_data;
+  logic [cce_block_width_p-1:0] lce_cmd_data, lce_cmd_r_data;
+  logic [dword_width_p-1:0] lce_cmd_uc_data, lce_cmd_r_uc_data;
   // casts from buffer output
-  assign lce_cmd_cmd = lce_cmd.msg[0+:lce_cmd_cmd_width_lp];
-  assign lce_cmd_data = lce_cmd.msg[0+:lce_cmd_data_width_lp];
-  assign lce_cmd_uc_data = lce_cmd.msg[0+:lce_cmd_uc_data_width_lp];
+  assign lce_cmd_cmd = lce_cmd.msg.cmd;
+  assign lce_cmd_data = lce_cmd.msg.data;
+  assign lce_cmd_uc_data = lce_cmd.msg.data[0+:dword_width_p];
   // casts from registered command
-  assign lce_cmd_r_cmd = lce_cmd_r.msg[0+:lce_cmd_cmd_width_lp];
-  assign lce_cmd_r_data = lce_cmd_r.msg[0+:lce_cmd_data_width_lp];
-  assign lce_cmd_r_uc_data = lce_cmd_r.msg[0+:lce_cmd_uc_data_width_lp];
+  assign lce_cmd_r_cmd = lce_cmd_r.msg.cmd;
+  assign lce_cmd_r_data = lce_cmd_r.msg.data;
+  assign lce_cmd_r_uc_data = lce_cmd_r.msg.data[0+:dword_width_p];
 
   typedef struct packed {
     logic [`bp_coh_bits-1:0] coh_st;
@@ -512,7 +511,6 @@ module bp_me_nonsynth_mock_lce
 
       lce_req_req_lo = '0;
       lce_req_uc_req_lo = '0;
-      lce_cmd_data_lo = '0;
       lce_resp_resp_lo = '0;
       lce_resp_data_lo = '0;
 
@@ -567,7 +565,6 @@ module bp_me_nonsynth_mock_lce
 
       lce_req_req_lo = '0;
       lce_req_uc_req_lo = '0;
-      lce_cmd_data_lo = '0;
       lce_resp_resp_lo = '0;
       lce_resp_data_lo = '0;
 
@@ -645,10 +642,10 @@ module bp_me_nonsynth_mock_lce
           lce_req_lo.dst_id = mshr_r.cce;
           lce_req_lo.src_id = lce_id_i;
           lce_req_lo.msg_type = (mshr_r.store_op) ? e_lce_req_type_uc_wr : e_lce_req_type_uc_rd;
+          lce_req_lo.addr = mshr_r.paddr;
 
           // Uncached LCE Req fields
           lce_req_uc_req_lo.data = (mshr_r.store_op) ? cmd.data : '0;
-          lce_req_uc_req_lo.addr = mshr_r.paddr;
           lce_req_uc_req_lo.uc_size =
             (double_op)
             ? e_lce_uc_req_8
@@ -659,7 +656,7 @@ module bp_me_nonsynth_mock_lce
                 : e_lce_uc_req_1;
 
           // Assign uncached message to msg field of LCE Req
-          lce_req_lo.msg[0+:lce_cce_req_uc_req_width_lp] = lce_req_uc_req_lo;
+          lce_req_lo.msg.uc_req = lce_req_uc_req_lo;
 
           // wait for LCE req outbound to be ready (r&v), then wait for responses
           lce_state_n = (lce_req_ready_i)
@@ -694,12 +691,12 @@ module bp_me_nonsynth_mock_lce
             // Extract the desired bits from the returned 64-bit dword
             tr_pkt_o[0 +: dword_width_p] =
               double_op
-                ? lce_cmd_uc_data.data[0 +: 64]
+                ? lce_cmd.msg.data[0 +: 64]
                 : word_op
-                  ? {32'('0), lce_cmd_uc_data.data[8*byte_offset +: 32]}
+                  ? {32'('0), lce_cmd.msg.data[8*byte_offset +: 32]}
                   : half_op
-                    ? {48'('0), lce_cmd_uc_data.data[8*byte_offset +: 16]}
-                    : {56'('0), lce_cmd_uc_data.data[8*byte_offset +: 8]};
+                    ? {48'('0), lce_cmd.msg.data[8*byte_offset +: 16]}
+                    : {56'('0), lce_cmd.msg.data[8*byte_offset +: 8]};
 
             lce_state_n = (tr_pkt_ready_i)
                           ? (lce_init_r)
@@ -754,13 +751,13 @@ module bp_me_nonsynth_mock_lce
           lce_resp_lo.dst_id = lce_cmd_r_cmd.src_id;
           lce_resp_lo.src_id = lce_id_i;
           lce_resp_lo.msg_type = e_lce_cce_resp_ack;
+          lce_resp_lo.addr = '0;
 
           // LCE Response Ack fields
           lce_resp_resp_lo.msg_type = e_lce_cce_sync_ack;
-          lce_resp_resp_lo.addr = '0;
 
           // Assign ack response to msg field of LCE Resp
-          lce_resp_lo.msg[0+:lce_cce_resp_resp_width_lp] = lce_resp_resp_lo;
+          lce_resp_lo.msg.resp = lce_resp_resp_lo;
 
           lce_resp_v_o = 1'b1;
 
@@ -817,7 +814,7 @@ module bp_me_nonsynth_mock_lce
           cur_way_n = lce_cmd_r.way_id;
           data_w_n[cur_set_n][cur_way_n] = '1;
           // data comes from the data command
-          data_next_n = lce_cmd_r_data.data;
+          data_next_n = lce_cmd_r.msg.data;
 
           // update mshr
           mshr_n.data_received = 1'b1;
@@ -846,13 +843,13 @@ module bp_me_nonsynth_mock_lce
           lce_resp_lo.dst_id = lce_cmd_r_cmd.src_id;
           lce_resp_lo.src_id = lce_id_i;
           lce_resp_lo.msg_type = e_lce_cce_resp_ack;
+          lce_resp_lo.addr = lce_cmd_r_cmd.addr;
 
           // LCE Response Ack fields
           lce_resp_resp_lo.msg_type = e_lce_cce_inv_ack;
-          lce_resp_resp_lo.addr = lce_cmd_r_cmd.addr;
 
           // Assign ack response to msg field of LCE Resp
-          lce_resp_lo.msg[0+:lce_cce_resp_resp_width_lp] = lce_resp_resp_lo;
+          lce_resp_lo.msg.resp = lce_resp_resp_lo;
 
           // make the LCE response valid
           lce_resp_v_o = 1'b1;
@@ -874,11 +871,8 @@ module bp_me_nonsynth_mock_lce
           lce_cmd_lo.msg_type = e_lce_cmd_data;
           lce_cmd_lo.way_id = lce_cmd_r_cmd.target_way_id;
 
-          // Data Command fields
-          lce_cmd_data_lo.data = data_cur;
-
           // Assign data command to msg field of LCE Cmd
-          lce_cmd_lo.msg[0+:lce_cmd_data_width_lp] = lce_cmd_data_lo;
+          lce_cmd_lo.msg.data = data_cur;
 
           // make the command valid
           lce_cmd_v_o = 1'b1;
@@ -901,8 +895,7 @@ module bp_me_nonsynth_mock_lce
           lce_resp_lo.dst_id = lce_cmd_r_cmd.src_id;
           lce_resp_lo.src_id = lce_id_i;
           lce_resp_lo.msg_type = e_lce_cce_resp_data;
-
-          lce_resp_data_lo.addr = lce_cmd_r_cmd.addr;
+          lce_resp_lo.addr = lce_cmd_r_cmd.addr;
 
           if (dirty_bits[cur_set][cur_way]) begin
             lce_resp_data_lo.data = data_cur;
@@ -920,7 +913,7 @@ module bp_me_nonsynth_mock_lce
 
           end
 
-          lce_resp_lo.msg[0+:lce_cce_resp_data_width_lp] = lce_resp_data_lo;
+          lce_resp_lo.msg.data_resp = lce_resp_data_lo;
 
           lce_resp_v_o = 1'b1;
 
@@ -953,13 +946,13 @@ module bp_me_nonsynth_mock_lce
           lce_resp_lo.dst_id = mshr_r.cce;
           lce_resp_lo.src_id = lce_id_i;
           lce_resp_lo.msg_type = e_lce_cce_resp_ack;
+          lce_resp_lo.addr = mshr_r.paddr;
 
           // LCE Response Ack fields
           lce_resp_resp_lo.msg_type = e_lce_cce_coh_ack;
-          lce_resp_resp_lo.addr = mshr_r.paddr;
 
           // Assign ack response to msg field of LCE Resp
-          lce_resp_lo.msg[0+:lce_cce_resp_resp_width_lp] = lce_resp_resp_lo;
+          lce_resp_lo.msg.resp = lce_resp_resp_lo;
 
           // make the LCE response valid
           lce_resp_v_o = 1'b1;
@@ -990,13 +983,13 @@ module bp_me_nonsynth_mock_lce
           lce_resp_lo.dst_id = lce_cmd_r_cmd.src_id;
           lce_resp_lo.src_id = lce_id_i;
           lce_resp_lo.msg_type = e_lce_cce_resp_ack;
+          lce_resp_lo.addr = lce_cmd_r_cmd.addr;
 
           // LCE Response Ack fields
           lce_resp_resp_lo.msg_type = e_lce_cce_coh_ack;
-          lce_resp_resp_lo.addr = lce_cmd_r_cmd.addr;
 
           // Assign ack response to msg field of LCE Resp
-          lce_resp_lo.msg[0+:lce_cce_resp_resp_width_lp] = lce_resp_resp_lo;
+          lce_resp_lo.msg.resp = lce_resp_resp_lo;
 
           // make the LCE response valid
           lce_resp_v_o = 1'b1;
@@ -1167,15 +1160,15 @@ module bp_me_nonsynth_mock_lce
           lce_req_lo.dst_id = mshr_r.cce;
           lce_req_lo.src_id = lce_id_i;
           lce_req_lo.msg_type = e_lce_req_type_rd;
+          lce_req_lo.addr = mshr_r.paddr;
 
           // LCE Req fields
           lce_req_req_lo.non_exclusive = e_lce_req_excl;
-          lce_req_req_lo.addr = mshr_r.paddr;
           lce_req_req_lo.lru_way_id = mshr_r.lru_way;
           lce_req_req_lo.lru_dirty = (mshr_r.lru_dirty ? e_lce_req_lru_dirty : e_lce_req_lru_clean);
 
           // Assign uncached message to msg field of LCE Req
-          lce_req_lo.msg[0+:lce_cce_req_req_width_lp] = lce_req_req_lo;
+          lce_req_lo.msg.req = lce_req_req_lo;
 
           // wait for LCE req outbound to be ready (r&v), then wait for responses
           lce_state_n = (lce_req_ready_i) ? READY : TR_CMD_LD_MISS;
@@ -1241,16 +1234,16 @@ module bp_me_nonsynth_mock_lce
           lce_req_lo.dst_id = mshr_r.cce;
           lce_req_lo.src_id = lce_id_i;
           lce_req_lo.msg_type = e_lce_req_type_wr;
+          lce_req_lo.addr = mshr_r.paddr;
 
           // LCE Req fields
           lce_req_req_lo.non_exclusive = e_lce_req_excl;
-          lce_req_req_lo.addr = mshr_r.paddr;
           lce_req_req_lo.lru_way_id = mshr_r.lru_way;
           lce_req_req_lo.lru_dirty = (mshr_r.upgrade) ? e_lce_req_lru_clean :
             ((mshr_r.lru_dirty) ? e_lce_req_lru_dirty : e_lce_req_lru_clean);
 
           // Assign uncached message to msg field of LCE Req
-          lce_req_lo.msg[0+:lce_cce_req_req_width_lp] = lce_req_req_lo;
+          lce_req_lo.msg.req = lce_req_req_lo;
 
           lce_state_n = (lce_req_ready_i) ? READY : TR_CMD_ST_MISS;
 

@@ -14,6 +14,7 @@ module testbench
  import bp_be_rv64_pkg::*;
  import bp_cce_pkg::*;
  import bp_cfg_link_pkg::*;
+ import bp_me_pkg::*;
  #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
    `declare_bp_proc_params(cfg_p)
 
@@ -49,7 +50,7 @@ module testbench
 
 `declare_bsg_ready_and_link_sif_s(noc_width_p, bsg_ready_and_link_sif_s);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
-`declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p, lce_cce_req_msg_width_lp, lce_cmd_msg_width_lp, lce_cce_resp_msg_width_lp);
+`declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
 logic [noc_cord_width_p-1:0]                 dram_cord_lo, clint_cord_lo;
 assign dram_cord_lo  = num_core_p+1;

@@ -627,7 +627,7 @@ typedef struct packed {
  */
 
 `define bp_cce_inst_pushq_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_dst_q_sel_width \
-  -`bp_cce_lce_cmd_type_width-`bp_cce_inst_lce_cmd_lce_sel_width \
+  -$bits(bp_cce_lce_cmd_type_e)-`bp_cce_inst_lce_cmd_lce_sel_width \
   -`bp_cce_inst_lce_cmd_addr_sel_width-`bp_cce_inst_lce_cmd_way_sel_width \
   -`bp_cce_inst_mem_data_cmd_addr_sel_width)
 
