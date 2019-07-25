@@ -19,6 +19,7 @@ module wrapper
 
    , parameter calc_trace_p = 0
    , parameter cce_trace_p = 0
+   , parameter cmt_trace_p = 0
    
    ,localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(noc_width_p)
    )
