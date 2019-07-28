@@ -75,21 +75,13 @@ module bp_be_top
    , output                                  lce_resp_v_o
    , input                                   lce_resp_ready_i                                 
 
-   , output [lce_cce_data_resp_width_lp-1:0] lce_data_resp_o
-   , output                                  lce_data_resp_v_o
-   , input                                   lce_data_resp_ready_i
-
-   , input [cce_lce_cmd_width_lp-1:0]        lce_cmd_i
+   , input [lce_cmd_width_lp-1:0]            lce_cmd_i
    , input                                   lce_cmd_v_i
    , output                                  lce_cmd_ready_o
 
-   , input [lce_data_cmd_width_lp-1:0]       lce_data_cmd_i
-   , input                                   lce_data_cmd_v_i
-   , output                                  lce_data_cmd_ready_o
-
-   , output [lce_data_cmd_width_lp-1:0]      lce_data_cmd_o
-   , output                                  lce_data_cmd_v_o
-   , input                                   lce_data_cmd_ready_i
+   , output [lce_cmd_width_lp-1:0]           lce_cmd_o
+   , output                                  lce_cmd_v_o
+   , input                                   lce_cmd_ready_i
 
    // Processor configuration
    , input [proc_cfg_width_lp-1:0]           proc_cfg_i

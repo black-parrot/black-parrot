@@ -99,17 +99,8 @@ module bp_be_dcache
     , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(page_offset_width_p,dword_width_p)
     , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(tag_width_lp)
     , localparam stat_info_width_lp=`bp_be_dcache_stat_info_width(lce_assoc_p)
-    
-    , localparam lce_cce_req_width_lp=
-      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p)
-    , localparam lce_cce_resp_width_lp=
-      `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
-    , localparam lce_cce_data_resp_width_lp=
-      `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_lp)
-    , localparam cce_lce_cmd_width_lp=
-      `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p)
-    , localparam lce_data_cmd_width_lp=
-      `bp_lce_data_cmd_width(num_lce_p, lce_data_width_lp, lce_assoc_p)
+   
+    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p) 
   )
   (
     input clk_i
@@ -148,23 +139,15 @@ module bp_be_dcache
     , output logic lce_resp_v_o
     , input lce_resp_ready_i
 
-    , output logic [lce_cce_data_resp_width_lp-1:0] lce_data_resp_o
-    , output logic lce_data_resp_v_o
-    , input lce_data_resp_ready_i
-
     // CCE-LCE interface
-    , input [cce_lce_cmd_width_lp-1:0] lce_cmd_i
+    , input [lce_cmd_width_lp-1:0] lce_cmd_i
     , input lce_cmd_v_i
     , output logic lce_cmd_ready_o
 
-    , input [lce_data_cmd_width_lp-1:0] lce_data_cmd_i
-    , input lce_data_cmd_v_i
-    , output logic lce_data_cmd_ready_o
-
     // LCE-LCE interface
-    , output logic [lce_data_cmd_width_lp-1:0] lce_data_cmd_o
-    , output logic lce_data_cmd_v_o
-    , input lce_data_cmd_ready_i 
+    , output logic [lce_cmd_width_lp-1:0] lce_cmd_o
+    , output logic lce_cmd_v_o
+    , input lce_cmd_ready_i 
 
     , output credits_full_o
     , output credits_empty_o
