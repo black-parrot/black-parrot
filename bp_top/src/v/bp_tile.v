@@ -409,15 +409,13 @@ for (genvar i = 0; i < 2; i++)
        ,.my_y_i(my_y_i)
        );
 
-    bp_me_network_pkt_encode_data_cmd 
-     #(.num_lce_p(num_lce_p)
-       ,.block_size_in_bits_p(cce_block_width_p)
-       ,.lce_assoc_p(lce_assoc_p)
+    bp_me_network_pkt_encode_cmd 
+     #(.cfg_p(cfg_p)
        ,.max_num_flit_p(lce_data_cmd_num_flits_lp)
        ,.x_cord_width_p(x_cord_width_p)
        ,.y_cord_width_p(y_cord_width_p)
        ) 
-     lce_data_cmd_pkt_encode 
+     lce_cmd_pkt_encode 
       (.payload_i(lce_lce_data_cmd_lo[i])
        ,.packet_o(lce_lce_data_cmd_packet[i])
        );
@@ -479,16 +477,13 @@ for (genvar i = 0; i < 2; i++)
        ,.ready_i(lce_data_cmd_ready_lo[i])
        );
 
-    bp_me_network_pkt_encode_data_resp
-     #(.num_cce_p(num_cce_p)
-       ,.num_lce_p(num_lce_p)
-       ,.paddr_width_p(paddr_width_p)
-       ,.block_size_in_bits_p(cce_block_width_p)
+    bp_me_network_pkt_encode_resp
+     #(.cfg_p(cfg_p)
        ,.max_num_flit_p(lce_cce_data_resp_num_flits_lp)
        ,.x_cord_width_p(x_cord_width_p)
        ,.y_cord_width_p(y_cord_width_p)
        )
-     lce_data_resp_pkt_encode
+     lce_resp_pkt_encode
       (.payload_i(lce_data_resp_lo[i])
        ,.packet_o(lce_data_resp_packet[i])
        );
@@ -532,15 +527,13 @@ for (genvar i = 0; i < 2; i++)
 
   end // rof3    
     
-bp_me_network_pkt_encode_data_cmd
- #(.num_lce_p(num_lce_p)
-   ,.block_size_in_bits_p(cce_block_width_p)
-   ,.lce_assoc_p(lce_assoc_p)
+bp_me_network_pkt_encode_cmd
+ #(.cfg_p(cfg_p)
    ,.max_num_flit_p(lce_data_cmd_num_flits_lp)
    ,.x_cord_width_p(x_cord_width_p)
    ,.y_cord_width_p(y_cord_width_p)
    )
- lce_data_cmd_pkt_encode
+ lce_cmd_pkt_encode
   (.payload_i(cce_lce_data_cmd_lo)
    ,.packet_o(cce_lce_data_cmd_packet)
    );
