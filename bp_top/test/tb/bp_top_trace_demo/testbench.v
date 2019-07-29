@@ -15,8 +15,7 @@ module testbench
  import bp_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
    `declare_bp_proc_params(cfg_p)
-   , localparam cce_mshr_width_lp = `bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, cce_mshr_width_lp)
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
    // Number of elements in the fake BlackParrot memory
    , parameter clock_period_in_ps_p = 1000
@@ -48,7 +47,7 @@ module testbench
    );
 
 `declare_bsg_ready_and_link_sif_s(noc_width_p, bsg_ready_and_link_sif_s);
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, cce_mshr_width_lp)     
+`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
 bsg_ready_and_link_sif_s [1:0] ct_link_li, ct_link_lo;
 
@@ -84,33 +83,21 @@ logic [1:0][noc_width_p-1:0] ct_fifo_data_lo, ct_fifo_data_li;
      
 bp_mem_cce_resp_s      mem_resp_li;
 logic                  mem_resp_v_li, mem_resp_ready_lo;
-bp_mem_cce_data_resp_s mem_data_resp_li;
-logic                  mem_data_resp_v_li, mem_data_resp_ready_lo;
 bp_cce_mem_cmd_s       mem_cmd_lo;
 logic                  mem_cmd_v_lo, mem_cmd_yumi_li;
-bp_cce_mem_data_cmd_s  mem_data_cmd_lo;
-logic                  mem_data_cmd_v_lo, mem_data_cmd_yumi_li;
 
 bp_mem_cce_resp_s      dram_resp_lo;
 logic                  dram_resp_v_lo, dram_resp_ready_li;
-bp_mem_cce_data_resp_s dram_data_resp_lo;
-logic                  dram_data_resp_v_lo, dram_data_resp_ready_li;
 bp_cce_mem_cmd_s       dram_cmd_li;
 logic                  dram_cmd_v_li, dram_cmd_yumi_lo;
-bp_cce_mem_data_cmd_s  dram_data_cmd_li;
-logic                  dram_data_cmd_v_li, dram_data_cmd_yumi_lo;
 
 bp_mem_cce_resp_s      host_resp_lo;
 logic                  host_resp_v_lo, host_resp_ready_li;
-bp_mem_cce_data_resp_s host_data_resp_lo;
-logic                  host_data_resp_v_lo, host_data_resp_ready_li;
 bp_cce_mem_cmd_s       host_cmd_li;
 logic                  host_cmd_v_li, host_cmd_yumi_lo;
-bp_cce_mem_data_cmd_s  host_data_cmd_li;
-logic                  host_data_cmd_v_li, host_data_cmd_yumi_lo;
 
-bp_cce_mem_data_cmd_s  cfg_data_cmd_lo;
-logic                  cfg_data_cmd_v_lo, cfg_data_cmd_yumi_li;
+bp_cce_mem_cmd_s       cfg_cmd_lo;
+logic                  cfg_cmd_v_lo, cfg_cmd_yumi_li;
 bp_mem_cce_resp_s      cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
@@ -217,33 +204,21 @@ bind bp_cce_top
       ,.lce_resp_i(lce_resp_to_cce)
       ,.lce_resp_v_i(lce_resp_v_to_cce)
       ,.lce_resp_yumi_i(lce_resp_yumi_from_cce)
-      ,.lce_data_resp_i(lce_data_resp_to_cce)
-      ,.lce_data_resp_v_i(lce_data_resp_v_to_cce)
-      ,.lce_data_resp_yumi_i(lce_data_resp_yumi_from_cce)
 
       // From CCE
       ,.lce_cmd_i(lce_cmd_o)
       ,.lce_cmd_v_i(lce_cmd_v_o)
       ,.lce_cmd_ready_i(lce_cmd_ready_i)
-      ,.lce_data_cmd_i(lce_data_cmd_o)
-      ,.lce_data_cmd_v_i(lce_data_cmd_v_o)
-      ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
 
       // To CCE
       ,.mem_resp_i(mem_resp_to_cce)
       ,.mem_resp_v_i(mem_resp_v_to_cce)
       ,.mem_resp_yumi_i(mem_resp_yumi_from_cce)
-      ,.mem_data_resp_i(mem_data_resp_to_cce)
-      ,.mem_data_resp_v_i(mem_data_resp_v_to_cce)
-      ,.mem_data_resp_yumi_i(mem_data_resp_yumi_from_cce)
 
       // From CCE
       ,.mem_cmd_i(mem_cmd_from_cce)
       ,.mem_cmd_v_i(mem_cmd_v_from_cce)
       ,.mem_cmd_ready_i(mem_cmd_ready_to_cce)
-      ,.mem_data_cmd_i(mem_data_cmd_from_cce)
-      ,.mem_data_cmd_v_i(mem_data_cmd_v_from_cce)
-      ,.mem_data_cmd_ready_i(mem_data_cmd_ready_to_cce)
       );
 
 // DRAM + link 
@@ -252,23 +227,15 @@ bp_me_cce_to_wormhole_link_client
   client_link
   (.clk_i(clk_i)
   ,.reset_i(reset_i)
-   
+
   ,.mem_cmd_o(mem_cmd_lo)
   ,.mem_cmd_v_o(mem_cmd_v_lo)
   ,.mem_cmd_yumi_i(mem_cmd_yumi_li)
-
-  ,.mem_data_cmd_o(mem_data_cmd_lo)
-  ,.mem_data_cmd_v_o(mem_data_cmd_v_lo)
-  ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi_li)
 
   ,.mem_resp_i(mem_resp_li)
   ,.mem_resp_v_i(mem_resp_v_li)
   ,.mem_resp_ready_o(mem_resp_ready_lo)
 
-  ,.mem_data_resp_i(mem_data_resp_li)
-  ,.mem_data_resp_v_i(mem_data_resp_v_li)
-  ,.mem_data_resp_ready_o(mem_data_resp_ready_lo)
-     
   ,.my_cord_i(dram_cord_lo)
      
   ,.link_i(mem_link_li)
@@ -298,23 +265,13 @@ mem
   ,.mem_cmd_v_i(dram_cmd_v_li)
   ,.mem_cmd_yumi_o(dram_cmd_yumi_lo)
 
-  ,.mem_data_cmd_i(dram_data_cmd_li)
-  ,.mem_data_cmd_v_i(dram_data_cmd_v_li)
-  ,.mem_data_cmd_yumi_o(dram_data_cmd_yumi_lo)
-
   ,.mem_resp_o(dram_resp_lo)
   ,.mem_resp_v_o(dram_resp_v_lo)
   ,.mem_resp_ready_i(dram_resp_ready_li)
-
-  ,.mem_data_resp_o(dram_data_resp_lo)
-  ,.mem_data_resp_v_o(dram_data_resp_v_lo)
-  ,.mem_data_resp_ready_i(dram_data_resp_ready_li)
   );
 
 
 assign host_cmd_yumi_lo    = '0;
-assign host_data_resp_lo   = '0;
-assign host_data_resp_v_lo = '0;
 logic [num_core_p-1:0] program_finish;
 bp_nonsynth_host
  #(.cfg_p(cfg_p))
@@ -322,9 +279,9 @@ bp_nonsynth_host
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.mem_data_cmd_i(host_data_cmd_li)
-   ,.mem_data_cmd_v_i(host_data_cmd_v_li)
-   ,.mem_data_cmd_yumi_o(host_data_cmd_yumi_lo)
+   ,.mem_cmd_i(host_cmd_li)
+   ,.mem_cmd_v_i(host_cmd_v_li)
+   ,.mem_cmd_yumi_o(host_cmd_yumi_lo)
 
    ,.mem_resp_o(host_resp_lo)
    ,.mem_resp_v_o(host_resp_v_lo)
@@ -346,13 +303,12 @@ bsg_dff_reset_en
  req_outstanding_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(mem_cmd_yumi_li | mem_data_cmd_yumi_li | mem_resp_v_li | mem_data_resp_v_li)
+   ,.en_i(mem_cmd_yumi_li | mem_resp_v_li)
 
-   ,.data_i(mem_cmd_yumi_li | mem_data_cmd_yumi_li)
+   ,.data_i(mem_cmd_yumi_li)
    ,.data_o(req_outstanding_r)
    );
 
-wire host_data_cmd_not_dram = mem_data_cmd_v_lo & (mem_data_cmd_lo.addr < dram_base_addr_gp);
 wire host_cmd_not_dram      = mem_cmd_v_lo & (mem_cmd_lo.addr < dram_base_addr_gp);
 
 assign host_cmd_li          = mem_cmd_lo;
@@ -363,23 +319,10 @@ assign mem_cmd_yumi_li      = host_cmd_not_dram
                               ? host_cmd_yumi_lo 
                               : dram_cmd_yumi_lo;
 
-assign host_data_cmd_li     = mem_data_cmd_lo;
-assign host_data_cmd_v_li   = mem_data_cmd_v_lo & host_data_cmd_not_dram & ~req_outstanding_r;
-assign dram_data_cmd_li     = mem_data_cmd_lo;
-assign dram_data_cmd_v_li   = mem_data_cmd_v_lo & ~host_data_cmd_not_dram & ~req_outstanding_r;
-assign mem_data_cmd_yumi_li = host_data_cmd_not_dram 
-                              ? host_data_cmd_yumi_lo 
-                              : dram_data_cmd_yumi_lo;
-
 assign mem_resp_li = host_resp_v_lo ? host_resp_lo : dram_resp_lo;
 assign mem_resp_v_li = host_resp_v_lo | dram_resp_v_lo;
 assign host_resp_ready_li = mem_resp_ready_lo;
 assign dram_resp_ready_li = mem_resp_ready_lo;
-
-assign mem_data_resp_li = host_data_resp_v_lo ? host_data_resp_lo : dram_data_resp_lo;
-assign mem_data_resp_v_li = host_data_resp_v_lo | dram_data_resp_v_lo;
-assign host_data_resp_ready_li = mem_data_resp_ready_lo;
-assign dram_data_resp_ready_li = mem_data_resp_ready_lo;
 
 // CFG loader + rom + link
 bp_me_cce_to_wormhole_link_master
@@ -388,27 +331,17 @@ bp_me_cce_to_wormhole_link_master
   (.clk_i(clk_i)
   ,.reset_i(reset_i)
 
-  ,.mem_cmd_i('0)
-  ,.mem_cmd_v_i('0)
-  ,.mem_cmd_yumi_o()
-
-  ,.mem_data_cmd_i(cfg_data_cmd_lo)
-  ,.mem_data_cmd_v_i(cfg_data_cmd_v_lo)
-  ,.mem_data_cmd_yumi_o(cfg_data_cmd_yumi_li)
+  ,.mem_cmd_i(cfg_cmd_lo)
+  ,.mem_cmd_v_i(cfg_cmd_v_lo)
+  ,.mem_cmd_yumi_o(cfg_cmd_yumi_li)
 
   ,.mem_resp_o(cfg_resp_li)
   ,.mem_resp_v_o(cfg_resp_v_li)
   ,.mem_resp_ready_i(cfg_resp_ready_lo)
 
-  ,.mem_data_resp_o()
-  ,.mem_data_resp_v_o()
-  ,.mem_data_resp_ready_i(1'b1)
-  
   ,.my_cord_i(dram_cord_lo)
   
-  ,.mem_cmd_dest_cord_i('0)
-  
-  ,.mem_data_cmd_dest_cord_i(clint_cord_lo)
+  ,.mem_cmd_dest_cord_i(clint_cord_lo)
   
   ,.link_i(cfg_link_li)
   ,.link_o(cfg_link_lo)
@@ -425,9 +358,9 @@ bp_cce_mmio_cfg_loader
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    
-   ,.mem_data_cmd_o(cfg_data_cmd_lo)
-   ,.mem_data_cmd_v_o(cfg_data_cmd_v_lo)
-   ,.mem_data_cmd_yumi_i(cfg_data_cmd_yumi_li)
+   ,.mem_cmd_o(cfg_cmd_lo)
+   ,.mem_cmd_v_o(cfg_cmd_v_lo)
+   ,.mem_cmd_yumi_i(cfg_cmd_yumi_li)
    
    ,.mem_resp_i(cfg_resp_li)
    ,.mem_resp_v_i(cfg_resp_v_li)

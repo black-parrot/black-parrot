@@ -9,15 +9,14 @@ module bp_nonsynth_host
  import bp_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
-   , localparam cce_mshr_width_lp = `bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, cce_mshr_width_lp)
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
    )
   (input clk_i
    , input reset_i
 
-   , input [cce_mem_data_cmd_width_lp-1:0]         mem_data_cmd_i
-   , input                                         mem_data_cmd_v_i
-   , output logic                                  mem_data_cmd_yumi_o
+   , input [cce_mem_cmd_width_lp-1:0]              mem_cmd_i
+   , input                                         mem_cmd_v_i
+   , output logic                                  mem_cmd_yumi_o
 
    , output logic [mem_cce_resp_width_lp-1:0]      mem_resp_o
    , output logic                                  mem_resp_v_o
@@ -26,7 +25,7 @@ module bp_nonsynth_host
    , output [num_core_p-1:0]                       program_finish_o
    );
 
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, cce_mshr_width_lp);
+`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 
 // HOST I/O mappings
 localparam host_dev_base_addr_gp     = 32'h03??_????;
@@ -38,9 +37,9 @@ localparam hprint_base_addr_gp = 32'h0300_0???;
 localparam cprint_base_addr_gp = 32'h0300_1???;
 localparam finish_base_addr_gp = 32'h0300_2???;
 
-bp_cce_mem_data_cmd_s  mem_data_cmd_cast_i;
+bp_cce_mem_cmd_s  mem_cmd_cast_i;
 
-assign mem_data_cmd_cast_i = mem_data_cmd_i;
+assign mem_cmd_cast_i = mem_cmd_i;
 
 localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
 
@@ -55,10 +54,10 @@ always_comb
     finish_data_cmd_v = 1'b0;
 
     unique
-    casez (mem_data_cmd_cast_i.addr)
-      hprint_base_addr_gp: hprint_data_cmd_v = mem_data_cmd_v_i; 
-      cprint_base_addr_gp: cprint_data_cmd_v = mem_data_cmd_v_i;
-      finish_base_addr_gp: finish_data_cmd_v = mem_data_cmd_v_i;
+    casez (mem_cmd_cast_i.addr)
+      hprint_base_addr_gp: hprint_data_cmd_v = mem_cmd_v_i; 
+      cprint_base_addr_gp: cprint_data_cmd_v = mem_cmd_v_i;
+      finish_base_addr_gp: finish_data_cmd_v = mem_cmd_v_i;
       default: begin end
     endcase
   end
@@ -69,14 +68,14 @@ logic [num_core_p-1:0] finish_w_v_li;
 
 // Memory-mapped I/O is 64 bit aligned
 localparam byte_offset_width_lp = 3;
-wire [lg_num_core_lp-1:0] mem_data_cmd_core_enc =
-  mem_data_cmd_cast_i.addr[byte_offset_width_lp+:lg_num_core_lp];
+wire [lg_num_core_lp-1:0] mem_cmd_core_enc =
+  mem_cmd_cast_i.addr[byte_offset_width_lp+:lg_num_core_lp];
 
 bsg_decode_with_v
  #(.num_out_p(num_core_p))
  hprint_data_cmd_decoder
   (.v_i(hprint_data_cmd_v)
-   ,.i(mem_data_cmd_core_enc)
+   ,.i(mem_cmd_core_enc)
    
    ,.o(hprint_w_v_li)
    );
@@ -85,7 +84,7 @@ bsg_decode_with_v
  #(.num_out_p(num_core_p))
  cprint_data_cmd_decoder
   (.v_i(cprint_data_cmd_v)
-   ,.i(mem_data_cmd_core_enc)
+   ,.i(mem_cmd_core_enc)
 
    ,.o(cprint_w_v_li)
    );
@@ -94,7 +93,7 @@ bsg_decode_with_v
  #(.num_out_p(num_core_p))
  finish_data_cmd_decoder
   (.v_i(finish_data_cmd_v)
-   ,.i(mem_data_cmd_core_enc)
+   ,.i(mem_cmd_core_enc)
 
    ,.o(finish_w_v_li)
    );
@@ -127,13 +126,13 @@ always_ff @(negedge clk_i)
   begin
     for (integer i = 0; i < num_core_p; i++)
       begin
-        if (hprint_w_v_li[i] & mem_data_cmd_yumi_o)
-          $display("[CORE%0x PRT] %x", i, mem_data_cmd_cast_i.data[0+:8]);
-        if (cprint_w_v_li[i] & mem_data_cmd_yumi_o)
-          $display("[CORE%0x PRT] %c", i, mem_data_cmd_cast_i.data[0+:8]);
-        if (finish_w_v_li[i] & mem_data_cmd_yumi_o & ~mem_data_cmd_cast_i.data[0])
+        if (hprint_w_v_li[i] & mem_cmd_yumi_o)
+          $display("[CORE%0x PRT] %x", i, mem_cmd_cast_i.data[0+:8]);
+        if (cprint_w_v_li[i] & mem_cmd_yumi_o)
+          $display("[CORE%0x PRT] %c", i, mem_cmd_cast_i.data[0+:8]);
+        if (finish_w_v_li[i] & mem_cmd_yumi_o & ~mem_cmd_cast_i.data[0])
           $display("[CORE%0x FSH] PASS", i);
-        if (finish_w_v_li[i] & mem_data_cmd_yumi_o &  mem_data_cmd_cast_i.data[0])
+        if (finish_w_v_li[i] & mem_cmd_yumi_o &  mem_cmd_cast_i.data[0])
           $display("[CORE%0x FSH] FAIL", i);
       end
 
@@ -146,7 +145,7 @@ always_ff @(negedge clk_i)
 
 bp_mem_cce_resp_s mem_resp_lo;
 logic mem_resp_v_lo, mem_resp_ready_lo;
-assign mem_data_cmd_yumi_o = mem_data_cmd_v_i & mem_resp_ready_lo;
+assign mem_cmd_yumi_o = mem_cmd_v_i & mem_resp_ready_lo;
 bsg_one_fifo
  #(.width_p(mem_cce_resp_width_lp))
  mem_resp_buffer
@@ -154,7 +153,7 @@ bsg_one_fifo
    ,.reset_i(reset_i)
 
    ,.data_i(mem_resp_lo)
-   ,.v_i(mem_data_cmd_yumi_o)
+   ,.v_i(mem_cmd_yumi_o)
    ,.ready_o(mem_resp_ready_lo)
 
    ,.data_o(mem_resp_o)
@@ -164,11 +163,11 @@ bsg_one_fifo
 assign mem_resp_v_o = mem_resp_v_lo & mem_resp_ready_i;
 
 assign mem_resp_lo =
-  '{msg_type       : mem_data_cmd_cast_i.msg_type
-    ,addr          : mem_data_cmd_cast_i.addr
-    ,payload       : mem_data_cmd_cast_i.payload
-    ,non_cacheable : mem_data_cmd_cast_i.non_cacheable
-    ,nc_size       : mem_data_cmd_cast_i.nc_size
+  '{msg_type       : mem_cmd_cast_i.msg_type
+    ,addr          : mem_cmd_cast_i.addr
+    ,payload       : mem_cmd_cast_i.payload
+    ,size          : mem_cmd_cast_i.size
+    ,data          : '0
     };
 
 
