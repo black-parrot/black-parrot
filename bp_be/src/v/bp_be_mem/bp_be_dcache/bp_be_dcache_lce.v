@@ -272,10 +272,6 @@ module bp_be_dcache_lce
   //
   logic lce_sync_done_lo;
 
-  bp_be_dcache_lce_data_mem_pkt_s lce_cmd_data_mem_pkt_lo;
-  logic lce_cmd_data_mem_pkt_v_lo;
-  logic lce_cmd_data_mem_pkt_yumi_li;
-
   bp_lce_cce_resp_s lce_cmd_to_lce_resp_lo;
   logic lce_cmd_to_lce_resp_v_lo;
   logic lce_cmd_to_lce_resp_yumi_li;
@@ -318,9 +314,9 @@ module bp_be_dcache_lce
       ,.lce_cmd_v_o(lce_cmd_v_o)
       ,.lce_cmd_ready_i(lce_cmd_ready_i)
 
-      ,.data_mem_pkt_o(lce_cmd_data_mem_pkt_lo)
-      ,.data_mem_pkt_v_o(lce_cmd_data_mem_pkt_v_lo)
-      ,.data_mem_pkt_yumi_i(lce_cmd_data_mem_pkt_yumi_li)
+      ,.data_mem_pkt_o(data_mem_pkt)
+      ,.data_mem_pkt_v_o(data_mem_pkt_v_o)
+      ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_i)
       ,.data_mem_data_i(data_mem_data_i)
 
       ,.tag_mem_pkt_o(tag_mem_pkt)

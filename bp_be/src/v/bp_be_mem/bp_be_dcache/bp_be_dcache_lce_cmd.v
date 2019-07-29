@@ -377,6 +377,7 @@ module bp_be_dcache_lce_cmd
 
                 end
               endcase
+            end
             e_lce_cmd_data: begin
               data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
               data_mem_pkt.way_id = lce_data_cmd_li.way_id;
@@ -393,7 +394,6 @@ module bp_be_dcache_lce_cmd
 
               uncached_data_received_o = 1'b1;
             end
-          end
           endcase
         end
       end
@@ -463,12 +463,11 @@ module bp_be_dcache_lce_cmd
             ? 1'b1
             : stat_mem_pkt_yumi_i);
         
-        lce_resp.msg.data_resp.data = wb_data_buffered_r
+        lce_resp.data = wb_data_buffered_r
           ? data_buf_r
           : data_mem_data_i;
-        lce_resp.msg.data_resp.msg_type = e_lce_cce_resp_wb;
         lce_resp.addr = lce_cmd_li.addr;
-        lce_resp.msg_type = e_lce_cce_resp_data;
+        lce_resp.msg_type = e_lce_cce_resp_wb;
         lce_resp.src_id = lce_id_i;
         lce_resp.dst_id = lce_cmd_li.src_id;
         lce_resp_v_o = wb_data_read_r & (wb_dirty_cleared_r | stat_mem_pkt_yumi_i);
@@ -483,10 +482,9 @@ module bp_be_dcache_lce_cmd
       //  <WRITEBACK not-dirty state>
       //  If not dirty, just respond with null writeback data.
       e_lce_cmd_state_wb_not_dirty: begin
-        lce_resp.msg.data_resp.data = '0;
-        lce_resp.msg.data_resp.msg_type = e_lce_cce_resp_null_wb;
+        lce_resp.data = '0;
         lce_resp.addr = lce_cmd_li.addr;
-        lce_resp.msg_type = e_lce_cce_resp_data;
+        lce_resp.msg_type = e_lce_cce_resp_null_wb;
         lce_resp.src_id = lce_id_i;
         lce_resp.dst_id = lce_cmd_li.src_id;
         lce_resp_v_o = 1'b1;
@@ -530,29 +528,6 @@ module bp_be_dcache_lce_cmd
       invalidated_tag_r <= invalidated_tag_n;
     end
   end
-
-  //// START DATA CMD
-  //assign data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
-  //assign data_mem_pkt.way_id = lce_data_cmd_li.way_id;
-  //assign data_mem_pkt.data = lce_data_cmd_li.data;
-  //assign data_mem_pkt.opcode = (lce_data_cmd_li.msg_type == e_lce_data_cmd_non_cacheable)
-  //  ? e_dcache_lce_data_mem_uncached 
-  //  : e_dcache_lce_data_mem_write;
-  //  
-  //
-
-  //// wakeup logic
-  ////
-  //assign cce_data_received_o =
-  //  data_mem_pkt_yumi_i & (lce_data_cmd_li.msg_type == e_lce_data_cmd_cce);
-
-  //assign tr_data_received_o =
-  //  data_mem_pkt_yumi_i & (lce_data_cmd_li.msg_type == e_lce_data_cmd_transfer);
-
-  //assign uncached_data_received_o =
-  //  data_mem_pkt_yumi_i & (lce_data_cmd_li.msg_type == e_lce_data_cmd_non_cacheable);
-  // END DATA CMD
-
 
   // We need this converter because the LCE expects this interface to be valid-yumi, while
   // the network links are ready-and-valid. It's possible that we could modify the LCE to 

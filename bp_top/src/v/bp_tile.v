@@ -13,9 +13,10 @@ module bp_tile
  import bsg_noc_pkg::*;
  import bp_cfg_link_pkg::*;
  import bsg_wormhole_router_pkg::StrictYX;
+ import bp_me_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mem_payload_width_p)
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
    `declare_bp_lce_cce_if_widths
      (num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
@@ -128,8 +129,6 @@ bp_lce_cce_req_s       [1:0] lce_req_lo;
 logic                  [1:0] lce_req_v_lo, lce_req_ready_li;
 bp_lce_cce_resp_s      [1:0] lce_resp_lo;
 logic                  [1:0] lce_resp_v_lo, lce_resp_ready_li;
-bp_lce_cce_data_resp_s [1:0] lce_data_resp_lo;
-logic                  [1:0] lce_data_resp_v_lo, lce_data_resp_ready_li;
 bp_cce_lce_cmd_s       [1:0] lce_cmd_li;
 logic                  [1:0] lce_cmd_v_li, lce_cmd_ready_lo;
 bp_lce_data_cmd_s      [1:0] lce_data_cmd_li;
@@ -142,9 +141,9 @@ bp_lce_cce_req_s             lce_req_li;
 logic                        lce_req_v_li, lce_req_ready_lo;
 bp_lce_cce_resp_s            lce_resp_li;
 logic                        lce_resp_v_li, lce_resp_ready_lo;
-bp_cce_lce_cmd_s             lce_cmd_lo;
+bp_lce_cmd_s                 lce_cmd_lo;
 logic                        lce_cmd_v_lo, lce_cmd_ready_li;
-bp_lce_data_cmd_s            lce_cmd_lo;
+bp_lce_cmd_s                 lce_cmd_lo;
 logic                        lce_cmd_v_lo, lce_cmd_ready_li;
 
 bp_proc_cfg_s proc_cfg_cast_i;
@@ -197,7 +196,7 @@ bp_core
    ,.lce_cmd_v_i(lce_cmd_v_li)
    ,.lce_cmd_ready_o(lce_cmd_ready_lo)
 
-   ,.lce_cmd_o(lce__cmd_lo)
+   ,.lce_cmd_o(lce_cmd_lo)
    ,.lce_cmd_v_o(lce_cmd_v_lo)
    ,.lce_cmd_ready_i(lce_cmd_ready_li)
     

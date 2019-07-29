@@ -31,13 +31,13 @@
   typedef struct packed { \
     logic [`BSG_SAFE_CLOG2(sets_mp)-1:0] index; \
     logic [`BSG_SAFE_CLOG2(ways_mp)-1:0] way_id; \
-    logic [`bp_cce_coh_bits-1:0] state; \
+    logic [`bp_coh_bits-1:0] state; \
     logic [tag_width_mp-1:0] tag; \
     bp_be_dcache_lce_tag_mem_opcode_e opcode; \
   } bp_be_dcache_lce_tag_mem_pkt_s
 
 `define bp_be_dcache_lce_tag_mem_pkt_width(sets_mp, ways_mp, tag_width_mp) \
-  (`BSG_SAFE_CLOG2(sets_mp)+`BSG_SAFE_CLOG2(ways_mp)+tag_width_mp+`bp_cce_coh_bits+2)
+  (`BSG_SAFE_CLOG2(sets_mp)+`BSG_SAFE_CLOG2(ways_mp)+tag_width_mp+`bp_coh_bits+2)
 
 
 //  stat_mem pkt

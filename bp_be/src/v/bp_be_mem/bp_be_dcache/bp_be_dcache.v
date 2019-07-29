@@ -908,14 +908,14 @@ module bp_be_dcache
       e_dcache_lce_tag_mem_invalidate: begin
         tag_mem_data_li = {((tag_info_width_lp)*lce_assoc_p){1'b0}};
         for (integer i = 0; i < lce_assoc_p; i++) begin 
-          tag_mem_mask_li[i].coh_state = {`bp_cce_coh_bits{lce_tag_mem_way_one_hot[i]}};
+          tag_mem_mask_li[i].coh_state = {`bp_coh_bits{lce_tag_mem_way_one_hot[i]}};
           tag_mem_mask_li[i].tag = {tag_width_lp{1'b0}};
         end
       end
       e_dcache_lce_tag_mem_set_tag: begin
         tag_mem_data_li = {lce_assoc_p{lce_tag_mem_pkt.state, lce_tag_mem_pkt.tag}};
         for (integer i = 0; i < lce_assoc_p; i++) begin
-          tag_mem_mask_li[i].coh_state = {`bp_cce_coh_bits{lce_tag_mem_way_one_hot[i]}};
+          tag_mem_mask_li[i].coh_state = {`bp_coh_bits{lce_tag_mem_way_one_hot[i]}};
           tag_mem_mask_li[i].tag = {tag_width_lp{lce_tag_mem_way_one_hot[i]}};
         end
       end

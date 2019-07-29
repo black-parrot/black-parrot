@@ -113,24 +113,9 @@ module bp_be_dcache_lce_req
 
   // comb logic
   //
-  if (num_cce_p == 1) begin
-    assign lce_resp.dst_id = 1'b0;
-    assign lce_req.dst_id = 1'b0;
-  end
-  else begin
-    assign lce_resp.dst_id = miss_addr_r[block_offset_width_lp+:cce_id_width_lp];
-    assign lce_req.dst_id = miss_addr_r[block_offset_width_lp+:cce_id_width_lp];
-  end
-
   assign cce_data_received = cce_data_received_r | cce_data_received_i;
   assign set_tag_received = set_tag_received_r | set_tag_received_i;
   assign miss_addr_o = miss_addr_r;
-
-  assign lce_req.src_id = (lce_id_width_lp)'(lce_id_i);
-  assign lce_req.non_exclusive = e_lce_req_excl;
-
-  assign lce_resp.src_id = (lce_id_width_lp)'(lce_id_i);
-  assign lce_resp.addr = miss_addr_r;
 
   always_comb begin
     cache_miss_o = 1'b0;
@@ -147,14 +132,20 @@ module bp_be_dcache_lce_req
     set_tag_received_n = set_tag_received_r;
 
     lce_req_v_o = 1'b0;
-    lce_req.addr = miss_addr_r;
-    lce_req.non_cacheable = e_lce_req_cacheable;
+
+    lce_req.dst_id = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_lp] : 1'b0;
+    lce_req.src_id = lce_id_i;
     lce_req.msg_type = e_lce_req_type_rd;
-    lce_req.nc_size = bp_lce_cce_nc_req_size_e'(size_op_i);
-    lce_req.data = '0;
+    lce_req.addr = miss_addr_r;
+    lce_req.msg = '0;
 
     lce_resp_v_o = 1'b0;
-    lce_resp.msg_type = e_lce_cce_tr_ack;
+
+    lce_resp.dst_id = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_lp] : 1'b0;
+    lce_resp.src_id = lce_id_i;
+    lce_resp.msg_type = e_lce_cce_coh_ack;
+    lce_resp.addr = miss_addr_r;
+    lce_resp.data = '0;
 
     unique case (state_r)
 
@@ -216,7 +207,8 @@ module bp_be_dcache_lce_req
         lru_way_n = dirty_lru_flopped_r ? lru_way_r : lru_way_i;
         dirty_n = dirty_lru_flopped_r ? dirty_r : dirty_i[lru_way_i];
 
-        lce_req_v_o = lce_req_ready_i;
+        lce_req_v_o = 1'b1;
+
         lce_req.msg.req.pad = '0;
         lce_req.msg.req.lru_dirty = dirty_lru_flopped_r
           ? bp_lce_cce_lru_dirty_e'(dirty_r)
@@ -225,16 +217,13 @@ module bp_be_dcache_lce_req
           ? lru_way_r
           : lru_way_i;
         lce_req.msg.req.non_exclusive = e_lce_req_excl;
+
         lce_req.addr = miss_addr_r;
         lce_req.msg_type = load_not_store_r 
           ? e_lce_req_type_rd
           : e_lce_req_type_wr;
-        lce_req.src_id = 
-
-        lce_req_v_o = 1'b1;
-        lce_req.msg_type = load_not_store_r
-        lce_req.non_cacheable = e_lce_req_cacheable;
-        lce_req.addr = miss_addr_r;
+        lce_req.src_id = lce_id_i;
+        lce_req.dst_id = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_lp] : 1'b0;
 
         cache_miss_o = 1'b1;
         state_n = lce_req_ready_i
@@ -245,11 +234,13 @@ module bp_be_dcache_lce_req
       // SEND UNCACHED_LOAD_REQ
       e_SEND_UNCACHED_LOAD_REQ: begin
         lce_req_v_o = 1'b1;
-        lce_req.msg_type = e_lce_req_type_rd;
-        lce_req.non_cacheable = e_lce_req_non_cacheable;
+
+        lce_req.msg.uc_req.data = '0;
+        lce_req.msg.uc_req.uc_size = size_op_r;
         lce_req.addr = miss_addr_r;
-        lce_req.nc_size = bp_lce_cce_nc_req_size_e'(size_op_r);
-        lce_req.lru_dirty = dirty_lru_flopped_r
+        lce_req.msg_type = e_lce_req_type_uc_rd;
+        lce_req.src_id = lce_id_i;
+        lce_req.dst_id = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_lp] : 1'b0;
 
         cache_miss_o = 1'b1;
         state_n = lce_req_ready_i
