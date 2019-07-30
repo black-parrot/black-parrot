@@ -408,6 +408,7 @@ module bp_be_dcache_lce_cmd
         tr_data_buffered_n = ~lce_tr_done;
 
         lce_cmd_out.dst_id = lce_cmd_li.msg.cmd.target;
+        lce_cmd_out.msg_type = e_lce_cmd_data;
         lce_cmd_out.way_id = lce_cmd_li.msg.cmd.target_way_id;
         lce_cmd_out.msg.data = tr_data_buffered_r
           ? data_buf_r

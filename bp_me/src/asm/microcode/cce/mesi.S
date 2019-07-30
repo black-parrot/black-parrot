@@ -136,16 +136,23 @@ sfz rf
 transfer_check: bfz tf read_l2
 
 # Transfer routine - other cache has block in E/M
-transfer: pushq lceCmd ST req req lru
+transfer: movi COH_ACK r3
+pushq lceCmd ST req req lru
 pushq lceCmd TR tr req tr
 pushq lceCmd WB tr req tr
 # wait for transfer WB response
-poph lceResp r0
+transfer_poph: poph lceResp r0
+# check if the response was actually a coherence ack
+beq r0 r3 transfer_pop_ack
 bf nwbf complete_nwb_transfer
 # perform the transfer WB to mem
 pushq memCmd MEM_CMD_WB req
 popq lceResp r0
 bi ready
+
+# pop coherence ack during transfer routine
+transfer_pop_ack: popq lceResp r0
+bi transfer_poph
 
 # Null transfer writeback, pop the data response and the transfer ack
 complete_nwb_transfer: popq lceResp r0
