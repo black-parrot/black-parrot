@@ -126,9 +126,13 @@ replace_check: bfz rf transfer_check
 
 # Replacement Routine
 replace: pushq lceCmd WB req lru lru
-poph lceResp r0
+movi COH_ACK r3
+replacement_poph: poph lceResp r0
+# check if the response was actually a coherence ack
+beq r0 r3 replacement_pop_ack
+bf nwbf complete_replacement
 pushq memCmd MEM_CMD_WB lru
-popq lceResp r0
+complete_replacement: popq lceResp r0
 # replacement done, explicitly set replacement flag to 0
 sfz rf
 
@@ -144,19 +148,15 @@ pushq lceCmd WB tr req tr
 transfer_poph: poph lceResp r0
 # check if the response was actually a coherence ack
 beq r0 r3 transfer_pop_ack
-bf nwbf complete_nwb_transfer
+bf nwbf complete_transfer
 # perform the transfer WB to mem
 pushq memCmd MEM_CMD_WB req
-popq lceResp r0
+complete_transfer: popq lceResp r0
 bi ready
 
 # pop coherence ack during transfer routine
 transfer_pop_ack: popq lceResp r0
 bi transfer_poph
-
-# Null transfer writeback, pop the data response and the transfer ack
-complete_nwb_transfer: popq lceResp r0
-bi ready
 
 # Read Line from L2 Routine
 # TODO: move memory request earlier to hide some latency
@@ -173,5 +173,9 @@ pushq memCmd
 bi ready
 uncached_store: pushq memCmd
 bi ready
+
+# pop coherence ack during transfer routine
+replacement_pop_ack: popq lceResp r0
+bi replacement_poph
 
 error: stall
