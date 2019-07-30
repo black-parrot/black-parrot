@@ -191,10 +191,12 @@ module bp_fe_lce
     ,.reset_i(reset_i)
 
     ,.lce_id_i(lce_id_i)
+    ,.miss_addr_i(miss_addr_i)
 
     ,.lce_ready_o(lce_ready_lo)
     ,.set_tag_received_o(set_tag_received)
     ,.set_tag_wakeup_received_o(set_tag_wakeup_received)
+    ,.cce_data_received_o(cce_data_received)
 
     ,.data_mem_pkt_o(data_mem_pkt)
     ,.data_mem_pkt_v_o(data_mem_pkt_v_o)

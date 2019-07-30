@@ -42,9 +42,12 @@ module bp_fe_lce_cmd
     , input                                                      reset_i
     , input [lce_id_width_lp-1:0]                                lce_id_i
 
+    , input [paddr_width_p-1:0]                                  miss_addr_i
+
     , output logic                                               lce_ready_o
     , output logic                                               set_tag_received_o
     , output logic                                               set_tag_wakeup_received_o
+    , output logic                                               cce_data_received_o
 
     , input [lce_data_width_lp-1:0]                              data_mem_data_i
     , output logic [data_mem_pkt_width_lp-1:0]                   data_mem_pkt_o
@@ -135,6 +138,7 @@ module bp_fe_lce_cmd
     lce_ready_o             = (state_r != e_lce_cmd_reset);
     set_tag_received_o               = 1'b0;
     set_tag_wakeup_received_o        = 1'b0;
+    cce_data_received_o              = 1'b0;
 
     state_n = state_r;
     data_n = data_r;
@@ -199,6 +203,17 @@ module bp_fe_lce_cmd
           lce_resp.addr = lce_cmd_li.msg.cmd.addr;
           lce_resp_v_o = (flag_invalidate_r | tag_mem_pkt_yumi_i);
           lce_cmd_yumi_lo = lce_resp_yumi_i;
+
+        end else if (lce_cmd_li.msg_type == e_lce_cmd_data) begin
+          data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
+          data_mem_pkt.way_id = lce_cmd_li.way_id;
+          data_mem_pkt.data = lce_cmd_li.msg.data;
+          data_mem_pkt.opcode = e_icache_lce_data_mem_write;
+          data_mem_pkt_v_o = lce_cmd_v_li;
+          lce_cmd_yumi_lo = data_mem_pkt_yumi_i;
+
+          cce_data_received_o = data_mem_pkt_yumi_i;
+
         end
       end
 

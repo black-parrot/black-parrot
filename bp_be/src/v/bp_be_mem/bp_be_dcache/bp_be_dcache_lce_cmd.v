@@ -375,8 +375,10 @@ module bp_be_dcache_lce_cmd
               data_mem_pkt.way_id = lce_cmd_li.way_id;
               data_mem_pkt.data = lce_cmd_li.msg.data;
               data_mem_pkt.opcode = e_dcache_lce_data_mem_write;
+              data_mem_pkt_v_o = lce_cmd_v_li;
+              lce_cmd_yumi_lo = data_mem_pkt_yumi_i;
 
-              cce_data_received_o = 1'b1;
+              cce_data_received_o = data_mem_pkt_yumi_i;
             end
 
             e_lce_cmd_uc_data: begin
@@ -384,8 +386,10 @@ module bp_be_dcache_lce_cmd
               data_mem_pkt.way_id = lce_cmd_li.way_id;
               data_mem_pkt.data = lce_cmd_li.msg.data;
               data_mem_pkt.opcode = e_dcache_lce_data_mem_uncached;
+              data_mem_pkt_v_o = lce_cmd_v_li;
+              lce_cmd_yumi_lo = data_mem_pkt_yumi_i;
 
-              uncached_data_received_o = 1'b1;
+              uncached_data_received_o = data_mem_pkt_yumi_i;
             end
             // for other message types in this state, use default as defined at top.
             default: begin
