@@ -160,7 +160,7 @@ module bp_fe_lce_cmd
 
         end else if (lce_cmd_li.msg_type == e_lce_cmd_set_tag) begin
           tag_mem_pkt.index  = lce_cmd_addr_index;
-          tag_mem_pkt.way_id = lce_cmd_li.msg.cmd.way_id;
+          tag_mem_pkt.way_id = lce_cmd_li.way_id;
           tag_mem_pkt.state  = lce_cmd_li.msg.cmd.state;
           tag_mem_pkt.tag    = lce_cmd_addr_tag;
           tag_mem_pkt.opcode = e_tag_mem_set_tag;
@@ -171,7 +171,7 @@ module bp_fe_lce_cmd
 
         end else if (lce_cmd_li.msg_type == e_lce_cmd_set_tag_wakeup) begin
           tag_mem_pkt.index  = lce_cmd_addr_index;
-          tag_mem_pkt.way_id = lce_cmd_li.msg.cmd.way_id;
+          tag_mem_pkt.way_id = lce_cmd_li.way_id;
           tag_mem_pkt.state  = lce_cmd_li.msg.cmd.state;
           tag_mem_pkt.tag    = lce_cmd_addr_tag;
           tag_mem_pkt.opcode = e_tag_mem_set_tag;
@@ -206,9 +206,9 @@ module bp_fe_lce_cmd
         flag_data_buffered_n = ~lce_cmd_ready_i;
         data_n               = flag_data_buffered_r ? data_r : data_mem_data_i;
         lce_cmd_out.msg.data = flag_data_buffered_r ? data_r : data_mem_data_i;
-        lce_cmd_out.way_id   = lce_cmd_li.target_way_id;
+        lce_cmd_out.way_id   = lce_cmd_li.msg.cmd.target_way_id;
         lce_cmd_out.msg_type = e_lce_cmd_data;
-        lce_cmd_out.dst_id   = lce_cmd_li.target;
+        lce_cmd_out.dst_id   = lce_cmd_li.msg.cmd.target;
         lce_cmd_yumi_lo      = lce_cmd_ready_i;
         lce_cmd_v_o          = 1'b1;
         state_n              = lce_cmd_ready_i ? e_lce_cmd_ready : e_lce_cmd_transfer_tmp;

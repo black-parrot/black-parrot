@@ -174,7 +174,7 @@ module bp_be_dcache_lce_req
         end
         else if (uncached_load_req_i) begin
           miss_addr_n = miss_addr_i;
-          size_op_n = size_op_i;
+          size_op_n = bp_lce_cce_uc_req_size_e'(size_op_i);
           cce_data_received_n = 1'b0;
           set_tag_received_n = 1'b0;
 
@@ -185,7 +185,7 @@ module bp_be_dcache_lce_req
           lce_req_v_o = lce_req_ready_i & ~credits_full_i;
 
           lce_req.msg.uc_req.data = store_data_i;
-          lce_req.msg.uc_req.uc_size = size_op_i;
+          lce_req.msg.uc_req.uc_size = bp_lce_cce_uc_req_size_e'(size_op_i);
           lce_req.addr = miss_addr_i;
           lce_req.msg_type = e_lce_req_type_uc_wr;
           lce_req.src_id = lce_id_i;
@@ -236,7 +236,7 @@ module bp_be_dcache_lce_req
         lce_req_v_o = 1'b1;
 
         lce_req.msg.uc_req.data = '0;
-        lce_req.msg.uc_req.uc_size = size_op_r;
+        lce_req.msg.uc_req.uc_size = bp_lce_cce_uc_req_size_e'(size_op_r);
         lce_req.addr = miss_addr_r;
         lce_req.msg_type = e_lce_req_type_uc_rd;
         lce_req.src_id = lce_id_i;

@@ -105,9 +105,6 @@ bind bp_cce_top
       ,.mem_cmd_i(mem_cmd_from_cce)
       ,.mem_cmd_v_i(mem_cmd_v_from_cce)
       ,.mem_cmd_ready_i(mem_cmd_ready_to_cce)
-
-      ,.stall_i((bp_cce.decoded_inst_lo.op == '0)
-                & (bp_cce.decoded_inst_lo.minor_op_u.misc_minor_op == 3'b111))
       );
 
 endmodule : wrapper

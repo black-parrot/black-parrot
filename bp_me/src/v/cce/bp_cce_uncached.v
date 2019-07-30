@@ -169,7 +169,7 @@ module bp_cce_uncached
           lce_req_n = lce_req;
           lce_req_yumi_o = lce_req_v_i;
           // uncached read first sends a memory cmd, uncached store sends memory data cmd
-          uc_state_n = (lce_req.msg_type == e_cce_mem_uc_rd)
+          uc_state_n = (lce_req.msg_type == e_lce_req_type_uc_rd)
                        ? SEND_MEM_CMD
                        : SEND_MEM_DATA_CMD;
         end

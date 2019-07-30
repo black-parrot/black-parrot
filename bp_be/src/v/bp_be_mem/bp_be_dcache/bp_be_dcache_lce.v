@@ -302,7 +302,7 @@ module bp_be_dcache_lce
       ,.cce_data_received_o(cce_data_received)
       ,.uncached_data_received_o(uncached_data_received)
 
-      ,.lce_cmd_i(lce_cmd)
+      ,.lce_cmd_i(lce_cmd_in)
       ,.lce_cmd_v_i(lce_cmd_v_i)
       ,.lce_cmd_ready_o(lce_cmd_ready_o)
 

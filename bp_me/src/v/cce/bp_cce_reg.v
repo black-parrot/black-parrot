@@ -189,19 +189,19 @@ module bp_cce_reg
       case (decoded_inst_i.ucf_sel)
         e_ucf_lce_req: begin
           mshr_n.flags[e_flag_sel_ucf] = uc_req;
-          mshr_n.uc_req_size           = lce_req.msg.uc_req.uc_size;
+          mshr_n.uc_req_size           = bp_lce_cce_uc_req_size_e'(lce_req.msg.uc_req.uc_size);
         end
         e_ucf_pending: begin
           mshr_n.flags[e_flag_sel_ucf] = '0;
-          mshr_n.uc_req_size           = '0;
+          mshr_n.uc_req_size           = bp_lce_cce_uc_req_size_e'('0);
         end
         e_ucf_imm0: begin
           mshr_n.flags[e_flag_sel_ucf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
-          mshr_n.uc_req_size           = '0;
+          mshr_n.uc_req_size           = bp_lce_cce_uc_req_size_e'('0);
         end
         default: begin
           mshr_n.flags[e_flag_sel_ucf] = '0;
-          mshr_n.uc_req_size           = '0;
+          mshr_n.uc_req_size           = bp_lce_cce_uc_req_size_e'('0);
         end
       endcase
 
@@ -364,7 +364,7 @@ module bp_cce_reg
       endcase
 
       // Next Coh State
-      mshr_n.next_coh_state = decoded_inst_i.imm[`bp_coh_bits-1:0];
+      mshr_n.next_coh_state = bp_coh_states_e'(decoded_inst_i.imm[`bp_coh_bits-1:0]);
 
       // LRU Addr
       mshr_n.lru_paddr = {dir_lru_tag_i, mshr_r.paddr[lg_block_size_in_bytes_lp +: lg_lce_sets_lp],

@@ -38,7 +38,7 @@ module bp_me_network_pkt_encode_cmd
 
     , localparam data_cmd_len_lp =
       (max_packet_width_lp/width_lp)+(max_packet_width_lp%width_lp==0 ? 0 : 1)-1
-    , localparam uc_len_lp = 
+    , localparam uc_cmd_len_lp = 
       (uc_packet_width_lp/width_lp)+(uc_packet_width_lp%width_lp==0 ? 0 : 1)-1
     , localparam cmd_len_lp =
       (cmd_packet_width_lp/width_lp)+(cmd_packet_width_lp%width_lp==0 ? 0 : 1)-1

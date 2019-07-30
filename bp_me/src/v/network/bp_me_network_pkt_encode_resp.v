@@ -58,7 +58,7 @@ module bp_me_network_pkt_encode_resp
     x_cord = x_cord_width_p'(resp.dst_id << 1);
 
     case (data_resp.msg_type)
-      e_lce_resp_wb: begin
+      e_lce_cce_resp_wb: begin
         length = len_width_lp'(wb_len_lp);
       end
 

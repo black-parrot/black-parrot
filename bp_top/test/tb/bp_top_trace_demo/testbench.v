@@ -271,7 +271,7 @@ mem
   );
 
 
-assign host_cmd_yumi_lo    = '0;
+//assign host_cmd_yumi_lo    = '0;
 logic [num_core_p-1:0] program_finish;
 bp_nonsynth_host
  #(.cfg_p(cfg_p))

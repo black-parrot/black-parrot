@@ -72,8 +72,6 @@ module bp_cce_nonsynth_tracer
    , input                                      mem_cmd_ready_i
 
    , input [lg_num_cce_lp-1:0]                  cce_id_i
-
-   , input                                      stall_i
   );
 
   // Define structure variables for output queues
@@ -103,11 +101,6 @@ module bp_cce_nonsynth_tracer
   // Tracer
   always_ff @(negedge clk_i) begin
     if (~reset_i & cce_trace_p) begin
-      if (stall_i) begin
-        $display("%T: stall detected!", $time);
-        $finish(0);
-      end
-
       // inbound messages
       if (lce_req_v_i & lce_req_yumi_i) begin
         if (lce_req.msg_type == e_lce_req_type_rd | lce_req.msg_type == e_lce_req_type_wr) begin

@@ -82,7 +82,7 @@ module bp_fe_lce_req
   logic [way_id_width_lp-1:0] lru_way_r, lru_way_n;
   logic lru_flopped_r, lru_flopped_n;
 
-
+/*
   if (num_cce_p == 1) begin
     // This part of the code is written using zero_r register to overcome a bug in vcs 2017
     logic zero_r;
@@ -96,7 +96,7 @@ module bp_fe_lce_req
     assign lce_resp.dst_id = miss_addr_r[block_offset_width_lp+:cce_id_width_lp];
     assign lce_req.dst_id = miss_addr_r[block_offset_width_lp+:cce_id_width_lp];
   end
-
+*/
   assign miss_addr_o = miss_addr_r;
    
   // lce_req fsm
