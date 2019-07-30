@@ -84,7 +84,7 @@ module bp_cce_gad
   assign req_lce_cached = lce_cached[req_lce_i];
   // read-only permissions in requesting LCE
   logic req_lce_ro;
-  assign req_lce_ro = sharers_coh_states_i[req_lce_i][`bp_coh_shared_bit];
+  assign req_lce_ro = req_lce_cached & sharers_coh_states_i[req_lce_i][`bp_coh_shared_bit];
 
   assign req_addr_way_o = req_lce_cached
     ? sharers_ways_i[req_lce_i]
@@ -120,7 +120,7 @@ module bp_cce_gad
   logic [lg_num_lce_lp-1:0] transfer_lce_lo;
   logic transfer_lce_v;
 
-  assign transfer_lce_one_hot = (gad_v_i & transfer_flag_o) ? lce_cached : '0;
+  assign transfer_lce_one_hot = (gad_v_i & transfer_flag_o) ? (lce_cached & ~lce_id_one_hot) : '0;
   bsg_encode_one_hot
     #(.width_p(num_lce_p)
       )

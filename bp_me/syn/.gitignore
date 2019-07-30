@@ -5,3 +5,4 @@ simv.daidir/
 simv
 ucli.key
 run_verilator/
+*.axe

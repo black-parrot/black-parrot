@@ -33,6 +33,7 @@ $BP_BE_DIR/src/include/bp_be_dcache/bp_be_dcache_pkg.vh
 # ME packages
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
 $BP_ME_DIR/src/include/v/bp_me_network_pkg.v
+$BP_ME_DIR/src/include/v/bp_me_pkg.vh
 # Top packages
 $BP_TOP_DIR/src/include/bp_cfg_link_pkg.vh
 ## bsg_ip_cores files
@@ -116,3 +117,5 @@ $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_pkg.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_generalized.v
 # TOP
 $BP_TOP_DIR/src/v/bp_clint.v
+$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_master.v
+$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_client.v
