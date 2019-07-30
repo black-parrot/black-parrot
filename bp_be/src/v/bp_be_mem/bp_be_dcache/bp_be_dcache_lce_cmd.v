@@ -119,8 +119,8 @@ module bp_be_dcache_lce_cmd
   logic [index_width_lp-1:0] lce_cmd_addr_index;
   logic [tag_width_lp-1:0] lce_cmd_addr_tag;
 
-  assign lce_cmd_addr_index = lce_cmd_li.addr[block_offset_width_lp+:index_width_lp];
-  assign lce_cmd_addr_tag = lce_cmd_li.addr[block_offset_width_lp+index_width_lp+:tag_width_lp];
+  assign lce_cmd_addr_index = lce_cmd_li.msg.cmd.addr[block_offset_width_lp+:index_width_lp];
+  assign lce_cmd_addr_tag = lce_cmd_li.msg.cmd.addr[block_offset_width_lp+index_width_lp+:tag_width_lp];
 
 
   // states
@@ -242,7 +242,7 @@ module bp_be_dcache_lce_cmd
           unique case (lce_cmd_li.msg_type)
 
             e_lce_cmd_sync: begin
-              lce_resp.dst_id = lce_cmd_li.src_id;
+              lce_resp.dst_id = lce_cmd_li.msg.cmd.src_id;
               lce_resp.src_id = lce_id_i;
               lce_resp.msg_type = e_lce_cce_sync_ack;
               lce_resp_v_o = lce_cmd_v_li;
@@ -313,7 +313,7 @@ module bp_be_dcache_lce_cmd
             e_lce_cmd_set_tag: begin
               tag_mem_pkt.index = lce_cmd_addr_index;
               tag_mem_pkt.way_id = lce_cmd_li.way_id;
-              tag_mem_pkt.state = lce_cmd_li.state;
+              tag_mem_pkt.state = lce_cmd_li.msg.cmd.state;
               tag_mem_pkt.tag = lce_cmd_addr_tag;
               tag_mem_pkt.opcode = e_dcache_lce_tag_mem_set_tag;
               tag_mem_pkt_v_o = lce_cmd_v_li;
@@ -327,8 +327,8 @@ module bp_be_dcache_lce_cmd
             //  set the tag and send wake-up signal to lce_cce_req module.
             e_lce_cmd_set_tag_wakeup: begin
               tag_mem_pkt.index = lce_cmd_addr_index;
-              tag_mem_pkt.way_id = lce_cmd_li.way_id;
-              tag_mem_pkt.state = lce_cmd_li.state;
+              tag_mem_pkt.way_id = lce_cmd_li.msg.cmd.way_id;
+              tag_mem_pkt.state = lce_cmd_li.msg.cmd.state;
               tag_mem_pkt.tag = lce_cmd_addr_tag;
               tag_mem_pkt.opcode = e_dcache_lce_tag_mem_set_tag;
               tag_mem_pkt_v_o = lce_cmd_v_li;
@@ -343,7 +343,7 @@ module bp_be_dcache_lce_cmd
             //  invalidate_ack response.
             e_lce_cmd_invalidate_tag: begin
               tag_mem_pkt.index = lce_cmd_addr_index;
-              tag_mem_pkt.way_id = lce_cmd_li.way_id;
+              tag_mem_pkt.way_id = lce_cmd_li.msg.cmd.way_id;
               tag_mem_pkt.opcode = e_dcache_lce_tag_mem_invalidate;
               tag_mem_pkt_v_o = invalidated_tag_r
                 ? 1'b0
@@ -465,7 +465,7 @@ module bp_be_dcache_lce_cmd
         lce_resp.addr = lce_cmd_li.addr;
         lce_resp.msg_type = e_lce_cce_resp_wb;
         lce_resp.src_id = lce_id_i;
-        lce_resp.dst_id = lce_cmd_li.src_id;
+        lce_resp.dst_id = lce_cmd_li.msg.cmd.src_id;
         lce_resp_v_o = wb_data_read_r & (wb_dirty_cleared_r | stat_mem_pkt_yumi_i);
 
         lce_cmd_yumi_lo = lce_resp_done;
@@ -482,7 +482,7 @@ module bp_be_dcache_lce_cmd
         lce_resp.addr = lce_cmd_li.addr;
         lce_resp.msg_type = e_lce_cce_resp_null_wb;
         lce_resp.src_id = lce_id_i;
-        lce_resp.dst_id = lce_cmd_li.src_id;
+        lce_resp.dst_id = lce_cmd_li.msg.cmd.src_id;
         lce_resp_v_o = 1'b1;
 
         lce_cmd_yumi_lo = lce_resp_done;

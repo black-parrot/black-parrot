@@ -193,7 +193,7 @@ wire [x_cord_width_p-1:0] lce_req_dst_x_cord_0_lo  = lce_req_lo[0].dst_id << 1;
 wire [x_cord_width_p-1:0] lce_req_dst_x_cord_1_lo  = lce_req_lo[1].dst_id << 1;
 wire [x_cord_width_p-1:0] lce_resp_dst_x_cord_0_lo = lce_resp_lo[0].dst_id << 1;
 wire [x_cord_width_p-1:0] lce_resp_dst_x_cord_1_lo = lce_resp_lo[1].dst_id << 1;
-wire [x_cord_width_p-1:0] lce_cmd_dst_x_cord_lo    = lce_cmd_lo.dst_id;
+wire [x_cord_width_p-1:0] cce_lce_cmd_dst_x_cord_lo = cce_lce_cmd_lo.dst_id;
 
 for (genvar i = 0; i < dirs_lp; i++)
   begin : rof1
@@ -266,10 +266,10 @@ for (genvar i = 0; i < dirs_lp; i++)
         assign lce_resp_link_i_stitch[0][S].ready_and_rev = '0;
         assign lce_resp_ready_li[0] = lce_resp_link_o_stitch[0][S].ready_and_rev;
 
-        assign lce_cmd_link_i_stitch[0][S].data          = {lce_cmd_lo, 1'b0, lce_cmd_dst_x_cord_lo};
-        assign lce_cmd_link_i_stitch[0][S].v             = lce_cmd_v_lo;
+        assign lce_cmd_link_i_stitch[0][S].data          = {cce_lce_cmd_lo, 1'b0, cce_lce_cmd_dst_x_cord_lo};
+        assign lce_cmd_link_i_stitch[0][S].v             = cce_lce_cmd_v_lo;
         assign lce_cmd_link_i_stitch[0][S].ready_and_rev = '0;
-        assign lce_cmd_ready_li = lce_cmd_link_o_stitch[0][S].ready_and_rev;
+        assign cce_lce_cmd_ready_li = lce_cmd_link_o_stitch[0][S].ready_and_rev;
 
         // LCE Data Command at x=0 driven by wormhole adapter
 
