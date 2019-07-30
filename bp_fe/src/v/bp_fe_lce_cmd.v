@@ -67,7 +67,7 @@ module bp_fe_lce_cmd
     , input                                                      lce_cmd_v_i
     , output logic                                               lce_cmd_ready_o
     
-    , output logic [lce_data_cmd_width_lp-1:0]                   lce_cmd_o
+    , output logic [lce_cmd_width_lp-1:0]                        lce_cmd_o
     , output logic                                               lce_cmd_v_o
     , input                                                      lce_cmd_ready_i 
   );
@@ -76,7 +76,7 @@ module bp_fe_lce_cmd
   //
   `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
-  bp_cce_lce_cmd_s lce_cmd_li;
+  bp_lce_cmd_s lce_cmd_li;
   logic lce_cmd_v_li, lce_cmd_yumi_lo;
   bp_lce_cce_resp_s lce_resp;
   bp_lce_cmd_s lce_cmd_out;
@@ -86,8 +86,8 @@ module bp_fe_lce_cmd
  
   logic [index_width_lp-1:0] lce_cmd_addr_index;
   logic [tag_width_lp-1:0] lce_cmd_addr_tag;
-  assign lce_cmd_addr_index = lce_cmd_li.addr[block_offset_width_lp+:index_width_lp];
-  assign lce_cmd_addr_tag = lce_cmd_li.addr[block_offset_width_lp+index_width_lp+:tag_width_lp];
+  assign lce_cmd_addr_index = lce_cmd_li.msg.cmd.addr[block_offset_width_lp+:index_width_lp];
+  assign lce_cmd_addr_tag = lce_cmd_li.msg.cmd.addr[block_offset_width_lp+index_width_lp+:tag_width_lp];
  
   // lce pkt
   //
@@ -156,7 +156,7 @@ module bp_fe_lce_cmd
           lce_resp.msg_type = e_lce_cce_resp_null_wb;
           lce_resp.addr     = lce_cmd_li.addr;
           lce_resp_v_o      = lce_cmd_v_li;
-          lce_cmd_yumi_lo   = lce_resp_ready_i & lce_resp_v_o;
+          lce_cmd_yumi_lo   = lce_resp_yumi_i;
 
         end else if (lce_cmd_li.msg_type == e_lce_cmd_set_tag) begin
           tag_mem_pkt.index  = lce_cmd_addr_index;

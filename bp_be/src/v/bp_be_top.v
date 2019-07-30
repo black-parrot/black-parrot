@@ -270,21 +270,13 @@ bp_be_mem_top
     ,.lce_resp_v_o(lce_resp_v_o)
     ,.lce_resp_ready_i(lce_resp_ready_i)        
 
-    ,.lce_data_resp_o(lce_data_resp_o)
-    ,.lce_data_resp_v_o(lce_data_resp_v_o)
-    ,.lce_data_resp_ready_i(lce_data_resp_ready_i)
-
     ,.lce_cmd_i(lce_cmd_i)
     ,.lce_cmd_v_i(lce_cmd_v_i)
     ,.lce_cmd_ready_o(lce_cmd_ready_o)
 
-    ,.lce_data_cmd_i(lce_data_cmd_i)
-    ,.lce_data_cmd_v_i(lce_data_cmd_v_i)
-    ,.lce_data_cmd_ready_o(lce_data_cmd_ready_o)
-
-    ,.lce_data_cmd_o(lce_data_cmd_o)
-    ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
-    ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
+    ,.lce_cmd_o(lce_cmd_o)
+    ,.lce_cmd_v_o(lce_cmd_v_o)
+    ,.lce_cmd_ready_i(lce_cmd_ready_i)
 
     ,.proc_cfg_i(proc_cfg_i)
     ,.instret_i(instret_mem3)

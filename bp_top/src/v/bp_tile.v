@@ -36,27 +36,7 @@ module bp_tile
    , localparam lce_cce_resp_network_width_lp = 
        lce_cce_resp_width_lp+x_cord_width_p+y_cord_width_p
    , localparam cce_lce_cmd_network_width_lp = 
-       cce_lce_cmd_width_lp+x_cord_width_p+y_cord_width_p
-
-   , localparam lce_cce_data_resp_num_flits_lp = bp_data_resp_num_flit_gp
-   , localparam lce_cce_data_resp_len_width_lp = `BSG_SAFE_CLOG2(lce_cce_data_resp_num_flits_lp)
-   , localparam lce_cce_data_resp_packet_width_lp = 
-       lce_cce_data_resp_width_lp+x_cord_width_p+y_cord_width_p+lce_cce_data_resp_len_width_lp
-   , localparam lce_cce_data_resp_router_width_lp = 
-       (lce_cce_data_resp_packet_width_lp/lce_cce_data_resp_num_flits_lp) 
-       + ((lce_cce_data_resp_packet_width_lp%lce_cce_data_resp_num_flits_lp) == 0 ? 0 : 1)
-   , localparam lce_cce_data_resp_payload_offset_lp = 
-       (x_cord_width_p+y_cord_width_p+lce_cce_data_resp_len_width_lp)
-
-   , localparam lce_data_cmd_num_flits_lp = bp_data_cmd_num_flit_gp
-   , localparam lce_data_cmd_len_width_lp = `BSG_SAFE_CLOG2(lce_data_cmd_num_flits_lp)
-   , localparam lce_data_cmd_packet_width_lp = 
-       lce_data_cmd_width_lp+x_cord_width_p+y_cord_width_p+lce_data_cmd_len_width_lp
-   , localparam lce_data_cmd_router_width_lp = 
-       (lce_data_cmd_packet_width_lp/lce_data_cmd_num_flits_lp) 
-       + ((lce_data_cmd_packet_width_lp%lce_data_cmd_num_flits_lp) == 0 ? 0 : 1)
-   , localparam lce_data_cmd_payload_offset_lp = 
-       (x_cord_width_p+y_cord_width_p+lce_data_cmd_len_width_lp)
+       lce_cmd_width_lp+x_cord_width_p+y_cord_width_p
 
    // Generalized Wormhole Router parameters
    , localparam dims_lp = 2
@@ -91,17 +71,13 @@ module bp_tile
    // Connected on east and west
    , input [E:W][2+lce_cce_req_network_width_lp-1:0]       lce_req_link_i
    , input [E:W][2+lce_cce_resp_network_width_lp-1:0]      lce_resp_link_i
-   , input [E:W][2+lce_cce_data_resp_router_width_lp-1:0]  lce_data_resp_link_i
    , input [E:W][2+cce_lce_cmd_network_width_lp-1:0]       lce_cmd_link_i
-   , input [E:W][2+lce_data_cmd_router_width_lp-1:0]       lce_data_cmd_link_i
 
    // Router - Outputs
    // Connected on east and west
    , output [E:W][2+lce_cce_req_network_width_lp-1:0]      lce_req_link_o
    , output [E:W][2+lce_cce_resp_network_width_lp-1:0]     lce_resp_link_o
-   , output [E:W][2+lce_cce_data_resp_router_width_lp-1:0]     lce_data_resp_link_o
    , output [E:W][2+cce_lce_cmd_network_width_lp-1:0]      lce_cmd_link_o
-   , output [E:W][2+lce_data_cmd_router_width_lp-1:0]      lce_data_cmd_link_o
 
    // Memory side connection
    , input [noc_cord_width_p-1:0]                             my_cord_i
@@ -129,22 +105,18 @@ bp_lce_cce_req_s       [1:0] lce_req_lo;
 logic                  [1:0] lce_req_v_lo, lce_req_ready_li;
 bp_lce_cce_resp_s      [1:0] lce_resp_lo;
 logic                  [1:0] lce_resp_v_lo, lce_resp_ready_li;
-bp_cce_lce_cmd_s       [1:0] lce_cmd_li;
+bp_lce_cmd_s           [1:0] lce_cmd_li;
 logic                  [1:0] lce_cmd_v_li, lce_cmd_ready_lo;
-bp_lce_data_cmd_s      [1:0] lce_data_cmd_li;
-logic                  [1:0] lce_data_cmd_v_li, lce_data_cmd_ready_lo;
-bp_lce_data_cmd_s      [1:0] lce_lce_data_cmd_lo;
-logic                  [1:0] lce_lce_data_cmd_v_lo, lce_lce_data_cmd_ready_li;
+bp_lce_cmd_s           [1:0] lce_cmd_lo;
+logic                  [1:0] lce_cmd_v_lo, lce_cmd_ready_li;
 
 // CCE connections
 bp_lce_cce_req_s             lce_req_li;
 logic                        lce_req_v_li, lce_req_ready_lo;
 bp_lce_cce_resp_s            lce_resp_li;
 logic                        lce_resp_v_li, lce_resp_ready_lo;
-bp_lce_cmd_s                 lce_cmd_lo;
-logic                        lce_cmd_v_lo, lce_cmd_ready_li;
-bp_lce_cmd_s                 lce_cmd_lo;
-logic                        lce_cmd_v_lo, lce_cmd_ready_li;
+bp_lce_cmd_s                 cce_lce_cmd_lo;
+logic                        cce_lce_cmd_v_lo, cce_lce_cmd_ready_li;
 
 bp_proc_cfg_s proc_cfg_cast_i;
 assign proc_cfg_cast_i = proc_cfg_i;
@@ -209,19 +181,11 @@ bp_core
 `declare_bsg_ready_and_link_sif_s(lce_cce_req_network_width_lp, bp_lce_req_ready_and_link_sif_s);
 `declare_bsg_ready_and_link_sif_s(lce_cce_resp_network_width_lp, bp_lce_resp_ready_and_link_sif_s);
 `declare_bsg_ready_and_link_sif_s(cce_lce_cmd_network_width_lp, bp_lce_cmd_ready_and_link_sif_s);
-`declare_bsg_ready_and_link_sif_s(lce_cce_data_resp_router_width_lp, bp_lce_data_resp_ready_and_link_sif_s);
-`declare_bsg_ready_and_link_sif_s(lce_data_cmd_router_width_lp, bp_lce_data_cmd_ready_and_link_sif_s);
 
 // Intermediate 'stitch' connections between the routers
 bp_lce_req_ready_and_link_sif_s [1:0][dirs_lp-1:0] lce_req_link_i_stitch, lce_req_link_o_stitch;
 bp_lce_resp_ready_and_link_sif_s [1:0][dirs_lp-1:0] lce_resp_link_i_stitch, lce_resp_link_o_stitch;
-bp_lce_data_resp_ready_and_link_sif_s [1:0][dirs_lp-1:0] lce_data_resp_link_i_stitch, lce_data_resp_link_o_stitch;
 bp_lce_cmd_ready_and_link_sif_s [1:0][dirs_lp-1:0] lce_cmd_link_i_stitch, lce_cmd_link_o_stitch;
-bp_lce_data_cmd_ready_and_link_sif_s [1:0][dirs_lp-1:0] lce_data_cmd_link_i_stitch, lce_data_cmd_link_o_stitch;
-
-logic [1:0][lce_cce_data_resp_packet_width_lp-1:0] lce_data_resp_packet;
-logic [1:0][lce_data_cmd_packet_width_lp-1:0]      lce_lce_data_cmd_packet;
-logic [lce_data_cmd_packet_width_lp-1:0]           cce_lce_data_cmd_packet;
 
 // Extract destination ids from packets
 // Note: We shift by 1 to make a CCE id of 1 -> x=2
@@ -237,41 +201,29 @@ for (genvar i = 0; i < dirs_lp; i++)
       begin : fi1_E
         assign lce_req_link_i_stitch[1][E]  = lce_req_link_i[E];
         assign lce_resp_link_i_stitch[1][E] = lce_resp_link_i[E];
-        assign lce_data_resp_link_i_stitch[1][E] = lce_data_resp_link_i[E];
         assign lce_cmd_link_i_stitch[1][E]  = lce_cmd_link_i[E];
-        assign lce_data_cmd_link_i_stitch[1][E] = lce_data_cmd_link_i[E];
 
         assign lce_req_link_i_stitch[0][E]  = lce_req_link_o_stitch[1][W];
         assign lce_resp_link_i_stitch[0][E] = lce_resp_link_o_stitch[1][W];
-        assign lce_data_resp_link_i_stitch[0][E] = lce_data_resp_link_o_stitch[1][W];
         assign lce_cmd_link_i_stitch[0][E]  = lce_cmd_link_o_stitch[1][W];
-        assign lce_data_cmd_link_i_stitch[0][E] = lce_data_cmd_link_o_stitch[1][W];
 
         assign lce_req_link_o[W]  = lce_req_link_o_stitch[0][W];
         assign lce_resp_link_o[W] = lce_resp_link_o_stitch[0][W];
-        assign lce_data_resp_link_o[W]  = lce_data_resp_link_o_stitch[0][W];
         assign lce_cmd_link_o[W]  = lce_cmd_link_o_stitch[0][W];
-        assign lce_data_cmd_link_o[W]  = lce_data_cmd_link_o_stitch[0][W];
       end
     else if (i == W) // Transfer side
       begin : fi1_W
         assign lce_req_link_i_stitch[0][W]  = lce_req_link_i[W];
         assign lce_resp_link_i_stitch[0][W] = lce_resp_link_i[W];
-        assign lce_data_resp_link_i_stitch[0][W] = lce_data_resp_link_i[W];
         assign lce_cmd_link_i_stitch[0][W]  = lce_cmd_link_i[W];
-        assign lce_data_cmd_link_i_stitch[0][W]  = lce_data_cmd_link_i[W];
 
         assign lce_req_link_i_stitch[1][W]  = lce_req_link_o_stitch[0][E];
         assign lce_resp_link_i_stitch[1][W] = lce_resp_link_o_stitch[0][E];
-        assign lce_data_resp_link_i_stitch[1][W]  = lce_data_resp_link_o_stitch[0][E];
         assign lce_cmd_link_i_stitch[1][W]  = lce_cmd_link_o_stitch[0][E];
-        assign lce_data_cmd_link_i_stitch[1][W]  = lce_data_cmd_link_o_stitch[0][E];
 
         assign lce_req_link_o[E]  = lce_req_link_o_stitch[1][E];
         assign lce_resp_link_o[E] = lce_resp_link_o_stitch[1][E];
-        assign lce_data_resp_link_o[E] = lce_data_resp_link_o_stitch[1][E];
         assign lce_cmd_link_o[E]  = lce_cmd_link_o_stitch[1][E];
-        assign lce_data_cmd_link_o[E]  = lce_data_cmd_link_o_stitch[1][E];
       end
     else if (i == P) // Destination side
       begin : fi1_P
@@ -288,16 +240,15 @@ for (genvar i = 0; i < dirs_lp; i++)
         // LCE Data Command at x=0 driven by wormhole adapter
 
         // To I$
-        assign lce_cmd_li[0]   = lce_cmd_link_o_stitch[0][P].data[1+x_cord_width_p+:cce_lce_cmd_width_lp]; 
+        assign lce_cmd_li[0]   = lce_cmd_link_o_stitch[0][P].data[1+x_cord_width_p+:lce_cmd_width_lp]; 
         assign lce_cmd_v_li[0] = lce_cmd_link_o_stitch[0][P].v;
         assign lce_cmd_link_i_stitch[0][P]  = '{ready_and_rev: lce_cmd_ready_lo[0], default: '0};
 
         // CCE doesn't connect on P at x=1 (D$) location, stub the input links
         assign lce_req_link_i_stitch[1][P] = '0;
         assign lce_resp_link_i_stitch[1][P] = '0;
-        assign lce_data_resp_link_i_stitch[1][P] = '0;
 
-        assign lce_cmd_li[1]   = lce_cmd_link_o_stitch[1][P].data[1+x_cord_width_p+:cce_lce_cmd_width_lp]; 
+        assign lce_cmd_li[1]   = lce_cmd_link_o_stitch[1][P].data[1+x_cord_width_p+:lce_cmd_width_lp]; 
         assign lce_cmd_v_li[1] = lce_cmd_link_o_stitch[1][P].v;
         assign lce_cmd_link_i_stitch[1][P]  = '{ready_and_rev: lce_cmd_ready_lo[1], default: '0};
 
@@ -323,7 +274,6 @@ for (genvar i = 0; i < dirs_lp; i++)
         // LCE Data Command at x=0 driven by wormhole adapter
 
         // LCE Data Response is sent on North port
-        assign lce_data_resp_link_i_stitch[0][S] = '0;
 
         assign lce_req_link_i_stitch[1][S].data          = {lce_req_lo[1], 1'b0, lce_req_dst_x_cord_1_lo}; 
         assign lce_req_link_i_stitch[1][S].v             = lce_req_v_lo[1];
@@ -337,28 +287,22 @@ for (genvar i = 0; i < dirs_lp; i++)
 
         // CCE is attached at x=0 only
         assign lce_cmd_link_i_stitch[1][S]             = '0;
-        assign lce_data_cmd_link_i_stitch[1][S]        = '0;
 
         // LCE Data Response is sent on North port
-        assign lce_data_resp_link_i_stitch[1][S]       = '0;
       end
     else
       begin : fi_N
         assign lce_req_link_i_stitch[0][N]     = '0;
         assign lce_resp_link_i_stitch[0][N]    = '0;
         // I$ data resp wh router fed from adapter
-        //assign lce_data_resp_link_i_stitch[0][N] = '0;
         assign lce_cmd_link_i_stitch[0][N]     = '0;
         // I$ data cmd wh router fed from adapter
-        //assign lce_data_cmd_link_i_stitch[0][N]  = '0;
 
         assign lce_req_link_i_stitch[1][N]     = '0;
         assign lce_resp_link_i_stitch[1][N]    = '0;
         // D$ data resp wh router fed from adapter
-        //assign lce_data_resp_link_i_stitch[1][N] ='0;
         assign lce_cmd_link_i_stitch[1][N]     = '0;
         // D$ data cmd wh router fed from adapter
-        //assign lce_data_cmd_link_i_stitch[1][N]  = '0;
       end
   end // rof1
 
@@ -408,173 +352,8 @@ for (genvar i = 0; i < 2; i++)
        ,.my_x_i(x_cord_width_p'(2*my_x_i+i))
        ,.my_y_i(my_y_i)
        );
-
-    bp_me_network_pkt_encode_cmd 
-     #(.cfg_p(cfg_p)
-       ,.max_num_flit_p(lce_data_cmd_num_flits_lp)
-       ,.x_cord_width_p(x_cord_width_p)
-       ,.y_cord_width_p(y_cord_width_p)
-       ) 
-     lce_cmd_pkt_encode 
-      (.payload_i(lce_lce_data_cmd_lo[i])
-       ,.packet_o(lce_lce_data_cmd_packet[i])
-       );
-
-    bsg_wormhole_router_adapter_in
-     #(.max_num_flit_p(lce_data_cmd_num_flits_lp)
-       ,.max_payload_width_p(lce_data_cmd_width_lp)
-       ,.x_cord_width_p(x_cord_width_p)
-       ,.y_cord_width_p(y_cord_width_p)
-       )
-     data_cmd_adapter_in
-      (.clk_i(clk_i)
-       ,.reset_i(reset_r)
-
-       ,.data_i(lce_lce_data_cmd_packet[i])
-       ,.v_i(lce_lce_data_cmd_v_lo[i])
-       ,.ready_o(lce_lce_data_cmd_ready_li[i])
-
-       ,.link_o(lce_data_cmd_link_i_stitch[i][N])
-       ,.link_i(lce_data_cmd_link_o_stitch[i][N])
-       );
-
-    // StrictYX routing, route Y first (allows N/S sending to E/W)
-    // LCEs send from N, CCEs (on even numbered routers) send from S.
-    bsg_wormhole_router_generalized
-     #(.flit_width_p(lce_data_cmd_router_width_lp)
-       ,.dims_p(dims_lp)
-       ,.cord_markers_pos_p(cord_markers_pos_lp)
-       ,.routing_matrix_p(StrictYX)
-       ,.reverse_order_p(1)
-       ,.len_width_p(lce_data_cmd_len_width_lp)
-       )
-     data_cmd_router
-      (.clk_i(clk_i)
-       ,.reset_i(reset_r)
-
-       ,.link_i(lce_data_cmd_link_i_stitch[i])
-       ,.link_o(lce_data_cmd_link_o_stitch[i])
-
-       ,.my_cord_i({my_y_i, {x_cord_width_p'(2*my_x_i+i)}})
-       );
-
-  wire [lce_data_cmd_payload_offset_lp-1:0] lce_data_cmd_nonpayload;
-    bsg_wormhole_router_adapter_out
-     #(.max_num_flit_p(lce_data_cmd_num_flits_lp)
-       ,.max_payload_width_p(lce_data_cmd_width_lp)
-       ,.x_cord_width_p(x_cord_width_p)
-       ,.y_cord_width_p(y_cord_width_p)
-       )
-     data_cmd_adapter_out
-      (.clk_i(clk_i)
-       ,.reset_i(reset_r)
-    
-       ,.link_i(lce_data_cmd_link_o_stitch[i][P])
-       ,.link_o(lce_data_cmd_link_i_stitch[i][P])
-
-       ,.data_o({lce_data_cmd_li[i], lce_data_cmd_nonpayload})
-       ,.v_o(lce_data_cmd_v_li[i])
-       ,.ready_i(lce_data_cmd_ready_lo[i])
-       );
-
-    bp_me_network_pkt_encode_resp
-     #(.cfg_p(cfg_p)
-       ,.max_num_flit_p(lce_cce_data_resp_num_flits_lp)
-       ,.x_cord_width_p(x_cord_width_p)
-       ,.y_cord_width_p(y_cord_width_p)
-       )
-     lce_resp_pkt_encode
-      (.payload_i(lce_data_resp_lo[i])
-       ,.packet_o(lce_data_resp_packet[i])
-       );
-
-    bsg_wormhole_router_adapter_in 
-     #(.max_num_flit_p(lce_cce_data_resp_num_flits_lp)
-       ,.max_payload_width_p(lce_cce_data_resp_width_lp)
-       ,.x_cord_width_p(x_cord_width_p)
-       ,.y_cord_width_p(y_cord_width_p)
-       )
-     data_resp_adapter_in
-      (.clk_i(clk_i)
-       ,.reset_i(reset_r)
-
-       ,.data_i(lce_data_resp_packet[i])
-       ,.v_i(lce_data_resp_v_lo[i])
-       ,.ready_o(lce_data_resp_ready_li[i])
-
-       ,.link_o(lce_data_resp_link_i_stitch[i][N])
-       ,.link_i(lce_data_resp_link_o_stitch[i][N])
-       );
-
-    // StrictYX routing, route Y first (allows N/S sending to E/W)
-    bsg_wormhole_router_generalized
-     #(.flit_width_p(lce_cce_data_resp_router_width_lp)
-       ,.dims_p(dims_lp)
-       ,.cord_markers_pos_p(cord_markers_pos_lp)
-       ,.routing_matrix_p(StrictYX)
-       ,.reverse_order_p(1)
-       ,.len_width_p(lce_cce_data_resp_len_width_lp)
-       )
-     data_resp_router
-      (.clk_i(clk_i)
-       ,.reset_i(reset_r)
-
-       ,.link_i(lce_data_resp_link_i_stitch[i])
-       ,.link_o(lce_data_resp_link_o_stitch[i])
-
-       ,.my_cord_i({my_y_i, {x_cord_width_p'(2*my_x_i+i)}})
-       );
-
   end // rof3    
     
-bp_me_network_pkt_encode_cmd
- #(.cfg_p(cfg_p)
-   ,.max_num_flit_p(lce_data_cmd_num_flits_lp)
-   ,.x_cord_width_p(x_cord_width_p)
-   ,.y_cord_width_p(y_cord_width_p)
-   )
- lce_cmd_pkt_encode
-  (.payload_i(cce_lce_data_cmd_lo)
-   ,.packet_o(cce_lce_data_cmd_packet)
-   );
-
-bsg_wormhole_router_adapter_in
- #(.max_num_flit_p(lce_data_cmd_num_flits_lp)
-   ,.max_payload_width_p(lce_data_cmd_width_lp)
-   ,.x_cord_width_p(x_cord_width_p)
-   ,.y_cord_width_p(y_cord_width_p)
-   )
- data_cmd_adapter_in
-  (.clk_i(clk_i)
-   ,.reset_i(reset_r)
-
-   ,.data_i(cce_lce_data_cmd_packet)
-   ,.v_i(cce_lce_data_cmd_v_lo)
-   ,.ready_o(cce_lce_data_cmd_ready_li)
-
-   ,.link_o(lce_data_cmd_link_i_stitch[0][S])
-   ,.link_i(lce_data_cmd_link_o_stitch[0][S])
-   );
-
-wire [lce_cce_data_resp_payload_offset_lp-1:0] lce_data_resp_nonpayload;
-bsg_wormhole_router_adapter_out
- #(.max_num_flit_p(lce_cce_data_resp_num_flits_lp)
-   ,.max_payload_width_p(lce_cce_data_resp_width_lp)
-   ,.x_cord_width_p(x_cord_width_p)
-   ,.y_cord_width_p(y_cord_width_p)
-   )
- data_resp_adapter_out
-  (.clk_i(clk_i)
-   ,.reset_i(reset_r)
-
-   ,.link_i(lce_data_resp_link_o_stitch[0][P])
-   ,.link_o(lce_data_resp_link_i_stitch[0][P])
-
-   ,.data_o({lce_data_resp_li, lce_data_resp_nonpayload})
-   ,.v_o(lce_data_resp_v_li)
-   ,.ready_i(lce_data_resp_ready_lo)
-   );
-
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 bp_cce_mem_cmd_s       mem_cmd_lo;
 logic                  mem_cmd_v_lo, mem_cmd_yumi_li;
@@ -603,18 +382,10 @@ bp_cce_top
    ,.lce_resp_v_i(lce_resp_v_li)
    ,.lce_resp_ready_o(lce_resp_ready_lo)
 
-   ,.lce_data_resp_i(lce_data_resp_li)
-   ,.lce_data_resp_v_i(lce_data_resp_v_li)
-   ,.lce_data_resp_ready_o(lce_data_resp_ready_lo)
-
    // From CCE
-   ,.lce_cmd_o(lce_cmd_lo)
-   ,.lce_cmd_v_o(lce_cmd_v_lo)
-   ,.lce_cmd_ready_i(lce_cmd_ready_li)
-
-   ,.lce_data_cmd_o(cce_lce_data_cmd_lo)
-   ,.lce_data_cmd_v_o(cce_lce_data_cmd_v_lo)
-   ,.lce_data_cmd_ready_i(cce_lce_data_cmd_ready_li)
+   ,.lce_cmd_o(cce_lce_cmd_lo)
+   ,.lce_cmd_v_o(cce_lce_cmd_v_lo)
+   ,.lce_cmd_ready_i(cce_lce_cmd_ready_li)
 
    // To CCE
    ,.mem_resp_i(mem_resp_li)

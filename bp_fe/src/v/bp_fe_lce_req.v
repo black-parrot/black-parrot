@@ -119,7 +119,7 @@ module bp_fe_lce_req
     lce_req.msg_type      = e_lce_req_type_rd;
     lce_req.addr          = miss_addr_r;
 
-    lce_req.msg.req.non_exclusive = e_lce_req_not_excl;
+    lce_req.msg.req.non_exclusive = e_lce_req_non_excl;
     lce_req.msg.req.lru_dirty     = e_lce_req_lru_clean;
     lce_req.msg.req.lru_way_id    = lru_flopped_r
                                     ? lru_way_r
