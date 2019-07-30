@@ -12,18 +12,21 @@ include $(BP_EXTERNAL_DIR)/Makefile.tools
 #  We only need to keep update basejump_stl up to date. The other submodules
 #    are for building tools, which we should only need to do every so often
 
-update_submodules:
-	cd $(TOP) && git submodule update --init --recursive 
+update_libs:
+	cd $(TOP); git submodule update --init --recursive basejump_stl
 
 update_tests:
-	cd $(TOP) && git submodule update --init --recursive $(BP_COMMON_DIR)/test
+	cd $(TOP); git submodule update --init --recursive $(BP_COMMON_DIR)/test
+
+clean_tools:
+	cd $(TOP); git submodule deinit -f external/
 
 ## This target fetches and builds all dependencies needed for running simulations
 #    to test BlackParrot. By default, all tools are built but comment any tools that 
 #    you already have a copy of. If your version of a tool significantly differs from 
 #    our submodule version, use at your own risk.
 #
-tools: update_submodules 
+tools: update_libs
 	$(MAKE) gnu
 	$(MAKE) systemc
 	$(MAKE) verilator
