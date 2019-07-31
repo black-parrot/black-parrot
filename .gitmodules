@@ -76,3 +76,9 @@
   branch = master
   ignore = dirty
 
+[submodule "external/agile-unhardware"]
+  path = external/agile-unhardware
+  url = https://github.com/bespoke-silicon-group/accelerator-debugger.git
+  branch = blackparrot_model
+  ignore = dirty
+
