@@ -183,6 +183,7 @@ module bp_be_dcache_lce_cmd
     set_tag_received_o = 1'b0;
     set_tag_wakeup_received_o = 1'b0;
     uncached_store_done_received_o = 1'b0;
+    uncached_data_received_o = 1'b0;
     cce_data_received_o = 1'b0;
 
     lce_cmd_yumi_lo = 1'b0;
