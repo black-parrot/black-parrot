@@ -104,7 +104,7 @@ module bp_cce_nonsynth_tracer
       // inbound messages
       if (lce_req_v_i & lce_req_yumi_i) begin
         if (lce_req.msg_type == e_lce_req_type_rd | lce_req.msg_type == e_lce_req_type_wr) begin
-        $display("%0T: CCE[%0d] REQ LCE[%0d] addr[%H] wr[%0b] ne[%0b] nc[%0b] lruWay[%0d] lruDirty[%0b] tag[%H] set[%0d]"
+        $display("%0T: CCE[%0d] REQ LCE[%0d] addr[%H] wr[%0b] ne[%0b] uc[%0b] lruWay[%0d] lruDirty[%0b] tag[%H] set[%0d]"
                  , $time, cce_id_i, lce_req.src_id, lce_req.addr, (lce_req.msg_type == e_lce_req_type_wr)
                  , lce_req_req.non_exclusive
                  , 1'b0
@@ -113,7 +113,7 @@ module bp_cce_nonsynth_tracer
                  , lce_req.addr[lg_block_size_in_bytes_lp+:lg_lce_sets_lp]);
         end
         if (lce_req.msg_type == e_lce_req_type_uc_rd | lce_req.msg_type == e_lce_req_type_uc_wr) begin
-        $display("%0T: CCE[%0d] REQ LCE[%0d] addr[%H] wr[%0b] ne[%0b] nc[%0b] lruWay[%0d] lruDirty[%0b] tag[%H] set[%0d]"
+        $display("%0T: CCE[%0d] REQ LCE[%0d] addr[%H] wr[%0b] ne[%0b] uc[%0b] lruWay[%0d] lruDirty[%0b] tag[%H] set[%0d]"
                  , $time, cce_id_i, lce_req.src_id, lce_req.addr, (lce_req.msg_type == e_lce_req_type_uc_wr)
                  , 1'b0
                  , 1'b1
@@ -126,7 +126,7 @@ module bp_cce_nonsynth_tracer
         if ((lce_resp.msg_type == e_lce_cce_sync_ack)
             | (lce_resp.msg_type == e_lce_cce_inv_ack)
             | (lce_resp.msg_type == e_lce_cce_coh_ack)) begin
-        $display("%0T: CCE[%0d] RESP LCE[%0d] addr[%H] ack[%3b]"
+        $display("%0T: CCE[%0d] RESP LCE[%0d] addr[%H] ack[%4b]"
                  , $time, cce_id_i, lce_resp.src_id, lce_resp.addr, lce_resp.msg_type);
         end
         if ((lce_resp.msg_type == e_lce_cce_resp_wb)
@@ -156,18 +156,18 @@ module bp_cce_nonsynth_tracer
       // outbound messages
       if (lce_cmd_v_i & lce_cmd_ready_i) begin
         if (lce_cmd.msg_type == e_lce_cmd_data) begin
-        $display("%0T: CCE[%0d] DATA CMD LCE[%0d] cmd[%2b] way[%0d]\n%H"
+        $display("%0T: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] way[%0d]\n%H"
                  , $time, cce_id_i, lce_cmd.dst_id, lce_cmd.msg_type, lce_cmd.way_id
                  , lce_cmd.msg.data);
         end
         else if (lce_cmd.msg_type == e_lce_cmd_uc_data) begin
-        $display("%0T: CCE[%0d] DATA CMD LCE[%0d] cmd[%2b] way[%0d]\n%H"
+        $display("%0T: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] way[%0d]\n%H"
                  , $time, cce_id_i, lce_cmd.dst_id, lce_cmd.msg_type, lce_cmd.way_id
                  , lce_cmd.msg.data);
         end
 
         else begin
-        $display("%0T: CCE[%0d] CMD LCE[%0d] addr[%H] cmd[%3b] way[%0d] st[%2b] tgt[%0d] tgtWay[%0d]"
+        $display("%0T: CCE[%0d] CMD LCE[%0d] addr[%H] cmd[%4b] way[%0d] st[%3b] tgt[%0d] tgtWay[%0d]"
                  , $time, cce_id_i, lce_cmd.dst_id, lce_cmd_cmd.addr, lce_cmd.msg_type, lce_cmd.way_id
                  , lce_cmd_cmd.state, lce_cmd_cmd.target, lce_cmd_cmd.target_way_id);
         end
