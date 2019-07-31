@@ -63,6 +63,7 @@ typedef enum logic [2:0] {
   ,e_bne_op                              = 3'b001   // Branch if A != B
 
   ,e_bf_op                               = 3'b010   // Branch if flag == 1 or 0 (set by immediate)
+  ,e_bs_op                               = 3'b011   // Branch if special == GPR/imm
 
   ,e_blt_op                              = 3'b100   // Branch if A < B
   ,e_ble_op                              = 3'b101   // Branch if A <= B
@@ -192,8 +193,8 @@ typedef enum logic [4:0] {
 // Special Source Select
 typedef enum logic [4:0] {
   e_src_sharers_hit_r0                   = 5'b00000
-  ,e_src_sharers_way_r1                  = 5'b00001
-  ,e_src_sharers_state_r2                = 5'b00010
+  ,e_src_sharers_way_r0                  = 5'b00001
+  ,e_src_sharers_state_r0                = 5'b00010
 
   ,e_src_req_lce                         = 5'b01000
   ,e_src_next_coh_state                  = 5'b01001

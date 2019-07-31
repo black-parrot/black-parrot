@@ -603,10 +603,10 @@ module bp_cce
   // ALU
   logic sharers_hits_r0;
   assign sharers_hits_r0 = sharers_hits_lo[gpr_r_lo[e_gpr_r0][lg_num_lce_lp-1:0]];
-  logic [lg_lce_assoc_lp-1:0] sharers_ways_r1;
-  assign sharers_ways_r1 = sharers_ways_lo[gpr_r_lo[e_gpr_r1][lg_num_lce_lp-1:0]];
-  logic [`bp_coh_bits-1:0] sharers_coh_states_r2;
-  assign sharers_coh_states_r2 = sharers_coh_states_lo[gpr_r_lo[e_gpr_r2][lg_num_lce_lp-1:0]];
+  logic [lg_lce_assoc_lp-1:0] sharers_ways_r0;
+  assign sharers_ways_r0 = sharers_ways_lo[gpr_r_lo[e_gpr_r0][lg_num_lce_lp-1:0]];
+  logic [`bp_coh_bits-1:0] sharers_coh_states_r0;
+  assign sharers_coh_states_r0 = sharers_coh_states_lo[gpr_r_lo[e_gpr_r0][lg_num_lce_lp-1:0]];
 
 
   always_comb
@@ -653,8 +653,8 @@ module bp_cce
       e_src_sel_special: begin
         case (decoded_inst_lo.src_a.special)
           e_src_sharers_hit_r0: src_a[0] = sharers_hits_r0;
-          e_src_sharers_way_r1: src_a[0+:lg_lce_assoc_lp] = sharers_ways_r1;
-          e_src_sharers_state_r2: src_a[0+:`bp_coh_bits] = sharers_coh_states_r2;
+          e_src_sharers_way_r0: src_a[0+:lg_lce_assoc_lp] = sharers_ways_r0;
+          e_src_sharers_state_r0: src_a[0+:`bp_coh_bits] = sharers_coh_states_r0;
           e_src_req_lce: src_a[0+:lg_num_lce_lp] = mshr.lce_id;
           e_src_next_coh_state: src_a[0+:`bp_coh_bits] = mshr.next_coh_state;
           e_src_lce_req_ready: src_a[0] = lce_req_v_i;
@@ -710,8 +710,8 @@ module bp_cce
       e_src_sel_special: begin
         case (decoded_inst_lo.src_b.special)
           e_src_sharers_hit_r0: src_b[0] = sharers_hits_r0;
-          e_src_sharers_way_r1: src_b[0+:lg_lce_assoc_lp] = sharers_ways_r1;
-          e_src_sharers_state_r2: src_b[0+:`bp_coh_bits] = sharers_coh_states_r2;
+          e_src_sharers_way_r0: src_b[0+:lg_lce_assoc_lp] = sharers_ways_r0;
+          e_src_sharers_state_r0: src_b[0+:`bp_coh_bits] = sharers_coh_states_r0;
           e_src_req_lce: src_b[0+:lg_num_lce_lp] = mshr.lce_id;
           e_src_next_coh_state: src_b[0+:`bp_coh_bits] = mshr.next_coh_state;
           e_src_lce_req_ready: src_b[0] = lce_req_v_i;

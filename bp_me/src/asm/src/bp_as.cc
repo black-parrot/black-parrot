@@ -72,8 +72,7 @@ Assembler::getOp(const char* op) {
   } else if (!strcmp("bi", op) || !strcmp("beq", op) || !strcmp("bne", op) || !strcmp("bz", op)
              || !strcmp("bnz", op) || !strcmp("bf", op) || !strcmp("bfz", op) || !strcmp("bqr", op)
              || !strcmp("blt", op) || !strcmp("ble", op) || !strcmp("bgt", op) || !strcmp("bge", op)
-             || !strcmp("beqi", op)
-            ) {
+             || !strcmp("beqi", op) || !strcmp("bs", op) || !strcmp("bsz", op)) {
     return e_op_branch;
   } else if (!strcmp("mov", op) || !strcmp("movi", op) || !strcmp("movf", op) || !strcmp("movsg", op)
              || !strcmp("movgs", op)) {
@@ -119,6 +118,8 @@ Assembler::getMinorOp(const char* op) {
     return e_beq;
   } else if (!strcmp("bqr", op)) {
     return e_bqr;
+  } else if (!strcmp("bs", op) || !strcmp("bsz", op)) {
+    return e_bs;
   } else if (!strcmp("bf", op) || !strcmp("bfz", op)) {
     return e_bf;
   } else if (!strcmp("bne", op) || !strcmp("bnz", op)) {
@@ -195,10 +196,10 @@ Assembler::parseSrcOpd(string &s) {
     return e_src_r7;
   } else if (!s.compare("shhitr0")) {
     return e_src_sharers_hit_r0;
-  } else if (!s.compare("shwayr1")) {
-    return e_src_sharers_way_r1;
-  } else if (!s.compare("shstr2")) {
-    return e_src_sharers_state_r2;
+  } else if (!s.compare("shwayr0")) {
+    return e_src_sharers_way_r0;
+  } else if (!s.compare("shstr0")) {
+    return e_src_sharers_state_r0;
   } else if (!s.compare("reqlce")) {
     return e_src_req_lce;
   } else if (!s.compare("lcereq")) {
@@ -240,8 +241,11 @@ Assembler::parseSrcOpd(string &s) {
   } else if (!s.compare("nwbf")) {
     return e_src_nwbf;
   } else {
+    return e_src_imm;
+    /*
     printf("Unknown source operand: %s\n", s.c_str());
     exit(-1);
+    */
   }
 }
 
@@ -408,6 +412,14 @@ Assembler::parseBranch(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
     if (!strcmp("bf", tokens->at(0).c_str()) || !strcmp("bqr", tokens->at(0).c_str())) {
       inst->type_u.branch_op_s.src_b = e_src_imm;
       inst->type_u.branch_op_s.imm = 1;
+    } else if (!strcmp("bs", tokens->at(0).c_str())) {
+      inst->type_u.branch_op_s.src_a = parseSrcOpd(tokens->at(1));
+      inst->type_u.branch_op_s.src_b = e_src_imm;
+      inst->type_u.branch_op_s.imm = 1;
+    } else if (!strcmp("bsz", tokens->at(0).c_str())) {
+      inst->type_u.branch_op_s.src_a = parseSrcOpd(tokens->at(1));
+      inst->type_u.branch_op_s.src_b = e_src_imm;
+      inst->type_u.branch_op_s.imm = 0;
     } else { // bfz, bz, bnz
       inst->type_u.branch_op_s.src_b = e_src_imm;
       inst->type_u.branch_op_s.imm = 0;
@@ -422,6 +434,12 @@ Assembler::parseBranch(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
     } else if (!strcmp("bge", tokens->at(0).c_str()) || !strcmp("bgt", tokens->at(0).c_str())) {
       inst->type_u.branch_op_s.src_a = parseSrcOpd(tokens->at(2));
       inst->type_u.branch_op_s.src_b = parseSrcOpd(tokens->at(1));
+    } else if (!strcmp("bs", tokens->at(0).c_str())) {
+      inst->type_u.branch_op_s.src_a = parseSrcOpd(tokens->at(1));
+      inst->type_u.branch_op_s.src_b = parseSrcOpd(tokens->at(2));
+      if (inst->type_u.branch_op_s.src_b == e_src_imm) {
+        inst->type_u.branch_op_s.imm = (uint16_t)parseImm(tokens->at(2), 16);
+      }
     } else { // blt, ble
       inst->type_u.branch_op_s.src_a = parseSrcOpd(tokens->at(1));
       inst->type_u.branch_op_s.src_b = parseSrcOpd(tokens->at(2));

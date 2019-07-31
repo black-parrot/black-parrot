@@ -51,6 +51,8 @@ typedef enum {
   ,e_bf                          = 0x2   // Branch if Flag == 1 // same as BEQ, src_a = flag, src_b = 1
   ,e_bfz                         = 0x2   // Branch if Flag == 0 // same as BEQ, src_a = flag, src_b = 0
 
+  ,e_bs                          = 0x3   // Branch if special == GPR/imm
+
   ,e_blt                         = 0x4   // Branch if A < B
   ,e_ble                         = 0x5   // Branch if A <= B
   ,e_bgt                         = 0x4   // Branch if A > B // same as BLT, swap src_a and src_b
@@ -114,8 +116,8 @@ typedef enum {
   ,e_src_r7                      = 0x07
 
   ,e_src_sharers_hit_r0          = 0x00
-  ,e_src_sharers_way_r1          = 0x01
-  ,e_src_sharers_state_r2        = 0x02
+  ,e_src_sharers_way_r0          = 0x01
+  ,e_src_sharers_state_r0        = 0x02
 
   ,e_src_req_lce                 = 0x08
   ,e_src_next_coh_state          = 0x09

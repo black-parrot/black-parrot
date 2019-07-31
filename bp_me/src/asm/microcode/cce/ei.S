@@ -81,8 +81,8 @@ movi N_LCE r1
 movi 0 r2
 movi INV_ACK r3
 inv_top: bge r0 r1 inv_ack_top
-bz shHitr0 inv_inc_lce
-beq reqLce r0 inv_inc_lce
+bsz shHitr0 inv_inc_lce
+bs reqLce r0 inv_inc_lce
 inc r2
 pushq lceCmd INV r0 req shWayR0
 wds req r0 shWayR0 I

@@ -154,6 +154,11 @@ module bp_cce_inst_decode
           end else if (minor_op_u.branch_minor_op == e_bqr_op) begin
             decoded_inst_o.src_a.special = branch_op_s.src_a.special;
             decoded_inst_o.src_a_sel = e_src_sel_special;
+
+          // Branch if specail register equal to GPR/imm encoded src_b
+          end else if (minor_op_u.branch_minor_op == e_bs_op) begin
+            decoded_inst_o.src_a.special = branch_op_s.src_a.special;
+            decoded_inst_o.src_a_sel = e_src_sel_special;
           end
 
         end
