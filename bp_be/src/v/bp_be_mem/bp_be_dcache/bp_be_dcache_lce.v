@@ -188,10 +188,12 @@ module bp_be_dcache_lce
   assign stat_mem_pkt_o = stat_mem_pkt;
 
   // Outstanding Uncached Store Counter
+  //
   logic uncached_store_done_received;
+  logic lce_req_uncached_store_lo;
   logic [`BSG_WIDTH(max_credits_p)-1:0] credit_count_lo;
   logic credit_v_li, credit_ready_li;
-  assign credit_v_li = uncached_store_req_i & lce_req_v_o;
+  assign credit_v_li = lce_req_uncached_store_lo & lce_req_v_o & lce_req_ready_i;
   assign credit_ready_li = lce_req_ready_i;
   bsg_flow_counter
     #(.els_p(max_credits_p))
@@ -257,6 +259,7 @@ module bp_be_dcache_lce
       ,.set_tag_received_i(set_tag_received)
       ,.set_tag_wakeup_received_i(set_tag_wakeup_received)
 
+      ,.lce_req_uncached_store_o(lce_req_uncached_store_lo)
       ,.lce_req_o(lce_req)
       ,.lce_req_v_o(lce_req_v_o)
       ,.lce_req_ready_i(lce_req_ready_i)

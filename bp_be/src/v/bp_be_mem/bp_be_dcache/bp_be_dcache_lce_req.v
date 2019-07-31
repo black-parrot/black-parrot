@@ -69,6 +69,7 @@ module bp_be_dcache_lce_req
     , input set_tag_received_i
     , input set_tag_wakeup_received_i
 
+    , output logic lce_req_uncached_store_o
     , output logic [lce_cce_req_width_lp-1:0] lce_req_o
     , output logic lce_req_v_o
     , input lce_req_ready_i
@@ -87,8 +88,11 @@ module bp_be_dcache_lce_req
   bp_lce_cce_req_s lce_req;
   bp_lce_cce_resp_s lce_resp;
 
-  assign lce_req_o = lce_req;
   assign lce_resp_o = lce_resp;
+
+  // For uncached store buffering
+  //
+  logic lce_req_v_lo, lce_req_ready_li;
 
   // states
   //
@@ -131,7 +135,7 @@ module bp_be_dcache_lce_req
     cce_data_received_n = cce_data_received_r;
     set_tag_received_n = set_tag_received_r;
 
-    lce_req_v_o = 1'b0;
+    lce_req_v_lo = 1'b0;
 
     lce_req.dst_id = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_lp] : 1'b0;
     lce_req.src_id = lce_id_i;
@@ -182,7 +186,7 @@ module bp_be_dcache_lce_req
           state_n = e_SEND_UNCACHED_LOAD_REQ;
         end
         else if (uncached_store_req_i) begin
-          lce_req_v_o = lce_req_ready_i & ~credits_full_i;
+          lce_req_v_lo = ~credits_full_i & lce_req_ready_li;
 
           lce_req.msg.uc_req.data = store_data_i;
           lce_req.msg.uc_req.uc_size = bp_lce_cce_uc_req_size_e'(size_op_i);
@@ -191,7 +195,7 @@ module bp_be_dcache_lce_req
           lce_req.src_id = lce_id_i;
           lce_req.dst_id = (num_cce_p > 1) ? miss_addr_i[block_offset_width_lp+:cce_id_width_lp] : 1'b0;
 
-          cache_miss_o = ~lce_req_ready_i | credits_full_i;
+          cache_miss_o = ~lce_req_ready_li | credits_full_i;
           state_n = e_READY;
         end
         else begin
@@ -207,7 +211,7 @@ module bp_be_dcache_lce_req
         lru_way_n = dirty_lru_flopped_r ? lru_way_r : lru_way_i;
         dirty_n = dirty_lru_flopped_r ? dirty_r : dirty_i[lru_way_i];
 
-        lce_req_v_o = 1'b1;
+        lce_req_v_lo = 1'b1;
 
         lce_req.msg.req.pad = '0;
         lce_req.msg.req.lru_dirty = dirty_lru_flopped_r
@@ -226,14 +230,14 @@ module bp_be_dcache_lce_req
         lce_req.dst_id = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_lp] : 1'b0;
 
         cache_miss_o = 1'b1;
-        state_n = lce_req_ready_i
+        state_n = lce_req_ready_li
           ? e_SLEEP
           : e_SEND_CACHED_REQ;
       end
 
       // SEND UNCACHED_LOAD_REQ
       e_SEND_UNCACHED_LOAD_REQ: begin
-        lce_req_v_o = 1'b1;
+        lce_req_v_lo = 1'b1;
 
         lce_req.msg.uc_req.data = '0;
         lce_req.msg.uc_req.uc_size = bp_lce_cce_uc_req_size_e'(size_op_r);
@@ -243,7 +247,7 @@ module bp_be_dcache_lce_req
         lce_req.dst_id = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_lp] : 1'b0;
 
         cache_miss_o = 1'b1;
-        state_n = lce_req_ready_i
+        state_n = lce_req_ready_li
           ? e_SLEEP
           : e_SEND_UNCACHED_LOAD_REQ;
       end
@@ -293,6 +297,21 @@ module bp_be_dcache_lce_req
     endcase
   end
 
+  // We need this converter because the LCE expects the store data to go out when valid
+  bsg_one_fifo
+   #(.width_p(lce_cce_req_width_lp+1))
+   rv_adapter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i({uncached_store_req_i, lce_req})
+     ,.v_i(lce_req_v_lo)
+     ,.ready_o(lce_req_ready_li)
+
+     ,.data_o({lce_req_uncached_store_o, lce_req_o})
+     ,.v_o(lce_req_v_o)
+     ,.yumi_i(lce_req_ready_i & lce_req_v_o)
+     );
 
   // sequential
   //
