@@ -60,6 +60,8 @@ typedef struct packed
   integer fe_queue_fifo_els;
   integer fe_cmd_fifo_els;
 
+  integer coh_noc_width;
+
   integer cfg_core_width;
   integer cfg_addr_width;
   integer cfg_data_width;
@@ -106,6 +108,8 @@ typedef struct packed
                                                                                                    \
   , localparam fe_queue_fifo_els_p = proc_param_lp.fe_queue_fifo_els                               \
   , localparam fe_cmd_fifo_els_p   = proc_param_lp.fe_cmd_fifo_els                                 \
+                                                                                                   \
+  , localparam coh_noc_width_p = proc_param_lp.coh_noc_width                                       \
                                                                                                    \
   , localparam cfg_core_width_p          = proc_param_lp.cfg_core_width                            \
   , localparam cfg_addr_width_p          = proc_param_lp.cfg_addr_width                            \
