@@ -237,11 +237,7 @@ module bp_cce_reg
 
       case (decoded_inst_i.nwbf_sel)
         e_nwbf_lce_resp: begin
-          if (null_wb_flag_i == e_lce_cce_resp_null_wb) begin
-            mshr_n.flags[e_flag_sel_nwbf] = 1'b1;
-          end else begin
-            mshr_n.flags[e_flag_sel_nwbf] = '0;
-          end
+          mshr_n.flags[e_flag_sel_nwbf] = null_wb_flag_i;
         end
         e_nwbf_imm0: begin
           mshr_n.flags[e_flag_sel_nwbf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
