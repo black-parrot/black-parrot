@@ -200,16 +200,19 @@ assign lce_resp_link_i_stitch[0][S] = '0;
 `declare_bsg_wormhole_router_packet_s(coh_cord_width_lp, coh_noc_len_width_p, lce_cce_resp_width_lp, lce_resp_packet_s);
 `declare_bsg_wormhole_router_packet_s(coh_cord_width_lp, coh_noc_len_width_p, lce_cmd_width_lp, lce_cmd_packet_s);
 
-localparam lce_req_num_flits_lp  = `BSG_CDIV($bits(lce_req_packet_s), coh_noc_width_p);
-localparam lce_resp_num_flits_lp = `BSG_CDIV($bits(lce_resp_packet_s), coh_noc_width_p);
-localparam lce_cmd_num_flits_lp  = `BSG_CDIV($bits(lce_cmd_packet_s), coh_noc_width_p);
+//localparam lce_cmd_num_flits_lp  = `BSG_CDIV($bits(lce_cmd_packet_s), coh_noc_width_p);
 
 for (genvar i = 0; i < 2; i++)
   begin : rof3
     wire [coh_cord_width_lp-1:0] lce_id_li = (i == 0) ? proc_cfg_cast_i.icache_id : proc_cfg_cast_i.dcache_id;
 
-    wire [coh_noc_len_width_p-1:0] lce_req_len_lo    = lce_req_num_flits_lp-1;
-    wire [coh_cord_width_lp-1:0] lce_req_dst_cord_lo  = lce_req_lo[i].dst_id << 1;
+    lce_req_packet_s lce_req_packet_lo;
+    bp_me_wormhole_packet_encode_req
+     #(.cfg_p(cfg_p))
+     req_encode
+      (.payload_i(lce_req_lo[i])
+       ,.packet_o(lce_req_packet_lo)
+       );
 
     bsg_wormhole_router_adapter_in
      #(.max_payload_width_p(lce_cce_req_width_lp)
@@ -221,7 +224,7 @@ for (genvar i = 0; i < 2; i++)
       (.clk_i(clk_i)
        ,.reset_i(reset_r)
 
-       ,.packet_i({lce_req_lo[i], lce_req_len_lo, lce_req_dst_cord_lo})
+       ,.packet_i(lce_req_packet_lo)
        ,.v_i(lce_req_v_lo[i])
        ,.ready_o(lce_req_ready_li[i])
 
@@ -247,8 +250,16 @@ for (genvar i = 0; i < 2; i++)
        ,.my_cord_i(lce_id_li)
        );
 
-    wire [coh_noc_len_width_p-1:0] lce_cmd_len_lo = lce_cmd_num_flits_lp - 1;
-    wire [coh_cord_width_lp-1:0] lce_cmd_dst_cord_lo  = lce_cmd_lo[i].dst_id;
+    lce_cmd_packet_s lce_cmd_packet_lo;
+    bp_me_wormhole_packet_encode_cmd
+     #(.cfg_p(cfg_p))
+     cmd_encode
+      (.payload_i(lce_cmd_lo[i])
+       ,.packet_o(lce_cmd_packet_lo)
+       );
+
+//    wire [coh_noc_len_width_p-1:0] lce_cmd_len_lo = lce_cmd_num_flits_lp - 1;
+//    wire [coh_cord_width_lp-1:0] lce_cmd_dst_cord_lo  = lce_cmd_lo[i].dst_id;
 
     bsg_wormhole_router_adapter_in
      #(.max_payload_width_p(lce_cmd_width_lp)
@@ -260,7 +271,8 @@ for (genvar i = 0; i < 2; i++)
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
-       ,.packet_i({lce_cmd_lo[i], lce_cmd_len_lo, lce_cmd_dst_cord_lo})
+       ,.packet_i(lce_cmd_packet_lo)
+//       ,.packet_i({lce_cmd_lo[i], lce_cmd_len_lo, lce_cmd_dst_cord_lo})
        ,.v_i(lce_cmd_v_lo[i])
        ,.ready_o(lce_cmd_ready_li[i])
 
@@ -305,9 +317,14 @@ for (genvar i = 0; i < 2; i++)
        ,.v_o(lce_cmd_v_li[i])
        ,.ready_i(lce_cmd_ready_lo[i])
        );
-    
-    wire [coh_noc_len_width_p-1:0] lce_resp_len_lo = lce_resp_num_flits_lp - 1;
-    wire [coh_cord_width_lp-1:0] lce_resp_dst_cord_lo  = lce_resp_lo[i].dst_id << 1;
+
+    lce_resp_packet_s lce_resp_packet_lo;
+    bp_me_wormhole_packet_encode_resp
+     #(.cfg_p(cfg_p))
+     resp_encode
+      (.payload_i(lce_resp_lo[i])
+       ,.packet_o(lce_resp_packet_lo)
+       );
 
     bsg_wormhole_router_adapter_in
      #(.max_payload_width_p(lce_cce_resp_width_lp)
@@ -319,7 +336,7 @@ for (genvar i = 0; i < 2; i++)
       (.clk_i(clk_i)
        ,.reset_i(reset_r)
 
-       ,.packet_i({lce_resp_lo[i], lce_resp_len_lo, lce_resp_dst_cord_lo})
+       ,.packet_i(lce_resp_packet_lo)
        ,.v_i(lce_resp_v_lo[i])
        ,.ready_o(lce_resp_ready_li[i])
 
@@ -373,8 +390,16 @@ bsg_wormhole_router_adapter_out
    );
 
 
-wire [coh_noc_len_width_p-1:0] cce_lce_cmd_len_lo = lce_cmd_num_flits_lp - 1;
-wire [coh_cord_width_lp-1:0] cce_lce_cmd_dst_cord_lo  = cce_lce_cmd_lo.dst_id;
+//wire [coh_noc_len_width_p-1:0] cce_lce_cmd_len_lo = lce_cmd_num_flits_lp - 1;
+//wire [coh_cord_width_lp-1:0] cce_lce_cmd_dst_cord_lo  = cce_lce_cmd_lo.dst_id;
+
+lce_cmd_packet_s cce_lce_cmd_packet_lo;
+bp_me_wormhole_packet_encode_cmd
+ #(.cfg_p(cfg_p))
+ cmd_encode
+  (.payload_i(cce_lce_cmd_lo)
+   ,.packet_o(cce_lce_cmd_packet_lo)
+   );
 
 bsg_wormhole_router_adapter_in
  #(.max_payload_width_p(lce_cmd_width_lp)
@@ -386,7 +411,8 @@ bsg_wormhole_router_adapter_in
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.packet_i({cce_lce_cmd_lo, cce_lce_cmd_len_lo, cce_lce_cmd_dst_cord_lo})
+   ,.packet_i(cce_lce_cmd_packet_lo)
+//   ,.packet_i({cce_lce_cmd_lo, cce_lce_cmd_len_lo, cce_lce_cmd_dst_cord_lo})
    ,.v_i(cce_lce_cmd_v_lo)
    ,.ready_o(cce_lce_cmd_ready_li)
 

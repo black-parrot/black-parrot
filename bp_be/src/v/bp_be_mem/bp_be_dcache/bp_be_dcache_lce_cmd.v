@@ -466,7 +466,7 @@ module bp_be_dcache_lce_cmd
             ? 1'b1
             : stat_mem_pkt_yumi_i);
         
-        lce_resp.data = wb_data_buffered_r
+        lce_resp.msg.data = wb_data_buffered_r
           ? data_buf_r
           : data_mem_data_i;
         lce_resp.addr = lce_cmd_li.msg.cmd.addr;
@@ -485,7 +485,7 @@ module bp_be_dcache_lce_cmd
       //  <WRITEBACK not-dirty state>
       //  If not dirty, just respond with null writeback data.
       e_lce_cmd_state_wb_not_dirty: begin
-        lce_resp.data = '0;
+        lce_resp.msg.data = '0;
         lce_resp.addr = lce_cmd_li.msg.cmd.addr;
         lce_resp.msg_type = e_lce_cce_resp_null_wb;
         lce_resp.src_id = lce_id_i;

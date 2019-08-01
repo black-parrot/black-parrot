@@ -133,7 +133,7 @@ module bp_fe_lce_req
     lce_resp.src_id       = lce_id_i;
     lce_resp.msg_type     = e_lce_cce_coh_ack;
     lce_resp.addr         = miss_addr_r;
-    lce_resp.data         = '0;
+    lce_resp.msg.data     = '0;
   
     cache_miss_o = 1'b0;
      

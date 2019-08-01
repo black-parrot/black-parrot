@@ -372,7 +372,7 @@ module bp_cce_msg
         // Writeback command - override default command fields as needed
         if (decoded_inst_i.mem_cmd == e_cce_mem_wb) begin
           mem_cmd.msg_type = e_cce_mem_wb;
-          mem_cmd.data = lce_resp.data;
+          mem_cmd.data = lce_resp.msg.data;
           mem_cmd.payload.lce_id = lce_resp.src_id;
           mem_cmd.payload.way_id = '0;
         end

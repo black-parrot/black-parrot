@@ -134,7 +134,7 @@ module bp_cce_nonsynth_tracer
         $display("%0T: CCE[%0d] DATA RESP LCE[%0d] addr[%H] null_wb[%0b]\n%H"
                  , $time, cce_id_i, lce_resp.src_id, lce_resp.addr
                  , (lce_resp.msg_type == e_lce_cce_resp_null_wb)
-                 , lce_resp.data);
+                 , lce_resp.msg.data);
         end
       end
       if (mem_resp_v_i & mem_resp_yumi_i) begin
