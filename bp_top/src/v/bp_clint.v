@@ -19,21 +19,21 @@ module bp_clint
    , parameter irq_pipe_depth_p = 4
    , parameter cfg_pipe_depth_p = 4
 
-   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(noc_width_p)
+   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_width_p)
    )
   (input                                           clk_i
    , input                                         reset_i
 
    // BP side
-   , input [noc_cord_width_p-1:0]                  my_cord_i
-   , input [noc_cord_width_p-1:0]                  dram_cord_i
-   , input [noc_cord_width_p-1:0]                  clint_cord_i
+   , input [mem_noc_cord_width_p-1:0]              my_cord_i
+   , input [mem_noc_cord_width_p-1:0]              dram_cord_i
+   , input [mem_noc_cord_width_p-1:0]              clint_cord_i
 
-   , input [bsg_ready_and_link_sif_width_lp-1:0]   cmd_link_i
-   , output [bsg_ready_and_link_sif_width_lp-1:0]  cmd_link_o
+   , input [mem_noc_ral_link_width_lp-1:0]         cmd_link_i
+   , output [mem_noc_ral_link_width_lp-1:0]        cmd_link_o
 
-   , input [bsg_ready_and_link_sif_width_lp-1:0]   resp_link_i
-   , output [bsg_ready_and_link_sif_width_lp-1:0]  resp_link_o
+   , input [mem_noc_ral_link_width_lp-1:0]         resp_link_i
+   , output [mem_noc_ral_link_width_lp-1:0]        resp_link_o
 
    // Local interrupts
    , output [num_core_p-1:0]                       soft_irq_o
@@ -366,7 +366,7 @@ assign mem_resp_lo =
 
 
 // CCE-MEM IF to wormhole link conversion
-`declare_bsg_ready_and_link_sif_s(noc_width_p, bsg_ready_and_link_sif_s);
+`declare_bsg_ready_and_link_sif_s(mem_noc_width_p, bsg_ready_and_link_sif_s);
 bsg_ready_and_link_sif_s cmd_link_cast_i, cmd_link_cast_o;
 bsg_ready_and_link_sif_s resp_link_cast_i, resp_link_cast_o;
 

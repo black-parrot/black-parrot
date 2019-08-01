@@ -17,7 +17,7 @@ module bp_me_cce_to_wormhole_link_master
   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
   
   // wormhole parameters
-  ,localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(noc_width_p)
+  ,localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(mem_noc_width_p)
 
   ,localparam word_select_bits_lp  = `BSG_SAFE_CLOG2(cce_block_width_p / dword_width_p)
   ,localparam byte_offset_bits_lp  = `BSG_SAFE_CLOG2(dword_width_p / 8)
@@ -38,9 +38,9 @@ module bp_me_cce_to_wormhole_link_master
   ,input  logic                                  mem_resp_ready_i
                                                  
   // Configuration
-  ,input [noc_cord_width_p-1:0] my_cord_i
+  ,input [mem_noc_cord_width_p-1:0] my_cord_i
   
-  ,input [noc_cord_width_p-1:0] mem_cmd_dest_cord_i
+  ,input [mem_noc_cord_width_p-1:0] mem_cmd_dest_cord_i
   
   // bsg_noc_wormhole interface
   ,input  [bsg_ready_and_link_sif_width_lp-1:0] link_i
@@ -49,7 +49,7 @@ module bp_me_cce_to_wormhole_link_master
   
   /********************** noc link interface ***********************/
   
-  `declare_bsg_ready_and_link_sif_s(noc_width_p,bsg_ready_and_link_sif_s);
+  `declare_bsg_ready_and_link_sif_s(mem_noc_width_p,bsg_ready_and_link_sif_s);
   bsg_ready_and_link_sif_s link_i_cast, link_o_cast;
     
   assign link_i_cast = link_i;
@@ -61,37 +61,37 @@ module bp_me_cce_to_wormhole_link_master
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
   
   // Wormhole packet definition
-  `declare_bp_mem_wormhole_packet_s(noc_reserved_width_p, noc_cord_width_p, noc_len_width_p, cce_mem_cmd_width_lp, bp_cmd_wormhole_packet_s);
-  `declare_bp_mem_wormhole_packet_s(noc_reserved_width_p, noc_cord_width_p, noc_len_width_p, mem_cce_resp_width_lp, bp_resp_wormhole_packet_s);
+  `declare_bp_mem_wormhole_packet_s(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, cce_mem_cmd_width_lp, bp_cmd_wormhole_packet_s);
+  `declare_bp_mem_wormhole_packet_s(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, mem_cce_resp_width_lp, bp_resp_wormhole_packet_s);
   
   // Wormhole header definition
-  `declare_wormhole_header_flit_s(noc_width_p, noc_cord_width_p, noc_len_width_p, wormhole_header_flit_s);
+  `declare_wormhole_header_flit_s(mem_noc_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, wormhole_header_flit_s);
   
   // Wormhole packet widths and lengths
   localparam cmd_header_width_lp = cce_mem_cmd_width_lp - cce_block_width_p;
   // currently, mem cmd and resp messages have same format
   localparam resp_header_Width_lp = cmd_header_width_lp;
 
-  localparam cmd_data_wh_pkt_width_lp = `bp_mem_wormhole_packet_width(noc_reserved_width_p, noc_cord_width_p, noc_len_width_p, cce_mem_cmd_width_lp);
-  localparam cmd_uc_data_wh_pkt_width_lp = `bp_mem_wormhole_packet_width(noc_reserved_width_p, noc_cord_width_p, noc_len_width_p, cce_mem_cmd_width_lp-cce_block_width_p+dword_width_p);
-  localparam cmd_wh_pkt_width_lp = `bp_mem_wormhole_packet_width(noc_reserved_width_p, noc_cord_width_p, noc_len_width_p, cce_mem_cmd_width_lp-cce_block_width_p);
+  localparam cmd_data_wh_pkt_width_lp = `bp_mem_wormhole_packet_width(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, cce_mem_cmd_width_lp);
+  localparam cmd_uc_data_wh_pkt_width_lp = `bp_mem_wormhole_packet_width(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, cce_mem_cmd_width_lp-cce_block_width_p+dword_width_p);
+  localparam cmd_wh_pkt_width_lp = `bp_mem_wormhole_packet_width(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, cce_mem_cmd_width_lp-cce_block_width_p);
 
-  localparam cmd_data_ratio_lp = `BSG_CDIV(cmd_data_wh_pkt_width_lp, noc_width_p);
-  localparam cmd_uc_data_ratio_lp = `BSG_CDIV(cmd_uc_data_wh_pkt_width_lp, noc_width_p);
-  localparam cmd_ratio_lp = `BSG_CDIV(cmd_wh_pkt_width_lp, noc_width_p);
+  localparam cmd_data_ratio_lp = `BSG_CDIV(cmd_data_wh_pkt_width_lp, mem_noc_width_p);
+  localparam cmd_uc_data_ratio_lp = `BSG_CDIV(cmd_uc_data_wh_pkt_width_lp, mem_noc_width_p);
+  localparam cmd_ratio_lp = `BSG_CDIV(cmd_wh_pkt_width_lp, mem_noc_width_p);
 
-  localparam resp_data_wh_pkt_width_lp = `bp_mem_wormhole_packet_width(noc_reserved_width_p, noc_cord_width_p, noc_len_width_p, mem_cce_resp_width_lp);
-  localparam resp_uc_data_wh_pkt_width_lp = `bp_mem_wormhole_packet_width(noc_reserved_width_p, noc_cord_width_p, noc_len_width_p, mem_cce_resp_width_lp-cce_block_width_p+dword_width_p);
-  localparam resp_wh_pkt_width_lp = `bp_mem_wormhole_packet_width(noc_reserved_width_p, noc_cord_width_p, noc_len_width_p, mem_cce_resp_width_lp-cce_block_width_p);
+  localparam resp_data_wh_pkt_width_lp = `bp_mem_wormhole_packet_width(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, mem_cce_resp_width_lp);
+  localparam resp_uc_data_wh_pkt_width_lp = `bp_mem_wormhole_packet_width(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, mem_cce_resp_width_lp-cce_block_width_p+dword_width_p);
+  localparam resp_wh_pkt_width_lp = `bp_mem_wormhole_packet_width(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_len_width_p, mem_cce_resp_width_lp-cce_block_width_p);
 
-  localparam resp_data_ratio_lp = `BSG_CDIV(resp_data_wh_pkt_width_lp, noc_width_p);
-  localparam resp_uc_data_ratio_lp = `BSG_CDIV(resp_uc_data_wh_pkt_width_lp, noc_width_p);
-  localparam resp_ratio_lp = `BSG_CDIV(resp_wh_pkt_width_lp, noc_width_p);
+  localparam resp_data_ratio_lp = `BSG_CDIV(resp_data_wh_pkt_width_lp, mem_noc_width_p);
+  localparam resp_uc_data_ratio_lp = `BSG_CDIV(resp_uc_data_wh_pkt_width_lp, mem_noc_width_p);
+  localparam resp_ratio_lp = `BSG_CDIV(resp_wh_pkt_width_lp, mem_noc_width_p);
 
   /********************** Sending Side ***********************/
   
   logic send_valid_li, send_ready_lo;
-  logic [cmd_data_ratio_lp*noc_width_p-1:0] send_data_li;
+  logic [cmd_data_ratio_lp*mem_noc_width_p-1:0] send_data_li;
   
   bp_cmd_wormhole_packet_s send_wormhole_packet_lo;
   assign mem_cmd_yumi_o      = send_ready_lo & mem_cmd_v_i;
@@ -99,7 +99,7 @@ module bp_me_cce_to_wormhole_link_master
   assign send_data_li        = {'0, send_wormhole_packet_lo};
   
   bsg_parallel_in_serial_out_dynamic                          
- #(.width_p  (noc_width_p      )
+ #(.width_p  (mem_noc_width_p      )
   ,.max_els_p(cmd_data_ratio_lp)
   )
   pisod
@@ -148,7 +148,7 @@ module bp_me_cce_to_wormhole_link_master
   assign receive_header = link_i_cast.data;
   
   logic receive_valid_lo, receive_yumi_li;
-  logic [resp_data_ratio_lp*noc_width_p-1:0] receive_data_lo;
+  logic [resp_data_ratio_lp*mem_noc_width_p-1:0] receive_data_lo;
   
   bp_resp_wormhole_packet_s receive_wormhole_packet_lo;
   assign receive_wormhole_packet_lo = receive_data_lo;
@@ -156,7 +156,7 @@ module bp_me_cce_to_wormhole_link_master
   assign receive_yumi_li            = (mem_resp_v_o & mem_resp_ready_i);
   
   bsg_serial_in_parallel_out_dynamic                            
- #(.width_p  (noc_width_p       )
+ #(.width_p  (mem_noc_width_p       )
   ,.max_els_p(resp_data_ratio_lp)
   )
   sipod

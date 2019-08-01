@@ -27,9 +27,6 @@ module bp_be_top
                                  ,cce_block_width_p
                                  )
 
-   , parameter calc_trace_p = 0
- 
-
    // Default parameters 
    , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
    , localparam ecode_dec_width_lp         = `bp_be_ecode_dec_width

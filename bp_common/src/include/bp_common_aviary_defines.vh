@@ -66,15 +66,17 @@ typedef struct packed
   integer cfg_core_width;
   integer cfg_addr_width;
   integer cfg_data_width;
-  integer noc_width;
-  integer noc_len_width;
-  integer noc_reserved_width;
+
+  integer mem_noc_width;
+  integer mem_noc_len_width;
+  integer mem_noc_reserved_width;
+  integer mem_noc_cord_width;
+
   integer ct_remote_credits;
   integer ct_max_payload_flits;
   integer ct_lg_credit_decimation;
   integer max_credits;
   integer clint_pos;
-  integer noc_cord_width;
 
   integer dword_width;
   integer instr_width;
@@ -116,15 +118,17 @@ typedef struct packed
   , localparam cfg_core_width_p          = proc_param_lp.cfg_core_width                            \
   , localparam cfg_addr_width_p          = proc_param_lp.cfg_addr_width                            \
   , localparam cfg_data_width_p          = proc_param_lp.cfg_data_width                            \
-  , localparam noc_width_p               = proc_param_lp.noc_width                                 \
-  , localparam noc_len_width_p           = proc_param_lp.noc_len_width                             \
-  , localparam noc_reserved_width_p      = proc_param_lp.noc_reserved_width                        \
+                                                                                                   \
+  , localparam mem_noc_width_p           = proc_param_lp.mem_noc_width                             \
+  , localparam mem_noc_len_width_p       = proc_param_lp.mem_noc_len_width                         \
+  , localparam mem_noc_reserved_width_p  = proc_param_lp.mem_noc_reserved_width                    \
+  , localparam mem_noc_cord_width_p      = proc_param_lp.mem_noc_cord_width                        \
+                                                                                                   \
   , localparam ct_remote_credits_p       = proc_param_lp.ct_remote_credits                         \
   , localparam ct_max_payload_flits_p    = proc_param_lp.ct_max_payload_flits                      \
   , localparam ct_lg_credit_decimation_p = proc_param_lp.ct_lg_credit_decimation                   \
   , localparam max_credits_p             = proc_param_lp.max_credits                               \
   , localparam clint_pos_p               = proc_param_lp.clint_pos                                 \
-  , localparam noc_cord_width_p          = proc_param_lp.noc_cord_width                            \
                                                                                                    \
   , localparam dword_width_p       = proc_param_lp.dword_width                                     \
   , localparam instr_width_p       = proc_param_lp.instr_width                                     \

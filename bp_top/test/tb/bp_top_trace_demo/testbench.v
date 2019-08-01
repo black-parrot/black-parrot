@@ -30,23 +30,17 @@ module testbench
    , parameter calc_trace_p                = 0
    , parameter cce_trace_p                 = 0
    , parameter skip_init_p                 = 0
-   , parameter trace_ring_width_p          = "inv"
-   , parameter trace_rom_addr_width_p      = "inv"
-   , localparam trace_rom_data_width_lp    = trace_ring_width_p + 4
-   
-   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(noc_width_p)
+
+   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_width_p)
    
    , localparam noc_x_cord_width_lp = 7
    , localparam noc_y_cord_width_lp = 1
-   
-   // FIXME: not needed when IO complex is used
-   , localparam link_width_lp = noc_width_p+2
    )
   (input clk_i
    , input reset_i
    );
 
-`declare_bsg_ready_and_link_sif_s(noc_width_p, bsg_ready_and_link_sif_s);
+`declare_bsg_ready_and_link_sif_s(mem_noc_width_p, bsg_ready_and_link_sif_s);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
 bsg_ready_and_link_sif_s [1:0] ct_link_li, ct_link_lo;
@@ -73,13 +67,13 @@ assign cmd_link_lo.data = cfg_link_lo.data;
 assign cmd_link_lo.ready_and_rev = mem_link_lo.ready_and_rev;
 
    
-logic [link_width_lp-1:0] multi_data_li, multi_data_lo;
+logic [mem_noc_ral_link_width_lp-1:0] multi_data_li, multi_data_lo;
 logic multi_v_li, multi_v_lo;
 logic multi_yumi_lo, multi_yumi_li;
 
 logic [1:0] ct_fifo_valid_lo, ct_fifo_yumi_li;
 logic [1:0] ct_fifo_valid_li, ct_fifo_yumi_lo;
-logic [1:0][noc_width_p-1:0] ct_fifo_data_lo, ct_fifo_data_li;
+logic [1:0][mem_noc_width_p-1:0] ct_fifo_data_lo, ct_fifo_data_li;
      
 bp_mem_cce_resp_s      mem_resp_li;
 logic                  mem_resp_v_li, mem_resp_ready_lo;
@@ -101,8 +95,8 @@ logic                  cfg_cmd_v_lo, cfg_cmd_yumi_li;
 bp_mem_cce_resp_s      cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
-logic [noc_cord_width_p-1:0]                 dram_cord_lo, clint_cord_lo;
-logic [num_core_p-1:0][noc_cord_width_p-1:0] tile_cord_lo;
+logic [mem_noc_cord_width_p-1:0]                 dram_cord_lo, clint_cord_lo;
+logic [num_core_p-1:0][mem_noc_cord_width_p-1:0] tile_cord_lo;
 
 assign dram_cord_lo  = num_core_p+1;
 assign clint_cord_lo = clint_pos_p;
@@ -113,10 +107,7 @@ for (genvar i = 0; i < num_core_p; i++)
 
 // Chip
 wrapper
- #(.cfg_p(cfg_p)
-   ,.calc_trace_p(calc_trace_p)
-   ,.cce_trace_p(cce_trace_p)
-   )
+ #(.cfg_p(cfg_p))
  wrapper
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -132,40 +123,41 @@ wrapper
    ,.resp_link_o(resp_link_li)
    );
 
-bind bp_be_top
-  bp_be_nonsynth_tracer
-   #(.cfg_p(cfg_p))
-   tracer
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.mhartid_i(be_calculator.proc_cfg.core_id)
-
-     ,.issue_pkt_i(be_calculator.issue_pkt)
-     ,.issue_pkt_v_i(be_calculator.issue_pkt_v_i)
-
-     ,.fe_nop_v_i(be_calculator.fe_nop_v)
-     ,.be_nop_v_i(be_calculator.be_nop_v)
-     ,.me_nop_v_i(be_calculator.me_nop_v)
-     ,.dispatch_pkt_i(be_calculator.dispatch_pkt)
-
-     ,.ex1_br_tgt_i(be_calculator.calc_status.int1_br_tgt)
-     ,.ex1_btaken_i(be_calculator.calc_status.int1_btaken)
-     ,.iwb_result_i(be_calculator.comp_stage_n[3])
-     ,.fwb_result_i(be_calculator.comp_stage_n[4])
-
-     ,.cmt_trace_exc_i(be_calculator.exc_stage_n[1+:5])
-
-     ,.trap_v_i(be_mem.csr.trap_v_o)
-     ,.mtvec_i(be_mem.csr.mtvec_n)
-     ,.mtval_i(be_mem.csr.mtval_n)
-     ,.ret_v_i(be_mem.csr.ret_v_o)
-     ,.mepc_i(be_mem.csr.mepc_n)
-     ,.mcause_i(be_mem.csr.mcause_n)
-
-     ,.priv_mode_i(be_mem.csr.priv_mode_n)
-     ,.mpp_i(be_mem.csr.mstatus_n.mpp)
-     );
+if (calc_trace_p)
+  bind bp_be_top
+    bp_be_nonsynth_tracer
+     #(.cfg_p(cfg_p))
+     tracer
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
+  
+       ,.mhartid_i(be_calculator.proc_cfg.core_id)
+  
+       ,.issue_pkt_i(be_calculator.issue_pkt)
+       ,.issue_pkt_v_i(be_calculator.issue_pkt_v_i)
+  
+       ,.fe_nop_v_i(be_calculator.fe_nop_v)
+       ,.be_nop_v_i(be_calculator.be_nop_v)
+       ,.me_nop_v_i(be_calculator.me_nop_v)
+       ,.dispatch_pkt_i(be_calculator.dispatch_pkt)
+  
+       ,.ex1_br_tgt_i(be_calculator.calc_status.int1_br_tgt)
+       ,.ex1_btaken_i(be_calculator.calc_status.int1_btaken)
+       ,.iwb_result_i(be_calculator.comp_stage_n[3])
+       ,.fwb_result_i(be_calculator.comp_stage_n[4])
+  
+       ,.cmt_trace_exc_i(be_calculator.exc_stage_n[1+:5])
+  
+       ,.trap_v_i(be_mem.csr.trap_v_o)
+       ,.mtvec_i(be_mem.csr.mtvec_n)
+       ,.mtval_i(be_mem.csr.mtval_n)
+       ,.ret_v_i(be_mem.csr.ret_v_o)
+       ,.mepc_i(be_mem.csr.mepc_n)
+       ,.mcause_i(be_mem.csr.mcause_n)
+  
+       ,.priv_mode_i(be_mem.csr.priv_mode_n)
+       ,.mpp_i(be_mem.csr.mstatus_n.mpp)
+       );
 
 bind bp_be_top
   bp_be_nonsynth_perf
@@ -186,40 +178,39 @@ bind bp_be_top
      ,.program_finish_i(testbench.program_finish)
      );
 
-bind bp_cce_top
-  bp_cce_nonsynth_tracer
-    #(.cfg_p(cfg_p)
-      ,.cce_trace_p(cce_trace_p)
-      )
-    bp_cce_tracer
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
-
-      ,.cce_id_i(cce_id_i)
-
-      // To CCE
-      ,.lce_req_i(lce_req_to_cce)
-      ,.lce_req_v_i(lce_req_v_to_cce)
-      ,.lce_req_yumi_i(lce_req_yumi_from_cce)
-      ,.lce_resp_i(lce_resp_to_cce)
-      ,.lce_resp_v_i(lce_resp_v_to_cce)
-      ,.lce_resp_yumi_i(lce_resp_yumi_from_cce)
-
-      // From CCE
-      ,.lce_cmd_i(lce_cmd_o)
-      ,.lce_cmd_v_i(lce_cmd_v_o)
-      ,.lce_cmd_ready_i(lce_cmd_ready_i)
-
-      // To CCE
-      ,.mem_resp_i(mem_resp_to_cce)
-      ,.mem_resp_v_i(mem_resp_v_to_cce)
-      ,.mem_resp_yumi_i(mem_resp_yumi_from_cce)
-
-      // From CCE
-      ,.mem_cmd_i(mem_cmd_from_cce)
-      ,.mem_cmd_v_i(mem_cmd_v_from_cce)
-      ,.mem_cmd_ready_i(mem_cmd_ready_to_cce)
-      );
+if (cce_trace_p)
+  bind bp_cce_top
+    bp_cce_nonsynth_tracer
+      #(.cfg_p(cfg_p))
+      bp_cce_tracer
+       (.clk_i(clk_i)
+        ,.reset_i(reset_i)
+  
+        ,.cce_id_i(cce_id_i)
+  
+        // To CCE
+        ,.lce_req_i(lce_req_to_cce)
+        ,.lce_req_v_i(lce_req_v_to_cce)
+        ,.lce_req_yumi_i(lce_req_yumi_from_cce)
+        ,.lce_resp_i(lce_resp_to_cce)
+        ,.lce_resp_v_i(lce_resp_v_to_cce)
+        ,.lce_resp_yumi_i(lce_resp_yumi_from_cce)
+  
+        // From CCE
+        ,.lce_cmd_i(lce_cmd_o)
+        ,.lce_cmd_v_i(lce_cmd_v_o)
+        ,.lce_cmd_ready_i(lce_cmd_ready_i)
+  
+        // To CCE
+        ,.mem_resp_i(mem_resp_to_cce)
+        ,.mem_resp_v_i(mem_resp_v_to_cce)
+        ,.mem_resp_yumi_i(mem_resp_yumi_from_cce)
+  
+        // From CCE
+        ,.mem_cmd_i(mem_cmd_from_cce)
+        ,.mem_cmd_v_i(mem_cmd_v_from_cce)
+        ,.mem_cmd_ready_i(mem_cmd_ready_to_cce)
+        );
 
 // DRAM + link 
 bp_me_cce_to_wormhole_link_client

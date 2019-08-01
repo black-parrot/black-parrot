@@ -41,15 +41,17 @@ package bp_common_aviary_pkg;
       ,cfg_core_width: 8
       ,cfg_addr_width: 16
       ,cfg_data_width: 32
-      ,noc_width     : 30
-      ,noc_len_width : 5
-      ,noc_reserved_width: 2
-      ,ct_remote_credits: 32
-      ,ct_max_payload_flits: 20
+
+      ,mem_noc_width         : 30
+      ,mem_noc_len_width     : 5
+      ,mem_noc_reserved_width: 2
+      ,mem_noc_cord_width    : 9
+
+      ,ct_remote_credits      : 32
+      ,ct_max_payload_flits   : 20
       ,ct_lg_credit_decimation: 3
-      ,max_credits   : 4
-      ,clint_pos : 1
-      ,noc_cord_width: 9
+      ,max_credits            : 4
+      ,clint_pos              : 1
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -89,15 +91,17 @@ package bp_common_aviary_pkg;
       ,cfg_core_width: 8
       ,cfg_addr_width: 16
       ,cfg_data_width: 32
-      ,noc_width     : 30
-      ,noc_len_width : 5
-      ,noc_reserved_width: 2
-      ,ct_remote_credits: 32
-      ,ct_max_payload_flits: 20
+
+      ,mem_noc_width         : 30
+      ,mem_noc_reserved_width: 2
+      ,mem_noc_len_width     : 5
+      ,mem_noc_cord_width    : 9
+
+      ,ct_remote_credits      : 32
+      ,ct_max_payload_flits   : 20
       ,ct_lg_credit_decimation: 3
-      ,max_credits   : 4
-      ,clint_pos : 1
-      ,noc_cord_width: 9
+      ,max_credits            : 4
+      ,clint_pos              : 1
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -137,15 +141,17 @@ package bp_common_aviary_pkg;
       ,cfg_core_width: 8
       ,cfg_addr_width: 16
       ,cfg_data_width: 32
-      ,noc_width     : 30
-      ,noc_len_width : 5
-      ,noc_reserved_width: 2
-      ,ct_remote_credits: 32
-      ,ct_max_payload_flits: 20
+
+      ,mem_noc_width         : 30
+      ,mem_noc_len_width     : 5
+      ,mem_noc_reserved_width: 2
+      ,mem_noc_cord_width    : 9
+
+      ,ct_remote_credits      : 32
+      ,ct_max_payload_flits   : 20
       ,ct_lg_credit_decimation: 3
-      ,max_credits   : 4
-      ,clint_pos : 1
-      ,noc_cord_width: 9
+      ,max_credits            : 4
+      ,clint_pos              : 1
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -185,15 +191,17 @@ package bp_common_aviary_pkg;
       ,cfg_core_width: 8
       ,cfg_addr_width: 16
       ,cfg_data_width: 32
-      ,noc_width     : 30
-      ,noc_len_width : 5
-      ,noc_reserved_width: 2
-      ,ct_remote_credits: 32
-      ,ct_max_payload_flits: 20
+
+      ,mem_noc_width         : 30
+      ,mem_noc_len_width     : 5
+      ,mem_noc_reserved_width: 2
+      ,mem_noc_cord_width    : 9
+
+      ,ct_remote_credits      : 32
+      ,ct_max_payload_flits   : 20
       ,ct_lg_credit_decimation: 3
-      ,max_credits   : 4
-      ,clint_pos : 2
-      ,noc_cord_width: 9
+      ,max_credits            : 4
+      ,clint_pos              : 2
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -233,15 +241,17 @@ package bp_common_aviary_pkg;
       ,cfg_core_width: 8
       ,cfg_addr_width: 16
       ,cfg_data_width: 32
-      ,noc_width     : 30
-      ,noc_len_width : 5
-      ,noc_reserved_width: 2
-      ,ct_remote_credits: 32
-      ,ct_max_payload_flits: 20
+
+      ,mem_noc_width         : 30
+      ,mem_noc_len_width     : 5
+      ,mem_noc_reserved_width: 2
+      ,mem_noc_cord_width    : 9
+
+      ,ct_remote_credits      : 32
+      ,ct_max_payload_flits   : 20
       ,ct_lg_credit_decimation: 3
-      ,max_credits   : 4
-      ,clint_pos : 6
-      ,noc_cord_width: 9
+      ,max_credits            : 4
+      ,clint_pos              : 6
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -281,15 +291,17 @@ package bp_common_aviary_pkg;
       ,cfg_core_width: 8
       ,cfg_addr_width: 16
       ,cfg_data_width: 32
-      ,noc_width     : 30
-      ,noc_len_width : 5
-      ,noc_reserved_width: 2
-      ,ct_remote_credits: 64
-      ,ct_max_payload_flits: 20
+
+      ,mem_noc_width         : 30
+      ,mem_noc_len_width     : 5
+      ,mem_noc_reserved_width: 2
+      ,mem_noc_cord_width    : 9
+
+      ,ct_remote_credits      : 64
+      ,ct_max_payload_flits   : 20
       ,ct_lg_credit_decimation: 4
-      ,max_credits   : 4
-      ,clint_pos : 6
-      ,noc_cord_width: 9
+      ,max_credits            : 4
+      ,clint_pos              : 6
 
       ,dword_width      : 64
       ,instr_width      : 32

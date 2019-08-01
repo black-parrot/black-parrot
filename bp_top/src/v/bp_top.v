@@ -27,10 +27,6 @@ module bp_top
                                  ,cce_block_width_p
                                  )
 
-   // Used to enable trace replay outputs for testbench
-   , parameter calc_trace_p = 0
-   , parameter cce_trace_p  = 0
-
    , parameter x_cord_width_p = `BSG_SAFE_CLOG2(num_lce_p)
    , parameter y_cord_width_p = 1
    
@@ -43,7 +39,7 @@ module bp_top
    , localparam lce_cce_resp_network_width_lp = coh_noc_width_p
    , localparam cce_lce_cmd_network_width_lp = coh_noc_width_p
 
-   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(noc_width_p)
+   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_width_p)
 
    // Arbitrarily set, should be set based on PD constraints
    , localparam reset_pipe_depth_lp = 10
@@ -55,29 +51,29 @@ module bp_top
                                                 ,2, 0, 0, 0
                                                 }
    )
-  (input                                                       clk_i
-   , input                                                     reset_i
+  (input                                                    clk_i
+   , input                                                  reset_i
 
    // Config channel
-   , input [num_core_p-1:0]                                    cfg_w_v_i
-   , input [num_core_p-1:0][cfg_addr_width_p-1:0]              cfg_addr_i
-   , input [num_core_p-1:0][cfg_data_width_p-1:0]              cfg_data_i
+   , input [num_core_p-1:0]                                 cfg_w_v_i
+   , input [num_core_p-1:0][cfg_addr_width_p-1:0]           cfg_addr_i
+   , input [num_core_p-1:0][cfg_data_width_p-1:0]           cfg_data_i
 
    // Interrupts
-   , input [num_core_p-1:0]                                    timer_irq_i
-   , input [num_core_p-1:0]                                    soft_irq_i
-   , input [num_core_p-1:0]                                    external_irq_i
+   , input [num_core_p-1:0]                                 timer_irq_i
+   , input [num_core_p-1:0]                                 soft_irq_i
+   , input [num_core_p-1:0]                                 external_irq_i
 
    // Memory side connection
-   , input [num_core_p-1:0][noc_cord_width_p-1:0]                 tile_cord_i
-   , input [noc_cord_width_p-1:0]                                 dram_cord_i
-   , input [noc_cord_width_p-1:0]                                 clint_cord_i
+   , input [num_core_p-1:0][mem_noc_cord_width_p-1:0]       tile_cord_i
+   , input [mem_noc_cord_width_p-1:0]                       dram_cord_i
+   , input [mem_noc_cord_width_p-1:0]                       clint_cord_i
 
-   , input [num_core_p-1:0][bsg_ready_and_link_sif_width_lp-1:0]  cmd_link_i
-   , output [num_core_p-1:0][bsg_ready_and_link_sif_width_lp-1:0] cmd_link_o
+   , input [num_core_p-1:0][mem_noc_ral_link_width_lp-1:0]  cmd_link_i
+   , output [num_core_p-1:0][mem_noc_ral_link_width_lp-1:0] cmd_link_o
 
-   , input [num_core_p-1:0][bsg_ready_and_link_sif_width_lp-1:0]  resp_link_i
-   , output [num_core_p-1:0][bsg_ready_and_link_sif_width_lp-1:0] resp_link_o
+   , input [num_core_p-1:0][mem_noc_ral_link_width_lp-1:0]  resp_link_i
+   , output [num_core_p-1:0][mem_noc_ral_link_width_lp-1:0] resp_link_o
 
   );
 
@@ -159,18 +155,12 @@ for(genvar i = 0; i < num_core_p; i++)
        );
 
     bp_tile
-     #(.cfg_p(cfg_p)
-       ,.calc_trace_p(calc_trace_p)
-       ,.cce_trace_p(cce_trace_p)
-       )
+     #(.cfg_p(cfg_p))
      tile
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
        ,.proc_cfg_i(proc_cfg)
-
-       ,.my_x_i(x_cord_width_p'(i))
-       ,.my_y_i(y_cord_width_p'(0))
 
        ,.cfg_w_v_i(cfg_w_v_i[i])
        ,.cfg_addr_i(cfg_addr_i[i])
