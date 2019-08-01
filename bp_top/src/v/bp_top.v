@@ -41,7 +41,7 @@ module bp_top
    // Other parameters
    , localparam lce_cce_req_network_width_lp = coh_noc_width_p
    , localparam lce_cce_resp_network_width_lp = coh_noc_width_p
-   , localparam cce_lce_cmd_network_width_lp = lce_cmd_width_lp+x_cord_width_p+1
+   , localparam cce_lce_cmd_network_width_lp = coh_noc_width_p
 
    , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(noc_width_p)
 
