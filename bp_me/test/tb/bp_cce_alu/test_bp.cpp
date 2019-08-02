@@ -26,17 +26,19 @@ int sc_main(int argc, char **argv)
     sc_signal <uint32_t> opd_a_i("opd_a");
     sc_signal <uint32_t> opd_b_i("opd_b");
     sc_signal <bool>     v_i("valid_in");
+    sc_signal <bool>     br_v_i("branch_valid_in");
     sc_signal <uint32_t> alu_op_i("alu_op");
+    sc_signal <uint32_t> br_op_i("br_op");
     sc_signal <uint32_t> res_o("result");
-    sc_signal <bool>     v_o("valid_out");
     sc_signal <bool>     branch_res_o("branch_res_out");
 
     Vbp_cce_alu DUT("DUT");
     DUT.opd_a_i(opd_a_i);
     DUT.opd_b_i(opd_b_i);
     DUT.v_i(v_i);
+    DUT.br_v_i(br_v_i);
     DUT.alu_op_i(alu_op_i);
-    DUT.v_o(v_o);
+    DUT.br_op_i(br_op_i);
     DUT.res_o(res_o);
     DUT.branch_res_o(branch_res_o);
 
@@ -47,6 +49,8 @@ int sc_main(int argc, char **argv)
     #endif
 
     sc_start(0, SC_NS);
+    br_v_i = false;
+    br_op_i = 0;
 
     cout << "@" << sc_time_stamp() << " UINT16_MAX: " << UINT16_MAX << endl;
     // Iterate ALU ops
@@ -113,12 +117,14 @@ int sc_main(int argc, char **argv)
 
     // Iterate Branch ops
     // BEQ
+    v_i = false;
+    alu_op_i = 0;
     for(int i = 0; i < TRACE_ITERS; i++)
     {
         opd_a_i = rand() % UINT16_MAX;
         opd_b_i = rand() % UINT16_MAX;
-        alu_op_i = e_beq;
-        v_i = true;
+        br_op_i = e_beq;
+        br_v_i = true;
 
         sc_start(10, SC_NS);
 
@@ -141,8 +147,8 @@ int sc_main(int argc, char **argv)
     {
         opd_a_i = rand() % UINT16_MAX;
         opd_b_i = rand() % UINT16_MAX;
-        alu_op_i = e_bne;
-        v_i = true;
+        br_op_i = e_bne;
+        br_v_i = true;
 
         sc_start(10, SC_NS);
 
@@ -165,8 +171,8 @@ int sc_main(int argc, char **argv)
     {
         opd_a_i = rand() % UINT16_MAX;
         opd_b_i = rand() % UINT16_MAX;
-        alu_op_i = e_blt;
-        v_i = true;
+        br_op_i = e_blt;
+        br_v_i = true;
 
         sc_start(10, SC_NS);
 
@@ -189,8 +195,8 @@ int sc_main(int argc, char **argv)
     {
         opd_a_i = rand() % UINT16_MAX;
         opd_b_i = rand() % UINT16_MAX;
-        alu_op_i = e_ble;
-        v_i = true;
+        br_op_i = e_ble;
+        br_v_i = true;
 
         sc_start(10, SC_NS);
 
@@ -213,8 +219,8 @@ int sc_main(int argc, char **argv)
     {
         opd_a_i = rand() % UINT16_MAX;
         opd_b_i = rand() % UINT16_MAX;
-        alu_op_i = e_bi;
-        v_i = true;
+        br_op_i = e_bi;
+        br_v_i = true;
 
         sc_start(10, SC_NS);
 

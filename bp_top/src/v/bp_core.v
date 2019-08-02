@@ -25,7 +25,6 @@ module bp_core
                                   ,dword_width_p
                                   ,cce_block_width_p
                                   )
-    , parameter calc_trace_p = 0
 
     // Should go away with manycore bridge 
     , localparam proc_cfg_width_lp = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
@@ -51,22 +50,14 @@ module bp_core
     , output [1:0]                                 lce_resp_v_o
     , input [1:0]                                  lce_resp_ready_i
 
-    , output [1:0][lce_cce_data_resp_width_lp-1:0] lce_data_resp_o
-    , output [1:0]                                 lce_data_resp_v_o
-    , input [1:0]                                  lce_data_resp_ready_i
-
     // CCE-LCE interface
-    , input [1:0][cce_lce_cmd_width_lp-1:0]        lce_cmd_i
+    , input [1:0][lce_cmd_width_lp-1:0]            lce_cmd_i
     , input [1:0]                                  lce_cmd_v_i
     , output [1:0]                                 lce_cmd_ready_o
 
-    , input [1:0][lce_data_cmd_width_lp-1:0]       lce_data_cmd_i
-    , input [1:0]                                  lce_data_cmd_v_i
-    , output [1:0]                                 lce_data_cmd_ready_o
-
-    , output [1:0][lce_data_cmd_width_lp-1:0]      lce_data_cmd_o
-    , output [1:0]                                 lce_data_cmd_v_o
-    , input [1:0]                                  lce_data_cmd_ready_i
+    , output [1:0][lce_cmd_width_lp-1:0]           lce_cmd_o
+    , output [1:0]                                 lce_cmd_v_o
+    , input [1:0]                                  lce_cmd_ready_i
 
     , input                                        timer_int_i
     , input                                        software_int_i
@@ -117,21 +108,13 @@ module bp_core
      ,.lce_resp_v_o(lce_resp_v_o[0])
      ,.lce_resp_ready_i(lce_resp_ready_i[0])
 
-     ,.lce_data_resp_o(lce_data_resp_o[0])
-     ,.lce_data_resp_v_o(lce_data_resp_v_o[0])
-     ,.lce_data_resp_ready_i(lce_data_resp_ready_i[0])
-
      ,.lce_cmd_i(lce_cmd_i[0])
      ,.lce_cmd_v_i(lce_cmd_v_i[0])
      ,.lce_cmd_ready_o(lce_cmd_ready_o[0])
 
-     ,.lce_data_cmd_i(lce_data_cmd_i[0])
-     ,.lce_data_cmd_v_i(lce_data_cmd_v_i[0])
-     ,.lce_data_cmd_ready_o(lce_data_cmd_ready_o[0])
-
-     ,.lce_data_cmd_o(lce_data_cmd_o[0])
-     ,.lce_data_cmd_v_o(lce_data_cmd_v_o[0])
-     ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i[0])
+     ,.lce_cmd_o(lce_cmd_o[0])
+     ,.lce_cmd_v_o(lce_cmd_v_o[0])
+     ,.lce_cmd_ready_i(lce_cmd_ready_i[0])
      );
 
   bsg_fifo_1r1w_rolly 
@@ -180,9 +163,7 @@ module bp_core
      );
 
   bp_be_top 
-   #(.cfg_p(cfg_p)
-     ,.calc_trace_p(calc_trace_p)
-     )
+   #(.cfg_p(cfg_p))
    be
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -214,21 +195,13 @@ module bp_core
      ,.lce_resp_v_o(lce_resp_v_o[1])
      ,.lce_resp_ready_i(lce_resp_ready_i[1])
 
-     ,.lce_data_resp_o(lce_data_resp_o[1])
-     ,.lce_data_resp_v_o(lce_data_resp_v_o[1])
-     ,.lce_data_resp_ready_i(lce_data_resp_ready_i[1])
-
      ,.lce_cmd_i(lce_cmd_i[1])
      ,.lce_cmd_v_i(lce_cmd_v_i[1])
      ,.lce_cmd_ready_o(lce_cmd_ready_o[1])
 
-     ,.lce_data_cmd_i(lce_data_cmd_i[1])
-     ,.lce_data_cmd_v_i(lce_data_cmd_v_i[1])
-     ,.lce_data_cmd_ready_o(lce_data_cmd_ready_o[1])
-
-     ,.lce_data_cmd_o(lce_data_cmd_o[1])
-     ,.lce_data_cmd_v_o(lce_data_cmd_v_o[1])
-     ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i[1])
+     ,.lce_cmd_o(lce_cmd_o[1])
+     ,.lce_cmd_v_o(lce_cmd_v_o[1])
+     ,.lce_cmd_ready_i(lce_cmd_ready_i[1])
 
      ,.timer_int_i(timer_int_i)
      ,.software_int_i(software_int_i)

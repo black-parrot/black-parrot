@@ -87,9 +87,8 @@ stall
 # Queue
 wfq   <src_q> [<srcq> ...]
 pushq lceCmd <cmd> <lce> <addr> <way>
-pushq lceDataCmd
-pushq memCmd
-pushq memDataCmd <mem_addr>
+pushq memCmd <cmd> <mem_addr>
+popq lceResp <gpr>
 popq  <src_q>
 
 <src_q> = lceReq, lceResp, lceDataResp, memResp, memDataResp, pending

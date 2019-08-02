@@ -50,8 +50,8 @@
 #define TAG_MASK ~((uint64_t)(~0) << TAG_WIDTH)
 #define N_WG (LCE_SETS/N_CCE)
 
-#define COH_ST 4
-#define LG_COH_ST 2
+#define COH_ST 8
+#define LG_COH_ST 3
 #define COH_ST_MASK ~((uint64_t)(~0) << LG_COH_ST)
 
 #define WG_WIDTH N_LCE*LCE_ASSOC*(TAG_WIDTH+LG_COH_ST)

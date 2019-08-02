@@ -6,14 +6,14 @@ module bp_addr_map
    `declare_bp_proc_params(cfg_p)
    )
   (// Destination nodes address
-   input [noc_cord_width_p-1:0]    clint_cord_i
-   , input [noc_cord_width_p-1:0]  dram_cord_i
+   input [mem_noc_cord_width_p-1:0]    clint_cord_i
+   , input [mem_noc_cord_width_p-1:0]  dram_cord_i
 
    // Command physical address
-   , input [paddr_width_p-1:0]     paddr_i
+   , input [paddr_width_p-1:0]         paddr_i
 
    // Destination router coordinates
-   , output [noc_cord_width_p-1:0] dest_cord_o
+   , output [mem_noc_cord_width_p-1:0] dest_cord_o
    );
 
 logic clint_not_dram;

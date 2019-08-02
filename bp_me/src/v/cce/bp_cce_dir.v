@@ -40,7 +40,7 @@ module bp_cce_dir
     , localparam lg_lce_assoc_lp          = `BSG_SAFE_CLOG2(lce_assoc_p)
 
     // Directory information widths
-    , localparam entry_width_lp           = (tag_width_p+`bp_cce_coh_bits)
+    , localparam entry_width_lp           = (tag_width_p+`bp_coh_bits)
     , localparam tag_set_width_lp         = (entry_width_lp*lce_assoc_p)
 
     , localparam lg_dir_tag_sets_per_row_lp = `BSG_SAFE_CLOG2(dir_tag_sets_per_row_lp)
@@ -74,7 +74,7 @@ module bp_cce_dir
    , input                                                        r_v_i
 
    , input [tag_width_p-1:0]                                      tag_i
-   , input [`bp_cce_coh_bits-1:0]                                 coh_state_i
+   , input [`bp_coh_bits-1:0]                                     coh_state_i
    , input [`bp_cce_inst_minor_op_width-1:0]                      w_cmd_i
    , input                                                        w_v_i
 
@@ -83,7 +83,7 @@ module bp_cce_dir
    , output logic                                                 sharers_v_o
    , output logic [num_lce_p-1:0]                                 sharers_hits_o
    , output logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0]            sharers_ways_o
-   , output logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0]           sharers_coh_states_o
+   , output logic [num_lce_p-1:0][`bp_coh_bits-1:0]               sharers_coh_states_o
 
    , output logic                                                 lru_v_o
    , output logic                                                 lru_cached_excl_o
@@ -93,7 +93,7 @@ module bp_cce_dir
 
   typedef struct packed {
     logic [tag_width_p-1:0]      tag;
-    logic [`bp_cce_coh_bits-1:0] state;
+    logic [`bp_coh_bits-1:0]     state;
   } dir_entry_s;
 
   // Directory
@@ -138,7 +138,7 @@ module bp_cce_dir
   logic                                                 sharers_v_r, sharers_v_n;
   logic [num_lce_p-1:0]                                 sharers_hits_r, sharers_hits_n;
   logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0]            sharers_ways_r, sharers_ways_n;
-  logic [num_lce_p-1:0][`bp_cce_coh_bits-1:0]           sharers_coh_states_r, sharers_coh_states_n;
+  logic [num_lce_p-1:0][`bp_coh_bits-1:0]               sharers_coh_states_r, sharers_coh_states_n;
 
   assign sharers_v_o = sharers_v_r;
   assign sharers_hits_o = sharers_hits_r;
@@ -147,7 +147,7 @@ module bp_cce_dir
 
   logic [dir_tag_sets_per_row_lp-1:0]                                 sharers_hits;
   logic [dir_tag_sets_per_row_lp-1:0][lg_lce_assoc_lp-1:0]            sharers_ways;
-  logic [dir_tag_sets_per_row_lp-1:0][`bp_cce_coh_bits-1:0]           sharers_coh_states;
+  logic [dir_tag_sets_per_row_lp-1:0][`bp_coh_bits-1:0]               sharers_coh_states;
 
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
@@ -291,7 +291,7 @@ module bp_cce_dir
               dir_ram_w_mask = {{(dir_row_width_lp-entry_width_lp){1'b0}},{entry_width_lp{1'b1}}}
                               << (wr_tag_set_select*tag_set_width_lp + way_i*entry_width_lp);
             end else if (w_cmd_i == e_wds_op) begin
-              dir_ram_w_mask = {{(dir_row_width_lp-`bp_cce_coh_bits){1'b0}},{`bp_cce_coh_bits{1'b1}}}
+              dir_ram_w_mask = {{(dir_row_width_lp-`bp_coh_bits){1'b0}},{`bp_coh_bits{1'b1}}}
                               << (wr_tag_set_select*tag_set_width_lp + way_i*entry_width_lp);
             end else begin
               dir_ram_w_mask = '0;

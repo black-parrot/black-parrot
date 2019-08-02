@@ -41,7 +41,7 @@ uint32_t genShared(uint32_t reqLce, uint32_t &reqWay, uint32_t &ways, uint32_t &
       hits = hits | (1 << shLce);
       uint32_t shWay = rand() % LG_LCE_ASSOC;
       ways = ways | (shWay << (shLce*LG_LCE_ASSOC));
-      states = states | (1 << (shLce*LG_COH_ST));
+      states = states | (e_COH_S << (shLce*LG_COH_ST));
       i++;
     }
   }
@@ -61,7 +61,7 @@ uint32_t genExclusive(uint32_t reqLce, uint32_t &reqWay, uint32_t &ways, uint32_
       hits = hits | (1 << shLce);
       uint32_t shWay = rand() % LG_LCE_ASSOC;
       ways = ways | (shWay << (shLce*LG_LCE_ASSOC));
-      states = states | (2 << (shLce*LG_COH_ST));
+      states = states | (e_COH_E << (shLce*LG_COH_ST));
       i++;
     }
   }
@@ -81,7 +81,7 @@ uint32_t genModified(uint32_t reqLce, uint32_t &reqWay, uint32_t &ways, uint32_t
       hits = hits | (1 << shLce);
       uint32_t shWay = rand() % LG_LCE_ASSOC;
       ways = ways | (shWay << (shLce*LG_LCE_ASSOC));
-      states = states | (3 << (shLce*LG_COH_ST));
+      states = states | (e_COH_M << (shLce*LG_COH_ST));
       i++;
     }
   }
@@ -97,7 +97,6 @@ int sc_main(int argc, char **argv)
   sc_clock clock("clk", sc_time(CLK_TIME, SC_NS));
   sc_signal <bool>     reset_i("reset_i");
   sc_signal <bool>     gad_v_i("gad_v_i");
-  sc_signal <bool>     error_o("error_o");
 
   sc_signal <bool>     sh_v_i("sh_v_i");
   sc_signal <uint32_t> sh_hits_i("sh_hits_i");
@@ -117,8 +116,10 @@ int sc_main(int argc, char **argv)
   sc_signal <bool>     rf_o("rf_o");
   sc_signal <bool>     uf_o("uf_o");
   sc_signal <bool>     if_o("if_o");
-  sc_signal <bool>     ef_o("ef_o");
   sc_signal <bool>     cf_o("cf_o");
+  sc_signal <bool>     cef_o("cef_o");
+  sc_signal <bool>     cof_o("cof_o");
+  sc_signal <bool>     cdf_o("cdf_o");
 
 
   Vbp_cce_gad DUT("DUT");
@@ -126,7 +127,6 @@ int sc_main(int argc, char **argv)
   DUT.clk_i(clock);
   DUT.reset_i(reset_i);
   DUT.gad_v_i(gad_v_i);
-  DUT.error_o(error_o);
 
   DUT.sharers_v_i(sh_v_i);
   DUT.sharers_hits_i(sh_hits_i);
@@ -146,8 +146,10 @@ int sc_main(int argc, char **argv)
   DUT.replacement_flag_o(rf_o);
   DUT.upgrade_flag_o(uf_o);
   DUT.invalidate_flag_o(if_o);
-  DUT.exclusive_flag_o(ef_o);
   DUT.cached_flag_o(cf_o);
+  DUT.cached_exclusive_flag_o(cef_o);
+  DUT.cached_owned_flag_o(cof_o);
+  DUT.cached_dirty_flag_o(cdf_o);
 
 
   #if (VM_TRACE == 1)
@@ -186,7 +188,7 @@ int sc_main(int argc, char **argv)
     sc_start(CLK_TIME, SC_NS);
     cout << "@" << sc_time_stamp() << " reqLce: " << reqLce << " reqWay: " << reqWay
          << " shWays: " << toString<uint32_t>(ways, N_LCE*LG_LCE_ASSOC) << endl;
-    if (tf_o || uf_o || if_o || rf_o || ef_o || (req_addr_way_o != 0)) {
+    if (tf_o || uf_o || if_o || rf_o || cef_o || (req_addr_way_o != 0)) {
       cout << "@" << sc_time_stamp() << " TEST FAILED" << endl;
       #if (VM_TRACE == 1)
       wf->close();
@@ -210,7 +212,7 @@ int sc_main(int argc, char **argv)
     sc_start(CLK_TIME, SC_NS);
     cout << "@" << sc_time_stamp() << " reqLce: " << reqLce << " reqWay: " << reqWay
          << " shWays: " << toString<uint32_t>(ways, N_LCE*LG_LCE_ASSOC) << endl;
-    if (tf_o || uf_o || if_o || rf_o || ef_o || (req_addr_way_o != 0)) {
+    if (tf_o || uf_o || if_o || rf_o || cef_o || (req_addr_way_o != 0)) {
       cout << "@" << sc_time_stamp() << " TEST FAILED" << endl;
       #if (VM_TRACE == 1)
       wf->close();
@@ -236,7 +238,7 @@ int sc_main(int argc, char **argv)
     sc_start(CLK_TIME, SC_NS);
     cout << "@" << sc_time_stamp() << " reqLce: " << reqLce << " reqWay: " << reqWay
          << " shWays: " << toString<uint32_t>(ways, N_LCE*LG_LCE_ASSOC) << endl;
-    if (tf_o || uf_o || !if_o || rf_o || ef_o || (req_addr_way_o != 0)) {
+    if (tf_o || uf_o || !if_o || rf_o || cef_o || (req_addr_way_o != 0)) {
       cout << "@" << sc_time_stamp() << " TEST FAILED" << endl;
       #if (VM_TRACE == 1)
       wf->close();
@@ -264,7 +266,7 @@ int sc_main(int argc, char **argv)
          << " shWays: " << toString<uint32_t>(ways, N_LCE*LG_LCE_ASSOC) << endl;
     //cout << "trLce= " << tr_lce_o << " lce= " << lce << endl;
     //cout << "trWay= " << tr_way_o << " way= " << way << endl;
-    if (!tf_o || uf_o || !if_o || rf_o || !ef_o || (req_addr_way_o != 0)) {
+    if (!tf_o || uf_o || !if_o || rf_o || !cef_o || (req_addr_way_o != 0)) {
       cout << "@" << sc_time_stamp() << " TEST FAILED" << endl;
       #if (VM_TRACE == 1)
       wf->close();
@@ -292,7 +294,7 @@ int sc_main(int argc, char **argv)
          << " shWays: " << toString<uint32_t>(ways, N_LCE*LG_LCE_ASSOC) << endl;
     //cout << "trLce= " << tr_lce_o << " lce= " << lce << endl;
     //cout << "trWay= " << tr_way_o << " way= " << way << endl;
-    if (!tf_o || uf_o || !if_o || rf_o || !ef_o || (req_addr_way_o != 0)) {
+    if (!tf_o || uf_o || !if_o || rf_o || !cef_o || (req_addr_way_o != 0)) {
       cout << "@" << sc_time_stamp() << " TEST FAILED" << endl;
       #if (VM_TRACE == 1)
       wf->close();
