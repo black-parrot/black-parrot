@@ -14,7 +14,7 @@ int sc_main(int argc, char **argv)
   Verilated::traceEverOn(VM_TRACE);
   Verilated::assertOn(false);
 
-  Vtestbench *tb = new Vtestbench("testbench");
+  Vtestbench *tb = new Vtestbench("test_bp");
 
   // Use me to find the correct scope of your DPI functions
   //Verilated::scopesDump();
@@ -28,7 +28,7 @@ int sc_main(int argc, char **argv)
 #if VM_TRACE
   VerilatedVcdSc* wf = new VerilatedVcdSc;
   tb->trace(wf, 10);
-  wf->open("vcdplus.vpd");
+  wf->open("dump.vcd");
 #endif
 
   reset = 1;

@@ -102,14 +102,13 @@ sim.sc: dirs.sc
 	$(eval include $(TB_PATH)/$(TB)/Makefile.frag)
 	-@ln -sf $(BUILD_DIR)/obj_dir/V$(TOP_MODULE) $(SIM_DIR)/simsc
 	-@cp $(MEM_PATH)/$(PROG).mem $(SIM_DIR)/prog.mem
+	-@cp $(MEM_PATH)/$(PROG).mem $(SIM_DIR)/prog.elf
 	-@cp $(MEM_PATH)/$(PROG).dump $(SIM_DIR)/prog.dump
 	-@cp $(MEM_PATH)/$(PROG).spike $(SIM_DIR)/prog.spike
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(SIM_DIR)/dram_ch.ini
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(SIM_DIR)/dram_sys.ini
 	-@cp $(CCE_MEM_PATH)/$(CCE_MEM) $(SIM_DIR)/cce_ucode.mem
 	-cd $(SIM_DIR); ./simsc | tee $(SIM_LOG)
-	-cd $(SIM_DIR); $(PYTHON) $(TRACEDIFF) prog.spike prog.trace $(START_PC) --tolerance=$(TOLERANCE) \
-	 	| tee -a $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "PASS" -A 8 $(SIM_LOG) > $(SIM_REPORT)
 
@@ -141,7 +140,12 @@ cov.sc: dirs.sc
 	-@cp $(COV_LOG) $(COV_REPORT)
 
 dve.sc: dirs.sc
-	cd $(SIM_DIR); dve -full64 -vpd vcdplus.vpd &
+	cd $(SIM_DIR); dve -full64 dump.vcd &
+
+debug.sc: dirs.sc
+	@echo "BlackParrot hardware model does not currently support Verilator VCD dumps"
+	exit 1
+	$(MAKE) -C $(UNHARDWARE_DIR) MODEL=$(UNHARDWARE_MODEL) DATA=$(SIM_DIR)/dump.vcd BINARY=$(SIM_DIR)/prog.elf
 
 clean.sc:
 	@rm -rf results/verilator

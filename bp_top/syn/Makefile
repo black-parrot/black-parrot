@@ -16,8 +16,6 @@ CFG         ?= e_bp_single_core_cfg
 START_PC 		?= 0x80000000
 TOLERANCE   ?= 2
 
-UNHARDWARE_MODEL ?= blackparrot
-
 # Select CCE ROM based on CFG and Coherence Protocol
 # TODO: is there a more scalable way to do this?
 ifeq ($(CFG), e_bp_half_core_cfg)
