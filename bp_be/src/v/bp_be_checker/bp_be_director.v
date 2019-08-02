@@ -96,8 +96,8 @@ module bp_be_director
    , input                            trap_v_i
    , input                            ret_v_i
    , output [vaddr_width_p-1:0]       pc_o 
-   , input [mepc_width_lp-1:0]        mtvec_i
-   , input [mtvec_width_lp-1:0]       mepc_i
+   , input [mepc_width_lp-1:0]        tvec_i
+   , input [mtvec_width_lp-1:0]       epc_i
    , input                            tlb_fence_i
    
    //iTLB fill interface
@@ -124,14 +124,14 @@ bp_fe_cmd_s                      fe_cmd;
 logic                            fe_cmd_v;
 bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
 bp_fe_cmd_attaboy_s              fe_cmd_attaboy;
-bp_mtvec_s                       mtvec;
-bp_mepc_s                        mepc;
+bp_mtvec_s                       tvec;
+bp_mepc_s                        epc;
 
 assign calc_status = calc_status_i;
 assign fe_cmd_o    = fe_cmd;
 assign fe_cmd_v_o  = fe_cmd_v;
-assign mtvec       = mtvec_i;
-assign mepc        = mepc_i;
+assign tvec        = tvec_i;
+assign epc         = epc_i;
 
 // Declare intermediate signals
 logic [vaddr_width_p-1:0]               npc_plus4;
@@ -234,7 +234,7 @@ bsg_mux
    ,.els_p(2)
    )
  ret_mux
-  (.data_i({mepc_i[0+:vaddr_width_p], {mtvec.base[0+:vaddr_width_p-2], 2'b00}})
+  (.data_i({epc_i[0+:vaddr_width_p], {tvec.base[0+:vaddr_width_p-2], 2'b00}})
    ,.sel_i(ret_v_i)
    ,.data_o(ret_mux_o)
    );

@@ -121,8 +121,8 @@ module bp_be_mem_top
    , output [rv64_priv_width_gp-1:0]         priv_mode_o
    , output                                  trap_v_o
    , output                                  ret_v_o
-   , output [mepc_width_lp-1:0]              mepc_o
-   , output [mtvec_width_lp-1:0]             mtvec_o
+   , output [mepc_width_lp-1:0]              epc_o
+   , output [mtvec_width_lp-1:0]             tvec_o
    , output                                  tlb_fence_o
    );
 
@@ -244,9 +244,9 @@ assign exception_ecode_dec_li =
     ,load_fault      : load_access_fault_v
     ,store_misaligned: 1'b0
     ,store_fault     : store_access_fault_v
-    ,ecall_u_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `RV64_PRIV_MODE_U)
-    ,ecall_s_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `RV64_PRIV_MODE_S)
-    ,ecall_m_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `RV64_PRIV_MODE_M)
+    ,ecall_u_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_U)
+    ,ecall_s_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_S)
+    ,ecall_m_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_M)
     ,instr_page_fault: ptw_instr_page_fault_v
     ,load_page_fault : ptw_load_page_fault_v
     ,store_page_fault: ptw_store_page_fault_v
@@ -286,8 +286,8 @@ bp_be_csr
    ,.priv_mode_o(priv_mode_o)
    ,.trap_v_o(trap_v_o)
    ,.ret_v_o(ret_v_o)
-   ,.mepc_o(mepc_o)
-   ,.mtvec_o(mtvec_o)
+   ,.epc_o(epc_o)
+   ,.tvec_o(tvec_o)
    ,.satp_o(satp_lo)
    ,.translation_en_o(translation_en_lo)
    ,.tlb_fence_o(tlb_fence_o)
