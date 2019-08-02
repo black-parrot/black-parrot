@@ -42,13 +42,9 @@ module bp_me_nonsynth_lce_tracer
     ,input                                                  lce_req_v_i
     ,input                                                  lce_req_ready_i
 
-    ,input [cce_lce_cmd_width_lp-1:0]                       lce_cmd_i
+    ,input [lce_cmd_width_lp-1:0]                           lce_cmd_i
     ,input                                                  lce_cmd_v_i
     ,input                                                  lce_cmd_ready_i
-
-    ,input [lce_data_cmd_width_lp-1:0]                      lce_data_cmd_i
-    ,input                                                  lce_data_cmd_v_i
-    ,input                                                  lce_data_cmd_ready_i
   );
 
   // LCE-CCE interface structs
@@ -56,12 +52,10 @@ module bp_me_nonsynth_lce_tracer
 
   // Structs for messages
   bp_lce_cce_req_s lce_req;
-  bp_cce_lce_cmd_s lce_cmd;
-  bp_lce_data_cmd_s lce_data_cmd;
+  bp_lce_cmd_s     lce_cmd;
 
   assign lce_req = lce_req_i;
   assign lce_cmd = lce_cmd_i;
-  assign lce_data_cmd = lce_data_cmd_i;
 
   typedef struct packed {
     logic [dcache_opcode_width_lp-1:0] cmd;
@@ -126,7 +120,7 @@ module bp_me_nonsynth_lce_tracer
         end
       end
 
-      if (lce_data_cmd_v_i & lce_data_cmd_ready_i) begin
+      if (lce_cmd_v_i & lce_cmd_ready_i & (lce_cmd.msg_type == e_lce_cmd_data)) begin
         data_received <= 1'b1;
         if (tag_received) begin
           $display("#LCEPERF %0d %0T %0T addr[%H] LCE wakeup", lce_id_i, $time, $time-start_t, paddr);

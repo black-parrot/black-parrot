@@ -38,7 +38,7 @@ func-regress-verilator-job:
     - echo "Fetching riscv-tests"
     - git submodule update --init --recursive -- bp_common/test/src/riscv-tests
     - echo "Building test programs"
-    - make -C bp_common/test perch riscv_mem 
+    - make -C bp_common/test perch riscv_mem riscv_dump riscv_spike
     - make ucode
 
   script:
@@ -46,7 +46,7 @@ func-regress-verilator-job:
     - cd bp_top/syn
     - make build.sc 
     - make regress.sc -j 
-    - grep -cr "FAIL" reports/ && exit 1
+    - grep -cr "FAILED" reports/ && exit 1
     - exit 0
 
   artifacts:

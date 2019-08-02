@@ -93,13 +93,13 @@ typedef enum logic [1:0] {
   typedef struct packed {                                                       \
     logic [`BSG_SAFE_CLOG2(sets_p)-1:0]        index;                           \
     logic [`BSG_SAFE_CLOG2(ways_p)-1:0]        way_id;                          \
-    logic [`bp_cce_coh_bits-1:0]               state;                           \
+    logic [`bp_coh_bits-1:0]                   state;                           \
     logic [tag_width_p-1:0]                    tag;                             \
     bp_fe_icache_tag_mem_opcode_e              opcode;                          \
   }  bp_fe_icache_lce_tag_mem_pkt_s;
 
 `define bp_fe_icache_lce_tag_mem_pkt_width(sets_p, ways_p, tag_width_p) \
-  (`BSG_SAFE_CLOG2(sets_p)+`BSG_SAFE_CLOG2(ways_p)+`bp_cce_coh_bits+tag_width_p+$bits(bp_fe_icache_tag_mem_opcode_e))
+  (`BSG_SAFE_CLOG2(sets_p)+`BSG_SAFE_CLOG2(ways_p)+`bp_coh_bits+tag_width_p+$bits(bp_fe_icache_tag_mem_opcode_e))
 
 /* 
  * stat_mem_pkt_s specifies a meta data memory packet transferred from LCE to the i-cache

@@ -27,9 +27,6 @@ module bp_be_top
                                  ,cce_block_width_p
                                  )
 
-   , parameter calc_trace_p = 0
- 
-
    // Default parameters 
    , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
    , localparam ecode_dec_width_lp         = `bp_be_ecode_dec_width
@@ -75,21 +72,13 @@ module bp_be_top
    , output                                  lce_resp_v_o
    , input                                   lce_resp_ready_i                                 
 
-   , output [lce_cce_data_resp_width_lp-1:0] lce_data_resp_o
-   , output                                  lce_data_resp_v_o
-   , input                                   lce_data_resp_ready_i
-
-   , input [cce_lce_cmd_width_lp-1:0]        lce_cmd_i
+   , input [lce_cmd_width_lp-1:0]            lce_cmd_i
    , input                                   lce_cmd_v_i
    , output                                  lce_cmd_ready_o
 
-   , input [lce_data_cmd_width_lp-1:0]       lce_data_cmd_i
-   , input                                   lce_data_cmd_v_i
-   , output                                  lce_data_cmd_ready_o
-
-   , output [lce_data_cmd_width_lp-1:0]      lce_data_cmd_o
-   , output                                  lce_data_cmd_v_o
-   , input                                   lce_data_cmd_ready_i
+   , output [lce_cmd_width_lp-1:0]           lce_cmd_o
+   , output                                  lce_cmd_v_o
+   , input                                   lce_cmd_ready_i
 
    // Processor configuration
    , input [proc_cfg_width_lp-1:0]           proc_cfg_i
@@ -136,8 +125,8 @@ bp_be_calc_status_s    calc_status;
 logic chk_dispatch_v, chk_poison_iss, chk_poison_isd;
 logic chk_poison_ex1, chk_poison_ex2, chk_roll, chk_instr_dequeue_v;
 
-logic [mtvec_width_lp-1:0] chk_mtvec_li;
-logic [mepc_width_lp-1:0]  chk_mepc_li;
+logic [mtvec_width_lp-1:0] chk_tvec_li;
+logic [mepc_width_lp-1:0]  chk_epc_li;
 logic [vaddr_width_p-1:0]  chk_pc_lo;
 
 logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li, chk_ifence_li;
@@ -192,8 +181,8 @@ bp_be_checker_top
    ,.trap_v_i(chk_trap_v_li)
    ,.ret_v_i(chk_ret_v_li)
    ,.pc_o(chk_pc_lo)
-   ,.mepc_i(chk_mepc_li)
-   ,.mtvec_i(chk_mtvec_li)
+   ,.epc_i(chk_epc_li)
+   ,.tvec_i(chk_tvec_li)
    ,.tlb_fence_i(chk_tlb_fence_li)
    
    ,.itlb_fill_v_i(itlb_fill_v)
@@ -278,21 +267,13 @@ bp_be_mem_top
     ,.lce_resp_v_o(lce_resp_v_o)
     ,.lce_resp_ready_i(lce_resp_ready_i)        
 
-    ,.lce_data_resp_o(lce_data_resp_o)
-    ,.lce_data_resp_v_o(lce_data_resp_v_o)
-    ,.lce_data_resp_ready_i(lce_data_resp_ready_i)
-
     ,.lce_cmd_i(lce_cmd_i)
     ,.lce_cmd_v_i(lce_cmd_v_i)
     ,.lce_cmd_ready_o(lce_cmd_ready_o)
 
-    ,.lce_data_cmd_i(lce_data_cmd_i)
-    ,.lce_data_cmd_v_i(lce_data_cmd_v_i)
-    ,.lce_data_cmd_ready_o(lce_data_cmd_ready_o)
-
-    ,.lce_data_cmd_o(lce_data_cmd_o)
-    ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
-    ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
+    ,.lce_cmd_o(lce_cmd_o)
+    ,.lce_cmd_v_o(lce_cmd_v_o)
+    ,.lce_cmd_ready_i(lce_cmd_ready_i)
 
     ,.proc_cfg_i(proc_cfg_i)
     ,.instret_i(instret_mem3)
@@ -313,8 +294,8 @@ bp_be_mem_top
     ,.priv_mode_o()
     ,.trap_v_o(chk_trap_v_li)
     ,.ret_v_o(chk_ret_v_li)
-    ,.mepc_o(chk_mepc_li)
-    ,.mtvec_o(chk_mtvec_li)
+    ,.epc_o(chk_epc_li)
+    ,.tvec_o(chk_tvec_li)
     ,.tlb_fence_o(chk_tlb_fence_li)
     );
 

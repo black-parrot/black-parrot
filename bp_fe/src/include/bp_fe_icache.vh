@@ -63,26 +63,21 @@
 `define declare_bp_fe_icache_tag_set_s(tag_width_mp, ways_mp) \
   typedef struct packed                                     \
   {                                                         \
-    logic [`bp_cce_coh_bits-1:0]  state;                    \
+    logic [`bp_coh_bits-1:0]       state;                    \
     logic [tag_width_mp-1:0]       tag;                      \
   }  bp_fe_icache_tag_set_s [ways_mp-1:0]
 
 `define bp_fe_icache_tag_set_width(tag_width_mp, ways_mp) \
-  ((`bp_cce_coh_bits+tag_width_mp)*ways_mp)
+  ((`bp_coh_bits+tag_width_mp)*ways_mp)
 
 `define bp_fe_icache_tag_state_width(tag_width_mp) \
-  (`bp_cce_coh_bits+tag_width_mp)
+  (`bp_coh_bits+tag_width_mp)
 
 /*
  * Declare all icache widths at once as localparams
  */
 `define declare_bp_icache_widths(vaddr_width_mp, tag_width_mp, ways_mp)                                \
-    , localparam bp_fe_pc_gen_icache_width_lp=`bp_fe_pc_gen_icache_width(vaddr_width_mp)               \
-    , localparam bp_fe_itlb_icache_data_resp_width_lp=`bp_fe_itlb_icache_data_resp_width(tag_width_mp) \
     , localparam bp_fe_icache_tag_state_width_lp=`bp_fe_icache_tag_state_width(tag_width_mp)           \
-    , localparam bp_fe_icache_stat_width_lp=`bp_fe_icache_stat_width(ways_mp)                  \
-    , localparam bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(vaddr_width_mp                \
-)
-
+    , localparam bp_fe_icache_stat_width_lp=`bp_fe_icache_stat_width(ways_mp)
 
 `endif

@@ -31,7 +31,7 @@ module bp_cce_gad
    , input                                                 sharers_v_i
    , input [num_lce_p-1:0]                                 sharers_hits_i
    , input [num_lce_p-1:0][lg_lce_assoc_lp-1:0]            sharers_ways_i
-   , input [num_lce_p-1:0][`bp_cce_coh_bits-1:0]           sharers_coh_states_i
+   , input [num_lce_p-1:0][`bp_coh_bits-1:0]               sharers_coh_states_i
 
    , input [lg_num_lce_lp-1:0]                             req_lce_i
    , input                                                 req_type_flag_i
@@ -46,16 +46,12 @@ module bp_cce_gad
    , output logic                                          replacement_flag_o
    , output logic                                          upgrade_flag_o
    , output logic                                          invalidate_flag_o
-   , output logic                                          exclusive_flag_o
    , output logic                                          cached_flag_o
-
-   , output logic                                          error_o
+   , output logic                                          cached_exclusive_flag_o
+   , output logic                                          cached_owned_flag_o
+   , output logic                                          cached_dirty_flag_o
   );
 
-  wire unused0 = clk_i;
-  wire unused1 = reset_i;
-
-  assign error_o = gad_v_i & ~sharers_v_i;
   // Suppress unused signal warnings
   wire unused = &{clk_i, reset_i};
 
@@ -75,26 +71,24 @@ module bp_cce_gad
 
   // Cache hit in E or M per LCE
   logic [num_lce_p-1:0] lce_cached_excl;
+  logic [num_lce_p-1:0] lce_cached_owned;
+  logic [num_lce_p-1:0] lce_cached_dirty;
   for (genvar i = 0; i < num_lce_p; i=i+1) begin : lce_cached_excl_gen
-    assign lce_cached_excl[i] = lce_cached[i] & ((sharers_coh_states_i[i] == e_MESI_E)
-                                                 | (sharers_coh_states_i[i] == e_MESI_M));
+    assign lce_cached_excl[i] = lce_cached[i] & ~sharers_coh_states_i[i][`bp_coh_shared_bit];
+    assign lce_cached_owned[i] = lce_cached[i] & sharers_coh_states_i[i][`bp_coh_owned_bit];
+    assign lce_cached_dirty[i] = lce_cached[i] & sharers_coh_states_i[i][`bp_coh_dirty_bit];
   end
 
   // hit in requesting LCE
-  // compute hit - OR reduction of hit bits for the requesting LCE
   logic req_lce_cached;
   assign req_lce_cached = lce_cached[req_lce_i];
-  logic req_lce_cached_excl;
-  assign req_lce_cached_excl = lce_cached_excl[req_lce_i];
+  // read-only permissions in requesting LCE
+  logic req_lce_ro;
+  assign req_lce_ro = req_lce_cached & sharers_coh_states_i[req_lce_i][`bp_coh_shared_bit];
 
   assign req_addr_way_o = req_lce_cached
     ? sharers_ways_i[req_lce_i]
     : '0;
-
-  logic other_lce_cached;
-  assign other_lce_cached = |(lce_cached & ~lce_id_one_hot);
-  logic other_lce_cached_excl;
-  assign other_lce_cached_excl = |(lce_cached_excl & ~lce_id_one_hot);
 
   // request type
   logic req_wr, req_rd;
@@ -102,25 +96,23 @@ module bp_cce_gad
   assign req_rd = ~req_wr;
 
   // Flag outputs
-  /*
-   * Excusive Flag: cached in other LCE in E or M
-   * Upgrade Flag: cached in reqLce in S and write request
-   * Transfer Flag: cached in other LCE in E or M (same as transfer at the moment)
-   * Invalidate Flag: cached exclusively in other LCEs if read request else
-                      cached in any valid state in other LCEs if write request
-   * Replacement Flag: reqLce's lru way is valid and dirty, and not an upgrade
-   * Cached Flag: cached in any valid state in any LCE other than requesting LCE
-   */
+  assign cached_flag_o = |(lce_cached & ~lce_id_one_hot);
+  assign cached_exclusive_flag_o = |(lce_cached_excl & ~lce_id_one_hot);
+  assign cached_owned_flag_o = |(lce_cached_owned & ~lce_id_one_hot);
+  assign cached_dirty_flag_o = |(lce_cached_dirty & ~lce_id_one_hot);
 
-  assign cached_flag_o = other_lce_cached;
-  assign exclusive_flag_o = other_lce_cached_excl;
-  assign transfer_flag_o = exclusive_flag_o;
-  assign upgrade_flag_o = (req_wr) ? (req_lce_cached & ~req_lce_cached_excl) : 1'b0;
+  // TODO: These flags might be redundant given the above four
+  // If the block has an owner, we can do an LCE to LCE transfer
+  assign transfer_flag_o = cached_owned_flag_o;
+  // Upgrade from read-only to read-write
+  assign upgrade_flag_o = (req_wr & req_lce_cached & req_lce_ro);
+  // Replace the LRU block if not doing an upgrade and the lru block is actually dirty
   assign replacement_flag_o = (~upgrade_flag_o & lru_cached_excl_flag_i & lru_dirty_flag_i);
 
-  // TODO: future version of CCE will not necessarily invalidate the transfer LCE, but
-  // for now, if the request results in a transfer, we invalidate the other LCE
-  assign invalidate_flag_o = (req_rd) ? other_lce_cached_excl : other_lce_cached;
+  // TODO: whether or not invalidations are required should be determined by microcode
+  // for now, if the request results in a transfer, we invalidate the other LCEA
+  // this works for MESI, MSI, MI/EI, but needs adjustment if adding O or F states in MOESIF
+  assign invalidate_flag_o = (req_rd) ? cached_exclusive_flag_o : cached_flag_o;
   
   // Transfer stuff
   // transfer LCE
@@ -128,7 +120,7 @@ module bp_cce_gad
   logic [lg_num_lce_lp-1:0] transfer_lce_lo;
   logic transfer_lce_v;
 
-  assign transfer_lce_one_hot = (gad_v_i & transfer_flag_o) ? lce_cached : '0;
+  assign transfer_lce_one_hot = (gad_v_i & transfer_flag_o) ? (lce_cached & ~lce_id_one_hot) : '0;
   bsg_encode_one_hot
     #(.width_p(num_lce_p)
       )

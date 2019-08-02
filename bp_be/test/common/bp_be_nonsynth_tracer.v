@@ -7,7 +7,6 @@ module bp_be_nonsynth_tracer
    `declare_bp_proc_params(cfg_p)
 
    // Default parameters
-   , parameter calc_trace_p = 0
    , parameter calc_trace_file_p = "debug"
 
    // Calculated parameters
@@ -114,12 +113,10 @@ bsg_dff_reset_en
    );
 
 
-if (calc_trace_p) 
-  begin : fi1
-    always_ff @(negedge reset_i) begin
-        file_name = $sformatf("%s_%x.log", calc_trace_file_p, mhartid_i);
-        file = $fopen(file_name, "w");
-    end
+always_ff @(negedge reset_i) begin
+  file_name = $sformatf("%s_%x.log", calc_trace_file_p, mhartid_i);
+  file = $fopen(file_name, "w");
+end
 
 logic [4:0][2:0][7:0] stage_aliases;
 assign stage_aliases = {"FWB", "IWB", "EX2", "EX1"};
@@ -237,35 +234,7 @@ end
             end
         end
     end
-end //fi1
 
-//If you want to print without creating the log, this is the default
-else begin
-    always_ff @(posedge clk_i) begin
-
-        if(booted_r) begin
-            if(dbg_stage_r[2].decode.instr_v & ~cmt_trace_exc[2].poison_v) begin
-                if(~dbg_stage_r[2].decode.csr_instr_v & ~dbg_stage_r[2].decode.dcache_r_v) begin
-                    if(dbg_stage_r[2].decode.dcache_w_v) begin
-                        if(dbg_stage_r[2].rs1
-                                    +dbg_stage_r[2].imm==64'h8FFF_FFFF) begin
-                            $display("[CORE%0x PRT] %x\n"
-                                     ,mhartid_i
-                                     ,dbg_stage_r[2].rs2[0+:8]
-                                     );
-                        end else if(dbg_stage_r[2].rs1
-                                    +dbg_stage_r[2].imm==64'h8FFF_EFFF) begin
-                            $display("[CORE%0x PRT] %c\n"
-                                     ,mhartid_i
-                                     ,dbg_stage_r[2].rs2[0+:8]
-                                    );
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
 
 endmodule : bp_be_nonsynth_tracer
 
