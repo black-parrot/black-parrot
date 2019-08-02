@@ -18,8 +18,11 @@ update_libs:
 update_tests:
 	cd $(TOP); git submodule update --init --recursive $(BP_COMMON_DIR)/test
 
-clean_tools:
+tidy_tools:
 	cd $(TOP); git submodule deinit -f external/
+
+bleach_all:
+	cd $(TOP); git clean -fdx; git submodule deinit -f .
 
 ## This target fetches and builds all dependencies needed for running simulations
 #    to test BlackParrot. By default, all tools are built but comment any tools that 
