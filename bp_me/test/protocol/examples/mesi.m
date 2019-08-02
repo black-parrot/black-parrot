@@ -5,7 +5,7 @@
 -- Constants
 ----------------------------------------------------------------------
 const
-  ProcCount: 3;          -- number processors
+  ProcCount: 2;          -- number processors
   ValueCount: 2;         -- number of data values.
   VC0: 0;                -- low priority
   VC1: 1;
