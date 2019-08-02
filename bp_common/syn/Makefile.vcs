@@ -142,8 +142,8 @@ dve.v: dirs.v
 	cd $(SIM_DIR); dve -full64 -vpd vcdplus.vpd &
 
 debug.v: dirs.v
-	$(VPD2VCD) $(SIM_DIR)/vcdplus.vpd $(SIM_DIR)/debug.vcd
-	$(MAKE) -C $(UNHARDWARE_DIR) MODEL=$(UNHARDWARE_MODEL) DATA=$(SIM_DIR)/debug.vcd BINARY=$(SIM_DIR)/prog.elf 
+	$(VPD2VCD) +splitpacked $(SIM_DIR)/vcdplus.vpd $(SIM_DIR)/debug.vcd
+	$(MAKE) regen -C $(UNHARDWARE_DIR) MODEL=$(UNHARDWARE_MODEL) DATA=$(SIM_DIR)/debug.vcd BINARY=$(SIM_DIR)/prog.elf 
 
 clean.v:
 	@rm -rf results/vcs

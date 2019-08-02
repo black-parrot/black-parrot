@@ -145,7 +145,7 @@ dve.sc: dirs.sc
 debug.sc: dirs.sc
 	@echo "BlackParrot hardware model does not currently support Verilator VCD dumps"
 	exit 1
-	$(MAKE) -C $(UNHARDWARE_DIR) MODEL=$(UNHARDWARE_MODEL) DATA=$(SIM_DIR)/dump.vcd BINARY=$(SIM_DIR)/prog.elf
+	$(MAKE) regen -C $(UNHARDWARE_DIR) MODEL=$(UNHARDWARE_MODEL) DATA=$(SIM_DIR)/dump.vcd BINARY=$(SIM_DIR)/prog.elf
 
 clean.sc:
 	@rm -rf results/verilator
