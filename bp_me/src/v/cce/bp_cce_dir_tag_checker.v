@@ -27,12 +27,12 @@ module bp_cce_dir_tag_checker
 
    , output logic [tag_sets_per_row_p-1:0]                        sharers_hits_o
    , output logic [tag_sets_per_row_p-1:0][lg_lce_assoc_lp-1:0]   sharers_ways_o
-   , output logic [tag_sets_per_row_p-1:0][`bp_cce_coh_bits-1:0]  sharers_coh_states_o
+   , output logic [tag_sets_per_row_p-1:0][`bp_coh_bits-1:0]      sharers_coh_states_o
   );
 
   typedef struct packed {
     logic [tag_width_p-1:0]      tag;
-    logic [`bp_cce_coh_bits-1:0] state;
+    logic [`bp_coh_bits-1:0]     state;
   } dir_entry_s;
 
   // Directory RAM row cast

@@ -1,173 +1,274 @@
 `ifndef BP_BE_CSR_DEFINES_VH
 `define BP_BE_CSR_DEFINES_VH
 
-`define RV64_PRIV_MODE_M 2'b11
-`define RV64_PRIV_MODE_S 2'b01
-`define RV64_PRIV_MODE_U 2'b00
+`define PRIV_MODE_M 2'b11
+`define PRIV_MODE_S 2'b01
+`define PRIV_MODE_U 2'b00
 
-`define RV64_CSR_ADDR_USTATUS       12'h000
-`define RV64_CSR_ADDR_UIE           12'h004
-`define RV64_CSR_ADDR_UTVEC         12'h005
+`define CSR_ADDR_USTATUS       12'h000
+`define CSR_ADDR_UIE           12'h004
+`define CSR_ADDR_UTVEC         12'h005
 
-`define RV64_CSR_ADDR_USCRATCH      12'h040
-`define RV64_CSR_ADDR_UEPC          12'h041
-`define RV64_CSR_ADDR_UCAUSE        12'h042
-`define RV64_CSR_ADDR_UTVAL         12'h043
-`define RV64_CSR_ADDR_UIP           12'h044
+`define CSR_ADDR_USCRATCH      12'h040
+`define CSR_ADDR_UEPC          12'h041
+`define CSR_ADDR_UCAUSE        12'h042
+`define CSR_ADDR_UTVAL         12'h043
+`define CSR_ADDR_UIP           12'h044
 
-`define RV64_CSR_ADDR_FFLAGS        12'h001
-`define RV64_CSR_ADDR_FRM           12'h002
-`define RV64_CSR_ADDR_FCSR          12'h003
+`define CSR_ADDR_FFLAGS        12'h001
+`define CSR_ADDR_FRM           12'h002
+`define CSR_ADDR_FCSR          12'h003
 
-`define RV64_CSR_ADDR_CYCLE         12'hc00
-`define RV64_CSR_ADDR_TIME          12'hc01
-`define RV64_CSR_ADDR_INSTRET       12'hc02
-`define RV64_CSR_ADDR_HPMCOUNTER3   12'hc03
-`define RV64_CSR_ADDR_HPMCOUNTER4   12'hc04
-`define RV64_CSR_ADDR_HPMCOUNTER5   12'hc05
-`define RV64_CSR_ADDR_HPMCOUNTER6   12'hc06
-`define RV64_CSR_ADDR_HPMCOUNTER7   12'hc07
-`define RV64_CSR_ADDR_HPMCOUNTER8   12'hc08
-`define RV64_CSR_ADDR_HPMCOUNTER9   12'hc09
-`define RV64_CSR_ADDR_HPMCOUNTER10  12'hc0a
-`define RV64_CSR_ADDR_HPMCOUNTER11  12'hc0b
-`define RV64_CSR_ADDR_HPMCOUNTER12  12'hc0c
-`define RV64_CSR_ADDR_HPMCOUNTER13  12'hc0d
-`define RV64_CSR_ADDR_HPMCOUNTER14  12'hc0e
-`define RV64_CSR_ADDR_HPMCOUNTER15  12'hc0f
-`define RV64_CSR_ADDR_HPMCOUNTER16  12'hc10
-`define RV64_CSR_ADDR_HPMCOUNTER17  12'hc11
-`define RV64_CSR_ADDR_HPMCOUNTER18  12'hc12
-`define RV64_CSR_ADDR_HPMCOUNTER19  12'hc13
-`define RV64_CSR_ADDR_HPMCOUNTER20  12'hc14
-`define RV64_CSR_ADDR_HPMCOUNTER21  12'hc15
-`define RV64_CSR_ADDR_HPMCOUNTER22  12'hc16
-`define RV64_CSR_ADDR_HPMCOUNTER23  12'hc17
-`define RV64_CSR_ADDR_HPMCOUNTER24  12'hc18
-`define RV64_CSR_ADDR_HPMCOUNTER25  12'hc19
-`define RV64_CSR_ADDR_HPMCOUNTER26  12'hc1a
-`define RV64_CSR_ADDR_HPMCOUNTER27  12'hc1b
-`define RV64_CSR_ADDR_HPMCOUNTER28  12'hc1c
-`define RV64_CSR_ADDR_HPMCOUNTER29  12'hc1d
-`define RV64_CSR_ADDR_HPMCOUNTER30  12'hc1e
-`define RV64_CSR_ADDR_HPMCOUNTER31  12'hc1f
+`define CSR_ADDR_CYCLE         12'hc00
+`define CSR_ADDR_TIME          12'hc01
+`define CSR_ADDR_INSTRET       12'hc02
+`define CSR_ADDR_HPMCOUNTER3   12'hc03
+`define CSR_ADDR_HPMCOUNTER4   12'hc04
+`define CSR_ADDR_HPMCOUNTER5   12'hc05
+`define CSR_ADDR_HPMCOUNTER6   12'hc06
+`define CSR_ADDR_HPMCOUNTER7   12'hc07
+`define CSR_ADDR_HPMCOUNTER8   12'hc08
+`define CSR_ADDR_HPMCOUNTER9   12'hc09
+`define CSR_ADDR_HPMCOUNTER10  12'hc0a
+`define CSR_ADDR_HPMCOUNTER11  12'hc0b
+`define CSR_ADDR_HPMCOUNTER12  12'hc0c
+`define CSR_ADDR_HPMCOUNTER13  12'hc0d
+`define CSR_ADDR_HPMCOUNTER14  12'hc0e
+`define CSR_ADDR_HPMCOUNTER15  12'hc0f
+`define CSR_ADDR_HPMCOUNTER16  12'hc10
+`define CSR_ADDR_HPMCOUNTER17  12'hc11
+`define CSR_ADDR_HPMCOUNTER18  12'hc12
+`define CSR_ADDR_HPMCOUNTER19  12'hc13
+`define CSR_ADDR_HPMCOUNTER20  12'hc14
+`define CSR_ADDR_HPMCOUNTER21  12'hc15
+`define CSR_ADDR_HPMCOUNTER22  12'hc16
+`define CSR_ADDR_HPMCOUNTER23  12'hc17
+`define CSR_ADDR_HPMCOUNTER24  12'hc18
+`define CSR_ADDR_HPMCOUNTER25  12'hc19
+`define CSR_ADDR_HPMCOUNTER26  12'hc1a
+`define CSR_ADDR_HPMCOUNTER27  12'hc1b
+`define CSR_ADDR_HPMCOUNTER28  12'hc1c
+`define CSR_ADDR_HPMCOUNTER29  12'hc1d
+`define CSR_ADDR_HPMCOUNTER30  12'hc1e
+`define CSR_ADDR_HPMCOUNTER31  12'hc1f
 
-`define RV64_CSR_ADDR_SSTATUS       12'h100
-`define RV64_CSR_ADDR_SEDELEG       12'h102
-`define RV64_CSR_ADDR_SIDELEG       12'h103
-`define RV64_CSR_ADDR_SIE           12'h104
-`define RV64_CSR_ADDR_STVEC         12'h105
-`define RV64_CSR_ADDR_SCOUNTEREN    12'h106
+`define CSR_ADDR_SSTATUS       12'h100
+`define CSR_ADDR_SEDELEG       12'h102
+`define CSR_ADDR_SIDELEG       12'h103
+`define CSR_ADDR_SIE           12'h104
+`define CSR_ADDR_STVEC         12'h105
+`define CSR_ADDR_SCOUNTEREN    12'h106
 
-`define RV64_CSR_ADDR_SSCRATCH      12'h140
-`define RV64_CSR_ADDR_SEPC          12'h141
-`define RV64_CSR_ADDR_SCAUSE        12'h142
-`define RV64_CSR_ADDR_STVAL         12'h143
-`define RV64_CSR_ADDR_SIP           12'h144
+`define CSR_ADDR_SSCRATCH      12'h140
+`define CSR_ADDR_SEPC          12'h141
+`define CSR_ADDR_SCAUSE        12'h142
+`define CSR_ADDR_STVAL         12'h143
+`define CSR_ADDR_SIP           12'h144
 
-`define RV64_CSR_ADDR_SATP          12'h180
+`define CSR_ADDR_SATP          12'h180
 
-`define RV64_CSR_ADDR_MVENDORID     12'hf11
-`define RV64_CSR_ADDR_MARCHID       12'hf12
-`define RV64_CSR_ADDR_MIMPID        12'hf13
-`define RV64_CSR_ADDR_MHARTID       12'hf14
+`define CSR_ADDR_MVENDORID     12'hf11
+`define CSR_ADDR_MARCHID       12'hf12
+`define CSR_ADDR_MIMPID        12'hf13
+`define CSR_ADDR_MHARTID       12'hf14
 
-`define RV64_CSR_ADDR_MSTATUS       12'h300
-`define RV64_CSR_ADDR_MISA          12'h301
-`define RV64_CSR_ADDR_MEDELEG       12'h302
-`define RV64_CSR_ADDR_MIDELEG       12'h303
-`define RV64_CSR_ADDR_MIE           12'h304
-`define RV64_CSR_ADDR_MTVEC         12'h305
-`define RV64_CSR_ADDR_MCOUNTEREN    12'h306
+`define CSR_ADDR_MSTATUS       12'h300
+`define CSR_ADDR_MISA          12'h301
+`define CSR_ADDR_MEDELEG       12'h302
+`define CSR_ADDR_MIDELEG       12'h303
+`define CSR_ADDR_MIE           12'h304
+`define CSR_ADDR_MTVEC         12'h305
+`define CSR_ADDR_MCOUNTEREN    12'h306
 
-`define RV64_CSR_ADDR_MSCRATCH      12'h340
-`define RV64_CSR_ADDR_MEPC          12'h341
-`define RV64_CSR_ADDR_MCAUSE        12'h342
-`define RV64_CSR_ADDR_MTVAL         12'h343
-`define RV64_CSR_ADDR_MIP           12'h344
+`define CSR_ADDR_MSCRATCH      12'h340
+`define CSR_ADDR_MEPC          12'h341
+`define CSR_ADDR_MCAUSE        12'h342
+`define CSR_ADDR_MTVAL         12'h343
+`define CSR_ADDR_MIP           12'h344
 
-`define RV64_CSR_ADDR_PMPCFG0       12'h3a0
-`define RV64_CSR_ADDR_PMPCFG2       12'h3a2
-`define RV64_CSR_ADDR_PMPADDR0      12'h3b0
-`define RV64_CSR_ADDR_PMPADDR1      12'h3b1
-`define RV64_CSR_ADDR_PMPADDR2      12'h3b2
-`define RV64_CSR_ADDR_PMPADDR3      12'h3b3
-`define RV64_CSR_ADDR_PMPADDR4      12'h3b4
-`define RV64_CSR_ADDR_PMPADDR5      12'h3b5
-`define RV64_CSR_ADDR_PMPADDR6      12'h3b6
-`define RV64_CSR_ADDR_PMPADDR7      12'h3b7
-`define RV64_CSR_ADDR_PMPADDR8      12'h3b8
-`define RV64_CSR_ADDR_PMPADDR9      12'h3b9
-`define RV64_CSR_ADDR_PMPADDR10     12'h3ba
-`define RV64_CSR_ADDR_PMPADDR11     12'h3bb
-`define RV64_CSR_ADDR_PMPADDR12     12'h3bc
-`define RV64_CSR_ADDR_PMPADDR13     12'h3bd
-`define RV64_CSR_ADDR_PMPADDR14     12'h3be
-`define RV64_CSR_ADDR_PMPADDR15     12'h3bf
+`define CSR_ADDR_PMPCFG0       12'h3a0
+`define CSR_ADDR_PMPCFG2       12'h3a2
+`define CSR_ADDR_PMPADDR0      12'h3b0
+`define CSR_ADDR_PMPADDR1      12'h3b1
+`define CSR_ADDR_PMPADDR2      12'h3b2
+`define CSR_ADDR_PMPADDR3      12'h3b3
+`define CSR_ADDR_PMPADDR4      12'h3b4
+`define CSR_ADDR_PMPADDR5      12'h3b5
+`define CSR_ADDR_PMPADDR6      12'h3b6
+`define CSR_ADDR_PMPADDR7      12'h3b7
+`define CSR_ADDR_PMPADDR8      12'h3b8
+`define CSR_ADDR_PMPADDR9      12'h3b9
+`define CSR_ADDR_PMPADDR10     12'h3ba
+`define CSR_ADDR_PMPADDR11     12'h3bb
+`define CSR_ADDR_PMPADDR12     12'h3bc
+`define CSR_ADDR_PMPADDR13     12'h3bd
+`define CSR_ADDR_PMPADDR14     12'h3be
+`define CSR_ADDR_PMPADDR15     12'h3bf
 
-`define RV64_CSR_ADDR_MCYCLE        12'hb00
-`define RV64_CSR_ADDR_MINSTRET      12'hb02
-`define RV64_CSR_ADDR_MHPMCOUNTER3  12'hb03
-`define RV64_CSR_ADDR_MHPMCOUNTER4  12'hb04
-`define RV64_CSR_ADDR_MHPMCOUNTER5  12'hb05
-`define RV64_CSR_ADDR_MHPMCOUNTER6  12'hb06
-`define RV64_CSR_ADDR_MHPMCOUNTER7  12'hb07
-`define RV64_CSR_ADDR_MHPMCOUNTER8  12'hb08
-`define RV64_CSR_ADDR_MHPMCOUNTER9  12'hb09
-`define RV64_CSR_ADDR_MHPMCOUNTER10 12'hb0a
-`define RV64_CSR_ADDR_MHPMCOUNTER11 12'hb0b
-`define RV64_CSR_ADDR_MHPMCOUNTER12 12'hb0c
-`define RV64_CSR_ADDR_MHPMCOUNTER13 12'hb0d
-`define RV64_CSR_ADDR_MHPMCOUNTER14 12'hb0e
-`define RV64_CSR_ADDR_MHPMCOUNTER15 12'hb0f
-`define RV64_CSR_ADDR_MHPMCOUNTER16 12'hb10
-`define RV64_CSR_ADDR_MHPMCOUNTER17 12'hb11
-`define RV64_CSR_ADDR_MHPMCOUNTER18 12'hb12
-`define RV64_CSR_ADDR_MHPMCOUNTER19 12'hb13
-`define RV64_CSR_ADDR_MHPMCOUNTER20 12'hb14
-`define RV64_CSR_ADDR_MHPMCOUNTER21 12'hb15
-`define RV64_CSR_ADDR_MHPMCOUNTER22 12'hb16
-`define RV64_CSR_ADDR_MHPMCOUNTER23 12'hb17
-`define RV64_CSR_ADDR_MHPMCOUNTER24 12'hb18
-`define RV64_CSR_ADDR_MHPMCOUNTER25 12'hb19
-`define RV64_CSR_ADDR_MHPMCOUNTER26 12'hb1a
-`define RV64_CSR_ADDR_MHPMCOUNTER27 12'hb1b
-`define RV64_CSR_ADDR_MHPMCOUNTER28 12'hb1c
-`define RV64_CSR_ADDR_MHPMCOUNTER29 12'hb1d
-`define RV64_CSR_ADDR_MHPMCOUNTER30 12'hb1e
-`define RV64_CSR_ADDR_MHPMCOUNTER31 12'hb2f
+`define CSR_ADDR_MCYCLE        12'hb00
+`define CSR_ADDR_MINSTRET      12'hb02
+`define CSR_ADDR_MHPMCOUNTER3  12'hb03
+`define CSR_ADDR_MHPMCOUNTER4  12'hb04
+`define CSR_ADDR_MHPMCOUNTER5  12'hb05
+`define CSR_ADDR_MHPMCOUNTER6  12'hb06
+`define CSR_ADDR_MHPMCOUNTER7  12'hb07
+`define CSR_ADDR_MHPMCOUNTER8  12'hb08
+`define CSR_ADDR_MHPMCOUNTER9  12'hb09
+`define CSR_ADDR_MHPMCOUNTER10 12'hb0a
+`define CSR_ADDR_MHPMCOUNTER11 12'hb0b
+`define CSR_ADDR_MHPMCOUNTER12 12'hb0c
+`define CSR_ADDR_MHPMCOUNTER13 12'hb0d
+`define CSR_ADDR_MHPMCOUNTER14 12'hb0e
+`define CSR_ADDR_MHPMCOUNTER15 12'hb0f
+`define CSR_ADDR_MHPMCOUNTER16 12'hb10
+`define CSR_ADDR_MHPMCOUNTER17 12'hb11
+`define CSR_ADDR_MHPMCOUNTER18 12'hb12
+`define CSR_ADDR_MHPMCOUNTER19 12'hb13
+`define CSR_ADDR_MHPMCOUNTER20 12'hb14
+`define CSR_ADDR_MHPMCOUNTER21 12'hb15
+`define CSR_ADDR_MHPMCOUNTER22 12'hb16
+`define CSR_ADDR_MHPMCOUNTER23 12'hb17
+`define CSR_ADDR_MHPMCOUNTER24 12'hb18
+`define CSR_ADDR_MHPMCOUNTER25 12'hb19
+`define CSR_ADDR_MHPMCOUNTER26 12'hb1a
+`define CSR_ADDR_MHPMCOUNTER27 12'hb1b
+`define CSR_ADDR_MHPMCOUNTER28 12'hb1c
+`define CSR_ADDR_MHPMCOUNTER29 12'hb1d
+`define CSR_ADDR_MHPMCOUNTER30 12'hb1e
+`define CSR_ADDR_MHPMCOUNTER31 12'hb1f
 
-`define RV64_CSR_ADDR_MHPMEVENT3  12'h323
-`define RV64_CSR_ADDR_MHPMEVENT4  12'h324
-`define RV64_CSR_ADDR_MHPMEVENT5  12'h325
-`define RV64_CSR_ADDR_MHPMEVENT6  12'h326
-`define RV64_CSR_ADDR_MHPMEVENT7  12'h327
-`define RV64_CSR_ADDR_MHPMEVENT8  12'h328
-`define RV64_CSR_ADDR_MHPMEVENT9  12'h329
-`define RV64_CSR_ADDR_MHPMEVENT10 12'h32a
-`define RV64_CSR_ADDR_MHPMEVENT11 12'h32b
-`define RV64_CSR_ADDR_MHPMEVENT12 12'h32c
-`define RV64_CSR_ADDR_MHPMEVENT13 12'h32d
-`define RV64_CSR_ADDR_MHPMEVENT14 12'h32e
-`define RV64_CSR_ADDR_MHPMEVENT15 12'h32f
-`define RV64_CSR_ADDR_MHPMEVENT16 12'h330
-`define RV64_CSR_ADDR_MHPMEVENT17 12'h331
-`define RV64_CSR_ADDR_MHPMEVENT18 12'h332
-`define RV64_CSR_ADDR_MHPMEVENT19 12'h333
-`define RV64_CSR_ADDR_MHPMEVENT20 12'h334
-`define RV64_CSR_ADDR_MHPMEVENT21 12'h335
-`define RV64_CSR_ADDR_MHPMEVENT22 12'h336
-`define RV64_CSR_ADDR_MHPMEVENT23 12'h337
-`define RV64_CSR_ADDR_MHPMEVENT24 12'h338
-`define RV64_CSR_ADDR_MHPMEVENT25 12'h339
-`define RV64_CSR_ADDR_MHPMEVENT26 12'h33a
-`define RV64_CSR_ADDR_MHPMEVENT27 12'h33b
-`define RV64_CSR_ADDR_MHPMEVENT28 12'h33c
-`define RV64_CSR_ADDR_MHPMEVENT29 12'h33d
-`define RV64_CSR_ADDR_MHPMEVENT30 12'h33e
-`define RV64_CSR_ADDR_MHPMEVENT31 12'h33f
+`define CSR_ADDR_MCOUNTINHIBIT 12'h320
+`define CSR_ADDR_MHPMEVENT3    12'h323
+`define CSR_ADDR_MHPMEVENT4    12'h324
+`define CSR_ADDR_MHPMEVENT5    12'h325
+`define CSR_ADDR_MHPMEVENT6    12'h326
+`define CSR_ADDR_MHPMEVENT7    12'h327
+`define CSR_ADDR_MHPMEVENT8    12'h328
+`define CSR_ADDR_MHPMEVENT9    12'h329
+`define CSR_ADDR_MHPMEVENT10   12'h32a
+`define CSR_ADDR_MHPMEVENT11   12'h32b
+`define CSR_ADDR_MHPMEVENT12   12'h32c
+`define CSR_ADDR_MHPMEVENT13   12'h32d
+`define CSR_ADDR_MHPMEVENT14   12'h32e
+`define CSR_ADDR_MHPMEVENT15   12'h32f
+`define CSR_ADDR_MHPMEVENT16   12'h330
+`define CSR_ADDR_MHPMEVENT17   12'h331
+`define CSR_ADDR_MHPMEVENT18   12'h332
+`define CSR_ADDR_MHPMEVENT19   12'h333
+`define CSR_ADDR_MHPMEVENT20   12'h334
+`define CSR_ADDR_MHPMEVENT21   12'h335
+`define CSR_ADDR_MHPMEVENT22   12'h336
+`define CSR_ADDR_MHPMEVENT23   12'h337
+`define CSR_ADDR_MHPMEVENT24   12'h338
+`define CSR_ADDR_MHPMEVENT25   12'h339
+`define CSR_ADDR_MHPMEVENT26   12'h33a
+`define CSR_ADDR_MHPMEVENT27   12'h33b
+`define CSR_ADDR_MHPMEVENT28   12'h33c
+`define CSR_ADDR_MHPMEVENT29   12'h33d
+`define CSR_ADDR_MHPMEVENT30   12'h33e
+`define CSR_ADDR_MHPMEVENT31   12'h33f
 
-`define BP_CSR_ADDR_UFINISH 12'h800
+typedef struct packed
+{
+  // Base address for traps
+  logic [61:0] base;
+  // Trap Mode
+  //   00 - Direct, all exceptions set pc to BASE
+  //   01 - Vectored, interrupts set pc to BASE+4xcause
+  logic [1:0]  mode;
+}  rv64_stvec_s;
+
+typedef struct packed
+{
+  logic [38:0] base;
+}  bp_stvec_s;
+
+`define bp_stvec_width ($bits(bp_stvec_s))
+
+`define compress_stvec_s(data_cast_mp) \
+  bp_stvec_s'{base: data_cast_mp.base[0+:39]}
+
+`define decompress_stvec_s(data_comp_mp) \
+  rv64_stvec_s'{base : {22'h0, data_comp_mp.base} \
+                ,mode: 2'b00                      \
+                }
+
+typedef struct packed
+{
+  logic [31:3] hpm;
+  logic        ir;
+  logic        cy;
+}  rv64_scounteren_s;
+
+typedef struct packed
+{
+  logic ir;
+  logic cy;
+}  bp_scounteren_s;
+
+`define bp_scounteren_width ($bits(bp_scounteren_s))
+
+`define compress_scounteren_s(data_cast_mp) \
+  bp_scounteren_s'{ir : data_cast_mp.ir \
+                   ,cy: data_cast_mp.cy \
+                   };
+
+`define decompress_scounteren_s(data_comp_mp) \
+  rv64_scounteren_s'{ir : data_comp_mp.ir \
+                     ,cy: data_comp_mp.cy \
+                     ,default: '0         \
+                     };
+
+typedef logic [63:0] rv64_sscratch_s;
+typedef logic [63:0] bp_sscratch_s;
+
+`define compress_sscratch_s(data_cast_mp) \
+  data_cast_mp[0+:64]
+
+`define decompress_sscratch_s(data_comp_mp) \
+  64'(data_comp_mp)
+
+typedef logic [63:0] rv64_sepc_s;
+typedef logic [38:0] bp_sepc_s;
+
+`define bp_sepc_width ($bits(bp_sepc_s))
+
+`define compress_sepc_s(data_cast_mp) \
+  data_cast_mp[0+:39]
+
+`define decompress_sepc_s(data_comp_mp) \
+  64'(data_comp_mp)
+
+typedef struct packed
+{
+  logic        _interrupt;
+  logic [62:0] ecode;
+}  rv64_scause_s;
+
+typedef struct packed
+{
+  logic       _interrupt;
+  logic [3:0] ecode;
+}  bp_scause_s;
+
+`define compress_scause_s(data_cast_mp) \
+  bp_scause_s'{_interrupt: data_cast_mp._interrupt \
+               ,ecode: data_cast_mp.ecode[0+:4]  \
+               }
+
+`define decompress_scause_s(data_comp_mp) \
+  rv64_scause_s'{_interrupt: data_comp_mp._interrupt \
+                 ,ecode: 63'(data_comp_mp.ecode)   \
+                 }
+
+typedef logic [63:0] rv64_stval_s;
+typedef logic [38:0] bp_stval_s;
+
+`define compress_stval_s(data_cast_mp) \
+  data_cast_mp[0+:39]
+
+`define decompress_stval_s(data_comp_mp) \
+  64'(data_comp_mp)
 
 typedef struct packed
 {
@@ -187,6 +288,7 @@ typedef struct packed
   logic        mode;
   // We don't currently have ASID support
   // We only support 39 bit physical address.
+  // TODO: Generate this based on vaddr
   logic [26:0] ppn;
 }  bp_satp_s;
 
@@ -283,144 +385,110 @@ typedef struct packed
 
 typedef struct packed
 {
+  logic       mprv;
+
   logic [1:0] mpp;
   logic       spp;
 
   logic       mpie;
   logic       spie;
-  logic       upie;
 
   logic       mie;
   logic       sie;
-  logic       uie;
 }  bp_mstatus_s;
 
 `define compress_mstatus_s(data_cast_mp) \
-  bp_mstatus_s'{mpp  : data_cast_mp.mpp  \
+  bp_mstatus_s'{mprv : data_cast_mp.mprv \
+                ,mpp : data_cast_mp.mpp  \
                 ,spp : data_cast_mp.spp  \
                 ,mpie: data_cast_mp.mpie \
                 ,spie: data_cast_mp.spie \
-                ,upie: data_cast_mp.upie \
                 ,mie : data_cast_mp.mie  \
                 ,sie : data_cast_mp.sie  \
-                ,uie : data_cast_mp.uie  \
                 }
 
 `define decompress_mstatus_s(data_comp_mp) \
-  rv64_mstatus_s'{mpp  : data_comp_mp.mpp  \
+  rv64_mstatus_s'{sxl  : 2'b10             \
+                  ,uxl : 2'b10             \
+                  ,mprv: data_comp_mp.mprv \
+                  ,mpp : data_comp_mp.mpp  \
                   ,spp : data_comp_mp.spp  \
                   ,mpie: data_comp_mp.mpie \
                   ,spie: data_comp_mp.spie \
-                  ,upie: data_comp_mp.upie \
                   ,mie : data_comp_mp.mie  \
                   ,sie : data_comp_mp.sie  \
-                  ,uie : data_comp_mp.uie  \
                   ,default: '0             \
                   }
 
-typedef logic [63:0] rv64_mscratch_s;
-typedef logic [63:0] bp_mscratch_s;
+typedef logic [63:0] rv64_medeleg_s;
+typedef logic [7:0]  bp_medeleg_s;
 
-`define compress_mscratch_s(data_cast_mp) \
-  data_cast_mp[0+:64]
+`define compress_medeleg_s(data_cast_mp) \
+  bp_medeleg_s'(data_cast_mp[0+:8])
 
-`define decompress_mscratch_s(data_comp_mp) \
-  64'(data_comp_mp)
-
-typedef struct packed
-{
-  // Base address for traps
-  logic [61:0] base;
-  // Trap Mode
-  //   00 - Direct, all exceptions set pc to BASE
-  //   01 - Vectored, interrupts set pc to BASE+4xcause
-  logic [1:0]  mode;
-}  rv64_mtvec_s;
-
-typedef struct packed
-{
-  logic [38:0] base;
-}  bp_mtvec_s;
-
-`define bp_mtvec_width ($bits(bp_mtvec_s))
-
-`define compress_mtvec_s(data_cast_mp) \
-  bp_mtvec_s'{base: data_cast_mp.base[0+:39]}
-
-`define decompress_mtvec_s(data_comp_mp) \
-  rv64_mtvec_s'{base : {22'h0, data_comp_mp.base} \
-                ,mode: 2'b00                      \
-                }
+`define decompress_medeleg_s(data_comp_mp) \
+  rv64_mstatus_s'(data_comp_mp)
 
 typedef struct packed
 {
   logic [51:0] wpri1;
-  // M-mode External Interrupt Pending
-  logic        meip;
+  // M-mode External Interrupt Delegation
+  logic        mei;
   logic        wpri2;
-  // S-mode External Interrupt Pending
-  logic        seip;
-  // U-mode External Interrupt Pending
-  logic        ueip;
-  // M-mode Timer Interrupt Pending
-  logic        mtip;
+  // S-mode External Interrupt Delegation
+  logic        sei;
+  // U-mode External Interrupt Delegation
+  logic        uei;
+  // M-mode Timer Interrupt Delegation
+  logic        mti;
   logic        wpri3;
-  // S-mode Timer Interrupt Pending
-  logic        stip;
-  // U-mode Timer Interrupt Pending
-  logic        utip;
-  // M-mode Software Interrupt Pending
-  logic        msip;
+  // S-mode Timer Interrupt Delegation
+  logic        sti;
+  // U-mode Timer Interrupt Delegation
+  logic        uti;
+  // M-mode Software Interrupt Delegation
+  logic        msi;
   logic        wpri4;
-  // S-mode Software Interrupt Pending
-  logic        ssip;
-  // U-mode Software Interrupt Pending
-  logic        usip;
-}  rv64_mip_s;
+  // S-mode Software Interrupt Delegation
+  logic        ssi;
+  // U-mode Software Interrupt Delegation
+  logic        usi;
+}  rv64_mideleg_s;
 
 typedef struct packed
 {
-  logic meip;
-  logic seip;
-  logic ueip;
+  logic mei;
+  logic sei;
+  
+  logic mti;
+  logic sti;
 
-  logic mtip;
-  logic stip;
-  logic utip;
+  logic msi;
+  logic ssi;
+}  bp_mideleg_s;
 
-  logic msip;
-  logic ssip;
-  logic usip;
-}   bp_mip_s;
-
-`define compress_mip_s(data_cast_mp) \
-  bp_mip_s'{meip : data_cast_mp.meip \
-            ,seip: data_cast_mp.seip \
-            ,ueip: data_cast_mp.ueip \
-                                     \
-            ,mtip: data_cast_mp.mtip \
-            ,stip: data_cast_mp.stip \
-            ,utip: data_cast_mp.utip \
-                                     \
-            ,msip: data_cast_mp.msip \
-            ,ssip: data_cast_mp.ssip \
-            ,usip: data_cast_mp.usip \
-            }
-
-`define decompress_mip_s(data_comp_mp) \
-  rv64_mip_s'{meip : data_comp_mp.meip \
-              ,seip: data_comp_mp.seip \
-              ,ueip: data_comp_mp.ueip \
+`define compress_mideleg_s(data_cast_mp) \
+  bp_mideleg_s'{mei : data_cast_mp.mei \
+                ,sei: data_cast_mp.sei \
                                        \
-              ,mtip: data_comp_mp.mtip \
-              ,stip: data_comp_mp.stip \
-              ,utip: data_comp_mp.utip \
+                ,mti: data_cast_mp.mti \
+                ,sti: data_cast_mp.sti \
                                        \
-              ,msip: data_comp_mp.msip \
-              ,ssip: data_comp_mp.ssip \
-              ,usip: data_comp_mp.usip \
-              ,default: '0             \
-              }
+                ,msi: data_cast_mp.msi \
+                ,ssi: data_cast_mp.ssi \
+                }
+
+`define decompress_mideleg_s(data_comp_mp) \
+  rv64_mideleg_s'{mei : data_comp_mp.mei \
+                  ,sei: data_comp_mp.sei \
+                                         \
+                  ,mti: data_comp_mp.mti \
+                  ,sti: data_comp_mp.sti \
+                                         \
+                  ,msi: data_comp_mp.msi \
+                  ,ssi: data_comp_mp.ssi \
+                  ,default: '0           \
+                  }
 
 typedef struct packed
 {
@@ -452,43 +520,156 @@ typedef struct packed
 {
   logic meie;
   logic seie;
-  logic ueie;
 
   logic mtie;
   logic stie;
-  logic utie;
 
   logic msie;
   logic ssie;
-  logic usie;
 }  bp_mie_s;
 
 `define compress_mie_s(data_cast_mp) \
   bp_mie_s'{meie : data_cast_mp.meie \
             ,seie: data_cast_mp.seie \
-            ,ueie: data_cast_mp.ueie \
                                      \
             ,mtie: data_cast_mp.mtie \
             ,stie: data_cast_mp.stie \
-            ,utie: data_cast_mp.utie \
                                      \
             ,msie: data_cast_mp.msie \
             ,ssie: data_cast_mp.ssie \
-            ,usie: data_cast_mp.usie \
             }
 
 `define decompress_mie_s(data_comp_mp) \
   rv64_mie_s'{meie : data_comp_mp.meie \
               ,seie: data_comp_mp.seie \
-              ,ueie: data_comp_mp.ueie \
                                        \
               ,mtie: data_comp_mp.mtie \
               ,stie: data_comp_mp.stie \
-              ,utie: data_comp_mp.utie \
                                        \
               ,msie: data_comp_mp.msie \
               ,ssie: data_comp_mp.ssie \
-              ,usie: data_comp_mp.usie \
+              ,default: '0             \
+              }
+
+typedef struct packed
+{
+  // Base address for traps
+  logic [61:0] base;
+  // Trap Mode
+  //   00 - Direct, all exceptions set pc to BASE
+  //   01 - Vectored, interrupts set pc to BASE+4xcause
+  logic [1:0]  mode;
+}  rv64_mtvec_s;
+
+typedef struct packed
+{
+  logic [38:0] base;
+}  bp_mtvec_s;
+
+`define bp_mtvec_width ($bits(bp_mtvec_s))
+
+`define compress_mtvec_s(data_cast_mp) \
+  bp_mtvec_s'{base: data_cast_mp.base[0+:39]}
+
+`define decompress_mtvec_s(data_comp_mp) \
+  rv64_mtvec_s'{base : {22'h0, data_comp_mp.base} \
+                ,mode: 2'b00                      \
+                }
+
+typedef struct packed
+{
+  logic [31:3] hpm;
+  logic        ir;
+  logic        tm;
+  logic        cy;
+}  rv64_mcounteren_s;
+
+typedef struct packed
+{
+  logic ir;
+  logic cy;
+}  bp_mcounteren_s;
+
+`define bp_mcounteren_width ($bits(bp_mcounteren_s))
+
+`define compress_mcounteren_s(data_cast_mp) \
+  bp_mcounteren_s'{ir : data_cast_mp.ir \
+                   ,cy: data_cast_mp.cy \
+                   };
+
+`define decompress_mcounteren_s(data_comp_mp) \
+  rv64_mcounteren_s'{ir : data_comp_mp.ir \
+                     ,cy: data_comp_mp.cy \
+                     ,default: '0         \
+                     };
+
+typedef logic [63:0] rv64_mscratch_s;
+typedef logic [63:0] bp_mscratch_s;
+
+`define compress_mscratch_s(data_cast_mp) \
+  data_cast_mp[0+:64]
+
+`define decompress_mscratch_s(data_comp_mp) \
+  64'(data_comp_mp)
+
+typedef struct packed
+{
+  logic [51:0] wpri1;
+  // M-mode External Interrupt Pending
+  logic        meip;
+  logic        wpri2;
+  // S-mode External Interrupt Pending
+  logic        seip;
+  // U-mode External Interrupt Pending
+  logic        ueip;
+  // M-mode Timer Interrupt Pending
+  logic        mtip;
+  logic        wpri3;
+  // S-mode Timer Interrupt Pending
+  logic        stip;
+  // U-mode Timer Interrupt Pending
+  logic        utip;
+  // M-mode Software Interrupt Pending
+  logic        msip;
+  logic        wpri4;
+  // S-mode Software Interrupt Pending
+  logic        ssip;
+  // U-mode Software Interrupt Pending
+  logic        usip;
+}  rv64_mip_s;
+
+typedef struct packed
+{
+  logic meip;
+  logic seip;
+
+  logic mtip;
+  logic stip;
+
+  logic msip;
+  logic ssip;
+}   bp_mip_s;
+
+`define compress_mip_s(data_cast_mp) \
+  bp_mip_s'{meip : data_cast_mp.meip \
+            ,seip: data_cast_mp.seip \
+                                     \
+            ,mtip: data_cast_mp.mtip \
+            ,stip: data_cast_mp.stip \
+                                     \
+            ,msip: data_cast_mp.msip \
+            ,ssip: data_cast_mp.ssip \
+            }
+
+`define decompress_mip_s(data_comp_mp) \
+  rv64_mip_s'{meip : data_comp_mp.meip \
+              ,seip: data_comp_mp.seip \
+                                       \
+              ,mtip: data_comp_mp.mtip \
+              ,stip: data_comp_mp.stip \
+                                       \
+              ,msip: data_comp_mp.msip \
+              ,ssip: data_comp_mp.ssip \
               ,default: '0             \
               }
 
@@ -562,10 +743,20 @@ typedef struct packed
   logic [53:0] addr_55_2;
 }  rv64_pmpaddr_s;
 
+typedef rv64_pmpaddr_s rv64_pmpaddr0_s;
+typedef rv64_pmpaddr_s rv64_pmpaddr1_s;
+typedef rv64_pmpaddr_s rv64_pmpaddr2_s;
+typedef rv64_pmpaddr_s rv64_pmpaddr3_s;
+
 typedef struct packed
 {
   logic [36:0] addr_38_2;
 }  bp_pmpaddr_s;
+
+typedef bp_pmpaddr_s bp_pmpaddr0_s;
+typedef bp_pmpaddr_s bp_pmpaddr1_s;
+typedef bp_pmpaddr_s bp_pmpaddr2_s;
+typedef bp_pmpaddr_s bp_pmpaddr3_s;
 
 `define compress_pmpaddr_s(data_cast_mp) \
   bp_pmpaddr_s'{addr_38_2: data_cast_mp.addr_55_2[0+:37]}
@@ -574,6 +765,16 @@ typedef struct packed
   rv64_pmpaddr_s'{addr_55_2: 54'(data_comp_mp.addr_38_2) \
                   ,default: '0                           \
                   }
+
+`define compress_pmpaddr0_s(data_cast_mp) `compress_pmpaddr_s(data_cast_mp)
+`define compress_pmpaddr1_s(data_cast_mp) `compress_pmpaddr_s(data_cast_mp)
+`define compress_pmpaddr2_s(data_cast_mp) `compress_pmpaddr_s(data_cast_mp)
+`define compress_pmpaddr3_s(data_cast_mp) `compress_pmpaddr_s(data_cast_mp)
+
+`define decompress_pmpaddr0_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
+`define decompress_pmpaddr1_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
+`define decompress_pmpaddr2_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
+`define decompress_pmpaddr3_s(data_cast_mp) `decompress_pmpaddr_s(data_cast_mp)
 
 typedef struct packed
 {
@@ -617,6 +818,69 @@ typedef bp_mcounter_s bp_minstret_s;
 
 `define decompress_mcycle_s(data_comp_mp) `decompress_mcounter_s(data_comp_mp)
 `define decompress_minstret_s(data_comp_mp) `decompress_mcounter_s(data_comp_mp)
+
+typedef struct packed
+{
+  logic [31:3] hpm;
+  logic        ir;
+  logic        warl;
+  logic        cy;
+}  rv64_mcountinhibit_s;
+
+typedef struct packed
+{
+  logic ir;
+  logic cy;
+}  bp_mcountinhibit_s;
+
+`define compress_mcountinhibit_s(data_cast_mp) \
+  bp_mcountinhibit_s'{ir : data_cast_mp.ir \
+                      ,cy: data_cast_mp.cy \
+                      }
+
+`define decompress_mcountinhibit_s(data_comp_mp) \
+  rv64_mcountinhibit_s'{ir : data_comp_mp.ir \
+                        ,cy: data_comp_mp.cy \
+                        ,default: '0         \
+                        }
+
+`define declare_csr(csr_name_mp) \
+  rv64_``csr_name_mp``_s ``csr_name_mp``_li, ``csr_name_mp``_lo;  \
+  bp_``csr_name_mp``_s ``csr_name_mp``_n, ``csr_name_mp``_r;      \
+  bsg_dff_reset                                                   \
+   #(.width_p($bits(bp_``csr_name_mp``_s)))                       \
+  ``csr_name_mp``_reg                                             \
+    (.clk_i(clk_i), .reset_i(reset_i), .data_i(``csr_name_mp``_n), .data_o(``csr_name_mp``_r));
+
+`define declare_csr_case_ro(priv_mode_mp, csr_addr_mp, csr_name_mp, ro_data_li, csr_data_lo) \
+  csr_addr_mp:                                        \
+    begin                                             \
+      csr_data_lo = ro_data_li;                       \
+                                                      \
+      illegal_instr_o = (priv_mode_r < priv_mode_mp); \
+    end
+
+`define declare_csr_case_rw(priv_mode_mp, csr_addr_mp, csr_name_mp, csr_data_li, csr_data_lo) \
+  csr_addr_mp:                                                               \
+    begin                                                                    \
+      ``csr_name_mp``_li = rv64_``csr_name_mp``_s'(csr_data_li);             \
+      ``csr_name_mp``_n  = `compress_``csr_name_mp``_s(``csr_name_mp``_li);  \
+      ``csr_name_mp``_lo = `decompress_``csr_name_mp``_s(``csr_name_mp``_r); \
+      csr_data_lo        = ``csr_name_mp``_lo;                               \
+                                                                             \
+      illegal_instr_o = (priv_mode_r < priv_mode_mp);                        \
+    end
+
+`define declare_csr_case_rw_mask(priv_mode_mp, csr_addr_mp, csr_name_mp, csr_data_li, csr_data_lo, csr_wmask_mp, csr_rmask_mp) \
+  csr_addr_mp:                                                                                 \
+    begin                                                                                      \
+      ``csr_name_mp``_li = (``csr_name_mp``_r & ~csr_wmask_mp) | (csr_data_li & csr_wmask_mp); \
+      ``csr_name_mp``_n  = `compress_``csr_name_mp``_s(``csr_name_mp``_li);                    \
+      ``csr_name_mp``_lo = `decompress_``csr_name_mp``_s(``csr_name_mp``_r);                   \
+      csr_data_lo        = (``csr_name_mp``_lo & csr_rmask_mp);                                \
+                                                                                               \
+      illegal_instr_o = (priv_mode_r < priv_mode_mp);                                          \
+    end
 
 `endif
 

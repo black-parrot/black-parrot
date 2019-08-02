@@ -14,12 +14,15 @@
 
 #include "bp_cce.h"
 
+// LCE Requests
 typedef enum {
   e_lce_req_type_rd          = 0 // Read-miss
   ,e_lce_req_type_wr         = 1 // Write-miss
+  ,e_lce_req_type_uc_rd      = 2 // Uncached Load
+  ,e_lce_req_type_uc_wr      = 3 // Uncached Store
 } bp_lce_cce_req_type_e;
 
-#define bp_lce_cce_req_type_width 1
+#define bp_lce_cce_req_type_width 3
 
 typedef enum {
   e_lce_req_excl             = 0 // Exclusive cache line request (read-only, exclusive request)
@@ -36,38 +39,34 @@ typedef enum {
 #define bp_lce_cce_lru_dirty_width 1
 
 typedef enum {
-  e_lce_req_cacheable      = 0
-  ,e_lce_req_non_cacheable = 1
-} bp_lce_cce_req_non_cacheable_e;
+  e_lce_uc_req_1     = 0
+  ,e_lce_uc_req_2    = 1
+  ,e_lce_uc_req_4    = 2
+  ,e_lce_uc_req_8    = 3
+} bp_lce_cce_uc_req_size_e;
 
-#define bp_lce_cce_req_non_cacheable_width 1
+#define bp_lce_cce_uc_req_size_width 2
 
+// Coherence States
 typedef enum {
-  e_lce_nc_req_1     = 0
-  ,e_lce_nc_req_2    = 1
-  ,e_lce_nc_req_4    = 2
-  ,e_lce_nc_req_8    = 3
-} bp_lce_cce_nc_req_size_e;
+  e_COH_I  = 0
+  ,e_COH_S = 1
+  ,e_COH_E = 2
+  ,e_COH_F = 3
+  // 4 = potentially dirty, not owned, not shared
+  // 5 = potentially dirty, not owned, shared
+  ,e_COH_M = 6
+  ,e_COH_O = 7
+} bp_cce_coh_states_e;
 
-#define bp_lce_cce_nc_req_size_width 2
+#define bp_cce_coh_shared_bit 0
+#define bp_cce_coh_owned_bit 1
+#define bp_cce_coh_dirty_bit 2
 
-/*
-uint32_t nc_req_size(bp_lce_cce_nc_req_size_e nc_req)
-{
-  if (nc_req == e_lce_nc_req_1) {
-    return 1;
-  } else if (nc_req == e_lce_nc_req_2) {
-    return 2;
-  } else if (nc_req == e_lce_nc_req_4) {
-    return 4;
-  } else if (nc_req == e_lce_nc_req_8) {
-    return 8;
-  }
-  return 0;
-}
-*/
+#define bp_cce_coh_bits 3
 
-typedef enum { // CCE to LCE Commands
+// LCE Commands
+typedef enum {
   e_lce_cmd_sync             = 0
   ,e_lce_cmd_set_clear       = 1
   ,e_lce_cmd_transfer        = 2
@@ -76,51 +75,41 @@ typedef enum { // CCE to LCE Commands
   ,e_lce_cmd_set_tag_wakeup  = 5
   ,e_lce_cmd_invalidate_tag  = 6
   ,e_lce_cmd_uc_st_done      = 7
-} bp_cce_lce_cmd_type_e;
+  ,e_lce_cmd_data            = 8
+  ,e_lce_cmd_uc_data         = 9
+} bp_lce_cmd_type_e;
 
-#define bp_cce_lce_cmd_type_width 3
+#define bp_lce_cmd_type_width 4
 
-typedef enum {
-  e_lce_resp_wb              = 0 // Normal Writeback Response
-  ,e_lce_resp_null_wb        = 1 // Null Writeback Response
-} bp_lce_cce_resp_msg_type_e;
-
-#define bp_lce_cce_resp_msg_type_width 1
-
-typedef enum {
-  e_lce_data_cmd_transfer       = 0
-  ,e_lce_data_cmd_cce           = 1
-  ,e_lce_data_cmd_non_cacheable = 2
-} bp_lce_data_cmd_type_e;
-
-#define bp_lce_data_cmd_type_width 2
-
+// LCE Responses
 typedef enum {
   e_lce_cce_sync_ack         = 0 // Sync Ack
   ,e_lce_cce_inv_ack         = 1 // Invalidate Tag Ack
-  ,e_lce_cce_tr_ack          = 2 // Transfer Ack
-  ,e_lce_cce_coh_ack         = 3 // Coherence Ack
-} bp_lce_cce_ack_type_e;
+  ,e_lce_cce_coh_ack         = 2 // Coherence Ack
+  ,e_lce_resp_wb             = 3 // Normal Writeback Response
+  ,e_lce_resp_null_wb        = 4 // Null Writeback Response
 
-#define bp_lce_cce_ack_type_width 2
+} bp_lce_cce_resp_type_e;
 
-// Coherence States
+#define bp_lce_cce_ack_type_width 3
 
+// Mem Commands
 typedef enum {
-  e_MESI_I  = 0
-  ,e_MESI_S = 1
-  ,e_MESI_E = 2
-  ,e_MESI_M = 3
-} bp_cce_coh_mesi_e;
+  e_cce_mem_rd               = 0
+  ,e_cce_mem_wr              = 1
+  ,e_cce_mem_uc_rd           = 2
+  ,e_cce_mem_uc_wr           = 3
+  ,e_cce_mem_wb              = 4
+  ,e_mem_cce_inv             = 5
 
-typedef enum {
-  e_VI_I  = 0
-  ,e_VI_V = 2
-} bp_cce_coh_vi_e;
+} bp_cce_mem_cmd_type_e;
 
-#define bp_cce_coh_bits 2
+#define bp_cce_mem_cmd_type_width 4
 
 
+// Width Macros
+
+/*
 #define bp_lce_cce_req_width (LG_N_CCE+LG_N_LCE+bp_lce_cce_req_type_width \
   +bp_lce_cce_req_non_excl_width+ADDR_WIDTH+LG_LCE_ASSOC+bp_lce_cce_lru_dirty_width \
   +bp_lce_cce_req_non_cacheable_width+bp_lce_cce_nc_req_size_width+NC_DATA_WIDTH)
@@ -152,5 +141,6 @@ typedef enum {
 
 #define bp_mem_cce_data_resp_width (bp_lce_cce_req_type_width+ADDR_WIDTH+DATA_WIDTH_BITS \
   +bp_cce_mem_cmd_payload_width+bp_lce_cce_req_non_cacheable_width+bp_lce_cce_nc_req_size_width)
+*/
 
 #endif

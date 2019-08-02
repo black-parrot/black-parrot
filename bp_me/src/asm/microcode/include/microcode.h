@@ -21,10 +21,23 @@
 #define STW 5
 #define INV 6
 #define UCST 7
+#define DATA 8
+#define UC_DATA 9
 
 #define SYNC_ACK 0
 #define INV_ACK 1
-#define TR_ACK 2
-#define COH_ACK 3
+#define COH_ACK 2
+#define RESP_WB 3
+#define RESP_NULL_WB 4
+
+#define COH_I 0
+#define COH_S 1
+#define COH_E 2
+#define COH_F 3
+#define COH_M 6
+#define COH_O 7
+
+#define MEM_CMD_REQ 0
+#define MEM_CMD_WB 4
 
 #endif

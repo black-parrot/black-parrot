@@ -14,10 +14,10 @@ module bp_cce_mmio_cfg_loader
   import bp_cfg_link_pkg::*;
   import bp_be_pkg::*;
   import bp_be_dcache_pkg::*;
+  import bp_me_pkg::*;
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
-    , localparam cce_mshr_width_lp = `bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
-    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, cce_mshr_width_lp)
+    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
     , parameter inst_width_p          = "inv"
     , parameter inst_ram_addr_width_p = "inv"
@@ -31,9 +31,9 @@ module bp_cce_mmio_cfg_loader
    , input                                           reset_i
 
    // Config channel
-   , output logic [cce_mem_data_cmd_width_lp-1:0]    mem_data_cmd_o
-   , output logic                                    mem_data_cmd_v_o
-   , input                                           mem_data_cmd_yumi_i
+   , output logic [cce_mem_cmd_width_lp-1:0]         mem_cmd_o
+   , output logic                                    mem_cmd_v_o
+   , input                                           mem_cmd_yumi_i
 
    // We don't need a response from the cfg network
    , input [mem_cce_resp_width_lp-1:0]               mem_resp_i
@@ -44,11 +44,11 @@ module bp_cce_mmio_cfg_loader
   wire unused0 = &{mem_resp_i, mem_resp_v_i};
   assign mem_resp_ready_o = 1'b1;
    
- `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, cce_mshr_width_lp);
+ `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 
-  bp_cce_mem_data_cmd_s mem_data_cmd_cast_o;
+  bp_cce_mem_cmd_s mem_cmd_cast_o;
 
-  assign mem_data_cmd_o = mem_data_cmd_cast_o;
+  assign mem_cmd_o = mem_cmd_cast_o;
   
   logic [`bp_cce_inst_width-1:0]    cce_inst_boot_rom [0:inst_ram_els_p-1];
   logic [inst_ram_addr_width_p-1:0] cce_inst_boot_rom_addr;
@@ -90,7 +90,7 @@ module bp_cce_mmio_cfg_loader
      ,.reset_i(reset_i)
 
      ,.clear_i(ucode_cnt_clr)
-     ,.up_i(ucode_cnt_inc & mem_data_cmd_yumi_i)
+     ,.up_i(ucode_cnt_inc & mem_cmd_yumi_i)
 
      ,.count_o(ucode_cnt_r)
      );
@@ -101,7 +101,7 @@ module bp_cce_mmio_cfg_loader
     begin
       if (reset_i)
         state_r <= RESET;
-      else if (mem_data_cmd_yumi_i || (state_r == RESET))
+      else if (mem_cmd_yumi_i || (state_r == RESET))
         state_r <= state_n;
     end
 
@@ -110,14 +110,14 @@ module bp_cce_mmio_cfg_loader
 
   always_comb
     begin
-      mem_data_cmd_v_o = cfg_v_lo;
+      mem_cmd_v_o = cfg_v_lo;
 
-      mem_data_cmd_cast_o.msg_type      = e_lce_req_type_wr;
-      mem_data_cmd_cast_o.addr          = bp_cfg_base_addr_gp;
-      mem_data_cmd_cast_o.payload       = '0;
-      mem_data_cmd_cast_o.non_cacheable = e_lce_req_non_cacheable;
-      mem_data_cmd_cast_o.nc_size       = e_lce_nc_req_8;
-      mem_data_cmd_cast_o.data          = {cfg_core_lo, cfg_addr_lo, cfg_data_lo};
+      // uncached store
+      mem_cmd_cast_o.msg_type      = e_cce_mem_uc_wr;
+      mem_cmd_cast_o.addr          = bp_cfg_base_addr_gp;
+      mem_cmd_cast_o.payload       = '0;
+      mem_cmd_cast_o.size          = e_mem_size_8;
+      mem_cmd_cast_o.data          = {cfg_core_lo, cfg_addr_lo, cfg_data_lo};
     end
 
   always_comb 

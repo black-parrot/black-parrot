@@ -96,8 +96,8 @@ module bp_be_director
    , input                            trap_v_i
    , input                            ret_v_i
    , output [vaddr_width_p-1:0]       pc_o 
-   , input [mepc_width_lp-1:0]        mtvec_i
-   , input [mtvec_width_lp-1:0]       mepc_i
+   , input [mepc_width_lp-1:0]        tvec_i
+   , input [mtvec_width_lp-1:0]       epc_i
    , input                            tlb_fence_i
    
    //iTLB fill interface
@@ -123,16 +123,15 @@ bp_be_calc_status_s              calc_status;
 bp_fe_cmd_s                      fe_cmd;
 logic                            fe_cmd_v;
 bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
-bp_fe_cmd_reset_operands_s       fe_cmd_reset_operands;
 bp_fe_cmd_attaboy_s              fe_cmd_attaboy;
-bp_mtvec_s                       mtvec;
-bp_mepc_s                        mepc;
+bp_mtvec_s                       tvec;
+bp_mepc_s                        epc;
 
 assign calc_status = calc_status_i;
 assign fe_cmd_o    = fe_cmd;
 assign fe_cmd_v_o  = fe_cmd_v;
-assign mtvec       = mtvec_i;
-assign mepc        = mepc_i;
+assign tvec        = tvec_i;
+assign epc         = epc_i;
 
 // Declare intermediate signals
 logic [vaddr_width_p-1:0]               npc_plus4;
@@ -235,7 +234,7 @@ bsg_mux
    ,.els_p(2)
    )
  ret_mux
-  (.data_i({mepc_i[0+:vaddr_width_p], {mtvec.base[0+:vaddr_width_p-2], 2'b00}})
+  (.data_i({epc_i[0+:vaddr_width_p], {tvec.base[0+:vaddr_width_p-2], 2'b00}})
    ,.sel_i(ret_v_i)
    ,.data_o(ret_mux_o)
    );
@@ -319,15 +318,15 @@ always_comb
     if (state_r == e_boot) 
       begin : fe_reset
         fe_cmd.opcode = e_op_state_reset;
-        fe_cmd_reset_operands.pc = npc_r;
+        fe_cmd.vaddr = npc_r;
 
-        fe_cmd.operands.reset_operands = fe_cmd_reset_operands;
         fe_cmd_v = fe_cmd_ready_i;
       end
     else if(itlb_fill_v_i)
       begin : itlb_fill
         fe_cmd.opcode = e_op_itlb_fill_response;
-        fe_cmd.operands.itlb_fill_response.vaddr = itlb_fill_vaddr_i;
+        fe_cmd.vaddr = itlb_fill_vaddr_i;
+
         fe_cmd.operands.itlb_fill_response.pte_entry_leaf = itlb_fill_entry_i;
       
         fe_cmd_v = fe_cmd_ready_i;
@@ -335,14 +334,14 @@ always_comb
     else if(tlb_fence_i)
       begin : tlb_fence
         fe_cmd.opcode = e_op_itlb_fence;
-        fe_cmd.operands.icache_fence.pc = calc_status.mem3_pc;
+        fe_cmd.vaddr = calc_status.mem3_pc;
         
         fe_cmd_v = fe_cmd_ready_i;
       end
     else if(calc_status.mem3_fencei_v)
       begin : icache_fence
         fe_cmd.opcode = e_op_icache_fence;
-        fe_cmd.operands.icache_fence.pc = calc_status.mem3_pc;
+        fe_cmd.vaddr = calc_status.mem3_pc;
 
         fe_cmd_v = fe_cmd_ready_i;
       end
@@ -351,7 +350,8 @@ always_comb
     else if((calc_status.ex1_v & npc_mismatch_v) | trap_v_i | ret_v_i) 
       begin : pc_redirect
         fe_cmd.opcode                                   = e_op_pc_redirection;
-        fe_cmd_pc_redirect_operands.pc                  = (trap_v_i | ret_v_i) ? npc_n : expected_npc_o;
+        fe_cmd.vaddr                                    = (trap_v_i | ret_v_i) ? npc_n : expected_npc_o;
+
         fe_cmd_pc_redirect_operands.subopcode           = e_subop_branch_mispredict;
         fe_cmd_pc_redirect_operands.branch_metadata_fwd =  calc_status.int1_branch_metadata_fwd;
 
@@ -367,7 +367,8 @@ always_comb
     else if(calc_status.ex1_instr_v & ~npc_mismatch_v & attaboy_pending) 
       begin : attaboy
         fe_cmd.opcode                      = e_op_attaboy;
-        fe_cmd_attaboy.pc                  = calc_status.ex1_pc;
+        fe_cmd.vaddr                       = calc_status.ex1_pc;
+
         fe_cmd_attaboy.branch_metadata_fwd = calc_status.int1_branch_metadata_fwd;
 
         fe_cmd.operands.attaboy = fe_cmd_attaboy;

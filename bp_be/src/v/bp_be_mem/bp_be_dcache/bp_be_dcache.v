@@ -99,17 +99,8 @@ module bp_be_dcache
     , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(page_offset_width_p,dword_width_p)
     , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(tag_width_lp)
     , localparam stat_info_width_lp=`bp_be_dcache_stat_info_width(lce_assoc_p)
-    
-    , localparam lce_cce_req_width_lp=
-      `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p)
-    , localparam lce_cce_resp_width_lp=
-      `bp_lce_cce_resp_width(num_cce_p, num_lce_p, paddr_width_p)
-    , localparam lce_cce_data_resp_width_lp=
-      `bp_lce_cce_data_resp_width(num_cce_p, num_lce_p, paddr_width_p, lce_data_width_lp)
-    , localparam cce_lce_cmd_width_lp=
-      `bp_cce_lce_cmd_width(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p)
-    , localparam lce_data_cmd_width_lp=
-      `bp_lce_data_cmd_width(num_lce_p, lce_data_width_lp, lce_assoc_p)
+   
+    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p) 
   )
   (
     input clk_i
@@ -148,23 +139,15 @@ module bp_be_dcache
     , output logic lce_resp_v_o
     , input lce_resp_ready_i
 
-    , output logic [lce_cce_data_resp_width_lp-1:0] lce_data_resp_o
-    , output logic lce_data_resp_v_o
-    , input lce_data_resp_ready_i
-
     // CCE-LCE interface
-    , input [cce_lce_cmd_width_lp-1:0] lce_cmd_i
+    , input [lce_cmd_width_lp-1:0] lce_cmd_i
     , input lce_cmd_v_i
     , output logic lce_cmd_ready_o
 
-    , input [lce_data_cmd_width_lp-1:0] lce_data_cmd_i
-    , input lce_data_cmd_v_i
-    , output logic lce_data_cmd_ready_o
-
     // LCE-LCE interface
-    , output logic [lce_data_cmd_width_lp-1:0] lce_data_cmd_o
-    , output logic lce_data_cmd_v_o
-    , input lce_data_cmd_ready_i 
+    , output logic [lce_cmd_width_lp-1:0] lce_cmd_o
+    , output logic lce_cmd_v_o
+    , input lce_cmd_ready_i 
 
     , output credits_full_o
     , output credits_empty_o
@@ -441,10 +424,10 @@ module bp_be_dcache
 
   for (genvar i = 0; i < lce_assoc_p; i++) begin: tag_comp
     assign tag_match_tv[i] = addr_tag_tv == tag_info_tv_r[i].tag;
-    assign load_hit_tv[i] = tag_match_tv[i] & (tag_info_tv_r[i].coh_state != e_MESI_I);
-    assign store_hit_tv[i] = tag_match_tv[i] & ((tag_info_tv_r[i].coh_state == e_MESI_M)
-                                                || (tag_info_tv_r[i].coh_state == e_MESI_E));
-    assign invalid_tv[i] = (tag_info_tv_r[i].coh_state == e_MESI_I);
+    assign load_hit_tv[i] = tag_match_tv[i] & (tag_info_tv_r[i].coh_state != e_COH_I);
+    assign store_hit_tv[i] = tag_match_tv[i] & ((tag_info_tv_r[i].coh_state == e_COH_M)
+                                                || (tag_info_tv_r[i].coh_state == e_COH_E));
+    assign invalid_tv[i] = (tag_info_tv_r[i].coh_state == e_COH_I);
   end
 
   bsg_priority_encode
@@ -707,21 +690,13 @@ module bp_be_dcache
       ,.lce_resp_v_o(lce_resp_v_o)
       ,.lce_resp_ready_i(lce_resp_ready_i)
 
-      ,.lce_data_resp_o(lce_data_resp_o)
-      ,.lce_data_resp_v_o(lce_data_resp_v_o)
-      ,.lce_data_resp_ready_i(lce_data_resp_ready_i)
-
       ,.lce_cmd_i(lce_cmd_i)
       ,.lce_cmd_v_i(lce_cmd_v_i)
       ,.lce_cmd_ready_o(lce_cmd_ready_o)
 
-      ,.lce_data_cmd_i(lce_data_cmd_i)
-      ,.lce_data_cmd_v_i(lce_data_cmd_v_i)
-      ,.lce_data_cmd_ready_o(lce_data_cmd_ready_o)
-
-      ,.lce_data_cmd_o(lce_data_cmd_o)
-      ,.lce_data_cmd_v_o(lce_data_cmd_v_o)
-      ,.lce_data_cmd_ready_i(lce_data_cmd_ready_i)
+      ,.lce_cmd_o(lce_cmd_o)
+      ,.lce_cmd_v_o(lce_cmd_v_o)
+      ,.lce_cmd_ready_i(lce_cmd_ready_i)
 
       ,.credits_full_o(credits_full_o)
       ,.credits_empty_o(credits_empty_o)
@@ -925,14 +900,14 @@ module bp_be_dcache
       e_dcache_lce_tag_mem_invalidate: begin
         tag_mem_data_li = {((tag_info_width_lp)*lce_assoc_p){1'b0}};
         for (integer i = 0; i < lce_assoc_p; i++) begin 
-          tag_mem_mask_li[i].coh_state = {2{lce_tag_mem_way_one_hot[i]}};
+          tag_mem_mask_li[i].coh_state = {`bp_coh_bits{lce_tag_mem_way_one_hot[i]}};
           tag_mem_mask_li[i].tag = {tag_width_lp{1'b0}};
         end
       end
       e_dcache_lce_tag_mem_set_tag: begin
         tag_mem_data_li = {lce_assoc_p{lce_tag_mem_pkt.state, lce_tag_mem_pkt.tag}};
         for (integer i = 0; i < lce_assoc_p; i++) begin
-          tag_mem_mask_li[i].coh_state = {2{lce_tag_mem_way_one_hot[i]}};
+          tag_mem_mask_li[i].coh_state = {`bp_coh_bits{lce_tag_mem_way_one_hot[i]}};
           tag_mem_mask_li[i].tag = {tag_width_lp{lce_tag_mem_way_one_hot[i]}};
         end
       end

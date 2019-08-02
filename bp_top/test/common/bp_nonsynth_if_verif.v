@@ -14,7 +14,7 @@ module bp_nonsynth_if_verif
    `declare_bp_lce_cce_if_widths
      (num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
    `declare_bp_me_if_widths
-     (paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mem_payload_width_p)
+     (paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
    , localparam proc_cfg_width_lp = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
    )
@@ -26,7 +26,7 @@ assign proc_param = all_cfgs_gp[cfg_p];
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p);
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mem_payload_width_p);
+`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 
 initial 
   begin
@@ -41,16 +41,12 @@ initial
 
     $display("########### LCE-CCE IF ##############");
     $display("bp_lce_cce_req_s       bits: struct %d width %d", $bits(bp_lce_cce_req_s), lce_cce_req_width_lp);
-    $display("bp_cce_lce_cmd_s       bits: struct %d width %d", $bits(bp_cce_lce_cmd_s), cce_lce_cmd_width_lp);
-    $display("bp_lce_data_cmd_s      bits: struct %d width %d", $bits(bp_lce_data_cmd_s), lce_data_cmd_width_lp);
+    $display("bp_lce_cmd_s           bits: struct %d width %d", $bits(bp_lce_cmd_s), lce_cmd_width_lp);
     $display("bp_lce_cce_resp_s      bits: struct %d width %d", $bits(bp_lce_cce_resp_s), lce_cce_resp_width_lp);
-    $display("bp_lce_cce_data_resp_s bits: struct %d width %d", $bits(bp_lce_cce_data_resp_s), lce_cce_data_resp_width_lp);
 
     $display("########### CCE-MEM IF ##############");
     $display("bp_cce_mem_cmd_s       bits: struct %d width %d", $bits(bp_cce_mem_cmd_s), cce_mem_cmd_width_lp);
-    $display("bp_cce_mem_data_cmd_s  bits: struct %d width %d", $bits(bp_cce_mem_data_cmd_s), cce_mem_data_cmd_width_lp);
     $display("bp_mem_cce_resp_s      bits: struct %d width %d", $bits(bp_mem_cce_resp_s), mem_cce_resp_width_lp);
-    $display("bp_mem_cce_data_resp_s bits: struct %d width %d", $bits(bp_mem_cce_data_resp_s), mem_cce_data_resp_width_lp);
   end
 
 endmodule
