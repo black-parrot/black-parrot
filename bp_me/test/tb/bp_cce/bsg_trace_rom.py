@@ -28,7 +28,10 @@ parser.add_argument('--sets', dest='sets', type=int, default=64,
                     help='Data cache number of sets')
 parser.add_argument('--mem-size', dest='mem_size', type=int, default=2,
                     help='Size of backing memory, given as integer multiple of D$ size')
-
+parser.add_argument('-i', dest='lce_id', type=int, default=0,
+                    help='LCE ID')
+parser.add_argument('-l', dest='num_lce', type=int, default=1,
+                    help='Number of LCEs')
 
 args = parser.parse_args()
 

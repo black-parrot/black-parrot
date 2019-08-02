@@ -56,8 +56,14 @@ include $(BP_COMMON_DIR)/syn/Makefile.regress
 include $(BP_COMMON_DIR)/syn/Makefile.verilator
 include $(BP_COMMON_DIR)/syn/Makefile.vcs
 
+axe: AXE_LOG ?= ./axe.log
+axe:
+	python $(BP_ME_DIR)/software/py/axe_trace_filter.py $(AXE_LOG) > trace.axe
+	cat trace.axe
+	axe check TSO trace.axe
+
 bsg_trace_rom_%.tr:
-	-python $(TB_PATH)/$(TB)/bsg_trace_rom.py -n $(NUM_INSTR_P) -s $(SEED_P) > $(TB_PATH)/$(TB)/$@
+	-python $(TB_PATH)/$(TB)/bsg_trace_rom.py -n $(NUM_INSTR_P) -s $(SEED_P) -i $* -l $(NUM_LCE_P) > $(TB_PATH)/$(TB)/$@
 
 bsg_trace_rom_%.v: bsg_trace_rom_%.tr
 	-python $(BSG_IP_CORES_DIR)/bsg_mem/bsg_ascii_to_rom.py $(TB_PATH)/$(TB)/$< bsg_trace_rom_$* > $(TB_PATH)/$(TB)/$@
@@ -79,9 +85,7 @@ pre-verilate.sc: $(TRACE_ROMS)
 verilate.sc: copy_roms.sc
 
 lint.me:
-	# TODO: The linter currently depends on the broken me_trace_tb
-	#$(MAKE) lint.v || true
-	#$(MAKE) lint.sc || true
+	@echo "ME lint not supported"
 
 regress.me.sc: dirs.sc
 	$(MAKE) build.sc sim.sc TB=bp_cce NUM_INSTR_P=$(NUM_INSTR_P)
@@ -91,66 +95,11 @@ regress.me.sc: dirs.sc
 	$(MAKE) build.sc sim.sc TB=bp_cce_alu
 	$(MAKE) build.sc sim.sc TB=bp_cce_gad
 
-#	$(MAKE) build.sc TB=bp_cce_alu
-#	$(MAKE) sim.sc TB=bp_cce_alu
-#	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_alu.e_bp_single_core_cfg.sim.rv64ui-p-simple.log \
-#	&& echo "bp_cce_alu: OK" >> $(LOG_PATH)/me_regress.log \
-#	|| echo "bp_cce_alu: FAIL" >> $(LOG_PATH)/me_regress.log
-#	$(MAKE) build.sc TB=bp_cce_dir
-#	$(MAKE) sim.sc TB=bp_cce_dir
-#	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_dir.e_bp_single_core_cfg.sim.rv64ui-p-simple.log \
-#	&& echo "bp_cce_dir: OK" >> $(LOG_PATH)/me_regress.log \
-#	|| echo "bp_cce_dir: FAIL" >> $(LOG_PATH)/me_regress.log
-#	$(MAKE) build.sc TB=bp_cce_gad
-#	$(MAKE) sim.sc TB=bp_cce_gad
-#	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_gad.e_bp_single_core_cfg.sim.rv64ui-p-simple.log \
-#	&& echo "bp_cce_gad: OK" >> $(LOG_PATH)/me_regress.log \
-#	|| echo "bp_cce_gad: FAIL" >> $(LOG_PATH)/me_regress.log
-#	$(MAKE) build.sc TB=bp_cce_test CFG=e_bp_half_core_cfg
-#	$(MAKE) sim.sc TB=bp_cce_test CFG=e_bp_half_core_cfg
-#	@grep "PASSED" $(LOG_PATH)/verilator/bp_cce_test.e_bp_half_core_cfg.sim.rv64ui-p-simple.log \
-#	&& echo "bp_cce_test: OK" >> $(LOG_PATH)/me_regress.log \
-#	|| echo "bp_cce_test: FAIL" >> $(LOG_PATH)/me_regress.log
-
 regress.me.v: dirs.v
 	$(MAKE) build.v sim.v TB=bp_cce NUM_INSTR_P=$(NUM_INSTR_P)
 	$(MAKE) build.v sim.v TB=bp_cce_uc
 	$(MAKE) build.v sim.v TB=bp_cce_fsm NUM_INSTR_P=$(NUM_INSTR_P)
 	$(MAKE) build.v sim.v TB=bp_cce_fsm_uc
-
-
-#	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_mock_lce \
-#	| tee -i $(LOG_PATH)/vcs/bp_me_mock_lce.log
-#	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_mock_lce.log \
-#	| tee -i $(REPORT_PATH)/vcs/bp_me_mock_lce.rpt
-#	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_mock_lce.log \
-#	|| echo "FAILED" >> $(REPORT_DIR)/bp_me_mock_lce.err
-#	@grep "DONE" $(LOG_PATH)/vcs/bp_me_mock_lce.log \
-#	&& echo "bp_me_mock_lce: OK" >> $(LOG_PATH)/me_regress.log \
-#	|| echo "bp_me_mock_lce: FAIL" >> $(LOG_PATH)/me_regress.log
-#	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_mock_lce_uc \
-#	| tee -i $(LOG_PATH)/vcs/bp_me_mock_lce_uc.log
-#	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_mock_lce_uc.log \
-#	| tee -i $(REPORT_PATH)/vcs/bp_me_mock_lce_uc.rpt
-#	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_mock_lce_uc.log \
-#	|| echo "FAILED" >> $(REPORT_DIR)/bp_me_mock_lce_uc.err
-#	@grep "DONE" $(LOG_PATH)/vcs/bp_me_mock_lce_uc.log \
-#	&& echo "bp_me_mock_lce_uc: OK" >> $(LOG_PATH)/me_regress.log \
-#	|| echo "bp_me_mock_lce_uc: FAIL" >> $(LOG_PATH)/me_regress.log
-#	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_mock_lce_tiled NUM_LCE_P=16 AXE_TRACE_P=1 NUM_INSTR_P=4096 \
-#	| tee -i $(LOG_PATH)/vcs/bp_me_mock_lce_tiled.log
-#	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_mock_lce_tiled.log \
-#	| tee -i $(REPORT_PATH)/vcs/bp_me_mock_lce_tiled.rpt
-#	@grep "mBPC" $(LOG_PATH)/vcs/bp_me_mock_lce_tiled.log \
-#	|| echo "FAILED" >> $(REPORT_DIR)/bp_me_mock_lce_tiled.err
-#	@grep "DONE" $(LOG_PATH)/vcs/bp_me_mock_lce_tiled.log \
-#	&& echo "bp_me_mock_lce_tiled: OK" >> $(LOG_PATH)/me_regress.log \
-#	|| echo "bp_me_mock_lce_tiled: FAIL" >> $(LOG_PATH)/me_regress.log
-#	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_mock_lce_tiled axe \
-#	| tee -i $(LOG_PATH)/vcs/bp_me_mock_lce_tiled_axe.log
-#	@grep "OK" $(LOG_PATH)/vcs/bp_me_mock_lce_tiled_axe.log \
-#	&& echo "bp_me_mock_lce_tiled_axe: OK" >> $(LOG_PATH)/me_regress.log \
-#	|| echo "bp_me_mock_lce_tiled_axe: FAIL" >> $(LOG_PATH)/me_regress.log
 
 regress: regress.me
 regress.me: lint.me regress.me.sc regress.me.v
@@ -158,4 +107,5 @@ regress.me: lint.me regress.me.sc regress.me.v
 clean: clean.me
 clean.me:
 	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_mock_lce_tiled clean
+	rm -f *.axe
 

@@ -50,8 +50,8 @@ movi N_LCE r1
 movi SYNC_ACK r3
 sync_top: bge r0 r1 ready
 pushq lceCmd SYNC r0
-popq lceResp
-bne r3 ackType error
+popq lceResp r4
+bne r3 r4 error
 inc r0
 bi sync_top
 
@@ -101,7 +101,7 @@ wds req r0 shWayR0 I
 inv_inc_lce: inc r0
 bi inv_top
 inv_ack_top: bz r2 upgrade_check
-popq lceResp
+popq lceResp r4
 dec r2
 bi inv_ack_top
 
@@ -112,7 +112,7 @@ bi replace_check
 # Upgrade Routine
 upgrade: wds req req req nextCohSt
 pushq lceCmd STW req req req
-popq lceResp
+popq lceResp r4
 bi ready
 
 # Replacement Check Routine
@@ -122,10 +122,8 @@ bi transfer_check
 # Replacement Routine
 replace: pushq lceCmd WB req lru lru
 poph lceDataResp
-sf rwbf
 pushq memDataCmd lru
 popq lceDataResp
-sfz rwbf
 bi mem_resp
 
 # Transfer Check
@@ -141,27 +139,25 @@ pushq lceCmd WB tr req tr
 poph lceDataResp
 bf nwbf complete_transfer
 # perform the transfer WB to mem
-sfz rwbf
+sfz rf
 pushq memDataCmd req
 popq memResp
-sf pcf
 
 # wait for the transfer ack
 complete_transfer: popq lceDataResp
-popq lceResp
+popq lceResp r4
 bi ready
 
 # Read Line from L2 Routine
 read_l2: wde req req lru req nextCohSt
 pushq memCmd
 pushq lceCmd ST req req lru
-popq lceResp
+popq lceResp r4
 bi ready
 
 # Memory Response Routine
 mem_resp: popq memResp
-bf rwbf transfer_check
-sf pcf
+bf rf transfer_check
 bi ready
 
 # Uncached Request Routine

@@ -62,9 +62,9 @@ protected:
   bp_cce_inst_src_e parseSrcOpd(string &s);
   bp_cce_inst_dst_e parseDstOpd(string &s);
 
-  uint16_t parseImm(string &s);
-  uint16_t parseCohStImm(string &s);
-  uint16_t getImm(string &target_str);
+  uint32_t parseImm(string &s, int immSize);
+  uint32_t parseCohStImm(string &s);
+  uint16_t getBranchTarget(string &target_str);
   bp_cce_inst_flag_e parseFlagSel(string &s);
   bp_cce_inst_dir_way_group_sel_e parseDirWgSel(string &s);
   bp_cce_inst_dir_lce_sel_e parseDirLceSel(string &s);
@@ -76,7 +76,7 @@ protected:
   bp_cce_inst_lce_cmd_lce_sel_e parseLceCmdLceSel(string &s);
   bp_cce_inst_lce_cmd_addr_sel_e parseLceCmdAddrSel(string &s);
   bp_cce_inst_lce_cmd_way_sel_e parseLceCmdWaySel(string &s);
-  bp_cce_inst_mem_data_cmd_addr_sel_e parseMemDataCmdAddrSel(string &s);
+  bp_cce_inst_mem_cmd_addr_sel_e parseMemCmdAddrSel(string &s);
 
   int readLine(char *s, int maxLineLen, FILE *infp);
   int tokenizeLine(char* input_line, char tokens[MAX_TOKENS][MAX_LINE_LENGTH]);
@@ -85,7 +85,7 @@ protected:
 
   void printShortField(uint8_t b, int bits, stringstream &ss);
   void printLongField(uint16_t b, int bits, stringstream &ss);
-  void printField(uint64_t b, int bits, stringstream &ss);
+  void printField(uint32_t b, int bits, stringstream &ss);
   void printPad(int bits, stringstream &ss);
   void writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &s);
 

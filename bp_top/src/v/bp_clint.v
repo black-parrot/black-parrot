@@ -10,38 +10,30 @@ module bp_clint
  import bp_cce_pkg::*;
  import bsg_noc_pkg::*;
  import bsg_wormhole_router_pkg::*;
+ import bp_me_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mem_payload_width_p)
-
-   , localparam mem_resp_width_lp=
-      `bp_mem_cce_resp_width(paddr_width_p,mem_payload_width_p)
-   , localparam mem_data_resp_width_lp=
-      `bp_mem_cce_data_resp_width(paddr_width_p,cce_block_width_p,num_lce_p,lce_assoc_p)
-   , localparam mem_cmd_width_lp=
-      `bp_cce_mem_cmd_width(paddr_width_p,num_lce_p,lce_assoc_p)
-   , localparam mem_data_cmd_width_lp=
-      `bp_cce_mem_data_cmd_width(paddr_width_p,cce_block_width_p,mem_payload_width_p)
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
    // Arbitrary default, should be set based on PD constraints
    , parameter irq_pipe_depth_p = 4
    , parameter cfg_pipe_depth_p = 4
 
-   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(noc_width_p)
+   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_width_p)
    )
   (input                                           clk_i
    , input                                         reset_i
 
    // BP side
-   , input [noc_cord_width_p-1:0]                  my_cord_i
-   , input [noc_cord_width_p-1:0]                  dram_cord_i
-   , input [noc_cord_width_p-1:0]                  clint_cord_i
+   , input [mem_noc_cord_width_p-1:0]              my_cord_i
+   , input [mem_noc_cord_width_p-1:0]              dram_cord_i
+   , input [mem_noc_cord_width_p-1:0]              clint_cord_i
 
-   , input [bsg_ready_and_link_sif_width_lp-1:0]   cmd_link_i
-   , output [bsg_ready_and_link_sif_width_lp-1:0]  cmd_link_o
+   , input [mem_noc_ral_link_width_lp-1:0]         cmd_link_i
+   , output [mem_noc_ral_link_width_lp-1:0]        cmd_link_o
 
-   , input [bsg_ready_and_link_sif_width_lp-1:0]   resp_link_i
-   , output [bsg_ready_and_link_sif_width_lp-1:0]  resp_link_o
+   , input [mem_noc_ral_link_width_lp-1:0]         resp_link_i
+   , output [mem_noc_ral_link_width_lp-1:0]        resp_link_o
 
    // Local interrupts
    , output [num_core_p-1:0]                       soft_irq_o
@@ -54,25 +46,18 @@ module bp_clint
    , output [num_core_p-1:0][cfg_data_width_p-1:0] cfg_data_o
    );
 
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p, mem_payload_width_p);
+`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 
 bp_cce_mem_cmd_s       mem_cmd_i;
 logic                  mem_cmd_v_i, mem_cmd_yumi_o;
-bp_cce_mem_data_cmd_s  mem_data_cmd_i;
-logic                  mem_data_cmd_v_i, mem_data_cmd_yumi_o;
 bp_mem_cce_resp_s      mem_resp_o;
 logic                  mem_resp_v_o, mem_resp_ready_i;
-bp_mem_cce_data_resp_s mem_data_resp_o;
-logic                  mem_data_resp_v_o, mem_data_resp_ready_i;
 
 // Cast ports
 bp_cce_mem_cmd_s       mem_cmd_cast_i;
-bp_cce_mem_data_cmd_s  mem_data_cmd_cast_i;
 bp_mem_cce_resp_s      mem_resp_r, mem_resp_n;
-bp_mem_cce_data_resp_s mem_data_resp_r, mem_data_resp_n;
 
 assign mem_cmd_cast_i       = mem_cmd_i;
-assign mem_data_cmd_cast_i  = mem_data_cmd_i;
 
 localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
 
@@ -89,6 +74,10 @@ always_comb
     mtime_cmd_v         = 1'b0;
     plic_cmd_v          = 1'b0;
 
+    // if read/load
+    // TODO: cached or uncached?
+    if (mem_cmd_cast_i.msg_type == e_cce_mem_rd | mem_cmd_cast_i.msg_type == e_cce_mem_wr
+        | mem_cmd_cast_i.msg_type == e_cce_mem_uc_rd) begin
     unique 
     casez (mem_cmd_cast_i.addr)
       mipi_reg_base_addr_gp    : mipi_cmd_v     = mem_cmd_v_i;
@@ -97,6 +86,7 @@ always_comb
       plic_reg_base_addr_gp    : plic_cmd_v     = mem_cmd_v_i;
       default: begin end
     endcase
+    end
 
     cfg_data_cmd_v = 1'b0;
     mipi_data_cmd_v     = 1'b0;
@@ -104,15 +94,19 @@ always_comb
     mtime_data_cmd_v    = 1'b0;
     plic_data_cmd_v     = 1'b0;
 
+    // if writeback or uncached store
+    // TODO: cached or uncached?
+    if (mem_cmd_cast_i.msg_type == e_cce_mem_wb | mem_cmd_cast_i.msg_type == e_cce_mem_uc_wr) begin
     unique 
-    casez (mem_data_cmd_cast_i.addr)
-      cfg_link_dev_base_addr_gp: cfg_data_cmd_v      = mem_data_cmd_v_i;
-      mipi_reg_base_addr_gp    : mipi_data_cmd_v     = mem_data_cmd_v_i;
-      mtimecmp_reg_base_addr_gp: mtimecmp_data_cmd_v = mem_data_cmd_v_i;
-      mtime_reg_addr_gp        : mtime_data_cmd_v    = mem_data_cmd_v_i;
-      plic_reg_base_addr_gp    : plic_data_cmd_v     = mem_data_cmd_v_i;
+    casez (mem_cmd_cast_i.addr)
+      cfg_link_dev_base_addr_gp: cfg_data_cmd_v      = mem_cmd_v_i;
+      mipi_reg_base_addr_gp    : mipi_data_cmd_v     = mem_cmd_v_i;
+      mtimecmp_reg_base_addr_gp: mtimecmp_data_cmd_v = mem_cmd_v_i;
+      mtime_reg_addr_gp        : mtime_data_cmd_v    = mem_cmd_v_i;
+      plic_reg_base_addr_gp    : plic_data_cmd_v     = mem_cmd_v_i;
       default: begin end
     endcase
+    end
   end
 
 logic [num_core_p-1:0] mtimecmp_r_v_li, mtimecmp_w_v_li;
@@ -124,7 +118,7 @@ localparam byte_offset_width_lp = 3;
 wire [lg_num_core_lp-1:0] mem_cmd_core_enc = 
   mem_cmd_cast_i.addr[byte_offset_width_lp+:lg_num_core_lp];
 wire [lg_num_core_lp-1:0] mem_data_cmd_core_enc = 
-  mem_data_cmd_cast_i.addr[byte_offset_width_lp+:lg_num_core_lp];
+  mem_cmd_cast_i.addr[byte_offset_width_lp+:lg_num_core_lp];
 
 bsg_decode_with_v
  #(.num_out_p(num_core_p))
@@ -183,7 +177,7 @@ bsg_decode_with_v
 logic [dword_width_p-1:0] mtime_n, mtime_r;
 wire mtime_w_v_li = mtime_data_cmd_v;
 assign mtime_n    = mtime_w_v_li 
-                    ? mem_data_cmd_cast_i.data[0+:dword_width_p] 
+                    ? mem_cmd_cast_i.data[0+:dword_width_p] 
                     : mtime_r + dword_width_p'(1);
   bsg_dff_reset
    #(.width_p(dword_width_p))
@@ -201,9 +195,9 @@ logic [num_core_p-1:0]                    plic_n    , plic_r;
 
 // cfg link to tile
 logic [num_core_p-1:0]      cfg_w_v_li;
-wire [cfg_core_width_p-1:0] cfg_core_li      = mem_data_cmd_cast_i.data[cfg_data_width_p+cfg_addr_width_p+:cfg_core_width_p];
-wire [cfg_addr_width_p-1:0] cfg_addr_li      = mem_data_cmd_cast_i.data[cfg_data_width_p+:cfg_addr_width_p];
-wire [cfg_data_width_p-1:0] cfg_data_li      = mem_data_cmd_cast_i.data[0+:cfg_data_width_p];
+wire [cfg_core_width_p-1:0] cfg_core_li      = mem_cmd_cast_i.data[cfg_data_width_p+cfg_addr_width_p+:cfg_core_width_p];
+wire [cfg_addr_width_p-1:0] cfg_addr_li      = mem_cmd_cast_i.data[cfg_data_width_p+:cfg_addr_width_p];
+wire [cfg_data_width_p-1:0] cfg_data_li      = mem_cmd_cast_i.data[0+:cfg_data_width_p];
 wire                        cfg_broadcast_li = cfg_data_cmd_v & (cfg_core_li == '1);
 
 bsg_decode_with_v
@@ -216,7 +210,7 @@ bsg_decode_with_v
 
 for (genvar i = 0; i < num_core_p; i++)
   begin : rof1
-    assign mtimecmp_n[i] = mem_data_cmd_cast_i.data[0+:dword_width_p];
+    assign mtimecmp_n[i] = mem_cmd_cast_i.data[0+:dword_width_p];
     bsg_dff_reset_en
      #(.width_p(dword_width_p))
      mtimecmp_reg
@@ -239,7 +233,7 @@ for (genvar i = 0; i < num_core_p; i++)
        ,.data_o(timer_irq_o[i])
        );
 
-    assign mipi_n[i] = mem_data_cmd_cast_i.data[0];
+    assign mipi_n[i] = mem_cmd_cast_i.data[0];
     bsg_dff_reset_en
      #(.width_p(1))
      mipi_reg
@@ -262,7 +256,7 @@ for (genvar i = 0; i < num_core_p; i++)
        ,.data_o(soft_irq_o[i])
        );
 
-    assign plic_n[i] = mem_data_cmd_cast_i.data[0];
+    assign plic_n[i] = mem_cmd_cast_i.data[0];
     bsg_dff_reset_en
      #(.width_p(1))
      plic_reg
@@ -341,28 +335,10 @@ wire [dword_width_p-1:0] rdata_lo = plic_cmd_v
 
 // Possibly unnecessary, if we convert the WH adapter to buffer in both directions,
 //   rather than sending in 1 cycle and receiving in the next
-bp_mem_cce_data_resp_s mem_data_resp_lo;
-logic mem_data_resp_v_lo, mem_data_resp_ready_lo;
-assign mem_cmd_yumi_o = mem_cmd_v_i & mem_data_resp_ready_lo;
-bsg_one_fifo
- #(.width_p(mem_cce_data_resp_width_lp))
- mem_data_resp_buffer
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   
-   ,.data_i(mem_data_resp_lo)
-   ,.v_i(mem_cmd_yumi_o)
-   ,.ready_o(mem_data_resp_ready_lo)
-
-   ,.data_o(mem_data_resp_o)
-   ,.v_o(mem_data_resp_v_lo)
-   ,.yumi_i(mem_data_resp_ready_i & mem_data_resp_v_lo)
-   );
-assign mem_data_resp_v_o = mem_data_resp_ready_i & mem_data_resp_v_lo;
 
 bp_mem_cce_resp_s mem_resp_lo;
 logic mem_resp_v_lo, mem_resp_ready_lo;
-assign mem_data_cmd_yumi_o = mem_data_cmd_v_i & mem_resp_ready_lo;
+assign mem_cmd_yumi_o = mem_cmd_v_i & mem_resp_ready_lo;
 bsg_one_fifo
  #(.width_p(mem_cce_resp_width_lp))
  mem_resp_buffer
@@ -370,7 +346,7 @@ bsg_one_fifo
    ,.reset_i(reset_i)
 
    ,.data_i(mem_resp_lo)
-   ,.v_i(mem_data_cmd_yumi_o)
+   ,.v_i(mem_cmd_yumi_o)
    ,.ready_o(mem_resp_ready_lo)
 
    ,.data_o(mem_resp_o)
@@ -379,26 +355,18 @@ bsg_one_fifo
    );
 assign mem_resp_v_o = mem_resp_ready_i & mem_resp_v_lo;
 
-assign mem_data_resp_lo = 
+// TODO: data only gets assigned for rd, wr, uc_rd
+assign mem_resp_lo =
   '{msg_type       : mem_cmd_cast_i.msg_type
     ,addr          : mem_cmd_cast_i.addr
     ,payload       : mem_cmd_cast_i.payload
-    ,non_cacheable : mem_cmd_cast_i.non_cacheable
-    ,nc_size       : mem_cmd_cast_i.nc_size
+    ,size          : mem_cmd_cast_i.size
     ,data          : rdata_lo
-    };
-
-assign mem_resp_lo =
-  '{msg_type       : mem_data_cmd_cast_i.msg_type
-    ,addr          : mem_data_cmd_cast_i.addr
-    ,payload       : mem_data_cmd_cast_i.payload
-    ,non_cacheable : mem_data_cmd_cast_i.non_cacheable
-    ,nc_size       : mem_data_cmd_cast_i.nc_size
     };
 
 
 // CCE-MEM IF to wormhole link conversion
-`declare_bsg_ready_and_link_sif_s(noc_width_p, bsg_ready_and_link_sif_s);
+`declare_bsg_ready_and_link_sif_s(mem_noc_width_p, bsg_ready_and_link_sif_s);
 bsg_ready_and_link_sif_s cmd_link_cast_i, cmd_link_cast_o;
 bsg_ready_and_link_sif_s resp_link_cast_i, resp_link_cast_o;
 
@@ -420,21 +388,12 @@ bp_me_cce_to_wormhole_link_master
    ,.mem_cmd_v_i('0)
    ,.mem_cmd_yumi_o()
 
-   ,.mem_data_cmd_i('0)
-   ,.mem_data_cmd_v_i('0)
-   ,.mem_data_cmd_yumi_o()
-
    ,.mem_resp_o()
    ,.mem_resp_v_o()
    ,.mem_resp_ready_i('1)
 
-   ,.mem_data_resp_o()
-   ,.mem_data_resp_v_o()
-   ,.mem_data_resp_ready_i('1)
-
    ,.my_cord_i(my_cord_i)
    ,.mem_cmd_dest_cord_i('0)
-   ,.mem_data_cmd_dest_cord_i('0)
 
    ,.link_i(wh_master_link_li)
    ,.link_o(wh_master_link_lo)
@@ -451,17 +410,9 @@ bp_me_cce_to_wormhole_link_client
    ,.mem_cmd_v_o(mem_cmd_v_i)
    ,.mem_cmd_yumi_i(mem_cmd_yumi_o)
 
-   ,.mem_data_cmd_o(mem_data_cmd_i)
-   ,.mem_data_cmd_v_o(mem_data_cmd_v_i)
-   ,.mem_data_cmd_yumi_i(mem_data_cmd_yumi_o)
-
    ,.mem_resp_i(mem_resp_o)
    ,.mem_resp_v_i(mem_resp_v_o)
    ,.mem_resp_ready_o(mem_resp_ready_i)
-
-   ,.mem_data_resp_i(mem_data_resp_o)
-   ,.mem_data_resp_v_i(mem_data_resp_v_o)
-   ,.mem_data_resp_ready_o(mem_data_resp_ready_i)
 
    ,.my_cord_i(my_cord_i)
 
