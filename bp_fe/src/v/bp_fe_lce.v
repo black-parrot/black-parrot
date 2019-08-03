@@ -191,7 +191,7 @@ module bp_fe_lce
     ,.reset_i(reset_i)
 
     ,.lce_id_i(lce_id_i)
-    ,.miss_addr_i(miss_addr_i)
+    ,.miss_addr_i(miss_addr_lo)
 
     ,.lce_ready_o(lce_ready_lo)
     ,.set_tag_received_o(set_tag_received)
