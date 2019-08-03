@@ -11,7 +11,6 @@ LOG_PATH     := $(BP_TOP_DIR)/syn/logs
 RESULTS_PATH := $(BP_TOP_DIR)/syn/results
 REPORT_PATH  := $(BP_TOP_DIR)/syn/reports
 
-# Default ROM to example
 TB          ?= bp_top_trace_demo
 CFG         ?= e_bp_single_core_cfg
 START_PC 		?= 0x80000000

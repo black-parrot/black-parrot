@@ -1,6 +1,9 @@
 
-PYTHON    ?= python
-TRACEDIFF ?= $(BP_COMMON_DIR)/test/software/tracediff.py
+VPD2VCD          ?= vpd2vcd
+PYTHON           ?= python
+TRACEDIFF        ?= $(BP_COMMON_DIR)/test/software/tracediff.py
+UNHARDWARE_DIR   ?= $(BP_EXTERNAL_DIR)/agile-unhardware
+UNHARDWARE_MODEL ?= blackparrot
 
 ## Tool specific options
 VCS_OPTIONS ?= +vcs+finish+5000000000ps   # Change this to run longer / shorter
@@ -95,6 +98,7 @@ sim.v: dirs.v
 	-@ln -sf $(BUILD_DIR)/simv $(SIM_DIR)/simv
 	-@ln -sf $(BUILD_DIR)/simv.daidir $(SIM_DIR)/simv.daidir
 	-@cp $(MEM_PATH)/$(PROG).mem $(SIM_DIR)/prog.mem
+	-@cp $(MEM_PATH)/$(PROG).mem $(SIM_DIR)/prog.elf
 	-@cp $(MEM_PATH)/$(PROG).dump $(SIM_DIR)/prog.dump
 	-@cp $(MEM_PATH)/$(PROG).spike $(SIM_DIR)/prog.spike
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(SIM_DIR)/dram_ch.ini
@@ -136,6 +140,10 @@ cov.v: dirs.v
 
 dve.v: dirs.v
 	cd $(SIM_DIR); dve -full64 -vpd vcdplus.vpd &
+
+debug.v: dirs.v
+	$(VPD2VCD) +splitpacked $(SIM_DIR)/vcdplus.vpd $(SIM_DIR)/debug.vcd
+	$(MAKE) regen -C $(UNHARDWARE_DIR) MODEL=$(UNHARDWARE_MODEL) DATA=$(SIM_DIR)/debug.vcd BINARY=$(SIM_DIR)/prog.elf 
 
 clean.v:
 	@rm -rf results/vcs
