@@ -9,13 +9,12 @@ VCS_OPTIONS += +libext+.v+.vlib+.vh      # Find library files with these extensi
 VCS_OPTIONS += +vcs+loopdetect
 
 VCS_BUILD_OPTS += -full64             # Compile a 64-bit executable
-VCS_BUILD_OPTS += -sverilog # Enable SystemVerilog
+VCS_BUILD_OPTS += -sverilog -debug_pp # Enable SystemVerilog
 VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
 #VCS_BUILD_OPTS += -assert svaext      # Enable elaboration system tasks
 VCS_BUILD_OPTS += -CFLAGS "-I$(BP_EXTERNAL_DIR)/include -std=c++11"
 VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
 VCS_BUILD_OPTS += -assert svaext
-VCS_BUILD_OPTS += +lint=TFIPC-L
 
 LINT_OPTIONS = +lint=all,noSVA-UA,noVCDE,noSVA-NSVU
 

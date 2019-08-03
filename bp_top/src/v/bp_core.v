@@ -65,7 +65,11 @@ module bp_core
     );
 
   `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
-  `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+  `declare_bp_fe_be_if(vaddr_width_p
+                       ,paddr_width_p
+                       ,asid_width_p
+                       ,branch_metadata_fwd_width_p
+                       );
 
   bp_fe_queue_s fe_queue_li, fe_queue_lo;
   logic fe_queue_v_li, fe_queue_ready_lo;
