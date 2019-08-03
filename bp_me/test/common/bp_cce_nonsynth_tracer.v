@@ -147,23 +147,25 @@ module bp_cce_nonsynth_tracer
         end
         if (mem_resp.msg_type == e_cce_mem_rd | mem_resp.msg_type == e_cce_mem_wr
             | mem_resp.msg_type == e_cce_mem_uc_rd) begin
-        $display("%0T: CCE[%0d] MEM DATA RESP wr[%0b] addr[%H] lce[%0d] way[%0d] uc[%0b]\n%H"
+        $display("%0T: CCE[%0d] MEM DATA RESP wr[%0b] addr[%H] lce[%0d] way[%0d] state[%3b] uc[%0b]\n%H"
                  , $time, cce_id_i, (mem_resp.msg_type == e_cce_mem_wr), mem_resp.addr
-                 , mem_resp.payload.lce_id, mem_resp.payload.way_id
+                 , mem_resp.payload.lce_id, mem_resp.payload.way_id, mem_resp.payload.state
                  , (mem_resp.msg_type == e_cce_mem_uc_rd), mem_resp.data);
         end
       end
       // outbound messages
       if (lce_cmd_v_i & lce_cmd_ready_i) begin
         if (lce_cmd.msg_type == e_lce_cmd_data) begin
-        $display("%0T: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] way[%0d]\n%H"
-                 , $time, cce_id_i, lce_cmd.dst_id, lce_cmd.msg_type, lce_cmd.way_id
-                 , lce_cmd.msg.data);
+        $display("%0T: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] addr[%H] st[%3b] way[%0d]\n%H"
+                 , $time, cce_id_i, lce_cmd.dst_id, lce_cmd.msg_type, lce_cmd.msg.dt_cmd.addr
+                 , lce_cmd.msg.dt_cmd.state, lce_cmd.way_id
+                 , lce_cmd.msg.dt_cmd.data);
         end
         else if (lce_cmd.msg_type == e_lce_cmd_uc_data) begin
-        $display("%0T: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] way[%0d]\n%H"
-                 , $time, cce_id_i, lce_cmd.dst_id, lce_cmd.msg_type, lce_cmd.way_id
-                 , lce_cmd.msg.data);
+        $display("%0T: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] addr[%H] st[%3b] way[%0d]\n%H"
+                 , $time, cce_id_i, lce_cmd.dst_id, lce_cmd.msg_type, lce_cmd.msg.dt_cmd.addr
+                 , lce_cmd.msg.dt_cmd.state, lce_cmd.way_id
+                 , lce_cmd.msg.dt_cmd.data);
         end
 
         else begin
@@ -180,9 +182,9 @@ module bp_cce_nonsynth_tracer
                  , mem_cmd.payload.way_id, (mem_cmd.msg_type == e_cce_mem_uc_rd));
         end
         if (mem_cmd.msg_type == e_cce_mem_uc_wr | mem_cmd.msg_type == e_cce_mem_wb) begin
-        $display("%0T: CCE[%0d] MEM DATA CMD wb[%0b] addr[%H] lce[%0d] way[%0d] uc[%0b]\n%H"
+        $display("%0T: CCE[%0d] MEM DATA CMD wb[%0b] addr[%H] lce[%0d] way[%0d] state[%3b] uc[%0b]\n%H"
                  , $time, cce_id_i, (mem_cmd.msg_type == e_cce_mem_wb), mem_cmd.addr
-                 , mem_cmd.payload.lce_id, mem_cmd.payload.way_id
+                 , mem_cmd.payload.lce_id, mem_cmd.payload.way_id, mem_cmd.payload.state
                  , (mem_cmd.msg_type == e_cce_mem_uc_wr), mem_cmd.data);
         end
       end

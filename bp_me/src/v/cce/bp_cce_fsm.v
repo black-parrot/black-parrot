@@ -443,11 +443,13 @@ module bp_cce_fsm
       if (mem_resp.msg_type == e_cce_mem_uc_rd) begin
         lce_cmd.msg_type = e_lce_cmd_uc_data;
         lce_cmd.way_id = '0;
-        lce_cmd.msg.data[0+:dword_width_p] = mem_resp.data[0+:dword_width_p];
+        lce_cmd.msg.dt_cmd.data[0+:dword_width_p] = mem_resp.data[0+:dword_width_p];
       end else begin
         lce_cmd.msg_type = e_lce_cmd_data;
         lce_cmd.way_id = mem_resp.payload.way_id;
-        lce_cmd.msg.data = mem_resp.data;
+        lce_cmd.msg.dt_cmd.data = mem_resp.data;
+        lce_cmd.msg.dt_cmd.addr = mem_resp.addr;
+        lce_cmd.msg.dt_cmd.state = mem_resp.payload.state;
       end
     end
 
@@ -860,7 +862,7 @@ module bp_cce_fsm
             mem_cmd.addr = lce_resp.addr;
             mem_cmd.payload.lce_id = mshr_r.lce_id;
             mem_cmd.payload.way_id = '0;
-            mem_cmd.data = lce_resp.data;
+            mem_cmd.data = lce_resp.msg.data;
 
             state_n = (lce_resp_yumi_o)
                       ? (mshr_r.flags[e_flag_sel_tf])
@@ -889,13 +891,16 @@ module bp_cce_fsm
         lce_cmd_cmd.addr = mshr_r.paddr;
         lce_cmd_cmd.target = mshr_r.lce_id;
         lce_cmd_cmd.target_way_id = mshr_r.lru_way_id;
+        lce_cmd_cmd.state = mshr_r.next_coh_state;
 
         // Assign Command subtype to msg field
         lce_cmd.msg.cmd = lce_cmd_cmd;
 
-        state_n = (lce_cmd_ready_i) ? TRANSFER_ST_CMD : TRANSFER_CMD;
+        //state_n = (lce_cmd_ready_i) ? TRANSFER_ST_CMD : TRANSFER_CMD;
+        state_n = (lce_cmd_ready_i) ? TRANSFER_WB_CMD : TRANSFER_CMD;
       end
       TRANSFER_ST_CMD: begin
+        $error("TRANSFER_ST_CMD");
         lce_cmd_v_o = 1'b1;
 
         // LCE Cmd Common Fields
@@ -946,7 +951,7 @@ module bp_cce_fsm
             mem_cmd.addr = lce_resp.addr;
             mem_cmd.payload.lce_id = mshr_r.lce_id;
             mem_cmd.payload.way_id = '0;
-            mem_cmd.data = lce_resp.data;
+            mem_cmd.data = lce_resp.msg.data;
 
             state_n = (lce_resp_yumi_o) ? READY : TRANSFER_WB_RESP;
 
@@ -987,8 +992,10 @@ module bp_cce_fsm
           mem_cmd.size = e_mem_size_64;
           mem_cmd.payload.lce_id = mshr_r.lce_id;
           mem_cmd.payload.way_id = mshr_r.lru_way_id;
+          mem_cmd.payload.state = mshr_r.next_coh_state;
 
-          state_n = (mem_cmd_ready_i) ? SEND_SET_TAG : READ_MEM;
+          //state_n = (mem_cmd_ready_i) ? SEND_SET_TAG : READ_MEM;
+          state_n = (mem_cmd_ready_i) ? READY : READ_MEM;
 
           pending_w_v = mem_cmd_ready_i;
           pending_li = 1'b1;
@@ -996,6 +1003,7 @@ module bp_cce_fsm
         end
       end
       SEND_SET_TAG: begin
+        $error("SEND_SET_TAG");
         lce_cmd_v_o = 1'b1;
 
         // LCE Cmd Common Fields

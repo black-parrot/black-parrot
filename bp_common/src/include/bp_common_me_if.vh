@@ -117,6 +117,13 @@
     logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]      src_id;                                                 \
   }  bp_lce_cmd_cmd_s;                                                                                   \
                                                                                                          \
+  typedef struct packed                                                                                  \
+  {                                                                                                      \
+    logic [cce_block_width_mp-1:0]               data;                                                   \
+    logic [`bp_coh_bits-1:0]                     state;                                                  \
+    logic [paddr_width_mp-1:0]                   addr;                                                   \
+  }  bp_lce_cmd_dt_s;                                                                                    \
+                                                                                                         \
 /**                                                                                                      \
  *  bp_lce_cmd_s is the generic message for LCE Command and LCE Data Command that is sent across the     \
  *  Command network from CCE to LCE.                                                                     \
@@ -128,7 +135,7 @@
   {                                                                                                      \
     union packed                                                                                         \
     {                                                                                                    \
-      logic [cce_block_width_mp-1:0]  data;                                                              \
+      bp_lce_cmd_dt_s                 dt_cmd;                                                            \
       bp_lce_cmd_cmd_s                cmd;                                                               \
     }                                            msg;                                                    \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id;                                                 \
@@ -308,10 +315,11 @@ typedef enum bit [2:0]
    +`BSG_SAFE_CLOG2(num_lce_mp)+`BSG_SAFE_CLOG2(lce_assoc_mp))
 
 `define bp_lce_cmd_pad(num_cce_mp, num_lce_mp, lce_assoc_mp, paddr_width_mp, cce_block_width_mp) \
-  (cce_block_width_mp-`bp_lce_cmd_no_pad_width(num_cce_mp, num_lce_mp, lce_assoc_mp, paddr_width_mp))
+  (cce_block_width_mp+paddr_width_mp+`bp_coh_bits \
+   -`bp_lce_cmd_no_pad_width(num_cce_mp, num_lce_mp, lce_assoc_mp, paddr_width_mp))
 
-`define bp_lce_cmd_msg_u_width(cce_block_width_mp) \
-  (cce_block_width_mp)
+`define bp_lce_cmd_msg_u_width(cce_block_width_mp, paddr_width_mp) \
+  (cce_block_width_mp+paddr_width_mp+`bp_coh_bits)
 
 
 /*
@@ -322,9 +330,9 @@ typedef enum bit [2:0]
   (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+$bits(bp_lce_cce_req_type_e) \
    +paddr_width_mp+`bp_lce_req_msg_u_width(data_width_mp))
 
-`define bp_lce_cmd_width(num_lce_mp, lce_assoc_mp, cce_block_width_mp) \
+`define bp_lce_cmd_width(num_lce_mp, lce_assoc_mp, paddr_width_mp, cce_block_width_mp) \
   (`BSG_SAFE_CLOG2(num_lce_mp)+$bits(bp_lce_cmd_type_e)+`BSG_SAFE_CLOG2(lce_assoc_mp) \
-   +`bp_lce_cmd_msg_u_width(cce_block_width_mp))
+   +`bp_lce_cmd_msg_u_width(cce_block_width_mp, paddr_width_mp))
 
 `define bp_lce_cce_resp_width(num_cce_mp, num_lce_mp, paddr_width_mp, cce_block_width_mp) \
   (`BSG_SAFE_CLOG2(num_cce_mp)+`BSG_SAFE_CLOG2(num_lce_mp)+$bits(bp_lce_cce_resp_type_e) \
@@ -343,6 +351,7 @@ typedef enum bit [2:0]
                                                               )                                \
     , localparam lce_cmd_width_lp=`bp_lce_cmd_width(num_lce_mp                                 \
                                                     ,lce_assoc_mp                              \
+                                                    ,paddr_width_mp                            \
                                                     ,cce_block_width_mp                        \
                                                     )
 

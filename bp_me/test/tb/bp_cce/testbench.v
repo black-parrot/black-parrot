@@ -48,11 +48,11 @@ module testbench
    , input reset_i
    );
 
-`declare_bsg_ready_and_link_sif_s(noc_width_p, bsg_ready_and_link_sif_s);
+`declare_bsg_ready_and_link_sif_s(mem_noc_width_p, bsg_ready_and_link_sif_s);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
-logic [noc_cord_width_p-1:0]                 dram_cord_lo, clint_cord_lo;
+logic [mem_noc_cord_width_p-1:0]                 dram_cord_lo, clint_cord_lo;
 assign dram_cord_lo  = num_core_p+1;
 assign clint_cord_lo = clint_pos_p;
 

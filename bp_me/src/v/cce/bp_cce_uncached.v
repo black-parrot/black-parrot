@@ -144,7 +144,8 @@ module bp_cce_uncached
           lce_cmd.dst_id = mem_resp.payload.lce_id;
           lce_cmd.msg_type = e_lce_cmd_uc_data;
           lce_cmd.way_id = '0;
-          lce_cmd.msg = mem_resp.data;
+          lce_cmd.msg.dt_cmd.data = mem_resp.data;
+          lce_cmd.msg.dt_cmd.addr = mem_resp.addr;
 
           // dequeue the mem data response if outbound lce data cmd is accepted
           mem_resp_yumi_o = lce_cmd_ready_i;
