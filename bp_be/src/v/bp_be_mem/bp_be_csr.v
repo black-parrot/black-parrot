@@ -469,8 +469,8 @@ assign epc_o           = (csr_cmd.csr_op == e_sret) ? sepc_r : mepc_r;
 assign tvec_o          = (priv_mode_n == `PRIV_MODE_S) ? stvec_r : mtvec_r;
 assign satp_o          = satp_r;
 // We only support SV39 so the mode can either be 0(off) or 1(SV39)
-assign translation_en_o = ((priv_mode_r < `PRIV_MODE_M) & (satp_lo.mode == 1'b1))
-                          | (mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 1'b1));
+assign translation_en_o = ((priv_mode_r < `PRIV_MODE_M) & (satp_r.mode == 1'b1))
+                          | (mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_r.mode == 1'b1));
 
 assign csr_cmd_ready_o = 1'b1;
 assign data_o          = dword_width_p'(csr_data_lo);
