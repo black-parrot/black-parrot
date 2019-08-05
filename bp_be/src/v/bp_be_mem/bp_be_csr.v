@@ -210,34 +210,38 @@ always_comb
   begin
     priv_mode_n = priv_mode_r;
 
-    stvec_n      = stvec_r;
-    scounteren_n = scounteren_r;
+    stvec_li      = stvec_lo;
+    scounteren_li = scounteren_lo;
 
-    sscratch_n = sscratch_r;
-    sepc_n     = sepc_r;
-    scause_n   = scause_r;
-    stval_n    = stval_r;
+    sscratch_li = sscratch_lo;
+    sepc_li     = sepc_lo;
+    scause_li   = scause_lo;
+    stval_li    = stval_lo;
 
-    satp_n     = satp_r;
+    satp_li     = satp_lo;
 
-    mstatus_n  = mstatus_r;
-    mie_n      = mie_r;
-    mtvec_n    = mtvec_r;
+    mstatus_li    = mstatus_lo;
+    medeleg_li    = medeleg_lo;
+    mideleg_li    = mideleg_lo;
+    mie_li        = mie_lo;
+    mtvec_li      = mtvec_lo;
+    mcounteren_li = mcounteren_lo;
 
-    mscratch_n = mscratch_r;
-    mepc_n     = mepc_r;
-    mcause_n   = mcause_r;
-    mtval_n    = mtval_r;
-    mip_n      = mip_r;
+    mscratch_li = mscratch_lo;
+    mepc_li     = mepc_lo;
+    mcause_li   = mcause_lo;
+    mtval_li    = mtval_lo;
+    mip_li      = mip_lo;
 
-    pmpcfg0_n  = pmpcfg0_r;
-    pmpaddr0_n = pmpaddr0_r;
-    pmpaddr1_n = pmpaddr1_r;
-    pmpaddr2_n = pmpaddr2_r;
-    pmpaddr3_n = pmpaddr3_r;
+    pmpcfg0_li  = pmpcfg0_lo;
+    pmpaddr0_li = pmpaddr0_lo;
+    pmpaddr1_li = pmpaddr1_lo;
+    pmpaddr2_li = pmpaddr2_lo;
+    pmpaddr3_li = pmpaddr3_lo;
 
-    mcycle_n   = mcountinhibit_r.cy ? mcycle_r + dword_width_p'(1) : mcycle_r;
-    minstret_n = mcountinhibit_r.ir ? minstret_r + dword_width_p'(instret_i) : minstret_r;
+    mcycle_li        = mcountinhibit_lo.cy ? mcycle_lo + dword_width_p'(1) : mcycle_lo;
+    minstret_li      = mcountinhibit_lo.ir ? minstret_lo + dword_width_p'(instret_i) : minstret_lo;
+    mcountinhibit_li = mcountinhibit_lo;
 
     trap_v_o        = '0;
     ret_v_o         = '0;
@@ -260,25 +264,25 @@ always_comb
         end
       else if (csr_cmd.csr_op == e_mret)
         begin
-          priv_mode_n     = mstatus_r.mpp;
+          priv_mode_n      = mstatus_lo.mpp;
 
-          mstatus_n.mpp   = `PRIV_MODE_M; // Should be U when U-mode is supported
-          mstatus_n.mpie  = 1'b1;
-          mstatus_n.mie   = mstatus_r.mpie;
+          mstatus_li.mpp   = `PRIV_MODE_M; // Should be U when U-mode is supported
+          mstatus_li.mpie  = 1'b1;
+          mstatus_li.mie   = mstatus_lo.mpie;
 
-          illegal_instr_o = (priv_mode_r < `PRIV_MODE_M);
-          ret_v_o         = ~illegal_instr_o;
+          illegal_instr_o  = (priv_mode_r < `PRIV_MODE_M);
+          ret_v_o          = ~illegal_instr_o;
         end
       else if (csr_cmd.csr_op == e_sret)
         begin
-          priv_mode_n     = {1'b0, mstatus_r.spp};
+          priv_mode_n      = {1'b0, mstatus_lo.spp};
           
-          mstatus_n.spp   = `PRIV_MODE_M; // Should be U when U-mode is supported
-          mstatus_n.spie  = 1'b1;
-          mstatus_n.sie   = mstatus_r.spie;
+          mstatus_li.spp   = `PRIV_MODE_M; // Should be U when U-mode is supported
+          mstatus_li.spie  = 1'b1;
+          mstatus_li.sie   = mstatus_lo.spie;
 
-          illegal_instr_o = (priv_mode_r < `PRIV_MODE_S);
-          ret_v_o         = ~illegal_instr_o;
+          illegal_instr_o  = (priv_mode_r < `PRIV_MODE_S);
+          ret_v_o          = ~illegal_instr_o;
         end
       else if (csr_cmd.csr_op inside {e_ebreak, e_ecall, e_wfi})
         begin
@@ -297,14 +301,14 @@ always_comb
                                ,mie: 1'b0, sie: 1'b1, uie: 1'b1
                                ,default: '0
                                };
-          sie_wmask_li     = '{meie: mideleg_r.mei, seie: 1'b1
-                               ,mtie: mideleg_r.mti, stie: 1'b1
-                               ,msie: mideleg_r.msi, ssie: 1'b1
+          sie_wmask_li     = '{meie: mideleg_lo.mei, seie: 1'b1
+                               ,mtie: mideleg_lo.mti, stie: 1'b1
+                               ,msie: mideleg_lo.msi, ssie: 1'b1
                                ,default: '0
                                };
-          sie_rmask_li     = '{meie: mideleg_r.mei, seie: 1'b1
-                               ,mtie: mideleg_r.mti, stie: 1'b1
-                               ,msie: mideleg_r.msi, ssie: 1'b1
+          sie_rmask_li     = '{meie: mideleg_lo.mei, seie: 1'b1
+                               ,mtie: mideleg_lo.mti, stie: 1'b1
+                               ,msie: mideleg_lo.msi, ssie: 1'b1
                                ,default: '0
                                };
           sip_wmask_li     = '{meip: 1'b0, seip: 1'b1
@@ -312,9 +316,9 @@ always_comb
                                ,msip: 1'b0, ssip: 1'b1
                                ,default: '0
                                };
-          sip_rmask_li     = '{meip: mideleg_r.mei, seip: 1'b1
-                               ,mtip: mideleg_r.mti, stip: 1'b1
-                               ,msip: mideleg_r.msi, ssip: 1'b1
+          sip_rmask_li     = '{meip: mideleg_lo.mei, seip: 1'b1
+                               ,mtip: mideleg_lo.mti, stip: 1'b1
+                               ,msip: mideleg_lo.msi, ssip: 1'b1
                                ,default: '0};
 
           unique casez (csr_cmd.csr_addr)
@@ -396,33 +400,33 @@ always_comb
     if (exception_v_i & exception_ecode_v_li) 
       if (medeleg_lo[exception_ecode_li] & ~is_m_mode)
         begin
-          priv_mode_n         = `PRIV_MODE_S;
+          priv_mode_n          = `PRIV_MODE_S;
 
-          mstatus_n.spp       = priv_mode_r;
-          mstatus_n.spie      = mstatus_r.sie;
-          mstatus_n.sie       = 1'b0;
+          mstatus_li.spp       = priv_mode_r;
+          mstatus_li.spie      = mstatus_lo.sie;
+          mstatus_li.sie       = 1'b0;
 
-          sepc_n              = exception_pc_i;
-          stval_n             = exception_ecode_dec_cast_i.illegal_instr ? exception_instr_i : exception_vaddr_i;
+          sepc_li              = exception_pc_i;
+          stval_li             = exception_ecode_dec_cast_i.illegal_instr ? exception_instr_i : exception_vaddr_i;
 
-          scause_n._interrupt = 1'b0;
-          scause_n.ecode      = exception_ecode_li;
+          scause_li._interrupt = 1'b0;
+          scause_li.ecode      = exception_ecode_li;
 
           trap_v_o            = 1'b1;
         end
       else
         begin
-          priv_mode_n         = `PRIV_MODE_M;
+          priv_mode_n          = `PRIV_MODE_M;
 
-          mstatus_n.mpp       = priv_mode_r;
-          mstatus_n.mpie      = mstatus_r.mie;
-          mstatus_n.mie       = 1'b0;
+          mstatus_li.mpp       = priv_mode_r;
+          mstatus_li.mpie      = mstatus_lo.mie;
+          mstatus_li.mie       = 1'b0;
 
-          mepc_n              = exception_pc_i;
-          mtval_n             = exception_ecode_dec_cast_i.illegal_instr ? exception_instr_i : exception_vaddr_i;
+          mepc_li              = exception_pc_i;
+          mtval_li             = exception_ecode_dec_cast_i.illegal_instr ? exception_instr_i : exception_vaddr_i;
 
-          mcause_n._interrupt = 1'b0;
-          mcause_n.ecode      = exception_ecode_li;
+          mcause_li._interrupt = 1'b0;
+          mcause_li.ecode      = exception_ecode_li;
 
           trap_v_o            = 1'b1;
         end
@@ -430,31 +434,31 @@ always_comb
     if (exception_icode_v_li)
       if (mideleg_lo[exception_icode_li] & ~is_m_mode)
         begin
-          priv_mode_n         = `PRIV_MODE_S;
+          priv_mode_n          = `PRIV_MODE_S;
 
-          mstatus_n.spp       = priv_mode_r;
-          mstatus_n.spie      = mstatus_r.sie;
-          mstatus_n.sie       = 1'b0;
+          mstatus_li.spp       = priv_mode_r;
+          mstatus_li.spie      = mstatus_lo.sie;
+          mstatus_li.sie       = 1'b0;
 
-          sepc_n              = (exception_v_i & exception_ecode_v_li) ? exception_pc_i : 64'(interrupt_pc_i);
-          stval_n             = '0;
-          scause_n._interrupt = 1'b1;
-          scause_n.ecode      = exception_icode_li;
+          sepc_li              = (exception_v_i & exception_ecode_v_li) ? exception_pc_i : 64'(interrupt_pc_i);
+          stval_li             = '0;
+          scause_li._interrupt = 1'b1;
+          scause_li.ecode      = exception_icode_li;
 
           trap_v_o            = 1'b1;
         end
       else
         begin
-          priv_mode_n         = `PRIV_MODE_M;
+          priv_mode_n          = `PRIV_MODE_M;
 
-          mstatus_n.mpp       = priv_mode_r;
-          mstatus_n.mpie      = mstatus_r.mie;
-          mstatus_n.mie       = 1'b0;
+          mstatus_li.mpp       = priv_mode_r;
+          mstatus_li.mpie      = mstatus_lo.mie;
+          mstatus_li.mie       = 1'b0;
 
-          mepc_n              = (exception_v_i & exception_ecode_v_li) ? exception_pc_i : 64'(interrupt_pc_i);
-          mtval_n             = '0;
-          mcause_n._interrupt = 1'b1;
-          mcause_n.ecode      = exception_icode_li;
+          mepc_li              = (exception_v_i & exception_ecode_v_li) ? exception_pc_i : interrupt_pc_i;
+          mtval_li             = '0;
+          mcause_li._interrupt = 1'b1;
+          mcause_li.ecode      = exception_icode_li;
 
           trap_v_o            = 1'b1;
         end
@@ -465,8 +469,8 @@ assign epc_o           = (csr_cmd.csr_op == e_sret) ? sepc_r : mepc_r;
 assign tvec_o          = (priv_mode_n == `PRIV_MODE_S) ? stvec_r : mtvec_r;
 assign satp_o          = satp_r;
 // We only support SV39 so the mode can either be 0(off) or 1(SV39)
-assign translation_en_o = ((priv_mode_r < `PRIV_MODE_M) & (satp_r.mode == 1'b1))
-                          | (mstatus_r.mprv & (mstatus_r.mpp < `PRIV_MODE_M) & (satp_r.mode == 1'b1));
+assign translation_en_o = ((priv_mode_r < `PRIV_MODE_M) & (satp_lo.mode == 1'b1))
+                          | (mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 1'b1));
 
 assign csr_cmd_ready_o = 1'b1;
 assign data_o          = dword_width_p'(csr_data_lo);
