@@ -421,13 +421,27 @@ typedef struct packed
                   }
 
 typedef logic [63:0] rv64_medeleg_s;
-typedef logic [7:0]  bp_medeleg_s;
+// Hardcode exception 10, 11, 14, 16+ to zero
+typedef struct packed
+{
+  logic [15:15] deleg_15;
+  logic [13:12] deleg_13to12;
+  logic [ 9: 0] deleg_9to0;
+}  bp_medeleg_s;
 
 `define compress_medeleg_s(data_cast_mp) \
-  bp_medeleg_s'(data_cast_mp[0+:8])
+  bp_medeleg_s'{deleg_15     : data_cast_mp[15]    \
+                ,deleg_13to12: data_cast_mp[13:12] \
+                ,deleg_9to0  : data_cast_mp[9:0]   \
+                };
 
 `define decompress_medeleg_s(data_comp_mp) \
-  rv64_mstatus_s'(data_comp_mp)
+  rv64_medeleg_s'({data_comp_mp.deleg_15      \
+                   ,1'b0                      \
+                   ,data_comp_mp.deleg_13to12 \
+                   ,2'b0                      \
+                   ,data_comp_mp.deleg_9to0   \
+                   });
 
 typedef struct packed
 {
