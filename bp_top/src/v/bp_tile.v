@@ -17,8 +17,7 @@ module bp_tile
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
-   `declare_bp_lce_cce_if_widths
-     (num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+   `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
    , localparam proc_cfg_width_lp = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
 
@@ -72,8 +71,7 @@ module bp_tile
    );
 
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
-`declare_bp_lce_cce_if
-  (num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+`declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
 // Proc-side connections network connections
 bp_lce_cce_req_s  [1:0] lce_req_lo;

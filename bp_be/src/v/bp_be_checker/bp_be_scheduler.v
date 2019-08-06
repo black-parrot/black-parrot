@@ -64,11 +64,9 @@ module bp_be_scheduler
    );
 
 // Declare parameterizable structures
-`declare_bp_fe_be_if
-  (vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+`declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-`declare_bp_be_internal_if_structs
-  (vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+`declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
 // Cast input and output ports 
 bp_fe_queue_s     fe_queue;

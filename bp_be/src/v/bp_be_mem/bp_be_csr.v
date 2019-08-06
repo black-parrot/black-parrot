@@ -321,14 +321,12 @@ always_comb
             `declare_csr_case_ro(`PRIV_MODE_U, `CSR_ADDR_CYCLE, cycle, mcycle_r, csr_data_lo)
             // Time must be done by trapping, since we can't stall at this point
             `declare_csr_case_ro(`PRIV_MODE_U, `CSR_ADDR_INSTRET, instret, minstret_r, csr_data_lo)
-            `declare_csr_case_rw_mask
-              (`PRIV_MODE_S, `CSR_ADDR_SSTATUS, mstatus, csr_data_li, csr_data_lo, sstatus_wmask_li, sstatus_rmask_li)
+            `declare_csr_case_rw_mask(`PRIV_MODE_S, `CSR_ADDR_SSTATUS, mstatus, csr_data_li, csr_data_lo, sstatus_wmask_li, sstatus_rmask_li)
             // Read-only because we don't support N-extension
             `declare_csr_case_ro(`PRIV_MODE_S, `CSR_ADDR_SEDELEG, sedeleg, '0, csr_data_lo)
             // Read-only because we don't support N-extension
             `declare_csr_case_ro(`PRIV_MODE_S, `CSR_ADDR_SIDELEG, sideleg, '0, csr_data_lo)
-            `declare_csr_case_rw_mask
-              (`PRIV_MODE_S, `CSR_ADDR_SIE, mie, csr_data_li, csr_data_lo, sie_wmask_li, sie_rmask_li)
+            `declare_csr_case_rw_mask(`PRIV_MODE_S, `CSR_ADDR_SIE, mie, csr_data_li, csr_data_lo, sie_wmask_li, sie_rmask_li)
             `declare_csr_case_rw(`PRIV_MODE_S, `CSR_ADDR_STVEC, stvec, csr_data_li, csr_data_lo)
             `declare_csr_case_rw(`PRIV_MODE_S, `CSR_ADDR_SCOUNTEREN, scounteren, csr_data_li, csr_data_lo)
             `declare_csr_case_rw(`PRIV_MODE_S, `CSR_ADDR_SSCRATCH, sscratch, csr_data_li, csr_data_lo)
@@ -336,8 +334,7 @@ always_comb
             `declare_csr_case_rw(`PRIV_MODE_S, `CSR_ADDR_SCAUSE, scause, csr_data_li, csr_data_lo)
             `declare_csr_case_rw(`PRIV_MODE_S, `CSR_ADDR_STVAL, stval, csr_data_li, csr_data_lo)
             // SIP subset of MIP
-            `declare_csr_case_rw_mask
-              (`PRIV_MODE_S, `CSR_ADDR_SIP, mip, csr_data_li, csr_data_lo, sip_wmask_li, sip_rmask_li)
+            `declare_csr_case_rw_mask(`PRIV_MODE_S, `CSR_ADDR_SIP, mip, csr_data_li, csr_data_lo, sip_wmask_li, sip_rmask_li)
             `declare_csr_case_rw(`PRIV_MODE_S, `CSR_ADDR_SATP, satp, csr_data_li, csr_data_lo)
 
             `declare_csr_case_ro(`PRIV_MODE_M, `CSR_ADDR_MVENDORID, mvendorid, csr_data_li, csr_data_lo)

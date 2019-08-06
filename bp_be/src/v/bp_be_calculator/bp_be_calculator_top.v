@@ -150,8 +150,7 @@ module bp_be_calculator_top
 // Declare parameterizable structs
 `declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p / 8)
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
-`declare_bp_be_internal_if_structs
-  (vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+`declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
 // Cast input and output ports 
 bp_be_issue_pkt_s   issue_pkt;
