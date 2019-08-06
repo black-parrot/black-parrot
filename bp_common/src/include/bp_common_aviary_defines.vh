@@ -76,7 +76,7 @@ typedef struct packed
   integer ct_max_payload_flits;
   integer ct_lg_credit_decimation;
   integer max_credits;
-  integer clint_pos;
+  integer mmio_pos;
 
   integer dword_width;
   integer instr_width;
@@ -128,7 +128,7 @@ typedef struct packed
   , localparam ct_max_payload_flits_p    = proc_param_lp.ct_max_payload_flits                      \
   , localparam ct_lg_credit_decimation_p = proc_param_lp.ct_lg_credit_decimation                   \
   , localparam max_credits_p             = proc_param_lp.max_credits                               \
-  , localparam clint_pos_p               = proc_param_lp.clint_pos                                 \
+  , localparam mmio_pos_p                = proc_param_lp.mmio_pos                                  \
                                                                                                    \
   , localparam dword_width_p       = proc_param_lp.dword_width                                     \
   , localparam instr_width_p       = proc_param_lp.instr_width                                     \

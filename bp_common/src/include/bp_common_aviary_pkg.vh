@@ -51,7 +51,7 @@ package bp_common_aviary_pkg;
       ,ct_max_payload_flits   : 20
       ,ct_lg_credit_decimation: 3
       ,max_credits            : 4
-      ,clint_pos              : 1
+      ,mmio_pos               : 1
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -101,7 +101,7 @@ package bp_common_aviary_pkg;
       ,ct_max_payload_flits   : 20
       ,ct_lg_credit_decimation: 3
       ,max_credits            : 4
-      ,clint_pos              : 1
+      ,mmio_pos               : 1
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -151,7 +151,7 @@ package bp_common_aviary_pkg;
       ,ct_max_payload_flits   : 20
       ,ct_lg_credit_decimation: 3
       ,max_credits            : 4
-      ,clint_pos              : 1
+      ,mmio_pos               : 1
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -201,7 +201,7 @@ package bp_common_aviary_pkg;
       ,ct_max_payload_flits   : 20
       ,ct_lg_credit_decimation: 3
       ,max_credits            : 4
-      ,clint_pos              : 2
+      ,mmio_pos               : 2
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -251,7 +251,7 @@ package bp_common_aviary_pkg;
       ,ct_max_payload_flits   : 20
       ,ct_lg_credit_decimation: 3
       ,max_credits            : 4
-      ,clint_pos              : 6
+      ,mmio_pos               : 6
 
       ,dword_width      : 64
       ,instr_width      : 32
@@ -301,7 +301,7 @@ package bp_common_aviary_pkg;
       ,ct_max_payload_flits   : 20
       ,ct_lg_credit_decimation: 4
       ,max_credits            : 4
-      ,clint_pos              : 6
+      ,mmio_pos               : 6
 
       ,dword_width      : 64
       ,instr_width      : 32

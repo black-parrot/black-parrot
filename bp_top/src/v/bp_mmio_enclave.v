@@ -27,7 +27,7 @@ module bp_mmio_enclave
    // BP side
    , input [mem_noc_cord_width_p-1:0]              my_cord_i
    , input [mem_noc_cord_width_p-1:0]              dram_cord_i
-   , input [mem_noc_cord_width_p-1:0]              clint_cord_i
+   , input [mem_noc_cord_width_p-1:0]              mmio_cord_i
 
    , input [mem_noc_ral_link_width_lp-1:0]         cmd_link_i
    , output [mem_noc_ral_link_width_lp-1:0]        cmd_link_o
