@@ -59,12 +59,12 @@ logic [num_core_p-1:0][mem_noc_ral_link_width_lp-1:0] tile_cmd_link_lo;
 logic [num_core_p-1:0][mem_noc_ral_link_width_lp-1:0] tile_resp_link_li;
 logic [num_core_p-1:0][mem_noc_ral_link_width_lp-1:0] tile_resp_link_lo;
 
-logic [mem_noc_ral_link_width_lp-1:0]                 clint_cmd_link_li;
-logic [mem_noc_ral_link_width_lp-1:0]                 clint_cmd_link_lo;
-logic [mem_noc_ral_link_width_lp-1:0]                 clint_resp_link_li;
-logic [mem_noc_ral_link_width_lp-1:0]                 clint_resp_link_lo;
+logic [mem_noc_ral_link_width_lp-1:0]                 mmio_cmd_link_li;
+logic [mem_noc_ral_link_width_lp-1:0]                 mmio_cmd_link_lo;
+logic [mem_noc_ral_link_width_lp-1:0]                 mmio_resp_link_li;
+logic [mem_noc_ral_link_width_lp-1:0]                 mmio_resp_link_lo;
 
-bp_top
+bp_tile_mesh
  #(.cfg_p(cfg_p))
  bp_top
   (.clk_i(clk_i)
@@ -106,25 +106,25 @@ bp_mmio_enclave
    ,.dram_cord_i(dram_cord_i)
    ,.mmio_cord_i(mmio_cord_i)
 
-   ,.cmd_link_i(clint_cmd_link_li)
-   ,.cmd_link_o(clint_cmd_link_lo)
-   ,.resp_link_i(clint_resp_link_li)
-   ,.resp_link_o(clint_resp_link_lo)
+   ,.cmd_link_i(mmio_cmd_link_li)
+   ,.cmd_link_o(mmio_cmd_link_lo)
+   ,.resp_link_i(mmio_resp_link_li)
+   ,.resp_link_o(mmio_resp_link_lo)
    );
 
 for (genvar i = 0; i < num_routers_lp; i++)
   begin : rof1
     if (i == mmio_pos_p)
-      begin : clint
-        assign clint_cmd_link_li = cmd_link_i[i];
-        assign cmd_link_o[i]     = clint_cmd_link_lo;
+      begin : mmio
+        assign mmio_cmd_link_li = cmd_link_i[i];
+        assign cmd_link_o[i]    = mmio_cmd_link_lo;
 
-        assign clint_resp_link_li = resp_link_i[i];
-        assign resp_link_o[i]     = clint_resp_link_lo;
+        assign mmio_resp_link_li = resp_link_i[i];
+        assign resp_link_o[i]    = mmio_resp_link_lo;
       end
     else
       begin : tile
-        // We subtract 1 if we're past the clint, so that the slice lines up with bp_top
+        // We subtract 1 if we're past the mmio, so that the slice lines up with bp_top
         localparam tile_pos_lp = (i < mmio_pos_p) ? i : i-1;
 
         assign tile_cmd_link_li[tile_pos_lp] = cmd_link_i[i];

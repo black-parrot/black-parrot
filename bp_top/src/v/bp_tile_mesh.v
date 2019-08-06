@@ -1,12 +1,12 @@
 /**
  *
- * bp_top.v
+ * bp_tile_mesh.v
  *
  */
  
 `include "bsg_noc_links.vh"
 
-module bp_top
+module bp_tile_mesh
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
@@ -192,5 +192,5 @@ for(genvar i = 0; i < num_core_p; i++)
        );
   end
 
-endmodule : bp_top
+endmodule
 

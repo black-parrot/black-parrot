@@ -187,7 +187,7 @@ $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_client.v
 $BP_TOP_DIR/src/v/bsg_noc_repeater_node.v
 $BP_TOP_DIR/src/v/bp_chip.v
 $BP_TOP_DIR/src/v/bp_core.v
-$BP_TOP_DIR/src/v/bp_top.v
+$BP_TOP_DIR/src/v/bp_tile_mesh.v
 $BP_TOP_DIR/src/v/bp_core_complex.v
 $BP_TOP_DIR/src/v/bp_tile.v
 $BP_TOP_DIR/src/v/bp_mmio_enclave.v
