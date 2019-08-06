@@ -203,7 +203,7 @@ for (genvar i = 0; i < 2; i++)
     wire [coh_cord_width_lp-1:0] lce_id_li = (i == 0) ? proc_cfg_cast_i.icache_id : proc_cfg_cast_i.dcache_id;
 
     lce_req_packet_s lce_req_packet_lo;
-    bp_me_wormhole_packet_encode_req
+    bp_me_wormhole_packet_encode_lce_req
      #(.cfg_p(cfg_p))
      req_encode
       (.payload_i(lce_req_lo[i])
@@ -247,7 +247,7 @@ for (genvar i = 0; i < 2; i++)
        );
 
     lce_cmd_packet_s lce_cmd_packet_lo;
-    bp_me_wormhole_packet_encode_cmd
+    bp_me_wormhole_packet_encode_lce_cmd
      #(.cfg_p(cfg_p))
      cmd_encode
       (.payload_i(lce_cmd_lo[i])
@@ -311,7 +311,7 @@ for (genvar i = 0; i < 2; i++)
     assign lce_cmd_li[i] = lce_cmd_packet_li.payload;
 
     lce_resp_packet_s lce_resp_packet_lo;
-    bp_me_wormhole_packet_encode_resp
+    bp_me_wormhole_packet_encode_lce_resp
      #(.cfg_p(cfg_p))
      resp_encode
       (.payload_i(lce_resp_lo[i])
@@ -382,7 +382,7 @@ bsg_wormhole_router_adapter_out
 assign lce_req_li = lce_req_packet_li.payload;
 
 lce_cmd_packet_s cce_lce_cmd_packet_lo;
-bp_me_wormhole_packet_encode_cmd
+bp_me_wormhole_packet_encode_lce_cmd
  #(.cfg_p(cfg_p))
  cmd_encode
   (.payload_i(cce_lce_cmd_lo)

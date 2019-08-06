@@ -88,9 +88,9 @@ bp_top
    ,.resp_link_o(tile_resp_link_lo)
    );
 
-bp_clint
+bp_mmio_enclave
  #(.cfg_p(cfg_p))
- clint
+ mmio
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    

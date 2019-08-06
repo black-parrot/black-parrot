@@ -1,6 +1,6 @@
 /**
  *  Name:
- *    bp_me_wormhole_packet_encode_resp.v
+ *    bp_me_wormhole_packet_encode_lce_resp.v
  *
  *  Description:
  *    It takes bp_lce_cce_resp_s as a payload, parses, and forms it into a wormhole
@@ -10,7 +10,7 @@
  */
 
 
-module bp_me_wormhole_packet_encode_resp
+module bp_me_wormhole_packet_encode_lce_resp
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg

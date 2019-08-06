@@ -2,7 +2,7 @@
 /*
  * Note: Should rename to I/O enclave and instantiate CLINT and CFG submodules
  */
-module bp_clint
+module bp_mmio_enclave
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
@@ -160,7 +160,7 @@ bsg_decode_with_v
 
 for (genvar i = 0; i < num_core_p; i++)
   begin : rof1
-    assign mtimecmp_n = mem_cmd_cast_i.data[0+:dword_width_p];
+    assign mtimecmp_n[i] = mem_cmd_cast_i.data[0+:dword_width_p];
     wire mtimecmp_w_v_li = wr_not_rd & mtimecmp_cmd_v;
     bsg_dff_reset_en
      #(.width_p(dword_width_p))
@@ -169,7 +169,7 @@ for (genvar i = 0; i < num_core_p; i++)
        ,.reset_i(reset_i)
 
        ,.en_i(mtimecmp_w_v_li)
-       ,.data_i(mtimecmp_n)
+       ,.data_i(mtimecmp_n[i])
        ,.data_o(mtimecmp_r[i])
        );
 
@@ -184,7 +184,7 @@ for (genvar i = 0; i < num_core_p; i++)
        ,.data_o(timer_irq_o[i])
        );
 
-    assign mipi_n = mem_cmd_cast_i.data[0];
+    assign mipi_n[i] = mem_cmd_cast_i.data[0];
     wire mipi_w_v_li = wr_not_rd & mipi_cmd_v;
     bsg_dff_reset_en
      #(.width_p(1))
@@ -193,7 +193,7 @@ for (genvar i = 0; i < num_core_p; i++)
        ,.reset_i(reset_i)
        ,.en_i(mipi_w_v_li)
 
-       ,.data_i(mipi_n)
+       ,.data_i(mipi_n[i])
        ,.data_o(mipi_r[i])
        );
 
@@ -208,7 +208,7 @@ for (genvar i = 0; i < num_core_p; i++)
        ,.data_o(soft_irq_o[i])
        );
 
-    assign plic_n = mem_cmd_cast_i.data[0];
+    assign plic_n[i] = mem_cmd_cast_i.data[0];
     wire plic_w_v_li = wr_not_rd & plic_cmd_v;
     bsg_dff_reset_en
      #(.width_p(1))
@@ -217,7 +217,7 @@ for (genvar i = 0; i < num_core_p; i++)
        ,.reset_i(reset_i)
        ,.en_i(plic_w_v_li)
 
-       ,.data_i(plic_n)
+       ,.data_i(plic_n[i])
        ,.data_o(plic_r[i])
        );
 
@@ -329,7 +329,7 @@ assign cmd_link_o       = cmd_link_cast_o;
 assign resp_link_cast_i = resp_link_i;
 assign resp_link_o      = resp_link_cast_o;
 
-// Not used at the moment by bp_clint, stubbed
+// Not used at the moment by bp_mmio_enclave, stubbed
 bsg_ready_and_link_sif_s wh_master_link_li, wh_master_link_lo;
 bp_me_cce_to_wormhole_link_master
  #(.cfg_p(cfg_p))
@@ -389,5 +389,5 @@ assign cmd_link_cast_o.v = wh_master_link_lo.v;
 assign cmd_link_cast_o.data = wh_master_link_lo.data;
 assign cmd_link_cast_o.ready_and_rev = wh_client_link_lo.ready_and_rev;
 
-endmodule : bp_clint
+endmodule : bp_mmio_enclave
 
