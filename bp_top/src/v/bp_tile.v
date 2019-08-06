@@ -94,6 +94,16 @@ logic             cce_lce_cmd_v_lo, cce_lce_cmd_ready_li;
 bp_proc_cfg_s proc_cfg_cast_i;
 assign proc_cfg_cast_i = proc_cfg_i;
 
+logic reset_r;
+always_ff @(posedge clk_i)
+  begin
+    // This doesn't have a reset because it's a reset register
+    if (reset_i)
+      reset_r <= 1'b1;
+    else if (cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_reset_gp))
+      reset_r <= cfg_data_i[0];
+  end
+
 logic freeze_r;
 always_ff @(posedge clk_i)
   begin
@@ -102,15 +112,6 @@ always_ff @(posedge clk_i)
     else if (cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_freeze_gp))
       freeze_r <= cfg_data_i[0];
   end
-
-logic reset_r;
-bsg_dff
- #(.width_p(1))
- reset_reg
-  (.clk_i(clk_i)
-   ,.data_i(reset_i)
-   ,.data_o(reset_r)
-   );
 
 
 // Module instantiations
@@ -262,7 +263,7 @@ for (genvar i = 0; i < 2; i++)
        )
      cmd_adapter_in
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
 
        ,.packet_i(lce_cmd_packet_lo)
        ,.v_i(lce_cmd_v_lo[i])
@@ -299,7 +300,7 @@ for (genvar i = 0; i < 2; i++)
        )
      cmd_adapter_out
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
 
        ,.link_i(lce_cmd_link_o_stitch[i][P])
        ,.link_o(lce_cmd_link_i_stitch[i][P])
@@ -370,7 +371,7 @@ bsg_wormhole_router_adapter_out
    )
  req_adapter_out
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
 
    ,.link_i(lce_req_link_o_stitch[0][P])
    ,.link_o(lce_req_link_i_stitch[0][P])
@@ -397,7 +398,7 @@ bsg_wormhole_router_adapter_in
    )
  cmd_adapter_in
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
 
    ,.packet_i(cce_lce_cmd_packet_lo)
    ,.v_i(cce_lce_cmd_v_lo)
@@ -416,7 +417,7 @@ bsg_wormhole_router_adapter_out
    )
  resp_adapter_out
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
 
    ,.link_i(lce_resp_link_o_stitch[0][P])
    ,.link_o(lce_resp_link_i_stitch[0][P])

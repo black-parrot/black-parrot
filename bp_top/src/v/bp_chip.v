@@ -40,9 +40,6 @@ module bp_chip
    
    // Other parameters
    , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(mem_noc_width_p)
-
-   // Arbitrarily set, should be set based on PD constraints
-   , localparam reset_pipe_depth_lp = 10
    )
   (input                                          clk_i
    , input                                        reset_i
