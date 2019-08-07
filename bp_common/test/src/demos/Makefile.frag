@@ -11,7 +11,11 @@ BP_DEMOS_C = \
   copy_example          \
   trap_demo             \
   atomic_demo           \
-  hello_world_atomic
+  hello_world_atomic    \
+	write_demo_2           \
+	write_demo_4           \
+	write_demo_8           \
+	write_demo_16
 
 BP_DEMOS_S = \
 	simple                \
