@@ -307,7 +307,7 @@ for (genvar i = 0; i < 2; i++)
 
        ,.packet_o(lce_cmd_packet_li)
        ,.v_o(lce_cmd_v_li[i])
-       ,.ready_i(lce_cmd_ready_lo[i])
+       ,.yumi_i(lce_cmd_ready_lo[i] & lce_cmd_v_li[i])
        );
     assign lce_cmd_li[i] = lce_cmd_packet_li.payload;
 
@@ -378,7 +378,7 @@ bsg_wormhole_router_adapter_out
 
    ,.packet_o(lce_req_packet_li)
    ,.v_o(lce_req_v_li)
-   ,.ready_i(lce_req_ready_lo)
+   ,.yumi_i(lce_req_ready_lo & lce_req_v_li)
    );
 assign lce_req_li = lce_req_packet_li.payload;
 
@@ -424,7 +424,7 @@ bsg_wormhole_router_adapter_out
 
    ,.packet_o(lce_resp_packet_li)
    ,.v_o(lce_resp_v_li)
-   ,.ready_i(lce_resp_ready_lo)
+   ,.yumi_i(lce_resp_ready_lo & lce_resp_v_li)
    );
 assign lce_resp_li = lce_resp_packet_li.payload;
 

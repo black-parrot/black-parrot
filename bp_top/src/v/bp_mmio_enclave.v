@@ -87,9 +87,9 @@ always_comb
     endcase
   end
 
-logic [num_core_p-1:0] mtimecmp_r_v_li, mtimecmp_w_v_li;
-logic [num_core_p-1:0] mipi_r_v_li    , mipi_w_v_li;
-logic [num_core_p-1:0] plic_r_v_li    , plic_w_v_li;
+logic [num_core_p-1:0] mtimecmp_v_li;
+logic [num_core_p-1:0] mipi_v_li;
+logic [num_core_p-1:0] plic_v_li;
 
 // Memory-mapped I/O is 64 bit aligned
 // Low 8 bits are core id for MMIO addresses
