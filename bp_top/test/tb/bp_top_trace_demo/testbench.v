@@ -23,10 +23,10 @@ module testbench
    , parameter cmt_trace_p                 = 0
    , parameter skip_init_p                 = 0
 
-   , parameter hex_load_p         = 1
-   , parameter hex_file_p         = "prog.mem"
+   , parameter mem_load_p         = 1
+   , parameter mem_file_p         = "prog.mem"
    , parameter mem_cap_in_bytes_p = 2**20
-   , parameter dram_offset_p      = 32'h8000_0000
+   , parameter mem_offset_p       = 32'h8000_0000
 
    // Number of elements in the fake BlackParrot memory
    , parameter use_max_latency_p      = 0
@@ -248,9 +248,9 @@ bp_me_cce_to_wormhole_link_client
 bp_mem
 #(.cfg_p(cfg_p)
   ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
-  ,.hex_load_p(hex_load_p)
-  ,.hex_file_p(hex_file_p)
-  ,.dram_offset_p(dram_offset_p)
+  ,.mem_load_p(mem_load_p)
+  ,.mem_file_p(mem_file_p)
+  ,.mem_offset_p(mem_offset_p)
 
   ,.use_max_latency_p(use_max_latency_p)
   ,.use_random_latency_p(use_random_latency_p)
