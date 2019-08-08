@@ -421,13 +421,27 @@ typedef struct packed
                   }
 
 typedef logic [63:0] rv64_medeleg_s;
-typedef logic [7:0]  bp_medeleg_s;
+// Hardcode exception 10, 11, 14, 16+ to zero
+typedef struct packed
+{
+  logic [15:15] deleg_15;
+  logic [13:12] deleg_13to12;
+  logic [ 9: 0] deleg_9to0;
+}  bp_medeleg_s;
 
 `define compress_medeleg_s(data_cast_mp) \
-  bp_medeleg_s'(data_cast_mp[0+:8])
+  bp_medeleg_s'{deleg_15     : data_cast_mp[15]    \
+                ,deleg_13to12: data_cast_mp[13:12] \
+                ,deleg_9to0  : data_cast_mp[9:0]   \
+                };
 
 `define decompress_medeleg_s(data_comp_mp) \
-  rv64_mstatus_s'(data_comp_mp)
+  rv64_medeleg_s'({data_comp_mp.deleg_15      \
+                   ,1'b0                      \
+                   ,data_comp_mp.deleg_13to12 \
+                   ,2'b0                      \
+                   ,data_comp_mp.deleg_9to0   \
+                   });
 
 typedef struct packed
 {
@@ -845,12 +859,23 @@ typedef struct packed
                         }
 
 `define declare_csr(csr_name_mp) \
-  rv64_``csr_name_mp``_s ``csr_name_mp``_li, ``csr_name_mp``_lo;  \
-  bp_``csr_name_mp``_s ``csr_name_mp``_n, ``csr_name_mp``_r;      \
-  bsg_dff_reset                                                   \
-   #(.width_p($bits(bp_``csr_name_mp``_s)))                       \
-  ``csr_name_mp``_reg                                             \
-    (.clk_i(clk_i), .reset_i(reset_i), .data_i(``csr_name_mp``_n), .data_o(``csr_name_mp``_r));
+  rv64_``csr_name_mp``_s ``csr_name_mp``_li, ``csr_name_mp``_lo;                                \
+  bp_``csr_name_mp``_s ``csr_name_mp``_n, ``csr_name_mp``_r;                                    \
+  bsg_dff_reset                                                                                 \
+   #(.width_p($bits(bp_``csr_name_mp``_s)))                                                     \
+  ``csr_name_mp``_reg                                                                           \
+    (.clk_i(clk_i), .reset_i(reset_i), .data_i(``csr_name_mp``_n), .data_o(``csr_name_mp``_r)); \
+  assign ``csr_name_mp``_lo = `decompress_``csr_name_mp``_s(``csr_name_mp``_r);                 \
+  assign ``csr_name_mp``_n  = `compress_``csr_name_mp``_s(``csr_name_mp``_li);                  \
+
+`define declare_csr_case_rw(priv_mode_mp, csr_addr_mp, csr_name_mp, csr_data_li, csr_data_lo) \
+  csr_addr_mp:                                                               \
+    begin                                                                    \
+      ``csr_name_mp``_li = rv64_``csr_name_mp``_s'(csr_data_li);             \
+      csr_data_lo        = ``csr_name_mp``_lo;                               \
+                                                                             \
+      illegal_instr_o = (priv_mode_r < priv_mode_mp);                        \
+    end
 
 `define declare_csr_case_ro(priv_mode_mp, csr_addr_mp, csr_name_mp, ro_data_li, csr_data_lo) \
   csr_addr_mp:                                        \
@@ -860,26 +885,13 @@ typedef struct packed
       illegal_instr_o = (priv_mode_r < priv_mode_mp); \
     end
 
-`define declare_csr_case_rw(priv_mode_mp, csr_addr_mp, csr_name_mp, csr_data_li, csr_data_lo) \
-  csr_addr_mp:                                                               \
-    begin                                                                    \
-      ``csr_name_mp``_li = rv64_``csr_name_mp``_s'(csr_data_li);             \
-      ``csr_name_mp``_n  = `compress_``csr_name_mp``_s(``csr_name_mp``_li);  \
-      ``csr_name_mp``_lo = `decompress_``csr_name_mp``_s(``csr_name_mp``_r); \
-      csr_data_lo        = ``csr_name_mp``_lo;                               \
-                                                                             \
-      illegal_instr_o = (priv_mode_r < priv_mode_mp);                        \
-    end
-
 `define declare_csr_case_rw_mask(priv_mode_mp, csr_addr_mp, csr_name_mp, csr_data_li, csr_data_lo, csr_wmask_mp, csr_rmask_mp) \
-  csr_addr_mp:                                                                                 \
-    begin                                                                                      \
-      ``csr_name_mp``_li = (``csr_name_mp``_r & ~csr_wmask_mp) | (csr_data_li & csr_wmask_mp); \
-      ``csr_name_mp``_n  = `compress_``csr_name_mp``_s(``csr_name_mp``_li);                    \
-      ``csr_name_mp``_lo = `decompress_``csr_name_mp``_s(``csr_name_mp``_r);                   \
-      csr_data_lo        = (``csr_name_mp``_lo & csr_rmask_mp);                                \
-                                                                                               \
-      illegal_instr_o = (priv_mode_r < priv_mode_mp);                                          \
+  csr_addr_mp:                                                                                  \
+    begin                                                                                       \
+      ``csr_name_mp``_li = (``csr_name_mp``_lo & ~csr_wmask_mp) | (csr_data_li & csr_wmask_mp); \
+      csr_data_lo        = (``csr_name_mp``_lo & csr_rmask_mp);                                 \
+                                                                                                \
+      illegal_instr_o = (priv_mode_r < priv_mode_mp);                                           \
     end
 
 `endif
