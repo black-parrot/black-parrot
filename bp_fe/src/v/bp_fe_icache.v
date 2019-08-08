@@ -563,7 +563,7 @@ module bp_fe_icache
       ,.dword_width_p(instr_width_p)
     ) cc (
       .clk_i(clk_i)
-      ,.id_i(id_i)
+      ,.id_i(lce_id_i)
       ,.v_i(icache_pc_gen_data_v_o)
       ,.addr_i(addr_tv_r)
       ,.data_i(data_o)

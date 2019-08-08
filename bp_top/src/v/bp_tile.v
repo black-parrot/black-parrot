@@ -17,8 +17,7 @@ module bp_tile
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
-   `declare_bp_lce_cce_if_widths
-     (num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+   `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
    , localparam proc_cfg_width_lp = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
 
@@ -57,7 +56,7 @@ module bp_tile
    // Memory side connection
    , input [mem_noc_cord_width_p-1:0]                      my_cord_i
    , input [mem_noc_cord_width_p-1:0]                      dram_cord_i
-   , input [mem_noc_cord_width_p-1:0]                      clint_cord_i
+   , input [mem_noc_cord_width_p-1:0]                      mmio_cord_i
 
    , input [mem_noc_ral_link_width_lp-1:0]                 cmd_link_i
    , output [mem_noc_ral_link_width_lp-1:0]                cmd_link_o
@@ -72,8 +71,7 @@ module bp_tile
    );
 
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
-`declare_bp_lce_cce_if
-  (num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+`declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
 // Proc-side connections network connections
 bp_lce_cce_req_s  [1:0] lce_req_lo;
@@ -96,6 +94,16 @@ logic             cce_lce_cmd_v_lo, cce_lce_cmd_ready_li;
 bp_proc_cfg_s proc_cfg_cast_i;
 assign proc_cfg_cast_i = proc_cfg_i;
 
+logic reset_r;
+always_ff @(posedge clk_i)
+  begin
+    // This doesn't have a reset because it's a reset register
+    if (reset_i)
+      reset_r <= 1'b1;
+    else if (cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_reset_gp))
+      reset_r <= cfg_data_i[0];
+  end
+
 logic freeze_r;
 always_ff @(posedge clk_i)
   begin
@@ -104,15 +112,6 @@ always_ff @(posedge clk_i)
     else if (cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_freeze_gp))
       freeze_r <= cfg_data_i[0];
   end
-
-logic reset_r;
-bsg_dff
- #(.width_p(1))
- reset_reg
-  (.clk_i(clk_i)
-   ,.data_i(reset_i)
-   ,.data_o(reset_r)
-   );
 
 
 // Module instantiations
@@ -205,7 +204,7 @@ for (genvar i = 0; i < 2; i++)
     wire [coh_cord_width_lp-1:0] lce_id_li = (i == 0) ? proc_cfg_cast_i.icache_id : proc_cfg_cast_i.dcache_id;
 
     lce_req_packet_s lce_req_packet_lo;
-    bp_me_wormhole_packet_encode_req
+    bp_me_wormhole_packet_encode_lce_req
      #(.cfg_p(cfg_p))
      req_encode
       (.payload_i(lce_req_lo[i])
@@ -249,7 +248,7 @@ for (genvar i = 0; i < 2; i++)
        );
 
     lce_cmd_packet_s lce_cmd_packet_lo;
-    bp_me_wormhole_packet_encode_cmd
+    bp_me_wormhole_packet_encode_lce_cmd
      #(.cfg_p(cfg_p))
      cmd_encode
       (.payload_i(lce_cmd_lo[i])
@@ -264,7 +263,7 @@ for (genvar i = 0; i < 2; i++)
        )
      cmd_adapter_in
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
 
        ,.packet_i(lce_cmd_packet_lo)
        ,.v_i(lce_cmd_v_lo[i])
@@ -301,19 +300,19 @@ for (genvar i = 0; i < 2; i++)
        )
      cmd_adapter_out
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
 
        ,.link_i(lce_cmd_link_o_stitch[i][P])
        ,.link_o(lce_cmd_link_i_stitch[i][P])
 
        ,.packet_o(lce_cmd_packet_li)
        ,.v_o(lce_cmd_v_li[i])
-       ,.ready_i(lce_cmd_ready_lo[i])
+       ,.yumi_i(lce_cmd_ready_lo[i] & lce_cmd_v_li[i])
        );
     assign lce_cmd_li[i] = lce_cmd_packet_li.payload;
 
     lce_resp_packet_s lce_resp_packet_lo;
-    bp_me_wormhole_packet_encode_resp
+    bp_me_wormhole_packet_encode_lce_resp
      #(.cfg_p(cfg_p))
      resp_encode
       (.payload_i(lce_resp_lo[i])
@@ -372,19 +371,19 @@ bsg_wormhole_router_adapter_out
    )
  req_adapter_out
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
 
    ,.link_i(lce_req_link_o_stitch[0][P])
    ,.link_o(lce_req_link_i_stitch[0][P])
 
    ,.packet_o(lce_req_packet_li)
    ,.v_o(lce_req_v_li)
-   ,.ready_i(lce_req_ready_lo)
+   ,.yumi_i(lce_req_ready_lo & lce_req_v_li)
    );
 assign lce_req_li = lce_req_packet_li.payload;
 
 lce_cmd_packet_s cce_lce_cmd_packet_lo;
-bp_me_wormhole_packet_encode_cmd
+bp_me_wormhole_packet_encode_lce_cmd
  #(.cfg_p(cfg_p))
  cmd_encode
   (.payload_i(cce_lce_cmd_lo)
@@ -399,7 +398,7 @@ bsg_wormhole_router_adapter_in
    )
  cmd_adapter_in
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
 
    ,.packet_i(cce_lce_cmd_packet_lo)
    ,.v_i(cce_lce_cmd_v_lo)
@@ -418,14 +417,14 @@ bsg_wormhole_router_adapter_out
    )
  resp_adapter_out
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
 
    ,.link_i(lce_resp_link_o_stitch[0][P])
    ,.link_o(lce_resp_link_i_stitch[0][P])
 
    ,.packet_o(lce_resp_packet_li)
    ,.v_o(lce_resp_v_li)
-   ,.ready_i(lce_resp_ready_lo)
+   ,.yumi_i(lce_resp_ready_lo & lce_resp_v_li)
    );
 assign lce_resp_li = lce_resp_packet_li.payload;
 
@@ -486,7 +485,7 @@ bp_addr_map
  cmd_map
   (.paddr_i(mem_cmd_lo.addr)
 
-  ,.clint_cord_i(clint_cord_i)
+  ,.mmio_cord_i(mmio_cord_i)
   ,.dram_cord_i(dram_cord_i)
 
   ,.dest_cord_o(cmd_dest_cord_lo)

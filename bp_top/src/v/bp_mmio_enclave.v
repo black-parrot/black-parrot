@@ -2,7 +2,7 @@
 /*
  * Note: Should rename to I/O enclave and instantiate CLINT and CFG submodules
  */
-module bp_clint
+module bp_mmio_enclave
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
@@ -27,7 +27,7 @@ module bp_clint
    // BP side
    , input [mem_noc_cord_width_p-1:0]              my_cord_i
    , input [mem_noc_cord_width_p-1:0]              dram_cord_i
-   , input [mem_noc_cord_width_p-1:0]              clint_cord_i
+   , input [mem_noc_cord_width_p-1:0]              mmio_cord_i
 
    , input [mem_noc_ral_link_width_lp-1:0]         cmd_link_i
    , output [mem_noc_ral_link_width_lp-1:0]        cmd_link_o
@@ -55,17 +55,17 @@ logic                  mem_resp_v_o, mem_resp_ready_i;
 
 // Cast ports
 bp_cce_mem_cmd_s       mem_cmd_cast_i;
-bp_mem_cce_resp_s      mem_resp_r, mem_resp_n;
 
-assign mem_cmd_cast_i       = mem_cmd_i;
+assign mem_cmd_cast_i = mem_cmd_i;
 
 localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
 
-logic cfg_data_cmd_v;
-logic mipi_cmd_v, mipi_data_cmd_v;
-logic mtimecmp_cmd_v, mtimecmp_data_cmd_v;
-logic mtime_cmd_v, mtime_data_cmd_v;
-logic plic_cmd_v, plic_data_cmd_v;
+logic cfg_cmd_v;
+logic mipi_cmd_v;
+logic mtimecmp_cmd_v;
+logic mtime_cmd_v;
+logic plic_cmd_v;
+logic wr_not_rd;
 
 always_comb
   begin
@@ -74,50 +74,27 @@ always_comb
     mtime_cmd_v         = 1'b0;
     plic_cmd_v          = 1'b0;
 
-    // if read/load
-    // TODO: cached or uncached?
-    if (mem_cmd_cast_i.msg_type == e_cce_mem_rd | mem_cmd_cast_i.msg_type == e_cce_mem_wr
-        | mem_cmd_cast_i.msg_type == e_cce_mem_uc_rd) begin
+    wr_not_rd = mem_cmd_cast_i.msg_type inside {e_cce_mem_wb, e_cce_mem_uc_wr};
+
     unique 
     casez (mem_cmd_cast_i.addr)
+      cfg_link_dev_base_addr_gp: cfg_cmd_v      = mem_cmd_v_i;
       mipi_reg_base_addr_gp    : mipi_cmd_v     = mem_cmd_v_i;
       mtimecmp_reg_base_addr_gp: mtimecmp_cmd_v = mem_cmd_v_i;
       mtime_reg_addr_gp        : mtime_cmd_v    = mem_cmd_v_i;
       plic_reg_base_addr_gp    : plic_cmd_v     = mem_cmd_v_i;
       default: begin end
     endcase
-    end
-
-    cfg_data_cmd_v = 1'b0;
-    mipi_data_cmd_v     = 1'b0;
-    mtimecmp_data_cmd_v = 1'b0;
-    mtime_data_cmd_v    = 1'b0;
-    plic_data_cmd_v     = 1'b0;
-
-    // if writeback or uncached store
-    // TODO: cached or uncached?
-    if (mem_cmd_cast_i.msg_type == e_cce_mem_wb | mem_cmd_cast_i.msg_type == e_cce_mem_uc_wr) begin
-    unique 
-    casez (mem_cmd_cast_i.addr)
-      cfg_link_dev_base_addr_gp: cfg_data_cmd_v      = mem_cmd_v_i;
-      mipi_reg_base_addr_gp    : mipi_data_cmd_v     = mem_cmd_v_i;
-      mtimecmp_reg_base_addr_gp: mtimecmp_data_cmd_v = mem_cmd_v_i;
-      mtime_reg_addr_gp        : mtime_data_cmd_v    = mem_cmd_v_i;
-      plic_reg_base_addr_gp    : plic_data_cmd_v     = mem_cmd_v_i;
-      default: begin end
-    endcase
-    end
   end
 
-logic [num_core_p-1:0] mtimecmp_r_v_li, mtimecmp_w_v_li;
-logic [num_core_p-1:0] mipi_r_v_li    , mipi_w_v_li;
-logic [num_core_p-1:0] plic_r_v_li    , plic_w_v_li;
+logic [num_core_p-1:0] mtimecmp_v_li;
+logic [num_core_p-1:0] mipi_v_li;
+logic [num_core_p-1:0] plic_v_li;
 
 // Memory-mapped I/O is 64 bit aligned
+// Low 8 bits are core id for MMIO addresses
 localparam byte_offset_width_lp = 3;
 wire [lg_num_core_lp-1:0] mem_cmd_core_enc = 
-  mem_cmd_cast_i.addr[byte_offset_width_lp+:lg_num_core_lp];
-wire [lg_num_core_lp-1:0] mem_data_cmd_core_enc = 
   mem_cmd_cast_i.addr[byte_offset_width_lp+:lg_num_core_lp];
 
 bsg_decode_with_v
@@ -126,16 +103,7 @@ bsg_decode_with_v
   (.v_i(mipi_cmd_v)
    ,.i(mem_cmd_core_enc)
    
-   ,.o(mipi_r_v_li)
-   );
-
-bsg_decode_with_v
- #(.num_out_p(num_core_p))
- mipi_data_cmd_decoder
-  (.v_i(mipi_data_cmd_v)
-   ,.i(mem_data_cmd_core_enc)
-
-   ,.o(mipi_w_v_li)
+   ,.o(mipi_v_li)
    );
 
 bsg_decode_with_v
@@ -144,16 +112,7 @@ bsg_decode_with_v
   (.v_i(mtimecmp_cmd_v)
    ,.i(mem_cmd_core_enc)
    
-   ,.o(mtimecmp_r_v_li)
-   );
-
-bsg_decode_with_v
- #(.num_out_p(num_core_p))
- mtimecmp_data_cmd_decoder
-  (.v_i(mtimecmp_data_cmd_v)
-   ,.i(mem_data_cmd_core_enc)
-
-   ,.o(mtimecmp_w_v_li)
+   ,.o(mtimecmp_v_li)
    );
 
 bsg_decode_with_v
@@ -162,20 +121,11 @@ bsg_decode_with_v
   (.v_i(plic_cmd_v)
    ,.i(mem_cmd_core_enc)
 
-   ,.o(plic_r_v_li)
-   );
-
-bsg_decode_with_v
- #(.num_out_p(num_core_p))
- plic_data_cmd_decoder
-  (.v_i(plic_data_cmd_v)
-   ,.i(mem_data_cmd_core_enc)
-
-   ,.o(plic_w_v_li)
+   ,.o(plic_v_li)
    );
 
 logic [dword_width_p-1:0] mtime_n, mtime_r;
-wire mtime_w_v_li = mtime_data_cmd_v;
+wire mtime_w_v_li = mtime_cmd_v;
 assign mtime_n    = mtime_w_v_li 
                     ? mem_cmd_cast_i.data[0+:dword_width_p] 
                     : mtime_r + dword_width_p'(1);
@@ -190,20 +140,20 @@ assign mtime_n    = mtime_w_v_li
      );
 
 logic [num_core_p-1:0][dword_width_p-1:0] mtimecmp_n, mtimecmp_r;
-logic [num_core_p-1:0]                    mipi_n    , mipi_r;
-logic [num_core_p-1:0]                    plic_n    , plic_r;
+logic [num_core_p-1:0]                    mipi_n, mipi_r;
+logic [num_core_p-1:0]                    plic_n, plic_r;
 
 // cfg link to tile
 logic [num_core_p-1:0]      cfg_w_v_li;
 wire [cfg_core_width_p-1:0] cfg_core_li      = mem_cmd_cast_i.data[cfg_data_width_p+cfg_addr_width_p+:cfg_core_width_p];
 wire [cfg_addr_width_p-1:0] cfg_addr_li      = mem_cmd_cast_i.data[cfg_data_width_p+:cfg_addr_width_p];
 wire [cfg_data_width_p-1:0] cfg_data_li      = mem_cmd_cast_i.data[0+:cfg_data_width_p];
-wire                        cfg_broadcast_li = cfg_data_cmd_v & (cfg_core_li == '1);
+wire                        cfg_broadcast_li = cfg_cmd_v & (cfg_core_li == '1);
 
 bsg_decode_with_v
  #(.num_out_p(num_core_p))
  cfg_link_decoder
-  (.v_i(cfg_data_cmd_v)
+  (.v_i(cfg_cmd_v)
    ,.i(cfg_core_li[0+:`BSG_SAFE_CLOG2(num_core_p)])
    ,.o(cfg_w_v_li)
    );
@@ -211,13 +161,14 @@ bsg_decode_with_v
 for (genvar i = 0; i < num_core_p; i++)
   begin : rof1
     assign mtimecmp_n[i] = mem_cmd_cast_i.data[0+:dword_width_p];
+    wire mtimecmp_w_v_li = wr_not_rd & mtimecmp_cmd_v;
     bsg_dff_reset_en
      #(.width_p(dword_width_p))
      mtimecmp_reg
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
-       ,.en_i(mtimecmp_w_v_li[i])
+       ,.en_i(mtimecmp_w_v_li)
        ,.data_i(mtimecmp_n[i])
        ,.data_o(mtimecmp_r[i])
        );
@@ -234,12 +185,13 @@ for (genvar i = 0; i < num_core_p; i++)
        );
 
     assign mipi_n[i] = mem_cmd_cast_i.data[0];
+    wire mipi_w_v_li = wr_not_rd & mipi_cmd_v;
     bsg_dff_reset_en
      #(.width_p(1))
      mipi_reg
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
-       ,.en_i(mipi_w_v_li[i])
+       ,.en_i(mipi_w_v_li)
 
        ,.data_i(mipi_n[i])
        ,.data_o(mipi_r[i])
@@ -257,12 +209,13 @@ for (genvar i = 0; i < num_core_p; i++)
        );
 
     assign plic_n[i] = mem_cmd_cast_i.data[0];
+    wire plic_w_v_li = wr_not_rd & plic_cmd_v;
     bsg_dff_reset_en
      #(.width_p(1))
      plic_reg
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
-       ,.en_i(plic_w_v_li[i])
+       ,.en_i(plic_w_v_li)
 
        ,.data_i(plic_n[i])
        ,.data_o(plic_r[i])
@@ -280,6 +233,7 @@ for (genvar i = 0; i < num_core_p; i++)
        );
        
     // cfg link dff chain
+    wire cfg_w_v_li = wr_not_rd & cfg_cmd_v;
     bsg_dff_chain
      #(.width_p(1+cfg_addr_width_p+cfg_data_width_p)
        ,.num_stages_p(cfg_pipe_depth_p)
@@ -287,7 +241,7 @@ for (genvar i = 0; i < num_core_p; i++)
      cfg_pipe
       (.clk_i(clk_i)
 
-       ,.data_i({(cfg_w_v_li[i] | cfg_broadcast_li), cfg_addr_li, cfg_data_li})
+       ,.data_i({(cfg_w_v_li | cfg_broadcast_li), cfg_addr_li, cfg_data_li})
        ,.data_o({cfg_w_v_o[i], cfg_addr_o[i], cfg_data_o[i]})
        );
   end // rof1
@@ -299,7 +253,7 @@ bsg_mux_one_hot
    )
  mipi_mux_one_hot
   (.data_i(mipi_r)
-   ,.sel_one_hot_i(mipi_r_v_li)
+   ,.sel_one_hot_i(mipi_v_li)
    ,.data_o(mipi_lo)
    );
 
@@ -310,7 +264,7 @@ bsg_mux_one_hot
    )
  mtimecmp_mux_one_hot
   (.data_i(mtimecmp_r)
-   ,.sel_one_hot_i(mtimecmp_r_v_li)
+   ,.sel_one_hot_i(mtimecmp_v_li)
    ,.data_o(mtimecmp_lo)
    );
 
@@ -321,7 +275,7 @@ bsg_mux_one_hot
    )
  plic_mux_one_hot
   (.data_i(plic_r)
-   ,.sel_one_hot_i(plic_r_v_li)
+   ,.sel_one_hot_i(plic_v_li)
    ,.data_o(plic_lo)
    );
 
@@ -355,7 +309,6 @@ bsg_one_fifo
    );
 assign mem_resp_v_o = mem_resp_ready_i & mem_resp_v_lo;
 
-// TODO: data only gets assigned for rd, wr, uc_rd
 assign mem_resp_lo =
   '{msg_type       : mem_cmd_cast_i.msg_type
     ,addr          : mem_cmd_cast_i.addr
@@ -376,7 +329,7 @@ assign cmd_link_o       = cmd_link_cast_o;
 assign resp_link_cast_i = resp_link_i;
 assign resp_link_o      = resp_link_cast_o;
 
-// Not used at the moment by bp_clint, stubbed
+// Not used at the moment by bp_mmio_enclave, stubbed
 bsg_ready_and_link_sif_s wh_master_link_li, wh_master_link_lo;
 bp_me_cce_to_wormhole_link_master
  #(.cfg_p(cfg_p))
@@ -436,5 +389,5 @@ assign cmd_link_cast_o.v = wh_master_link_lo.v;
 assign cmd_link_cast_o.data = wh_master_link_lo.data;
 assign cmd_link_cast_o.ready_and_rev = wh_client_link_lo.ready_and_rev;
 
-endmodule : bp_clint
+endmodule : bp_mmio_enclave
 

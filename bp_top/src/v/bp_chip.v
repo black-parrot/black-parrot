@@ -40,16 +40,13 @@ module bp_chip
    
    // Other parameters
    , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(mem_noc_width_p)
-
-   // Arbitrarily set, should be set based on PD constraints
-   , localparam reset_pipe_depth_lp = 10
    )
   (input                                          clk_i
    , input                                        reset_i
 
    , input [num_core_p-1:0][cord_width_lp-1:0]    tile_cord_i
    , input [cord_width_lp-1:0]                    dram_cord_i
-   , input [cord_width_lp-1:0]                    clint_cord_i
+   , input [cord_width_lp-1:0]                    mmio_cord_i
 
    , input  [bsg_ready_and_link_sif_width_lp-1:0] cmd_link_i
    , output [bsg_ready_and_link_sif_width_lp-1:0] cmd_link_o
@@ -77,7 +74,7 @@ bp_core_complex
 
    ,.tile_cord_i(tile_cord_i)
    ,.dram_cord_i(dram_cord_i)
-   ,.clint_cord_i(clint_cord_i)
+   ,.mmio_cord_i(mmio_cord_i)
 
    ,.cmd_link_i(cc_cmd_link_li)
    ,.cmd_link_o(cc_cmd_link_lo)
@@ -89,13 +86,13 @@ bp_core_complex
 for (genvar i = 0; i < num_routers_lp; i++)
   begin: wh_router
     logic [mem_noc_cord_width_p-1:0] router_cord_li;
-    if (i == clint_pos_p)
+    if (i == mmio_pos_p)
       begin : fi1
-        assign router_cord_li = clint_cord_i;
+        assign router_cord_li = mmio_cord_i;
       end 
     else 
       begin : fi1
-        localparam tile_id_lp = (i < clint_pos_p) ? i : i-1;
+        localparam tile_id_lp = (i < mmio_pos_p) ? i : i-1;
 
         assign router_cord_li = tile_cord_i[tile_id_lp];
       end

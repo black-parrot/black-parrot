@@ -100,6 +100,7 @@ $BSG_IP_CORES_DIR/bsg_misc/bsg_swap.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router_buffered.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router.v
+$BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_adapter.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_adapter_in.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
 $BSG_IP_CORES_DIR/bsg_dataflow/bsg_flow_counter.v
@@ -176,18 +177,20 @@ $BP_ME_DIR/src/v/cce/bp_cce_msg.v
 $BP_ME_DIR/src/v/cce/bp_cce_pending.v
 $BP_ME_DIR/src/v/cce/bp_cce_top.v
 # Network
-$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_req.v
-$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_cmd.v
-$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_resp.v
+$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_req.v
+$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_cmd.v
+$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.v
+$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.v
+$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_master.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_client.v
 ## TOP
 $BP_TOP_DIR/src/v/bsg_noc_repeater_node.v
 $BP_TOP_DIR/src/v/bp_chip.v
 $BP_TOP_DIR/src/v/bp_core.v
-$BP_TOP_DIR/src/v/bp_top.v
+$BP_TOP_DIR/src/v/bp_tile_mesh.v
 $BP_TOP_DIR/src/v/bp_core_complex.v
 $BP_TOP_DIR/src/v/bp_tile.v
-$BP_TOP_DIR/src/v/bp_clint.v
+$BP_TOP_DIR/src/v/bp_mmio_enclave.v
 $BP_TOP_DIR/src/v/bp_addr_map.v
 
