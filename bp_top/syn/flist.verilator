@@ -81,11 +81,13 @@ $BSG_IP_CORES_DIR/bsg_misc/bsg_cycle_counter.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_decode.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_decode_with_v.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_dff.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_dff_en_bypass.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_dff_chain.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_dff_en.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_dff_reset.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_dff_reset_en.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_encode_one_hot.v
+$BSG_IP_CORES_DIR/bsg_misc/bsg_lfsr.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_mux.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_mux_one_hot.v
 $BSG_IP_CORES_DIR/bsg_misc/bsg_mux_segmented.v

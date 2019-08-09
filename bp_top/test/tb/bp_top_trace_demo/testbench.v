@@ -17,25 +17,28 @@ module testbench
    `declare_bp_proc_params(cfg_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
-   // Number of elements in the fake BlackParrot memory
-   , parameter clock_period_in_ps_p = 1000
-   , parameter prog_name_p = "prog.mem"
-   , parameter dram_cfg_p  = "dram_ch.ini"
-   , parameter dram_sys_cfg_p = "dram_sys.ini"
-   , parameter dram_capacity_p = 16384
-
-   , localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
-
-   // Trace replay parameters
+   // Tracing parameters
    , parameter calc_trace_p                = 0
    , parameter cce_trace_p                 = 0
    , parameter cmt_trace_p                 = 0
    , parameter skip_init_p                 = 0
 
-   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_width_p)
-   
-   , localparam noc_x_cord_width_lp = 7
-   , localparam noc_y_cord_width_lp = 1
+   , parameter mem_load_p         = 1
+   , parameter mem_file_p         = "prog.mem"
+   , parameter mem_cap_in_bytes_p = 2**20
+   , parameter mem_offset_p       = 32'h8000_0000
+
+   // Number of elements in the fake BlackParrot memory
+   , parameter use_max_latency_p      = 0
+   , parameter use_random_latency_p   = 1
+   , parameter use_dramsim2_latency_p = 0
+
+   , parameter max_latency_p = 15
+
+   , parameter dram_clock_period_in_ps_p = 1000
+   , parameter dram_cfg_p                = "dram_ch.ini"
+   , parameter dram_sys_cfg_p            = "dram_sys.ini"
+   , parameter dram_capacity_p           = 16384
    )
   (input clk_i
    , input reset_i
@@ -67,15 +70,6 @@ assign cmd_link_lo.v = cfg_link_lo.v;
 assign cmd_link_lo.data = cfg_link_lo.data;
 assign cmd_link_lo.ready_and_rev = mem_link_lo.ready_and_rev;
 
-   
-logic [mem_noc_ral_link_width_lp-1:0] multi_data_li, multi_data_lo;
-logic multi_v_li, multi_v_lo;
-logic multi_yumi_lo, multi_yumi_li;
-
-logic [1:0] ct_fifo_valid_lo, ct_fifo_yumi_li;
-logic [1:0] ct_fifo_valid_li, ct_fifo_yumi_lo;
-logic [1:0][mem_noc_width_p-1:0] ct_fifo_data_lo, ct_fifo_data_li;
-     
 bp_mem_cce_resp_s      mem_resp_li;
 logic                  mem_resp_v_li, mem_resp_ready_lo;
 bp_cce_mem_cmd_s       mem_cmd_lo;
@@ -251,20 +245,22 @@ bp_me_cce_to_wormhole_link_client
   ,.link_o(mem_link_lo)
   );
 
-bp_mem_dramsim2
-#(.mem_id_p(0)
-   ,.clock_period_in_ps_p(clock_period_in_ps_p)
-   ,.prog_name_p(prog_name_p)
-   ,.dram_cfg_p(dram_cfg_p)
-   ,.dram_sys_cfg_p(dram_sys_cfg_p)
-   ,.dram_capacity_p(dram_capacity_p)
-   ,.num_lce_p(num_lce_p)
-   ,.num_cce_p(num_cce_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.lce_assoc_p(lce_assoc_p)
-   ,.block_size_in_bytes_p(cce_block_width_p/8)
-   ,.lce_sets_p(lce_sets_p)
-   ,.lce_req_data_width_p(dword_width_p)
+bp_mem
+#(.cfg_p(cfg_p)
+  ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
+  ,.mem_load_p(mem_load_p)
+  ,.mem_file_p(mem_file_p)
+  ,.mem_offset_p(mem_offset_p)
+
+  ,.use_max_latency_p(use_max_latency_p)
+  ,.use_random_latency_p(use_random_latency_p)
+  ,.use_dramsim2_latency_p(use_dramsim2_latency_p)
+  ,.max_latency_p(max_latency_p)
+
+  ,.dram_clock_period_in_ps_p(dram_clock_period_in_ps_p)
+  ,.dram_cfg_p(dram_cfg_p)
+  ,.dram_sys_cfg_p(dram_sys_cfg_p)
+  ,.dram_capacity_p(dram_capacity_p)
   )
 mem
  (.clk_i(clk_i)
@@ -279,8 +275,6 @@ mem
   ,.mem_resp_ready_i(dram_resp_ready_li)
   );
 
-
-//assign host_cmd_yumi_lo    = '0;
 logic [num_core_p-1:0] program_finish;
 bp_nonsynth_host
  #(.cfg_p(cfg_p))
@@ -355,7 +349,8 @@ bp_me_cce_to_wormhole_link_master
   ,.link_i(cfg_link_li)
   ,.link_o(cfg_link_lo)
   );
-  
+
+localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
 bp_cce_mmio_cfg_loader
   #(.cfg_p(cfg_p)
     ,.inst_width_p(`bp_cce_inst_width)
@@ -376,5 +371,5 @@ bp_cce_mmio_cfg_loader
    ,.mem_resp_ready_o(cfg_resp_ready_lo)
   );
 
-endmodule : testbench
+endmodule
 
