@@ -1,3 +1,4 @@
++define+DRAMSIM2
 // Includes
 // bsg_ip_cores includes
 +incdir+$BSG_IP_CORES_DIR/bsg_dataflow
