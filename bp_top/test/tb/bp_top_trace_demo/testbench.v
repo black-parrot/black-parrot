@@ -30,10 +30,10 @@ module testbench
 
    // Number of elements in the fake BlackParrot memory
    , parameter use_max_latency_p      = 0
-   , parameter use_random_latency_p   = 0
-   , parameter use_dramsim2_latency_p = 1
+   , parameter use_random_latency_p   = 1
+   , parameter use_dramsim2_latency_p = 0
 
-   , parameter max_latency_p = 10
+   , parameter max_latency_p = 15
 
    , parameter dram_clock_period_in_ps_p = 1000
    , parameter dram_cfg_p                = "dram_ch.ini"

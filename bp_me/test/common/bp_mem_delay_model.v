@@ -42,7 +42,8 @@ always_comb
     default  : state_n = e_idle;
   endcase
 
-logic [latency_width_lp-1:0] current_latency, latency_cnt;
+logic [latency_width_lp-1:0] current_latency;
+logic [latency_width_lp:0]   latency_cnt;
 
 wire clr_counter = yumi_i;
 wire inc_counter = (state_r == e_service) & (latency_cnt < current_latency);

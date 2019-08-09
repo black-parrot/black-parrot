@@ -16,7 +16,7 @@ extern "C" char *rebase_hexfile(char *memfile_name, uint64_t dram_base)
 {
   std::string hexfile_name = std::string(memfile_name);
 
-  hexfile_name.append("rebase");
+  hexfile_name.append(".rebase");
 
   std::string line, tok;
   char delimiter = ' ';
@@ -28,7 +28,7 @@ extern "C" char *rebase_hexfile(char *memfile_name, uint64_t dram_base)
     while (getline(memfile, line)) {
       if (line.find("@") != std::string::npos) {
         current_addr = std::stoull(line.substr(1), nullptr, 16);
-        hexfile << "@" << current_addr - dram_base << std::endl;
+        hexfile << "@" << std::hex << current_addr - dram_base << std::endl;
       } else {
         hexfile << line << std::endl;
       }
