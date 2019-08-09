@@ -922,7 +922,7 @@ module bp_be_dcache
   //
   assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r) | lce_stat_mem_pkt_yumi;
   assign stat_mem_w_li = v_tv_r 
-    ? ~(load_miss_tv | store_miss_tv)
+    ? ~(load_miss_tv | store_miss_tv | lr_miss_tv)
     : lce_stat_mem_pkt_yumi & (lce_stat_mem_pkt.opcode != e_dcache_lce_stat_mem_read);
   assign stat_mem_addr_li = v_tv_r
     ? addr_index_tv

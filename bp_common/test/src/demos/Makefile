@@ -23,9 +23,14 @@ queue_demo_%.s:
 atomic_queue_demo_%.s:
 	$(RISCV_GCC) -DNUM_CORES=$(notdir $*) -S -o src/atomic_queue_demo_$(notdir $*).s src/atomic_queue_demo.c
 
+write_demo_%.s:
+	$(RISCV_GCC) -DNUM_CORES=$(notdir $*) -S -o src/write_demo_$(notdir $*).s src/write_demo.c
+
 %.s:
 	$(RISCV_GCC) -S -o src/$@ src/$*.c
 
 clean:
 	rm -f *.riscv
+	rm -f src/atomic_queue_demo_*.s
+	rm -f src/write_demo_*.s
 
