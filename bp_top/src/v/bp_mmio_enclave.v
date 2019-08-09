@@ -69,6 +69,7 @@ logic wr_not_rd;
 
 always_comb
   begin
+    cfg_cmd_v           = 1'b0;
     mipi_cmd_v          = 1'b0;
     mtimecmp_cmd_v      = 1'b0;
     mtime_cmd_v         = 1'b0;

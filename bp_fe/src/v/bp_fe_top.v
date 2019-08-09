@@ -121,7 +121,8 @@ logic [instr_width_p-1:0] fetch_instr_li;
 logic fetch_instr_v_li, fetch_instr_ready_lo;
 
 logic icache_ready_lo, itlb_ready_lo;
-assign fetch_ready_li = icache_ready_lo & itlb_ready_lo;
+logic fetch_v_lo;
+wire fetch_ready_li = icache_ready_lo & itlb_ready_lo;
 bp_fe_pc_gen 
  #(.cfg_p(cfg_p)) 
  bp_fe_pc_gen_1
