@@ -169,12 +169,12 @@ end
                         ,dbg_stage_r[2].rs2
                         ,dbg_stage_r[2].imm
                         );
-                if(dbg_stage_r[2].decode.csr_instr_v) begin
+                if(dbg_stage_r[2].decode.csr_v) begin
                      $fwrite(file, "\t\top: csr sem: r%d <- csr {%x}\n"
                              ,dbg_stage_r[2].instr.fields.rtype.rd_addr
                              ,iwb_result_i
                              );
-                end else if(dbg_stage_r[2].decode.dcache_r_v) begin
+                end else if(dbg_stage_r[2].decode.mem_v) begin
                   if(dbg_stage_r[2].decode.fu_op == e_lrd)
                     $fwrite(file, "\t\top: lr.d sem: r%d <- mem[%x] {%x}\n"
                              ,dbg_stage_r[2].instr.fields.rtype.rd_addr
@@ -195,7 +195,7 @@ end
                               + dbg_stage_r[2].imm
                              ,iwb_result_i
                              );
-                end else if(dbg_stage_r[2].decode.dcache_w_v) begin
+                end else if(dbg_stage_r[2].decode.mem_v) begin
                     if(dbg_stage_r[2].decode.fu_op == e_scd)
                         $fwrite(file, "\t\top: sc.d sem: mem[%x] <- r%d {%x}, success: %d \n"
                                  ,dbg_stage_r[2].rs1 

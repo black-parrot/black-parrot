@@ -185,7 +185,7 @@ bind bp_be_top
      ,.me_nop_i(be_calculator.exc_stage_r[2].me_nop_v)
      ,.poison_i(be_calculator.exc_stage_r[2].poison_v)
      ,.roll_i(be_calculator.exc_stage_r[2].roll_v)
-     ,.instr_cmt_i(be_calculator.calc_status.instr_cmt_v)
+     ,.instr_cmt_i(be_calculator.calc_status.mem3_cmt_v)
 
      ,.program_finish_i(testbench.program_finish)
      );

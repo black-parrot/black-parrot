@@ -184,13 +184,11 @@ logic dcache_cmd_v;
 logic itlb_not_dtlb_resp;
 logic dtlb_miss_r;
 bp_be_mmu_vaddr_s vaddr_mem3, fault_vaddr;
+logic is_itlb_fill_mem3;
 logic is_store_mem3;
 logic [vaddr_width_p-1:0] fault_pc;
 
-logic ecode_v_mem3_r;
-bp_fe_exception_code_e ecode_mem3_r;
-
-wire itlb_fill_cmd_v = (ecode_mem3_r == e_itlb_miss) & pc_v_mem3_i;
+wire itlb_fill_cmd_v = is_itlb_fill_mem3;
 wire dtlb_fill_cmd_v = dtlb_miss_r & pc_v_mem3_i;
 
 bsg_dff_en
@@ -203,35 +201,25 @@ bsg_dff_en
    ,.data_o({fault_vaddr, fault_pc})
    );
 
-wire is_store = mmu_cmd.mem_op inside {e_sb, e_sh, e_sw, e_sd};
+wire is_itlb_fill = mmu_cmd_v_i & mmu_cmd.mem_op inside {e_itlb_fill};
+wire is_store     = mmu_cmd_v_i & mmu_cmd.mem_op inside {e_sb, e_sh, e_sw, e_sd};
 bsg_dff_chain
- #(.width_p(1+vaddr_width_p)
+ #(.width_p(2+vaddr_width_p)
    ,.num_stages_p(2)
    )
  fill_pipe
   (.clk_i(clk_i)
    
-   ,.data_i({mmu_cmd.vaddr, is_store})
-   ,.data_o({vaddr_mem3, is_store_mem3})
-   );
-
-bsg_dff_chain
- #(.width_p(1+$bits(bp_fe_exception_code_e))
-   ,.num_stages_p(2)
-   )
- fe_exception_pipe
-  (.clk_i(clk_i)
-
-   ,.data_i({mmu_cmd_v_i & mmu_cmd.fe_exc_v, mmu_cmd.fe_ecode})
-   ,.data_o({ecode_v_mem3_r, ecode_mem3_r})
+   ,.data_i({mmu_cmd.vaddr, is_store, is_itlb_fill})
+   ,.data_o({vaddr_mem3, is_store_mem3, is_itlb_fill_mem3})
    );
 
 bp_be_ecode_dec_s exception_ecode_dec_li;
 assign exception_ecode_dec_li = 
-  '{instr_misaligned : (ecode_v_mem3_r & (ecode_mem3_r == e_instr_misaligned))
-    ,instr_fault     : (ecode_v_mem3_r & (ecode_mem3_r == e_instr_access_fault))
-    ,illegal_instr   : (ecode_v_mem3_r & (ecode_mem3_r == e_illegal_instr))
-    ,breakpoint      : (csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak))
+  '{instr_misaligned : csr_cmd_v_i & (csr_cmd.csr_op == e_op_instr_misaligned)
+    ,instr_fault     : csr_cmd_v_i & (csr_cmd.csr_op == e_op_instr_access_fault)
+    ,illegal_instr   : csr_cmd_v_i & (csr_cmd.csr_op == e_op_illegal_instr)
+    ,breakpoint      : csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak)
     ,load_misaligned : 1'b0
     ,load_fault      : load_access_fault_v
     ,store_misaligned: 1'b0

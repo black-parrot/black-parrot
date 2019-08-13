@@ -64,6 +64,7 @@ module bp_fe_pc_gen
 logic [vaddr_width_p-1:0]       pc_if1_n, pc_if1_r, pc_if2_r;
 logic                           pc_v_if1_n, pc_v_if2_n, pc_v_if1_r, pc_v_if2_r;
 // branch prediction wires
+logic                           is_br_or_jmp;
 logic [vaddr_width_p-1:0]       br_target;
 logic                           ovr_taken, ovr_ntaken;
 // btb io
@@ -91,7 +92,8 @@ wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
 // Until we support C, must be aligned to 4 bytes
 // There's also an interesting question about physical alignment (I/O devices, etc)
 //   But let's punt that for now...
-wire misalign_exception  = pc_v_if2_r & (pc_if2_r[1:0] != 2'b00); 
+// TODO: misaligned is actually done by the branch target, not the PC
+wire misalign_exception  = 1'b0;
 wire itlb_miss_exception = pc_v_if2_r & itlb_miss_if2_r;
 wire instr_access_fault_exception = pc_v_if2_r & instr_access_fault_i;
 
@@ -267,7 +269,7 @@ wire is_jal     = fetch_instr_v_i & (scan_instr.instr_scan_class == e_rvi_jal);
 wire is_back_br = fetch_instr_i[instr_width_lp-1];
 assign ovr_taken  = 1'b0; //pc_v_if2_r & ~flush & ((is_br & is_back_br) | (is_jal)) & ~btb_v_if1_r & icache_pc_gen_v_i;
 assign ovr_ntaken = 1'b0; 
-assign br_target  = pc_if2_r + fetch_instr_i[20+:12]; 
+assign br_target  = pc_if2_r + fetch_instr_i[20+:12];
 
 // Organize the FE queue message
 always_comb
@@ -283,7 +285,7 @@ always_comb
                                                        ? e_instr_misaligned
                                                        : itlb_miss_exception
                                                          ? e_itlb_miss
-                                                         : e_illegal_instr;
+                                                         : e_instr_access_fault;
       end
     else 
       begin

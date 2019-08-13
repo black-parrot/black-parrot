@@ -343,8 +343,6 @@ bp_be_instr_decoder
    ,.fe_exc_i(issue_pkt_r.fe_exception_code)
 
    ,.decode_o(decoded)
-   ,.fe_exc_not_instr_o(fe_exc_not_instr_isd)
-   ,.fe_exc_o(fe_exc_isd)
    );
 
 // Bypass the instruction operands from written registers in the stack
@@ -417,8 +415,6 @@ bp_be_pipe_mem
    ,.kill_ex3_i(exc_stage_r[2].poison_v) 
 
    ,.decode_i(dispatch_pkt_r.decode)
-   ,.exc_v_i(dispatch_pkt_r.fe_exception_not_instr)
-   ,.exc_i(dispatch_pkt_r.fe_exception_code)
    ,.pc_i(dispatch_pkt_r.pc)
    ,.instr_i(dispatch_pkt_r.instr)
    ,.rs1_i(dispatch_pkt_r.rs1)
@@ -522,7 +518,6 @@ bsg_dff
    ,.data_o(exc_stage_r)
    );
 
-wire fe_exc_v = chk_dispatch_v_i & issue_pkt_v_r & fe_exc_not_instr_isd;
 wire fe_nop_v = chk_dispatch_v_i & ~issue_pkt_v_r;
 wire be_nop_v = ~chk_dispatch_v_i &  mmu_cmd_ready_i;
 wire me_nop_v = ~chk_dispatch_v_i & ~mmu_cmd_ready_i;
@@ -531,20 +526,13 @@ always_comb
   begin
     // Form dispatch packet
     dispatch_pkt.pc                  = issue_pkt_r.pc;
-    dispatch_pkt.fe_exception_not_instr = fe_exc_not_instr_isd;
-    dispatch_pkt.fe_exception_code   = fe_exc_isd;
     dispatch_pkt.branch_metadata_fwd = issue_pkt_r.branch_metadata_fwd;
     dispatch_pkt.instr               = issue_pkt_r.instr;
     dispatch_pkt.rs1                 = bypass_rs1;
     dispatch_pkt.rs2                 = bypass_rs2;
     dispatch_pkt.imm                 = issue_pkt_r.imm;
 
-           if (fe_exc_v) 
-             begin
-               dispatch_pkt.decode = '0;
-               dispatch_pkt.decode.pipe_mem_v = 1'b1;
-             end
-      else if (fe_nop_v) dispatch_pkt = '0;
+      if (fe_nop_v) dispatch_pkt = '0;
       else if (be_nop_v) dispatch_pkt = '0;
       else if (me_nop_v) dispatch_pkt = '0;
       else               dispatch_pkt.decode = decoded;
@@ -552,12 +540,14 @@ always_comb
     // Strip out elements of the dispatch packet that we want to save for later
     calc_stage_isd.pc             = dispatch_pkt.pc;
     calc_stage_isd.instr          = dispatch_pkt.instr;
+    calc_stage_isd.v              = dispatch_pkt.decode.v;
     calc_stage_isd.instr_v        = dispatch_pkt.decode.instr_v;
     calc_stage_isd.pipe_int_v     = dispatch_pkt.decode.pipe_int_v;
     calc_stage_isd.pipe_mul_v     = dispatch_pkt.decode.pipe_mul_v;
     calc_stage_isd.pipe_mem_v     = dispatch_pkt.decode.pipe_mem_v;
     calc_stage_isd.pipe_fp_v      = dispatch_pkt.decode.pipe_fp_v;
-    calc_stage_isd.fencei_v       = dispatch_pkt.decode.fencei_v;
+    calc_stage_isd.mem_v          = dispatch_pkt.decode.mem_v;
+    calc_stage_isd.csr_v          = dispatch_pkt.decode.csr_v;
     calc_stage_isd.irf_w_v        = dispatch_pkt.decode.irf_w_v;
     calc_stage_isd.frf_w_v        = dispatch_pkt.decode.frf_w_v;
 
@@ -580,10 +570,11 @@ always_comb
                                            | dispatch_pkt_r.decode.jmp_v;
     calc_status.int1_br_or_jmp           = dispatch_pkt_r.decode.br_v 
                                            | dispatch_pkt_r.decode.jmp_v;
-    calc_status.ex1_v                    = dispatch_pkt_v_r; 
+    calc_status.ex1_v                    = dispatch_pkt_r.decode.v & ~exc_stage_r[0].poison_v;
     calc_status.ex1_pc                   = dispatch_pkt_r.pc;
     calc_status.ex1_instr_v              = dispatch_pkt_r.decode.instr_v & ~exc_stage_r[0].poison_v;
-    
+    calc_status.mem1_fencei_v            = dispatch_pkt_r.decode.fencei_v;
+
     // Dependency information for pipelines
     for (integer i = 0; i < pipe_stage_els_lp; i++) 
       begin : dep_status
@@ -603,23 +594,16 @@ always_comb
                                               & ~exc_stage_n[i+1].poison_v
                                               & calc_stage_r[i].frf_w_v;
         calc_status.dep_status[i].rd_addr   = calc_stage_r[i].instr.fields.rtype.rd_addr;
-        calc_status.dep_status[i].mem_v     = calc_stage_r[i].pipe_mem_v
+        calc_status.dep_status[i].mem_v     = calc_stage_r[i].mem_v
                                               & ~exc_stage_n[i+1].poison_v;
-        calc_status.dep_status[i].stall_v   = (exc_stage_r[i].csr_instr_v
-                                              | calc_stage_r[i].fencei_v
-                                              ) & ~exc_stage_n[i+1].poison_v;
+        calc_status.dep_status[i].stall_v   = calc_stage_r[i].csr_v 
+                                              & ~exc_stage_n[i+1].poison_v;
       end
 
     // Additional commit point information
-    calc_status.mem3_pc           = calc_stage_r[2].pc;
-    // This should actually be reliant on not begin a fill request
-    calc_status.mem3_miss_v       = (~pipe_mem_v_lo & calc_stage_r[2].pipe_mem_v)
-                                     & ~exc_stage_r[2].poison_v;
-    calc_status.mem3_fencei_v     = calc_stage_r[2].fencei_v & ~exc_stage_r[2].poison_v;
-    // TODO: Handles dequeueing both healthy and poisoned instructions from the queue. 
-    //   Should rename for descriptiveness
-    calc_status.instr_cmt_v       = (calc_stage_r[2].instr_v | exc_stage_r[2].fe_exc_v) & ~exc_stage_r[2].roll_v;
-    calc_status.mem3_fe_exc_v     = exc_stage_r[2].fe_exc_v & ~exc_stage_r[2].poison_v;
+    calc_status.mem3_pc     = calc_stage_r[2].pc;
+    calc_status.mem3_miss_v = ~pipe_mem_v_lo & calc_stage_r[2].mem_v & ~exc_stage_r[2].poison_v;
+    calc_status.mem3_cmt_v  = calc_stage_r[2].v & ~exc_stage_r[2].roll_v;
     
     // Slicing the completion pipe for Forwarding information
     for (integer i = 1; i < pipe_stage_els_lp; i++) 
@@ -641,9 +625,6 @@ always_comb
         exc_stage_n[i] = (i == 0) ? '0 : exc_stage_r[i-1];
       end
         // If there are new exceptions, add them to the list
-        exc_stage_n[0].csr_instr_v     = chk_dispatch_v_i & dispatch_pkt.decode.csr_instr_v;
-
-        exc_stage_n[0].fe_exc_v        = fe_exc_v;
         exc_stage_n[0].fe_nop_v        = fe_nop_v;
         exc_stage_n[0].be_nop_v        = be_nop_v;
         exc_stage_n[0].me_nop_v        = me_nop_v;
@@ -661,7 +642,7 @@ always_comb
 
 assign instret_mem3_o = calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v;
 assign pc_mem3_o      = calc_stage_r[2].pc;
-assign pc_v_mem3_o    = (calc_stage_r[2].instr_v | exc_stage_r[2].fe_exc_v) & ~exc_stage_r[2].poison_v;
+assign pc_v_mem3_o    = calc_stage_r[2].v & ~exc_stage_r[2].poison_v;
 assign instr_mem3_o   = calc_stage_r[2].instr;
 
 endmodule : bp_be_calculator_top

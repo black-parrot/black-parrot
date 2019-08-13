@@ -43,6 +43,8 @@ typedef enum bit [3:0]
 
   ,e_lrd   = 4'b1101
   ,e_scd   = 4'b1110
+
+  ,e_itlb_fill = 4'b1111
 } bp_be_mmu_fu_op_e;
 
 typedef enum bit [3:0]
@@ -56,7 +58,6 @@ typedef enum bit [3:0]
 
   ,e_mret   = 4'b1011
   ,e_sret   = 4'b1001
-  ,e_uret   = 4'b1000
 
   // TODO: Think more carefully about these encodings
   ,e_ecall      = 4'b1110
@@ -64,6 +65,11 @@ typedef enum bit [3:0]
   ,e_ebreak     = 4'b1111
 
   ,e_sfence_vma = 4'b1101
+
+  // We treat FE exceptions as CSR ops
+  ,e_op_illegal_instr      = 4'b0000
+  ,e_op_instr_access_fault = 4'b0100
+  ,e_op_instr_misaligned   = 4'b1010
 } bp_be_csr_fu_op_e;
 
 typedef struct packed
@@ -108,6 +114,7 @@ typedef enum bit
 
 typedef struct packed
 {
+  logic                             v;
   logic                             instr_v;
 
   logic                             pipe_comp_v;
@@ -118,11 +125,11 @@ typedef struct packed
 
   logic                             irf_w_v;
   logic                             frf_w_v;
-  logic                             csr_instr_v;
-  logic                             fence_v;
-  logic                             fencei_v;
-  logic                             dcache_w_v;
+  logic                             mem_v;
   logic                             dcache_r_v;
+  logic                             dcache_w_v;
+  logic                             csr_v;
+  logic                             fencei_v;
   logic                             fp_not_int_v;
   logic                             jmp_v;
   logic                             br_v;
@@ -164,17 +171,11 @@ typedef struct packed
 typedef struct packed
 {
   // BE exceptional conditions
-  logic fe_exc_v;
   logic fe_nop_v;
   logic be_nop_v;
   logic me_nop_v;
   logic poison_v;
   logic roll_v;
-
-  // We stall on csr instructions because they might have
-  //  side effects. Of course, we could progress on some CSRs
-  //  (*scratch, for example)
-  logic csr_instr_v;
 }  bp_be_exception_s;
 
 `define bp_be_fu_op_width                                                                          \

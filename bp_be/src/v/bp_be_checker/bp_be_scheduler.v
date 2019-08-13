@@ -131,14 +131,8 @@ always_comb
             issue_pkt.frs1_v = '0;
             issue_pkt.frs2_v = '0;
 
-            issue_pkt.fence_v = (fe_fetch_instr.opcode == `RV64_MISC_MEM_OP);
+            issue_pkt.fence_v  = (fe_fetch_instr.opcode == `RV64_MISC_MEM_OP);
             
-            casez(fe_fetch_instr.opcode)
-              `RV64_STORE_OP, `RV64_LOAD_OP, `RV64_AMO_OP: 
-                       issue_pkt.mem_v = 1'b1;
-              default: issue_pkt.mem_v = 1'b0;
-            endcase
-                      
             // Immediate extraction
             casez(fe_fetch_instr.opcode)
               `RV64_LUI_OP, `RV64_AUIPC_OP : issue_pkt.imm = `rv64_signext_u_imm(fe_fetch_instr);

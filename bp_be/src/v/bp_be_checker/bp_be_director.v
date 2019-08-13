@@ -193,7 +193,7 @@ bsg_mux
    )
  init_mux
   (.data_i({cfg_pc_part_li, exc_mux_o})
-   ,.sel_i(freeze_i)
+   ,.sel_i(cfg_w_v_i)
    ,.data_o(npc_n)
    );
 
@@ -259,7 +259,7 @@ bsg_dff_reset_en
  attaboy_pending_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(calc_status.ex1_instr_v)
+   ,.en_i(calc_status.ex1_v)
 
    ,.data_i(calc_status.int1_br_or_jmp)
    ,.data_o(attaboy_pending)
@@ -270,7 +270,7 @@ assign expected_npc_o = npc_r;
 // Increment the checkpoint if there's a committing instruction
 // The itlb fill is strictly unnecessary, but we would need to work the rollback logic to work
 // without it
-assign chk_dequeue_fe_o = ~calc_status.mem3_miss_v & calc_status.instr_cmt_v;
+assign chk_dequeue_fe_o = ~calc_status.mem3_miss_v & calc_status.mem3_cmt_v;
 // Flush the FE queue if there's a pc redirect
 assign chk_flush_fe_o = (fe_cmd_v & (fe_cmd.opcode != e_op_attaboy));
 
@@ -338,10 +338,10 @@ always_comb
         
         fe_cmd_v = fe_cmd_ready_i;
       end
-    else if(calc_status.mem3_fencei_v)
+    else if(calc_status.mem1_fencei_v)
       begin : icache_fence
         fe_cmd.opcode = e_op_icache_fence;
-        fe_cmd.vaddr = calc_status.mem3_pc;
+        fe_cmd.vaddr = expected_npc_o;
 
         fe_cmd_v = fe_cmd_ready_i;
       end
@@ -361,10 +361,10 @@ always_comb
 
         fe_cmd.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
 
-        fe_cmd_v = fe_cmd_ready_i & ~chk_roll_fe_o & (~redirect_pending | trap_v_i | ret_v_i);
+        fe_cmd_v = fe_cmd_ready_i & (~redirect_pending | trap_v_i | ret_v_i);
       end 
     // Send an attaboy if there's a correct prediction
-    else if(calc_status.ex1_instr_v & ~npc_mismatch_v & attaboy_pending) 
+    else if(calc_status.ex1_v & ~npc_mismatch_v & attaboy_pending) 
       begin : attaboy
         fe_cmd.opcode                      = e_op_attaboy;
         fe_cmd.vaddr                       = calc_status.ex1_pc;
@@ -373,7 +373,7 @@ always_comb
 
         fe_cmd.operands.attaboy = fe_cmd_attaboy;
 
-        fe_cmd_v = fe_cmd_ready_i & ~chk_roll_fe_o & ~redirect_pending;
+        fe_cmd_v = fe_cmd_ready_i & ~redirect_pending;
       end
   end
 endmodule : bp_be_director

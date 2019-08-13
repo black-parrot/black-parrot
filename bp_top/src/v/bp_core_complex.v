@@ -26,9 +26,6 @@ module bp_core_complex
    , localparam num_routers_lp = num_tiles_lp+1
    
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_width_p)
-
-   // Arbitrarily set, should be set based on PD constraints
-   , localparam reset_pipe_depth_lp = 10
    )
   (input                                                        clk_i
    , input                                                      reset_i
@@ -66,7 +63,7 @@ logic [mem_noc_ral_link_width_lp-1:0]                 mmio_resp_link_lo;
 
 bp_tile_mesh
  #(.cfg_p(cfg_p))
- bp_top
+ bp_tile_mesh
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 

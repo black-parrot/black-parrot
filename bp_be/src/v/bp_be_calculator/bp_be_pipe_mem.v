@@ -64,8 +64,6 @@ module bp_be_pipe_mem
    , input                                kill_ex2_i
    , input                                kill_ex3_i
 
-   , input bp_fe_exception_code_e         exc_i
-   , input                                exc_v_i
    , input [decode_width_lp-1:0]          decode_i
    , input [vaddr_width_p-1:0]            pc_i
    , input [rv64_instr_width_gp-1:0]      instr_i
@@ -123,7 +121,7 @@ bsg_shift_reg
   (.clk(clk_i)
    ,.reset_i(reset_i)
 
-   ,.valid_i(decode.csr_instr_v)
+   ,.valid_i(decode.csr_v)
    ,.data_i(csr_cmd_li)
 
    ,.valid_o(csr_cmd_v_lo)
@@ -134,14 +132,12 @@ logic [reg_data_width_lp-1:0] offset;
 
 assign offset = decode.offset_sel ? '0 : imm_i[0+:vaddr_width_p];
 
-assign mem1_cmd_v = decode.pipe_mem_v & ~decode.csr_instr_v & ~kill_ex1_i;
+assign mem1_cmd_v = decode.mem_v & ~kill_ex1_i;
 always_comb 
   begin
     mem1_cmd.mem_op   = decode.fu_op;
     mem1_cmd.data     = rs2_i;
-    mem1_cmd.vaddr    = exc_v_i ? pc_i : (rs1_i + offset);
-    mem1_cmd.fe_exc_v = exc_v_i;
-    mem1_cmd.fe_ecode = exc_i;
+    mem1_cmd.vaddr    = (mem1_cmd.mem_op == e_itlb_fill) ? pc_i : (rs1_i + offset);
   end
 
 assign csr_cmd_v_o = csr_cmd_v_lo & ~kill_ex3_i;

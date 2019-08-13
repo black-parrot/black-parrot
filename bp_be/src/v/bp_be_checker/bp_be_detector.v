@@ -179,23 +179,19 @@ assign chk_roll_o       = calc_status.mem3_miss_v;
 
 assign chk_poison_iss_o = reset_i
                           | flush_i
-                          | calc_status.mem3_fe_exc_v
                           | calc_status.mem3_miss_v;
                           
 assign chk_poison_isd_o = reset_i
                           | flush_i
-                          | calc_status.mem3_fe_exc_v
                           | calc_status.mem3_miss_v;
 
 assign chk_poison_ex1_o = reset_i 
                           | mispredict_v
                           | flush_i
-                          | calc_status.mem3_fe_exc_v
                           | calc_status.mem3_miss_v;
 
 assign chk_poison_ex2_o = reset_i
                           | flush_i
-                          | calc_status.mem3_fe_exc_v
                           | calc_status.mem3_miss_v;
 
 endmodule : bp_be_detector
