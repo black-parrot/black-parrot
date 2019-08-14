@@ -60,7 +60,7 @@ typedef struct packed
   integer fe_queue_fifo_els;
   integer fe_cmd_fifo_els;
 
-  integer coh_noc_link_width;
+  integer coh_noc_flit_width;
   integer coh_noc_cid_width;
   integer coh_noc_len_width;
   integer coh_noc_cord_width;
@@ -69,7 +69,7 @@ typedef struct packed
   integer cfg_addr_width;
   integer cfg_data_width;
 
-  integer mem_noc_link_width;
+  integer mem_noc_flit_width;
   integer mem_noc_reserved_width;
   integer mem_noc_cid_width;
   integer mem_noc_len_width;
@@ -115,7 +115,7 @@ typedef struct packed
   , localparam fe_queue_fifo_els_p = proc_param_lp.fe_queue_fifo_els                               \
   , localparam fe_cmd_fifo_els_p   = proc_param_lp.fe_cmd_fifo_els                                 \
                                                                                                    \
-  , localparam coh_noc_flit_width_p = proc_param_lp.coh_noc_link_width                             \
+  , localparam coh_noc_flit_width_p = proc_param_lp.coh_noc_flit_width                             \
   , localparam coh_noc_cid_width_p  = proc_param_lp.coh_noc_cid_width                              \
   , localparam coh_noc_len_width_p  = proc_param_lp.coh_noc_len_width                              \
   , localparam coh_noc_cord_width_p = proc_param_lp.coh_noc_cord_width                             \
@@ -124,7 +124,7 @@ typedef struct packed
   , localparam cfg_addr_width_p          = proc_param_lp.cfg_addr_width                            \
   , localparam cfg_data_width_p          = proc_param_lp.cfg_data_width                            \
                                                                                                    \
-  , localparam mem_noc_flit_width_p      = proc_param_lp.mem_noc_link_width                        \
+  , localparam mem_noc_flit_width_p      = proc_param_lp.mem_noc_flit_width                        \
   , localparam mem_noc_reserved_width_p  = proc_param_lp.mem_noc_reserved_width                    \
   , localparam mem_noc_cid_width_p       = proc_param_lp.mem_noc_cid_width                         \
   , localparam mem_noc_len_width_p       = proc_param_lp.mem_noc_len_width                         \

@@ -103,6 +103,8 @@ $BSG_IP_CORES_DIR/bsg_misc/bsg_swap.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router_buffered.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_concentrator.v
+$BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_concentrator_in.v
+$BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_concentrator_out.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_adapter_in.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
