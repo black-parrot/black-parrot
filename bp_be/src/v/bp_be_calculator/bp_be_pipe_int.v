@@ -57,7 +57,7 @@ module bp_be_pipe_int
    // Pipeline results
    , output [reg_data_width_lp-1:0] data_o
 
-   , output [reg_data_width_lp-1:0] br_tgt_o
+   , output [vaddr_width_p-1:0]     br_tgt_o
    );
 
 // Cast input and output ports 

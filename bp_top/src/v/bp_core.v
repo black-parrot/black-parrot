@@ -67,18 +67,17 @@ module bp_core
   `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
   `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
+  bp_proc_cfg_s proc_cfg_cast_i;
+  assign proc_cfg_cast_i = proc_cfg_i;
+
   bp_fe_queue_s fe_queue_li, fe_queue_lo;
   logic fe_queue_v_li, fe_queue_ready_lo;
   logic fe_queue_v_lo, fe_queue_yumi_li;
 
-  logic fe_queue_clr_li, fe_queue_dequeue_li, fe_queue_rollback_li;
-
   bp_fe_cmd_s fe_cmd_li, fe_cmd_lo;
   logic fe_cmd_v_li, fe_cmd_ready_lo;
-  logic fe_cmd_v_lo, fe_cmd_ready_li;
+  logic fe_cmd_v_lo, fe_cmd_yumi_li;
 
-  bp_proc_cfg_s proc_cfg;
-  assign proc_cfg = proc_cfg_i;
   bp_fe_top
    #(.cfg_p(cfg_p))
    fe 
@@ -86,7 +85,7 @@ module bp_core
      ,.reset_i(reset_i)
      ,.freeze_i(freeze_i)
 
-     ,.icache_id_i(proc_cfg.icache_id)
+     ,.icache_id_i(proc_cfg_cast_i.icache_id)
 
      ,.cfg_w_v_i(cfg_w_v_i)
      ,.cfg_addr_i(cfg_addr_i)
@@ -98,7 +97,8 @@ module bp_core
 
      ,.fe_cmd_i(fe_cmd_lo)
      ,.fe_cmd_v_i(fe_cmd_v_lo)
-     ,.fe_cmd_ready_o(fe_cmd_ready_li)
+     ,.fe_cmd_yumi_o(fe_cmd_yumi_li)
+     ,.fe_cmd_processed_o(fe_cmd_processed_li)
 
      ,.lce_req_o(lce_req_o[0])
      ,.lce_req_v_o(lce_req_v_o[0])
@@ -117,6 +117,32 @@ module bp_core
      ,.lce_cmd_ready_i(lce_cmd_ready_i[0])
      );
 
+  logic fe_fence_r;
+  wire fe_cmd_nonattaboy_v_li = fe_cmd_v_li & (fe_cmd_li.opcode != e_op_attaboy);
+  bsg_fifo_1r1w_fence
+   #(.width_p(fe_cmd_width_lp)
+     ,.els_p(fe_cmd_fifo_els_p)
+     ,.ready_THEN_valid_p(1)
+     )
+   fe_cmd_fifo
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.fence_set_i(fe_cmd_nonattaboy_v_li)
+     ,.fence_clr_i(fe_cmd_processed_li)
+     ,.fence_o(fe_fence_r)
+      
+     ,.data_i(fe_cmd_li)
+     ,.v_i(fe_cmd_v_li)
+     ,.ready_o(fe_cmd_ready_lo)
+                  
+     ,.data_o(fe_cmd_lo)
+     ,.v_o(fe_cmd_v_lo)
+     ,.yumi_i(fe_cmd_yumi_li)
+     );
+
+  logic fe_queue_deq_li, fe_queue_roll_li;
+  wire fe_queue_clr_li = fe_fence_r & fe_cmd_processed_li;
   bsg_fifo_1r1w_rolly 
    #(.width_p(fe_queue_width_lp)
      ,.els_p(fe_queue_fifo_els_p)
@@ -127,8 +153,8 @@ module bp_core
      ,.reset_i(reset_i)
 
      ,.clr_v_i(fe_queue_clr_li)
-     ,.ckpt_v_i(fe_queue_dequeue_li)
-     ,.roll_v_i(fe_queue_rollback_li)
+     ,.deq_v_i(fe_queue_deq_li)
+     ,.roll_v_i(fe_queue_roll_li)
 
      ,.data_i(fe_queue_li)
      ,.v_i(fe_queue_v_li)
@@ -137,29 +163,6 @@ module bp_core
      ,.data_o(fe_queue_lo)
      ,.v_o(fe_queue_v_lo)
      ,.yumi_i(fe_queue_yumi_li)
-     );
-
-  bsg_fifo_1r1w_fence
-   #(.width_p(fe_cmd_width_lp)
-     ,.els_p(fe_cmd_fifo_els_p)
-     ,.ready_THEN_valid_p(1)
-     )
-   fe_cmd_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-      
-     // FE cmd fencing is not implemented at the moment     
-     ,.fence_set_i(1'b0)
-     ,.fence_clr_i(1'b0)
-     ,.fence_o()
-
-     ,.data_i(fe_cmd_li)
-     ,.v_i(fe_cmd_v_li)
-     ,.ready_o(fe_cmd_ready_lo)
-                  
-     ,.data_o(fe_cmd_lo)
-     ,.v_o(fe_cmd_v_lo)
-     ,.yumi_i(fe_cmd_ready_li)
      );
 
   bp_be_top 
@@ -175,17 +178,16 @@ module bp_core
      ,.cfg_addr_i(cfg_addr_i)
      ,.cfg_data_i(cfg_data_i)
 
-     ,.fe_queue_i(fe_queue_lo)
-     ,.fe_queue_v_i(fe_queue_v_lo)
-     ,.fe_queue_yumi_o(fe_queue_yumi_li)
+     ,.fe_queue_deq_o(fe_queue_deq_li)
+     ,.fe_queue_roll_o(fe_queue_roll_li)
 
-     ,.fe_queue_clr_o(fe_queue_clr_li)
-     ,.fe_queue_dequeue_o(fe_queue_dequeue_li)
-     ,.fe_queue_rollback_o(fe_queue_rollback_li)
+     ,.fe_queue_i(fe_queue_lo)
+     ,.fe_queue_v_i(~fe_fence_r & fe_queue_v_lo)
+     ,.fe_queue_yumi_o(fe_queue_yumi_li)
 
      ,.fe_cmd_o(fe_cmd_li)
      ,.fe_cmd_v_o(fe_cmd_v_li)
-     ,.fe_cmd_ready_i(fe_cmd_ready_lo)
+     ,.fe_cmd_ready_i(~fe_fence_r & fe_cmd_ready_lo)
 
      ,.lce_req_o(lce_req_o[1])
      ,.lce_req_v_o(lce_req_v_o[1])

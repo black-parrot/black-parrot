@@ -24,24 +24,14 @@ module bp_be_checker_top
  import bp_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
-    `declare_bp_fe_be_if_widths(vaddr_width_p
-                                ,paddr_width_p
-                                ,asid_width_p
-                                ,branch_metadata_fwd_width_p
-                                )
+    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
    // Generated parameters
    , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam issue_pkt_width_lp   = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
 
    // VM parameters
-   , localparam vtag_width_lp     = (vaddr_width_p-bp_page_offset_width_gp)
-   , localparam ptag_width_lp     = (paddr_width_p-bp_page_offset_width_gp)
-   , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_lp)
-
-   // CSRs
-   , localparam mepc_width_lp  = `bp_mepc_width
-   , localparam mtvec_width_lp = `bp_mtvec_width
+   , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_p)
    )
   (input                              clk_i
    , input                            reset_i
@@ -58,13 +48,12 @@ module bp_be_checker_top
    , input                            fe_cmd_ready_i
 
    // FE queue interface
+   , output                           fe_queue_roll_o
+   , output                           fe_queue_deq_o
+
    , input [fe_queue_width_lp-1:0]    fe_queue_i
    , input                            fe_queue_v_i
    , output                           fe_queue_yumi_o
-
-   , output                           chk_roll_fe_o
-   , output                           chk_flush_fe_o
-   , output                           chk_dequeue_fe_o
 
    // Instruction issue interface
    , output [issue_pkt_width_lp-1:0]  issue_pkt_o
@@ -89,8 +78,8 @@ module bp_be_checker_top
    , input                            trap_v_i
    , input                            ret_v_i
    , output [vaddr_width_p-1:0]       pc_o
-   , input [mtvec_width_lp-1:0]       tvec_i
-   , input [mepc_width_lp-1:0]        epc_i
+   , input [vaddr_width_p-1:0]        tvec_i
+   , input [vaddr_width_p-1:0]        epc_i
    , input                            tlb_fence_i
    
    //iTLB fill interface
@@ -100,14 +89,13 @@ module bp_be_checker_top
    );
 
 // Declare parameterizable structures
-`declare_bp_be_internal_if_structs(vaddr_width_p
-                                   , paddr_width_p
-                                   , asid_width_p
-                                   , branch_metadata_fwd_width_p
-                                   ); 
+`declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p); 
+
+bp_be_calc_status_s calc_status_cast_i;
+assign calc_status_cast_i = calc_status_i;
 
 // Intermediate connections
-logic [vaddr_width_p-1:0] expected_npc;
+logic [vaddr_width_p-1:0] expected_npc_lo;
 logic flush;
 
 // Datapath
@@ -123,16 +111,12 @@ bp_be_director
    ,.cfg_data_i(cfg_data_i)
 
    ,.calc_status_i(calc_status_i) 
-   ,.expected_npc_o(expected_npc)
+   ,.expected_npc_o(expected_npc_lo)
    ,.flush_o(flush)
 
    ,.fe_cmd_o(fe_cmd_o)
    ,.fe_cmd_v_o(fe_cmd_v_o)
    ,.fe_cmd_ready_i(fe_cmd_ready_i)
-
-   ,.chk_dequeue_fe_o(chk_dequeue_fe_o)
-   ,.chk_roll_fe_o(chk_roll_fe_o)
-   ,.chk_flush_fe_o(chk_flush_fe_o)
 
    ,.trap_v_i(trap_v_i)
    ,.ret_v_i(ret_v_i)
@@ -152,8 +136,8 @@ bp_be_detector
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.expected_npc_i(expected_npc)
    ,.calc_status_i(calc_status_i)
+   ,.expected_npc_i(expected_npc_lo)
    ,.mmu_cmd_ready_i(mmu_cmd_ready_i)
    ,.credits_full_i(credits_full_i)
    ,.credits_empty_i(credits_empty_i)
@@ -174,6 +158,12 @@ bp_be_scheduler
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
+   ,.cache_miss_v_i(calc_status_cast_i.mem3_miss_v)
+   ,.cmt_v_i(calc_status_cast_i.mem3_cmt_v)
+
+   ,.fe_queue_deq_o(fe_queue_deq_o)
+   ,.fe_queue_roll_o(fe_queue_roll_o)
+
    ,.fe_queue_i(fe_queue_i)
    ,.fe_queue_v_i(fe_queue_v_i)
    ,.fe_queue_yumi_o(fe_queue_yumi_o)
@@ -183,4 +173,5 @@ bp_be_scheduler
    ,.issue_pkt_ready_i(issue_pkt_ready_i)
    );
 
-endmodule : bp_be_checker_top
+endmodule
+

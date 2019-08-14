@@ -119,6 +119,9 @@ $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_input_control.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_output_control.v 
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_pkg.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_generalized.v
+# Common files
+$BP_COMMON_DIR/src/v/bsg_fifo_1r1w_fence.v
+$BP_COMMON_DIR/src/v/bsg_fifo_1r1w_rolly.v
 ## BE files
 $BP_BE_DIR/src/v/bp_be_top.v
 # Calculator
@@ -148,9 +151,6 @@ $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf_queue.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dtlb/bp_be_dtlb.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dtlb/bp_be_dtlb_replacement.v
-# Common
-$BP_BE_DIR/src/v/common/bsg_fifo_1r1w_fence.v
-$BP_BE_DIR/src/v/common/bsg_fifo_1r1w_rolly.v
 ## FE files
 $BP_FE_DIR/src/v/bp_fe_bht.v
 #$BP_FE_DIR/src/v/bp_fe_branch_predictor.v

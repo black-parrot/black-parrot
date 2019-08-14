@@ -45,14 +45,15 @@ module bp_fe_pc_gen
    , output [vaddr_width_p-page_offset_width_p-1:0]  itlb_w_vtag_o
    , output [entry_width_lp-1:0]                     itlb_w_entry_o
 
-   , input [fe_cmd_width_lp-1:0]                      fe_cmd_i
-   , input                                            fe_cmd_v_i
-   , output logic                                     fe_cmd_ready_o
+   , input [fe_cmd_width_lp-1:0]                     fe_cmd_i
+   , input                                           fe_cmd_v_i
+   , output logic                                    fe_cmd_yumi_o
 
-   , output [fe_queue_width_lp-1:0]                   fe_queue_o
-   , output                                           fe_queue_v_o
-   , input                                            fe_queue_ready_i
+   , output                                          fe_cmd_processed_o
 
+   , output [fe_queue_width_lp-1:0]                  fe_queue_o
+   , output                                          fe_queue_v_o
+   , input                                           fe_queue_ready_i
    );
 
 //the first level of structs
@@ -174,7 +175,9 @@ always_comb
 
 // PC pipeline
 // We can't fetch from wait state, only run and coming out of stall
-assign pc_v_if1_n = ~is_wait & fe_queue_ready_i & fetch_ready_i;
+// We want to wait until the FE queue is ready, but if we're going to flush anyway
+//   we might as well start fetching
+assign pc_v_if1_n = ~is_wait & (cmd_nonattaboy_v || fe_queue_ready_i) & fetch_ready_i;
 assign pc_v_if2_n = pc_v_if1_r & ~flush;
 
 // We use reset flops for status signals in the pipeline
@@ -247,7 +250,7 @@ bp_fe_btb
 
    ,.w_tag_i(fe_cmd_branch_metadata.btb_tag) 
    ,.w_idx_i(fe_cmd_branch_metadata.btb_idx)
-   ,.w_v_i(pc_redirect_v & fe_cmd_ready_o)
+   ,.w_v_i(pc_redirect_v & fe_cmd_yumi_o)
    ,.br_tgt_i(fe_cmd_cast_i.vaddr)
    );
  
@@ -309,8 +312,9 @@ assign fetch_pc_o = pc_if1_n;
 assign fetch_v_o  = fetch_ready_i & pc_v_if1_n;
 
 // Handshaking signals
-assign fe_cmd_ready_o        = fe_cmd_v_i; // Always accept FE commands
-assign fe_queue_v_o          = fe_queue_ready_i & (fe_instr_v | fe_exception_v);
+assign fe_cmd_yumi_o      = fe_cmd_v_i; // Always accept FE commands
+assign fe_cmd_processed_o = fe_cmd_yumi_o; // All FE cmds are processed in 1 cycle, for now
+assign fe_queue_v_o       = fe_queue_ready_i & (fe_instr_v | fe_exception_v);
 
 endmodule
 

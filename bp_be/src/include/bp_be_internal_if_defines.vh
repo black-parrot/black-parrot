@@ -66,7 +66,7 @@
     logic                              mem_iwb_v;                                                  \
     logic                              mem_fwb_v;                                                  \
     logic                              fp_fwb_v;                                                   \
-    logic                              stall_v;                                                    \
+    logic                              serial_v;                                                   \
     logic                              mem_v;                                                      \
                                                                                                    \
     logic [rv64_reg_addr_width_gp-1:0] rd_addr;                                                    \

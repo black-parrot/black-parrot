@@ -5,45 +5,6 @@
  * 
  * Description:
  *
- * Parameters:
- *   vaddr_width_p               - FE-BE structure sizing parameter
- *   paddr_width_p               - ''
- *   asid_width_p                - ''
- *   branch_metadata_fwd_width_p - ''   
- *
- * Inputs:
- *   clk_i                  -
- *   reset_i                -
- *
- *   issue_pkt_i            - An issued instruction, containing predecoded metadata
- *   issue_pkt_v_i          - "ready-then-valid" interface
- *   issue_pkt_ready_o      -
- *
- *   chk_dispatch_v_i       - Checker indicates the last issued instruction may be dispatched
- *   chk_roll_i             - Checker rolls back all uncommitted instructions
- *   chk_poison_ex_i        - Checker poisons all uncommitted instructions
- *   chk_poison_isd_i       - Checker poisons the currently issued instruction as it's dispatched
- *   chk_poison_iss_i       - Checker poisons the instruction at the issue stage
- *
- *   mem_resp_i             - An MMU response containing load data and exception codes
- *   mem_resp_v_i           - "ready-then-valid" interface
- *   mem_resp_ready_o       -
- *   
- * Outputs:
- *   calc_status_o          - Packet containing execution status of pipeline, including dependency
- *                              information used by the checker to detect hazards
- *
- *   mmu_cmd_o              - An MMU command wrapping a D$ command
- *   mmu_cmd_v_o            - "ready-then-valid" interface
- *   mmu_cmd_ready_i        -
- *
- *   cmt_trace_stage_reg_o  - Commit status data used to monitor execution
- *   cmt_trace_data_o     - Committed calculated results
- *   cmt_trace_exc_o        - Committed exceptions 
- *
- * Keywords:
- *   calculator, pipeline, pipe, execution, registers
- * 
  * Notes:
  *   Should subdivide this module into a few helper modules to reduce complexity. Perhaps
  *     issuer, exe_pipe, completion_pipe, status_gen?
@@ -58,18 +19,8 @@ module bp_be_calculator_top
  import bp_be_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
-    `declare_bp_fe_be_if_widths(vaddr_width_p
-                                ,paddr_width_p
-                                ,asid_width_p
-                                ,branch_metadata_fwd_width_p
-                                )
-    `declare_bp_lce_cce_if_widths(num_cce_p
-                                  ,num_lce_p
-                                  ,paddr_width_p
-                                  ,lce_assoc_p
-                                  ,dword_width_p
-                                  ,cce_block_width_p
-                                  )
+    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
    // Default parameters
    , parameter fp_en_p                  = 0
@@ -84,18 +35,13 @@ module bp_be_calculator_top
    , localparam mem_resp_width_lp       = `bp_be_mem_resp_width(vaddr_width_p)
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam pipe_stage_reg_width_lp = `bp_be_pipe_stage_reg_width(vaddr_width_p)
-   , localparam fu_op_width_lp          = `bp_be_fu_op_width
-   , localparam decode_width_lp         = `bp_be_decode_width
 
    // From BP BE specifications
    , localparam pipe_stage_els_lp = 5 
    , localparam ecode_dec_width_lp = `bp_be_ecode_dec_width
 
    // From RISC-V specifications
-   , localparam instr_width_lp    = rv64_instr_width_gp
-   , localparam reg_data_width_lp = rv64_reg_data_width_gp
    , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
-   , localparam eaddr_width_lp    = rv64_eaddr_width_gp
 
    // Local constants
    , localparam dispatch_point_lp   = 0
@@ -143,7 +89,7 @@ module bp_be_calculator_top
   // CSRs
   , output                               instret_mem3_o
   , output [vaddr_width_p-1:0]           pc_mem3_o
-  , output [instr_width_lp-1:0]          instr_mem3_o
+  , output [instr_width_p-1:0]          instr_mem3_o
   , output                               pc_v_mem3_o
   );
 
@@ -172,11 +118,11 @@ logic                   dispatch_pkt_v_r;
 bp_be_decode_s          decoded;
 
 // Register bypass network
-logic [reg_data_width_lp-1:0] irf_rs1    , irf_rs2;
-logic [reg_data_width_lp-1:0] frf_rs1    , frf_rs2;
-logic [reg_data_width_lp-1:0] bypass_irs1, bypass_irs2;
-logic [reg_data_width_lp-1:0] bypass_frs1, bypass_frs2;
-logic [reg_data_width_lp-1:0] bypass_rs1 , bypass_rs2;
+logic [dword_width_p-1:0] irf_rs1    , irf_rs2;
+logic [dword_width_p-1:0] frf_rs1    , frf_rs2;
+logic [dword_width_p-1:0] bypass_irs1, bypass_irs2;
+logic [dword_width_p-1:0] bypass_frs1, bypass_frs2;
+logic [dword_width_p-1:0] bypass_rs1 , bypass_rs2;
 
 // Exception signals
 logic load_misaligned_mem1, store_misaligned_mem3;
@@ -187,22 +133,22 @@ bp_be_pipe_stage_reg_s                         calc_stage_isd;
 bp_be_exception_s      [pipe_stage_els_lp-1:0] exc_stage_r;
 bp_be_exception_s      [pipe_stage_els_lp  :0] exc_stage_n;
 
-logic [pipe_stage_els_lp-1:0][reg_data_width_lp-1:0] comp_stage_r, comp_stage_n;
+logic [pipe_stage_els_lp-1:0][dword_width_p-1:0] comp_stage_r, comp_stage_n;
 
-logic [reg_data_width_lp-1:0] pipe_nop_data_lo;
-logic [reg_data_width_lp-1:0] pipe_int_data_lo, pipe_mul_data_lo, pipe_mem_data_lo, pipe_fp_data_lo;
+logic [dword_width_p-1:0] pipe_nop_data_lo;
+logic [dword_width_p-1:0] pipe_int_data_lo, pipe_mul_data_lo, pipe_mem_data_lo, pipe_fp_data_lo;
 
 logic nop_pipe_result_v;
 logic pipe_int_data_lo_v, pipe_mul_data_lo_v, pipe_mem_data_lo_v, pipe_fp_data_lo_v;
 logic pipe_mem_v_lo;
 
-logic [eaddr_width_lp-1:0] br_tgt_int1;
+logic [vaddr_width_p-1:0] br_tgt_int1;
 
 // Forwarding information
 logic [pipe_stage_els_lp-1:1]                        comp_stage_n_slice_iwb_v;
 logic [pipe_stage_els_lp-1:1]                        comp_stage_n_slice_fwb_v;
 logic [pipe_stage_els_lp-1:1][reg_addr_width_lp-1:0] comp_stage_n_slice_rd_addr;
-logic [pipe_stage_els_lp-1:1][reg_data_width_lp-1:0] comp_stage_n_slice_rd;
+logic [pipe_stage_els_lp-1:1][dword_width_p-1:0] comp_stage_n_slice_rd;
 
 // Handshakes
 assign issue_pkt_ready_o = (chk_dispatch_v_i | ~issue_pkt_v_r);
@@ -276,7 +222,7 @@ if (fp_en_p)
        );
     
     bsg_mux 
-     #(.width_p(reg_data_width_lp)
+     #(.width_p(dword_width_p)
        ,.els_p(2)
        ) 
      bypass_xrs1_mux
@@ -286,7 +232,7 @@ if (fp_en_p)
        );
     
     bsg_mux 
-     #(.width_p(reg_data_width_lp)
+     #(.width_p(dword_width_p)
        ,.els_p(2)
        ) 
      bypass_xrs2_mux
@@ -483,24 +429,24 @@ assign pipe_int_data_lo_v = calc_stage_r[0].pipe_int_v;
 
 assign pipe_nop_data_lo = '0;
 
-logic [pipe_stage_els_lp-1:0][reg_data_width_lp-1:0] comp_stage_mux_li;
+logic [pipe_stage_els_lp-1:0][dword_width_p-1:0] comp_stage_mux_li;
 logic [pipe_stage_els_lp-1:0]                        comp_stage_mux_sel_li;
 
 assign comp_stage_mux_li = {pipe_fp_data_lo, pipe_mem_data_lo, pipe_mul_data_lo, pipe_int_data_lo, pipe_nop_data_lo};
 assign comp_stage_mux_sel_li = {pipe_fp_data_lo_v, pipe_mem_data_lo_v, pipe_mul_data_lo_v, pipe_int_data_lo_v, 1'b1};
 bsg_mux_segmented 
  #(.segments_p(pipe_stage_els_lp)
-   ,.segment_width_p(reg_data_width_lp)
+   ,.segment_width_p(dword_width_p)
    ) 
  comp_stage_mux
-  (.data0_i({comp_stage_r[0+:pipe_stage_els_lp-1], reg_data_width_lp'(0)})
+  (.data0_i({comp_stage_r[0+:pipe_stage_els_lp-1], dword_width_p'(0)})
    ,.data1_i(comp_stage_mux_li)
    ,.sel_i(comp_stage_mux_sel_li)
    ,.data_o(comp_stage_n)
    );
 
 bsg_dff 
- #(.width_p(reg_data_width_lp*pipe_stage_els_lp)
+ #(.width_p(dword_width_p*pipe_stage_els_lp)
    ) 
  comp_stage_reg 
   (.clk_i(clk_i)
@@ -593,10 +539,8 @@ always_comb
                                               & ~exc_stage_n[i+1].poison_v
                                               & calc_stage_r[i].frf_w_v;
         calc_status.dep_status[i].rd_addr   = calc_stage_r[i].instr.fields.rtype.rd_addr;
-        calc_status.dep_status[i].mem_v     = calc_stage_r[i].mem_v
-                                              & ~exc_stage_n[i+1].poison_v;
-        calc_status.dep_status[i].stall_v   = calc_stage_r[i].csr_v 
-                                              & ~exc_stage_n[i+1].poison_v;
+        calc_status.dep_status[i].mem_v     = calc_stage_r[i].mem_v & ~exc_stage_n[i+1].poison_v;
+        calc_status.dep_status[i].serial_v  = calc_stage_r[i].csr_v & ~exc_stage_n[i+1].poison_v;
       end
 
     // Additional commit point information
@@ -644,5 +588,5 @@ assign pc_mem3_o      = calc_stage_r[2].pc;
 assign pc_v_mem3_o    = calc_stage_r[2].v & ~exc_stage_r[2].poison_v;
 assign instr_mem3_o   = calc_stage_r[2].instr;
 
-endmodule : bp_be_calculator_top
+endmodule
 

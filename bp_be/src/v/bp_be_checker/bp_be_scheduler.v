@@ -26,7 +26,13 @@ module bp_be_scheduler
   (input                             clk_i
    , input                           reset_i
 
+   , input                           cache_miss_v_i
+   , input                           cmt_v_i
+
    // Fetch interface
+   , output                          fe_queue_roll_o
+   , output                          fe_queue_deq_o
+
    , input [fe_queue_width_lp-1:0]   fe_queue_i
    , input                           fe_queue_v_i
    , output                          fe_queue_yumi_o
@@ -50,14 +56,10 @@ assign fe_queue_cast_i = fe_queue_i;
 assign issue_pkt_o     = issue_pkt_cast_o;
 assign fetch_instr     = fe_queue_cast_i.msg.fetch.instr;
 
-// Interface handshakes
-assign fe_queue_yumi_o = fe_queue_v_i & issue_pkt_ready_i;
-assign issue_pkt_v_o   = fe_queue_v_i & issue_pkt_ready_i;
-
-always_comb  begin
+always_comb
   case (fe_queue_cast_i.msg_type)
     // Populate the issue packet with a valid pc/instruction pair.
-    e_fetch: 
+    e_fe_fetch: 
       begin
         issue_pkt_cast_o = '0;
 
@@ -115,6 +117,14 @@ always_comb  begin
       end
     default: begin end
   endcase
+
+// Interface handshakes
+assign fe_queue_yumi_o = fe_queue_v_i & issue_pkt_ready_i;
+assign issue_pkt_v_o   = fe_queue_yumi_o;
+
+// Queue control signals
+assign fe_queue_roll_o = cache_miss_v_i;
+assign fe_queue_deq_o  = ~cache_miss_v_i & cmt_v_i;
 
 endmodule
 

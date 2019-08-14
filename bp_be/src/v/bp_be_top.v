@@ -50,14 +50,13 @@ module bp_be_top
    , input [cfg_data_width_p-1:0]            cfg_data_i
 
    // FE queue interface
+   , output                                  fe_queue_deq_o
+   , output                                  fe_queue_roll_o
+ 
    , input [fe_queue_width_lp-1:0]           fe_queue_i
    , input                                   fe_queue_v_i
    , output                                  fe_queue_yumi_o
 
-   , output                                  fe_queue_clr_o
-   , output                                  fe_queue_dequeue_o
-   , output                                  fe_queue_rollback_o
- 
    // FE cmd interface
    , output [fe_cmd_width_lp-1:0]            fe_cmd_o
    , output                                  fe_cmd_v_o
@@ -166,9 +165,8 @@ bp_be_checker_top
    ,.fe_cmd_v_o(fe_cmd_v_o)
    ,.fe_cmd_ready_i(fe_cmd_ready_i)
 
-   ,.chk_roll_fe_o(fe_queue_rollback_o)
-   ,.chk_flush_fe_o(fe_queue_clr_o)
-   ,.chk_dequeue_fe_o(fe_queue_dequeue_o)
+   ,.fe_queue_roll_o(fe_queue_roll_o)
+   ,.fe_queue_deq_o(fe_queue_deq_o)
 
    ,.fe_queue_i(fe_queue_i)
    ,.fe_queue_v_i(fe_queue_v_i)

@@ -41,7 +41,8 @@ module bp_fe_top
 
    , input [fe_cmd_width_lp-1:0]                      fe_cmd_i
    , input                                            fe_cmd_v_i
-   , output logic                                     fe_cmd_ready_o
+   , output                                           fe_cmd_yumi_o
+   , output                                           fe_cmd_processed_o
 
    , output [fe_queue_width_lp-1:0]                   fe_queue_o
    , output                                           fe_queue_v_o
@@ -101,13 +102,6 @@ logic 		                itlb_miss;
    
 bp_be_tlb_entry_s itlb_r_entry;
 
-// be interfaces
-// FE cmd fencing is not implemented yet
-// We lower the fence the same cycle that we get the command off of the fifo. 
-// If there are any operations that take more than one cycle, we should delay sending this signal
-// and move into a stall state in pc_gen, pending on completing the fe_cmd operation
-//assign fe_cmd_fence_clr_o = fe_cmd_ready_o & ~(fe_cmd.opcode == e_op_attaboy); 
-
 //fe to itlb
 logic itlb_fence_v;
 
@@ -149,7 +143,8 @@ bp_fe_pc_gen
  
    ,.fe_cmd_i(fe_cmd_i)
    ,.fe_cmd_v_i(fe_cmd_v_i)
-   ,.fe_cmd_ready_o(fe_cmd_ready_o)
+   ,.fe_cmd_yumi_o(fe_cmd_yumi_o)
+   ,.fe_cmd_processed_o(fe_cmd_processed_o)
 
    ,.fe_queue_o(fe_queue_o)
    ,.fe_queue_v_o(fe_queue_v_o)
