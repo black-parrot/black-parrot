@@ -44,21 +44,21 @@ module bp_me_wormhole_packet_encode_mem_resp
   bp_resp_wormhole_payload_s payload_li;
 
   localparam mem_resp_ack_len_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data), mem_noc_width_p) - 1;
+    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data), mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_1_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*1, mem_noc_width_p) - 1;
+    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*1, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_2_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*2, mem_noc_width_p) - 1;
+    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*2, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_4_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*4, mem_noc_width_p) - 1;
+    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*4, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_8_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*8, mem_noc_width_p) - 1;
+    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*8, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_16_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*16, mem_noc_width_p) - 1;
+    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*16, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_32_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*32, mem_noc_width_p) - 1;
+    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*32, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_64_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*64, mem_noc_width_p) - 1;
+    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*64, mem_noc_flit_width_p) - 1;
 
   logic [mem_noc_len_width_p-1:0] data_resp_len_li;
 

@@ -30,8 +30,8 @@ module bp_tile
    , localparam coh_cord_width_lp = coh_cord_markers_pos_lp[dims_lp]
 
    // Wormhole parameters
-   , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_width_p)
-   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_width_p)
+   , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
+   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
    )
   (input                                                   clk_i
    , input                                                 reset_i
@@ -150,7 +150,7 @@ bp_core
    );
 
 // Declare the routing links
-`declare_bsg_ready_and_link_sif_s(coh_noc_width_p, bp_coh_ready_and_link_s);
+`declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
 
 // Intermediate 'stitch' connections between the routers
 bp_coh_ready_and_link_s [1:0][S:P] lce_req_link_i_stitch, lce_req_link_o_stitch;
@@ -215,7 +215,7 @@ for (genvar i = 0; i < 2; i++)
      #(.max_payload_width_p(lce_cce_req_width_lp)
        ,.len_width_p(coh_noc_len_width_p)
        ,.cord_width_p(coh_cord_width_lp)
-       ,.link_width_p(coh_noc_width_p)
+       ,.flit_width_p(coh_noc_flit_width_p)
        )
      req_adapter_in
       (.clk_i(clk_i)
@@ -230,7 +230,7 @@ for (genvar i = 0; i < 2; i++)
        );
 
     bsg_wormhole_router_generalized
-     #(.flit_width_p(coh_noc_width_p)
+     #(.flit_width_p(coh_noc_flit_width_p)
        ,.dims_p(dims_lp)
        ,.cord_markers_pos_p(coh_cord_markers_pos_lp)
        ,.routing_matrix_p(StrictYX)
@@ -259,7 +259,7 @@ for (genvar i = 0; i < 2; i++)
      #(.max_payload_width_p(lce_cmd_width_lp)
        ,.len_width_p(coh_noc_len_width_p)
        ,.cord_width_p(coh_cord_width_lp)
-       ,.link_width_p(coh_noc_width_p)
+       ,.flit_width_p(coh_noc_flit_width_p)
        )
      cmd_adapter_in
       (.clk_i(clk_i)
@@ -274,7 +274,7 @@ for (genvar i = 0; i < 2; i++)
        );
     
     bsg_wormhole_router_generalized
-     #(.flit_width_p(coh_noc_width_p)
+     #(.flit_width_p(coh_noc_flit_width_p)
        ,.dims_p(dims_lp)
        ,.cord_markers_pos_p(coh_cord_markers_pos_lp)
        ,.routing_matrix_p(StrictYX)
@@ -296,7 +296,7 @@ for (genvar i = 0; i < 2; i++)
      #(.max_payload_width_p(lce_cmd_width_lp)
        ,.len_width_p(coh_noc_len_width_p)
        ,.cord_width_p(coh_cord_width_lp)
-       ,.link_width_p(coh_noc_width_p)
+       ,.flit_width_p(coh_noc_flit_width_p)
        )
      cmd_adapter_out
       (.clk_i(clk_i)
@@ -323,7 +323,7 @@ for (genvar i = 0; i < 2; i++)
      #(.max_payload_width_p(lce_cce_resp_width_lp)
        ,.len_width_p(coh_noc_len_width_p)
        ,.cord_width_p(coh_cord_width_lp)
-       ,.link_width_p(coh_noc_width_p)
+       ,.flit_width_p(coh_noc_flit_width_p)
        )
      resp_adapter_in
       (.clk_i(clk_i)
@@ -338,7 +338,7 @@ for (genvar i = 0; i < 2; i++)
        );
 
     bsg_wormhole_router_generalized
-     #(.flit_width_p(coh_noc_width_p)
+     #(.flit_width_p(coh_noc_flit_width_p)
        ,.dims_p(dims_lp)
        ,.cord_markers_pos_p(coh_cord_markers_pos_lp)
        ,.routing_matrix_p(StrictYX)
@@ -367,7 +367,7 @@ bsg_wormhole_router_adapter_out
  #(.max_payload_width_p(lce_cce_req_width_lp)
    ,.len_width_p(coh_noc_len_width_p)
    ,.cord_width_p(coh_cord_width_lp)
-   ,.link_width_p(coh_noc_width_p)
+   ,.flit_width_p(coh_noc_flit_width_p)
    )
  req_adapter_out
   (.clk_i(clk_i)
@@ -394,7 +394,7 @@ bsg_wormhole_router_adapter_in
  #(.max_payload_width_p(lce_cmd_width_lp)
    ,.len_width_p(coh_noc_len_width_p)
    ,.cord_width_p(coh_cord_width_lp)
-   ,.link_width_p(coh_noc_width_p)
+   ,.flit_width_p(coh_noc_flit_width_p)
    )
  cmd_adapter_in
   (.clk_i(clk_i)
@@ -413,7 +413,7 @@ bsg_wormhole_router_adapter_out
  #(.max_payload_width_p(lce_cce_resp_width_lp)
    ,.len_width_p(coh_noc_len_width_p)
    ,.cord_width_p(coh_cord_width_lp)
-   ,.link_width_p(coh_noc_width_p)
+   ,.flit_width_p(coh_noc_flit_width_p)
    )
  resp_adapter_out
   (.clk_i(clk_i)
@@ -469,7 +469,7 @@ bp_cce_top
 
 // CCE-MEM IF to Wormhole routed interface
 
-`declare_bsg_ready_and_link_sif_s(mem_noc_width_p, bsg_ready_and_link_sif_s);
+`declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
 bsg_ready_and_link_sif_s cmd_link_cast_i, cmd_link_cast_o;
 bsg_ready_and_link_sif_s resp_link_cast_i, resp_link_cast_o;
 

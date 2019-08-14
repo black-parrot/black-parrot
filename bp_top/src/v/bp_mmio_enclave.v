@@ -19,7 +19,7 @@ module bp_mmio_enclave
    , parameter irq_pipe_depth_p = 4
    , parameter cfg_pipe_depth_p = 4
 
-   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_width_p)
+   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
    )
   (input                                           clk_i
    , input                                         reset_i
@@ -320,7 +320,7 @@ assign mem_resp_lo =
 
 
 // CCE-MEM IF to wormhole link conversion
-`declare_bsg_ready_and_link_sif_s(mem_noc_width_p, bsg_ready_and_link_sif_s);
+`declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
 bsg_ready_and_link_sif_s cmd_link_cast_i, cmd_link_cast_o;
 bsg_ready_and_link_sif_s resp_link_cast_i, resp_link_cast_o;
 

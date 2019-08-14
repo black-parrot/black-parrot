@@ -42,11 +42,11 @@ module bp_me_wormhole_packet_encode_lce_cmd
   assign packet_o = packet_cast_o;
 
   localparam lce_cmd_cmd_len_lp = 
-    `BSG_CDIV(lce_cmd_packet_width_lp-$bits(payload_cast_i.msg.cmd.pad), coh_noc_width_p) - 1;
+    `BSG_CDIV(lce_cmd_packet_width_lp-$bits(payload_cast_i.msg.cmd.pad), coh_noc_flit_width_p) - 1;
   localparam lce_cmd_data_len_lp = 
-    `BSG_CDIV(lce_cmd_packet_width_lp, coh_noc_width_p) - 1;
+    `BSG_CDIV(lce_cmd_packet_width_lp, coh_noc_flit_width_p) - 1;
   localparam lce_cmd_uc_data_len_lp =
-    `BSG_CDIV(lce_cmd_packet_width_lp-(cce_block_width_p-dword_width_p), coh_noc_width_p) - 1;
+    `BSG_CDIV(lce_cmd_packet_width_lp-(cce_block_width_p-dword_width_p), coh_noc_flit_width_p) - 1;
 
   always_comb begin
     packet_cast_o.payload = payload_cast_i;

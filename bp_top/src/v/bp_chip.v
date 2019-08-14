@@ -39,7 +39,7 @@ module bp_chip
    , localparam num_routers_lp = num_tiles_lp+1
    
    // Other parameters
-   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(mem_noc_width_p)
+   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
    )
   (input                                          clk_i
    , input                                        reset_i
@@ -58,7 +58,7 @@ module bp_chip
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-`declare_bsg_ready_and_link_sif_s(mem_noc_width_p, bsg_ready_and_link_sif_s);
+`declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
 
 bsg_ready_and_link_sif_s [num_routers_lp-1:0][E:P] cmd_link_li,  cmd_link_lo;
 bsg_ready_and_link_sif_s [num_routers_lp-1:0][E:P] resp_link_li, resp_link_lo;
@@ -98,7 +98,7 @@ for (genvar i = 0; i < num_routers_lp; i++)
       end
 
     bsg_wormhole_router_generalized
-     #(.flit_width_p(mem_noc_width_p)
+     #(.flit_width_p(mem_noc_flit_width_p)
        ,.dims_p(dims_lp)
        ,.cord_markers_pos_p(cord_markers_pos_lp)
        ,.routing_matrix_p(routing_matrix_lp)
@@ -113,7 +113,7 @@ for (genvar i = 0; i < num_routers_lp; i++)
 	    );
   
     bsg_wormhole_router_generalized
-     #(.flit_width_p(mem_noc_width_p)
+     #(.flit_width_p(mem_noc_flit_width_p)
        ,.dims_p(dims_lp)
        ,.cord_markers_pos_p(cord_markers_pos_lp)
        ,.routing_matrix_p(routing_matrix_lp)

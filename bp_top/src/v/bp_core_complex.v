@@ -25,7 +25,7 @@ module bp_core_complex
    , localparam num_tiles_lp = num_core_p
    , localparam num_routers_lp = num_tiles_lp+1
    
-   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_width_p)
+   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
 
    // Arbitrarily set, should be set based on PD constraints
    , localparam reset_pipe_depth_lp = 10

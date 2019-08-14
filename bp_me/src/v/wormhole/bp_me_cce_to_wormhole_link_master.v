@@ -17,7 +17,7 @@ module bp_me_cce_to_wormhole_link_master
   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
   
   // wormhole parameters
-  ,localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(mem_noc_width_p)
+  ,localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
 
   ,localparam word_select_bits_lp  = `BSG_SAFE_CLOG2(cce_block_width_p / dword_width_p)
   ,localparam byte_offset_bits_lp  = `BSG_SAFE_CLOG2(dword_width_p / 8)
@@ -49,7 +49,7 @@ module bp_me_cce_to_wormhole_link_master
   
   /********************** noc link interface ***********************/
   
-  `declare_bsg_ready_and_link_sif_s(mem_noc_width_p,bsg_ready_and_link_sif_s);
+  `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p,bsg_ready_and_link_sif_s);
   bsg_ready_and_link_sif_s link_i_cast, link_o_cast;
   assign link_i_cast = link_i;
   assign link_o = link_o_cast;
@@ -88,7 +88,7 @@ module bp_me_cce_to_wormhole_link_master
    #(.max_payload_width_p($bits(bp_cmd_wormhole_payload_s))
      ,.len_width_p(mem_noc_len_width_p)
      ,.cord_width_p(mem_noc_cord_width_p)
-     ,.link_width_p(mem_noc_width_p)
+     ,.flit_width_p(mem_noc_flit_width_p)
      )
     adapter
     (.clk_i(clk_i)

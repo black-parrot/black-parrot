@@ -44,7 +44,7 @@ module testbench
    , input reset_i
    );
 
-`declare_bsg_ready_and_link_sif_s(mem_noc_width_p, bsg_ready_and_link_sif_s);
+`declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
 bsg_ready_and_link_sif_s [1:0] ct_link_li, ct_link_lo;
