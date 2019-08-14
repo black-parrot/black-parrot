@@ -52,7 +52,7 @@ module bp_be_top
    // FE queue interface
    , input [fe_queue_width_lp-1:0]           fe_queue_i
    , input                                   fe_queue_v_i
-   , output                                  fe_queue_ready_o
+   , output                                  fe_queue_yumi_o
 
    , output                                  fe_queue_clr_o
    , output                                  fe_queue_dequeue_o
@@ -172,7 +172,7 @@ bp_be_checker_top
 
    ,.fe_queue_i(fe_queue_i)
    ,.fe_queue_v_i(fe_queue_v_i)
-   ,.fe_queue_ready_o(fe_queue_ready_o)
+   ,.fe_queue_yumi_o(fe_queue_yumi_o)
 
    ,.issue_pkt_o(issue_pkt)
    ,.issue_pkt_v_o(issue_pkt_v)

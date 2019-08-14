@@ -74,7 +74,6 @@
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
-    logic                                    isd_v;                                                \
     logic                                    isd_fence_v;                                          \
     logic                                    isd_mem_v;                                            \
     logic                                    isd_irs1_v;                                           \
@@ -142,7 +141,7 @@
   (7 + rv64_reg_addr_width_gp)                                                                     
 
 `define bp_be_calc_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                      \
-  (3                                                                                               \
+  (2                                                                                               \
    + vaddr_width_p                                                                                 \
    + 2                                                                                             \
    + rv64_reg_addr_width_gp                                                                        \

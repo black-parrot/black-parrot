@@ -552,14 +552,13 @@ always_comb
     calc_stage_isd.frf_w_v        = dispatch_pkt.decode.frf_w_v;
 
     // Calculator status ISD stage
-    calc_status.isd_v        = issue_pkt_v_r;
-    calc_status.isd_fence_v  = issue_pkt_r.fence_v;
-    calc_status.isd_mem_v    = issue_pkt_r.mem_v;
-    calc_status.isd_irs1_v   = issue_pkt_r.irs1_v;
-    calc_status.isd_frs1_v   = issue_pkt_r.frs1_v;
+    calc_status.isd_fence_v  = issue_pkt_v_r & issue_pkt_r.fence_v;
+    calc_status.isd_mem_v    = issue_pkt_v_r & issue_pkt_r.mem_v;
+    calc_status.isd_irs1_v   = issue_pkt_v_r & issue_pkt_r.irs1_v;
+    calc_status.isd_frs1_v   = issue_pkt_v_r & issue_pkt_r.frs1_v;
     calc_status.isd_rs1_addr = issue_pkt_r.instr.fields.rtype.rs1_addr;
-    calc_status.isd_irs2_v   = issue_pkt_r.irs2_v;
-    calc_status.isd_frs2_v   = issue_pkt_r.frs2_v;
+    calc_status.isd_irs2_v   = issue_pkt_v_r & issue_pkt_r.irs2_v;
+    calc_status.isd_frs2_v   = issue_pkt_v_r & issue_pkt_r.frs2_v;
     calc_status.isd_rs2_addr = issue_pkt_r.instr.fields.rtype.rs2_addr;
 
     // Calculator status EX1 information

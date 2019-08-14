@@ -12,48 +12,6 @@
  *     for the Calculator to flush or inserts bubbles into the execution pipeline.
  *   The Director maintains the true PC, as well as sending redirection commands to the FE.
  *
- * Parameters:
- *   vaddr_width_p               - FE-BE structure sizing parameter
- *   paddr_width_p               - ''
- *   asid_width_p                - ''
- *   branch_metadata_fwd_width_p - ''
- * 
- * Inputs:
- *   clk_i                       -
- *   reset_i                     -
- *
- *   fe_queue_i                  - Structure from FE, either an instruction/PC pair or exception
- *   fe_queue_v_i                - "valid-then-ready" interface
- *   fe_queue_ready_o            -
- *
- *   calc_status_i               - Instruction dependency information from the calculator
- *   mmu_cmd_ready_i             - MMU ready, used as structural hazard detection for mem instrs
- *   
- * Outputs:
- *   fe_cmd_o                    - Command to FE, used for PC redirection among other things
- *   fe_cmd_v_o                  - "ready-then-valid" interface
- *   fe_cmd_ready_i              -
- *    
- *   chk_roll_fe_o               - Command to rollback the FE queue to the last checkpoint 
- *   chk_flush_fe_o              - Command to flush the FE queue (e.g. on a mispredict)
- *   chk_dequeue_fe_o            - An instruction has committed in the BE
- *
- *   issue_pkt_o                 - Issuing instruction with pre-decode information
- *   issue_pkt_v_o               - "ready-then-valid" interface
- *   issue_pkt_ready_i           - 
- * 
- *   chk_dispatch_v_o            - Dispatch signal to the calculator. Since the pipes are 
- *                                   non-blocking, this signal indicates that there will be no
- *                                   hazards from this point on
- *   chk_roll_o                  - Roll back all the instructions in the pipe
- *   chk_poison_iss_o            - Poison the instruction currently in issue stage
- *   chk_poison_isd_o            - Poison the instruction currently in ISD stage
- *   chk_poison_ex_o             - Poison all instructions currently in the pipe 
- *                                   prior to the commit point
- *
- * Keywords:
- *   Checker, speculation, dependencies, interface
- * 
  * Notes:
  *
  */
@@ -102,7 +60,7 @@ module bp_be_checker_top
    // FE queue interface
    , input [fe_queue_width_lp-1:0]    fe_queue_i
    , input                            fe_queue_v_i
-   , output                           fe_queue_ready_o
+   , output                           fe_queue_yumi_o
 
    , output                           chk_roll_fe_o
    , output                           chk_flush_fe_o
@@ -218,7 +176,7 @@ bp_be_scheduler
 
    ,.fe_queue_i(fe_queue_i)
    ,.fe_queue_v_i(fe_queue_v_i)
-   ,.fe_queue_ready_o(fe_queue_ready_o)
+   ,.fe_queue_yumi_o(fe_queue_yumi_o)
 
    ,.issue_pkt_o(issue_pkt_o)
    ,.issue_pkt_v_o(issue_pkt_v_o)

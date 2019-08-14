@@ -69,7 +69,7 @@ module bp_core
 
   bp_fe_queue_s fe_queue_li, fe_queue_lo;
   logic fe_queue_v_li, fe_queue_ready_lo;
-  logic fe_queue_v_lo, fe_queue_ready_li;
+  logic fe_queue_v_lo, fe_queue_yumi_li;
 
   logic fe_queue_clr_li, fe_queue_dequeue_li, fe_queue_rollback_li;
 
@@ -136,7 +136,7 @@ module bp_core
 
      ,.data_o(fe_queue_lo)
      ,.v_o(fe_queue_v_lo)
-     ,.yumi_i(fe_queue_ready_li)
+     ,.yumi_i(fe_queue_yumi_li)
      );
 
   bsg_fifo_1r1w_fence
@@ -177,7 +177,7 @@ module bp_core
 
      ,.fe_queue_i(fe_queue_lo)
      ,.fe_queue_v_i(fe_queue_v_lo)
-     ,.fe_queue_ready_o(fe_queue_ready_li)
+     ,.fe_queue_yumi_o(fe_queue_yumi_li)
 
      ,.fe_queue_clr_o(fe_queue_clr_li)
      ,.fe_queue_dequeue_o(fe_queue_dequeue_li)
