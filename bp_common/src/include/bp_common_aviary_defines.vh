@@ -63,7 +63,9 @@ typedef struct packed
   integer coh_noc_flit_width;
   integer coh_noc_cid_width;
   integer coh_noc_len_width;
-  integer coh_noc_cord_width;
+  integer coh_noc_dims;
+  integer coh_noc_x_cord_width;
+  integer coh_noc_y_cord_width;
 
   integer cfg_core_width;
   integer cfg_addr_width;
@@ -115,14 +117,18 @@ typedef struct packed
   , localparam fe_queue_fifo_els_p = proc_param_lp.fe_queue_fifo_els                               \
   , localparam fe_cmd_fifo_els_p   = proc_param_lp.fe_cmd_fifo_els                                 \
                                                                                                    \
-  , localparam coh_noc_flit_width_p = proc_param_lp.coh_noc_flit_width                             \
-  , localparam coh_noc_cid_width_p  = proc_param_lp.coh_noc_cid_width                              \
-  , localparam coh_noc_len_width_p  = proc_param_lp.coh_noc_len_width                              \
-  , localparam coh_noc_cord_width_p = proc_param_lp.coh_noc_cord_width                             \
+  , localparam coh_noc_flit_width_p   = proc_param_lp.coh_noc_flit_width                           \
+  , localparam coh_noc_cid_width_p    = proc_param_lp.coh_noc_cid_width                            \
+  , localparam coh_noc_len_width_p    = proc_param_lp.coh_noc_len_width                            \
+  , localparam coh_noc_dims_p         = proc_param_lp.coh_noc_dims                                 \
+  , localparam coh_noc_dirs_p         = coh_noc_dims_p*2 + 1                                       \
+  , localparam coh_noc_x_cord_width_p = proc_param_lp.coh_noc_x_cord_width                         \
+  , localparam coh_noc_y_cord_width_p = proc_param_lp.coh_noc_y_cord_width                         \
+  , localparam coh_noc_cord_width_p   = coh_noc_x_cord_width_p + coh_noc_y_cord_width_p            \
                                                                                                    \
-  , localparam cfg_core_width_p          = proc_param_lp.cfg_core_width                            \
-  , localparam cfg_addr_width_p          = proc_param_lp.cfg_addr_width                            \
-  , localparam cfg_data_width_p          = proc_param_lp.cfg_data_width                            \
+  , localparam cfg_core_width_p = proc_param_lp.cfg_core_width                                     \
+  , localparam cfg_addr_width_p = proc_param_lp.cfg_addr_width                                     \
+  , localparam cfg_data_width_p = proc_param_lp.cfg_data_width                                     \
                                                                                                    \
   , localparam mem_noc_flit_width_p      = proc_param_lp.mem_noc_flit_width                        \
   , localparam mem_noc_reserved_width_p  = proc_param_lp.mem_noc_reserved_width                    \

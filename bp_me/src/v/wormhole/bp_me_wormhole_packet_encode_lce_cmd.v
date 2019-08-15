@@ -17,23 +17,15 @@ module bp_me_wormhole_packet_encode_lce_cmd
     `declare_bp_proc_params(cfg_p)
     `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
-    // Generalized Wormhole Router parameters
-    , localparam dims_lp                                = 2
-    , localparam coh_x_cord_width_lp                    = `BSG_SAFE_CLOG2(num_lce_p)
-    , localparam coh_y_cord_width_lp                    = 1
-    , localparam int coh_cord_markers_pos_lp[dims_lp:0] =
-     '{ coh_x_cord_width_lp+coh_y_cord_width_lp, coh_x_cord_width_lp, 0 }
-    , localparam coh_cord_width_lp = coh_cord_markers_pos_lp[dims_lp]
-
     , localparam lce_cmd_packet_width_lp = 
-        `bsg_wormhole_concentrator_packet_width(coh_cord_width_lp, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_width_lp)
+        `bsg_wormhole_concentrator_packet_width(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_width_lp)
     )
    (input [lce_cmd_width_lp-1:0]           payload_i
     , output [lce_cmd_packet_width_lp-1:0] packet_o
     );
 
   `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
-  `declare_bsg_wormhole_concentrator_packet_s(coh_cord_width_lp, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_width_lp, lce_cmd_packet_s);
+  `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_width_lp, lce_cmd_packet_s);
 
   bp_lce_cmd_s payload_cast_i;
   lce_cmd_packet_s packet_cast_o;
