@@ -114,7 +114,7 @@ bp_mmio_enclave
 
 for (genvar i = 0; i < num_routers_lp; i++)
   begin : rof1
-    if (i == mmio_pos_p)
+    if (i == mmio_x_pos_p)
       begin : mmio
         assign mmio_cmd_link_li = cmd_link_i[i];
         assign cmd_link_o[i]    = mmio_cmd_link_lo;
@@ -125,7 +125,7 @@ for (genvar i = 0; i < num_routers_lp; i++)
     else
       begin : tile
         // We subtract 1 if we're past the mmio, so that the slice lines up with bp_top
-        localparam tile_pos_lp = (i < mmio_pos_p) ? i : i-1;
+        localparam tile_pos_lp = (i < mmio_x_pos_p) ? i : i-1;
 
         assign tile_cmd_link_li[tile_pos_lp] = cmd_link_i[i];
         assign cmd_link_o[i]                 = tile_cmd_link_lo[tile_pos_lp];
@@ -135,5 +135,5 @@ for (genvar i = 0; i < num_routers_lp; i++)
       end
   end
 
-endmodule : bp_core_complex
+endmodule
 

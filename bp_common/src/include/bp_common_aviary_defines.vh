@@ -63,9 +63,8 @@ typedef struct packed
   integer coh_noc_flit_width;
   integer coh_noc_cid_width;
   integer coh_noc_len_width;
-  integer coh_noc_dims;
-  integer coh_noc_x_cord_width;
   integer coh_noc_y_cord_width;
+  integer coh_noc_x_cord_width;
 
   integer cfg_core_width;
   integer cfg_addr_width;
@@ -75,13 +74,15 @@ typedef struct packed
   integer mem_noc_reserved_width;
   integer mem_noc_cid_width;
   integer mem_noc_len_width;
-  integer mem_noc_cord_width;
+  integer mem_noc_y_cord_width;
+  integer mem_noc_x_cord_width;
 
   integer ct_remote_credits;
   integer ct_max_payload_flits;
   integer ct_lg_credit_decimation;
   integer max_credits;
-  integer mmio_pos;
+  integer mmio_y_pos;
+  integer mmio_x_pos;
 
   integer dword_width;
   integer instr_width;
@@ -120,11 +121,13 @@ typedef struct packed
   , localparam coh_noc_flit_width_p   = proc_param_lp.coh_noc_flit_width                           \
   , localparam coh_noc_cid_width_p    = proc_param_lp.coh_noc_cid_width                            \
   , localparam coh_noc_len_width_p    = proc_param_lp.coh_noc_len_width                            \
-  , localparam coh_noc_dims_p         = proc_param_lp.coh_noc_dims                                 \
-  , localparam coh_noc_dirs_p         = coh_noc_dims_p*2 + 1                                       \
-  , localparam coh_noc_x_cord_width_p = proc_param_lp.coh_noc_x_cord_width                         \
   , localparam coh_noc_y_cord_width_p = proc_param_lp.coh_noc_y_cord_width                         \
+  , localparam coh_noc_x_cord_width_p = proc_param_lp.coh_noc_x_cord_width                         \
   , localparam coh_noc_cord_width_p   = coh_noc_x_cord_width_p + coh_noc_y_cord_width_p            \
+  , localparam coh_noc_dims_p            = 1 + (coh_noc_y_cord_width_p > 0)                        \
+  , localparam coh_noc_dirs_p            = coh_noc_dims_p*2 + 1                                    \
+  , localparam int coh_noc_cord_markers_pos_p [2:0] =                                              \
+      '{coh_noc_cord_width_p, coh_noc_x_cord_width_p, 0}                                           \
                                                                                                    \
   , localparam cfg_core_width_p = proc_param_lp.cfg_core_width                                     \
   , localparam cfg_addr_width_p = proc_param_lp.cfg_addr_width                                     \
@@ -134,13 +137,20 @@ typedef struct packed
   , localparam mem_noc_reserved_width_p  = proc_param_lp.mem_noc_reserved_width                    \
   , localparam mem_noc_cid_width_p       = proc_param_lp.mem_noc_cid_width                         \
   , localparam mem_noc_len_width_p       = proc_param_lp.mem_noc_len_width                         \
-  , localparam mem_noc_cord_width_p      = proc_param_lp.mem_noc_cord_width                        \
+  , localparam mem_noc_y_cord_width_p    = proc_param_lp.mem_noc_y_cord_width                      \
+  , localparam mem_noc_x_cord_width_p    = proc_param_lp.mem_noc_x_cord_width                      \
+  , localparam mem_noc_cord_width_p      = mem_noc_x_cord_width_p + mem_noc_y_cord_width_p         \
+  , localparam mem_noc_dims_p            = 1 + (mem_noc_y_cord_width_p > 0)                        \
+  , localparam mem_noc_dirs_p            = mem_noc_dims_p*2 + 1                                    \
+  , localparam int mem_noc_cord_markers_pos_p [2:0] =                                              \
+      '{mem_noc_cord_width_p, mem_noc_x_cord_width_p, 0}                                           \
                                                                                                    \
   , localparam ct_remote_credits_p       = proc_param_lp.ct_remote_credits                         \
   , localparam ct_max_payload_flits_p    = proc_param_lp.ct_max_payload_flits                      \
   , localparam ct_lg_credit_decimation_p = proc_param_lp.ct_lg_credit_decimation                   \
   , localparam max_credits_p             = proc_param_lp.max_credits                               \
-  , localparam mmio_pos_p                = proc_param_lp.mmio_pos                                  \
+  , localparam mmio_y_pos_p              = proc_param_lp.mmio_y_pos                                \
+  , localparam mmio_x_pos_p              = proc_param_lp.mmio_x_pos                                \
                                                                                                    \
   , localparam dword_width_p       = proc_param_lp.dword_width                                     \
   , localparam instr_width_p       = proc_param_lp.instr_width                                     \

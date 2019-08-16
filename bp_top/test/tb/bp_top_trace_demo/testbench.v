@@ -94,10 +94,10 @@ logic [mem_noc_cord_width_p-1:0]                 dram_cord_lo, mmio_cord_lo;
 logic [num_core_p-1:0][mem_noc_cord_width_p-1:0] tile_cord_lo;
 
 assign dram_cord_lo  = num_core_p+1;
-assign mmio_cord_lo = mmio_pos_p;
+assign mmio_cord_lo = mmio_x_pos_p;
 for (genvar i = 0; i < num_core_p; i++)
   begin : rof1
-    assign tile_cord_lo[i] = (i < mmio_pos_p) ? i : i+1;
+    assign tile_cord_lo[i] = (i < mmio_x_pos_p) ? i : i+1;
   end
 
 // Chip
