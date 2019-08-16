@@ -385,17 +385,17 @@ for (genvar i = 0; i < 2; i++)
   bp_coh_ready_and_link_s resp_concentrated_link_li, resp_concentrated_link_lo;
 
   assign req_concentrated_link_li = lce_req_link_o_stitch[P];
-  assign lce_req_link_i_stitch[P] = {data          : req_concentrated_link_lo.data
-                                     ,v            : req_concentrated_link_lo.v
-                                     ,ready_and_rev: cce_lce_req_link_lo.ready_and_rev
-                                     };
+  assign lce_req_link_i_stitch[P] = '{data          : req_concentrated_link_lo.data
+                                      ,v            : req_concentrated_link_lo.v
+                                      ,ready_and_rev: cce_lce_req_link_lo.ready_and_rev
+                                      };
   bsg_wormhole_concentrator_in
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.len_width_p(coh_noc_len_width_p)
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.num_in_p(2)
      ,.dims_p(coh_noc_dims_p)
-     ,.cord_markers_pos_p(cord_markers_pos_lp[1:0])
+     ,.cord_markers_pos_p(cord_markers_pos_lp)
      )
    req_concentrator
     (.clk_i(clk_i)
@@ -416,7 +416,7 @@ for (genvar i = 0; i < 2; i++)
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.num_in_p(3)
      ,.dims_p(coh_noc_dims_p)
-     ,.cord_markers_pos_p(cord_markers_pos_lp[1:0])
+     ,.cord_markers_pos_p(cord_markers_pos_lp)
      )
    cmd_concentrator
     (.clk_i(clk_i)
@@ -430,17 +430,17 @@ for (genvar i = 0; i < 2; i++)
      );
 
   assign resp_concentrated_link_li = lce_resp_link_o_stitch[P];
-  assign lce_resp_link_i_stitch[P] = {data          : resp_concentrated_link_lo.data
-                                      ,v            : resp_concentrated_link_lo.v
-                                      ,ready_and_rev: cce_lce_resp_link_lo.ready_and_rev
-                                      };
+  assign lce_resp_link_i_stitch[P] = '{data          : resp_concentrated_link_lo.data
+                                       ,v            : resp_concentrated_link_lo.v
+                                       ,ready_and_rev: cce_lce_resp_link_lo.ready_and_rev
+                                       };
   bsg_wormhole_concentrator_in
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.len_width_p(coh_noc_len_width_p)
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.num_in_p(2)
      ,.dims_p(coh_noc_dims_p)
-     ,.cord_markers_pos_p(cord_markers_pos_lp[1:0])
+     ,.cord_markers_pos_p(cord_markers_pos_lp)
      )
    resp_concentrator
     (.clk_i(clk_i)
@@ -457,7 +457,7 @@ for (genvar i = 0; i < 2; i++)
   bsg_wormhole_router_generalized
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.dims_p(coh_noc_dims_p)
-     ,.cord_markers_pos_p(cord_markers_pos_lp[1:0])
+     ,.cord_markers_pos_p(cord_markers_pos_lp)
      ,.routing_matrix_p(routing_matrix_lp)
      ,.reverse_order_p(1)
      ,.len_width_p(coh_noc_len_width_p)
@@ -475,7 +475,7 @@ for (genvar i = 0; i < 2; i++)
   bsg_wormhole_router_generalized
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.dims_p(coh_noc_dims_p)
-     ,.cord_markers_pos_p(cord_markers_pos_lp[1:0])
+     ,.cord_markers_pos_p(cord_markers_pos_lp)
      ,.routing_matrix_p(routing_matrix_lp)
      ,.reverse_order_p(1)
      ,.len_width_p(coh_noc_len_width_p)
@@ -493,7 +493,7 @@ for (genvar i = 0; i < 2; i++)
   bsg_wormhole_router_generalized
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.dims_p(coh_noc_dims_p)
-     ,.cord_markers_pos_p(cord_markers_pos_lp[1:0])
+     ,.cord_markers_pos_p(cord_markers_pos_lp)
      ,.routing_matrix_p(routing_matrix_lp)
      ,.reverse_order_p(1)
      ,.len_width_p(coh_noc_len_width_p)
