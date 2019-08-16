@@ -70,6 +70,7 @@ module bp_tile
 
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
 `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
 // Proc-side connections network connections
 bp_lce_cce_req_s  [1:0] lce_req_lo;
@@ -88,6 +89,12 @@ bp_lce_cmd_s      cce_lce_cmd_lo;
 logic             cce_lce_cmd_v_lo, cce_lce_cmd_ready_li;
 bp_lce_cce_resp_s cce_lce_resp_li;
 logic             cce_lce_resp_v_li, cce_lce_resp_ready_lo;
+
+// Mem connections
+bp_cce_mem_cmd_s       mem_cmd_lo;
+logic                  mem_cmd_v_lo, mem_cmd_yumi_li;
+bp_mem_cce_resp_s      mem_resp_li;
+logic                  mem_resp_v_li, mem_resp_ready_lo;
 
 bp_proc_cfg_s proc_cfg_cast_i;
 assign proc_cfg_cast_i = proc_cfg_i;
@@ -109,7 +116,6 @@ always_ff @(posedge clk_i)
     else if (cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_freeze_gp))
       freeze_r <= cfg_data_i[0];
   end
-
 
 // Module instantiations
 bp_core   
@@ -145,280 +151,6 @@ bp_core
    ,.software_int_i(software_int_i)
    ,.external_int_i(external_int_i)
    );
-
-// Declare the routing links
-`declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
-
-// Intermediate 'stitch' connections between the routers
-bp_coh_ready_and_link_s [1:0][coh_noc_dirs_p-1:P] lce_req_link_i_stitch, lce_req_link_o_stitch;
-bp_coh_ready_and_link_s [1:0][coh_noc_dirs_p-1:P] lce_resp_link_i_stitch, lce_resp_link_o_stitch;
-bp_coh_ready_and_link_s [1:0][coh_noc_dirs_p-1:P] lce_cmd_link_i_stitch, lce_cmd_link_o_stitch;
-
-// Stitch together I$ and D$
-assign lce_req_link_i_stitch[1][E]  = lce_req_link_i[E];
-assign lce_resp_link_i_stitch[1][E] = lce_resp_link_i[E];
-assign lce_cmd_link_i_stitch[1][E]  = lce_cmd_link_i[E];
-
-assign lce_req_link_i_stitch[0][E]  = lce_req_link_o_stitch[1][W];
-assign lce_resp_link_i_stitch[0][E] = lce_resp_link_o_stitch[1][W];
-assign lce_cmd_link_i_stitch[0][E]  = lce_cmd_link_o_stitch[1][W];
-
-assign lce_req_link_o[W]  = lce_req_link_o_stitch[0][W];
-assign lce_resp_link_o[W] = lce_resp_link_o_stitch[0][W];
-assign lce_cmd_link_o[W]  = lce_cmd_link_o_stitch[0][W];
-
-assign lce_req_link_i_stitch[0][W]  = lce_req_link_i[W];
-assign lce_resp_link_i_stitch[0][W] = lce_resp_link_i[W];
-assign lce_cmd_link_i_stitch[0][W]  = lce_cmd_link_i[W];
-
-assign lce_req_link_i_stitch[1][W]  = lce_req_link_o_stitch[0][E];
-assign lce_resp_link_i_stitch[1][W] = lce_resp_link_o_stitch[0][E];
-assign lce_cmd_link_i_stitch[1][W]  = lce_cmd_link_o_stitch[0][E];
-
-assign lce_req_link_o[E]  = lce_req_link_o_stitch[1][E];
-assign lce_resp_link_o[E] = lce_resp_link_o_stitch[1][E];
-assign lce_cmd_link_o[E]  = lce_cmd_link_o_stitch[1][E];
-
-`declare_bsg_wormhole_router_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, lce_cce_req_width_lp, lce_req_packet_s);
-`declare_bsg_wormhole_router_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, lce_cce_resp_width_lp, lce_resp_packet_s);
-`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_width_lp, lce_cmd_packet_s);
-
-for (genvar i = 0; i < 2; i++)
-  begin : rof3
-    wire [coh_noc_cord_width_p-1:0] lce_id_li = (i == 0) ? proc_cfg_cast_i.icache_id : proc_cfg_cast_i.dcache_id;
-
-    lce_req_packet_s lce_req_packet_lo;
-    bp_me_wormhole_packet_encode_lce_req
-     #(.cfg_p(cfg_p))
-     req_encode
-      (.payload_i(lce_req_lo[i])
-       ,.packet_o(lce_req_packet_lo)
-       );
-
-    lce_req_packet_s lce_req_packet_li;
-    logic lce_req_v_li, lce_req_ready_lo;
-    bsg_wormhole_router_adapter
-     #(.max_payload_width_p(lce_cce_req_width_lp)
-       ,.len_width_p(coh_noc_len_width_p)
-       ,.cord_width_p(coh_noc_cord_width_p)
-       ,.flit_width_p(coh_noc_flit_width_p)
-       )
-     req_adapter
-      (.clk_i(clk_i)
-       ,.reset_i(reset_i)
-
-       ,.packet_i(lce_req_packet_lo)
-       ,.v_i(lce_req_v_lo[i])
-       ,.ready_o(lce_req_ready_li[i])
-
-       ,.link_i(lce_req_link_o_stitch[i][P])
-       ,.link_o(lce_req_link_i_stitch[i][P])
-
-       ,.packet_o(lce_req_packet_li)
-       ,.v_o(lce_req_v_li)
-       ,.yumi_i(lce_req_ready_lo & lce_req_v_li)
-       );
-    if (i == 0)
-      begin : cce_req_link
-        assign cce_lce_req_li = lce_req_packet_li.payload;
-        assign cce_lce_req_v_li = lce_req_v_li;
-        assign lce_req_ready_lo = cce_lce_req_ready_lo;
-      end
-    else 
-      begin : no_cce_req_link
-        assign lce_req_ready_lo = 1'b0;
-      end
-
-    bsg_wormhole_router_generalized
-     #(.flit_width_p(coh_noc_flit_width_p)
-       ,.dims_p(coh_noc_dims_p)
-       ,.cord_markers_pos_p(cord_markers_pos_lp[1:0])
-       ,.routing_matrix_p(routing_matrix_lp)
-       ,.reverse_order_p(1)
-       ,.len_width_p(coh_noc_len_width_p)
-       )
-     req_router
-      (.clk_i(clk_i)
-       ,.reset_i(reset_r)
-
-       ,.link_i(lce_req_link_i_stitch[i])
-       ,.link_o(lce_req_link_o_stitch[i])
-
-       ,.my_cord_i(lce_id_li)
-       );
-
-    lce_cmd_packet_s lce_cmd_packet_lo;
-    bp_me_wormhole_packet_encode_lce_cmd
-     #(.cfg_p(cfg_p))
-     cmd_encode
-      (.payload_i(lce_cmd_lo[i])
-       ,.packet_o(lce_cmd_packet_lo)
-       );
-
-    bp_coh_ready_and_link_s lce_cmd_link_li, lce_cmd_link_lo;
-    lce_cmd_packet_s lce_cmd_packet_li;
-    bsg_wormhole_router_adapter
-     #(.max_payload_width_p($bits(lce_cmd_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
-       ,.len_width_p(coh_noc_len_width_p)
-       ,.cord_width_p(coh_noc_cord_width_p)
-       ,.flit_width_p(coh_noc_flit_width_p)
-       )
-     cmd_adapter
-      (.clk_i(clk_i)
-       ,.reset_i(reset_r)
-
-       ,.packet_i(lce_cmd_packet_lo)
-       ,.v_i(lce_cmd_v_lo[i])
-       ,.ready_o(lce_cmd_ready_li[i])
-
-       ,.link_i(lce_cmd_link_li)
-       ,.link_o(lce_cmd_link_lo)
-
-       ,.packet_o(lce_cmd_packet_li)
-       ,.v_o(lce_cmd_v_li[i])
-       ,.yumi_i(lce_cmd_ready_lo[i] & lce_cmd_v_li[i])
-       );
-    assign lce_cmd_li[i] = lce_cmd_packet_li.payload;
-
-    if (i == 0) 
-      begin : cce_cmd_link
-        bp_coh_ready_and_link_s cce_lce_cmd_link_li, cce_lce_cmd_link_lo;
-        lce_cmd_packet_s cce_lce_cmd_packet_lo;
-        bp_me_wormhole_packet_encode_lce_cmd
-         #(.cfg_p(cfg_p))
-         cmd_encode
-          (.payload_i(cce_lce_cmd_lo)
-           ,.packet_o(cce_lce_cmd_packet_lo)
-           );
-
-        bsg_wormhole_router_adapter_in
-         #(.max_payload_width_p($bits(lce_cmd_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
-           ,.len_width_p(coh_noc_len_width_p)
-           ,.cord_width_p(coh_noc_cord_width_p)
-           ,.flit_width_p(coh_noc_flit_width_p)
-           )
-         cmd_adapter_in
-          (.clk_i(clk_i)
-           ,.reset_i(reset_r)
-
-           ,.packet_i(cce_lce_cmd_packet_lo)
-           ,.v_i(cce_lce_cmd_v_lo)
-           ,.ready_o(cce_lce_cmd_ready_li)
-
-           ,.link_i(cce_lce_cmd_link_li)
-           ,.link_o(cce_lce_cmd_link_lo)
-           );
-         
-         bsg_wormhole_concentrator
-          #(.flit_width_p(coh_noc_flit_width_p)
-            ,.len_width_p(coh_noc_len_width_p)
-            ,.cid_width_p(coh_noc_cid_width_p)
-            ,.num_in_p(2)
-            ,.dims_p(coh_noc_dims_p)
-            ,.cord_markers_pos_p(cord_markers_pos_lp[1:0])
-            )
-          cmd_concentrator
-           (.clk_i(clk_i)
-            ,.reset_i(reset_i)
-
-            ,.links_i({cce_lce_cmd_link_lo, lce_cmd_link_lo})
-            ,.links_o({cce_lce_cmd_link_li, lce_cmd_link_li})
-
-            ,.concentrated_link_i(lce_cmd_link_o_stitch[i][P])
-            ,.concentrated_link_o(lce_cmd_link_i_stitch[i][P])
-            );
-      end
-    else
-      begin : no_cce_cmd_link
-        assign lce_cmd_link_i_stitch[1][P] = lce_cmd_link_lo;
-        assign lce_cmd_link_li = lce_cmd_link_o_stitch[1][P];
-      end
-    
-    bsg_wormhole_router_generalized
-     #(.flit_width_p(coh_noc_flit_width_p)
-       ,.dims_p(coh_noc_dims_p)
-       ,.cord_markers_pos_p(cord_markers_pos_lp[1:0])
-       ,.routing_matrix_p(routing_matrix_lp)
-       ,.reverse_order_p(1)
-       ,.len_width_p(coh_noc_len_width_p)
-       )
-     cmd_router
-      (.clk_i(clk_i)
-       ,.reset_i(reset_r)
-       
-       ,.link_i(lce_cmd_link_i_stitch[i])
-       ,.link_o(lce_cmd_link_o_stitch[i])
-
-       ,.my_cord_i(lce_id_li)
-       );
-
-    lce_resp_packet_s lce_resp_packet_lo;
-    bp_me_wormhole_packet_encode_lce_resp
-     #(.cfg_p(cfg_p))
-     resp_encode
-      (.payload_i(lce_resp_lo[i])
-       ,.packet_o(lce_resp_packet_lo)
-       );
-
-    lce_resp_packet_s lce_resp_packet_li;
-    logic lce_resp_v_li, lce_resp_ready_lo;
-    bsg_wormhole_router_adapter
-     #(.max_payload_width_p(lce_cce_resp_width_lp)
-       ,.len_width_p(coh_noc_len_width_p)
-       ,.cord_width_p(coh_noc_cord_width_p)
-       ,.flit_width_p(coh_noc_flit_width_p)
-       )
-     resp_adapter
-      (.clk_i(clk_i)
-       ,.reset_i(reset_i)
-
-       ,.packet_i(lce_resp_packet_lo)
-       ,.v_i(lce_resp_v_lo[i])
-       ,.ready_o(lce_resp_ready_li[i])
-
-       ,.link_i(lce_resp_link_o_stitch[i][P])
-       ,.link_o(lce_resp_link_i_stitch[i][P])
-
-       ,.packet_o(lce_resp_packet_li)
-       ,.v_o(lce_resp_v_li)
-       ,.yumi_i(lce_resp_ready_lo & lce_resp_v_li)
-       );
-    if (i == 0)
-      begin : cce_resp_link
-        assign cce_lce_resp_li = lce_resp_packet_li.payload;
-        assign cce_lce_resp_v_li = lce_resp_v_li;
-        assign lce_resp_ready_lo = cce_lce_resp_ready_lo;
-      end
-    else
-      begin : no_cce_resp_link
-        assign lce_resp_ready_lo = 1'b0;
-      end
-
-
-    bsg_wormhole_router_generalized
-     #(.flit_width_p(coh_noc_flit_width_p)
-       ,.dims_p(coh_noc_dims_p)
-       ,.cord_markers_pos_p(cord_markers_pos_lp[1:0])
-       ,.routing_matrix_p(routing_matrix_lp)
-       ,.reverse_order_p(1)
-       ,.len_width_p(coh_noc_len_width_p)
-       )
-     resp_router
-      (.clk_i(clk_i)
-       ,.reset_i(reset_r)
-       
-       ,.link_i(lce_resp_link_i_stitch[i])
-       ,.link_o(lce_resp_link_o_stitch[i])
-       
-       ,.my_cord_i(lce_id_li)
-       );
-  end // rof3
-    
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
-bp_cce_mem_cmd_s       mem_cmd_lo;
-logic                  mem_cmd_v_lo, mem_cmd_yumi_li;
-bp_mem_cce_resp_s      mem_resp_li;
-logic                  mem_resp_v_li, mem_resp_ready_lo;
 
 bp_cce_top
  #(.cfg_p(cfg_p))
@@ -458,9 +190,325 @@ bp_cce_top
    ,.cce_id_i(proc_cfg_cast_i.cce_id) 
    );
 
+// Declare the routing links
+`declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
+
+// Intermediate 'stitch' connections between the routers
+bp_coh_ready_and_link_s [coh_noc_dirs_p-1:P] lce_req_link_i_stitch, lce_req_link_o_stitch;
+bp_coh_ready_and_link_s [coh_noc_dirs_p-1:P] lce_resp_link_i_stitch, lce_resp_link_o_stitch;
+bp_coh_ready_and_link_s [coh_noc_dirs_p-1:P] lce_cmd_link_i_stitch, lce_cmd_link_o_stitch;
+
+// Stitch together I$ and D$
+assign lce_req_link_i_stitch[E]  = lce_req_link_i[E];
+assign lce_resp_link_i_stitch[E] = lce_resp_link_i[E];
+assign lce_cmd_link_i_stitch[E]  = lce_cmd_link_i[E];
+
+assign lce_req_link_o[W]  = lce_req_link_o_stitch[W];
+assign lce_resp_link_o[W] = lce_resp_link_o_stitch[W];
+assign lce_cmd_link_o[W]  = lce_cmd_link_o_stitch[W];
+
+assign lce_req_link_i_stitch[W]  = lce_req_link_i[W];
+assign lce_resp_link_i_stitch[W] = lce_resp_link_i[W];
+assign lce_cmd_link_i_stitch[W]  = lce_cmd_link_i[W];
+
+assign lce_req_link_o[E]  = lce_req_link_o_stitch[E];
+assign lce_resp_link_o[E] = lce_resp_link_o_stitch[E];
+assign lce_cmd_link_o[E]  = lce_cmd_link_o_stitch[E];
+
+`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_req_width_lp, lce_req_packet_s);
+`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_resp_width_lp, lce_resp_packet_s);
+`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_width_lp, lce_cmd_packet_s);
+
+lce_req_packet_s [1:0]  lce_req_packet_lo;
+lce_cmd_packet_s [1:0]  lce_cmd_packet_lo, lce_cmd_packet_li;
+lce_resp_packet_s [1:0] lce_resp_packet_lo;
+
+bp_coh_ready_and_link_s [1:0] lce_req_link_li, lce_req_link_lo;
+bp_coh_ready_and_link_s [1:0] lce_cmd_link_li, lce_cmd_link_lo;
+bp_coh_ready_and_link_s [1:0] lce_resp_link_li, lce_resp_link_lo;
+
+bp_coh_ready_and_link_s cce_lce_req_link_li, cce_lce_req_link_lo;
+bp_coh_ready_and_link_s cce_lce_cmd_link_li, cce_lce_cmd_link_lo;
+bp_coh_ready_and_link_s cce_lce_resp_link_li, cce_lce_resp_link_lo;
+
+for (genvar i = 0; i < 2; i++)
+  begin : lce
+    bp_me_wormhole_packet_encode_lce_req
+     #(.cfg_p(cfg_p))
+     req_encode
+      (.payload_i(lce_req_lo[i])
+       ,.packet_o(lce_req_packet_lo[i])
+       );
+
+    bsg_wormhole_router_adapter_in
+     #(.max_payload_width_p($bits(lce_req_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
+       ,.len_width_p(coh_noc_len_width_p)
+       ,.cord_width_p(coh_noc_cord_width_p)
+       ,.flit_width_p(coh_noc_flit_width_p)
+       )
+     lce_req_adapter_in
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
+
+       ,.packet_i(lce_req_packet_lo[i])
+       ,.v_i(lce_req_v_lo[i])
+       ,.ready_o(lce_req_ready_li[i])
+
+       ,.link_i(lce_req_link_li[i])
+       ,.link_o(lce_req_link_lo[i])
+       );
+
+    bp_me_wormhole_packet_encode_lce_cmd
+     #(.cfg_p(cfg_p))
+     cmd_encode
+      (.payload_i(lce_cmd_lo[i])
+       ,.packet_o(lce_cmd_packet_lo[i])
+       );
+
+    bsg_wormhole_router_adapter
+     #(.max_payload_width_p($bits(lce_cmd_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
+       ,.len_width_p(coh_noc_len_width_p)
+       ,.cord_width_p(coh_noc_cord_width_p)
+       ,.flit_width_p(coh_noc_flit_width_p)
+       )
+     cmd_adapter
+      (.clk_i(clk_i)
+       ,.reset_i(reset_r)
+
+       ,.packet_i(lce_cmd_packet_lo[i])
+       ,.v_i(lce_cmd_v_lo[i])
+       ,.ready_o(lce_cmd_ready_li[i])
+
+       ,.link_i(lce_cmd_link_li[i])
+       ,.link_o(lce_cmd_link_lo[i])
+
+       ,.packet_o(lce_cmd_packet_li[i])
+       ,.v_o(lce_cmd_v_li[i])
+       ,.yumi_i(lce_cmd_ready_lo[i] & lce_cmd_v_li[i])
+       );
+    assign lce_cmd_li[i] = lce_cmd_packet_li[i].payload;
+
+    bp_me_wormhole_packet_encode_lce_resp
+     #(.cfg_p(cfg_p))
+     resp_encode
+      (.payload_i(lce_resp_lo[i])
+       ,.packet_o(lce_resp_packet_lo[i])
+       );
+
+    bsg_wormhole_router_adapter_in
+     #(.max_payload_width_p($bits(lce_resp_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
+       ,.len_width_p(coh_noc_len_width_p)
+       ,.cord_width_p(coh_noc_cord_width_p)
+       ,.flit_width_p(coh_noc_flit_width_p)
+       )
+     lce_resp_adapter_in
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
+
+       ,.packet_i(lce_resp_packet_lo[i])
+       ,.v_i(lce_resp_v_lo[i])
+       ,.ready_o(lce_resp_ready_li[i])
+
+       ,.link_i(lce_resp_link_li[i])
+       ,.link_o(lce_resp_link_lo[i])
+       );
+  end
+
+  lce_req_packet_s cce_lce_req_packet_li;
+  bsg_wormhole_router_adapter_out
+   #(.max_payload_width_p($bits(lce_req_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
+     ,.len_width_p(coh_noc_len_width_p)
+     ,.cord_width_p(coh_noc_cord_width_p)
+     ,.flit_width_p(coh_noc_flit_width_p)
+     )
+   cce_req_adapter_out
+   (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+  
+    ,.link_i(lce_req_link_o_stitch[P])
+    ,.link_o(cce_lce_req_link_lo)
+  
+    ,.packet_o(cce_lce_req_packet_li)
+    ,.v_o(cce_lce_req_v_li)
+    ,.yumi_i(cce_lce_req_ready_lo & cce_lce_req_v_li)
+    );
+  assign cce_lce_req_li = cce_lce_req_packet_li.payload;
+      
+  lce_cmd_packet_s cce_lce_cmd_packet_lo;
+  bp_me_wormhole_packet_encode_lce_cmd
+   #(.cfg_p(cfg_p))
+   cmd_encode
+    (.payload_i(cce_lce_cmd_lo)
+     ,.packet_o(cce_lce_cmd_packet_lo)
+     );
+  
+  bsg_wormhole_router_adapter_in
+   #(.max_payload_width_p($bits(lce_cmd_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
+     ,.len_width_p(coh_noc_len_width_p)
+     ,.cord_width_p(coh_noc_cord_width_p)
+     ,.flit_width_p(coh_noc_flit_width_p)
+     )
+   cmd_adapter_in
+    (.clk_i(clk_i)
+     ,.reset_i(reset_r)
+  
+     ,.packet_i(cce_lce_cmd_packet_lo)
+     ,.v_i(cce_lce_cmd_v_lo)
+     ,.ready_o(cce_lce_cmd_ready_li)
+  
+     ,.link_i(cce_lce_cmd_link_li)
+     ,.link_o(cce_lce_cmd_link_lo)
+     );
+  
+  lce_resp_packet_s cce_lce_resp_packet_li;
+  bsg_wormhole_router_adapter_out
+   #(.max_payload_width_p($bits(lce_resp_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
+     ,.len_width_p(coh_noc_len_width_p)
+     ,.cord_width_p(coh_noc_cord_width_p)
+     ,.flit_width_p(coh_noc_flit_width_p)
+     )
+   cce_resp_adapter_out
+   (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+  
+    ,.link_i(lce_resp_link_o_stitch[P])
+    ,.link_o(cce_lce_resp_link_lo)
+  
+    ,.packet_o(cce_lce_resp_packet_li)
+    ,.v_o(cce_lce_resp_v_li)
+    ,.yumi_i(cce_lce_resp_ready_lo & cce_lce_resp_v_li)
+    );
+  assign cce_lce_resp_li = cce_lce_resp_packet_li.payload;
+
+  bp_coh_ready_and_link_s req_concentrated_link_li, req_concentrated_link_lo;
+  bp_coh_ready_and_link_s cmd_concentrated_link_li, cmd_concentrated_link_lo;
+  bp_coh_ready_and_link_s resp_concentrated_link_li, resp_concentrated_link_lo;
+
+  assign req_concentrated_link_li = lce_req_link_o_stitch[P];
+  assign lce_req_link_i_stitch[P] = {data          : req_concentrated_link_lo.data
+                                     ,v            : req_concentrated_link_lo.v
+                                     ,ready_and_rev: cce_lce_req_link_lo.ready_and_rev
+                                     };
+  bsg_wormhole_concentrator_in
+   #(.flit_width_p(coh_noc_flit_width_p)
+     ,.len_width_p(coh_noc_len_width_p)
+     ,.cid_width_p(coh_noc_cid_width_p)
+     ,.num_in_p(2)
+     ,.dims_p(coh_noc_dims_p)
+     ,.cord_markers_pos_p(cord_markers_pos_lp[1:0])
+     )
+   req_concentrator
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.links_i(lce_req_link_lo)
+     ,.links_o(lce_req_link_li)
+
+     ,.concentrated_link_i(req_concentrated_link_li)
+     ,.concentrated_link_o(req_concentrated_link_lo)
+     );
+
+  assign cmd_concentrated_link_li = lce_cmd_link_o_stitch[P];
+  assign lce_cmd_link_i_stitch[P] = cmd_concentrated_link_lo;
+  bsg_wormhole_concentrator
+   #(.flit_width_p(coh_noc_flit_width_p)
+     ,.len_width_p(coh_noc_len_width_p)
+     ,.cid_width_p(coh_noc_cid_width_p)
+     ,.num_in_p(3)
+     ,.dims_p(coh_noc_dims_p)
+     ,.cord_markers_pos_p(cord_markers_pos_lp[1:0])
+     )
+   cmd_concentrator
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.links_i({cce_lce_cmd_link_lo, lce_cmd_link_lo})
+     ,.links_o({cce_lce_cmd_link_li, lce_cmd_link_li})
+
+     ,.concentrated_link_i(cmd_concentrated_link_li)
+     ,.concentrated_link_o(cmd_concentrated_link_lo)
+     );
+
+  assign resp_concentrated_link_li = lce_resp_link_o_stitch[P];
+  assign lce_resp_link_i_stitch[P] = {data          : resp_concentrated_link_lo.data
+                                      ,v            : resp_concentrated_link_lo.v
+                                      ,ready_and_rev: cce_lce_resp_link_lo.ready_and_rev
+                                      };
+  bsg_wormhole_concentrator_in
+   #(.flit_width_p(coh_noc_flit_width_p)
+     ,.len_width_p(coh_noc_len_width_p)
+     ,.cid_width_p(coh_noc_cid_width_p)
+     ,.num_in_p(2)
+     ,.dims_p(coh_noc_dims_p)
+     ,.cord_markers_pos_p(cord_markers_pos_lp[1:0])
+     )
+   resp_concentrator
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.links_i(lce_resp_link_lo)
+     ,.links_o(lce_resp_link_li)
+
+     ,.concentrated_link_i(resp_concentrated_link_li)
+     ,.concentrated_link_o(resp_concentrated_link_lo)
+     );
+
+  wire [coh_noc_cord_width_p-1:0] lce_id_li = proc_cfg_cast_i.icache_id >> 1;
+  bsg_wormhole_router_generalized
+   #(.flit_width_p(coh_noc_flit_width_p)
+     ,.dims_p(coh_noc_dims_p)
+     ,.cord_markers_pos_p(cord_markers_pos_lp[1:0])
+     ,.routing_matrix_p(routing_matrix_lp)
+     ,.reverse_order_p(1)
+     ,.len_width_p(coh_noc_len_width_p)
+     )
+   req_router
+    (.clk_i(clk_i)
+     ,.reset_i(reset_r)
+
+     ,.link_i(lce_req_link_i_stitch)
+     ,.link_o(lce_req_link_o_stitch)
+
+     ,.my_cord_i(lce_id_li)
+     );
+
+  bsg_wormhole_router_generalized
+   #(.flit_width_p(coh_noc_flit_width_p)
+     ,.dims_p(coh_noc_dims_p)
+     ,.cord_markers_pos_p(cord_markers_pos_lp[1:0])
+     ,.routing_matrix_p(routing_matrix_lp)
+     ,.reverse_order_p(1)
+     ,.len_width_p(coh_noc_len_width_p)
+     )
+   cmd_router
+    (.clk_i(clk_i)
+     ,.reset_i(reset_r)
+
+     ,.link_i(lce_cmd_link_i_stitch)
+     ,.link_o(lce_cmd_link_o_stitch)
+
+     ,.my_cord_i(lce_id_li)
+     );
+
+  bsg_wormhole_router_generalized
+   #(.flit_width_p(coh_noc_flit_width_p)
+     ,.dims_p(coh_noc_dims_p)
+     ,.cord_markers_pos_p(cord_markers_pos_lp[1:0])
+     ,.routing_matrix_p(routing_matrix_lp)
+     ,.reverse_order_p(1)
+     ,.len_width_p(coh_noc_len_width_p)
+     )
+   resp_router
+    (.clk_i(clk_i)
+     ,.reset_i(reset_r)
+
+     ,.link_i(lce_resp_link_i_stitch)
+     ,.link_o(lce_resp_link_o_stitch)
+
+     ,.my_cord_i(lce_id_li)
+     );
 
 // CCE-MEM IF to Wormhole routed interface
-
 `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
 bsg_ready_and_link_sif_s cmd_link_cast_i, cmd_link_cast_o;
 bsg_ready_and_link_sif_s resp_link_cast_i, resp_link_cast_o;

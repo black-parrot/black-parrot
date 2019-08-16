@@ -41,8 +41,8 @@ module bp_me_wormhole_packet_encode_lce_cmd
 
   always_comb begin
     packet_cast_o.payload = payload_cast_i;
-    packet_cast_o.cid     = 1'b0;
-    packet_cast_o.cord    = payload_cast_i.dst_id;
+    packet_cast_o.cid     = payload_cast_i.dst_id[0];
+    packet_cast_o.cord    = payload_cast_i.dst_id >> 1;
 
     case (payload_cast_i.msg_type)
       e_lce_cmd_sync

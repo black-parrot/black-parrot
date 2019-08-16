@@ -124,8 +124,8 @@ typedef struct packed
   , localparam coh_noc_y_cord_width_p = proc_param_lp.coh_noc_y_cord_width                         \
   , localparam coh_noc_x_cord_width_p = proc_param_lp.coh_noc_x_cord_width                         \
   , localparam coh_noc_cord_width_p   = coh_noc_x_cord_width_p + coh_noc_y_cord_width_p            \
-  , localparam coh_noc_dims_p            = 1 + (coh_noc_y_cord_width_p > 0)                        \
-  , localparam coh_noc_dirs_p            = coh_noc_dims_p*2 + 1                                    \
+  , localparam coh_noc_dims_p         = 1 + (coh_noc_y_cord_width_p > 0)                           \
+  , localparam coh_noc_dirs_p         = coh_noc_dims_p*2 + 1                                       \
   , localparam int coh_noc_cord_markers_pos_p [2:0] =                                              \
       '{coh_noc_cord_width_p, coh_noc_x_cord_width_p, 0}                                           \
                                                                                                    \
