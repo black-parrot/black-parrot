@@ -32,10 +32,22 @@ module wrapper
    , output [mem_noc_ral_link_width_lp-1:0]           resp_link_o
    );
 
-  bp_chip
-   #(.cfg_p(cfg_p))
-   dut
-    (.*);
+  if (coh_noc_dims_p != mem_noc_dims_p)
+    $fatal("Coherence and memory networks should be same dimensionality!");
 
-endmodule : wrapper
+  if (mem_noc_dims_p == 1)
+    begin : mesh_1d
+      localparam int mem_noc_cord_markers_pos_p[1:0] = '{mem_noc_x_cord_width_p, 0};
+      localparam int coh_noc_cord_markers_pos_p[1:0] = '{coh_noc_x_cord_width_p, 0};
+
+      bp_chip
+       #(.cfg_p(cfg_p)
+         ,.mem_noc_cord_markers_pos_p(mem_noc_cord_markers_pos_p)
+         ,.coh_noc_cord_markers_pos_p(coh_noc_cord_markers_pos_p)
+         )
+       dut
+        (.*);
+    end
+
+endmodule
 

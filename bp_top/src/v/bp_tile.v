@@ -19,17 +19,14 @@ module bp_tile
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
-   , localparam proc_cfg_width_lp = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
-
-   // Generalized Wormhole Router parameters
-   , localparam int cord_markers_pos_lp[2:0] = 
-       '{coh_noc_x_cord_width_p + coh_noc_y_cord_width_p, coh_noc_x_cord_width_p, 0}
-   , localparam bit [1:0][coh_noc_dirs_p-1:0][coh_noc_dirs_p-1:0] routing_matrix_lp =
-       (coh_noc_dims_p == 2) ? StrictYX : StrictX
+   , parameter int mem_noc_cord_markers_pos_p [mem_noc_dims_p:0] = "inv"
+   , parameter int coh_noc_cord_markers_pos_p [coh_noc_dims_p:0] = "inv"
 
    // Wormhole parameters
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
+
+   , localparam proc_cfg_width_lp = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
    )
   (input                                                      clk_i
    , input                                                    reset_i
@@ -395,7 +392,7 @@ for (genvar i = 0; i < 2; i++)
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.num_in_p(2)
      ,.dims_p(coh_noc_dims_p)
-     ,.cord_markers_pos_p(cord_markers_pos_lp)
+     ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
      )
    req_concentrator
     (.clk_i(clk_i)
@@ -416,7 +413,7 @@ for (genvar i = 0; i < 2; i++)
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.num_in_p(3)
      ,.dims_p(coh_noc_dims_p)
-     ,.cord_markers_pos_p(cord_markers_pos_lp)
+     ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
      )
    cmd_concentrator
     (.clk_i(clk_i)
@@ -440,7 +437,7 @@ for (genvar i = 0; i < 2; i++)
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.num_in_p(2)
      ,.dims_p(coh_noc_dims_p)
-     ,.cord_markers_pos_p(cord_markers_pos_lp)
+     ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
      )
    resp_concentrator
     (.clk_i(clk_i)
@@ -457,8 +454,8 @@ for (genvar i = 0; i < 2; i++)
   bsg_wormhole_router_generalized
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.dims_p(coh_noc_dims_p)
-     ,.cord_markers_pos_p(cord_markers_pos_lp)
-     ,.routing_matrix_p(routing_matrix_lp)
+     ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
+     ,.routing_matrix_p((coh_noc_dims_p == 1) ? StrictX : StrictYX)
      ,.reverse_order_p(1)
      ,.len_width_p(coh_noc_len_width_p)
      )
@@ -475,8 +472,8 @@ for (genvar i = 0; i < 2; i++)
   bsg_wormhole_router_generalized
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.dims_p(coh_noc_dims_p)
-     ,.cord_markers_pos_p(cord_markers_pos_lp)
-     ,.routing_matrix_p(routing_matrix_lp)
+     ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
+     ,.routing_matrix_p((coh_noc_dims_p == 1) ? StrictX : StrictYX)
      ,.reverse_order_p(1)
      ,.len_width_p(coh_noc_len_width_p)
      )
@@ -493,8 +490,8 @@ for (genvar i = 0; i < 2; i++)
   bsg_wormhole_router_generalized
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.dims_p(coh_noc_dims_p)
-     ,.cord_markers_pos_p(cord_markers_pos_lp)
-     ,.routing_matrix_p(routing_matrix_lp)
+     ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
+     ,.routing_matrix_p((coh_noc_dims_p == 1) ? StrictX : StrictYX)
      ,.reverse_order_p(1)
      ,.len_width_p(coh_noc_len_width_p)
      )
