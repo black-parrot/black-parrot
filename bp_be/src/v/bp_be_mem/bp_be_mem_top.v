@@ -46,10 +46,6 @@ module bp_be_mem_top
    
    // VM
    , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_p)
-
-   // CSRs
-   , localparam mepc_width_lp  = `bp_mepc_width
-   , localparam mtvec_width_lp = `bp_mtvec_width
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -113,8 +109,8 @@ module bp_be_mem_top
    , output [rv64_priv_width_gp-1:0]         priv_mode_o
    , output                                  trap_v_o
    , output                                  ret_v_o
-   , output [mepc_width_lp-1:0]              epc_o
-   , output [mtvec_width_lp-1:0]             tvec_o
+   , output [vaddr_width_p-1:0]              epc_o
+   , output [vaddr_width_p-1:0]              tvec_o
    , output                                  tlb_fence_o
    );
 

@@ -80,10 +80,6 @@ module bp_be_checker_top
    , localparam vtag_width_lp     = (vaddr_width_p-bp_page_offset_width_gp)
    , localparam ptag_width_lp     = (paddr_width_p-bp_page_offset_width_gp)
    , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_lp)
-
-   // CSRs
-   , localparam mepc_width_lp  = `bp_mepc_width
-   , localparam mtvec_width_lp = `bp_mtvec_width
    )
   (input                              clk_i
    , input                            reset_i
@@ -131,8 +127,8 @@ module bp_be_checker_top
    , input                            trap_v_i
    , input                            ret_v_i
    , output [vaddr_width_p-1:0]       pc_o
-   , input [mtvec_width_lp-1:0]       tvec_i
-   , input [mepc_width_lp-1:0]        epc_i
+   , input [vaddr_width_p-1:0]        tvec_i
+   , input [vaddr_width_p-1:0]        epc_i
    , input                            tlb_fence_i
    
    //iTLB fill interface

@@ -10,8 +10,6 @@ module bp_be_csr
     , localparam csr_cmd_width_lp = `bp_be_csr_cmd_width
     , localparam ecode_dec_width_lp = `bp_be_ecode_dec_width
 
-    , localparam mepc_width_lp  = `bp_mepc_width
-    , localparam mtvec_width_lp = `bp_mtvec_width
     , localparam satp_width_lp  = `bp_satp_width
 
     , localparam hartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
@@ -46,8 +44,8 @@ module bp_be_csr
     , output [rv64_priv_width_gp-1:0]   priv_mode_o
     , output logic                      trap_v_o
     , output logic                      ret_v_o
-    , output logic [mepc_width_lp-1:0]  epc_o
-    , output logic [mtvec_width_lp-1:0] tvec_o
+    , output logic [vaddr_width_p-1:0]  epc_o
+    , output logic [vaddr_width_p-1:0]  tvec_o
     , output [satp_width_lp-1:0]        satp_o
     , output                            translation_en_o
     , output logic                      tlb_fence_o
@@ -402,8 +400,10 @@ always_comb
           mstatus_n.spie      = mstatus_r.sie;
           mstatus_n.sie       = 1'b0;
 
-          sepc_n              = exception_pc_i;
-          stval_n             = exception_ecode_dec_cast_i.illegal_instr ? exception_instr_i : exception_vaddr_i;
+          sepc_n              = paddr_width_p'($signed(exception_pc_i));
+          stval_n             = exception_ecode_dec_cast_i.illegal_instr 
+                                ? exception_instr_i 
+                                : paddr_width_p'($signed(exception_vaddr_i));
 
           scause_n._interrupt = 1'b0;
           scause_n.ecode      = exception_ecode_li;
@@ -418,8 +418,10 @@ always_comb
           mstatus_n.mpie      = mstatus_r.mie;
           mstatus_n.mie       = 1'b0;
 
-          mepc_n              = exception_pc_i;
-          mtval_n             = exception_ecode_dec_cast_i.illegal_instr ? exception_instr_i : exception_vaddr_i;
+          mepc_n              = paddr_width_p'($signed(exception_pc_i));
+          mtval_n             = exception_ecode_dec_cast_i.illegal_instr 
+                                ? exception_instr_i 
+                                : paddr_width_p'($signed(exception_vaddr_i));
 
           mcause_n._interrupt = 1'b0;
           mcause_n.ecode      = exception_ecode_li;
@@ -436,7 +438,9 @@ always_comb
           mstatus_n.spie      = mstatus_r.sie;
           mstatus_n.sie       = 1'b0;
 
-          sepc_n              = (exception_v_i & exception_ecode_v_li) ? exception_pc_i : 64'(interrupt_pc_i);
+          sepc_n              = (exception_v_i & exception_ecode_v_li) 
+                                ? paddr_width_p'($signed(exception_pc_i))
+                                : paddr_width_p'($signed(interrupt_pc_i));
           stval_n             = '0;
           scause_n._interrupt = 1'b1;
           scause_n.ecode      = exception_icode_li;
@@ -451,7 +455,9 @@ always_comb
           mstatus_n.mpie      = mstatus_r.mie;
           mstatus_n.mie       = 1'b0;
 
-          mepc_n              = (exception_v_i & exception_ecode_v_li) ? exception_pc_i : 64'(interrupt_pc_i);
+          mepc_n              = (exception_v_i & exception_ecode_v_li) 
+                                ? paddr_width_p'($signed(exception_pc_i))
+                                : paddr_width_p'($signed(interrupt_pc_i));
           mtval_n             = '0;
           mcause_n._interrupt = 1'b1;
           mcause_n.ecode      = exception_icode_li;
