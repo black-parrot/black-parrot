@@ -132,6 +132,9 @@ typedef struct packed
   , localparam coh_noc_cord_width_p   = coh_noc_x_cord_width_p + coh_noc_y_cord_width_p            \
   , localparam coh_noc_dims_p         = 1 + (coh_noc_y_cord_width_p > 0)                           \
   , localparam coh_noc_dirs_p         = coh_noc_dims_p*2 + 1                                       \
+  , localparam coh_noc_max_dims_p     = 2                                                          \
+  , localparam int coh_noc_cord_markers_pos_p[coh_noc_max_dims_p:0] =                              \
+      '{coh_noc_cord_width_p, coh_noc_x_cord_width_p, 0}                                           \
                                                                                                    \
   , localparam cfg_core_width_p = proc_param_lp.cfg_core_width                                     \
   , localparam cfg_addr_width_p = proc_param_lp.cfg_addr_width                                     \
@@ -148,6 +151,9 @@ typedef struct packed
   , localparam mem_noc_cord_width_p      = mem_noc_x_cord_width_p + mem_noc_y_cord_width_p         \
   , localparam mem_noc_dims_p            = 1 + (mem_noc_y_cord_width_p > 0)                        \
   , localparam mem_noc_dirs_p            = mem_noc_dims_p*2 + 1                                    \
+  , localparam mem_noc_max_dims_p        = 2                                                       \
+  , localparam int mem_noc_cord_markers_pos_p[mem_noc_max_dims_p:0] =                              \
+      '{mem_noc_cord_width_p, mem_noc_x_cord_width_p, 0}                                           \
                                                                                                    \
   , localparam ct_remote_credits_p       = proc_param_lp.ct_remote_credits                         \
   , localparam ct_max_payload_flits_p    = proc_param_lp.ct_max_payload_flits                      \

@@ -20,6 +20,7 @@
 ## Packages
 # bsg_ip_cores packages
 $BSG_IP_CORES_DIR/bsg_noc/bsg_noc_pkg.v
+$BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_pkg.v
 # Interface packages
 $BP_COMMON_DIR/src/include/bp_common_pkg.vh
 $BP_COMMON_DIR/src/include/bp_common_aviary_pkg.vh
@@ -120,8 +121,6 @@ $BSG_IP_CORES_DIR/bsg_misc/bsg_unconcentrate_static.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_input_control.v  
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_output_control.v 
-$BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_pkg.v
-$BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_generalized.v
 ## BE files
 $BP_BE_DIR/src/v/bp_be_top.v
 # Calculator

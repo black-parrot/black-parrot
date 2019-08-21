@@ -21,9 +21,6 @@ module bp_chip
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
-   , parameter int mem_noc_cord_markers_pos_p [mem_noc_dims_p:0] = "inv"
-   , parameter int coh_noc_cord_markers_pos_p [coh_noc_dims_p:0] = "inv"
-
    // Tile parameters
    , localparam num_tiles_lp = num_core_p
    , localparam num_routers_lp = num_tiles_lp+1
@@ -54,10 +51,7 @@ bsg_ready_and_link_sif_s [num_routers_lp-1:0] cc_cmd_link_li, cc_cmd_link_lo;
 bsg_ready_and_link_sif_s [num_routers_lp-1:0] cc_resp_link_li, cc_resp_link_lo;
 
 bp_core_complex
- #(.cfg_p(cfg_p)
-   ,.mem_noc_cord_markers_pos_p(mem_noc_cord_markers_pos_p)
-   ,.coh_noc_cord_markers_pos_p(coh_noc_cord_markers_pos_p)
-   )
+ #(.cfg_p(cfg_p))
   cc
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -90,11 +84,11 @@ if (mem_noc_y_cord_width_p == 0)
             assign router_cord_li = tile_cord_i[tile_id_lp];
           end
 
-        bsg_wormhole_router_generalized
+        bsg_wormhole_router
          #(.flit_width_p(mem_noc_flit_width_p)
-           ,.dims_p(mem_noc_dims_p)
+           ,.dims_p(1)
+           ,.cord_dims_p(mem_noc_max_dims_p)
            ,.cord_markers_pos_p(mem_noc_cord_markers_pos_p)
-           ,.routing_matrix_p((mem_noc_dims_p == 1) ? StrictX : StrictYX)
            ,.len_width_p(mem_noc_len_width_p)
            )
          cmd_router
@@ -105,11 +99,11 @@ if (mem_noc_y_cord_width_p == 0)
           ,.link_o(cmd_link_lo[i])
     	    );
       
-        bsg_wormhole_router_generalized
+        bsg_wormhole_router
          #(.flit_width_p(mem_noc_flit_width_p)
            ,.dims_p(mem_noc_dims_p)
+           ,.cord_dims_p(mem_noc_max_dims_p)
            ,.cord_markers_pos_p(mem_noc_cord_markers_pos_p)
-           ,.routing_matrix_p((mem_noc_dims_p == 1) ? StrictX : StrictYX)
            ,.len_width_p(mem_noc_len_width_p)
            )
          resp_router

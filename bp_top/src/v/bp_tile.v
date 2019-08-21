@@ -19,9 +19,6 @@ module bp_tile
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
-   , parameter int mem_noc_cord_markers_pos_p [mem_noc_dims_p:0] = "inv"
-   , parameter int coh_noc_cord_markers_pos_p [coh_noc_dims_p:0] = "inv"
-
    // Wormhole parameters
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
@@ -391,8 +388,7 @@ for (genvar i = 0; i < 2; i++)
      ,.len_width_p(coh_noc_len_width_p)
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.num_in_p(2)
-     ,.dims_p(coh_noc_dims_p)
-     ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
+     ,.cord_width_p(coh_noc_cord_width_p)
      )
    req_concentrator
     (.clk_i(clk_i)
@@ -412,8 +408,7 @@ for (genvar i = 0; i < 2; i++)
      ,.len_width_p(coh_noc_len_width_p)
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.num_in_p(3)
-     ,.dims_p(coh_noc_dims_p)
-     ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
+     ,.cord_width_p(coh_noc_cord_width_p)
      )
    cmd_concentrator
     (.clk_i(clk_i)
@@ -436,8 +431,7 @@ for (genvar i = 0; i < 2; i++)
      ,.len_width_p(coh_noc_len_width_p)
      ,.cid_width_p(coh_noc_cid_width_p)
      ,.num_in_p(2)
-     ,.dims_p(coh_noc_dims_p)
-     ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
+     ,.cord_width_p(coh_noc_cord_width_p)
      )
    resp_concentrator
     (.clk_i(clk_i)
@@ -451,11 +445,11 @@ for (genvar i = 0; i < 2; i++)
      );
 
   wire [coh_noc_cord_width_p-1:0] lce_id_li = proc_cfg_cast_i.icache_id >> 1;
-  bsg_wormhole_router_generalized
+  bsg_wormhole_router
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.dims_p(coh_noc_dims_p)
+     ,.cord_dims_p(coh_noc_max_dims_p)
      ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
-     ,.routing_matrix_p((coh_noc_dims_p == 1) ? StrictX : StrictYX)
      ,.reverse_order_p(1)
      ,.len_width_p(coh_noc_len_width_p)
      )
@@ -469,11 +463,11 @@ for (genvar i = 0; i < 2; i++)
      ,.my_cord_i(lce_id_li)
      );
 
-  bsg_wormhole_router_generalized
+  bsg_wormhole_router
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.dims_p(coh_noc_dims_p)
+     ,.cord_dims_p(coh_noc_max_dims_p)
      ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
-     ,.routing_matrix_p((coh_noc_dims_p == 1) ? StrictX : StrictYX)
      ,.reverse_order_p(1)
      ,.len_width_p(coh_noc_len_width_p)
      )
@@ -487,11 +481,11 @@ for (genvar i = 0; i < 2; i++)
      ,.my_cord_i(lce_id_li)
      );
 
-  bsg_wormhole_router_generalized
+  bsg_wormhole_router
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.dims_p(coh_noc_dims_p)
+     ,.cord_dims_p(coh_noc_max_dims_p)
      ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
-     ,.routing_matrix_p((coh_noc_dims_p == 1) ? StrictX : StrictYX)
      ,.reverse_order_p(1)
      ,.len_width_p(coh_noc_len_width_p)
      )

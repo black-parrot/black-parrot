@@ -21,9 +21,6 @@ module bp_tile_mesh
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
-   , parameter int mem_noc_cord_markers_pos_p [mem_noc_dims_p:0] = "inv"
-   , parameter int coh_noc_cord_markers_pos_p [coh_noc_dims_p:0] = "inv"
-
    // Tile parameters
    , localparam num_tiles_lp = num_core_p
    , localparam num_routers_lp = num_tiles_lp+1
@@ -146,10 +143,7 @@ for(genvar i = 0; i < num_core_p; i++)
        );
 
     bp_tile
-     #(.cfg_p(cfg_p)
-       ,.mem_noc_cord_markers_pos_p(mem_noc_cord_markers_pos_p)
-       ,.coh_noc_cord_markers_pos_p(coh_noc_cord_markers_pos_p)
-       )
+     #(.cfg_p(cfg_p))
      tile
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
