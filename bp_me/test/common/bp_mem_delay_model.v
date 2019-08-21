@@ -80,7 +80,7 @@ else if (use_random_latency_p)
        ,.yumi_i(yumi_i)
        ,.o(lfsr_reg)
        );
-    assign current_latency = lfsr_reg;
+    assign current_latency = lfsr_reg | 1'b1;
 
     assign ready_o = (state_r == e_idle);
     assign v_o = (latency_cnt == current_latency);

@@ -89,7 +89,7 @@ logic             cce_lce_resp_v_li, cce_lce_resp_ready_lo;
 
 // Mem connections
 bp_cce_mem_cmd_s       mem_cmd_lo;
-logic                  mem_cmd_v_lo, mem_cmd_yumi_li;
+logic                  mem_cmd_v_lo, mem_cmd_ready_li;
 bp_mem_cce_resp_s      mem_resp_li;
 logic                  mem_resp_v_li, mem_resp_ready_lo;
 
@@ -182,7 +182,7 @@ bp_cce_top
    // From CCE
    ,.mem_cmd_o(mem_cmd_lo)
    ,.mem_cmd_v_o(mem_cmd_v_lo)
-   ,.mem_cmd_yumi_i(mem_cmd_yumi_li)
+   ,.mem_cmd_yumi_i(mem_cmd_ready_li & mem_cmd_v_lo)
 
    ,.cce_id_i(proc_cfg_cast_i.cce_id) 
    );
@@ -505,30 +505,6 @@ for (genvar i = 0; i < 2; i++)
      ,.my_cord_i(lce_id_li)
      );
 
-// CCE-MEM IF to Wormhole routed interface
-`declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
-bsg_ready_and_link_sif_s cmd_link_cast_i, cmd_link_cast_o;
-bsg_ready_and_link_sif_s resp_link_cast_i, resp_link_cast_o;
-
-assign cmd_link_cast_i  = cmd_link_i;
-assign cmd_link_o       = cmd_link_cast_o;
-
-assign resp_link_cast_i = resp_link_i;
-assign resp_link_o      = resp_link_cast_o;
-
-logic [mem_noc_cord_width_p-1:0] cmd_dest_cord_lo;
-bp_addr_map
- #(.cfg_p(cfg_p))
- cmd_map
-  (.paddr_i(mem_cmd_lo.addr)
-
-  ,.mmio_cord_i(mmio_cord_i)
-  ,.dram_cord_i(dram_cord_i)
-
-  ,.dest_cord_o(cmd_dest_cord_lo)
-  );
-
-bsg_ready_and_link_sif_s wh_master_link_li, wh_master_link_lo;
 bp_me_cce_to_wormhole_link_master
  #(.cfg_p(cfg_p))
  master_link
@@ -537,56 +513,22 @@ bp_me_cce_to_wormhole_link_master
 
    ,.mem_cmd_i(mem_cmd_lo)
    ,.mem_cmd_v_i(mem_cmd_v_lo)
-   ,.mem_cmd_yumi_o(mem_cmd_yumi_li)
+   ,.mem_cmd_ready_o(mem_cmd_ready_li)
 
    ,.mem_resp_o(mem_resp_li)
    ,.mem_resp_v_o(mem_resp_v_li)
-   ,.mem_resp_ready_i(mem_resp_ready_lo)
+   ,.mem_resp_yumi_i(mem_resp_ready_lo & mem_resp_v_li)
 
    ,.my_cord_i(my_cord_i)
-   ,.mem_cmd_dest_cord_i(cmd_dest_cord_lo)
+   ,.dram_cord_i(dram_cord_i)
+   ,.mmio_cord_i(mmio_cord_i)
 
-   ,.link_i(wh_master_link_li)
-   ,.link_o(wh_master_link_lo)
+   ,.cmd_link_i(cmd_link_i)
+   ,.cmd_link_o(cmd_link_o)
+
+   ,.resp_link_i(resp_link_i)
+   ,.resp_link_o(resp_link_o)
    );
-
-// Not used at the moment by bp_tile, stubbed
-bsg_ready_and_link_sif_s wh_client_link_li, wh_client_link_lo;
-bp_me_cce_to_wormhole_link_client
- #(.cfg_p(cfg_p))
- client_link
-  (.clk_i(clk_i)
-   ,.reset_i(reset_r)
-
-   ,.mem_cmd_o()
-   ,.mem_cmd_v_o()
-   ,.mem_cmd_yumi_i('0)
-
-   ,.mem_resp_i('0)
-   ,.mem_resp_v_i('0)
-   ,.mem_resp_ready_o()
-
-   ,.my_cord_i(my_cord_i)
-
-   ,.link_i(wh_client_link_li)
-   ,.link_o(wh_client_link_lo)
-   );
-
-assign wh_client_link_li.v             = cmd_link_cast_i.v;
-assign wh_client_link_li.data          = cmd_link_cast_i.data;
-assign wh_client_link_li.ready_and_rev = resp_link_cast_i.ready_and_rev;
-
-assign wh_master_link_li.v             = resp_link_cast_i.v;
-assign wh_master_link_li.data          = resp_link_cast_i.data;
-assign wh_master_link_li.ready_and_rev = cmd_link_cast_i.ready_and_rev;
-
-assign resp_link_cast_o.v = wh_client_link_lo.v;
-assign resp_link_cast_o.data = wh_client_link_lo.data;
-assign resp_link_cast_o.ready_and_rev = wh_master_link_lo.ready_and_rev;
-
-assign cmd_link_cast_o.v = wh_master_link_lo.v;
-assign cmd_link_cast_o.data = wh_master_link_lo.data;
-assign cmd_link_cast_o.ready_and_rev = wh_client_link_lo.ready_and_rev;
 
 endmodule
 

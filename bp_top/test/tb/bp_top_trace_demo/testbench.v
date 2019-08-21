@@ -47,28 +47,25 @@ module testbench
 `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
-bsg_ready_and_link_sif_s [1:0] ct_link_li, ct_link_lo;
-
 bsg_ready_and_link_sif_s cmd_link_li, cmd_link_lo;
 bsg_ready_and_link_sif_s resp_link_li, resp_link_lo;
-bsg_ready_and_link_sif_s mem_link_li, mem_link_lo;
-bsg_ready_and_link_sif_s cfg_link_li, cfg_link_lo;
 
-assign mem_link_li.v = cmd_link_li.v;
-assign mem_link_li.data = cmd_link_li.data;
-assign mem_link_li.ready_and_rev = resp_link_li.ready_and_rev;
+bsg_ready_and_link_sif_s mem_cmd_link_li, mem_cmd_link_lo, mem_resp_link_li, mem_resp_link_lo;
+bsg_ready_and_link_sif_s cfg_cmd_link_li, cfg_cmd_link_lo, cfg_resp_link_li, cfg_resp_link_lo;
 
-assign cfg_link_li.v = resp_link_li.v;
-assign cfg_link_li.data = resp_link_li.data;
-assign cfg_link_li.ready_and_rev = cmd_link_li.ready_and_rev;
+assign mem_cmd_link_li = cmd_link_li;
+assign cfg_cmd_link_li = '{ready_and_rev: cmd_link_li.ready_and_rev, default: '0};
+assign cmd_link_lo = '{data: cfg_cmd_link_lo.data
+                       ,v  : cfg_cmd_link_lo.v
+                       ,ready_and_rev: mem_cmd_link_lo.ready_and_rev
+                       };
 
-assign resp_link_lo.v = mem_link_lo.v;
-assign resp_link_lo.data = mem_link_lo.data;
-assign resp_link_lo.ready_and_rev = cfg_link_lo.ready_and_rev;
-
-assign cmd_link_lo.v = cfg_link_lo.v;
-assign cmd_link_lo.data = cfg_link_lo.data;
-assign cmd_link_lo.ready_and_rev = mem_link_lo.ready_and_rev;
+assign mem_resp_link_li = '{ready_and_rev: resp_link_li.ready_and_rev, default: '0};
+assign cfg_resp_link_li = resp_link_li;
+assign resp_link_lo = '{data: mem_resp_link_lo.data
+                        ,v  : mem_resp_link_lo.v
+                        ,ready_and_rev: cfg_resp_link_li.ready_and_rev
+                        };
 
 bp_mem_cce_resp_s      mem_resp_li;
 logic                  mem_resp_v_li, mem_resp_ready_lo;
@@ -86,7 +83,7 @@ bp_cce_mem_cmd_s       host_cmd_li;
 logic                  host_cmd_v_li, host_cmd_yumi_lo;
 
 bp_cce_mem_cmd_s       cfg_cmd_lo;
-logic                  cfg_cmd_v_lo, cfg_cmd_yumi_li;
+logic                  cfg_cmd_v_lo, cfg_cmd_ready_li;
 bp_mem_cce_resp_s      cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
@@ -241,8 +238,11 @@ bp_me_cce_to_wormhole_link_client
 
   ,.my_cord_i(dram_cord_lo)
      
-  ,.link_i(mem_link_li)
-  ,.link_o(mem_link_lo)
+  ,.cmd_link_i(mem_cmd_link_li)
+  ,.cmd_link_o(mem_cmd_link_lo)
+
+  ,.resp_link_i(mem_resp_link_li)
+  ,.resp_link_o(mem_resp_link_lo)
   );
 
 bp_mem
@@ -335,19 +335,22 @@ bp_me_cce_to_wormhole_link_master
   ,.reset_i(reset_i)
 
   ,.mem_cmd_i(cfg_cmd_lo)
-  ,.mem_cmd_v_i(cfg_cmd_v_lo)
-  ,.mem_cmd_yumi_o(cfg_cmd_yumi_li)
+  ,.mem_cmd_v_i(cfg_cmd_ready_li & cfg_cmd_v_lo)
+  ,.mem_cmd_ready_o(cfg_cmd_ready_li)
 
   ,.mem_resp_o(cfg_resp_li)
   ,.mem_resp_v_o(cfg_resp_v_li)
-  ,.mem_resp_ready_i(cfg_resp_ready_lo)
+  ,.mem_resp_yumi_i(cfg_resp_ready_lo & cfg_resp_v_li)
 
   ,.my_cord_i(dram_cord_lo)
+  ,.dram_cord_i(dram_cord_lo)
+  ,.mmio_cord_i(mmio_cord_lo)
   
-  ,.mem_cmd_dest_cord_i(mmio_cord_lo)
-  
-  ,.link_i(cfg_link_li)
-  ,.link_o(cfg_link_lo)
+  ,.cmd_link_i(cfg_cmd_link_li)
+  ,.cmd_link_o(cfg_cmd_link_lo)
+
+  ,.resp_link_i(cfg_resp_link_li)
+  ,.resp_link_o(cfg_resp_link_lo)
   );
 
 localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
@@ -364,7 +367,7 @@ bp_cce_mmio_cfg_loader
    
    ,.mem_cmd_o(cfg_cmd_lo)
    ,.mem_cmd_v_o(cfg_cmd_v_lo)
-   ,.mem_cmd_yumi_i(cfg_cmd_yumi_li)
+   ,.mem_cmd_yumi_i(cfg_cmd_ready_li & cfg_cmd_v_lo)
    
    ,.mem_resp_i(cfg_resp_li)
    ,.mem_resp_v_i(cfg_resp_v_li)
