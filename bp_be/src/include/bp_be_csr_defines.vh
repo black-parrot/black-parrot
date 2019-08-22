@@ -289,19 +289,19 @@ typedef struct packed
   // We don't currently have ASID support
   // We only support 39 bit physical address.
   // TODO: Generate this based on vaddr
-  logic [26:0] ppn;
+  logic [27:0] ppn;
 }  bp_satp_s;
 
 `define bp_satp_width ($bits(bp_satp_s))
 
 `define compress_satp_s(data_cast_mp) \
   bp_satp_s'{mode: data_cast_mp.mode[3]   \
-             ,ppn: data_cast_mp.ppn[26:0] \
+             ,ppn: data_cast_mp.ppn[27:0] \
              }
 
 `define decompress_satp_s(data_comp_mp) \
   rv64_satp_s'{mode: {data_comp_mp.mode, 3'b000} \
-               ,ppn: {17'h0, data_comp_mp.ppn}   \
+               ,ppn: {16'h0, data_comp_mp.ppn}   \
                ,default: '0                      \
                }
 
@@ -688,24 +688,30 @@ typedef struct packed
               }
 
 typedef logic [63:0] rv64_mtval_s;
-typedef logic [38:0] bp_mtval_s;
+typedef struct packed
+{
+  logic sgn;
+  logic [39:0] addr;
+}  bp_mtval_s;
 
 `define compress_mtval_s(data_cast_mp) \
-  data_cast_mp[0+:39]
+  bp_mtval_s'{sgn: data_cast_mp[39], addr: data_cast_mp[0+:40]}
 
 `define decompress_mtval_s(data_comp_mp) \
-  64'(data_comp_mp)
+  64'($signed(data_comp_mp))
 
 typedef logic [63:0] rv64_mepc_s;
-typedef logic [38:0] bp_mepc_s;
-
-`define bp_mepc_width ($bits(bp_mepc_s))
+typedef struct packed
+{
+  logic sgn;
+  logic [39:0] addr;
+}  bp_mepc_s;
 
 `define compress_mepc_s(data_cast_mp) \
-  data_cast_mp[0+:39]
+  bp_mepc_s'{sgn: data_cast_mp[39], addr: data_cast_mp[0+:40]} 
 
 `define decompress_mepc_s(data_comp_mp) \
-  64'(data_comp_mp)
+  64'($signed(data_comp_mp))
 
 typedef struct packed
 {
@@ -753,7 +759,7 @@ typedef bp_pmpcfg_s bp_pmpcfg0_s;
 
 typedef struct packed
 {
-  logic [9:0]  wpri;
+  logic [9:0]  warl;
   logic [53:0] addr_55_2;
 }  rv64_pmpaddr_s;
 
@@ -764,7 +770,7 @@ typedef rv64_pmpaddr_s rv64_pmpaddr3_s;
 
 typedef struct packed
 {
-  logic [36:0] addr_38_2;
+  logic [37:0] addr_39_2;
 }  bp_pmpaddr_s;
 
 typedef bp_pmpaddr_s bp_pmpaddr0_s;
@@ -773,10 +779,10 @@ typedef bp_pmpaddr_s bp_pmpaddr2_s;
 typedef bp_pmpaddr_s bp_pmpaddr3_s;
 
 `define compress_pmpaddr_s(data_cast_mp) \
-  bp_pmpaddr_s'{addr_38_2: data_cast_mp.addr_55_2[0+:37]}
+  bp_pmpaddr_s'{addr_39_2: data_cast_mp.addr_55_2[0+:38]}
 
 `define decompress_pmpaddr_s(data_comp_mp) \
-  rv64_pmpaddr_s'{addr_55_2: 54'(data_comp_mp.addr_38_2) \
+  rv64_pmpaddr_s'{addr_55_2: 54'(data_comp_mp.addr_39_2) \
                   ,default: '0                           \
                   }
 

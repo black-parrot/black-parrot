@@ -15,7 +15,7 @@ package bp_common_aviary_pkg;
       ,num_lce: 1
 
       ,vaddr_width: 39
-      ,paddr_width: 39
+      ,paddr_width: 40
       ,asid_width : 1
       
       ,branch_metadata_fwd_width: 27
@@ -75,7 +75,7 @@ package bp_common_aviary_pkg;
       ,num_lce: 2
 
       ,vaddr_width: 39
-      ,paddr_width: 39
+      ,paddr_width: 40
       ,asid_width : 1
       
       ,branch_metadata_fwd_width: 27
@@ -135,7 +135,7 @@ package bp_common_aviary_pkg;
       ,num_lce: 4
       
       ,vaddr_width: 39
-      ,paddr_width: 39
+      ,paddr_width: 40
       ,asid_width : 1
       
       ,branch_metadata_fwd_width: 27
@@ -195,7 +195,7 @@ package bp_common_aviary_pkg;
       ,num_lce: 8
       
       ,vaddr_width: 39
-      ,paddr_width: 39
+      ,paddr_width: 40
       ,asid_width : 1
       
       ,branch_metadata_fwd_width: 27
@@ -255,7 +255,7 @@ package bp_common_aviary_pkg;
       ,num_lce: 16
       
       ,vaddr_width: 39
-      ,paddr_width: 39
+      ,paddr_width: 40
       ,asid_width : 1
       
       ,branch_metadata_fwd_width: 27
@@ -315,7 +315,7 @@ package bp_common_aviary_pkg;
       ,num_lce: 32
 
       ,vaddr_width: 39
-      ,paddr_width: 39
+      ,paddr_width: 40
       ,asid_width : 1
 
       ,branch_metadata_fwd_width: 27

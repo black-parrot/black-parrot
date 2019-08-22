@@ -78,6 +78,8 @@ module bp_core
   logic fe_cmd_v_li, fe_cmd_ready_lo;
   logic fe_cmd_v_lo, fe_cmd_yumi_li;
 
+  logic fe_cmd_processed_li;
+
   bp_fe_top
    #(.cfg_p(cfg_p))
    fe 
