@@ -30,8 +30,10 @@ module bp_me_cce_to_wormhole_link_master
                                                  
   // Configuration
   , input [mem_noc_cord_width_p-1:0]             my_cord_i
+  , input [mem_noc_cid_width_p-1:0]              my_cid_i
   , input [mem_noc_cord_width_p-1:0]             mmio_cord_i
   , input [mem_noc_cord_width_p-1:0]             dram_cord_i
+  , input [mem_noc_cord_width_p-1:0]             host_cord_i
   
   // bsg_noc_wormhole interface
   , input [bsg_ready_and_link_sif_width_lp-1:0]  cmd_link_i
@@ -51,12 +53,13 @@ assign mem_cmd_cast_i = mem_cmd_i;
 assign mem_resp_o = mem_resp_cast_o;
 
 // CCE-MEM IF to Wormhole routed interface
-`declare_bp_mem_wormhole_payload_s(mem_noc_reserved_width_p, mem_noc_cord_width_p, cce_mem_cmd_width_lp, mem_cmd_payload_s);
-`declare_bp_mem_wormhole_payload_s(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_cce_resp_width_lp, mem_resp_payload_s);
-`declare_bsg_wormhole_router_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, $bits(mem_cmd_payload_s), mem_cmd_packet_s);
-`declare_bsg_wormhole_router_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, $bits(mem_resp_payload_s), mem_resp_packet_s);
+`declare_bp_mem_wormhole_payload_s(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, cce_mem_cmd_width_lp, mem_cmd_payload_s);
+`declare_bp_mem_wormhole_payload_s(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, mem_cce_resp_width_lp, mem_resp_payload_s);
+`declare_bsg_wormhole_concentrator_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p, $bits(mem_cmd_payload_s), mem_cmd_packet_s);
+`declare_bsg_wormhole_concentrator_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p, $bits(mem_resp_payload_s), mem_resp_packet_s);
 
 logic [mem_noc_cord_width_p-1:0] mem_cmd_dst_cord_lo;
+logic [mem_noc_cid_width_p-1:0]  mem_cmd_dst_cid_lo;
 bp_addr_map
  #(.cfg_p(cfg_p))
  cmd_map
@@ -64,8 +67,10 @@ bp_addr_map
 
   ,.mmio_cord_i(mmio_cord_i)
   ,.dram_cord_i(dram_cord_i)
+  ,.host_cord_i(host_cord_i)
 
-  ,.dest_cord_o(mem_cmd_dst_cord_lo)
+  ,.dst_cid_o(mem_cmd_dst_cid_lo)
+  ,.dst_cord_o(mem_cmd_dst_cord_lo)
   );
 
 mem_cmd_packet_s mem_cmd_packet_li;
@@ -74,12 +79,14 @@ bp_me_wormhole_packet_encode_mem_cmd
  mem_cmd_encode
   (.mem_cmd_i(mem_cmd_cast_i)
    ,.src_cord_i(my_cord_i)
+   ,.src_cid_i(my_cid_i)
    ,.dst_cord_i(mem_cmd_dst_cord_lo)
+   ,.dst_cid_i(mem_cmd_dst_cid_lo)
    ,.packet_o(mem_cmd_packet_li)
    );
 
 bsg_wormhole_router_adapter_in
- #(.max_payload_width_p($bits(mem_cmd_payload_s))
+ #(.max_payload_width_p($bits(mem_cmd_payload_s)+mem_noc_cid_width_p)
    ,.len_width_p(mem_noc_len_width_p)
    ,.cord_width_p(mem_noc_cord_width_p)
    ,.flit_width_p(mem_noc_flit_width_p)
@@ -98,7 +105,7 @@ bsg_wormhole_router_adapter_in
 
 mem_resp_packet_s mem_resp_packet_lo;
 bsg_wormhole_router_adapter_out
- #(.max_payload_width_p($bits(mem_resp_payload_s))
+ #(.max_payload_width_p($bits(mem_resp_payload_s)+mem_noc_cid_width_p)
    ,.len_width_p(mem_noc_len_width_p)
    ,.cord_width_p(mem_noc_cord_width_p)
    ,.flit_width_p(mem_noc_flit_width_p)

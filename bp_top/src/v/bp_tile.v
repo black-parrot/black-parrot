@@ -47,8 +47,10 @@ module bp_tile
 
    // Memory side connection
    , input [mem_noc_cord_width_p-1:0]                         my_cord_i
+   , input [mem_noc_cid_width_p-1:0]                          my_cid_i
    , input [mem_noc_cord_width_p-1:0]                         dram_cord_i
    , input [mem_noc_cord_width_p-1:0]                         mmio_cord_i
+   , input [mem_noc_cord_width_p-1:0]                         host_cord_i
 
    , input [mem_noc_ral_link_width_lp-1:0]                    cmd_link_i
    , output [mem_noc_ral_link_width_lp-1:0]                   cmd_link_o
@@ -514,8 +516,10 @@ bp_me_cce_to_wormhole_link_master
    ,.mem_resp_yumi_i(mem_resp_ready_lo & mem_resp_v_li)
 
    ,.my_cord_i(my_cord_i)
+   ,.my_cid_i(my_cid_i)
    ,.dram_cord_i(dram_cord_i)
    ,.mmio_cord_i(mmio_cord_i)
+   ,.host_cord_i(host_cord_i)
 
    ,.cmd_link_i(cmd_link_i)
    ,.cmd_link_o(cmd_link_o)

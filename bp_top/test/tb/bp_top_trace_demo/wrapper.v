@@ -7,6 +7,7 @@
 `include "bsg_noc_links.vh"
 
 module wrapper
+ import bsg_wormhole_router_pkg::*;
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
@@ -24,6 +25,7 @@ module wrapper
    , input [num_core_p-1:0][mem_noc_cord_width_p-1:0] tile_cord_i
    , input [mem_noc_cord_width_p-1:0]                 dram_cord_i
    , input [mem_noc_cord_width_p-1:0]                 mmio_cord_i
+   , input [mem_noc_cord_width_p-1:0]                 host_cord_i
 
    , input  [mem_noc_ral_link_width_lp-1:0]           cmd_link_i
    , output [mem_noc_ral_link_width_lp-1:0]           cmd_link_o
@@ -32,8 +34,10 @@ module wrapper
    , output [mem_noc_ral_link_width_lp-1:0]           resp_link_o
    );
 
+  //synopsys translate_off
   if (coh_noc_dims_p != mem_noc_dims_p)
     $fatal("Coherence and memory networks should be same dimensionality!");
+  //synopsys translate_on
 
   bp_chip
    #(.cfg_p(cfg_p))

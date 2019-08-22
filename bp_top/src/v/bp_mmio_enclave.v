@@ -25,8 +25,10 @@ module bp_mmio_enclave
 
    // BP side
    , input [mem_noc_cord_width_p-1:0]              my_cord_i
+   , input [mem_noc_cid_width_p-1:0]               my_cid_i
    , input [mem_noc_cord_width_p-1:0]              dram_cord_i
    , input [mem_noc_cord_width_p-1:0]              mmio_cord_i
+   , input [mem_noc_cord_width_p-1:0]              host_cord_i
 
    , input [mem_noc_ral_link_width_lp-1:0]         cmd_link_i
    , output [mem_noc_ral_link_width_lp-1:0]        cmd_link_o
@@ -311,6 +313,7 @@ bp_me_cce_to_wormhole_link_client
    ,.mem_resp_ready_o(mem_resp_ready_li)
 
    ,.my_cord_i(my_cord_i)
+   ,.my_cid_i(my_cid_i)
 
    ,.cmd_link_i(cmd_link_i)
    ,.cmd_link_o(cmd_link_o)

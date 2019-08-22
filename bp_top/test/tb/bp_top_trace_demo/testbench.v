@@ -87,14 +87,15 @@ logic                  cfg_cmd_v_lo, cfg_cmd_ready_li;
 bp_mem_cce_resp_s      cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
-logic [mem_noc_cord_width_p-1:0]                 dram_cord_lo, mmio_cord_lo;
+logic [mem_noc_cord_width_p-1:0]                 dram_cord_lo, mmio_cord_lo, host_cord_lo;
 logic [num_core_p-1:0][mem_noc_cord_width_p-1:0] tile_cord_lo;
 
-assign dram_cord_lo  = num_core_p+1;
+assign dram_cord_lo = num_core_p+1;
 assign mmio_cord_lo = mmio_x_pos_p;
+assign host_cord_lo = dram_cord_lo;
 for (genvar i = 0; i < num_core_p; i++)
   begin : rof1
-    assign tile_cord_lo[i] = (i < mmio_x_pos_p) ? i : i+1;
+    assign tile_cord_lo[i] = i;
   end
 
 // Chip
@@ -107,6 +108,7 @@ wrapper
    ,.tile_cord_i(tile_cord_lo)
    ,.dram_cord_i(dram_cord_lo)
    ,.mmio_cord_i(mmio_cord_lo)
+   ,.host_cord_i(host_cord_lo)
 
    ,.cmd_link_i(cmd_link_lo)
    ,.cmd_link_o(cmd_link_li)
@@ -237,6 +239,7 @@ bp_me_cce_to_wormhole_link_client
   ,.mem_resp_ready_o(mem_resp_ready_lo)
 
   ,.my_cord_i(dram_cord_lo)
+  ,.my_cid_i(mem_noc_cid_width_p'(0))
      
   ,.cmd_link_i(mem_cmd_link_li)
   ,.cmd_link_o(mem_cmd_link_lo)
@@ -343,8 +346,10 @@ bp_me_cce_to_wormhole_link_master
   ,.mem_resp_yumi_i(cfg_resp_ready_lo & cfg_resp_v_li)
 
   ,.my_cord_i(dram_cord_lo)
+  ,.my_cid_i(mem_noc_cid_width_p'(0))
   ,.dram_cord_i(dram_cord_lo)
   ,.mmio_cord_i(mmio_cord_lo)
+  ,.host_cord_i(host_cord_lo)
   
   ,.cmd_link_i(cfg_cmd_link_li)
   ,.cmd_link_o(cfg_cmd_link_lo)

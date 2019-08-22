@@ -26,22 +26,26 @@ module bp_core_complex
    , localparam num_routers_lp = num_tiles_lp+1
    
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
-
-   // Arbitrarily set, should be set based on PD constraints
-   , localparam reset_pipe_depth_lp = 10
    )
-  (input                                                        clk_i
-   , input                                                      reset_i
+  (input                                                    clk_i
+   , input                                                  reset_i
 
-   , input [num_core_p-1:0][mem_noc_cord_width_p-1:0]           tile_cord_i
-   , input [mem_noc_cord_width_p-1:0]                           dram_cord_i
-   , input [mem_noc_cord_width_p-1:0]                           mmio_cord_i
+   , input [num_core_p-1:0][mem_noc_cord_width_p-1:0]       tile_cord_i
+   , input [mem_noc_cord_width_p-1:0]                       dram_cord_i
+   , input [mem_noc_cord_width_p-1:0]                       mmio_cord_i
+   , input [mem_noc_cord_width_p-1:0]                       host_cord_i
 
-   , input [num_routers_lp-1:0][mem_noc_ral_link_width_lp-1:0]  cmd_link_i
-   , output [num_routers_lp-1:0][mem_noc_ral_link_width_lp-1:0] cmd_link_o
+   , input [num_core_p-1:0][mem_noc_ral_link_width_lp-1:0]  tile_cmd_link_i
+   , output [num_core_p-1:0][mem_noc_ral_link_width_lp-1:0] tile_cmd_link_o
 
-   , input [num_routers_lp-1:0][mem_noc_ral_link_width_lp-1:0]  resp_link_i
-   , output [num_routers_lp-1:0][mem_noc_ral_link_width_lp-1:0] resp_link_o
+   , input [num_core_p-1:0][mem_noc_ral_link_width_lp-1:0]  tile_resp_link_i
+   , output [num_core_p-1:0][mem_noc_ral_link_width_lp-1:0] tile_resp_link_o
+
+   , input [mem_noc_ral_link_width_lp-1:0]                  mmio_cmd_link_i
+   , output [mem_noc_ral_link_width_lp-1:0]                 mmio_cmd_link_o
+
+   , input [mem_noc_ral_link_width_lp-1:0]                  mmio_resp_link_i
+   , output [mem_noc_ral_link_width_lp-1:0]                 mmio_resp_link_o
   );
 
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
@@ -59,10 +63,10 @@ logic [num_core_p-1:0][mem_noc_ral_link_width_lp-1:0] tile_cmd_link_lo;
 logic [num_core_p-1:0][mem_noc_ral_link_width_lp-1:0] tile_resp_link_li;
 logic [num_core_p-1:0][mem_noc_ral_link_width_lp-1:0] tile_resp_link_lo;
 
-logic [mem_noc_ral_link_width_lp-1:0]                 mmio_cmd_link_li;
-logic [mem_noc_ral_link_width_lp-1:0]                 mmio_cmd_link_lo;
-logic [mem_noc_ral_link_width_lp-1:0]                 mmio_resp_link_li;
-logic [mem_noc_ral_link_width_lp-1:0]                 mmio_resp_link_lo;
+logic [mem_noc_ral_link_width_lp-1:0] mmio_cmd_link_li;
+logic [mem_noc_ral_link_width_lp-1:0] mmio_cmd_link_lo;
+logic [mem_noc_ral_link_width_lp-1:0] mmio_resp_link_li;
+logic [mem_noc_ral_link_width_lp-1:0] mmio_resp_link_lo;
 
 bp_tile_mesh
  #(.cfg_p(cfg_p))
@@ -81,11 +85,12 @@ bp_tile_mesh
    ,.tile_cord_i(tile_cord_i)
    ,.dram_cord_i(dram_cord_i)
    ,.mmio_cord_i(mmio_cord_i)
+   ,.host_cord_i(host_cord_i)
 
-   ,.cmd_link_i(tile_cmd_link_li)
-   ,.cmd_link_o(tile_cmd_link_lo)
-   ,.resp_link_i(tile_resp_link_li)
-   ,.resp_link_o(tile_resp_link_lo)
+   ,.cmd_link_i(tile_cmd_link_i)
+   ,.cmd_link_o(tile_cmd_link_o)
+   ,.resp_link_i(tile_resp_link_i)
+   ,.resp_link_o(tile_resp_link_o)
    );
 
 bp_mmio_enclave
@@ -103,37 +108,17 @@ bp_mmio_enclave
    ,.external_irq_o(external_irq_lo)
 
    ,.my_cord_i(mmio_cord_i)
+   // TODO: Configurable?
+   ,.my_cid_i(mem_noc_cid_width_p'(1))
    ,.dram_cord_i(dram_cord_i)
    ,.mmio_cord_i(mmio_cord_i)
+   ,.host_cord_i(host_cord_i)
 
-   ,.cmd_link_i(mmio_cmd_link_li)
-   ,.cmd_link_o(mmio_cmd_link_lo)
-   ,.resp_link_i(mmio_resp_link_li)
-   ,.resp_link_o(mmio_resp_link_lo)
+   ,.cmd_link_i(mmio_cmd_link_i)
+   ,.cmd_link_o(mmio_cmd_link_o)
+   ,.resp_link_i(mmio_resp_link_i)
+   ,.resp_link_o(mmio_resp_link_o)
    );
-
-for (genvar i = 0; i < num_routers_lp; i++)
-  begin : rof1
-    if (i == mmio_x_pos_p)
-      begin : mmio
-        assign mmio_cmd_link_li = cmd_link_i[i];
-        assign cmd_link_o[i]    = mmio_cmd_link_lo;
-
-        assign mmio_resp_link_li = resp_link_i[i];
-        assign resp_link_o[i]    = mmio_resp_link_lo;
-      end
-    else
-      begin : tile
-        // We subtract 1 if we're past the mmio, so that the slice lines up with bp_top
-        localparam tile_pos_lp = (i < mmio_x_pos_p) ? i : i-1;
-
-        assign tile_cmd_link_li[tile_pos_lp] = cmd_link_i[i];
-        assign cmd_link_o[i]                 = tile_cmd_link_lo[tile_pos_lp];
-
-        assign tile_resp_link_li[tile_pos_lp] = resp_link_i[i];
-        assign resp_link_o[i]                 = tile_resp_link_lo[tile_pos_lp];
-      end
-  end
 
 endmodule
 

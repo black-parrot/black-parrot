@@ -1,13 +1,13 @@
 ## Set common environment variables
 TOP ?= $(shell git rev-parse --show-toplevel)
 
-BSG_IP_CORES_DIR ?= $(TOP)/basejump_stl
-BP_COMMON_DIR    ?= $(TOP)/bp_common
-BP_FE_DIR        ?= $(TOP)/bp_fe
-BP_BE_DIR        ?= $(TOP)/bp_be
-BP_ME_DIR        ?= $(TOP)/bp_me
-BP_TOP_DIR       ?= $(TOP)/bp_top
-BP_EXTERNAL_DIR  ?= $(TOP)/external
+export BSG_IP_CORES_DIR ?= $(TOP)/basejump_stl
+export BP_COMMON_DIR    ?= $(TOP)/bp_common
+export BP_FE_DIR        ?= $(TOP)/bp_fe
+export BP_BE_DIR        ?= $(TOP)/bp_be
+export BP_ME_DIR        ?= $(TOP)/bp_me
+export BP_TOP_DIR       ?= $(TOP)/bp_top
+export BP_EXTERNAL_DIR  ?= $(TOP)/external
 
 ## Setup CAD tools
 
@@ -33,7 +33,4 @@ SYSTEMC_LIBDIR  ?= $(BP_EXTERNAL_DIR)/lib-linux64
 ## Add external tools and libraries to environment
 PATH            := $(BP_EXTERNAL_DIR)/bin:$(PATH)
 LD_LIBRARY_PATH := $(SYSTEMC_LIBDIR):$(LD_LIBRARY_PATH)
-
-# Exports variables to subprocesses. Then, we can e.g. use BP_FE_DIR in flists
-.EXPORT_ALL_VARIABLES:
 
