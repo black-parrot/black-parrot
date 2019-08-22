@@ -21,19 +21,21 @@ module bp_me_wormhole_packet_encode_mem_resp
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
     , localparam mem_resp_payload_width_lp =
-        `bp_mem_wormhole_payload_width(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_cce_resp_width_lp)
+        `bp_mem_wormhole_payload_width(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, mem_cce_resp_width_lp)
     , localparam mem_resp_packet_width_lp = 
-        `bsg_wormhole_router_packet_width(mem_noc_cord_width_p, mem_noc_len_width_p, mem_resp_payload_width_lp)
+        `bsg_wormhole_concentrator_packet_width(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p, mem_resp_payload_width_lp)
     )
    (input [mem_cce_resp_width_lp-1:0]       mem_resp_i
     , input [mem_noc_cord_width_p-1:0]      src_cord_i
+    , input [mem_noc_cid_width_p-1:0]       src_cid_i
     , input [mem_noc_cord_width_p-1:0]      dst_cord_i
+    , input [mem_noc_cid_width_p-1:0]       dst_cid_i
     , output [mem_resp_packet_width_lp-1:0] packet_o
     );
 
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
-  `declare_bp_mem_wormhole_payload_s(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_cce_resp_width_lp, bp_resp_wormhole_payload_s);
-  `declare_bsg_wormhole_router_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, $bits(bp_resp_wormhole_payload_s), bp_resp_wormhole_packet_s);
+  `declare_bp_mem_wormhole_payload_s(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, mem_cce_resp_width_lp, bp_resp_wormhole_payload_s);
+  `declare_bsg_wormhole_concentrator_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p, $bits(bp_resp_wormhole_payload_s), bp_resp_wormhole_packet_s);
 
   bp_mem_cce_resp_s mem_resp_cast_i;
   bp_resp_wormhole_packet_s packet_cast_o;
@@ -44,21 +46,21 @@ module bp_me_wormhole_packet_encode_mem_resp
   bp_resp_wormhole_payload_s payload_li;
 
   localparam mem_resp_ack_len_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data), mem_noc_width_p) - 1;
+    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data), mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_1_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*1, mem_noc_width_p) - 1;
+    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*1, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_2_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*2, mem_noc_width_p) - 1;
+    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*2, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_4_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*4, mem_noc_width_p) - 1;
+    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*4, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_8_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*8, mem_noc_width_p) - 1;
+    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*8, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_16_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*16, mem_noc_width_p) - 1;
+    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*16, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_32_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*32, mem_noc_width_p) - 1;
+    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*32, mem_noc_flit_width_p) - 1;
   localparam mem_resp_data_len_64_lp =
-    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*64, mem_noc_width_p) - 1;
+    `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data) + 8*64, mem_noc_flit_width_p) - 1;
 
   logic [mem_noc_len_width_p-1:0] data_resp_len_li;
 
@@ -66,8 +68,10 @@ module bp_me_wormhole_packet_encode_mem_resp
     payload_li.data = mem_resp_i;
     payload_li.reserved = '0;
     payload_li.src_cord = src_cord_i;
+    payload_li.src_cid = src_cid_i;
 
     packet_cast_o.payload = payload_li;
+    packet_cast_o.cid     = dst_cid_i;
     packet_cast_o.cord    = dst_cord_i;
 
     case (mem_resp_cast_i.size)

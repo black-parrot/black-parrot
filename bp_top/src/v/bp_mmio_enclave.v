@@ -1,4 +1,3 @@
-
 /*
  * Note: Should rename to I/O enclave and instantiate CLINT and CFG submodules
  */
@@ -19,15 +18,17 @@ module bp_mmio_enclave
    , parameter irq_pipe_depth_p = 4
    , parameter cfg_pipe_depth_p = 4
 
-   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_width_p)
+   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
    )
   (input                                           clk_i
    , input                                         reset_i
 
    // BP side
    , input [mem_noc_cord_width_p-1:0]              my_cord_i
+   , input [mem_noc_cid_width_p-1:0]               my_cid_i
    , input [mem_noc_cord_width_p-1:0]              dram_cord_i
    , input [mem_noc_cord_width_p-1:0]              mmio_cord_i
+   , input [mem_noc_cord_width_p-1:0]              host_cord_i
 
    , input [mem_noc_ral_link_width_lp-1:0]         cmd_link_i
    , output [mem_noc_ral_link_width_lp-1:0]        cmd_link_o
@@ -48,15 +49,12 @@ module bp_mmio_enclave
 
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 
-bp_cce_mem_cmd_s       mem_cmd_i;
-logic                  mem_cmd_v_i, mem_cmd_yumi_o;
-bp_mem_cce_resp_s      mem_resp_o;
-logic                  mem_resp_v_o, mem_resp_ready_i;
-
 // Cast ports
-bp_cce_mem_cmd_s       mem_cmd_cast_i;
+bp_cce_mem_cmd_s mem_cmd_li;
+logic mem_cmd_v_li, mem_cmd_yumi_lo;
 
-assign mem_cmd_cast_i = mem_cmd_i;
+bp_mem_cce_resp_s mem_resp_lo;
+logic mem_resp_v_lo, mem_resp_ready_li;
 
 localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
 
@@ -75,15 +73,15 @@ always_comb
     mtime_cmd_v         = 1'b0;
     plic_cmd_v          = 1'b0;
 
-    wr_not_rd = mem_cmd_cast_i.msg_type inside {e_cce_mem_wb, e_cce_mem_uc_wr};
+    wr_not_rd = mem_cmd_li.msg_type inside {e_cce_mem_wb, e_cce_mem_uc_wr};
 
     unique 
-    casez (mem_cmd_cast_i.addr)
-      cfg_link_dev_base_addr_gp: cfg_cmd_v      = mem_cmd_v_i;
-      mipi_reg_base_addr_gp    : mipi_cmd_v     = mem_cmd_v_i;
-      mtimecmp_reg_base_addr_gp: mtimecmp_cmd_v = mem_cmd_v_i;
-      mtime_reg_addr_gp        : mtime_cmd_v    = mem_cmd_v_i;
-      plic_reg_base_addr_gp    : plic_cmd_v     = mem_cmd_v_i;
+    casez (mem_cmd_li.addr)
+      cfg_link_dev_base_addr_gp: cfg_cmd_v      = mem_cmd_v_li;
+      mipi_reg_base_addr_gp    : mipi_cmd_v     = mem_cmd_v_li;
+      mtimecmp_reg_base_addr_gp: mtimecmp_cmd_v = mem_cmd_v_li;
+      mtime_reg_addr_gp        : mtime_cmd_v    = mem_cmd_v_li;
+      plic_reg_base_addr_gp    : plic_cmd_v     = mem_cmd_v_li;
       default: begin end
     endcase
   end
@@ -96,7 +94,7 @@ logic [num_core_p-1:0] plic_v_li;
 // Low 8 bits are core id for MMIO addresses
 localparam byte_offset_width_lp = 3;
 wire [lg_num_core_lp-1:0] mem_cmd_core_enc = 
-  mem_cmd_cast_i.addr[byte_offset_width_lp+:lg_num_core_lp];
+  mem_cmd_li.addr[byte_offset_width_lp+:lg_num_core_lp];
 
 bsg_decode_with_v
  #(.num_out_p(num_core_p))
@@ -128,7 +126,7 @@ bsg_decode_with_v
 logic [dword_width_p-1:0] mtime_n, mtime_r;
 wire mtime_w_v_li = mtime_cmd_v;
 assign mtime_n    = mtime_w_v_li 
-                    ? mem_cmd_cast_i.data[0+:dword_width_p] 
+                    ? mem_cmd_li.data[0+:dword_width_p] 
                     : mtime_r + dword_width_p'(1);
   bsg_dff_reset
    #(.width_p(dword_width_p))
@@ -145,10 +143,11 @@ logic [num_core_p-1:0]                    mipi_n, mipi_r;
 logic [num_core_p-1:0]                    plic_n, plic_r;
 
 // cfg link to tile
+// TODO: cfg_link payload should be a struct
 logic [num_core_p-1:0]      cfg_w_v_li;
-wire [cfg_core_width_p-1:0] cfg_core_li      = mem_cmd_cast_i.data[cfg_data_width_p+cfg_addr_width_p+:cfg_core_width_p];
-wire [cfg_addr_width_p-1:0] cfg_addr_li      = mem_cmd_cast_i.data[cfg_data_width_p+:cfg_addr_width_p];
-wire [cfg_data_width_p-1:0] cfg_data_li      = mem_cmd_cast_i.data[0+:cfg_data_width_p];
+wire [cfg_core_width_p-1:0] cfg_core_li      = mem_cmd_li.data[cfg_data_width_p+cfg_addr_width_p+:cfg_core_width_p];
+wire [cfg_addr_width_p-1:0] cfg_addr_li      = mem_cmd_li.data[cfg_data_width_p+:cfg_addr_width_p];
+wire [cfg_data_width_p-1:0] cfg_data_li      = mem_cmd_li.data[0+:cfg_data_width_p];
 wire                        cfg_broadcast_li = cfg_cmd_v & (cfg_core_li == '1);
 
 bsg_decode_with_v
@@ -161,7 +160,7 @@ bsg_decode_with_v
 
 for (genvar i = 0; i < num_core_p; i++)
   begin : rof1
-    assign mtimecmp_n[i] = mem_cmd_cast_i.data[0+:dword_width_p];
+    assign mtimecmp_n[i] = mem_cmd_li.data[0+:dword_width_p];
     wire mtimecmp_w_v_li = wr_not_rd & mtimecmp_cmd_v;
     bsg_dff_reset_en
      #(.width_p(dword_width_p))
@@ -185,7 +184,7 @@ for (genvar i = 0; i < num_core_p; i++)
        ,.data_o(timer_irq_o[i])
        );
 
-    assign mipi_n[i] = mem_cmd_cast_i.data[0];
+    assign mipi_n[i] = mem_cmd_li.data[0];
     wire mipi_w_v_li = wr_not_rd & mipi_cmd_v;
     bsg_dff_reset_en
      #(.width_p(1))
@@ -209,7 +208,7 @@ for (genvar i = 0; i < num_core_p; i++)
        ,.data_o(soft_irq_o[i])
        );
 
-    assign plic_n[i] = mem_cmd_cast_i.data[0];
+    assign plic_n[i] = mem_cmd_li.data[0];
     wire plic_w_v_li = wr_not_rd & plic_cmd_v;
     bsg_dff_reset_en
      #(.width_p(1))
@@ -288,107 +287,40 @@ wire [dword_width_p-1:0] rdata_lo = plic_cmd_v
                                         ? mtimecmp_lo 
                                         : mtime_r;
 
-// Possibly unnecessary, if we convert the WH adapter to buffer in both directions,
-//   rather than sending in 1 cycle and receiving in the next
-
-bp_mem_cce_resp_s mem_resp_lo;
-logic mem_resp_v_lo, mem_resp_ready_lo;
-assign mem_cmd_yumi_o = mem_cmd_v_i & mem_resp_ready_lo;
-bsg_one_fifo
- #(.width_p(mem_cce_resp_width_lp))
- mem_resp_buffer
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-
-   ,.data_i(mem_resp_lo)
-   ,.v_i(mem_cmd_yumi_o)
-   ,.ready_o(mem_resp_ready_lo)
-
-   ,.data_o(mem_resp_o)
-   ,.v_o(mem_resp_v_lo)
-   ,.yumi_i(mem_resp_ready_i & mem_resp_v_lo)
-   );
-assign mem_resp_v_o = mem_resp_ready_i & mem_resp_v_lo;
-
 assign mem_resp_lo =
-  '{msg_type       : mem_cmd_cast_i.msg_type
-    ,addr          : mem_cmd_cast_i.addr
-    ,payload       : mem_cmd_cast_i.payload
-    ,size          : mem_cmd_cast_i.size
+  '{msg_type       : mem_cmd_li.msg_type
+    ,addr          : mem_cmd_li.addr
+    ,payload       : mem_cmd_li.payload
+    ,size          : mem_cmd_li.size
     ,data          : rdata_lo
     };
 
-
 // CCE-MEM IF to wormhole link conversion
-`declare_bsg_ready_and_link_sif_s(mem_noc_width_p, bsg_ready_and_link_sif_s);
-bsg_ready_and_link_sif_s cmd_link_cast_i, cmd_link_cast_o;
-bsg_ready_and_link_sif_s resp_link_cast_i, resp_link_cast_o;
-
-assign cmd_link_cast_i  = cmd_link_i;
-assign cmd_link_o       = cmd_link_cast_o;
-
-assign resp_link_cast_i = resp_link_i;
-assign resp_link_o      = resp_link_cast_o;
-
-// Not used at the moment by bp_mmio_enclave, stubbed
-bsg_ready_and_link_sif_s wh_master_link_li, wh_master_link_lo;
-bp_me_cce_to_wormhole_link_master
- #(.cfg_p(cfg_p))
- master_link
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-
-   ,.mem_cmd_i('0)
-   ,.mem_cmd_v_i('0)
-   ,.mem_cmd_yumi_o()
-
-   ,.mem_resp_o()
-   ,.mem_resp_v_o()
-   ,.mem_resp_ready_i('1)
-
-   ,.my_cord_i(my_cord_i)
-   ,.mem_cmd_dest_cord_i('0)
-
-   ,.link_i(wh_master_link_li)
-   ,.link_o(wh_master_link_lo)
-   );
-
-bsg_ready_and_link_sif_s wh_client_link_li, wh_client_link_lo;
+assign mem_cmd_yumi_lo = mem_cmd_v_li & mem_resp_ready_li;
+assign mem_resp_v_lo = mem_cmd_yumi_lo;
 bp_me_cce_to_wormhole_link_client
  #(.cfg_p(cfg_p))
  client_link
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.mem_cmd_o(mem_cmd_i)
-   ,.mem_cmd_v_o(mem_cmd_v_i)
-   ,.mem_cmd_yumi_i(mem_cmd_yumi_o)
+   ,.mem_cmd_o(mem_cmd_li)
+   ,.mem_cmd_v_o(mem_cmd_v_li)
+   ,.mem_cmd_yumi_i(mem_cmd_yumi_lo)
 
-   ,.mem_resp_i(mem_resp_o)
-   ,.mem_resp_v_i(mem_resp_v_o)
-   ,.mem_resp_ready_o(mem_resp_ready_i)
+   ,.mem_resp_i(mem_resp_lo)
+   ,.mem_resp_v_i(mem_resp_v_lo)
+   ,.mem_resp_ready_o(mem_resp_ready_li)
 
    ,.my_cord_i(my_cord_i)
+   ,.my_cid_i(my_cid_i)
 
-   ,.link_i(wh_client_link_li)
-   ,.link_o(wh_client_link_lo)
+   ,.cmd_link_i(cmd_link_i)
+   ,.cmd_link_o(cmd_link_o)
+
+   ,.resp_link_i(resp_link_i)
+   ,.resp_link_o(resp_link_o)
    );
 
-assign wh_client_link_li.v             = cmd_link_cast_i.v;
-assign wh_client_link_li.data          = cmd_link_cast_i.data;
-assign wh_client_link_li.ready_and_rev = resp_link_cast_i.ready_and_rev;
-
-assign wh_master_link_li.v             = resp_link_cast_i.v;
-assign wh_master_link_li.data          = resp_link_cast_i.data;
-assign wh_master_link_li.ready_and_rev = cmd_link_cast_i.ready_and_rev;
-
-assign resp_link_cast_o.v = wh_client_link_lo.v;
-assign resp_link_cast_o.data = wh_client_link_lo.data;
-assign resp_link_cast_o.ready_and_rev = wh_master_link_lo.ready_and_rev;
-
-assign cmd_link_cast_o.v = wh_master_link_lo.v;
-assign cmd_link_cast_o.data = wh_master_link_lo.data;
-assign cmd_link_cast_o.ready_and_rev = wh_client_link_lo.ready_and_rev;
-
-endmodule : bp_mmio_enclave
+endmodule
 

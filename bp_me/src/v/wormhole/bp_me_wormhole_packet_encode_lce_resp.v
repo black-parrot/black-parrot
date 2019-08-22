@@ -17,23 +17,15 @@ module bp_me_wormhole_packet_encode_lce_resp
     `declare_bp_proc_params(cfg_p)
     `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
-    // Generalized Wormhole Router parameters
-    , localparam dims_lp                                = 2
-    , localparam coh_x_cord_width_lp                    = `BSG_SAFE_CLOG2(num_lce_p)
-    , localparam coh_y_cord_width_lp                    = 1
-    , localparam int coh_cord_markers_pos_lp[dims_lp:0] =
-     '{ coh_x_cord_width_lp+coh_y_cord_width_lp, coh_x_cord_width_lp, 0 }
-    , localparam coh_cord_width_lp = coh_cord_markers_pos_lp[dims_lp]
-
     , localparam lce_cce_resp_packet_width_lp = 
-        `bsg_wormhole_router_packet_width(coh_cord_width_lp, coh_noc_len_width_p, lce_cce_resp_width_lp)
+        `bsg_wormhole_concentrator_packet_width(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_resp_width_lp)
     )
    (input [lce_cce_resp_width_lp-1:0]           payload_i
     , output [lce_cce_resp_packet_width_lp-1:0] packet_o
     );
 
   `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
-  `declare_bsg_wormhole_router_packet_s(coh_cord_width_lp, coh_noc_len_width_p, lce_cce_resp_width_lp, lce_cce_resp_packet_s);
+  `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_resp_width_lp, lce_cce_resp_packet_s);
 
   bp_lce_cce_resp_s payload_cast_i;
   lce_cce_resp_packet_s packet_cast_o;
@@ -41,14 +33,14 @@ module bp_me_wormhole_packet_encode_lce_resp
   assign packet_o = packet_cast_o;
 
   localparam lce_cce_resp_ack_len_lp =
-    `BSG_CDIV(lce_cce_resp_packet_width_lp-$bits(payload_cast_i.msg.data), coh_noc_width_p) - 1;
+    `BSG_CDIV(lce_cce_resp_packet_width_lp-$bits(payload_cast_i.msg.data), coh_noc_flit_width_p) - 1;
   localparam lce_cce_resp_wb_len_lp =
-    `BSG_CDIV(lce_cce_resp_packet_width_lp, coh_noc_width_p) - 1;
+    `BSG_CDIV(lce_cce_resp_packet_width_lp, coh_noc_flit_width_p) - 1;
 
   always_comb begin
     packet_cast_o.payload = payload_cast_i;
-    // Multiply by two because CCEs are on every other router
-    packet_cast_o.cord    = payload_cast_i.dst_id << 1'b1;
+    packet_cast_o.cid     = 0;
+    packet_cast_o.cord    = payload_cast_i.dst_id;
 
     case (payload_cast_i.msg_type)
       e_lce_cce_sync_ack
