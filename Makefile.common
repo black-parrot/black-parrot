@@ -27,10 +27,10 @@ VERILATOR ?= verilator
 DC_SHELL  ?= dc_shell
 
 ## Needed for verilator g++ compilations
-SYSTEMC_INCLUDE ?= $(BP_EXTERNAL_DIR)/include
-SYSTEMC_LIBDIR  ?= $(BP_EXTERNAL_DIR)/lib-linux64
+export SYSTEMC_INCLUDE ?= $(BP_EXTERNAL_DIR)/include
+export SYSTEMC_LIBDIR  ?= $(BP_EXTERNAL_DIR)/lib-linux64
 
 ## Add external tools and libraries to environment
-PATH            := $(BP_EXTERNAL_DIR)/bin:$(PATH)
-LD_LIBRARY_PATH := $(SYSTEMC_LIBDIR):$(LD_LIBRARY_PATH)
+export PATH            := $(BP_EXTERNAL_DIR)/bin:$(PATH)
+export LD_LIBRARY_PATH := $(SYSTEMC_LIBDIR):$(LD_LIBRARY_PATH)
 
