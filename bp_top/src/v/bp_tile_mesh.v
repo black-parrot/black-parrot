@@ -21,10 +21,6 @@ module bp_tile_mesh
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
-   // Tile parameters
-   , localparam num_tiles_lp = num_core_p
-   , localparam num_routers_lp = num_tiles_lp+1
-   
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
 
@@ -68,80 +64,87 @@ module bp_tile_mesh
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
 `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, coh_noc_ral_link_s);
 
-coh_noc_ral_link_s [num_core_p:0][E:W] lce_req_link_stitch_lo, lce_req_link_stitch_li;
-coh_noc_ral_link_s [num_core_p:0][E:W] lce_resp_link_stitch_lo, lce_resp_link_stitch_li;
-coh_noc_ral_link_s [num_core_p:0][E:W] lce_cmd_link_stitch_lo, lce_cmd_link_stitch_li;
+coh_noc_ral_link_s [num_core_p:0][coh_noc_dirs_p-1:W] lce_req_link_stitch_lo, lce_req_link_stitch_li;
+coh_noc_ral_link_s [num_core_p:0][coh_noc_dirs_p-1:W] lce_resp_link_stitch_lo, lce_resp_link_stitch_li;
+coh_noc_ral_link_s [num_core_p:0][coh_noc_dirs_p-1:W] lce_cmd_link_stitch_lo, lce_cmd_link_stitch_li;
 
-/************************* BP Tiles *************************/
-assign lce_req_link_stitch_lo[0][W]                = '0;
-assign lce_resp_link_stitch_lo[0][W]               = '0;
-assign lce_cmd_link_stitch_lo[0][W]                = '0;
+if (coh_noc_dims_p > 0)
+  begin : stub_EW
+    assign lce_req_link_stitch_lo[0][W]                = '0;
+    assign lce_resp_link_stitch_lo[0][W]               = '0;
+    assign lce_cmd_link_stitch_lo[0][W]                = '0;
 
-assign lce_req_link_stitch_li[num_core_p][W]       = '0;
-assign lce_resp_link_stitch_li[num_core_p][W]      = '0;
-assign lce_cmd_link_stitch_li[num_core_p][W]       = '0;
+    assign lce_req_link_stitch_li[num_core_p][W]       = '0;
+    assign lce_resp_link_stitch_li[num_core_p][W]      = '0;
+    assign lce_cmd_link_stitch_li[num_core_p][W]       = '0;
+  end
+
+if (coh_noc_dims_p > 1)
+  begin : stub_NS
+    assign lce_req_link_stitch_lo[0][N]                = '0;
+    assign lce_resp_link_stitch_lo[0][N]               = '0;
+    assign lce_cmd_link_stitch_lo[0][N]                = '0;
+
+    assign lce_req_link_stitch_li[num_core_p][N]       = '0;
+    assign lce_resp_link_stitch_li[num_core_p][N]      = '0;
+    assign lce_cmd_link_stitch_li[num_core_p][N]       = '0;
+  end
 
 for(genvar i = 0; i < num_core_p; i++) 
   begin : rof1
-    localparam core_id   = i;
-    localparam cce_id    = i;
-    localparam icache_id = (i * 2 + 0);
-    localparam dcache_id = (i * 2 + 1);
-
-    localparam core_id_width_lp = `BSG_SAFE_CLOG2(num_core_p);
-    localparam cce_id_width_lp  = `BSG_SAFE_CLOG2(num_cce_p);
-    localparam lce_id_width_lp  = `BSG_SAFE_CLOG2(num_lce_p);
-
     bp_proc_cfg_s proc_cfg;
-    assign proc_cfg.core_id   = core_id[0+:core_id_width_lp];
-    assign proc_cfg.cce_id    = cce_id[0+:cce_id_width_lp];
-    assign proc_cfg.icache_id = icache_id[0+:lce_id_width_lp];
-    assign proc_cfg.dcache_id = dcache_id[0+:lce_id_width_lp];
+    assign proc_cfg.core_id   = i;
+    assign proc_cfg.cce_id    = i;
+    assign proc_cfg.icache_id = (i*2 + 0);
+    assign proc_cfg.dcache_id = (i*2 + 1);
 
-    bsg_noc_repeater_node
-     #(.width_p(coh_noc_flit_width_p)
-       ,.num_nodes_p(repeater_depth_lp[i])
-       )
-     lce_req_repeater
-      (.clk_i(clk_i)
-       ,.side_A_reset_i(reset_i)
+  for (genvar j = 0; j < coh_noc_dims_p; j++)
+    begin : rof2
+      bsg_noc_repeater_node
+       #(.width_p(coh_noc_flit_width_p)
+         ,.num_nodes_p(repeater_depth_lp[i])
+         )
+       lce_req_repeater
+        (.clk_i(clk_i)
+         ,.side_A_reset_i(reset_i)
 
-       ,.side_A_links_i(lce_req_link_stitch_li[i][E])
-       ,.side_A_links_o(lce_req_link_stitch_lo[i][E])
+         ,.side_A_links_i(lce_req_link_stitch_li[i][E+2*j])
+         ,.side_A_links_o(lce_req_link_stitch_lo[i][E+2*j])
 
-       ,.side_B_links_i(lce_req_link_stitch_li[i+1][W])
-       ,.side_B_links_o(lce_req_link_stitch_lo[i+1][W])
-       );
+         ,.side_B_links_i(lce_req_link_stitch_li[i+1][W+2*j])
+         ,.side_B_links_o(lce_req_link_stitch_lo[i+1][W+2*j])
+         );
 
-    bsg_noc_repeater_node
-     #(.width_p(coh_noc_flit_width_p)
-       ,.num_nodes_p(repeater_depth_lp[i])
-       )
-     lce_cmd_repeater
-      (.clk_i(clk_i)
-       ,.side_A_reset_i(reset_i)
+      bsg_noc_repeater_node
+       #(.width_p(coh_noc_flit_width_p)
+         ,.num_nodes_p(repeater_depth_lp[i])
+         )
+       lce_cmd_repeater
+        (.clk_i(clk_i)
+         ,.side_A_reset_i(reset_i)
 
-       ,.side_A_links_i(lce_cmd_link_stitch_li[i][E])
-       ,.side_A_links_o(lce_cmd_link_stitch_lo[i][E])
+         ,.side_A_links_i(lce_cmd_link_stitch_li[i][E+2*j])
+         ,.side_A_links_o(lce_cmd_link_stitch_lo[i][E+2*j])
 
-       ,.side_B_links_i(lce_cmd_link_stitch_li[i+1][W])
-       ,.side_B_links_o(lce_cmd_link_stitch_lo[i+1][W])
-       );
+         ,.side_B_links_i(lce_cmd_link_stitch_li[i+1][W+2*j])
+         ,.side_B_links_o(lce_cmd_link_stitch_lo[i+1][W+2*j])
+         );
 
-    bsg_noc_repeater_node
-     #(.width_p(coh_noc_flit_width_p)
-       ,.num_nodes_p(repeater_depth_lp[i])
-       )
-     lce_resp_repeater
-      (.clk_i(clk_i)
-       ,.side_A_reset_i(reset_i)
+      bsg_noc_repeater_node
+       #(.width_p(coh_noc_flit_width_p)
+         ,.num_nodes_p(repeater_depth_lp[i])
+         )
+       lce_resp_repeater
+        (.clk_i(clk_i)
+         ,.side_A_reset_i(reset_i)
 
-       ,.side_A_links_i(lce_resp_link_stitch_li[i][E])
-       ,.side_A_links_o(lce_resp_link_stitch_lo[i][E])
+         ,.side_A_links_i(lce_resp_link_stitch_li[i][E+2*j])
+         ,.side_A_links_o(lce_resp_link_stitch_lo[i][E+2*j])
 
-       ,.side_B_links_i(lce_resp_link_stitch_li[i+1][W])
-       ,.side_B_links_o(lce_resp_link_stitch_lo[i+1][W])
-       );
+         ,.side_B_links_i(lce_resp_link_stitch_li[i+1][W+2*j])
+         ,.side_B_links_o(lce_resp_link_stitch_lo[i+1][W+2*j])
+         );
+    end
 
     bp_tile
      #(.cfg_p(cfg_p))

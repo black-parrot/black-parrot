@@ -35,8 +35,8 @@ module wrapper
    );
 
   //synopsys translate_off
-  if (coh_noc_dims_p != mem_noc_dims_p)
-    $fatal("Coherence and memory networks should be same dimensionality!");
+  //if (coh_noc_dims_p != mem_noc_dims_p)
+  //  $fatal("Coherence and memory networks should be same dimensionality!");
   //synopsys translate_on
 
   bp_chip

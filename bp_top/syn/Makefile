@@ -36,7 +36,11 @@ else ifeq ($(CFG), e_bp_oct_core_cfg)
 else ifeq ($(CFG), e_bp_sexta_core_cfg)
   NUM_LCE_P=32
   N_WG=4
+else ifeq ($(CFG), e_bp_quad_core_2d_cfg)
+  NUM_LCE_P=8
+  N_WG=16
 endif
+
 
 COH_PROTO   ?= mesi
 CCE_MEM_PATH = $(BP_ME_DIR)/src/asm/roms/$(COH_PROTO)

@@ -190,26 +190,17 @@ bp_cce_top
 `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
 
 // Intermediate 'stitch' connections between the routers
-bp_coh_ready_and_link_s [coh_noc_dirs_p-1:P] lce_req_link_i_stitch, lce_req_link_o_stitch;
-bp_coh_ready_and_link_s [coh_noc_dirs_p-1:P] lce_resp_link_i_stitch, lce_resp_link_o_stitch;
-bp_coh_ready_and_link_s [coh_noc_dirs_p-1:P] lce_cmd_link_i_stitch, lce_cmd_link_o_stitch;
+bp_coh_ready_and_link_s [coh_noc_dirs_p-1:P] lce_req_link_cast_i, lce_req_link_cast_o;
+bp_coh_ready_and_link_s [coh_noc_dirs_p-1:P] lce_resp_link_cast_i, lce_resp_link_cast_o;
+bp_coh_ready_and_link_s [coh_noc_dirs_p-1:P] lce_cmd_link_cast_i, lce_cmd_link_cast_o;
 
-// Stitch together I$ and D$
-assign lce_req_link_i_stitch[E]  = lce_req_link_i[E];
-assign lce_resp_link_i_stitch[E] = lce_resp_link_i[E];
-assign lce_cmd_link_i_stitch[E]  = lce_cmd_link_i[E];
+assign lce_req_link_cast_i[coh_noc_dirs_p-1:W]  = lce_req_link_i;
+assign lce_cmd_link_cast_i[coh_noc_dirs_p-1:W]  = lce_cmd_link_i;
+assign lce_resp_link_cast_i[coh_noc_dirs_p-1:W] = lce_resp_link_i;
 
-assign lce_req_link_o[W]  = lce_req_link_o_stitch[W];
-assign lce_resp_link_o[W] = lce_resp_link_o_stitch[W];
-assign lce_cmd_link_o[W]  = lce_cmd_link_o_stitch[W];
-
-assign lce_req_link_i_stitch[W]  = lce_req_link_i[W];
-assign lce_resp_link_i_stitch[W] = lce_resp_link_i[W];
-assign lce_cmd_link_i_stitch[W]  = lce_cmd_link_i[W];
-
-assign lce_req_link_o[E]  = lce_req_link_o_stitch[E];
-assign lce_resp_link_o[E] = lce_resp_link_o_stitch[E];
-assign lce_cmd_link_o[E]  = lce_cmd_link_o_stitch[E];
+assign lce_req_link_o  = lce_req_link_cast_o[coh_noc_dirs_p-1:W];
+assign lce_cmd_link_o  = lce_cmd_link_cast_o[coh_noc_dirs_p-1:W];
+assign lce_resp_link_o = lce_resp_link_cast_o[coh_noc_dirs_p-1:W];
 
 `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_req_width_lp, lce_req_packet_s);
 `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_resp_width_lp, lce_resp_packet_s);
@@ -321,7 +312,7 @@ for (genvar i = 0; i < 2; i++)
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
   
-    ,.link_i(lce_req_link_o_stitch[P])
+    ,.link_i(lce_req_link_cast_o[P])
     ,.link_o(cce_lce_req_link_lo)
   
     ,.packet_o(cce_lce_req_packet_li)
@@ -367,7 +358,7 @@ for (genvar i = 0; i < 2; i++)
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
   
-    ,.link_i(lce_resp_link_o_stitch[P])
+    ,.link_i(lce_resp_link_cast_o[P])
     ,.link_o(cce_lce_resp_link_lo)
   
     ,.packet_o(cce_lce_resp_packet_li)
@@ -380,8 +371,8 @@ for (genvar i = 0; i < 2; i++)
   bp_coh_ready_and_link_s cmd_concentrated_link_li, cmd_concentrated_link_lo;
   bp_coh_ready_and_link_s resp_concentrated_link_li, resp_concentrated_link_lo;
 
-  assign req_concentrated_link_li = lce_req_link_o_stitch[P];
-  assign lce_req_link_i_stitch[P] = '{data          : req_concentrated_link_lo.data
+  assign req_concentrated_link_li = lce_req_link_cast_o[P];
+  assign lce_req_link_cast_i[P] = '{data          : req_concentrated_link_lo.data
                                       ,v            : req_concentrated_link_lo.v
                                       ,ready_and_rev: cce_lce_req_link_lo.ready_and_rev
                                       };
@@ -403,8 +394,8 @@ for (genvar i = 0; i < 2; i++)
      ,.concentrated_link_o(req_concentrated_link_lo)
      );
 
-  assign cmd_concentrated_link_li = lce_cmd_link_o_stitch[P];
-  assign lce_cmd_link_i_stitch[P] = cmd_concentrated_link_lo;
+  assign cmd_concentrated_link_li = lce_cmd_link_cast_o[P];
+  assign lce_cmd_link_cast_i[P] = cmd_concentrated_link_lo;
   bsg_wormhole_concentrator
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.len_width_p(coh_noc_len_width_p)
@@ -423,8 +414,8 @@ for (genvar i = 0; i < 2; i++)
      ,.concentrated_link_o(cmd_concentrated_link_lo)
      );
 
-  assign resp_concentrated_link_li = lce_resp_link_o_stitch[P];
-  assign lce_resp_link_i_stitch[P] = '{data          : resp_concentrated_link_lo.data
+  assign resp_concentrated_link_li = lce_resp_link_cast_o[P];
+  assign lce_resp_link_cast_i[P] = '{data          : resp_concentrated_link_lo.data
                                        ,v            : resp_concentrated_link_lo.v
                                        ,ready_and_rev: cce_lce_resp_link_lo.ready_and_rev
                                        };
@@ -459,8 +450,8 @@ for (genvar i = 0; i < 2; i++)
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.link_i(lce_req_link_i_stitch)
-     ,.link_o(lce_req_link_o_stitch)
+     ,.link_i(lce_req_link_cast_i)
+     ,.link_o(lce_req_link_cast_o)
 
      ,.my_cord_i(lce_id_li)
      );
@@ -477,8 +468,8 @@ for (genvar i = 0; i < 2; i++)
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.link_i(lce_cmd_link_i_stitch)
-     ,.link_o(lce_cmd_link_o_stitch)
+     ,.link_i(lce_cmd_link_cast_i)
+     ,.link_o(lce_cmd_link_cast_o)
 
      ,.my_cord_i(lce_id_li)
      );
@@ -495,8 +486,8 @@ for (genvar i = 0; i < 2; i++)
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
 
-     ,.link_i(lce_resp_link_i_stitch)
-     ,.link_o(lce_resp_link_o_stitch)
+     ,.link_i(lce_resp_link_cast_i)
+     ,.link_o(lce_resp_link_cast_o)
 
      ,.my_cord_i(lce_id_li)
      );
