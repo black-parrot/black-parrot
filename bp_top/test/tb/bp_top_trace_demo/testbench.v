@@ -21,6 +21,7 @@ module testbench
    , parameter calc_trace_p                = 0
    , parameter cce_trace_p                 = 0
    , parameter cmt_trace_p                 = 0
+   , parameter dram_trace_p                = 0
    , parameter skip_init_p                 = 0
 
    , parameter mem_load_p         = 1
@@ -187,6 +188,22 @@ bind bp_be_top
      ,.instr_cmt_i(be_calculator.calc_status.mem3_cmt_v)
 
      ,.program_finish_i(testbench.program_finish)
+     );
+
+if (dram_trace_p)
+  bp_mem_nonsynth_tracer
+   #(.cfg_p(cfg_p))
+   bp_mem_tracer
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.mem_cmd_i(dram_cmd_li)
+     ,.mem_cmd_v_i(dram_cmd_v_li)
+     ,.mem_cmd_yumi_i(dram_cmd_yumi_lo)
+
+     ,.mem_resp_i(dram_resp_lo)
+     ,.mem_resp_v_i(dram_resp_v_lo)
+     ,.mem_resp_ready_i(dram_resp_ready_li)
      );
 
 if (cce_trace_p)
