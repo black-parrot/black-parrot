@@ -44,7 +44,7 @@ assign r_ready_o = ~w_v_i;
   
 logic [lg_els_lp-1:0] cam_w_addr, cam_r_addr, victim_addr, ram_addr;
 logic                 cam_r_v;
-logic                 r_v_n, miss_v_n, en_r;
+logic                 r_v_n, miss_v_n;
 
 assign cam_w_addr                 = victim_addr;
 assign ram_addr                   = (w_v_i)? cam_w_addr : cam_r_addr;

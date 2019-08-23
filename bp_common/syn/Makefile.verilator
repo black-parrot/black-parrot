@@ -6,15 +6,13 @@ TRACEDIFF ?= $(BP_COMMON_DIR)/test/software/tracediff.py
 
 ## Tool options
 VV_OPTS  = --sc                 # Output in SystemC rather than C++
-VV_OPTS += -Wno-unoptflat       # Verilator has problems with false positive combinatorial
-                                #   loop detection e.g. bit 0 drives bit 1 of struct
 #VV_OPTS += --debug --gdbbt     # Debugs and produces stack trace
 VV_OPTS += -O3
 
 #VV_OPTS += -O1 -fstrict-aliasing # Fastest compile time options
 
-LINT_OPTS   = --lint-only
-BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --exe -CFLAGS -std=c++11 
+LINT_OPTS   = --lint-only -Wall --Wno-unoptflat --Wno-DECLFILENAME --Wno-PINCONNECTEMPTY
+BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat --exe -CFLAGS -std=c++11 
 BUILD_OPTS += -I$(BP_EXTERNAL_DIR)/share/verilator/include/vltstd/ 
 BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
 
@@ -40,11 +38,24 @@ dirs.sc:
 	$(shell mkdir -p $(LOG_DIR))
 	$(shell mkdir -p $(REPORT_DIR))
 
-lint.sc: VV_OPTS += $(LINT_OPTS)
-lint.sc: override VBUILD_LOG    = $(LOG_DIR)/$(TB).$(CFG).lint.log
-lint.sc: override VBUILD_REPORT = $(REPORT_DIR)/$(TB).$(CFG).lint.rpt
-lint.sc: override VBUILD_ERROR  = $(REPORT_DIR)/$(TB).$(CFG).lint.err
-lint.sc: verilate.sc
+LINT_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).lint.log
+LINT_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).lint.rpt
+LINT_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).lint.err
+lint.sc: dirs.sc
+	$(shell mkdir -p $(BUILD_DIR))
+	$(eval include $(TB_PATH)/$(TB)/Makefile.frag)
+	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/testbench.v > $(BUILD_DIR)/testbench.v
+	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v > $(BUILD_DIR)/wrapper.v
+	-@cat $(SYN_PATH)/lint_settings.verilator | envsubst > $(BUILD_DIR)/config.vlt
+	-@cp $(TB_PATH)/$(TB)/test_bp.cpp $(BUILD_DIR)/test_bp.cpp
+	-@grep -v -e "^\#" $(SYN_PATH)/flist.verilator       > $(BUILD_DIR)/flist.verilator 
+	-@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.verilator >> $(BUILD_DIR)/flist.verilator
+	-@echo $(BUILD_DIR)/wrapper.v                 >> $(BUILD_DIR)/flist.verilator
+	-@echo $(BUILD_DIR)/testbench.v               >> $(BUILD_DIR)/flist.verilator
+	-@echo $(BUILD_DIR)/test_bp.cpp               >> $(BUILD_DIR)/flist.verilator
+	cd $(BUILD_DIR); $(VV) $(LINT_OPTS) --top-module $(TOP_MODULE) \
+		config.vlt -f flist.verilator $(HDL_PARAMS) |& tee $(LINT_LOG)
+
 
 VBUILD_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).vbuild.log
 VBUILD_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).vbuild.rpt

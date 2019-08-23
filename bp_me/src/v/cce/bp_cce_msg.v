@@ -94,6 +94,8 @@ module bp_cce_msg
    , input [dword_width_p-1:0]                         nc_data_i
   );
 
+  wire unused = &{clk_i, reset_i};
+
   `declare_bp_cce_mshr_s(num_lce_p, lce_assoc_p, paddr_width_p);
   bp_cce_mshr_s mshr;
   assign mshr = mshr_i;

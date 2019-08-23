@@ -72,15 +72,12 @@ bp_be_calc_status_s              calc_status;
 bp_fe_cmd_s                      fe_cmd;
 logic                            fe_cmd_v;
 bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
-bp_fe_cmd_attaboy_s              fe_cmd_attaboy;
 bp_mtvec_s                       tvec;
-bp_mepc_s                        epc;
 
 assign calc_status = calc_status_i;
 assign fe_cmd_o    = fe_cmd;
 assign fe_cmd_v_o  = fe_cmd_v;
 assign tvec        = tvec_i;
-assign epc         = epc_i;
 
 // Declare intermediate signals
 logic [vaddr_width_p-1:0]               npc_plus4;
@@ -298,9 +295,9 @@ always_comb
       begin
         fe_cmd.opcode                      = e_op_attaboy;
         fe_cmd.vaddr                       = calc_status.ex1_pc;
-        fe_cmd_attaboy.branch_metadata_fwd = calc_status.int1_branch_metadata_fwd;
-        fe_cmd.operands.attaboy            = fe_cmd_attaboy;
-
+        fe_cmd.operands.attaboy            = '{branch_metadata_fwd: calc_status.int1_branch_metadata_fwd
+                                               ,default: '0
+                                               };
         fe_cmd_v = fe_cmd_ready_i;
       end
   end

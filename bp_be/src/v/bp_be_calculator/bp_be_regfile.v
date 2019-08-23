@@ -48,7 +48,6 @@ module bp_be_regfile
  import bp_be_rv64_pkg::*;
  #(// Default parameters
    parameter w_to_r_fwd_p = 0
-   , parameter harden_p = 1
    
    // Generated parameters
    // From RISC-V specifications
@@ -97,7 +96,6 @@ logic [reg_data_width_lp-1:0] rd_data_r;
 bsg_mem_2r1w_sync 
  #(.width_p(reg_data_width_lp)
    ,.els_p(rf_els_lp)
-   ,.harden_p(harden_p)
    )
  rf
   (.clk_i(clk_i)

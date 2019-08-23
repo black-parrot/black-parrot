@@ -19,25 +19,33 @@ module wrapper
 
    ,localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
    )
-  (input                                              clk_i
-   , input                                            reset_i
+  (input                                              core_clk_i
+   , input                                            core_reset_i
 
+   , input                                            coh_clk_i
+   , input                                            coh_reset_i
+
+   , input                                            mem_clk_i
+   , input                                            mem_reset_i
+
+   , input [num_mem_p-1:0][mem_noc_cord_width_p-1:0]  mem_cord_i
    , input [num_core_p-1:0][mem_noc_cord_width_p-1:0] tile_cord_i
    , input [mem_noc_cord_width_p-1:0]                 dram_cord_i
    , input [mem_noc_cord_width_p-1:0]                 mmio_cord_i
    , input [mem_noc_cord_width_p-1:0]                 host_cord_i
 
-   , input  [mem_noc_ral_link_width_lp-1:0]           cmd_link_i
-   , output [mem_noc_ral_link_width_lp-1:0]           cmd_link_o
+   , input  [mem_noc_ral_link_width_lp-1:0]           prev_cmd_link_i
+   , output [mem_noc_ral_link_width_lp-1:0]           prev_cmd_link_o
 
-   , input  [mem_noc_ral_link_width_lp-1:0]           resp_link_i
-   , output [mem_noc_ral_link_width_lp-1:0]           resp_link_o
+   , input  [mem_noc_ral_link_width_lp-1:0]           prev_resp_link_i
+   , output [mem_noc_ral_link_width_lp-1:0]           prev_resp_link_o
+
+   , input  [mem_noc_ral_link_width_lp-1:0]           next_cmd_link_i
+   , output [mem_noc_ral_link_width_lp-1:0]           next_cmd_link_o
+
+   , input  [mem_noc_ral_link_width_lp-1:0]           next_resp_link_i
+   , output [mem_noc_ral_link_width_lp-1:0]           next_resp_link_o
    );
-
-  //synopsys translate_off
-  //if (coh_noc_dims_p != mem_noc_dims_p)
-  //  $fatal("Coherence and memory networks should be same dimensionality!");
-  //synopsys translate_on
 
   bp_chip
    #(.cfg_p(cfg_p))

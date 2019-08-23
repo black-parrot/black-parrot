@@ -214,7 +214,7 @@ module bp_cce_uncached
           ;
         mem_cmd.payload.lce_id = lce_req_r.src_id;
         mem_cmd.payload.way_id = '0;
-        mem_cmd.data = lce_req_r_uc_req.data;
+        mem_cmd.data = block_size_in_bits_lp'(lce_req_r_uc_req.data);
 
         lce_req_n = (mem_cmd_ready_i) ? '0 : lce_req_r;
 

@@ -31,7 +31,7 @@ always_comb
   endcase
 
 assign dst_cord_o = clint_not_dram ? mmio_cord_i : dram_cord_i;
-assign dst_cid_o  = clint_not_dram ? 1'b1 : '0;
+assign dst_cid_o  = '0; // currently unused
 
 endmodule
 

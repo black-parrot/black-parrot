@@ -75,13 +75,13 @@ module bp_me_wormhole_packet_encode_mem_resp
     packet_cast_o.cord    = dst_cord_i;
 
     case (mem_resp_cast_i.size)
-      e_mem_size_1 : data_resp_len_li = mem_resp_data_len_1_lp;
-      e_mem_size_2 : data_resp_len_li = mem_resp_data_len_2_lp;
-      e_mem_size_4 : data_resp_len_li = mem_resp_data_len_4_lp;
-      e_mem_size_8 : data_resp_len_li = mem_resp_data_len_8_lp;
-      e_mem_size_16: data_resp_len_li = mem_resp_data_len_16_lp;
-      e_mem_size_32: data_resp_len_li = mem_resp_data_len_32_lp;
-      e_mem_size_64: data_resp_len_li = mem_resp_data_len_64_lp;
+      e_mem_size_1 : data_resp_len_li = mem_noc_len_width_p'(mem_resp_data_len_1_lp);
+      e_mem_size_2 : data_resp_len_li = mem_noc_len_width_p'(mem_resp_data_len_2_lp);
+      e_mem_size_4 : data_resp_len_li = mem_noc_len_width_p'(mem_resp_data_len_4_lp);
+      e_mem_size_8 : data_resp_len_li = mem_noc_len_width_p'(mem_resp_data_len_8_lp);
+      e_mem_size_16: data_resp_len_li = mem_noc_len_width_p'(mem_resp_data_len_16_lp);
+      e_mem_size_32: data_resp_len_li = mem_noc_len_width_p'(mem_resp_data_len_32_lp);
+      e_mem_size_64: data_resp_len_li = mem_noc_len_width_p'(mem_resp_data_len_64_lp);
       default: data_resp_len_li = '0;
     endcase
 
@@ -90,7 +90,7 @@ module bp_me_wormhole_packet_encode_mem_resp
       ,e_cce_mem_wr
       ,e_cce_mem_uc_rd: packet_cast_o.len = data_resp_len_li;
       e_cce_mem_uc_wr
-      ,e_cce_mem_wb   : packet_cast_o.len = mem_resp_ack_len_lp;
+      ,e_cce_mem_wb   : packet_cast_o.len = mem_noc_len_width_p'(mem_resp_ack_len_lp);
       default: packet_cast_o = '0;
     endcase
   end

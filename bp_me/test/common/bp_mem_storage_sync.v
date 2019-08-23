@@ -26,6 +26,8 @@ module bp_mem_storage_sync
 
 wire unused = &{reset_i};
 
+enum bit [1:0] {e_reset, e_init, e_run} state_n, state_r;
+
 logic [7:0] mem [0:mem_cap_in_bytes_p-1];
 
 logic [data_width_p-1:0] data_li, data_lo;
@@ -39,17 +41,17 @@ always_comb
   for (integer i = 0; i < num_data_bytes_lp; i++)
     data_li[i*8+:8] = write_mask_i[i] ? data_i[i*8+:8] : data_lo[i*8+:8];
 
-import "DPI-C" context function string rebase_hexfile(input string memfile_name
-                                                      , input longint dram_base);
-string hex_file;
+import "DPI-C" context function string rebase_hexfile(input string memfile_name, input longint dram_base);
+
 always_ff @(posedge clk_i)
   begin
-    if (reset_i & mem_load_p)
+    if ((state_r == e_reset))
       begin
-        for (integer i = 0; i < mem_cap_in_bytes_p; i++)
-          mem[i] = '0;
-        hex_file = rebase_hexfile(mem_file_p, mem_offset_p);
-        $readmemh(hex_file, mem);
+        mem <= '{default: '0};
+      end
+    if ((state_r == e_init) && (mem_load_p == 1))
+      begin
+        $readmemh(rebase_hexfile(mem_file_p, mem_offset_p), mem);
       end
     else if (v_i & w_i)
       for (integer i = 0; i < num_data_bytes_lp; i++)
@@ -60,6 +62,24 @@ always_ff @(posedge clk_i)
   end
 
 assign data_o = data_lo;
+
+always_comb
+  begin
+    case (state_r)
+      e_reset: state_n = e_init;
+      e_init : state_n = e_run;
+      e_run  : state_n = e_run;
+      default: state_n = e_reset;
+    endcase
+  end
+
+always_ff @(posedge clk_i)
+  begin
+    if (reset_i)
+      state_r <= e_reset;
+    else
+      state_r <= state_n;
+  end
 
 endmodule
 

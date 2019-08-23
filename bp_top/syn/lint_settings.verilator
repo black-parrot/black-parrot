@@ -1,0 +1,4 @@
+`verilator_config
+lint_off -file "$BSG_IP_CORES_DIR/*"
+lint_off -msg UNUSED
+

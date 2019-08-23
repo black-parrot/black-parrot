@@ -48,6 +48,7 @@ module bp_fe_lce_cmd
     , output logic                                               set_tag_received_o
     , output logic                                               set_tag_wakeup_received_o
     , output logic                                               cce_data_received_o
+    , output logic                                               uncached_data_received_o
 
     , input [lce_data_width_lp-1:0]                              data_mem_data_i
     , output logic [data_mem_pkt_width_lp-1:0]                   data_mem_pkt_o
@@ -214,7 +215,16 @@ module bp_fe_lce_cmd
 
           cce_data_received_o = data_mem_pkt_yumi_i;
 
-        end
+        end else if (lce_cmd_li.msg_type == e_lce_cmd_uc_data) begin
+              data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
+              data_mem_pkt.way_id = lce_cmd_li.way_id;
+              data_mem_pkt.data = lce_cmd_li.msg.data;
+              data_mem_pkt.opcode = e_icache_lce_data_mem_uncached;
+              data_mem_pkt_v_o = lce_cmd_v_li;
+              lce_cmd_yumi_lo = data_mem_pkt_yumi_i;
+
+              uncached_data_received_o = data_mem_pkt_yumi_i;
+            end
       end
 
       e_lce_cmd_transfer_tmp: begin

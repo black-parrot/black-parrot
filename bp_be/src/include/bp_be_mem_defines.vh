@@ -47,8 +47,8 @@
   
   typedef struct packed 
   {
-    logic [bp_sv39_pte_width_gp-10-bp_sv39_paddr_width_gp-1:0] reserved;
-    logic [bp_sv39_paddr_width_gp-1:0] ppn;
+    logic [bp_sv39_pte_width_gp-10-bp_sv39_ppn_width_gp-1:0] reserved;
+    logic [bp_sv39_ppn_width_gp-1:0] ppn;
     logic [1:0] rsw;
     logic d;
     logic a;
