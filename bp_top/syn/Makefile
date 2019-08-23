@@ -39,6 +39,9 @@ else ifeq ($(CFG), e_bp_sexta_core_cfg)
 else ifeq ($(CFG), e_bp_quad_core_2d_cfg)
   NUM_LCE_P=8
   N_WG=16
+else ifeq ($(CFG), e_bp_oct_core_2d_cfg)
+  NUM_LCE_P=16
+  N_WG=8
 endif
 
 

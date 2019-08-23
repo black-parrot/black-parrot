@@ -437,13 +437,22 @@ for (genvar i = 0; i < 2; i++)
      ,.concentrated_link_o(resp_concentrated_link_lo)
      );
 
-  wire [coh_noc_cord_width_p-1:0] lce_id_li = proc_cfg_cast_i.icache_id >> 1;
+  logic [coh_noc_cord_width_p-1:0] lce_cord_li;
+  bp_me_lce_id_to_cord
+   #(.cfg_p(cfg_p))
+   router_cord
+    (.lce_id_i(proc_cfg_cast_i.icache_id)
+     ,.lce_cord_o(lce_cord_li)
+     ,.lce_cid_o()
+     );
+
   bsg_wormhole_router
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.dims_p(coh_noc_dims_p)
      ,.cord_dims_p(coh_noc_max_dims_p)
      ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
      ,.reverse_order_p(1)
+     ,.routing_matrix_p((coh_noc_dims_p == 2) ? StrictYX : StrictX)
      ,.len_width_p(coh_noc_len_width_p)
      )
    req_router
@@ -453,7 +462,7 @@ for (genvar i = 0; i < 2; i++)
      ,.link_i(lce_req_link_cast_i)
      ,.link_o(lce_req_link_cast_o)
 
-     ,.my_cord_i(lce_id_li)
+     ,.my_cord_i(lce_cord_li)
      );
 
   bsg_wormhole_router
@@ -462,6 +471,7 @@ for (genvar i = 0; i < 2; i++)
      ,.cord_dims_p(coh_noc_max_dims_p)
      ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
      ,.reverse_order_p(1)
+     ,.routing_matrix_p((coh_noc_dims_p == 2) ? StrictYX : StrictX)
      ,.len_width_p(coh_noc_len_width_p)
      )
    cmd_router
@@ -471,7 +481,7 @@ for (genvar i = 0; i < 2; i++)
      ,.link_i(lce_cmd_link_cast_i)
      ,.link_o(lce_cmd_link_cast_o)
 
-     ,.my_cord_i(lce_id_li)
+     ,.my_cord_i(lce_cord_li)
      );
 
   bsg_wormhole_router
@@ -480,6 +490,7 @@ for (genvar i = 0; i < 2; i++)
      ,.cord_dims_p(coh_noc_max_dims_p)
      ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
      ,.reverse_order_p(1)
+     ,.routing_matrix_p((coh_noc_dims_p == 2) ? StrictYX : StrictX)
      ,.len_width_p(coh_noc_len_width_p)
      )
    resp_router
@@ -489,7 +500,7 @@ for (genvar i = 0; i < 2; i++)
      ,.link_i(lce_resp_link_cast_i)
      ,.link_o(lce_resp_link_cast_o)
 
-     ,.my_cord_i(lce_id_li)
+     ,.my_cord_i(lce_cord_li)
      );
 
 bp_me_cce_to_wormhole_link_master

@@ -34,11 +34,6 @@ module wrapper
    , output [mem_noc_ral_link_width_lp-1:0]           resp_link_o
    );
 
-  //synopsys translate_off
-  //if (coh_noc_dims_p != mem_noc_dims_p)
-  //  $fatal("Coherence and memory networks should be same dimensionality!");
-  //synopsys translate_on
-
   bp_chip
    #(.cfg_p(cfg_p))
    dut

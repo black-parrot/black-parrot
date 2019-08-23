@@ -21,10 +21,6 @@ module bp_core_complex
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
-   // Tile parameters
-   , localparam num_tiles_lp = num_core_p
-   , localparam num_routers_lp = num_tiles_lp+1
-   
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
    )
   (input                                                    clk_i

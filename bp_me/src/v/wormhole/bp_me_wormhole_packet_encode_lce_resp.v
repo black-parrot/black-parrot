@@ -37,10 +37,20 @@ module bp_me_wormhole_packet_encode_lce_resp
   localparam lce_cce_resp_wb_len_lp =
     `BSG_CDIV(lce_cce_resp_packet_width_lp, coh_noc_flit_width_p) - 1;
 
+  logic [coh_noc_cord_width_p-1:0] cce_cord_li;
+  logic [coh_noc_cid_width_p-1:0]  cce_cid_li;
+  bp_me_cce_id_to_cord
+   #(.cfg_p(cfg_p))
+   router_cord
+    (.cce_id_i(payload_cast_i.dst_id)
+     ,.cce_cord_o(cce_cord_li)
+     ,.cce_cid_o(cce_cid_li)
+     );
+
   always_comb begin
     packet_cast_o.payload = payload_cast_i;
-    packet_cast_o.cid     = 0;
-    packet_cast_o.cord    = payload_cast_i.dst_id;
+    packet_cast_o.cid     = cce_cid_li;
+    packet_cast_o.cord    = cce_cord_li;
 
     case (payload_cast_i.msg_type)
       e_lce_cce_sync_ack

@@ -92,9 +92,9 @@ logic [num_core_p-1:0][mem_noc_cord_width_p-1:0] tile_cord_lo;
 
 if (mem_noc_dims_p > 0)
   begin : x_cord
-    assign dram_cord_lo[0+:mem_noc_x_cord_width_p] = mem_noc_x_dim_p;
+    assign dram_cord_lo[0+:mem_noc_x_cord_width_p] = mem_noc_x_dim_p+1;
     assign mmio_cord_lo[0+:mem_noc_x_cord_width_p] = mmio_x_pos_p;
-    assign host_cord_lo[0+:mem_noc_x_cord_width_p] = mem_noc_x_dim_p;
+    assign host_cord_lo[0+:mem_noc_x_cord_width_p] = mem_noc_x_dim_p+1;
   end
 if (mem_noc_dims_p > 1)
   begin : y_cord
@@ -182,9 +182,9 @@ if (calc_trace_p)
   
        ,.trap_v_i(be_mem.csr.trap_v_o)
        ,.mtvec_i(be_mem.csr.mtvec_n)
-       ,.mtval_i(be_mem.csr.mtval_n)
+       ,.mtval_i(be_mem.csr.mtval_n[0+:vaddr_width_p])
        ,.ret_v_i(be_mem.csr.ret_v_o)
-       ,.mepc_i(be_mem.csr.mepc_n)
+       ,.mepc_i(be_mem.csr.mepc_n[0+:vaddr_width_p])
        ,.mcause_i(be_mem.csr.mcause_n)
   
        ,.priv_mode_i(be_mem.csr.priv_mode_n)
