@@ -271,7 +271,7 @@ bsg_dff_reset_en
  issue_psn_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(issue_pkt_v_i | chk_dispatch_v_i)
+   ,.en_i(issue_pkt_v_i | chk_dispatch_v_i | chk_poison_iss_i)
 
    ,.data_i(chk_poison_iss_i)
    ,.data_o(chk_poison_iss_r)

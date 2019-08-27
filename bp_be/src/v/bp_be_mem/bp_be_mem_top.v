@@ -163,7 +163,7 @@ logic                     dcache_tlb_miss, dcache_poison;
 logic                     dcache_uncached;
 
 /* CSR signals */
-logic                     illegal_instr;
+logic                     csr_illegal_instr_lo;
 bp_satp_s                 satp_lo;
 logic [dword_width_p-1:0] csr_data_lo;
 logic                     csr_v_lo;
@@ -210,7 +210,7 @@ bp_be_ecode_dec_s exception_ecode_dec_li;
 assign exception_ecode_dec_li = 
   '{instr_misaligned : csr_cmd_v_i & (csr_cmd.csr_op == e_op_instr_misaligned)
     ,instr_fault     : csr_cmd_v_i & (csr_cmd.csr_op == e_op_instr_access_fault)
-    ,illegal_instr   : csr_cmd_v_i & (csr_cmd.csr_op == e_op_illegal_instr)
+    ,illegal_instr   : csr_cmd_v_i & ((csr_cmd.csr_op == e_op_illegal_instr) || csr_illegal_instr_lo)
     ,breakpoint      : csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak)
     ,load_misaligned : 1'b0
     ,load_fault      : load_access_fault_v
@@ -239,7 +239,7 @@ bp_be_csr
 
    ,.data_o(csr_data_lo)
    ,.v_o(csr_v_lo)
-   ,.illegal_instr_o(illegal_instr)
+   ,.illegal_instr_o(csr_illegal_instr_lo)
 
    ,.hartid_i(proc_cfg.core_id)
    ,.instret_i(instret_i)
