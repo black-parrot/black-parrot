@@ -294,7 +294,10 @@ always_comb
                                ,mie: 1'b0, sie: 1'b1, uie: 1'b1
                                ,default: '0
                                };
-          sstatus_rmask_li = '{mpp: 2'b00, spp: 2'b11
+          sstatus_rmask_li = '{sd: 1'b1, uxl: 2'b11
+                               ,mxr: 1'b1, sum: 1'b1
+                               ,xs: 2'b11, fs: 2'b11
+                               ,mpp: 2'b00, spp: 2'b11
                                ,mpie: 1'b0, spie: 1'b1, upie: 1'b1
                                ,mie: 1'b0, sie: 1'b1, uie: 1'b1
                                ,default: '0
