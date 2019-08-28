@@ -174,10 +174,14 @@ always_comb
     end
 
 // PC pipeline
-// We can't fetch from wait state, only run and coming out of stall
-// We want to wait until the FE queue is ready, but if we're going to flush anyway
-//   we might as well start fetching
-assign pc_v_if1_n = ~is_wait & (cmd_nonattaboy_v || (fe_queue_ready_i & ~flush)) & fetch_ready_i;
+// We can't fetch from wait state, only run and coming out of stall.
+// We wait until both the FE queue and I$ are ready, but flushes invalidate the fetch.
+// The next PC is valid during a FE cmd, since it is a non-speculative
+//   command and we must accept it immediately.
+// This may cause us to fetch during an I$ miss or a with a full queue.  
+// FE cmds normally flush the queue, so we don't expect this to affect
+//   power much in practice.
+assign pc_v_if1_n = ~is_wait & (cmd_nonattaboy_v || (fe_queue_ready_i & fetch_ready_i & ~flush));
 assign pc_v_if2_n = pc_v_if1_r & ~flush;
 
 // We use reset flops for status signals in the pipeline
