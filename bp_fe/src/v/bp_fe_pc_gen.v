@@ -101,7 +101,7 @@ wire instr_access_fault_exception = pc_v_if2_r & instr_access_fault_i;
 wire fetch_fail     = pc_v_if2_r & ~fe_queue_v_o;
 wire queue_miss     = pc_v_if2_r & ~fe_queue_ready_i;
 wire icache_miss    = pc_v_if2_r & ~fetch_instr_v_i;
-wire flush          = itlb_miss_if2_r | icache_miss | queue_miss | cmd_nonattaboy_v;
+wire flush          = itlb_miss_exception | icache_miss | queue_miss | cmd_nonattaboy_v;
 wire fe_instr_v     = pc_v_if2_r & ~flush;
 wire fe_exception_v = pc_v_if2_r & (instr_access_fault_exception | misalign_exception | itlb_miss_exception);
 
@@ -174,10 +174,14 @@ always_comb
     end
 
 // PC pipeline
-// We can't fetch from wait state, only run and coming out of stall
-// We want to wait until the FE queue is ready, but if we're going to flush anyway
-//   we might as well start fetching
-assign pc_v_if1_n = ~is_wait & (cmd_nonattaboy_v || fe_queue_ready_i) & fetch_ready_i;
+// We can't fetch from wait state, only run and coming out of stall.
+// We wait until both the FE queue and I$ are ready, but flushes invalidate the fetch.
+// The next PC is valid during a FE cmd, since it is a non-speculative
+//   command and we must accept it immediately.
+// This may cause us to fetch during an I$ miss or a with a full queue.  
+// FE cmds normally flush the queue, so we don't expect this to affect
+//   power much in practice.
+assign pc_v_if1_n = ~is_wait & (cmd_nonattaboy_v || (fe_queue_ready_i & fetch_ready_i & ~flush));
 assign pc_v_if2_n = pc_v_if1_r & ~flush;
 
 // We use reset flops for status signals in the pipeline
