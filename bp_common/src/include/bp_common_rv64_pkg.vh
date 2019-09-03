@@ -1,8 +1,8 @@
 
-package bp_be_rv64_pkg;
+package bp_common_rv64_pkg;
 
-  `include "bp_be_rv64_defines.vh"
-  `include "bp_be_csr_defines.vh"
+  `include "bp_common_rv64_defines.vh"
+  `include "bp_common_csr_defines.vh"
 
   localparam rv64_rf_els_gp         = 32;
   localparam rv64_instr_width_gp    = 32;
@@ -69,8 +69,5 @@ package bp_be_rv64_pkg;
     logic [rv64_opcode_width_gp-1:0]   opcode;
   }  rv64_instr_s;
 
-  `define bp_be_instr_width \
-    ($bits(bp_be_instr_s))
-
-endpackage : bp_be_rv64_pkg
+endpackage
 

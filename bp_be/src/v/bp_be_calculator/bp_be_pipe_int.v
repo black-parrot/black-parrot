@@ -31,7 +31,7 @@
  *   
  */
 module bp_be_pipe_int 
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
  #(parameter vaddr_width_p = "inv"
 

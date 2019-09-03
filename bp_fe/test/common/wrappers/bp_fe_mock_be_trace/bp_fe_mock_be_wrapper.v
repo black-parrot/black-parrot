@@ -9,7 +9,7 @@
 module bp_fe_mock_be_wrapper
  import bp_common_pkg::*;
  import bp_cce_pkg::*;
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
  #(parameter num_core_p="inv"
    ,parameter vaddr_width_p="inv"

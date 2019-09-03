@@ -1,7 +1,7 @@
 
 module bp_be_ptw
   import bp_common_pkg::*;
-  import bp_be_rv64_pkg::*;
+  import bp_common_rv64_pkg::*;
   import bp_be_pkg::*;
   import bp_be_dcache_pkg::*;
   #(parameter pte_width_p               = bp_sv39_pte_width_gp

@@ -36,7 +36,7 @@
  */
 
 module bp_be_bypass
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  #(parameter fwd_els_p = "inv"
 
    // Default params
