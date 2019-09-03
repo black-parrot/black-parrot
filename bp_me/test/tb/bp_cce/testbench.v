@@ -54,14 +54,8 @@ module testbench
    , input reset_i
    );
 
-`declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
-
-//logic [mem_noc_cord_width_p-1:0]                 dram_cord_lo, clint_cord_lo;
-logic [mem_noc_cord_width_p-1:0]                 dram_cord_lo, mmio_cord_lo;
-assign dram_cord_lo  = num_core_p+1;
-assign mmio_cord_lo = mmio_x_pos_p;
 
 // CFG IF
 bp_cce_mem_cmd_s       cfg_cmd_lo;
@@ -72,6 +66,10 @@ logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 logic [cfg_addr_width_p-1:0] config_addr_li;
 logic [cfg_data_width_p-1:0] config_data_li;
 logic                        config_v_li;
+
+assign config_v_li = cfg_cmd_v_lo;
+assign config_addr_li = cfg_cmd_lo[cfg_data_width_p+:cfg_addr_width_p];
+assign config_data_li = cfg_cmd_lo[0+:cfg_data_width_p];
 
 // Freeze signal register
 logic freeze_r;
@@ -202,32 +200,7 @@ wrapper
   ,.mem_cmd_yumi_i(mem_cmd_yumi)
 );
 
-
-// DRAM + link 
-bp_me_cce_to_wormhole_link_client
- #(.cfg_p(cfg_p))
-  client_link
-  (.clk_i(clk_i)
-  ,.reset_i(reset_i)
-
-  ,.mem_cmd_o(mem_cmd_lo)
-  ,.mem_cmd_v_o(mem_cmd_v_lo)
-  ,.mem_cmd_yumi_i(mem_cmd_yumi_li)
-
-  ,.mem_resp_i(mem_resp_li)
-  ,.mem_resp_v_i(mem_resp_v_li)
-  ,.mem_resp_ready_o(mem_resp_ready_lo)
-
-  ,.my_cord_i(dram_cord_lo)
-  ,.my_cid_i(mem_noc_cid_width_p'(0))
-     
-  ,.cmd_link_i(mem_cmd_link_li)
-  ,.cmd_link_o(mem_cmd_link_lo)
-
-  ,.resp_link_i(mem_resp_link_li)
-  ,.resp_link_o(mem_resp_link_lo)
-  );
-
+// DRAM
 bp_mem
 #(.cfg_p(cfg_p)
   ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
@@ -258,36 +231,13 @@ mem
   ,.mem_resp_ready_i(mem_resp_ready)
   );
 
-
-// CFG loader + rom + link
-bp_me_cce_to_wormhole_link_master
- #(.cfg_p(cfg_p))
-  master_link
-  (.clk_i(clk_i)
-  ,.reset_i(reset_i)
-
-  ,.mem_cmd_i(cfg_cmd_lo)
-  ,.mem_cmd_v_i(cfg_cmd_ready_li & cfg_cmd_v_lo)
-  ,.mem_cmd_ready_o(cfg_cmd_ready_li)
-
-  ,.mem_resp_o(cfg_resp_li)
-  ,.mem_resp_v_o(cfg_resp_v_li)
-  ,.mem_resp_yumi_i(cfg_resp_ready_lo & cfg_resp_v_li)
-
-  ,.my_cord_i(dram_cord_lo)
-  ,.my_cid_i(mem_noc_cid_width_p'(0))
-  ,.dram_cord_i(dram_cord_lo)
-  ,.mmio_cord_i(mmio_cord_lo)
-  ,.host_cord_i(host_cord_lo)
-  
-  ,.cmd_link_i(cfg_cmd_link_li)
-  ,.cmd_link_o(cfg_cmd_link_lo)
-
-  ,.resp_link_i(cfg_resp_link_li)
-  ,.resp_link_o(cfg_resp_link_lo)
-  );
-
+// CFG loader
 localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
+// command is consumed cycle it is valid
+assign cfg_cmd_yumi_li = cfg_cmd_v_lo;
+// no responses to CFG loader
+assign cfg_resp_li = '0;
+assign cfg_resp_v_li = '0;
 bp_cce_mmio_cfg_loader
   #(.cfg_p(cfg_p)
     ,.inst_width_p(`bp_cce_inst_width)
@@ -301,7 +251,7 @@ bp_cce_mmio_cfg_loader
    
    ,.mem_cmd_o(cfg_cmd_lo)
    ,.mem_cmd_v_o(cfg_cmd_v_lo)
-   ,.mem_cmd_yumi_i(cfg_cmd_ready_li & cfg_cmd_v_lo)
+   ,.mem_cmd_yumi_i(cfg_cmd_yumi_li)
    
    ,.mem_resp_i(cfg_resp_li)
    ,.mem_resp_v_i(cfg_resp_v_li)

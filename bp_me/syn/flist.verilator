@@ -113,6 +113,7 @@ $BSG_IP_CORES_DIR/bsg_misc/bsg_unconcentrate_static.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_input_control.v  
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_output_control.v 
+$BSG_IP_CORES_DIR/bsg_misc/bsg_lfsr.v
 # COMMON
 $BP_COMMON_DIR/src/v/bp_addr_map.v
 # ME
