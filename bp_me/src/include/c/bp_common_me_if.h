@@ -109,6 +109,7 @@ typedef enum {
 
 // Width Macros
 
+// TODO: these widths are incorrect - need to be updated to reflect updates to ME IF
 /*
 #define bp_lce_cce_req_width (LG_N_CCE+LG_N_LCE+bp_lce_cce_req_type_width \
   +bp_lce_cce_req_non_excl_width+ADDR_WIDTH+LG_LCE_ASSOC+bp_lce_cce_lru_dirty_width \

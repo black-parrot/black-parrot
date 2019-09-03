@@ -113,7 +113,13 @@ $BSG_IP_CORES_DIR/bsg_misc/bsg_unconcentrate_static.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.v
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_input_control.v  
 $BSG_IP_CORES_DIR/bsg_noc/bsg_wormhole_router_output_control.v 
-# TOP
-$BP_TOP_DIR/src/v/bp_clint.v
+# COMMON
+$BP_COMMON_DIR/src/v/bp_addr_map.v
+# ME
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_master.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_client.v
+$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_cmd.v
+$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_req.v
+$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.v
+$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.v
+$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.v
