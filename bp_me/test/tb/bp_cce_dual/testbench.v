@@ -54,9 +54,10 @@ module testbench
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
-logic [mem_noc_cord_width_p-1:0]                 dram_cord_lo, clint_cord_lo;
+//logic [mem_noc_cord_width_p-1:0]                 dram_cord_lo, clint_cord_lo;
+logic [noc_cord_width_p-1:0]                 dram_cord_lo, mmio_cord_lo;
 assign dram_cord_lo  = num_core_p+1;
-assign clint_cord_lo = clint_pos_p;
+assign mmio_cord_lo = mmio_pos_p;
 
 // CFG IF
 bp_cce_mem_cmd_s       cfg_cmd_lo;
@@ -343,9 +344,9 @@ bp_me_cce_to_wormhole_link_master
 
   ,.my_cord_i(dram_cord_lo)
   
-  ,.mem_cmd_dest_cord_i(clint_cord_lo)
+  ,.mem_cmd_dest_cord_i(mmio_cord_lo)
   
-  //,.mem_data_cmd_dest_cord_i(clint_cord_lo)
+  //,.mem_data_cmd_dest_cord_i(mmio_cord_lo)
   
   ,.link_i(cfg_link_li)
   ,.link_o(cfg_link_lo)
@@ -388,9 +389,9 @@ bp_clint
    ,.timer_irq_o()
    ,.external_irq_o()
 
-   ,.my_cord_i(clint_cord_lo)
+   ,.my_cord_i(mmio_cord_lo)
    ,.dram_cord_i(dram_cord_lo)
-   ,.clint_cord_i(clint_cord_lo)
+   ,.mmio_cord_i(mmio_cord_lo)
 
    // to client
    ,.cmd_link_i(clint_cmd_link_i)

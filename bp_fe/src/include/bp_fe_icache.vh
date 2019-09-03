@@ -13,21 +13,6 @@
 `include "bp_common_me_if.vh"
 
 /*
- * bp_fe_icache_pc_gen_s defines the interface between I-Cache and pc_gen. The
- * I-Cache sends the data (instruction) stored at the virtual pc address to the
- * pc_gen. The width of data (instruction) is specified by the bp_instr_width_gp parameter.
- */
-`define declare_bp_fe_icache_pc_gen_s(eaddr_width_mp) \
-  typedef struct packed                              \
-  {                                                  \
-    logic [bp_instr_width_gp-1:0] instr;             \
-    logic [eaddr_width_mp-1:0]     addr;              \
-  }  bp_fe_icache_pc_gen_s
-
-`define bp_fe_icache_pc_gen_width(eaddr_width_mp)     \
-  (bp_instr_width_gp+eaddr_width_mp)
-
-/*
  *
  * bp_fe_icache_stat_s is the struct that specifies the format of the
  * I-Cache meta-data array. The meta-data array contains the auxiliary
@@ -77,12 +62,7 @@
  * Declare all icache widths at once as localparams
  */
 `define declare_bp_icache_widths(vaddr_width_mp, tag_width_mp, ways_mp)                                \
-    , localparam bp_fe_pc_gen_icache_width_lp=`bp_fe_pc_gen_icache_width(vaddr_width_mp)               \
-    , localparam bp_fe_itlb_icache_data_resp_width_lp=`bp_fe_itlb_icache_data_resp_width(tag_width_mp) \
     , localparam bp_fe_icache_tag_state_width_lp=`bp_fe_icache_tag_state_width(tag_width_mp)           \
-    , localparam bp_fe_icache_stat_width_lp=`bp_fe_icache_stat_width(ways_mp)                  \
-    , localparam bp_fe_icache_pc_gen_width_lp=`bp_fe_icache_pc_gen_width(vaddr_width_mp                \
-)
-
+    , localparam bp_fe_icache_stat_width_lp=`bp_fe_icache_stat_width(ways_mp)
 
 `endif

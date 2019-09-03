@@ -4,34 +4,8 @@
  *   bp_be_detector.v
  * 
  * Description:
- *   Schedules instruction issue from the FE queue to the Calculator.
- *
- * Parameters:
- *   vaddr_width_p               - FE-BE structure sizing parameter
- *   paddr_width_p               - ''
- *   asid_width_p                - ''
- *   branch_metadata_fwd_width_p - ''
- * 
- * Inputs:
- *   clk_i                       -
- *   reset_i                     -
  *   
- *   calc_status_i               - Instruction dependency information from the calculator
- *   expected_npc_i              - The expected next pc, considering branching information
- *   mmu_cmd_ready_i             - MMU ready, used as structural hazard detection for mem instrs
  *
- * Outputs:
- *   chk_dispatch_v_o            - Dispatch signal to the calculator. Since the pipes are 
- *                                   non-blocking, this signal indicates that there will be no
- *                                   hazards from this point on
- *   chk_roll_o                  - Roll back all the instructions in the pipe
- *   chk_poison_iss_o            - Poison the instruction currently in issue stage
- *   chk_poison_isd_o            - Poison the instruction currently in ISD stage
- *   chk_poison_ex_o             - Poison all instructions currently in the pipe
- *   
- * Keywords:
- *   detector, hazard, dependencies, stall
- * 
  * Notes:
  *   We don't need the entirety of the calc_status structure here, but for simplicity 
  *     we pass it all. If the compiler doesn't flatten and optimize, we can do it ourselves.
@@ -49,8 +23,6 @@ module bp_be_detector
 
    // Generated parameters
    , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
-   // From RISC-V specifications
-   , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
    )
   (input                               clk_i
    , input                             reset_i
@@ -73,22 +45,17 @@ module bp_be_detector
    , output                            chk_poison_ex2_o
   );
 
-`declare_bp_be_internal_if_structs(vaddr_width_p
-                                   , paddr_width_p
-                                   , asid_width_p
-                                   , branch_metadata_fwd_width_p
-                                   ); 
+`declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p); 
 
 // Casting 
-bp_be_calc_status_s      calc_status;
-bp_be_dep_status_s [4:0] dep_status;
+bp_be_calc_status_s      calc_status_cast_i;
+bp_be_dep_status_s [4:0] dep_status_li;
 
-assign calc_status = calc_status_i;
-assign dep_status  = calc_status.dep_status;
+assign calc_status_cast_i = calc_status_i;
+assign dep_status_li      = calc_status_cast_i.dep_status;
 
 // Suppress unused inputs
-wire unused1 = clk_i;
-wire unused2 = reset_i;
+wire unused = &{clk_i, reset_i};
 
 // Declare intermediate signals
 // Integer data hazards
@@ -97,7 +64,7 @@ logic [2:0] irs1_data_haz_v , irs2_data_haz_v;
 logic [2:0] frs1_data_haz_v , frs2_data_haz_v;
 logic [2:0] rs1_match_vector, rs2_match_vector;
 
-logic fence_haz_v, stall_haz_v, data_haz_v, struct_haz_v, mispredict_v, mem_in_pipe_v;
+logic fence_haz_v, serial_haz_v, data_haz_v, struct_haz_v, mispredict_v, mem_in_pipe_v;
 
 always_comb 
   begin
@@ -106,97 +73,90 @@ always_comb
     //   can be handled through forwarding
     for(integer i = 0; i < 3; i++) 
       begin
-        rs1_match_vector[i] = (calc_status.isd_rs1_addr != reg_addr_width_lp'(0))
-                              & (calc_status.isd_rs1_addr == dep_status[i].rd_addr);
+        rs1_match_vector[i] = (calc_status_cast_i.isd_rs1_addr != '0)
+                              & (calc_status_cast_i.isd_rs1_addr == dep_status_li[i].rd_addr);
 
-        rs2_match_vector[i] = (calc_status.isd_rs2_addr != reg_addr_width_lp'(0))
-                              & (calc_status.isd_rs2_addr == dep_status[i].rd_addr);
+        rs2_match_vector[i] = (calc_status_cast_i.isd_rs2_addr != '0)
+                              & (calc_status_cast_i.isd_rs2_addr == dep_status_li[i].rd_addr);
       end
 
     // Detect integer and float data hazards for EX1
-    irs1_data_haz_v[0] = (calc_status.isd_irs1_v & rs1_match_vector[0])
-                         & (dep_status[0].mul_iwb_v | dep_status[0].mem_iwb_v);
+    irs1_data_haz_v[0] = (calc_status_cast_i.isd_irs1_v & rs1_match_vector[0])
+                         & (dep_status_li[0].mul_iwb_v | dep_status_li[0].mem_iwb_v);
 
-    irs2_data_haz_v[0] = (calc_status.isd_irs2_v & rs2_match_vector[0])
-                         & (dep_status[0].mul_iwb_v | dep_status[0].mem_iwb_v);
+    irs2_data_haz_v[0] = (calc_status_cast_i.isd_irs2_v & rs2_match_vector[0])
+                         & (dep_status_li[0].mul_iwb_v | dep_status_li[0].mem_iwb_v);
 
-    frs1_data_haz_v[0] = (calc_status.isd_frs1_v & rs1_match_vector[0])
-                         & (dep_status[0].mem_fwb_v | dep_status[0].fp_fwb_v);
+    frs1_data_haz_v[0] = (calc_status_cast_i.isd_frs1_v & rs1_match_vector[0])
+                         & (dep_status_li[0].mem_fwb_v | dep_status_li[0].fp_fwb_v);
 
-    frs2_data_haz_v[0] = (calc_status.isd_frs2_v & rs2_match_vector[0])
-                         & (dep_status[0].mem_fwb_v | dep_status[0].fp_fwb_v);
+    frs2_data_haz_v[0] = (calc_status_cast_i.isd_frs2_v & rs2_match_vector[0])
+                         & (dep_status_li[0].mem_fwb_v | dep_status_li[0].fp_fwb_v);
 
     // Detect integer and float data hazards for EX2
-    irs1_data_haz_v[1] = (calc_status.isd_irs1_v & rs1_match_vector[1])
-                         & (dep_status[1].mem_iwb_v);
+    irs1_data_haz_v[1] = (calc_status_cast_i.isd_irs1_v & rs1_match_vector[1])
+                         & (dep_status_li[1].mem_iwb_v);
 
-    irs2_data_haz_v[1] = (calc_status.isd_irs2_v & rs2_match_vector[1])
-                         & (dep_status[1].mem_iwb_v);
+    irs2_data_haz_v[1] = (calc_status_cast_i.isd_irs2_v & rs2_match_vector[1])
+                         & (dep_status_li[1].mem_iwb_v);
 
-    frs1_data_haz_v[1] = (calc_status.isd_frs1_v & rs1_match_vector[1])
-                         & (dep_status[1].mem_fwb_v | dep_status[1].fp_fwb_v);
+    frs1_data_haz_v[1] = (calc_status_cast_i.isd_frs1_v & rs1_match_vector[1])
+                         & (dep_status_li[1].mem_fwb_v | dep_status_li[1].fp_fwb_v);
 
-    frs2_data_haz_v[1] = (calc_status.isd_frs2_v & rs2_match_vector[1])
-                         & (dep_status[1].mem_fwb_v | dep_status[1].fp_fwb_v);
+    frs2_data_haz_v[1] = (calc_status_cast_i.isd_frs2_v & rs2_match_vector[1])
+                         & (dep_status_li[1].mem_fwb_v | dep_status_li[1].fp_fwb_v);
 
     // Detect float data hazards for IWB. Integer dependencies can be handled by forwarding
     irs1_data_haz_v[2] = '0;
     irs2_data_haz_v[2] = '0;
 
-    frs1_data_haz_v[2] = (calc_status.isd_frs1_v & rs1_match_vector[2])
-                         & (dep_status[2].fp_fwb_v);
+    frs1_data_haz_v[2] = (calc_status_cast_i.isd_frs1_v & rs1_match_vector[2])
+                         & (dep_status_li[2].fp_fwb_v);
 
-    frs2_data_haz_v[2] = (calc_status.isd_frs2_v & rs2_match_vector[2])
-                         & (dep_status[2].fp_fwb_v);
+    frs2_data_haz_v[2] = (calc_status_cast_i.isd_frs2_v & rs2_match_vector[2])
+                         & (dep_status_li[2].fp_fwb_v);
 
-    mem_in_pipe_v      = dep_status[0].mem_v | dep_status[1].mem_v | dep_status[2].mem_v;
-    fence_haz_v        = (calc_status.isd_fence_v & (~credits_empty_i | mem_in_pipe_v))
-                         | (calc_status.isd_mem_v & credits_full_i);
+    mem_in_pipe_v      = dep_status_li[0].mem_v | dep_status_li[1].mem_v | dep_status_li[2].mem_v;
+    fence_haz_v        = (calc_status_cast_i.isd_fence_v & (~credits_empty_i | mem_in_pipe_v))
+                         | (calc_status_cast_i.isd_mem_v & credits_full_i);
 
-    stall_haz_v        = dep_status[0].stall_v
-                         | dep_status[1].stall_v
-                         | dep_status[2].stall_v
-                         | dep_status[3].stall_v;
+    serial_haz_v       = dep_status_li[0].serial_v
+                         | dep_status_li[1].serial_v
+                         | dep_status_li[2].serial_v
+                         | dep_status_li[3].serial_v;
 
     // Combine all data hazard information
     // TODO: Parameterize away floating point data hazards without hardware support
-    data_haz_v = stall_haz_v
-                 | (|irs1_data_haz_v) 
+    data_haz_v = (|irs1_data_haz_v) 
                  | (|irs2_data_haz_v) 
                  | (|frs1_data_haz_v) 
                  | (|frs2_data_haz_v);
 
     // Combine all structural hazard information
-    struct_haz_v = ~mmu_cmd_ready_i | fence_haz_v;
+    struct_haz_v = ~mmu_cmd_ready_i | fence_haz_v | serial_haz_v;
 
     // Detect misprediction
-    mispredict_v = (calc_status.ex1_v & (calc_status.ex1_pc != expected_npc_i));
+    mispredict_v = (calc_status_cast_i.ex1_v & (calc_status_cast_i.ex1_pc != expected_npc_i));
   end
 
 // Generate calculator control signals
 assign chk_dispatch_v_o = ~(data_haz_v | struct_haz_v); 
-assign chk_roll_o       = calc_status.mem3_miss_v;
+assign chk_roll_o       = calc_status_cast_i.mem3_miss_v;
 
-assign chk_poison_iss_o = reset_i
+assign chk_poison_iss_o = mispredict_v
                           | flush_i
-                          | calc_status.mem3_fe_exc_v
-                          | calc_status.mem3_miss_v;
+                          | calc_status_cast_i.mem3_miss_v;
                           
-assign chk_poison_isd_o = reset_i
+assign chk_poison_isd_o = mispredict_v
                           | flush_i
-                          | calc_status.mem3_fe_exc_v
-                          | calc_status.mem3_miss_v;
+                          | calc_status_cast_i.mem3_miss_v;
 
-assign chk_poison_ex1_o = reset_i 
-                          | mispredict_v
+assign chk_poison_ex1_o = mispredict_v
                           | flush_i
-                          | calc_status.mem3_fe_exc_v
-                          | calc_status.mem3_miss_v;
+                          | calc_status_cast_i.mem3_miss_v;
 
-assign chk_poison_ex2_o = reset_i
-                          | flush_i
-                          | calc_status.mem3_fe_exc_v
-                          | calc_status.mem3_miss_v;
+assign chk_poison_ex2_o = flush_i
+                          | calc_status_cast_i.mem3_miss_v;
 
-endmodule : bp_be_detector
+endmodule
 

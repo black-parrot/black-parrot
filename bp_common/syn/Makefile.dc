@@ -1,8 +1,5 @@
 # Top-level module
-DESIGN_NAME ?= wrapper
-
-# Run directory for DesignCompiler
-DC_RUN_DIR := $(SYN_PATH)/run_dc
+export DESIGN_NAME ?= wrapper
 
 .PHONY: deps.syn check_design.syn lookup.syn clean.syn
 

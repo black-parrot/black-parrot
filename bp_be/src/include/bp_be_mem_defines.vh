@@ -14,8 +14,6 @@
     bp_be_fu_op_s                      mem_op;                                                     \
     bp_be_mmu_vaddr_s                  vaddr;                                                      \
     logic [rv64_reg_data_width_gp-1:0] data;                                                       \
-    logic                              fe_exc_v;                                                   \
-    bp_fe_exception_code_e             fe_ecode;                                                   \
   }  bp_be_mmu_cmd_s;                                                                              \
                                                                                                    \
   typedef struct packed                                                                            \
@@ -77,7 +75,7 @@
    )
 
 `define bp_be_mmu_cmd_width(vaddr_width_mp) \
-  (`bp_be_fu_op_width + vaddr_width_mp + rv64_reg_data_width_gp + 1 + $bits(bp_fe_exception_code_e))
+  (`bp_be_fu_op_width + vaddr_width_mp + rv64_reg_data_width_gp)
 
 `define bp_be_csr_cmd_width \
   (`bp_be_fu_op_width + rv64_csr_addr_width_gp + rv64_reg_data_width_gp)

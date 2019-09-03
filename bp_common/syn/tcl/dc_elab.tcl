@@ -32,7 +32,7 @@ proc exit_failed {} {
 
 proc post_synth_message {} {
   puts ""
-  puts "## All reports can be found inside the DC run dir ($::env(DC_RUN_DIR))"
+  puts "## All reports can be found inside results/dc/ "
   puts "## Please check the error log (<design_name>.check.syn.err) for problematic"
   puts "## messages that we found during elaboration. This file should be empty, otherwise"
   puts "## please search through the main log (<design_name>.check.syn.log) to find more"

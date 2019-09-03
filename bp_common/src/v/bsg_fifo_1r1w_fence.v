@@ -12,7 +12,6 @@ module bsg_fifo_1r1w_fence
 
    , input                fence_set_i
    , input                fence_clr_i
-
    , output               fence_o
 
    , input [width_p-1:0]  data_i
@@ -43,7 +42,6 @@ module bsg_fifo_1r1w_fence
      );
 
   logic fence_r;
-
   bsg_dff_reset_en
    #(.width_p(1))
    fence_reg
@@ -55,7 +53,7 @@ module bsg_fifo_1r1w_fence
      ,.data_o(fence_r)
      );
 
-  assign fence_o = (fence_r & ~fence_clr_i) | fence_set_i;
+  assign fence_o = fence_r;
 
-endmodule : bsg_fifo_1r1w_fence
+endmodule
 

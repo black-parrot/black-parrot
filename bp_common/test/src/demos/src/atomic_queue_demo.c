@@ -172,6 +172,7 @@ uint64_t main(uint64_t argc, char * argv[]) {
     }
     thread_main();
 
-    bp_barrier_end(&end_barrier_mem, NUM_CORES);
+    bp_finish(0);
+
     return 0;
 }

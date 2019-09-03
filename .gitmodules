@@ -24,8 +24,8 @@
 
 [submodule "basejump_stl"]
   path = basejump_stl
-  url = https://github.com/bespoke-silicon-group/basejump_stl.git
-  branch = wormhole_router_adapter_refactor
+  url = https://github.com/black-parrot/basejump_stl.git
+  branch = blackparrot_mods
   ignore = dirty
 
 [submodule "external/DRAMSim2"]

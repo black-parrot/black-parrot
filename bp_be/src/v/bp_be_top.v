@@ -35,10 +35,6 @@ module bp_be_top
    , localparam vtag_width_lp     = (vaddr_width_p-bp_page_offset_width_gp)
    , localparam ptag_width_lp     = (paddr_width_p-bp_page_offset_width_gp)
    , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_lp)
-
-   // CSRs
-   , localparam mepc_width_lp  = `bp_mepc_width
-   , localparam mtvec_width_lp = `bp_mtvec_width
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -50,14 +46,13 @@ module bp_be_top
    , input [cfg_data_width_p-1:0]            cfg_data_i
 
    // FE queue interface
+   , output                                  fe_queue_deq_o
+   , output                                  fe_queue_roll_o
+ 
    , input [fe_queue_width_lp-1:0]           fe_queue_i
    , input                                   fe_queue_v_i
-   , output                                  fe_queue_ready_o
+   , output                                  fe_queue_yumi_o
 
-   , output                                  fe_queue_clr_o
-   , output                                  fe_queue_dequeue_o
-   , output                                  fe_queue_rollback_o
- 
    // FE cmd interface
    , output [fe_cmd_width_lp-1:0]            fe_cmd_o
    , output                                  fe_cmd_v_o
@@ -125,9 +120,9 @@ bp_be_calc_status_s    calc_status;
 logic chk_dispatch_v, chk_poison_iss, chk_poison_isd;
 logic chk_poison_ex1, chk_poison_ex2, chk_roll, chk_instr_dequeue_v;
 
-logic [mtvec_width_lp-1:0] chk_tvec_li;
-logic [mepc_width_lp-1:0]  chk_epc_li;
-logic [vaddr_width_p-1:0]  chk_pc_lo;
+logic [vaddr_width_p-1:0] chk_tvec_li;
+logic [vaddr_width_p-1:0] chk_epc_li;
+logic [vaddr_width_p-1:0] chk_pc_lo;
 
 logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li, chk_ifence_li;
 
@@ -166,13 +161,12 @@ bp_be_checker_top
    ,.fe_cmd_v_o(fe_cmd_v_o)
    ,.fe_cmd_ready_i(fe_cmd_ready_i)
 
-   ,.chk_roll_fe_o(fe_queue_rollback_o)
-   ,.chk_flush_fe_o(fe_queue_clr_o)
-   ,.chk_dequeue_fe_o(fe_queue_dequeue_o)
+   ,.fe_queue_roll_o(fe_queue_roll_o)
+   ,.fe_queue_deq_o(fe_queue_deq_o)
 
    ,.fe_queue_i(fe_queue_i)
    ,.fe_queue_v_i(fe_queue_v_i)
-   ,.fe_queue_ready_o(fe_queue_ready_o)
+   ,.fe_queue_yumi_o(fe_queue_yumi_o)
 
    ,.issue_pkt_o(issue_pkt)
    ,.issue_pkt_v_o(issue_pkt_v)

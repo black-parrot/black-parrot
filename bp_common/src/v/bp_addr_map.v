@@ -6,15 +6,20 @@ module bp_addr_map
    `declare_bp_proc_params(cfg_p)
    )
   (// Destination nodes address
-   input [mem_noc_cord_width_p-1:0]    clint_cord_i
+   input [mem_noc_cord_width_p-1:0]    mmio_cord_i
    , input [mem_noc_cord_width_p-1:0]  dram_cord_i
+   , input [mem_noc_cord_width_p-1:0]  host_cord_i
 
    // Command physical address
    , input [paddr_width_p-1:0]         paddr_i
 
    // Destination router coordinates
-   , output [mem_noc_cord_width_p-1:0] dest_cord_o
+   , output [mem_noc_cord_width_p-1:0] dst_cord_o
+   , output [mem_noc_cid_width_p-1:0]  dst_cid_o
    );
+
+// TODO: Currently, tiles are not writable and host is the same as DRAM
+wire unused = &{host_cord_i};
 
 logic clint_not_dram;
 
@@ -25,7 +30,8 @@ always_comb
     default: clint_not_dram = 1'b0;
   endcase
 
-assign dest_cord_o = clint_not_dram ? clint_cord_i : dram_cord_i;
+assign dst_cord_o = clint_not_dram ? mmio_cord_i : dram_cord_i;
+assign dst_cid_o  = clint_not_dram ? 1'b1 : '0;
 
-endmodule : bp_addr_map
+endmodule
 

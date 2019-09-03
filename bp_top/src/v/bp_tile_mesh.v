@@ -1,12 +1,12 @@
 /**
  *
- * bp_top.v
+ * bp_tile_mesh.v
  *
  */
  
 `include "bsg_noc_links.vh"
 
-module bp_top
+module bp_tile_mesh
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
@@ -19,27 +19,14 @@ module bp_top
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
-   `declare_bp_lce_cce_if_widths(num_cce_p
-                                 ,num_lce_p
-                                 ,paddr_width_p
-                                 ,lce_assoc_p
-                                 ,dword_width_p
-                                 ,cce_block_width_p
-                                 )
+   `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
-   , parameter x_cord_width_p = `BSG_SAFE_CLOG2(num_lce_p)
-   , parameter y_cord_width_p = 1
-   
    // Tile parameters
    , localparam num_tiles_lp = num_core_p
    , localparam num_routers_lp = num_tiles_lp+1
    
-   // Other parameters
-   , localparam lce_cce_req_network_width_lp = coh_noc_width_p
-   , localparam lce_cce_resp_network_width_lp = coh_noc_width_p
-   , localparam cce_lce_cmd_network_width_lp = coh_noc_width_p
-
-   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_width_p)
+   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
+   , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
 
    // Arbitrarily set, should be set based on PD constraints
    , localparam reset_pipe_depth_lp = 10
@@ -67,7 +54,8 @@ module bp_top
    // Memory side connection
    , input [num_core_p-1:0][mem_noc_cord_width_p-1:0]       tile_cord_i
    , input [mem_noc_cord_width_p-1:0]                       dram_cord_i
-   , input [mem_noc_cord_width_p-1:0]                       clint_cord_i
+   , input [mem_noc_cord_width_p-1:0]                       mmio_cord_i
+   , input [mem_noc_cord_width_p-1:0]                       host_cord_i
 
    , input [num_core_p-1:0][mem_noc_ral_link_width_lp-1:0]  cmd_link_i
    , output [num_core_p-1:0][mem_noc_ral_link_width_lp-1:0] cmd_link_o
@@ -78,10 +66,11 @@ module bp_top
   );
 
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
+`declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, coh_noc_ral_link_s);
 
-logic [num_core_p:0][E:W][2+lce_cce_req_network_width_lp-1:0] lce_req_link_stitch_lo, lce_req_link_stitch_li;
-logic [num_core_p:0][E:W][2+lce_cce_resp_network_width_lp-1:0] lce_resp_link_stitch_lo, lce_resp_link_stitch_li;
-logic [num_core_p:0][E:W][2+cce_lce_cmd_network_width_lp-1:0] lce_cmd_link_stitch_lo, lce_cmd_link_stitch_li;
+coh_noc_ral_link_s [num_core_p:0][E:W] lce_req_link_stitch_lo, lce_req_link_stitch_li;
+coh_noc_ral_link_s [num_core_p:0][E:W] lce_resp_link_stitch_lo, lce_resp_link_stitch_li;
+coh_noc_ral_link_s [num_core_p:0][E:W] lce_cmd_link_stitch_lo, lce_cmd_link_stitch_li;
 
 /************************* BP Tiles *************************/
 assign lce_req_link_stitch_lo[0][W]                = '0;
@@ -110,7 +99,7 @@ for(genvar i = 0; i < num_core_p; i++)
     assign proc_cfg.dcache_id = dcache_id[0+:lce_id_width_lp];
 
     bsg_noc_repeater_node
-     #(.width_p(lce_cce_req_network_width_lp)
+     #(.width_p(coh_noc_flit_width_p)
        ,.num_nodes_p(repeater_depth_lp[i])
        )
      lce_req_repeater
@@ -125,7 +114,7 @@ for(genvar i = 0; i < num_core_p; i++)
        );
 
     bsg_noc_repeater_node
-     #(.width_p(cce_lce_cmd_network_width_lp)
+     #(.width_p(coh_noc_flit_width_p)
        ,.num_nodes_p(repeater_depth_lp[i])
        )
      lce_cmd_repeater
@@ -140,7 +129,7 @@ for(genvar i = 0; i < num_core_p; i++)
        );
 
     bsg_noc_repeater_node
-     #(.width_p(lce_cce_resp_network_width_lp)
+     #(.width_p(coh_noc_flit_width_p)
        ,.num_nodes_p(repeater_depth_lp[i])
        )
      lce_resp_repeater
@@ -178,8 +167,11 @@ for(genvar i = 0; i < num_core_p; i++)
 
        // CCE-MEM IF
        ,.my_cord_i(tile_cord_i[i])
+       // TODO: configurable?
+       ,.my_cid_i('0)
        ,.dram_cord_i(dram_cord_i)
-       ,.clint_cord_i(clint_cord_i)
+       ,.mmio_cord_i(mmio_cord_i)
+       ,.host_cord_i(host_cord_i)
 
        ,.cmd_link_i(cmd_link_i[i])
        ,.cmd_link_o(cmd_link_o[i])
@@ -192,5 +184,5 @@ for(genvar i = 0; i < num_core_p; i++)
        );
   end
 
-endmodule : bp_top
+endmodule
 

@@ -38,6 +38,7 @@ testbench
 initial 
   begin
     $assertoff();
+    @(posedge clk)
     @(negedge reset)
     $asserton();
   end
