@@ -64,6 +64,7 @@ typedef enum bit [2:0]
   {                                                           \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      lce_id;      \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id;      \
+    bp_coh_states_e                              state;       \
   }  bp_cce_mem_cmd_payload_s
 
 
@@ -113,7 +114,7 @@ typedef enum bit [2:0]
 
 // CCE-MEM Interface
 `define bp_cce_mem_cmd_payload_width(num_lce_mp, lce_assoc_mp) \
-  (`BSG_SAFE_CLOG2(num_lce_mp)+`BSG_SAFE_CLOG2(lce_assoc_mp))
+  (`BSG_SAFE_CLOG2(num_lce_mp)+`BSG_SAFE_CLOG2(lce_assoc_mp)+`bp_coh_bits)
 
 `define bp_cce_mem_cmd_width(addr_width_mp, data_width_mp, num_lce_mp, lce_assoc_mp) \
   (`bp_cce_mem_cmd_type_width+addr_width_mp+data_width_mp \

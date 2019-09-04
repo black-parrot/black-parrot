@@ -153,6 +153,9 @@ module bp_cce_fsm
   // bit to tell FSM that it can't use pending bit module write port
   logic pending_busy;
 
+  // bit to tell FSM that it can't use LCE Command network because memory response is using it
+  logic lce_cmd_busy;
+
   bp_cce_pending
     #(.num_way_groups_p(num_way_groups_lp)
      )
@@ -413,6 +416,7 @@ module bp_cce_fsm
 
     // By default, pending write port is available
     pending_busy = '0;
+    lce_cmd_busy = '0;
 
     // Mem Response (Data) to LCE Command (Data)
 
@@ -424,6 +428,7 @@ module bp_cce_fsm
 
       lce_cmd_v_o = mem_resp_v_i;
       mem_resp_yumi_o = lce_cmd_ready_i;
+      lce_cmd_busy = 1'b1;
 
       // Clear the pending bit in the cycle that the wormhole router asserts ready_i
       // also set pending_busy to block FSM if needed
@@ -443,11 +448,13 @@ module bp_cce_fsm
       if (mem_resp.msg_type == e_cce_mem_uc_rd) begin
         lce_cmd.msg_type = e_lce_cmd_uc_data;
         lce_cmd.way_id = '0;
-        lce_cmd.msg.data[0+:dword_width_p] = mem_resp.data[0+:dword_width_p];
+        lce_cmd.msg.dt_cmd.data[0+:dword_width_p] = mem_resp.data[0+:dword_width_p];
       end else begin
         lce_cmd.msg_type = e_lce_cmd_data;
         lce_cmd.way_id = mem_resp.payload.way_id;
-        lce_cmd.msg.data = mem_resp.data;
+        lce_cmd.msg.dt_cmd.data = mem_resp.data;
+        lce_cmd.msg.dt_cmd.addr = mem_resp.addr;
+        lce_cmd.msg.dt_cmd.state = mem_resp.payload.state;
       end
     end
 
@@ -759,7 +766,7 @@ module bp_cce_fsm
       INV_CMD: begin
         // Send invalidation commands only to LCEs that hit in the sharers vector and that are
         // not the requesting LCE
-        if ((cnt[0+:lg_num_lce_lp] != mshr_r.lce_id) & (sharers_hits_lo[cnt])) begin
+        if ((cnt[0+:lg_num_lce_lp] != mshr_r.lce_id) & (sharers_hits_lo[cnt]) & ~lce_cmd_busy) begin
           // LCE given by cnt needs to be invalidated, try to send the LCE Cmd
           lce_cmd_v_o = 1'b1;
 
@@ -824,6 +831,7 @@ module bp_cce_fsm
         end
       end
       REPLACEMENT: begin
+        if (~lce_cmd_busy) begin
         lce_cmd_v_o = 1'b1;
 
         // LCE Cmd Common Fields
@@ -838,6 +846,7 @@ module bp_cce_fsm
         lce_cmd.msg.cmd = lce_cmd_cmd;
 
         state_n = (lce_cmd_ready_i) ? REPLACEMENT_WB_RESP : REPLACEMENT;
+        end
       end
       REPLACEMENT_WB_RESP: begin
         if (lce_resp_v_i) begin
@@ -860,7 +869,7 @@ module bp_cce_fsm
             mem_cmd.addr = lce_resp.addr;
             mem_cmd.payload.lce_id = mshr_r.lce_id;
             mem_cmd.payload.way_id = '0;
-            mem_cmd.data = lce_resp.data;
+            mem_cmd.data = lce_resp.msg.data;
 
             state_n = (lce_resp_yumi_o)
                       ? (mshr_r.flags[e_flag_sel_tf])
@@ -878,6 +887,7 @@ module bp_cce_fsm
         end
       end
       TRANSFER_CMD: begin
+        if (~lce_cmd_busy) begin
         lce_cmd_v_o = 1'b1;
 
         // LCE Cmd Common Fields
@@ -889,13 +899,17 @@ module bp_cce_fsm
         lce_cmd_cmd.addr = mshr_r.paddr;
         lce_cmd_cmd.target = mshr_r.lce_id;
         lce_cmd_cmd.target_way_id = mshr_r.lru_way_id;
+        lce_cmd_cmd.state = mshr_r.next_coh_state;
 
         // Assign Command subtype to msg field
         lce_cmd.msg.cmd = lce_cmd_cmd;
 
-        state_n = (lce_cmd_ready_i) ? TRANSFER_ST_CMD : TRANSFER_CMD;
+        //state_n = (lce_cmd_ready_i) ? TRANSFER_ST_CMD : TRANSFER_CMD;
+        state_n = (lce_cmd_ready_i) ? TRANSFER_WB_CMD : TRANSFER_CMD;
+        end
       end
       TRANSFER_ST_CMD: begin
+        $error("TRANSFER_ST_CMD");
         lce_cmd_v_o = 1'b1;
 
         // LCE Cmd Common Fields
@@ -913,6 +927,7 @@ module bp_cce_fsm
         state_n = (lce_cmd_ready_i) ? TRANSFER_WB_CMD : TRANSFER_ST_CMD;
       end
       TRANSFER_WB_CMD: begin
+        if (~lce_cmd_busy) begin
         lce_cmd_v_o = 1'b1;
 
         // LCE Cmd Common Fields
@@ -927,6 +942,7 @@ module bp_cce_fsm
         lce_cmd.msg.cmd = lce_cmd_cmd;
 
         state_n = (lce_cmd_ready_i) ? TRANSFER_WB_RESP : TRANSFER_WB_CMD;
+        end
       end
       TRANSFER_WB_RESP: begin
         if (lce_resp_v_i) begin
@@ -946,7 +962,7 @@ module bp_cce_fsm
             mem_cmd.addr = lce_resp.addr;
             mem_cmd.payload.lce_id = mshr_r.lce_id;
             mem_cmd.payload.way_id = '0;
-            mem_cmd.data = lce_resp.data;
+            mem_cmd.data = lce_resp.msg.data;
 
             state_n = (lce_resp_yumi_o) ? READY : TRANSFER_WB_RESP;
 
@@ -960,12 +976,13 @@ module bp_cce_fsm
         end
       end
       UPGRADE_STW_CMD: begin
+        if (~lce_cmd_busy) begin
         lce_cmd_v_o = 1'b1;
 
         // LCE Cmd Common Fields
         lce_cmd.dst_id = mshr_r.lce_id;
         lce_cmd.msg_type = e_lce_cmd_set_tag_wakeup;
-        lce_cmd.way_id = mshr_r.lru_way_id;
+        lce_cmd.way_id = mshr_r.way_id;
 
         // Sub message fields
         lce_cmd_cmd.addr = mshr_r.paddr;
@@ -976,6 +993,7 @@ module bp_cce_fsm
 
         state_n = (lce_cmd_ready_i) ? READY : UPGRADE_STW_CMD;
         mshr_n = (lce_cmd_ready_i) ? '0 : mshr_r;
+        end
       end
       READ_MEM: begin
         // Mem Cmd needs to write pending bit, so only send if Mem Resp / LCE Cmd is not
@@ -987,8 +1005,10 @@ module bp_cce_fsm
           mem_cmd.size = e_mem_size_64;
           mem_cmd.payload.lce_id = mshr_r.lce_id;
           mem_cmd.payload.way_id = mshr_r.lru_way_id;
+          mem_cmd.payload.state = mshr_r.next_coh_state;
 
-          state_n = (mem_cmd_ready_i) ? SEND_SET_TAG : READ_MEM;
+          //state_n = (mem_cmd_ready_i) ? SEND_SET_TAG : READ_MEM;
+          state_n = (mem_cmd_ready_i) ? READY : READ_MEM;
 
           pending_w_v = mem_cmd_ready_i;
           pending_li = 1'b1;
@@ -996,6 +1016,7 @@ module bp_cce_fsm
         end
       end
       SEND_SET_TAG: begin
+        $error("SEND_SET_TAG");
         lce_cmd_v_o = 1'b1;
 
         // LCE Cmd Common Fields

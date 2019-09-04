@@ -31,6 +31,8 @@ module bp_cce_top
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
 
+    , parameter cce_trace_p = 0
+
     // Derived parameters
     , localparam block_size_in_bytes_lp = (cce_block_width_p/8)
     , localparam lg_num_cce_lp         = `BSG_SAFE_CLOG2(num_cce_p)

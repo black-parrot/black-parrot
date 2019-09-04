@@ -100,7 +100,7 @@ tg = TraceGen(addr_width_p=args.paddr_width, data_width_p=args.data_width)
 tg.print_header()
 
 # test begin
-random.seed(args.seed)
+random.seed(args.seed+args.lce_id+1)
 
 tg.wait(100)
 

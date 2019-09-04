@@ -44,6 +44,8 @@ import "DPI-C" context function string rebase_hexfile(input string memfile_name
 string hex_file;
 always_ff @(posedge clk_i)
   begin
+    // TODO: need a mechanism to zero-init memory. This can be done using a "zero.mem" file with
+    // mem_cap_in_bytes_p entries, but for a 1 MB DRAM, that file is 3.1 MB in size.
     if (reset_i & mem_load_p)
       begin
         for (integer i = 0; i < mem_cap_in_bytes_p; i++)
