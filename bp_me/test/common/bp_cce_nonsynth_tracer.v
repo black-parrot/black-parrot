@@ -15,8 +15,6 @@ module bp_cce_nonsynth_tracer
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
 
-    , parameter cce_trace_p = 0
-
     // Derived parameters
     , localparam block_size_in_bytes_lp      = (cce_block_width_p/8)
     , localparam lg_num_lce_lp             = `BSG_SAFE_CLOG2(num_lce_p)
@@ -100,7 +98,7 @@ module bp_cce_nonsynth_tracer
 
   // Tracer
   always_ff @(negedge clk_i) begin
-    if (~reset_i & cce_trace_p) begin
+    if (~reset_i) begin
       // inbound messages
       if (lce_req_v_i & lce_req_yumi_i) begin
         if (lce_req.msg_type == e_lce_req_type_rd | lce_req.msg_type == e_lce_req_type_wr) begin

@@ -80,14 +80,10 @@ copy_roms.sc:
 	-@rm $(TB_PATH)/$(TB)/bsg_trace_rom*.tr
 	-@echo $(BUILD_DIR)/bsg_trace_rom*.v >> $(BUILD_DIR)/flist.verilator
 
-zero_init:
-	-python $(BP_ME_DIR)/software/py/zero.py > zero.mem
-	-@mv zero.mem $(BP_COMMON_DIR)/test/mem/zero.mem
-
-pre-build.v: $(TRACE_ROMS) zero_init
+pre-build.v: $(TRACE_ROMS)
 build.v: copy_roms.v
 
-pre-verilate.sc: $(TRACE_ROMS) zero_init
+pre-verilate.sc: $(TRACE_ROMS)
 verilate.sc: copy_roms.sc
 
 lint.me:

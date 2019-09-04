@@ -17,8 +17,6 @@ module bp_cce_fsm
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
 
-    , parameter cce_trace_p             = 0
-
     // Derived parameters
     , localparam block_size_in_bytes_lp    = (cce_block_width_p/8)
     , localparam lg_num_lce_lp             = `BSG_SAFE_CLOG2(num_lce_p)
@@ -306,7 +304,6 @@ module bp_cce_fsm
     , UPGRADE_STW_CMD
 
     , TRANSFER_CMD
-    , TRANSFER_ST_CMD
     , TRANSFER_WB_CMD
     , TRANSFER_WB_RESP
 
@@ -396,7 +393,6 @@ module bp_cce_fsm
     pending_li = '0;
     pending_r_v = '0;
     pending_w_v = '0;
-    //pending_r_way_group = '0; - set directly from MSHR
     pending_w_way_group = '0;
 
     gad_v = '0;
@@ -904,27 +900,8 @@ module bp_cce_fsm
         // Assign Command subtype to msg field
         lce_cmd.msg.cmd = lce_cmd_cmd;
 
-        //state_n = (lce_cmd_ready_i) ? TRANSFER_ST_CMD : TRANSFER_CMD;
         state_n = (lce_cmd_ready_i) ? TRANSFER_WB_CMD : TRANSFER_CMD;
         end
-      end
-      TRANSFER_ST_CMD: begin
-        $error("TRANSFER_ST_CMD");
-        lce_cmd_v_o = 1'b1;
-
-        // LCE Cmd Common Fields
-        lce_cmd.dst_id = mshr_r.lce_id;
-        lce_cmd.msg_type = e_lce_cmd_set_tag;
-        lce_cmd.way_id = mshr_r.lru_way_id;
-
-        // Sub message fields
-        lce_cmd_cmd.addr = mshr_r.paddr;
-        lce_cmd_cmd.state = mshr_r.next_coh_state;
-
-        // Assign Command subtype to msg field
-        lce_cmd.msg.cmd = lce_cmd_cmd;
-
-        state_n = (lce_cmd_ready_i) ? TRANSFER_WB_CMD : TRANSFER_ST_CMD;
       end
       TRANSFER_WB_CMD: begin
         if (~lce_cmd_busy) begin
@@ -1007,7 +984,6 @@ module bp_cce_fsm
           mem_cmd.payload.way_id = mshr_r.lru_way_id;
           mem_cmd.payload.state = mshr_r.next_coh_state;
 
-          //state_n = (mem_cmd_ready_i) ? SEND_SET_TAG : READ_MEM;
           state_n = (mem_cmd_ready_i) ? READY : READ_MEM;
 
           pending_w_v = mem_cmd_ready_i;

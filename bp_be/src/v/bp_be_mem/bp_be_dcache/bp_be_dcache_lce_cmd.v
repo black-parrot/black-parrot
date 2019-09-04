@@ -313,7 +313,6 @@ module bp_be_dcache_lce_cmd
             //  <set tag>
             //  set the tag and coherency state of given index/way.
             e_lce_cmd_set_tag: begin
-              $error("set tag received in dcache");
               tag_mem_pkt.index = lce_cmd_addr_index;
               tag_mem_pkt.way_id = lce_cmd_li.way_id;
               tag_mem_pkt.state = lce_cmd_li.msg.cmd.state;

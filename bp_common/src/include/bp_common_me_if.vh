@@ -106,6 +106,8 @@
     logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]  dst_id;                                                     \
   }  bp_lce_cce_req_s;                                                                                   \
                                                                                                          \
+  // CCE to LCE Command                                                                                  \
+  // This command does not include data                                                                  \
   typedef struct packed                                                                                  \
   {                                                                                                      \
     logic [`bp_lce_cmd_pad(num_cce_mp, num_lce_mp, lce_assoc_mp, paddr_width_mp, cce_block_width_mp)-1:0]\
@@ -117,6 +119,8 @@
     logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]      src_id;                                                 \
   }  bp_lce_cmd_cmd_s;                                                                                   \
                                                                                                          \
+  // LCE Data and Tag Command                                                                            \
+  // This command sends data and cache tag to an LCE                                                     \
   typedef struct packed                                                                                  \
   {                                                                                                      \
     logic [cce_block_width_mp-1:0]               data;                                                   \

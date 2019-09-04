@@ -163,7 +163,6 @@ module bp_fe_lce_cmd
           lce_cmd_yumi_lo   = lce_resp_yumi_i;
 
         end else if (lce_cmd_li.msg_type == e_lce_cmd_set_tag) begin
-          $error("set tag received in icache");
           tag_mem_pkt.index  = lce_cmd_addr_index;
           tag_mem_pkt.way_id = lce_cmd_li.way_id;
           tag_mem_pkt.state  = lce_cmd_li.msg.cmd.state;
