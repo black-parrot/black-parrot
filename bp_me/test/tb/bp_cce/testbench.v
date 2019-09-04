@@ -28,10 +28,13 @@ module testbench
    , parameter skip_init_p = 0
    , parameter lce_perf_trace_p = 0
 
-   , parameter mem_load_p         = 0
+   // TODO: must supply a valid initial memory file, e.g., a file of all zeros for 1 MB of storage,
+   // or, trace replay script must only load data that was previously stored
+   , parameter mem_load_p         = 1
    , parameter mem_file_p         = "prog.mem"
    , parameter mem_cap_in_bytes_p = 2**20
-   , parameter mem_offset_p       = 32'h8000_0000
+   // CCE testing uses any address it wants, no DRAM offset required
+   , parameter mem_offset_p       = '0
 
    , parameter use_max_latency_p      = 0
    , parameter use_random_latency_p   = 1
@@ -68,8 +71,8 @@ logic [cfg_data_width_p-1:0] config_data_li;
 logic                        config_v_li;
 
 assign config_v_li = cfg_cmd_v_lo;
-assign config_addr_li = cfg_cmd_lo[cfg_data_width_p+:cfg_addr_width_p];
-assign config_data_li = cfg_cmd_lo[0+:cfg_data_width_p];
+assign config_addr_li = cfg_cmd_lo.data[cfg_data_width_p+:cfg_addr_width_p];
+assign config_data_li = cfg_cmd_lo.data[0+:cfg_data_width_p];
 
 // Freeze signal register
 logic freeze_r;

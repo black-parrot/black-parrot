@@ -16,6 +16,8 @@ RESULTS_PATH := $(BP_ME_DIR)/syn/results
 TB          ?= bp_cce
 CFG         ?= e_bp_half_core_cfg
 
+PADDR_WIDTH ?= 40
+
 NUM_INSTR_P ?= 16
 SEED_P ?= 1
 
@@ -63,7 +65,7 @@ axe:
 	axe check TSO trace.axe
 
 bsg_trace_rom_%.tr:
-	-python $(TB_PATH)/$(TB)/bsg_trace_rom.py -n $(NUM_INSTR_P) -s $(SEED_P) -i $* -l $(NUM_LCE_P) > $(TB_PATH)/$(TB)/$@
+	-python $(TB_PATH)/$(TB)/bsg_trace_rom.py -m $(PADDR_WIDTH) -n $(NUM_INSTR_P) -s $(SEED_P) -i $* -l $(NUM_LCE_P) > $(TB_PATH)/$(TB)/$@
 
 bsg_trace_rom_%.v: bsg_trace_rom_%.tr
 	-python $(BSG_IP_CORES_DIR)/bsg_mem/bsg_ascii_to_rom.py $(TB_PATH)/$(TB)/$< bsg_trace_rom_$* > $(TB_PATH)/$(TB)/$@
