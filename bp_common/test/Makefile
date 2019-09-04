@@ -16,6 +16,8 @@ MKLFS = $(TEST_DIR)/bin/bsg_newlib_mklfs
 
 NC ?= 1
 
+.EXPORT_ALL_VARIABLES:
+
 include $(TEST_DIR)/Makefile.frag
 
 all: all_mem all_dump all_spike
