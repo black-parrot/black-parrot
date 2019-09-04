@@ -80,29 +80,33 @@ copy_roms.sc:
 	-@rm $(TB_PATH)/$(TB)/bsg_trace_rom*.tr
 	-@echo $(BUILD_DIR)/bsg_trace_rom*.v >> $(BUILD_DIR)/flist.verilator
 
-pre-build.v: $(TRACE_ROMS)
+zero_init:
+	-python $(BP_ME_DIR)/software/py/zero.py > zero.mem
+	-@mv zero.mem $(BP_COMMON_DIR)/test/mem/zero.mem
+
+pre-build.v: $(TRACE_ROMS) zero_init
 build.v: copy_roms.v
 
-pre-verilate.sc: $(TRACE_ROMS)
+pre-verilate.sc: $(TRACE_ROMS) zero_init
 verilate.sc: copy_roms.sc
 
 lint.me:
 	@echo "ME lint not supported"
 
 regress.me.sc: dirs.sc
-	$(MAKE) build.sc sim.sc TB=bp_cce NUM_INSTR_P=$(NUM_INSTR_P)
-	$(MAKE) build.sc sim.sc TB=bp_cce_uc
-	$(MAKE) build.sc sim.sc TB=bp_cce_fsm NUM_INSTR_P=$(NUM_INSTR_P)
-	$(MAKE) build.sc sim.sc TB=bp_cce_fsm_uc
+	$(MAKE) build.sc sim.sc TB=bp_cce NUM_INSTR_P=$(NUM_INSTR_P) PROG=zero
+	$(MAKE) build.sc sim.sc TB=bp_cce_uc PROG=zero
+	$(MAKE) build.sc sim.sc TB=bp_cce_fsm NUM_INSTR_P=$(NUM_INSTR_P) PROG=zero
+	$(MAKE) build.sc sim.sc TB=bp_cce_fsm_uc PROG=zero
 	$(MAKE) build.sc sim.sc TB=bp_cce_alu
 
 #	$(MAKE) build.sc sim.sc TB=bp_cce_gad
 
 regress.me.v: dirs.v
-	$(MAKE) build.v sim.v TB=bp_cce NUM_INSTR_P=$(NUM_INSTR_P)
-	$(MAKE) build.v sim.v TB=bp_cce_uc
-	$(MAKE) build.v sim.v TB=bp_cce_fsm NUM_INSTR_P=$(NUM_INSTR_P)
-	$(MAKE) build.v sim.v TB=bp_cce_fsm_uc
+	$(MAKE) build.v sim.v TB=bp_cce NUM_INSTR_P=$(NUM_INSTR_P) PROG=zero
+	$(MAKE) build.v sim.v TB=bp_cce_uc PROG=zero
+	$(MAKE) build.v sim.v TB=bp_cce_fsm NUM_INSTR_P=$(NUM_INSTR_P) PROG=zero
+	$(MAKE) build.v sim.v TB=bp_cce_fsm_uc PROG=zero
 
 regress: regress.me
 regress.me: lint.me regress.me.sc regress.me.v
