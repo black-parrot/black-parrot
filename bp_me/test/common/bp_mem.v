@@ -13,6 +13,7 @@ module bp_mem
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
    , parameter mem_cap_in_bytes_p = "inv"
+   , parameter mem_zero_p         = 0
    , parameter mem_load_p         = 0
    , parameter mem_file_p         = "inv"
    , parameter mem_offset_p       = 0
@@ -107,6 +108,7 @@ bp_mem_storage_sync
  #(.data_width_p(cce_block_width_p)
    ,.addr_width_p(paddr_width_p)
    ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
+   ,.mem_zero_p(mem_zero_p)
    ,.mem_load_p(mem_load_p)
    ,.mem_file_p(mem_file_p)
    ,.mem_offset_p(mem_offset_p)

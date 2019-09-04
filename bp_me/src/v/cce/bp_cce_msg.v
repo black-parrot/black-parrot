@@ -184,11 +184,14 @@ module bp_cce_msg
         if (mem_resp.msg_type == e_cce_mem_uc_rd) begin
           lce_cmd.msg_type = e_lce_cmd_uc_data;
           lce_cmd.way_id = '0;
-          lce_cmd.msg.data[0+:dword_width_p] = mem_resp.data[0+:dword_width_p];
+          lce_cmd.msg.dt_cmd.data[0+:dword_width_p] = mem_resp.data[0+:dword_width_p];
+          lce_cmd.msg.dt_cmd.addr = mem_resp.addr;
         end else begin
           lce_cmd.msg_type = e_lce_cmd_data;
           lce_cmd.way_id = mem_resp.payload.way_id;
-          lce_cmd.msg.data = mem_resp.data;
+          lce_cmd.msg.dt_cmd.data = mem_resp.data;
+          lce_cmd.msg.dt_cmd.addr = mem_resp.addr;
+          lce_cmd.msg.dt_cmd.state = mem_resp.payload.state;
         end
 
         // Clear the pending bit in the cycle that the LCE Command ready_i goes high
@@ -340,6 +343,7 @@ module bp_cce_msg
       mem_cmd.size = e_mem_size_64;
       mem_cmd.payload.lce_id = mshr.lce_id;
       mem_cmd.payload.way_id = mshr.lru_way_id;
+      mem_cmd.payload.state = mshr.next_coh_state;
       mem_cmd.data = '0;
 
       // Uncached command - no need to block on pending_w_busy_o because uncached access does not use pending bits
@@ -398,18 +402,19 @@ module bp_cce_msg
 
       lce_cmd_cmd.src_id = (lg_num_cce_lp)'(cce_id_i);
       lce_cmd_cmd.addr = lce_cmd_addr;
+
+      lce_cmd_cmd.state = '0;
+      lce_cmd_cmd.target = '0;
+      lce_cmd_cmd.target_way_id = '0;
+
       if ((decoded_inst_i.lce_cmd == e_lce_cmd_set_tag)
           | (decoded_inst_i.lce_cmd == e_lce_cmd_set_tag_wakeup)) begin
         lce_cmd_cmd.state = mshr.next_coh_state;
-      end else begin
-        lce_cmd_cmd.state = '0;
       end
-      if (decoded_inst_i.lce_cmd == e_lce_cmd_transfer) begin
+      else if (decoded_inst_i.lce_cmd == e_lce_cmd_transfer) begin
+        lce_cmd_cmd.state = mshr.next_coh_state;
         lce_cmd_cmd.target = mshr.lce_id;
         lce_cmd_cmd.target_way_id = mshr.lru_way_id;
-      end else begin
-        lce_cmd_cmd.target = '0;
-        lce_cmd_cmd.target_way_id = '0;
       end
       lce_cmd.msg.cmd = lce_cmd_cmd;
     end

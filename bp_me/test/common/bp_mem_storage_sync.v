@@ -4,6 +4,7 @@ module bp_mem_storage_sync
    , parameter addr_width_p       = "inv"
    , parameter mem_cap_in_bytes_p = "inv"
    , parameter mem_load_p         = 0
+   , parameter mem_zero_p         = 0
    , parameter mem_file_p         = "inv"
    , parameter mem_offset_p       = "inv"
 
@@ -50,6 +51,11 @@ always_ff @(posedge clk_i)
           mem[i] = '0;
         hex_file = rebase_hexfile(mem_file_p, mem_offset_p);
         $readmemh(hex_file, mem);
+      end
+    else if (reset_i & mem_zero_p)
+      begin
+        for (integer i = 0; i < mem_cap_in_bytes_p; i++)
+          mem[i] = '0;
       end
     else if (v_i & w_i)
       for (integer i = 0; i < num_data_bytes_lp; i++)

@@ -2,7 +2,7 @@
 CC ?= $(GCC)
 VV ?= $(VERILATOR)
 PYTHON    ?= python
-TRACEDIFF ?= $(BP_COMMON_DIR)/test/software/tracediff.py
+TRACEDIFF ?= $(BP_COMMON_DIR)/software/tracediff.py
 
 ## Tool options
 VV_OPTS  = --sc                 # Output in SystemC rather than C++
