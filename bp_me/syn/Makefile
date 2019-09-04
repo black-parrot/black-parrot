@@ -94,19 +94,19 @@ lint.me:
 	@echo "ME lint not supported"
 
 regress.me.sc: dirs.sc
-	$(MAKE) build.sc sim.sc TB=bp_cce NUM_INSTR_P=$(NUM_INSTR_P) PROG=zero
-	$(MAKE) build.sc sim.sc TB=bp_cce_uc PROG=zero
-	$(MAKE) build.sc sim.sc TB=bp_cce_fsm NUM_INSTR_P=$(NUM_INSTR_P) PROG=zero
-	$(MAKE) build.sc sim.sc TB=bp_cce_fsm_uc PROG=zero
+	$(MAKE) build.sc sim.sc TB=bp_cce NUM_INSTR_P=$(NUM_INSTR_P)
+	$(MAKE) build.sc sim.sc TB=bp_cce_uc
+	$(MAKE) build.sc sim.sc TB=bp_cce_fsm NUM_INSTR_P=$(NUM_INSTR_P)
+	$(MAKE) build.sc sim.sc TB=bp_cce_fsm_uc
 	$(MAKE) build.sc sim.sc TB=bp_cce_alu
 
 #	$(MAKE) build.sc sim.sc TB=bp_cce_gad
 
 regress.me.v: dirs.v
-	$(MAKE) build.v sim.v TB=bp_cce NUM_INSTR_P=$(NUM_INSTR_P) PROG=zero
-	$(MAKE) build.v sim.v TB=bp_cce_uc PROG=zero
-	$(MAKE) build.v sim.v TB=bp_cce_fsm NUM_INSTR_P=$(NUM_INSTR_P) PROG=zero
-	$(MAKE) build.v sim.v TB=bp_cce_fsm_uc PROG=zero
+	$(MAKE) build.v sim.v TB=bp_cce NUM_INSTR_P=$(NUM_INSTR_P)
+	$(MAKE) build.v sim.v TB=bp_cce_uc
+	$(MAKE) build.v sim.v TB=bp_cce_fsm NUM_INSTR_P=$(NUM_INSTR_P)
+	$(MAKE) build.v sim.v TB=bp_cce_fsm_uc
 
 regress: regress.me
 regress.me: lint.me regress.me.sc regress.me.v

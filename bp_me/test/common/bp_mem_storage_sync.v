@@ -4,6 +4,7 @@ module bp_mem_storage_sync
    , parameter addr_width_p       = "inv"
    , parameter mem_cap_in_bytes_p = "inv"
    , parameter mem_load_p         = 0
+   , parameter mem_zero_p         = 0
    , parameter mem_file_p         = "inv"
    , parameter mem_offset_p       = "inv"
 
@@ -44,14 +45,17 @@ import "DPI-C" context function string rebase_hexfile(input string memfile_name
 string hex_file;
 always_ff @(posedge clk_i)
   begin
-    // TODO: need a mechanism to zero-init memory. This can be done using a "zero.mem" file with
-    // mem_cap_in_bytes_p entries, but for a 1 MB DRAM, that file is 3.1 MB in size.
     if (reset_i & mem_load_p)
       begin
         for (integer i = 0; i < mem_cap_in_bytes_p; i++)
           mem[i] = '0;
         hex_file = rebase_hexfile(mem_file_p, mem_offset_p);
         $readmemh(hex_file, mem);
+      end
+    else if (reset_i & mem_zero_p)
+      begin
+        for (integer i = 0; i < mem_cap_in_bytes_p; i++)
+          mem[i] = '0;
       end
     else if (v_i & w_i)
       for (integer i = 0; i < num_data_bytes_lp; i++)

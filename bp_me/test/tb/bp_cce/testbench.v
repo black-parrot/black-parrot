@@ -28,10 +28,9 @@ module testbench
    , parameter skip_init_p = 0
    , parameter lce_perf_trace_p = 0
 
-   // TODO: must supply a valid initial memory file, e.g., a file of all zeros for 1 MB of storage,
-   // or, trace replay script must only load data that was previously stored
-   , parameter mem_load_p         = 1
-   , parameter mem_file_p         = "prog.mem"
+   , parameter mem_zero_p         = 1
+   , parameter mem_load_p         = 0
+   , parameter mem_file_p         = "inv"
    , parameter mem_cap_in_bytes_p = 2**20
    // CCE testing uses any address it wants, no DRAM offset required
    , parameter mem_offset_p       = '0
@@ -207,6 +206,7 @@ wrapper
 bp_mem
 #(.cfg_p(cfg_p)
   ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
+  ,.mem_zero_p(mem_zero_p)
   ,.mem_load_p(mem_load_p)
   ,.mem_file_p(mem_file_p)
   ,.mem_offset_p(mem_offset_p)
