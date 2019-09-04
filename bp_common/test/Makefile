@@ -23,12 +23,13 @@ include $(TEST_DIR)/Makefile.frag
 all: all_mem all_dump all_spike
 
 all_mem: perch
-all_mem: riscv_mem coremark_mem beebs_mem littlefs_test_mem demos_mem
+all_mem: riscv_mem coremark_mem beebs_mem littlefs_test_mem demos_mem zero_mem
 
 all_dump: riscv_dump coremark_dump beebs_dump littlefs_test_dump demos_dump
 
 all_spike: riscv_spike coremark_spike beebs_spike littlefs_test_spike
 
+zero: zero_mem
 riscv: riscv_mem riscv_dump riscv_spike
 coremark: coremark_mem coremark_dump coremark_spike
 beebs: beebs_mem beebs_dump beebs_spike
@@ -85,7 +86,7 @@ littlefs_test_elf:
 mtest_lfs: $(foreach x, $(PROGS), $(x).bin)
 	cd $(MEM_DIR) && $(MKLFS) 128 204800 $(foreach x, $(PROGS), $(x).bin) > $(TEST_DIR)/src/mtest/src/lfs.c
 	rm $(foreach x, $(PROGS), $(MEM_DIR)/$(x).bin)
-	python $(TEST_DIR)/src/mtest/py/testgen.py $(NC) $(PROGS) > $(TEST_DIR)/src/mtest/src/benchmarks.h
+	$(PYTHON) $(TEST_DIR)/src/mtest/py/testgen.py $(NC) $(PROGS) > $(TEST_DIR)/src/mtest/src/benchmarks.h
 
 mtest_elf:
 	$(MAKE) -C $(TEST_DIR)/src/mtest/
@@ -122,6 +123,9 @@ littlefs_test_mem: littlefs_test_elf
 littlefs_test_mem: littlefs_test.mem
 littlefs_test_spike: littlefs_test.spike
 littlefs_test_dump: littlefs_test.dump
+
+zero_mem:
+	$(PYTHON) $(BP_COMMON_DIR)/software/py/zero_mem.py > $(MEM_DIR)/zero.mem
 
 #mtest_mem: beebs_elf
 mtest_mem: mtest_lfs
