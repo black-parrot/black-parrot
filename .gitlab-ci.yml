@@ -47,6 +47,10 @@ func-regress-verilator-job:
     - make build.sc 
     - make regress.sc -j 
     - grep -cr "FAILED" reports/ && exit 1
+    - cd -
+    - cd bp_me/syn
+    - make build.sc sim.sc TB=bp_cce NUM_INSTR_P=16 PROG=zero
+    - grep -cr "FAIL" reports/ && exit 1
     - exit 0
 
   artifacts:
