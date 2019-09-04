@@ -67,7 +67,6 @@ module bp_fe_top
 
 // the first level of structs
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-`declare_bp_fe_itlb_vaddr_s(vaddr_width_p,lce_sets_p,cce_block_width_p) 
 `declare_bp_be_tlb_entry_s(ptag_width_p);
    
 // fe to be
@@ -114,12 +113,13 @@ bp_be_tlb_entry_s itlb_w_entry;
 logic [instr_width_p-1:0] fetch_instr_li;
 logic fetch_instr_v_li, fetch_instr_ready_lo;
 
+logic itlb_miss_r;
 logic icache_ready_lo, itlb_ready_lo;
 logic fetch_v_lo;
 wire fetch_ready_li = icache_ready_lo & itlb_ready_lo;
 bp_fe_pc_gen 
  #(.cfg_p(cfg_p)) 
- bp_fe_pc_gen_1
+ pc_gen
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
                
@@ -134,7 +134,7 @@ bp_fe_pc_gen
    ,.instr_access_fault_i(instr_access_fault)
    ,.icache_poison_o(poison_tl)
 
-   ,.itlb_miss_i(itlb_miss)
+   ,.itlb_miss_i(itlb_miss_r)
 
    ,.itlb_fence_v_o(itlb_fence_v)
    ,.itlb_w_v_o(itlb_w_v)
@@ -150,6 +150,10 @@ bp_fe_pc_gen
    ,.fe_queue_v_o(fe_queue_v_o)
    ,.fe_queue_ready_i(fe_queue_ready_i)
    );
+
+// We delay itlb miss by 1 cycle so that it comes at the same time as icache_miss
+always_ff @(posedge clk_i)
+  itlb_miss_r <= itlb_miss;
 
 logic [ptag_width_p-1:0] fetch_ptag_lo;
 logic itlb_r_v_lo, itlb_r_ready_li;

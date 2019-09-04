@@ -1,35 +1,52 @@
 /*
- *bp_fe_instr_scan.v
+ * bp_fe_instr_scan.v
  * 
- *Instr scan check if the intruction is aligned, compressed, or normal instruction.
- *The entire block is implemented in combinational logic, achieved within one cycle.
+ * Instr scan check if the intruction is aligned, compressed, or normal instruction.
+ * The entire block is implemented in combinational logic, achieved within one cycle.
 */
 
-module instr_scan
+module bp_fe_instr_scan
  import bp_common_pkg::*;
+ import bp_common_aviary_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_fe_pkg::*; 
- #(parameter vaddr_width_p="inv"
-   , parameter instr_width_p="inv"
-   , localparam bp_fe_instr_scan_width_lp=`bp_fe_instr_scan_width 
-  ) 
-  (input [instr_width_p-1:0]                      instr_i
-   , output logic [bp_fe_instr_scan_width_lp-1:0] scan_o
+ #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+   `declare_bp_proc_params(cfg_p)
+
+   , localparam instr_scan_width_lp = `bp_fe_instr_scan_width(vaddr_width_p)
+   )
+  (input [vaddr_width_p-1:0]          pc_i
+   , input [instr_width_p-1:0]        instr_i
+
+   , output [instr_scan_width_lp-1:0] scan_o
   );
 
-   
-//assign the struct to the port signals
-bp_fe_instr_scan_s scan;
-assign scan_o = scan;
-   
-//is_compressed signal indicates if the instruction from icache is compressed
-assign scan.is_compressed = (instr_i[1:0] != 2'b11);
+`declare_bp_fe_instr_scan_s(vaddr_width_p);
 
-assign scan.instr_scan_class = bp_fe_instr_scan_class_e'(
-  (instr_i[6:0]   == `opcode_rvi_branch) ? `bp_fe_instr_scan_class_width'(e_rvi_branch) :
-  (instr_i[6:0]   == `opcode_rvi_jalr  ) ? `bp_fe_instr_scan_class_width'(e_rvi_jalr  ) :
-  (instr_i[6:0]   == `opcode_rvi_jal   ) ? `bp_fe_instr_scan_class_width'(e_rvi_jal   ) :
-                                           `bp_fe_instr_scan_class_width'(e_default   ) );
+rv64_instr_s       instr_cast_i;
+bp_fe_instr_scan_s scan_cast_o;
+
+assign instr_cast_i = instr_i;
+assign scan_o = scan_cast_o;
+
+// TODO: compressed instruction support
+wire is_compressed = (instr_i[1:0] != 2'b11);
+
+always_comb
+  begin
+    unique casez (instr_cast_i.opcode)
+      `RV64_BRANCH_OP: assign scan_cast_o.scan_class = e_rvi_branch;
+      `RV64_JAL_OP   : assign scan_cast_o.scan_class = e_rvi_jal;
+      `RV64_JALR_OP  : assign scan_cast_o.scan_class = e_rvi_jalr;
+      default        : assign scan_cast_o.scan_class = e_default;
+    endcase
+
+    unique casez (instr_cast_i.opcode)
+      `RV64_BRANCH_OP: assign scan_cast_o.imm = `rv64_signext_b_imm(instr_i);
+      `RV64_JAL_OP   : assign scan_cast_o.imm = `rv64_signext_j_imm(instr_i);
+      default        : assign scan_cast_o.imm = '0;
+    endcase
+  end
 
 endmodule
-
 

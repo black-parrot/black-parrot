@@ -27,7 +27,6 @@ $BP_COMMON_DIR/src/include/bp_common_pkg.vh
 $BP_COMMON_DIR/src/include/bp_common_aviary_pkg.vh
 // FE packages
 $BP_FE_DIR/src/include/bp_fe_icache_pkg.vh
-$BP_FE_DIR/src/include/bp_fe_itlb_pkg.vh
 $BP_FE_DIR/src/include/bp_fe_pkg.vh
 // BE packages
 $BP_BE_DIR/src/include/bp_be_pkg.vh
@@ -159,8 +158,6 @@ $BP_FE_DIR/src/v/bp_fe_btb.v
 $BP_FE_DIR/src/v/bp_fe_lce_cmd.v
 $BP_FE_DIR/src/v/bp_fe_icache.v
 $BP_FE_DIR/src/v/bp_fe_instr_scan.v
-$BP_FE_DIR/src/v/bp_fe_itlb.v
-$BP_FE_DIR/src/v/bp_fe_itlb_replacement.v
 $BP_FE_DIR/src/v/bp_fe_lce.v
 $BP_FE_DIR/src/v/bp_fe_lce_req.v
 $BP_FE_DIR/src/v/bp_fe_pc_gen.v

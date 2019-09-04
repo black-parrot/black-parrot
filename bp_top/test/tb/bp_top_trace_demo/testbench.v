@@ -139,8 +139,9 @@ if (calc_trace_p)
     bp_be_nonsynth_tracer
      #(.cfg_p(cfg_p))
      tracer
-      (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+      (.clk_i(clk_i) 
+       ,.reset_i(reset_i)  // Workaround for verilator binding by accident
+                           // TODO: Figure out why tracing is always enabled
   
        ,.mhartid_i(be_calculator.proc_cfg.core_id)
 
