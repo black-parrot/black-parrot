@@ -66,46 +66,43 @@ module wrapper
   );
 
   bp_cce_fsm_top
-   #(.cfg_p(cfg_p)
-     ,.cce_trace_p(cce_trace_p)
-     )
+   #(.cfg_p(cfg_p))
    dut
     (.*);
 
-bind bp_cce_fsm_top
-  bp_cce_nonsynth_tracer
-    #(.cfg_p(cfg_p)
-      ,.cce_trace_p(cce_trace_p)
-      )
-    bp_cce_tracer
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
-
-      ,.cce_id_i(cce_id_i)
-
-      // To CCE
-      ,.lce_req_i(lce_req_to_cce)
-      ,.lce_req_v_i(lce_req_v_to_cce)
-      ,.lce_req_yumi_i(lce_req_yumi_from_cce)
-      ,.lce_resp_i(lce_resp_to_cce)
-      ,.lce_resp_v_i(lce_resp_v_to_cce)
-      ,.lce_resp_yumi_i(lce_resp_yumi_from_cce)
-
-      // From CCE
-      ,.lce_cmd_i(lce_cmd_o)
-      ,.lce_cmd_v_i(lce_cmd_v_o)
-      ,.lce_cmd_ready_i(lce_cmd_ready_i)
-
-      // To CCE
-      ,.mem_resp_i(mem_resp_to_cce)
-      ,.mem_resp_v_i(mem_resp_v_to_cce)
-      ,.mem_resp_yumi_i(mem_resp_yumi_from_cce)
-
-      // From CCE
-      ,.mem_cmd_i(mem_cmd_from_cce)
-      ,.mem_cmd_v_i(mem_cmd_v_from_cce)
-      ,.mem_cmd_ready_i(mem_cmd_ready_to_cce)
-      );
+if (cce_trace_p)
+  bind bp_cce_fsm_top
+    bp_cce_nonsynth_tracer
+      #(.cfg_p(cfg_p))
+      bp_cce_tracer
+       (.clk_i(clk_i)
+        ,.reset_i(reset_i)
+  
+        ,.cce_id_i(cce_id_i)
+  
+        // To CCE
+        ,.lce_req_i(lce_req_to_cce)
+        ,.lce_req_v_i(lce_req_v_to_cce)
+        ,.lce_req_yumi_i(lce_req_yumi_from_cce)
+        ,.lce_resp_i(lce_resp_to_cce)
+        ,.lce_resp_v_i(lce_resp_v_to_cce)
+        ,.lce_resp_yumi_i(lce_resp_yumi_from_cce)
+  
+        // From CCE
+        ,.lce_cmd_i(lce_cmd_o)
+        ,.lce_cmd_v_i(lce_cmd_v_o)
+        ,.lce_cmd_ready_i(lce_cmd_ready_i)
+  
+        // To CCE
+        ,.mem_resp_i(mem_resp_to_cce)
+        ,.mem_resp_v_i(mem_resp_v_to_cce)
+        ,.mem_resp_yumi_i(mem_resp_yumi_from_cce)
+  
+        // From CCE
+        ,.mem_cmd_i(mem_cmd_from_cce)
+        ,.mem_cmd_v_i(mem_cmd_v_from_cce)
+        ,.mem_cmd_ready_i(mem_cmd_ready_to_cce)
+        );
 
 endmodule : wrapper
 
