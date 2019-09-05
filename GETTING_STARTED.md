@@ -7,6 +7,8 @@
     # make progs will build all open source test programs that ship with BlackParrot
     make progs
     # make ucode will build the CCE microcode used for BlackParrot's coherence engine
+    # This is necessary whenever changes are made to CCE ucode. Eventually, CCE ucode
+    #  will be built 'on demand' and so this command may become unnecessary
     make ucode
 
 

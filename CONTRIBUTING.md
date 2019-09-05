@@ -44,7 +44,7 @@ An ideal collaboration looks like the following:
     - Supporting eating ants would increase PPA because BlackParrot would have more energy.
     - We could either modify the beak or the talons, with the tradeoff being that the beak is more efficent, but harder to modify.
 3. Communicate with BlackParrot maintainers
-    - We have an extensive talon modification pending on another branch, which will be incompatible with your proposal. Your beak proposal interesting though, have you considered the effects on eating berries?
+    - We have an extensive talon modification pending on another branch, which will be incompatible with your talon proposal. Your beak proposal is interesting though, have you considered the effects on eating berries?
     - \<Back and forth\>
     - Design specification document is written and agreed upon.
 4. Make a PR with an initial version of code.
@@ -70,7 +70,7 @@ An ideal collaboration looks like the following:
     - Top level wrapping modules; tiles, off-chip networks, SoC configurations.
     - CI should often pass, but there is no gatekeeper at this level.  
 - fe_dev, be_dev, me_dev: Module level development branch
-    - All \<end\> work should branch off of and merge into this branch. fe_dev will periodically merge from and into dev.
+    - All \<end\> work should branch off of and merge into these branches. These will periodically merge from and into dev.
     - CI should often pass, but there is no gatekeeper at this level.  
 - sw_dev: Software development branch
     - All CAD flow, software tests and debugging utilities should branch off and merge into this branch. sw_dev will periodically merge from and into dev.
