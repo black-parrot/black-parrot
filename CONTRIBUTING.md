@@ -13,26 +13,36 @@ Generally, there are three types of issues raised in BlackParrot.
     - Current behavior (steps for reproduction).
     - Expected behavior.
     - Proposed solution(s), including scope of work and affected modules.
+    - Analysis of potential impact.
     - Methods of verification.
-- Example: Power waste by propagating data when stalled.
+- Resolution: Bug fixed, analysis shows not a true bug.
+
+![Bug Report Issue](docs/issue_bug.png)
+
 ### Feature requests
 **I would like BlackParrot to do this.**
 - Suggested fields:
     - Descriptive title.
     - Module/tool/makefile/script in question.
+    - Current behavior.
     - Desired behavior / rationale for change.
     - Proposed solution(s), including scope of work and affected modules.
+    - Analysis of potential impact.
     - Methods of quantitative evaluation.
-- Example: Support pre-fetching in I$.
+- Resolution: Feature added, feature deferred, feature discouraged.
+
+![Feature Request Issue](docs/issue_feature.png)
+
 ### Informational
 **I don't understand this.**
 - Suggested fields:
     - Descriptive title.
     - Module/tool/makefile/script in question.
-    - Information requested.
     - Background information already gathered.
-- Example: What algorithm does D$ LRU use?
+    - Information requested.
 - Resolution: Additional comments, additional documentation.
+
+![Informational Issue](docs/issue_info.png)
 
 ## Making a PR
 The absolute most important factor in making a successful open-source contribution is communication with the maintainers. Therefore it is highly recommended to raise an issue and discuss potential implementation paths before making a pull request. "Dumping code" is discouraged. 
