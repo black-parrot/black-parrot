@@ -69,18 +69,16 @@ module bp_mem_transducer
   // Only handle word aligned accesses
   wire [word_offset_bits_lp-1:0] wr_word_offset = mem_cmd_cast_i.addr[byte_offset_bits_lp+:word_offset_bits_lp];
   wire [byte_offset_bits_lp-1:0] wr_byte_offset = mem_cmd_cast_i.addr[0+:byte_offset_bits_lp];
-  wire [paddr_width_p-1:0]             wr_shift = wr_word_offset*dword_width_p + wr_byte_offset;
+  wire [paddr_width_p-1:0]             wr_shift = wr_word_offset*dword_width_p;
   wire [word_offset_bits_lp-1:0] rd_word_offset = mem_cmd_r.addr[byte_offset_bits_lp+:word_offset_bits_lp];
   wire [byte_offset_bits_lp-1:0] rd_byte_offset = mem_cmd_r.addr[0+:byte_offset_bits_lp];
-  wire [paddr_width_p-1:0]             rd_shift = rd_word_offset*dword_width_p + rd_byte_offset;
+  wire [paddr_width_p-1:0]             rd_shift = rd_word_offset*dword_width_p;
 
   assign v_o = mem_cmd_yumi_o;
   assign w_o = mem_cmd_cast_i.msg_type inside {e_cce_mem_uc_wr, e_cce_mem_wb};
   assign addr_o = (((mem_cmd_cast_i.addr - dram_offset_p) >> block_offset_bits_lp) << block_offset_bits_lp);
-  assign data_o = (mem_cmd_cast_i.msg_type == e_cce_mem_wb)
-                  ? mem_cmd_cast_i.data
-                  : mem_cmd_cast_i.data << wr_shift;
-  assign write_mask_o = (2**(2**mem_cmd_cast_i.size) - 1) << wr_shift;
+  assign data_o = mem_cmd_cast_i.data << wr_shift;
+  assign write_mask_o = (2**(2**mem_cmd_cast_i.size) - 1) << (wr_word_offset*num_word_bytes_lp + wr_byte_offset);
 
   wire [cce_block_width_p-1:0] data_li = data_i >> rd_shift;
 
