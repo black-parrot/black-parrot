@@ -117,12 +117,11 @@ wrapper
    ,.resp_link_o(resp_link_li)
    );
 
-if (cmt_trace_p)
   bind bp_be_top
     bp_nonsynth_commit_tracer
      #(.cfg_p(cfg_p))
      commit_tracer
-      (.clk_i(clk_i)
+      (.clk_i(clk_i & cmt_trace_p)
        ,.reset_i(reset_i)
 
        ,.commit_v_i(be_calculator.instret_mem3_o)
@@ -134,12 +133,11 @@ if (cmt_trace_p)
        ,.rd_data_i(be_calculator.int_regfile.rd_data_i)
        );
 
-if (calc_trace_p)
   bind bp_be_top
     bp_be_nonsynth_tracer
      #(.cfg_p(cfg_p))
      tracer
-      (.clk_i(clk_i)
+      (.clk_i(clk_i & calc_trace_p)
        ,.reset_i(reset_i)
   
        ,.mhartid_i(be_calculator.proc_cfg.core_id)
@@ -189,12 +187,11 @@ bind bp_be_top
      ,.program_finish_i(testbench.program_finish)
      );
 
-if (cce_trace_p)
   bind bp_cce_top
     bp_cce_nonsynth_tracer
       #(.cfg_p(cfg_p))
       bp_cce_tracer
-       (.clk_i(clk_i)
+       (.clk_i(clk_i & testbench.cce_trace_p)
         ,.reset_i(reset_i)
   
         ,.cce_id_i(cce_id_i)
