@@ -6,6 +6,10 @@ from npa_addr_gen import NPAAddrGen
 paddr_width = 40
 uc_mask = (1 << (paddr_width-1))
 tg = TraceGen(addr_width_p=paddr_width, data_width_p=64)
+# TODO: the addressing below is a carryover from manycore-land. This generates valid addresses,
+# but is not exactly how BP works. This test will be changed to use direct assignment of addresses
+# in a future change, when we also change the use of the msb bit of the address to no longer rely
+# on it for cached/uncached determination.
 npa = NPAAddrGen(y_cord_width_p=1, x_cord_width_p=2, epa_addr_width_p=10)
 
 tg.print_header()

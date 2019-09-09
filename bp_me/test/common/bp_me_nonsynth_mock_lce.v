@@ -7,6 +7,10 @@
  * Uncached access is determined by the memory address. If the MSB of the address is set, the
  * access is for uncached memory, otherwise it is a cached access.
  *
+ * NOTE: this mock LCE uses the msb of the address to determine cached/uncached access. The
+ * real D$ and I$ no longer do this, and instead take an uncached_i signal as input alongside
+ * the cache command. The mock LCE interface will soon be changed to this as well.
+ *
  */
 
 module tag_lookup
