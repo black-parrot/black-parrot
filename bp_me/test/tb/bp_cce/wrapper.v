@@ -70,12 +70,11 @@ module wrapper
    dut
     (.*);
 
-if (cce_trace_p)
   bind bp_cce_top
     bp_cce_nonsynth_tracer
       #(.cfg_p(cfg_p))
       bp_cce_tracer
-       (.clk_i(clk_i)
+       (.clk_i(clk_i & wrapper.cce_trace_p)
         ,.reset_i(reset_i)
   
         ,.cce_id_i(cce_id_i)
