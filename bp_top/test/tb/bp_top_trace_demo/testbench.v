@@ -121,8 +121,10 @@ wrapper
     bp_nonsynth_commit_tracer
      #(.cfg_p(cfg_p))
      commit_tracer
-      (.clk_i(clk_i & cmt_trace_p)
+      (.clk_i(clk_i & (testbench.cmt_trace_p == 1))
        ,.reset_i(reset_i)
+
+       ,.mhartid_i('0)
 
        ,.commit_v_i(be_calculator.instret_mem3_o)
        ,.commit_pc_i(be_calculator.pc_mem3_o)
@@ -137,7 +139,7 @@ wrapper
     bp_be_nonsynth_tracer
      #(.cfg_p(cfg_p))
      tracer
-      (.clk_i(clk_i & calc_trace_p)
+      (.clk_i(clk_i & (testbench.calc_trace_p == 1))
        ,.reset_i(reset_i)
   
        ,.mhartid_i(be_calculator.proc_cfg.core_id)
@@ -191,7 +193,7 @@ bind bp_be_top
     bp_cce_nonsynth_tracer
       #(.cfg_p(cfg_p))
       bp_cce_tracer
-       (.clk_i(clk_i & testbench.cce_trace_p)
+       (.clk_i(clk_i & (testbench.cce_trace_p == 1))
         ,.reset_i(reset_i)
   
         ,.cce_id_i(cce_id_i)

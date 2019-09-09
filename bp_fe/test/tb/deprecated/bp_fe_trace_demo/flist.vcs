@@ -1,7 +1,7 @@
 # bsg_ip_cores files
-$BSG_IP_CORES_DIR/bsg_test/bsg_nonsynth_reset_gen.v
-$BSG_IP_CORES_DIR/bsg_test/bsg_nonsynth_clock_gen.v
-$BSG_IP_CORES_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_reset_gen.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_clock_gen.v
+$BASEJUMP_STL_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
 # be files
 # me files
 # fe files

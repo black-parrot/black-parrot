@@ -68,7 +68,7 @@ bsg_trace_rom_%.tr:
 	-python $(TB_PATH)/$(TB)/bsg_trace_rom.py -m $(PADDR_WIDTH) -n $(NUM_INSTR_P) -s $(SEED_P) -i $* -l $(NUM_LCE_P) > $(TB_PATH)/$(TB)/$@
 
 bsg_trace_rom_%.v: bsg_trace_rom_%.tr
-	-python $(BSG_IP_CORES_DIR)/bsg_mem/bsg_ascii_to_rom.py $(TB_PATH)/$(TB)/$< bsg_trace_rom_$* > $(TB_PATH)/$(TB)/$@
+	-python $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $(TB_PATH)/$(TB)/$< bsg_trace_rom_$* > $(TB_PATH)/$(TB)/$@
 
 copy_roms.v:
 	-@mv $(TB_PATH)/$(TB)/bsg_trace_rom*.v $(BUILD_DIR)/

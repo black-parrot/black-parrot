@@ -22,6 +22,12 @@
   branch = master
   ignore = dirty
 
+#[submodule "external/basejump_stl"]
+#  path = external/basejump_stl
+#  url = https://github.com/black-parrot/basejump_stl.git
+#  branch = blackparrot_mods
+#  ignore = dirty
+
 [submodule "external/DRAMSim2"]
   path = external/DRAMSim2
   url = https://github.com/umd-memsys/DRAMSim2.git
