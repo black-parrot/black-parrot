@@ -73,11 +73,11 @@ always_ff @(posedge clk_i)
       begin
         clk_cnt_r <= clk_cnt_r + 64'b1;
         instr_cnt_r <= instr_cnt_r + instr_cmt_i & ~poison_i;
-        fe_nop_cnt_r <= fe_nop_cnt_r + blame_fe;
-        be_nop_cnt_r <= be_nop_cnt_r + blame_be;
-        me_nop_cnt_r <= me_nop_cnt_r + blame_me;
-        poison_cnt_r <= poison_cnt_r + blame_poison;
-        roll_cnt_r <= roll_cnt_r + blame_roll;
+        fe_nop_cnt_r <= blame_fe ? fe_nop_cnt_r + 1'b1 : fe_nop_cnt_r; 
+        be_nop_cnt_r <= blame_be ? be_nop_cnt_r + 1'b1 : be_nop_cnt_r;
+        me_nop_cnt_r <= blame_me ? me_nop_cnt_r + 1'b1 : me_nop_cnt_r;
+        poison_cnt_r <= blame_poison ? poison_cnt_r + 1'b1 : poison_cnt_r;
+        roll_cnt_r <= blame_roll ? roll_cnt_r + 1'b1 : roll_cnt_r;
 
         program_finish_r <= program_finish_i;
       end

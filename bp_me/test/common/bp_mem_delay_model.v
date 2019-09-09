@@ -25,7 +25,7 @@ module bp_mem_delay_model
    , input                    yumi_i
    );
 
-localparam latency_width_lp = `BSG_SAFE_CLOG2(max_latency_p);
+localparam latency_width_lp = `BSG_SAFE_CLOG2(max_latency_p+1);
 
 enum bit {e_idle, e_service} state_n, state_r;
 
@@ -43,12 +43,12 @@ always_comb
   endcase
 
 logic [latency_width_lp-1:0] current_latency;
-logic [latency_width_lp:0]   latency_cnt;
+logic [latency_width_lp-1:0] latency_cnt;
 
 wire clr_counter = yumi_i;
 wire inc_counter = (state_r == e_service) & (latency_cnt < current_latency);
 bsg_counter_clear_up
- #(.max_val_p(max_latency_p+1)
+ #(.max_val_p(max_latency_p)
    ,.init_val_p(0)
    )
  latency_counter

@@ -3,7 +3,7 @@
 
 `define PRIV_MODE_M 2'b11
 `define PRIV_MODE_S 2'b01
-`define PRIV_MODE_U 2'b00
+`define PRIV_MODE_U 1'b0
 
 `define CSR_ADDR_USTATUS       12'h000
 `define CSR_ADDR_UIE           12'h004
@@ -865,6 +865,7 @@ typedef struct packed
                         }
 
 `define declare_csr(csr_name_mp) \
+  /* verilator lint_off UNUSED */                                                               \
   rv64_``csr_name_mp``_s ``csr_name_mp``_li, ``csr_name_mp``_lo;                                \
   bp_``csr_name_mp``_s ``csr_name_mp``_n, ``csr_name_mp``_r;                                    \
   bsg_dff_reset                                                                                 \
@@ -873,32 +874,39 @@ typedef struct packed
     (.clk_i(clk_i), .reset_i(reset_i), .data_i(``csr_name_mp``_n), .data_o(``csr_name_mp``_r)); \
   assign ``csr_name_mp``_lo = `decompress_``csr_name_mp``_s(``csr_name_mp``_r);                 \
   assign ``csr_name_mp``_n  = `compress_``csr_name_mp``_s(``csr_name_mp``_li);                  \
+  /* verilator lint_on UNUSED */
 
 `define declare_csr_case_rw(priv_mode_mp, csr_addr_mp, csr_name_mp, csr_data_li, csr_data_lo) \
+  /* verilator lint_off UNSIGNED */                                          \
   csr_addr_mp:                                                               \
     begin                                                                    \
       ``csr_name_mp``_li = rv64_``csr_name_mp``_s'(csr_data_li);             \
-      csr_data_lo        = ``csr_name_mp``_lo;                               \
+      csr_data_lo        = dword_width_p'(``csr_name_mp``_lo);               \
                                                                              \
       illegal_instr_o = (priv_mode_r < priv_mode_mp);                        \
-    end
+    end                                                                      \
+  /* verilator lint_on UNSIGNED */
 
 `define declare_csr_case_ro(priv_mode_mp, csr_addr_mp, csr_name_mp, ro_data_li, csr_data_lo) \
+  /* verilator lint_off UNSIGNED */                   \
   csr_addr_mp:                                        \
     begin                                             \
-      csr_data_lo = ro_data_li;                       \
+      csr_data_lo = dword_width_p'(ro_data_li);       \
                                                       \
       illegal_instr_o = (priv_mode_r < priv_mode_mp); \
-    end
+    end                                               \
+  /* verilator lint_on UNSIGNED */
 
 `define declare_csr_case_rw_mask(priv_mode_mp, csr_addr_mp, csr_name_mp, csr_data_li, csr_data_lo, csr_wmask_mp, csr_rmask_mp) \
+  /* verilator lint_off UNSIGNED */                                                             \
   csr_addr_mp:                                                                                  \
     begin                                                                                       \
       ``csr_name_mp``_li = (``csr_name_mp``_lo & ~csr_wmask_mp) | (csr_data_li & csr_wmask_mp); \
-      csr_data_lo        = (``csr_name_mp``_lo & csr_rmask_mp);                                 \
+      csr_data_lo        = dword_width_p'(``csr_name_mp``_lo & csr_rmask_mp);                   \
                                                                                                 \
       illegal_instr_o = (priv_mode_r < priv_mode_mp);                                           \
-    end
+    end                                                                                         \
+  /* verilator lint_on UNSIGNED */
 
 `endif
 

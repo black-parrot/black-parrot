@@ -35,38 +35,29 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
+      ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 62
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 5
       ,coh_noc_y_cord_width: 0
       ,coh_noc_x_cord_width: 1
-      ,coh_noc_y_dim       : 0
+      ,coh_noc_y_dim       : 1
       ,coh_noc_x_dim       : 1
 
       ,cfg_core_width: 8
       ,cfg_addr_width: 16
       ,cfg_data_width: 32
 
+      ,async_mem_clk         : 0
+      ,mem_noc_max_credits   : 4
       ,mem_noc_flit_width    : 30
       ,mem_noc_reserved_width: 2
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
       ,mem_noc_y_cord_width  : 0
-      ,mem_noc_x_cord_width  : 9
+      ,mem_noc_x_cord_width  : 8
       ,mem_noc_y_dim         : 1
       ,mem_noc_x_dim         : 1
-
-      ,ct_remote_credits      : 32
-      ,ct_max_payload_flits   : 20
-      ,ct_lg_credit_decimation: 3
-      ,max_credits            : 4
-      ,mmio_y_pos             : 0
-      ,mmio_x_pos             : 0
-
-      ,dword_width      : 64
-      ,instr_width      : 32
-      ,reg_addr_width   : 5
-      ,page_offset_width: 12
       };
 
   localparam bp_proc_param_s bp_single_core_cfg_p = 
@@ -95,38 +86,29 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
+      ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 62
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 5
-      ,coh_noc_y_cord_width: 0
+      ,coh_noc_y_cord_width: 1
       ,coh_noc_x_cord_width: 1
-      ,coh_noc_y_dim       : 0
+      ,coh_noc_y_dim       : 1
       ,coh_noc_x_dim       : 1
 
       ,cfg_core_width: 8
       ,cfg_addr_width: 16
       ,cfg_data_width: 32
 
+      ,async_mem_clk         : 0
+      ,mem_noc_max_credits   : 4
       ,mem_noc_flit_width    : 30
       ,mem_noc_reserved_width: 2
       ,mem_noc_cid_width     : 5
       ,mem_noc_len_width     : 5
-      ,mem_noc_y_cord_width  : 0
-      ,mem_noc_x_cord_width  : 9
+      ,mem_noc_y_cord_width  : 1
+      ,mem_noc_x_cord_width  : 8
       ,mem_noc_y_dim         : 1
       ,mem_noc_x_dim         : 1
-
-      ,ct_remote_credits      : 32
-      ,ct_max_payload_flits   : 20
-      ,ct_lg_credit_decimation: 3
-      ,max_credits            : 4
-      ,mmio_y_pos             : 0
-      ,mmio_x_pos             : 0
-
-      ,dword_width      : 64
-      ,instr_width      : 32
-      ,reg_addr_width   : 5
-      ,page_offset_width: 12
       };
 
   localparam bp_proc_param_s bp_dual_core_cfg_p = 
@@ -155,38 +137,29 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
+      ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 62
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 5
-      ,coh_noc_y_cord_width: 0
+      ,coh_noc_y_cord_width: 1
       ,coh_noc_x_cord_width: 2
-      ,coh_noc_y_dim       : 0
+      ,coh_noc_y_dim       : 1
       ,coh_noc_x_dim       : 2
 
       ,cfg_core_width: 8
       ,cfg_addr_width: 16
       ,cfg_data_width: 32
 
+      ,async_mem_clk         : 0
+      ,mem_noc_max_credits   : 4
       ,mem_noc_flit_width    : 30
       ,mem_noc_reserved_width: 2
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
-      ,mem_noc_y_cord_width  : 0
-      ,mem_noc_x_cord_width  : 9
+      ,mem_noc_y_cord_width  : 1
+      ,mem_noc_x_cord_width  : 7
       ,mem_noc_y_dim         : 1
       ,mem_noc_x_dim         : 2
-
-      ,ct_remote_credits      : 32
-      ,ct_max_payload_flits   : 20
-      ,ct_lg_credit_decimation: 3
-      ,max_credits            : 4
-      ,mmio_y_pos             : 0
-      ,mmio_x_pos             : 0
-
-      ,dword_width      : 64
-      ,instr_width      : 32
-      ,reg_addr_width   : 5
-      ,page_offset_width: 12
       };
 
   localparam bp_proc_param_s bp_quad_core_cfg_p = 
@@ -215,38 +188,29 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
+      ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 62
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 5
-      ,coh_noc_y_cord_width: 0
-      ,coh_noc_x_cord_width: 3
-      ,coh_noc_y_dim       : 0
-      ,coh_noc_x_dim       : 3
+      ,coh_noc_y_cord_width: 1
+      ,coh_noc_x_cord_width: 1
+      ,coh_noc_y_dim       : 2
+      ,coh_noc_x_dim       : 2
 
       ,cfg_core_width: 8
       ,cfg_addr_width: 16
       ,cfg_data_width: 32
 
+      ,async_mem_clk         : 1
+      ,mem_noc_max_credits   : 4
       ,mem_noc_flit_width    : 30
       ,mem_noc_reserved_width: 2
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
-      ,mem_noc_y_cord_width  : 0
-      ,mem_noc_x_cord_width  : 9
+      ,mem_noc_y_cord_width  : 2
+      ,mem_noc_x_cord_width  : 6
       ,mem_noc_y_dim         : 2
       ,mem_noc_x_dim         : 2
-
-      ,ct_remote_credits      : 32
-      ,ct_max_payload_flits   : 20
-      ,ct_lg_credit_decimation: 3
-      ,max_credits            : 4
-      ,mmio_y_pos             : 0
-      ,mmio_x_pos             : 1
-
-      ,dword_width      : 64
-      ,instr_width      : 32
-      ,reg_addr_width   : 5
-      ,page_offset_width: 12
       };
 
   localparam bp_proc_param_s bp_oct_core_cfg_p = 
@@ -275,6 +239,7 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
+      ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 62
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 5
@@ -287,26 +252,16 @@ package bp_common_aviary_pkg;
       ,cfg_addr_width: 16
       ,cfg_data_width: 32
 
+      ,async_mem_clk         : 0
+      ,mem_noc_max_credits   : 4
       ,mem_noc_flit_width    : 30
       ,mem_noc_reserved_width: 2
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
       ,mem_noc_y_cord_width  : 0
-      ,mem_noc_x_cord_width  : 9
-      ,mem_noc_y_dim         : 2
-      ,mem_noc_x_dim         : 4
-
-      ,ct_remote_credits      : 32
-      ,ct_max_payload_flits   : 20
-      ,ct_lg_credit_decimation: 3
-      ,max_credits            : 4
-      ,mmio_y_pos             : 0
-      ,mmio_x_pos             : 5
-
-      ,dword_width      : 64
-      ,instr_width      : 32
-      ,reg_addr_width   : 5
-      ,page_offset_width: 12
+      ,mem_noc_x_cord_width  : 8
+      ,mem_noc_y_dim         : 1
+      ,mem_noc_x_dim         : 8
       };
 
   localparam bp_proc_param_s bp_sexta_core_cfg_p =
@@ -335,104 +290,34 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 2
 
+      ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 62
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 5
       ,coh_noc_y_cord_width: 0
-      ,coh_noc_x_cord_width: 5
+      ,coh_noc_x_cord_width: 4
       ,coh_noc_y_dim       : 0
-      ,coh_noc_x_dim       : 5
+      ,coh_noc_x_dim       : 16
 
       ,cfg_core_width: 8
       ,cfg_addr_width: 16
       ,cfg_data_width: 32
 
+      ,async_mem_clk         : 0
+      ,mem_noc_max_credits   : 4
       ,mem_noc_flit_width    : 30
       ,mem_noc_reserved_width: 2
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
       ,mem_noc_y_cord_width  : 0
-      ,mem_noc_x_cord_width  : 9
-      ,mem_noc_y_dim         : 4
-      ,mem_noc_x_dim         : 4
-
-      ,ct_remote_credits      : 64
-      ,ct_max_payload_flits   : 20
-      ,ct_lg_credit_decimation: 4
-      ,max_credits            : 4
-      ,mmio_y_pos             : 0
-      ,mmio_x_pos             : 5
-
-      ,dword_width      : 64
-      ,instr_width      : 32
-      ,reg_addr_width   : 5
-      ,page_offset_width: 12
-      };
-
-  localparam bp_proc_param_s bp_single_core_2d_cfg_p = 
-    '{num_core: 1
-      ,num_cce: 1
-      ,num_lce: 2
-
-      ,vaddr_width: 39
-      ,paddr_width: 39
-      ,asid_width : 1
-      
-      ,branch_metadata_fwd_width: 27
-      ,btb_tag_width            : 10
-      ,btb_idx_width            : 6
-      ,bht_idx_width            : 9
-      ,ras_idx_width            : 2
-      
-      ,itlb_els             : 8
-      ,dtlb_els             : 8
-      
-      ,lce_sets             : 64
-      ,lce_assoc            : 8
-      ,cce_block_width      : 512
-      ,num_cce_instr_ram_els: 256
-
-      ,fe_queue_fifo_els: 8
-      ,fe_cmd_fifo_els  : 2
-
-      ,coh_noc_flit_width  : 62
-      ,coh_noc_cid_width   : 2
-      ,coh_noc_len_width   : 5
-      ,coh_noc_y_cord_width: 1
-      ,coh_noc_x_cord_width: 1
-      ,coh_noc_y_dim       : 1
-      ,coh_noc_x_dim       : 1
-
-      ,cfg_core_width: 8
-      ,cfg_addr_width: 16
-      ,cfg_data_width: 32
-
-      ,mem_noc_flit_width    : 30
-      ,mem_noc_reserved_width: 2
-      ,mem_noc_cid_width     : 5
-      ,mem_noc_len_width     : 5
-      ,mem_noc_y_cord_width  : 1
-      ,mem_noc_x_cord_width  : 9
+      ,mem_noc_x_cord_width  : 8
       ,mem_noc_y_dim         : 1
-      ,mem_noc_x_dim         : 1
-
-      ,ct_remote_credits      : 32
-      ,ct_max_payload_flits   : 20
-      ,ct_lg_credit_decimation: 3
-      ,max_credits            : 4
-      ,mmio_y_pos             : 0
-      ,mmio_x_pos             : 1
-
-      ,dword_width      : 64
-      ,instr_width      : 32
-      ,reg_addr_width   : 5
-      ,page_offset_width: 12
+      ,mem_noc_x_dim         : 16
       };
 
   typedef enum bit [lg_max_cfgs-1:0] 
   {
-    e_bp_single_core_2d_cfg = 7
-    ,e_bp_sexta_core_cfg    = 6
+    e_bp_sexta_core_cfg     = 6
     ,e_bp_oct_core_cfg      = 5
     ,e_bp_quad_core_cfg     = 4
     ,e_bp_dual_core_cfg     = 3
@@ -441,10 +326,10 @@ package bp_common_aviary_pkg;
     ,e_bp_inv_cfg           = 0
   } bp_cfg_e;
 
+  /* verilator lint_off WIDTH */     
   parameter bp_proc_param_s [max_cfgs-1:0] all_cfgs_gp =
   {
-    bp_single_core_2d_cfg_p
-    ,bp_sexta_core_cfg_p
+    bp_sexta_core_cfg_p
     ,bp_oct_core_cfg_p
     ,bp_quad_core_cfg_p
     ,bp_dual_core_cfg_p
@@ -452,6 +337,7 @@ package bp_common_aviary_pkg;
     ,bp_half_core_cfg_p
     ,bp_inv_cfg_p
   };
+  /* verilator lint_on WIDTH */
 
 endpackage
 

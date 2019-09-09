@@ -306,6 +306,7 @@ assign itlb_w_vtag_o = fe_cmd_cast_i.vaddr[vaddr_width_p-1:page_offset_width_p];
 assign itlb_w_entry_o = fe_cmd_cast_i.operands.itlb_fill_response.pte_entry_leaf;
    
 // icache to icache
+assign fetch_instr_ready_o = is_run;
 assign icache_poison_o = cmd_nonattaboy_v;
 
 assign fetch_pc_o = pc_if1_n;

@@ -129,6 +129,7 @@ bsg_priority_encode
    );
 
 // Compute input CSR data
+wire [dword_width_p-1:0] csr_imm_li = dword_width_p'(csr_cmd.data[4:0]);
 always_comb 
   begin
     unique casez (csr_cmd.csr_op)
@@ -136,9 +137,9 @@ always_comb
       e_csrrs : csr_data_li =  csr_cmd.data | csr_data_lo;
       e_csrrc : csr_data_li = ~csr_cmd.data & csr_data_lo;
 
-      e_csrrwi: csr_data_li =  csr_cmd.data[4:0];
-      e_csrrsi: csr_data_li =  csr_cmd.data[4:0] | csr_data_lo;
-      e_csrrci: csr_data_li = ~csr_cmd.data[4:0] & csr_data_lo;
+      e_csrrwi: csr_data_li =  csr_imm_li;
+      e_csrrsi: csr_data_li =  csr_imm_li | csr_data_lo;
+      e_csrrci: csr_data_li = ~csr_imm_li & csr_data_lo;
       default : csr_data_li = '0;
     endcase
   end
@@ -338,8 +339,8 @@ always_comb
             // SIP subset of MIP
             `declare_csr_case_rw_mask(`PRIV_MODE_S, `CSR_ADDR_SIP, mip, csr_data_li, csr_data_lo, sip_wmask_li, sip_rmask_li)
             `declare_csr_case_rw(`PRIV_MODE_S, `CSR_ADDR_SATP, satp, csr_data_li, csr_data_lo)
-
-            `declare_csr_case_ro(`PRIV_MODE_M, `CSR_ADDR_MVENDORID, mvendorid, csr_data_li, csr_data_lo)
+            // We havr no vendorid currently
+            `declare_csr_case_ro(`PRIV_MODE_M, `CSR_ADDR_MVENDORID, mvendorid, '0, csr_data_lo)
             // https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md
             //   Lucky 13 (*v*)
             `declare_csr_case_ro(`PRIV_MODE_M, `CSR_ADDR_MARCHID, marchid, 13, csr_data_lo)
