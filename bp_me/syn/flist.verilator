@@ -112,7 +112,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_array_concentrate_static.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_unconcentrate_static.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v  
-$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v 
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lfsr.v
 # COMMON
 $BP_COMMON_DIR/src/v/bp_addr_map.v
