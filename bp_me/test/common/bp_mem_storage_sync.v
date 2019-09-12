@@ -36,9 +36,7 @@ always_comb
   for (integer i = 0; i < num_data_bytes_lp; i++)
     data_lo[i*8+:8] = mem[addr_r+byte_els_lp'(i)];
 
-always_comb
-  for (integer i = 0; i < num_data_bytes_lp; i++)
-    data_li[i*8+:8] = write_mask_i[i] ? data_i[i*8+:8] : data_lo[i*8+:8];
+assign data_li = data_i;
 
 import "DPI-C" context function string rebase_hexfile(input string memfile_name
                                                       , input longint dram_base);
@@ -58,9 +56,14 @@ always_ff @(posedge clk_i)
           mem[i] = '0;
       end
     else if (v_i & w_i)
-      for (integer i = 0; i < num_data_bytes_lp; i++)
-        mem[addr_i+i] <= data_li[i*8+:8];
-
+      // byte-maskable writes
+      begin
+        for (integer i = 0; i < num_data_bytes_lp; i++)
+          begin
+            if (write_mask_i[i])
+              mem[addr_i+i] <= data_li[i*8+:8];
+          end
+      end
     if (v_i & ~w_i)
       addr_r <= addr_i;
   end
