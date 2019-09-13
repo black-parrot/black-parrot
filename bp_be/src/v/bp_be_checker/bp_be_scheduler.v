@@ -102,6 +102,8 @@ always_comb
             issue_pkt_cast_o.imm = `rv64_signext_s_imm(fetch_instr);
           `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP: 
             issue_pkt_cast_o.imm = `rv64_signext_i_imm(fetch_instr);
+          `RV64_SYSTEM_OP:
+            issue_pkt_cast_o.imm = `rv64_signext_c_imm(fetch_instr);
           default: begin end
         endcase
       end
