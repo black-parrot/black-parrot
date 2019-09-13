@@ -205,11 +205,9 @@ if (fp_en_p)
      // Don't need to forward isd data
      #(.fwd_els_p(pipe_stage_els_lp-1))
      fp_bypass
-      (.id_rs1_v_i(issue_pkt_r.frs1_v)
-       ,.id_rs1_addr_i(issue_pkt_r.instr.fields.rtype.rs1_addr)
+      (.id_rs1_addr_i(issue_pkt_r.instr.fields.rtype.rs1_addr)
        ,.id_rs1_i(frf_rs1)
     
-       ,.id_rs2_v_i(issue_pkt_r.frs2_v)
        ,.id_rs2_addr_i(issue_pkt_r.instr.fields.rtype.rs2_addr)
        ,.id_rs2_i(frf_rs2)
     
@@ -296,11 +294,9 @@ bp_be_bypass
  // Don't need to forward isd data
  #(.fwd_els_p(pipe_stage_els_lp-1))
  int_bypass 
-  (.id_rs1_v_i(issue_pkt_r.irs1_v)
-   ,.id_rs1_addr_i(issue_pkt_r.instr.fields.rtype.rs1_addr)
+  (.id_rs1_addr_i(issue_pkt_r.instr.fields.rtype.rs1_addr)
    ,.id_rs1_i(irf_rs1)
 
-   ,.id_rs2_v_i(issue_pkt_r.irs2_v)
    ,.id_rs2_addr_i(issue_pkt_r.instr.fields.rtype.rs2_addr)
    ,.id_rs2_i(irf_rs2)
 
