@@ -174,7 +174,7 @@ logic load_access_fault_v, store_access_fault_v;
 /* Control signals */
 logic dcache_cmd_v;
 logic itlb_not_dtlb_resp;
-logic dtlb_miss_r;
+logic mmu_cmd_v_r, mmu_cmd_v_rr, dtlb_miss_r;
 bp_be_mmu_vaddr_s vaddr_mem3, fault_vaddr;
 logic is_itlb_fill_mem3;
 logic is_store_mem3;
@@ -379,12 +379,17 @@ bp_be_dcache
     );
 
 // We delay the tlb miss signal by one cycle to synchronize with cache miss signal
+// We latch the dcache miss signal
 always_ff @(posedge clk_i) begin
   if(reset_i) begin
-    dtlb_miss_r <= '0;
+    dtlb_miss_r  <= '0;
+    mmu_cmd_v_r  <= '0;
+    mmu_cmd_v_rr <= '0;
   end
   else begin
-    dtlb_miss_r <= dtlb_miss_v;
+    dtlb_miss_r  <= dtlb_miss_v;
+    mmu_cmd_v_r  <= mmu_cmd_v_i;
+    mmu_cmd_v_rr <= mmu_cmd_v_r;
   end
 end
     
@@ -427,11 +432,11 @@ assign ptw_page_fault_v  = ptw_instr_page_fault_v | ptw_load_page_fault_v | ptw_
 assign ptw_store_not_load = dtlb_fill_cmd_v & is_store_mem3;
  
 // MMU response connections
-assign mem_resp.data   = dcache_v
-                         ? dcache_data
-                         : csr_data_lo;
+assign mem_resp.miss_v = dtlb_miss_r | dcache_miss_v;
+assign mem_resp.exc_v  = |exception_ecode_dec_li;
+assign mem_resp.data   = dcache_v ? dcache_data : csr_data_lo;
 
-assign mem_resp_v_o    = ptw_busy ? 1'b0 : (dcache_v | csr_v_lo | itlb_fill_cmd_v | |exception_ecode_dec_li);
+assign mem_resp_v_o    = ptw_busy ? 1'b0 : mmu_cmd_v_rr | csr_v_lo;
 assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~ptw_busy;
 
 assign itlb_fill_v_o     = ptw_tlb_w_v & itlb_not_dtlb_resp;

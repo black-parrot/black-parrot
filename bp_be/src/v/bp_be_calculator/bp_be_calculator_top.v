@@ -140,7 +140,7 @@ logic [dword_width_p-1:0] pipe_int_data_lo, pipe_mul_data_lo, pipe_mem_data_lo, 
 
 logic nop_pipe_result_v;
 logic pipe_int_data_lo_v, pipe_mul_data_lo_v, pipe_mem_data_lo_v, pipe_fp_data_lo_v;
-logic pipe_mem_v_lo;
+logic pipe_mem_exc_v_lo, pipe_mem_miss_v_lo;
 
 logic [vaddr_width_p-1:0] br_tgt_int1;
 
@@ -156,7 +156,7 @@ assign issue_pkt_ready_o = (chk_dispatch_v_i | ~issue_pkt_v_r);
 // Module instantiations
 // Register files
 bp_be_regfile
-#(.harden_p(1))
+#(.cfg_p(cfg_p))
  int_regfile
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -180,7 +180,7 @@ bp_be_regfile
 if (fp_en_p)
   begin : fp_rf
     bp_be_regfile
-    #(.harden_p(0))
+    #(.cfg_p(cfg_p))
      float_regfile
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
@@ -379,7 +379,8 @@ bp_be_pipe_mem
    ,.mem_resp_v_i(mem_resp_v_i)
    ,.mem_resp_ready_o(mem_resp_ready_o)
 
-   ,.v_o(pipe_mem_v_lo)
+   ,.exc_v_o(pipe_mem_exc_v_lo)
+   ,.miss_v_o(pipe_mem_miss_v_lo)
    ,.data_o(pipe_mem_data_lo)
    );
 
@@ -545,7 +546,7 @@ always_comb
 
     // Additional commit point information
     calc_status.mem3_pc     = calc_stage_r[2].pc;
-    calc_status.mem3_miss_v = ~pipe_mem_v_lo & calc_stage_r[2].mem_v & ~exc_stage_r[2].poison_v;
+    calc_status.mem3_miss_v = pipe_mem_miss_v_lo & ~exc_stage_r[2].poison_v;
     calc_status.mem3_cmt_v  = calc_stage_r[2].v & ~exc_stage_r[2].roll_v;
     
     // Slicing the completion pipe for Forwarding information
@@ -580,7 +581,7 @@ always_comb
         exc_stage_n[0].poison_v        = chk_poison_iss_r        | chk_poison_isd_i;
         exc_stage_n[1].poison_v        = exc_stage_r[0].poison_v | chk_poison_ex1_i;
         exc_stage_n[2].poison_v        = exc_stage_r[1].poison_v | chk_poison_ex2_i;
-        exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | calc_status.mem3_miss_v; 
+        exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | pipe_mem_miss_v_lo | pipe_mem_exc_v_lo;
   end
 
 assign instret_mem3_o = calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v;

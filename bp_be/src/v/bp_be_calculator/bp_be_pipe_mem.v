@@ -83,7 +83,8 @@ module bp_be_pipe_mem
    , input                                mem_resp_v_i
    , output                               mem_resp_ready_o
 
-   , output logic                              v_o
+   , output logic                              exc_v_o
+   , output logic                              miss_v_o
    , output logic [reg_data_width_lp-1:0]      data_o
    );
 
@@ -152,7 +153,8 @@ always_comb
   end
 
 // Output results of memory op
-assign v_o                = mem_resp_v_i;
+assign exc_v_o            = mem_resp_v_i & mem_resp.exc_v;
+assign miss_v_o           = mem_resp_v_i & mem_resp.miss_v;
 assign mem_resp_ready_o   = 1'b1;
 
 // Set MMU cmd signal
