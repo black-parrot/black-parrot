@@ -22,12 +22,14 @@ module bp_be_detector
    `declare_bp_proc_params(cfg_p)
 
    // Generated parameters
+   , localparam isd_status_width_lp = `bp_be_isd_status_width
    , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    )
   (input                               clk_i
    , input                             reset_i
 
    // Dependency information
+   , input [isd_status_width_lp-1:0]   isd_status_i
    , input [calc_status_width_lp-1:0]  calc_status_i
    , input [vaddr_width_p-1:0]         expected_npc_i
    , input                             mmu_cmd_ready_i
@@ -48,9 +50,11 @@ module bp_be_detector
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p); 
 
 // Casting 
+bp_be_isd_status_s       isd_status_cast_i;
 bp_be_calc_status_s      calc_status_cast_i;
 bp_be_dep_status_s [4:0] dep_status_li;
 
+assign isd_status_cast_i  = isd_status_i;
 assign calc_status_cast_i = calc_status_i;
 assign dep_status_li      = calc_status_cast_i.dep_status;
 
@@ -73,52 +77,52 @@ always_comb
     //   can be handled through forwarding
     for(integer i = 0; i < 3; i++) 
       begin
-        rs1_match_vector[i] = (calc_status_cast_i.isd_rs1_addr != '0)
-                              & (calc_status_cast_i.isd_rs1_addr == dep_status_li[i].rd_addr);
+        rs1_match_vector[i] = (isd_status_cast_i.isd_rs1_addr != '0)
+                              & (isd_status_cast_i.isd_rs1_addr == dep_status_li[i].rd_addr);
 
-        rs2_match_vector[i] = (calc_status_cast_i.isd_rs2_addr != '0)
-                              & (calc_status_cast_i.isd_rs2_addr == dep_status_li[i].rd_addr);
+        rs2_match_vector[i] = (isd_status_cast_i.isd_rs2_addr != '0)
+                              & (isd_status_cast_i.isd_rs2_addr == dep_status_li[i].rd_addr);
       end
 
     // Detect integer and float data hazards for EX1
-    irs1_data_haz_v[0] = (calc_status_cast_i.isd_irs1_v & rs1_match_vector[0])
+    irs1_data_haz_v[0] = (isd_status_cast_i.isd_irs1_v & rs1_match_vector[0])
                          & (dep_status_li[0].mul_iwb_v | dep_status_li[0].mem_iwb_v);
 
-    irs2_data_haz_v[0] = (calc_status_cast_i.isd_irs2_v & rs2_match_vector[0])
+    irs2_data_haz_v[0] = (isd_status_cast_i.isd_irs2_v & rs2_match_vector[0])
                          & (dep_status_li[0].mul_iwb_v | dep_status_li[0].mem_iwb_v);
 
-    frs1_data_haz_v[0] = (calc_status_cast_i.isd_frs1_v & rs1_match_vector[0])
+    frs1_data_haz_v[0] = (isd_status_cast_i.isd_frs1_v & rs1_match_vector[0])
                          & (dep_status_li[0].mem_fwb_v | dep_status_li[0].fp_fwb_v);
 
-    frs2_data_haz_v[0] = (calc_status_cast_i.isd_frs2_v & rs2_match_vector[0])
+    frs2_data_haz_v[0] = (isd_status_cast_i.isd_frs2_v & rs2_match_vector[0])
                          & (dep_status_li[0].mem_fwb_v | dep_status_li[0].fp_fwb_v);
 
     // Detect integer and float data hazards for EX2
-    irs1_data_haz_v[1] = (calc_status_cast_i.isd_irs1_v & rs1_match_vector[1])
+    irs1_data_haz_v[1] = (isd_status_cast_i.isd_irs1_v & rs1_match_vector[1])
                          & (dep_status_li[1].mem_iwb_v);
 
-    irs2_data_haz_v[1] = (calc_status_cast_i.isd_irs2_v & rs2_match_vector[1])
+    irs2_data_haz_v[1] = (isd_status_cast_i.isd_irs2_v & rs2_match_vector[1])
                          & (dep_status_li[1].mem_iwb_v);
 
-    frs1_data_haz_v[1] = (calc_status_cast_i.isd_frs1_v & rs1_match_vector[1])
+    frs1_data_haz_v[1] = (isd_status_cast_i.isd_frs1_v & rs1_match_vector[1])
                          & (dep_status_li[1].mem_fwb_v | dep_status_li[1].fp_fwb_v);
 
-    frs2_data_haz_v[1] = (calc_status_cast_i.isd_frs2_v & rs2_match_vector[1])
+    frs2_data_haz_v[1] = (isd_status_cast_i.isd_frs2_v & rs2_match_vector[1])
                          & (dep_status_li[1].mem_fwb_v | dep_status_li[1].fp_fwb_v);
 
     // Detect float data hazards for IWB. Integer dependencies can be handled by forwarding
     irs1_data_haz_v[2] = '0;
     irs2_data_haz_v[2] = '0;
 
-    frs1_data_haz_v[2] = (calc_status_cast_i.isd_frs1_v & rs1_match_vector[2])
+    frs1_data_haz_v[2] = (isd_status_cast_i.isd_frs1_v & rs1_match_vector[2])
                          & (dep_status_li[2].fp_fwb_v);
 
-    frs2_data_haz_v[2] = (calc_status_cast_i.isd_frs2_v & rs2_match_vector[2])
+    frs2_data_haz_v[2] = (isd_status_cast_i.isd_frs2_v & rs2_match_vector[2])
                          & (dep_status_li[2].fp_fwb_v);
 
     mem_in_pipe_v      = dep_status_li[0].mem_v | dep_status_li[1].mem_v | dep_status_li[2].mem_v;
-    fence_haz_v        = (calc_status_cast_i.isd_fence_v & (~credits_empty_i | mem_in_pipe_v))
-                         | (calc_status_cast_i.isd_mem_v & credits_full_i);
+    fence_haz_v        = (isd_status_cast_i.isd_fence_v & (~credits_empty_i | mem_in_pipe_v))
+                         | (isd_status_cast_i.isd_mem_v & credits_full_i);
 
     serial_haz_v       = dep_status_li[0].serial_v
                          | dep_status_li[1].serial_v

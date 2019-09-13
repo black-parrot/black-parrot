@@ -28,6 +28,7 @@ module bp_be_calculator_top
    // Generated parameters
    , localparam proc_cfg_width_lp       = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
    , localparam issue_pkt_width_lp      = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
+   , localparam isd_status_width_lp     = `bp_be_isd_status_width
    , localparam calc_status_width_lp    = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam exception_width_lp      = `bp_be_exception_width
    , localparam mmu_cmd_width_lp        = `bp_be_mmu_cmd_width(vaddr_width_p)
@@ -71,6 +72,7 @@ module bp_be_calculator_top
   , input                                chk_poison_ex1_i
   , input                                chk_poison_ex2_i
    
+  , output [isd_status_width_lp-1:0]     isd_status_o
   , output [calc_status_width_lp-1:0]    calc_status_o
    
   // Mem interface   
@@ -100,6 +102,7 @@ module bp_be_calculator_top
 
 // Cast input and output ports 
 bp_be_issue_pkt_s   issue_pkt;
+bp_be_isd_status_s  isd_status;
 bp_be_calc_status_s calc_status;
 bp_be_mem_resp_s    mem_resp;
 bp_proc_cfg_s       proc_cfg;
@@ -108,6 +111,7 @@ assign issue_pkt = issue_pkt_i;
 assign mem_resp = mem_resp_i;
 assign proc_cfg = proc_cfg_i;
 assign calc_status_o = calc_status;
+assign isd_status_o = isd_status;
 
 // Declare intermediate signals
 logic                   chk_poison_iss_r;
@@ -495,14 +499,14 @@ always_comb
     calc_stage_isd.frf_w_v        = dispatch_pkt.decode.frf_w_v;
 
     // Calculator status ISD stage
-    calc_status.isd_fence_v  = issue_pkt_v_r & issue_pkt_r.fence_v;
-    calc_status.isd_mem_v    = issue_pkt_v_r & issue_pkt_r.mem_v;
-    calc_status.isd_irs1_v   = issue_pkt_v_r & issue_pkt_r.irs1_v;
-    calc_status.isd_frs1_v   = issue_pkt_v_r & issue_pkt_r.frs1_v;
-    calc_status.isd_rs1_addr = issue_pkt_r.instr.fields.rtype.rs1_addr;
-    calc_status.isd_irs2_v   = issue_pkt_v_r & issue_pkt_r.irs2_v;
-    calc_status.isd_frs2_v   = issue_pkt_v_r & issue_pkt_r.frs2_v;
-    calc_status.isd_rs2_addr = issue_pkt_r.instr.fields.rtype.rs2_addr;
+    isd_status.isd_fence_v  = issue_pkt_v_r & issue_pkt_r.fence_v;
+    isd_status.isd_mem_v    = issue_pkt_v_r & issue_pkt_r.mem_v;
+    isd_status.isd_irs1_v   = issue_pkt_v_r & issue_pkt_r.irs1_v;
+    isd_status.isd_frs1_v   = issue_pkt_v_r & issue_pkt_r.frs1_v;
+    isd_status.isd_rs1_addr = issue_pkt_r.instr.fields.rtype.rs1_addr;
+    isd_status.isd_irs2_v   = issue_pkt_v_r & issue_pkt_r.irs2_v;
+    isd_status.isd_frs2_v   = issue_pkt_v_r & issue_pkt_r.frs2_v;
+    isd_status.isd_rs2_addr = issue_pkt_r.instr.fields.rtype.rs2_addr;
 
     // Calculator status EX1 information
     calc_status.int1_v                   = dispatch_pkt_r.decode.pipe_int_v;
