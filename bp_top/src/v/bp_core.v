@@ -87,7 +87,7 @@ module bp_core
      ,.reset_i(reset_i)
      ,.freeze_i(freeze_i)
 
-     ,.icache_id_i(proc_cfg_cast_i.icache_id)
+     ,.lce_id_i(proc_cfg_cast_i.icache_id)
 
      ,.cfg_w_v_i(cfg_w_v_i)
      ,.cfg_addr_i(cfg_addr_i)

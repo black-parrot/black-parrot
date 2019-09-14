@@ -14,41 +14,27 @@ module bp_fe_pc_gen
  import bp_common_aviary_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
+   `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
-   `declare_bp_fe_be_if_widths(vaddr_width_p
-                               ,paddr_width_p
-                               ,asid_width_p
-                               ,branch_metadata_fwd_width_p
-                               )
-
-   , localparam entry_width_lp = `bp_be_tlb_entry_width(ptag_width_p)
-   , localparam instr_width_lp = rv64_instr_width_gp
+   , localparam mem_cmd_width_lp  = `bp_fe_mem_cmd_width(vaddr_width_p, vtag_width_p, ptag_width_p)
+   , localparam mem_resp_width_lp = `bp_fe_mem_resp_width
    )
   (input                                             clk_i
    , input                                           reset_i
-    
-   , output [vaddr_width_p-1:0]                      fetch_pc_o
-   , output                                          fetch_v_o
-   , input                                           fetch_ready_i
+ 
+   , output [mem_cmd_width_lp-1:0]                   mem_cmd_o
+   , output                                          mem_cmd_v_o
+   , input                                           mem_cmd_ready_i
 
-   , input [instr_width_lp-1:0]                      fetch_instr_i
-   , input                                           fetch_instr_v_i
-   , output                                          fetch_instr_ready_o
+   , output                                          mem_poison_o
 
-   , output                                          icache_poison_o
-   , input                                           instr_access_fault_i
-
-   , input logic                                     itlb_miss_i
-
-   , output                                          itlb_fence_v_o
-   , output                                          itlb_w_v_o
-   , output [vaddr_width_p-page_offset_width_p-1:0]  itlb_w_vtag_o
-   , output [entry_width_lp-1:0]                     itlb_w_entry_o
+   , input [mem_resp_width_lp-1:0]                   mem_resp_i
+   , input                                           mem_resp_v_i
+   , output                                          mem_resp_ready_o
 
    , input [fe_cmd_width_lp-1:0]                     fe_cmd_i
    , input                                           fe_cmd_v_i
    , output logic                                    fe_cmd_yumi_o
-
    , output                                          fe_cmd_processed_o
 
    , output [fe_queue_width_lp-1:0]                  fe_queue_o
@@ -56,23 +42,26 @@ module bp_fe_pc_gen
    , input                                           fe_queue_ready_i
    );
 
-//the first level of structs
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+`declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p,ras_idx_width_p);
+`declare_bp_fe_mem_structs(vaddr_width_p, lce_sets_p, cce_block_width_p, vtag_width_p, ptag_width_p)
 
-`declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p,btb_idx_width_p,bht_idx_width_p,ras_idx_width_p);
+bp_fe_mem_cmd_s mem_cmd_cast_o;
+bp_fe_mem_resp_s mem_resp_cast_i;
+
+assign mem_cmd_o       = mem_cmd_cast_o;
+assign mem_resp_cast_i = mem_resp_i;
 
 // pc pipeline
 logic [vaddr_width_p-1:0]       pc_if1_n, pc_if1_r, pc_if2_r;
 logic                           pc_v_if1_n, pc_v_if2_n, pc_v_if1_r, pc_v_if2_r;
 // branch prediction wires
-logic                           is_br_or_jmp;
 logic [vaddr_width_p-1:0]       br_target;
 logic                           ovr_taken, ovr_ntaken;
 // btb io
 logic [vaddr_width_p-1:0]       btb_br_tgt_lo;
 logic                           btb_br_tgt_v_lo;
 
-logic itlb_miss_if2_r;
 logic btb_v_if1_r;
 
 bp_fe_queue_s fe_queue_cast_o;
@@ -94,15 +83,15 @@ wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
 // There's also an interesting question about physical alignment (I/O devices, etc)
 //   But let's punt that for now...
 // TODO: misaligned is actually done by the branch target, not the PC
-wire misalign_exception  = 1'b0;
-wire itlb_miss_exception = pc_v_if2_r & itlb_miss_if2_r;
-wire instr_access_fault_exception = pc_v_if2_r & instr_access_fault_i;
+wire misalign_exception           = 1'b0;
+wire itlb_miss_exception          = pc_v_if2_r & (mem_resp_v_i & mem_resp_cast_i.itlb_miss);
+wire instr_access_fault_exception = pc_v_if2_r & (mem_resp_v_i & mem_resp_cast_i.instr_access_fault);
 
 wire fetch_fail     = pc_v_if2_r & ~fe_queue_v_o;
 wire queue_miss     = pc_v_if2_r & ~fe_queue_ready_i;
-wire icache_miss    = pc_v_if2_r & ~fetch_instr_v_i;
+wire icache_miss    = pc_v_if2_r & (mem_resp_v_i & mem_resp_cast_i.icache_miss);
 wire flush          = itlb_miss_exception | icache_miss | queue_miss | cmd_nonattaboy_v;
-wire fe_instr_v     = pc_v_if2_r & ~flush;
+wire fe_instr_v     = pc_v_if2_r & mem_resp_v_i & ~flush;
 wire fe_exception_v = pc_v_if2_r & (instr_access_fault_exception | misalign_exception | itlb_miss_exception);
 
 // FSM
@@ -181,7 +170,7 @@ always_comb
 // This may cause us to fetch during an I$ miss or a with a full queue.  
 // FE cmds normally flush the queue, so we don't expect this to affect
 //   power much in practice.
-assign pc_v_if1_n = ~is_wait & (cmd_nonattaboy_v || (fe_queue_ready_i & fetch_ready_i & ~flush));
+assign pc_v_if1_n = ~is_wait & (cmd_nonattaboy_v || (fe_queue_ready_i & mem_cmd_ready_i & ~flush));
 assign pc_v_if2_n = pc_v_if1_r & ~flush;
 
 // We use reset flops for status signals in the pipeline
@@ -192,14 +181,12 @@ always_ff @(posedge clk_i)
         pc_v_if1_r      <= '0;
         pc_v_if2_r      <= '0;
         btb_v_if1_r     <= '0;
-        itlb_miss_if2_r <= '0;
       end
     else
       begin
         pc_v_if1_r      <= pc_v_if1_n;
         pc_v_if2_r      <= pc_v_if2_n;
         btb_v_if1_r     <= btb_br_tgt_v_lo;
-        itlb_miss_if2_r <= itlb_miss_i;
       end
   end
 
@@ -261,24 +248,56 @@ bp_fe_btb
 bp_fe_instr_scan_s scan_instr;
 instr_scan 
  #(.vaddr_width_p(vaddr_width_p)
-   ,.instr_width_p(instr_width_lp)
+   ,.instr_width_p(instr_width_p)
    ) 
- instr_scan_1 
-  (.instr_i(fetch_instr_i)
+ instr_scan
+  (.instr_i(mem_resp_cast_i.data)
    ,.scan_o(scan_instr)
    );
 
 // TODO: Should use an instruction cast
 //   We don't want to wait until after expanding the immediate, though
 // TODO: This functionality is broken. Should predict taken branches based on BHT and override BTB
-wire is_br      = fetch_instr_v_i & (scan_instr.instr_scan_class == e_rvi_branch);
-wire is_jal     = fetch_instr_v_i & (scan_instr.instr_scan_class == e_rvi_jal);
-wire is_back_br = fetch_instr_i[instr_width_lp-1];
+wire is_br      = mem_resp_v_i & (scan_instr.instr_scan_class == e_rvi_branch);
+wire is_jal     = mem_resp_v_i & (scan_instr.instr_scan_class == e_rvi_jal);
+wire is_back_br = mem_resp_cast_i.data[instr_width_p-1];
 assign ovr_taken  = 1'b0; //pc_v_if2_r & ~flush & ((is_br & is_back_br) | (is_jal)) & ~btb_v_if1_r & icache_pc_gen_v_i;
 assign ovr_ntaken = 1'b0; 
-assign br_target  = pc_if2_r + fetch_instr_i[20+:12];
+assign br_target  = pc_if2_r + mem_resp_cast_i.data[20+:12];
+
+assign mem_cmd_v_o = mem_cmd_ready_i & (itlb_fence_v | itlb_fill_v | pc_v_if1_n);
+always_comb
+  begin
+    mem_cmd_cast_o = '0;
+
+    if (itlb_fence_v)
+      begin
+        mem_cmd_cast_o.op                   = e_fe_op_tlb_fence;
+        mem_cmd_cast_o.operands.fetch.vaddr = fe_cmd_cast_i.vaddr;
+      end
+    else if (itlb_fill_v)
+      begin
+        mem_cmd_cast_o.op                  = e_fe_op_tlb_fill;
+        mem_cmd_cast_o.operands.fill.vtag  = fe_cmd_cast_i.vaddr[vaddr_width_p-1:page_offset_width_p];
+        mem_cmd_cast_o.operands.fill.entry = fe_cmd_cast_i.operands.itlb_fill_response.pte_entry_leaf;
+      end
+    else
+      begin
+        mem_cmd_cast_o.op                   = e_fe_op_fetch;
+        mem_cmd_cast_o.operands.fetch.vaddr = pc_if1_n;
+      end
+  end
+
+assign mem_poison_o = flush;
+
+assign mem_resp_ready_o = 1'b1;
+
+// Handshaking signals
+assign fe_cmd_yumi_o      = fe_cmd_v_i; // Always accept FE commands
+assign fe_cmd_processed_o = fe_cmd_yumi_o; // All FE cmds are processed in 1 cycle, for now
 
 // Organize the FE queue message
+assign fe_queue_v_o = fe_queue_ready_i & (fe_instr_v | fe_exception_v);
 always_comb
   begin
     // Set padding to 0
@@ -298,27 +317,10 @@ always_comb
       begin
         fe_queue_cast_o.msg_type                      = e_fe_fetch;
         fe_queue_cast_o.msg.fetch.pc                  = pc_if2_r;
-        fe_queue_cast_o.msg.fetch.instr               = fetch_instr_i;
+        fe_queue_cast_o.msg.fetch.instr               = mem_resp_cast_i.data;
         fe_queue_cast_o.msg.fetch.branch_metadata_fwd = fe_queue_cast_o_branch_metadata_r;
       end
   end
-
-// Organize the TLB commands
-assign itlb_fence_v_o = itlb_fence_v;
-assign itlb_w_v_o = itlb_fill_v;
-assign itlb_w_vtag_o = fe_cmd_cast_i.vaddr[vaddr_width_p-1:page_offset_width_p];
-assign itlb_w_entry_o = fe_cmd_cast_i.operands.itlb_fill_response.pte_entry_leaf;
-   
-// icache to icache
-assign icache_poison_o = cmd_nonattaboy_v;
-
-assign fetch_pc_o = pc_if1_n;
-assign fetch_v_o  = fetch_ready_i & pc_v_if1_n;
-
-// Handshaking signals
-assign fe_cmd_yumi_o      = fe_cmd_v_i; // Always accept FE commands
-assign fe_cmd_processed_o = fe_cmd_yumi_o; // All FE cmds are processed in 1 cycle, for now
-assign fe_queue_v_o       = fe_queue_ready_i & (fe_instr_v | fe_exception_v);
 
 endmodule
 

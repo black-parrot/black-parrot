@@ -9,7 +9,7 @@ UNHARDWARE_MODEL ?= blackparrot
 VCS_OPTIONS ?= +vcs+finish+5000000000ps   # Change this to run longer / shorter
 VCS_OPTIONS += +vcs+lic+wait             # Wait for license
 VCS_OPTIONS += +libext+.v+.vlib+.vh      # Find library files with these extensions
-VCS_OPTIONS += +vcs+loopdetect
+VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
 
 VCS_BUILD_OPTS += -full64             # Compile a 64-bit executable
 VCS_BUILD_OPTS += -sverilog # Enable SystemVerilog
@@ -17,7 +17,7 @@ VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
 #VCS_BUILD_OPTS += -assert svaext      # Enable elaboration system tasks
 VCS_BUILD_OPTS += -CFLAGS "-I$(BP_EXTERNAL_DIR)/include -std=c++11"
 VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
-VCS_BUILD_OPTS += -assert svaext
+VCS_BUILD_OPTS += -assert svaext -debug_all
 VCS_BUILD_OPTS += +lint=TFIPC-L
 
 LINT_OPTIONS = +lint=all,noSVA-UA,noVCDE,noSVA-NSVU
@@ -140,7 +140,7 @@ cov.v: dirs.v
 	@cp $(COV_REPORT)/hierarchy.txt $(COV_HREPORT) 
 
 dve.v: dirs.v
-	cd $(SIM_DIR); $(DVE) -full64 -vpd vcdplus.vpd &
+	cd $(SIM_DIR); dve -full64 -vpd vcdplus.vpd &
 
 debug.v: dirs.v
 	$(VPD2VCD) +splitpacked $(SIM_DIR)/vcdplus.vpd $(SIM_DIR)/debug.vcd

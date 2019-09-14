@@ -10,14 +10,6 @@
  * icache has an LCE as part of the cache controller that communicates with the CCE. For replacement
  * policy, we use the pseudo-LRU module implemnted for dcache.
  *
- * Parameters:
- *
- * Inputs:
- *
- * Outputs:
- *
- * Keywords:
- *
  * Notes:
  *
  */
@@ -30,20 +22,13 @@ module bp_fe_icache
   import bp_fe_icache_pkg::*;  
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
-   `declare_bp_lce_cce_if_widths(num_cce_p
-                                 ,num_lce_p
-                                 ,paddr_width_p
-                                 ,lce_assoc_p
-                                 ,dword_width_p
-                                 ,cce_block_width_p
-                                 )
-    , parameter debug_p=0
-
+   `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
     `declare_bp_fe_tag_widths(lce_assoc_p, lce_sets_p, num_lce_p, num_cce_p, dword_width_p, paddr_width_p)
     `declare_bp_icache_widths(vaddr_width_p, tag_width_lp, lce_assoc_p) 
-   )
-   (
-    input                                              clk_i
+
+    , parameter debug_p=0
+    )
+   (input                                              clk_i
     , input                                            reset_i
     , input                                            freeze_i
 
@@ -58,41 +43,34 @@ module bp_fe_icache
     , input                                            vaddr_v_i
     , output                                           vaddr_ready_o
 
-    , output [instr_width_p-1:0]                       data_o
-    , output                                           data_v_o
-    , input                                            data_ready_i
-
     , input [ptag_width_p-1:0]                         ptag_i
     , input                                            ptag_v_i
-    , output                                           ptag_ready_o
-
-    , input                                            itlb_icache_miss_i 
     , input                                            uncached_i
-    
-    , output logic                                     cache_miss_o
-    , output logic                                     instr_access_fault_o
     , input                                            poison_tl_i
+    
+    , output [instr_width_p-1:0]                       data_o
+    , output                                           data_v_o
+    , output                                           instr_access_fault_o
+    , output                                           cache_miss_o
 
-    , output logic [lce_cce_req_width_lp-1:0]          lce_req_o
-    , output logic                                     lce_req_v_o
+    , output [lce_cce_req_width_lp-1:0]                lce_req_o
+    , output                                           lce_req_v_o
     , input                                            lce_req_ready_i
 
-    , output logic [lce_cce_resp_width_lp-1:0]         lce_resp_o
-    , output logic                                     lce_resp_v_o
+    , output [lce_cce_resp_width_lp-1:0]               lce_resp_o
+    , output                                           lce_resp_v_o
     , input                                            lce_resp_ready_i
 
     , input [lce_cmd_width_lp-1:0]                     lce_cmd_i
     , input                                            lce_cmd_v_i
-    , output logic                                     lce_cmd_ready_o
+    , output                                           lce_cmd_ready_o
 
-    , output logic [lce_cmd_width_lp-1:0]              lce_cmd_o
-    , output logic                                     lce_cmd_v_o
+    , output [lce_cmd_width_lp-1:0]                    lce_cmd_o
+    , output                                           lce_cmd_v_o
     , input                                            lce_cmd_ready_i 
  );
 
   logic [index_width_lp-1:0]            vaddr_index;
-  // Suppress unused signal warnings
-  wire unused = &{data_ready_i};
 
   logic [word_offset_width_lp-1:0] vaddr_offset;
 
@@ -183,8 +161,6 @@ module bp_fe_icache
     );
   end                                             
 
-  assign ptag_ready_o = v_tl_r;
-   
   // TV stage
   logic v_tv_r;
   logic tv_we;
@@ -198,7 +174,7 @@ module bp_fe_icache
   logic [index_width_lp-1:0]                    addr_index_tv;
   logic [word_offset_width_lp-1:0]              addr_word_offset_tv;
 
-  assign tv_we = v_tl_r & ~poison_tl_i & ptag_v_i & ~itlb_icache_miss_i;
+  assign tv_we = v_tl_r & ~poison_tl_i & ptag_v_i;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin

@@ -38,14 +38,6 @@ typedef struct packed
 }  bp_fe_instr_scan_s;
 
 
-`define declare_bp_fe_itlb_vaddr_s(vaddr_width_mp, sets_mp, cce_block_width_mp)                    \
-  typedef struct packed                                                                            \
-  {                                                                                                \
-    logic [vaddr_width_mp-`BSG_SAFE_CLOG2(sets_mp*cce_block_width_p/8)-1:0]    tag;                \
-    logic [`BSG_SAFE_CLOG2(sets_mp)-1:0]                                       index;              \
-    logic [`BSG_SAFE_CLOG2(cce_block_width_p/8)-1:0]                           offset;             \
-  }  bp_fe_itlb_vaddr_s;   
-
 `define declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_mp,btb_idx_width_mp,bht_idx_width_mp,ras_idx_width_mp) \
   typedef struct packed                                                                          \
   {                                                                                              \
