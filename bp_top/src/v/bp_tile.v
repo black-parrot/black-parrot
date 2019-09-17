@@ -8,7 +8,7 @@ module bp_tile
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_cce_pkg::*;
  import bsg_noc_pkg::*;
  import bp_cfg_link_pkg::*;

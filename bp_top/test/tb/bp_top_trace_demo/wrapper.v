@@ -11,7 +11,7 @@ module wrapper
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_cce_pkg::*;
  #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR
    `declare_bp_proc_params(cfg_p)

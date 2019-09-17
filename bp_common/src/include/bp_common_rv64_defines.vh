@@ -1,13 +1,13 @@
 /**
  *
- * bp_be_rv_defines.v
+ * bp_common_rv_defines.v
  * Based off of: https://bitbucket.org/taylor-bsg/bsg_manycore/src/master
  *                                           /v/vanilla_bean/parameters.v
  * TODO: Make opcodes into an enum, same with CSR defines
  */
 
-`ifndef BP_BE_RV_DEFINES_VH
-`define BP_BE_RV_DEFINES_VH
+`ifndef BP_COMMON_RV_DEFINES_VH
+`define BP_COMMON_RV_DEFINES_VH
 
 /* RISCV definitions */
 `define RV64_LUI_OP        7'b0110111

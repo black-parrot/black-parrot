@@ -45,7 +45,7 @@
  */
 
 module bp_be_regfile 
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  #(// Default parameters
    parameter w_to_r_fwd_p = 0
    , parameter harden_p = 1

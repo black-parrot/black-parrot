@@ -110,7 +110,7 @@ sim.sc: dirs.sc
 	-@cp $(CCE_MEM_PATH)/$(CCE_MEM) $(SIM_DIR)/cce_ucode.mem
 	-cd $(SIM_DIR); ./simsc | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
-	-@grep "PASS" -A 8 $(SIM_LOG) > $(SIM_REPORT)
+	-@grep "PASS" -A 9 $(SIM_LOG) > $(SIM_REPORT)
 
 match.sc: MATCH_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).match.$(PROG).log
 match.sc: MATCH_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).match.$(PROG).rpt

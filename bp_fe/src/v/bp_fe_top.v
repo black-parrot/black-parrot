@@ -6,7 +6,7 @@ module bp_fe_top
  import bp_fe_pkg::*;
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
  import bp_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
@@ -54,7 +54,7 @@ module bp_fe_top
 
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 `declare_bp_fe_mem_structs(vaddr_width_p, lce_sets_p, cce_block_width_p, vtag_width_p, ptag_width_p)
-
+   
 bp_fe_mem_cmd_s  mem_cmd_lo;
 logic            mem_cmd_v_lo, mem_cmd_ready_li;
 logic            mem_poison_lo;

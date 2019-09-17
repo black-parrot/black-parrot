@@ -7,9 +7,10 @@ UNHARDWARE_MODEL ?= blackparrot
 
 ## Tool specific options
 VCS_OPTIONS ?= +vcs+finish+5000000000ps   # Change this to run longer / shorter
-VCS_OPTIONS += +vcs+lic+wait             # Wait for license
-VCS_OPTIONS += +libext+.v+.vlib+.vh      # Find library files with these extensions
+VCS_OPTIONS += +vcs+lic+wait              # Wait for license
+VCS_OPTIONS += +libext+.v+.vlib+.vh       # Find library files with these extensions
 VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
+VCS_OPTIONS += -debug_all
 
 VCS_BUILD_OPTS += -full64             # Compile a 64-bit executable
 VCS_BUILD_OPTS += -sverilog # Enable SystemVerilog
@@ -17,7 +18,7 @@ VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
 #VCS_BUILD_OPTS += -assert svaext      # Enable elaboration system tasks
 VCS_BUILD_OPTS += -CFLAGS "-I$(BP_EXTERNAL_DIR)/include -std=c++11"
 VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
-VCS_BUILD_OPTS += -assert svaext -debug_all
+VCS_BUILD_OPTS += -assert svaext
 VCS_BUILD_OPTS += +lint=TFIPC-L
 
 LINT_OPTIONS = +lint=all,noSVA-UA,noVCDE,noSVA-NSVU
@@ -107,7 +108,7 @@ sim.v: dirs.v
 	-@cp $(CCE_MEM_PATH)/$(CCE_MEM) $(SIM_DIR)/cce_ucode.mem
 	-cd $(SIM_DIR); ./simv $(VCS_OPTIONS) | tee $(SIM_LOG) 
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
-	-@grep "PASS" -A 8 $(SIM_LOG) > $(SIM_REPORT)
+	-@grep "PASS" -A 9 $(SIM_LOG) > $(SIM_REPORT)
 
 match.v: MATCH_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).match.$(PROG).log
 match.v: MATCH_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).match.$(PROG).rpt

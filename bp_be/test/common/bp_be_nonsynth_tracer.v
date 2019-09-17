@@ -2,7 +2,7 @@ module bp_be_nonsynth_tracer
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
 
@@ -45,9 +45,9 @@ module bp_be_nonsynth_tracer
 
    , input                                                 trap_v_i
    , input [vaddr_width_p-1:0]                             mtvec_i
-   , input [vaddr_width_p-1:0]                             mtval_i
+   , input [paddr_width_p:0]                               mtval_i
    , input                                                 ret_v_i
-   , input [vaddr_width_p-1:0]                             mepc_i
+   , input [paddr_width_p:0]                               mepc_i
    , input [5-1:0]                                         mcause_i
 
    , input [1:0]                                           priv_mode_i

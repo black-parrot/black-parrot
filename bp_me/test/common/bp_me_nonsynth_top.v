@@ -8,7 +8,7 @@ module bp_me_nonsynth_top
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_cce_pkg::*;
  import bsg_noc_pkg::*;
  import bp_be_dcache_pkg::*;

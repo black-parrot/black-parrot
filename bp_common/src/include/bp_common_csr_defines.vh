@@ -1,5 +1,5 @@
-`ifndef BP_BE_CSR_DEFINES_VH
-`define BP_BE_CSR_DEFINES_VH
+`ifndef BP_COMMON_CSR_DEFINES_VH
+`define BP_COMMON_CSR_DEFINES_VH
 
 `define PRIV_MODE_M 2'b11
 `define PRIV_MODE_S 2'b01

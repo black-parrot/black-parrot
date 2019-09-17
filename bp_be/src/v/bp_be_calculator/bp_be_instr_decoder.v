@@ -29,7 +29,7 @@
 
 module bp_be_instr_decoder 
  import bp_common_pkg::*;
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
  #(// Generated parameters
    localparam instr_width_lp = rv64_instr_width_gp

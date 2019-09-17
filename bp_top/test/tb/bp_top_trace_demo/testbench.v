@@ -10,7 +10,7 @@ module testbench
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_cce_pkg::*;
  import bp_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
@@ -139,8 +139,9 @@ if (calc_trace_p)
     bp_be_nonsynth_tracer
      #(.cfg_p(cfg_p))
      tracer
-      (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+      (.clk_i(clk_i) 
+       ,.reset_i(reset_i)  // Workaround for verilator binding by accident
+                           // TODO: Figure out why tracing is always enabled
   
        ,.mhartid_i(be_calculator.proc_cfg.core_id)
 

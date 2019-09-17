@@ -31,7 +31,7 @@
 
 module bp_be_int_alu 
   import bp_be_pkg::*;
-  import bp_be_rv64_pkg::*;
+  import bp_common_rv64_pkg::*;
  #(// Generated parameters
    localparam fu_op_width_lp      = `bp_be_fu_op_width
    // From RISC-V specifications
