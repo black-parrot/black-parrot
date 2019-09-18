@@ -109,6 +109,5 @@ regress.me: lint.me regress.me.sc regress.me.v
 
 clean: clean.me
 clean.me:
-	$(MAKE) -C $(BP_ME_DIR)/test/tb/bp_me_mock_lce_tiled clean
 	rm -f *.axe
 
