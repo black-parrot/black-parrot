@@ -87,10 +87,19 @@ bp_lce_cce_resp_s cce_lce_resp_li;
 logic             cce_lce_resp_v_li, cce_lce_resp_ready_lo;
 
 // Mem connections
-bp_cce_mem_cmd_s       mem_cmd_lo;
+bp_cce_mem_msg_s       mem_cmd_lo;
 logic                  mem_cmd_v_lo, mem_cmd_ready_li;
-bp_mem_cce_resp_s      mem_resp_li;
+bp_cce_mem_msg_s       mem_resp_lo;
+logic                  mem_resp_v_lo, mem_resp_ready_li;
+bp_cce_mem_msg_s       mem_resp_li;
 logic                  mem_resp_v_li, mem_resp_ready_lo;
+bp_cce_mem_msg_s       mem_cmd_li;
+logic                  mem_cmd_v_li, mem_cmd_ready_lo;
+
+// TODO: connect mem_cmd_li and mem_resp_lo
+assign mem_cmd_li = '0;
+assign mem_cmd_v_li = '0;
+assign mem_resp_ready_li = '0;
 
 bp_proc_cfg_s proc_cfg_cast_i;
 assign proc_cfg_cast_i = proc_cfg_i;
@@ -178,10 +187,18 @@ bp_cce_top
    ,.mem_resp_v_i(mem_resp_v_li)
    ,.mem_resp_ready_o(mem_resp_ready_lo)
 
+   ,.mem_cmd_i(mem_cmd_li)
+   ,.mem_cmd_v_i(mem_cmd_v_li)
+   ,.mem_cmd_ready_o(mem_cmd_ready_lo)
+
    // From CCE
    ,.mem_cmd_o(mem_cmd_lo)
    ,.mem_cmd_v_o(mem_cmd_v_lo)
    ,.mem_cmd_yumi_i(mem_cmd_ready_li & mem_cmd_v_lo)
+
+   ,.mem_resp_o(mem_resp_lo)
+   ,.mem_resp_v_o(mem_resp_v_lo)
+   ,.mem_resp_yumi_i(mem_resp_ready_li & mem_resp_v_lo)
 
    ,.cce_id_i(proc_cfg_cast_i.cce_id) 
    );

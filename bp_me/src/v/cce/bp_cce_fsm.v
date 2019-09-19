@@ -67,13 +67,21 @@ module bp_cce_fsm
    // CCE-MEM Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
    // outbound: ready&valid (connects to FIFO)
-   , input [mem_cce_resp_width_lp-1:0]                 mem_resp_i
+   , input [cce_mem_msg_width_lp-1:0]                  mem_resp_i
    , input                                             mem_resp_v_i
    , output logic                                      mem_resp_yumi_o
 
-   , output logic [cce_mem_cmd_width_lp-1:0]           mem_cmd_o
+   , input [cce_mem_msg_width_lp-1:0]                  mem_cmd_i
+   , input                                             mem_cmd_v_i
+   , output logic                                      mem_cmd_yumi_o
+
+   , output logic [cce_mem_msg_width_lp-1:0]           mem_cmd_o
    , output logic                                      mem_cmd_v_o
    , input                                             mem_cmd_ready_i
+
+   , output logic [cce_mem_msg_width_lp-1:0]           mem_resp_o
+   , output logic                                      mem_resp_v_o
+   , input                                             mem_resp_ready_i
 
    , input [lg_num_cce_lp-1:0]                         cce_id_i
   );
@@ -92,14 +100,10 @@ module bp_cce_fsm
   `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   bp_lce_cce_req_s lce_req;
-  bp_lce_cce_req_req_s lce_req_req;
-  bp_lce_cce_req_uc_req_s lce_req_uc_req;
   bp_lce_cce_resp_s lce_resp;
   bp_lce_cmd_s lce_cmd;
-  bp_lce_cmd_cmd_s lce_cmd_cmd;
 
-  bp_mem_cce_resp_s mem_resp;
-  bp_cce_mem_cmd_s mem_cmd;
+  bp_cce_mem_msg_s mem_cmd, mem_resp;
 
   // assign output queue ports to structure variables
   assign lce_cmd_o = lce_cmd;
@@ -109,8 +113,6 @@ module bp_cce_fsm
   assign mem_resp = mem_resp_i;
   assign lce_resp = lce_resp_i;
   assign lce_req = lce_req_i;
-  assign lce_req_req = lce_req.msg.req;
-  assign lce_req_uc_req = lce_req.msg.uc_req;
 
   // CCE Mode
   bp_cce_mode_e cce_mode_r, cce_mode_n;
@@ -179,7 +181,7 @@ module bp_cce_fsm
   logic [num_lce_p-1:0][`bp_coh_bits-1:0] sharers_coh_states_lo;
   logic dir_lru_v_lo;
   logic dir_lru_cached_excl_lo;
-  logic [ptag_width_lp-1:0] dir_lru_tag_lo;
+  logic [ptag_width_lp-1:0] dir_lru_tag_lo, dir_tag_lo;
   logic dir_busy_lo;
 
   logic [lg_num_way_groups_lp-1:0] dir_way_group_li;
@@ -204,7 +206,7 @@ module bp_cce_fsm
   logic gad_cached_dirty_flag_lo;
 
   // Directory
-  bp_cce_fsm_dir
+  bp_cce_dir
     #(.num_way_groups_p(num_way_groups_lp)
       ,.num_lce_p(num_lce_p)
       ,.num_cce_p(num_cce_p)
@@ -241,6 +243,7 @@ module bp_cce_fsm
 
       ,.busy_o(dir_busy_lo)
 
+      ,.tag_o(dir_tag_lo)
       );
 
   // GAD logic - auxiliary directory information logic
@@ -380,8 +383,7 @@ module bp_cce_fsm
     mem_cmd_v_o = '0;
     mem_resp_yumi_o = '0;
 
-    lce_cmd_cmd = '0;
-    lce_cmd_cmd.src_id = cce_id_i;
+    lce_cmd.msg.cmd.src_id = cce_id_i;
 
     cnt_clr = '0;
     cnt_inc = '0;
@@ -521,11 +523,11 @@ module bp_cce_fsm
         // Sub message fields
         // sc_cnt holds the current way-group being targeted by the set clear command, which
         // needs to be translated into an LCE relative set index
-        lce_cmd_cmd.addr = ((paddr_width_p'(sc_cnt) << set_shift_lp) + paddr_width_p'(cce_id_i))
+        lce_cmd.msg.cmd.addr = ((paddr_width_p'(sc_cnt) << set_shift_lp) + paddr_width_p'(cce_id_i))
                            << lg_block_size_in_bytes_lp;
 
         // Assign Command subtype to msg field
-        lce_cmd.msg.cmd = lce_cmd_cmd;
+        lce_cmd.msg.cmd = lce_cmd.msg.cmd;
 
         // reset set counter to 0 if command is accepted and current count is max
         sc_cnt_clr = lce_cmd_ready_i & (sc_cnt == (num_way_groups_lp-1));
@@ -551,9 +553,6 @@ module bp_cce_fsm
         // LCE Cmd Common Fields
         lce_cmd.dst_id = cnt[0+:lg_num_lce_lp];
         lce_cmd.msg_type = e_lce_cmd_sync;
-
-        // Assign Command subtype to msg field
-        lce_cmd.msg.cmd = lce_cmd_cmd;
 
         state_n = (lce_cmd_ready_i) ? SYNC_ACK : SEND_SYNC;
         cnt_inc = lce_cmd_ready_i;
@@ -589,10 +588,7 @@ module bp_cce_fsm
             lce_cmd.msg_type = e_lce_cmd_uc_st_done;
 
             // Sub message fields
-            lce_cmd_cmd.addr = mem_resp.addr;
-
-            // Assign Command subtype to msg field
-            lce_cmd.msg.cmd = lce_cmd_cmd;
+            lce_cmd.msg.cmd.addr = mem_resp.addr;
 
             mem_resp_yumi_o = lce_cmd_ready_i;
             state_n = READY;
@@ -603,18 +599,18 @@ module bp_cce_fsm
           // cached request
           if (lce_req.msg_type == e_lce_req_type_rd | lce_req.msg_type == e_lce_req_type_wr) begin
             mshr_n.paddr = lce_req.addr;
-            mshr_n.lru_way_id = lce_req_req.lru_way_id;
-            mshr_n.flags[e_flag_sel_ldf] = lce_req_req.lru_dirty;
+            mshr_n.lru_way_id = lce_req.msg.req.lru_way_id;
+            mshr_n.flags[e_flag_sel_ldf] = lce_req.msg.req.lru_dirty;
             mshr_n.flags[e_flag_sel_rqf] = (lce_req.msg_type == e_lce_req_type_wr);
-            mshr_n.flags[e_flag_sel_nerf] = lce_req_req.non_exclusive;
+            mshr_n.flags[e_flag_sel_nerf] = lce_req.msg.req.non_exclusive;
 
             state_n = READ_PENDING;
 
           // uncached request
           end else if (lce_req.msg_type == e_lce_req_type_uc_rd | lce_req.msg_type == e_lce_req_type_uc_wr) begin
             mshr_n.paddr = lce_req.addr;
-            uc_data_n = lce_req_uc_req.data;
-            mshr_n.uc_req_size = lce_req_uc_req.uc_size;
+            uc_data_n = lce_req.msg.uc_req.data;
+            mshr_n.uc_req_size = lce_req.msg.uc_req.uc_size;
             mshr_n.flags[e_flag_sel_ucf] = 1'b1;
             mshr_n.flags[e_flag_sel_rqf] = (lce_req.msg_type == e_lce_req_type_uc_wr);
 
@@ -772,10 +768,7 @@ module bp_cce_fsm
           lce_cmd.way_id = sharers_ways_lo[cnt];
 
           // Sub message fields
-          lce_cmd_cmd.addr = mshr_r.paddr;
-
-          // Assign Command subtype to msg field
-          lce_cmd.msg.cmd = lce_cmd_cmd;
+          lce_cmd.msg.cmd.addr = mshr_r.paddr;
 
           cnt_clr = (cnt == (num_lce_p-1)) & lce_cmd_ready_i;
           cnt_inc = lce_cmd_ready_i & ~cnt_clr;
@@ -836,10 +829,7 @@ module bp_cce_fsm
         lce_cmd.way_id = mshr_r.lru_way_id;
 
         // Sub message fields
-        lce_cmd_cmd.addr = mshr_r.lru_paddr;
-
-        // Assign Command subtype to msg field
-        lce_cmd.msg.cmd = lce_cmd_cmd;
+        lce_cmd.msg.cmd.addr = mshr_r.lru_paddr;
 
         state_n = (lce_cmd_ready_i) ? REPLACEMENT_WB_RESP : REPLACEMENT;
         end
@@ -865,7 +855,7 @@ module bp_cce_fsm
             mem_cmd.addr = lce_resp.addr;
             mem_cmd.payload.lce_id = mshr_r.lce_id;
             mem_cmd.payload.way_id = '0;
-            mem_cmd.data = lce_resp.msg.data;
+            mem_cmd.data = lce_resp.data;
 
             state_n = (lce_resp_yumi_o)
                       ? (mshr_r.flags[e_flag_sel_tf])
@@ -892,13 +882,10 @@ module bp_cce_fsm
         lce_cmd.way_id = mshr_r.tr_way_id;
 
         // Sub message fields
-        lce_cmd_cmd.addr = mshr_r.paddr;
-        lce_cmd_cmd.target = mshr_r.lce_id;
-        lce_cmd_cmd.target_way_id = mshr_r.lru_way_id;
-        lce_cmd_cmd.state = mshr_r.next_coh_state;
-
-        // Assign Command subtype to msg field
-        lce_cmd.msg.cmd = lce_cmd_cmd;
+        lce_cmd.msg.cmd.addr = mshr_r.paddr;
+        lce_cmd.msg.cmd.target = mshr_r.lce_id;
+        lce_cmd.msg.cmd.target_way_id = mshr_r.lru_way_id;
+        lce_cmd.msg.cmd.state = mshr_r.next_coh_state;
 
         state_n = (lce_cmd_ready_i) ? TRANSFER_WB_CMD : TRANSFER_CMD;
         end
@@ -913,10 +900,7 @@ module bp_cce_fsm
         lce_cmd.way_id = mshr_r.tr_way_id;
 
         // Sub message fields
-        lce_cmd_cmd.addr = mshr_r.paddr;
-
-        // Assign Command subtype to msg field
-        lce_cmd.msg.cmd = lce_cmd_cmd;
+        lce_cmd.msg.cmd.addr = mshr_r.paddr;
 
         state_n = (lce_cmd_ready_i) ? TRANSFER_WB_RESP : TRANSFER_WB_CMD;
         end
@@ -939,7 +923,7 @@ module bp_cce_fsm
             mem_cmd.addr = lce_resp.addr;
             mem_cmd.payload.lce_id = mshr_r.lce_id;
             mem_cmd.payload.way_id = '0;
-            mem_cmd.data = lce_resp.msg.data;
+            mem_cmd.data = lce_resp.data;
 
             state_n = (lce_resp_yumi_o) ? READY : TRANSFER_WB_RESP;
 
@@ -962,11 +946,8 @@ module bp_cce_fsm
         lce_cmd.way_id = mshr_r.way_id;
 
         // Sub message fields
-        lce_cmd_cmd.addr = mshr_r.paddr;
-        lce_cmd_cmd.state = mshr_r.next_coh_state;
-
-        // Assign Command subtype to msg field
-        lce_cmd.msg.cmd = lce_cmd_cmd;
+        lce_cmd.msg.cmd.addr = mshr_r.paddr;
+        lce_cmd.msg.cmd.state = mshr_r.next_coh_state;
 
         state_n = (lce_cmd_ready_i) ? READY : UPGRADE_STW_CMD;
         mshr_n = (lce_cmd_ready_i) ? '0 : mshr_r;
@@ -1001,11 +982,8 @@ module bp_cce_fsm
         lce_cmd.way_id = mshr_r.lru_way_id;
 
         // Sub message fields
-        lce_cmd_cmd.addr = mshr_r.paddr;
-        lce_cmd_cmd.state = mshr_r.next_coh_state;
-
-        // Assign Command subtype to msg field
-        lce_cmd.msg.cmd = lce_cmd_cmd;
+        lce_cmd.msg.cmd.addr = mshr_r.paddr;
+        lce_cmd.msg.cmd.state = mshr_r.next_coh_state;
 
         state_n = (lce_cmd_ready_i) ? READY : SEND_SET_TAG;
         mshr_n = (lce_cmd_ready_i) ? '0 : mshr_r;

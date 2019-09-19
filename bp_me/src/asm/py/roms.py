@@ -11,7 +11,7 @@ parser.add_argument('-S', dest='lce_sets', type=int, nargs='+', help='Number of 
 parser.add_argument('-C', dest='n_cce', type=int, nargs='+', help='Number of CCEs')
 parser.add_argument('-W', dest='n_wg', type=int, nargs='+', help='Number of Way-Groups per CCE')
 
-parser.add_argument('--bsg', dest='bsg', type=str, default='../../../../basejump_stl/bsg_mem',
+parser.add_argument('--bsg', dest='bsg', type=str, default='./basejump_stl/bsg_mem',
                     help='Path to basejump_stl/bsg_mem')
 parser.add_argument('--script', dest='script', type=str, default='bsg_ascii_to_rom.py',
                     help='Name of ROM generator script')

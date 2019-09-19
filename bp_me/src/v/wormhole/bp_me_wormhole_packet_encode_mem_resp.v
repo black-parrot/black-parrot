@@ -21,11 +21,11 @@ module bp_me_wormhole_packet_encode_mem_resp
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
     , localparam mem_resp_payload_width_lp =
-        `bp_mem_wormhole_payload_width(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, mem_cce_resp_width_lp)
+        `bp_mem_wormhole_payload_width(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, cce_mem_msg_width_lp)
     , localparam mem_resp_packet_width_lp = 
         `bsg_wormhole_concentrator_packet_width(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p, mem_resp_payload_width_lp)
     )
-   (input [mem_cce_resp_width_lp-1:0]       mem_resp_i
+   (input [cce_mem_msg_width_lp-1:0]        mem_resp_i
     , input [mem_noc_cord_width_p-1:0]      src_cord_i
     , input [mem_noc_cid_width_p-1:0]       src_cid_i
     , input [mem_noc_cord_width_p-1:0]      dst_cord_i
@@ -34,10 +34,10 @@ module bp_me_wormhole_packet_encode_mem_resp
     );
 
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
-  `declare_bp_mem_wormhole_payload_s(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, mem_cce_resp_width_lp, bp_resp_wormhole_payload_s);
+  `declare_bp_mem_wormhole_payload_s(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, cce_mem_msg_width_lp, bp_resp_wormhole_payload_s);
   `declare_bsg_wormhole_concentrator_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p, $bits(bp_resp_wormhole_payload_s), bp_resp_wormhole_packet_s);
 
-  bp_mem_cce_resp_s mem_resp_cast_i;
+  bp_cce_mem_msg_s mem_resp_cast_i;
   bp_resp_wormhole_packet_s packet_cast_o;
 
   assign mem_resp_cast_i = mem_resp_i;

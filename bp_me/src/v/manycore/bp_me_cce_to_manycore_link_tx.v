@@ -32,7 +32,7 @@ module bp_me_cce_to_manycore_link_tx
 
     , localparam bp_cce_mem_data_cmd_width_lp=
       `bp_cce_mem_data_cmd_width(paddr_width_p,block_size_in_bits_p,num_lce_p,lce_assoc_p)
-    , localparam bp_mem_cce_resp_width_lp=
+    , localparam bp_cce_mem_msg_width_lp=
       `bp_mem_cce_resp_width(paddr_width_p,num_lce_p,lce_assoc_p)
 
     , localparam packet_width_lp=
@@ -48,7 +48,7 @@ module bp_me_cce_to_manycore_link_tx
     , input mem_data_cmd_v_i
     , output logic mem_data_cmd_yumi_o
 
-    , output logic [bp_mem_cce_resp_width_lp-1:0] mem_resp_o
+    , output logic [bp_cce_mem_msg_width_lp-1:0] mem_resp_o
     , output logic mem_resp_v_o
     , input mem_resp_ready_i
 
