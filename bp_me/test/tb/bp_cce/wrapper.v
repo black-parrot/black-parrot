@@ -54,13 +54,21 @@ module wrapper
    // inbound: ready&valid, helpful consumer from demanding producer
    // outbound: valid->yumi, helpful producer to demanding consumer
    // Both inbound and outbound messages are buffered by two element FIFOs
-   , input [mem_cce_resp_width_lp-1:0]                     mem_resp_i
+   , input [cce_mem_msg_width_lp-1:0]                      mem_resp_i
    , input                                                 mem_resp_v_i
    , output logic                                          mem_resp_ready_o
 
-   , output logic [cce_mem_cmd_width_lp-1:0]               mem_cmd_o
+   , input [cce_mem_msg_width_lp-1:0]                      mem_cmd_i
+   , input                                                 mem_cmd_v_i
+   , output logic                                          mem_cmd_ready_o
+
+   , output logic [cce_mem_msg_width_lp-1:0]               mem_cmd_o
    , output logic                                          mem_cmd_v_o
    , input                                                 mem_cmd_yumi_i
+
+   , output logic [cce_mem_msg_width_lp-1:0]               mem_resp_o
+   , output logic                                          mem_resp_v_o
+   , input                                                 mem_resp_yumi_i
 
    , input [lg_num_cce_lp-1:0]                             cce_id_i
   );

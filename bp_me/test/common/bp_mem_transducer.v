@@ -24,11 +24,11 @@ module bp_mem_transducer
    , input                               reset_i
 
    // BP side
-   , input [cce_mem_cmd_width_lp-1:0]    mem_cmd_i
+   , input [cce_mem_msg_width_lp-1:0]    mem_cmd_i
    , input                               mem_cmd_v_i
    , output                              mem_cmd_yumi_o
 
-   , output [mem_cce_resp_width_lp-1:0]  mem_resp_o
+   , output [cce_mem_msg_width_lp-1:0]   mem_resp_o
    , output                              mem_resp_v_o
    , input                               mem_resp_ready_i
 
@@ -48,15 +48,14 @@ module bp_mem_transducer
 
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 
-  bp_cce_mem_cmd_s mem_cmd_cast_i;
-  bp_mem_cce_resp_s mem_resp_cast_o;
+  bp_cce_mem_msg_s mem_cmd_cast_i, mem_resp_cast_o;
 
   assign mem_resp_o = mem_resp_cast_o;
   assign mem_cmd_cast_i  = mem_cmd_i;
 
-  bp_cce_mem_cmd_s mem_cmd_r;
+  bp_cce_mem_msg_s mem_cmd_r;
   bsg_dff_reset_en
-   #(.width_p(cce_mem_cmd_width_lp))
+   #(.width_p(cce_mem_msg_width_lp))
    mshr_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

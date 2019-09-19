@@ -35,11 +35,11 @@ module bp_mem
    , input                               reset_i
 
    // BP side
-   , input [cce_mem_cmd_width_lp-1:0]    mem_cmd_i
+   , input [cce_mem_msg_width_lp-1:0]    mem_cmd_i
    , input                               mem_cmd_v_i
    , output                              mem_cmd_yumi_o
 
-   , output [mem_cce_resp_width_lp-1:0]  mem_resp_o
+   , output [cce_mem_msg_width_lp-1:0]   mem_resp_o
    , output                              mem_resp_v_o
    , input                               mem_resp_ready_i
    );
