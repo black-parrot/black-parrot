@@ -68,7 +68,6 @@ module bp_fe_top
 // the first level of structs
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 `declare_bp_fe_itlb_vaddr_s(vaddr_width_p,lce_sets_p,cce_block_width_p) 
-`declare_bp_be_tlb_entry_s(ptag_width_p);
    
 // fe to be
 bp_fe_queue_s                 fe_queue;
@@ -97,26 +96,22 @@ logic [vaddr_width_p-1:0] fetch_pc_lo;
 logic fetch_pc_v_lo, fetch_pc_ready_li;
 
 //itlb
-logic [vtag_width_p-1:0]  itlb_miss_vtag;
-logic 		                itlb_miss;
-   
-bp_be_tlb_entry_s itlb_r_entry;
+logic [vtag_width_p-1:0]  itlb_miss_vtag, itlb_r_vtag, itlb_w_vtag;
+logic                     itlb_miss, itlb_w_v;
+bp_pte_entry_leaf_s       itlb_w_entry, itlb_r_entry;
+assign itlb_r_vtag = fetch_pc_lo[vaddr_width_p-1:page_offset_width_p];
 
 //fe to itlb
 logic itlb_fence_v;
 
 wire icache_uncached = itlb_r_entry.uc;
 
-logic itlb_w_v;
-logic [vaddr_width_p-page_offset_width_p-1:0] itlb_w_vtag;
-bp_be_tlb_entry_s itlb_w_entry;
-
 logic [instr_width_p-1:0] fetch_instr_li;
 logic fetch_instr_v_li, fetch_instr_ready_lo;
 
-logic icache_ready_lo, itlb_ready_lo;
+logic icache_ready_lo;
 logic fetch_v_lo;
-wire fetch_ready_li = icache_ready_lo & itlb_ready_lo;
+wire fetch_ready_li = icache_ready_lo;
 bp_fe_pc_gen 
  #(.cfg_p(cfg_p)) 
  bp_fe_pc_gen_1
@@ -139,7 +134,7 @@ bp_fe_pc_gen
    ,.itlb_fence_v_o(itlb_fence_v)
    ,.itlb_w_v_o(itlb_w_v)
    ,.itlb_w_vtag_o(itlb_w_vtag)
-	 ,.itlb_w_entry_o(itlb_w_entry)
+   ,.itlb_w_entry_o(itlb_w_entry)
  
    ,.fe_cmd_i(fe_cmd_i)
    ,.fe_cmd_v_i(fe_cmd_v_i)
@@ -152,7 +147,7 @@ bp_fe_pc_gen
    );
 
 logic [ptag_width_p-1:0] fetch_ptag_lo;
-logic itlb_r_v_lo, itlb_r_ready_li;
+logic itlb_r_v_lo;
 
 bp_fe_icache 
  #(.cfg_p(cfg_p)) 
@@ -176,7 +171,7 @@ bp_fe_icache
 
    ,.ptag_i(itlb_r_entry.ptag)
    ,.ptag_v_i(itlb_r_v_lo)
-   ,.ptag_ready_o(itlb_r_ready_li)
+   ,.ptag_ready_o()
 
    ,.itlb_icache_miss_i(itlb_miss) 
    ,.uncached_i(icache_uncached)
@@ -202,26 +197,25 @@ bp_fe_icache
    ,.poison_tl_i(poison_tl | icache_miss)
    );
 
-bp_be_dtlb
- #(.cfg_p(cfg_p))
+bp_tlb
+ #(.cfg_p(cfg_p)
+   ,.tlb_els_p(itlb_els_p)
+ )
  itlb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.flush_i(itlb_fence_v)
-	       
-   ,.r_vtag_i(fetch_pc_lo[vaddr_width_p-1:page_offset_width_p])
-   ,.r_v_i(fetch_v_lo)
-   ,.r_ready_o(itlb_ready_lo)
-	   
-   ,.r_v_o(itlb_r_v_lo)
-   ,.r_entry_o(itlb_r_entry)
-
-   ,.w_v_i(itlb_w_v)
-   ,.w_vtag_i(itlb_w_vtag)
-	 ,.w_entry_i(itlb_w_entry)
-
-	 ,.miss_v_o(itlb_miss)
-	 ,.miss_vtag_o(itlb_miss_vtag)
-	 );
+   
+   ,.v_i(fetch_v_lo | itlb_w_v)
+   ,.w_i(itlb_w_v)
+   ,.vtag_i((itlb_w_v)? itlb_w_vtag : itlb_r_vtag)
+   ,.entry_i(itlb_w_entry)
+   
+   ,.v_o(itlb_r_v_lo)
+   ,.entry_o(itlb_r_entry)
+   
+   ,.miss_v_o(itlb_miss)
+   ,.miss_vtag_o(itlb_miss_vtag)   
+   );
 
 endmodule

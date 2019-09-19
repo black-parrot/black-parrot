@@ -32,9 +32,7 @@ module bp_be_top
    , localparam ecode_dec_width_lp         = `bp_be_ecode_dec_width
    
    // VM parameters
-   , localparam vtag_width_lp     = (vaddr_width_p-bp_page_offset_width_gp)
-   , localparam ptag_width_lp     = (paddr_width_p-bp_page_offset_width_gp)
-   , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_lp)
+   , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -85,7 +83,6 @@ module bp_be_top
 
 // Declare parameterized structures
 `declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p)
-`declare_bp_be_tlb_entry_s(ptag_width_p)
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
 `declare_bp_be_internal_if_structs(vaddr_width_p
                                    , paddr_width_p
@@ -111,9 +108,9 @@ logic csr_cmd_v, csr_cmd_rdy;
 bp_be_mem_resp_s mem_resp;
 logic mem_resp_v, mem_resp_rdy;
 
-bp_be_tlb_entry_s         itlb_fill_entry;
-logic [vaddr_width_p-1:0] itlb_fill_vaddr;
-logic                     itlb_fill_v;
+logic [tlb_entry_width_lp-1:0]  itlb_fill_entry;
+logic [vaddr_width_p-1:0]       itlb_fill_vaddr;
+logic                           itlb_fill_v;
 
 bp_be_calc_status_s    calc_status;
 

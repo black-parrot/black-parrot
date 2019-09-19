@@ -21,7 +21,7 @@ module bp_fe_pc_gen
                                ,branch_metadata_fwd_width_p
                                )
 
-   , localparam entry_width_lp = `bp_be_tlb_entry_width(ptag_width_p)
+   , localparam entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
    , localparam instr_width_lp = rv64_instr_width_gp
    )
   (input                                             clk_i
