@@ -114,6 +114,7 @@ module bp_cce_reg
   logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_r, gpr_n;
   logic [lce_req_data_width_p-1:0] nc_data_r, nc_data_n;
   logic [lg_num_lce_lp-1:0] num_lce_r, num_lce_n;
+  logic [`bp_coh_bits-1:0] coh_state_r, coh_state_n;
 
   // Config link
   wire cfg_num_lce_w_v = (cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_num_lce_gp));
@@ -159,6 +160,9 @@ module bp_cce_reg
       num_lce_n = mov_src_i[0+:lg_num_lce_lp];
     end
 
+    // Default coherence state
+    coh_state_n = mov_src_i[0+:`bp_coh_bits];
+
     // MSHR
 
     // by default, hold mshr value
@@ -169,6 +173,7 @@ module bp_cce_reg
     // normal request processing).
     if (decoded_inst_i.mshr_clear) begin
       mshr_n = '0;
+      mshr_n.next_coh_state = coh_state_r;
     end else begin
       // Request LCE, address, tag
       case (decoded_inst_i.req_sel)
@@ -417,6 +422,7 @@ module bp_cce_reg
       gpr_r <= '0;
       nc_data_r <= '0;
       num_lce_r <= '0;
+      coh_state_r <= '0;
     end else begin
       // MSHR writes
       if (decoded_inst_i.mshr_clear) begin
@@ -475,6 +481,11 @@ module bp_cce_reg
           | (decoded_inst_i.mov_dst_w_v & (decoded_inst_i.dst_sel == e_dst_sel_special)
              & (decoded_inst_i.dst.special == e_dst_num_lce))) begin
         num_lce_r <= num_lce_n;
+      end
+
+      if (decoded_inst_i.mov_dst_w_v & (decoded_inst_i.dst_sel == e_dst_sel_special)
+          & (decoded_inst_i.dst.special == e_dst_coh_state)) begin
+        coh_state_r <= coh_state_n;
       end
 
     end // else

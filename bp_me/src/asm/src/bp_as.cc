@@ -279,6 +279,8 @@ Assembler::parseDstOpd(string &s) {
     return e_dst_next_coh_state;
   } else if (!s.compare("numlce")) {
     return e_dst_num_lce;
+  } else if (!s.compare("cohst")) {
+    return e_dst_coh_state;
   } else if (!s.compare("rqf")) {
     return e_dst_rqf;
   } else if (!s.compare("ucf")) {

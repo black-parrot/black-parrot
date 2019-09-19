@@ -260,6 +260,7 @@ typedef enum logic [4:0] {
 typedef enum logic [4:0] {
   e_dst_next_coh_state                   = 5'b00000
   ,e_dst_num_lce                         = 5'b00001
+  ,e_dst_coh_state                       = 5'b00010
 
 } bp_cce_inst_dst_special_e;
 

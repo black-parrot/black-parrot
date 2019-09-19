@@ -166,6 +166,7 @@ typedef enum {
 
   ,e_dst_next_coh_state          = 0x00
   ,e_dst_num_lce                 = 0x01
+  ,e_dst_coh_state               = 0x02
 
   ,e_dst_rqf                     = 0x00
   ,e_dst_ucf                     = 0x01
