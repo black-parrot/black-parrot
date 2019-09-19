@@ -88,7 +88,6 @@ typedef enum {
   ,e_lce_cce_coh_ack         = 2 // Coherence Ack
   ,e_lce_resp_wb             = 3 // Normal Writeback Response
   ,e_lce_resp_null_wb        = 4 // Null Writeback Response
-
 } bp_lce_cce_resp_type_e;
 
 #define bp_lce_cce_ack_type_width 3
@@ -100,12 +99,14 @@ typedef enum {
   ,e_cce_mem_uc_rd           = 2
   ,e_cce_mem_uc_wr           = 3
   ,e_cce_mem_wb              = 4
-  ,e_mem_cce_inv             = 5
-
 } bp_cce_mem_cmd_type_e;
 
-#define bp_cce_mem_cmd_type_width 4
+typedef enum {
+  e_mem_cce_inv              = 0
+  ,e_mem_cce_flush           = 1
+} bp_mem_cce_cmd_type_e;
 
+#define bp_cce_mem_msg_type_width 4
 
 // Width Macros
 

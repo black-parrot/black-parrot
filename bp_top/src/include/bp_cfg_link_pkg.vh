@@ -28,6 +28,7 @@ package bp_cfg_link_pkg;
   localparam bp_cfg_reg_start_pc_hi_gp    = 'h0041;
   localparam bp_cfg_reg_dcache_mode_gp    = 'h0042;
   localparam bp_cfg_reg_cce_mode_gp       = 'h0060;
+  localparam bp_cfg_reg_num_lce_gp        = 'h0061;
   localparam bp_cfg_mem_base_cce_ucode_gp = 'h8000;
 
 endpackage

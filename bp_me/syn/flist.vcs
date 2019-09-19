@@ -1,41 +1,41 @@
-## Includes
-# bsg_ip_cores includes
+//// Includes
+// bsg_ip_cores includes
 +incdir+$BASEJUMP_STL_DIR/bsg_dataflow
 +incdir+$BASEJUMP_STL_DIR/bsg_mem
 +incdir+$BASEJUMP_STL_DIR/bsg_misc
 +incdir+$BASEJUMP_STL_DIR/bsg_test
 +incdir+$BASEJUMP_STL_DIR/bsg_noc
-# common includes
+// common includes
 +incdir+$BP_COMMON_DIR/src/include
-# fe includes
+// fe includes
 +incdir+$BP_FE_DIR/src/include
-# be includes
+// be includes
 +incdir+$BP_BE_DIR/src/include
 +incdir+$BP_BE_DIR/src/include/bp_be_dcache
-# me includes 
+// me includes 
 +incdir+$BP_ME_DIR/src/include/v
-# top includes
+// top includes
 +incdir+$BP_TOP_DIR/src/include
-## Packages
-# bsg_ip_cores packages
+//// Packages
+// bsg_ip_cores packages
 $BASEJUMP_STL_DIR/bsg_noc/bsg_noc_pkg.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_pkg.v
-# Interface packages
+// Interface packages
 $BP_COMMON_DIR/src/include/bp_common_pkg.vh
 $BP_COMMON_DIR/src/include/bp_common_aviary_pkg.vh
-# FE packages
+// FE packages
 $BP_FE_DIR/src/include/bp_fe_icache_pkg.vh
 $BP_FE_DIR/src/include/bp_fe_pkg.vh
-# BE packages
+// BE packages
 $BP_BE_DIR/src/include/bp_be_rv64_pkg.vh
 $BP_BE_DIR/src/include/bp_be_pkg.vh
 $BP_BE_DIR/src/include/bp_be_dcache/bp_be_dcache_pkg.vh
-# ME packages
+// ME packages
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
 $BP_ME_DIR/src/include/v/bp_me_pkg.vh
-# Top packages
+// Top packages
 $BP_TOP_DIR/src/include/bp_cfg_link_pkg.vh
-## bsg_ip_cores files
+//// bsg_ip_cores files
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_fifo.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_launch_sync_sync.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_ptr_gray.v
@@ -113,9 +113,9 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v  
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lfsr.v
-# COMMON
+// COMMON
 $BP_COMMON_DIR/src/v/bp_addr_map.v
-# ME
+// ME
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_master.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_client.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_cmd.v

@@ -72,3 +72,5 @@ msi: as
 mesi: as
 	python2 py/roms.py -i microcode/cce/mesi -N 1 -W 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/mesi
 
+test: as
+	python2 py/roms.py -i microcode/cce/test --bsg $(BSG_MEM_DIR) --outdir ./roms/test

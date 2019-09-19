@@ -33,7 +33,7 @@ module bp_me_wormhole_packet_encode_lce_resp
   assign packet_o = packet_cast_o;
 
   localparam lce_cce_resp_ack_len_lp =
-    `BSG_CDIV(lce_cce_resp_packet_width_lp-$bits(payload_cast_i.msg.data), coh_noc_flit_width_p) - 1;
+    `BSG_CDIV(lce_cce_resp_packet_width_lp-$bits(payload_cast_i.data), coh_noc_flit_width_p) - 1;
   localparam lce_cce_resp_wb_len_lp =
     `BSG_CDIV(lce_cce_resp_packet_width_lp, coh_noc_flit_width_p) - 1;
 

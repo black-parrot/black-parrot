@@ -31,12 +31,12 @@ module bp_cce_mmio_cfg_loader
    , input                                           reset_i
 
    // Config channel
-   , output logic [cce_mem_cmd_width_lp-1:0]         mem_cmd_o
+   , output logic [cce_mem_msg_width_lp-1:0]         mem_cmd_o
    , output logic                                    mem_cmd_v_o
    , input                                           mem_cmd_yumi_i
 
    // We don't need a response from the cfg network
-   , input [mem_cce_resp_width_lp-1:0]               mem_resp_i
+   , input [cce_mem_msg_width_lp-1:0]                mem_resp_i
    , input                                           mem_resp_v_i
    , output                                          mem_resp_ready_o
    );
@@ -46,7 +46,7 @@ module bp_cce_mmio_cfg_loader
    
  `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 
-  bp_cce_mem_cmd_s mem_cmd_cast_o;
+  bp_cce_mem_msg_s mem_cmd_cast_o;
 
   assign mem_cmd_o = mem_cmd_cast_o;
   

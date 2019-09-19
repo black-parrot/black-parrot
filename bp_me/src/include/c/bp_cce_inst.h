@@ -29,9 +29,10 @@ typedef enum {
 typedef enum {
   e_add                          = 0x0   // Add
   ,e_inc                         = 0x0   // Increment by 1 // same as ADD, src_b = 1, dst = src_a
-  ,e_addi                        = 0x0   // Add immediate to GPR
+  ,e_addi                        = 0x0   // Add immediate to GPR // dst = src_a + imm
   ,e_sub                         = 0x1   // Subtract
   ,e_dec                         = 0x1   // Decrement by 1 // same as DEC, src_b = 1, dst = src_a
+  ,e_subi                        = 0x1   // Subtract immediate from GPR // dst = src_a - imm
   ,e_lsh                         = 0x2   // Left shift
   ,e_rsh                         = 0x3   // Right shift
   ,e_and                         = 0x4   // Bit-wise AND
@@ -44,6 +45,7 @@ typedef enum {
   e_beq                          = 0x0   // Branch if A == B
   ,e_beqi                        = 0x0   // Branch Equal Immediate, src_b = imm
   ,e_bne                         = 0x1   // Branch if A != B
+  ,e_bneqi                       = 0x1   // Branch Not Equal Immediate, src_b = imm
 
   ,e_bz                          = 0x0   // Branch if A == 0 // same as BEQ, src_b = imm
   ,e_bnz                         = 0x1   // Branch if A != 0 // same as BNE, src_b = imm
@@ -58,7 +60,7 @@ typedef enum {
   ,e_bgt                         = 0x4   // Branch if A > B // same as BLT, swap src_a and src_b
   ,e_bge                         = 0x5   // Branch if A >= B // same as BLE, swap src_a and src_b
 
-  ,e_bqr                         = 0x6   // Branch if Queue.ready == 1 // same as BEQ src_a = queue.ready, src_b = 1
+  ,e_bqv                         = 0x6   // Branch if Queue.valid == 1 // same as BEQ src_a = queue.valid, src_b = 1
 
   ,e_bi                          = 0x7   // Branch Immediate (Unconditional)
 } bp_cce_inst_minor_branch_op_e;
@@ -93,11 +95,12 @@ typedef enum {
 typedef enum {
   e_gad                          = 0x0   // Generate Auxiliary Data
   ,e_clm                         = 0x1   // Clear MSHR register
+  ,e_fence                       = 0x2   // CCE Mem Fence
   ,e_stall                       = 0x7   // Stall PC - used for errors
 } bp_cce_inst_minor_misc_op_e;
 
 typedef enum {
-  e_wfq                          = 0x0   // Wait for Queue Ready
+  e_wfq                          = 0x0   // Wait for Queue Valid
   ,e_pushq                       = 0x1   // Push Queue
   ,e_popq                        = 0x2   // Pop Queue
   ,e_poph                        = 0x3   // Pop Header
@@ -121,11 +124,14 @@ typedef enum {
 
   ,e_src_req_lce                 = 0x08
   ,e_src_next_coh_state          = 0x09
+  ,e_src_num_lce                 = 0x0a
+  ,e_src_req_addr                = 0x0b
 
-  ,e_src_lce_req_ready           = 0x10
-  ,e_src_mem_resp_ready          = 0x11
-  ,e_src_pending_ready           = 0x12
-  ,e_src_lce_resp_ready          = 0x13
+  ,e_src_lce_req_v               = 0x10
+  ,e_src_mem_resp_v              = 0x11
+  ,e_src_pending_v               = 0x12
+  ,e_src_lce_resp_v              = 0x13
+  ,e_src_mem_cmd_v               = 0x14
 
   ,e_src_rqf                     = 0x00
   ,e_src_ucf                     = 0x01
@@ -159,6 +165,7 @@ typedef enum {
   ,e_dst_r7                      = 0x07
 
   ,e_dst_next_coh_state          = 0x00
+  ,e_dst_num_lce                 = 0x01
 
   ,e_dst_rqf                     = 0x00
   ,e_dst_ucf                     = 0x01
@@ -195,26 +202,6 @@ typedef enum {
 #define bp_cce_inst_gpr_width 64
 
 typedef enum {
-  e_flag_rqf                     = 1 // Request Type Flag
-  ,e_flag_ucf                    = 2 // Uncached Request Flag
-  ,e_flag_nerf                   = 4 // Non-Exclusive Request Flag
-  ,e_flag_ldf                    = 8 // LRU Dirty Flag
-  ,e_flag_pf                     = 16 // Pending Flag
-  ,e_flag_lef                    = 32 // LRU Cached Exclusive Flag
-  ,e_flag_cf                     = 64 // Cached Flag
-  ,e_flag_cef                    = 128 // Cached Flag
-  ,e_flag_cof                    = 256 // Cached Flag
-  ,e_flag_cdf                    = 512 // Cached Flag
-  ,e_flag_tf                     = 1024 // Transfer Flag
-  ,e_flag_rf                     = 2048 // Replacement Flag
-  ,e_flag_uf                     = 4096 // Upgrade Flag
-  ,e_flag_if                     = 8192 // Invalidate Flag
-  ,e_flag_nwbf                   = 16384 // Null Writeback Flag
-} bp_cce_inst_flag_e;
-
-#define bp_cce_inst_num_flags 15
-
-typedef enum {
   e_flag_sel_rqf                 = 0x0 // Request Type Flag
   ,e_flag_sel_ucf                = 0x1 // Uncached Request Flag
   ,e_flag_sel_nerf               = 0x2 // Non-Exclusive Request Flag
@@ -234,10 +221,197 @@ typedef enum {
 
 #define bp_cce_inst_flag_sel_width 4
 
+typedef enum {
+  e_flag_rqf                     = 1 // Request Type Flag
+  ,e_flag_ucf                    = 2 // Uncached Request Flag
+  ,e_flag_nerf                   = 4 // Non-Exclusive Request Flag
+  ,e_flag_ldf                    = 8 // LRU Dirty Flag
+  ,e_flag_pf                     = 16 // Pending Flag
+  ,e_flag_lef                    = 32 // LRU Cached Exclusive Flag
+  ,e_flag_cf                     = 64 // Cached Flag
+  ,e_flag_cef                    = 128 // Cached Flag
+  ,e_flag_cof                    = 256 // Cached Flag
+  ,e_flag_cdf                    = 512 // Cached Flag
+  ,e_flag_tf                     = 1024 // Transfer Flag
+  ,e_flag_rf                     = 2048 // Replacement Flag
+  ,e_flag_uf                     = 4096 // Upgrade Flag
+  ,e_flag_if                     = 8192 // Invalidate Flag
+  ,e_flag_nwbf                   = 16384 // Null Writeback Flag
+} bp_cce_inst_flag_e;
+
+#define bp_cce_inst_num_flags 15
+
+// Source select for Directory Way Group input
+typedef enum {
+  e_dir_wg_sel_r0                = 0x0
+  ,e_dir_wg_sel_r1               = 0x1
+  ,e_dir_wg_sel_r2               = 0x2
+  ,e_dir_wg_sel_r3               = 0x3
+  ,e_dir_wg_sel_r4               = 0x4
+  ,e_dir_wg_sel_r5               = 0x5
+  ,e_dir_wg_sel_r6               = 0x6
+  ,e_dir_wg_sel_r7               = 0x7
+  ,e_dir_wg_sel_req_addr         = 0x8
+  ,e_dir_wg_sel_lru_way_addr     = 0x9
+} bp_cce_inst_dir_way_group_sel_e;
+
+#define bp_cce_inst_dir_way_group_sel_width 4
+
+// Source select for Directory LCE input
+typedef enum {
+  e_dir_lce_sel_r0               = 0x0
+  ,e_dir_lce_sel_r1              = 0x1
+  ,e_dir_lce_sel_r2              = 0x2
+  ,e_dir_lce_sel_r3              = 0x3
+  ,e_dir_lce_sel_r4              = 0x4
+  ,e_dir_lce_sel_r5              = 0x5
+  ,e_dir_lce_sel_r6              = 0x6
+  ,e_dir_lce_sel_r7              = 0x7
+  ,e_dir_lce_sel_req_lce         = 0x8
+  ,e_dir_lce_sel_transfer_lce    = 0x9
+} bp_cce_inst_dir_lce_sel_e;
+
+#define bp_cce_inst_dir_lce_sel_width 4
+
+// Source select for Directory Way input
+typedef enum {
+  e_dir_way_sel_r0                 = 0x0
+  ,e_dir_way_sel_r1                = 0x1
+  ,e_dir_way_sel_r2                = 0x2
+  ,e_dir_way_sel_r3                = 0x3
+  ,e_dir_way_sel_r4                = 0x4
+  ,e_dir_way_sel_r5                = 0x5
+  ,e_dir_way_sel_r6                = 0x6
+  ,e_dir_way_sel_r7                = 0x7
+  ,e_dir_way_sel_req_addr_way      = 0x8
+  ,e_dir_way_sel_lru_way_addr_way  = 0x9
+  ,e_dir_way_sel_sh_way_r0         = 0xa
+} bp_cce_inst_dir_way_sel_e;
+
+#define bp_cce_inst_dir_way_sel_width 4
+
+// Source select for Directory Coherence State input
+typedef enum {
+  e_dir_coh_sel_r0                 = 0x0
+  ,e_dir_coh_sel_r1                = 0x1
+  ,e_dir_coh_sel_r2                = 0x2
+  ,e_dir_coh_sel_r3                = 0x3
+  ,e_dir_coh_sel_r4                = 0x4
+  ,e_dir_coh_sel_r5                = 0x5
+  ,e_dir_coh_sel_r6                = 0x6
+  ,e_dir_coh_sel_r7                = 0x7
+  ,e_dir_coh_sel_next_coh_st       = 0x8
+  ,e_dir_coh_sel_inst_imm          = 0x9
+} bp_cce_inst_dir_coh_state_sel_e;
+
+#define bp_cce_inst_dir_coh_state_sel_width 4
+
+// Source select for Directory Tag input
+typedef enum {
+  e_dir_tag_sel_r0                 = 0x0
+  ,e_dir_tag_sel_r1                = 0x1
+  ,e_dir_tag_sel_r2                = 0x2
+  ,e_dir_tag_sel_r3                = 0x3
+  ,e_dir_tag_sel_r4                = 0x4
+  ,e_dir_tag_sel_r5                = 0x5
+  ,e_dir_tag_sel_r6                = 0x6
+  ,e_dir_tag_sel_r7                = 0x7
+  ,e_dir_tag_sel_req_addr          = 0x8
+  ,e_dir_tag_sel_lru_way_addr      = 0x9
+  ,e_dir_tag_sel_const_0           = 0xa
+} bp_cce_inst_dir_tag_sel_e;
+
+#define bp_cce_inst_dir_tag_sel_width 4
+
+typedef enum {
+  e_src_q_lce_req                = 0x0
+  ,e_src_q_mem_resp              = 0x1
+  ,e_src_q_pending               = 0x2
+  ,e_src_q_lce_resp              = 0x3
+  ,e_src_q_mem_cmd               = 0x4
+} bp_cce_inst_src_q_sel_e;
+
+#define bp_cce_inst_src_q_sel_width 3
+#define bp_cce_num_src_q 5
+
+typedef enum {
+  e_dst_q_lce_cmd                = 0x0
+  ,e_dst_q_mem_cmd               = 0x1
+  ,e_dst_q_mem_resp              = 0x2
+} bp_cce_inst_dst_q_sel_e;
+
+#define bp_cce_inst_dst_q_sel_width 2
+
+typedef enum {
+  e_lce_cmd_lce_r0               = 0x0
+  ,e_lce_cmd_lce_r1              = 0x1
+  ,e_lce_cmd_lce_r2              = 0x2
+  ,e_lce_cmd_lce_r3              = 0x3
+  ,e_lce_cmd_lce_r4              = 0x4
+  ,e_lce_cmd_lce_r5              = 0x5
+  ,e_lce_cmd_lce_r6              = 0x6
+  ,e_lce_cmd_lce_r7              = 0x7
+  ,e_lce_cmd_lce_req_lce         = 0x8
+  ,e_lce_cmd_lce_tr_lce          = 0x9
+  ,e_lce_cmd_lce_0               = 0xa
+} bp_cce_inst_lce_cmd_lce_sel_e;
+
+#define bp_cce_inst_lce_cmd_lce_sel_width 4
+
+typedef enum {
+  e_lce_cmd_addr_r0              = 0x0
+  ,e_lce_cmd_addr_r1             = 0x1
+  ,e_lce_cmd_addr_r2             = 0x2
+  ,e_lce_cmd_addr_r3             = 0x3
+  ,e_lce_cmd_addr_r4             = 0x4
+  ,e_lce_cmd_addr_r5             = 0x5
+  ,e_lce_cmd_addr_r6             = 0x6
+  ,e_lce_cmd_addr_r7             = 0x7
+  ,e_lce_cmd_addr_req_addr       = 0x8
+  ,e_lce_cmd_addr_lru_way_addr   = 0x9
+  ,e_lce_cmd_addr_0              = 0xa
+} bp_cce_inst_lce_cmd_addr_sel_e;
+
+#define bp_cce_inst_lce_cmd_addr_sel_width 4
+
+typedef enum {
+  e_lce_cmd_way_r0               = 0x0
+  ,e_lce_cmd_way_r1              = 0x1
+  ,e_lce_cmd_way_r2              = 0x2
+  ,e_lce_cmd_way_r3              = 0x3
+  ,e_lce_cmd_way_r4              = 0x4
+  ,e_lce_cmd_way_r5              = 0x5
+  ,e_lce_cmd_way_r6              = 0x6
+  ,e_lce_cmd_way_r7              = 0x7
+  ,e_lce_cmd_way_req_addr_way    = 0x8
+  ,e_lce_cmd_way_tr_addr_way     = 0x9
+  ,e_lce_cmd_way_sh_list_r0      = 0xa
+  ,e_lce_cmd_way_lru_addr_way    = 0xb
+  ,e_lce_cmd_way_0               = 0xc
+} bp_cce_inst_lce_cmd_way_sel_e;
+
+#define bp_cce_inst_lce_cmd_way_sel_width 4
+
+typedef enum {
+  e_mem_cmd_addr_r0               = 0x0
+  ,e_mem_cmd_addr_r1              = 0x1
+  ,e_mem_cmd_addr_r2              = 0x2
+  ,e_mem_cmd_addr_r3              = 0x3
+  ,e_mem_cmd_addr_r4              = 0x4
+  ,e_mem_cmd_addr_r5              = 0x5
+  ,e_mem_cmd_addr_r6              = 0x6
+  ,e_mem_cmd_addr_r7              = 0x7
+  ,e_mem_cmd_addr_lru_way_addr    = 0x8
+  ,e_mem_cmd_addr_req_addr        = 0x9
+} bp_cce_inst_mem_cmd_addr_sel_e;
+
+#define bp_cce_inst_mem_cmd_addr_sel_width 4
+
 // Source select for ReqLCE and ReqAddr registers writes
 typedef enum {
   e_req_sel_lce_req              = 0x0
   ,e_req_sel_pending             = 0x1
+  ,e_req_sel_mem_cmd             = 0x2
 } bp_cce_inst_req_sel_e;
 
 #define bp_cce_inst_req_sel_width 2
@@ -256,60 +430,6 @@ typedef enum {
 
 #define bp_cce_inst_lru_way_sel_width 2
 
-// Source select for Directory Way Group input
-typedef enum {
-  e_dir_wg_sel_r0                = 0x0
-  ,e_dir_wg_sel_r1               = 0x1
-  ,e_dir_wg_sel_r2               = 0x2
-  ,e_dir_wg_sel_r3               = 0x3
-  ,e_dir_wg_sel_req_addr         = 0x4
-  ,e_dir_wg_sel_lru_way_addr     = 0x5
-} bp_cce_inst_dir_way_group_sel_e;
-
-#define bp_cce_inst_dir_way_group_sel_width 3
-
-// Source select for Directory LCE input
-typedef enum {
-  e_dir_lce_sel_r0               = 0x0
-  ,e_dir_lce_sel_r1              = 0x1
-  ,e_dir_lce_sel_r2              = 0x2
-  ,e_dir_lce_sel_r3              = 0x3
-  ,e_dir_lce_sel_req_lce         = 0x4
-  ,e_dir_lce_sel_transfer_lce    = 0x5
-} bp_cce_inst_dir_lce_sel_e;
-
-#define bp_cce_inst_dir_lce_sel_width 3
-
-// Source select for Directory Way input
-typedef enum {
-  e_dir_way_sel_r0                 = 0x0
-  ,e_dir_way_sel_r1                = 0x1
-  ,e_dir_way_sel_r2                = 0x2
-  ,e_dir_way_sel_r3                = 0x3
-  ,e_dir_way_sel_req_addr_way      = 0x4
-  ,e_dir_way_sel_lru_way_addr_way  = 0x5
-  ,e_dir_way_sel_sh_way_r0         = 0x6
-} bp_cce_inst_dir_way_sel_e;
-
-#define bp_cce_inst_dir_way_sel_width 3
-
-// Source select for Directory Coherence State input
-typedef enum {
-  e_dir_coh_sel_next_coh_st      = 0x0
-  ,e_dir_coh_sel_inst_imm        = 0x1
-} bp_cce_inst_dir_coh_state_sel_e;
-
-#define bp_cce_inst_dir_coh_state_sel_width 1
-
-// Source select for Directory Tag input
-typedef enum {
-  e_dir_tag_sel_req_addr         = 0x0
-  ,e_dir_tag_sel_lru_way_addr    = 0x1
-  ,e_dir_tag_sel_const_0         = 0x2
-} bp_cce_inst_dir_tag_sel_e;
-
-#define bp_cce_inst_dir_tag_sel_width 2
-
 // Source select for Transfer LCE register writes
 typedef enum {
   e_tr_lce_sel_logic             = 0x0
@@ -318,63 +438,6 @@ typedef enum {
 
 #define bp_cce_inst_transfer_lce_sel_width 1
 
-typedef enum {
-  e_src_q_lce_req                = 0x0
-  ,e_src_q_mem_resp              = 0x1
-  ,e_src_q_pending               = 0x2
-  ,e_src_q_lce_resp              = 0x3
-} bp_cce_inst_src_q_sel_e;
-
-#define bp_cce_inst_src_q_sel_width 3
-#define bp_cce_num_src_q 4
-
-typedef enum {
-  e_dst_q_lce_cmd                = 0x0
-  ,e_dst_q_mem_cmd               = 0x1
-} bp_cce_inst_dst_q_sel_e;
-
-#define bp_cce_inst_dst_q_sel_width 2
-
-typedef enum {
-  e_lce_cmd_lce_r0               = 0x0
-  ,e_lce_cmd_lce_r1              = 0x1
-  ,e_lce_cmd_lce_r2              = 0x2
-  ,e_lce_cmd_lce_r3              = 0x3
-  ,e_lce_cmd_lce_req_lce         = 0x4
-  ,e_lce_cmd_lce_tr_lce          = 0x5
-  ,e_lce_cmd_lce_0               = 0x6
-} bp_cce_inst_lce_cmd_lce_sel_e;
-
-#define bp_cce_inst_lce_cmd_lce_sel_width 3
-
-typedef enum {
-  e_lce_cmd_addr_r0              = 0x0
-  ,e_lce_cmd_addr_r1             = 0x1
-  ,e_lce_cmd_addr_r2             = 0x2
-  ,e_lce_cmd_addr_r3             = 0x3
-  ,e_lce_cmd_addr_req_addr       = 0x4
-  ,e_lce_cmd_addr_lru_way_addr   = 0x5
-  ,e_lce_cmd_addr_0              = 0x6
-} bp_cce_inst_lce_cmd_addr_sel_e;
-
-#define bp_cce_inst_lce_cmd_addr_sel_width 3
-
-typedef enum {
-  e_lce_cmd_way_req_addr_way     = 0x0
-  ,e_lce_cmd_way_tr_addr_way     = 0x1
-  ,e_lce_cmd_way_sh_list_r0      = 0x2
-  ,e_lce_cmd_way_lru_addr_way    = 0x3
-  ,e_lce_cmd_way_0               = 0x4
-} bp_cce_inst_lce_cmd_way_sel_e;
-
-#define bp_cce_inst_lce_cmd_way_sel_width 3
-
-typedef enum {
-  e_mem_cmd_addr_lru_way_addr = 0x0
-  ,e_mem_cmd_addr_req_addr    = 0x1
-} bp_cce_inst_mem_cmd_addr_sel_e;
-
-#define bp_cce_inst_mem_cmd_addr_sel_width 1
 
 #define bp_cce_inst_imm16_width 16
 #define bp_cce_inst_imm32_width 32
@@ -442,7 +505,7 @@ typedef struct __attribute__((__packed__)) {
   bp_cce_inst_src_e src_a : bp_cce_inst_src_width;
   bp_cce_inst_src_e src_b : bp_cce_inst_src_width;
   uint8_t imm : 1;
-  uint32_t pad : bp_cce_inst_flag_pad;
+  uint64_t pad : bp_cce_inst_flag_pad;
 } bp_cce_inst_flag_op_s;
 
 // Read Directory Operation
@@ -450,12 +513,16 @@ typedef struct __attribute__((__packed__)) {
   bp_cce_inst_type_u_width \
   - bp_cce_inst_dir_way_group_sel_width \
   - bp_cce_inst_dir_lce_sel_width \
-  - bp_cce_inst_dir_way_sel_width
+  - bp_cce_inst_dir_way_sel_width \
+  - bp_cce_inst_dir_tag_sel_width \
+  - bp_cce_inst_dst_width
 
 typedef struct __attribute__((__packed__)) {
   bp_cce_inst_dir_way_group_sel_e dir_way_group_sel : bp_cce_inst_dir_way_group_sel_width;
   bp_cce_inst_dir_lce_sel_e dir_lce_sel : bp_cce_inst_dir_lce_sel_width;
   bp_cce_inst_dir_way_sel_e dir_way_sel : bp_cce_inst_dir_way_sel_width;
+  bp_cce_inst_dir_tag_sel_e dir_tag_sel : bp_cce_inst_dir_tag_sel_width;
+  bp_cce_inst_dst_e dst : bp_cce_inst_dst_width;
   uint64_t pad : bp_cce_inst_read_dir_pad;
 } bp_cce_inst_read_dir_op_s;
 
@@ -498,7 +565,8 @@ typedef struct __attribute__((__packed__)) {
 
 typedef union __attribute__((__packed__)) {
   bp_lce_cmd_type_e lce_cmd : bp_lce_cmd_type_width;
-  bp_cce_mem_cmd_type_e mem_cmd : bp_cce_mem_cmd_type_width;
+  bp_cce_mem_cmd_type_e mem_cmd : bp_cce_mem_msg_type_width;
+  bp_mem_cce_cmd_type_e mem_resp : bp_cce_mem_msg_type_width;
 } bp_pushq_cmd_u;
 
 typedef struct __attribute__((__packed__)) {

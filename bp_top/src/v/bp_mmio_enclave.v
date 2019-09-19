@@ -50,10 +50,10 @@ module bp_mmio_enclave
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 
 // Cast ports
-bp_cce_mem_cmd_s mem_cmd_li;
+bp_cce_mem_msg_s mem_cmd_li;
 logic mem_cmd_v_li, mem_cmd_yumi_lo;
 
-bp_mem_cce_resp_s mem_resp_lo;
+bp_cce_mem_msg_s mem_resp_lo;
 logic mem_resp_v_lo, mem_resp_ready_li;
 
 localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);

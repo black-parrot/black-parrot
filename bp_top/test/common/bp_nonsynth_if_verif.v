@@ -45,8 +45,7 @@ initial
     $display("bp_lce_cce_resp_s      bits: struct %d width %d", $bits(bp_lce_cce_resp_s), lce_cce_resp_width_lp);
 
     $display("########### CCE-MEM IF ##############");
-    $display("bp_cce_mem_cmd_s       bits: struct %d width %d", $bits(bp_cce_mem_cmd_s), cce_mem_cmd_width_lp);
-    $display("bp_mem_cce_resp_s      bits: struct %d width %d", $bits(bp_mem_cce_resp_s), mem_cce_resp_width_lp);
+    $display("bp_cce_mem_msg_s       bits: struct %d width %d", $bits(bp_cce_mem_msg_s), cce_mem_msg_width_lp);
   end
 
 endmodule
