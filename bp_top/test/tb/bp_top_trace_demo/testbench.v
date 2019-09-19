@@ -67,24 +67,24 @@ assign resp_link_lo = '{data: mem_resp_link_lo.data
                         ,ready_and_rev: cfg_resp_link_li.ready_and_rev
                         };
 
-bp_mem_cce_resp_s      mem_resp_li;
+bp_cce_mem_msg_s       mem_resp_li;
 logic                  mem_resp_v_li, mem_resp_ready_lo;
-bp_cce_mem_cmd_s       mem_cmd_lo;
+bp_cce_mem_msg_s       mem_cmd_lo;
 logic                  mem_cmd_v_lo, mem_cmd_yumi_li;
 
-bp_mem_cce_resp_s      dram_resp_lo;
+bp_cce_mem_msg_s       dram_resp_lo;
 logic                  dram_resp_v_lo, dram_resp_ready_li;
-bp_cce_mem_cmd_s       dram_cmd_li;
+bp_cce_mem_msg_s       dram_cmd_li;
 logic                  dram_cmd_v_li, dram_cmd_yumi_lo;
 
-bp_mem_cce_resp_s      host_resp_lo;
+bp_cce_mem_msg_s       host_resp_lo;
 logic                  host_resp_v_lo, host_resp_ready_li;
-bp_cce_mem_cmd_s       host_cmd_li;
+bp_cce_mem_msg_s       host_cmd_li;
 logic                  host_cmd_v_li, host_cmd_yumi_lo;
 
-bp_cce_mem_cmd_s       cfg_cmd_lo;
+bp_cce_mem_msg_s       cfg_cmd_lo;
 logic                  cfg_cmd_v_lo, cfg_cmd_ready_li;
-bp_mem_cce_resp_s      cfg_resp_li;
+bp_cce_mem_msg_s       cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
 logic [mem_noc_cord_width_p-1:0]                 dram_cord_lo, mmio_cord_lo, host_cord_lo;
