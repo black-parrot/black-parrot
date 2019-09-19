@@ -20,7 +20,7 @@ VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_E
 VCS_BUILD_OPTS += -assert svaext
 VCS_BUILD_OPTS += +lint=TFIPC-L
 
-LINT_OPTIONS = +lint=all,noSVA-UA,noVCDE,noSVA-NSVU
+LINT_OPTIONS = +lint=all,noSVA-UA,noSVA-NSVU,noNS,noVCDE
 
 DUMP ?= 0
 COV  ?= 0
