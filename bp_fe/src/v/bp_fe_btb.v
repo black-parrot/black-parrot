@@ -96,7 +96,7 @@ always_ff @(posedge clk_i)
         // Read didn't actually happen if there was a write
         r_v_r <= r_v_i & ~w_v_i;
         r_tag_r <= r_addr_i[btb_offset_width_lp+btb_idx_width_p+:btb_tag_width_p];
-        r_idx_r <= r_addr_i[btb_offset_width_lp+:btb_tag_width_p];
+        r_idx_r <= r_addr_i[btb_offset_width_lp+:btb_idx_width_p];
       end
     
       if (reset_i)

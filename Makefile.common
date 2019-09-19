@@ -25,6 +25,7 @@ VCS       ?= vcs
 URG       ?= urg
 VERILATOR ?= verilator
 DC_SHELL  ?= dc_shell
+PYTHON    ?= python
 
 ## Needed for verilator g++ compilations
 export SYSTEMC_INCLUDE ?= $(BP_EXTERNAL_DIR)/include

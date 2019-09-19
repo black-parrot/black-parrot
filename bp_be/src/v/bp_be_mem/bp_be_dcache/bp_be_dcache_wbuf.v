@@ -116,7 +116,7 @@ module bp_be_dcache_wbuf
       num_els_r <= 2'b0;
     end
     else begin
-      num_els_r <= num_els_r + 2'(v_i - (v_o & yumi_i));
+      num_els_r <= num_els_r + 2'(v_i) - 2'(v_o & yumi_i);
     end
   end
 

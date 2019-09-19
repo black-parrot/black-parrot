@@ -37,16 +37,16 @@ module bsg_fifo_1r1w_rolly
   wire roll = roll_v_i;
 
   assign rptr_jmp = roll
-                    ? (cptr_r - rptr_r + deq)
+                    ? (cptr_r - rptr_r + (ptr_width_lp+1)'(deq))
                     : read 
-                       ? (ptr_width_lp'(1))
-                       : (ptr_width_lp'(0));
+                       ? ((ptr_width_lp+1)'(1))
+                       : ((ptr_width_lp+1)'(0));
 
   assign wptr_jmp = clr
-                    ? (rptr_r - wptr_r + read)
+                    ? (rptr_r - wptr_r + (ptr_width_lp+1)'(read))
                     : enq
-                       ? (ptr_width_lp'(1))
-                       : (ptr_width_lp'(0));
+                       ? ((ptr_width_lp+1)'(1))
+                       : ((ptr_width_lp+1)'(0));
 
   wire empty = (rptr_r[0+:ptr_width_lp] == wptr_r[0+:ptr_width_lp]) 
                & (rptr_r[ptr_width_lp] == wptr_r[ptr_width_lp]);

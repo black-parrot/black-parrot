@@ -234,14 +234,14 @@ module bp_fe_lce_req
       state_r              <= e_lce_req_ready;
       lru_flopped_r        <= 1'b0;
       cce_data_received_r  <= 1'b0;
-      set_tag_received_r            <= 1'b0;
+      set_tag_received_r   <= 1'b0;
     end else begin
       state_r              <= state_n;
       miss_addr_r          <= miss_addr_n;
       cce_data_received_r  <= cce_data_received_n;
       set_tag_received_r   <= set_tag_received_n;
       lru_way_r            <= lru_way_n;
-      lru_flopped_r        <= lru_flopped_r;
+      lru_flopped_r        <= lru_flopped_n;
     end
   end
 

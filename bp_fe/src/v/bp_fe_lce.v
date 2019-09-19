@@ -146,7 +146,7 @@ module bp_fe_lce
   logic set_tag_wakeup_received;
   logic lce_req_lce_resp_v_lo;
   logic lce_req_lce_resp_yumi_li;
-  logic [paddr_width_p-1:0] miss_addr_lo; 
+  logic [paddr_width_p-1:0] miss_addr_lo;
 
   bp_fe_lce_req #(.cfg_p(cfg_p))
     lce_req_inst (
@@ -197,6 +197,7 @@ module bp_fe_lce
     ,.set_tag_received_o(set_tag_received)
     ,.set_tag_wakeup_received_o(set_tag_wakeup_received)
     ,.cce_data_received_o(cce_data_received)
+    ,.uncached_data_received_o(uncached_data_received)
 
     ,.data_mem_pkt_o(data_mem_pkt)
     ,.data_mem_pkt_v_o(data_mem_pkt_v_o)

@@ -30,27 +30,27 @@ module bp_tile
 
    , input [proc_cfg_width_lp-1:0]                            proc_cfg_i
 
-   // Config channel
-   , input                                                    cfg_w_v_i
-   , input [cfg_addr_width_p-1:0]                             cfg_addr_i
-   , input [cfg_data_width_p-1:0]                             cfg_data_i
-
-   // Connected to other tiles on east and west
-   , input [coh_noc_dirs_p-1:W][coh_noc_ral_link_width_lp-1:0]  lce_req_link_i
-   , output [coh_noc_dirs_p-1:W][coh_noc_ral_link_width_lp-1:0] lce_req_link_o
-
-   , input [coh_noc_dirs_p-1:W][coh_noc_ral_link_width_lp-1:0]  lce_cmd_link_i
-   , output [coh_noc_dirs_p-1:W][coh_noc_ral_link_width_lp-1:0] lce_cmd_link_o
-
-   , input [coh_noc_dirs_p-1:W][coh_noc_ral_link_width_lp-1:0]  lce_resp_link_i
-   , output [coh_noc_dirs_p-1:W][coh_noc_ral_link_width_lp-1:0] lce_resp_link_o
-
    // Memory side connection
    , input [mem_noc_cord_width_p-1:0]                         my_cord_i
    , input [mem_noc_cid_width_p-1:0]                          my_cid_i
    , input [mem_noc_cord_width_p-1:0]                         dram_cord_i
    , input [mem_noc_cord_width_p-1:0]                         mmio_cord_i
    , input [mem_noc_cord_width_p-1:0]                         host_cord_i
+
+   // Config channel
+   , input                                                    cfg_w_v_i
+   , input [cfg_addr_width_p-1:0]                             cfg_addr_i
+   , input [cfg_data_width_p-1:0]                             cfg_data_i
+
+   // Connected to other tiles on east and west
+   , input [coh_noc_ral_link_width_lp-1:0]                    lce_req_link_i
+   , output [coh_noc_ral_link_width_lp-1:0]                   lce_req_link_o
+
+   , input [coh_noc_ral_link_width_lp-1:0]                    lce_cmd_link_i
+   , output [coh_noc_ral_link_width_lp-1:0]                   lce_cmd_link_o
+
+   , input [coh_noc_ral_link_width_lp-1:0]                    lce_resp_link_i
+   , output [coh_noc_ral_link_width_lp-1:0]                   lce_resp_link_o
 
    , input [mem_noc_ral_link_width_lp-1:0]                    cmd_link_i
    , output [mem_noc_ral_link_width_lp-1:0]                   cmd_link_o
@@ -67,6 +67,21 @@ module bp_tile
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
 `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+
+// Cast the routing links
+`declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
+
+bp_coh_ready_and_link_s lce_req_link_cast_i, lce_req_link_cast_o;
+bp_coh_ready_and_link_s lce_resp_link_cast_i, lce_resp_link_cast_o;
+bp_coh_ready_and_link_s lce_cmd_link_cast_i, lce_cmd_link_cast_o;
+
+assign lce_req_link_cast_i  = lce_req_link_i;
+assign lce_cmd_link_cast_i  = lce_cmd_link_i;
+assign lce_resp_link_cast_i = lce_resp_link_i;
+
+assign lce_req_link_o  = lce_req_link_cast_o;
+assign lce_cmd_link_o  = lce_cmd_link_cast_o;
+assign lce_resp_link_o = lce_resp_link_cast_o;
 
 // Proc-side connections network connections
 bp_lce_cce_req_s  [1:0] lce_req_lo;
@@ -186,34 +201,9 @@ bp_cce_top
    ,.cce_id_i(proc_cfg_cast_i.cce_id) 
    );
 
-// Declare the routing links
-`declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
-
-// Intermediate 'stitch' connections between the routers
-bp_coh_ready_and_link_s [coh_noc_dirs_p-1:P] lce_req_link_i_stitch, lce_req_link_o_stitch;
-bp_coh_ready_and_link_s [coh_noc_dirs_p-1:P] lce_resp_link_i_stitch, lce_resp_link_o_stitch;
-bp_coh_ready_and_link_s [coh_noc_dirs_p-1:P] lce_cmd_link_i_stitch, lce_cmd_link_o_stitch;
-
-// Stitch together I$ and D$
-assign lce_req_link_i_stitch[E]  = lce_req_link_i[E];
-assign lce_resp_link_i_stitch[E] = lce_resp_link_i[E];
-assign lce_cmd_link_i_stitch[E]  = lce_cmd_link_i[E];
-
-assign lce_req_link_o[W]  = lce_req_link_o_stitch[W];
-assign lce_resp_link_o[W] = lce_resp_link_o_stitch[W];
-assign lce_cmd_link_o[W]  = lce_cmd_link_o_stitch[W];
-
-assign lce_req_link_i_stitch[W]  = lce_req_link_i[W];
-assign lce_resp_link_i_stitch[W] = lce_resp_link_i[W];
-assign lce_cmd_link_i_stitch[W]  = lce_cmd_link_i[W];
-
-assign lce_req_link_o[E]  = lce_req_link_o_stitch[E];
-assign lce_resp_link_o[E] = lce_resp_link_o_stitch[E];
-assign lce_cmd_link_o[E]  = lce_cmd_link_o_stitch[E];
-
 `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_req_width_lp, lce_req_packet_s);
-`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_resp_width_lp, lce_resp_packet_s);
 `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_width_lp, lce_cmd_packet_s);
+`declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_resp_width_lp, lce_resp_packet_s);
 
 lce_req_packet_s [1:0]  lce_req_packet_lo;
 lce_cmd_packet_s [1:0]  lce_cmd_packet_lo, lce_cmd_packet_li;
@@ -299,7 +289,7 @@ for (genvar i = 0; i < 2; i++)
        )
      lce_resp_adapter_in
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
 
        ,.packet_i(lce_resp_packet_lo[i])
        ,.v_i(lce_resp_v_lo[i])
@@ -319,9 +309,9 @@ for (genvar i = 0; i < 2; i++)
      )
    cce_req_adapter_out
    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+    ,.reset_i(reset_r)
   
-    ,.link_i(lce_req_link_o_stitch[P])
+    ,.link_i(lce_req_link_i)
     ,.link_o(cce_lce_req_link_lo)
   
     ,.packet_o(cce_lce_req_packet_li)
@@ -365,9 +355,9 @@ for (genvar i = 0; i < 2; i++)
      )
    cce_resp_adapter_out
    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+    ,.reset_i(reset_r)
   
-    ,.link_i(lce_resp_link_o_stitch[P])
+    ,.link_i(lce_resp_link_i)
     ,.link_o(cce_lce_resp_link_lo)
   
     ,.packet_o(cce_lce_resp_packet_li)
@@ -380,11 +370,11 @@ for (genvar i = 0; i < 2; i++)
   bp_coh_ready_and_link_s cmd_concentrated_link_li, cmd_concentrated_link_lo;
   bp_coh_ready_and_link_s resp_concentrated_link_li, resp_concentrated_link_lo;
 
-  assign req_concentrated_link_li = lce_req_link_o_stitch[P];
-  assign lce_req_link_i_stitch[P] = '{data          : req_concentrated_link_lo.data
-                                      ,v            : req_concentrated_link_lo.v
-                                      ,ready_and_rev: cce_lce_req_link_lo.ready_and_rev
-                                      };
+  assign req_concentrated_link_li = lce_req_link_cast_i;
+  assign lce_req_link_cast_o = '{data          : req_concentrated_link_lo.data
+                                 ,v            : req_concentrated_link_lo.v
+                                 ,ready_and_rev: cce_lce_req_link_lo.ready_and_rev
+                                 };
   bsg_wormhole_concentrator_in
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.len_width_p(coh_noc_len_width_p)
@@ -394,7 +384,7 @@ for (genvar i = 0; i < 2; i++)
      )
    req_concentrator
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.links_i(lce_req_link_lo)
      ,.links_o(lce_req_link_li)
@@ -403,8 +393,8 @@ for (genvar i = 0; i < 2; i++)
      ,.concentrated_link_o(req_concentrated_link_lo)
      );
 
-  assign cmd_concentrated_link_li = lce_cmd_link_o_stitch[P];
-  assign lce_cmd_link_i_stitch[P] = cmd_concentrated_link_lo;
+  assign cmd_concentrated_link_li = lce_cmd_link_cast_i;
+  assign lce_cmd_link_cast_o = cmd_concentrated_link_lo;
   bsg_wormhole_concentrator
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.len_width_p(coh_noc_len_width_p)
@@ -414,7 +404,7 @@ for (genvar i = 0; i < 2; i++)
      )
    cmd_concentrator
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.links_i({cce_lce_cmd_link_lo, lce_cmd_link_lo})
      ,.links_o({cce_lce_cmd_link_li, lce_cmd_link_li})
@@ -423,11 +413,11 @@ for (genvar i = 0; i < 2; i++)
      ,.concentrated_link_o(cmd_concentrated_link_lo)
      );
 
-  assign resp_concentrated_link_li = lce_resp_link_o_stitch[P];
-  assign lce_resp_link_i_stitch[P] = '{data          : resp_concentrated_link_lo.data
-                                       ,v            : resp_concentrated_link_lo.v
-                                       ,ready_and_rev: cce_lce_resp_link_lo.ready_and_rev
-                                       };
+  assign resp_concentrated_link_li = lce_resp_link_cast_i;
+  assign lce_resp_link_cast_o = '{data          : resp_concentrated_link_lo.data
+                                  ,v            : resp_concentrated_link_lo.v
+                                  ,ready_and_rev: cce_lce_resp_link_lo.ready_and_rev
+                                  };
   bsg_wormhole_concentrator_in
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.len_width_p(coh_noc_len_width_p)
@@ -437,68 +427,13 @@ for (genvar i = 0; i < 2; i++)
      )
    resp_concentrator
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.links_i(lce_resp_link_lo)
      ,.links_o(lce_resp_link_li)
 
      ,.concentrated_link_i(resp_concentrated_link_li)
      ,.concentrated_link_o(resp_concentrated_link_lo)
-     );
-
-  wire [coh_noc_cord_width_p-1:0] lce_id_li = proc_cfg_cast_i.icache_id >> 1;
-  bsg_wormhole_router
-   #(.flit_width_p(coh_noc_flit_width_p)
-     ,.dims_p(coh_noc_dims_p)
-     ,.cord_dims_p(coh_noc_max_dims_p)
-     ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
-     ,.reverse_order_p(1)
-     ,.len_width_p(coh_noc_len_width_p)
-     )
-   req_router
-    (.clk_i(clk_i)
-     ,.reset_i(reset_r)
-
-     ,.link_i(lce_req_link_i_stitch)
-     ,.link_o(lce_req_link_o_stitch)
-
-     ,.my_cord_i(lce_id_li)
-     );
-
-  bsg_wormhole_router
-   #(.flit_width_p(coh_noc_flit_width_p)
-     ,.dims_p(coh_noc_dims_p)
-     ,.cord_dims_p(coh_noc_max_dims_p)
-     ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
-     ,.reverse_order_p(1)
-     ,.len_width_p(coh_noc_len_width_p)
-     )
-   cmd_router
-    (.clk_i(clk_i)
-     ,.reset_i(reset_r)
-
-     ,.link_i(lce_cmd_link_i_stitch)
-     ,.link_o(lce_cmd_link_o_stitch)
-
-     ,.my_cord_i(lce_id_li)
-     );
-
-  bsg_wormhole_router
-   #(.flit_width_p(coh_noc_flit_width_p)
-     ,.dims_p(coh_noc_dims_p)
-     ,.cord_dims_p(coh_noc_max_dims_p)
-     ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
-     ,.reverse_order_p(1)
-     ,.len_width_p(coh_noc_len_width_p)
-     )
-   resp_router
-    (.clk_i(clk_i)
-     ,.reset_i(reset_r)
-
-     ,.link_i(lce_resp_link_i_stitch)
-     ,.link_o(lce_resp_link_o_stitch)
-
-     ,.my_cord_i(lce_id_li)
      );
 
 bp_me_cce_to_wormhole_link_master
