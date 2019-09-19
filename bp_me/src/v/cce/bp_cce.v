@@ -306,13 +306,13 @@ module bp_cce
       ,.way_i(dir_way_li)
       ,.lru_way_i(mshr.lru_way_id)
 
-      ,.r_cmd_i(decoded_inst_lo.dir_r_cmd)
+      ,.r_cmd_i(decoded_inst_lo.minor_op_u.read_dir_minor_op)
       ,.r_v_i(decoded_inst_lo.dir_r_v)
 
       ,.tag_i(dir_tag_li)
       ,.coh_state_i(dir_coh_state_li)
 
-      ,.w_cmd_i(decoded_inst_lo.dir_w_cmd)
+      ,.w_cmd_i(decoded_inst_lo.minor_op_u.write_dir_minor_op)
       ,.w_v_i(decoded_inst_lo.dir_w_v)
       ,.w_clr_wg_i('0)
 

@@ -948,9 +948,7 @@ typedef struct packed {
 
   // Directory inputs
   // TODO: r/w cmd can be replaced with decoded_inst.minor_op_u
-  logic [`bp_cce_inst_minor_op_width-1:0]  dir_r_cmd;
   logic                                    dir_r_v;
-  logic [`bp_cce_inst_minor_op_width-1:0]  dir_w_cmd;
   logic                                    dir_w_v;
 
   // LCE command queue input selects

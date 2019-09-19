@@ -282,7 +282,6 @@ module bp_cce_inst_decode
           decoded_inst_o.dir_way_sel = read_dir_op_s.dir_way_sel;
           decoded_inst_o.dir_tag_sel = read_dir_op_s.dir_tag_sel;
 
-          decoded_inst_o.dir_r_cmd = minor_op_u;
           if (minor_op_u.read_dir_minor_op == e_rdp_op) begin
             decoded_inst_o.pending_r_v = 1'b1;
             decoded_inst_o.flag_mask_w_v = e_flag_pf;
@@ -305,7 +304,6 @@ module bp_cce_inst_decode
           decoded_inst_o.dir_coh_state_sel = write_dir_op_s.dir_coh_state_sel;
           decoded_inst_o.dir_tag_sel = write_dir_op_s.dir_tag_sel;
 
-          decoded_inst_o.dir_w_cmd = minor_op_u;
           decoded_inst_o.dir_w_v = 1'b1;
 
           decoded_inst_o.imm[0+:`bp_coh_bits] = write_dir_op_s.imm;

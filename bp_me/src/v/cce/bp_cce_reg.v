@@ -140,7 +140,8 @@ module bp_cce_reg
         gpr_n[i] = {'0, mem_resp_type_i};
       end else if (decoded_inst_i.mem_cmd_type_w_v & decoded_inst_i.gpr_w_mask[i]) begin
         gpr_n[i] = {'0, mem_cmd.msg_type};
-      end else if (decoded_inst_i.dir_r_v & (decoded_inst_i.dir_r_cmd == e_rde_op)
+      end else if (decoded_inst_i.dir_r_v
+                   & (decoded_inst_i.minor_op_u.read_dir_minor_op == e_rde_op)
                    & decoded_inst_i.gpr_w_mask[i]) begin
         gpr_n[i] = {'0, dir_tag_i} << (paddr_width_p - tag_width_lp);
       end else begin
