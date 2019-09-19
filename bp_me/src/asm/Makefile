@@ -59,10 +59,6 @@ roms: as
 	python2 py/roms.py -i microcode/cce/msi -N 1 2 4 8 16 32 -W 2 4 8 16 32 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/msi
 	python2 py/roms.py -i microcode/cce/mesi -N 1 2 4 8 16 32 -W 2 4 8 16 32 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/mesi
 
-#	python2 py/roms.py -i microcode/cce/ei-tr -N 1 2 4 8 16 32 -W 2 4 8 16 32 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/ei-tr
-#	python2 py/roms.py -i microcode/cce/mesi-tr -N 1 2 4 8 16 32 -W 2 4 8 16 32 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/mesi-tr
-#	python2 py/roms.py -i microcode/cce/msi-tr -N 1 2 4 8 16 32 -W 2 4 8 16 32 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/msi-tr
-
 ei: as
 	python2 py/roms.py -i microcode/cce/ei -N 1 -W 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/ei
 
@@ -74,3 +70,6 @@ mesi: as
 
 test: as
 	python2 py/roms.py -i microcode/cce/test --bsg $(BSG_MEM_DIR) --outdir ./roms/test
+
+fast: as
+	python2 py/roms.py -i microcode/cce/fast -N 1 -W 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/fast

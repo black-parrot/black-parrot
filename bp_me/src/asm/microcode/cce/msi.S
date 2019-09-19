@@ -65,9 +65,9 @@ gad
 # Next Coherence State Routine
 # write request means set to M, else read means set to S
 next_coh_state: bf rqf next_coh_set_m
-next_coh_set_s: movi S nextCohSt
+next_coh_set_s: movis S nextCohSt
 bi inv_check
-next_coh_set_m: movi M nextCohSt
+next_coh_set_m: movis M nextCohSt
 # fall through to inv_check
 
 # Invalidation Check
