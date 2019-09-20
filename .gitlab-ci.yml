@@ -24,9 +24,7 @@ update-tools:
   tags:
     - bsg
   script:
-    - make tools -j 10 > make_tools.log
-    - make tidy_tools
-    - cp -r external/* $CI_CACHE/bp-tools/
+    - $CI_PROJECT_DIR/ci/cache.sh tools > make_tools.log
   artifacts:
     when: always
     paths:
@@ -38,177 +36,131 @@ update-tests:
   tags:
     - bsg
   before_script:
-    - echo "Relinking external tools"
-    - cp -r $CI_CACHE/bp-tools/* external/
+    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
-    - make progs > make_progs.log
-    - cp -r bp_common/test/mem/* $CI_CACHE/bp-tests/
+    - $CI_PROJECT_DIR/ci/cache.sh progs > make_progs.log
   artifacts:
     when: always
     paths:
+      - link.log
       - make_progs.log
 
 check-design:
   stage: check
   only:
     - master
-    - dev
-    - fe_dev
-    - be_dev
-    - me_dev
-    - top_dev
-    - sw_dev
+    - "*dev"
+    - ci_testing
   tags:
     - dc
   before_script:
-    - echo "Relinking external tools"
-    - cp -r $CI_CACHE/bp-tools/* external/
-    - echo "Relinking tests"
-    - cp -r $CI_CACHE/bp-tests/* bp_common/test/mem/
-    - echo "Updating basejump stl"
-    - git submodule update --init -- external/basejump_stl
-
+    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
-    - echo "Running Check Synth regression"
-    - cd bp_top/syn
-    - make check_design.syn
-    - grep -cr "FAILED" reports/ && exit 1
-    - exit 0
+    - $CI_PROJECT_DIR/ci/regress.sh check_design.syn bp_top > regress.log
   artifacts:
     when: always
     paths:
+      - link.log
+      - regress.log
       - bp_top/syn/reports/
-      #- bp_top/syn/logs/
       
 lint-verilator:
   stage: check
   only:
     - master
-    - dev
-    - fe_dev
-    - be_dev
-    - me_dev
-    - top_dev
-    - sw_dev
+    - "*dev"
+    - ci_testing
   tags:
     - verilator
   before_script:
-    - echo "Relinking external tools"
-    - cp -r $CI_CACHE/bp-tools/* external/
-    - echo "Relinking tests"
-    - cp -r $CI_CACHE/bp-tests/* bp_common/test/mem/
-    - echo "Updating basejump stl"
-    - git submodule update --init -- external/basejump_stl
+    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
-    - echo "Running Verilator lint"
-    - cd bp_top/syn
-    - make lint.sc
-    - exit 0
+    - $CI_PROJECT_DIR/ci/regress.sh lint.sc bp_top > regress.log
   artifacts:
     when: always
     paths:
+      - link.log
+      - regress.log
       - bp_top/syn/reports/
-      - bp_top/syn/logs/
       
+# NOTE: me regression can only work for single thread right now, so we don't use regress.sh
 me-regress-verilator:
   stage: test-short
   only:
     - master
-    - dev
-    - fe_dev
-    - be_dev
-    - me_dev
-    - top_dev
-    - sw_dev
+    - "*dev"
+    - ci_testing
   tags:
     - verilator
   before_script:
-    - echo "Relinking external tools"
-    - cp -r $CI_CACHE/bp-tools/* external/
-    - echo "Relinking tests"
-    - cp -r $CI_CACHE/bp-tests/* bp_common/test/mem/
-    - echo "Updating basejump stl"
-    - git submodule update --init -- external/basejump_stl
-    - echo "Building microcode"
-    - make ucode
+    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
-    - echo "Running ME Verilator regression"
-    - cd bp_me/syn
-    - make regress.me.sc
-    - grep -cr "FAILED" reports/ && exit 1
+    - echo "Updating CCE ucode"
+    - make ucode
+    - echo "Cleaning working directory"
+    - make -C bp_me/syn clean
+    - echo "Executing regression regress.me.sc on end bp_me"
+    - make -C bp_me/syn regress.me.sc
+    - grep -cr "FAILED" bp_me/syn/reports/ && exit 1
     - exit 0
+
   artifacts:
     when: always
     paths:
+  artifacts:
+    when: always
+    paths:
+      - link.log
+      - regress.log
       - bp_me/syn/reports/
-      #- bp_me/syn/logs/
      
+# NOTE: me regression can only work for single thread right now, so we don't use regress.sh
 me-regress-vcs:
   stage: test-short
   only:
     - master
-    - dev
-    - fe_dev
-    - be_dev
-    - me_dev
-    - top_dev
-    - sw_dev
+    - "*dev"
+    - ci_testing
   tags:
     - vcs
   before_script:
-    - echo "Relinking external tools"
-    - cp -r $CI_CACHE/bp-tools/* external/
-    - echo "Relinking tests"
-    - cp -r $CI_CACHE/bp-tests/* bp_common/test/mem/
-    - echo "Updating basejump stl"
-    - git submodule update --init -- external/basejump_stl
-    - echo "Building microcode"
-    - make ucode
+    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
-    - echo "Running ME VCS regression"
-    - cd bp_me/syn
-    - make regress.me.v
-    - grep -cr "FAILED" reports/ && exit 1
+    - echo "Updating CCE ucode"
+    - make ucode
+    - echo "Cleaning working directory"
+    - make -C bp_me/syn clean
+    - echo "Executing regression regress.me.v on end bp_me"
+    - make -C bp_me/syn regress.me.v
+    - grep -cr "FAILED" bp_me/syn/reports/ && exit 1
     - exit 0
+
   artifacts:
     when: always
     paths:
+      - link.log
+      - regress.log
       - bp_me/syn/reports/
-      #- bp_me/syn/logs/
       
-top-riscv-tests-verilator:
+top-riscv-verilator:
   stage: test-short
   only:
     - master
-    - dev
-    - fe_dev
-    - be_dev
-    - me_dev
-    - top_dev
-    - sw_dev
+    - "*dev"
+    - ci_testing
   tags:
     - verilator
   before_script:
-    - echo "Relinking external tools"
-    - cp -r $CI_CACHE/bp-tools/* external/
-    - echo "Relinking tests"
-    - cp -r $CI_CACHE/bp-tests/* bp_common/test/mem/
-    - echo "Updating basejump stl"
-    - git submodule update --init -- external/basejump_stl
-    - echo "Building microcode"
-    - make ucode
+    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
-    - echo "Running TOP Verilator regression"
-    - cd bp_top/syn
-    - make build.sc
-    - make regress.sc -j 10
-    - grep -cr "FAIL" reports/ && exit 1
-    - exit 0
+    - make -C bp_top/syn clean build.sc
+    - $CI_PROJECT_DIR/ci/regress.sh regress_riscv.sc bp_top > regress.log
   artifacts:
     when: always
     paths:
+      - link.log
+      - regress.log
       - bp_top/syn/reports/
-      #- bp_top/syn/logs/
  
 # Disabled because it's too long running     
 top-beebs-verilator:
@@ -216,129 +168,78 @@ top-beebs-verilator:
   stage: test-long
   only:
     - master
-    - dev
-    - fe_dev
-    - be_dev
-    - me_dev
-    - top_dev
-    - sw_dev
+    - "*dev"
+    - ci_testing
   tags:
     - verilator
   before_script:
-    - echo "Relinking external tools"
-    - cp -r $CI_CACHE/bp-tools/* external/
-    - echo "Updating basejump stl"
-    - git submodule update --init -- external/basejump_stl
-    - echo "Relinking tests"
-    - cp -r $CI_CACHE/bp-tests/* bp_common/test/mem/
-    - echo "Building microcode"
-    - make ucode
+    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
-    - echo "Running TOP Verilator beebs regression"
-    - cd bp_top/syn
-    - make build.sc
-    - make regress_beebs.sc -j 10
-    - grep -cr "FAIL" reports/ && exit 1
-    - exit 0
+    - make -C bp_top/syn clean build.sc
+    - $CI_PROJECT_DIR/ci/regress.sh regress_beebs.sc bp_top > regress.log
   artifacts:
     when: always
     paths:
+      - link.log
+      - regress.log
       - bp_top/syn/reports/
-      #- bp_top/syn/logs/
       
 lint-vcs:
   stage: check
   only:
     - master
-    - dev
-    - fe_dev
-    - be_dev
-    - me_dev
-    - top_dev
-    - sw_dev
+    - "*dev"
+    - ci_testing
   tags:
     - vcs
   before_script:
-    - echo "Relinking external tools"
-    - cp -r $CI_CACHE/bp-tools/* external/
-    - echo "Updating basejump stl"
-    - git submodule update --init -- external/basejump_stl
+    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
-    - echo "Running vcs lint"
-    - cd bp_top/syn
-    - make lint.v
-    - exit 0
+    - $CI_PROJECT_DIR/ci/regress.sh lint.v bp_top > regress.log
   artifacts:
     when: always
     paths:
+      - link.log
+      - regress.log
       - bp_top/syn/reports/
-      - bp_top/syn/logs/
 
 top-riscv-tests-vcs:
   stage: test-short
   only:
     - master
-    - dev
-    - fe_dev
-    - be_dev
-    - me_dev
-    - top_dev
-    - sw_dev
+    - "*dev"
+    - ci_testing
   tags:
     - vcs
   before_script:
-    - echo "Relinking external tools"
-    - cp -r $CI_CACHE/bp-tools/* external/
-    - echo "Updating basejump stl"
-    - git submodule update --init -- external/basejump_stl
-    - echo "Relinking tests"
-    - cp -r $CI_CACHE/bp-tests/* bp_common/test/mem/
-    - echo "Building microcode"
-    - make ucode
+    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
-    - echo "Running TOP VCS regression"
-    - cd bp_top/syn
-    - make build.v
-    - make regress.v -j 10
-    - grep -cr "FAIL" reports/ && exit 1
-    - exit 0
+    - make -C bp_top/syn clean build.v
+    - $CI_PROJECT_DIR/ci/regress.sh regress_riscv.v bp_top > regress.log
   artifacts:
     when: always
     paths:
+      - link.log
+      - regress.log
       - bp_top/syn/reports/
-      #- bp_top/syn/logs/
       
 top-beebs-vcs:
   stage: test-long
   only:
     - master
-    - dev
-    - fe_dev
-    - be_dev
-    - me_dev
-    - top_dev
-    - sw_dev
+    - "*dev"
+    - ci_testing
   tags:
     - vcs
   before_script:
-    - echo "Relinking external tools"
-    - cp -r $CI_CACHE/bp-tools/* external/
-    - echo "Updating basejump stl"
-    - git submodule update --init -- external/basejump_stl
-    - echo "Relinking tests"
-    - cp -r $CI_CACHE/bp-tests/* bp_common/test/mem/
-    - echo "Building microcode"
-    - make ucode
+    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
-    - echo "Running TOP VCS beebs regression"
-    - cd bp_top/syn
-    - make build.v
-    - make regress_beebs.v -j 10
-    - grep -cr "FAIL" reports/ && exit 1
-    - exit 0
+    - make -C bp_top/syn clean build.v
+    - $CI_PROJECT_DIR/ci/regress.sh regress_beebs.v bp_top > regress.log
   artifacts:
     when: always
     paths:
+      - link.log
+      - regress.log
       - bp_top/syn/reports/
-      #- bp_top/syn/logs/
 

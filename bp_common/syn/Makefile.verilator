@@ -133,7 +133,7 @@ match.sc: dirs.sc
 	-@grep "MATCH" $(MATCH_LOG) || echo "MISMATCHED" >> $(MATCH_ERROR)
 	-@grep "MATCH" -A 4 $(MATCH_LOG) > $(MATCH_REPORT)
 
-regress.sc: $(RV64_REGRESSION_SC) 
+regress_riscv.sc: $(RV64_REGRESSION_SC) 
 $(RV64_REGRESSION_SC):
 	$(MAKE) sim.sc PROG=$(basename $@)
 $(COREMARK_REGRESSION_SC):
