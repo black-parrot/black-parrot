@@ -83,7 +83,6 @@ lint-verilator:
       - regress.log
       - bp_top/syn/reports/
       
-# NOTE: me regression can only work for single thread right now, so we don't use regress.sh
 me-regress-verilator:
   stage: test-short
   only:
@@ -95,15 +94,7 @@ me-regress-verilator:
   before_script:
     - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
-    - echo "Updating CCE ucode"
-    - make ucode
-    - echo "Cleaning working directory"
-    - make -C bp_me/syn clean
-    - echo "Executing regression regress.me.sc on end bp_me"
-    - make -C bp_me/syn regress.me.sc
-    - grep -cr "FAILED" bp_me/syn/reports/ && exit 1
-    - exit 0
-
+    - $CI_PROJECT_DIR/ci/regress.sh regress.me.sc bp_me > regress.log
   artifacts:
     when: always
     paths:
@@ -114,7 +105,6 @@ me-regress-verilator:
       - regress.log
       - bp_me/syn/reports/
      
-# NOTE: me regression can only work for single thread right now, so we don't use regress.sh
 me-regress-vcs:
   stage: test-short
   only:
@@ -126,15 +116,7 @@ me-regress-vcs:
   before_script:
     - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
-    - echo "Updating CCE ucode"
-    - make ucode
-    - echo "Cleaning working directory"
-    - make -C bp_me/syn clean
-    - echo "Executing regression regress.me.v on end bp_me"
-    - make -C bp_me/syn regress.me.v
-    - grep -cr "FAILED" bp_me/syn/reports/ && exit 1
-    - exit 0
-
+    - $CI_PROJECT_DIR/ci/regress.sh regress.me.v bp_me > regress.log
   artifacts:
     when: always
     paths:
@@ -163,6 +145,7 @@ top-riscv-verilator:
       - bp_top/syn/reports/
  
 # Disabled because it's too long running     
+# TODO: Investigate why
 top-beebs-verilator:
   when: manual
   stage: test-long
