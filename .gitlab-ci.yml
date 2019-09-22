@@ -1,5 +1,5 @@
 variables:
-  GIT_STRATEGY: clone
+  GIT_STRATEGY: fetch
   GIT_SUBMODULE_STRATEGY: none
 
 stages:
@@ -18,211 +18,123 @@ stages:
 #    - echo "Failing job 2"
 #    - exit 1 
 
-update-tools:
-  stage: prereq
-  when: manual
-  tags:
-    - bsg
-  script:
-    - $CI_PROJECT_DIR/ci/cache.sh tools > make_tools.log
-  artifacts:
-    when: always
-    paths:
-      - make_tools.log
-
-update-tests:
-  stage: prereq
-  when: manual
-  tags:
-    - bsg
+.job_template: &job_definition
+  only:
+    - master
+    - "*dev"
   before_script:
-    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
-  script:
-    - $CI_PROJECT_DIR/ci/cache.sh progs > make_progs.log
+    - echo "Updating libraries"
+    - make update_libs
+    - echo "Making CCE ucode"
+    - make ucode > make_ucode.log
   artifacts:
     when: always
     paths:
-      - link.log
-      - make_progs.log
+      - "*.log"
+      - "bp_fe/syn/reports/"
+      - "bp_be/syn/reports/"
+      - "bp_me/syn/reports/"
+      - "bp_top/syn/reports/"
+
+cache: &global_cache
+  key: $CI_COMMIT_REF_SLUG
+  paths:
+    - $CI_PROJECT_DIR/external/
+  policy: pull
+
+update-cache:
+  <<: *job_definition
+  when: manual
+  stage: prereq
+  tags:
+    - bsg
+  script:
+    - make tools -j $CI_CORES > make_tools.log
+    - make tidy_tools > make_tidy_tools.log
+    - make progs > make_progs.log
+  cache:
+    key: $CI_COMMIT_REF_SLUG
+    paths:
+      - $CI_PROJECT_DIR/external/
+      - $CI_PROJECT_DIR/bp_common/test/mem/
+    policy: push
 
 check-design:
+  <<: *job_definition
   stage: check
-  only:
-    - master
-    - "*dev"
-    - ci_testing
   tags:
     - dc
-  before_script:
-    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
-    - $CI_PROJECT_DIR/ci/regress.sh check_design.syn bp_top > regress.log
-  artifacts:
-    when: always
-    paths:
-      - link.log
-      - regress.log
-      - bp_top/syn/reports/
+    - $CI_PROJECT_DIR/ci/regress.sh check_design.syn bp_top
       
 lint-verilator:
+  <<: *job_definition
   stage: check
-  only:
-    - master
-    - "*dev"
-    - ci_testing
   tags:
     - verilator
-  before_script:
-    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
-    - $CI_PROJECT_DIR/ci/regress.sh lint.sc bp_top > regress.log
-  artifacts:
-    when: always
-    paths:
-      - link.log
-      - regress.log
-      - bp_top/syn/reports/
+    - $CI_PROJECT_DIR/ci/regress.sh lint.sc bp_top
       
 me-regress-verilator:
+  <<: *job_definition
   stage: test-short
-  only:
-    - master
-    - "*dev"
-    - ci_testing
   tags:
     - verilator
-  before_script:
-    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
-    - $CI_PROJECT_DIR/ci/regress.sh regress.me.sc bp_me > regress.log
-  artifacts:
-    when: always
-    paths:
-  artifacts:
-    when: always
-    paths:
-      - link.log
-      - regress.log
-      - bp_me/syn/reports/
+    - $CI_PROJECT_DIR/ci/regress.sh regress.me.sc bp_me
      
 me-regress-vcs:
+  <<: *job_definition
   stage: test-short
-  only:
-    - master
-    - "*dev"
-    - ci_testing
   tags:
     - vcs
-  before_script:
-    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
-    - $CI_PROJECT_DIR/ci/regress.sh regress.me.v bp_me > regress.log
-  artifacts:
-    when: always
-    paths:
-      - link.log
-      - regress.log
-      - bp_me/syn/reports/
+    - $CI_PROJECT_DIR/ci/regress.sh regress.me.v bp_me
       
 top-riscv-verilator:
+  <<: *job_definition
   stage: test-short
-  only:
-    - master
-    - "*dev"
-    - ci_testing
   tags:
     - verilator
-  before_script:
-    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
     - make -C bp_top/syn clean build.sc
-    - $CI_PROJECT_DIR/ci/regress.sh regress_riscv.sc bp_top > regress.log
-  artifacts:
-    when: always
-    paths:
-      - link.log
-      - regress.log
-      - bp_top/syn/reports/
+    - $CI_PROJECT_DIR/ci/regress.sh regress_riscv.sc bp_top
  
 # Disabled because it's too long running     
 # TODO: Investigate why
 top-beebs-verilator:
+  <<: *job_definition
   when: manual
   stage: test-long
-  only:
-    - master
-    - "*dev"
-    - ci_testing
   tags:
     - verilator
-  before_script:
-    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
     - make -C bp_top/syn clean build.sc
-    - $CI_PROJECT_DIR/ci/regress.sh regress_beebs.sc bp_top > regress.log
-  artifacts:
-    when: always
-    paths:
-      - link.log
-      - regress.log
-      - bp_top/syn/reports/
-      
+    - $CI_PROJECT_DIR/ci/regress.sh regress_beebs.sc bp_top
+
 lint-vcs:
+  <<: *job_definition
   stage: check
-  only:
-    - master
-    - "*dev"
-    - ci_testing
   tags:
     - vcs
-  before_script:
-    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
-    - $CI_PROJECT_DIR/ci/regress.sh lint.v bp_top > regress.log
-  artifacts:
-    when: always
-    paths:
-      - link.log
-      - regress.log
-      - bp_top/syn/reports/
+    - $CI_PROJECT_DIR/ci/regress.sh lint.v bp_top
 
 top-riscv-tests-vcs:
+  <<: *job_definition
   stage: test-short
-  only:
-    - master
-    - "*dev"
-    - ci_testing
   tags:
     - vcs
-  before_script:
-    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
     - make -C bp_top/syn clean build.v
-    - $CI_PROJECT_DIR/ci/regress.sh regress_riscv.v bp_top > regress.log
-  artifacts:
-    when: always
-    paths:
-      - link.log
-      - regress.log
-      - bp_top/syn/reports/
+    - $CI_PROJECT_DIR/ci/regress.sh regress_riscv.v bp_top
       
 top-beebs-vcs:
+  <<: *job_definition
   stage: test-long
-  only:
-    - master
-    - "*dev"
-    - ci_testing
   tags:
     - vcs
-  before_script:
-    - $CI_PROJECT_DIR/ci/cache.sh link > link.log
   script:
     - make -C bp_top/syn clean build.v
-    - $CI_PROJECT_DIR/ci/regress.sh regress_beebs.v bp_top > regress.log
-  artifacts:
-    when: always
-    paths:
-      - link.log
-      - regress.log
-      - bp_top/syn/reports/
+    - $CI_PROJECT_DIR/ci/regress.sh regress_beebs.v bp_top
 
