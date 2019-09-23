@@ -21,6 +21,7 @@ stages:
 .job_template: &job_definition
   only:
     - master
+    - dev
     - "*dev"
   before_script:
     - echo "Updating libraries"
