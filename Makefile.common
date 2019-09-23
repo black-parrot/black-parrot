@@ -13,7 +13,8 @@ export BASEJUMP_STL_DIR ?= $(BP_EXTERNAL_DIR)/basejump_stl
 
 # If the machine you are working on is bsg_cadenv compliant, then you do not
 # need to setup the cad tools, simply put bsg_cadenv in the same root dir.
--include $(TOP)/bsg_cadenv/cadenv.mk
+BSG_CADENV_DIR ?= $(TOP)/external/bsg_cadenv
+-include $(BSG_CADENV_DIR)/cadenv.mk
 
 ## Sepcify license path if needed
 LM_LICENSE_FILE ?=

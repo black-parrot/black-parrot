@@ -11,7 +11,7 @@ VV_OPTS += -O3
 
 #VV_OPTS += -O1 -fstrict-aliasing # Fastest compile time options
 
-LINT_OPTS   = --lint-only -Wall --Wno-unoptflat --Wno-DECLFILENAME --Wno-PINCONNECTEMPTY
+LINT_OPTS   = --lint-only -Wall --Wno-unoptflat 
 BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat --exe -CFLAGS -std=c++11 
 BUILD_OPTS += -I$(BP_EXTERNAL_DIR)/share/verilator/include/vltstd/ 
 BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
@@ -133,7 +133,7 @@ match.sc: dirs.sc
 	-@grep "MATCH" $(MATCH_LOG) || echo "MISMATCHED" >> $(MATCH_ERROR)
 	-@grep "MATCH" -A 4 $(MATCH_LOG) > $(MATCH_REPORT)
 
-regress.sc: $(RV64_REGRESSION_SC) 
+regress_riscv.sc: $(RV64_REGRESSION_SC) 
 $(RV64_REGRESSION_SC):
 	$(MAKE) sim.sc PROG=$(basename $@)
 $(COREMARK_REGRESSION_SC):

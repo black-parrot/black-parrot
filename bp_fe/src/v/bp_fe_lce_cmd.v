@@ -140,6 +140,7 @@ module bp_fe_lce_cmd
     set_tag_received_o               = 1'b0;
     set_tag_wakeup_received_o        = 1'b0;
     cce_data_received_o              = 1'b0;
+    uncached_data_received_o         = 1'b0;
 
     state_n = state_r;
     data_n = data_r;
