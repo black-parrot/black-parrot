@@ -126,6 +126,7 @@ $BP_COMMON_DIR/src/v/bsg_fifo_1r1w_rolly.v
 $BP_COMMON_DIR/src/v/bp_tlb.v
 $BP_COMMON_DIR/src/v/bp_tlb_replacement.v
 // BE files
+>>>>>>> top_dev
 $BP_BE_DIR/src/v/bp_be_top.v
 // Calculator
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_bypass.v

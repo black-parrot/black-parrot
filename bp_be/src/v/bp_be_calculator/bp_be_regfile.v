@@ -17,7 +17,7 @@
 module bp_be_regfile
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
    )

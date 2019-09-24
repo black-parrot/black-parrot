@@ -54,7 +54,7 @@ module bsg_fifo_1r1w_rolly
               & (cptr_r[ptr_width_lp] != wptr_r[ptr_width_lp]);
 
   assign ready_o = ~clr & ~full;
-  assign v_o     = ~clr & ~roll & ~empty;
+  assign v_o     = ~roll & ~empty;
 
   bsg_circular_ptr 
    #(.slots_p(2*els_p), .max_add_p(1)) 

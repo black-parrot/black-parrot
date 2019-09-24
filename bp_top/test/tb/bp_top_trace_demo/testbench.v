@@ -115,7 +115,6 @@ for (genvar i = 0; i < num_mem_p; i++)
   end
 
 // Chip
-// TODO: Actually make async
 wrapper
  #(.cfg_p(cfg_p))
  wrapper
@@ -193,9 +192,9 @@ wrapper
   
        ,.trap_v_i(be_mem.csr.trap_v_o)
        ,.mtvec_i(be_mem.csr.mtvec_n)
-       ,.mtval_i(be_mem.csr.mtval_n)
+       ,.mtval_i(be_mem.csr.mtval_n[0+:vaddr_width_p])
        ,.ret_v_i(be_mem.csr.ret_v_o)
-       ,.mepc_i(be_mem.csr.mepc_n)
+       ,.mepc_i(be_mem.csr.mepc_n[0+:vaddr_width_p])
        ,.mcause_i(be_mem.csr.mcause_n)
   
        ,.priv_mode_i(be_mem.csr.priv_mode_n)

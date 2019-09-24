@@ -45,9 +45,9 @@ module bp_be_nonsynth_tracer
 
    , input                                                 trap_v_i
    , input [vaddr_width_p-1:0]                             mtvec_i
-   , input [paddr_width_p:0]                               mtval_i
+   , input [vaddr_width_p-1:0]                             mtval_i
    , input                                                 ret_v_i
-   , input [paddr_width_p:0]                               mepc_i
+   , input [vaddr_width_p-1:0]                             mepc_i
    , input [5-1:0]                                         mcause_i
 
    , input [1:0]                                           priv_mode_i
