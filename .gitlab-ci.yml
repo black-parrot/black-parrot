@@ -22,7 +22,10 @@ stages:
   only:
     - master
     - dev
-    - "*dev"
+    - fe_dev
+    - be_dev
+    - me_dev
+    - top_dev
   before_script:
     - echo "Updating libraries"
     - make update_libs
