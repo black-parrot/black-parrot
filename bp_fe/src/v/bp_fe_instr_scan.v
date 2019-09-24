@@ -34,16 +34,16 @@ wire is_compressed = (instr_i[1:0] != 2'b11);
 always_comb
   begin
     unique casez (instr_cast_i.opcode)
-      `RV64_BRANCH_OP: assign scan_cast_o.scan_class = e_rvi_branch;
-      `RV64_JAL_OP   : assign scan_cast_o.scan_class = e_rvi_jal;
-      `RV64_JALR_OP  : assign scan_cast_o.scan_class = e_rvi_jalr;
-      default        : assign scan_cast_o.scan_class = e_default;
+      `RV64_BRANCH_OP: scan_cast_o.scan_class = e_rvi_branch;
+      `RV64_JAL_OP   : scan_cast_o.scan_class = e_rvi_jal;
+      `RV64_JALR_OP  : scan_cast_o.scan_class = e_rvi_jalr;
+      default        : scan_cast_o.scan_class = e_default;
     endcase
 
     unique casez (instr_cast_i.opcode)
-      `RV64_BRANCH_OP: assign scan_cast_o.imm = `rv64_signext_b_imm(instr_i);
-      `RV64_JAL_OP   : assign scan_cast_o.imm = `rv64_signext_j_imm(instr_i);
-      default        : assign scan_cast_o.imm = '0;
+      `RV64_BRANCH_OP: scan_cast_o.imm = `rv64_signext_b_imm(instr_i);
+      `RV64_JAL_OP   : scan_cast_o.imm = `rv64_signext_j_imm(instr_i);
+      default        : scan_cast_o.imm = '0;
     endcase
   end
 
