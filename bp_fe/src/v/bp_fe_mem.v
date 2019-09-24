@@ -64,6 +64,7 @@ wire itlb_fill_v  = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fill);
 wire fetch_v      = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_fetch);
 
 bp_fe_tlb_entry_s itlb_r_entry;
+logic itlb_r_v_lo;
 bp_tlb
  #(.cfg_p(cfg_p), .tlb_els_p(itlb_els_p))
  itlb
