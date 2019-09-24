@@ -112,6 +112,7 @@ logic [tlb_entry_width_lp-1:0]  itlb_fill_entry;
 logic [vaddr_width_p-1:0]       itlb_fill_vaddr;
 logic                           itlb_fill_v;
 
+bp_be_isd_status_s     isd_status;
 bp_be_calc_status_s    calc_status;
 
 logic chk_dispatch_v, chk_poison_iss, chk_poison_isd;
@@ -149,6 +150,7 @@ bp_be_checker_top
    ,.chk_poison_ex1_o(chk_poison_ex1)
    ,.chk_poison_ex2_o(chk_poison_ex2)
 
+   ,.isd_status_i(isd_status)
    ,.calc_status_i(calc_status)
    ,.mmu_cmd_ready_i(mmu_cmd_rdy)
    ,.credits_full_i(credits_full_lo)
@@ -201,6 +203,7 @@ bp_be_calculator_top
    ,.chk_poison_ex1_i(chk_poison_ex1)
    ,.chk_poison_ex2_i(chk_poison_ex2)
 
+   ,.isd_status_o(isd_status)
    ,.calc_status_o(calc_status)
 
    ,.mmu_cmd_o(mmu_cmd)

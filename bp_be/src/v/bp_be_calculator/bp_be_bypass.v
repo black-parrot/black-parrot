@@ -6,31 +6,6 @@
  * Description:
  *   Register bypass network for up to 2 source registers and 1 destination register.
  *
- * Parameters:
- *   fwd_els_p        - Number of potential forwarding candidates. Should be
- *                        equal to # stages in pipeline after dispatch
- *   enable_p         - When disabled, module becomes passthrough. Useful for debugging
- *
- * Inputs:
- *   id_rs1_v_i       - 'Valid' interface
- *   id_rs1_addr_i    - Dispatched source register address
- *   id_rs1_i         - Dispatched source register data (from regfile)
- *
- *   id_rs2_v_i       - 'Valid' interface
- *   id_rs2_addr_i    - Dispatched source register addresss
- *   id_rs2_i         - Dispatched source register data (from regfile)
- *
- *   fwd_rd_v_i       - 'Valid interface'
- *   fwd_rd_addr_i    - Forwarded writeback address
- *   fwd_rd_i         - Forwarded writeback data (from completed instr)
- *
- * Outputs:
- *   bypass_rs1_o     - Most recent register data available in pipeline
- *   bypass_rs2_o     - Most recent register data available in pipeline
- *   
- * Keywords:
- *   calculator, register, bypass, forward 
- * 
  * Notes:
  * 
  */
@@ -50,11 +25,9 @@ module bp_be_bypass
    )
   (
    // Dispatched instruction operands
-   input                                          id_rs1_v_i
-   , input [reg_addr_width_lp-1:0]                id_rs1_addr_i
+   input [reg_addr_width_lp-1:0]                  id_rs1_addr_i
    , input [reg_data_width_lp-1:0]                id_rs1_i
 
-   , input                                        id_rs2_v_i
    , input [reg_addr_width_lp-1:0]                id_rs2_addr_i
    , input [reg_data_width_lp-1:0]                id_rs2_i
 
@@ -148,14 +121,14 @@ always_comb
         //   * Do not forward x0 data, RISC-V defines this as always 0
         rs1_match_vector[i] = ((i == bypass_els_lp-1)
                                || ((id_rs1_addr_i == fwd_rd_addr_i[i])
-                                   & (id_rs1_v_i & fwd_rd_v_i[i])
+                                   & fwd_rd_v_i[i]
                                    & (id_rs1_addr_i != reg_addr_width_lp'(0))
                                    )
                                );
 
         rs2_match_vector[i] = ((i == bypass_els_lp-1)
                                || ((id_rs2_addr_i == fwd_rd_addr_i[i]) 
-                                   & (id_rs2_v_i & fwd_rd_v_i[i]) 
+                                   & fwd_rd_v_i[i]
                                    & (id_rs2_addr_i != reg_addr_width_lp'(0))
                                    )
                                );

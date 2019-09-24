@@ -39,6 +39,7 @@
 `define rv64_signext_u_imm(instr) {{32{``instr``[31]}},``instr``[31:12], {12{1'b0}}}
 `define rv64_signext_j_imm(instr) {{44{``instr``[31]}},``instr``[19:12],``instr``[20] \
                                        ,``instr``[30:21], {1'b0}}
+`define rv64_signext_c_imm(instr) {{59{1'b0}},``instr``[19:15]}
 
 `define RV64_LUI        `rv64_u_type(`RV64_LUI_OP)
 `define RV64_AUIPC      `rv64_u_type(`RV64_AUIPC_OP)

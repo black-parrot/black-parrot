@@ -82,7 +82,10 @@
     logic                                    isd_irs2_v;                                           \
     logic                                    isd_frs2_v;                                           \
     logic [rv64_reg_addr_width_gp-1:0]       isd_rs2_addr;                                         \
+  }  bp_be_isd_status_s;                                                                           \
                                                                                                    \
+  typedef struct packed                                                                            \
+  {                                                                                                \
     logic                                    int1_v;                                               \
     logic [vaddr_width_p-1:0]                int1_br_tgt;                                          \
     logic [branch_metadata_fwd_width_mp-1:0] int1_branch_metadata_fwd;                             \
@@ -137,17 +140,15 @@
    + 10                                                                                            \
    )
 
+`define bp_be_isd_status_width                                                                     \
+  (4 + rv64_reg_addr_width_gp +  2 + rv64_reg_addr_width_gp)
+
 `define bp_be_dep_status_width                                                                     \
   (7 + rv64_reg_addr_width_gp)                                                                     
 
 `define bp_be_calc_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                      \
   (2                                                                                               \
    + vaddr_width_p                                                                                 \
-   + 2                                                                                             \
-   + rv64_reg_addr_width_gp                                                                        \
-   + 2                                                                                             \
-   + rv64_reg_addr_width_gp                                                                        \
-   + 2                                                                                             \
    + vaddr_width_p                                                                                 \
    + branch_metadata_fwd_width_mp                                                                  \
    + 3                                                                                             \
