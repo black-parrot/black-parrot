@@ -1,7 +1,7 @@
 
 VPD2VCD          ?= vpd2vcd
 PYTHON           ?= python
-TRACEDIFF        ?= $(BP_COMMON_DIR)/test/software/tracediff.py
+TRACEDIFF        ?= $(BP_COMMON_DIR)/software/tracediff.py
 UNHARDWARE_DIR   ?= $(BP_EXTERNAL_DIR)/agile-unhardware
 UNHARDWARE_MODEL ?= blackparrot
 

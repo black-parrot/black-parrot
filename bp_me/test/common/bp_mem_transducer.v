@@ -67,24 +67,24 @@ module bp_mem_transducer
      );
 
   // Only handle word aligned accesses
-  wire [word_offset_bits_lp-1:0] wr_word_offset = 
-    mem_cmd_cast_i.addr[byte_offset_bits_lp+:word_offset_bits_lp];
-  wire [word_offset_bits_lp-1:0] rd_word_offset = 
-    mem_cmd_r.addr[byte_offset_bits_lp+:word_offset_bits_lp];
+  wire [cce_block_width_p-1:0]  wr_word_offset = mem_cmd_cast_i.addr[byte_offset_bits_lp+:word_offset_bits_lp];
+  wire [cce_block_width_p-1:0]  wr_byte_offset = mem_cmd_cast_i.addr[0+:byte_offset_bits_lp];
+  wire [cce_block_width_p-1:0]    wr_bit_shift = wr_word_offset*dword_width_p + wr_byte_offset*8;
+  wire [cce_block_width_p-1:0]   wr_byte_shift = wr_word_offset*num_word_bytes_lp + wr_byte_offset;
+  wire [cce_block_width_p-1:0]  rd_word_offset = mem_cmd_r.addr[byte_offset_bits_lp+:word_offset_bits_lp];
+  wire [cce_block_width_p-1:0]  rd_byte_offset = mem_cmd_r.addr[0+:byte_offset_bits_lp];
+  wire [cce_block_width_p-1:0]    rd_bit_shift = rd_word_offset*dword_width_p; // We rely on receiver to adjust bits
+  wire [cce_block_width_p-1:0]   rd_byte_shift = rd_word_offset*num_word_bytes_lp;
 
   assign v_o = mem_cmd_yumi_o;
   assign w_o = mem_cmd_cast_i.msg_type inside {e_cce_mem_uc_wr, e_cce_mem_wb};
   assign addr_o = (((mem_cmd_cast_i.addr - dram_offset_p) >> block_offset_bits_lp) << block_offset_bits_lp);
-  assign data_o = (mem_cmd_cast_i.msg_type == e_cce_mem_wb)
-                  ? mem_cmd_cast_i.data
-                  : mem_cmd_cast_i.data << (dword_width_p * wr_word_offset);
-  assign write_mask_o = ~($signed('1 << (1 << mem_cmd_cast_i.size)));
-    
+  assign data_o = mem_cmd_cast_i.data << wr_bit_shift;
+  assign write_mask_o = ((1 << (1 << mem_cmd_cast_i.size)) - 1) << wr_byte_shift;
+
   wire [cce_block_width_p-1:0] data_li = (mem_cmd_r.msg_type == e_cce_mem_uc_rd)
-                                         ? data_i >> (dword_width_p * wr_word_offset)
-                                         : (mem_cmd_r.msg_type inside {e_cce_mem_uc_wr, e_cce_mem_wb})
-                                           ? '0
-                                           : data_i;
+                                         ? data_i >> rd_bit_shift
+                                         : data_i;
 
   assign mem_resp_cast_o = '{data     : data_li
                              ,payload : mem_cmd_r.payload

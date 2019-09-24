@@ -191,12 +191,12 @@ module bp_be_dcache_lce
   //
   logic uncached_store_done_received;
   logic lce_req_uncached_store_lo;
-  logic [`BSG_WIDTH(max_credits_p)-1:0] credit_count_lo;
+  logic [`BSG_WIDTH(mem_noc_max_credits_p)-1:0] credit_count_lo;
   logic credit_v_li, credit_ready_li;
   assign credit_v_li = lce_req_uncached_store_lo & lce_req_v_o & lce_req_ready_i;
   assign credit_ready_li = lce_req_ready_i;
   bsg_flow_counter
-    #(.els_p(max_credits_p))
+    #(.els_p(mem_noc_max_credits_p))
     uncached_store_counter
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -207,13 +207,12 @@ module bp_be_dcache_lce
       ,.yumi_i(uncached_store_done_received)
       ,.count_o(credit_count_lo)
       );
-  assign credits_full_o = (credit_count_lo == max_credits_p);
+  assign credits_full_o = (credit_count_lo == mem_noc_max_credits_p);
   assign credits_empty_o = (credit_count_lo == 0);
 
 
   // LCE_CCE_req
   //
-  logic tr_data_received;
   logic cce_data_received;
   logic uncached_data_received;
   logic set_tag_received;

@@ -28,14 +28,14 @@ module bp_nonsynth_host
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 
 // HOST I/O mappings
-localparam host_dev_base_addr_gp     = 32'h03??_????;
+//localparam host_dev_base_addr_gp     = 32'h03??_????;
 
 // Host I/O mappings (arbitrarily decided for now)
 //   Overall host controls 32'h0300_0000-32'h03FF_FFFF
 
-localparam hprint_base_addr_gp = 32'h0300_0???;
-localparam cprint_base_addr_gp = 32'h0300_1???;
-localparam finish_base_addr_gp = 32'h0300_2???;
+localparam hprint_base_addr_gp = paddr_width_p'(32'h0300_0???);
+localparam cprint_base_addr_gp = paddr_width_p'(64'h0300_1???);
+localparam finish_base_addr_gp = paddr_width_p'(64'h0300_2???);
 
 bp_cce_mem_cmd_s  mem_cmd_cast_i;
 

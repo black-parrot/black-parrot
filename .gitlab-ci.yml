@@ -34,7 +34,7 @@ func-regress-verilator-job:
     - mkdir /pre-alpha-release/
     - ln -sf /bp-tools /pre-alpha-release/external
     - echo "Fetching Basejump STL"
-    - git submodule update --init -- basejump_stl
+    - git submodule update --init -- external/basejump_stl
     - echo "Fetching riscv-tests"
     - git submodule update --init --recursive -- bp_common/test/src/riscv-tests
     - echo "Building test programs"
@@ -47,6 +47,10 @@ func-regress-verilator-job:
     - make build.sc 
     - make regress.sc -j 
     - grep -cr "FAILED" reports/ && exit 1
+    - cd -
+    - cd bp_me/syn
+    - make regress.me.sc
+    - grep -cr "FAIL" reports/ && exit 1
     - exit 0
 
   artifacts:

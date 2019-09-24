@@ -1,5 +1,5 @@
 // bsg_ip_cores files
-$BSG_IP_CORES_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
+$BASEJUMP_STL_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
 // be files
 $BP_BE_DIR/test/common/bp_be_nonsynth_tracer.v
 $BP_BE_DIR/test/common/bp_be_nonsynth_perf.v

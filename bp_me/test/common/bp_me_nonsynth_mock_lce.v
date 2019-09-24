@@ -7,6 +7,10 @@
  * Uncached access is determined by the memory address. If the MSB of the address is set, the
  * access is for uncached memory, otherwise it is a cached access.
  *
+ * NOTE: this mock LCE uses the msb of the address to determine cached/uncached access. The
+ * real D$ and I$ no longer do this, and instead take an uncached_i signal as input alongside
+ * the cache command. The mock LCE interface will soon be changed to this as well.
+ *
  */
 
 module tag_lookup
@@ -166,17 +170,13 @@ module bp_me_nonsynth_mock_lce
     );
 
   // LCE Command Message Types
-  bp_lce_cmd_cmd_s lce_cmd_cmd, lce_cmd_r_cmd;
-  logic [cce_block_width_p-1:0] lce_cmd_data, lce_cmd_r_data;
-  logic [dword_width_p-1:0] lce_cmd_uc_data, lce_cmd_r_uc_data;
+  bp_lce_cmd_cmd_s lce_cmd_cmd;
+  logic [cce_block_width_p-1:0] lce_cmd_data;
+  logic [dword_width_p-1:0] lce_cmd_uc_data;
   // casts from buffer output
   assign lce_cmd_cmd = lce_cmd.msg.cmd;
-  assign lce_cmd_data = lce_cmd.msg.data;
-  assign lce_cmd_uc_data = lce_cmd.msg.data[0+:dword_width_p];
-  // casts from registered command
-  assign lce_cmd_r_cmd = lce_cmd_r.msg.cmd;
-  assign lce_cmd_r_data = lce_cmd_r.msg.data;
-  assign lce_cmd_r_uc_data = lce_cmd_r.msg.data[0+:dword_width_p];
+  assign lce_cmd_data = lce_cmd.msg.dt_cmd.data;
+  assign lce_cmd_uc_data = lce_cmd.msg.dt_cmd.data[0+:dword_width_p];
 
   typedef struct packed {
     logic [`bp_coh_bits-1:0] coh_st;
@@ -684,12 +684,12 @@ module bp_me_nonsynth_mock_lce
             // Extract the desired bits from the returned 64-bit dword
             tr_pkt_o[0 +: dword_width_p] =
               double_op
-                ? lce_cmd.msg.data[0 +: 64]
+                ? lce_cmd.msg.dt_cmd.data[0 +: 64]
                 : word_op
-                  ? {32'('0), lce_cmd.msg.data[8*byte_offset +: 32]}
+                  ? {32'('0), lce_cmd.msg.dt_cmd.data[8*byte_offset +: 32]}
                   : half_op
-                    ? {48'('0), lce_cmd.msg.data[8*byte_offset +: 16]}
-                    : {56'('0), lce_cmd.msg.data[8*byte_offset +: 8]};
+                    ? {48'('0), lce_cmd.msg.dt_cmd.data[8*byte_offset +: 16]}
+                    : {56'('0), lce_cmd.msg.dt_cmd.data[8*byte_offset +: 8]};
 
             lce_state_n = (tr_pkt_ready_i)
                           ? (lce_init_r)
@@ -741,7 +741,7 @@ module bp_me_nonsynth_mock_lce
           // create the LCE response and make it valid for output
 
           // Common LCE Resp fields
-          lce_resp_lo.dst_id = lce_cmd_r_cmd.src_id;
+          lce_resp_lo.dst_id = lce_cmd_r.msg.cmd.src_id;
           lce_resp_lo.src_id = lce_id_i;
           lce_resp_lo.msg_type = e_lce_cce_sync_ack;
           lce_resp_lo.addr = '0;
@@ -758,6 +758,8 @@ module bp_me_nonsynth_mock_lce
             lce_cmd_yumi = 1'b1;
             lce_cmd_n = lce_cmd;
 
+            assert(lce_cmd.dst_id == lce_id_i) else $error("[%0d]: command delivered to wrong LCE", lce_id_i);
+
             // uncached data or data command
             if (lce_cmd.msg_type == e_lce_cmd_data | lce_cmd.msg_type == e_lce_cmd_uc_data) begin
               lce_state_n = LCE_DATA_CMD;
@@ -770,6 +772,7 @@ module bp_me_nonsynth_mock_lce
             end else if (lce_cmd.msg_type == e_lce_cmd_writeback) begin
               lce_state_n = LCE_CMD_WB_RD;
             end else if (lce_cmd.msg_type == e_lce_cmd_set_tag) begin
+              $error("LCE received set tag command");
               lce_state_n = LCE_CMD_ST;
             end else if (lce_cmd.msg_type == e_lce_cmd_set_tag_wakeup) begin
               lce_state_n = LCE_CMD_STW;
@@ -799,24 +802,36 @@ module bp_me_nonsynth_mock_lce
           cur_way_n = lce_cmd_r.way_id;
           data_w_n[cur_set_n][cur_way_n] = '1;
           // data comes from the data command
-          data_next_n = lce_cmd_r.msg.data;
+          data_next_n = lce_cmd_r.msg.dt_cmd.data;
+
+// TODO:
+          //cur_set_n = lce_cmd_r.msg.cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
+          //cur_way_n = lce_cmd_r.way_id;
+          tag_w_n[cur_set_n][cur_way_n] = 1'b1;
+          tag_next_n[cur_set_n][cur_way_n].coh_st = lce_cmd_r.msg.dt_cmd.state;
+          tag_next_n[cur_set_n][cur_way_n].tag = lce_cmd_r.msg.dt_cmd.addr[paddr_width_p-1 -: ptag_width_lp];
+
+          assert (mshr_r.paddr == lce_cmd_r.msg.dt_cmd.addr) else
+            $error("[%0d]: DT_CMD address mismatch [%H] != [%H]", lce_id_i, mshr_r.paddr, lce_cmd_r.msg.dt_cmd.addr);
 
           // update mshr
           mshr_n.data_received = 1'b1;
+          mshr_n.tag_received = 1'b1;
 
           // if tag was already received, go to next state to send the response, else go to 
           // ready to wait for more commands
-          lce_state_n = (mshr_r.tag_received) ? LCE_CMD_ST_DATA_RESP : READY;
+          //lce_state_n = (mshr_r.tag_received) ? LCE_CMD_ST_DATA_RESP : READY;
+          lce_state_n = LCE_CMD_ST_DATA_RESP;
 
         end
         LCE_CMD_INV: begin
           // invalidate cmd received - update tags
           // lce_cmd contains all the necessary information to update tags
-          cur_set_n = lce_cmd_r_cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
+          cur_set_n = lce_cmd_r.msg.cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
           cur_way_n = lce_cmd_r.way_id;
           tag_w_n[cur_set_n][cur_way_n] = 1'b1;
           tag_next_n[cur_set_n][cur_way_n].coh_st = e_COH_I;
-          tag_next_n[cur_set_n][cur_way_n].tag = lce_cmd_r_cmd.addr[paddr_width_p-1 -: ptag_width_lp];
+          tag_next_n[cur_set_n][cur_way_n].tag = lce_cmd_r.msg.cmd.addr[paddr_width_p-1 -: ptag_width_lp];
 
           // send inv_ack next
           lce_state_n = LCE_CMD_INV_RESP;
@@ -825,10 +840,10 @@ module bp_me_nonsynth_mock_lce
         LCE_CMD_INV_RESP: begin
 
           // Common LCE Resp fields
-          lce_resp_lo.dst_id = lce_cmd_r_cmd.src_id;
+          lce_resp_lo.dst_id = lce_cmd_r.msg.cmd.src_id;
           lce_resp_lo.src_id = lce_id_i;
           lce_resp_lo.msg_type = e_lce_cce_inv_ack;
-          lce_resp_lo.addr = lce_cmd_r_cmd.addr;
+          lce_resp_lo.addr = lce_cmd_r.msg.cmd.addr;
 
           // make the LCE response valid
           lce_resp_v_o = 1'b1;
@@ -839,19 +854,21 @@ module bp_me_nonsynth_mock_lce
         end
         LCE_CMD_TR_RD: begin
           // data select
-          cur_set_n = lce_cmd_r_cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
+          cur_set_n = lce_cmd_r.msg.cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
           cur_way_n = lce_cmd_r.way_id;
 
           lce_state_n = LCE_CMD_TR;
         end
         LCE_CMD_TR: begin
           // Common LCE Command fields
-          lce_cmd_lo.dst_id = lce_cmd_r_cmd.target;
+          lce_cmd_lo.dst_id = lce_cmd_r.msg.cmd.target;
           lce_cmd_lo.msg_type = e_lce_cmd_data;
-          lce_cmd_lo.way_id = lce_cmd_r_cmd.target_way_id;
+          lce_cmd_lo.way_id = lce_cmd_r.msg.cmd.target_way_id;
 
           // Assign data command to msg field of LCE Cmd
-          lce_cmd_lo.msg.data = data_cur;
+          lce_cmd_lo.msg.dt_cmd.data = data_cur;
+          lce_cmd_lo.msg.dt_cmd.state = lce_cmd_r.msg.cmd.state;
+          lce_cmd_lo.msg.dt_cmd.addr = lce_cmd_r.msg.cmd.addr;
 
           // make the command valid
           lce_cmd_v_o = 1'b1;
@@ -862,7 +879,7 @@ module bp_me_nonsynth_mock_lce
         end
         LCE_CMD_WB_RD: begin
           // tag and data select
-          cur_set_n = lce_cmd_r_cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
+          cur_set_n = lce_cmd_r.msg.cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
           cur_way_n = lce_cmd_r.way_id;
 
           lce_state_n = LCE_CMD_WB;
@@ -871,12 +888,12 @@ module bp_me_nonsynth_mock_lce
         LCE_CMD_WB: begin
           // writeback cmd
 
-          lce_resp_lo.dst_id = lce_cmd_r_cmd.src_id;
+          lce_resp_lo.dst_id = lce_cmd_r.msg.cmd.src_id;
           lce_resp_lo.src_id = lce_id_i;
-          lce_resp_lo.addr = lce_cmd_r_cmd.addr;
+          lce_resp_lo.addr = lce_cmd_r.msg.cmd.addr;
 
           if (dirty_bits[cur_set][cur_way]) begin
-            lce_resp_lo.data = data_cur;
+            lce_resp_lo.msg.data = data_cur;
             lce_resp_lo.msg_type = e_lce_cce_resp_wb;
 
             // clear the dirty bit - but only do the write if the data response is accepted
@@ -886,7 +903,7 @@ module bp_me_nonsynth_mock_lce
             dirty_bits_n[cur_set][cur_way] = 1'b0;
 
           end else begin
-            lce_resp_lo.data = '0;
+            lce_resp_lo.msg.data = '0;
             lce_resp_lo.msg_type = e_lce_cce_resp_null_wb;
 
           end
@@ -898,15 +915,16 @@ module bp_me_nonsynth_mock_lce
 
         end
         LCE_CMD_ST: begin
+          $error("LCE_CMD_ST state reached");
           // response to miss - tag
-          cur_set_n = lce_cmd_r_cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
+          cur_set_n = lce_cmd_r.msg.cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
           cur_way_n = lce_cmd_r.way_id;
           tag_w_n[cur_set_n][cur_way_n] = 1'b1;
-          tag_next_n[cur_set_n][cur_way_n].coh_st = lce_cmd_r_cmd.state;
-          tag_next_n[cur_set_n][cur_way_n].tag = lce_cmd_r_cmd.addr[paddr_width_p-1 -: ptag_width_lp];
+          tag_next_n[cur_set_n][cur_way_n].coh_st = lce_cmd_r.msg.cmd.state;
+          tag_next_n[cur_set_n][cur_way_n].tag = lce_cmd_r.msg.cmd.addr[paddr_width_p-1 -: ptag_width_lp];
 
           // TODO: remove assert
-          assert(lce_cmd_r_cmd.addr == mshr_r.paddr) else $error("set tag does not match mshr");
+          assert(lce_cmd_r.msg.cmd.addr == mshr_r.paddr) else $error("set tag does not match mshr");
           // tag only comes in response to a miss, update the mshr
           mshr_n.tag_received = 1'b1;
 
@@ -935,12 +953,12 @@ module bp_me_nonsynth_mock_lce
           // set tag and wakeup command - response to a miss
 
           // update tag array
-          cur_set_n = lce_cmd_r_cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
+          cur_set_n = lce_cmd_r.msg.cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
           cur_way_n = lce_cmd_r.way_id;
 
           tag_w_n[cur_set_n][cur_way_n] = 1'b1;
-          tag_next_n[cur_set_n][cur_way_n].coh_st = lce_cmd_r_cmd.state;
-          tag_next_n[cur_set_n][cur_way_n].tag = lce_cmd_r_cmd.addr[paddr_width_p-1 -: ptag_width_lp];
+          tag_next_n[cur_set_n][cur_way_n].coh_st = lce_cmd_r.msg.cmd.state;
+          tag_next_n[cur_set_n][cur_way_n].tag = lce_cmd_r.msg.cmd.addr[paddr_width_p-1 -: ptag_width_lp];
 
           // send coh_ack next cycle
           lce_state_n = LCE_CMD_STW_RESP;
@@ -950,10 +968,10 @@ module bp_me_nonsynth_mock_lce
           // Send coherence ack in response to set tag and wakeup
 
           // Common LCE Resp fields
-          lce_resp_lo.dst_id = lce_cmd_r_cmd.src_id;
+          lce_resp_lo.dst_id = lce_cmd_r.msg.cmd.src_id;
           lce_resp_lo.src_id = lce_id_i;
           lce_resp_lo.msg_type = e_lce_cce_coh_ack;
-          lce_resp_lo.addr = lce_cmd_r_cmd.addr;
+          lce_resp_lo.addr = lce_cmd_r.msg.cmd.addr;
 
           // make the LCE response valid
           lce_resp_v_o = 1'b1;

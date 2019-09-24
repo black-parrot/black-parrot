@@ -26,7 +26,7 @@ module testbench
    , parameter mem_load_p         = 1
    , parameter mem_file_p         = "prog.mem"
    , parameter mem_cap_in_bytes_p = 2**20
-   , parameter mem_offset_p       = 32'h8000_0000
+   , parameter [paddr_width_p-1:0] mem_offset_p = paddr_width_p'(32'h8000_0000)
 
    // Number of elements in the fake BlackParrot memory
    , parameter use_max_latency_p      = 0
@@ -64,7 +64,7 @@ assign mem_resp_link_li = '{ready_and_rev: resp_link_li.ready_and_rev, default: 
 assign cfg_resp_link_li = resp_link_li;
 assign resp_link_lo = '{data: mem_resp_link_lo.data
                         ,v  : mem_resp_link_lo.v
-                        ,ready_and_rev: cfg_resp_link_li.ready_and_rev
+                        ,ready_and_rev: cfg_resp_link_lo.ready_and_rev
                         };
 
 bp_mem_cce_resp_s      mem_resp_li;
@@ -87,43 +87,73 @@ logic                  cfg_cmd_v_lo, cfg_cmd_ready_li;
 bp_mem_cce_resp_s      cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
-logic [mem_noc_cord_width_p-1:0]                 dram_cord_lo, mmio_cord_lo, host_cord_lo;
+logic [mem_noc_cord_width_p-1:0] dram_cord_lo, mmio_cord_lo, host_cord_lo;
 logic [num_core_p-1:0][mem_noc_cord_width_p-1:0] tile_cord_lo;
+logic [num_mem_p-1:0][mem_noc_cord_width_p-1:0] mem_cord_lo;
 
-assign dram_cord_lo = num_core_p+1;
-assign mmio_cord_lo = mmio_x_pos_p;
-assign host_cord_lo = dram_cord_lo;
-for (genvar i = 0; i < num_core_p; i++)
-  begin : rof1
-    assign tile_cord_lo[i] = i;
+assign mmio_cord_lo[0+:mem_noc_x_cord_width_p]                      = mmio_x_pos_p;
+assign mmio_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
+assign dram_cord_lo[0+:mem_noc_x_cord_width_p]                      = mem_noc_x_dim_p+2;
+assign dram_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
+assign host_cord_lo[0+:mem_noc_x_cord_width_p]                      = mem_noc_x_dim_p+2;
+assign host_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
+
+for (genvar j = 0; j < mem_noc_y_dim_p; j++)
+  begin : y
+    for (genvar i = 0; i < mem_noc_x_dim_p; i++)
+      begin : x
+        localparam idx = j*mem_noc_x_dim_p + i;
+        assign tile_cord_lo[idx][0+:mem_noc_x_cord_width_p] = i+1;
+        assign tile_cord_lo[idx][mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = j+1;
+      end
+  end
+for (genvar i = 0; i < num_mem_p; i++)
+  begin : x
+    assign mem_cord_lo[i][0+:mem_noc_x_cord_width_p] = i;
+    assign mem_cord_lo[i][mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
   end
 
 // Chip
+// TODO: Actually make async
 wrapper
  #(.cfg_p(cfg_p))
  wrapper
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+  (.core_clk_i(clk_i)
+   ,.core_reset_i(reset_i)
    
+   ,.coh_clk_i(clk_i)
+   ,.coh_reset_i(reset_i)
+
+   ,.mem_clk_i(clk_i)
+   ,.mem_reset_i(reset_i)
+
+   ,.mem_cord_i(mem_cord_lo)
    ,.tile_cord_i(tile_cord_lo)
    ,.dram_cord_i(dram_cord_lo)
    ,.mmio_cord_i(mmio_cord_lo)
    ,.host_cord_i(host_cord_lo)
 
-   ,.cmd_link_i(cmd_link_lo)
-   ,.cmd_link_o(cmd_link_li)
+   ,.prev_cmd_link_i('0)
+   ,.prev_cmd_link_o()
 
-   ,.resp_link_i(resp_link_lo)
-   ,.resp_link_o(resp_link_li)
+   ,.prev_resp_link_i('0)
+   ,.prev_resp_link_o()
+
+   ,.next_cmd_link_i(cmd_link_lo)
+   ,.next_cmd_link_o(cmd_link_li)
+
+   ,.next_resp_link_i(resp_link_lo)
+   ,.next_resp_link_o(resp_link_li)
    );
 
-if (cmt_trace_p)
   bind bp_be_top
     bp_nonsynth_commit_tracer
      #(.cfg_p(cfg_p))
      commit_tracer
-      (.clk_i(clk_i)
+      (.clk_i(clk_i & (testbench.cmt_trace_p == 1))
        ,.reset_i(reset_i)
+
+       ,.mhartid_i('0)
 
        ,.commit_v_i(be_calculator.instret_mem3_o)
        ,.commit_pc_i(be_calculator.pc_mem3_o)
@@ -134,14 +164,14 @@ if (cmt_trace_p)
        ,.rd_data_i(be_calculator.int_regfile.rd_data_i)
        );
 
-if (calc_trace_p)
   bind bp_be_top
     bp_be_nonsynth_tracer
      #(.cfg_p(cfg_p))
      tracer
-      (.clk_i(clk_i) 
-       ,.reset_i(reset_i)  // Workaround for verilator binding by accident
-                           // TODO: Figure out why tracing is always enabled
+       // Workaround for verilator binding by accident
+       // TODO: Figure out why tracing is always enabled
+      (.clk_i(clk_i & (testbench.calc_trace_p == 1))
+       ,.reset_i(reset_i)
   
        ,.mhartid_i(be_calculator.proc_cfg.core_id)
 
@@ -190,12 +220,11 @@ bind bp_be_top
      ,.program_finish_i(testbench.program_finish)
      );
 
-if (cce_trace_p)
   bind bp_cce_top
     bp_cce_nonsynth_tracer
       #(.cfg_p(cfg_p))
       bp_cce_tracer
-       (.clk_i(clk_i)
+       (.clk_i(clk_i & (testbench.cce_trace_p == 1))
         ,.reset_i(reset_i)
   
         ,.cce_id_i(cce_id_i)

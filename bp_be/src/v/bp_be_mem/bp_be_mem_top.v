@@ -45,7 +45,7 @@ module bp_be_mem_top
    , localparam mem_resp_width_lp = `bp_be_mem_resp_width(vaddr_width_p)
    
    // VM
-   , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_p)
+   , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -114,11 +114,11 @@ module bp_be_mem_top
    , output                                  tlb_fence_o
    );
 
+`declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
 `declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p/8)
-`declare_bp_be_tlb_entry_s(ptag_width_p)
 `declare_bp_be_dcache_pkt_s(page_offset_width_lp, dword_width_p);
 
 // Cast input and output ports 
@@ -143,7 +143,7 @@ wire unused0 = mem_resp_ready_i;
 /* TLB ports */
 logic                    dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_r_v, dtlb_r_v_lo;
 logic [vtag_width_p-1:0] dtlb_r_vtag, dtlb_w_vtag, dtlb_miss_vtag;
-bp_be_tlb_entry_s        dtlb_r_entry, dtlb_w_entry;
+bp_pte_entry_leaf_s      dtlb_r_entry, dtlb_w_entry;
 
 /* PTW ports */
 logic [ptag_width_p-1:0]  ptw_dcache_ptag;
@@ -151,7 +151,7 @@ logic                     ptw_dcache_v, ptw_busy, ptw_store_not_load;
 bp_be_dcache_pkt_s        ptw_dcache_pkt; 
 logic                     ptw_tlb_miss_v, ptw_tlb_w_v;
 logic [vtag_width_p-1:0]  ptw_tlb_w_vtag, ptw_tlb_miss_vtag;
-bp_be_tlb_entry_s         ptw_tlb_w_entry;
+bp_pte_entry_leaf_s       ptw_tlb_w_entry;
 logic                     ptw_page_fault_v, ptw_instr_page_fault_v, ptw_load_page_fault_v, ptw_store_page_fault_v;
 
 /* D-Cache ports */
@@ -265,33 +265,30 @@ bp_be_csr
    ,.tlb_fence_o(tlb_fence_o)
    );
 
-bp_be_dtlb
-  #(.cfg_p(cfg_p))
+bp_tlb
+  #(.cfg_p(cfg_p)
+    ,.tlb_els_p(dtlb_els_p)
+  )
   dtlb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.flush_i(tlb_fence_o)
    
-   ,.r_v_i(dtlb_r_v)
-   ,.r_ready_o()
-   ,.r_vtag_i(dtlb_r_vtag)
+   ,.v_i(dtlb_r_v | dtlb_w_v)
+   ,.w_i(dtlb_w_v)
+   ,.vtag_i((dtlb_w_v)? dtlb_w_vtag : dtlb_r_vtag)
+   ,.entry_i(dtlb_w_entry)
    
-   ,.r_v_o(dtlb_r_v_lo)
-   ,.r_entry_o(dtlb_r_entry)
-   
-   ,.w_v_i(dtlb_w_v)
-   ,.w_vtag_i(dtlb_w_vtag)
-   ,.w_entry_i(dtlb_w_entry)
-   
+   ,.v_o(dtlb_r_v_lo)
+   ,.entry_o(dtlb_r_entry)
+      
    ,.miss_v_o(dtlb_miss_v)
    ,.miss_vtag_o(dtlb_miss_vtag)
   );
   
 bp_be_ptw
-  #(.pte_width_p(bp_sv39_pte_width_gp)
-    ,.vaddr_width_p(vaddr_width_p)
-    ,.paddr_width_p(paddr_width_p)
-    ,.page_offset_width_p(page_offset_width_p)
+  #(.cfg_p(cfg_p)
+    ,.pte_width_p(bp_sv39_pte_width_gp)
     ,.page_table_depth_p(bp_sv39_page_table_depth_gp)
   )
   ptw

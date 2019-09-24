@@ -7,5 +7,5 @@ coverage_off -file "$BP_ME_DIR/src/*"
 coverage_off -file "$BP_BE_DIR/test/*"
 coverage_off -file "$BP_FE_DIR/test/*"
 coverage_off -file "$BP_ME_DIR/test/*"
-coverage_off -file "$BSG_IP_CORES_DIR/*"
+coverage_off -file "$BASEJUMP_STL_DIR/*"
 

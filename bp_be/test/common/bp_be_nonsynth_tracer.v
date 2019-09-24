@@ -113,10 +113,11 @@ bsg_dff_reset_en
    );
 
 
-always_ff @(negedge reset_i) begin
-  file_name = $sformatf("%s_%x.log", calc_trace_file_p, mhartid_i);
-  file = $fopen(file_name, "w");
-end
+initial 
+  begin
+    file_name = $sformatf("%s_%x.log", calc_trace_file_p, mhartid_i);
+    file      = $fopen(file_name, "w");
+  end
 
 logic [4:0][2:0][7:0] stage_aliases;
 assign stage_aliases = {"FWB", "IWB", "EX2", "EX1"};
