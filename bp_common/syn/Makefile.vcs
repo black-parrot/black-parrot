@@ -10,7 +10,6 @@ VCS_OPTIONS ?= +vcs+finish+5000000000ps   # Change this to run longer / shorter
 VCS_OPTIONS += +vcs+lic+wait              # Wait for license
 VCS_OPTIONS += +libext+.v+.vlib+.vh       # Find library files with these extensions
 VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
-VCS_OPTIONS += -debug_all
 
 VCS_BUILD_OPTS += -full64             # Compile a 64-bit executable
 VCS_BUILD_OPTS += -sverilog # Enable SystemVerilog
@@ -20,6 +19,7 @@ VCS_BUILD_OPTS += -CFLAGS "-I$(BP_EXTERNAL_DIR)/include -std=c++11"
 VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
 VCS_BUILD_OPTS += -assert svaext
 VCS_BUILD_OPTS += +lint=TFIPC-L
+VCS_BUILD_OPTS += -debug_pp
 
 LINT_OPTIONS = +lint=all,noSVA-UA,noSVA-NSVU,noNS,noVCDE
 

@@ -64,23 +64,20 @@ wire itlb_fill_v  = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fill);
 wire fetch_v      = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_fetch);
 
 bp_fe_tlb_entry_s itlb_r_entry;
-bp_be_dtlb
- #(.cfg_p(cfg_p))
+bp_tlb
+ #(.cfg_p(cfg_p), .tlb_els_p(itlb_els_p))
  itlb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.flush_i(itlb_fence_v)
 	       
-   ,.r_vtag_i(mem_cmd_cast_i.operands.fetch.vaddr.tag)
-   ,.r_v_i(fetch_v)
-   ,.r_ready_o(itlb_ready_lo)
+   ,.v_i(fetch_v | itlb_fill_v)
+   ,.w_i(itlb_fill_v)
+   ,.vtag_i(itlb_fill_v ? mem_cmd_cast_i.operands.fill.vtag : mem_cmd_cast_i.operands.fetch.vaddr.tag)
+	 ,.entry_i(mem_cmd_cast_i.operands.fill.entry)
 	   
-   ,.r_v_o(itlb_r_v_lo)
-   ,.r_entry_o(itlb_r_entry)
-
-   ,.w_v_i(itlb_fill_v)
-   ,.w_vtag_i(mem_cmd_cast_i.operands.fill.vtag)
-	 ,.w_entry_i(mem_cmd_cast_i.operands.fill.entry)
+   ,.v_o(itlb_r_v_lo)
+   ,.entry_o(itlb_r_entry)
 
 	 ,.miss_v_o(itlb_miss_lo)
 	 ,.miss_vtag_o()
