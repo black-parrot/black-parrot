@@ -85,15 +85,18 @@ logic [num_core_p-1:0] plic_v_li;
 
 // Memory-mapped I/O is 64 bit aligned
 // Low 8 bits are core id for MMIO addresses
-localparam byte_offset_width_lp = 3;
-wire [lg_num_core_lp-1:0] mem_cmd_core_enc = 
-  mem_cmd_li.addr[byte_offset_width_lp+:lg_num_core_lp];
+localparam mipi_core_offset_lp = 2;
+localparam mtimecmp_core_offset_lp = 3;
+wire [lg_num_core_lp-1:0] mipi_cmd_core_enc = 
+  mem_cmd_li.addr[mipi_core_offset_lp+:lg_num_core_lp];
+wire [lg_num_core_lp-1:0] mtimecmp_cmd_core_enc = 
+  mem_cmd_li.addr[mtimecmp_core_offset_lp+:lg_num_core_lp];  
 
 bsg_decode_with_v
  #(.num_out_p(num_core_p))
  mipi_cmd_decoder
   (.v_i(mipi_cmd_v)
-   ,.i(mem_cmd_core_enc)
+   ,.i(mipi_cmd_core_enc)
    
    ,.o(mipi_v_li)
    );
@@ -102,7 +105,7 @@ bsg_decode_with_v
  #(.num_out_p(num_core_p))
  mtimecmp_cmd_decoder
   (.v_i(mtimecmp_cmd_v)
-   ,.i(mem_cmd_core_enc)
+   ,.i(mtimecmp_cmd_core_enc)
    
    ,.o(mtimecmp_v_li)
    );
@@ -111,13 +114,13 @@ bsg_decode_with_v
  #(.num_out_p(num_core_p))
  plic_cmd_decoder
   (.v_i(plic_cmd_v)
-   ,.i(mem_cmd_core_enc)
+   ,.i(mtimecmp_cmd_core_enc)
 
    ,.o(plic_v_li)
    );
 
 logic [dword_width_p-1:0] mtime_n, mtime_r;
-wire mtime_w_v_li = mtime_cmd_v;
+wire mtime_w_v_li = wr_not_rd & mtime_cmd_v;
 assign mtime_n    = mtime_w_v_li 
                     ? mem_cmd_li.data[0+:dword_width_p] 
                     : mtime_r + dword_width_p'(1);
@@ -154,7 +157,7 @@ bsg_decode_with_v
 for (genvar i = 0; i < num_core_p; i++)
   begin : rof1
     assign mtimecmp_n[i] = mem_cmd_li.data[0+:dword_width_p];
-    wire mtimecmp_w_v_li = wr_not_rd & mtimecmp_cmd_v;
+    wire mtimecmp_w_v_li = wr_not_rd & mtimecmp_v_li[i];
     bsg_dff_reset_en
      #(.width_p(dword_width_p))
      mtimecmp_reg
@@ -168,7 +171,7 @@ for (genvar i = 0; i < num_core_p; i++)
     assign timer_irq_o[i] = mtimecmp_r[i];
 
     assign mipi_n[i] = mem_cmd_li.data[0];
-    wire mipi_w_v_li = wr_not_rd & mipi_cmd_v;
+    wire mipi_w_v_li = wr_not_rd & mipi_v_li[i];
     bsg_dff_reset_en
      #(.width_p(1))
      mipi_reg
@@ -182,7 +185,7 @@ for (genvar i = 0; i < num_core_p; i++)
     assign soft_irq_o[i] = mipi_r[i];
 
     assign plic_n[i] = mem_cmd_li.data[0];
-    wire plic_w_v_li = wr_not_rd & plic_cmd_v;
+    wire plic_w_v_li = wr_not_rd & plic_v_li[i];
     bsg_dff_reset_en
      #(.width_p(1))
      plic_reg
