@@ -1,8 +1,11 @@
+# Description
+BlackParrot aims to be the default Linux-capable, cache-coherent, RV64GC multicore used by the world.
+
 # Getting started
 [Getting Started](GETTING_STARTED.md)
 
 # Project Status
-The next release of Black Parrot, v1.0, is coming in September 2019, and will contain support for an (up to) 16 core, cache-coherent, Linux-capable, RV64IA multicore.
+The next release of BlackParrot, v1.0, is coming in September 2019, and will contain support for a (up to) 16 core, cache-coherent, Linux-capable, RV64IA multicore.
 
 # BlackParrot software developer guide
 Coming soon!
@@ -38,4 +41,3 @@ CI](https://gitlab.com/black-parrot/pre-alpha-release/badges/master/build.svg)](
 
 dev: [![Gitlab CI](https://gitlab.com/black-parrot/pre-alpha-release/badges/dev/build.svg)](https://gitlab.com/black-parrot/pre-alpha-release/pipelines) 
 
-fe_dev: [![Gitlab CI](https://gitlab.com/black-parrot/pre-alpha-release/badges/fe_dev/build.svg)](https://gitlab.com/black-parrot/pre-alpha-release/pipelines) be_dev: [![Gitlab CI](https://gitlab.com/black-parrot/pre-alpha-release/badges/be_dev/build.svg)](https://gitlab.com/black-parrot/pre-alpha-release/pipelines) me_dev: [![Gitlab CI](https://gitlab.com/black-parrot/pre-alpha-release/badges/me_dev/build.svg)](https://gitlab.com/black-parrot/pre-alpha-release/pipelines) sw_dev: [![Gitlab CI](https://gitlab.com/black-parrot/pre-alpha-release/badges/sw_dev/build.svg)](https://gitlab.com/black-parrot/pre-alpha-release/pipelines)
