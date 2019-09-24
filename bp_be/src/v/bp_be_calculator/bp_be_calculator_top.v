@@ -28,6 +28,7 @@ module bp_be_calculator_top
    // Generated parameters
    , localparam proc_cfg_width_lp       = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
    , localparam issue_pkt_width_lp      = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
+   , localparam isd_status_width_lp     = `bp_be_isd_status_width
    , localparam calc_status_width_lp    = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam exception_width_lp      = `bp_be_exception_width
    , localparam mmu_cmd_width_lp        = `bp_be_mmu_cmd_width(vaddr_width_p)
@@ -71,6 +72,7 @@ module bp_be_calculator_top
   , input                                chk_poison_ex1_i
   , input                                chk_poison_ex2_i
    
+  , output [isd_status_width_lp-1:0]     isd_status_o
   , output [calc_status_width_lp-1:0]    calc_status_o
    
   // Mem interface   
@@ -100,6 +102,7 @@ module bp_be_calculator_top
 
 // Cast input and output ports 
 bp_be_issue_pkt_s   issue_pkt;
+bp_be_isd_status_s  isd_status;
 bp_be_calc_status_s calc_status;
 bp_be_mem_resp_s    mem_resp;
 bp_proc_cfg_s       proc_cfg;
@@ -108,6 +111,7 @@ assign issue_pkt = issue_pkt_i;
 assign mem_resp = mem_resp_i;
 assign proc_cfg = proc_cfg_i;
 assign calc_status_o = calc_status;
+assign isd_status_o = isd_status;
 
 // Declare intermediate signals
 logic                   chk_poison_iss_r;
@@ -140,7 +144,7 @@ logic [dword_width_p-1:0] pipe_int_data_lo, pipe_mul_data_lo, pipe_mem_data_lo, 
 
 logic nop_pipe_result_v;
 logic pipe_int_data_lo_v, pipe_mul_data_lo_v, pipe_mem_data_lo_v, pipe_fp_data_lo_v;
-logic pipe_mem_v_lo;
+logic pipe_mem_exc_v_lo, pipe_mem_miss_v_lo;
 
 logic [vaddr_width_p-1:0] br_tgt_int1;
 
@@ -156,6 +160,7 @@ assign issue_pkt_ready_o = (chk_dispatch_v_i | ~issue_pkt_v_r);
 // Module instantiations
 // Register files
 bp_be_regfile
+#(.cfg_p(cfg_p))
  int_regfile
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -179,6 +184,7 @@ bp_be_regfile
 if (fp_en_p)
   begin : fp_rf
     bp_be_regfile
+    #(.cfg_p(cfg_p))
      float_regfile
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
@@ -203,11 +209,9 @@ if (fp_en_p)
      // Don't need to forward isd data
      #(.fwd_els_p(pipe_stage_els_lp-1))
      fp_bypass
-      (.id_rs1_v_i(issue_pkt_r.frs1_v)
-       ,.id_rs1_addr_i(issue_pkt_r.instr.fields.rtype.rs1_addr)
+      (.id_rs1_addr_i(issue_pkt_r.instr.fields.rtype.rs1_addr)
        ,.id_rs1_i(frf_rs1)
     
-       ,.id_rs2_v_i(issue_pkt_r.frs2_v)
        ,.id_rs2_addr_i(issue_pkt_r.instr.fields.rtype.rs2_addr)
        ,.id_rs2_i(frf_rs2)
     
@@ -294,11 +298,9 @@ bp_be_bypass
  // Don't need to forward isd data
  #(.fwd_els_p(pipe_stage_els_lp-1))
  int_bypass 
-  (.id_rs1_v_i(issue_pkt_r.irs1_v)
-   ,.id_rs1_addr_i(issue_pkt_r.instr.fields.rtype.rs1_addr)
+  (.id_rs1_addr_i(issue_pkt_r.instr.fields.rtype.rs1_addr)
    ,.id_rs1_i(irf_rs1)
 
-   ,.id_rs2_v_i(issue_pkt_r.irs2_v)
    ,.id_rs2_addr_i(issue_pkt_r.instr.fields.rtype.rs2_addr)
    ,.id_rs2_i(irf_rs2)
 
@@ -377,7 +379,8 @@ bp_be_pipe_mem
    ,.mem_resp_v_i(mem_resp_v_i)
    ,.mem_resp_ready_o(mem_resp_ready_o)
 
-   ,.v_o(pipe_mem_v_lo)
+   ,.exc_v_o(pipe_mem_exc_v_lo)
+   ,.miss_v_o(pipe_mem_miss_v_lo)
    ,.data_o(pipe_mem_data_lo)
    );
 
@@ -496,14 +499,14 @@ always_comb
     calc_stage_isd.frf_w_v        = dispatch_pkt.decode.frf_w_v;
 
     // Calculator status ISD stage
-    calc_status.isd_fence_v  = issue_pkt_v_r & issue_pkt_r.fence_v;
-    calc_status.isd_mem_v    = issue_pkt_v_r & issue_pkt_r.mem_v;
-    calc_status.isd_irs1_v   = issue_pkt_v_r & issue_pkt_r.irs1_v;
-    calc_status.isd_frs1_v   = issue_pkt_v_r & issue_pkt_r.frs1_v;
-    calc_status.isd_rs1_addr = issue_pkt_r.instr.fields.rtype.rs1_addr;
-    calc_status.isd_irs2_v   = issue_pkt_v_r & issue_pkt_r.irs2_v;
-    calc_status.isd_frs2_v   = issue_pkt_v_r & issue_pkt_r.frs2_v;
-    calc_status.isd_rs2_addr = issue_pkt_r.instr.fields.rtype.rs2_addr;
+    isd_status.isd_fence_v  = issue_pkt_v_r & issue_pkt_r.fence_v;
+    isd_status.isd_mem_v    = issue_pkt_v_r & issue_pkt_r.mem_v;
+    isd_status.isd_irs1_v   = issue_pkt_v_r & issue_pkt_r.irs1_v;
+    isd_status.isd_frs1_v   = issue_pkt_v_r & issue_pkt_r.frs1_v;
+    isd_status.isd_rs1_addr = issue_pkt_r.instr.fields.rtype.rs1_addr;
+    isd_status.isd_irs2_v   = issue_pkt_v_r & issue_pkt_r.irs2_v;
+    isd_status.isd_frs2_v   = issue_pkt_v_r & issue_pkt_r.frs2_v;
+    isd_status.isd_rs2_addr = issue_pkt_r.instr.fields.rtype.rs2_addr;
 
     // Calculator status EX1 information
     calc_status.int1_v                   = dispatch_pkt_r.decode.pipe_int_v;
@@ -543,7 +546,7 @@ always_comb
 
     // Additional commit point information
     calc_status.mem3_pc     = calc_stage_r[2].pc;
-    calc_status.mem3_miss_v = ~pipe_mem_v_lo & calc_stage_r[2].mem_v & ~exc_stage_r[2].poison_v;
+    calc_status.mem3_miss_v = pipe_mem_miss_v_lo & ~exc_stage_r[2].poison_v;
     calc_status.mem3_cmt_v  = calc_stage_r[2].v & ~exc_stage_r[2].roll_v;
     
     // Slicing the completion pipe for Forwarding information
@@ -578,7 +581,7 @@ always_comb
         exc_stage_n[0].poison_v        = chk_poison_iss_r        | chk_poison_isd_i;
         exc_stage_n[1].poison_v        = exc_stage_r[0].poison_v | chk_poison_ex1_i;
         exc_stage_n[2].poison_v        = exc_stage_r[1].poison_v | chk_poison_ex2_i;
-        exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | calc_status.mem3_miss_v; 
+        exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | pipe_mem_miss_v_lo | pipe_mem_exc_v_lo;
   end
 
 assign instret_mem3_o = calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v;

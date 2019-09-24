@@ -27,6 +27,7 @@ module bp_be_checker_top
     `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
    // Generated parameters
+   , localparam isd_status_width_lp = `bp_be_isd_status_width
    , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam issue_pkt_width_lp   = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
 
@@ -61,6 +62,7 @@ module bp_be_checker_top
    , input                            issue_pkt_ready_i
 
    // Dependency information
+   , input [isd_status_width_lp-1:0]  isd_status_i
    , input [calc_status_width_lp-1:0] calc_status_i
    , input                            mmu_cmd_ready_i
    , input                            credits_full_i
@@ -136,6 +138,7 @@ bp_be_detector
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
+   ,.isd_status_i(isd_status_i)
    ,.calc_status_i(calc_status_i)
    ,.expected_npc_i(expected_npc_lo)
    ,.mmu_cmd_ready_i(mmu_cmd_ready_i)
