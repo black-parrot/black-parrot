@@ -1,19 +1,20 @@
 ## Set common environment variables
 TOP ?= $(shell git rev-parse --show-toplevel)
 
-export BSG_IP_CORES_DIR ?= $(TOP)/basejump_stl
 export BP_COMMON_DIR    ?= $(TOP)/bp_common
 export BP_FE_DIR        ?= $(TOP)/bp_fe
 export BP_BE_DIR        ?= $(TOP)/bp_be
 export BP_ME_DIR        ?= $(TOP)/bp_me
 export BP_TOP_DIR       ?= $(TOP)/bp_top
 export BP_EXTERNAL_DIR  ?= $(TOP)/external
+export BASEJUMP_STL_DIR ?= $(BP_EXTERNAL_DIR)/basejump_stl
 
 ## Setup CAD tools
 
 # If the machine you are working on is bsg_cadenv compliant, then you do not
 # need to setup the cad tools, simply put bsg_cadenv in the same root dir.
--include $(TOP)/bsg_cadenv/cadenv.mk
+BSG_CADENV_DIR ?= $(TOP)/external/bsg_cadenv
+-include $(BSG_CADENV_DIR)/cadenv.mk
 
 ## Sepcify license path if needed
 LM_LICENSE_FILE ?=
@@ -25,6 +26,7 @@ VCS       ?= vcs
 URG       ?= urg
 VERILATOR ?= verilator
 DC_SHELL  ?= dc_shell
+PYTHON    ?= python
 
 ## Needed for verilator g++ compilations
 export SYSTEMC_INCLUDE ?= $(BP_EXTERNAL_DIR)/include

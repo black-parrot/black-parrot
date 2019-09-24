@@ -14,10 +14,6 @@ module bp_mmio_enclave
    `declare_bp_proc_params(cfg_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
-   // Arbitrary default, should be set based on PD constraints
-   , parameter irq_pipe_depth_p = 4
-   , parameter cfg_pipe_depth_p = 4
-
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
    )
   (input                                           clk_i
@@ -26,9 +22,6 @@ module bp_mmio_enclave
    // BP side
    , input [mem_noc_cord_width_p-1:0]              my_cord_i
    , input [mem_noc_cid_width_p-1:0]               my_cid_i
-   , input [mem_noc_cord_width_p-1:0]              dram_cord_i
-   , input [mem_noc_cord_width_p-1:0]              mmio_cord_i
-   , input [mem_noc_cord_width_p-1:0]              host_cord_i
 
    , input [mem_noc_ral_link_width_lp-1:0]         cmd_link_i
    , output [mem_noc_ral_link_width_lp-1:0]        cmd_link_o
@@ -92,15 +85,18 @@ logic [num_core_p-1:0] plic_v_li;
 
 // Memory-mapped I/O is 64 bit aligned
 // Low 8 bits are core id for MMIO addresses
-localparam byte_offset_width_lp = 3;
-wire [lg_num_core_lp-1:0] mem_cmd_core_enc = 
-  mem_cmd_li.addr[byte_offset_width_lp+:lg_num_core_lp];
+localparam mipi_core_offset_lp = 2;
+localparam mtimecmp_core_offset_lp = 3;
+wire [lg_num_core_lp-1:0] mipi_cmd_core_enc = 
+  mem_cmd_li.addr[mipi_core_offset_lp+:lg_num_core_lp];
+wire [lg_num_core_lp-1:0] mtimecmp_cmd_core_enc = 
+  mem_cmd_li.addr[mtimecmp_core_offset_lp+:lg_num_core_lp];  
 
 bsg_decode_with_v
  #(.num_out_p(num_core_p))
  mipi_cmd_decoder
   (.v_i(mipi_cmd_v)
-   ,.i(mem_cmd_core_enc)
+   ,.i(mipi_cmd_core_enc)
    
    ,.o(mipi_v_li)
    );
@@ -109,7 +105,7 @@ bsg_decode_with_v
  #(.num_out_p(num_core_p))
  mtimecmp_cmd_decoder
   (.v_i(mtimecmp_cmd_v)
-   ,.i(mem_cmd_core_enc)
+   ,.i(mtimecmp_cmd_core_enc)
    
    ,.o(mtimecmp_v_li)
    );
@@ -118,13 +114,13 @@ bsg_decode_with_v
  #(.num_out_p(num_core_p))
  plic_cmd_decoder
   (.v_i(plic_cmd_v)
-   ,.i(mem_cmd_core_enc)
+   ,.i(mtimecmp_cmd_core_enc)
 
    ,.o(plic_v_li)
    );
 
 logic [dword_width_p-1:0] mtime_n, mtime_r;
-wire mtime_w_v_li = mtime_cmd_v;
+wire mtime_w_v_li = wr_not_rd & mtime_cmd_v;
 assign mtime_n    = mtime_w_v_li 
                     ? mem_cmd_li.data[0+:dword_width_p] 
                     : mtime_r + dword_width_p'(1);
@@ -144,7 +140,7 @@ logic [num_core_p-1:0]                    plic_n, plic_r;
 
 // cfg link to tile
 // TODO: cfg_link payload should be a struct
-logic [num_core_p-1:0]      cfg_w_v_li;
+logic [num_core_p-1:0]      cfg_v_li;
 wire [cfg_core_width_p-1:0] cfg_core_li      = mem_cmd_li.data[cfg_data_width_p+cfg_addr_width_p+:cfg_core_width_p];
 wire [cfg_addr_width_p-1:0] cfg_addr_li      = mem_cmd_li.data[cfg_data_width_p+:cfg_addr_width_p];
 wire [cfg_data_width_p-1:0] cfg_data_li      = mem_cmd_li.data[0+:cfg_data_width_p];
@@ -155,13 +151,13 @@ bsg_decode_with_v
  cfg_link_decoder
   (.v_i(cfg_cmd_v)
    ,.i(cfg_core_li[0+:`BSG_SAFE_CLOG2(num_core_p)])
-   ,.o(cfg_w_v_li)
+   ,.o(cfg_v_li)
    );
 
 for (genvar i = 0; i < num_core_p; i++)
   begin : rof1
     assign mtimecmp_n[i] = mem_cmd_li.data[0+:dword_width_p];
-    wire mtimecmp_w_v_li = wr_not_rd & mtimecmp_cmd_v;
+    wire mtimecmp_w_v_li = wr_not_rd & mtimecmp_v_li[i];
     bsg_dff_reset_en
      #(.width_p(dword_width_p))
      mtimecmp_reg
@@ -172,20 +168,10 @@ for (genvar i = 0; i < num_core_p; i++)
        ,.data_i(mtimecmp_n[i])
        ,.data_o(mtimecmp_r[i])
        );
-
-    bsg_dff_chain
-     #(.width_p(1)
-       ,.num_stages_p(irq_pipe_depth_p)
-       )
-     timer_irq_pipe
-      (.clk_i(clk_i)
-
-       ,.data_i((mtimecmp_r[i] >= mtime_r))
-       ,.data_o(timer_irq_o[i])
-       );
+    assign timer_irq_o[i] = mtimecmp_r[i];
 
     assign mipi_n[i] = mem_cmd_li.data[0];
-    wire mipi_w_v_li = wr_not_rd & mipi_cmd_v;
+    wire mipi_w_v_li = wr_not_rd & mipi_v_li[i];
     bsg_dff_reset_en
      #(.width_p(1))
      mipi_reg
@@ -196,20 +182,10 @@ for (genvar i = 0; i < num_core_p; i++)
        ,.data_i(mipi_n[i])
        ,.data_o(mipi_r[i])
        );
-
-    bsg_dff_chain
-     #(.width_p(1)
-       ,.num_stages_p(irq_pipe_depth_p)
-       )
-     soft_irq_pipe
-      (.clk_i(clk_i)
-
-       ,.data_i(mipi_r[i])
-       ,.data_o(soft_irq_o[i])
-       );
+    assign soft_irq_o[i] = mipi_r[i];
 
     assign plic_n[i] = mem_cmd_li.data[0];
-    wire plic_w_v_li = wr_not_rd & plic_cmd_v;
+    wire plic_w_v_li = wr_not_rd & plic_v_li[i];
     bsg_dff_reset_en
      #(.width_p(1))
      plic_reg
@@ -220,30 +196,14 @@ for (genvar i = 0; i < num_core_p; i++)
        ,.data_i(plic_n[i])
        ,.data_o(plic_r[i])
        );
+    assign external_irq_o[i] = plic_r[i];
 
-    bsg_dff_chain
-     #(.width_p(1)
-       ,.num_stages_p(irq_pipe_depth_p)
-       )
-     external_irq_pipe
-      (.clk_i(clk_i)
-
-       ,.data_i(plic_r[i])
-       ,.data_o(external_irq_o[i])
-       );
-       
     // cfg link dff chain
-    wire cfg_w_v_li = wr_not_rd & cfg_cmd_v;
-    bsg_dff_chain
-     #(.width_p(1+cfg_addr_width_p+cfg_data_width_p)
-       ,.num_stages_p(cfg_pipe_depth_p)
-       )
-     cfg_pipe
-      (.clk_i(clk_i)
+    wire cfg_w_v_li = wr_not_rd & cfg_v_li[i];
 
-       ,.data_i({(cfg_w_v_li | cfg_broadcast_li), cfg_addr_li, cfg_data_li})
-       ,.data_o({cfg_w_v_o[i], cfg_addr_o[i], cfg_data_o[i]})
-       );
+    assign cfg_w_v_o[i]  = cfg_w_v_li | cfg_broadcast_li;
+    assign cfg_addr_o[i] = cfg_addr_li;
+    assign cfg_data_o[i] = cfg_data_li;
   end // rof1
 
 logic mipi_lo;
@@ -280,11 +240,11 @@ bsg_mux_one_hot
    );
 
 wire [dword_width_p-1:0] rdata_lo = plic_cmd_v 
-                                    ? plic_lo 
+                                    ? dword_width_p'(plic_lo)
                                     : mipi_cmd_v 
-                                      ? mipi_lo 
+                                      ? dword_width_p'(mipi_lo)
                                       : mtimecmp_cmd_v 
-                                        ? mtimecmp_lo 
+                                        ? dword_width_p'(mtimecmp_lo)
                                         : mtime_r;
 
 assign mem_resp_lo =
@@ -292,7 +252,7 @@ assign mem_resp_lo =
     ,addr          : mem_cmd_li.addr
     ,payload       : mem_cmd_li.payload
     ,size          : mem_cmd_li.size
-    ,data          : rdata_lo
+    ,data          : cce_block_width_p'(rdata_lo)
     };
 
 // CCE-MEM IF to wormhole link conversion

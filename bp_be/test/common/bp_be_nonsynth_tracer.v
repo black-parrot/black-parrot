@@ -45,9 +45,9 @@ module bp_be_nonsynth_tracer
 
    , input                                                 trap_v_i
    , input [vaddr_width_p-1:0]                             mtvec_i
-   , input [vaddr_width_p-1:0]                             mtval_i
+   , input [paddr_width_p:0]                               mtval_i
    , input                                                 ret_v_i
-   , input [vaddr_width_p-1:0]                             mepc_i
+   , input [paddr_width_p:0]                               mepc_i
    , input [5-1:0]                                         mcause_i
 
    , input [1:0]                                           priv_mode_i
@@ -113,10 +113,11 @@ bsg_dff_reset_en
    );
 
 
-always_ff @(negedge reset_i) begin
-  file_name = $sformatf("%s_%x.log", calc_trace_file_p, mhartid_i);
-  file = $fopen(file_name, "w");
-end
+initial 
+  begin
+    file_name = $sformatf("%s_%x.log", calc_trace_file_p, mhartid_i);
+    file      = $fopen(file_name, "w");
+  end
 
 logic [4:0][2:0][7:0] stage_aliases;
 assign stage_aliases = {"FWB", "IWB", "EX2", "EX1"};

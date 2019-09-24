@@ -1,5 +1,5 @@
 
-module bp_be_dtlb_replacement
+module bp_tlb_replacement
   #(parameter ways_p="inv"
     ,localparam lg_ways_lp=`BSG_SAFE_CLOG2(ways_p)
   )

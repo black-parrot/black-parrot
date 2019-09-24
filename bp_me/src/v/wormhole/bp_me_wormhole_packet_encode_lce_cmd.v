@@ -39,10 +39,20 @@ module bp_me_wormhole_packet_encode_lce_cmd
   localparam lce_cmd_uc_data_len_lp =
     `BSG_CDIV(lce_cmd_packet_width_lp-(cce_block_width_p-dword_width_p), coh_noc_flit_width_p) - 1;
 
+  logic [coh_noc_cord_width_p-1:0] lce_cord_li;
+  logic [coh_noc_cid_width_p-1:0]  lce_cid_li;
+  bp_me_lce_id_to_cord
+   #(.cfg_p(cfg_p))
+   router_cord
+    (.lce_id_i(payload_cast_i.dst_id)
+     ,.lce_cord_o(lce_cord_li)
+     ,.lce_cid_o(lce_cid_li)
+     );
+
   always_comb begin
     packet_cast_o.payload = payload_cast_i;
-    packet_cast_o.cid     = payload_cast_i.dst_id[0];
-    packet_cast_o.cord    = payload_cast_i.dst_id >> 1;
+    packet_cast_o.cid     = lce_cid_li;
+    packet_cast_o.cord    = lce_cord_li;
 
     case (payload_cast_i.msg_type)
       e_lce_cmd_sync
@@ -52,9 +62,9 @@ module bp_me_wormhole_packet_encode_lce_cmd
       ,e_lce_cmd_set_tag
       ,e_lce_cmd_set_tag_wakeup
       ,e_lce_cmd_invalidate_tag
-      ,e_lce_cmd_uc_st_done: packet_cast_o.len = lce_cmd_cmd_len_lp;
-      e_lce_cmd_data       : packet_cast_o.len = lce_cmd_data_len_lp;
-      e_lce_cmd_uc_data    : packet_cast_o.len = lce_cmd_uc_data_len_lp; 
+      ,e_lce_cmd_uc_st_done: packet_cast_o.len = coh_noc_len_width_p'(lce_cmd_cmd_len_lp);
+      e_lce_cmd_data       : packet_cast_o.len = coh_noc_len_width_p'(lce_cmd_data_len_lp);
+      e_lce_cmd_uc_data    : packet_cast_o.len = coh_noc_len_width_p'(lce_cmd_uc_data_len_lp); 
       default: packet_cast_o = '0;
     endcase
   end

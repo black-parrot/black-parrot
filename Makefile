@@ -13,7 +13,7 @@ include $(BP_EXTERNAL_DIR)/Makefile.tools
 #    are for building tools, which we should only need to do every so often
 
 update_libs:
-	cd $(TOP); git submodule update --init --recursive basejump_stl
+	cd $(TOP); git submodule update --init --recursive $(BP_EXTERNAL_DIR)/basejump_stl
 
 update_tests:
 	cd $(TOP); git submodule update --init --recursive $(BP_COMMON_DIR)/test

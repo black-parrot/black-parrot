@@ -1,19 +1,21 @@
 
 module bp_be_ptw
   import bp_common_pkg::*;
+  import bp_common_aviary_pkg::*;
   import bp_be_rv64_pkg::*;
   import bp_be_pkg::*;
   import bp_be_dcache_pkg::*;
-  #(parameter pte_width_p               = bp_sv39_pte_width_gp
-    ,parameter vaddr_width_p            = bp_sv39_vaddr_width_gp
-    ,parameter paddr_width_p            = bp_sv39_paddr_width_gp
-    ,parameter page_offset_width_p      = bp_page_offset_width_gp
+  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+    `declare_bp_proc_params(cfg_p)
+    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+
+    ,parameter pte_width_p              = bp_sv39_pte_width_gp
     ,parameter page_table_depth_p       = bp_sv39_page_table_depth_gp
     
     ,localparam vpn_width_lp            = vaddr_width_p - page_offset_width_p
     ,localparam ppn_width_lp            = paddr_width_p - page_offset_width_p
     ,localparam dcache_pkt_width_lp     = `bp_be_dcache_pkt_width(page_offset_width_p, pte_width_p)    
-    ,localparam tlb_entry_width_lp      = `bp_be_tlb_entry_width(ppn_width_lp)
+    ,localparam tlb_entry_width_lp      = `bp_pte_entry_leaf_width(paddr_width_p)
     ,localparam lg_page_table_depth_lp  = `BSG_SAFE_CLOG2(page_table_depth_p)
 
     ,localparam pte_size_in_bytes_lp    = pte_width_p/rv64_byte_width_gp
@@ -54,14 +56,14 @@ module bp_be_ptw
    , input                                  dcache_miss_i
   );
   
+  `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   `declare_bp_be_dcache_pkt_s(page_offset_width_p, pte_width_p);
-  `declare_bp_be_tlb_entry_s(ppn_width_lp);
   
   typedef enum bit [2:0] { eIdle, eSendLoad, eWaitLoad, eWriteBack, eStuck } state_e;
   
-  bp_be_dcache_pkt_s dcache_pkt;
-  bp_sv39_pte_s      dcache_data;
-  bp_be_tlb_entry_s  tlb_w_entry;
+  bp_be_dcache_pkt_s  dcache_pkt;
+  bp_sv39_pte_s       dcache_data;
+  bp_pte_entry_leaf_s tlb_w_entry;
   
   state_e state_r, state_n;
 

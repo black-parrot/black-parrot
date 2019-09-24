@@ -1,7 +1,7 @@
 
 VPD2VCD          ?= vpd2vcd
 PYTHON           ?= python
-TRACEDIFF        ?= $(BP_COMMON_DIR)/test/software/tracediff.py
+TRACEDIFF        ?= $(BP_COMMON_DIR)/software/tracediff.py
 UNHARDWARE_DIR   ?= $(BP_EXTERNAL_DIR)/agile-unhardware
 UNHARDWARE_MODEL ?= blackparrot
 
@@ -20,7 +20,7 @@ VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_E
 VCS_BUILD_OPTS += -assert svaext
 VCS_BUILD_OPTS += +lint=TFIPC-L
 
-LINT_OPTIONS = +lint=all,noSVA-UA,noVCDE,noSVA-NSVU
+LINT_OPTIONS = +lint=all,noSVA-UA,noSVA-NSVU,noNS,noVCDE
 
 DUMP ?= 0
 COV  ?= 0
@@ -119,7 +119,7 @@ match.v: dirs.v
 	-@grep "MATCH" $(MATCH_LOG) || echo "MISMATCHED" >> $(MATCH_ERROR)
 	-@grep "MATCH" -A 4 $(MATCH_LOG) > $(MATCH_REPORT)
 
-regress.v: $(RV64_REGRESSION_V) 
+regress_riscv.v: $(RV64_REGRESSION_V) 
 $(RV64_REGRESSION_V):
 	$(MAKE) sim.v PROG=$(basename $@)
 $(COREMARK_REGRESSION_V):

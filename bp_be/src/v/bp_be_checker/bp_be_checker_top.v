@@ -32,7 +32,7 @@ module bp_be_checker_top
    , localparam issue_pkt_width_lp   = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
 
    // VM parameters
-   , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_p)
+   , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
    )
   (input                              clk_i
    , input                            reset_i

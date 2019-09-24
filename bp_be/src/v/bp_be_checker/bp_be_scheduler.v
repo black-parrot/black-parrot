@@ -43,6 +43,8 @@ module bp_be_scheduler
    , input                           issue_pkt_ready_i
    );
 
+wire unused = &{clk_i, reset_i};
+
 // Declare parameterizable structures
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);

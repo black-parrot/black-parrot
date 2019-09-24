@@ -141,7 +141,7 @@ transfer_check: bfz tf read_l2
 
 # Transfer routine - other cache has block in E/M
 transfer: movi COH_ACK r3
-pushq lceCmd ST req req lru
+# pushq lceCmd ST req req lru
 pushq lceCmd TR tr req tr
 pushq lceCmd WB tr req tr
 # wait for transfer WB response
@@ -161,7 +161,7 @@ bi transfer_poph
 # Read Line from L2 Routine
 # TODO: move memory request earlier to hide some latency
 read_l2: pushq memCmd
-pushq lceCmd ST req req lru
+# pushq lceCmd ST req req lru
 bi ready
 
 # Uncached Request Routine
