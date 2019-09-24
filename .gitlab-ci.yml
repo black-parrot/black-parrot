@@ -26,6 +26,7 @@ stages:
     - be_dev
     - me_dev
     - top_dev
+    - sw_dev
   before_script:
     - echo "Updating libraries"
     - make update_libs

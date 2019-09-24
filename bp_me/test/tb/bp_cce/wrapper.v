@@ -9,8 +9,8 @@
 module wrapper
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- import bp_be_pkg::*;
  import bp_common_rv64_pkg::*;
+ import bp_be_pkg::*;
  import bp_cce_pkg::*;
  import bp_cfg_link_pkg::*;
  import bp_me_pkg::*;
@@ -74,7 +74,7 @@ module wrapper
     bp_cce_nonsynth_tracer
       #(.cfg_p(cfg_p))
       bp_cce_tracer
-       (.clk_i(clk_i & wrapper.cce_trace_p)
+       (.clk_i(clk_i & (wrapper.cce_trace_p == 1))
         ,.reset_i(reset_i)
   
         ,.cce_id_i(cce_id_i)

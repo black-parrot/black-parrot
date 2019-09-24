@@ -9,9 +9,9 @@
 module testbench
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
  import bp_be_dcache_pkg::*;
- import bp_common_rv64_pkg::*;
  import bp_cce_pkg::*;
  import bp_cfg_link_pkg::*;
  import bp_me_pkg::*;
