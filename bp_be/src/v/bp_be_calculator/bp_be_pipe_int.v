@@ -31,7 +31,7 @@
  *   
  */
 module bp_be_pipe_int 
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
  #(parameter vaddr_width_p = "inv"
 
@@ -57,7 +57,7 @@ module bp_be_pipe_int
    // Pipeline results
    , output [reg_data_width_lp-1:0] data_o
 
-   , output [reg_data_width_lp-1:0] br_tgt_o
+   , output [vaddr_width_p-1:0]     br_tgt_o
    );
 
 // Cast input and output ports 
@@ -69,6 +69,9 @@ assign decode = decode_i;
 wire unused0 = clk_i;
 wire unused1 = reset_i;
 wire unused2 = kill_ex1_i;
+
+// Sign-extend PC for calculation
+wire [reg_data_width_lp-1:0] pc_sext_li = reg_data_width_lp'($signed(pc_i));
 
 // Submodule connections
 logic [reg_data_width_lp-1:0] src1, src2, baddr, alu_result;
@@ -88,10 +91,10 @@ bp_be_int_alu
 
 always_comb 
   begin 
-    src1     = decode.src1_sel  ? pc_i  : rs1_i;
-    src2     = decode.src2_sel  ? imm_i : rs2_i;
-    baddr    = decode.baddr_sel ? src1  : pc_i ;
-    pc_plus4 = pc_i + reg_data_width_lp'(4);
+    src1     = decode.src1_sel  ? pc_sext_li : rs1_i;
+    src2     = decode.src2_sel  ? imm_i      : rs2_i;
+    baddr    = decode.baddr_sel ? src1       : pc_sext_li;
+    pc_plus4 = pc_sext_li + reg_data_width_lp'(4);
   end
 
 assign data_o   = decode.result_sel

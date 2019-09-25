@@ -1,26 +1,47 @@
-**The structure of the BlackParrot repository branches.**
+# Description
+BlackParrot aims to be the default Linux-capable, cache-coherent, RV64GC multicore used by the world.
 
-The *dev* branch contains the most recent development version, being tested internally.
+# Getting started
+[Getting Started](GETTING_STARTED.md)
 
-The *master* branch contains most recent stable version.
+# Project Status
+The next release of BlackParrot, v 1.0, is coming in October 2019, and will contain support for 1 to 24-way cache coherent multicore, and include baseline user and privilege mode functionality and run Linux.
 
-The *fe_dev*, *be_dev*, and *me_dev* branches are used to do development on the three major components of the BlackParrot core. 
+A 14-nm BlackParrot multicore chip was taped out in July 2019.
 
-**Development flow.**
+# BlackParrot software developer guide
+Coming soon!
 
-When a new feature is ready for wider use across the BlackParrot development team, it is pushed from *fe_dev*, *be_dev*, or *me_dev* to *dev*, so the wider team can test. When we are satisfied with *dev*, we push to *master* so the world can use it.
+# BlackParrot interface specification
+Coming soon!
 
-**Project Status.**
+# BlackParrot microarchitectural specification
+Coming soon!
 
-The next release of Black Parrot, v 1.0, is coming in October 2019, and will contain support for 1 to 24-way cache coherent multicore, and include baseline user and privilege mode functionality and run Linux.
+# BlackParrot Manifesto
+Always remember:
+- Be TINY
+    - When deliberating between two options, consider the one with least hardware cost/complexity.
+- Be Modular
+    - Prevent tight coupling between modules by designing latency insenstive interfaces.
+- Be Friendly
+    - Combat NIH, welcome external contributions and strive for infrastructure agnosticism.
 
-A 14-nm Black Parrot multicore chip was taped out in July 2019.
+# How to contribute
+[Contribution Guide](CONTRIBUTING.md)
 
-**CI**
+NOTE: BlackParrot will be licensed during v 1.0 release. Until then, we are happy to discuss BlackParrot over GitHub Issues, but are unable to accept external PRs.
+
+# BlackParrot style guide
+[BlackParrot Style Guide](STYLE_GUIDE.md)
+
+# CI
+Below is the current status of BlackParrot CI builds. Upon commit to the listed branch, a Verilator-based regression consisting of full-system riscv-tests, beebs, elaborability tests and module level tests is run and checked for correctness.
+
+NOTE: Work is in progress to continuously verify synthesizability and PPA.
 
 master: [![Gitlab
 CI](https://gitlab.com/black-parrot/pre-alpha-release/badges/master/build.svg)](https://gitlab.com/black-parrot/pre-alpha-release/pipelines) 
 
 dev: [![Gitlab CI](https://gitlab.com/black-parrot/pre-alpha-release/badges/dev/build.svg)](https://gitlab.com/black-parrot/pre-alpha-release/pipelines) 
 
-fe_dev: [![Gitlab CI](https://gitlab.com/black-parrot/pre-alpha-release/badges/fe_dev/build.svg)](https://gitlab.com/black-parrot/pre-alpha-release/pipelines) be_dev: [![Gitlab CI](https://gitlab.com/black-parrot/pre-alpha-release/badges/be_dev/build.svg)](https://gitlab.com/black-parrot/pre-alpha-release/pipelines) me_dev: [![Gitlab CI](https://gitlab.com/black-parrot/pre-alpha-release/badges/me_dev/build.svg)](https://gitlab.com/black-parrot/pre-alpha-release/pipelines) sw_dev: [![Gitlab CI](https://gitlab.com/black-parrot/pre-alpha-release/badges/sw_dev/build.svg)](https://gitlab.com/black-parrot/pre-alpha-release/pipelines)

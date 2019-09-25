@@ -6,39 +6,15 @@
  * Description:
  *   Schedules instruction issue from the FE queue to the Calculator.
  *
- * Parameters:
- *   vaddr_width_p               - FE-BE structure sizing parameter
- *   paddr_width_p               - ''
- *   asid_width_p                - ''
- *   branch_metadata_fwd_width_p - ''
- * 
- * Inputs:
- *   clk_i                       -
- *   reset_i                     -
- *   
- *   fe_queue_i                  - Instruction / PC pair (or exception) from the Front End
- *   fe_queue_v_i                - "valid-then-ready"
- *   fe_queue_ready_o              - 
- *
- * Outputs:
- *
- *   issue_pkt_o                 - Issuing instruction with pre-decode information
- *   issue_pkt_v_o               - "ready-then-valid"
- *   issue_pkt_ready_i             -
- *   
- * Keywords:
- *   checker, schedule, issue
- * 
  * Notes:
  *   It might make sense to use an enum for RISC-V opcodes rather than `defines.
  *   Floating point instruction decoding is not implemented, so we do not predecode.
- *   It might makes sense to split fe_queue_in into a separate module
  */
 
 module bp_be_scheduler
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
@@ -46,16 +22,20 @@ module bp_be_scheduler
    // Generated parameters
    , localparam fe_queue_width_lp  = `bp_fe_queue_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam issue_pkt_width_lp = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
-   // From BP BE defines
-   , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )
   (input                             clk_i
    , input                           reset_i
 
+   , input                           cache_miss_v_i
+   , input                           cmt_v_i
+
    // Fetch interface
+   , output                          fe_queue_roll_o
+   , output                          fe_queue_deq_o
+
    , input [fe_queue_width_lp-1:0]   fe_queue_i
    , input                           fe_queue_v_i
-   , output                          fe_queue_ready_o
+   , output                          fe_queue_yumi_o
 
    // Issue interface
    , output [issue_pkt_width_lp-1:0] issue_pkt_o
@@ -63,110 +43,92 @@ module bp_be_scheduler
    , input                           issue_pkt_ready_i
    );
 
-// Declare parameterizable structures
-`declare_bp_fe_be_if
-  (vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+wire unused = &{clk_i, reset_i};
 
-`declare_bp_be_internal_if_structs
-  (vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+// Declare parameterizable structures
+`declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+`declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
 // Cast input and output ports 
-bp_fe_queue_s     fe_queue;
-bp_be_issue_pkt_s issue_pkt;
+bp_fe_queue_s     fe_queue_cast_i;
+bp_be_issue_pkt_s issue_pkt_cast_o;
+rv64_instr_s      fetch_instr;
 
-assign fe_queue    = fe_queue_i;
-assign issue_pkt_o = issue_pkt;
+assign fe_queue_cast_i = fe_queue_i;
+assign issue_pkt_o     = issue_pkt_cast_o;
+assign fetch_instr     = fe_queue_cast_i.msg.fetch.instr;
 
-bp_fe_fetch_s      fe_fetch;
-rv64_instr_s       fe_fetch_instr;
-bp_fe_exception_s  fe_exception;
+always_comb
+  case (fe_queue_cast_i.msg_type)
+    // Populate the issue packet with a valid pc/instruction pair.
+    e_fe_fetch: 
+      begin
+        issue_pkt_cast_o = '0;
 
-assign fe_fetch           = fe_queue.msg.fetch;
-assign fe_fetch_instr     = fe_fetch.instr;
-assign fe_exception       = fe_queue.msg.exception;
+        issue_pkt_cast_o.fe_exception_not_instr = 1'b0;
+        issue_pkt_cast_o.pc                     = fe_queue_cast_i.msg.fetch.pc;
+        issue_pkt_cast_o.branch_metadata_fwd    = fe_queue_cast_i.msg.fetch.branch_metadata_fwd;
+        issue_pkt_cast_o.instr                  = fe_queue_cast_i.msg.fetch.instr;
+
+        // Decide whether to read from integer regfile (saves power)
+        casez (fetch_instr.opcode)
+          `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP, `RV64_SYSTEM_OP :
+            begin 
+              issue_pkt_cast_o.irs1_v = '1; 
+              issue_pkt_cast_o.irs2_v = '0;
+            end
+          `RV64_BRANCH_OP, `RV64_STORE_OP, `RV64_OP_OP, `RV64_OP_32_OP, `RV64_AMO_OP: 
+            begin 
+              issue_pkt_cast_o.irs1_v = '1; 
+              issue_pkt_cast_o.irs2_v = '1; 
+            end
+          default: begin end
+        endcase
+
+        // Decide whether to read from floating point regfile (saves power)
+        issue_pkt_cast_o.frs1_v = '0;
+        issue_pkt_cast_o.frs2_v = '0;
+
+        // Pre-decode
+        issue_pkt_cast_o.fence_v = (fetch_instr.opcode == `RV64_MISC_MEM_OP);
+        
+        // Immediate extraction
+        unique casez (fetch_instr.opcode)
+          `RV64_LUI_OP, `RV64_AUIPC_OP: 
+            issue_pkt_cast_o.imm = `rv64_signext_u_imm(fetch_instr);
+          `RV64_JAL_OP: 
+            issue_pkt_cast_o.imm = `rv64_signext_j_imm(fetch_instr);
+          `RV64_BRANCH_OP: 
+            issue_pkt_cast_o.imm = `rv64_signext_b_imm(fetch_instr);
+          `RV64_STORE_OP: 
+            issue_pkt_cast_o.imm = `rv64_signext_s_imm(fetch_instr);
+          `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP: 
+            issue_pkt_cast_o.imm = `rv64_signext_i_imm(fetch_instr);
+          `RV64_SYSTEM_OP:
+            issue_pkt_cast_o.imm = `rv64_signext_c_imm(fetch_instr);
+          default: begin end
+        endcase
+      end
+
+    // FE exceptions only have an exception address, code and flag. 
+    e_fe_exception: 
+      begin
+        issue_pkt_cast_o = '0;
+
+        issue_pkt_cast_o.fe_exception_not_instr = 1'b1;
+        issue_pkt_cast_o.fe_exception_code      = fe_queue_cast_i.msg.exception.exception_code;
+        issue_pkt_cast_o.pc                     = fe_queue_cast_i.msg.exception.vaddr;
+      end
+    default: begin end
+  endcase
 
 // Interface handshakes
-assign fe_queue_ready_o = fe_queue_v_i & issue_pkt_ready_i;
-assign issue_pkt_v_o    = fe_queue_v_i & issue_pkt_ready_i;
+assign fe_queue_yumi_o = fe_queue_v_i & issue_pkt_ready_i;
+assign issue_pkt_v_o   = fe_queue_yumi_o;
 
-// Module instantiations
-always_comb 
-  begin 
-    // Default value
-    issue_pkt = '0;
+// Queue control signals
+assign fe_queue_roll_o = cache_miss_v_i;
+assign fe_queue_deq_o  = ~cache_miss_v_i & cmt_v_i;
 
-    if (fe_queue_v_i)
-      case(fe_queue.msg_type)
-        // Populate the issue packet with a valid pc/instruction pair.
-        e_fe_fetch : 
-          begin
-            issue_pkt.pc = fe_fetch.pc;
-            issue_pkt.branch_metadata_fwd = fe_fetch.branch_metadata_fwd;
-            issue_pkt.instr = fe_fetch.instr;
-
-            // Decide whether to read from integer regfile (saves power)
-            casez(fe_fetch_instr.opcode)
-              `RV64_LUI_OP, `RV64_AUIPC_OP, `RV64_JAL_OP : 
-                begin 
-                  issue_pkt.irs1_v = '0; 
-                  issue_pkt.irs2_v = '0;
-                end
-              `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP, `RV64_SYSTEM_OP :
-                begin 
-                  issue_pkt.irs1_v = '1; 
-                  issue_pkt.irs2_v = '0;
-                end
-              `RV64_BRANCH_OP, `RV64_STORE_OP, `RV64_OP_OP, `RV64_OP_32_OP, `RV64_AMO_OP: 
-                begin 
-                  issue_pkt.irs1_v = '1; 
-                  issue_pkt.irs2_v = '1; 
-                end
-              default : 
-                begin
-                  // Should not reach
-                  issue_pkt.irs1_v = '0;
-                  issue_pkt.irs2_v = '0;
-                end
-            endcase
-
-            // Decide whether to read from floating point regfile (saves power)
-            issue_pkt.frs1_v = '0;
-            issue_pkt.frs2_v = '0;
-
-            issue_pkt.fence_v = (fe_fetch_instr.opcode == `RV64_MISC_MEM_OP);
-            
-            casez(fe_fetch_instr.opcode)
-              `RV64_STORE_OP, `RV64_LOAD_OP, `RV64_AMO_OP: 
-                       issue_pkt.mem_v = 1'b1;
-              default: issue_pkt.mem_v = 1'b0;
-            endcase
-                      
-            // Immediate extraction
-            casez(fe_fetch_instr.opcode)
-              `RV64_LUI_OP, `RV64_AUIPC_OP : issue_pkt.imm = `rv64_signext_u_imm(fe_fetch_instr);
-              `RV64_JAL_OP                 : issue_pkt.imm = `rv64_signext_j_imm(fe_fetch_instr);
-              `RV64_BRANCH_OP              : issue_pkt.imm = `rv64_signext_b_imm(fe_fetch_instr);
-              `RV64_STORE_OP               : issue_pkt.imm = `rv64_signext_s_imm(fe_fetch_instr);
-              `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP 
-                                           : issue_pkt.imm = `rv64_signext_i_imm(fe_fetch_instr);
-                                           
-              // Should not reach
-              default : issue_pkt.imm = '0;
-            endcase
-          end
-
-        // FE exceptions only have an exception address, code and flag. 
-        e_fe_exception : 
-          begin
-            issue_pkt.pc = fe_exception.vaddr;
-            issue_pkt.fe_exception_not_instr = 1'b1;
-            issue_pkt.fe_exception_code = fe_exception.exception_code;
-          end
-
-        // Should not reach
-        default : begin end
-      endcase
-  end
-
-endmodule : bp_be_scheduler
+endmodule
 

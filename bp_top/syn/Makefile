@@ -3,13 +3,13 @@ TOP ?= $(shell git rev-parse --show-toplevel)
 
 include $(TOP)/Makefile.common
 
-SYN_PATH     := $(BP_TOP_DIR)/syn
-TB_PATH      := $(BP_TOP_DIR)/test/tb
-MEM_PATH     := $(BP_COMMON_DIR)/test/mem
+export SYN_PATH     := $(BP_TOP_DIR)/syn
+export TB_PATH      := $(BP_TOP_DIR)/test/tb
+export MEM_PATH     := $(BP_COMMON_DIR)/test/mem
 
-LOG_PATH     := $(BP_TOP_DIR)/syn/logs
-RESULTS_PATH := $(BP_TOP_DIR)/syn/results
-REPORT_PATH  := $(BP_TOP_DIR)/syn/reports
+export LOG_PATH     := $(BP_TOP_DIR)/syn/logs
+export RESULTS_PATH := $(BP_TOP_DIR)/syn/results
+export REPORT_PATH  := $(BP_TOP_DIR)/syn/reports
 
 TB          ?= bp_top_trace_demo
 CFG         ?= e_bp_single_core_cfg
@@ -36,7 +36,14 @@ else ifeq ($(CFG), e_bp_oct_core_cfg)
 else ifeq ($(CFG), e_bp_sexta_core_cfg)
   NUM_LCE_P=32
   N_WG=4
+else ifeq ($(CFG), e_bp_quad_core_2d_cfg)
+  NUM_LCE_P=8
+  N_WG=16
+else ifeq ($(CFG), e_bp_oct_core_2d_cfg)
+  NUM_LCE_P=16
+  N_WG=8
 endif
+
 
 COH_PROTO   ?= mesi
 CCE_MEM_PATH = $(BP_ME_DIR)/src/asm/roms/$(COH_PROTO)
@@ -44,8 +51,6 @@ CCE_MEM      = bp_cce_inst_rom_$(COH_PROTO)_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.mem
 
 DRAMSIM_CH_CFG  ?= DDR2_micron_16M_8b_x8_sg3E.ini
 DRAMSIM_SYS_CFG ?= system.ini
-
-.EXPORT_ALL_VARIABLES:
 
 include $(BP_COMMON_DIR)/syn/Makefile.common
 include $(BP_COMMON_DIR)/syn/Makefile.dc

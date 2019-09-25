@@ -27,7 +27,7 @@
  */
 module bp_be_pipe_fp
   import bp_be_pkg::*;
-  import bp_be_rv64_pkg::*;
+  import bp_common_rv64_pkg::*;
  #(// Generated parameters
    localparam decode_width_lp      = `bp_be_decode_width
    // From RISC-V specifications

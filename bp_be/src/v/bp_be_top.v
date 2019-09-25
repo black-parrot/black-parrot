@@ -9,7 +9,7 @@
 module bp_be_top
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
  import bp_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
@@ -32,13 +32,7 @@ module bp_be_top
    , localparam ecode_dec_width_lp         = `bp_be_ecode_dec_width
    
    // VM parameters
-   , localparam vtag_width_lp     = (vaddr_width_p-bp_page_offset_width_gp)
-   , localparam ptag_width_lp     = (paddr_width_p-bp_page_offset_width_gp)
-   , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_lp)
-
-   // CSRs
-   , localparam mepc_width_lp  = `bp_mepc_width
-   , localparam mtvec_width_lp = `bp_mtvec_width
+   , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -50,14 +44,13 @@ module bp_be_top
    , input [cfg_data_width_p-1:0]            cfg_data_i
 
    // FE queue interface
+   , output                                  fe_queue_deq_o
+   , output                                  fe_queue_roll_o
+ 
    , input [fe_queue_width_lp-1:0]           fe_queue_i
    , input                                   fe_queue_v_i
-   , output                                  fe_queue_ready_o
+   , output                                  fe_queue_yumi_o
 
-   , output                                  fe_queue_clr_o
-   , output                                  fe_queue_dequeue_o
-   , output                                  fe_queue_rollback_o
- 
    // FE cmd interface
    , output [fe_cmd_width_lp-1:0]            fe_cmd_o
    , output                                  fe_cmd_v_o
@@ -90,7 +83,6 @@ module bp_be_top
 
 // Declare parameterized structures
 `declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p)
-`declare_bp_be_tlb_entry_s(ptag_width_p)
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
 `declare_bp_be_internal_if_structs(vaddr_width_p
                                    , paddr_width_p
@@ -116,18 +108,19 @@ logic csr_cmd_v, csr_cmd_rdy;
 bp_be_mem_resp_s mem_resp;
 logic mem_resp_v, mem_resp_rdy;
 
-bp_be_tlb_entry_s         itlb_fill_entry;
-logic [vaddr_width_p-1:0] itlb_fill_vaddr;
-logic                     itlb_fill_v;
+logic [tlb_entry_width_lp-1:0]  itlb_fill_entry;
+logic [vaddr_width_p-1:0]       itlb_fill_vaddr;
+logic                           itlb_fill_v;
 
+bp_be_isd_status_s     isd_status;
 bp_be_calc_status_s    calc_status;
 
 logic chk_dispatch_v, chk_poison_iss, chk_poison_isd;
 logic chk_poison_ex1, chk_poison_ex2, chk_roll, chk_instr_dequeue_v;
 
-logic [mtvec_width_lp-1:0] chk_tvec_li;
-logic [mepc_width_lp-1:0]  chk_epc_li;
-logic [vaddr_width_p-1:0]  chk_pc_lo;
+logic [vaddr_width_p-1:0] chk_tvec_li;
+logic [vaddr_width_p-1:0] chk_epc_li;
+logic [vaddr_width_p-1:0] chk_pc_lo;
 
 logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li, chk_ifence_li;
 
@@ -157,6 +150,7 @@ bp_be_checker_top
    ,.chk_poison_ex1_o(chk_poison_ex1)
    ,.chk_poison_ex2_o(chk_poison_ex2)
 
+   ,.isd_status_i(isd_status)
    ,.calc_status_i(calc_status)
    ,.mmu_cmd_ready_i(mmu_cmd_rdy)
    ,.credits_full_i(credits_full_lo)
@@ -166,13 +160,12 @@ bp_be_checker_top
    ,.fe_cmd_v_o(fe_cmd_v_o)
    ,.fe_cmd_ready_i(fe_cmd_ready_i)
 
-   ,.chk_roll_fe_o(fe_queue_rollback_o)
-   ,.chk_flush_fe_o(fe_queue_clr_o)
-   ,.chk_dequeue_fe_o(fe_queue_dequeue_o)
+   ,.fe_queue_roll_o(fe_queue_roll_o)
+   ,.fe_queue_deq_o(fe_queue_deq_o)
 
    ,.fe_queue_i(fe_queue_i)
    ,.fe_queue_v_i(fe_queue_v_i)
-   ,.fe_queue_ready_o(fe_queue_ready_o)
+   ,.fe_queue_yumi_o(fe_queue_yumi_o)
 
    ,.issue_pkt_o(issue_pkt)
    ,.issue_pkt_v_o(issue_pkt_v)
@@ -210,6 +203,7 @@ bp_be_calculator_top
    ,.chk_poison_ex1_i(chk_poison_ex1)
    ,.chk_poison_ex2_i(chk_poison_ex2)
 
+   ,.isd_status_o(isd_status)
    ,.calc_status_o(calc_status)
 
    ,.mmu_cmd_o(mmu_cmd)

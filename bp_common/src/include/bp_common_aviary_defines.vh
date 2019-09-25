@@ -60,28 +60,29 @@ typedef struct packed
   integer fe_queue_fifo_els;
   integer fe_cmd_fifo_els;
 
-  integer coh_noc_width;
+  integer async_coh_clk;
+  integer coh_noc_flit_width;
+  integer coh_noc_cid_width;
   integer coh_noc_len_width;
+  integer coh_noc_y_cord_width;
+  integer coh_noc_x_cord_width;
+  integer coh_noc_y_dim;
+  integer coh_noc_x_dim;
 
   integer cfg_core_width;
   integer cfg_addr_width;
   integer cfg_data_width;
 
-  integer mem_noc_width;
-  integer mem_noc_len_width;
+  integer async_mem_clk;
+  integer mem_noc_max_credits;
+  integer mem_noc_flit_width;
   integer mem_noc_reserved_width;
-  integer mem_noc_cord_width;
-
-  integer ct_remote_credits;
-  integer ct_max_payload_flits;
-  integer ct_lg_credit_decimation;
-  integer max_credits;
-  integer clint_pos;
-
-  integer dword_width;
-  integer instr_width;
-  integer reg_addr_width;
-  integer page_offset_width;
+  integer mem_noc_cid_width;
+  integer mem_noc_len_width;
+  integer mem_noc_y_cord_width;
+  integer mem_noc_x_cord_width;
+  integer mem_noc_y_dim;
+  integer mem_noc_x_dim;
 }  bp_proc_param_s;
 
 `define declare_bp_proc_params(bp_cfg_e_mp) \
@@ -112,31 +113,50 @@ typedef struct packed
   , localparam fe_queue_fifo_els_p = proc_param_lp.fe_queue_fifo_els                               \
   , localparam fe_cmd_fifo_els_p   = proc_param_lp.fe_cmd_fifo_els                                 \
                                                                                                    \
-  , localparam coh_noc_width_p     = proc_param_lp.coh_noc_width                                   \
-  , localparam coh_noc_len_width_p = proc_param_lp.coh_noc_len_width                               \
+  , localparam async_coh_clk_p        = proc_param_lp.async_coh_clk                                \
+  , localparam coh_noc_flit_width_p   = proc_param_lp.coh_noc_flit_width                           \
+  , localparam coh_noc_cid_width_p    = proc_param_lp.coh_noc_cid_width                            \
+  , localparam coh_noc_len_width_p    = proc_param_lp.coh_noc_len_width                            \
+  , localparam coh_noc_y_cord_width_p = proc_param_lp.coh_noc_y_cord_width                         \
+  , localparam coh_noc_x_cord_width_p = proc_param_lp.coh_noc_x_cord_width                         \
+  , localparam coh_noc_y_dim_p        = proc_param_lp.coh_noc_y_dim                                \
+  , localparam coh_noc_x_dim_p        = proc_param_lp.coh_noc_x_dim                                \
+  , localparam coh_noc_cord_width_p   = coh_noc_x_cord_width_p + coh_noc_y_cord_width_p            \
+  , localparam coh_noc_dims_p         = 2                                                          \
+  , localparam coh_noc_dirs_p         = coh_noc_dims_p*2 + 1                                       \
+  , localparam int coh_noc_cord_markers_pos_p[coh_noc_dims_p:0] =                                  \
+      '{coh_noc_cord_width_p, coh_noc_x_cord_width_p, 0}                                           \
                                                                                                    \
-  , localparam cfg_core_width_p          = proc_param_lp.cfg_core_width                            \
-  , localparam cfg_addr_width_p          = proc_param_lp.cfg_addr_width                            \
-  , localparam cfg_data_width_p          = proc_param_lp.cfg_data_width                            \
+  , localparam cfg_core_width_p = proc_param_lp.cfg_core_width                                     \
+  , localparam cfg_addr_width_p = proc_param_lp.cfg_addr_width                                     \
+  , localparam cfg_data_width_p = proc_param_lp.cfg_data_width                                     \
                                                                                                    \
-  , localparam mem_noc_width_p           = proc_param_lp.mem_noc_width                             \
-  , localparam mem_noc_len_width_p       = proc_param_lp.mem_noc_len_width                         \
+  , localparam async_mem_clk_p           = proc_param_lp.async_mem_clk                             \
+  , localparam mem_noc_max_credits_p     = proc_param_lp.mem_noc_max_credits                       \
+  , localparam mem_noc_flit_width_p      = proc_param_lp.mem_noc_flit_width                        \
   , localparam mem_noc_reserved_width_p  = proc_param_lp.mem_noc_reserved_width                    \
-  , localparam mem_noc_cord_width_p      = proc_param_lp.mem_noc_cord_width                        \
+  , localparam mem_noc_cid_width_p       = proc_param_lp.mem_noc_cid_width                         \
+  , localparam mem_noc_len_width_p       = proc_param_lp.mem_noc_len_width                         \
+  , localparam mem_noc_y_cord_width_p    = proc_param_lp.mem_noc_y_cord_width                      \
+  , localparam mem_noc_x_cord_width_p    = proc_param_lp.mem_noc_x_cord_width                      \
+  , localparam mem_noc_y_dim_p           = proc_param_lp.mem_noc_y_dim                             \
+  , localparam mem_noc_x_dim_p           = proc_param_lp.mem_noc_x_dim                             \
+  , localparam mem_noc_cord_width_p      = mem_noc_x_cord_width_p + mem_noc_y_cord_width_p         \
+  , localparam mem_noc_dims_p            = 2                                                       \
+  , localparam mem_noc_dirs_p            = mem_noc_dims_p*2 + 1                                    \
+  , localparam int mem_noc_cord_markers_pos_p[mem_noc_dims_p:0] =                                  \
+      '{mem_noc_cord_width_p, mem_noc_x_cord_width_p, 0}                                           \
                                                                                                    \
-  , localparam ct_remote_credits_p       = proc_param_lp.ct_remote_credits                         \
-  , localparam ct_max_payload_flits_p    = proc_param_lp.ct_max_payload_flits                      \
-  , localparam ct_lg_credit_decimation_p = proc_param_lp.ct_lg_credit_decimation                   \
-  , localparam max_credits_p             = proc_param_lp.max_credits                               \
-  , localparam clint_pos_p               = proc_param_lp.clint_pos                                 \
+  , localparam num_mem_p    = mem_noc_x_dim_p + 2                                                  \
+  , localparam mmio_x_pos_p = (mem_noc_x_dim_p+1)/2                                                \
                                                                                                    \
-  , localparam dword_width_p       = proc_param_lp.dword_width                                     \
-  , localparam instr_width_p       = proc_param_lp.instr_width                                     \
-  , localparam reg_addr_width_p    = proc_param_lp.reg_addr_width                                  \
-  , localparam page_offset_width_p = proc_param_lp.page_offset_width                               \
+  , localparam dword_width_p       = 64                                                            \
+  , localparam instr_width_p       = 32                                                            \
+  , localparam reg_addr_width_p    = 5                                                             \
+  , localparam page_offset_width_p = 12                                                            \
                                                                                                    \
-  , localparam vtag_width_p        = proc_param_lp.vaddr_width - proc_param_lp.page_offset_width   \
-  , localparam ptag_width_p        = proc_param_lp.paddr_width - proc_param_lp.page_offset_width   \
+  , localparam vtag_width_p  = proc_param_lp.vaddr_width - page_offset_width_p                     \
+  , localparam ptag_width_p  = proc_param_lp.paddr_width - page_offset_width_p                     \
 
 `endif
 

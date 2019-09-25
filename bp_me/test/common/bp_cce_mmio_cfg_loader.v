@@ -31,12 +31,12 @@ module bp_cce_mmio_cfg_loader
    , input                                           reset_i
 
    // Config channel
-   , output logic [cce_mem_cmd_width_lp-1:0]         mem_cmd_o
+   , output logic [cce_mem_msg_width_lp-1:0]         mem_cmd_o
    , output logic                                    mem_cmd_v_o
    , input                                           mem_cmd_yumi_i
 
    // We don't need a response from the cfg network
-   , input [mem_cce_resp_width_lp-1:0]               mem_resp_i
+   , input [cce_mem_msg_width_lp-1:0]                mem_resp_i
    , input                                           mem_resp_v_i
    , output                                          mem_resp_ready_o
    );
@@ -46,7 +46,7 @@ module bp_cce_mmio_cfg_loader
    
  `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 
-  bp_cce_mem_cmd_s mem_cmd_cast_o;
+  bp_cce_mem_msg_s mem_cmd_cast_o;
 
   assign mem_cmd_o = mem_cmd_cast_o;
   
@@ -79,10 +79,10 @@ module bp_cce_mmio_cfg_loader
     ,DONE
   } state_n, state_r;
 
-  logic [cfg_addr_width_p:0] ucode_cnt_r;
+  logic [cfg_addr_width_p-1:0] ucode_cnt_r;
   logic ucode_cnt_clr, ucode_cnt_inc;
   bsg_counter_clear_up
-   #(.max_val_p(2**cfg_addr_width_p)
+   #(.max_val_p(2**cfg_addr_width_p-1)
      ,.init_val_p(0)
      )
    ucode_counter
@@ -95,7 +95,7 @@ module bp_cce_mmio_cfg_loader
      ,.count_o(ucode_cnt_r)
      );
 
-  wire ucode_prog_done = (ucode_cnt_r == inst_ram_els_p-1);
+  wire ucode_prog_done = (ucode_cnt_r == cfg_addr_width_p'(inst_ram_els_p-1));
 
   always_ff @(posedge clk_i) 
     begin
@@ -117,7 +117,7 @@ module bp_cce_mmio_cfg_loader
       mem_cmd_cast_o.addr          = bp_cfg_base_addr_gp;
       mem_cmd_cast_o.payload       = '0;
       mem_cmd_cast_o.size          = e_mem_size_8;
-      mem_cmd_cast_o.data          = {cfg_core_lo, cfg_addr_lo, cfg_data_lo};
+      mem_cmd_cast_o.data          = cce_block_width_p'({cfg_core_lo, cfg_addr_lo, cfg_data_lo});
     end
 
   always_comb 
@@ -141,27 +141,27 @@ module bp_cce_mmio_cfg_loader
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_reset_gp;
-          cfg_data_lo = 1'b1;
+          cfg_data_lo = cfg_data_width_p'(1);
         end
         BP_FREEZE_SET: begin
           state_n = BP_RESET_CLR;
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_freeze_gp;
-          cfg_data_lo = 1'b1;
+          cfg_data_lo = cfg_data_width_p'(1);
         end
         BP_RESET_CLR: begin
           state_n = SEND_RAM_LO;
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_reset_gp;
-          cfg_data_lo = 1'b0;
+          cfg_data_lo = cfg_data_width_p'(0);
         end
         SEND_RAM_LO: begin
           state_n = SEND_RAM_HI;
 
           cfg_v_lo = 1'b1;
-          cfg_addr_lo = bp_cfg_mem_base_cce_ucode_gp + (ucode_cnt_r << 1);
+          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_mem_base_cce_ucode_gp) + (ucode_cnt_r << 1);
           cfg_data_lo = cce_inst_boot_rom_data[0+:cfg_data_width_p];
           // TODO: This is nonsynth, won't work on FPGA
           cfg_data_lo = (|cfg_data_lo === 'X) ? '0 : cfg_data_lo;
@@ -172,7 +172,7 @@ module bp_cce_mmio_cfg_loader
           ucode_cnt_inc = 1'b1;
 
           cfg_v_lo = 1'b1;
-          cfg_addr_lo = bp_cfg_mem_base_cce_ucode_gp + (ucode_cnt_r << 1) + 1'b1;
+          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_mem_base_cce_ucode_gp) + (ucode_cnt_r << 1) + 1'b1;
           cfg_data_lo = cfg_data_width_p'(cce_inst_boot_rom_data[inst_width_p-1:cfg_data_width_p]);
           // TODO: This is nonsynth, won't work on FPGA
           cfg_data_lo = (|cfg_data_lo === 'X) ? '0 : cfg_data_lo;
@@ -188,36 +188,36 @@ module bp_cce_mmio_cfg_loader
           state_n = SEND_DCACHE_NORMAL;
 
           cfg_v_lo = 1'b1;
-          cfg_addr_lo = bp_cfg_reg_icache_mode_gp;
+          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_icache_mode_gp);
           cfg_data_lo = cfg_data_width_p'(e_dcache_lce_mode_normal); // TODO: tapeout hack, change to icache
         end
         SEND_DCACHE_NORMAL: begin
           state_n = SEND_PC_LO;
 
           cfg_v_lo = 1'b1;
-          cfg_addr_lo = bp_cfg_reg_dcache_mode_gp;
+          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_dcache_mode_gp);
           cfg_data_lo = cfg_data_width_p'(e_dcache_lce_mode_normal);
         end
         SEND_PC_LO: begin
           state_n = SEND_PC_HI;
 
           cfg_v_lo = 1'b1;
-          cfg_addr_lo = bp_cfg_reg_start_pc_lo_gp;
+          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_start_pc_lo_gp);
           cfg_data_lo = bp_pc_entry_point_gp[0+:cfg_data_width_p];
         end
         SEND_PC_HI: begin
           state_n = BP_FREEZE_CLR;
 
           cfg_v_lo = 1'b1;
-          cfg_addr_lo = bp_cfg_reg_start_pc_hi_gp;
+          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_start_pc_hi_gp);
           cfg_data_lo = cfg_data_width_p'(bp_pc_entry_point_gp[vaddr_width_p-1:cfg_data_width_p]);
         end
         BP_FREEZE_CLR: begin
           state_n = DONE;
 
           cfg_v_lo = 1'b1;
-          cfg_addr_lo = bp_cfg_reg_freeze_gp;
-          cfg_data_lo = 1'b0;
+          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_freeze_gp);
+          cfg_data_lo = cfg_data_width_p'(0);;
         end
         DONE: begin
           state_n = DONE;

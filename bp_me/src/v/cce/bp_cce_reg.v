@@ -11,6 +11,7 @@ module bp_cce_reg
   import bp_common_pkg::*;
   import bp_cce_pkg::*;
   import bp_me_pkg::*;
+  import bp_cfg_link_pkg::*;
   #(parameter num_lce_p                     = "inv"
     , parameter num_cce_p                   = "inv"
     , parameter paddr_width_p                = "inv"
@@ -18,6 +19,9 @@ module bp_cce_reg
     , parameter lce_sets_p                  = "inv"
     , parameter block_size_in_bytes_p       = "inv"
     , parameter lce_req_data_width_p        = "inv"
+
+    , parameter cfg_addr_width_p            = "inv"
+    , parameter cfg_data_width_p            = "inv"
 
     // Derived parameters
     , localparam lg_num_lce_lp              = `BSG_SAFE_CLOG2(num_lce_p)
@@ -34,6 +38,7 @@ module bp_cce_reg
     , localparam mshr_width_lp = `bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
 
     `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p, block_size_in_bits_lp)
+    `declare_bp_me_if_widths(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
   )
   (input                                                                   clk_i
    , input                                                                 reset_i
@@ -43,6 +48,8 @@ module bp_cce_reg
    , input [lce_cce_req_width_lp-1:0]                                      lce_req_i
    , input                                                                 null_wb_flag_i
    , input bp_lce_cce_resp_type_e                                          lce_resp_type_i
+   , input bp_cce_mem_cmd_type_e                                           mem_resp_type_i
+   , input [cce_mem_msg_width_lp-1:0]                                      mem_cmd_i
 
    , input [`bp_cce_inst_gpr_width-1:0]                                    alu_res_i
    , input [`bp_cce_inst_gpr_width-1:0]                                    mov_src_i
@@ -53,6 +60,7 @@ module bp_cce_reg
    , input                                                                 dir_lru_v_i
    , input                                                                 dir_lru_cached_excl_i
    , input [tag_width_lp-1:0]                                              dir_lru_tag_i
+   , input [tag_width_lp-1:0]                                              dir_tag_i
 
    , input [lg_lce_assoc_lp-1:0]                                           gad_req_addr_way_i
    , input [lg_num_lce_lp-1:0]                                             gad_transfer_lce_i
@@ -66,12 +74,19 @@ module bp_cce_reg
    , input                                                                 gad_cached_owned_flag_i
    , input                                                                 gad_cached_dirty_flag_i
 
+   // Config channel
+   , input                                                                 cfg_w_v_i
+   , input [cfg_addr_width_p-1:0]                                          cfg_addr_i
+   , input [cfg_data_width_p-1:0]                                          cfg_data_i
+
    // Register value outputs
    , output logic [mshr_width_lp-1:0]                                      mshr_o
 
    , output logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0]   gpr_o
 
    , output logic [lce_req_data_width_p-1:0]                               nc_data_o
+
+   , output logic [lg_num_lce_lp-1:0]                                      num_lce_o
   );
 
   wire unused = pending_v_o_i;
@@ -83,11 +98,14 @@ module bp_cce_reg
 
   bp_lce_cce_req_s lce_req;
 
+  // assign input and output queues to/from structure variables
+  assign lce_req = lce_req_i;
+
   logic uc_req;
   assign uc_req = (lce_req.msg_type == e_lce_req_type_uc_rd) | (lce_req.msg_type == e_lce_req_type_uc_wr);
 
-  // assign input and output queues to/from structure variables
-  assign lce_req = lce_req_i;
+  bp_cce_mem_msg_s mem_cmd;
+  assign mem_cmd = mem_cmd_i;
 
   // Registers
   `declare_bp_cce_mshr_s(num_lce_p, lce_assoc_p, paddr_width_p);
@@ -95,11 +113,16 @@ module bp_cce_reg
 
   logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_r, gpr_n;
   logic [lce_req_data_width_p-1:0] nc_data_r, nc_data_n;
-  
+  logic [lg_num_lce_lp-1:0] num_lce_r, num_lce_n;
+
+  // Config link
+  wire cfg_num_lce_w_v = (cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_num_lce_gp));
+
   // Output register values
   assign mshr_o = mshr_r;
   assign gpr_o = gpr_r;
   assign nc_data_o = nc_data_r;
+  assign num_lce_o = num_lce_r;
 
   always_comb
   begin
@@ -110,8 +133,15 @@ module bp_cce_reg
         gpr_n[i] = alu_res_i;
       end else if (decoded_inst_i.mov_dst_w_v & decoded_inst_i.gpr_w_mask[i]) begin
         gpr_n[i] = mov_src_i;
-     end else if (decoded_inst_i.resp_type_w_v & decoded_inst_i.gpr_w_mask[i]) begin
+      end else if (decoded_inst_i.resp_type_w_v & decoded_inst_i.gpr_w_mask[i]) begin
         gpr_n[i] = {'0, lce_resp_type_i};
+      end else if (decoded_inst_i.mem_resp_type_w_v & decoded_inst_i.gpr_w_mask[i]) begin
+        gpr_n[i] = {'0, mem_resp_type_i};
+      end else if (decoded_inst_i.mem_cmd_type_w_v & decoded_inst_i.gpr_w_mask[i]) begin
+        gpr_n[i] = {'0, mem_cmd.msg_type};
+      end else if (decoded_inst_i.dir_r_v & (decoded_inst_i.dir_r_cmd == e_rde_op)
+                   & decoded_inst_i.gpr_w_mask[i]) begin
+        gpr_n[i] = {'0, dir_tag_i} << (paddr_width_p - tag_width_lp);
       end else begin
         gpr_n[i] = '0;
       end
@@ -121,6 +151,13 @@ module bp_cce_reg
     // Uncached data that is being returned to an LCE from a Mem Data Resp does not need
     // to be registered, and is handled by bp_cce_msg module.
     nc_data_n = lce_req.msg.uc_req.data;
+
+    // Num LCE register - always come from move source, unless config link writes it
+    if (cfg_num_lce_w_v) begin
+      num_lce_n = cfg_data_i[0+:lg_num_lce_lp];
+    end else begin
+      num_lce_n = mov_src_i[0+:lg_num_lce_lp];
+    end
 
     // MSHR
 
@@ -142,6 +179,10 @@ module bp_cce_reg
         e_req_sel_pending: begin // TODO: v2
           mshr_n.lce_id = '0;
           mshr_n.paddr = '0;
+        end
+        e_req_sel_mem_cmd: begin
+          mshr_n.lce_id = mem_cmd.payload.lce_id;
+          mshr_n.paddr = mem_cmd.addr;
         end
         default: begin
           mshr_n.lce_id = '0;
@@ -375,6 +416,7 @@ module bp_cce_reg
       mshr_r <= '0;
       gpr_r <= '0;
       nc_data_r <= '0;
+      num_lce_r <= '0;
     end else begin
       // MSHR writes
       if (decoded_inst_i.mshr_clear) begin
@@ -426,6 +468,15 @@ module bp_cce_reg
       if (decoded_inst_i.nc_data_w_v) begin
         nc_data_r <= nc_data_n;
       end
+
+      // Num LCE register
+      // written on move special operation or by config link
+      if (cfg_num_lce_w_v
+          | (decoded_inst_i.mov_dst_w_v & (decoded_inst_i.dst_sel == e_dst_sel_special)
+             & (decoded_inst_i.dst.special == e_dst_num_lce))) begin
+        num_lce_r <= num_lce_n;
+      end
+
     end // else
   end // always_ff
 

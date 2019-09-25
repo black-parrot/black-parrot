@@ -3,7 +3,7 @@ module bp_nonsynth_host
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_cce_pkg::*;
  import bsg_noc_pkg::*;
  import bp_cfg_link_pkg::*;
@@ -14,11 +14,11 @@ module bp_nonsynth_host
   (input clk_i
    , input reset_i
 
-   , input [cce_mem_cmd_width_lp-1:0]              mem_cmd_i
+   , input [cce_mem_msg_width_lp-1:0]              mem_cmd_i
    , input                                         mem_cmd_v_i
    , output logic                                  mem_cmd_yumi_o
 
-   , output logic [mem_cce_resp_width_lp-1:0]      mem_resp_o
+   , output logic [cce_mem_msg_width_lp-1:0]       mem_resp_o
    , output logic                                  mem_resp_v_o
    , input                                         mem_resp_ready_i
 
@@ -28,16 +28,16 @@ module bp_nonsynth_host
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 
 // HOST I/O mappings
-localparam host_dev_base_addr_gp     = 32'h03??_????;
+//localparam host_dev_base_addr_gp     = 32'h03??_????;
 
 // Host I/O mappings (arbitrarily decided for now)
 //   Overall host controls 32'h0300_0000-32'h03FF_FFFF
 
-localparam hprint_base_addr_gp = 32'h0300_0???;
-localparam cprint_base_addr_gp = 32'h0300_1???;
-localparam finish_base_addr_gp = 32'h0300_2???;
+localparam hprint_base_addr_gp = paddr_width_p'(32'h0300_0???);
+localparam cprint_base_addr_gp = paddr_width_p'(64'h0300_1???);
+localparam finish_base_addr_gp = paddr_width_p'(64'h0300_2???);
 
-bp_cce_mem_cmd_s  mem_cmd_cast_i;
+bp_cce_mem_msg_s  mem_cmd_cast_i;
 
 assign mem_cmd_cast_i = mem_cmd_i;
 
@@ -143,11 +143,11 @@ always_ff @(negedge clk_i)
       end
   end
 
-bp_mem_cce_resp_s mem_resp_lo;
+bp_cce_mem_msg_s mem_resp_lo;
 logic mem_resp_v_lo, mem_resp_ready_lo;
 assign mem_cmd_yumi_o = mem_cmd_v_i & mem_resp_ready_lo;
 bsg_one_fifo
- #(.width_p(mem_cce_resp_width_lp))
+ #(.width_p(cce_mem_msg_width_lp))
  mem_resp_buffer
   (.clk_i(clk_i)
    ,.reset_i(reset_i)

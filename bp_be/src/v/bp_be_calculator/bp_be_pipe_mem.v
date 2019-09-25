@@ -43,7 +43,7 @@
 module bp_be_pipe_mem 
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
@@ -64,8 +64,6 @@ module bp_be_pipe_mem
    , input                                kill_ex2_i
    , input                                kill_ex3_i
 
-   , input bp_fe_exception_code_e         exc_i
-   , input                                exc_v_i
    , input [decode_width_lp-1:0]          decode_i
    , input [vaddr_width_p-1:0]            pc_i
    , input [rv64_instr_width_gp-1:0]      instr_i
@@ -85,7 +83,8 @@ module bp_be_pipe_mem
    , input                                mem_resp_v_i
    , output                               mem_resp_ready_o
 
-   , output logic                              v_o
+   , output logic                              exc_v_o
+   , output logic                              miss_v_o
    , output logic [reg_data_width_lp-1:0]      data_o
    );
 
@@ -123,7 +122,7 @@ bsg_shift_reg
   (.clk(clk_i)
    ,.reset_i(reset_i)
 
-   ,.valid_i(decode.csr_instr_v)
+   ,.valid_i(decode.csr_v)
    ,.data_i(csr_cmd_li)
 
    ,.valid_o(csr_cmd_v_lo)
@@ -134,14 +133,12 @@ logic [reg_data_width_lp-1:0] offset;
 
 assign offset = decode.offset_sel ? '0 : imm_i[0+:vaddr_width_p];
 
-assign mem1_cmd_v = decode.pipe_mem_v & ~decode.csr_instr_v & ~kill_ex1_i;
+assign mem1_cmd_v = decode.mem_v & ~kill_ex1_i;
 always_comb 
   begin
     mem1_cmd.mem_op   = decode.fu_op;
     mem1_cmd.data     = rs2_i;
-    mem1_cmd.vaddr    = exc_v_i ? pc_i : (rs1_i + offset);
-    mem1_cmd.fe_exc_v = exc_v_i;
-    mem1_cmd.fe_ecode = exc_i;
+    mem1_cmd.vaddr    = (mem1_cmd.mem_op == e_itlb_fill) ? pc_i : (rs1_i + offset);
   end
 
 assign csr_cmd_v_o = csr_cmd_v_lo & ~kill_ex3_i;
@@ -156,7 +153,8 @@ always_comb
   end
 
 // Output results of memory op
-assign v_o                = mem_resp_v_i;
+assign exc_v_o            = mem_resp_v_i & mem_resp.exc_v;
+assign miss_v_o           = mem_resp_v_i & mem_resp.miss_v;
 assign mem_resp_ready_o   = 1'b1;
 
 // Set MMU cmd signal

@@ -42,7 +42,7 @@ module bp_cce_alu
       e_ble_op:  branch_res_o = less | equal;
       e_bi_op:   branch_res_o = 1'b1;
       e_bf_op:   branch_res_o = equal;
-      e_bqr_op:  branch_res_o = equal;
+      e_bqv_op:  branch_res_o = equal;
       e_bs_op:   branch_res_o = equal;
       default: branch_res_o = '0;
     endcase

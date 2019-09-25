@@ -1,0 +1,7 @@
+`verilator_config
+lint_off -file "$BASEJUMP_STL_DIR/*"
+lint_off -file "*/sva/*"
+lint_off -msg UNUSED
+lint_off -msg DECLFILENAME
+lint_off -msg PINCONNECTEMPTY
+

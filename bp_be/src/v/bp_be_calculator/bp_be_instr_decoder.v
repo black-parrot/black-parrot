@@ -29,10 +29,10 @@
 
 module bp_be_instr_decoder 
  import bp_common_pkg::*;
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
  #(// Generated parameters
-   localparam instr_width_lp    = rv64_instr_width_gp
+   localparam instr_width_lp = rv64_instr_width_gp
    , localparam decode_width_lp = `bp_be_decode_width
    )
   (input                             instr_v_i
@@ -41,8 +41,6 @@ module bp_be_instr_decoder
    , input bp_fe_exception_code_e    fe_exc_i
 
    , output [decode_width_lp-1:0]    decode_o
-   , output logic                    fe_exc_not_instr_o
-   , output bp_fe_exception_code_e   fe_exc_o
    );
 
 // Cast input and output ports 
@@ -60,6 +58,7 @@ always_comb
     // Set decoded defaults
     // NOPs are set after bypassing for critical path reasons
     decode               = '0;
+    decode.v             = 1'b1;
     decode.instr_v       = 1'b1;
 
     // Destination pipe
@@ -72,15 +71,15 @@ always_comb
     // R/W signals
     decode.irf_w_v       = '0;
     decode.frf_w_v       = '0;
-    decode.dcache_w_v    = '0;
     decode.dcache_r_v    = '0;
+    decode.dcache_w_v    = '0;
 
-    // CSR signals
-    decode.csr_instr_v   = '0;
+    // Metadata signals
+    decode.mem_v         = '0;
+    decode.csr_v         = '0;
 
     // Fence signals
     decode.fencei_v      = '0;
-    decode.fence_v       = '0;
 
     // Decode metadata
     decode.fp_not_int_v  = '0;
@@ -200,6 +199,7 @@ always_comb
           decode.pipe_mem_v = 1'b1;
           decode.irf_w_v    = 1'b1;
           decode.dcache_r_v = 1'b1;
+          decode.mem_v      = 1'b1;
           unique casez (instr)
             `RV64_LB : decode.fu_op = e_lb;
             `RV64_LH : decode.fu_op = e_lh;
@@ -215,6 +215,7 @@ always_comb
         begin
           decode.pipe_mem_v = 1'b1;
           decode.dcache_w_v = 1'b1;
+          decode.mem_v      = 1'b1;
           unique casez (instr)
             `RV64_SB : decode.fu_op = e_sb;
             `RV64_SH : decode.fu_op = e_sh;
@@ -227,7 +228,7 @@ always_comb
         begin
           decode.pipe_comp_v = 1'b1;
           unique casez (instr)
-            `RV64_FENCE   : decode.fence_v = 1'b1;
+            `RV64_FENCE   : begin end
             `RV64_FENCE_I : decode.fencei_v = 1'b1;
             default : illegal_instr = 1'b1;
           endcase
@@ -235,13 +236,12 @@ always_comb
       `RV64_SYSTEM_OP : 
         begin
           decode.pipe_mem_v = 1'b1;
-          decode.csr_instr_v = 1'b1;
+          decode.csr_v = 1'b1;
           unique casez (instr)
             `RV64_ECALL      : decode.fu_op = e_ecall;
             `RV64_EBREAK     : decode.fu_op = e_ebreak;
             `RV64_MRET       : decode.fu_op = e_mret;
             `RV64_SRET       : decode.fu_op = e_sret;
-            `RV64_URET       : decode.fu_op = e_uret;
             `RV64_WFI        : decode.fu_op = e_wfi;
             `RV64_SFENCE_VMA : decode.fu_op = e_sfence_vma;
             default: 
@@ -264,6 +264,8 @@ always_comb
           decode.pipe_mem_v = 1'b1;
           decode.irf_w_v    = 1'b1;
           decode.dcache_r_v = 1'b1;
+          decode.dcache_w_v = 1'b1;
+          decode.mem_v      = 1'b1;
           decode.offset_sel = e_offset_is_zero;
           // Note: could do a more efficent decoding here by having atomic be a flag
           //   And having the op simply taken from funct3
@@ -278,8 +280,28 @@ always_comb
       default : illegal_instr = 1'b1;
     endcase
 
-    fe_exc_not_instr_o = fe_exc_not_instr_i | (instr_v_i & illegal_instr);
-    fe_exc_o           = fe_exc_not_instr_i ? fe_exc_i : e_illegal_instr;
+    if (fe_exc_not_instr_i)
+      begin
+        decode = '0;
+        decode.v           = 1'b1;
+        decode.pipe_mem_v  = 1'b1;
+        decode.csr_v = (fe_exc_i != e_itlb_miss);
+        decode.mem_v = (fe_exc_i == e_itlb_miss);
+        casez (fe_exc_i)
+          e_illegal_instr     : decode.fu_op = e_op_illegal_instr;
+          e_instr_misaligned  : decode.fu_op = e_op_instr_misaligned;
+          e_instr_access_fault: decode.fu_op = e_op_instr_access_fault;
+          e_itlb_miss         : decode.fu_op = e_itlb_fill;
+        endcase
+      end
+    else if (illegal_instr)
+      begin
+        decode = '0;
+        decode.v           = 1'b1;
+        decode.pipe_mem_v  = 1'b1;
+        decode.csr_v = 1'b1;
+        decode.fu_op       = e_op_illegal_instr;
+      end
   end
 
 endmodule : bp_be_instr_decoder

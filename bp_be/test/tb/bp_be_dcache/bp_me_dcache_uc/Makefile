@@ -39,7 +39,7 @@ bsg_trace_rom_%.tr:
 #python bsg_trace_rom_normal.py -n $(NUM_INSTR_P) -s $(SEED_P) > $@
 
 bsg_trace_rom_%.v: bsg_trace_rom_%.tr
-	python $(BSG_IP_CORES_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_trace_rom_$* > $@
+	python $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_trace_rom_$* > $@
 
 sim: clean $(TRACE_ROMS)
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" testbench.v > testbench_postsed.v

@@ -8,7 +8,7 @@ include $(BP_DIR)/Makefile.common
 BP_COMMON_DIR = $(BP_DIR)/bp_common
 BP_BE_DIR = $(BP_DIR)/bp_be
 BP_ME_DIR = $(BP_DIR)/bp_me
-BSG_IP_CORES_DIR = $(BP_DIR)/basejump_stl
+BASEJUMP_STL_DIR = $(BP_DIR)/basejump_stl
 EXTERNAL_DIR = $(BP_DIR)/external
 
 AXE = $(EXTERNAL_DIR)/bin/axe
@@ -17,8 +17,8 @@ AXE = $(EXTERNAL_DIR)/bin/axe
 
 INCDIR = +incdir+$(BP_COMMON_DIR)/src/include
 INCDIR += +incdir+$(BP_BE_DIR)/src/include/bp_be_dcache
-INCDIR += +incdir+$(BSG_IP_CORES_DIR)/bsg_misc
-INCDIR += +incdir+$(BSG_IP_CORES_DIR)/bsg_noc
+INCDIR += +incdir+$(BASEJUMP_STL_DIR)/bsg_misc
+INCDIR += +incdir+$(BASEJUMP_STL_DIR)/bsg_noc
 INCDIR += +incdir+$(BP_ME_DIR)/src/include/v
 
 HIGHLIGHT = grep --color -E '^|Error|Warning|Implicit wire is used|Too few instance port connections|Port connection width mismatch|Width mismatch'
@@ -62,7 +62,7 @@ bsg_trace_rom_%.tr:
 	python bsg_trace_rom.py $(NUM_LCE_P) $* $(NUM_INSTR_P) $(SEED_P) > $@
 
 bsg_trace_rom_%.v: bsg_trace_rom_%.tr
-	python $(BSG_IP_CORES_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_trace_rom_$* > $@
+	python $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< bsg_trace_rom_$* > $@
 
 sim: clean $(TRACE_ROMS)
 	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" testbench.v > testbench_postsed.v

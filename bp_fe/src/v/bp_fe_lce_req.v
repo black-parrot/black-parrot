@@ -131,9 +131,9 @@ module bp_fe_lce_req
 
     lce_resp.dst_id       = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_lp] : 1'b0;
     lce_resp.src_id       = lce_id_i;
-    lce_resp.msg_type     = e_lce_cce_coh_ack;
+    lce_resp.msg_type     = bp_lce_cce_resp_type_e'('0);
     lce_resp.addr         = miss_addr_r;
-    lce_resp.msg.data     = '0;
+    lce_resp.data         = '0;
   
     cache_miss_o = 1'b0;
      
@@ -194,14 +194,14 @@ module bp_fe_lce_req
         cache_miss_o = 1'b1;
 
         if (set_tag_wakeup_received_i) begin
-          state_n = e_lce_req_send_coh_ack;
+          state_n = e_lce_req_ready;
         end
         else if (uncached_data_received_i) begin
           state_n = e_lce_req_ready;
         end
         else if (set_tag_received) begin
           if (cce_data_received) begin
-            state_n = e_lce_req_send_coh_ack;
+            state_n = e_lce_req_ready;
           end
           else begin
             state_n = e_lce_req_sleep;
@@ -234,14 +234,14 @@ module bp_fe_lce_req
       state_r              <= e_lce_req_ready;
       lru_flopped_r        <= 1'b0;
       cce_data_received_r  <= 1'b0;
-      set_tag_received_r            <= 1'b0;
+      set_tag_received_r   <= 1'b0;
     end else begin
       state_r              <= state_n;
       miss_addr_r          <= miss_addr_n;
       cce_data_received_r  <= cce_data_received_n;
       set_tag_received_r   <= set_tag_received_n;
       lru_way_r            <= lru_way_n;
-      lru_flopped_r        <= lru_flopped_r;
+      lru_flopped_r        <= lru_flopped_n;
     end
   end
 

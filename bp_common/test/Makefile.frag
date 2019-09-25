@@ -15,7 +15,11 @@ BP_DEMOS = \
   queue_demo_8  \
   copy_example  \
   trap_demo     \
-  atomic_demo          
+  atomic_demo   \
+  write_demo_2 \
+  write_demo_4 \
+  write_demo_8 \
+  write_demo_16
 
 RV64_BENCHMARKS = \
   median   \

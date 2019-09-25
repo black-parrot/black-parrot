@@ -7,7 +7,7 @@
 module bp_be_mock_fe
  import bp_common_pkg::*;
  import bp_be_pkg::*;
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  #(parameter vaddr_width_p                 = "inv"
    , parameter paddr_width_p               = "inv"
    , parameter asid_width_p                = "inv"

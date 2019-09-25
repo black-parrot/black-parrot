@@ -2,7 +2,7 @@ module bp_be_nonsynth_tracer
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
 
@@ -113,10 +113,11 @@ bsg_dff_reset_en
    );
 
 
-always_ff @(negedge reset_i) begin
-  file_name = $sformatf("%s_%x.log", calc_trace_file_p, mhartid_i);
-  file = $fopen(file_name, "w");
-end
+initial 
+  begin
+    file_name = $sformatf("%s_%x.log", calc_trace_file_p, mhartid_i);
+    file      = $fopen(file_name, "w");
+  end
 
 logic [4:0][2:0][7:0] stage_aliases;
 assign stage_aliases = {"FWB", "IWB", "EX2", "EX1"};
@@ -169,12 +170,12 @@ end
                         ,dbg_stage_r[2].rs2
                         ,dbg_stage_r[2].imm
                         );
-                if(dbg_stage_r[2].decode.csr_instr_v) begin
+                if(dbg_stage_r[2].decode.csr_v) begin
                      $fwrite(file, "\t\top: csr sem: r%d <- csr {%x}\n"
                              ,dbg_stage_r[2].instr.fields.rtype.rd_addr
                              ,iwb_result_i
                              );
-                end else if(dbg_stage_r[2].decode.dcache_r_v) begin
+                end else if(dbg_stage_r[2].decode.mem_v) begin
                   if(dbg_stage_r[2].decode.fu_op == e_lrd)
                     $fwrite(file, "\t\top: lr.d sem: r%d <- mem[%x] {%x}\n"
                              ,dbg_stage_r[2].instr.fields.rtype.rd_addr
@@ -195,7 +196,7 @@ end
                               + dbg_stage_r[2].imm
                              ,iwb_result_i
                              );
-                end else if(dbg_stage_r[2].decode.dcache_w_v) begin
+                end else if(dbg_stage_r[2].decode.mem_v) begin
                     if(dbg_stage_r[2].decode.fu_op == e_scd)
                         $fwrite(file, "\t\top: sc.d sem: mem[%x] <- r%d {%x}, success: %d \n"
                                  ,dbg_stage_r[2].rs1 

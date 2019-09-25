@@ -15,8 +15,6 @@ module bp_cce_nonsynth_tracer
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
 
-    , parameter cce_trace_p = 0
-
     // Derived parameters
     , localparam block_size_in_bytes_lp      = (cce_block_width_p/8)
     , localparam lg_num_lce_lp             = `BSG_SAFE_CLOG2(num_lce_p)
@@ -62,12 +60,12 @@ module bp_cce_nonsynth_tracer
    // outbound: ready&valid (connects to FIFO)
 
    // inbound: valid->yumi (to CCE)
-   , input [mem_cce_resp_width_lp-1:0]          mem_resp_i
+   , input [cce_mem_msg_width_lp-1:0]           mem_resp_i
    , input                                      mem_resp_v_i
    , input                                      mem_resp_yumi_i
 
    // outbound: ready&valid (from CCE)
-   , input [cce_mem_cmd_width_lp-1:0]           mem_cmd_i
+   , input [cce_mem_msg_width_lp-1:0]           mem_cmd_i
    , input                                      mem_cmd_v_i
    , input                                      mem_cmd_ready_i
 
@@ -86,8 +84,7 @@ module bp_cce_nonsynth_tracer
   bp_lce_cmd_s               lce_cmd;
   bp_lce_cmd_cmd_s           lce_cmd_cmd;
 
-  bp_cce_mem_cmd_s           mem_cmd;
-  bp_mem_cce_resp_s          mem_resp;
+  bp_cce_mem_msg_s           mem_cmd_lo, mem_resp_li;
 
   assign lce_req             = lce_req_i;
   assign lce_req_req         = lce_req.msg.req;
@@ -95,12 +92,12 @@ module bp_cce_nonsynth_tracer
   assign lce_resp            = lce_resp_i;
   assign lce_cmd             = lce_cmd_i;
   assign lce_cmd_cmd         = lce_cmd.msg.cmd;
-  assign mem_cmd             = mem_cmd_i;
-  assign mem_resp            = mem_resp_i;
+  assign mem_cmd_lo          = mem_cmd_i;
+  assign mem_resp_li         = mem_resp_i;
 
   // Tracer
   always_ff @(negedge clk_i) begin
-    if (~reset_i & cce_trace_p) begin
+    if (~reset_i) begin
       // inbound messages
       if (lce_req_v_i & lce_req_yumi_i) begin
         if (lce_req.msg_type == e_lce_req_type_rd | lce_req.msg_type == e_lce_req_type_wr) begin
@@ -134,36 +131,38 @@ module bp_cce_nonsynth_tracer
         $display("%0T: CCE[%0d] DATA RESP LCE[%0d] addr[%H] null_wb[%0b]\n%H"
                  , $time, cce_id_i, lce_resp.src_id, lce_resp.addr
                  , (lce_resp.msg_type == e_lce_cce_resp_null_wb)
-                 , lce_resp.msg.data);
+                 , lce_resp.data);
         end
       end
       if (mem_resp_v_i & mem_resp_yumi_i) begin
-        if (mem_resp.msg_type == e_cce_mem_wb | mem_resp.msg_type == e_cce_mem_uc_wr) begin
+        if (mem_resp_li.msg_type == e_cce_mem_wb | mem_resp_li.msg_type == e_cce_mem_uc_wr) begin
         $display("%0T: CCE[%0d] MEM RESP wb[%0b] uc[%0b] addr[%H] lce[%0d] way[%0d]"
-                 , $time, cce_id_i, (mem_resp.msg_type == e_cce_mem_wb)
-                 , (mem_resp.msg_type == e_cce_mem_uc_wr)
-                 , mem_resp.addr
-                 , mem_resp.payload.lce_id, mem_resp.payload.way_id);
+                 , $time, cce_id_i, (mem_resp_li.msg_type == e_cce_mem_wb)
+                 , (mem_resp_li.msg_type == e_cce_mem_uc_wr)
+                 , mem_resp_li.addr
+                 , mem_resp_li.payload.lce_id, mem_resp_li.payload.way_id);
         end
-        if (mem_resp.msg_type == e_cce_mem_rd | mem_resp.msg_type == e_cce_mem_wr
-            | mem_resp.msg_type == e_cce_mem_uc_rd) begin
-        $display("%0T: CCE[%0d] MEM DATA RESP wr[%0b] addr[%H] lce[%0d] way[%0d] uc[%0b]\n%H"
-                 , $time, cce_id_i, (mem_resp.msg_type == e_cce_mem_wr), mem_resp.addr
-                 , mem_resp.payload.lce_id, mem_resp.payload.way_id
-                 , (mem_resp.msg_type == e_cce_mem_uc_rd), mem_resp.data);
+        if (mem_resp_li.msg_type == e_cce_mem_rd | mem_resp_li.msg_type == e_cce_mem_wr
+            | mem_resp_li.msg_type == e_cce_mem_uc_rd) begin
+        $display("%0T: CCE[%0d] MEM DATA RESP wr[%0b] addr[%H] lce[%0d] way[%0d] state[%3b] uc[%0b]\n%H"
+                 , $time, cce_id_i, (mem_resp_li.msg_type == e_cce_mem_wr), mem_resp_li.addr
+                 , mem_resp_li.payload.lce_id, mem_resp_li.payload.way_id, mem_resp_li.payload.state
+                 , (mem_resp_li.msg_type == e_cce_mem_uc_rd), mem_resp_li.data);
         end
       end
       // outbound messages
       if (lce_cmd_v_i & lce_cmd_ready_i) begin
         if (lce_cmd.msg_type == e_lce_cmd_data) begin
-        $display("%0T: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] way[%0d]\n%H"
-                 , $time, cce_id_i, lce_cmd.dst_id, lce_cmd.msg_type, lce_cmd.way_id
-                 , lce_cmd.msg.data);
+        $display("%0T: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] addr[%H] st[%3b] way[%0d]\n%H"
+                 , $time, cce_id_i, lce_cmd.dst_id, lce_cmd.msg_type, lce_cmd.msg.dt_cmd.addr
+                 , lce_cmd.msg.dt_cmd.state, lce_cmd.way_id
+                 , lce_cmd.msg.dt_cmd.data);
         end
         else if (lce_cmd.msg_type == e_lce_cmd_uc_data) begin
-        $display("%0T: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] way[%0d]\n%H"
-                 , $time, cce_id_i, lce_cmd.dst_id, lce_cmd.msg_type, lce_cmd.way_id
-                 , lce_cmd.msg.data);
+        $display("%0T: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] addr[%H] st[%3b] way[%0d]\n%H"
+                 , $time, cce_id_i, lce_cmd.dst_id, lce_cmd.msg_type, lce_cmd.msg.dt_cmd.addr
+                 , lce_cmd.msg.dt_cmd.state, lce_cmd.way_id
+                 , lce_cmd.msg.dt_cmd.data);
         end
 
         else begin
@@ -173,17 +172,17 @@ module bp_cce_nonsynth_tracer
         end
       end
       if (mem_cmd_v_i & mem_cmd_ready_i) begin
-        if (mem_cmd.msg_type == e_cce_mem_rd | mem_cmd.msg_type == e_cce_mem_wr
-            | mem_cmd.msg_type == e_cce_mem_uc_rd) begin
+        if (mem_cmd_lo.msg_type == e_cce_mem_rd | mem_cmd_lo.msg_type == e_cce_mem_wr
+            | mem_cmd_lo.msg_type == e_cce_mem_uc_rd) begin
         $display("%0T: CCE[%0d] MEM CMD wr[%0b] addr[%H] lce[%0d] way[%0d] uc[%0b]"
-                 , $time, cce_id_i, mem_cmd.msg_type, mem_cmd.addr, mem_cmd.payload.lce_id
-                 , mem_cmd.payload.way_id, (mem_cmd.msg_type == e_cce_mem_uc_rd));
+                 , $time, cce_id_i, mem_cmd_lo.msg_type, mem_cmd_lo.addr, mem_cmd_lo.payload.lce_id
+                 , mem_cmd_lo.payload.way_id, (mem_cmd_lo.msg_type == e_cce_mem_uc_rd));
         end
-        if (mem_cmd.msg_type == e_cce_mem_uc_wr | mem_cmd.msg_type == e_cce_mem_wb) begin
-        $display("%0T: CCE[%0d] MEM DATA CMD wb[%0b] addr[%H] lce[%0d] way[%0d] uc[%0b]\n%H"
-                 , $time, cce_id_i, (mem_cmd.msg_type == e_cce_mem_wb), mem_cmd.addr
-                 , mem_cmd.payload.lce_id, mem_cmd.payload.way_id
-                 , (mem_cmd.msg_type == e_cce_mem_uc_wr), mem_cmd.data);
+        if (mem_cmd_lo.msg_type == e_cce_mem_uc_wr | mem_cmd_lo.msg_type == e_cce_mem_wb) begin
+        $display("%0T: CCE[%0d] MEM DATA CMD wb[%0b] addr[%H] lce[%0d] way[%0d] state[%3b] uc[%0b]\n%H"
+                 , $time, cce_id_i, (mem_cmd_lo.msg_type == e_cce_mem_wb), mem_cmd_lo.addr
+                 , mem_cmd_lo.payload.lce_id, mem_cmd_lo.payload.way_id, mem_cmd_lo.payload.state
+                 , (mem_cmd_lo.msg_type == e_cce_mem_uc_wr), mem_cmd_lo.data);
         end
       end
     end // reset & trace

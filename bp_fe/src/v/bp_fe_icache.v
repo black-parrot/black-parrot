@@ -10,14 +10,6 @@
  * icache has an LCE as part of the cache controller that communicates with the CCE. For replacement
  * policy, we use the pseudo-LRU module implemnted for dcache.
  *
- * Parameters:
- *
- * Inputs:
- *
- * Outputs:
- *
- * Keywords:
- *
  * Notes:
  *
  */
@@ -30,20 +22,13 @@ module bp_fe_icache
   import bp_fe_icache_pkg::*;  
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
-   `declare_bp_lce_cce_if_widths(num_cce_p
-                                 ,num_lce_p
-                                 ,paddr_width_p
-                                 ,lce_assoc_p
-                                 ,dword_width_p
-                                 ,cce_block_width_p
-                                 )
-    , parameter debug_p=0
-
+   `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
     `declare_bp_fe_tag_widths(lce_assoc_p, lce_sets_p, num_lce_p, num_cce_p, dword_width_p, paddr_width_p)
     `declare_bp_icache_widths(vaddr_width_p, tag_width_lp, lce_assoc_p) 
-   )
-   (
-    input                                              clk_i
+
+    , parameter debug_p=0
+    )
+   (input                                              clk_i
     , input                                            reset_i
     , input                                            freeze_i
 
@@ -54,44 +39,38 @@ module bp_fe_icache
     , input [cfg_addr_width_p-1:0]                     cfg_addr_i
     , input [cfg_data_width_p-1:0]                     cfg_data_i
 
-    , input [bp_fe_pc_gen_icache_width_lp-1:0]         pc_gen_icache_vaddr_i
-    , input                                            pc_gen_icache_vaddr_v_i
-    , output logic                                     pc_gen_icache_vaddr_ready_o
+    , input [vaddr_width_p-1:0]                        vaddr_i
+    , input                                            vaddr_v_i
+    , output                                           vaddr_ready_o
 
-    , output logic [bp_fe_icache_pc_gen_width_lp-1:0]  icache_pc_gen_data_o
-    , output logic                                     icache_pc_gen_data_v_o
-    , input                                            icache_pc_gen_data_ready_i // Not used
-
-    , input [bp_fe_itlb_icache_data_resp_width_lp-1:0] itlb_icache_data_resp_i
-    , input                                            itlb_icache_data_resp_v_i
-    , output logic                                     itlb_icache_data_resp_ready_o
-    , input                                            itlb_icache_miss_i 
+    , input [ptag_width_p-1:0]                         ptag_i
+    , input                                            ptag_v_i
     , input                                            uncached_i
-    
-    , output logic                                     cache_miss_o
-    , output logic                                     instr_access_fault_o
     , input                                            poison_tl_i
+    
+    , output [instr_width_p-1:0]                       data_o
+    , output                                           data_v_o
+    , output                                           instr_access_fault_o
+    , output                                           cache_miss_o
 
-    , output logic [lce_cce_req_width_lp-1:0]          lce_req_o
-    , output logic                                     lce_req_v_o
+    , output [lce_cce_req_width_lp-1:0]                lce_req_o
+    , output                                           lce_req_v_o
     , input                                            lce_req_ready_i
 
-    , output logic [lce_cce_resp_width_lp-1:0]         lce_resp_o
-    , output logic                                     lce_resp_v_o
+    , output [lce_cce_resp_width_lp-1:0]               lce_resp_o
+    , output                                           lce_resp_v_o
     , input                                            lce_resp_ready_i
 
     , input [lce_cmd_width_lp-1:0]                     lce_cmd_i
     , input                                            lce_cmd_v_i
-    , output logic                                     lce_cmd_ready_o
+    , output                                           lce_cmd_ready_o
 
-    , output logic [lce_cmd_width_lp-1:0]              lce_cmd_o
-    , output logic                                     lce_cmd_v_o
+    , output [lce_cmd_width_lp-1:0]                    lce_cmd_o
+    , output                                           lce_cmd_v_o
     , input                                            lce_cmd_ready_i 
  );
 
   logic [index_width_lp-1:0]            vaddr_index;
-  // Suppress unused signal warnings
-  wire unused0 = icache_pc_gen_data_ready_i;
 
   logic [word_offset_width_lp-1:0] vaddr_offset;
 
@@ -101,15 +80,10 @@ module bp_fe_icache
 
   logic                                 invalidate_cmd_v; // an invalidate command from CCE
 
-
-  `declare_bp_fe_itlb_icache_data_resp_s(tag_width_lp);
-  bp_fe_itlb_icache_data_resp_s itlb_icache_data_resp_li;
-  assign itlb_icache_data_resp_li = itlb_icache_data_resp_i;
-
-  assign vaddr_index      = pc_gen_icache_vaddr_i[word_offset_width_lp
-                                                  +byte_offset_width_lp
-                                                  +:index_width_lp];
-  assign vaddr_offset     = pc_gen_icache_vaddr_i[byte_offset_width_lp+:word_offset_width_lp];
+  assign vaddr_index      = vaddr_i[word_offset_width_lp
+                                       +byte_offset_width_lp
+                                       +:index_width_lp];
+  assign vaddr_offset     = vaddr_i[byte_offset_width_lp+:word_offset_width_lp];
    
   // TL stage
   logic v_tl_r;
@@ -117,7 +91,7 @@ module bp_fe_icache
   logic [bp_page_offset_width_gp-1:0] page_offset_tl_r;
   logic [vaddr_width_p-1:0]           vaddr_tl_r;
 
-  assign tl_we = pc_gen_icache_vaddr_v_i & pc_gen_icache_vaddr_ready_o;
+  assign tl_we = vaddr_v_i; 
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -125,8 +99,8 @@ module bp_fe_icache
     end else begin
       v_tl_r       <= tl_we;
       if (tl_we) begin
-        page_offset_tl_r <= pc_gen_icache_vaddr_i[bp_page_offset_width_gp-1:0];
-        vaddr_tl_r       <= pc_gen_icache_vaddr_i;
+        page_offset_tl_r <= vaddr_i[bp_page_offset_width_gp-1:0];
+        vaddr_tl_r       <= vaddr_i;
       end
     end
   end
@@ -187,8 +161,6 @@ module bp_fe_icache
     );
   end                                             
 
-  assign itlb_icache_data_resp_ready_o = v_tl_r;
-   
   // TV stage
   logic v_tv_r;
   logic tv_we;
@@ -202,7 +174,7 @@ module bp_fe_icache
   logic [index_width_lp-1:0]                    addr_index_tv;
   logic [word_offset_width_lp-1:0]              addr_word_offset_tv;
 
-  assign tv_we = v_tl_r & ~poison_tl_i & itlb_icache_data_resp_v_i & ~itlb_icache_miss_i;
+  assign tv_we = v_tl_r & ~poison_tl_i & ptag_v_i;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -211,7 +183,7 @@ module bp_fe_icache
     else begin
       v_tv_r <= tv_we;
       if (tv_we) begin
-        addr_tv_r    <= {itlb_icache_data_resp_li.ppn, vaddr_tl_r[0+:bp_page_offset_width_gp]};
+        addr_tv_r    <= {ptag_i, vaddr_tl_r[0+:bp_page_offset_width_gp]};
         vaddr_tv_r   <= vaddr_tl_r;
         tag_tv_r     <= tag_tl;
         state_tv_r   <= state_tl;
@@ -332,7 +304,7 @@ module bp_fe_icache
 
      ,.lce_id_i(lce_id_i)
 
-     ,.ready_o(pc_gen_icache_vaddr_ready_o)
+     ,.ready_o(vaddr_ready_o)
      ,.cache_miss_o(cache_miss_o)
 
      ,.miss_i(miss_tv)
@@ -378,20 +350,7 @@ module bp_fe_icache
     ? ~uncached_tv_r
     : 1'b0;
 
-  // output stage
-  always_comb begin
-    if (v_tv_r) begin
-      if (uncached_tv_r) begin
-        icache_pc_gen_data_v_o = uncached_load_data_v_r;
-      end
-      else begin
-        icache_pc_gen_data_v_o = v_tv_r & ~cache_miss_o;
-      end
-    end
-    else begin
-      icache_pc_gen_data_v_o = 1'b0;
-    end
-  end
+  assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r) | ~cache_miss_o);
 
   logic [dword_width_p-1:0]   ld_data_way_picked;
 
@@ -416,14 +375,10 @@ module bp_fe_icache
 
   logic lower_upper_sel;
 
-  `declare_bp_fe_icache_pc_gen_s(vaddr_width_p);
-  bp_fe_icache_pc_gen_s icache_pc_gen_data_lo;
   assign lower_upper_sel             = addr_tv_r[byte_offset_width_lp-1];
-  assign icache_pc_gen_data_lo.instr = lower_upper_sel
+  assign data_o = lower_upper_sel
     ? final_data[instr_width_p+:instr_width_p]
     : final_data[instr_width_p-1:0];
-  assign icache_pc_gen_data_lo.addr  = vaddr_tv_r;
-  assign icache_pc_gen_data_o        = icache_pc_gen_data_lo;
 
   // data mem
 
@@ -564,7 +519,7 @@ module bp_fe_icache
       end
       else begin
         // once the uncached load is replayed, and v_o goes high, clear the valid bit
-        if (icache_pc_gen_data_v_o) begin
+        if (data_v_o) begin
           uncached_load_data_v_r <= 1'b0;
         end
       end
@@ -581,13 +536,13 @@ module bp_fe_icache
   if (debug_p) begin
     bp_fe_icache_axe_trace_gen #(
       .addr_width_p(paddr_width_p)
-      ,.data_width_p(instr_width_p)
+      ,.dword_width_p(instr_width_p)
     ) cc (
       .clk_i(clk_i)
-      ,.id_i(id_i)
+      ,.id_i(lce_id_i)
       ,.v_i(icache_pc_gen_data_v_o)
       ,.addr_i(addr_tv_r)
-      ,.data_i(icache_pc_gen_data_o)
+      ,.data_i(data_o)
     );
   end
   // synopsys translate_on

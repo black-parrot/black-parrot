@@ -39,6 +39,7 @@ std::string toString(T in, int bits)
   return ss.str();
 }
 
+/*
 // LCE to CCE Request
 sc_bv<bp_lce_cce_req_width>
 createLceReq(uint32_t dst, uint32_t src, bp_lce_cce_req_type_e reqType, uint64_t addr,
@@ -245,12 +246,10 @@ createCceDataCmd(uint32_t dst, uint32_t way, bp_lce_data_cmd_type_e cmdType, uin
   msg.range(LG_LCE_ASSOC+bp_lce_data_cmd_type_width+LG_N_LCE-1, LG_LCE_ASSOC+bp_lce_data_cmd_type_width) = dst;
   msg.range(bp_lce_data_cmd_width-1, bp_lce_data_cmd_width-DATA_WIDTH_BITS) = data;
 
-  /*
-  std::stringstream ss;
-  ss << "CCE Data Cmd Addr: " 
-     << std::setfill('0') << std::setw(sizeof(uint64_t)*2) << std::hex << addr;
-  cout << ss.str() << endl;
-  */
+//  std::stringstream ss;
+//  ss << "CCE Data Cmd Addr: "
+//     << std::setfill('0') << std::setw(sizeof(uint64_t)*2) << std::hex << addr;
+//  cout << ss.str() << endl;
 
   return msg;
 }
@@ -270,3 +269,5 @@ checkCceDataCmd(sc_bv<bp_lce_data_cmd_width> &msg, uint32_t dst, uint32_t way,
   cout << "exp msg:      " << exp.to_string() << endl;
   return !(msg.to_string().compare(exp.to_string()));
 }
+
+*/

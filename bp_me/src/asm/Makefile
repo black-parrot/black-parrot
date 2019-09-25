@@ -4,7 +4,7 @@ BP_INC_DIR=$(abspath ../include/c)
 INC_DIR=$(abspath ./include)
 SRC_DIR=$(abspath ./src)
 
-BSG_MEM_DIR=$(abspath ../../../basejump_stl/bsg_mem)
+BSG_MEM_DIR=$(abspath ../../../external/basejump_stl/bsg_mem)
 
 CXX=g++
 COMMON_CFLAGS=-Wall -Wno-switch -Wno-format -Wno-unused-function
@@ -72,3 +72,5 @@ msi: as
 mesi: as
 	python2 py/roms.py -i microcode/cce/mesi -N 1 -W 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/mesi
 
+test: as
+	python2 py/roms.py -i microcode/cce/test --bsg $(BSG_MEM_DIR) --outdir ./roms/test

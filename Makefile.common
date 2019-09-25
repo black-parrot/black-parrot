@@ -1,19 +1,20 @@
 ## Set common environment variables
 TOP ?= $(shell git rev-parse --show-toplevel)
 
-BSG_IP_CORES_DIR ?= $(TOP)/basejump_stl
-BP_COMMON_DIR    ?= $(TOP)/bp_common
-BP_FE_DIR        ?= $(TOP)/bp_fe
-BP_BE_DIR        ?= $(TOP)/bp_be
-BP_ME_DIR        ?= $(TOP)/bp_me
-BP_TOP_DIR       ?= $(TOP)/bp_top
-BP_EXTERNAL_DIR  ?= $(TOP)/external
+export BP_COMMON_DIR    ?= $(TOP)/bp_common
+export BP_FE_DIR        ?= $(TOP)/bp_fe
+export BP_BE_DIR        ?= $(TOP)/bp_be
+export BP_ME_DIR        ?= $(TOP)/bp_me
+export BP_TOP_DIR       ?= $(TOP)/bp_top
+export BP_EXTERNAL_DIR  ?= $(TOP)/external
+export BASEJUMP_STL_DIR ?= $(BP_EXTERNAL_DIR)/basejump_stl
 
 ## Setup CAD tools
 
 # If the machine you are working on is bsg_cadenv compliant, then you do not
 # need to setup the cad tools, simply put bsg_cadenv in the same root dir.
--include $(TOP)/bsg_cadenv/cadenv.mk
+BSG_CADENV_DIR ?= $(TOP)/external/bsg_cadenv
+-include $(BSG_CADENV_DIR)/cadenv.mk
 
 ## Sepcify license path if needed
 LM_LICENSE_FILE ?=
@@ -25,15 +26,14 @@ VCS       ?= vcs
 URG       ?= urg
 VERILATOR ?= verilator
 DC_SHELL  ?= dc_shell
+DVE       ?= dve
+PYTHON    ?= python
 
 ## Needed for verilator g++ compilations
-SYSTEMC_INCLUDE ?= $(BP_EXTERNAL_DIR)/include
-SYSTEMC_LIBDIR  ?= $(BP_EXTERNAL_DIR)/lib-linux64
+export SYSTEMC_INCLUDE ?= $(BP_EXTERNAL_DIR)/include
+export SYSTEMC_LIBDIR  ?= $(BP_EXTERNAL_DIR)/lib-linux64
 
 ## Add external tools and libraries to environment
-PATH            := $(BP_EXTERNAL_DIR)/bin:$(PATH)
-LD_LIBRARY_PATH := $(SYSTEMC_LIBDIR):$(LD_LIBRARY_PATH)
-
-# Exports variables to subprocesses. Then, we can e.g. use BP_FE_DIR in flists
-.EXPORT_ALL_VARIABLES:
+export PATH            := $(BP_EXTERNAL_DIR)/bin:$(PATH)
+export LD_LIBRARY_PATH := $(SYSTEMC_LIBDIR):$(LD_LIBRARY_PATH)
 

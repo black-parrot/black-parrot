@@ -1,22 +1,24 @@
 variables:
-  DOCKER_DRIVER: overlay2
   GIT_STRATEGY: fetch
   GIT_SUBMODULE_STRATEGY: none
 
-#pass-job:
+stages:
+  - prereq
+  - check
+  - test-short
+  - test-long
+ 
+#pass:
 #  script:
 #    - echo "Passing job 1"
 #    - exit 0
 
-#fail-job:
+#fail:
 #  script:
 #    - echo "Failing job 2"
 #    - exit 1 
 
-func-regress-verilator-job:
-  image:
-    name: "registry.gitlab.com/black-parrot/pre-alpha-release:latest"
-
+.job_template: &job_definition
   only:
     - master
     - dev
@@ -24,34 +26,120 @@ func-regress-verilator-job:
     - be_dev
     - me_dev
     - top_dev
-    - common_dev
     - sw_dev
-
   before_script:
-    - echo "Linking external tools"
-    - rm -rf external
-    - ln -sf /bp-tools external
-    - mkdir /pre-alpha-release/
-    - ln -sf /bp-tools /pre-alpha-release/external
-    - echo "Fetching Basejump STL"
-    - git submodule update --init -- basejump_stl
-    - echo "Fetching riscv-tests"
-    - git submodule update --init --recursive -- bp_common/test/src/riscv-tests
-    - echo "Building test programs"
-    - make -C bp_common/test perch riscv_mem riscv_dump riscv_spike
-    - make ucode
-
-  script:
-    - echo "Running Verilator regression"
-    - cd bp_top/syn
-    - make build.sc 
-    - make regress.sc -j 
-    - grep -cr "FAILED" reports/ && exit 1
-    - exit 0
-
+    - echo "Updating libraries"
+    - make update_libs
+    - echo "Making CCE ucode"
+    - make ucode > make_ucode.log
   artifacts:
     when: always
     paths:
-      - bp_top/syn/reports/
-      - bp_top/syn/logs/
+      - "*.log"
+      - "bp_fe/syn/reports/"
+      - "bp_be/syn/reports/"
+      - "bp_me/syn/reports/"
+      - "bp_top/syn/reports/"
+
+cache: &global_cache
+  key: $CI_COMMIT_REF_SLUG
+  paths:
+    - $CI_PROJECT_DIR/external/
+  policy: pull
+
+update-cache:
+  <<: *job_definition
+  when: manual
+  stage: prereq
+  tags:
+    - bsg
+  script:
+    - make tools -j $CI_CORES > make_tools.log
+    - make tidy_tools > make_tidy_tools.log
+    - make progs > make_progs.log
+  cache:
+    key: $CI_COMMIT_REF_SLUG
+    paths:
+      - $CI_PROJECT_DIR/external/
+      - $CI_PROJECT_DIR/bp_common/test/mem/
+    policy: push
+
+check-design:
+  <<: *job_definition
+  stage: check
+  tags:
+    - dc
+  script:
+    - $CI_PROJECT_DIR/ci/regress.sh check_design.syn bp_top
+      
+lint-verilator:
+  <<: *job_definition
+  stage: check
+  tags:
+    - verilator
+  script:
+    - $CI_PROJECT_DIR/ci/regress.sh lint.sc bp_top
+      
+me-regress-verilator:
+  <<: *job_definition
+  stage: test-short
+  tags:
+    - verilator
+  script:
+    - $CI_PROJECT_DIR/ci/regress.sh regress.me.sc bp_me
+     
+me-regress-vcs:
+  <<: *job_definition
+  stage: test-short
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/regress.sh regress.me.v bp_me
+      
+top-riscv-verilator:
+  <<: *job_definition
+  stage: test-short
+  tags:
+    - verilator
+  script:
+    - make -C bp_top/syn clean build.sc
+    - $CI_PROJECT_DIR/ci/regress.sh regress_riscv.sc bp_top
+ 
+# Disabled because it's too long running     
+# TODO: Investigate why
+top-beebs-verilator:
+  <<: *job_definition
+  when: manual
+  stage: test-long
+  tags:
+    - verilator
+  script:
+    - make -C bp_top/syn clean build.sc
+    - $CI_PROJECT_DIR/ci/regress.sh regress_beebs.sc bp_top
+
+lint-vcs:
+  <<: *job_definition
+  stage: check
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/regress.sh lint.v bp_top
+
+top-riscv-tests-vcs:
+  <<: *job_definition
+  stage: test-short
+  tags:
+    - vcs
+  script:
+    - make -C bp_top/syn clean build.v
+    - $CI_PROJECT_DIR/ci/regress.sh regress_riscv.v bp_top
+      
+top-beebs-vcs:
+  <<: *job_definition
+  stage: test-long
+  tags:
+    - vcs
+  script:
+    - make -C bp_top/syn clean build.v
+    - $CI_PROJECT_DIR/ci/regress.sh regress_beebs.v bp_top
 

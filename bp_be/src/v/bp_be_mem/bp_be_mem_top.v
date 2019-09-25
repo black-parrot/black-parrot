@@ -12,7 +12,7 @@ module bp_be_mem_top
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_be_pkg::*;
-  import bp_be_rv64_pkg::*;
+  import bp_common_rv64_pkg::*;
   import bp_be_dcache_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
@@ -45,11 +45,7 @@ module bp_be_mem_top
    , localparam mem_resp_width_lp = `bp_be_mem_resp_width(vaddr_width_p)
    
    // VM
-   , localparam tlb_entry_width_lp = `bp_be_tlb_entry_width(ptag_width_p)
-
-   // CSRs
-   , localparam mepc_width_lp  = `bp_mepc_width
-   , localparam mtvec_width_lp = `bp_mtvec_width
+   , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
    )
   (input                                     clk_i
    , input                                   reset_i
@@ -113,20 +109,16 @@ module bp_be_mem_top
    , output [rv64_priv_width_gp-1:0]         priv_mode_o
    , output                                  trap_v_o
    , output                                  ret_v_o
-   , output [mepc_width_lp-1:0]              epc_o
-   , output [mtvec_width_lp-1:0]             tvec_o
+   , output [vaddr_width_p-1:0]              epc_o
+   , output [vaddr_width_p-1:0]              tvec_o
    , output                                  tlb_fence_o
    );
 
-`declare_bp_be_internal_if_structs(vaddr_width_p
-                                   , paddr_width_p
-                                   , asid_width_p
-                                   , branch_metadata_fwd_width_p
-                                   );
+`declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+`declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
 `declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p/8)
-`declare_bp_be_tlb_entry_s(ptag_width_p)
 `declare_bp_be_dcache_pkt_s(page_offset_width_lp, dword_width_p);
 
 // Cast input and output ports 
@@ -151,7 +143,7 @@ wire unused0 = mem_resp_ready_i;
 /* TLB ports */
 logic                    dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_r_v, dtlb_r_v_lo;
 logic [vtag_width_p-1:0] dtlb_r_vtag, dtlb_w_vtag, dtlb_miss_vtag;
-bp_be_tlb_entry_s        dtlb_r_entry, dtlb_w_entry;
+bp_pte_entry_leaf_s      dtlb_r_entry, dtlb_w_entry;
 
 /* PTW ports */
 logic [ptag_width_p-1:0]  ptw_dcache_ptag;
@@ -159,7 +151,7 @@ logic                     ptw_dcache_v, ptw_busy, ptw_store_not_load;
 bp_be_dcache_pkt_s        ptw_dcache_pkt; 
 logic                     ptw_tlb_miss_v, ptw_tlb_w_v;
 logic [vtag_width_p-1:0]  ptw_tlb_w_vtag, ptw_tlb_miss_vtag;
-bp_be_tlb_entry_s         ptw_tlb_w_entry;
+bp_pte_entry_leaf_s       ptw_tlb_w_entry;
 logic                     ptw_page_fault_v, ptw_instr_page_fault_v, ptw_load_page_fault_v, ptw_store_page_fault_v;
 
 /* D-Cache ports */
@@ -171,7 +163,7 @@ logic                     dcache_tlb_miss, dcache_poison;
 logic                     dcache_uncached;
 
 /* CSR signals */
-logic                     illegal_instr;
+logic                     csr_illegal_instr_lo;
 bp_satp_s                 satp_lo;
 logic [dword_width_p-1:0] csr_data_lo;
 logic                     csr_v_lo;
@@ -182,15 +174,13 @@ logic load_access_fault_v, store_access_fault_v;
 /* Control signals */
 logic dcache_cmd_v;
 logic itlb_not_dtlb_resp;
-logic dtlb_miss_r;
+logic mmu_cmd_v_r, mmu_cmd_v_rr, dtlb_miss_r;
 bp_be_mmu_vaddr_s vaddr_mem3, fault_vaddr;
+logic is_itlb_fill_mem3;
 logic is_store_mem3;
 logic [vaddr_width_p-1:0] fault_pc;
 
-logic ecode_v_mem3_r;
-bp_fe_exception_code_e ecode_mem3_r;
-
-wire itlb_fill_cmd_v = (ecode_mem3_r == e_itlb_miss) & pc_v_mem3_i;
+wire itlb_fill_cmd_v = is_itlb_fill_mem3;
 wire dtlb_fill_cmd_v = dtlb_miss_r & pc_v_mem3_i;
 
 bsg_dff_en
@@ -203,35 +193,25 @@ bsg_dff_en
    ,.data_o({fault_vaddr, fault_pc})
    );
 
-wire is_store = mmu_cmd.mem_op inside {e_sb, e_sh, e_sw, e_sd};
+wire is_itlb_fill = mmu_cmd_v_i & mmu_cmd.mem_op inside {e_itlb_fill};
+wire is_store     = mmu_cmd_v_i & mmu_cmd.mem_op inside {e_sb, e_sh, e_sw, e_sd};
 bsg_dff_chain
- #(.width_p(1+vaddr_width_p)
+ #(.width_p(2+vaddr_width_p)
    ,.num_stages_p(2)
    )
  fill_pipe
   (.clk_i(clk_i)
    
-   ,.data_i({mmu_cmd.vaddr, is_store})
-   ,.data_o({vaddr_mem3, is_store_mem3})
-   );
-
-bsg_dff_chain
- #(.width_p(1+$bits(bp_fe_exception_code_e))
-   ,.num_stages_p(2)
-   )
- fe_exception_pipe
-  (.clk_i(clk_i)
-
-   ,.data_i({mmu_cmd_v_i & mmu_cmd.fe_exc_v, mmu_cmd.fe_ecode})
-   ,.data_o({ecode_v_mem3_r, ecode_mem3_r})
+   ,.data_i({mmu_cmd.vaddr, is_store, is_itlb_fill})
+   ,.data_o({vaddr_mem3, is_store_mem3, is_itlb_fill_mem3})
    );
 
 bp_be_ecode_dec_s exception_ecode_dec_li;
 assign exception_ecode_dec_li = 
-  '{instr_misaligned : (ecode_v_mem3_r & (ecode_mem3_r == e_instr_misaligned))
-    ,instr_fault     : (ecode_v_mem3_r & (ecode_mem3_r == e_instr_access_fault))
-    ,illegal_instr   : (ecode_v_mem3_r & (ecode_mem3_r == e_illegal_instr))
-    ,breakpoint      : (csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak))
+  '{instr_misaligned : csr_cmd_v_i & (csr_cmd.csr_op == e_op_instr_misaligned)
+    ,instr_fault     : csr_cmd_v_i & (csr_cmd.csr_op == e_op_instr_access_fault)
+    ,illegal_instr   : csr_cmd_v_i & ((csr_cmd.csr_op == e_op_illegal_instr) || csr_illegal_instr_lo)
+    ,breakpoint      : csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak)
     ,load_misaligned : 1'b0
     ,load_fault      : load_access_fault_v
     ,store_misaligned: 1'b0
@@ -259,7 +239,7 @@ bp_be_csr
 
    ,.data_o(csr_data_lo)
    ,.v_o(csr_v_lo)
-   ,.illegal_instr_o(illegal_instr)
+   ,.illegal_instr_o(csr_illegal_instr_lo)
 
    ,.hartid_i(proc_cfg.core_id)
    ,.instret_i(instret_i)
@@ -285,33 +265,30 @@ bp_be_csr
    ,.tlb_fence_o(tlb_fence_o)
    );
 
-bp_be_dtlb
-  #(.cfg_p(cfg_p))
+bp_tlb
+  #(.cfg_p(cfg_p)
+    ,.tlb_els_p(dtlb_els_p)
+  )
   dtlb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.flush_i(tlb_fence_o)
    
-   ,.r_v_i(dtlb_r_v)
-   ,.r_ready_o()
-   ,.r_vtag_i(dtlb_r_vtag)
+   ,.v_i(dtlb_r_v | dtlb_w_v)
+   ,.w_i(dtlb_w_v)
+   ,.vtag_i((dtlb_w_v)? dtlb_w_vtag : dtlb_r_vtag)
+   ,.entry_i(dtlb_w_entry)
    
-   ,.r_v_o(dtlb_r_v_lo)
-   ,.r_entry_o(dtlb_r_entry)
-   
-   ,.w_v_i(dtlb_w_v)
-   ,.w_vtag_i(dtlb_w_vtag)
-   ,.w_entry_i(dtlb_w_entry)
-   
+   ,.v_o(dtlb_r_v_lo)
+   ,.entry_o(dtlb_r_entry)
+      
    ,.miss_v_o(dtlb_miss_v)
    ,.miss_vtag_o(dtlb_miss_vtag)
   );
   
 bp_be_ptw
-  #(.pte_width_p(bp_sv39_pte_width_gp)
-    ,.vaddr_width_p(vaddr_width_p)
-    ,.paddr_width_p(paddr_width_p)
-    ,.page_offset_width_p(page_offset_width_p)
+  #(.cfg_p(cfg_p)
+    ,.pte_width_p(bp_sv39_pte_width_gp)
     ,.page_table_depth_p(bp_sv39_page_table_depth_gp)
   )
   ptw
@@ -399,12 +376,17 @@ bp_be_dcache
     );
 
 // We delay the tlb miss signal by one cycle to synchronize with cache miss signal
+// We latch the dcache miss signal
 always_ff @(posedge clk_i) begin
   if(reset_i) begin
-    dtlb_miss_r <= '0;
+    dtlb_miss_r  <= '0;
+    mmu_cmd_v_r  <= '0;
+    mmu_cmd_v_rr <= '0;
   end
   else begin
-    dtlb_miss_r <= dtlb_miss_v;
+    dtlb_miss_r  <= dtlb_miss_v;
+    mmu_cmd_v_r  <= mmu_cmd_v_i;
+    mmu_cmd_v_rr <= mmu_cmd_v_r;
   end
 end
     
@@ -447,11 +429,11 @@ assign ptw_page_fault_v  = ptw_instr_page_fault_v | ptw_load_page_fault_v | ptw_
 assign ptw_store_not_load = dtlb_fill_cmd_v & is_store_mem3;
  
 // MMU response connections
-assign mem_resp.data   = dcache_v
-                         ? dcache_data
-                         : csr_data_lo;
+assign mem_resp.miss_v = dtlb_miss_r | dcache_miss_v;
+assign mem_resp.exc_v  = |exception_ecode_dec_li;
+assign mem_resp.data   = dcache_v ? dcache_data : csr_data_lo;
 
-assign mem_resp_v_o    = ptw_busy ? 1'b0 : (dcache_v | csr_v_lo | itlb_fill_cmd_v | |exception_ecode_dec_li);
+assign mem_resp_v_o    = ptw_busy ? 1'b0 : mmu_cmd_v_rr | csr_v_lo;
 assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~ptw_busy;
 
 assign itlb_fill_v_o     = ptw_tlb_w_v & itlb_not_dtlb_resp;

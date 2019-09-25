@@ -5,45 +5,6 @@
  * 
  * Description:
  *
- * Parameters:
- *   vaddr_width_p               - FE-BE structure sizing parameter
- *   paddr_width_p               - ''
- *   asid_width_p                - ''
- *   branch_metadata_fwd_width_p - ''   
- *
- * Inputs:
- *   clk_i                  -
- *   reset_i                -
- *
- *   issue_pkt_i            - An issued instruction, containing predecoded metadata
- *   issue_pkt_v_i          - "ready-then-valid" interface
- *   issue_pkt_ready_o      -
- *
- *   chk_dispatch_v_i       - Checker indicates the last issued instruction may be dispatched
- *   chk_roll_i             - Checker rolls back all uncommitted instructions
- *   chk_poison_ex_i        - Checker poisons all uncommitted instructions
- *   chk_poison_isd_i       - Checker poisons the currently issued instruction as it's dispatched
- *   chk_poison_iss_i       - Checker poisons the instruction at the issue stage
- *
- *   mem_resp_i             - An MMU response containing load data and exception codes
- *   mem_resp_v_i           - "ready-then-valid" interface
- *   mem_resp_ready_o       -
- *   
- * Outputs:
- *   calc_status_o          - Packet containing execution status of pipeline, including dependency
- *                              information used by the checker to detect hazards
- *
- *   mmu_cmd_o              - An MMU command wrapping a D$ command
- *   mmu_cmd_v_o            - "ready-then-valid" interface
- *   mmu_cmd_ready_i        -
- *
- *   cmt_trace_stage_reg_o  - Commit status data used to monitor execution
- *   cmt_trace_data_o     - Committed calculated results
- *   cmt_trace_exc_o        - Committed exceptions 
- *
- * Keywords:
- *   calculator, pipeline, pipe, execution, registers
- * 
  * Notes:
  *   Should subdivide this module into a few helper modules to reduce complexity. Perhaps
  *     issuer, exe_pipe, completion_pipe, status_gen?
@@ -54,22 +15,12 @@
 module bp_be_calculator_top 
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
-    `declare_bp_fe_be_if_widths(vaddr_width_p
-                                ,paddr_width_p
-                                ,asid_width_p
-                                ,branch_metadata_fwd_width_p
-                                )
-    `declare_bp_lce_cce_if_widths(num_cce_p
-                                  ,num_lce_p
-                                  ,paddr_width_p
-                                  ,lce_assoc_p
-                                  ,dword_width_p
-                                  ,cce_block_width_p
-                                  )
+    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
    // Default parameters
    , parameter fp_en_p                  = 0
@@ -77,6 +28,7 @@ module bp_be_calculator_top
    // Generated parameters
    , localparam proc_cfg_width_lp       = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
    , localparam issue_pkt_width_lp      = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
+   , localparam isd_status_width_lp     = `bp_be_isd_status_width
    , localparam calc_status_width_lp    = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam exception_width_lp      = `bp_be_exception_width
    , localparam mmu_cmd_width_lp        = `bp_be_mmu_cmd_width(vaddr_width_p)
@@ -84,18 +36,13 @@ module bp_be_calculator_top
    , localparam mem_resp_width_lp       = `bp_be_mem_resp_width(vaddr_width_p)
    , localparam dispatch_pkt_width_lp   = `bp_be_dispatch_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam pipe_stage_reg_width_lp = `bp_be_pipe_stage_reg_width(vaddr_width_p)
-   , localparam fu_op_width_lp          = `bp_be_fu_op_width
-   , localparam decode_width_lp         = `bp_be_decode_width
 
    // From BP BE specifications
    , localparam pipe_stage_els_lp = 5 
    , localparam ecode_dec_width_lp = `bp_be_ecode_dec_width
 
    // From RISC-V specifications
-   , localparam instr_width_lp    = rv64_instr_width_gp
-   , localparam reg_data_width_lp = rv64_reg_data_width_gp
    , localparam reg_addr_width_lp = rv64_reg_addr_width_gp
-   , localparam eaddr_width_lp    = rv64_eaddr_width_gp
 
    // Local constants
    , localparam dispatch_point_lp   = 0
@@ -125,6 +72,7 @@ module bp_be_calculator_top
   , input                                chk_poison_ex1_i
   , input                                chk_poison_ex2_i
    
+  , output [isd_status_width_lp-1:0]     isd_status_o
   , output [calc_status_width_lp-1:0]    calc_status_o
    
   // Mem interface   
@@ -143,18 +91,18 @@ module bp_be_calculator_top
   // CSRs
   , output                               instret_mem3_o
   , output [vaddr_width_p-1:0]           pc_mem3_o
-  , output [instr_width_lp-1:0]          instr_mem3_o
+  , output [instr_width_p-1:0]          instr_mem3_o
   , output                               pc_v_mem3_o
   );
 
 // Declare parameterizable structs
 `declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p / 8)
 `declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
-`declare_bp_be_internal_if_structs
-  (vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+`declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
 // Cast input and output ports 
 bp_be_issue_pkt_s   issue_pkt;
+bp_be_isd_status_s  isd_status;
 bp_be_calc_status_s calc_status;
 bp_be_mem_resp_s    mem_resp;
 bp_proc_cfg_s       proc_cfg;
@@ -163,6 +111,7 @@ assign issue_pkt = issue_pkt_i;
 assign mem_resp = mem_resp_i;
 assign proc_cfg = proc_cfg_i;
 assign calc_status_o = calc_status;
+assign isd_status_o = isd_status;
 
 // Declare intermediate signals
 logic                   chk_poison_iss_r;
@@ -173,11 +122,11 @@ logic                   dispatch_pkt_v_r;
 bp_be_decode_s          decoded;
 
 // Register bypass network
-logic [reg_data_width_lp-1:0] irf_rs1    , irf_rs2;
-logic [reg_data_width_lp-1:0] frf_rs1    , frf_rs2;
-logic [reg_data_width_lp-1:0] bypass_irs1, bypass_irs2;
-logic [reg_data_width_lp-1:0] bypass_frs1, bypass_frs2;
-logic [reg_data_width_lp-1:0] bypass_rs1 , bypass_rs2;
+logic [dword_width_p-1:0] irf_rs1    , irf_rs2;
+logic [dword_width_p-1:0] frf_rs1    , frf_rs2;
+logic [dword_width_p-1:0] bypass_irs1, bypass_irs2;
+logic [dword_width_p-1:0] bypass_frs1, bypass_frs2;
+logic [dword_width_p-1:0] bypass_rs1 , bypass_rs2;
 
 // Exception signals
 logic load_misaligned_mem1, store_misaligned_mem3;
@@ -188,22 +137,22 @@ bp_be_pipe_stage_reg_s                         calc_stage_isd;
 bp_be_exception_s      [pipe_stage_els_lp-1:0] exc_stage_r;
 bp_be_exception_s      [pipe_stage_els_lp  :0] exc_stage_n;
 
-logic [pipe_stage_els_lp-1:0][reg_data_width_lp-1:0] comp_stage_r, comp_stage_n;
+logic [pipe_stage_els_lp-1:0][dword_width_p-1:0] comp_stage_r, comp_stage_n;
 
-logic [reg_data_width_lp-1:0] pipe_nop_data_lo;
-logic [reg_data_width_lp-1:0] pipe_int_data_lo, pipe_mul_data_lo, pipe_mem_data_lo, pipe_fp_data_lo;
+logic [dword_width_p-1:0] pipe_nop_data_lo;
+logic [dword_width_p-1:0] pipe_int_data_lo, pipe_mul_data_lo, pipe_mem_data_lo, pipe_fp_data_lo;
 
 logic nop_pipe_result_v;
 logic pipe_int_data_lo_v, pipe_mul_data_lo_v, pipe_mem_data_lo_v, pipe_fp_data_lo_v;
-logic pipe_mem_v_lo;
+logic pipe_mem_exc_v_lo, pipe_mem_miss_v_lo;
 
-logic [eaddr_width_lp-1:0] br_tgt_int1;
+logic [vaddr_width_p-1:0] br_tgt_int1;
 
 // Forwarding information
 logic [pipe_stage_els_lp-1:1]                        comp_stage_n_slice_iwb_v;
 logic [pipe_stage_els_lp-1:1]                        comp_stage_n_slice_fwb_v;
 logic [pipe_stage_els_lp-1:1][reg_addr_width_lp-1:0] comp_stage_n_slice_rd_addr;
-logic [pipe_stage_els_lp-1:1][reg_data_width_lp-1:0] comp_stage_n_slice_rd;
+logic [pipe_stage_els_lp-1:1][dword_width_p-1:0] comp_stage_n_slice_rd;
 
 // Handshakes
 assign issue_pkt_ready_o = (chk_dispatch_v_i | ~issue_pkt_v_r);
@@ -211,7 +160,7 @@ assign issue_pkt_ready_o = (chk_dispatch_v_i | ~issue_pkt_v_r);
 // Module instantiations
 // Register files
 bp_be_regfile
-#(.harden_p(1))
+#(.cfg_p(cfg_p))
  int_regfile
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -235,7 +184,7 @@ bp_be_regfile
 if (fp_en_p)
   begin : fp_rf
     bp_be_regfile
-    #(.harden_p(0))
+    #(.cfg_p(cfg_p))
      float_regfile
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
@@ -260,11 +209,9 @@ if (fp_en_p)
      // Don't need to forward isd data
      #(.fwd_els_p(pipe_stage_els_lp-1))
      fp_bypass
-      (.id_rs1_v_i(issue_pkt_r.frs1_v)
-       ,.id_rs1_addr_i(issue_pkt_r.instr.fields.rtype.rs1_addr)
+      (.id_rs1_addr_i(issue_pkt_r.instr.fields.rtype.rs1_addr)
        ,.id_rs1_i(frf_rs1)
     
-       ,.id_rs2_v_i(issue_pkt_r.frs2_v)
        ,.id_rs2_addr_i(issue_pkt_r.instr.fields.rtype.rs2_addr)
        ,.id_rs2_i(frf_rs2)
     
@@ -277,7 +224,7 @@ if (fp_en_p)
        );
     
     bsg_mux 
-     #(.width_p(reg_data_width_lp)
+     #(.width_p(dword_width_p)
        ,.els_p(2)
        ) 
      bypass_xrs1_mux
@@ -287,7 +234,7 @@ if (fp_en_p)
        );
     
     bsg_mux 
-     #(.width_p(reg_data_width_lp)
+     #(.width_p(dword_width_p)
        ,.els_p(2)
        ) 
      bypass_xrs2_mux
@@ -326,7 +273,7 @@ bsg_dff_reset_en
  issue_psn_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(issue_pkt_v_i | chk_dispatch_v_i)
+   ,.en_i(issue_pkt_v_i | chk_dispatch_v_i | chk_poison_iss_i)
 
    ,.data_i(chk_poison_iss_i)
    ,.data_o(chk_poison_iss_r)
@@ -344,8 +291,6 @@ bp_be_instr_decoder
    ,.fe_exc_i(issue_pkt_r.fe_exception_code)
 
    ,.decode_o(decoded)
-   ,.fe_exc_not_instr_o(fe_exc_not_instr_isd)
-   ,.fe_exc_o(fe_exc_isd)
    );
 
 // Bypass the instruction operands from written registers in the stack
@@ -353,11 +298,9 @@ bp_be_bypass
  // Don't need to forward isd data
  #(.fwd_els_p(pipe_stage_els_lp-1))
  int_bypass 
-  (.id_rs1_v_i(issue_pkt_r.irs1_v)
-   ,.id_rs1_addr_i(issue_pkt_r.instr.fields.rtype.rs1_addr)
+  (.id_rs1_addr_i(issue_pkt_r.instr.fields.rtype.rs1_addr)
    ,.id_rs1_i(irf_rs1)
 
-   ,.id_rs2_v_i(issue_pkt_r.irs2_v)
    ,.id_rs2_addr_i(issue_pkt_r.instr.fields.rtype.rs2_addr)
    ,.id_rs2_i(irf_rs2)
 
@@ -418,8 +361,6 @@ bp_be_pipe_mem
    ,.kill_ex3_i(exc_stage_r[2].poison_v) 
 
    ,.decode_i(dispatch_pkt_r.decode)
-   ,.exc_v_i(dispatch_pkt_r.fe_exception_not_instr)
-   ,.exc_i(dispatch_pkt_r.fe_exception_code)
    ,.pc_i(dispatch_pkt_r.pc)
    ,.instr_i(dispatch_pkt_r.instr)
    ,.rs1_i(dispatch_pkt_r.rs1)
@@ -438,7 +379,8 @@ bp_be_pipe_mem
    ,.mem_resp_v_i(mem_resp_v_i)
    ,.mem_resp_ready_o(mem_resp_ready_o)
 
-   ,.v_o(pipe_mem_v_lo)
+   ,.exc_v_o(pipe_mem_exc_v_lo)
+   ,.miss_v_o(pipe_mem_miss_v_lo)
    ,.data_o(pipe_mem_data_lo)
    );
 
@@ -488,24 +430,24 @@ assign pipe_int_data_lo_v = calc_stage_r[0].pipe_int_v;
 
 assign pipe_nop_data_lo = '0;
 
-logic [pipe_stage_els_lp-1:0][reg_data_width_lp-1:0] comp_stage_mux_li;
+logic [pipe_stage_els_lp-1:0][dword_width_p-1:0] comp_stage_mux_li;
 logic [pipe_stage_els_lp-1:0]                        comp_stage_mux_sel_li;
 
 assign comp_stage_mux_li = {pipe_fp_data_lo, pipe_mem_data_lo, pipe_mul_data_lo, pipe_int_data_lo, pipe_nop_data_lo};
 assign comp_stage_mux_sel_li = {pipe_fp_data_lo_v, pipe_mem_data_lo_v, pipe_mul_data_lo_v, pipe_int_data_lo_v, 1'b1};
 bsg_mux_segmented 
  #(.segments_p(pipe_stage_els_lp)
-   ,.segment_width_p(reg_data_width_lp)
+   ,.segment_width_p(dword_width_p)
    ) 
  comp_stage_mux
-  (.data0_i({comp_stage_r[0+:pipe_stage_els_lp-1], reg_data_width_lp'(0)})
+  (.data0_i({comp_stage_r[0+:pipe_stage_els_lp-1], dword_width_p'(0)})
    ,.data1_i(comp_stage_mux_li)
    ,.sel_i(comp_stage_mux_sel_li)
    ,.data_o(comp_stage_n)
    );
 
 bsg_dff 
- #(.width_p(reg_data_width_lp*pipe_stage_els_lp)
+ #(.width_p(dword_width_p*pipe_stage_els_lp)
    ) 
  comp_stage_reg 
   (.clk_i(clk_i)
@@ -523,7 +465,6 @@ bsg_dff
    ,.data_o(exc_stage_r)
    );
 
-wire fe_exc_v = chk_dispatch_v_i & issue_pkt_v_r & fe_exc_not_instr_isd;
 wire fe_nop_v = chk_dispatch_v_i & ~issue_pkt_v_r;
 wire be_nop_v = ~chk_dispatch_v_i &  mmu_cmd_ready_i;
 wire me_nop_v = ~chk_dispatch_v_i & ~mmu_cmd_ready_i;
@@ -532,20 +473,13 @@ always_comb
   begin
     // Form dispatch packet
     dispatch_pkt.pc                  = issue_pkt_r.pc;
-    dispatch_pkt.fe_exception_not_instr = fe_exc_not_instr_isd;
-    dispatch_pkt.fe_exception_code   = fe_exc_isd;
     dispatch_pkt.branch_metadata_fwd = issue_pkt_r.branch_metadata_fwd;
     dispatch_pkt.instr               = issue_pkt_r.instr;
     dispatch_pkt.rs1                 = bypass_rs1;
     dispatch_pkt.rs2                 = bypass_rs2;
     dispatch_pkt.imm                 = issue_pkt_r.imm;
 
-           if (fe_exc_v) 
-             begin
-               dispatch_pkt.decode = '0;
-               dispatch_pkt.decode.pipe_mem_v = 1'b1;
-             end
-      else if (fe_nop_v) dispatch_pkt = '0;
+      if (fe_nop_v) dispatch_pkt = '0;
       else if (be_nop_v) dispatch_pkt = '0;
       else if (me_nop_v) dispatch_pkt = '0;
       else               dispatch_pkt.decode = decoded;
@@ -553,25 +487,26 @@ always_comb
     // Strip out elements of the dispatch packet that we want to save for later
     calc_stage_isd.pc             = dispatch_pkt.pc;
     calc_stage_isd.instr          = dispatch_pkt.instr;
+    calc_stage_isd.v              = dispatch_pkt.decode.v;
     calc_stage_isd.instr_v        = dispatch_pkt.decode.instr_v;
     calc_stage_isd.pipe_int_v     = dispatch_pkt.decode.pipe_int_v;
     calc_stage_isd.pipe_mul_v     = dispatch_pkt.decode.pipe_mul_v;
     calc_stage_isd.pipe_mem_v     = dispatch_pkt.decode.pipe_mem_v;
     calc_stage_isd.pipe_fp_v      = dispatch_pkt.decode.pipe_fp_v;
-    calc_stage_isd.fencei_v       = dispatch_pkt.decode.fencei_v;
+    calc_stage_isd.mem_v          = dispatch_pkt.decode.mem_v;
+    calc_stage_isd.csr_v          = dispatch_pkt.decode.csr_v;
     calc_stage_isd.irf_w_v        = dispatch_pkt.decode.irf_w_v;
     calc_stage_isd.frf_w_v        = dispatch_pkt.decode.frf_w_v;
 
     // Calculator status ISD stage
-    calc_status.isd_v        = issue_pkt_v_r;
-    calc_status.isd_fence_v  = issue_pkt_r.fence_v;
-    calc_status.isd_mem_v    = issue_pkt_r.mem_v;
-    calc_status.isd_irs1_v   = issue_pkt_r.irs1_v;
-    calc_status.isd_frs1_v   = issue_pkt_r.frs1_v;
-    calc_status.isd_rs1_addr = issue_pkt_r.instr.fields.rtype.rs1_addr;
-    calc_status.isd_irs2_v   = issue_pkt_r.irs2_v;
-    calc_status.isd_frs2_v   = issue_pkt_r.frs2_v;
-    calc_status.isd_rs2_addr = issue_pkt_r.instr.fields.rtype.rs2_addr;
+    isd_status.isd_fence_v  = issue_pkt_v_r & issue_pkt_r.fence_v;
+    isd_status.isd_mem_v    = issue_pkt_v_r & issue_pkt_r.mem_v;
+    isd_status.isd_irs1_v   = issue_pkt_v_r & issue_pkt_r.irs1_v;
+    isd_status.isd_frs1_v   = issue_pkt_v_r & issue_pkt_r.frs1_v;
+    isd_status.isd_rs1_addr = issue_pkt_r.instr.fields.rtype.rs1_addr;
+    isd_status.isd_irs2_v   = issue_pkt_v_r & issue_pkt_r.irs2_v;
+    isd_status.isd_frs2_v   = issue_pkt_v_r & issue_pkt_r.frs2_v;
+    isd_status.isd_rs2_addr = issue_pkt_r.instr.fields.rtype.rs2_addr;
 
     // Calculator status EX1 information
     calc_status.int1_v                   = dispatch_pkt_r.decode.pipe_int_v;
@@ -581,10 +516,11 @@ always_comb
                                            | dispatch_pkt_r.decode.jmp_v;
     calc_status.int1_br_or_jmp           = dispatch_pkt_r.decode.br_v 
                                            | dispatch_pkt_r.decode.jmp_v;
-    calc_status.ex1_v                    = dispatch_pkt_v_r; 
+    calc_status.ex1_v                    = dispatch_pkt_r.decode.v & ~exc_stage_r[0].poison_v;
     calc_status.ex1_pc                   = dispatch_pkt_r.pc;
     calc_status.ex1_instr_v              = dispatch_pkt_r.decode.instr_v & ~exc_stage_r[0].poison_v;
-    
+    calc_status.mem1_fencei_v            = dispatch_pkt_r.decode.fencei_v;
+
     // Dependency information for pipelines
     for (integer i = 0; i < pipe_stage_els_lp; i++) 
       begin : dep_status
@@ -604,23 +540,14 @@ always_comb
                                               & ~exc_stage_n[i+1].poison_v
                                               & calc_stage_r[i].frf_w_v;
         calc_status.dep_status[i].rd_addr   = calc_stage_r[i].instr.fields.rtype.rd_addr;
-        calc_status.dep_status[i].mem_v     = calc_stage_r[i].pipe_mem_v
-                                              & ~exc_stage_n[i+1].poison_v;
-        calc_status.dep_status[i].stall_v   = (exc_stage_r[i].csr_instr_v
-                                              | calc_stage_r[i].fencei_v
-                                              ) & ~exc_stage_n[i+1].poison_v;
+        calc_status.dep_status[i].mem_v     = calc_stage_r[i].mem_v & ~exc_stage_n[i+1].poison_v;
+        calc_status.dep_status[i].serial_v  = calc_stage_r[i].csr_v & ~exc_stage_n[i+1].poison_v;
       end
 
     // Additional commit point information
-    calc_status.mem3_pc           = calc_stage_r[2].pc;
-    // This should actually be reliant on not begin a fill request
-    calc_status.mem3_miss_v       = (~pipe_mem_v_lo & calc_stage_r[2].pipe_mem_v)
-                                     & ~exc_stage_r[2].poison_v;
-    calc_status.mem3_fencei_v     = calc_stage_r[2].fencei_v & ~exc_stage_r[2].poison_v;
-    // TODO: Handles dequeueing both healthy and poisoned instructions from the queue. 
-    //   Should rename for descriptiveness
-    calc_status.instr_cmt_v       = (calc_stage_r[2].instr_v | exc_stage_r[2].fe_exc_v) & ~exc_stage_r[2].roll_v;
-    calc_status.mem3_fe_exc_v     = exc_stage_r[2].fe_exc_v & ~exc_stage_r[2].poison_v;
+    calc_status.mem3_pc     = calc_stage_r[2].pc;
+    calc_status.mem3_miss_v = pipe_mem_miss_v_lo & ~exc_stage_r[2].poison_v;
+    calc_status.mem3_cmt_v  = calc_stage_r[2].v & ~exc_stage_r[2].roll_v;
     
     // Slicing the completion pipe for Forwarding information
     for (integer i = 1; i < pipe_stage_els_lp; i++) 
@@ -642,9 +569,6 @@ always_comb
         exc_stage_n[i] = (i == 0) ? '0 : exc_stage_r[i-1];
       end
         // If there are new exceptions, add them to the list
-        exc_stage_n[0].csr_instr_v     = chk_dispatch_v_i & dispatch_pkt.decode.csr_instr_v;
-
-        exc_stage_n[0].fe_exc_v        = fe_exc_v;
         exc_stage_n[0].fe_nop_v        = fe_nop_v;
         exc_stage_n[0].be_nop_v        = be_nop_v;
         exc_stage_n[0].me_nop_v        = me_nop_v;
@@ -657,13 +581,13 @@ always_comb
         exc_stage_n[0].poison_v        = chk_poison_iss_r        | chk_poison_isd_i;
         exc_stage_n[1].poison_v        = exc_stage_r[0].poison_v | chk_poison_ex1_i;
         exc_stage_n[2].poison_v        = exc_stage_r[1].poison_v | chk_poison_ex2_i;
-        exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | calc_status.mem3_miss_v; 
+        exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | pipe_mem_miss_v_lo | pipe_mem_exc_v_lo;
   end
 
 assign instret_mem3_o = calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v;
 assign pc_mem3_o      = calc_stage_r[2].pc;
-assign pc_v_mem3_o    = (calc_stage_r[2].instr_v | exc_stage_r[2].fe_exc_v) & ~exc_stage_r[2].poison_v;
+assign pc_v_mem3_o    = calc_stage_r[2].v & ~exc_stage_r[2].poison_v;
 assign instr_mem3_o   = calc_stage_r[2].instr;
 
-endmodule : bp_be_calculator_top
+endmodule
 

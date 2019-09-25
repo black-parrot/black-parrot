@@ -147,9 +147,9 @@ module bp_be_dcache_lce_req
 
     lce_resp.dst_id = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_lp] : 1'b0;
     lce_resp.src_id = lce_id_i;
-    lce_resp.msg_type = e_lce_cce_coh_ack;
+    lce_resp.msg_type = bp_lce_cce_resp_type_e'('0);
     lce_resp.addr = miss_addr_r;
-    lce_resp.msg.data = '0;
+    lce_resp.data = '0;
 
     unique case (state_r)
 
@@ -260,14 +260,14 @@ module bp_be_dcache_lce_req
         set_tag_received_n = set_tag_received_i ? 1'b1 : set_tag_received_r;
 
         if (set_tag_wakeup_received_i) begin
-          state_n = e_SEND_COH_ACK;
+          state_n = e_READY;
         end
         else if (uncached_data_received_i) begin
           state_n = e_READY;
         end
         else if (set_tag_received) begin
           if (cce_data_received) begin
-            state_n = e_SEND_COH_ACK;
+            state_n = e_READY;
           end
           else begin
             state_n = e_SLEEP;
