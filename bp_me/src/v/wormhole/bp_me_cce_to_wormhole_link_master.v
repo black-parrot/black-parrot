@@ -20,11 +20,11 @@ module bp_me_cce_to_wormhole_link_master
   , input                                        reset_i
 
   // CCE-MEM Interface
-  , input  [cce_mem_cmd_width_lp-1:0]            mem_cmd_i
+  , input  [cce_mem_msg_width_lp-1:0]            mem_cmd_i
   , input                                        mem_cmd_v_i
   , output                                       mem_cmd_ready_o
                                                   
-  , output [mem_cce_resp_width_lp-1:0]           mem_resp_o
+  , output [cce_mem_msg_width_lp-1:0]            mem_resp_o
   , output                                       mem_resp_v_o
   , input                                        mem_resp_yumi_i
                                                  
@@ -46,15 +46,14 @@ module bp_me_cce_to_wormhole_link_master
 // CCE-MEM interface packets
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
   
-bp_cce_mem_cmd_s mem_cmd_cast_i;
-bp_mem_cce_resp_s mem_resp_cast_o;
+bp_cce_mem_msg_s mem_cmd_cast_i, mem_resp_cast_o;
 
 assign mem_cmd_cast_i = mem_cmd_i;
 assign mem_resp_o = mem_resp_cast_o;
 
 // CCE-MEM IF to Wormhole routed interface
-`declare_bp_mem_wormhole_payload_s(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, cce_mem_cmd_width_lp, mem_cmd_payload_s);
-`declare_bp_mem_wormhole_payload_s(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, mem_cce_resp_width_lp, mem_resp_payload_s);
+`declare_bp_mem_wormhole_payload_s(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, cce_mem_msg_width_lp, mem_cmd_payload_s);
+`declare_bp_mem_wormhole_payload_s(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, cce_mem_msg_width_lp, mem_resp_payload_s);
 `declare_bsg_wormhole_concentrator_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p, $bits(mem_cmd_payload_s), mem_cmd_packet_s);
 `declare_bsg_wormhole_concentrator_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p, $bits(mem_resp_payload_s), mem_resp_packet_s);
 

@@ -92,6 +92,7 @@ protected:
   void parseALU(vector<string> *tokens, int n, bp_cce_inst_s *inst);
   void parseBranch(vector<string> *tokens, int n, bp_cce_inst_s *inst);
   void parseMove(vector<string> *tokens, int n, bp_cce_inst_s *inst);
+  void parseFlag(vector<string> *tokens, int n, bp_cce_inst_s *inst);
   void parseReadDir(vector<string> *tokens, int n, bp_cce_inst_s *inst);
   void parseWriteDir(vector<string> *tokens, int n, bp_cce_inst_s *inst);
   void parseMisc(vector<string> *tokens, int n, bp_cce_inst_s *inst);

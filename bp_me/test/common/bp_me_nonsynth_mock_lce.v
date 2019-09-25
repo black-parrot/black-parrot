@@ -804,9 +804,6 @@ module bp_me_nonsynth_mock_lce
           // data comes from the data command
           data_next_n = lce_cmd_r.msg.dt_cmd.data;
 
-// TODO:
-          //cur_set_n = lce_cmd_r.msg.cmd.addr[block_offset_bits_lp +: lg_lce_sets_lp];
-          //cur_way_n = lce_cmd_r.way_id;
           tag_w_n[cur_set_n][cur_way_n] = 1'b1;
           tag_next_n[cur_set_n][cur_way_n].coh_st = lce_cmd_r.msg.dt_cmd.state;
           tag_next_n[cur_set_n][cur_way_n].tag = lce_cmd_r.msg.dt_cmd.addr[paddr_width_p-1 -: ptag_width_lp];
@@ -818,10 +815,7 @@ module bp_me_nonsynth_mock_lce
           mshr_n.data_received = 1'b1;
           mshr_n.tag_received = 1'b1;
 
-          // if tag was already received, go to next state to send the response, else go to 
-          // ready to wait for more commands
-          //lce_state_n = (mshr_r.tag_received) ? LCE_CMD_ST_DATA_RESP : READY;
-          lce_state_n = LCE_CMD_ST_DATA_RESP;
+          lce_state_n = FINISH_MISS;
 
         end
         LCE_CMD_INV: begin
@@ -893,7 +887,7 @@ module bp_me_nonsynth_mock_lce
           lce_resp_lo.addr = lce_cmd_r.msg.cmd.addr;
 
           if (dirty_bits[cur_set][cur_way]) begin
-            lce_resp_lo.msg.data = data_cur;
+            lce_resp_lo.data = data_cur;
             lce_resp_lo.msg_type = e_lce_cce_resp_wb;
 
             // clear the dirty bit - but only do the write if the data response is accepted
@@ -903,7 +897,7 @@ module bp_me_nonsynth_mock_lce
             dirty_bits_n[cur_set][cur_way] = 1'b0;
 
           end else begin
-            lce_resp_lo.msg.data = '0;
+            lce_resp_lo.data = '0;
             lce_resp_lo.msg_type = e_lce_cce_resp_null_wb;
 
           end
@@ -933,6 +927,7 @@ module bp_me_nonsynth_mock_lce
 
         end
         LCE_CMD_ST_DATA_RESP: begin
+          $error("LCE_CMD_ST_DATA_RESP state reached");
           // respond to the miss - tag and data both received
           // all information needed to respond is stored in mshr
 
@@ -961,7 +956,7 @@ module bp_me_nonsynth_mock_lce
           tag_next_n[cur_set_n][cur_way_n].tag = lce_cmd_r.msg.cmd.addr[paddr_width_p-1 -: ptag_width_lp];
 
           // send coh_ack next cycle
-          lce_state_n = LCE_CMD_STW_RESP;
+          lce_state_n = FINISH_MISS;
 
         end
         LCE_CMD_STW_RESP: begin

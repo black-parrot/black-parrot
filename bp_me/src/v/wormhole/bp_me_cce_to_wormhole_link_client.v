@@ -22,11 +22,11 @@ module bp_me_cce_to_wormhole_link_client
   (input                                         clk_i
   , input                                        reset_i
 
-  , output [cce_mem_cmd_width_lp-1:0]            mem_cmd_o
+  , output [cce_mem_msg_width_lp-1:0]            mem_cmd_o
   , output                                       mem_cmd_v_o
   , input                                        mem_cmd_yumi_i
                                            
-  , input [mem_cce_resp_width_lp-1:0]            mem_resp_i
+  , input [cce_mem_msg_width_lp-1:0]             mem_resp_i
   , input                                        mem_resp_v_i
   , output                                       mem_resp_ready_o
 
@@ -43,8 +43,8 @@ module bp_me_cce_to_wormhole_link_client
   );
   
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
-  `declare_bp_mem_wormhole_payload_s(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, cce_mem_cmd_width_lp, mem_cmd_payload_s);
-  `declare_bp_mem_wormhole_payload_s(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, mem_cce_resp_width_lp, mem_resp_payload_s);
+  `declare_bp_mem_wormhole_payload_s(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, cce_mem_msg_width_lp, mem_cmd_payload_s);
+  `declare_bp_mem_wormhole_payload_s(mem_noc_reserved_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, cce_mem_msg_width_lp, mem_resp_payload_s);
   `declare_bsg_wormhole_concentrator_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p, $bits(mem_cmd_payload_s), mem_cmd_packet_s);
   `declare_bsg_wormhole_concentrator_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p, $bits(mem_resp_payload_s), mem_resp_packet_s);
 

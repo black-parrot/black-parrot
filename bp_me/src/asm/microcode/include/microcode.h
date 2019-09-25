@@ -13,6 +13,10 @@
 #define LCE_ASSOC 8
 #endif
 
+#ifndef BLOCK_SIZE
+#define BLOCK_SIZE 64
+#endif
+
 #define SYNC 0
 #define SC 1
 #define TR 2
@@ -39,5 +43,8 @@
 
 #define MEM_CMD_REQ 0
 #define MEM_CMD_WB 4
+
+#define MEM_CMD_INV 0
+#define MEM_CMD_FLUSH 1
 
 #endif

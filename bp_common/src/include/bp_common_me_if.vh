@@ -153,10 +153,7 @@
  */                                                                                                      \
   typedef struct packed                                                                                  \
   {                                                                                                      \
-    union packed                                                                                         \
-    {                                                                                                    \
-      logic [cce_block_width_mp-1:0] data;                                                               \
-    }                                            msg;                                                    \
+    logic [cce_block_width_mp-1:0]               data;                                                   \
     logic [paddr_width_mp-1:0]                   addr;                                                   \
     bp_lce_cce_resp_type_e                       msg_type;                                               \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      src_id;                                                 \

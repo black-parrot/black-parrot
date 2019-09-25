@@ -67,12 +67,13 @@ bp_cce_inst_op_e
 Assembler::getOp(const char* op) {
   if (!strcmp("add", op) || !strcmp("inc", op) || !strcmp("sub", op) || !strcmp("dec", op)
       || !strcmp("lsh", op) || !strcmp("rsh", op) || !strcmp("and", op) || !strcmp("or", op)
-      || !strcmp("xor", op) || !strcmp("neg", op)) {
+      || !strcmp("xor", op) || !strcmp("neg", op) || !strcmp("addi", op) || !strcmp("subi", op)) {
     return e_op_alu;
   } else if (!strcmp("bi", op) || !strcmp("beq", op) || !strcmp("bne", op) || !strcmp("bz", op)
-             || !strcmp("bnz", op) || !strcmp("bf", op) || !strcmp("bfz", op) || !strcmp("bqr", op)
+             || !strcmp("bnz", op) || !strcmp("bf", op) || !strcmp("bfz", op) || !strcmp("bqv", op)
              || !strcmp("blt", op) || !strcmp("ble", op) || !strcmp("bgt", op) || !strcmp("bge", op)
-             || !strcmp("beqi", op) || !strcmp("bs", op) || !strcmp("bsz", op)) {
+             || !strcmp("beqi", op) || !strcmp("bneqi", op)
+             || !strcmp("bs", op) || !strcmp("bsz", op)) {
     return e_op_branch;
   } else if (!strcmp("mov", op) || !strcmp("movi", op) || !strcmp("movf", op) || !strcmp("movsg", op)
              || !strcmp("movgs", op)) {
@@ -83,7 +84,8 @@ Assembler::getOp(const char* op) {
     return e_op_read_dir;
   } else if (!strcmp("wdp", op) || !strcmp("wde", op) || !strcmp("wds", op)) {
     return e_op_write_dir;
-  } else if (!strcmp("gad", op) || !strcmp("stall", op) || !strcmp("clm", op)) {
+  } else if (!strcmp("gad", op) || !strcmp("stall", op) || !strcmp("clm", op)
+             || !strcmp("fence", op)) {
     return e_op_misc;
   } else if (!strcmp("wfq", op) || !strcmp("pushq", op) || !strcmp("popq", op)
              || !strcmp("poph", op)) {
@@ -96,9 +98,9 @@ Assembler::getOp(const char* op) {
 
 uint8_t
 Assembler::getMinorOp(const char* op) {
-  if (!strcmp("add", op) || !strcmp("inc", op)) {
+  if (!strcmp("add", op) || !strcmp("inc", op) || !strcmp("addi", op)) {
     return e_add;
-  } else if (!strcmp("sub", op) || !strcmp("dec", op)) {
+  } else if (!strcmp("sub", op) || !strcmp("dec", op) || !strcmp("subi", op)) {
     return e_sub;
   } else if (!strcmp("lsh", op)) {
     return e_lsh;
@@ -116,13 +118,13 @@ Assembler::getMinorOp(const char* op) {
     return e_bi;
   } else if (!strcmp("beq", op) || !strcmp("bz", op) || !strcmp("beqi", op)) {
     return e_beq;
-  } else if (!strcmp("bqr", op)) {
-    return e_bqr;
+  } else if (!strcmp("bqv", op)) {
+    return e_bqv;
   } else if (!strcmp("bs", op) || !strcmp("bsz", op)) {
     return e_bs;
   } else if (!strcmp("bf", op) || !strcmp("bfz", op)) {
     return e_bf;
-  } else if (!strcmp("bne", op) || !strcmp("bnz", op)) {
+  } else if (!strcmp("bne", op) || !strcmp("bnz", op) || !strcmp("bneqi", op)) {
     return e_bne;
   } else if (!strcmp("blt", op) || !strcmp("bgt", op)) {
     return e_blt;
@@ -162,6 +164,8 @@ Assembler::getMinorOp(const char* op) {
     return e_stall;
   } else if (!strcmp("clm", op)) {
     return e_clm;
+  } else if (!strcmp("fence", op)) {
+    return e_fence;
   } else if (!strcmp("wfq", op)) {
     return e_wfq;
   } else if (!strcmp("pushq", op)) {
@@ -202,14 +206,22 @@ Assembler::parseSrcOpd(string &s) {
     return e_src_sharers_state_r0;
   } else if (!s.compare("reqlce")) {
     return e_src_req_lce;
+  } else if (!s.compare("nextcohstate")) {
+    return e_src_next_coh_state;
+  } else if (!s.compare("numlce")) {
+    return e_src_num_lce;
+  } else if (!s.compare("reqaddr")) {
+    return e_src_req_addr;
   } else if (!s.compare("lcereq")) {
-    return e_src_lce_req_ready;
+    return e_src_lce_req_v;
   } else if (!s.compare("memresp")) {
-    return e_src_mem_resp_ready;
+    return e_src_mem_resp_v;
   } else if (!s.compare("pending")) {
-    return e_src_pending_ready;
+    return e_src_pending_v;
   } else if (!s.compare("lceresp")) {
-    return e_src_lce_resp_ready;
+    return e_src_lce_resp_v;
+  } else if (!s.compare("memcmd")) {
+    return e_src_mem_cmd_v;
   } else if (!s.compare("rqf")) {
     return e_src_rqf;
   } else if (!s.compare("ucf")) {
@@ -242,10 +254,6 @@ Assembler::parseSrcOpd(string &s) {
     return e_src_nwbf;
   } else {
     return e_src_imm;
-    /*
-    printf("Unknown source operand: %s\n", s.c_str());
-    exit(-1);
-    */
   }
 }
 
@@ -269,6 +277,8 @@ Assembler::parseDstOpd(string &s) {
     return e_dst_r7;
   } else if (!s.compare("nextcohst")) {
     return e_dst_next_coh_state;
+  } else if (!s.compare("numlce")) {
+    return e_dst_num_lce;
   } else if (!s.compare("rqf")) {
     return e_dst_rqf;
   } else if (!s.compare("ucf")) {
@@ -368,9 +378,12 @@ Assembler::parseALU(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
     inst->type_u.alu_op_s.src_a = parseSrcOpd(tokens->at(1));
     inst->type_u.alu_op_s.dst = parseDstOpd(tokens->at(1));
     inst->type_u.alu_op_s.src_b = e_src_imm;
-  } else if (tokens->size() == 4) { // add, sub, and, or, xor
+  } else if (tokens->size() == 4) { // add, sub, and, or, xor, addi, subi
     inst->type_u.alu_op_s.src_a = parseSrcOpd(tokens->at(1));
     inst->type_u.alu_op_s.src_b = parseSrcOpd(tokens->at(2));
+    if (inst->type_u.alu_op_s.src_b == e_src_imm) {
+      inst->type_u.alu_op_s.imm = parseImm(tokens->at(2), 16);
+    }
     inst->type_u.alu_op_s.dst = parseDstOpd(tokens->at(3));
   } else {
     printf("Unknown ALU instruction: %s\n", tokens->at(0).c_str());
@@ -409,7 +422,7 @@ Assembler::parseBranch(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
   // Branch Flag, Branch Queue Ready, Branch Zero, Branch Not Zero
   } else if (tokens->size() == 3) {
     inst->type_u.branch_op_s.src_a = parseSrcOpd(tokens->at(1));
-    if (!strcmp("bf", tokens->at(0).c_str()) || !strcmp("bqr", tokens->at(0).c_str())) {
+    if (!strcmp("bf", tokens->at(0).c_str()) || !strcmp("bqv", tokens->at(0).c_str())) {
       inst->type_u.branch_op_s.src_b = e_src_imm;
       inst->type_u.branch_op_s.imm = 1;
     } else if (!strcmp("bs", tokens->at(0).c_str())) {
@@ -427,7 +440,7 @@ Assembler::parseBranch(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
     inst->type_u.branch_op_s.target = getBranchTarget(tokens->at(2));
   // Branch comparing two sources, or Branch Equal Immediate
   } else if (tokens->size() == 4) {
-    if (!strcmp("beqi", tokens->at(0).c_str())) {
+    if (!strcmp("beqi", tokens->at(0).c_str()) || !strcmp("bneqi", tokens->at(0).c_str())) {
       inst->type_u.branch_op_s.src_a = parseSrcOpd(tokens->at(1));
       inst->type_u.branch_op_s.src_b = e_src_imm;
       inst->type_u.branch_op_s.imm = (uint16_t)parseImm(tokens->at(2), 16);
@@ -518,13 +531,22 @@ Assembler::parseMove(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
       } else {
         inst->type_u.mov_op_s.imm = (uint32_t)parseImm(tokens->at(1), 32);
       }
-    } else if (inst->minor_op == e_mov) {
+    } else if (inst->minor_op == e_mov || inst->minor_op == e_movf || inst->minor_op == e_movsg
+               || inst->minor_op == e_movgs) {
       inst->type_u.mov_op_s.src = parseSrcOpd(tokens->at(1));
     } else {
       printf("Unknown Move instruction: %s\n", tokens->at(0).c_str());
       exit(-1);
     }
-  } else if (tokens->size() == 2) { // sf or sfz
+  } else {
+    printf("Unknown Move instruction: %s\n", tokens->at(0).c_str());
+    exit(-1);
+  }
+}
+
+void
+Assembler::parseFlag(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
+  if (tokens->size() == 2) { // sf or sfz
     inst->type_u.flag_op_s.dst = parseDstOpd(tokens->at(1));
     if (!strcmp("sf", tokens->at(0).c_str())) {
       inst->type_u.flag_op_s.imm = 1;
@@ -534,8 +556,9 @@ Assembler::parseMove(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
       printf("Unknown Flag instruction: %s\n", tokens->at(0).c_str());
       exit(-1);
     }
+  // TODO: implement andf and orf instructions
   } else {
-    printf("Unknown Move or Flag instruction: %s\n", tokens->at(0).c_str());
+    printf("Unknown Flag instruction: %s\n", tokens->at(0).c_str());
     exit(-1);
   }
 }
@@ -550,6 +573,14 @@ Assembler::parseDirWgSel(string &s) {
     return e_dir_wg_sel_r2;
   } else if (!s.compare("r3")) {
     return e_dir_wg_sel_r3;
+  } else if (!s.compare("r4")) {
+    return e_dir_wg_sel_r4;
+  } else if (!s.compare("r5")) {
+    return e_dir_wg_sel_r5;
+  } else if (!s.compare("r6")) {
+    return e_dir_wg_sel_r6;
+  } else if (!s.compare("r7")) {
+    return e_dir_wg_sel_r7;
   } else if (!s.compare("req")) {
     return e_dir_wg_sel_req_addr;
   } else if (!s.compare("lru")) {
@@ -570,6 +601,14 @@ Assembler::parseDirLceSel(string &s) {
     return e_dir_lce_sel_r2;
   } else if (!s.compare("r3")) {
     return e_dir_lce_sel_r3;
+  } else if (!s.compare("r4")) {
+    return e_dir_lce_sel_r4;
+  } else if (!s.compare("r5")) {
+    return e_dir_lce_sel_r5;
+  } else if (!s.compare("r6")) {
+    return e_dir_lce_sel_r6;
+  } else if (!s.compare("r7")) {
+    return e_dir_lce_sel_r7;
   } else if (!s.compare("req")) {
     return e_dir_lce_sel_req_lce;
   } else if (!s.compare("tr")) {
@@ -590,6 +629,14 @@ Assembler::parseDirWaySel(string &s) {
     return e_dir_way_sel_r2;
   } else if (!s.compare("r3")) {
     return e_dir_way_sel_r3;
+  } else if (!s.compare("r4")) {
+    return e_dir_way_sel_r4;
+  } else if (!s.compare("r5")) {
+    return e_dir_way_sel_r5;
+  } else if (!s.compare("r6")) {
+    return e_dir_way_sel_r6;
+  } else if (!s.compare("r7")) {
+    return e_dir_way_sel_r7;
   } else if (!s.compare("req")) {
     return e_dir_way_sel_req_addr_way;
   } else if (!s.compare("lru")) {
@@ -604,7 +651,23 @@ Assembler::parseDirWaySel(string &s) {
 
 bp_cce_inst_dir_tag_sel_e
 Assembler::parseDirTagSel(string &s) {
-  if (!s.compare("req")) {
+  if (!s.compare("r0")) {
+    return e_dir_tag_sel_r0;
+  } else if (!s.compare("r1")) {
+    return e_dir_tag_sel_r1;
+  } else if (!s.compare("r2")) {
+    return e_dir_tag_sel_r2;
+  } else if (!s.compare("r3")) {
+    return e_dir_tag_sel_r3;
+  } else if (!s.compare("r4")) {
+    return e_dir_tag_sel_r4;
+  } else if (!s.compare("r5")) {
+    return e_dir_tag_sel_r5;
+  } else if (!s.compare("r6")) {
+    return e_dir_tag_sel_r6;
+  } else if (!s.compare("r7")) {
+    return e_dir_tag_sel_r7;
+  } else if (!s.compare("req")) {
     return e_dir_tag_sel_req_addr;
   } else if (!s.compare("lru")) {
     return e_dir_tag_sel_lru_way_addr;
@@ -618,7 +681,23 @@ Assembler::parseDirTagSel(string &s) {
 
 bp_cce_inst_dir_coh_state_sel_e
 Assembler::parseDirCohStSel(string &s) {
-  if (!s.compare("nextcohst")) {
+  if (!s.compare("r0")) {
+    return e_dir_coh_sel_r0;
+  } else if (!s.compare("r1")) {
+    return e_dir_coh_sel_r1;
+  } else if (!s.compare("r2")) {
+    return e_dir_coh_sel_r2;
+  } else if (!s.compare("r3")) {
+    return e_dir_coh_sel_r3;
+  } else if (!s.compare("r4")) {
+    return e_dir_coh_sel_r4;
+  } else if (!s.compare("r5")) {
+    return e_dir_coh_sel_r5;
+  } else if (!s.compare("r6")) {
+    return e_dir_coh_sel_r6;
+  } else if (!s.compare("r7")) {
+    return e_dir_coh_sel_r7;
+  } else if (!s.compare("nextcohst")) {
     return e_dir_coh_sel_next_coh_st;
   } else {
     return e_dir_coh_sel_inst_imm;
@@ -632,9 +711,11 @@ Assembler::parseReadDir(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
     // nothing special to set
   } else if (inst->minor_op == e_rdw) {
     inst->type_u.read_dir_op_s.dir_lce_sel = parseDirLceSel(tokens->at(2));
+    inst->type_u.read_dir_op_s.dir_tag_sel = parseDirTagSel(tokens->at(3));
   } else if (inst->minor_op == e_rde) {
     inst->type_u.read_dir_op_s.dir_lce_sel = parseDirLceSel(tokens->at(2));
     inst->type_u.read_dir_op_s.dir_way_sel = parseDirWaySel(tokens->at(3));
+    inst->type_u.read_dir_op_s.dst = parseDstOpd(tokens->at(4));
   } else {
     printf("Unknown Read Directory instruction\n");
     exit(-1);
@@ -669,7 +750,8 @@ Assembler::parseWriteDir(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
 
 void
 Assembler::parseMisc(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
-  if (inst->minor_op != e_gad && inst->minor_op != e_stall && inst->minor_op != e_clm) {
+  if (inst->minor_op != e_gad && inst->minor_op != e_stall && inst->minor_op != e_clm
+      && inst->minor_op != e_fence) {
     printf("Unknown Misc instruction: %s\n", tokens->at(0).c_str());
     exit(-1);
   }
@@ -685,6 +767,8 @@ Assembler::parseSrcQueue(string &s) {
     return e_src_q_pending;
   } else if (!s.compare("lceresp")) {
     return e_src_q_lce_resp;
+  } else if (!s.compare("memcmd")) {
+    return e_src_q_mem_cmd;
   } else {
     printf("Unknown src queue select operand: %s\n", s.c_str());
     exit(-1);
@@ -697,6 +781,8 @@ Assembler::parseDstQueue(string &s) {
     return e_dst_q_lce_cmd;
   } else if (!s.compare("memcmd")) {
     return e_dst_q_mem_cmd;
+  } else if (!s.compare("memresp")) {
+    return e_dst_q_mem_resp;
   } else {
     printf("Unknown dst queue select operand: %s\n", s.c_str());
     exit(-1);
@@ -717,6 +803,14 @@ Assembler::parseLceCmdLceSel(string &s) {
     return e_lce_cmd_lce_r2;
   } else if (!s.compare("r3")) {
     return e_lce_cmd_lce_r3;
+  } else if (!s.compare("r4")) {
+    return e_lce_cmd_lce_r4;
+  } else if (!s.compare("r5")) {
+    return e_lce_cmd_lce_r5;
+  } else if (!s.compare("r6")) {
+    return e_lce_cmd_lce_r6;
+  } else if (!s.compare("r7")) {
+    return e_lce_cmd_lce_r7;
   } else {
     printf("Bad LCE Cmd LCE select operand\n");
     exit(-1);
@@ -737,6 +831,14 @@ Assembler::parseLceCmdAddrSel(string &s) {
     return e_lce_cmd_addr_r2;
   } else if (!s.compare("r3")) {
     return e_lce_cmd_addr_r3;
+  } else if (!s.compare("r4")) {
+    return e_lce_cmd_addr_r4;
+  } else if (!s.compare("r5")) {
+    return e_lce_cmd_addr_r5;
+  } else if (!s.compare("r6")) {
+    return e_lce_cmd_addr_r6;
+  } else if (!s.compare("r7")) {
+    return e_lce_cmd_addr_r7;
   } else {
    printf("Bad LCE Cmd Addr select operand\n");
    exit(-1);
@@ -745,7 +847,23 @@ Assembler::parseLceCmdAddrSel(string &s) {
 
 bp_cce_inst_lce_cmd_way_sel_e
 Assembler::parseLceCmdWaySel(string &s) {
-  if (!s.compare("req")) {
+  if (!s.compare("r0")) {
+   return e_lce_cmd_way_r0;
+  } else if (!s.compare("r1")) {
+   return e_lce_cmd_way_r1;
+  } else if (!s.compare("r2")) {
+   return e_lce_cmd_way_r2;
+  } else if (!s.compare("r3")) {
+   return e_lce_cmd_way_r3;
+  } else if (!s.compare("r4")) {
+   return e_lce_cmd_way_r4;
+  } else if (!s.compare("r5")) {
+   return e_lce_cmd_way_r5;
+  } else if (!s.compare("r6")) {
+   return e_lce_cmd_way_r6;
+  } else if (!s.compare("r7")) {
+   return e_lce_cmd_way_r7;
+  } else if (!s.compare("req")) {
    return e_lce_cmd_way_req_addr_way;
   } else if (!s.compare("tr")) {
    return e_lce_cmd_way_tr_addr_way;
@@ -765,6 +883,22 @@ Assembler::parseMemCmdAddrSel(string &s) {
    return e_mem_cmd_addr_req_addr;
   } else if (!s.compare("lru")) {
    return e_mem_cmd_addr_lru_way_addr;
+  } else if (!s.compare("r0")) {
+    return e_mem_cmd_addr_r0;
+  } else if (!s.compare("r1")) {
+    return e_mem_cmd_addr_r1;
+  } else if (!s.compare("r2")) {
+    return e_mem_cmd_addr_r2;
+  } else if (!s.compare("r3")) {
+    return e_mem_cmd_addr_r3;
+  } else if (!s.compare("r4")) {
+    return e_mem_cmd_addr_r4;
+  } else if (!s.compare("r5")) {
+    return e_mem_cmd_addr_r5;
+  } else if (!s.compare("r6")) {
+    return e_mem_cmd_addr_r6;
+  } else if (!s.compare("r7")) {
+    return e_mem_cmd_addr_r7;
   } else {
    printf("Bad Mem Cmd Addr select operand\n");
    exit(-1);
@@ -777,6 +911,9 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
     for (int i = 1; i < n; i++) {
       bp_cce_inst_src_q_sel_e q = parseSrcQueue(tokens->at(i));
       switch (q) {
+        case e_src_q_mem_cmd:
+          inst->type_u.queue_op_s.op.wfq.qmask |= (1 << 4);
+          break;
         case e_src_q_lce_req:
           inst->type_u.queue_op_s.op.wfq.qmask |= (1 << 3);
           break;
@@ -797,7 +934,7 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
   } else if (inst->minor_op == e_popq || inst->minor_op == e_poph) {
     bp_cce_inst_src_q_sel_e srcQ = parseSrcQueue(tokens->at(1));
     inst->type_u.queue_op_s.op.popq.src_q = srcQ;
-    if (srcQ == e_src_q_lce_resp) {
+    if (srcQ == e_src_q_lce_resp || srcQ == e_src_q_mem_resp || srcQ == e_src_q_mem_cmd) {
       inst->type_u.queue_op_s.op.popq.dst = parseDstOpd(tokens->at(2));
     }
   } else if (inst->minor_op == e_pushq) {
@@ -807,7 +944,6 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
     inst->type_u.queue_op_s.op.pushq.lce_cmd_lce_sel = e_lce_cmd_lce_0;
     inst->type_u.queue_op_s.op.pushq.lce_cmd_addr_sel = e_lce_cmd_addr_0;
     inst->type_u.queue_op_s.op.pushq.lce_cmd_way_sel = e_lce_cmd_way_0;
-    // TODO: default to req addr for mem command, since only writeback uses lru_addr
     inst->type_u.queue_op_s.op.pushq.mem_cmd_addr_sel = e_mem_cmd_addr_req_addr;
     // parse lce, addr, way, and mem_addr selects
     switch (dstQ) {
@@ -835,6 +971,16 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
           inst->type_u.queue_op_s.op.pushq.mem_cmd_addr_sel = parseMemCmdAddrSel(tokens->at(3));
         }
         break;
+      case e_dst_q_mem_resp:
+        if (tokens->size() <= 2) {
+          printf("Not enough tokens for pushq memresp\n");
+          exit(-1);
+        }
+        if (tokens->size() > 2) {
+          inst->type_u.queue_op_s.op.pushq.cmd.mem_resp =
+            (bp_mem_cce_cmd_type_e)(parseImm(tokens->at(2), 16) & 0xF);
+        }
+        break;
       default:
         printf("Unknown queue\n");
         exit(-1);
@@ -845,7 +991,6 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
   }
 }
 
-// parse based on tokens[0]
 void
 Assembler::parseTokens(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
 
@@ -861,8 +1006,10 @@ Assembler::parseTokens(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
       parseBranch(tokens, n, inst);
       break;
     case e_op_move:
-    case e_op_flag:
       parseMove(tokens, n, inst);
+      break;
+    case e_op_flag:
+      parseFlag(tokens, n, inst);
       break;
     case e_op_read_dir:
       parseReadDir(tokens, n, inst);
@@ -1042,8 +1189,6 @@ Assembler::writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &
 
   stringstream ss;
 
-  //ss << "(" << line_number << ") ";
-
   printShortField(inst->op, bp_cce_inst_op_width, ss);
   printShortField(inst->minor_op, bp_cce_inst_minor_op_width, ss);
 
@@ -1060,13 +1205,13 @@ Assembler::writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &
       printShortField(inst->type_u.branch_op_s.src_b, bp_cce_inst_src_width, ss);
       printLongField(inst->type_u.branch_op_s.target, bp_cce_inst_imm16_width, ss);
       printLongField(inst->type_u.branch_op_s.imm, bp_cce_inst_imm16_width, ss);
-      //printPad(bp_cce_inst_branch_pad, ss);
+      // no padding
       break;
     case e_op_move:
       printShortField(inst->type_u.mov_op_s.dst, bp_cce_inst_dst_width, ss);
       printShortField(inst->type_u.mov_op_s.src, bp_cce_inst_src_width, ss);
       printField(inst->type_u.mov_op_s.imm, bp_cce_inst_imm32_width, ss);
-      //printPad(bp_cce_inst_mov_pad, ss);
+      // no padding
       break;
     case e_op_flag:
       printShortField(inst->type_u.flag_op_s.dst, bp_cce_inst_dst_width, ss);
@@ -1079,6 +1224,8 @@ Assembler::writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &
       printShortField(inst->type_u.read_dir_op_s.dir_way_group_sel, bp_cce_inst_dir_way_group_sel_width, ss);
       printShortField(inst->type_u.read_dir_op_s.dir_lce_sel, bp_cce_inst_dir_lce_sel_width, ss);
       printShortField(inst->type_u.read_dir_op_s.dir_way_sel, bp_cce_inst_dir_way_sel_width, ss);
+      printShortField(inst->type_u.read_dir_op_s.dir_tag_sel, bp_cce_inst_dir_tag_sel_width, ss);
+      printShortField(inst->type_u.read_dir_op_s.dst, bp_cce_inst_dst_width, ss);
       printPad(bp_cce_inst_read_dir_pad, ss);
       break;
     case e_op_write_dir:
@@ -1099,10 +1246,12 @@ Assembler::writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &
         printPad(bp_cce_inst_wfq_pad, ss);
       } else if (inst->minor_op == e_pushq) {
         printShortField(inst->type_u.queue_op_s.op.pushq.dst_q, bp_cce_inst_dst_q_sel_width, ss);
-        if (inst->type_u.queue_op_s.op.pushq.dst_q == e_dst_q_mem_cmd) {
+        if (inst->type_u.queue_op_s.op.pushq.dst_q == e_dst_q_lce_cmd) {
           printShortField(inst->type_u.queue_op_s.op.pushq.cmd.lce_cmd, bp_lce_cmd_type_width, ss);
-        } else {
-          printShortField(inst->type_u.queue_op_s.op.pushq.cmd.mem_cmd, bp_cce_mem_cmd_type_width, ss);
+        } else if (inst->type_u.queue_op_s.op.pushq.dst_q == e_dst_q_mem_cmd) {
+          printShortField(inst->type_u.queue_op_s.op.pushq.cmd.mem_cmd, bp_cce_mem_msg_type_width, ss);
+        } else if (inst->type_u.queue_op_s.op.pushq.dst_q == e_dst_q_mem_resp) {
+          printShortField(inst->type_u.queue_op_s.op.pushq.cmd.mem_resp, bp_cce_mem_msg_type_width, ss);
         }
         printShortField(inst->type_u.queue_op_s.op.pushq.lce_cmd_lce_sel, bp_cce_inst_lce_cmd_lce_sel_width, ss);
         printShortField(inst->type_u.queue_op_s.op.pushq.lce_cmd_addr_sel, bp_cce_inst_lce_cmd_addr_sel_width, ss);
@@ -1156,7 +1305,6 @@ Assembler::readLine(char *s, int maxLineLen, FILE *infp) {
 
     // comment character at start of line, discard line
     if (_iscommentstart(ch) && n == 0) {
-      //fgetc(infp);  // discard character
       // read through newline or EOF
       fgets(s, maxLineLen, infp);
       continue;

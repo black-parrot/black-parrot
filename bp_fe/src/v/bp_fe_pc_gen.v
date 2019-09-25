@@ -160,7 +160,7 @@ always_comb
     //   power much in practice.
     pc_gen_stage_n[0].v          = ~is_wait & (cmd_nonattaboy_v || (fe_queue_ready_i & mem_cmd_ready_i & ~flush));
     pc_gen_stage_n[0].pred_taken = btb_br_tgt_v_lo | ovr_taken;
-    pc_gen_stage_n[0].override   = ovr_taken | ovr_ntaken;
+    pc_gen_stage_n[0].ovr        = ovr_taken | ovr_ntaken;
 
     // Next PC calculation
     // load boot pc on reset command
@@ -275,8 +275,8 @@ bp_fe_instr_scan
 
 wire is_br        = mem_resp_v_i & (scan_instr.scan_class == e_rvi_branch);
 wire is_jal       = mem_resp_v_i & (scan_instr.scan_class == e_rvi_jal);
-assign ovr_taken  = pc_gen_stage_r[1].v & ~pc_gen_stage_r[0].override & ~pc_gen_stage_r[0].pred_taken & ((is_br &  bht_pred_lo) | is_jal);
-assign ovr_ntaken = pc_gen_stage_r[1].v & ~pc_gen_stage_r[0].override &  pc_gen_stage_r[0].pred_taken &  (is_br & ~bht_pred_lo);
+assign ovr_taken  = pc_gen_stage_r[1].v & ~pc_gen_stage_r[0].ovr & ~pc_gen_stage_r[0].pred_taken & ((is_br &  bht_pred_lo) | is_jal);
+assign ovr_ntaken = pc_gen_stage_r[1].v & ~pc_gen_stage_r[0].ovr &  pc_gen_stage_r[0].pred_taken &  (is_br & ~bht_pred_lo);
 assign br_target  = pc_gen_stage_r[1].pc + scan_instr.imm;
 
 assign mem_cmd_v_o = mem_cmd_ready_i & (itlb_fence_v | itlb_fill_v | pc_gen_stage_n[0].v);

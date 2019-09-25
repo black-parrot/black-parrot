@@ -60,9 +60,9 @@ module testbench
 `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
 // CFG IF
-bp_cce_mem_cmd_s       cfg_cmd_lo;
+bp_cce_mem_msg_s       cfg_cmd_lo;
 logic                  cfg_cmd_v_lo, cfg_cmd_yumi_li;
-bp_mem_cce_resp_s      cfg_resp_li;
+bp_cce_mem_msg_s       cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
 logic [cfg_addr_width_p-1:0] config_addr_li;
@@ -83,9 +83,9 @@ always_ff @(posedge clk_i) begin
 end
 
 // CCE-MEM IF
-bp_mem_cce_resp_s      mem_resp;
+bp_cce_mem_msg_s       mem_resp;
 logic                  mem_resp_v, mem_resp_ready;
-bp_cce_mem_cmd_s       mem_cmd;
+bp_cce_mem_msg_s       mem_cmd;
 logic                  mem_cmd_v, mem_cmd_yumi;
 
 // LCE-CCE IF
@@ -197,9 +197,17 @@ wrapper
   ,.mem_resp_v_i(mem_resp_v)
   ,.mem_resp_ready_o(mem_resp_ready)
 
+  ,.mem_cmd_i('0)
+  ,.mem_cmd_v_i('0)
+  ,.mem_cmd_ready_o()
+
   ,.mem_cmd_o(mem_cmd)
   ,.mem_cmd_v_o(mem_cmd_v)
   ,.mem_cmd_yumi_i(mem_cmd_yumi)
+
+  ,.mem_resp_o()
+  ,.mem_resp_v_o()
+  ,.mem_resp_yumi_i('0)
 );
 
 // DRAM

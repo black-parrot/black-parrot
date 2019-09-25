@@ -18,11 +18,11 @@ module bp_mem_nonsynth_tracer
    , input                               reset_i
 
    // BP side
-   , input [cce_mem_cmd_width_lp-1:0]    mem_cmd_i
+   , input [cce_mem_msg_width_lp-1:0]    mem_cmd_i
    , input                               mem_cmd_v_i
    , input                               mem_cmd_yumi_i
 
-   , input [mem_cce_resp_width_lp-1:0]   mem_resp_i
+   , input [cce_mem_msg_width_lp-1:0]    mem_resp_i
    , input                               mem_resp_v_i
    , input                               mem_resp_ready_i
    );
@@ -36,8 +36,8 @@ always_ff @(negedge reset_i) begin
   file = $fopen(trace_file_p, "w");
 end
 
-bp_cce_mem_cmd_s  mem_cmd_cast_i;
-bp_mem_cce_resp_s mem_resp_cast_i;
+bp_cce_mem_msg_s mem_cmd_cast_i;
+bp_cce_mem_msg_s mem_resp_cast_i;
 
 assign mem_cmd_cast_i = mem_cmd_i;
 assign mem_resp_cast_i = mem_resp_i;

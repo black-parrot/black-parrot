@@ -23,9 +23,11 @@ lce_top: bge r0 r1 sync_init
 # r2 = way group ID
 movi 0 r2
 movi N_WG r3
+movi 0 r4
 set_clear_top: bge r2 r3 lce_inc
-pushq lceCmd SC r0 r2
+pushq lceCmd SC r0 r4
 inc r2
+addi r4 64 r4
 bi set_clear_top
 lce_inc: inc r0
 bi lce_top
@@ -47,16 +49,7 @@ inc r0
 bi sync_top
 
 # Ready Routine
-ready: wfq lceReq lceResp
-bqr lceResp resp_pop
-bqr lceReq lce_req
-stall
-
-resp_pop: popq lceResp r4
-movi COH_ACK r0
-beq r0 r4 ready
-# coming from the ready state, the CCE should only receive COH ack
-bi error
+ready: wfq lceReq
 
 # LCE Request Routine
 lce_req: clm
@@ -65,7 +58,7 @@ bf ucf uncached_req
 rdp req
 bf pf ready
 popq lceReq
-rdw req req
+rdw req req req
 gad
 # fall through
 
@@ -103,9 +96,6 @@ bi inv_top
 inv_ack_top: bz r2 upgrade_check
 # pop the lce response
 inv_ack_pop: popq lceResp r4
-# check the response type; if it is an invalidation, decrement the counter and continue looping
-# non invalidation acks get popped, and then the PC jumps back to wait for invalidation acks
-bne r3 r4 inv_ack_pop
 dec r2
 bi inv_ack_top
 
@@ -126,10 +116,7 @@ replace_check: bfz rf transfer_check
 
 # Replacement Routine
 replace: pushq lceCmd WB req lru lru
-movi COH_ACK r3
 replacement_poph: poph lceResp r0
-# check if the response was actually a coherence ack
-beq r0 r3 replacement_pop_ack
 bf nwbf complete_replacement
 pushq memCmd MEM_CMD_WB lru
 complete_replacement: popq lceResp r0
@@ -140,28 +127,19 @@ sfz rf
 transfer_check: bfz tf read_l2
 
 # Transfer routine - other cache has block in E/M
-transfer: movi COH_ACK r3
-# pushq lceCmd ST req req lru
-pushq lceCmd TR tr req tr
+transfer: pushq lceCmd TR tr req tr
 pushq lceCmd WB tr req tr
 # wait for transfer WB response
 transfer_poph: poph lceResp r0
-# check if the response was actually a coherence ack
-beq r0 r3 transfer_pop_ack
 bf nwbf complete_transfer
 # perform the transfer WB to mem
 pushq memCmd MEM_CMD_WB req
 complete_transfer: popq lceResp r0
 bi ready
 
-# pop coherence ack during transfer routine
-transfer_pop_ack: popq lceResp r0
-bi transfer_poph
-
 # Read Line from L2 Routine
 # TODO: move memory request earlier to hide some latency
 read_l2: pushq memCmd
-# pushq lceCmd ST req req lru
 bi ready
 
 # Uncached Request Routine
@@ -173,9 +151,5 @@ pushq memCmd
 bi ready
 uncached_store: pushq memCmd
 bi ready
-
-# pop coherence ack during transfer routine
-replacement_pop_ack: popq lceResp r0
-bi replacement_poph
 
 error: stall
