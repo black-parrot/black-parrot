@@ -11,7 +11,7 @@ module bp_cce_reg
   import bp_common_pkg::*;
   import bp_cce_pkg::*;
   import bp_me_pkg::*;
-  import bp_cfg_link_pkg::*;
+  import bp_common_cfg_link_pkg::*;
   #(parameter num_lce_p                     = "inv"
     , parameter num_cce_p                   = "inv"
     , parameter paddr_width_p                = "inv"

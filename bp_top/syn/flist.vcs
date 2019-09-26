@@ -25,6 +25,7 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_pkg.v
 $BP_COMMON_DIR/src/include/bp_common_rv64_pkg.vh
 $BP_COMMON_DIR/src/include/bp_common_pkg.vh
 $BP_COMMON_DIR/src/include/bp_common_aviary_pkg.vh
+$BP_COMMON_DIR/src/include/bp_common_cfg_link_pkg.vh
 # FE packages
 $BP_FE_DIR/src/include/bp_fe_icache_pkg.vh
 $BP_FE_DIR/src/include/bp_fe_pkg.vh
@@ -34,8 +35,6 @@ $BP_BE_DIR/src/include/bp_be_dcache/bp_be_dcache_pkg.vh
 # ME packages
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
 $BP_ME_DIR/src/include/v/bp_me_pkg.vh
-# Top packages
-$BP_TOP_DIR/src/include/bp_cfg_link_pkg.vh
 ## bsg_ip_cores files
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_fifo.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_launch_sync_sync.v
@@ -191,12 +190,12 @@ $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.v
 ## TOP
-$BP_TOP_DIR/src/v/bp_chip.v
 $BP_TOP_DIR/src/v/bp_core.v
 $BP_TOP_DIR/src/v/bp_core_complex.v
 $BP_TOP_DIR/src/v/bp_mem_complex.v
 $BP_TOP_DIR/src/v/bp_mmio_enclave.v
 $BP_TOP_DIR/src/v/bp_mmio_node.v
+$BP_TOP_DIR/src/v/bp_processor.v
 $BP_TOP_DIR/src/v/bp_tile.v
 $BP_TOP_DIR/src/v/bp_tile_node.v
 ## Common

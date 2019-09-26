@@ -13,7 +13,7 @@ $BP_BE_DIR/src/include/bp_be_rv64_pkg.vh
 $BP_BE_DIR/src/include/bp_be_pkg.vh
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
 $BP_ME_DIR/src/include/v/bp_me_network_pkg.v
-$BP_TOP_DIR/src/include/bp_cfg_link_pkg.vh
+$BP_COMMON_DIR/src/include/bp_common_cfg_link_pkg.vh
 $BASEJUMP_STL_DIR/bsg_misc/bsg_defines.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_noc_pkg.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux.v

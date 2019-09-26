@@ -24,7 +24,7 @@ module bp_fe_lce
   import bp_fe_pkg::*;
   import bp_fe_icache_pkg::*;
   import bp_common_aviary_pkg::*;
-  import bp_cfg_link_pkg::*;
+  import bp_common_cfg_link_pkg::*;
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
    `declare_bp_lce_cce_if_widths(num_cce_p

@@ -1,7 +1,7 @@
 
-package bp_cfg_link_pkg;
+package bp_common_cfg_link_pkg;
 
-  `include "bp_cfg_link_defines.vh"
+  `include "bp_common_cfg_link_defines.vh"
 
   // The overall memory map of the config link is:
   //   16'h0000 - 16'h001f: chip level config

@@ -11,7 +11,7 @@ module bp_cce_mmio_cfg_loader
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
-  import bp_cfg_link_pkg::*;
+  import bp_common_cfg_link_pkg::*;
   import bp_be_pkg::*;
   import bp_be_dcache_pkg::*;
   import bp_me_pkg::*;

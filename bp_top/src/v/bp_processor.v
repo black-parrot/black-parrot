@@ -1,12 +1,12 @@
 /**
  *
- * bp_chip.v
+ * bp_processor.v
  *
  */
  
 `include "bsg_noc_links.vh"
 
-module bp_chip
+module bp_processor
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
@@ -14,7 +14,7 @@ module bp_chip
  import bp_cce_pkg::*;
  import bsg_noc_pkg::*;
  import bsg_wormhole_router_pkg::*;
- import bp_cfg_link_pkg::*;
+ import bp_common_cfg_link_pkg::*;
  import bp_me_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)

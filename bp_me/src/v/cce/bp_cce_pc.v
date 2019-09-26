@@ -40,7 +40,7 @@
 module bp_cce_pc
   import bp_common_pkg::*;
   import bp_cce_pkg::*;
-  import bp_cfg_link_pkg::*;
+  import bp_common_cfg_link_pkg::*;
   #(parameter inst_ram_els_p             = "inv"
 
     // Config channel parameters

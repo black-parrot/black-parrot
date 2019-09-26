@@ -47,7 +47,7 @@ module wrapper
    , output [mem_noc_ral_link_width_lp-1:0]           next_resp_link_o
    );
 
-  bp_chip
+  bp_processor
    #(.cfg_p(cfg_p))
    dut
     (.*);
