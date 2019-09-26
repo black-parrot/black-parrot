@@ -30,9 +30,8 @@ module bp_me_cce_to_wormhole_link_master
    // Configuration
    , input [mem_noc_cord_width_p-1:0]             my_cord_i
    , input [mem_noc_cid_width_p-1:0]              my_cid_i
-   , input [mem_noc_cord_width_p-1:0]             mmio_cord_i
-   , input [mem_noc_cord_width_p-1:0]             dram_cord_i
-   , input [mem_noc_cord_width_p-1:0]             host_cord_i
+   , input [mem_noc_cord_width_p-1:0]             dst_cord_i
+   , input [mem_noc_cid_width_p-1:0]              dst_cid_i
    
    // bsg_noc_wormhole interface
    , input [bsg_ready_and_link_sif_width_lp-1:0]  cmd_link_i
@@ -56,21 +55,6 @@ assign mem_resp_o = mem_resp_cast_o;
 `declare_bsg_wormhole_concentrator_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p, $bits(mem_cmd_payload_s), mem_cmd_packet_s);
 `declare_bsg_wormhole_concentrator_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p, $bits(mem_resp_payload_s), mem_resp_packet_s);
 
-logic [mem_noc_cord_width_p-1:0] mem_cmd_dst_cord_lo;
-logic [mem_noc_cid_width_p-1:0]  mem_cmd_dst_cid_lo;
-bp_addr_map
- #(.cfg_p(cfg_p))
- cmd_map
-  (.paddr_i(mem_cmd_cast_i.addr)
-
-  ,.mmio_cord_i(mmio_cord_i)
-  ,.dram_cord_i(dram_cord_i)
-  ,.host_cord_i(host_cord_i)
-
-  ,.dst_cid_o(mem_cmd_dst_cid_lo)
-  ,.dst_cord_o(mem_cmd_dst_cord_lo)
-  );
-
 mem_cmd_packet_s mem_cmd_packet_li;
 bp_me_wormhole_packet_encode_mem_cmd
  #(.cfg_p(cfg_p))
@@ -78,8 +62,8 @@ bp_me_wormhole_packet_encode_mem_cmd
   (.mem_cmd_i(mem_cmd_cast_i)
    ,.src_cord_i(my_cord_i)
    ,.src_cid_i(my_cid_i)
-   ,.dst_cord_i(mem_cmd_dst_cord_lo)
-   ,.dst_cid_i(mem_cmd_dst_cid_lo)
+   ,.dst_cord_i(dst_cord_i)
+   ,.dst_cid_i(dst_cid_i)
    ,.packet_o(mem_cmd_packet_li)
    );
 

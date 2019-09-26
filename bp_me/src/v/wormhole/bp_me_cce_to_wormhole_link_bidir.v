@@ -17,9 +17,8 @@ module bp_me_cce_to_wormhole_link_bidir
   // Configuration
   , input [mem_noc_cord_width_p-1:0]             my_cord_i
   , input [mem_noc_cid_width_p-1:0]              my_cid_i
-  , input [mem_noc_cord_width_p-1:0]             mmio_cord_i
-  , input [mem_noc_cord_width_p-1:0]             dram_cord_i
-  , input [mem_noc_cord_width_p-1:0]             host_cord_i
+  , input [mem_noc_cord_width_p-1:0]             dst_cord_i
+  , input [mem_noc_cid_width_p-1:0]              dst_cid_i
 
   // Master link
   , input  [cce_mem_msg_width_lp-1:0]            mem_cmd_i
@@ -92,9 +91,8 @@ bp_me_cce_to_wormhole_link_master
 
   ,.my_cord_i(my_cord_i)
   ,.my_cid_i(my_cid_i)
-  ,.dram_cord_i(dram_cord_i)
-  ,.mmio_cord_i(mmio_cord_i)
-  ,.host_cord_i(host_cord_i)
+  ,.dst_cord_i(dst_cord_i)
+  ,.dst_cid_i(dst_cid_i)
   
   ,.cmd_link_i(master_cmd_link_li)
   ,.cmd_link_o(master_cmd_link_lo)

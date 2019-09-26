@@ -9,7 +9,7 @@ module bp_me_mock_lce_me
   import bp_common_aviary_pkg::*;
   import bp_be_dcache_pkg::*;
   import bp_cce_pkg::*;
-  import bp_cfg_link_pkg::*;
+  import bp_common_cfg_link_pkg::*;
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
     , parameter mem_els_p="inv"

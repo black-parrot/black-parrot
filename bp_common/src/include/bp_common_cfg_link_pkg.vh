@@ -1,7 +1,5 @@
 
-package bp_cfg_link_pkg;
-
-  `include "bp_cfg_link_defines.vh"
+package bp_common_cfg_link_pkg;
 
   // The overall memory map of the config link is:
   //   16'h0000 - 16'h001f: chip level config
@@ -20,15 +18,17 @@ package bp_cfg_link_pkg;
   //   16'h8000-8fff = cce ucode
 
   localparam bp_cfg_base_addr_gp          = 'h0100_0000;
-  localparam bp_cfg_reg_clk_osc_gp        = 'h0000;
   localparam bp_cfg_reg_reset_gp          = 'h0001;
   localparam bp_cfg_reg_freeze_gp         = 'h0002;
+  localparam bp_cfg_reg_core_id_gp        = 'h0003;
+  localparam bp_cfg_reg_icache_id_gp      = 'h0021;
   localparam bp_cfg_reg_icache_mode_gp    = 'h0022;
-  localparam bp_cfg_reg_start_pc_lo_gp    = 'h0040;
-  localparam bp_cfg_reg_start_pc_hi_gp    = 'h0041;
+  localparam bp_cfg_reg_start_pc_gp       = 'h0040;
+  localparam bp_cfg_reg_dcache_id_gp      = 'h0041;
   localparam bp_cfg_reg_dcache_mode_gp    = 'h0042;
-  localparam bp_cfg_reg_cce_mode_gp       = 'h0060;
-  localparam bp_cfg_reg_num_lce_gp        = 'h0061;
+  localparam bp_cfg_reg_cce_id_gp         = 'h0060;
+  localparam bp_cfg_reg_cce_mode_gp       = 'h0061;
+  localparam bp_cfg_reg_num_lce_gp        = 'h0062;
   localparam bp_cfg_mem_base_cce_ucode_gp = 'h8000;
 
 endpackage

@@ -12,7 +12,7 @@ module testbench
  import bp_be_pkg::*;
  import bp_common_rv64_pkg::*;
  import bp_cce_pkg::*;
- import bp_cfg_link_pkg::*;
+ import bp_common_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
    `declare_bp_proc_params(cfg_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
@@ -75,7 +75,7 @@ logic [mem_noc_cord_width_p-1:0] dram_cord_lo, mmio_cord_lo, host_cord_lo;
 logic [num_core_p-1:0][mem_noc_cord_width_p-1:0] tile_cord_lo;
 logic [num_mem_p-1:0][mem_noc_cord_width_p-1:0] mem_cord_lo;
 
-assign mmio_cord_lo[0+:mem_noc_x_cord_width_p]                      = mmio_x_pos_p;
+assign mmio_cord_lo[0+:mem_noc_x_cord_width_p]                      = clint_x_pos_p;
 assign mmio_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
 assign dram_cord_lo[0+:mem_noc_x_cord_width_p]                      = mem_noc_x_dim_p+2;
 assign dram_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
@@ -253,6 +253,10 @@ if (cce_trace_p)
         ,.mem_cmd_ready_i(mem_cmd_ready_to_cce)
         );
 
+wire [mem_noc_cord_width_p-1:0] cfg_cmd_core_lo = cfg_cmd_lo.addr[cfg_addr_width_p+:cfg_core_width_p];
+wire [mem_noc_cord_width_p-1:0] dst_cord_lo = cfg_cmd_v_lo ? tile_cord_lo[cfg_cmd_core_lo] : '0;
+wire [mem_noc_cid_width_p-1:0]  dst_cid_lo = '0;
+
 // DRAM + link 
 bp_me_cce_to_wormhole_link_bidir
  #(.cfg_p(cfg_p))
@@ -278,9 +282,8 @@ bp_me_cce_to_wormhole_link_bidir
 
   ,.my_cord_i(dram_cord_lo)
   ,.my_cid_i(mem_noc_cid_width_p'(0))
-  ,.dram_cord_i(dram_cord_lo)
-  ,.mmio_cord_i(mmio_cord_lo)
-  ,.host_cord_i(host_cord_lo)
+  ,.dst_cord_i(dst_cord_lo)
+  ,.dst_cid_i(dst_cid_lo)
      
   ,.cmd_link_i(cmd_link_li)
   ,.cmd_link_o(cmd_link_lo)
@@ -383,6 +386,8 @@ bp_cce_mmio_cfg_loader
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    
+   ,.core_id_o()
+
    ,.mem_cmd_o(cfg_cmd_lo)
    ,.mem_cmd_v_o(cfg_cmd_v_lo)
    ,.mem_cmd_yumi_i(cfg_cmd_ready_li & cfg_cmd_v_lo)

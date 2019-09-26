@@ -11,7 +11,7 @@ module bp_be_nonsynth_tracer
 
    // Calculated parameters
    , localparam mhartid_width_lp      = `BSG_SAFE_CLOG2(num_core_p)
-   , localparam proc_cfg_width_lp     = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
+   , localparam proc_cfg_width_lp     = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
    , localparam issue_pkt_width_lp    = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam exception_width_lp    = `bp_be_exception_width
@@ -54,11 +54,7 @@ module bp_be_nonsynth_tracer
    , input [1:0]                                           mpp_i
    );
 
-`declare_bp_be_internal_if_structs(vaddr_width_p
-                                   , paddr_width_p
-                                   , asid_width_p
-                                   , branch_metadata_fwd_width_p
-                                   );
+`declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 // Cast input and output ports
 bp_be_issue_pkt_s             issue_pkt;
 bp_be_dispatch_pkt_s          dispatch_pkt;

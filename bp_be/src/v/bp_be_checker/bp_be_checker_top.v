@@ -21,7 +21,7 @@ module bp_be_checker_top
  import bp_common_aviary_pkg::*;
  import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
- import bp_cfg_link_pkg::*;
+ import bp_common_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
@@ -33,15 +33,13 @@ module bp_be_checker_top
 
    // VM parameters
    , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
+    , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
    )
   (input                              clk_i
    , input                            reset_i
    , input                            freeze_i
 
-   // Config channel
-   , input                            cfg_w_v_i
-   , input [cfg_addr_width_p-1:0]     cfg_addr_i
-   , input [cfg_data_width_p-1:0]     cfg_data_i
+   , input [proc_cfg_width_lp-1:0]    proc_cfg_i
 
    // FE cmd interface
    , output [fe_cmd_width_lp-1:0]     fe_cmd_o
@@ -108,9 +106,7 @@ bp_be_director
    ,.reset_i(reset_i)
    ,.freeze_i(freeze_i)
 
-   ,.cfg_w_v_i(cfg_w_v_i)
-   ,.cfg_addr_i(cfg_addr_i)
-   ,.cfg_data_i(cfg_data_i)
+   ,.proc_cfg_i(proc_cfg_i)
 
    ,.calc_status_i(calc_status_i) 
    ,.expected_npc_o(expected_npc_lo)

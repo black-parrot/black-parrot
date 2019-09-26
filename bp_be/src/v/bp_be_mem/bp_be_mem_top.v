@@ -16,14 +16,7 @@ module bp_be_mem_top
   import bp_be_dcache_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
-   `declare_bp_lce_cce_if_widths(num_cce_p
-                                 ,num_lce_p
-                                 ,paddr_width_p
-                                 ,lce_assoc_p
-                                 ,dword_width_p
-                                 ,cce_block_width_p
-                                 )
-   , localparam ecode_dec_width_lp = `bp_be_ecode_dec_width
+   `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
    // Generated parameters
    // D$   
    , localparam block_size_in_words_lp = lce_assoc_p // Due to cache interleaving scheme
@@ -36,7 +29,7 @@ module bp_be_mem_top
    , localparam dcache_pkt_width_lp    = `bp_be_dcache_pkt_width(page_offset_width_lp
                                                                  , dword_width_p
                                                                  )
-   , localparam proc_cfg_width_lp      = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
+   , localparam proc_cfg_width_lp      = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
    , localparam lce_id_width_lp        = `BSG_SAFE_CLOG2(num_lce_p)
 
    // MMU                                                              
@@ -51,10 +44,7 @@ module bp_be_mem_top
    , input                                   reset_i
    , input                                   freeze_i
 
-   // Config channel
-   , input                                   cfg_w_v_i
-   , input [cfg_addr_width_p-1:0]            cfg_addr_i
-   , input [cfg_data_width_p-1:0]            cfg_data_i
+   , input [proc_cfg_width_lp-1:0]           proc_cfg_i
 
    , input [mmu_cmd_width_lp-1:0]            mmu_cmd_i
    , input                                   mmu_cmd_v_i
@@ -94,7 +84,6 @@ module bp_be_mem_top
    , output                                  credits_empty_o
 
    // CSRs
-   , input [proc_cfg_width_lp-1:0]           proc_cfg_i
    , input                                   instret_i
 
    , input [vaddr_width_p-1:0]               pc_mem3_i
@@ -117,7 +106,7 @@ module bp_be_mem_top
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-`declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
+`declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p/8)
 `declare_bp_be_dcache_pkt_s(page_offset_width_lp, dword_width_p);
 
@@ -331,10 +320,7 @@ bp_be_dcache
     ,.reset_i(reset_i)
     ,.freeze_i(freeze_i)
 
-    ,.lce_id_i(proc_cfg.dcache_id)
-    ,.cfg_w_v_i(cfg_w_v_i)
-    ,.cfg_addr_i(cfg_addr_i)
-    ,.cfg_data_i(cfg_data_i)
+    ,.proc_cfg_i(proc_cfg_i)
 
     ,.dcache_pkt_i(dcache_pkt)
     ,.v_i(dcache_pkt_v)

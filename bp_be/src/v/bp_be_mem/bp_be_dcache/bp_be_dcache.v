@@ -83,6 +83,7 @@ module bp_be_dcache
    
     , parameter debug_p=0 
 
+    , localparam proc_cfg_width_lp= `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
     , localparam block_size_in_words_lp=lce_assoc_p
     , localparam data_mask_width_lp=(dword_width_p>>3)
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
@@ -107,12 +108,7 @@ module bp_be_dcache
     , input reset_i
     , input freeze_i
     
-    // Config channel
-    , input                        cfg_w_v_i
-    , input [cfg_addr_width_p-1:0] cfg_addr_i
-    , input [cfg_data_width_p-1:0] cfg_data_i
-
-    , input [lce_id_width_lp-1:0] lce_id_i
+    , input [proc_cfg_width_lp-1:0] proc_cfg_i
 
     , input [dcache_pkt_width_lp-1:0] dcache_pkt_i
     , input v_i
@@ -155,6 +151,10 @@ module bp_be_dcache
     , output load_access_fault_o
     , output store_access_fault_o
   );
+
+  `declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+  bp_proc_cfg_s proc_cfg_cast_i;
+  assign proc_cfg_cast_i = proc_cfg_i;
 
   // packet decoding
   //
@@ -638,8 +638,6 @@ module bp_be_dcache
 
   logic lce_stat_mem_pkt_v;
   logic lce_stat_mem_pkt_yumi;
-
-  bp_be_dcache_lce_mode_e lce_mode_lo;
  
   bp_be_dcache_lce
     #(.cfg_p(cfg_p))
@@ -648,11 +646,8 @@ module bp_be_dcache
       ,.reset_i(reset_i)
       ,.freeze_i(freeze_i)
     
-      ,.cfg_w_v_i(cfg_w_v_i)
-      ,.cfg_addr_i(cfg_addr_i)
-      ,.cfg_data_i(cfg_data_i)
-
-      ,.lce_id_i(lce_id_i)
+      ,.lce_id_i(proc_cfg_cast_i.dcache_id)
+      ,.lce_mode_i(proc_cfg_cast_i.dcache_mode)
 
       ,.ready_o(ready_o)
       ,.cache_miss_o(cache_miss_o)
@@ -700,15 +695,13 @@ module bp_be_dcache
 
       ,.credits_full_o(credits_full_o)
       ,.credits_empty_o(credits_empty_o)
-
-      ,.lce_mode_o(lce_mode_lo)
       );
 
   // Fault if in uncached mode but access is not for an uncached address
-  assign load_access_fault_o  = (lce_mode_lo == e_dcache_lce_mode_uncached)
+  assign load_access_fault_o  = (proc_cfg_cast_i.dcache_mode == e_lce_mode_uncached)
     ? (load_op_tv_r & ~uncached_tv_r)
     : 1'b0;
-  assign store_access_fault_o = (lce_mode_lo == e_dcache_lce_mode_uncached)
+  assign store_access_fault_o = (proc_cfg_cast_i.dcache_mode == e_lce_mode_uncached)
     ? (store_op_tv_r & ~uncached_tv_r)
     : 1'b0;
 
@@ -1079,7 +1072,7 @@ module bp_be_dcache
         )
       axe_trace_gen
         (.clk_i(clk_i)
-        ,.id_i(lce_id_i)
+        ,.id_i(proc_cfg_cast_i.dcache_id)
         ,.v_i(v_o)
         ,.addr_i(paddr_tv_r)
         ,.load_data_i(data_o)
@@ -1092,9 +1085,9 @@ module bp_be_dcache
   always_ff @ (negedge clk_i) begin
     if (v_tv_r) begin
       assert($countones(load_hit_tv) <= 1)
-        else $error("multiple load hit: %b. id = %0d", load_hit_tv, lce_id_i);
+        else $error("multiple load hit: %b. id = %0d", load_hit_tv, proc_cfg_cast_i.dcache_id);
       assert($countones(store_hit_tv) <= 1)
-        else $error("multiple store hit: %b. id = %0d", store_hit_tv, lce_id_i);
+        else $error("multiple store hit: %b. id = %0d", store_hit_tv, proc_cfg_cast_i.dcache_id);
       assert (~(sc_op_tv_r & load_reserved_v_r & (load_reserved_tag_r == addr_tag_tv) & (load_reserved_index_r == addr_index_tv)) | store_hit)
           else $error("sc success without exclusive ownership of cache line: %x %x", load_reserved_tag_r, load_reserved_index_r);
     end

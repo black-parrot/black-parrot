@@ -8,23 +8,20 @@ module bp_fe_top
  import bp_common_aviary_pkg::*;
  import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
- import bp_cfg_link_pkg::*;
+ import bp_common_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
+   , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
    , localparam lce_id_width_lp = `BSG_SAFE_CLOG2(num_lce_p)
    )
   (input                                              clk_i
    , input                                            reset_i
    , input                                            freeze_i
 
-   , input [lce_id_width_lp-1:0]                      lce_id_i
-
-   , input                                            cfg_w_v_i
-   , input [cfg_addr_width_p-1:0]                     cfg_addr_i
-   , input [cfg_data_width_p-1:0]                     cfg_data_i
+   , input [proc_cfg_width_lp-1:0]                    proc_cfg_i
 
    , input [fe_cmd_width_lp-1:0]                      fe_cmd_i
    , input                                            fe_cmd_v_i
@@ -94,12 +91,8 @@ bp_fe_mem
    ,.reset_i(reset_i)
    ,.freeze_i(freeze_i)
    
-   ,.lce_id_i(lce_id_i)
+   ,.proc_cfg_i(proc_cfg_i)
    
-   ,.cfg_w_v_i(cfg_w_v_i)
-   ,.cfg_addr_i(cfg_addr_i)
-   ,.cfg_data_i(cfg_data_i)
-
    ,.mem_cmd_i(mem_cmd_lo)
    ,.mem_cmd_v_i(mem_cmd_v_lo)
    ,.mem_cmd_ready_o(mem_cmd_ready_li)

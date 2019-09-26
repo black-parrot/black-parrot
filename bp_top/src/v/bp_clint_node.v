@@ -1,9 +1,9 @@
 
-module bp_mmio_node
+module bp_clint_node
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
- import bp_cfg_link_pkg::*;
+ import bp_common_cfg_link_pkg::*;
  import bp_cce_pkg::*;
  import bsg_noc_pkg::*;
  import bsg_wormhole_router_pkg::*;
@@ -14,30 +14,25 @@ module bp_mmio_node
 
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
    )
-  (input                                           core_clk_i
-   , input                                         core_reset_i
+  (input                                                core_clk_i
+   , input                                              core_reset_i
 
-   , input                                         mem_clk_i
-   , input                                         mem_reset_i
+   , input                                              mem_clk_i
+   , input                                              mem_reset_i
 
-   , input [mem_noc_cord_width_p-1:0]              my_cord_i
-   , input [mem_noc_cid_width_p-1:0]               my_cid_i
-
-   // Core config link
-   , output [num_core_p-1:0]                       cfg_w_v_o
-   , output [num_core_p-1:0][cfg_addr_width_p-1:0] cfg_addr_o
-   , output [num_core_p-1:0][cfg_data_width_p-1:0] cfg_data_o
+   , input [mem_noc_cord_width_p-1:0]                   my_cord_i
+   , input [mem_noc_cid_width_p-1:0]                    my_cid_i
 
    // Local interrupts
-   , output [num_core_p-1:0]                       soft_irq_o
-   , output [num_core_p-1:0]                       timer_irq_o
-   , output [num_core_p-1:0]                       external_irq_o
+   , output [num_core_p-1:0]                            soft_irq_o
+   , output [num_core_p-1:0]                            timer_irq_o
+   , output [num_core_p-1:0]                            external_irq_o
 
-   , input [S:W][mem_noc_ral_link_width_lp-1:0]    mem_cmd_link_i
-   , output [S:W][mem_noc_ral_link_width_lp-1:0]   mem_cmd_link_o
+   , input [S:W][mem_noc_ral_link_width_lp-1:0]         mem_cmd_link_i
+   , output [S:W][mem_noc_ral_link_width_lp-1:0]        mem_cmd_link_o
 
-   , input [S:W][mem_noc_ral_link_width_lp-1:0]    mem_resp_link_i
-   , output [S:W][mem_noc_ral_link_width_lp-1:0]   mem_resp_link_o
+   , input [S:W][mem_noc_ral_link_width_lp-1:0]         mem_resp_link_i
+   , output [S:W][mem_noc_ral_link_width_lp-1:0]        mem_resp_link_o
    );
 
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
@@ -47,18 +42,14 @@ module bp_mmio_node
 mem_noc_ral_link_s mmio_cmd_link_li, mmio_cmd_link_lo;
 mem_noc_ral_link_s mmio_resp_link_li, mmio_resp_link_lo;
 
-  bp_mmio_enclave
+  bp_clint
    #(.cfg_p(cfg_p))
-   mmio
+   clint
     (.clk_i(core_clk_i)
      ,.reset_i(core_reset_i)
   
      ,.my_cord_i(my_cord_i)
      ,.my_cid_i(my_cid_i)
-  
-     ,.cfg_w_v_o(cfg_w_v_o)
-     ,.cfg_addr_o(cfg_addr_o)
-     ,.cfg_data_o(cfg_data_o)
   
      ,.soft_irq_o(soft_irq_o)
      ,.timer_irq_o(timer_irq_o)
@@ -205,7 +196,6 @@ if (async_mem_clk_p == 1)
      ,.link_i({mem_resp_link_i, mem_resp_link_lo})
      ,.link_o({mem_resp_link_o, mem_resp_link_li})
      );
-
 
 endmodule
 

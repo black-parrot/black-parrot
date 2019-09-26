@@ -14,6 +14,7 @@
 
 module bp_be_dcache_lce_cmd
   import bp_common_pkg::*;
+  import bp_common_aviary_pkg::*;
   import bp_be_dcache_pkg::*;
   #(parameter num_cce_p="inv"
     , parameter num_lce_p="inv"
@@ -50,7 +51,7 @@ module bp_be_dcache_lce_cmd
 
     , input [lce_id_width_lp-1:0] lce_id_i
 
-    , input bp_be_dcache_lce_mode_e lce_mode_i
+    , input bp_lce_mode_e lce_mode_i
 
     , input [paddr_width_p-1:0] miss_addr_i
 
@@ -213,7 +214,7 @@ module bp_be_dcache_lce_cmd
       e_lce_cmd_state_uncached: begin
         state_n = (freeze_i)
                   ? e_lce_cmd_state_uncached
-                  : (lce_mode_i == e_dcache_lce_mode_normal)
+                  : (lce_mode_i == e_lce_mode_normal)
                     ? e_lce_cmd_state_sync
                     : e_lce_cmd_state_uncached;
 

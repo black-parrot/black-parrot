@@ -26,12 +26,13 @@ module bp_cce_top
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
-  import bp_cfg_link_pkg::*;
+  import bp_common_cfg_link_pkg::*;
   import bp_me_pkg::*;
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
 
     // Derived parameters
+    , localparam proc_cfg_width_lp      = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
     , localparam block_size_in_bytes_lp = (cce_block_width_p/8)
     , localparam lg_num_cce_lp          = `BSG_SAFE_CLOG2(num_cce_p)
     , localparam wg_per_cce_lp          = (lce_sets_p / num_cce_p)
@@ -39,16 +40,12 @@ module bp_cce_top
     // interface widths
     `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
-
   )
   (input                                                   clk_i
    , input                                                 reset_i
    , input                                                 freeze_i
 
-   // Config channel
-   , input                                                 cfg_w_v_i
-   , input [cfg_addr_width_p-1:0]                          cfg_addr_i
-   , input [cfg_data_width_p-1:0]                          cfg_data_i
+   , input [proc_cfg_width_lp-1:0]                         proc_cfg_i
 
    // LCE-CCE Interface
    // inbound: ready&valid
@@ -208,11 +205,7 @@ module bp_cce_top
       ,.reset_i(reset_i)
       ,.freeze_i(freeze_i)
 
-      ,.cce_id_i(cce_id_i)
-
-      ,.cfg_w_v_i(cfg_w_v_i)
-      ,.cfg_addr_i(cfg_addr_i)
-      ,.cfg_data_i(cfg_data_i)
+      ,.proc_cfg_i(proc_cfg_i)
 
       // To CCE
       ,.lce_req_i(lce_req_to_cce)

@@ -10,17 +10,14 @@ module bp_fe_mem
    , localparam mem_cmd_width_lp  = `bp_fe_mem_cmd_width(vaddr_width_p, vtag_width_p, ptag_width_p)
    , localparam mem_resp_width_lp = `bp_fe_mem_resp_width
 
+   , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
    , localparam lce_id_width_lp = `BSG_SAFE_CLOG2(num_lce_p)
    )
   (input                                              clk_i
    , input                                            reset_i
    , input                                            freeze_i
 
-   , input [lce_id_width_lp-1:0]                      lce_id_i
-
-   , input                                            cfg_w_v_i
-   , input [cfg_addr_width_p-1:0]                     cfg_addr_i
-   , input [cfg_data_width_p-1:0]                     cfg_data_i
+   , input [proc_cfg_width_lp-1:0]                    proc_cfg_i
 
    , input [mem_cmd_width_lp-1:0]                     mem_cmd_i
    , input                                            mem_cmd_v_i
@@ -97,11 +94,7 @@ bp_fe_icache
    ,.reset_i(reset_i)
    ,.freeze_i(freeze_i)
 
-   ,.lce_id_i(lce_id_i)
-
-   ,.cfg_w_v_i(cfg_w_v_i)
-   ,.cfg_addr_i(cfg_addr_i)
-   ,.cfg_data_i(cfg_data_i)
+   ,.proc_cfg_i(proc_cfg_i)
 
    ,.vaddr_i(mem_cmd_cast_i.operands.fetch.vaddr)
    ,.vaddr_v_i(fetch_v)

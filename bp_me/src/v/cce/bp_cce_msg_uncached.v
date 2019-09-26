@@ -21,6 +21,7 @@
 
 module bp_cce_msg_uncached
   import bp_common_pkg::*;
+  import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
   import bp_me_pkg::*;
   #(parameter num_lce_p                    = "inv"

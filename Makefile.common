@@ -26,7 +26,7 @@ VCS       ?= vcs
 URG       ?= urg
 VERILATOR ?= verilator
 DC_SHELL  ?= dc_shell
-DVE       ?= dve
+_DVE      ?= dve
 PYTHON    ?= python
 
 ## Needed for verilator g++ compilations

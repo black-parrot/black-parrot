@@ -2,6 +2,7 @@
 module bp_mem_complex
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
+ import bp_common_cfg_link_pkg::*;
  import bp_cce_pkg::*;
  import bp_me_pkg::*;
  import bsg_noc_pkg::*;
@@ -19,10 +20,6 @@ module bp_mem_complex
    , input                                                             mem_reset_i
 
    , input [num_mem_p-1:0][mem_noc_cord_width_p-1:0]                   mem_cord_i
-
-   , output [num_core_p-1:0]                                           cfg_w_v_o
-   , output [num_core_p-1:0][cfg_addr_width_p-1:0]                     cfg_addr_o
-   , output [num_core_p-1:0][cfg_data_width_p-1:0]                     cfg_data_o
 
    , output [num_core_p-1:0]                                           soft_irq_o
    , output [num_core_p-1:0]                                           timer_irq_o
@@ -58,11 +55,11 @@ bsg_ready_and_link_sif_s [E:W]                cmd_hor_link_li, cmd_hor_link_lo, 
 
 for (genvar i = 0; i < num_mem_p; i++)
   begin : node
-    if (i == mmio_x_pos_p)
-      begin : mmio
-        bp_mmio_node
+    if (i == clint_x_pos_p)
+      begin : clint
+        bp_clint_node
          #(.cfg_p(cfg_p))
-         mmio
+         clint
           (.core_clk_i(core_clk_i)
            ,.core_reset_i(core_reset_i)
 
@@ -71,10 +68,6 @@ for (genvar i = 0; i < num_mem_p; i++)
 
            ,.my_cord_i(mem_cord_i[i])
            ,.my_cid_i('0)
-
-           ,.cfg_w_v_o(cfg_w_v_o)
-           ,.cfg_addr_o(cfg_addr_o)
-           ,.cfg_data_o(cfg_data_o)
 
            ,.soft_irq_o(soft_irq_o)
            ,.timer_irq_o(timer_irq_o)
