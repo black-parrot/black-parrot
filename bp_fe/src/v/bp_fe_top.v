@@ -56,7 +56,7 @@ module bp_fe_top
 `declare_bp_fe_mem_structs(vaddr_width_p, lce_sets_p, cce_block_width_p, vtag_width_p, ptag_width_p)
    
 bp_fe_mem_cmd_s  mem_cmd_lo;
-logic            mem_cmd_v_lo, mem_cmd_ready_li;
+logic            mem_cmd_v_lo, mem_cmd_yumi_li;
 logic            mem_poison_lo;
 bp_fe_mem_resp_s mem_resp_li;
 logic            mem_resp_v_li, mem_resp_ready_lo;
@@ -69,7 +69,7 @@ bp_fe_pc_gen
                
    ,.mem_cmd_o(mem_cmd_lo)
    ,.mem_cmd_v_o(mem_cmd_v_lo)
-   ,.mem_cmd_ready_i(mem_cmd_ready_li)
+   ,.mem_cmd_yumi_i(mem_cmd_yumi_li)
 
    ,.mem_poison_o(mem_poison_lo)
 
@@ -102,7 +102,7 @@ bp_fe_mem
 
    ,.mem_cmd_i(mem_cmd_lo)
    ,.mem_cmd_v_i(mem_cmd_v_lo)
-   ,.mem_cmd_ready_o(mem_cmd_ready_li)
+   ,.mem_cmd_yumi_o(mem_cmd_yumi_li)
 
    ,.mem_poison_i(mem_poison_lo)
 
