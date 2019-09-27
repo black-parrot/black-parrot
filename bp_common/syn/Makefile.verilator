@@ -150,8 +150,8 @@ cov.sc: dirs.sc
 	verilator_coverage *.dat --rank | tee $(COV_LOG)
 	-@cp $(COV_LOG) $(COV_REPORT)
 
-dve.sc: dirs.sc
-	cd $(SIM_DIR); dve -full64 dump.vcd &
+wave.sc: dirs.sc
+	cd $(SIM_DIR); $(GTKWAVE) -f dump.vcd &
 
 debug.sc: dirs.sc
 	@echo "BlackParrot hardware model does not currently support Verilator VCD dumps"

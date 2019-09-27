@@ -26,7 +26,9 @@ VCS       ?= vcs
 URG       ?= urg
 VERILATOR ?= verilator
 DC_SHELL  ?= dc_shell
-DVE       ?= dve
+# Some environments have issues with setting DVE as an environment variable
+_DVE      ?= dve
+GTKWAVE   ?= gtkwave
 PYTHON    ?= python
 
 ## Needed for verilator g++ compilations
