@@ -140,8 +140,8 @@ cov.v: dirs.v
 	@cp $(COV_REPORT)/tests.txt $(COV_TREPORT)
 	@cp $(COV_REPORT)/hierarchy.txt $(COV_HREPORT) 
 
-dve.v: dirs.v
-	cd $(SIM_DIR); dve -full64 -vpd vcdplus.vpd &
+wave.v: dirs.v
+	cd $(SIM_DIR); $(_DVE) -full64 -vpd vcdplus.vpd &
 
 debug.v: dirs.v
 	$(VPD2VCD) +splitpacked $(SIM_DIR)/vcdplus.vpd $(SIM_DIR)/debug.vcd
