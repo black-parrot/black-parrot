@@ -72,4 +72,4 @@ test: as
 	python2 py/roms.py -i microcode/cce/test --bsg $(BSG_MEM_DIR) --outdir ./roms/test
 
 fast: as
-	python2 py/roms.py -i microcode/cce/fast -N 1 -W 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/fast
+	python2 py/roms.py -i microcode/cce/fast -N 1 2 4 8 16 32 -W 2 4 8 16 32 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/fast
