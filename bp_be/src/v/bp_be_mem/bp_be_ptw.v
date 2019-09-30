@@ -25,6 +25,7 @@ module bp_be_ptw
   (input                                    clk_i
    , input                                  reset_i
    , input [ppn_width_lp-1:0]               base_ppn_i
+   , input [rv64_priv_width_gp-1:0]         priv_mode_i
    , input                                  translation_en_i
    , output                                 busy_o
    
@@ -77,6 +78,7 @@ module bp_be_ptw
   
   logic [page_table_depth_p-1:0] [partial_vpn_width_lp-1:0] partial_vpn;
   logic [page_table_depth_p-2:0] [partial_vpn_width_lp-1:0] partial_ppn;
+  logic [page_table_depth_p-2:0] partial_pte_misaligned;
   
   logic store_not_load_r;
   logic page_fault_v;
@@ -88,6 +90,7 @@ module bp_be_ptw
     end
    for(i=0; i<page_table_depth_p-1; i++) begin
       assign partial_ppn[i] = ppn_r[partial_vpn_width_lp*i +: partial_vpn_width_lp];
+      assign partial_pte_misaligned[i] = (level_cntr > i)? |dcache_data.ppn[partial_vpn_width_lp*i +: partial_vpn_width_lp] : 1'b0;
       assign writeback_ppn[partial_vpn_width_lp*i +: partial_vpn_width_lp] = (level_cntr > i)? partial_vpn[i] : partial_ppn[i];
     end
     assign writeback_ppn[ppn_width_lp-1 : (page_table_depth_p-1)*partial_vpn_width_lp] = ppn_r[ppn_width_lp-1 : (page_table_depth_p-1)*partial_vpn_width_lp];
@@ -128,9 +131,18 @@ module bp_be_ptw
   assign ppn_n                  = (state_r == eIdle)? base_ppn_i : dcache_data.ppn[0+:ppn_width_lp];
   assign vpn_n                  = tlb_miss_vtag_i;
   
-  assign instr_page_fault_o     = busy_o & dcache_v_i & itlb_not_dtlb_o & ((level_cntr == '0 & ~dcache_data.v) | (pte_is_leaf & ~dcache_data.x));
-  assign load_page_fault_o      = busy_o & dcache_v_i & ~itlb_not_dtlb_o & ~store_not_load_r & ((level_cntr == '0 & ~dcache_data.v) | (pte_is_leaf & ~dcache_data.r));
-  assign store_page_fault_o     = busy_o & dcache_v_i & ~itlb_not_dtlb_o & store_not_load_r & ((level_cntr == '0 & ~dcache_data.v) | (pte_is_leaf & ~dcache_data.w));
+  wire pte_invalid              = (~dcache_data.v) | (~dcache_data.r & dcache_data.w);
+  wire leaf_not_found           = (level_cntr == '0) & (~pte_is_leaf);
+  // SUM is hardwired to zero so supervisor access to user pages will fault 
+  wire priv_fault               = pte_is_leaf & dcache_data.u & (priv_mode_i == `PRIV_MODE_S);
+  wire misaligned_superpage     = pte_is_leaf & (|partial_pte_misaligned);
+  wire ad_fault                 = pte_is_leaf & (~dcache_data.a | (dcache_data.a & ~dcache_data.d));
+  wire common_faults            = pte_invalid | leaf_not_found | priv_fault | misaligned_superpage | ad_fault;
+
+  assign instr_page_fault_o     = busy_o & dcache_v_i & itlb_not_dtlb_o & (common_faults | (pte_is_leaf & ~dcache_data.x));
+  // MXR is hardwired to zero so loads from executable pages will fault
+  assign load_page_fault_o      = busy_o & dcache_v_i & ~itlb_not_dtlb_o & ~store_not_load_r & (common_faults | (pte_is_leaf & ~dcache_data.r));
+  assign store_page_fault_o     = busy_o & dcache_v_i & ~itlb_not_dtlb_o & store_not_load_r & (common_faults | (pte_is_leaf & ~dcache_data.w));
   assign page_fault_v           = instr_page_fault_o | load_page_fault_o | store_page_fault_o;
   
   always_comb begin

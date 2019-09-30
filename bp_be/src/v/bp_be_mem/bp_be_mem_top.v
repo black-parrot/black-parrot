@@ -295,6 +295,7 @@ bp_be_ptw
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.base_ppn_i(satp_lo.ppn)
+   ,.priv_mode_i(priv_mode_o)
    ,.translation_en_i(translation_en_lo)
    ,.busy_o(ptw_busy)
    
