@@ -182,6 +182,7 @@ $BP_ME_DIR/src/v/cce/bp_cce_reg.v
 $BP_ME_DIR/src/v/cce/bp_cce_top.v
 # Network
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_id_to_cord.v
+$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_bidir.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_client.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_master.v
 $BP_ME_DIR/src/v/wormhole/bp_me_lce_id_to_cord.v

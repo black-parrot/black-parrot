@@ -5,43 +5,42 @@
 `include "bp_mem_wormhole.vh"
 
 module bp_me_cce_to_wormhole_link_master
-  import bp_cce_pkg::*;
-  import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
-  import bp_me_pkg::*;
+ import bp_cce_pkg::*;
+ import bp_common_pkg::*;
+ import bp_common_aviary_pkg::*;
+ import bp_me_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-  `declare_bp_proc_params(cfg_p)
-  `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
-  
-  , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
-  )
-  
-  (input                                         clk_i
-  , input                                        reset_i
+   `declare_bp_proc_params(cfg_p)
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
-  // CCE-MEM Interface
-  , input  [cce_mem_msg_width_lp-1:0]            mem_cmd_i
-  , input                                        mem_cmd_v_i
-  , output                                       mem_cmd_ready_o
+   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
+   )
+  (input                                          clk_i
+   , input                                        reset_i
+
+   // CCE-MEM Interface
+   , input  [cce_mem_msg_width_lp-1:0]            mem_cmd_i
+   , input                                        mem_cmd_v_i
+   , output                                       mem_cmd_ready_o
+                                                   
+   , output [cce_mem_msg_width_lp-1:0]            mem_resp_o
+   , output                                       mem_resp_v_o
+   , input                                        mem_resp_yumi_i
                                                   
-  , output [cce_mem_msg_width_lp-1:0]            mem_resp_o
-  , output                                       mem_resp_v_o
-  , input                                        mem_resp_yumi_i
-                                                 
-  // Configuration
-  , input [mem_noc_cord_width_p-1:0]             my_cord_i
-  , input [mem_noc_cid_width_p-1:0]              my_cid_i
-  , input [mem_noc_cord_width_p-1:0]             mmio_cord_i
-  , input [mem_noc_cord_width_p-1:0]             dram_cord_i
-  , input [mem_noc_cord_width_p-1:0]             host_cord_i
-  
-  // bsg_noc_wormhole interface
-  , input [bsg_ready_and_link_sif_width_lp-1:0]  cmd_link_i
-  , output [bsg_ready_and_link_sif_width_lp-1:0] cmd_link_o
+   // Configuration
+   , input [mem_noc_cord_width_p-1:0]             my_cord_i
+   , input [mem_noc_cid_width_p-1:0]              my_cid_i
+   , input [mem_noc_cord_width_p-1:0]             mmio_cord_i
+   , input [mem_noc_cord_width_p-1:0]             dram_cord_i
+   , input [mem_noc_cord_width_p-1:0]             host_cord_i
+   
+   // bsg_noc_wormhole interface
+   , input [bsg_ready_and_link_sif_width_lp-1:0]  cmd_link_i
+   , output [bsg_ready_and_link_sif_width_lp-1:0] cmd_link_o
 
-  , input [bsg_ready_and_link_sif_width_lp-1:0]  resp_link_i
-  , output [bsg_ready_and_link_sif_width_lp-1:0] resp_link_o
-  );
+   , input [bsg_ready_and_link_sif_width_lp-1:0]  resp_link_i
+   , output [bsg_ready_and_link_sif_width_lp-1:0] resp_link_o
+   );
   
 // CCE-MEM interface packets
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
