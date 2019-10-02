@@ -31,7 +31,7 @@ module wrapper
    , input [num_mem_p-1:0][mem_noc_cord_width_p-1:0]  mem_cord_i
    , input [num_core_p-1:0][mem_noc_cord_width_p-1:0] tile_cord_i
    , input [mem_noc_cord_width_p-1:0]                 dram_cord_i
-   , input [mem_noc_cord_width_p-1:0]                 mmio_cord_i
+   , input [mem_noc_cord_width_p-1:0]                 clint_cord_i
    , input [mem_noc_cord_width_p-1:0]                 host_cord_i
 
    , input  [mem_noc_ral_link_width_lp-1:0]           prev_cmd_link_i

@@ -74,13 +74,9 @@ module bp_be_dcache_lce
   (
     input clk_i
     , input reset_i
-    , input freeze_i
 
-    // Config channel
-    , input                        cfg_w_v_i
-    , input [cfg_addr_width_p-1:0] cfg_addr_i
-    , input [cfg_data_width_p-1:0] cfg_data_i
     , input [lce_id_width_lp-1:0] lce_id_i
+    , input bp_lce_mode_e lce_mode_i
 
     , output logic ready_o
     , output logic cache_miss_o
@@ -134,33 +130,7 @@ module bp_be_dcache_lce
 
     , output credits_full_o
     , output credits_empty_o
-
-    // LCE Mode
-    , output bp_be_dcache_lce_mode_e              lce_mode_o
   );
-
-  // LCE Mode control
-  bp_be_dcache_lce_mode_e lce_mode_r, lce_mode_n;
-  assign lce_mode_o = lce_mode_r;
-
-  // The LCE has a single config register, thus the unit is always ready. Writes should only
-  // happen when reset_i is low and freeze_i is high. If these conditions are true, the LCE
-  // simply snoops the config link and writes the mode register when targeted by a valid write
-  // command on the link.
-  logic lce_mode_w_v, lce_mode_addr_v;
-  assign lce_mode_addr_v = (cfg_addr_i == bp_cfg_reg_dcache_mode_gp);
-  assign lce_mode_w_v = freeze_i & cfg_w_v_i & lce_mode_addr_v;
-  assign lce_mode_n = bp_be_dcache_lce_mode_e'(cfg_data_i[0+:`bp_be_dcache_lce_mode_bits]);
-
-  always_ff @(posedge clk_i) begin
-    if (reset_i) begin
-      lce_mode_r <= e_dcache_lce_mode_uncached;
-    end else begin
-      if (lce_mode_w_v) begin
-        lce_mode_r <= lce_mode_n;
-      end
-    end
-  end
 
   // casting structs
   //
@@ -290,10 +260,9 @@ module bp_be_dcache_lce
     lce_cmd_inst
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.freeze_i(freeze_i)
 
       ,.lce_id_i(lce_id_i)
-      ,.lce_mode_i(lce_mode_r)
+      ,.lce_mode_i(lce_mode_i)
 
       ,.miss_addr_i(miss_addr_lo)
 
@@ -389,11 +358,11 @@ module bp_be_dcache_lce
 
   // LCE Ready Signal
   // The LCE ready signal depends on the mode of operation.
-  // In uncached only mode, the signal goes high once freeze_i goes low.
+  // In uncached only mode, the LCE is always ready
   // In normal mode, the signal goes high after the LCE CMD unit signals that the CCE has
   // completed the initialization sequence.
   logic lce_ready;
-  assign lce_ready = (lce_mode_r == e_dcache_lce_mode_uncached) ? ~freeze_i : lce_sync_done_lo;
+  assign lce_ready = (lce_mode_i == e_lce_mode_uncached) ? 1'b1 : lce_sync_done_lo;
   assign ready_o = lce_ready & ~timeout & ~cache_miss_o; 
 
 endmodule

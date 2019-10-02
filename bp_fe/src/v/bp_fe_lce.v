@@ -27,30 +27,19 @@ module bp_fe_lce
   import bp_common_cfg_link_pkg::*;
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
-   `declare_bp_lce_cce_if_widths(num_cce_p
-                                 ,num_lce_p
-                                 ,paddr_width_p
-                                 ,lce_assoc_p
-                                 ,dword_width_p
-                                 ,cce_block_width_p
-                                 )
+   `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
     , parameter timeout_max_limit_p=4
 
    `declare_bp_fe_tag_widths(lce_assoc_p, lce_sets_p, num_lce_p, num_cce_p, dword_width_p, paddr_width_p)
    `declare_bp_fe_lce_widths(lce_assoc_p, lce_sets_p, tag_width_lp, cce_block_width_p) 
+   , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
   )
   (
     input                                                        clk_i
     , input                                                      reset_i
-    , input                                                      freeze_i
 
-    // Config channel
-    , input                                                      cfg_w_v_i
-    , input [cfg_addr_width_p-1:0]                               cfg_addr_i
-    , input [cfg_data_width_p-1:0]                               cfg_data_i
-
-    , input [lce_id_width_lp-1:0]                                lce_id_i
+    , input [proc_cfg_width_lp-1:0]                              proc_cfg_i
 
     , output logic                                               ready_o
     , output logic                                               cache_miss_o
@@ -90,35 +79,16 @@ module bp_fe_lce
     , output logic [lce_cmd_width_lp-1:0] lce_cmd_o
     , output logic lce_cmd_v_o
     , input lce_cmd_ready_i
-
-    , output bp_fe_icache_lce_mode_e                  lce_mode_o
   );
 
-  // LCE Mode control
-  bp_fe_icache_lce_mode_e lce_mode_r, lce_mode_n;
-  assign lce_mode_o = lce_mode_r;
-
-  logic lce_mode_w_v, lce_mode_addr_v;
-  assign lce_mode_addr_v = (cfg_addr_i == bp_cfg_reg_icache_mode_gp);
-  assign lce_mode_w_v = freeze_i & cfg_w_v_i & lce_mode_addr_v;
-  assign lce_mode_n = bp_fe_icache_lce_mode_e'(cfg_data_i[0+:`bp_fe_icache_lce_mode_bits]);
-
-  always_ff @(posedge clk_i) begin
-    if (reset_i) begin
-      lce_mode_r <= e_icache_lce_mode_uncached;
-    end else begin
-      if (lce_mode_w_v) begin
-        lce_mode_r <= lce_mode_n;
-      end
-    end
-  end
-
-
+  `declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
   `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   `declare_bp_fe_icache_lce_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
   `declare_bp_fe_icache_lce_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, tag_width_lp);
   `declare_bp_fe_icache_lce_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
+
+  bp_proc_cfg_s proc_cfg_cast_i;
 
   bp_lce_cce_req_s lce_req;
   bp_lce_cce_resp_s lce_resp;
@@ -128,6 +98,8 @@ module bp_fe_lce
   bp_fe_icache_lce_data_mem_pkt_s data_mem_pkt;
   bp_fe_icache_lce_tag_mem_pkt_s tag_mem_pkt;
   bp_fe_icache_lce_stat_mem_pkt_s stat_mem_pkt;
+
+  assign proc_cfg_cast_i = proc_cfg_i;
 
   assign lce_req_o           = lce_req;
   assign lce_resp_o          = lce_resp;
@@ -153,7 +125,7 @@ module bp_fe_lce
     .clk_i(clk_i)
     ,.reset_i(reset_i)
   
-    ,.lce_id_i(lce_id_i)
+    ,.lce_id_i(proc_cfg_cast_i.icache_id)
 
     ,.miss_i(miss_i)
     ,.miss_addr_i(miss_addr_i)
@@ -190,7 +162,7 @@ module bp_fe_lce
     .clk_i(clk_i)
     ,.reset_i(reset_i)
 
-    ,.lce_id_i(lce_id_i)
+    ,.lce_id_i(proc_cfg_cast_i.icache_id)
     ,.miss_addr_i(miss_addr_lo)
 
     ,.lce_ready_o(lce_ready_lo)
@@ -277,8 +249,7 @@ module bp_fe_lce
     end
   end
 
-  logic lce_ready;
-  assign lce_ready = (lce_mode_r == e_icache_lce_mode_uncached) ? ~freeze_i : lce_ready_lo;
+  wire lce_ready = (proc_cfg_cast_i.icache_mode == e_lce_mode_uncached) ? 1'b1 : lce_ready_lo;
   assign ready_o = lce_ready & ~timeout & ~cache_miss_o;
  
 endmodule

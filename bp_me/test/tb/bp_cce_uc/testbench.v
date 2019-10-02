@@ -65,6 +65,7 @@ logic                  cfg_cmd_v_lo, cfg_cmd_yumi_li;
 bp_cce_mem_msg_s       cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
+<<<<<<< HEAD
 logic [cfg_addr_width_p-1:0] config_addr_li;
 logic [cfg_data_width_p-1:0] config_data_li;
 logic                        config_v_li;
@@ -82,6 +83,8 @@ always_ff @(posedge clk_i) begin
     freeze_r <= config_data_li[0];
 end
 
+=======
+>>>>>>> top_dev_project_bidir_cfg_bus
 // CCE-MEM IF
 bp_cce_mem_msg_s       mem_resp;
 logic                  mem_resp_v, mem_resp_ready;
@@ -135,7 +138,7 @@ bp_me_nonsynth_mock_lce #(
 ) lce (
   .clk_i(clk_i)
   ,.reset_i(reset_i)
-  ,.freeze_i(freeze_r)
+  ,.freeze_i('0)
 
   ,.lce_id_i('0)
 
@@ -173,13 +176,7 @@ wrapper
  (.clk_i(clk_i)
   ,.reset_i(reset_i)
 
-  ,.freeze_i(freeze_r)
-
-  ,.cfg_w_v_i(config_v_li)
-  ,.cfg_addr_i(config_addr_li)
-  ,.cfg_data_i(config_data_li)
-
-  ,.cce_id_i('0)
+  ,.proc_cfg_i('0)
 
   ,.lce_cmd_o(lce_cmd)
   ,.lce_cmd_v_o(lce_cmd_v)
@@ -242,6 +239,7 @@ mem
   ,.mem_resp_ready_i(mem_resp_ready)
   );
 
+<<<<<<< HEAD
 // CFG loader
 localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
 // command is consumed cycle it is valid
@@ -270,6 +268,8 @@ bp_cce_mmio_cfg_loader
   );
 
 
+=======
+>>>>>>> top_dev_project_bidir_cfg_bus
 // Program done info
 localparam max_clock_cnt_lp    = 2**30-1;
 localparam lg_max_clock_cnt_lp = `BSG_SAFE_CLOG2(max_clock_cnt_lp);

@@ -70,7 +70,7 @@ logic [cfg_data_width_p-1:0] config_data_li;
 logic                        config_v_li;
 
 assign config_v_li = cfg_cmd_v_lo;
-assign config_addr_li = cfg_cmd_lo.data[cfg_data_width_p+:cfg_addr_width_p];
+assign config_addr_li = cfg_cmd_lo.addr[0+:cfg_addr_width_p];
 assign config_data_li = cfg_cmd_lo.data[0+:cfg_data_width_p];
 
 // Freeze signal register

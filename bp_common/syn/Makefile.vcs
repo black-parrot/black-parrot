@@ -14,12 +14,10 @@ VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
 VCS_BUILD_OPTS += -full64             # Compile a 64-bit executable
 VCS_BUILD_OPTS += -sverilog # Enable SystemVerilog
 VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
-#VCS_BUILD_OPTS += -assert svaext      # Enable elaboration system tasks
+VCS_BUILD_OPTS += -assert svaext      # Enable elaboration system tasks
 VCS_BUILD_OPTS += -CFLAGS "-I$(BP_EXTERNAL_DIR)/include -std=c++11"
 VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
-VCS_BUILD_OPTS += -assert svaext
 VCS_BUILD_OPTS += +lint=TFIPC-L
-VCS_BUILD_OPTS += -debug_pp
 
 LINT_OPTIONS = +lint=all,noSVA-UA,noSVA-NSVU,noNS,noVCDE
 
@@ -27,6 +25,7 @@ DUMP ?= 0
 COV  ?= 0
 
 ifeq ($(DUMP), 1)
+VCS_BUILD_OPTS += -debug_all
 VCS_OPTIONS += +vcs+vcdpluson # Enable vcd dump
 VCS_OPTIONS += +memcbk        # Dump memory 
 endif

@@ -13,7 +13,7 @@ export REPORT_PATH  := $(BP_TOP_DIR)/syn/reports
 
 TB          ?= bp_top_trace_demo
 CFG         ?= e_bp_single_core_cfg
-START_PC 		?= 0x80000000
+START_PC    ?= 0x80000000
 TOLERANCE   ?= 2
 
 # Select CCE ROM based on CFG and Coherence Protocol

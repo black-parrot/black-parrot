@@ -34,7 +34,7 @@ module bp_processor
    , input [num_mem_p-1:0][mem_noc_cord_width_p-1:0]  mem_cord_i
    , input [num_core_p-1:0][mem_noc_cord_width_p-1:0] tile_cord_i
    , input [mem_noc_cord_width_p-1:0]                 dram_cord_i
-   , input [mem_noc_cord_width_p-1:0]                 mmio_cord_i
+   , input [mem_noc_cord_width_p-1:0]                 clint_cord_i
    , input [mem_noc_cord_width_p-1:0]                 host_cord_i
 
    , input  [bsg_ready_and_link_sif_width_lp-1:0]     prev_cmd_link_i
@@ -50,15 +50,12 @@ module bp_processor
    , output [bsg_ready_and_link_sif_width_lp-1:0]     next_resp_link_o
    );
 
-`declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
+`declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
 
-logic [num_core_p-1:0]                       cfg_w_v_lo;
-logic [num_core_p-1:0][cfg_addr_width_p-1:0] cfg_addr_lo;
-logic [num_core_p-1:0][cfg_data_width_p-1:0] cfg_data_lo;
-logic [num_core_p-1:0] timer_irq_lo, soft_irq_lo, external_irq_lo;
+logic [num_core_p-1:0]                       timer_irq_lo, soft_irq_lo, external_irq_lo;
 
 bsg_ready_and_link_sif_s [mem_noc_x_dim_p-1:0] mem_cmd_link_li, mem_cmd_link_lo;
 bsg_ready_and_link_sif_s [mem_noc_x_dim_p-1:0] mem_resp_link_li, mem_resp_link_lo;
@@ -77,12 +74,8 @@ bp_core_complex
 
    ,.tile_cord_i(tile_cord_i)
    ,.dram_cord_i(dram_cord_i)
-   ,.mmio_cord_i(mmio_cord_i)
+   ,.clint_cord_i(clint_cord_i)
    ,.host_cord_i(host_cord_i)
-
-   ,.cfg_w_v_i(cfg_w_v_lo)
-   ,.cfg_addr_i(cfg_addr_lo)
-   ,.cfg_data_i(cfg_data_lo)
 
    ,.timer_irq_i(timer_irq_lo)
    ,.soft_irq_i(soft_irq_lo)
@@ -105,10 +98,6 @@ bp_mem_complex
    ,.mem_reset_i(mem_reset_i)
 
    ,.mem_cord_i(mem_cord_i)
-
-   ,.cfg_w_v_o(cfg_w_v_lo)
-   ,.cfg_addr_o(cfg_addr_lo)
-   ,.cfg_data_o(cfg_data_lo)
 
    ,.timer_irq_o(timer_irq_lo)
    ,.soft_irq_o(soft_irq_lo)

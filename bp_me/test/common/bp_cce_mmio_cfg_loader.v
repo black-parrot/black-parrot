@@ -56,25 +56,28 @@ module bp_cce_mmio_cfg_loader
   
   initial $readmemb(cce_ucode_filename_p, cce_inst_boot_rom);
 
-  assign cce_inst_boot_rom_data = cce_inst_boot_rom[cce_inst_boot_rom_addr];
-
   logic                        cfg_v_lo;
-  logic [cfg_core_width_p-1:0] cfg_core_lo;
   logic [cfg_addr_width_p-1:0] cfg_addr_lo;
   logic [cfg_data_width_p-1:0] cfg_data_lo;
+
+  assign cce_inst_boot_rom_addr = cfg_addr_lo;
+  assign cce_inst_boot_rom_data = cce_inst_boot_rom[cce_inst_boot_rom_addr];
 
   enum logic [3:0] {
     RESET
     ,BP_RESET_SET
     ,BP_FREEZE_SET
     ,BP_RESET_CLR
-    ,SEND_RAM_LO
-    ,SEND_RAM_HI
+    ,SEND_CORE_ID
+    ,SEND_RAM
+    ,SEND_CCE_ID
     ,SEND_CCE_NORMAL
+    ,SEND_NUM_LCE
+    ,SEND_ICACHE_ID
     ,SEND_ICACHE_NORMAL
+    ,SEND_DCACHE_ID
     ,SEND_DCACHE_NORMAL
-    ,SEND_PC_LO
-    ,SEND_PC_HI
+    ,SEND_PC
     ,BP_FREEZE_CLR
     ,DONE
   } state_n, state_r;
@@ -89,13 +92,30 @@ module bp_cce_mmio_cfg_loader
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.clear_i(ucode_cnt_clr)
+     ,.clear_i(ucode_cnt_clr & mem_cmd_yumi_i)
      ,.up_i(ucode_cnt_inc & mem_cmd_yumi_i)
 
      ,.count_o(ucode_cnt_r)
      );
 
+  logic [cfg_addr_width_p-1:0] core_cnt_r;
+  logic core_cnt_clr, core_cnt_inc;
+  bsg_counter_clear_up
+   #(.max_val_p(2**cfg_addr_width_p-1)
+     ,.init_val_p(0)
+     )
+   core_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.clear_i(core_cnt_clr & mem_cmd_yumi_i)
+     ,.up_i(core_cnt_inc & mem_cmd_yumi_i)
+
+     ,.count_o(core_cnt_r)
+     );
+
   wire ucode_prog_done = (ucode_cnt_r == cfg_addr_width_p'(inst_ram_els_p-1));
+  wire core_prog_done  = (core_cnt_r == cfg_addr_width_p'(num_core_p-1));
 
   always_ff @(posedge clk_i) 
     begin
@@ -105,19 +125,18 @@ module bp_cce_mmio_cfg_loader
         state_r <= state_n;
     end
 
-  wire [7:0] unused;
-  assign {unused, cce_inst_boot_rom_addr} = cfg_addr_lo >> 1'b1;
-
   always_comb
     begin
       mem_cmd_v_o = cfg_v_lo;
 
       // uncached store
       mem_cmd_cast_o.msg_type      = e_cce_mem_uc_wr;
-      mem_cmd_cast_o.addr          = bp_cfg_base_addr_gp;
+      mem_cmd_cast_o.addr          = bp_cfg_base_addr_gp 
+                                     + ((core_cnt_r) << cfg_addr_width_p)
+                                     + cfg_addr_lo;
       mem_cmd_cast_o.payload       = '0;
       mem_cmd_cast_o.size          = e_mem_size_8;
-      mem_cmd_cast_o.data          = cce_block_width_p'({cfg_core_lo, cfg_addr_lo, cfg_data_lo});
+      mem_cmd_cast_o.data          = cfg_data_lo;
     end
 
   always_comb 
@@ -126,98 +145,159 @@ module bp_cce_mmio_cfg_loader
       ucode_cnt_inc = 1'b0;
 
       cfg_v_lo = '0;
-      cfg_core_lo = 8'hff;
       cfg_addr_lo = '0;
       cfg_data_lo = '0;
 
       case (state_r)
         RESET: begin
           state_n = skip_ram_init_p ? BP_FREEZE_CLR : BP_RESET_SET;
-
+          
           ucode_cnt_clr = 1'b1;
+          core_cnt_clr = 1'b1;
         end
         BP_RESET_SET: begin
-          state_n = BP_FREEZE_SET;
+          state_n = core_prog_done ? BP_FREEZE_SET : BP_RESET_SET;
+
+          core_cnt_inc = ~core_prog_done;
+          core_cnt_clr = core_prog_done;
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_reset_gp;
           cfg_data_lo = cfg_data_width_p'(1);
         end
         BP_FREEZE_SET: begin
-          state_n = BP_RESET_CLR;
+          state_n = core_prog_done ? BP_RESET_CLR : BP_FREEZE_SET;
+
+          core_cnt_inc = ~core_prog_done;
+          core_cnt_clr = core_prog_done;
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_freeze_gp;
           cfg_data_lo = cfg_data_width_p'(1);
         end
         BP_RESET_CLR: begin
-          state_n = SEND_RAM_LO;
+          state_n = core_prog_done ? SEND_CORE_ID : BP_RESET_CLR;
+
+          core_cnt_inc = ~core_prog_done;
+          core_cnt_clr = core_prog_done;
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_reset_gp;
           cfg_data_lo = cfg_data_width_p'(0);
         end
-        SEND_RAM_LO: begin
-          state_n = SEND_RAM_HI;
+        SEND_CORE_ID: begin
+          state_n = core_prog_done ? SEND_RAM : SEND_CORE_ID;
+
+          core_cnt_inc = ~core_prog_done;
+          core_cnt_clr = core_prog_done;
 
           cfg_v_lo = 1'b1;
-          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_mem_base_cce_ucode_gp) + (ucode_cnt_r << 1);
-          cfg_data_lo = cce_inst_boot_rom_data[0+:cfg_data_width_p];
+          cfg_addr_lo = bp_cfg_reg_core_id_gp;
+          cfg_data_lo = core_cnt_r;
+        end
+        SEND_RAM: begin
+          state_n = (core_prog_done & ucode_prog_done) ? SEND_CCE_ID : SEND_RAM;
+
+          core_cnt_inc = ucode_prog_done & ~core_prog_done;
+          core_cnt_clr = ucode_prog_done &  core_prog_done;
+          ucode_cnt_inc = ~ucode_prog_done;;
+          ucode_cnt_clr = ucode_prog_done;
+
+          cfg_v_lo = 1'b1;
+          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_mem_base_cce_ucode_gp) + ucode_cnt_r;
+          cfg_data_lo = cce_inst_boot_rom_data;
           // TODO: This is nonsynth, won't work on FPGA
           cfg_data_lo = (|cfg_data_lo === 'X) ? '0 : cfg_data_lo;
         end
-        SEND_RAM_HI: begin
-          state_n = ucode_prog_done ? SEND_CCE_NORMAL : SEND_RAM_LO;
+        SEND_CCE_ID: begin
+          state_n = core_prog_done ? SEND_CCE_NORMAL : SEND_CCE_ID;
 
-          ucode_cnt_inc = 1'b1;
+          core_cnt_inc = ~core_prog_done;
+          core_cnt_clr = core_prog_done;
 
           cfg_v_lo = 1'b1;
-          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_mem_base_cce_ucode_gp) + (ucode_cnt_r << 1) + 1'b1;
-          cfg_data_lo = cfg_data_width_p'(cce_inst_boot_rom_data[inst_width_p-1:cfg_data_width_p]);
-          // TODO: This is nonsynth, won't work on FPGA
-          cfg_data_lo = (|cfg_data_lo === 'X) ? '0 : cfg_data_lo;
+          cfg_addr_lo = bp_cfg_reg_cce_id_gp;
+          cfg_data_lo = core_cnt_r;
         end
         SEND_CCE_NORMAL: begin
-          state_n = SEND_ICACHE_NORMAL;
+          state_n = core_prog_done ? SEND_NUM_LCE : SEND_CCE_NORMAL;
+
+          core_cnt_inc = ~core_prog_done;
+          core_cnt_clr = core_prog_done;
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_cce_mode_gp;
           cfg_data_lo = cfg_data_width_p'(e_cce_mode_normal);
         end
+        SEND_NUM_LCE: begin
+          state_n = core_prog_done ? SEND_ICACHE_ID : SEND_NUM_LCE;
+
+          core_cnt_inc = ~core_prog_done;
+          core_cnt_clr = core_prog_done;
+
+          cfg_v_lo = 1'b1;
+          cfg_addr_lo = bp_cfg_reg_num_lce_gp;
+          cfg_data_lo = num_lce_p;
+        end
+        SEND_ICACHE_ID: begin
+          state_n = core_prog_done ? SEND_ICACHE_NORMAL : SEND_ICACHE_ID;
+
+          core_cnt_inc = ~core_prog_done;
+          core_cnt_clr = core_prog_done;
+
+          cfg_v_lo = 1'b1;
+          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_icache_id_gp);
+          cfg_data_lo = (core_cnt_r << 1'b1);
+        end
         SEND_ICACHE_NORMAL: begin
-          state_n = SEND_DCACHE_NORMAL;
+          state_n = core_prog_done ? SEND_DCACHE_ID : SEND_ICACHE_NORMAL;
+
+          core_cnt_inc = ~core_prog_done;
+          core_cnt_clr = core_prog_done;
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_icache_mode_gp);
-          cfg_data_lo = cfg_data_width_p'(e_dcache_lce_mode_normal); // TODO: tapeout hack, change to icache
+          cfg_data_lo = cfg_data_width_p'(e_lce_mode_normal); // TODO: tapeout hack, change to icache
+        end
+        SEND_DCACHE_ID: begin
+          state_n = core_prog_done ? SEND_DCACHE_NORMAL : SEND_DCACHE_ID;
+
+          core_cnt_inc = ~core_prog_done;
+          core_cnt_clr = core_prog_done;
+
+          cfg_v_lo = 1'b1;
+          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_dcache_id_gp);
+          cfg_data_lo = (core_cnt_r << 1'b1) + 1'b1;
         end
         SEND_DCACHE_NORMAL: begin
-          state_n = SEND_PC_LO;
+          state_n = core_prog_done ? SEND_PC : SEND_DCACHE_NORMAL;
+
+          core_cnt_inc  = ~core_prog_done;
+          core_cnt_clr  = core_prog_done;
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_dcache_mode_gp);
-          cfg_data_lo = cfg_data_width_p'(e_dcache_lce_mode_normal);
+          cfg_data_lo = cfg_data_width_p'(e_lce_mode_normal);
         end
-        SEND_PC_LO: begin
-          state_n = SEND_PC_HI;
+        SEND_PC: begin
+          state_n = core_prog_done ? BP_FREEZE_CLR : SEND_PC;
+
+          core_cnt_inc = ~core_prog_done;
+          core_cnt_clr = core_prog_done;
 
           cfg_v_lo = 1'b1;
-          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_start_pc_lo_gp);
-          cfg_data_lo = bp_pc_entry_point_gp[0+:cfg_data_width_p];
-        end
-        SEND_PC_HI: begin
-          state_n = BP_FREEZE_CLR;
-
-          cfg_v_lo = 1'b1;
-          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_start_pc_hi_gp);
-          cfg_data_lo = cfg_data_width_p'(bp_pc_entry_point_gp[vaddr_width_p-1:cfg_data_width_p]);
+          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_start_pc_gp);
+          cfg_data_lo = bp_pc_entry_point_gp;
         end
         BP_FREEZE_CLR: begin
-          state_n = DONE;
+          state_n = core_prog_done ? DONE : BP_FREEZE_CLR;
+
+          core_cnt_inc = ~core_prog_done;
+          core_cnt_clr = core_prog_done;
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_freeze_gp);
-          cfg_data_lo = cfg_data_width_p'(0);;
+          cfg_data_lo = cfg_data_width_p'(0);
         end
         DONE: begin
           state_n = DONE;

@@ -36,13 +36,8 @@ module bp_core_complex
    // Memory side connection
    , input [num_core_p-1:0][mem_noc_cord_width_p-1:0]              tile_cord_i
    , input [mem_noc_cord_width_p-1:0]                              dram_cord_i
-   , input [mem_noc_cord_width_p-1:0]                              mmio_cord_i
+   , input [mem_noc_cord_width_p-1:0]                              clint_cord_i
    , input [mem_noc_cord_width_p-1:0]                              host_cord_i
-
-   // Config channel
-   , input [num_core_p-1:0]                                        cfg_w_v_i
-   , input [num_core_p-1:0][cfg_addr_width_p-1:0]                  cfg_addr_i
-   , input [num_core_p-1:0][cfg_data_width_p-1:0]                  cfg_data_i
 
    // Interrupts
    , input [num_core_p-1:0]                                        timer_irq_i
@@ -56,15 +51,9 @@ module bp_core_complex
    , output [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]   mem_resp_link_o
    );
 
-`declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
+`declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, coh_noc_ral_link_s);
 `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, mem_noc_ral_link_s);
-
-logic [coh_noc_y_dim_p-1:0][coh_noc_x_dim_p-1:0]                       cfg_w_v_lo;
-logic [coh_noc_y_dim_p-1:0][coh_noc_x_dim_p-1:0][cfg_addr_width_p-1:0] cfg_addr_lo;
-logic [coh_noc_y_dim_p-1:0][coh_noc_x_dim_p-1:0][cfg_data_width_p-1:0] cfg_data_lo;
-
-logic [coh_noc_y_dim_p-1:0][coh_noc_x_dim_p-1:0] timer_irq_lo, soft_irq_lo, external_irq_lo;
 
 coh_noc_ral_link_s [coh_noc_y_dim_p-1:0][coh_noc_x_dim_p-1:0][S:W] lce_req_link_lo, lce_req_link_li;
 coh_noc_ral_link_s [coh_noc_y_dim_p-1:0][coh_noc_x_dim_p-1:0][S:W] lce_cmd_link_lo, lce_cmd_link_li;
@@ -90,34 +79,14 @@ for (genvar j = 0; j < mem_noc_y_dim_p; j++)
     for (genvar i = 0; i < mem_noc_x_dim_p; i++) 
       begin : x
         localparam tile_idx = j*mem_noc_x_dim_p + i;
-
-        bp_proc_cfg_s proc_cfg;
-        assign proc_cfg.core_id   = tile_idx;
-        assign proc_cfg.cce_id    = tile_idx;
-        assign proc_cfg.icache_id = (tile_idx*2 + 0);
-        assign proc_cfg.dcache_id = (tile_idx*2 + 1);
-
         // TODO: Num stages arbitrarily set, should be based on PD
-        logic cfg_w_v_li, timer_irq_li, soft_irq_li, external_irq_li;
-        logic [cfg_addr_width_p-1:0] cfg_addr_li;
-        logic [cfg_data_width_p-1:0] cfg_data_li;
+        logic timer_irq_li, soft_irq_li, external_irq_li;
         bsg_dff_chain
-         #(.width_p(3+1+cfg_addr_width_p+cfg_data_width_p), .num_stages_p(10))
+         #(.width_p(3))
          slow_pipe
           (.clk_i(core_clk_i)
-           ,.data_i({cfg_w_v_i[tile_idx]
-                     ,cfg_addr_i[tile_idx]
-                     ,cfg_data_i[tile_idx]
-                     ,timer_irq_i[tile_idx]
-                     ,soft_irq_i[tile_idx]
-                     ,external_irq_i[tile_idx]
-                     })
-           ,.data_o({cfg_w_v_li
-                     ,cfg_addr_li
-                     ,cfg_data_li
-                     ,timer_irq_li
-                     ,soft_irq_li
-                     ,external_irq_li})
+           ,.data_i({timer_irq_i[tile_idx], soft_irq_i[tile_idx], external_irq_i[tile_idx]})
+           ,.data_o({timer_irq_li, soft_irq_li, external_irq_li})
            );
     
         bp_tile_node
@@ -132,18 +101,11 @@ for (genvar j = 0; j < mem_noc_y_dim_p; j++)
            ,.mem_clk_i(mem_clk_i)
            ,.mem_reset_i(mem_reset_i)
     
-           ,.proc_cfg_i(proc_cfg)
-    
            ,.my_cord_i(tile_cord_i[tile_idx])
-           ,.my_cid_i(mem_noc_cid_width_p'(0))
            ,.dram_cord_i(dram_cord_i)
-           ,.mmio_cord_i(mmio_cord_i)
+           ,.clint_cord_i(clint_cord_i)
            ,.host_cord_i(host_cord_i)
-    
-           ,.cfg_w_v_i(cfg_w_v_li)
-           ,.cfg_addr_i(cfg_addr_li)
-           ,.cfg_data_i(cfg_data_li)
-    
+ 
            ,.timer_int_i(timer_irq_li)
            ,.software_int_i(soft_irq_li)
            ,.external_int_i(external_irq_li)

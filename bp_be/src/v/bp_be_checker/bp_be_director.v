@@ -27,17 +27,14 @@ module bp_be_director
    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
    // Generated parameters
+   , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
    , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam tlb_entry_width_lp   = `bp_pte_entry_leaf_width(paddr_width_p)
    )
   (input                              clk_i
    , input                            reset_i
-   , input                            freeze_i
 
-   // Config channel
-   , input                            cfg_w_v_i
-   , input [cfg_addr_width_p-1:0]     cfg_addr_i
-   , input [cfg_data_width_p-1:0]     cfg_data_i
+   , input [proc_cfg_width_lp-1:0]    proc_cfg_i
 
    // Dependency information
    , input [calc_status_width_lp-1:0] calc_status_i
@@ -64,16 +61,19 @@ module bp_be_director
   );
 
 // Declare parameterized structures
+`declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p); 
 
 // Cast input and output ports 
+bp_proc_cfg_s                    proc_cfg_cast_i;
 bp_be_calc_status_s              calc_status;
 bp_fe_cmd_s                      fe_cmd;
 logic                            fe_cmd_v;
 bp_fe_cmd_pc_redirect_operands_s fe_cmd_pc_redirect_operands;
 bp_mtvec_s                       tvec;
 
+assign proc_cfg_cast_i = proc_cfg_i;
 assign calc_status = calc_status_i;
 assign fe_cmd_o    = fe_cmd;
 assign fe_cmd_v_o  = fe_cmd_v;
@@ -92,25 +92,18 @@ logic npc_w_v, btaken_v, attaboy_pending;
 
 logic [vaddr_width_p-1:0] br_mux_o, roll_mux_o, ret_mux_o, exc_mux_o;
 
-wire cfg_pc_lo_w_v = cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_start_pc_lo_gp);
-wire cfg_pc_hi_w_v = cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_start_pc_hi_gp);
-wire [vaddr_width_p-1:0] cfg_pc_part_li = 
-  cfg_pc_hi_w_v
-  ? {cfg_data_i[0+:vaddr_width_p-cfg_data_width_p], npc_r[0+:cfg_data_width_p]}
-  : {npc_r[vaddr_width_p-1:cfg_data_width_p], cfg_data_i[0+:cfg_data_width_p]};
-
 // Module instantiations
 // Update the NPC on a valid instruction in ex1 or a cache miss or a tlb miss
-assign npc_w_v = (cfg_pc_lo_w_v | cfg_pc_hi_w_v)
-                 |(calc_status.ex1_instr_v & ~npc_mismatch_v) 
+assign npc_w_v = proc_cfg_cast_i.start_pc_w_v
+                 | (calc_status.ex1_instr_v & ~npc_mismatch_v) 
                  | calc_status.mem3_miss_v
                  | trap_v_i
                  | ret_v_i;
-bsg_dff_en 
- #(.width_p(vaddr_width_p)
-   ) 
+bsg_dff_reset_en 
+ #(.width_p(vaddr_width_p))
  npc
   (.clk_i(clk_i)
+   ,.reset_i(reset_i)
    ,.en_i(npc_w_v)
   
    ,.data_i(npc_n)
@@ -134,8 +127,8 @@ bsg_mux
    ,.els_p(2)   
    )
  init_mux
-  (.data_i({cfg_pc_part_li, exc_mux_o})
-   ,.sel_i(cfg_w_v_i)
+  (.data_i({proc_cfg_cast_i.start_pc, exc_mux_o})
+   ,.sel_i(proc_cfg_cast_i.start_pc_w_v)
    ,.data_o(npc_n)
    );
 
@@ -204,7 +197,7 @@ assign pc_o = pc_r;
 always_comb
   begin
     unique casez (state_r)
-      e_reset : state_n = freeze_i ? e_reset : e_boot;
+      e_reset : state_n = proc_cfg_cast_i.freeze ? e_reset : e_boot;
       e_boot  : state_n = fe_cmd_v ? e_run : e_boot;
       e_run   : state_n = e_run;
       default : state_n = e_reset;

@@ -32,6 +32,7 @@ module bp_cce
     , localparam num_way_groups_lp         = (lce_sets_p/num_cce_p)
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
     , localparam inst_ram_addr_width_lp    = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
+    , localparam proc_cfg_width_lp         = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
 
     // interface widths
     `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
@@ -39,12 +40,8 @@ module bp_cce
   )
   (input                                               clk_i
    , input                                             reset_i
-   , input                                             freeze_i
 
-   // Config channel
-   , input                                             cfg_w_v_i
-   , input [cfg_addr_width_p-1:0]                      cfg_addr_i
-   , input [cfg_data_width_p-1:0]                      cfg_data_i
+   , input [proc_cfg_width_lp-1:0]                     proc_cfg_i
 
    // LCE-CCE Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
@@ -79,8 +76,6 @@ module bp_cce
    , output logic [cce_mem_msg_width_lp-1:0]           mem_resp_o
    , output logic                                      mem_resp_v_o
    , input                                             mem_resp_ready_i
-
-   , input [lg_num_cce_lp-1:0]                         cce_id_i
   );
 
   //synopsys translate_off
@@ -120,9 +115,6 @@ module bp_cce
   // Decode to PC signals
   logic pc_stall_lo;
   logic [inst_ram_addr_width_lp-1:0] pc_branch_target_lo;
-
-  // PC output signals
-  bp_cce_mode_e cce_mode_lo;
 
   // ALU signals
   logic alu_branch_res_lo;
@@ -188,7 +180,6 @@ module bp_cce
 
   logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_r_lo;
   logic [dword_width_p-1:0] nc_data_r_lo;
-  logic [lg_num_lce_lp-1:0] num_lce_r_lo;
 
   // Message Unit Signals
   logic                                          fence_zero_lo;
@@ -197,18 +188,12 @@ module bp_cce
 
   // PC Logic, Instruction RAM
   bp_cce_pc
-    #(.inst_ram_els_p(num_cce_instr_ram_els_p)
-      ,.cfg_link_addr_width_p(cfg_addr_width_p)
-      ,.cfg_link_data_width_p(cfg_data_width_p)
-      )
+    #(.cfg_p(cfg_p))
     inst_ram
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.freeze_i(freeze_i)
 
-      ,.cfg_w_v_i(cfg_w_v_i)
-      ,.cfg_addr_i(cfg_addr_i)
-      ,.cfg_data_i(cfg_data_i)
+      ,.proc_cfg_i(proc_cfg_i)
 
       ,.alu_branch_res_i(alu_branch_res_lo)
 
@@ -219,8 +204,6 @@ module bp_cce
 
       ,.inst_o(pc_inst_lo)
       ,.inst_v_o(pc_inst_v_lo)
-
-      ,.cce_mode_o(cce_mode_lo)
       );
 
   // Instruction Decode
@@ -367,16 +350,7 @@ module bp_cce
 
   // Registers
   bp_cce_reg
-    #(.num_lce_p(num_lce_p)
-      ,.num_cce_p(num_cce_p)
-      ,.paddr_width_p(paddr_width_p)
-      ,.lce_assoc_p(lce_assoc_p)
-      ,.lce_sets_p(lce_sets_p)
-      ,.block_size_in_bytes_p(block_size_in_bytes_lp)
-      ,.lce_req_data_width_p(dword_width_p)
-      ,.cfg_addr_width_p(cfg_addr_width_p)
-      ,.cfg_data_width_p(cfg_data_width_p)
-      )
+    #(.cfg_p(cfg_p))
     registers
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -408,15 +382,12 @@ module bp_cce
       ,.gad_cached_owned_flag_i(gad_cached_owned_flag_lo)
       ,.gad_cached_dirty_flag_i(gad_cached_dirty_flag_lo)
 
-      ,.cfg_w_v_i(cfg_w_v_i)
-      ,.cfg_addr_i(cfg_addr_i)
-      ,.cfg_data_i(cfg_data_i)
+      ,.proc_cfg_i(proc_cfg_i)
 
       // register state outputs
       ,.mshr_o(mshr)
       ,.gpr_o(gpr_r_lo)
       ,.nc_data_o(nc_data_r_lo)
-      ,.num_lce_o(num_lce_r_lo)
       );
 
   // Message unit
@@ -427,8 +398,7 @@ module bp_cce
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
 
-      ,.cce_id_i(cce_id_i)
-      ,.cce_mode_i(cce_mode_lo)
+      ,.proc_cfg_i(proc_cfg_i)
 
       // To CCE
       ,.lce_req_i(lce_req_li)

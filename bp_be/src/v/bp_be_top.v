@@ -14,34 +14,20 @@ module bp_be_top
  import bp_common_cfg_link_pkg::*;
  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
-   `declare_bp_fe_be_if_widths(vaddr_width_p
-                               ,paddr_width_p
-                               ,asid_width_p
-                               ,branch_metadata_fwd_width_p
-                               )
-   `declare_bp_lce_cce_if_widths(num_cce_p
-                                 ,num_lce_p
-                                 ,paddr_width_p
-                                 ,lce_assoc_p
-                                 ,dword_width_p
-                                 ,cce_block_width_p
-                                 )
+   `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
+   `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
    // Default parameters 
-   , localparam proc_cfg_width_lp          = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
-   , localparam ecode_dec_width_lp         = `bp_be_ecode_dec_width
+   , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
    
    // VM parameters
    , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
    )
   (input                                     clk_i
    , input                                   reset_i
-   , input                                   freeze_i
 
-   // Config channel
-   , input                                   cfg_w_v_i
-   , input [cfg_addr_width_p-1:0]            cfg_addr_i
-   , input [cfg_data_width_p-1:0]            cfg_data_i
+   // Processor configuration
+   , input [proc_cfg_width_lp-1:0]           proc_cfg_i
 
    // FE queue interface
    , output                                  fe_queue_deq_o
@@ -73,9 +59,6 @@ module bp_be_top
    , output                                  lce_cmd_v_o
    , input                                   lce_cmd_ready_i
 
-   // Processor configuration
-   , input [proc_cfg_width_lp-1:0]           proc_cfg_i
-
    , input                                   timer_int_i
    , input                                   software_int_i
    , input                                   external_int_i
@@ -83,12 +66,8 @@ module bp_be_top
 
 // Declare parameterized structures
 `declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p)
-`declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
-`declare_bp_be_internal_if_structs(vaddr_width_p
-                                   , paddr_width_p
-                                   , asid_width_p
-                                   , branch_metadata_fwd_width_p
-                                   );
+`declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+`declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
 // Casting
 bp_proc_cfg_s proc_cfg;
@@ -137,11 +116,8 @@ bp_be_checker_top
  be_checker
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.freeze_i(freeze_i)
 
-   ,.cfg_w_v_i(cfg_w_v_i)
-   ,.cfg_addr_i(cfg_addr_i)
-   ,.cfg_data_i(cfg_data_i)
+   ,.proc_cfg_i(proc_cfg_i)
 
    ,.chk_dispatch_v_o(chk_dispatch_v)
    ,.chk_roll_o(chk_roll)
@@ -229,11 +205,8 @@ bp_be_mem_top
  be_mem
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
-    ,.freeze_i(freeze_i)
 
-    ,.cfg_w_v_i(cfg_w_v_i)
-    ,.cfg_addr_i(cfg_addr_i)
-    ,.cfg_data_i(cfg_data_i)
+    ,.proc_cfg_i(proc_cfg_i)
 
     ,.chk_poison_ex_i(chk_poison_ex2)
 
@@ -269,7 +242,6 @@ bp_be_mem_top
     ,.lce_cmd_v_o(lce_cmd_v_o)
     ,.lce_cmd_ready_i(lce_cmd_ready_i)
 
-    ,.proc_cfg_i(proc_cfg_i)
     ,.instret_i(instret_mem3)
 
     ,.pc_v_mem3_i(pc_v_mem3)
