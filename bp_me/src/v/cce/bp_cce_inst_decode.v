@@ -187,7 +187,7 @@ module bp_cce_inst_decode
             decoded_inst_o.imm[0+:`bp_cce_inst_imm32_width] = mov_op_s.op.movi.imm;
 
           end else if (minor_op_u.mov_minor_op == e_movis_op) begin
-            decoded_inst_o.dst.gpr = mov_op_s.dst.special;
+            decoded_inst_o.dst.special = mov_op_s.dst.special;
             decoded_inst_o.dst_sel = e_dst_sel_special;
             decoded_inst_o.src_a.gpr = e_src_gpr_imm;
             decoded_inst_o.src_a_sel = e_src_sel_gpr;
@@ -214,7 +214,7 @@ module bp_cce_inst_decode
             decoded_inst_o.src_a_sel = e_src_sel_special;
 
           end else if (minor_op_u.mov_minor_op == e_movgs_op) begin
-            decoded_inst_o.dst.gpr = mov_op_s.dst.special;
+            decoded_inst_o.dst.special = mov_op_s.dst.special;
             decoded_inst_o.dst_sel = e_dst_sel_special;
             decoded_inst_o.src_a.gpr = mov_op_s.op.mov.src.gpr;
             decoded_inst_o.src_a_sel = e_src_sel_gpr;
