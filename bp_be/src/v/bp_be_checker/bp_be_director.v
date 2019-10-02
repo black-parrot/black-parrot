@@ -33,7 +33,6 @@ module bp_be_director
    )
   (input                              clk_i
    , input                            reset_i
-   , input                            freeze_i
 
    , input [proc_cfg_width_lp-1:0]    proc_cfg_i
 
@@ -198,7 +197,7 @@ assign pc_o = pc_r;
 always_comb
   begin
     unique casez (state_r)
-      e_reset : state_n = freeze_i ? e_reset : e_boot;
+      e_reset : state_n = proc_cfg_cast_i.freeze ? e_reset : e_boot;
       e_boot  : state_n = fe_cmd_v ? e_run : e_boot;
       e_run   : state_n = e_run;
       default : state_n = e_reset;

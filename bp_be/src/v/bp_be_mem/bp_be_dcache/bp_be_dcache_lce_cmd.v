@@ -47,7 +47,6 @@ module bp_be_dcache_lce_cmd
   (
     input clk_i
     , input reset_i
-    , input freeze_i
 
     , input [lce_id_width_lp-1:0] lce_id_i
 
@@ -206,15 +205,12 @@ module bp_be_dcache_lce_cmd
 
       // < STARTUP / UNCACHED ONLY >
       // LCE starts in a mode that can process only uncached accesses, and in which the only
-      // commands that will be received are uncached store done commands. When freeze_i goes low
-      // the LCE makes a determination how to operate based on the value of the LCE mode register.
+      // commands that will be received are uncached store done commands. 
       // If the mode is set to uncached, the LCE CMD unit stays in this state. If the mode is
       // set to normal, the LCE CMD unit transitions to the sync state and waits for the CCE to
       // perform the initialization routine.
       e_lce_cmd_state_uncached: begin
-        state_n = (freeze_i)
-                  ? e_lce_cmd_state_uncached
-                  : (lce_mode_i == e_lce_mode_normal)
+        state_n = (lce_mode_i == e_lce_mode_normal)
                     ? e_lce_cmd_state_sync
                     : e_lce_cmd_state_uncached;
 

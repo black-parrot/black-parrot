@@ -38,7 +38,6 @@ module bp_fe_lce
   (
     input                                                        clk_i
     , input                                                      reset_i
-    , input                                                      freeze_i
 
     , input [proc_cfg_width_lp-1:0]                              proc_cfg_i
 
@@ -250,8 +249,7 @@ module bp_fe_lce
     end
   end
 
-  logic lce_ready;
-  assign lce_ready = (proc_cfg_cast_i.icache_mode == e_lce_mode_uncached) ? ~freeze_i : lce_ready_lo;
+  wire lce_ready = (proc_cfg_cast_i.icache_mode == e_lce_mode_uncached) ? 1'b1 : lce_ready_lo;
   assign ready_o = lce_ready & ~timeout & ~cache_miss_o;
  
 endmodule

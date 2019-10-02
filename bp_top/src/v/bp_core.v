@@ -21,7 +21,6 @@ module bp_core
    (
     input                                          clk_i
     , input                                        reset_i
-    , input                                        freeze_i
 
     , input [proc_cfg_width_lp-1:0]                proc_cfg_i
 
@@ -69,7 +68,6 @@ module bp_core
    fe 
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.freeze_i(freeze_i)
 
      ,.proc_cfg_i(proc_cfg_i)
 
@@ -152,7 +150,6 @@ module bp_core
    be
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.freeze_i(freeze_i)
      
      ,.proc_cfg_i(proc_cfg_i)
 

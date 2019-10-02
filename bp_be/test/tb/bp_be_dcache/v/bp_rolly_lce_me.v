@@ -223,8 +223,6 @@ module bp_rolly_lce_me
   ) me (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
-    // TODO: add freeze
-    ,.freeze_i('0)
 
     // TODO: hook up config port
     ,.config_addr_i('0)

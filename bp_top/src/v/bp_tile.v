@@ -127,7 +127,6 @@ bp_core
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.freeze_i(proc_cfg_lo.freeze)
    ,.proc_cfg_i(proc_cfg_lo)
 
    ,.lce_req_o(lce_req_lo)
@@ -156,7 +155,6 @@ bp_cce_top
  cce
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.freeze_i(proc_cfg_lo.freeze)
 
    ,.proc_cfg_i(proc_cfg_lo)
 

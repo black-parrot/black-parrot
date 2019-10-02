@@ -74,7 +74,6 @@ module bp_be_dcache_lce
   (
     input clk_i
     , input reset_i
-    , input freeze_i
 
     , input [lce_id_width_lp-1:0] lce_id_i
     , input bp_lce_mode_e lce_mode_i
@@ -261,7 +260,6 @@ module bp_be_dcache_lce
     lce_cmd_inst
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.freeze_i(freeze_i)
 
       ,.lce_id_i(lce_id_i)
       ,.lce_mode_i(lce_mode_i)
@@ -360,11 +358,11 @@ module bp_be_dcache_lce
 
   // LCE Ready Signal
   // The LCE ready signal depends on the mode of operation.
-  // In uncached only mode, the signal goes high once freeze_i goes low.
+  // In uncached only mode, the LCE is always ready
   // In normal mode, the signal goes high after the LCE CMD unit signals that the CCE has
   // completed the initialization sequence.
   logic lce_ready;
-  assign lce_ready = (lce_mode_i == e_lce_mode_uncached) ? ~freeze_i : lce_sync_done_lo;
+  assign lce_ready = (lce_mode_i == e_lce_mode_uncached) ? 1'b1 : lce_sync_done_lo;
   assign ready_o = lce_ready & ~timeout & ~cache_miss_o; 
 
 endmodule

@@ -11,8 +11,6 @@
  *   At startup, reset_i and freeze_i will both be high. After reset_i goes low, and while freeze_i
  *   is still high, the CCE waits for the mode register to be written.
  *
- *   After freeze_i goes low, the CCE begins operation.
- *
  *   config_addr_i specifies which address to read or write from. The address must be large enough
  *   to support 2*inst_ram_els_p addresses, plus the CCE mode register.
  *
@@ -49,7 +47,6 @@ module bp_cce_pc
   )
   (input                                         clk_i
    , input                                       reset_i
-   , input                                       freeze_i
 
    , input [proc_cfg_width_lp-1:0]               proc_cfg_i
 
@@ -139,23 +136,17 @@ module bp_cce_pc
         pc_state_n = INIT;
       end
       INIT: begin
-        // In INIT, the CCE waits for commands to arrive on the configuration link
-        // init complete when freeze is low and cce mode is normal
-        // if freeze goes low, but mode is uncached, the CCE operates in uncached mode
+        // If mode is uncached, the CCE operates in uncached mode
         // and this module stays in the INIT state and does not fetch microcode
-        if (~freeze_i & (proc_cfg_cast_i.cce_mode == e_cce_mode_normal)) begin
-          // finalize init, then start fetching microcode next
-          pc_state_n = INIT_END;
+        pc_state_n = (proc_cfg_cast_i.cce_mode == e_cce_mode_normal) ? INIT_END : INIT;
         // address is reading or writing the instruction RAM
-        end else if (proc_cfg_cast_i.cce_ucode_w_v) begin
-          // inputs to RAM are valid if config address high bit is set
-          ram_v_li = 1'b1;
-          ram_w_li = 1'b1;
-          // lsb of config address specifies if write is first or second part, so ram addr
-          // starts at bit 1
-          ram_addr_li = proc_cfg_cast_i.cce_ucode_addr;
-          ram_data_li = proc_cfg_cast_i.cce_ucode_data;
-        end
+        // inputs to RAM are valid if config address high bit is set
+        ram_v_li = proc_cfg_cast_i.cce_ucode_w_v;
+        ram_w_li = proc_cfg_cast_i.cce_ucode_w_v;
+        // lsb of config address specifies if write is first or second part, so ram addr
+        // starts at bit 1
+        ram_addr_li = proc_cfg_cast_i.cce_ucode_addr;
+        ram_data_li = proc_cfg_cast_i.cce_ucode_data;
       end
       INIT_END: begin
         // let the last cfg link write finish (if there is one)

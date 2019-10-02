@@ -37,7 +37,6 @@ module bp_be_checker_top
    )
   (input                              clk_i
    , input                            reset_i
-   , input                            freeze_i
 
    , input [proc_cfg_width_lp-1:0]    proc_cfg_i
 
@@ -104,7 +103,6 @@ bp_be_director
  director
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.freeze_i(freeze_i)
 
    ,.proc_cfg_i(proc_cfg_i)
 
