@@ -165,6 +165,7 @@ $BP_FE_DIR/src/v/bp_fe_top.v
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce.v
 $BP_ME_DIR/src/v/cce/bp_cce_alu.v
+$BP_ME_DIR/src/v/cce/bp_cce_buffered.v
 $BP_ME_DIR/src/v/cce/bp_cce_dir.v
 $BP_ME_DIR/src/v/cce/bp_cce_dir_tag_checker.v
 $BP_ME_DIR/src/v/cce/bp_cce_dir_lru_extract.v
@@ -177,7 +178,6 @@ $BP_ME_DIR/src/v/cce/bp_cce_pc.v
 $BP_ME_DIR/src/v/cce/bp_cce_pending.v
 $BP_ME_DIR/src/v/cce/bp_cce_reg.v
 $BP_ME_DIR/src/v/cce/bp_cce_spec.v
-$BP_ME_DIR/src/v/cce/bp_cce_top.v
 # Network
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_id_to_cord.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_bidir.v
