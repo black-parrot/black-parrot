@@ -12,6 +12,7 @@ SPIKE_DIR     := $(BP_EXTERNAL_DIR)/riscv-isa-sim
 AXE_DIR       := $(BP_EXTERNAL_DIR)/axe
 DRAMSIM2_DIR  := $(BP_EXTERNAL_DIR)/DRAMSim2
 CMURPHI_DIR   := $(BP_EXTERNAL_DIR)/cmurphi
+SV2V_DIR      := $(BP_EXTERNAL_DIR)/sv2v
 
 systemc:
 	wget http://www.accellera.org/images/downloads/standards/systemc/systemc-2.3.3.gz \
@@ -61,4 +62,11 @@ dramsim2:
 cmurphi:
 	@cd $(TOP); git submodule update --init --recursive $(CMURPHI_DIR)
 	$(MAKE) -C $(CMURPHI_DIR)/src mu 
+
+sv2v:
+	@cd $(TOP); git submodule update --init --recursive $(SV2V_DIR)
+	wget -qO- https://get.haskellstack.org/stable/linux-x86_64-static.tar.gz | tar xz
+	cp stack*/stack $(BP_EXTERNAL_DIR)/bin; rm -rf stack*
+	$(MAKE) -C $(SV2V_DIR)
+	cp $(SV2V_DIR)/bin/sv2v $(BP_EXTERNAL_DIR)/bin/
 

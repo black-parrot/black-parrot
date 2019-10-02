@@ -147,9 +147,6 @@ debug.v: dirs.v
 	$(VPD2VCD) +splitpacked $(SIM_DIR)/vcdplus.vpd $(SIM_DIR)/debug.vcd
 	$(MAKE) regen -C $(UNHARDWARE_DIR) MODEL=$(UNHARDWARE_MODEL) DATA=$(SIM_DIR)/debug.vcd BINARY=$(SIM_DIR)/prog.elf 
 
-sv2v:
-	sv2v --oneunit $(shell cat command.txt)
-
 clean.v:
 	@rm -rf results/vcs
 	@rm -rf reports/vcs

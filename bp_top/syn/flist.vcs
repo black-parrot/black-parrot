@@ -107,8 +107,6 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_swap.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_thermometer_count.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_transpose.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_unconcentrate_static.v
-$BASEJUMP_STL_DIR/bsg_noc/bsg_mesh_router.v
-$BASEJUMP_STL_DIR/bsg_noc/bsg_mesh_router_buffered.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_mesh_stitch.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_noc_repeater_node.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_concentrator.v
