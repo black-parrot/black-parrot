@@ -89,11 +89,11 @@ logic             [1:0] lce_cmd_v_lo, lce_cmd_ready_li;
 
 // CCE connections
 bp_lce_cce_req_s  cce_lce_req_li;
-logic             cce_lce_req_v_li, cce_lce_req_ready_lo;
+logic             cce_lce_req_v_li, cce_lce_req_yumi_lo;
 bp_lce_cmd_s      cce_lce_cmd_lo;
 logic             cce_lce_cmd_v_lo, cce_lce_cmd_ready_li;
 bp_lce_cce_resp_s cce_lce_resp_li;
-logic             cce_lce_resp_v_li, cce_lce_resp_ready_lo;
+logic             cce_lce_resp_v_li, cce_lce_resp_yumi_lo;
 
 // Mem connections
 bp_cce_mem_msg_s       cce_mem_cmd_lo;
@@ -101,9 +101,9 @@ logic                  cce_mem_cmd_v_lo, cce_mem_cmd_ready_li;
 bp_cce_mem_msg_s       cce_mem_resp_lo;
 logic                  cce_mem_resp_v_lo, cce_mem_resp_ready_li;
 bp_cce_mem_msg_s       cce_mem_resp_li;
-logic                  cce_mem_resp_v_li, cce_mem_resp_ready_lo;
+logic                  cce_mem_resp_v_li, cce_mem_resp_yumi_lo;
 bp_cce_mem_msg_s       cce_mem_cmd_li;
-logic                  cce_mem_cmd_v_li, cce_mem_cmd_ready_lo;
+logic                  cce_mem_cmd_v_li, cce_mem_cmd_yumi_lo;
 
 bp_cce_mem_msg_s       cfg_mem_cmd_li;
 logic                  cfg_mem_cmd_v_li, cfg_mem_cmd_yumi_lo;
@@ -174,7 +174,7 @@ bp_core
    ,.external_irq_i(external_irq_i)
    );
 
-bp_cce_top
+bp_cce
  #(.bp_params_p(bp_params_p))
  cce
   (.clk_i(clk_i)
@@ -186,11 +186,11 @@ bp_cce_top
    // To CCE
    ,.lce_req_i(cce_lce_req_li)
    ,.lce_req_v_i(cce_lce_req_v_li)
-   ,.lce_req_ready_o(cce_lce_req_ready_lo)
+   ,.lce_req_yumi_o(cce_lce_req_yumi_lo)
 
    ,.lce_resp_i(cce_lce_resp_li)
    ,.lce_resp_v_i(cce_lce_resp_v_li)
-   ,.lce_resp_ready_o(cce_lce_resp_ready_lo)
+   ,.lce_resp_yumi_o(cce_lce_resp_yumi_lo)
 
    // From CCE
    ,.lce_cmd_o(cce_lce_cmd_lo)
@@ -200,21 +200,20 @@ bp_cce_top
    // To CCE
    ,.mem_resp_i(cce_mem_resp_li)
    ,.mem_resp_v_i(cce_mem_resp_v_li)
-   ,.mem_resp_ready_o(cce_mem_resp_ready_lo)
+   ,.mem_resp_yumi_o(cce_mem_resp_yumi_lo)
 
-   // TODO: Reconnect with concentrator
    ,.mem_cmd_i(cce_mem_cmd_li)
    ,.mem_cmd_v_i(cce_mem_cmd_v_li)
-   ,.mem_cmd_ready_o(cce_mem_cmd_ready_lo)
+   ,.mem_cmd_yumi_o(cce_mem_cmd_yumi_lo)
 
    // From CCE
    ,.mem_cmd_o(cce_mem_cmd_lo)
    ,.mem_cmd_v_o(cce_mem_cmd_v_lo)
-   ,.mem_cmd_yumi_i(cce_mem_cmd_ready_li & cce_mem_cmd_v_lo)
+   ,.mem_cmd_ready_i(cce_mem_cmd_ready_li)
 
    ,.mem_resp_o(cce_mem_resp_lo)
    ,.mem_resp_v_o(cce_mem_resp_v_lo)
-   ,.mem_resp_yumi_i(cce_mem_resp_ready_li & cce_mem_resp_v_lo)
+   ,.mem_resp_ready_i(cce_mem_resp_ready_li)
    );
 
 `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_req_width_lp, lce_req_packet_s);
@@ -332,7 +331,7 @@ for (genvar i = 0; i < 2; i++)
   
     ,.packet_o(cce_lce_req_packet_li)
     ,.v_o(cce_lce_req_v_li)
-    ,.yumi_i(cce_lce_req_ready_lo & cce_lce_req_v_li)
+    ,.yumi_i(cce_lce_req_yumi_lo)
     );
   assign cce_lce_req_li = cce_lce_req_packet_li.payload;
       
@@ -378,7 +377,7 @@ for (genvar i = 0; i < 2; i++)
   
     ,.packet_o(cce_lce_resp_packet_li)
     ,.v_o(cce_lce_resp_v_li)
-    ,.yumi_i(cce_lce_resp_ready_lo & cce_lce_resp_v_li)
+    ,.yumi_i(cce_lce_resp_yumi_lo)
     );
   assign cce_lce_resp_li = cce_lce_resp_packet_li.payload;
 
@@ -528,11 +527,11 @@ bp_me_cce_to_wormhole_link_bidir
 
    ,.mem_resp_o(cce_mem_resp_li)
    ,.mem_resp_v_o(cce_mem_resp_v_li)
-   ,.mem_resp_yumi_i(cce_mem_resp_ready_lo & cce_mem_resp_v_li)
+   ,.mem_resp_yumi_i(cce_mem_resp_yumi_lo)
 
    ,.mem_cmd_o(cce_mem_cmd_li)
    ,.mem_cmd_v_o(cce_mem_cmd_v_li)
-   ,.mem_cmd_yumi_i(cce_mem_cmd_ready_lo & cce_mem_cmd_v_li)
+   ,.mem_cmd_yumi_i(cce_mem_cmd_yumi_lo)
 
    ,.mem_resp_i(cce_mem_resp_lo)
    ,.mem_resp_v_i(cce_mem_resp_v_lo)

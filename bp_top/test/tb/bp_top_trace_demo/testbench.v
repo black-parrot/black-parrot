@@ -267,7 +267,7 @@ bind bp_be_top
      ,.mem_resp_ready_i(dram_resp_ready_li)
      );
 
-  bind bp_cce_top
+  bind bp_cce
     bp_cce_nonsynth_tracer
       #(.bp_params_p(bp_params_p))
       bp_cce_tracer
@@ -278,12 +278,13 @@ bind bp_be_top
         ,.cce_id_i(bp_cce.inst_ram.cfg_bus_cast_i.cce_id)
   
         // To CCE
-        ,.lce_req_i(lce_req_to_cce)
-        ,.lce_req_v_i(lce_req_v_to_cce)
-        ,.lce_req_yumi_i(lce_req_yumi_from_cce)
-        ,.lce_resp_i(lce_resp_to_cce)
-        ,.lce_resp_v_i(lce_resp_v_to_cce)
-        ,.lce_resp_yumi_i(lce_resp_yumi_from_cce)
+        ,.lce_req_i(lce_req_i)
+        ,.lce_req_v_i(lce_req_v_i)
+        ,.lce_req_yumi_i(lce_req_yumi_o)
+
+        ,.lce_resp_i(lce_resp_i)
+        ,.lce_resp_v_i(lce_resp_v_i)
+        ,.lce_resp_yumi_i(lce_resp_yumi_o)
   
         // From CCE
         ,.lce_cmd_i(lce_cmd_o)
@@ -291,14 +292,14 @@ bind bp_be_top
         ,.lce_cmd_ready_i(lce_cmd_ready_i)
   
         // To CCE
-        ,.mem_resp_i(mem_resp_to_cce)
-        ,.mem_resp_v_i(mem_resp_v_to_cce)
-        ,.mem_resp_yumi_i(mem_resp_yumi_from_cce)
+        ,.mem_resp_i(mem_resp_i)
+        ,.mem_resp_v_i(mem_resp_v_i)
+        ,.mem_resp_yumi_i(mem_resp_yumi_o)
   
         // From CCE
-        ,.mem_cmd_i(mem_cmd_from_cce)
-        ,.mem_cmd_v_i(mem_cmd_v_from_cce)
-        ,.mem_cmd_ready_i(mem_cmd_ready_to_cce)
+        ,.mem_cmd_i(mem_cmd_o)
+        ,.mem_cmd_v_i(mem_cmd_v_o)
+        ,.mem_cmd_ready_i(mem_cmd_ready_i)
         );
 
 wire [mem_noc_cord_width_p-1:0] cfg_cmd_core_lo = cfg_cmd_lo.addr[cfg_addr_width_p+:cfg_core_width_p];
