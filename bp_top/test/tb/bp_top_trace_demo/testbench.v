@@ -255,7 +255,7 @@ if (cce_trace_p)
 
 wire [mem_noc_cord_width_p-1:0] cfg_cmd_core_lo = cfg_cmd_lo.addr[cfg_addr_width_p+:cfg_core_width_p];
 wire [mem_noc_cord_width_p-1:0] dst_cord_lo = cfg_cmd_v_lo ? tile_cord_lo[cfg_cmd_core_lo] : '0;
-wire [mem_noc_cid_width_p-1:0]  dst_cid_lo = '0;
+wire [mem_noc_cid_width_p-1:0]  dst_cid_lo = mem_noc_cid_width_p'(1);
 
 // DRAM + link 
 bp_me_cce_to_wormhole_link_bidir

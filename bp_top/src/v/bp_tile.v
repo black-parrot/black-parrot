@@ -96,14 +96,19 @@ bp_lce_cce_resp_s cce_lce_resp_li;
 logic             cce_lce_resp_v_li, cce_lce_resp_ready_lo;
 
 // Mem connections
-bp_cce_mem_msg_s       mem_cmd_lo;
-logic                  mem_cmd_v_lo, mem_cmd_ready_li;
-bp_cce_mem_msg_s       mem_resp_lo;
-logic                  mem_resp_v_lo, mem_resp_ready_li;
-bp_cce_mem_msg_s       mem_resp_li;
-logic                  mem_resp_v_li, mem_resp_ready_lo;
-bp_cce_mem_msg_s       mem_cmd_li;
-logic                  mem_cmd_v_li, mem_cmd_yumi_lo;
+bp_cce_mem_msg_s       cce_mem_cmd_lo;
+logic                  cce_mem_cmd_v_lo, cce_mem_cmd_ready_li;
+bp_cce_mem_msg_s       cce_mem_resp_lo;
+logic                  cce_mem_resp_v_lo, cce_mem_resp_ready_li;
+bp_cce_mem_msg_s       cce_mem_resp_li;
+logic                  cce_mem_resp_v_li, cce_mem_resp_ready_lo;
+bp_cce_mem_msg_s       cce_mem_cmd_li;
+logic                  cce_mem_cmd_v_li, cce_mem_cmd_yumi_lo;
+
+bp_cce_mem_msg_s       cfg_mem_cmd_li;
+logic                  cfg_mem_cmd_v_li, cfg_mem_cmd_yumi_lo;
+bp_cce_mem_msg_s       cfg_mem_resp_lo;
+logic                  cfg_mem_resp_v_lo, cfg_mem_resp_ready_li;
 
 bp_proc_cfg_s proc_cfg_lo;
 bp_cfg
@@ -112,13 +117,13 @@ bp_cfg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.mem_cmd_i(mem_cmd_li)
-   ,.mem_cmd_v_i(mem_cmd_v_li)
-   ,.mem_cmd_yumi_o(mem_cmd_yumi_lo)
+   ,.mem_cmd_i(cfg_mem_cmd_li)
+   ,.mem_cmd_v_i(cfg_mem_cmd_v_li)
+   ,.mem_cmd_yumi_o(cfg_mem_cmd_yumi_lo)
 
-   ,.mem_resp_o(mem_resp_lo)
-   ,.mem_resp_v_o(mem_resp_v_lo)
-   ,.mem_resp_ready_i(mem_resp_ready_li)
+   ,.mem_resp_o(cfg_mem_resp_lo)
+   ,.mem_resp_v_o(cfg_mem_resp_v_lo)
+   ,.mem_resp_ready_i(cfg_mem_resp_ready_li)
 
    ,.proc_cfg_o(proc_cfg_lo)
    );
@@ -177,23 +182,23 @@ bp_cce_top
    ,.lce_cmd_ready_i(cce_lce_cmd_ready_li)
 
    // To CCE
-   ,.mem_resp_i(mem_resp_li)
-   ,.mem_resp_v_i(mem_resp_v_li)
-   ,.mem_resp_ready_o(mem_resp_ready_lo)
+   ,.mem_resp_i(cce_mem_resp_li)
+   ,.mem_resp_v_i(cce_mem_resp_v_li)
+   ,.mem_resp_ready_o(cce_mem_resp_ready_lo)
 
    // TODO: Reconnect with concentrator
-   ,.mem_cmd_i('0)
-   ,.mem_cmd_v_i('0)
-   ,.mem_cmd_ready_o()
+   ,.mem_cmd_i(cce_mem_cmd_li)
+   ,.mem_cmd_v_i(cce_mem_cmd_v_li)
+   ,.mem_cmd_ready_o(cce_mem_cmd_ready_lo)
 
    // From CCE
-   ,.mem_cmd_o(mem_cmd_lo)
-   ,.mem_cmd_v_o(mem_cmd_v_lo)
-   ,.mem_cmd_yumi_i(mem_cmd_ready_li & mem_cmd_v_lo)
+   ,.mem_cmd_o(cce_mem_cmd_lo)
+   ,.mem_cmd_v_o(cce_mem_cmd_v_lo)
+   ,.mem_cmd_yumi_i(cce_mem_cmd_ready_li & cce_mem_cmd_v_lo)
 
-   ,.mem_resp_o()
-   ,.mem_resp_v_o()
-   ,.mem_resp_yumi_i('0)
+   ,.mem_resp_o(cce_mem_resp_lo)
+   ,.mem_resp_v_o(cce_mem_resp_v_lo)
+   ,.mem_resp_yumi_i(cce_mem_resp_ready_li & cce_mem_resp_v_lo)
 
    ,.cce_id_i(proc_cfg_lo.cce_id) 
    );
@@ -438,7 +443,7 @@ logic [mem_noc_cid_width_p-1:0]  dst_cid_lo;
 bp_addr_map
  #(.cfg_p(cfg_p))
  cmd_map
-  (.paddr_i(mem_cmd_lo.addr)
+  (.paddr_i(cce_mem_cmd_lo.addr)
 
    ,.clint_cord_i(clint_cord_i)
    ,.dram_cord_i(dram_cord_i)
@@ -448,38 +453,111 @@ bp_addr_map
    ,.dst_cord_o(dst_cord_lo)
    );
 
-bp_me_cce_to_wormhole_link_bidir
- #(.cfg_p(cfg_p))
- bidir_link
+bp_mem_ready_and_link_s cce_mem_cmd_link_li, cce_mem_cmd_link_lo;
+bp_mem_ready_and_link_s cce_mem_resp_link_li, cce_mem_resp_link_lo;
+
+bp_mem_ready_and_link_s cfg_mem_cmd_link_li, cfg_mem_cmd_link_lo;
+bp_mem_ready_and_link_s cfg_mem_resp_link_li, cfg_mem_resp_link_lo;
+
+bp_mem_ready_and_link_s mem_cmd_concentrated_link_li, mem_cmd_concentrated_link_lo;
+bp_mem_ready_and_link_s mem_resp_concentrated_link_li, mem_resp_concentrated_link_lo;
+
+assign mem_cmd_concentrated_link_li = mem_cmd_link_i;
+assign mem_cmd_link_o = mem_cmd_concentrated_link_lo;
+bsg_wormhole_concentrator
+ #(.flit_width_p(mem_noc_flit_width_p)
+   ,.len_width_p(mem_noc_len_width_p)
+   ,.cid_width_p(mem_noc_cid_width_p)
+   ,.num_in_p(2)
+   ,.cord_width_p(mem_noc_cord_width_p)
+   )
+ mem_cmd_concentrator
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.mem_cmd_i(mem_cmd_lo)
-   ,.mem_cmd_v_i(mem_cmd_v_lo)
-   ,.mem_cmd_ready_o(mem_cmd_ready_li)
+   ,.links_i({cfg_mem_cmd_link_lo, cce_mem_cmd_link_lo})
+   ,.links_o({cfg_mem_cmd_link_li, cce_mem_cmd_link_li})
 
-   ,.mem_resp_o(mem_resp_li)
-   ,.mem_resp_v_o(mem_resp_v_li)
-   ,.mem_resp_yumi_i(mem_resp_ready_lo & mem_resp_v_li)
+   ,.concentrated_link_i(mem_cmd_concentrated_link_li)
+   ,.concentrated_link_o(mem_cmd_concentrated_link_lo)
+   );
 
-   ,.mem_cmd_o(mem_cmd_li)
-   ,.mem_cmd_v_o(mem_cmd_v_li)
-   ,.mem_cmd_yumi_i(mem_cmd_yumi_lo)
+assign mem_resp_concentrated_link_li = mem_resp_link_i;
+assign mem_resp_link_o = mem_resp_concentrated_link_lo;
+bsg_wormhole_concentrator
+ #(.flit_width_p(mem_noc_flit_width_p)
+   ,.len_width_p(mem_noc_len_width_p)
+   ,.cid_width_p(mem_noc_cid_width_p)
+   ,.num_in_p(2)
+   ,.cord_width_p(mem_noc_cord_width_p)
+   )
+ mem_resp_concentrator
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
 
-   ,.mem_resp_i(mem_resp_lo)
-   ,.mem_resp_v_i(mem_resp_v_lo)
-   ,.mem_resp_ready_o(mem_resp_ready_li)
+   ,.links_i({cfg_mem_resp_link_lo, cce_mem_resp_link_lo})
+   ,.links_o({cfg_mem_resp_link_li, cce_mem_resp_link_li})
+
+   ,.concentrated_link_i(mem_resp_concentrated_link_li)
+   ,.concentrated_link_o(mem_resp_concentrated_link_lo)
+   );
+
+bp_me_cce_to_wormhole_link_bidir
+ #(.cfg_p(cfg_p))
+ cce_link
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.mem_cmd_i(cce_mem_cmd_lo)
+   ,.mem_cmd_v_i(cce_mem_cmd_v_lo)
+   ,.mem_cmd_ready_o(cce_mem_cmd_ready_li)
+
+   ,.mem_resp_o(cce_mem_resp_li)
+   ,.mem_resp_v_o(cce_mem_resp_v_li)
+   ,.mem_resp_yumi_i(cce_mem_resp_ready_lo & cce_mem_resp_v_li)
+
+   ,.mem_cmd_o(cce_mem_cmd_li)
+   ,.mem_cmd_v_o(cce_mem_cmd_v_li)
+   ,.mem_cmd_yumi_i(cce_mem_cmd_yumi_lo)
+
+   ,.mem_resp_i(cce_mem_resp_lo)
+   ,.mem_resp_v_i(cce_mem_resp_v_lo)
+   ,.mem_resp_ready_o(cce_mem_resp_ready_li)
 
    ,.my_cord_i(my_cord_i)
-   ,.my_cid_i('0)
+   ,.my_cid_i(mem_noc_cid_width_p'(0))
    ,.dst_cord_i(dst_cord_lo)
    ,.dst_cid_i(dst_cid_lo)
 
-   ,.cmd_link_i(mem_cmd_link_i)
-   ,.cmd_link_o(mem_cmd_link_o)
+   ,.cmd_link_i(cce_mem_cmd_link_li)
+   ,.cmd_link_o(cce_mem_cmd_link_lo)
 
-   ,.resp_link_i(mem_resp_link_i)
-   ,.resp_link_o(mem_resp_link_o)
+   ,.resp_link_i(cce_mem_resp_link_li)
+   ,.resp_link_o(cce_mem_resp_link_lo)
+   );
+
+bp_me_cce_to_wormhole_link_client
+ #(.cfg_p(cfg_p))
+ cfg_link
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.mem_cmd_o(cfg_mem_cmd_li)
+   ,.mem_cmd_v_o(cfg_mem_cmd_v_li)
+   ,.mem_cmd_yumi_i(cfg_mem_cmd_yumi_lo)
+
+   ,.mem_resp_i(cfg_mem_resp_lo)
+   ,.mem_resp_v_i(cfg_mem_resp_v_lo)
+   ,.mem_resp_ready_o(cfg_mem_resp_ready_li)
+
+   ,.my_cord_i(my_cord_i)
+   ,.my_cid_i(mem_noc_cid_width_p'(1))
+
+   ,.cmd_link_i(cfg_mem_cmd_link_li)
+   ,.cmd_link_o(cfg_mem_cmd_link_lo)
+
+   ,.resp_link_i(cfg_mem_resp_link_li)
+   ,.resp_link_o(cfg_mem_resp_link_lo)
    );
 
 endmodule
