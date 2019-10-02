@@ -89,13 +89,14 @@ logic             [1:0] lce_cmd_v_lo, lce_cmd_ready_li;
 
 // CCE connections
 bp_lce_cce_req_s  cce_lce_req_li;
-logic             cce_lce_req_v_li, cce_lce_req_ready_lo;
+logic             cce_lce_req_v_li, cce_lce_req_yumi_lo;
 bp_lce_cmd_s      cce_lce_cmd_lo;
 logic             cce_lce_cmd_v_lo, cce_lce_cmd_ready_li;
 bp_lce_cce_resp_s cce_lce_resp_li;
-logic             cce_lce_resp_v_li, cce_lce_resp_ready_lo;
+logic             cce_lce_resp_v_li, cce_lce_resp_yumi_lo;
 
 // Mem connections
+<<<<<<< HEAD
 bp_cce_mem_msg_s       cce_mem_cmd_lo;
 logic                  cce_mem_cmd_v_lo, cce_mem_cmd_ready_li;
 bp_cce_mem_msg_s       cce_mem_resp_lo;
@@ -139,6 +140,42 @@ bp_cfg
    );
 // TODO: Find more elegant way to do this
 assign cfg_bus_o = cfg_bus_lo;
+=======
+bp_cce_mem_msg_s       mem_cmd_lo;
+logic                  mem_cmd_v_lo, mem_cmd_ready_li;
+bp_cce_mem_msg_s       mem_resp_lo;
+logic                  mem_resp_v_lo, mem_resp_ready_li;
+bp_cce_mem_msg_s       mem_resp_li;
+logic                  mem_resp_v_li, mem_resp_yumi_lo;
+bp_cce_mem_msg_s       mem_cmd_li;
+logic                  mem_cmd_v_li, mem_cmd_yumi_lo;
+
+// TODO: connect mem_cmd_li and mem_resp_lo
+assign mem_cmd_li = '0;
+assign mem_cmd_v_li = '0;
+assign mem_resp_ready_li = '0;
+
+bp_proc_cfg_s proc_cfg_cast_i;
+assign proc_cfg_cast_i = proc_cfg_i;
+
+logic reset_r;
+always_ff @(posedge clk_i)
+  begin
+    if (reset_i)
+      reset_r <= 1'b1;
+    else if (cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_reset_gp))
+      reset_r <= cfg_data_i[0];
+  end
+
+logic freeze_r;
+always_ff @(posedge clk_i)
+  begin
+    if (reset_i)
+      freeze_r <= 1'b1;
+    else if (cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_freeze_gp))
+      freeze_r <= cfg_data_i[0];
+  end
+>>>>>>> Removing buffers from bp_tile cce, renaming cce_top to cce_buffered
 
 // Module instantiations
 bp_core   
@@ -174,8 +211,13 @@ bp_core
    ,.external_irq_i(external_irq_i)
    );
 
+<<<<<<< HEAD
 bp_cce_top
  #(.bp_params_p(bp_params_p))
+=======
+bp_cce
+ #(.cfg_p(cfg_p))
+>>>>>>> Removing buffers from bp_tile cce, renaming cce_top to cce_buffered
  cce
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -186,11 +228,11 @@ bp_cce_top
    // To CCE
    ,.lce_req_i(cce_lce_req_li)
    ,.lce_req_v_i(cce_lce_req_v_li)
-   ,.lce_req_ready_o(cce_lce_req_ready_lo)
+   ,.lce_req_yumi_o(cce_lce_req_yumi_lo)
 
    ,.lce_resp_i(cce_lce_resp_li)
    ,.lce_resp_v_i(cce_lce_resp_v_li)
-   ,.lce_resp_ready_o(cce_lce_resp_ready_lo)
+   ,.lce_resp_yumi_o(cce_lce_resp_yumi_lo)
 
    // From CCE
    ,.lce_cmd_o(cce_lce_cmd_lo)
@@ -198,6 +240,7 @@ bp_cce_top
    ,.lce_cmd_ready_i(cce_lce_cmd_ready_li)
 
    // To CCE
+<<<<<<< HEAD
    ,.mem_resp_i(cce_mem_resp_li)
    ,.mem_resp_v_i(cce_mem_resp_v_li)
    ,.mem_resp_ready_o(cce_mem_resp_ready_lo)
@@ -211,6 +254,24 @@ bp_cce_top
    ,.mem_cmd_o(cce_mem_cmd_lo)
    ,.mem_cmd_v_o(cce_mem_cmd_v_lo)
    ,.mem_cmd_yumi_i(cce_mem_cmd_ready_li & cce_mem_cmd_v_lo)
+=======
+   ,.mem_resp_i(mem_resp_li)
+   ,.mem_resp_v_i(mem_resp_v_li)
+   ,.mem_resp_yumi_o(mem_resp_yumi_lo)
+
+   ,.mem_cmd_i(mem_cmd_li)
+   ,.mem_cmd_v_i(mem_cmd_v_li)
+   ,.mem_cmd_yumi_o(mem_cmd_yumi_lo)
+
+   // From CCE
+   ,.mem_cmd_o(mem_cmd_lo)
+   ,.mem_cmd_v_o(mem_cmd_v_lo)
+   ,.mem_cmd_ready_i(mem_cmd_ready_li)
+
+   ,.mem_resp_o(mem_resp_lo)
+   ,.mem_resp_v_o(mem_resp_v_lo)
+   ,.mem_resp_ready_i(mem_resp_ready_li)
+>>>>>>> Removing buffers from bp_tile cce, renaming cce_top to cce_buffered
 
    ,.mem_resp_o(cce_mem_resp_lo)
    ,.mem_resp_v_o(cce_mem_resp_v_lo)
@@ -332,7 +393,7 @@ for (genvar i = 0; i < 2; i++)
   
     ,.packet_o(cce_lce_req_packet_li)
     ,.v_o(cce_lce_req_v_li)
-    ,.yumi_i(cce_lce_req_ready_lo & cce_lce_req_v_li)
+    ,.yumi_i(cce_lce_req_yumi_lo)
     );
   assign cce_lce_req_li = cce_lce_req_packet_li.payload;
       
@@ -378,7 +439,7 @@ for (genvar i = 0; i < 2; i++)
   
     ,.packet_o(cce_lce_resp_packet_li)
     ,.v_o(cce_lce_resp_v_li)
-    ,.yumi_i(cce_lce_resp_ready_lo & cce_lce_resp_v_li)
+    ,.yumi_i(cce_lce_resp_yumi_lo)
     );
   assign cce_lce_resp_li = cce_lce_resp_packet_li.payload;
 
@@ -492,6 +553,7 @@ bsg_wormhole_concentrator
    ,.links_i({cfg_mem_cmd_link_lo, cce_mem_cmd_link_lo})
    ,.links_o({cfg_mem_cmd_link_li, cce_mem_cmd_link_li})
 
+<<<<<<< HEAD
    ,.concentrated_link_i(mem_cmd_concentrated_link_li)
    ,.concentrated_link_o(mem_cmd_concentrated_link_lo)
    );
@@ -537,6 +599,11 @@ bp_me_cce_to_wormhole_link_bidir
    ,.mem_resp_i(cce_mem_resp_lo)
    ,.mem_resp_v_i(cce_mem_resp_v_lo)
    ,.mem_resp_ready_o(cce_mem_resp_ready_li)
+=======
+   ,.mem_resp_o(mem_resp_li)
+   ,.mem_resp_v_o(mem_resp_v_li)
+   ,.mem_resp_yumi_i(mem_resp_yumi_lo)
+>>>>>>> Removing buffers from bp_tile cce, renaming cce_top to cce_buffered
 
    ,.my_cord_i(my_cord_i)
    ,.my_cid_i(mem_noc_cid_width_p'(0))

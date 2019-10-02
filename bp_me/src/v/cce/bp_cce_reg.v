@@ -101,7 +101,7 @@ module bp_cce_reg
   bp_cce_mshr_s mshr_r, mshr_n;
 
   logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_r, gpr_n;
-  logic [dword_width_p-1:0] nc_data_r, nc_data_n;
+  logic [lce_req_data_width_p-1:0] nc_data_r, nc_data_n;
   bp_coh_states_e coh_state_r, coh_state_n;
 
   // Output register values
