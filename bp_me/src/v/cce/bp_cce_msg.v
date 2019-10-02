@@ -145,17 +145,7 @@ module bp_cce_msg
 
   // Message unit
   bp_cce_msg_cached
-    #(.num_lce_p(num_lce_p)
-      ,.num_cce_p(num_cce_p)
-      ,.paddr_width_p(paddr_width_p)
-      ,.lce_assoc_p(lce_assoc_p)
-      ,.lce_sets_p(lce_sets_p)
-      ,.block_size_in_bytes_p(block_size_in_bytes_lp)
-      ,.lce_req_data_width_p(dword_width_p)
-      ,.num_way_groups_p(num_way_groups_lp)
-      ,.cce_block_width_p(cce_block_width_p)
-      ,.dword_width_p(dword_width_p)
-      )
+    #(.cfg_p(cfg_p))
     bp_cce_msg_cached
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -212,14 +202,7 @@ module bp_cce_msg
 
   // Uncached access module
   bp_cce_msg_uncached
-    #(.num_lce_p(num_lce_p)
-      ,.num_cce_p(num_cce_p)
-      ,.paddr_width_p(paddr_width_p)
-      ,.lce_assoc_p(lce_assoc_p)
-      ,.lce_sets_p(lce_sets_p)
-      ,.block_size_in_bytes_p(block_size_in_bytes_lp)
-      ,.lce_req_data_width_p(dword_width_p)
-      )
+    #(.cfg_p(cfg_p))
     bp_cce_msg_uncached
      (.clk_i(clk_i)
       ,.reset_i(reset_i)

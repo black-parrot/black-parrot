@@ -189,6 +189,7 @@ module bp_cce
   logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_r_lo;
   logic [dword_width_p-1:0] nc_data_r_lo;
   logic [lg_num_lce_lp-1:0] num_lce_r_lo;
+  logic [`bp_coh_bits-1:0] coh_state_r_lo;
 
   // Message Unit Signals
   logic                                          fence_zero_lo;
@@ -306,13 +307,13 @@ module bp_cce
       ,.way_i(dir_way_li)
       ,.lru_way_i(mshr.lru_way_id)
 
-      ,.r_cmd_i(decoded_inst_lo.dir_r_cmd)
+      ,.r_cmd_i(decoded_inst_lo.minor_op_u.dir_minor_op)
       ,.r_v_i(decoded_inst_lo.dir_r_v)
 
       ,.tag_i(dir_tag_li)
       ,.coh_state_i(dir_coh_state_li)
 
-      ,.w_cmd_i(decoded_inst_lo.dir_w_cmd)
+      ,.w_cmd_i(decoded_inst_lo.minor_op_u.dir_minor_op)
       ,.w_v_i(decoded_inst_lo.dir_w_v)
       ,.w_clr_wg_i('0)
 
@@ -417,6 +418,7 @@ module bp_cce
       ,.gpr_o(gpr_r_lo)
       ,.nc_data_o(nc_data_r_lo)
       ,.num_lce_o(num_lce_r_lo)
+      ,.coh_state_o(coh_state_r_lo)
       );
 
   // Message unit
@@ -584,6 +586,15 @@ module bp_cce
   logic [`bp_coh_bits-1:0] sharers_coh_states_r0;
   assign sharers_coh_states_r0 = sharers_coh_states_lo[gpr_r_lo[e_gpr_r0][lg_num_lce_lp-1:0]];
 
+  // Branch multiple-flag operands
+  // Apply bit-mask from instruction to MSHR flags register
+  logic [`bp_cce_inst_num_flags-1:0] bf_opd;
+  assign bf_opd = (mshr.flags & decoded_inst_lo.imm[0+:`bp_cce_inst_num_flags]);
+  logic bf_and, bf_or;
+  // All flags are set (AND) if the flags with mask applied is the same as the mask itself
+  assign bf_and = (bf_opd == decoded_inst_lo.imm[0+:`bp_cce_inst_num_flags]);
+  // Any flag is set (OR) if at least one bit is set in the masked flags
+  assign bf_or = |bf_opd;
 
   always_comb
   begin
@@ -622,6 +633,11 @@ module bp_cce
           e_src_uf: src_a[0] = mshr.flags[e_flag_sel_uf];
           e_src_if: src_a[0] = mshr.flags[e_flag_sel_if];
           e_src_nwbf: src_a[0] = mshr.flags[e_flag_sel_nwbf];
+          e_src_sf: src_a[0] = mshr.flags[e_flag_sel_sf];
+          e_src_flag_and: src_a[0] = bf_and;
+          e_src_flag_nand: src_a[0] = ~bf_and;
+          e_src_flag_or: src_a[0] = bf_or;
+          e_src_flag_nor: src_a[0] = ~bf_or;
           e_src_flag_imm: src_a = decoded_inst_lo.imm;
           default: src_a = '0;
         endcase
@@ -633,12 +649,15 @@ module bp_cce
           e_src_sharers_state_r0: src_a[0+:`bp_coh_bits] = sharers_coh_states_r0;
           e_src_req_lce: src_a[0+:lg_num_lce_lp] = mshr.lce_id;
           e_src_next_coh_state: src_a[0+:`bp_coh_bits] = mshr.next_coh_state;
+          e_src_coh_state: src_a[0+:`bp_coh_bits] = coh_state_r_lo;
           e_src_lce_req_v: src_a[0] = lce_req_v_i;
           e_src_mem_resp_v: src_a[0] = mem_resp_v_i;
           e_src_pending_v: src_a = '0; // TODO: v2
           e_src_lce_resp_v: src_a[0] = lce_resp_v_i;
           e_src_mem_cmd_v: src_a[0] = mem_cmd_v_i;
           e_src_lce_resp_type: src_a[0+:$bits(bp_lce_cce_resp_type_e)] = lce_resp_li.msg_type;
+          e_src_special_0: src_a[0] = 1'b0;
+          e_src_special_1: src_a[0] = 1'b1;
           e_src_special_imm: src_a = decoded_inst_lo.imm;
           default: src_a = '0;
         endcase
@@ -681,6 +700,11 @@ module bp_cce
           e_src_uf: src_b[0] = mshr.flags[e_flag_sel_uf];
           e_src_if: src_b[0] = mshr.flags[e_flag_sel_if];
           e_src_nwbf: src_b[0] = mshr.flags[e_flag_sel_nwbf];
+          e_src_sf: src_b[0] = mshr.flags[e_flag_sel_sf];
+          e_src_flag_and: src_b[0] = bf_and;
+          e_src_flag_nand: src_b[0] = ~bf_and;
+          e_src_flag_or: src_b[0] = bf_or;
+          e_src_flag_nor: src_b[0] = ~bf_or;
           e_src_flag_imm: src_b = decoded_inst_lo.imm;
           default: src_b = '0;
         endcase
@@ -692,12 +716,15 @@ module bp_cce
           e_src_sharers_state_r0: src_b[0+:`bp_coh_bits] = sharers_coh_states_r0;
           e_src_req_lce: src_b[0+:lg_num_lce_lp] = mshr.lce_id;
           e_src_next_coh_state: src_b[0+:`bp_coh_bits] = mshr.next_coh_state;
+          e_src_coh_state: src_b[0+:`bp_coh_bits] = coh_state_r_lo;
           e_src_lce_req_v: src_b[0] = lce_req_v_i;
           e_src_mem_resp_v: src_b[0] = mem_resp_v_i;
           e_src_pending_v: src_b = '0; // TODO: v2
           e_src_lce_resp_v: src_b[0] = lce_resp_v_i;
           e_src_mem_cmd_v: src_b[0] = mem_cmd_v_i;
           e_src_lce_resp_type: src_b[0+:$bits(bp_lce_cce_resp_type_e)] = lce_resp_li.msg_type;
+          e_src_special_0: src_b[0] = 1'b0;
+          e_src_special_1: src_b[0] = 1'b1;
           e_src_special_imm: src_b = decoded_inst_lo.imm;
           default: src_b = '0;
         endcase

@@ -70,11 +70,11 @@ bf nerf next_coh_set_s
 # block cached somewhere
 bf cf next_coh_set_s
 # invalidations not required, thus block not cache, set to E
-next_coh_set_e: movi E nextCohSt
+next_coh_set_e: movis E nextCohSt
 bi inv_check
-next_coh_set_s: movi S nextCohSt
+next_coh_set_s: movis S nextCohSt
 bi inv_check
-next_coh_set_m: movi M nextCohSt
+next_coh_set_m: movis M nextCohSt
 # fall through to inv_check
 
 # Invalidation Check

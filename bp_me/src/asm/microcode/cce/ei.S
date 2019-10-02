@@ -63,7 +63,7 @@ gad
 # fall through
 
 # Next Coherence State Routine
-next_coh_state: movi E nextCohSt
+next_coh_state: movis E nextCohSt
 
 # Invalidation Check
 inv_check: bfz if upgrade_check

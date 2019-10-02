@@ -17,17 +17,17 @@ typedef enum {
   ,e_op_branch                   = 0x1
   ,e_op_move                     = 0x2
   ,e_op_flag                     = 0x3
-  ,e_op_read_dir                 = 0x4
-  ,e_op_write_dir                = 0x5
+  ,e_op_dir                      = 0x4
   ,e_op_misc                     = 0x6
   ,e_op_queue                    = 0x7
 } bp_cce_inst_op_e;
 
-#define bp_cce_inst_op_width 3
+#define bp_cce_inst_op_width 4
 
 // Minor Op Codes
 typedef enum {
   e_add                          = 0x0   // Add
+  ,e_nop                         = 0x0   // addi R0 = 0 + R0
   ,e_inc                         = 0x0   // Increment by 1 // same as ADD, src_b = 1, dst = src_a
   ,e_addi                        = 0x0   // Add immediate to GPR // dst = src_a + imm
   ,e_sub                         = 0x1   // Subtract
@@ -44,6 +44,10 @@ typedef enum {
 typedef enum {
   e_beq                          = 0x0   // Branch if A == B
   ,e_beqi                        = 0x0   // Branch Equal Immediate, src_b = imm
+  ,e_bfand                       = 0x0   // Branch if logical AND (flags) == 1
+  ,e_bfnand                      = 0x0   // Branch if logical NAND (flags) == 1
+  ,e_bfor                        = 0x0   // Branch if logical OR (flags) == 1
+  ,e_bfnor                       = 0x0   // Branch if logical NOR (flags) == 1
   ,e_bne                         = 0x1   // Branch if A != B
   ,e_bneqi                       = 0x1   // Branch Not Equal Immediate, src_b = imm
 
@@ -53,7 +57,9 @@ typedef enum {
   ,e_bf                          = 0x2   // Branch if Flag == 1 // same as BEQ, src_a = flag, src_b = 1
   ,e_bfz                         = 0x2   // Branch if Flag == 0 // same as BEQ, src_a = flag, src_b = 0
 
-  ,e_bs                          = 0x3   // Branch if special == GPR/imm
+  ,e_bs                          = 0x3   // Branch if special == GPR
+  ,e_bsz                         = 0x3   // Branch if special == 0
+  ,e_bsi                         = 0x3   // Branch if special == immediate
 
   ,e_blt                         = 0x4   // Branch if A < B
   ,e_ble                         = 0x5   // Branch if A <= B
@@ -71,6 +77,7 @@ typedef enum {
   ,e_movf                        = 0x2   // Move flag to GPR
   ,e_movsg                       = 0x3   // Move special register to GPR
   ,e_movgs                       = 0x4   // Move GPR to special register
+  ,e_movis                       = 0x5   // Move immediate to special register
 } bp_cce_inst_minor_mov_op_e;
 
 typedef enum {
@@ -84,19 +91,16 @@ typedef enum {
   e_rdp                          = 0x0   // Read Directory Pending Bit
   ,e_rdw                         = 0x1   // Read Directory Way Group
   ,e_rde                         = 0x2   // Read Directory Entry
-} bp_cce_inst_minor_read_dir_op_e;
+  ,e_wdp                         = 0x3   // Write Directory Pending Bit
+  ,e_wde                         = 0x4   // Write Directory Entry
+  ,e_wds                         = 0x5   // Write Directory Entry State
+  ,e_gad                         = 0x8   // Generate Auxiliary Data
+} bp_cce_inst_minor_dir_op_e;
 
 typedef enum {
-  e_wdp                          = 0x0   // Write Directory Pending Bit
-  ,e_wde                         = 0x1   // Write Directory Entry
-  ,e_wds                         = 0x2   // Write Directory Entry State
-} bp_cce_inst_minor_write_dir_op_e;
-
-typedef enum {
-  e_gad                          = 0x0   // Generate Auxiliary Data
-  ,e_clm                         = 0x1   // Clear MSHR register
-  ,e_fence                       = 0x2   // CCE Mem Fence
-  ,e_stall                       = 0x7   // Stall PC - used for errors
+  e_clm                          = 0x0   // Clear MSHR register
+  ,e_fence                       = 0x1   // CCE Mem Fence
+  ,e_stall                       = 0xF   // Stall PC - used for errors
 } bp_cce_inst_minor_misc_op_e;
 
 typedef enum {
@@ -104,9 +108,10 @@ typedef enum {
   ,e_pushq                       = 0x1   // Push Queue
   ,e_popq                        = 0x2   // Pop Queue
   ,e_poph                        = 0x3   // Pop Header
+  ,e_specq                       = 0x4   // Modify speculative access bits
 } bp_cce_inst_minor_queue_op_e;
 
-#define bp_cce_inst_minor_op_width 3
+#define bp_cce_inst_minor_op_width 4
 
 typedef enum {
   e_src_r0                       = 0x00
@@ -126,6 +131,7 @@ typedef enum {
   ,e_src_next_coh_state          = 0x09
   ,e_src_num_lce                 = 0x0a
   ,e_src_req_addr                = 0x0b
+  ,e_src_coh_state               = 0x0c
 
   ,e_src_lce_req_v               = 0x10
   ,e_src_mem_resp_v              = 0x11
@@ -148,6 +154,15 @@ typedef enum {
   ,e_src_uf                      = 0x0C
   ,e_src_if                      = 0x0D
   ,e_src_nwbf                    = 0x0E
+  ,e_src_sf                      = 0x0F
+
+  ,e_src_flag_and                = 0x10
+  ,e_src_flag_nand               = 0x11
+  ,e_src_flag_or                 = 0x12
+  ,e_src_flag_nor                = 0x13
+
+  ,e_src_special_0               = 0x1c
+  ,e_src_special_1               = 0x1d
 
   ,e_src_imm                     = 0x1F
 } bp_cce_inst_src_e;
@@ -166,6 +181,7 @@ typedef enum {
 
   ,e_dst_next_coh_state          = 0x00
   ,e_dst_num_lce                 = 0x01
+  ,e_dst_coh_state               = 0x02
 
   ,e_dst_rqf                     = 0x00
   ,e_dst_ucf                     = 0x01
@@ -182,6 +198,7 @@ typedef enum {
   ,e_dst_uf                      = 0x0C
   ,e_dst_if                      = 0x0D
   ,e_dst_nwbf                    = 0x0E
+  ,e_dst_sf                      = 0x0F
 
 } bp_cce_inst_dst_e;
 
@@ -217,6 +234,7 @@ typedef enum {
   ,e_flag_sel_uf                 = 0xC // Upgrade Flag
   ,e_flag_sel_if                 = 0xD // Invalidate Flag
   ,e_flag_sel_nwbf               = 0xE // Null Writeback Flag
+  ,e_flag_sel_sf                 = 0xF // Speculative Flag
 } bp_cce_inst_flag_sel_e;
 
 #define bp_cce_inst_flag_sel_width 4
@@ -237,9 +255,10 @@ typedef enum {
   ,e_flag_uf                     = 4096 // Upgrade Flag
   ,e_flag_if                     = 8192 // Invalidate Flag
   ,e_flag_nwbf                   = 16384 // Null Writeback Flag
+  ,e_flag_sf                     = 32768 // Speculative Flag
 } bp_cce_inst_flag_e;
 
-#define bp_cce_inst_num_flags 15
+#define bp_cce_inst_num_flags 16
 
 // Source select for Directory Way Group input
 typedef enum {
@@ -438,13 +457,26 @@ typedef enum {
 
 #define bp_cce_inst_transfer_lce_sel_width 1
 
+typedef enum {
+  e_spec_cmd_set          = 0x0 // Set spec bit to 1
+  ,e_spec_cmd_unset       = 0x1 // Set spec bit to 0
+  ,e_spec_cmd_squash      = 0x2 // Set squash bit to 1, clear spec bit
+  ,e_spec_cmd_fwd_mod     = 0x3 // Set fwd_mod bit to 1, clear spec bit, set state to state
+  ,e_spec_cmd_clear       = 0x7 // Write all fields of speculative access bits
+} bp_cce_inst_spec_cmd_e;
 
+#define bp_cce_inst_spec_cmd_width 3
+
+
+#define bp_cce_inst_imm8_width 8
 #define bp_cce_inst_imm16_width 16
 #define bp_cce_inst_imm32_width 32
 #define bp_cce_inst_imm64_width 64
 
 #define bp_cce_inst_width 48
 #define bp_cce_inst_type_u_width (bp_cce_inst_width-bp_cce_inst_op_width-bp_cce_inst_minor_op_width)
+
+#define bp_cce_inst_addr_width 10
 
 // ALU Operation
 #define bp_cce_inst_alu_pad \
@@ -467,29 +499,45 @@ typedef struct __attribute__((__packed__)) {
   bp_cce_inst_type_u_width \
   - bp_cce_inst_src_width \
   - bp_cce_inst_src_width \
-  - bp_cce_inst_imm16_width \
+  - bp_cce_inst_addr_width \
   - bp_cce_inst_imm16_width
 
 typedef struct __attribute__((__packed__)) {
   bp_cce_inst_src_e src_a : bp_cce_inst_src_width;
   bp_cce_inst_src_e src_b : bp_cce_inst_src_width;
-  uint16_t target : bp_cce_inst_imm16_width;
+  uint16_t target : bp_cce_inst_addr_width;
   uint16_t imm : bp_cce_inst_imm16_width;
-  // no pad
+  uint64_t pad : bp_cce_inst_branch_pad;
 } bp_cce_inst_branch_op_s;
 
 // Move Operation
+typedef struct __attribute__((__packed__)) {
+  uint32_t imm : bp_cce_inst_imm32_width;
+} bp_cce_inst_movi_bits_s;
+
+#define bp_cce_inst_mov_bits_pad \
+  bp_cce_inst_imm32_width \
+  - bp_cce_inst_src_width
+
+typedef struct __attribute__((__packed__)) {
+  bp_cce_inst_src_e src : bp_cce_inst_src_width;
+  uint64_t pad : bp_cce_inst_mov_bits_pad;
+} bp_cce_inst_mov_bits_s;
+
 #define bp_cce_inst_mov_pad \
   bp_cce_inst_type_u_width \
   - bp_cce_inst_dst_width \
-  - bp_cce_inst_src_width \
   - bp_cce_inst_imm32_width
+
+typedef union __attribute__((__packed__)) {
+  bp_cce_inst_mov_bits_s mov;
+  bp_cce_inst_movi_bits_s movi;
+} bp_cce_inst_mov_op_u;
 
 typedef struct __attribute__((__packed__)) {
   bp_cce_inst_dst_e dst : bp_cce_inst_dst_width;
-  bp_cce_inst_src_e src : bp_cce_inst_src_width;
-  uint32_t imm : bp_cce_inst_imm32_width;
-  // no pad
+  bp_cce_inst_mov_op_u op;
+  uint64_t pad : bp_cce_inst_mov_pad;
 } bp_cce_inst_mov_op_s;
 
 // Set Flag Operation
@@ -504,37 +552,21 @@ typedef struct __attribute__((__packed__)) {
   bp_cce_inst_dst_e dst : bp_cce_inst_dst_width;
   bp_cce_inst_src_e src_a : bp_cce_inst_src_width;
   bp_cce_inst_src_e src_b : bp_cce_inst_src_width;
-  uint8_t imm : 1;
+  uint8_t val : 1;
   uint64_t pad : bp_cce_inst_flag_pad;
 } bp_cce_inst_flag_op_s;
 
-// Read Directory Operation
-#define bp_cce_inst_read_dir_pad \
-  bp_cce_inst_type_u_width \
-  - bp_cce_inst_dir_way_group_sel_width \
-  - bp_cce_inst_dir_lce_sel_width \
-  - bp_cce_inst_dir_way_sel_width \
-  - bp_cce_inst_dir_tag_sel_width \
-  - bp_cce_inst_dst_width
-
-typedef struct __attribute__((__packed__)) {
-  bp_cce_inst_dir_way_group_sel_e dir_way_group_sel : bp_cce_inst_dir_way_group_sel_width;
-  bp_cce_inst_dir_lce_sel_e dir_lce_sel : bp_cce_inst_dir_lce_sel_width;
-  bp_cce_inst_dir_way_sel_e dir_way_sel : bp_cce_inst_dir_way_sel_width;
-  bp_cce_inst_dir_tag_sel_e dir_tag_sel : bp_cce_inst_dir_tag_sel_width;
-  bp_cce_inst_dst_e dst : bp_cce_inst_dst_width;
-  uint64_t pad : bp_cce_inst_read_dir_pad;
-} bp_cce_inst_read_dir_op_s;
-
-// Write Directory Operation
-#define bp_cce_inst_write_dir_pad \
+// Directory Operation
+#define bp_cce_inst_dir_pad \
   bp_cce_inst_type_u_width \
   - bp_cce_inst_dir_way_group_sel_width \
   - bp_cce_inst_dir_lce_sel_width \
   - bp_cce_inst_dir_way_sel_width \
   - bp_cce_inst_dir_coh_state_sel_width \
   - bp_cce_inst_dir_tag_sel_width \
-  - bp_cce_coh_bits
+  - bp_cce_coh_bits \
+  - 1 \
+  - bp_cce_inst_dst_width
 
 typedef struct __attribute__((__packed__)) {
   bp_cce_inst_dir_way_group_sel_e dir_way_group_sel : bp_cce_inst_dir_way_group_sel_width;
@@ -542,9 +574,11 @@ typedef struct __attribute__((__packed__)) {
   bp_cce_inst_dir_way_sel_e dir_way_sel : bp_cce_inst_dir_way_sel_width;
   bp_cce_inst_dir_coh_state_sel_e dir_coh_state_sel : bp_cce_inst_dir_coh_state_sel_width;
   bp_cce_inst_dir_tag_sel_e dir_tag_sel : bp_cce_inst_dir_tag_sel_width;
-  uint8_t imm : bp_cce_coh_bits;
-  uint64_t pad : bp_cce_inst_write_dir_pad;
-} bp_cce_inst_write_dir_op_s;
+  uint8_t state : bp_cce_coh_bits;
+  uint8_t pending : 1;
+  bp_cce_inst_dst_e dst : bp_cce_inst_dst_width;
+  uint64_t pad : bp_cce_inst_dir_pad;
+} bp_cce_inst_dir_op_s;
 
 // Misc Operation
 #define bp_cce_inst_misc_pad bp_cce_inst_type_u_width
@@ -561,7 +595,8 @@ typedef struct __attribute__((__packed__)) {
   - bp_cce_inst_lce_cmd_lce_sel_width \
   - bp_cce_inst_lce_cmd_addr_sel_width \
   - bp_cce_inst_lce_cmd_way_sel_width \
-  - bp_cce_inst_mem_cmd_addr_sel_width
+  - bp_cce_inst_mem_cmd_addr_sel_width \
+  - 1
 
 typedef union __attribute__((__packed__)) {
   bp_lce_cmd_type_e lce_cmd : bp_lce_cmd_type_width;
@@ -576,6 +611,7 @@ typedef struct __attribute__((__packed__)) {
   bp_cce_inst_lce_cmd_addr_sel_e lce_cmd_addr_sel : bp_cce_inst_lce_cmd_addr_sel_width;
   bp_cce_inst_lce_cmd_way_sel_e lce_cmd_way_sel : bp_cce_inst_lce_cmd_way_sel_width;
   bp_cce_inst_mem_cmd_addr_sel_e mem_cmd_addr_sel : bp_cce_inst_mem_cmd_addr_sel_width;
+  uint8_t speculative : 1;
   uint64_t pad : bp_cce_inst_pushq_pad;
 } bp_cce_inst_pushq_s;
 
@@ -599,10 +635,22 @@ typedef struct __attribute__((__packed__)) {
   uint64_t pad : bp_cce_inst_wfq_pad;
 } bp_cce_inst_wfq_s;
 
+#define bp_cce_inst_specq_pad \
+  bp_cce_inst_type_u_width \
+  - bp_cce_inst_spec_cmd_width \
+  - bp_cce_coh_bits
+
+typedef struct __attribute__((__packed__)) {
+  bp_cce_inst_spec_cmd_e cmd : bp_cce_inst_spec_cmd_width;
+  uint8_t state : bp_cce_coh_bits;
+  uint64_t pad : bp_cce_inst_specq_pad;
+} bp_cce_inst_specq_s;
+
 typedef union __attribute__((__packed__)) {
   bp_cce_inst_pushq_s pushq;
   bp_cce_inst_popq_s  popq;
   bp_cce_inst_wfq_s   wfq;
+  bp_cce_inst_specq_s specq;
 } bp_cce_inst_queue_op_u;
 
 typedef struct __attribute__((__packed__)) {
@@ -614,8 +662,7 @@ typedef union __attribute__((__packed__)) {
   bp_cce_inst_branch_op_s    branch_op_s;
   bp_cce_inst_mov_op_s       mov_op_s;
   bp_cce_inst_flag_op_s      flag_op_s;
-  bp_cce_inst_read_dir_op_s  read_dir_op_s;
-  bp_cce_inst_write_dir_op_s write_dir_op_s;
+  bp_cce_inst_dir_op_s       dir_op_s;
   bp_cce_inst_misc_op_s      misc_op_s;
   bp_cce_inst_queue_op_s     queue_op_s;
 } bp_cce_inst_type_u;

@@ -26,7 +26,8 @@ typedef enum bit [3:0]
   ,e_cce_mem_uc_rd   = 4'b0010  // Uncached load
   ,e_cce_mem_uc_wr   = 4'b0011  // Uncached store
   ,e_cce_mem_wb      = 4'b0100  // Cache block Writeback
-  // 4'b0101 - 4'b1111 reserved / custom
+  ,e_cce_mem_pre     = 4'b0101  // Pre-fetch block into L2 if able
+  // 4'b0110 - 4'b1111 reserved // custom
 } bp_cce_mem_cmd_type_e;
 
 /*
@@ -36,7 +37,7 @@ typedef enum bit [3:0]
 {
   e_mem_cce_inv      = 4'b0000  // Invalidate block (from Mem to CCE)
   ,e_mem_cce_flush   = 4'b0001  // Flush all managed blocks
-  // 4'b0010 - 4'b1111 reserved / custom
+  // 4'b0010 - 4'b1111 reserved // custom
 } bp_mem_cce_cmd_type_e;
 
 typedef union packed {
@@ -79,6 +80,7 @@ typedef enum bit [2:0]
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      lce_id;      \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id;      \
     bp_coh_states_e                              state;       \
+    logic                                        speculative; \
   }  bp_cce_mem_msg_payload_s
 
 
@@ -105,7 +107,7 @@ typedef enum bit [2:0]
 
 // CCE-MEM Interface
 `define bp_cce_mem_msg_payload_width(num_lce_mp, lce_assoc_mp) \
-  (`BSG_SAFE_CLOG2(num_lce_mp)+`BSG_SAFE_CLOG2(lce_assoc_mp)+`bp_coh_bits)
+  (`BSG_SAFE_CLOG2(num_lce_mp)+`BSG_SAFE_CLOG2(lce_assoc_mp)+`bp_coh_bits+1)
 
 `define bp_cce_mem_msg_width(addr_width_mp, data_width_mp, num_lce_mp, lce_assoc_mp) \
   (`bp_cce_mem_msg_type_width+addr_width_mp+data_width_mp \
