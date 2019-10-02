@@ -108,7 +108,6 @@ bsg_dff_reset_en
    ,.data_o(booted_r)
    );
 
-
 integer file;
 string file_name;
 
