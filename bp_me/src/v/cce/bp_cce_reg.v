@@ -116,7 +116,7 @@ module bp_cce_reg
   logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_r, gpr_n;
   logic [lce_req_data_width_p-1:0] nc_data_r, nc_data_n;
   logic [lg_num_lce_lp-1:0] num_lce_r, num_lce_n;
-  logic [`bp_coh_bits-1:0] coh_state_r, coh_state_n;
+  bp_coh_states_e coh_state_r, coh_state_n;
 
   // Config link
   wire cfg_num_lce_w_v = (cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_num_lce_gp));
@@ -165,7 +165,7 @@ module bp_cce_reg
     end
 
     // Default coherence state
-    coh_state_n = mov_src_i[0+:`bp_coh_bits];
+    coh_state_n = bp_coh_states_e'(mov_src_i[0+:`bp_coh_bits]);
 
     // MSHR
 
@@ -438,7 +438,7 @@ module bp_cce_reg
       gpr_r <= '0;
       nc_data_r <= '0;
       num_lce_r <= '0;
-      coh_state_r <= '0;
+      coh_state_r <= bp_coh_states_e'(0);
     end else begin
       // MSHR writes
       if (decoded_inst_i.mshr_clear) begin

@@ -319,7 +319,7 @@ always_ff @(posedge clk_i)
       freeze_r <= config_data_li[0];
   end
 
-  bp_cce_top #(
+  bp_cce_buffered #(
     .cfg_p(cfg_p)
     ,.cce_trace_p(cce_trace_p)
   ) cce (

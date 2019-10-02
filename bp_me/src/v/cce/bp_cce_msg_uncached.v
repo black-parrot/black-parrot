@@ -114,11 +114,11 @@ module bp_cce_msg_uncached
     end
   end
 
-  // Input messages to the CCE are buffered by two element FIFOs in bp_cce_top.v, thus
+  // Input messages to the CCE are buffered by two element FIFOs in bp_cce_buffered.v, thus
   // the outbound valid signal is a yumi.
   //
   // Outbound queues all use ready&valid handshaking. Outbound messages going to LCEs are not
-  // buffered by bp_cce_top.v, but messages to memory are.
+  // buffered by bp_cce_buffered.v, but messages to memory are.
   always_comb begin
     // defaults for output signals
     lce_req_yumi_o = '0;

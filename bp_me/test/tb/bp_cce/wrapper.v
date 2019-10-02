@@ -73,12 +73,12 @@ module wrapper
    , input [lg_num_cce_lp-1:0]                             cce_id_i
   );
 
-  bp_cce_top
+  bp_cce_buffered
    #(.cfg_p(cfg_p))
    dut
     (.*);
 
-  bind bp_cce_top
+  bind bp_cce_buffered
     bp_cce_nonsynth_tracer
       #(.cfg_p(cfg_p))
       bp_cce_tracer
