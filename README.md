@@ -20,7 +20,11 @@ The next release of BlackParrot, v1.0, is coming in September 2019, and will con
 Coming soon!
 
 # BlackParrot interface specification
-Coming soon!
+BlackParrot is an aggresively modular design: communication between the components is performed over a set of narrow
+interfaces. The interfaces are designed to allow implementations of the FE, BE or ME to change
+independently of one another.
+
+[Interface specification](docs/InterfaceSpecification.md)
 
 # BlackParrot microarchitectural specification
 Coming soon!
