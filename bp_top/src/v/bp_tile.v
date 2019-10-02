@@ -103,7 +103,7 @@ logic                  cce_mem_resp_v_lo, cce_mem_resp_ready_li;
 bp_cce_mem_msg_s       cce_mem_resp_li;
 logic                  cce_mem_resp_v_li, cce_mem_resp_ready_lo;
 bp_cce_mem_msg_s       cce_mem_cmd_li;
-logic                  cce_mem_cmd_v_li, cce_mem_cmd_yumi_lo;
+logic                  cce_mem_cmd_v_li, cce_mem_cmd_ready_lo;
 
 bp_cce_mem_msg_s       cfg_mem_cmd_li;
 logic                  cfg_mem_cmd_v_li, cfg_mem_cmd_yumi_lo;
@@ -516,7 +516,7 @@ bp_me_cce_to_wormhole_link_bidir
 
    ,.mem_cmd_o(cce_mem_cmd_li)
    ,.mem_cmd_v_o(cce_mem_cmd_v_li)
-   ,.mem_cmd_yumi_i(cce_mem_cmd_yumi_lo)
+   ,.mem_cmd_yumi_i(cce_mem_cmd_ready_lo & cce_mem_cmd_v_li)
 
    ,.mem_resp_i(cce_mem_resp_lo)
    ,.mem_resp_v_i(cce_mem_resp_v_lo)
