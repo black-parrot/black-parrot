@@ -65,12 +65,7 @@ module wrapper
    , output logic [cce_mem_msg_width_lp-1:0]               mem_resp_o
    , output logic                                          mem_resp_v_o
    , input                                                 mem_resp_yumi_i
-<<<<<<< HEAD
-
-   , input [lg_num_cce_lp-1:0]                             cce_id_i
-=======
->>>>>>> top_dev_project_bidir_cfg_bus
-  );
+   );
 
   bp_cce_top
    #(.cfg_p(cfg_p))
@@ -84,11 +79,7 @@ module wrapper
        (.clk_i(clk_i & (wrapper.cce_trace_p == 1))
         ,.reset_i(reset_i)
   
-<<<<<<< HEAD
-        ,.cce_id_i(cce_id_i)
-=======
         ,.cce_id_i('0)
->>>>>>> top_dev_project_bidir_cfg_bus
   
         // To CCE
         ,.lce_req_i(lce_req_to_cce)
