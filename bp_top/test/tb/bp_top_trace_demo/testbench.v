@@ -386,8 +386,6 @@ bp_cce_mmio_cfg_loader
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    
-   ,.core_id_o()
-
    ,.mem_cmd_o(cfg_cmd_lo)
    ,.mem_cmd_v_o(cfg_cmd_v_lo)
    ,.mem_cmd_yumi_i(cfg_cmd_ready_li & cfg_cmd_v_lo)

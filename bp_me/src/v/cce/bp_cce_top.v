@@ -82,8 +82,6 @@ module bp_cce_top
    , output logic [cce_mem_msg_width_lp-1:0]               mem_resp_o
    , output logic                                          mem_resp_v_o
    , input                                                 mem_resp_yumi_i
-
-   , input [lg_num_cce_lp-1:0]                             cce_id_i
   );
 
   logic [lce_cce_req_width_lp-1:0]               lce_req_to_cce;

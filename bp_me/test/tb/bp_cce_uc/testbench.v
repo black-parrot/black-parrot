@@ -65,23 +65,6 @@ logic                  cfg_cmd_v_lo, cfg_cmd_yumi_li;
 bp_cce_mem_msg_s       cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
-logic [cfg_addr_width_p-1:0] config_addr_li;
-logic [cfg_data_width_p-1:0] config_data_li;
-logic                        config_v_li;
-
-assign config_v_li = cfg_cmd_v_lo;
-assign config_addr_li = cfg_cmd_lo.data[cfg_data_width_p+:cfg_addr_width_p];
-assign config_data_li = cfg_cmd_lo.data[0+:cfg_data_width_p];
-
-// Freeze signal register
-logic freeze_r;
-always_ff @(posedge clk_i) begin
-  if (reset_i)
-    freeze_r <= 1'b1;
-  else if (config_v_li & (config_addr_li == bp_cfg_reg_freeze_gp))
-    freeze_r <= config_data_li[0];
-end
-
 // CCE-MEM IF
 bp_cce_mem_msg_s       mem_resp;
 logic                  mem_resp_v, mem_resp_ready;
@@ -135,7 +118,7 @@ bp_me_nonsynth_mock_lce #(
 ) lce (
   .clk_i(clk_i)
   ,.reset_i(reset_i)
-  ,.freeze_i(freeze_r)
+  ,.freeze_i('0)
 
   ,.lce_id_i('0)
 
@@ -173,13 +156,7 @@ wrapper
  (.clk_i(clk_i)
   ,.reset_i(reset_i)
 
-  ,.freeze_i(freeze_r)
-
-  ,.cfg_w_v_i(config_v_li)
-  ,.cfg_addr_i(config_addr_li)
-  ,.cfg_data_i(config_data_li)
-
-  ,.cce_id_i('0)
+  ,.proc_cfg_i('0)
 
   ,.lce_cmd_o(lce_cmd)
   ,.lce_cmd_v_o(lce_cmd_v)
@@ -241,34 +218,6 @@ mem
   ,.mem_resp_v_o(mem_resp_v)
   ,.mem_resp_ready_i(mem_resp_ready)
   );
-
-// CFG loader
-localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
-// command is consumed cycle it is valid
-assign cfg_cmd_yumi_li = cfg_cmd_v_lo;
-// no responses to CFG loader
-assign cfg_resp_li = '0;
-assign cfg_resp_v_li = '0;
-bp_cce_mmio_cfg_loader
-  #(.cfg_p(cfg_p)
-    ,.inst_width_p(`bp_cce_inst_width)
-    ,.inst_ram_addr_width_p(cce_instr_ram_addr_width_lp)
-    ,.inst_ram_els_p(num_cce_instr_ram_els_p)
-    ,.skip_ram_init_p(skip_init_p)
-  )
-  cfg_loader
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   
-   ,.mem_cmd_o(cfg_cmd_lo)
-   ,.mem_cmd_v_o(cfg_cmd_v_lo)
-   ,.mem_cmd_yumi_i(cfg_cmd_yumi_li)
-   
-   ,.mem_resp_i(cfg_resp_li)
-   ,.mem_resp_v_i(cfg_resp_v_li)
-   ,.mem_resp_ready_o(cfg_resp_ready_lo)
-  );
-
 
 // Program done info
 localparam max_clock_cnt_lp    = 2**30-1;

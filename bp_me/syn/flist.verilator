@@ -114,6 +114,8 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lfsr.v
 // COMMON
 $BP_COMMON_DIR/src/v/bp_addr_map.v
+// TOP
+$BP_TOP_DIR/src/v/bp_cfg.v
 // ME
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_master.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_client.v

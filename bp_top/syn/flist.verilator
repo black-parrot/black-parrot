@@ -182,6 +182,7 @@ $BP_ME_DIR/src/v/cce/bp_cce_top.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_id_to_cord.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_client.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_master.v
+$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_bidir.v
 $BP_ME_DIR/src/v/wormhole/bp_me_lce_id_to_cord.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_cmd.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_req.v
@@ -189,11 +190,12 @@ $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.v
 //// TOP
+$BP_TOP_DIR/src/v/bp_cfg.v
 $BP_TOP_DIR/src/v/bp_core.v
 $BP_TOP_DIR/src/v/bp_core_complex.v
 $BP_TOP_DIR/src/v/bp_mem_complex.v
-$BP_TOP_DIR/src/v/bp_mmio_enclave.v
-$BP_TOP_DIR/src/v/bp_mmio_node.v
+$BP_TOP_DIR/src/v/bp_clint.v
+$BP_TOP_DIR/src/v/bp_clint_node.v
 $BP_TOP_DIR/src/v/bp_processor.v
 $BP_TOP_DIR/src/v/bp_tile.v
 $BP_TOP_DIR/src/v/bp_tile_node.v

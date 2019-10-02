@@ -21,17 +21,14 @@ module wrapper
    // interface widths
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+   , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
 
    , parameter cce_trace_p = 0
    )
   (input                                                   clk_i
    , input                                                 reset_i
-   , input                                                 freeze_i
 
-   // Config channel
-   , input                                                 cfg_w_v_i
-   , input [cfg_addr_width_p-1:0]                          cfg_addr_i
-   , input [cfg_data_width_p-1:0]                          cfg_data_i
+   , input [proc_cfg_width_lp-1:0]                         proc_cfg_i
 
    // LCE-CCE Interface
    // inbound: ready&valid
@@ -69,8 +66,6 @@ module wrapper
    , output logic [cce_mem_msg_width_lp-1:0]               mem_resp_o
    , output logic                                          mem_resp_v_o
    , input                                                 mem_resp_yumi_i
-
-   , input [lg_num_cce_lp-1:0]                             cce_id_i
   );
 
   bp_cce_top
@@ -85,7 +80,7 @@ module wrapper
        (.clk_i(clk_i & (wrapper.cce_trace_p == 1))
         ,.reset_i(reset_i)
   
-        ,.cce_id_i(cce_id_i)
+        ,.cce_id_i('0)
   
         // To CCE
         ,.lce_req_i(lce_req_to_cce)

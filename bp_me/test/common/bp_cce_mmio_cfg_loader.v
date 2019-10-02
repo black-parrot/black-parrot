@@ -30,8 +30,6 @@ module bp_cce_mmio_cfg_loader
   (input                                             clk_i
    , input                                           reset_i
 
-   , output [`BSG_SAFE_CLOG2(num_core_p)-1:0]        core_id_o
-
    // Config channel
    , output logic [cce_mem_msg_width_lp-1:0]         mem_cmd_o
    , output logic                                    mem_cmd_v_o
