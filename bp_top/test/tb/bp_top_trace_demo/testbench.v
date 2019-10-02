@@ -71,12 +71,12 @@ logic                  cfg_cmd_v_lo, cfg_cmd_ready_li;
 bp_cce_mem_msg_s       cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
-logic [mem_noc_cord_width_p-1:0] dram_cord_lo, mmio_cord_lo, host_cord_lo;
+logic [mem_noc_cord_width_p-1:0] dram_cord_lo, clint_cord_lo, host_cord_lo;
 logic [num_core_p-1:0][mem_noc_cord_width_p-1:0] tile_cord_lo;
 logic [num_mem_p-1:0][mem_noc_cord_width_p-1:0] mem_cord_lo;
 
-assign mmio_cord_lo[0+:mem_noc_x_cord_width_p]                      = clint_x_pos_p;
-assign mmio_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
+assign clint_cord_lo[0+:mem_noc_x_cord_width_p]                      = clint_x_pos_p;
+assign clint_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
 assign dram_cord_lo[0+:mem_noc_x_cord_width_p]                      = mem_noc_x_dim_p+2;
 assign dram_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
 assign host_cord_lo[0+:mem_noc_x_cord_width_p]                      = mem_noc_x_dim_p+2;
@@ -113,7 +113,7 @@ wrapper
    ,.mem_cord_i(mem_cord_lo)
    ,.tile_cord_i(tile_cord_lo)
    ,.dram_cord_i(dram_cord_lo)
-   ,.mmio_cord_i(mmio_cord_lo)
+   ,.clint_cord_i(clint_cord_lo)
    ,.host_cord_i(host_cord_lo)
 
    ,.prev_cmd_link_i('0)

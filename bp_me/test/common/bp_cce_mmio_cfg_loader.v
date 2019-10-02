@@ -65,8 +65,6 @@ module bp_cce_mmio_cfg_loader
   assign cce_inst_boot_rom_addr = cfg_addr_lo;
   assign cce_inst_boot_rom_data = cce_inst_boot_rom[cce_inst_boot_rom_addr];
 
-  logic [`BSG_SAFE_CLOG2(num_core_p)-1:0] current_core;
-
   enum logic [3:0] {
     RESET
     ,BP_RESET_SET
@@ -197,13 +195,13 @@ module bp_cce_mmio_cfg_loader
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_core_id_gp;
-          cfg_data_lo = 1'b0; // Should be correlated to core
+          cfg_data_lo = core_cnt_r;
         end
         SEND_RAM: begin
           state_n = (core_prog_done & ucode_prog_done) ? SEND_CCE_ID : SEND_RAM;
 
-          core_cnt_inc = ~core_prog_done;
-          core_cnt_clr = core_prog_done;
+          core_cnt_inc = ucode_prog_done & ~core_prog_done;
+          core_cnt_clr = ucode_prog_done &  core_prog_done;
           ucode_cnt_inc = ~ucode_prog_done;;
           ucode_cnt_clr = ucode_prog_done;
 
@@ -221,7 +219,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_cce_id_gp;
-          cfg_data_lo = '0; // Should be per core
+          cfg_data_lo = core_cnt_r;
         end
         SEND_CCE_NORMAL: begin
           state_n = core_prog_done ? SEND_NUM_LCE : SEND_CCE_NORMAL;
@@ -251,7 +249,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_icache_id_gp);
-          cfg_data_lo = 1'b0; // TODO: Should be per core
+          cfg_data_lo = (core_cnt_r << 1'b1);
         end
         SEND_ICACHE_NORMAL: begin
           state_n = core_prog_done ? SEND_DCACHE_ID : SEND_ICACHE_NORMAL;
@@ -271,7 +269,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_dcache_id_gp);
-          cfg_data_lo = 1'b1; // TODO: Should be per core
+          cfg_data_lo = (core_cnt_r << 1'b1) + 1'b1;
         end
         SEND_DCACHE_NORMAL: begin
           state_n = core_prog_done ? SEND_PC : SEND_DCACHE_NORMAL;

@@ -151,7 +151,7 @@ package bp_common_aviary_pkg;
 
       ,cfg_core_width: 8
       ,cfg_addr_width: 16
-      ,cfg_data_width: 32
+      ,cfg_data_width: 64
 
       ,async_mem_clk         : 0
       ,mem_noc_max_credits   : 4

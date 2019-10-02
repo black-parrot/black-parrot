@@ -36,7 +36,7 @@ module bp_core_complex
    // Memory side connection
    , input [num_core_p-1:0][mem_noc_cord_width_p-1:0]              tile_cord_i
    , input [mem_noc_cord_width_p-1:0]                              dram_cord_i
-   , input [mem_noc_cord_width_p-1:0]                              mmio_cord_i
+   , input [mem_noc_cord_width_p-1:0]                              clint_cord_i
    , input [mem_noc_cord_width_p-1:0]                              host_cord_i
 
    // Interrupts
@@ -103,7 +103,7 @@ for (genvar j = 0; j < mem_noc_y_dim_p; j++)
     
            ,.my_cord_i(tile_cord_i[tile_idx])
            ,.dram_cord_i(dram_cord_i)
-           ,.mmio_cord_i(mmio_cord_i)
+           ,.clint_cord_i(clint_cord_i)
            ,.host_cord_i(host_cord_i)
  
            ,.timer_int_i(timer_irq_li)

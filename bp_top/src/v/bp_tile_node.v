@@ -34,7 +34,7 @@ module bp_tile_node
    // Memory side connection
    , input [mem_noc_cord_width_p-1:0]            my_cord_i
    , input [mem_noc_cord_width_p-1:0]            dram_cord_i
-   , input [mem_noc_cord_width_p-1:0]            mmio_cord_i
+   , input [mem_noc_cord_width_p-1:0]            clint_cord_i
    , input [mem_noc_cord_width_p-1:0]            host_cord_i
 
    // Interrupts
@@ -61,6 +61,7 @@ module bp_tile_node
 
 `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+`declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
 
 // Declare the routing links
 `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
@@ -75,16 +76,19 @@ bp_coh_ready_and_link_s core_lce_resp_link_li, core_lce_resp_link_lo;
 bp_mem_ready_and_link_s core_mem_cmd_link_li, core_mem_cmd_link_lo;
 bp_mem_ready_and_link_s core_mem_resp_link_li, core_mem_resp_link_lo;
 
+  bp_proc_cfg_s proc_cfg_lo;
   bp_tile
    #(.cfg_p(cfg_p))
    tile
     (.clk_i(core_clk_i)
      ,.reset_i(core_reset_i)
 
+     ,.proc_cfg_o(proc_cfg_lo)
+
      // CCE-MEM IF
      ,.my_cord_i(my_cord_i)
      ,.dram_cord_i(dram_cord_i)
-     ,.mmio_cord_i(mmio_cord_i)
+     ,.clint_cord_i(clint_cord_i)
      ,.host_cord_i(host_cord_i)
 
      ,.timer_int_i(timer_int_i)
@@ -361,12 +365,11 @@ bp_mem_ready_and_link_s mem_resp_link_li, mem_resp_link_lo;
       assign core_mem_resp_link_li = mem_resp_link_lo;
     end
 
-  // TODO: connect to proc cfg, somehow
   logic [coh_noc_cord_width_p-1:0] lce_cord_li;
   bp_me_lce_id_to_cord
    #(.cfg_p(cfg_p))
    router_cord
-    (.lce_id_i('0)
+    (.lce_id_i(proc_cfg_lo.icache_id)
      ,.lce_cord_o(lce_cord_li)
      ,.lce_cid_o()
      );

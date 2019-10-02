@@ -24,7 +24,6 @@ module bp_cfg
    , input                              mem_resp_ready_i
 
    , output [proc_cfg_width_lp-1:0]     proc_cfg_o
-   //, input [dword_width_p-1:0]          dbg_gpr_i
    );
 
 `declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);

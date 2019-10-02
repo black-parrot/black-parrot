@@ -34,7 +34,7 @@ module bp_processor
    , input [num_mem_p-1:0][mem_noc_cord_width_p-1:0]  mem_cord_i
    , input [num_core_p-1:0][mem_noc_cord_width_p-1:0] tile_cord_i
    , input [mem_noc_cord_width_p-1:0]                 dram_cord_i
-   , input [mem_noc_cord_width_p-1:0]                 mmio_cord_i
+   , input [mem_noc_cord_width_p-1:0]                 clint_cord_i
    , input [mem_noc_cord_width_p-1:0]                 host_cord_i
 
    , input  [bsg_ready_and_link_sif_width_lp-1:0]     prev_cmd_link_i
@@ -74,7 +74,7 @@ bp_core_complex
 
    ,.tile_cord_i(tile_cord_i)
    ,.dram_cord_i(dram_cord_i)
-   ,.mmio_cord_i(mmio_cord_i)
+   ,.clint_cord_i(clint_cord_i)
    ,.host_cord_i(host_cord_i)
 
    ,.timer_irq_i(timer_irq_lo)

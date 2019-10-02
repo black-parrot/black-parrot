@@ -19,6 +19,7 @@ module bp_tile
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
+    , localparam proc_cfg_width_lp        = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
    // Wormhole parameters
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
@@ -26,10 +27,12 @@ module bp_tile
   (input                                                      clk_i
    , input                                                    reset_i
 
+    , output [proc_cfg_width_lp-1:0]                          proc_cfg_o
+
    // Memory side connection
    , input [mem_noc_cord_width_p-1:0]                         my_cord_i
    , input [mem_noc_cord_width_p-1:0]                         dram_cord_i
-   , input [mem_noc_cord_width_p-1:0]                         mmio_cord_i
+   , input [mem_noc_cord_width_p-1:0]                         clint_cord_i
    , input [mem_noc_cord_width_p-1:0]                         host_cord_i
 
    // Connected to other tiles on east and west
@@ -119,6 +122,7 @@ bp_cfg
 
    ,.proc_cfg_o(proc_cfg_lo)
    );
+assign proc_cfg_o = proc_cfg_lo;
 
 // Module instantiations
 bp_core   
@@ -436,7 +440,7 @@ bp_addr_map
  cmd_map
   (.paddr_i(mem_cmd_lo.addr)
 
-   ,.mmio_cord_i(mmio_cord_i)
+   ,.clint_cord_i(clint_cord_i)
    ,.dram_cord_i(dram_cord_i)
    ,.host_cord_i(host_cord_i)
 
