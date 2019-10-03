@@ -195,6 +195,9 @@ typedef enum logic [4:0] {
   ,e_src_num_lce                         = 5'b01010
   ,e_src_req_addr                        = 5'b01011
   ,e_src_coh_state                       = 5'b01100
+  ,e_src_num_cce                         = 5'b01101
+  ,e_src_lce_assoc                       = 5'b01110
+  ,e_src_num_wg                          = 5'b01111
 
   ,e_src_lce_req_v                       = 5'b10000
   ,e_src_mem_resp_v                      = 5'b10001
@@ -203,6 +206,7 @@ typedef enum logic [4:0] {
   ,e_src_mem_cmd_v                       = 5'b10100
 
   ,e_src_lce_resp_type                   = 5'b11000
+  ,e_src_cce_id                          = 5'b11001
 
   ,e_src_special_0                       = 5'b11100
   ,e_src_special_1                       = 5'b11101

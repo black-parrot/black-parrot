@@ -650,6 +650,11 @@ module bp_cce
           e_src_req_lce: src_a[0+:lg_num_lce_lp] = mshr.lce_id;
           e_src_next_coh_state: src_a[0+:`bp_coh_bits] = mshr.next_coh_state;
           e_src_coh_state: src_a[0+:`bp_coh_bits] = coh_state_r_lo;
+          e_src_num_lce: src_a[0+:lg_num_lce_lp+1] = num_lce_p[0+:lg_num_lce_lp+1];
+          e_src_req_addr: src_a[0+:paddr_width_p] = mshr.paddr;
+          e_src_num_cce: src_a[0+:lg_num_cce_lp+1] = num_cce_p[0+:lg_num_cce_lp+1];
+          e_src_lce_assoc: src_a[0+:lg_lce_assoc_lp+1] = lce_assoc_p[0+:lg_lce_assoc_lp+1];
+          e_src_num_wg: src_a[0+:lg_num_way_groups_lp+1] = num_way_groups_lp[0+:lg_num_way_groups_lp+1];
           e_src_lce_req_v: src_a[0] = lce_req_v_i;
           e_src_mem_resp_v: src_a[0] = mem_resp_v_i;
           e_src_pending_v: src_a = '0; // TODO: v2
@@ -658,6 +663,7 @@ module bp_cce
           e_src_lce_resp_type: src_a[0+:$bits(bp_lce_cce_resp_type_e)] = lce_resp_li.msg_type;
           e_src_special_0: src_a[0] = 1'b0;
           e_src_special_1: src_a[0] = 1'b1;
+          e_src_cce_id: src_a[0+:lg_num_cce_lp] = cce_id_i;
           e_src_special_imm: src_a = decoded_inst_lo.imm;
           default: src_a = '0;
         endcase
@@ -717,6 +723,11 @@ module bp_cce
           e_src_req_lce: src_b[0+:lg_num_lce_lp] = mshr.lce_id;
           e_src_next_coh_state: src_b[0+:`bp_coh_bits] = mshr.next_coh_state;
           e_src_coh_state: src_b[0+:`bp_coh_bits] = coh_state_r_lo;
+          e_src_num_lce: src_b[0+:lg_num_lce_lp+1] = num_lce_p[0+:lg_num_lce_lp+1];
+          e_src_req_addr: src_b[0+:paddr_width_p] = mshr.paddr;
+          e_src_num_cce: src_b[0+:lg_num_cce_lp+1] = num_cce_p[0+:lg_num_cce_lp+1];
+          e_src_lce_assoc: src_b[0+:lg_lce_assoc_lp+1] = lce_assoc_p[0+:lg_lce_assoc_lp+1];
+          e_src_num_wg: src_b[0+:lg_num_way_groups_lp+1] = num_way_groups_lp[0+:lg_num_way_groups_lp+1];
           e_src_lce_req_v: src_b[0] = lce_req_v_i;
           e_src_mem_resp_v: src_b[0] = mem_resp_v_i;
           e_src_pending_v: src_b = '0; // TODO: v2
@@ -725,6 +736,7 @@ module bp_cce
           e_src_lce_resp_type: src_b[0+:$bits(bp_lce_cce_resp_type_e)] = lce_resp_li.msg_type;
           e_src_special_0: src_b[0] = 1'b0;
           e_src_special_1: src_b[0] = 1'b1;
+          e_src_cce_id: src_b[0+:lg_num_cce_lp] = cce_id_i;
           e_src_special_imm: src_b = decoded_inst_lo.imm;
           default: src_b = '0;
         endcase

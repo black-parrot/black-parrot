@@ -41,7 +41,7 @@ endif
 
 COH_PROTO   ?= mesi
 CCE_MEM_PATH = $(BP_ME_DIR)/src/asm/roms/$(COH_PROTO)
-CCE_MEM      = bp_cce_inst_rom_$(COH_PROTO)_lce$(NUM_LCE_P)_wg$(N_WG)_assoc8.mem
+CCE_MEM      = bp_cce_inst_rom_$(COH_PROTO).mem
 
 NUMS = $(shell seq 0 `expr $(NUM_LCE_P) - 1`)
 BASE = bsg_trace_rom_

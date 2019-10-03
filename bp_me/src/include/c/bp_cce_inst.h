@@ -132,12 +132,18 @@ typedef enum {
   ,e_src_num_lce                 = 0x0a
   ,e_src_req_addr                = 0x0b
   ,e_src_coh_state               = 0x0c
+  ,e_src_num_cce                 = 0x0d
+  ,e_src_lce_assoc               = 0x0e
+  ,e_src_num_wg                  = 0x0f
 
   ,e_src_lce_req_v               = 0x10
   ,e_src_mem_resp_v              = 0x11
   ,e_src_pending_v               = 0x12
   ,e_src_lce_resp_v              = 0x13
   ,e_src_mem_cmd_v               = 0x14
+
+  ,e_src_lce_resp_type           = 0x18
+  ,e_src_cce_id                  = 0x19
 
   ,e_src_rqf                     = 0x00
   ,e_src_ucf                     = 0x01

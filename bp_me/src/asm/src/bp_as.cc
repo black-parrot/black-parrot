@@ -224,6 +224,12 @@ Assembler::parseSrcOpd(string &s) {
     return e_src_num_lce;
   } else if (!s.compare("reqaddr")) {
     return e_src_req_addr;
+  } else if (!s.compare("numcce")) {
+    return e_src_num_cce;
+  } else if (!s.compare("lceassoc")) {
+    return e_src_lce_assoc;
+  } else if (!s.compare("numwg")) {
+    return e_src_num_wg;
   } else if (!s.compare("lcereq")) {
     return e_src_lce_req_v;
   } else if (!s.compare("memresp")) {
@@ -234,6 +240,10 @@ Assembler::parseSrcOpd(string &s) {
     return e_src_lce_resp_v;
   } else if (!s.compare("memcmd")) {
     return e_src_mem_cmd_v;
+  } else if (!s.compare("lceresptype")) {
+    return e_src_lce_resp_type;
+  } else if (!s.compare("cceid")) {
+    return e_src_cce_id;
   } else if (!s.compare("rqf")) {
     return e_src_rqf;
   } else if (!s.compare("ucf")) {

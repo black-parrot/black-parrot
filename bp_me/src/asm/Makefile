@@ -54,22 +54,19 @@ clean:
 	rm -f $(AS) $(as_SRC:.cc=.o) $(cce_PRE_SRC) $(cce_MEM) $(cce_DBG)
 	rm -rf roms
 
-roms: as
-	python2 py/roms.py -i microcode/cce/ei -N 1 2 4 8 16 32 -W 2 4 8 16 32 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/ei
-	python2 py/roms.py -i microcode/cce/msi -N 1 2 4 8 16 32 -W 2 4 8 16 32 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/msi
-	python2 py/roms.py -i microcode/cce/mesi -N 1 2 4 8 16 32 -W 2 4 8 16 32 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/mesi
+roms: as ei msi mesi fast
 
 ei: as
-	python2 py/roms.py -i microcode/cce/ei -N 1 -W 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/ei
+	python2 py/roms.py -i microcode/cce/ei --bsg $(BSG_MEM_DIR) --outdir ./roms/ei
 
 msi: as
-	python2 py/roms.py -i microcode/cce/msi -N 1 -W 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/msi
+	python2 py/roms.py -i microcode/cce/msi --bsg $(BSG_MEM_DIR) --outdir ./roms/msi
 
 mesi: as
-	python2 py/roms.py -i microcode/cce/mesi -N 1 -W 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/mesi
+	python2 py/roms.py -i microcode/cce/mesi --bsg $(BSG_MEM_DIR) --outdir ./roms/mesi
 
 test: as
 	python2 py/roms.py -i microcode/cce/test --bsg $(BSG_MEM_DIR) --outdir ./roms/test
 
 fast: as
-	python2 py/roms.py -i microcode/cce/fast -N 1 2 4 8 16 32 -W 2 4 8 16 32 64 -E 8 --bsg $(BSG_MEM_DIR) --outdir ./roms/fast
+	python2 py/roms.py -i microcode/cce/fast --bsg $(BSG_MEM_DIR) --outdir ./roms/fast
