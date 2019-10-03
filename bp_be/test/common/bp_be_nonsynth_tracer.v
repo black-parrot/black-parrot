@@ -189,28 +189,20 @@ end
                                  ,dbg_stage_r[2].rs2
                                  ,iwb_result_i[0]
                                  );   
-                  else
+                  else if (dbg_stage_r[2].decode.irf_w_v == 1)
                     $fwrite(file, "\t\top: load sem: r%d <- mem[%x] {%x}\n"
                              ,dbg_stage_r[2].instr.fields.rtype.rd_addr
                              ,dbg_stage_r[2].rs1 
                               + dbg_stage_r[2].imm
                              ,iwb_result_i
                              );
-                end else if(dbg_stage_r[2].decode.mem_v) begin
-                    if(dbg_stage_r[2].decode.fu_op == e_scd)
-                        $fwrite(file, "\t\top: sc.d sem: mem[%x] <- r%d {%x}, success: %d \n"
-                                 ,dbg_stage_r[2].rs1 
-                                 ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
-                                 ,dbg_stage_r[2].rs2
-                                 ,iwb_result_i
-                                 );   
-                      else
-                        $fwrite(file, "\t\top: store sem: mem[%x] <- r%d {%x}\n"
-                                 ,dbg_stage_r[2].rs1 
-                                  + dbg_stage_r[2].imm
-                                 ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
-                                 ,dbg_stage_r[2].rs2
-                                 );   
+                  else 
+                    $fwrite(file, "\t\top: store sem: mem[%x] <- r%d {%x}\n"
+                            ,dbg_stage_r[2].rs1 
+                             + dbg_stage_r[2].imm
+                            ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
+                            ,dbg_stage_r[2].rs2
+                            );   
                 end else if(dbg_stage_r[2].decode.jmp_v) begin
                     $fwrite(file, "\t\top: jump sem: pc <- {%x}, r%d <- {%x}\n"
                              ,iwb_br_tgt_r
