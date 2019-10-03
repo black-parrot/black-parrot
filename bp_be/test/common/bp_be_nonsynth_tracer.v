@@ -113,7 +113,7 @@ bsg_dff_reset_en
    );
 
 
-initial 
+always_ff @(negedge reset_i)
   begin
     file_name = $sformatf("%s_%x.log", calc_trace_file_p, mhartid_i);
     file      = $fopen(file_name, "w");

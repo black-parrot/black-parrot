@@ -153,7 +153,7 @@ wrapper
       (.clk_i(clk_i & (testbench.cmt_trace_p == 1))
        ,.reset_i(reset_i)
 
-       ,.mhartid_i('0)
+       ,.mhartid_i(be_calculator.proc_cfg.core_id)
 
        ,.commit_v_i(be_calculator.instret_mem3_o)
        ,.commit_pc_i(be_calculator.pc_mem3_o)

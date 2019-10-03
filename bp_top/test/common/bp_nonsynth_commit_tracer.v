@@ -26,7 +26,7 @@ module bp_nonsynth_commit_tracer
 
   always_ff @(negedge reset_i) 
     begin
-      file_name = $sformatf("%s.trace", trace_file_p);
+      file_name = $sformatf("%s_%x.trace", trace_file_p, mhartid_i);
       file = $fopen(file_name, "w");
     end
 
