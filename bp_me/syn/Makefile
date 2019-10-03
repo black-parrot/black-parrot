@@ -78,7 +78,7 @@ copy_roms.v:
 copy_roms.sc:
 	-@mv $(TB_PATH)/$(TB)/bsg_trace_rom*.v $(BUILD_DIR)/
 	-@rm $(TB_PATH)/$(TB)/bsg_trace_rom*.tr
-	-@echo $(BUILD_DIR)/bsg_trace_rom*.v >> $(BUILD_DIR)/flist.verilator
+	-@echo $(BUILD_DIR)/bsg_trace_rom*.v >> $(BUILD_DIR)/flist.vcs
 
 pre-build.v: $(TRACE_ROMS)
 build.v: copy_roms.v
