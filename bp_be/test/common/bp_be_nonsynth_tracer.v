@@ -125,29 +125,29 @@ always_ff @(posedge clk_i) begin
 
     if(booted_r) begin
             $fwrite(file, "-----\n");
-            if (issue_pkt_v_i)
-              $fwrite(file, "[ISS] core: %x pc: %x\n", mhartid_i, issue_pkt.pc);
-
-            if (fe_nop_v_i)
-              $fwrite(file, "[ISD] core: %x bub (fe)\n", mhartid_i);
-            else if (be_nop_v_i)
-              $fwrite(file, "[ISD] core: %x bub (be)\n", mhartid_i);
-            else if (me_nop_v_i)
-              $fwrite(file, "[ISD] core: %x bub (me)\n", mhartid_i);
-            else 
-              $fwrite(file, "[ISD] core: %x pc: %x\n", mhartid_i, dispatch_pkt.pc);
-
-for (integer i = 0; i < 4; i++)
-begin
-            if (cmt_trace_exc[i].roll_v)
-              $fwrite(file, "[%s] core: %x rolled\n", stage_aliases[i], mhartid_i);
-            else if (cmt_trace_exc[i].poison_v)
-              $fwrite(file, "[%s] core: %x poisoned\n", stage_aliases[i], mhartid_i);
-            else if (~dbg_stage_r[i].decode.instr_v)
-              $fwrite(file, "[%s] core: %x nop\n", stage_aliases[i], mhartid_i);
-            else
-              $fwrite(file, "[%s] core: %x pc: %x\n", stage_aliases[i], mhartid_i, dbg_stage_r[i].pc);
-end
+//            if (issue_pkt_v_i)
+//              $fwrite(file, "[ISS] core: %x pc: %x\n", mhartid_i, issue_pkt.pc);
+//
+//            if (fe_nop_v_i)
+//              $fwrite(file, "[ISD] core: %x bub (fe)\n", mhartid_i);
+//            else if (be_nop_v_i)
+//              $fwrite(file, "[ISD] core: %x bub (be)\n", mhartid_i);
+//            else if (me_nop_v_i)
+//              $fwrite(file, "[ISD] core: %x bub (me)\n", mhartid_i);
+//            else 
+//              $fwrite(file, "[ISD] core: %x pc: %x\n", mhartid_i, dispatch_pkt.pc);
+//
+//for (integer i = 0; i < 4; i++)
+//begin
+//            if (cmt_trace_exc[i].roll_v)
+//              $fwrite(file, "[%s] core: %x rolled\n", stage_aliases[i], mhartid_i);
+//            else if (cmt_trace_exc[i].poison_v)
+//              $fwrite(file, "[%s] core: %x poisoned\n", stage_aliases[i], mhartid_i);
+//            else if (~dbg_stage_r[i].decode.instr_v)
+//              $fwrite(file, "[%s] core: %x nop\n", stage_aliases[i], mhartid_i);
+//            else
+//              $fwrite(file, "[%s] core: %x pc: %x\n", stage_aliases[i], mhartid_i, dbg_stage_r[i].pc);
+//end
 
             if (trap_v_i) begin
               $fwrite(file, "[TRP] core: %x pc: %x", mhartid_i, dbg_stage_r[2].pc);
