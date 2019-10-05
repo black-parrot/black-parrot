@@ -1,6 +1,7 @@
 
 package bp_common_cfg_link_pkg;
 
+  // TODO: This is out of date.  The actual map shouldn't matter much, but we should decide...
   // The overall memory map of the config link is:
   //   16'h0000 - 16'h001f: chip level config
   //   16'h0020 - 16'h003f: fe config
@@ -12,8 +13,8 @@ package bp_common_cfg_link_pkg;
   //   16'h0000      = clk_osc
   //   16'h0001      = reset
   //   16'h0002      = freeze
-  //   16'h0040      = start_pc low  32 bits
-  //   16'h0041      = start_pc high 32 bits
+  //   16'h0040      = npc low  32 bits
+  //   16'h0041      = npc high 32 bits
   //   16'h0060      = cce_mode
   //   16'h8000-8fff = cce ucode
 
@@ -23,12 +24,15 @@ package bp_common_cfg_link_pkg;
   localparam bp_cfg_reg_core_id_gp        = 'h0003;
   localparam bp_cfg_reg_icache_id_gp      = 'h0021;
   localparam bp_cfg_reg_icache_mode_gp    = 'h0022;
-  localparam bp_cfg_reg_start_pc_gp       = 'h0040;
+  localparam bp_cfg_reg_npc_gp            = 'h0040;
   localparam bp_cfg_reg_dcache_id_gp      = 'h0041;
   localparam bp_cfg_reg_dcache_mode_gp    = 'h0042;
-  localparam bp_cfg_reg_cce_id_gp         = 'h0060;
-  localparam bp_cfg_reg_cce_mode_gp       = 'h0061;
-  localparam bp_cfg_reg_num_lce_gp        = 'h0062;
+  localparam bp_cfg_reg_irf_x0_gp         = 'h0050;
+  /* ... */
+  localparam bp_cfg_reg_irf_x31_gp        = 'h006f;
+  localparam bp_cfg_reg_cce_id_gp         = 'h0080;
+  localparam bp_cfg_reg_cce_mode_gp       = 'h0081;
+  localparam bp_cfg_reg_num_lce_gp        = 'h0082;
   localparam bp_cfg_mem_base_cce_ucode_gp = 'h8000;
 
 endpackage

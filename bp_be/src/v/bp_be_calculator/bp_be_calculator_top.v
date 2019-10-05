@@ -59,6 +59,7 @@ module bp_be_calculator_top
    
   // Slow inputs   
   , input [proc_cfg_width_lp-1:0]        proc_cfg_i
+  , output [dword_width_p-1:0]           cfg_irf_data_o
    
   // Calculator - Checker interface   
   , input [issue_pkt_width_lp-1:0]       issue_pkt_i
@@ -165,18 +166,21 @@ bp_be_regfile
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.issue_v_i(issue_pkt_v_i)
-   ,.dispatch_v_i(chk_dispatch_v_i)
+   ,.cfg_w_v_i(proc_cfg.irf_w_v)
+   ,.cfg_r_v_i(proc_cfg.irf_r_v)
+   ,.cfg_addr_i(proc_cfg.irf_addr)
+   ,.cfg_data_i(proc_cfg.irf_data)
+   ,.cfg_data_o(cfg_irf_data_o)
 
    ,.rd_w_v_i(calc_stage_r[int_commit_point_lp].irf_w_v & ~exc_stage_r[int_commit_point_lp].poison_v)
    ,.rd_addr_i(calc_stage_r[int_commit_point_lp].instr.fields.rtype.rd_addr)
    ,.rd_data_i(comp_stage_r[int_commit_point_lp])
 
-   ,.rs1_r_v_i(issue_pkt.irs1_v)
+   ,.rs1_r_v_i(issue_pkt_v_i & issue_pkt.irs1_v)
    ,.rs1_addr_i(issue_pkt.instr.fields.rtype.rs1_addr)
    ,.rs1_data_o(irf_rs1)
 
-   ,.rs2_r_v_i(issue_pkt.irs2_v)
+   ,.rs2_r_v_i(issue_pkt_v_i & issue_pkt.irs2_v)
    ,.rs2_addr_i(issue_pkt.instr.fields.rtype.rs2_addr)
    ,.rs2_data_o(irf_rs2)
    );

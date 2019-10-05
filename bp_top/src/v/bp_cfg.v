@@ -24,6 +24,9 @@ module bp_cfg
    , input                              mem_resp_ready_i
 
    , output [proc_cfg_width_lp-1:0]     proc_cfg_o
+   , input [dword_width_p-1:0]          irf_data_i
+   , input [vaddr_width_p-1:0]          npc_data_i
+   , input [cce_instr_width_p-1:0]      cce_ucode_data_i
    );
 
 `declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
@@ -40,32 +43,46 @@ logic                                   freeze_r;
 logic [`BSG_SAFE_CLOG2(num_core_p)-1:0] core_id_r;
 logic [`BSG_SAFE_CLOG2(num_lce_p)-1:0]  icache_id_r;
 bp_lce_mode_e                           icache_mode_r;
-logic                                   start_pc_w_v_r;
-logic [vaddr_width_p-1:0]               start_pc_r;
+logic                                   npc_w_v_r;
+logic                                   npc_r_v_r;
+logic [vaddr_width_p-1:0]               npc_r;
 logic [`BSG_SAFE_CLOG2(num_lce_p)-1:0]  dcache_id_r;
 bp_lce_mode_e                           dcache_mode_r;
 logic [`BSG_SAFE_CLOG2(num_cce_p)-1:0]  cce_id_r;
 bp_cce_mode_e                           cce_mode_r;
 logic [`BSG_SAFE_CLOG2(num_lce_p)-1:0]  num_lce_r;
 logic                                   cce_ucode_w_v_r;
+logic                                   cce_ucode_r_v_r;
 logic [cce_pc_width_p-1:0]              cce_ucode_addr_r;
 logic [cce_instr_width_p-1:0]           cce_ucode_data_r;
+logic                                   irf_w_v_r;
+logic                                   irf_r_v_r;
+logic [reg_addr_width_p-1:0]            irf_addr_r;
+logic [dword_width_p-1:0]               irf_data_r;
 
-assign mem_cmd_yumi_o = mem_cmd_v_i & mem_resp_ready_i;
+// The config bus reads are synchronous (regfile, ucode ram, etc.). Therefore, we need to 
+//   wait a cycle before returning mem_resp. However, if we wait to dequeue until mem_resp_ready is high,
+//   it may no longer be true by the time the synchronous read is complete. To avoid having input
+//   and output fifos, we simply serialize the requests with a cycle delay. For a config bus, this
+//   is a very small overhead.
+logic read_ready_r;
+bsg_dff_reset
+ #(.width_p(1))
+ read_ready_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
 
-wire                        cfg_v_li    = mem_cmd_yumi_o;
+   ,.data_i(mem_cmd_v_i & ~mem_resp_v_o)
+   ,.data_o(read_ready_r)
+   );
+
+assign mem_cmd_yumi_o = mem_cmd_v_i & mem_resp_v_o;
+
+wire                        cfg_v_li    = mem_cmd_v_i;
 wire                        cfg_w_v_li  = cfg_v_li & (mem_cmd_cast_i.msg_type.cce_mem_cmd == e_cce_mem_uc_wr);
 wire                        cfg_r_v_li  = cfg_v_li & (mem_cmd_cast_i.msg_type.cce_mem_cmd == e_cce_mem_uc_rd);
 wire [cfg_addr_width_p-1:0] cfg_addr_li = mem_cmd_cast_i.addr[0+:cfg_addr_width_p];
 wire [cfg_data_width_p-1:0] cfg_data_li = mem_cmd_cast_i.data[0+:cfg_data_width_p];
-
-assign mem_resp_v_o    = mem_cmd_yumi_o;
-assign mem_resp_cast_o = '{msg_type: mem_cmd_cast_i.msg_type
-                           ,addr   : mem_cmd_cast_i.addr
-                           ,payload: mem_cmd_cast_i.payload
-                           ,size   : mem_cmd_cast_i.size
-                           ,data   : '0
-                           };
 
 always_ff @(posedge clk_i)
   if (reset_i)
@@ -97,46 +114,48 @@ always_ff @(posedge clk_i)
       endcase
     end
 
-always_ff @(posedge clk_i)
-  if (reset_i)
-    begin
-      cce_ucode_w_v_r     <= '0;
-      cce_ucode_addr_r    <= '0;
-      cce_ucode_data_r    <= '0;
-    end
-  else if (cfg_addr_li >= 16'h8000)
-    begin
-      cce_ucode_w_v_r  <= cfg_w_v_li;
-      cce_ucode_addr_r <= cfg_addr_li[0+:cce_pc_width_p];
-      cce_ucode_data_r <= cfg_data_li[0+:cce_instr_width_p];
-    end
+wire cce_ucode_w_v_li = cfg_w_v_li & (cfg_addr_li >= 16'h8000);
+wire cce_ucode_r_v_li = cfg_r_v_li & (cfg_addr_li >= 16'h8000);
+wire [cce_pc_width_p-1:0] cce_ucode_addr_li = cfg_addr_li[0+:cce_pc_width_p];
+wire [cce_instr_width_p-1:0] cce_ucode_data_li = cfg_data_li[0+:cce_instr_width_p];
 
-always_ff @(posedge clk_i)
-  if (reset_i)
-    begin
-      start_pc_w_v_r <= '0;
-      start_pc_r     <= '0;
-    end
-  else if (cfg_addr_li == bp_cfg_reg_start_pc_gp)
-    begin
-      start_pc_w_v_r <= cfg_w_v_li;
-      start_pc_r     <= cfg_data_li;
-    end
+wire npc_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_npc_gp);
+wire npc_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_npc_gp);
+wire [vaddr_width_p-1:0] npc_li = cfg_data_li;
+
+wire irf_w_v_li = cfg_w_v_li & (cfg_addr_li >= bp_cfg_reg_irf_x0_gp && cfg_addr_li <= bp_cfg_reg_irf_x31_gp);
+wire irf_r_v_li = cfg_r_v_li & (cfg_addr_li >= bp_cfg_reg_irf_x0_gp && cfg_addr_li <= bp_cfg_reg_irf_x31_gp);
+// TODO: we could get rid of this subtraction with intellignent address map
+wire [reg_addr_width_p-1:0] irf_addr_li = (cfg_addr_li - bp_cfg_reg_irf_x0_gp);
+wire [dword_width_p-1:0] irf_data_li = cfg_data_li;
 
 assign proc_cfg_cast_o = '{freeze: freeze_r
                            ,core_id: core_id_r
                            ,icache_id: icache_id_r
                            ,icache_mode: icache_mode_r
-                           ,start_pc_w_v: start_pc_w_v_r
-                           ,start_pc: start_pc_r
+                           ,npc_w_v: npc_w_v_li
+                           ,npc_r_v: npc_r_v_li
+                           ,npc: npc_li
                            ,dcache_id: dcache_id_r
                            ,dcache_mode: dcache_mode_r
                            ,cce_id: cce_id_r
                            ,cce_mode: cce_mode_r
-                           ,cce_ucode_w_v: cce_ucode_w_v_r
-                           ,cce_ucode_r_v: '0
-                           ,cce_ucode_addr: cce_ucode_addr_r
-                           ,cce_ucode_data: cce_ucode_data_r
+                           ,cce_ucode_w_v: cce_ucode_w_v_li
+                           ,cce_ucode_r_v: cce_ucode_r_v_li
+                           ,cce_ucode_addr: cce_ucode_addr_li
+                           ,cce_ucode_data: cce_ucode_data_li
+                           ,irf_w_v: irf_w_v_li
+                           ,irf_r_v: irf_r_v_li
+                           ,irf_addr: irf_addr_li
+                           ,irf_data: irf_data_li
+                           };
+
+assign mem_resp_v_o    = mem_resp_ready_i & read_ready_r;
+assign mem_resp_cast_o = '{msg_type: mem_cmd_cast_i.msg_type
+                           ,addr   : mem_cmd_cast_i.addr
+                           ,payload: mem_cmd_cast_i.payload
+                           ,size   : mem_cmd_cast_i.size
+                           ,data   : irf_r_v_li ? irf_data_i : npc_r_v_li ? npc_data_i : cce_ucode_data_i
                            };
 
 endmodule

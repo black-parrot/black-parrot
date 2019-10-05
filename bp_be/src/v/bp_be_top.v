@@ -28,6 +28,8 @@ module bp_be_top
 
    // Processor configuration
    , input [proc_cfg_width_lp-1:0]           proc_cfg_i
+   , output [dword_width_p-1:0]              cfg_irf_data_o
+   , output [vaddr_width_p-1:0]              cfg_npc_data_o
 
    // FE queue interface
    , output                                  fe_queue_deq_o
@@ -118,6 +120,7 @@ bp_be_checker_top
    ,.reset_i(reset_i)
 
    ,.proc_cfg_i(proc_cfg_i)
+   ,.cfg_npc_data_o(cfg_npc_data_o)
 
    ,.chk_dispatch_v_o(chk_dispatch_v)
    ,.chk_roll_o(chk_roll)
@@ -166,6 +169,7 @@ bp_be_calculator_top
    ,.reset_i(reset_i)
 
    ,.proc_cfg_i(proc_cfg_i)
+   ,.cfg_irf_data_o(cfg_irf_data_o)
 
    ,.issue_pkt_i(issue_pkt)
    ,.issue_pkt_v_i(issue_pkt_v)

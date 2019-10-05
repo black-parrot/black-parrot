@@ -40,8 +40,9 @@ typedef enum bit
     logic [`BSG_SAFE_CLOG2(num_core_mp)-1:0] core_id;                                              \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]  icache_id;                                            \
     bp_lce_mode_e                            icache_mode;                                          \
-    logic                                    start_pc_w_v;                                         \
-    logic [vaddr_width_mp-1:0]               start_pc;                                             \
+    logic                                    npc_w_v;                                              \
+    logic                                    npc_r_v;                                              \
+    logic [vaddr_width_mp-1:0]               npc;                                                  \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]  dcache_id;                                            \
     bp_lce_mode_e                            dcache_mode;                                          \
     logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]  cce_id;                                               \
@@ -50,6 +51,10 @@ typedef enum bit
     logic                                    cce_ucode_r_v;                                        \
     logic [cce_pc_width_mp-1:0]              cce_ucode_addr;                                       \
     logic [cce_instr_width_mp-1:0]           cce_ucode_data;                                       \
+    logic                                    irf_w_v;                                              \
+    logic                                    irf_r_v;                                              \
+    logic [reg_addr_width_p-1:0]             irf_addr;                                             \
+    logic [dword_width_p-1:0]                irf_data;                                             \
   }  bp_proc_cfg_s
 
 `define bp_proc_cfg_width(vaddr_width_mp, num_core_mp, num_cce_mp, num_lce_mp, cce_pc_width_mp, cce_instr_width_mp) \
@@ -57,7 +62,7 @@ typedef enum bit
    + `BSG_SAFE_CLOG2(num_core_mp)   \
    + `BSG_SAFE_CLOG2(num_lce_mp)    \
    + $bits(bp_lce_mode_e)           \
-   + 1                              \
+   + 2                              \
    + vaddr_width_mp                 \
    + `BSG_SAFE_CLOG2(num_lce_mp)    \
    + $bits(bp_lce_mode_e)           \
@@ -66,6 +71,9 @@ typedef enum bit
    + 2                              \
    + cce_pc_width_mp                \
    + cce_instr_width_mp             \
+   + 2                              \
+   + reg_addr_width_p               \
+   + dword_width_p                  \
    )
 
 

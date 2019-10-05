@@ -39,6 +39,7 @@ module bp_be_checker_top
    , input                            reset_i
 
    , input [proc_cfg_width_lp-1:0]    proc_cfg_i
+   , output [vaddr_width_p-1:0]       cfg_npc_data_o
 
    // FE cmd interface
    , output [fe_cmd_width_lp-1:0]     fe_cmd_o
@@ -105,6 +106,7 @@ bp_be_director
    ,.reset_i(reset_i)
 
    ,.proc_cfg_i(proc_cfg_i)
+   ,.cfg_npc_data_o(cfg_npc_data_o)
 
    ,.calc_status_i(calc_status_i) 
    ,.expected_npc_o(expected_npc_lo)

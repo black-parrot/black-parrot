@@ -47,23 +47,25 @@ module bp_cce_mmio_cfg_loader
  `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 
   bp_cce_mem_msg_s mem_cmd_cast_o;
+  bp_cce_mem_msg_s mem_resp_cast_i;
 
   assign mem_cmd_o = mem_cmd_cast_o;
-  
+  assign mem_resp_cast_i = mem_resp_i;
+
   logic [`bp_cce_inst_width-1:0]    cce_inst_boot_rom [0:inst_ram_els_p-1];
   logic [inst_ram_addr_width_p-1:0] cce_inst_boot_rom_addr;
   logic [`bp_cce_inst_width-1:0]    cce_inst_boot_rom_data;
   
   initial $readmemb(cce_ucode_filename_p, cce_inst_boot_rom);
 
-  logic                        cfg_v_lo;
+  logic                        cfg_w_v_lo, cfg_r_v_lo;
   logic [cfg_addr_width_p-1:0] cfg_addr_lo;
   logic [cfg_data_width_p-1:0] cfg_data_lo;
 
   assign cce_inst_boot_rom_addr = cfg_addr_lo;
   assign cce_inst_boot_rom_data = cce_inst_boot_rom[cce_inst_boot_rom_addr];
 
-  enum logic [3:0] {
+  enum logic [4:0] {
     RESET
     ,BP_RESET_SET
     ,BP_FREEZE_SET
@@ -78,6 +80,8 @@ module bp_cce_mmio_cfg_loader
     ,SEND_DCACHE_ID
     ,SEND_DCACHE_NORMAL
     ,SEND_PC
+    ,SEND_IRF
+    ,RECV_IRF
     ,BP_FREEZE_CLR
     ,DONE
   } state_n, state_r;
@@ -114,8 +118,26 @@ module bp_cce_mmio_cfg_loader
      ,.count_o(core_cnt_r)
      );
 
+  localparam reg_els_lp = 2**reg_addr_width_p;
+  logic [cfg_addr_width_p-1:0] irf_cnt_r;
+  logic irf_cnt_clr, irf_cnt_inc;
+  bsg_counter_clear_up
+   #(.max_val_p(2**cfg_addr_width_p-1)
+     ,.init_val_p(0)
+     )
+   irf_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.clear_i(irf_cnt_clr & mem_cmd_yumi_i)
+     ,.up_i(irf_cnt_inc & mem_cmd_yumi_i)
+
+     ,.count_o(irf_cnt_r)
+     );
+
   wire ucode_prog_done = (ucode_cnt_r == cfg_addr_width_p'(inst_ram_els_p-1));
   wire core_prog_done  = (core_cnt_r == cfg_addr_width_p'(num_core_p-1));
+  wire irf_done = (irf_cnt_r == cfg_addr_width_p'(reg_els_lp-1));
 
   always_ff @(posedge clk_i) 
     begin
@@ -127,10 +149,10 @@ module bp_cce_mmio_cfg_loader
 
   always_comb
     begin
-      mem_cmd_v_o = cfg_v_lo;
+      mem_cmd_v_o = cfg_w_v_lo | cfg_r_v_lo;
 
       // uncached store
-      mem_cmd_cast_o.msg_type      = e_cce_mem_uc_wr;
+      mem_cmd_cast_o.msg_type      = cfg_w_v_lo ? e_cce_mem_uc_wr : e_cce_mem_uc_rd;
       mem_cmd_cast_o.addr          = bp_cfg_base_addr_gp 
                                      + ((core_cnt_r) << cfg_addr_width_p)
                                      + cfg_addr_lo;
@@ -144,7 +166,14 @@ module bp_cce_mmio_cfg_loader
       ucode_cnt_clr = 1'b0;
       ucode_cnt_inc = 1'b0;
 
-      cfg_v_lo = '0;
+      core_cnt_clr = 1'b0;
+      core_cnt_inc = 1'b0;
+
+      irf_cnt_clr = 1'b0;
+      irf_cnt_inc = 1'b0;
+
+      cfg_w_v_lo = '0;
+      cfg_r_v_lo = '0;
       cfg_addr_lo = '0;
       cfg_data_lo = '0;
 
@@ -154,6 +183,7 @@ module bp_cce_mmio_cfg_loader
           
           ucode_cnt_clr = 1'b1;
           core_cnt_clr = 1'b1;
+          irf_cnt_clr = 1'b1;
         end
         BP_RESET_SET: begin
           state_n = core_prog_done ? BP_FREEZE_SET : BP_RESET_SET;
@@ -161,7 +191,7 @@ module bp_cce_mmio_cfg_loader
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
 
-          cfg_v_lo = 1'b1;
+          cfg_w_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_reset_gp;
           cfg_data_lo = cfg_data_width_p'(1);
         end
@@ -171,7 +201,7 @@ module bp_cce_mmio_cfg_loader
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
 
-          cfg_v_lo = 1'b1;
+          cfg_w_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_freeze_gp;
           cfg_data_lo = cfg_data_width_p'(1);
         end
@@ -181,7 +211,7 @@ module bp_cce_mmio_cfg_loader
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
 
-          cfg_v_lo = 1'b1;
+          cfg_w_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_reset_gp;
           cfg_data_lo = cfg_data_width_p'(0);
         end
@@ -191,7 +221,7 @@ module bp_cce_mmio_cfg_loader
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
 
-          cfg_v_lo = 1'b1;
+          cfg_w_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_core_id_gp;
           cfg_data_lo = core_cnt_r;
         end
@@ -203,7 +233,7 @@ module bp_cce_mmio_cfg_loader
           ucode_cnt_inc = ~ucode_prog_done;;
           ucode_cnt_clr = ucode_prog_done;
 
-          cfg_v_lo = 1'b1;
+          cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_mem_base_cce_ucode_gp) + ucode_cnt_r;
           cfg_data_lo = cce_inst_boot_rom_data;
           // TODO: This is nonsynth, won't work on FPGA
@@ -215,7 +245,7 @@ module bp_cce_mmio_cfg_loader
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
 
-          cfg_v_lo = 1'b1;
+          cfg_w_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_cce_id_gp;
           cfg_data_lo = core_cnt_r;
         end
@@ -225,7 +255,7 @@ module bp_cce_mmio_cfg_loader
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
 
-          cfg_v_lo = 1'b1;
+          cfg_w_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_cce_mode_gp;
           cfg_data_lo = cfg_data_width_p'(e_cce_mode_normal);
         end
@@ -235,7 +265,7 @@ module bp_cce_mmio_cfg_loader
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
 
-          cfg_v_lo = 1'b1;
+          cfg_w_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_num_lce_gp;
           cfg_data_lo = num_lce_p;
         end
@@ -245,7 +275,7 @@ module bp_cce_mmio_cfg_loader
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
 
-          cfg_v_lo = 1'b1;
+          cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_icache_id_gp);
           cfg_data_lo = (core_cnt_r << 1'b1);
         end
@@ -255,7 +285,7 @@ module bp_cce_mmio_cfg_loader
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
 
-          cfg_v_lo = 1'b1;
+          cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_icache_mode_gp);
           cfg_data_lo = cfg_data_width_p'(e_lce_mode_normal); // TODO: tapeout hack, change to icache
         end
@@ -265,7 +295,7 @@ module bp_cce_mmio_cfg_loader
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
 
-          cfg_v_lo = 1'b1;
+          cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_dcache_id_gp);
           cfg_data_lo = (core_cnt_r << 1'b1) + 1'b1;
         end
@@ -275,19 +305,39 @@ module bp_cce_mmio_cfg_loader
           core_cnt_inc  = ~core_prog_done;
           core_cnt_clr  = core_prog_done;
 
-          cfg_v_lo = 1'b1;
+          cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_dcache_mode_gp);
           cfg_data_lo = cfg_data_width_p'(e_lce_mode_normal);
         end
         SEND_PC: begin
-          state_n = core_prog_done ? BP_FREEZE_CLR : SEND_PC;
+          state_n = core_prog_done ? SEND_IRF : SEND_PC;
 
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
 
-          cfg_v_lo = 1'b1;
-          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_start_pc_gp);
+          cfg_w_v_lo = 1'b1;
+          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_npc_gp);
           cfg_data_lo = bp_pc_entry_point_gp;
+        end
+        SEND_IRF: begin
+          state_n = irf_done ? RECV_IRF : SEND_IRF;
+
+          irf_cnt_inc = ~irf_done;
+          irf_cnt_clr = irf_done;
+
+          cfg_w_v_lo = 1'b1;
+          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_irf_x0_gp + irf_cnt_r);
+          cfg_data_lo = cfg_data_width_p'(irf_cnt_r);
+        end
+        RECV_IRF: begin
+          state_n = irf_done ? BP_FREEZE_CLR : RECV_IRF;
+
+          irf_cnt_inc = ~irf_done;
+          irf_cnt_clr = irf_done;
+
+          cfg_r_v_lo = 1'b1;
+          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_irf_x0_gp + irf_cnt_r);
+          cfg_data_lo = '0;
         end
         BP_FREEZE_CLR: begin
           state_n = core_prog_done ? DONE : BP_FREEZE_CLR;
@@ -295,7 +345,7 @@ module bp_cce_mmio_cfg_loader
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
 
-          cfg_v_lo = 1'b1;
+          cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_freeze_gp);
           cfg_data_lo = cfg_data_width_p'(0);
         end

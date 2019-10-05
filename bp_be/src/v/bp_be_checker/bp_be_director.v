@@ -35,6 +35,7 @@ module bp_be_director
    , input                            reset_i
 
    , input [proc_cfg_width_lp-1:0]    proc_cfg_i
+   , output [vaddr_width_p-1:0]       cfg_npc_data_o
 
    // Dependency information
    , input [calc_status_width_lp-1:0] calc_status_i
@@ -94,7 +95,7 @@ logic [vaddr_width_p-1:0] br_mux_o, roll_mux_o, ret_mux_o, exc_mux_o;
 
 // Module instantiations
 // Update the NPC on a valid instruction in ex1 or a cache miss or a tlb miss
-assign npc_w_v = proc_cfg_cast_i.start_pc_w_v
+assign npc_w_v = proc_cfg_cast_i.npc_w_v
                  | (calc_status.ex1_instr_v & ~npc_mismatch_v) 
                  | calc_status.mem3_miss_v
                  | trap_v_i
@@ -109,6 +110,7 @@ bsg_dff_reset_en
    ,.data_i(npc_n)
    ,.data_o(npc_r)
    );
+assign cfg_npc_data_o = npc_r;
 
 bsg_dff_reset_en
  #(.width_p(vaddr_width_p))
@@ -127,8 +129,8 @@ bsg_mux
    ,.els_p(2)   
    )
  init_mux
-  (.data_i({proc_cfg_cast_i.start_pc, exc_mux_o})
-   ,.sel_i(proc_cfg_cast_i.start_pc_w_v)
+  (.data_i({proc_cfg_cast_i.npc, exc_mux_o})
+   ,.sel_i(proc_cfg_cast_i.npc_w_v)
    ,.data_o(npc_n)
    );
 
@@ -294,5 +296,6 @@ always_comb
         fe_cmd_v = fe_cmd_ready_i;
       end
   end
+
 endmodule
 

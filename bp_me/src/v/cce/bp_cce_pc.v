@@ -49,6 +49,7 @@ module bp_cce_pc
    , input                                       reset_i
 
    , input [proc_cfg_width_lp-1:0]               proc_cfg_i
+   , output [cce_instr_width_p-1:0]              cfg_cce_ucode_data_o
 
    // ALU branch result signal
    , input                                       alu_branch_res_i
@@ -95,12 +96,13 @@ module bp_cce_pc
     cce_inst_ram
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.v_i(ram_v_li)
-      ,.data_i(ram_data_li)
-      ,.addr_i(ram_addr_li)
-      ,.w_i(ram_w_li)
+      ,.v_i((proc_cfg_cast_i.cce_ucode_w_v | proc_cfg_cast_i.cce_ucode_r_v) | ram_v_li)
+      ,.data_i(proc_cfg_cast_i.cce_ucode_w_v ? proc_cfg_cast_i.cce_ucode_data : ram_data_li)
+      ,.addr_i((proc_cfg_cast_i.cce_ucode_w_v | proc_cfg_cast_i.cce_ucode_r_v) ? proc_cfg_cast_i.cce_ucode_addr : ram_addr_li)
+      ,.w_i(proc_cfg_cast_i.cce_ucode_w_v | ram_w_li)
       ,.data_o(ram_data_lo)
       );
+  assign cfg_cce_ucode_data_o = ram_data_lo;
 
   //synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i) begin
@@ -139,14 +141,6 @@ module bp_cce_pc
         // If mode is uncached, the CCE operates in uncached mode
         // and this module stays in the INIT state and does not fetch microcode
         pc_state_n = (proc_cfg_cast_i.cce_mode == e_cce_mode_normal) ? INIT_END : INIT;
-        // address is reading or writing the instruction RAM
-        // inputs to RAM are valid if config address high bit is set
-        ram_v_li = proc_cfg_cast_i.cce_ucode_w_v;
-        ram_w_li = proc_cfg_cast_i.cce_ucode_w_v;
-        // lsb of config address specifies if write is first or second part, so ram addr
-        // starts at bit 1
-        ram_addr_li = proc_cfg_cast_i.cce_ucode_addr;
-        ram_data_li = proc_cfg_cast_i.cce_ucode_data;
       end
       INIT_END: begin
         // let the last cfg link write finish (if there is one)
@@ -189,6 +183,8 @@ module bp_cce_pc
         pc_state_n = RESET;
       end
     endcase
+
+
   end
 endmodule
 

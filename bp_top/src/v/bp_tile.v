@@ -111,6 +111,9 @@ bp_cce_mem_msg_s       cfg_mem_resp_lo;
 logic                  cfg_mem_resp_v_lo, cfg_mem_resp_ready_li;
 
 bp_proc_cfg_s proc_cfg_lo;
+logic [dword_width_p-1:0] cfg_irf_data_li;
+logic [vaddr_width_p-1:0] cfg_npc_data_li;
+logic [cce_instr_width_p-1:0] cfg_cce_ucode_data_li;
 bp_cfg
  #(.cfg_p(cfg_p))
  cfg
@@ -126,7 +129,11 @@ bp_cfg
    ,.mem_resp_ready_i(cfg_mem_resp_ready_li)
 
    ,.proc_cfg_o(proc_cfg_lo)
+   ,.irf_data_i(cfg_irf_data_li)
+   ,.npc_data_i(cfg_npc_data_li)
+   ,.cce_ucode_data_i(cfg_cce_ucode_data_li)
    );
+// TODO: Find more elegant way to do this
 assign proc_cfg_o = proc_cfg_lo;
 
 // Module instantiations
@@ -137,6 +144,8 @@ bp_core
    ,.reset_i(reset_i)
 
    ,.proc_cfg_i(proc_cfg_lo)
+   ,.cfg_irf_data_o(cfg_irf_data_li)
+   ,.cfg_npc_data_o(cfg_npc_data_li)
 
    ,.lce_req_o(lce_req_lo)
    ,.lce_req_v_o(lce_req_v_lo)
@@ -166,6 +175,7 @@ bp_cce_top
    ,.reset_i(reset_i)
 
    ,.proc_cfg_i(proc_cfg_lo)
+   ,.cfg_cce_ucode_data_o(cfg_cce_ucode_data_li)
 
    // To CCE
    ,.lce_req_i(cce_lce_req_li)

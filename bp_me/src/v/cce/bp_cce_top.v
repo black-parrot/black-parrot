@@ -45,6 +45,7 @@ module bp_cce_top
    , input                                                 reset_i
 
    , input [proc_cfg_width_lp-1:0]                         proc_cfg_i
+   , output [cce_instr_width_p-1:0]                        cfg_cce_ucode_data_o
 
    // LCE-CCE Interface
    // inbound: ready&valid
@@ -202,6 +203,7 @@ module bp_cce_top
       ,.reset_i(reset_i)
 
       ,.proc_cfg_i(proc_cfg_i)
+      ,.cfg_cce_ucode_data_o(cfg_cce_ucode_data_o)
 
       // To CCE
       ,.lce_req_i(lce_req_to_cce)

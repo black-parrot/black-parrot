@@ -10,6 +10,7 @@ module bp_be_csr
     , localparam csr_cmd_width_lp = `bp_be_csr_cmd_width
     , localparam ecode_dec_width_lp = `bp_be_ecode_dec_width
 
+    , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
     , localparam satp_width_lp  = `bp_satp_width
 
     , localparam hartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)

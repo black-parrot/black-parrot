@@ -42,6 +42,7 @@ module bp_cce
    , input                                             reset_i
 
    , input [proc_cfg_width_lp-1:0]                     proc_cfg_i
+   , output [cce_instr_width_p-1:0]                    cfg_cce_ucode_data_o
 
    // LCE-CCE Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
@@ -194,6 +195,7 @@ module bp_cce
       ,.reset_i(reset_i)
 
       ,.proc_cfg_i(proc_cfg_i)
+      ,.cfg_cce_ucode_data_o(cfg_cce_ucode_data_o)
 
       ,.alu_branch_res_i(alu_branch_res_lo)
 
