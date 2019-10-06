@@ -20,7 +20,7 @@ module bp_fe_mem
 
    , input [mem_cmd_width_lp-1:0]                     mem_cmd_i
    , input                                            mem_cmd_v_i
-   , output                                           mem_cmd_ready_o
+   , output                                           mem_cmd_yumi_o
 
    , input                                            mem_poison_i
 
@@ -53,11 +53,11 @@ assign mem_cmd_cast_i = mem_cmd_i;
 assign mem_resp_o     = mem_resp_cast_o;
 
 logic instr_access_fault_lo, icache_miss_lo, itlb_miss_lo;
-logic itlb_ready_lo;
+logic icache_ready_lo;
 
 wire itlb_fence_v = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fence);
 wire itlb_fill_v  = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fill);
-wire fetch_v      = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_fetch);
+wire fetch_v      = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_fetch) & icache_ready_lo;
 
 bp_fe_tlb_entry_s itlb_r_entry;
 logic itlb_r_v_lo;
@@ -83,7 +83,6 @@ wire                    uncached_li = itlb_r_entry.uc;
 wire [ptag_width_p-1:0] ptag_li     = itlb_r_entry.ptag;
 wire                    ptag_v_li   = itlb_r_v_lo;
 
-logic                     icache_ready_lo;
 logic [instr_width_p-1:0] icache_data_lo;
 logic                     icache_data_v_lo;
 bp_fe_icache 
@@ -125,25 +124,18 @@ bp_fe_icache
    ,.lce_resp_ready_i(lce_resp_ready_i)
    );
 
-// We don't need to check itlb ready, because it is only ready when not writing.  
-//   Reads and writes to itlb are mutually exclusive by construction
-assign mem_cmd_ready_o = icache_ready_lo;
+assign mem_cmd_yumi_o = itlb_fence_v | itlb_fill_v | fetch_v;
 
-always_ff @(negedge clk_i)
-  begin
-    assert(mem_cmd_ready_o || ~mem_cmd_v_i);
-  end
-
-logic mem_cmd_v_r, mem_cmd_v_rr;
+logic fetch_v_r, fetch_v_rr;
 logic itlb_miss_r;
 always_ff @(posedge clk_i)
   begin
-    itlb_miss_r  <= itlb_miss_lo;
-    mem_cmd_v_r  <= mem_cmd_v_i;
-    mem_cmd_v_rr <= mem_cmd_v_r & ~mem_poison_i;
+    itlb_miss_r <= itlb_miss_lo;
+    fetch_v_r   <= fetch_v;
+    fetch_v_rr  <= fetch_v_r & ~mem_poison_i;
   end
 
-assign mem_resp_v_o    = mem_resp_ready_i & mem_cmd_v_rr;
+assign mem_resp_v_o    = mem_resp_ready_i & fetch_v_rr;
 assign mem_resp_cast_o = '{instr_access_fault: instr_access_fault_lo
                            ,itlb_miss        : itlb_miss_r
                            ,icache_miss      : icache_miss_lo
