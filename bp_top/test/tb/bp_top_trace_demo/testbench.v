@@ -22,6 +22,8 @@ module testbench
    , parameter cce_trace_p                 = 0
    , parameter cmt_trace_p                 = 0
    , parameter dram_trace_p                = 0
+   , parameter npc_trace_p                 = 0
+   , parameter dcache_trace_p              = 0
    , parameter skip_init_p                 = 0
 
    , parameter mem_load_p         = 1
@@ -135,48 +137,94 @@ wrapper
      commit_tracer
       (.clk_i(clk_i & (testbench.cmt_trace_p == 1))
        ,.reset_i(reset_i)
+       ,.freeze_i(be_checker.scheduler.int_regfile.proc_cfg.freeze)
 
-       ,.mhartid_i('0)
+       ,.mhartid_i(be_checker.scheduler.int_regfile.proc_cfg.core_id)
 
-       ,.commit_v_i(be_calculator.instret_mem3_o)
-       ,.commit_pc_i(be_calculator.pc_mem3_o)
-       ,.commit_instr_i(be_calculator.instr_mem3_o)
+       ,.commit_v_i(be_calculator.commit_pkt.instret)
+       ,.commit_pc_i(be_calculator.commit_pkt.pc)
+       ,.commit_instr_i(be_calculator.commit_pkt.instr)
 
-       ,.rd_w_v_i(be_calculator.int_regfile.rd_w_v_i)
-       ,.rd_addr_i(be_calculator.int_regfile.rd_addr_i)
-       ,.rd_data_i(be_calculator.int_regfile.rd_data_i)
+       ,.rd_w_v_i(be_calculator.wb_pkt.rd_w_v)
+       ,.rd_addr_i(be_calculator.wb_pkt.rd_addr)
+       ,.rd_data_i(be_calculator.wb_pkt.rd_data)
+       );
+
+  bind bp_be_director
+    bp_be_nonsynth_npc_tracer
+     #(.cfg_p(cfg_p))
+     npc_tracer
+      (.clk_i(clk_i & (testbench.npc_trace_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i(be_checker.scheduler.int_regfile.proc_cfg.freeze)
+
+       ,.mhartid_i(be_checker.scheduler.int_regfile.proc_cfg.core_id)
+
+       ,.npc_w_v(npc_w_v)
+       ,.npc_n(npc_n)
+       ,.npc_r(npc_r)
+       ,.expected_npc_o(expected_npc_o)
+
+       ,.fe_cmd_i(fe_cmd)
+       ,.fe_cmd_v(fe_cmd_v)
+
+       ,.commit_pkt_i(commit_pkt)
+       );
+
+  bind bp_be_dcache
+    bp_be_nonsynth_dcache_tracer
+     #(.cfg_p(cfg_p))
+     dcache_tracer
+      (.clk_i(clk_i & (testbench.dcache_trace_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i(proc_cfg_cast_i.freeze)
+
+       ,.mhartid_i(proc_cfg_cast_i.core_id)
+
+       ,.v_tv_r(v_tv_r)
+       ,.cache_miss_o(cache_miss_o)
+
+       ,.paddr_tv_r(paddr_tv_r)
+       ,.uncached_tv_r(uncached_tv_r)
+       ,.load_op_tv_r(load_op_tv_r)
+       ,.store_op_tv_r(store_op_tv_r)
+       ,.lr_op_tv_r(lr_op_tv_r)
+       ,.sc_op_tv_r(sc_op_tv_r)
+       ,.store_data(data_tv_r)
+       ,.load_data(data_o)
        );
 
   bind bp_be_top
-    bp_be_nonsynth_tracer
+    bp_be_nonsynth_calc_tracer
      #(.cfg_p(cfg_p))
      tracer
        // Workaround for verilator binding by accident
        // TODO: Figure out why tracing is always enabled
       (.clk_i(clk_i & (testbench.calc_trace_p == 1))
        ,.reset_i(reset_i)
+       ,.freeze_i(be_checker.scheduler.int_regfile.proc_cfg.freeze)
   
-       ,.mhartid_i(be_calculator.proc_cfg.core_id)
+       ,.mhartid_i(be_checker.scheduler.int_regfile.proc_cfg.core_id)
 
-       ,.issue_pkt_i(be_calculator.issue_pkt)
-       ,.issue_pkt_v_i(be_calculator.issue_pkt_v_i)
+       ,.issue_pkt_i(be_checker.scheduler.issue_pkt)
+       ,.issue_pkt_v_i(be_checker.scheduler.fe_queue_yumi_o)
   
-       ,.fe_nop_v_i(be_calculator.fe_nop_v)
-       ,.be_nop_v_i(be_calculator.be_nop_v)
-       ,.me_nop_v_i(be_calculator.me_nop_v)
+       ,.fe_nop_v_i(be_calculator.exc_stage_n[0].fe_nop_v)
+       ,.be_nop_v_i(be_calculator.exc_stage_n[0].be_nop_v)
+       ,.me_nop_v_i(be_calculator.exc_stage_n[0].me_nop_v)
        ,.dispatch_pkt_i(be_calculator.dispatch_pkt)
   
-       ,.ex1_br_tgt_i(be_calculator.calc_status.int1_br_tgt)
-       ,.ex1_btaken_i(be_calculator.calc_status.int1_btaken)
+       ,.ex1_br_tgt_i(be_calculator.calc_status.ex1_npc)
+       ,.ex1_btaken_i(be_calculator.pipe_int.btaken)
        ,.iwb_result_i(be_calculator.comp_stage_n[3])
        ,.fwb_result_i(be_calculator.comp_stage_n[4])
   
        ,.cmt_trace_exc_i(be_calculator.exc_stage_n[1+:5])
   
-       ,.trap_v_i(be_mem.csr.trap_v_o)
+       ,.trap_v_i(be_mem.csr.trap_pkt_cast_o._interrupt | be_mem.csr.trap_pkt_cast_o.exception)
        ,.mtvec_i(be_mem.csr.mtvec_n)
        ,.mtval_i(be_mem.csr.mtval_n[0+:vaddr_width_p])
-       ,.ret_v_i(be_mem.csr.ret_v_o)
+       ,.ret_v_i(be_mem.csr.trap_pkt_cast_o.eret)
        ,.mepc_i(be_mem.csr.mepc_n[0+:vaddr_width_p])
        ,.mcause_i(be_mem.csr.mcause_n)
   
@@ -184,6 +232,7 @@ wrapper
        ,.mpp_i(be_mem.csr.mstatus_n.mpp)
        );
 
+// We rely on this for termination, so don't gate behind parameter
 bind bp_be_top
   bp_be_nonsynth_perf
    #(.cfg_p(cfg_p))
@@ -191,19 +240,18 @@ bind bp_be_top
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mhartid_i(be_calculator.proc_cfg.core_id)
+     ,.mhartid_i(be_checker.scheduler.int_regfile.proc_cfg.core_id)
 
      ,.fe_nop_i(be_calculator.exc_stage_r[2].fe_nop_v)
      ,.be_nop_i(be_calculator.exc_stage_r[2].be_nop_v)
      ,.me_nop_i(be_calculator.exc_stage_r[2].me_nop_v)
      ,.poison_i(be_calculator.exc_stage_r[2].poison_v)
      ,.roll_i(be_calculator.exc_stage_r[2].roll_v)
-     ,.instr_cmt_i(be_calculator.calc_status.mem3_cmt_v)
+     ,.instr_cmt_i(be_calculator.commit_pkt.v)
 
      ,.program_finish_i(testbench.program_finish)
      );
 
-if (dram_trace_p)
   bp_mem_nonsynth_tracer
    #(.cfg_p(cfg_p))
    bp_mem_tracer
@@ -219,15 +267,15 @@ if (dram_trace_p)
      ,.mem_resp_ready_i(dram_resp_ready_li)
      );
 
-if (cce_trace_p)
   bind bp_cce_top
     bp_cce_nonsynth_tracer
       #(.cfg_p(cfg_p))
       bp_cce_tracer
        (.clk_i(clk_i & (testbench.cce_trace_p == 1))
         ,.reset_i(reset_i)
+        ,.freeze_i(bp_cce.inst_ram.proc_cfg_cast_i.freeze)
   
-        ,.cce_id_i(cce_id_i)
+        ,.cce_id_i(bp_cce.inst_ram.proc_cfg_cast_i.cce_id)
   
         // To CCE
         ,.lce_req_i(lce_req_to_cce)

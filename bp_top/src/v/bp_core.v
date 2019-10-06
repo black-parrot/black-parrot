@@ -46,9 +46,9 @@ module bp_core
     , output [1:0]                                 lce_cmd_v_o
     , input [1:0]                                  lce_cmd_ready_i
 
-    , input                                        timer_int_i
-    , input                                        software_int_i
-    , input                                        external_int_i
+    , input                                        timer_irq_i
+    , input                                        software_irq_i
+    , input                                        external_irq_i
     );
 
   `declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
@@ -188,9 +188,9 @@ module bp_core
      ,.lce_cmd_v_o(lce_cmd_v_o[1])
      ,.lce_cmd_ready_i(lce_cmd_ready_i[1])
 
-     ,.timer_int_i(timer_int_i)
-     ,.software_int_i(software_int_i)
-     ,.external_int_i(external_int_i)
+     ,.timer_irq_i(timer_irq_i)
+     ,.software_irq_i(software_irq_i)
+     ,.external_irq_i(external_irq_i)
      );
 
 endmodule : bp_core

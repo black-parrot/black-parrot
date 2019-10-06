@@ -38,9 +38,9 @@ module bp_tile_node
    , input [mem_noc_cord_width_p-1:0]            host_cord_i
 
    // Interrupts
-   , input                                       timer_int_i
-   , input                                       software_int_i
-   , input                                       external_int_i
+   , input                                       timer_irq_i
+   , input                                       software_irq_i
+   , input                                       external_irq_i
 
    // Connected to other tiles on east and west
    , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_req_link_i
@@ -91,9 +91,9 @@ bp_mem_ready_and_link_s core_mem_resp_link_li, core_mem_resp_link_lo;
      ,.clint_cord_i(clint_cord_i)
      ,.host_cord_i(host_cord_i)
 
-     ,.timer_int_i(timer_int_i)
-     ,.software_int_i(software_int_i)
-     ,.external_int_i(external_int_i)
+     ,.timer_irq_i(timer_irq_i)
+     ,.software_irq_i(software_irq_i)
+     ,.external_irq_i(external_irq_i)
 
      ,.lce_req_link_i(core_lce_req_link_li)
      ,.lce_req_link_o(core_lce_req_link_lo)

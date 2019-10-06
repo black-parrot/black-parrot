@@ -15,6 +15,8 @@ module bp_cce_nonsynth_tracer
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
 
+    , localparam cce_trace_file_p = "cce"
+
     // Derived parameters
     , localparam block_size_in_bytes_lp      = (cce_block_width_p/8)
     , localparam lg_num_lce_lp             = `BSG_SAFE_CLOG2(num_lce_p)
@@ -36,6 +38,7 @@ module bp_cce_nonsynth_tracer
   )
   (input                                        clk_i
    , input                                      reset_i
+   , input                                      freeze_i
 
    // LCE-CCE Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
@@ -95,13 +98,27 @@ module bp_cce_nonsynth_tracer
   assign mem_cmd_lo          = mem_cmd_i;
   assign mem_resp_li         = mem_resp_i;
 
+  integer file;
+  string file_name;
+ 
+  logic freeze_r;
+  always_ff @(posedge clk_i)
+    freeze_r <= freeze_i;
+
+  always_ff @(negedge clk_i)
+    if (freeze_r & ~freeze_i)
+      begin
+        file_name = $sformatf("%s_%x.trace", cce_trace_file_p, cce_id_i);
+        file      = $fopen(file_name, "w");
+      end
+
   // Tracer
   always_ff @(negedge clk_i) begin
     if (~reset_i) begin
       // inbound messages
       if (lce_req_v_i & lce_req_yumi_i) begin
         if (lce_req.msg_type == e_lce_req_type_rd | lce_req.msg_type == e_lce_req_type_wr) begin
-        $display("%0T: CCE[%0d] REQ LCE[%0d] addr[%H] wr[%0b] ne[%0b] uc[%0b] lruWay[%0d] lruDirty[%0b] tag[%H] set[%0d]"
+        $fwrite(file, "[%t]: CCE[%0d] REQ LCE[%0d] addr[%H] wr[%0b] ne[%0b] uc[%0b] lruWay[%0d] lruDirty[%0b] tag[%H] set[%0d]"
                  , $time, cce_id_i, lce_req.src_id, lce_req.addr, (lce_req.msg_type == e_lce_req_type_wr)
                  , lce_req_req.non_exclusive
                  , 1'b0
@@ -110,7 +127,7 @@ module bp_cce_nonsynth_tracer
                  , lce_req.addr[lg_block_size_in_bytes_lp+:lg_lce_sets_lp]);
         end
         if (lce_req.msg_type == e_lce_req_type_uc_rd | lce_req.msg_type == e_lce_req_type_uc_wr) begin
-        $display("%0T: CCE[%0d] REQ LCE[%0d] addr[%H] wr[%0b] ne[%0b] uc[%0b] lruWay[%0d] lruDirty[%0b] tag[%H] set[%0d]"
+        $fwrite(file, "[%t]: CCE[%0d] REQ LCE[%0d] addr[%H] wr[%0b] ne[%0b] uc[%0b] lruWay[%0d] lruDirty[%0b] tag[%H] set[%0d]"
                  , $time, cce_id_i, lce_req.src_id, lce_req.addr, (lce_req.msg_type == e_lce_req_type_uc_wr)
                  , 1'b0
                  , 1'b1
@@ -123,12 +140,12 @@ module bp_cce_nonsynth_tracer
         if ((lce_resp.msg_type == e_lce_cce_sync_ack)
             | (lce_resp.msg_type == e_lce_cce_inv_ack)
             | (lce_resp.msg_type == e_lce_cce_coh_ack)) begin
-        $display("%0T: CCE[%0d] RESP LCE[%0d] addr[%H] ack[%4b]"
+        $fwrite(file, "[%t]: CCE[%0d] RESP LCE[%0d] addr[%H] ack[%4b]"
                  , $time, cce_id_i, lce_resp.src_id, lce_resp.addr, lce_resp.msg_type);
         end
         if ((lce_resp.msg_type == e_lce_cce_resp_wb)
             | (lce_resp.msg_type == e_lce_cce_resp_null_wb)) begin
-        $display("%0T: CCE[%0d] DATA RESP LCE[%0d] addr[%H] null_wb[%0b]\n%H"
+        $fwrite(file, "[%t]: CCE[%0d] DATA RESP LCE[%0d] addr[%H] null_wb[%0b]\n%H"
                  , $time, cce_id_i, lce_resp.src_id, lce_resp.addr
                  , (lce_resp.msg_type == e_lce_cce_resp_null_wb)
                  , lce_resp.data);
@@ -136,7 +153,7 @@ module bp_cce_nonsynth_tracer
       end
       if (mem_resp_v_i & mem_resp_yumi_i) begin
         if (mem_resp_li.msg_type == e_cce_mem_wb | mem_resp_li.msg_type == e_cce_mem_uc_wr) begin
-        $display("%0T: CCE[%0d] MEM RESP wb[%0b] uc[%0b] addr[%H] lce[%0d] way[%0d]"
+        $fwrite(file, "[%t]: CCE[%0d] MEM RESP wb[%0b] uc[%0b] addr[%H] lce[%0d] way[%0d]"
                  , $time, cce_id_i, (mem_resp_li.msg_type == e_cce_mem_wb)
                  , (mem_resp_li.msg_type == e_cce_mem_uc_wr)
                  , mem_resp_li.addr
@@ -144,7 +161,7 @@ module bp_cce_nonsynth_tracer
         end
         if (mem_resp_li.msg_type == e_cce_mem_rd | mem_resp_li.msg_type == e_cce_mem_wr
             | mem_resp_li.msg_type == e_cce_mem_uc_rd) begin
-        $display("%0T: CCE[%0d] MEM DATA RESP wr[%0b] addr[%H] lce[%0d] way[%0d] state[%3b] uc[%0b]\n%H"
+        $fwrite(file, "[%t]: CCE[%0d] MEM DATA RESP wr[%0b] addr[%H] lce[%0d] way[%0d] state[%3b] uc[%0b]\n%H"
                  , $time, cce_id_i, (mem_resp_li.msg_type == e_cce_mem_wr), mem_resp_li.addr
                  , mem_resp_li.payload.lce_id, mem_resp_li.payload.way_id, mem_resp_li.payload.state
                  , (mem_resp_li.msg_type == e_cce_mem_uc_rd), mem_resp_li.data);
@@ -153,20 +170,20 @@ module bp_cce_nonsynth_tracer
       // outbound messages
       if (lce_cmd_v_i & lce_cmd_ready_i) begin
         if (lce_cmd.msg_type == e_lce_cmd_data) begin
-        $display("%0T: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] addr[%H] st[%3b] way[%0d]\n%H"
+        $fwrite(file, "[%t]: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] addr[%H] st[%3b] way[%0d]\n%H"
                  , $time, cce_id_i, lce_cmd.dst_id, lce_cmd.msg_type, lce_cmd.msg.dt_cmd.addr
                  , lce_cmd.msg.dt_cmd.state, lce_cmd.way_id
                  , lce_cmd.msg.dt_cmd.data);
         end
         else if (lce_cmd.msg_type == e_lce_cmd_uc_data) begin
-        $display("%0T: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] addr[%H] st[%3b] way[%0d]\n%H"
+        $fwrite(file, "[%t]: CCE[%0d] DATA CMD LCE[%0d] cmd[%4b] addr[%H] st[%3b] way[%0d]\n%H"
                  , $time, cce_id_i, lce_cmd.dst_id, lce_cmd.msg_type, lce_cmd.msg.dt_cmd.addr
                  , lce_cmd.msg.dt_cmd.state, lce_cmd.way_id
                  , lce_cmd.msg.dt_cmd.data);
         end
 
         else begin
-        $display("%0T: CCE[%0d] CMD LCE[%0d] addr[%H] cmd[%4b] way[%0d] st[%3b] tgt[%0d] tgtWay[%0d]"
+        $fwrite(file, "[%t]: CCE[%0d] CMD LCE[%0d] addr[%H] cmd[%4b] way[%0d] st[%3b] tgt[%0d] tgtWay[%0d]"
                  , $time, cce_id_i, lce_cmd.dst_id, lce_cmd_cmd.addr, lce_cmd.msg_type, lce_cmd.way_id
                  , lce_cmd_cmd.state, lce_cmd_cmd.target, lce_cmd_cmd.target_way_id);
         end
@@ -174,12 +191,12 @@ module bp_cce_nonsynth_tracer
       if (mem_cmd_v_i & mem_cmd_ready_i) begin
         if (mem_cmd_lo.msg_type == e_cce_mem_rd | mem_cmd_lo.msg_type == e_cce_mem_wr
             | mem_cmd_lo.msg_type == e_cce_mem_uc_rd) begin
-        $display("%0T: CCE[%0d] MEM CMD wr[%0b] addr[%H] lce[%0d] way[%0d] uc[%0b]"
+        $fwrite(file, "[%t]: CCE[%0d] MEM CMD wr[%0b] addr[%H] lce[%0d] way[%0d] uc[%0b]"
                  , $time, cce_id_i, mem_cmd_lo.msg_type, mem_cmd_lo.addr, mem_cmd_lo.payload.lce_id
                  , mem_cmd_lo.payload.way_id, (mem_cmd_lo.msg_type == e_cce_mem_uc_rd));
         end
         if (mem_cmd_lo.msg_type == e_cce_mem_uc_wr | mem_cmd_lo.msg_type == e_cce_mem_wb) begin
-        $display("%0T: CCE[%0d] MEM DATA CMD wb[%0b] addr[%H] lce[%0d] way[%0d] state[%3b] uc[%0b]\n%H"
+        $fwrite(file, "[%t]: CCE[%0d] MEM DATA CMD wb[%0b] addr[%H] lce[%0d] way[%0d] state[%3b] uc[%0b]\n%H"
                  , $time, cce_id_i, (mem_cmd_lo.msg_type == e_cce_mem_wb), mem_cmd_lo.addr
                  , mem_cmd_lo.payload.lce_id, mem_cmd_lo.payload.way_id, mem_cmd_lo.payload.state
                  , (mem_cmd_lo.msg_type == e_cce_mem_uc_wr), mem_cmd_lo.data);

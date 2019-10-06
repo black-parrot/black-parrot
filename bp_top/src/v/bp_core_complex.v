@@ -106,9 +106,9 @@ for (genvar j = 0; j < mem_noc_y_dim_p; j++)
            ,.clint_cord_i(clint_cord_i)
            ,.host_cord_i(host_cord_i)
  
-           ,.timer_int_i(timer_irq_li)
-           ,.software_int_i(soft_irq_li)
-           ,.external_int_i(external_irq_li)
+           ,.timer_irq_i(timer_irq_li)
+           ,.software_irq_i(soft_irq_li)
+           ,.external_irq_i(external_irq_li)
 
            ,.coh_lce_req_link_i(lce_req_link_li[j][i])
            ,.coh_lce_resp_link_i(lce_resp_link_li[j][i])

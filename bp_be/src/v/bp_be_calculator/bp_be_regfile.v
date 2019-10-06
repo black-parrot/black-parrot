@@ -27,10 +27,7 @@ module bp_be_regfile
    , input                         reset_i
 
    // Pipeline control signals
-   , input                         cfg_w_v_i
-   , input                         cfg_r_v_i
-   , input [reg_addr_width_p-1:0]  cfg_addr_i
-   , input [dword_width_p-1:0]     cfg_data_i
+   , input [proc_cfg_width_lp-1:0] proc_cfg_i
    , output [dword_width_p-1:0]    cfg_data_o
 
    // rd write bus
@@ -49,6 +46,10 @@ module bp_be_regfile
    , output [dword_width_p-1:0]    rs2_data_o
    );
 
+`declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+bp_proc_cfg_s proc_cfg;
+assign proc_cfg = proc_cfg_i;
+
 // Intermediate connections
 logic                        rs1_read_v     , rs2_read_v;
 logic [dword_width_p-1:0]    rs1_reg_data   , rs2_reg_data;
@@ -63,12 +64,12 @@ bsg_mem_2r1w_sync
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.w_v_i(cfg_w_v_i | rd_w_v_i)
-   ,.w_addr_i(cfg_w_v_i ? cfg_addr_i : rd_addr_i)
-   ,.w_data_i(cfg_w_v_i ? cfg_data_i : rd_data_i)
+   ,.w_v_i(proc_cfg.irf_w_v | rd_w_v_i)
+   ,.w_addr_i(proc_cfg.irf_w_v ? proc_cfg.irf_addr : rd_addr_i)
+   ,.w_data_i(proc_cfg.irf_w_v ? proc_cfg.irf_data : rd_data_i)
 
-   ,.r0_v_i(cfg_r_v_i | rs1_read_v)
-   ,.r0_addr_i(cfg_r_v_i ? cfg_addr_i : rs1_reread_addr)
+   ,.r0_v_i(proc_cfg.irf_r_v | rs1_read_v)
+   ,.r0_addr_i(proc_cfg.irf_r_v ? proc_cfg.irf_addr : rs1_reread_addr)
    ,.r0_data_o(rs1_reg_data)
 
    ,.r1_v_i(rs2_read_v)
@@ -107,8 +108,8 @@ always_comb
     // Technically, this is unnecessary, since most hardened SRAMs still write correctly
     //   on read-write conflicts, and the read is handled by forwarding. But this avoids
     //   nasty warnings and possible power sink.
-    rs1_read_v = ~fwd_rs1 & ~cfg_r_v_i & ~cfg_w_v_i;
-    rs2_read_v = ~fwd_rs2 & ~cfg_r_v_i & ~cfg_w_v_i;
+    rs1_read_v = ~fwd_rs1 & ~proc_cfg.irf_r_v & ~proc_cfg.irf_w_v;
+    rs2_read_v = ~fwd_rs2 & ~proc_cfg.irf_r_v & ~proc_cfg.irf_w_v;
   
     // If we have issued a new instruction, use input address to read, 
     //   else use last request address to read
