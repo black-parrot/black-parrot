@@ -73,6 +73,8 @@ always_comb
     decode.frf_w_v       = '0;
     decode.dcache_r_v    = '0;
     decode.dcache_w_v    = '0;
+    decode.csr_r_v       = '0;
+    decode.csr_w_v       = '0;
 
     // Metadata signals
     decode.mem_v         = '0;
@@ -247,6 +249,9 @@ always_comb
             default: 
               begin
                 decode.irf_w_v     = 1'b1;
+                // TODO: Should not write/read based on x0
+                decode.csr_w_v     = 1'b1;
+                decode.csr_r_v     = 1'b1;
                 unique casez (instr)
                   `RV64_CSRRW  : decode.fu_op = e_csrrw;
                   `RV64_CSRRWI : decode.fu_op = e_csrrwi;

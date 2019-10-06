@@ -205,6 +205,39 @@ bsg_dff_reset
    ,.data_o(priv_mode_r)
    );
 
+assign sstatus_wmask_li = '{mpp: 2'b00, spp: 2'b11
+                            ,mpie: 1'b0, spie: 1'b1, upie: 1'b1
+                            ,mie: 1'b0, sie: 1'b1, uie: 1'b1
+                            ,default: '0
+                            };
+assign sstatus_rmask_li = '{sd: 1'b1, uxl: 2'b11
+                            ,mxr: 1'b1, sum: 1'b1
+                            ,xs: 2'b11, fs: 2'b11
+                            ,mpp: 2'b00, spp: 2'b11
+                            ,mpie: 1'b0, spie: 1'b1, upie: 1'b1
+                            ,mie: 1'b0, sie: 1'b1, uie: 1'b1
+                            ,default: '0
+                            };
+assign sie_wmask_li     = '{meie: mideleg_lo.mei, seie: 1'b1
+                            ,mtie: mideleg_lo.mti, stie: 1'b1
+                            ,msie: mideleg_lo.msi, ssie: 1'b1
+                            ,default: '0
+                            };
+assign sie_rmask_li     = '{meie: mideleg_lo.mei, seie: 1'b1
+                            ,mtie: mideleg_lo.mti, stie: 1'b1
+                            ,msie: mideleg_lo.msi, ssie: 1'b1
+                            ,default: '0
+                            };
+assign sip_wmask_li     = '{meip: 1'b0, seip: 1'b1
+                            ,mtip: 1'b0, stip: 1'b1
+                            ,msip: 1'b0, ssip: 1'b1
+                            ,default: '0
+                            };
+assign sip_rmask_li     = '{meip: mideleg_lo.mei, seip: 1'b1
+                            ,mtip: mideleg_lo.mti, stip: 1'b1
+                            ,msip: mideleg_lo.msi, ssip: 1'b1
+                            ,default: '0};
+
 // CSR data
 always_comb
   begin
@@ -243,19 +276,12 @@ always_comb
     minstret_li      = mcountinhibit_lo.ir ? minstret_lo + dword_width_p'(instret_i) : minstret_lo;
     mcountinhibit_li = mcountinhibit_lo;
 
-    trap_v_o        = '0;
-    ret_v_o         = '0;
-    illegal_instr_o = '0;
-    csr_data_lo     = '0;
-    tlb_fence_o     = '0;
+    trap_v_o         = '0;
+    ret_v_o          = '0;
+    illegal_instr_o  = '0;
+    csr_data_lo      = '0;
+    tlb_fence_o      = '0;
 
-    sstatus_wmask_li = '0;
-    sstatus_rmask_li = '0;
-    sie_wmask_li     = '0;
-    sie_rmask_li     = '0;
-    sip_wmask_li     = '0;
-    sip_rmask_li     = '0;
-        
     if (csr_cmd_v_i)
       if (csr_cmd.csr_op == e_sfence_vma)
         begin
@@ -291,101 +317,121 @@ always_comb
         end
       else 
         begin
-          sstatus_wmask_li = '{mpp: 2'b00, spp: 2'b11
-                               ,mpie: 1'b0, spie: 1'b1, upie: 1'b1
-                               ,mie: 1'b0, sie: 1'b1, uie: 1'b1
-                               ,default: '0
-                               };
-          sstatus_rmask_li = '{sd: 1'b1, uxl: 2'b11
-                               ,mxr: 1'b1, sum: 1'b1
-                               ,xs: 2'b11, fs: 2'b11
-                               ,mpp: 2'b00, spp: 2'b11
-                               ,mpie: 1'b0, spie: 1'b1, upie: 1'b1
-                               ,mie: 1'b0, sie: 1'b1, uie: 1'b1
-                               ,default: '0
-                               };
-          sie_wmask_li     = '{meie: mideleg_lo.mei, seie: 1'b1
-                               ,mtie: mideleg_lo.mti, stie: 1'b1
-                               ,msie: mideleg_lo.msi, ssie: 1'b1
-                               ,default: '0
-                               };
-          sie_rmask_li     = '{meie: mideleg_lo.mei, seie: 1'b1
-                               ,mtie: mideleg_lo.mti, stie: 1'b1
-                               ,msie: mideleg_lo.msi, ssie: 1'b1
-                               ,default: '0
-                               };
-          sip_wmask_li     = '{meip: 1'b0, seip: 1'b1
-                               ,mtip: 1'b0, stip: 1'b1
-                               ,msip: 1'b0, ssip: 1'b1
-                               ,default: '0
-                               };
-          sip_rmask_li     = '{meip: mideleg_lo.mei, seip: 1'b1
-                               ,mtip: mideleg_lo.mti, stip: 1'b1
-                               ,msip: mideleg_lo.msi, ssip: 1'b1
-                               ,default: '0};
-
-          unique casez (csr_cmd.csr_addr)
-            `declare_csr_case_ro(`PRIV_MODE_U, `CSR_ADDR_CYCLE, cycle, mcycle_r, csr_data_lo)
-            // Time must be done by trapping, since we can't stall at this point
-            `declare_csr_case_ro(`PRIV_MODE_U, `CSR_ADDR_INSTRET, instret, minstret_r, csr_data_lo)
-            `declare_csr_case_rw_mask(`PRIV_MODE_S, `CSR_ADDR_SSTATUS, mstatus, csr_data_li, csr_data_lo, sstatus_wmask_li, sstatus_rmask_li)
-            // Read-only because we don't support N-extension
-            `declare_csr_case_ro(`PRIV_MODE_S, `CSR_ADDR_SEDELEG, sedeleg, '0, csr_data_lo)
-            // Read-only because we don't support N-extension
-            `declare_csr_case_ro(`PRIV_MODE_S, `CSR_ADDR_SIDELEG, sideleg, '0, csr_data_lo)
-            `declare_csr_case_rw_mask(`PRIV_MODE_S, `CSR_ADDR_SIE, mie, csr_data_li, csr_data_lo, sie_wmask_li, sie_rmask_li)
-            `declare_csr_case_rw(`PRIV_MODE_S, `CSR_ADDR_STVEC, stvec, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_S, `CSR_ADDR_SCOUNTEREN, scounteren, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_S, `CSR_ADDR_SSCRATCH, sscratch, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_S, `CSR_ADDR_SEPC, sepc, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_S, `CSR_ADDR_SCAUSE, scause, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_S, `CSR_ADDR_STVAL, stval, csr_data_li, csr_data_lo)
-            // SIP subset of MIP
-            `declare_csr_case_rw_mask(`PRIV_MODE_S, `CSR_ADDR_SIP, mip, csr_data_li, csr_data_lo, sip_wmask_li, sip_rmask_li)
-            `declare_csr_case_rw(`PRIV_MODE_S, `CSR_ADDR_SATP, satp, csr_data_li, csr_data_lo)
-            // We havr no vendorid currently
-            `declare_csr_case_ro(`PRIV_MODE_M, `CSR_ADDR_MVENDORID, mvendorid, '0, csr_data_lo)
-            // https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md
-            //   Lucky 13 (*v*)
-            `declare_csr_case_ro(`PRIV_MODE_M, `CSR_ADDR_MARCHID, marchid, 13, csr_data_lo)
-            // 0: Tapeout 0, July 2019
-            // 1: Current
-            `declare_csr_case_ro(`PRIV_MODE_M, `CSR_ADDR_MIMPID, mimpid, 1, csr_data_lo)
-            `declare_csr_case_ro(`PRIV_MODE_M, `CSR_ADDR_MHARTID, mhartid, hartid_i, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_M, `CSR_ADDR_MSTATUS, mstatus, csr_data_li, csr_data_lo)
-            // MISA is optionally read-write, but all fields are read-only in BlackParrot
-            //   64 bit MXLEN, AISU extensions
-            `declare_csr_case_ro(`PRIV_MODE_M, `CSR_ADDR_MISA, misa, {2'b10, 36'b0, 26'h140101}, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_M, `CSR_ADDR_MEDELEG, medeleg, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_M, `CSR_ADDR_MIDELEG, mideleg, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_M, `CSR_ADDR_MIE, mie, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_M, `CSR_ADDR_MTVEC, mtvec, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_M, `CSR_ADDR_MCOUNTEREN, mcounteren, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_M, `CSR_ADDR_MIP, mip, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_M, `CSR_ADDR_MSCRATCH, mscratch, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_M, `CSR_ADDR_MEPC, mepc, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_M, `CSR_ADDR_MCAUSE, mcause, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_M, `CSR_ADDR_MTVAL, mtval, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_M, `CSR_ADDR_PMPCFG0, pmpcfg0, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_M, `CSR_ADDR_PMPADDR0, pmpaddr0, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_M, `CSR_ADDR_PMPADDR1, pmpaddr1, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_M, `CSR_ADDR_PMPADDR2, pmpaddr2, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_M, `CSR_ADDR_PMPADDR3, pmpaddr3, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_M, `CSR_ADDR_MCYCLE, mcycle, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_M, `CSR_ADDR_MINSTRET, minstret, csr_data_li, csr_data_lo)
-            `declare_csr_case_rw(`PRIV_MODE_M, `CSR_ADDR_MCOUNTINHIBIT, mcountinhibit, csr_data_li, csr_data_lo)
-            default: illegal_instr_o = 1'b1;
-          endcase
+          if (csr_cmd_v_i) // Read case
+            unique casez (csr_cmd.csr_addr)
+              `CSR_ADDR_CYCLE  : csr_data_lo = mcycle_lo;
+              // Time must be done by trapping, since we can't stall at this point
+              `CSR_ADDR_INSTRET: csr_data_lo = minstret_lo;
+              // SSTATUS subset of MSTATUS
+              `CSR_ADDR_SSTATUS: csr_data_lo = mstatus_lo & sstatus_rmask_li;
+              // Read-only because we don't support N-extension
+              // Read-only because we don't support N-extension
+              `CSR_ADDR_SEDELEG: csr_data_lo = '0;
+              `CSR_ADDR_SIDELEG: csr_data_lo = '0;
+              `CSR_ADDR_SIE: csr_data_lo = mie_lo & sie_rmask_li;
+              `CSR_ADDR_STVEC: csr_data_lo = stvec_lo;
+              `CSR_ADDR_SCOUNTEREN: csr_data_lo = scounteren_lo;
+              `CSR_ADDR_SSCRATCH: csr_data_lo = sscratch_lo;
+              `CSR_ADDR_SEPC: csr_data_lo = sepc_lo;
+              `CSR_ADDR_SCAUSE: csr_data_lo = scause_lo;
+              `CSR_ADDR_STVAL: csr_data_lo = stval_lo;
+              // SIP subset of MIP
+              `CSR_ADDR_SIP: csr_data_lo = mip_lo & sip_rmask_li;
+              `CSR_ADDR_SATP: csr_data_lo = satp_lo;
+              // We havr no vendorid currently
+              `CSR_ADDR_MVENDORID: csr_data_lo = '0;
+              // https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md
+              //   Lucky 13 (*v*)
+              `CSR_ADDR_MARCHID: csr_data_lo = 64'd13;
+              // 0: Tapeout 0, July 2019
+              // 1: Current
+              `CSR_ADDR_MIMPID: csr_data_lo = 64'd1;
+              `CSR_ADDR_MHARTID: csr_data_lo = hartid_i;
+              `CSR_ADDR_MSTATUS: csr_data_lo = mstatus_lo;
+              // MISA is optionally read-write, but all fields are read-only in BlackParrot
+              //   64 bit MXLEN, AISU extensions
+              `CSR_ADDR_MISA: csr_data_lo = {2'b10, 36'b0, 26'h140101};
+              `CSR_ADDR_MEDELEG: csr_data_lo = medeleg_lo;
+              `CSR_ADDR_MIDELEG: csr_data_lo = mideleg_lo;
+              `CSR_ADDR_MIE: csr_data_lo = mie_lo;
+              `CSR_ADDR_MTVEC: csr_data_lo = mtvec_lo;
+              `CSR_ADDR_MCOUNTEREN: csr_data_lo = mcounteren_lo;
+              // TODO: This should actually be readonly in most bits
+              `CSR_ADDR_MIP: csr_data_lo = mip_lo;
+              `CSR_ADDR_MSCRATCH: csr_data_lo = mscratch_lo;
+              `CSR_ADDR_MEPC: csr_data_lo = mepc_lo;
+              `CSR_ADDR_MCAUSE: csr_data_lo = mcause_lo;
+              `CSR_ADDR_MTVAL: csr_data_lo = mtval_lo;
+              `CSR_ADDR_PMPCFG0: csr_data_lo = pmpcfg0_lo;
+              `CSR_ADDR_PMPADDR0: csr_data_lo = pmpaddr0_lo;
+              `CSR_ADDR_PMPADDR1: csr_data_lo = pmpaddr1_lo;
+              `CSR_ADDR_PMPADDR2: csr_data_lo = pmpaddr2_lo;
+              `CSR_ADDR_PMPADDR3: csr_data_lo = pmpaddr3_lo;
+              `CSR_ADDR_MCYCLE: csr_data_lo = mcycle_lo;
+              `CSR_ADDR_MINSTRET: csr_data_lo = minstret_lo;
+              `CSR_ADDR_MCOUNTINHIBIT: csr_data_lo = mcountinhibit_lo;
+              default: illegal_instr_o = 1'b1;
+            endcase
+          if (csr_cmd_v_i) // Write case
+            unique casez (csr_cmd.csr_addr)
+              `CSR_ADDR_CYCLE  : mcycle_li = csr_data_li;
+              // Time must be done by trapping, since we can't stall at this point
+              `CSR_ADDR_INSTRET: minstret_li = csr_data_li;
+              // SSTATUS subset of MSTATUS
+              `CSR_ADDR_SSTATUS: mstatus_li = (mstatus_lo & ~sstatus_wmask_li) | (csr_data_li & sstatus_wmask_li);
+              // Read-only because we don't support N-extension
+              // Read-only because we don't support N-extension
+              `CSR_ADDR_SEDELEG: begin end
+              `CSR_ADDR_SIDELEG: begin end
+              `CSR_ADDR_SIE: mie_li = (mie_lo & ~sie_wmask_li) | (csr_data_li & sie_wmask_li);
+              `CSR_ADDR_STVEC: stvec_li = csr_data_li;
+              `CSR_ADDR_SCOUNTEREN: scounteren_li = csr_data_li;
+              `CSR_ADDR_SSCRATCH: sscratch_li = csr_data_li;
+              `CSR_ADDR_SEPC: sepc_li = csr_data_li;
+              `CSR_ADDR_SCAUSE: scause_li = csr_data_li;
+              `CSR_ADDR_STVAL: stval_li = csr_data_li;
+              // SIP subset of MIP
+              `CSR_ADDR_SIP: mip_li = (mip_lo & ~sip_wmask_li) | (csr_data_li & sip_wmask_li);
+              `CSR_ADDR_SATP: satp_li = csr_data_li;
+              `CSR_ADDR_MVENDORID: begin end
+              `CSR_ADDR_MARCHID: begin end
+              `CSR_ADDR_MIMPID: begin end
+              `CSR_ADDR_MHARTID: begin end
+              `CSR_ADDR_MSTATUS: mstatus_li = csr_data_li;
+              `CSR_ADDR_MISA: begin end
+              `CSR_ADDR_MEDELEG: medeleg_li = csr_data_li;
+              `CSR_ADDR_MIDELEG: mideleg_li = csr_data_li;
+              `CSR_ADDR_MIE: mie_li = csr_data_li;
+              `CSR_ADDR_MTVEC: mtvec_li = csr_data_li;
+              `CSR_ADDR_MCOUNTEREN: mcounteren_li = csr_data_li;
+              // TODO: This should actually be readonly in most bits
+              `CSR_ADDR_MIP: mip_li = csr_data_li;
+              `CSR_ADDR_MSCRATCH: mscratch_li = csr_data_li;
+              `CSR_ADDR_MEPC: mepc_li = csr_data_li;
+              `CSR_ADDR_MCAUSE: mcause_li = csr_data_li;
+              `CSR_ADDR_MTVAL: mtval_li = csr_data_li;
+              `CSR_ADDR_PMPCFG0: pmpcfg0_li = csr_data_li;
+              `CSR_ADDR_PMPADDR0: pmpaddr0_li = csr_data_li;
+              `CSR_ADDR_PMPADDR1: pmpaddr1_li = csr_data_li;
+              `CSR_ADDR_PMPADDR2: pmpaddr2_li = csr_data_li;
+              `CSR_ADDR_PMPADDR3: pmpaddr3_li = csr_data_li;
+              `CSR_ADDR_MCYCLE: mcycle_li = csr_data_li;
+              `CSR_ADDR_MINSTRET: minstret_li = csr_data_li;
+              `CSR_ADDR_MCOUNTINHIBIT: mcountinhibit_li = csr_data_li;
+              default: illegal_instr_o = 1'b1;
+            endcase
         end
 
     // Check for access violations
     if (is_s_mode & (csr_cmd.csr_addr == `CSR_ADDR_CYCLE) & ~mcounteren_lo.cy)
       illegal_instr_o = 1'b1;
-    if (is_u_mode & (csr_cmd.csr_addr == `CSR_ADDR_CYCLE) & ~scounteren_lo.cy)
+    else if (is_u_mode & (csr_cmd.csr_addr == `CSR_ADDR_CYCLE) & ~scounteren_lo.cy)
       illegal_instr_o = 1'b1;
-    if (is_s_mode & (csr_cmd.csr_addr == `CSR_ADDR_INSTRET) & ~mcounteren_lo.ir)
+    else if (is_s_mode & (csr_cmd.csr_addr == `CSR_ADDR_INSTRET) & ~mcounteren_lo.ir)
       illegal_instr_o = 1'b1;
-    if (is_u_mode & (csr_cmd.csr_addr == `CSR_ADDR_INSTRET) & ~scounteren_lo.ir)
+    else if (is_u_mode & (csr_cmd.csr_addr == `CSR_ADDR_INSTRET) & ~scounteren_lo.ir)
+      illegal_instr_o = 1'b1;
+    else if (priv_mode_r < csr_cmd.csr_addr[9:8])
       illegal_instr_o = 1'b1;
 
     if (timer_int_i)
@@ -484,5 +530,5 @@ assign csr_cmd_ready_o = 1'b1;
 assign data_o          = dword_width_p'(csr_data_lo);
 assign v_o             = csr_cmd_v_i;
 
-endmodule: bp_be_csr
+endmodule
 

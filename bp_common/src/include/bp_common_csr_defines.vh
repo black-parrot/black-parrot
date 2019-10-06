@@ -876,37 +876,5 @@ typedef struct packed
   assign ``csr_name_mp``_n  = `compress_``csr_name_mp``_s(``csr_name_mp``_li);                  \
   /* verilator lint_on UNUSED */
 
-`define declare_csr_case_rw(priv_mode_mp, csr_addr_mp, csr_name_mp, csr_data_li, csr_data_lo) \
-  /* verilator lint_off UNSIGNED */                                          \
-  csr_addr_mp:                                                               \
-    begin                                                                    \
-      ``csr_name_mp``_li = rv64_``csr_name_mp``_s'(csr_data_li);             \
-      csr_data_lo        = dword_width_p'(``csr_name_mp``_lo);               \
-                                                                             \
-      illegal_instr_o = (priv_mode_r < priv_mode_mp);                        \
-    end                                                                      \
-  /* verilator lint_on UNSIGNED */
-
-`define declare_csr_case_ro(priv_mode_mp, csr_addr_mp, csr_name_mp, ro_data_li, csr_data_lo) \
-  /* verilator lint_off UNSIGNED */                   \
-  csr_addr_mp:                                        \
-    begin                                             \
-      csr_data_lo = dword_width_p'(ro_data_li);       \
-                                                      \
-      illegal_instr_o = (priv_mode_r < priv_mode_mp); \
-    end                                               \
-  /* verilator lint_on UNSIGNED */
-
-`define declare_csr_case_rw_mask(priv_mode_mp, csr_addr_mp, csr_name_mp, csr_data_li, csr_data_lo, csr_wmask_mp, csr_rmask_mp) \
-  /* verilator lint_off UNSIGNED */                                                             \
-  csr_addr_mp:                                                                                  \
-    begin                                                                                       \
-      ``csr_name_mp``_li = (``csr_name_mp``_lo & ~csr_wmask_mp) | (csr_data_li & csr_wmask_mp); \
-      csr_data_lo        = dword_width_p'(``csr_name_mp``_lo & csr_rmask_mp);                   \
-                                                                                                \
-      illegal_instr_o = (priv_mode_r < priv_mode_mp);                                           \
-    end                                                                                         \
-  /* verilator lint_on UNSIGNED */
-
 `endif
 
