@@ -193,9 +193,12 @@ if (fp_en_p)
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
     
-       ,.issue_v_i(issue_pkt_v_i)
-       ,.dispatch_v_i(chk_dispatch_v_i)
-    
+       ,.cfg_w_v_i(proc_cfg.irf_w_v)
+       ,.cfg_r_v_i(proc_cfg.irf_r_v)
+       ,.cfg_addr_i(proc_cfg.irf_addr)
+       ,.cfg_data_i(proc_cfg.irf_data)
+       ,.cfg_data_o(cfg_irf_data_o)
+
        ,.rd_w_v_i(calc_stage_r[fp_commit_point_lp].frf_w_v & ~exc_stage_r[fp_commit_point_lp].poison_v)
        ,.rd_addr_i(calc_stage_r[fp_commit_point_lp].rd_addr)
        ,.rd_data_i(comp_stage_r[fp_commit_point_lp])
