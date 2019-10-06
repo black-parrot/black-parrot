@@ -810,7 +810,7 @@ module bp_be_dcache
             : {{56{byte_sigext}}, data_byte_selected})))
       : (sc_op_tv_r & ~sc_success
          ? 64'b1
-         : 64'b0);;
+         : 64'b0);
 
   end
  

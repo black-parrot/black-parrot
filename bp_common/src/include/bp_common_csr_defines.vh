@@ -186,12 +186,12 @@ typedef struct packed
 `define bp_stvec_width ($bits(bp_stvec_s))
 
 `define compress_stvec_s(data_cast_mp) \
-  bp_stvec_s'{base: data_cast_mp.base[0+:39]}
+  '{base: data_cast_mp.base[0+:39]}
 
 `define decompress_stvec_s(data_comp_mp) \
-  rv64_stvec_s'{base : {22'h0, data_comp_mp.base} \
-                ,mode: 2'b00                      \
-                }
+  '{base : {22'h0, data_comp_mp.base} \
+    ,mode: 2'b00                      \
+    }
 
 typedef struct packed
 {
@@ -209,15 +209,15 @@ typedef struct packed
 `define bp_scounteren_width ($bits(bp_scounteren_s))
 
 `define compress_scounteren_s(data_cast_mp) \
-  bp_scounteren_s'{ir : data_cast_mp.ir \
-                   ,cy: data_cast_mp.cy \
-                   };
+  '{ir : data_cast_mp.ir \
+    ,cy: data_cast_mp.cy \
+    };
 
 `define decompress_scounteren_s(data_comp_mp) \
-  rv64_scounteren_s'{ir : data_comp_mp.ir \
-                     ,cy: data_comp_mp.cy \
-                     ,default: '0         \
-                     };
+  '{ir : data_comp_mp.ir \
+    ,cy: data_comp_mp.cy \
+    ,default: '0         \
+    };
 
 typedef logic [63:0] rv64_sscratch_s;
 typedef logic [63:0] bp_sscratch_s;
@@ -252,14 +252,14 @@ typedef struct packed
 }  bp_scause_s;
 
 `define compress_scause_s(data_cast_mp) \
-  bp_scause_s'{_interrupt: data_cast_mp._interrupt \
-               ,ecode: data_cast_mp.ecode[0+:4]  \
-               }
+  '{_interrupt: data_cast_mp._interrupt \
+    ,ecode: data_cast_mp.ecode[0+:4]    \
+    }
 
 `define decompress_scause_s(data_comp_mp) \
-  rv64_scause_s'{_interrupt: data_comp_mp._interrupt \
-                 ,ecode: 63'(data_comp_mp.ecode)   \
-                 }
+  '{_interrupt: data_comp_mp._interrupt \
+    ,ecode: 63'(data_comp_mp.ecode)     \
+    }
 
 typedef logic [63:0] rv64_stval_s;
 typedef logic [38:0] bp_stval_s;
@@ -295,15 +295,15 @@ typedef struct packed
 `define bp_satp_width ($bits(bp_satp_s))
 
 `define compress_satp_s(data_cast_mp) \
-  bp_satp_s'{mode: data_cast_mp.mode[3]   \
-             ,ppn: data_cast_mp.ppn[27:0] \
-             }
+  '{mode: data_cast_mp.mode[3]   \
+    ,ppn: data_cast_mp.ppn[27:0] \
+    }
 
 `define decompress_satp_s(data_comp_mp) \
-  rv64_satp_s'{mode: {data_comp_mp.mode, 3'b000} \
-               ,ppn: {16'h0, data_comp_mp.ppn}   \
-               ,default: '0                      \
-               }
+  '{mode: {data_comp_mp.mode, 3'b000} \
+    ,ppn: {16'h0, data_comp_mp.ppn}   \
+    ,default: '0                      \
+    }
 
 typedef struct packed
 {
@@ -398,27 +398,27 @@ typedef struct packed
 }  bp_mstatus_s;
 
 `define compress_mstatus_s(data_cast_mp) \
-  bp_mstatus_s'{mprv : data_cast_mp.mprv \
-                ,mpp : data_cast_mp.mpp  \
-                ,spp : data_cast_mp.spp  \
-                ,mpie: data_cast_mp.mpie \
-                ,spie: data_cast_mp.spie \
-                ,mie : data_cast_mp.mie  \
-                ,sie : data_cast_mp.sie  \
-                }
+  '{mprv : data_cast_mp.mprv \
+    ,mpp : data_cast_mp.mpp  \
+    ,spp : data_cast_mp.spp  \
+    ,mpie: data_cast_mp.mpie \
+    ,spie: data_cast_mp.spie \
+    ,mie : data_cast_mp.mie  \
+    ,sie : data_cast_mp.sie  \
+    }
 
 `define decompress_mstatus_s(data_comp_mp) \
-  rv64_mstatus_s'{sxl  : 2'b10             \
-                  ,uxl : 2'b10             \
-                  ,mprv: data_comp_mp.mprv \
-                  ,mpp : data_comp_mp.mpp  \
-                  ,spp : data_comp_mp.spp  \
-                  ,mpie: data_comp_mp.mpie \
-                  ,spie: data_comp_mp.spie \
-                  ,mie : data_comp_mp.mie  \
-                  ,sie : data_comp_mp.sie  \
-                  ,default: '0             \
-                  }
+  '{sxl  : 2'b10             \
+    ,uxl : 2'b10             \
+    ,mprv: data_comp_mp.mprv \
+    ,mpp : data_comp_mp.mpp  \
+    ,spp : data_comp_mp.spp  \
+    ,mpie: data_comp_mp.mpie \
+    ,spie: data_comp_mp.spie \
+    ,mie : data_comp_mp.mie  \
+    ,sie : data_comp_mp.sie  \
+    ,default: '0             \
+    }
 
 typedef logic [63:0] rv64_medeleg_s;
 // Hardcode exception 10, 11, 14, 16+ to zero
@@ -430,10 +430,10 @@ typedef struct packed
 }  bp_medeleg_s;
 
 `define compress_medeleg_s(data_cast_mp) \
-  bp_medeleg_s'{deleg_15     : data_cast_mp[15]    \
-                ,deleg_13to12: data_cast_mp[13:12] \
-                ,deleg_9to0  : data_cast_mp[9:0]   \
-                };
+  '{deleg_15     : data_cast_mp[15]    \
+    ,deleg_13to12: data_cast_mp[13:12] \
+    ,deleg_9to0  : data_cast_mp[9:0]   \
+    };
 
 `define decompress_medeleg_s(data_comp_mp) \
   rv64_medeleg_s'({data_comp_mp.deleg_15      \
@@ -482,27 +482,27 @@ typedef struct packed
 }  bp_mideleg_s;
 
 `define compress_mideleg_s(data_cast_mp) \
-  bp_mideleg_s'{mei : data_cast_mp.mei \
-                ,sei: data_cast_mp.sei \
-                                       \
-                ,mti: data_cast_mp.mti \
-                ,sti: data_cast_mp.sti \
-                                       \
-                ,msi: data_cast_mp.msi \
-                ,ssi: data_cast_mp.ssi \
-                }
+  '{mei : data_cast_mp.mei \
+    ,sei: data_cast_mp.sei \
+                           \
+    ,mti: data_cast_mp.mti \
+    ,sti: data_cast_mp.sti \
+                           \
+    ,msi: data_cast_mp.msi \
+    ,ssi: data_cast_mp.ssi \
+    }
 
 `define decompress_mideleg_s(data_comp_mp) \
-  rv64_mideleg_s'{mei : data_comp_mp.mei \
-                  ,sei: data_comp_mp.sei \
-                                         \
-                  ,mti: data_comp_mp.mti \
-                  ,sti: data_comp_mp.sti \
-                                         \
-                  ,msi: data_comp_mp.msi \
-                  ,ssi: data_comp_mp.ssi \
-                  ,default: '0           \
-                  }
+  '{mei : data_comp_mp.mei \
+    ,sei: data_comp_mp.sei \
+                           \
+    ,mti: data_comp_mp.mti \
+    ,sti: data_comp_mp.sti \
+                           \
+    ,msi: data_comp_mp.msi \
+    ,ssi: data_comp_mp.ssi \
+    ,default: '0           \
+    }
 
 typedef struct packed
 {
@@ -543,27 +543,27 @@ typedef struct packed
 }  bp_mie_s;
 
 `define compress_mie_s(data_cast_mp) \
-  bp_mie_s'{meie : data_cast_mp.meie \
-            ,seie: data_cast_mp.seie \
-                                     \
-            ,mtie: data_cast_mp.mtie \
-            ,stie: data_cast_mp.stie \
-                                     \
-            ,msie: data_cast_mp.msie \
-            ,ssie: data_cast_mp.ssie \
-            }
+  '{meie : data_cast_mp.meie \
+    ,seie: data_cast_mp.seie \
+                             \
+    ,mtie: data_cast_mp.mtie \
+    ,stie: data_cast_mp.stie \
+                             \
+    ,msie: data_cast_mp.msie \
+    ,ssie: data_cast_mp.ssie \
+    }
 
 `define decompress_mie_s(data_comp_mp) \
-  rv64_mie_s'{meie : data_comp_mp.meie \
-              ,seie: data_comp_mp.seie \
-                                       \
-              ,mtie: data_comp_mp.mtie \
-              ,stie: data_comp_mp.stie \
-                                       \
-              ,msie: data_comp_mp.msie \
-              ,ssie: data_comp_mp.ssie \
-              ,default: '0             \
-              }
+  '{meie : data_comp_mp.meie \
+    ,seie: data_comp_mp.seie \
+                             \
+    ,mtie: data_comp_mp.mtie \
+    ,stie: data_comp_mp.stie \
+                             \
+    ,msie: data_comp_mp.msie \
+    ,ssie: data_comp_mp.ssie \
+    ,default: '0             \
+    }
 
 typedef struct packed
 {
@@ -583,12 +583,12 @@ typedef struct packed
 `define bp_mtvec_width ($bits(bp_mtvec_s))
 
 `define compress_mtvec_s(data_cast_mp) \
-  bp_mtvec_s'{base: data_cast_mp.base[0+:39]}
+  '{base: data_cast_mp.base[0+:39]}
 
 `define decompress_mtvec_s(data_comp_mp) \
-  rv64_mtvec_s'{base : {22'h0, data_comp_mp.base} \
-                ,mode: 2'b00                      \
-                }
+  '{base : {22'h0, data_comp_mp.base} \
+    ,mode: 2'b00                      \
+    }
 
 typedef struct packed
 {
@@ -607,15 +607,15 @@ typedef struct packed
 `define bp_mcounteren_width ($bits(bp_mcounteren_s))
 
 `define compress_mcounteren_s(data_cast_mp) \
-  bp_mcounteren_s'{ir : data_cast_mp.ir \
-                   ,cy: data_cast_mp.cy \
-                   };
+  '{ir : data_cast_mp.ir \
+    ,cy: data_cast_mp.cy \
+    };
 
 `define decompress_mcounteren_s(data_comp_mp) \
-  rv64_mcounteren_s'{ir : data_comp_mp.ir \
-                     ,cy: data_comp_mp.cy \
-                     ,default: '0         \
-                     };
+  '{ir : data_comp_mp.ir \
+    ,cy: data_comp_mp.cy \
+    ,default: '0         \
+    };
 
 typedef logic [63:0] rv64_mscratch_s;
 typedef logic [63:0] bp_mscratch_s;
@@ -665,27 +665,27 @@ typedef struct packed
 }   bp_mip_s;
 
 `define compress_mip_s(data_cast_mp) \
-  bp_mip_s'{meip : data_cast_mp.meip \
-            ,seip: data_cast_mp.seip \
-                                     \
-            ,mtip: data_cast_mp.mtip \
-            ,stip: data_cast_mp.stip \
-                                     \
-            ,msip: data_cast_mp.msip \
-            ,ssip: data_cast_mp.ssip \
-            }
+  '{meip : data_cast_mp.meip \
+    ,seip: data_cast_mp.seip \
+                             \
+    ,mtip: data_cast_mp.mtip \
+    ,stip: data_cast_mp.stip \
+                             \
+    ,msip: data_cast_mp.msip \
+    ,ssip: data_cast_mp.ssip \
+    }
 
 `define decompress_mip_s(data_comp_mp) \
-  rv64_mip_s'{meip : data_comp_mp.meip \
-              ,seip: data_comp_mp.seip \
-                                       \
-              ,mtip: data_comp_mp.mtip \
-              ,stip: data_comp_mp.stip \
-                                       \
-              ,msip: data_comp_mp.msip \
-              ,ssip: data_comp_mp.ssip \
-              ,default: '0             \
-              }
+  '{meip : data_comp_mp.meip \
+    ,seip: data_comp_mp.seip \
+                             \
+    ,mtip: data_comp_mp.mtip \
+    ,stip: data_comp_mp.stip \
+                             \
+    ,msip: data_comp_mp.msip \
+    ,ssip: data_comp_mp.ssip \
+    ,default: '0             \
+    }
 
 typedef logic [63:0] rv64_mtval_s;
 typedef struct packed
@@ -695,7 +695,7 @@ typedef struct packed
 }  bp_mtval_s;
 
 `define compress_mtval_s(data_cast_mp) \
-  bp_mtval_s'{sgn: data_cast_mp[39], addr: data_cast_mp[0+:40]}
+  '{sgn: data_cast_mp[39], addr: data_cast_mp[0+:40]}
 
 `define decompress_mtval_s(data_comp_mp) \
   64'($signed(data_comp_mp))
@@ -708,7 +708,7 @@ typedef struct packed
 }  bp_mepc_s;
 
 `define compress_mepc_s(data_cast_mp) \
-  bp_mepc_s'{sgn: data_cast_mp[39], addr: data_cast_mp[0+:40]} 
+  '{sgn: data_cast_mp[39], addr: data_cast_mp[0+:40]} 
 
 `define decompress_mepc_s(data_comp_mp) \
   64'($signed(data_comp_mp))
@@ -747,10 +747,10 @@ typedef struct packed
 typedef bp_pmpcfg_s bp_pmpcfg0_s;
 
 `define compress_pmpcfg_s(data_cast_mp) \
-  bp_pmpcfg_s'{pmpcfg: data_cast_mp.pmpcfg[0+:4]}
+  '{pmpcfg: data_cast_mp.pmpcfg[0+:4]}
 
 `define decompress_pmpcfg_s(data_comp_mp) \
-  rv64_pmpcfg_s'{pmpcfg: ($bits(rv64_pmpcfg_entry_s)*8)'(data_comp_mp.pmpcfg)}
+  '{pmpcfg: ($bits(rv64_pmpcfg_entry_s)*8)'(data_comp_mp.pmpcfg)}
 
 `define compress_pmpcfg0_s(data_cast_mp) `compress_pmpcfg_s(data_cast_mp)
 `define compress_pmpcfg1_s(data_cast_mp) `compress_pmpcfg_s(data_cast_mp)
@@ -779,12 +779,12 @@ typedef bp_pmpaddr_s bp_pmpaddr2_s;
 typedef bp_pmpaddr_s bp_pmpaddr3_s;
 
 `define compress_pmpaddr_s(data_cast_mp) \
-  bp_pmpaddr_s'{addr_39_2: data_cast_mp.addr_55_2[0+:38]}
+  '{addr_39_2: data_cast_mp.addr_55_2[0+:38]}
 
 `define decompress_pmpaddr_s(data_comp_mp) \
-  rv64_pmpaddr_s'{addr_55_2: 54'(data_comp_mp.addr_39_2) \
-                  ,default: '0                           \
-                  }
+  '{addr_55_2: 54'(data_comp_mp.addr_39_2) \
+    ,default: '0                           \
+    }
 
 `define compress_pmpaddr0_s(data_cast_mp) `compress_pmpaddr_s(data_cast_mp)
 `define compress_pmpaddr1_s(data_cast_mp) `compress_pmpaddr_s(data_cast_mp)
@@ -809,14 +809,14 @@ typedef struct packed
 }  bp_mcause_s;
 
 `define compress_mcause_s(data_cast_mp) \
-  bp_mcause_s'{_interrupt: data_cast_mp._interrupt \
-               ,ecode: data_cast_mp.ecode[0+:4]  \
-               }
+  '{_interrupt: data_cast_mp._interrupt \
+    ,ecode: data_cast_mp.ecode[0+:4]  \
+    }
 
 `define decompress_mcause_s(data_comp_mp) \
-  rv64_mcause_s'{_interrupt: data_comp_mp._interrupt \
-                 ,ecode: 63'(data_comp_mp.ecode)   \
-                 }
+  '{_interrupt: data_comp_mp._interrupt \
+    ,ecode: 63'(data_comp_mp.ecode)   \
+    }
 
 typedef logic [63:0] rv64_mcounter_s;
 typedef logic [47:0] bp_mcounter_s;
@@ -854,15 +854,15 @@ typedef struct packed
 }  bp_mcountinhibit_s;
 
 `define compress_mcountinhibit_s(data_cast_mp) \
-  bp_mcountinhibit_s'{ir : data_cast_mp.ir \
-                      ,cy: data_cast_mp.cy \
-                      }
+  '{ir : data_cast_mp.ir \
+    ,cy: data_cast_mp.cy \
+    }
 
 `define decompress_mcountinhibit_s(data_comp_mp) \
-  rv64_mcountinhibit_s'{ir : data_comp_mp.ir \
-                        ,cy: data_comp_mp.cy \
-                        ,default: '0         \
-                        }
+  '{ir : data_comp_mp.ir \
+    ,cy: data_comp_mp.cy \
+    ,default: '0         \
+    }
 
 `define declare_csr(csr_name_mp) \
   /* verilator lint_off UNUSED */                                                               \
