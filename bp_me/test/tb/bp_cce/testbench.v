@@ -164,6 +164,11 @@ bp_cfg
    ,.mem_resp_ready_i(cfg_resp_ready_lo)
 
    ,.proc_cfg_o(proc_cfg_lo)
+   ,.irf_data_i()
+   ,.npc_data_i()
+   ,.csr_data_i()
+   ,.priv_data_i()
+   ,.cce_ucode_data_i()
    );
 
 // CCE
@@ -176,6 +181,7 @@ wrapper
   ,.reset_i(reset_i)
 
   ,.proc_cfg_i(proc_cfg_lo)
+  ,.cfg_cce_ucode_data_o()
 
   ,.lce_cmd_o(lce_cmd)
   ,.lce_cmd_v_o(lce_cmd_v)

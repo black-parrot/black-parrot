@@ -157,6 +157,7 @@ wrapper
   ,.reset_i(reset_i)
 
   ,.proc_cfg_i('0)
+  ,.cfg_cce_ucode_data_o()
 
   ,.lce_cmd_o(lce_cmd)
   ,.lce_cmd_v_o(lce_cmd_v)

@@ -29,6 +29,7 @@ module wrapper
    , input                                                 reset_i
 
    , input [proc_cfg_width_lp-1:0]                         proc_cfg_i
+   , output logic [cce_instr_width_p-1:0]                  cfg_cce_ucode_data_o
 
    // LCE-CCE Interface
    // inbound: ready&valid
