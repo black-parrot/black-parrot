@@ -201,7 +201,7 @@ always_comb
     unique casez (state_r)
       e_reset : state_n = proc_cfg_cast_i.freeze ? e_reset : e_boot;
       e_boot  : state_n = fe_cmd_v ? e_run : e_boot;
-      e_run   : state_n = e_run;
+      e_run   : state_n = proc_cfg_cast_i.freeze ? e_reset : e_run;
       default : state_n = e_reset;
     endcase
   end

@@ -44,6 +44,8 @@ module bp_be_mem_top
    , input                                   reset_i
 
    , input [proc_cfg_width_lp-1:0]           proc_cfg_i
+   , output [dword_width_p-1:0]              cfg_csr_data_o
+   , output [1:0]                            cfg_priv_data_o
 
    , input [mmu_cmd_width_lp-1:0]            mmu_cmd_i
    , input                                   mmu_cmd_v_i
@@ -220,6 +222,10 @@ bp_be_csr
   csr
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
+
+   ,.proc_cfg_i(proc_cfg_i)
+   ,.cfg_csr_data_o(cfg_csr_data_o)
+   ,.cfg_priv_data_o(cfg_priv_data_o)
 
    ,.csr_cmd_i(csr_cmd_i)
    ,.csr_cmd_v_i(csr_cmd_v_i)

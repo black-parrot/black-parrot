@@ -113,6 +113,8 @@ logic                  cfg_mem_resp_v_lo, cfg_mem_resp_ready_li;
 bp_proc_cfg_s proc_cfg_lo;
 logic [dword_width_p-1:0] cfg_irf_data_li;
 logic [vaddr_width_p-1:0] cfg_npc_data_li;
+logic [dword_width_p-1:0] cfg_csr_data_li;
+logic [1:0]               cfg_priv_data_li;
 logic [cce_instr_width_p-1:0] cfg_cce_ucode_data_li;
 bp_cfg
  #(.cfg_p(cfg_p))
@@ -131,6 +133,8 @@ bp_cfg
    ,.proc_cfg_o(proc_cfg_lo)
    ,.irf_data_i(cfg_irf_data_li)
    ,.npc_data_i(cfg_npc_data_li)
+   ,.csr_data_i(cfg_csr_data_li)
+   ,.priv_data_i(cfg_priv_data_li)
    ,.cce_ucode_data_i(cfg_cce_ucode_data_li)
    );
 // TODO: Find more elegant way to do this
@@ -146,6 +150,8 @@ bp_core
    ,.proc_cfg_i(proc_cfg_lo)
    ,.cfg_irf_data_o(cfg_irf_data_li)
    ,.cfg_npc_data_o(cfg_npc_data_li)
+   ,.cfg_csr_data_o(cfg_csr_data_li)
+   ,.cfg_priv_data_o(cfg_priv_data_li)
 
    ,.lce_req_o(lce_req_lo)
    ,.lce_req_v_o(lce_req_v_lo)

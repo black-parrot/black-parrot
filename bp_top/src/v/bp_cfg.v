@@ -26,6 +26,8 @@ module bp_cfg
    , output [proc_cfg_width_lp-1:0]     proc_cfg_o
    , input [dword_width_p-1:0]          irf_data_i
    , input [vaddr_width_p-1:0]          npc_data_i
+   , input [dword_width_p-1:0]          csr_data_i
+   , input [1:0]                        priv_data_i
    , input [cce_instr_width_p-1:0]      cce_ucode_data_i
    );
 
@@ -129,6 +131,15 @@ wire irf_r_v_li = cfg_r_v_li & (cfg_addr_li >= bp_cfg_reg_irf_x0_gp && cfg_addr_
 wire [reg_addr_width_p-1:0] irf_addr_li = (cfg_addr_li - bp_cfg_reg_irf_x0_gp);
 wire [dword_width_p-1:0] irf_data_li = cfg_data_li;
 
+wire csr_w_v_li = cfg_w_v_li & (cfg_addr_li >= bp_cfg_reg_csr_begin_gp && cfg_addr_li <= bp_cfg_reg_csr_end_gp);
+wire csr_r_v_li = cfg_r_v_li & (cfg_addr_li >= bp_cfg_reg_csr_begin_gp && cfg_addr_li <= bp_cfg_reg_csr_end_gp);
+wire [rv64_csr_addr_width_gp-1:0] csr_addr_li = (cfg_addr_li - bp_cfg_reg_csr_begin_gp);
+wire [dword_width_p-1:0] csr_data_li = cfg_data_li;
+
+wire priv_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_priv_gp);
+wire priv_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_priv_gp);
+wire [1:0] priv_data_li = cfg_data_li;
+
 assign proc_cfg_cast_o = '{freeze: freeze_r
                            ,core_id: core_id_r
                            ,icache_id: icache_id_r
@@ -148,6 +159,13 @@ assign proc_cfg_cast_o = '{freeze: freeze_r
                            ,irf_r_v: irf_r_v_li
                            ,irf_addr: irf_addr_li
                            ,irf_data: irf_data_li
+                           ,csr_w_v: csr_w_v_li
+                           ,csr_r_v: csr_r_v_li
+                           ,csr_addr: csr_addr_li
+                           ,csr_data: csr_data_li
+                           ,priv_w_v: priv_w_v_li
+                           ,priv_r_v: priv_r_v_li
+                           ,priv_data: priv_data_li
                            };
 
 assign mem_resp_v_o    = mem_resp_ready_i & read_ready_r;
@@ -155,7 +173,16 @@ assign mem_resp_cast_o = '{msg_type: mem_cmd_cast_i.msg_type
                            ,addr   : mem_cmd_cast_i.addr
                            ,payload: mem_cmd_cast_i.payload
                            ,size   : mem_cmd_cast_i.size
-                           ,data   : irf_r_v_li ? irf_data_i : npc_r_v_li ? npc_data_i : cce_ucode_data_i
+                           // TODO: Add all mode bits to mux
+                           ,data   : irf_r_v_li 
+                                     ? irf_data_i 
+                                     : npc_r_v_li 
+                                       ? npc_data_i
+                                       : csr_r_v_li
+                                         ? csr_data_i
+                                         : priv_r_v_li
+                                           ? priv_data_i
+                                           : cce_ucode_data_i
                            };
 
 endmodule

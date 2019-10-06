@@ -6,17 +6,20 @@ module bp_be_csr
   #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
     `declare_bp_proc_params(cfg_p)
 
-    , localparam fu_op_width_lp = `bp_be_fu_op_width
     , localparam csr_cmd_width_lp = `bp_be_csr_cmd_width
     , localparam ecode_dec_width_lp = `bp_be_ecode_dec_width
 
-    , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
     , localparam satp_width_lp  = `bp_satp_width
 
     , localparam hartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
+    , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
     )
    (input                            clk_i
     , input                          reset_i
+
+    , input [proc_cfg_width_lp-1:0]  proc_cfg_i
+    , output [dword_width_p-1:0]     cfg_csr_data_o
+    , output [1:0]                   cfg_priv_data_o
 
     // CSR instruction interface
     , input [csr_cmd_width_lp-1:0]   csr_cmd_i
@@ -53,12 +56,15 @@ module bp_be_csr
     );
 
 // Declare parameterizable structs
+`declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
 
 // Casting input and output ports
+bp_proc_cfg_s proc_cfg_cast_i;
 bp_be_csr_cmd_s csr_cmd;
 bp_be_ecode_dec_s exception_ecode_dec_cast_i;
 
+assign proc_cfg_cast_i = proc_cfg_i;
 assign csr_cmd = csr_cmd_i;
 assign exception_ecode_dec_cast_i = exception_ecode_dec_i;
 
@@ -201,9 +207,10 @@ bsg_dff_reset
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.data_i(priv_mode_n)
+   ,.data_i(proc_cfg_cast_i.priv_w_v ? proc_cfg_cast_i.priv_data : priv_mode_n)
    ,.data_o(priv_mode_r)
    );
+assign cfg_priv_data_o = priv_mode_r;
 
 assign sstatus_wmask_li = '{mpp: 2'b00, spp: 2'b11
                             ,mpie: 1'b0, spie: 1'b1, upie: 1'b1
@@ -529,6 +536,10 @@ assign translation_en_o = ((priv_mode_r < `PRIV_MODE_M) & (satp_r.mode == 1'b1))
 assign csr_cmd_ready_o = 1'b1;
 assign data_o          = dword_width_p'(csr_data_lo);
 assign v_o             = csr_cmd_v_i;
+
+/* TODO: This doesn't actually work */
+assign cfg_csr_data_o = csr_data_lo;
+assign cfg_priv_data_o = priv_mode_r;
 
 endmodule
 

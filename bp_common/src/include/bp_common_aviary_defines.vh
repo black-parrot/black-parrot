@@ -55,6 +55,13 @@ typedef enum bit
     logic                                    irf_r_v;                                              \
     logic [reg_addr_width_p-1:0]             irf_addr;                                             \
     logic [dword_width_p-1:0]                irf_data;                                             \
+    logic                                    csr_w_v;                                              \
+    logic                                    csr_r_v;                                              \
+    logic [csr_addr_width_p-1:0]             csr_addr;                                             \
+    logic [dword_width_p-1:0]                csr_data;                                             \
+    logic                                    priv_w_v;                                             \
+    logic                                    priv_r_v;                                             \
+    logic [1:0]                              priv_data;                                            \
   }  bp_proc_cfg_s
 
 `define bp_proc_cfg_width(vaddr_width_mp, num_core_mp, num_cce_mp, num_lce_mp, cce_pc_width_mp, cce_instr_width_mp) \
@@ -74,6 +81,11 @@ typedef enum bit
    + 2                              \
    + reg_addr_width_p               \
    + dword_width_p                  \
+   + 2                              \
+   + csr_addr_width_p               \
+   + dword_width_p                  \
+   + 2                              \
+   + 2                              \
    )
 
 
@@ -199,6 +211,7 @@ typedef struct packed
                                                                                                    \
   , localparam dword_width_p       = 64                                                            \
   , localparam instr_width_p       = 32                                                            \
+  , localparam csr_addr_width_p    = 12                                                            \
   , localparam reg_addr_width_p    = 5                                                             \
   , localparam page_offset_width_p = 12                                                            \
                                                                                                    \

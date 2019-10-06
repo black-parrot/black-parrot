@@ -30,6 +30,8 @@ module bp_be_top
    , input [proc_cfg_width_lp-1:0]           proc_cfg_i
    , output [dword_width_p-1:0]              cfg_irf_data_o
    , output [vaddr_width_p-1:0]              cfg_npc_data_o
+   , output [dword_width_p-1:0]              cfg_csr_data_o
+   , output [1:0]                            cfg_priv_data_o
 
    // FE queue interface
    , output                                  fe_queue_deq_o
@@ -211,6 +213,8 @@ bp_be_mem_top
     ,.reset_i(reset_i)
 
     ,.proc_cfg_i(proc_cfg_i)
+    ,.cfg_csr_data_o(cfg_csr_data_o)
+    ,.cfg_priv_data_o(cfg_priv_data_o)
 
     ,.chk_poison_ex_i(chk_poison_ex2)
 
