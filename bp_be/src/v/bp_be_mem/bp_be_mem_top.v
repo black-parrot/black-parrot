@@ -382,7 +382,7 @@ always_ff @(posedge clk_i) begin
 end
     
 // Decode cmd type
-assign dcache_cmd_v    = mmu_cmd_v_i & ~(itlb_fill_cmd_v | dtlb_fill_cmd_v);
+assign dcache_cmd_v    = mmu_cmd_v_i & ~is_itlb_fill;
 
 // D-Cache connections
 assign dcache_ptag     = (ptw_busy)? ptw_dcache_ptag : dtlb_r_entry.ptag;
