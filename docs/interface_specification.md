@@ -118,3 +118,82 @@ Illegal Instruction
       - All asid flag
     - A simple implementation will flush the entire itlb
 
+
+# LCE-CCE Interface
+
+The LCE-CCE Interface comprises the connections between the BlackParrot processor cores and the
+memory system. The interface is implemented as a collection of networks, whose primary purpose is
+to carry the memory access and cache coherence traffic between the L1 instruction and data caches
+and the coherence directory and rest of the memory system. The two components that interact through
+the interface are the Local Cache Engines (LCE) and Cache Coherence Engines (CCE).
+
+A Local Cache Engine (LCE) is a coherence controller attached to each L1 entity in the system. The
+most common L1 entities are the instruction and data caches in the Front End and Back End,
+respectively, of a BlackParrot processor. The LCE is responsible for initiating coherence requests
+and responding to coherence commands. A Cache Coherence Engine (CCE) is a coherence directory that
+manages the coherence state of blocks cached in any of the LCEs. The CCEs have full control over
+the coherence state of all cache blocks. Each CCE manages the coherence state of a subset of the
+physical address space, and there may be many LCEs and CCEs in a multicore BlackParrot processor.
+
+The LCE-CCE Interface comprises three networks: LCE Request, LCE Command, and LCE Response. An
+LCE initiates a coherence request using the LCE Request network. The CCEs issue commands, such as
+invalidations or tag and data commands to complete requests, on the LCE Command network while
+processing an LCE Request. The LCEs respond to commands issued by the CCEs by sending messages
+on the LCE Response network. Each of these networks is point-to-point ordered and input buffered.
+The LCEs and CCEs must also be input buffered to conform to the handshaking of the networks.
+
+## LCE Request Network
+
+The LCE Request network carries coherence requests from the LCEs to the CCEs. Requests are initiated
+when an LCE encounters a cache or coherence miss. Cache misses occur when the LCE does not contain
+the desired cache block. A coherence miss occurs when the LCE contains a valid copy of the desired
+cache block, but has insufficient permissions to perform the desired operation (e.g., trying to write
+a cache block that the LCE has with read-only permissions). An LCE Request may also be sent to
+perform an uncached load or store operation. Issuing an LCE Request initiates a new coherence
+transaction, which is handled by one of the CCEs in the system.
+
+## LCE Command Network
+
+The LCE Command network carries commands and data to the LCEs. Most messages on this network originate
+at the CCEs. LCEs may also occasionally send LCE Command messages to perform LCE to LCE transfers
+of cache block data, but only do so when commanded to by a CCE. Common LCE Commands include cache
+block invalidation and writeback commands, data and tag commands that deliver a valid cache block
+and coherence permissions to an LCE, and transfer commands that tell an LCE to send a cache block
+to another LCE in the system.
+
+## LCE Response Network
+
+The LCE Response network carries acknowledgement and data writeback messages from the LCEs to the
+CCEs. The CCE must be able to sink any potential LCE Response that could be generated in the system
+in order to prevent deadlock in the system. Sinking a message can be accomplished by processing
+the message when it arrives or placing it into a buffer to consume it from the network.
+
+## Network Priorities
+
+The three networks of the LCE-CCE Interface have a priority ordering, from highest to lowest, of
+LCE Response, LCE Command, LCE Request. In other words, LCE Responses are the highest priority
+messages, followed by LCE Commands, and lastly LCE Requests, which are the lowest priority. The
+priority of messages across the networks is required to ensure deadlock free operation of the
+coherence protocol. A message on a lower priority network may cause a message to be
+sent on a higher priority network, but a higher priority message may not cause a lower priority
+message to be sent. These priority restrictions prevent the presence of cycles between messages
+on the three networks, the presence of which may lead to deadlock in the protocol.
+
+# Cache Coherence Protocol Overview
+
+The LCEs and CCEs operate cooperatively to implement the cache coherence protocol in a multicore
+BlackParrot processor. The standard coherence protocol is a directory-based MESI protocol. The
+coherence protocol implemented is similar to traditional directory-based coherence protocols, but
+differs in a few subtle ways. First, all coherence state is managed exclusively by the CCEs
+(coherence directories). Second, all state transitions are atomic, and there are zero transient
+states in the protocol. Third, the coherence directory mantains the full coherence state of all blocks
+cached in the system, and the directories are fully inclusive of all LCEs.
+
+A coherence transaction begins when an LCE sends an LCE Request to a CCE due to a read or write miss.
+The CCE receives the LCE Request and begins processing it by reading the coherence directory. Based on
+the current coherence state of the requested cache block, the CCE will send a sequence of LCE Commands
+that will, if required, 1) invalidate the block from other LCEs, 2) writeback the cache block that
+is being replaced in the requesting LCE, and 3) initiate an LCE to LCE transfer or fetch the requested
+block from the next level of cache or memory. The coherence transaction closes when the requesting
+LCE receives a cache block data and tag command from either a CCE or another LCE, or receives a
+set tag and wakeup command from a CCE in the event that the request was an upgrade request.
