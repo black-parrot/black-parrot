@@ -174,7 +174,7 @@ bp_core
    ,.external_irq_i(external_irq_i)
    );
 
-bp_cce_top
+bp_cce_fsm_top
  #(.bp_params_p(bp_params_p))
  cce
   (.clk_i(clk_i)

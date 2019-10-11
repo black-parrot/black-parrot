@@ -267,7 +267,7 @@ bind bp_be_top
      ,.mem_resp_ready_i(dram_resp_ready_li)
      );
 
-  bind bp_cce_top
+  bind bp_cce_fsm_top
     bp_cce_nonsynth_tracer
       #(.bp_params_p(bp_params_p))
       bp_cce_tracer
