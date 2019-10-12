@@ -14,21 +14,21 @@ module wrapper
  import bp_cce_pkg::*;
  import bp_common_cfg_link_pkg::*;
  import bp_me_pkg::*;
- #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
+   `declare_bp_proc_params(bp_params_p)
    , localparam lg_num_cce_lp = `BSG_SAFE_CLOG2(num_cce_p)
 
    // interface widths
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
-   , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
 
    , parameter cce_trace_p = 0
    )
   (input                                                   clk_i
    , input                                                 reset_i
 
-   , input [proc_cfg_width_lp-1:0]                         proc_cfg_i
+   , input [cfg_bus_width_lp-1:0]                         cfg_bus_i
    , output logic [cce_instr_width_p-1:0]                  cfg_cce_ucode_data_o
 
    // LCE-CCE Interface
@@ -70,13 +70,13 @@ module wrapper
   );
 
   bp_cce_top
-   #(.cfg_p(cfg_p))
+   #(.bp_params_p(bp_params_p))
    dut
     (.*);
 
   bind bp_cce_top
     bp_cce_nonsynth_tracer
-      #(.cfg_p(cfg_p))
+      #(.bp_params_p(bp_params_p))
       bp_cce_tracer
        (.clk_i(clk_i & (wrapper.cce_trace_p == 1))
         ,.reset_i(reset_i)

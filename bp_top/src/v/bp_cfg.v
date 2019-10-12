@@ -6,11 +6,11 @@ module bp_cfg
  import bp_common_rv64_pkg::*;
  import bp_cce_pkg::*;
  import bp_common_cfg_link_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
-   , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
    )
   (input                                clk_i
    , input                              reset_i
@@ -23,7 +23,7 @@ module bp_cfg
    , output                             mem_resp_v_o
    , input                              mem_resp_ready_i
 
-   , output [proc_cfg_width_lp-1:0]     proc_cfg_o
+   , output [cfg_bus_width_lp-1:0]     cfg_bus_o
    , input [dword_width_p-1:0]          irf_data_i
    , input [vaddr_width_p-1:0]          npc_data_i
    , input [dword_width_p-1:0]          csr_data_i
@@ -31,13 +31,13 @@ module bp_cfg
    , input [cce_instr_width_p-1:0]      cce_ucode_data_i
    );
 
-`declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+`declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
-bp_proc_cfg_s proc_cfg_cast_o;
+bp_cfg_bus_s cfg_bus_cast_o;
 bp_cce_mem_msg_s mem_cmd_cast_i, mem_resp_cast_o;
 
-assign proc_cfg_o = proc_cfg_cast_o;
+assign cfg_bus_o = cfg_bus_cast_o;
 assign mem_cmd_cast_i = mem_cmd_i;
 assign mem_resp_o = mem_resp_cast_o;
 
@@ -136,11 +136,16 @@ wire csr_r_v_li = cfg_r_v_li & (cfg_addr_li >= bp_cfg_reg_csr_begin_gp && cfg_ad
 wire [rv64_csr_addr_width_gp-1:0] csr_addr_li = (cfg_addr_li - bp_cfg_reg_csr_begin_gp);
 wire [dword_width_p-1:0] csr_data_li = cfg_data_li;
 
+// Need to delay reads by 1 cycle here, to align with other synchronous reads
+logic [dword_width_p-1:0] csr_data_r;
+always_ff @(posedge clk_i)
+  csr_data_r <= csr_data_i;
+
 wire priv_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_priv_gp);
 wire priv_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_priv_gp);
 wire [1:0] priv_data_li = cfg_data_li;
 
-assign proc_cfg_cast_o = '{freeze: freeze_r
+assign cfg_bus_cast_o = '{freeze: freeze_r
                            ,core_id: core_id_r
                            ,icache_id: icache_id_r
                            ,icache_mode: icache_mode_r
@@ -179,7 +184,7 @@ assign mem_resp_cast_o = '{msg_type: mem_cmd_cast_i.msg_type
                                      : npc_r_v_li 
                                        ? npc_data_i
                                        : csr_r_v_li
-                                         ? csr_data_i
+                                         ? csr_data_r
                                          : priv_r_v_li
                                            ? priv_data_i
                                            : cce_ucode_data_i

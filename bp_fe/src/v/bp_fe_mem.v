@@ -3,20 +3,20 @@ module bp_fe_mem
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_fe_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
    , localparam mem_cmd_width_lp  = `bp_fe_mem_cmd_width(vaddr_width_p, vtag_width_p, ptag_width_p)
    , localparam mem_resp_width_lp = `bp_fe_mem_resp_width
 
-   , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
    , localparam lce_id_width_lp = `BSG_SAFE_CLOG2(num_lce_p)
    )
   (input                                              clk_i
    , input                                            reset_i
 
-   , input [proc_cfg_width_lp-1:0]                    proc_cfg_i
+   , input [cfg_bus_width_lp-1:0]                    cfg_bus_i
 
    , input [mem_cmd_width_lp-1:0]                     mem_cmd_i
    , input                                            mem_cmd_v_i
@@ -62,7 +62,7 @@ wire fetch_v      = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_fetch) & icache_
 bp_fe_tlb_entry_s itlb_r_entry;
 logic itlb_r_v_lo;
 bp_tlb
- #(.cfg_p(cfg_p), .tlb_els_p(itlb_els_p))
+ #(.bp_params_p(bp_params_p), .tlb_els_p(itlb_els_p))
  itlb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -86,12 +86,12 @@ wire                    ptag_v_li   = itlb_r_v_lo;
 logic [instr_width_p-1:0] icache_data_lo;
 logic                     icache_data_v_lo;
 bp_fe_icache 
- #(.cfg_p(cfg_p)) 
+ #(.bp_params_p(bp_params_p)) 
  icache
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.proc_cfg_i(proc_cfg_i)
+   ,.cfg_bus_i(cfg_bus_i)
 
    ,.vaddr_i(mem_cmd_cast_i.operands.fetch.vaddr)
    ,.vaddr_v_i(fetch_v)

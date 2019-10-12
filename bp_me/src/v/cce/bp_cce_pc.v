@@ -39,16 +39,16 @@ module bp_cce_pc
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
-  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-    `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    `declare_bp_proc_params(bp_params_p)
     // Derived parameters
     , localparam inst_width_lp     = `bp_cce_inst_width
-    , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
   )
   (input                                         clk_i
    , input                                       reset_i
 
-   , input [proc_cfg_width_lp-1:0]               proc_cfg_i
+   , input [cfg_bus_width_lp-1:0]               cfg_bus_i
    , output [cce_instr_width_p-1:0]              cfg_cce_ucode_data_o
 
    // ALU branch result signal
@@ -66,9 +66,9 @@ module bp_cce_pc
    , output logic                                inst_v_o
   );
 
-  `declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
-  bp_proc_cfg_s proc_cfg_cast_i;
-  assign proc_cfg_cast_i = proc_cfg_i;
+  `declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+  bp_cfg_bus_s cfg_bus_cast_i;
+  assign cfg_bus_cast_i = cfg_bus_i;
 
   typedef enum logic [3:0] {
     RESET
@@ -96,10 +96,10 @@ module bp_cce_pc
     cce_inst_ram
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.v_i((proc_cfg_cast_i.cce_ucode_w_v | proc_cfg_cast_i.cce_ucode_r_v) | ram_v_li)
-      ,.data_i(proc_cfg_cast_i.cce_ucode_w_v ? proc_cfg_cast_i.cce_ucode_data : ram_data_li)
-      ,.addr_i((proc_cfg_cast_i.cce_ucode_w_v | proc_cfg_cast_i.cce_ucode_r_v) ? proc_cfg_cast_i.cce_ucode_addr : ram_addr_li)
-      ,.w_i(proc_cfg_cast_i.cce_ucode_w_v | ram_w_li)
+      ,.v_i((cfg_bus_cast_i.cce_ucode_w_v | cfg_bus_cast_i.cce_ucode_r_v) | ram_v_li)
+      ,.data_i(cfg_bus_cast_i.cce_ucode_w_v ? cfg_bus_cast_i.cce_ucode_data : ram_data_li)
+      ,.addr_i((cfg_bus_cast_i.cce_ucode_w_v | cfg_bus_cast_i.cce_ucode_r_v) ? cfg_bus_cast_i.cce_ucode_addr : ram_addr_li)
+      ,.w_i(cfg_bus_cast_i.cce_ucode_w_v | ram_w_li)
       ,.data_o(ram_data_lo)
       );
   assign cfg_cce_ucode_data_o = ram_data_lo;
@@ -140,7 +140,7 @@ module bp_cce_pc
       INIT: begin
         // If mode is uncached, the CCE operates in uncached mode
         // and this module stays in the INIT state and does not fetch microcode
-        pc_state_n = (proc_cfg_cast_i.cce_mode == e_cce_mode_normal) ? INIT_END : INIT;
+        pc_state_n = (cfg_bus_cast_i.cce_mode == e_cce_mode_normal) ? INIT_END : INIT;
       end
       INIT_END: begin
         // let the last cfg link write finish (if there is one)

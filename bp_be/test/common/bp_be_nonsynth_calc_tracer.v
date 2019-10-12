@@ -1,19 +1,22 @@
-module bp_be_nonsynth_tracer
+
+
+// TODO: Cleanup and add times
+module bp_be_nonsynth_calc_tracer
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_common_rv64_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
 
    // Default parameters
-   , parameter calc_trace_file_p = "debug"
+   , parameter calc_trace_file_p = "calc"
 
    // Calculated parameters
    , localparam mhartid_width_lp      = `BSG_SAFE_CLOG2(num_core_p)
-   , localparam proc_cfg_width_lp     = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp     = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
    , localparam issue_pkt_width_lp    = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
-   , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
+   , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam exception_width_lp    = `bp_be_exception_width
    , localparam ecode_dec_width_lp    = `bp_be_ecode_dec_width
 
@@ -25,6 +28,7 @@ module bp_be_nonsynth_tracer
    )
   (input                                                   clk_i
    , input                                                 reset_i
+   , input                                                 freeze_i
 
    , input [mhartid_width_lp-1:0]                          mhartid_i
 
@@ -91,10 +95,6 @@ wire unused = &{ex1_btaken_i, fwb_result_i, trap_v_i, mtvec_i, mtval_i, ret_v_i,
        ,.data_o(iwb_br_tgt_r)
        );
 
-    integer file;
-    string file_name;
-
-
 //Shared logic 
 logic booted_r;
 
@@ -109,11 +109,19 @@ bsg_dff_reset_en
    );
 
 
-initial 
-  begin
-    file_name = $sformatf("%s_%x.log", calc_trace_file_p, mhartid_i);
-    file      = $fopen(file_name, "w");
-  end
+integer file;
+string file_name;
+
+logic freeze_r;
+always_ff @(posedge clk_i)
+  freeze_r <= freeze_i;
+
+always_ff @(negedge clk_i)
+  if (freeze_r & ~freeze_i)
+    begin
+      file_name = $sformatf("%s_%x.trace", calc_trace_file_p, mhartid_i);
+      file      = $fopen(file_name, "w");
+    end
 
 logic [4:0][2:0][7:0] stage_aliases;
 assign stage_aliases = {"FWB", "IWB", "EX2", "EX1"};
@@ -233,5 +241,5 @@ end
     end
 
 
-endmodule : bp_be_nonsynth_tracer
+endmodule
 

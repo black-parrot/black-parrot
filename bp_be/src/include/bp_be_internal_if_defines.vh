@@ -30,8 +30,9 @@
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
+    logic                                    v;                                                    \
+    logic                                    poison;                                               \
     logic [vaddr_width_mp-1:0]               pc;                                                   \
-    logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                  \
     rv64_instr_s                             instr;                                                \
     bp_be_decode_s                           decode;                                               \
                                                                                                    \
@@ -74,6 +75,9 @@
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
+    logic                                    isd_v;                                                \
+    logic [vaddr_width_mp-1:0]               isd_pc;                                               \
+    logic [branch_metadata_fwd_width_mp-1:0] isd_branch_metadata_fwd;                              \
     logic                                    isd_fence_v;                                          \
     logic                                    isd_mem_v;                                            \
     logic                                    isd_irs1_v;                                           \
@@ -86,16 +90,10 @@
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
-    logic                                    int1_v;                                               \
-    logic [vaddr_width_p-1:0]                int1_br_tgt;                                          \
-    logic [branch_metadata_fwd_width_mp-1:0] int1_branch_metadata_fwd;                             \
-    logic                                    int1_br_or_jmp;                                       \
-    logic                                    int1_btaken;                                          \
-                                                                                                   \
     logic                                    ex1_v;                                                \
     logic                                    ex1_instr_v;                                          \
-    logic [vaddr_width_p-1:0]                ex1_pc;                                               \
-                                                                                                   \
+    logic [vaddr_width_p-1:0]                ex1_npc;                                              \
+    logic                                    ex1_br_or_jmp;                                        \
     logic                                    mem1_fencei_v;                                        \
                                                                                                    \
     /*                                                                                             \
@@ -104,19 +102,41 @@
      *    post-commit. However, for now we're passing all of it.                                   \
      */                                                                                            \
     bp_be_dep_status_s[4:0]                 dep_status;                                            \
-                                                                                                   \
-    logic [vaddr_width_p-1:0]               mem3_pc;                                               \
-    logic                                   mem3_miss_v;                                           \
-    logic                                   mem3_cmt_v;                                            \
-                                                                                                   \
   }  bp_be_calc_status_s;                                                                          \
+                                                                                                   \
+  typedef struct packed                                                                            \
+  {                                                                                                \
+    logic                        v;                                                                \
+    logic                        instret;                                                          \
+    logic                        cache_miss;                                                       \
+    logic                        tlb_miss;                                                         \
+    logic [vaddr_width_p-1:0]    pc;                                                               \
+    logic [instr_width_p-1:0]    instr;                                                            \
+  }  bp_be_commit_pkt_s;                                                                           \
+                                                                                                   \
+  /* TODO: make opcode */                                                                          \
+  typedef struct packed                                                                            \
+  {                                                                                                \
+    logic [vaddr_width_p-1:0] epc;                                                                 \
+    logic [vaddr_width_p-1:0] tvec;                                                                \
+    logic                     exception;                                                           \
+    logic                     _interrupt;                                                          \
+    logic                     eret;                                                                \
+  }  bp_be_trap_pkt_s;                                                                             \
+                                                                                                   \
+  typedef struct packed                                                                            \
+  {                                                                                                \
+    logic                        rd_w_v;                                                           \
+    logic [reg_addr_width_p-1:0] rd_addr;                                                          \
+    logic [dword_width_p-1:0]    rd_data;                                                          \
+  }  bp_be_wb_pkt_s;
 
 /* Declare width macros so that clients can use structs in ports before struct declaration
  * Each of these macros needs to be kept in sync with the struct definition. The computation
  *   comes from literally counting bits in the struct definition, which is ugly, error-prone,
  *   and an unfortunate, necessary consequence of parameterized structs.
  */
-`define bp_be_issue_pkt_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                        \
+`define bp_be_issue_pkt_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
   (vaddr_width_mp                                                                                  \
    + 1                                                                                             \
    + $bits(bp_fe_exception_code_e)                                                                 \
@@ -126,36 +146,49 @@
    + rv64_reg_data_width_gp                                                                        \
    )                                                                                               
 
-`define bp_be_dispatch_pkt_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                     \
-  (vaddr_width_mp                                                                                  \
-   + branch_metadata_fwd_width_mp                                                                  \
+`define bp_be_dispatch_pkt_width(vaddr_width_mp) \
+  (2                                                                                               \
+   + vaddr_width_mp                                                                                \
    + rv64_instr_width_gp                                                                           \
    + 3 * rv64_reg_data_width_gp                                                                    \
    + `bp_be_decode_width                                                                           \
    )                                                                                               
 
-`define bp_be_pipe_stage_reg_width(vaddr_width_mp)                                                 \
+`define bp_be_pipe_stage_reg_width(vaddr_width_mp) \
    (vaddr_width_mp                                                                                 \
    + rv64_instr_width_gp                                                                           \
    + 10                                                                                            \
    )
 
-`define bp_be_isd_status_width                                                                     \
-  (4 + rv64_reg_addr_width_gp +  2 + rv64_reg_addr_width_gp)
+`define bp_be_isd_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
+  (1 + vaddr_width_mp + branch_metadata_fwd_width_mp + 4 + rv64_reg_addr_width_gp +  2 + rv64_reg_addr_width_gp)
 
-`define bp_be_dep_status_width                                                                     \
-  (7 + rv64_reg_addr_width_gp)                                                                     
+`define bp_be_dep_status_width \
+  (7 + rv64_reg_addr_width_gp)
 
-`define bp_be_calc_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                      \
+`define bp_be_calc_status_width(vaddr_width_mp) \
   (2                                                                                               \
    + vaddr_width_p                                                                                 \
-   + vaddr_width_p                                                                                 \
-   + branch_metadata_fwd_width_mp                                                                  \
-   + 3                                                                                             \
+   + 2                                                                                             \
    + 5 * `bp_be_dep_status_width                                                                   \
-   + vaddr_width_p                                                                                 \
-   + 3                                                                                             \
    )                                                                                               
+
+`define bp_be_commit_pkt_width(vaddr_width_mp) \
+  (4                                                                                               \
+   + vaddr_width_mp                                                                                \
+   + instr_width_p                                                                                 \
+   )
+ 
+`define bp_be_trap_pkt_width(vaddr_width_mp) \
+  (2 * vaddr_width_mp + 3)
+
+`define bp_be_wb_pkt_width(vaddr_width_mp) \
+  (1                                                                                               \
+   + reg_addr_width_p                                                                              \
+   + dword_width_p                                                                                 \
+   )
+
+
 
 `endif
 

@@ -3,8 +3,8 @@
 module bp_me_cce_id_to_cord
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
 
    , localparam cce_id_width_lp = `BSG_SAFE_CLOG2(num_cce_p)
    )

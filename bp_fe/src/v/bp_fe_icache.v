@@ -20,19 +20,19 @@ module bp_fe_icache
   import bp_common_aviary_pkg::*;
   import bp_fe_pkg::*;
   import bp_fe_icache_pkg::*;  
-  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
     `declare_bp_fe_tag_widths(lce_assoc_p, lce_sets_p, num_lce_p, num_cce_p, dword_width_p, paddr_width_p)
     `declare_bp_icache_widths(vaddr_width_p, tag_width_lp, lce_assoc_p) 
 
-   , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
     , parameter debug_p=0
     )
    (input                                              clk_i
     , input                                            reset_i
 
-    , input [proc_cfg_width_lp-1:0]                    proc_cfg_i
+    , input [cfg_bus_width_lp-1:0]                    cfg_bus_i
 
     , input [vaddr_width_p-1:0]                        vaddr_i
     , input                                            vaddr_v_i
@@ -65,9 +65,9 @@ module bp_fe_icache
     , input                                            lce_cmd_ready_i 
  );
 
-  `declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
-  bp_proc_cfg_s proc_cfg_cast_i;
-  assign proc_cfg_cast_i = proc_cfg_i;
+  `declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+  bp_cfg_bus_s cfg_bus_cast_i;
+  assign cfg_bus_cast_i = cfg_bus_i;
 
   logic [index_width_lp-1:0]            vaddr_index;
 
@@ -291,12 +291,12 @@ module bp_fe_icache
   bp_lce_mode_e lce_mode_lo;
 
   bp_fe_lce
-    #(.cfg_p(cfg_p))
+    #(.bp_params_p(bp_params_p))
   lce
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.proc_cfg_i(proc_cfg_i)
+     ,.cfg_bus_i(cfg_bus_i)
 
      ,.ready_o(vaddr_ready_o)
      ,.cache_miss_o(cache_miss_o)
@@ -338,7 +338,7 @@ module bp_fe_icache
      ); 
 
   // Fault if in uncached mode but access is not for an uncached address
-  assign instr_access_fault_o = (proc_cfg_cast_i.icache_mode == e_lce_mode_uncached)
+  assign instr_access_fault_o = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached)
     ? ~uncached_tv_r
     : 1'b0;
 

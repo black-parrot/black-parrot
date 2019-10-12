@@ -35,8 +35,7 @@ module bp_be_instr_decoder
    localparam instr_width_lp = rv64_instr_width_gp
    , localparam decode_width_lp = `bp_be_decode_width
    )
-  (input                             instr_v_i
-   , input [instr_width_lp-1:0]      instr_i
+  (input [instr_width_lp-1:0]        instr_i
    , input                           fe_exc_not_instr_i
    , input bp_fe_exception_code_e    fe_exc_i
 

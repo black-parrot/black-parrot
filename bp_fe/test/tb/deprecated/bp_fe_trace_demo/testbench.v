@@ -10,8 +10,8 @@ module testbench
  import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
  import bp_cce_pkg::*;
- #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
+   `declare_bp_proc_params(bp_params_p)
    `declare_bp_fe_be_if_widths(vaddr_width_p
                                ,paddr_width_p
                                ,asid_width_p
@@ -41,7 +41,7 @@ module testbench
    , input reset_i
    );
 
-`declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
+`declare_bp_common_cfg_bus_s(num_core_p, num_lce_p)
 `declare_bp_fe_be_if(vaddr_width_p
                      , paddr_width_p
                      , asid_width_p
@@ -83,7 +83,7 @@ logic  lce_data_cmd_v_lo, lce_data_cmd_ready_li;
 bp_lce_data_cmd_s  lce_data_cmd_li;
 logic  lce_data_cmd_v_li, lce_data_cmd_ready_lo;
 
-bp_proc_cfg_s proc_cfg;
+bp_cfg_bus_s cfg_bus;
 
 logic [trace_ring_width_p-1:0] tr_data_li, tr_data_lo;
 logic tr_v_li, tr_ready_lo, tr_v_lo, tr_yumi_li;
@@ -98,17 +98,17 @@ logic [num_cce_p-1:0][boot_rom_width_p-1:0]   mrom_data;
 logic [num_cce_p-1:0][cce_inst_ram_addr_width_lp-1:0] cce_inst_boot_rom_addr;
 logic [num_cce_p-1:0][`bp_cce_inst_width-1:0]         cce_inst_boot_rom_data;
 
-assign proc_cfg.mhartid   = 1'b0;
-assign proc_cfg.icache_id = 1'b0;
-assign proc_cfg.dcache_id = 1'b1; // Unused
+assign cfg_bus.mhartid   = 1'b0;
+assign cfg_bus.icache_id = 1'b0;
+assign cfg_bus.dcache_id = 1'b1; // Unused
 
     wrapper
-     #(.cfg_p(cfg_p))
+     #(.bp_params_p(bp_params_p))
      wrapper
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
 
-       ,.icache_id_i(proc_cfg.icache_id)
+       ,.icache_id_i(cfg_bus.icache_id)
 
        ,.fe_queue_o(fe_fe_queue)
        ,.fe_queue_v_o(fe_fe_queue_v)
@@ -279,7 +279,7 @@ logic [num_cce_p-1:0] mem_data_cmd_yumi;
 
 
 bp_me_top 
- #(.cfg_p(cfg_p)
+ #(.bp_params_p(bp_params_p)
    ,.cfg_link_addr_width_p(cfg_link_addr_width_p)
    ,.cfg_link_data_width_p(cfg_link_data_width_p)
  )

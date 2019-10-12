@@ -13,8 +13,8 @@ module testbench
  import bp_common_rv64_pkg::*;
  import bp_cce_pkg::*;
  import bp_common_cfg_link_pkg::*;
- #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
+   `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
    // Tracing parameters
@@ -22,6 +22,8 @@ module testbench
    , parameter cce_trace_p                 = 0
    , parameter cmt_trace_p                 = 0
    , parameter dram_trace_p                = 0
+   , parameter npc_trace_p                 = 0
+   , parameter dcache_trace_p              = 0
    , parameter skip_init_p                 = 0
 
    , parameter mem_load_p         = 1
@@ -37,8 +39,8 @@ module testbench
    , parameter max_latency_p = 15
 
    , parameter dram_clock_period_in_ps_p = 1000
-   , parameter dram_cfg_p                = "dram_ch.ini"
-   , parameter dram_sys_cfg_p            = "dram_sys.ini"
+   , parameter dram_bp_params_p                = "dram_ch.ini"
+   , parameter dram_sys_bp_params_p            = "dram_sys.ini"
    , parameter dram_capacity_p           = 16384
    )
   (input clk_i
@@ -99,7 +101,7 @@ for (genvar i = 0; i < num_mem_p; i++)
 
 // Chip
 wrapper
- #(.cfg_p(cfg_p))
+ #(.bp_params_p(bp_params_p))
  wrapper
   (.core_clk_i(clk_i)
    ,.core_reset_i(reset_i)
@@ -131,52 +133,98 @@ wrapper
 
   bind bp_be_top
     bp_nonsynth_commit_tracer
-     #(.cfg_p(cfg_p))
+     #(.bp_params_p(bp_params_p))
      commit_tracer
       (.clk_i(clk_i & (testbench.cmt_trace_p == 1))
        ,.reset_i(reset_i)
+       ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
 
-       ,.mhartid_i('0)
+       ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
-       ,.commit_v_i(be_calculator.instret_mem3_o)
-       ,.commit_pc_i(be_calculator.pc_mem3_o)
-       ,.commit_instr_i(be_calculator.instr_mem3_o)
+       ,.commit_v_i(be_calculator.commit_pkt.instret)
+       ,.commit_pc_i(be_calculator.commit_pkt.pc)
+       ,.commit_instr_i(be_calculator.commit_pkt.instr)
 
-       ,.rd_w_v_i(be_calculator.int_regfile.rd_w_v_i)
-       ,.rd_addr_i(be_calculator.int_regfile.rd_addr_i)
-       ,.rd_data_i(be_calculator.int_regfile.rd_data_i)
+       ,.rd_w_v_i(be_calculator.wb_pkt.rd_w_v)
+       ,.rd_addr_i(be_calculator.wb_pkt.rd_addr)
+       ,.rd_data_i(be_calculator.wb_pkt.rd_data)
+       );
+
+  bind bp_be_director
+    bp_be_nonsynth_npc_tracer
+     #(.bp_params_p(bp_params_p))
+     npc_tracer
+      (.clk_i(clk_i & (testbench.npc_trace_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
+
+       ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
+
+       ,.npc_w_v(npc_w_v)
+       ,.npc_n(npc_n)
+       ,.npc_r(npc_r)
+       ,.expected_npc_o(expected_npc_o)
+
+       ,.fe_cmd_i(fe_cmd)
+       ,.fe_cmd_v(fe_cmd_v)
+
+       ,.commit_pkt_i(commit_pkt)
+       );
+
+  bind bp_be_dcache
+    bp_be_nonsynth_dcache_tracer
+     #(.bp_params_p(bp_params_p))
+     dcache_tracer
+      (.clk_i(clk_i & (testbench.dcache_trace_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i(cfg_bus_cast_i.freeze)
+
+       ,.mhartid_i(cfg_bus_cast_i.core_id)
+
+       ,.v_tv_r(v_tv_r)
+       ,.cache_miss_o(cache_miss_o)
+
+       ,.paddr_tv_r(paddr_tv_r)
+       ,.uncached_tv_r(uncached_tv_r)
+       ,.load_op_tv_r(load_op_tv_r)
+       ,.store_op_tv_r(store_op_tv_r)
+       ,.lr_op_tv_r(lr_op_tv_r)
+       ,.sc_op_tv_r(sc_op_tv_r)
+       ,.store_data(data_tv_r)
+       ,.load_data(data_o)
        );
 
   bind bp_be_top
-    bp_be_nonsynth_tracer
-     #(.cfg_p(cfg_p))
+    bp_be_nonsynth_calc_tracer
+     #(.bp_params_p(bp_params_p))
      tracer
        // Workaround for verilator binding by accident
        // TODO: Figure out why tracing is always enabled
       (.clk_i(clk_i & (testbench.calc_trace_p == 1))
        ,.reset_i(reset_i)
+       ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
   
-       ,.mhartid_i(be_calculator.proc_cfg.core_id)
+       ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
-       ,.issue_pkt_i(be_calculator.issue_pkt)
-       ,.issue_pkt_v_i(be_calculator.issue_pkt_v_i)
+       ,.issue_pkt_i(be_checker.scheduler.issue_pkt)
+       ,.issue_pkt_v_i(be_checker.scheduler.fe_queue_yumi_o)
   
-       ,.fe_nop_v_i(be_calculator.fe_nop_v)
-       ,.be_nop_v_i(be_calculator.be_nop_v)
-       ,.me_nop_v_i(be_calculator.me_nop_v)
+       ,.fe_nop_v_i(be_calculator.exc_stage_n[0].fe_nop_v)
+       ,.be_nop_v_i(be_calculator.exc_stage_n[0].be_nop_v)
+       ,.me_nop_v_i(be_calculator.exc_stage_n[0].me_nop_v)
        ,.dispatch_pkt_i(be_calculator.dispatch_pkt)
   
-       ,.ex1_br_tgt_i(be_calculator.calc_status.int1_br_tgt)
-       ,.ex1_btaken_i(be_calculator.calc_status.int1_btaken)
+       ,.ex1_br_tgt_i(be_calculator.calc_status.ex1_npc)
+       ,.ex1_btaken_i(be_calculator.pipe_int.btaken)
        ,.iwb_result_i(be_calculator.comp_stage_n[3])
        ,.fwb_result_i(be_calculator.comp_stage_n[4])
   
        ,.cmt_trace_exc_i(be_calculator.exc_stage_n[1+:5])
   
-       ,.trap_v_i(be_mem.csr.trap_v_o)
+       ,.trap_v_i(be_mem.csr.trap_pkt_cast_o._interrupt | be_mem.csr.trap_pkt_cast_o.exception)
        ,.mtvec_i(be_mem.csr.mtvec_n)
        ,.mtval_i(be_mem.csr.mtval_n[0+:vaddr_width_p])
-       ,.ret_v_i(be_mem.csr.ret_v_o)
+       ,.ret_v_i(be_mem.csr.trap_pkt_cast_o.eret)
        ,.mepc_i(be_mem.csr.mepc_n[0+:vaddr_width_p])
        ,.mcause_i(be_mem.csr.mcause_n)
   
@@ -184,28 +232,28 @@ wrapper
        ,.mpp_i(be_mem.csr.mstatus_n.mpp)
        );
 
+// We rely on this for termination, so don't gate behind parameter
 bind bp_be_top
   bp_be_nonsynth_perf
-   #(.cfg_p(cfg_p))
+   #(.bp_params_p(bp_params_p))
    perf
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mhartid_i(be_calculator.proc_cfg.core_id)
+     ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
      ,.fe_nop_i(be_calculator.exc_stage_r[2].fe_nop_v)
      ,.be_nop_i(be_calculator.exc_stage_r[2].be_nop_v)
      ,.me_nop_i(be_calculator.exc_stage_r[2].me_nop_v)
      ,.poison_i(be_calculator.exc_stage_r[2].poison_v)
      ,.roll_i(be_calculator.exc_stage_r[2].roll_v)
-     ,.instr_cmt_i(be_calculator.calc_status.mem3_cmt_v)
+     ,.instr_cmt_i(be_calculator.commit_pkt.v)
 
      ,.program_finish_i(testbench.program_finish)
      );
 
-if (dram_trace_p)
   bp_mem_nonsynth_tracer
-   #(.cfg_p(cfg_p))
+   #(.bp_params_p(bp_params_p))
    bp_mem_tracer
     (.clk_i(clk_i & (testbench.dram_trace_p == 1))
      ,.reset_i(reset_i)
@@ -219,15 +267,15 @@ if (dram_trace_p)
      ,.mem_resp_ready_i(dram_resp_ready_li)
      );
 
-if (cce_trace_p)
   bind bp_cce_top
     bp_cce_nonsynth_tracer
-      #(.cfg_p(cfg_p))
+      #(.bp_params_p(bp_params_p))
       bp_cce_tracer
        (.clk_i(clk_i & (testbench.cce_trace_p == 1))
         ,.reset_i(reset_i)
+        ,.freeze_i(bp_cce.inst_ram.cfg_bus_cast_i.freeze)
   
-        ,.cce_id_i(cce_id_i)
+        ,.cce_id_i(bp_cce.inst_ram.cfg_bus_cast_i.cce_id)
   
         // To CCE
         ,.lce_req_i(lce_req_to_cce)
@@ -259,7 +307,7 @@ wire [mem_noc_cid_width_p-1:0]  dst_cid_lo = mem_noc_cid_width_p'(1);
 
 // DRAM + link 
 bp_me_cce_to_wormhole_link_bidir
- #(.cfg_p(cfg_p))
+ #(.bp_params_p(bp_params_p))
   bidir_link
   (.clk_i(clk_i)
   ,.reset_i(reset_i)
@@ -293,7 +341,7 @@ bp_me_cce_to_wormhole_link_bidir
   );
 
 bp_mem
-#(.cfg_p(cfg_p)
+#(.bp_params_p(bp_params_p)
   ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
   ,.mem_load_p(mem_load_p)
   ,.mem_file_p(mem_file_p)
@@ -305,8 +353,8 @@ bp_mem
   ,.max_latency_p(max_latency_p)
 
   ,.dram_clock_period_in_ps_p(dram_clock_period_in_ps_p)
-  ,.dram_cfg_p(dram_cfg_p)
-  ,.dram_sys_cfg_p(dram_sys_cfg_p)
+  ,.dram_bp_params_p(dram_bp_params_p)
+  ,.dram_sys_bp_params_p(dram_sys_bp_params_p)
   ,.dram_capacity_p(dram_capacity_p)
   )
 mem
@@ -324,7 +372,7 @@ mem
 
 logic [num_core_p-1:0] program_finish;
 bp_nonsynth_host
- #(.cfg_p(cfg_p))
+ #(.bp_params_p(bp_params_p))
  host_mmio
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -341,7 +389,7 @@ bp_nonsynth_host
    );
 
 bp_nonsynth_if_verif
- #(.cfg_p(cfg_p))
+ #(.bp_params_p(bp_params_p))
  if_verif
   ();
 
@@ -376,7 +424,7 @@ assign dram_resp_ready_li = mem_resp_ready_lo;
 
 localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
 bp_cce_mmio_cfg_loader
-  #(.cfg_p(cfg_p)
+  #(.bp_params_p(bp_params_p)
     ,.inst_width_p(`bp_cce_inst_width)
     ,.inst_ram_addr_width_p(cce_instr_ram_addr_width_lp)
     ,.inst_ram_els_p(num_cce_instr_ram_els_p)

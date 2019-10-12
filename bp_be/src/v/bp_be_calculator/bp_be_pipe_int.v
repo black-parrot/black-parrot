@@ -46,8 +46,6 @@ module bp_be_pipe_int
    , input                          reset_i
 
    // Common pipeline interface
-   , input                          kill_ex1_i
-
    , input [decode_width_lp-1:0]    decode_i
    , input [vaddr_width_p-1:0]      pc_i
    , input [reg_data_width_lp-1:0]  rs1_i
@@ -68,7 +66,6 @@ assign decode = decode_i;
 // Suppress unused signal warning
 wire unused0 = clk_i;
 wire unused1 = reset_i;
-wire unused2 = kill_ex1_i;
 
 // Sign-extend PC for calculation
 wire [reg_data_width_lp-1:0] pc_sext_li = reg_data_width_lp'($signed(pc_i));
@@ -100,7 +97,9 @@ always_comb
 assign data_o   = decode.result_sel
                   ? pc_plus4
                   : alu_result;
-assign br_tgt_o = baddr + imm_i;
+// TODO: Split into branch unit, will break other pipelines if pc+4 is data gated
+wire btaken = (decode.br_v & alu_result[0]) | decode.jmp_v;
+assign br_tgt_o = (decode.pipe_int_v & btaken) ? baddr + imm_i : pc_plus4;
 
 endmodule : bp_be_pipe_int
 

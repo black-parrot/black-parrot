@@ -13,8 +13,8 @@ module bp_cce
   import bp_cce_pkg::*;
   import bp_common_cfg_link_pkg::*;
   import bp_me_pkg::*;
-  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-    `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    `declare_bp_proc_params(bp_params_p)
 
     // Derived parameters
     , localparam block_size_in_bytes_lp    = (cce_block_width_p/8)
@@ -32,7 +32,7 @@ module bp_cce
     , localparam num_way_groups_lp         = (lce_sets_p/num_cce_p)
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
     , localparam inst_ram_addr_width_lp    = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
-    , localparam proc_cfg_width_lp         = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+    , localparam cfg_bus_width_lp         = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
 
     // interface widths
     `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
@@ -41,7 +41,7 @@ module bp_cce
   (input                                               clk_i
    , input                                             reset_i
 
-   , input [proc_cfg_width_lp-1:0]                     proc_cfg_i
+   , input [cfg_bus_width_lp-1:0]                     cfg_bus_i
    , output [cce_instr_width_p-1:0]                    cfg_cce_ucode_data_o
 
    // LCE-CCE Interface
@@ -189,12 +189,12 @@ module bp_cce
 
   // PC Logic, Instruction RAM
   bp_cce_pc
-    #(.cfg_p(cfg_p))
+    #(.bp_params_p(bp_params_p))
     inst_ram
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
 
-      ,.proc_cfg_i(proc_cfg_i)
+      ,.cfg_bus_i(cfg_bus_i)
       ,.cfg_cce_ucode_data_o(cfg_cce_ucode_data_o)
 
       ,.alu_branch_res_i(alu_branch_res_lo)
@@ -352,7 +352,7 @@ module bp_cce
 
   // Registers
   bp_cce_reg
-    #(.cfg_p(cfg_p))
+    #(.bp_params_p(bp_params_p))
     registers
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -384,7 +384,7 @@ module bp_cce
       ,.gad_cached_owned_flag_i(gad_cached_owned_flag_lo)
       ,.gad_cached_dirty_flag_i(gad_cached_dirty_flag_lo)
 
-      ,.proc_cfg_i(proc_cfg_i)
+      ,.cfg_bus_i(cfg_bus_i)
 
       // register state outputs
       ,.mshr_o(mshr)
@@ -394,13 +394,13 @@ module bp_cce
 
   // Message unit
   bp_cce_msg
-    #(.cfg_p(cfg_p)
+    #(.bp_params_p(bp_params_p)
       )
     bp_cce_msg
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
 
-      ,.proc_cfg_i(proc_cfg_i)
+      ,.cfg_bus_i(cfg_bus_i)
 
       // To CCE
       ,.lce_req_i(lce_req_li)

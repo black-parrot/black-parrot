@@ -3,8 +3,8 @@ module bp_be_csr
   import bp_common_aviary_pkg::*;
   import bp_common_rv64_pkg::*;
   import bp_be_pkg::*;
-  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-    `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    `declare_bp_proc_params(bp_params_p)
 
     , localparam csr_cmd_width_lp = `bp_be_csr_cmd_width
     , localparam ecode_dec_width_lp = `bp_be_ecode_dec_width
@@ -12,14 +12,16 @@ module bp_be_csr
     , localparam satp_width_lp  = `bp_satp_width
 
     , localparam hartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
-    , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+
+    , localparam trap_pkt_width_lp = `bp_be_trap_pkt_width(vaddr_width_p)
     )
    (input                            clk_i
     , input                          reset_i
 
-    , input [proc_cfg_width_lp-1:0]  proc_cfg_i
+    , input [cfg_bus_width_lp-1:0]  cfg_bus_i
     , output [dword_width_p-1:0]     cfg_csr_data_o
-    , output [1:0]                   cfg_priv_data_o
+    , output [1:0]                   bp_params_priv_data_o
 
     // CSR instruction interface
     , input [csr_cmd_width_lp-1:0]   csr_cmd_i
@@ -40,33 +42,39 @@ module bp_be_csr
     , input [instr_width_p-1:0]      exception_instr_i
     , input [ecode_dec_width_lp-1:0] exception_ecode_dec_i
 
-    , input                          timer_int_i
-    , input                          software_int_i
-    , input                          external_int_i
+    , input                          timer_irq_i
+    , input                          software_irq_i
+    , input                          external_irq_i
     , input [vaddr_width_p-1:0]      interrupt_pc_i
 
+    , output [trap_pkt_width_lp-1:0] trap_pkt_o
+
     , output [rv64_priv_width_gp-1:0]   priv_mode_o
-    , output logic                      trap_v_o
-    , output logic                      ret_v_o
-    , output logic [vaddr_width_p-1:0]  epc_o
-    , output logic [vaddr_width_p-1:0]  tvec_o
     , output [satp_width_lp-1:0]        satp_o
     , output                            translation_en_o
     , output logic                      tlb_fence_o
     );
 
 // Declare parameterizable structs
-`declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+`declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+`declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p); 
 `declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
 
 // Casting input and output ports
-bp_proc_cfg_s proc_cfg_cast_i;
+bp_cfg_bus_s cfg_bus_cast_i;
 bp_be_csr_cmd_s csr_cmd;
+bp_be_csr_cmd_s cfg_bus_csr_cmd_li;
 bp_be_ecode_dec_s exception_ecode_dec_cast_i;
+bp_be_trap_pkt_s trap_pkt_cast_o;
 
-assign proc_cfg_cast_i = proc_cfg_i;
-assign csr_cmd = csr_cmd_i;
+assign cfg_bus_csr_cmd_li.csr_op   = cfg_bus_cast_i.csr_r_v ? e_csrrs : e_csrrw;
+assign cfg_bus_csr_cmd_li.csr_addr = cfg_bus_cast_i.csr_addr;
+assign cfg_bus_csr_cmd_li.data     = cfg_bus_cast_i.csr_r_v ? '0 : cfg_bus_cast_i.csr_data;
+
+assign cfg_bus_cast_i = cfg_bus_i;
+assign csr_cmd = cfg_bus_cast_i.csr_r_v ? cfg_bus_csr_cmd_li : csr_cmd_i;
 assign exception_ecode_dec_cast_i = exception_ecode_dec_i;
+assign trap_pkt_o = trap_pkt_cast_o;
 
 // The muxed and demuxed CSR outputs
 logic [dword_width_p-1:0] csr_data_li, csr_data_lo;
@@ -207,10 +215,10 @@ bsg_dff_reset
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.data_i(proc_cfg_cast_i.priv_w_v ? proc_cfg_cast_i.priv_data : priv_mode_n)
+   ,.data_i(cfg_bus_cast_i.priv_w_v ? cfg_bus_cast_i.priv_data : priv_mode_n)
    ,.data_o(priv_mode_r)
    );
-assign cfg_priv_data_o = priv_mode_r;
+assign bp_params_priv_data_o = priv_mode_r;
 
 assign sstatus_wmask_li = '{mpp: 2'b00, spp: 2'b11
                             ,mpie: 1'b0, spie: 1'b1, upie: 1'b1
@@ -245,6 +253,7 @@ assign sip_rmask_li     = '{meip: mideleg_lo.mei, seip: 1'b1
                             ,msip: mideleg_lo.msi, ssip: 1'b1
                             ,default: '0};
 
+logic exception_v_o, interrupt_v_o, ret_v_o;
 // CSR data
 always_comb
   begin
@@ -283,7 +292,8 @@ always_comb
     minstret_li      = mcountinhibit_lo.ir ? minstret_lo + dword_width_p'(instret_i) : minstret_lo;
     mcountinhibit_li = mcountinhibit_lo;
 
-    trap_v_o         = '0;
+    exception_v_o    = '0;
+    interrupt_v_o    = '0;
     ret_v_o          = '0;
     illegal_instr_o  = '0;
     csr_data_lo      = '0;
@@ -324,7 +334,8 @@ always_comb
         end
       else 
         begin
-          if (csr_cmd_v_i) // Read case
+          // Read case, we need to read as well as write for config bus
+          if (csr_cmd_v_i | cfg_bus_cast_i.csr_r_v | cfg_bus_cast_i.csr_w_v) 
             unique casez (csr_cmd.csr_addr)
               `CSR_ADDR_CYCLE  : csr_data_lo = mcycle_lo;
               // Time must be done by trapping, since we can't stall at this point
@@ -379,7 +390,7 @@ always_comb
               `CSR_ADDR_MCOUNTINHIBIT: csr_data_lo = mcountinhibit_lo;
               default: illegal_instr_o = 1'b1;
             endcase
-          if (csr_cmd_v_i) // Write case
+          if (csr_cmd_v_i | cfg_bus_cast_i.csr_w_v) // Write case
             unique casez (csr_cmd.csr_addr)
               `CSR_ADDR_CYCLE  : mcycle_li = csr_data_li;
               // Time must be done by trapping, since we can't stall at this point
@@ -441,13 +452,13 @@ always_comb
     else if (priv_mode_r < csr_cmd.csr_addr[9:8])
       illegal_instr_o = 1'b1;
 
-    if (timer_int_i)
+    if (timer_irq_i)
         mip_li.mtip = 1'b1;
 
-    if (software_int_i)
+    if (software_irq_i)
         mip_li.msip = 1'b1;
 
-    if (external_int_i)
+    if (external_irq_i)
         mip_li.meip = 1'b1;
 
     if (exception_v_i & exception_ecode_v_li) 
@@ -467,7 +478,9 @@ always_comb
           scause_li._interrupt = 1'b0;
           scause_li.ecode      = exception_ecode_li;
 
-          trap_v_o            = 1'b1;
+          exception_v_o        = 1'b1;
+          interrupt_v_o        = 1'b0;
+          ret_v_o              = 1'b0;
         end
       else
         begin
@@ -485,7 +498,9 @@ always_comb
           mcause_li._interrupt = 1'b0;
           mcause_li.ecode      = exception_ecode_li;
 
-          trap_v_o             = 1'b1;
+          exception_v_o        = 1'b1;
+          interrupt_v_o        = 1'b0;
+          ret_v_o              = 1'b0;
         end
 
     if (exception_icode_v_li)
@@ -504,7 +519,9 @@ always_comb
           scause_li._interrupt = 1'b1;
           scause_li.ecode      = exception_icode_li;
 
-          trap_v_o             = 1'b1;
+          exception_v_o        = 1'b0;
+          interrupt_v_o        = 1'b1;
+          ret_v_o              = 1'b0;
         end
       else
         begin
@@ -521,13 +538,13 @@ always_comb
           mcause_li._interrupt = 1'b1;
           mcause_li.ecode      = exception_icode_li;
 
-          trap_v_o            = 1'b1;
+          exception_v_o        = 1'b0;
+          interrupt_v_o        = 1'b1;
+          ret_v_o              = 1'b0;
         end
   end
 
 // CSR slow paths
-assign epc_o           = (csr_cmd.csr_op == e_sret) ? sepc_r : mepc_r;
-assign tvec_o          = (priv_mode_n == `PRIV_MODE_S) ? stvec_r : mtvec_r;
 assign satp_o          = satp_r;
 // We only support SV39 so the mode can either be 0(off) or 1(SV39)
 assign translation_en_o = ((priv_mode_r < `PRIV_MODE_M) & (satp_r.mode == 1'b1))
@@ -539,7 +556,14 @@ assign v_o             = csr_cmd_v_i;
 
 /* TODO: This doesn't actually work */
 assign cfg_csr_data_o = csr_data_lo;
-assign cfg_priv_data_o = priv_mode_r;
+assign bp_params_priv_data_o = priv_mode_r;
+
+assign trap_pkt_cast_o.epc       = (csr_cmd.csr_op == e_sret) ? sepc_r : mepc_r;
+assign trap_pkt_cast_o.tvec      = (priv_mode_n == `PRIV_MODE_S) ? stvec_r : mtvec_r;
+// TODO: Find more solid invariant
+assign trap_pkt_cast_o.exception  = exception_v_o;
+assign trap_pkt_cast_o._interrupt = interrupt_v_o;
+assign trap_pkt_cast_o.eret       = ret_v_o;
 
 endmodule
 

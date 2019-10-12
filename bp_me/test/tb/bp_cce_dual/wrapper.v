@@ -14,8 +14,8 @@ module wrapper
  import bp_cce_pkg::*;
  import bp_common_cfg_link_pkg::*;
  import bp_me_pkg::*;
- #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
+   `declare_bp_proc_params(bp_params_p)
    , localparam lg_num_cce_lp = `BSG_SAFE_CLOG2(num_cce_p)
 
    // interface widths
@@ -66,7 +66,7 @@ module wrapper
   );
 
   bp_cce_top
-   #(.cfg_p(cfg_p)
+   #(.bp_params_p(bp_params_p)
      ,.cce_trace_p(cce_trace_p)
      )
    dut
@@ -74,7 +74,7 @@ module wrapper
 
 bind bp_cce_top
   bp_cce_nonsynth_tracer
-    #(.cfg_p(cfg_p)
+    #(.bp_params_p(bp_params_p)
       ,.cce_trace_p(cce_trace_p)
       )
     bp_cce_tracer
