@@ -25,21 +25,21 @@ module bp_fe_lce
   import bp_fe_icache_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_common_cfg_link_pkg::*;
-  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
     , parameter timeout_max_limit_p=4
 
    `declare_bp_fe_tag_widths(lce_assoc_p, lce_sets_p, num_lce_p, num_cce_p, dword_width_p, paddr_width_p)
    `declare_bp_fe_lce_widths(lce_assoc_p, lce_sets_p, tag_width_lp, cce_block_width_p) 
-   , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
   )
   (
     input                                                        clk_i
     , input                                                      reset_i
 
-    , input [proc_cfg_width_lp-1:0]                              proc_cfg_i
+    , input [cfg_bus_width_lp-1:0]                              cfg_bus_i
 
     , output logic                                               ready_o
     , output logic                                               cache_miss_o
@@ -81,14 +81,14 @@ module bp_fe_lce
     , input lce_cmd_ready_i
   );
 
-  `declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
   `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   `declare_bp_fe_icache_lce_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
   `declare_bp_fe_icache_lce_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, tag_width_lp);
   `declare_bp_fe_icache_lce_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
 
-  bp_proc_cfg_s proc_cfg_cast_i;
+  bp_cfg_bus_s cfg_bus_cast_i;
 
   bp_lce_cce_req_s lce_req;
   bp_lce_cce_resp_s lce_resp;
@@ -99,7 +99,7 @@ module bp_fe_lce
   bp_fe_icache_lce_tag_mem_pkt_s tag_mem_pkt;
   bp_fe_icache_lce_stat_mem_pkt_s stat_mem_pkt;
 
-  assign proc_cfg_cast_i = proc_cfg_i;
+  assign cfg_bus_cast_i = cfg_bus_i;
 
   assign lce_req_o           = lce_req;
   assign lce_resp_o          = lce_resp;
@@ -120,12 +120,12 @@ module bp_fe_lce
   logic lce_req_lce_resp_yumi_li;
   logic [paddr_width_p-1:0] miss_addr_lo;
 
-  bp_fe_lce_req #(.cfg_p(cfg_p))
+  bp_fe_lce_req #(.bp_params_p(bp_params_p))
     lce_req_inst (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
   
-    ,.lce_id_i(proc_cfg_cast_i.icache_id)
+    ,.lce_id_i(cfg_bus_cast_i.icache_id)
 
     ,.miss_i(miss_i)
     ,.miss_addr_i(miss_addr_i)
@@ -157,12 +157,12 @@ module bp_fe_lce
   logic lce_cmd_lce_resp_v_lo;
   logic lce_cmd_lce_resp_yumi_li;
 
-  bp_fe_lce_cmd #(.cfg_p(cfg_p))
+  bp_fe_lce_cmd #(.bp_params_p(bp_params_p))
     lce_cmd_inst (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
 
-    ,.lce_id_i(proc_cfg_cast_i.icache_id)
+    ,.lce_id_i(cfg_bus_cast_i.icache_id)
     ,.miss_addr_i(miss_addr_lo)
 
     ,.lce_ready_o(lce_ready_lo)
@@ -249,7 +249,7 @@ module bp_fe_lce
     end
   end
 
-  wire lce_ready = (proc_cfg_cast_i.icache_mode == e_lce_mode_uncached) ? 1'b1 : lce_ready_lo;
+  wire lce_ready = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached) ? 1'b1 : lce_ready_lo;
   assign ready_o = lce_ready & ~timeout & ~cache_miss_o;
  
 endmodule

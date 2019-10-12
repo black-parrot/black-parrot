@@ -15,8 +15,8 @@ module testbench
  import bp_cce_pkg::*;
  import bp_common_cfg_link_pkg::*;
  import bp_me_pkg::*;
- #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
+   `declare_bp_proc_params(bp_params_p)
 
    // interface widths
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
@@ -42,8 +42,8 @@ module testbench
    , parameter max_latency_p = 15
 
    , parameter dram_clock_period_in_ps_p = 1000
-   , parameter dram_cfg_p                = "dram_ch.ini"
-   , parameter dram_sys_cfg_p            = "dram_sys.ini"
+   , parameter dram_bp_params_p                = "dram_ch.ini"
+   , parameter dram_sys_bp_params_p            = "dram_sys.ini"
    , parameter dram_capacity_p           = 16384
 
    // LCE Trace Replay Width
@@ -56,7 +56,7 @@ module testbench
    , input reset_i
    );
 
-`declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+`declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
@@ -113,7 +113,7 @@ bsg_trace_node_master #(
 
 // LCE
 bp_me_nonsynth_mock_lce #(
-  .cfg_p(cfg_p)
+  .bp_params_p(bp_params_p)
   ,.axe_trace_p(axe_trace_p)
   ,.perf_trace_p(lce_perf_trace_p)
 ) lce (
@@ -148,9 +148,9 @@ bp_me_nonsynth_mock_lce #(
   ,.lce_cmd_ready_i(lce_cmd_ready_li)
 );
 
-bp_proc_cfg_s proc_cfg_lo;
+bp_cfg_bus_s cfg_bus_lo;
 bp_cfg
- #(.cfg_p(cfg_p))
+ #(.bp_params_p(bp_params_p))
  cfg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -163,7 +163,7 @@ bp_cfg
    ,.mem_resp_v_o(cfg_resp_v_li)
    ,.mem_resp_ready_i(cfg_resp_ready_lo)
 
-   ,.proc_cfg_o(proc_cfg_lo)
+   ,.cfg_bus_o(cfg_bus_lo)
    ,.irf_data_i()
    ,.npc_data_i()
    ,.csr_data_i()
@@ -173,14 +173,14 @@ bp_cfg
 
 // CCE
 wrapper
-#(.cfg_p(cfg_p)
+#(.bp_params_p(bp_params_p)
   ,.cce_trace_p(cce_trace_p)
  )
 wrapper
  (.clk_i(clk_i)
   ,.reset_i(reset_i)
 
-  ,.proc_cfg_i(proc_cfg_lo)
+  ,.cfg_bus_i(cfg_bus_lo)
   ,.cfg_cce_ucode_data_o()
 
   ,.lce_cmd_o(lce_cmd)
@@ -214,7 +214,7 @@ wrapper
 
 // DRAM
 bp_mem
-#(.cfg_p(cfg_p)
+#(.bp_params_p(bp_params_p)
   ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
   ,.mem_zero_p(mem_zero_p)
   ,.mem_load_p(mem_load_p)
@@ -227,8 +227,8 @@ bp_mem
   ,.max_latency_p(max_latency_p)
 
   ,.dram_clock_period_in_ps_p(dram_clock_period_in_ps_p)
-  ,.dram_cfg_p(dram_cfg_p)
-  ,.dram_sys_cfg_p(dram_sys_cfg_p)
+  ,.dram_bp_params_p(dram_bp_params_p)
+  ,.dram_sys_bp_params_p(dram_sys_bp_params_p)
   ,.dram_capacity_p(dram_capacity_p)
   )
 mem
@@ -247,7 +247,7 @@ mem
 // CFG loader
 localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
 bp_cce_mmio_cfg_loader
-  #(.cfg_p(cfg_p)
+  #(.bp_params_p(bp_params_p)
     ,.inst_width_p(`bp_cce_inst_width)
     ,.inst_ram_addr_width_p(cce_instr_ram_addr_width_lp)
     ,.inst_ram_els_p(num_cce_instr_ram_els_p)

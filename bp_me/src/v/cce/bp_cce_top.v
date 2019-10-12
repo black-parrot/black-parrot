@@ -28,11 +28,11 @@ module bp_cce_top
   import bp_cce_pkg::*;
   import bp_common_cfg_link_pkg::*;
   import bp_me_pkg::*;
-  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-    `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    `declare_bp_proc_params(bp_params_p)
 
     // Derived parameters
-    , localparam proc_cfg_width_lp      = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+    , localparam cfg_bus_width_lp      = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
     , localparam block_size_in_bytes_lp = (cce_block_width_p/8)
     , localparam lg_num_cce_lp          = `BSG_SAFE_CLOG2(num_cce_p)
     , localparam wg_per_cce_lp          = (lce_sets_p / num_cce_p)
@@ -44,7 +44,7 @@ module bp_cce_top
   (input                                                   clk_i
    , input                                                 reset_i
 
-   , input [proc_cfg_width_lp-1:0]                         proc_cfg_i
+   , input [cfg_bus_width_lp-1:0]                         cfg_bus_i
    , output [cce_instr_width_p-1:0]                        cfg_cce_ucode_data_o
 
    // LCE-CCE Interface
@@ -197,12 +197,12 @@ module bp_cce_top
 
   // CCE
   bp_cce
-    #(.cfg_p(cfg_p))
+    #(.bp_params_p(bp_params_p))
     bp_cce
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
 
-      ,.proc_cfg_i(proc_cfg_i)
+      ,.cfg_bus_i(cfg_bus_i)
       ,.cfg_cce_ucode_data_o(cfg_cce_ucode_data_o)
 
       // To CCE

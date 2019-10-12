@@ -84,7 +84,7 @@ module mock_be_trace
 
    
 `declare_bp_be_mmu_structs(vaddr_width_p, lce_sets_p, cce_block_size_in_bytes_p)
-`declare_bp_common_proc_cfg_s(num_core_p, num_lce_p)
+`declare_bp_common_cfg_bus_s(num_core_p, num_lce_p)
 
 // the first level of structs
 `declare_bp_fe_structs(vaddr_width_p,paddr_width_p,asid_width_p,branch_metadata_fwd_width_p);   
@@ -99,7 +99,7 @@ bp_fe_cmd_itlb_map_s             fe_cmd_itlb_map;
 assign bp_fe_queue = bp_fe_queue_i;
 assign bp_fe_cmd_o = bp_fe_cmd;
 
-bp_proc_cfg_s proc_cfg;
+bp_cfg_bus_s cfg_bus;
 
 logic chk_psn_ex;
 logic prev_trace_v;

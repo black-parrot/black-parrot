@@ -8,8 +8,8 @@ module bp_mem
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
   import bp_me_pkg::*;
-  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
    , parameter mem_cap_in_bytes_p = "inv"
@@ -25,8 +25,8 @@ module bp_mem
    , parameter max_latency_p = "inv"
 
    , parameter dram_clock_period_in_ps_p = "inv"
-   , parameter dram_cfg_p                = "inv"
-   , parameter dram_sys_cfg_p            = "inv"
+   , parameter dram_bp_params_p                = "inv"
+   , parameter dram_sys_bp_params_p            = "inv"
    , parameter dram_capacity_p           = "inv"
 
    , localparam num_block_bytes_lp = cce_block_width_p / 8
@@ -52,7 +52,7 @@ logic                          dram_v_lo, delayed_dram_v_lo;
 logic                          dram_ready_lo, delayed_dram_yumi_li;
 
 bp_mem_transducer
- #(.cfg_p(cfg_p)
+ #(.bp_params_p(bp_params_p)
    ,.dram_offset_p(mem_offset_p)
    )
  transducer
@@ -87,8 +87,8 @@ bp_mem_delay_model
    ,.use_dramsim2_latency_p(use_dramsim2_latency_p)
    ,.max_latency_p(max_latency_p)
    ,.dram_clock_period_in_ps_p(dram_clock_period_in_ps_p)
-   ,.dram_cfg_p(dram_cfg_p)
-   ,.dram_sys_cfg_p(dram_sys_cfg_p)
+   ,.dram_bp_params_p(dram_bp_params_p)
+   ,.dram_sys_bp_params_p(dram_sys_bp_params_p)
    ,.dram_capacity_p(dram_capacity_p)
    )
  delay_model

@@ -330,7 +330,7 @@ package bp_common_aviary_pkg;
     ,e_bp_single_core_cfg   = 2
     ,e_bp_half_core_cfg     = 1
     ,e_bp_inv_cfg           = 0
-  } bp_cfg_e;
+  } bp_params_e;
 
   /* verilator lint_off WIDTH */     
   parameter bp_proc_param_s [max_cfgs-1:0] all_cfgs_gp =

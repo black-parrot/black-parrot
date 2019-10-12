@@ -16,8 +16,8 @@ module bp_core_complex
  import bsg_wormhole_router_pkg::*;
  import bp_common_cfg_link_pkg::*;
  import bp_me_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
@@ -51,7 +51,7 @@ module bp_core_complex
    , output [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]   mem_resp_link_o
    );
 
-`declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+`declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, coh_noc_ral_link_s);
 `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, mem_noc_ral_link_s);
 
@@ -90,7 +90,7 @@ for (genvar j = 0; j < mem_noc_y_dim_p; j++)
            );
     
         bp_tile_node
-         #(.cfg_p(cfg_p))
+         #(.bp_params_p(bp_params_p))
          tile_node
           (.core_clk_i(core_clk_i)
            ,.core_reset_i(core_reset_i)

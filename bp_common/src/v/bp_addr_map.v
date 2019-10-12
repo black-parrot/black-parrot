@@ -2,8 +2,8 @@
 module bp_addr_map
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
    )
   (// Destination nodes address
    input [mem_noc_cord_width_p-1:0]    clint_cord_i

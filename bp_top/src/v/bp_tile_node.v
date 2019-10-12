@@ -14,8 +14,8 @@ module bp_tile_node
  import bp_common_cfg_link_pkg::*;
  import bsg_wormhole_router_pkg::*;
  import bp_me_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
@@ -61,7 +61,7 @@ module bp_tile_node
 
 `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
-`declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+`declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
 
 // Declare the routing links
 `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
@@ -76,14 +76,14 @@ bp_coh_ready_and_link_s core_lce_resp_link_li, core_lce_resp_link_lo;
 bp_mem_ready_and_link_s core_mem_cmd_link_li, core_mem_cmd_link_lo;
 bp_mem_ready_and_link_s core_mem_resp_link_li, core_mem_resp_link_lo;
 
-  bp_proc_cfg_s proc_cfg_lo;
+  bp_cfg_bus_s cfg_bus_lo;
   bp_tile
-   #(.cfg_p(cfg_p))
+   #(.bp_params_p(bp_params_p))
    tile
     (.clk_i(core_clk_i)
      ,.reset_i(core_reset_i)
 
-     ,.proc_cfg_o(proc_cfg_lo)
+     ,.cfg_bus_o(cfg_bus_lo)
 
      // CCE-MEM IF
      ,.my_cord_i(my_cord_i)
@@ -367,9 +367,9 @@ bp_mem_ready_and_link_s mem_resp_link_li, mem_resp_link_lo;
 
   logic [coh_noc_cord_width_p-1:0] lce_cord_li;
   bp_me_lce_id_to_cord
-   #(.cfg_p(cfg_p))
+   #(.bp_params_p(bp_params_p))
    router_cord
-    (.lce_id_i(proc_cfg_lo.icache_id)
+    (.lce_id_i(cfg_bus_lo.icache_id)
      ,.lce_cord_o(lce_cord_li)
      ,.lce_cid_o()
      );

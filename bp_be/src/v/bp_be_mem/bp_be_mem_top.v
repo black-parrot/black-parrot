@@ -14,8 +14,8 @@ module bp_be_mem_top
   import bp_be_pkg::*;
   import bp_common_rv64_pkg::*;
   import bp_be_dcache_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
    // Generated parameters
    // D$   
@@ -29,7 +29,7 @@ module bp_be_mem_top
    , localparam dcache_pkt_width_lp    = `bp_be_dcache_pkt_width(page_offset_width_lp
                                                                  , dword_width_p
                                                                  )
-   , localparam proc_cfg_width_lp      = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp      = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
    , localparam lce_id_width_lp        = `BSG_SAFE_CLOG2(num_lce_p)
 
    , localparam trap_pkt_width_lp      = `bp_be_trap_pkt_width(vaddr_width_p)
@@ -46,9 +46,9 @@ module bp_be_mem_top
   (input                                     clk_i
    , input                                   reset_i
 
-   , input [proc_cfg_width_lp-1:0]           proc_cfg_i
+   , input [cfg_bus_width_lp-1:0]           cfg_bus_i
    , output [dword_width_p-1:0]              cfg_csr_data_o
-   , output [1:0]                            cfg_priv_data_o
+   , output [1:0]                            bp_params_priv_data_o
 
    , input [mmu_cmd_width_lp-1:0]            mmu_cmd_i
    , input                                   mmu_cmd_v_i
@@ -102,19 +102,19 @@ module bp_be_mem_top
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-`declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+`declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p/8)
 `declare_bp_be_dcache_pkt_s(page_offset_width_lp, dword_width_p);
 
 // Cast input and output ports 
-bp_proc_cfg_s          proc_cfg;
+bp_cfg_bus_s          cfg_bus;
 bp_be_mmu_cmd_s        mmu_cmd;
 bp_be_csr_cmd_s        csr_cmd;
 bp_be_mem_resp_s       mem_resp;
 bp_be_mmu_vaddr_s      mmu_cmd_vaddr;
 bp_be_commit_pkt_s     commit_pkt;
 
-assign proc_cfg = proc_cfg_i;
+assign cfg_bus = cfg_bus_i;
 assign mmu_cmd = mmu_cmd_i;
 assign csr_cmd = csr_cmd_i;
 
@@ -217,14 +217,14 @@ assign exception_ecode_dec_li =
     };
 
 bp_be_csr
- #(.cfg_p(cfg_p))
+ #(.bp_params_p(bp_params_p))
   csr
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.proc_cfg_i(proc_cfg_i)
+   ,.cfg_bus_i(cfg_bus_i)
    ,.cfg_csr_data_o(cfg_csr_data_o)
-   ,.cfg_priv_data_o(cfg_priv_data_o)
+   ,.bp_params_priv_data_o(bp_params_priv_data_o)
 
    ,.csr_cmd_i(csr_cmd_i)
    ,.csr_cmd_v_i(csr_cmd_v_i)
@@ -234,7 +234,7 @@ bp_be_csr
    ,.v_o(csr_v_lo)
    ,.illegal_instr_o(csr_illegal_instr_lo)
 
-   ,.hartid_i(proc_cfg.core_id)
+   ,.hartid_i(cfg_bus.core_id)
    ,.instret_i(commit_pkt.instret)
 
    ,.exception_v_i(exception_v_li)
@@ -256,7 +256,7 @@ bp_be_csr
    );
 
 bp_tlb
-  #(.cfg_p(cfg_p)
+  #(.bp_params_p(bp_params_p)
     ,.tlb_els_p(dtlb_els_p)
   )
   dtlb
@@ -277,7 +277,7 @@ bp_tlb
   );
   
 bp_be_ptw
-  #(.cfg_p(cfg_p)
+  #(.bp_params_p(bp_params_p)
     ,.pte_width_p(bp_sv39_pte_width_gp)
     ,.page_table_depth_p(bp_sv39_page_table_depth_gp)
   )
@@ -316,12 +316,12 @@ bp_be_ptw
   );
 
 bp_be_dcache 
-  #(.cfg_p(cfg_p))
+  #(.bp_params_p(bp_params_p))
   dcache
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
-    ,.proc_cfg_i(proc_cfg_i)
+    ,.cfg_bus_i(cfg_bus_i)
 
     ,.dcache_pkt_i(dcache_pkt)
     ,.v_i(dcache_pkt_v)

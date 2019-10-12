@@ -28,12 +28,7 @@ typedef enum bit
   ,e_cce_mode_normal  = 1'b1
 } bp_cce_mode_e;
 
-// Passing in proc_cfg as a port rather than a parameter limits some optimizations (need to 
-//   route the ids through the chip), but it allows us to stamp out cores in our flow
-// mhartid   - the hartid for the core. Since BP does not support SMT, hartid == coreid
-// icache_id - the lceid used for coherence operations
-// dcache_id - the lceid used for coherence operations 
-`define declare_bp_proc_cfg_s(vaddr_width_mp, num_core_mp, num_cce_mp, num_lce_mp, cce_pc_width_mp, cce_instr_width_mp) \
+`define declare_bp_cfg_bus_s(vaddr_width_mp, num_core_mp, num_cce_mp, num_lce_mp, cce_pc_width_mp, cce_instr_width_mp) \
   typedef struct packed                                                                            \
   {                                                                                                \
     logic                                    freeze;                                               \
@@ -62,9 +57,9 @@ typedef enum bit
     logic                                    priv_w_v;                                             \
     logic                                    priv_r_v;                                             \
     logic [1:0]                              priv_data;                                            \
-  }  bp_proc_cfg_s
+  }  bp_cfg_bus_s
 
-`define bp_proc_cfg_width(vaddr_width_mp, num_core_mp, num_cce_mp, num_lce_mp, cce_pc_width_mp, cce_instr_width_mp) \
+`define bp_cfg_bus_width(vaddr_width_mp, num_core_mp, num_cce_mp, num_lce_mp, cce_pc_width_mp, cce_instr_width_mp) \
   (1                                \
    + `BSG_SAFE_CLOG2(num_core_mp)   \
    + `BSG_SAFE_CLOG2(num_lce_mp)    \
@@ -142,8 +137,8 @@ typedef struct packed
   integer mem_noc_x_dim;
 }  bp_proc_param_s;
 
-`define declare_bp_proc_params(bp_cfg_e_mp) \
-  , localparam bp_proc_param_s proc_param_lp = all_cfgs_gp[bp_cfg_e_mp]                            \
+`define declare_bp_proc_params(bp_params_e_mp) \
+  , localparam bp_proc_param_s proc_param_lp = all_cfgs_gp[bp_params_e_mp]                            \
                                                                                                    \
   , localparam num_core_p = proc_param_lp.num_core                                                 \
   , localparam num_cce_p  = proc_param_lp.num_cce                                                  \

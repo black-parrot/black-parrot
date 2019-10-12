@@ -6,15 +6,15 @@ module bp_be_nonsynth_calc_tracer
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_common_rv64_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
 
    // Default parameters
    , parameter calc_trace_file_p = "calc"
 
    // Calculated parameters
    , localparam mhartid_width_lp      = `BSG_SAFE_CLOG2(num_core_p)
-   , localparam proc_cfg_width_lp     = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp     = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
    , localparam issue_pkt_width_lp    = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
    , localparam exception_width_lp    = `bp_be_exception_width

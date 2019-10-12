@@ -17,8 +17,8 @@ module bp_be_calculator_top
  import bp_common_aviary_pkg::*;
  import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-    `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    `declare_bp_proc_params(bp_params_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
     `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
@@ -26,7 +26,7 @@ module bp_be_calculator_top
    , parameter fp_en_p                  = 0
 
    // Generated parameters
-   , localparam proc_cfg_width_lp       = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp       = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
    , localparam calc_status_width_lp    = `bp_be_calc_status_width(vaddr_width_p)
    , localparam exception_width_lp      = `bp_be_exception_width
    , localparam mmu_cmd_width_lp        = `bp_be_mmu_cmd_width(vaddr_width_p)
@@ -83,14 +83,14 @@ module bp_be_calculator_top
 
 // Declare parameterizable structs
 `declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p / 8)
-`declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+`declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
 // Cast input and output ports 
 bp_be_dispatch_pkt_s   dispatch_pkt;
 bp_be_calc_status_s    calc_status;
 bp_be_mem_resp_s       mem_resp;
-bp_proc_cfg_s          proc_cfg;
+bp_cfg_bus_s          cfg_bus;
 bp_be_wb_pkt_s         wb_pkt;
 bp_be_commit_pkt_s     commit_pkt;
 
@@ -237,7 +237,7 @@ bp_be_pipe_mul
 
 // Memory pipe: 3 cycle latency
 bp_be_pipe_mem
- #(.cfg_p(cfg_p))
+ #(.bp_params_p(bp_params_p))
  pipe_mem
   (.clk_i(clk_i)
    ,.reset_i(reset_i)

@@ -22,8 +22,8 @@ module bp_be_checker_top
  import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
  import bp_common_cfg_link_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-    `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    `declare_bp_proc_params(bp_params_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
    // Generated parameters
@@ -36,12 +36,12 @@ module bp_be_checker_top
 
    // VM parameters
    , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
-    , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
    )
   (input                              clk_i
    , input                            reset_i
 
-   , input [proc_cfg_width_lp-1:0]    proc_cfg_i
+   , input [cfg_bus_width_lp-1:0]    cfg_bus_i
    , output [vaddr_width_p-1:0]       cfg_npc_data_o
    , output [dword_width_p-1:0]       cfg_irf_data_o
 
@@ -101,12 +101,12 @@ logic flush;
 
 // Datapath
 bp_be_director 
- #(.cfg_p(cfg_p))
+ #(.bp_params_p(bp_params_p))
  director
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.proc_cfg_i(proc_cfg_i)
+   ,.cfg_bus_i(cfg_bus_i)
    ,.cfg_npc_data_o(cfg_npc_data_o)
 
    ,.isd_status_i(isd_status)
@@ -129,12 +129,12 @@ bp_be_director
    );
 
 bp_be_detector 
- #(.cfg_p(cfg_p))
+ #(.bp_params_p(bp_params_p))
  detector
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.proc_cfg_i(proc_cfg_i)
+   ,.cfg_bus_i(cfg_bus_i)
 
    ,.isd_status_i(isd_status)
    ,.calc_status_i(calc_status_i)
@@ -149,12 +149,12 @@ bp_be_detector
    );
 
 bp_be_scheduler 
- #(.cfg_p(cfg_p))
+ #(.bp_params_p(bp_params_p))
  scheduler
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.proc_cfg_i(proc_cfg_i)
+   ,.cfg_bus_i(cfg_bus_i)
    ,.cfg_irf_data_o(cfg_irf_data_o)
 
    ,.isd_status_o(isd_status)

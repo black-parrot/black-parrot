@@ -13,8 +13,8 @@ module bp_cce_reg
   import bp_cce_pkg::*;
   import bp_me_pkg::*;
   import bp_common_cfg_link_pkg::*;
-  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-    `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    `declare_bp_proc_params(bp_params_p)
     // Derived parameters
     , localparam lg_num_lce_lp              = `BSG_SAFE_CLOG2(num_lce_p)
     , localparam lg_num_cce_lp              = `BSG_SAFE_CLOG2(num_cce_p)
@@ -25,7 +25,7 @@ module bp_cce_reg
       (paddr_width_p-lg_lce_sets_lp-lg_block_size_in_bytes_lp)
     , localparam entry_width_lp             = (tag_width_lp+`bp_coh_bits)
     , localparam tag_set_width_lp           = (entry_width_lp*lce_assoc_p)
-    , localparam proc_cfg_width_lp         = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+    , localparam cfg_bus_width_lp         = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
 
     , localparam mshr_width_lp = `bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
 
@@ -66,7 +66,7 @@ module bp_cce_reg
    , input                                                                 gad_cached_owned_flag_i
    , input                                                                 gad_cached_dirty_flag_i
 
-   , input [proc_cfg_width_lp-1:0]                                         proc_cfg_i
+   , input [cfg_bus_width_lp-1:0]                                         cfg_bus_i
 
    // Register value outputs
    , output logic [mshr_width_lp-1:0]                                      mshr_o

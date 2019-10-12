@@ -11,22 +11,22 @@ module bp_core
  import bp_be_pkg::*;
  import bp_common_rv64_pkg::*;
  import bp_common_cfg_link_pkg::*;
-  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-    `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    `declare_bp_proc_params(bp_params_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
     `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
-    , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
     )
    (
     input                                          clk_i
     , input                                        reset_i
 
-    , input [proc_cfg_width_lp-1:0]                proc_cfg_i
+    , input [cfg_bus_width_lp-1:0]                cfg_bus_i
     , output [vaddr_width_p-1:0]                   cfg_npc_data_o
     , output [dword_width_p-1:0]                   cfg_irf_data_o
     , output [dword_width_p-1:0]                   cfg_csr_data_o
-    , output [1:0]                                 cfg_priv_data_o
+    , output [1:0]                                 bp_params_priv_data_o
 
     // LCE-CCE interface
     , output [1:0][lce_cce_req_width_lp-1:0]       lce_req_o
@@ -51,11 +51,11 @@ module bp_core
     , input                                        external_irq_i
     );
 
-  `declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
   `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-  bp_proc_cfg_s proc_cfg_cast_i;
-  assign proc_cfg_cast_i = proc_cfg_i;
+  bp_cfg_bus_s cfg_bus_cast_i;
+  assign cfg_bus_cast_i = cfg_bus_i;
 
   bp_fe_queue_s fe_queue_li, fe_queue_lo;
   logic fe_queue_v_li, fe_queue_ready_lo;
@@ -68,12 +68,12 @@ module bp_core
   logic fe_cmd_processed_li;
 
   bp_fe_top
-   #(.cfg_p(cfg_p))
+   #(.bp_params_p(bp_params_p))
    fe 
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.proc_cfg_i(proc_cfg_i)
+     ,.cfg_bus_i(cfg_bus_i)
 
      ,.fe_queue_o(fe_queue_li)
      ,.fe_queue_v_o(fe_queue_v_li)
@@ -150,16 +150,16 @@ module bp_core
      );
 
   bp_be_top 
-   #(.cfg_p(cfg_p))
+   #(.bp_params_p(bp_params_p))
    be
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      
-     ,.proc_cfg_i(proc_cfg_i)
+     ,.cfg_bus_i(cfg_bus_i)
      ,.cfg_npc_data_o(cfg_npc_data_o)
      ,.cfg_irf_data_o(cfg_irf_data_o)
      ,.cfg_csr_data_o(cfg_csr_data_o)
-     ,.cfg_priv_data_o(cfg_priv_data_o)
+     ,.bp_params_priv_data_o(bp_params_priv_data_o)
 
      ,.fe_queue_deq_o(fe_queue_deq_li)
      ,.fe_queue_roll_o(fe_queue_roll_li)

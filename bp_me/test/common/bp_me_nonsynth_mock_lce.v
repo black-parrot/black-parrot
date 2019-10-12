@@ -73,8 +73,8 @@ module bp_me_nonsynth_mock_lce
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
   import bp_be_dcache_pkg::*;
-  #(parameter bp_cfg_e cfg_p = e_bp_half_core_cfg
-    `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = e_bp_half_core_cfg
+    `declare_bp_proc_params(bp_params_p)
 
     , parameter axe_trace_p = 0
     , parameter perf_trace_p = 0

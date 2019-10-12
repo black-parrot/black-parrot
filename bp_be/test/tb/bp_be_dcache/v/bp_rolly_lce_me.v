@@ -9,8 +9,8 @@ module bp_rolly_lce_me
   import bp_common_aviary_pkg::*;
   import bp_be_dcache_pkg::*;
   import bp_cce_pkg::*;
-  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-    `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    `declare_bp_proc_params(bp_params_p)
     , parameter mem_els_p="inv"
     , parameter boot_rom_els_p="inv"
     
@@ -217,7 +217,7 @@ module bp_rolly_lce_me
   logic [num_cce_p-1:0] mem_data_cmd_yumi;
 
   bp_me_top #(
-    .cfg_p(cfg_p)
+    .bp_params_p(bp_params_p)
     ,.cfg_link_addr_width_p(16)
     ,.cfg_link_data_width_p(32)
   ) me (

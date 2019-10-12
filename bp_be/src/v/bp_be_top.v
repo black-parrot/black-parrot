@@ -12,13 +12,13 @@ module bp_be_top
  import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
  import bp_common_cfg_link_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
    // Default parameters 
-   , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
    
    // VM parameters
    , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
@@ -27,11 +27,11 @@ module bp_be_top
    , input                                   reset_i
 
    // Processor configuration
-   , input [proc_cfg_width_lp-1:0]           proc_cfg_i
+   , input [cfg_bus_width_lp-1:0]           cfg_bus_i
    , output [dword_width_p-1:0]              cfg_irf_data_o
    , output [vaddr_width_p-1:0]              cfg_npc_data_o
    , output [dword_width_p-1:0]              cfg_csr_data_o
-   , output [1:0]                            cfg_priv_data_o
+   , output [1:0]                            bp_params_priv_data_o
 
    // FE queue interface
    , output                                  fe_queue_deq_o
@@ -70,13 +70,13 @@ module bp_be_top
 
 // Declare parameterized structures
 `declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p)
-`declare_bp_proc_cfg_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+`declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
 // Casting
-bp_proc_cfg_s proc_cfg;
+bp_cfg_bus_s cfg_bus;
 
-assign proc_cfg = proc_cfg_i;
+assign cfg_bus = cfg_bus_i;
 
 // Top-level interface connections
 bp_be_dispatch_pkt_s dispatch_pkt;
@@ -120,12 +120,12 @@ logic wb_pkt_v;
 logic flush;
 // Module instantiations
 bp_be_checker_top 
- #(.cfg_p(cfg_p))
+ #(.bp_params_p(bp_params_p))
  be_checker
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.proc_cfg_i(proc_cfg_i)
+   ,.cfg_bus_i(cfg_bus_i)
    ,.cfg_npc_data_o(cfg_npc_data_o)
    ,.cfg_irf_data_o(cfg_irf_data_o)
 
@@ -164,7 +164,7 @@ bp_be_checker_top
    );
 
 bp_be_calculator_top 
- #(.cfg_p(cfg_p))
+ #(.bp_params_p(bp_params_p))
  be_calculator
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -192,14 +192,14 @@ bp_be_calculator_top
    );
 
 bp_be_mem_top
- #(.cfg_p(cfg_p))
+ #(.bp_params_p(bp_params_p))
  be_mem
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
-    ,.proc_cfg_i(proc_cfg_i)
+    ,.cfg_bus_i(cfg_bus_i)
     ,.cfg_csr_data_o(cfg_csr_data_o)
-    ,.cfg_priv_data_o(cfg_priv_data_o)
+    ,.bp_params_priv_data_o(bp_params_priv_data_o)
 
     ,.chk_poison_ex_i(flush)
 

@@ -16,11 +16,11 @@ module bp_be_scheduler
  import bp_common_aviary_pkg::*;
  import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
 
    // Generated parameters
-   , localparam proc_cfg_width_lp = `bp_proc_cfg_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
    , localparam fe_queue_width_lp = `bp_fe_queue_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam issue_pkt_width_lp = `bp_be_issue_pkt_width(vaddr_width_p, branch_metadata_fwd_width_p)
    , localparam dispatch_pkt_width_lp = `bp_be_dispatch_pkt_width(vaddr_width_p)
@@ -33,7 +33,7 @@ module bp_be_scheduler
    , input                              reset_i
 
   // Slow inputs   
-  , input [proc_cfg_width_lp-1:0]      proc_cfg_i
+  , input [cfg_bus_width_lp-1:0]      cfg_bus_i
   , output [dword_width_p-1:0]         cfg_irf_data_o
 
   , output [isd_status_width_lp-1:0]   isd_status_o
@@ -177,12 +177,12 @@ assign fe_queue_deq_o  = ~cache_miss_v_i & cmt_v_i;
 logic [dword_width_p-1:0] irf_rs1;
 logic [dword_width_p-1:0] irf_rs2;
 bp_be_regfile
-#(.cfg_p(cfg_p))
+#(.bp_params_p(bp_params_p))
  int_regfile
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.proc_cfg_i(proc_cfg_i)
+   ,.cfg_bus_i(cfg_bus_i)
    ,.cfg_data_o(cfg_irf_data_o)
 
    ,.rd_w_v_i(wb_pkt.rd_w_v)
