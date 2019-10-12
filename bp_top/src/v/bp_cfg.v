@@ -136,6 +136,11 @@ wire csr_r_v_li = cfg_r_v_li & (cfg_addr_li >= bp_cfg_reg_csr_begin_gp && cfg_ad
 wire [rv64_csr_addr_width_gp-1:0] csr_addr_li = (cfg_addr_li - bp_cfg_reg_csr_begin_gp);
 wire [dword_width_p-1:0] csr_data_li = cfg_data_li;
 
+// Need to delay reads by 1 cycle here, to align with other synchronous reads
+logic [dword_width_p-1:0] csr_data_r;
+always_ff @(posedge clk_i)
+  csr_data_r <= csr_data_i;
+
 wire priv_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_priv_gp);
 wire priv_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_priv_gp);
 wire [1:0] priv_data_li = cfg_data_li;
@@ -179,7 +184,7 @@ assign mem_resp_cast_o = '{msg_type: mem_cmd_cast_i.msg_type
                                      : npc_r_v_li 
                                        ? npc_data_i
                                        : csr_r_v_li
-                                         ? csr_data_i
+                                         ? csr_data_r
                                          : priv_r_v_li
                                            ? priv_data_i
                                            : cce_ucode_data_i

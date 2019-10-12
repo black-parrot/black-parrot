@@ -63,11 +63,16 @@ module bp_be_csr
 // Casting input and output ports
 bp_proc_cfg_s proc_cfg_cast_i;
 bp_be_csr_cmd_s csr_cmd;
+bp_be_csr_cmd_s proc_cfg_csr_cmd_li;
 bp_be_ecode_dec_s exception_ecode_dec_cast_i;
 bp_be_trap_pkt_s trap_pkt_cast_o;
 
+assign proc_cfg_csr_cmd_li.csr_op   = proc_cfg_cast_i.csr_r_v ? e_csrrs : e_csrrw;
+assign proc_cfg_csr_cmd_li.csr_addr = proc_cfg_cast_i.csr_addr;
+assign proc_cfg_csr_cmd_li.data     = proc_cfg_cast_i.csr_r_v ? '0 : proc_cfg_cast_i.csr_data;
+
 assign proc_cfg_cast_i = proc_cfg_i;
-assign csr_cmd = csr_cmd_i;
+assign csr_cmd = proc_cfg_cast_i.csr_r_v ? proc_cfg_csr_cmd_li : csr_cmd_i;
 assign exception_ecode_dec_cast_i = exception_ecode_dec_i;
 assign trap_pkt_o = trap_pkt_cast_o;
 
@@ -329,7 +334,8 @@ always_comb
         end
       else 
         begin
-          if (csr_cmd_v_i) // Read case
+          // Read case, we need to read as well as write for config bus
+          if (csr_cmd_v_i | proc_cfg_cast_i.csr_r_v | proc_cfg_cast_i.csr_w_v) 
             unique casez (csr_cmd.csr_addr)
               `CSR_ADDR_CYCLE  : csr_data_lo = mcycle_lo;
               // Time must be done by trapping, since we can't stall at this point
@@ -384,7 +390,7 @@ always_comb
               `CSR_ADDR_MCOUNTINHIBIT: csr_data_lo = mcountinhibit_lo;
               default: illegal_instr_o = 1'b1;
             endcase
-          if (csr_cmd_v_i) // Write case
+          if (csr_cmd_v_i | proc_cfg_cast_i.csr_w_v) // Write case
             unique casez (csr_cmd.csr_addr)
               `CSR_ADDR_CYCLE  : mcycle_li = csr_data_li;
               // Time must be done by trapping, since we can't stall at this point
