@@ -44,7 +44,7 @@ module bp_be_director
    , input [isd_status_width_lp-1:0]  isd_status_i
    , input [calc_status_width_lp-1:0] calc_status_i
    , output [vaddr_width_p-1:0]       expected_npc_o
-   , output                           flush_o
+   , output logic                     flush_o
 
    // FE-BE interface
    , output [fe_cmd_width_lp-1:0]     fe_cmd_o
@@ -213,12 +213,11 @@ always_ff @(posedge clk_i)
     end
 
 // Flush on FE cmds which are not attaboys.  Also don't flush the entire pipeline on a mispredict.
-assign flush_o = fe_cmd_v & ((fe_cmd.opcode != e_op_attaboy) & (fe_cmd.opcode != e_op_pc_redirection)) | trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret | commit_pkt.cache_miss | commit_pkt.tlb_miss;
-
 always_comb 
   begin : fe_cmd_adapter
     fe_cmd = 'b0;
     fe_cmd_v = 1'b0;
+    flush_o = 1'b0;
 
     // Send one reset cmd on boot
     if (state_r == e_boot) 
@@ -228,6 +227,10 @@ always_comb
 
         fe_cmd_v = fe_cmd_ready_i;
       end
+    else if (commit_pkt.cache_miss | commit_pkt.tlb_miss)
+      begin
+        flush_o = 1'b1;
+      end
     else if (itlb_fill_v_i)
       begin
         fe_cmd.opcode                                     = e_op_itlb_fill_response;
@@ -235,6 +238,8 @@ always_comb
         fe_cmd.operands.itlb_fill_response.pte_entry_leaf = itlb_fill_entry_i;
       
         fe_cmd_v = fe_cmd_ready_i;
+
+        flush_o = 1'b1;
       end
     else if (tlb_fence_i)
       begin
@@ -242,7 +247,10 @@ always_comb
         fe_cmd.vaddr  = commit_pkt.pc;
         
         fe_cmd_v      = fe_cmd_ready_i;
+
+        flush_o = 1'b1;
       end
+    // TODO: Needs to happen at mem3, not mem1
     else if (calc_status.mem1_fencei_v)
       begin
         fe_cmd.opcode = e_op_icache_fence;
@@ -266,6 +274,7 @@ always_comb
 
         fe_cmd_v = fe_cmd_ready_i;
 
+        flush_o = 1'b1;
       end
     else if (isd_status.isd_v & npc_mismatch_v)
       begin
