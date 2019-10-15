@@ -9,8 +9,6 @@ module bp_be_csr
     , localparam csr_cmd_width_lp = `bp_be_csr_cmd_width
     , localparam ecode_dec_width_lp = `bp_be_ecode_dec_width
 
-    , localparam satp_width_lp  = `bp_satp_width
-
     , localparam hartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
 
@@ -50,8 +48,10 @@ module bp_be_csr
     , output [trap_pkt_width_lp-1:0] trap_pkt_o
 
     , output [rv64_priv_width_gp-1:0]   priv_mode_o
-    , output [satp_width_lp-1:0]        satp_o
+    , output [ptag_width_p-1:0]         satp_ppn_o
     , output                            translation_en_o
+    , output                            mstatus_sum_o
+    , output                            mstatus_mxr_o
     , output logic                      tlb_fence_o
     );
 
@@ -91,13 +91,13 @@ wire is_m_mode = (priv_mode_r == `PRIV_MODE_M);
 wire is_s_mode = (priv_mode_r == `PRIV_MODE_S);
 wire is_u_mode = (priv_mode_r == `PRIV_MODE_U);
 
-wire mti_v = mstatus_r.mie & mie_r.mtie & mip_r.mtip;
-wire msi_v = mstatus_r.mie & mie_r.msie & mip_r.msip;
-wire mei_v = mstatus_r.mie & mie_r.meie & mip_r.meip;
+wire mti_v = ((mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode) & mie_r.mtie & mip_r.mtip;
+wire msi_v = ((mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode) & mie_r.msie & mip_r.msip;
+wire mei_v = ((mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode) & mie_r.meie & mip_r.meip;
 
-wire sti_v = mstatus_r.sie & mie_r.stie & mip_r.stip;
-wire ssi_v = mstatus_r.sie & mie_r.ssie & mip_r.ssip;
-wire sei_v = mstatus_r.sie & mie_r.seie & mip_r.seip;
+wire sti_v = ((mstatus_r.sie & is_s_mode) | is_u_mode) & mie_r.stie & mip_r.stip;
+wire ssi_v = ((mstatus_r.sie & is_s_mode) | is_u_mode) & mie_r.ssie & mip_r.ssip;
+wire sei_v = ((mstatus_r.sie & is_s_mode) | is_u_mode) & mie_r.seie & mip_r.seip;
 
 wire [15:0] exception_icode_dec_li =
   {4'b0
@@ -109,7 +109,7 @@ wire [15:0] exception_icode_dec_li =
 
    ,mti_v & ~mideleg_lo.mti
    ,1'b0 // Reserved
-   ,sti_v &  mideleg_lo.sei
+   ,sti_v &  mideleg_lo.sti
    ,1'b0
 
    ,msi_v & ~mideleg_lo.msi
@@ -309,7 +309,7 @@ always_comb
         begin
           priv_mode_n      = mstatus_lo.mpp;
 
-          mstatus_li.mpp   = `PRIV_MODE_M; // Should be U when U-mode is supported
+          mstatus_li.mpp   = `PRIV_MODE_U;
           mstatus_li.mpie  = 1'b1;
           mstatus_li.mie   = mstatus_lo.mpie;
 
@@ -320,7 +320,7 @@ always_comb
         begin
           priv_mode_n      = {1'b0, mstatus_lo.spp};
           
-          mstatus_li.spp   = `PRIV_MODE_M; // Should be U when U-mode is supported
+          mstatus_li.spp   = `PRIV_MODE_U;
           mstatus_li.spie  = 1'b1;
           mstatus_li.sie   = mstatus_lo.spie;
 
@@ -545,10 +545,13 @@ always_comb
   end
 
 // CSR slow paths
-assign satp_o          = satp_r;
+assign satp_ppn_o       = satp_r.ppn;
 // We only support SV39 so the mode can either be 0(off) or 1(SV39)
 assign translation_en_o = ((priv_mode_r < `PRIV_MODE_M) & (satp_r.mode == 1'b1))
                           | (mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_r.mode == 1'b1));
+
+assign mstatus_sum_o = mstatus_lo.sum;
+assign mstatus_mxr_o = mstatus_lo.mxr;
 
 assign csr_cmd_ready_o = 1'b1;
 assign data_o          = dword_width_p'(csr_data_lo);

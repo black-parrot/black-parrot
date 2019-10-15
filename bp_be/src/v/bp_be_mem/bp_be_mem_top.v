@@ -149,10 +149,10 @@ logic                     dcache_uncached;
 
 /* CSR signals */
 logic                     csr_illegal_instr_lo;
-bp_satp_s                 satp_lo;
+logic [ptag_width_p-1:0]  satp_ppn_lo;
 logic [dword_width_p-1:0] csr_data_lo;
 logic                     csr_v_lo;
-logic                     translation_en_lo;
+logic                     translation_en_lo, mstatus_sum_lo, mstatus_mxr_lo;
 
 logic load_access_fault_v, store_access_fault_v;
 
@@ -250,8 +250,10 @@ bp_be_csr
 
    ,.priv_mode_o(priv_mode_o)
    ,.trap_pkt_o(trap_pkt_o)
-   ,.satp_o(satp_lo)
+   ,.satp_ppn_o(satp_ppn_lo)
    ,.translation_en_o(translation_en_lo)
+   ,.mstatus_sum_o(mstatus_sum_lo)
+   ,.mstatus_mxr_o(mstatus_mxr_lo)
    ,.tlb_fence_o(tlb_fence_o)
    );
 
@@ -284,9 +286,11 @@ bp_be_ptw
   ptw
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.base_ppn_i(satp_lo.ppn)
+   ,.base_ppn_i(satp_ppn_lo)
    ,.priv_mode_i(priv_mode_o)
    ,.translation_en_i(translation_en_lo)
+   ,.mstatus_sum_i(mstatus_sum_lo)
+   ,.mstatus_mxr_i(mstatus_mxr_lo)
    ,.busy_o(ptw_busy)
    
    ,.itlb_not_dtlb_i(itlb_fill_cmd_v)
@@ -427,11 +431,9 @@ assign itlb_fill_v_o     = ptw_tlb_w_v & itlb_not_dtlb_resp;
 assign itlb_fill_vaddr_o = fault_vaddr;
 assign itlb_fill_entry_o = ptw_tlb_w_entry;
 
-logic dcache_pkt_v_r;
 always_ff @(negedge clk_i)
   begin
-    dcache_pkt_v_r <= dcache_pkt_v;
-    assert (~(dcache_pkt_v_r & dcache_uncached & ~dtlb_miss_v & mmu_cmd.mem_op inside {e_lrw, e_lrd, e_scw, e_scd}))
+    assert (~(dcache_pkt_v & dcache_uncached & mmu_cmd.mem_op inside {e_lrw, e_lrd, e_scw, e_scd}))
       else $warning("LR/SC to uncached memory not supported");
   end
 
