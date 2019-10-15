@@ -229,15 +229,19 @@ typedef logic [63:0] bp_sscratch_s;
   64'(data_comp_mp)
 
 typedef logic [63:0] rv64_sepc_s;
-typedef logic [38:0] bp_sepc_s;
+typedef struct packed
+{
+  logic sgn;
+  logic [39:0] addr;
+}  bp_sepc_s;
 
 `define bp_sepc_width ($bits(bp_sepc_s))
 
 `define compress_sepc_s(data_cast_mp) \
-  data_cast_mp[0+:39]
+  '{sgn: data_cast_mp[39], addr: data_cast_mp[0+:40]}
 
 `define decompress_sepc_s(data_comp_mp) \
-  64'(data_comp_mp)
+  64'($signed(data_comp_mp))
 
 typedef struct packed
 {
@@ -262,13 +266,17 @@ typedef struct packed
     }
 
 typedef logic [63:0] rv64_stval_s;
-typedef logic [38:0] bp_stval_s;
+typedef struct packed
+{
+  logic sgn;
+  logic [39:0] addr;
+}  bp_stval_s;
 
 `define compress_stval_s(data_cast_mp) \
-  data_cast_mp[0+:39]
+  '{sgn: data_cast_mp[39], addr: data_cast_mp[0+:40]}
 
 `define decompress_stval_s(data_comp_mp) \
-  64'(data_comp_mp)
+  64'($signed(data_comp_mp))
 
 typedef struct packed
 {
@@ -385,6 +393,8 @@ typedef struct packed
 
 typedef struct packed
 {
+  logic       mxr;
+  logic       sum;
   logic       mprv;
 
   logic [1:0] mpp;
@@ -398,7 +408,9 @@ typedef struct packed
 }  bp_mstatus_s;
 
 `define compress_mstatus_s(data_cast_mp) \
-  '{mprv : data_cast_mp.mprv \
+  '{mxr  : data_cast_mp.mxr  \
+    ,sum : data_cast_mp.sum  \
+    ,mprv: data_cast_mp.mprv \
     ,mpp : data_cast_mp.mpp  \
     ,spp : data_cast_mp.spp  \
     ,mpie: data_cast_mp.mpie \
@@ -410,6 +422,8 @@ typedef struct packed
 `define decompress_mstatus_s(data_comp_mp) \
   '{sxl  : 2'b10             \
     ,uxl : 2'b10             \
+    ,mxr : data_comp_mp.mxr  \
+    ,sum : data_comp_mp.sum  \
     ,mprv: data_comp_mp.mprv \
     ,mpp : data_comp_mp.mpp  \
     ,spp : data_comp_mp.spp  \
