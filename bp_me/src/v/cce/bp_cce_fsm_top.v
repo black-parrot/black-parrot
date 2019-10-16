@@ -26,10 +26,10 @@ module bp_cce_fsm_top
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
-  import bp_cfg_link_pkg::*;
+  import bp_common_cfg_link_pkg::*;
   import bp_me_pkg::*;
-  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-    `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    `declare_bp_proc_params(bp_params_p)
 
     // Derived parameters
     , localparam block_size_in_bytes_lp = (cce_block_width_p/8)
@@ -202,7 +202,7 @@ module bp_cce_fsm_top
 
   // CCE
   bp_cce_fsm
-    #(.cfg_p(cfg_p))
+    #(.bp_params_p(bp_params_p))
     bp_cce
      (.clk_i(clk_i)
       ,.reset_i(reset_i)

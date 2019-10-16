@@ -37,11 +37,6 @@ module bp_be_pipe_fp
    , input                          reset_i
 
    // Common pipeline interface
-   , input                          kill_ex1_i
-   , input                          kill_ex2_i
-   , input                          kill_ex3_i
-   , input                          kill_ex4_i
-
    , input [decode_width_lp-1:0]    decode_i
    , input [reg_data_width_lp-1:0]  rs1_i
    , input [reg_data_width_lp-1:0]  rs2_i
@@ -58,10 +53,6 @@ assign decode = decode_i;
 // Suppress unused signal warnings
 wire unused0 = clk_i;
 wire unused1 = reset_i;
-wire unused2 = kill_ex1_i;
-wire unused3 = kill_ex2_i;
-wire unused4 = kill_ex3_i;
-wire unused5 = kill_ex4_i;
 
 wire [decode_width_lp-1:0]    unused6 = decode_i;
 wire [reg_data_width_lp-1:0]  unused7 = rs1_i;

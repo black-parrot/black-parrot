@@ -9,9 +9,9 @@ module bp_me_mock_lce_me
   import bp_common_aviary_pkg::*;
   import bp_be_dcache_pkg::*;
   import bp_cce_pkg::*;
-  import bp_cfg_link_pkg::*;
-  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-    `declare_bp_proc_params(cfg_p)
+  import bp_common_cfg_link_pkg::*;
+  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    `declare_bp_proc_params(bp_params_p)
     , parameter mem_els_p="inv"
     , parameter boot_rom_els_p="inv"
     , parameter cce_trace_p = 0
@@ -40,8 +40,8 @@ module bp_me_mock_lce_me
     , parameter dramsim2_en_p = 0
     , parameter clock_period_in_ps_p = 1000
     , parameter prog_name_p = "null.mem"
-    , parameter dram_cfg_p  = "DDR2_micron_16M_8b_x8_sg3E.ini"
-    , parameter dram_sys_cfg_p = "system.ini"
+    , parameter dram_bp_params_p  = "DDR2_micron_16M_8b_x8_sg3E.ini"
+    , parameter dram_sys_bp_params_p = "system.ini"
     , parameter dram_capacity_p = 16384
 
   )
@@ -320,7 +320,7 @@ always_ff @(posedge clk_i)
   end
 
   bp_cce_top #(
-    .cfg_p(cfg_p)
+    .bp_params_p(bp_params_p)
     ,.cce_trace_p(cce_trace_p)
   ) cce (
     .clk_i(clk_i)
@@ -375,8 +375,8 @@ always_ff @(posedge clk_i)
    #(.mem_id_p('0)
      ,.clock_period_in_ps_p(clock_period_in_ps_p)
      ,.prog_name_p(prog_name_p)
-     ,.dram_cfg_p(dram_cfg_p)
-     ,.dram_sys_cfg_p(dram_sys_cfg_p)
+     ,.dram_bp_params_p(dram_bp_params_p)
+     ,.dram_sys_bp_params_p(dram_sys_bp_params_p)
      ,.dram_capacity_p(dram_capacity_p)
      ,.num_lce_p(num_lce_p)
      ,.num_cce_p(num_cce_p)
@@ -408,7 +408,7 @@ always_ff @(posedge clk_i)
      );
 
   bp_cce_mmio_cfg_loader
-  #(.cfg_p(cfg_p)
+  #(.bp_params_p(bp_params_p)
     ,.inst_width_p(`bp_cce_inst_width)
     ,.inst_ram_addr_width_p(cce_instr_ram_addr_width_lp)
     ,.inst_ram_els_p(num_cce_instr_ram_els_p)
@@ -429,7 +429,7 @@ always_ff @(posedge clk_i)
 
   // We use the clint just as a config loader converter
   bp_clint
-  #(.cfg_p(cfg_p))
+  #(.bp_params_p(bp_params_p))
   clint
    (.clk_i(clk_i)
     ,.reset_i(reset_i)

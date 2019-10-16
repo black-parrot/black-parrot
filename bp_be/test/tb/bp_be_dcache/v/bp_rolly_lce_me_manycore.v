@@ -11,8 +11,8 @@ module bp_rolly_lce_me_manycore
   import bp_be_dcache_pkg::*;
   import bp_cce_pkg::*;
   import bsg_noc_pkg::*;
-  #(parameter bp_cfg_e cfg_p = e_bp_half_core_cfg
-    `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = e_bp_half_core_cfg
+    `declare_bp_proc_params(bp_params_p)
 
     , parameter link_data_width_p=32
     , parameter link_addr_width_p=10
@@ -205,7 +205,7 @@ module bp_rolly_lce_me_manycore
   logic mem_data_cmd_yumi;
 
   bp_me_top #(
-    .cfg_p(cfg_p)
+    .bp_params_p(bp_params_p)
     ,.cfg_link_addr_width_p(16)
     ,.cfg_link_data_width_p(32)
   ) me (

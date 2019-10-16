@@ -8,8 +8,8 @@ module testbench
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_be_dcache_pkg::*;
-  #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR
-    `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
+    `declare_bp_proc_params(bp_params_p)
 
     , localparam mem_els_p = 2*lce_sets_p*lce_assoc_p
 
@@ -59,7 +59,7 @@ module testbench
 
 
   bp_me_mock_lce_me #(
-    .cfg_p(cfg_p)
+    .bp_params_p(bp_params_p)
     ,.mem_els_p(mem_els_p)
     ,.boot_rom_els_p(mem_els_p)
     ,.cce_trace_p(cce_trace_p)

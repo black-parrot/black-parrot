@@ -12,8 +12,8 @@ module bp_fe_pc_gen
  import bp_common_rv64_pkg::*;
  import bp_fe_pkg::*;
  import bp_common_aviary_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
    , localparam mem_cmd_width_lp  = `bp_fe_mem_cmd_width(vaddr_width_p, vtag_width_p, ptag_width_p)
@@ -260,7 +260,7 @@ bp_fe_bht
 `declare_bp_fe_instr_scan_s(vaddr_width_p)
 bp_fe_instr_scan_s scan_instr;
 bp_fe_instr_scan 
- #(.cfg_p(cfg_p))
+ #(.bp_params_p(bp_params_p))
  instr_scan
   (.instr_i(mem_resp_cast_i.data)
 

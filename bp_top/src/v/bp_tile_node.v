@@ -11,19 +11,16 @@ module bp_tile_node
  import bp_be_pkg::*;
  import bp_cce_pkg::*;
  import bsg_noc_pkg::*;
- import bp_cfg_link_pkg::*;
+ import bp_common_cfg_link_pkg::*;
  import bsg_wormhole_router_pkg::*;
  import bp_me_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
-   // Wormhole parameters
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
-
-   , localparam proc_cfg_width_lp = `bp_proc_cfg_width(num_core_p, num_cce_p, num_lce_p)
    )
   (input                                         core_clk_i
    , input                                       core_reset_i
@@ -34,24 +31,16 @@ module bp_tile_node
    , input                                       mem_clk_i
    , input                                       mem_reset_i
 
-   , input [proc_cfg_width_lp-1:0]               proc_cfg_i
-
    // Memory side connection
    , input [mem_noc_cord_width_p-1:0]            my_cord_i
-   , input [mem_noc_cid_width_p-1:0]             my_cid_i
    , input [mem_noc_cord_width_p-1:0]            dram_cord_i
-   , input [mem_noc_cord_width_p-1:0]            mmio_cord_i
+   , input [mem_noc_cord_width_p-1:0]            clint_cord_i
    , input [mem_noc_cord_width_p-1:0]            host_cord_i
 
-   // Config channel
-   , input                                       cfg_w_v_i
-   , input [cfg_addr_width_p-1:0]                cfg_addr_i
-   , input [cfg_data_width_p-1:0]                cfg_data_i
-
    // Interrupts
-   , input                                       timer_int_i
-   , input                                       software_int_i
-   , input                                       external_int_i
+   , input                                       timer_irq_i
+   , input                                       software_irq_i
+   , input                                       external_irq_i
 
    // Connected to other tiles on east and west
    , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_req_link_i
@@ -70,12 +59,9 @@ module bp_tile_node
    , output [S:W][mem_noc_ral_link_width_lp-1:0] mem_resp_link_o
    );
 
-`declare_bp_common_proc_cfg_s(num_core_p, num_cce_p, num_lce_p)
 `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
-
-bp_proc_cfg_s proc_cfg_cast_i;
-assign proc_cfg_cast_i = proc_cfg_i;
+`declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
 
 // Declare the routing links
 `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
@@ -90,28 +76,24 @@ bp_coh_ready_and_link_s core_lce_resp_link_li, core_lce_resp_link_lo;
 bp_mem_ready_and_link_s core_mem_cmd_link_li, core_mem_cmd_link_lo;
 bp_mem_ready_and_link_s core_mem_resp_link_li, core_mem_resp_link_lo;
 
+  bp_cfg_bus_s cfg_bus_lo;
   bp_tile
-   #(.cfg_p(cfg_p))
+   #(.bp_params_p(bp_params_p))
    tile
     (.clk_i(core_clk_i)
      ,.reset_i(core_reset_i)
 
-     ,.proc_cfg_i(proc_cfg_i)
+     ,.cfg_bus_o(cfg_bus_lo)
 
      // CCE-MEM IF
      ,.my_cord_i(my_cord_i)
-     ,.my_cid_i('0)
      ,.dram_cord_i(dram_cord_i)
-     ,.mmio_cord_i(mmio_cord_i)
+     ,.clint_cord_i(clint_cord_i)
      ,.host_cord_i(host_cord_i)
 
-     ,.cfg_w_v_i(cfg_w_v_i)
-     ,.cfg_addr_i(cfg_addr_i)
-     ,.cfg_data_i(cfg_data_i)
-
-     ,.timer_int_i(timer_int_i)
-     ,.software_int_i(software_int_i)
-     ,.external_int_i(external_int_i)
+     ,.timer_irq_i(timer_irq_i)
+     ,.software_irq_i(software_irq_i)
+     ,.external_irq_i(external_irq_i)
 
      ,.lce_req_link_i(core_lce_req_link_li)
      ,.lce_req_link_o(core_lce_req_link_lo)
@@ -122,11 +104,11 @@ bp_mem_ready_and_link_s core_mem_resp_link_li, core_mem_resp_link_lo;
      ,.lce_resp_link_i(core_lce_resp_link_li)
      ,.lce_resp_link_o(core_lce_resp_link_lo)
 
-     ,.cmd_link_i(core_mem_cmd_link_li)
-     ,.resp_link_i(core_mem_resp_link_li)
+     ,.mem_cmd_link_i(core_mem_cmd_link_li)
+     ,.mem_cmd_link_o(core_mem_cmd_link_lo)
 
-     ,.cmd_link_o(core_mem_cmd_link_lo)
-     ,.resp_link_o(core_mem_resp_link_lo)
+     ,.mem_resp_link_i(core_mem_resp_link_li)
+     ,.mem_resp_link_o(core_mem_resp_link_lo)
      );
 
 // Network-side coherence connections
@@ -385,9 +367,9 @@ bp_mem_ready_and_link_s mem_resp_link_li, mem_resp_link_lo;
 
   logic [coh_noc_cord_width_p-1:0] lce_cord_li;
   bp_me_lce_id_to_cord
-   #(.cfg_p(cfg_p))
+   #(.bp_params_p(bp_params_p))
    router_cord
-    (.lce_id_i(proc_cfg_cast_i.icache_id)
+    (.lce_id_i(cfg_bus_lo.icache_id)
      ,.lce_cord_o(lce_cord_li)
      ,.lce_cid_o()
      );

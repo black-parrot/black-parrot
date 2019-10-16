@@ -13,7 +13,7 @@ export REPORT_PATH  := $(BP_TOP_DIR)/syn/reports
 
 TB          ?= bp_top_trace_demo
 CFG         ?= e_bp_single_core_cfg
-START_PC 		?= 0x80000000
+START_PC    ?= 0x80000000
 TOLERANCE   ?= 2
 
 # Select CCE ROM based on CFG and Coherence Protocol
@@ -57,6 +57,7 @@ include $(BP_COMMON_DIR)/syn/Makefile.dc
 include $(BP_COMMON_DIR)/syn/Makefile.regress
 include $(BP_COMMON_DIR)/syn/Makefile.verilator
 include $(BP_COMMON_DIR)/syn/Makefile.vcs
+include $(BP_COMMON_DIR)/syn/Makefile.sv2v
 
 regress.top: regress
 regress: regress.v check_design.syn

@@ -3,13 +3,14 @@ module bp_nonsynth_commit_tracer
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_common_rv64_pkg::*;
-  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-    `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    `declare_bp_proc_params(bp_params_p)
 
-    , parameter trace_file_p = "prog"
+    , parameter commit_trace_file_p = "commit"
     )
    (input                                     clk_i
     , input                                   reset_i
+    , input                                   freeze_i
 
     , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
 
@@ -21,14 +22,20 @@ module bp_nonsynth_commit_tracer
     , input [dword_width_p-1:0]               rd_data_i
     );
 
-  string file_name;
-  integer file;
+integer file;
+string file_name;
 
-  always_ff @(negedge reset_i) 
+logic freeze_r;
+always_ff @(posedge clk_i)
+  freeze_r <= freeze_i;
+
+always_ff @(negedge clk_i)
+  if (freeze_r & ~freeze_i)
     begin
-      file_name = $sformatf("%s_%x.trace", trace_file_p, mhartid_i);
-      file = $fopen(file_name, "w");
+      file_name = $sformatf("%s_%x.trace", commit_trace_file_p, mhartid_i);
+      file      = $fopen(file_name, "w");
     end
+
 
   logic [30:0] itag_cnt;
   bsg_counter_clear_up

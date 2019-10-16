@@ -13,8 +13,8 @@
 module bp_me_wormhole_packet_encode_lce_req
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
-  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-    `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    `declare_bp_proc_params(bp_params_p)
     `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
     , localparam lce_cce_req_packet_width_lp = 
@@ -42,7 +42,7 @@ module bp_me_wormhole_packet_encode_lce_req
   logic [coh_noc_cord_width_p-1:0] cce_cord_li;
   logic [coh_noc_cid_width_p-1:0]  cce_cid_li;
   bp_me_cce_id_to_cord
-   #(.cfg_p(cfg_p))
+   #(.bp_params_p(bp_params_p))
    router_cord
     (.cce_id_i(payload_cast_i.dst_id)
      ,.cce_cord_o(cce_cord_li)

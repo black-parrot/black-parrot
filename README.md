@@ -7,6 +7,15 @@ BlackParrot aims to be the default Linux-capable, cache-coherent, RV64GC multico
 # Project Status
 The next release of BlackParrot, v1.0, is coming in September 2019, and will contain support for a (up to) 16 core, cache-coherent, Linux-capable, RV64IA multicore.
 
+# BlackParrot repository overview
+- **bp_fe/** contains the front-end (FE) of BlackParrot, responsible for speculative fetching of instructions.
+- **bp_be/** contains the back-end (BE) of BlackParrot, responsible for atomically executing instructions, as well as logically controlling the FE.
+- **bp_me/** contains the memory-end (ME) of BlackParrot, responsible for servicing memory/IO requests as well as maintaining cache coherence between BlackParrot cores. 
+- **bp_top/** contains configurations of FE, BE, and ME components. For instance, tile components and NOC assemblies.
+- **bp_common/** contains the interface components which connect FE, BE and ME. FE, BE, ME may depend on bp\_common, but not each other.
+- **external/** contains submodules corresponding to tooling that BlackParrot depends upon, such as the riscv-gnu-toolchain and Verilator.
+
+
 # BlackParrot software developer guide
 Coming soon!
 
@@ -17,7 +26,6 @@ Coming soon!
 Coming soon!
 
 # BlackParrot Manifesto
-Always remember:
 - Be TINY
     - When deliberating between two options, consider the one with least hardware cost/complexity.
 - Be Modular

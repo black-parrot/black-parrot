@@ -9,36 +9,28 @@
 
 module bp_cce_reg
   import bp_common_pkg::*;
+  import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
   import bp_me_pkg::*;
-  import bp_cfg_link_pkg::*;
-  #(parameter num_lce_p                     = "inv"
-    , parameter num_cce_p                   = "inv"
-    , parameter paddr_width_p                = "inv"
-    , parameter lce_assoc_p                 = "inv"
-    , parameter lce_sets_p                  = "inv"
-    , parameter block_size_in_bytes_p       = "inv"
-    , parameter lce_req_data_width_p        = "inv"
-
-    , parameter cfg_addr_width_p            = "inv"
-    , parameter cfg_data_width_p            = "inv"
-
+  import bp_common_cfg_link_pkg::*;
+  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    `declare_bp_proc_params(bp_params_p)
     // Derived parameters
     , localparam lg_num_lce_lp              = `BSG_SAFE_CLOG2(num_lce_p)
     , localparam lg_num_cce_lp              = `BSG_SAFE_CLOG2(num_cce_p)
-    , localparam block_size_in_bits_lp      = (block_size_in_bytes_p*8)
-    , localparam lg_block_size_in_bytes_lp  = `BSG_SAFE_CLOG2(block_size_in_bytes_p)
+    , localparam lg_block_size_in_bytes_lp  = `BSG_SAFE_CLOG2(cce_block_width_p/8)
     , localparam lg_lce_assoc_lp            = `BSG_SAFE_CLOG2(lce_assoc_p)
     , localparam lg_lce_sets_lp             = `BSG_SAFE_CLOG2(lce_sets_p)
     , localparam tag_width_lp               =
       (paddr_width_p-lg_lce_sets_lp-lg_block_size_in_bytes_lp)
     , localparam entry_width_lp             = (tag_width_lp+`bp_coh_bits)
     , localparam tag_set_width_lp           = (entry_width_lp*lce_assoc_p)
+    , localparam cfg_bus_width_lp         = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
 
     , localparam mshr_width_lp = `bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
 
-    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p, block_size_in_bits_lp)
-    `declare_bp_me_if_widths(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
   )
   (input                                                                   clk_i
    , input                                                                 reset_i
@@ -74,29 +66,24 @@ module bp_cce_reg
    , input                                                                 gad_cached_owned_flag_i
    , input                                                                 gad_cached_dirty_flag_i
 
-   // Config channel
-   , input                                                                 cfg_w_v_i
-   , input [cfg_addr_width_p-1:0]                                          cfg_addr_i
-   , input [cfg_data_width_p-1:0]                                          cfg_data_i
+   , input [cfg_bus_width_lp-1:0]                                         cfg_bus_i
 
    // Register value outputs
    , output logic [mshr_width_lp-1:0]                                      mshr_o
 
    , output logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0]   gpr_o
 
-   , output logic [lce_req_data_width_p-1:0]                               nc_data_o
-
-   , output logic [lg_num_lce_lp-1:0]                                      num_lce_o
-
    , output logic [`bp_coh_bits-1:0]                                       coh_state_o
+
+   , output logic [dword_width_p-1:0]                                      nc_data_o
   );
 
   wire unused = pending_v_o_i;
 
   // Define structure variables for input queues
 
-  `declare_bp_me_if(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
-  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p, block_size_in_bits_lp);
+  `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
+  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   bp_lce_cce_req_s lce_req;
 
@@ -114,18 +101,13 @@ module bp_cce_reg
   bp_cce_mshr_s mshr_r, mshr_n;
 
   logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_r, gpr_n;
-  logic [lce_req_data_width_p-1:0] nc_data_r, nc_data_n;
-  logic [lg_num_lce_lp-1:0] num_lce_r, num_lce_n;
+  logic [dword_width_p-1:0] nc_data_r, nc_data_n;
   logic [`bp_coh_bits-1:0] coh_state_r, coh_state_n;
-
-  // Config link
-  wire cfg_num_lce_w_v = (cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_num_lce_gp));
 
   // Output register values
   assign mshr_o = mshr_r;
   assign gpr_o = gpr_r;
   assign nc_data_o = nc_data_r;
-  assign num_lce_o = num_lce_r;
   assign coh_state_o = coh_state_r;
 
   always_comb
@@ -156,13 +138,6 @@ module bp_cce_reg
     // Uncached data that is being returned to an LCE from a Mem Data Resp does not need
     // to be registered, and is handled by bp_cce_msg module.
     nc_data_n = lce_req.msg.uc_req.data;
-
-    // Num LCE register - always come from move source, unless config link writes it
-    if (cfg_num_lce_w_v) begin
-      num_lce_n = cfg_data_i[0+:lg_num_lce_lp];
-    end else begin
-      num_lce_n = mov_src_i[0+:lg_num_lce_lp];
-    end
 
     // Default coherence state
     coh_state_n = mov_src_i[0+:`bp_coh_bits];
@@ -437,7 +412,6 @@ module bp_cce_reg
       mshr_r <= '0;
       gpr_r <= '0;
       nc_data_r <= '0;
-      num_lce_r <= '0;
       coh_state_r <= '0;
     end else begin
       // MSHR writes
@@ -489,14 +463,6 @@ module bp_cce_reg
       // Uncached data and request size
       if (decoded_inst_i.nc_data_w_v) begin
         nc_data_r <= nc_data_n;
-      end
-
-      // Num LCE register
-      // written on move special operation or by config link
-      if (cfg_num_lce_w_v
-          | (decoded_inst_i.mov_dst_w_v & (decoded_inst_i.dst_sel == e_dst_sel_special)
-             & (decoded_inst_i.dst.special == e_dst_num_lce))) begin
-        num_lce_r <= num_lce_n;
       end
 
       if (decoded_inst_i.mov_dst_w_v & (decoded_inst_i.dst_sel == e_dst_sel_special)

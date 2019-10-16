@@ -36,14 +36,6 @@ typedef enum logic [1:0] {
 
 `define bp_fe_icache_lce_data_mem_opcode_width $bits(bp_fe_icache_lce_data_mem_opcode_e)
 
-// TODO: might not be needed for icache
-typedef enum logic {
-  e_icache_lce_mode_uncached
-  ,e_icache_lce_mode_normal
-} bp_fe_icache_lce_mode_e;
-
-`define bp_fe_icache_lce_mode_bits $bits(bp_fe_icache_lce_mode_e)
-
 /*
  * bp_fe_lce_cce_req_state_e specifies the state of the lce_cmd.
  */
