@@ -1021,6 +1021,7 @@ typedef struct packed {
   // Directory inputs
   logic                                    dir_r_v;
   logic                                    dir_w_v;
+  bp_cce_inst_minor_dir_op_e               dir_op;
 
   // LCE command queue input selects
   bp_cce_inst_lce_cmd_lce_sel_e            lce_cmd_lce_sel;
@@ -1073,7 +1074,7 @@ typedef struct packed {
   // request size written any time ucf (rqf) written
   logic                                    nc_req_size_w_v;
 
-  // inbound messages - yumi signals (to FIFOs)
+  // inbound messages - yumi signals
   logic                                    lce_req_yumi;
   logic                                    lce_resp_yumi;
   logic                                    mem_resp_yumi;

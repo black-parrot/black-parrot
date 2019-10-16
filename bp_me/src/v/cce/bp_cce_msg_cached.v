@@ -526,7 +526,9 @@ module bp_cce_msg_cached
           mem_cmd_lo.payload.way_id = '0;
         end
 
-        // Load or store miss request uses defaults defined above
+        // align mem_cmd address to cache block boundary, since all cached requests are for full
+        // blocks
+        mem_cmd_lo.addr = (mem_cmd_addr >> lg_block_size_in_bytes_lp) << lg_block_size_in_bytes_lp;
 
         // write pending bit
         pending_w_v_o = mem_cmd_ready_i;

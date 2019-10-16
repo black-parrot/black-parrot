@@ -316,28 +316,34 @@ module bp_cce_inst_decode
           if (minor_op_u.dir_minor_op == e_rdp_op) begin
             decoded_inst_o.pending_r_v = 1'b1;
             decoded_inst_o.flag_mask_w_v = e_flag_pf;
+            decoded_inst_o.dir_op = minor_op_u.dir_minor_op;
           end
           if (minor_op_u.dir_minor_op == e_rdw_op) begin
             decoded_inst_o.dir_r_v = 1'b1;
+            decoded_inst_o.dir_op = minor_op_u.dir_minor_op;
           end
           if (minor_op_u.dir_minor_op == e_rde_op) begin
             decoded_inst_o.dir_r_v = 1'b1;
             decoded_inst_o.dst.gpr = dir_op_s.dst;
             decoded_inst_o.dst_sel = e_dst_sel_gpr;
             decoded_inst_o.rde_w_v = 1'b1;
+            decoded_inst_o.dir_op = minor_op_u.dir_minor_op;
           end
           if (minor_op_u.dir_minor_op == e_wdp_op) begin
             decoded_inst_o.dir_w_v = 1'b1;
             decoded_inst_o.pending_w_v = 1'b1;
             decoded_inst_o.imm[0] = dir_op_s.pending;
+            decoded_inst_o.dir_op = minor_op_u.dir_minor_op;
           end
           if (minor_op_u.dir_minor_op == e_wde_op) begin
             decoded_inst_o.dir_w_v = 1'b1;
             decoded_inst_o.imm[0+:`bp_coh_bits] = dir_op_s.state;
+            decoded_inst_o.dir_op = minor_op_u.dir_minor_op;
           end
           if (minor_op_u.dir_minor_op == e_wds_op) begin
             decoded_inst_o.dir_w_v = 1'b1;
             decoded_inst_o.imm[0+:`bp_coh_bits] = dir_op_s.state;
+            decoded_inst_o.dir_op = minor_op_u.dir_minor_op;
           end
           if (minor_op_u.dir_minor_op == e_gad_op) begin
             decoded_inst_o.gad_v = 1'b1;
@@ -568,6 +574,9 @@ module bp_cce_inst_decode
 
     // stall if trying to push mem_cmd but bp_cce_msg is using the pending bit
     pc_stall_o |= (pushq_op & (pushq_qsel == e_dst_q_mem_cmd) & pending_w_busy_i);
+
+    // stall if trying to pop mem_resp but bp_cce_msg is using the pending bit
+    pc_stall_o |= (popq_op & (popq_qsel == e_src_q_sel_mem_resp) & pending_w_busy_i);
 
     // stall if trying to push lce_cmd but bp_cce_msg is sending an lce_cmd
     pc_stall_o |= (pushq_op & (pushq_qsel == e_dst_q_lce_cmd) & lce_cmd_busy_i);

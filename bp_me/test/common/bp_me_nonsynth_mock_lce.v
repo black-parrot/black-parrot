@@ -808,7 +808,7 @@ module bp_me_nonsynth_mock_lce
           tag_next_n[cur_set_n][cur_way_n].coh_st = lce_cmd_r.msg.dt_cmd.state;
           tag_next_n[cur_set_n][cur_way_n].tag = lce_cmd_r.msg.dt_cmd.addr[paddr_width_p-1 -: ptag_width_lp];
 
-          assert (mshr_r.paddr == lce_cmd_r.msg.dt_cmd.addr) else
+          assert (mshr_r.paddr[paddr_width_p-1 -: ptag_width_lp] == lce_cmd_r.msg.dt_cmd.addr[paddr_width_p-1 -: ptag_width_lp]) else
             $error("[%0d]: DT_CMD address mismatch [%H] != [%H]", lce_id_i, mshr_r.paddr, lce_cmd_r.msg.dt_cmd.addr);
 
           // update mshr
@@ -917,8 +917,6 @@ module bp_me_nonsynth_mock_lce
           tag_next_n[cur_set_n][cur_way_n].coh_st = lce_cmd_r.msg.cmd.state;
           tag_next_n[cur_set_n][cur_way_n].tag = lce_cmd_r.msg.cmd.addr[paddr_width_p-1 -: ptag_width_lp];
 
-          // TODO: remove assert
-          assert(lce_cmd_r.msg.cmd.addr == mshr_r.paddr) else $error("set tag does not match mshr");
           // tag only comes in response to a miss, update the mshr
           mshr_n.tag_received = 1'b1;
 

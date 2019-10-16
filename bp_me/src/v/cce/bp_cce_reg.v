@@ -152,7 +152,7 @@ module bp_cce_reg
     // normal request processing).
     if (decoded_inst_i.mshr_clear) begin
       mshr_n = '0;
-      mshr_n.next_coh_state = coh_state_r;
+      mshr_n.next_coh_state = bp_coh_states_e'(coh_state_r);
     end else begin
       // Request LCE, address, tag
       case (decoded_inst_i.req_sel)

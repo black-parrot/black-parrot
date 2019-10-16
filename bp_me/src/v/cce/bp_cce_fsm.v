@@ -44,6 +44,7 @@ module bp_cce_fsm
   (input                                               clk_i
    , input                                             reset_i
 
+   // Config channel
    , input [cfg_bus_width_lp-1:0]                      cfg_bus_i
    , output [cce_instr_width_p-1:0]                    cfg_cce_ucode_data_o
 
@@ -82,6 +83,10 @@ module bp_cce_fsm
    , input                                             mem_resp_ready_i
   );
 
+  // stub unused ports
+  assign mem_resp_o = '0;
+  assign mem_resp_v_o = '0;
+  assign mem_cmd_yumi_o = '0;
   // stub cfg ucode output, since FSM CCE has no ucode
   assign cfg_cce_ucode_data_o = '0;
 
@@ -90,6 +95,7 @@ module bp_cce_fsm
     assert (lce_sets_p > 1) else $error("Number of LCE sets must be greater than 1");
     assert (num_cce_p >= 1 && `BSG_IS_POW2(num_cce_p))
       else $error("Number of CCE must be power of two");
+    assert (counter_max > num_way_groups_lp) else $error("Counter max value not large enough");
   end
   //synopsys translate_on
 
@@ -509,7 +515,7 @@ module bp_cce_fsm
         // cnt_0 holds the current way-group being targeted by the set clear command, which
         // needs to be translated into an LCE relative set index
         lce_cmd.msg.cmd.addr = ((paddr_width_p'(cnt_0) << set_shift_lp) + paddr_width_p'(cfg_bus_cast_i.cce_id))
-                           << lg_block_size_in_bytes_lp;
+                               << lg_block_size_in_bytes_lp;
 
         // Assign Command subtype to msg field
         lce_cmd.msg.cmd = lce_cmd.msg.cmd;
@@ -735,6 +741,11 @@ module bp_cce_fsm
               : (mshr_r.flags[e_flag_sel_tf])
                 ? TRANSFER_CMD
                 : READ_MEM;
+
+        cnt_0_clr = 1'b1;
+        cnt_1_clr = 1'b1;
+        ack_cnt_clr = 1'b1;
+
       end
       INV_CMD: begin
         // cnt_1 is the LCE ID counter
@@ -779,6 +790,7 @@ module bp_cce_fsm
             // increment the Ack counting register if the command is sent
             ack_cnt_inc = (lce_cmd_ready_i);
           end
+          // else do not send, lce_cmd_busy set
         end else begin
           // current LCE ID in cnt_1 is either the requesting LCE or does not have block cached
 
@@ -820,6 +832,8 @@ module bp_cce_fsm
           cnt_0_clr = (state_n != INV_ACK);
           // increment the count of messages received as long as there are more yet to arrive
           cnt_0_inc = ~cnt_0_clr;
+
+          // clear the ack counter when moving out of this state
           ack_cnt_clr = (state_n != INV_ACK);
 
         end
