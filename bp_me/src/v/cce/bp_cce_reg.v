@@ -102,7 +102,7 @@ module bp_cce_reg
 
   logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_r, gpr_n;
   logic [dword_width_p-1:0] nc_data_r, nc_data_n;
-  logic [`bp_coh_bits-1:0] coh_state_r, coh_state_n;
+  bp_coh_states_e coh_state_r, coh_state_n;
 
   // Output register values
   assign mshr_o = mshr_r;
@@ -140,7 +140,7 @@ module bp_cce_reg
     nc_data_n = lce_req.msg.uc_req.data;
 
     // Default coherence state
-    coh_state_n = mov_src_i[0+:`bp_coh_bits];
+    coh_state_n = bp_coh_states_e'(mov_src_i[0+:`bp_coh_bits]);
 
     // MSHR
 
@@ -412,7 +412,7 @@ module bp_cce_reg
       mshr_r <= '0;
       gpr_r <= '0;
       nc_data_r <= '0;
-      coh_state_r <= '0;
+      coh_state_r <= bp_coh_states_e'('0);
     end else begin
       // MSHR writes
       if (decoded_inst_i.mshr_clear) begin

@@ -33,6 +33,7 @@ module bp_cce_fsm
     , localparam num_way_groups_lp         = (lce_sets_p/num_cce_p)
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
     , localparam inst_ram_addr_width_lp    = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
+    , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
 
     // interface widths
     `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
@@ -42,12 +43,9 @@ module bp_cce_fsm
   )
   (input                                               clk_i
    , input                                             reset_i
-   , input                                             freeze_i
 
-   // Config channel
-   , input                                             cfg_w_v_i
-   , input [cfg_addr_width_p-1:0]                      cfg_addr_i
-   , input [cfg_data_width_p-1:0]                      cfg_data_i
+   , input [cfg_bus_width_lp-1:0]                      cfg_bus_i
+   , output [cce_instr_width_p-1:0]                    cfg_cce_ucode_data_o
 
    // LCE-CCE Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
@@ -82,9 +80,10 @@ module bp_cce_fsm
    , output logic [cce_mem_msg_width_lp-1:0]           mem_resp_o
    , output logic                                      mem_resp_v_o
    , input                                             mem_resp_ready_i
-
-   , input [lg_num_cce_lp-1:0]                         cce_id_i
   );
+
+  // stub cfg ucode output, since FSM CCE has no ucode
+  assign cfg_cce_ucode_data_o = '0;
 
   //synopsys translate_off
   initial begin
@@ -114,24 +113,10 @@ module bp_cce_fsm
   assign lce_resp = lce_resp_i;
   assign lce_req = lce_req_i;
 
-  // CCE Mode
-  bp_cce_mode_e cce_mode_r, cce_mode_n;
-  always_ff @(posedge clk_i) begin
-    if (reset_i) begin
-      cce_mode_r <= e_cce_mode_uncached;
-    end else begin
-      cce_mode_r <= cce_mode_n;
-    end
-  end
-
-  wire cfg_cce_mode_addr_v = (cfg_addr_i == bp_cfg_reg_cce_mode_gp);
-  always_comb begin
-    cce_mode_n = cce_mode_r;
-    if (cfg_w_v_i & cfg_cce_mode_addr_v) begin
-      cce_mode_n = bp_cce_mode_e'(cfg_data_i[0+:`bp_cce_mode_bits]);
-    end
-  end
-
+  // Config bus
+  `declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+  bp_cfg_bus_s cfg_bus_cast_i;
+  assign cfg_bus_cast_i = cfg_bus_i;
 
   // CCE FSM
 
@@ -383,7 +368,7 @@ module bp_cce_fsm
     mem_cmd_v_o = '0;
     mem_resp_yumi_o = '0;
 
-    lce_cmd.msg.cmd.src_id = cce_id_i;
+    lce_cmd.msg.cmd.src_id = cfg_bus_cast_i.cce_id;
 
     cnt_1_clr = '0;
     cnt_1_inc = '0;
@@ -479,7 +464,7 @@ module bp_cce_fsm
     // FSM
     case (state_r)
       RESET: begin
-        state_n = (reset_i | freeze_i) ? RESET : CLEAR_DIR;
+        state_n = (reset_i | cfg_bus_cast_i.freeze) ? RESET : CLEAR_DIR;
         cnt_0_clr = 1'b1;
         cnt_1_clr = 1'b1;
         ack_cnt_clr = 1'b1;
@@ -508,7 +493,7 @@ module bp_cce_fsm
         cnt_0_inc = cnt_1_clr & ~cnt_0_clr;
 
         // override next state if in uncached mode
-        state_n = ((state_n == SEND_SET_CLEAR) & (cce_mode_r == e_cce_mode_uncached))
+        state_n = ((state_n == SEND_SET_CLEAR) & (cfg_bus_cast_i.cce_mode == e_cce_mode_uncached))
                   ? READY
                   : state_n;
       end
@@ -523,7 +508,7 @@ module bp_cce_fsm
         // Sub message fields
         // cnt_0 holds the current way-group being targeted by the set clear command, which
         // needs to be translated into an LCE relative set index
-        lce_cmd.msg.cmd.addr = ((paddr_width_p'(cnt_0) << set_shift_lp) + paddr_width_p'(cce_id_i))
+        lce_cmd.msg.cmd.addr = ((paddr_width_p'(cnt_0) << set_shift_lp) + paddr_width_p'(cfg_bus_cast_i.cce_id))
                            << lg_block_size_in_bytes_lp;
 
         // Assign Command subtype to msg field

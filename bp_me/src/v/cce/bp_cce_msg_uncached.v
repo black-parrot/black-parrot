@@ -24,8 +24,8 @@ module bp_cce_msg_uncached
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
   import bp_me_pkg::*;
-  #(parameter cfg_p                        = "inv"
-    `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_p                  = "inv"
+    `declare_bp_proc_params(bp_params_p)
 
     // Derived parameters
     , localparam lg_num_cce_lp             = `BSG_SAFE_CLOG2(num_cce_p)

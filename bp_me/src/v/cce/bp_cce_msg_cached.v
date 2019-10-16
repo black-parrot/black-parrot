@@ -16,8 +16,8 @@ module bp_cce_msg_cached
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
   import bp_me_pkg::*;
-  #(parameter cfg_p                        = "inv"
-    `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_p                  = "inv"
+    `declare_bp_proc_params(bp_params_p)
 
     // Derived parameters
     , localparam block_size_in_bytes_lp    = (cce_block_width_p/8)

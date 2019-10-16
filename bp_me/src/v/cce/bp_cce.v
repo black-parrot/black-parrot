@@ -32,7 +32,7 @@ module bp_cce
     , localparam num_way_groups_lp         = (lce_sets_p/num_cce_p)
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
     , localparam inst_ram_addr_width_lp    = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
-    , localparam cfg_bus_width_lp         = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+    , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
 
     // interface widths
     `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
@@ -41,7 +41,7 @@ module bp_cce
   (input                                               clk_i
    , input                                             reset_i
 
-   , input [cfg_bus_width_lp-1:0]                     cfg_bus_i
+   , input [cfg_bus_width_lp-1:0]                      cfg_bus_i
    , output [cce_instr_width_p-1:0]                    cfg_cce_ucode_data_o
 
    // LCE-CCE Interface
@@ -108,6 +108,11 @@ module bp_cce
   assign mem_cmd_li = mem_cmd_i;
   assign lce_resp_li = lce_resp_i;
   assign lce_req_li = lce_req_i;
+
+  // Config bus
+  `declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+  bp_cfg_bus_s cfg_bus_cast_i;
+  assign cfg_bus_cast_i = cfg_bus_i;
 
   // PC to Decode signals
   logic [`bp_cce_inst_width-1:0] pc_inst_lo;
@@ -635,7 +640,7 @@ module bp_cce
           e_src_lce_resp_type: src_a[0+:$bits(bp_lce_cce_resp_type_e)] = lce_resp_li.msg_type;
           e_src_special_0: src_a[0] = 1'b0;
           e_src_special_1: src_a[0] = 1'b1;
-          e_src_cce_id: src_a[0+:lg_num_cce_lp] = cce_id_i;
+          e_src_cce_id: src_a[0+:lg_num_cce_lp] = cfg_bus_cast_i.cce_id;
           e_src_special_imm: src_a = decoded_inst_lo.imm;
           default: src_a = '0;
         endcase
@@ -708,7 +713,7 @@ module bp_cce
           e_src_lce_resp_type: src_b[0+:$bits(bp_lce_cce_resp_type_e)] = lce_resp_li.msg_type;
           e_src_special_0: src_b[0] = 1'b0;
           e_src_special_1: src_b[0] = 1'b1;
-          e_src_cce_id: src_b[0+:lg_num_cce_lp] = cce_id_i;
+          e_src_cce_id: src_b[0+:lg_num_cce_lp] = cfg_bus_cast_i.cce_id;
           e_src_special_imm: src_b = decoded_inst_lo.imm;
           default: src_b = '0;
         endcase

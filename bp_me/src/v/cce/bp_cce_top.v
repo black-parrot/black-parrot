@@ -44,7 +44,7 @@ module bp_cce_top
   (input                                                   clk_i
    , input                                                 reset_i
 
-   , input [cfg_bus_width_lp-1:0]                         cfg_bus_i
+   , input [cfg_bus_width_lp-1:0]                          cfg_bus_i
    , output [cce_instr_width_p-1:0]                        cfg_cce_ucode_data_o
 
    // LCE-CCE Interface
