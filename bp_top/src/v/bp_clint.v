@@ -141,7 +141,7 @@ for (genvar i = 0; i < num_core_p; i++)
        ,.data_i(mtimecmp_n[i])
        ,.data_o(mtimecmp_r[i])
        );
-    assign timer_irq_o[i] = mtimecmp_r[i];
+    assign timer_irq_o[i] = (mtime_r >= mtimecmp_r[i]);
 
     assign mipi_n[i] = mem_cmd_li.data[0];
     wire mipi_w_v_li = wr_not_rd & mipi_v_li[i];
