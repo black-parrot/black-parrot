@@ -17,7 +17,6 @@ wde r0 r1 r2 0 I
 bi rst_way_check
 
 # send set_clear messages
-
 set_clear_init: movsg cceId r5
 # r4 holds starting offset for address, assumes blocks striped across CCEs
 movi 0 r4
@@ -48,7 +47,7 @@ bi set_clear_top
 
 # send sync messages
 # r0 counts up from 0 number of sync messages sent
-# r1 holds constant N_LCE
+# r1 holds constant numLCE
 # r3 stores the constant SYNC_ACK to check response ack type against
 # The CCE waits for sync ack after each sync command. This avoids additional buffering being
 # required in the CCE, at a small "performance" cost during startup
