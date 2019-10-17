@@ -248,9 +248,9 @@ package bp_common_aviary_pkg;
       ,coh_noc_flit_width  : 62
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 5
-      ,coh_noc_y_cord_width: 0
+      ,coh_noc_y_cord_width: 4
       ,coh_noc_x_cord_width: 4
-      ,coh_noc_y_dim       : 0
+      ,coh_noc_y_dim       : 2
       ,coh_noc_x_dim       : 4
 
       ,cfg_core_width: 8
@@ -263,10 +263,10 @@ package bp_common_aviary_pkg;
       ,mem_noc_reserved_width: 2
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
-      ,mem_noc_y_cord_width  : 0
-      ,mem_noc_x_cord_width  : 8
-      ,mem_noc_y_dim         : 1
-      ,mem_noc_x_dim         : 8
+      ,mem_noc_y_cord_width  : 4
+      ,mem_noc_x_cord_width  : 4
+      ,mem_noc_y_dim         : 2
+      ,mem_noc_x_dim         : 4
       };
 
   localparam bp_proc_param_s bp_sexta_core_cfg_p =
@@ -300,10 +300,10 @@ package bp_common_aviary_pkg;
       ,coh_noc_flit_width  : 62
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 5
-      ,coh_noc_y_cord_width: 0
+      ,coh_noc_y_cord_width: 4
       ,coh_noc_x_cord_width: 4
-      ,coh_noc_y_dim       : 0
-      ,coh_noc_x_dim       : 16
+      ,coh_noc_y_dim       : 4
+      ,coh_noc_x_dim       : 4
 
       ,cfg_core_width: 8
       ,cfg_addr_width: 16
@@ -315,8 +315,8 @@ package bp_common_aviary_pkg;
       ,mem_noc_reserved_width: 2
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
-      ,mem_noc_y_cord_width  : 0
-      ,mem_noc_x_cord_width  : 9
+      ,mem_noc_y_cord_width  : 4
+      ,mem_noc_x_cord_width  : 4
       ,mem_noc_y_dim         : 4
       ,mem_noc_x_dim         : 4
       };
