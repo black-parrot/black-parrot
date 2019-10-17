@@ -164,6 +164,7 @@ module bp_cce_nonsynth_tracer
         $fwrite(file, "[%t]: CCE[%0d] MEM DATA RESP wr[%0b] addr[%H] lce[%0d] way[%0d] state[%3b] uc[%0b]\n%H"
                  , $time, cce_id_i, (mem_resp_li.msg_type == e_cce_mem_wr), mem_resp_li.addr
                  , mem_resp_li.payload.lce_id, mem_resp_li.payload.way_id, mem_resp_li.payload.state
+                 , mem_resp_li.payload.speculative
                  , (mem_resp_li.msg_type == e_cce_mem_uc_rd), mem_resp_li.data);
         end
       end
@@ -193,7 +194,8 @@ module bp_cce_nonsynth_tracer
             | mem_cmd_lo.msg_type == e_cce_mem_uc_rd) begin
         $fwrite(file, "[%t]: CCE[%0d] MEM CMD wr[%0b] addr[%H] lce[%0d] way[%0d] uc[%0b]"
                  , $time, cce_id_i, mem_cmd_lo.msg_type, mem_cmd_lo.addr, mem_cmd_lo.payload.lce_id
-                 , mem_cmd_lo.payload.way_id, (mem_cmd_lo.msg_type == e_cce_mem_uc_rd));
+                 , mem_cmd_lo.payload.way_id, mem_cmd_lo.payload.speculative
+                 , (mem_cmd_lo.msg_type == e_cce_mem_uc_rd));
         end
         if (mem_cmd_lo.msg_type == e_cce_mem_uc_wr | mem_cmd_lo.msg_type == e_cce_mem_wb) begin
         $fwrite(file, "[%t]: CCE[%0d] MEM DATA CMD wb[%0b] addr[%H] lce[%0d] way[%0d] state[%3b] uc[%0b]\n%H"

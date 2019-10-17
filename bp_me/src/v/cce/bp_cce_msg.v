@@ -38,7 +38,7 @@ module bp_cce_msg
   (input                                               clk_i
    , input                                             reset_i
 
-   , input [cfg_bus_width_lp-1:0]                     cfg_bus_i
+   , input [cfg_bus_width_lp-1:0]                      cfg_bus_i
 
    // LCE-CCE Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
@@ -103,7 +103,7 @@ module bp_cce_msg
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
   `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
-  bp_cfg_bus_s     cfg_bus_cast_i;
+  bp_cfg_bus_s      cfg_bus_cast_i;
   bp_lce_cce_req_s  lce_req_li;
   bp_lce_cce_resp_s lce_resp_li;
   bp_lce_cmd_s      lce_cmd_lo;
@@ -149,17 +149,7 @@ module bp_cce_msg
 
   // Message unit
   bp_cce_msg_cached
-    #(.num_lce_p(num_lce_p)
-      ,.num_cce_p(num_cce_p)
-      ,.paddr_width_p(paddr_width_p)
-      ,.lce_assoc_p(lce_assoc_p)
-      ,.lce_sets_p(lce_sets_p)
-      ,.block_size_in_bytes_p(block_size_in_bytes_lp)
-      ,.lce_req_data_width_p(dword_width_p)
-      ,.num_way_groups_p(num_way_groups_lp)
-      ,.cce_block_width_p(cce_block_width_p)
-      ,.dword_width_p(dword_width_p)
-      )
+    #(.bp_params_p(bp_params_p))
     bp_cce_msg_cached
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -216,14 +206,7 @@ module bp_cce_msg
 
   // Uncached access module
   bp_cce_msg_uncached
-    #(.num_lce_p(num_lce_p)
-      ,.num_cce_p(num_cce_p)
-      ,.paddr_width_p(paddr_width_p)
-      ,.lce_assoc_p(lce_assoc_p)
-      ,.lce_sets_p(lce_sets_p)
-      ,.block_size_in_bytes_p(block_size_in_bytes_lp)
-      ,.lce_req_data_width_p(dword_width_p)
-      )
+    #(.bp_params_p(bp_params_p))
     bp_cce_msg_uncached
      (.clk_i(clk_i)
       ,.reset_i(reset_i)

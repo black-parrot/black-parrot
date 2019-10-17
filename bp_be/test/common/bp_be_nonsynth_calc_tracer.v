@@ -129,29 +129,29 @@ always_ff @(posedge clk_i) begin
 
     if(booted_r) begin
             $fwrite(file, "-----\n");
-            if (issue_pkt_v_i)
-              $fwrite(file, "[ISS] core: %x pc: %x\n", mhartid_i, issue_pkt.pc);
-
-            if (fe_nop_v_i)
-              $fwrite(file, "[ISD] core: %x bub (fe)\n", mhartid_i);
-            else if (be_nop_v_i)
-              $fwrite(file, "[ISD] core: %x bub (be)\n", mhartid_i);
-            else if (me_nop_v_i)
-              $fwrite(file, "[ISD] core: %x bub (me)\n", mhartid_i);
-            else 
-              $fwrite(file, "[ISD] core: %x pc: %x\n", mhartid_i, dispatch_pkt.pc);
-
-for (integer i = 0; i < 4; i++)
-begin
-            if (cmt_trace_exc[i].roll_v)
-              $fwrite(file, "[%s] core: %x rolled\n", stage_aliases[i], mhartid_i);
-            else if (cmt_trace_exc[i].poison_v)
-              $fwrite(file, "[%s] core: %x poisoned\n", stage_aliases[i], mhartid_i);
-            else if (~dbg_stage_r[i].decode.instr_v)
-              $fwrite(file, "[%s] core: %x nop\n", stage_aliases[i], mhartid_i);
-            else
-              $fwrite(file, "[%s] core: %x pc: %x\n", stage_aliases[i], mhartid_i, dbg_stage_r[i].pc);
-end
+//            if (issue_pkt_v_i)
+//              $fwrite(file, "[ISS] core: %x pc: %x\n", mhartid_i, issue_pkt.pc);
+//
+//            if (fe_nop_v_i)
+//              $fwrite(file, "[ISD] core: %x bub (fe)\n", mhartid_i);
+//            else if (be_nop_v_i)
+//              $fwrite(file, "[ISD] core: %x bub (be)\n", mhartid_i);
+//            else if (me_nop_v_i)
+//              $fwrite(file, "[ISD] core: %x bub (me)\n", mhartid_i);
+//            else 
+//              $fwrite(file, "[ISD] core: %x pc: %x\n", mhartid_i, dispatch_pkt.pc);
+//
+//for (integer i = 0; i < 4; i++)
+//begin
+//            if (cmt_trace_exc[i].roll_v)
+//              $fwrite(file, "[%s] core: %x rolled\n", stage_aliases[i], mhartid_i);
+//            else if (cmt_trace_exc[i].poison_v)
+//              $fwrite(file, "[%s] core: %x poisoned\n", stage_aliases[i], mhartid_i);
+//            else if (~dbg_stage_r[i].decode.instr_v)
+//              $fwrite(file, "[%s] core: %x nop\n", stage_aliases[i], mhartid_i);
+//            else
+//              $fwrite(file, "[%s] core: %x pc: %x\n", stage_aliases[i], mhartid_i, dbg_stage_r[i].pc);
+//end
 
             if (trap_v_i) begin
               $fwrite(file, "[TRP] core: %x pc: %x", mhartid_i, dbg_stage_r[2].pc);
@@ -193,28 +193,20 @@ end
                                  ,dbg_stage_r[2].rs2
                                  ,iwb_result_i[0]
                                  );   
-                  else
+                  else if (dbg_stage_r[2].decode.irf_w_v == 1)
                     $fwrite(file, "\t\top: load sem: r%d <- mem[%x] {%x}\n"
                              ,dbg_stage_r[2].instr.fields.rtype.rd_addr
                              ,dbg_stage_r[2].rs1 
                               + dbg_stage_r[2].imm
                              ,iwb_result_i
                              );
-                end else if(dbg_stage_r[2].decode.mem_v) begin
-                    if(dbg_stage_r[2].decode.fu_op == e_scd)
-                        $fwrite(file, "\t\top: sc.d sem: mem[%x] <- r%d {%x}, success: %d \n"
-                                 ,dbg_stage_r[2].rs1 
-                                 ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
-                                 ,dbg_stage_r[2].rs2
-                                 ,iwb_result_i
-                                 );   
-                      else
-                        $fwrite(file, "\t\top: store sem: mem[%x] <- r%d {%x}\n"
-                                 ,dbg_stage_r[2].rs1 
-                                  + dbg_stage_r[2].imm
-                                 ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
-                                 ,dbg_stage_r[2].rs2
-                                 );   
+                  else 
+                    $fwrite(file, "\t\top: store sem: mem[%x] <- r%d {%x}\n"
+                            ,dbg_stage_r[2].rs1 
+                             + dbg_stage_r[2].imm
+                            ,dbg_stage_r[2].instr.fields.rtype.rs2_addr
+                            ,dbg_stage_r[2].rs2
+                            );   
                 end else if(dbg_stage_r[2].decode.jmp_v) begin
                     $fwrite(file, "\t\top: jump sem: pc <- {%x}, r%d <- {%x}\n"
                              ,iwb_br_tgt_r

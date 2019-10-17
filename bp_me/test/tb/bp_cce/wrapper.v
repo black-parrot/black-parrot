@@ -28,7 +28,7 @@ module wrapper
   (input                                                   clk_i
    , input                                                 reset_i
 
-   , input [cfg_bus_width_lp-1:0]                         cfg_bus_i
+   , input [cfg_bus_width_lp-1:0]                          cfg_bus_i
    , output logic [cce_instr_width_p-1:0]                  cfg_cce_ucode_data_o
 
    // LCE-CCE Interface
@@ -80,6 +80,7 @@ module wrapper
       bp_cce_tracer
        (.clk_i(clk_i & (wrapper.cce_trace_p == 1))
         ,.reset_i(reset_i)
+        ,.freeze_i(bp_cce.inst_ram.cfg_bus_cast_i.freeze)
   
         ,.cce_id_i('0)
   

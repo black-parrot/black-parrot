@@ -33,4 +33,5 @@ clean:
 	rm -f *.riscv
 	rm -f src/atomic_queue_demo_*.s
 	rm -f src/write_demo_*.s
+	rm -f src/queue_demo_*.s
 

@@ -4,42 +4,55 @@
 #include "microcode.h"
 
 # invalidate every entry in directory
-rst_wg_init: movi N_WG r0
+rst_wg_init: movsg numWG r0
 rst_wg_check: bz r0 set_clear_init
 dec r0
-rst_lce_init: movi N_LCE r1
+rst_lce_init: movsg numLCE r1
 rst_lce_check: bz r1 rst_wg_check
 dec r1
-rst_way_init: movi LCE_ASSOC r2
+rst_way_init: movsg lceAssoc r2
 rst_way_check: bz r2 rst_lce_check
 dec r2
 wde r0 r1 r2 0 I
 bi rst_way_check
 
 # send set_clear messages
-set_clear_init: movi 0 r0
-movi N_LCE r1
-lce_top: bge r0 r1 sync_init
-# r2 = way group ID
-movi 0 r2
-movi N_WG r3
+set_clear_init: movsg cceId r5
+# r4 holds starting offset for address, assumes blocks striped across CCEs
 movi 0 r4
-set_clear_top: bge r2 r3 lce_inc
+offset_compute: bz r5 stride_compute
+addi r4 BLOCK_SIZE r4
+dec r5
+bi offset_compute
+# r6 holds address stride
+stride_compute: movsg numCCE r5
+movi 0 r6
+stride_top: bz r5 sc_init_2
+addi r6 BLOCK_SIZE r6
+dec r5
+bi stride_top
+
+sc_init_2: movi 0 r2
+movsg numWG r3
+set_clear_top: bge r2 r3 sync_init
+movi 0 r0
+movsg numLCE r1
+lce_top: bge r0 r1 wg_inc
 pushq lceCmd SC r0 r4
-inc r2
-addi r4 64 r4
-bi set_clear_top
-lce_inc: inc r0
+inc r0
 bi lce_top
+wg_inc: inc r2
+add r4 r6 r4
+bi set_clear_top
 
 # send sync messages
 # r0 counts up from 0 number of sync messages sent
-# r1 holds constant N_LCE
+# r1 holds constant numLCE
 # r3 stores the constant SYNC_ACK to check response ack type against
 # The CCE waits for sync ack after each sync command. This avoids additional buffering being
 # required in the CCE, at a small "performance" cost during startup
 sync_init: movi 0 r0
-movi N_LCE r1
+movsg numLCE r1
 movi SYNC_ACK r3
 sync_top: bge r0 r1 ready
 pushq lceCmd SYNC r0
@@ -70,11 +83,11 @@ bf nerf next_coh_set_s
 # block cached somewhere
 bf cf next_coh_set_s
 # invalidations not required, thus block not cache, set to E
-next_coh_set_e: movi E nextCohSt
+next_coh_set_e: movis E nextCohSt
 bi inv_check
-next_coh_set_s: movi S nextCohSt
+next_coh_set_s: movis S nextCohSt
 bi inv_check
-next_coh_set_m: movi M nextCohSt
+next_coh_set_m: movis M nextCohSt
 # fall through to inv_check
 
 # Invalidation Check
@@ -82,7 +95,7 @@ inv_check: bfz if upgrade_check
 
 # Invalidation Routine
 invalidate: movi 0 r0
-movi N_LCE r1
+movsg numLCE r1
 movi 0 r2
 movi INV_ACK r3
 inv_top: bge r0 r1 inv_ack_top

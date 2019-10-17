@@ -79,6 +79,7 @@ module wrapper
       bp_cce_tracer
        (.clk_i(clk_i & (wrapper.cce_trace_p == 1))
         ,.reset_i(reset_i)
+        ,.freeze_i(bp_cce.inst_ram.cfg_bus_cast_i.freeze)
   
         ,.cce_id_i('0)
   

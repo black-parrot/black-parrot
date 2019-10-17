@@ -65,23 +65,6 @@ logic                  cfg_cmd_v_lo, cfg_cmd_yumi_li;
 bp_cce_mem_msg_s       cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
-logic [cfg_addr_width_p-1:0] config_addr_li;
-logic [cfg_data_width_p-1:0] config_data_li;
-logic                        config_v_li;
-
-assign config_v_li = cfg_cmd_v_lo;
-assign config_addr_li = cfg_cmd_lo.addr[0+:cfg_addr_width_p];
-assign config_data_li = cfg_cmd_lo.data[0+:cfg_data_width_p];
-
-// Freeze signal register
-logic freeze_r;
-always_ff @(posedge clk_i) begin
-  if (reset_i)
-    freeze_r <= 1'b1;
-  else if (config_v_li & (config_addr_li == bp_cfg_reg_freeze_gp))
-    freeze_r <= config_data_li[0];
-end
-
 // CCE-MEM IF
 bp_cce_mem_msg_s       mem_resp;
 logic                  mem_resp_v, mem_resp_ready;
@@ -135,7 +118,7 @@ bp_me_nonsynth_mock_lce #(
 ) lce (
   .clk_i(clk_i)
   ,.reset_i(reset_i)
-  ,.freeze_i(freeze_r)
+  ,.freeze_i('0)
 
   ,.lce_id_i('0)
 
@@ -173,13 +156,8 @@ wrapper
  (.clk_i(clk_i)
   ,.reset_i(reset_i)
 
-  ,.freeze_i(freeze_r)
-
-  ,.cfg_w_v_i(config_v_li)
-  ,.cfg_addr_i(config_addr_li)
-  ,.cfg_data_i(config_data_li)
-
-  ,.cce_id_i('0)
+  ,.cfg_bus_i('0)
+  ,.cfg_cce_ucode_data_o()
 
   ,.lce_cmd_o(lce_cmd)
   ,.lce_cmd_v_o(lce_cmd_v)
@@ -268,7 +246,6 @@ bp_cce_mmio_cfg_loader
    ,.mem_resp_v_i(cfg_resp_v_li)
    ,.mem_resp_ready_o(cfg_resp_ready_lo)
   );
-
 
 // Program done info
 localparam max_clock_cnt_lp    = 2**30-1;

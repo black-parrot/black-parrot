@@ -56,6 +56,7 @@ module testbench
    , input reset_i
    );
 
+`declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
@@ -64,23 +65,6 @@ bp_cce_mem_msg_s       cfg_cmd_lo;
 logic                  cfg_cmd_v_lo, cfg_cmd_yumi_li;
 bp_cce_mem_msg_s       cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
-
-logic [cfg_addr_width_p-1:0] config_addr_li;
-logic [cfg_data_width_p-1:0] config_data_li;
-logic                        config_v_li;
-
-assign config_v_li = cfg_cmd_v_lo;
-assign config_addr_li = cfg_cmd_lo.addr[0+:cfg_addr_width_p];
-assign config_data_li = cfg_cmd_lo.data[0+:cfg_data_width_p];
-
-// Freeze signal register
-logic freeze_r;
-always_ff @(posedge clk_i) begin
-  if (reset_i)
-    freeze_r <= 1'b1;
-  else if (config_v_li & (config_addr_li == bp_cfg_reg_freeze_gp))
-    freeze_r <= config_data_li[0];
-end
 
 // CCE-MEM IF
 bp_cce_mem_msg_s       mem_resp;
@@ -135,7 +119,7 @@ bp_me_nonsynth_mock_lce #(
 ) lce (
   .clk_i(clk_i)
   ,.reset_i(reset_i)
-  ,.freeze_i(freeze_r)
+  ,.freeze_i('0)
 
   ,.lce_id_i('0)
 
@@ -164,6 +148,29 @@ bp_me_nonsynth_mock_lce #(
   ,.lce_cmd_ready_i(lce_cmd_ready_li)
 );
 
+bp_cfg_bus_s cfg_bus_lo;
+bp_cfg
+ #(.bp_params_p(bp_params_p))
+ cfg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.mem_cmd_i(cfg_cmd_lo)
+   ,.mem_cmd_v_i(cfg_cmd_v_lo)
+   ,.mem_cmd_yumi_o(cfg_cmd_yumi_li)
+
+   ,.mem_resp_o(cfg_resp_li)
+   ,.mem_resp_v_o(cfg_resp_v_li)
+   ,.mem_resp_ready_i(cfg_resp_ready_lo)
+
+   ,.cfg_bus_o(cfg_bus_lo)
+   ,.irf_data_i()
+   ,.npc_data_i()
+   ,.csr_data_i()
+   ,.priv_data_i()
+   ,.cce_ucode_data_i()
+   );
+
 // CCE
 wrapper
 #(.bp_params_p(bp_params_p)
@@ -173,13 +180,8 @@ wrapper
  (.clk_i(clk_i)
   ,.reset_i(reset_i)
 
-  ,.freeze_i(freeze_r)
-
-  ,.cfg_w_v_i(config_v_li)
-  ,.cfg_addr_i(config_addr_li)
-  ,.cfg_data_i(config_data_li)
-
-  ,.cce_id_i('0)
+  ,.cfg_bus_i(cfg_bus_lo)
+  ,.cfg_cce_ucode_data_o()
 
   ,.lce_cmd_o(lce_cmd)
   ,.lce_cmd_v_o(lce_cmd_v)
@@ -244,11 +246,6 @@ mem
 
 // CFG loader
 localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
-// command is consumed cycle it is valid
-assign cfg_cmd_yumi_li = cfg_cmd_v_lo;
-// no responses to CFG loader
-assign cfg_resp_li = '0;
-assign cfg_resp_v_li = '0;
 bp_cce_mmio_cfg_loader
   #(.bp_params_p(bp_params_p)
     ,.inst_width_p(`bp_cce_inst_width)

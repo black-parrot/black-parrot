@@ -9,9 +9,9 @@
 module testbench
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
  import bp_be_dcache_pkg::*;
- import bp_be_rv64_pkg::*;
  import bp_cce_pkg::*;
  import bp_common_cfg_link_pkg::*;
  import bp_me_pkg::*;
@@ -28,60 +28,50 @@ module testbench
    , parameter skip_init_p = 0
    , parameter lce_perf_trace_p = 0
 
-   // Number of elements in the fake BlackParrot memory
-   , parameter clock_period_in_ps_p = 1000
-   , parameter prog_name_p = "prog.mem"
-   , parameter dram_bp_params_p  = "dram_ch.ini"
-   , parameter dram_sys_bp_params_p = "dram_sys.ini"
-   , parameter dram_capacity_p = 16384
+   , parameter mem_zero_p         = 1
+   , parameter mem_load_p         = 0
+   , parameter mem_file_p         = "inv"
+   , parameter mem_cap_in_bytes_p = 2**20
+   // CCE testing uses any address it wants, no DRAM offset required
+   , parameter mem_offset_p       = '0
+
+   , parameter use_max_latency_p      = 0
+   , parameter use_random_latency_p   = 1
+   , parameter use_dramsim2_latency_p = 0
+
+   , parameter max_latency_p = 15
+
+   , parameter dram_clock_period_in_ps_p = 1000
+   , parameter dram_bp_params_p          = "dram_ch.ini"
+   , parameter dram_sys_bp_params_p      = "dram_sys.ini"
+   , parameter dram_capacity_p           = 16384
 
    // LCE Trace Replay Width
    , localparam dcache_opcode_width_lp=$bits(bp_be_dcache_opcode_e)
    , localparam tr_ring_width_lp=(dcache_opcode_width_lp+paddr_width_p+dword_width_p)
    , localparam tr_rom_addr_width_p = 20
 
-   // Config link
-   , localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
-
-   , localparam lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
+   , localparam lg_num_lce_lp = `BSG_SAFE_CLOG2(num_lce_p)
 
    )
   (input clk_i
    , input reset_i
    );
 
-`declare_bsg_ready_and_link_sif_s(mem_noc_width_p, bsg_ready_and_link_sif_s);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
 `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
-
-//logic [mem_noc_cord_width_p-1:0]                 dram_cord_lo, clint_cord_lo;
-logic [noc_cord_width_p-1:0]                 dram_cord_lo, clint_cord_lo;
-assign dram_cord_lo  = num_core_p+1;
-assign clint_cord_lo = mmio_pos_p;
+`declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
 
 // CFG IF
-bp_cce_mem_cmd_s       cfg_cmd_lo;
+bp_cce_mem_msg_s       cfg_cmd_lo;
 logic                  cfg_cmd_v_lo, cfg_cmd_yumi_li;
-bp_mem_cce_resp_s      cfg_resp_li;
+bp_cce_mem_msg_s       cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
-logic [cfg_addr_width_p-1:0] config_addr_li;
-logic [cfg_data_width_p-1:0] config_data_li;
-logic                        config_v_li;
-
-// Freeze signal register
-logic freeze_r;
-always_ff @(posedge clk_i) begin
-  if (reset_i)
-    freeze_r <= 1'b1;
-  else if (config_v_li & (config_addr_li == bp_cfg_reg_freeze_gp))
-    freeze_r <= config_data_li[0];
-end
-
 // CCE-MEM IF
-bp_mem_cce_resp_s          mem_resp;
+bp_cce_mem_msg_s           mem_resp;
 logic                      mem_resp_v, mem_resp_ready;
-bp_cce_mem_cmd_s           mem_cmd;
+bp_cce_mem_msg_s           mem_cmd;
 logic                      mem_cmd_v, mem_cmd_yumi;
 
 // LCE-CCE IF
@@ -180,7 +170,7 @@ bp_me_nonsynth_mock_lce #(
 ) lce (
   .clk_i(clk_i)
   ,.reset_i(reset_i)
-  ,.freeze_i(freeze_r)
+  ,.freeze_i('0)
 
   ,.lce_id_i(lg_num_lce_lp'(i))
 
@@ -216,7 +206,7 @@ bp_me_nonsynth_lce_tracer #(
 ) lce (
   .clk_i(clk_i)
   ,.reset_i(reset_i)
-  ,.freeze_i(freeze_i)
+  ,.freeze_i('0)
 
   ,.lce_id_i(lce_id_i)
 
@@ -238,6 +228,29 @@ bp_me_nonsynth_lce_tracer #(
 
 end // rof1
 
+bp_cfg_bus_s cfg_bus_lo;
+bp_cfg
+ #(.bp_params_p(bp_params_p))
+ cfg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.mem_cmd_i(cfg_cmd_lo)
+   ,.mem_cmd_v_i(cfg_cmd_v_lo)
+   ,.mem_cmd_yumi_o(cfg_cmd_yumi_li)
+
+   ,.mem_resp_o(cfg_resp_li)
+   ,.mem_resp_v_o(cfg_resp_v_li)
+   ,.mem_resp_ready_i(cfg_resp_ready_lo)
+
+   ,.cfg_bus_o(cfg_bus_lo)
+   ,.irf_data_i('0)
+   ,.npc_data_i('0)
+   ,.csr_data_i('0)
+   ,.priv_data_i('0)
+   ,.cce_ucode_data_i('0)
+   );
+
 // CCE
 wrapper
 #(.bp_params_p(bp_params_p)
@@ -247,13 +260,8 @@ wrapper
  (.clk_i(clk_i)
   ,.reset_i(reset_i)
 
-  ,.freeze_i(freeze_r)
-
-  ,.cfg_w_v_i(config_v_li)
-  ,.cfg_addr_i(config_addr_li)
-  ,.cfg_data_i(config_data_li)
-
-  ,.cce_id_i('0)
+  ,.cfg_bus_i(cfg_bus_lo)
+  ,.cfg_cce_ucode_data_o()
 
   ,.lce_cmd_o(lce_cmd_cce)
   ,.lce_cmd_v_o(lce_cmd_v_cce)
@@ -271,26 +279,37 @@ wrapper
   ,.mem_resp_v_i(mem_resp_v)
   ,.mem_resp_ready_o(mem_resp_ready)
 
+  ,.mem_cmd_i('0)
+  ,.mem_cmd_v_i('0)
+  ,.mem_cmd_ready_o()
+
   ,.mem_cmd_o(mem_cmd)
   ,.mem_cmd_v_o(mem_cmd_v)
   ,.mem_cmd_yumi_i(mem_cmd_yumi)
+
+  ,.mem_resp_o()
+  ,.mem_resp_v_o()
+  ,.mem_resp_yumi_i('0)
 );
 
 // DRAM
-bp_mem_dramsim2
-#(.mem_id_p(0)
-   ,.clock_period_in_ps_p(clock_period_in_ps_p)
-   ,.prog_name_p(prog_name_p)
-   ,.dram_bp_params_p(dram_bp_params_p)
-   ,.dram_sys_bp_params_p(dram_sys_bp_params_p)
-   ,.dram_capacity_p(dram_capacity_p)
-   ,.num_lce_p(num_lce_p)
-   ,.num_cce_p(num_cce_p)
-   ,.paddr_width_p(paddr_width_p)
-   ,.lce_assoc_p(lce_assoc_p)
-   ,.block_size_in_bytes_p(cce_block_width_p/8)
-   ,.lce_sets_p(lce_sets_p)
-   ,.lce_req_data_width_p(dword_width_p)
+bp_mem
+#(.bp_params_p(bp_params_p)
+  ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
+  ,.mem_zero_p(mem_zero_p)
+  ,.mem_load_p(mem_load_p)
+  ,.mem_file_p(mem_file_p)
+  ,.mem_offset_p(mem_offset_p)
+
+  ,.use_max_latency_p(use_max_latency_p)
+  ,.use_random_latency_p(use_random_latency_p)
+  ,.use_dramsim2_latency_p(use_dramsim2_latency_p)
+  ,.max_latency_p(max_latency_p)
+
+  ,.dram_clock_period_in_ps_p(dram_clock_period_in_ps_p)
+  ,.dram_bp_params_p(dram_bp_params_p)
+  ,.dram_sys_bp_params_p(dram_sys_bp_params_p)
+  ,.dram_capacity_p(dram_capacity_p)
   )
 mem
  (.clk_i(clk_i)
@@ -305,7 +324,8 @@ mem
   ,.mem_resp_ready_i(mem_resp_ready)
   );
 
-// CFG Loader
+// CFG loader
+localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
 bp_cce_mmio_cfg_loader
 #(.bp_params_p(bp_params_p)
   ,.inst_width_p(`bp_cce_inst_width)
@@ -325,84 +345,6 @@ cfg_loader
   ,.mem_resp_v_i(cfg_resp_v_li)
   ,.mem_resp_ready_o(cfg_resp_ready_lo)
   );
-
-// CFG Loader Master
-bsg_ready_and_link_sif_s cfg_link_li, cfg_link_lo;
-bp_me_cce_to_wormhole_link_master
- #(.bp_params_p(bp_params_p))
-  master_link
-  (.clk_i(clk_i)
-  ,.reset_i(reset_i)
-
-  ,.mem_cmd_i(cfg_cmd_lo)
-  ,.mem_cmd_v_i(cfg_cmd_v_lo)
-  ,.mem_cmd_yumi_o(cfg_cmd_yumi_li)
-
-  ,.mem_resp_o(cfg_resp_li)
-  ,.mem_resp_v_o(cfg_resp_v_li)
-  ,.mem_resp_ready_i(cfg_resp_ready_lo)
-
-  ,.my_cord_i(dram_cord_lo)
-  
-  ,.mem_cmd_dest_cord_i(clint_cord_lo)
-  
-  //,.mem_data_cmd_dest_cord_i(clint_cord_lo)
-  
-  ,.link_i(cfg_link_li)
-  ,.link_o(cfg_link_lo)
-  );
- 
-// We use the clint just as a config loader converter
-bsg_ready_and_link_sif_s clint_cmd_link_i;
-bsg_ready_and_link_sif_s clint_cmd_link_o;
-bsg_ready_and_link_sif_s clint_resp_link_i;
-bsg_ready_and_link_sif_s clint_resp_link_o;
-
-
-// CLINT sends nothing to CFG
-assign cfg_link_li.v = '0;
-assign cfg_link_li.data = '0;
-// Ready signal to master, from CLINT client
-assign cfg_link_li.ready_and_rev = clint_cmd_link_o.ready_and_rev;
-
-// command to clint comes from cfg_link_lo
-assign clint_cmd_link_i.v = cfg_link_lo.v;
-assign clint_cmd_link_i.data = cfg_link_lo.data;
-assign clint_cmd_link_i.ready_and_rev = '0;
-
-// clint has no responses inbound
-assign clint_resp_link_i.v = '0;
-assign clint_resp_link_i.data = '0;
-assign clint_resp_link_i.ready_and_rev = cfg_link_lo.ready_and_rev;
-
-bp_clint
- #(.bp_params_p(bp_params_p))
- clint
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   
-   ,.cfg_w_v_o(config_v_li)
-   ,.cfg_addr_o(config_addr_li)
-   ,.cfg_data_o(config_data_li)
-
-   ,.soft_irq_o()
-   ,.timer_irq_o()
-   ,.external_irq_o()
-
-   ,.my_cord_i(clint_cord_lo)
-   ,.dram_cord_i(dram_cord_lo)
-   ,.clint_cord_i(clint_cord_lo)
-
-   // to client
-   ,.cmd_link_i(clint_cmd_link_i)
-   // from master - unused
-   ,.cmd_link_o(clint_cmd_link_o)
-   // to master - unused
-   ,.resp_link_i(clint_resp_link_i)
-   // from client
-   ,.resp_link_o(clint_resp_link_o)
-   );
-
 
 // Program done info
 localparam max_clock_cnt_lp    = 2**30-1;
