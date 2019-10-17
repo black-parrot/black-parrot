@@ -91,6 +91,54 @@ wire is_m_mode = (priv_mode_r == `PRIV_MODE_M);
 wire is_s_mode = (priv_mode_r == `PRIV_MODE_S);
 wire is_u_mode = (priv_mode_r == `PRIV_MODE_U);
 
+// sstatus subset of mstatus
+// sedeleg hardcoded to 0
+// sideleg hardcoded to 0
+// sie subset of mie
+`declare_csr(stvec)
+`declare_csr(scounteren)
+
+`declare_csr(sscratch)
+`declare_csr(sepc)
+`declare_csr(scause)
+`declare_csr(stval)
+// sip subset of mip
+
+`declare_csr(satp)
+
+// mvendorid readonly
+// marchid readonly
+// mimpid readonly
+// mhartid readonly
+
+`declare_csr(mstatus)
+// misa readonly
+`declare_csr(medeleg)
+`declare_csr(mideleg)
+`declare_csr(mie)
+`declare_csr(mtvec)
+`declare_csr(mcounteren)
+
+`declare_csr(mscratch)
+`declare_csr(mepc)
+`declare_csr(mcause)
+`declare_csr(mtval)
+`declare_csr(mip)
+
+`declare_csr(pmpcfg0)
+`declare_csr(pmpaddr0)
+`declare_csr(pmpaddr1)
+`declare_csr(pmpaddr2)
+`declare_csr(pmpaddr3)
+
+`declare_csr(mcycle)
+`declare_csr(minstret)
+// mhpmcounter not implemented
+//   This is non-compliant. We should hardcode to 0 instead of trapping
+`declare_csr(mcountinhibit)
+// mhpmevent not implemented
+//   This is non-compliant. We should hardcode to 0 instead of trapping
+
 wire mgie = (mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode;
 wire sgie = (mstatus_r.sie & is_s_mode) | is_u_mode;
 
@@ -141,7 +189,7 @@ bsg_priority_encode
    ,.lo_to_hi_p(1)
    )
  m_interrupt_enc
-  (.i(interrupt_icode_dec_li & ~mideleg_lo & 16'($signed(mgie)))
+  (.i(interrupt_icode_dec_li & ~mideleg_lo[0+:ecode_dec_width_lp] & ecode_dec_width_lp'($signed(mgie)))
    ,.addr_o(m_interrupt_icode_li)
    ,.v_o(m_interrupt_icode_v_li)
    );
@@ -151,7 +199,7 @@ bsg_priority_encode
    ,.lo_to_hi_p(1)
    )
  s_interrupt_enc
-  (.i(interrupt_icode_dec_li & mideleg_lo & 16'($signed(sgie)))
+  (.i(interrupt_icode_dec_li & mideleg_lo[0+:ecode_dec_width_lp] & ecode_dec_width_lp'($signed(sgie)))
    ,.addr_o(s_interrupt_icode_li)
    ,.v_o(s_interrupt_icode_v_li)
    );
@@ -171,54 +219,6 @@ always_comb
       default : csr_data_li = '0;
     endcase
   end
-
-// sstatus subset of mstatus
-// sedeleg hardcoded to 0
-// sideleg hardcoded to 0
-// sie subset of mie
-`declare_csr(stvec)
-`declare_csr(scounteren)
-
-`declare_csr(sscratch)
-`declare_csr(sepc)
-`declare_csr(scause)
-`declare_csr(stval)
-// sip subset of mip
-
-`declare_csr(satp)
-
-// mvendorid readonly
-// marchid readonly
-// mimpid readonly
-// mhartid readonly
-
-`declare_csr(mstatus)
-// misa readonly
-`declare_csr(medeleg)
-`declare_csr(mideleg)
-`declare_csr(mie)
-`declare_csr(mtvec)
-`declare_csr(mcounteren)
-
-`declare_csr(mscratch)
-`declare_csr(mepc)
-`declare_csr(mcause)
-`declare_csr(mtval)
-`declare_csr(mip)
-
-`declare_csr(pmpcfg0)
-`declare_csr(pmpaddr0)
-`declare_csr(pmpaddr1)
-`declare_csr(pmpaddr2)
-`declare_csr(pmpaddr3)
-
-`declare_csr(mcycle)
-`declare_csr(minstret)
-// mhpmcounter not implemented
-//   This is non-compliant. We should hardcode to 0 instead of trapping
-`declare_csr(mcountinhibit)
-// mhpmevent not implemented
-//   This is non-compliant. We should hardcode to 0 instead of trapping
 
 bsg_dff_reset
  #(.width_p(2) 

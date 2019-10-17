@@ -497,7 +497,7 @@ typedef struct packed
     }
 
 `define decompress_mideleg_s(data_comp_mp) \
-  '{sei: data_comp_mp.sei \
+  '{sei : data_comp_mp.sei \
     ,sti: data_comp_mp.sti \
     ,ssi: data_comp_mp.ssi \
     ,default: '0           \
