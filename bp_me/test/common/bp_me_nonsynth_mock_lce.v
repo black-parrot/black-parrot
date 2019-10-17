@@ -815,7 +815,7 @@ module bp_me_nonsynth_mock_lce
           mshr_n.data_received = 1'b1;
           mshr_n.tag_received = 1'b1;
 
-          lce_state_n = FINISH_MISS;
+          lce_state_n = LCE_CMD_ST_DATA_RESP;
 
         end
         LCE_CMD_INV: begin
@@ -925,7 +925,6 @@ module bp_me_nonsynth_mock_lce
 
         end
         LCE_CMD_ST_DATA_RESP: begin
-          $error("LCE_CMD_ST_DATA_RESP state reached");
           // respond to the miss - tag and data both received
           // all information needed to respond is stored in mshr
 
@@ -954,7 +953,7 @@ module bp_me_nonsynth_mock_lce
           tag_next_n[cur_set_n][cur_way_n].tag = lce_cmd_r.msg.cmd.addr[paddr_width_p-1 -: ptag_width_lp];
 
           // send coh_ack next cycle
-          lce_state_n = FINISH_MISS;
+          lce_state_n = LCE_CMD_STW_RESP;
 
         end
         LCE_CMD_STW_RESP: begin

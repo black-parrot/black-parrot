@@ -179,14 +179,14 @@ module bp_fe_lce_req
         cache_miss_o = 1'b1;
 
         if (set_tag_wakeup_received_i) begin
-          state_n = e_lce_req_ready;
+          state_n = e_lce_req_send_coh_ack;
         end
         else if (uncached_data_received_i) begin
           state_n = e_lce_req_ready;
         end
         else if (set_tag_received) begin
           if (cce_data_received) begin
-            state_n = e_lce_req_ready;
+            state_n = e_lce_req_send_coh_ack;
           end
           else begin
             state_n = e_lce_req_sleep;

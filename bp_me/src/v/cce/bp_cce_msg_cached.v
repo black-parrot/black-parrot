@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_cce_msg.v
+ *   bp_cce_msg_cached.v
  *
  * Description:
  *   This module handles sending and receiving of all messages in normal operation mode.
@@ -108,6 +108,7 @@ module bp_cce_msg_cached
   `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   // structures for casting
+  bp_lce_cce_req_s lce_req_li;
   bp_lce_cmd_s lce_cmd;
   bp_lce_cce_resp_s lce_resp;
 
@@ -122,6 +123,7 @@ module bp_cce_msg_cached
   assign mem_resp_li = mem_resp_i;
   assign mem_cmd_li = mem_cmd_i;
   assign lce_resp = lce_resp_i;
+  assign lce_req_li = lce_req_i;
 
   // signals for setting fields in outbound messages
   logic [paddr_width_p-1:0] mem_cmd_addr;
@@ -404,6 +406,19 @@ module bp_cce_msg_cached
 
     end // mem_resp auto-forward
 
+    // automatically dequeue coherence ack and decrement pending bit
+    // memory response has priority for using the pending bit write port and will stall
+    // the LCE Response if the port is busy
+    if (lce_resp_v_i & (lce_resp.msg_type == e_lce_cce_coh_ack) & ~pending_w_busy_o) begin
+      lce_resp_yumi_o = 1'b1;
+      pending_w_busy_o = 1'b1;
+      // clear pending bit
+      pending_w_v_o = 1'b1;
+      pending_w_way_group_o =
+        lce_resp.addr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
+      pending_o = 1'b0;
+    end
+
 
     /*
      * Microcode message send/receive
@@ -584,7 +599,17 @@ module bp_cce_msg_cached
 
     // LCE Request
     else if (decoded_inst_i.lce_req_yumi) begin
-      lce_req_yumi_o = decoded_inst_i.lce_req_yumi;
+      if (~pending_w_busy_o) begin
+        lce_req_yumi_o = decoded_inst_i.lce_req_yumi;
+        // set pending bit if cached request
+        if (~(lce_req_li.msg_type == e_lce_req_type_uc_rd
+              | lce_req_li.msg_type == e_lce_req_type_uc_wr)) begin
+          pending_w_v_o = 1'b1;
+          pending_w_way_group_o =
+            lce_req_li.addr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
+          pending_o = 1'b1;
+        end
+      end
     end
     // LCE Response
     else if (decoded_inst_i.lce_resp_yumi) begin

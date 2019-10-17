@@ -70,14 +70,11 @@ module bp_cce_pc
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
-  typedef enum logic [3:0] {
+  typedef enum logic [2:0] {
     RESET
     ,INIT
-    ,INIT_CFG_REG_RESP
-    ,INIT_RAM_RD_RESP
     ,INIT_END
-    ,FETCH_1
-    ,FETCH_2
+    ,START_FETCH
     ,FETCH
   } pc_state_e;
 
@@ -143,7 +140,8 @@ module bp_cce_pc
         pc_state_n = (cfg_bus_cast_i.cce_mode == e_cce_mode_normal) ? INIT_END : INIT;
       end
       INIT_END: begin
-        // let the last cfg link write finish (if there is one)
+        // This state gives an extra cycle for the RAM to finish the last write command that
+        // was sent on the config link, if it needs it.
         pc_state_n = FETCH;
         ex_pc_n = '0;
         inst_v_n = 1'b1;
@@ -153,24 +151,33 @@ module bp_cce_pc
       FETCH: begin
         // Always continue fetching instructions
         pc_state_n = FETCH;
-        // next instruction is always valid once in steady state
+        ram_v_li = 1'b1;
+
+        // The next instruction is always valid once this state is reached. Stalls replay
+        // the current instruction, and branches have a 0 cycle redirect.
         inst_v_n = 1'b1;
 
-        // Always fetch an instruction
-        ram_v_li = 1'b1;
-        // setup RAM address register and register tracking PC of instruction being executed
-        // also, determine input address for RAM depending on stall and branch in execution
-
+        // The PC stalls and the current instruction is presented in the next cycle if
+        // the decoder stalls execution, the directory is finishing a read, or the invalidtion
+        // instruction is still executing.
         if (pc_stall_i | dir_busy_i) begin
           // when stalling, hold executing pc and ram addr registers constant
           ex_pc_n = ex_pc_r;
           // feed the currently executing pc as input to instruction ram
           ram_addr_li = ex_pc_n;
+
+        // A branch is signaled by the ALU branch result. The PC is redirected to the branch
+        // target, which is executed next cycle. The second instruction will be the one after
+        // the branch target.
         end else if (alu_branch_res_i) begin
           // when branching, the instruction executed next is the branch target
           ex_pc_n = pc_branch_target_i;
           // if branching, use the branch target from the current instruction
           ram_addr_li = pc_branch_target_i;
+
+        // If no stall or branch occurs, the next instruction executed is the one indicated
+        // by the RAM address register, and the second instruction is the next one in sequential
+        // order.
         end else begin
           // normal execution, the instruction that will be executed is the one that will
           // be fetched in sequential order

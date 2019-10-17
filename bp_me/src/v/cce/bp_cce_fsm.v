@@ -462,8 +462,16 @@ module bp_cce_fsm
 
     // Dequeue coherence ack when it arrives
     // Does not conflict with other dequeues of LCE Response
-    if (lce_resp_v_i & (lce_resp.msg_type == e_lce_cce_coh_ack)) begin
+    // Decrements pending bit on arrival, so arbitrate with memory ports for access
+    if (lce_resp_v_i & (lce_resp.msg_type == e_lce_cce_coh_ack) & ~pending_busy) begin
         lce_resp_yumi_o = 1'b1;
+
+        // inform FSM that pending bit is being used
+        pending_busy = 1'b1;
+        pending_w_v = 1'b1;
+        pending_w_way_group =
+          lce_resp.addr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
+        pending_li = 1'b0;
     end
 
 
@@ -660,16 +668,26 @@ module bp_cce_fsm
                   : ERROR;
       end
       READ_DIR: begin
-        lce_req_yumi_o = 1'b1;
-        // initiate the directory read
-        // At the earliest, data will be valid in the next cycle
-        dir_r_v = 1'b1;
-        dir_way_group_li = mshr_r.paddr[way_group_offset_high_lp-1 -: lg_num_way_groups_lp];
-        dir_r_cmd = e_rdw_op;
-        dir_lce_li = mshr_r.lce_id;
-        dir_lru_way_li = mshr_r.lru_way_id;
-        state_n = WAIT_DIR_GAD;
+        // dequeueing the request also writes the pending bit, so arbitrate with no FSM logic
+        if (~pending_busy) begin
+          lce_req_yumi_o = 1'b1;
+          // initiate the directory read
+          // At the earliest, data will be valid in the next cycle
+          dir_r_v = 1'b1;
+          dir_way_group_li = mshr_r.paddr[way_group_offset_high_lp-1 -: lg_num_way_groups_lp];
+          dir_r_cmd = e_rdw_op;
+          dir_lce_li = mshr_r.lce_id;
+          dir_lru_way_li = mshr_r.lru_way_id;
 
+          pending_w_v = 1'b1;
+          pending_w_way_group =
+            mshr_r.paddr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
+          pending_li = 1'b1;
+
+          state_n = WAIT_DIR_GAD;
+        end else begin
+          state_n = READ_DIR;
+        end
       end
       WAIT_DIR_GAD: begin
 

@@ -109,6 +109,7 @@ bi inv_top
 inv_ack_top: bz r2 upgrade_check
 # pop the lce response
 inv_ack_pop: popq lceResp r4
+beqi r4 COH_ACK inv_ack_pop
 dec r2
 bi inv_ack_top
 
@@ -130,9 +131,11 @@ replace_check: bfz rf transfer_check
 # Replacement Routine
 replace: pushq lceCmd WB req lru lru
 replacement_poph: poph lceResp r0
+beqi r0 COH_ACK replacement_poph
 bf nwbf complete_replacement
 pushq memCmd MEM_CMD_WB lru
 complete_replacement: popq lceResp r0
+beqi r0 COH_ACK complete_replacement
 # replacement done, explicitly set replacement flag to 0
 sfz rf
 
@@ -144,10 +147,12 @@ transfer: pushq lceCmd TR tr req tr
 pushq lceCmd WB tr req tr
 # wait for transfer WB response
 transfer_poph: poph lceResp r0
+beqi r0 COH_ACK transfer_poph
 bf nwbf complete_transfer
 # perform the transfer WB to mem
 pushq memCmd MEM_CMD_WB req
 complete_transfer: popq lceResp r0
+beqi r0 COH_ACK complete_transfer
 bi ready
 
 # Read Line from L2 Routine
