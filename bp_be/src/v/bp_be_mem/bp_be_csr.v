@@ -19,7 +19,7 @@ module bp_be_csr
 
     , input [cfg_bus_width_lp-1:0]  cfg_bus_i
     , output [dword_width_p-1:0]     cfg_csr_data_o
-    , output [1:0]                   bp_params_priv_data_o
+    , output [1:0]                   cfg_priv_data_o
 
     // CSR instruction interface
     , input [csr_cmd_width_lp-1:0]   csr_cmd_i
@@ -231,7 +231,7 @@ bsg_dff_reset
    ,.data_i(cfg_bus_cast_i.priv_w_v ? cfg_bus_cast_i.priv_data : priv_mode_n)
    ,.data_o(priv_mode_r)
    );
-assign bp_params_priv_data_o = priv_mode_r;
+assign cfg_priv_data_o = priv_mode_r;
 
 // sstatus mask
 assign sstatus_wmask_li = '{mxr: 1'b1, sum: 1'b1
@@ -564,7 +564,7 @@ assign v_o             = csr_cmd_v_i;
 
 /* TODO: This doesn't actually work */
 assign cfg_csr_data_o = csr_data_lo;
-assign bp_params_priv_data_o = priv_mode_r;
+assign cfg_priv_data_o = priv_mode_r;
 
 assign trap_pkt_cast_o.epc       = (csr_cmd.csr_op == e_sret) ? sepc_r : mepc_r;
 assign trap_pkt_cast_o.tvec      = (priv_mode_n == `PRIV_MODE_S) ? stvec_r : mtvec_r;

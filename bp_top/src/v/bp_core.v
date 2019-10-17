@@ -22,11 +22,11 @@ module bp_core
     input                                          clk_i
     , input                                        reset_i
 
-    , input [cfg_bus_width_lp-1:0]                cfg_bus_i
+    , input [cfg_bus_width_lp-1:0]                 cfg_bus_i
     , output [vaddr_width_p-1:0]                   cfg_npc_data_o
     , output [dword_width_p-1:0]                   cfg_irf_data_o
     , output [dword_width_p-1:0]                   cfg_csr_data_o
-    , output [1:0]                                 bp_params_priv_data_o
+    , output [1:0]                                 cfg_priv_data_o
 
     // LCE-CCE interface
     , output [1:0][lce_cce_req_width_lp-1:0]       lce_req_o
@@ -159,7 +159,7 @@ module bp_core
      ,.cfg_npc_data_o(cfg_npc_data_o)
      ,.cfg_irf_data_o(cfg_irf_data_o)
      ,.cfg_csr_data_o(cfg_csr_data_o)
-     ,.bp_params_priv_data_o(bp_params_priv_data_o)
+     ,.cfg_priv_data_o(cfg_priv_data_o)
 
      ,.fe_queue_deq_o(fe_queue_deq_li)
      ,.fe_queue_roll_o(fe_queue_roll_li)
