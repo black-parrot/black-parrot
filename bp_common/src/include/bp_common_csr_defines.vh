@@ -485,35 +485,20 @@ typedef struct packed
 
 typedef struct packed
 {
-  logic mei;
   logic sei;
-  
-  logic mti;
   logic sti;
-
-  logic msi;
   logic ssi;
 }  bp_mideleg_s;
 
 `define compress_mideleg_s(data_cast_mp) \
-  '{mei : data_cast_mp.mei \
-    ,sei: data_cast_mp.sei \
-                           \
-    ,mti: data_cast_mp.mti \
+  '{sei : data_cast_mp.sei \
     ,sti: data_cast_mp.sti \
-                           \
-    ,msi: data_cast_mp.msi \
     ,ssi: data_cast_mp.ssi \
     }
 
 `define decompress_mideleg_s(data_comp_mp) \
-  '{mei : data_comp_mp.mei \
-    ,sei: data_comp_mp.sei \
-                           \
-    ,mti: data_comp_mp.mti \
+  '{sei: data_comp_mp.sei \
     ,sti: data_comp_mp.sti \
-                           \
-    ,msi: data_comp_mp.msi \
     ,ssi: data_comp_mp.ssi \
     ,default: '0           \
     }

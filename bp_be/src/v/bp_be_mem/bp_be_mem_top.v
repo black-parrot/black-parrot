@@ -198,6 +198,7 @@ wire [vaddr_width_p-1:0] exception_pc_li = ptw_page_fault_v ? fault_pc : commit_
 // TODO: vaddr_mem3 -> commit_pkt.vaddr
 wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? fault_vaddr : vaddr_mem3;
 wire [instr_width_p-1:0] exception_instr_li = commit_pkt.instr;
+// TODO: exception priority is non-compliant with the spec.
 assign exception_ecode_dec_li = 
   '{instr_misaligned : csr_cmd_v_i & (csr_cmd.csr_op == e_op_instr_misaligned)
     ,instr_fault     : csr_cmd_v_i & (csr_cmd.csr_op == e_op_instr_access_fault)
