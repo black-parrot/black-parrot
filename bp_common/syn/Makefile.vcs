@@ -128,6 +128,9 @@ regress_beebs.v: $(BEEBS_REGRESSION_V)
 $(BEEBS_REGRESSION_V):
 	$(MAKE) sim.v PROG=$(basename $@)
 
+$(MC_REGRESSION_V):
+	$(MAKE) sim.v CFG=$(CFG) PROG=$(basename $@)
+
 cov.v: COV_LOG     ?= $(LOG_DIR)/$(TB).$(CFG).cov.log
 cov.v: COV_REPORT  ?= $(REPORT_DIR)/$(TB).$(CFG).cov
 cov.v: COV_HREPORT ?= $(REPORT_DIR)/$(TB).$(CFG).cov.hier.rpt

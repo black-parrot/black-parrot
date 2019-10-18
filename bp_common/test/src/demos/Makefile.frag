@@ -12,10 +12,11 @@ BP_DEMOS_C = \
   trap_demo             \
   atomic_demo           \
   hello_world_atomic    \
-	write_demo_2           \
-	write_demo_4           \
-	write_demo_8           \
-	write_demo_16
+	mc_sanity_1           \
+	mc_sanity_2           \
+	mc_sanity_4           \
+	mc_sanity_8           \
+	mc_sanity_16
 
 BP_DEMOS_S = \
 	simple                \
