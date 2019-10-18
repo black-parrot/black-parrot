@@ -80,7 +80,7 @@ logic [dword_width_p-1:0] csr_data_li, csr_data_lo;
 
 rv64_mstatus_s sstatus_wmask_li, sstatus_rmask_li;
 rv64_mie_s sie_rwmask_li;
-rv64_mip_s sip_rwmask_li, mip_wmask_li;
+rv64_mip_s sip_wmask_li, sip_rmask_li, mip_wmask_li;
 
 logic [1:0] priv_mode_n, priv_mode_r;
 
@@ -255,17 +255,16 @@ assign mip_wmask_li     = '{meip: 1'b0, seip: 1'b1
                             ,default: '0
                             };
 
-// sip and sie masks
-assign sie_rwmask_li    = '{meie: 1'b0, seie: 1'b1
-                            ,mtie: 1'b0, stie: 1'b1
-                            ,msie: 1'b0, ssie: 1'b1
+// sie mask
+assign sie_rwmask_li    = mideleg_lo;
+
+// sip mask
+assign sip_rmask_li     = mideleg_lo;
+assign sip_wmask_li    = '{meip: 1'b0, seip: 1'b0
+                            ,mtip: 1'b0, stip: 1'b0
+                            ,msip: 1'b0, ssip: mideleg_lo.ssi
                             ,default: '0
-                            };
-assign sip_rwmask_li    = '{meip: 1'b0, seip: 1'b1
-                            ,mtip: 1'b0, stip: 1'b1
-                            ,msip: 1'b0, ssip: 1'b1
-                            ,default: '0
-                            };
+                           };
 
 logic exception_v_o, interrupt_v_o, ret_v_o;
 // CSR data
@@ -368,7 +367,7 @@ always_comb
               `CSR_ADDR_SCAUSE: csr_data_lo = scause_lo;
               `CSR_ADDR_STVAL: csr_data_lo = stval_lo;
               // SIP subset of MIP
-              `CSR_ADDR_SIP: csr_data_lo = mip_lo & sip_rwmask_li;
+              `CSR_ADDR_SIP: csr_data_lo = mip_lo & sip_rmask_li;
               `CSR_ADDR_SATP: csr_data_lo = satp_lo;
               // We havr no vendorid currently
               `CSR_ADDR_MVENDORID: csr_data_lo = '0;
@@ -422,7 +421,7 @@ always_comb
               `CSR_ADDR_SCAUSE: scause_li = csr_data_li;
               `CSR_ADDR_STVAL: stval_li = csr_data_li;
               // SIP subset of MIP
-              `CSR_ADDR_SIP: mip_li = (mip_lo & ~sip_rwmask_li) | (csr_data_li & sip_rwmask_li);
+              `CSR_ADDR_SIP: mip_li = (mip_lo & ~sip_wmask_li) | (csr_data_li & sip_wmask_li);
               `CSR_ADDR_SATP: satp_li = csr_data_li;
               `CSR_ADDR_MVENDORID: begin end
               `CSR_ADDR_MARCHID: begin end
