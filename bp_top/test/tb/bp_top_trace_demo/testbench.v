@@ -13,6 +13,9 @@ module testbench
  import bp_common_rv64_pkg::*;
  import bp_cce_pkg::*;
  import bp_common_cfg_link_pkg::*;
+ 
+ import bsg_cache_pkg::*;
+ 
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
@@ -42,6 +45,9 @@ module testbench
    , parameter dram_bp_params_p                = "dram_ch.ini"
    , parameter dram_sys_bp_params_p            = "dram_sys.ini"
    , parameter dram_capacity_p           = 16384
+   
+   , parameter vcache_ways_p                = 2
+   , parameter vcache_sets_p                = 64
    )
   (input clk_i
    , input reset_i
@@ -347,6 +353,122 @@ bp_me_cce_to_wormhole_link_bidir
   ,.resp_link_i(resp_link_li)
   ,.resp_link_o(resp_link_lo)
   );
+  
+  
+  `declare_bsg_cache_pkt_s(paddr_width_p, dword_width_p);
+  bsg_cache_pkt_s cache_pkt;
+  logic cache_v_li;
+  logic cache_ready_lo;
+  logic [dword_width_p-1:0] cache_data_lo;
+  logic cache_v_lo;
+  logic cache_yumi_li;
+
+bp_me_cce_to_cache
+  #(.bp_params_p(bp_params_p)
+    ,.sets_p(vcache_sets_p)
+    ,.ways_p(vcache_ways_p)
+  )
+cce_to_cache
+  (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+
+    ,.mem_cmd_i(dram_cmd_li)
+    ,.mem_cmd_v_i(dram_cmd_v_li)
+    ,.mem_cmd_yumi_o(dram_cmd_yumi_lo)
+    
+    ,.mem_resp_o(dram_resp_lo)
+    ,.mem_resp_v_o(dram_resp_v_lo)
+    ,.mem_resp_ready_i(dram_resp_ready_li)
+
+    ,.cache_pkt_o(cache_pkt)
+    ,.v_o(cache_v_li)
+    ,.ready_i(cache_ready_lo)
+  
+    ,.data_i(cache_data_lo)
+    ,.v_i(cache_v_lo)
+    ,.yumi_o(cache_yumi_li)
+  );
+  
+  `declare_bsg_cache_dma_pkt_s(paddr_width_p);
+      
+  bsg_cache_dma_pkt_s [1-1:0]        dma_pkt_lo;
+  logic               [1-1:0]        dma_pkt_v_lo;
+  logic               [1-1:0]        dma_pkt_yumi_li;
+  
+  logic [1-1:0][dword_width_p-1:0] dma_data_li;
+  logic [1-1:0]                      dma_data_v_li;
+  logic [1-1:0]                      dma_data_ready_lo;
+  
+  logic [1-1:0][dword_width_p-1:0] dma_data_lo;
+  logic [1-1:0]                      dma_data_v_lo;
+  logic [1-1:0]                      dma_data_yumi_li;
+
+  bsg_cache #(.addr_width_p(paddr_width_p)
+             ,.data_width_p(dword_width_p)
+             ,.block_size_in_words_p(cce_block_width_p/dword_width_p)
+             ,.sets_p(vcache_sets_p)
+             ,.ways_p(vcache_ways_p)
+             )
+    cache
+      (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      
+      ,.cache_pkt_i(cache_pkt)
+      ,.v_i(cache_v_li)
+      ,.ready_o(cache_ready_lo)
+      ,.data_o(cache_data_lo)
+      ,.v_o(cache_v_lo)
+      ,.yumi_i(cache_yumi_li)
+      
+      ,.dma_pkt_o(dma_pkt_lo)
+      ,.dma_pkt_v_o(dma_pkt_v_lo)
+      ,.dma_pkt_yumi_i(dma_pkt_yumi_li)
+      ,.dma_data_i(dma_data_li)
+      ,.dma_data_v_i(dma_data_v_li)
+      ,.dma_data_ready_o(dma_data_ready_lo)
+      ,.dma_data_o(dma_data_lo)
+      ,.dma_data_v_o(dma_data_v_lo)
+      ,.dma_data_yumi_i(dma_data_yumi_li)
+      
+      ,.v_we_o()
+      );
+
+bp_cce_mem_msg_s       true_dram_resp_lo;
+logic                  true_dram_resp_v_lo, true_dram_resp_ready_li;
+bp_cce_mem_msg_s       true_dram_cmd_li;
+logic                  true_dram_cmd_v_li, true_dram_cmd_yumi_lo;
+
+bsg_cache_dma_to_cce
+ #(.cache_addr_width_p(paddr_width_p)
+  ,.data_width_p (dword_width_p)
+  ,.block_size_in_words_p(cce_block_width_p/dword_width_p)
+  ,.bp_params_p(bp_params_p)
+  )
+dma_to_cce
+  (.clk_i(clk_i)
+  ,.reset_i(reset_i)
+  
+  ,.dma_pkt_i( dma_pkt_lo )
+  ,.dma_pkt_v_i( dma_pkt_v_lo )
+  ,.dma_pkt_yumi_o( dma_pkt_yumi_li )
+  
+  ,.dma_data_o( dma_data_li )
+  ,.dma_data_v_o( dma_data_v_li )
+  ,.dma_data_ready_i( dma_data_ready_lo )
+  
+  ,.dma_data_i( dma_data_lo )
+  ,.dma_data_v_i( dma_data_v_lo )
+  ,.dma_data_yumi_o( dma_data_yumi_li )
+
+  ,.mem_cmd_o(true_dram_cmd_li)
+  ,.mem_cmd_v_o(true_dram_cmd_v_li)
+  ,.mem_cmd_yumi_i(true_dram_cmd_yumi_lo)
+   
+  ,.mem_resp_i(true_dram_resp_lo)
+  ,.mem_resp_v_i(true_dram_resp_v_lo)
+  ,.mem_resp_ready_o(true_dram_resp_ready_li)
+  );
+  
 
 bp_mem
 #(.bp_params_p(bp_params_p)
@@ -369,13 +491,13 @@ mem
  (.clk_i(clk_i)
   ,.reset_i(reset_i)
 
-  ,.mem_cmd_i(dram_cmd_li)
-  ,.mem_cmd_v_i(dram_cmd_v_li)
-  ,.mem_cmd_yumi_o(dram_cmd_yumi_lo)
+  ,.mem_cmd_i(true_dram_cmd_li)
+  ,.mem_cmd_v_i(true_dram_cmd_v_li)
+  ,.mem_cmd_yumi_o(true_dram_cmd_yumi_lo)
 
-  ,.mem_resp_o(dram_resp_lo)
-  ,.mem_resp_v_o(dram_resp_v_lo)
-  ,.mem_resp_ready_i(dram_resp_ready_li)
+  ,.mem_resp_o(true_dram_resp_lo)
+  ,.mem_resp_v_o(true_dram_resp_v_lo)
+  ,.mem_resp_ready_i(true_dram_resp_ready_li)
   );
 
 logic [num_core_p-1:0] program_finish;

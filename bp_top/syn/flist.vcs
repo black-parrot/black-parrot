@@ -204,3 +204,18 @@ $BP_TOP_DIR/src/v/bp_vcache_node.v
 ## Common
 $BP_COMMON_DIR/src/v/bp_addr_map.v
 
+
+$BP_COMMON_DIR/../basejump_stl_new/bsg_cache/bsg_cache_pkg.v
+$BP_COMMON_DIR/../basejump_stl_new/bsg_cache/bsg_cache.v
+$BP_COMMON_DIR/../basejump_stl_new/bsg_cache/bsg_cache_pkt_decode.v
+$BP_COMMON_DIR/../basejump_stl_new/bsg_cache/bsg_cache_miss.v
+$BP_COMMON_DIR/../basejump_stl_new/bsg_cache/bsg_cache_sbuf.v
+$BP_COMMON_DIR/../basejump_stl_new/bsg_cache/bsg_cache_sbuf_queue.v
+$BP_COMMON_DIR/../basejump_stl_new/bsg_cache/bsg_cache_dma.v
+$BP_COMMON_DIR/../basejump_stl_new/bsg_misc/bsg_expand_bitmask.v
+
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out.v
+
+$BP_ME_DIR/src/v/wormhole/bsg_cache_dma_to_cce.v
+$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_cache.v
+
