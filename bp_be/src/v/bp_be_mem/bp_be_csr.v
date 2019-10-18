@@ -19,7 +19,7 @@ module bp_be_csr
 
     , input [cfg_bus_width_lp-1:0]  cfg_bus_i
     , output [dword_width_p-1:0]     cfg_csr_data_o
-    , output [1:0]                   bp_params_priv_data_o
+    , output [1:0]                   cfg_priv_data_o
 
     // CSR instruction interface
     , input [csr_cmd_width_lp-1:0]   csr_cmd_i
@@ -43,7 +43,6 @@ module bp_be_csr
     , input                          timer_irq_i
     , input                          software_irq_i
     , input                          external_irq_i
-    , input [vaddr_width_p-1:0]      interrupt_pc_i
 
     , output [trap_pkt_width_lp-1:0] trap_pkt_o
 
@@ -80,8 +79,8 @@ assign trap_pkt_o = trap_pkt_cast_o;
 logic [dword_width_p-1:0] csr_data_li, csr_data_lo;
 
 rv64_mstatus_s sstatus_wmask_li, sstatus_rmask_li;
-rv64_mie_s sie_wmask_li, sie_rmask_li;
-rv64_mip_s sip_wmask_li, sip_rmask_li;;
+rv64_mie_s sie_rwmask_li;
+rv64_mip_s sip_wmask_li, sip_rmask_li, mip_wmask_li;
 
 logic [1:0] priv_mode_n, priv_mode_r;
 
@@ -90,74 +89,6 @@ assign priv_mode_o = priv_mode_r;
 wire is_m_mode = (priv_mode_r == `PRIV_MODE_M);
 wire is_s_mode = (priv_mode_r == `PRIV_MODE_S);
 wire is_u_mode = (priv_mode_r == `PRIV_MODE_U);
-
-wire mti_v = ((mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode) & mie_r.mtie & mip_r.mtip;
-wire msi_v = ((mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode) & mie_r.msie & mip_r.msip;
-wire mei_v = ((mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode) & mie_r.meie & mip_r.meip;
-
-wire sti_v = ((mstatus_r.sie & is_s_mode) | is_u_mode) & mie_r.stie & mip_r.stip;
-wire ssi_v = ((mstatus_r.sie & is_s_mode) | is_u_mode) & mie_r.ssie & mip_r.ssip;
-wire sei_v = ((mstatus_r.sie & is_s_mode) | is_u_mode) & mie_r.seie & mip_r.seip;
-
-wire [15:0] exception_icode_dec_li =
-  {4'b0
-
-   ,mei_v & ~mideleg_lo.mei
-   ,1'b0
-   ,sei_v &  mideleg_lo.sei
-   ,1'b0
-
-   ,mti_v & ~mideleg_lo.mti
-   ,1'b0 // Reserved
-   ,sti_v &  mideleg_lo.sti
-   ,1'b0
-
-   ,msi_v & ~mideleg_lo.msi
-   ,1'b0 // Reserved
-   ,ssi_v &  mideleg_lo.ssi
-   ,1'b0
-   };
-
-logic [3:0] exception_ecode_li;
-logic       exception_ecode_v_li;
-bsg_priority_encode 
- #(.width_p(ecode_dec_width_lp)
-   ,.lo_to_hi_p(1)
-   )
- mcause_exception_enc
-  (.i(exception_ecode_dec_i)
-   ,.addr_o(exception_ecode_li)
-   ,.v_o(exception_ecode_v_li)
-   );
-
-// TODO: This priority encoder needs to be swizzled, right now it is non-compliant with the spec...
-logic [3:0] exception_icode_li;
-logic       exception_icode_v_li;
-bsg_priority_encode
- #(.width_p(ecode_dec_width_lp)
-   ,.lo_to_hi_p(1)
-   )
- mcause_interrupt_enc
-  (.i(exception_icode_dec_li)
-   ,.addr_o(exception_icode_li)
-   ,.v_o(exception_icode_v_li)
-   );
-
-// Compute input CSR data
-wire [dword_width_p-1:0] csr_imm_li = dword_width_p'(csr_cmd.data[4:0]);
-always_comb 
-  begin
-    unique casez (csr_cmd.csr_op)
-      e_csrrw : csr_data_li =  csr_cmd.data;
-      e_csrrs : csr_data_li =  csr_cmd.data | csr_data_lo;
-      e_csrrc : csr_data_li = ~csr_cmd.data & csr_data_lo;
-
-      e_csrrwi: csr_data_li =  csr_imm_li;
-      e_csrrsi: csr_data_li =  csr_imm_li | csr_data_lo;
-      e_csrrci: csr_data_li = ~csr_imm_li & csr_data_lo;
-      default : csr_data_li = '0;
-    endcase
-  end
 
 // sstatus subset of mstatus
 // sedeleg hardcoded to 0
@@ -207,6 +138,87 @@ always_comb
 // mhpmevent not implemented
 //   This is non-compliant. We should hardcode to 0 instead of trapping
 
+wire mgie = (mstatus_r.mie & is_m_mode) | is_s_mode | is_u_mode;
+wire sgie = (mstatus_r.sie & is_s_mode) | is_u_mode;
+
+wire mti_v = mie_r.mtie & mip_r.mtip;
+wire msi_v = mie_r.msie & mip_r.msip;
+wire mei_v = mie_r.meie & mip_r.meip;
+
+wire sti_v = mie_r.stie & mip_r.stip;
+wire ssi_v = mie_r.ssie & mip_r.ssip;
+wire sei_v = mie_r.seie & mip_r.seip;
+
+// TODO: interrupt priority is non-compliant with the spec.
+wire [15:0] interrupt_icode_dec_li =
+  {4'b0
+
+   ,mei_v
+   ,1'b0
+   ,sei_v
+   ,1'b0
+
+   ,mti_v
+   ,1'b0 // Reserved
+   ,sti_v
+   ,1'b0
+
+   ,msi_v
+   ,1'b0 // Reserved
+   ,ssi_v
+   ,1'b0
+   };
+
+logic [3:0] exception_ecode_li;
+logic       exception_ecode_v_li;
+bsg_priority_encode 
+ #(.width_p(ecode_dec_width_lp)
+   ,.lo_to_hi_p(1)
+   )
+ mcause_exception_enc
+  (.i(exception_ecode_dec_i)
+   ,.addr_o(exception_ecode_li)
+   ,.v_o(exception_ecode_v_li)
+   );
+
+logic [3:0] m_interrupt_icode_li, s_interrupt_icode_li;
+logic       m_interrupt_icode_v_li, s_interrupt_icode_v_li;
+bsg_priority_encode
+ #(.width_p(ecode_dec_width_lp)
+   ,.lo_to_hi_p(1)
+   )
+ m_interrupt_enc
+  (.i(interrupt_icode_dec_li & ~mideleg_lo[0+:ecode_dec_width_lp] & ecode_dec_width_lp'($signed(mgie)))
+   ,.addr_o(m_interrupt_icode_li)
+   ,.v_o(m_interrupt_icode_v_li)
+   );
+
+bsg_priority_encode
+ #(.width_p(ecode_dec_width_lp)
+   ,.lo_to_hi_p(1)
+   )
+ s_interrupt_enc
+  (.i(interrupt_icode_dec_li & mideleg_lo[0+:ecode_dec_width_lp] & ecode_dec_width_lp'($signed(sgie)))
+   ,.addr_o(s_interrupt_icode_li)
+   ,.v_o(s_interrupt_icode_v_li)
+   );
+
+// Compute input CSR data
+wire [dword_width_p-1:0] csr_imm_li = dword_width_p'(csr_cmd.data[4:0]);
+always_comb 
+  begin
+    unique casez (csr_cmd.csr_op)
+      e_csrrw : csr_data_li =  csr_cmd.data;
+      e_csrrs : csr_data_li =  csr_cmd.data | csr_data_lo;
+      e_csrrc : csr_data_li = ~csr_cmd.data & csr_data_lo;
+
+      e_csrrwi: csr_data_li =  csr_imm_li;
+      e_csrrsi: csr_data_li =  csr_imm_li | csr_data_lo;
+      e_csrrci: csr_data_li = ~csr_imm_li & csr_data_lo;
+      default : csr_data_li = '0;
+    endcase
+  end
+
 bsg_dff_reset
  #(.width_p(2) 
    ,.reset_val_p(`PRIV_MODE_M)
@@ -218,40 +230,41 @@ bsg_dff_reset
    ,.data_i(cfg_bus_cast_i.priv_w_v ? cfg_bus_cast_i.priv_data : priv_mode_n)
    ,.data_o(priv_mode_r)
    );
-assign bp_params_priv_data_o = priv_mode_r;
+assign cfg_priv_data_o = priv_mode_r;
 
-assign sstatus_wmask_li = '{mpp: 2'b00, spp: 2'b11
-                            ,mpie: 1'b0, spie: 1'b1, upie: 1'b1
-                            ,mie: 1'b0, sie: 1'b1, uie: 1'b1
+// sstatus mask
+assign sstatus_wmask_li = '{mxr: 1'b1, sum: 1'b1
+                            ,mpp: 2'b00, spp: 2'b11
+                            ,mpie: 1'b0, spie: 1'b1
+                            ,mie: 1'b0, sie: 1'b1
                             ,default: '0
                             };
 assign sstatus_rmask_li = '{sd: 1'b1, uxl: 2'b11
                             ,mxr: 1'b1, sum: 1'b1
                             ,xs: 2'b11, fs: 2'b11
                             ,mpp: 2'b00, spp: 2'b11
-                            ,mpie: 1'b0, spie: 1'b1, upie: 1'b1
-                            ,mie: 1'b0, sie: 1'b1, uie: 1'b1
+                            ,mpie: 1'b0, spie: 1'b1
+                            ,mie: 1'b0, sie: 1'b1
                             ,default: '0
                             };
-assign sie_wmask_li     = '{meie: mideleg_lo.mei, seie: 1'b1
-                            ,mtie: mideleg_lo.mti, stie: 1'b1
-                            ,msie: mideleg_lo.msi, ssie: 1'b1
-                            ,default: '0
-                            };
-assign sie_rmask_li     = '{meie: mideleg_lo.mei, seie: 1'b1
-                            ,mtie: mideleg_lo.mti, stie: 1'b1
-                            ,msie: mideleg_lo.msi, ssie: 1'b1
-                            ,default: '0
-                            };
-assign sip_wmask_li     = '{meip: 1'b0, seip: 1'b1
+
+// mip mask
+assign mip_wmask_li     = '{meip: 1'b0, seip: 1'b1
                             ,mtip: 1'b0, stip: 1'b1
                             ,msip: 1'b0, ssip: 1'b1
                             ,default: '0
                             };
-assign sip_rmask_li     = '{meip: mideleg_lo.mei, seip: 1'b1
-                            ,mtip: mideleg_lo.mti, stip: 1'b1
-                            ,msip: mideleg_lo.msi, ssip: 1'b1
-                            ,default: '0};
+
+// sie mask
+assign sie_rwmask_li    = mideleg_lo;
+
+// sip mask
+assign sip_rmask_li     = mideleg_lo;
+assign sip_wmask_li    = '{meip: 1'b0, seip: 1'b0
+                            ,mtip: 1'b0, stip: 1'b0
+                            ,msip: 1'b0, ssip: mideleg_lo.ssi
+                            ,default: '0
+                           };
 
 logic exception_v_o, interrupt_v_o, ret_v_o;
 // CSR data
@@ -346,7 +359,7 @@ always_comb
               // Read-only because we don't support N-extension
               `CSR_ADDR_SEDELEG: csr_data_lo = '0;
               `CSR_ADDR_SIDELEG: csr_data_lo = '0;
-              `CSR_ADDR_SIE: csr_data_lo = mie_lo & sie_rmask_li;
+              `CSR_ADDR_SIE: csr_data_lo = mie_lo & sie_rwmask_li;
               `CSR_ADDR_STVEC: csr_data_lo = stvec_lo;
               `CSR_ADDR_SCOUNTEREN: csr_data_lo = scounteren_lo;
               `CSR_ADDR_SSCRATCH: csr_data_lo = sscratch_lo;
@@ -374,7 +387,6 @@ always_comb
               `CSR_ADDR_MIE: csr_data_lo = mie_lo;
               `CSR_ADDR_MTVEC: csr_data_lo = mtvec_lo;
               `CSR_ADDR_MCOUNTEREN: csr_data_lo = mcounteren_lo;
-              // TODO: This should actually be readonly in most bits
               `CSR_ADDR_MIP: csr_data_lo = mip_lo;
               `CSR_ADDR_MSCRATCH: csr_data_lo = mscratch_lo;
               `CSR_ADDR_MEPC: csr_data_lo = mepc_lo;
@@ -401,7 +413,7 @@ always_comb
               // Read-only because we don't support N-extension
               `CSR_ADDR_SEDELEG: begin end
               `CSR_ADDR_SIDELEG: begin end
-              `CSR_ADDR_SIE: mie_li = (mie_lo & ~sie_wmask_li) | (csr_data_li & sie_wmask_li);
+              `CSR_ADDR_SIE: mie_li = (mie_lo & ~sie_rwmask_li) | (csr_data_li & sie_rwmask_li);
               `CSR_ADDR_STVEC: stvec_li = csr_data_li;
               `CSR_ADDR_SCOUNTEREN: scounteren_li = csr_data_li;
               `CSR_ADDR_SSCRATCH: sscratch_li = csr_data_li;
@@ -422,8 +434,7 @@ always_comb
               `CSR_ADDR_MIE: mie_li = csr_data_li;
               `CSR_ADDR_MTVEC: mtvec_li = csr_data_li;
               `CSR_ADDR_MCOUNTEREN: mcounteren_li = csr_data_li;
-              // TODO: This should actually be readonly in most bits
-              `CSR_ADDR_MIP: mip_li = csr_data_li;
+              `CSR_ADDR_MIP: mip_li = (mip_lo & ~mip_wmask_li) | (csr_data_li & mip_wmask_li);
               `CSR_ADDR_MSCRATCH: mscratch_li = csr_data_li;
               `CSR_ADDR_MEPC: mepc_li = csr_data_li;
               `CSR_ADDR_MCAUSE: mcause_li = csr_data_li;
@@ -452,16 +463,47 @@ always_comb
     else if (priv_mode_r < csr_cmd.csr_addr[9:8])
       illegal_instr_o = 1'b1;
 
-    if (timer_irq_i)
-        mip_li.mtip = 1'b1;
+    mip_li.mtip = timer_irq_i;
+    mip_li.msip = software_irq_i;
+    mip_li.meip = external_irq_i;
 
-    if (software_irq_i)
-        mip_li.msip = 1'b1;
+    // Only take interrupt during nop
+    if (~exception_v_i & (m_interrupt_icode_v_li | s_interrupt_icode_v_li))
+      if (m_interrupt_icode_v_li)
+        begin
+          priv_mode_n          = `PRIV_MODE_M;
 
-    if (external_irq_i)
-        mip_li.meip = 1'b1;
+          mstatus_li.mpp       = priv_mode_r;
+          mstatus_li.mpie      = mstatus_lo.mie;
+          mstatus_li.mie       = 1'b0;
 
-    if (exception_v_i & exception_ecode_v_li) 
+          mepc_li              = exception_pc_i;
+          mtval_li             = '0;
+          mcause_li._interrupt = 1'b1;
+          mcause_li.ecode      = m_interrupt_icode_li;
+
+          exception_v_o        = 1'b0;
+          interrupt_v_o        = 1'b1;
+          ret_v_o              = 1'b0;
+        end
+      else
+        begin
+          priv_mode_n          = `PRIV_MODE_S;
+
+          mstatus_li.spp       = priv_mode_r;
+          mstatus_li.spie      = mstatus_lo.sie;
+          mstatus_li.sie       = 1'b0;
+
+          sepc_li              = exception_pc_i;
+          stval_li             = '0;
+          scause_li._interrupt = 1'b1;
+          scause_li.ecode      = s_interrupt_icode_li;
+
+          exception_v_o        = 1'b0;
+          interrupt_v_o        = 1'b1;
+          ret_v_o              = 1'b0;
+        end
+    else if (exception_v_i & exception_ecode_v_li)
       if (medeleg_lo[exception_ecode_li] & ~is_m_mode)
         begin
           priv_mode_n          = `PRIV_MODE_S;
@@ -502,46 +544,6 @@ always_comb
           interrupt_v_o        = 1'b0;
           ret_v_o              = 1'b0;
         end
-
-    if (exception_icode_v_li)
-      if (mideleg_lo[exception_icode_li] & ~is_m_mode)
-        begin
-          priv_mode_n          = `PRIV_MODE_S;
-
-          mstatus_li.spp       = priv_mode_r;
-          mstatus_li.spie      = mstatus_lo.sie;
-          mstatus_li.sie       = 1'b0;
-
-          sepc_li              = (exception_v_i & exception_ecode_v_li) 
-                                ? paddr_width_p'($signed(exception_pc_i))
-                                : paddr_width_p'($signed(interrupt_pc_i));
-          stval_li             = '0;
-          scause_li._interrupt = 1'b1;
-          scause_li.ecode      = exception_icode_li;
-
-          exception_v_o        = 1'b0;
-          interrupt_v_o        = 1'b1;
-          ret_v_o              = 1'b0;
-        end
-      else
-        begin
-          priv_mode_n          = `PRIV_MODE_M;
-
-          mstatus_li.mpp       = priv_mode_r;
-          mstatus_li.mpie      = mstatus_lo.mie;
-          mstatus_li.mie       = 1'b0;
-
-          mepc_li              = (exception_v_i & exception_ecode_v_li) 
-                                ? paddr_width_p'($signed(exception_pc_i))
-                                : paddr_width_p'($signed(interrupt_pc_i));
-          mtval_li             = '0;
-          mcause_li._interrupt = 1'b1;
-          mcause_li.ecode      = exception_icode_li;
-
-          exception_v_o        = 1'b0;
-          interrupt_v_o        = 1'b1;
-          ret_v_o              = 1'b0;
-        end
   end
 
 // CSR slow paths
@@ -559,7 +561,7 @@ assign v_o             = csr_cmd_v_i;
 
 /* TODO: This doesn't actually work */
 assign cfg_csr_data_o = csr_data_lo;
-assign bp_params_priv_data_o = priv_mode_r;
+assign cfg_priv_data_o = priv_mode_r;
 
 assign trap_pkt_cast_o.epc       = (csr_cmd.csr_op == e_sret) ? sepc_r : mepc_r;
 assign trap_pkt_cast_o.tvec      = (priv_mode_n == `PRIV_MODE_S) ? stvec_r : mtvec_r;

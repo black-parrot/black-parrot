@@ -46,9 +46,9 @@ module bp_be_mem_top
   (input                                     clk_i
    , input                                   reset_i
 
-   , input [cfg_bus_width_lp-1:0]           cfg_bus_i
+   , input [cfg_bus_width_lp-1:0]            cfg_bus_i
    , output [dword_width_p-1:0]              cfg_csr_data_o
-   , output [1:0]                            bp_params_priv_data_o
+   , output [1:0]                            cfg_priv_data_o
 
    , input [mmu_cmd_width_lp-1:0]            mmu_cmd_i
    , input                                   mmu_cmd_v_i
@@ -92,7 +92,6 @@ module bp_be_mem_top
    , input                                   timer_irq_i
    , input                                   software_irq_i
    , input                                   external_irq_i
-   , input [vaddr_width_p-1:0]               interrupt_pc_i
 
    , output [trap_pkt_width_lp-1:0]          trap_pkt_o
    , output [rv64_priv_width_gp-1:0]         priv_mode_o
@@ -198,6 +197,7 @@ wire [vaddr_width_p-1:0] exception_pc_li = ptw_page_fault_v ? fault_pc : commit_
 // TODO: vaddr_mem3 -> commit_pkt.vaddr
 wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? fault_vaddr : vaddr_mem3;
 wire [instr_width_p-1:0] exception_instr_li = commit_pkt.instr;
+// TODO: exception priority is non-compliant with the spec.
 assign exception_ecode_dec_li = 
   '{instr_misaligned : csr_cmd_v_i & (csr_cmd.csr_op == e_op_instr_misaligned)
     ,instr_fault     : csr_cmd_v_i & (csr_cmd.csr_op == e_op_instr_access_fault)
@@ -224,7 +224,7 @@ bp_be_csr
 
    ,.cfg_bus_i(cfg_bus_i)
    ,.cfg_csr_data_o(cfg_csr_data_o)
-   ,.bp_params_priv_data_o(bp_params_priv_data_o)
+   ,.cfg_priv_data_o(cfg_priv_data_o)
 
    ,.csr_cmd_i(csr_cmd_i)
    ,.csr_cmd_v_i(csr_cmd_v_i)
@@ -246,7 +246,6 @@ bp_be_csr
    ,.timer_irq_i(timer_irq_i)
    ,.software_irq_i(software_irq_i)
    ,.external_irq_i(external_irq_i)
-   ,.interrupt_pc_i(interrupt_pc_i)
 
    ,.priv_mode_o(priv_mode_o)
    ,.trap_pkt_o(trap_pkt_o)
