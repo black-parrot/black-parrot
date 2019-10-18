@@ -231,7 +231,7 @@ always_comb
     // Form dispatch packet
     dispatch_pkt.v      = issue_pkt_v_r & dispatch_v_i;
     dispatch_pkt.poison = poison_iss_r | npc_mismatch;
-    dispatch_pkt.pc     = issue_pkt_r.pc;
+    dispatch_pkt.pc     = expected_npc_i;
     dispatch_pkt.instr  = issue_pkt_r.instr;
     dispatch_pkt.rs1    = irf_rs1; // TODO: Add float forwarding
     dispatch_pkt.rs2    = irf_rs2;

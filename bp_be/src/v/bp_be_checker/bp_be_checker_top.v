@@ -71,8 +71,6 @@ module bp_be_checker_top
    , output                           chk_dispatch_v_o
    , output                           flush_o
 
-   // CSR interface
-   , output [vaddr_width_p-1:0]       pc_o
    , input                            tlb_fence_i
    
    //iTLB fill interface
@@ -121,7 +119,6 @@ bp_be_director
    ,.commit_pkt_i(commit_pkt_i)
    ,.trap_pkt_i(trap_pkt_i)
    ,.tlb_fence_i(tlb_fence_i)
-   ,.pc_o(pc_o)
 
    ,.itlb_fill_v_i(itlb_fill_v_i)
    ,.itlb_fill_vaddr_i(itlb_fill_vaddr_i)

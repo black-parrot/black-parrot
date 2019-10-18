@@ -43,7 +43,6 @@ module bp_be_csr
     , input                          timer_irq_i
     , input                          software_irq_i
     , input                          external_irq_i
-    , input [vaddr_width_p-1:0]      interrupt_pc_i
 
     , output [trap_pkt_width_lp-1:0] trap_pkt_o
 
@@ -469,8 +468,9 @@ always_comb
     mip_li.msip = software_irq_i;
     mip_li.meip = external_irq_i;
 
-    if(m_interrupt_icode_v_li | s_interrupt_icode_v_li) begin
-      if(m_interrupt_icode_v_li)
+    // Only take interrupt during nop
+    if (~exception_v_i & (m_interrupt_icode_v_li | s_interrupt_icode_v_li))
+      if (m_interrupt_icode_v_li)
         begin
           priv_mode_n          = `PRIV_MODE_M;
 
@@ -478,7 +478,7 @@ always_comb
           mstatus_li.mpie      = mstatus_lo.mie;
           mstatus_li.mie       = 1'b0;
 
-          mepc_li              = paddr_width_p'($signed(interrupt_pc_i));
+          mepc_li              = exception_pc_i;
           mtval_li             = '0;
           mcause_li._interrupt = 1'b1;
           mcause_li.ecode      = m_interrupt_icode_li;
@@ -495,7 +495,7 @@ always_comb
           mstatus_li.spie      = mstatus_lo.sie;
           mstatus_li.sie       = 1'b0;
 
-          sepc_li              = paddr_width_p'($signed(interrupt_pc_i));
+          sepc_li              = exception_pc_i;
           stval_li             = '0;
           scause_li._interrupt = 1'b1;
           scause_li.ecode      = s_interrupt_icode_li;
@@ -504,8 +504,7 @@ always_comb
           interrupt_v_o        = 1'b1;
           ret_v_o              = 1'b0;
         end
-    end
-    else if(exception_v_i & exception_ecode_v_li) begin
+    else if (exception_v_i & exception_ecode_v_li)
       if (medeleg_lo[exception_ecode_li] & ~is_m_mode)
         begin
           priv_mode_n          = `PRIV_MODE_S;
@@ -546,7 +545,6 @@ always_comb
           interrupt_v_o        = 1'b0;
           ret_v_o              = 1'b0;
         end
-    end
   end
 
 // CSR slow paths

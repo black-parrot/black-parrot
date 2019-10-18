@@ -92,7 +92,6 @@ module bp_be_mem_top
    , input                                   timer_irq_i
    , input                                   software_irq_i
    , input                                   external_irq_i
-   , input [vaddr_width_p-1:0]               interrupt_pc_i
 
    , output [trap_pkt_width_lp-1:0]          trap_pkt_o
    , output [rv64_priv_width_gp-1:0]         priv_mode_o
@@ -247,7 +246,6 @@ bp_be_csr
    ,.timer_irq_i(timer_irq_i)
    ,.software_irq_i(software_irq_i)
    ,.external_irq_i(external_irq_i)
-   ,.interrupt_pc_i(interrupt_pc_i)
 
    ,.priv_mode_o(priv_mode_o)
    ,.trap_pkt_o(trap_pkt_o)

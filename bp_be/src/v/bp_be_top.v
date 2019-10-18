@@ -101,7 +101,6 @@ logic chk_dispatch_v;
 
 logic [vaddr_width_p-1:0] chk_tvec_li;
 logic [vaddr_width_p-1:0] chk_epc_li;
-logic [vaddr_width_p-1:0] chk_pc_lo;
 
 logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li, chk_ifence_li;
 
@@ -150,8 +149,6 @@ bp_be_checker_top
 
    ,.dispatch_pkt_o(dispatch_pkt)
 
-
-   ,.pc_o(chk_pc_lo)
    ,.tlb_fence_i(chk_tlb_fence_li)
    
    ,.itlb_fill_v_i(itlb_fill_v)
@@ -243,7 +240,6 @@ bp_be_mem_top
     ,.timer_irq_i(timer_irq_i)
     ,.software_irq_i(software_irq_i)
     ,.external_irq_i(external_irq_i)
-    ,.interrupt_pc_i(chk_pc_lo)
 
     ,.trap_pkt_o(trap_pkt)
     // Should connect priv mode to checker for shadow privilege mode

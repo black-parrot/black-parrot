@@ -53,8 +53,6 @@ module bp_be_director
 
    , input [commit_pkt_width_lp-1:0]  commit_pkt_i
    , input [trap_pkt_width_lp-1:0]    trap_pkt_i
-   // CSR interface
-   , output [vaddr_width_p-1:0]       pc_o 
    , input                            tlb_fence_i
    
    //iTLB fill interface
@@ -117,17 +115,6 @@ bsg_dff_reset_en
    );
 assign cfg_npc_data_o = npc_r;
 
-bsg_dff_reset_en
- #(.width_p(vaddr_width_p))
- pc
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.en_i(npc_w_v)
-
-   ,.data_i(npc_r)
-   ,.data_o(pc_r)
-   );
-
 // NPC calculation
 bsg_mux 
  #(.width_p(vaddr_width_p)
@@ -189,8 +176,6 @@ wire last_instr_was_branch = attaboy_pending | calc_status.ex1_br_or_jmp;
 //   mispredict-under-cache-miss. However, there's a critical path vs extra speculation argument.
 //   Currently, we just don't send pc redirects under a cache miss.
 assign expected_npc_o = npc_w_v ? npc_n : npc_r;
-// The current PC, used for interrupts
-assign pc_o = pc_r;
 
 // Boot logic 
 always_comb
@@ -287,7 +272,7 @@ always_comb
     else if (isd_status.isd_v & ~npc_mismatch_v & attaboy_pending) 
       begin
         fe_cmd.opcode                      = e_op_attaboy;
-        fe_cmd.vaddr                       = isd_status.isd_pc;
+        fe_cmd.vaddr                       = expected_npc_o;
         fe_cmd.operands.attaboy.branch_metadata_fwd = isd_status.isd_branch_metadata_fwd;
         fe_cmd_v = fe_cmd_ready_i & (~commit_pkt.cache_miss & ~commit_pkt.tlb_miss);
       end
