@@ -194,11 +194,13 @@ $BP_TOP_DIR/src/v/bp_cfg.v
 $BP_TOP_DIR/src/v/bp_core.v
 $BP_TOP_DIR/src/v/bp_core_complex.v
 $BP_TOP_DIR/src/v/bp_mem_complex.v
+$BP_TOP_DIR/src/v/bp_io_complex.v
 $BP_TOP_DIR/src/v/bp_clint.v
 $BP_TOP_DIR/src/v/bp_clint_node.v
 $BP_TOP_DIR/src/v/bp_processor.v
 $BP_TOP_DIR/src/v/bp_tile.v
 $BP_TOP_DIR/src/v/bp_tile_node.v
+$BP_TOP_DIR/src/v/bp_vcache_node.v
 ## Common
 $BP_COMMON_DIR/src/v/bp_addr_map.v
 

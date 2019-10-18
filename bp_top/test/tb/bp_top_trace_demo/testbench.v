@@ -76,6 +76,7 @@ logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 logic [mem_noc_cord_width_p-1:0] dram_cord_lo, clint_cord_lo, host_cord_lo;
 logic [num_core_p-1:0][mem_noc_cord_width_p-1:0] tile_cord_lo;
 logic [num_mem_p-1:0][mem_noc_cord_width_p-1:0] mem_cord_lo;
+logic [num_io_p-1:0][mem_noc_cord_width_p-1:0]  io_cord_lo;
 
 assign clint_cord_lo[0+:mem_noc_x_cord_width_p]                      = clint_x_pos_p;
 assign clint_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
@@ -85,18 +86,23 @@ assign host_cord_lo[0+:mem_noc_x_cord_width_p]                      = mem_noc_x_
 assign host_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
 
 for (genvar j = 0; j < mem_noc_y_dim_p; j++)
-  begin : y
+  begin : tile_y
     for (genvar i = 0; i < mem_noc_x_dim_p; i++)
-      begin : x
+      begin : tile_x
         localparam idx = j*mem_noc_x_dim_p + i;
         assign tile_cord_lo[idx][0+:mem_noc_x_cord_width_p] = i+1;
         assign tile_cord_lo[idx][mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = j+1;
       end
   end
+for (genvar i = 0; i < num_io_p; i++)
+  begin : io_x
+    assign io_cord_lo[i][0+:mem_noc_x_cord_width_p] = i;
+    assign io_cord_lo[i][mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
+  end
 for (genvar i = 0; i < num_mem_p; i++)
-  begin : x
+  begin : mem_x
     assign mem_cord_lo[i][0+:mem_noc_x_cord_width_p] = i;
-    assign mem_cord_lo[i][mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
+    assign mem_cord_lo[i][mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = mem_noc_y_dim_p+1;
   end
 
 // Chip
@@ -112,6 +118,7 @@ wrapper
    ,.mem_clk_i(clk_i)
    ,.mem_reset_i(reset_i)
 
+   ,.io_cord_i(io_cord_lo)
    ,.mem_cord_i(mem_cord_lo)
    ,.tile_cord_i(tile_cord_lo)
    ,.dram_cord_i(dram_cord_lo)

@@ -201,7 +201,8 @@ typedef struct packed
   , localparam int mem_noc_cord_markers_pos_p[mem_noc_dims_p:0] =                                  \
       '{mem_noc_cord_width_p, mem_noc_x_cord_width_p, 0}                                           \
                                                                                                    \
-  , localparam num_mem_p     = mem_noc_x_dim_p + 2                                                 \
+  , localparam num_mem_p     = mem_noc_x_dim_p                                                     \
+  , localparam num_io_p      = mem_noc_x_dim_p + 2                                                 \
   , localparam clint_x_pos_p = (mem_noc_x_dim_p+1)/2                                               \
                                                                                                    \
   , localparam dword_width_p       = 64                                                            \

@@ -31,6 +31,7 @@ module bp_processor
    , input                                            mem_clk_i
    , input                                            mem_reset_i
 
+   , input [num_io_p-1:0][mem_noc_cord_width_p-1:0]   io_cord_i
    , input [num_mem_p-1:0][mem_noc_cord_width_p-1:0]  mem_cord_i
    , input [num_core_p-1:0][mem_noc_cord_width_p-1:0] tile_cord_i
    , input [mem_noc_cord_width_p-1:0]                 dram_cord_i
@@ -48,6 +49,8 @@ module bp_processor
 
    , input [bsg_ready_and_link_sif_width_lp-1:0]      next_resp_link_i
    , output [bsg_ready_and_link_sif_width_lp-1:0]     next_resp_link_o
+
+   // TODO: DMC Channels
    );
 
 `declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
@@ -55,10 +58,10 @@ module bp_processor
 `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
 
-logic [num_core_p-1:0]                       timer_irq_lo, soft_irq_lo, external_irq_lo;
+logic [num_core_p-1:0] timer_irq_lo, soft_irq_lo, external_irq_lo;
 
-bsg_ready_and_link_sif_s [mem_noc_x_dim_p-1:0] mem_cmd_link_li, mem_cmd_link_lo;
-bsg_ready_and_link_sif_s [mem_noc_x_dim_p-1:0] mem_resp_link_li, mem_resp_link_lo;
+bsg_ready_and_link_sif_s [S:N][mem_noc_x_dim_p-1:0] mem_cmd_link_li, mem_cmd_link_lo;
+bsg_ready_and_link_sif_s [S:N][mem_noc_x_dim_p-1:0] mem_resp_link_li, mem_resp_link_lo;
 
 bp_core_complex
  #(.bp_params_p(bp_params_p))
@@ -88,26 +91,26 @@ bp_core_complex
    ,.mem_resp_link_o(mem_resp_link_lo)
    );
 
-bp_mem_complex
+bp_io_complex
  #(.bp_params_p(bp_params_p))
- mc
+ ioc
   (.core_clk_i(core_clk_i)
    ,.core_reset_i(core_reset_i)
 
    ,.mem_clk_i(mem_clk_i)
    ,.mem_reset_i(mem_reset_i)
 
-   ,.mem_cord_i(mem_cord_i)
+   ,.io_cord_i(io_cord_i)
 
    ,.timer_irq_o(timer_irq_lo)
    ,.soft_irq_o(soft_irq_lo)
    ,.external_irq_o(external_irq_lo)
 
-   ,.mem_cmd_link_i(mem_cmd_link_lo)
-   ,.mem_cmd_link_o(mem_cmd_link_li)
+   ,.mem_cmd_link_i(mem_cmd_link_lo[N])
+   ,.mem_cmd_link_o(mem_cmd_link_li[N])
 
-   ,.mem_resp_link_i(mem_resp_link_lo)
-   ,.mem_resp_link_o(mem_resp_link_li)
+   ,.mem_resp_link_i(mem_resp_link_lo[N])
+   ,.mem_resp_link_o(mem_resp_link_li[N])
 
    ,.prev_cmd_link_i(prev_cmd_link_i)
    ,.prev_cmd_link_o(prev_cmd_link_o)
@@ -120,6 +123,26 @@ bp_mem_complex
 
    ,.next_resp_link_i(next_resp_link_i)
    ,.next_resp_link_o(next_resp_link_o)
+   );
+
+bp_mem_complex
+ #(.bp_params_p(bp_params_p))
+ mc
+  (.core_clk_i(core_clk_i)
+   ,.core_reset_i(core_reset_i)
+
+   ,.mem_clk_i(mem_clk_i)
+   ,.mem_reset_i(mem_reset_i)
+   
+   ,.mem_cord_i(mem_cord_i)
+
+   ,.mem_cmd_link_i(mem_cmd_link_lo[S])
+   ,.mem_cmd_link_o(mem_cmd_link_li[S])
+
+   ,.mem_resp_link_i(mem_resp_link_lo[S])
+   ,.mem_resp_link_o(mem_resp_link_li[S])
+
+   // TODO: DMC Channels
    );
 
 endmodule

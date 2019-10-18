@@ -28,6 +28,7 @@ module wrapper
    , input                                            mem_clk_i
    , input                                            mem_reset_i
 
+   , input [num_io_p-1:0][mem_noc_cord_width_p-1:0]   io_cord_i
    , input [num_mem_p-1:0][mem_noc_cord_width_p-1:0]  mem_cord_i
    , input [num_core_p-1:0][mem_noc_cord_width_p-1:0] tile_cord_i
    , input [mem_noc_cord_width_p-1:0]                 dram_cord_i
