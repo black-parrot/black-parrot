@@ -23,11 +23,11 @@ include $(TEST_DIR)/Makefile.frag
 all: all_mem all_dump all_spike
 
 all_mem: perch
-all_mem: riscv_mem coremark_mem beebs_mem littlefs_test_mem demos_mem zero_mem
+all_mem: riscv_mem coremark_mem beebs_mem littlefs_test_mem demos_mem riscvdv_mem zero_mem
 
-all_dump: riscv_dump coremark_dump beebs_dump littlefs_test_dump demos_dump
+all_dump: riscv_dump coremark_dump beebs_dump littlefs_test_dump demos_dump riscvdv_dump
 
-all_spike: riscv_spike coremark_spike beebs_spike littlefs_test_spike
+all_spike: riscv_spike coremark_spike beebs_spike littlefs_test_spike riscvdv_spike
 
 zero: zero_mem
 riscv: riscv_mem riscv_dump riscv_spike
@@ -35,6 +35,7 @@ coremark: coremark_mem coremark_dump coremark_spike
 beebs: beebs_mem beebs_dump beebs_spike
 littlefs_test: littlefs_test_mem littlefs_test_dump littlefs_test_spike
 demos: demos_mem demos_dump
+riscvdv: riscvdv_mem riscvdv_dump riscvdv_spike
 # OpenSBI requires hardfloat and does not support softfloat libraries, so the compilation will fail
 #opensbi: opensbi_mem opensbi_dump
 #bbl: bbl_mem bbl_dump
@@ -148,7 +149,6 @@ bbl_dump: bbl.dump
 
 beebs_mem: beebs_elf
 beebs_mem: $(foreach x, $(BEEBS_TESTS), $(x).mem)
-beebs_dump: $(foreach x, $(BEEBS_TESTS), $(x).dump)
 beebs_spike: $(foreach x, $(BEEBS_TESTS), $(x).spike)
 beebs_dump: $(foreach x, $(BEEBS_TESTS), $(x).dump)
 
@@ -156,6 +156,16 @@ spec_mem: spec_elf
 spec_mem: $(foreach x, $(BP_SPEC), $(x).mem)
 spec_spike: $(foreach x, $(BP_SPEC), $(x).spike)
 spec_dump: $(foreach x, $(BP_SPEC), $(x).dump)
+
+riscvdv_elf: $(BP_RVDV)
+$(BP_RVDV):
+	rm -rf $(TEST_DIR)/src/riscv-dv/out/
+	$(MAKE) -C $(TEST_DIR)/src/riscv-dv/ generate.$@
+	cp $(TEST_DIR)/src/riscv-dv/out/asm_tests/$@_0.o $(MEM_DIR)/$@.riscv
+riscvdv_mem: riscvdv_elf
+riscvdv_mem: $(foreach x, $(BP_RVDV), $(x).mem)
+riscvdv_spike: $(foreach x, $(BP_RVDV), $(x).spike)
+riscvdv_dump: $(foreach x, $(BP_RVDV), $(x).dump)
 
 %.mem: 
 	$(RISCV_OBJCOPY) $(MEM_DIR)/$*.riscv $(MEM_DIR)/$@
@@ -181,6 +191,7 @@ clean:
 	-$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test/fhello clean
 	-$(MAKE) -C $(TEST_DIR)/src/beebs clean
 	-$(MAKE) -C $(TEST_DIR)/src/spec/spec2000/benchmarks/spec2000/CINT2000/175.vpr/src.raw/ clean
+	-$(MAKE) -C $(TEST_DIR)/src/riscv-dv clean
 	-rm -rf $(TEST_DIR)/src/bsg_newlib_dramfs/build-newlib 
 	-rm -rf $(TEST_DIR)/src/bsg_newlib_dramfs/install-newlib
 	-rm -ff $(MEM_DIR)/*

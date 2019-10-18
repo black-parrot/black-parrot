@@ -1,5 +1,5 @@
 ## Set common environment variables
-TOP ?= $(shell git rev-parse --show-toplevel)
+export TOP ?= $(shell git rev-parse --show-toplevel)
 
 export BP_COMMON_DIR    ?= $(TOP)/bp_common
 export BP_FE_DIR        ?= $(TOP)/bp_fe
@@ -13,23 +13,23 @@ export BASEJUMP_STL_DIR ?= $(BP_EXTERNAL_DIR)/basejump_stl
 
 # If the machine you are working on is bsg_cadenv compliant, then you do not
 # need to setup the cad tools, simply put bsg_cadenv in the same root dir.
-BSG_CADENV_DIR ?= $(TOP)/external/bsg_cadenv
+export BSG_CADENV_DIR ?= $(TOP)/external/bsg_cadenv
 -include $(BSG_CADENV_DIR)/cadenv.mk
 
 ## Sepcify license path if needed
-LM_LICENSE_FILE ?=
+export LM_LICENSE_FILE ?=
 
 ## Override tool paths if needed
-GCC       ?= gcc
-VCS_HOME  ?=
-VCS       ?= vcs
-URG       ?= urg
-VERILATOR ?= verilator
-DC_SHELL  ?= dc_shell
+export GCC       ?= gcc
+export VCS_HOME  ?=
+export VCS       ?= vcs
+export URG       ?= urg
+export VERILATOR ?= verilator
+export DC_SHELL  ?= dc_shell
 # Some environments have issues with setting DVE as an environment variable
-_DVE      ?= dve
-GTKWAVE   ?= gtkwave
-PYTHON    ?= python
+export _DVE      ?= dve
+export GTKWAVE   ?= gtkwave
+export PYTHON    ?= python3
 
 ## Needed for verilator g++ compilations
 export SYSTEMC_INCLUDE ?= $(BP_EXTERNAL_DIR)/include
