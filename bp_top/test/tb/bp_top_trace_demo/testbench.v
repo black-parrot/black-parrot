@@ -354,7 +354,7 @@ bp_me_cce_to_wormhole_link_bidir
   ,.resp_link_o(resp_link_lo)
   );
   
-  
+ 
   `declare_bsg_cache_pkt_s(paddr_width_p, dword_width_p);
   bsg_cache_pkt_s cache_pkt;
   logic cache_v_li;
@@ -469,7 +469,6 @@ dma_to_cce
   ,.mem_resp_ready_o(true_dram_resp_ready_li)
   );
   
-
 bp_mem
 #(.bp_params_p(bp_params_p)
   ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
@@ -499,7 +498,38 @@ mem
   ,.mem_resp_v_o(true_dram_resp_v_lo)
   ,.mem_resp_ready_i(true_dram_resp_ready_li)
   );
+ 
+/*
+bp_mem
+#(.bp_params_p(bp_params_p)
+  ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
+  ,.mem_load_p(mem_load_p)
+  ,.mem_file_p(mem_file_p)
+  ,.mem_offset_p(mem_offset_p)
 
+  ,.use_max_latency_p(use_max_latency_p)
+  ,.use_random_latency_p(use_random_latency_p)
+  ,.use_dramsim2_latency_p(use_dramsim2_latency_p)
+  ,.max_latency_p(max_latency_p)
+
+  ,.dram_clock_period_in_ps_p(dram_clock_period_in_ps_p)
+  ,.dram_bp_params_p(dram_bp_params_p)
+  ,.dram_sys_bp_params_p(dram_sys_bp_params_p)
+  ,.dram_capacity_p(dram_capacity_p)
+  )
+mem
+ (.clk_i(clk_i)
+  ,.reset_i(reset_i)
+
+  ,.mem_cmd_i(dram_cmd_li)
+  ,.mem_cmd_v_i(dram_cmd_v_li)
+  ,.mem_cmd_yumi_o(dram_cmd_yumi_lo)
+
+  ,.mem_resp_o(dram_resp_lo)
+  ,.mem_resp_v_o(dram_resp_v_lo)
+  ,.mem_resp_ready_i(dram_resp_ready_li)
+  );
+*/
 logic [num_core_p-1:0] program_finish;
 bp_nonsynth_host
  #(.bp_params_p(bp_params_p))
@@ -531,7 +561,7 @@ bsg_dff_reset_en
  req_outstanding_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(mem_cmd_yumi_li | mem_resp_v_li)
+   ,.en_i(mem_cmd_yumi_li | (mem_resp_v_li & mem_resp_ready_lo))
 
    ,.data_i(mem_cmd_yumi_li)
    ,.data_o(req_outstanding_r)
