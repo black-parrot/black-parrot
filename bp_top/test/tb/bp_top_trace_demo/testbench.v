@@ -107,7 +107,7 @@ for (genvar i = 0; i < num_io_p; i++)
   end
 for (genvar i = 0; i < num_mem_p; i++)
   begin : mem_x
-    assign mem_cord_lo[i][0+:mem_noc_x_cord_width_p] = i;
+    assign mem_cord_lo[i][0+:mem_noc_x_cord_width_p] = i+1;
     assign mem_cord_lo[i][mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = mem_noc_y_dim_p+1;
   end
 
