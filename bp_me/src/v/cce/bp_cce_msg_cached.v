@@ -490,7 +490,10 @@ module bp_cce_msg_cached
     // Outbound Messages - pushq
 
     // Mem Command
-    if (decoded_inst_i.mem_cmd_v) begin
+    // All memory commands arbitrate with use of the pending bits, even though uncached commands
+    // don't require use of the bits. This makes arbitration logic a little simpler in the ucode
+    // instruction decoder.
+    if (decoded_inst_i.mem_cmd_v & ~pending_w_busy_o) begin
 
       // set some defaults - cached load/store miss request
       mem_cmd_lo.msg_type.cce_mem_cmd = (mshr.flags[e_flag_sel_rqf]) ? e_cce_mem_wr : e_cce_mem_rd;
@@ -506,7 +509,7 @@ module bp_cce_msg_cached
         mem_cmd_lo.payload.speculative = 1'b1;
       end
 
-      // Uncached command - no need to block on pending_w_busy_o because uncached access does not use pending bits
+      // Uncached request
       if (mshr.flags[e_flag_sel_ucf]) begin
         mem_cmd_v_o = 1'b1;
         // load or store
@@ -529,8 +532,8 @@ module bp_cce_msg_cached
 
       end // uncached mem_cmd
 
-      // Cached request - only send if this module isn't already writing the pending bits
-      else if (~pending_w_busy_o) begin
+      // Cached request
+      else begin
         mem_cmd_v_o = 1'b1;
 
         // Writeback command - override default command fields as needed
@@ -613,13 +616,17 @@ module bp_cce_msg_cached
     end
     // LCE Response
     else if (decoded_inst_i.lce_resp_yumi) begin
-      lce_resp_yumi_o = decoded_inst_i.lce_resp_yumi;
+      if (~pending_w_busy_o) begin
+        lce_resp_yumi_o = decoded_inst_i.lce_resp_yumi;
+      end
     end
     // Mem Response
     else if (decoded_inst_i.mem_resp_yumi) begin
-      mem_resp_yumi_o = decoded_inst_i.mem_resp_yumi;
-      // decrement the fence counter when dequeueing the memory response
-      fence_dec = mem_resp_v_i & mem_resp_yumi_o;
+      if (~pending_w_busy_o) begin
+        mem_resp_yumi_o = decoded_inst_i.mem_resp_yumi;
+        // decrement the fence counter when dequeueing the memory response
+        fence_dec = mem_resp_v_i & mem_resp_yumi_o;
+      end
     end
     // Mem Command
     else if (decoded_inst_i.mem_cmd_yumi) begin

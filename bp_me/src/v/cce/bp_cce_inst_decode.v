@@ -579,7 +579,7 @@ module bp_cce_inst_decode
     pc_stall_o |= (popq_op & (popq_qsel == e_src_q_sel_mem_resp) & pending_w_busy_i);
 
     // stall if trying to pop lce_resp but bp_cce_msg is using the pending bit
-    //pc_stall_o |= (popq_op & (popq_qsel == e_src_q_sel_lce_resp) & pending_w_busy_i);
+    pc_stall_o |= (popq_op & (popq_qsel == e_src_q_sel_lce_resp) & pending_w_busy_i);
 
     // stall if trying to pop lce_req but bp_cce_msg is using the pending bit
     pc_stall_o |= (popq_op & (popq_qsel == e_src_q_sel_lce_req) & pending_w_busy_i);
