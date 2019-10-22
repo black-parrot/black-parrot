@@ -189,20 +189,6 @@ $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_req.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.v
-## TOP
-$BP_TOP_DIR/src/v/bp_cfg.v
-$BP_TOP_DIR/src/v/bp_core.v
-$BP_TOP_DIR/src/v/bp_core_complex.v
-$BP_TOP_DIR/src/v/bp_mem_complex.v
-$BP_TOP_DIR/src/v/bp_io_complex.v
-$BP_TOP_DIR/src/v/bp_clint.v
-$BP_TOP_DIR/src/v/bp_clint_node.v
-$BP_TOP_DIR/src/v/bp_processor.v
-$BP_TOP_DIR/src/v/bp_tile.v
-$BP_TOP_DIR/src/v/bp_tile_node.v
-$BP_TOP_DIR/src/v/bp_vcache_node.v
-## Common
-$BP_COMMON_DIR/src/v/bp_addr_map.v
 
 
 $BP_COMMON_DIR/../basejump_stl_new/bsg_cache/bsg_cache_pkg.v
@@ -218,4 +204,20 @@ $BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out.v
 
 $BP_ME_DIR/src/v/wormhole/bsg_cache_dma_to_cce.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_cache.v
+
+
+## TOP
+$BP_TOP_DIR/src/v/bp_cfg.v
+$BP_TOP_DIR/src/v/bp_core.v
+$BP_TOP_DIR/src/v/bp_core_complex.v
+$BP_TOP_DIR/src/v/bp_mem_complex.v
+$BP_TOP_DIR/src/v/bp_io_complex.v
+$BP_TOP_DIR/src/v/bp_clint.v
+$BP_TOP_DIR/src/v/bp_clint_node.v
+$BP_TOP_DIR/src/v/bp_processor.v
+$BP_TOP_DIR/src/v/bp_tile.v
+$BP_TOP_DIR/src/v/bp_tile_node.v
+$BP_TOP_DIR/src/v/bp_vcache_node.v
+## Common
+$BP_COMMON_DIR/src/v/bp_addr_map.v
 

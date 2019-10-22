@@ -8,11 +8,17 @@ module bp_vcache_node
  import bsg_noc_pkg::*;
  import bsg_wormhole_router_pkg::*;
  import bp_me_pkg::*;
+ import bsg_cache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+   
+   // TODO: move to bp_params_p
+   , parameter vcache_ways_p = 2
+   , parameter vcache_sets_p = 64
 
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
+   , localparam bsg_cache_dma_pkt_width_lp = `bsg_cache_dma_pkt_width(paddr_width_p)
    )
   (input                                                core_clk_i
    , input                                              core_reset_i
@@ -27,11 +33,19 @@ module bp_vcache_node
 
    , input [S:W][mem_noc_ral_link_width_lp-1:0]         mem_resp_link_i
    , output [S:W][mem_noc_ral_link_width_lp-1:0]        mem_resp_link_o
+
    // DMC controller ports
-   // input
-   // input
-   // output
-   // output
+   , output logic [bsg_cache_dma_pkt_width_lp-1:0] dma_pkt_o
+   , output logic dma_pkt_v_o
+   , input dma_pkt_yumi_i
+     
+   , input [dword_width_p-1:0] dma_data_i
+   , input dma_data_v_i
+   , output logic dma_data_ready_o
+     
+   , output logic [dword_width_p-1:0] dma_data_o
+   , output logic dma_data_v_o
+   , input dma_data_yumi_i
    );
 
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
@@ -45,14 +59,101 @@ mem_noc_ral_link_s vcache_resp_link_li, vcache_resp_link_lo;
   // mem_link_to_vcache
   //
   //
+bp_cce_mem_msg_s       mem_resp_lo;
+logic                  mem_resp_v_lo, mem_resp_ready_li;
+bp_cce_mem_msg_s       mem_cmd_li;
+logic                  mem_cmd_v_li, mem_cmd_yumi_lo;
+  
+bp_me_cce_to_wormhole_link_client
+ #(.bp_params_p(bp_params_p))
+  client_link
+  (.clk_i(core_clk_i)
+  ,.reset_i(core_reset_i)
+
+  ,.mem_cmd_o(mem_cmd_li)
+  ,.mem_cmd_v_o(mem_cmd_v_li)
+  ,.mem_cmd_yumi_i(mem_cmd_yumi_lo)
+
+  ,.mem_resp_i(mem_resp_lo)
+  ,.mem_resp_v_i(mem_resp_v_lo)
+  ,.mem_resp_ready_o(mem_resp_ready_li)
+
+  ,.my_cord_i(my_cord_i)
+  ,.my_cid_i('0)
+     
+  ,.cmd_link_i(vcache_cmd_link_li)
+  ,.cmd_link_o(vcache_cmd_link_lo)
+
+  ,.resp_link_i(vcache_resp_link_li)
+  ,.resp_link_o(vcache_resp_link_lo)
+  );
+  
+`declare_bsg_cache_pkt_s(paddr_width_p, dword_width_p);
+bsg_cache_pkt_s cache_pkt;
+logic cache_v_li;
+logic cache_ready_lo;
+logic [dword_width_p-1:0] cache_data_lo;
+logic cache_v_lo;
+logic cache_yumi_li;
+
+bp_me_cce_to_cache
+  #(.bp_params_p(bp_params_p)
+    ,.sets_p(vcache_sets_p)
+    ,.ways_p(vcache_ways_p)
+  )
+cce_to_cache
+  (.clk_i(core_clk_i)
+    ,.reset_i(core_reset_i)
+
+    ,.mem_cmd_i(mem_cmd_li)
+    ,.mem_cmd_v_i(mem_cmd_v_li)
+    ,.mem_cmd_yumi_o(mem_cmd_yumi_lo)
+    
+    ,.mem_resp_o(mem_resp_lo)
+    ,.mem_resp_v_o(mem_resp_v_lo)
+    ,.mem_resp_ready_i(mem_resp_ready_li)
+
+    ,.cache_pkt_o(cache_pkt)
+    ,.v_o(cache_v_li)
+    ,.ready_i(cache_ready_lo)
+  
+    ,.data_i(cache_data_lo)
+    ,.v_i(cache_v_lo)
+    ,.yumi_o(cache_yumi_li)
+  );
 
   // vcache
   //
   //
-  
-  // TODO: remove stubs
-  assign vcache_cmd_link_lo  = '0;
-  assign vcache_resp_link_lo = '0;
+bsg_cache #(.addr_width_p(paddr_width_p)
+           ,.data_width_p(dword_width_p)
+           ,.block_size_in_words_p(cce_block_width_p/dword_width_p)
+           ,.sets_p(vcache_sets_p)
+           ,.ways_p(vcache_ways_p)
+           )
+  cache
+    (.clk_i(core_clk_i)
+    ,.reset_i(core_reset_i)
+    
+    ,.cache_pkt_i(cache_pkt)
+    ,.v_i(cache_v_li)
+    ,.ready_o(cache_ready_lo)
+    ,.data_o(cache_data_lo)
+    ,.v_o(cache_v_lo)
+    ,.yumi_i(cache_yumi_li)
+    
+    ,.dma_pkt_o(dma_pkt_o)
+    ,.dma_pkt_v_o(dma_pkt_v_o)
+    ,.dma_pkt_yumi_i(dma_pkt_yumi_i)
+    ,.dma_data_i(dma_data_i)
+    ,.dma_data_v_i(dma_data_v_i)
+    ,.dma_data_ready_o(dma_data_ready_o)
+    ,.dma_data_o(dma_data_o)
+    ,.dma_data_v_o(dma_data_v_o)
+    ,.dma_data_yumi_i(dma_data_yumi_i)
+    
+    ,.v_we_o()
+    );
 
 // Network side links
 mem_noc_ral_link_s mem_cmd_link_li, mem_cmd_link_lo;
@@ -162,8 +263,8 @@ if (async_mem_clk_p == 1)
      ,.dims_p(mem_noc_dims_p)
      ,.cord_markers_pos_p(mem_noc_cord_markers_pos_p)
      ,.len_width_p(mem_noc_len_width_p)
-     ,.reverse_order_p(0)
-     ,.routing_matrix_p(StrictXY | XY_Allow_S)
+     ,.reverse_order_p(1)
+     ,.routing_matrix_p(StrictYX)
      )
    mem_cmd_router
    (.clk_i(mem_clk_i)
@@ -178,8 +279,8 @@ if (async_mem_clk_p == 1)
      ,.dims_p(mem_noc_dims_p)
      ,.cord_markers_pos_p(mem_noc_cord_markers_pos_p)
      ,.len_width_p(mem_noc_len_width_p)
-     ,.reverse_order_p(0)
-     ,.routing_matrix_p(StrictXY | XY_Allow_S)
+     ,.reverse_order_p(1)
+     ,.routing_matrix_p(StrictYX)
      )
    mem_resp_router
     (.clk_i(mem_clk_i)

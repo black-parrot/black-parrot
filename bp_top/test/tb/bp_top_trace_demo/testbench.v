@@ -86,8 +86,8 @@ logic [num_io_p-1:0][mem_noc_cord_width_p-1:0]  io_cord_lo;
 
 assign clint_cord_lo[0+:mem_noc_x_cord_width_p]                      = clint_x_pos_p;
 assign clint_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
-assign dram_cord_lo[0+:mem_noc_x_cord_width_p]                      = mem_noc_x_dim_p+2;
-assign dram_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
+assign dram_cord_lo[0+:mem_noc_x_cord_width_p]                      = 1;
+assign dram_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = mem_noc_y_dim_p+1;
 assign host_cord_lo[0+:mem_noc_x_cord_width_p]                      = mem_noc_x_dim_p+2;
 assign host_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
 
@@ -110,6 +110,22 @@ for (genvar i = 0; i < num_mem_p; i++)
     assign mem_cord_lo[i][0+:mem_noc_x_cord_width_p] = i+1;
     assign mem_cord_lo[i][mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = mem_noc_y_dim_p+1;
   end
+  
+  
+`declare_bsg_cache_dma_pkt_s(paddr_width_p);
+    
+bsg_cache_dma_pkt_s [num_mem_p-1:0]        dma_pkt_lo;
+logic               [num_mem_p-1:0]        dma_pkt_v_lo;
+logic               [num_mem_p-1:0]        dma_pkt_yumi_li;
+
+logic [num_mem_p-1:0][dword_width_p-1:0]   dma_data_li;
+logic [num_mem_p-1:0]                      dma_data_v_li;
+logic [num_mem_p-1:0]                      dma_data_ready_lo;
+
+logic [num_mem_p-1:0][dword_width_p-1:0]   dma_data_lo;
+logic [num_mem_p-1:0]                      dma_data_v_lo;
+logic [num_mem_p-1:0]                      dma_data_yumi_li;
+
 
 // Chip
 wrapper
@@ -142,6 +158,19 @@ wrapper
 
    ,.next_resp_link_i(resp_link_lo)
    ,.next_resp_link_o(resp_link_li)
+   
+   // TODO: DMC Channels
+   ,.dma_pkt_o(dma_pkt_lo)
+   ,.dma_pkt_v_o(dma_pkt_v_lo)
+   ,.dma_pkt_yumi_i(dma_pkt_yumi_li)
+   
+   ,.dma_data_i(dma_data_li)
+   ,.dma_data_v_i(dma_data_v_li)
+   ,.dma_data_ready_o(dma_data_ready_lo)
+   
+   ,.dma_data_o(dma_data_lo)
+   ,.dma_data_v_o(dma_data_v_lo)
+   ,.dma_data_yumi_i(dma_data_yumi_li)
    );
 
   bind bp_be_top
@@ -342,7 +371,7 @@ bp_me_cce_to_wormhole_link_bidir
   ,.mem_resp_v_i(mem_resp_v_li)
   ,.mem_resp_ready_o(mem_resp_ready_lo)
 
-  ,.my_cord_i(dram_cord_lo)
+  ,.my_cord_i(host_cord_lo)
   ,.my_cid_i(mem_noc_cid_width_p'(0))
   ,.dst_cord_i(dst_cord_lo)
   ,.dst_cid_i(dst_cid_lo)
@@ -354,7 +383,7 @@ bp_me_cce_to_wormhole_link_bidir
   ,.resp_link_o(resp_link_lo)
   );
   
- 
+/* 
   `declare_bsg_cache_pkt_s(paddr_width_p, dword_width_p);
   bsg_cache_pkt_s cache_pkt;
   logic cache_v_li;
@@ -432,6 +461,12 @@ cce_to_cache
       
       ,.v_we_o()
       );
+*/
+
+// Stub
+assign dram_resp_lo = '0;
+assign dram_resp_v_lo = 1'b0;
+assign dram_cmd_yumi_lo = dram_cmd_v_li;
 
 bp_cce_mem_msg_s       true_dram_resp_lo;
 logic                  true_dram_resp_v_lo, true_dram_resp_ready_li;
@@ -448,17 +483,17 @@ dma_to_cce
   (.clk_i(clk_i)
   ,.reset_i(reset_i)
   
-  ,.dma_pkt_i( dma_pkt_lo )
-  ,.dma_pkt_v_i( dma_pkt_v_lo )
-  ,.dma_pkt_yumi_o( dma_pkt_yumi_li )
+  ,.dma_pkt_i( dma_pkt_lo[0] )
+  ,.dma_pkt_v_i( dma_pkt_v_lo[0] )
+  ,.dma_pkt_yumi_o( dma_pkt_yumi_li[0] )
   
-  ,.dma_data_o( dma_data_li )
-  ,.dma_data_v_o( dma_data_v_li )
-  ,.dma_data_ready_i( dma_data_ready_lo )
+  ,.dma_data_o( dma_data_li[0] )
+  ,.dma_data_v_o( dma_data_v_li[0] )
+  ,.dma_data_ready_i( dma_data_ready_lo[0] )
   
-  ,.dma_data_i( dma_data_lo )
-  ,.dma_data_v_i( dma_data_v_lo )
-  ,.dma_data_yumi_o( dma_data_yumi_li )
+  ,.dma_data_i( dma_data_lo[0] )
+  ,.dma_data_v_i( dma_data_v_lo[0] )
+  ,.dma_data_yumi_o( dma_data_yumi_li[0] )
 
   ,.mem_cmd_o(true_dram_cmd_li)
   ,.mem_cmd_v_o(true_dram_cmd_v_li)

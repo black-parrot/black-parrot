@@ -19,9 +19,9 @@ module bp_addr_map
    );
 
 // TODO: Currently, tiles are not writable and host is the same as DRAM
-wire unused = &{host_cord_i};
+//wire unused = &{host_cord_i};
 
-logic clint_not_dram;
+logic clint_not_dram, host_not_dram;
 
 always_comb
   casez (paddr_i)
@@ -29,8 +29,10 @@ always_comb
              clint_not_dram = 1'b1;
     default: clint_not_dram = 1'b0;
   endcase
+  
+assign host_not_dram = (paddr_i < dram_base_addr_gp);
 
-assign dst_cord_o = clint_not_dram ? clint_cord_i : dram_cord_i;
+assign dst_cord_o = clint_not_dram ? clint_cord_i : host_not_dram ? host_cord_i : dram_cord_i;
 assign dst_cid_o  = '0; // currently unused
 
 endmodule
