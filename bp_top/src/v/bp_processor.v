@@ -31,11 +31,7 @@ module bp_processor
    , input                                            mem_clk_i
    , input                                            mem_reset_i
 
-   , input [num_mem_p-1:0][mem_noc_cord_width_p-1:0]  mem_cord_i
-   , input [num_core_p-1:0][mem_noc_cord_width_p-1:0] tile_cord_i
-   , input [mem_noc_cord_width_p-1:0]                 dram_cord_i
-   , input [mem_noc_cord_width_p-1:0]                 clint_cord_i
-   , input [mem_noc_cord_width_p-1:0]                 host_cord_i
+   , input [mem_noc_chid_width_p-1:0]                 my_chid_i
 
    , input  [bsg_ready_and_link_sif_width_lp-1:0]     prev_cmd_link_i
    , output [bsg_ready_and_link_sif_width_lp-1:0]     prev_cmd_link_o
@@ -55,8 +51,6 @@ module bp_processor
 `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
 
-logic [num_core_p-1:0]                       timer_irq_lo, soft_irq_lo, external_irq_lo;
-
 bsg_ready_and_link_sif_s [mem_noc_x_dim_p-1:0] mem_cmd_link_li, mem_cmd_link_lo;
 bsg_ready_and_link_sif_s [mem_noc_x_dim_p-1:0] mem_resp_link_li, mem_resp_link_lo;
 
@@ -72,14 +66,7 @@ bp_core_complex
    ,.mem_clk_i(mem_clk_i)
    ,.mem_reset_i(mem_reset_i)
 
-   ,.tile_cord_i(tile_cord_i)
-   ,.dram_cord_i(dram_cord_i)
-   ,.clint_cord_i(clint_cord_i)
-   ,.host_cord_i(host_cord_i)
-
-   ,.timer_irq_i(timer_irq_lo)
-   ,.soft_irq_i(soft_irq_lo)
-   ,.external_irq_i(external_irq_lo)
+   ,.my_chid_i(my_chid_i)
 
    ,.mem_cmd_link_i(mem_cmd_link_li)
    ,.mem_cmd_link_o(mem_cmd_link_lo)
@@ -88,20 +75,16 @@ bp_core_complex
    ,.mem_resp_link_o(mem_resp_link_lo)
    );
 
-bp_mem_complex
+bp_io_complex
  #(.bp_params_p(bp_params_p))
- mc
+ ioc
   (.core_clk_i(core_clk_i)
    ,.core_reset_i(core_reset_i)
 
    ,.mem_clk_i(mem_clk_i)
    ,.mem_reset_i(mem_reset_i)
 
-   ,.mem_cord_i(mem_cord_i)
-
-   ,.timer_irq_o(timer_irq_lo)
-   ,.soft_irq_o(soft_irq_lo)
-   ,.external_irq_o(external_irq_lo)
+   ,.my_chid_i(my_chid_i)
 
    ,.mem_cmd_link_i(mem_cmd_link_lo)
    ,.mem_cmd_link_o(mem_cmd_link_li)

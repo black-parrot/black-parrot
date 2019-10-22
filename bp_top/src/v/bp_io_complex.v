@@ -1,5 +1,5 @@
 
-module bp_mem_complex
+module bp_io_complex
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_common_cfg_link_pkg::*;
@@ -19,11 +19,7 @@ module bp_mem_complex
    , input                                                             mem_clk_i
    , input                                                             mem_reset_i
 
-   , input [num_mem_p-1:0][mem_noc_cord_width_p-1:0]                   mem_cord_i
-
-   , output [num_core_p-1:0]                                           soft_irq_o
-   , output [num_core_p-1:0]                                           timer_irq_o
-   , output [num_core_p-1:0]                                           external_irq_o
+   , input [mem_noc_chid_width_p-1:0]                                  my_chid_i
 
    , input [mem_noc_x_dim_p-1:0][bsg_ready_and_link_sif_width_lp-1:0]  mem_cmd_link_i
    , output [mem_noc_x_dim_p-1:0][bsg_ready_and_link_sif_width_lp-1:0] mem_cmd_link_o
@@ -45,33 +41,27 @@ module bp_mem_complex
    );
 
 `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
-bsg_ready_and_link_sif_s [num_mem_p-1:0][S:W] cmd_link_li, cmd_link_lo, resp_link_li, resp_link_lo;
-bsg_ready_and_link_sif_s [S:N][num_mem_p-1:0] cmd_ver_link_li, cmd_ver_link_lo, resp_ver_link_li, resp_ver_link_lo;
-bsg_ready_and_link_sif_s [E:W]                cmd_hor_link_li, cmd_hor_link_lo, resp_hor_link_li, resp_hor_link_lo;
+bsg_ready_and_link_sif_s [num_io_p-1:0][S:W] cmd_link_li, cmd_link_lo, resp_link_li, resp_link_lo;
+bsg_ready_and_link_sif_s [S:N][num_io_p-1:0] cmd_ver_link_li, cmd_ver_link_lo, resp_ver_link_li, resp_ver_link_lo;
+bsg_ready_and_link_sif_s [E:W]               cmd_hor_link_li, cmd_hor_link_lo, resp_hor_link_li, resp_hor_link_lo;
 
-// bp_mem_complex is laid out like this:
-//   [io] [0:cores/2-1] [mmio_node] [cores/2:cores-1] [io]
-// Note: for single core, there is no router on between mmio_node[E] and io[W]
+// bp_io_complex is laid out like this:
+//   [io] [0:cores/2-1] [cores/2:cores-1] [io]
+//
 
-for (genvar i = 0; i < num_mem_p; i++)
+for (genvar i = 0; i < num_io_p; i++)
   begin : node
-    if (i == clint_x_pos_p)
-      begin : clint
-        bp_clint_node
+    wire [mem_noc_cord_width_p-1:0] cord_li = {'0, mem_noc_x_cord_width_p'(i+1)};
+    if (0) //  ((i == 0) || (i == num_io_p-1))
+      begin : reroute
+        bp_rerouter_node
          #(.bp_params_p(bp_params_p))
-         clint
-          (.core_clk_i(core_clk_i)
-           ,.core_reset_i(core_reset_i)
+         rerouter
+          (.clk_i(mem_clk_i)
+           ,.reset_i(mem_reset_i)
 
-           ,.mem_clk_i(mem_clk_i)
-           ,.mem_reset_i(mem_reset_i)
-
-           ,.my_cord_i(mem_cord_i[i])
-           ,.my_cid_i('0)
-
-           ,.soft_irq_o(soft_irq_o)
-           ,.timer_irq_o(timer_irq_o)
-           ,.external_irq_o(external_irq_o)
+           ,.my_chid_i(my_chid_i)
+           ,.my_cord_i(cord_li)
 
            ,.mem_cmd_link_i(cmd_link_li[i])
            ,.mem_cmd_link_o(cmd_link_lo[i])
@@ -81,7 +71,7 @@ for (genvar i = 0; i < num_mem_p; i++)
            );
       end
     else
-      begin : mem
+      begin : route
         bsg_ready_and_link_sif_s rtr_cmd_link_li, rtr_cmd_link_lo;
         bsg_ready_and_link_sif_s rtr_resp_link_li, rtr_resp_link_lo;
 
@@ -98,7 +88,7 @@ for (genvar i = 0; i < num_mem_p; i++)
          cmd_router 
          (.clk_i(mem_clk_i)
           ,.reset_i(mem_reset_i)
-          ,.my_cord_i(mem_cord_i[i])
+          ,.my_cord_i(cord_li)
           ,.link_i({cmd_link_li[i], rtr_cmd_link_li})
           ,.link_o({cmd_link_lo[i], rtr_cmd_link_lo})
           );
@@ -116,7 +106,7 @@ for (genvar i = 0; i < num_mem_p; i++)
          resp_router 
           (.clk_i(mem_clk_i)
            ,.reset_i(mem_reset_i)
-           ,.my_cord_i(mem_cord_i[i])
+           ,.my_cord_i(cord_li)
            ,.link_i({resp_link_li[i], rtr_resp_link_li})
            ,.link_o({resp_link_lo[i], rtr_resp_link_lo})
            );
@@ -129,7 +119,7 @@ for (genvar i = 0; i < num_mem_p; i++)
   assign cmd_hor_link_li[E] = next_cmd_link_i;
   bsg_mesh_stitch
    #(.width_p(bsg_ready_and_link_sif_width_lp)
-     ,.x_max_p(num_mem_p)
+     ,.x_max_p(num_io_p)
      ,.y_max_p(1)
      )
    cmd_mesh
@@ -141,7 +131,7 @@ for (genvar i = 0; i < num_mem_p; i++)
      ,.ver_i(cmd_ver_link_li)
      ,.ver_o(cmd_ver_link_lo)
      );
-  assign mem_cmd_link_o  = cmd_ver_link_lo[S][num_mem_p-1:1];
+  assign mem_cmd_link_o  = cmd_ver_link_lo[S][num_io_p-1:1];
   assign prev_cmd_link_o = cmd_hor_link_lo[W];
   assign next_cmd_link_o = cmd_hor_link_lo[E];
 
@@ -151,7 +141,7 @@ for (genvar i = 0; i < num_mem_p; i++)
   assign resp_hor_link_li[E] = next_resp_link_i;
   bsg_mesh_stitch
    #(.width_p(bsg_ready_and_link_sif_width_lp)
-     ,.x_max_p(num_mem_p)
+     ,.x_max_p(num_io_p)
      ,.y_max_p(1)
      )
    resp_mesh
@@ -163,7 +153,7 @@ for (genvar i = 0; i < num_mem_p; i++)
      ,.ver_i(resp_ver_link_li)
      ,.ver_o(resp_ver_link_lo)
      );
-  assign mem_resp_link_o  = resp_ver_link_lo[S][num_mem_p-1:1];
+  assign mem_resp_link_o  = resp_ver_link_lo[S][num_io_p-1:1];
   assign prev_resp_link_o = resp_hor_link_lo[W];
   assign next_resp_link_o = resp_hor_link_lo[E];
 

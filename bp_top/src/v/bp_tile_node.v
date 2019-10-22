@@ -32,15 +32,8 @@ module bp_tile_node
    , input                                       mem_reset_i
 
    // Memory side connection
+   , input [mem_noc_chid_width_p-1:0]            my_chid_i
    , input [mem_noc_cord_width_p-1:0]            my_cord_i
-   , input [mem_noc_cord_width_p-1:0]            dram_cord_i
-   , input [mem_noc_cord_width_p-1:0]            clint_cord_i
-   , input [mem_noc_cord_width_p-1:0]            host_cord_i
-
-   // Interrupts
-   , input                                       timer_irq_i
-   , input                                       software_irq_i
-   , input                                       external_irq_i
 
    // Connected to other tiles on east and west
    , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_req_link_i
@@ -76,24 +69,15 @@ bp_coh_ready_and_link_s core_lce_resp_link_li, core_lce_resp_link_lo;
 bp_mem_ready_and_link_s core_mem_cmd_link_li, core_mem_cmd_link_lo;
 bp_mem_ready_and_link_s core_mem_resp_link_li, core_mem_resp_link_lo;
 
-  bp_cfg_bus_s cfg_bus_lo;
   bp_tile
    #(.bp_params_p(bp_params_p))
    tile
     (.clk_i(core_clk_i)
      ,.reset_i(core_reset_i)
 
-     ,.cfg_bus_o(cfg_bus_lo)
-
-     // CCE-MEM IF
+     // Memory side connection
+     ,.my_chid_i(my_chid_i)
      ,.my_cord_i(my_cord_i)
-     ,.dram_cord_i(dram_cord_i)
-     ,.clint_cord_i(clint_cord_i)
-     ,.host_cord_i(host_cord_i)
-
-     ,.timer_irq_i(timer_irq_i)
-     ,.software_irq_i(software_irq_i)
-     ,.external_irq_i(external_irq_i)
 
      ,.lce_req_link_i(core_lce_req_link_li)
      ,.lce_req_link_o(core_lce_req_link_lo)
@@ -365,15 +349,6 @@ bp_mem_ready_and_link_s mem_resp_link_li, mem_resp_link_lo;
       assign core_mem_resp_link_li = mem_resp_link_lo;
     end
 
-  logic [coh_noc_cord_width_p-1:0] lce_cord_li;
-  bp_me_lce_id_to_cord
-   #(.bp_params_p(bp_params_p))
-   router_cord
-    (.lce_id_i(cfg_bus_lo.icache_id)
-     ,.lce_cord_o(lce_cord_li)
-     ,.lce_cid_o()
-     );
-
   bsg_wormhole_router
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.dims_p(coh_noc_dims_p)
@@ -389,7 +364,7 @@ bp_mem_ready_and_link_s mem_resp_link_li, mem_resp_link_lo;
      ,.link_i({coh_lce_req_link_i, coh_lce_req_link_li})
      ,.link_o({coh_lce_req_link_o, coh_lce_req_link_lo})
 
-     ,.my_cord_i(lce_cord_li)
+     ,.my_cord_i(my_cord_i)
      );
 
   bsg_wormhole_router
@@ -407,7 +382,7 @@ bp_mem_ready_and_link_s mem_resp_link_li, mem_resp_link_lo;
      ,.link_i({coh_lce_cmd_link_i, coh_lce_cmd_link_li})
      ,.link_o({coh_lce_cmd_link_o, coh_lce_cmd_link_lo})
 
-     ,.my_cord_i(lce_cord_li)
+     ,.my_cord_i(my_cord_i)
      );
 
   bsg_wormhole_router
@@ -425,7 +400,7 @@ bp_mem_ready_and_link_s mem_resp_link_li, mem_resp_link_lo;
      ,.link_i({coh_lce_resp_link_i, coh_lce_resp_link_li})
      ,.link_o({coh_lce_resp_link_o, coh_lce_resp_link_lo})
 
-     ,.my_cord_i(lce_cord_li)
+     ,.my_cord_i(my_cord_i)
      );
 
   bsg_wormhole_router
