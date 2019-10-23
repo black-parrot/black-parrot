@@ -21,23 +21,19 @@
 
 module bp_cce_msg_uncached
   import bp_common_pkg::*;
+  import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
   import bp_me_pkg::*;
-  #(parameter num_lce_p                    = "inv"
-    , parameter num_cce_p                  = "inv"
-    , parameter paddr_width_p              = "inv"
-    , parameter lce_assoc_p                = "inv"
-    , parameter lce_sets_p                 = "inv"
-    , parameter block_size_in_bytes_p      = "inv"
-    , parameter lce_req_data_width_p       = "inv"
+  #(parameter bp_params_p                  = "inv"
+    `declare_bp_proc_params(bp_params_p)
 
     // Derived parameters
     , localparam lg_num_cce_lp             = `BSG_SAFE_CLOG2(num_cce_p)
-    , localparam block_size_in_bits_lp     = (block_size_in_bytes_p*8)
     , localparam mshr_width_lp = `bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
-    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p, block_size_in_bits_lp)
-    `declare_bp_me_if_widths(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
 
+    // interface widths
+    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
   )
   (input                                               clk_i
    , input                                             reset_i
@@ -80,8 +76,8 @@ module bp_cce_msg_uncached
    , input                                             mem_resp_ready_i
   );
 
-  `declare_bp_me_if(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
-  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p, block_size_in_bits_lp);
+  `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
+  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   // structures for casting
   bp_lce_cce_req_s lce_req, lce_req_r, lce_req_n;

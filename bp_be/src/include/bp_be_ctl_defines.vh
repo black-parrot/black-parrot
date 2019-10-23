@@ -128,6 +128,8 @@ typedef struct packed
   logic                             mem_v;
   logic                             dcache_r_v;
   logic                             dcache_w_v;
+  logic                             csr_w_v;
+  logic                             csr_r_v;
   logic                             csr_v;
   logic                             fencei_v;
   logic                             fp_not_int_v;

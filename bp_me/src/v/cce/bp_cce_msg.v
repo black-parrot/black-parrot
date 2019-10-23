@@ -16,8 +16,8 @@ module bp_cce_msg
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
   import bp_me_pkg::*;
-  #(parameter cfg_p                        = "inv"
-    `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_p                        = "inv"
+    `declare_bp_proc_params(bp_params_p)
 
     // Derived parameters
     , localparam block_size_in_bytes_lp    = (cce_block_width_p/8)
@@ -29,6 +29,7 @@ module bp_cce_msg
     , localparam num_way_groups_lp         = (lce_sets_p/num_cce_p)
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
     , localparam mshr_width_lp = `bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
+    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
 
     // interface widths
     `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
@@ -37,8 +38,7 @@ module bp_cce_msg
   (input                                               clk_i
    , input                                             reset_i
 
-   , input [lg_num_cce_lp-1:0]                         cce_id_i
-   , input bp_cce_mode_e                               cce_mode_i
+   , input [cfg_bus_width_lp-1:0]                      cfg_bus_i
 
    // LCE-CCE Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
@@ -99,9 +99,11 @@ module bp_cce_msg
   );
 
   // Define structure variables for output queues
+  `declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
   `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
+  bp_cfg_bus_s      cfg_bus_cast_i;
   bp_lce_cce_req_s  lce_req_li;
   bp_lce_cce_resp_s lce_resp_li;
   bp_lce_cmd_s      lce_cmd_lo;
@@ -109,6 +111,8 @@ module bp_cce_msg
   bp_cce_mem_msg_s  mem_cmd_li, mem_cmd_lo, mem_resp_li, mem_resp_lo;
 
   // assign output queue ports to structure variables
+  assign cfg_bus_cast_i = cfg_bus_i;
+
   assign lce_cmd_o = lce_cmd_lo;
   assign mem_cmd_o = mem_cmd_lo;
   assign mem_resp_o = mem_resp_lo;
@@ -145,23 +149,13 @@ module bp_cce_msg
 
   // Message unit
   bp_cce_msg_cached
-    #(.num_lce_p(num_lce_p)
-      ,.num_cce_p(num_cce_p)
-      ,.paddr_width_p(paddr_width_p)
-      ,.lce_assoc_p(lce_assoc_p)
-      ,.lce_sets_p(lce_sets_p)
-      ,.block_size_in_bytes_p(block_size_in_bytes_lp)
-      ,.lce_req_data_width_p(dword_width_p)
-      ,.num_way_groups_p(num_way_groups_lp)
-      ,.cce_block_width_p(cce_block_width_p)
-      ,.dword_width_p(dword_width_p)
-      )
+    #(.bp_params_p(bp_params_p))
     bp_cce_msg_cached
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
 
-      ,.cce_id_i(cce_id_i)
-      ,.cce_mode_i(cce_mode_i)
+      ,.cce_id_i(cfg_bus_cast_i.cce_id)
+      ,.cce_mode_i(cfg_bus_cast_i.cce_mode)
 
       // To CCE
       ,.lce_req_i(lce_req_li)
@@ -212,20 +206,13 @@ module bp_cce_msg
 
   // Uncached access module
   bp_cce_msg_uncached
-    #(.num_lce_p(num_lce_p)
-      ,.num_cce_p(num_cce_p)
-      ,.paddr_width_p(paddr_width_p)
-      ,.lce_assoc_p(lce_assoc_p)
-      ,.lce_sets_p(lce_sets_p)
-      ,.block_size_in_bytes_p(block_size_in_bytes_lp)
-      ,.lce_req_data_width_p(dword_width_p)
-      )
+    #(.bp_params_p(bp_params_p))
     bp_cce_msg_uncached
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
 
-      ,.cce_id_i(cce_id_i)
-      ,.cce_mode_i(cce_mode_i)
+      ,.cce_id_i(cfg_bus_cast_i.cce_id)
+      ,.cce_mode_i(cfg_bus_cast_i.cce_mode)
 
       // To CCE
       ,.lce_req_i(lce_req_li)
@@ -268,7 +255,7 @@ module bp_cce_msg
   // buffered by bp_cce_top.v, but messages to memory are.
   always_comb
   begin
-    if (cce_mode_i == e_cce_mode_uncached) begin
+    if (cfg_bus_cast_i.cce_mode == e_cce_mode_uncached) begin
       lce_resp_yumi_o = '0;
       lce_req_yumi_o = lce_req_yumi_from_uc;
 

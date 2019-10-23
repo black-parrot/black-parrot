@@ -65,7 +65,7 @@ protected:
   uint32_t parseImm(string &s, int immSize);
   uint32_t parseCohStImm(string &s);
   uint16_t getBranchTarget(string &target_str);
-  bp_cce_inst_flag_e parseFlagSel(string &s);
+  bp_cce_inst_flag_e parseFlagOneHot(string &s);
   bp_cce_inst_dir_way_group_sel_e parseDirWgSel(string &s);
   bp_cce_inst_dir_lce_sel_e parseDirLceSel(string &s);
   bp_cce_inst_dir_way_sel_e parseDirWaySel(string &s);
@@ -77,6 +77,7 @@ protected:
   bp_cce_inst_lce_cmd_addr_sel_e parseLceCmdAddrSel(string &s);
   bp_cce_inst_lce_cmd_way_sel_e parseLceCmdWaySel(string &s);
   bp_cce_inst_mem_cmd_addr_sel_e parseMemCmdAddrSel(string &s);
+  bp_cce_inst_spec_cmd_e parseSpecCmd(string &s);
 
   int readLine(char *s, int maxLineLen, FILE *infp);
   int tokenizeLine(char* input_line, char tokens[MAX_TOKENS][MAX_LINE_LENGTH]);
@@ -93,8 +94,7 @@ protected:
   void parseBranch(vector<string> *tokens, int n, bp_cce_inst_s *inst);
   void parseMove(vector<string> *tokens, int n, bp_cce_inst_s *inst);
   void parseFlag(vector<string> *tokens, int n, bp_cce_inst_s *inst);
-  void parseReadDir(vector<string> *tokens, int n, bp_cce_inst_s *inst);
-  void parseWriteDir(vector<string> *tokens, int n, bp_cce_inst_s *inst);
+  void parseDir(vector<string> *tokens, int n, bp_cce_inst_s *inst);
   void parseMisc(vector<string> *tokens, int n, bp_cce_inst_s *inst);
   void parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst);
 

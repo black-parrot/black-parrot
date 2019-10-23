@@ -9,36 +9,28 @@
 
 module bp_cce_reg
   import bp_common_pkg::*;
+  import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
   import bp_me_pkg::*;
-  import bp_cfg_link_pkg::*;
-  #(parameter num_lce_p                     = "inv"
-    , parameter num_cce_p                   = "inv"
-    , parameter paddr_width_p                = "inv"
-    , parameter lce_assoc_p                 = "inv"
-    , parameter lce_sets_p                  = "inv"
-    , parameter block_size_in_bytes_p       = "inv"
-    , parameter lce_req_data_width_p        = "inv"
-
-    , parameter cfg_addr_width_p            = "inv"
-    , parameter cfg_data_width_p            = "inv"
-
+  import bp_common_cfg_link_pkg::*;
+  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    `declare_bp_proc_params(bp_params_p)
     // Derived parameters
     , localparam lg_num_lce_lp              = `BSG_SAFE_CLOG2(num_lce_p)
     , localparam lg_num_cce_lp              = `BSG_SAFE_CLOG2(num_cce_p)
-    , localparam block_size_in_bits_lp      = (block_size_in_bytes_p*8)
-    , localparam lg_block_size_in_bytes_lp  = `BSG_SAFE_CLOG2(block_size_in_bytes_p)
+    , localparam lg_block_size_in_bytes_lp  = `BSG_SAFE_CLOG2(cce_block_width_p/8)
     , localparam lg_lce_assoc_lp            = `BSG_SAFE_CLOG2(lce_assoc_p)
     , localparam lg_lce_sets_lp             = `BSG_SAFE_CLOG2(lce_sets_p)
     , localparam tag_width_lp               =
       (paddr_width_p-lg_lce_sets_lp-lg_block_size_in_bytes_lp)
     , localparam entry_width_lp             = (tag_width_lp+`bp_coh_bits)
     , localparam tag_set_width_lp           = (entry_width_lp*lce_assoc_p)
+    , localparam cfg_bus_width_lp         = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
 
     , localparam mshr_width_lp = `bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
 
-    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p, block_size_in_bits_lp)
-    `declare_bp_me_if_widths(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p)
+    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
   )
   (input                                                                   clk_i
    , input                                                                 reset_i
@@ -74,27 +66,24 @@ module bp_cce_reg
    , input                                                                 gad_cached_owned_flag_i
    , input                                                                 gad_cached_dirty_flag_i
 
-   // Config channel
-   , input                                                                 cfg_w_v_i
-   , input [cfg_addr_width_p-1:0]                                          cfg_addr_i
-   , input [cfg_data_width_p-1:0]                                          cfg_data_i
+   , input [cfg_bus_width_lp-1:0]                                         cfg_bus_i
 
    // Register value outputs
    , output logic [mshr_width_lp-1:0]                                      mshr_o
 
    , output logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0]   gpr_o
 
-   , output logic [lce_req_data_width_p-1:0]                               nc_data_o
+   , output logic [`bp_coh_bits-1:0]                                       coh_state_o
 
-   , output logic [lg_num_lce_lp-1:0]                                      num_lce_o
+   , output logic [dword_width_p-1:0]                                      nc_data_o
   );
 
   wire unused = pending_v_o_i;
 
   // Define structure variables for input queues
 
-  `declare_bp_me_if(paddr_width_p, block_size_in_bits_lp, num_lce_p, lce_assoc_p);
-  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, lce_req_data_width_p, block_size_in_bits_lp);
+  `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
+  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   bp_lce_cce_req_s lce_req;
 
@@ -112,17 +101,14 @@ module bp_cce_reg
   bp_cce_mshr_s mshr_r, mshr_n;
 
   logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_r, gpr_n;
-  logic [lce_req_data_width_p-1:0] nc_data_r, nc_data_n;
-  logic [lg_num_lce_lp-1:0] num_lce_r, num_lce_n;
-
-  // Config link
-  wire cfg_num_lce_w_v = (cfg_w_v_i & (cfg_addr_i == bp_cfg_reg_num_lce_gp));
+  logic [dword_width_p-1:0] nc_data_r, nc_data_n;
+  bp_coh_states_e coh_state_r, coh_state_n;
 
   // Output register values
   assign mshr_o = mshr_r;
   assign gpr_o = gpr_r;
   assign nc_data_o = nc_data_r;
-  assign num_lce_o = num_lce_r;
+  assign coh_state_o = coh_state_r;
 
   always_comb
   begin
@@ -139,7 +125,8 @@ module bp_cce_reg
         gpr_n[i] = {'0, mem_resp_type_i};
       end else if (decoded_inst_i.mem_cmd_type_w_v & decoded_inst_i.gpr_w_mask[i]) begin
         gpr_n[i] = {'0, mem_cmd.msg_type};
-      end else if (decoded_inst_i.dir_r_v & (decoded_inst_i.dir_r_cmd == e_rde_op)
+      end else if (decoded_inst_i.dir_r_v
+                   & (decoded_inst_i.minor_op_u.dir_minor_op == e_rde_op)
                    & decoded_inst_i.gpr_w_mask[i]) begin
         gpr_n[i] = {'0, dir_tag_i} << (paddr_width_p - tag_width_lp);
       end else begin
@@ -152,12 +139,8 @@ module bp_cce_reg
     // to be registered, and is handled by bp_cce_msg module.
     nc_data_n = lce_req.msg.uc_req.data;
 
-    // Num LCE register - always come from move source, unless config link writes it
-    if (cfg_num_lce_w_v) begin
-      num_lce_n = cfg_data_i[0+:lg_num_lce_lp];
-    end else begin
-      num_lce_n = mov_src_i[0+:lg_num_lce_lp];
-    end
+    // Default coherence state
+    coh_state_n = bp_coh_states_e'(mov_src_i[0+:`bp_coh_bits]);
 
     // MSHR
 
@@ -169,6 +152,7 @@ module bp_cce_reg
     // normal request processing).
     if (decoded_inst_i.mshr_clear) begin
       mshr_n = '0;
+      mshr_n.next_coh_state = bp_coh_states_e'(coh_state_r);
     end else begin
       // Request LCE, address, tag
       case (decoded_inst_i.req_sel)
@@ -220,7 +204,7 @@ module bp_cce_reg
           mshr_n.flags[e_flag_sel_rqf] = '0; // TODO: v2
         end
         e_rqf_imm0: begin
-          mshr_n.flags[e_flag_sel_rqf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+          mshr_n.flags[e_flag_sel_rqf] = decoded_inst_i.imm[0];
         end
         default: begin
           mshr_n.flags[e_flag_sel_rqf] = '0;
@@ -237,7 +221,7 @@ module bp_cce_reg
           mshr_n.uc_req_size           = bp_lce_cce_uc_req_size_e'('0);
         end
         e_ucf_imm0: begin
-          mshr_n.flags[e_flag_sel_ucf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+          mshr_n.flags[e_flag_sel_ucf] = decoded_inst_i.imm[0];
           mshr_n.uc_req_size           = bp_lce_cce_uc_req_size_e'('0);
         end
         default: begin
@@ -254,7 +238,7 @@ module bp_cce_reg
           mshr_n.flags[e_flag_sel_nerf] = '0; // TODO: v2
         end
         e_nerf_imm0: begin
-          mshr_n.flags[e_flag_sel_nerf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+          mshr_n.flags[e_flag_sel_nerf] = decoded_inst_i.imm[0];
         end
         default: begin
           mshr_n.flags[e_flag_sel_nerf] = '0;
@@ -269,7 +253,7 @@ module bp_cce_reg
           mshr_n.flags[e_flag_sel_ldf] = '0; // TODO: v2
         end
         e_ldf_imm0: begin
-          mshr_n.flags[e_flag_sel_ldf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+          mshr_n.flags[e_flag_sel_ldf] = decoded_inst_i.imm[0];
         end
         default: begin
           mshr_n.flags[e_flag_sel_ldf] = '0;
@@ -281,7 +265,7 @@ module bp_cce_reg
           mshr_n.flags[e_flag_sel_nwbf] = null_wb_flag_i;
         end
         e_nwbf_imm0: begin
-          mshr_n.flags[e_flag_sel_nwbf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+          mshr_n.flags[e_flag_sel_nwbf] = decoded_inst_i.imm[0];
         end
         default: begin
           mshr_n.flags[e_flag_sel_nwbf] = '0;
@@ -293,7 +277,7 @@ module bp_cce_reg
           mshr_n.flags[e_flag_sel_tf] = gad_transfer_flag_i;
         end
         e_tf_imm0: begin
-          mshr_n.flags[e_flag_sel_tf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+          mshr_n.flags[e_flag_sel_tf] = decoded_inst_i.imm[0];
         end
         default: begin
           mshr_n.flags[e_flag_sel_tf] = '0;
@@ -305,7 +289,7 @@ module bp_cce_reg
           mshr_n.flags[e_flag_sel_pf] = pending_o_i; // RDP instruction
         end
         e_pf_imm0: begin
-          mshr_n.flags[e_flag_sel_pf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+          mshr_n.flags[e_flag_sel_pf] = decoded_inst_i.imm[0];
         end
         default: begin
           mshr_n.flags[e_flag_sel_pf] = '0;
@@ -316,7 +300,7 @@ module bp_cce_reg
           mshr_n.flags[e_flag_sel_rf] = gad_replacement_flag_i;
         end
         e_rf_imm0: begin
-          mshr_n.flags[e_flag_sel_rf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+          mshr_n.flags[e_flag_sel_rf] = decoded_inst_i.imm[0];
         end
         default: begin
           mshr_n.flags[e_flag_sel_rf] = '0;
@@ -327,7 +311,7 @@ module bp_cce_reg
           mshr_n.flags[e_flag_sel_uf] = gad_upgrade_flag_i;
         end
         e_uf_imm0: begin
-          mshr_n.flags[e_flag_sel_uf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+          mshr_n.flags[e_flag_sel_uf] = decoded_inst_i.imm[0];
         end
         default: begin
           mshr_n.flags[e_flag_sel_uf] = '0;
@@ -338,7 +322,7 @@ module bp_cce_reg
           mshr_n.flags[e_flag_sel_if] = gad_invalidate_flag_i;
         end
         e_if_imm0: begin
-          mshr_n.flags[e_flag_sel_if] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+          mshr_n.flags[e_flag_sel_if] = decoded_inst_i.imm[0];
         end
         default: begin
           mshr_n.flags[e_flag_sel_if] = '0;
@@ -349,7 +333,7 @@ module bp_cce_reg
           mshr_n.flags[e_flag_sel_cf] = gad_cached_flag_i;
         end
         e_cf_imm0: begin
-          mshr_n.flags[e_flag_sel_cf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+          mshr_n.flags[e_flag_sel_cf] = decoded_inst_i.imm[0];
         end
         default: begin
           mshr_n.flags[e_flag_sel_cf] = '0;
@@ -360,7 +344,7 @@ module bp_cce_reg
           mshr_n.flags[e_flag_sel_cef] = gad_cached_exclusive_flag_i;
         end
         e_cef_imm0: begin
-          mshr_n.flags[e_flag_sel_cef] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+          mshr_n.flags[e_flag_sel_cef] = decoded_inst_i.imm[0];
         end
         default: begin
           mshr_n.flags[e_flag_sel_cef] = '0;
@@ -371,7 +355,7 @@ module bp_cce_reg
           mshr_n.flags[e_flag_sel_cof] = gad_cached_owned_flag_i;
         end
         e_cof_imm0: begin
-          mshr_n.flags[e_flag_sel_cof] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+          mshr_n.flags[e_flag_sel_cof] = decoded_inst_i.imm[0];
         end
         default: begin
           mshr_n.flags[e_flag_sel_cof] = '0;
@@ -382,7 +366,7 @@ module bp_cce_reg
           mshr_n.flags[e_flag_sel_cdf] = gad_cached_dirty_flag_i;
         end
         e_cdf_imm0: begin
-          mshr_n.flags[e_flag_sel_cdf] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+          mshr_n.flags[e_flag_sel_cdf] = decoded_inst_i.imm[0];
         end
         default: begin
           mshr_n.flags[e_flag_sel_cdf] = '0;
@@ -393,10 +377,22 @@ module bp_cce_reg
           mshr_n.flags[e_flag_sel_lef] = dir_lru_cached_excl_i;
         end
         e_lef_imm0: begin
-          mshr_n.flags[e_flag_sel_lef] = decoded_inst_i.imm[`bp_cce_inst_flag_imm_bit];
+          mshr_n.flags[e_flag_sel_lef] = decoded_inst_i.imm[0];
         end
         default: begin
           mshr_n.flags[e_flag_sel_lef] = '0;
+        end
+      endcase
+      case (decoded_inst_i.sf_sel)
+        e_sf_logic: begin
+          // logic select sources from speculative bit in outbound mem_cmd message
+          mshr_n.flags[e_flag_sel_sf] = decoded_inst_i.spec_bits.spec;
+        end
+        e_sf_imm0: begin
+          mshr_n.flags[e_flag_sel_sf] = decoded_inst_i.imm[0];
+        end
+        default: begin
+          mshr_n.flags[e_flag_sel_sf] = '0;
         end
       endcase
 
@@ -416,7 +412,7 @@ module bp_cce_reg
       mshr_r <= '0;
       gpr_r <= '0;
       nc_data_r <= '0;
-      num_lce_r <= '0;
+      coh_state_r <= bp_coh_states_e'('0);
     end else begin
       // MSHR writes
       if (decoded_inst_i.mshr_clear) begin
@@ -469,12 +465,9 @@ module bp_cce_reg
         nc_data_r <= nc_data_n;
       end
 
-      // Num LCE register
-      // written on move special operation or by config link
-      if (cfg_num_lce_w_v
-          | (decoded_inst_i.mov_dst_w_v & (decoded_inst_i.dst_sel == e_dst_sel_special)
-             & (decoded_inst_i.dst.special == e_dst_num_lce))) begin
-        num_lce_r <= num_lce_n;
+      if (decoded_inst_i.mov_dst_w_v & (decoded_inst_i.dst_sel == e_dst_sel_special)
+          & (decoded_inst_i.dst.special == e_dst_coh_state)) begin
+        coh_state_r <= coh_state_n;
       end
 
     end // else

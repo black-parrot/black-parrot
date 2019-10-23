@@ -18,15 +18,17 @@ module bp_be_regfile
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_common_rv64_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-    `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    `declare_bp_proc_params(bp_params_p)
+
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
    )
   (input                           clk_i
    , input                         reset_i
 
    // Pipeline control signals
-   , input                         issue_v_i
-   , input                         dispatch_v_i
+   , input [cfg_bus_width_lp-1:0] cfg_bus_i
+   , output [dword_width_p-1:0]    cfg_data_o
 
    // rd write bus
    , input                         rd_w_v_i
@@ -44,9 +46,12 @@ module bp_be_regfile
    , output [dword_width_p-1:0]    rs2_data_o
    );
 
+`declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+bp_cfg_bus_s cfg_bus;
+assign cfg_bus = cfg_bus_i;
+
 // Intermediate connections
 logic                        rs1_read_v     , rs2_read_v;
-logic                        rs1_issue_v    , rs2_issue_v;
 logic [dword_width_p-1:0]    rs1_reg_data   , rs2_reg_data;
 logic [reg_addr_width_p-1:0] rs1_addr_r     , rs2_addr_r,      rd_addr_r;
 logic [reg_addr_width_p-1:0] rs1_reread_addr, rs2_reread_addr;
@@ -59,26 +64,27 @@ bsg_mem_2r1w_sync
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.w_v_i(rd_w_v_i)
-   ,.w_addr_i(rd_addr_i)
-   ,.w_data_i(rd_data_i)
+   ,.w_v_i(cfg_bus.irf_w_v | rd_w_v_i)
+   ,.w_addr_i(cfg_bus.irf_w_v ? cfg_bus.irf_addr : rd_addr_i)
+   ,.w_data_i(cfg_bus.irf_w_v ? cfg_bus.irf_data : rd_data_i)
 
-   ,.r0_v_i(rs1_read_v)
-   ,.r0_addr_i(rs1_reread_addr)
+   ,.r0_v_i(cfg_bus.irf_r_v | rs1_read_v)
+   ,.r0_addr_i(cfg_bus.irf_r_v ? cfg_bus.irf_addr : rs1_reread_addr)
    ,.r0_data_o(rs1_reg_data)
 
    ,.r1_v_i(rs2_read_v)
    ,.r1_addr_i(rs2_reread_addr)
    ,.r1_data_o(rs2_reg_data)
    );
+assign cfg_data_o = rs1_reg_data;
 
 // Save the last issued register addresses
 bsg_dff_reset_en 
  #(.width_p(2*reg_addr_width_p))
- rs1_addr
+ rs_addr_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(rs1_issue_v | rs2_issue_v)
+   ,.en_i(rs1_r_v_i | rs2_r_v_i)
 
    ,.data_i({rs1_addr_i, rs2_addr_i})
    ,.data_o({rs1_addr_r, rs2_addr_r})
@@ -99,18 +105,16 @@ bsg_dff
 
 always_comb 
   begin
-    // Instruction has been issued, don't bother reading if the register data is not used
-    rs1_issue_v = (issue_v_i & rs1_r_v_i);
-    rs2_issue_v = (issue_v_i & rs2_r_v_i);
-  
-    // We need to read from the regfile if we have issued a new request, or if we have stalled
-    rs1_read_v = (rs1_issue_v | ~dispatch_v_i) & ~fwd_rs1;
-    rs2_read_v = (rs2_issue_v | ~dispatch_v_i) & ~fwd_rs2;
+    // Technically, this is unnecessary, since most hardened SRAMs still write correctly
+    //   on read-write conflicts, and the read is handled by forwarding. But this avoids
+    //   nasty warnings and possible power sink.
+    rs1_read_v = ~fwd_rs1 & ~cfg_bus.irf_r_v & ~cfg_bus.irf_w_v;
+    rs2_read_v = ~fwd_rs2 & ~cfg_bus.irf_r_v & ~cfg_bus.irf_w_v;
   
     // If we have issued a new instruction, use input address to read, 
     //   else use last request address to read
-    rs1_reread_addr = rs1_issue_v ? rs1_addr_i : rs1_addr_r;
-    rs2_reread_addr = rs2_issue_v ? rs2_addr_i : rs2_addr_r;
+    rs1_reread_addr = rs1_r_v_i ? rs1_addr_i : rs1_addr_r;
+    rs2_reread_addr = rs2_r_v_i ? rs2_addr_i : rs2_addr_r;
 end
 
 // RISC-V defines x0 as 0. Else, forward if we read/wrote, else pass out the register data

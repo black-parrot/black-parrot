@@ -12,8 +12,8 @@ module bp_fe_pc_gen
  import bp_common_rv64_pkg::*;
  import bp_fe_pkg::*;
  import bp_common_aviary_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
 
    , localparam mem_cmd_width_lp  = `bp_fe_mem_cmd_width(vaddr_width_p, vtag_width_p, ptag_width_p)
@@ -24,7 +24,7 @@ module bp_fe_pc_gen
  
    , output [mem_cmd_width_lp-1:0]                   mem_cmd_o
    , output                                          mem_cmd_v_o
-   , input                                           mem_cmd_ready_i
+   , input                                           mem_cmd_yumi_i
 
    , output                                          mem_poison_o
 
@@ -75,6 +75,7 @@ wire [vaddr_width_p-1:0] pc_if1 = pc_gen_stage_r[0].pc;
 wire [vaddr_width_p-1:0] pc_if2 = pc_gen_stage_r[1].pc;
 
 // Flags for valid FE commands
+wire fetch_v          = mem_cmd_yumi_i & (mem_cmd_cast_o.op == e_fe_op_fetch);
 wire state_reset_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset); 
 wire pc_redirect_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_pc_redirection);
 wire itlb_fill_v      = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fill_response);
@@ -151,14 +152,7 @@ always_ff @(posedge clk_i)
 
 always_comb
   begin
-    // We can't fetch from wait state, only run and coming out of stall.
-    // We wait until both the FE queue and I$ are ready, but flushes invalidate the fetch.
-    // The next PC is valid during a FE cmd, since it is a non-speculative
-    //   command and we must accept it immediately.
-    // This may cause us to fetch during an I$ miss or a with a full queue.  
-    // FE cmds normally flush the queue, so we don't expect this to affect
-    //   power much in practice.
-    pc_gen_stage_n[0].v          = ~is_wait & (cmd_nonattaboy_v || (fe_queue_ready_i & mem_cmd_ready_i & ~flush));
+    pc_gen_stage_n[0].v          = fetch_v;
     pc_gen_stage_n[0].pred_taken = btb_br_tgt_v_lo | ovr_taken;
     pc_gen_stage_n[0].ovr        = ovr_taken | ovr_ntaken;
 
@@ -266,7 +260,7 @@ bp_fe_bht
 `declare_bp_fe_instr_scan_s(vaddr_width_p)
 bp_fe_instr_scan_s scan_instr;
 bp_fe_instr_scan 
- #(.cfg_p(cfg_p))
+ #(.bp_params_p(bp_params_p))
  instr_scan
   (.instr_i(mem_resp_cast_i.data)
 
@@ -279,7 +273,14 @@ assign ovr_taken  = pc_gen_stage_r[1].v & ~pc_gen_stage_r[0].ovr & ~pc_gen_stage
 assign ovr_ntaken = pc_gen_stage_r[1].v & ~pc_gen_stage_r[0].ovr &  pc_gen_stage_r[0].pred_taken &  (is_br & ~bht_pred_lo);
 assign br_target  = pc_gen_stage_r[1].pc + scan_instr.imm;
 
-assign mem_cmd_v_o = mem_cmd_ready_i & (itlb_fence_v | itlb_fill_v | pc_gen_stage_n[0].v);
+// We can't fetch from wait state, only run and coming out of stall.
+// We wait until both the FE queue and I$ are ready, but flushes invalidate the fetch.
+// The next PC is valid during a FE cmd, since it is a non-speculative
+//   command and we must accept it immediately.
+// This may cause us to fetch during an I$ miss or a with a full queue.  
+// FE cmds normally flush the queue, so we don't expect this to affect
+//   power much in practice.
+assign mem_cmd_v_o = cmd_nonattaboy_v || (~is_wait & fe_queue_ready_i & ~flush); 
 always_comb
   begin
     mem_cmd_cast_o = '0;

@@ -12,10 +12,10 @@ module bp_cce_fsm
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
-  import bp_cfg_link_pkg::*;
+  import bp_common_cfg_link_pkg::*;
   import bp_me_pkg::*;
-  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-    `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    `declare_bp_proc_params(bp_params_p)
 
     // Derived parameters
     , localparam block_size_in_bytes_lp    = (cce_block_width_p/8)
@@ -33,6 +33,7 @@ module bp_cce_fsm
     , localparam num_way_groups_lp         = (lce_sets_p/num_cce_p)
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
     , localparam inst_ram_addr_width_lp    = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
+    , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
 
     // interface widths
     `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
@@ -42,12 +43,10 @@ module bp_cce_fsm
   )
   (input                                               clk_i
    , input                                             reset_i
-   , input                                             freeze_i
 
    // Config channel
-   , input                                             cfg_w_v_i
-   , input [cfg_addr_width_p-1:0]                      cfg_addr_i
-   , input [cfg_data_width_p-1:0]                      cfg_data_i
+   , input [cfg_bus_width_lp-1:0]                      cfg_bus_i
+   , output [cce_instr_width_p-1:0]                    cfg_cce_ucode_data_o
 
    // LCE-CCE Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
@@ -82,15 +81,21 @@ module bp_cce_fsm
    , output logic [cce_mem_msg_width_lp-1:0]           mem_resp_o
    , output logic                                      mem_resp_v_o
    , input                                             mem_resp_ready_i
-
-   , input [lg_num_cce_lp-1:0]                         cce_id_i
   );
+
+  // stub unused ports
+  assign mem_resp_o = '0;
+  assign mem_resp_v_o = '0;
+  assign mem_cmd_yumi_o = '0;
+  // stub cfg ucode output, since FSM CCE has no ucode
+  assign cfg_cce_ucode_data_o = '0;
 
   //synopsys translate_off
   initial begin
     assert (lce_sets_p > 1) else $error("Number of LCE sets must be greater than 1");
     assert (num_cce_p >= 1 && `BSG_IS_POW2(num_cce_p))
       else $error("Number of CCE must be power of two");
+    assert (counter_max > num_way_groups_lp) else $error("Counter max value not large enough");
   end
   //synopsys translate_on
 
@@ -114,24 +119,10 @@ module bp_cce_fsm
   assign lce_resp = lce_resp_i;
   assign lce_req = lce_req_i;
 
-  // CCE Mode
-  bp_cce_mode_e cce_mode_r, cce_mode_n;
-  always_ff @(posedge clk_i) begin
-    if (reset_i) begin
-      cce_mode_r <= e_cce_mode_uncached;
-    end else begin
-      cce_mode_r <= cce_mode_n;
-    end
-  end
-
-  wire cfg_cce_mode_addr_v = (cfg_addr_i == bp_cfg_reg_cce_mode_gp);
-  always_comb begin
-    cce_mode_n = cce_mode_r;
-    if (cfg_w_v_i & cfg_cce_mode_addr_v) begin
-      cce_mode_n = bp_cce_mode_e'(cfg_data_i[0+:`bp_cce_mode_bits]);
-    end
-  end
-
+  // Config bus
+  `declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+  bp_cfg_bus_s cfg_bus_cast_i;
+  assign cfg_bus_cast_i = cfg_bus_i;
 
   // CCE FSM
 
@@ -173,8 +164,8 @@ module bp_cce_fsm
 
   // Directory signals
   logic dir_r_v, dir_w_v, dir_wg_clr;
-  bp_cce_inst_minor_read_dir_op_e dir_r_cmd;
-  bp_cce_inst_minor_write_dir_op_e dir_w_cmd;
+  bp_cce_inst_minor_dir_op_e dir_r_cmd;
+  bp_cce_inst_minor_dir_op_e dir_w_cmd;
   logic sharers_v_lo;
   logic [num_lce_p-1:0] sharers_hits_lo;
   logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0] sharers_ways_lo;
@@ -320,34 +311,34 @@ module bp_cce_fsm
 
   state_e state_r, state_n;
 
-  // Counter for set clear operation
-  logic sc_cnt_clr, sc_cnt_inc;
-  logic [`BSG_SAFE_CLOG2(num_way_groups_lp+1)-1:0] sc_cnt;
-  bsg_counter_clear_up
-    #(.max_val_p(num_way_groups_lp)
-      ,.init_val_p(0)
-     )
-    sc_counter
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
-      ,.clear_i(sc_cnt_clr)
-      ,.up_i(sc_cnt_inc)
-      ,.count_o(sc_cnt)
-      );
-
   // General use counter
-  logic cnt_clr, cnt_inc;
-  logic [`BSG_SAFE_CLOG2(counter_max+1)-1:0] cnt;
+  logic cnt_0_clr, cnt_0_inc;
+  logic [`BSG_SAFE_CLOG2(counter_max+1)-1:0] cnt_0;
   bsg_counter_clear_up
     #(.max_val_p(counter_max)
       ,.init_val_p(0)
      )
-    counter
+    counter_0
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.clear_i(cnt_clr)
-      ,.up_i(cnt_inc)
-      ,.count_o(cnt)
+      ,.clear_i(cnt_0_clr)
+      ,.up_i(cnt_0_inc)
+      ,.count_o(cnt_0)
+      );
+
+  // General use counter
+  logic cnt_1_clr, cnt_1_inc;
+  logic [`BSG_SAFE_CLOG2(counter_max+1)-1:0] cnt_1;
+  bsg_counter_clear_up
+    #(.max_val_p(counter_max)
+      ,.init_val_p(0)
+     )
+    counter_1
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      ,.clear_i(cnt_1_clr)
+      ,.up_i(cnt_1_inc)
+      ,.count_o(cnt_1)
       );
 
   // ACK counter
@@ -383,12 +374,12 @@ module bp_cce_fsm
     mem_cmd_v_o = '0;
     mem_resp_yumi_o = '0;
 
-    lce_cmd.msg.cmd.src_id = cce_id_i;
+    lce_cmd.msg.cmd.src_id = cfg_bus_cast_i.cce_id;
 
-    cnt_clr = '0;
-    cnt_inc = '0;
-    sc_cnt_clr = '0;
-    sc_cnt_inc = '0;
+    cnt_1_clr = '0;
+    cnt_1_inc = '0;
+    cnt_0_clr = '0;
+    cnt_0_inc = '0;
     ack_cnt_clr = '0;
     ack_cnt_inc = '0;
 
@@ -471,17 +462,25 @@ module bp_cce_fsm
 
     // Dequeue coherence ack when it arrives
     // Does not conflict with other dequeues of LCE Response
-    if (lce_resp_v_i & (lce_resp.msg_type == e_lce_cce_coh_ack)) begin
+    // Decrements pending bit on arrival, so arbitrate with memory ports for access
+    if (lce_resp_v_i & (lce_resp.msg_type == e_lce_cce_coh_ack) & ~pending_busy) begin
         lce_resp_yumi_o = 1'b1;
+
+        // inform FSM that pending bit is being used
+        pending_busy = 1'b1;
+        pending_w_v = 1'b1;
+        pending_w_way_group =
+          lce_resp.addr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
+        pending_li = 1'b0;
     end
 
 
     // FSM
     case (state_r)
       RESET: begin
-        state_n = (reset_i | freeze_i) ? RESET : CLEAR_DIR;
-        sc_cnt_clr = 1'b1;
-        cnt_clr = 1'b1;
+        state_n = (reset_i | cfg_bus_cast_i.freeze) ? RESET : CLEAR_DIR;
+        cnt_0_clr = 1'b1;
+        cnt_1_clr = 1'b1;
         ack_cnt_clr = 1'b1;
       end
       CLEAR_DIR: begin
@@ -489,26 +488,26 @@ module bp_cce_fsm
         dir_wg_clr = 1'b1;
 
         // increment through all way-groups (outer loop) and all LCE's (inner loop)
-        dir_way_group_li = sc_cnt[0+:lg_num_way_groups_lp];
-        dir_lce_li = cnt[0+:lg_num_lce_lp];
+        dir_way_group_li = cnt_0[0+:lg_num_way_groups_lp];
+        dir_lce_li = cnt_1[0+:lg_num_lce_lp];
 
         // clear the LCE counter back to 0 after reaching max LCE ID
-        cnt_clr = (cnt == (num_lce_p-1));
+        cnt_1_clr = (cnt_1 == (num_lce_p-1));
         // increment the LCE counter if not clearing
-        cnt_inc = ~cnt_clr;
+        cnt_1_inc = ~cnt_1_clr;
 
-        state_n = ((sc_cnt == num_way_groups_lp-1) & (cnt == num_lce_p-1))
+        state_n = ((cnt_0 == num_way_groups_lp-1) & (cnt_1 == num_lce_p-1))
                   ? SEND_SET_CLEAR
                   : CLEAR_DIR;
 
         // clear way group counter when moving to the next state
-        sc_cnt_clr = (state_n == SEND_SET_CLEAR);
+        cnt_0_clr = (state_n == SEND_SET_CLEAR);
         // increment the way group counter whenever the LCE counter resets to 0, except when it
         // is being cleared
-        sc_cnt_inc = cnt_clr & ~sc_cnt_clr;
+        cnt_0_inc = cnt_1_clr & ~cnt_0_clr;
 
         // override next state if in uncached mode
-        state_n = ((state_n == SEND_SET_CLEAR) & (cce_mode_r == e_cce_mode_uncached))
+        state_n = ((state_n == SEND_SET_CLEAR) & (cfg_bus_cast_i.cce_mode == e_cce_mode_uncached))
                   ? READY
                   : state_n;
       end
@@ -517,45 +516,45 @@ module bp_cce_fsm
         lce_cmd_v_o = 1'b1;
 
         // LCE Cmd Common Fields
-        lce_cmd.dst_id = cnt[0+:lg_num_lce_lp];
+        lce_cmd.dst_id = cnt_1[0+:lg_num_lce_lp];
         lce_cmd.msg_type = e_lce_cmd_set_clear;
 
         // Sub message fields
-        // sc_cnt holds the current way-group being targeted by the set clear command, which
+        // cnt_0 holds the current way-group being targeted by the set clear command, which
         // needs to be translated into an LCE relative set index
-        lce_cmd.msg.cmd.addr = ((paddr_width_p'(sc_cnt) << set_shift_lp) + paddr_width_p'(cce_id_i))
-                           << lg_block_size_in_bytes_lp;
+        lce_cmd.msg.cmd.addr = ((paddr_width_p'(cnt_0) << set_shift_lp) + paddr_width_p'(cfg_bus_cast_i.cce_id))
+                               << lg_block_size_in_bytes_lp;
 
         // Assign Command subtype to msg field
         lce_cmd.msg.cmd = lce_cmd.msg.cmd;
 
         // reset set counter to 0 if command is accepted and current count is max
-        sc_cnt_clr = lce_cmd_ready_i & (sc_cnt == (num_way_groups_lp-1));
+        cnt_0_clr = lce_cmd_ready_i & (cnt_0 == (num_way_groups_lp-1));
         // increment set counter when not clearing it and command is accepted
-        sc_cnt_inc = lce_cmd_ready_i & ~sc_cnt_clr;
+        cnt_0_inc = lce_cmd_ready_i & ~cnt_0_clr;
 
         // send syncs once last command is accepted
-        state_n = (lce_cmd_ready_i & (sc_cnt == num_way_groups_lp-1) & (cnt == num_lce_p-1))
+        state_n = (lce_cmd_ready_i & (cnt_0 == num_way_groups_lp-1) & (cnt_1 == num_lce_p-1))
                   ? SEND_SYNC
                   : SEND_SET_CLEAR;
 
         // clear the counters if moving to sending sync commands
-        cnt_clr = (state_n == SEND_SYNC);
+        cnt_1_clr = (state_n == SEND_SYNC);
 
         // only increment the LCE counter if it isn't being cleared
         // this avoids a clear then increment in the same cycle
-        cnt_inc = sc_cnt_clr & ~cnt_clr;
+        cnt_1_inc = cnt_0_clr & ~cnt_1_clr;
 
       end
       SEND_SYNC: begin
         lce_cmd_v_o = 1'b1;
 
         // LCE Cmd Common Fields
-        lce_cmd.dst_id = cnt[0+:lg_num_lce_lp];
+        lce_cmd.dst_id = cnt_1[0+:lg_num_lce_lp];
         lce_cmd.msg_type = e_lce_cmd_sync;
 
         state_n = (lce_cmd_ready_i) ? SYNC_ACK : SEND_SYNC;
-        cnt_inc = lce_cmd_ready_i;
+        cnt_1_inc = lce_cmd_ready_i;
       end
       SYNC_ACK: begin
         lce_resp_yumi_o = lce_resp_v_i;
@@ -569,13 +568,14 @@ module bp_cce_fsm
                   : state_n;
         ack_cnt_clr = (state_n == READY);
         ack_cnt_inc = lce_resp_v_i & ~ack_cnt_clr;
-        cnt_clr = (state_n == READY);
+        cnt_1_clr = (state_n == READY);
       end
       READY: begin
         // clear the MSHR
         mshr_n = '0;
         // clear the ack counter
-        cnt_clr = 1'b1;
+        cnt_0_clr = 1'b1;
+        cnt_1_clr = 1'b1;
         ack_cnt_clr = 1'b1;
 
         if (mem_resp_v_i) begin
@@ -616,8 +616,6 @@ module bp_cce_fsm
 
             state_n = UC_REQ;
           end
-
-          cnt_clr = 1'b1;
         end
       end
       UC_REQ: begin
@@ -670,16 +668,26 @@ module bp_cce_fsm
                   : ERROR;
       end
       READ_DIR: begin
-        lce_req_yumi_o = 1'b1;
-        // initiate the directory read
-        // At the earliest, data will be valid in the next cycle
-        dir_r_v = 1'b1;
-        dir_way_group_li = mshr_r.paddr[way_group_offset_high_lp-1 -: lg_num_way_groups_lp];
-        dir_r_cmd = e_rdw_op;
-        dir_lce_li = mshr_r.lce_id;
-        dir_lru_way_li = mshr_r.lru_way_id;
-        state_n = WAIT_DIR_GAD;
+        // dequeueing the request also writes the pending bit, so arbitrate with no FSM logic
+        if (~pending_busy) begin
+          lce_req_yumi_o = 1'b1;
+          // initiate the directory read
+          // At the earliest, data will be valid in the next cycle
+          dir_r_v = 1'b1;
+          dir_way_group_li = mshr_r.paddr[way_group_offset_high_lp-1 -: lg_num_way_groups_lp];
+          dir_r_cmd = e_rdw_op;
+          dir_lce_li = mshr_r.lce_id;
+          dir_lru_way_li = mshr_r.lru_way_id;
 
+          pending_w_v = 1'b1;
+          pending_w_way_group =
+            mshr_r.paddr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
+          pending_li = 1'b1;
+
+          state_n = WAIT_DIR_GAD;
+        end else begin
+          state_n = READ_DIR;
+        end
       end
       WAIT_DIR_GAD: begin
 
@@ -752,58 +760,83 @@ module bp_cce_fsm
                 ? TRANSFER_CMD
                 : READ_MEM;
 
+        cnt_0_clr = 1'b1;
+        cnt_1_clr = 1'b1;
         ack_cnt_clr = 1'b1;
-        cnt_clr = 1'b1;
+
       end
       INV_CMD: begin
+        // cnt_1 is the LCE ID counter
+        // ack_cnt is the number of invalidation acks that need to be received (carries over to INV_ACK)
+        // cnt_0 is the number of invalidation acks received (carries over to INV_ACK)
+        // The final value of ack_cnt is the number of invalidations that will be
+        // received in the INV_ACK state
+
         // Send invalidation commands only to LCEs that hit in the sharers vector and that are
         // not the requesting LCE
-        if ((cnt[0+:lg_num_lce_lp] != mshr_r.lce_id) & (sharers_hits_lo[cnt]) & ~lce_cmd_busy) begin
-          // LCE given by cnt needs to be invalidated, try to send the LCE Cmd
-          lce_cmd_v_o = 1'b1;
+        if ((cnt_1[0+:lg_num_lce_lp] != mshr_r.lce_id) & (sharers_hits_lo[cnt_1])) begin
+          // Can only send command if the port isn't being used to forward a mem_resp
+          if (~lce_cmd_busy) begin
+            // LCE given by cnt needs to be invalidated, try to send the LCE Cmd
+            lce_cmd_v_o = 1'b1;
 
-          // LCE Cmd Common Fields
-          lce_cmd.dst_id = cnt[0+:lg_num_lce_lp];
-          lce_cmd.msg_type = e_lce_cmd_invalidate_tag;
-          lce_cmd.way_id = sharers_ways_lo[cnt];
+            // LCE Cmd Common Fields
+            lce_cmd.dst_id = cnt_1[0+:lg_num_lce_lp];
+            lce_cmd.msg_type = e_lce_cmd_invalidate_tag;
+            lce_cmd.way_id = sharers_ways_lo[cnt_1];
 
-          // Sub message fields
-          lce_cmd.msg.cmd.addr = mshr_r.paddr;
+            // Sub message fields
+            lce_cmd.msg.cmd.addr = mshr_r.paddr;
 
-          cnt_clr = (cnt == (num_lce_p-1)) & lce_cmd_ready_i;
-          cnt_inc = lce_cmd_ready_i & ~cnt_clr;
+            // invalidate the entry in the directory
+            dir_w_v = 1'b1;
+            dir_lce_li = cnt_1[0+:lg_num_lce_lp];
+            dir_way_group_li = mshr_r.paddr[way_group_offset_high_lp-1 -: lg_num_way_groups_lp];
+            dir_coh_state_li = e_COH_I;
+            dir_w_cmd = e_wde_op;
+            dir_tag_li = '0;
+            dir_way_li = sharers_ways_lo[cnt_1];
 
-          state_n = (cnt_clr) ? INV_ACK : INV_CMD;
+            // clear the counter when last command is consumed
+            cnt_1_clr = (cnt_1 == (num_lce_p-1)) & lce_cmd_ready_i;
+            state_n = (cnt_1_clr) ? INV_ACK : INV_CMD;
 
-          // increment the Ack counting register if the command is sent
-          ack_cnt_inc = (lce_cmd_ready_i);
+            // only increment the counter if it isn't being cleared to ensure a count
+            // of 0 when entering INV_ACK. Counter only incremented if command is accepted.
+            cnt_1_inc = lce_cmd_ready_i & ~cnt_1_clr;
 
-          // invalidate the entry in the directory
-          dir_w_v = 1'b1;
-          dir_lce_li = cnt[0+:lg_num_lce_lp];
-          dir_way_group_li = mshr_r.paddr[way_group_offset_high_lp-1 -: lg_num_way_groups_lp];
-          dir_coh_state_li = e_COH_I;
-          dir_w_cmd = e_wde_op;
-          dir_tag_li = '0;
-          dir_way_li = sharers_ways_lo[cnt];
-
+            // increment the Ack counting register if the command is sent
+            ack_cnt_inc = (lce_cmd_ready_i);
+          end
+          // else do not send, lce_cmd_busy set
         end else begin
-          cnt_clr = (cnt == (num_lce_p-1));
-          cnt_inc = ~cnt_clr;
-          state_n = (cnt_clr) ? INV_ACK : INV_CMD;
+          // current LCE ID in cnt_1 is either the requesting LCE or does not have block cached
+
+          // clear the counter if last LCE
+          cnt_1_clr = (cnt_1 == (num_lce_p-1));
+          // increment the LCE ID as long as it isn't being cleared
+          cnt_1_inc = ~cnt_1_clr;
+          state_n = (cnt_1_clr) ? INV_ACK : INV_CMD;
         end
 
-      end
-      INV_ACK: begin
+        // Dequeue invalidation ack if one has arrived
+        // Increment cnt_0 when invalidation ack arrives
         if (lce_resp_v_i & (lce_resp.msg_type == e_lce_cce_inv_ack)) begin
           lce_resp_yumi_o = 1'b1;
-          cnt_inc = 1'b1;
+          cnt_0_inc = 1'b1;
+        end
+      end
+      INV_ACK: begin
+        // Wait for remaining invalidation ack messages.
+        if (lce_resp_v_i & (lce_resp.msg_type == e_lce_cce_inv_ack)) begin
+          // Dequeue invalidation ack
+          lce_resp_yumi_o = 1'b1;
 
-          // cnt counter holds the number of invalidation acks received so far
+          // cnt_0 counter holds the number of invalidation acks received so far
           // ack_cnt holds the number that the CCE needs to wait for
           // Transition to another state if there is a valid request and all but the last ack has
           // been received - since the last ack is being dequeued this cycle!
-          state_n = (cnt == (ack_cnt-1))
+          state_n = (cnt_0 == (ack_cnt-1))
                     ? (mshr_r.flags[e_flag_sel_uf])
                       ? UPGRADE_STW_CMD
                       : (mshr_r.flags[e_flag_sel_rf])
@@ -814,7 +847,11 @@ module bp_cce_fsm
                     : INV_ACK;
 
           // clear counter and ack count register if all acks received
-          cnt_clr = (state_n != INV_ACK);
+          cnt_0_clr = (state_n != INV_ACK);
+          // increment the count of messages received as long as there are more yet to arrive
+          cnt_0_inc = ~cnt_0_clr;
+
+          // clear the ack counter when moving out of this state
           ack_cnt_clr = (state_n != INV_ACK);
 
         end

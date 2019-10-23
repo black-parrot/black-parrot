@@ -9,8 +9,8 @@ module bp_me_cce_to_wormhole_link_client
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_me_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-  `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+  `declare_bp_proc_params(bp_params_p)
   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
   
   // TODO: Should be related to network credits
@@ -104,7 +104,7 @@ module bp_me_cce_to_wormhole_link_client
   
   mem_resp_packet_s mem_resp_packet_lo;
   bp_me_wormhole_packet_encode_mem_resp
-   #(.cfg_p(cfg_p))
+   #(.bp_params_p(bp_params_p))
    mem_resp_encode
     (.mem_resp_i(mem_resp_i)
      ,.src_cord_i(my_cord_i)

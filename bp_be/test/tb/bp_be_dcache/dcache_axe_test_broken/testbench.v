@@ -8,8 +8,8 @@ module testbench
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_be_dcache_pkg::*;
-  #(parameter bp_cfg_e cfg_p = BP_CFG_FLOWVAR
-    `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
+    `declare_bp_proc_params(bp_params_p)
 
     // parameters
     //
@@ -58,7 +58,7 @@ module testbench
   logic [num_lce_p-1:0][dword_width_p-1:0] dcache_data_lo;
 
   bp_rolly_lce_me #(
-    .cfg_p(cfg_p)
+    .bp_params_p(bp_params_p)
     ,.mem_els_p(mem_els_p)
     ,.boot_rom_els_p(mem_els_p)
   ) dcache_cce_mem (

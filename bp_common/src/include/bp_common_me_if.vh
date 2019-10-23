@@ -340,21 +340,8 @@ typedef enum bit [2:0]
    +paddr_width_mp+cce_block_width_mp)
 
 `define declare_bp_lce_cce_if_widths(num_cce_mp, num_lce_mp, paddr_width_mp, lce_assoc_mp, data_width_mp, cce_block_width_mp) \
-    , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_mp                         \
-                                                            ,num_lce_mp                        \
-                                                            ,paddr_width_mp                    \
-                                                            ,data_width_mp                     \
-                                                            )                                  \
-    , localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_mp                       \
-                                                              ,num_lce_mp                      \
-                                                              ,paddr_width_mp                  \
-                                                              ,cce_block_width_mp              \
-                                                              )                                \
-    , localparam lce_cmd_width_lp=`bp_lce_cmd_width(num_lce_mp                                 \
-                                                    ,lce_assoc_mp                              \
-                                                    ,paddr_width_mp                            \
-                                                    ,cce_block_width_mp                        \
-                                                    )
-
+    , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(num_cce_mp, num_lce_mp, paddr_width_mp, data_width_mp)        \
+    , localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(num_cce_mp, num_lce_mp, paddr_width_mp, cce_block_width_mp) \
+    , localparam lce_cmd_width_lp=`bp_lce_cmd_width(num_lce_mp, lce_assoc_mp, paddr_width_mp, cce_block_width_mp)
 
 `endif

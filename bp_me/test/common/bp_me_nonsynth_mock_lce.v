@@ -73,8 +73,8 @@ module bp_me_nonsynth_mock_lce
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;
   import bp_be_dcache_pkg::*;
-  #(parameter bp_cfg_e cfg_p = e_bp_half_core_cfg
-    `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = e_bp_half_core_cfg
+    `declare_bp_proc_params(bp_params_p)
 
     , parameter axe_trace_p = 0
     , parameter perf_trace_p = 0
@@ -808,14 +808,14 @@ module bp_me_nonsynth_mock_lce
           tag_next_n[cur_set_n][cur_way_n].coh_st = lce_cmd_r.msg.dt_cmd.state;
           tag_next_n[cur_set_n][cur_way_n].tag = lce_cmd_r.msg.dt_cmd.addr[paddr_width_p-1 -: ptag_width_lp];
 
-          assert (mshr_r.paddr == lce_cmd_r.msg.dt_cmd.addr) else
+          assert (mshr_r.paddr[paddr_width_p-1 -: ptag_width_lp] == lce_cmd_r.msg.dt_cmd.addr[paddr_width_p-1 -: ptag_width_lp]) else
             $error("[%0d]: DT_CMD address mismatch [%H] != [%H]", lce_id_i, mshr_r.paddr, lce_cmd_r.msg.dt_cmd.addr);
 
           // update mshr
           mshr_n.data_received = 1'b1;
           mshr_n.tag_received = 1'b1;
 
-          lce_state_n = FINISH_MISS;
+          lce_state_n = LCE_CMD_ST_DATA_RESP;
 
         end
         LCE_CMD_INV: begin
@@ -917,8 +917,6 @@ module bp_me_nonsynth_mock_lce
           tag_next_n[cur_set_n][cur_way_n].coh_st = lce_cmd_r.msg.cmd.state;
           tag_next_n[cur_set_n][cur_way_n].tag = lce_cmd_r.msg.cmd.addr[paddr_width_p-1 -: ptag_width_lp];
 
-          // TODO: remove assert
-          assert(lce_cmd_r.msg.cmd.addr == mshr_r.paddr) else $error("set tag does not match mshr");
           // tag only comes in response to a miss, update the mshr
           mshr_n.tag_received = 1'b1;
 
@@ -927,7 +925,6 @@ module bp_me_nonsynth_mock_lce
 
         end
         LCE_CMD_ST_DATA_RESP: begin
-          $error("LCE_CMD_ST_DATA_RESP state reached");
           // respond to the miss - tag and data both received
           // all information needed to respond is stored in mshr
 
@@ -956,7 +953,7 @@ module bp_me_nonsynth_mock_lce
           tag_next_n[cur_set_n][cur_way_n].tag = lce_cmd_r.msg.cmd.addr[paddr_width_p-1 -: ptag_width_lp];
 
           // send coh_ack next cycle
-          lce_state_n = FINISH_MISS;
+          lce_state_n = LCE_CMD_STW_RESP;
 
         end
         LCE_CMD_STW_RESP: begin

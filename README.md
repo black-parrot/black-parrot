@@ -9,17 +9,29 @@ The next release of BlackParrot, v 1.0, is coming in October 2019, and will cont
 
 A 14-nm BlackParrot multicore chip was taped out in July 2019.
 
+# BlackParrot repository overview
+- **bp_fe/** contains the front-end (FE) of BlackParrot, responsible for speculative fetching of instructions.
+- **bp_be/** contains the back-end (BE) of BlackParrot, responsible for atomically executing instructions, as well as logically controlling the FE.
+- **bp_me/** contains the memory-end (ME) of BlackParrot, responsible for servicing memory/IO requests as well as maintaining cache coherence between BlackParrot cores. 
+- **bp_top/** contains configurations of FE, BE, and ME components. For instance, tile components and NOC assemblies.
+- **bp_common/** contains the interface components which connect FE, BE and ME. FE, BE, ME may depend on bp\_common, but not each other.
+- **external/** contains submodules corresponding to tooling that BlackParrot depends upon, such as the riscv-gnu-toolchain and Verilator.
+
+
 # BlackParrot software developer guide
 Coming soon!
 
 # BlackParrot interface specification
-Coming soon!
+BlackParrot is an aggresively modular design: communication between the components is performed over a set of narrow
+interfaces. The interfaces are designed to allow implementations of the FE, BE or ME to change
+independently of one another.
+
+[Interface specification](docs/interface_specification.md)
 
 # BlackParrot microarchitectural specification
 Coming soon!
 
 # BlackParrot Manifesto
-Always remember:
 - Be TINY
     - When deliberating between two options, consider the one with least hardware cost/complexity.
 - Be Modular

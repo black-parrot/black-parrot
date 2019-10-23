@@ -2,8 +2,8 @@
 module bp_tlb
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
    ,parameter tlb_els_p       = "inv"
    
    ,localparam lg_els_lp      = `BSG_SAFE_CLOG2(tlb_els_p)

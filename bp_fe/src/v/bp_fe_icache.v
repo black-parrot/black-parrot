@@ -20,24 +20,19 @@ module bp_fe_icache
   import bp_common_aviary_pkg::*;
   import bp_fe_pkg::*;
   import bp_fe_icache_pkg::*;  
-  #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
     `declare_bp_fe_tag_widths(lce_assoc_p, lce_sets_p, num_lce_p, num_cce_p, dword_width_p, paddr_width_p)
     `declare_bp_icache_widths(vaddr_width_p, tag_width_lp, lce_assoc_p) 
 
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
     , parameter debug_p=0
     )
    (input                                              clk_i
     , input                                            reset_i
-    , input                                            freeze_i
 
-    , input [lce_id_width_lp-1:0]                      lce_id_i
-
-    // Config channel
-    , input                                            cfg_w_v_i
-    , input [cfg_addr_width_p-1:0]                     cfg_addr_i
-    , input [cfg_data_width_p-1:0]                     cfg_data_i
+    , input [cfg_bus_width_lp-1:0]                    cfg_bus_i
 
     , input [vaddr_width_p-1:0]                        vaddr_i
     , input                                            vaddr_v_i
@@ -69,6 +64,10 @@ module bp_fe_icache
     , output                                           lce_cmd_v_o
     , input                                            lce_cmd_ready_i 
  );
+
+  `declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+  bp_cfg_bus_s cfg_bus_cast_i;
+  assign cfg_bus_cast_i = cfg_bus_i;
 
   logic [index_width_lp-1:0]            vaddr_index;
 
@@ -289,20 +288,15 @@ module bp_fe_icache
   logic                                      stat_mem_pkt_v_lo;
   logic                                      stat_mem_pkt_yumi_li;
 
-  bp_fe_icache_lce_mode_e lce_mode_lo;
+  bp_lce_mode_e lce_mode_lo;
 
   bp_fe_lce
-    #(.cfg_p(cfg_p))
+    #(.bp_params_p(bp_params_p))
   lce
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.freeze_i(freeze_i)
 
-     ,.cfg_w_v_i(cfg_w_v_i)
-     ,.cfg_addr_i(cfg_addr_i)
-     ,.cfg_data_i(cfg_data_i)
-
-     ,.lce_id_i(lce_id_i)
+     ,.cfg_bus_i(cfg_bus_i)
 
      ,.ready_o(vaddr_ready_o)
      ,.cache_miss_o(cache_miss_o)
@@ -341,12 +335,10 @@ module bp_fe_icache
      ,.lce_cmd_o(lce_cmd_o)
      ,.lce_cmd_v_o(lce_cmd_v_o)
      ,.lce_cmd_ready_i(lce_cmd_ready_i)
-
-     ,.lce_mode_o(lce_mode_lo)
      ); 
 
   // Fault if in uncached mode but access is not for an uncached address
-  assign instr_access_fault_o = (lce_mode_lo == e_icache_lce_mode_uncached)
+  assign instr_access_fault_o = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached)
     ? ~uncached_tv_r
     : 1'b0;
 

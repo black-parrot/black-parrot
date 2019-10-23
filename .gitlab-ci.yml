@@ -105,6 +105,16 @@ top-riscv-verilator:
     - make -C bp_top/syn clean build.sc
     - $CI_PROJECT_DIR/ci/regress.sh regress_riscv.sc bp_top
  
+top-coremark-verilator:
+  <<: *job_definition
+  when: manual
+  stage: test-long
+  tags:
+    - verilator
+  script:
+    - make -C bp_top/syn clean build.sc
+    - $CI_PROJECT_DIR/ci/regress.sh "sim.sc PROG=coremark" bp_top
+
 # Disabled because it's too long running     
 # TODO: Investigate why
 top-beebs-verilator:
@@ -134,6 +144,15 @@ top-riscv-tests-vcs:
     - make -C bp_top/syn clean build.v
     - $CI_PROJECT_DIR/ci/regress.sh regress_riscv.v bp_top
       
+top-coremark-vcs:
+  <<: *job_definition
+  stage: test-long
+  tags:
+    - vcs
+  script:
+    - make -C bp_top/syn clean build.v
+    - $CI_PROJECT_DIR/ci/regress.sh "sim.v PROG=coremark" bp_top
+
 top-beebs-vcs:
   <<: *job_definition
   stage: test-long

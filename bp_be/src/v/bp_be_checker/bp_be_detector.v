@@ -18,15 +18,18 @@ module bp_be_detector
  import bp_common_aviary_pkg::*;
  import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
-   `declare_bp_proc_params(cfg_p)
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
 
    // Generated parameters
-   , localparam isd_status_width_lp = `bp_be_isd_status_width
-   , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam isd_status_width_lp = `bp_be_isd_status_width(vaddr_width_p, branch_metadata_fwd_width_p)
+   , localparam calc_status_width_lp = `bp_be_calc_status_width(vaddr_width_p)
    )
   (input                               clk_i
    , input                             reset_i
+
+   , input [cfg_bus_width_lp-1:0]     cfg_bus_i
 
    // Dependency information
    , input [isd_status_width_lp-1:0]   isd_status_i
@@ -40,14 +43,13 @@ module bp_be_detector
 
    // Pipeline control signals from the checker to the calculator
    , output                            chk_dispatch_v_o
-   , output                            chk_roll_o
-   , output                            chk_poison_iss_o
-   , output                            chk_poison_isd_o
-   , output                            chk_poison_ex1_o
-   , output                            chk_poison_ex2_o
   );
 
+`declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p); 
+
+bp_cfg_bus_s cfg_bus_cast_i;
+assign cfg_bus_cast_i = cfg_bus_i;
 
 // Casting 
 bp_be_isd_status_s       isd_status_cast_i;
@@ -68,7 +70,7 @@ logic [2:0] irs1_data_haz_v , irs2_data_haz_v;
 logic [2:0] frs1_data_haz_v , frs2_data_haz_v;
 logic [2:0] rs1_match_vector, rs2_match_vector;
 
-logic fence_haz_v, serial_haz_v, data_haz_v, struct_haz_v, mispredict_v, mem_in_pipe_v;
+logic fence_haz_v, serial_haz_v, data_haz_v, struct_haz_v, mem_in_pipe_v;
 
 always_comb 
   begin
@@ -138,29 +140,10 @@ always_comb
 
     // Combine all structural hazard information
     struct_haz_v = ~mmu_cmd_ready_i | fence_haz_v | serial_haz_v;
-
-    // Detect misprediction
-    mispredict_v = (calc_status_cast_i.ex1_v & (calc_status_cast_i.ex1_pc != expected_npc_i));
   end
 
 // Generate calculator control signals
-assign chk_dispatch_v_o = ~(data_haz_v | struct_haz_v); 
-assign chk_roll_o       = calc_status_cast_i.mem3_miss_v;
-
-assign chk_poison_iss_o = mispredict_v
-                          | flush_i
-                          | calc_status_cast_i.mem3_miss_v;
-                          
-assign chk_poison_isd_o = mispredict_v
-                          | flush_i
-                          | calc_status_cast_i.mem3_miss_v;
-
-assign chk_poison_ex1_o = mispredict_v
-                          | flush_i
-                          | calc_status_cast_i.mem3_miss_v;
-
-assign chk_poison_ex2_o = flush_i
-                          | calc_status_cast_i.mem3_miss_v;
+assign chk_dispatch_v_o = ~(data_haz_v | struct_haz_v | cfg_bus_cast_i.freeze); 
 
 endmodule
 

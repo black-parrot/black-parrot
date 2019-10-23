@@ -13,25 +13,76 @@
 //   oct-core configurations.
 // typedef logic[2:0] bp_mhartid_t;
 // typedef logic[3:0] bp_lce_id_t;
-//
-// We could pass pc_entry_point here as logic.  We could also pass it as a bsg_tag message
 
-// Passing in proc_cfg as a port rather than a parameter limits some optimizations (need to 
-//   route the ids through the chip), but it allows us to stamp out cores in our flow
-// mhartid   - the hartid for the core. Since BP does not support SMT, hartid == coreid
-// icache_id - the lceid used for coherence operations
-// dcache_id - the lceid used for coherence operations 
-`define declare_bp_common_proc_cfg_s(num_core_mp, num_cce_mp, num_lce_mp)                          \
+typedef enum logic {
+  e_lce_mode_uncached
+  ,e_lce_mode_normal
+} bp_lce_mode_e;
+
+// CCE Operating Mode
+// e_cce_mode_uncached: CCE supports uncached requests only
+// e_cce_mode_normal: CCE operates as a microcoded engine, features depend on microcode provided
+typedef enum bit
+{
+  e_cce_mode_uncached = 1'b0
+  ,e_cce_mode_normal  = 1'b1
+} bp_cce_mode_e;
+
+`define declare_bp_cfg_bus_s(vaddr_width_mp, num_core_mp, num_cce_mp, num_lce_mp, cce_pc_width_mp, cce_instr_width_mp) \
   typedef struct packed                                                                            \
   {                                                                                                \
+    logic                                    freeze;                                               \
     logic [`BSG_SAFE_CLOG2(num_core_mp)-1:0] core_id;                                              \
-    logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]  cce_id;                                               \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]  icache_id;                                            \
+    bp_lce_mode_e                            icache_mode;                                          \
+    logic                                    npc_w_v;                                              \
+    logic                                    npc_r_v;                                              \
+    logic [vaddr_width_mp-1:0]               npc;                                                  \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]  dcache_id;                                            \
-  }  bp_proc_cfg_s;
+    bp_lce_mode_e                            dcache_mode;                                          \
+    logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]  cce_id;                                               \
+    bp_cce_mode_e                            cce_mode;                                             \
+    logic                                    cce_ucode_w_v;                                        \
+    logic                                    cce_ucode_r_v;                                        \
+    logic [cce_pc_width_mp-1:0]              cce_ucode_addr;                                       \
+    logic [cce_instr_width_mp-1:0]           cce_ucode_data;                                       \
+    logic                                    irf_w_v;                                              \
+    logic                                    irf_r_v;                                              \
+    logic [reg_addr_width_p-1:0]             irf_addr;                                             \
+    logic [dword_width_p-1:0]                irf_data;                                             \
+    logic                                    csr_w_v;                                              \
+    logic                                    csr_r_v;                                              \
+    logic [csr_addr_width_p-1:0]             csr_addr;                                             \
+    logic [dword_width_p-1:0]                csr_data;                                             \
+    logic                                    priv_w_v;                                             \
+    logic                                    priv_r_v;                                             \
+    logic [1:0]                              priv_data;                                            \
+  }  bp_cfg_bus_s
 
-`define bp_proc_cfg_width(num_core_mp, num_cce_mp, num_lce_mp)                                     \
-  (`BSG_SAFE_CLOG2(num_core_mp) + `BSG_SAFE_CLOG2(num_cce_mp) + 2 * `BSG_SAFE_CLOG2(num_lce_mp))
+`define bp_cfg_bus_width(vaddr_width_mp, num_core_mp, num_cce_mp, num_lce_mp, cce_pc_width_mp, cce_instr_width_mp) \
+  (1                                \
+   + `BSG_SAFE_CLOG2(num_core_mp)   \
+   + `BSG_SAFE_CLOG2(num_lce_mp)    \
+   + $bits(bp_lce_mode_e)           \
+   + 2                              \
+   + vaddr_width_mp                 \
+   + `BSG_SAFE_CLOG2(num_lce_mp)    \
+   + $bits(bp_lce_mode_e)           \
+   + `BSG_SAFE_CLOG2(num_cce_mp)    \
+   + $bits(bp_cce_mode_e)           \
+   + 2                              \
+   + cce_pc_width_mp                \
+   + cce_instr_width_mp             \
+   + 2                              \
+   + reg_addr_width_p               \
+   + dword_width_p                  \
+   + 2                              \
+   + csr_addr_width_p               \
+   + dword_width_p                  \
+   + 2                              \
+   + 2                              \
+   )
+
 
 typedef struct packed
 {
@@ -55,7 +106,8 @@ typedef struct packed
   integer lce_sets;
   integer lce_assoc;
   integer cce_block_width;
-  integer num_cce_instr_ram_els;
+  integer cce_pc_width;
+  integer cce_instr_width;
 
   integer fe_queue_fifo_els;
   integer fe_cmd_fifo_els;
@@ -85,8 +137,8 @@ typedef struct packed
   integer mem_noc_x_dim;
 }  bp_proc_param_s;
 
-`define declare_bp_proc_params(bp_cfg_e_mp) \
-  , localparam bp_proc_param_s proc_param_lp = all_cfgs_gp[bp_cfg_e_mp]                            \
+`define declare_bp_proc_params(bp_params_e_mp) \
+  , localparam bp_proc_param_s proc_param_lp = all_cfgs_gp[bp_params_e_mp]                            \
                                                                                                    \
   , localparam num_core_p = proc_param_lp.num_core                                                 \
   , localparam num_cce_p  = proc_param_lp.num_cce                                                  \
@@ -105,10 +157,12 @@ typedef struct packed
   , localparam itlb_els_p              = proc_param_lp.itlb_els                                    \
   , localparam dtlb_els_p              = proc_param_lp.dtlb_els                                    \
                                                                                                    \
-  , localparam lce_sets_p              = proc_param_lp.lce_sets                                    \
-  , localparam lce_assoc_p             = proc_param_lp.lce_assoc                                   \
-  , localparam cce_block_width_p       = proc_param_lp.cce_block_width                             \
-  , localparam num_cce_instr_ram_els_p = proc_param_lp.num_cce_instr_ram_els                       \
+  , localparam lce_sets_p                 = proc_param_lp.lce_sets                                 \
+  , localparam lce_assoc_p                = proc_param_lp.lce_assoc                                \
+  , localparam cce_block_width_p          = proc_param_lp.cce_block_width                          \
+  , localparam cce_pc_width_p             = proc_param_lp.cce_pc_width                             \
+  , localparam cce_instr_width_p          = proc_param_lp.cce_instr_width                          \
+  , localparam num_cce_instr_ram_els_p    = 2**cce_pc_width_p                                      \
                                                                                                    \
   , localparam fe_queue_fifo_els_p = proc_param_lp.fe_queue_fifo_els                               \
   , localparam fe_cmd_fifo_els_p   = proc_param_lp.fe_cmd_fifo_els                                 \
@@ -147,11 +201,12 @@ typedef struct packed
   , localparam int mem_noc_cord_markers_pos_p[mem_noc_dims_p:0] =                                  \
       '{mem_noc_cord_width_p, mem_noc_x_cord_width_p, 0}                                           \
                                                                                                    \
-  , localparam num_mem_p    = mem_noc_x_dim_p + 2                                                  \
-  , localparam mmio_x_pos_p = (mem_noc_x_dim_p+1)/2                                                \
+  , localparam num_mem_p     = mem_noc_x_dim_p + 2                                                 \
+  , localparam clint_x_pos_p = (mem_noc_x_dim_p+1)/2                                               \
                                                                                                    \
   , localparam dword_width_p       = 64                                                            \
   , localparam instr_width_p       = 32                                                            \
+  , localparam csr_addr_width_p    = 12                                                            \
   , localparam reg_addr_width_p    = 5                                                             \
   , localparam page_offset_width_p = 12                                                            \
                                                                                                    \

@@ -14,15 +14,6 @@ package bp_cce_pkg;
   `include "bp_me_cce_mem_if.vh"
   `include "bp_cce_inst.vh"
 
-  // CCE Operating Mode
-  // e_cce_mode_uncached: CCE supports uncached requests only
-  // e_cce_mode_normal: CCE operates as a microcoded engine, features depend on microcode provided
-  typedef enum bit
-  {
-    e_cce_mode_uncached = 1'b0
-    ,e_cce_mode_normal  = 1'b1
-  } bp_cce_mode_e;
-
   `define bp_cce_mode_bits $bits(bp_cce_mode_e)
 
   // Miss Status Handling Register Struct

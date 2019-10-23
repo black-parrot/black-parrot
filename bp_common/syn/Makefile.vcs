@@ -14,12 +14,10 @@ VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
 VCS_BUILD_OPTS += -full64             # Compile a 64-bit executable
 VCS_BUILD_OPTS += -sverilog # Enable SystemVerilog
 VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
-#VCS_BUILD_OPTS += -assert svaext      # Enable elaboration system tasks
+VCS_BUILD_OPTS += -assert svaext      # Enable elaboration system tasks
 VCS_BUILD_OPTS += -CFLAGS "-I$(BP_EXTERNAL_DIR)/include -std=c++11"
 VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
-VCS_BUILD_OPTS += -assert svaext
 VCS_BUILD_OPTS += +lint=TFIPC-L
-VCS_BUILD_OPTS += -debug_pp
 
 LINT_OPTIONS = +lint=all,noSVA-UA,noSVA-NSVU,noNS,noVCDE
 
@@ -27,6 +25,7 @@ DUMP ?= 0
 COV  ?= 0
 
 ifeq ($(DUMP), 1)
+VCS_BUILD_OPTS += -debug_all
 VCS_OPTIONS += +vcs+vcdpluson # Enable vcd dump
 VCS_OPTIONS += +memcbk        # Dump memory 
 endif
@@ -102,7 +101,7 @@ sim.v: dirs.v
 	-@cp $(MEM_PATH)/$(PROG).mem $(SIM_DIR)/prog.mem
 	-@cp $(MEM_PATH)/$(PROG).riscv $(SIM_DIR)/prog.elf
 	-@cp $(MEM_PATH)/$(PROG).dump $(SIM_DIR)/prog.dump
-	-@cp $(MEM_PATH)/$(PROG).spike $(SIM_DIR)/prog.spike
+	-@cp $(MEM_PATH)/$(PROG).spike $(SIM_DIR)/commit.spike
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(SIM_DIR)/dram_ch.ini
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(SIM_DIR)/dram_sys.ini
 	-@cp $(CCE_MEM_PATH)/$(CCE_MEM) $(SIM_DIR)/cce_ucode.mem
@@ -115,7 +114,7 @@ match.v: MATCH_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).match.$(PROG).rpt
 match.v: MATCH_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).match.$(PROG).err
 match.v: PROG ?= rv64ui-p-simple
 match.v: dirs.v
-	-cd $(SIM_DIR); $(PYTHON) $(TRACEDIFF) prog.spike prog.trace $(START_PC) --tolerance=$(TOLERANCE) \
+	-cd $(SIM_DIR); $(PYTHON) $(TRACEDIFF) commit.spike commit.trace $(START_PC) --tolerance=$(TOLERANCE) \
 		| tee -a $(MATCH_LOG)
 	-@grep "MATCH" $(MATCH_LOG) || echo "MISMATCHED" >> $(MATCH_ERROR)
 	-@grep "MATCH" -A 4 $(MATCH_LOG) > $(MATCH_REPORT)
@@ -140,15 +139,12 @@ cov.v: dirs.v
 	@cp $(COV_REPORT)/tests.txt $(COV_TREPORT)
 	@cp $(COV_REPORT)/hierarchy.txt $(COV_HREPORT) 
 
-dve.v: dirs.v
-	cd $(SIM_DIR); dve -full64 -vpd vcdplus.vpd &
+wave.v: dirs.v
+	cd $(SIM_DIR); $(_DVE) -full64 -vpd vcdplus.vpd &
 
 debug.v: dirs.v
 	$(VPD2VCD) +splitpacked $(SIM_DIR)/vcdplus.vpd $(SIM_DIR)/debug.vcd
 	$(MAKE) regen -C $(UNHARDWARE_DIR) MODEL=$(UNHARDWARE_MODEL) DATA=$(SIM_DIR)/debug.vcd BINARY=$(SIM_DIR)/prog.elf 
-
-sv2v:
-	sv2v --oneunit $(shell cat command.txt)
 
 clean.v:
 	@rm -rf results/vcs
