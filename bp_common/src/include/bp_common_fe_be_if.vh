@@ -176,11 +176,7 @@
  */
 `define declare_bp_fe_be_if_widths(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
   , localparam fe_queue_width_lp=`bp_fe_queue_width(vaddr_width_mp,branch_metadata_fwd_width_mp) \
-  , localparam fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_mp                                   \
-                                                ,paddr_width_mp                                  \
-                                                ,asid_width_mp                                   \
-                                                ,branch_metadata_fwd_width_mp                    \
-                                                )
+  , localparam fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)
 
 /*
  * bp_fe_queue_s can either contain an instruction or exception.
