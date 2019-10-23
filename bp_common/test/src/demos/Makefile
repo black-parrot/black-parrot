@@ -23,8 +23,8 @@ queue_demo_%.s:
 atomic_queue_demo_%.s:
 	$(RISCV_GCC) -DNUM_CORES=$(notdir $*) -S -o src/atomic_queue_demo_$(notdir $*).s src/atomic_queue_demo.c
 
-write_demo_%.s:
-	$(RISCV_GCC) -DNUM_CORES=$(notdir $*) -S -o src/write_demo_$(notdir $*).s src/write_demo.c
+mc_sanity_%.s:
+	$(RISCV_GCC) -DNUM_CORES=$(notdir $*) -S -o src/mc_sanity_$(notdir $*).s src/mc_sanity.c
 
 %.s:
 	$(RISCV_GCC) -S -o src/$@ src/$*.c
@@ -32,6 +32,6 @@ write_demo_%.s:
 clean:
 	rm -f *.riscv
 	rm -f src/atomic_queue_demo_*.s
-	rm -f src/write_demo_*.s
+	rm -f src/mc_sanity_*.s
 	rm -f src/queue_demo_*.s
 

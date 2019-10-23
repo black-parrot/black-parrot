@@ -213,6 +213,14 @@ BEEBS_TESTS = \
 ## We do support qsort, but there is a name conflict currently
 #qsort \
 
+MC_TESTS = \
+  mc_sanity_1 \
+  mc_sanity_2 \
+  mc_sanity_4 \
+  mc_sanity_8 \
+  mc_sanity_16
+
+
 RV64_REGRESSION   := $(RV64_P_ISA_TESTS) $(RV64_V_ISA_TESTS) $(RV64_BENCHMARKS)
 RV64_REGRESSION_V  = $(addsuffix .v, $(RV64_REGRESSION))
 RV64_REGRESSION_SC = $(addsuffix .sc, $(RV64_REGRESSION))
@@ -220,3 +228,5 @@ COREMARK_REGRESSION_V = $(addsuffix .v, $(COREMARK))
 COREMARK_REGRESSION_SC = $(addsuffix .sc, $(COREMARK))
 BEEBS_REGRESSION_V = $(addsuffix .v, $(BEEBS_TESTS))
 BEEBS_REGRESSION_SC = $(addsuffix .sc, $(BEEBS_TESTS))
+MC_REGRESSION_V = $(addsuffix .v, $(MC_TESTS))
+MC_REGRESSION_SC = $(addsuffix .sc, $(MC_TESTS))
