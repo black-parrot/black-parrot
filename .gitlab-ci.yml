@@ -136,13 +136,9 @@ top-mc-verilator:
     - make -C bp_top/syn clean build.sc CFG=e_bp_single_core_cfg
     - make -C bp_top/syn build.sc CFG=e_bp_dual_core_cfg
     - make -C bp_top/syn build.sc CFG=e_bp_quad_core_cfg
-    - make -C bp_top/syn build.sc CFG=e_bp_oct_core_cfg
-    - make -C bp_top/syn build.sc CFG=e_bp_sexta_core_cfg
     - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_1.sc CFG=e_bp_single_core_cfg" bp_top
     - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_2.sc CFG=e_bp_dual_core_cfg" bp_top
     - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_4.sc CFG=e_bp_quad_core_cfg" bp_top
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_8.sc CFG=e_bp_oct_core_cfg" bp_top
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_16.sc CFG=e_bp_sexta_core_cfg" bp_top
 
 lint-vcs:
   <<: *job_definition
