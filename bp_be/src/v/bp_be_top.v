@@ -233,6 +233,7 @@ bp_be_mem_top
     ,.lce_cmd_ready_i(lce_cmd_ready_i)
 
     ,.commit_pkt_i(commit_pkt)
+    ,.npc_i(cfg_npc_data_o)
 
     ,.credits_full_o(credits_full_lo)
     ,.credits_empty_o(credits_empty_lo)

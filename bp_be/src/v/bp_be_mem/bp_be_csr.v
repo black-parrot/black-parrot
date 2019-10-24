@@ -40,6 +40,8 @@ module bp_be_csr
     , input [instr_width_p-1:0]      exception_instr_i
     , input [ecode_dec_width_lp-1:0] exception_ecode_dec_i
 
+    , input [vaddr_width_p-1:0]      interrupt_pc_i
+
     , input                          timer_irq_i
     , input                          software_irq_i
     , input                          external_irq_i
@@ -477,7 +479,7 @@ always_comb
           mstatus_li.mpie      = mstatus_lo.mie;
           mstatus_li.mie       = 1'b0;
 
-          mepc_li              = exception_pc_i;
+          mepc_li              = paddr_width_p'($signed(interrupt_pc_i));;
           mtval_li             = '0;
           mcause_li._interrupt = 1'b1;
           mcause_li.ecode      = m_interrupt_icode_li;
@@ -494,7 +496,7 @@ always_comb
           mstatus_li.spie      = mstatus_lo.sie;
           mstatus_li.sie       = 1'b0;
 
-          sepc_li              = exception_pc_i;
+          sepc_li              = paddr_width_p'($signed(interrupt_pc_i));;
           stval_li             = '0;
           scause_li._interrupt = 1'b1;
           scause_li.ecode      = s_interrupt_icode_li;

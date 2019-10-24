@@ -88,6 +88,7 @@ module bp_be_mem_top
    , output                                  credits_empty_o
 
    , input [commit_pkt_width_lp-1:0]         commit_pkt_i
+   , input [vaddr_width_p-1:0]               npc_i
 
    , input                                   timer_irq_i
    , input                                   software_irq_i
@@ -242,6 +243,8 @@ bp_be_csr
    ,.exception_vaddr_i(exception_vaddr_li)
    ,.exception_instr_i(exception_instr_li)
    ,.exception_ecode_dec_i(exception_ecode_dec_li)
+
+   ,.interrupt_pc_i(npc_i)
 
    ,.timer_irq_i(timer_irq_i)
    ,.software_irq_i(software_irq_i)
