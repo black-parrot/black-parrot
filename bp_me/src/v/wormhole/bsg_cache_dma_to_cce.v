@@ -119,12 +119,32 @@ module bsg_cache_dma_to_cce
   ,.yumi_i  (dma_pkt_rr_yumi_li)
   );
   
-  always_ff @(posedge clk_i)
-    if (reset_i)
-        dma_pkt_rr_tag_r <= '0;
-    else
-        if (dma_pkt_rr_yumi_li)
-            dma_pkt_rr_tag_r <= dma_pkt_rr_tag_n;
+  bsg_dff_reset_en
+ #(.width_p(lg_num_mem_lp)
+  ) dffre
+  (.clk_i(clk_i)
+  ,.reset_i(reset_i)
+  ,.en_i(dma_pkt_rr_yumi_li)
+  ,.data_i(dma_pkt_rr_tag_n)
+  ,.data_o(dma_pkt_rr_tag_r)
+  );
+  
+  logic arbiter_fifo_ready_lo, arbiter_fifo_valid_lo, arbiter_fifo_yumi_li;
+  logic [lg_num_mem_lp-1:0] arbiter_fifo_data_lo;
+  
+  bsg_fifo_1r1w_small
+ #(.width_p(lg_num_mem_lp)
+  ,.els_p(8))
+  arbiter_fifo
+  (.clk_i  (clk_i  )
+  ,.reset_i(reset_i)
+  ,.ready_o(arbiter_fifo_ready_lo)
+  ,.data_i (dma_pkt_rr_tag_n)
+  ,.v_i    (~dma_pkt_rr_lo.write_not_read & dma_pkt_rr_yumi_li)
+  ,.v_o    (arbiter_fifo_valid_lo)
+  ,.data_o (arbiter_fifo_data_lo)
+  ,.yumi_i (arbiter_fifo_yumi_li)
+  );
             
   logic [data_width_p-1:0] dma_data_li, dma_data_lo;
   logic dma_data_v_li, dma_data_v_lo, dma_data_ready_li, dma_data_yumi_lo;
@@ -139,9 +159,9 @@ module bsg_cache_dma_to_cce
     dma_data_v_li = dma_data_v_i[dma_pkt_rr_tag_r];
     dma_data_yumi_o[dma_pkt_rr_tag_r] = dma_data_yumi_lo;
     
-    dma_data_o[dma_pkt_rr_tag_r] = dma_data_lo;
-    dma_data_v_o[dma_pkt_rr_tag_r] = dma_data_v_lo;
-    dma_data_ready_li = dma_data_ready_i[dma_pkt_rr_tag_r];
+    dma_data_o[arbiter_fifo_data_lo] = dma_data_lo;
+    dma_data_v_o[arbiter_fifo_data_lo] = dma_data_v_lo;
+    dma_data_ready_li = dma_data_ready_i[arbiter_fifo_data_lo];
   end
   
   
@@ -212,7 +232,7 @@ module bsg_cache_dma_to_cce
       end
     READY:
       begin
-        if (dma_pkt_rr_v_lo)
+        if (dma_pkt_rr_v_lo & arbiter_fifo_ready_lo)
           begin
             send_dma_pkt_n = dma_pkt_rr_lo;
             dma_pkt_rr_yumi_li = 1'b1;
@@ -282,6 +302,27 @@ module bsg_cache_dma_to_cce
   ,.data_o(dma_data_lo)
   ,.yumi_i(dma_data_v_lo & dma_data_ready_li)
   );
+  
+  logic [7:0] resp_count_r, resp_count_n;
+  
+  always_ff @(posedge clk_i)
+    if (reset_i) resp_count_r <= '0;
+    else         resp_count_r <= resp_count_n;
+  
+  always_comb
+  begin
+    arbiter_fifo_yumi_li = 1'b0;
+    resp_count_n = resp_count_r;
+    if (dma_data_v_lo & dma_data_ready_li)
+      begin
+        resp_count_n = resp_count_r + 1;
+        if (resp_count_r == block_size_in_words_p-1)
+          begin
+            resp_count_n = '0;
+            arbiter_fifo_yumi_li = 1'b1;
+          end
+      end
+  end
   
   
 endmodule
