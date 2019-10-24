@@ -86,7 +86,7 @@ logic [num_io_p-1:0][mem_noc_cord_width_p-1:0]  io_cord_lo;
 
 assign clint_cord_lo[0+:mem_noc_x_cord_width_p]                      = clint_x_pos_p;
 assign clint_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
-assign dram_cord_lo[0+:mem_noc_x_cord_width_p]                      = 1;
+assign dram_cord_lo[0+:mem_noc_x_cord_width_p]                      = mem_noc_x_dim_p;
 assign dram_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = mem_noc_y_dim_p+1;
 assign host_cord_lo[0+:mem_noc_x_cord_width_p]                      = mem_noc_x_dim_p+2;
 assign host_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
@@ -483,17 +483,17 @@ dma_to_cce
   (.clk_i(clk_i)
   ,.reset_i(reset_i)
   
-  ,.dma_pkt_i( dma_pkt_lo[0] )
-  ,.dma_pkt_v_i( dma_pkt_v_lo[0] )
-  ,.dma_pkt_yumi_o( dma_pkt_yumi_li[0] )
+  ,.dma_pkt_i( dma_pkt_lo )
+  ,.dma_pkt_v_i( dma_pkt_v_lo )
+  ,.dma_pkt_yumi_o( dma_pkt_yumi_li )
   
-  ,.dma_data_o( dma_data_li[0] )
-  ,.dma_data_v_o( dma_data_v_li[0] )
-  ,.dma_data_ready_i( dma_data_ready_lo[0] )
+  ,.dma_data_o( dma_data_li )
+  ,.dma_data_v_o( dma_data_v_li )
+  ,.dma_data_ready_i( dma_data_ready_lo )
   
-  ,.dma_data_i( dma_data_lo[0] )
-  ,.dma_data_v_i( dma_data_v_lo[0] )
-  ,.dma_data_yumi_o( dma_data_yumi_li[0] )
+  ,.dma_data_i( dma_data_lo )
+  ,.dma_data_v_i( dma_data_v_lo )
+  ,.dma_data_yumi_o( dma_data_yumi_li )
 
   ,.mem_cmd_o(true_dram_cmd_li)
   ,.mem_cmd_v_o(true_dram_cmd_v_li)

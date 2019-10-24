@@ -26,31 +26,32 @@ module bsg_cache_dma_to_cce
   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
   
   ,localparam bsg_cache_dma_pkt_width_lp        = `bsg_cache_dma_pkt_width(cache_addr_width_p)
+  ,localparam lg_num_mem_lp = `BSG_SAFE_CLOG2(num_mem_p)
   )
   
   (// Cache DMA side
-   input                                                clk_i
-  ,input                                                reset_i
+   input                                                          clk_i
+  ,input                                                          reset_i
   // Sending address and write_en               
-  ,input        [bsg_cache_dma_pkt_width_lp-1:0]        dma_pkt_i
-  ,input                                                dma_pkt_v_i
-  ,output logic                                         dma_pkt_yumi_o
-  // Sending cache block                        
-  ,input        [data_width_p-1:0]                      dma_data_i
-  ,input                                                dma_data_v_i
-  ,output logic                                         dma_data_yumi_o
-  // Receiving cache block                      
-  ,output logic [data_width_p-1:0]                      dma_data_o
-  ,output logic                                         dma_data_v_o
-  ,input                                                dma_data_ready_i
+  ,input        [num_mem_p-1:0][bsg_cache_dma_pkt_width_lp-1:0]   dma_pkt_i
+  ,input        [num_mem_p-1:0]                                   dma_pkt_v_i
+  ,output logic [num_mem_p-1:0]                                   dma_pkt_yumi_o
+  // Sending cache block                                          
+  ,input        [num_mem_p-1:0][data_width_p-1:0]                 dma_data_i
+  ,input        [num_mem_p-1:0]                                   dma_data_v_i
+  ,output logic [num_mem_p-1:0]                                   dma_data_yumi_o
+  // Receiving cache block                                        
+  ,output logic [num_mem_p-1:0][data_width_p-1:0]                 dma_data_o
+  ,output logic [num_mem_p-1:0]                                   dma_data_v_o
+  ,input        [num_mem_p-1:0]                                   dma_data_ready_i
 
-  ,output [cce_mem_msg_width_lp-1:0]                    mem_cmd_o
-  ,output                                               mem_cmd_v_o
-  ,input                                                mem_cmd_yumi_i
-                                                        
-  ,input  [cce_mem_msg_width_lp-1:0]                    mem_resp_i
-  ,input                                                mem_resp_v_i
-  ,output                                               mem_resp_ready_o
+  ,output [cce_mem_msg_width_lp-1:0]                              mem_cmd_o
+  ,output                                                         mem_cmd_v_o
+  ,input                                                          mem_cmd_yumi_i
+  
+  ,input  [cce_mem_msg_width_lp-1:0]                              mem_resp_i
+  ,input                                                          mem_resp_v_i
+  ,output                                                         mem_resp_ready_o
   );
   
   localparam lg_fifo_depth_lp = 3;
@@ -70,24 +71,78 @@ module bsg_cache_dma_to_cce
   // This two-element fifo is necessary to avoid bubble between address flit
   // and data flit for cache evict operation
   
-  logic dma_pkt_fifo_valid_lo, dma_pkt_fifo_yumi_li;
-  bsg_cache_dma_pkt_s dma_pkt_fifo_data_lo;
+  logic [num_mem_p-1:0] dma_pkt_fifo_valid_lo, dma_pkt_fifo_yumi_li;
+  bsg_cache_dma_pkt_s [num_mem_p-1:0] dma_pkt_fifo_data_lo;
   
-  logic dma_pkt_fifo_ready_lo;
+  logic [num_mem_p-1:0] dma_pkt_fifo_ready_lo;
   assign dma_pkt_yumi_o = dma_pkt_v_i & dma_pkt_fifo_ready_lo;
   
-  bsg_two_fifo
- #(.width_p(bsg_cache_dma_pkt_width_lp))
-  dma_pkt_fifo
-  (.clk_i  (clk_i  )
-  ,.reset_i(reset_i)
-  ,.ready_o(dma_pkt_fifo_ready_lo)
-  ,.data_i (dma_pkt_i            )
-  ,.v_i    (dma_pkt_v_i          )
-  ,.v_o    (dma_pkt_fifo_valid_lo)
-  ,.data_o (dma_pkt_fifo_data_lo )
-  ,.yumi_i (dma_pkt_fifo_yumi_li )
+  for (i = 0; i < num_mem_p; i++)
+  begin: fifo
+    bsg_two_fifo
+   #(.width_p(bsg_cache_dma_pkt_width_lp))
+    dma_pkt_fifo
+    (.clk_i  (clk_i  )
+    ,.reset_i(reset_i)
+    ,.ready_o(dma_pkt_fifo_ready_lo[i])
+    ,.data_i (dma_pkt_i            [i])
+    ,.v_i    (dma_pkt_v_i          [i])
+    ,.v_o    (dma_pkt_fifo_valid_lo[i])
+    ,.data_o (dma_pkt_fifo_data_lo [i])
+    ,.yumi_i (dma_pkt_fifo_yumi_li [i])
+    );
+  end
+
+
+  /********************* Packet arbitration *********************/
+  
+  logic dma_pkt_rr_v_lo;
+  bsg_cache_dma_pkt_s dma_pkt_rr_lo;
+  logic [lg_num_mem_lp-1:0] dma_pkt_rr_tag_n, dma_pkt_rr_tag_r;
+  logic dma_pkt_rr_yumi_li;
+
+  bsg_round_robin_n_to_1 
+ #(.width_p (bsg_cache_dma_pkt_width_lp)
+  ,.num_in_p(num_mem_p)
+  ,.strict_p(0)
+  ) dma_pkt_rr 
+  (.clk_i   (clk_i)
+  ,.reset_i (reset_i)
+            
+  ,.data_i  (dma_pkt_fifo_data_lo)
+  ,.v_i     (dma_pkt_fifo_valid_lo)
+  ,.yumi_o  (dma_pkt_fifo_yumi_li)
+            
+  ,.v_o     (dma_pkt_rr_v_lo)
+  ,.data_o  (dma_pkt_rr_lo)
+  ,.tag_o   (dma_pkt_rr_tag_n)
+  ,.yumi_i  (dma_pkt_rr_yumi_li)
   );
+  
+  always_ff @(posedge clk_i)
+    if (reset_i)
+        dma_pkt_rr_tag_r <= '0;
+    else
+        if (dma_pkt_rr_yumi_li)
+            dma_pkt_rr_tag_r <= dma_pkt_rr_tag_n;
+            
+  logic [data_width_p-1:0] dma_data_li, dma_data_lo;
+  logic dma_data_v_li, dma_data_v_lo, dma_data_ready_li, dma_data_yumi_lo;
+  
+  always_comb
+  begin
+    dma_data_yumi_o = '0;
+    dma_data_v_o = '0;
+    dma_data_o = '0;
+    
+    dma_data_li = dma_data_i[dma_pkt_rr_tag_r];
+    dma_data_v_li = dma_data_v_i[dma_pkt_rr_tag_r];
+    dma_data_yumi_o[dma_pkt_rr_tag_r] = dma_data_yumi_lo;
+    
+    dma_data_o[dma_pkt_rr_tag_r] = dma_data_lo;
+    dma_data_v_o[dma_pkt_rr_tag_r] = dma_data_v_lo;
+    dma_data_ready_li = dma_data_ready_i[dma_pkt_rr_tag_r];
+  end
   
   
   /********************* cache DMA -> cce *********************/
@@ -143,8 +198,8 @@ module bsg_cache_dma_to_cce
     dma_state_n            = dma_state_r;
     count_n                = count_r;
     // send control
-    dma_pkt_fifo_yumi_li   = 1'b0;
-    dma_data_yumi_o        = 1'b0;
+    dma_pkt_rr_yumi_li   = 1'b0;
+    dma_data_yumi_lo        = 1'b0;
     mem_cmd_v_lo           = 1'b0;
     
     send_dma_pkt_n = send_dma_pkt_r;
@@ -157,19 +212,19 @@ module bsg_cache_dma_to_cce
       end
     READY:
       begin
-        if (dma_pkt_fifo_valid_lo)
+        if (dma_pkt_rr_v_lo)
           begin
-            send_dma_pkt_n = dma_pkt_fifo_data_lo;
-            dma_pkt_fifo_yumi_li = 1'b1;
-            dma_state_n = (dma_pkt_fifo_data_lo.write_not_read)? SEND_DATA : SEND;
+            send_dma_pkt_n = dma_pkt_rr_lo;
+            dma_pkt_rr_yumi_li = 1'b1;
+            dma_state_n = (dma_pkt_rr_lo.write_not_read)? SEND_DATA : SEND;
           end
       end
     SEND_DATA:
       begin
-        if (dma_data_v_i)
+        if (dma_data_v_li)
           begin
-            dma_data_yumi_o = 1'b1;
-            data_n = dma_data_i;
+            dma_data_yumi_lo = 1'b1;
+            data_n = dma_data_li;
             count_n = count_r + 1;
             if (count_r == block_size_in_words_p-1)
               begin
@@ -223,9 +278,9 @@ module bsg_cache_dma_to_cce
   ,.valid_i(piso_v_li)
   ,.data_i(mem_resp_li.data)
   ,.ready_o(piso_ready_lo)
-  ,.valid_o(dma_data_v_o)
-  ,.data_o(dma_data_o)
-  ,.yumi_i(dma_data_v_o & dma_data_ready_i)
+  ,.valid_o(dma_data_v_lo)
+  ,.data_o(dma_data_lo)
+  ,.yumi_i(dma_data_v_lo & dma_data_ready_li)
   );
   
   
