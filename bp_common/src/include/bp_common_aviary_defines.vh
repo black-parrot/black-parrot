@@ -135,6 +135,9 @@ typedef struct packed
   integer mem_noc_x_cord_width;
   integer mem_noc_y_dim;
   integer mem_noc_x_dim;
+  
+  integer vcache_ways;
+  integer vcache_sets;
 }  bp_proc_param_s;
 
 `define declare_bp_proc_params(bp_params_e_mp) \
@@ -200,6 +203,9 @@ typedef struct packed
   , localparam mem_noc_dirs_p            = mem_noc_dims_p*2 + 1                                    \
   , localparam int mem_noc_cord_markers_pos_p[mem_noc_dims_p:0] =                                  \
       '{mem_noc_cord_width_p, mem_noc_x_cord_width_p, 0}                                           \
+                                                                                                   \
+  , localparam vcache_ways_p             = proc_param_lp.vcache_ways                               \
+  , localparam vcache_sets_p             = proc_param_lp.vcache_sets                               \
                                                                                                    \
   , localparam num_mem_p     = mem_noc_x_dim_p                                                     \
   , localparam num_io_p      = mem_noc_x_dim_p + 2                                                 \

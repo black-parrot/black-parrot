@@ -18,8 +18,6 @@ module bp_addr_map
    , output [mem_noc_cid_width_p-1:0]  dst_cid_o
    );
 
-parameter vcache_sets_p = 64;
-
 localparam lg_num_mem_lp = `BSG_SAFE_CLOG2(num_mem_p);
 localparam lg_vcache_sets_lp = `BSG_SAFE_CLOG2(vcache_sets_p);
 localparam cache_line_offset_lp = `BSG_SAFE_CLOG2(cce_block_width_p) - `BSG_SAFE_CLOG2(8);

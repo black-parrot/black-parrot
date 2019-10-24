@@ -59,6 +59,9 @@ package bp_common_aviary_pkg;
       ,mem_noc_x_cord_width  : 8
       ,mem_noc_y_dim         : 1
       ,mem_noc_x_dim         : 1
+
+      ,vcache_ways         : 2
+      ,vcache_sets         : 64
       };
 
   localparam bp_proc_param_s bp_single_core_cfg_p = 
@@ -111,6 +114,9 @@ package bp_common_aviary_pkg;
       ,mem_noc_x_cord_width  : 8
       ,mem_noc_y_dim         : 1
       ,mem_noc_x_dim         : 1
+
+      ,vcache_ways         : 2
+      ,vcache_sets         : 64
       };
 
   localparam bp_proc_param_s bp_dual_core_cfg_p = 
@@ -163,6 +169,9 @@ package bp_common_aviary_pkg;
       ,mem_noc_x_cord_width  : 7
       ,mem_noc_y_dim         : 1
       ,mem_noc_x_dim         : 2
+
+      ,vcache_ways         : 2
+      ,vcache_sets         : 64
       };
 
   localparam bp_proc_param_s bp_quad_core_cfg_p = 
@@ -215,6 +224,9 @@ package bp_common_aviary_pkg;
       ,mem_noc_x_cord_width  : 6
       ,mem_noc_y_dim         : 2
       ,mem_noc_x_dim         : 2
+
+      ,vcache_ways         : 2
+      ,vcache_sets         : 64
       };
 
   localparam bp_proc_param_s bp_oct_core_cfg_p = 
@@ -267,6 +279,9 @@ package bp_common_aviary_pkg;
       ,mem_noc_x_cord_width  : 4
       ,mem_noc_y_dim         : 2
       ,mem_noc_x_dim         : 4
+
+      ,vcache_ways         : 2
+      ,vcache_sets         : 64
       };
 
   localparam bp_proc_param_s bp_sexta_core_cfg_p =
@@ -319,6 +334,9 @@ package bp_common_aviary_pkg;
       ,mem_noc_x_cord_width  : 4
       ,mem_noc_y_dim         : 4
       ,mem_noc_x_dim         : 4
+
+      ,vcache_ways         : 2
+      ,vcache_sets         : 64
       };
 
   typedef enum bit [lg_max_cfgs-1:0] 
