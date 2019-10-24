@@ -18,10 +18,20 @@ module bp_addr_map
    , output [mem_noc_cid_width_p-1:0]  dst_cid_o
    );
 
-// TODO: Currently, tiles are not writable and host is the same as DRAM
-//wire unused = &{host_cord_i};
+parameter vcache_sets_p = 64;
+
+localparam lg_num_mem_lp = `BSG_SAFE_CLOG2(num_mem_p);
+localparam lg_vcache_sets_lp = `BSG_SAFE_CLOG2(vcache_sets_p);
+localparam cache_line_offset_lp = `BSG_SAFE_CLOG2(cce_block_width_p) - `BSG_SAFE_CLOG2(8);
+localparam vcache_offset_lp = cache_line_offset_lp + lg_vcache_sets_lp;
 
 logic clint_not_dram, host_not_dram;
+logic [mem_noc_cord_width_p-1:0] cache_cord;
+
+if (num_mem_p == 1)
+    assign cache_cord = dram_cord_i;
+else
+    assign cache_cord = dram_cord_i + paddr_i[vcache_offset_lp+:lg_num_mem_lp];
 
 always_comb
   casez (paddr_i)
@@ -32,7 +42,7 @@ always_comb
   
 assign host_not_dram = (paddr_i < dram_base_addr_gp);
 
-assign dst_cord_o = clint_not_dram ? clint_cord_i : host_not_dram ? host_cord_i : dram_cord_i;
+assign dst_cord_o = clint_not_dram ? clint_cord_i : host_not_dram ? host_cord_i : cache_cord;
 assign dst_cid_o  = '0; // currently unused
 
 endmodule

@@ -45,9 +45,6 @@ module testbench
    , parameter dram_bp_params_p                = "dram_ch.ini"
    , parameter dram_sys_bp_params_p            = "dram_sys.ini"
    , parameter dram_capacity_p           = 16384
-   
-   , parameter vcache_ways_p                = 2
-   , parameter vcache_sets_p                = 64
    )
   (input clk_i
    , input reset_i
@@ -86,7 +83,7 @@ logic [num_io_p-1:0][mem_noc_cord_width_p-1:0]  io_cord_lo;
 
 assign clint_cord_lo[0+:mem_noc_x_cord_width_p]                      = clint_x_pos_p;
 assign clint_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
-assign dram_cord_lo[0+:mem_noc_x_cord_width_p]                      = mem_noc_x_dim_p;
+assign dram_cord_lo[0+:mem_noc_x_cord_width_p]                      = 1;
 assign dram_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = mem_noc_y_dim_p+1;
 assign host_cord_lo[0+:mem_noc_x_cord_width_p]                      = mem_noc_x_dim_p+2;
 assign host_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
