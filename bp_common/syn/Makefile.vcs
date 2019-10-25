@@ -2,6 +2,7 @@
 VPD2VCD          ?= vpd2vcd
 PYTHON           ?= python
 TRACEDIFF        ?= $(BP_COMMON_DIR)/software/py/tracediff.py
+MEM2NBF          ?= $(BP_COMMON_DIR)/software/py/nbf.py
 UNHARDWARE_DIR   ?= $(BP_EXTERNAL_DIR)/agile-unhardware
 UNHARDWARE_MODEL ?= blackparrot
 
@@ -100,6 +101,7 @@ sim.v: dirs.v
 	-@ln -sf $(BUILD_DIR)/simv $(SIM_DIR)/simv
 	-@ln -sf $(BUILD_DIR)/simv.daidir $(SIM_DIR)/simv.daidir
 	-@cp $(MEM_PATH)/$(PROG).mem $(SIM_DIR)/prog.mem
+	-@$(PYTHON) $(MEM2NBF) $(SIM_DIR)/prog.mem > $(SIM_DIR)/prog.nbf
 	-@cp $(MEM_PATH)/$(PROG).riscv $(SIM_DIR)/prog.elf
 	-@cp $(MEM_PATH)/$(PROG).dump $(SIM_DIR)/prog.dump
 	-@cp $(MEM_PATH)/$(PROG).spike $(SIM_DIR)/commit.spike
