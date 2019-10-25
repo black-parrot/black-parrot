@@ -204,12 +204,14 @@ typedef struct packed
   , localparam int mem_noc_cord_markers_pos_p[mem_noc_dims_p:0] =                                  \
       '{mem_noc_cord_width_p, mem_noc_x_cord_width_p, 0}                                           \
                                                                                                    \
-  , localparam vcache_ways_p             = proc_param_lp.vcache_ways                               \
-  , localparam vcache_sets_p             = proc_param_lp.vcache_sets                               \
-                                                                                                   \
   , localparam num_mem_p     = mem_noc_x_dim_p                                                     \
   , localparam num_io_p      = mem_noc_x_dim_p + 2                                                 \
   , localparam clint_x_pos_p = (mem_noc_x_dim_p+1)/2                                               \
+                                                                                                   \
+  , localparam vcache_ways_p             = proc_param_lp.vcache_ways                               \
+  , localparam vcache_sets_p             = proc_param_lp.vcache_sets                               \
+  , localparam vcache_sel_width_p        = $clog2(num_mem_p)                                       \
+  , localparam vcache_addr_width_p       = paddr_width_p - vcache_sel_width_p                      \
                                                                                                    \
   , localparam dword_width_p       = 64                                                            \
   , localparam instr_width_p       = 32                                                            \

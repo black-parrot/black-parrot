@@ -109,7 +109,7 @@ for (genvar i = 0; i < num_mem_p; i++)
   end
   
   
-`declare_bsg_cache_dma_pkt_s(paddr_width_p);
+`declare_bsg_cache_dma_pkt_s(vcache_addr_width_p);
     
 bsg_cache_dma_pkt_s [num_mem_p-1:0]        dma_pkt_lo;
 logic               [num_mem_p-1:0]        dma_pkt_v_lo;
@@ -471,7 +471,7 @@ bp_cce_mem_msg_s       true_dram_cmd_li;
 logic                  true_dram_cmd_v_li, true_dram_cmd_yumi_lo;
 
 bsg_cache_dma_to_cce
- #(.cache_addr_width_p(paddr_width_p)
+ #(.cache_addr_width_p(vcache_addr_width_p)
   ,.data_width_p (dword_width_p)
   ,.block_size_in_words_p(cce_block_width_p/dword_width_p)
   ,.bp_params_p(bp_params_p)

@@ -22,7 +22,7 @@ module bp_processor
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
    , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
-   , localparam bsg_cache_dma_pkt_width_lp = `bsg_cache_dma_pkt_width(paddr_width_p)
+   , localparam bsg_cache_dma_pkt_width_lp = `bsg_cache_dma_pkt_width(vcache_addr_width_p)
    )
   (input                                              core_clk_i
    , input                                            core_reset_i

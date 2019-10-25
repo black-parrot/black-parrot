@@ -19,9 +19,7 @@ module bp_addr_map
    );
 
 localparam lg_num_mem_lp = `BSG_SAFE_CLOG2(num_mem_p);
-localparam lg_vcache_sets_lp = `BSG_SAFE_CLOG2(vcache_sets_p);
-localparam cache_line_offset_lp = `BSG_SAFE_CLOG2(cce_block_width_p) - `BSG_SAFE_CLOG2(8);
-localparam vcache_offset_lp = cache_line_offset_lp + lg_vcache_sets_lp;
+localparam block_offset_width_lp = `BSG_SAFE_CLOG2(cce_block_width_p >> 3);
 
 logic clint_not_dram, host_not_dram;
 logic [mem_noc_cord_width_p-1:0] cache_cord;
@@ -29,7 +27,7 @@ logic [mem_noc_cord_width_p-1:0] cache_cord;
 if (num_mem_p == 1)
     assign cache_cord = dram_cord_i;
 else
-    assign cache_cord = dram_cord_i + paddr_i[vcache_offset_lp+:lg_num_mem_lp];
+    assign cache_cord = dram_cord_i + paddr_i[block_offset_width_lp+:lg_num_mem_lp];
 
 always_comb
   casez (paddr_i)

@@ -14,7 +14,7 @@ module bp_vcache_node
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
    , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
-   , localparam bsg_cache_dma_pkt_width_lp = `bsg_cache_dma_pkt_width(paddr_width_p)
+   , localparam bsg_cache_dma_pkt_width_lp = `bsg_cache_dma_pkt_width(vcache_addr_width_p)
    )
   (input                                                core_clk_i
    , input                                              core_reset_i
@@ -84,7 +84,7 @@ bp_me_cce_to_wormhole_link_client
   ,.resp_link_o(vcache_resp_link_lo)
   );
   
-`declare_bsg_cache_pkt_s(paddr_width_p, dword_width_p);
+`declare_bsg_cache_pkt_s(vcache_addr_width_p, dword_width_p);
 bsg_cache_pkt_s cache_pkt;
 logic cache_v_li;
 logic cache_ready_lo;
@@ -121,7 +121,7 @@ cce_to_cache
   // vcache
   //
   //
-bsg_cache #(.addr_width_p(paddr_width_p)
+bsg_cache #(.addr_width_p(vcache_addr_width_p)
            ,.data_width_p(dword_width_p)
            ,.block_size_in_words_p(cce_block_width_p/dword_width_p)
            ,.sets_p(vcache_sets_p)

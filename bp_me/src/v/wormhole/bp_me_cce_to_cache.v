@@ -30,7 +30,7 @@ module bp_me_cce_to_cache
     , parameter word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_p)
     , parameter data_mask_width_lp=(data_width_p>>3)
     , parameter byte_offset_width_lp=`BSG_SAFE_CLOG2(data_width_p>>3)
-    , parameter cache_addr_width_lp=addr_width_p
+    , parameter cache_addr_width_lp=vcache_addr_width_p
     , parameter block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
     
     , parameter bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(cache_addr_width_lp,data_width_p)
@@ -88,6 +88,10 @@ module bp_me_cce_to_cache
   
   assign mem_cmd = mem_cmd_i;
   assign mem_cmd_yumi_o = mem_cmd_yumi_lo;
+  
+  logic [cache_addr_width_lp-1:0] cmd_addr;
+  assign cmd_addr = {mem_cmd.addr[paddr_width_p-1:block_offset_width_lp+vcache_sel_width_p], 
+                     mem_cmd.addr[0+:block_offset_width_lp]};
   
   logic [block_size_in_words_p-1:0][dword_width_p-1:0] cmd_data;
   assign cmd_data = mem_cmd.data;
@@ -199,7 +203,7 @@ module bp_me_cce_to_cache
           default: cache_pkt.opcode = LB;
         endcase
         cache_pkt.data = cmd_data[cmd_counter_r];
-        cache_pkt.addr = mem_cmd.addr + cmd_counter_r*data_mask_width_lp;
+        cache_pkt.addr = cmd_addr + cmd_counter_r*data_mask_width_lp;
         case (mem_cmd.size)
           e_mem_size_1: cache_pkt.mask = data_mask_width_lp'(1'b1);
           e_mem_size_2: cache_pkt.mask = data_mask_width_lp'(2'b11);
