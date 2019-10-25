@@ -109,6 +109,7 @@ typedef enum {
   ,e_popq                        = 0x2   // Pop Queue
   ,e_poph                        = 0x3   // Pop Header
   ,e_specq                       = 0x4   // Modify speculative access bits
+  ,e_inv                         = 0x5   // Invalidate commands
 } bp_cce_inst_minor_queue_op_e;
 
 #define bp_cce_inst_minor_op_width 4

@@ -87,24 +87,7 @@ next_coh_set_m: movis M nextCohSt
 inv_check: bfz if upgrade_check
 
 # Invalidation Routine
-invalidate: movi 0 r0
-movsg numLCE r1
-movi 0 r2
-movi INV_ACK r3
-inv_top: bge r0 r1 inv_ack_top
-bsz shHitr0 inv_inc_lce
-bs reqLce r0 inv_inc_lce
-inc r2
-pushq lceCmd INV r0 req shWayR0
-wds req r0 shWayR0 I
-inv_inc_lce: inc r0
-bi inv_top
-inv_ack_top: bz r2 upgrade_check
-# pop the lce response
-inv_ack_pop: popq lceResp r4
-beqi r4 COH_ACK inv_ack_pop
-dec r2
-bi inv_ack_top
+invalidate: inv
 
 # Upgrade Check Routine
 upgrade_check: bfz uf set_entry

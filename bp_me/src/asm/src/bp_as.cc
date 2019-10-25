@@ -91,7 +91,7 @@ Assembler::getOp(const char* op) {
              || !strcmp("fence", op)) {
     return e_op_misc;
   } else if (!strcmp("wfq", op) || !strcmp("pushq", op) || !strcmp("popq", op)
-             || !strcmp("poph", op) || !strcmp("specq", op)) {
+             || !strcmp("poph", op) || !strcmp("specq", op) || !strcmp("inv", op)) {
     return e_op_queue;
   } else {
     printf("Bad Op: %s\n", op);
@@ -186,6 +186,8 @@ Assembler::getMinorOp(const char* op) {
     return e_poph;
   } else if (!strcmp("specq", op)) {
     return e_specq;
+  } else if (!strcmp("inv", op)) {
+    return e_inv;
   } else {
     printf("Bad Minor Op: %s\n", op);
     exit(-1);
@@ -1076,6 +1078,8 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
     if (tokens->size() > 2) {
       inst->type_u.queue_op_s.op.specq.state = (uint8_t)parseCohStImm(tokens->at(2));
     }
+  } else if (inst->minor_op == e_inv) {
+    // do nothing
   } else {
     printf("Unknown Queue instruction: %d\n", tokens->at(0).c_str());
     exit(-1);
@@ -1357,6 +1361,8 @@ Assembler::writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &
         printShortField(inst->type_u.queue_op_s.op.specq.cmd, bp_cce_inst_spec_cmd_width, ss);
         printShortField(inst->type_u.queue_op_s.op.specq.state, bp_cce_coh_bits, ss);
         printPad(bp_cce_inst_specq_pad, ss);
+      } else if (inst->minor_op == e_inv) {
+        printPad(bp_cce_inst_type_u_width, ss);
       }
       break;
     default:

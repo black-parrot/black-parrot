@@ -57,6 +57,9 @@ module bp_cce_pc
    // Directory busy signal
    , input                                       dir_busy_i
 
+   // Msg Inv busy signal
+   , input                                       inv_busy_i
+
    // control from decode
    , input                                       pc_stall_i
    , input [cce_pc_width_p-1:0]                  pc_branch_target_i
@@ -160,7 +163,7 @@ module bp_cce_pc
         // The PC stalls and the current instruction is presented in the next cycle if
         // the decoder stalls execution, the directory is finishing a read, or the invalidtion
         // instruction is still executing.
-        if (pc_stall_i | dir_busy_i) begin
+        if (pc_stall_i | dir_busy_i | inv_busy_i) begin
           // when stalling, hold executing pc and ram addr registers constant
           ex_pc_n = ex_pc_r;
           // feed the currently executing pc as input to instruction ram

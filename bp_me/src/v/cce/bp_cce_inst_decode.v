@@ -441,6 +441,28 @@ module bp_cce_inst_decode
             end
 
           end
+          if (minor_op_u.queue_minor_op == e_inv_op) begin
+            decoded_inst_o.inv_cmd_v = 1'b1;
+
+            // invalidation op performs a write directory state operation
+            // WG = request address
+            // LCE = from INV unit
+            // WAY = from INV unit
+            // Coherence State = Invalid (immediate)
+
+            decoded_inst_o.dir_op = e_wds_op;
+
+            // Directory input mux selects
+            decoded_inst_o.dir_way_group_sel = e_dir_wg_sel_req_addr;
+            decoded_inst_o.dir_lce_sel = e_dir_lce_sel_inv;
+            decoded_inst_o.dir_way_sel = e_dir_way_sel_inv;
+            decoded_inst_o.dir_coh_state_sel = e_dir_coh_sel_inst_imm;
+            decoded_inst_o.imm[0+:`bp_coh_bits] = e_COH_I;
+
+            decoded_inst_o.lce_cmd = e_lce_cmd_invalidate_tag;
+            decoded_inst_o.lce_cmd_addr_sel = e_lce_cmd_addr_req_addr;
+
+          end
           if ((minor_op_u.queue_minor_op == e_popq_op)
               | (minor_op_u.queue_minor_op == e_poph_op)) begin
 

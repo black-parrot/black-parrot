@@ -192,6 +192,10 @@ module bp_cce
   logic                                          fence_zero_lo;
   logic                                          pending_w_busy_from_msg;
   logic                                          lce_cmd_busy_from_msg;
+  logic                                          msg_inv_busy_lo;
+  logic                                          msg_dir_w_v_lo;
+  logic [lg_num_lce_lp-1:0]                      inv_dir_lce_lo;
+  logic [lg_lce_assoc_lp-1:0]                    inv_dir_way_lo;
 
   // PC Logic, Instruction RAM
   bp_cce_pc
@@ -206,6 +210,8 @@ module bp_cce
       ,.alu_branch_res_i(alu_branch_res_lo)
 
       ,.dir_busy_i(dir_busy_lo)
+
+      ,.inv_busy_i(msg_inv_busy_lo)
 
       ,.pc_stall_i(pc_stall_lo)
       ,.pc_branch_target_i(pc_branch_target_lo)
@@ -304,7 +310,7 @@ module bp_cce
       ,.coh_state_i(dir_coh_state_li)
 
       ,.w_cmd_i(decoded_inst_lo.dir_op)
-      ,.w_v_i(decoded_inst_lo.dir_w_v)
+      ,.w_v_i(decoded_inst_lo.dir_w_v | msg_dir_w_v_lo)
       ,.w_clr_wg_i('0)
 
       ,.sharers_v_o(sharers_v_lo)
@@ -448,12 +454,19 @@ module bp_cce
 
       ,.pending_w_busy_o(pending_w_busy_from_msg)
       ,.lce_cmd_busy_o(lce_cmd_busy_from_msg)
+      ,.msg_inv_busy_o(msg_inv_busy_lo)
 
       ,.gpr_i(gpr_r_lo)
+      ,.sharers_hits_i(sharers_hits_lo)
       ,.sharers_ways_i(sharers_ways_lo)
       ,.nc_data_i(nc_data_r_lo)
 
       ,.fence_zero_o(fence_zero_lo)
+
+      ,.lce_id_o(inv_dir_lce_lo)
+      ,.lce_way_o(inv_dir_way_lo)
+
+      ,.dir_w_v_o(msg_dir_w_v_lo)
       );
 
 
@@ -510,6 +523,7 @@ module bp_cce
       e_dir_lce_sel_r7: dir_lce_li = gpr_r_lo[e_gpr_r7][lg_num_lce_lp-1:0];
       e_dir_lce_sel_req_lce: dir_lce_li = mshr.lce_id;
       e_dir_lce_sel_transfer_lce: dir_lce_li = mshr.tr_lce_id;
+      e_dir_lce_sel_inv: dir_lce_li = inv_dir_lce_lo;
       default: dir_lce_li = '0;
     endcase
     case (decoded_inst_lo.dir_way_sel)
@@ -524,6 +538,7 @@ module bp_cce
       e_dir_way_sel_req_addr_way: dir_way_li = mshr.way_id;
       e_dir_way_sel_lru_way_addr_way: dir_way_li = mshr.lru_way_id;
       e_dir_way_sel_sh_way_r0: dir_way_li = sharers_ways_lo[gpr_r_lo[e_gpr_r0][lg_num_lce_lp-1:0]];
+      e_dir_way_sel_inv: dir_way_li = inv_dir_way_lo;
       default: dir_way_li = '0;
     endcase
     case (decoded_inst_lo.dir_coh_state_sel)
