@@ -15,7 +15,7 @@
 -- Constants
 ----------------------------------------------------------------------
 const
-  ProcCount: 2;          -- number processors
+  ProcCount: CFG_PROCS;  -- number processors
   ValueCount: 2;         -- number of data values.
   VC0: 0;                -- low priority - LCE Req
   VC1: 1;                -- LCE Cmd

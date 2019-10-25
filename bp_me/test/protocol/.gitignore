@@ -1,3 +1,5 @@
+bin/
+build/
+results/
+*.tar.gz
 *.o
-mesi
-mesi.cpp
