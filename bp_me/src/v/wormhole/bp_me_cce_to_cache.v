@@ -197,23 +197,34 @@ module bp_me_cce_to_cache
         case (mem_cmd.msg_type)
           e_cce_mem_rd
           ,e_cce_mem_wr
-          ,e_cce_mem_uc_rd: cache_pkt.opcode = LM;
+          ,e_cce_mem_uc_rd:
+            case (mem_cmd.size)
+              e_mem_size_1: cache_pkt.opcode = LB;
+              e_mem_size_2: cache_pkt.opcode = LH;
+              e_mem_size_4: cache_pkt.opcode = LW;
+              e_mem_size_8
+              ,e_mem_size_16
+              ,e_mem_size_32
+              ,e_mem_size_64: cache_pkt.opcode = LM;
+              default: cache_pkt.opcode = LB;
+            endcase
           e_cce_mem_uc_wr
-          ,e_cce_mem_wb   : cache_pkt.opcode = SM;
+          ,e_cce_mem_wb   :
+            case (mem_cmd.size)
+              e_mem_size_1: cache_pkt.opcode = SB;
+              e_mem_size_2: cache_pkt.opcode = SH;
+              e_mem_size_4: cache_pkt.opcode = SW;
+              e_mem_size_8
+              ,e_mem_size_16
+              ,e_mem_size_32
+              ,e_mem_size_64: cache_pkt.opcode = SM;
+              default: cache_pkt.opcode = LB;
+            endcase
           default: cache_pkt.opcode = LB;
         endcase
         cache_pkt.data = cmd_data[cmd_counter_r];
         cache_pkt.addr = cmd_addr + cmd_counter_r*data_mask_width_lp;
-        case (mem_cmd.size)
-          e_mem_size_1: cache_pkt.mask = data_mask_width_lp'(1'b1);
-          e_mem_size_2: cache_pkt.mask = data_mask_width_lp'(2'b11);
-          e_mem_size_4: cache_pkt.mask = data_mask_width_lp'(4'b1111);
-          e_mem_size_8
-          ,e_mem_size_16
-          ,e_mem_size_32
-          ,e_mem_size_64: cache_pkt.mask = '1;
-          default: cache_pkt.mask = '0;
-        endcase
+        cache_pkt.mask = '1;
         if (ready_i)
           begin
             cmd_counter_n = cmd_counter_r + 1;
