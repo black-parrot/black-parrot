@@ -31,17 +31,17 @@ module bp_mem_complex
 
    // TODO DMC channels
    //, input [num_mem_p-1:0]   ....
-   , output logic [num_mem_p-1:0][bsg_cache_dma_pkt_width_lp-1:0] dma_pkt_o
-   , output logic [num_mem_p-1:0] dma_pkt_v_o
-   , input [num_mem_p-1:0] dma_pkt_yumi_i
+   , output logic [num_mem_p-1:0][bsg_cache_dma_pkt_width_lp-1:0]      dma_pkt_o
+   , output logic [num_mem_p-1:0]                                      dma_pkt_v_o
+   , input        [num_mem_p-1:0]                                      dma_pkt_yumi_i
      
-   , input [num_mem_p-1:0][dword_width_p-1:0] dma_data_i
-   , input [num_mem_p-1:0] dma_data_v_i
-   , output logic [num_mem_p-1:0] dma_data_ready_o
+   , input        [num_mem_p-1:0][dword_width_p-1:0]                   dma_data_i
+   , input        [num_mem_p-1:0]                                      dma_data_v_i
+   , output logic [num_mem_p-1:0]                                      dma_data_ready_o
      
-   , output logic [num_mem_p-1:0][dword_width_p-1:0] dma_data_o
-   , output logic [num_mem_p-1:0] dma_data_v_o
-   , input [num_mem_p-1:0] dma_data_yumi_i
+   , output logic [num_mem_p-1:0][dword_width_p-1:0]                   dma_data_o
+   , output logic [num_mem_p-1:0]                                      dma_data_v_o
+   , input        [num_mem_p-1:0]                                      dma_data_yumi_i
    );
 
 `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
@@ -58,32 +58,32 @@ for (genvar i = 0; i < num_mem_p; i++)
     bp_vcache_node
      #(.bp_params_p(bp_params_p))
      vcache
-      (.core_clk_i(core_clk_i)
-       ,.core_reset_i(core_reset_i)
-
-       ,.mem_clk_i(mem_clk_i)
-       ,.mem_reset_i(mem_reset_i)
-
-       ,.my_cord_i(mem_cord_i[i])
-
-       ,.mem_cmd_link_i(cmd_link_li[i])
-       ,.mem_cmd_link_o(cmd_link_lo[i])
-
-       ,.mem_resp_link_i(resp_link_li[i])
-       ,.mem_resp_link_o(resp_link_lo[i])
+      (.core_clk_i       (core_clk_i)
+       ,.core_reset_i    (core_reset_i)
+                         
+       ,.mem_clk_i       (mem_clk_i)
+       ,.mem_reset_i     (mem_reset_i)
+                         
+       ,.my_cord_i       (mem_cord_i[i])
+                         
+       ,.mem_cmd_link_i  (cmd_link_li[i])
+       ,.mem_cmd_link_o  (cmd_link_lo[i])
+                         
+       ,.mem_resp_link_i (resp_link_li[i])
+       ,.mem_resp_link_o (resp_link_lo[i])
 
        // TOOD: Add DMC link[i]
-       ,.dma_pkt_o(dma_pkt_o[i])
-       ,.dma_pkt_v_o(dma_pkt_v_o[i])
-       ,.dma_pkt_yumi_i(dma_pkt_yumi_i[i])
+       ,.dma_pkt_o       (dma_pkt_o[i])
+       ,.dma_pkt_v_o     (dma_pkt_v_o[i])
+       ,.dma_pkt_yumi_i  (dma_pkt_yumi_i[i])
        
-       ,.dma_data_i(dma_data_i[i])
-       ,.dma_data_v_i(dma_data_v_i[i])
+       ,.dma_data_i      (dma_data_i[i])
+       ,.dma_data_v_i    (dma_data_v_i[i])
        ,.dma_data_ready_o(dma_data_ready_o[i])
        
-       ,.dma_data_o(dma_data_o[i])
-       ,.dma_data_v_o(dma_data_v_o[i])
-       ,.dma_data_yumi_i(dma_data_yumi_i[i])
+       ,.dma_data_o      (dma_data_o[i])
+       ,.dma_data_v_o    (dma_data_v_o[i])
+       ,.dma_data_yumi_i (dma_data_yumi_i[i])
        );
   end
 

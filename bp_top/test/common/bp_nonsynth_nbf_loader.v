@@ -47,8 +47,8 @@ module bp_nonsynth_nbf_loader
   // bp_nbf packet
   typedef struct packed {
     logic [nbf_opcode_width_p-1:0] opcode;
-    logic [nbf_addr_width_p-1:0] addr;
-    logic [nbf_data_width_p-1:0] data;
+    logic [nbf_addr_width_p-1:0]   addr;
+    logic [nbf_data_width_p-1:0]   data;
   } bp_nbf_s;
 
   // bp_cce packet

@@ -1,9 +1,11 @@
 #
-#   nbf.py
+# nbf.py
 #
-#   MEM (.mem) to Network Boot Format (.nbf)
+# MEM (.mem) to Network Boot Format (.nbf)
+# bp_nonsynth_nbf_loader.v utilizes this CCE tracing file to load program to chip
+# 
+# Please update self.addr_width and self.block_size to match testbench
 #
-
 
 import sys
 import math

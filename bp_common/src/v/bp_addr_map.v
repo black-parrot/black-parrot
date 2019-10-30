@@ -4,6 +4,8 @@ module bp_addr_map
  import bp_common_aviary_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
+   , localparam lg_num_mem_lp = `BSG_SAFE_CLOG2(num_mem_p)
+   , localparam block_offset_width_lp = `BSG_SAFE_CLOG2(cce_block_width_p >> 3)
    )
   (// Destination nodes address
    input [mem_noc_cord_width_p-1:0]    clint_cord_i
@@ -18,16 +20,14 @@ module bp_addr_map
    , output [mem_noc_cid_width_p-1:0]  dst_cid_o
    );
 
-localparam lg_num_mem_lp = `BSG_SAFE_CLOG2(num_mem_p);
-localparam block_offset_width_lp = `BSG_SAFE_CLOG2(cce_block_width_p >> 3);
-
 logic clint_not_dram, host_not_dram;
-logic [mem_noc_cord_width_p-1:0] cache_cord;
+logic [mem_noc_cord_width_p-1:0] cache_cord_lo;
 
+// Map addresses to specific vcache
 if (num_mem_p == 1)
-    assign cache_cord = dram_cord_i;
+    assign cache_cord_lo = dram_cord_i;
 else
-    assign cache_cord = dram_cord_i + paddr_i[block_offset_width_lp+:lg_num_mem_lp];
+    assign cache_cord_lo = dram_cord_i + paddr_i[block_offset_width_lp+:lg_num_mem_lp];
 
 always_comb
   casez (paddr_i)
@@ -38,7 +38,7 @@ always_comb
   
 assign host_not_dram = (paddr_i < dram_base_addr_gp);
 
-assign dst_cord_o = clint_not_dram ? clint_cord_i : host_not_dram ? host_cord_i : cache_cord;
+assign dst_cord_o = clint_not_dram ? clint_cord_i : host_not_dram ? host_cord_i : cache_cord_lo;
 assign dst_cid_o  = '0; // currently unused
 
 endmodule

@@ -57,16 +57,6 @@ module testbench
 bsg_ready_and_link_sif_s [S:P] cmd_link_li, cmd_link_lo;
 bsg_ready_and_link_sif_s [S:P] resp_link_li, resp_link_lo;
 
-bp_cce_mem_msg_s       mem_resp_li;
-logic                  mem_resp_v_li, mem_resp_ready_lo;
-bp_cce_mem_msg_s       mem_cmd_lo;
-logic                  mem_cmd_v_lo, mem_cmd_yumi_li;
-
-bp_cce_mem_msg_s       dram_resp_lo;
-logic                  dram_resp_v_lo, dram_resp_ready_li;
-bp_cce_mem_msg_s       dram_cmd_li;
-logic                  dram_cmd_v_li, dram_cmd_yumi_lo;
-
 bp_cce_mem_msg_s       host_resp_lo;
 logic                  host_resp_v_lo, host_resp_ready_li;
 bp_cce_mem_msg_s       host_cmd_li;
@@ -343,7 +333,8 @@ bind bp_be_top
         ,.mem_cmd_v_i(mem_cmd_v_o)
         ,.mem_cmd_ready_i(mem_cmd_ready_i)
         );
-        
+  
+  // Wormhole routers in testbench
   bsg_wormhole_router
    #(.flit_width_p(mem_noc_flit_width_p)
      ,.dims_p(mem_noc_dims_p)
@@ -380,7 +371,7 @@ bind bp_be_top
   assign cmd_link_li[S:N] = '0;
   assign resp_link_li[S:N] = '0;
    
-  // nbf loader node
+  // nbf loader node, attached to east of routers
   logic nbf_done_lo;
   
   bp_nbf_loader_node
@@ -421,13 +412,13 @@ bp_me_cce_to_wormhole_link_bidir
   ,.mem_resp_v_o(cfg_resp_v_li)
   ,.mem_resp_yumi_i(cfg_resp_ready_lo & cfg_resp_v_li)
 
-  ,.mem_cmd_o(mem_cmd_lo)
-  ,.mem_cmd_v_o(mem_cmd_v_lo)
-  ,.mem_cmd_yumi_i(mem_cmd_yumi_li)
+  ,.mem_cmd_o(host_cmd_li)
+  ,.mem_cmd_v_o(host_cmd_v_li)
+  ,.mem_cmd_yumi_i(host_cmd_yumi_lo)
 
-  ,.mem_resp_i(mem_resp_li)
-  ,.mem_resp_v_i(mem_resp_v_li)
-  ,.mem_resp_ready_o(mem_resp_ready_lo)
+  ,.mem_resp_i(host_resp_lo)
+  ,.mem_resp_v_i(host_resp_v_lo)
+  ,.mem_resp_ready_o(host_resp_ready_li)
 
   ,.my_cord_i(host_cord_lo)
   ,.my_cid_i(mem_noc_cid_width_p'(0))
@@ -441,23 +432,13 @@ bp_me_cce_to_wormhole_link_bidir
   ,.resp_link_o(resp_link_li[P])
   );
 
-
-// Stub
-assign dram_resp_lo = '0;
-assign dram_resp_v_lo = 1'b0;
-assign dram_cmd_yumi_lo = dram_cmd_v_li;
-
 bp_cce_mem_msg_s       true_dram_resp_lo;
 logic                  true_dram_resp_v_lo, true_dram_resp_ready_li;
 bp_cce_mem_msg_s       true_dram_cmd_li;
 logic                  true_dram_cmd_v_li, true_dram_cmd_yumi_lo;
 
 bp_me_cache_dma_to_cce
- #(.cache_addr_width_p(vcache_addr_width_p)
-  ,.data_width_p (dword_width_p)
-  ,.block_size_in_words_p(cce_block_width_p/dword_width_p)
-  ,.bp_params_p(bp_params_p)
-  )
+ #(.bp_params_p(bp_params_p))
 dma_to_cce
   (.clk_i(clk_i)
   ,.reset_i(reset_i)
@@ -536,35 +517,6 @@ bp_nonsynth_if_verif
  #(.bp_params_p(bp_params_p))
  if_verif
   ();
-
-// MMIO arbitration 
-//   Should this be on its own I/O router?
-logic req_outstanding_r;
-bsg_dff_reset_en
- #(.width_p(1))
- req_outstanding_reg
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.en_i(mem_cmd_yumi_li | (mem_resp_v_li & mem_resp_ready_lo))
-
-   ,.data_i(mem_cmd_yumi_li)
-   ,.data_o(req_outstanding_r)
-   );
-
-wire host_cmd_not_dram      = mem_cmd_v_lo & (mem_cmd_lo.addr < dram_base_addr_gp);
-
-assign host_cmd_li          = mem_cmd_lo;
-assign host_cmd_v_li        = mem_cmd_v_lo & host_cmd_not_dram & ~req_outstanding_r;
-assign dram_cmd_li          = mem_cmd_lo;
-assign dram_cmd_v_li        = mem_cmd_v_lo & ~host_cmd_not_dram & ~req_outstanding_r;
-assign mem_cmd_yumi_li      = host_cmd_not_dram 
-                              ? host_cmd_yumi_lo 
-                              : dram_cmd_yumi_lo;
-
-assign mem_resp_li = host_resp_v_lo ? host_resp_lo : dram_resp_lo;
-assign mem_resp_v_li = host_resp_v_lo | dram_resp_v_lo;
-assign host_resp_ready_li = mem_resp_ready_lo;
-assign dram_resp_ready_li = mem_resp_ready_lo;
 
 localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
 bp_cce_mmio_cfg_loader

@@ -23,10 +23,10 @@ module bp_nbf_loader_node
   ,input  reset_i
   ,output done_o
 
-  ,input   [mem_noc_cord_width_p-1:0]        my_cord_i
-  ,input   [mem_noc_cord_width_p-1:0]        dram_cord_i
-  ,input   [mem_noc_cord_width_p-1:0]        host_cord_i
-  ,input   [mem_noc_cord_width_p-1:0]        clint_cord_i
+  ,input   [mem_noc_cord_width_p-1:0]            my_cord_i
+  ,input   [mem_noc_cord_width_p-1:0]            dram_cord_i
+  ,input   [mem_noc_cord_width_p-1:0]            host_cord_i
+  ,input   [mem_noc_cord_width_p-1:0]            clint_cord_i
   
   // bsg_noc_wormhole interface
   , input  [bsg_ready_and_link_sif_width_lp-1:0] cmd_link_i

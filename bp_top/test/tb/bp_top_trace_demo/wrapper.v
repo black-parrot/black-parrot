@@ -51,16 +51,16 @@ module wrapper
    
    // TODO: DMC Channels
    , output logic [num_mem_p-1:0][bsg_cache_dma_pkt_width_lp-1:0] dma_pkt_o
-   , output logic [num_mem_p-1:0] dma_pkt_v_o
-   , input [num_mem_p-1:0] dma_pkt_yumi_i
+   , output logic [num_mem_p-1:0]                                 dma_pkt_v_o
+   , input        [num_mem_p-1:0]                                 dma_pkt_yumi_i
      
-   , input [num_mem_p-1:0][dword_width_p-1:0] dma_data_i
-   , input [num_mem_p-1:0] dma_data_v_i
-   , output logic [num_mem_p-1:0] dma_data_ready_o
+   , input        [num_mem_p-1:0][dword_width_p-1:0]              dma_data_i
+   , input        [num_mem_p-1:0]                                 dma_data_v_i
+   , output logic [num_mem_p-1:0]                                 dma_data_ready_o
      
-   , output logic [num_mem_p-1:0][dword_width_p-1:0] dma_data_o
-   , output logic [num_mem_p-1:0] dma_data_v_o
-   , input [num_mem_p-1:0] dma_data_yumi_i
+   , output logic [num_mem_p-1:0][dword_width_p-1:0]              dma_data_o
+   , output logic [num_mem_p-1:0]                                 dma_data_v_o
+   , input        [num_mem_p-1:0]                                 dma_data_yumi_i
    );
 
   bp_processor

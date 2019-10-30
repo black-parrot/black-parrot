@@ -53,17 +53,17 @@ module bp_processor
    , output [bsg_ready_and_link_sif_width_lp-1:0]     next_resp_link_o
 
    // TODO: DMC Channels
-   , output logic [num_mem_p-1:0][bsg_cache_dma_pkt_width_lp-1:0] dma_pkt_o
-   , output logic [num_mem_p-1:0] dma_pkt_v_o
-   , input [num_mem_p-1:0] dma_pkt_yumi_i
+   , output logic [num_mem_p-1:0][bsg_cache_dma_pkt_width_lp-1:0]      dma_pkt_o
+   , output logic [num_mem_p-1:0]                                      dma_pkt_v_o
+   , input        [num_mem_p-1:0]                                      dma_pkt_yumi_i
      
-   , input [num_mem_p-1:0][dword_width_p-1:0] dma_data_i
-   , input [num_mem_p-1:0] dma_data_v_i
-   , output logic [num_mem_p-1:0] dma_data_ready_o
+   , input        [num_mem_p-1:0][dword_width_p-1:0]                   dma_data_i
+   , input        [num_mem_p-1:0]                                      dma_data_v_i
+   , output logic [num_mem_p-1:0]                                      dma_data_ready_o
      
-   , output logic [num_mem_p-1:0][dword_width_p-1:0] dma_data_o
-   , output logic [num_mem_p-1:0] dma_data_v_o
-   , input [num_mem_p-1:0] dma_data_yumi_i
+   , output logic [num_mem_p-1:0][dword_width_p-1:0]                   dma_data_o
+   , output logic [num_mem_p-1:0]                                      dma_data_v_o
+   , input        [num_mem_p-1:0]                                      dma_data_yumi_i
    );
 
 `declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
@@ -141,32 +141,32 @@ bp_io_complex
 bp_mem_complex
  #(.bp_params_p(bp_params_p))
  mc
-  (.core_clk_i(core_clk_i)
-   ,.core_reset_i(core_reset_i)
+  (.core_clk_i       (core_clk_i)
+   ,.core_reset_i    (core_reset_i)
 
-   ,.mem_clk_i(mem_clk_i)
-   ,.mem_reset_i(mem_reset_i)
+   ,.mem_clk_i       (mem_clk_i)
+   ,.mem_reset_i     (mem_reset_i)
    
-   ,.mem_cord_i(mem_cord_i)
+   ,.mem_cord_i      (mem_cord_i)
 
-   ,.mem_cmd_link_i(mem_cmd_link_lo[S])
-   ,.mem_cmd_link_o(mem_cmd_link_li[S])
+   ,.mem_cmd_link_i  (mem_cmd_link_lo[S])
+   ,.mem_cmd_link_o  (mem_cmd_link_li[S])
 
-   ,.mem_resp_link_i(mem_resp_link_lo[S])
-   ,.mem_resp_link_o(mem_resp_link_li[S])
+   ,.mem_resp_link_i (mem_resp_link_lo[S])
+   ,.mem_resp_link_o (mem_resp_link_li[S])
 
    // TODO: DMC Channels
-   ,.dma_pkt_o(dma_pkt_o)
-   ,.dma_pkt_v_o(dma_pkt_v_o)
-   ,.dma_pkt_yumi_i(dma_pkt_yumi_i)
+   ,.dma_pkt_o       (dma_pkt_o)
+   ,.dma_pkt_v_o     (dma_pkt_v_o)
+   ,.dma_pkt_yumi_i  (dma_pkt_yumi_i)
    
-   ,.dma_data_i(dma_data_i)
-   ,.dma_data_v_i(dma_data_v_i)
+   ,.dma_data_i      (dma_data_i)
+   ,.dma_data_v_i    (dma_data_v_i)
    ,.dma_data_ready_o(dma_data_ready_o)
    
-   ,.dma_data_o(dma_data_o)
-   ,.dma_data_v_o(dma_data_v_o)
-   ,.dma_data_yumi_i(dma_data_yumi_i)
+   ,.dma_data_o      (dma_data_o)
+   ,.dma_data_v_o    (dma_data_v_o)
+   ,.dma_data_yumi_i (dma_data_yumi_i)
    );
 
 endmodule

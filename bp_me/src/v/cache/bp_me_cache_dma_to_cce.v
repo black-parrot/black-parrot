@@ -16,17 +16,13 @@ module bp_me_cache_dma_to_cce
   
   import bsg_cache_pkg::*;
   
- #(// cache dma configuration
-   parameter cache_addr_width_p                 = "inv"
-  ,parameter data_width_p                       = "inv"
-  ,parameter block_size_in_words_p              = "inv"
-
-  ,parameter bp_params_e bp_params_p = e_bp_inv_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
   `declare_bp_proc_params(bp_params_p)
   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
   
+  ,localparam block_size_in_words_lp = cce_block_width_p / dword_width_p
   ,localparam block_offset_width_lp = `BSG_SAFE_CLOG2(cce_block_width_p >> 3)
-  ,localparam bsg_cache_dma_pkt_width_lp = `bsg_cache_dma_pkt_width(cache_addr_width_p)
+  ,localparam bsg_cache_dma_pkt_width_lp = `bsg_cache_dma_pkt_width(vcache_addr_width_p)
   ,localparam lg_num_mem_lp = `BSG_SAFE_CLOG2(num_mem_p)
   )
   
@@ -38,19 +34,19 @@ module bp_me_cache_dma_to_cce
   ,input        [num_mem_p-1:0]                                   dma_pkt_v_i
   ,output logic [num_mem_p-1:0]                                   dma_pkt_yumi_o
   // Sending cache block                                          
-  ,input        [num_mem_p-1:0][data_width_p-1:0]                 dma_data_i
+  ,input        [num_mem_p-1:0][dword_width_p-1:0]                dma_data_i
   ,input        [num_mem_p-1:0]                                   dma_data_v_i
   ,output logic [num_mem_p-1:0]                                   dma_data_yumi_o
   // Receiving cache block                                        
-  ,output logic [num_mem_p-1:0][data_width_p-1:0]                 dma_data_o
+  ,output logic [num_mem_p-1:0][dword_width_p-1:0]                dma_data_o
   ,output logic [num_mem_p-1:0]                                   dma_data_v_o
   ,input        [num_mem_p-1:0]                                   dma_data_ready_i
 
-  ,output [cce_mem_msg_width_lp-1:0]                              mem_cmd_o
+  ,output       [cce_mem_msg_width_lp-1:0]                        mem_cmd_o
   ,output                                                         mem_cmd_v_o
   ,input                                                          mem_cmd_yumi_i
   
-  ,input  [cce_mem_msg_width_lp-1:0]                              mem_resp_i
+  ,input        [cce_mem_msg_width_lp-1:0]                        mem_resp_i
   ,input                                                          mem_resp_v_i
   ,output                                                         mem_resp_ready_o
   );
@@ -61,7 +57,7 @@ module bp_me_cache_dma_to_cce
   /********************* Packet definition *********************/
   
   // Define cache DMA packet
-  `declare_bsg_cache_dma_pkt_s(cache_addr_width_p);
+  `declare_bsg_cache_dma_pkt_s(vcache_addr_width_p);
   
   // cce
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
@@ -123,11 +119,11 @@ module bp_me_cache_dma_to_cce
   bsg_dff_reset_en
  #(.width_p(lg_num_mem_lp)
   ) dffre
-  (.clk_i(clk_i)
+  (.clk_i  (clk_i)
   ,.reset_i(reset_i)
-  ,.en_i(dma_pkt_rr_yumi_li)
-  ,.data_i(dma_pkt_rr_tag_n)
-  ,.data_o(dma_pkt_rr_tag_r)
+  ,.en_i   (dma_pkt_rr_yumi_li)
+  ,.data_i (dma_pkt_rr_tag_n)
+  ,.data_o (dma_pkt_rr_tag_r)
   );
   
   logic arbiter_fifo_ready_lo, arbiter_fifo_valid_lo, arbiter_fifo_yumi_li;
@@ -135,8 +131,8 @@ module bp_me_cache_dma_to_cce
   
   bsg_fifo_1r1w_small
  #(.width_p(lg_num_mem_lp)
-  ,.els_p(8))
-  arbiter_fifo
+  ,.els_p  (8)
+  ) arbiter_fifo
   (.clk_i  (clk_i  )
   ,.reset_i(reset_i)
   ,.ready_o(arbiter_fifo_ready_lo)
@@ -147,7 +143,7 @@ module bp_me_cache_dma_to_cce
   ,.yumi_i (arbiter_fifo_yumi_li)
   );
             
-  logic [data_width_p-1:0] dma_data_li, dma_data_lo;
+  logic [dword_width_p-1:0] dma_data_li, dma_data_lo;
   logic dma_data_v_li, dma_data_v_lo, dma_data_ready_li, dma_data_yumi_lo;
   
   always_comb
@@ -170,8 +166,8 @@ module bp_me_cache_dma_to_cce
   
   // send cache DMA packet
   bsg_cache_dma_pkt_s send_dma_pkt_n, send_dma_pkt_r;
-  logic [data_width_p-1:0] data_n;
-  logic [block_size_in_words_p-1:0][data_width_p-1:0] data_r ;
+  logic [dword_width_p-1:0] data_n;
+  logic [block_size_in_words_lp-1:0][dword_width_p-1:0] data_r ;
   
   logic mem_cmd_v_lo;
   bp_cce_mem_msg_s mem_cmd_lo;
@@ -221,8 +217,8 @@ module bp_me_cache_dma_to_cce
     dma_state_n            = dma_state_r;
     count_n                = count_r;
     // send control
-    dma_pkt_rr_yumi_li   = 1'b0;
-    dma_data_yumi_lo        = 1'b0;
+    dma_pkt_rr_yumi_li     = 1'b0;
+    dma_data_yumi_lo       = 1'b0;
     mem_cmd_v_lo           = 1'b0;
     
     send_dma_pkt_n = send_dma_pkt_r;
@@ -249,7 +245,7 @@ module bp_me_cache_dma_to_cce
             dma_data_yumi_lo = 1'b1;
             data_n = dma_data_li;
             count_n = count_r + 1;
-            if (count_r == block_size_in_words_p-1)
+            if (count_r == block_size_in_words_lp-1)
               begin
                 count_n = 0;
                 dma_state_n = SEND;
@@ -279,31 +275,31 @@ module bp_me_cache_dma_to_cce
   bsg_two_fifo
  #(.width_p(cce_mem_msg_width_lp)
   ) two_fifo
-  (.clk_i(clk_i)
+  (.clk_i  (clk_i)
   ,.reset_i(reset_i)
-  ,.v_i(mem_resp_v_i)
-  ,.data_i(mem_resp_i)
+  ,.v_i    (mem_resp_v_i)
+  ,.data_i (mem_resp_i)
   ,.ready_o(mem_resp_ready_o)
-  ,.v_o(two_fifo_v_lo)
-  ,.data_o(mem_resp_li)
-  ,.yumi_i(two_fifo_yumi_li)
+  ,.v_o    (two_fifo_v_lo)
+  ,.data_o (mem_resp_li)
+  ,.yumi_i (two_fifo_yumi_li)
   );
 
   assign piso_v_li = two_fifo_v_lo & (mem_resp_li.msg_type == e_cce_mem_rd);
   assign two_fifo_yumi_li = two_fifo_v_lo & ((mem_resp_li.msg_type == e_cce_mem_wb) | piso_ready_lo);
   
   bsg_parallel_in_serial_out 
- #(.width_p(data_width_p)
-  ,.els_p(block_size_in_words_p)
+ #(.width_p(dword_width_p)
+  ,.els_p  (block_size_in_words_lp)
   ) piso
-  (.clk_i(clk_i)
+  (.clk_i  (clk_i)
   ,.reset_i(reset_i)
   ,.valid_i(piso_v_li)
-  ,.data_i(mem_resp_li.data)
+  ,.data_i (mem_resp_li.data)
   ,.ready_o(piso_ready_lo)
   ,.valid_o(dma_data_v_lo)
-  ,.data_o(dma_data_lo)
-  ,.yumi_i(dma_data_v_lo & dma_data_ready_li)
+  ,.data_o (dma_data_lo)
+  ,.yumi_i (dma_data_v_lo & dma_data_ready_li)
   );
   
   logic [7:0] resp_count_r, resp_count_n;
@@ -319,7 +315,7 @@ module bp_me_cache_dma_to_cce
     if (dma_data_v_lo & dma_data_ready_li)
       begin
         resp_count_n = resp_count_r + 1;
-        if (resp_count_r == block_size_in_words_p-1)
+        if (resp_count_r == block_size_in_words_lp-1)
           begin
             resp_count_n = '0;
             arbiter_fifo_yumi_li = 1'b1;
