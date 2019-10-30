@@ -90,7 +90,7 @@ module bp_be_calculator_top
 bp_be_dispatch_pkt_s   dispatch_pkt;
 bp_be_calc_status_s    calc_status;
 bp_be_mem_resp_s       mem_resp;
-bp_cfg_bus_s          cfg_bus;
+bp_cfg_bus_s           cfg_bus;
 bp_be_wb_pkt_s         wb_pkt;
 bp_be_commit_pkt_s     commit_pkt;
 
@@ -360,7 +360,7 @@ always_comb
     // Strip out elements of the dispatch packet that we want to save for later
     calc_stage_isd.pc             = reservation_n.pc;
     calc_stage_isd.instr          = reservation_n.instr;
-    calc_stage_isd.v              = reservation_n.decode.v;
+    calc_stage_isd.queue_v        = reservation_n.decode.queue_v;
     calc_stage_isd.instr_v        = reservation_n.decode.instr_v;
     calc_stage_isd.pipe_int_v     = reservation_n.decode.pipe_int_v;
     calc_stage_isd.pipe_mul_v     = reservation_n.decode.pipe_mul_v;
@@ -372,7 +372,7 @@ always_comb
     calc_stage_isd.frf_w_v        = reservation_n.decode.frf_w_v;
 
     // Calculator status EX1 information
-    calc_status.ex1_v                    = reservation_r.decode.v & ~exc_stage_r[0].poison_v;
+    calc_status.ex1_v                    = reservation_r.decode.queue_v & ~exc_stage_r[0].poison_v;
     calc_status.ex1_npc                  = br_tgt_int1;
     calc_status.ex1_br_or_jmp            = reservation_r.decode.br_v | reservation_r.decode.jmp_v;
     calc_status.ex1_instr_v              = reservation_r.decode.instr_v & ~exc_stage_r[0].poison_v;
@@ -434,10 +434,12 @@ always_comb
         exc_stage_n[0].poison_v        = dispatch_pkt.poison     | flush_i;
         exc_stage_n[1].poison_v        = exc_stage_r[0].poison_v | flush_i;
         exc_stage_n[2].poison_v        = exc_stage_r[1].poison_v | flush_i;
-        exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | flush_i;
+        exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | pipe_mem_miss_v_lo | pipe_mem_exc_v_lo;
   end
 
-assign commit_pkt.v          = calc_stage_r[2].v & ~exc_stage_r[2].roll_v;
+assign commit_pkt.v          = ~exc_stage_r[2].poison_v;
+assign commit_pkt.queue_v    = calc_stage_r[2].queue_v & ~exc_stage_r[2].roll_v;
+assign commit_pkt.bubble_v   = ~calc_stage_r[2].queue_v & ~exc_stage_r[2].poison_v;
 assign commit_pkt.instret    = calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v;
 assign commit_pkt.cache_miss = pipe_mem_miss_v_lo & ~exc_stage_r[2].poison_v;
 assign commit_pkt.tlb_miss   = 1'b0; // TODO: Add to mem resp

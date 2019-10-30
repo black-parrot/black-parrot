@@ -105,6 +105,7 @@ logic [vaddr_width_p-1:0] chk_epc_li;
 logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li, chk_ifence_li;
 
 logic credits_full_lo, credits_empty_lo;
+logic accept_irq_lo;
 
 logic                     instret_mem3;
 logic                     pc_v_mem3;
@@ -135,6 +136,7 @@ bp_be_checker_top
    ,.mmu_cmd_ready_i(mmu_cmd_rdy)
    ,.credits_full_i(credits_full_lo)
    ,.credits_empty_i(credits_empty_lo)
+   ,.accept_irq_i(accept_irq_lo)
 
    ,.fe_cmd_o(fe_cmd_o)
    ,.fe_cmd_v_o(fe_cmd_v_o)
@@ -233,7 +235,6 @@ bp_be_mem_top
     ,.lce_cmd_ready_i(lce_cmd_ready_i)
 
     ,.commit_pkt_i(commit_pkt)
-    ,.npc_i(cfg_npc_data_o)
 
     ,.credits_full_o(credits_full_lo)
     ,.credits_empty_o(credits_empty_lo)
@@ -241,6 +242,7 @@ bp_be_mem_top
     ,.timer_irq_i(timer_irq_i)
     ,.software_irq_i(software_irq_i)
     ,.external_irq_i(external_irq_i)
+    ,.accept_irq_o(accept_irq_lo)
 
     ,.trap_pkt_o(trap_pkt)
     // Should connect priv mode to checker for shadow privilege mode
@@ -248,5 +250,5 @@ bp_be_mem_top
     ,.tlb_fence_o(chk_tlb_fence_li)
     );
 
-endmodule : bp_be_top
+endmodule
 
