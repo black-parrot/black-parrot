@@ -1,5 +1,5 @@
 // 
-// bsg_cache_dma_to_cce.v
+// bp_me_cache_dma_to_cce.v
 // 
 // Paul Gao   10/2019
 //  
@@ -7,7 +7,7 @@
 
 `include "bp_me_cce_mem_if.vh"
 
-module bsg_cache_dma_to_cce
+module bp_me_cache_dma_to_cce
 
   import bp_cce_pkg::*;
   import bp_common_pkg::*;

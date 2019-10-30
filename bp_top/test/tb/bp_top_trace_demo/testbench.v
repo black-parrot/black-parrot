@@ -452,7 +452,7 @@ logic                  true_dram_resp_v_lo, true_dram_resp_ready_li;
 bp_cce_mem_msg_s       true_dram_cmd_li;
 logic                  true_dram_cmd_v_li, true_dram_cmd_yumi_lo;
 
-bsg_cache_dma_to_cce
+bp_me_cache_dma_to_cce
  #(.cache_addr_width_p(vcache_addr_width_p)
   ,.data_width_p (dword_width_p)
   ,.block_size_in_words_p(cce_block_width_p/dword_width_p)

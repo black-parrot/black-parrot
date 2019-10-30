@@ -47,6 +47,7 @@ $BASEJUMP_STL_DIR/bsg_dataflow/bsg_1_to_n_tagged.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_1r1w_large.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_1rw_large.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_one_fifo.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_2_to_2.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_1r1w_pseudo_large.v
@@ -190,7 +191,7 @@ $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.v
 
-
+# Cache
 $BP_COMMON_DIR/../basejump_stl_new/bsg_cache/bsg_cache_pkg.v
 $BP_COMMON_DIR/../basejump_stl_new/bsg_cache/bsg_cache.v
 $BP_COMMON_DIR/../basejump_stl_new/bsg_cache/bsg_cache_pkt_decode.v
@@ -200,11 +201,8 @@ $BP_COMMON_DIR/../basejump_stl_new/bsg_cache/bsg_cache_sbuf_queue.v
 $BP_COMMON_DIR/../basejump_stl_new/bsg_cache/bsg_cache_dma.v
 $BP_COMMON_DIR/../basejump_stl_new/bsg_misc/bsg_expand_bitmask.v
 
-$BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out.v
-
-$BP_ME_DIR/src/v/wormhole/bsg_cache_dma_to_cce.v
-$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_cache.v
-
+$BP_ME_DIR/src/v/cache/bp_me_cache_dma_to_cce.v
+$BP_ME_DIR/src/v/cache/bp_me_cce_to_cache.v
 
 ## TOP
 $BP_TOP_DIR/src/v/bp_cfg.v
