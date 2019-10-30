@@ -92,6 +92,7 @@ module bp_be_mem_top
    , input                                   timer_irq_i
    , input                                   software_irq_i
    , input                                   external_irq_i
+   , output                                  accept_irq_o
 
    , output [trap_pkt_width_lp-1:0]          trap_pkt_o
    , output [rv64_priv_width_gp-1:0]         priv_mode_o
@@ -192,6 +193,7 @@ bsg_dff_chain
 
 bp_be_ecode_dec_s exception_ecode_dec_li;
 
+wire bubble_v_li    = commit_pkt.bubble_v;
 wire exception_v_li = commit_pkt.v | ptw_page_fault_v;
 wire [vaddr_width_p-1:0] exception_pc_li = ptw_page_fault_v ? fault_pc : commit_pkt.pc;
 // TODO: vaddr_mem3 -> commit_pkt.vaddr
@@ -237,6 +239,7 @@ bp_be_csr
    ,.hartid_i(cfg_bus.core_id)
    ,.instret_i(commit_pkt.instret)
 
+   ,.bubble_v_i(bubble_v_li)
    ,.exception_v_i(exception_v_li)
    ,.exception_pc_i(exception_pc_li)
    ,.exception_vaddr_i(exception_vaddr_li)
@@ -246,6 +249,7 @@ bp_be_csr
    ,.timer_irq_i(timer_irq_i)
    ,.software_irq_i(software_irq_i)
    ,.external_irq_i(external_irq_i)
+   ,.accept_irq_o(accept_irq_o)
 
    ,.priv_mode_o(priv_mode_o)
    ,.trap_pkt_o(trap_pkt_o)

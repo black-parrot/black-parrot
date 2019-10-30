@@ -135,7 +135,7 @@ module bp_be_ptw
   wire leaf_not_found           = (level_cntr == '0) & (~pte_is_leaf);
   wire priv_fault               = pte_is_leaf & dcache_data.u & (priv_mode_i == `PRIV_MODE_S) & ~mstatus_sum_i;
   wire misaligned_superpage     = pte_is_leaf & (|partial_pte_misaligned);
-  wire ad_fault                 = pte_is_leaf & (~dcache_data.a | (dcache_data.a & ~dcache_data.d));
+  wire ad_fault                 = pte_is_leaf & (~dcache_data.a | (~itlb_not_dtlb_o & store_not_load_r & ~dcache_data.d));
   wire common_faults            = pte_invalid | leaf_not_found | priv_fault | misaligned_superpage | ad_fault;
 
   assign instr_page_fault_o     = busy_o & dcache_v_i & itlb_not_dtlb_o & (common_faults | (pte_is_leaf & ~dcache_data.x));

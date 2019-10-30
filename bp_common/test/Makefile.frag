@@ -16,10 +16,11 @@ BP_DEMOS = \
   copy_example  \
   trap_demo     \
   atomic_demo   \
-  write_demo_2 \
-  write_demo_4 \
-  write_demo_8 \
-  write_demo_16
+  mc_sanity_1 \
+  mc_sanity_2 \
+  mc_sanity_4 \
+  mc_sanity_8 \
+  mc_sanity_16
 
 RV64_BENCHMARKS = \
   median   \
@@ -160,6 +161,112 @@ RV64_V_TESTS = \
   rv64ui-v-sw      \
   rv64ui-v-xor     \
   rv64ui-v-xori
+
+RV64_PT_TESTS = \
+  rv64ui-pt-add     \
+  rv64ui-pt-addi    \
+  rv64ui-pt-addiw   \
+  rv64ui-pt-addw    \
+  rv64ui-pt-and     \
+  rv64ui-pt-andi    \
+  rv64ui-pt-auipc   \
+  rv64ui-pt-beq     \
+  rv64ui-pt-bge     \
+  rv64ui-pt-bgeu    \
+  rv64ui-pt-blt     \
+  rv64ui-pt-bltu    \
+  rv64ui-pt-bne     \
+  rv64ui-pt-fence_i \
+  rv64ui-pt-jal     \
+  rv64ui-pt-jalr    \
+  rv64ui-pt-lb      \
+  rv64ui-pt-lbu     \
+  rv64ui-pt-ld      \
+  rv64ui-pt-lh      \
+  rv64ui-pt-lhu     \
+  rv64ui-pt-lui     \
+  rv64ui-pt-lw      \
+  rv64ui-pt-lwu     \
+  rv64ui-pt-or      \
+  rv64ui-pt-ori     \
+  rv64ui-pt-sb      \
+  rv64ui-pt-sd      \
+  rv64ui-pt-sh      \
+  rv64ui-pt-simple  \
+  rv64ui-pt-sll     \
+  rv64ui-pt-slli    \
+  rv64ui-pt-slliw   \
+  rv64ui-pt-sllw    \
+  rv64ui-pt-slt     \
+  rv64ui-pt-slti    \
+  rv64ui-pt-sltiu   \
+  rv64ui-pt-sltu    \
+  rv64ui-pt-sra     \
+  rv64ui-pt-srai    \
+  rv64ui-pt-sraiw   \
+  rv64ui-pt-sraw    \
+  rv64ui-pt-srl     \
+  rv64ui-pt-srli    \
+  rv64ui-pt-srliw   \
+  rv64ui-pt-srlw    \
+  rv64ui-pt-sub     \
+  rv64ui-pt-subw    \
+  rv64ui-pt-sw      \
+  rv64ui-pt-xor     \
+  rv64ui-pt-xori
+
+RV64_VT_TESTS = \
+  rv64ui-vt-add     \
+  rv64ui-vt-addi    \
+  rv64ui-vt-addiw   \
+  rv64ui-vt-addw    \
+  rv64ui-vt-and     \
+  rv64ui-vt-andi    \
+  rv64ui-vt-auipc   \
+  rv64ui-vt-beq     \
+  rv64ui-vt-bge     \
+  rv64ui-vt-bgeu    \
+  rv64ui-vt-blt     \
+  rv64ui-vt-bltu    \
+  rv64ui-vt-bne     \
+  rv64ui-vt-fence_i \
+  rv64ui-vt-jal     \
+  rv64ui-vt-jalr    \
+  rv64ui-vt-lb      \
+  rv64ui-vt-lbu     \
+  rv64ui-vt-ld      \
+  rv64ui-vt-lh      \
+  rv64ui-vt-lhu     \
+  rv64ui-vt-lui     \
+  rv64ui-vt-lw      \
+  rv64ui-vt-lwu     \
+  rv64ui-vt-or      \
+  rv64ui-vt-ori     \
+  rv64ui-vt-sb      \
+  rv64ui-vt-sd      \
+  rv64ui-vt-sh      \
+  rv64ui-vt-simple  \
+  rv64ui-vt-sll     \
+  rv64ui-vt-slli    \
+  rv64ui-vt-slliw   \
+  rv64ui-vt-sllw    \
+  rv64ui-vt-slt     \
+  rv64ui-vt-slti    \
+  rv64ui-vt-sltiu   \
+  rv64ui-vt-sltu    \
+  rv64ui-vt-sra     \
+  rv64ui-vt-srai    \
+  rv64ui-vt-sraiw   \
+  rv64ui-vt-sraw    \
+  rv64ui-vt-srl     \
+  rv64ui-vt-srli    \
+  rv64ui-vt-srliw   \
+  rv64ui-vt-srlw    \
+  rv64ui-vt-sub     \
+  rv64ui-vt-subw    \
+  rv64ui-vt-sw      \
+  rv64ui-vt-xor     \
+  rv64ui-vt-xori
 
 
 #Removed from beebs testsuite - 

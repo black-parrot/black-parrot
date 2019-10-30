@@ -127,6 +127,19 @@ top-beebs-verilator:
     - make -C bp_top/syn clean build.sc
     - $CI_PROJECT_DIR/ci/regress.sh regress_beebs.sc bp_top
 
+top-mc-verilator:
+  <<: *job_definition
+  stage: test-short
+  tags:
+    - verilator
+  script:
+    - make -C bp_top/syn clean build.sc CFG=e_bp_single_core_cfg
+    - make -C bp_top/syn build.sc CFG=e_bp_dual_core_cfg
+    - make -C bp_top/syn build.sc CFG=e_bp_quad_core_cfg
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_1.sc CFG=e_bp_single_core_cfg" bp_top
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_2.sc CFG=e_bp_dual_core_cfg" bp_top
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_4.sc CFG=e_bp_quad_core_cfg" bp_top
+
 lint-vcs:
   <<: *job_definition
   stage: check
@@ -161,4 +174,21 @@ top-beebs-vcs:
   script:
     - make -C bp_top/syn clean build.v
     - $CI_PROJECT_DIR/ci/regress.sh regress_beebs.v bp_top
+
+top-mc-vcs:
+  <<: *job_definition
+  stage: test-short
+  tags:
+    - vcs
+  script:
+    - make -C bp_top/syn clean build.v CFG=e_bp_single_core_cfg
+    - make -C bp_top/syn build.v CFG=e_bp_dual_core_cfg
+    - make -C bp_top/syn build.v CFG=e_bp_quad_core_cfg
+    - make -C bp_top/syn build.v CFG=e_bp_oct_core_cfg
+    - make -C bp_top/syn build.v CFG=e_bp_sexta_core_cfg
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_1.v CFG=e_bp_single_core_cfg" bp_top
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_2.v CFG=e_bp_dual_core_cfg" bp_top
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_4.v CFG=e_bp_quad_core_cfg" bp_top
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_8.v CFG=e_bp_oct_core_cfg" bp_top
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_16.v CFG=e_bp_sexta_core_cfg" bp_top
 

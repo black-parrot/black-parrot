@@ -46,7 +46,7 @@
     logic [vaddr_width_mp-1:0]         pc;                                                         \
     rv64_instr_s                       instr;                                                      \
                                                                                                    \
-    logic                              v;                                                          \
+    logic                              queue_v;                                                    \
     logic                              instr_v;                                                    \
     logic                              pipe_int_v;                                                 \
     logic                              pipe_mul_v;                                                 \
@@ -107,6 +107,8 @@
   typedef struct packed                                                                            \
   {                                                                                                \
     logic                        v;                                                                \
+    logic                        queue_v;                                                          \
+    logic                        bubble_v;                                                         \
     logic                        instret;                                                          \
     logic                        cache_miss;                                                       \
     logic                        tlb_miss;                                                         \
@@ -174,7 +176,7 @@
    )                                                                                               
 
 `define bp_be_commit_pkt_width(vaddr_width_mp) \
-  (4                                                                                               \
+  (6                                                                                               \
    + vaddr_width_mp                                                                                \
    + instr_width_p                                                                                 \
    )

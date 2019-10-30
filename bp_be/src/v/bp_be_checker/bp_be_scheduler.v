@@ -29,13 +29,14 @@ module bp_be_scheduler
 
    , localparam fp_en_p = 0
    )
-  (input                                clk_i
-   , input                              reset_i
+  (input                               clk_i
+   , input                             reset_i
 
   // Slow inputs   
-  , input [cfg_bus_width_lp-1:0]      cfg_bus_i
+  , input [cfg_bus_width_lp-1:0]       cfg_bus_i
   , output [dword_width_p-1:0]         cfg_irf_data_o
 
+  , input                              accept_irq_i
   , output [isd_status_width_lp-1:0]   isd_status_o
   , input [vaddr_width_p-1:0]          expected_npc_i
   , input                              poison_iss_i
@@ -205,9 +206,10 @@ bp_fe_exception_code_e fe_exc_isd;
 bp_be_decode_s          decoded;
 bp_be_instr_decoder
  instr_decoder
-  (.instr_i(issue_pkt_r.instr)
+  (.interrupt_v_i(accept_irq_i)
    ,.fe_exc_not_instr_i(issue_pkt_r.fe_exception_not_instr)
    ,.fe_exc_i(issue_pkt_r.fe_exception_code)
+   ,.instr_i(issue_pkt_r.instr)
 
    ,.decode_o(decoded)
    );

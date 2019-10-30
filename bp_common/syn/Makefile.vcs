@@ -18,6 +18,7 @@ VCS_BUILD_OPTS += -assert svaext      # Enable elaboration system tasks
 VCS_BUILD_OPTS += -CFLAGS "-I$(BP_EXTERNAL_DIR)/include -std=c++11"
 VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
 VCS_BUILD_OPTS += +lint=TFIPC-L
+VCS_BUILD_OPTS += -notice
 
 LINT_OPTIONS = +lint=all,noSVA-UA,noSVA-NSVU,noNS,noVCDE
 
@@ -127,6 +128,9 @@ $(COREMARK_REGRESSION_V):
 regress_beebs.v: $(BEEBS_REGRESSION_V)
 $(BEEBS_REGRESSION_V):
 	$(MAKE) sim.v PROG=$(basename $@)
+
+$(MC_REGRESSION_V):
+	$(MAKE) sim.v CFG=$(CFG) PROG=$(basename $@)
 
 cov.v: COV_LOG     ?= $(LOG_DIR)/$(TB).$(CFG).cov.log
 cov.v: COV_REPORT  ?= $(REPORT_DIR)/$(TB).$(CFG).cov

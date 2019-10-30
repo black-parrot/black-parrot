@@ -41,7 +41,7 @@ module bp_be_checker_top
   (input                              clk_i
    , input                            reset_i
 
-   , input [cfg_bus_width_lp-1:0]    cfg_bus_i
+   , input [cfg_bus_width_lp-1:0]     cfg_bus_i
    , output [vaddr_width_p-1:0]       cfg_npc_data_o
    , output [dword_width_p-1:0]       cfg_irf_data_o
 
@@ -72,6 +72,7 @@ module bp_be_checker_top
    , output                           flush_o
 
    , input                            tlb_fence_i
+   , input                            accept_irq_i
    
    //iTLB fill interface
     , input                           itlb_fill_v_i
@@ -154,12 +155,13 @@ bp_be_scheduler
    ,.cfg_bus_i(cfg_bus_i)
    ,.cfg_irf_data_o(cfg_irf_data_o)
 
+   ,.accept_irq_i(accept_irq_i)
    ,.isd_status_o(isd_status)
    ,.expected_npc_i(expected_npc_lo)
    ,.poison_iss_i(flush_o)
    ,.dispatch_v_i(chk_dispatch_v_o)
    ,.cache_miss_v_i(commit_pkt.cache_miss | commit_pkt.tlb_miss)
-   ,.cmt_v_i(commit_pkt.v)
+   ,.cmt_v_i(commit_pkt.queue_v)
 
    ,.fe_queue_roll_o(fe_queue_roll_o)
    ,.fe_queue_deq_o(fe_queue_deq_o)

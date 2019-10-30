@@ -1,7 +1,24 @@
+/*
+ * Name:
+ *   mc_sanity.c
+ *
+ * Description:
+ *   This program has each core write to unique entries in memory and then locally sum
+ *   the values. The cores deliberately false share cache blocks, forcing the coherence
+ *   system to transfer blocks between the cores as a basic sanity check of coherence
+ *   functionality in a multicore system.
+ *
+ */
+
 #include <stdint.h>
 #include "bp_utils.h"
 
-#include "write_demo_small.h"
+#ifndef N
+#define N 8192
+#endif
+
+typedef uint64_t matrix[N];
+matrix MATRIX;
 
 #ifndef NUM_CORES
 #define NUM_CORES 2
@@ -18,13 +35,6 @@ uint64_t main(uint64_t argc, char * argv[]) {
     for (int i = 0; i < K; i++) {
       MATRIX[i*NUM_CORES + core_id] = 1;
       sum += MATRIX[i*NUM_CORES + core_id];
-
-      /*
-      if (sum != i+1) {
-        bp_finish(1);
-        return 0;
-      }
-      */
     }
 
     bp_hprint((uint8_t)sum);
