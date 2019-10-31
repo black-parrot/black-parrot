@@ -12,11 +12,23 @@ BP_DEMOS_C = \
   trap_demo             \
   atomic_demo           \
   hello_world_atomic    \
-	mc_sanity_1           \
-	mc_sanity_2           \
-	mc_sanity_4           \
-	mc_sanity_8           \
-	mc_sanity_16
+  mc_sanity_1           \
+  mc_sanity_2           \
+  mc_sanity_4           \
+  mc_sanity_8           \
+  mc_sanity_16          \
+  mc_template_1         \
+  mc_template_2         \
+  mc_rand_walk_1        \
+  mc_rand_walk_2        \
+  mc_rand_walk_4        \
+  mc_rand_walk_8        \
+  mc_rand_walk_16       \
+  mc_work_share_sort_1  \
+  mc_work_share_sort_2  \
+  mc_work_share_sort_4  \
+  mc_work_share_sort_8  \
+  mc_work_share_sort_16
 
 BP_DEMOS_S = \
 	simple                \
