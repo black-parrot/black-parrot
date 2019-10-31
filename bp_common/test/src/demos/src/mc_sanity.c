@@ -13,18 +13,18 @@
 #include <stdint.h>
 #include "bp_utils.h"
 
-#ifndef N
-#define N 8192
-#endif
-
-typedef uint64_t matrix[N];
-matrix MATRIX;
-
 #ifndef NUM_CORES
 #define NUM_CORES 2
 #endif
 
-#define K (N/NUM_CORES)
+#define K 512
+
+#ifndef N
+#define N (NUM_CORES*K)
+#endif
+
+typedef uint64_t matrix[N];
+matrix MATRIX;
 
 uint64_t main(uint64_t argc, char * argv[]) {
     uint64_t i;
