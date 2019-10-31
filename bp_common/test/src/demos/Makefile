@@ -26,6 +26,15 @@ atomic_queue_demo_%.s:
 mc_sanity_%.s:
 	$(RISCV_GCC) -DNUM_CORES=$(notdir $*) -S -o src/mc_sanity_$(notdir $*).s src/mc_sanity.c
 
+mc_template_%.s:
+	$(RISCV_GCC) -DNUM_CORES=$(notdir $*) -S -o src/mc_template_$(notdir $*).s src/mc_template.c
+
+mc_rand_walk_%.s:
+	$(RISCV_GCC) -DNUM_CORES=$(notdir $*) -S -o src/mc_rand_walk_$(notdir $*).s src/mc_rand_walk.c
+
+mc_work_share_sort_%.s:
+	$(RISCV_GCC) -DNUM_CORES=$(notdir $*) -S -o src/mc_work_share_sort_$(notdir $*).s src/mc_work_share_sort.c
+
 %.s:
 	$(RISCV_GCC) -S -o src/$@ src/$*.c
 
@@ -33,5 +42,8 @@ clean:
 	rm -f *.riscv
 	rm -f src/atomic_queue_demo_*.s
 	rm -f src/mc_sanity_*.s
+	rm -f src/mc_template_*.s
+	rm -f src/mc_rand_walk_*.s
+	rm -f src/mc_work_share_sort_*.s
 	rm -f src/queue_demo_*.s
 
