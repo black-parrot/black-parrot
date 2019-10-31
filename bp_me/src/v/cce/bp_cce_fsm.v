@@ -284,6 +284,7 @@ module bp_cce_fsm
     , LCE_REQ
     , READ_PENDING
     , DEQ_LCE_REQ
+    , READ_MEM_SPEC
     , READ_DIR
     , WAIT_DIR_GAD
     , GAD
@@ -356,6 +357,37 @@ module bp_cce_fsm
       ,.up_i(ack_cnt_inc)
       ,.count_o(ack_cnt)
       );
+
+  // Speculative memory access management
+  logic spec_bits_v_lo;
+  bp_cce_spec_s spec_bits_li, spec_bits_lo;
+  logic spec_v_li, spec_w_v, squash_v_li, fwd_mod_v_li, state_v_li;
+
+  bp_cce_spec
+    #(.num_way_groups_p(num_way_groups_lp))
+    spec_bits
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
+
+       // write-port
+       ,.w_v_i(spec_w_v)
+       ,.w_way_group_i(mshr_r.paddr[way_group_offset_high_lp-1 -: lg_num_way_groups_lp])
+       ,.spec_v_i(spec_v_li)
+       ,.spec_i(spec_bits_li.spec)
+       ,.squash_v_i(squash_v_li)
+       ,.squash_i(spec_bits_li.squash)
+       ,.fwd_mod_v_i(fwd_mod_v_li)
+       ,.fwd_mod_i(spec_bits_li.fwd_mod)
+       ,.state_v_i(state_v_li)
+       ,.state_i(spec_bits_li.state)
+
+       // read-port
+       ,.r_v_i(mem_resp_v_i & mem_resp.payload.speculative)
+       ,.r_way_group_i(mem_resp.addr[way_group_offset_high_lp-1 -: lg_num_way_groups_lp])
+       ,.data_o(spec_bits_lo)
+       ,.v_o(spec_bits_v_lo)
+       );
+
 
   // One hot of request LCE ID
   logic [num_lce_p-1:0] req_lce_id_one_hot;
@@ -461,6 +493,13 @@ module bp_cce_fsm
     dir_tag_li = mshr_r.paddr[(paddr_width_p-1) -: ptag_width_lp];
     dir_coh_state_li = mshr_r.next_coh_state;
 
+    // speculative memory access
+    spec_w_v = '0;
+    spec_bits_li = '0;
+    spec_v_li = '0;
+    squash_v_li = '0;
+    fwd_mod_v_li = '0;
+    state_v_li = '0;
 
     // By default, pending write port is available
     pending_busy = '0;
@@ -472,11 +511,87 @@ module bp_cce_fsm
     // lce_cmd_ready_i signal. The pending bit is written on the cycle that lce_cmd_ready_i goes
     // high. The main FSM will stall if it wants to write to the pending bits in the same cycle.
     if (mem_resp_v_i) begin
-      lce_cmd_busy = 1'b1;
-      pending_busy = 1'b1;
 
-      if ((mem_resp.msg_type.cce_mem_cmd == e_cce_mem_rd)
-          | (mem_resp.msg_type.cce_mem_cmd == e_cce_mem_wr)) begin
+      // Speculative access response
+      // Note: speculative access is only supported for cached requests
+      if (mem_resp.payload.speculative) begin
+        if (spec_bits_lo.spec) begin // speculation not resolved yet
+          // do nothing, wait for speculation to be resolved
+          // Note: this blocks memory responses behind the speculative response from being
+          // forwarded. However, the CCE will not move on to a new LCE request until it
+          // resolves the speculation for the current request.
+        end
+        else if (spec_bits_lo.squash) begin // speculation resolved, squash
+          // dequeue the command and do nothing with it
+          mem_resp_yumi_o = 1'b1;
+
+          pending_busy = 1'b1;
+          pending_w_v = 1'b1;
+          pending_w_way_group =
+            mem_resp.addr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
+          pending_li = 1'b0;
+
+        end
+        else if (spec_bits_lo.fwd_mod) begin // speculation resolved, forward with modified state
+          // handshaking
+          lce_cmd_v_o = mem_resp_v_i;
+          mem_resp_yumi_o = lce_cmd_ready_i;
+
+          // inform ucode decode that this unit is using the LCE Command network
+          lce_cmd_busy = 1'b1;
+
+          // output command message
+          lce_cmd.dst_id = mem_resp.payload.lce_id;
+
+          // Data is copied directly from the Mem Data Response
+          lce_cmd.msg_type = e_lce_cmd_data;
+          lce_cmd.way_id = mem_resp.payload.way_id;
+          lce_cmd.msg.dt_cmd.data = mem_resp.data;
+          lce_cmd.msg.dt_cmd.addr = mem_resp.addr;
+          // modify the coherence state
+          lce_cmd.msg.dt_cmd.state = spec_bits_lo.state;
+
+          if (lce_cmd_ready_i) begin
+            pending_busy = 1'b1;
+            pending_w_v = 1'b1;
+            pending_w_way_group =
+              mem_resp.addr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
+            pending_li = 1'b0;
+          end
+
+        end
+        else begin // speculation resolved, forward unmodified
+          // handshaking
+          lce_cmd_v_o = mem_resp_v_i;
+          mem_resp_yumi_o = lce_cmd_ready_i;
+
+          // inform ucode decode that this unit is using the LCE Command network
+          lce_cmd_busy = 1'b1;
+
+          // output command message
+          lce_cmd.dst_id = mem_resp.payload.lce_id;
+
+          // Data is copied directly from the Mem Data Response
+          lce_cmd.msg_type = e_lce_cmd_data;
+          lce_cmd.way_id = mem_resp.payload.way_id;
+          lce_cmd.msg.dt_cmd.data = mem_resp.data;
+          lce_cmd.msg.dt_cmd.addr = mem_resp.addr;
+          lce_cmd.msg.dt_cmd.state = mem_resp.payload.state;
+
+          if (lce_cmd_ready_i) begin
+            pending_busy = 1'b1;
+            pending_w_v = 1'b1;
+            pending_w_way_group =
+              mem_resp.addr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
+            pending_li = 1'b0;
+          end
+
+        end
+
+      end // speculative response
+
+      else if ((mem_resp.msg_type.cce_mem_cmd == e_cce_mem_rd)
+               | (mem_resp.msg_type.cce_mem_cmd == e_cce_mem_wr)) begin
 
         // handshaking
         lce_cmd_v_o = mem_resp_v_i;
@@ -506,7 +621,7 @@ module bp_cce_fsm
 
       // Uncached load response - forward data to LCE
       // This transaction does not modify the pending bits
-      if (mem_resp.msg_type.cce_mem_cmd == e_cce_mem_uc_rd) begin
+      else if (mem_resp.msg_type.cce_mem_cmd == e_cce_mem_uc_rd) begin
 
         // handshaking
         lce_cmd_v_o = mem_resp_v_i;
@@ -709,6 +824,7 @@ module bp_cce_fsm
           mem_cmd.addr = mshr_r.paddr;
           mem_cmd.payload.lce_id = mshr_r.lce_id;
           mem_cmd.payload.way_id = '0;
+          mem_cmd.payload.speculative = '0;
           mem_cmd.data = {{(cce_block_width_p-dword_width_p){1'b0}}, uc_data_r};
           mem_cmd.size =
             (bp_lce_cce_uc_req_size_e'(mshr_r.uc_req_size) == e_lce_uc_req_1)
@@ -729,6 +845,7 @@ module bp_cce_fsm
           mem_cmd.addr = mshr_r.paddr;
           mem_cmd.payload.lce_id = mshr_r.lce_id;
           mem_cmd.payload.way_id = '0;
+          mem_cmd.payload.speculative = '0;
           mem_cmd.size =
             (bp_lce_cce_uc_req_size_e'(mshr_r.uc_req_size) == e_lce_uc_req_1)
             ? e_mem_size_1
@@ -753,7 +870,7 @@ module bp_cce_fsm
       DEQ_LCE_REQ: begin
         // dequeueing the request writes the pending bit and must arbitrate with logic above
         if (lce_req_v_i & ~pending_busy) begin
-          state_n = READ_DIR;
+          state_n = READ_MEM_SPEC;
           lce_req_yumi_o = 1'b1;
 
           pending_w_v = 1'b1;
@@ -766,6 +883,39 @@ module bp_cce_fsm
           // next cycle
           state_n = DEQ_LCE_REQ;
         end
+      end
+      READ_MEM_SPEC: begin
+        // Mem Cmd needs to write pending bit, so only send if Mem Resp / LCE Cmd is not
+        // writing the pending bit
+        if (~pending_busy) begin
+          mem_cmd_v_o = 1'b1;
+          mem_cmd.msg_type = (mshr_r.flags[e_flag_sel_rqf]) ? e_cce_mem_wr : e_cce_mem_rd;
+          mem_cmd.addr = (mshr_r.paddr >> lg_block_size_in_bytes_lp) << lg_block_size_in_bytes_lp;
+          mem_cmd.size = e_mem_size_64;
+          mem_cmd.payload.lce_id = mshr_r.lce_id;
+          mem_cmd.payload.way_id = mshr_r.lru_way_id;
+          // speculatively issue request for E state
+          mem_cmd.payload.state = e_COH_E;
+          mem_cmd.payload.speculative = 1'b1;
+
+          // set the spec bit and clear all other bits for this entry
+          spec_w_v = mem_cmd_ready_i;
+          spec_v_li = 1'b1;
+          squash_v_li = 1'b1;
+          fwd_mod_v_li = 1'b1;
+          state_v_li = 1'b1;
+          spec_bits_li.spec = 1'b1;
+          spec_bits_li.squash = 1'b0;
+          spec_bits_li.fwd_mod = 1'b0;
+          spec_bits_li.state = e_COH_I;
+
+          state_n = (mem_cmd_ready_i) ? READ_DIR : READ_MEM_SPEC;
+
+          pending_w_v = mem_cmd_ready_i;
+          pending_li = 1'b1;
+          pending_w_way_group = mshr_r.paddr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
+        end
+
       end
       READ_DIR: begin
         // initiate the directory read
@@ -852,6 +1002,17 @@ module bp_cce_fsm
               : (mshr_r.flags[e_flag_sel_tf])
                 ? TRANSFER_CMD
                 : READ_MEM;
+
+        // squash speculative memory request if transfer or upgrade
+        if (mshr_r.flags[e_flag_sel_tf] || mshr_r.flags[e_flag_sel_uf]) begin
+          spec_w_v = 1'b1;
+          // no longer speculative
+          spec_v_li = 1'b1;
+          spec_bits_li.spec = 1'b0;
+          // squash the response
+          squash_v_li = 1'b1;
+          spec_bits_li.squash = 1'b1;
+        end
 
         if (state_n == INV_CMD) begin
           pe_sharers_n = sharers_hits_r & ~req_lce_id_one_hot;
@@ -1086,23 +1247,32 @@ module bp_cce_fsm
         end
       end
       READ_MEM: begin
-        // Mem Cmd needs to write pending bit, so only send if Mem Resp / LCE Cmd is not
-        // writing the pending bit
-        if (~pending_busy) begin
-          mem_cmd_v_o = 1'b1;
-          mem_cmd.msg_type = (mshr_r.flags[e_flag_sel_rqf]) ? e_cce_mem_wr : e_cce_mem_rd;
-          mem_cmd.addr = (mshr_r.paddr >> lg_block_size_in_bytes_lp) << lg_block_size_in_bytes_lp;
-          mem_cmd.size = e_mem_size_64;
-          mem_cmd.payload.lce_id = mshr_r.lce_id;
-          mem_cmd.payload.way_id = mshr_r.lru_way_id;
-          mem_cmd.payload.state = mshr_r.next_coh_state;
-
-          state_n = (mem_cmd_ready_i) ? READY : READ_MEM;
-
-          pending_w_v = mem_cmd_ready_i;
-          pending_li = 1'b1;
-          pending_w_way_group = mshr_r.paddr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
+        // request was already issued to mem, resolve the speculation now
+        if (mshr_r.flags[e_flag_sel_rqf]) begin
+          // forward with M state
+          spec_w_v = 1'b1;
+          spec_v_li = 1'b1;
+          fwd_mod_v_li = 1'b1;
+          state_v_li = 1'b1;
+          spec_bits_li.spec = 1'b0;
+          spec_bits_li.state = e_COH_M;
+          spec_bits_li.fwd_mod = 1'b1;
+        end else if (mshr_r.flags[e_flag_sel_cf] | mshr_r.flags[e_flag_sel_nerf]) begin
+          // forward with S state
+          spec_w_v = 1'b1;
+          spec_v_li = 1'b1;
+          fwd_mod_v_li = 1'b1;
+          state_v_li = 1'b1;
+          spec_bits_li.spec = 1'b0;
+          spec_bits_li.state = e_COH_S;
+          spec_bits_li.fwd_mod = 1'b1;
+        end else begin
+          // forward with E state (as requested)
+          spec_w_v = 1'b1;
+          spec_v_li = 1'b1;
+          spec_bits_li.spec = 1'b0;
         end
+        state_n = READY;
       end
       SEND_SET_TAG: begin
         $error("SEND_SET_TAG");
