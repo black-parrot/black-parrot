@@ -33,8 +33,6 @@ module bp_core_complex
    , input                                                         mem_clk_i
    , input                                                         mem_reset_i
 
-   , input [mem_noc_chid_width_p-1:0]                              my_chid_i
-
    , input [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]    mem_cmd_link_i
    , output [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]   mem_cmd_link_o
 
@@ -83,7 +81,6 @@ for (genvar j = 0; j < mem_noc_y_dim_p; j++)
            ,.mem_clk_i(mem_clk_i)
            ,.mem_reset_i(mem_reset_i)
  
-           ,.my_chid_i(my_chid_i)   
            ,.my_cord_i(cord_li)
 
            ,.coh_lce_req_link_i(lce_req_link_li[j][i])

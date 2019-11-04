@@ -5,8 +5,7 @@ module bp_addr_map
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    )
-  (input [mem_noc_chid_width_p-1:0]          my_chid_i
-   , input [mem_noc_cord_width_p-1:0]        my_cord_i
+  (input [mem_noc_cord_width_p-1:0]          my_cord_i
 
    // Command physical address
    , input [paddr_width_p-1:0]               paddr_i
@@ -30,8 +29,8 @@ endfunction
 wire [mem_noc_y_cord_width_p-1:0] my_y_cord_li = my_cord_i[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p];
 wire [mem_noc_x_cord_width_p-1:0] my_x_cord_li = my_cord_i[0+:mem_noc_x_cord_width_p];
 
-wire [mem_noc_cord_width_p-1:0] prev_io_cord_li = {'0, '0};
-wire [mem_noc_cord_width_p-1:0] next_io_cord_li = {'0, mem_noc_x_cord_width_p'(num_io_p+1)};
+wire [mem_noc_cord_width_p-1:0] io_cord_li = {'0, '0};
+
 wire [mem_noc_cord_width_p-1:0] coproc_cord_li  = {my_y_cord_li, my_x_cord_li + 1'b1};
 wire [mem_noc_cord_width_p-1:0] dram_cord_li    = {my_y_cord_li + 1'b1, my_x_cord_li};
 
@@ -64,7 +63,7 @@ always_comb
       host_dev_base_addr_gp:
         begin
           // Sending to a local host address simply goes east off-chip by default
-          dst_cord_o = next_io_cord_li;
+          dst_cord_o = io_cord_li;
           dst_cid_o  = '0;
         end
       cce_dev_base_addr_gp:
@@ -89,13 +88,13 @@ always_comb
         begin
           // TODO: DRAM is either enabled, or we send to next chip
           //   Should we make a more flexible scheme?
-          dst_cord_o = dram_en_i ? dram_cord_li : next_io_cord_li;
+          dst_cord_o = dram_en_i ? dram_cord_li : io_cord_li;
           dst_cid_o  = '0;
         end
     endcase
   else
     begin
-      dst_cord_o = (my_chid_i > paddr_chid_li) ? prev_io_cord_li : next_io_cord_li;
+      dst_cord_o = io_cord_li;
       dst_cid_o  = '0;
     end
 

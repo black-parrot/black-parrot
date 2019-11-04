@@ -199,8 +199,7 @@ $BP_TOP_DIR/src/v/bp_clint_node.v
 $BP_TOP_DIR/src/v/bp_clint_slice.v
 $BP_TOP_DIR/src/v/bp_io_complex.v
 $BP_TOP_DIR/src/v/bp_processor.v
-$BP_TOP_DIR/src/v/bp_rerouter.v
-$BP_TOP_DIR/src/v/bp_rerouter_node.v
+$BP_TOP_DIR/src/v/bp_remote_domain_proxy_node.v
 $BP_TOP_DIR/src/v/bp_tile.v
 $BP_TOP_DIR/src/v/bp_tile_node.v
 

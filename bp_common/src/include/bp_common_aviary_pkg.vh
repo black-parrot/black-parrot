@@ -52,15 +52,13 @@ package bp_common_aviary_pkg;
       ,async_mem_clk         : 0
       ,mem_noc_max_credits   : 32
       ,mem_noc_flit_width    : 30
-      ,mem_noc_reserved_width: 2
+      ,mem_noc_chid_width    : 3
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
       ,mem_noc_y_cord_width  : 1
       ,mem_noc_x_cord_width  : 1
       ,mem_noc_y_dim         : 1
       ,mem_noc_x_dim         : 1
-
-      ,chid_width : 3
       };
 
   localparam bp_proc_param_s bp_single_core_cfg_p = 
@@ -106,15 +104,13 @@ package bp_common_aviary_pkg;
       ,async_mem_clk         : 0
       ,mem_noc_max_credits   : 32
       ,mem_noc_flit_width    : 30
-      ,mem_noc_reserved_width: 2
+      ,mem_noc_chid_width    : 3
       ,mem_noc_cid_width     : 5
       ,mem_noc_len_width     : 5
       ,mem_noc_y_cord_width  : 3
       ,mem_noc_x_cord_width  : 3
       ,mem_noc_y_dim         : 1
       ,mem_noc_x_dim         : 1
-
-      ,chid_width : 3
       };
 
   localparam bp_proc_param_s bp_dual_core_cfg_p = 
@@ -160,15 +156,13 @@ package bp_common_aviary_pkg;
       ,async_mem_clk         : 0
       ,mem_noc_max_credits   : 32
       ,mem_noc_flit_width    : 30
-      ,mem_noc_reserved_width: 2
+      ,mem_noc_chid_width    : 3
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
       ,mem_noc_y_cord_width  : 3
       ,mem_noc_x_cord_width  : 3
       ,mem_noc_y_dim         : 1
       ,mem_noc_x_dim         : 2
-
-      ,chid_width : 3
       };
 
   localparam bp_proc_param_s bp_quad_core_cfg_p = 
@@ -214,15 +208,13 @@ package bp_common_aviary_pkg;
       ,async_mem_clk         : 1
       ,mem_noc_max_credits   : 32
       ,mem_noc_flit_width    : 30
-      ,mem_noc_reserved_width: 2
+      ,mem_noc_chid_width    : 3
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
       ,mem_noc_y_cord_width  : 2
       ,mem_noc_x_cord_width  : 6
       ,mem_noc_y_dim         : 2
       ,mem_noc_x_dim         : 2
-
-      ,chid_width : 3
       };
 
   localparam bp_proc_param_s bp_oct_core_cfg_p = 
@@ -268,15 +260,13 @@ package bp_common_aviary_pkg;
       ,async_mem_clk         : 0
       ,mem_noc_max_credits   : 32
       ,mem_noc_flit_width    : 30
-      ,mem_noc_reserved_width: 2
+      ,mem_noc_chid_width    : 3
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
       ,mem_noc_y_cord_width  : 4
       ,mem_noc_x_cord_width  : 4
       ,mem_noc_y_dim         : 2
       ,mem_noc_x_dim         : 4
-
-      ,chid_width : 3
       };
 
   localparam bp_proc_param_s bp_sexta_core_cfg_p =
@@ -322,15 +312,13 @@ package bp_common_aviary_pkg;
       ,async_mem_clk         : 1
       ,mem_noc_max_credits   : 32
       ,mem_noc_flit_width    : 30
-      ,mem_noc_reserved_width: 2
+      ,mem_noc_chid_width    : 3
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
       ,mem_noc_y_cord_width  : 4
       ,mem_noc_x_cord_width  : 4
       ,mem_noc_y_dim         : 4
       ,mem_noc_x_dim         : 4
-
-      ,chid_width : 3
       };
 
   typedef enum bit [lg_max_cfgs-1:0] 

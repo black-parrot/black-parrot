@@ -28,7 +28,6 @@ module bp_tile
    , input                                                    reset_i
 
    // Memory side connection
-   , input [mem_noc_chid_width_p-1:0]                         my_chid_i
    , input [mem_noc_cord_width_p-1:0]                         my_cord_i
 
    // Connected to other tiles on east and west
@@ -471,8 +470,7 @@ logic [mem_noc_cid_width_p-1:0]  dst_cid_lo;
 bp_addr_map
  #(.bp_params_p(bp_params_p))
  cmd_map
-  (.my_chid_i(my_chid_i)
-   ,.my_cord_i(my_cord_i)
+  (.my_cord_i(my_cord_i)
 
    ,.paddr_i(cce_mem_cmd_lo.addr)
    ,.dram_en_i(1'b0)

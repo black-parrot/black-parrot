@@ -66,8 +66,6 @@ bp_core_complex
    ,.mem_clk_i(mem_clk_i)
    ,.mem_reset_i(mem_reset_i)
 
-   ,.my_chid_i(my_chid_i)
-
    ,.mem_cmd_link_i(mem_cmd_link_li)
    ,.mem_cmd_link_o(mem_cmd_link_lo)
 
