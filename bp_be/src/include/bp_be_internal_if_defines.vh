@@ -55,6 +55,7 @@
                                                                                                    \
     logic                              mem_v;                                                      \
     logic                              csr_v;                                                      \
+    logic                              serial_v;                                                   \
                                                                                                    \
     logic                              irf_w_v;                                                    \
     logic                              frf_w_v;                                                    \
@@ -159,7 +160,7 @@
 `define bp_be_pipe_stage_reg_width(vaddr_width_mp) \
    (vaddr_width_mp                                                                                 \
    + rv64_instr_width_gp                                                                           \
-   + 10                                                                                            \
+   + 11                                                                                            \
    )
 
 `define bp_be_isd_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
