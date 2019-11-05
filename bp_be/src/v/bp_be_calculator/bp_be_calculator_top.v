@@ -368,6 +368,7 @@ always_comb
     calc_stage_isd.pipe_fp_v      = reservation_n.decode.pipe_fp_v;
     calc_stage_isd.mem_v          = reservation_n.decode.mem_v;
     calc_stage_isd.csr_v          = reservation_n.decode.csr_v;
+    calc_stage_isd.serial_v       = reservation_n.decode.serial_v;
     calc_stage_isd.irf_w_v        = reservation_n.decode.irf_w_v;
     calc_stage_isd.frf_w_v        = reservation_n.decode.frf_w_v;
 
@@ -398,7 +399,7 @@ always_comb
                                               & calc_stage_r[i].frf_w_v;
         calc_status.dep_status[i].rd_addr   = calc_stage_r[i].instr.fields.rtype.rd_addr;
         calc_status.dep_status[i].mem_v     = calc_stage_r[i].mem_v & ~exc_stage_n[i+1].poison_v;
-        calc_status.dep_status[i].serial_v  = calc_stage_r[i].csr_v & ~exc_stage_n[i+1].poison_v;
+        calc_status.dep_status[i].serial_v  = calc_stage_r[i].serial_v & ~exc_stage_n[i+1].poison_v;
       end
 
     // Slicing the completion pipe for Forwarding information
