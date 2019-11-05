@@ -165,7 +165,7 @@ logic is_itlb_fill_mem3;
 logic is_store_mem3;
 logic [vaddr_width_p-1:0] fault_pc;
 
-wire itlb_fill_cmd_v = is_itlb_fill_mem3;
+wire itlb_fill_cmd_v = is_itlb_fill_mem3 & mmu_cmd_v_rr;
 wire dtlb_fill_cmd_v = dtlb_miss_r;
 
 bsg_dff_en
@@ -423,7 +423,7 @@ assign ptw_page_fault_v  = ptw_instr_page_fault_v | ptw_load_page_fault_v | ptw_
 assign ptw_store_not_load = dtlb_fill_cmd_v & is_store_mem3;
  
 // MMU response connections
-assign mem_resp.miss_v = mmu_cmd_v_rr & ~dcache_v & ~itlb_fill_cmd_v;
+assign mem_resp.miss_v = mmu_cmd_v_rr & (dcache_miss_v | ptw_tlb_miss_v);
 assign mem_resp.exc_v  = |exception_ecode_dec_li;
 assign mem_resp.data   = dcache_v ? dcache_data : csr_data_lo;
 
