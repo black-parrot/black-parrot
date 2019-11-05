@@ -79,6 +79,7 @@ always_comb
     // Metadata signals
     decode.mem_v         = '0;
     decode.csr_v         = '0;
+    decode.serial_v      = '0;
 
     // Fence signals
     decode.fencei_v      = '0;
@@ -239,6 +240,7 @@ always_comb
         begin
           decode.pipe_mem_v = 1'b1;
           decode.csr_v = 1'b1;
+          decode.serial_v = 1'b1;
           unique casez (instr)
             `RV64_ECALL      : decode.fu_op = e_ecall;
             `RV64_EBREAK     : decode.fu_op = e_ebreak;
@@ -291,6 +293,7 @@ always_comb
         decode.queue_v     = 1'b0;
         decode.pipe_mem_v  = 1'b1;
         decode.csr_v       = 1'b1;
+        decode.serial_v    = 1'b1;
         decode.fu_op       = e_op_take_interrupt;
       end
     else if (fe_exc_not_instr_i)
@@ -300,6 +303,7 @@ always_comb
         decode.pipe_mem_v  = 1'b1;
         decode.csr_v = (fe_exc_i != e_itlb_miss);
         decode.mem_v = (fe_exc_i == e_itlb_miss);
+        decode.serial_v    = 1'b1;
         casez (fe_exc_i)
           e_illegal_instr     : decode.fu_op = e_op_illegal_instr;
           e_instr_misaligned  : decode.fu_op = e_op_instr_misaligned;
@@ -313,6 +317,7 @@ always_comb
         decode.queue_v     = 1'b1;
         decode.pipe_mem_v  = 1'b1;
         decode.csr_v = 1'b1;
+        decode.serial_v    = 1'b1;
         decode.fu_op       = e_op_illegal_instr;
       end
   end
