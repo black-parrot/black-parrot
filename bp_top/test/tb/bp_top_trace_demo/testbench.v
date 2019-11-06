@@ -284,6 +284,8 @@ bind bp_be_top
      ,.program_finish_i(testbench.program_finish)
      );
 
+  /*
+   * TODO: Fix connections for this
   bp_mem_nonsynth_tracer
    #(.bp_params_p(bp_params_p))
    bp_mem_tracer
@@ -298,6 +300,7 @@ bind bp_be_top
      ,.mem_resp_v_i(dram_resp_v_lo)
      ,.mem_resp_ready_i(dram_resp_ready_li)
      );
+   */
 
   bind bp_cce
     bp_cce_nonsynth_tracer

@@ -62,7 +62,8 @@ module bsg_fifo_1r1w_rolly
     (.clk(clk_i)
      ,.reset_i(reset_i)
      ,.add_i(deq_v_i)
-    ,.o(cptr_r)
+     ,.o(cptr_r)
+     ,.n_o()
      );
     
   bsg_circular_ptr 
@@ -72,6 +73,7 @@ module bsg_fifo_1r1w_rolly
      ,.reset_i(reset_i)
      ,.add_i(wptr_jmp)
      ,.o(wptr_r)
+     ,.n_o()
      );
 
   bsg_circular_ptr 
@@ -81,6 +83,7 @@ module bsg_fifo_1r1w_rolly
     ,.reset_i(reset_i)
     ,.add_i(rptr_jmp)
     ,.o(rptr_r)
+    ,.n_o()
     );
   
   bsg_mem_1r1w 
