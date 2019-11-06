@@ -13,6 +13,7 @@ module testbench
  import bp_common_rv64_pkg::*;
  import bp_cce_pkg::*;
  import bp_common_cfg_link_pkg::*;
+ import bsg_noc_pkg::*;
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
@@ -50,8 +51,11 @@ module testbench
 `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
 
-bsg_ready_and_link_sif_s cmd_link_li, cmd_link_lo;
-bsg_ready_and_link_sif_s resp_link_li, resp_link_lo;
+bsg_ready_and_link_sif_s [E:P] cmd_link_li, cmd_link_lo;
+bsg_ready_and_link_sif_s [E:P] resp_link_li, resp_link_lo;
+
+bsg_ready_and_link_sif_s proc_cmd_link_li, proc_cmd_link_lo;
+bsg_ready_and_link_sif_s proc_resp_link_li, proc_resp_link_lo;
 
 bp_cce_mem_msg_s       mem_resp_li;
 logic                  mem_resp_v_li, mem_resp_ready_lo;
@@ -73,28 +77,8 @@ logic                  cfg_cmd_v_lo, cfg_cmd_ready_li;
 bp_cce_mem_msg_s       cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
-logic [mem_noc_cord_width_p-1:0] dram_cord_lo, host_cord_lo;
-logic [num_core_p-1:0][mem_noc_cord_width_p-1:0] tile_cord_lo;
-
-assign dram_cord_lo[0+:mem_noc_x_cord_width_p]                      = mem_noc_x_dim_p+3;
-assign dram_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
-assign host_cord_lo[0+:mem_noc_x_cord_width_p]                      = mem_noc_x_dim_p+3;
-assign host_cord_lo[mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = '0;
-
-for (genvar j = 0; j < mem_noc_y_dim_p; j++)
-  begin : y
-    for (genvar i = 0; i < mem_noc_x_dim_p; i++)
-      begin : x
-        localparam idx = j*mem_noc_x_dim_p + i;
-        assign tile_cord_lo[idx][0+:mem_noc_x_cord_width_p] = i+2;
-        assign tile_cord_lo[idx][mem_noc_x_cord_width_p+:mem_noc_y_cord_width_p] = j+1;
-      end
-  end
-
-wire [mem_noc_chid_width_p-1:0] my_chid_li     = 1'b0;
-wire [mem_noc_chid_width_p-1:0] coproc_chid_li = 1'b1;
-wire [mem_noc_chid_width_p-1:0] dram_chid_li   = 1'b1;
-wire [mem_noc_chid_width_p-1:0] host_chid_li   = 1'b1;
+wire [mem_noc_chid_width_p-1:0] dram_chid_li = '1;
+wire [mem_noc_chid_width_p-1:0] proc_chid_li = 1;
 
 // Chip
 wrapper
@@ -109,10 +93,7 @@ wrapper
    ,.mem_clk_i(clk_i)
    ,.mem_reset_i(reset_i)
 
-   ,.my_chid_i(my_chid_li)
-   ,.coproc_chid_i(coproc_chid_li)
-   ,.dram_chid_i(dram_chid_li)
-   ,.host_chid_i(host_chid_li)
+   ,.my_chid_i(proc_chid_li)
 
    ,.prev_cmd_link_i('0)
    ,.prev_cmd_link_o()
@@ -120,11 +101,40 @@ wrapper
    ,.prev_resp_link_i('0)
    ,.prev_resp_link_o()
 
-   ,.next_cmd_link_i(cmd_link_lo)
-   ,.next_cmd_link_o(cmd_link_li)
+   ,.next_cmd_link_i(proc_cmd_link_li)
+   ,.next_cmd_link_o(proc_cmd_link_lo)
 
-   ,.next_resp_link_i(resp_link_lo)
-   ,.next_resp_link_o(resp_link_li)
+   ,.next_resp_link_i(proc_resp_link_li)
+   ,.next_resp_link_o(proc_resp_link_lo)
+   );
+
+assign cmd_link_li[W]  = proc_cmd_link_lo;
+assign cmd_link_li[E]  = '0;
+assign resp_link_li[W] = proc_resp_link_lo;
+assign resp_link_li[E] = '0;
+
+assign proc_cmd_link_li = cmd_link_lo[W];
+assign proc_resp_link_li = resp_link_lo[W];
+bp_host_remote_domain_proxy_node
+ #(.bp_params_p(bp_params_p))
+ rdp
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.my_chid_i(dram_chid_li)
+   ,.my_cord_i(mem_noc_cord_width_p'(dram_chid_li))
+
+   ,.on_cmd_link_i(cmd_link_li[P])
+   ,.on_cmd_link_o(cmd_link_lo[P])
+
+   ,.on_resp_link_i(resp_link_li[P])
+   ,.on_resp_link_o(resp_link_lo[P])
+
+   ,.off_cmd_link_i(cmd_link_li[E:W])
+   ,.off_cmd_link_o(cmd_link_lo[E:W])
+
+   ,.off_resp_link_i(resp_link_li[E:W])
+   ,.off_resp_link_o(resp_link_lo[E:W])
    );
 
   bind bp_be_top
@@ -298,9 +308,9 @@ bind bp_be_top
         ,.mem_cmd_ready_i(mem_cmd_ready_i)
         );
 
-wire [mem_noc_cord_width_p-1:0] cfg_cmd_core_lo = cfg_cmd_lo.addr[cfg_addr_width_p+:cfg_core_width_p];
-wire [mem_noc_cord_width_p-1:0] dst_cord_lo = cfg_cmd_v_lo ? tile_cord_lo[cfg_cmd_core_lo] : '0;
-wire [mem_noc_cid_width_p-1:0]  dst_cid_lo = mem_noc_cid_width_p'(1);
+wire [mem_noc_chid_width_p-1:0] dst_chid_lo = 1;
+wire [mem_noc_cord_width_p-1:0] dst_cord_lo = '1;
+wire [mem_noc_cid_width_p-1:0]  dst_cid_lo  = '0;
 
 // DRAM + link 
 bp_me_cce_to_wormhole_link_bidir
@@ -325,16 +335,18 @@ bp_me_cce_to_wormhole_link_bidir
   ,.mem_resp_v_i(mem_resp_v_li)
   ,.mem_resp_ready_o(mem_resp_ready_lo)
 
-  ,.my_cord_i(dram_cord_lo)
+  ,.my_chid_i(dram_chid_li)
+  ,.my_cord_i(mem_noc_cord_width_p'(dram_chid_li))
   ,.my_cid_i(mem_noc_cid_width_p'(0))
+  ,.dst_chid_i(dst_chid_lo)
   ,.dst_cord_i(dst_cord_lo)
   ,.dst_cid_i(dst_cid_lo)
      
-  ,.cmd_link_i(cmd_link_li)
-  ,.cmd_link_o(cmd_link_lo)
+  ,.cmd_link_i(cmd_link_lo[P])
+  ,.cmd_link_o(cmd_link_li[P])
 
-  ,.resp_link_i(resp_link_li)
-  ,.resp_link_o(resp_link_lo)
+  ,.resp_link_i(resp_link_lo[P])
+  ,.resp_link_o(resp_link_li[P])
   );
 
 bp_mem

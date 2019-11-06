@@ -47,7 +47,7 @@ bsg_ready_and_link_sif_s [E:W]                      cmd_hor_link_li, cmd_hor_lin
 
 for (genvar i = 0; i < mem_noc_x_dim_p; i++)
   begin : node
-    wire [mem_noc_cord_width_p-1:0] cord_li = {'0, mem_noc_x_cord_width_p'(i+1)};
+    wire [mem_noc_cord_width_p-1:0] cord_li = {'0, mem_noc_x_cord_width_p'(i)};
     wire [E:W][bsg_ready_and_link_sif_width_lp-1:0] off_cmd_link_li = {next_cmd_link_i, prev_cmd_link_i};
     wire [E:W][bsg_ready_and_link_sif_width_lp-1:0] off_resp_link_li = {next_resp_link_i, prev_resp_link_i};
     bp_remote_domain_proxy_node

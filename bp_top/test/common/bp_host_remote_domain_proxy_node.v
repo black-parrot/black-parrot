@@ -1,5 +1,8 @@
 
-module bp_remote_domain_proxy_node
+
+// TODO: This module is identical to bp_remote_domain_proxy_node modulo the address map.
+//   Maybe there's a clever way to get around this, like proxying out for the address map only
+module bp_host_remote_domain_proxy_node
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
@@ -189,24 +192,13 @@ module bp_remote_domain_proxy_node
   assign off_mem_resp_payload_lo = off_mem_resp_packet_lo.payload;
 
   bp_cce_mem_msg_s off_mem_cmd_lo;
-  logic [mem_noc_cord_width_p-1:0] cmd_dst_cord_lo;
-  logic [mem_noc_cid_width_p-1:0]  cmd_dst_cid_lo;
   assign off_mem_cmd_lo = off_mem_cmd_payload_lo.data;
-  wire [paddr_width_p-1:0] local_cmd_mask_li = ({paddr_width_p{1'b1}} >> mem_noc_chid_width_p);
-  wire [paddr_width_p-1:0] local_cmd_addr_li = off_mem_cmd_lo.addr & local_cmd_mask_li;
-  bp_addr_map
-   #(.bp_params_p(bp_params_p))
-   cmd_addr_map
-    (.my_cord_i(my_cord_i)
+  wire [paddr_width_p-1:0] local_cmd_addr_li = off_mem_cmd_lo.addr;
 
-     ,.paddr_i(local_cmd_addr_li)
-     ,.dram_en_i(1'b0)
-
-     // We don't use dst chid, since we know sending on chip at this point
-     ,.dst_chid_o()
-     ,.dst_cord_o(cmd_dst_cord_lo)
-     ,.dst_cid_o(cmd_dst_cid_lo)
-     );
+  // TODO Attach host and fake memory to router coordinates
+  //wire host_not_dram = (mem_cmd_lo.addr < dram_base_addr_gp);
+  wire [mem_noc_cord_width_p-1:0] cmd_dst_cord_lo = '0; 
+  wire [mem_noc_cord_width_p-1:0] cmd_dst_cid_lo  = '0;
 
   always_comb
     begin

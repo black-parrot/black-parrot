@@ -32,6 +32,7 @@ module bp_tile_node
    , input                                       mem_reset_i
 
    // Memory side connection
+   , input [mem_noc_chid_width_p-1:0]            my_chid_i
    , input [mem_noc_cord_width_p-1:0]            my_cord_i
 
    // Connected to other tiles on east and west
@@ -75,6 +76,7 @@ bp_mem_ready_and_link_s core_mem_resp_link_li, core_mem_resp_link_lo;
      ,.reset_i(core_reset_i)
 
      // Memory side connection
+     ,.my_chid_i(my_chid_i)
      ,.my_cord_i(my_cord_i)
 
      ,.lce_req_link_i(core_lce_req_link_li)
@@ -353,7 +355,7 @@ bp_mem_ready_and_link_s mem_resp_link_li, mem_resp_link_lo;
      ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
      ,.len_width_p(coh_noc_len_width_p)
      ,.reverse_order_p(1)
-     ,.routing_matrix_p(StrictXY)
+     ,.routing_matrix_p(StrictYX)
      )
    lce_req_router
     (.clk_i(coh_clk_i)
@@ -371,7 +373,7 @@ bp_mem_ready_and_link_s mem_resp_link_li, mem_resp_link_lo;
      ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
      ,.len_width_p(coh_noc_len_width_p)
      ,.reverse_order_p(1)
-     ,.routing_matrix_p(StrictXY)
+     ,.routing_matrix_p(StrictYX)
      )
    lce_cmd_router
     (.clk_i(coh_clk_i)
@@ -389,7 +391,7 @@ bp_mem_ready_and_link_s mem_resp_link_li, mem_resp_link_lo;
      ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
      ,.len_width_p(coh_noc_len_width_p)
      ,.reverse_order_p(1)
-     ,.routing_matrix_p(StrictXY)
+     ,.routing_matrix_p(StrictYX)
      )
    lce_resp_router
     (.clk_i(coh_clk_i)
@@ -407,7 +409,7 @@ bp_mem_ready_and_link_s mem_resp_link_li, mem_resp_link_lo;
      ,.cord_markers_pos_p(mem_noc_cord_markers_pos_p)
      ,.len_width_p(mem_noc_len_width_p)
      ,.reverse_order_p(1)
-     ,.routing_matrix_p(StrictXY)
+     ,.routing_matrix_p(StrictYX)
      )
    mem_cmd_router 
    (.clk_i(mem_clk_i)
@@ -423,7 +425,7 @@ bp_mem_ready_and_link_s mem_resp_link_li, mem_resp_link_lo;
      ,.cord_markers_pos_p(mem_noc_cord_markers_pos_p)
      ,.len_width_p(mem_noc_len_width_p)
      ,.reverse_order_p(1)
-     ,.routing_matrix_p(StrictXY)
+     ,.routing_matrix_p(StrictYX)
      )
    mem_resp_router 
     (.clk_i(mem_clk_i)

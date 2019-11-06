@@ -30,10 +30,6 @@ module wrapper
 
    , input [mem_noc_chid_width_p-1:0]                 my_chid_i
 
-   , input [mem_noc_chid_width_p-1:0]                 coproc_chid_i
-   , input [mem_noc_chid_width_p-1:0]                 dram_chid_i
-   , input [mem_noc_chid_width_p-1:0]                 host_chid_i
-
    , input  [mem_noc_ral_link_width_lp-1:0]           prev_cmd_link_i
    , output [mem_noc_ral_link_width_lp-1:0]           prev_cmd_link_o
 

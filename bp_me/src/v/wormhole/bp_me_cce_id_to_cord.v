@@ -15,7 +15,7 @@ module bp_me_cce_id_to_cord
 
   if (coh_noc_dims_p > 0)
     begin : x_cord
-      assign cce_cord_o[0+:coh_noc_x_cord_width_p]                      = cce_id_i % coh_noc_x_dim_p + 2;
+      assign cce_cord_o[0+:coh_noc_x_cord_width_p]                      = cce_id_i % coh_noc_x_dim_p;
     end
   if (coh_noc_dims_p > 1)
     begin : y_cord

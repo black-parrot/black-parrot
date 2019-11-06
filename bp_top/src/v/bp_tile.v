@@ -28,6 +28,7 @@ module bp_tile
    , input                                                    reset_i
 
    // Memory side connection
+   , input [mem_noc_chid_width_p-1:0]                         my_chid_i
    , input [mem_noc_cord_width_p-1:0]                         my_cord_i
 
    // Connected to other tiles on east and west
@@ -465,6 +466,7 @@ for (genvar i = 0; i < 2; i++)
      ,.concentrated_link_o(resp_concentrated_link_lo)
      );
 
+logic [mem_noc_chid_width_p-1:0] dst_chid_lo;
 logic [mem_noc_cord_width_p-1:0] dst_cord_lo;
 logic [mem_noc_cid_width_p-1:0]  dst_cid_lo;
 bp_addr_map
@@ -475,6 +477,7 @@ bp_addr_map
    ,.paddr_i(cce_mem_cmd_lo.addr)
    ,.dram_en_i(1'b0)
 
+   ,.dst_chid_o(dst_chid_lo)
    ,.dst_cord_o(dst_cord_lo)
    ,.dst_cid_o(dst_cid_lo)
    );
@@ -553,8 +556,10 @@ bp_me_cce_to_wormhole_link_bidir
    ,.mem_resp_v_i(cce_mem_resp_v_lo)
    ,.mem_resp_ready_o(cce_mem_resp_ready_li)
 
+   ,.my_chid_i(my_chid_i)
    ,.my_cord_i(my_cord_i)
    ,.my_cid_i(mem_noc_cid_width_p'(0))
+   ,.dst_chid_i(dst_chid_lo)
    ,.dst_cord_i(dst_cord_lo)
    ,.dst_cid_i(dst_cid_lo)
 
@@ -579,9 +584,6 @@ bp_me_cce_to_wormhole_link_client
    ,.mem_resp_v_i(cfg_mem_resp_v_lo)
    ,.mem_resp_ready_o(cfg_mem_resp_ready_li)
 
-   ,.my_cord_i(my_cord_i)
-   ,.my_cid_i(mem_noc_cid_width_p'(1))
-
    ,.cmd_link_i(cfg_mem_cmd_link_li)
    ,.cmd_link_o(cfg_mem_cmd_link_lo)
 
@@ -602,9 +604,6 @@ bp_me_cce_to_wormhole_link_client
    ,.mem_resp_i(clint_mem_resp_lo)
    ,.mem_resp_v_i(clint_mem_resp_v_lo)
    ,.mem_resp_ready_o(clint_mem_resp_ready_li)
-
-   ,.my_cord_i(my_cord_i)
-   ,.my_cid_i(mem_noc_cid_width_p'(2))
 
    ,.cmd_link_i(clint_mem_cmd_link_li)
    ,.cmd_link_o(clint_mem_cmd_link_lo)
