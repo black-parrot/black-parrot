@@ -19,7 +19,7 @@ module bp_io_complex
    , input                                                             mem_clk_i
    , input                                                             mem_reset_i
 
-   , input [mem_noc_chid_width_p-1:0]                                  my_chid_i
+   , input [mem_noc_did_width_p-1:0]                                   my_did_i
 
    , input [mem_noc_x_dim_p-1:0][bsg_ready_and_link_sif_width_lp-1:0]  mem_cmd_link_i
    , output [mem_noc_x_dim_p-1:0][bsg_ready_and_link_sif_width_lp-1:0] mem_cmd_link_o
@@ -56,7 +56,7 @@ for (genvar i = 0; i < mem_noc_x_dim_p; i++)
       (.clk_i(mem_clk_i)
        ,.reset_i(mem_reset_i)
 
-       ,.my_chid_i(my_chid_i)
+       ,.my_did_i(my_did_i)
        ,.my_cord_i(cord_li)
 
        ,.on_cmd_link_i(cmd_link_li[i][S])

@@ -77,8 +77,8 @@ logic                  cfg_cmd_v_lo, cfg_cmd_ready_li;
 bp_cce_mem_msg_s       cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
-wire [mem_noc_chid_width_p-1:0] dram_chid_li = '1;
-wire [mem_noc_chid_width_p-1:0] proc_chid_li = 1;
+wire [mem_noc_did_width_p-1:0] dram_did_li = '1;
+wire [mem_noc_did_width_p-1:0] proc_did_li = 1;
 
 // Chip
 wrapper
@@ -93,7 +93,7 @@ wrapper
    ,.mem_clk_i(clk_i)
    ,.mem_reset_i(reset_i)
 
-   ,.my_chid_i(proc_chid_li)
+   ,.my_did_i(proc_did_li)
 
    ,.prev_cmd_link_i('0)
    ,.prev_cmd_link_o()
@@ -121,8 +121,8 @@ bp_host_remote_domain_proxy_node
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.my_chid_i(dram_chid_li)
-   ,.my_cord_i(mem_noc_cord_width_p'(dram_chid_li))
+   ,.my_did_i(dram_did_li)
+   ,.my_cord_i(mem_noc_cord_width_p'(dram_did_li))
 
    ,.on_cmd_link_i(cmd_link_li[P])
    ,.on_cmd_link_o(cmd_link_lo[P])
@@ -308,7 +308,7 @@ bind bp_be_top
         ,.mem_cmd_ready_i(mem_cmd_ready_i)
         );
 
-wire [mem_noc_chid_width_p-1:0] dst_chid_lo = 1;
+wire [mem_noc_did_width_p-1:0]  dst_did_lo  = 1;
 wire [mem_noc_cord_width_p-1:0] dst_cord_lo = '1;
 wire [mem_noc_cid_width_p-1:0]  dst_cid_lo  = '0;
 
@@ -335,10 +335,10 @@ bp_me_cce_to_wormhole_link_bidir
   ,.mem_resp_v_i(mem_resp_v_li)
   ,.mem_resp_ready_o(mem_resp_ready_lo)
 
-  ,.my_chid_i(dram_chid_li)
-  ,.my_cord_i(mem_noc_cord_width_p'(dram_chid_li))
+  ,.my_did_i(dram_did_li)
+  ,.my_cord_i(mem_noc_cord_width_p'(dram_did_li))
   ,.my_cid_i(mem_noc_cid_width_p'(0))
-  ,.dst_chid_i(dst_chid_lo)
+  ,.dst_did_i(dst_did_lo)
   ,.dst_cord_i(dst_cord_lo)
   ,.dst_cid_i(dst_cid_lo)
      

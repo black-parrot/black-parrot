@@ -31,7 +31,7 @@ module bp_processor
    , input                                            mem_clk_i
    , input                                            mem_reset_i
 
-   , input [mem_noc_chid_width_p-1:0]                 my_chid_i
+   , input [mem_noc_did_width_p-1:0]                  my_did_i
 
    , input  [bsg_ready_and_link_sif_width_lp-1:0]     prev_cmd_link_i
    , output [bsg_ready_and_link_sif_width_lp-1:0]     prev_cmd_link_o
@@ -66,7 +66,7 @@ bp_core_complex
    ,.mem_clk_i(mem_clk_i)
    ,.mem_reset_i(mem_reset_i)
 
-   ,.my_chid_i(my_chid_i)
+   ,.my_did_i(my_did_i)
 
    ,.mem_cmd_link_i(mem_cmd_link_li)
    ,.mem_cmd_link_o(mem_cmd_link_lo)
@@ -84,7 +84,7 @@ bp_io_complex
    ,.mem_clk_i(mem_clk_i)
    ,.mem_reset_i(mem_reset_i)
 
-   ,.my_chid_i(my_chid_i)
+   ,.my_did_i(my_did_i)
 
    ,.mem_cmd_link_i(mem_cmd_link_lo)
    ,.mem_cmd_link_o(mem_cmd_link_li)

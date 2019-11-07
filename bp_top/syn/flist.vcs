@@ -51,6 +51,7 @@ $BASEJUMP_STL_DIR/bsg_dataflow/bsg_one_fifo.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_2_to_2.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_1r1w_pseudo_large.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_1r1w_small.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_1r1w_small_unhardened.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_tracker.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_flow_counter.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out_dynamic.v

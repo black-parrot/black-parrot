@@ -11,16 +11,16 @@ module bp_me_cce_to_wormhole_link_bidir
   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
   )
 
-  (input                                         clk_i
+  (input                                          clk_i
    , input                                        reset_i
 
    // Configuration
-   , input [mem_noc_chid_width_p-1:0]             my_chid_i
+   , input [mem_noc_did_width_p-1:0]              my_did_i
    , input [mem_noc_cord_width_p-1:0]             my_cord_i
    , input [mem_noc_cid_width_p-1:0]              my_cid_i
    , input [mem_noc_cid_width_p-1:0]              dst_cid_i
    , input [mem_noc_cord_width_p-1:0]             dst_cord_i
-   , input [mem_noc_chid_width_p-1:0]             dst_chid_i
+   , input [mem_noc_did_width_p-1:0]              dst_did_i
 
    // Master link
    , input  [cce_mem_msg_width_lp-1:0]            mem_cmd_i
@@ -91,10 +91,10 @@ bp_me_cce_to_wormhole_link_master
   ,.mem_resp_v_o(mem_resp_v_o)
   ,.mem_resp_yumi_i(mem_resp_yumi_i)
 
-  ,.my_chid_i(my_chid_i)
+  ,.my_did_i(my_did_i)
   ,.my_cord_i(my_cord_i)
   ,.my_cid_i(my_cid_i)
-  ,.dst_chid_i(dst_chid_i)
+  ,.dst_did_i(dst_did_i)
   ,.dst_cord_i(dst_cord_i)
   ,.dst_cid_i(dst_cid_i)
   
