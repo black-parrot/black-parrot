@@ -129,6 +129,8 @@ bp_cfg
    ,.mem_resp_ready_i(cfg_mem_resp_ready_li)
 
    ,.cfg_bus_o(cfg_bus_lo)
+   ,.did_i(my_did_i)
+   ,.cord_i(my_cord_i)
    ,.irf_data_i(cfg_irf_data_li)
    ,.npc_data_i(cfg_npc_data_li)
    ,.csr_data_i(cfg_csr_data_li)
