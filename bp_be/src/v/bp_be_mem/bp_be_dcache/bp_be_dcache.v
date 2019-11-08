@@ -468,7 +468,8 @@ module bp_be_dcache
   logic load_reserved_v_r;
 
   // Upgrade if a load reserved and we don't have the line in exclusive state
-  assign lr_miss_tv = v_tv_r & lr_op_tv_r & load_hit & ~store_hit;
+  // Load reserved misses if not in exclusive or modified (whether load hit or not)
+  assign lr_miss_tv = v_tv_r & lr_op_tv_r & ~store_hit;
   // Succeed if the address matches and we have a store hit
   assign sc_success  = v_tv_r & sc_op_tv_r & store_hit & load_reserved_v_r 
                        & (load_reserved_tag_r == addr_tag_tv)
