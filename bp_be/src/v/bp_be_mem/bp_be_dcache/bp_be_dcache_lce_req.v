@@ -156,20 +156,22 @@ module bp_be_dcache_lce_req
       // READY
       // wait for the cache miss.
       e_READY: begin
-        if (load_miss_i | store_miss_i) begin
+        // LR needs priority over regular load miss, otherwise it might get sent out as a regular
+        // load miss if the cache block is not in the cache at all.
+        if (lr_miss_i) begin
           miss_addr_n = miss_addr_i;
           dirty_lru_flopped_n = 1'b0;
-          load_not_store_n = load_miss_i;
+          load_not_store_n = 1'b0; // We force a store miss to upgrade the block to exclusive
           cce_data_received_n = 1'b0;
           set_tag_received_n = 1'b0;
 
           cache_miss_o = 1'b1;
           state_n = e_SEND_CACHED_REQ;
         end
-        else if (lr_miss_i) begin
+        else if (load_miss_i | store_miss_i) begin
           miss_addr_n = miss_addr_i;
           dirty_lru_flopped_n = 1'b0;
-          load_not_store_n = 1'b0; // We force a store miss to upgrade the block to exclusive
+          load_not_store_n = load_miss_i;
           cce_data_received_n = 1'b0;
           set_tag_received_n = 1'b0;
 
