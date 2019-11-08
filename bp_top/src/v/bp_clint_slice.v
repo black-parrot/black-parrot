@@ -64,7 +64,18 @@ logic [dword_width_p-1:0] mtime_r, mtimecmp_n, mtimecmp_r;
 logic                     mipi_n, mipi_r;
 logic                     plic_n, plic_r;
 
-// TODO: Should be RTC
+// TODO: Should be actual RTC
+localparam ds_width_lp = 5;
+localparam [ds_width_lp-1:0] ds_ratio_li = 10;
+logic mtime_inc_li;
+bsg_strobe
+ #(.width_p(ds_width_lp))
+ bsg_rtc_strobe
+  (.clk_i(clk_i)
+   ,.reset_r_i(reset_i)
+   ,.init_val_r_i(ds_ratio_li)
+   ,.strobe_r_o(mtime_inc_li)
+   );
 bsg_counter_clear_up
  #(.max_val_p(2**dword_width_p-1)
    ,.ptr_width_lp(dword_width_p)
@@ -75,7 +86,7 @@ bsg_counter_clear_up
    ,.reset_i(reset_i)
    ,.clear_i(1'b0)
 
-   ,.up_i(1'b1)
+   ,.up_i(mtime_inc_li)
    ,.count_o(mtime_r)
    );
 
