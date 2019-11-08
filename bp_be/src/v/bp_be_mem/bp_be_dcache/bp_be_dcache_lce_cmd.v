@@ -54,6 +54,8 @@ module bp_be_dcache_lce_cmd
 
     , input [paddr_width_p-1:0] miss_addr_i
 
+    , input lr_locked_i
+
     , output logic lce_sync_done_o
     , output logic set_tag_received_o
     , output logic set_tag_wakeup_received_o
@@ -341,24 +343,27 @@ module bp_be_dcache_lce_cmd
             //  invalidate tag. It does not update the LRU. It sends out
             //  invalidate_ack response.
             e_lce_cmd_invalidate_tag: begin
-              tag_mem_pkt.index = lce_cmd_addr_index;
-              tag_mem_pkt.way_id = lce_cmd_li.way_id;
-              tag_mem_pkt.opcode = e_dcache_lce_tag_mem_invalidate;
-              tag_mem_pkt_v_o = invalidated_tag_r
-                ? 1'b0
-                : lce_cmd_v_li;
-              invalidated_tag_n = lce_resp_yumi_i
-                ? 1'b0
-                : (invalidated_tag_r
-                  ? 1'b1
-                  : tag_mem_pkt_yumi_i);
+              // only respond to invalidates if LR lock is unset
+              if (~lr_locked_i) begin
+                tag_mem_pkt.index = lce_cmd_addr_index;
+                tag_mem_pkt.way_id = lce_cmd_li.way_id;
+                tag_mem_pkt.opcode = e_dcache_lce_tag_mem_invalidate;
+                tag_mem_pkt_v_o = invalidated_tag_r
+                  ? 1'b0
+                  : lce_cmd_v_li;
+                invalidated_tag_n = lce_resp_yumi_i
+                  ? 1'b0
+                  : (invalidated_tag_r
+                    ? 1'b1
+                    : tag_mem_pkt_yumi_i);
 
-              lce_resp.dst_id = lce_cmd_li.msg.cmd.src_id;
-              lce_resp.msg_type = e_lce_cce_inv_ack;
-              lce_resp.src_id = lce_id_i;
-              lce_resp.addr = lce_cmd_li.msg.cmd.addr;
-              lce_resp_v_o = invalidated_tag_r | tag_mem_pkt_yumi_i;
-              lce_cmd_yumi_lo = lce_resp_yumi_i;
+                lce_resp.dst_id = lce_cmd_li.msg.cmd.src_id;
+                lce_resp.msg_type = e_lce_cce_inv_ack;
+                lce_resp.src_id = lce_id_i;
+                lce_resp.addr = lce_cmd_li.msg.cmd.addr;
+                lce_resp_v_o = invalidated_tag_r | tag_mem_pkt_yumi_i;
+                lce_cmd_yumi_lo = lce_resp_yumi_i;
+              end
             end
 
             //  <uncached store done>

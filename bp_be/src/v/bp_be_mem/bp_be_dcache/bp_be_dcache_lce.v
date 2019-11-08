@@ -91,6 +91,8 @@ module bp_be_dcache_lce
     , input [dword_width_p-1:0] store_data_i
     , input [1:0] size_op_i
 
+    , input sc_success_i
+
     // data_mem
     , output logic data_mem_pkt_v_o
     , output logic [dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
@@ -180,14 +182,50 @@ module bp_be_dcache_lce
   assign credits_full_o = (credit_count_lo == mem_noc_max_credits_p);
   assign credits_empty_o = (credit_count_lo == 0);
 
-
-  // LCE_CCE_req
-  //
+  // Tag and Data signals from LCE Command
   logic cce_data_received;
   logic uncached_data_received;
   logic set_tag_received;
   logic set_tag_wakeup_received;
 
+  // LR Missing Register
+  // Set when lr_miss_i goes high
+  // Unset when lr_miss_done goes high
+  logic lr_missing_r, lr_missing_n, lr_miss_done;
+  // LR miss is done if in missing state and STW or Data+Tag arrives
+  assign lr_miss_done = lr_missing_r &
+    ( set_tag_wakeup_received | (set_tag_received & cce_data_received));
+  assign lr_missing_n = lr_miss_done
+    ? 1'b0
+    : lr_miss_i
+      ? 1'b1
+      : lr_missing_r;
+
+  // LR/SC lock
+  // Lock is set when LR is filled
+  // Lock is unset when already set and SC succeeds
+  logic lr_lock_r, lr_lock_n, lr_lock_set, lr_lock_unset;
+  assign lr_lock_set = lr_miss_done;
+  assign lr_lock_unset = lr_lock_r & sc_success_i;
+  assign lr_lock_n = lr_lock_unset
+    ? 1'b0
+    : lr_lock_set
+      ? 1'b1
+      : lr_lock_r;
+
+  // LR Registers
+  always_ff @(posedge clk_i) begin
+    if (reset_i) begin
+      lr_missing_r <= '0;
+      lr_lock_r <= '0;
+    end else begin
+      lr_lock_r <= lr_lock_n;
+      lr_missing_r <= lr_missing_n;
+    end
+  end
+
+  // LCE_CCE_req
+  //
   bp_lce_cce_resp_s lce_req_to_lce_resp_lo;
   logic lce_req_to_lce_resp_v_lo;
   logic lce_req_to_lce_resp_yumi_li;
@@ -265,6 +303,8 @@ module bp_be_dcache_lce
       ,.lce_mode_i(lce_mode_i)
 
       ,.miss_addr_i(miss_addr_lo)
+
+      ,.lr_locked_i(lr_lock_r)
 
       ,.lce_sync_done_o(lce_sync_done_lo)
       ,.set_tag_received_o(set_tag_received)
