@@ -382,16 +382,25 @@ module bp_cce_inst_decode
             case (queue_op_s.op.specq.cmd)
               e_spec_cmd_set: begin
                 decoded_inst_o.spec_bits.spec = 1'b1;
+                decoded_inst_o.spec_bits.squash = 1'b0;
+                decoded_inst_o.spec_bits.fwd_mod = 1'b0;
+                decoded_inst_o.spec_bits.state = '0;
               end
               e_spec_cmd_unset: begin
                 decoded_inst_o.spec_bits.spec = 1'b0;
+                decoded_inst_o.spec_bits.squash = 1'b0;
+                decoded_inst_o.spec_bits.fwd_mod = 1'b0;
+                decoded_inst_o.spec_bits.state = '0;
               end
               e_spec_cmd_squash: begin
                 decoded_inst_o.spec_bits.spec = 1'b0;
                 decoded_inst_o.spec_bits.squash = 1'b1;
+                decoded_inst_o.spec_bits.fwd_mod = 1'b0;
+                decoded_inst_o.spec_bits.state = '0;
               end
               e_spec_cmd_fwd_mod: begin
                 decoded_inst_o.spec_bits.spec = 1'b0;
+                decoded_inst_o.spec_bits.squash = 1'b0;
                 decoded_inst_o.spec_bits.fwd_mod = 1'b1;
                 decoded_inst_o.spec_bits.state = queue_op_s.op.specq.state;
               end

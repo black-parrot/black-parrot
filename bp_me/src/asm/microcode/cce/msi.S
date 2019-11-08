@@ -106,14 +106,14 @@ replace_check: bfz rf transfer_check
 
 # Replacement Routine
 replace: pushq lceCmd WB req lru lru
+# wait for writeback response
 replacement_poph: poph lceResp r0
 beqi r0 COH_ACK replacement_poph
 bf nwbf complete_replacement
 pushq memCmd MEM_CMD_WB lru
-complete_replacement: popq lceResp r0
-beqi r0 COH_ACK complete_replacement
+popq lceResp r0
 # replacement done, explicitly set replacement flag to 0
-sfz rf
+complete_replacement: sfz rf
 
 # Transfer Check
 transfer_check: bfz tf read_l2
@@ -125,10 +125,8 @@ pushq lceCmd WB tr req tr
 transfer_poph: poph lceResp r0
 beqi r0 COH_ACK transfer_poph
 bf nwbf complete_transfer
-# perform the transfer WB to mem
 pushq memCmd MEM_CMD_WB req
 complete_transfer: popq lceResp r0
-beqi r0 COH_ACK complete_transfer
 bi ready
 
 # Read Line from L2 Routine

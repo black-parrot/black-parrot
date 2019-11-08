@@ -166,15 +166,19 @@ module bp_cce_msg_cached
   logic spec_bits_v_lo;
   bp_cce_spec_s spec_bits_lo;
 
-  // Note: currently, all spec commands write the spec bit
   wire spec_v_li = decoded_inst_i.spec_w_v;
+  wire squash_v_li = decoded_inst_i.spec_w_v;
+  wire fwd_mod_v_li = decoded_inst_i.spec_w_v;
+  wire state_v_li = decoded_inst_i.spec_w_v;
 
+  /*
   wire squash_v_li = (decoded_inst_i.spec_cmd == e_spec_cmd_squash)
                      || (decoded_inst_i.spec_cmd == e_spec_cmd_clear);
   wire fwd_mod_v_li = (decoded_inst_i.spec_cmd == e_spec_cmd_fwd_mod)
                       || (decoded_inst_i.spec_cmd == e_spec_cmd_clear);
   wire state_v_li = (decoded_inst_i.spec_cmd == e_spec_cmd_fwd_mod)
                     || (decoded_inst_i.spec_cmd == e_spec_cmd_clear);
+  */
 
   bp_cce_spec
     #(.num_way_groups_p(num_way_groups_lp))
@@ -336,6 +340,13 @@ module bp_cce_msg_cached
         else if (spec_bits_lo.squash) begin // speculation resolved, squash
           // dequeue the command and do nothing with it
           mem_resp_yumi_o = 1'b1;
+
+          pending_w_busy_o = 1'b1;
+          pending_w_v_o = 1'b1;
+          pending_w_way_group_o =
+            mem_resp_li.addr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
+          pending_o = 1'b0;
+
         end
         else if (spec_bits_lo.fwd_mod) begin // speculation resolved, forward with modified state
           // handshaking
@@ -356,6 +367,14 @@ module bp_cce_msg_cached
           // modify the coherence state
           lce_cmd.msg.dt_cmd.state = spec_bits_lo.state;
 
+          if (lce_cmd_ready_i) begin
+            pending_w_busy_o = 1'b1;
+            pending_w_v_o = 1'b1;
+            pending_w_way_group_o =
+              mem_resp_li.addr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
+            pending_o = 1'b0;
+          end
+
         end
         else begin // speculation resolved, forward unmodified
           // handshaking
@@ -375,22 +394,14 @@ module bp_cce_msg_cached
           lce_cmd.msg.dt_cmd.addr = mem_resp_li.addr;
           lce_cmd.msg.dt_cmd.state = mem_resp_li.payload.state;
 
-        end
+          if (lce_cmd_ready_i) begin
+            pending_w_busy_o = 1'b1;
+            pending_w_v_o = 1'b1;
+            pending_w_way_group_o =
+              mem_resp_li.addr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
+            pending_o = 1'b0;
+          end
 
-        // Clear the pending bit in the cycle that the message is dequeued from mem_resp,
-        // which is same cycle that the LCE command is sent
-        // Pending bit only cleared if this is a cached request response
-        if (mem_resp_yumi_o) begin
-          pending_w_v_o = 1'b1;
-          pending_w_way_group_o =
-            mem_resp_li.addr[(way_group_offset_high_lp-1) -: lg_num_way_groups_lp];
-          pending_o = 1'b0;
-          // TODO: only blocking on cycle that message sends because Mem Cmd are sent to a full width buffer, so it only
-          // takes a single cycle to send Mem Cmd.
-          // If mem_cmd is sent directly to a wormhole router (i.e., the output buffers are removed, the arbitration logic
-          // for pending bits needs to be reworked. Would it be safe to have one or more cycle gap between flits in a WH routed
-          // message?
-          pending_w_busy_o = 1'b1;
         end
 
       end // speculative response
