@@ -16,7 +16,6 @@
 typedef struct {
     uint64_t head_index;
     uint64_t tail_index;
-    uint64_t lock_address;
     uint64_t queue_buffer[QUEUE_LENGTH];
 } shared_queue;
 
@@ -27,7 +26,9 @@ typedef struct {
 typedef uint64_t queue_item;
 
 // declare everything volatile, so loops don't optimize themselves away
-volatile shared_queue queue;
+// place lock and data structure on separate cache lines
+volatile uint64_t __attribute__((aligned(64))) lock_address;
+volatile __attribute__((aligned(64))) shared_queue queue;
 
 volatile uint64_t start_barrier_mem = 0;
 volatile uint64_t end_barrier_mem = 0;
@@ -37,7 +38,7 @@ void lock_queue(uint64_t core_id) {
 
     do {
         __asm__ volatile("amoswap.d %0, %2, (%1)": "=r"(swap_value) 
-                                                 : "r"(&(queue.lock_address)), "r"(swap_value)
+                                                 : "r"(&(lock_address)), "r"(swap_value)
                                                  :);
     } while (swap_value != 0);
 }
@@ -45,7 +46,7 @@ void lock_queue(uint64_t core_id) {
 void unlock_queue(uint64_t core_id) {
     uint64_t swap_value = 0;
     __asm__ volatile("amoswap.d %0, %2, (%1)": "=r"(swap_value) 
-                                                 : "r"(&(queue.lock_address)), "r"(swap_value)
+                                                 : "r"(&(lock_address)), "r"(swap_value)
                                                  :);
 }
 
@@ -158,7 +159,7 @@ uint64_t main(uint64_t argc, char * argv[]) {
     // only core 0 intializes data structures
     if (core_id == 0) {
         // initialize queue lock
-        queue.lock_address = 0;
+        lock_address = 0;
         // initialize queue structure
         queue.head_index = 0;
         queue.tail_index = 0;
