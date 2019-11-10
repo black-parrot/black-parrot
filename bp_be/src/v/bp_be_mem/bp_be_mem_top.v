@@ -107,7 +107,7 @@ module bp_be_mem_top
 `declare_bp_be_dcache_pkt_s(page_offset_width_lp, dword_width_p);
 
 // Cast input and output ports 
-bp_cfg_bus_s          cfg_bus;
+bp_cfg_bus_s           cfg_bus;
 bp_be_mmu_cmd_s        mmu_cmd;
 bp_be_csr_cmd_s        csr_cmd;
 bp_be_mem_resp_s       mem_resp;
@@ -154,7 +154,7 @@ logic [dword_width_p-1:0] csr_data_lo;
 logic                     csr_v_lo;
 logic                     translation_en_lo, mstatus_sum_lo, mstatus_mxr_lo;
 
-logic load_access_fault_v, store_access_fault_v;
+logic load_access_fault_v, load_access_fault_r, store_access_fault_v, store_access_fault_r;
 logic load_access_err_v, load_access_err_r, store_access_err_v, store_access_err_r;
 
 /* Control signals */
@@ -206,10 +206,10 @@ assign exception_ecode_dec_li =
     ,instr_fault     : csr_cmd_v_i & (csr_cmd.csr_op == e_op_instr_access_fault)
     ,illegal_instr   : csr_cmd_v_i & ((csr_cmd.csr_op == e_op_illegal_instr) || csr_illegal_instr_lo)
     ,breakpoint      : csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak)
-    ,load_misaligned : 1'b0
-    ,load_fault      : load_access_fault_v
-    ,store_misaligned: 1'b0
-    ,store_fault     : store_access_fault_v
+    ,load_misaligned : 1'b0 // TODO: Need to detect this
+    ,load_fault      : load_access_fault_r
+    ,store_misaligned: 1'b0 // TODO: Need to detect this
+    ,store_fault     : store_access_fault_r
     ,ecall_u_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_U)
     ,ecall_s_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_S)
     ,ecall_m_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_M)
@@ -323,6 +323,7 @@ bp_be_ptw
    ,.dcache_miss_i(dcache_miss_v)
   );
 
+logic load_op_tl_lo, store_op_tl_lo;
 bp_be_dcache 
   #(.bp_params_p(bp_params_p))
   dcache
@@ -341,6 +342,9 @@ bp_be_dcache
     ,.tlb_miss_i(dcache_tlb_miss)
     ,.ptag_i(dcache_ptag)
     ,.uncached_i(dcache_uncached)
+
+    ,.load_op_tl_o(load_op_tl_lo)
+    ,.store_op_tl_o(store_op_tl_lo)
 
     ,.cache_miss_o(dcache_miss_v)
     ,.poison_i(dcache_poison)
@@ -365,9 +369,6 @@ bp_be_dcache
 
     ,.credits_full_o(credits_full_o)
     ,.credits_empty_o(credits_empty_o)
-  
-    ,.load_access_fault_o(load_access_fault_v)
-    ,.store_access_fault_o(store_access_fault_v)
     );
 
 // We delay the tlb miss signal by one cycle to synchronize with cache miss signal
@@ -380,6 +381,8 @@ always_ff @(posedge clk_i) begin
     is_store_r   <= '0;
     load_access_err_r   <= '0;
     store_access_err_r  <= '0;
+    load_access_fault_r <= '0;
+    store_access_fault_r <= '0;
   end
   else begin
     dtlb_miss_r  <= dtlb_miss_v & ~chk_poison_ex_i;
@@ -389,6 +392,8 @@ always_ff @(posedge clk_i) begin
     is_store_rr  <= is_store_r & ~chk_poison_ex_i;
     load_access_err_r   <= load_access_err_v & ~chk_poison_ex_i;
     store_access_err_r  <= store_access_err_v & ~chk_poison_ex_i;
+    load_access_fault_r <= load_access_fault_v & ~chk_poison_ex_i;
+    store_access_fault_r <= store_access_fault_v & ~chk_poison_ex_i;
   end
 end
 
@@ -406,7 +411,9 @@ assign dcache_cmd_v    = mmu_cmd_v_i & ~is_itlb_fill;
 // D-Cache connections
 assign dcache_ptag     = (ptw_busy)? ptw_dcache_ptag : dtlb_r_entry.ptag;
 assign dcache_tlb_miss = (ptw_busy)? 1'b0 : dtlb_miss_v;
-assign dcache_poison   = (ptw_busy)? 1'b0 : (chk_poison_ex_i | load_access_err_v | store_access_err_v);
+assign dcache_poison   = (ptw_busy)? 1'b0 : chk_poison_ex_i 
+                                            | (load_access_err_v | store_access_err_v)
+                                            | (load_access_fault_v | store_access_fault_v);
 assign dcache_pkt_v    = (ptw_busy)? ptw_dcache_v : dcache_cmd_v;
 
 always_comb 
@@ -424,6 +431,11 @@ always_comb
       dcache_pkt.data        = mmu_cmd.data;
     end
 end
+
+// Fault if in uncached mode but access is not for an uncached address
+wire is_uncached_mode = (cfg_bus.dcache_mode == e_lce_mode_uncached);
+assign load_access_fault_v  = is_uncached_mode & (load_op_tl_lo & ~dcache_uncached);
+assign store_access_fault_v = is_uncached_mode & (store_op_tl_lo & ~dcache_uncached);
 
 // D-TLB connections
 assign dtlb_r_v     = dcache_cmd_v;

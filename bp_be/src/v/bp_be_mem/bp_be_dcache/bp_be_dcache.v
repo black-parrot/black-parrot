@@ -122,6 +122,9 @@ module bp_be_dcache
     , input [ptag_width_lp-1:0] ptag_i
     , input uncached_i
 
+    , output load_op_tl_o
+    , output store_op_tl_o
+
     // ctrl
     , output logic cache_miss_o
     , input poison_i
@@ -147,9 +150,6 @@ module bp_be_dcache
 
     , output credits_full_o
     , output credits_empty_o
-
-    , output load_access_fault_o
-    , output store_access_fault_o
   );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
@@ -697,14 +697,6 @@ module bp_be_dcache
       ,.credits_full_o(credits_full_o)
       ,.credits_empty_o(credits_empty_o)
       );
-
-  // Fault if in uncached mode but access is not for an uncached address
-  assign load_access_fault_o  = (cfg_bus_cast_i.dcache_mode == e_lce_mode_uncached)
-    ? (load_op_tv_r & ~uncached_tv_r)
-    : 1'b0;
-  assign store_access_fault_o = (cfg_bus_cast_i.dcache_mode == e_lce_mode_uncached)
-    ? (store_op_tv_r & ~uncached_tv_r)
-    : 1'b0;
 
   // output stage
   //
