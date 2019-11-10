@@ -318,51 +318,35 @@ module bp_be_dcache_lce
     end
   end
 
-  //  timeout logic
-  //  LCE can read/write to data_mem, tag_mem, and stat_mem, when they are free (e.g. tl stage in dcache is not accessing them).
-  //  In order to prevent LCE taking too much time to process incoming coherency requests,
-  //  there is a timer, which counts up whenever LCE needs to access mem, but have not been able to.
-  //  when the timer reaches max, it deasserts ready_o of dcache for one cycle, allowing it to access mem
-  //  by creating a free slot.
-  logic [`BSG_SAFE_CLOG2(timeout_max_limit_p+1)-1:0] timeout_count_r, timeout_count_n;
-  logic timeout;
+  // LCE timeout logic
+  // LCE can read/write to data_mem, tag_mem, and stat_mem, when they are free (e.g. tl stage in dcache is not accessing them).
+  // In order to prevent LCE taking too much time to process incoming coherency requests,
+  // there is a timer, which counts up whenever LCE needs to access mem, but have not been able to.
+  // when the timer reaches max, it deasserts ready_o of dcache for one cycle, allowing it to access mem
+  // by creating a free slot.
+  logic [`BSG_SAFE_CLOG2(timeout_max_limit_p+1)-1:0] timeout_cnt_r;
+  wire coherence_blocked = (data_mem_pkt_v_o | tag_mem_pkt_v_o | stat_mem_pkt_v_o)
+                           & (~data_mem_pkt_yumi_i & ~tag_mem_pkt_yumi_i & ~stat_mem_pkt_yumi_i);
+  bsg_counter_clear_up
+   #(.max_val_p(timeout_max_limit_p)
+     ,.init_val_p(0)
+     )
+   timeout_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-  // synopsys sync_set_reset "reset_i"
-  always_comb begin
-    if (timeout_count_r == timeout_max_limit_p) begin
-      timeout = 1'b1;
-      timeout_count_n = '0;
-    end
-    else begin
-      timeout = 1'b0;
-      if (data_mem_pkt_v_o | tag_mem_pkt_v_o | stat_mem_pkt_v_o) begin
-        timeout_count_n = (~data_mem_pkt_yumi_i & ~tag_mem_pkt_yumi_i & ~stat_mem_pkt_yumi_i)
-          ? timeout_count_r + 1
-          : '0;
-      end
-      else begin
-        timeout_count_n = '0;
-      end 
-    end
-  end
-
-  // synopsys sync_set_reset "reset_i"
-  always_ff @ (posedge clk_i) begin
-    if (reset_i) begin
-      timeout_count_r <= '0;
-    end
-    else begin
-      timeout_count_r <= timeout_count_n;
-    end
-  end
+     ,.clear_i(~coherence_blocked)
+     ,.up_i(coherence_blocked)
+     ,.count_o(timeout_cnt_r)
+     );
+  wire timeout = (timeout_cnt_r == timeout_max_limit_p);
 
   // LCE Ready Signal
   // The LCE ready signal depends on the mode of operation.
   // In uncached only mode, the LCE is always ready
   // In normal mode, the signal goes high after the LCE CMD unit signals that the CCE has
   // completed the initialization sequence.
-  logic lce_ready;
-  assign lce_ready = (lce_mode_i == e_lce_mode_uncached) ? 1'b1 : lce_sync_done_lo;
+  wire lce_ready = (lce_mode_i == e_lce_mode_uncached) ? 1'b1 : lce_sync_done_lo;
   assign ready_o = lce_ready & ~timeout & ~cache_miss_o; 
 
 endmodule
