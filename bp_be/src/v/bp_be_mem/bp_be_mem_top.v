@@ -155,14 +155,15 @@ logic                     csr_v_lo;
 logic                     translation_en_lo, mstatus_sum_lo, mstatus_mxr_lo;
 
 logic load_access_fault_v, store_access_fault_v;
+logic load_access_err_v, load_access_err_r, store_access_err_v, store_access_err_r;
 
 /* Control signals */
 logic dcache_cmd_v;
 logic itlb_not_dtlb_resp;
 logic mmu_cmd_v_r, mmu_cmd_v_rr, dtlb_miss_r;
+logic is_store_r, is_store_rr;
 bp_be_mmu_vaddr_s vaddr_mem3, fault_vaddr;
 logic is_itlb_fill_mem3;
-logic is_store_mem3;
 logic [vaddr_width_p-1:0] fault_pc;
 
 wire itlb_fill_cmd_v = is_itlb_fill_mem3 & mmu_cmd_v_rr;
@@ -181,14 +182,14 @@ bsg_dff_en
 wire is_itlb_fill = mmu_cmd_v_i & mmu_cmd.mem_op inside {e_itlb_fill};
 wire is_store     = mmu_cmd_v_i & mmu_cmd.mem_op inside {e_sb, e_sh, e_sw, e_sd};
 bsg_dff_chain
- #(.width_p(2+vaddr_width_p)
+ #(.width_p(1+vaddr_width_p)
    ,.num_stages_p(2)
    )
  fill_pipe
   (.clk_i(clk_i)
    
-   ,.data_i({mmu_cmd.vaddr, is_store, is_itlb_fill})
-   ,.data_o({vaddr_mem3, is_store_mem3, is_itlb_fill_mem3})
+   ,.data_i({mmu_cmd.vaddr, is_itlb_fill})
+   ,.data_o({vaddr_mem3, is_itlb_fill_mem3})
    );
 
 bp_be_ecode_dec_s exception_ecode_dec_li;
@@ -213,8 +214,8 @@ assign exception_ecode_dec_li =
     ,ecall_s_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_S)
     ,ecall_m_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_M)
     ,instr_page_fault: ptw_instr_page_fault_v
-    ,load_page_fault : ptw_load_page_fault_v
-    ,store_page_fault: ptw_store_page_fault_v
+    ,load_page_fault : ptw_load_page_fault_v | load_access_err_r
+    ,store_page_fault: ptw_store_page_fault_v | store_access_err_r
     ,default: '0
     };
 
@@ -376,21 +377,36 @@ always_ff @(posedge clk_i) begin
     dtlb_miss_r  <= '0;
     mmu_cmd_v_r  <= '0;
     mmu_cmd_v_rr <= '0;
+    is_store_r   <= '0;
+    load_access_err_r   <= '0;
+    store_access_err_r  <= '0;
   end
   else begin
     dtlb_miss_r  <= dtlb_miss_v & ~chk_poison_ex_i;
     mmu_cmd_v_r  <= mmu_cmd_v_i;
     mmu_cmd_v_rr <= mmu_cmd_v_r & ~chk_poison_ex_i;
+    is_store_r   <= is_store;
+    is_store_rr  <= is_store_r & ~chk_poison_ex_i;
+    load_access_err_r   <= load_access_err_v & ~chk_poison_ex_i;
+    store_access_err_r  <= store_access_err_v & ~chk_poison_ex_i;
   end
 end
-    
+
+// Check instruction accesses
+wire data_priv_access_fault = ((priv_mode_o == `PRIV_MODE_S) & ~mstatus_sum_lo & dtlb_r_entry.u)
+                              | ((priv_mode_o == `PRIV_MODE_U) & ~dtlb_r_entry.u);
+wire data_write_access_fault = is_store_r & (~dtlb_r_entry.w | ~dtlb_r_entry.d);
+
+assign load_access_err_v  = mmu_cmd_v_r & dtlb_r_v_lo & ~is_store_r & data_priv_access_fault;
+assign store_access_err_v = mmu_cmd_v_r & dtlb_r_v_lo & is_store_r & (data_priv_access_fault | data_write_access_fault);
+
 // Decode cmd type
 assign dcache_cmd_v    = mmu_cmd_v_i & ~is_itlb_fill;
 
 // D-Cache connections
 assign dcache_ptag     = (ptw_busy)? ptw_dcache_ptag : dtlb_r_entry.ptag;
 assign dcache_tlb_miss = (ptw_busy)? 1'b0 : dtlb_miss_v;
-assign dcache_poison   = (ptw_busy)? 1'b0 : chk_poison_ex_i;
+assign dcache_poison   = (ptw_busy)? 1'b0 : (chk_poison_ex_i | load_access_err_v | store_access_err_v);
 assign dcache_pkt_v    = (ptw_busy)? ptw_dcache_v : dcache_cmd_v;
 
 always_comb 
@@ -420,7 +436,7 @@ assign dtlb_w_entry = ptw_tlb_w_entry;
 assign ptw_tlb_miss_v    = itlb_fill_cmd_v | dtlb_fill_cmd_v;
 assign ptw_tlb_miss_vtag = vaddr_mem3.tag;
 assign ptw_page_fault_v  = ptw_instr_page_fault_v | ptw_load_page_fault_v | ptw_store_page_fault_v;
-assign ptw_store_not_load = dtlb_fill_cmd_v & is_store_mem3;
+assign ptw_store_not_load = dtlb_fill_cmd_v & is_store_rr;
  
 // MMU response connections
 assign mem_resp.miss_v = mmu_cmd_v_rr & ~dcache_v & ~itlb_fill_cmd_v;

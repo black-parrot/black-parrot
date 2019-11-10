@@ -105,7 +105,8 @@ module bp_be_ptw
   assign tlb_w_entry_o          = tlb_w_entry;
   
   assign tlb_w_entry.ptag       = translation_en_i ? writeback_ppn : ptag_width_p'(vpn_r);
-  assign tlb_w_entry.g          = translation_en_i ? dcache_data.g : 1'b0;
+  assign tlb_w_entry.a          = translation_en_i ? dcache_data.a : 1'b1;
+  assign tlb_w_entry.d          = translation_en_i ? dcache_data.d : 1'b1;
   assign tlb_w_entry.u          = translation_en_i ? dcache_data.u : 1'b0;
   assign tlb_w_entry.x          = translation_en_i ? dcache_data.x : 1'b1;
   assign tlb_w_entry.w          = translation_en_i ? dcache_data.w : 1'b1;

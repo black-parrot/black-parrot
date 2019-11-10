@@ -27,7 +27,8 @@ typedef enum bit [1:0]
   typedef struct packed                                        \
   {                                                            \
     logic [ptag_width_mp-1:0]  ptag;                           \
-    logic                      g;                              \
+    logic                      a;                              \
+    logic                      d;                              \
     logic                      u;                              \
     logic                      x;                              \
     logic                      w;                              \
@@ -71,7 +72,7 @@ typedef enum bit [1:0]
   }  bp_fe_mem_resp_s;
 
 `define bp_fe_tlb_entry_width(ptag_width_mp) \
-  (ptag_width_mp+6)
+  (ptag_width_mp+7)
 
 `define bp_fe_fetch_operands_width_no_padding(vaddr_width_mp) \
   (vaddr_width_mp)

@@ -116,7 +116,8 @@
   typedef struct packed                                                                            \
   {                                                                                                \
     logic [paddr_width_mp-bp_page_offset_width_gp-1:0] ptag;                                       \
-    logic                                              g;                                          \
+    logic                                              a;                                          \
+    logic                                              d;                                          \
     logic                                              u;                                          \
     logic                                              x;                                          \
     logic                                              w;                                          \
@@ -286,7 +287,7 @@ typedef enum bit [2:0]
   (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
 
 `define bp_pte_entry_leaf_width(paddr_width_mp)                                                 \
-  (paddr_width_mp - bp_page_offset_width_gp + 6)
+  (paddr_width_mp - bp_page_offset_width_gp + 7)
 
 `define bp_fe_cmd_itlb_fence_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp) \
   (`bp_fe_cmd_operands_u_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp))
