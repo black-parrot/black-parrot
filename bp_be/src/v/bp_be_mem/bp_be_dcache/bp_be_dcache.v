@@ -81,6 +81,7 @@ module bp_be_dcache
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    
+    , parameter lock_max_limit_p=8
     , parameter debug_p=0 
 
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
@@ -638,6 +639,7 @@ module bp_be_dcache
   logic lce_stat_mem_pkt_v;
   logic lce_stat_mem_pkt_yumi;
  
+  logic lce_cmd_ready_lo, lce_cmd_lock_lo;
   bp_be_dcache_lce
     #(.bp_params_p(bp_params_p))
     lce
@@ -685,7 +687,7 @@ module bp_be_dcache
 
       ,.lce_cmd_i(lce_cmd_i)
       ,.lce_cmd_v_i(lce_cmd_v_i)
-      ,.lce_cmd_ready_o(lce_cmd_ready_o)
+      ,.lce_cmd_ready_o(lce_cmd_ready_lo)
 
       ,.lce_cmd_o(lce_cmd_o)
       ,.lce_cmd_v_o(lce_cmd_v_o)
@@ -1060,6 +1062,38 @@ module bp_be_dcache
   // LCE stat_mem
   //
   assign lce_stat_mem_pkt_yumi = ~(v_tv_r & ~uncached_tv_r) & lce_stat_mem_pkt_v;
+
+  // Lock logic
+  // There are two potential sources for livelock in this cache, both due to multicore interference.
+  // 1) Cache misses are replayed with a 1 cycle delay
+  // 2) LR/SC sequences are guaranteed to make forward progress by the RISC-V spec as long as the
+  //      sequences meet certain conditions.  By ignoring incoming invalidations for a short period
+  //      after each LR, we minimize the chance of SC failure at the cost of less coherence
+  //      responsiveness
+  // TODO: Extra into bsg_edge_detector
+  logic cache_miss_r;
+  always_ff @(posedge clk_i)
+    cache_miss_r <= cache_miss_o;
+  wire cache_miss_resolved = cache_miss_r & ~cache_miss_o;
+
+  logic [`BSG_SAFE_CLOG2(lock_max_limit_p+1)-1:0] lock_cnt_r;
+  wire lock_clr = v_o || (lock_cnt_r == lock_max_limit_p);
+  wire lock_inc = ~lock_clr & (cache_miss_resolved || lr_op_tv_r || (lock_cnt_r > 0));
+  bsg_counter_clear_up
+   #(.max_val_p(lock_max_limit_p)
+     ,.init_val_p(0)
+     ,.disable_overflow_warning_p(1)
+     )
+   lock_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.clear_i(lock_clr)
+     ,.up_i(lock_inc)
+     ,.count_o(lock_cnt_r)
+     );
+  assign lce_cmd_lock_lo = (lock_cnt_r != '0);
+  assign lce_cmd_ready_o = lce_cmd_ready_lo & ~lce_cmd_lock_lo;
 
   // synopsys translate_off
   if (debug_p) begin: axe
