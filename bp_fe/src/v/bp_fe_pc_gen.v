@@ -26,6 +26,7 @@ module bp_fe_pc_gen
    , output                                          mem_cmd_v_o
    , input                                           mem_cmd_yumi_i
 
+   , output [1:0]                                    mem_priv_o
    , output                                          mem_poison_o
 
    , input [mem_resp_width_lp-1:0]                   mem_resp_i
@@ -34,7 +35,7 @@ module bp_fe_pc_gen
 
    , input [fe_cmd_width_lp-1:0]                     fe_cmd_i
    , input                                           fe_cmd_v_i
-   , output logic                                    fe_cmd_yumi_o
+   , output                                          fe_cmd_yumi_o
    , output                                          fe_cmd_processed_o
 
    , output [fe_queue_width_lp-1:0]                  fe_queue_o
@@ -83,6 +84,21 @@ wire icache_fence_v   = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_icache_fence)
 wire itlb_fence_v     = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_itlb_fence);
 wire attaboy_v        = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
 wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
+
+wire trap_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
+
+logic [1:0] shadow_priv_n, shadow_priv_r;
+assign shadow_priv_n = fe_cmd_cast_i.operands.pc_redirect_operands.priv;
+bsg_dff_reset_en
+ #(.width_p(2))
+ shadow_priv_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(trap_v)
+
+   ,.data_i(shadow_priv_n)
+   ,.data_o(shadow_priv_r)
+   );
 
 // Until we support C, must be aligned to 4 bytes
 // There's also an interesting question about physical alignment (I/O devices, etc)
