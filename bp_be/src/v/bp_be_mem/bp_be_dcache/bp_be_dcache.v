@@ -461,7 +461,7 @@ module bp_be_dcache
   logic [dword_width_p-1:0] uncached_load_data_r;
 
   // load reserved / store conditional
-  logic lr_miss_tv;
+  logic lr_hit_tv, lr_miss_tv;
   logic sc_success;
   logic sc_fail;
   logic [ptag_width_lp-1:0]  load_reserved_tag_r;
@@ -469,6 +469,7 @@ module bp_be_dcache
   logic load_reserved_v_r;
 
   // Upgrade if a load reserved and we don't have the line in exclusive state
+  assign lr_hit_tv = v_tv_r & lr_op_tv_r & load_hit;
   assign lr_miss_tv = v_tv_r & lr_op_tv_r & load_hit & ~store_hit;
   // Succeed if the address matches and we have a store hit
   assign sc_success  = v_tv_r & sc_op_tv_r & store_hit & load_reserved_v_r 
@@ -639,7 +640,7 @@ module bp_be_dcache
   logic lce_stat_mem_pkt_v;
   logic lce_stat_mem_pkt_yumi;
  
-  logic lce_cmd_ready_lo, lce_cmd_lock_lo;
+  logic lce_cmd_v_li, lce_cmd_lock_lo;
   bp_be_dcache_lce
     #(.bp_params_p(bp_params_p))
     lce
@@ -686,8 +687,8 @@ module bp_be_dcache
       ,.lce_resp_ready_i(lce_resp_ready_i)
 
       ,.lce_cmd_i(lce_cmd_i)
-      ,.lce_cmd_v_i(lce_cmd_v_i)
-      ,.lce_cmd_ready_o(lce_cmd_ready_lo)
+      ,.lce_cmd_v_i(lce_cmd_v_li)
+      ,.lce_cmd_ready_o(lce_cmd_ready_o)
 
       ,.lce_cmd_o(lce_cmd_o)
       ,.lce_cmd_v_o(lce_cmd_v_o)
@@ -1070,7 +1071,7 @@ module bp_be_dcache
   //      sequences meet certain conditions.  By ignoring incoming invalidations for a short period
   //      after each LR, we minimize the chance of SC failure at the cost of less coherence
   //      responsiveness
-  // TODO: Extra into bsg_edge_detector
+  // TODO: Extract into bsg_edge_detector
   logic cache_miss_r;
   always_ff @(posedge clk_i)
     cache_miss_r <= cache_miss_o;
@@ -1078,7 +1079,7 @@ module bp_be_dcache
 
   logic [`BSG_SAFE_CLOG2(lock_max_limit_p+1)-1:0] lock_cnt_r;
   wire lock_clr = v_o || (lock_cnt_r == lock_max_limit_p);
-  wire lock_inc = ~lock_clr & (cache_miss_resolved || lr_op_tv_r || (lock_cnt_r > 0));
+  wire lock_inc = ~lock_clr & (cache_miss_resolved || lr_hit_tv || (lock_cnt_r > 0));
   bsg_counter_clear_up
    #(.max_val_p(lock_max_limit_p)
      ,.init_val_p(0)
@@ -1092,8 +1093,10 @@ module bp_be_dcache
      ,.up_i(lock_inc)
      ,.count_o(lock_cnt_r)
      );
+  // We could actually be more clever here.  We only need to block invalidations to this
+  //   specific line.  However, being extra safe is easier to implement for now.
   assign lce_cmd_lock_lo = (lock_cnt_r != '0);
-  assign lce_cmd_ready_o = lce_cmd_ready_lo & ~lce_cmd_lock_lo;
+  assign lce_cmd_v_li = lce_cmd_v_i & ~lce_cmd_lock_lo;
 
   // synopsys translate_off
   if (debug_p) begin: axe
