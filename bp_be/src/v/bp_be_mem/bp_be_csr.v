@@ -379,7 +379,7 @@ always_comb
               ret_v_o              = 1'b0;
             end
         end
-      else if (csr_cmd.csr_op inside {e_ebreak, e_ecall, e_wfi})
+      else if (csr_cmd.csr_op inside {e_ebreak, e_ecall})
         begin
           // NOPs for now. EBREAK and WFI are likely to remain a NOP for a while, whereas
           // ECALL is implemented as part of the exception cause vector
@@ -570,6 +570,7 @@ assign cfg_priv_data_o = priv_mode_r;
 
 assign trap_pkt_cast_o.epc       = (csr_cmd.csr_op == e_sret) ? sepc_r : mepc_r;
 assign trap_pkt_cast_o.tvec      = (priv_mode_n == `PRIV_MODE_S) ? stvec_r : mtvec_r;
+assign trap_pkt_cast_o.priv_n    = priv_mode_n;
 // TODO: Find more solid invariant
 assign trap_pkt_cast_o.exception  = exception_v_o;
 assign trap_pkt_cast_o._interrupt = interrupt_v_o;

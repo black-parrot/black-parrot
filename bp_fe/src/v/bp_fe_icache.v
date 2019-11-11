@@ -32,7 +32,7 @@ module bp_fe_icache
    (input                                              clk_i
     , input                                            reset_i
 
-    , input [cfg_bus_width_lp-1:0]                    cfg_bus_i
+    , input [cfg_bus_width_lp-1:0]                     cfg_bus_i
 
     , input [vaddr_width_p-1:0]                        vaddr_i
     , input                                            vaddr_v_i
@@ -45,7 +45,6 @@ module bp_fe_icache
     
     , output [instr_width_p-1:0]                       data_o
     , output                                           data_v_o
-    , output                                           instr_access_fault_o
     , output                                           cache_miss_o
 
     , output [lce_cce_req_width_lp-1:0]                lce_req_o
@@ -338,10 +337,6 @@ module bp_fe_icache
      ); 
 
   // Fault if in uncached mode but access is not for an uncached address
-  assign instr_access_fault_o = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached)
-    ? ~uncached_tv_r
-    : 1'b0;
-
   assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r) | ~cache_miss_o);
 
   logic [dword_width_p-1:0]   ld_data_way_picked;

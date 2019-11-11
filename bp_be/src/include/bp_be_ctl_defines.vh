@@ -61,7 +61,8 @@ typedef enum bit [3:0]
 
   // TODO: Think more carefully about these encodings
   ,e_ecall      = 4'b1110
-  ,e_wfi        = 4'b1100
+  // TODO: This is a nop for now
+  //,e_wfi        = 4'b1100
   ,e_ebreak     = 4'b1111
 
   ,e_sfence_vma = 4'b1101
@@ -70,6 +71,7 @@ typedef enum bit [3:0]
   ,e_op_take_interrupt     = 4'b1000
   ,e_op_illegal_instr      = 4'b0000
   ,e_op_instr_access_fault = 4'b0100
+  ,e_op_instr_page_fault   = 4'b1100
   ,e_op_instr_misaligned   = 4'b1010
 } bp_be_csr_fu_op_e;
 

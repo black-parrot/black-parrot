@@ -122,6 +122,7 @@
   {                                                                                                \
     logic [vaddr_width_p-1:0] epc;                                                                 \
     logic [vaddr_width_p-1:0] tvec;                                                                \
+    logic [1:0]               priv_n;                                                              \
     logic                     exception;                                                           \
     logic                     _interrupt;                                                          \
     logic                     eret;                                                                \
@@ -183,7 +184,7 @@
    )
  
 `define bp_be_trap_pkt_width(vaddr_width_mp) \
-  (2 * vaddr_width_mp + 3)
+  (2 * vaddr_width_mp + 5)
 
 `define bp_be_wb_pkt_width(vaddr_width_mp) \
   (1                                                                                               \

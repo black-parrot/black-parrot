@@ -67,6 +67,7 @@ typedef enum bit [1:0]
   {                                                            \
     logic                     itlb_miss;                       \
     logic                     instr_access_fault;              \
+    logic                     instr_page_fault;                \
     logic                     icache_miss;                     \
     logic [instr_width_p-1:0] data;                            \
   }  bp_fe_mem_resp_s;
@@ -110,7 +111,7 @@ typedef enum bit [1:0]
   ($bits(bp_fe_mem_cmd_op_e)+`bp_fe_mem_cmd_operands_u_width(vaddr_width_mp, vtag_width_mp, ptag_width_mp))
 
 `define bp_fe_mem_resp_width \
-  (3+instr_width_p)
+  (4+instr_width_p)
 
 `endif
 

@@ -239,14 +239,14 @@ always_comb
       `RV64_SYSTEM_OP : 
         begin
           decode.pipe_mem_v = 1'b1;
-          decode.csr_v = 1'b1;
-          decode.serial_v = 1'b1;
+          decode.csr_v      = 1'b1;
+          decode.serial_v   = 1'b1;
           unique casez (instr)
             `RV64_ECALL      : decode.fu_op = e_ecall;
             `RV64_EBREAK     : decode.fu_op = e_ebreak;
             `RV64_MRET       : decode.fu_op = e_mret;
             `RV64_SRET       : decode.fu_op = e_sret;
-            `RV64_WFI        : decode.fu_op = e_wfi;
+            `RV64_WFI        : decode.csr_v = 1'b0; // NOP
             `RV64_SFENCE_VMA : decode.fu_op = e_sfence_vma;
             default: 
               begin
@@ -305,9 +305,9 @@ always_comb
         decode.mem_v = (fe_exc_i == e_itlb_miss);
         decode.serial_v    = 1'b1;
         casez (fe_exc_i)
-          e_illegal_instr     : decode.fu_op = e_op_illegal_instr;
           e_instr_misaligned  : decode.fu_op = e_op_instr_misaligned;
           e_instr_access_fault: decode.fu_op = e_op_instr_access_fault;
+          e_instr_page_fault  : decode.fu_op = e_op_instr_page_fault;
           e_itlb_miss         : decode.fu_op = e_itlb_fill;
         endcase
       end
@@ -316,7 +316,7 @@ always_comb
         decode = '0;
         decode.queue_v     = 1'b1;
         decode.pipe_mem_v  = 1'b1;
-        decode.csr_v = 1'b1;
+        decode.csr_v       = 1'b1;
         decode.serial_v    = 1'b1;
         decode.fu_op       = e_op_illegal_instr;
       end

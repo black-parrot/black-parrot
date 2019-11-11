@@ -53,6 +53,7 @@ module bp_fe_top
    
 bp_fe_mem_cmd_s  mem_cmd_lo;
 logic            mem_cmd_v_lo, mem_cmd_yumi_li;
+logic [1:0]      mem_priv_lo;
 logic            mem_poison_lo;
 bp_fe_mem_resp_s mem_resp_li;
 logic            mem_resp_v_li, mem_resp_ready_lo;
@@ -67,6 +68,7 @@ bp_fe_pc_gen
    ,.mem_cmd_v_o(mem_cmd_v_lo)
    ,.mem_cmd_yumi_i(mem_cmd_yumi_li)
 
+   ,.mem_priv_o(mem_priv_lo)
    ,.mem_poison_o(mem_poison_lo)
 
    ,.mem_resp_i(mem_resp_li)
@@ -95,6 +97,7 @@ bp_fe_mem
    ,.mem_cmd_v_i(mem_cmd_v_lo)
    ,.mem_cmd_yumi_o(mem_cmd_yumi_li)
 
+   ,.mem_priv_i(mem_priv_lo)
    ,.mem_poison_i(mem_poison_lo)
 
    ,.mem_resp_o(mem_resp_li)

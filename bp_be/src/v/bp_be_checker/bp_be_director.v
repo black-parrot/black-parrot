@@ -37,7 +37,7 @@ module bp_be_director
   (input                              clk_i
    , input                            reset_i
 
-   , input [cfg_bus_width_lp-1:0]    cfg_bus_i
+   , input [cfg_bus_width_lp-1:0]     cfg_bus_i
    , output [vaddr_width_p-1:0]       cfg_npc_data_o
 
    // Dependency information
@@ -67,7 +67,7 @@ module bp_be_director
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p); 
 
 // Cast input and output ports 
-bp_cfg_bus_s                    cfg_bus_cast_i;
+bp_cfg_bus_s                     cfg_bus_cast_i;
 bp_be_isd_status_s               isd_status;
 bp_be_calc_status_s              calc_status;
 bp_fe_cmd_s                      fe_cmd;
@@ -255,6 +255,7 @@ always_comb
         fe_cmd_pc_redirect_operands.subopcode            = e_subop_trap;
         fe_cmd_pc_redirect_operands.branch_metadata_fwd  = '0; 
         fe_cmd_pc_redirect_operands.misprediction_reason = e_not_a_branch;
+        fe_cmd_pc_redirect_operands.priv                 = trap_pkt.priv_n;
         fe_cmd.operands.pc_redirect_operands             = fe_cmd_pc_redirect_operands;
 
         fe_cmd_v = fe_cmd_ready_i;

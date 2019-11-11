@@ -91,6 +91,7 @@
     logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                  \
     bp_fe_misprediction_reason_e             misprediction_reason;                                 \
     logic                                    translation_enabled;                                  \
+    logic [1:0]                              priv;                                                 \
                                                                                                    \
     logic [`bp_fe_cmd_pc_redirect_operands_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
                                              padding;                                              \
@@ -109,8 +110,8 @@
   }  bp_fe_cmd_attaboy_s;                                                                          \
                                                                                                    \
   /*                                                                                               \
-   * bp_pte_entry_leaf_s provides the information needed in the case of the page                \
-   * walk. The bp_pte_entry_leaf_s contains the physical address and the                        \
+   * bp_pte_entry_leaf_s provides the information needed in the case of the page                   \
+   * walk. The bp_pte_entry_leaf_s contains the physical address and the                           \
    * additional bits in the page table entry (pte).                                                \
   */                                                                                               \
   typedef struct packed                                                                            \
@@ -123,7 +124,7 @@
     logic                                              w;                                          \
     logic                                              r;                                          \
     logic                                              uc;                                         \
-  }  bp_pte_entry_leaf_s;                                                                       \
+  }  bp_pte_entry_leaf_s;                                                                          \
                                                                                                    \
   /*                                                                                               \
    * bp_fe_cmd_itlb_map_s provides the virtual, physical translation plus the                      \
@@ -226,14 +227,14 @@ typedef enum bit
  * the iTLB. ITLB misses can cause the instruction misaligned. Thus the frontend
  * detects the instruction miss first and then detect whether there is an ITLB
  * miss. e_instruction_access_fault is when the access control is violated.
- * e_illegal_instruction is when the instruction is not legitimate.
+ * e_instr_page_fault is when the instruction page is accessed with insufficent privilege
  */
 typedef enum bit [1:0]
 {
   e_instr_misaligned    = 0
   ,e_itlb_miss          = 1
   ,e_instr_access_fault = 2
-  ,e_illegal_instr      = 3
+  ,e_instr_page_fault   = 3
 } bp_fe_exception_code_e;
 
 /*
@@ -317,7 +318,7 @@ typedef enum bit [2:0]
 
 `define bp_fe_cmd_pc_redirect_operands_width_no_padding(branch_metadata_fwd_width_mp) \
   ($bits(bp_fe_command_queue_subopcodes_e)                                                         \
-   + branch_metadata_fwd_width_mp + $bits(bp_fe_misprediction_reason_e) + 1)
+   + branch_metadata_fwd_width_mp + $bits(bp_fe_misprediction_reason_e) + 3)
 
 `define bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp) \
   (branch_metadata_fwd_width_mp)
