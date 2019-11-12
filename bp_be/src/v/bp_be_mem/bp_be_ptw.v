@@ -113,8 +113,6 @@ module bp_be_ptw
   assign tlb_w_entry.r          = translation_en_i ? dcache_data.r : 1'b1;
 
   // PMA attributes
-  assign tlb_w_entry.uc         = (tlb_w_entry.ptag < (dram_base_addr_gp >> page_offset_width_p));
-
   assign dcache_v_o             = (state_r == eSendLoad);
   assign dcache_pkt.opcode      = e_dcache_opcode_ld;
   assign dcache_pkt.page_offset = {partial_vpn[level_cntr], (lg_pte_size_in_bytes_lp)'(0)};
