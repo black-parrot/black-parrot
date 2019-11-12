@@ -281,6 +281,14 @@ bp_tlb
    ,.miss_v_o(dtlb_miss_v)
    ,.miss_vtag_o(dtlb_miss_vtag)
   );
+
+bp_pma
+ #(.bp_params_p(bp_params_p))
+ pma
+  (.ptag_i(dtlb_r_entry.ptag)
+
+   ,.uncached_o(dcache_uncached)
+   );
   
 bp_be_ptw
   #(.bp_params_p(bp_params_p)
@@ -418,14 +426,10 @@ assign dcache_pkt_v    = (ptw_busy)? ptw_dcache_v : dcache_cmd_v;
 
 always_comb 
   begin
-    // TODO: Should we allow uncached accesses during PTW?
-    //   I don't see why not, but it's something to think about...
     if(ptw_busy) begin
       dcache_pkt = ptw_dcache_pkt;
-      dcache_uncached = '0;
     end
     else begin
-      dcache_uncached        = dtlb_r_v_lo & dtlb_r_entry.uc;
       dcache_pkt.opcode      = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
       dcache_pkt.page_offset = {mmu_cmd.vaddr.index, mmu_cmd.vaddr.offset};
       dcache_pkt.data        = mmu_cmd.data;

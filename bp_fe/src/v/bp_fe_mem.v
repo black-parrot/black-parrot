@@ -84,9 +84,17 @@ bp_tlb
    ,.miss_v_o(itlb_miss_lo)
    ,.miss_vtag_o()
    );
-wire                    uncached_li = itlb_r_entry.uc;
+
 wire [ptag_width_p-1:0] ptag_li     = itlb_r_entry.ptag;
 wire                    ptag_v_li   = itlb_r_v_lo;
+
+bp_pma
+ #(.bp_params_p(bp_params_p))
+ pma
+  (.ptag_i(ptag_li)
+
+   ,.uncached_o(uncached_li)
+   );
 
 logic [instr_width_p-1:0] icache_data_lo;
 logic                     icache_data_v_lo;
