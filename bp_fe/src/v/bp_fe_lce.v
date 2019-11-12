@@ -39,7 +39,7 @@ module bp_fe_lce
     input                                                        clk_i
     , input                                                      reset_i
 
-    , input [cfg_bus_width_lp-1:0]                              cfg_bus_i
+    , input [cfg_bus_width_lp-1:0]                               cfg_bus_i
 
     , output logic                                               ready_o
     , output logic                                               cache_miss_o
@@ -74,7 +74,7 @@ module bp_fe_lce
 
     , input [lce_cmd_width_lp-1:0] lce_cmd_i
     , input lce_cmd_v_i
-    , output logic lce_cmd_ready_o
+    , output logic lce_cmd_yumi_o
 
     , output logic [lce_cmd_width_lp-1:0] lce_cmd_o
     , output logic lce_cmd_v_o
@@ -186,7 +186,7 @@ module bp_fe_lce
 
     ,.lce_cmd_i(lce_cmd)
     ,.lce_cmd_v_i(lce_cmd_v_i)
-    ,.lce_cmd_ready_o(lce_cmd_ready_o)
+    ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
 
     ,.lce_resp_o(lce_cmd_lce_resp_lo)
     ,.lce_resp_v_o(lce_cmd_lce_resp_v_lo)

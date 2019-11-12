@@ -27,7 +27,7 @@ module bp_tile
   (input                                                      clk_i
    , input                                                    reset_i
 
-    , output [cfg_bus_width_lp-1:0]                          cfg_bus_o
+   , output [cfg_bus_width_lp-1:0]                           cfg_bus_o
 
    // Memory side connection
    , input [mem_noc_cord_width_p-1:0]                         my_cord_i
@@ -83,7 +83,7 @@ logic             [1:0] lce_req_v_lo, lce_req_ready_li;
 bp_lce_cce_resp_s [1:0] lce_resp_lo;
 logic             [1:0] lce_resp_v_lo, lce_resp_ready_li;
 bp_lce_cmd_s      [1:0] lce_cmd_li;
-logic             [1:0] lce_cmd_v_li, lce_cmd_ready_lo;
+logic             [1:0] lce_cmd_v_li, lce_cmd_yumi_lo;
 bp_lce_cmd_s      [1:0] lce_cmd_lo;
 logic             [1:0] lce_cmd_v_lo, lce_cmd_ready_li;
 
@@ -163,7 +163,7 @@ bp_core
 
    ,.lce_cmd_i(lce_cmd_li)
    ,.lce_cmd_v_i(lce_cmd_v_li)
-   ,.lce_cmd_ready_o(lce_cmd_ready_lo)
+   ,.lce_cmd_yumi_o(lce_cmd_yumi_lo)
 
    ,.lce_cmd_o(lce_cmd_lo)
    ,.lce_cmd_v_o(lce_cmd_v_lo)
@@ -286,7 +286,7 @@ for (genvar i = 0; i < 2; i++)
 
        ,.packet_o(lce_cmd_packet_li[i])
        ,.v_o(lce_cmd_v_li[i])
-       ,.yumi_i(lce_cmd_ready_lo[i] & lce_cmd_v_li[i])
+       ,.yumi_i(lce_cmd_yumi_lo[i])
        );
     assign lce_cmd_li[i] = lce_cmd_packet_li[i].payload;
 

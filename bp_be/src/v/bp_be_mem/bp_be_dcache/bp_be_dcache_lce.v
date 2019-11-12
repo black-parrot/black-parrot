@@ -121,7 +121,7 @@ module bp_be_dcache_lce
     // CCE-LCE interface
     , input [lce_cmd_width_lp-1:0] lce_cmd_i
     , input lce_cmd_v_i
-    , output logic lce_cmd_ready_o
+    , output logic lce_cmd_yumi_o
 
     // LCE-LCE interface
     , output logic [lce_cmd_width_lp-1:0] lce_cmd_o
@@ -275,7 +275,7 @@ module bp_be_dcache_lce
 
       ,.lce_cmd_i(lce_cmd_in)
       ,.lce_cmd_v_i(lce_cmd_v_i)
-      ,.lce_cmd_ready_o(lce_cmd_ready_o)
+      ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
 
       ,.lce_resp_o(lce_cmd_to_lce_resp_lo)
       ,.lce_resp_v_o(lce_cmd_to_lce_resp_v_lo)
@@ -330,6 +330,7 @@ module bp_be_dcache_lce
   bsg_counter_clear_up
    #(.max_val_p(timeout_max_limit_p)
      ,.init_val_p(0)
+     ,.disable_overflow_warning_p(1)
      )
    timeout_counter
     (.clk_i(clk_i)
