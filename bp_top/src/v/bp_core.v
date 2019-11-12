@@ -40,7 +40,7 @@ module bp_core
     // CCE-LCE interface
     , input [1:0][lce_cmd_width_lp-1:0]            lce_cmd_i
     , input [1:0]                                  lce_cmd_v_i
-    , output [1:0]                                 lce_cmd_ready_o
+    , output [1:0]                                 lce_cmd_yumi_o
 
     , output [1:0][lce_cmd_width_lp-1:0]           lce_cmd_o
     , output [1:0]                                 lce_cmd_v_o
@@ -94,7 +94,7 @@ module bp_core
 
      ,.lce_cmd_i(lce_cmd_i[0])
      ,.lce_cmd_v_i(lce_cmd_v_i[0])
-     ,.lce_cmd_ready_o(lce_cmd_ready_o[0])
+     ,.lce_cmd_yumi_o(lce_cmd_yumi_o[0])
 
      ,.lce_cmd_o(lce_cmd_o[0])
      ,.lce_cmd_v_o(lce_cmd_v_o[0])
@@ -182,7 +182,7 @@ module bp_core
 
      ,.lce_cmd_i(lce_cmd_i[1])
      ,.lce_cmd_v_i(lce_cmd_v_i[1])
-     ,.lce_cmd_ready_o(lce_cmd_ready_o[1])
+     ,.lce_cmd_yumi_o(lce_cmd_yumi_o[1])
 
      ,.lce_cmd_o(lce_cmd_o[1])
      ,.lce_cmd_v_o(lce_cmd_v_o[1])
