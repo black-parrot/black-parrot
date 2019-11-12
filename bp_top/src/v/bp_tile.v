@@ -27,13 +27,9 @@ module bp_tile
   (input                                                      clk_i
    , input                                                    reset_i
 
-    , output [cfg_bus_width_lp-1:0]                          cfg_bus_o
-
    // Memory side connection
+   , input [mem_noc_did_width_p-1:0]                          my_did_i
    , input [mem_noc_cord_width_p-1:0]                         my_cord_i
-   , input [mem_noc_cord_width_p-1:0]                         dram_cord_i
-   , input [mem_noc_cord_width_p-1:0]                         clint_cord_i
-   , input [mem_noc_cord_width_p-1:0]                         host_cord_i
 
    // Connected to other tiles on east and west
    , input [coh_noc_ral_link_width_lp-1:0]                    lce_req_link_i
@@ -50,11 +46,6 @@ module bp_tile
 
    , input [mem_noc_ral_link_width_lp-1:0]                    mem_resp_link_i
    , output [mem_noc_ral_link_width_lp-1:0]                   mem_resp_link_o
-
-   // Interrupts
-   , input                                                    timer_irq_i
-   , input                                                    software_irq_i
-   , input                                                    external_irq_i
    );
 
 `declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
@@ -76,6 +67,8 @@ assign lce_resp_link_cast_i = lce_resp_link_i;
 assign lce_req_link_o  = lce_req_link_cast_o;
 assign lce_cmd_link_o  = lce_cmd_link_cast_o;
 assign lce_resp_link_o = lce_resp_link_cast_o;
+
+logic timer_irq_li, software_irq_li, external_irq_li;
 
 // Proc-side connections network connections
 bp_lce_cce_req_s  [1:0] lce_req_lo;
@@ -110,6 +103,11 @@ logic                  cfg_mem_cmd_v_li, cfg_mem_cmd_yumi_lo;
 bp_cce_mem_msg_s       cfg_mem_resp_lo;
 logic                  cfg_mem_resp_v_lo, cfg_mem_resp_ready_li;
 
+bp_cce_mem_msg_s       clint_mem_cmd_li;
+logic                  clint_mem_cmd_v_li, clint_mem_cmd_yumi_lo;
+bp_cce_mem_msg_s       clint_mem_resp_lo;
+logic                  clint_mem_resp_v_lo, clint_mem_resp_ready_li;
+
 bp_cfg_bus_s cfg_bus_lo;
 logic [dword_width_p-1:0] cfg_irf_data_li;
 logic [vaddr_width_p-1:0] cfg_npc_data_li;
@@ -131,14 +129,33 @@ bp_cfg
    ,.mem_resp_ready_i(cfg_mem_resp_ready_li)
 
    ,.cfg_bus_o(cfg_bus_lo)
+   ,.did_i(my_did_i)
+   ,.cord_i(my_cord_i)
    ,.irf_data_i(cfg_irf_data_li)
    ,.npc_data_i(cfg_npc_data_li)
    ,.csr_data_i(cfg_csr_data_li)
    ,.priv_data_i(cfg_priv_data_li)
    ,.cce_ucode_data_i(cfg_cce_ucode_data_li)
    );
-// TODO: Find more elegant way to do this
-assign cfg_bus_o = cfg_bus_lo;
+
+bp_clint_slice
+ #(.bp_params_p(bp_params_p))
+ clint
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.mem_cmd_i(clint_mem_cmd_li)
+   ,.mem_cmd_v_i(clint_mem_cmd_v_li)
+   ,.mem_cmd_yumi_o(clint_mem_cmd_yumi_lo)
+
+   ,.mem_resp_o(clint_mem_resp_lo)
+   ,.mem_resp_v_o(clint_mem_resp_v_lo)
+   ,.mem_resp_ready_i(clint_mem_resp_ready_li)
+
+   ,.timer_irq_o(timer_irq_li)
+   ,.software_irq_o(software_irq_li)
+   ,.external_irq_o(external_irq_li)
+   );
 
 // Module instantiations
 bp_core   
@@ -169,9 +186,9 @@ bp_core
    ,.lce_cmd_v_o(lce_cmd_v_lo)
    ,.lce_cmd_ready_i(lce_cmd_ready_li)
     
-   ,.timer_irq_i(timer_irq_i)
-   ,.software_irq_i(software_irq_i)
-   ,.external_irq_i(external_irq_i)
+   ,.timer_irq_i(timer_irq_li)
+   ,.software_irq_i(software_irq_li)
+   ,.external_irq_i(external_irq_li)
    );
 
 bp_cce
@@ -451,19 +468,20 @@ for (genvar i = 0; i < 2; i++)
      ,.concentrated_link_o(resp_concentrated_link_lo)
      );
 
+logic [mem_noc_did_width_p-1:0]  dst_did_lo;
 logic [mem_noc_cord_width_p-1:0] dst_cord_lo;
 logic [mem_noc_cid_width_p-1:0]  dst_cid_lo;
 bp_addr_map
  #(.bp_params_p(bp_params_p))
  cmd_map
-  (.paddr_i(cce_mem_cmd_lo.addr)
+  (.my_cord_i(my_cord_i)
 
-   ,.clint_cord_i(clint_cord_i)
-   ,.dram_cord_i(dram_cord_i)
-   ,.host_cord_i(host_cord_i)
+   ,.paddr_i(cce_mem_cmd_lo.addr)
+   ,.dram_en_i(1'b0)
 
-   ,.dst_cid_o(dst_cid_lo)
+   ,.dst_did_o(dst_did_lo)
    ,.dst_cord_o(dst_cord_lo)
+   ,.dst_cid_o(dst_cid_lo)
    );
 
 bp_mem_ready_and_link_s cce_mem_cmd_link_li, cce_mem_cmd_link_lo;
@@ -471,6 +489,9 @@ bp_mem_ready_and_link_s cce_mem_resp_link_li, cce_mem_resp_link_lo;
 
 bp_mem_ready_and_link_s cfg_mem_cmd_link_li, cfg_mem_cmd_link_lo;
 bp_mem_ready_and_link_s cfg_mem_resp_link_li, cfg_mem_resp_link_lo;
+
+bp_mem_ready_and_link_s clint_mem_cmd_link_li, clint_mem_cmd_link_lo;
+bp_mem_ready_and_link_s clint_mem_resp_link_li, clint_mem_resp_link_lo;
 
 bp_mem_ready_and_link_s mem_cmd_concentrated_link_li, mem_cmd_concentrated_link_lo;
 bp_mem_ready_and_link_s mem_resp_concentrated_link_li, mem_resp_concentrated_link_lo;
@@ -481,15 +502,15 @@ bsg_wormhole_concentrator
  #(.flit_width_p(mem_noc_flit_width_p)
    ,.len_width_p(mem_noc_len_width_p)
    ,.cid_width_p(mem_noc_cid_width_p)
-   ,.num_in_p(2)
+   ,.num_in_p(3)
    ,.cord_width_p(mem_noc_cord_width_p)
    )
  mem_cmd_concentrator
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.links_i({cfg_mem_cmd_link_lo, cce_mem_cmd_link_lo})
-   ,.links_o({cfg_mem_cmd_link_li, cce_mem_cmd_link_li})
+   ,.links_i({clint_mem_cmd_link_lo, cfg_mem_cmd_link_lo, cce_mem_cmd_link_lo})
+   ,.links_o({clint_mem_cmd_link_li, cfg_mem_cmd_link_li, cce_mem_cmd_link_li})
 
    ,.concentrated_link_i(mem_cmd_concentrated_link_li)
    ,.concentrated_link_o(mem_cmd_concentrated_link_lo)
@@ -501,15 +522,15 @@ bsg_wormhole_concentrator
  #(.flit_width_p(mem_noc_flit_width_p)
    ,.len_width_p(mem_noc_len_width_p)
    ,.cid_width_p(mem_noc_cid_width_p)
-   ,.num_in_p(2)
+   ,.num_in_p(3)
    ,.cord_width_p(mem_noc_cord_width_p)
    )
  mem_resp_concentrator
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.links_i({cfg_mem_resp_link_lo, cce_mem_resp_link_lo})
-   ,.links_o({cfg_mem_resp_link_li, cce_mem_resp_link_li})
+   ,.links_i({clint_mem_resp_link_lo, cfg_mem_resp_link_lo, cce_mem_resp_link_lo})
+   ,.links_o({clint_mem_resp_link_li, cfg_mem_resp_link_li, cce_mem_resp_link_li})
 
    ,.concentrated_link_i(mem_resp_concentrated_link_li)
    ,.concentrated_link_o(mem_resp_concentrated_link_lo)
@@ -537,8 +558,10 @@ bp_me_cce_to_wormhole_link_bidir
    ,.mem_resp_v_i(cce_mem_resp_v_lo)
    ,.mem_resp_ready_o(cce_mem_resp_ready_li)
 
+   ,.my_did_i(my_did_i)
    ,.my_cord_i(my_cord_i)
    ,.my_cid_i(mem_noc_cid_width_p'(0))
+   ,.dst_did_i(dst_did_lo)
    ,.dst_cord_i(dst_cord_lo)
    ,.dst_cid_i(dst_cid_lo)
 
@@ -563,15 +586,34 @@ bp_me_cce_to_wormhole_link_client
    ,.mem_resp_v_i(cfg_mem_resp_v_lo)
    ,.mem_resp_ready_o(cfg_mem_resp_ready_li)
 
-   ,.my_cord_i(my_cord_i)
-   ,.my_cid_i(mem_noc_cid_width_p'(1))
-
    ,.cmd_link_i(cfg_mem_cmd_link_li)
    ,.cmd_link_o(cfg_mem_cmd_link_lo)
 
    ,.resp_link_i(cfg_mem_resp_link_li)
    ,.resp_link_o(cfg_mem_resp_link_lo)
    );
+
+bp_me_cce_to_wormhole_link_client
+ #(.bp_params_p(bp_params_p))
+ clint_link
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.mem_cmd_o(clint_mem_cmd_li)
+   ,.mem_cmd_v_o(clint_mem_cmd_v_li)
+   ,.mem_cmd_yumi_i(clint_mem_cmd_yumi_lo)
+
+   ,.mem_resp_i(clint_mem_resp_lo)
+   ,.mem_resp_v_i(clint_mem_resp_v_lo)
+   ,.mem_resp_ready_o(clint_mem_resp_ready_li)
+
+   ,.cmd_link_i(clint_mem_cmd_link_li)
+   ,.cmd_link_o(clint_mem_cmd_link_lo)
+
+   ,.resp_link_i(clint_mem_resp_link_li)
+   ,.resp_link_o(clint_mem_resp_link_lo)
+   );
+
 
 endmodule
 

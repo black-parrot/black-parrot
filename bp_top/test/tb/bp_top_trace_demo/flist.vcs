@@ -21,3 +21,4 @@ $BP_ME_DIR/test/common/bp_mem_nonsynth_tracer.v
 $BP_TOP_DIR/test/common/bp_nonsynth_host.v
 $BP_TOP_DIR/test/common/bp_nonsynth_if_verif.v
 $BP_TOP_DIR/test/common/bp_nonsynth_commit_tracer.v
+$BP_TOP_DIR/test/common/bp_host_remote_domain_proxy_node.v

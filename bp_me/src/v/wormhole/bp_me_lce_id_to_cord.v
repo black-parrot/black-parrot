@@ -21,7 +21,7 @@ module bp_me_lce_id_to_cord
   if (coh_noc_dims_p > 1)
     begin : y_cord
       assign lce_cord_o[coh_noc_x_cord_width_p+:coh_noc_y_cord_width_p] = 
-        (lce_id_i >> 1'b1) / lce_id_width_lp'(coh_noc_x_dim_p);
+        (lce_id_i >> 1'b1) / lce_id_width_lp'(coh_noc_x_dim_p) + 1;
     end
       assign lce_cid_o = coh_noc_cid_width_p'(lce_id_i[0]);
 

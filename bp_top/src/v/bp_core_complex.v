@@ -33,16 +33,7 @@ module bp_core_complex
    , input                                                         mem_clk_i
    , input                                                         mem_reset_i
 
-   // Memory side connection
-   , input [num_core_p-1:0][mem_noc_cord_width_p-1:0]              tile_cord_i
-   , input [mem_noc_cord_width_p-1:0]                              dram_cord_i
-   , input [mem_noc_cord_width_p-1:0]                              clint_cord_i
-   , input [mem_noc_cord_width_p-1:0]                              host_cord_i
-
-   // Interrupts
-   , input [num_core_p-1:0]                                        timer_irq_i
-   , input [num_core_p-1:0]                                        soft_irq_i
-   , input [num_core_p-1:0]                                        external_irq_i
+   , input [mem_noc_did_width_p-1:0]                               my_did_i
 
    , input [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]    mem_cmd_link_i
    , output [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]   mem_cmd_link_o
@@ -79,16 +70,7 @@ for (genvar j = 0; j < mem_noc_y_dim_p; j++)
     for (genvar i = 0; i < mem_noc_x_dim_p; i++) 
       begin : x
         localparam tile_idx = j*mem_noc_x_dim_p + i;
-        // TODO: Num stages arbitrarily set, should be based on PD
-        logic timer_irq_li, soft_irq_li, external_irq_li;
-        bsg_dff_chain
-         #(.width_p(3))
-         slow_pipe
-          (.clk_i(core_clk_i)
-           ,.data_i({timer_irq_i[tile_idx], soft_irq_i[tile_idx], external_irq_i[tile_idx]})
-           ,.data_o({timer_irq_li, soft_irq_li, external_irq_li})
-           );
-    
+        wire [mem_noc_cord_width_p-1:0] cord_li = {mem_noc_y_cord_width_p'(1+j), mem_noc_x_cord_width_p'(i)};
         bp_tile_node
          #(.bp_params_p(bp_params_p))
          tile_node
@@ -100,15 +82,9 @@ for (genvar j = 0; j < mem_noc_y_dim_p; j++)
 
            ,.mem_clk_i(mem_clk_i)
            ,.mem_reset_i(mem_reset_i)
-    
-           ,.my_cord_i(tile_cord_i[tile_idx])
-           ,.dram_cord_i(dram_cord_i)
-           ,.clint_cord_i(clint_cord_i)
-           ,.host_cord_i(host_cord_i)
  
-           ,.timer_irq_i(timer_irq_li)
-           ,.software_irq_i(soft_irq_li)
-           ,.external_irq_i(external_irq_li)
+           ,.my_did_i(my_did_i)
+           ,.my_cord_i(cord_li)
 
            ,.coh_lce_req_link_i(lce_req_link_li[j][i])
            ,.coh_lce_resp_link_i(lce_resp_link_li[j][i])
