@@ -54,6 +54,7 @@ $BASEJUMP_STL_DIR/bsg_dataflow/bsg_one_fifo.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_2_to_2.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_1r1w_pseudo_large.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_1r1w_small.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_1r1w_small_unhardened.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_tracker.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_n_to_1.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_shift_reg.v
@@ -113,9 +114,6 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lfsr.v
 // COMMON
-$BP_COMMON_DIR/src/v/bp_addr_map.v
-// TOP
-$BP_TOP_DIR/src/v/bp_cfg.v
 // ME
 // Common files
 $BP_COMMON_DIR/src/v/bsg_fifo_1r1w_fence.v
@@ -168,6 +166,8 @@ $BP_ME_DIR/src/v/cce/bp_cce_buffered.v
 $BP_ME_DIR/src/v/cce/bp_cce_dir.v
 $BP_ME_DIR/src/v/cce/bp_cce_dir_tag_checker.v
 $BP_ME_DIR/src/v/cce/bp_cce_dir_lru_extract.v
+$BP_ME_DIR/src/v/cce/bp_cce_fsm.v
+$BP_ME_DIR/src/v/cce/bp_cce_fsm_top.v
 $BP_ME_DIR/src/v/cce/bp_cce_gad.v
 $BP_ME_DIR/src/v/cce/bp_cce_inst_decode.v
 $BP_ME_DIR/src/v/cce/bp_cce_msg.v
@@ -191,7 +191,7 @@ $BP_TOP_DIR/src/v/bp_addr_map.v
 $BP_TOP_DIR/src/v/bp_cfg.v
 $BP_TOP_DIR/src/v/bp_core.v
 $BP_TOP_DIR/src/v/bp_core_complex.v
-$BP_TOP_DIR/src/v/bp_mem_complex.v
+$BP_TOP_DIR/src/v/bp_io_complex.v
 $BP_TOP_DIR/src/v/bp_clint.v
 $BP_TOP_DIR/src/v/bp_clint_node.v
 $BP_TOP_DIR/src/v/bp_clint_slice.v

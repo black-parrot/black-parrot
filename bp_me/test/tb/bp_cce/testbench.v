@@ -169,6 +169,8 @@ bp_cfg
    ,.csr_data_i()
    ,.priv_data_i()
    ,.cce_ucode_data_i()
+   ,.cord_i()
+   ,.did_i()
    );
 
 // CCE
