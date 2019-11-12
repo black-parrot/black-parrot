@@ -58,7 +58,7 @@ module bp_fe_icache
 
     , input [lce_cmd_width_lp-1:0]                     lce_cmd_i
     , input                                            lce_cmd_v_i
-    , output                                           lce_cmd_ready_o
+    , output                                           lce_cmd_yumi_o
 
     , output [lce_cmd_width_lp-1:0]                    lce_cmd_o
     , output                                           lce_cmd_v_o
@@ -330,7 +330,7 @@ module bp_fe_icache
 
      ,.lce_cmd_i(lce_cmd_i)
      ,.lce_cmd_v_i(lce_cmd_v_i)
-     ,.lce_cmd_ready_o(lce_cmd_ready_o)
+     ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
 
      ,.lce_cmd_o(lce_cmd_o)
      ,.lce_cmd_v_o(lce_cmd_v_o)

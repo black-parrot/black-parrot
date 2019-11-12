@@ -138,7 +138,7 @@ module bp_be_dcache
     // CCE-LCE interface
     , input [lce_cmd_width_lp-1:0] lce_cmd_i
     , input lce_cmd_v_i
-    , output logic lce_cmd_ready_o
+    , output logic lce_cmd_yumi_o
 
     // LCE-LCE interface
     , output logic [lce_cmd_width_lp-1:0] lce_cmd_o
@@ -469,8 +469,8 @@ module bp_be_dcache
   logic load_reserved_v_r;
 
   // Upgrade if a load reserved and we don't have the line in exclusive state
-  assign lr_hit_tv = v_tv_r & lr_op_tv_r & load_hit;
-  assign lr_miss_tv = v_tv_r & lr_op_tv_r & load_hit & ~store_hit;
+  assign lr_hit_tv = v_tv_r & lr_op_tv_r & store_hit;
+  assign lr_miss_tv = v_tv_r & lr_op_tv_r & ~store_hit;
   // Succeed if the address matches and we have a store hit
   assign sc_success  = v_tv_r & sc_op_tv_r & store_hit & load_reserved_v_r 
                        & (load_reserved_tag_r == addr_tag_tv)
@@ -688,7 +688,7 @@ module bp_be_dcache
 
       ,.lce_cmd_i(lce_cmd_i)
       ,.lce_cmd_v_i(lce_cmd_v_li)
-      ,.lce_cmd_ready_o(lce_cmd_ready_o)
+      ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
 
       ,.lce_cmd_o(lce_cmd_o)
       ,.lce_cmd_v_o(lce_cmd_v_o)
