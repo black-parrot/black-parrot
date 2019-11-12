@@ -139,8 +139,8 @@ always_ff @(posedge clk_i)
     fetch_v_r   <= fetch_v;
     fetch_v_rr  <= fetch_v_r & ~mem_poison_i;
 
-    instr_access_fault_r <= instr_access_fault_v;
-    instr_page_fault_r   <= instr_access_err_v;
+    instr_access_fault_r <= instr_access_fault_v & ~mem_poison_i;
+    instr_page_fault_r   <= instr_access_err_v & ~mem_poison_i;
   end
 
 wire instr_priv_access_fault = ((mem_priv_i == `PRIV_MODE_S) & itlb_r_entry.u)
@@ -149,7 +149,7 @@ wire instr_exe_access_fault = ~itlb_r_entry.x;
 
 wire is_uncached_mode = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached);
 assign instr_access_fault_v = is_uncached_mode & ~uncached_li;
-assign instr_access_err_v  = fetch_v_r & itlb_r_v_lo & instr_priv_access_fault & instr_exe_access_fault;
+assign instr_access_err_v  = fetch_v_r & itlb_r_v_lo & (instr_priv_access_fault | instr_exe_access_fault);
 
 assign mem_resp_v_o    = mem_resp_ready_i & fetch_v_rr;
 assign mem_resp_cast_o = '{instr_access_fault: instr_access_fault_r
