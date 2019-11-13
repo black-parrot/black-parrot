@@ -332,6 +332,9 @@ module bp_be_dcache
         );
   end
 
+  assign store_op_tl_o = store_op_tl_r;
+  assign load_op_tl_o  = load_op_tl_r;
+
   // TV stage
   //
   logic v_tv_r;

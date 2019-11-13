@@ -91,10 +91,12 @@ bp_tlb
 wire [ptag_width_p-1:0] ptag_li     = itlb_r_entry.ptag;
 wire                    ptag_v_li   = itlb_r_v_lo;
 
+logic uncached_li;
 bp_pma
  #(.bp_params_p(bp_params_p))
  pma
-  (.ptag_i(ptag_li)
+  (.ptag_v_i(ptag_v_li)
+   ,.ptag_i(ptag_li)
 
    ,.uncached_o(uncached_li)
    );

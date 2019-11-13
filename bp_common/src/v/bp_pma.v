@@ -6,12 +6,13 @@ module bp_pma
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    )
-  (input [ptag_width_p-1:0] ptag_i
+  (input                      ptag_v_i
+   , input [ptag_width_p-1:0] ptag_i
 
-   , output                 uncached_o
+   , output                   uncached_o
    );
 
-  assign uncached_o = (ptag_i < (dram_base_addr_gp >> page_offset_width_p));
+  assign uncached_o = ptag_v_i & (ptag_i < (dram_base_addr_gp >> page_offset_width_p));
 
 endmodule
 
