@@ -286,7 +286,8 @@ bp_tlb
 bp_pma
  #(.bp_params_p(bp_params_p))
  pma
-  (.ptag_i(dtlb_r_entry.ptag)
+  (.ptag_v_i(dtlb_r_v_lo)
+   ,.ptag_i(dtlb_r_entry.ptag)
 
    ,.uncached_o(dcache_uncached)
    );
