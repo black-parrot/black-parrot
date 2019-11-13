@@ -137,6 +137,7 @@ bp_be_detector
    ,.isd_status_i(isd_status)
    ,.calc_status_i(calc_status_i)
    ,.expected_npc_i(expected_npc_lo)
+   ,.fe_cmd_ready_i(fe_cmd_ready_i)
    ,.mmu_cmd_ready_i(mmu_cmd_ready_i)
    ,.credits_full_i(credits_full_i)
    ,.credits_empty_i(credits_empty_i)
