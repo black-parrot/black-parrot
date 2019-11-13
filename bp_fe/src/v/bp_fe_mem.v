@@ -3,6 +3,7 @@ module bp_fe_mem
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_fe_pkg::*;
+ import bp_common_rv64_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
@@ -22,7 +23,8 @@ module bp_fe_mem
    , input                                            mem_cmd_v_i
    , output                                           mem_cmd_yumi_o
 
-   , input [1:0]                                      mem_priv_i
+   , input [rv64_priv_width_gp-1:0]                   mem_priv_i
+   , input                                            mem_translation_en_i
    , input                                            mem_poison_i
 
    , output [mem_resp_width_lp-1:0]                   mem_resp_o
@@ -72,6 +74,7 @@ bp_tlb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.flush_i(itlb_fence_v)
+   ,.translation_en_i(mem_translation_en_i)
          
    ,.v_i(fetch_v | itlb_fill_v)
    ,.w_i(itlb_fill_v)
@@ -157,7 +160,7 @@ wire instr_exe_access_fault = ~itlb_r_entry.x;
 
 wire is_uncached_mode = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached);
 assign instr_access_fault_v = is_uncached_mode & ~uncached_li;
-assign instr_access_err_v  = fetch_v_r & itlb_r_v_lo & (instr_priv_access_fault | instr_exe_access_fault);
+assign instr_access_err_v  = fetch_v_r & itlb_r_v_lo & mem_translation_en_i & (instr_priv_access_fault | instr_exe_access_fault);
 
 assign mem_resp_v_o    = mem_resp_ready_i & fetch_v_rr;
 assign mem_resp_cast_o = '{instr_access_fault: instr_access_fault_r

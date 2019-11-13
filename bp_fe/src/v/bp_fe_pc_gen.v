@@ -26,7 +26,8 @@ module bp_fe_pc_gen
    , output                                          mem_cmd_v_o
    , input                                           mem_cmd_yumi_i
 
-   , output [1:0]                                    mem_priv_o
+   , output [rv64_priv_width_gp-1:0]                 mem_priv_o
+   , output                                          mem_translation_en_o
    , output                                          mem_poison_o
 
    , input [mem_resp_width_lp-1:0]                   mem_resp_i
@@ -87,17 +88,32 @@ wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
 
 wire trap_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
 
-logic [1:0] shadow_priv_n, shadow_priv_r;
+logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
+wire shadow_priv_w = state_reset_v | trap_v;
 assign shadow_priv_n = fe_cmd_cast_i.operands.pc_redirect_operands.priv;
 bsg_dff_reset_en
- #(.width_p(2))
+ #(.width_p(rv64_priv_width_gp))
  shadow_priv_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(trap_v)
+   ,.en_i(shadow_priv_w)
 
    ,.data_i(shadow_priv_n)
    ,.data_o(shadow_priv_r)
+   );
+   
+logic shadow_translation_en_n, shadow_translation_en_r;
+wire shadow_translation_en_w = state_reset_v | trap_v | itlb_fence_v;
+assign shadow_translation_en_n = fe_cmd_cast_i.operands.pc_redirect_operands.translation_enabled;
+bsg_dff_reset_en
+ #(.width_p(1))
+ shadow_translation_en_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(shadow_translation_en_w)
+
+   ,.data_i(shadow_translation_en_n)
+   ,.data_o(shadow_translation_en_r)
    );
 
 // Until we support C, must be aligned to 4 bytes
@@ -296,7 +312,7 @@ assign br_target  = pc_gen_stage_r[1].pc + scan_instr.imm;
 // This may cause us to fetch during an I$ miss or a with a full queue.  
 // FE cmds normally flush the queue, so we don't expect this to affect
 //   power much in practice.
-assign mem_cmd_v_o = cmd_nonattaboy_v || (~is_wait & fe_queue_ready_i & ~flush); 
+assign mem_cmd_v_o = cmd_nonattaboy_v || (~is_wait & fe_queue_ready_i & ~flush);
 always_comb
   begin
     mem_cmd_cast_o = '0;
@@ -319,7 +335,9 @@ always_comb
       end
   end
 
-assign mem_poison_o = ~pc_gen_stage_n[1].v;
+assign mem_poison_o         = ~pc_gen_stage_n[1].v;
+assign mem_priv_o           = shadow_priv_w ? shadow_priv_n : shadow_priv_r;
+assign mem_translation_en_o = shadow_translation_en_w ? shadow_translation_en_n : shadow_translation_en_r;
 
 assign mem_resp_ready_o = 1'b1;
 

@@ -12,6 +12,7 @@ module bp_tlb
  (input                               clk_i
   , input                             reset_i
   , input                             flush_i
+  , input                             translation_en_i
   
   , input                             v_i
   , input                             w_i
@@ -26,24 +27,26 @@ module bp_tlb
  );
 
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-bp_pte_entry_leaf_s r_entry, w_entry, ram_r_data;
+bp_pte_entry_leaf_s r_entry, w_entry, passthrough_entry;
 
 logic [lg_els_lp-1:0] cam_w_addr, cam_r_addr, ram_addr;
 logic                 r_v, w_v, cam_r_v;
 
-assign entry_o    = r_entry;
+assign entry_o    = translation_en_i ? r_entry : passthrough_entry;
 assign w_entry    = entry_i;
   
 assign r_v        = v_i & ~w_i; 
-assign w_v        = v_i & w_i; 
+assign w_v        = v_i & w_i & translation_en_i; 
 
 assign ram_addr   = (w_i)? cam_w_addr : cam_r_addr;
+
+assign passthrough_entry.ptag = miss_vtag_o;
 
 bsg_dff_reset #(.width_p(1))
   r_v_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.data_i(r_v & cam_r_v)
+   ,.data_i(r_v & (cam_r_v | ~translation_en_i))
    ,.data_o(v_o)
   );
 
@@ -51,7 +54,7 @@ bsg_dff_reset #(.width_p(1))
   miss_v_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.data_i(r_v & ~cam_r_v)
+   ,.data_i(r_v & ~(cam_r_v | ~translation_en_i))
    ,.data_o(miss_v_o)
   );
 

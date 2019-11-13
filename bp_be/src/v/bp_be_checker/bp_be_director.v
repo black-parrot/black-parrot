@@ -209,6 +209,11 @@ always_comb
       begin
         fe_cmd.opcode = e_op_state_reset;
         fe_cmd.vaddr  = npc_r;
+        
+        fe_cmd_pc_redirect_operands = '0;
+        fe_cmd_pc_redirect_operands.priv                = trap_pkt.priv_n;
+        fe_cmd_pc_redirect_operands.translation_enabled = trap_pkt.translation_en_n;
+        fe_cmd.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
 
         fe_cmd_v = fe_cmd_ready_i;
       end
@@ -230,6 +235,10 @@ always_comb
       begin
         fe_cmd.opcode = e_op_itlb_fence;
         fe_cmd.vaddr  = commit_pkt.pc;
+        
+        fe_cmd_pc_redirect_operands = '0;
+        fe_cmd_pc_redirect_operands.translation_enabled = trap_pkt.translation_en_n;
+        fe_cmd.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
         
         fe_cmd_v      = fe_cmd_ready_i;
 
@@ -256,6 +265,7 @@ always_comb
         fe_cmd_pc_redirect_operands.branch_metadata_fwd  = '0; 
         fe_cmd_pc_redirect_operands.misprediction_reason = e_not_a_branch;
         fe_cmd_pc_redirect_operands.priv                 = trap_pkt.priv_n;
+        fe_cmd_pc_redirect_operands.translation_enabled  = trap_pkt.translation_en_n;
         fe_cmd.operands.pc_redirect_operands             = fe_cmd_pc_redirect_operands;
 
         fe_cmd_v = fe_cmd_ready_i;
