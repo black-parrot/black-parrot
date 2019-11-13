@@ -245,8 +245,6 @@ bp_be_mem_top
     ,.accept_irq_o(accept_irq_lo)
 
     ,.trap_pkt_o(trap_pkt)
-    // Should connect priv mode to checker for shadow privilege mode
-    ,.priv_mode_o()
     ,.tlb_fence_o(chk_tlb_fence_li)
     );
 

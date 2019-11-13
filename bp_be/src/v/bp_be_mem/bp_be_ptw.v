@@ -24,7 +24,6 @@ module bp_be_ptw
    , input                                  reset_i
    , input [ptag_width_p-1:0]               base_ppn_i
    , input [rv64_priv_width_gp-1:0]         priv_mode_i
-   , input                                  translation_en_i
    , input                                  mstatus_sum_i
    , input                                  mstatus_mxr_i
    , output                                 busy_o
@@ -104,13 +103,13 @@ module bp_be_ptw
   assign tlb_w_vtag_o           = vpn_r;
   assign tlb_w_entry_o          = tlb_w_entry;
   
-  assign tlb_w_entry.ptag       = translation_en_i ? writeback_ppn : ptag_width_p'(vpn_r);
-  assign tlb_w_entry.a          = translation_en_i ? dcache_data.a : 1'b1;
-  assign tlb_w_entry.d          = translation_en_i ? dcache_data.d : 1'b1;
-  assign tlb_w_entry.u          = translation_en_i ? dcache_data.u : 1'b0;
-  assign tlb_w_entry.x          = translation_en_i ? dcache_data.x : 1'b1;
-  assign tlb_w_entry.w          = translation_en_i ? dcache_data.w : 1'b1;
-  assign tlb_w_entry.r          = translation_en_i ? dcache_data.r : 1'b1;
+  assign tlb_w_entry.ptag       = writeback_ppn;
+  assign tlb_w_entry.a          = dcache_data.a;
+  assign tlb_w_entry.d          = dcache_data.d;
+  assign tlb_w_entry.u          = dcache_data.u;
+  assign tlb_w_entry.x          = dcache_data.x;
+  assign tlb_w_entry.w          = dcache_data.w;
+  assign tlb_w_entry.r          = dcache_data.r;
 
   // PMA attributes
   assign dcache_v_o             = (state_r == eSendLoad);
@@ -144,9 +143,7 @@ module bp_be_ptw
   
   always_comb begin
     case(state_r)
-      eIdle:      state_n = tlb_miss_v_i 
-                             ? (translation_en_i ? eSendLoad : eWriteBack) 
-                             : eIdle;                           
+      eIdle:      state_n = tlb_miss_v_i ? eSendLoad : eIdle;                           
       eSendLoad:  state_n = dcache_rdy_i ? eWaitLoad : eSendLoad; 
       eWaitLoad:  state_n = dcache_miss_i
                             ? eSendLoad

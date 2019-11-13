@@ -120,12 +120,13 @@
   /* TODO: make opcode */                                                                          \
   typedef struct packed                                                                            \
   {                                                                                                \
-    logic [vaddr_width_p-1:0] epc;                                                                 \
-    logic [vaddr_width_p-1:0] tvec;                                                                \
-    logic [1:0]               priv_n;                                                              \
-    logic                     exception;                                                           \
-    logic                     _interrupt;                                                          \
-    logic                     eret;                                                                \
+    logic [vaddr_width_p-1:0]       epc;                                                           \
+    logic [vaddr_width_p-1:0]       tvec;                                                          \
+    logic [rv64_priv_width_gp-1:0]  priv_n;                                                        \
+    logic                           translation_en_n;                                              \
+    logic                           exception;                                                     \
+    logic                           _interrupt;                                                    \
+    logic                           eret;                                                          \
   }  bp_be_trap_pkt_s;                                                                             \
                                                                                                    \
   typedef struct packed                                                                            \
@@ -184,7 +185,7 @@
    )
  
 `define bp_be_trap_pkt_width(vaddr_width_mp) \
-  (2 * vaddr_width_mp + 5)
+  (2 * vaddr_width_mp + rv64_priv_width_gp + 4)
 
 `define bp_be_wb_pkt_width(vaddr_width_mp) \
   (1                                                                                               \

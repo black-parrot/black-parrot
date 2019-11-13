@@ -95,7 +95,6 @@ module bp_be_mem_top
    , output                                  accept_irq_o
 
    , output [trap_pkt_width_lp-1:0]          trap_pkt_o
-   , output [rv64_priv_width_gp-1:0]         priv_mode_o
    , output                                  tlb_fence_o
    );
 
@@ -152,7 +151,8 @@ logic                     csr_illegal_instr_lo;
 logic [ptag_width_p-1:0]  satp_ppn_lo;
 logic [dword_width_p-1:0] csr_data_lo;
 logic                     csr_v_lo;
-logic                     translation_en_lo, mstatus_sum_lo, mstatus_mxr_lo;
+logic                     mstatus_sum_lo, mstatus_mxr_lo, translation_en_lo;
+logic [rv64_priv_width_gp-1:0] priv_mode_lo;
 
 logic load_access_fault_v, load_access_fault_r, store_access_fault_v, store_access_fault_r;
 logic load_access_err_v, load_access_err_r, store_access_err_v, store_access_err_r;
@@ -210,9 +210,9 @@ assign exception_ecode_dec_li =
     ,load_fault      : load_access_fault_r
     ,store_misaligned: 1'b0 // TODO: Need to detect this
     ,store_fault     : store_access_fault_r
-    ,ecall_u_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_U)
-    ,ecall_s_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_S)
-    ,ecall_m_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_o == `PRIV_MODE_M)
+    ,ecall_u_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_lo == `PRIV_MODE_U)
+    ,ecall_s_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_lo == `PRIV_MODE_S)
+    ,ecall_m_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_lo == `PRIV_MODE_M)
     ,instr_page_fault: ptw_instr_page_fault_v
     ,load_page_fault : ptw_load_page_fault_v | load_access_err_r
     ,store_page_fault: ptw_store_page_fault_v | store_access_err_r
@@ -252,7 +252,7 @@ bp_be_csr
    ,.external_irq_i(external_irq_i)
    ,.accept_irq_o(accept_irq_o)
 
-   ,.priv_mode_o(priv_mode_o)
+   ,.priv_mode_o(priv_mode_lo)
    ,.trap_pkt_o(trap_pkt_o)
    ,.satp_ppn_o(satp_ppn_lo)
    ,.translation_en_o(translation_en_lo)
@@ -269,6 +269,7 @@ bp_tlb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.flush_i(tlb_fence_o)
+   ,.translation_en_i(translation_en_lo)
    
    ,.v_i(dtlb_r_v | dtlb_w_v)
    ,.w_i(dtlb_w_v)
@@ -299,8 +300,7 @@ bp_be_ptw
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.base_ppn_i(satp_ppn_lo)
-   ,.priv_mode_i(priv_mode_o)
-   ,.translation_en_i(translation_en_lo)
+   ,.priv_mode_i(priv_mode_lo)
    ,.mstatus_sum_i(mstatus_sum_lo)
    ,.mstatus_mxr_i(mstatus_mxr_lo)
    ,.busy_o(ptw_busy)
@@ -406,12 +406,12 @@ always_ff @(posedge clk_i) begin
 end
 
 // Check instruction accesses
-wire data_priv_access_fault = ((priv_mode_o == `PRIV_MODE_S) & ~mstatus_sum_lo & dtlb_r_entry.u)
-                              | ((priv_mode_o == `PRIV_MODE_U) & ~dtlb_r_entry.u);
+wire data_priv_access_fault = ((priv_mode_lo == `PRIV_MODE_S) & ~mstatus_sum_lo & dtlb_r_entry.u)
+                              | ((priv_mode_lo == `PRIV_MODE_U) & ~dtlb_r_entry.u);
 wire data_write_access_fault = is_store_r & (~dtlb_r_entry.w | ~dtlb_r_entry.d);
 
-assign load_access_err_v  = mmu_cmd_v_r & dtlb_r_v_lo & ~is_store_r & data_priv_access_fault;
-assign store_access_err_v = mmu_cmd_v_r & dtlb_r_v_lo & is_store_r & (data_priv_access_fault | data_write_access_fault);
+assign load_access_err_v  = mmu_cmd_v_r & dtlb_r_v_lo & translation_en_lo & ~is_store_r & data_priv_access_fault;
+assign store_access_err_v = mmu_cmd_v_r & dtlb_r_v_lo & translation_en_lo & is_store_r & (data_priv_access_fault | data_write_access_fault);
 
 // Decode cmd type
 assign dcache_cmd_v    = mmu_cmd_v_i & ~is_itlb_fill;
@@ -468,7 +468,7 @@ assign itlb_fill_entry_o = ptw_tlb_w_entry;
 
 always_ff @(negedge clk_i)
   begin
-    assert (~(dcache_pkt_v & dcache_uncached & mmu_cmd.mem_op inside {e_lrw, e_lrd, e_scw, e_scd}))
+    assert (~(dtlb_r_v_lo & dcache_uncached & mmu_cmd.mem_op inside {e_lrw, e_lrd, e_scw, e_scd}))
       else $warning("LR/SC to uncached memory not supported");
   end
 
