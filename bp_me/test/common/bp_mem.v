@@ -25,8 +25,8 @@ module bp_mem
    , parameter max_latency_p = "inv"
 
    , parameter dram_clock_period_in_ps_p = "inv"
-   , parameter dram_bp_params_p                = "inv"
-   , parameter dram_sys_bp_params_p            = "inv"
+   , parameter dram_cfg_p                = "inv"
+   , parameter dram_sys_cfg_p            = "inv"
    , parameter dram_capacity_p           = "inv"
 
    , localparam num_block_bytes_lp = cce_block_width_p / 8
@@ -87,8 +87,8 @@ bp_mem_delay_model
    ,.use_dramsim2_latency_p(use_dramsim2_latency_p)
    ,.max_latency_p(max_latency_p)
    ,.dram_clock_period_in_ps_p(dram_clock_period_in_ps_p)
-   ,.dram_bp_params_p(dram_bp_params_p)
-   ,.dram_sys_bp_params_p(dram_sys_bp_params_p)
+   ,.dram_cfg_p(dram_cfg_p)
+   ,.dram_sys_cfg_p(dram_sys_cfg_p)
    ,.dram_capacity_p(dram_capacity_p)
    )
  delay_model

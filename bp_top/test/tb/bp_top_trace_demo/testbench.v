@@ -25,6 +25,7 @@ module testbench
    , parameter dram_trace_p                = 0
    , parameter npc_trace_p                 = 0
    , parameter dcache_trace_p              = 0
+   , parameter vm_trace_p                  = 0
    , parameter skip_init_p                 = 0
 
    , parameter mem_load_p         = 1
@@ -40,8 +41,8 @@ module testbench
    , parameter max_latency_p = 15
 
    , parameter dram_clock_period_in_ps_p = 1000
-   , parameter dram_bp_params_p                = "dram_ch.ini"
-   , parameter dram_sys_bp_params_p            = "dram_sys.ini"
+   , parameter dram_cfg_p                = "dram_ch.ini"
+   , parameter dram_sys_cfg_p            = "dram_sys.ini"
    , parameter dram_capacity_p           = 16384
    )
   (input clk_i
@@ -203,7 +204,7 @@ bp_host_remote_domain_proxy_node
   bind bp_be_top
     bp_be_nonsynth_calc_tracer
      #(.bp_params_p(bp_params_p))
-     tracer
+     calc_tracer
        // Workaround for verilator binding by accident
        // TODO: Figure out why tracing is always enabled
       (.clk_i(clk_i & (testbench.calc_trace_p == 1))
@@ -236,6 +237,27 @@ bp_host_remote_domain_proxy_node
   
        ,.priv_mode_i(be_mem.csr.priv_mode_n)
        ,.mpp_i(be_mem.csr.mstatus_n.mpp)
+       );
+
+  bind bp_core
+    bp_be_nonsynth_vm_tracer
+    #(.bp_params_p(bp_params_p))
+    vm_tracer
+      (.clk_i(clk_i & (testbench.vm_trace_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i(be.be_checker.scheduler.int_regfile.cfg_bus.freeze)
+
+       ,.mhartid_i(be.be_checker.scheduler.int_regfile.cfg_bus.core_id)
+
+       ,.itlb_clear_i(fe.mem.itlb.flush_i)
+       ,.itlb_fill_v_i(fe.mem.itlb.v_i & fe.mem.itlb.w_i)
+       ,.itlb_vtag_i(fe.mem.itlb.vtag_i)
+       ,.itlb_entry_i(fe.mem.itlb.entry_i)
+
+       ,.dtlb_clear_i(be.be_mem.dtlb.flush_i)
+       ,.dtlb_fill_v_i(be.be_mem.dtlb.v_i & be.be_mem.dtlb.w_i)
+       ,.dtlb_vtag_i(be.be_mem.dtlb.vtag_i)
+       ,.dtlb_entry_i(be.be_mem.dtlb.entry_i)
        );
 
 // We rely on this for termination, so don't gate behind parameter
@@ -362,8 +384,8 @@ bp_mem
   ,.max_latency_p(max_latency_p)
 
   ,.dram_clock_period_in_ps_p(dram_clock_period_in_ps_p)
-  ,.dram_bp_params_p(dram_bp_params_p)
-  ,.dram_sys_bp_params_p(dram_sys_bp_params_p)
+  ,.dram_cfg_p(dram_cfg_p)
+  ,.dram_sys_cfg_p(dram_sys_cfg_p)
   ,.dram_capacity_p(dram_capacity_p)
   )
 mem

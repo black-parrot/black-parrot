@@ -9,8 +9,8 @@ module bp_mem_delay_model
    , parameter max_latency_p = "inv"
 
    , parameter dram_clock_period_in_ps_p = "inv"
-   , parameter dram_bp_params_p                = "inv"
-   , parameter dram_sys_bp_params_p            = "inv"
+   , parameter dram_cfg_p                = "inv"
+   , parameter dram_sys_cfg_p            = "inv"
    , parameter dram_capacity_p           = "inv"
    )
   (input                      clk_i
@@ -114,7 +114,7 @@ else if (use_dramsim2_latency_p)
           );
 
       initial 
-        init(dram_clock_period_in_ps_p, dram_bp_params_p, dram_sys_bp_params_p, dram_capacity_p);
+        init(dram_clock_period_in_ps_p, dram_cfg_p, dram_sys_cfg_p, dram_capacity_p);
 
       always_ff @(negedge clk_i)
         begin
