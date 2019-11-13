@@ -382,6 +382,7 @@ always_comb
     // Dependency information for pipelines
     for (integer i = 0; i < pipe_stage_els_lp; i++) 
       begin : dep_status
+        calc_status.dep_status[i].v         = calc_stage_r[i].queue_v;
         calc_status.dep_status[i].int_iwb_v = calc_stage_r[i].pipe_int_v 
                                               & ~exc_stage_n[i+1].poison_v
                                               & calc_stage_r[i].irf_w_v;

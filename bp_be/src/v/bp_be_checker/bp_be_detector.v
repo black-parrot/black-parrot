@@ -35,6 +35,7 @@ module bp_be_detector
    , input [isd_status_width_lp-1:0]   isd_status_i
    , input [calc_status_width_lp-1:0]  calc_status_i
    , input [vaddr_width_p-1:0]         expected_npc_i
+   , input                             fe_cmd_ready_i
    , input                             mmu_cmd_ready_i
    , input                             credits_full_i
    , input                             credits_empty_i
@@ -70,7 +71,8 @@ logic [2:0] irs1_data_haz_v , irs2_data_haz_v;
 logic [2:0] frs1_data_haz_v , frs2_data_haz_v;
 logic [2:0] rs1_match_vector, rs2_match_vector;
 
-logic fence_haz_v, serial_haz_v, data_haz_v, struct_haz_v, mem_in_pipe_v;
+logic fence_haz_v, interrupt_haz_v, serial_haz_v, data_haz_v, struct_haz_v;
+logic instr_in_pipe_v, mem_in_pipe_v;
 
 always_comb 
   begin
@@ -122,9 +124,11 @@ always_comb
     frs2_data_haz_v[2] = (isd_status_cast_i.isd_frs2_v & rs2_match_vector[2])
                          & (dep_status_li[2].fp_fwb_v);
 
+    instr_in_pipe_v    = dep_status_li[0].v | dep_status_li[1].v | dep_status_li[2].v;
     mem_in_pipe_v      = dep_status_li[0].mem_v | dep_status_li[1].mem_v | dep_status_li[2].mem_v;
     fence_haz_v        = (isd_status_cast_i.isd_fence_v & (~credits_empty_i | mem_in_pipe_v))
                          | (isd_status_cast_i.isd_mem_v & credits_full_i);
+    interrupt_haz_v    = isd_status_cast_i.isd_irq_v & instr_in_pipe_v;
 
     serial_haz_v       = dep_status_li[0].serial_v
                          | dep_status_li[1].serial_v
@@ -139,7 +143,7 @@ always_comb
                  | (|frs2_data_haz_v);
 
     // Combine all structural hazard information
-    struct_haz_v = ~mmu_cmd_ready_i | fence_haz_v | serial_haz_v;
+    struct_haz_v = ~mmu_cmd_ready_i | fence_haz_v | interrupt_haz_v | serial_haz_v;
   end
 
 // Generate calculator control signals

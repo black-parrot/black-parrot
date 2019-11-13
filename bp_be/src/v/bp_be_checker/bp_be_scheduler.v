@@ -221,6 +221,7 @@ always_comb
     isd_status.isd_v        = issue_pkt_v_r & ~poison_iss_r & ~poison_iss_i;
     isd_status.isd_pc       = issue_pkt_r.pc;
     isd_status.isd_branch_metadata_fwd = issue_pkt_r.branch_metadata_fwd;
+    isd_status.isd_irq_v    = accept_irq_i;
     isd_status.isd_fence_v  = issue_pkt_v_r & issue_pkt_r.fence_v;
     isd_status.isd_mem_v    = issue_pkt_v_r & issue_pkt_r.mem_v;
     isd_status.isd_irs1_v   = issue_pkt_v_r & issue_pkt_r.irs1_v;
