@@ -156,7 +156,7 @@ bsg_mux
    ,.data_o(ret_mux_o)
    );
 
-assign npc_mismatch_v = isd_status.isd_v & (expected_npc_o != isd_status.isd_pc);
+assign npc_mismatch_v = isd_status.isd_v & ~isd_status.isd_irq_v & (expected_npc_o != isd_status.isd_pc);
 
 // Last operation was branch. Was it successful? Let's find out
 bsg_dff_reset_en
