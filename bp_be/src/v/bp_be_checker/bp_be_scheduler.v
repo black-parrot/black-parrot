@@ -77,7 +77,7 @@ assign fetch_instr     = fe_queue_cast_i.msg.fetch.instr;
 assign wb_pkt = wb_pkt_i;
 
 logic issue_pkt_v_r, poison_iss_r;
-wire npc_mismatch = issue_pkt_v_r & (expected_npc_i != issue_pkt_r.pc);
+wire npc_mismatch = issue_pkt_v_r & ~accept_irq_i & (expected_npc_i != issue_pkt_r.pc);
 bsg_dff_reset_en
  #(.width_p(1))
  issue_status_reg
