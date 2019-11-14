@@ -301,8 +301,7 @@ always_comb
         decode = '0;
         decode.queue_v     = 1'b1;
         decode.pipe_mem_v  = 1'b1;
-        decode.csr_v = (fe_exc_i != e_itlb_miss);
-        decode.mem_v = (fe_exc_i == e_itlb_miss);
+        decode.csr_v       = 1'b1;
         decode.serial_v    = 1'b1;
         casez (fe_exc_i)
           e_instr_misaligned  : decode.fu_op = e_op_instr_misaligned;

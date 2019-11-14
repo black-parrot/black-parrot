@@ -152,10 +152,11 @@ logic [ptag_width_p-1:0]  satp_ppn_lo;
 logic [dword_width_p-1:0] csr_data_lo;
 logic                     csr_v_lo;
 logic                     mstatus_sum_lo, mstatus_mxr_lo, translation_en_lo;
+logic                     itlb_fill_lo, instr_page_fault_lo, instr_access_fault_lo, instr_misaligned_lo;
 logic [rv64_priv_width_gp-1:0] priv_mode_lo;
 
-logic load_access_fault_v, load_access_fault_r, store_access_fault_v, store_access_fault_r;
-logic load_access_err_v, load_access_err_r, store_access_err_v, store_access_err_r;
+logic load_access_fault_v, load_access_fault_mem3, store_access_fault_v, store_access_fault_mem3;
+logic load_page_fault_v, load_page_fault_mem3, store_page_fault_v, store_page_fault_mem3;
 
 /* Control signals */
 logic dcache_cmd_v;
@@ -163,10 +164,9 @@ logic itlb_not_dtlb_resp;
 logic mmu_cmd_v_r, mmu_cmd_v_rr, dtlb_miss_r;
 logic is_store_r, is_store_rr;
 bp_be_mmu_vaddr_s vaddr_mem3, fault_vaddr;
-logic is_itlb_fill_mem3;
 logic [vaddr_width_p-1:0] fault_pc;
 
-wire itlb_fill_cmd_v = is_itlb_fill_mem3 & mmu_cmd_v_rr;
+wire itlb_fill_cmd_v = itlb_fill_lo;
 wire dtlb_fill_cmd_v = dtlb_miss_r;
 
 bsg_dff_en
@@ -179,17 +179,17 @@ bsg_dff_en
    ,.data_o({fault_vaddr, fault_pc})
    );
 
-wire is_itlb_fill = mmu_cmd_v_i & mmu_cmd.mem_op inside {e_itlb_fill};
-wire is_store     = mmu_cmd_v_i & mmu_cmd.mem_op inside {e_sb, e_sh, e_sw, e_sd};
+wire is_store = mmu_cmd_v_i & mmu_cmd.mem_op inside {e_sb, e_sh, e_sw, e_sd};
+
 bsg_dff_chain
- #(.width_p(1+vaddr_width_p)
+ #(.width_p(vaddr_width_p)
    ,.num_stages_p(2)
    )
- fill_pipe
+ vaddr_pipe
   (.clk_i(clk_i)
    
-   ,.data_i({mmu_cmd.vaddr, is_itlb_fill})
-   ,.data_o({vaddr_mem3, is_itlb_fill_mem3})
+   ,.data_i(mmu_cmd.vaddr)
+   ,.data_o(vaddr_mem3)
    );
 
 bp_be_ecode_dec_s exception_ecode_dec_li;
@@ -202,20 +202,20 @@ wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? fault_vaddr : v
 wire [instr_width_p-1:0] exception_instr_li = commit_pkt.instr;
 // TODO: exception priority is non-compliant with the spec.
 assign exception_ecode_dec_li = 
-  '{instr_misaligned : csr_cmd_v_i & (csr_cmd.csr_op == e_op_instr_misaligned)
-    ,instr_fault     : csr_cmd_v_i & (csr_cmd.csr_op == e_op_instr_access_fault)
+  '{instr_misaligned : instr_misaligned_lo
+    ,instr_fault     : instr_access_fault_lo
     ,illegal_instr   : csr_cmd_v_i & ((csr_cmd.csr_op == e_op_illegal_instr) || csr_illegal_instr_lo)
     ,breakpoint      : csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak)
     ,load_misaligned : 1'b0 // TODO: Need to detect this
-    ,load_fault      : load_access_fault_r
+    ,load_fault      : load_access_fault_mem3
     ,store_misaligned: 1'b0 // TODO: Need to detect this
-    ,store_fault     : store_access_fault_r
+    ,store_fault     : store_access_fault_mem3
     ,ecall_u_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_lo == `PRIV_MODE_U)
     ,ecall_s_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_lo == `PRIV_MODE_S)
     ,ecall_m_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_lo == `PRIV_MODE_M)
-    ,instr_page_fault: ptw_instr_page_fault_v
-    ,load_page_fault : ptw_load_page_fault_v | load_access_err_r
-    ,store_page_fault: ptw_store_page_fault_v | store_access_err_r
+    ,instr_page_fault: ptw_instr_page_fault_v | instr_page_fault_lo
+    ,load_page_fault : ptw_load_page_fault_v | load_page_fault_mem3
+    ,store_page_fault: ptw_store_page_fault_v | store_page_fault_mem3
     ,default: '0
     };
 
@@ -259,6 +259,11 @@ bp_be_csr
    ,.mstatus_sum_o(mstatus_sum_lo)
    ,.mstatus_mxr_o(mstatus_mxr_lo)
    ,.tlb_fence_o(tlb_fence_o)
+   
+   ,.itlb_fill_o(itlb_fill_lo)
+   ,.instr_page_fault_o(instr_page_fault_lo)
+   ,.instr_access_fault_o(instr_access_fault_lo)
+   ,.instr_misaligned_o(instr_misaligned_lo)
    );
 
 bp_tlb
@@ -388,10 +393,10 @@ always_ff @(posedge clk_i) begin
     mmu_cmd_v_r  <= '0;
     mmu_cmd_v_rr <= '0;
     is_store_r   <= '0;
-    load_access_err_r   <= '0;
-    store_access_err_r  <= '0;
-    load_access_fault_r <= '0;
-    store_access_fault_r <= '0;
+    load_page_fault_mem3    <= '0;
+    store_page_fault_mem3   <= '0;
+    load_access_fault_mem3  <= '0;
+    store_access_fault_mem3 <= '0;
   end
   else begin
     dtlb_miss_r  <= dtlb_miss_v & ~chk_poison_ex_i;
@@ -399,29 +404,29 @@ always_ff @(posedge clk_i) begin
     mmu_cmd_v_rr <= mmu_cmd_v_r & ~chk_poison_ex_i;
     is_store_r   <= is_store;
     is_store_rr  <= is_store_r & ~chk_poison_ex_i;
-    load_access_err_r   <= load_access_err_v & ~chk_poison_ex_i;
-    store_access_err_r  <= store_access_err_v & ~chk_poison_ex_i;
-    load_access_fault_r <= load_access_fault_v & ~chk_poison_ex_i;
-    store_access_fault_r <= store_access_fault_v & ~chk_poison_ex_i;
+    load_page_fault_mem3    <= load_page_fault_v & ~chk_poison_ex_i;
+    store_page_fault_mem3   <= store_page_fault_v & ~chk_poison_ex_i;
+    load_access_fault_mem3  <= load_access_fault_v & ~chk_poison_ex_i;
+    store_access_fault_mem3 <= store_access_fault_v & ~chk_poison_ex_i;
   end
 end
 
 // Check instruction accesses
-wire data_priv_access_fault = ((priv_mode_lo == `PRIV_MODE_S) & ~mstatus_sum_lo & dtlb_r_entry.u)
+wire data_priv_page_fault = ((priv_mode_lo == `PRIV_MODE_S) & ~mstatus_sum_lo & dtlb_r_entry.u)
                               | ((priv_mode_lo == `PRIV_MODE_U) & ~dtlb_r_entry.u);
-wire data_write_access_fault = is_store_r & (~dtlb_r_entry.w | ~dtlb_r_entry.d);
+wire data_write_page_fault = is_store_r & (~dtlb_r_entry.w | ~dtlb_r_entry.d);
 
-assign load_access_err_v  = mmu_cmd_v_r & dtlb_r_v_lo & translation_en_lo & ~is_store_r & data_priv_access_fault;
-assign store_access_err_v = mmu_cmd_v_r & dtlb_r_v_lo & translation_en_lo & is_store_r & (data_priv_access_fault | data_write_access_fault);
+assign load_page_fault_v  = mmu_cmd_v_r & dtlb_r_v_lo & translation_en_lo & ~is_store_r & data_priv_page_fault;
+assign store_page_fault_v = mmu_cmd_v_r & dtlb_r_v_lo & translation_en_lo & is_store_r & (data_priv_page_fault | data_write_page_fault);
 
 // Decode cmd type
-assign dcache_cmd_v    = mmu_cmd_v_i & ~is_itlb_fill;
+assign dcache_cmd_v    = mmu_cmd_v_i;
 
 // D-Cache connections
 assign dcache_ptag     = (ptw_busy)? ptw_dcache_ptag : dtlb_r_entry.ptag;
 assign dcache_tlb_miss = (ptw_busy)? 1'b0 : dtlb_miss_v;
 assign dcache_poison   = (ptw_busy)? 1'b0 : chk_poison_ex_i 
-                                            | (load_access_err_v | store_access_err_v)
+                                            | (load_page_fault_v | store_page_fault_v)
                                             | (load_access_fault_v | store_access_fault_v);
 assign dcache_pkt_v    = (ptw_busy)? ptw_dcache_v : dcache_cmd_v;
 
@@ -456,7 +461,7 @@ assign ptw_page_fault_v  = ptw_instr_page_fault_v | ptw_load_page_fault_v | ptw_
 assign ptw_store_not_load = dtlb_fill_cmd_v & is_store_rr;
  
 // MMU response connections
-assign mem_resp.miss_v = mmu_cmd_v_rr & ~dcache_v & ~itlb_fill_cmd_v;
+assign mem_resp.miss_v = mmu_cmd_v_rr & ~dcache_v;
 assign mem_resp.exc_v  = |exception_ecode_dec_li;
 assign mem_resp.data   = dcache_v ? dcache_data : csr_data_lo;
 
@@ -472,6 +477,5 @@ always_ff @(negedge clk_i)
     assert (~(dtlb_r_v_lo & dcache_uncached & mmu_cmd.mem_op inside {e_lrw, e_lrd, e_scw, e_scd}))
       else $warning("LR/SC to uncached memory not supported");
   end
-
 endmodule : bp_be_mem_top
 

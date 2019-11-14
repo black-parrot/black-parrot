@@ -123,13 +123,14 @@ bsg_dff_reset_en
 wire misalign_exception           = 1'b0;
 wire itlb_miss_exception          = v_if2 & (mem_resp_v_i & mem_resp_cast_i.itlb_miss);
 wire instr_access_fault_exception = v_if2 & (mem_resp_v_i & mem_resp_cast_i.instr_access_fault);
+wire instr_page_fault_exception   = v_if2 & (mem_resp_v_i & mem_resp_cast_i.instr_page_fault);
 
 wire fetch_fail     = v_if2 & ~fe_queue_v_o;
 wire queue_miss     = v_if2 & ~fe_queue_ready_i;
 wire icache_miss    = v_if2 & (mem_resp_v_i & mem_resp_cast_i.icache_miss);
-wire flush          = itlb_miss_exception | icache_miss | queue_miss | cmd_nonattaboy_v;
+wire fe_exception_v = v_if2 & (instr_page_fault_exception | instr_access_fault_exception | misalign_exception | itlb_miss_exception);
+wire flush          = fe_exception_v | icache_miss | queue_miss | cmd_nonattaboy_v;
 wire fe_instr_v     = v_if2 & mem_resp_v_i & ~flush;
-wire fe_exception_v = v_if2 & (instr_access_fault_exception | misalign_exception | itlb_miss_exception);
 
 // FSM
 enum bit [1:0] {e_wait=2'd0, e_run, e_stall} state_n, state_r;
@@ -360,7 +361,9 @@ always_comb
                                                        ? e_instr_misaligned
                                                        : itlb_miss_exception
                                                          ? e_itlb_miss
-                                                         : e_instr_access_fault;
+                                                         : instr_page_fault_exception
+                                                           ? e_instr_page_fault
+                                                           : e_instr_access_fault;
       end
     else 
       begin
