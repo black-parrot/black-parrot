@@ -54,6 +54,12 @@ module bp_be_csr
     , output                            mstatus_sum_o
     , output                            mstatus_mxr_o
     , output logic                      tlb_fence_o
+    
+    // FE Exceptions
+    , output logic                      itlb_fill_o
+    , output logic                      instr_page_fault_o
+    , output logic                      instr_access_fault_o
+    , output logic                      instr_misaligned_o
     );
 
 // Declare parameterizable structs
@@ -329,6 +335,11 @@ always_comb
     illegal_instr_o  = '0;
     csr_data_lo      = '0;
     tlb_fence_o      = '0;
+    
+    itlb_fill_o           = '0;
+    instr_page_fault_o    = '0;
+    instr_access_fault_o  = '0;
+    instr_misaligned_o    = '0;
 
     if (csr_cmd_v_i)
       if (csr_cmd.csr_op == e_sfence_vma)
@@ -357,6 +368,22 @@ always_comb
 
           illegal_instr_o  = (priv_mode_r < `PRIV_MODE_S);
           ret_v_o          = ~illegal_instr_o;
+        end
+      else if (csr_cmd.csr_op == e_itlb_fill)
+        begin
+          itlb_fill_o = 1'b1;
+        end
+      else if (csr_cmd.csr_op == e_op_instr_page_fault)
+        begin
+          instr_page_fault_o = 1'b1;
+        end
+      else if (csr_cmd.csr_op == e_op_instr_access_fault)
+        begin
+          instr_access_fault_o = 1'b1;
+        end
+      else if (csr_cmd.csr_op == e_op_instr_misaligned)
+        begin
+          instr_misaligned_o = 1'b1;
         end
       else if (csr_cmd.csr_op == e_op_take_interrupt)
         begin
