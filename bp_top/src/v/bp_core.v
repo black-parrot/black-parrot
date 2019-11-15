@@ -170,7 +170,7 @@ module bp_core
 
      ,.fe_cmd_o(fe_cmd_li)
      ,.fe_cmd_v_o(fe_cmd_v_li)
-     ,.fe_cmd_ready_i(~fe_fence_r & fe_cmd_ready_lo)
+     ,.fe_cmd_ready_i(fe_cmd_ready_lo)
 
      ,.lce_req_o(lce_req_o[1])
      ,.lce_req_v_o(lce_req_v_o[1])
@@ -193,5 +193,5 @@ module bp_core
      ,.external_irq_i(external_irq_i)
      );
 
-endmodule : bp_core
+endmodule
 
