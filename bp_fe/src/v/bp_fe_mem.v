@@ -148,12 +148,22 @@ logic itlb_miss_r;
 logic instr_access_fault_v, instr_access_fault_r, instr_access_err_v, instr_page_fault_r;
 always_ff @(posedge clk_i)
   begin
-    itlb_miss_r <= itlb_miss_lo;
-    fetch_v_r   <= fetch_v;
-    fetch_v_rr  <= fetch_v_r & ~mem_poison_i;
+    if(reset_i) begin
+      itlb_miss_r <= '0;
+      fetch_v_r   <= '0;
+      fetch_v_rr  <= '0;
 
-    instr_access_fault_r <= instr_access_fault_v & ~mem_poison_i;
-    instr_page_fault_r   <= instr_access_err_v & ~mem_poison_i;
+      instr_access_fault_r <= '0;
+      instr_page_fault_r   <= '0;
+    end
+    else begin
+      itlb_miss_r <= itlb_miss_lo;
+      fetch_v_r   <= fetch_v;
+      fetch_v_rr  <= fetch_v_r & ~mem_poison_i;
+
+      instr_access_fault_r <= instr_access_fault_v & ~mem_poison_i;
+      instr_page_fault_r   <= instr_access_err_v & ~mem_poison_i;
+    end
   end
 
 wire instr_priv_access_fault = ((mem_priv_i == `PRIV_MODE_S) & itlb_r_entry.u)
