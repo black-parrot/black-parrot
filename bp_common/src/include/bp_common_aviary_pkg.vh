@@ -34,7 +34,7 @@ package bp_common_aviary_pkg;
       ,cce_instr_width      : 48
 
       ,fe_queue_fifo_els: 8
-      ,fe_cmd_fifo_els  : 2
+      ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 62
@@ -86,7 +86,7 @@ package bp_common_aviary_pkg;
       ,cce_instr_width      : 48
 
       ,fe_queue_fifo_els: 8
-      ,fe_cmd_fifo_els  : 2
+      ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 62
@@ -138,7 +138,7 @@ package bp_common_aviary_pkg;
       ,cce_instr_width      : 48
 
       ,fe_queue_fifo_els: 8
-      ,fe_cmd_fifo_els  : 2
+      ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 62
@@ -190,7 +190,7 @@ package bp_common_aviary_pkg;
       ,cce_instr_width      : 48
 
       ,fe_queue_fifo_els: 8
-      ,fe_cmd_fifo_els  : 2
+      ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 62
@@ -242,7 +242,7 @@ package bp_common_aviary_pkg;
       ,cce_instr_width      : 48
 
       ,fe_queue_fifo_els: 8
-      ,fe_cmd_fifo_els  : 2
+      ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 62
@@ -294,7 +294,7 @@ package bp_common_aviary_pkg;
       ,cce_instr_width      : 48
 
       ,fe_queue_fifo_els: 8
-      ,fe_cmd_fifo_els  : 2
+      ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
       ,coh_noc_flit_width  : 62
