@@ -134,11 +134,16 @@ logic [reg_data_width_lp-1:0] offset;
 assign offset = decode.offset_sel ? '0 : imm_i[0+:vaddr_width_p];
 
 assign mem1_cmd_v = decode.mem_v & ~kill_ex1_i;
+
+wire fe_exc_v = (decode.fu_op == e_op_instr_misaligned)
+                | (decode.fu_op == e_op_instr_access_fault)
+                | (decode.fu_op == e_op_instr_page_fault)
+                | (decode.fu_op == e_itlb_fill);
 always_comb 
   begin
     mem1_cmd.mem_op   = decode.fu_op;
     mem1_cmd.data     = rs2_i;
-    mem1_cmd.vaddr    = (mem1_cmd.mem_op == e_itlb_fill) ? pc_i : (rs1_i + offset);
+    mem1_cmd.vaddr    = fe_exc_v ? pc_i : (rs1_i + offset);
   end
 
 assign csr_cmd_v_o = csr_cmd_v_lo & ~kill_ex3_i;
