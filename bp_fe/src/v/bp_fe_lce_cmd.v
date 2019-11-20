@@ -34,7 +34,7 @@ module bp_fe_lce_cmd
   (
     input                                                        clk_i
     , input                                                      reset_i
-    , input [lce_id_width_lp-1:0]                                lce_id_i
+    , input [lce_id_width_p-1:0]                                 lce_id_i
 
     , input [paddr_width_p-1:0]                                  miss_addr_i
 
@@ -103,7 +103,7 @@ module bp_fe_lce_cmd
 
   // states
   //
-  logic [cce_id_width_lp-1:0] syn_ack_cnt_r, syn_ack_cnt_n;
+  logic [cce_id_width_p-1:0] syn_ack_cnt_r, syn_ack_cnt_n;
   logic [lce_data_width_lp-1:0] data_r, data_n;
   logic flag_data_buffered_r, flag_data_buffered_n;
   logic flag_invalidate_r, flag_invalidate_n;
@@ -265,7 +265,7 @@ module bp_fe_lce_cmd
           syn_ack_cnt_n = lce_resp_yumi_i
             ? syn_ack_cnt_r + 1
             : syn_ack_cnt_r;
-          state_n = (syn_ack_cnt_r == cce_id_width_lp'(num_cce_p-1)) & lce_resp_yumi_i
+          state_n = (syn_ack_cnt_r == cce_id_width_p'(num_cce_p-1)) & lce_resp_yumi_i
             ? e_lce_cmd_ready
             : e_lce_cmd_reset;
         end

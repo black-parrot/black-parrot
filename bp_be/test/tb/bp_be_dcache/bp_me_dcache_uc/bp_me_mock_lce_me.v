@@ -21,8 +21,6 @@ module bp_me_mock_lce_me
 
     , localparam block_size_in_bytes_lp=(cce_block_width_p / 8)
 
-    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
-
     , localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
 
     , localparam ptag_width_lp = (paddr_width_p-bp_page_offset_width_gp)
@@ -174,7 +172,7 @@ module bp_me_mock_lce_me
     .clk_i(clk_i)
     ,.reset_i(reset_i)
     ,.freeze_i(freeze_li)
-    ,.lce_id_i(lce_id_width_lp'(0))
+    ,.lce_id_i(lce_id_width_p'(0))
 
     ,.dcache_pkt_i(rolly_dcache_pkt_lo)
     ,.v_i(dcache_v_li)

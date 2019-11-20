@@ -5,10 +5,8 @@ module bp_me_cce_id_to_cord
  import bp_common_aviary_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
-
-   , localparam cce_id_width_lp = `BSG_SAFE_CLOG2(num_cce_p)
    )
-  (input [cce_id_width_lp-1:0]         cce_id_i
+  (input [cce_id_width_p-1:0]          cce_id_i
    , output [coh_noc_cord_width_p-1:0] cce_cord_o
    , output [coh_noc_cid_width_p-1:0]  cce_cid_o
    );

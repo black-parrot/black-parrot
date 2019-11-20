@@ -30,7 +30,6 @@ module bp_be_mem_top
                                                                  , dword_width_p
                                                                  )
    , localparam cfg_bus_width_lp      = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
-   , localparam lce_id_width_lp        = `BSG_SAFE_CLOG2(num_lce_p)
 
    , localparam trap_pkt_width_lp      = `bp_be_trap_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp    = `bp_be_commit_pkt_width(vaddr_width_p)
