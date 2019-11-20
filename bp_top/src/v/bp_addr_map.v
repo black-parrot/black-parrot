@@ -89,13 +89,13 @@ always_comb
           dst_cord_o = core_id_to_cord(paddr_i[3+:core_id_width_lp]);
           dst_cid_o  = '0;
         end
-      coproc_dev_base_addr_gp:
-        begin
-          // Coproc is assumed to be due east
-          dst_did_o = '0;
-          dst_cord_o = coproc_cord_li;
-          dst_cid_o  = '0;
-        end
+      //coproc_dev_base_addr_gp:
+      //  begin
+      //    // Coproc is assumed to be due east
+      //    dst_did_o = '0;
+      //    dst_cord_o = coproc_cord_li;
+      //    dst_cid_o  = '0;
+      //  end
       default: // DRAM 
         begin
           // TODO: DRAM is either enabled, or we send to next chip
