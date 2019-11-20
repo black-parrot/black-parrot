@@ -145,11 +145,14 @@ typedef struct packed
 }  bp_proc_param_s;
 
 `define declare_bp_proc_params(bp_params_e_mp) \
-  , localparam bp_proc_param_s proc_param_lp = all_cfgs_gp[bp_params_e_mp]                            \
+  , localparam bp_proc_param_s proc_param_lp = all_cfgs_gp[bp_params_e_mp]                         \
                                                                                                    \
   , localparam num_core_p = proc_param_lp.num_core                                                 \
   , localparam num_cce_p  = proc_param_lp.num_cce                                                  \
   , localparam num_lce_p  = proc_param_lp.num_lce                                                  \
+                                                                                                   \
+  , localparam cce_id_width_p = `BSG_SAFE_CLOG2(num_cce_p)                                         \
+  , localparam lce_id_width_p = `BSG_SAFE_CLOG2(num_lce_p)                                         \
                                                                                                    \
   , localparam vaddr_width_p = proc_param_lp.vaddr_width                                           \
   , localparam paddr_width_p = proc_param_lp.paddr_width                                           \

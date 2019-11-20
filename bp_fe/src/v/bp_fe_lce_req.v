@@ -39,7 +39,7 @@ module bp_fe_lce_req
    (input clk_i
     , input reset_i
 
-    , input [lce_id_width_lp-1:0] lce_id_i
+    , input [lce_id_width_p-1:0] lce_id_i
  
     , input miss_i
     , input [paddr_width_p-1:0] miss_addr_i
@@ -99,7 +99,7 @@ module bp_fe_lce_req
 
     lce_req_v_o           = 1'b0;
 
-    lce_req.dst_id        = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_lp] : 1'b0;
+    lce_req.dst_id        = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_p] : 1'b0;
     lce_req.src_id        = lce_id_i;
     lce_req.msg_type      = e_lce_req_type_rd;
     lce_req.addr          = miss_addr_r;
@@ -114,7 +114,7 @@ module bp_fe_lce_req
 
     lce_resp_v_o          = 1'b0;
 
-    lce_resp.dst_id       = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_lp] : 1'b0;
+    lce_resp.dst_id       = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_p] : 1'b0;
     lce_resp.src_id       = lce_id_i;
     lce_resp.msg_type     = bp_lce_cce_resp_type_e'('0);
     lce_resp.addr         = miss_addr_r;

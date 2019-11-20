@@ -16,39 +16,32 @@ module bp_be_dcache_lce_cmd
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_be_dcache_pkg::*;
-  #(parameter num_cce_p="inv"
-    , parameter num_lce_p="inv"
-    , parameter paddr_width_p="inv"
-    , parameter lce_data_width_p="inv"
-    , parameter sets_p="inv"
-    , parameter ways_p="inv"
-    , parameter data_width_p="inv"
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
 
-    , localparam block_size_in_words_lp=ways_p
-    , localparam data_mask_width_lp=(data_width_p>>3)
-    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_width_p>>3)
+    , localparam block_size_in_words_lp=lce_assoc_p
+    , localparam data_mask_width_lp=(dword_width_p>>3)
+    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
     , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
     , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
-    , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
+    , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)
     , localparam tag_width_lp=(paddr_width_p-index_width_lp-block_offset_width_lp)
-    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
-    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
-    , localparam cce_id_width_lp=`BSG_SAFE_CLOG2(num_cce_p)
+    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
     
-    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, ways_p, data_width_p, lce_data_width_p) 
+    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p) 
 
     , localparam dcache_lce_data_mem_pkt_width_lp=
-      `bp_be_dcache_lce_data_mem_pkt_width(sets_p, ways_p, lce_data_width_p)
+      `bp_be_dcache_lce_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
     , localparam dcache_lce_tag_mem_pkt_width_lp=
-      `bp_be_dcache_lce_tag_mem_pkt_width(sets_p, ways_p, tag_width_lp)
+      `bp_be_dcache_lce_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, tag_width_lp)
     , localparam dcache_lce_stat_mem_pkt_width_lp=
-      `bp_be_dcache_lce_stat_mem_pkt_width(sets_p, ways_p)
+      `bp_be_dcache_lce_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
   )
   (
     input clk_i
     , input reset_i
 
-    , input [lce_id_width_lp-1:0] lce_id_i
+    , input [lce_id_width_p-1:0] lce_id_i
 
     , input bp_lce_mode_e lce_mode_i
 
@@ -79,7 +72,7 @@ module bp_be_dcache_lce_cmd
     // data_mem
     , output logic data_mem_pkt_v_o
     , output logic [dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
-    , input [lce_data_width_p-1:0] data_mem_data_i
+    , input [cce_block_width_p-1:0] data_mem_data_i
     , input data_mem_pkt_yumi_i
   
     // tag_mem
@@ -90,15 +83,15 @@ module bp_be_dcache_lce_cmd
     // stat_mem
     , output logic stat_mem_pkt_v_o
     , output logic [dcache_lce_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
-    , input [ways_p-1:0] dirty_i
+    , input [lce_assoc_p-1:0] dirty_i
     , input stat_mem_pkt_yumi_i
   );
 
   // casting structs
-  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, ways_p, data_width_p, lce_data_width_p)
-  `declare_bp_be_dcache_lce_data_mem_pkt_s(sets_p, ways_p, lce_data_width_p);
-  `declare_bp_be_dcache_lce_tag_mem_pkt_s(sets_p, ways_p, tag_width_lp);
-  `declare_bp_be_dcache_lce_stat_mem_pkt_s(sets_p, ways_p);
+  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+  `declare_bp_be_dcache_lce_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
+  `declare_bp_be_dcache_lce_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, tag_width_lp);
+  `declare_bp_be_dcache_lce_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
 
   bp_lce_cmd_s lce_cmd_li;
   bp_lce_cce_resp_s lce_resp;
@@ -136,7 +129,7 @@ module bp_be_dcache_lce_cmd
   } lce_cmd_state_e;
 
   lce_cmd_state_e state_r, state_n;
-  logic [cce_id_width_lp-1:0] sync_ack_count_r, sync_ack_count_n;
+  logic [cce_id_width_p-1:0] sync_ack_count_r, sync_ack_count_n;
 
   // for invalidate_tag_cmd
   logic invalidated_tag_r, invalidated_tag_n;
@@ -150,7 +143,7 @@ module bp_be_dcache_lce_cmd
   logic wb_dirty_cleared_r, wb_dirty_cleared_n;
 
   // data buffer
-  logic [lce_data_width_p-1:0] data_buf_r, data_buf_n;
+  logic [cce_block_width_p-1:0] data_buf_r, data_buf_n;
 
   // transaction signals
   //
@@ -246,7 +239,7 @@ module bp_be_dcache_lce_cmd
             sync_ack_count_n = lce_resp_yumi_i
               ? sync_ack_count_r + 1
               : sync_ack_count_r;
-            state_n = ((sync_ack_count_r == cce_id_width_lp'(num_cce_p-1)) & lce_resp_yumi_i)
+            state_n = ((sync_ack_count_r == cce_id_width_p'(num_cce_p-1)) & lce_resp_yumi_i)
               ? e_lce_cmd_state_ready
               : e_lce_cmd_state_sync;
           end

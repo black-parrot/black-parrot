@@ -39,8 +39,6 @@ package bp_common_pkg;
   parameter bp_data_resp_num_flit_gp = 4;
   parameter bp_data_cmd_num_flit_gp = 4;
  
-  localparam dram_base_addr_gp         = 32'h8000_0000;
- 
   localparam cfg_link_dev_base_addr_gp = 32'h01??_????;
   localparam clint_dev_base_addr_gp    = 32'h02??_????;
   localparam host_dev_base_addr_gp     = 32'h03??_????;
@@ -52,7 +50,9 @@ package bp_common_pkg;
   localparam mtime_reg_addr_gp         = 32'h0200_bff8;
   localparam plic_reg_base_addr_gp     = 32'h0c00_0???;
 
-  localparam coproc_dev_base_addr_gp   = 32'h4???_????;
+  localparam dram_base_addr_gp         = 40'h00_8000_0000;
+  localparam coproc_base_addr_gp       = 40'h10_0000_0000;
+  localparam global_base_addr_gp       = 40'h20_0000_0000;
 
-endpackage : bp_common_pkg
+endpackage
 

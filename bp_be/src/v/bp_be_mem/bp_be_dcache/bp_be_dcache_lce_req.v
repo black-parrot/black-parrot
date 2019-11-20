@@ -23,20 +23,15 @@
 
 module bp_be_dcache_lce_req
   import bp_common_pkg::*;
-  #(parameter dword_width_p="inv"
-    , parameter paddr_width_p="inv"
-    , parameter num_cce_p="inv"
-    , parameter num_lce_p="inv"
-    , parameter ways_p="inv"
-    , parameter cce_block_width_p="inv"
+  import bp_common_aviary_pkg::*;
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
   
-    , localparam block_size_in_words_lp=ways_p
+    , localparam block_size_in_words_lp=lce_assoc_p
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
     , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
     , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
-    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_p)
-    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
-    , localparam cce_id_width_lp=`BSG_SAFE_CLOG2(num_cce_p)
+    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
   
     , localparam lce_cce_req_width_lp=
       `bp_lce_cce_req_width(num_cce_p, num_lce_p, paddr_width_p, dword_width_p)
@@ -47,14 +42,14 @@ module bp_be_dcache_lce_req
     input clk_i
     , input reset_i
 
-    , input [lce_id_width_lp-1:0] lce_id_i
+    , input [lce_id_width_p-1:0] lce_id_i
 
     , input load_miss_i
     , input store_miss_i
     , input lr_miss_i
     , input [paddr_width_p-1:0] miss_addr_i
     , input [way_id_width_lp-1:0] lru_way_i
-    , input [ways_p-1:0] dirty_i
+    , input [lce_assoc_p-1:0] dirty_i
 
     , input uncached_load_req_i
     , input uncached_store_req_i
@@ -83,7 +78,7 @@ module bp_be_dcache_lce_req
 
   // casting struct
   //
-  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, ways_p, dword_width_p, cce_block_width_p)
+  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
   bp_lce_cce_req_s lce_req;
   bp_lce_cce_resp_s lce_resp;
@@ -138,7 +133,7 @@ module bp_be_dcache_lce_req
 
     lce_req_v_o = 1'b0;
 
-    lce_req.dst_id = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_lp] : 1'b0;
+    lce_req.dst_id = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_p] : 1'b0;
     lce_req.src_id = lce_id_i;
     lce_req.msg_type = e_lce_req_type_rd;
     lce_req.addr = miss_addr_r;
@@ -146,7 +141,7 @@ module bp_be_dcache_lce_req
 
     lce_resp_v_o = 1'b0;
 
-    lce_resp.dst_id = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_lp] : 1'b0;
+    lce_resp.dst_id = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_p] : 1'b0;
     lce_resp.src_id = lce_id_i;
     lce_resp.msg_type = bp_lce_cce_resp_type_e'('0);
     lce_resp.addr = miss_addr_r;
@@ -196,7 +191,7 @@ module bp_be_dcache_lce_req
           lce_req.addr = miss_addr_i;
           lce_req.msg_type = e_lce_req_type_uc_wr;
           lce_req.src_id = lce_id_i;
-          lce_req.dst_id = (num_cce_p > 1) ? miss_addr_i[block_offset_width_lp+:cce_id_width_lp] : 1'b0;
+          lce_req.dst_id = (num_cce_p > 1) ? miss_addr_i[block_offset_width_lp+:cce_id_width_p] : 1'b0;
 
           cache_miss_o = ~lce_req_ready_i | credits_full_i;
           lce_req_uncached_store_o = ~cache_miss_o;
@@ -231,7 +226,7 @@ module bp_be_dcache_lce_req
           ? e_lce_req_type_rd
           : e_lce_req_type_wr;
         lce_req.src_id = lce_id_i;
-        lce_req.dst_id = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_lp] : 1'b0;
+        lce_req.dst_id = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_p] : 1'b0;
 
         cache_miss_o = 1'b1;
         state_n = lce_req_ready_i
@@ -248,7 +243,7 @@ module bp_be_dcache_lce_req
         lce_req.addr = miss_addr_r;
         lce_req.msg_type = e_lce_req_type_uc_rd;
         lce_req.src_id = lce_id_i;
-        lce_req.dst_id = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_lp] : 1'b0;
+        lce_req.dst_id = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_p] : 1'b0;
 
         cache_miss_o = 1'b1;
         state_n = lce_req_ready_i

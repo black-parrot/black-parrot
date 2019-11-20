@@ -28,7 +28,6 @@ module bp_cce_msg_uncached
     `declare_bp_proc_params(bp_params_p)
 
     // Derived parameters
-    , localparam lg_num_cce_lp             = `BSG_SAFE_CLOG2(num_cce_p)
     , localparam mshr_width_lp = `bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
 
     // interface widths
@@ -38,7 +37,7 @@ module bp_cce_msg_uncached
   (input                                               clk_i
    , input                                             reset_i
 
-   , input [lg_num_cce_lp-1:0]                         cce_id_i
+   , input [cce_id_width_p-1:0]                        cce_id_i
    , input bp_cce_mode_e                               cce_mode_i
 
    // LCE-CCE Interface
@@ -166,7 +165,7 @@ module bp_cce_msg_uncached
           lce_cmd.msg_type = e_lce_cmd_uc_st_done;
           lce_cmd.way_id = '0;
 
-          lce_cmd_cmd.src_id = (lg_num_cce_lp)'(cce_id_i);
+          lce_cmd_cmd.src_id = (cce_id_width_p)'(cce_id_i);
           lce_cmd_cmd.addr = mem_resp_li.addr;
 
           lce_cmd.msg.cmd = lce_cmd_cmd;

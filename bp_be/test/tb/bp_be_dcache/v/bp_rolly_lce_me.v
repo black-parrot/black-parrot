@@ -24,8 +24,6 @@ module bp_rolly_lce_me
     , localparam lce_data_width_lp=(lce_assoc_p*dword_width_p)
     , localparam block_size_in_bytes_lp=(lce_data_width_lp / 8)
 
-    , localparam lce_id_width_lp=`BSG_SAFE_CLOG2(num_lce_p)
-      
     , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(bp_page_offset_width_gp,dword_width_p)
 
     , localparam inst_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
@@ -127,7 +125,7 @@ module bp_rolly_lce_me
     ) dcache (
       .clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.lce_id_i((lce_id_width_lp)'(i))
+      ,.lce_id_i((lce_id_width_p)'(i))
  
       ,.dcache_pkt_i(rolly_dcache_pkt_lo[i])
       ,.v_i(rolly_v_lo[i])
