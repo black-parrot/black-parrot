@@ -111,6 +111,7 @@ logic                  clint_mem_resp_v_lo, clint_mem_resp_ready_li;
 bp_cfg_bus_s cfg_bus_lo;
 logic [dword_width_p-1:0] cfg_irf_data_li;
 logic [vaddr_width_p-1:0] cfg_npc_data_li;
+logic                     cfg_haz_v_li;
 logic [dword_width_p-1:0] cfg_csr_data_li;
 logic [1:0]               cfg_priv_data_li;
 logic [cce_instr_width_p-1:0] cfg_cce_ucode_data_li;
@@ -133,6 +134,7 @@ bp_cfg
    ,.cord_i(my_cord_i)
    ,.irf_data_i(cfg_irf_data_li)
    ,.npc_data_i(cfg_npc_data_li)
+   ,.haz_v_i(cfg_haz_v_li)
    ,.csr_data_i(cfg_csr_data_li)
    ,.priv_data_i(cfg_priv_data_li)
    ,.cce_ucode_data_i(cfg_cce_ucode_data_li)
@@ -167,6 +169,7 @@ bp_core
    ,.cfg_bus_i(cfg_bus_lo)
    ,.cfg_irf_data_o(cfg_irf_data_li)
    ,.cfg_npc_data_o(cfg_npc_data_li)
+   ,.cfg_haz_v_o(cfg_haz_v_li)
    ,.cfg_csr_data_o(cfg_csr_data_li)
    ,.cfg_priv_data_o(cfg_priv_data_li)
 

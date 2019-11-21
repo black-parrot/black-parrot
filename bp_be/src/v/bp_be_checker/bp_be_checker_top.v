@@ -73,6 +73,8 @@ module bp_be_checker_top
 
    , input                            tlb_fence_i
    , input                            accept_irq_i
+   , input                            debug_mode_i
+   , input                            single_step_i
    
    //iTLB fill interface
     , input                           itlb_fill_v_i
@@ -141,6 +143,8 @@ bp_be_detector
    ,.mmu_cmd_ready_i(mmu_cmd_ready_i)
    ,.credits_full_i(credits_full_i)
    ,.credits_empty_i(credits_empty_i)
+   ,.debug_mode_i(debug_mode_i)
+   ,.single_step_i(single_step_i)
 
    ,.flush_i(flush_o)
 

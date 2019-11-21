@@ -82,6 +82,8 @@ module bp_cce_mmio_cfg_loader
     ,SEND_PC
     ,SEND_IRF
     ,RECV_IRF
+    ,BP_ENTER_DEBUG
+    ,BP_EXIT_DEBUG
     ,BP_FREEZE_CLR
     ,DONE
   } state_n, state_r;
@@ -338,6 +340,20 @@ module bp_cce_mmio_cfg_loader
           cfg_r_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_irf_x0_gp + irf_cnt_r);
           cfg_data_lo = '0;
+        end
+        BP_ENTER_DEBUG: begin
+          state_n = BP_EXIT_DEBUG;
+
+          cfg_w_v_lo = 1'b1;
+          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_enter_debug_gp);
+          cfg_data_lo = 1'b1;
+        end
+        BP_EXIT_DEBUG: begin
+          state_n = BP_FREEZE_CLR;
+
+          cfg_w_v_lo = 1'b1;
+          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_exit_debug_gp);
+          cfg_data_lo = 1'b1;
         end
         BP_FREEZE_CLR: begin
           state_n = core_prog_done ? DONE : BP_FREEZE_CLR;

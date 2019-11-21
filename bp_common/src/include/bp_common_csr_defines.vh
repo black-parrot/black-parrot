@@ -168,6 +168,16 @@
 `define CSR_ADDR_MHPMEVENT30   12'h33e
 `define CSR_ADDR_MHPMEVENT31   12'h33f
 
+`define CSR_ADDR_TSELECT       12'h7a0
+`define CSR_ADDR_TDATA1        12'h7a1
+`define CSR_ADDR_TDATA2        12'h7a2
+`define CSR_ADDR_TDATA3        12'h7a3
+
+`define CSR_ADDR_DCSR          12'h7b0
+`define CSR_ADDR_DPC           12'h7b1
+`define CSR_ADDR_DSCRATCH0     12'h7b2
+`define CSR_ADDR_DSCRATCH1     12'h7b3
+
 typedef struct packed
 {
   // Base address for traps
@@ -872,6 +882,121 @@ typedef struct packed
     ,cy: data_comp_mp.cy \
     ,default: '0         \
     }
+
+typedef struct packed
+{
+  // Debugger version
+  //   0 : No external debug support
+  //   4 : External debug support ala RISC-V Debug Spec
+  //   15: Non-conformant RISC-V debug spec
+  logic [3:0]  xdebugver;
+  logic [11:0] reserved1;
+  // Ebreak M-mode behavior
+  //   0 : behave normally
+  //   1 : ebreak in M enters Debug Mode
+  logic        ebreakm;
+  logic        reserved2;
+  // Ebreak S-mode behavior
+  //   0 : behave normally
+  //   1 : ebreak in S enters Debug Mode
+  logic        ebreaks;
+  // Ebreak U-mode behavior
+  //   0 : behave normally
+  //   1 : ebreak in U enters Debug Mode
+  logic        ebreaku;
+  // Stepping Interrupt Enable
+  //   0 : Interrupts are disabled during single stepping
+  //   1 : Interrupts are enabled during single stepping
+  logic        stepie;
+  // Stop Counters
+  //   0 : Increment counters while in Debug Mode
+  //   1 : Don't increment counters while in Debug Mode or ebreak->Debug Mode
+  logic        stopcount;
+  // Stop Timers
+  //   0 : Increment timers as usual
+  //   1 : Don't increment timers in Debug Mode
+  logic        stoptime;
+  // Cause of Debug Mode entry
+  //   1 : Ebreak was executed (priority 3)
+  //   2 : Trigger Module caused a breakpoint exception  (priority 4)
+  //   3 : Debugger requested entry using haltreq (priority 1)
+  //   4 : Hart single stepped (priority 0)
+  //   5*: Hart halted out of reset due to resethaltreq (priority 2)
+  //         *Also legal to report 3
+  logic [3:0]  cause;
+  logic        reserved3;
+  // MPRV Enable
+  //   0 : MPRV is ignored in Debug Mode
+  //   1 : MPRV is enabled in Debug Mode
+  logic        mprven;
+  // Non-Maskable-Interrupt Pending
+  //   0 : No NMI pending
+  //   1 : NMI pending
+  logic        nmip;
+  // Single Step Mode
+  //   0 : Normal behavior during non-Debug Mode
+  //   1 : Hart will only execute a single instruction and then enter Debug Mode.
+  //         If the instruction does not complete due to execption, hart enters
+  //         Debug Mode after setting exception registers.
+  logic        step;
+  // Privilege mode
+  //   The privilege level the hart was operating in prior to Debug Mode entry
+  //   0 : U-mode
+  //   1 : S-mode
+  //   3 : M-mode
+  logic [1:0]  prv;
+}  rv64_dcsr_s;
+
+typedef struct packed
+{
+  logic       ebreakm;
+  logic       ebreaks;
+  logic       ebreaku;
+  logic       stepie;
+  logic [3:0] cause;
+  logic [1:0] prv;
+  logic       step;
+}  bp_dcsr_s;
+
+`define compress_dcsr_s(data_cast_mp) \
+  '{ebreakm : data_cast_mp.ebreakm \
+    ,ebreaks: data_cast_mp.ebreaks \
+    ,ebreaku: data_cast_mp.ebreaku \
+    ,stepie : data_cast_mp.stepie  \
+    ,cause  : data_cast_mp.cause   \
+    ,prv    : data_cast_mp.prv     \
+    ,step   : data_cast_mp.step    \
+    }
+
+`define decompress_dcsr_s(data_comp_mp) \
+  '{xdebugver : 4'd4                  \
+    ,ebreakm  : data_comp_mp.ebreakm  \
+    ,ebreaks  : data_comp_mp.ebreakm  \
+    ,ebreaku  : data_comp_mp.ebreakm  \
+    ,stepie   : data_comp_mp.stepie   \
+    ,stopcount: 1'b0                  \
+    ,stoptime : 1'b0                  \
+    ,cause    : data_comp_mp.cause    \
+    ,mprven   : 1'b1                  \
+    ,nmip     : 1'b0                  \
+    ,step     : data_comp_mp.step     \
+    ,prv      : data_comp_mp.prv      \
+    ,default  : '0                    \
+    }
+
+typedef logic [63:0] rv64_dpc_s;
+
+typedef struct packed
+{
+  logic sgn;
+  logic [39:0] addr;
+}  bp_dpc_s;
+
+`define compress_dpc_s(data_cast_mp) \
+  '{sgn: data_cast_mp[39], addr: data_cast_mp[0+:40]} 
+
+`define decompress_dpc_s(data_comp_mp) \
+  64'($signed(data_comp_mp))
 
 `define declare_csr(csr_name_mp) \
   /* verilator lint_off UNUSED */                                                               \

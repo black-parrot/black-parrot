@@ -61,8 +61,12 @@ module bp_be_scheduler
 wire unused = &{clk_i, reset_i};
 
 // Declare parameterizable structures
+`declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+
+bp_cfg_bus_s cfg_bus_cast_i;
+assign cfg_bus_cast_i = cfg_bus_i;
 
 // Cast input and output ports 
 bp_be_isd_status_s  isd_status;
@@ -199,6 +203,9 @@ bp_be_regfile
    ,.rs2_data_o(irf_rs2)
    );
 
+wire enter_debug_li = cfg_bus_cast_i.enter_debug;
+wire exit_debug_li  = cfg_bus_cast_i.exit_debug;
+
 // Decode the dispatched instruction
 logic                  fe_exc_not_instr_isd;
 bp_fe_exception_code_e fe_exc_isd;
@@ -207,6 +214,8 @@ bp_be_decode_s          decoded;
 bp_be_instr_decoder
  instr_decoder
   (.interrupt_v_i(accept_irq_i)
+   ,.enter_debug_v_i(enter_debug_li)
+   ,.exit_debug_v_i(exit_debug_li)
    ,.fe_exc_not_instr_i(issue_pkt_r.fe_exception_not_instr)
    ,.fe_exc_i(issue_pkt_r.fe_exception_code)
    ,.instr_i(issue_pkt_r.instr)
@@ -218,10 +227,14 @@ bp_be_dispatch_pkt_s dispatch_pkt;
 always_comb
   begin
     // Calculator status ISD stage
-    isd_status.isd_v        = issue_pkt_v_r & ~poison_iss_r & ~poison_iss_i & ~accept_irq_i;
+    isd_status.isd_v        = issue_pkt_v_r 
+                              & ~(poison_iss_r | poison_iss_i)
+                              & ~accept_irq_i 
+                              & ~(enter_debug_li | exit_debug_li);
     isd_status.isd_pc       = issue_pkt_r.pc;
     isd_status.isd_branch_metadata_fwd = issue_pkt_r.branch_metadata_fwd;
     isd_status.isd_irq_v    = accept_irq_i;
+    isd_status.isd_debug_v  = enter_debug_li | exit_debug_li;
     isd_status.isd_fence_v  = issue_pkt_v_r & issue_pkt_r.fence_v;
     isd_status.isd_mem_v    = issue_pkt_v_r & issue_pkt_r.mem_v;
     isd_status.isd_irs1_v   = issue_pkt_v_r & issue_pkt_r.irs1_v;
@@ -232,8 +245,8 @@ always_comb
     isd_status.isd_rs2_addr = issue_pkt_r.instr.fields.rtype.rs2_addr;
 
     // Form dispatch packet
-    dispatch_pkt.v      = (issue_pkt_v_r | accept_irq_i) & dispatch_v_i;
-    dispatch_pkt.poison = ~accept_irq_i & (poison_iss_r | npc_mismatch);
+    dispatch_pkt.v      = (issue_pkt_v_r | enter_debug_li | exit_debug_li | accept_irq_i) & dispatch_v_i;
+    dispatch_pkt.poison = ~enter_debug_li & ~exit_debug_li & ~accept_irq_i & (poison_iss_r | npc_mismatch);
     dispatch_pkt.pc     = expected_npc_i;
     dispatch_pkt.instr  = issue_pkt_r.instr;
     dispatch_pkt.rs1    = irf_rs1; // TODO: Add float forwarding

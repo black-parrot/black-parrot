@@ -62,8 +62,8 @@ module bsg_fifo_1r1w_rolly
     (.clk(clk_i)
      ,.reset_i(reset_i)
      ,.add_i(deq_v_i)
-     ,.o(cptr_r)
-     ,.n_o()
+    ,.o(cptr_r)
+    ,.n_o()
      );
     
   bsg_circular_ptr 
