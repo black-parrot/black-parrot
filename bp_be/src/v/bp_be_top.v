@@ -30,6 +30,7 @@ module bp_be_top
    , input [cfg_bus_width_lp-1:0]            cfg_bus_i
    , output [dword_width_p-1:0]              cfg_irf_data_o
    , output [vaddr_width_p-1:0]              cfg_npc_data_o
+   , output                                  cfg_haz_v_o
    , output [dword_width_p-1:0]              cfg_csr_data_o
    , output [1:0]                            cfg_priv_data_o
 
@@ -105,6 +106,8 @@ logic [vaddr_width_p-1:0] chk_epc_li;
 logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li, chk_ifence_li;
 
 logic credits_full_lo, credits_empty_lo;
+logic debug_mode_lo;
+logic single_step_lo;
 logic accept_irq_lo;
 
 logic                     instret_mem3;
@@ -136,6 +139,8 @@ bp_be_checker_top
    ,.mmu_cmd_ready_i(mmu_cmd_rdy)
    ,.credits_full_i(credits_full_lo)
    ,.credits_empty_i(credits_empty_lo)
+   ,.debug_mode_i(debug_mode_lo)
+   ,.single_step_i(single_step_lo)
    ,.accept_irq_i(accept_irq_lo)
 
    ,.fe_cmd_o(fe_cmd_o)
@@ -238,6 +243,8 @@ bp_be_mem_top
 
     ,.credits_full_o(credits_full_lo)
     ,.credits_empty_o(credits_empty_lo)
+    ,.debug_mode_o(debug_mode_lo)
+    ,.single_step_o(single_step_lo)
 
     ,.timer_irq_i(timer_irq_i)
     ,.software_irq_i(software_irq_i)

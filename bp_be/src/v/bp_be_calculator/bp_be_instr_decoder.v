@@ -7,18 +7,6 @@
  *   BlackParrot instruction decoder for translating RISC-V instructions into pipeline control
  *     signals. Currently supports most of rv64i with the exception of fences and csrs.
  *
- * Parameters:
- *
- * Inputs:
- *   instr_i          - The RISC-V instruction to decode
- *
- * Outputs:
- *   decode_o         - Control signals for the pipeline
- *   illegal_instr_o  - Flag to indicate that the input instruction is illegal
- *   
- * Keywords:
- *   calculator, rv64i, instruction, decode
- *
  * Notes:
  *   We may want to break this up into a decoder for each standard extension.
  *   decode_s might not be the best name for control signals. Additionally, each pipe may need
@@ -35,7 +23,9 @@ module bp_be_instr_decoder
    localparam instr_width_lp = rv64_instr_width_gp
    , localparam decode_width_lp = `bp_be_decode_width
    )
-  (input                             interrupt_v_i
+  (input                             enter_debug_v_i
+   , input                           exit_debug_v_i
+   , input                           interrupt_v_i
    , input                           fe_exc_not_instr_i
    , input bp_fe_exception_code_e    fe_exc_i
    , input [instr_width_lp-1:0]      instr_i
@@ -244,6 +234,7 @@ always_comb
           unique casez (instr)
             `RV64_ECALL      : decode.fu_op = e_ecall;
             `RV64_EBREAK     : decode.fu_op = e_ebreak;
+            `RV64_DRET       : decode.fu_op = e_dret;
             `RV64_MRET       : decode.fu_op = e_mret;
             `RV64_SRET       : decode.fu_op = e_sret;
             `RV64_WFI        : decode.fu_op = e_wfi;
@@ -287,7 +278,25 @@ always_comb
       default : illegal_instr = 1'b1;
     endcase
 
-    if (interrupt_v_i)
+    if (enter_debug_v_i)
+      begin
+        decode = '0;
+        decode.queue_v     = 1'b0;
+        decode.pipe_mem_v  = 1'b1;
+        decode.csr_v       = 1'b1;
+        decode.serial_v    = 1'b1;
+        decode.fu_op       = e_op_enter_debug;
+      end
+    else if (exit_debug_v_i)
+      begin
+        decode = '0;
+        decode.queue_v     = 1'b0;
+        decode.pipe_mem_v  = 1'b1;
+        decode.csr_v       = 1'b1;
+        decode.serial_v    = 1'b1;
+        decode.fu_op       = e_op_exit_debug;
+      end
+    else if (interrupt_v_i)
       begin
         decode = '0;
         decode.queue_v     = 1'b0;

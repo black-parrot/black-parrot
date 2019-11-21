@@ -93,6 +93,8 @@ module bp_be_mem_top
    , input                                   software_irq_i
    , input                                   external_irq_i
    , output                                  accept_irq_o
+   , output                                  single_step_o
+   , output                                  debug_mode_o
 
    , output [trap_pkt_width_lp-1:0]          trap_pkt_o
    , output                                  tlb_fence_o
@@ -153,6 +155,7 @@ logic [dword_width_p-1:0] csr_data_lo;
 logic                     csr_v_lo;
 logic                     mstatus_sum_lo, mstatus_mxr_lo, translation_en_lo;
 logic                     itlb_fill_lo, instr_page_fault_lo, instr_access_fault_lo, instr_misaligned_lo;
+logic                     ebreak_lo;
 logic [rv64_priv_width_gp-1:0] priv_mode_lo;
 
 logic load_access_fault_v, load_access_fault_mem3, store_access_fault_v, store_access_fault_mem3;
@@ -197,6 +200,7 @@ bp_be_ecode_dec_s exception_ecode_dec_li;
 wire bubble_v_li    = commit_pkt.bubble_v;
 wire exception_v_li = commit_pkt.v | ptw_page_fault_v;
 wire [vaddr_width_p-1:0] exception_pc_li = ptw_page_fault_v ? fault_pc : commit_pkt.pc;
+wire [vaddr_width_p-1:0] exception_npc_li = commit_pkt.npc;
 // TODO: vaddr_mem3 -> commit_pkt.vaddr
 wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? fault_vaddr : vaddr_mem3;
 wire [instr_width_p-1:0] exception_instr_li = commit_pkt.instr;
@@ -205,7 +209,7 @@ assign exception_ecode_dec_li =
   '{instr_misaligned : instr_misaligned_lo
     ,instr_fault     : instr_access_fault_lo
     ,illegal_instr   : csr_cmd_v_i & ((csr_cmd.csr_op == e_op_illegal_instr) || csr_illegal_instr_lo)
-    ,breakpoint      : csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak)
+    ,breakpoint      : ebreak_lo
     ,load_misaligned : 1'b0 // TODO: Need to detect this
     ,load_fault      : load_access_fault_mem3
     ,store_misaligned: 1'b0 // TODO: Need to detect this
@@ -243,6 +247,7 @@ bp_be_csr
    ,.bubble_v_i(bubble_v_li)
    ,.exception_v_i(exception_v_li)
    ,.exception_pc_i(exception_pc_li)
+   ,.exception_npc_i(exception_npc_li)
    ,.exception_vaddr_i(exception_vaddr_li)
    ,.exception_instr_i(exception_instr_li)
    ,.exception_ecode_dec_i(exception_ecode_dec_li)
@@ -251,6 +256,8 @@ bp_be_csr
    ,.software_irq_i(software_irq_i)
    ,.external_irq_i(external_irq_i)
    ,.accept_irq_o(accept_irq_o)
+   ,.debug_mode_o(debug_mode_o)
+   ,.single_step_o(single_step_o)
 
    ,.priv_mode_o(priv_mode_lo)
    ,.trap_pkt_o(trap_pkt_o)
@@ -264,6 +271,7 @@ bp_be_csr
    ,.instr_page_fault_o(instr_page_fault_lo)
    ,.instr_access_fault_o(instr_access_fault_lo)
    ,.instr_misaligned_o(instr_misaligned_lo)
+   ,.ebreak_o(ebreak_lo)
    );
 
 bp_tlb

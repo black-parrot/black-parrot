@@ -28,6 +28,7 @@ module bp_cfg
    , input [mem_noc_did_width_p-1:0]    did_i
    , input [dword_width_p-1:0]          irf_data_i
    , input [vaddr_width_p-1:0]          npc_data_i
+   , input                              haz_v_i
    , input [dword_width_p-1:0]          csr_data_i
    , input [1:0]                        priv_data_i
    , input [cce_instr_width_p-1:0]      cce_ucode_data_i
@@ -118,6 +119,9 @@ always_ff @(posedge clk_i)
       endcase
     end
 
+wire enter_debug_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_enter_debug_gp);
+wire exit_debug_li  = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_exit_debug_gp);
+
 wire cord_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_cord_gp);
 wire did_r_v_li  = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_did_gp);
 
@@ -151,6 +155,8 @@ wire priv_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_priv_gp);
 wire [1:0] priv_data_li = cfg_data_li;
 
 assign cfg_bus_cast_o = '{freeze: freeze_r
+                           ,enter_debug: enter_debug_li
+                           ,exit_debug: exit_debug_li
                            ,core_id: core_id_r
                            ,icache_id: icache_id_r
                            ,icache_mode: icache_mode_r

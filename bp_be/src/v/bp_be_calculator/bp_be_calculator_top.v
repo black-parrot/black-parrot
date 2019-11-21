@@ -446,6 +446,7 @@ assign commit_pkt.instret    = calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_
 assign commit_pkt.cache_miss = pipe_mem_miss_v_lo & ~exc_stage_r[2].poison_v;
 assign commit_pkt.tlb_miss   = 1'b0; // TODO: Add to mem resp
 assign commit_pkt.pc         = calc_stage_r[2].pc;
+assign commit_pkt.npc        = calc_stage_r[1].pc;
 assign commit_pkt.instr      = calc_stage_r[2].instr;
 
 assign wb_pkt.rd_w_v  = calc_stage_r[3].irf_w_v & ~exc_stage_r[3].poison_v;

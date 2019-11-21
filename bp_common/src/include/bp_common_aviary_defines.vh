@@ -32,6 +32,8 @@ typedef enum bit
   typedef struct packed                                                                            \
   {                                                                                                \
     logic                                    freeze;                                               \
+    logic                                    enter_debug;                                          \
+    logic                                    exit_debug;                                           \
     logic [`BSG_SAFE_CLOG2(num_core_mp)-1:0] core_id;                                              \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]  icache_id;                                            \
     bp_lce_mode_e                            icache_mode;                                          \
@@ -60,7 +62,7 @@ typedef enum bit
   }  bp_cfg_bus_s
 
 `define bp_cfg_bus_width(vaddr_width_mp, num_core_mp, num_cce_mp, num_lce_mp, cce_pc_width_mp, cce_instr_width_mp) \
-  (1                                \
+  (3                                \
    + `BSG_SAFE_CLOG2(num_core_mp)   \
    + `BSG_SAFE_CLOG2(num_lce_mp)    \
    + $bits(bp_lce_mode_e)           \
