@@ -9,7 +9,7 @@ module bp_nonsynth_host
  import bp_common_cfg_link_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
    )
   (input clk_i
    , input reset_i
@@ -25,7 +25,7 @@ module bp_nonsynth_host
    , output [num_core_p-1:0]                       program_finish_o
    );
 
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
+`declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
 
 // HOST I/O mappings
 //localparam host_dev_base_addr_gp     = 32'h03??_????;

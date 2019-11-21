@@ -9,8 +9,7 @@ module bp_be_csr
     , localparam csr_cmd_width_lp = `bp_be_csr_cmd_width
     , localparam ecode_dec_width_lp = `bp_be_ecode_dec_width
 
-    , localparam hartid_width_lp = `BSG_SAFE_CLOG2(num_core_p)
-    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
 
     , localparam trap_pkt_width_lp = `bp_be_trap_pkt_width(vaddr_width_p)
     )
@@ -31,7 +30,7 @@ module bp_be_csr
     , output logic                      illegal_instr_o
 
     // Misc interface
-    , input [hartid_width_lp-1:0]       hartid_i
+    , input [core_id_width_p-1:0]       hartid_i
     , input                             instret_i
 
     , input                             bubble_v_i
@@ -68,7 +67,7 @@ module bp_be_csr
     );
 
 // Declare parameterizable structs
-`declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+`declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p); 
 `declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
 

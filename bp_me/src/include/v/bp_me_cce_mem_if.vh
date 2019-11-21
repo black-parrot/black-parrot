@@ -74,10 +74,10 @@ typedef enum bit [2:0]
  * way_id is the way within the cache miss address target set to fill the data in to
  */
 
-`define declare_bp_cce_mem_msg_payload_s(num_lce_mp, lce_assoc_mp) \
+`define declare_bp_cce_mem_msg_payload_s(lce_id_width_mp, lce_assoc_mp) \
   typedef struct packed                                       \
   {                                                           \
-    logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]      lce_id;      \
+    logic [lce_id_width_mp-1:0]                  lce_id;      \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id;      \
     bp_coh_states_e                              state;       \
     logic                                        speculative; \
@@ -106,12 +106,12 @@ typedef enum bit [2:0]
  */
 
 // CCE-MEM Interface
-`define bp_cce_mem_msg_payload_width(num_lce_mp, lce_assoc_mp) \
-  (`BSG_SAFE_CLOG2(num_lce_mp)+`BSG_SAFE_CLOG2(lce_assoc_mp)+`bp_coh_bits+1)
+`define bp_cce_mem_msg_payload_width(lce_id_width_mp, lce_assoc_mp) \
+  (lce_id_width_mp+`BSG_SAFE_CLOG2(lce_assoc_mp)+`bp_coh_bits+1)
 
-`define bp_cce_mem_msg_width(addr_width_mp, data_width_mp, num_lce_mp, lce_assoc_mp) \
+`define bp_cce_mem_msg_width(addr_width_mp, data_width_mp, lce_id_width_mp, lce_assoc_mp) \
   (`bp_cce_mem_msg_type_width+addr_width_mp+data_width_mp \
-   +`bp_cce_mem_msg_payload_width(num_lce_mp, lce_assoc_mp)\
+   +`bp_cce_mem_msg_payload_width(lce_id_width_mp, lce_assoc_mp)\
    +$bits(bp_cce_mem_req_size_e))
 
 /*
@@ -122,14 +122,14 @@ typedef enum bit [2:0]
  *
  */
 
-`define declare_bp_me_if(paddr_width_mp, data_width_mp, num_lce_mp, lce_assoc_mp) \
-  `declare_bp_cce_mem_msg_payload_s(num_lce_mp, lce_assoc_mp);                    \
+`define declare_bp_me_if(paddr_width_mp, data_width_mp, lce_id_width_mp, lce_assoc_mp) \
+  `declare_bp_cce_mem_msg_payload_s(lce_id_width_mp, lce_assoc_mp);                    \
   `declare_bp_cce_mem_msg_s(paddr_width_mp, data_width_mp);                       \
 
-`define declare_bp_me_if_widths(paddr_width_mp, data_width_mp, num_lce_mp, lce_assoc_mp) \
+`define declare_bp_me_if_widths(paddr_width_mp, data_width_mp, lce_id_width_mp, lce_assoc_mp) \
   , localparam cce_mem_msg_width_lp=`bp_cce_mem_msg_width(paddr_width_mp                 \
                                                           ,data_width_mp                 \
-                                                          ,num_lce_mp                    \
+                                                          ,lce_id_width_mp               \
                                                           ,lce_assoc_mp)                 \
 
 

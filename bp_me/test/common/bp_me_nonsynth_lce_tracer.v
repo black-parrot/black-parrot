@@ -15,7 +15,7 @@ module bp_me_nonsynth_lce_tracer
 
     , localparam lg_num_lce_lp=`BSG_SAFE_CLOG2(num_lce_p)
 
-`declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+`declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
     , localparam dcache_opcode_width_lp=$bits(bp_be_dcache_opcode_e)
     , localparam tr_ring_width_lp=(dcache_opcode_width_lp+paddr_width_p+dword_width_p)
@@ -48,7 +48,7 @@ module bp_me_nonsynth_lce_tracer
   );
 
   // LCE-CCE interface structs
-  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
+  `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   // Structs for messages
   bp_lce_cce_req_s lce_req;

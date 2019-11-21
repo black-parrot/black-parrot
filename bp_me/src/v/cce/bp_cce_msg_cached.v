@@ -21,8 +21,6 @@ module bp_cce_msg_cached
 
     // Derived parameters
     , localparam block_size_in_bytes_lp    = (cce_block_width_p/8)
-    , localparam lg_num_cce_lp             = `BSG_SAFE_CLOG2(num_cce_p)
-    , localparam lg_num_lce_lp             = `BSG_SAFE_CLOG2(num_lce_p)
     , localparam lg_lce_assoc_lp           = `BSG_SAFE_CLOG2(lce_assoc_p)
     , localparam mshr_width_lp = `bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
     , localparam lg_lce_sets_lp            = `BSG_SAFE_CLOG2(lce_sets_p)
@@ -32,13 +30,13 @@ module bp_cce_msg_cached
     , localparam way_group_offset_high_lp  = (lg_block_size_in_bytes_lp+lg_lce_sets_lp)
 
     // interface widths
-    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
   )
   (input                                               clk_i
    , input                                             reset_i
 
-   , input [lg_num_cce_lp-1:0]                         cce_id_i
+   , input [cce_id_width_p-1:0]                         cce_id_i
    , input bp_cce_mode_e                               cce_mode_i
 
    // LCE-CCE Interface
@@ -104,8 +102,8 @@ module bp_cce_msg_cached
   assign mshr = mshr_i;
 
   // Interfaces
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
-  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
+  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   // structures for casting
   bp_lce_cce_req_s lce_req_li;
@@ -127,12 +125,12 @@ module bp_cce_msg_cached
 
   // signals for setting fields in outbound messages
   logic [paddr_width_p-1:0] mem_cmd_addr;
-  logic [lg_num_lce_lp-1:0] lce_cmd_lce;
+  logic [lce_id_width_p-1:0] lce_cmd_lce;
   logic [paddr_width_p-1:0] lce_cmd_addr;
   logic [lg_lce_assoc_lp-1:0] lce_cmd_way;
 
   // NOTE: num_cce_p must be a power of two
-  localparam gpr_shift_lp = (num_cce_p == 1) ? 0 : lg_num_cce_lp;
+  localparam gpr_shift_lp = (num_cce_p == 1) ? 0 : cce_id_width_p;
   localparam [paddr_width_p-lg_lce_sets_lp-1:0] lce_cmd_addr_0 =
     (paddr_width_p-lg_lce_sets_lp)'('0);
 
@@ -396,7 +394,7 @@ module bp_cce_msg_cached
         lce_cmd.msg_type = e_lce_cmd_uc_st_done;
         lce_cmd.way_id = '0;
 
-        lce_cmd.msg.cmd.src_id = (lg_num_cce_lp)'(cce_id_i);
+        lce_cmd.msg.cmd.src_id = (cce_id_width_p)'(cce_id_i);
         lce_cmd.msg.cmd.addr = mem_resp_li.addr;
 
       end // uncached store response
@@ -441,14 +439,14 @@ module bp_cce_msg_cached
 
     gpr_set = '0;
     case (decoded_inst_i.lce_cmd_lce_sel)
-      e_lce_cmd_lce_r0: lce_cmd_lce = gpr_i[e_gpr_r0][lg_num_lce_lp-1:0];
-      e_lce_cmd_lce_r1: lce_cmd_lce = gpr_i[e_gpr_r1][lg_num_lce_lp-1:0];
-      e_lce_cmd_lce_r2: lce_cmd_lce = gpr_i[e_gpr_r2][lg_num_lce_lp-1:0];
-      e_lce_cmd_lce_r3: lce_cmd_lce = gpr_i[e_gpr_r3][lg_num_lce_lp-1:0];
-      e_lce_cmd_lce_r4: lce_cmd_lce = gpr_i[e_gpr_r4][lg_num_lce_lp-1:0];
-      e_lce_cmd_lce_r5: lce_cmd_lce = gpr_i[e_gpr_r5][lg_num_lce_lp-1:0];
-      e_lce_cmd_lce_r6: lce_cmd_lce = gpr_i[e_gpr_r6][lg_num_lce_lp-1:0];
-      e_lce_cmd_lce_r7: lce_cmd_lce = gpr_i[e_gpr_r7][lg_num_lce_lp-1:0];
+      e_lce_cmd_lce_r0: lce_cmd_lce = gpr_i[e_gpr_r0][lce_id_width_p-1:0];
+      e_lce_cmd_lce_r1: lce_cmd_lce = gpr_i[e_gpr_r1][lce_id_width_p-1:0];
+      e_lce_cmd_lce_r2: lce_cmd_lce = gpr_i[e_gpr_r2][lce_id_width_p-1:0];
+      e_lce_cmd_lce_r3: lce_cmd_lce = gpr_i[e_gpr_r3][lce_id_width_p-1:0];
+      e_lce_cmd_lce_r4: lce_cmd_lce = gpr_i[e_gpr_r4][lce_id_width_p-1:0];
+      e_lce_cmd_lce_r5: lce_cmd_lce = gpr_i[e_gpr_r5][lce_id_width_p-1:0];
+      e_lce_cmd_lce_r6: lce_cmd_lce = gpr_i[e_gpr_r6][lce_id_width_p-1:0];
+      e_lce_cmd_lce_r7: lce_cmd_lce = gpr_i[e_gpr_r7][lce_id_width_p-1:0];
       e_lce_cmd_lce_req_lce: lce_cmd_lce = mshr.lce_id;
       e_lce_cmd_lce_tr_lce: lce_cmd_lce = mshr.tr_lce_id;
       e_lce_cmd_lce_0: lce_cmd_lce = '0;
@@ -471,17 +469,17 @@ module bp_cce_msg_cached
     endcase
 
     case (decoded_inst_i.lce_cmd_way_sel)
-      e_lce_cmd_way_r0: lce_cmd_way = gpr_i[e_gpr_r0][lg_num_lce_lp-1:0];
-      e_lce_cmd_way_r1: lce_cmd_way = gpr_i[e_gpr_r1][lg_num_lce_lp-1:0];
-      e_lce_cmd_way_r2: lce_cmd_way = gpr_i[e_gpr_r2][lg_num_lce_lp-1:0];
-      e_lce_cmd_way_r3: lce_cmd_way = gpr_i[e_gpr_r3][lg_num_lce_lp-1:0];
-      e_lce_cmd_way_r4: lce_cmd_way = gpr_i[e_gpr_r4][lg_num_lce_lp-1:0];
-      e_lce_cmd_way_r5: lce_cmd_way = gpr_i[e_gpr_r5][lg_num_lce_lp-1:0];
-      e_lce_cmd_way_r6: lce_cmd_way = gpr_i[e_gpr_r6][lg_num_lce_lp-1:0];
-      e_lce_cmd_way_r7: lce_cmd_way = gpr_i[e_gpr_r7][lg_num_lce_lp-1:0];
+      e_lce_cmd_way_r0: lce_cmd_way = gpr_i[e_gpr_r0][lce_id_width_p-1:0];
+      e_lce_cmd_way_r1: lce_cmd_way = gpr_i[e_gpr_r1][lce_id_width_p-1:0];
+      e_lce_cmd_way_r2: lce_cmd_way = gpr_i[e_gpr_r2][lce_id_width_p-1:0];
+      e_lce_cmd_way_r3: lce_cmd_way = gpr_i[e_gpr_r3][lce_id_width_p-1:0];
+      e_lce_cmd_way_r4: lce_cmd_way = gpr_i[e_gpr_r4][lce_id_width_p-1:0];
+      e_lce_cmd_way_r5: lce_cmd_way = gpr_i[e_gpr_r5][lce_id_width_p-1:0];
+      e_lce_cmd_way_r6: lce_cmd_way = gpr_i[e_gpr_r6][lce_id_width_p-1:0];
+      e_lce_cmd_way_r7: lce_cmd_way = gpr_i[e_gpr_r7][lce_id_width_p-1:0];
       e_lce_cmd_way_req_addr_way: lce_cmd_way = mshr.way_id;
       e_lce_cmd_way_tr_addr_way: lce_cmd_way = mshr.tr_way_id;
-      e_lce_cmd_way_sh_list_r0: lce_cmd_way = sharers_ways_i[gpr_i[e_gpr_r0][lg_num_lce_lp-1:0]];
+      e_lce_cmd_way_sh_list_r0: lce_cmd_way = sharers_ways_i[gpr_i[e_gpr_r0][lce_id_width_p-1:0]];
       e_lce_cmd_way_lru_addr_way: lce_cmd_way = mshr.lru_way_id;
       e_lce_cmd_way_0: lce_cmd_way = '0;
       default: lce_cmd_way = '0;
@@ -579,7 +577,7 @@ module bp_cce_msg_cached
       lce_cmd.msg_type = decoded_inst_i.lce_cmd;
       lce_cmd.way_id = lce_cmd_way;
 
-      lce_cmd.msg.cmd.src_id = (lg_num_cce_lp)'(cce_id_i);
+      lce_cmd.msg.cmd.src_id = (cce_id_width_p)'(cce_id_i);
       lce_cmd.msg.cmd.addr = lce_cmd_addr;
 
       lce_cmd.msg.cmd.state = '0;

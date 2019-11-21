@@ -9,7 +9,7 @@ module bp_mem_transducer
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
    , parameter [paddr_width_p-1:0] dram_offset_p = '0
 
@@ -46,7 +46,7 @@ module bp_mem_transducer
    , output                              yumi_o
    );
 
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
+  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
 
   bp_cce_mem_msg_s mem_cmd_cast_i, mem_resp_cast_o;
 

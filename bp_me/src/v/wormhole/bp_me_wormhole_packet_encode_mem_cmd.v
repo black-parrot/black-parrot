@@ -18,7 +18,7 @@ module bp_me_wormhole_packet_encode_mem_cmd
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
     , localparam mem_cmd_payload_width_lp =
         `bp_mem_wormhole_payload_width(mem_noc_did_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, cce_mem_msg_width_lp)
@@ -37,7 +37,7 @@ module bp_me_wormhole_packet_encode_mem_cmd
     , output [mem_cmd_packet_width_lp-1:0] packet_o
     );
 
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
+  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_mem_wormhole_payload_s(mem_noc_did_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, cce_mem_msg_width_lp, bp_cmd_wormhole_payload_s);
   `declare_bsg_wormhole_interdomain_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p, mem_noc_did_width_p, $bits(bp_cmd_wormhole_payload_s), bp_cmd_wormhole_packet_s);
 

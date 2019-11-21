@@ -84,7 +84,7 @@ module bp_be_dcache
     , parameter lock_max_limit_p=8
     , parameter debug_p=0 
 
-    , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+    , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , localparam block_size_in_words_lp=lce_assoc_p
     , localparam data_mask_width_lp=(dword_width_p>>3)
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
@@ -101,7 +101,7 @@ module bp_be_dcache
     , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(tag_width_lp)
     , localparam stat_info_width_lp=`bp_be_dcache_stat_info_width(lce_assoc_p)
    
-    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p) 
+    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p) 
   )
   (
     input clk_i
@@ -151,7 +151,7 @@ module bp_be_dcache
     , output credits_empty_o
   );
 
-  `declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 

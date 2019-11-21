@@ -11,7 +11,7 @@ module bp_me_cce_to_wormhole_link_client
   import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+  `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
   
   // TODO: Should be related to network credits
   , localparam num_outstanding_req_p           = 16
@@ -38,7 +38,7 @@ module bp_me_cce_to_wormhole_link_client
   , output [bsg_ready_and_link_sif_width_lp-1:0] resp_link_o
   );
   
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
+  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_mem_wormhole_payload_s(mem_noc_did_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, cce_mem_msg_width_lp, mem_cmd_payload_s);
   `declare_bp_mem_wormhole_payload_s(mem_noc_did_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, cce_mem_msg_width_lp, mem_resp_payload_s);
   `declare_bsg_wormhole_interdomain_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p, mem_noc_did_width_p, $bits(mem_cmd_payload_s), mem_cmd_packet_s);

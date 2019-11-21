@@ -16,7 +16,7 @@ module testbench
  import bsg_noc_pkg::*;
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
    // Tracing parameters
    , parameter calc_trace_p                = 0
@@ -50,7 +50,7 @@ module testbench
    );
 
 `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+`declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
 bsg_ready_and_link_sif_s [E:P] cmd_link_li, cmd_link_lo;
 bsg_ready_and_link_sif_s [E:P] resp_link_li, resp_link_lo;

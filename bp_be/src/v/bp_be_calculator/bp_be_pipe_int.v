@@ -6,27 +6,6 @@
  * Description:
  *   Pipeline for RISC-V integer instructions. Handles integer computation.
  *
- * Parameters:
- *   num_core_p       - 
- *
- * Inputs:
- *   clk_i            -
- *   reset_i          -
- *
- *   decode_i         - All of the pipeline control information needed for a dispatched instruction
- *   pc_i             - PC of the dispatched instruction
- *   rs1_i            - Source register data for the dispatched instruction
- *   rs2_i            - Source register data for the dispatched instruction
- *   imm_i            - Immediate data for the dispatched instruction
- *   exc_i            - Exception information for a dispatched instruction
- * 
- * Outputs:
- *   data_o           - The calculated result of the instruction
- *   br_tgt_o         - The calculated branch target from branch instructions
- *   
- * Keywords:
- *   calculator, alu, int, integer, rv64i
- *
  * Notes:
  *   
  */
