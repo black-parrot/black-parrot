@@ -25,15 +25,9 @@ module bp_fe_lce_req
   import bp_common_aviary_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_lce_cce_if_widths(num_cce_p
-                                 ,num_lce_p
-                                 ,paddr_width_p
-                                 ,lce_assoc_p
-                                 ,dword_width_p
-                                 ,cce_block_width_p
-                                 )
+   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
-   `declare_bp_fe_tag_widths(lce_assoc_p, lce_sets_p, num_lce_p, num_cce_p, dword_width_p, paddr_width_p)
+   `declare_bp_fe_tag_widths(lce_assoc_p, lce_sets_p, lce_id_width_p, cce_id_width_p, dword_width_p, paddr_width_p)
    `declare_bp_fe_lce_widths(lce_assoc_p, lce_sets_p, tag_width_lp, lce_data_width_lp)
   )
    (input clk_i
@@ -66,7 +60,7 @@ module bp_fe_lce_req
   // lce interface
   //
 
-  `declare_bp_lce_cce_if(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
+  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
   
   bp_lce_cce_resp_s lce_resp;
   bp_lce_cce_req_s lce_req;
@@ -99,7 +93,7 @@ module bp_fe_lce_req
 
     lce_req_v_o           = 1'b0;
 
-    lce_req.dst_id        = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_p] : 1'b0;
+    lce_req.dst_id        = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:`BSG_SAFE_CLOG2(num_cce_p)] : 1'b0;
     lce_req.src_id        = lce_id_i;
     lce_req.msg_type      = e_lce_req_type_rd;
     lce_req.addr          = miss_addr_r;
@@ -114,7 +108,7 @@ module bp_fe_lce_req
 
     lce_resp_v_o          = 1'b0;
 
-    lce_resp.dst_id       = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:cce_id_width_p] : 1'b0;
+    lce_resp.dst_id       = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:`BSG_SAFE_CLOG2(num_cce_p)] : 1'b0;
     lce_resp.src_id       = lce_id_i;
     lce_resp.msg_type     = bp_lce_cce_resp_type_e'('0);
     lce_resp.addr         = miss_addr_r;

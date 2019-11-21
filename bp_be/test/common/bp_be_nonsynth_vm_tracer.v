@@ -10,7 +10,6 @@ module bp_be_nonsynth_vm_tracer
 
    , parameter vm_trace_file_p = "vm"
 
-   , localparam core_id_width_p = `BSG_SAFE_CLOG2(num_core_p)
    , localparam itlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
    , localparam dtlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
    )

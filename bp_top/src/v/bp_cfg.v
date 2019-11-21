@@ -8,9 +8,9 @@ module bp_cfg
  import bp_common_cfg_link_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    )
   (input                                clk_i
    , input                              reset_i
@@ -34,8 +34,8 @@ module bp_cfg
    , input [cce_instr_width_p-1:0]      cce_ucode_data_i
    );
 
-`declare_bp_cfg_bus_s(vaddr_width_p, num_core_p, num_cce_p, num_lce_p, cce_pc_width_p, cce_instr_width_p);
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+`declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+`declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
 bp_cfg_bus_s cfg_bus_cast_o;
 bp_cce_mem_msg_s mem_cmd_cast_i, mem_resp_cast_o;
@@ -45,17 +45,17 @@ assign mem_cmd_cast_i = mem_cmd_i;
 assign mem_resp_o = mem_resp_cast_o;
 
 logic                                   freeze_r;
-logic [`BSG_SAFE_CLOG2(num_core_p)-1:0] core_id_r;
-logic [`BSG_SAFE_CLOG2(num_lce_p)-1:0]  icache_id_r;
+logic [core_id_width_p-1:0]             core_id_r;
+logic [lce_id_width_p-1:0]              icache_id_r;
 bp_lce_mode_e                           icache_mode_r;
 logic                                   npc_w_v_r;
 logic                                   npc_r_v_r;
 logic [vaddr_width_p-1:0]               npc_r;
-logic [`BSG_SAFE_CLOG2(num_lce_p)-1:0]  dcache_id_r;
+logic [lce_id_width_p-1:0]              dcache_id_r;
 bp_lce_mode_e                           dcache_mode_r;
-logic [`BSG_SAFE_CLOG2(num_cce_p)-1:0]  cce_id_r;
+logic [cce_id_width_p-1:0]              cce_id_r;
 bp_cce_mode_e                           cce_mode_r;
-logic [`BSG_SAFE_CLOG2(num_lce_p)-1:0]  num_lce_r;
+logic [lce_id_width_p:0]                num_lce_r;
 logic                                   cce_ucode_w_v_r;
 logic                                   cce_ucode_r_v_r;
 logic [cce_pc_width_p-1:0]              cce_ucode_addr_r;
