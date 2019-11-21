@@ -133,6 +133,7 @@ module bp_me_cce_to_cache
     cache_pkt.data = '0;
     cache_pkt.addr = '0;
     cache_pkt.opcode = TAGST;
+	cache_pkt.l2_bypass = '0;
     tagst_sent_n = tagst_sent_r;
     tagst_received_n = tagst_received_r;
     v_o = 1'b0;
@@ -216,7 +217,10 @@ module bp_me_cce_to_cache
             endcase
           default: cache_pkt.opcode = LB;
         endcase
-        cache_pkt.data = cmd_data[cmd_counter_r];
+        cache_pkt.l2_bypass = (mem_cmd.msg_type == e_cce_mem_wr)
+							? 1'b1
+							: 1'b0;
+		cache_pkt.data = cmd_data[cmd_counter_r];
         cache_pkt.addr = cmd_addr + cmd_counter_r*data_mask_width_lp;
         cache_pkt.mask = '1;
         if (ready_i)
