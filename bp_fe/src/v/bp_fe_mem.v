@@ -67,18 +67,18 @@ bp_tlb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.flush_i(itlb_fence_v)
-	       
+
    ,.v_i(fetch_v | itlb_fill_v)
    ,.w_i(itlb_fill_v)
    ,.vtag_i(itlb_fill_v ? mem_cmd_cast_i.operands.fill.vtag : mem_cmd_cast_i.operands.fetch.vaddr.tag)
-	 ,.entry_i(mem_cmd_cast_i.operands.fill.entry)
-	   
+   ,.entry_i(mem_cmd_cast_i.operands.fill.entry)
+
    ,.v_o(itlb_r_v_lo)
    ,.entry_o(itlb_r_entry)
 
-	 ,.miss_v_o(itlb_miss_lo)
-	 ,.miss_vtag_o()
-	 );
+   ,.miss_v_o(itlb_miss_lo)
+   ,.miss_vtag_o()
+   );
 wire                    uncached_li = itlb_r_entry.uc;
 wire [ptag_width_p-1:0] ptag_li     = itlb_r_entry.ptag;
 wire                    ptag_v_li   = itlb_r_v_lo;

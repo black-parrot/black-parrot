@@ -7,6 +7,7 @@ $BP_BE_DIR/test/common/bp_be_nonsynth_calc_tracer.v
 $BP_BE_DIR/test/common/bp_be_nonsynth_dcache_tracer.v
 $BP_BE_DIR/test/common/bp_be_nonsynth_perf.v
 $BP_BE_DIR/test/common/bp_be_nonsynth_npc_tracer.v
+$BP_BE_DIR/test/common/bp_be_nonsynth_vm_tracer.v
 # me files
 $BP_ME_DIR/test/common/bp_mem.v
 $BP_ME_DIR/test/common/bp_mem_transducer.v

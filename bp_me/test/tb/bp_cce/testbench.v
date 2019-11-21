@@ -42,8 +42,8 @@ module testbench
    , parameter max_latency_p = 15
 
    , parameter dram_clock_period_in_ps_p = 1000
-   , parameter dram_bp_params_p                = "dram_ch.ini"
-   , parameter dram_sys_bp_params_p            = "dram_sys.ini"
+   , parameter dram_cfg_p                = "dram_ch.ini"
+   , parameter dram_sys_cfg_p            = "dram_sys.ini"
    , parameter dram_capacity_p           = 16384
 
    // LCE Trace Replay Width
@@ -229,8 +229,8 @@ bp_mem
   ,.max_latency_p(max_latency_p)
 
   ,.dram_clock_period_in_ps_p(dram_clock_period_in_ps_p)
-  ,.dram_bp_params_p(dram_bp_params_p)
-  ,.dram_sys_bp_params_p(dram_sys_bp_params_p)
+  ,.dram_cfg_p(dram_cfg_p)
+  ,.dram_sys_cfg_p(dram_sys_cfg_p)
   ,.dram_capacity_p(dram_capacity_p)
   )
 mem

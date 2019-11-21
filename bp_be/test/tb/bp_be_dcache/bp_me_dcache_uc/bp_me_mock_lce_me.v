@@ -40,8 +40,8 @@ module bp_me_mock_lce_me
     , parameter dramsim2_en_p = 0
     , parameter clock_period_in_ps_p = 1000
     , parameter prog_name_p = "null.mem"
-    , parameter dram_bp_params_p  = "DDR2_micron_16M_8b_x8_sg3E.ini"
-    , parameter dram_sys_bp_params_p = "system.ini"
+    , parameter dram_cfg_p  = "DDR2_micron_16M_8b_x8_sg3E.ini"
+    , parameter dram_sys_cfg_p = "system.ini"
     , parameter dram_capacity_p = 16384
 
   )
@@ -375,8 +375,8 @@ always_ff @(posedge clk_i)
    #(.mem_id_p('0)
      ,.clock_period_in_ps_p(clock_period_in_ps_p)
      ,.prog_name_p(prog_name_p)
-     ,.dram_bp_params_p(dram_bp_params_p)
-     ,.dram_sys_bp_params_p(dram_sys_bp_params_p)
+     ,.dram_cfg_p(dram_cfg_p)
+     ,.dram_sys_cfg_p(dram_sys_cfg_p)
      ,.dram_capacity_p(dram_capacity_p)
      ,.num_lce_p(num_lce_p)
      ,.num_cce_p(num_cce_p)
