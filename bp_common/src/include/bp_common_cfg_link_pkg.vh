@@ -22,6 +22,8 @@ package bp_common_cfg_link_pkg;
   localparam bp_cfg_reg_reset_gp          = 'h0001;
   localparam bp_cfg_reg_freeze_gp         = 'h0002;
   localparam bp_cfg_reg_core_id_gp        = 'h0003;
+  localparam bp_cfg_reg_did_gp            = 'h0004;
+  localparam bp_cfg_reg_cord_gp           = 'h0005;
   localparam bp_cfg_reg_icache_id_gp      = 'h0021;
   localparam bp_cfg_reg_icache_mode_gp    = 'h0022;
   localparam bp_cfg_reg_npc_gp            = 'h0040;

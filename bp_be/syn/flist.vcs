@@ -139,7 +139,7 @@ $BP_ME_DIR/src/v/cce/bp_cce_gad.v
 $BP_ME_DIR/src/v/cce/bp_cce_inst_decode.v
 $BP_ME_DIR/src/v/cce/bp_cce_pc.v
 $BP_ME_DIR/src/v/cce/bp_cce_reg.v
-$BP_ME_DIR/src/v/cce/bp_cce_top.v
+$BP_ME_DIR/src/v/cce/bp_cce_buffered.v
 # Network
 $BP_ME_DIR/src/v/network/bp_me_network.v
 $BP_ME_DIR/src/v/network/bp_me_network_channel_mesh.v

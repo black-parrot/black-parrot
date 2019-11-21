@@ -68,12 +68,12 @@ module wrapper
    , input                                                 mem_resp_yumi_i
    );
 
-  bp_cce_top
+  bp_cce_buffered
    #(.bp_params_p(bp_params_p))
    dut
     (.*);
 
-  bind bp_cce_top
+  bind bp_cce_buffered
     bp_cce_nonsynth_tracer
       #(.bp_params_p(bp_params_p))
       bp_cce_tracer

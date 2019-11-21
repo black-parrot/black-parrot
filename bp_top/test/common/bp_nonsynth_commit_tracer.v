@@ -36,7 +36,6 @@ always_ff @(negedge clk_i)
       file      = $fopen(file_name, "w");
     end
 
-
   logic [30:0] itag_cnt;
   bsg_counter_clear_up
    #(.max_val_p(2**31-1)

@@ -1,0 +1,144 @@
+
+module bp_clint_slice
+ import bp_common_pkg::*;
+ import bp_common_aviary_pkg::*;
+ import bp_be_pkg::*;
+ import bp_common_cfg_link_pkg::*;
+ import bp_cce_pkg::*;
+ import bsg_noc_pkg::*;
+ import bsg_wormhole_router_pkg::*;
+ import bp_me_pkg::*;
+ #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   `declare_bp_proc_params(bp_params_p)
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+   )
+  (input                                                clk_i
+   , input                                              reset_i
+
+   , input [cce_mem_msg_width_lp-1:0]                   mem_cmd_i
+   , input                                              mem_cmd_v_i
+   , output                                             mem_cmd_yumi_o
+
+   , output [cce_mem_msg_width_lp-1:0]                  mem_resp_o
+   , output                                             mem_resp_v_o
+   , input                                              mem_resp_ready_i
+
+   // Local interrupts
+   , output                                             software_irq_o
+   , output                                             timer_irq_o
+   , output                                             external_irq_o
+   );
+
+`declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
+
+bp_cce_mem_msg_s mem_cmd_li;
+assign mem_cmd_li = mem_cmd_i;
+assign mem_cmd_yumi_o = mem_cmd_v_i & mem_resp_ready_i;
+
+logic mipi_cmd_v;
+logic mtimecmp_cmd_v;
+logic mtime_cmd_v;
+logic plic_cmd_v;
+logic wr_not_rd;
+
+always_comb
+  begin
+    mtime_cmd_v    = 1'b0;
+    mtimecmp_cmd_v = 1'b0;
+    mipi_cmd_v     = 1'b0;
+    plic_cmd_v     = 1'b0;
+
+    wr_not_rd = mem_cmd_li.msg_type inside {e_cce_mem_wb, e_cce_mem_uc_wr};
+
+    unique 
+    casez (mem_cmd_li.addr)
+      mtime_reg_addr_gp        : mtime_cmd_v    = mem_cmd_v_i;
+      mtimecmp_reg_base_addr_gp: mtimecmp_cmd_v = mem_cmd_v_i;
+      mipi_reg_base_addr_gp    : mipi_cmd_v     = mem_cmd_v_i;
+      plic_reg_base_addr_gp    : plic_cmd_v     = mem_cmd_v_i;
+      default: begin end
+    endcase
+  end
+
+logic [dword_width_p-1:0] mtime_r, mtimecmp_n, mtimecmp_r;
+logic                     mipi_n, mipi_r;
+logic                     plic_n, plic_r;
+
+// TODO: Should be RTC
+bsg_counter_clear_up
+ #(.max_val_p(2**dword_width_p-1)
+   ,.ptr_width_lp(dword_width_p)
+   ,.init_val_p(0)
+   )
+ mtime_counter
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.clear_i(1'b0)
+
+   ,.up_i(1'b1)
+   ,.count_o(mtime_r)
+   );
+
+assign mtimecmp_n = mem_cmd_li.data[0+:dword_width_p];
+wire mtimecmp_w_v_li = wr_not_rd & mtimecmp_cmd_v;
+bsg_dff_reset_en
+ #(.width_p(dword_width_p))
+ mtimecmp_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.en_i(mtimecmp_w_v_li)
+   ,.data_i(mtimecmp_n)
+   ,.data_o(mtimecmp_r)
+   );
+assign timer_irq_o = (mtime_r >= mtimecmp_r);
+
+assign mipi_n = mem_cmd_li.data[0];
+wire mipi_w_v_li = wr_not_rd & mipi_cmd_v;
+bsg_dff_reset_en
+ #(.width_p(1))
+ mipi_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(mipi_w_v_li)
+
+   ,.data_i(mipi_n)
+   ,.data_o(mipi_r)
+   );
+assign software_irq_o = mipi_r;
+
+assign plic_n = mem_cmd_li.data[0];
+wire plic_w_v_li = wr_not_rd & plic_cmd_v;
+bsg_dff_reset_en
+ #(.width_p(1))
+ plic_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(plic_w_v_li)
+
+   ,.data_i(plic_n)
+   ,.data_o(plic_r)
+   );
+assign external_irq_o = plic_r;
+
+wire [dword_width_p-1:0] rdata_lo = plic_cmd_v 
+                                    ? dword_width_p'(plic_r)
+                                    : mipi_cmd_v 
+                                      ? dword_width_p'(mipi_r)
+                                      : mtimecmp_cmd_v 
+                                        ? dword_width_p'(mtimecmp_r)
+                                        : mtime_r;
+
+bp_cce_mem_msg_s mem_resp_lo;
+assign mem_resp_lo =
+  '{msg_type       : mem_cmd_li.msg_type
+    ,addr          : mem_cmd_li.addr
+    ,payload       : mem_cmd_li.payload
+    ,size          : mem_cmd_li.size
+    ,data          : cce_block_width_p'(rdata_lo)
+    };
+assign mem_resp_o = mem_resp_lo;
+assign mem_resp_v_o = mem_cmd_yumi_o;
+
+endmodule
+
