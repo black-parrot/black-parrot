@@ -217,10 +217,6 @@ always_comb
 
         fe_cmd_v = fe_cmd_ready_i;
       end
-    else if (commit_pkt.cache_miss | commit_pkt.tlb_miss)
-      begin
-        flush_o = 1'b1;
-      end
     else if (itlb_fill_v_i)
       begin
         fe_cmd.opcode                                     = e_op_itlb_fill_response;
@@ -272,6 +268,10 @@ always_comb
 
         flush_o = 1'b1;
       end
+    else if (commit_pkt.cache_miss | commit_pkt.tlb_miss)
+      begin
+        flush_o = 1'b1;
+      end
     else if (isd_status.isd_v & npc_mismatch_v)
       begin
         fe_cmd_pc_redirect_operands = '0;
@@ -286,7 +286,7 @@ always_comb
                                                            : e_not_a_branch;
         fe_cmd.operands.pc_redirect_operands             = fe_cmd_pc_redirect_operands;
 
-        fe_cmd_v = fe_cmd_ready_i & (~commit_pkt.cache_miss & ~commit_pkt.tlb_miss);
+        fe_cmd_v = fe_cmd_ready_i;
       end 
     // Send an attaboy if there's a correct prediction
     else if (isd_status.isd_v & ~npc_mismatch_v & attaboy_pending) 
@@ -294,7 +294,7 @@ always_comb
         fe_cmd.opcode                      = e_op_attaboy;
         fe_cmd.vaddr                       = expected_npc_o;
         fe_cmd.operands.attaboy.branch_metadata_fwd = isd_status.isd_branch_metadata_fwd;
-        fe_cmd_v = fe_cmd_ready_i & (~commit_pkt.cache_miss & ~commit_pkt.tlb_miss);
+        fe_cmd_v = fe_cmd_ready_i;
       end
   end
 
