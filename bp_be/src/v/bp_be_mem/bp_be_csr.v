@@ -362,6 +362,7 @@ always_comb
               mstatus_li.mpp   = `PRIV_MODE_U;
               mstatus_li.mpie  = 1'b1;
               mstatus_li.mie   = mstatus_lo.mpie;
+              mstatus_li.mprv  = (priv_mode_n < `PRIV_MODE_M) ? '0 : mstatus_li.mprv;
 
               ret_v_o          = 1'b1;
             end
@@ -377,6 +378,7 @@ always_comb
               mstatus_li.spp   = `PRIV_MODE_U;
               mstatus_li.spie  = 1'b1;
               mstatus_li.sie   = mstatus_lo.spie;
+              mstatus_li.mprv  = (priv_mode_n < `PRIV_MODE_M) ? '0 : mstatus_li.mprv;
 
               ret_v_o          = 1'b1;
             end
