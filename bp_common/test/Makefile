@@ -177,7 +177,7 @@ riscvdv_dump: $(foreach x, $(BP_RVDV), $(x).dump)
 	$(RISCV_OBJDUMP) $(MEM_DIR)/$*.riscv > $(MEM_DIR)/$@
 
 %.spike:
-	$(RISCV_SIM) -p$(NC) -l $(MEM_DIR)/$*.riscv 2> $(MEM_DIR)/$@
+	$(RISCV_SIM) -p$(NC) -l --log-commits $(MEM_DIR)/$*.riscv 2> $(MEM_DIR)/$@
 
 %.dump:
 	$(RISCV_OBJDUMP) $(MEM_DIR)/$*.riscv > $(MEM_DIR)/$@
