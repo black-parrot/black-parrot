@@ -110,10 +110,18 @@ def compare_trace(spike_entries, sim_entries, start_pc):
 
     if spike_entries[spike_index] != sim_entries[sim_index]:
       mismatches += 1
-      print("Mismatch! PC: {} ITAG: {} DASM: {}".format(
+      print("Mismatch!")
+      print("\tSpike PC: {} Instr: {} DASM: {}".format(
         hex(spike_entries[spike_index].pc),
-        hex(sim_entries[sim_index].itag),
+        hex(spike_entries[spike_index].instr),
         spike_entries[spike_index].dasm))
+      print("\tSim PC: {} Instr: {} itag: {}".format(
+        hex(sim_entries[sim_index].pc),
+        hex(sim_entries[sim_index].instr),
+        hex(sim_entries[sim_index].itag)))
+    #else:
+    #  print("Match: Spike PC: {} Sim PC: {}".format(hex(spike_entries[spike_index].pc),
+    #      hex(sim_entries[sim_index].pc)))
 
     sim_index += 1
     spike_index += 1
@@ -139,7 +147,8 @@ if __name__ == "__main__":
     entries = f.read().split("core  ")[1:]
 
     for entry in entries:
-      spike_entries.append(SpikeLogEntry(entry))
+        if '\n' in entry[:-1]:
+            spike_entries.append(SpikeLogEntry(entry))
 
   sim_entries = []
   with open(sim_log, 'r') as f:

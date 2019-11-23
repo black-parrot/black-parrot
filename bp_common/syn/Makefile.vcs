@@ -1,7 +1,7 @@
 
 VPD2VCD          ?= vpd2vcd
 PYTHON           ?= python
-TRACEDIFF        ?= $(BP_COMMON_DIR)/software/tracediff.py
+TRACEDIFF        ?= $(BP_COMMON_DIR)/software/py/tracediff.py
 UNHARDWARE_DIR   ?= $(BP_EXTERNAL_DIR)/agile-unhardware
 UNHARDWARE_MODEL ?= blackparrot
 
@@ -115,7 +115,7 @@ match.v: MATCH_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).match.$(PROG).rpt
 match.v: MATCH_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).match.$(PROG).err
 match.v: PROG ?= rv64ui-p-simple
 match.v: dirs.v
-	-cd $(SIM_DIR); $(PYTHON) $(TRACEDIFF) commit.spike commit.trace $(START_PC) --tolerance=$(TOLERANCE) \
+	-cd $(SIM_DIR); $(PYTHON) $(TRACEDIFF) commit.spike commit_0.trace $(START_PC) --tolerance=$(TOLERANCE) \
 		| tee -a $(MATCH_LOG)
 	-@grep "MATCH" $(MATCH_LOG) || echo "MISMATCHED" >> $(MATCH_ERROR)
 	-@grep "MATCH" -A 4 $(MATCH_LOG) > $(MATCH_REPORT)
