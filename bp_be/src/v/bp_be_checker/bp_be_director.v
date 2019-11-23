@@ -159,6 +159,7 @@ bsg_mux
 assign npc_mismatch_v = isd_status.isd_v & (expected_npc_o != isd_status.isd_pc);
 
 // Last operation was branch. Was it successful? Let's find out
+// TODO: I think this is wrong, may send extra attaboys
 bsg_dff_reset_en
  #(.width_p(1))
  attaboy_pending_reg

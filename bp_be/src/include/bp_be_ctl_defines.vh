@@ -60,8 +60,7 @@ typedef enum bit [4:0]
   ,e_sret   = 5'b01001
   ,e_ebreak = 5'b01010
   ,e_sfence_vma = 5'b01011
-    // TODO: This is a nop for now
-  //,e_wfi  = 5'b01100
+  ,e_wfi    = 5'b01100
 
   // We treat FE exceptions as CSR ops
   ,e_op_take_interrupt     = 5'b11000

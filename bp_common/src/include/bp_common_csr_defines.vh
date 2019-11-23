@@ -393,6 +393,10 @@ typedef struct packed
 
 typedef struct packed
 {
+  logic       tsr;
+  logic       tw;
+  logic       tvm;
+
   logic       mxr;
   logic       sum;
   logic       mprv;
@@ -408,7 +412,10 @@ typedef struct packed
 }  bp_mstatus_s;
 
 `define compress_mstatus_s(data_cast_mp) \
-  '{mxr  : data_cast_mp.mxr  \
+  '{tsr  : data_cast_mp.tsr  \
+    ,tw  : data_cast_mp.tw   \
+    ,tvm : data_cast_mp.tvm  \
+    ,mxr : data_cast_mp.mxr  \
     ,sum : data_cast_mp.sum  \
     ,mprv: data_cast_mp.mprv \
     ,mpp : data_cast_mp.mpp  \
@@ -422,6 +429,9 @@ typedef struct packed
 `define decompress_mstatus_s(data_comp_mp) \
   '{sxl  : 2'b10             \
     ,uxl : 2'b10             \
+    ,tsr : data_comp_mp.tsr  \
+    ,tvm : data_comp_mp.tvm  \
+    ,tw  : data_comp_mp.tw   \
     ,mxr : data_comp_mp.mxr  \
     ,sum : data_comp_mp.sum  \
     ,mprv: data_comp_mp.mprv \

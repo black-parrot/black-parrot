@@ -246,7 +246,7 @@ always_comb
             `RV64_EBREAK     : decode.fu_op = e_ebreak;
             `RV64_MRET       : decode.fu_op = e_mret;
             `RV64_SRET       : decode.fu_op = e_sret;
-            `RV64_WFI        : decode.csr_v = 1'b0; // NOP
+            `RV64_WFI        : decode.fu_op = e_wfi;
             `RV64_SFENCE_VMA : decode.fu_op = e_sfence_vma;
             default: 
               begin
