@@ -181,7 +181,7 @@ module bp_me_cce_to_cache
               ,e_mem_size_8: cmd_max_count_n = '0;
               e_mem_size_16: cmd_max_count_n = counter_width_lp'(1);
               e_mem_size_32: cmd_max_count_n = counter_width_lp'(3);
-              e_mem_size_64: cmd_max_count_n = (mem_cmd.msg_type == e_cce_mem_wr) | (mem_cmd.msg_type == e_cce_mem_rd)? '0 : counter_width_lp'(7);
+              e_mem_size_64: cmd_max_count_n = (mem_cmd.msg_type == e_cce_mem_wr) | (mem_cmd.msg_type == e_cce_mem_rd) ? '0 : counter_width_lp'(7);
               default: cmd_max_count_n = '0;
             endcase
             small_fifo_v_li = 1'b1;
@@ -255,9 +255,11 @@ module bp_me_cce_to_cache
   
   logic [dword_width_p-1:0] resp_data_n;
   logic [block_size_in_words_lp-1:0][dword_width_p-1:0] resp_data_r, block_load_data_r, block_load_data_n;
-  assign mem_resp.data = (mem_resp.msg_type == e_cce_mem_wr) | (mem_resp.msg_type == e_cce_mem_rd) ? block_load_data_r : resp_data_r;
+  assign mem_resp.data = (mem_resp.msg_type == e_cce_mem_wr) | (mem_resp.msg_type == e_cce_mem_rd)? block_load_data_r : resp_data_r;
   
-
+  integer file_handle;
+  reg [8*20:1] file_name_str = "mem_resp.trace";
+  
   // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
@@ -265,6 +267,8 @@ module bp_me_cce_to_cache
       resp_counter_r    <= '0;
       resp_max_count_r  <= '0;
       block_load_data_r <= '0;
+      file_handle = $fopen(file_name_str, "w");
+      $fclose(file_handle);
     end
     else begin
       resp_state_r      <= resp_state_n;
@@ -272,6 +276,11 @@ module bp_me_cce_to_cache
       resp_max_count_r  <= resp_max_count_n;
       block_load_data_r <= block_load_data_n;
       resp_data_r[resp_counter_r] <= resp_data_n;
+      if(mem_resp_v_lo & ( (mem_resp.msg_type == e_cce_mem_wr) | (mem_resp.msg_type == e_cce_mem_rd) ) ) begin
+        file_handle = $fopen(file_name_str, "a");
+        $fwrite(file_handle,"ADDR[%h] = %h\n", mem_resp.addr, mem_resp.data);
+        $fclose(file_handle);
+      end
     end
   end
 
@@ -300,7 +309,7 @@ module bp_me_cce_to_cache
               ,e_mem_size_8: resp_max_count_n = '0;
               e_mem_size_16: resp_max_count_n = counter_width_lp'(1);
               e_mem_size_32: resp_max_count_n = counter_width_lp'(3);
-              e_mem_size_64: resp_max_count_n = (mem_resp.msg_type == e_cce_mem_wr) | (mem_resp.msg_type == e_cce_mem_rd)? '0 : counter_width_lp'(7);
+              e_mem_size_64: resp_max_count_n = (mem_resp.msg_type == e_cce_mem_wr) | (mem_resp.msg_type == e_cce_mem_rd) ? '0 : counter_width_lp'(7);
               default: resp_max_count_n = '0;
             endcase
             resp_state_n = RESP_RECEIVE;
