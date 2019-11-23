@@ -394,17 +394,16 @@ BP_SPEC = \
   vpr
 
 BP_RVDV = \
-  riscv_arithmetic_basic_test
-#  riscv_mmu_stress_test \
-#  riscv_privileged_mode_rand_test \
-#  riscv_rand_instr_test \
-#  riscv_loop_test \
-#  riscv_rand_jump_test \
-#  riscv_no_fence_test \
-#  riscv_sfence_exception_test \
-#  riscv_illegal_instr_test \
-#  riscv_hint_instr_test \
-#  riscv_full_interrupt_test
+  riscv_arithmetic_basic_test \
+  riscv_mmu_stress_test \
+  riscv_privileged_mode_rand_test \
+  riscv_rand_instr_test \
+  riscv_loop_test \
+  riscv_rand_jump_test \
+  riscv_no_fence_test \
+  riscv_sfence_exception_test \
+  riscv_illegal_instr_test \
+  riscv_full_interrupt_test
 
   
 
