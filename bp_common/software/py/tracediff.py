@@ -13,7 +13,7 @@ class SpikeLogEntry:
 
     if len(commit_string) > 0:
       self.priv = int(commit_string[0], 16)
-    if len(commit_string) > 3:
+    if len(commit_string) > 3 and "mem" not in commit_string:
       self.rd_addr = int(commit_string[3].replace('x',''), 10)
       self.rf_instr = (self.rd_addr > 0)
     else:
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     entries = f.read().split("core  ")[1:]
 
     for entry in entries:
-        if '\n' in entry[:-1]:
+        if ('\n' in entry[:-1]):
             spike_entries.append(SpikeLogEntry(entry))
 
   sim_entries = []
