@@ -344,30 +344,42 @@ always_comb
     if (csr_cmd_v_i)
       if (csr_cmd.csr_op == e_sfence_vma)
         begin
-          illegal_instr_o = (priv_mode_r < `PRIV_MODE_S);
-          tlb_fence_o     = ~illegal_instr_o;
+          if (is_s_mode & mstatus_lo.tvm)
+              illegal_instr_o = 1'b1;
+          else
+            begin
+              tlb_fence_o     = 1'b1;
+            end
         end
       else if (csr_cmd.csr_op == e_mret)
         begin
-          priv_mode_n      = mstatus_lo.mpp;
+          if (priv_mode_r < `PRIV_MODE_M)
+            illegal_instr_o = 1'b1;
+          else
+            begin
+              priv_mode_n      = mstatus_lo.mpp;
 
-          mstatus_li.mpp   = `PRIV_MODE_U;
-          mstatus_li.mpie  = 1'b1;
-          mstatus_li.mie   = mstatus_lo.mpie;
+              mstatus_li.mpp   = `PRIV_MODE_U;
+              mstatus_li.mpie  = 1'b1;
+              mstatus_li.mie   = mstatus_lo.mpie;
 
-          illegal_instr_o  = (priv_mode_r < `PRIV_MODE_M);
-          ret_v_o          = ~illegal_instr_o;
+              ret_v_o          = 1'b1;
+            end
         end
       else if (csr_cmd.csr_op == e_sret)
         begin
-          priv_mode_n      = {1'b0, mstatus_lo.spp};
-          
-          mstatus_li.spp   = `PRIV_MODE_U;
-          mstatus_li.spie  = 1'b1;
-          mstatus_li.sie   = mstatus_lo.spie;
+          if ((is_s_mode & mstatus_lo.tsr) || (priv_mode_r < `PRIV_MODE_S))
+            illegal_instr_o = 1'b1;
+          else
+            begin
+              priv_mode_n      = {1'b0, mstatus_lo.spp};
+              
+              mstatus_li.spp   = `PRIV_MODE_U;
+              mstatus_li.spie  = 1'b1;
+              mstatus_li.sie   = mstatus_lo.spie;
 
-          illegal_instr_o  = (priv_mode_r < `PRIV_MODE_S);
-          ret_v_o          = ~illegal_instr_o;
+              ret_v_o          = 1'b1;
+            end
         end
       else if (csr_cmd.csr_op == e_itlb_fill)
         begin
@@ -422,12 +434,29 @@ always_comb
               ret_v_o              = 1'b0;
             end
         end
+      else if (csr_cmd.csr_op == e_wfi)
+        begin
+          illegal_instr_o = mstatus_lo.tw;
+        end
       else if (csr_cmd.csr_op inside {e_ebreak, e_ecall})
         begin
           // NOPs for now. EBREAK and WFI are likely to remain a NOP for a while, whereas
           // ECALL is implemented as part of the exception cause vector
         end
-      else 
+      // Check for access violations
+      else if (is_s_mode & mstatus_lo.tvm & (csr_cmd.csr_addr == `CSR_ADDR_SATP))
+        illegal_instr_o = 1'b1;
+      else if (is_s_mode & (csr_cmd.csr_addr == `CSR_ADDR_CYCLE) & ~mcounteren_lo.cy)
+        illegal_instr_o = 1'b1;
+      else if (is_u_mode & (csr_cmd.csr_addr == `CSR_ADDR_CYCLE) & ~scounteren_lo.cy)
+        illegal_instr_o = 1'b1;
+      else if (is_s_mode & (csr_cmd.csr_addr == `CSR_ADDR_INSTRET) & ~mcounteren_lo.ir)
+        illegal_instr_o = 1'b1;
+      else if (is_u_mode & (csr_cmd.csr_addr == `CSR_ADDR_INSTRET) & ~scounteren_lo.ir)
+        illegal_instr_o = 1'b1;
+      else if (priv_mode_r < csr_cmd.csr_addr[9:8])
+        illegal_instr_o = 1'b1;
+      else
         begin
           // Read case, we need to read as well as write for config bus
           if (csr_cmd_v_i | cfg_bus_cast_i.csr_r_v | cfg_bus_cast_i.csr_w_v) 
@@ -531,18 +560,6 @@ always_comb
               `CSR_ADDR_MCOUNTINHIBIT: mcountinhibit_li = csr_data_li;
               default: illegal_instr_o = 1'b1;
             endcase
-
-            // Check for access violations
-          if (is_s_mode & (csr_cmd.csr_addr == `CSR_ADDR_CYCLE) & ~mcounteren_lo.cy)
-            illegal_instr_o = 1'b1;
-          else if (is_u_mode & (csr_cmd.csr_addr == `CSR_ADDR_CYCLE) & ~scounteren_lo.cy)
-            illegal_instr_o = 1'b1;
-          else if (is_s_mode & (csr_cmd.csr_addr == `CSR_ADDR_INSTRET) & ~mcounteren_lo.ir)
-            illegal_instr_o = 1'b1;
-          else if (is_u_mode & (csr_cmd.csr_addr == `CSR_ADDR_INSTRET) & ~scounteren_lo.ir)
-            illegal_instr_o = 1'b1;
-          else if (priv_mode_r < csr_cmd.csr_addr[9:8])
-            illegal_instr_o = 1'b1;
         end
 
     mip_li.mtip = timer_irq_i;
