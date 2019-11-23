@@ -33,6 +33,7 @@ $BP_ME_DIR/src/include/v/bp_cce_pkg.v
 $BP_ME_DIR/src/include/v/bp_me_network_pkg.v
 ## bsg_ip_cores files
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_1r1w_small.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_1r1w_small_unhardened.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_tracker.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_shift_reg.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_two_fifo.v
