@@ -1041,6 +1041,8 @@ module bp_be_dcache
         uncached_load_data_r <= lce_data_mem_pkt.data[0+:dword_width_p];
         uncached_load_data_v_r <= 1'b1;
       end
+      else if (poison_i)
+          uncached_load_data_v_r <= 1'b0;
       else begin
         // once uncached load request is replayed, and v_o goes high,
         // cleared the valid bit.
