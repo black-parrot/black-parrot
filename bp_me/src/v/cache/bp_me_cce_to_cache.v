@@ -49,6 +49,7 @@ module bp_me_cce_to_cache
     , input                               ready_i
 
     , input [dword_width_p-1:0]           data_i
+    , input [511:0]                       block_load_data_i
     , input                               v_i
     , output logic                        yumi_o
   );
@@ -133,7 +134,7 @@ module bp_me_cce_to_cache
     cache_pkt.data = '0;
     cache_pkt.addr = '0;
     cache_pkt.opcode = TAGST;
-	cache_pkt.l2_bypass = '0;
+    cache_pkt.l2_bypass = '0;
     tagst_sent_n = tagst_sent_r;
     tagst_received_n = tagst_received_r;
     v_o = 1'b0;
@@ -180,7 +181,7 @@ module bp_me_cce_to_cache
               ,e_mem_size_8: cmd_max_count_n = '0;
               e_mem_size_16: cmd_max_count_n = counter_width_lp'(1);
               e_mem_size_32: cmd_max_count_n = counter_width_lp'(3);
-              e_mem_size_64: cmd_max_count_n = counter_width_lp'(7);
+              e_mem_size_64: cmd_max_count_n = (mem_cmd.msg_type == e_cce_mem_wr) | (mem_cmd.msg_type == e_cce_mem_rd)? '0 : counter_width_lp'(7);
               default: cmd_max_count_n = '0;
             endcase
             small_fifo_v_li = 1'b1;
@@ -217,10 +218,8 @@ module bp_me_cce_to_cache
             endcase
           default: cache_pkt.opcode = LB;
         endcase
-        cache_pkt.l2_bypass = (mem_cmd.msg_type == e_cce_mem_wr)
-							? 1'b1
-							: 1'b0;
-		cache_pkt.data = cmd_data[cmd_counter_r];
+        cache_pkt.l2_bypass = (mem_cmd.msg_type == e_cce_mem_wr) ? 1'b1 : 1'b0;
+        cache_pkt.data = cmd_data[cmd_counter_r];
         cache_pkt.addr = cmd_addr + cmd_counter_r*data_mask_width_lp;
         cache_pkt.mask = '1;
         if (ready_i)
@@ -255,8 +254,8 @@ module bp_me_cce_to_cache
   assign mem_resp_v_o = mem_resp_v_lo;
   
   logic [dword_width_p-1:0] resp_data_n;
-  logic [block_size_in_words_lp-1:0][dword_width_p-1:0] resp_data_r;
-  assign mem_resp.data = resp_data_r;
+  logic [block_size_in_words_lp-1:0][dword_width_p-1:0] resp_data_r, block_load_data_r, block_load_data_n;
+  assign mem_resp.data = (mem_resp.msg_type == e_cce_mem_wr) | (mem_resp.msg_type == e_cce_mem_rd) ? block_load_data_r : resp_data_r;
   
 
   // synopsys sync_set_reset "reset_i"
@@ -265,11 +264,13 @@ module bp_me_cce_to_cache
       resp_state_r      <= RESP_RESET;
       resp_counter_r    <= '0;
       resp_max_count_r  <= '0;
+      block_load_data_r <= '0;
     end
     else begin
       resp_state_r      <= resp_state_n;
       resp_counter_r    <= resp_counter_n;
       resp_max_count_r  <= resp_max_count_n;
+      block_load_data_r <= block_load_data_n;
       resp_data_r[resp_counter_r] <= resp_data_n;
     end
   end
@@ -283,6 +284,7 @@ module bp_me_cce_to_cache
     resp_counter_n = resp_counter_r;
     resp_max_count_n = resp_max_count_r;
     resp_data_n = resp_data_r[resp_counter_r];
+    block_load_data_n = block_load_data_r;
 
     case (resp_state_r)
       RESP_RESET: begin
@@ -298,7 +300,7 @@ module bp_me_cce_to_cache
               ,e_mem_size_8: resp_max_count_n = '0;
               e_mem_size_16: resp_max_count_n = counter_width_lp'(1);
               e_mem_size_32: resp_max_count_n = counter_width_lp'(3);
-              e_mem_size_64: resp_max_count_n = counter_width_lp'(7);
+              e_mem_size_64: resp_max_count_n = (mem_resp.msg_type == e_cce_mem_wr) | (mem_resp.msg_type == e_cce_mem_rd)? '0 : counter_width_lp'(7);
               default: resp_max_count_n = '0;
             endcase
             resp_state_n = RESP_RECEIVE;
@@ -313,6 +315,7 @@ module bp_me_cce_to_cache
           begin
             yumi_o = 1'b1;
             resp_data_n = data_i;
+            block_load_data_n = block_load_data_i;
             resp_counter_n = resp_counter_r + 1;
             if (resp_counter_r == resp_max_count_r)
               begin
