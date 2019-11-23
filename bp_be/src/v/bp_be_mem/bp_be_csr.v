@@ -94,7 +94,8 @@ logic [rv64_priv_width_gp-1:0] priv_mode_n, priv_mode_r;
 logic translation_en_n, translation_en_r;
 
 assign priv_mode_o      = priv_mode_r;
-assign translation_en_o = translation_en_r;
+assign translation_en_o = translation_en_r
+                          | (mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_li.mode == 1'b1));
 
 wire is_m_mode = (priv_mode_r == `PRIV_MODE_M);
 wire is_s_mode = (priv_mode_r == `PRIV_MODE_S);
@@ -243,8 +244,7 @@ bsg_dff_reset
 assign cfg_priv_data_o = priv_mode_r;
 
 // We only support SV39 so the mode can either be 0(off) or 1(SV39)
-assign translation_en_n = ((priv_mode_n < `PRIV_MODE_M) & (satp_n.mode == 1'b1))
-                          | (mstatus_n.mprv & (mstatus_n.mpp < `PRIV_MODE_M) & (satp_n.mode == 1'b1));
+assign translation_en_n = ((priv_mode_n < `PRIV_MODE_M) & (satp_li.mode == 1'b1));
 bsg_dff_reset
  #(.width_p(1)
    )
