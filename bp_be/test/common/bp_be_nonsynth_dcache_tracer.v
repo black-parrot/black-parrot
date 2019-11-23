@@ -38,7 +38,7 @@ logic freeze_r;
 always_ff @(posedge clk_i)
   freeze_r <= freeze_i;
 
-initial
+always_ff @(negedge clk_i)
   if (freeze_r & ~freeze_i)
     begin
       file_name = $sformatf("%s_%x.trace", dcache_trace_file_p, mhartid_i);
