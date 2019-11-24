@@ -6,6 +6,7 @@ stages:
   - prereq
   - check
   - test-short
+  - test-medium
   - test-long
  
 #pass:
@@ -165,6 +166,15 @@ top-coremark-vcs:
   script:
     - make -C bp_top/syn clean build.v
     - $CI_PROJECT_DIR/ci/regress.sh "sim.v PROG=coremark" bp_top
+
+top-riscvdv-vcs:
+  <<: *job_definition
+  stage: test-medium
+  tags:
+    - vcs
+  script:
+    - make -C bp_top/syn clean build.v
+    - $CI_PROJECT_DIR/ci/regress.sh regress_dv.v bp_top
 
 top-beebs-vcs:
   <<: *job_definition

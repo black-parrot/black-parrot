@@ -89,7 +89,7 @@ bsg_dff_reset_en
    ,.reset_i(reset_i)
    ,.en_i(fe_queue_yumi_o | dispatch_v_i | poison_iss_i)
 
-   ,.data_i(poison_iss_i | issue_pkt_r.fencei_v)
+   ,.data_i(poison_iss_i | (issue_pkt_v_r & issue_pkt_r.fencei_v))
    ,.data_o(poison_iss_r)
    );
 
