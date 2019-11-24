@@ -119,6 +119,16 @@ always_comb
           issue_pkt.branch_metadata_fwd    = fe_queue_cast_i.msg.fetch.branch_metadata_fwd;
           issue_pkt.instr                  = fe_queue_cast_i.msg.fetch.instr;
 
+          // Pre-decode
+          casez (fetch_instr.opcode)
+            `RV64_LOAD_OP, `RV64_STORE_OP, `RV64_AMO_OP: issue_pkt.mem_v = 1'b1;
+          endcase
+          
+          casez (fetch_instr)
+            `RV64_FENCE   : issue_pkt.fence_v  = 1'b1;
+            `RV64_FENCE_I : issue_pkt.fencei_v = 1'b1;
+          endcase
+          
           // Decide whether to read from integer regfile (saves power)
           casez (fetch_instr.opcode)
             `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP, `RV64_SYSTEM_OP :
@@ -138,12 +148,6 @@ always_comb
           issue_pkt.frs1_v = '0;
           issue_pkt.frs2_v = '0;
 
-          // Pre-decode
-          casez (fetch_instr)
-            `RV64_FENCE   : issue_pkt.fence_v  = 1'b1;
-            `RV64_FENCE_I : issue_pkt.fencei_v = 1'b1;
-          endcase
-          
           // Immediate extraction
           unique casez (fetch_instr.opcode)
             `RV64_LUI_OP, `RV64_AUIPC_OP: 
