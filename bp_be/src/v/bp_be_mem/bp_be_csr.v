@@ -100,7 +100,7 @@ logic translation_en_n, translation_en_r;
 
 assign priv_mode_o      = priv_mode_r;
 assign translation_en_o = translation_en_r
-                          | (mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_li.mode == 1'b1));
+                          | (mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
 
 wire is_debug_mode = debug_mode_r;
 // Debug Mode grants pseudo M-mode permission
@@ -263,8 +263,7 @@ bsg_dff_reset
    );
 assign cfg_priv_data_o = priv_mode_r;
 
-// We only support SV39 so the mode can either be 0(off) or 1(SV39)
-assign translation_en_n = ((priv_mode_n < `PRIV_MODE_M) & (satp_li.mode == 1'b1));
+assign translation_en_n = ((priv_mode_n < `PRIV_MODE_M) & (satp_li.mode == 4'd8));
 bsg_dff_reset
  #(.width_p(1)
    )

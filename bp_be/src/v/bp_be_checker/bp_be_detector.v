@@ -42,8 +42,6 @@ module bp_be_detector
    , input                             debug_mode_i
    , input                             single_step_i
 
-   , input                             flush_i
-
    // Pipeline control signals from the checker to the calculator
    , output                            chk_dispatch_v_o
   );

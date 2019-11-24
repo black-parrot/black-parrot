@@ -89,7 +89,7 @@ bsg_dff_reset_en
    ,.reset_i(reset_i)
    ,.en_i(fe_queue_yumi_o | dispatch_v_i | poison_iss_i)
 
-   ,.data_i(poison_iss_i)
+   ,.data_i(poison_iss_i | issue_pkt_r.fencei_v)
    ,.data_o(poison_iss_r)
    );
 
@@ -139,7 +139,10 @@ always_comb
           issue_pkt.frs2_v = '0;
 
           // Pre-decode
-          issue_pkt.fence_v = (fetch_instr.opcode == `RV64_MISC_MEM_OP);
+          casez (fetch_instr)
+            `RV64_FENCE   : issue_pkt.fence_v  = 1'b1;
+            `RV64_FENCE_I : issue_pkt.fencei_v = 1'b1;
+          endcase
           
           // Immediate extraction
           unique casez (fetch_instr.opcode)
@@ -236,6 +239,7 @@ always_comb
     isd_status.isd_irq_v    = accept_irq_i;
     isd_status.isd_debug_v  = enter_debug_li | exit_debug_li;
     isd_status.isd_fence_v  = issue_pkt_v_r & issue_pkt_r.fence_v;
+    isd_status.isd_fencei_v = issue_pkt_v_r & issue_pkt_r.fencei_v;
     isd_status.isd_mem_v    = issue_pkt_v_r & issue_pkt_r.mem_v;
     isd_status.isd_irs1_v   = issue_pkt_v_r & issue_pkt_r.irs1_v;
     isd_status.isd_frs1_v   = issue_pkt_v_r & issue_pkt_r.frs1_v;
@@ -246,7 +250,9 @@ always_comb
 
     // Form dispatch packet
     dispatch_pkt.v      = (issue_pkt_v_r | enter_debug_li | exit_debug_li | accept_irq_i) & dispatch_v_i;
-    dispatch_pkt.poison = ~enter_debug_li & ~exit_debug_li & ~accept_irq_i & (poison_iss_r | npc_mismatch);
+    dispatch_pkt.poison = ~(enter_debug_li | exit_debug_li) 
+                          & (poison_iss_r | npc_mismatch) 
+                          & ~(accept_irq_i & dispatch_v_i);
     dispatch_pkt.pc     = expected_npc_i;
     dispatch_pkt.instr  = issue_pkt_r.instr;
     dispatch_pkt.rs1    = irf_rs1; // TODO: Add float forwarding
