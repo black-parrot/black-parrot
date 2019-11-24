@@ -297,7 +297,7 @@ bp_be_dispatch_pkt_s reservation_n, reservation_r;
 always_comb
   begin
     reservation_n        = dispatch_pkt_i;
-    reservation_n.decode = dispatch_pkt.v ? dispatch_pkt.decode : '0;
+    reservation_n.decode = (~flush_i & dispatch_pkt.v) ? dispatch_pkt.decode : '0;
     reservation_n.rs1    = bypass_rs1;
     reservation_n.rs2    = bypass_rs2;
   end

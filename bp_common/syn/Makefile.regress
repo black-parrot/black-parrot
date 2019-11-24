@@ -342,6 +342,18 @@ MC_TESTS = \
   mc_sanity_8 \
   mc_sanity_16
 
+RVDV_TESTS = \
+  riscv_arithmetic_basic_test     \
+  riscv_full_interrupt_test       \
+  riscv_illegal_instr_test        \
+  riscv_loop_test                 \
+  riscv_mmu_stress_test           \
+  riscv_no_fence_test             \
+  riscv_privileged_mode_rand_test \
+  riscv_rand_instr_test           \
+  riscv_rand_jump_test            \
+  riscv_sfence_exception_test
+
 
 RV64_REGRESSION   := $(RV64_P_ISA_TESTS) $(RV64_PT_ISA_TESTS) $(RV64_V_ISA_TESTS) $(RV64_VT_ISA_TESTS) $(RV64_BENCHMARKS)
 RV64_REGRESSION_V  = $(addsuffix .v, $(RV64_REGRESSION))
@@ -352,3 +364,5 @@ BEEBS_REGRESSION_V = $(addsuffix .v, $(BEEBS_TESTS))
 BEEBS_REGRESSION_SC = $(addsuffix .sc, $(BEEBS_TESTS))
 MC_REGRESSION_V = $(addsuffix .v, $(MC_TESTS))
 MC_REGRESSION_SC = $(addsuffix .sc, $(MC_TESTS))
+DV_REGRESSION_V = $(addsuffix .v, $(RVDV_TESTS))
+DV_REGRESSION_SC = $(addsuffix .sc, $(RVDV_TESTS))

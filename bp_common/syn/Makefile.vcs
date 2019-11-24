@@ -128,9 +128,12 @@ $(COREMARK_REGRESSION_V):
 regress_beebs.v: $(BEEBS_REGRESSION_V)
 $(BEEBS_REGRESSION_V):
 	$(MAKE) sim.v PROG=$(basename $@)
-
+regress_mc.v: $(MC_REGRESSION_V)
 $(MC_REGRESSION_V):
 	$(MAKE) sim.v CFG=$(CFG) PROG=$(basename $@)
+regress_dv.v: $(DV_REGRESSION_V)
+$(DV_REGRESSION_V):
+	$(MAKE) sim.v PROG=$(basename $@)
 
 cov.v: COV_LOG     ?= $(LOG_DIR)/$(TB).$(CFG).cov.log
 cov.v: COV_REPORT  ?= $(REPORT_DIR)/$(TB).$(CFG).cov
