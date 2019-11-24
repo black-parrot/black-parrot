@@ -41,7 +41,7 @@ module bp_fe_icache
     , input [ptag_width_p-1:0]                         ptag_i
     , input                                            ptag_v_i
     , input                                            uncached_i
-    , input                                            poison_tl_i
+    , input                                            poison_i
     
     , output [instr_width_p-1:0]                       data_o
     , output                                           data_v_o
@@ -89,7 +89,7 @@ module bp_fe_icache
   logic [bp_page_offset_width_gp-1:0] page_offset_tl_r;
   logic [vaddr_width_p-1:0]           vaddr_tl_r;
 
-  assign tl_we = vaddr_v_i; 
+  assign tl_we = vaddr_v_i;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -172,7 +172,7 @@ module bp_fe_icache
   logic [index_width_lp-1:0]                    addr_index_tv;
   logic [word_offset_width_lp-1:0]              addr_word_offset_tv;
 
-  assign tv_we = v_tl_r & ~poison_tl_i & ptag_v_i;
+  assign tv_we = v_tl_r & ~poison_i & ptag_v_i;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -504,6 +504,8 @@ module bp_fe_icache
         uncached_load_data_r <= lce_data_mem_pkt.data[0+:dword_width_p];
         uncached_load_data_v_r <= 1'b1;
       end
+      else if (poison_i)
+          uncached_load_data_v_r <= 1'b0;
       else begin
         // once the uncached load is replayed, and v_o goes high, clear the valid bit
         if (data_v_o) begin

@@ -20,7 +20,7 @@ module bp_fe_top
   (input                                              clk_i
    , input                                            reset_i
 
-   , input [cfg_bus_width_lp-1:0]                    cfg_bus_i
+   , input [cfg_bus_width_lp-1:0]                     cfg_bus_i
 
    , input [fe_cmd_width_lp-1:0]                      fe_cmd_i
    , input                                            fe_cmd_v_i
