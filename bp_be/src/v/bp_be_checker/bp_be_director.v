@@ -265,12 +265,11 @@ always_comb
       begin
         flush_o = 1'b1;
       end
-    // TODO: Needs to happen at mem3, not mem1.  Currently, we flush which is okay
-    //         because we also drain the pipeline
+    // TODO: Needs to happen at mem3, not mem1.
     else if (calc_status.mem1_fencei_v)
       begin
         fe_cmd.opcode = e_op_icache_fence;
-        fe_cmd.vaddr  = expected_npc_o;
+        fe_cmd.vaddr  = npc_n;
 
         fe_cmd_v = fe_cmd_ready_i;
 
