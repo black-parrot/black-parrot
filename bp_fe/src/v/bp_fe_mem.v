@@ -118,7 +118,7 @@ bp_fe_icache
    ,.uncached_i(uncached_li)
    ,.ptag_i(ptag_li)
    ,.ptag_v_i(ptag_v_li)
-   ,.poison_tl_i(mem_poison_i)
+   ,.poison_i(mem_poison_i)
 
    ,.data_o(icache_data_lo)
    ,.data_v_o(icache_data_v_lo)
@@ -157,9 +157,9 @@ always_ff @(posedge clk_i)
       instr_page_fault_r   <= '0;
     end
     else begin
-      itlb_miss_r <= itlb_miss_lo;
       fetch_v_r   <= fetch_v;
       fetch_v_rr  <= fetch_v_r & ~mem_poison_i;
+      itlb_miss_r <= itlb_miss_lo & ~mem_poison_i;
 
       instr_access_fault_r <= instr_access_fault_v & ~mem_poison_i;
       instr_page_fault_r   <= instr_access_err_v & ~mem_poison_i;
@@ -174,11 +174,13 @@ wire is_uncached_mode = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached);
 assign instr_access_fault_v = is_uncached_mode & ~uncached_li;
 assign instr_access_err_v  = fetch_v_r & itlb_r_v_lo & mem_translation_en_i & (instr_priv_access_fault | instr_exe_access_fault);
 
-assign mem_resp_v_o    = mem_resp_ready_i & fetch_v_rr;
+wire unused = &{mem_resp_ready_i};
+
+assign mem_resp_v_o    = fetch_v_rr;
 assign mem_resp_cast_o = '{instr_access_fault: instr_access_fault_r
                            ,instr_page_fault : instr_page_fault_r
                            ,itlb_miss        : itlb_miss_r
-                           ,icache_miss      : icache_miss_lo
+                           ,icache_miss      : fetch_v_rr & ~icache_data_v_lo
                            ,data             : icache_data_lo
                            };
 
