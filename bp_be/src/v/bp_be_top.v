@@ -103,7 +103,7 @@ logic chk_dispatch_v;
 logic [vaddr_width_p-1:0] chk_tvec_li;
 logic [vaddr_width_p-1:0] chk_epc_li;
 
-logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li, chk_ifence_li;
+logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li;
 
 logic credits_full_lo, credits_empty_lo;
 logic debug_mode_lo;

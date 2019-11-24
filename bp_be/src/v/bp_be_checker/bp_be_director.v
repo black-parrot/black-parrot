@@ -265,16 +265,6 @@ always_comb
       begin
         flush_o = 1'b1;
       end
-    // TODO: Needs to happen at mem3, not mem1.
-    else if (calc_status.mem1_fencei_v)
-      begin
-        fe_cmd.opcode = e_op_icache_fence;
-        fe_cmd.vaddr  = npc_n;
-
-        fe_cmd_v = fe_cmd_ready_i;
-
-        flush_o = 1'b1;
-      end
     else if (isd_status.isd_v & npc_mismatch_v)
       begin
         fe_cmd_pc_redirect_operands = '0;
@@ -291,6 +281,16 @@ always_comb
 
         fe_cmd_v = fe_cmd_ready_i;
       end 
+    // TODO: This priority will clobber some attaboys, will get fixed by moving to mem3
+    else if (isd_status.isd_v & isd_status.isd_fencei_v)
+      begin
+        fe_cmd.opcode = e_op_icache_fence;
+        // TODO: Can we get rid of this addition? Probably, by moving it to mem3 and using
+        //         commit_pkt.npc
+        fe_cmd.vaddr  = isd_status.isd_pc + vaddr_width_p'(4);
+
+        fe_cmd_v = fe_cmd_ready_i;
+      end
     // Send an attaboy if there's a correct prediction
     else if (isd_status.isd_v & ~npc_mismatch_v & attaboy_pending) 
       begin

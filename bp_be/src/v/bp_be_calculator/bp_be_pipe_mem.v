@@ -133,7 +133,7 @@ logic [reg_data_width_lp-1:0] offset;
 
 assign offset = decode.offset_sel ? '0 : imm_i[0+:vaddr_width_p];
 
-assign mem1_cmd_v = decode.mem_v & ~kill_ex1_i;
+assign mem1_cmd_v = (decode.dcache_r_v | decode.dcache_w_v) & ~kill_ex1_i;
 
 wire fe_exc_v = (decode.fu_op == e_op_instr_misaligned)
                 | (decode.fu_op == e_op_instr_access_fault)

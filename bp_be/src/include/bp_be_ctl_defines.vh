@@ -56,13 +56,13 @@ typedef enum bit [4:0]
   ,e_csrrci = 5'b00110
 
   // TODO: Separate out CSR op from exceptions based on flag
-  ,e_ecall  = 5'b00111
-  ,e_dret   = 5'b10011
-  ,e_mret   = 5'b01000
-  ,e_sret   = 5'b01001
-  ,e_ebreak = 5'b01010
+  ,e_ecall      = 5'b00111
+  ,e_dret       = 5'b10011
+  ,e_mret       = 5'b01000
+  ,e_sret       = 5'b01001
+  ,e_ebreak     = 5'b01010
   ,e_sfence_vma = 5'b01011
-  ,e_wfi    = 5'b01100
+  ,e_wfi        = 5'b01100
 
   // We treat FE exceptions as CSR ops
   ,e_op_take_interrupt     = 5'b11000
@@ -136,7 +136,6 @@ typedef struct packed
   logic                             csr_r_v;
   logic                             csr_v;
   logic                             serial_v;
-  logic                             fencei_v;
   logic                             fp_not_int_v;
   logic                             jmp_v;
   logic                             br_v;

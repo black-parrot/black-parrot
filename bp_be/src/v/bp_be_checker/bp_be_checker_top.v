@@ -146,8 +146,6 @@ bp_be_detector
    ,.debug_mode_i(debug_mode_i)
    ,.single_step_i(single_step_i)
 
-   ,.flush_i(flush_o)
-
    ,.chk_dispatch_v_o(chk_dispatch_v_o)
    );
 

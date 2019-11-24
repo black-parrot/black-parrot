@@ -71,9 +71,6 @@ always_comb
     decode.csr_v         = '0;
     decode.serial_v      = '0;
 
-    // Fence signals
-    decode.fencei_v      = '0;
-
     // Decode metadata
     decode.fp_not_int_v  = '0;
     decode.jmp_v         = '0;
@@ -222,7 +219,7 @@ always_comb
           decode.pipe_comp_v = 1'b1;
           unique casez (instr)
             `RV64_FENCE   : begin end
-            `RV64_FENCE_I : decode.fencei_v = 1'b1;
+            `RV64_FENCE_I : begin end
             default : illegal_instr = 1'b1;
           endcase
         end

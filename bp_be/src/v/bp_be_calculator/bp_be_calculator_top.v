@@ -377,7 +377,6 @@ always_comb
     calc_status.ex1_npc                  = br_tgt_int1;
     calc_status.ex1_br_or_jmp            = reservation_r.decode.br_v | reservation_r.decode.jmp_v;
     calc_status.ex1_instr_v              = reservation_r.decode.instr_v & ~exc_stage_r[0].poison_v;
-    calc_status.mem1_fencei_v            = reservation_r.decode.fencei_v;
 
     // Dependency information for pipelines
     for (integer i = 0; i < pipe_stage_els_lp; i++) 
