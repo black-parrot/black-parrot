@@ -356,7 +356,7 @@ module bp_fe_icache
     ,.els_p(2)
   ) final_data_mux (
     .data_i({uncached_load_data_r, ld_data_way_picked})
-    ,.sel_i(uncached_load_data_v_r)
+    ,.sel_i(uncached_tv_r)
     ,.data_o(final_data)
   );
 

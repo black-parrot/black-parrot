@@ -297,6 +297,7 @@ always_comb
         fe_cmd.opcode                      = e_op_attaboy;
         fe_cmd.vaddr                       = expected_npc_o;
         fe_cmd.operands.attaboy.branch_metadata_fwd = isd_status.isd_branch_metadata_fwd;
+
         fe_cmd_v = fe_cmd_ready_i;
       end
   end

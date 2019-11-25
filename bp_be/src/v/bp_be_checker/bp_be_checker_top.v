@@ -98,7 +98,6 @@ assign calc_status_cast_i = calc_status_i;
 // Intermediate connections
 bp_be_isd_status_s isd_status;
 logic [vaddr_width_p-1:0] expected_npc_lo;
-logic flush;
 
 // Datapath
 bp_be_director 
