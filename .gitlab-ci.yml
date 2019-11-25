@@ -58,6 +58,7 @@ update-cache:
     - make tools -j $CI_CORES > make_tools.log
     - make tidy_tools > make_tidy_tools.log
     - make progs > make_progs.log
+    - make -C bp_common/test riscvdv > make_riscvdv.log
   cache:
     key: $CI_COMMIT_REF_SLUG
     paths:

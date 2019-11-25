@@ -14,6 +14,8 @@ RISCV_OBJCOPY  = riscv64-unknown-elf-objcopy -O verilog
 RISCV_OBJCOPY_BIN = riscv64-unknown-elf-objcopy -O binary
 MKLFS = $(TEST_DIR)/bin/bsg_newlib_mklfs
 
+PATH := $(BP_EXTERNAL_DIR)/bin:$(PATH)
+
 NC ?= 1
 
 export TEST_DIR
@@ -22,12 +24,13 @@ include $(TEST_DIR)/Makefile.frag
 
 all: all_mem all_dump all_spike
 
+# We don't include riscvdv here because it requires VCS
 all_mem: perch
-all_mem: riscv_mem coremark_mem beebs_mem littlefs_test_mem demos_mem riscvdv_mem zero_mem
+all_mem: riscv_mem coremark_mem beebs_mem littlefs_test_mem demos_mem zero_mem
 
-all_dump: riscv_dump coremark_dump beebs_dump littlefs_test_dump demos_dump riscvdv_dump
+all_dump: riscv_dump coremark_dump beebs_dump littlefs_test_dump demos_dump
 
-all_spike: riscv_spike coremark_spike beebs_spike littlefs_test_spike riscvdv_spike
+all_spike: riscv_spike coremark_spike beebs_spike littlefs_test_spike 
 
 zero: zero_mem
 riscv: riscv_mem riscv_dump riscv_spike

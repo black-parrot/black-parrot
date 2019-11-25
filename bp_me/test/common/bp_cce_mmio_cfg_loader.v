@@ -351,7 +351,7 @@ module bp_cce_mmio_cfg_loader
           cfg_data_lo = 1'b1;
         end
         BP_FREEZE_CLR: begin
-          state_n = DONE;
+          state_n = core_prog_done ? DONE : BP_FREEZE_CLR;
           //state_n = core_prog_done ? BP_NINSTR_RD : BP_FREEZE_CLR;
           //state_n = core_prog_done ? BP_EXIT_DEBUG : BP_FREEZE_CLR;
 
