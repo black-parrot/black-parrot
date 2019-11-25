@@ -83,7 +83,7 @@ bsg_dff_reset
 
 assign mem_cmd_yumi_o = mem_cmd_v_i & mem_resp_v_o;
 
-wire                        cfg_v_li    = mem_cmd_v_i;
+wire                        cfg_v_li    = mem_cmd_yumi_o;
 wire                        cfg_w_v_li  = cfg_v_li & (mem_cmd_cast_i.msg_type.cce_mem_cmd == e_cce_mem_uc_wr);
 wire                        cfg_r_v_li  = cfg_v_li & (mem_cmd_cast_i.msg_type.cce_mem_cmd == e_cce_mem_uc_rd);
 wire [cfg_addr_width_p-1:0] cfg_addr_li = mem_cmd_cast_i.addr[0+:cfg_addr_width_p];
@@ -134,6 +134,12 @@ wire npc_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_npc_gp);
 wire npc_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_npc_gp);
 wire [vaddr_width_p-1:0] npc_li = cfg_data_li;
 
+wire ninstr_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_ninstr_gp);
+wire [instr_width_p-1:0] ninstr_li = cfg_data_li;
+logic dispatch_r;
+always_ff @(posedge clk_i)
+  dispatch_r <= ninstr_w_v_li;
+
 wire irf_w_v_li = cfg_w_v_li & (cfg_addr_li >= bp_cfg_reg_irf_x0_gp && cfg_addr_li <= bp_cfg_reg_irf_x31_gp);
 wire irf_r_v_li = cfg_r_v_li & (cfg_addr_li >= bp_cfg_reg_irf_x0_gp && cfg_addr_li <= bp_cfg_reg_irf_x31_gp);
 // TODO: we could get rid of this subtraction with intellignent address map
@@ -163,6 +169,9 @@ assign cfg_bus_cast_o = '{freeze: freeze_r
                            ,npc_w_v: npc_w_v_li
                            ,npc_r_v: npc_r_v_li
                            ,npc: npc_li
+                           ,ninstr_w_v: ninstr_w_v_li
+                           ,ninstr: ninstr_li
+                           ,dispatch: dispatch_r
                            ,dcache_id: dcache_id_r
                            ,dcache_mode: dcache_mode_r
                            ,cce_id: cce_id_r

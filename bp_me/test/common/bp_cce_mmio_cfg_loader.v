@@ -65,7 +65,7 @@ module bp_cce_mmio_cfg_loader
   assign cce_inst_boot_rom_addr = cfg_addr_lo;
   assign cce_inst_boot_rom_data = cce_inst_boot_rom[cce_inst_boot_rom_addr];
 
-  enum logic [4:0] {
+  enum logic [5:0] {
     RESET
     ,BP_RESET_SET
     ,BP_FREEZE_SET
@@ -83,8 +83,10 @@ module bp_cce_mmio_cfg_loader
     ,SEND_IRF
     ,RECV_IRF
     ,BP_ENTER_DEBUG
-    ,BP_EXIT_DEBUG
     ,BP_FREEZE_CLR
+    ,BP_NINSTR_RD
+    ,BP_NINSTR_LD
+    ,BP_EXIT_DEBUG
     ,DONE
   } state_n, state_r;
 
@@ -312,7 +314,7 @@ module bp_cce_mmio_cfg_loader
           cfg_data_lo = cfg_data_width_p'(e_lce_mode_normal);
         end
         SEND_PC: begin
-          state_n = core_prog_done ? SEND_IRF : SEND_PC;
+          state_n = core_prog_done ? BP_FREEZE_CLR : SEND_PC;
 
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
@@ -332,7 +334,7 @@ module bp_cce_mmio_cfg_loader
           cfg_data_lo = cfg_data_width_p'(irf_cnt_r);
         end
         RECV_IRF: begin
-          state_n = irf_done ? BP_FREEZE_CLR : RECV_IRF;
+          state_n = irf_done ? BP_ENTER_DEBUG : RECV_IRF;
 
           irf_cnt_inc = ~irf_done;
           irf_cnt_clr = irf_done;
@@ -342,21 +344,16 @@ module bp_cce_mmio_cfg_loader
           cfg_data_lo = '0;
         end
         BP_ENTER_DEBUG: begin
-          state_n = BP_EXIT_DEBUG;
+          state_n = BP_FREEZE_CLR;
 
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_enter_debug_gp);
           cfg_data_lo = 1'b1;
         end
-        BP_EXIT_DEBUG: begin
-          state_n = BP_FREEZE_CLR;
-
-          cfg_w_v_lo = 1'b1;
-          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_exit_debug_gp);
-          cfg_data_lo = 1'b1;
-        end
         BP_FREEZE_CLR: begin
-          state_n = core_prog_done ? DONE : BP_FREEZE_CLR;
+          state_n = DONE;
+          //state_n = core_prog_done ? BP_NINSTR_RD : BP_FREEZE_CLR;
+          //state_n = core_prog_done ? BP_EXIT_DEBUG : BP_FREEZE_CLR;
 
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
@@ -364,6 +361,20 @@ module bp_cce_mmio_cfg_loader
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_freeze_gp);
           cfg_data_lo = cfg_data_width_p'(0);
+        end
+        BP_NINSTR_RD: begin
+          state_n = BP_EXIT_DEBUG;
+
+          cfg_w_v_lo = 1'b1;
+          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_ninstr_gp);
+          cfg_data_lo = 32'h00100093;
+        end
+        BP_EXIT_DEBUG: begin
+          state_n = DONE;
+
+          cfg_w_v_lo = 1'b1;
+          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_exit_debug_gp);
+          cfg_data_lo = 1'b1;
         end
         DONE: begin
           state_n = DONE;

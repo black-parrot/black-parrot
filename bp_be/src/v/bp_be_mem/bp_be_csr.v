@@ -366,7 +366,34 @@ always_comb
     ebreak_o              = '0;
 
     if (csr_cmd_v_i)
-      if (csr_cmd.csr_op == e_sfence_vma)
+      if (~is_debug_mode & (csr_cmd.csr_op == e_ebreak))
+        begin
+          ebreak_o = (is_m_mode & ~dcsr_lo.ebreakm) 
+                     | (is_s_mode & ~dcsr_lo.ebreaks) 
+                     | (is_u_mode & ~dcsr_lo.ebreaku);
+
+          if (~ebreak_o)
+            begin
+              debug_mode_n   = 1'b1;
+              dpc_li         = paddr_width_p'($signed(exception_pc_i));
+              dcsr_li.cause  = 1; // Ebreak
+              dcsr_li.prv    = priv_mode_r;
+            end
+        end
+      else if (~is_debug_mode & (csr_cmd.csr_op == e_op_enter_debug))
+        begin
+          debug_mode_n  = 1'b1;
+          dpc_li        = paddr_width_p'($signed(exception_pc_i));
+          dcsr_li.cause = 3; // Requested halt
+          dcsr_li.prv   = priv_mode_r;
+        end
+      else if (is_debug_mode & (csr_cmd.csr_op == e_op_exit_debug))
+        begin
+          debug_mode_n  = 1'b0;
+          priv_mode_n   = dcsr_lo.prv;
+          ret_v_o       = 1'b1;
+        end
+      else if (csr_cmd.csr_op == e_sfence_vma)
         begin
           if (is_s_mode & mstatus_lo.tvm)
               illegal_instr_o = 1'b1;
@@ -645,39 +672,12 @@ always_comb
           ret_v_o              = 1'b0;
         end
 
-      if (~is_debug_mode & csr_cmd_v_i & (csr_cmd.csr_op == e_ebreak))
-        begin
-          ebreak_o = (is_m_mode & ~dcsr_lo.ebreakm) 
-                     | (is_s_mode & ~dcsr_lo.ebreaks) 
-                     | (is_u_mode & ~dcsr_lo.ebreaku);
-
-          if (~ebreak_o)
-            begin
-              debug_mode_n   = 1'b1;
-              dpc_li         = paddr_width_p'($signed(exception_pc_i));
-              dcsr_li.cause  = 1; // Ebreak
-              dcsr_li.prv    = priv_mode_r;
-            end
-        end
-      else if (~is_debug_mode & csr_cmd_v_i & (csr_cmd.csr_op == e_op_enter_debug))
-        begin
-          debug_mode_n  = 1'b1;
-          dpc_li        = paddr_width_p'($signed(exception_pc_i));
-          dcsr_li.cause = 3; // Requested halt
-          dcsr_li.prv   = priv_mode_r;
-        end
-      else if (~is_debug_mode & exception_v_i & dcsr_lo.step)
+      if (~is_debug_mode & exception_v_i & dcsr_lo.step)
         begin
           debug_mode_n = 1'b1;
           dpc_li        = paddr_width_p'($signed(exception_npc_i));
           dcsr_li.cause = 4;
           dcsr_li.prv   = priv_mode_r;
-        end
-      else if (is_debug_mode & csr_cmd_v_i & (csr_cmd.csr_op == e_op_exit_debug))
-        begin
-          debug_mode_n  = 1'b0;
-          priv_mode_n   = dcsr_lo.prv;
-          ret_v_o       = 1'b1;
         end
   end
 
