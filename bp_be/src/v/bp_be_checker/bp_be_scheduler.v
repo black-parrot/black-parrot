@@ -84,7 +84,7 @@ assign wb_pkt          = wb_pkt_i;
 wire issue_v = fe_queue_yumi_o | cfg_bus_cast_i.ninstr_w_v;
 
 logic issue_pkt_v_r, poison_iss_r;
-wire npc_mismatch = issue_pkt_v_r & ~accept_irq_i & (expected_npc_i != issue_pkt_r.pc);
+wire npc_mismatch = isd_status.isd_v & (expected_npc_i != issue_pkt_r.pc);
 wire dispatch_fencei = dispatch_pkt.v & ~dispatch_pkt.poison & issue_pkt_r.fencei_v;
 bsg_dff_reset_en
  #(.width_p(1))
@@ -243,7 +243,7 @@ bp_be_dispatch_pkt_s dispatch_pkt;
 always_comb
   begin
     // Calculator status ISD stage
-    isd_status.isd_v        = issue_pkt_v_r
+    isd_status.isd_v        = (issue_pkt_v_r & dispatch_v_i)
                               & ~(poison_iss_r | poison_iss_i)
                               & ~(accept_irq_i & dispatch_v_i)
                               & ~(enter_debug_li | exit_debug_li);

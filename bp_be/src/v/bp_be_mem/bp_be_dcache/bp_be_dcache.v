@@ -755,7 +755,7 @@ module bp_be_dcache
     ,.els_p(2)
   ) final_data_mux (
     .data_i({uncached_load_data_r, bypass_data_masked})
-    ,.sel_i(uncached_load_data_v_r)
+    ,.sel_i(uncached_tv_r)
     ,.data_o(final_data)
   );
 
