@@ -91,9 +91,9 @@ bsg_dff_reset_en
  issue_status_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(issue_v | dispatch_v_i | poison_iss_i)
+   ,.en_i(issue_v | dispatch_v_i | poison_iss_i | npc_mismatch)
 
-   ,.data_i(poison_iss_i | dispatch_fencei)
+   ,.data_i(poison_iss_i | npc_mismatch | dispatch_fencei)
    ,.data_o(poison_iss_r)
    );
 
