@@ -165,6 +165,7 @@ bp_be_scheduler
    ,.dispatch_v_i(chk_dispatch_v_o)
    ,.cache_miss_v_i(commit_pkt.cache_miss | commit_pkt.tlb_miss)
    ,.cmt_v_i(commit_pkt.queue_v)
+   ,.debug_mode_i(debug_mode_i)
 
    ,.fe_queue_roll_o(fe_queue_roll_o)
    ,.fe_queue_deq_o(fe_queue_deq_o)

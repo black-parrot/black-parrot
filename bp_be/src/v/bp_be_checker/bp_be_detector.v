@@ -156,7 +156,7 @@ always_comb
   end
 
 // Generate calculator control signals
-assign chk_dispatch_v_o = ~(control_haz_v | data_haz_v | struct_haz_v);
+assign chk_dispatch_v_o = cfg_bus_cast_i.dispatch || ~(control_haz_v | data_haz_v | struct_haz_v);
 
 endmodule
 

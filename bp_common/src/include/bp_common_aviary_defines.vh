@@ -40,6 +40,9 @@ typedef enum bit
     logic                                    npc_w_v;                                              \
     logic                                    npc_r_v;                                              \
     logic [vaddr_width_mp-1:0]               npc;                                                  \
+    logic                                    ninstr_w_v;                                           \
+    logic [instr_width_p-1:0]                ninstr;                                               \
+    logic                                    dispatch;                                             \
     logic [`BSG_SAFE_CLOG2(num_lce_mp)-1:0]  dcache_id;                                            \
     bp_lce_mode_e                            dcache_mode;                                          \
     logic [`BSG_SAFE_CLOG2(num_cce_mp)-1:0]  cce_id;                                               \
@@ -66,7 +69,9 @@ typedef enum bit
    + `BSG_SAFE_CLOG2(num_core_mp)   \
    + `BSG_SAFE_CLOG2(num_lce_mp)    \
    + $bits(bp_lce_mode_e)           \
-   + 2                              \
+   + 3                              \
+   + instr_width_p                  \
+   + 1                              \
    + vaddr_width_mp                 \
    + `BSG_SAFE_CLOG2(num_lce_mp)    \
    + $bits(bp_lce_mode_e)           \
