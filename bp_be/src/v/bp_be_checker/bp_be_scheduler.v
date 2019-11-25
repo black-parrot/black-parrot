@@ -2,7 +2,7 @@
  *
  * Name:
  *   bp_be_scheduler.v
- * 
+ *
  * Description:
  *   Schedules instruction issue from the FE queue to the Calculator.
  *
@@ -32,7 +32,7 @@ module bp_be_scheduler
   (input                               clk_i
    , input                             reset_i
 
-  // Slow inputs   
+  // Slow inputs
   , input [cfg_bus_width_lp-1:0]       cfg_bus_i
   , output [dword_width_p-1:0]         cfg_irf_data_o
 
@@ -68,7 +68,7 @@ wire unused = &{clk_i, reset_i};
 bp_cfg_bus_s cfg_bus_cast_i;
 assign cfg_bus_cast_i = cfg_bus_i;
 
-// Cast input and output ports 
+// Cast input and output ports
 bp_be_isd_status_s  isd_status;
 bp_fe_queue_s     fe_queue_cast_i;
 bp_be_issue_pkt_s issue_pkt;
@@ -82,14 +82,15 @@ assign wb_pkt = wb_pkt_i;
 
 logic issue_pkt_v_r, poison_iss_r;
 wire npc_mismatch = issue_pkt_v_r & ~accept_irq_i & (expected_npc_i != issue_pkt_r.pc);
+wire dispatch_fencei = dispatch_pkt.v & ~dispatch_pkt.poison & issue_pkt_r.fencei_v;
 bsg_dff_reset_en
  #(.width_p(1))
  issue_status_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(fe_queue_yumi_o | dispatch_v_i | poison_iss_i | npc_mismatch)
+   ,.en_i(fe_queue_yumi_o | dispatch_v_i | poison_iss_i)
 
-   ,.data_i(poison_iss_i | npc_mismatch | (issue_pkt_v_r & issue_pkt_r.fencei_v))
+   ,.data_i(poison_iss_i | dispatch_fencei)
    ,.data_o(poison_iss_r)
    );
 
@@ -100,7 +101,7 @@ bsg_dff_reset_en
   (.clk_i(clk_i)
    ,.reset_i(reset_i | cache_miss_v_i)
    ,.en_i(fe_queue_yumi_o | dispatch_v_i)
-   
+
    ,.data_i({fe_queue_yumi_o, issue_pkt})
    ,.data_o({issue_pkt_v_r, issue_pkt_r})
    );
@@ -109,7 +110,7 @@ always_comb
   begin
     case (fe_queue_cast_i.msg_type)
       // Populate the issue packet with a valid pc/instruction pair.
-      e_fe_fetch: 
+      e_fe_fetch:
         begin
           issue_pkt = '0;
 
@@ -123,23 +124,23 @@ always_comb
           casez (fetch_instr.opcode)
             `RV64_LOAD_OP, `RV64_STORE_OP, `RV64_AMO_OP: issue_pkt.mem_v = 1'b1;
           endcase
-          
+
           casez (fetch_instr)
             `RV64_FENCE   : issue_pkt.fence_v  = 1'b1;
             `RV64_FENCE_I : issue_pkt.fencei_v = 1'b1;
           endcase
-          
+
           // Decide whether to read from integer regfile (saves power)
           casez (fetch_instr.opcode)
             `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP, `RV64_SYSTEM_OP :
-              begin 
-                issue_pkt.irs1_v = '1; 
+              begin
+                issue_pkt.irs1_v = '1;
                 issue_pkt.irs2_v = '0;
               end
-            `RV64_BRANCH_OP, `RV64_STORE_OP, `RV64_OP_OP, `RV64_OP_32_OP, `RV64_AMO_OP: 
-              begin 
-                issue_pkt.irs1_v = '1; 
-                issue_pkt.irs2_v = '1; 
+            `RV64_BRANCH_OP, `RV64_STORE_OP, `RV64_OP_OP, `RV64_OP_32_OP, `RV64_AMO_OP:
+              begin
+                issue_pkt.irs1_v = '1;
+                issue_pkt.irs2_v = '1;
               end
             default: begin end
           endcase
@@ -150,15 +151,15 @@ always_comb
 
           // Immediate extraction
           unique casez (fetch_instr.opcode)
-            `RV64_LUI_OP, `RV64_AUIPC_OP: 
+            `RV64_LUI_OP, `RV64_AUIPC_OP:
               issue_pkt.imm = `rv64_signext_u_imm(fetch_instr);
-            `RV64_JAL_OP: 
+            `RV64_JAL_OP:
               issue_pkt.imm = `rv64_signext_j_imm(fetch_instr);
-            `RV64_BRANCH_OP: 
+            `RV64_BRANCH_OP:
               issue_pkt.imm = `rv64_signext_b_imm(fetch_instr);
-            `RV64_STORE_OP: 
+            `RV64_STORE_OP:
               issue_pkt.imm = `rv64_signext_s_imm(fetch_instr);
-            `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP: 
+            `RV64_JALR_OP, `RV64_LOAD_OP, `RV64_OP_IMM_OP, `RV64_OP_IMM_32_OP:
               issue_pkt.imm = `rv64_signext_i_imm(fetch_instr);
             `RV64_SYSTEM_OP:
               issue_pkt.imm = `rv64_signext_c_imm(fetch_instr);
@@ -166,8 +167,8 @@ always_comb
           endcase
         end
 
-      // FE exceptions only have an exception address, code and flag. 
-      e_fe_exception: 
+      // FE exceptions only have an exception address, code and flag.
+      e_fe_exception:
         begin
           issue_pkt = '0;
 
@@ -234,9 +235,9 @@ bp_be_dispatch_pkt_s dispatch_pkt;
 always_comb
   begin
     // Calculator status ISD stage
-    isd_status.isd_v        = issue_pkt_v_r 
+    isd_status.isd_v        = issue_pkt_v_r
                               & ~(poison_iss_r | poison_iss_i)
-                              & ~accept_irq_i 
+                              & ~(accept_irq_i & dispatch_v_i)
                               & ~(enter_debug_li | exit_debug_li);
     isd_status.isd_pc       = issue_pkt_r.pc;
     isd_status.isd_branch_metadata_fwd = issue_pkt_r.branch_metadata_fwd;
@@ -254,9 +255,9 @@ always_comb
 
     // Form dispatch packet
     dispatch_pkt.v      = (issue_pkt_v_r | enter_debug_li | exit_debug_li | accept_irq_i) & dispatch_v_i;
-    dispatch_pkt.poison = ~(enter_debug_li | exit_debug_li) 
-                          & (poison_iss_r | npc_mismatch) 
-                          & ~(accept_irq_i & dispatch_v_i);
+    dispatch_pkt.poison = (poison_iss_r | npc_mismatch)
+                          & ~(accept_irq_i & dispatch_v_i)
+                          & ~(enter_debug_li | exit_debug_li);
     dispatch_pkt.pc     = expected_npc_i;
     dispatch_pkt.instr  = issue_pkt_r.instr;
     dispatch_pkt.rs1    = irf_rs1; // TODO: Add float forwarding

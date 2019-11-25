@@ -119,6 +119,14 @@ def compare_trace(spike_entries, sim_entries, start_pc):
         hex(sim_entries[sim_index].pc),
         hex(sim_entries[sim_index].instr),
         hex(sim_entries[sim_index].itag)))
+      print("\tPrevious Spike PC: {} Instr: {} DASM: {}".format(
+        hex(spike_entries[spike_index-1].pc),
+        hex(spike_entries[spike_index-1].instr),
+        spike_entries[spike_index-1].dasm))
+      print("\tPrevious Sim PC: {} Instr: {} itag: {}".format(
+        hex(sim_entries[sim_index-1].pc),
+        hex(sim_entries[sim_index-1].instr),
+        hex(sim_entries[sim_index-1].itag)))
     #else:
     #  print("Match: Spike PC: {} Sim PC: {}".format(hex(spike_entries[spike_index].pc),
     #      hex(sim_entries[sim_index].pc)))
