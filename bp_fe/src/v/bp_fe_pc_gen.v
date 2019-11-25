@@ -87,6 +87,9 @@ wire attaboy_v        = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
 wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
 
 wire trap_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
+wire br_res_v = pc_redirect_v
+                & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_branch_mispredict)
+                & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_incorrect_prediction);
 
 logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
 wire shadow_priv_w = state_reset_v | trap_v;
@@ -270,7 +273,7 @@ bp_fe_btb
    ,.w_idx_i(fe_cmd_branch_metadata.btb_idx)
    // Literature says that we should only update btb on taken branches, but I'd like to see
    // benchmarks...
-   ,.w_v_i((pc_redirect_v | attaboy_v) & fe_cmd_yumi_o) // & fe_cmd_branch_metadata.pred_taken)
+   ,.w_v_i((br_res_v | attaboy_v) & fe_cmd_yumi_o) // & fe_cmd_branch_metadata.pred_taken)
    ,.br_tgt_i(fe_cmd_cast_i.vaddr)
    );
 
@@ -285,7 +288,7 @@ bp_fe_bht
    ,.idx_r_i(fe_queue_cast_o_branch_metadata.bht_idx)
    ,.predict_o(bht_pred_lo)
 
-   ,.w_v_i((pc_redirect_v | attaboy_v) & fe_cmd_yumi_o)
+   ,.w_v_i((br_res_v | attaboy_v) & fe_cmd_yumi_o)
    ,.idx_w_i(fe_cmd_branch_metadata.bht_idx)
    ,.correct_i(attaboy_v)
    );
