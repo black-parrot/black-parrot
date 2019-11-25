@@ -438,7 +438,7 @@ always_comb
         exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | pipe_mem_miss_v_lo | pipe_mem_exc_v_lo;
   end
 
-assign commit_pkt.v          = ~exc_stage_r[2].poison_v;
+assign commit_pkt.v          = calc_stage_r[2].instr_v & ~exc_stage_r[2].poison_v;
 assign commit_pkt.queue_v    = calc_stage_r[2].queue_v & ~exc_stage_r[2].roll_v;
 assign commit_pkt.bubble_v   = ~calc_stage_r[2].queue_v & ~exc_stage_r[2].poison_v;
 assign commit_pkt.instret    = calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v;

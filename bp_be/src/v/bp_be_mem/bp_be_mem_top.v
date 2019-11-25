@@ -2,13 +2,13 @@
  *
  *  Name:
  *    bp_be_mem_top.v
- * 
+ *
  *  Description:
  *    memory management unit.
  *
  */
 
-module bp_be_mem_top 
+module bp_be_mem_top
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_be_pkg::*;
@@ -18,7 +18,7 @@ module bp_be_mem_top
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(num_cce_p, num_lce_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
    // Generated parameters
-   // D$   
+   // D$
    , localparam block_size_in_words_lp = lce_assoc_p // Due to cache interleaving scheme
    , localparam data_mask_width_lp     = (dword_width_p >> 3) // Byte mask
    , localparam byte_offset_width_lp   = `BSG_SAFE_CLOG2(dword_width_p >> 3)
@@ -35,11 +35,11 @@ module bp_be_mem_top
    , localparam trap_pkt_width_lp      = `bp_be_trap_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp    = `bp_be_commit_pkt_width(vaddr_width_p)
 
-   // MMU                                                              
+   // MMU
    , localparam mmu_cmd_width_lp  = `bp_be_mmu_cmd_width(vaddr_width_p)
    , localparam csr_cmd_width_lp  = `bp_be_csr_cmd_width
    , localparam mem_resp_width_lp = `bp_be_mem_resp_width(vaddr_width_p)
-   
+
    // VM
    , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
    )
@@ -67,14 +67,14 @@ module bp_be_mem_top
    , output                                  itlb_fill_v_o
    , output [vaddr_width_p-1:0]              itlb_fill_vaddr_o
    , output [tlb_entry_width_lp-1:0]         itlb_fill_entry_o
-   
+
    , output [lce_cce_req_width_lp-1:0]       lce_req_o
    , output                                  lce_req_v_o
    , input                                   lce_req_ready_i
 
    , output [lce_cce_resp_width_lp-1:0]      lce_resp_o
    , output                                  lce_resp_v_o
-   , input                                   lce_resp_ready_i                                 
+   , input                                   lce_resp_ready_i
 
    , input [lce_cmd_width_lp-1:0]            lce_cmd_i
    , input                                   lce_cmd_v_i
@@ -82,7 +82,7 @@ module bp_be_mem_top
 
    , output [lce_cmd_width_lp-1:0]           lce_cmd_o
    , output                                  lce_cmd_v_o
-   , input                                   lce_cmd_ready_i 
+   , input                                   lce_cmd_ready_i
 
    , output                                  credits_full_o
    , output                                  credits_empty_o
@@ -107,7 +107,7 @@ module bp_be_mem_top
 `declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p/8)
 `declare_bp_be_dcache_pkt_s(page_offset_width_lp, dword_width_p);
 
-// Cast input and output ports 
+// Cast input and output ports
 bp_cfg_bus_s           cfg_bus;
 bp_be_mmu_cmd_s        mmu_cmd;
 bp_be_csr_cmd_s        csr_cmd;
@@ -134,7 +134,7 @@ bp_pte_entry_leaf_s      dtlb_r_entry, dtlb_w_entry;
 /* PTW ports */
 logic [ptag_width_p-1:0]  ptw_dcache_ptag;
 logic                     ptw_dcache_v, ptw_busy, ptw_store_not_load;
-bp_be_dcache_pkt_s        ptw_dcache_pkt; 
+bp_be_dcache_pkt_s        ptw_dcache_pkt;
 logic                     ptw_tlb_miss_v, ptw_tlb_w_v;
 logic [vtag_width_p-1:0]  ptw_tlb_w_vtag, ptw_tlb_miss_vtag;
 bp_pte_entry_leaf_s       ptw_tlb_w_entry;
@@ -190,7 +190,7 @@ bsg_dff_chain
    )
  vaddr_pipe
   (.clk_i(clk_i)
-   
+
    ,.data_i(mmu_cmd.vaddr)
    ,.data_o(vaddr_mem3)
    );
@@ -205,7 +205,7 @@ wire [vaddr_width_p-1:0] exception_npc_li = commit_pkt.npc;
 wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? fault_vaddr : vaddr_mem3;
 wire [instr_width_p-1:0] exception_instr_li = commit_pkt.instr;
 // TODO: exception priority is non-compliant with the spec.
-assign exception_ecode_dec_li = 
+assign exception_ecode_dec_li =
   '{instr_misaligned : instr_misaligned_lo
     ,instr_fault     : instr_access_fault_lo
     ,illegal_instr   : csr_cmd_v_i & ((csr_cmd.csr_op == e_op_illegal_instr) || csr_illegal_instr_lo)
@@ -266,7 +266,7 @@ bp_be_csr
    ,.mstatus_sum_o(mstatus_sum_lo)
    ,.mstatus_mxr_o(mstatus_mxr_lo)
    ,.tlb_fence_o(tlb_fence_o)
-   
+
    ,.itlb_fill_o(itlb_fill_lo)
    ,.instr_page_fault_o(instr_page_fault_lo)
    ,.instr_access_fault_o(instr_access_fault_lo)
@@ -283,15 +283,15 @@ bp_tlb
    ,.reset_i(reset_i)
    ,.flush_i(tlb_fence_o)
    ,.translation_en_i(translation_en_lo)
-   
+
    ,.v_i(dtlb_r_v | dtlb_w_v)
    ,.w_i(dtlb_w_v)
    ,.vtag_i((dtlb_w_v)? dtlb_w_vtag : dtlb_r_vtag)
    ,.entry_i(dtlb_w_entry)
-   
+
    ,.v_o(dtlb_r_v_lo)
    ,.entry_o(dtlb_r_entry)
-      
+
    ,.miss_v_o(dtlb_miss_v)
    ,.miss_vtag_o(dtlb_miss_vtag)
   );
@@ -304,7 +304,7 @@ bp_pma
 
    ,.uncached_o(dcache_uncached)
    );
-  
+
 bp_be_ptw
   #(.bp_params_p(bp_params_p)
     ,.pte_width_p(bp_sv39_pte_width_gp)
@@ -318,26 +318,26 @@ bp_be_ptw
    ,.mstatus_sum_i(mstatus_sum_lo)
    ,.mstatus_mxr_i(mstatus_mxr_lo)
    ,.busy_o(ptw_busy)
-   
+
    ,.itlb_not_dtlb_i(itlb_fill_cmd_v)
    ,.itlb_not_dtlb_o(itlb_not_dtlb_resp)
-   
+
    ,.store_not_load_i(ptw_store_not_load)
-   
+
    ,.instr_page_fault_o(ptw_instr_page_fault_v)
    ,.load_page_fault_o(ptw_load_page_fault_v)
    ,.store_page_fault_o(ptw_store_page_fault_v)
-   
+
    ,.tlb_miss_v_i(ptw_tlb_miss_v)
    ,.tlb_miss_vtag_i(ptw_tlb_miss_vtag)
-   
+
    ,.tlb_w_v_o(ptw_tlb_w_v)
    ,.tlb_w_vtag_o(ptw_tlb_w_vtag)
    ,.tlb_w_entry_o(ptw_tlb_w_entry)
 
    ,.dcache_v_i(dcache_v)
    ,.dcache_data_i(dcache_data)
-   
+
    ,.dcache_v_o(ptw_dcache_v)
    ,.dcache_pkt_o(ptw_dcache_pkt)
    ,.dcache_ptag_o(ptw_dcache_ptag)
@@ -346,7 +346,7 @@ bp_be_ptw
   );
 
 logic load_op_tl_lo, store_op_tl_lo;
-bp_be_dcache 
+bp_be_dcache
   #(.bp_params_p(bp_params_p))
   dcache
    (.clk_i(clk_i)
@@ -433,12 +433,12 @@ assign dcache_cmd_v    = mmu_cmd_v_i;
 // D-Cache connections
 assign dcache_ptag     = (ptw_busy)? ptw_dcache_ptag : dtlb_r_entry.ptag;
 assign dcache_tlb_miss = (ptw_busy)? 1'b0 : dtlb_miss_v;
-assign dcache_poison   = (ptw_busy)? 1'b0 : chk_poison_ex_i 
+assign dcache_poison   = (ptw_busy)? 1'b0 : chk_poison_ex_i
                                             | (load_page_fault_v | store_page_fault_v)
                                             | (load_access_fault_v | store_access_fault_v);
 assign dcache_pkt_v    = (ptw_busy)? ptw_dcache_v : dcache_cmd_v;
 
-always_comb 
+always_comb
   begin
     if(ptw_busy) begin
       dcache_pkt = ptw_dcache_pkt;
@@ -467,7 +467,7 @@ assign ptw_tlb_miss_v    = itlb_fill_cmd_v | dtlb_fill_cmd_v;
 assign ptw_tlb_miss_vtag = vaddr_mem3.tag;
 assign ptw_page_fault_v  = ptw_instr_page_fault_v | ptw_load_page_fault_v | ptw_store_page_fault_v;
 assign ptw_store_not_load = dtlb_fill_cmd_v & is_store_rr;
- 
+
 // MMU response connections
 assign mem_resp.exc_v  = |exception_ecode_dec_li;
 assign mem_resp.miss_v = mmu_cmd_v_rr & ~dcache_v & ~|exception_ecode_dec_li;
