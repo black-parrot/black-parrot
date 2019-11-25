@@ -47,6 +47,7 @@
     logic [vaddr_width_mp-1:0]         pc;                                                         \
     rv64_instr_s                       instr;                                                      \
                                                                                                    \
+    logic                              v;                                                          \
     logic                              queue_v;                                                    \
     logic                              instr_v;                                                    \
     logic                              pipe_int_v;                                                 \
@@ -167,7 +168,7 @@
 `define bp_be_pipe_stage_reg_width(vaddr_width_mp) \
    (vaddr_width_mp                                                                                 \
    + rv64_instr_width_gp                                                                           \
-   + 11                                                                                            \
+   + 12                                                                                            \
    )
 
 `define bp_be_isd_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \

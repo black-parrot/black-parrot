@@ -360,6 +360,7 @@ always_comb
     // Strip out elements of the dispatch packet that we want to save for later
     calc_stage_isd.pc             = reservation_n.pc;
     calc_stage_isd.instr          = reservation_n.instr;
+    calc_stage_isd.v              = reservation_n.v;
     calc_stage_isd.queue_v        = reservation_n.decode.queue_v;
     calc_stage_isd.instr_v        = reservation_n.decode.instr_v;
     calc_stage_isd.pipe_int_v     = reservation_n.decode.pipe_int_v;
@@ -438,7 +439,7 @@ always_comb
         exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | pipe_mem_miss_v_lo | pipe_mem_exc_v_lo;
   end
 
-assign commit_pkt.v          = calc_stage_r[2].instr_v & ~exc_stage_r[2].poison_v;
+assign commit_pkt.v          = calc_stage_r[2].v & ~exc_stage_r[2].poison_v;
 assign commit_pkt.queue_v    = calc_stage_r[2].queue_v & ~exc_stage_r[2].roll_v;
 assign commit_pkt.bubble_v   = ~calc_stage_r[2].queue_v & ~exc_stage_r[2].poison_v;
 assign commit_pkt.instret    = calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v;
