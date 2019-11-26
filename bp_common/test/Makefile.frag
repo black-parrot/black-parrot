@@ -43,16 +43,16 @@ RV64_BENCHMARKS = \
   #rv64si-p-csr
   #rv64si-p-sbreak
   #rv64si-p-scall
+  #rv64si-p-ma_fetch
+  #rv64mi-p-ma_fetch
 RV64_P_TESTS = \
   rv64mi-p-access  \
   rv64mi-p-breakpoint \
   rv64mi-p-ma_addr \
-  rv64mi-p-ma_fetch \
   rv64mi-p-mcsr    \
   rv64mi-p-scall   \
   rv64si-p-dirty   \
   rv64si-p-icache-alias \
-  rv64si-p-ma_fetch \
   rv64si-p-wfi     \
   rv64ui-p-add     \
   rv64ui-p-addi    \
@@ -124,8 +124,9 @@ RV64_P_TESTS = \
   rv64ua-p-amoswap_w \
   rv64ua-p-amoxor_d  \
   rv64ua-p-amoxor_w  \
-  rv64ua-p-lrsc  
+  rv64ua-p-lrsc
 
+  #rv64ua-v-amominu_w
 RV64_V_TESTS = \
   rv64ui-v-add     \
   rv64ui-v-addi    \
@@ -178,8 +179,7 @@ RV64_V_TESTS = \
   rv64ui-v-sw      \
   rv64ui-v-xor     \
   rv64ui-v-xori    \
-  \
-  #rv64ua-v-amoadd_d  \
+  rv64ua-v-amoadd_d  \
   rv64ua-v-amoadd_w  \
   rv64ua-v-amoand_d  \
   rv64ua-v-amoand_w  \
@@ -189,7 +189,6 @@ RV64_V_TESTS = \
   rv64ua-v-amomaxu_d \
   rv64ua-v-amomin_d  \
   rv64ua-v-amomin_w  \
-  rv64ua-v-amominu_w \
   rv64ua-v-amominu_d \
   rv64ua-v-amoor_d   \
   rv64ua-v-amoor_w   \
@@ -197,7 +196,7 @@ RV64_V_TESTS = \
   rv64ua-v-amoswap_w \
   rv64ua-v-amoxor_d  \
   rv64ua-v-amoxor_w  \
-  rv64ua-v-lrsc  
+  rv64ua-v-lrsc
 
 RV64_PT_TESTS = \
   rv64ui-pt-add     \
@@ -250,7 +249,27 @@ RV64_PT_TESTS = \
   rv64ui-pt-subw    \
   rv64ui-pt-sw      \
   rv64ui-pt-xor     \
-  rv64ui-pt-xori
+  rv64ui-pt-xori    \
+  rv64ua-pt-amoadd_d  \
+  rv64ua-pt-amoadd_w  \
+  rv64ua-pt-amoand_d  \
+  rv64ua-pt-amoand_w  \
+  rv64ua-pt-amomax_d  \
+  rv64ua-pt-amomax_w  \
+  rv64ua-pt-amomaxu_w \
+  rv64ua-pt-amomaxu_d \
+  rv64ua-pt-amomin_d  \
+  rv64ua-pt-amomin_w  \
+  rv64ua-pt-amominu_w \
+  rv64ua-pt-amominu_d \
+  rv64ua-pt-amoor_d   \
+  rv64ua-pt-amoor_w   \
+  rv64ua-pt-amoswap_d \
+  rv64ua-pt-amoswap_w \
+  rv64ua-pt-amoxor_d  \
+  rv64ua-pt-amoxor_w  \
+  rv64ua-pt-lrsc
+
 
 RV64_VT_TESTS = \
   rv64ui-vt-add     \
@@ -303,7 +322,27 @@ RV64_VT_TESTS = \
   rv64ui-vt-subw    \
   rv64ui-vt-sw      \
   rv64ui-vt-xor     \
-  rv64ui-vt-xori
+  rv64ui-vt-xori    \
+  rv64ua-vt-amoadd_d  \
+  rv64ua-vt-amoadd_w  \
+  rv64ua-vt-amoand_d  \
+  rv64ua-vt-amoand_w  \
+  rv64ua-vt-amomax_d  \
+  rv64ua-vt-amomax_w  \
+  rv64ua-vt-amomaxu_w \
+  rv64ua-vt-amomaxu_d \
+  rv64ua-vt-amomin_d  \
+  rv64ua-vt-amomin_w  \
+  rv64ua-vt-amominu_w \
+  rv64ua-vt-amominu_d \
+  rv64ua-vt-amoor_d   \
+  rv64ua-vt-amoor_w   \
+  rv64ua-vt-amoswap_d \
+  rv64ua-vt-amoswap_w \
+  rv64ua-vt-amoxor_d  \
+  rv64ua-vt-amoxor_w  \
+  rv64ua-vt-lrsc
+
 
 
 #Removed from beebs testsuite - 
