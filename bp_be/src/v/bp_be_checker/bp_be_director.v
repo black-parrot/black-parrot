@@ -54,6 +54,7 @@ module bp_be_director
    , input [commit_pkt_width_lp-1:0]  commit_pkt_i
    , input [trap_pkt_width_lp-1:0]    trap_pkt_i
    , input                            tlb_fence_i
+   , input                            fencei_i
    
    //iTLB fill interface
    , input                            itlb_fill_v_i
@@ -100,7 +101,7 @@ logic [vaddr_width_p-1:0] br_mux_o, roll_mux_o, ret_mux_o, exc_mux_o;
 // Module instantiations
 // Update the NPC on a valid instruction in ex1 or a cache miss or a tlb miss
 assign npc_w_v = cfg_bus_cast_i.npc_w_v
-                 | calc_status.ex1_instr_v 
+                 | calc_status.ex1_instr_v
                  | (commit_pkt.tlb_miss | commit_pkt.cache_miss)
                  | (trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret);
 bsg_dff_reset_en 
@@ -231,13 +232,22 @@ always_comb
     else if (tlb_fence_i)
       begin
         fe_cmd.opcode = e_op_itlb_fence;
-        fe_cmd.vaddr  = commit_pkt.pc;
+        fe_cmd.vaddr  = commit_pkt.npc;
         
         fe_cmd_pc_redirect_operands = '0;
         fe_cmd_pc_redirect_operands.translation_enabled = trap_pkt.translation_en_n;
         fe_cmd.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
         
         fe_cmd_v      = fe_cmd_ready_i;
+
+        flush_o = 1'b1;
+      end
+    else if (fencei_i)
+      begin
+        fe_cmd.opcode = e_op_icache_fence;
+        fe_cmd.vaddr  = commit_pkt.npc;
+
+        fe_cmd_v = fe_cmd_ready_i;
 
         flush_o = 1'b1;
       end
@@ -281,16 +291,6 @@ always_comb
 
         fe_cmd_v = fe_cmd_ready_i;
       end 
-    // TODO: This priority will clobber some attaboys, will get fixed by moving to mem3
-    else if (isd_status.isd_v & isd_status.isd_fencei_v)
-      begin
-        fe_cmd.opcode = e_op_icache_fence;
-        // TODO: Can we get rid of this addition? Probably, by moving it to mem3 and using
-        //         commit_pkt.npc
-        fe_cmd.vaddr  = isd_status.isd_pc + vaddr_width_p'(4);
-
-        fe_cmd_v = fe_cmd_ready_i;
-      end
     // Send an attaboy if there's a correct prediction
     else if (isd_status.isd_v & ~npc_mismatch_v & attaboy_pending) 
       begin

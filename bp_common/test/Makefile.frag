@@ -105,7 +105,6 @@ RV64_P_TESTS = \
   rv64ui-p-sw      \
   rv64ui-p-xor     \
   rv64ui-p-xori    \
-                   \
   rv64ua-p-amoadd_d  \
   rv64ua-p-amoadd_w  \
   rv64ua-p-amoand_d  \

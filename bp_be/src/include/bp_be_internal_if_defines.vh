@@ -21,7 +21,6 @@
     rv64_instr_s                             instr;                                                \
     logic                                    mem_v;                                                \
     logic                                    fence_v;                                              \
-    logic                                    fencei_v;                                             \
     logic                                    irs1_v;                                               \
     logic                                    irs2_v;                                               \
     logic                                    frs1_v;                                               \
@@ -85,7 +84,6 @@
     logic                                    isd_debug_v;                                          \
     logic                                    isd_irq_v;                                            \
     logic                                    isd_fence_v;                                          \
-    logic                                    isd_fencei_v;                                         \
     logic                                    isd_mem_v;                                            \
     logic                                    isd_irs1_v;                                           \
     logic                                    isd_frs1_v;                                           \
@@ -153,7 +151,7 @@
    + $bits(bp_fe_exception_code_e)                                                                 \
    + branch_metadata_fwd_width_mp                                                                  \
    + rv64_instr_width_gp                                                                           \
-   + 7                                                                                             \
+   + 6                                                                                             \
    + rv64_reg_data_width_gp                                                                        \
    )                                                                                               
 
@@ -172,7 +170,7 @@
    )
 
 `define bp_be_isd_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
-  (1 + vaddr_width_mp + branch_metadata_fwd_width_mp + 7 + rv64_reg_addr_width_gp +  2 + rv64_reg_addr_width_gp)
+  (1 + vaddr_width_mp + branch_metadata_fwd_width_mp + 6 + rv64_reg_addr_width_gp +  2 + rv64_reg_addr_width_gp)
 
 `define bp_be_dep_status_width \
   (8 + rv64_reg_addr_width_gp)
