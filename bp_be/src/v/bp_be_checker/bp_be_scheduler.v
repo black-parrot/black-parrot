@@ -85,7 +85,6 @@ wire issue_v = fe_queue_yumi_o | cfg_bus_cast_i.ninstr_w_v;
 
 logic issue_pkt_v_r, poison_iss_r;
 wire npc_mismatch = isd_status.isd_v & (expected_npc_i != issue_pkt_r.pc);
-wire dispatch_fencei = dispatch_pkt.v & ~dispatch_pkt.poison & issue_pkt_r.fencei_v;
 bsg_dff_reset_en
  #(.width_p(1))
  issue_status_reg
@@ -93,7 +92,7 @@ bsg_dff_reset_en
    ,.reset_i(reset_i)
    ,.en_i(issue_v | dispatch_v_i | poison_iss_i | npc_mismatch)
 
-   ,.data_i(poison_iss_i | npc_mismatch | dispatch_fencei)
+   ,.data_i(poison_iss_i | npc_mismatch)
    ,.data_o(poison_iss_r)
    );
 
@@ -137,8 +136,9 @@ always_comb
         endcase
         
         casez (fetch_instr)
-          `RV64_FENCE   : issue_pkt.fence_v  = 1'b1;
-          `RV64_FENCE_I : issue_pkt.fencei_v = 1'b1;
+          `RV64_FENCE     : issue_pkt.fence_v  = 1'b1;
+          `RV64_FENCE_I   : issue_pkt.fence_v  = 1'b1;
+          `RV64_SFENCE_VMA: issue_pkt.fence_v  = 1'b1;
         endcase
         
         // Decide whether to read from integer regfile (saves power)
@@ -252,7 +252,6 @@ always_comb
     isd_status.isd_irq_v    = accept_irq_i;
     isd_status.isd_debug_v  = enter_debug_li | exit_debug_li;
     isd_status.isd_fence_v  = issue_pkt_v_r & issue_pkt_r.fence_v;
-    isd_status.isd_fencei_v = issue_pkt_v_r & issue_pkt_r.fencei_v;
     isd_status.isd_mem_v    = issue_pkt_v_r & issue_pkt_r.mem_v;
     isd_status.isd_irs1_v   = issue_pkt_v_r & issue_pkt_r.irs1_v;
     isd_status.isd_frs1_v   = issue_pkt_v_r & issue_pkt_r.frs1_v;

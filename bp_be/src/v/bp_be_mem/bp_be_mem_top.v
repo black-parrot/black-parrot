@@ -98,6 +98,7 @@ module bp_be_mem_top
 
    , output [trap_pkt_width_lp-1:0]          trap_pkt_o
    , output                                  tlb_fence_o
+   , output                                  fencei_o
    );
 
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -266,6 +267,7 @@ bp_be_csr
    ,.mstatus_sum_o(mstatus_sum_lo)
    ,.mstatus_mxr_o(mstatus_mxr_lo)
    ,.tlb_fence_o(tlb_fence_o)
+   ,.fencei_o(fencei_o)
 
    ,.itlb_fill_o(itlb_fill_lo)
    ,.instr_page_fault_o(instr_page_fault_lo)
@@ -485,5 +487,5 @@ always_ff @(negedge clk_i)
     assert (~(dtlb_r_v_lo & dcache_uncached & mmu_cmd.mem_op inside {e_lrw, e_lrd, e_scw, e_scd}))
       else $warning("LR/SC to uncached memory not supported");
   end
-endmodule : bp_be_mem_top
+endmodule
 

@@ -216,10 +216,18 @@ always_comb
         end
       `RV64_MISC_MEM_OP : 
         begin
-          decode.pipe_comp_v = 1'b1;
           unique casez (instr)
-            `RV64_FENCE   : begin end
-            `RV64_FENCE_I : begin end
+            `RV64_FENCE   : 
+              begin
+                decode.pipe_comp_v = 1'b1;
+              end
+            `RV64_FENCE_I : 
+              begin 
+                decode.pipe_mem_v  = 1'b1;
+                decode.csr_v       = 1'b1;
+                decode.serial_v    = 1'b1;
+                decode.fu_op       = e_fencei;
+              end
             default : illegal_instr = 1'b1;
           endcase
         end

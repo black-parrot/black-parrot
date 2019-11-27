@@ -57,6 +57,7 @@ module bp_be_csr
     , output                            mstatus_sum_o
     , output                            mstatus_mxr_o
     , output logic                      tlb_fence_o
+    , output logic                      fencei_o
     
     // FE Exceptions
     , output logic                      itlb_fill_o
@@ -358,6 +359,7 @@ always_comb
     illegal_instr_o  = '0;
     csr_data_lo      = '0;
     tlb_fence_o      = '0;
+    fencei_o         = '0;
     
     itlb_fill_o           = '0;
     instr_page_fault_o    = '0;
@@ -401,6 +403,10 @@ always_comb
             begin
               tlb_fence_o     = 1'b1;
             end
+        end
+      else if (csr_cmd.csr_op == e_fencei)
+        begin
+          fencei_o = 1'b1;
         end
       else if (csr_cmd.csr_op == e_dret)
         begin

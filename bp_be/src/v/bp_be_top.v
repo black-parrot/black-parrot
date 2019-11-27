@@ -103,7 +103,7 @@ logic chk_dispatch_v;
 logic [vaddr_width_p-1:0] chk_tvec_li;
 logic [vaddr_width_p-1:0] chk_epc_li;
 
-logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li;
+logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li, chk_fencei_li;
 
 logic credits_full_lo, credits_empty_lo;
 logic debug_mode_lo;
@@ -157,6 +157,7 @@ bp_be_checker_top
    ,.dispatch_pkt_o(dispatch_pkt)
 
    ,.tlb_fence_i(chk_tlb_fence_li)
+   ,.fencei_i(chk_fencei_li)
    
    ,.itlb_fill_v_i(itlb_fill_v)
    ,.itlb_fill_vaddr_i(itlb_fill_vaddr)
@@ -253,6 +254,7 @@ bp_be_mem_top
 
     ,.trap_pkt_o(trap_pkt)
     ,.tlb_fence_o(chk_tlb_fence_li)
+    ,.fencei_o(chk_fencei_li)
     );
 
 endmodule
