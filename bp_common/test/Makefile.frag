@@ -178,7 +178,7 @@ RV64_V_TESTS = \
   rv64ui-v-sw      \
   rv64ui-v-xor     \
   rv64ui-v-xori    \
-  rv64ua-v-amoadd_d  \
+  #rv64ua-v-amoadd_d  \
   rv64ua-v-amoadd_w  \
   rv64ua-v-amoand_d  \
   rv64ua-v-amoand_w  \
@@ -249,7 +249,7 @@ RV64_PT_TESTS = \
   rv64ui-pt-sw      \
   rv64ui-pt-xor     \
   rv64ui-pt-xori    \
-  rv64ua-pt-amoadd_d  \
+  #rv64ua-pt-amoadd_d  \
   rv64ua-pt-amoadd_w  \
   rv64ua-pt-amoand_d  \
   rv64ua-pt-amoand_w  \
@@ -322,7 +322,7 @@ RV64_VT_TESTS = \
   rv64ui-vt-sw      \
   rv64ui-vt-xor     \
   rv64ui-vt-xori    \
-  rv64ua-vt-amoadd_d  \
+  #rv64ua-vt-amoadd_d  \
   rv64ua-vt-amoadd_w  \
   rv64ua-vt-amoand_d  \
   rv64ua-vt-amoand_w  \
