@@ -202,6 +202,7 @@ $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_miss.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_sbuf.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_sbuf_queue.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_dma.v
+$BASEJUMP_STL_DIR/bsg_cache/bsg_BL_LD_counter.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_expand_bitmask.v
 
 $BP_ME_DIR/src/v/cache/bp_me_cache_dma_to_cce.v

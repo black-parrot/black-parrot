@@ -89,7 +89,6 @@ bsg_cache_pkt_s cache_pkt;
 logic cache_v_li;
 logic cache_ready_lo;
 logic [dword_width_p-1:0] cache_data_lo;
-logic [511:0] block_load_lo;
 logic cache_v_lo;
 logic cache_yumi_li;
 
@@ -112,7 +111,6 @@ cce_to_cache
     ,.ready_i         (cache_ready_lo)
   
     ,.data_i          (cache_data_lo)
-    ,.block_load_data_i (block_load_lo)
     ,.v_i             (cache_v_lo)
     ,.yumi_o          (cache_yumi_li)
   );
@@ -134,7 +132,6 @@ bsg_cache #(.addr_width_p(vcache_addr_width_p)
     ,.v_i             (cache_v_li)
     ,.ready_o         (cache_ready_lo)
     ,.data_o          (cache_data_lo)
-    ,.block_load_o    (block_load_lo)
     ,.v_o             (cache_v_lo)
     ,.yumi_i          (cache_yumi_li)
     
