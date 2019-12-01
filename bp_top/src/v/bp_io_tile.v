@@ -137,7 +137,7 @@ module bp_io_tile
    #(.bp_params_p(bp_params_p))
    cmd_encode
     (.payload_i(cce_lce_cmd_lo)
-     ,.packet_o(cce_cmd_packet_lo)
+     ,.packet_o(lce_cmd_packet_lo)
      );
 
   bsg_wormhole_router_adapter
@@ -191,13 +191,13 @@ module bp_io_tile
 
      ,.mem_resp_i(lce_io_resp_lo)
      ,.mem_resp_v_i(lce_io_resp_v_lo)
-     ,.mem_resp_ready_i(lce_io_resp_ready_li)
+     ,.mem_resp_ready_o(lce_io_resp_ready_li)
 
      ,.my_did_i(my_did_i)
      ,.my_cord_i(my_cord_i)
      ,.my_cid_i('0)
      ,.dst_did_i(dst_did_lo)
-     ,.dst_cord_i(dst_did_lo)
+     ,.dst_cord_i(mem_noc_cord_width_p'(dst_did_lo))
      ,.dst_cid_i(dst_cid_lo)
 
      ,.cmd_link_i(io_cmd_link_i)

@@ -333,7 +333,7 @@ module bp_io_tile_node
      ,.link_i({mem_cmd_link_i, mem_cmd_link_li})
      ,.link_o({mem_cmd_link_o, mem_cmd_link_lo})
 
-     ,.my_cord_i(my_cord_i)
+     ,.my_cord_i(mem_noc_cord_width_p'(my_did_i))
      );
 
   bsg_wormhole_router
@@ -351,7 +351,7 @@ module bp_io_tile_node
      ,.link_i({mem_resp_link_i, mem_resp_link_li})
      ,.link_o({mem_resp_link_o, mem_resp_link_lo})
 
-     ,.my_cord_i(my_cord_i)
+     ,.my_cord_i(mem_noc_cord_width_p'(my_did_i))
      );
 
 endmodule
