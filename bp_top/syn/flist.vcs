@@ -210,6 +210,7 @@ $BP_TOP_DIR/src/v/bp_clint_slice.v
 $BP_TOP_DIR/src/v/bp_io_complex.v
 $BP_TOP_DIR/src/v/bp_io_link_to_lce.v
 $BP_TOP_DIR/src/v/bp_io_tile.v
+$BP_TOP_DIR/src/v/bp_io_tile_node.v
 $BP_TOP_DIR/src/v/bp_processor.v
 $BP_TOP_DIR/src/v/bp_remote_domain_proxy_node.v
 $BP_TOP_DIR/src/v/bp_tile.v
