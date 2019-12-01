@@ -13,6 +13,7 @@ module wrapper
  import bp_be_pkg::*;
  import bp_common_rv64_pkg::*;
  import bp_cce_pkg::*;
+ import bsg_noc_pkg::*;
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
@@ -30,17 +31,11 @@ module wrapper
 
    , input [mem_noc_did_width_p-1:0]                  my_did_i
 
-   , input  [mem_noc_ral_link_width_lp-1:0]           prev_cmd_link_i
-   , output [mem_noc_ral_link_width_lp-1:0]           prev_cmd_link_o
+   , input  [E:W][mem_noc_ral_link_width_lp-1:0]      mem_cmd_link_i
+   , output [E:W][mem_noc_ral_link_width_lp-1:0]      mem_cmd_link_o
 
-   , input  [mem_noc_ral_link_width_lp-1:0]           prev_resp_link_i
-   , output [mem_noc_ral_link_width_lp-1:0]           prev_resp_link_o
-
-   , input  [mem_noc_ral_link_width_lp-1:0]           next_cmd_link_i
-   , output [mem_noc_ral_link_width_lp-1:0]           next_cmd_link_o
-
-   , input  [mem_noc_ral_link_width_lp-1:0]           next_resp_link_i
-   , output [mem_noc_ral_link_width_lp-1:0]           next_resp_link_o
+   , input  [E:W][mem_noc_ral_link_width_lp-1:0]      mem_resp_link_i
+   , output [E:W][mem_noc_ral_link_width_lp-1:0]      mem_resp_link_o
    );
 
   bp_processor

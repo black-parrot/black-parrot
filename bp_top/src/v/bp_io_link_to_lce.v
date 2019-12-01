@@ -60,15 +60,6 @@ module bp_io_link_to_lce
   assign io_resp_v_o    = io_resp_ready_i & lce_cmd_v_i;
   assign lce_cmd_yumi_o = io_resp_v_o;
 
-  bp_cce_mem_req_size_e mem_cmd_size;
-  assign mem_resp_size = (lce_cmd_li.msg.uc_req.uc_size == e_lce_uc_req_1)
-                         ? e_mem_size_1
-                         : (lce_cmd_li.msg.uc_req.uc_size == e_lce_uc_req_2)
-                           ? e_mem_size_2
-                           : (lce_cmd_li.msg.uc_req.uc_size == e_lce_uc_req_4)
-                             ? e_mem_size_4
-                             : e_mem_size_8;
-
   bp_lce_cce_uc_req_size_e lce_req_size;
   assign lce_req_size = (io_cmd_li.size == e_mem_size_1)
                         ? e_lce_uc_req_1
@@ -78,24 +69,38 @@ module bp_io_link_to_lce
                             ? e_lce_uc_req_4
                             : e_lce_uc_req_8;
 
+  // TODO: Since we don't send size along with lce_cmd, 
+  //         we need to assume all uncached load accesses are 8 bytes.
+  bp_cce_mem_req_size_e mem_resp_size;
+  assign mem_resp_size = e_mem_size_8;
+  //assign mem_resp_size = (lce_cmd_li.msg.uc_req.uc_size == e_lce_uc_req_1)
+  //                       ? e_mem_size_1
+  //                       : (lce_cmd_li.msg.uc_req.uc_size == e_lce_uc_req_2)
+  //                         ? e_mem_size_2
+  //                         : (lce_cmd_li.msg.uc_req.uc_size == e_lce_uc_req_4)
+  //                           ? e_mem_size_4
+  //                           : e_mem_size_8;
+
+  /* TODO: Addr -> coord based on entire memory map */
+
   wire mem_cmd_wr_not_rd = (io_cmd_li.msg_type == e_cce_mem_uc_wr);
   wire lce_cmd_wr_not_rd = (lce_cmd_li.msg_type == e_lce_cmd_uc_st_done);
   always_comb
     begin
-      lce_req_lo                 = '0;
-      lce_req_lo.msg.uc_req.data = io_cmd_li.data;
-      lce_req_lo.msg.uc_req.size = lce_req_size;
-      lce_req_lo.addr            = io_cmd_li.addr;
-      lce_req_lo.msg_type        = mem_cmd_wr_not_rd ? e_lce_req_type_uc_wr : e_lce_req_type_uc_rd;
-      lce_req_lo.src_id          = lce_id_i;
-      lce_req_lo.dst_id          = (num_cce_p > 1) 
-                                   ? io_cmd_li.addr[page_offset_width_p+:`BSG_SAFE_CLOG2(num_cce_p)] 
-                                   : 1'b0;
+      lce_req_lo                    = '0;
+      lce_req_lo.msg.uc_req.data    = io_cmd_li.data;
+      lce_req_lo.msg.uc_req.uc_size = lce_req_size;
+      lce_req_lo.addr               = io_cmd_li.addr;
+      lce_req_lo.msg_type           = mem_cmd_wr_not_rd ? e_lce_req_type_uc_wr : e_lce_req_type_uc_rd;
+      lce_req_lo.src_id             = lce_id_i;
+      lce_req_lo.dst_id             = (num_cce_p > 1) 
+                                      ? io_cmd_li.addr[page_offset_width_p+:`BSG_SAFE_CLOG2(num_cce_p)] 
+                                      : 1'b0;
 
       io_resp_lo                = '0;
-      io_resp_lo.data           = lce_cmd_li.data;
+      io_resp_lo.data           = lce_cmd_li.msg.dt_cmd.data;
       io_resp_lo.size           = mem_resp_size;
-      io_resp_lo.addr           = lce_cmd_li.addr;
+      io_resp_lo.addr           = lce_cmd_li.msg.dt_cmd.addr;
       io_resp_lo.msg_type       = lce_cmd_wr_not_rd ? e_cce_mem_uc_wr : e_cce_mem_uc_rd;
     end
 

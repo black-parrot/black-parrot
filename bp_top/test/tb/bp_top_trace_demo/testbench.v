@@ -81,6 +81,10 @@ logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 wire [mem_noc_did_width_p-1:0] dram_did_li = '1;
 wire [mem_noc_did_width_p-1:0] proc_did_li = 1;
 
+bsg_ready_and_link_sif_s stub_cmd_link_li, stub_resp_link_li;
+bsg_ready_and_link_sif_s stub_cmd_link_lo, stub_resp_link_lo;
+assign stub_cmd_link_li  = '0;
+assign stub_resp_link_li = '0;
 // Chip
 wrapper
  #(.bp_params_p(bp_params_p))
@@ -96,17 +100,11 @@ wrapper
 
    ,.my_did_i(proc_did_li)
 
-   ,.prev_cmd_link_i('0)
-   ,.prev_cmd_link_o()
+   ,.mem_cmd_link_i({proc_cmd_link_li, stub_cmd_link_li})
+   ,.mem_cmd_link_o({proc_cmd_link_lo, stub_cmd_link_lo})
 
-   ,.prev_resp_link_i('0)
-   ,.prev_resp_link_o()
-
-   ,.next_cmd_link_i(proc_cmd_link_li)
-   ,.next_cmd_link_o(proc_cmd_link_lo)
-
-   ,.next_resp_link_i(proc_resp_link_li)
-   ,.next_resp_link_o(proc_resp_link_lo)
+   ,.mem_resp_link_i({proc_resp_link_li, stub_resp_link_li})
+   ,.mem_resp_link_o({proc_resp_link_lo, stub_resp_link_lo})
    );
 
 assign cmd_link_li[W]  = proc_cmd_link_lo;
