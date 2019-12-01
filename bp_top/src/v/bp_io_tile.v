@@ -15,70 +15,197 @@ module bp_io_tile
   (input                                    clk_i
    , input                                  reset_i
 
-   , input [cce_id_width_p-1:0]             cce_id_i
-
-   , input [mem_noc_ral_link_width_lp-1:0]  io_cmd_link_i
-   , output [mem_noc_ral_link_width_lp-1:0] io_cmd_link_o
-
-   , input [mem_noc_ral_link_width_lp-1:0]  io_resp_link_i
-   , output [mem_noc_ral_link_width_lp-1:0] io_resp_link_o
+   , input [mem_noc_did_width_p-1:0]        my_did_i
+   , input [mem_noc_cord_width_p-1:0]       my_cord_i
 
    , input [coh_noc_ral_link_width_lp-1:0]  lce_req_link_i
    , output [coh_noc_ral_link_width_lp-1:0] lce_req_link_o
 
    , input [coh_noc_ral_link_width_lp-1:0]  lce_cmd_link_i
    , output [coh_noc_ral_link_width_lp-1:0] lce_cmd_link_o
+
+   , input [mem_noc_ral_link_width_lp-1:0]  io_cmd_link_i
+   , output [mem_noc_ral_link_width_lp-1:0] io_cmd_link_o
+
+   , input [mem_noc_ral_link_width_lp-1:0]  io_resp_link_i
+   , output [mem_noc_ral_link_width_lp-1:0] io_resp_link_o
    );
 
-   bp_io_link_to_lce
-    #(.bp_params_p(bp_params_p))
-    lce_link
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
+  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
-      ,.lce_id_i()
+  `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_req_width_lp, lce_req_packet_s);
+  `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_width_lp, lce_cmd_packet_s);
 
-      ,.io_cmd_i()
-      ,.io_cmd_v_i()
-      ,.io_cmd_yumi_o()
+  bp_lce_cce_req_s  cce_lce_req_li, lce_lce_req_lo;
+  logic cce_lce_req_v_li, cce_lce_req_yumi_lo, lce_lce_req_v_lo, lce_lce_req_ready_li;
+  bp_lce_cmd_s cce_lce_cmd_lo, lce_lce_cmd_li;
+  logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_li, lce_lce_cmd_v_li, lce_lce_cmd_yumi_lo;
 
-      ,.io_resp_o()
-      ,.io_resp_v_o()
-      ,.io_resp_ready_i()
+  bp_cce_mem_msg_s cce_io_cmd_lo, lce_io_cmd_li;
+  logic cce_io_cmd_v_lo, cce_io_cmd_ready_li, lce_io_cmd_v_li, lce_io_cmd_yumi_lo;
+  bp_cce_mem_msg_s cce_io_resp_li, lce_io_resp_lo;
+  logic cce_io_resp_v_li, cce_io_resp_yumi_lo, lce_io_resp_v_lo, lce_io_resp_ready_li;
 
-      ,.lce_req_o()
-      ,.lce_req_v_o()
-      ,.lce_req_ready_i()
+  // TODO: Get id from coord
+  wire [cce_id_width_p-1:0] cce_id_li = '0;
+  wire [lce_id_width_p-1:0] lce_id_li = '0;
 
-      ,.lce_cmd_i()
-      ,.lce_cmd_v_i()
-      ,.lce_cmd_yumi_o()
-      );
+  bp_io_link_to_lce
+   #(.bp_params_p(bp_params_p))
+   lce_link
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-   bp_io_cce
-    #(.bp_params_p(bp_params_p))
-    io_cce
-     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
+     ,.lce_id_i(lce_id_li)
 
-      ,.cce_id_i()
+     ,.io_cmd_i(lce_io_cmd_li)
+     ,.io_cmd_v_i(lce_io_cmd_v_li)
+     ,.io_cmd_yumi_o(lce_io_cmd_yumi_lo)
 
-      ,.lce_req_i()
-      ,.lce_req_v_i()
-      ,.lce_req_yumi_o()
+     ,.io_resp_o(lce_io_resp_lo)
+     ,.io_resp_v_o(lce_io_resp_v_lo)
+     ,.io_resp_ready_i(lce_io_resp_ready_li)
 
-      ,.lce_cmd_o()
-      ,.lce_cmd_v_o()
-      ,.lce_cmd_ready_i()
+     ,.lce_req_o(lce_lce_req_lo)
+     ,.lce_req_v_o(lce_lce_req_v_lo)
+     ,.lce_req_ready_i(lce_lce_req_ready_li)
 
-      ,.mem_cmd_o()
-      ,.mem_cmd_v_o()
-      ,.mem_cmd_ready_i()
+     ,.lce_cmd_i(lce_lce_cmd_li)
+     ,.lce_cmd_v_i(lce_lce_cmd_v_li)
+     ,.lce_cmd_yumi_o(lce_lce_cmd_yumi_lo)
+     );
 
-      ,.mem_resp_i()
-      ,.mem_resp_v_i()
-      ,.mem_resp_yumi_o()
-      );
+  bp_io_cce
+   #(.bp_params_p(bp_params_p))
+   io_cce
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.cce_id_i(cce_id_li)
+
+     ,.lce_req_i(cce_lce_req_li)
+     ,.lce_req_v_i(cce_lce_req_v_li)
+     ,.lce_req_yumi_o(cce_lce_req_yumi_lo)
+
+     ,.lce_cmd_o(cce_lce_cmd_lo)
+     ,.lce_cmd_v_o(cce_lce_cmd_v_lo)
+     ,.lce_cmd_ready_i(cce_lce_cmd_ready_li)
+
+     ,.io_cmd_o(cce_io_cmd_lo)
+     ,.io_cmd_v_o(cce_io_cmd_v_lo)
+     ,.io_cmd_ready_i(cce_io_cmd_ready_li)
+
+     ,.io_resp_i(cce_io_resp_li)
+     ,.io_resp_v_i(cce_io_resp_v_li)
+     ,.io_resp_yumi_o(cce_io_resp_yumi_lo)
+     );
+
+  lce_req_packet_s lce_req_packet_li, lce_req_packet_lo;
+  bp_me_wormhole_packet_encode_lce_req
+   #(.bp_params_p(bp_params_p))
+   req_encode
+    (.payload_i(lce_lce_req_lo)
+     ,.packet_o(lce_req_packet_lo)
+     );
+
+  bsg_wormhole_router_adapter
+   #(.max_payload_width_p($bits(lce_req_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
+     ,.len_width_p(coh_noc_len_width_p)
+     ,.cord_width_p(coh_noc_cord_width_p)
+     ,.flit_width_p(coh_noc_flit_width_p)
+     )
+   lce_req_adapter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.packet_i(lce_req_packet_lo)
+     ,.v_i(lce_lce_req_v_lo)
+     ,.ready_o(lce_lce_req_ready_li)
+
+     ,.link_i(lce_req_link_i)
+     ,.link_o(lce_req_link_o)
+
+     ,.packet_o(lce_req_packet_li)
+     ,.v_o(cce_lce_req_v_li)
+     ,.yumi_i(cce_lce_req_yumi_lo)
+     );
+  assign cce_lce_req_li = lce_req_packet_li.payload;
+
+  lce_cmd_packet_s lce_cmd_packet_li, lce_cmd_packet_lo;
+  bp_me_wormhole_packet_encode_lce_cmd
+   #(.bp_params_p(bp_params_p))
+   cmd_encode
+    (.payload_i(cce_lce_cmd_lo)
+     ,.packet_o(cce_cmd_packet_lo)
+     );
+
+  bsg_wormhole_router_adapter
+   #(.max_payload_width_p($bits(lce_cmd_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
+     ,.len_width_p(coh_noc_len_width_p)
+     ,.cord_width_p(coh_noc_cord_width_p)
+     ,.flit_width_p(coh_noc_flit_width_p)
+     )
+   lce_cmd_adapter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.packet_i(lce_cmd_packet_lo)
+     ,.v_i(cce_lce_cmd_v_lo)
+     ,.ready_o(cce_lce_cmd_ready_li)
+
+     ,.link_i(lce_cmd_link_i)
+     ,.link_o(lce_cmd_link_o)
+
+     ,.packet_o(lce_cmd_packet_li)
+     ,.v_o(lce_lce_cmd_v_li)
+     ,.yumi_i(lce_lce_cmd_yumi_lo)
+     );
+  assign lce_lce_cmd_li = lce_cmd_packet_li.payload;
+
+  logic [mem_noc_did_width_p-1:0]  dst_did_lo;
+  logic [mem_noc_cord_width_p-1:0] dst_cord_lo;
+  logic [mem_noc_cid_width_p-1:0]  dst_cid_lo;
+
+  assign dst_did_lo  = cce_io_cmd_lo.addr[paddr_width_p-1-:mem_noc_did_width_p];
+  assign dst_cord_lo = cce_io_cmd_lo.addr[paddr_width_p-1-:mem_noc_did_width_p];
+  assign dst_cid_lo  = '0;
+
+  bp_me_cce_to_wormhole_link_bidir
+   #(.bp_params_p(bp_params_p))
+   io_link
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.mem_cmd_i(cce_io_cmd_lo)
+     ,.mem_cmd_v_i(cce_io_cmd_v_lo)
+     ,.mem_cmd_ready_o(cce_io_cmd_ready_li)
+
+     ,.mem_resp_o(cce_io_resp_li)
+     ,.mem_resp_v_o(cce_io_resp_v_li)
+     ,.mem_resp_yumi_i(cce_io_resp_yumi_lo)
+
+     ,.mem_cmd_o(lce_io_cmd_li)
+     ,.mem_cmd_v_o(lce_io_cmd_v_li)
+     ,.mem_cmd_yumi_i(lce_io_cmd_yumi_lo)
+
+     ,.mem_resp_i(lce_io_resp_lo)
+     ,.mem_resp_v_i(lce_io_resp_v_lo)
+     ,.mem_resp_ready_i(lce_io_resp_ready_li)
+
+     ,.my_did_i(my_did_i)
+     ,.my_cord_i(my_cord_i)
+     ,.my_cid_i('0)
+     ,.dst_did_i(dst_did_lo)
+     ,.dst_cord_i(dst_did_lo)
+     ,.dst_cid_i(dst_cid_lo)
+
+     ,.cmd_link_i(io_cmd_link_i)
+     ,.cmd_link_o(io_cmd_link_o)
+
+     ,.resp_link_i(io_resp_link_i)
+     ,.resp_link_o(io_resp_link_o)
+     );
 
 
 endmodule

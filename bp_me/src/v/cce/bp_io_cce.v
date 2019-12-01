@@ -22,13 +22,13 @@ module bp_io_cce
    , output                             lce_cmd_v_o
    , input                              lce_cmd_ready_i
 
-   , output [cce_mem_msg_width_lp-1:0]  mem_cmd_o
-   , output                             mem_cmd_v_o
-   , input                              mem_cmd_ready_i
+   , output [cce_mem_msg_width_lp-1:0]  io_cmd_o
+   , output                             io_cmd_v_o
+   , input                              io_cmd_ready_i
 
-   , input [cce_mem_msg_width_lp-1:0]   mem_resp_i
-   , input                              mem_resp_v_i
-   , output                             mem_resp_yumi_o
+   , input [cce_mem_msg_width_lp-1:0]   io_resp_i
+   , input                              io_resp_v_i
+   , output                             io_resp_yumi_o
    );
 
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
@@ -37,17 +37,17 @@ module bp_io_cce
   bp_lce_cce_req_s  lce_req_cast_i;
   bp_lce_cmd_s      lce_cmd_cast_o;
 
-  bp_cce_mem_msg_s  mem_cmd_cast_o;
-  bp_cce_mem_msg_s  mem_resp_cast_i;
+  bp_cce_mem_msg_s  io_cmd_cast_o;
+  bp_cce_mem_msg_s  io_resp_cast_i;
 
   assign lce_req_cast_i  = lce_req_i;
   assign lce_cmd_o       = lce_cmd_cast_o;
 
-  assign mem_resp_cast_i = mem_resp_i;
-  assign mem_cmd_o       = mem_cmd_cast_o;
+  assign io_resp_cast_i = io_resp_i;
+  assign io_cmd_o       = io_cmd_cast_o;
 
-  bp_cce_mem_req_size_e mem_cmd_size;
-  assign mem_cmd_size = (lce_req_cast_i.msg.uc_req.uc_size == e_lce_uc_req_1)
+  bp_cce_mem_req_size_e io_cmd_size;
+  assign io_cmd_size = (lce_req_cast_i.msg.uc_req.uc_size == e_lce_uc_req_1)
                         ? e_mem_size_1
                         : (lce_req_cast_i.msg.uc_req.uc_size == e_lce_uc_req_2)
                           ? e_mem_size_2
@@ -55,48 +55,48 @@ module bp_io_cce
                             ? e_mem_size_4
                             : e_mem_size_8;
 
-  assign lce_req_yumi_o  = lce_req_v_i & mem_cmd_ready_i;
-  assign mem_cmd_v_o     = lce_req_yumi_o;
+  assign lce_req_yumi_o  = lce_req_v_i & io_cmd_ready_i;
+  assign io_cmd_v_o      = lce_req_yumi_o;
   wire lce_req_wr_not_rd = (lce_req_cast_i.msg_type == e_lce_req_type_uc_wr);
   always_comb
     if (lce_req_wr_not_rd)
       begin
-        mem_cmd_cast_o                     = '0;
-        mem_cmd_cast_o.msg_type            = e_cce_mem_uc_wr;
-        mem_cmd_cast_o.addr                = lce_req_cast_i.addr;
-        mem_cmd_cast_o.size                = mem_cmd_size;
-        mem_cmd_cast_o.payload.lce_id      = lce_req_cast_i.src_id;
-        mem_cmd_cast_o.data                = lce_req_cast_i.msg.uc_req.data;
+        io_cmd_cast_o                     = '0;
+        io_cmd_cast_o.msg_type            = e_cce_mem_uc_wr;
+        io_cmd_cast_o.addr                = lce_req_cast_i.addr;
+        io_cmd_cast_o.size                = io_cmd_size;
+        io_cmd_cast_o.payload.lce_id      = lce_req_cast_i.src_id;
+        io_cmd_cast_o.data                = lce_req_cast_i.msg.uc_req.data;
       end
     else
       begin
-        mem_cmd_cast_o                     = '0;
-        mem_cmd_cast_o.msg_type            = e_cce_mem_uc_rd;
-        mem_cmd_cast_o.addr                = lce_req_cast_i.addr;
-        mem_cmd_cast_o.size                = mem_cmd_size;
-        mem_cmd_cast_o.payload.lce_id      = lce_req_cast_i.src_id;
-        mem_cmd_cast_o.data                = lce_req_cast_i.msg.uc_req.data;
+        io_cmd_cast_o                     = '0;
+        io_cmd_cast_o.msg_type            = e_cce_mem_uc_rd;
+        io_cmd_cast_o.addr                = lce_req_cast_i.addr;
+        io_cmd_cast_o.size                = io_cmd_size;
+        io_cmd_cast_o.payload.lce_id      = lce_req_cast_i.src_id;
+        io_cmd_cast_o.data                = lce_req_cast_i.msg.uc_req.data;
       end
 
-  assign mem_resp_yumi_o  = mem_resp_v_i & lce_cmd_ready_i;
-  assign lce_cmd_v_o      = mem_resp_yumi_o;
-  wire mem_resp_wr_not_rd = (mem_resp_cast_i.msg_type.cce_mem_cmd == e_cce_mem_uc_wr);
+  assign io_resp_yumi_o  = io_resp_v_i & lce_cmd_ready_i;
+  assign lce_cmd_v_o     = io_resp_yumi_o;
+  wire io_resp_wr_not_rd = (io_resp_cast_i.msg_type.cce_io_cmd == e_cce_mem_uc_wr);
   always_comb
-    if (mem_resp_wr_not_rd)
+    if (io_resp_wr_not_rd)
       begin
         lce_cmd_cast_o                = '0;
-        lce_cmd_cast_o.dst_id         = mem_resp_cast_i.payload.lce_id;
+        lce_cmd_cast_o.dst_id         = io_resp_cast_i.payload.lce_id;
         lce_cmd_cast_o.msg_type       = e_lce_cmd_uc_st_done;
-        lce_cmd_cast_o.msg.cmd.addr   = mem_resp_cast_i.addr;
+        lce_cmd_cast_o.msg.cmd.addr   = io_resp_cast_i.addr;
         lce_cmd_cast_o.msg.cmd.src_id = cce_id_i;
       end
     else
       begin
-        lce_cmd_cast_o                = '0;
-        lce_cmd_cast_o.dst_id           = mem_resp_cast_i.payload.lce_id;
+        lce_cmd_cast_o                  = '0;
+        lce_cmd_cast_o.dst_id           = io_resp_cast_i.payload.lce_id;
         lce_cmd_cast_o.msg_type         = e_lce_cmd_uc_data;
-        lce_cmd_cast_o.msg.dt_cmd.data  = mem_resp_cast_i.data;
-        lce_cmd_cast_o.msg.dt_cmd.addr  = mem_resp_cast_i.addr;
+        lce_cmd_cast_o.msg.dt_cmd.data  = io_resp_cast_i.data;
+        lce_cmd_cast_o.msg.dt_cmd.addr  = io_resp_cast_i.addr;
       end
 
 endmodule
