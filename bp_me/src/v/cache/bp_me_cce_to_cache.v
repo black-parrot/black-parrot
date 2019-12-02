@@ -64,17 +64,18 @@ module bp_me_cce_to_cache
   bsg_cache_pkt_s cache_pkt;
   assign cache_pkt_o = cache_pkt;
 
-  typedef enum logic [1:0] {
+  typedef enum logic [2:0] {
     RESET
     ,CLEAR_TAG
     ,READY
     ,SEND
+    ,BLOCK_LD_WAIT
   } cmd_state_e;
 
   cmd_state_e cmd_state_r, cmd_state_n;
   logic [lg_sets_lp+lg_ways_lp:0] tagst_sent_r, tagst_sent_n;
   logic [lg_sets_lp+lg_ways_lp:0] tagst_received_r, tagst_received_n;
-  logic [counter_width_lp-1:0] cmd_counter_r, cmd_counter_n;
+  logic [counter_width_lp-1:0] cmd_counter_r, cmd_counter_n, block_ld_counter_r, block_ld_counter_n;
   logic [counter_width_lp-1:0] cmd_max_count_r, cmd_max_count_n;
   
   bp_cce_mem_msg_s mem_cmd;
@@ -117,6 +118,7 @@ module bp_me_cce_to_cache
       tagst_sent_r     <= '0;
       tagst_received_r <= '0;
       cmd_counter_r    <= '0;
+      block_ld_counter_r <= '0;
       cmd_max_count_r  <= '0;
     end
     else begin
@@ -124,6 +126,7 @@ module bp_me_cce_to_cache
       tagst_sent_r     <= tagst_sent_n;
       tagst_received_r <= tagst_received_n;
       cmd_counter_r    <= cmd_counter_n;
+      block_ld_counter_r <= block_ld_counter_n;
       cmd_max_count_r  <= cmd_max_count_n;
     end
   end
@@ -142,6 +145,7 @@ module bp_me_cce_to_cache
     
     cmd_state_n = cmd_state_r;
     cmd_counter_n = cmd_counter_r;
+    block_ld_counter_n = block_ld_counter_r;
     cmd_max_count_n = cmd_max_count_r;
 
     case (cmd_state_r)
@@ -224,7 +228,12 @@ module bp_me_cce_to_cache
         if (ready_i)
           begin
             cmd_counter_n = cmd_counter_r + 1;
-            if (cmd_counter_r == cmd_max_count_r)
+            if (((mem_cmd.msg_type == e_cce_mem_wr) | (mem_cmd.msg_type == e_cce_mem_rd)) & mem_cmd.size == e_mem_size_64)
+            begin
+                cmd_state_n = BLOCK_LD_WAIT;
+                cmd_counter_n = '0;
+            end
+            else if (cmd_counter_r == cmd_max_count_r)
               begin
                 mem_cmd_yumi_lo = 1'b1;
                 cmd_counter_n = '0;
@@ -232,9 +241,20 @@ module bp_me_cce_to_cache
               end
           end
       end
+      BLOCK_LD_WAIT: begin
+        if(ready_i) begin
+          block_ld_counter_n = block_ld_counter_r + 1;
+          if(block_ld_counter_r ==  counter_width_lp'(7))
+            begin
+              mem_cmd_yumi_lo = 1'b1;
+              block_ld_counter_n = '0;
+              cmd_state_n = READY;
+            end
+        end    
+      end
     endcase
   end
-  
+    
   
   typedef enum logic [1:0] {
     RESP_RESET
@@ -256,9 +276,6 @@ module bp_me_cce_to_cache
   logic [block_size_in_words_lp-1:0][dword_width_p-1:0] resp_data_r;
   
   assign mem_resp.data = resp_data_r;
-
-  integer file_handle;
-  reg [8*20:1] file_name_str = "mem_resp.trace";
   
   // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i) begin
@@ -266,19 +283,12 @@ module bp_me_cce_to_cache
       resp_state_r      <= RESP_RESET;
       resp_counter_r    <= '0;
       resp_max_count_r  <= '0;
-      file_handle = $fopen(file_name_str, "w");
-      $fclose(file_handle);
     end
     else begin
       resp_state_r      <= resp_state_n;
       resp_counter_r    <= resp_counter_n;
       resp_max_count_r  <= resp_max_count_n;
       resp_data_r[resp_counter_r] <= resp_data_n;
-      if(mem_resp_v_lo & ( (mem_resp.msg_type == e_cce_mem_wr) | (mem_resp.msg_type == e_cce_mem_rd) ) ) begin
-        file_handle = $fopen(file_name_str, "a");
-        $fwrite(file_handle,"ADDR[%h] = %h\n", mem_resp.addr, mem_resp.data);
-        $fclose(file_handle);
-      end
     end
   end
 
