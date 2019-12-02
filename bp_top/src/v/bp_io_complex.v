@@ -66,17 +66,17 @@ module bp_io_complex
          ,.my_did_i(my_did_i)
          ,.my_cord_i(cord_li)
   
-         ,.coh_lce_req_link_i(lce_req_link_li)
-         ,.coh_lce_req_link_o(lce_req_link_lo)
+         ,.coh_lce_req_link_i(lce_req_link_li[i])
+         ,.coh_lce_req_link_o(lce_req_link_lo[i])
   
-         ,.coh_lce_cmd_link_i(lce_cmd_link_li)
-         ,.coh_lce_cmd_link_o(lce_cmd_link_lo)
+         ,.coh_lce_cmd_link_i(lce_cmd_link_li[i])
+         ,.coh_lce_cmd_link_o(lce_cmd_link_lo[i])
   
-         ,.mem_cmd_link_i(mem_cmd_link_li)
-         ,.mem_cmd_link_o(mem_cmd_link_lo)
+         ,.mem_cmd_link_i(mem_cmd_link_li[i])
+         ,.mem_cmd_link_o(mem_cmd_link_lo[i])
   
-         ,.mem_resp_link_i(mem_resp_link_li)
-         ,.mem_resp_link_o(mem_resp_link_lo)
+         ,.mem_resp_link_i(mem_resp_link_li[i])
+         ,.mem_resp_link_o(mem_resp_link_lo[i])
          );
     end
   
