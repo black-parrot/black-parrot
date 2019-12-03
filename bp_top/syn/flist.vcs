@@ -199,8 +199,9 @@ $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_req.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.v
+$BP_ME_DIR/src/v/wormhole/bp_me_addr_to_cce_id.v
 ## TOP
-$BP_TOP_DIR/src/v/bp_addr_map.v
+#$BP_TOP_DIR/src/v/bp_addr_map.v
 $BP_TOP_DIR/src/v/bp_cfg.v
 $BP_TOP_DIR/src/v/bp_cfg_buffered.v
 $BP_TOP_DIR/src/v/bp_core.v
@@ -214,6 +215,6 @@ $BP_TOP_DIR/src/v/bp_io_link_to_lce.v
 $BP_TOP_DIR/src/v/bp_io_tile.v
 $BP_TOP_DIR/src/v/bp_io_tile_node.v
 $BP_TOP_DIR/src/v/bp_processor.v
-$BP_TOP_DIR/src/v/bp_remote_domain_proxy_node.v
+#$BP_TOP_DIR/src/v/bp_remote_domain_proxy_node.v
 $BP_TOP_DIR/src/v/bp_tile.v
 $BP_TOP_DIR/src/v/bp_tile_node.v

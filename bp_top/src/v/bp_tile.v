@@ -94,11 +94,6 @@ logic                  cce_mem_cmd_v_lo, cce_mem_cmd_ready_li;
 bp_cce_mem_msg_s       cce_mem_resp_li;
 logic                  cce_mem_resp_v_li, cce_mem_resp_yumi_lo;
 
-bp_cce_mem_msg_s       mem_cmd_lo;
-logic                  mem_cmd_v_lo, mem_cmd_yumi_li;
-bp_cce_mem_msg_s       mem_resp_li;
-logic                  mem_resp_v_li, mem_resp_ready_lo;
-
 bp_cce_mem_msg_s       link_mem_cmd_li;
 logic                  link_mem_cmd_v_li, link_mem_cmd_ready_lo, link_mem_cmd_yumi_lo;
 bp_cce_mem_msg_s       link_mem_resp_lo;
@@ -482,14 +477,14 @@ for (genvar i = 0; i < 2; i++)
 
   assign mem_cmd_ready_li     = link_mem_cmd_ready_lo | cfg_mem_cmd_ready_lo | clint_mem_cmd_ready_lo;
 
-  assign link_mem_cmd_li      = mem_cmd_lo;
-  assign link_mem_cmd_v_li    = mem_cmd_v_lo & ~local_cmd_li;
+  assign link_mem_cmd_li      = cce_mem_cmd_lo;
+  assign link_mem_cmd_v_li    = cce_mem_cmd_v_lo & ~local_cmd_li;
 
-  assign cfg_mem_cmd_li       = mem_cmd_lo;
-  assign cfg_mem_cmd_v_li     = mem_cmd_v_lo &  local_cmd_li & (device_li == 4'd1);
+  assign cfg_mem_cmd_li       = cce_mem_cmd_lo;
+  assign cfg_mem_cmd_v_li     = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == 4'd1);
 
-  assign clint_mem_cmd_li     = mem_cmd_lo;
-  assign clint_mem_cmd_v_li   = mem_cmd_v_lo &  local_cmd_li & (device_li == 4'd2);
+  assign clint_mem_cmd_li     = cce_mem_cmd_lo;
+  assign clint_mem_cmd_v_li   = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == 4'd2);
 
   /* TODO: Do arbitration backwards */
   bsg_arb_fixed
@@ -497,11 +492,11 @@ for (genvar i = 0; i < 2; i++)
      ,.lo_to_hi_p(1)
      )
    resp_arb
-    (.ready_i(mem_resp_ready_lo)
+    (.ready_i(cce_mem_resp_yumi_lo)
      ,.reqs_i({clint_mem_resp_v_lo, cfg_mem_resp_v_lo, link_mem_resp_v_lo})
      ,.grants_o({clint_mem_resp_yumi_li, cfg_mem_resp_yumi_li, link_mem_resp_yumi_li})
      );
-  assign mem_resp_v_li = link_mem_resp_yumi_li | cfg_mem_resp_yumi_li | clint_mem_resp_yumi_li;
+  assign cce_mem_resp_v_li = link_mem_resp_v_lo | cfg_mem_resp_v_lo | clint_mem_resp_v_lo;
 
   bp_me_cce_to_wormhole_link_master
    #(.bp_params_p(bp_params_p))

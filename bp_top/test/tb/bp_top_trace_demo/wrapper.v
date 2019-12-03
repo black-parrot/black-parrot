@@ -36,6 +36,13 @@ module wrapper
 
    , input  [E:W][mem_noc_ral_link_width_lp-1:0]      mem_resp_link_i
    , output [E:W][mem_noc_ral_link_width_lp-1:0]      mem_resp_link_o
+
+   // TODO: Temp
+   , input [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  dram_cmd_link_i
+   , output [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] dram_cmd_link_o
+
+   , input [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  dram_resp_link_i
+   , output [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] dram_resp_link_o
    );
 
   bp_processor

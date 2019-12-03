@@ -55,13 +55,11 @@ module testbench
 bsg_ready_and_link_sif_s [E:P] cmd_link_li, cmd_link_lo;
 bsg_ready_and_link_sif_s [E:P] resp_link_li, resp_link_lo;
 
+bsg_ready_and_link_sif_s dram_cmd_link_li, dram_cmd_link_lo;
+bsg_ready_and_link_sif_s dram_resp_link_li, dram_resp_link_lo;
+
 bsg_ready_and_link_sif_s proc_cmd_link_li, proc_cmd_link_lo;
 bsg_ready_and_link_sif_s proc_resp_link_li, proc_resp_link_lo;
-
-bp_cce_mem_msg_s       mem_resp_li;
-logic                  mem_resp_v_li, mem_resp_ready_lo;
-bp_cce_mem_msg_s       mem_cmd_lo;
-logic                  mem_cmd_v_lo, mem_cmd_yumi_li;
 
 bp_cce_mem_msg_s       dram_resp_lo;
 logic                  dram_resp_v_lo, dram_resp_ready_li;
@@ -105,6 +103,12 @@ wrapper
 
    ,.mem_resp_link_i({proc_resp_link_li, stub_resp_link_li})
    ,.mem_resp_link_o({proc_resp_link_lo, stub_resp_link_lo})
+
+   ,.dram_cmd_link_i(dram_cmd_link_li)
+   ,.dram_cmd_link_o(dram_cmd_link_lo)
+
+   ,.dram_resp_link_i(dram_resp_link_li)
+   ,.dram_resp_link_o(dram_resp_link_lo)
    );
 
 assign cmd_link_li[W]  = proc_cmd_link_lo;
@@ -332,10 +336,10 @@ wire [mem_noc_did_width_p-1:0]  dst_did_lo  = 1;
 wire [mem_noc_cord_width_p-1:0] dst_cord_lo = '1;
 wire [mem_noc_cid_width_p-1:0]  dst_cid_lo  = '0;
 
-// DRAM + link 
+// Host + cfg link 
 bp_me_cce_to_wormhole_link_bidir
  #(.bp_params_p(bp_params_p))
-  bidir_link
+ host_cfg_link
   (.clk_i(clk_i)
   ,.reset_i(reset_i)
 
@@ -347,13 +351,13 @@ bp_me_cce_to_wormhole_link_bidir
   ,.mem_resp_v_o(cfg_resp_v_li)
   ,.mem_resp_yumi_i(cfg_resp_ready_lo & cfg_resp_v_li)
 
-  ,.mem_cmd_o(mem_cmd_lo)
-  ,.mem_cmd_v_o(mem_cmd_v_lo)
-  ,.mem_cmd_yumi_i(mem_cmd_yumi_li)
+  ,.mem_cmd_o(host_cmd_li)
+  ,.mem_cmd_v_o(host_cmd_v_li)
+  ,.mem_cmd_yumi_i(host_cmd_yumi_lo)
 
-  ,.mem_resp_i(mem_resp_li)
-  ,.mem_resp_v_i(mem_resp_v_li)
-  ,.mem_resp_ready_o(mem_resp_ready_lo)
+  ,.mem_resp_i(host_resp_lo)
+  ,.mem_resp_v_i(host_resp_v_lo)
+  ,.mem_resp_ready_o(host_resp_ready_li)
 
   ,.my_did_i(dram_did_li)
   ,.my_cord_i(mem_noc_cord_width_p'(dram_did_li))
@@ -368,6 +372,28 @@ bp_me_cce_to_wormhole_link_bidir
   ,.resp_link_i(resp_link_lo[P])
   ,.resp_link_o(resp_link_li[P])
   );
+
+// DRAM 
+bp_me_cce_to_wormhole_link_client
+ #(.bp_params_p(bp_params_p))
+ dram_link
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.mem_cmd_o(dram_cmd_li)
+   ,.mem_cmd_v_o(dram_cmd_v_li)
+   ,.mem_cmd_yumi_i(dram_cmd_yumi_lo)
+
+   ,.mem_resp_i(dram_resp_lo)
+   ,.mem_resp_v_i(dram_resp_v_lo)
+   ,.mem_resp_ready_o(dram_resp_ready_li)
+
+   ,.cmd_link_i(dram_cmd_link_lo)
+   ,.cmd_link_o(dram_cmd_link_li)
+
+   ,.resp_link_i(dram_resp_link_lo)
+   ,.resp_link_o(dram_resp_link_li)
+   );
 
 bp_mem
 #(.bp_params_p(bp_params_p)
@@ -417,40 +443,6 @@ bp_nonsynth_host
    ,.program_finish_o(program_finish)
    );
 
-bp_nonsynth_if_verif
- #(.bp_params_p(bp_params_p))
- if_verif
-  ();
-
-// MMIO arbitration 
-//   Should this be on its own I/O router?
-logic req_outstanding_r;
-bsg_dff_reset_en
- #(.width_p(1))
- req_outstanding_reg
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.en_i(mem_cmd_yumi_li | mem_resp_v_li)
-
-   ,.data_i(mem_cmd_yumi_li)
-   ,.data_o(req_outstanding_r)
-   );
-
-wire host_cmd_not_dram      = mem_cmd_v_lo & (mem_cmd_lo.addr < dram_base_addr_gp);
-
-assign host_cmd_li          = mem_cmd_lo;
-assign host_cmd_v_li        = mem_cmd_v_lo & host_cmd_not_dram & ~req_outstanding_r;
-assign dram_cmd_li          = mem_cmd_lo;
-assign dram_cmd_v_li        = mem_cmd_v_lo & ~host_cmd_not_dram & ~req_outstanding_r;
-assign mem_cmd_yumi_li      = host_cmd_not_dram 
-                              ? host_cmd_yumi_lo 
-                              : dram_cmd_yumi_lo;
-
-assign mem_resp_li = host_resp_v_lo ? host_resp_lo : dram_resp_lo;
-assign mem_resp_v_li = host_resp_v_lo | dram_resp_v_lo;
-assign host_resp_ready_li = mem_resp_ready_lo;
-assign dram_resp_ready_li = mem_resp_ready_lo;
-
 localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
 bp_cce_mmio_cfg_loader
   #(.bp_params_p(bp_params_p)
@@ -471,6 +463,11 @@ bp_cce_mmio_cfg_loader
    ,.mem_resp_v_i(cfg_resp_v_li)
    ,.mem_resp_ready_o(cfg_resp_ready_lo)
   );
+
+bp_nonsynth_if_verif
+ #(.bp_params_p(bp_params_p))
+ if_verif
+  ();
 
 endmodule
 
