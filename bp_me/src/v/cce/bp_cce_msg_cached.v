@@ -61,17 +61,9 @@ module bp_cce_msg_cached
    , input                                             mem_resp_v_i
    , output logic                                      mem_resp_yumi_o
 
-   , input [cce_mem_msg_width_lp-1:0]                  mem_cmd_i
-   , input                                             mem_cmd_v_i
-   , output logic                                      mem_cmd_yumi_o
-
    , output logic [cce_mem_msg_width_lp-1:0]           mem_cmd_o
    , output logic                                      mem_cmd_v_o
    , input                                             mem_cmd_ready_i
-
-   , output logic [cce_mem_msg_width_lp-1:0]           mem_resp_o
-   , output logic                                      mem_resp_v_o
-   , input                                             mem_resp_ready_i
 
    // MSHR
    , input [mshr_width_lp-1:0]                         mshr_i
@@ -110,16 +102,14 @@ module bp_cce_msg_cached
   bp_lce_cmd_s lce_cmd;
   bp_lce_cce_resp_s lce_resp;
 
-  bp_cce_mem_msg_s mem_resp_li, mem_resp_lo, mem_cmd_lo, mem_cmd_li;
+  bp_cce_mem_msg_s mem_resp_li, mem_cmd_lo;
 
   // cast output queue messages from structure variables
   assign lce_cmd_o = lce_cmd;
   assign mem_cmd_o = mem_cmd_lo;
-  assign mem_resp_o = mem_resp_lo;
 
   // cast input queue messages to structure variables
   assign mem_resp_li = mem_resp_i;
-  assign mem_cmd_li = mem_cmd_i;
   assign lce_resp = lce_resp_i;
   assign lce_req_li = lce_req_i;
 
@@ -198,8 +188,6 @@ module bp_cce_msg_cached
     // defaults
     mem_cmd_v_o = '0;
     mem_cmd_lo = '0;
-    mem_resp_v_o = '0;
-    mem_resp_lo = '0;
 
     lce_cmd_v_o = '0;
     lce_cmd = '0;
@@ -207,7 +195,6 @@ module bp_cce_msg_cached
     lce_req_yumi_o = '0;
     lce_resp_yumi_o = '0;
     mem_resp_yumi_o = '0;
-    mem_cmd_yumi_o = '0;
 
     pending_w_v_o = '0;
     pending_w_way_group_o = '0;
@@ -559,16 +546,6 @@ module bp_cce_msg_cached
 
     end // mem_cmd
 
-    // Memory Response
-    else if (decoded_inst_i.mem_resp_v) begin
-      // TODO: implement pushq memResp with more flexibility
-      mem_resp_v_o = 1'b1;
-      mem_resp_lo.msg_type = decoded_inst_i.mem_resp;
-      // mem_cmd_li stores addr into mshr. This assumes it is still valid.
-      mem_resp_lo.addr = mshr.paddr;
-
-    end // mem_resp
-
     // LCE Command
     else if (decoded_inst_i.lce_cmd_v & ~lce_cmd_busy_o) begin
       lce_cmd_v_o = 1'b1;
@@ -625,10 +602,6 @@ module bp_cce_msg_cached
         // decrement the fence counter when dequeueing the memory response
         fence_dec = mem_resp_v_i & mem_resp_yumi_o;
       end
-    end
-    // Mem Command
-    else if (decoded_inst_i.mem_cmd_yumi) begin
-      mem_cmd_yumi_o = decoded_inst_i.mem_cmd_yumi;
     end
 
   end

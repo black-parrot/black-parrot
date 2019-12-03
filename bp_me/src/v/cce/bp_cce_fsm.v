@@ -70,17 +70,9 @@ module bp_cce_fsm
    , input                                             mem_resp_v_i
    , output logic                                      mem_resp_yumi_o
 
-   , input [cce_mem_msg_width_lp-1:0]                  mem_cmd_i
-   , input                                             mem_cmd_v_i
-   , output logic                                      mem_cmd_yumi_o
-
    , output logic [cce_mem_msg_width_lp-1:0]           mem_cmd_o
    , output logic                                      mem_cmd_v_o
    , input                                             mem_cmd_ready_i
-
-   , output logic [cce_mem_msg_width_lp-1:0]           mem_resp_o
-   , output logic                                      mem_resp_v_o
-   , input                                             mem_resp_ready_i
   );
 
   // stub unused ports
