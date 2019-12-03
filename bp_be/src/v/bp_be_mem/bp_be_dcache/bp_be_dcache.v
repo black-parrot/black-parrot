@@ -650,7 +650,6 @@ module bp_be_dcache
       ,.reset_i(reset_i)
     
       ,.lce_id_i(cfg_bus_cast_i.dcache_id)
-      ,.lce_mode_i(cfg_bus_cast_i.dcache_mode)
 
       ,.ready_o(ready_o)
       ,.cache_miss_o(cache_miss_o)
