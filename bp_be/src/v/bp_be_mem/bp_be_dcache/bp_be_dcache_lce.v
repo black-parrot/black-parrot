@@ -75,7 +75,6 @@ module bp_be_dcache_lce
     , input reset_i
 
     , input [lce_id_width_p-1:0] lce_id_i
-    , input bp_lce_mode_e lce_mode_i
 
     , output logic ready_o
     , output logic cache_miss_o
@@ -235,7 +234,7 @@ module bp_be_dcache_lce
 
   // LCE cmd
   //
-  logic lce_sync_done_lo;
+  logic lce_ready_lo;
 
   bp_lce_cce_resp_s lce_cmd_to_lce_resp_lo;
   logic lce_cmd_to_lce_resp_v_lo;
@@ -248,11 +247,10 @@ module bp_be_dcache_lce
       ,.reset_i(reset_i)
 
       ,.lce_id_i(lce_id_i)
-      ,.lce_mode_i(lce_mode_i)
 
       ,.miss_addr_i(miss_addr_lo)
 
-      ,.lce_sync_done_o(lce_sync_done_lo)
+      ,.lce_ready_o(lce_ready_lo)
       ,.set_tag_received_o(set_tag_received)
       ,.set_tag_wakeup_received_o(set_tag_wakeup_received)
       ,.uncached_store_done_received_o(uncached_store_done_received)
@@ -329,11 +327,7 @@ module bp_be_dcache_lce
   wire timeout = (timeout_cnt_r == timeout_max_limit_p);
 
   // LCE Ready Signal
-  // The LCE ready signal depends on the mode of operation.
-  // In uncached only mode, the LCE is always ready
-  // In normal mode, the signal goes high after the LCE CMD unit signals that the CCE has
-  // completed the initialization sequence.
-  wire lce_ready = (lce_mode_i == e_lce_mode_uncached) ? 1'b1 : lce_sync_done_lo;
+  wire lce_ready = lce_ready_lo;
   assign ready_o = lce_ready & ~timeout & ~cache_miss_o; 
 
 endmodule

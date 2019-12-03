@@ -6,7 +6,7 @@
  *    LCE command handler. On reset, LCE is in reset state, waiting to be
  *    initialized. LCE receives set_clear commands to invalidate all the sets
  *    in the cache. Once LCE has received sync command from all the CCEs, and
- *    has responded with ack, it asserts lce_sync_done_o signal to indicate
+ *    has responded with ack, it asserts lce_ready_o signal to indicate
  *    that the cache may begin start accepting load/store instructions from
  *    the backend.
  *
@@ -36,6 +36,11 @@ module bp_be_dcache_lce_cmd
       `bp_be_dcache_lce_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, tag_width_lp)
     , localparam dcache_lce_stat_mem_pkt_width_lp=
       `bp_be_dcache_lce_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
+
+    // width for counter used during initiliazation and for sync messages
+    , localparam cnt_width_lp = `BSG_MAX(cce_id_width_p+1, `BSG_SAFE_CLOG2(lce_sets_p)+1)
+    , localparam cnt_max_val_lp = ((2**cnt_width_lp)-1)
+
   )
   (
     input clk_i
@@ -43,11 +48,9 @@ module bp_be_dcache_lce_cmd
 
     , input [lce_id_width_p-1:0] lce_id_i
 
-    , input bp_lce_mode_e lce_mode_i
-
     , input [paddr_width_p-1:0] miss_addr_i
 
-    , output logic lce_sync_done_o
+    , output logic lce_ready_o
     , output logic set_tag_received_o
     , output logic set_tag_wakeup_received_o
     , output logic uncached_store_done_received_o
@@ -119,8 +122,8 @@ module bp_be_dcache_lce_cmd
   // states
   //
   typedef enum logic [2:0] {
-    e_lce_cmd_state_uncached
-    ,e_lce_cmd_state_sync
+    e_lce_cmd_state_reset
+    ,e_lce_cmd_state_uncached_only
     ,e_lce_cmd_state_ready
     ,e_lce_cmd_state_tr
     ,e_lce_cmd_state_wb
@@ -129,7 +132,6 @@ module bp_be_dcache_lce_cmd
   } lce_cmd_state_e;
 
   lce_cmd_state_e state_r, state_n;
-  logic [cce_id_width_p-1:0] sync_ack_count_r, sync_ack_count_n;
 
   // for invalidate_tag_cmd
   logic invalidated_tag_r, invalidated_tag_n;
@@ -153,16 +155,31 @@ module bp_be_dcache_lce_cmd
   assign lce_tr_done = lce_cmd_v_o & lce_cmd_ready_i;
   assign lce_resp_done = lce_resp_yumi_i;
 
-  // this gets asserted when LCE finishes its sync with CCE.
-  assign lce_sync_done_o = (state_r != e_lce_cmd_state_sync)
-                           & (state_r != e_lce_cmd_state_uncached);
+  // this gets asserted when LCE finishes resetting its state
+  assign lce_ready_o = (state_r != e_lce_cmd_state_reset);
+
+  logic cnt_inc, cnt_clear;
+  logic [cnt_width_lp-1:0] cnt_r;
+  bsg_counter_clear_up
+    #(.max_val_p(cnt_max_val_lp)
+      ,.init_val_p(0)
+      )
+    counter
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      ,.clear_i(cnt_clear)
+      ,.up_i(cnt_inc)
+      ,.count_o(cnt_r)
+      );
 
   // next state logic
   //
   always_comb begin
-    
+
+    cnt_inc = 1'b0;
+    cnt_clear = reset_i;
+
     state_n = state_r;
-    sync_ack_count_n = sync_ack_count_r;
     tr_data_buffered_n = tr_data_buffered_r;
 
     wb_data_buffered_n = wb_data_buffered_r;
@@ -196,38 +213,38 @@ module bp_be_dcache_lce_cmd
     
     unique case (state_r)
 
-      // < STARTUP / UNCACHED ONLY >
-      // LCE starts in a mode that can process only uncached accesses, and in which the only
-      // commands that will be received are uncached store done commands. 
-      // If the mode is set to uncached, the LCE CMD unit stays in this state. If the mode is
-      // set to normal, the LCE CMD unit transitions to the sync state and waits for the CCE to
-      // perform the initialization routine.
-      e_lce_cmd_state_uncached: begin
-        state_n = (lce_mode_i == e_lce_mode_normal)
-                    ? e_lce_cmd_state_sync
-                    : e_lce_cmd_state_uncached;
+      // < RESET >
+      // After reset_i goes low, this module clears all stat and tag mem entries,
+      // resetting the state of the cache and LCE
+      e_lce_cmd_state_reset: begin
+        tag_mem_pkt.index = cnt_r[0+:index_width_lp];
+        tag_mem_pkt.state = e_COH_I;
+        tag_mem_pkt.tag = '0;
+        tag_mem_pkt.opcode = e_dcache_lce_tag_mem_set_clear;
+        tag_mem_pkt_v_o = 1'b1;
 
-        unique case (lce_cmd_li.msg_type)
-          //  <uncached store done>
-          //  Uncached store done from CCE - decrement flow counter
-          e_lce_cmd_uc_st_done: begin
-            lce_cmd_yumi_o = lce_cmd_v_i;
-            uncached_store_done_received_o = lce_cmd_v_i;
-          end
+        stat_mem_pkt.index = cnt_r[0+:index_width_lp];
+        stat_mem_pkt.opcode = e_dcache_lce_stat_mem_set_clear;
+        stat_mem_pkt_v_o = 1'b1;
 
-          // for other message types in this state, use default as defined at top.
-          default: begin
-          end
-        endcase
+        state_n = ((cnt_r == cnt_width_lp'(lce_sets_p-1)) & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i)
+          ? e_lce_cmd_state_uncached_only
+          : e_lce_cmd_state_reset;
+        cnt_clear = (state_n == e_lce_cmd_state_uncached_only);
+        cnt_inc = ~cnt_clear & (tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i);
 
       end
 
-      // < RESET >
-      // LCE is expected to receive SET-CLEAR messages from CCE to invalidate every cache lines.
+      // < UNCACHED ONLY >
+      // LCE starts in a mode that can process uncached accesses.
+
+      // LCE may receive SET-CLEAR messages from CCE to invalidate cache lines.
       // set-clear messages clears the valid bits in tag_mem and the dirty bits in stat_mem.
       // When LCE receives SYNC message, it responds with SYNC-ACK. When LCE received SYNC messages from
       // every CCE in the system, it moves onto READY state.
-      e_lce_cmd_state_sync: begin
+
+      e_lce_cmd_state_uncached_only: begin
+
         unique case (lce_cmd_li.msg_type)
 
           e_lce_cmd_sync: begin
@@ -236,12 +253,15 @@ module bp_be_dcache_lce_cmd
             lce_resp.msg_type = e_lce_cce_sync_ack;
             lce_resp_v_o = lce_cmd_v_i;
             lce_cmd_yumi_o = lce_resp_yumi_i;
-            sync_ack_count_n = lce_resp_yumi_i
-              ? sync_ack_count_r + 1
-              : sync_ack_count_r;
-            state_n = ((sync_ack_count_r == cce_id_width_p'(num_cce_p-1)) & lce_resp_yumi_i)
+            state_n = ((cnt_r == cnt_width_lp'(num_cce_p-1)) & lce_resp_yumi_i)
               ? e_lce_cmd_state_ready
-              : e_lce_cmd_state_sync;
+              : e_lce_cmd_state_uncached_only;
+            // clear counter when moving to ready state
+            cnt_clear = (state_n == e_lce_cmd_state_ready);
+            // only increment counter when staying in uncached_only state and waiting for more
+            // sync messages, and when the lce_resp is sent
+            cnt_inc = ~cnt_clear & lce_resp_yumi_i;
+
           end
 
           e_lce_cmd_set_clear: begin
@@ -255,12 +275,30 @@ module bp_be_dcache_lce_cmd
 
             lce_cmd_yumi_o = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
           end
-  
+
+          e_lce_cmd_uc_st_done: begin
+            lce_cmd_yumi_o = lce_cmd_v_i;
+            uncached_store_done_received_o = lce_cmd_v_i;
+          end
+
+          e_lce_cmd_uc_data: begin
+            data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
+            data_mem_pkt.way_id = lce_cmd_li.way_id;
+            data_mem_pkt.data = lce_cmd_li.msg.dt_cmd.data;
+            data_mem_pkt.opcode = e_dcache_lce_data_mem_uncached;
+            data_mem_pkt_v_o = lce_cmd_v_i;
+            lce_cmd_yumi_o = data_mem_pkt_yumi_i;
+
+            uncached_data_received_o = data_mem_pkt_yumi_i;
+
+          end
+
           // for other message types in this state, use default as defined at top.
           default: begin
 	     
           end
         endcase 
+
       end
 
       // < READY >
@@ -387,6 +425,19 @@ module bp_be_dcache_lce_cmd
 
             uncached_data_received_o = data_mem_pkt_yumi_i;
           end
+
+          e_lce_cmd_set_clear: begin
+            tag_mem_pkt.index = lce_cmd_addr_index;
+            tag_mem_pkt.opcode = e_dcache_lce_tag_mem_set_clear;
+            tag_mem_pkt_v_o = lce_cmd_v_i;
+
+            stat_mem_pkt.index = lce_cmd_addr_index;
+            stat_mem_pkt.opcode = e_dcache_lce_stat_mem_set_clear;
+            stat_mem_pkt_v_o = lce_cmd_v_i;
+
+            lce_cmd_yumi_o = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
+          end
+
           // for other message types in this state, use default as defined at top.
           default: begin
 
@@ -497,7 +548,7 @@ module bp_be_dcache_lce_cmd
 
       // we should never get in this state, but if we do, return to the sync state.
       default: begin 
-        state_n = e_lce_cmd_state_sync;
+        state_n = e_lce_cmd_state_reset;
       end
     endcase
   end
@@ -508,8 +559,7 @@ module bp_be_dcache_lce_cmd
   //synopsys sync_set_reset "reset_i"
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
-      state_r <= e_lce_cmd_state_uncached;
-      sync_ack_count_r <= '0;
+      state_r <= e_lce_cmd_state_reset;
       tr_data_buffered_r <= 1'b0;
       wb_data_buffered_r <= 1'b0;
       wb_data_read_r <= 1'b0;
@@ -518,7 +568,6 @@ module bp_be_dcache_lce_cmd
     end
     else begin
       state_r <= state_n;
-      sync_ack_count_r <= sync_ack_count_n;
       tr_data_buffered_r <= tr_data_buffered_n;
       wb_data_buffered_r <= wb_data_buffered_n;
       wb_data_read_r <= wb_data_read_n;
