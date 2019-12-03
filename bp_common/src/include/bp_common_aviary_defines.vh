@@ -144,6 +144,25 @@ typedef struct packed
   integer mem_noc_x_dim;
 }  bp_proc_param_s;
 
+// For now, we have a fixed address map
+typedef struct packed
+{
+  logic [2:0]  did;
+  logic [36:0] addr;
+}  bp_global_addr_s;
+
+localparam cfg_cce_width_p  = 7;
+localparam cfg_dev_width_p  = 4;
+localparam cfg_addr_width_p = 20;
+localparam cfg_data_width_p = 64;
+typedef struct packed
+{
+  logic [8:0]  zero;
+  logic [6:0]  cce;
+  logic [3:0]  dev;
+  logic [19:0] addr;
+}  bp_local_addr_s;
+
 `define declare_bp_proc_params(bp_params_e_mp) \
   , localparam bp_proc_param_s proc_param_lp = all_cfgs_gp[bp_params_e_mp]                         \
                                                                                                    \
@@ -220,10 +239,6 @@ typedef struct packed
   , localparam csr_addr_width_p    = 12                                                            \
   , localparam reg_addr_width_p    = 5                                                             \
   , localparam page_offset_width_p = 12                                                            \
-                                                                                                   \
-  , localparam cfg_core_width_p = 8                                                                \
-  , localparam cfg_addr_width_p = 16                                                               \
-  , localparam cfg_data_width_p = 64                                                               \
                                                                                                    \
   , localparam vtag_width_p  = proc_param_lp.vaddr_width - page_offset_width_p                     \
   , localparam ptag_width_p  = proc_param_lp.paddr_width - page_offset_width_p                     \

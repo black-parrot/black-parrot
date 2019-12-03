@@ -39,6 +39,13 @@ module bp_processor
 
    , input  [E:W][mem_noc_ral_link_width_lp-1:0]     mem_resp_link_i
    , output [E:W][mem_noc_ral_link_width_lp-1:0]     mem_resp_link_o
+
+   // TODO: Temp
+   , input [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  dram_cmd_link_i
+   , output [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] dram_cmd_link_o
+
+   , input [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  dram_resp_link_i
+   , output [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] dram_resp_link_o
    );
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
@@ -70,11 +77,11 @@ bp_core_complex
    ,.coh_cmd_link_o(coh_cmd_link_li)
 
    // TODO: Connect to DRAM
-   ,.mem_cmd_link_i('0)
-   ,.mem_cmd_link_o()
+   ,.mem_cmd_link_i(dram_cmd_link_i)
+   ,.mem_cmd_link_o(dram_cmd_link_o)
 
-   ,.mem_resp_link_i('0)
-   ,.mem_resp_link_o()
+   ,.mem_resp_link_i(dram_resp_link_i)
+   ,.mem_resp_link_o(dram_resp_link_o)
    );
 
 bp_io_complex

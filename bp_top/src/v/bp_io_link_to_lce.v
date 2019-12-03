@@ -82,6 +82,14 @@ module bp_io_link_to_lce
   //                           : e_mem_size_8;
 
   /* TODO: Addr -> coord based on entire memory map */
+  logic [cce_id_width_p-1:0] cce_id_lo;
+  bp_me_addr_to_cce_id
+   #(.bp_params_p(bp_params_p))
+   addr_map
+    (.paddr_i(io_cmd_li.addr)
+
+     ,.cce_id_o(cce_id_lo)
+     );
 
   wire mem_cmd_wr_not_rd = (io_cmd_li.msg_type == e_cce_mem_uc_wr);
   wire lce_cmd_wr_not_rd = (lce_cmd_li.msg_type == e_lce_cmd_uc_st_done);
@@ -93,9 +101,7 @@ module bp_io_link_to_lce
       lce_req_lo.addr               = io_cmd_li.addr;
       lce_req_lo.msg_type           = mem_cmd_wr_not_rd ? e_lce_req_type_uc_wr : e_lce_req_type_uc_rd;
       lce_req_lo.src_id             = lce_id_i;
-      lce_req_lo.dst_id             = (num_cce_p > 1) 
-                                      ? io_cmd_li.addr[page_offset_width_p+:`BSG_SAFE_CLOG2(num_cce_p)] 
-                                      : 1'b0;
+      lce_req_lo.dst_id             = cce_id_lo;
 
       io_resp_lo                = '0;
       io_resp_lo.data           = lce_cmd_li.msg.dt_cmd.data;

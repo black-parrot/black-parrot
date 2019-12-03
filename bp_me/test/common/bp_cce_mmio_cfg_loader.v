@@ -59,8 +59,9 @@ module bp_cce_mmio_cfg_loader
   initial $readmemb(cce_ucode_filename_p, cce_inst_boot_rom);
 
   logic                        cfg_w_v_lo, cfg_r_v_lo;
+  bp_local_addr_s              local_addr_lo;
   logic [cfg_addr_width_p-1:0] cfg_addr_lo;
-  logic [cfg_data_width_p-1:0] cfg_data_lo;
+  logic [dword_width_p-1:0] cfg_data_lo;
 
   assign cce_inst_boot_rom_addr = cfg_addr_lo;
   assign cce_inst_boot_rom_data = cce_inst_boot_rom[cce_inst_boot_rom_addr];
@@ -157,12 +158,18 @@ module bp_cce_mmio_cfg_loader
 
       // uncached store
       mem_cmd_cast_o.msg_type      = cfg_w_v_lo ? e_cce_mem_uc_wr : e_cce_mem_uc_rd;
-      mem_cmd_cast_o.addr          = bp_cfg_base_addr_gp 
-                                     + ((core_cnt_r) << cfg_addr_width_p)
-                                     + cfg_addr_lo;
+      mem_cmd_cast_o.addr          = local_addr_lo; 
       mem_cmd_cast_o.payload       = '0;
       mem_cmd_cast_o.size          = e_mem_size_8;
       mem_cmd_cast_o.data          = cfg_data_lo;
+    end
+
+  always_comb
+    begin
+      local_addr_lo.zero = '0;
+      local_addr_lo.cce  = core_cnt_r;
+      local_addr_lo.dev  = 1;
+      local_addr_lo.addr = cfg_addr_lo;
     end
 
   always_comb 
@@ -197,7 +204,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_reset_gp;
-          cfg_data_lo = cfg_data_width_p'(1);
+          cfg_data_lo = dword_width_p'(1);
         end
         BP_FREEZE_SET: begin
           state_n = core_prog_done ? BP_RESET_CLR : BP_FREEZE_SET;
@@ -207,7 +214,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_freeze_gp;
-          cfg_data_lo = cfg_data_width_p'(1);
+          cfg_data_lo = dword_width_p'(1);
         end
         BP_RESET_CLR: begin
           state_n = core_prog_done ? SEND_CORE_ID : BP_RESET_CLR;
@@ -217,7 +224,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_reset_gp;
-          cfg_data_lo = cfg_data_width_p'(0);
+          cfg_data_lo = dword_width_p'(0);
         end
         SEND_CORE_ID: begin
           state_n = core_prog_done ? SEND_RAM : SEND_CORE_ID;
@@ -261,7 +268,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = bp_cfg_reg_cce_mode_gp;
-          cfg_data_lo = cfg_data_width_p'(e_cce_mode_normal);
+          cfg_data_lo = dword_width_p'(e_cce_mode_normal);
         end
         SEND_NUM_LCE: begin
           state_n = core_prog_done ? SEND_ICACHE_ID : SEND_NUM_LCE;
@@ -291,7 +298,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_icache_mode_gp);
-          cfg_data_lo = cfg_data_width_p'(e_lce_mode_normal); // TODO: tapeout hack, change to icache
+          cfg_data_lo = dword_width_p'(e_lce_mode_normal); // TODO: tapeout hack, change to icache
         end
         SEND_DCACHE_ID: begin
           state_n = core_prog_done ? SEND_DCACHE_NORMAL : SEND_DCACHE_ID;
@@ -311,7 +318,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_dcache_mode_gp);
-          cfg_data_lo = cfg_data_width_p'(e_lce_mode_normal);
+          cfg_data_lo = dword_width_p'(e_lce_mode_normal);
         end
         SEND_PC: begin
           state_n = core_prog_done ? BP_FREEZE_CLR : SEND_PC;
@@ -331,7 +338,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_irf_x0_gp + irf_cnt_r);
-          cfg_data_lo = cfg_data_width_p'(irf_cnt_r);
+          cfg_data_lo = dword_width_p'(irf_cnt_r);
         end
         RECV_IRF: begin
           state_n = irf_done ? BP_ENTER_DEBUG : RECV_IRF;
@@ -360,7 +367,7 @@ module bp_cce_mmio_cfg_loader
 
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_freeze_gp);
-          cfg_data_lo = cfg_data_width_p'(0);
+          cfg_data_lo = dword_width_p'(0);
         end
         BP_NINSTR_RD: begin
           state_n = BP_EXIT_DEBUG;

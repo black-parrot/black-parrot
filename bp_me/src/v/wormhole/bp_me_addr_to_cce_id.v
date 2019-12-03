@@ -10,12 +10,16 @@ module bp_me_addr_to_cce_id
    , output logic [cce_id_width_p-1:0] cce_id_o
    );
 
+bp_local_addr_s local_addr_li;
+
+assign local_addr_li = paddr_i;
+
 always_comb
   if (paddr_i < dram_base_addr_gp)
     begin
       // Split uncached I/O region by N CCE cores
       // TODO: hardcoded bit range, should be in defines file
-      cce_id_o = paddr_i[37-:cce_id_width_lp];
+      cce_id_o = local_addr_li.cce;
     end
   else if (paddr_i < coproc_base_addr_gp)
     begin
