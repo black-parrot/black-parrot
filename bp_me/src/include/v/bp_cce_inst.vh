@@ -203,7 +203,6 @@ typedef enum logic [4:0] {
   ,e_src_mem_resp_v                      = 5'b10001
   ,e_src_pending_v                       = 5'b10010
   ,e_src_lce_resp_v                      = 5'b10011
-  ,e_src_mem_cmd_v                       = 5'b10100
 
   ,e_src_lce_resp_type                   = 5'b11000
   ,e_src_cce_id                          = 5'b11001
@@ -438,12 +437,11 @@ typedef enum logic [3:0] {
 
 // Source queue one hot
 // order: {lceReq, lceResp, memResp, pending}
-typedef enum logic [4:0] {
-  e_src_q_pending                        = 5'b00001
-  ,e_src_q_mem_resp                      = 5'b00010
-  ,e_src_q_lce_resp                      = 5'b00100
-  ,e_src_q_lce_req                       = 5'b01000
-  ,e_src_q_mem_cmd                       = 5'b10000
+typedef enum logic [3:0] {
+  e_src_q_pending                        = 4'b0001
+  ,e_src_q_mem_resp                      = 4'b0010
+  ,e_src_q_lce_resp                      = 4'b0100
+  ,e_src_q_lce_req                       = 4'b1000
 } bp_cce_inst_src_q_e;
 
 `define bp_cce_num_src_q $bits(bp_cce_inst_src_q_e)
@@ -454,7 +452,6 @@ typedef enum logic [2:0] {
   ,e_src_q_sel_mem_resp                  = 3'b001
   ,e_src_q_sel_pending                   = 3'b010
   ,e_src_q_sel_lce_resp                  = 3'b011
-  ,e_src_q_sel_mem_cmd                   = 3'b100
 } bp_cce_inst_src_q_sel_e;
 
 `define bp_cce_inst_src_q_sel_width $bits(bp_cce_inst_src_q_sel_e)
@@ -463,7 +460,6 @@ typedef enum logic [2:0] {
 typedef enum logic [1:0] {
   e_dst_q_lce_cmd                        = 2'b00
   ,e_dst_q_mem_cmd                       = 2'b01
-  ,e_dst_q_mem_resp                      = 2'b10
 } bp_cce_inst_dst_q_sel_e;
 
 `define bp_cce_inst_dst_q_sel_width $bits(bp_cce_inst_dst_q_sel_e)
@@ -557,7 +553,6 @@ typedef enum logic [2:0] {
 typedef enum logic [1:0] {
   e_req_sel_lce_req                      = 2'b00
   ,e_req_sel_pending                     = 2'b01
-  ,e_req_sel_mem_cmd                     = 2'b10
 } bp_cce_inst_req_sel_e;
 
 `define bp_cce_inst_req_sel_width $bits(bp_cce_inst_req_sel_e)
@@ -1064,8 +1059,6 @@ typedef struct packed {
   logic                                    resp_type_w_v;
   // Write enable for mem response type
   logic                                    mem_resp_type_w_v;
-  // Write enable for mem command type
-  logic                                    mem_cmd_type_w_v;
 
 
   // Write enables for uncached data and request size registers
@@ -1078,12 +1071,10 @@ typedef struct packed {
   logic                                    lce_req_yumi;
   logic                                    lce_resp_yumi;
   logic                                    mem_resp_yumi;
-  logic                                    mem_cmd_yumi;
 
   // outbound messages - valid signals
   logic                                    lce_cmd_v;
   logic                                    mem_cmd_v;
-  logic                                    mem_resp_v;
 
   // clear mshr
   logic                                    mshr_clear;

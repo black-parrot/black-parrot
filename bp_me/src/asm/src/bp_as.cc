@@ -238,8 +238,6 @@ Assembler::parseSrcOpd(string &s) {
     return e_src_pending_v;
   } else if (!s.compare("lceresp")) {
     return e_src_lce_resp_v;
-  } else if (!s.compare("memcmd")) {
-    return e_src_mem_cmd_v;
   } else if (!s.compare("lceresptype")) {
     return e_src_lce_resp_type;
   } else if (!s.compare("cceid")) {
@@ -825,8 +823,6 @@ Assembler::parseSrcQueue(string &s) {
     return e_src_q_pending;
   } else if (!s.compare("lceresp")) {
     return e_src_q_lce_resp;
-  } else if (!s.compare("memcmd")) {
-    return e_src_q_mem_cmd;
   } else {
     printf("Unknown src queue select operand: %s\n", s.c_str());
     exit(-1);
@@ -839,8 +835,6 @@ Assembler::parseDstQueue(string &s) {
     return e_dst_q_lce_cmd;
   } else if (!s.compare("memcmd")) {
     return e_dst_q_mem_cmd;
-  } else if (!s.compare("memresp")) {
-    return e_dst_q_mem_resp;
   } else {
     printf("Unknown dst queue select operand: %s\n", s.c_str());
     exit(-1);
@@ -987,9 +981,6 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
     for (int i = 1; i < n; i++) {
       bp_cce_inst_src_q_sel_e q = parseSrcQueue(tokens->at(i));
       switch (q) {
-        case e_src_q_mem_cmd:
-          inst->type_u.queue_op_s.op.wfq.qmask |= (1 << 4);
-          break;
         case e_src_q_lce_req:
           inst->type_u.queue_op_s.op.wfq.qmask |= (1 << 3);
           break;
@@ -1010,7 +1001,7 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
   } else if (inst->minor_op == e_popq || inst->minor_op == e_poph) {
     bp_cce_inst_src_q_sel_e srcQ = parseSrcQueue(tokens->at(1));
     inst->type_u.queue_op_s.op.popq.src_q = srcQ;
-    if (srcQ == e_src_q_lce_resp || srcQ == e_src_q_mem_resp || srcQ == e_src_q_mem_cmd) {
+    if (srcQ == e_src_q_lce_resp || srcQ == e_src_q_mem_resp) {
       inst->type_u.queue_op_s.op.popq.dst = parseDstOpd(tokens->at(2));
     }
   } else if (inst->minor_op == e_pushq) {
@@ -1055,16 +1046,6 @@ Assembler::parseQueue(vector<string> *tokens, int n, bp_cce_inst_s *inst) {
         } else {
           printf("Too many tokens for pushq memcmd\n");
           exit(-1);
-        }
-        break;
-      case e_dst_q_mem_resp:
-        if (tokens->size() <= 2) {
-          printf("Not enough tokens for pushq memresp\n");
-          exit(-1);
-        }
-        if (tokens->size() > 2) {
-          inst->type_u.queue_op_s.op.pushq.cmd.mem_resp =
-            (bp_mem_cce_cmd_type_e)(parseImm(tokens->at(2), 16) & 0xF);
         }
         break;
       default:
@@ -1340,8 +1321,6 @@ Assembler::writeInstToOutput(bp_cce_inst_s *inst, uint16_t line_number, string &
           printShortField(inst->type_u.queue_op_s.op.pushq.cmd.lce_cmd, bp_lce_cmd_type_width, ss);
         } else if (inst->type_u.queue_op_s.op.pushq.dst_q == e_dst_q_mem_cmd) {
           printShortField(inst->type_u.queue_op_s.op.pushq.cmd.mem_cmd, bp_cce_mem_msg_type_width, ss);
-        } else if (inst->type_u.queue_op_s.op.pushq.dst_q == e_dst_q_mem_resp) {
-          printShortField(inst->type_u.queue_op_s.op.pushq.cmd.mem_resp, bp_cce_mem_msg_type_width, ss);
         }
         printShortField(inst->type_u.queue_op_s.op.pushq.lce_cmd_lce_sel, bp_cce_inst_lce_cmd_lce_sel_width, ss);
         printShortField(inst->type_u.queue_op_s.op.pushq.lce_cmd_addr_sel, bp_cce_inst_lce_cmd_addr_sel_width, ss);

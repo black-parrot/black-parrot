@@ -140,7 +140,6 @@ typedef enum {
   ,e_src_mem_resp_v              = 0x11
   ,e_src_pending_v               = 0x12
   ,e_src_lce_resp_v              = 0x13
-  ,e_src_mem_cmd_v               = 0x14
 
   ,e_src_lce_resp_type           = 0x18
   ,e_src_cce_id                  = 0x19
@@ -353,16 +352,14 @@ typedef enum {
   ,e_src_q_mem_resp              = 0x1
   ,e_src_q_pending               = 0x2
   ,e_src_q_lce_resp              = 0x3
-  ,e_src_q_mem_cmd               = 0x4
 } bp_cce_inst_src_q_sel_e;
 
 #define bp_cce_inst_src_q_sel_width 3
-#define bp_cce_num_src_q 5
+#define bp_cce_num_src_q 4
 
 typedef enum {
   e_dst_q_lce_cmd                = 0x0
   ,e_dst_q_mem_cmd               = 0x1
-  ,e_dst_q_mem_resp              = 0x2
 } bp_cce_inst_dst_q_sel_e;
 
 #define bp_cce_inst_dst_q_sel_width 2
@@ -436,7 +433,6 @@ typedef enum {
 typedef enum {
   e_req_sel_lce_req              = 0x0
   ,e_req_sel_pending             = 0x1
-  ,e_req_sel_mem_cmd             = 0x2
 } bp_cce_inst_req_sel_e;
 
 #define bp_cce_inst_req_sel_width 2
@@ -607,7 +603,6 @@ typedef struct __attribute__((__packed__)) {
 typedef union __attribute__((__packed__)) {
   bp_lce_cmd_type_e lce_cmd : bp_lce_cmd_type_width;
   bp_cce_mem_cmd_type_e mem_cmd : bp_cce_mem_msg_type_width;
-  bp_mem_cce_cmd_type_e mem_resp : bp_cce_mem_msg_type_width;
 } bp_pushq_cmd_u;
 
 typedef struct __attribute__((__packed__)) {

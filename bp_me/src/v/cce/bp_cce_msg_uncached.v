@@ -58,17 +58,9 @@ module bp_cce_msg_uncached
    , input                                             mem_resp_v_i
    , output logic                                      mem_resp_yumi_o
 
-   , input [cce_mem_msg_width_lp-1:0]                  mem_cmd_i
-   , input                                             mem_cmd_v_i
-   , output logic                                      mem_cmd_yumi_o
-
    , output logic [cce_mem_msg_width_lp-1:0]           mem_cmd_o
    , output logic                                      mem_cmd_v_o
    , input                                             mem_cmd_ready_i
-
-   , output logic [cce_mem_msg_width_lp-1:0]           mem_resp_o
-   , output logic                                      mem_resp_v_o
-   , input                                             mem_resp_ready_i
   );
 
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
@@ -76,19 +68,17 @@ module bp_cce_msg_uncached
 
   // structures for casting
   bp_lce_cce_req_s lce_req, lce_req_r, lce_req_n;
-  bp_cce_mem_msg_s mem_resp_li, mem_resp_lo, mem_cmd_lo, mem_cmd_li;
+  bp_cce_mem_msg_s mem_resp_li, mem_cmd_lo;
   bp_lce_cmd_s     lce_cmd;
   bp_lce_cmd_cmd_s lce_cmd_cmd;
 
   // cast output queue messages from structure variables
   assign lce_cmd_o = lce_cmd;
   assign mem_cmd_o = mem_cmd_lo;
-  assign mem_resp_o = mem_resp_lo;
 
   // cast input queue messages to structure variables
   assign lce_req = lce_req_i;
   assign mem_resp_li = mem_resp_i;
-  assign mem_cmd_li = mem_cmd_i;
 
   typedef enum logic [1:0] {
     READY
@@ -118,15 +108,12 @@ module bp_cce_msg_uncached
     // defaults for output signals
     lce_req_yumi_o = '0;
     mem_resp_yumi_o = '0;
-    mem_cmd_yumi_o = '0;
 
     lce_cmd_v_o = '0;
     lce_cmd = '0;
     lce_cmd_cmd = '0;
     mem_cmd_v_o = '0;
     mem_cmd_lo = '0;
-    mem_resp_v_o = '0;
-    mem_resp_lo = '0;
 
     // register next value defaults
     lce_req_n = lce_req_r;

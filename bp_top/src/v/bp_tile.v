@@ -223,15 +223,6 @@ bp_cce
    ,.mem_resp_i(cce_mem_resp_li)
    ,.mem_resp_v_i(cce_mem_resp_v_li)
    ,.mem_resp_yumi_o(cce_mem_resp_yumi_lo)
-
-   /* TODO: Remove ports recursively */
-   ,.mem_cmd_i('0)
-   ,.mem_cmd_v_i('0)
-   ,.mem_cmd_yumi_o()
-
-   ,.mem_resp_o()
-   ,.mem_resp_v_o()
-   ,.mem_resp_ready_i('0)
    );
 
 `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_req_width_lp, lce_req_packet_s);

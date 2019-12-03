@@ -41,7 +41,6 @@ module bp_cce_reg
    , input                                                                 null_wb_flag_i
    , input bp_lce_cce_resp_type_e                                          lce_resp_type_i
    , input bp_cce_mem_cmd_type_e                                           mem_resp_type_i
-   , input [cce_mem_msg_width_lp-1:0]                                      mem_cmd_i
 
    , input [`bp_cce_inst_gpr_width-1:0]                                    alu_res_i
    , input [`bp_cce_inst_gpr_width-1:0]                                    mov_src_i
@@ -93,9 +92,6 @@ module bp_cce_reg
   logic uc_req;
   assign uc_req = (lce_req.msg_type == e_lce_req_type_uc_rd) | (lce_req.msg_type == e_lce_req_type_uc_wr);
 
-  bp_cce_mem_msg_s mem_cmd;
-  assign mem_cmd = mem_cmd_i;
-
   // Registers
   `declare_bp_cce_mshr_s(lce_id_width_p, lce_assoc_p, paddr_width_p);
   bp_cce_mshr_s mshr_r, mshr_n;
@@ -123,8 +119,6 @@ module bp_cce_reg
         gpr_n[i] = {'0, lce_resp_type_i};
       end else if (decoded_inst_i.mem_resp_type_w_v & decoded_inst_i.gpr_w_mask[i]) begin
         gpr_n[i] = {'0, mem_resp_type_i};
-      end else if (decoded_inst_i.mem_cmd_type_w_v & decoded_inst_i.gpr_w_mask[i]) begin
-        gpr_n[i] = {'0, mem_cmd.msg_type};
       end else if (decoded_inst_i.dir_r_v
                    & (decoded_inst_i.minor_op_u.dir_minor_op == e_rde_op)
                    & decoded_inst_i.gpr_w_mask[i]) begin
@@ -163,10 +157,6 @@ module bp_cce_reg
         e_req_sel_pending: begin // TODO: v2
           mshr_n.lce_id = '0;
           mshr_n.paddr = '0;
-        end
-        e_req_sel_mem_cmd: begin
-          mshr_n.lce_id = mem_cmd.payload.lce_id;
-          mshr_n.paddr = mem_cmd.addr;
         end
         default: begin
           mshr_n.lce_id = '0;

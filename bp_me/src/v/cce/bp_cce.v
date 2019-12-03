@@ -66,17 +66,9 @@ module bp_cce
    , input                                             mem_resp_v_i
    , output logic                                      mem_resp_yumi_o
 
-   , input [cce_mem_msg_width_lp-1:0]                  mem_cmd_i
-   , input                                             mem_cmd_v_i
-   , output logic                                      mem_cmd_yumi_o
-
    , output logic [cce_mem_msg_width_lp-1:0]           mem_cmd_o
    , output logic                                      mem_cmd_v_o
    , input                                             mem_cmd_ready_i
-
-   , output logic [cce_mem_msg_width_lp-1:0]           mem_resp_o
-   , output logic                                      mem_resp_v_o
-   , input                                             mem_resp_ready_i
   );
 
   //synopsys translate_off
@@ -96,16 +88,14 @@ module bp_cce
   bp_lce_cce_resp_s lce_resp_li;
   bp_lce_cmd_s      lce_cmd_lo;
 
-  bp_cce_mem_msg_s  mem_cmd_li, mem_cmd_lo, mem_resp_li, mem_resp_lo;
+  bp_cce_mem_msg_s  mem_cmd_lo, mem_resp_li;
 
   // assign output queue ports to structure variables
   assign lce_cmd_o = lce_cmd_lo;
   assign mem_cmd_o = mem_cmd_lo;
-  assign mem_resp_o = mem_resp_lo;
 
   // cast input messages with data
   assign mem_resp_li = mem_resp_i;
-  assign mem_cmd_li = mem_cmd_i;
   assign lce_resp_li = lce_resp_i;
   assign lce_req_li = lce_req_i;
 
@@ -233,12 +223,10 @@ module bp_cce
       ,.lce_resp_v_i(lce_resp_v_i)
       ,.lce_resp_type_i(lce_resp_li.msg_type)
       ,.mem_resp_v_i(mem_resp_v_i)
-      ,.mem_cmd_v_i(mem_cmd_v_i)
       ,.pending_v_i('0)
 
       ,.lce_cmd_ready_i(lce_cmd_ready_i)
       ,.mem_cmd_ready_i(mem_cmd_ready_i)
-      ,.mem_resp_ready_i(mem_resp_ready_i)
 
       ,.fence_zero_i(fence_zero_lo)
 
@@ -367,7 +355,6 @@ module bp_cce
       ,.null_wb_flag_i(null_wb_flag_li)
       ,.lce_resp_type_i(lce_resp_li.msg_type)
       ,.mem_resp_type_i(mem_resp_li.msg_type.cce_mem_cmd)
-      ,.mem_cmd_i(mem_cmd_li)
       ,.alu_res_i(alu_res_lo)
       ,.mov_src_i(src_a)
 
@@ -427,17 +414,11 @@ module bp_cce
       ,.mem_resp_i(mem_resp_i)
       ,.mem_resp_v_i(mem_resp_v_i)
       ,.mem_resp_yumi_o(mem_resp_yumi_o)
-      ,.mem_cmd_i(mem_cmd_i)
-      ,.mem_cmd_v_i(mem_cmd_v_i)
-      ,.mem_cmd_yumi_o(mem_cmd_yumi_o)
 
       // From CCE
       ,.mem_cmd_o(mem_cmd_lo)
       ,.mem_cmd_v_o(mem_cmd_v_o)
       ,.mem_cmd_ready_i(mem_cmd_ready_i)
-      ,.mem_resp_o(mem_resp_lo)
-      ,.mem_resp_v_o(mem_resp_v_o)
-      ,.mem_resp_ready_i(mem_resp_ready_i)
 
       ,.mshr_i(mshr)
       ,.decoded_inst_i(decoded_inst_lo)
@@ -636,7 +617,6 @@ module bp_cce
           e_src_mem_resp_v: src_a[0] = mem_resp_v_i;
           e_src_pending_v: src_a = '0; // TODO: v2
           e_src_lce_resp_v: src_a[0] = lce_resp_v_i;
-          e_src_mem_cmd_v: src_a[0] = mem_cmd_v_i;
           e_src_lce_resp_type: src_a[0+:$bits(bp_lce_cce_resp_type_e)] = lce_resp_li.msg_type;
           e_src_special_0: src_a[0] = 1'b0;
           e_src_special_1: src_a[0] = 1'b1;
@@ -709,7 +689,6 @@ module bp_cce
           e_src_mem_resp_v: src_b[0] = mem_resp_v_i;
           e_src_pending_v: src_b = '0; // TODO: v2
           e_src_lce_resp_v: src_b[0] = lce_resp_v_i;
-          e_src_mem_cmd_v: src_b[0] = mem_cmd_v_i;
           e_src_lce_resp_type: src_b[0+:$bits(bp_lce_cce_resp_type_e)] = lce_resp_li.msg_type;
           e_src_special_0: src_b[0] = 1'b0;
           e_src_special_1: src_b[0] = 1'b1;
