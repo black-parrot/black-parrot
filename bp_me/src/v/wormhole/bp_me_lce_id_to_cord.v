@@ -30,8 +30,8 @@ module bp_me_lce_id_to_cord
     // Core complex
     if (lce_id_i < max_cc_lce_lp)
       begin
-        lce_cord_o[0+:coh_noc_x_cord_width_p]                      = sac_cols_lp + (lce_id_i>>1'b1 % cc_x_dim_p);
-        lce_cord_o[coh_noc_x_cord_width_p+:coh_noc_y_cord_width_p] = io_rows_lp  + (lce_id_i>>1'b1 / cc_x_dim_p);
+        lce_cord_o[0+:coh_noc_x_cord_width_p]                      = sac_cols_lp + ((lce_id_i>>1'b1) % cc_x_dim_p);
+        lce_cord_o[coh_noc_x_cord_width_p+:coh_noc_y_cord_width_p] = io_rows_lp  + ((lce_id_i>>1'b1) / cc_x_dim_p);
         lce_cid_o                                                  = lce_id_i[0];
       end
     // Coherent accelerator complex
