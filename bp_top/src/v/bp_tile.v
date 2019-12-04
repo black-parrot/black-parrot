@@ -497,6 +497,11 @@ for (genvar i = 0; i < 2; i++)
      ,.grants_o({clint_mem_resp_yumi_li, cfg_mem_resp_yumi_li, link_mem_resp_yumi_li})
      );
   assign cce_mem_resp_v_li = link_mem_resp_v_lo | cfg_mem_resp_v_lo | clint_mem_resp_v_lo;
+  assign cce_mem_resp_li = link_mem_resp_v_lo
+                           ? link_mem_resp_lo
+                           : cfg_mem_resp_v_lo
+                             ? cfg_mem_resp_lo
+                               : clint_mem_resp_lo;
 
   bp_me_cce_to_wormhole_link_master
    #(.bp_params_p(bp_params_p))
