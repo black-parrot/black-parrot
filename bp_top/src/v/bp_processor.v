@@ -76,7 +76,6 @@ bp_core_complex
    ,.coh_cmd_link_i(coh_cmd_link_lo)
    ,.coh_cmd_link_o(coh_cmd_link_li)
 
-   // TODO: Connect to DRAM
    ,.mem_cmd_link_i(dram_cmd_link_i)
    ,.mem_cmd_link_o(dram_cmd_link_o)
 
