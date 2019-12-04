@@ -37,8 +37,6 @@ This document is intended to provide more rigid structure for coding style and f
 
 - Use localparam keyword for derived parameters and input parameters that should not be set by the party instantiating the module.
 - Localparams in port lists are allowed, but only for sizing ports. Other generated localparams should go near their consumers.
-- Prefer input [1:0] to input logic [1:0] and output [1:0] to output logic [1:0]
-    - Ports with no type default to 'wire'. This forces you to use an 'assign' for outputs, preventing inferred latches.  Since BSG style is to latch inputs and have combinatorial outputs, this style conveys hardware intent.
 - Ports and parameters should not have the module name as a prefix, since that is redundant. In some cases, the wires in the parent module may use the module name of the child to disambiguate. 
 
         module foo 
