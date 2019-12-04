@@ -47,9 +47,17 @@ module bp_io_tile
   bp_cce_mem_msg_s cce_io_resp_li, lce_io_resp_lo;
   logic cce_io_resp_v_li, cce_io_resp_yumi_lo, lce_io_resp_v_lo, lce_io_resp_ready_li;
 
-  // TODO: Get id from coord
-  wire [cce_id_width_p-1:0] cce_id_li = '0;
-  wire [lce_id_width_p-1:0] lce_id_li = '0;
+  logic [cce_id_width_p-1:0]  cce_id_li;
+  logic [lce_id_width_p-1:0]  lce_id_li;
+  bp_me_cord_to_id
+   #(.bp_params_p(bp_params_p))
+   id_map
+    (.cord_i(my_cord_i)
+     ,.core_id_o()
+     ,.cce_id_o(cce_id_li)
+     ,.lce_id0_o(lce_id_li)
+     ,.lce_id1_o()
+     );
 
   bp_io_link_to_lce
    #(.bp_params_p(bp_params_p))

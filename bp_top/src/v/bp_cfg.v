@@ -45,17 +45,12 @@ assign mem_cmd_cast_i = mem_cmd_i;
 assign mem_resp_o = mem_resp_cast_o;
 
 logic                                   freeze_r;
-logic [core_id_width_p-1:0]             core_id_r;
-logic [lce_id_width_p-1:0]              icache_id_r;
 bp_lce_mode_e                           icache_mode_r;
 logic                                   npc_w_v_r;
 logic                                   npc_r_v_r;
 logic [vaddr_width_p-1:0]               npc_r;
-logic [lce_id_width_p-1:0]              dcache_id_r;
 bp_lce_mode_e                           dcache_mode_r;
-logic [cce_id_width_p-1:0]              cce_id_r;
 bp_cce_mode_e                           cce_mode_r;
-logic [lce_id_width_p:0]                num_lce_r;
 logic                                   cce_ucode_w_v_r;
 logic                                   cce_ucode_r_v_r;
 logic [cce_pc_width_p-1:0]              cce_ucode_addr_r;
@@ -93,28 +88,18 @@ always_ff @(posedge clk_i)
   if (reset_i)
     begin
       freeze_r            <= 1'b1;
-      core_id_r           <= '0;
-      icache_id_r         <= '0;
       icache_mode_r       <= e_lce_mode_uncached;
-      dcache_id_r         <= '0;
       dcache_mode_r       <= e_lce_mode_uncached;
-      cce_id_r            <= '0;
       cce_mode_r          <= e_cce_mode_uncached;
-      num_lce_r           <= '0;
     end
   else if (cfg_w_v_li)
     begin
       unique 
       case (cfg_addr_li)
         bp_cfg_reg_freeze_gp      : freeze_r       <= cfg_data_li;
-        bp_cfg_reg_core_id_gp     : core_id_r      <= cfg_data_li;
-        bp_cfg_reg_icache_id_gp   : icache_id_r    <= cfg_data_li;
         bp_cfg_reg_icache_mode_gp : icache_mode_r  <= bp_lce_mode_e'(cfg_data_li);
-        bp_cfg_reg_dcache_id_gp   : dcache_id_r    <= cfg_data_li;
         bp_cfg_reg_dcache_mode_gp : dcache_mode_r  <= bp_lce_mode_e'(cfg_data_li);
-        bp_cfg_reg_cce_id_gp      : cce_id_r       <= cfg_data_li;
         bp_cfg_reg_cce_mode_gp    : cce_mode_r     <= bp_cce_mode_e'(cfg_data_li);
-        bp_cfg_reg_num_lce_gp     : num_lce_r      <= cfg_data_li;
         default : begin end
       endcase
     end
@@ -160,38 +145,51 @@ wire priv_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_priv_gp);
 wire priv_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_priv_gp);
 wire [1:0] priv_data_li = cfg_data_li;
 
+logic [core_id_width_p-1:0] core_id_li;
+logic [cce_id_width_p-1:0]  cce_id_li;
+logic [lce_id_width_p-1:0]  icache_id_li, dcache_id_li;
+bp_me_cord_to_id
+ #(.bp_params_p(bp_params_p))
+ id_map
+  (.cord_i(cord_i)
+   ,.core_id_o(core_id_li)
+   ,.cce_id_o(cce_id_li)
+   ,.lce_id0_o(icache_id_li)
+   ,.lce_id1_o(dcache_id_li)
+   );
+
 assign cfg_bus_cast_o = '{freeze: freeze_r
-                           ,enter_debug: enter_debug_li
-                           ,exit_debug: exit_debug_li
-                           ,core_id: core_id_r
-                           ,icache_id: icache_id_r
-                           ,icache_mode: icache_mode_r
-                           ,npc_w_v: npc_w_v_li
-                           ,npc_r_v: npc_r_v_li
-                           ,npc: npc_li
-                           ,ninstr_w_v: ninstr_w_v_li
-                           ,ninstr: ninstr_li
-                           ,dispatch: dispatch_r
-                           ,dcache_id: dcache_id_r
-                           ,dcache_mode: dcache_mode_r
-                           ,cce_id: cce_id_r
-                           ,cce_mode: cce_mode_r
-                           ,cce_ucode_w_v: cce_ucode_w_v_li
-                           ,cce_ucode_r_v: cce_ucode_r_v_li
-                           ,cce_ucode_addr: cce_ucode_addr_li
-                           ,cce_ucode_data: cce_ucode_data_li
-                           ,irf_w_v: irf_w_v_li
-                           ,irf_r_v: irf_r_v_li
-                           ,irf_addr: irf_addr_li
-                           ,irf_data: irf_data_li
-                           ,csr_w_v: csr_w_v_li
-                           ,csr_r_v: csr_r_v_li
-                           ,csr_addr: csr_addr_li
-                           ,csr_data: csr_data_li
-                           ,priv_w_v: priv_w_v_li
-                           ,priv_r_v: priv_r_v_li
-                           ,priv_data: priv_data_li
-                           };
+                          ,enter_debug: enter_debug_li
+                          ,exit_debug: exit_debug_li
+                          ,core_id: core_id_li
+                          ,icache_id: icache_id_li
+                          ,icache_mode: icache_mode_r
+                          ,npc_w_v: npc_w_v_li
+                          ,npc_r_v: npc_r_v_li
+                          ,npc: npc_li
+                          ,ninstr_w_v: ninstr_w_v_li
+                          ,ninstr: ninstr_li
+                          ,dispatch: dispatch_r
+                          ,dcache_id: dcache_id_li
+                          ,dcache_mode: dcache_mode_r
+                          ,cce_id: cce_id_li
+                          ,cce_mode: cce_mode_r
+                          ,cce_ucode_w_v: cce_ucode_w_v_li
+                          ,cce_ucode_r_v: cce_ucode_r_v_li
+                          ,cce_ucode_addr: cce_ucode_addr_li
+                          ,cce_ucode_data: cce_ucode_data_li
+                          ,irf_w_v: irf_w_v_li
+                          ,irf_r_v: irf_r_v_li
+                          ,irf_addr: irf_addr_li
+                          ,irf_data: irf_data_li
+                          ,csr_w_v: csr_w_v_li
+                          ,csr_r_v: csr_r_v_li
+                          ,csr_addr: csr_addr_li
+                          ,csr_data: csr_data_li
+                          ,priv_w_v: priv_w_v_li
+                          ,priv_r_v: priv_r_v_li
+                          ,priv_data: priv_data_li
+                          };
 
 assign mem_resp_v_o    = mem_resp_ready_i & read_ready_r;
 assign mem_resp_cast_o = '{msg_type: mem_cmd_cast_i.msg_type
