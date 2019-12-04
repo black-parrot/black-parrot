@@ -71,14 +71,10 @@ module bp_cce_mmio_cfg_loader
     ,BP_RESET_SET
     ,BP_FREEZE_SET
     ,BP_RESET_CLR
-    ,SEND_CORE_ID
     ,SEND_RAM
-    ,SEND_CCE_ID
     ,SEND_CCE_NORMAL
     ,SEND_NUM_LCE
-    ,SEND_ICACHE_ID
     ,SEND_ICACHE_NORMAL
-    ,SEND_DCACHE_ID
     ,SEND_DCACHE_NORMAL
     ,SEND_PC
     ,SEND_IRF
@@ -217,7 +213,7 @@ module bp_cce_mmio_cfg_loader
           cfg_data_lo = dword_width_p'(1);
         end
         BP_RESET_CLR: begin
-          state_n = core_prog_done ? SEND_CORE_ID : BP_RESET_CLR;
+          state_n = core_prog_done ? SEND_RAM : BP_RESET_CLR;
 
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
@@ -226,18 +222,8 @@ module bp_cce_mmio_cfg_loader
           cfg_addr_lo = bp_cfg_reg_reset_gp;
           cfg_data_lo = dword_width_p'(0);
         end
-        SEND_CORE_ID: begin
-          state_n = core_prog_done ? SEND_RAM : SEND_CORE_ID;
-
-          core_cnt_inc = ~core_prog_done;
-          core_cnt_clr = core_prog_done;
-
-          cfg_w_v_lo = 1'b1;
-          cfg_addr_lo = bp_cfg_reg_core_id_gp;
-          cfg_data_lo = core_cnt_r;
-        end
         SEND_RAM: begin
-          state_n = (core_prog_done & ucode_prog_done) ? SEND_CCE_ID : SEND_RAM;
+          state_n = (core_prog_done & ucode_prog_done) ? SEND_CCE_NORMAL : SEND_RAM;
 
           core_cnt_inc = ucode_prog_done & ~core_prog_done;
           core_cnt_clr = ucode_prog_done &  core_prog_done;
@@ -250,18 +236,8 @@ module bp_cce_mmio_cfg_loader
           // TODO: This is nonsynth, won't work on FPGA
           cfg_data_lo = (|cfg_data_lo === 'X) ? '0 : cfg_data_lo;
         end
-        SEND_CCE_ID: begin
-          state_n = core_prog_done ? SEND_CCE_NORMAL : SEND_CCE_ID;
-
-          core_cnt_inc = ~core_prog_done;
-          core_cnt_clr = core_prog_done;
-
-          cfg_w_v_lo = 1'b1;
-          cfg_addr_lo = bp_cfg_reg_cce_id_gp;
-          cfg_data_lo = core_cnt_r;
-        end
         SEND_CCE_NORMAL: begin
-          state_n = core_prog_done ? SEND_NUM_LCE : SEND_CCE_NORMAL;
+          state_n = core_prog_done ? SEND_ICACHE_NORMAL : SEND_CCE_NORMAL;
 
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
@@ -270,45 +246,15 @@ module bp_cce_mmio_cfg_loader
           cfg_addr_lo = bp_cfg_reg_cce_mode_gp;
           cfg_data_lo = dword_width_p'(e_cce_mode_normal);
         end
-        SEND_NUM_LCE: begin
-          state_n = core_prog_done ? SEND_ICACHE_ID : SEND_NUM_LCE;
-
-          core_cnt_inc = ~core_prog_done;
-          core_cnt_clr = core_prog_done;
-
-          cfg_w_v_lo = 1'b1;
-          cfg_addr_lo = bp_cfg_reg_num_lce_gp;
-          cfg_data_lo = num_lce_p;
-        end
-        SEND_ICACHE_ID: begin
-          state_n = core_prog_done ? SEND_ICACHE_NORMAL : SEND_ICACHE_ID;
-
-          core_cnt_inc = ~core_prog_done;
-          core_cnt_clr = core_prog_done;
-
-          cfg_w_v_lo = 1'b1;
-          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_icache_id_gp);
-          cfg_data_lo = (core_cnt_r << 1'b1);
-        end
         SEND_ICACHE_NORMAL: begin
-          state_n = core_prog_done ? SEND_DCACHE_ID : SEND_ICACHE_NORMAL;
+          state_n = core_prog_done ? SEND_DCACHE_NORMAL : SEND_ICACHE_NORMAL;
 
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
 
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_icache_mode_gp);
-          cfg_data_lo = dword_width_p'(e_lce_mode_normal); // TODO: tapeout hack, change to icache
-        end
-        SEND_DCACHE_ID: begin
-          state_n = core_prog_done ? SEND_DCACHE_NORMAL : SEND_DCACHE_ID;
-
-          core_cnt_inc = ~core_prog_done;
-          core_cnt_clr = core_prog_done;
-
-          cfg_w_v_lo = 1'b1;
-          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_dcache_id_gp);
-          cfg_data_lo = (core_cnt_r << 1'b1) + 1'b1;
+          cfg_data_lo = dword_width_p'(e_lce_mode_normal);
         end
         SEND_DCACHE_NORMAL: begin
           state_n = core_prog_done ? SEND_PC : SEND_DCACHE_NORMAL;
@@ -330,6 +276,7 @@ module bp_cce_mmio_cfg_loader
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_npc_gp);
           cfg_data_lo = bp_pc_entry_point_gp;
         end
+        // Skip these, just for demonstration
         SEND_IRF: begin
           state_n = irf_done ? RECV_IRF : SEND_IRF;
 

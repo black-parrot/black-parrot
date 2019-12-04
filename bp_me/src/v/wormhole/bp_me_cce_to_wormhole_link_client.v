@@ -105,8 +105,8 @@ module bp_me_cce_to_wormhole_link_client
   wire [mem_noc_cid_width_p-1:0]  src_cid_lo  = (mem_cmd_yumi_i & mem_resp_v_i) ? mem_cmd_payload_lo.src_cid  : fifo_cid_lo;
   
   wire [mem_noc_did_width_p-1:0] dst_did_lo = src_did_lo;
-  wire [mem_noc_cord_width_p-1:0] dst_cord_lo = (src_did_lo == '0) ? src_cord_lo : io_cord_lo;
-  wire [mem_noc_cid_width_p-1:0]  dst_cid_lo  = (src_did_lo == '0) ? src_cid_lo  : io_cid_lo;
+  wire [mem_noc_cord_width_p-1:0] dst_cord_lo = src_cord_lo;
+  wire [mem_noc_cid_width_p-1:0]  dst_cid_lo  = src_cid_lo;
 
   mem_resp_packet_s mem_resp_packet_lo;
   bp_me_wormhole_packet_encode_mem_resp
