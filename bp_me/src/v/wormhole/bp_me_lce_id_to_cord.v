@@ -15,6 +15,8 @@ module bp_me_lce_id_to_cord
 
 
   localparam io_rows_lp  = `BSG_CDIV(num_io_p, cc_x_dim_p);
+  localparam mc_rows_lp  = `BSG_CDIV(num_l2e_p, cc_x_dim_p);
+  localparam cac_cols_lp = `BSG_CDIV(num_cacc_p, cc_y_dim_p);
   localparam sac_cols_lp = `BSG_CDIV(num_sacc_p, cc_y_dim_p);
 
   localparam max_cc_lce_lp  = num_core_p*2;
@@ -25,24 +27,35 @@ module bp_me_lce_id_to_cord
 
   // TODO: We only support 1 additional column / row for non-core-complex accelerators
   always_comb
+    // Core complex
     if (lce_id_i < max_cc_lce_lp)
       begin
         lce_cord_o[0+:coh_noc_x_cord_width_p]                      = sac_cols_lp + (lce_id_i>>1'b1 % cc_x_dim_p);
         lce_cord_o[coh_noc_x_cord_width_p+:coh_noc_y_cord_width_p] = io_rows_lp  + (lce_id_i>>1'b1 / cc_x_dim_p);
         lce_cid_o                                                  = lce_id_i[0];
       end
+    // Coherent accelerator complex
     else if (lce_id_i < max_cac_lce_lp)
       begin
         lce_cord_o[0+:coh_noc_x_cord_width_p]                      = sac_cols_lp + cc_x_dim_p + 1'b1;
-        lce_cord_o[coh_noc_x_cord_width_p+:coh_noc_y_cord_width_p] = io_rows_lp  + (lce_id_i % cc_x_dim_p);
+        lce_cord_o[coh_noc_x_cord_width_p+:coh_noc_y_cord_width_p] = io_rows_lp  + (lce_id_i % cc_y_dim_p);
         lce_cid_o                                                  = '0;
       end
+    // Memory complex
     else if (lce_id_i < max_mc_lce_lp)
       begin
         lce_cord_o[0+:coh_noc_x_cord_width_p]                      = sac_cols_lp + (lce_id_i % cc_x_dim_p);
         lce_cord_o[coh_noc_x_cord_width_p+:coh_noc_y_cord_width_p] = io_rows_lp + cc_y_dim_p + 1'b1;
         lce_cid_o                                                  = '0;
       end
+    // Streaming accelerator complex
+    else if (lce_id_i < max_sac_lce_lp)
+      begin
+        lce_cord_o[0+:coh_noc_x_cord_width_p]                      = '0;
+        lce_cord_o[coh_noc_x_cord_width_p+:coh_noc_y_cord_width_p] = io_rows_lp + (lce_id_i % cc_y_dim_p);
+        lce_cid_o                                                  = '0;
+      end
+    // IO complex
     else
       begin
         lce_cord_o[0+:coh_noc_x_cord_width_p]                      = sac_cols_lp + (lce_id_i % cc_x_dim_p);
