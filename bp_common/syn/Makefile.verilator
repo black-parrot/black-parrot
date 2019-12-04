@@ -94,7 +94,7 @@ build.sc: dirs.sc verilate.sc
 ifeq ($(DUMP), 1)
 VV_OPTS += --trace         # Dump a VCD
 VV_OPTS += --trace-structs # Dump struct information with VCD
-VV_OPTS += --trace-depth 10
+VV_OPTS += --trace-depth 15
 endif
 
 ifeq ($(COV), 1)
