@@ -47,10 +47,6 @@ module bp_cce_msg_uncached
    , input                                             lce_req_v_i
    , output logic                                      lce_req_yumi_o
 
-//   , input [lce_cce_req_width_lp-1:0]                  lce_resp_i
-//   , input                                             lce_resp_v_i
-   , output logic                                      lce_resp_yumi_o
-
    , output logic [lce_cmd_width_lp-1:0]               lce_cmd_o
    , output logic                                      lce_cmd_v_o
    , input                                             lce_cmd_ready_i
@@ -121,7 +117,6 @@ module bp_cce_msg_uncached
   always_comb begin
     // defaults for output signals
     lce_req_yumi_o = '0;
-    lce_resp_yumi_o = '0;
     mem_resp_yumi_o = '0;
     mem_cmd_yumi_o = '0;
 

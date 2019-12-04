@@ -475,7 +475,7 @@ for (genvar i = 0; i < 2; i++)
   wire local_cmd_li    = (cce_mem_cmd_lo.addr < 32'h8000_0000);
   wire [3:0] device_li =  cce_mem_cmd_lo.addr[20+:4];
 
-  assign mem_cmd_ready_li     = link_mem_cmd_ready_lo | cfg_mem_cmd_ready_lo | clint_mem_cmd_ready_lo;
+  assign cce_mem_cmd_ready_li = link_mem_cmd_ready_lo | cfg_mem_cmd_ready_lo | clint_mem_cmd_ready_lo;
 
   assign link_mem_cmd_li      = cce_mem_cmd_lo;
   assign link_mem_cmd_v_li    = cce_mem_cmd_v_lo & ~local_cmd_li;
