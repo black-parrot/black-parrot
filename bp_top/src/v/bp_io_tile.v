@@ -177,6 +177,7 @@ module bp_io_tile
   wire is_host_addr = ((cce_io_cmd_lo.addr >= host_dev_base_addr_gp) 
                       && (cce_io_cmd_lo.addr < cce_dev_base_addr_gp));
   assign dst_did_lo = is_host_addr ? '1 : cce_io_cmd_lo.addr[paddr_width_p-1-:mem_noc_did_width_p];
+  assign dst_cord_lo = dst_did_lo;
 
   bp_me_cce_to_wormhole_link_bidir
    #(.bp_params_p(bp_params_p))
@@ -204,7 +205,7 @@ module bp_io_tile
      ,.my_cord_i(mem_noc_cord_width_p'(my_did_i))
      ,.my_cid_i('0)
      ,.dst_did_i(dst_did_lo)
-     ,.dst_cord_i(mem_noc_cord_width_p'(dst_did_lo))
+     ,.dst_cord_i(dst_cord_lo)
      ,.dst_cid_i('0)
 
      ,.cmd_link_i(io_cmd_link_i)
