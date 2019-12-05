@@ -248,7 +248,7 @@ module bp_cce_mmio_cfg_loader
 
           core_cnt_inc = ucode_prog_done & ~core_prog_done;
           core_cnt_clr = ucode_prog_done &  core_prog_done;
-          ucode_cnt_inc = ~ucode_prog_done;;
+          ucode_cnt_inc = ~ucode_prog_done;
           ucode_cnt_clr = ucode_prog_done;
 
           cfg_w_v_lo = 1'b1;
@@ -288,10 +288,7 @@ module bp_cce_mmio_cfg_loader
           cfg_data_lo = dword_width_p'(e_cce_mode_normal);
         end
         WAIT_FOR_SYNC: begin
-          state_n = (core_prog_done & sync_done) ? SEND_PC : WAIT_FOR_SYNC;
-
-          core_cnt_inc = ~core_prog_done;
-          core_cnt_clr = core_prog_done;
+          state_n = sync_done ? SEND_PC : WAIT_FOR_SYNC;
 
           sync_cnt_inc = ~sync_done;
           sync_cnt_clr = sync_done;
