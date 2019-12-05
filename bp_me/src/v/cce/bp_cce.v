@@ -178,7 +178,7 @@ module bp_cce
   logic gad_cached_dirty_flag_lo;
 
   // Register signals
-  `declare_bp_cce_mshr_s(num_lce_p, lce_assoc_p, paddr_width_p);
+  `declare_bp_cce_mshr_s(lce_id_width_p, lce_assoc_p, paddr_width_p);
   bp_cce_mshr_s mshr;
 
   logic null_wb_flag_li;
