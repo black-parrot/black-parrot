@@ -117,10 +117,10 @@ wire [cce_instr_width_p-1:0] cce_ucode_data_li = cfg_data_li[0+:cce_instr_width_
 
 wire npc_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_npc_gp);
 wire npc_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_npc_gp);
-wire [vaddr_width_p-1:0] npc_li = cfg_data_li;
+wire [vaddr_width_p-1:0] npc_li = cfg_data_li[0+:vaddr_width_p];
 
 wire ninstr_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_ninstr_gp);
-wire [instr_width_p-1:0] ninstr_li = cfg_data_li;
+wire [instr_width_p-1:0] ninstr_li = cfg_data_li[0+:instr_width_p];
 logic dispatch_r;
 always_ff @(posedge clk_i)
   dispatch_r <= ninstr_w_v_li;
@@ -143,7 +143,7 @@ always_ff @(posedge clk_i)
 
 wire priv_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_priv_gp);
 wire priv_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_priv_gp);
-wire [1:0] priv_data_li = cfg_data_li;
+wire [1:0] priv_data_li = cfg_data_li[1:0];
 
 logic [core_id_width_p-1:0] core_id_li;
 logic [cce_id_width_p-1:0]  cce_id_li;
