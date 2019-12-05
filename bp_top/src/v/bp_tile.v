@@ -161,9 +161,9 @@ bp_clint_slice_buffered
    );
 
 // Module instantiations
-bp_core   
+bp_core
  #(.bp_params_p(bp_params_p))
- core 
+ core
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
@@ -185,7 +185,7 @@ bp_core
    ,.lce_cmd_o(lce_cmd_lo)
    ,.lce_cmd_v_o(lce_cmd_v_lo)
    ,.lce_cmd_ready_i(lce_cmd_ready_li)
-    
+
    ,.lce_resp_o(lce_resp_lo)
    ,.lce_resp_v_o(lce_resp_v_lo)
    ,.lce_resp_ready_i(lce_resp_ready_li)
@@ -343,16 +343,16 @@ for (genvar i = 0; i < 2; i++)
    cce_req_adapter_out
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
-  
+
     ,.link_i(lce_req_link_i)
     ,.link_o(cce_lce_req_link_lo)
-  
+
     ,.packet_o(cce_lce_req_packet_li)
     ,.v_o(cce_lce_req_v_li)
     ,.yumi_i(cce_lce_req_yumi_lo)
     );
   assign cce_lce_req_li = cce_lce_req_packet_li.payload;
-      
+
   lce_cmd_packet_s cce_lce_cmd_packet_lo;
   bp_me_wormhole_packet_encode_lce_cmd
    #(.bp_params_p(bp_params_p))
@@ -360,7 +360,7 @@ for (genvar i = 0; i < 2; i++)
     (.payload_i(cce_lce_cmd_lo)
      ,.packet_o(cce_lce_cmd_packet_lo)
      );
-  
+
   bsg_wormhole_router_adapter_in
    #(.max_payload_width_p($bits(lce_cmd_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
      ,.len_width_p(coh_noc_len_width_p)
@@ -370,15 +370,15 @@ for (genvar i = 0; i < 2; i++)
    cmd_adapter_in
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.packet_i(cce_lce_cmd_packet_lo)
      ,.v_i(cce_lce_cmd_v_lo)
      ,.ready_o(cce_lce_cmd_ready_li)
-  
+
      ,.link_i(cce_lce_cmd_link_li)
      ,.link_o(cce_lce_cmd_link_lo)
      );
-  
+
   lce_resp_packet_s cce_lce_resp_packet_li;
   bsg_wormhole_router_adapter_out
    #(.max_payload_width_p($bits(lce_resp_packet_s)-coh_noc_cord_width_p-coh_noc_len_width_p)
@@ -389,10 +389,10 @@ for (genvar i = 0; i < 2; i++)
    cce_resp_adapter_out
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
-  
+
     ,.link_i(lce_resp_link_i)
     ,.link_o(cce_lce_resp_link_lo)
-  
+
     ,.packet_o(cce_lce_resp_packet_li)
     ,.v_o(cce_lce_resp_v_li)
     ,.yumi_i(cce_lce_resp_yumi_lo)
@@ -484,9 +484,12 @@ for (genvar i = 0; i < 2; i++)
   assign cfg_mem_cmd_v_li     = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == 4'd1);
 
   assign clint_mem_cmd_li     = cce_mem_cmd_lo;
-  assign clint_mem_cmd_v_li   = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == 4'd2);
+  // TODO: We want to re
+  //assign clint_mem_cmd_v_li   = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == 4'd2);
+  assign clint_mem_cmd_v_li = cce_mem_cmd_v_lo
+                              & (cce_mem_cmd_lo.addr >= clint_dev_base_addr_gp)
+                              & (cce_mem_cmd_lo.addr < host_dev_base_addr_gp);
 
-  /* TODO: Do arbitration backwards */
   bsg_arb_fixed
    #(.inputs_p(3)
      ,.lo_to_hi_p(1)
@@ -508,25 +511,25 @@ for (genvar i = 0; i < 2; i++)
    mem_link
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.mem_cmd_i(link_mem_cmd_li)
      ,.mem_cmd_v_i(link_mem_cmd_v_li)
      ,.mem_cmd_ready_o(link_mem_cmd_ready_lo)
-  
+
      ,.mem_resp_o(link_mem_resp_lo)
      ,.mem_resp_v_o(link_mem_resp_v_lo)
      ,.mem_resp_yumi_i(link_mem_resp_yumi_li)
-  
+
      ,.my_did_i(my_did_i)
      ,.my_cord_i(my_cord_i)
      ,.my_cid_i(mem_noc_cid_width_p'(0))
      ,.dst_did_i('0)
      ,.dst_cord_i('0)
      ,.dst_cid_i('0)
-  
+
      ,.cmd_link_i(mem_cmd_link_i)
      ,.cmd_link_o(mem_cmd_link_o)
-  
+
      ,.resp_link_i(mem_resp_link_i)
      ,.resp_link_o(mem_resp_link_o)
      );
