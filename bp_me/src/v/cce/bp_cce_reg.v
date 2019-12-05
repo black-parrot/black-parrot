@@ -25,7 +25,6 @@ module bp_cce_reg
       (paddr_width_p-lg_lce_sets_lp-lg_block_size_in_bytes_lp)
     , localparam entry_width_lp             = (tag_width_lp+`bp_coh_bits)
     , localparam tag_set_width_lp           = (entry_width_lp*lce_assoc_p)
-    , localparam cfg_bus_width_lp         = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
 
     , localparam mshr_width_lp = `bp_cce_mshr_width(lce_id_width_p, lce_assoc_p, paddr_width_p)
 
@@ -64,8 +63,6 @@ module bp_cce_reg
    , input                                                                 gad_cached_exclusive_flag_i
    , input                                                                 gad_cached_owned_flag_i
    , input                                                                 gad_cached_dirty_flag_i
-
-   , input [cfg_bus_width_lp-1:0]                                         cfg_bus_i
 
    // Register value outputs
    , output logic [mshr_width_lp-1:0]                                      mshr_o

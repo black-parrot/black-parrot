@@ -120,6 +120,9 @@ bp_be_trap_pkt_s trap_pkt;
 bp_be_wb_pkt_s wb_pkt;
 logic wb_pkt_v;
 
+// TODO: connect to proper source
+assign cfg_haz_v_o = '0;
+
 logic flush;
 // Module instantiations
 bp_be_checker_top 

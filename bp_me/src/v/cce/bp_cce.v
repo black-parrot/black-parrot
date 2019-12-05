@@ -377,8 +377,6 @@ module bp_cce
       ,.gad_cached_owned_flag_i(gad_cached_owned_flag_lo)
       ,.gad_cached_dirty_flag_i(gad_cached_dirty_flag_lo)
 
-      ,.cfg_bus_i(cfg_bus_i)
-
       // register state outputs
       ,.mshr_o(mshr)
       ,.gpr_o(gpr_r_lo)
