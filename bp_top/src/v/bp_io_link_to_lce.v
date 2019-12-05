@@ -105,7 +105,7 @@ module bp_io_link_to_lce
       io_resp_lo                = '0;
       io_resp_lo.data           = lce_cmd_li.msg.dt_cmd.data;
       io_resp_lo.size           = mem_resp_size;
-      io_resp_lo.addr           = lce_cmd_li.msg.dt_cmd.addr;
+      io_resp_lo.addr           = lce_cmd_wr_not_rd ? lce_cmd_li.msg.cmd.addr : lce_cmd_li.msg.dt_cmd.addr;
       io_resp_lo.msg_type       = lce_cmd_wr_not_rd ? e_cce_mem_uc_wr : e_cce_mem_uc_rd;
     end
 
