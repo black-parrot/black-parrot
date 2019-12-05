@@ -72,10 +72,10 @@ module bp_cce_mmio_cfg_loader
     ,BP_FREEZE_SET
     ,BP_RESET_CLR
     ,SEND_RAM
-    ,SEND_CCE_NORMAL
-    ,SEND_NUM_LCE
     ,SEND_ICACHE_NORMAL
     ,SEND_DCACHE_NORMAL
+    ,SEND_CCE_NORMAL
+    ,WAIT_FOR_SYNC
     ,SEND_PC
     ,SEND_IRF
     ,RECV_IRF
@@ -86,6 +86,22 @@ module bp_cce_mmio_cfg_loader
     ,BP_EXIT_DEBUG
     ,DONE
   } state_n, state_r;
+
+  logic [cfg_addr_width_p-1:0] sync_cnt_r;
+  logic sync_cnt_clr, sync_cnt_inc;
+  bsg_counter_clear_up
+   #(.max_val_p(2**cfg_addr_width_p-1)
+     ,.init_val_p(0)
+     )
+   sync_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.clear_i(sync_cnt_clr)
+     ,.up_i(sync_cnt_inc)
+
+     ,.count_o(sync_cnt_r)
+     );
 
   logic [cfg_addr_width_p-1:0] ucode_cnt_r;
   logic ucode_cnt_clr, ucode_cnt_inc;
@@ -136,6 +152,7 @@ module bp_cce_mmio_cfg_loader
      ,.count_o(irf_cnt_r)
      );
 
+  wire sync_done = (sync_cnt_r == cfg_addr_width_p'(256));
   wire ucode_prog_done = (ucode_cnt_r == cfg_addr_width_p'(inst_ram_els_p-1));
   wire core_prog_done  = (core_cnt_r == cfg_addr_width_p'(num_core_p-1));
   wire irf_done = (irf_cnt_r == cfg_addr_width_p'(reg_els_lp-1));
@@ -144,7 +161,7 @@ module bp_cce_mmio_cfg_loader
     begin
       if (reset_i)
         state_r <= RESET;
-      else if (mem_cmd_yumi_i || (state_r == RESET))
+      else if (mem_cmd_yumi_i || (state_r == RESET) || (state_r == WAIT_FOR_SYNC))
         state_r <= state_n;
     end
 
@@ -170,6 +187,9 @@ module bp_cce_mmio_cfg_loader
 
   always_comb 
     begin
+      sync_cnt_clr = 1'b0;
+      sync_cnt_inc = 1'b0;
+
       ucode_cnt_clr = 1'b0;
       ucode_cnt_inc = 1'b0;
 
@@ -188,6 +208,7 @@ module bp_cce_mmio_cfg_loader
         RESET: begin
           state_n = skip_ram_init_p ? BP_FREEZE_CLR : BP_RESET_SET;
           
+          sync_cnt_clr = 1'b1;
           ucode_cnt_clr = 1'b1;
           core_cnt_clr = 1'b1;
           irf_cnt_clr = 1'b1;
@@ -223,7 +244,7 @@ module bp_cce_mmio_cfg_loader
           cfg_data_lo = dword_width_p'(0);
         end
         SEND_RAM: begin
-          state_n = (core_prog_done & ucode_prog_done) ? SEND_CCE_NORMAL : SEND_RAM;
+          state_n = (core_prog_done & ucode_prog_done) ? SEND_ICACHE_NORMAL : SEND_RAM;
 
           core_cnt_inc = ucode_prog_done & ~core_prog_done;
           core_cnt_clr = ucode_prog_done &  core_prog_done;
@@ -236,16 +257,6 @@ module bp_cce_mmio_cfg_loader
           // TODO: This is nonsynth, won't work on FPGA
           cfg_data_lo = (|cfg_data_lo === 'X) ? '0 : cfg_data_lo;
         end
-        SEND_CCE_NORMAL: begin
-          state_n = core_prog_done ? SEND_ICACHE_NORMAL : SEND_CCE_NORMAL;
-
-          core_cnt_inc = ~core_prog_done;
-          core_cnt_clr = core_prog_done;
-
-          cfg_w_v_lo = 1'b1;
-          cfg_addr_lo = bp_cfg_reg_cce_mode_gp;
-          cfg_data_lo = dword_width_p'(e_cce_mode_normal);
-        end
         SEND_ICACHE_NORMAL: begin
           state_n = core_prog_done ? SEND_DCACHE_NORMAL : SEND_ICACHE_NORMAL;
 
@@ -257,7 +268,7 @@ module bp_cce_mmio_cfg_loader
           cfg_data_lo = dword_width_p'(e_lce_mode_normal);
         end
         SEND_DCACHE_NORMAL: begin
-          state_n = core_prog_done ? SEND_PC : SEND_DCACHE_NORMAL;
+          state_n = core_prog_done ? SEND_CCE_NORMAL : SEND_DCACHE_NORMAL;
 
           core_cnt_inc  = ~core_prog_done;
           core_cnt_clr  = core_prog_done;
@@ -265,6 +276,29 @@ module bp_cce_mmio_cfg_loader
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_dcache_mode_gp);
           cfg_data_lo = dword_width_p'(e_lce_mode_normal);
+        end
+        SEND_CCE_NORMAL: begin
+          state_n = core_prog_done ? WAIT_FOR_SYNC : SEND_CCE_NORMAL;
+
+          core_cnt_inc = ~core_prog_done;
+          core_cnt_clr = core_prog_done;
+
+          cfg_w_v_lo = 1'b1;
+          cfg_addr_lo = bp_cfg_reg_cce_mode_gp;
+          cfg_data_lo = dword_width_p'(e_cce_mode_normal);
+        end
+        WAIT_FOR_SYNC: begin
+          state_n = (core_prog_done & sync_done) ? SEND_PC : WAIT_FOR_SYNC;
+
+          core_cnt_inc = ~core_prog_done;
+          core_cnt_clr = core_prog_done;
+
+          sync_cnt_inc = ~sync_done;
+          sync_cnt_clr = sync_done;
+
+          cfg_w_v_lo = 1'b0;
+          cfg_addr_lo = '0;
+          cfg_data_lo = '0;
         end
         SEND_PC: begin
           state_n = core_prog_done ? BP_FREEZE_CLR : SEND_PC;
