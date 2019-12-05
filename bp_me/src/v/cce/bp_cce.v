@@ -337,7 +337,7 @@ module bp_cce
       ,.sharers_ways_i(sharers_ways_lo)
       ,.sharers_coh_states_i(sharers_coh_states_lo)
 
-      ,.req_lce_i(mshr.lce_id)
+      ,.req_lce_i(lg_num_lce_lp'(mshr.lce_id))
       ,.req_type_flag_i(mshr.flags[e_flag_sel_rqf])
       ,.lru_dirty_flag_i(mshr.flags[e_flag_sel_ldf])
       ,.lru_cached_excl_flag_i(mshr.flags[e_flag_sel_lef])

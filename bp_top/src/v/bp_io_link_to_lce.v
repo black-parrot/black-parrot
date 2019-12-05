@@ -81,7 +81,6 @@ module bp_io_link_to_lce
   //                           ? e_mem_size_4
   //                           : e_mem_size_8;
 
-  /* TODO: Addr -> coord based on entire memory map */
   logic [cce_id_width_p-1:0] cce_id_lo;
   bp_me_addr_to_cce_id
    #(.bp_params_p(bp_params_p))

@@ -173,11 +173,10 @@ module bp_io_tile
 
   logic [mem_noc_did_width_p-1:0]  dst_did_lo;
   logic [mem_noc_cord_width_p-1:0] dst_cord_lo;
-  logic [mem_noc_cid_width_p-1:0]  dst_cid_lo;
 
-  assign dst_did_lo  = cce_io_cmd_lo.addr[paddr_width_p-1-:mem_noc_did_width_p];
-  assign dst_cord_lo = cce_io_cmd_lo.addr[paddr_width_p-1-:mem_noc_did_width_p];
-  assign dst_cid_lo  = '0;
+  wire is_host_addr = ((cce_io_cmd_lo.addr >= host_dev_base_addr_gp) 
+                      && (cce_io_cmd_lo.addr < cce_dev_base_addr_gp));
+  assign dst_did_lo = is_host_addr ? '1 : cce_io_cmd_lo.addr[paddr_width_p-1-:mem_noc_did_width_p];
 
   bp_me_cce_to_wormhole_link_bidir
    #(.bp_params_p(bp_params_p))
@@ -202,11 +201,11 @@ module bp_io_tile
      ,.mem_resp_ready_o(lce_io_resp_ready_li)
 
      ,.my_did_i(my_did_i)
-     ,.my_cord_i(my_cord_i)
+     ,.my_cord_i(mem_noc_cord_width_p'(my_did_i))
      ,.my_cid_i('0)
      ,.dst_did_i(dst_did_lo)
      ,.dst_cord_i(mem_noc_cord_width_p'(dst_did_lo))
-     ,.dst_cid_i(dst_cid_lo)
+     ,.dst_cid_i('0)
 
      ,.cmd_link_i(io_cmd_link_i)
      ,.cmd_link_o(io_cmd_link_o)
