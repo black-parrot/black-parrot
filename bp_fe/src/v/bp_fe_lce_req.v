@@ -78,6 +78,24 @@ module bp_fe_lce_req
 
   assign miss_addr_o = miss_addr_r;
    
+  logic [cce_id_width_p-1:0] req_cce_id_lo;
+  bp_me_addr_to_cce_id
+   #(.bp_params_p(bp_params_p))
+   req_map
+    (.paddr_i(lce_req.addr)
+
+     ,.cce_id_o(req_cce_id_lo)
+     );
+
+  logic [cce_id_width_p-1:0] resp_cce_id_lo;
+  bp_me_addr_to_cce_id
+   #(.bp_params_p(bp_params_p))
+   resp_map
+    (.paddr_i(lce_resp.addr)
+
+     ,.cce_id_o(resp_cce_id_lo)
+     );
+
   // lce_req fsm
   always_comb begin
 
@@ -93,7 +111,7 @@ module bp_fe_lce_req
 
     lce_req_v_o           = 1'b0;
 
-    lce_req.dst_id        = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:`BSG_SAFE_CLOG2(num_cce_p)] : 1'b0;
+    lce_req.dst_id        = req_cce_id_lo;
     lce_req.src_id        = lce_id_i;
     lce_req.msg_type      = e_lce_req_type_rd;
     lce_req.addr          = miss_addr_r;
@@ -108,7 +126,7 @@ module bp_fe_lce_req
 
     lce_resp_v_o          = 1'b0;
 
-    lce_resp.dst_id       = (num_cce_p > 1) ? miss_addr_r[block_offset_width_lp+:`BSG_SAFE_CLOG2(num_cce_p)] : 1'b0;
+    lce_resp.dst_id       = resp_cce_id_lo;
     lce_resp.src_id       = lce_id_i;
     lce_resp.msg_type     = bp_lce_cce_resp_type_e'('0);
     lce_resp.addr         = miss_addr_r;

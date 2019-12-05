@@ -95,7 +95,7 @@ bp_cce_mem_msg_s       cce_mem_resp_li;
 logic                  cce_mem_resp_v_li, cce_mem_resp_yumi_lo;
 
 bp_cce_mem_msg_s       link_mem_cmd_li;
-logic                  link_mem_cmd_v_li, link_mem_cmd_ready_lo, link_mem_cmd_yumi_lo;
+logic                  link_mem_cmd_v_li, link_mem_cmd_ready_lo;
 bp_cce_mem_msg_s       link_mem_resp_lo;
 logic                  link_mem_resp_v_lo, link_mem_resp_ready_li;
 

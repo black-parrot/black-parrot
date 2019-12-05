@@ -39,11 +39,11 @@ package bp_common_pkg;
   parameter bp_data_resp_num_flit_gp = 4;
   parameter bp_data_cmd_num_flit_gp = 4;
  
-  localparam cfg_link_dev_base_addr_gp = 32'h01??_????;
-  localparam clint_dev_base_addr_gp    = 32'h02??_????;
-  localparam host_dev_base_addr_gp     = 32'h03??_????;
-  localparam cce_dev_base_addr_gp      = 32'h04??_????;
-  localparam plic_dev_base_addr_gp     = 32'h0c??_????;
+  localparam cfg_link_dev_base_addr_gp = 32'h0100_0000;
+  localparam clint_dev_base_addr_gp    = 32'h0200_0000;
+  localparam host_dev_base_addr_gp     = 32'h0300_0000;
+  localparam cce_dev_base_addr_gp      = 32'h0400_0000;
+  localparam plic_dev_base_addr_gp     = 32'h0c00_0000;
   
   localparam mipi_reg_base_addr_gp     = 32'h0200_0???;
   localparam mtimecmp_reg_base_addr_gp = 32'h0200_4???;
