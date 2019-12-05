@@ -75,10 +75,12 @@ module bp_me_cce_to_wormhole_link_client
   assign mem_cmd_v_o = mem_cmd_packet_v_lo & fifo_ready_lo;
   assign mem_cmd_packet_yumi_li = mem_cmd_yumi_i;
   
+
+  wire bypass_fifo = mem_resp_v_i & ~fifo_v_lo;
   assign fifo_did_li = mem_cmd_payload_lo.src_did;
   assign fifo_cord_li = mem_cmd_payload_lo.src_cord;
   assign fifo_cid_li  = mem_cmd_payload_lo.src_cid;
-  assign fifo_v_li    = mem_cmd_yumi_i & ~mem_resp_v_i;
+  assign fifo_v_li    = mem_cmd_yumi_i & ~bypass_fifo;
   bsg_fifo_1r1w_small 
   #(.width_p(mem_noc_did_width_p+mem_noc_cid_width_p+mem_noc_cord_width_p)
     ,.els_p(num_outstanding_req_p)
@@ -95,16 +97,13 @@ module bp_me_cce_to_wormhole_link_client
     ,.v_o    (fifo_v_lo)
     ,.yumi_i (fifo_yumi_li)
     );
-  assign fifo_yumi_li = fifo_v_lo & mem_resp_ready_o & mem_resp_v_i;
+  assign fifo_yumi_li = fifo_v_lo & mem_resp_v_i;
 
-  wire [mem_noc_cord_width_p-1:0] io_cord_lo = {'0, '0};
-  wire [mem_noc_cid_width_p-1:0]  io_cid_lo  = '0;
-
-  wire [mem_noc_did_width_p-1:0] src_did_lo = (mem_cmd_yumi_i & mem_resp_v_i) ? mem_cmd_payload_lo.src_did : fifo_did_lo;
-  wire [mem_noc_cord_width_p-1:0] src_cord_lo = (mem_cmd_yumi_i & mem_resp_v_i) ? mem_cmd_payload_lo.src_cord : fifo_cord_lo;
-  wire [mem_noc_cid_width_p-1:0]  src_cid_lo  = (mem_cmd_yumi_i & mem_resp_v_i) ? mem_cmd_payload_lo.src_cid  : fifo_cid_lo;
+  wire [mem_noc_did_width_p-1:0]  src_did_lo  = bypass_fifo ? mem_cmd_payload_lo.src_did  : fifo_did_lo;
+  wire [mem_noc_cord_width_p-1:0] src_cord_lo = bypass_fifo ? mem_cmd_payload_lo.src_cord : fifo_cord_lo;
+  wire [mem_noc_cid_width_p-1:0]  src_cid_lo  = bypass_fifo ? mem_cmd_payload_lo.src_cid  : fifo_cid_lo;
   
-  wire [mem_noc_did_width_p-1:0] dst_did_lo = src_did_lo;
+  wire [mem_noc_did_width_p-1:0]  dst_did_lo  = src_did_lo;
   wire [mem_noc_cord_width_p-1:0] dst_cord_lo = src_cord_lo;
   wire [mem_noc_cid_width_p-1:0]  dst_cid_lo  = src_cid_lo;
 
