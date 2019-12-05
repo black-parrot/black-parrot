@@ -22,7 +22,7 @@ module bp_cce_msg_cached
     // Derived parameters
     , localparam block_size_in_bytes_lp    = (cce_block_width_p/8)
     , localparam lg_lce_assoc_lp           = `BSG_SAFE_CLOG2(lce_assoc_p)
-    , localparam mshr_width_lp = `bp_cce_mshr_width(num_lce_p, lce_assoc_p, paddr_width_p)
+    , localparam mshr_width_lp = `bp_cce_mshr_width(lce_id_width_p, lce_assoc_p, paddr_width_p)
     , localparam lg_lce_sets_lp            = `BSG_SAFE_CLOG2(lce_sets_p)
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
     , localparam num_way_groups_lp         = (lce_sets_p/num_cce_p)
@@ -97,7 +97,7 @@ module bp_cce_msg_cached
    , output logic                                      fence_zero_o
   );
 
-  `declare_bp_cce_mshr_s(num_lce_p, lce_assoc_p, paddr_width_p);
+  `declare_bp_cce_mshr_s(lce_id_width_p, lce_assoc_p, paddr_width_p);
   bp_cce_mshr_s mshr;
   assign mshr = mshr_i;
 

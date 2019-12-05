@@ -127,7 +127,7 @@ module bp_cce_fsm
   // CCE FSM
 
   // MSHR
-  `declare_bp_cce_mshr_s(num_lce_p, lce_assoc_p, paddr_width_p);
+  `declare_bp_cce_mshr_s(lce_id_width_p, lce_assoc_p, paddr_width_p);
   bp_cce_mshr_s mshr_r, mshr_n;
 
   // uncached data register
