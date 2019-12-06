@@ -17,17 +17,17 @@ module bp_me_cce_to_cache
 
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
     , parameter block_size_in_words_lp=cce_block_width_p/dword_width_p
-    , parameter lg_sets_lp=`BSG_SAFE_CLOG2(vcache_sets_p)
-    , parameter lg_ways_lp=`BSG_SAFE_CLOG2(vcache_ways_p)
+    , parameter lg_sets_lp=`BSG_SAFE_CLOG2(l2_sets_p)
+    , parameter lg_ways_lp=`BSG_SAFE_CLOG2(l2_assoc_p)
     , parameter word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
     , parameter data_mask_width_lp=(dword_width_p>>3)
     , parameter byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
     , parameter block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
     
-    , parameter bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(vcache_addr_width_p,dword_width_p)
+    , parameter bsg_cache_pkt_width_lp=`bsg_cache_pkt_width(paddr_width_p,dword_width_p)
     , parameter counter_width_lp=`BSG_SAFE_CLOG2(cce_block_width_p/dword_width_p)
   )
   (
@@ -56,10 +56,10 @@ module bp_me_cce_to_cache
   // at the reset, this module intializes all the tags and valid bits to zero.
   // After all the tags are completedly initialized, this module starts
   // accepting packets from manycore network.
-  `declare_bsg_cache_pkt_s(vcache_addr_width_p, dword_width_p);
+  `declare_bsg_cache_pkt_s(paddr_width_p, dword_width_p);
   
   // cce logics
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
+  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
   
   bsg_cache_pkt_s cache_pkt;
   assign cache_pkt_o = cache_pkt;
@@ -83,9 +83,8 @@ module bp_me_cce_to_cache
   assign mem_cmd = mem_cmd_i;
   assign mem_cmd_yumi_o = mem_cmd_yumi_lo;
   
-  logic [vcache_addr_width_p-1:0] cmd_addr;
-  assign cmd_addr = {mem_cmd.addr[paddr_width_p-1:block_offset_width_lp+vcache_sel_width_p], 
-                     mem_cmd.addr[0+:block_offset_width_lp]};
+  logic [paddr_width_p-1:0] cmd_addr;
+  assign cmd_addr = mem_cmd.addr;
   
   logic [block_size_in_words_lp-1:0][dword_width_p-1:0] cmd_data;
   assign cmd_data = mem_cmd.data;
@@ -148,12 +147,12 @@ module bp_me_cce_to_cache
         cmd_state_n = CLEAR_TAG;
       end
       CLEAR_TAG: begin
-        v_o = tagst_sent_r != (vcache_ways_p*vcache_sets_p);
+        v_o = tagst_sent_r != (l2_assoc_p*l2_sets_p);
         
         cache_pkt.opcode = TAGST;
         cache_pkt.data = '0;
         cache_pkt.addr = {
-          {(vcache_addr_width_p-lg_sets_lp-lg_ways_lp-block_offset_width_lp){1'b0}},
+          {(paddr_width_p-lg_sets_lp-lg_ways_lp-block_offset_width_lp){1'b0}},
           tagst_sent_r[0+:lg_sets_lp+lg_ways_lp],
           {(block_offset_width_lp){1'b0}}
         };
@@ -165,7 +164,7 @@ module bp_me_cce_to_cache
           ? tagst_received_r + 1
           : tagst_received_r;
 
-        cmd_state_n = (tagst_sent_r == vcache_ways_p*vcache_sets_p) & (tagst_received_r == vcache_ways_p*vcache_sets_p)
+        cmd_state_n = (tagst_sent_r == l2_assoc_p*l2_sets_p) & (tagst_received_r == l2_assoc_p*l2_sets_p)
           ? READY
           : CLEAR_TAG;
       end

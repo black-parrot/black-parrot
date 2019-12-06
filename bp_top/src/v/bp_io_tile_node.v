@@ -33,11 +33,11 @@ module bp_io_tile_node
    , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_cmd_link_i
    , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_cmd_link_o
 
-   , input [S:W][mem_noc_ral_link_width_lp-1:0]  mem_cmd_link_i
-   , output [S:W][mem_noc_ral_link_width_lp-1:0] mem_cmd_link_o
+   , input [S:W][mem_noc_ral_link_width_lp-1:0]  io_cmd_link_i
+   , output [S:W][mem_noc_ral_link_width_lp-1:0] io_cmd_link_o
 
-   , input [S:W][mem_noc_ral_link_width_lp-1:0]  mem_resp_link_i
-   , output [S:W][mem_noc_ral_link_width_lp-1:0] mem_resp_link_o
+   , input [S:W][mem_noc_ral_link_width_lp-1:0]  io_resp_link_i
+   , output [S:W][mem_noc_ral_link_width_lp-1:0] io_resp_link_o
    );
 
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
@@ -330,8 +330,8 @@ module bp_io_tile_node
     (.clk_i(mem_clk_i)
      ,.reset_i(mem_reset_i)
 
-     ,.link_i({mem_cmd_link_i, mem_cmd_link_li})
-     ,.link_o({mem_cmd_link_o, mem_cmd_link_lo})
+     ,.link_i({io_cmd_link_i, mem_cmd_link_li})
+     ,.link_o({io_cmd_link_o, mem_cmd_link_lo})
 
      ,.my_cord_i(mem_noc_cord_width_p'(my_did_i))
      );
@@ -348,8 +348,8 @@ module bp_io_tile_node
     (.clk_i(mem_clk_i)
      ,.reset_i(mem_reset_i)
 
-     ,.link_i({mem_resp_link_i, mem_resp_link_li})
-     ,.link_o({mem_resp_link_o, mem_resp_link_lo})
+     ,.link_i({io_resp_link_i, mem_resp_link_li})
+     ,.link_o({io_resp_link_o, mem_resp_link_lo})
 
      ,.my_cord_i(mem_noc_cord_width_p'(my_did_i))
      );
