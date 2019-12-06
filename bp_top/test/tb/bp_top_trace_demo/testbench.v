@@ -103,17 +103,19 @@ wrapper
 
    ,.my_did_i(proc_did_li)
 
-   ,.mem_cmd_link_i({proc_cmd_link_li, stub_cmd_link_li})
-   ,.mem_cmd_link_o({proc_cmd_link_lo, stub_cmd_link_lo})
+   ,.io_cmd_link_i({proc_cmd_link_li, stub_cmd_link_li})
+   ,.io_cmd_link_o({proc_cmd_link_lo, stub_cmd_link_lo})
 
-   ,.mem_resp_link_i({proc_resp_link_li, stub_resp_link_li})
-   ,.mem_resp_link_o({proc_resp_link_lo, stub_resp_link_lo})
+   ,.io_resp_link_i({proc_resp_link_li, stub_resp_link_li})
+   ,.io_resp_link_o({proc_resp_link_lo, stub_resp_link_lo})
 
-   ,.dram_cmd_link_i(dram_cmd_link_li)
-   ,.dram_cmd_link_o(dram_cmd_link_lo)
+   ,.dram_cmd_o(dram_cmd_li)
+   ,.dram_cmd_v_o(dram_cmd_v_li)
+   ,.dram_cmd_yumi_i(dram_cmd_yumi_lo)
 
-   ,.dram_resp_link_i(dram_resp_link_li)
-   ,.dram_resp_link_o(dram_resp_link_lo)
+   ,.dram_resp_i(dram_resp_lo)
+   ,.dram_resp_v_i(dram_resp_v_lo)
+   ,.dram_resp_ready_o(dram_resp_ready_li)
    );
 
 assign cmd_link_li[W]  = proc_cmd_link_lo;
@@ -377,31 +379,6 @@ bp_me_cce_to_wormhole_link_bidir
   ,.resp_link_i(resp_link_lo[P])
   ,.resp_link_o(resp_link_li[P])
   );
-
-// DRAM 
-for (genvar i = 0; i < mem_noc_x_dim_p; i++)
-  begin : dram_link
-    bp_me_cce_to_wormhole_link_client
-     #(.bp_params_p(bp_params_p))
-     dram_link
-      (.clk_i(clk_i)
-       ,.reset_i(reset_i)
-    
-       ,.mem_cmd_o(dram_cmd_li[i])
-       ,.mem_cmd_v_o(dram_cmd_v_li[i])
-       ,.mem_cmd_yumi_i(dram_cmd_yumi_lo[i])
-    
-       ,.mem_resp_i(dram_resp_lo[i])
-       ,.mem_resp_v_i(dram_resp_v_lo[i])
-       ,.mem_resp_ready_o(dram_resp_ready_li[i])
-    
-       ,.cmd_link_i(dram_cmd_link_lo[i])
-       ,.cmd_link_o(dram_cmd_link_li[i])
-    
-       ,.resp_link_i(dram_resp_link_lo[i])
-       ,.resp_link_o(dram_resp_link_li[i])
-       );
-  end
 
 logic [`BSG_SAFE_CLOG2(mem_noc_x_dim_p)-1:0] dram_ch_tag_li;
 bsg_round_robin_n_to_1

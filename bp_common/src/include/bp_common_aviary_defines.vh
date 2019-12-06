@@ -120,6 +120,9 @@ typedef struct packed
   integer cce_pc_width;
   integer cce_instr_width;
 
+  integer l2_sets;
+  integer l2_assoc;
+
   integer fe_queue_fifo_els;
   integer fe_cmd_fifo_els;
 
@@ -200,6 +203,9 @@ typedef struct packed
   , localparam cce_pc_width_p             = proc_param_lp.cce_pc_width                             \
   , localparam cce_instr_width_p          = proc_param_lp.cce_instr_width                          \
   , localparam num_cce_instr_ram_els_p    = 2**cce_pc_width_p                                      \
+                                                                                                   \
+  , localparam l2_sets_p  = proc_param_lp.l2_sets                                                  \
+  , localparam l2_assoc_p = proc_param_lp.l2_assoc                                                 \
                                                                                                    \
   , localparam fe_queue_fifo_els_p = proc_param_lp.fe_queue_fifo_els                               \
   , localparam fe_cmd_fifo_els_p   = proc_param_lp.fe_cmd_fifo_els                                 \

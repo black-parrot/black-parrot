@@ -87,6 +87,9 @@ package bp_common_aviary_pkg;
       ,cce_pc_width         : 8
       ,cce_instr_width      : 48
 
+      ,l2_sets : 16
+      ,l2_assoc: 2
+
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
 
@@ -139,6 +142,9 @@ package bp_common_aviary_pkg;
       ,cce_block_width      : 512
       ,cce_pc_width         : 8
       ,cce_instr_width      : 48
+
+      ,l2_sets : 16
+      ,l2_assoc: 2
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4

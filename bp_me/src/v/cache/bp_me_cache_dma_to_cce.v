@@ -18,11 +18,13 @@ module bp_me_cache_dma_to_cce
   
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+  `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
   
   ,localparam block_size_in_words_lp = cce_block_width_p / dword_width_p
   ,localparam block_offset_width_lp = `BSG_SAFE_CLOG2(cce_block_width_p >> 3)
-  ,localparam bsg_cache_dma_pkt_width_lp = `bsg_cache_dma_pkt_width(vcache_addr_width_p)
+  ,localparam bsg_cache_dma_pkt_width_lp = `bsg_cache_dma_pkt_width(paddr_width_p)
+  // TODO: This module should be 1:1, not N:1
+  ,localparam num_mem_p = 1
   ,localparam lg_num_mem_lp = `BSG_SAFE_CLOG2(num_mem_p)
   )
   
@@ -57,10 +59,10 @@ module bp_me_cache_dma_to_cce
   /********************* Packet definition *********************/
   
   // Define cache DMA packet
-  `declare_bsg_cache_dma_pkt_s(vcache_addr_width_p);
+  `declare_bsg_cache_dma_pkt_s(paddr_width_p);
   
   // cce
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
+  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
   
   
   /********************* dma packet fifo *********************/
@@ -175,7 +177,7 @@ module bp_me_cache_dma_to_cce
   assign mem_cmd_lo.msg_type = (send_dma_pkt_r.write_not_read)? 
                                 e_cce_mem_wb : e_cce_mem_rd;
   assign mem_cmd_lo.addr     = (num_mem_p == 1)? send_dma_pkt_r.addr : 
-                               {send_dma_pkt_r.addr[vcache_addr_width_p-1:block_offset_width_lp], 
+                               {send_dma_pkt_r.addr[paddr_width_p-1:block_offset_width_lp], 
                                 dma_pkt_rr_tag_r, send_dma_pkt_r.addr[block_offset_width_lp-1:0]};
   assign mem_cmd_lo.payload  = '0;
   assign mem_cmd_lo.size     = e_mem_size_64;

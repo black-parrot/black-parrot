@@ -31,11 +31,11 @@ module bp_io_complex
    , input [coh_noc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_cmd_link_i
    , output [coh_noc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_cmd_link_o
 
-   , input [E:W][mem_noc_ral_link_width_lp-1:0]                  mem_cmd_link_i
-   , output [E:W][mem_noc_ral_link_width_lp-1:0]                 mem_cmd_link_o
+   , input [E:W][mem_noc_ral_link_width_lp-1:0]                  io_cmd_link_i
+   , output [E:W][mem_noc_ral_link_width_lp-1:0]                 io_cmd_link_o
 
-   , input [E:W][mem_noc_ral_link_width_lp-1:0]                  mem_resp_link_i
-   , output [E:W][mem_noc_ral_link_width_lp-1:0]                 mem_resp_link_o
+   , input [E:W][mem_noc_ral_link_width_lp-1:0]                  io_resp_link_i
+   , output [E:W][mem_noc_ral_link_width_lp-1:0]                 io_resp_link_o
    );
 
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
@@ -72,11 +72,11 @@ module bp_io_complex
          ,.coh_lce_cmd_link_i(lce_cmd_link_li[i])
          ,.coh_lce_cmd_link_o(lce_cmd_link_lo[i])
   
-         ,.mem_cmd_link_i(mem_cmd_link_li[i])
-         ,.mem_cmd_link_o(mem_cmd_link_lo[i])
+         ,.io_cmd_link_i(mem_cmd_link_li[i])
+         ,.io_cmd_link_o(mem_cmd_link_lo[i])
   
-         ,.mem_resp_link_i(mem_resp_link_li[i])
-         ,.mem_resp_link_o(mem_resp_link_lo[i])
+         ,.io_resp_link_i(mem_resp_link_li[i])
+         ,.io_resp_link_o(mem_resp_link_lo[i])
          );
     end
   
@@ -119,7 +119,7 @@ module bp_io_complex
   assign coh_cmd_link_o = lce_cmd_ver_link_lo[S];
 
   assign mem_cmd_ver_link_li = '0;
-  assign mem_cmd_hor_link_li = mem_cmd_link_i;
+  assign mem_cmd_hor_link_li = io_cmd_link_i;
   bsg_mesh_stitch
    #(.width_p(mem_noc_ral_link_width_lp)
      ,.x_max_p(mem_noc_x_dim_p)
@@ -134,10 +134,10 @@ module bp_io_complex
      ,.ver_i(mem_cmd_ver_link_li)
      ,.ver_o(mem_cmd_ver_link_lo)
      );
-  assign mem_cmd_link_o  = mem_cmd_hor_link_lo;
+  assign io_cmd_link_o  = mem_cmd_hor_link_lo;
 
   assign mem_resp_ver_link_li = '0;
-  assign mem_resp_hor_link_li = mem_resp_link_i;
+  assign mem_resp_hor_link_li = io_resp_link_i;
   bsg_mesh_stitch
    #(.width_p(mem_noc_ral_link_width_lp)
      ,.x_max_p(mem_noc_x_dim_p)
@@ -152,7 +152,7 @@ module bp_io_complex
      ,.ver_i(mem_resp_ver_link_li)
      ,.ver_o(mem_resp_ver_link_lo)
      );
-  assign mem_resp_link_o = mem_resp_hor_link_lo;
+  assign io_resp_link_o = mem_resp_hor_link_lo;
 
 endmodule
 

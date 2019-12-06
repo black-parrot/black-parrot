@@ -31,18 +31,20 @@ module wrapper
 
    , input [mem_noc_did_width_p-1:0]                  my_did_i
 
-   , input  [E:W][mem_noc_ral_link_width_lp-1:0]      mem_cmd_link_i
-   , output [E:W][mem_noc_ral_link_width_lp-1:0]      mem_cmd_link_o
+   , input  [E:W][mem_noc_ral_link_width_lp-1:0]      io_cmd_link_i
+   , output [E:W][mem_noc_ral_link_width_lp-1:0]      io_cmd_link_o
 
-   , input  [E:W][mem_noc_ral_link_width_lp-1:0]      mem_resp_link_i
-   , output [E:W][mem_noc_ral_link_width_lp-1:0]      mem_resp_link_o
+   , input  [E:W][mem_noc_ral_link_width_lp-1:0]      io_resp_link_i
+   , output [E:W][mem_noc_ral_link_width_lp-1:0]      io_resp_link_o
 
-   // TODO: Temp
-   , input [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  dram_cmd_link_i
-   , output [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] dram_cmd_link_o
+   // TEMP
+   , output [mem_noc_x_dim_p-1:0][cce_mem_msg_width_lp-1:0] dram_cmd_o
+   , output [mem_noc_x_dim_p-1:0]                           dram_cmd_v_o
+   , input  [mem_noc_x_dim_p-1:0]                           dram_cmd_yumi_i
 
-   , input [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  dram_resp_link_i
-   , output [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] dram_resp_link_o
+   , input  [mem_noc_x_dim_p-1:0][cce_mem_msg_width_lp-1:0] dram_resp_i
+   , input  [mem_noc_x_dim_p-1:0]                           dram_resp_v_i
+   , output [mem_noc_x_dim_p-1:0]                           dram_resp_ready_o
    );
 
   bp_processor
