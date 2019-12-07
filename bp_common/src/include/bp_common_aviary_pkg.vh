@@ -38,6 +38,7 @@ package bp_common_aviary_pkg;
       ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
+      ,coh_noc_max_credits : 32
       ,coh_noc_flit_width  : 62
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 5
@@ -47,7 +48,6 @@ package bp_common_aviary_pkg;
       ,coh_noc_x_dim       : 1
 
       ,async_mem_clk         : 0
-      ,mem_noc_max_credits   : 32
       ,mem_noc_flit_width    : 30
       ,mem_noc_did_width     : 3
       ,mem_noc_cid_width     : 2
@@ -94,6 +94,7 @@ package bp_common_aviary_pkg;
       ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
+      ,coh_noc_max_credits : 32
       ,coh_noc_flit_width  : 62
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 5
@@ -103,7 +104,6 @@ package bp_common_aviary_pkg;
       ,coh_noc_x_dim       : 1
 
       ,async_mem_clk         : 0
-      ,mem_noc_max_credits   : 32
       ,mem_noc_flit_width    : 30
       ,mem_noc_did_width     : 3
       ,mem_noc_cid_width     : 5
@@ -150,6 +150,7 @@ package bp_common_aviary_pkg;
       ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
+      ,coh_noc_max_credits : 32
       ,coh_noc_flit_width  : 62
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 5
@@ -159,7 +160,6 @@ package bp_common_aviary_pkg;
       ,coh_noc_x_dim       : 2
 
       ,async_mem_clk         : 0
-      ,mem_noc_max_credits   : 32
       ,mem_noc_flit_width    : 30
       ,mem_noc_did_width     : 3
       ,mem_noc_cid_width     : 5
@@ -199,6 +199,7 @@ package bp_common_aviary_pkg;
       ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
+      ,coh_noc_max_credits : 32
       ,coh_noc_flit_width  : 62
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 5
@@ -208,7 +209,6 @@ package bp_common_aviary_pkg;
       ,coh_noc_x_dim       : 2
 
       ,async_mem_clk         : 0
-      ,mem_noc_max_credits   : 32
       ,mem_noc_flit_width    : 30
       ,mem_noc_did_width     : 3
       ,mem_noc_cid_width     : 2
@@ -247,6 +247,7 @@ package bp_common_aviary_pkg;
       ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
+      ,coh_noc_max_credits : 32
       ,coh_noc_flit_width  : 62
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 5
@@ -256,7 +257,6 @@ package bp_common_aviary_pkg;
       ,coh_noc_x_dim       : 2
 
       ,async_mem_clk         : 1
-      ,mem_noc_max_credits   : 32
       ,mem_noc_flit_width    : 30
       ,mem_noc_did_width     : 3
       ,mem_noc_cid_width     : 2
@@ -295,6 +295,7 @@ package bp_common_aviary_pkg;
       ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
+      ,coh_noc_max_credits : 32
       ,coh_noc_flit_width  : 62
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 5
@@ -304,7 +305,6 @@ package bp_common_aviary_pkg;
       ,coh_noc_x_dim       : 4
 
       ,async_mem_clk         : 0
-      ,mem_noc_max_credits   : 32
       ,mem_noc_flit_width    : 30
       ,mem_noc_did_width     : 3
       ,mem_noc_cid_width     : 2
@@ -343,6 +343,7 @@ package bp_common_aviary_pkg;
       ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
+      ,coh_noc_max_credits : 32
       ,coh_noc_flit_width  : 62
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 5
@@ -352,7 +353,6 @@ package bp_common_aviary_pkg;
       ,coh_noc_x_dim       : 4
 
       ,async_mem_clk         : 1
-      ,mem_noc_max_credits   : 32
       ,mem_noc_flit_width    : 30
       ,mem_noc_did_width     : 3
       ,mem_noc_cid_width     : 2
