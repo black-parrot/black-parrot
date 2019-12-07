@@ -173,6 +173,11 @@ typedef struct packed
   , localparam num_cacc_p  = proc_param_lp.num_cacc                                                \
   , localparam num_l2e_p   = proc_param_lp.num_l2e                                                 \
                                                                                                    \
+  , localparam ioc_y_dim_p = `BSG_CDIV(num_io_p, cc_x_dim_p)                                       \
+  , localparam mc_y_dim_p  = `BSG_CDIV(num_l2e_p, cc_x_dim_p)                                      \
+  , localparam cac_x_dim_p = `BSG_CDIV(num_cacc_p, cc_y_dim_p)                                     \
+  , localparam sac_x_dim_p = `BSG_CDIV(num_sacc_p, cc_y_dim_p)                                     \
+                                                                                                   \
   , localparam num_cce_p   = num_core_p + num_l2e_p                                                \
   , localparam num_lce_p   = 2*num_core_p + num_cacc_p                                             \
                                                                                                    \
