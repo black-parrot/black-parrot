@@ -44,11 +44,11 @@ module bp_core_complex
    , input [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_link_i
    , output [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_resp_link_o
 
-   , input [cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]       mem_cmd_link_i
-   , output [cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]      mem_cmd_link_o
+   , input [S:N][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_cmd_link_i
+   , output [S:N][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] mem_cmd_link_o
 
-   , input [cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]       mem_resp_link_i
-   , output [cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]      mem_resp_link_o
+   , input [S:N][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_resp_link_i
+   , output [S:N][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] mem_resp_link_o
    );
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
@@ -169,9 +169,8 @@ for (genvar j = 0; j < cc_y_dim_p; j++)
      );
   assign coh_resp_link_o = lce_resp_ver_link_lo[N];
   
-  assign mem_cmd_hor_link_li    = '0;
-  assign mem_cmd_ver_link_li[N] = '0;
-  assign mem_cmd_ver_link_li[S] = mem_cmd_link_i;
+  assign mem_cmd_hor_link_li = '0;
+  assign mem_cmd_ver_link_li = mem_cmd_link_i;
   bsg_mesh_stitch
    #(.width_p($bits(mem_noc_ral_link_s))
      ,.x_max_p(cc_x_dim_p)
@@ -187,11 +186,10 @@ for (genvar j = 0; j < cc_y_dim_p; j++)
      ,.ver_i(mem_cmd_ver_link_li)
      ,.ver_o(mem_cmd_ver_link_lo)
      );
-  assign mem_cmd_link_o = mem_cmd_ver_link_lo[S];
+  assign mem_cmd_link_o = mem_cmd_ver_link_lo;
 
-  assign mem_resp_hor_link_li    = '0;
-  assign mem_resp_ver_link_li[N] = '0;
-  assign mem_resp_ver_link_li[S] = mem_resp_link_i;
+  assign mem_resp_hor_link_li = '0;
+  assign mem_resp_ver_link_li = mem_resp_link_i;
   bsg_mesh_stitch
    #(.width_p($bits(mem_noc_ral_link_s))
      ,.x_max_p(cc_x_dim_p)
@@ -207,7 +205,7 @@ for (genvar j = 0; j < cc_y_dim_p; j++)
      ,.ver_i(mem_resp_ver_link_li)
      ,.ver_o(mem_resp_ver_link_lo)
      );
-  assign mem_resp_link_o = mem_resp_ver_link_lo[S];
+  assign mem_resp_link_o = mem_resp_ver_link_lo;
 
 endmodule
 
