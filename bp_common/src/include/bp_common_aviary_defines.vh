@@ -216,8 +216,8 @@ typedef struct packed
   , localparam coh_noc_flit_width_p   = proc_param_lp.coh_noc_flit_width                           \
   , localparam coh_noc_cid_width_p    = proc_param_lp.coh_noc_cid_width                            \
   , localparam coh_noc_len_width_p    = proc_param_lp.coh_noc_len_width                            \
-  , localparam coh_noc_y_cord_width_p = proc_param_lp.coh_noc_y_cord_width                         \
-  , localparam coh_noc_x_cord_width_p = proc_param_lp.coh_noc_x_cord_width                         \
+  , localparam coh_noc_y_cord_width_p = `BSG_SAFE_CLOG2(ioc_y_dim_p+cc_y_dim_p+mc_y_dim_p) + 2     \
+  , localparam coh_noc_x_cord_width_p = `BSG_SAFE_CLOG2(sac_x_dim_p+cc_x_dim_p+cac_x_dim_p) + 2    \
   , localparam coh_noc_cord_width_p   = coh_noc_x_cord_width_p + coh_noc_y_cord_width_p            \
   , localparam coh_noc_dims_p         = 2                                                          \
   , localparam coh_noc_dirs_p         = coh_noc_dims_p*2 + 1                                       \
@@ -229,8 +229,8 @@ typedef struct packed
   , localparam mem_noc_did_width_p       = proc_param_lp.mem_noc_did_width                         \
   , localparam mem_noc_cid_width_p       = proc_param_lp.mem_noc_cid_width                         \
   , localparam mem_noc_len_width_p       = proc_param_lp.mem_noc_len_width                         \
-  , localparam mem_noc_y_cord_width_p    = proc_param_lp.mem_noc_y_cord_width                      \
-  , localparam mem_noc_x_cord_width_p    = proc_param_lp.mem_noc_x_cord_width                      \
+  , localparam mem_noc_y_cord_width_p    = `BSG_SAFE_CLOG2(ioc_y_dim_p+cc_y_dim_p+mc_y_dim_p) + 2  \
+  , localparam mem_noc_x_cord_width_p    = `BSG_SAFE_CLOG2(sac_x_dim_p+cc_x_dim_p+cac_x_dim_p) + 2 \
   , localparam mem_noc_cord_width_p      = mem_noc_x_cord_width_p + mem_noc_y_cord_width_p         \
   , localparam mem_noc_dims_p            = 2                                                       \
   , localparam mem_noc_dirs_p            = mem_noc_dims_p*2 + 1                                    \
