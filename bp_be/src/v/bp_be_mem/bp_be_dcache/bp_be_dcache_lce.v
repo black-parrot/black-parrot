@@ -155,16 +155,28 @@ module bp_be_dcache_lce
   assign tag_mem_pkt_o = tag_mem_pkt;
   assign stat_mem_pkt_o = stat_mem_pkt;
 
+  // LCE_CCE_req
+  //
+  logic cce_data_received;
+  logic uncached_data_received;
+  logic set_tag_received;
+  logic set_tag_wakeup_received;
+  logic uncached_store_done_received;
+
+  bp_lce_cce_resp_s lce_req_to_lce_resp_lo;
+  logic lce_req_to_lce_resp_v_lo;
+  logic lce_req_to_lce_resp_yumi_li;
+
+  logic [paddr_width_p-1:0] miss_addr_lo;
+
   // Outstanding Uncached Store Counter
   //
-  logic uncached_store_done_received;
-  logic lce_req_uncached_store_lo;
-  logic [`BSG_WIDTH(mem_noc_max_credits_p)-1:0] credit_count_lo;
-  logic credit_v_li, credit_ready_li;
-  assign credit_v_li = lce_req_uncached_store_lo & lce_req_v_o & lce_req_ready_i;
-  assign credit_ready_li = lce_req_ready_i;
+  logic [`BSG_WIDTH(coh_noc_max_credits_p)-1:0] credit_count_lo;
+  wire credit_v_li = lce_req_v_o;
+  wire credit_ready_li = lce_req_ready_i;
+  wire credit_returned_li = uncached_store_done_received | cce_data_received | uncached_data_received;
   bsg_flow_counter
-    #(.els_p(mem_noc_max_credits_p))
+    #(.els_p(coh_noc_max_credits_p))
     uncached_store_counter
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -172,25 +184,11 @@ module bp_be_dcache_lce
       ,.v_i(credit_v_li)
       ,.ready_i(credit_ready_li)
       // decrement, when LCE CMD processes UC_ST_DONE_CMD
-      ,.yumi_i(uncached_store_done_received)
+      ,.yumi_i(credit_returned_li)
       ,.count_o(credit_count_lo)
       );
-  assign credits_full_o = (credit_count_lo == mem_noc_max_credits_p);
+  assign credits_full_o = (credit_count_lo == coh_noc_max_credits_p);
   assign credits_empty_o = (credit_count_lo == 0);
-
-
-  // LCE_CCE_req
-  //
-  logic cce_data_received;
-  logic uncached_data_received;
-  logic set_tag_received;
-  logic set_tag_wakeup_received;
-
-  bp_lce_cce_resp_s lce_req_to_lce_resp_lo;
-  logic lce_req_to_lce_resp_v_lo;
-  logic lce_req_to_lce_resp_yumi_li;
-
-  logic [paddr_width_p-1:0] miss_addr_lo;
 
   bp_be_dcache_lce_req
     #(.bp_params_p(bp_params_p))
