@@ -292,8 +292,8 @@ module bp_cce_msg_cached
       end // speculative response
 
       // Memory Response with cached data
-      else if ((mem_resp_li.msg_type.cce_mem_cmd == e_cce_mem_rd)
-               | (mem_resp_li.msg_type.cce_mem_cmd == e_cce_mem_wr)) begin
+      else if ((mem_resp_li.msg_type == e_cce_mem_rd)
+               | (mem_resp_li.msg_type == e_cce_mem_wr)) begin
 
         // handshaking
         lce_cmd_v_o = mem_resp_v_i;
@@ -331,7 +331,7 @@ module bp_cce_msg_cached
 
       // Uncached load response - forward data to LCE
       // This transaction does not modify the pending bits
-      else if (mem_resp_li.msg_type.cce_mem_cmd == e_cce_mem_uc_rd) begin
+      else if (mem_resp_li.msg_type == e_cce_mem_uc_rd) begin
 
         // handshaking
         lce_cmd_v_o = mem_resp_v_i;
@@ -354,7 +354,7 @@ module bp_cce_msg_cached
       end // uncached read response
 
       // Writeback response - clears the pending bit
-      else if (mem_resp_li.msg_type.cce_mem_cmd == e_cce_mem_wb) begin
+      else if (mem_resp_li.msg_type == e_cce_mem_wb) begin
 
         mem_resp_yumi_o = 1'b1;
         pending_w_v_o = 1'b1;
@@ -367,7 +367,7 @@ module bp_cce_msg_cached
 
       // Uncached store response - send uncached store done command on LCE Command
       // This transaction does not modify the pending bits
-      else if (mem_resp_li.msg_type.cce_mem_cmd == e_cce_mem_uc_wr) begin
+      else if (mem_resp_li.msg_type == e_cce_mem_uc_wr) begin
 
         // handshaking
         lce_cmd_v_o = mem_resp_v_i;
@@ -481,7 +481,7 @@ module bp_cce_msg_cached
     if (decoded_inst_i.mem_cmd_v & ~pending_w_busy_o) begin
 
       // set some defaults - cached load/store miss request
-      mem_cmd_lo.msg_type.cce_mem_cmd = (mshr.flags[e_flag_sel_rqf]) ? e_cce_mem_wr : e_cce_mem_rd;
+      mem_cmd_lo.msg_type = (mshr.flags[e_flag_sel_rqf]) ? e_cce_mem_wr : e_cce_mem_rd;
       mem_cmd_lo.addr = mem_cmd_addr;
       mem_cmd_lo.size = e_mem_size_64;
       mem_cmd_lo.payload.lce_id = mshr.lce_id;
@@ -499,10 +499,10 @@ module bp_cce_msg_cached
         mem_cmd_v_o = 1'b1;
         // load or store
         if (mshr.flags[e_flag_sel_rqf]) begin
-          mem_cmd_lo.msg_type.cce_mem_cmd = e_cce_mem_uc_wr;
+          mem_cmd_lo.msg_type = e_cce_mem_uc_wr;
           mem_cmd_lo.data = {(cce_block_width_p-dword_width_p)'('0),nc_data_i};
         end else begin
-          mem_cmd_lo.msg_type.cce_mem_cmd = e_cce_mem_uc_rd;
+          mem_cmd_lo.msg_type = e_cce_mem_uc_rd;
         end
 
         mem_cmd_lo.size =
@@ -523,7 +523,7 @@ module bp_cce_msg_cached
 
         // Writeback command - override default command fields as needed
         if (decoded_inst_i.mem_cmd == e_cce_mem_wb) begin
-          mem_cmd_lo.msg_type.cce_mem_cmd = e_cce_mem_wb;
+          mem_cmd_lo.msg_type = e_cce_mem_wb;
           mem_cmd_lo.data = lce_resp.data;
           mem_cmd_lo.payload.lce_id = lce_resp.src_id;
           mem_cmd_lo.payload.way_id = '0;

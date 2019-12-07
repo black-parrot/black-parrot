@@ -858,7 +858,7 @@ typedef struct packed {
   {
     bp_lce_cmd_type_e      lce_cmd;
     bp_cce_mem_cmd_type_e  mem_cmd;
-    bp_mem_cce_cmd_type_e  mem_resp;
+    bp_cce_mem_cmd_type_e  mem_resp;
   }                                      cmd;
   // cce_lce_cmd_queue inputs
   bp_cce_inst_lce_cmd_lce_sel_e          lce_cmd_lce_sel;
@@ -1032,7 +1032,7 @@ typedef struct packed {
   bp_cce_inst_mem_cmd_addr_sel_e           mem_cmd_addr_sel;
 
   // Mem Response type
-  bp_mem_cce_cmd_type_e                    mem_resp;
+  bp_cce_mem_cmd_type_e                    mem_resp;
 
   // Register write enables
   // TODO: write enable for every register
