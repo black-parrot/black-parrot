@@ -46,7 +46,6 @@ package bp_common_aviary_pkg;
       ,async_mem_clk         : 0
       ,mem_noc_flit_width    : 30
       ,mem_noc_did_width     : 3
-      ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
       };
 */
@@ -94,7 +93,6 @@ package bp_common_aviary_pkg;
       ,async_mem_clk         : 0
       ,mem_noc_flit_width    : 30
       ,mem_noc_did_width     : 3
-      ,mem_noc_cid_width     : 5
       ,mem_noc_len_width     : 5
       };
 
@@ -142,7 +140,6 @@ package bp_common_aviary_pkg;
       ,async_mem_clk         : 0
       ,mem_noc_flit_width    : 30
       ,mem_noc_did_width     : 3
-      ,mem_noc_cid_width     : 5
       ,mem_noc_len_width     : 5
       };
 
@@ -183,7 +180,6 @@ package bp_common_aviary_pkg;
       ,async_mem_clk         : 0
       ,mem_noc_flit_width    : 30
       ,mem_noc_did_width     : 3
-      ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
       };
 
@@ -223,7 +219,6 @@ package bp_common_aviary_pkg;
       ,async_mem_clk         : 1
       ,mem_noc_flit_width    : 30
       ,mem_noc_did_width     : 3
-      ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
       };
 
@@ -263,7 +258,6 @@ package bp_common_aviary_pkg;
       ,async_mem_clk         : 0
       ,mem_noc_flit_width    : 30
       ,mem_noc_did_width     : 3
-      ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
       };
 
@@ -303,7 +297,6 @@ package bp_common_aviary_pkg;
       ,async_mem_clk         : 1
       ,mem_noc_flit_width    : 30
       ,mem_noc_did_width     : 3
-      ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
       };
 */

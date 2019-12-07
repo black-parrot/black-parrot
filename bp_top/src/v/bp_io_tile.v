@@ -203,10 +203,8 @@ module bp_io_tile
 
      ,.my_did_i(my_did_i)
      ,.my_cord_i(mem_noc_cord_width_p'(my_did_i))
-     ,.my_cid_i('0)
      ,.dst_did_i(dst_did_lo)
      ,.dst_cord_i(dst_cord_lo)
-     ,.dst_cid_i('0)
 
      ,.cmd_link_i(io_cmd_link_i)
      ,.cmd_link_o(io_cmd_link_o)

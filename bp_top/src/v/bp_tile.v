@@ -604,7 +604,6 @@ for (genvar i = 0; i < 2; i++)
   wire [mem_noc_did_width_p-1:0]  dst_did_li  = my_did_i;
   wire [mem_noc_cord_width_p-1:0] dst_cord_li = 
       {mem_noc_y_cord_width_p'(dram_y_dim_lp), my_cord_i[0+:mem_noc_x_cord_width_p]};
-  wire [mem_noc_cid_width_p-1:0]  dst_cid_li  = '0;
   bp_me_cce_to_wormhole_link_master
    #(.bp_params_p(bp_params_p))
    dma_link
@@ -621,10 +620,8 @@ for (genvar i = 0; i < 2; i++)
 
      ,.my_did_i(my_did_i)
      ,.my_cord_i(my_cord_i)
-     ,.my_cid_i('0)
      ,.dst_did_i(dst_did_li)
      ,.dst_cord_i(dst_cord_li)
-     ,.dst_cid_i(dst_cid_li)
 
      ,.cmd_link_i(mem_cmd_link_i)
      ,.cmd_link_o(mem_cmd_link_o)

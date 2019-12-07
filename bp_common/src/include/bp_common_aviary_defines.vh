@@ -131,16 +131,11 @@ typedef struct packed
   integer coh_noc_flit_width;
   integer coh_noc_cid_width;
   integer coh_noc_len_width;
-  integer coh_noc_y_cord_width;
-  integer coh_noc_x_cord_width;
 
   integer async_mem_clk;
   integer mem_noc_flit_width;
   integer mem_noc_did_width;
-  integer mem_noc_cid_width;
   integer mem_noc_len_width;
-  integer mem_noc_y_cord_width;
-  integer mem_noc_x_cord_width;
 }  bp_proc_param_s;
 
 // For now, we have a fixed address map
@@ -227,7 +222,6 @@ typedef struct packed
   , localparam async_mem_clk_p           = proc_param_lp.async_mem_clk                             \
   , localparam mem_noc_flit_width_p      = proc_param_lp.mem_noc_flit_width                        \
   , localparam mem_noc_did_width_p       = proc_param_lp.mem_noc_did_width                         \
-  , localparam mem_noc_cid_width_p       = proc_param_lp.mem_noc_cid_width                         \
   , localparam mem_noc_len_width_p       = proc_param_lp.mem_noc_len_width                         \
   , localparam mem_noc_y_cord_width_p    = `BSG_SAFE_CLOG2(ioc_y_dim_p+cc_y_dim_p+mc_y_dim_p) + 2  \
   , localparam mem_noc_x_cord_width_p    = `BSG_SAFE_CLOG2(sac_x_dim_p+cc_x_dim_p+cac_x_dim_p) + 2 \

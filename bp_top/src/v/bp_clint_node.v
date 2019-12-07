@@ -21,7 +21,6 @@ module bp_clint_node
    , input                                              mem_reset_i
 
    , input [mem_noc_cord_width_p-1:0]                   my_cord_i
-   , input [mem_noc_cid_width_p-1:0]                    my_cid_i
 
    // Local interrupts
    , output [num_core_p-1:0]                            soft_irq_o
@@ -49,7 +48,6 @@ mem_noc_ral_link_s mmio_resp_link_li, mmio_resp_link_lo;
      ,.reset_i(core_reset_i)
   
      ,.my_cord_i(my_cord_i)
-     ,.my_cid_i(my_cid_i)
   
      ,.soft_irq_o(soft_irq_o)
      ,.timer_irq_o(timer_irq_o)
