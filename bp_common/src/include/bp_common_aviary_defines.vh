@@ -133,8 +133,6 @@ typedef struct packed
   integer coh_noc_len_width;
   integer coh_noc_y_cord_width;
   integer coh_noc_x_cord_width;
-  integer coh_noc_y_dim;
-  integer coh_noc_x_dim;
 
   integer async_mem_clk;
   integer mem_noc_flit_width;
@@ -143,8 +141,6 @@ typedef struct packed
   integer mem_noc_len_width;
   integer mem_noc_y_cord_width;
   integer mem_noc_x_cord_width;
-  integer mem_noc_y_dim;
-  integer mem_noc_x_dim;
 }  bp_proc_param_s;
 
 // For now, we have a fixed address map
@@ -217,8 +213,6 @@ typedef struct packed
   , localparam coh_noc_len_width_p    = proc_param_lp.coh_noc_len_width                            \
   , localparam coh_noc_y_cord_width_p = proc_param_lp.coh_noc_y_cord_width                         \
   , localparam coh_noc_x_cord_width_p = proc_param_lp.coh_noc_x_cord_width                         \
-  , localparam coh_noc_y_dim_p        = proc_param_lp.coh_noc_y_dim                                \
-  , localparam coh_noc_x_dim_p        = proc_param_lp.coh_noc_x_dim                                \
   , localparam coh_noc_cord_width_p   = coh_noc_x_cord_width_p + coh_noc_y_cord_width_p            \
   , localparam coh_noc_dims_p         = 2                                                          \
   , localparam coh_noc_dirs_p         = coh_noc_dims_p*2 + 1                                       \
@@ -232,8 +226,6 @@ typedef struct packed
   , localparam mem_noc_len_width_p       = proc_param_lp.mem_noc_len_width                         \
   , localparam mem_noc_y_cord_width_p    = proc_param_lp.mem_noc_y_cord_width                      \
   , localparam mem_noc_x_cord_width_p    = proc_param_lp.mem_noc_x_cord_width                      \
-  , localparam mem_noc_y_dim_p           = proc_param_lp.mem_noc_y_dim                             \
-  , localparam mem_noc_x_dim_p           = proc_param_lp.mem_noc_x_dim                             \
   , localparam mem_noc_cord_width_p      = mem_noc_x_cord_width_p + mem_noc_y_cord_width_p         \
   , localparam mem_noc_dims_p            = 2                                                       \
   , localparam mem_noc_dirs_p            = mem_noc_dims_p*2 + 1                                    \

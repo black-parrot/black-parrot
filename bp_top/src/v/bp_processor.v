@@ -41,13 +41,13 @@ module bp_processor
    , output [E:W][mem_noc_ral_link_width_lp-1:0]    io_resp_link_o
 
    // TEMP
-   , output [mem_noc_x_dim_p-1:0][cce_mem_msg_width_lp-1:0] dram_cmd_o
-   , output [mem_noc_x_dim_p-1:0]                           dram_cmd_v_o
-   , input  [mem_noc_x_dim_p-1:0]                           dram_cmd_yumi_i
+   , output [cc_x_dim_p-1:0][cce_mem_msg_width_lp-1:0] dram_cmd_o
+   , output [cc_x_dim_p-1:0]                           dram_cmd_v_o
+   , input  [cc_x_dim_p-1:0]                           dram_cmd_yumi_i
 
-   , input  [mem_noc_x_dim_p-1:0][cce_mem_msg_width_lp-1:0] dram_resp_i
-   , input  [mem_noc_x_dim_p-1:0]                           dram_resp_v_i
-   , output [mem_noc_x_dim_p-1:0]                           dram_resp_ready_o
+   , input  [cc_x_dim_p-1:0][cce_mem_msg_width_lp-1:0] dram_resp_i
+   , input  [cc_x_dim_p-1:0]                           dram_resp_v_i
+   , output [cc_x_dim_p-1:0]                           dram_resp_ready_o
    );
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
@@ -56,12 +56,12 @@ module bp_processor
 `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
 `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_ready_and_link_s);
 
-bp_coh_ready_and_link_s [S:N][coh_noc_x_dim_p-1:0] coh_req_link_li, coh_req_link_lo;
-bp_coh_ready_and_link_s [S:N][coh_noc_x_dim_p-1:0] coh_cmd_link_li, coh_cmd_link_lo;
-bp_coh_ready_and_link_s [S:N][coh_noc_x_dim_p-1:0] coh_resp_link_li, coh_resp_link_lo;
+bp_coh_ready_and_link_s [S:N][cc_x_dim_p-1:0] coh_req_link_li, coh_req_link_lo;
+bp_coh_ready_and_link_s [S:N][cc_x_dim_p-1:0] coh_cmd_link_li, coh_cmd_link_lo;
+bp_coh_ready_and_link_s [S:N][cc_x_dim_p-1:0] coh_resp_link_li, coh_resp_link_lo;
 
-bp_mem_ready_and_link_s [mem_noc_x_dim_p-1:0] mem_cmd_link_li, mem_cmd_link_lo;
-bp_mem_ready_and_link_s [mem_noc_x_dim_p-1:0] mem_resp_link_li, mem_resp_link_lo;
+bp_mem_ready_and_link_s [cc_x_dim_p-1:0] mem_cmd_link_li, mem_cmd_link_lo;
+bp_mem_ready_and_link_s [cc_x_dim_p-1:0] mem_resp_link_li, mem_resp_link_lo;
 
 assign coh_resp_link_lo[N] = '0;
 bp_core_complex

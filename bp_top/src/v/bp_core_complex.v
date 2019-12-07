@@ -35,50 +35,50 @@ module bp_core_complex
 
    , input [mem_noc_did_width_p-1:0]                                  my_did_i
 
-   , input [S:N][coh_noc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_req_link_i
-   , output [S:N][coh_noc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_req_link_o
+   , input [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_req_link_i
+   , output [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_req_link_o
 
-   , input [S:N][coh_noc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_cmd_link_i
-   , output [S:N][coh_noc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_cmd_link_o
+   , input [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_cmd_link_i
+   , output [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_cmd_link_o
 
-   , input [S:N][coh_noc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_link_i
-   , output [S:N][coh_noc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_resp_link_o
+   , input [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_link_i
+   , output [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_resp_link_o
 
-   , input [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]       mem_cmd_link_i
-   , output [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]      mem_cmd_link_o
+   , input [cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]       mem_cmd_link_i
+   , output [cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]      mem_cmd_link_o
 
-   , input [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]       mem_resp_link_i
-   , output [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]      mem_resp_link_o
+   , input [cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]       mem_resp_link_i
+   , output [cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]      mem_resp_link_o
    );
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, coh_noc_ral_link_s);
 `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, mem_noc_ral_link_s);
 
-coh_noc_ral_link_s [coh_noc_y_dim_p-1:0][coh_noc_x_dim_p-1:0][S:W] lce_req_link_lo, lce_req_link_li;
-coh_noc_ral_link_s [coh_noc_y_dim_p-1:0][coh_noc_x_dim_p-1:0][S:W] lce_cmd_link_lo, lce_cmd_link_li;
-coh_noc_ral_link_s [coh_noc_y_dim_p-1:0][coh_noc_x_dim_p-1:0][S:W] lce_resp_link_lo, lce_resp_link_li;
+coh_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] lce_req_link_lo, lce_req_link_li;
+coh_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] lce_cmd_link_lo, lce_cmd_link_li;
+coh_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] lce_resp_link_lo, lce_resp_link_li;
 
-mem_noc_ral_link_s [mem_noc_y_dim_p-1:0][mem_noc_x_dim_p-1:0][S:W] mem_cmd_link_lo, mem_cmd_link_li;
-mem_noc_ral_link_s [mem_noc_y_dim_p-1:0][mem_noc_x_dim_p-1:0][S:W] mem_resp_link_lo, mem_resp_link_li;
+mem_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] mem_cmd_link_lo, mem_cmd_link_li;
+mem_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] mem_resp_link_lo, mem_resp_link_li;
 
-coh_noc_ral_link_s [E:W][mem_noc_y_dim_p-1:0] lce_req_hor_link_li, lce_req_hor_link_lo;
-coh_noc_ral_link_s [S:N][mem_noc_x_dim_p-1:0] lce_req_ver_link_li, lce_req_ver_link_lo;
-coh_noc_ral_link_s [E:W][mem_noc_y_dim_p-1:0] lce_cmd_hor_link_li, lce_cmd_hor_link_lo;
-coh_noc_ral_link_s [S:N][mem_noc_x_dim_p-1:0] lce_cmd_ver_link_li, lce_cmd_ver_link_lo;
-coh_noc_ral_link_s [E:W][mem_noc_y_dim_p-1:0] lce_resp_hor_link_li, lce_resp_hor_link_lo;
-coh_noc_ral_link_s [S:N][mem_noc_x_dim_p-1:0] lce_resp_ver_link_li, lce_resp_ver_link_lo;
+coh_noc_ral_link_s [E:W][cc_y_dim_p-1:0] lce_req_hor_link_li, lce_req_hor_link_lo;
+coh_noc_ral_link_s [S:N][cc_x_dim_p-1:0] lce_req_ver_link_li, lce_req_ver_link_lo;
+coh_noc_ral_link_s [E:W][cc_y_dim_p-1:0] lce_cmd_hor_link_li, lce_cmd_hor_link_lo;
+coh_noc_ral_link_s [S:N][cc_x_dim_p-1:0] lce_cmd_ver_link_li, lce_cmd_ver_link_lo;
+coh_noc_ral_link_s [E:W][cc_y_dim_p-1:0] lce_resp_hor_link_li, lce_resp_hor_link_lo;
+coh_noc_ral_link_s [S:N][cc_x_dim_p-1:0] lce_resp_ver_link_li, lce_resp_ver_link_lo;
 
-mem_noc_ral_link_s [E:W][mem_noc_y_dim_p-1:0] mem_cmd_hor_link_li, mem_cmd_hor_link_lo;
-mem_noc_ral_link_s [S:N][mem_noc_x_dim_p-1:0] mem_cmd_ver_link_li, mem_cmd_ver_link_lo;
-mem_noc_ral_link_s [E:W][mem_noc_y_dim_p-1:0] mem_resp_hor_link_li, mem_resp_hor_link_lo;
-mem_noc_ral_link_s [S:N][mem_noc_x_dim_p-1:0] mem_resp_ver_link_li, mem_resp_ver_link_lo;
+mem_noc_ral_link_s [E:W][cc_y_dim_p-1:0] mem_cmd_hor_link_li, mem_cmd_hor_link_lo;
+mem_noc_ral_link_s [S:N][cc_x_dim_p-1:0] mem_cmd_ver_link_li, mem_cmd_ver_link_lo;
+mem_noc_ral_link_s [E:W][cc_y_dim_p-1:0] mem_resp_hor_link_li, mem_resp_hor_link_lo;
+mem_noc_ral_link_s [S:N][cc_x_dim_p-1:0] mem_resp_ver_link_li, mem_resp_ver_link_lo;
 
-for (genvar j = 0; j < mem_noc_y_dim_p; j++)
+for (genvar j = 0; j < cc_y_dim_p; j++)
   begin : y
-    for (genvar i = 0; i < mem_noc_x_dim_p; i++) 
+    for (genvar i = 0; i < cc_x_dim_p; i++) 
       begin : x
-        localparam tile_idx = j*mem_noc_x_dim_p + i;
+        localparam tile_idx = j*cc_x_dim_p + i;
         wire [mem_noc_cord_width_p-1:0] cord_li = {mem_noc_y_cord_width_p'(1+j), mem_noc_x_cord_width_p'(i)};
         bp_tile_node
          #(.bp_params_p(bp_params_p))
@@ -116,8 +116,8 @@ for (genvar j = 0; j < mem_noc_y_dim_p; j++)
   assign lce_req_ver_link_li = coh_req_link_i;
   bsg_mesh_stitch
    #(.width_p($bits(coh_noc_ral_link_s))
-     ,.x_max_p(coh_noc_x_dim_p)
-     ,.y_max_p(coh_noc_y_dim_p)
+     ,.x_max_p(cc_x_dim_p)
+     ,.y_max_p(cc_y_dim_p)
      )
    coh_req_mesh
     (.outs_i(lce_req_link_lo)
@@ -135,8 +135,8 @@ for (genvar j = 0; j < mem_noc_y_dim_p; j++)
   assign lce_cmd_ver_link_li = coh_cmd_link_i;
   bsg_mesh_stitch
    #(.width_p($bits(coh_noc_ral_link_s))
-     ,.x_max_p(coh_noc_x_dim_p)
-     ,.y_max_p(coh_noc_y_dim_p)
+     ,.x_max_p(cc_x_dim_p)
+     ,.y_max_p(cc_y_dim_p)
      )
    coh_cmd_mesh
     (.outs_i(lce_cmd_link_lo)
@@ -154,8 +154,8 @@ for (genvar j = 0; j < mem_noc_y_dim_p; j++)
   assign lce_resp_ver_link_li = coh_resp_link_i;
   bsg_mesh_stitch
    #(.width_p($bits(coh_noc_ral_link_s))
-     ,.x_max_p(coh_noc_x_dim_p)
-     ,.y_max_p(coh_noc_y_dim_p)
+     ,.x_max_p(cc_x_dim_p)
+     ,.y_max_p(cc_y_dim_p)
      )
    coh_resp_mesh
     (.outs_i(lce_resp_link_lo)
@@ -174,8 +174,8 @@ for (genvar j = 0; j < mem_noc_y_dim_p; j++)
   assign mem_cmd_ver_link_li[S] = mem_cmd_link_i;
   bsg_mesh_stitch
    #(.width_p($bits(mem_noc_ral_link_s))
-     ,.x_max_p(mem_noc_x_dim_p)
-     ,.y_max_p(mem_noc_y_dim_p)
+     ,.x_max_p(cc_x_dim_p)
+     ,.y_max_p(cc_y_dim_p)
      )
    mem_cmd_mesh
     (.outs_i(mem_cmd_link_lo)
@@ -194,8 +194,8 @@ for (genvar j = 0; j < mem_noc_y_dim_p; j++)
   assign mem_resp_ver_link_li[S] = mem_resp_link_i;
   bsg_mesh_stitch
    #(.width_p($bits(mem_noc_ral_link_s))
-     ,.x_max_p(mem_noc_x_dim_p)
-     ,.y_max_p(mem_noc_y_dim_p)
+     ,.x_max_p(cc_x_dim_p)
+     ,.y_max_p(cc_y_dim_p)
      )
    mem_resp_mesh
     (.outs_i(mem_resp_link_lo)
