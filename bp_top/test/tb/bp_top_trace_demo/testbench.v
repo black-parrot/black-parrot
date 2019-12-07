@@ -55,13 +55,13 @@ module testbench
 bsg_ready_and_link_sif_s [E:P] cmd_link_li, cmd_link_lo;
 bsg_ready_and_link_sif_s [E:P] resp_link_li, resp_link_lo;
 
-bsg_ready_and_link_sif_s [mem_noc_x_dim_p-1:0] dram_cmd_link_li, dram_cmd_link_lo;
-bsg_ready_and_link_sif_s [mem_noc_x_dim_p-1:0] dram_resp_link_li, dram_resp_link_lo;
+bsg_ready_and_link_sif_s [cc_x_dim_p-1:0] dram_cmd_link_li, dram_cmd_link_lo;
+bsg_ready_and_link_sif_s [cc_x_dim_p-1:0] dram_resp_link_li, dram_resp_link_lo;
 
-bp_cce_mem_msg_s [mem_noc_x_dim_p-1:0] dram_cmd_li;
-logic            [mem_noc_x_dim_p-1:0] dram_cmd_v_li, dram_cmd_yumi_lo;
-bp_cce_mem_msg_s [mem_noc_x_dim_p-1:0] dram_resp_lo;
-logic            [mem_noc_x_dim_p-1:0] dram_resp_v_lo, dram_resp_ready_li;
+bp_cce_mem_msg_s [cc_x_dim_p-1:0] dram_cmd_li;
+logic            [cc_x_dim_p-1:0] dram_cmd_v_li, dram_cmd_yumi_lo;
+bp_cce_mem_msg_s [cc_x_dim_p-1:0] dram_resp_lo;
+logic            [cc_x_dim_p-1:0] dram_resp_v_lo, dram_resp_ready_li;
 
 bsg_ready_and_link_sif_s proc_cmd_link_li, proc_cmd_link_lo;
 bsg_ready_and_link_sif_s proc_resp_link_li, proc_resp_link_lo;
@@ -380,10 +380,10 @@ bp_me_cce_to_wormhole_link_bidir
   ,.resp_link_o(resp_link_li[P])
   );
 
-logic [`BSG_SAFE_CLOG2(mem_noc_x_dim_p)-1:0] dram_ch_tag_li;
+logic [`BSG_SAFE_CLOG2(cc_x_dim_p)-1:0] dram_ch_tag_li;
 bsg_round_robin_n_to_1
  #(.width_p($bits(bp_cce_mem_msg_s))
-   ,.num_in_p(mem_noc_x_dim_p)
+   ,.num_in_p(cc_x_dim_p)
    ,.strict_p(0)
    )
  dram_rr
@@ -400,9 +400,9 @@ bsg_round_robin_n_to_1
    ,.yumi_i(dram_ch_cmd_yumi_lo)
    );
 
-logic [`BSG_SAFE_CLOG2(mem_noc_x_dim_p)-1:0] dram_ch_tag_r;
+logic [`BSG_SAFE_CLOG2(cc_x_dim_p)-1:0] dram_ch_tag_r;
 bsg_dff_reset_en
- #(.width_p(`BSG_SAFE_CLOG2(mem_noc_x_dim_p)))
+ #(.width_p(`BSG_SAFE_CLOG2(cc_x_dim_p)))
  tag_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)

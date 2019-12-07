@@ -23,29 +23,29 @@ module bp_mem_complex
    , input                                                        mem_clk_i
    , input                                                        mem_reset_i
 
-   , input  [coh_noc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_req_link_i
-   , output [coh_noc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_req_link_o
+   , input  [cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_req_link_i
+   , output [cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_req_link_o
 
-   , input  [coh_noc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_cmd_link_i
-   , output [coh_noc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_cmd_link_o
+   , input  [cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_cmd_link_i
+   , output [cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_cmd_link_o
 
-   , input  [coh_noc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_link_i
-   , output [coh_noc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_link_o
+   , input  [cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_link_i
+   , output [cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_link_o
 
-   , input  [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_cmd_link_i
-   , output [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_cmd_link_o
+   , input  [cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_cmd_link_i
+   , output [cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_cmd_link_o
 
-   , input  [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_resp_link_i
-   , output [mem_noc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_resp_link_o
+   , input  [cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_resp_link_i
+   , output [cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_resp_link_o
 
    // TEMP
-   , output [mem_noc_x_dim_p-1:0] [cce_mem_msg_width_lp-1:0]      dram_cmd_o
-   , output [mem_noc_x_dim_p-1:0]                                 dram_cmd_v_o
-   , input  [mem_noc_x_dim_p-1:0]                                 dram_cmd_yumi_i
+   , output [cc_x_dim_p-1:0] [cce_mem_msg_width_lp-1:0]      dram_cmd_o
+   , output [cc_x_dim_p-1:0]                                 dram_cmd_v_o
+   , input  [cc_x_dim_p-1:0]                                 dram_cmd_yumi_i
 
-   , input  [mem_noc_x_dim_p-1:0][cce_mem_msg_width_lp-1:0]       dram_resp_i
-   , input  [mem_noc_x_dim_p-1:0]                                 dram_resp_v_i
-   , output [mem_noc_x_dim_p-1:0]                                 dram_resp_ready_o
+   , input  [cc_x_dim_p-1:0][cce_mem_msg_width_lp-1:0]       dram_resp_i
+   , input  [cc_x_dim_p-1:0]                                 dram_resp_v_i
+   , output [cc_x_dim_p-1:0]                                 dram_resp_ready_o
    );
 
   // Stub coherence links unless we have l2e
@@ -53,7 +53,7 @@ module bp_mem_complex
   assign coh_cmd_link_o  = '0;
   assign coh_resp_link_o = '0;
 
-  for (genvar i = 0; i < mem_noc_x_dim_p; i++)
+  for (genvar i = 0; i < cc_x_dim_p; i++)
     begin : links
       bp_me_cce_to_wormhole_link_client
        #(.bp_params_p(bp_params_p))
