@@ -38,10 +38,10 @@ module bp_host_remote_domain_proxy_node
 
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, mem_noc_ral_link_s);
-  `declare_bp_mem_wormhole_payload_s(mem_noc_did_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, cce_mem_msg_width_lp, mem_cmd_payload_s);
-  `declare_bp_mem_wormhole_payload_s(mem_noc_did_width_p, mem_noc_cord_width_p, mem_noc_cid_width_p, cce_mem_msg_width_lp, mem_resp_payload_s);
-  `declare_bsg_wormhole_interdomain_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p, mem_noc_did_width_p, $bits(mem_cmd_payload_s), mem_cmd_packet_s);
-  `declare_bsg_wormhole_interdomain_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p, mem_noc_did_width_p, $bits(mem_resp_payload_s), mem_resp_packet_s);
+  `declare_bp_mem_wormhole_payload_s(mem_noc_did_width_p, mem_noc_cord_width_p, cce_mem_msg_width_lp, mem_cmd_payload_s);
+  `declare_bp_mem_wormhole_payload_s(mem_noc_did_width_p, mem_noc_cord_width_p, cce_mem_msg_width_lp, mem_resp_payload_s);
+  `declare_bsg_wormhole_interdomain_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_did_width_p, $bits(mem_cmd_payload_s), mem_cmd_packet_s);
+  `declare_bsg_wormhole_interdomain_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_did_width_p, $bits(mem_resp_payload_s), mem_resp_packet_s);
 
   mem_noc_ral_link_s [S:N] stub_cmd_li, stub_cmd_lo;
   mem_noc_ral_link_s rtr_cmd_link_li, rtr_cmd_link_lo;
@@ -87,7 +87,7 @@ module bp_host_remote_domain_proxy_node
   logic on_mem_cmd_v_li, on_mem_cmd_ready_lo;
   logic on_mem_cmd_v_lo, on_mem_cmd_yumi_li;
   bsg_wormhole_router_adapter
-   #(.max_payload_width_p($bits(mem_cmd_payload_s)+mem_noc_cid_width_p+mem_noc_did_width_p)
+   #(.max_payload_width_p($bits(mem_cmd_payload_s)+mem_noc_did_width_p)
      ,.len_width_p(mem_noc_len_width_p)
      ,.cord_width_p(mem_noc_cord_width_p)
      ,.flit_width_p(mem_noc_flit_width_p)
@@ -114,7 +114,7 @@ module bp_host_remote_domain_proxy_node
   logic on_mem_resp_v_li, on_mem_resp_ready_lo;
   logic on_mem_resp_v_lo, on_mem_resp_yumi_li;
   bsg_wormhole_router_adapter
-   #(.max_payload_width_p($bits(mem_resp_payload_s)+mem_noc_cid_width_p+mem_noc_did_width_p)
+   #(.max_payload_width_p($bits(mem_resp_payload_s)+mem_noc_did_width_p)
      ,.len_width_p(mem_noc_len_width_p)
      ,.cord_width_p(mem_noc_cord_width_p)
      ,.flit_width_p(mem_noc_flit_width_p)
@@ -141,7 +141,7 @@ module bp_host_remote_domain_proxy_node
   logic off_mem_cmd_v_li, off_mem_cmd_ready_lo;
   logic off_mem_cmd_v_lo, off_mem_cmd_yumi_li;
   bsg_wormhole_router_adapter
-   #(.max_payload_width_p($bits(mem_cmd_payload_s)+mem_noc_cid_width_p+mem_noc_did_width_p)
+   #(.max_payload_width_p($bits(mem_cmd_payload_s)+mem_noc_did_width_p)
      ,.len_width_p(mem_noc_len_width_p)
      ,.cord_width_p(mem_noc_cord_width_p)
      ,.flit_width_p(mem_noc_flit_width_p)
@@ -168,7 +168,7 @@ module bp_host_remote_domain_proxy_node
   logic off_mem_resp_v_li, off_mem_resp_ready_lo;
   logic off_mem_resp_v_lo, off_mem_resp_yumi_li;
   bsg_wormhole_router_adapter
-   #(.max_payload_width_p($bits(mem_resp_payload_s)+mem_noc_cid_width_p+mem_noc_did_width_p)
+   #(.max_payload_width_p($bits(mem_resp_payload_s)+mem_noc_did_width_p)
      ,.len_width_p(mem_noc_len_width_p)
      ,.cord_width_p(mem_noc_cord_width_p)
      ,.flit_width_p(mem_noc_flit_width_p)
@@ -198,7 +198,6 @@ module bp_host_remote_domain_proxy_node
   // TODO Attach host and fake memory to router coordinates
   //wire host_not_dram = (mem_cmd_lo.addr < dram_base_addr_gp);
   wire [mem_noc_cord_width_p-1:0] cmd_dst_cord_lo = '0; 
-  wire [mem_noc_cord_width_p-1:0] cmd_dst_cid_lo  = '0;
 
   always_comb
     begin
@@ -209,7 +208,6 @@ module bp_host_remote_domain_proxy_node
       off_mem_cmd_packet_li           = on_mem_cmd_packet_lo;
       off_mem_cmd_packet_li.did       = on_mem_cmd_packet_lo.did;
       off_mem_cmd_packet_li.cord      = on_mem_cmd_packet_lo.did;
-      off_mem_cmd_packet_li.cid       = '0;
 
       on_mem_resp_yumi_li             = on_mem_resp_v_lo & off_mem_resp_ready_lo;
       off_mem_resp_v_li               = on_mem_resp_yumi_li;
@@ -217,7 +215,6 @@ module bp_host_remote_domain_proxy_node
       off_mem_resp_packet_li          = on_mem_resp_packet_lo;
       off_mem_resp_packet_li.did      = on_mem_resp_payload_lo.src_did;
       off_mem_resp_packet_li.cord     = on_mem_resp_payload_lo.src_did;
-      off_mem_resp_packet_li.cid      = '0;
 
       // Off-chip to on-chip
       off_mem_cmd_yumi_li             = off_mem_cmd_v_lo & on_mem_cmd_ready_lo;
@@ -226,7 +223,6 @@ module bp_host_remote_domain_proxy_node
       on_mem_cmd_packet_li            = off_mem_cmd_packet_lo;
       on_mem_cmd_packet_li.did        = off_mem_cmd_packet_lo.did;
       on_mem_cmd_packet_li.cord       = cmd_dst_cord_lo;
-      on_mem_cmd_packet_li.cid        = cmd_dst_cid_lo;
 
       off_mem_resp_yumi_li            = off_mem_resp_v_lo & on_mem_resp_ready_lo;
       on_mem_resp_v_li                = off_mem_resp_yumi_li;
@@ -234,7 +230,6 @@ module bp_host_remote_domain_proxy_node
       on_mem_resp_packet_li           = off_mem_resp_packet_lo;
       on_mem_resp_packet_li.did       = off_mem_resp_payload_lo.src_did;
       on_mem_resp_packet_li.cord      = off_mem_resp_payload_lo.src_cord;
-      on_mem_resp_packet_li.cid       = off_mem_resp_payload_lo.src_cid;
     end
 
 endmodule

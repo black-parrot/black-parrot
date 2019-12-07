@@ -341,7 +341,6 @@ bind bp_be_top
 
 wire [mem_noc_did_width_p-1:0]  dst_did_lo  = 1;
 wire [mem_noc_cord_width_p-1:0] dst_cord_lo = '1;
-wire [mem_noc_cid_width_p-1:0]  dst_cid_lo  = '0;
 
 // Host + cfg link 
 bp_me_cce_to_wormhole_link_bidir
@@ -368,10 +367,8 @@ bp_me_cce_to_wormhole_link_bidir
 
   ,.my_did_i(dram_did_li)
   ,.my_cord_i(mem_noc_cord_width_p'(dram_did_li))
-  ,.my_cid_i(mem_noc_cid_width_p'(0))
   ,.dst_did_i(dst_did_lo)
   ,.dst_cord_i(dst_cord_lo)
-  ,.dst_cid_i(dst_cid_lo)
      
   ,.cmd_link_i(cmd_link_lo[P])
   ,.cmd_link_o(cmd_link_li[P])
