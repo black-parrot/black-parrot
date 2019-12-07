@@ -30,23 +30,6 @@ typedef enum bit [3:0]
   // 4'b0110 - 4'b1111 reserved // custom
 } bp_cce_mem_cmd_type_e;
 
-/*
- * bp_mem_cce_cmd_type_e specifies the command from memory to CCE
- */
-typedef enum bit [3:0]
-{
-  e_mem_cce_inv      = 4'b0000  // Invalidate block (from Mem to CCE)
-  ,e_mem_cce_flush   = 4'b0001  // Flush all managed blocks
-  // 4'b0010 - 4'b1111 reserved // custom
-} bp_mem_cce_cmd_type_e;
-
-typedef union packed {
-  bp_cce_mem_cmd_type_e cce_mem_cmd;
-  bp_mem_cce_cmd_type_e mem_cce_cmd;
-} bp_cce_mem_msg_type_u;
-
-`define bp_cce_mem_msg_type_width $bits(bp_cce_mem_msg_type_u)
-
 typedef enum bit [2:0]
 {
   e_mem_size_1     = 3'b000  // 1 byte
@@ -98,7 +81,7 @@ typedef enum bit [2:0]
     bp_cce_mem_msg_payload_s                     payload;       \
     bp_cce_mem_req_size_e                        size;          \
     logic [addr_width_mp-1:0]                    addr;          \
-    bp_cce_mem_msg_type_u                        msg_type;      \
+    bp_cce_mem_cmd_type_e                        msg_type;      \
   }  bp_cce_mem_msg_s
 
 /*
@@ -110,7 +93,7 @@ typedef enum bit [2:0]
   (lce_id_width_mp+`BSG_SAFE_CLOG2(lce_assoc_mp)+`bp_coh_bits+1)
 
 `define bp_cce_mem_msg_width(addr_width_mp, data_width_mp, lce_id_width_mp, lce_assoc_mp) \
-  (`bp_cce_mem_msg_type_width+addr_width_mp+data_width_mp \
+  ($bits(bp_cce_mem_cmd_type_e)+addr_width_mp+data_width_mp \
    +`bp_cce_mem_msg_payload_width(lce_id_width_mp, lce_assoc_mp)\
    +$bits(bp_cce_mem_req_size_e))
 

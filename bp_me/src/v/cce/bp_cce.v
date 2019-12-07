@@ -354,7 +354,7 @@ module bp_cce
       ,.lce_req_i(lce_req_li)
       ,.null_wb_flag_i(null_wb_flag_li)
       ,.lce_resp_type_i(lce_resp_li.msg_type)
-      ,.mem_resp_type_i(mem_resp_li.msg_type.cce_mem_cmd)
+      ,.mem_resp_type_i(mem_resp_li.msg_type)
       ,.alu_res_i(alu_res_lo)
       ,.mov_src_i(src_a)
 

@@ -80,7 +80,7 @@ module bp_io_cce
 
   assign io_resp_yumi_o  = io_resp_v_i & lce_cmd_ready_i;
   assign lce_cmd_v_o     = io_resp_yumi_o;
-  wire io_resp_wr_not_rd = (io_resp_cast_i.msg_type.cce_mem_cmd == e_cce_mem_uc_wr);
+  wire io_resp_wr_not_rd = (io_resp_cast_i.msg_type == e_cce_mem_uc_wr);
   always_comb
     if (io_resp_wr_not_rd)
       begin

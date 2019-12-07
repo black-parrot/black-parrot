@@ -55,8 +55,6 @@ always_ff @(posedge clk_i) begin
         $fwrite(file, "[%t] CMD UCWR: (%x) %b %x\n", $time, mem_cmd_cast_i.addr, mem_cmd_cast_i.size, mem_cmd_cast_i.data);
       e_cce_mem_wb:
         $fwrite(file, "[%t] CMD WB: (%x) %b %x\n", $time, mem_cmd_cast_i.addr, mem_cmd_cast_i.size, mem_cmd_cast_i.data);
-      e_mem_cce_inv:
-        $fwrite(file, "[%t] CMD INV: (%x)\n", $time, mem_resp_cast_i.addr);
       default: 
         $fwrite(file, "[%t] CMD ERROR: unknown cmd_type %x received!", $time, mem_resp_cast_i.msg_type);
     endcase
@@ -73,8 +71,6 @@ always_ff @(posedge clk_i) begin
         $fwrite(file, "[%t] RESP UCWR: (%x) %b\n", $time, mem_resp_cast_i.addr, mem_resp_cast_i.size);
       e_cce_mem_wb:
         $fwrite(file, "[%t] RESP WB: (%x) %b\n", $time, mem_resp_cast_i.addr, mem_resp_cast_i.size);
-      e_mem_cce_inv:
-        $fwrite(file, "[%t] RESP INV: (%x)\n", $time, mem_resp_cast_i.addr);
       default: 
         $fwrite(file, "[%t] ERROR: unknown resp_type %x received!", $time, mem_resp_cast_i.msg_type);
     endcase
