@@ -45,5 +45,19 @@ initial
     $display("bp_cce_mem_msg_s       bits: struct %d width %d", $bits(bp_cce_mem_msg_s), cce_mem_msg_width_lp);
   end
 
+  if (ioc_y_dim_p != 1)
+    $fatal("Error: Must have exactly 1 row of I/O routers");
+  if (mc_y_dim_p != 0)
+    $fatal("Error: L2 expansion nodes not yet supported, MC must be passthrough");
+  if (sac_x_dim_p != 0)
+    $fatal("Error: SAC not yet supported");
+  if (cac_x_dim_p != 0)
+    $fatal("Error: CAC not yet supported");
+
+  if (vaddr_width_p != 39)
+    $warning("Warning: VM will not work without 39 bit vaddr");
+  if (paddr_width_p != 40)
+    $warning("Warning: paddr != 40 has not been tested");
+
 endmodule
 

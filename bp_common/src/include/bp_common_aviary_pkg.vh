@@ -50,13 +50,12 @@ package bp_common_aviary_pkg;
 */
 
   localparam bp_proc_param_s bp_single_core_cfg_p = 
-    '{num_core   : 1
-      ,cc_x_dim  : 1
+    '{cc_x_dim   : 1
       ,cc_y_dim  : 1
-      ,num_io    : 1
-      ,num_cacc  : 0
-      ,num_sacc  : 0
-      ,num_l2e   : 0
+      ,ioc_y_dim : 1
+      ,mc_y_dim  : 0
+      ,sac_x_dim : 0
+      ,cac_x_dim : 0
 
       ,vaddr_width: 39
       ,paddr_width: 40
@@ -96,13 +95,12 @@ package bp_common_aviary_pkg;
 
 
   localparam bp_proc_param_s bp_dual_core_cfg_p = 
-    '{num_core   : 2
-      ,cc_x_dim  : 2
+    '{cc_x_dim   : 2
       ,cc_y_dim  : 1
-      ,num_io    : 2
-      ,num_cacc  : 0
-      ,num_sacc  : 0
-      ,num_l2e   : 0
+      ,ioc_y_dim : 1
+      ,mc_y_dim  : 0
+      ,sac_x_dim : 0
+      ,cac_x_dim : 0
 
       ,vaddr_width: 39
       ,paddr_width: 40
