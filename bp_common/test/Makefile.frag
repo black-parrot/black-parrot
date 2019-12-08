@@ -45,15 +45,15 @@ RV64_BENCHMARKS = \
   #rv64si-p-scall
   #rv64si-p-ma_fetch
   #rv64mi-p-ma_fetch
+  #rv64mi-p-access
+  #rv64mi-p-breakpoint
+  #rv64mi-p-ma_addr
+  #rv64mi-p-mcsr
+  #rv64mi-p-scall
+  #rv64si-p-dirty
+  #rv64si-p-icache-alias
+  #rv64si-p-wfi
 RV64_P_TESTS = \
-  rv64mi-p-access  \
-  rv64mi-p-breakpoint \
-  rv64mi-p-ma_addr \
-  rv64mi-p-mcsr    \
-  rv64mi-p-scall   \
-  rv64si-p-dirty   \
-  rv64si-p-icache-alias \
-  rv64si-p-wfi     \
   rv64ui-p-add     \
   rv64ui-p-addi    \
   rv64ui-p-addiw   \

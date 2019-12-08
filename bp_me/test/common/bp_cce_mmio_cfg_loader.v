@@ -179,9 +179,9 @@ module bp_cce_mmio_cfg_loader
 
   always_comb
     begin
-      local_addr_lo.zero = '0;
+      local_addr_lo.nonlocal = '0;
       local_addr_lo.cce  = core_cnt_r;
-      local_addr_lo.dev  = 1;
+      local_addr_lo.dev  = cfg_dev_gp;
       local_addr_lo.addr = cfg_addr_lo;
     end
 

@@ -155,7 +155,7 @@ localparam cfg_addr_width_p = 20;
 localparam cfg_data_width_p = 64;
 typedef struct packed
 {
-  logic [8:0]  zero;
+  logic [8:0]  nonlocal;
   logic [6:0]  cce;
   logic [3:0]  dev;
   logic [19:0] addr;
