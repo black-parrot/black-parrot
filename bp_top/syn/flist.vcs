@@ -224,6 +224,8 @@ $BP_TOP_DIR/src/v/bp_clint.v
 $BP_TOP_DIR/src/v/bp_clint_node.v
 $BP_TOP_DIR/src/v/bp_clint_slice.v
 $BP_TOP_DIR/src/v/bp_clint_slice_buffered.v
+$BP_TOP_DIR/src/v/bp_l2e_tile.v
+$BP_TOP_DIR/src/v/bp_l2e_tile_node.v
 $BP_TOP_DIR/src/v/bp_io_complex.v
 $BP_TOP_DIR/src/v/bp_io_link_to_lce.v
 $BP_TOP_DIR/src/v/bp_io_tile.v
