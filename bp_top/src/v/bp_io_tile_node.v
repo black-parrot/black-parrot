@@ -13,7 +13,7 @@ module bp_io_tile_node
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
-   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
+   , localparam io_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(io_noc_flit_width_p)
    )
   (input                                         core_clk_i
    , input                                       core_reset_i
@@ -21,11 +21,11 @@ module bp_io_tile_node
    , input                                       coh_clk_i
    , input                                       coh_reset_i
 
-   , input                                       mem_clk_i
-   , input                                       mem_reset_i
+   , input                                       io_clk_i
+   , input                                       io_reset_i
 
-   , input [mem_noc_did_width_p-1:0]             my_did_i
-   , input [mem_noc_cord_width_p-1:0]            my_cord_i
+   , input [io_noc_did_width_p-1:0]              my_did_i
+   , input [io_noc_cord_width_p-1:0]             my_cord_i
 
    , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_req_link_i
    , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_req_link_o
@@ -33,26 +33,26 @@ module bp_io_tile_node
    , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_cmd_link_i
    , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_cmd_link_o
 
-   , input [S:W][mem_noc_ral_link_width_lp-1:0]  io_cmd_link_i
-   , output [S:W][mem_noc_ral_link_width_lp-1:0] io_cmd_link_o
+   , input [S:W][io_noc_ral_link_width_lp-1:0]   io_cmd_link_i
+   , output [S:W][io_noc_ral_link_width_lp-1:0]  io_cmd_link_o
 
-   , input [S:W][mem_noc_ral_link_width_lp-1:0]  io_resp_link_i
-   , output [S:W][mem_noc_ral_link_width_lp-1:0] io_resp_link_o
+   , input [S:W][io_noc_ral_link_width_lp-1:0]   io_resp_link_i
+   , output [S:W][io_noc_ral_link_width_lp-1:0]  io_resp_link_o
    );
 
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
   
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
-  `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_ready_and_link_s);
+  `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_ready_and_link_s);
   
   // Tile-side coherence connections
   bp_coh_ready_and_link_s core_lce_req_link_li, core_lce_req_link_lo;
   bp_coh_ready_and_link_s core_lce_cmd_link_li, core_lce_cmd_link_lo;
   
-  // Tile side membus connections
-  bp_mem_ready_and_link_s core_mem_cmd_link_li, core_mem_cmd_link_lo;
-  bp_mem_ready_and_link_s core_mem_resp_link_li, core_mem_resp_link_lo;
+  // Tile side IO connections
+  bp_io_ready_and_link_s core_io_cmd_link_li, core_io_cmd_link_lo;
+  bp_io_ready_and_link_s core_io_resp_link_li, core_io_resp_link_lo;
   
   bp_io_tile
    #(.bp_params_p(bp_params_p))
@@ -69,20 +69,20 @@ module bp_io_tile_node
      ,.lce_cmd_link_i(core_lce_cmd_link_li)
      ,.lce_cmd_link_o(core_lce_cmd_link_lo)
 
-     ,.io_cmd_link_i(core_mem_cmd_link_li)
-     ,.io_cmd_link_o(core_mem_cmd_link_lo)
+     ,.io_cmd_link_i(core_io_cmd_link_li)
+     ,.io_cmd_link_o(core_io_cmd_link_lo)
 
-     ,.io_resp_link_i(core_mem_resp_link_li)
-     ,.io_resp_link_o(core_mem_resp_link_lo)
+     ,.io_resp_link_i(core_io_resp_link_li)
+     ,.io_resp_link_o(core_io_resp_link_lo)
      );
 
   // Network-side coherence connections
   bp_coh_ready_and_link_s coh_lce_req_link_li, coh_lce_req_link_lo;
   bp_coh_ready_and_link_s coh_lce_cmd_link_li, coh_lce_cmd_link_lo;
 
-  // Network-side membus connections
-  bp_mem_ready_and_link_s mem_cmd_link_li, mem_cmd_link_lo;
-  bp_mem_ready_and_link_s mem_resp_link_li, mem_resp_link_lo;
+  // Network-side IO connections
+  bp_io_ready_and_link_s io_cmd_link_li, io_cmd_link_lo;
+  bp_io_ready_and_link_s io_resp_link_li, io_resp_link_lo;
 
   if (async_coh_clk_p == 1)
     begin : coh_async
@@ -149,51 +149,51 @@ module bp_io_tile_node
       assign core_lce_cmd_link_li = coh_lce_cmd_link_lo;
     end
 
-  if (async_mem_clk_p == 1)
-    begin : mem_async
+  if (async_io_clk_p == 1)
+    begin : io_async
       bsg_async_noc_link
        #(.width_p(coh_noc_flit_width_p)
          ,.lg_size_p(3)
          )
-       mem_cmd_link
+       io_cmd_link
         (.aclk_i(core_clk_i)
          ,.areset_i(core_reset_i)
 
-         ,.bclk_i(mem_clk_i)
-         ,.breset_i(mem_reset_i)
+         ,.bclk_i(io_clk_i)
+         ,.breset_i(io_reset_i)
 
-         ,.alink_i(core_mem_cmd_link_lo)
-         ,.alink_o(core_mem_cmd_link_li)
+         ,.alink_i(core_io_cmd_link_lo)
+         ,.alink_o(core_io_cmd_link_li)
 
-         ,.blink_i(mem_cmd_link_li)
-         ,.blink_o(mem_cmd_link_lo)
+         ,.blink_i(io_cmd_link_li)
+         ,.blink_o(io_cmd_link_lo)
          );
 
       bsg_async_noc_link
        #(.width_p(coh_noc_flit_width_p)
          ,.lg_size_p(3)
          )
-       mem_resp_link
+       io_resp_link
         (.aclk_i(core_clk_i)
          ,.areset_i(core_reset_i)
 
-         ,.bclk_i(mem_clk_i)
-         ,.breset_i(mem_reset_i)
+         ,.bclk_i(io_clk_i)
+         ,.breset_i(io_reset_i)
 
-         ,.alink_i(core_mem_resp_link_lo)
-         ,.alink_o(core_mem_resp_link_li)
+         ,.alink_i(core_io_resp_link_lo)
+         ,.alink_o(core_io_resp_link_li)
 
-         ,.blink_i(mem_resp_link_li)
-         ,.blink_o(mem_resp_link_lo)
+         ,.blink_i(io_resp_link_li)
+         ,.blink_o(io_resp_link_lo)
          );
     end
   else
-    begin : mem_sync
-      assign mem_cmd_link_li  = core_mem_cmd_link_lo;
-      assign mem_resp_link_li = core_mem_resp_link_lo;
+    begin : io_sync
+      assign io_cmd_link_li  = core_io_cmd_link_lo;
+      assign io_resp_link_li = core_io_resp_link_lo;
 
-      assign core_mem_cmd_link_li  = mem_cmd_link_lo;
-      assign core_mem_resp_link_li = mem_resp_link_lo;
+      assign core_io_cmd_link_li  = io_cmd_link_lo;
+      assign core_io_resp_link_li = io_resp_link_lo;
     end
 
   bsg_wormhole_router
@@ -233,39 +233,39 @@ module bp_io_tile_node
      );
 
   bsg_wormhole_router
-   #(.flit_width_p(mem_noc_flit_width_p)
-     ,.dims_p(mem_noc_dims_p)
-     ,.cord_markers_pos_p(mem_noc_cord_markers_pos_p)
-     ,.len_width_p(mem_noc_len_width_p)
+   #(.flit_width_p(io_noc_flit_width_p)
+     ,.dims_p(io_noc_dims_p)
+     ,.cord_markers_pos_p(io_noc_cord_markers_pos_p)
+     ,.len_width_p(io_noc_len_width_p)
      ,.reverse_order_p(1)
      ,.routing_matrix_p(StrictYX)
      )
-   mem_cmd_router
-    (.clk_i(mem_clk_i)
-     ,.reset_i(mem_reset_i)
+   io_cmd_router
+    (.clk_i(io_clk_i)
+     ,.reset_i(io_reset_i)
 
-     ,.link_i({io_cmd_link_i, mem_cmd_link_li})
-     ,.link_o({io_cmd_link_o, mem_cmd_link_lo})
+     ,.link_i({io_cmd_link_i, io_cmd_link_li})
+     ,.link_o({io_cmd_link_o, io_cmd_link_lo})
 
-     ,.my_cord_i(mem_noc_cord_width_p'(my_did_i))
+     ,.my_cord_i(io_noc_cord_width_p'(my_did_i))
      );
 
   bsg_wormhole_router
-   #(.flit_width_p(mem_noc_flit_width_p)
-     ,.dims_p(mem_noc_dims_p)
-     ,.cord_markers_pos_p(mem_noc_cord_markers_pos_p)
-     ,.len_width_p(mem_noc_len_width_p)
+   #(.flit_width_p(io_noc_flit_width_p)
+     ,.dims_p(io_noc_dims_p)
+     ,.cord_markers_pos_p(io_noc_cord_markers_pos_p)
+     ,.len_width_p(io_noc_len_width_p)
      ,.reverse_order_p(1)
      ,.routing_matrix_p(StrictYX)
      )
-   mem_resp_router
-    (.clk_i(mem_clk_i)
-     ,.reset_i(mem_reset_i)
+   io_resp_router
+    (.clk_i(io_clk_i)
+     ,.reset_i(io_reset_i)
 
-     ,.link_i({io_resp_link_i, mem_resp_link_li})
-     ,.link_o({io_resp_link_o, mem_resp_link_lo})
+     ,.link_i({io_resp_link_i, io_resp_link_li})
+     ,.link_o({io_resp_link_o, io_resp_link_lo})
 
-     ,.my_cord_i(mem_noc_cord_width_p'(my_did_i))
+     ,.my_cord_i(io_noc_cord_width_p'(my_did_i))
      );
 
 endmodule

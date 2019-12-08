@@ -10,13 +10,13 @@ module bp_io_tile
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
-   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
+   , localparam io_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(io_noc_flit_width_p)
    )
   (input                                    clk_i
    , input                                  reset_i
 
-   , input [mem_noc_did_width_p-1:0]        my_did_i
-   , input [mem_noc_cord_width_p-1:0]       my_cord_i
+   , input [io_noc_did_width_p-1:0]         my_did_i
+   , input [io_noc_cord_width_p-1:0]        my_cord_i
 
    , input [coh_noc_ral_link_width_lp-1:0]  lce_req_link_i
    , output [coh_noc_ral_link_width_lp-1:0] lce_req_link_o
@@ -24,11 +24,11 @@ module bp_io_tile
    , input [coh_noc_ral_link_width_lp-1:0]  lce_cmd_link_i
    , output [coh_noc_ral_link_width_lp-1:0] lce_cmd_link_o
 
-   , input [mem_noc_ral_link_width_lp-1:0]  io_cmd_link_i
-   , output [mem_noc_ral_link_width_lp-1:0] io_cmd_link_o
+   , input [io_noc_ral_link_width_lp-1:0]   io_cmd_link_i
+   , output [io_noc_ral_link_width_lp-1:0]  io_cmd_link_o
 
-   , input [mem_noc_ral_link_width_lp-1:0]  io_resp_link_i
-   , output [mem_noc_ral_link_width_lp-1:0] io_resp_link_o
+   , input [io_noc_ral_link_width_lp-1:0]   io_resp_link_i
+   , output [io_noc_ral_link_width_lp-1:0]  io_resp_link_o
    );
 
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
@@ -171,12 +171,12 @@ module bp_io_tile
      );
   assign lce_lce_cmd_li = lce_cmd_packet_li.payload;
 
-  logic [mem_noc_did_width_p-1:0]  dst_did_lo;
-  logic [mem_noc_cord_width_p-1:0] dst_cord_lo;
+  logic [io_noc_did_width_p-1:0]  dst_did_lo;
+  logic [io_noc_cord_width_p-1:0] dst_cord_lo;
 
   wire is_host_addr = ((cce_io_cmd_lo.addr >= host_dev_base_addr_gp) 
                       && (cce_io_cmd_lo.addr < cce_dev_base_addr_gp));
-  assign dst_did_lo = is_host_addr ? '1 : cce_io_cmd_lo.addr[paddr_width_p-1-:mem_noc_did_width_p];
+  assign dst_did_lo = is_host_addr ? '1 : cce_io_cmd_lo.addr[paddr_width_p-1-:io_noc_did_width_p];
   assign dst_cord_lo = dst_did_lo;
 
   bp_me_cce_to_wormhole_link_bidir
@@ -202,7 +202,7 @@ module bp_io_tile
      ,.mem_resp_ready_o(lce_io_resp_ready_li)
 
      ,.my_did_i(my_did_i)
-     ,.my_cord_i(mem_noc_cord_width_p'(my_did_i))
+     ,.my_cord_i(io_noc_cord_width_p'(my_did_i))
      ,.dst_did_i(dst_did_lo)
      ,.dst_cord_i(dst_cord_lo)
 
