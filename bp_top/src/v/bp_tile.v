@@ -473,14 +473,10 @@ for (genvar i = 0; i < 2; i++)
   assign cache_mem_cmd_v_li    = cce_mem_cmd_v_lo & ~local_cmd_li;
 
   assign cfg_mem_cmd_li       = cce_mem_cmd_lo;
-  assign cfg_mem_cmd_v_li     = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == 4'd1);
+  assign cfg_mem_cmd_v_li     = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == cfg_dev_gp);
 
   assign clint_mem_cmd_li     = cce_mem_cmd_lo;
-  // TODO: We want to remap clint addresses so that it fits this scheme
-  //assign clint_mem_cmd_v_li   = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == 4'd2);
-  assign clint_mem_cmd_v_li = cce_mem_cmd_v_lo
-                              & (cce_mem_cmd_lo.addr >= clint_dev_base_addr_gp)
-                              & (cce_mem_cmd_lo.addr < host_dev_base_addr_gp);
+  assign clint_mem_cmd_v_li   = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == clint_dev_gp);
 
   bsg_arb_fixed
    #(.inputs_p(3)

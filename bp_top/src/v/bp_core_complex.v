@@ -78,7 +78,6 @@ for (genvar j = 0; j < cc_y_dim_p; j++)
   begin : y
     for (genvar i = 0; i < cc_x_dim_p; i++) 
       begin : x
-        localparam tile_idx = j*cc_x_dim_p + i;
         wire [mem_noc_cord_width_p-1:0] cord_li = {mem_noc_y_cord_width_p'(1+j), mem_noc_x_cord_width_p'(i)};
         bp_tile_node
          #(.bp_params_p(bp_params_p))

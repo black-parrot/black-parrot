@@ -33,9 +33,9 @@ module bp_nonsynth_host
 // Host I/O mappings (arbitrarily decided for now)
 //   Overall host controls 32'h0300_0000-32'h03FF_FFFF
 
-localparam hprint_base_addr_gp = paddr_width_p'(32'h0300_0???);
-localparam cprint_base_addr_gp = paddr_width_p'(64'h0300_1???);
-localparam finish_base_addr_gp = paddr_width_p'(64'h0300_2???);
+localparam hprint_base_addr_gp = paddr_width_p'(32'h0010_0???);
+localparam cprint_base_addr_gp = paddr_width_p'(64'h0010_1???);
+localparam finish_base_addr_gp = paddr_width_p'(64'h0010_2???);
 
 bp_cce_mem_msg_s  mem_cmd_cast_i;
 

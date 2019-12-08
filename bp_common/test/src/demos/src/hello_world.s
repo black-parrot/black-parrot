@@ -7,7 +7,7 @@
 main:
     csrr x4, mhartid
     slli x4, x4, 3
-    li x3, 0x03001000
+    li x3, 0x00101000
     add x3, x3, x4
 
     /* H */
@@ -50,7 +50,7 @@ main:
     sb x0, 0(x3)
     /* return back to the start code to finish the simulation */
 
-    li x5, 0x03002000
+    li x5, 0x00102000
     add x5, x5, x4
     li x6, 0
     sb x6, 0(x5)
