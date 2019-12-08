@@ -231,3 +231,6 @@ $BP_TOP_DIR/src/v/bp_mem_complex.v
 $BP_TOP_DIR/src/v/bp_processor.v
 $BP_TOP_DIR/src/v/bp_tile.v
 $BP_TOP_DIR/src/v/bp_tile_node.v
+
+## BSG Staging area
+$BP_TOP_DIR/src/v/bsg_async_noc_link.v
