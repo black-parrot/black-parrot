@@ -38,8 +38,8 @@ module bp_clint_node
 `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, mem_noc_ral_link_s);
 
 // Core side links
-mem_noc_ral_link_s mmio_cmd_link_li, mmio_cmd_link_lo;
-mem_noc_ral_link_s mmio_resp_link_li, mmio_resp_link_lo;
+mem_noc_ral_link_s clint_cmd_link_li, clint_cmd_link_lo;
+mem_noc_ral_link_s clint_resp_link_li, clint_resp_link_lo;
 
   bp_clint
    #(.bp_params_p(bp_params_p))
@@ -53,11 +53,11 @@ mem_noc_ral_link_s mmio_resp_link_li, mmio_resp_link_lo;
      ,.timer_irq_o(timer_irq_o)
      ,.external_irq_o(external_irq_o)
   
-     ,.cmd_link_i(mmio_cmd_link_li)
-     ,.cmd_link_o(mmio_cmd_link_lo)
+     ,.cmd_link_i(clint_cmd_link_li)
+     ,.cmd_link_o(clint_cmd_link_lo)
   
-     ,.resp_link_i(mmio_resp_link_li)
-     ,.resp_link_o(mmio_resp_link_lo)
+     ,.resp_link_i(clint_resp_link_li)
+     ,.resp_link_o(clint_resp_link_lo)
      );
 
 // Network side links
@@ -66,101 +66,49 @@ mem_noc_ral_link_s mem_resp_link_li, mem_resp_link_lo;
 
 if (async_mem_clk_p == 1)
   begin : async_mem
-    logic mmio_cmd_full_lo;
-    assign mmio_cmd_link_li.ready_and_rev = ~mmio_cmd_full_lo;
-    wire mmio_cmd_enq_li = mmio_cmd_link_lo.v & mmio_cmd_link_li.ready_and_rev;
-    wire mem_cmd_deq_li = mem_cmd_link_lo.v & mem_cmd_link_li.ready_and_rev;
-    bsg_async_fifo
-     #(.lg_size_p(3)
-       ,.width_p(mem_noc_flit_width_p)
+    bsg_async_noc_link
+     #(.width_p(coh_noc_flit_width_p)
+       ,.lg_size_p(3)
        )
-     mem_cmd_link_async_fifo_to_rtr
-      (.w_clk_i(core_clk_i)
-       ,.w_reset_i(core_reset_i)
-       ,.w_enq_i(mmio_cmd_enq_li)
-       ,.w_data_i(mmio_cmd_link_lo.data)
-       ,.w_full_o(mmio_cmd_full_lo)
+     mem_cmd_link
+      (.aclk_i(core_clk_i)
+       ,.areset_i(core_reset_i)
 
-       ,.r_clk_i(mem_clk_i)
-       ,.r_reset_i(mem_reset_i)
-       ,.r_deq_i(mem_cmd_deq_li)
-       ,.r_data_o(mem_cmd_link_lo.data)
-       ,.r_valid_o(mem_cmd_link_lo.v)
+       ,.bclk_i(mem_clk_i)
+       ,.breset_i(mem_reset_i)
+
+       ,.alink_i(clint_mem_cmd_link_lo)
+       ,.alink_o(clint_mem_cmd_link_li)
+
+       ,.blink_i(mem_cmd_link_li)
+       ,.blink_o(mem_cmd_link_lo)
        );
 
-    logic mmio_resp_full_lo;
-    assign mmio_resp_link_li.ready_and_rev = ~mmio_resp_full_lo;
-    wire mmio_resp_enq_li = mmio_resp_link_lo.v & mmio_resp_link_li.ready_and_rev;
-    wire mem_resp_deq_li = mem_resp_link_lo.v & mem_resp_link_li.ready_and_rev;
-    bsg_async_fifo
-     #(.lg_size_p(3)
-       ,.width_p(mem_noc_flit_width_p)
+    bsg_async_noc_link
+     #(.width_p(coh_noc_flit_width_p)
+       ,.lg_size_p(3)
        )
-     mem_resp_link_async_fifo_to_rtr
-      (.w_clk_i(core_clk_i)
-       ,.w_reset_i(core_reset_i)
-       ,.w_enq_i(mmio_resp_enq_li)
-       ,.w_data_i(mmio_resp_link_lo.data)
-       ,.w_full_o(mmio_resp_full_lo)
-    
-       ,.r_clk_i(mem_clk_i)
-       ,.r_reset_i(mem_reset_i)
-       ,.r_deq_i(mem_resp_deq_li)
-       ,.r_data_o(mem_resp_link_lo.data)
-       ,.r_valid_o(mem_resp_link_lo.v)
-       );
-    
-    logic mem_cmd_full_lo;
-    assign mem_cmd_link_lo.ready_and_rev = ~mem_cmd_full_lo;
-    wire mem_cmd_enq_li = mem_cmd_link_li.v & mem_cmd_link_lo.ready_and_rev;
-    wire mmio_cmd_deq_li = mmio_cmd_link_li.v & mmio_cmd_link_lo.ready_and_rev;
-    bsg_async_fifo
-     #(.lg_size_p(3)
-       ,.width_p(mem_noc_flit_width_p)
-       )
-     mem_cmd_link_async_fifo_from_rtr
-      (.w_clk_i(mem_clk_i)
-       ,.w_reset_i(mem_reset_i)
-       ,.w_enq_i(mem_cmd_enq_li)
-       ,.w_data_i(mem_cmd_link_li.data)
-       ,.w_full_o(mem_cmd_full_lo)
-    
-       ,.r_clk_i(core_clk_i)
-       ,.r_reset_i(core_reset_i)
-       ,.r_deq_i(mmio_cmd_deq_li)
-       ,.r_data_o(mmio_cmd_link_li.data)
-       ,.r_valid_o(mmio_cmd_link_li.v)
-       );
+     mem_resp_link
+      (.aclk_i(core_clk_i)
+       ,.areset_i(core_reset_i)
 
-    logic mem_resp_full_lo;
-    assign mem_resp_link_lo.ready_and_rev = ~mem_resp_full_lo;
-    wire mem_resp_enq_li = mem_resp_link_li.v & mem_resp_link_lo.ready_and_rev;
-    wire mmio_resp_deq_li = mmio_resp_link_li.v & mmio_resp_link_lo.ready_and_rev;
-    bsg_async_fifo
-     #(.lg_size_p(3)
-       ,.width_p(mem_noc_flit_width_p)
-       )
-     mem_resp_link_async_fifo_from_rtr
-      (.w_clk_i(mem_clk_i)
-       ,.w_reset_i(mem_reset_i)
-       ,.w_enq_i(mem_resp_enq_li)
-       ,.w_data_i(mem_resp_link_li.data)
-       ,.w_full_o(mem_resp_full_lo)
-    
-       ,.r_clk_i(core_clk_i)
-       ,.r_reset_i(core_reset_i)
-       ,.r_deq_i(mmio_resp_deq_li)
-       ,.r_data_o(mmio_resp_link_li.data)
-       ,.r_valid_o(mmio_resp_link_li.v)
+       ,.bclk_i(mem_clk_i)
+       ,.breset_i(mem_reset_i)
+
+       ,.alink_i(clint_mem_resp_link_lo)
+       ,.alink_o(clint_mem_resp_link_li)
+
+       ,.blink_i(mem_resp_link_li)
+       ,.blink_o(mem_resp_link_lo)
        );
     end
   else
     begin : sync_mem
-      assign mem_cmd_link_lo  = mmio_cmd_link_lo;
-      assign mem_resp_link_lo = mmio_resp_link_lo;
+      assign mem_cmd_link_lo  = clint_cmd_link_lo;
+      assign mem_resp_link_lo = clint_resp_link_lo;
 
-      assign mmio_cmd_link_li  = mem_cmd_link_li;
-      assign mmio_resp_link_li = mem_resp_link_li;
+      assign clint_cmd_link_li  = mem_cmd_link_li;
+      assign clint_resp_link_li = mem_resp_link_li;
     end
 
   bsg_wormhole_router

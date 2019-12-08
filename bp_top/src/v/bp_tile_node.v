@@ -105,136 +105,58 @@ bp_mem_ready_and_link_s mem_resp_link_li, mem_resp_link_lo;
 
   if (async_coh_clk_p == 1)
     begin : coh_async
-      logic core_lce_req_full_lo;
-      assign core_lce_req_link_li.ready_and_rev = ~core_lce_req_full_lo;
-      wire core_lce_req_enq_li = core_lce_req_link_lo.v & core_lce_req_link_li.ready_and_rev;
-      wire coh_lce_req_deq_li = coh_lce_req_link_li.v & coh_lce_req_link_lo.ready_and_rev;
-      bsg_async_fifo
-       #(.lg_size_p(3)
-         ,.width_p(coh_noc_flit_width_p)
+      bsg_async_noc_link
+       #(.width_p(coh_noc_flit_width_p)
+         ,.lg_size_p(3)
          )
-       lce_req_link_async_fifo_to_rtr
-        (.w_clk_i(core_clk_i)
-         ,.w_reset_i(core_reset_i)
-         ,.w_enq_i(core_lce_req_enq_li)
-         ,.w_data_i(core_lce_req_link_lo.data)
-         ,.w_full_o(core_lce_req_full_lo)
+       lce_req_link
+        (.aclk_i(core_clk_i)
+         ,.areset_i(core_reset_i)
 
-         ,.r_clk_i(coh_clk_i)
-         ,.r_reset_i(coh_reset_i)
-         ,.r_deq_i(coh_lce_req_deq_li)
-         ,.r_data_o(coh_lce_req_link_li.data)
-         ,.r_valid_o(coh_lce_req_link_li.v)
+         ,.bclk_i(coh_clk_i)
+         ,.breset_i(coh_reset_i)
+
+         ,.alink_i(core_lce_req_link_lo)
+         ,.alink_o(core_lce_req_link_li)
+
+         ,.blink_i(coh_lce_req_link_li)
+         ,.blink_o(coh_lce_req_link_lo)
          );
 
-      logic core_lce_cmd_full_lo;
-      assign core_lce_cmd_link_li.ready_and_rev = ~core_lce_cmd_full_lo;
-      wire core_lce_cmd_enq_li = core_lce_cmd_link_lo.v & core_lce_cmd_link_li.ready_and_rev;
-      wire coh_lce_cmd_deq_li = coh_lce_cmd_link_li.v & coh_lce_cmd_link_lo.ready_and_rev;
-      bsg_async_fifo
-       #(.lg_size_p(3)
-         ,.width_p(coh_noc_flit_width_p)
+      bsg_async_noc_link
+       #(.width_p(coh_noc_flit_width_p)
+         ,.lg_size_p(3)
          )
-       lce_cmd_link_async_fifo_to_rtr
-        (.w_clk_i(core_clk_i)
-         ,.w_reset_i(core_reset_i)
-         ,.w_enq_i(core_lce_cmd_enq_li)
-         ,.w_data_i(core_lce_cmd_link_lo.data)
-         ,.w_full_o(core_lce_cmd_full_lo)
+       lce_cmd_link
+        (.aclk_i(core_clk_i)
+         ,.areset_i(core_reset_i)
 
-         ,.r_clk_i(coh_clk_i)
-         ,.r_reset_i(coh_reset_i)
-         ,.r_deq_i(coh_lce_cmd_deq_li)
-         ,.r_data_o(coh_lce_cmd_link_li.data)
-         ,.r_valid_o(coh_lce_cmd_link_li.v)
+         ,.bclk_i(coh_clk_i)
+         ,.breset_i(coh_reset_i)
+
+         ,.alink_i(core_lce_cmd_link_lo)
+         ,.alink_o(core_lce_cmd_link_li)
+
+         ,.blink_i(coh_lce_cmd_link_li)
+         ,.blink_o(coh_lce_cmd_link_lo)
          );
 
-      logic core_lce_resp_full_lo;
-      assign core_lce_resp_link_li.ready_and_rev = ~core_lce_resp_full_lo;
-      wire core_lce_resp_enq_li = core_lce_resp_link_lo.v & core_lce_resp_link_li.ready_and_rev;
-      wire coh_lce_resp_deq_li = coh_lce_resp_link_li.v & coh_lce_resp_link_lo.ready_and_rev;
-      bsg_async_fifo
-       #(.lg_size_p(3)
-         ,.width_p(coh_noc_flit_width_p)
+      bsg_async_noc_link
+       #(.width_p(coh_noc_flit_width_p)
+         ,.lg_size_p(3)
          )
-       lce_resp_link_async_fifo_to_rtr
-        (.w_clk_i(core_clk_i)
-         ,.w_reset_i(core_reset_i)
-         ,.w_enq_i(core_lce_resp_enq_li)
-         ,.w_data_i(core_lce_resp_link_lo.data)
-         ,.w_full_o(core_lce_resp_full_lo)
+       lce_resp_link
+        (.aclk_i(core_clk_i)
+         ,.areset_i(core_reset_i)
 
-         ,.r_clk_i(coh_clk_i)
-         ,.r_reset_i(coh_reset_i)
-         ,.r_deq_i(coh_lce_resp_deq_li)
-         ,.r_data_o(coh_lce_resp_link_li.data)
-         ,.r_valid_o(coh_lce_resp_link_li.v)
-         );
+         ,.bclk_i(coh_clk_i)
+         ,.breset_i(coh_reset_i)
 
-      logic coh_lce_req_full_lo;
-      assign coh_lce_req_link_li.ready_and_rev = ~coh_lce_req_full_lo;
-      wire coh_lce_req_enq_li = coh_lce_req_link_lo.v & coh_lce_req_link_li.ready_and_rev;
-      wire core_lce_req_deq_li = core_lce_req_link_li.v & core_lce_req_link_lo.ready_and_rev;
-      bsg_async_fifo
-       #(.lg_size_p(3)
-         ,.width_p(coh_noc_flit_width_p)
-         )
-       lce_req_link_async_fifo_from_rtr
-        (.w_clk_i(coh_clk_i)
-         ,.w_reset_i(coh_reset_i)
-         ,.w_enq_i(coh_lce_req_enq_li)
-         ,.w_data_i(coh_lce_req_link_lo.data)
-         ,.w_full_o(coh_lce_req_full_lo)
+         ,.alink_i(core_lce_resp_link_lo)
+         ,.alink_o(core_lce_resp_link_li)
 
-         ,.r_clk_i(core_clk_i)
-         ,.r_reset_i(core_reset_i)
-         ,.r_deq_i(core_lce_req_deq_li)
-         ,.r_data_o(core_lce_req_link_li.data)
-         ,.r_valid_o(core_lce_req_link_li.v)
-         );
-
-      logic coh_lce_cmd_full_lo;
-      assign coh_lce_cmd_link_li.ready_and_rev = ~coh_lce_cmd_full_lo;
-      wire coh_lce_cmd_enq_li = coh_lce_cmd_link_lo.v & coh_lce_cmd_link_li.ready_and_rev;
-      wire core_lce_cmd_deq_li = core_lce_cmd_link_li.v & core_lce_cmd_link_lo.ready_and_rev;
-      bsg_async_fifo
-       #(.lg_size_p(3)
-         ,.width_p(coh_noc_flit_width_p)
-         )
-       lce_cmd_link_async_fifo_from_rtr
-        (.w_clk_i(coh_clk_i)
-         ,.w_reset_i(coh_reset_i)
-         ,.w_enq_i(coh_lce_cmd_enq_li)
-         ,.w_data_i(coh_lce_cmd_link_lo.data)
-         ,.w_full_o(coh_lce_cmd_full_lo)
-
-         ,.r_clk_i(core_clk_i)
-         ,.r_reset_i(core_reset_i)
-         ,.r_deq_i(core_lce_cmd_deq_li)
-         ,.r_data_o(core_lce_cmd_link_li.data)
-         ,.r_valid_o(core_lce_cmd_link_li.v)
-         );
-
-      logic coh_lce_resp_full_lo;
-      assign coh_lce_resp_link_li.ready_and_rev = ~coh_lce_resp_full_lo;
-      wire coh_lce_resp_enq_li = coh_lce_resp_link_lo.v & coh_lce_resp_link_li.ready_and_rev;
-      wire core_lce_resp_deq_li = core_lce_resp_link_li.v & core_lce_resp_link_lo.ready_and_rev;
-      bsg_async_fifo
-       #(.lg_size_p(3)
-         ,.width_p(coh_noc_flit_width_p)
-         )
-       lce_resp_link_async_fifo_from_rtr
-        (.w_clk_i(coh_clk_i)
-         ,.w_reset_i(coh_reset_i)
-         ,.w_enq_i(coh_lce_resp_enq_li)
-         ,.w_data_i(coh_lce_resp_link_lo.data)
-         ,.w_full_o(coh_lce_resp_full_lo)
-
-         ,.r_clk_i(core_clk_i)
-         ,.r_reset_i(core_reset_i)
-         ,.r_deq_i(core_lce_resp_deq_li)
-         ,.r_data_o(core_lce_resp_link_li.data)
-         ,.r_valid_o(core_lce_resp_link_li.v)
+         ,.blink_i(coh_lce_resp_link_li)
+         ,.blink_o(coh_lce_resp_link_lo)
          );
     end
   else
@@ -250,96 +172,44 @@ bp_mem_ready_and_link_s mem_resp_link_li, mem_resp_link_lo;
 
   if (async_mem_clk_p == 1)
     begin : mem_async
-      logic core_mem_cmd_full_lo;
-      assign core_mem_cmd_link_li.ready_and_rev = ~core_mem_cmd_full_lo;
-      wire core_mem_cmd_enq_li = core_mem_cmd_link_lo.v & core_mem_cmd_link_li.ready_and_rev;
-      wire mem_cmd_deq_li = mem_cmd_link_li.v & mem_cmd_link_lo.ready_and_rev;
-      bsg_async_fifo
-       #(.lg_size_p(3)
-         ,.width_p(mem_noc_flit_width_p)
+      bsg_async_noc_link
+       #(.width_p(coh_noc_flit_width_p)
+         ,.lg_size_p(3)
          )
-       mem_cmd_link_async_fifo_to_rtr
-        (.w_clk_i(core_clk_i)
-         ,.w_reset_i(core_reset_i)
-         ,.w_enq_i(core_mem_cmd_enq_li)
-         ,.w_data_i(core_mem_cmd_link_lo.data)
-         ,.w_full_o(core_mem_cmd_full_lo)
+       mem_cmd_link
+        (.aclk_i(core_clk_i)
+         ,.areset_i(core_reset_i)
 
-         ,.r_clk_i(mem_clk_i)
-         ,.r_reset_i(mem_reset_i)
-         ,.r_deq_i(mem_cmd_deq_li)
-         ,.r_data_o(mem_cmd_link_li.data)
-         ,.r_valid_o(mem_cmd_link_li.v)
+         ,.bclk_i(mem_clk_i)
+         ,.breset_i(mem_reset_i)
+
+         ,.alink_i(core_mem_cmd_link_lo)
+         ,.alink_o(core_mem_cmd_link_li)
+
+         ,.blink_i(mem_cmd_link_li)
+         ,.blink_o(mem_cmd_link_lo)
          );
 
-      logic core_mem_resp_full_lo;
-      assign core_mem_resp_link_li.ready_and_rev = ~core_mem_resp_full_lo;
-      wire core_mem_resp_enq_li = core_mem_resp_link_lo.v & core_mem_resp_link_li.ready_and_rev;
-      wire mem_resp_deq_li = mem_resp_link_li.v & mem_resp_link_lo.ready_and_rev;
-      bsg_async_fifo
-       #(.lg_size_p(3)
-         ,.width_p(mem_noc_flit_width_p)
+      bsg_async_noc_link
+       #(.width_p(coh_noc_flit_width_p)
+         ,.lg_size_p(3)
          )
-       mem_resp_link_async_fifo_to_rtr
-        (.w_clk_i(core_clk_i)
-         ,.w_reset_i(core_reset_i)
-         ,.w_enq_i(core_mem_resp_enq_li)
-         ,.w_data_i(core_mem_resp_link_lo.data)
-         ,.w_full_o(core_mem_resp_full_lo)
+       mem_resp_link
+        (.aclk_i(core_clk_i)
+         ,.areset_i(core_reset_i)
 
-         ,.r_clk_i(mem_clk_i)
-         ,.r_reset_i(mem_reset_i)
-         ,.r_deq_i(mem_resp_deq_li)
-         ,.r_data_o(mem_resp_link_li.data)
-         ,.r_valid_o(mem_resp_link_li.v)
-         );
+         ,.bclk_i(mem_clk_i)
+         ,.breset_i(mem_reset_i)
 
-      logic mem_cmd_full_lo;
-      assign mem_cmd_link_li.ready_and_rev = ~mem_cmd_full_lo;
-      wire mem_cmd_enq_li = mem_cmd_link_lo.v & mem_cmd_link_li.ready_and_rev;
-      wire core_mem_cmd_deq_li = core_mem_cmd_link_li.v & core_mem_cmd_link_lo.ready_and_rev;
-      bsg_async_fifo
-       #(.lg_size_p(3)
-         ,.width_p(mem_noc_flit_width_p)
-         )
-       mem_cmd_link_async_fifo_from_rtr
-        (.w_clk_i(mem_clk_i)
-         ,.w_reset_i(mem_reset_i)
-         ,.w_enq_i(mem_cmd_enq_li)
-         ,.w_data_i(mem_cmd_link_lo.data)
-         ,.w_full_o(mem_cmd_full_lo)
+         ,.alink_i(core_mem_resp_link_lo)
+         ,.alink_o(core_mem_resp_link_li)
 
-         ,.r_clk_i(core_clk_i)
-         ,.r_reset_i(core_reset_i)
-         ,.r_deq_i(core_mem_cmd_deq_li)
-         ,.r_data_o(core_mem_cmd_link_li.data)
-         ,.r_valid_o(core_mem_cmd_link_li.v)
-         );
-
-      logic mem_resp_full_lo;
-      assign mem_resp_link_li.ready_and_rev = ~mem_resp_full_lo;
-      wire mem_resp_enq_li = mem_resp_link_lo.v & mem_resp_link_li.ready_and_rev;
-      wire core_mem_resp_deq_li = core_mem_resp_link_li.v & core_mem_resp_link_lo.ready_and_rev;
-      bsg_async_fifo
-       #(.lg_size_p(3)
-         ,.width_p(mem_noc_flit_width_p)
-         )
-       mem_resp_link_async_fifo_from_rtr
-        (.w_clk_i(mem_clk_i)
-         ,.w_reset_i(mem_reset_i)
-         ,.w_enq_i(mem_resp_enq_li)
-         ,.w_data_i(mem_resp_link_lo.data)
-         ,.w_full_o(mem_resp_full_lo)
-
-         ,.r_clk_i(core_clk_i)
-         ,.r_reset_i(core_reset_i)
-         ,.r_deq_i(core_mem_resp_deq_li)
-         ,.r_data_o(core_mem_resp_link_li.data)
-         ,.r_valid_o(core_mem_resp_link_li.v)
+         ,.blink_i(mem_resp_link_li)
+         ,.blink_o(mem_resp_link_lo)
          );
     end
   else
-    begin : io_sync
+    begin : mem_sync
       assign mem_cmd_link_li  = core_mem_cmd_link_lo;
       assign mem_resp_link_li = core_mem_resp_link_lo;
 
