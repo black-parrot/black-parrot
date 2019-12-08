@@ -93,13 +93,13 @@ typedef enum bit
 
 typedef struct packed
 {
-  integer num_core;
   integer cc_x_dim;
   integer cc_y_dim;
-  integer num_io;
-  integer num_sacc;
-  integer num_cacc;
-  integer num_l2e;
+
+  integer ioc_y_dim;
+  integer mc_y_dim;
+  integer sac_x_dim;
+  integer cac_x_dim;
 
   integer vaddr_width;
   integer paddr_width;
@@ -159,18 +159,23 @@ typedef struct packed
 `define declare_bp_proc_params(bp_params_e_mp) \
   , localparam bp_proc_param_s proc_param_lp = all_cfgs_gp[bp_params_e_mp]                         \
                                                                                                    \
-  , localparam num_core_p  = proc_param_lp.num_core                                                \
   , localparam cc_x_dim_p  = proc_param_lp.cc_x_dim                                                \
   , localparam cc_y_dim_p  = proc_param_lp.cc_y_dim                                                \
-  , localparam num_io_p    = proc_param_lp.num_io                                                  \
-  , localparam num_sacc_p  = proc_param_lp.num_sacc                                                \
-  , localparam num_cacc_p  = proc_param_lp.num_cacc                                                \
-  , localparam num_l2e_p   = proc_param_lp.num_l2e                                                 \
                                                                                                    \
-  , localparam ioc_y_dim_p = `BSG_CDIV(num_io_p, cc_x_dim_p)                                       \
-  , localparam mc_y_dim_p  = `BSG_CDIV(num_l2e_p, cc_x_dim_p)                                      \
-  , localparam cac_x_dim_p = `BSG_CDIV(num_cacc_p, cc_y_dim_p)                                     \
-  , localparam sac_x_dim_p = `BSG_CDIV(num_sacc_p, cc_y_dim_p)                                     \
+  , localparam ioc_x_dim_p = cc_x_dim_p                                                            \
+  , localparam ioc_y_dim_p = proc_param_lp.ioc_y_dim                                               \
+  , localparam mc_x_dim_p  = cc_x_dim_p                                                            \
+  , localparam mc_y_dim_p  = proc_param_lp.mc_y_dim                                                \
+  , localparam sac_x_dim_p = proc_param_lp.sac_x_dim                                               \
+  , localparam sac_y_dim_p = cc_y_dim_p                                                            \
+  , localparam cac_x_dim_p = proc_param_lp.cac_x_dim                                               \
+  , localparam cac_y_dim_p = cc_y_dim_p                                                            \
+                                                                                                   \
+  , localparam num_core_p  = cc_x_dim_p * cc_y_dim_p                                               \
+  , localparam num_io_p    = ioc_x_dim_p * ioc_y_dim_p                                             \
+  , localparam num_l2e_p   = mc_x_dim_p * mc_y_dim_p                                               \
+  , localparam num_sacc_p  = sac_x_dim_p * sac_y_dim_p                                             \
+  , localparam num_cacc_p  = cac_x_dim_p * cac_y_dim_p                                             \
                                                                                                    \
   , localparam num_cce_p   = num_core_p + num_l2e_p                                                \
   , localparam num_lce_p   = 2*num_core_p + num_cacc_p                                             \
