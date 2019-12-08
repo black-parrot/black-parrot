@@ -21,7 +21,7 @@ module bp_processor
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
-   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
+   , localparam io_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(io_noc_flit_width_p)
    )
   (input                                            core_clk_i
    , input                                          core_reset_i
@@ -29,16 +29,19 @@ module bp_processor
    , input                                          coh_clk_i
    , input                                          coh_reset_i
 
+   , input                                          io_clk_i
+   , input                                          io_reset_i
+
    , input                                          mem_clk_i
    , input                                          mem_reset_i
 
-   , input [mem_noc_did_width_p-1:0]                my_did_i
+   , input [io_noc_did_width_p-1:0]                 my_did_i
 
-   , input  [E:W][mem_noc_ral_link_width_lp-1:0]    io_cmd_link_i
-   , output [E:W][mem_noc_ral_link_width_lp-1:0]    io_cmd_link_o
+   , input  [E:W][io_noc_ral_link_width_lp-1:0]     io_cmd_link_i
+   , output [E:W][io_noc_ral_link_width_lp-1:0]     io_cmd_link_o
 
-   , input  [E:W][mem_noc_ral_link_width_lp-1:0]    io_resp_link_i
-   , output [E:W][mem_noc_ral_link_width_lp-1:0]    io_resp_link_o
+   , input  [E:W][io_noc_ral_link_width_lp-1:0]     io_resp_link_i
+   , output [E:W][io_noc_ral_link_width_lp-1:0]     io_resp_link_o
 
    // TEMP
    , output [cc_x_dim_p-1:0][cce_mem_msg_width_lp-1:0] dram_cmd_o
@@ -54,6 +57,7 @@ module bp_processor
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
+`declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_ready_and_link_s);
 `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_ready_and_link_s);
 
 bp_coh_ready_and_link_s [S:N][cc_x_dim_p-1:0] coh_req_link_li, coh_req_link_lo;
@@ -105,8 +109,8 @@ bp_io_complex
    ,.coh_clk_i(coh_clk_i)
    ,.coh_reset_i(coh_reset_i)
 
-   ,.mem_clk_i(mem_clk_i)
-   ,.mem_reset_i(mem_reset_i)
+   ,.io_clk_i(io_clk_i)
+   ,.io_reset_i(io_reset_i)
 
    ,.my_did_i(my_did_i)
 

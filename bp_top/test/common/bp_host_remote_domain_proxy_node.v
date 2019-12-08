@@ -15,70 +15,70 @@ module bp_host_remote_domain_proxy_node
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
-   , localparam mem_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
+   , localparam io_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(io_noc_flit_width_p)
    )
-  (input                                                clk_i
-   , input                                              reset_i
+  (input                                               clk_i
+   , input                                             reset_i
 
-   , input [mem_noc_did_width_p-1:0]                    my_did_i
-   , input [mem_noc_cord_width_p-1:0]                   my_cord_i
+   , input [io_noc_did_width_p-1:0]                    my_did_i
+   , input [io_noc_cord_width_p-1:0]                   my_cord_i
 
-   , input [mem_noc_ral_link_width_lp-1:0]              on_cmd_link_i
-   , output [mem_noc_ral_link_width_lp-1:0]             on_cmd_link_o
+   , input [io_noc_ral_link_width_lp-1:0]              on_cmd_link_i
+   , output [io_noc_ral_link_width_lp-1:0]             on_cmd_link_o
 
-   , input [mem_noc_ral_link_width_lp-1:0]              on_resp_link_i
-   , output [mem_noc_ral_link_width_lp-1:0]             on_resp_link_o
+   , input [io_noc_ral_link_width_lp-1:0]              on_resp_link_i
+   , output [io_noc_ral_link_width_lp-1:0]             on_resp_link_o
 
-   , input [E:W][mem_noc_ral_link_width_lp-1:0]         off_cmd_link_i
-   , output [E:W][mem_noc_ral_link_width_lp-1:0]        off_cmd_link_o
+   , input [E:W][io_noc_ral_link_width_lp-1:0]         off_cmd_link_i
+   , output [E:W][io_noc_ral_link_width_lp-1:0]        off_cmd_link_o
 
-   , input [E:W][mem_noc_ral_link_width_lp-1:0]         off_resp_link_i
-   , output [E:W][mem_noc_ral_link_width_lp-1:0]        off_resp_link_o
+   , input [E:W][io_noc_ral_link_width_lp-1:0]         off_resp_link_i
+   , output [E:W][io_noc_ral_link_width_lp-1:0]        off_resp_link_o
    );
 
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
-  `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, mem_noc_ral_link_s);
-  `declare_bp_mem_wormhole_payload_s(mem_noc_did_width_p, mem_noc_cord_width_p, cce_mem_msg_width_lp, mem_cmd_payload_s);
-  `declare_bp_mem_wormhole_payload_s(mem_noc_did_width_p, mem_noc_cord_width_p, cce_mem_msg_width_lp, mem_resp_payload_s);
-  `declare_bsg_wormhole_interdomain_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_did_width_p, $bits(mem_cmd_payload_s), mem_cmd_packet_s);
-  `declare_bsg_wormhole_interdomain_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_did_width_p, $bits(mem_resp_payload_s), mem_resp_packet_s);
+  `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, io_noc_ral_link_s);
+  `declare_bp_mem_wormhole_payload_s(io_noc_did_width_p, io_noc_cord_width_p, cce_mem_msg_width_lp, mem_cmd_payload_s);
+  `declare_bp_mem_wormhole_payload_s(io_noc_did_width_p, io_noc_cord_width_p, cce_mem_msg_width_lp, mem_resp_payload_s);
+  `declare_bsg_wormhole_interdomain_packet_s(io_noc_cord_width_p, io_noc_len_width_p, io_noc_did_width_p, $bits(mem_cmd_payload_s), mem_cmd_packet_s);
+  `declare_bsg_wormhole_interdomain_packet_s(io_noc_cord_width_p, io_noc_len_width_p, io_noc_did_width_p, $bits(mem_resp_payload_s), mem_resp_packet_s);
 
-  mem_noc_ral_link_s [S:N] stub_cmd_li, stub_cmd_lo;
-  mem_noc_ral_link_s rtr_cmd_link_li, rtr_cmd_link_lo;
+  io_noc_ral_link_s [S:N] stub_cmd_li, stub_cmd_lo;
+  io_noc_ral_link_s rtr_cmd_link_li, rtr_cmd_link_lo;
   assign stub_cmd_li = '0;
   bsg_wormhole_router
-   #(.flit_width_p(mem_noc_flit_width_p)
-     ,.dims_p(mem_noc_dims_p)
-     ,.cord_dims_p(mem_noc_dims_p)
-     ,.cord_markers_pos_p(mem_noc_cord_markers_pos_p)
-     ,.len_width_p(mem_noc_len_width_p)
+   #(.flit_width_p(io_noc_flit_width_p)
+     ,.dims_p(io_noc_dims_p)
+     ,.cord_dims_p(io_noc_dims_p)
+     ,.cord_markers_pos_p(io_noc_cord_markers_pos_p)
+     ,.len_width_p(io_noc_len_width_p)
      ,.reverse_order_p(0)
      ,.routing_matrix_p(StrictXY)
      )
    cmd_router
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
-    ,.my_cord_i(mem_noc_cord_width_p'(my_did_i))
+    ,.my_cord_i(io_noc_cord_width_p'(my_did_i))
     ,.link_i({stub_cmd_li, off_cmd_link_i, rtr_cmd_link_li})
     ,.link_o({stub_cmd_lo, off_cmd_link_o, rtr_cmd_link_lo})
     );
 
-  mem_noc_ral_link_s [S:N] stub_resp_li, stub_resp_lo;
-  mem_noc_ral_link_s rtr_resp_link_li, rtr_resp_link_lo;
+  io_noc_ral_link_s [S:N] stub_resp_li, stub_resp_lo;
+  io_noc_ral_link_s rtr_resp_link_li, rtr_resp_link_lo;
   assign stub_resp_li = '0;
   bsg_wormhole_router
-   #(.flit_width_p(mem_noc_flit_width_p)
-     ,.dims_p(mem_noc_dims_p)
-     ,.cord_dims_p(mem_noc_dims_p)
-     ,.cord_markers_pos_p(mem_noc_cord_markers_pos_p)
-     ,.len_width_p(mem_noc_len_width_p)
+   #(.flit_width_p(io_noc_flit_width_p)
+     ,.dims_p(io_noc_dims_p)
+     ,.cord_dims_p(io_noc_dims_p)
+     ,.cord_markers_pos_p(io_noc_cord_markers_pos_p)
+     ,.len_width_p(io_noc_len_width_p)
      ,.reverse_order_p(0)
      ,.routing_matrix_p(StrictXY)
      )
    resp_router
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.my_cord_i(mem_noc_cord_width_p'(my_did_i))
+     ,.my_cord_i(io_noc_cord_width_p'(my_did_i))
      ,.link_i({stub_resp_li, off_resp_link_i, rtr_resp_link_li})
      ,.link_o({stub_resp_lo, off_resp_link_o, rtr_resp_link_lo})
      );
@@ -87,10 +87,10 @@ module bp_host_remote_domain_proxy_node
   logic on_mem_cmd_v_li, on_mem_cmd_ready_lo;
   logic on_mem_cmd_v_lo, on_mem_cmd_yumi_li;
   bsg_wormhole_router_adapter
-   #(.max_payload_width_p($bits(mem_cmd_payload_s)+mem_noc_did_width_p)
-     ,.len_width_p(mem_noc_len_width_p)
-     ,.cord_width_p(mem_noc_cord_width_p)
-     ,.flit_width_p(mem_noc_flit_width_p)
+   #(.max_payload_width_p($bits(mem_cmd_payload_s)+io_noc_did_width_p)
+     ,.len_width_p(io_noc_len_width_p)
+     ,.cord_width_p(io_noc_cord_width_p)
+     ,.flit_width_p(io_noc_flit_width_p)
      )
    on_cmd_adapter
     (.clk_i(clk_i)
@@ -114,10 +114,10 @@ module bp_host_remote_domain_proxy_node
   logic on_mem_resp_v_li, on_mem_resp_ready_lo;
   logic on_mem_resp_v_lo, on_mem_resp_yumi_li;
   bsg_wormhole_router_adapter
-   #(.max_payload_width_p($bits(mem_resp_payload_s)+mem_noc_did_width_p)
-     ,.len_width_p(mem_noc_len_width_p)
-     ,.cord_width_p(mem_noc_cord_width_p)
-     ,.flit_width_p(mem_noc_flit_width_p)
+   #(.max_payload_width_p($bits(mem_resp_payload_s)+io_noc_did_width_p)
+     ,.len_width_p(io_noc_len_width_p)
+     ,.cord_width_p(io_noc_cord_width_p)
+     ,.flit_width_p(io_noc_flit_width_p)
      )
    on_resp_adapter
     (.clk_i(clk_i)
@@ -141,10 +141,10 @@ module bp_host_remote_domain_proxy_node
   logic off_mem_cmd_v_li, off_mem_cmd_ready_lo;
   logic off_mem_cmd_v_lo, off_mem_cmd_yumi_li;
   bsg_wormhole_router_adapter
-   #(.max_payload_width_p($bits(mem_cmd_payload_s)+mem_noc_did_width_p)
-     ,.len_width_p(mem_noc_len_width_p)
-     ,.cord_width_p(mem_noc_cord_width_p)
-     ,.flit_width_p(mem_noc_flit_width_p)
+   #(.max_payload_width_p($bits(mem_cmd_payload_s)+io_noc_did_width_p)
+     ,.len_width_p(io_noc_len_width_p)
+     ,.cord_width_p(io_noc_cord_width_p)
+     ,.flit_width_p(io_noc_flit_width_p)
      )
    off_cmd_adapter
     (.clk_i(clk_i)
@@ -168,10 +168,10 @@ module bp_host_remote_domain_proxy_node
   logic off_mem_resp_v_li, off_mem_resp_ready_lo;
   logic off_mem_resp_v_lo, off_mem_resp_yumi_li;
   bsg_wormhole_router_adapter
-   #(.max_payload_width_p($bits(mem_resp_payload_s)+mem_noc_did_width_p)
-     ,.len_width_p(mem_noc_len_width_p)
-     ,.cord_width_p(mem_noc_cord_width_p)
-     ,.flit_width_p(mem_noc_flit_width_p)
+   #(.max_payload_width_p($bits(mem_resp_payload_s)+io_noc_did_width_p)
+     ,.len_width_p(io_noc_len_width_p)
+     ,.cord_width_p(io_noc_cord_width_p)
+     ,.flit_width_p(io_noc_flit_width_p)
      )
    off_resp_adapter
     (.clk_i(clk_i)
@@ -197,7 +197,7 @@ module bp_host_remote_domain_proxy_node
 
   // TODO Attach host and fake memory to router coordinates
   //wire host_not_dram = (mem_cmd_lo.addr < dram_base_addr_gp);
-  wire [mem_noc_cord_width_p-1:0] cmd_dst_cord_lo = '0; 
+  wire [io_noc_cord_width_p-1:0] cmd_dst_cord_lo = '0; 
 
   always_comb
     begin

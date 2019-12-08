@@ -49,7 +49,7 @@ module testbench
    , input reset_i
    );
 
-`declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bsg_ready_and_link_sif_s);
+`declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bsg_ready_and_link_sif_s);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
 bsg_ready_and_link_sif_s [E:P] cmd_link_li, cmd_link_lo;
@@ -81,8 +81,8 @@ logic                  cfg_cmd_v_lo, cfg_cmd_ready_li;
 bp_cce_mem_msg_s       cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
-wire [mem_noc_did_width_p-1:0] dram_did_li = '1;
-wire [mem_noc_did_width_p-1:0] proc_did_li = 1;
+wire [io_noc_did_width_p-1:0] dram_did_li = '1;
+wire [io_noc_did_width_p-1:0] proc_did_li = 1;
 
 bsg_ready_and_link_sif_s stub_cmd_link_li, stub_resp_link_li;
 bsg_ready_and_link_sif_s stub_cmd_link_lo, stub_resp_link_lo;
@@ -97,6 +97,9 @@ wrapper
    
    ,.coh_clk_i(clk_i)
    ,.coh_reset_i(reset_i)
+
+   ,.io_clk_i(clk_i)
+   ,.io_reset_i(reset_i)
 
    ,.mem_clk_i(clk_i)
    ,.mem_reset_i(reset_i)
@@ -132,7 +135,7 @@ bp_host_remote_domain_proxy_node
    ,.reset_i(reset_i)
 
    ,.my_did_i(dram_did_li)
-   ,.my_cord_i(mem_noc_cord_width_p'(dram_did_li))
+   ,.my_cord_i(io_noc_cord_width_p'(dram_did_li))
 
    ,.on_cmd_link_i(cmd_link_li[P])
    ,.on_cmd_link_o(cmd_link_lo[P])
@@ -339,8 +342,8 @@ bind bp_be_top
         ,.mem_cmd_ready_i(mem_cmd_ready_i)
         );
 
-wire [mem_noc_did_width_p-1:0]  dst_did_lo  = 1;
-wire [mem_noc_cord_width_p-1:0] dst_cord_lo = '1;
+wire [io_noc_did_width_p-1:0]  dst_did_lo  = 1;
+wire [io_noc_cord_width_p-1:0] dst_cord_lo = '1;
 
 // Host + cfg link 
 bp_me_cce_to_wormhole_link_bidir
@@ -366,7 +369,7 @@ bp_me_cce_to_wormhole_link_bidir
   ,.mem_resp_ready_o(host_resp_ready_li)
 
   ,.my_did_i(dram_did_li)
-  ,.my_cord_i(mem_noc_cord_width_p'(dram_did_li))
+  ,.my_cord_i(io_noc_cord_width_p'(dram_did_li))
   ,.dst_did_i(dst_did_lo)
   ,.dst_cord_i(dst_cord_lo)
      
