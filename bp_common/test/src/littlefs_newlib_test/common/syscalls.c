@@ -67,7 +67,7 @@ uintptr_t __attribute__((weak)) handle_trap(uintptr_t cause, uintptr_t epc, uint
 void exit(int code)
 {
   uint64_t mhartid = read_csr(mhartid);
-  uint64_t *finish_address = (uint64_t*)(0x03002000 + (mhartid << 3));
+  uint64_t *finish_address = (uint64_t*)(0x00102000 + (mhartid << 3));
   *finish_address = code;
   while (1);
 }
@@ -75,7 +75,7 @@ void exit(int code)
 int putchar(int c) {
   char ch = (char)c;
   uint64_t mhartid = read_csr(mhartid);
-  char* ch_ptr = (char*)(0x03001000 + (mhartid << 3));
+  char* ch_ptr = (char*)(0x00101000 + (mhartid << 3));
   *ch_ptr = ch;
   return 0;
 }
