@@ -25,7 +25,25 @@ localparam max_ioc_cce_lp = max_sac_cce_lp + num_io_p;
 wire external_io_li = (global_addr_li.did > '0);
 
 localparam block_offset_lp = `BSG_SAFE_CLOG2(cce_block_width_p/8);
-always_comb
+localparam lg_lce_sets_lp = `BSG_SAFE_CLOG2(lce_sets_p);
+localparam lg_num_cce_lp = `BSG_SAFE_CLOG2(num_cce_p);
+
+// convert miss address (excluding block offset bits) into CCE ID
+// For now, assume all CCE's have ID [0,num_core_p-1] and addresses are striped
+// at the cache block granularity
+logic [lg_num_cce_lp-1:0] cce_dst_id_lo;
+bsg_hash_bank
+  #(.banks_p(num_cce_p) // number of CCE's to spread way groups over
+    ,.width_p(lg_lce_sets_lp) // width of address input
+    )
+  addr_to_cce_id
+   (.i({<< {paddr_i[block_offset_lp+:lg_lce_sets_lp]}})
+    ,.bank_o(cce_dst_id_lo)
+    ,.index_o()
+    );
+
+always_comb begin
+  cce_id_o = '0;
   if (external_io_li || (local_addr_li.dev == host_dev_gp))
     // Stripe by 4kiB page, start at io CCE id
     cce_id_o = (num_io_p > 1)
@@ -36,10 +54,11 @@ always_comb
     cce_id_o = local_addr_li.cce;
   else if ((paddr_i >= dram_base_addr_gp) && (paddr_i < coproc_base_addr_gp))
     // Stripe by cache line
-    cce_id_o = (num_cce_p > 1) ? paddr_i[block_offset_lp+:`BSG_SAFE_CLOG2(num_cce_p)] : '0;
+    cce_id_o[0+:lg_num_cce_lp] = cce_dst_id_lo;
   else
     // TODO: Coprocessor address space, figure out.  Probably striped by CCEs within the AC
     cce_id_o = '0;
+end
 
 endmodule
 

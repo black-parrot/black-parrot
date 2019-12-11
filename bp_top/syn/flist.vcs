@@ -102,6 +102,8 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset_en.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_encode_one_hot.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_expand_bitmask.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_hash_bank.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_hash_bank_reverse.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lfsr.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_decode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_encode.v
@@ -115,6 +117,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_nand.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_priority_encode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_priority_encode_one_hot_out.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_reduce.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_reduce_segmented.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_round_robin_arb.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_scan.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_strobe.v
