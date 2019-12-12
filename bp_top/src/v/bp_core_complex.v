@@ -33,7 +33,7 @@ module bp_core_complex
    , input                                                            mem_clk_i
    , input                                                            mem_reset_i
 
-   , input [mem_noc_did_width_p-1:0]                                  my_did_i
+   , input [io_noc_did_width_p-1:0]                                   my_did_i
 
    , input [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_req_link_i
    , output [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_req_link_o

@@ -1,7 +1,7 @@
 
-`include "bp_io_mesh.vh"
+`include "bp_mem_wormhole.vh"
 
-module bp_me_mesh_packet_encode_io_cmd
+module bp_me_wormhole_packet_encode_io_cmd
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_cce_pkg::*;

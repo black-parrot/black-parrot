@@ -30,7 +30,6 @@ module bp_be_top
    , input [cfg_bus_width_lp-1:0]            cfg_bus_i
    , output [dword_width_p-1:0]              cfg_irf_data_o
    , output [vaddr_width_p-1:0]              cfg_npc_data_o
-   , output                                  cfg_haz_v_o
    , output [dword_width_p-1:0]              cfg_csr_data_o
    , output [1:0]                            cfg_priv_data_o
 
@@ -119,9 +118,6 @@ bp_be_commit_pkt_s commit_pkt;
 bp_be_trap_pkt_s trap_pkt;
 bp_be_wb_pkt_s wb_pkt;
 logic wb_pkt_v;
-
-// TODO: connect to proper source
-assign cfg_haz_v_o = '0;
 
 logic flush;
 // Module instantiations

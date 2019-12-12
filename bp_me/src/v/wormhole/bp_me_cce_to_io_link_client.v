@@ -2,9 +2,9 @@
  * bp_me_cce_to_wormhole_link_client.v
  */
 
-`include "bp_io_mesh.vh"
+`include "bp_mem_wormhole.vh"
 
-module bp_me_cce_to_mesh_link_client
+module bp_me_cce_to_io_link_client
   import bp_cce_pkg::*;
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;

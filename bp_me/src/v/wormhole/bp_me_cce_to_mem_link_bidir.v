@@ -1,5 +1,5 @@
 
-module bp_me_cce_to_wormhole_link_bidir
+module bp_me_cce_to_mem_link_bidir
  import bp_cce_pkg::*;
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
@@ -15,10 +15,8 @@ module bp_me_cce_to_wormhole_link_bidir
    , input                                        reset_i
 
    // Configuration
-   , input [mem_noc_did_width_p-1:0]              my_did_i
    , input [mem_noc_cord_width_p-1:0]             my_cord_i
    , input [mem_noc_cord_width_p-1:0]             dst_cord_i
-   , input [mem_noc_did_width_p-1:0]              dst_did_i
 
    // Master link
    , input  [cce_mem_msg_width_lp-1:0]            mem_cmd_i
@@ -75,7 +73,7 @@ assign resp_link_cast_o    = '{data          : client_resp_link_lo.data
                                ,ready_and_rev: master_resp_link_lo.ready_and_rev
                                };
 
-bp_me_cce_to_wormhole_link_master
+bp_me_cce_to_mem_link_master
  #(.bp_params_p(bp_params_p))
   master_link
   (.clk_i(clk_i)
@@ -89,9 +87,7 @@ bp_me_cce_to_wormhole_link_master
   ,.mem_resp_v_o(mem_resp_v_o)
   ,.mem_resp_yumi_i(mem_resp_yumi_i)
 
-  ,.my_did_i(my_did_i)
   ,.my_cord_i(my_cord_i)
-  ,.dst_did_i(dst_did_i)
   ,.dst_cord_i(dst_cord_i)
   
   ,.cmd_link_i(master_cmd_link_li)
@@ -101,7 +97,7 @@ bp_me_cce_to_wormhole_link_master
   ,.resp_link_o(master_resp_link_lo)
   );
 
-bp_me_cce_to_wormhole_link_client
+bp_me_cce_to_mem_link_client
  #(.bp_params_p(bp_params_p))
   client_link
   (.clk_i(clk_i)

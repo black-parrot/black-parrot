@@ -184,7 +184,7 @@ module bp_io_tile
   assign dst_did_lo  = is_host_addr ? '1 : global_addr_lo.did;
   assign dst_cord_lo = dst_did_lo;
 
-  bp_me_cce_to_wormhole_link_bidir
+  bp_me_cce_to_mem_link_bidir
    #(.bp_params_p(bp_params_p))
    io_link
     (.clk_i(clk_i)
@@ -206,9 +206,7 @@ module bp_io_tile
      ,.mem_resp_v_i(lce_io_resp_v_lo)
      ,.mem_resp_ready_o(lce_io_resp_ready_li)
 
-     ,.my_did_i(my_did_i)
      ,.my_cord_i(io_noc_cord_width_p'(my_did_i))
-     ,.dst_did_i(dst_did_lo)
      ,.dst_cord_i(dst_cord_lo)
 
      ,.cmd_link_i(io_cmd_link_i)

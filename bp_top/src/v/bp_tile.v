@@ -29,7 +29,7 @@ module bp_tile
    , input                                                    reset_i
 
    // Memory side connection
-   , input [mem_noc_did_width_p-1:0]                          my_did_i
+   , input [io_noc_did_width_p-1:0]                           my_did_i
    , input [mem_noc_cord_width_p-1:0]                         my_cord_i
 
    // Connected to other tiles on east and west
@@ -171,7 +171,6 @@ bp_core
    ,.cfg_bus_i(cfg_bus_lo)
    ,.cfg_irf_data_o(cfg_irf_data_li)
    ,.cfg_npc_data_o(cfg_npc_data_li)
-   ,.cfg_haz_v_o(cfg_haz_v_li)
    ,.cfg_csr_data_o(cfg_csr_data_li)
    ,.cfg_priv_data_o(cfg_priv_data_li)
 
@@ -522,10 +521,9 @@ for (genvar i = 0; i < 2; i++)
      );
 
   localparam dram_y_cord_lp = ioc_y_dim_p + cc_y_dim_p + mc_y_dim_p;
-  wire [mem_noc_did_width_p-1:0]  dst_did_li  = my_did_i;
   wire [mem_noc_cord_width_p-1:0] dst_cord_li = 
       {mem_noc_y_cord_width_p'(dram_y_cord_lp), my_cord_i[0+:mem_noc_x_cord_width_p]};
-  bp_me_cce_to_wormhole_link_master
+  bp_me_cce_to_mem_link_master
    #(.bp_params_p(bp_params_p))
    dma_link
     (.clk_i(clk_i)
@@ -539,9 +537,7 @@ for (genvar i = 0; i < 2; i++)
      ,.mem_resp_v_o(dma_mem_resp_v_li)
      ,.mem_resp_yumi_i(dma_mem_resp_ready_lo & dma_mem_resp_v_li)
 
-     ,.my_did_i(my_did_i)
      ,.my_cord_i(my_cord_i)
-     ,.dst_did_i(dst_did_li)
      ,.dst_cord_i(dst_cord_li)
 
      ,.cmd_link_i(mem_cmd_link_i)
