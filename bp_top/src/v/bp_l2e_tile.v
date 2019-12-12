@@ -24,7 +24,7 @@ module bp_l2e_tile
    , input                                                    reset_i
 
    // Memory side connection
-   , input [mem_noc_did_width_p-1:0]                          my_did_i
+   , input [io_noc_did_width_p-1:0]                           my_did_i
    , input [mem_noc_cord_width_p-1:0]                         my_cord_i
 
    // Connected to other tiles on east and west
@@ -274,7 +274,7 @@ bp_coh_ready_and_link_s cce_lce_resp_link_li, cce_lce_resp_link_lo;
      );
 
   localparam dram_y_cord_lp = ioc_y_dim_p + cc_y_dim_p + mc_y_dim_p;
-  wire [mem_noc_did_width_p-1:0]  dst_did_li  = my_did_i;
+  wire [io_noc_did_width_p-1:0]  dst_did_li  = my_did_i;
   wire [mem_noc_cord_width_p-1:0] dst_cord_li = 
       {mem_noc_y_cord_width_p'(dram_y_cord_lp), my_cord_i[0+:mem_noc_x_cord_width_p]};
   bp_me_cce_to_wormhole_link_master

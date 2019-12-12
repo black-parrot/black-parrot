@@ -50,12 +50,11 @@ package bp_common_aviary_pkg;
 
       ,async_mem_clk         : 0
       ,mem_noc_flit_width    : 96
-      ,mem_noc_did_width     : 3
       ,mem_noc_len_width     : 5
 
       ,async_io_clk         : 0
-      ,io_noc_flit_width    : 96
       ,io_noc_did_width     : 3
+      ,io_noc_flit_width    : 96
       ,io_noc_len_width     : 5
       };
 
@@ -99,12 +98,11 @@ package bp_common_aviary_pkg;
 
       ,async_mem_clk         : 0
       ,mem_noc_flit_width    : 96
-      ,mem_noc_did_width     : 3
       ,mem_noc_len_width     : 5
 
       ,async_io_clk         : 0
-      ,io_noc_flit_width    : 96
       ,io_noc_did_width     : 3
+      ,io_noc_flit_width    : 96
       ,io_noc_len_width     : 5
       };
 
@@ -149,12 +147,11 @@ package bp_common_aviary_pkg;
 
       ,async_mem_clk         : 0
       ,mem_noc_flit_width    : 96
-      ,mem_noc_did_width     : 3
       ,mem_noc_len_width     : 5
 
       ,async_io_clk         : 0
-      ,io_noc_flit_width    : 96
       ,io_noc_did_width     : 3
+      ,io_noc_flit_width    : 96
       ,io_noc_len_width     : 5
       };
 
@@ -198,12 +195,11 @@ package bp_common_aviary_pkg;
 
       ,async_mem_clk         : 0
       ,mem_noc_flit_width    : 96
-      ,mem_noc_did_width     : 3
       ,mem_noc_len_width     : 5
 
       ,async_io_clk         : 0
-      ,io_noc_flit_width    : 96
       ,io_noc_did_width     : 3
+      ,io_noc_flit_width    : 96
       ,io_noc_len_width     : 5
       };
 
@@ -247,12 +243,11 @@ package bp_common_aviary_pkg;
 
       ,async_mem_clk         : 0
       ,mem_noc_flit_width    : 96
-      ,mem_noc_did_width     : 3
       ,mem_noc_len_width     : 5
 
       ,async_io_clk         : 0
-      ,io_noc_flit_width    : 96
       ,io_noc_did_width     : 3
+      ,io_noc_flit_width    : 96
       ,io_noc_len_width     : 5
       };
 
@@ -296,12 +291,11 @@ package bp_common_aviary_pkg;
 
       ,async_mem_clk         : 0
       ,mem_noc_flit_width    : 96
-      ,mem_noc_did_width     : 3
       ,mem_noc_len_width     : 5
 
       ,async_io_clk         : 0
-      ,io_noc_flit_width    : 96
       ,io_noc_did_width     : 3
+      ,io_noc_flit_width    : 96
       ,io_noc_len_width     : 5
       };
 

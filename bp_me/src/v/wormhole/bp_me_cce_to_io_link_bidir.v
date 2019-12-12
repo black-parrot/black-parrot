@@ -1,7 +1,7 @@
 
-`include "bp_io_mesh.vh"
+`include "bp_mem_wormhole.vh"
 
-module bp_me_cce_to_wormhole_link_bidir
+module bp_me_cce_to_io_link_bidir
  import bp_cce_pkg::*;
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
@@ -10,8 +10,6 @@ module bp_me_cce_to_wormhole_link_bidir
   `declare_bp_proc_params(bp_params_p)
   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
-  , localparam io_cmd_payload_width_lp  = `bp_io_mesh_payload_width(io_noc_cord_width_p, cce_mem_msg_width_lp)
-  , localparam io_resp_payload_width_lp = `bp_io_mesh_payload_width(io_noc_cord_width_p, cce_mem_msg_width_lp)
   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(io_noc_flit_width_p)
   )
 
@@ -78,7 +76,7 @@ assign resp_link_cast_o    = '{data          : client_resp_link_lo.data
                                ,ready_and_rev: master_resp_link_lo.ready_and_rev
                                };
 
-bp_me_cce_to_mesh_link_master
+bp_me_cce_to_io_link_master
  #(.bp_params_p(bp_params_p))
   master_link
   (.clk_i(clk_i)
@@ -104,7 +102,7 @@ bp_me_cce_to_mesh_link_master
   ,.resp_link_o(master_resp_link_lo)
   );
 
-bp_me_cce_to_mesh_link_client
+bp_me_cce_to_io_link_client
  #(.bp_params_p(bp_params_p))
   client_link
   (.clk_i(clk_i)

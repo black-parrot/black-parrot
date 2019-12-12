@@ -32,7 +32,7 @@ module bp_tile_node
    , input                                       mem_reset_i
 
    // Memory side connection
-   , input [mem_noc_did_width_p-1:0]             my_did_i
+   , input [io_noc_did_width_p-1:0]              my_did_i
    , input [mem_noc_cord_width_p-1:0]            my_cord_i
 
    // Connected to other tiles on east and west

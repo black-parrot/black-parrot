@@ -55,7 +55,7 @@ module bp_mem_complex
 
   for (genvar i = 0; i < cc_x_dim_p; i++)
     begin : links
-      bp_me_cce_to_wormhole_link_client
+      bp_me_cce_to_mem_link_client
        #(.bp_params_p(bp_params_p))
        dram_link
         (.clk_i(mem_clk_i)

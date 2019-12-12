@@ -121,35 +121,6 @@ wrapper
    ,.dram_resp_ready_o(dram_resp_ready_li)
    );
 
-assign cmd_link_li[W]  = proc_cmd_link_lo;
-assign cmd_link_li[E]  = '0;
-assign resp_link_li[W] = proc_resp_link_lo;
-assign resp_link_li[E] = '0;
-
-assign proc_cmd_link_li = cmd_link_lo[W];
-assign proc_resp_link_li = resp_link_lo[W];
-bp_host_remote_domain_proxy_node
- #(.bp_params_p(bp_params_p))
- rdp
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-
-   ,.my_did_i(dram_did_li)
-   ,.my_cord_i(io_noc_cord_width_p'(dram_did_li))
-
-   ,.on_cmd_link_i(cmd_link_li[P])
-   ,.on_cmd_link_o(cmd_link_lo[P])
-
-   ,.on_resp_link_i(resp_link_li[P])
-   ,.on_resp_link_o(resp_link_lo[P])
-
-   ,.off_cmd_link_i(cmd_link_li[E:W])
-   ,.off_cmd_link_o(cmd_link_lo[E:W])
-
-   ,.off_resp_link_i(resp_link_li[E:W])
-   ,.off_resp_link_o(resp_link_lo[E:W])
-   );
-
   bind bp_be_top
     bp_nonsynth_commit_tracer
      #(.bp_params_p(bp_params_p))
@@ -342,11 +313,10 @@ bind bp_be_top
         ,.mem_cmd_ready_i(mem_cmd_ready_i)
         );
 
-wire [io_noc_did_width_p-1:0]  dst_did_lo  = 1;
-wire [io_noc_cord_width_p-1:0] dst_cord_lo = '1;
+wire [io_noc_cord_width_p-1:0] dst_cord_lo = 1;
 
 // Host + cfg link 
-bp_me_cce_to_wormhole_link_bidir
+bp_me_cce_to_mem_link_bidir
  #(.bp_params_p(bp_params_p))
  host_cfg_link
   (.clk_i(clk_i)
@@ -368,16 +338,14 @@ bp_me_cce_to_wormhole_link_bidir
   ,.mem_resp_v_i(host_resp_v_lo)
   ,.mem_resp_ready_o(host_resp_ready_li)
 
-  ,.my_did_i(dram_did_li)
   ,.my_cord_i(io_noc_cord_width_p'(dram_did_li))
-  ,.dst_did_i(dst_did_lo)
   ,.dst_cord_i(dst_cord_lo)
      
-  ,.cmd_link_i(cmd_link_lo[P])
-  ,.cmd_link_o(cmd_link_li[P])
+  ,.cmd_link_i(proc_cmd_link_lo)
+  ,.cmd_link_o(proc_cmd_link_li)
 
-  ,.resp_link_i(resp_link_lo[P])
-  ,.resp_link_o(resp_link_li[P])
+  ,.resp_link_i(proc_resp_link_lo)
+  ,.resp_link_o(proc_resp_link_li)
   );
 
 logic [`BSG_SAFE_CLOG2(cc_x_dim_p)-1:0] dram_ch_tag_li;
