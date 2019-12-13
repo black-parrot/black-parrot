@@ -197,7 +197,7 @@ clean:
 	-$(MAKE) -C $(TEST_DIR)/src/riscv-dv clean
 	-rm -rf $(TEST_DIR)/src/bsg_newlib_dramfs/build-newlib 
 	-rm -rf $(TEST_DIR)/src/bsg_newlib_dramfs/install-newlib
-	-rm -ff $(MEM_DIR)/*
+	-rm -rf $(MEM_DIR)/*
 
 ####### These targets are not maintained at the moment
 #
