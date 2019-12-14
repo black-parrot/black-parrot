@@ -132,10 +132,12 @@ typedef struct packed
   integer coh_noc_len_width;
 
   integer async_mem_clk;
+  integer mem_noc_max_credits;
   integer mem_noc_flit_width;
   integer mem_noc_len_width;
 
   integer async_io_clk;
+  integer io_noc_max_credits;
   integer io_noc_did_width;
   integer io_noc_flit_width;
   integer io_noc_len_width;
@@ -227,6 +229,7 @@ typedef struct packed
       '{coh_noc_cord_width_p, coh_noc_x_cord_width_p, 0}                                           \
                                                                                                    \
   , localparam async_mem_clk_p           = proc_param_lp.async_mem_clk                             \
+  , localparam mem_noc_max_credits_p     = proc_param_lp.mem_noc_max_credits                       \
   , localparam mem_noc_flit_width_p      = proc_param_lp.mem_noc_flit_width                        \
   , localparam mem_noc_len_width_p       = proc_param_lp.mem_noc_len_width                         \
   , localparam mem_noc_y_cord_width_p    = `BSG_SAFE_CLOG2(ioc_y_dim_p+cc_y_dim_p+mc_y_dim_p) + 2  \
@@ -238,6 +241,7 @@ typedef struct packed
       '{mem_noc_cord_width_p, mem_noc_x_cord_width_p, 0}                                           \
                                                                                                    \
   , localparam async_io_clk_p           = proc_param_lp.async_io_clk                               \
+  , localparam io_noc_max_credits_p     = proc_param_lp.io_noc_max_credits                         \
   , localparam io_noc_did_width_p       = proc_param_lp.io_noc_did_width                           \
   , localparam io_noc_flit_width_p      = proc_param_lp.io_noc_flit_width                          \
   , localparam io_noc_len_width_p       = proc_param_lp.io_noc_len_width                           \
