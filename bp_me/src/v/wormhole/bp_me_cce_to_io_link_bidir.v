@@ -1,6 +1,4 @@
 
-`include "bp_mem_wormhole.vh"
-
 module bp_me_cce_to_io_link_bidir
  import bp_cce_pkg::*;
  import bp_common_pkg::*;
@@ -8,7 +6,7 @@ module bp_me_cce_to_io_link_bidir
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+  `declare_bp_io_if_widths(paddr_width_p, dword_width_p, lce_id_width_p)
 
   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(io_noc_flit_width_p)
   )
@@ -21,20 +19,20 @@ module bp_me_cce_to_io_link_bidir
    , input [io_noc_cord_width_p-1:0]              dst_cord_i
 
    // Master link
-   , input  [cce_mem_msg_width_lp-1:0]            io_cmd_i
+   , input  [cce_io_msg_width_lp-1:0]             io_cmd_i
    , input                                        io_cmd_v_i
    , output                                       io_cmd_ready_o
 
-   , output [cce_mem_msg_width_lp-1:0]            io_resp_o
+   , output [cce_io_msg_width_lp-1:0]             io_resp_o
    , output                                       io_resp_v_o
    , input                                        io_resp_yumi_i
 
    // Client link
-   , output  [cce_mem_msg_width_lp-1:0]           io_cmd_o
+   , output  [cce_io_msg_width_lp-1:0]            io_cmd_o
    , output                                       io_cmd_v_o
    , input                                        io_cmd_yumi_i
 
-   , input [cce_mem_msg_width_lp-1:0]             io_resp_i
+   , input [cce_io_msg_width_lp-1:0]              io_resp_i
    , input                                        io_resp_v_i
    , output                                       io_resp_ready_o
 
@@ -46,8 +44,7 @@ module bp_me_cce_to_io_link_bidir
    , output [bsg_ready_and_link_sif_width_lp-1:0] resp_link_o
    );
 
-`declare_bsg_mesh_packet_s(io_noc_cord_width_p, io_cmd_payload_width_lp, bp_io_cmd_packet_s);
-`declare_bsg_ready_and_link_sif_s($bits(bp_io_cmd_packet_s), bsg_ready_and_link_sif_s);
+`declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bsg_ready_and_link_sif_s);
 bsg_ready_and_link_sif_s cmd_link_cast_i, cmd_link_cast_o;
 bsg_ready_and_link_sif_s resp_link_cast_i, resp_link_cast_o;
 
@@ -90,9 +87,7 @@ bp_me_cce_to_io_link_master
   ,.io_resp_v_o(io_resp_v_o)
   ,.io_resp_yumi_i(io_resp_yumi_i)
 
-  ,.my_did_i(my_did_i)
   ,.my_cord_i(my_cord_i)
-  ,.dst_did_i(dst_did_i)
   ,.dst_cord_i(dst_cord_i)
   
   ,.cmd_link_i(master_cmd_link_li)

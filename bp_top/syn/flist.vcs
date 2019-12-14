@@ -205,16 +205,16 @@ $BP_ME_DIR/src/v/cce/bp_io_cce.v
 # Network
 $BP_ME_DIR/src/v/wormhole/bp_me_addr_to_cce_id.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_id_to_cord.v
-#$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_io_link_bidir.v
-#$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_io_link_client.v
-#$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_io_link_master.v
+$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_io_link_bidir.v
+$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_io_link_client.v
+$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_io_link_master.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_mem_link_bidir.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_mem_link_client.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_mem_link_master.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cord_to_id.v
 $BP_ME_DIR/src/v/wormhole/bp_me_lce_id_to_cord.v
-#$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_io_cmd.v
-#$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_io_resp.v
+$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_io_cmd.v
+$BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_io_resp.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_cmd.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_req.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.v

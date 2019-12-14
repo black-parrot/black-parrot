@@ -13,8 +13,7 @@ module bp_me_cce_to_mem_link_client
   `declare_bp_proc_params(bp_params_p)
   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
   
-  // TODO: Should be related to network credits
-  , localparam num_outstanding_req_p           = 16
+  , localparam num_outstanding_req_p           = mem_noc_max_credits_p
   // wormhole parameters
   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
   )

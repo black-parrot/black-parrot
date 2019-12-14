@@ -12,6 +12,7 @@ module testbench
  import bp_be_pkg::*;
  import bp_common_rv64_pkg::*;
  import bp_cce_pkg::*;
+ import bp_me_pkg::*;
  import bp_common_cfg_link_pkg::*;
  import bsg_noc_pkg::*;
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
@@ -51,6 +52,7 @@ module testbench
 
 `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bsg_ready_and_link_sif_s);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+`declare_bp_io_if(paddr_width_p, dword_width_p, lce_id_width_p)
 
 bsg_ready_and_link_sif_s [E:P] cmd_link_li, cmd_link_lo;
 bsg_ready_and_link_sif_s [E:P] resp_link_li, resp_link_lo;
@@ -71,14 +73,14 @@ logic                  dram_ch_cmd_v_li, dram_ch_cmd_yumi_lo;
 bp_cce_mem_msg_s       dram_ch_resp_lo;
 logic                  dram_ch_resp_v_lo, dram_ch_resp_ready_li;
 
-bp_cce_mem_msg_s       host_cmd_li;
+bp_cce_io_msg_s        host_cmd_li;
 logic                  host_cmd_v_li, host_cmd_yumi_lo;
-bp_cce_mem_msg_s       host_resp_lo;
+bp_cce_io_msg_s        host_resp_lo;
 logic                  host_resp_v_lo, host_resp_ready_li;
 
-bp_cce_mem_msg_s       cfg_cmd_lo;
+bp_cce_io_msg_s        cfg_cmd_lo;
 logic                  cfg_cmd_v_lo, cfg_cmd_ready_li;
-bp_cce_mem_msg_s       cfg_resp_li;
+bp_cce_io_msg_s        cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
 wire [io_noc_did_width_p-1:0] dram_did_li = '1;
@@ -316,27 +318,27 @@ bind bp_be_top
 wire [io_noc_cord_width_p-1:0] dst_cord_lo = 1;
 
 // Host + cfg link 
-bp_me_cce_to_mem_link_bidir
+bp_me_cce_to_io_link_bidir
  #(.bp_params_p(bp_params_p))
  host_cfg_link
   (.clk_i(clk_i)
   ,.reset_i(reset_i)
 
-  ,.mem_cmd_i(cfg_cmd_lo)
-  ,.mem_cmd_v_i(cfg_cmd_ready_li & cfg_cmd_v_lo)
-  ,.mem_cmd_ready_o(cfg_cmd_ready_li)
+  ,.io_cmd_i(cfg_cmd_lo)
+  ,.io_cmd_v_i(cfg_cmd_ready_li & cfg_cmd_v_lo)
+  ,.io_cmd_ready_o(cfg_cmd_ready_li)
 
-  ,.mem_resp_o(cfg_resp_li)
-  ,.mem_resp_v_o(cfg_resp_v_li)
-  ,.mem_resp_yumi_i(cfg_resp_ready_lo & cfg_resp_v_li)
+  ,.io_resp_o(cfg_resp_li)
+  ,.io_resp_v_o(cfg_resp_v_li)
+  ,.io_resp_yumi_i(cfg_resp_ready_lo & cfg_resp_v_li)
 
-  ,.mem_cmd_o(host_cmd_li)
-  ,.mem_cmd_v_o(host_cmd_v_li)
-  ,.mem_cmd_yumi_i(host_cmd_yumi_lo)
+  ,.io_cmd_o(host_cmd_li)
+  ,.io_cmd_v_o(host_cmd_v_li)
+  ,.io_cmd_yumi_i(host_cmd_yumi_lo)
 
-  ,.mem_resp_i(host_resp_lo)
-  ,.mem_resp_v_i(host_resp_v_lo)
-  ,.mem_resp_ready_o(host_resp_ready_li)
+  ,.io_resp_i(host_resp_lo)
+  ,.io_resp_v_i(host_resp_v_lo)
+  ,.io_resp_ready_o(host_resp_ready_li)
 
   ,.my_cord_i(io_noc_cord_width_p'(dram_did_li))
   ,.dst_cord_i(dst_cord_lo)
@@ -427,13 +429,13 @@ bp_nonsynth_host
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.mem_cmd_i(host_cmd_li)
-   ,.mem_cmd_v_i(host_cmd_v_li)
-   ,.mem_cmd_yumi_o(host_cmd_yumi_lo)
+   ,.io_cmd_i(host_cmd_li)
+   ,.io_cmd_v_i(host_cmd_v_li)
+   ,.io_cmd_yumi_o(host_cmd_yumi_lo)
 
-   ,.mem_resp_o(host_resp_lo)
-   ,.mem_resp_v_o(host_resp_v_lo)
-   ,.mem_resp_ready_i(host_resp_ready_li)
+   ,.io_resp_o(host_resp_lo)
+   ,.io_resp_v_o(host_resp_v_lo)
+   ,.io_resp_ready_i(host_resp_ready_li)
 
    ,.program_finish_o(program_finish)
    );
@@ -450,13 +452,13 @@ bp_cce_mmio_cfg_loader
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    
-   ,.mem_cmd_o(cfg_cmd_lo)
-   ,.mem_cmd_v_o(cfg_cmd_v_lo)
-   ,.mem_cmd_yumi_i(cfg_cmd_ready_li & cfg_cmd_v_lo)
+   ,.io_cmd_o(cfg_cmd_lo)
+   ,.io_cmd_v_o(cfg_cmd_v_lo)
+   ,.io_cmd_yumi_i(cfg_cmd_ready_li & cfg_cmd_v_lo)
    
-   ,.mem_resp_i(cfg_resp_li)
-   ,.mem_resp_v_i(cfg_resp_v_li)
-   ,.mem_resp_ready_o(cfg_resp_ready_lo)
+   ,.io_resp_i(cfg_resp_li)
+   ,.io_resp_v_i(cfg_resp_v_li)
+   ,.io_resp_ready_o(cfg_resp_ready_lo)
   );
 
 bp_nonsynth_if_verif

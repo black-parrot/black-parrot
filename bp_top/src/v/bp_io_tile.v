@@ -7,7 +7,7 @@ module bp_io_tile
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+   `declare_bp_io_if_widths(paddr_width_p, dword_width_p, lce_id_width_p)
 
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
    , localparam io_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(io_noc_flit_width_p)
@@ -31,9 +31,8 @@ module bp_io_tile
    , output [io_noc_ral_link_width_lp-1:0]  io_resp_link_o
    );
 
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
+  `declare_bp_io_if(paddr_width_p, dword_width_p, lce_id_width_p);
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
-
   `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_req_width_lp, lce_req_packet_s);
   `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cmd_width_lp, lce_cmd_packet_s);
 
@@ -42,9 +41,9 @@ module bp_io_tile
   bp_lce_cmd_s cce_lce_cmd_lo, lce_lce_cmd_li;
   logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_li, lce_lce_cmd_v_li, lce_lce_cmd_yumi_lo;
 
-  bp_cce_mem_msg_s cce_io_cmd_lo, lce_io_cmd_li;
+  bp_cce_io_msg_s cce_io_cmd_lo, lce_io_cmd_li;
   logic cce_io_cmd_v_lo, cce_io_cmd_ready_li, lce_io_cmd_v_li, lce_io_cmd_yumi_lo;
-  bp_cce_mem_msg_s cce_io_resp_li, lce_io_resp_lo;
+  bp_cce_io_msg_s cce_io_resp_li, lce_io_resp_lo;
   logic cce_io_resp_v_li, cce_io_resp_yumi_lo, lce_io_resp_v_lo, lce_io_resp_ready_li;
 
   logic [cce_id_width_p-1:0]  cce_id_li;
@@ -184,27 +183,27 @@ module bp_io_tile
   assign dst_did_lo  = is_host_addr ? '1 : global_addr_lo.did;
   assign dst_cord_lo = dst_did_lo;
 
-  bp_me_cce_to_mem_link_bidir
+  bp_me_cce_to_io_link_bidir
    #(.bp_params_p(bp_params_p))
    io_link
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_cmd_i(cce_io_cmd_lo)
-     ,.mem_cmd_v_i(cce_io_cmd_v_lo)
-     ,.mem_cmd_ready_o(cce_io_cmd_ready_li)
+     ,.io_cmd_i(cce_io_cmd_lo)
+     ,.io_cmd_v_i(cce_io_cmd_v_lo)
+     ,.io_cmd_ready_o(cce_io_cmd_ready_li)
 
-     ,.mem_resp_o(cce_io_resp_li)
-     ,.mem_resp_v_o(cce_io_resp_v_li)
-     ,.mem_resp_yumi_i(cce_io_resp_yumi_lo)
+     ,.io_resp_o(cce_io_resp_li)
+     ,.io_resp_v_o(cce_io_resp_v_li)
+     ,.io_resp_yumi_i(cce_io_resp_yumi_lo)
 
-     ,.mem_cmd_o(lce_io_cmd_li)
-     ,.mem_cmd_v_o(lce_io_cmd_v_li)
-     ,.mem_cmd_yumi_i(lce_io_cmd_yumi_lo)
+     ,.io_cmd_o(lce_io_cmd_li)
+     ,.io_cmd_v_o(lce_io_cmd_v_li)
+     ,.io_cmd_yumi_i(lce_io_cmd_yumi_lo)
 
-     ,.mem_resp_i(lce_io_resp_lo)
-     ,.mem_resp_v_i(lce_io_resp_v_lo)
-     ,.mem_resp_ready_o(lce_io_resp_ready_li)
+     ,.io_resp_i(lce_io_resp_lo)
+     ,.io_resp_v_i(lce_io_resp_v_lo)
+     ,.io_resp_ready_o(lce_io_resp_ready_li)
 
      ,.my_cord_i(io_noc_cord_width_p'(my_did_i))
      ,.dst_cord_i(dst_cord_lo)
