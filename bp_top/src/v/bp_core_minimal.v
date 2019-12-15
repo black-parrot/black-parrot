@@ -30,6 +30,7 @@ module bp_core_minimal
     , input [cfg_bus_width_lp-1:0] cfg_bus_i
     , output [vaddr_width_p-1:0] cfg_npc_data_o
     , output [dword_width_p-1:0] cfg_irf_data_o
+    , output [dword_width_p-1:0] cfg_frf_data_o
     , output [dword_width_p-1:0] cfg_csr_data_o
     , output [1:0] cfg_priv_data_o
 
@@ -195,6 +196,7 @@ module bp_core_minimal
      ,.cfg_bus_i(cfg_bus_i)
      ,.cfg_npc_data_o(cfg_npc_data_o)
      ,.cfg_irf_data_o(cfg_irf_data_o)
+     ,.cfg_frf_data_o(cfg_frf_data_o)
      ,.cfg_csr_data_o(cfg_csr_data_o)
      ,.cfg_priv_data_o(cfg_priv_data_o)
 

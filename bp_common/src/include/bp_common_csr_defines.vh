@@ -327,7 +327,7 @@ typedef struct packed
 {
   // State Dirty
   // 0 - FS and XS are both != 11
-  // 1 - set if FS or SX == 11
+  // 1 - set if FS or XS == 11
   //  Note: readonly
   logic        sd;
   logic [26:0] wpri1;
@@ -886,6 +886,30 @@ typedef struct packed
   '{ir : data_comp_mp.ir \
     ,cy: data_comp_mp.cy \
     ,default: '0         \
+    }
+
+typedef struct packed
+{
+  logic [23:0] warl;
+  logic [2:0]  frm;
+  logic [4:0]  fflags;
+}  rv64_fcsr_s;
+
+typedef struct packed
+{
+  logic [2:0] frm;
+  logic [4:0] fflags;
+}  bp_fcsr_s;
+
+`define compress_fcsr_s(data_cast_mp) \
+  '{frm    : data_cast_mp.frm    \
+    ,fflags: data_cast_mp.fflags \
+    }
+
+`define decompress_fcsr_s(data_comp_mp) \
+  '{frm     : data_comp_mp.frm    \
+    ,fflags : data_comp_mp.fflags \
+    ,default: '0                  \
     }
 
 typedef struct packed

@@ -60,6 +60,10 @@ typedef enum logic [15:0]{
     logic                                    irf_r_v;                                              \
     logic [reg_addr_width_p-1:0]             irf_addr;                                             \
     logic [dword_width_p-1:0]                irf_data;                                             \
+    logic                                    frf_w_v;                                              \
+    logic                                    frf_r_v;                                              \
+    logic [reg_addr_width_p-1:0]             frf_addr;                                             \
+    logic [dword_width_p-1:0]                frf_data;                                             \
     logic                                    csr_w_v;                                              \
     logic                                    csr_r_v;                                              \
     logic [csr_addr_width_p-1:0]             csr_addr;                                             \
@@ -84,6 +88,9 @@ typedef enum logic [15:0]{
    + 2                              \
    + cce_pc_width_mp                \
    + cce_instr_width_mp             \
+   + 2                              \
+   + reg_addr_width_p               \
+   + dword_width_p                  \
    + 2                              \
    + reg_addr_width_p               \
    + dword_width_p                  \
@@ -310,6 +317,7 @@ typedef struct packed
       : '{io_noc_y_cord_width_p+io_noc_x_cord_width_p, io_noc_x_cord_width_p, 0}                   \
   , localparam io_noc_cord_width_p      = io_noc_cord_markers_pos_p[io_noc_dims_p]                 \
                                                                                                    \
+  , localparam fword_width_p       = 65                                                            \
   , localparam dword_width_p       = 64                                                            \
   , localparam instr_width_p       = 32                                                            \
   , localparam csr_addr_width_p    = 12                                                            \

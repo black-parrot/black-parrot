@@ -31,6 +31,7 @@ module bp_cfg
    , input [io_noc_did_width_p-1:0]     host_did_i
    , input [coh_noc_cord_width_p-1:0]   cord_i
    , input [dword_width_p-1:0]          irf_data_i
+   , input [dword_width_p-1:0]          frf_data_i
    , input [vaddr_width_p-1:0]          npc_data_i
    , input [dword_width_p-1:0]          csr_data_i
    , input [1:0]                        priv_data_i
@@ -113,9 +114,13 @@ always_ff @(posedge clk_i)
 
 wire irf_w_v_li = cfg_w_v_li & (cfg_addr_li >= bp_cfg_reg_irf_x0_gp && cfg_addr_li <= bp_cfg_reg_irf_x31_gp);
 wire irf_r_v_li = cfg_r_v_li & (cfg_addr_li >= bp_cfg_reg_irf_x0_gp && cfg_addr_li <= bp_cfg_reg_irf_x31_gp);
-// TODO: we could get rid of this subtraction with intellignent address map
 wire [reg_addr_width_p-1:0] irf_addr_li = (cfg_addr_li - bp_cfg_reg_irf_x0_gp);
 wire [dword_width_p-1:0] irf_data_li = cfg_data_li;
+
+wire frf_w_v_li = cfg_w_v_li & (cfg_addr_li >= bp_cfg_reg_frf_x0_gp && cfg_addr_li <= bp_cfg_reg_frf_x31_gp);
+wire frf_r_v_li = cfg_r_v_li & (cfg_addr_li >= bp_cfg_reg_frf_x0_gp && cfg_addr_li <= bp_cfg_reg_frf_x31_gp);
+wire [reg_addr_width_p-1:0] frf_addr_li = (cfg_addr_li - bp_cfg_reg_frf_x0_gp);
+wire [dword_width_p-1:0] frf_data_li = cfg_data_li;
 
 wire csr_w_v_li = cfg_w_v_li & (cfg_addr_li >= bp_cfg_reg_csr_begin_gp && cfg_addr_li <= bp_cfg_reg_csr_end_gp);
 wire csr_r_v_li = cfg_r_v_li & (cfg_addr_li >= bp_cfg_reg_csr_begin_gp && cfg_addr_li <= bp_cfg_reg_csr_end_gp);
@@ -163,6 +168,10 @@ assign cfg_bus_cast_o = '{freeze: freeze_r
                           ,irf_r_v: irf_r_v_li
                           ,irf_addr: irf_addr_li
                           ,irf_data: irf_data_li
+                          ,frf_w_v: frf_w_v_li
+                          ,frf_r_v: frf_r_v_li
+                          ,frf_addr: frf_addr_li
+                          ,frf_data: frf_data_li
                           ,csr_w_v: csr_w_v_li
                           ,csr_r_v: csr_r_v_li
                           ,csr_addr: csr_addr_li
@@ -183,23 +192,24 @@ assign cfg_bus_cast_o = '{freeze: freeze_r
      ,.data_o(rdata_v_r)
      );
 
-  logic [7:0] read_sel_one_hot_r;
+  logic [8:0] read_sel_one_hot_r;
   bsg_dff_reset_en
-   #(.width_p(8))
+   #(.width_p(9))
    read_reg_one_hot
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(mem_cmd_v_lo)
 
-     ,.data_i({irf_r_v_li, npc_r_v_li, csr_r_v_li, priv_r_v_li, host_did_r_v_li, did_r_v_li, cord_r_v_li, cce_ucode_r_v_li})
+     ,.data_i({irf_r_v_li, frf_r_v_li, npc_r_v_li, csr_r_v_li, priv_r_v_li, host_did_r_v_li, did_r_v_li, cord_r_v_li, cce_ucode_r_v_li})
      ,.data_o(read_sel_one_hot_r)
      );
 
   logic [dword_width_p-1:0] read_data;
   bsg_mux_one_hot
-   #(.width_p(dword_width_p), .els_p(8))
+   #(.width_p(dword_width_p), .els_p(9))
    read_mux_one_hot
     (.data_i({dword_width_p'(irf_data_i)
+              ,dword_width_p'(frf_data_i)
               ,dword_width_p'(npc_data_r)
               ,dword_width_p'(csr_data_r)
               ,dword_width_p'(priv_data_i)

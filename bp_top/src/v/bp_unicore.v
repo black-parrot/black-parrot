@@ -119,6 +119,7 @@ module bp_unicore
 
   bp_cfg_bus_s cfg_bus_lo;
   logic [dword_width_p-1:0] cfg_irf_data_li;
+  logic [dword_width_p-1:0] cfg_frf_data_li;
   logic [vaddr_width_p-1:0] cfg_npc_data_li;
   logic [dword_width_p-1:0] cfg_csr_data_li;
   logic [1:0]               cfg_priv_data_li;
@@ -133,6 +134,7 @@ module bp_unicore
      ,.cfg_bus_i(cfg_bus_lo)
      ,.cfg_npc_data_o(cfg_npc_data_li)
      ,.cfg_irf_data_o(cfg_irf_data_li)
+     ,.cfg_frf_data_o(cfg_frf_data_li)
      ,.cfg_csr_data_o(cfg_csr_data_li)
      ,.cfg_priv_data_o(cfg_priv_data_li)
 
@@ -320,6 +322,7 @@ module bp_unicore
      ,.host_did_i('0)
      ,.cord_i({coh_noc_y_cord_width_p'(1), coh_noc_x_cord_width_p'(0)})
      ,.irf_data_i(cfg_irf_data_li)
+     ,.frf_data_i(cfg_frf_data_li)
      ,.npc_data_i(cfg_npc_data_li)
      ,.csr_data_i(cfg_csr_data_li)
      ,.priv_data_i(cfg_priv_data_li)

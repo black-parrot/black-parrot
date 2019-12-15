@@ -21,7 +21,6 @@ module testbench
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
    // Tracing parameters
-   , parameter calc_trace_p                = 0
    , parameter cce_trace_p                 = 0
    , parameter cmt_trace_p                 = 0
    , parameter dram_trace_p                = 0
@@ -287,9 +286,13 @@ bind bp_be_top
      ,.commit_pc_i(calculator.commit_pkt.pc)
      ,.commit_instr_i(calculator.commit_pkt.instr)
 
-     ,.rd_w_v_i(scheduler.wb_pkt.rd_w_v)
-     ,.rd_addr_i(scheduler.wb_pkt.rd_addr)
-     ,.rd_data_i(scheduler.wb_pkt.rd_data)
+     ,.int_rd_w_v_i(scheduler.int_wb_pkt.rd_w_v)
+     ,.int_rd_addr_i(scheduler.int_wb_pkt.rd_addr)
+     ,.int_rd_data_i(scheduler.int_wb_pkt.rd_data)
+
+     ,.fp_rd_w_v_i(scheduler.fp_wb_pkt.rd_w_v)
+     ,.fp_rd_addr_i(scheduler.fp_wb_pkt.rd_addr)
+     ,.fp_rd_data_i(scheduler.fp_wb_pkt.rd_data)
      );
 
   if (num_core_p == 1)
@@ -315,9 +318,13 @@ bind bp_be_top
            ,.commit_pc_i(calculator.commit_pkt.pc)
            ,.commit_instr_i(calculator.commit_pkt.instr)
 
-           ,.rd_w_v_i(scheduler.wb_pkt.rd_w_v)
-           ,.rd_addr_i(scheduler.wb_pkt.rd_addr)
-           ,.rd_data_i(scheduler.wb_pkt.rd_data)
+           ,.int_rd_w_v_i(scheduler.int_wb_pkt.rd_w_v)
+           ,.int_rd_addr_i(scheduler.int_wb_pkt.rd_addr)
+           ,.int_rd_data_i(scheduler.int_wb_pkt.rd_data)
+
+           ,.fp_rd_w_v_i(scheduler.fp_wb_pkt.rd_w_v)
+           ,.fp_rd_addr_i(scheduler.fp_wb_pkt.rd_addr)
+           ,.fp_rd_data_i(scheduler.fp_wb_pkt.rd_data)
 
            ,.interrupt_v_i(calculator.pipe_sys.trap_pkt._interrupt)
            ,.cause_i((calculator.pipe_sys.csr.priv_mode_n == `PRIV_MODE_S)

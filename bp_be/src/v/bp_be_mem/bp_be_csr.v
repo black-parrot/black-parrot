@@ -27,6 +27,8 @@ module bp_be_csr
 
     // Misc interface
     , input                             instret_i
+    , input                             fflags_w_v_i
+    , input [4:0]                       fflags_i
 
     , input                             exception_v_i
     , input [vaddr_width_p-1:0]         exception_pc_i
@@ -41,8 +43,8 @@ module bp_be_csr
     , input                             interrupt_v_i
 
     , output [trap_pkt_width_lp-1:0]    trap_pkt_o
-
     , output [trans_info_width_lp-1:0]  trans_info_o
+    , output [2:0]                      frm_o
     );
 
 // Declare parameterizable structs
@@ -83,6 +85,8 @@ wire is_debug_mode = debug_mode_r;
 wire is_m_mode = is_debug_mode | (priv_mode_r == `PRIV_MODE_M);
 wire is_s_mode = (priv_mode_r == `PRIV_MODE_S);
 wire is_u_mode = (priv_mode_r == `PRIV_MODE_U);
+
+`declare_csr(fcsr)
 
 // sstatus subset of mstatus
 // sedeleg hardcoded to 0
@@ -353,6 +357,8 @@ always_comb
     minstret_li      = mcountinhibit_lo.ir ? minstret_lo + dword_width_p'(instret_i) : minstret_lo;
     mcountinhibit_li = mcountinhibit_lo;
 
+    fcsr_li = fcsr_lo;
+
     dcsr_li = dcsr_lo;
     dpc_li  = dpc_lo;
 
@@ -448,6 +454,9 @@ always_comb
           begin
             // Read case
             unique casez (csr_cmd.csr_addr)
+              `CSR_ADDR_FFLAGS : csr_data_lo = fcsr_lo.fflags;
+              `CSR_ADDR_FRM    : csr_data_lo = fcsr_lo.frm;
+              `CSR_ADDR_FCSR   : csr_data_lo = fcsr_lo;
               `CSR_ADDR_CYCLE  : csr_data_lo = mcycle_lo;
               // Time must be done by trapping, since we can't stall at this point
               `CSR_ADDR_INSTRET: csr_data_lo = minstret_lo;
@@ -499,6 +508,9 @@ always_comb
             endcase
             // Write case
             unique casez (csr_cmd.csr_addr)
+              `CSR_ADDR_FFLAGS : fcsr_li = '{frm: fcsr_lo.frm, fflags: csr_data_li, default: '0};
+              `CSR_ADDR_FRM    : fcsr_li = '{frm: csr_data_li, fflags: fcsr_lo.fflags, default: '0};
+              `CSR_ADDR_FCSR   : fcsr_li = csr_data_li;
               `CSR_ADDR_CYCLE  : mcycle_li = csr_data_li;
               // Time must be done by trapping, since we can't stall at this point
               `CSR_ADDR_INSTRET: minstret_li = csr_data_li;
@@ -635,6 +647,11 @@ always_comb
         dcsr_li.prv   = priv_mode_r;
       end
 
+    if (fflags_w_v_i)
+      begin
+        fcsr_li.fflags |= fflags_i;
+      end
+
     mip_li.mtip = timer_irq_i;
     mip_li.msip = software_irq_i;
     mip_li.meip = external_irq_i;
@@ -665,6 +682,8 @@ assign trans_info_cast_o.translation_en = translation_en_r
     | (mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
 assign trans_info_cast_o.mstatus_sum = mstatus_lo.sum;
 assign trans_info_cast_o.mstatus_mxr = mstatus_lo.mxr;
+
+assign frm_o = fcsr_lo.frm;
 
 endmodule
 

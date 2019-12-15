@@ -1,7 +1,7 @@
 /**
  *
  * Name:
- *   bp_be_regfile.v
+ *   bp_be_int_regfile.v
  * 
  * Description:
  *   Synchronous register file wrapper for integer and floating point RISC-V registers. Inlcudes
@@ -14,7 +14,7 @@
  *       down to if writing / reading x0 and then muxing is less power than checking x == 0 on input.
  */
 
-module bp_be_regfile
+module bp_be_int_regfile
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_common_rv64_pkg::*;

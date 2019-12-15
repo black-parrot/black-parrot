@@ -25,6 +25,7 @@ module bp_be_pipe_sys
    , localparam ptw_fill_pkt_width_lp = `bp_be_ptw_fill_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp   = `bp_be_commit_pkt_width(vaddr_width_p)
    , localparam trap_pkt_width_lp     = `bp_be_trap_pkt_width(vaddr_width_p)
+   , localparam wb_pkt_width_lp       = `bp_be_wb_pkt_width(vaddr_width_p)
    , localparam trans_info_width_lp   = `bp_be_trans_info_width(ptag_width_p)
    )
   (input                                  clk_i
@@ -58,6 +59,8 @@ module bp_be_pipe_sys
 
    , input [commit_pkt_width_lp-1:0]      commit_pkt_i
    , output [trap_pkt_width_lp-1:0]       trap_pkt_o
+   , input [wb_pkt_width_lp-1:0]          int_wb_pkt_i
+   , input [wb_pkt_width_lp-1:0]          fp_wb_pkt_i
 
    , input                                interrupt_v_i
    , output                               interrupt_ready_o
@@ -66,6 +69,7 @@ module bp_be_pipe_sys
    , input                                external_irq_i
 
    , output [trans_info_width_lp-1:0]     trans_info_o
+   , output [2:0]                         frm_o
    );
 
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -79,6 +83,7 @@ bp_be_ptw_miss_pkt_s ptw_miss_pkt;
 bp_be_ptw_fill_pkt_s ptw_fill_pkt;
 bp_be_commit_pkt_s commit_pkt;
 bp_be_trap_pkt_s trap_pkt;
+bp_be_wb_pkt_s int_wb_pkt, fp_wb_pkt;
 bp_be_trans_info_s trans_info;
 
 assign decode = decode_i;
@@ -88,6 +93,8 @@ assign ptw_miss_pkt_o = ptw_miss_pkt;
 assign ptw_fill_pkt = ptw_fill_pkt_i;
 assign commit_pkt = commit_pkt_i;
 assign trap_pkt_o = trap_pkt;
+assign int_wb_pkt = int_wb_pkt_i;
+assign fp_wb_pkt = fp_wb_pkt_i;
 assign trans_info_o = trans_info;
 
 wire csr_imm_op = decode.fu_op inside {e_csrrwi, e_csrrsi, e_csrrci};
@@ -169,6 +176,9 @@ always_comb
   wire [vaddr_width_p-1:0] exception_npc_li = ptw_page_fault_v ? '0 : commit_pkt.npc;
   wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? ptw_fill_pkt.vaddr : exception_vaddr_i;
   wire [instr_width_p-1:0] exception_instr_li = commit_pkt.instr;
+  rv64_fflags_s fflags_li;
+  assign fflags_li = (int_wb_pkt.fflags_w_v ? int_wb_pkt.fflags : '0) | (fp_wb_pkt.fflags_w_v ? fp_wb_pkt.fflags : '0);
+  wire fflags_w_v_li = int_wb_pkt.fflags_w_v | fp_wb_pkt.fflags_w_v;
 
   bp_be_csr
    #(.bp_params_p(bp_params_p))
@@ -185,6 +195,8 @@ always_comb
      ,.csr_data_o(data_o)
   
      ,.instret_i(commit_pkt.instret)
+     ,.fflags_i(fflags_li)
+     ,.fflags_w_v_i(fflags_w_v_li)
   
      ,.exception_v_i(exception_v_li)
      ,.exception_pc_i(exception_pc_li)
@@ -200,6 +212,7 @@ always_comb
   
      ,.trap_pkt_o(trap_pkt)
      ,.trans_info_o(trans_info)
+     ,.frm_o(frm_o)
      );
 
   assign exc_v_o          = trap_pkt.exception;

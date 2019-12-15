@@ -150,8 +150,9 @@ logic load_misaligned_v, load_misaligned_mem3, store_misaligned_v, store_misalig
 logic is_store_r;
 logic dtlb_miss_r;
 logic [vaddr_width_p-1:0] vaddr_mem3;
-logic is_req_mem3, is_store_mem3, is_fencei_mem3;
+logic is_req_mem3, is_nanbox_mem3, is_store_mem3, is_fencei_mem3;
 
+wire is_nanbox = decode.frf_w_v & (decode.fu_op == e_lw);
 wire is_store  = decode.pipe_mem_v & decode.fu_op inside {e_sb, e_sh, e_sw, e_sd, e_scw, e_scd};
 wire is_fencei = decode.pipe_mem_v & decode.fu_op inside {e_fencei};
 
@@ -160,14 +161,14 @@ wire [vaddr_width_p-1:0] offset = decode.offset_sel ? '0 : imm_i[0+:vaddr_width_
 wire [vaddr_width_p-1:0] vaddr = rs1_i + offset;
 
 bsg_dff_chain
- #(.width_p(3+vaddr_width_p)
+ #(.width_p(4+vaddr_width_p)
    ,.num_stages_p(2)
    )
  request_pipe
   (.clk_i(clk_i)
 
-   ,.data_i({decode.pipe_mem_v, is_store, is_fencei, vaddr})
-   ,.data_o({is_req_mem3, is_store_mem3, is_fencei_mem3, vaddr_mem3})
+   ,.data_i({decode.pipe_mem_v, is_nanbox, is_store, is_fencei, vaddr})
+   ,.data_o({is_req_mem3, is_nanbox_mem3, is_store_mem3, is_fencei_mem3, vaddr_mem3})
    );
 
 // D-TLB connections
@@ -358,7 +359,7 @@ assign load_misaligned_v_o    = load_misaligned_mem3;
 
 assign ready_o                = dcache_ready_lo & ~ptw_busy;
 assign vaddr_o                = vaddr_mem3;
-assign data_o                 = dcache_data;
+assign data_o                 = dcache_data | ({32{is_nanbox_mem3}} << 32);
 
 //// synopsys translate_off
 //bp_be_mem_cmd_s mem_cmd_r;

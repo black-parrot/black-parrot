@@ -37,6 +37,9 @@ package bp_common_cfg_link_pkg;
   localparam bp_cfg_reg_cce_id_gp         = 'h0080;
   localparam bp_cfg_reg_cce_mode_gp       = 'h0081;
   localparam bp_cfg_reg_num_lce_gp        = 'h0082;
+  localparam bp_cfg_reg_frf_x0_gp         = 'h00a0;
+  /* ... */
+  localparam bp_cfg_reg_frf_x31_gp        = 'h00bf;
   localparam bp_cfg_reg_csr_begin_gp      = 'h6000;
   localparam bp_cfg_reg_csr_end_gp        = 'h6fff;
   localparam bp_cfg_mem_base_cce_ucode_gp = 'h8000;

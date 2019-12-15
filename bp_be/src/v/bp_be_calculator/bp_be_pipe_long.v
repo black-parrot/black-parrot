@@ -23,18 +23,19 @@ module bp_be_pipe_long
 
    , input                         flush_i
 
-   , output [wb_pkt_width_lp-1:0]  wb_pkt_o
-   , output                        v_o
+   , output [wb_pkt_width_lp-1:0]  int_wb_pkt_o
+   , output [wb_pkt_width_lp-1:0]  fp_wb_pkt_o
    );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   bp_be_decode_s decode;
   rv64_instr_s instr;
-  bp_be_wb_pkt_s wb_pkt;
+  bp_be_wb_pkt_s int_wb_pkt, fp_wb_pkt;
 
   assign decode = decode_i;
   assign instr = instr_i;
-  assign wb_pkt_o = wb_pkt;
+  assign int_wb_pkt_o = int_wb_pkt;
+  assign fp_wb_pkt_o = fp_wb_pkt;
 
   wire signed_div_li = decode.fu_op inside {e_mul_op_div, e_mul_op_rem};
   wire rem_not_div_li = decode.fu_op inside {e_mul_op_rem, e_mul_op_remu};
@@ -104,10 +105,19 @@ module bp_be_pipe_long
     else
       rd_data_lo = remainder_lo;
 
-  assign wb_pkt.rd_w_v  = rd_w_v_r;
-  assign wb_pkt.rd_addr = rd_addr_r;
-  assign wb_pkt.rd_data = rd_data_lo;
-  assign v_o = v_lo & rd_w_v_r;
+  assign int_wb_pkt.fflags_w_v = '0;
+  assign int_wb_pkt.fflags  = '0;
+  assign int_wb_pkt.rd_w_v  = rd_w_v_r & v_lo;
+  assign int_wb_pkt.rd_addr = rd_addr_r;
+  assign int_wb_pkt.rd_data = rd_data_lo;
+
+  assign fp_wb_pkt.fflags_w_v = '0;
+  assign fp_wb_pkt.fflags  = '0;
+  assign fp_wb_pkt.rd_w_v  = '0;
+  assign fp_wb_pkt.rd_addr = '0;
+  assign fp_wb_pkt.rd_data = '0;
+
+
 
   // Actually a "busy" signal
   assign ready_o = idiv_ready_lo & ~v_i;

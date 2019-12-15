@@ -166,7 +166,30 @@ RV64_P_TESTS = \
   rv64um-p-rem       \
   rv64um-p-remu      \
   rv64um-p-remuw     \
-  rv64um-p-remw
+  rv64um-p-remw      \
+  rv64uf-p-fadd      \
+  rv64uf-p-fmadd     \
+  rv64uf-p-fclass    \
+  rv64uf-p-fcmp      \
+  rv64uf-p-fcvt      \
+  rv64uf-p-fcvt_w    \
+  rv64uf-p-fdiv      \
+  rv64uf-p-fmin      \
+  rv64uf-p-ldst      \
+  rv64uf-p-move      \
+  rv64uf-p-recoding  \
+  rv64ud-p-fadd      \
+  rv64ud-p-fclass    \
+  rv64ud-p-fcmp      \
+  rv64ud-p-fcvt      \
+  rv64ud-p-fcvt_w    \
+  rv64ud-p-fdiv      \
+  rv64ud-p-fmadd     \
+  rv64ud-p-fmin      \
+  rv64ud-p-ldst      \
+  rv64ud-p-move      \
+  rv64ud-p-recoding  \
+  rv64ud-p-structural
 RV64_P_TESTS_RISCV := $(addprefix $(BP_TEST_MEM_DIR)/riscv_tests/, $(addsuffix .riscv, $(RV64_P_TESTS)))
 
   #rv64ua-v-amominu_w

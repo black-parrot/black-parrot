@@ -65,10 +65,10 @@ wire unused = &{clk_i, reset_i};
 
 // Declare intermediate signals
 // Integer data hazards
-logic [2:0] irs1_data_haz_v , irs2_data_haz_v;
+logic [3:0] irs1_data_haz_v , irs2_data_haz_v;
 // Floating point data hazards
-logic [2:0] frs1_data_haz_v , frs2_data_haz_v;
-logic [2:0] rs1_match_vector, rs2_match_vector;
+logic [3:0] frs1_data_haz_v , frs2_data_haz_v, frs3_data_haz_v;
+logic [3:0] rs1_match_vector, rs2_match_vector, rs3_match_vector;
 
 logic fence_haz_v, queue_haz_v, interrupt_haz_v, serial_haz_v, long_haz_v;
 logic data_haz_v, control_haz_v, struct_haz_v;
@@ -79,34 +79,39 @@ always_comb
     // Generate matches for rs1 and rs2.
     // 3 stages because we only care about ex1, ex2, and iwb dependencies. fwb dependencies
     //   can be handled through forwarding
-    for(integer i = 0; i < 3; i++) 
+    for(integer i = 0; i < 4; i++) 
       begin
-        rs1_match_vector[i] = (isd_status_cast_i.isd_rs1_addr != '0)
+        rs1_match_vector[i] = ~(isd_status_cast_i.isd_irs1_v & (isd_status_cast_i.isd_rs1_addr == '0))
                               & (isd_status_cast_i.isd_rs1_addr == dep_status_li[i].rd_addr);
 
-        rs2_match_vector[i] = (isd_status_cast_i.isd_rs2_addr != '0)
+        rs2_match_vector[i] = ~(isd_status_cast_i.isd_irs2_v & (isd_status_cast_i.isd_rs2_addr == '0))
                               & (isd_status_cast_i.isd_rs2_addr == dep_status_li[i].rd_addr);
+
+        rs3_match_vector[i] = (isd_status_cast_i.isd_rs3_addr == dep_status_li[i].rd_addr);
       end
 
     // Detect integer and float data hazards for EX1
     irs1_data_haz_v[0] = (isd_status_cast_i.isd_irs1_v & rs1_match_vector[0])
-                         & (dep_status_li[0].mul_iwb_v | dep_status_li[0].mem_iwb_v);
+                         & (dep_status_li[0].mem_iwb_v | dep_status_li[0].mul_iwb_v | dep_status_li[0].fp_iwb_v);
 
     irs2_data_haz_v[0] = (isd_status_cast_i.isd_irs2_v & rs2_match_vector[0])
-                         & (dep_status_li[0].mul_iwb_v | dep_status_li[0].mem_iwb_v);
+                         & (dep_status_li[0].mem_iwb_v | dep_status_li[0].mul_iwb_v | dep_status_li[0].fp_iwb_v);
 
     frs1_data_haz_v[0] = (isd_status_cast_i.isd_frs1_v & rs1_match_vector[0])
-                         & (dep_status_li[0].mem_fwb_v | dep_status_li[0].fp_fwb_v);
+                         & (dep_status_li[0].aux_fwb_v | dep_status_li[0].mem_fwb_v | dep_status_li[0].fp_fwb_v);
 
     frs2_data_haz_v[0] = (isd_status_cast_i.isd_frs2_v & rs2_match_vector[0])
-                         & (dep_status_li[0].mem_fwb_v | dep_status_li[0].fp_fwb_v);
+                         & (dep_status_li[0].aux_fwb_v | dep_status_li[0].mem_fwb_v | dep_status_li[0].fp_fwb_v);
+
+    frs3_data_haz_v[0] = (isd_status_cast_i.isd_frs3_v & rs3_match_vector[0])
+                         & (dep_status_li[0].aux_fwb_v | dep_status_li[0].mem_fwb_v | dep_status_li[0].fp_fwb_v);
 
     // Detect integer and float data hazards for EX2
     irs1_data_haz_v[1] = (isd_status_cast_i.isd_irs1_v & rs1_match_vector[1])
-                         & (dep_status_li[1].mul_iwb_v | dep_status_li[1].mem_iwb_v);
+                         & (dep_status_li[1].mem_iwb_v | dep_status_li[1].mul_iwb_v | dep_status_li[1].fp_iwb_v);
 
     irs2_data_haz_v[1] = (isd_status_cast_i.isd_irs2_v & rs2_match_vector[1])
-                         & (dep_status_li[1].mul_iwb_v | dep_status_li[1].mem_iwb_v);
+                         & (dep_status_li[1].mem_iwb_v | dep_status_li[1].mul_iwb_v | dep_status_li[1].fp_iwb_v);
 
     frs1_data_haz_v[1] = (isd_status_cast_i.isd_frs1_v & rs1_match_vector[1])
                          & (dep_status_li[1].mem_fwb_v | dep_status_li[1].fp_fwb_v);
@@ -114,10 +119,14 @@ always_comb
     frs2_data_haz_v[1] = (isd_status_cast_i.isd_frs2_v & rs2_match_vector[1])
                          & (dep_status_li[1].mem_fwb_v | dep_status_li[1].fp_fwb_v);
 
+    frs3_data_haz_v[1] = (isd_status_cast_i.isd_frs3_v & rs3_match_vector[1])
+                         & (dep_status_li[1].mem_fwb_v | dep_status_li[1].fp_fwb_v);
+
+    // Detect integer and float data hazards for EX3
     irs1_data_haz_v[2] = (isd_status_cast_i.isd_irs1_v & rs1_match_vector[2])
-                         & (dep_status_li[2].mul_iwb_v);
+                         & (dep_status_li[2].mul_iwb_v | dep_status_li[2].fp_iwb_v);
     irs2_data_haz_v[2] = (isd_status_cast_i.isd_irs2_v & rs2_match_vector[2])
-                         & (dep_status_li[2].mul_iwb_v);
+                         & (dep_status_li[2].mul_iwb_v | dep_status_li[2].fp_iwb_v);
 
     frs1_data_haz_v[2] = (isd_status_cast_i.isd_frs1_v & rs1_match_vector[2])
                          & (dep_status_li[2].fp_fwb_v);
@@ -125,8 +134,26 @@ always_comb
     frs2_data_haz_v[2] = (isd_status_cast_i.isd_frs2_v & rs2_match_vector[2])
                          & (dep_status_li[2].fp_fwb_v);
 
-    instr_in_pipe_v    = dep_status_li[0].v | dep_status_li[1].v | dep_status_li[2].v;
-    mem_in_pipe_v      = dep_status_li[0].mem_v | dep_status_li[1].mem_v | dep_status_li[2].mem_v;
+    frs3_data_haz_v[2] = (isd_status_cast_i.isd_frs3_v & rs3_match_vector[2])
+                         & (dep_status_li[2].fp_fwb_v);
+
+    // Detect float data hazards for EX4
+    irs1_data_haz_v[3] = (isd_status_cast_i.isd_irs1_v & rs1_match_vector[3])
+                         & (dep_status_li[3].fp_iwb_v);
+    irs2_data_haz_v[3] = (isd_status_cast_i.isd_irs2_v & rs2_match_vector[3])
+                         & (dep_status_li[3].fp_iwb_v);
+
+    frs1_data_haz_v[3] = (isd_status_cast_i.isd_frs1_v & rs1_match_vector[3])
+                         & (dep_status_li[3].fp_fwb_v);
+
+    frs2_data_haz_v[3] = (isd_status_cast_i.isd_frs2_v & rs2_match_vector[3])
+                         & (dep_status_li[3].fp_fwb_v);
+
+    frs3_data_haz_v[3] = (isd_status_cast_i.isd_frs3_v & rs3_match_vector[3])
+                         & (dep_status_li[3].fp_fwb_v);
+
+    instr_in_pipe_v    = dep_status_li[0].v | dep_status_li[1].v | dep_status_li[2].v | dep_status_li[3].v;
+    mem_in_pipe_v      = dep_status_li[0].mem_v | dep_status_li[1].mem_v | dep_status_li[2].mem_v | dep_status_li[3].mem_v;
     fence_haz_v        = (isd_status_cast_i.isd_fence_v & (~credits_empty_i | mem_in_pipe_v))
                          | (isd_status_cast_i.isd_mem_v & credits_full_i);
     interrupt_haz_v    = interrupt_ready_i;
@@ -135,7 +162,8 @@ always_comb
     serial_haz_v       = dep_status_li[0].serial_v
                          | dep_status_li[1].serial_v
                          | dep_status_li[2].serial_v
-                         | dep_status_li[3].serial_v;
+                         | dep_status_li[3].serial_v
+                         | dep_status_li[4].serial_v;
 
     long_haz_v = calc_status_cast_i.long_busy;
 
@@ -146,7 +174,8 @@ always_comb
     data_haz_v = (|irs1_data_haz_v) 
                  | (|irs2_data_haz_v) 
                  | (|frs1_data_haz_v) 
-                 | (|frs2_data_haz_v);
+                 | (|frs2_data_haz_v)
+                 | (|frs3_data_haz_v);
 
     // Combine all structural hazard information
     // We block on mmu not ready even on not memory instructions, because it means there's an

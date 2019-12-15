@@ -27,10 +27,7 @@ prep: | $(TARGET_DIRS)
 	$(MAKE) -j1 progs 
 	$(MAKE) -j1 ucode
 
-## This target updates submodules needed for building BlackParrot.
-#  We only need to keep update basejump_stl up to date. The other submodules
-#    are for building tools, which we should only need to do every so often
-
+## This target frees up some space by deleting intermediate build files
 tidy_tools:
 	cd $(TOP); git submodule deinit -f external/riscv-gnu-toolchain
 	cd $(TOP); git submodule deinit -f external/verilator

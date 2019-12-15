@@ -30,6 +30,7 @@ module bp_be_top
    // Processor configuration
    , input [cfg_bus_width_lp-1:0]                    cfg_bus_i
    , output [dword_width_p-1:0]                      cfg_irf_data_o
+   , output [dword_width_p-1:0]                      cfg_frf_data_o
    , output [vaddr_width_p-1:0]                      cfg_npc_data_o
    , output [dword_width_p-1:0]                      cfg_csr_data_o
    , output [1:0]                                    cfg_priv_data_o
@@ -101,7 +102,7 @@ logic interrupt_ready_lo, interrupt_v_li;
 
 bp_be_commit_pkt_s commit_pkt;
 bp_be_trap_pkt_s trap_pkt;
-bp_be_wb_pkt_s wb_pkt;
+bp_be_wb_pkt_s int_wb_pkt, fp_wb_pkt;
 
 bp_be_isd_status_s isd_status;
 logic [vaddr_width_p-1:0] expected_npc_lo;
@@ -169,6 +170,7 @@ bp_be_scheduler
 
    ,.cfg_bus_i(cfg_bus_i)
    ,.cfg_irf_data_o(cfg_irf_data_o)
+   ,.cfg_frf_data_o(cfg_frf_data_o)
 
    ,.isd_status_o(isd_status)
    ,.expected_npc_i(expected_npc_lo)
@@ -186,10 +188,10 @@ bp_be_scheduler
    ,.fe_queue_roll_o(fe_queue_roll_o)
    ,.fe_queue_deq_o(fe_queue_deq_o)
 
-
    ,.dispatch_pkt_o(dispatch_pkt)
    
-   ,.wb_pkt_i(wb_pkt)
+   ,.int_wb_pkt_i(int_wb_pkt)
+   ,.fp_wb_pkt_i(fp_wb_pkt)
    );
 
 bp_be_calculator_top 
@@ -212,7 +214,8 @@ bp_be_calculator_top
 
    ,.commit_pkt_o(commit_pkt)
    ,.trap_pkt_o(trap_pkt)
-   ,.wb_pkt_o(wb_pkt)
+   ,.int_wb_pkt_o(int_wb_pkt)
+   ,.fp_wb_pkt_o(fp_wb_pkt)
 
    ,.timer_irq_i(timer_irq_i)
    ,.software_irq_i(software_irq_i)

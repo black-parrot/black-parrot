@@ -22,9 +22,13 @@ module bp_nonsynth_commit_tracer
     , input [vaddr_width_p-1:0]               commit_pc_i
     , input [instr_width_p-1:0]               commit_instr_i
 
-    , input                                   rd_w_v_i
-    , input [rv64_reg_addr_width_gp-1:0]      rd_addr_i
-    , input [dword_width_p-1:0]               rd_data_i
+    , input                                   int_rd_w_v_i
+    , input [rv64_reg_addr_width_gp-1:0]      int_rd_addr_i
+    , input [dword_width_p-1:0]               int_rd_data_i
+
+    , input                                   fp_rd_w_v_i
+    , input [rv64_reg_addr_width_gp-1:0]      fp_rd_addr_i
+    , input [dword_width_p-1:0]               fp_rd_data_i
     );
 
 integer file;
@@ -68,7 +72,7 @@ always_ff @(negedge delay_li)
   logic [instr_width_p-1:0] commit_instr_r;
   logic                     commit_rd_w_v_r;
   logic commit_fifo_v_lo, commit_fifo_yumi_li;
-  wire commit_rd_w_v_li = decode_r.irf_w_v | decode_r.pipe_long_v;
+  wire commit_rd_w_v_li = decode_r.irf_w_v | decode_r.frf_w_v | decode_r.pipe_long_v;
   bsg_fifo_1r1w_small
    #(.width_p(1+vaddr_width_p+instr_width_p+1), .els_p(8))
    commit_fifo
@@ -83,15 +87,17 @@ always_ff @(negedge delay_li)
      ,.v_o(commit_fifo_v_lo)
      ,.yumi_i(commit_fifo_yumi_li)
      );
-  assign commit_fifo_yumi_li = commit_fifo_v_lo & (~commit_rd_w_v_r | (commit_rd_w_v_r & rd_w_v_i));
+  assign commit_fifo_yumi_li = commit_fifo_v_lo & (~commit_rd_w_v_r | (commit_rd_w_v_r & (int_rd_w_v_i | fp_rd_w_v_i)));
 
   always_ff @(negedge clk_i)
     // TODO: For some reason, we're getting 0 PC/instr pairs. Either to do with nops or exceptions
     if (commit_fifo_yumi_li & commit_v_r & commit_pc_r != '0)
       begin
         $fwrite(file, "%x %x %x %x ", mhartid_i, commit_pc_r, commit_instr_r, itag_cnt);
-        if (rd_w_v_i)
-          $fwrite(file, "%x %x", rd_addr_i, rd_data_i);
+        if (int_rd_w_v_i)
+          $fwrite(file, "%x %x", int_rd_addr_i, int_rd_data_i);
+        if (fp_rd_w_v_i)
+          $fwrite(file, "%x %x", fp_rd_addr_i, fp_rd_data_i);
         $fwrite(file, "\n");
       end
 
