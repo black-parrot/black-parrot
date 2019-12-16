@@ -1115,9 +1115,9 @@ module bp_be_dcache
   always_ff @ (negedge clk_i) begin
     if (v_tv_r) begin
       assert($countones(load_hit_tv) <= 1)
-        else $error("multiple load hit: %b. id = %0d", load_hit_tv, cfg_bus_cast_i.dcache_id);
+        else $error("multiple load hit: %b. id = %0d. addr = %H", load_hit_tv, cfg_bus_cast_i.dcache_id, addr_tag_tv);
       assert($countones(store_hit_tv) <= 1)
-        else $error("multiple store hit: %b. id = %0d", store_hit_tv, cfg_bus_cast_i.dcache_id);
+        else $error("multiple store hit: %b. id = %0d. addr = %H", store_hit_tv, cfg_bus_cast_i.dcache_id, addr_tag_tv);
       assert (~(sc_op_tv_r & load_reserved_v_r & (load_reserved_tag_r == addr_tag_tv) & (load_reserved_index_r == addr_index_tv)) | store_hit)
           else $error("sc success without exclusive ownership of cache line: %x %x", load_reserved_tag_r, load_reserved_index_r);
     end
