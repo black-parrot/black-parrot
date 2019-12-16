@@ -35,14 +35,23 @@ module bp_core_complex
 
    , input [io_noc_did_width_p-1:0]                              my_did_i
 
-   , input [S:W][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_req_link_i
-   , output [S:W][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_req_link_o
+   , input [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_req_hor_link_i
+   , output [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_req_hor_link_o
 
-   , input [S:W][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_cmd_link_i
-   , output [S:W][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_cmd_link_o
+   , input [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_cmd_hor_link_i
+   , output [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_cmd_hor_link_o
 
-   , input [S:W][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_link_i
-   , output [S:W][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_resp_link_o
+   , input [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_hor_link_i
+   , output [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_resp_hor_link_o
+
+   , input [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_req_ver_link_i
+   , output [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_req_ver_link_o
+
+   , input [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_cmd_ver_link_i
+   , output [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_cmd_ver_link_o
+
+   , input [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_ver_link_i
+   , output [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_resp_ver_link_o
 
    , input [S:N][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_cmd_link_i
    , output [S:N][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] mem_cmd_link_o
@@ -111,8 +120,8 @@ for (genvar j = 0; j < cc_y_dim_p; j++)
       end
   end
 
-  assign lce_req_hor_link_li = coh_req_link_i[E:W];
-  assign lce_req_ver_link_li = coh_req_link_i[S:N];
+  assign lce_req_hor_link_li = coh_req_hor_link_i;
+  assign lce_req_ver_link_li = coh_req_ver_link_i;
   bsg_mesh_stitch
    #(.width_p($bits(coh_noc_ral_link_s))
      ,.x_max_p(cc_x_dim_p)
@@ -128,10 +137,11 @@ for (genvar j = 0; j < cc_y_dim_p; j++)
      ,.ver_i(lce_req_ver_link_li)
      ,.ver_o(lce_req_ver_link_lo)
      );
-  assign coh_req_link_o = {lce_req_ver_link_lo, lce_req_hor_link_lo};
+  assign coh_req_hor_link_o = lce_req_hor_link_lo;
+  assign coh_req_ver_link_o = lce_req_ver_link_lo;
   
-  assign lce_cmd_hor_link_li = coh_cmd_link_i[E:W];
-  assign lce_cmd_ver_link_li = coh_cmd_link_i[S:N];
+  assign lce_cmd_hor_link_li = coh_cmd_hor_link_i;
+  assign lce_cmd_ver_link_li = coh_cmd_ver_link_i;
   bsg_mesh_stitch
    #(.width_p($bits(coh_noc_ral_link_s))
      ,.x_max_p(cc_x_dim_p)
@@ -147,10 +157,11 @@ for (genvar j = 0; j < cc_y_dim_p; j++)
      ,.ver_i(lce_cmd_ver_link_li)
      ,.ver_o(lce_cmd_ver_link_lo)
      );
-  assign coh_cmd_link_o = {lce_cmd_ver_link_lo, lce_cmd_hor_link_lo};
+  assign coh_cmd_hor_link_o = lce_cmd_hor_link_lo;
+  assign coh_cmd_ver_link_o = lce_cmd_ver_link_lo;
   
-  assign lce_resp_hor_link_li = coh_resp_link_i[E:W];
-  assign lce_resp_ver_link_li = coh_resp_link_i[S:N];
+  assign lce_resp_hor_link_li = coh_resp_hor_link_i;
+  assign lce_resp_ver_link_li = coh_resp_ver_link_i;
   bsg_mesh_stitch
    #(.width_p($bits(coh_noc_ral_link_s))
      ,.x_max_p(cc_x_dim_p)
@@ -166,7 +177,8 @@ for (genvar j = 0; j < cc_y_dim_p; j++)
      ,.ver_i(lce_resp_ver_link_li)
      ,.ver_o(lce_resp_ver_link_lo)
      );
-  assign coh_resp_link_o = {lce_resp_ver_link_lo, lce_resp_hor_link_lo};
+  assign coh_resp_hor_link_o = lce_resp_hor_link_lo;
+  assign coh_resp_ver_link_o = lce_resp_ver_link_lo;
   
   assign mem_cmd_hor_link_li = '0;
   assign mem_cmd_ver_link_li = mem_cmd_link_i;

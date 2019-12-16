@@ -29,9 +29,6 @@ module bp_mem_complex
    , input  [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_cmd_link_i
    , output [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_cmd_link_o
 
-   , input  [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_link_i
-   , output [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_link_o
-
    , input  [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_cmd_link_i
    , output [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_cmd_link_o
 
@@ -63,7 +60,6 @@ module bp_mem_complex
       // Right now this is passthrough, but should be replaced by l2e tiles
       assign coh_req_link_o  = '0;
       assign coh_cmd_link_o  = '0;
-      assign coh_resp_link_o = '0;
 
       for (genvar i = 0; i < mc_x_dim_p; i++)
         begin : stub
@@ -79,7 +75,6 @@ module bp_mem_complex
       // Stub coherence links
       assign coh_req_link_o  = '0;
       assign coh_cmd_link_o  = '0;
-      assign coh_resp_link_o = '0;
 
       for (genvar i = 0; i < mc_x_dim_p; i++)
         begin : stub
