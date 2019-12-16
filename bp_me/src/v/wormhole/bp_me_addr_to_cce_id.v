@@ -24,7 +24,7 @@ localparam max_ioc_cce_lp = max_sac_cce_lp + num_io_p;
 
 wire external_io_li = (global_addr_li.did > '0);
 
-localparam block_offset_lp = `BSG_SAFE_CLOG2(cce_block_width_p);
+localparam block_offset_lp = `BSG_SAFE_CLOG2(cce_block_width_p/8);
 always_comb
   if (external_io_li || (local_addr_li.dev == host_dev_gp))
     // Stripe by 4kiB page, start at io CCE id
