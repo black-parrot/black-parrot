@@ -40,4 +40,12 @@ package bp_cce_pkg;
   // MSHR width for BP is:
   // 2*LOG(num_lce) + (9 + 78 + 3 + 15 + 2) = 2*LOG(num_lce) + 107
 
+  `define declare_bp_cce_dir_entry_s(tag_width_mp) \
+  typedef struct packed                            \
+  {                                                \
+    logic [tag_width_mp-1:0] tag;                  \
+    bp_coh_states_e          state;                \
+  } dir_entry_s                                    \
+
+
 endpackage : bp_cce_pkg

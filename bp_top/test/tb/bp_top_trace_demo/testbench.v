@@ -288,9 +288,9 @@ bind bp_be_top
       bp_cce_tracer
        (.clk_i(clk_i & (testbench.cce_trace_p == 1))
         ,.reset_i(reset_i)
-        ,.freeze_i(bp_cce.inst_ram.cfg_bus_cast_i.freeze)
+        ,.freeze_i(bp_cce.cfg_bus_cast_i.freeze)
   
-        ,.cce_id_i(bp_cce.inst_ram.cfg_bus_cast_i.cce_id)
+        ,.cce_id_i(bp_cce.cfg_bus_cast_i.cce_id)
   
         // To CCE
         ,.lce_req_i(lce_req_i)
