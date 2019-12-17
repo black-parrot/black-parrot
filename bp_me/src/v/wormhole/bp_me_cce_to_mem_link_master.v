@@ -48,10 +48,10 @@ assign mem_cmd_cast_i = mem_cmd_i;
 assign mem_resp_o = mem_resp_cast_o;
 
 // CCE-MEM IF to Wormhole routed interface
-`declare_bp_mem_wormhole_payload_s(mem_noc_cord_width_p, cce_mem_msg_width_lp, mem_cmd_payload_s);
-`declare_bp_mem_wormhole_payload_s(mem_noc_cord_width_p, cce_mem_msg_width_lp, mem_resp_payload_s);
-`declare_bsg_wormhole_router_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, $bits(mem_cmd_payload_s), mem_cmd_packet_s);
-`declare_bsg_wormhole_router_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, $bits(mem_resp_payload_s), mem_resp_packet_s);
+`declare_bp_mem_wormhole_payload_s(mem_noc_cord_width_p, mem_noc_cid_width_p, cce_mem_msg_width_lp, mem_cmd_payload_s);
+`declare_bp_mem_wormhole_payload_s(mem_noc_cord_width_p, mem_noc_cid_width_p, cce_mem_msg_width_lp, mem_resp_payload_s);
+`declare_bsg_wormhole_concentrator_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p, $bits(mem_cmd_payload_s), mem_cmd_packet_s);
+`declare_bsg_wormhole_concentrator_packet_s(mem_noc_cord_width_p, mem_noc_len_width_p, mem_noc_cid_width_p, $bits(mem_resp_payload_s), mem_resp_packet_s);
 
 mem_cmd_packet_s mem_cmd_packet_li;
 bp_me_wormhole_packet_encode_mem_cmd
@@ -59,12 +59,14 @@ bp_me_wormhole_packet_encode_mem_cmd
  mem_cmd_encode
   (.mem_cmd_i(mem_cmd_cast_i)
    ,.src_cord_i(my_cord_i)
+   ,.src_cid_i(my_cord_i[0+:mem_noc_x_cord_width_p])
    ,.dst_cord_i(dst_cord_i)
+   ,.dst_cid_i('0)
    ,.packet_o(mem_cmd_packet_li)
    );
 
 bsg_wormhole_router_adapter_in
- #(.max_payload_width_p($bits(mem_cmd_payload_s))
+ #(.max_payload_width_p($bits(mem_cmd_payload_s)+mem_noc_cid_width_p)
    ,.len_width_p(mem_noc_len_width_p)
    ,.cord_width_p(mem_noc_cord_width_p)
    ,.flit_width_p(mem_noc_flit_width_p)
@@ -83,7 +85,7 @@ bsg_wormhole_router_adapter_in
 
 mem_resp_packet_s mem_resp_packet_lo;
 bsg_wormhole_router_adapter_out
- #(.max_payload_width_p($bits(mem_resp_payload_s))
+ #(.max_payload_width_p($bits(mem_resp_payload_s)+mem_noc_cid_width_p)
    ,.len_width_p(mem_noc_len_width_p)
    ,.cord_width_p(mem_noc_cord_width_p)
    ,.flit_width_p(mem_noc_flit_width_p)
