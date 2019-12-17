@@ -41,13 +41,13 @@ module wrapper
    , output [E:W][io_noc_ral_link_width_lp-1:0]        io_resp_link_o
 
    // TEMP
-   , output [cc_x_dim_p-1:0][cce_mem_msg_width_lp-1:0] dram_cmd_o
-   , output [cc_x_dim_p-1:0]                           dram_cmd_v_o
-   , input  [cc_x_dim_p-1:0]                           dram_cmd_yumi_i
+   , output [cce_mem_msg_width_lp-1:0] dram_cmd_o
+   , output                            dram_cmd_v_o
+   , input                             dram_cmd_yumi_i
 
-   , input  [cc_x_dim_p-1:0][cce_mem_msg_width_lp-1:0] dram_resp_i
-   , input  [cc_x_dim_p-1:0]                           dram_resp_v_i
-   , output [cc_x_dim_p-1:0]                           dram_resp_ready_o
+   , input  [cce_mem_msg_width_lp-1:0] dram_resp_i
+   , input                             dram_resp_v_i
+   , output                            dram_resp_ready_o
    );
 
   bp_processor
