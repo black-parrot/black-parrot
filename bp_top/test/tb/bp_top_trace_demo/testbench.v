@@ -57,21 +57,13 @@ module testbench
 bsg_ready_and_link_sif_s [E:P] cmd_link_li, cmd_link_lo;
 bsg_ready_and_link_sif_s [E:P] resp_link_li, resp_link_lo;
 
-bsg_ready_and_link_sif_s [cc_x_dim_p-1:0] dram_cmd_link_li, dram_cmd_link_lo;
-bsg_ready_and_link_sif_s [cc_x_dim_p-1:0] dram_resp_link_li, dram_resp_link_lo;
-
-bp_cce_mem_msg_s [cc_x_dim_p-1:0] dram_cmd_li;
-logic            [cc_x_dim_p-1:0] dram_cmd_v_li, dram_cmd_yumi_lo;
-bp_cce_mem_msg_s [cc_x_dim_p-1:0] dram_resp_lo;
-logic            [cc_x_dim_p-1:0] dram_resp_v_lo, dram_resp_ready_li;
+bp_cce_mem_msg_s dram_cmd_li;
+logic            dram_cmd_v_li, dram_cmd_yumi_lo;
+bp_cce_mem_msg_s dram_resp_lo;
+logic            dram_resp_v_lo, dram_resp_ready_li;
 
 bsg_ready_and_link_sif_s proc_cmd_link_li, proc_cmd_link_lo;
 bsg_ready_and_link_sif_s proc_resp_link_li, proc_resp_link_lo;
-
-bp_cce_mem_msg_s       dram_ch_cmd_li;
-logic                  dram_ch_cmd_v_li, dram_ch_cmd_yumi_lo;
-bp_cce_mem_msg_s       dram_ch_resp_lo;
-logic                  dram_ch_resp_v_lo, dram_ch_resp_ready_li;
 
 bp_cce_io_msg_s        host_cmd_li;
 logic                  host_cmd_v_li, host_cmd_yumi_lo;
@@ -271,13 +263,13 @@ bind bp_be_top
     (.clk_i(clk_i & (testbench.dram_trace_p == 1))
      ,.reset_i(reset_i)
 
-     ,.mem_cmd_i(dram_ch_cmd_li)
-     ,.mem_cmd_v_i(dram_ch_cmd_v_li)
-     ,.mem_cmd_yumi_i(dram_ch_cmd_yumi_lo)
+     ,.mem_cmd_i(dram_cmd_li)
+     ,.mem_cmd_v_i(dram_cmd_v_li)
+     ,.mem_cmd_yumi_i(dram_cmd_yumi_lo)
 
-     ,.mem_resp_i(dram_ch_resp_lo)
-     ,.mem_resp_v_i(dram_ch_resp_v_lo)
-     ,.mem_resp_ready_i(dram_ch_resp_ready_li)
+     ,.mem_resp_i(dram_resp_lo)
+     ,.mem_resp_v_i(dram_resp_v_lo)
+     ,.mem_resp_ready_i(dram_resp_ready_li)
      );
 
   bind bp_cce
@@ -350,48 +342,6 @@ bp_me_cce_to_io_link_bidir
   ,.resp_link_o(proc_resp_link_li)
   );
 
-logic [`BSG_SAFE_CLOG2(cc_x_dim_p)-1:0] dram_ch_tag_li;
-bsg_round_robin_n_to_1
- #(.width_p($bits(bp_cce_mem_msg_s))
-   ,.num_in_p(cc_x_dim_p)
-   ,.strict_p(0)
-   )
- dram_rr
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-
-   ,.data_i(dram_cmd_li)
-   ,.v_i(dram_cmd_v_li)
-   ,.yumi_o(dram_cmd_yumi_lo)
-
-   ,.tag_o(dram_ch_tag_li)
-   ,.data_o(dram_ch_cmd_li)
-   ,.v_o(dram_ch_cmd_v_li)
-   ,.yumi_i(dram_ch_cmd_yumi_lo)
-   );
-
-logic [`BSG_SAFE_CLOG2(cc_x_dim_p)-1:0] dram_ch_tag_r;
-bsg_dff_reset_en
- #(.width_p(`BSG_SAFE_CLOG2(cc_x_dim_p)))
- tag_reg
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.en_i(dram_ch_cmd_yumi_lo)
-
-   ,.data_i(dram_ch_tag_li)
-   ,.data_o(dram_ch_tag_r)
-   );
-
-always_comb
-  begin
-    dram_resp_lo = '0;
-    dram_resp_v_lo = '0;
-
-    dram_resp_lo[dram_ch_tag_r] = dram_ch_resp_lo;
-    dram_resp_v_lo[dram_ch_tag_r] = dram_ch_resp_v_lo;
-    dram_ch_resp_ready_li = &dram_resp_ready_li;
-  end
-
 bp_mem
  #(.bp_params_p(bp_params_p)
    ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
@@ -413,13 +363,13 @@ bp_mem
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
  
-   ,.mem_cmd_i(dram_ch_cmd_li)
-   ,.mem_cmd_v_i(dram_ch_cmd_v_li)
-   ,.mem_cmd_yumi_o(dram_ch_cmd_yumi_lo)
+   ,.mem_cmd_i(dram_cmd_li)
+   ,.mem_cmd_v_i(dram_cmd_v_li)
+   ,.mem_cmd_yumi_o(dram_cmd_yumi_lo)
  
-   ,.mem_resp_o(dram_ch_resp_lo)
-   ,.mem_resp_v_o(dram_ch_resp_v_lo)
-   ,.mem_resp_ready_i(dram_ch_resp_ready_li)
+   ,.mem_resp_o(dram_resp_lo)
+   ,.mem_resp_v_o(dram_resp_v_lo)
+   ,.mem_resp_ready_i(dram_resp_ready_li)
    );
 
 logic [num_core_p-1:0] program_finish;
