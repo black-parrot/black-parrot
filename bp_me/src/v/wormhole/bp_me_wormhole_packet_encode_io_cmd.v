@@ -21,7 +21,7 @@ module bp_me_wormhole_packet_encode_io_cmd
     `declare_bp_io_if_widths(paddr_width_p, dword_width_p, lce_id_width_p)
 
     , localparam io_cmd_payload_width_lp =
-        `bp_mem_wormhole_payload_width(io_noc_cord_width_p, cce_io_msg_width_lp)
+        `bp_io_wormhole_payload_width(io_noc_cord_width_p, cce_io_msg_width_lp)
     , localparam io_cmd_packet_width_lp = 
         `bsg_wormhole_router_packet_width(io_noc_cord_width_p, io_noc_len_width_p, io_cmd_payload_width_lp)
     )
@@ -34,7 +34,7 @@ module bp_me_wormhole_packet_encode_io_cmd
     );
 
   `declare_bp_io_if(paddr_width_p, dword_width_p, lce_id_width_p);
-  `declare_bp_mem_wormhole_payload_s(io_noc_cord_width_p, cce_io_msg_width_lp, bp_cmd_wormhole_payload_s);
+  `declare_bp_io_wormhole_payload_s(io_noc_cord_width_p, cce_io_msg_width_lp, bp_cmd_wormhole_payload_s);
   `declare_bsg_wormhole_router_packet_s(io_noc_cord_width_p, io_noc_len_width_p, $bits(bp_cmd_wormhole_payload_s), bp_cmd_wormhole_packet_s);
 
   bp_cce_io_msg_s io_cmd_cast_i;

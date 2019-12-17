@@ -40,9 +40,9 @@ module bp_mem_complex
    , output                                        dram_cmd_v_o
    , input                                         dram_cmd_yumi_i
 
-   , input  [cce_mem_msg_width_lp-1:0]            dram_resp_i
-   , input                                        dram_resp_v_i
-   , output                                       dram_resp_ready_o
+   , input  [cce_mem_msg_width_lp-1:0]             dram_resp_i
+   , input                                         dram_resp_v_i
+   , output                                        dram_resp_ready_o
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
@@ -52,8 +52,8 @@ module bp_mem_complex
   `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_ready_and_link_s);
   `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_ready_and_link_s);
 
-  bp_mem_ready_and_link_s [mc_x_dim_p-1:0][S:N] mem_cmd_link_li, mem_cmd_link_lo;
-  bp_mem_ready_and_link_s [mc_x_dim_p-1:0][S:N] mem_resp_link_li, mem_resp_link_lo;
+  bp_mem_ready_and_link_s [S:N][mc_x_dim_p-1:0] mem_cmd_link_li, mem_cmd_link_lo;
+  bp_mem_ready_and_link_s [S:N][mc_x_dim_p-1:0] mem_resp_link_li, mem_resp_link_lo;
 
   if (mc_y_dim_p > 0)
     begin : mc_stitch
@@ -61,14 +61,11 @@ module bp_mem_complex
       assign coh_req_link_o  = '0;
       assign coh_cmd_link_o  = '0;
 
-      for (genvar i = 0; i < mc_x_dim_p; i++)
-        begin : stub
-          assign mem_cmd_link_lo[S]  = mem_cmd_link_i;
-          assign mem_resp_link_lo[S] = mem_resp_link_i;
+      assign mem_cmd_link_lo[S]  = mem_cmd_link_i;
+      assign mem_resp_link_lo[S] = mem_resp_link_i;
 
-          assign mem_cmd_link_o      = mem_cmd_link_li[S];
-          assign mem_resp_link_o     = mem_resp_link_li[S];
-        end
+      assign mem_cmd_link_o      = mem_cmd_link_li[S];
+      assign mem_resp_link_o     = mem_resp_link_li[S];
     end
   else
     begin : stub
@@ -76,87 +73,71 @@ module bp_mem_complex
       assign coh_req_link_o  = '0;
       assign coh_cmd_link_o  = '0;
 
-      for (genvar i = 0; i < mc_x_dim_p; i++)
-        begin : stub
-          assign mem_cmd_link_lo[i][S]  = mem_cmd_link_i[i];
-          assign mem_resp_link_lo[i][S] = mem_resp_link_i[i];
+      assign mem_cmd_link_lo[S]  = mem_cmd_link_i;
+      assign mem_resp_link_lo[S] = mem_resp_link_i;
 
-          assign mem_cmd_link_o[i]      = mem_cmd_link_li[i][S];
-          assign mem_resp_link_o[i]     = mem_resp_link_li[i][S];
-        end
+      assign mem_cmd_link_o      = mem_cmd_link_li[S];
+      assign mem_resp_link_o     = mem_resp_link_li[S];
     end
 
-  bp_cce_mem_msg_s [mc_x_dim_p-1:0] dram_cmd_lo;
-  logic [mc_x_dim_p-1:0] dram_cmd_v_lo, dram_cmd_yumi_li;
-  bp_cce_mem_msg_s [mc_x_dim_p-1:0] dram_resp_li;
-  logic [mc_x_dim_p-1:0] dram_resp_v_li, dram_resp_ready_lo;
-
-  for (genvar i = 0; i < mc_x_dim_p; i++)
-    begin : links
-      bp_me_cce_to_mem_link_client
-       #(.bp_params_p(bp_params_p))
-       dram_link
-        (.clk_i(mem_clk_i)
-         ,.reset_i(mem_reset_i)
-
-         ,.mem_cmd_o(dram_cmd_lo[i])
-         ,.mem_cmd_v_o(dram_cmd_v_lo[i])
-         ,.mem_cmd_yumi_i(dram_cmd_yumi_li[i])
-
-         ,.mem_resp_i(dram_resp_li[i])
-         ,.mem_resp_v_i(dram_resp_v_li[i])
-         ,.mem_resp_ready_o(dram_resp_ready_lo[i])
-
-         ,.cmd_link_i(mem_cmd_link_lo[i][S])
-         ,.cmd_link_o(mem_cmd_link_li[i][S])
-
-         ,.resp_link_i(mem_resp_link_lo[i][S])
-         ,.resp_link_o(mem_resp_link_li[i][S])
-         );
-    end
-
-  logic [`BSG_SAFE_CLOG2(mc_x_dim_p)-1:0] dram_ch_tag_li;
-  bsg_round_robin_n_to_1
-   #(.width_p($bits(bp_cce_mem_msg_s))
-     ,.num_in_p(cc_x_dim_p)
-     ,.strict_p(0)
+  bp_mem_ready_and_link_s cmd_concentrated_link_li, cmd_concentrated_link_lo;
+  bsg_wormhole_concentrator
+   #(.flit_width_p(mem_noc_flit_width_p)
+     ,.len_width_p(mem_noc_len_width_p)
+     ,.cid_width_p(mem_noc_cid_width_p)
+     ,.cord_width_p(mem_noc_cord_width_p)
+     ,.num_in_p(mc_x_dim_p)
      )
-   dram_rr
-    (.clk_i(core_clk_i)
-     ,.reset_i(core_reset_i)
-  
-     ,.data_i(dram_cmd_lo)
-     ,.v_i(dram_cmd_v_lo)
-     ,.yumi_o(dram_cmd_yumi_li)
-  
-     ,.tag_o(dram_ch_tag_li)
-     ,.data_o(dram_cmd_o)
-     ,.v_o(dram_cmd_v_o)
-     ,.yumi_i(dram_cmd_yumi_i)
+   cmd_concentrator
+    (.clk_i(mem_clk_i)
+     ,.reset_i(mem_reset_i)
+
+     ,.links_i(mem_cmd_link_lo[S])
+     ,.links_o(mem_cmd_link_li[S])
+
+     ,.concentrated_link_i(cmd_concentrated_link_li)
+     ,.concentrated_link_o(cmd_concentrated_link_lo)
+     );
+
+  bp_mem_ready_and_link_s resp_concentrated_link_li, resp_concentrated_link_lo;
+  bsg_wormhole_concentrator
+   #(.flit_width_p(mem_noc_flit_width_p)
+     ,.len_width_p(mem_noc_len_width_p)
+     ,.cid_width_p(mem_noc_cid_width_p)
+     ,.cord_width_p(mem_noc_cord_width_p)
+     ,.num_in_p(mc_x_dim_p)
+     )
+   resp_concentrator
+    (.clk_i(mem_clk_i)
+     ,.reset_i(mem_reset_i)
+
+     ,.links_i(mem_resp_link_lo[S])
+     ,.links_o(mem_resp_link_li[S])
+
+     ,.concentrated_link_i(resp_concentrated_link_li)
+     ,.concentrated_link_o(resp_concentrated_link_lo)
+     );
+
+  bp_me_cce_to_mem_link_client
+   #(.bp_params_p(bp_params_p))
+   dram_link
+    (.clk_i(mem_clk_i)
+     ,.reset_i(mem_reset_i)
+
+     ,.mem_cmd_o(dram_cmd_o)
+     ,.mem_cmd_v_o(dram_cmd_v_o)
+     ,.mem_cmd_yumi_i(dram_cmd_yumi_i)
+
+     ,.mem_resp_i(dram_resp_i)
+     ,.mem_resp_v_i(dram_resp_v_i)
+     ,.mem_resp_ready_o(dram_resp_ready_o)
+
+     ,.cmd_link_i(cmd_concentrated_link_lo)
+     ,.cmd_link_o(cmd_concentrated_link_li)
+
+     ,.resp_link_i(resp_concentrated_link_lo)
+     ,.resp_link_o(resp_concentrated_link_li)
      );
   
-  logic [`BSG_SAFE_CLOG2(mc_x_dim_p)-1:0] dram_ch_tag_r;
-  bsg_dff_reset_en
-   #(.width_p(`BSG_SAFE_CLOG2(cc_x_dim_p)))
-   tag_reg
-    (.clk_i(core_clk_i)
-     ,.reset_i(core_reset_i)
-     ,.en_i(dram_cmd_yumi_i)
-  
-     ,.data_i(dram_ch_tag_li)
-     ,.data_o(dram_ch_tag_r)
-     );
-  
-  assign dram_resp_ready_o = &dram_resp_ready_lo;
-  always_comb
-    begin
-      dram_resp_li = '0;
-      dram_resp_v_li = '0;
-
-      dram_resp_li[dram_ch_tag_r] = dram_resp_i;
-      dram_resp_v_li[dram_ch_tag_r] = dram_resp_v_i;
-    end
-
-
 endmodule
 

@@ -48,8 +48,8 @@ assign io_cmd_cast_i = io_cmd_i;
 assign io_resp_o = io_resp_cast_o;
 
 // CCE-MEM IF to Wormhole routed interface
-`declare_bp_mem_wormhole_payload_s(io_noc_cord_width_p, cce_io_msg_width_lp, io_cmd_payload_s);
-`declare_bp_mem_wormhole_payload_s(io_noc_cord_width_p, cce_io_msg_width_lp, io_resp_payload_s);
+`declare_bp_io_wormhole_payload_s(io_noc_cord_width_p, cce_io_msg_width_lp, io_cmd_payload_s);
+`declare_bp_io_wormhole_payload_s(io_noc_cord_width_p, cce_io_msg_width_lp, io_resp_payload_s);
 `declare_bsg_wormhole_router_packet_s(io_noc_cord_width_p, io_noc_len_width_p, $bits(io_cmd_payload_s), io_cmd_packet_s);
 `declare_bsg_wormhole_router_packet_s(io_noc_cord_width_p, io_noc_len_width_p, $bits(io_resp_payload_s), io_resp_packet_s);
 

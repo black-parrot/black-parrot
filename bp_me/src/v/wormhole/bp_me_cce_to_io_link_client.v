@@ -38,8 +38,8 @@ module bp_me_cce_to_io_link_client
   );
   
   `declare_bp_io_if(paddr_width_p, dword_width_p, lce_id_width_p);
-  `declare_bp_mem_wormhole_payload_s(io_noc_cord_width_p, cce_io_msg_width_lp, io_cmd_payload_s);
-  `declare_bp_mem_wormhole_payload_s(io_noc_cord_width_p, cce_io_msg_width_lp, io_resp_payload_s);
+  `declare_bp_io_wormhole_payload_s(io_noc_cord_width_p, cce_io_msg_width_lp, io_cmd_payload_s);
+  `declare_bp_io_wormhole_payload_s(io_noc_cord_width_p, cce_io_msg_width_lp, io_resp_payload_s);
   `declare_bsg_wormhole_router_packet_s(io_noc_cord_width_p, io_noc_len_width_p, $bits(io_cmd_payload_s), io_cmd_packet_s);
   `declare_bsg_wormhole_router_packet_s(io_noc_cord_width_p, io_noc_len_width_p, $bits(io_resp_payload_s), io_resp_packet_s);
 

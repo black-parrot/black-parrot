@@ -16,7 +16,7 @@ module bp_io_tile
    , input                                  reset_i
 
    , input [io_noc_did_width_p-1:0]         my_did_i
-   , input [io_noc_cord_width_p-1:0]        my_cord_i
+   , input [coh_noc_cord_width_p-1:0]       my_cord_i
 
    , input [coh_noc_ral_link_width_lp-1:0]  lce_req_link_i
    , output [coh_noc_ral_link_width_lp-1:0] lce_req_link_o
