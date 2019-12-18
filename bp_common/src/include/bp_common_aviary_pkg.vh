@@ -53,6 +53,7 @@ package bp_common_aviary_pkg;
       ,mem_noc_flit_width    : 128
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
+      ,bypass_flit_width     : 10
 
       ,async_io_clk         : 0
       ,io_noc_max_credits   : 16
@@ -104,6 +105,7 @@ package bp_common_aviary_pkg;
       ,mem_noc_flit_width    : 128
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
+      ,bypass_flit_width     : 10
 
       ,async_io_clk         : 0
       ,io_noc_max_credits   : 16
@@ -156,6 +158,7 @@ package bp_common_aviary_pkg;
       ,mem_noc_flit_width    : 128
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
+      ,bypass_flit_width     : 10
 
       ,async_io_clk         : 0
       ,io_noc_max_credits   : 16
@@ -207,6 +210,7 @@ package bp_common_aviary_pkg;
       ,mem_noc_flit_width    : 128
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
+      ,bypass_flit_width     : 10
 
       ,async_io_clk         : 0
       ,io_noc_max_credits   : 16
@@ -258,6 +262,7 @@ package bp_common_aviary_pkg;
       ,mem_noc_flit_width    : 128
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
+      ,bypass_flit_width     : 10
 
       ,async_io_clk         : 0
       ,io_noc_max_credits   : 16
@@ -309,6 +314,7 @@ package bp_common_aviary_pkg;
       ,mem_noc_flit_width    : 128
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
+      ,bypass_flit_width     : 10
 
       ,async_io_clk         : 0
       ,io_noc_max_credits   : 16
@@ -360,6 +366,7 @@ package bp_common_aviary_pkg;
       ,mem_noc_flit_width    : 128
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
+      ,bypass_flit_width     : 10
 
       ,async_io_clk         : 0
       ,io_noc_max_credits   : 16
@@ -411,6 +418,7 @@ package bp_common_aviary_pkg;
       ,mem_noc_flit_width    : 128
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
+      ,bypass_flit_width     : 10
 
       ,async_io_clk         : 0
       ,io_noc_max_credits   : 16

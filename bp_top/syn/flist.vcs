@@ -61,10 +61,12 @@ $BASEJUMP_STL_DIR/bsg_dataflow/bsg_flow_counter.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_one_fifo.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_parallel_in_serial_out_dynamic.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_1_to_n.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_2_to_2.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_n_to_1.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out_dynamic.v
+$BASEJUMP_STL_DIR/bsg_dataflow/bsg_serial_in_parallel_out_full.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_shift_reg.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_two_fifo.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_cam_1r1w.v
