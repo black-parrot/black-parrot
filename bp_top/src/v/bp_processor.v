@@ -22,6 +22,8 @@ module bp_processor
 
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
    , localparam io_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(io_noc_flit_width_p)
+
+   , localparam bypass_link_width_lp = `bsg_ready_and_link_sif_width(bypass_flit_width_p)
    )
   (input                                            core_clk_i
    , input                                          core_reset_i
@@ -43,14 +45,10 @@ module bp_processor
    , input  [E:W][io_noc_ral_link_width_lp-1:0]     io_resp_link_i
    , output [E:W][io_noc_ral_link_width_lp-1:0]     io_resp_link_o
 
-   // TEMP
-   , output [cce_mem_msg_width_lp-1:0] dram_cmd_o
-   , output                            dram_cmd_v_o
-   , input                             dram_cmd_yumi_i
+   , output [E:W][bypass_link_width_lp-1:0]         bypass_cmd_link_o
+   , input [E:W][bypass_link_width_lp-1:0]          bypass_resp_link_i
 
-   , input  [cce_mem_msg_width_lp-1:0] dram_resp_i
-   , input                             dram_resp_v_i
-   , output                            dram_resp_ready_o
+   // TODO: DMC links
    );
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
@@ -156,13 +154,8 @@ bp_mem_complex
    ,.mem_cmd_link_i(mem_cmd_link_lo[S])
    ,.mem_resp_link_o(mem_resp_link_li[S])
 
-   ,.dram_cmd_o(dram_cmd_o)
-   ,.dram_cmd_v_o(dram_cmd_v_o)
-   ,.dram_cmd_yumi_i(dram_cmd_yumi_i)
-
-   ,.dram_resp_i(dram_resp_i)
-   ,.dram_resp_v_i(dram_resp_v_i)
-   ,.dram_resp_ready_o(dram_resp_ready_o)
+   ,.bypass_cmd_link_o(bypass_cmd_link_o)
+   ,.bypass_resp_link_i(bypass_resp_link_i)
    );
 
 bp_cacc_complex

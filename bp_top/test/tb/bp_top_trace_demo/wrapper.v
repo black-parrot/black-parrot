@@ -19,6 +19,7 @@ module wrapper
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
    ,localparam io_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(io_noc_flit_width_p)
+   , localparam bypass_link_width_lp = `bsg_ready_and_link_sif_width(bypass_flit_width_p)
    )
   (input                                               core_clk_i
    , input                                             core_reset_i
@@ -40,14 +41,10 @@ module wrapper
    , input  [E:W][io_noc_ral_link_width_lp-1:0]        io_resp_link_i
    , output [E:W][io_noc_ral_link_width_lp-1:0]        io_resp_link_o
 
-   // TEMP
-   , output [cce_mem_msg_width_lp-1:0] dram_cmd_o
-   , output                            dram_cmd_v_o
-   , input                             dram_cmd_yumi_i
+   , output [E:W][bypass_link_width_lp-1:0]            bypass_cmd_link_o
+   , input [E:W][bypass_link_width_lp-1:0]             bypass_resp_link_i
 
-   , input  [cce_mem_msg_width_lp-1:0] dram_resp_i
-   , input                             dram_resp_v_i
-   , output                            dram_resp_ready_o
+   // TODO: DMC links
    );
 
   bp_processor
