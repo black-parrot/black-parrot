@@ -41,6 +41,7 @@ module bp_be_bypass
    , output [reg_data_width_lp-1:0]               bypass_rs2_o
    );
 
+// synopsys translate_off
 initial begin : parameter_validation
   assert (fwd_els_p > 0 && fwd_els_p != "inv") 
     else $error("fwd_els_p must be positive, else there is nothing to bypass. \
@@ -50,6 +51,7 @@ initial begin : parameter_validation
   assert (enable_p == 1)
     else $warning("Bypassing disabled.");
 end
+// synopsys translate_on
 
 // Intermediate connections
 logic [bypass_els_lp-1:0]                        rs1_match_vector       , rs2_match_vector;

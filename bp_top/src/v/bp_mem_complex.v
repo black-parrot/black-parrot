@@ -103,7 +103,7 @@ module bp_mem_complex
   localparam bypass_width_ceil_lp = bypass_len_lp * bypass_flit_width_p;
   bp_cce_mem_msg_s piso_cmd_li;
   logic piso_cmd_v_li, piso_cmd_ready_lo;
-  bp_bypass_ready_and_link_s bypass_cmd_link_lo;
+  bp_bypass_ready_and_link_s bypass_cmd_link_lo, bypass_resp_link_li;
   wire [bypass_width_ceil_lp-1:0] piso_cmd_pad_li = bypass_width_ceil_lp'(piso_cmd_li);
   bsg_parallel_in_serial_out
    #(.width_p(bypass_flit_width_p)
@@ -124,7 +124,6 @@ module bp_mem_complex
 
   bp_cce_mem_msg_s sipo_resp_lo;
   logic sipo_resp_v_lo, sipo_resp_yumi_li;
-  bp_bypass_ready_and_link_s bypass_resp_link_li;
   logic [bypass_width_ceil_lp-1:0] sipo_resp_pad_lo;
   bsg_serial_in_parallel_out_full
    #(.width_p(bypass_flit_width_p)
@@ -184,8 +183,10 @@ module bp_mem_complex
       endcase
     end
 
+// synopsys translate_off
 always_ff @(negedge mem_clk_i)
   assert (dram_mode_li != e_dram_enable) else $error("DMC is not current supported");
-  
+// synopsys translate_on
+
 endmodule
 

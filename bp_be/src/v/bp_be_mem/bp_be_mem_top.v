@@ -481,10 +481,13 @@ assign itlb_fill_v_o     = ptw_tlb_w_v & itlb_not_dtlb_resp;
 assign itlb_fill_vaddr_o = fault_vaddr;
 assign itlb_fill_entry_o = ptw_tlb_w_entry;
 
+// synopsys translate_off
 always_ff @(negedge clk_i)
   begin
     assert (~(dtlb_r_v_lo & dcache_uncached & mmu_cmd.mem_op inside {e_lrw, e_lrd, e_scw, e_scd}))
       else $warning("LR/SC to uncached memory not supported");
   end
+// synopsys translate_on
+//
 endmodule
 

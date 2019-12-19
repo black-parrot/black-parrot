@@ -77,8 +77,8 @@ if (async_mem_clk_p == 1)
        ,.bclk_i(mem_clk_i)
        ,.breset_i(mem_reset_i)
 
-       ,.alink_i(clint_mem_cmd_link_lo)
-       ,.alink_o(clint_mem_cmd_link_li)
+       ,.alink_i(clint_cmd_link_lo)
+       ,.alink_o(clint_cmd_link_li)
 
        ,.blink_i(mem_cmd_link_li)
        ,.blink_o(mem_cmd_link_lo)
@@ -95,8 +95,8 @@ if (async_mem_clk_p == 1)
        ,.bclk_i(mem_clk_i)
        ,.breset_i(mem_reset_i)
 
-       ,.alink_i(clint_mem_resp_link_lo)
-       ,.alink_o(clint_mem_resp_link_li)
+       ,.alink_i(clint_resp_link_lo)
+       ,.alink_o(clint_resp_link_li)
 
        ,.blink_i(mem_resp_link_li)
        ,.blink_o(mem_resp_link_lo)
