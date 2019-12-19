@@ -39,7 +39,7 @@ tools: update_libs
 	$(MAKE) cmurphi
 
 progs: update_tests
-	$(MAKE) -C $(BP_COMMON_DIR)/test all_mem all_dump
+	$(MAKE) -C $(BP_COMMON_DIR)/test all_mem all_dump all_nbf
 
 ucode:
 	$(MAKE) -C $(BP_ME_DIR)/src/asm roms

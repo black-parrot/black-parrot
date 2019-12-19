@@ -3,7 +3,8 @@ TOP ?= $(shell git rev-parse --show-toplevel)
 
 include $(TOP)/Makefile.common
 
-SPIKE_MOD_PATH = $(BP_EXTERNAL_DIR)/bin
+ZERO_MEM ?=$(BP_COMMON_DIR)/software/py/zero_mem.py
+MEM2NBF  ?= $(BP_COMMON_DIR)/software/py/nbf.py
 
 TEST_DIR       = $(BP_COMMON_DIR)/test
 MEM_DIR        = $(TEST_DIR)/mem
@@ -22,7 +23,9 @@ export TEST_DIR
 
 include $(TEST_DIR)/Makefile.frag
 
-all: all_mem all_dump all_spike
+all: all_mem all_dump all_nbf all_spike
+
+all_nbf: riscv_nbf coremark_nbf beebs_nbf littlefs_test_nbf demos_nbf zero_nbf
 
 # We don't include riscvdv here because it requires VCS
 all_mem: perch
@@ -109,29 +112,41 @@ spec_elf:
 	$(MAKE) -C $(TEST_DIR)/src/spec/spec2000/benchmarks/spec2000/CINT2000/175.vpr/src.raw/ 
 	find $(TEST_DIR)/src/spec/spec2000/benchmarks/spec2000/CINT2000/175.vpr/src.raw/  -executable -type f -execdir mv {} $(MEM_DIR)/{} \;
 
+riscvdv_elf: $(BP_RVDV)
+$(BP_RVDV):
+	rm -rf $(TEST_DIR)/src/riscv-dv/out/
+	$(MAKE) -C $(TEST_DIR)/src/riscv-dv/ generate.$@
+	cp $(TEST_DIR)/src/riscv-dv/out/asm_tests/$@_0.o $(MEM_DIR)/$@.riscv
+
+riscv_nbf: $(foreach x, $(RV64_P_TESTS) $(RV64_PT_TESTS) $(RV64_V_TESTS) $(RV64_VT_TESTS) $(RV64_BENCHMARKS), $(x).nbf)
 riscv_mem: riscv_elf
 riscv_mem: $(foreach x, $(RV64_P_TESTS) $(RV64_PT_TESTS) $(RV64_V_TESTS) $(RV64_VT_TESTS) $(RV64_BENCHMARKS), $(x).mem)
 riscv_spike: $(foreach x, $(RV64_P_TESTS) $(RV64_PT_TESTS) $(RV64_V_TESTS) $(RV64_VT_TESTS) $(RV64_BENCHMARKS), $(x).spike)
 riscv_dump: $(foreach x, $(RV64_P_TESTS) $(RV64_PT_TESTS) $(RV64_V_TESTS) $(RV64_VT_TESTS) $(RV64_BENCHMARKS), $(x).dump)
 
+demos_nbf: $(foreach x, $(BP_DEMOS), $(x).nbf)
 demos_mem: demos_elf
 demos_mem: $(foreach x, $(BP_DEMOS), $(x).mem)
 demos_spike: $(foreach x, $(BP_DEMOS), $(x).spike)
 demos_dump: $(foreach x, $(BP_DEMOS), $(x).dump)
 
+coremark_nbf: coremark.nbf
 coremark_mem: coremark_elf
 coremark_mem: coremark.mem
 coremark_spike: coremark.spike
 coremark_dump: coremark.dump
 
+littlefs_test_nbf: littlefs_test.nbf
 littlefs_test_mem: littlefs_test_elf
 littlefs_test_mem: littlefs_test.mem
 littlefs_test_spike: littlefs_test.spike
 littlefs_test_dump: littlefs_test.dump
 
+zero_nbf: zero.nbf
 zero_mem:
-	$(PYTHON) $(BP_COMMON_DIR)/software/py/zero_mem.py > $(MEM_DIR)/zero.mem
+	$(PYTHON) $(ZERO_MEM) > $(MEM_DIR)/zero.mem
 
+mtest_nbf: mtest.nbf
 #mtest_mem: beebs_elf
 mtest_mem: mtest_lfs
 mtest_mem: mtest_elf
@@ -139,32 +154,32 @@ mtest_mem: mtest.mem
 mtest_spike: mtest.spike
 mtest_dump: mtest.dump
 
+opensbi_nbf: opensbi.nbf
 opensbi_mem: opensbi_elf
 opensbi_mem: opensbi.mem
 # Need to kill spike at the end of opensbi payload for this to work
 #opensbi_spike: opensbi.spike
 
+bbl_nbf: bbl.nbf
 bbl_mem: bbl_elf
 bbl_mem: bbl.mem
 bbl_dump: bbl.dump
 # Need to kill spike at the end of bbl payload for this to work
 #bbl_spike: bbl.spike
 
+beebs_nbf: $(foreach x, $(BEEBS_TESTS), $(x).nbf)
 beebs_mem: beebs_elf
 beebs_mem: $(foreach x, $(BEEBS_TESTS), $(x).mem)
 beebs_spike: $(foreach x, $(BEEBS_TESTS), $(x).spike)
 beebs_dump: $(foreach x, $(BEEBS_TESTS), $(x).dump)
 
+spec_nbf: $(foreach x, $(BP_SPEC), $(x).nbf)
 spec_mem: spec_elf
 spec_mem: $(foreach x, $(BP_SPEC), $(x).mem)
 spec_spike: $(foreach x, $(BP_SPEC), $(x).spike)
 spec_dump: $(foreach x, $(BP_SPEC), $(x).dump)
 
-riscvdv_elf: $(BP_RVDV)
-$(BP_RVDV):
-	rm -rf $(TEST_DIR)/src/riscv-dv/out/
-	$(MAKE) -C $(TEST_DIR)/src/riscv-dv/ generate.$@
-	cp $(TEST_DIR)/src/riscv-dv/out/asm_tests/$@_0.o $(MEM_DIR)/$@.riscv
+riscvdv_nbf: $(foreach x, $(BP_RVDV), $(x).nbf)
 riscvdv_mem: riscvdv_elf
 riscvdv_mem: $(foreach x, $(BP_RVDV), $(x).mem)
 riscvdv_spike: $(foreach x, $(BP_RVDV), $(x).spike)
@@ -184,6 +199,9 @@ riscvdv_dump: $(foreach x, $(BP_RVDV), $(x).dump)
 
 %.dump:
 	$(RISCV_OBJDUMP) $(MEM_DIR)/$*.riscv > $(MEM_DIR)/$@
+
+%.nbf:
+	$(PYTHON) $(MEM2NBF) $(MEM_DIR)/$*.mem > $(MEM_DIR)/$@
 
 clean:
 	-$(MAKE) -C $(TEST_DIR)/src/perch clean
