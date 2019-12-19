@@ -35,13 +35,13 @@ all_dump: riscv_dump coremark_dump beebs_dump littlefs_test_dump demos_dump
 
 all_spike: riscv_spike coremark_spike beebs_spike littlefs_test_spike 
 
-zero: zero_mem
-riscv: riscv_mem riscv_dump riscv_spike
-coremark: coremark_mem coremark_dump coremark_spike
-beebs: beebs_mem beebs_dump beebs_spike
-littlefs_test: littlefs_test_mem littlefs_test_dump littlefs_test_spike
-demos: demos_mem demos_dump
-riscvdv: riscvdv_mem riscvdv_dump riscvdv_spike
+zero: zero_mem zero_nbf
+riscv: riscv_mem riscv_nbf riscv_dump riscv_spike
+coremark: coremark_mem coremark_nbf coremark_dump coremark_spike
+beebs: beebs_mem beebs_nbf beebs_dump beebs_spike
+littlefs_test: littlefs_test_mem littlefs_test_nbf littlefs_test_dump littlefs_test_spike
+demos: demos_mem demos_nbf demos_dump
+riscvdv: riscvdv_mem riscvdv_nbf riscvdv_dump riscvdv_spike
 # OpenSBI requires hardfloat and does not support softfloat libraries, so the compilation will fail
 #opensbi: opensbi_mem opensbi_dump
 #bbl: bbl_mem bbl_dump

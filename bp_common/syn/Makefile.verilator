@@ -112,6 +112,7 @@ sim.sc: dirs.sc
 	$(shell mkdir -p $(COV_DIR))
 	$(eval include $(TB_PATH)/$(TB)/Makefile.frag)
 	-@ln -sf $(BUILD_DIR)/obj_dir/V$(TOP_MODULE) $(SIM_DIR)/simsc
+	-@cp $(MEM_PATH)/$(PROG).nbf $(SIM_DIR)/prog.nbf
 	-@cp $(MEM_PATH)/$(PROG).mem $(SIM_DIR)/prog.mem
 	-@cp $(MEM_PATH)/$(PROG).riscv $(SIM_DIR)/prog.elf
 	-@cp $(MEM_PATH)/$(PROG).dump $(SIM_DIR)/prog.dump

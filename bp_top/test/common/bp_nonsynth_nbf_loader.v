@@ -15,12 +15,12 @@ module bp_nonsynth_nbf_loader
 
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
   `declare_bp_proc_params(bp_params_p)
-  `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p)
+  `declare_bp_io_if_widths(paddr_width_p, dword_width_p, lce_id_width_p)
 
   ,parameter nbf_filename_p = "prog.nbf"
   ,parameter nbf_opcode_width_p = 8
   ,parameter nbf_addr_width_p = paddr_width_p
-  ,parameter nbf_data_width_p = cce_block_width_p
+  ,parameter nbf_data_width_p = dword_width_p
   
   ,localparam nbf_width_lp = nbf_opcode_width_p + nbf_addr_width_p + nbf_data_width_p
   ,localparam max_nbf_index_lp = 2**20
@@ -31,18 +31,18 @@ module bp_nonsynth_nbf_loader
   ,input  reset_i
   ,output done_o
   
-  ,output [cce_mem_msg_width_lp-1:0]        mem_cmd_o
-  ,output                                   mem_cmd_v_o
-  ,input                                    mem_cmd_ready_i
+  ,output [cce_io_msg_width_lp-1:0]        io_cmd_o
+  ,output                                  io_cmd_v_o
+  ,input                                   io_cmd_ready_i
   
-  ,input  [cce_mem_msg_width_lp-1:0]        mem_resp_i
-  ,input                                    mem_resp_v_i
-  ,output                                   mem_resp_yumi_o
+  ,input  [cce_io_msg_width_lp-1:0]        io_resp_i
+  ,input                                   io_resp_v_i
+  ,output                                  io_resp_yumi_o
   );
   
   // response network not used
-  wire unused_resp = &{mem_resp_i, mem_resp_v_i};
-  assign mem_resp_yumi_o = mem_resp_v_i;
+  wire unused_resp = &{io_resp_i, io_resp_v_i};
+  assign io_resp_yumi_o = io_resp_v_i;
 
   // bp_nbf packet
   typedef struct packed {
@@ -52,12 +52,12 @@ module bp_nonsynth_nbf_loader
   } bp_nbf_s;
 
   // bp_cce packet
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, num_lce_p, lce_assoc_p);
-  bp_cce_mem_msg_s mem_cmd;
-  logic mem_cmd_v_lo;
+  `declare_bp_io_if(paddr_width_p, dword_width_p, lce_id_width_p);
+  bp_cce_io_msg_s io_cmd;
+  logic io_cmd_v_lo;
   
-  assign mem_cmd_o = mem_cmd;
-  assign mem_cmd_v_o = mem_cmd_v_lo;
+  assign io_cmd_o = io_cmd;
+  assign io_cmd_v_o = io_cmd_v_lo;
 
   // read nbf file.
   logic [nbf_width_lp-1:0] nbf [max_nbf_index_lp-1:0];
@@ -68,18 +68,15 @@ module bp_nonsynth_nbf_loader
   // assemble cce cmd packet
   always_comb
   begin
-    mem_cmd.data = curr_nbf.data;
-    mem_cmd.payload = '0;
-    mem_cmd.addr = curr_nbf.addr;
-    mem_cmd.msg_type = e_cce_mem_wb;
+    io_cmd.data = curr_nbf.data;
+    io_cmd.payload = '0;
+    io_cmd.addr = curr_nbf.addr;
+    io_cmd.msg_type = e_cce_io_wr;
     
     case (curr_nbf.opcode)
-      2: mem_cmd.size = e_mem_size_4;
-      3: mem_cmd.size = e_mem_size_8;
-      4: mem_cmd.size = e_mem_size_16;
-      5: mem_cmd.size = e_mem_size_32;
-      6: mem_cmd.size = e_mem_size_64;
-      default: mem_cmd.size = e_mem_size_4;
+      2: io_cmd.size = e_io_size_4;
+      3: io_cmd.size = e_io_size_8;
+      default: io_cmd.size = e_io_size_4;
     endcase
   end
 
@@ -92,7 +89,7 @@ module bp_nonsynth_nbf_loader
  // combinational
   always_comb 
   begin
-    mem_cmd_v_lo = 1'b0;
+    io_cmd_v_lo = 1'b0;
     nbf_index_n = nbf_index_r;
     done_n = 1'b0;
     if (~reset_i) 
@@ -103,8 +100,8 @@ module bp_nonsynth_nbf_loader
           end
         else 
           begin
-            mem_cmd_v_lo = 1'b1;
-            if (mem_cmd_ready_i)
+            io_cmd_v_lo = 1'b1;
+            if (io_cmd_ready_i)
               begin
                 nbf_index_n = nbf_index_r + 1;
               end

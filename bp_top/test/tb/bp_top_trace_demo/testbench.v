@@ -73,10 +73,20 @@ logic                  host_cmd_v_li, host_cmd_yumi_lo;
 bp_cce_io_msg_s        host_resp_lo;
 logic                  host_resp_v_lo, host_resp_ready_li;
 
+bp_cce_io_msg_s        load_cmd_lo;
+logic                  load_cmd_v_lo, load_cmd_ready_li;
+bp_cce_io_msg_s        load_resp_li;
+logic                  load_resp_v_li;
+
 bp_cce_io_msg_s        cfg_cmd_lo;
 logic                  cfg_cmd_v_lo, cfg_cmd_ready_li;
 bp_cce_io_msg_s        cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
+
+bp_cce_io_msg_s        nbf_cmd_lo;
+logic                  nbf_cmd_v_lo, nbf_cmd_ready_li;
+bp_cce_io_msg_s        nbf_resp_li;
+logic                  nbf_resp_v_li;
 
 wire [io_noc_did_width_p-1:0] dram_did_li = '1;
 wire [io_noc_did_width_p-1:0] proc_did_li = 1;
@@ -317,13 +327,13 @@ bp_me_cce_to_io_link_bidir
   (.clk_i(clk_i)
   ,.reset_i(reset_i)
 
-  ,.io_cmd_i(cfg_cmd_lo)
-  ,.io_cmd_v_i(cfg_cmd_ready_li & cfg_cmd_v_lo)
-  ,.io_cmd_ready_o(cfg_cmd_ready_li)
+  ,.io_cmd_i(load_cmd_lo)
+  ,.io_cmd_v_i(load_cmd_ready_li & load_cmd_v_lo)
+  ,.io_cmd_ready_o(load_cmd_ready_li)
 
-  ,.io_resp_o(cfg_resp_li)
-  ,.io_resp_v_o(cfg_resp_v_li)
-  ,.io_resp_yumi_i(cfg_resp_ready_lo & cfg_resp_v_li)
+  ,.io_resp_o(load_resp_li)
+  ,.io_resp_v_o(load_resp_v_li)
+  ,.io_resp_yumi_i(load_resp_v_li) // Always accept responses
 
   ,.io_cmd_o(host_cmd_li)
   ,.io_cmd_v_o(host_cmd_v_li)
@@ -427,6 +437,24 @@ bp_nonsynth_host
    ,.program_finish_o(program_finish)
    );
 
+logic nbf_done_lo;
+bp_nonsynth_nbf_loader
+ #(.bp_params_p(bp_params_p))
+ nbf_loader
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.io_cmd_o(nbf_cmd_lo)
+   ,.io_cmd_v_o(nbf_cmd_v_lo)
+   ,.io_cmd_ready_i(nbf_cmd_ready_li)
+
+   ,.io_resp_i(nbf_resp_li)
+   ,.io_resp_v_i(nbf_resp_v_li)
+   ,.io_resp_yumi_o()
+
+   ,.done_o(nbf_done_lo)
+   );
+
 localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
 bp_cce_mmio_cfg_loader
   #(.bp_params_p(bp_params_p)
@@ -437,7 +465,7 @@ bp_cce_mmio_cfg_loader
     )
   cfg_loader
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_i | ~nbf_done_lo)
    
    ,.io_cmd_o(cfg_cmd_lo)
    ,.io_cmd_v_o(cfg_cmd_v_lo)
@@ -447,6 +475,22 @@ bp_cce_mmio_cfg_loader
    ,.io_resp_v_i(cfg_resp_v_li)
    ,.io_resp_ready_o(cfg_resp_ready_lo)
   );
+
+// CFG and NBF are mutex, so we can just use fixed arbitration here
+always_comb
+  begin
+    load_cmd_lo = nbf_cmd_v_lo ? nbf_cmd_lo : cfg_cmd_lo;
+    load_cmd_v_lo = nbf_cmd_v_lo | cfg_cmd_v_lo;
+    nbf_cmd_ready_li = load_cmd_ready_li;
+    cfg_cmd_ready_li = load_cmd_ready_li;
+
+    // Either/both can sink responses
+    nbf_resp_li = load_resp_li;
+    nbf_resp_v_li = load_resp_v_li;
+
+    cfg_resp_li = load_resp_li;
+    cfg_resp_v_li = load_resp_v_li;
+  end
 
 bp_nonsynth_if_verif
  #(.bp_params_p(bp_params_p))

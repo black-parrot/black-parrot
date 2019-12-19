@@ -20,7 +20,7 @@ class NBF:
     # input parameters
     self.mem_file = config["mem_file"]
     self.addr_width = 40
-    self.block_size = 64
+    self.block_size = 8
 
     # process riscv
     self.read_dram()
@@ -42,16 +42,7 @@ class NBF:
   def get_opcode(self, addr):
     opcode = 2
     if addr % 8 == 0:
-      if addr % 16 == 0:
-        if addr % 32 == 0:
-          if addr % 64 == 0:
-            opcode = 6
-          else:
-            opcode = 5
-        else:
-          opcode = 4
-      else:
-        opcode = 3
+      opcode = 3
     return opcode
 
   # read objcopy dumped in 'verilog' format.
