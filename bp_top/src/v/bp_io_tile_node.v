@@ -25,7 +25,7 @@ module bp_io_tile_node
    , input                                       io_reset_i
 
    , input [io_noc_did_width_p-1:0]              my_did_i
-   , input [io_noc_cord_width_p-1:0]             my_cord_i
+   , input [coh_noc_cord_width_p-1:0]            my_cord_i
 
    , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_req_link_i
    , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_req_link_o
@@ -33,11 +33,11 @@ module bp_io_tile_node
    , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_cmd_link_i
    , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_cmd_link_o
 
-   , input [S:W][io_noc_ral_link_width_lp-1:0]   io_cmd_link_i
-   , output [S:W][io_noc_ral_link_width_lp-1:0]  io_cmd_link_o
+   , input [E:W][io_noc_ral_link_width_lp-1:0]   io_cmd_link_i
+   , output [E:W][io_noc_ral_link_width_lp-1:0]  io_cmd_link_o
 
-   , input [S:W][io_noc_ral_link_width_lp-1:0]   io_resp_link_i
-   , output [S:W][io_noc_ral_link_width_lp-1:0]  io_resp_link_o
+   , input [E:W][io_noc_ral_link_width_lp-1:0]   io_resp_link_i
+   , output [E:W][io_noc_ral_link_width_lp-1:0]  io_resp_link_o
    );
 
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
@@ -235,10 +235,11 @@ module bp_io_tile_node
   bsg_wormhole_router
    #(.flit_width_p(io_noc_flit_width_p)
      ,.dims_p(io_noc_dims_p)
+     ,.cord_dims_p(io_noc_cord_dims_p)
      ,.cord_markers_pos_p(io_noc_cord_markers_pos_p)
      ,.len_width_p(io_noc_len_width_p)
      ,.reverse_order_p(1)
-     ,.routing_matrix_p(StrictYX)
+     ,.routing_matrix_p(StrictX)
      )
    io_cmd_router
     (.clk_i(io_clk_i)
@@ -253,10 +254,11 @@ module bp_io_tile_node
   bsg_wormhole_router
    #(.flit_width_p(io_noc_flit_width_p)
      ,.dims_p(io_noc_dims_p)
+     ,.cord_dims_p(io_noc_cord_dims_p)
      ,.cord_markers_pos_p(io_noc_cord_markers_pos_p)
      ,.len_width_p(io_noc_len_width_p)
      ,.reverse_order_p(1)
-     ,.routing_matrix_p(StrictYX)
+     ,.routing_matrix_p(StrictX)
      )
    io_resp_router
     (.clk_i(io_clk_i)
