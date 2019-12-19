@@ -111,8 +111,8 @@ bp_mem_ready_and_link_s mem_cmd_link_lo, mem_resp_link_li;
          ,.alink_i(core_lce_req_link_lo)
          ,.alink_o(core_lce_req_link_li)
 
-         ,.blink_i(coh_lce_req_link_li)
-         ,.blink_o(coh_lce_req_link_lo)
+         ,.blink_i(coh_lce_req_link_lo)
+         ,.blink_o(coh_lce_req_link_li)
          );
 
       bsg_async_noc_link
@@ -129,8 +129,8 @@ bp_mem_ready_and_link_s mem_cmd_link_lo, mem_resp_link_li;
          ,.alink_i(core_lce_cmd_link_lo)
          ,.alink_o(core_lce_cmd_link_li)
 
-         ,.blink_i(coh_lce_cmd_link_li)
-         ,.blink_o(coh_lce_cmd_link_lo)
+         ,.blink_i(coh_lce_cmd_link_lo)
+         ,.blink_o(coh_lce_cmd_link_li)
          );
 
       bsg_async_noc_link
@@ -147,8 +147,8 @@ bp_mem_ready_and_link_s mem_cmd_link_lo, mem_resp_link_li;
          ,.alink_i(core_lce_resp_link_lo)
          ,.alink_o(core_lce_resp_link_li)
 
-         ,.blink_i(coh_lce_resp_link_li)
-         ,.blink_o(coh_lce_resp_link_lo)
+         ,.blink_i(coh_lce_resp_link_lo)
+         ,.blink_o(coh_lce_resp_link_li)
          );
     end
   else
@@ -165,7 +165,7 @@ bp_mem_ready_and_link_s mem_cmd_link_lo, mem_resp_link_li;
   if (async_mem_clk_p == 1)
     begin : mem_async
       bsg_async_noc_link
-       #(.width_p(coh_noc_flit_width_p)
+       #(.width_p(mem_noc_flit_width_p)
          ,.lg_size_p(3)
          )
        mem_cdc

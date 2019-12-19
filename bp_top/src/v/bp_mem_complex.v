@@ -100,9 +100,11 @@ module bp_mem_complex
      );
 
   localparam bypass_len_lp = `BSG_CDIV(cce_mem_msg_width_lp, bypass_flit_width_p);
+  localparam bypass_width_ceil_lp = bypass_len_lp * bypass_flit_width_p;
   bp_cce_mem_msg_s piso_cmd_li;
   logic piso_cmd_v_li, piso_cmd_ready_lo;
   bp_bypass_ready_and_link_s bypass_cmd_link_lo;
+  wire [bypass_width_ceil_lp-1:0] piso_cmd_pad_li = bypass_width_ceil_lp'(piso_cmd_li);
   bsg_parallel_in_serial_out
    #(.width_p(bypass_flit_width_p)
      ,.els_p(bypass_len_lp)
@@ -111,7 +113,7 @@ module bp_mem_complex
     (.clk_i(mem_clk_i)
      ,.reset_i(mem_reset_i)
 
-     ,.data_i(piso_cmd_li)
+     ,.data_i(piso_cmd_pad_li)
      ,.valid_i(piso_cmd_v_li)
      ,.ready_o(piso_cmd_ready_lo)
 
@@ -123,6 +125,7 @@ module bp_mem_complex
   bp_cce_mem_msg_s sipo_resp_lo;
   logic sipo_resp_v_lo, sipo_resp_yumi_li;
   bp_bypass_ready_and_link_s bypass_resp_link_li;
+  logic [bypass_width_ceil_lp-1:0] sipo_resp_pad_lo;
   bsg_serial_in_parallel_out_full
    #(.width_p(bypass_flit_width_p)
      ,.els_p(bypass_len_lp)
@@ -136,10 +139,11 @@ module bp_mem_complex
      ,.v_i(bypass_resp_link_li.v)
      ,.ready_o(bypass_cmd_link_lo.ready_and_rev)
 
-     ,.data_o(sipo_resp_lo)
+     ,.data_o(sipo_resp_pad_lo)
      ,.v_o(sipo_resp_v_lo)
      ,.yumi_i(sipo_resp_yumi_li)
      );
+  assign sipo_resp_lo = sipo_resp_pad_lo[0+:cce_mem_msg_width_lp];
 
   typedef enum bit [1:0]
   {

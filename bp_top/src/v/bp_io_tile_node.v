@@ -100,8 +100,8 @@ module bp_io_tile_node
          ,.alink_i(core_lce_req_link_lo)
          ,.alink_o(core_lce_req_link_li)
 
-         ,.blink_i(coh_lce_req_link_li)
-         ,.blink_o(coh_lce_req_link_lo)
+         ,.blink_i(coh_lce_req_link_lo)
+         ,.blink_o(coh_lce_req_link_li)
          );
 
       bsg_async_noc_link
@@ -118,26 +118,8 @@ module bp_io_tile_node
          ,.alink_i(core_lce_cmd_link_lo)
          ,.alink_o(core_lce_cmd_link_li)
 
-         ,.blink_i(coh_lce_cmd_link_li)
-         ,.blink_o(coh_lce_cmd_link_lo)
-         );
-
-      bsg_async_noc_link
-       #(.width_p(coh_noc_flit_width_p)
-         ,.lg_size_p(3)
-         )
-       lce_resp_link
-        (.aclk_i(core_clk_i)
-         ,.areset_i(core_reset_i)
-
-         ,.bclk_i(coh_clk_i)
-         ,.breset_i(coh_reset_i)
-
-         ,.alink_i(core_lce_resp_link_lo)
-         ,.alink_o(core_lce_resp_link_li)
-
-         ,.blink_i(coh_lce_resp_link_li)
-         ,.blink_o(coh_lce_resp_link_lo)
+         ,.blink_i(coh_lce_cmd_link_lo)
+         ,.blink_o(coh_lce_cmd_link_li)
          );
     end
   else
@@ -152,7 +134,7 @@ module bp_io_tile_node
   if (async_io_clk_p == 1)
     begin : io_async
       bsg_async_noc_link
-       #(.width_p(coh_noc_flit_width_p)
+       #(.width_p(io_noc_flit_width_p)
          ,.lg_size_p(3)
          )
        io_cmd_link
@@ -165,12 +147,12 @@ module bp_io_tile_node
          ,.alink_i(core_io_cmd_link_lo)
          ,.alink_o(core_io_cmd_link_li)
 
-         ,.blink_i(io_cmd_link_li)
-         ,.blink_o(io_cmd_link_lo)
+         ,.blink_i(io_cmd_link_lo)
+         ,.blink_o(io_cmd_link_li)
          );
 
       bsg_async_noc_link
-       #(.width_p(coh_noc_flit_width_p)
+       #(.width_p(io_noc_flit_width_p)
          ,.lg_size_p(3)
          )
        io_resp_link
@@ -183,8 +165,8 @@ module bp_io_tile_node
          ,.alink_i(core_io_resp_link_lo)
          ,.alink_o(core_io_resp_link_li)
 
-         ,.blink_i(io_resp_link_li)
-         ,.blink_o(io_resp_link_lo)
+         ,.blink_i(io_resp_link_lo)
+         ,.blink_o(io_resp_link_li)
          );
     end
   else
