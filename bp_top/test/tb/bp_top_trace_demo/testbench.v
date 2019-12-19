@@ -29,7 +29,8 @@ module testbench
    , parameter vm_trace_p                  = 0
    , parameter skip_init_p                 = 0
 
-   , parameter mem_load_p         = 1
+   , parameter mem_load_p         = 0
+   , parameter mem_zero_p         = 1
    , parameter mem_file_p         = "prog.mem"
    , parameter mem_cap_in_bytes_p = 2**20
    , parameter [paddr_width_p-1:0] mem_offset_p = paddr_width_p'(32'h8000_0000)
@@ -76,7 +77,7 @@ logic                  host_resp_v_lo, host_resp_ready_li;
 bp_cce_io_msg_s        load_cmd_lo;
 logic                  load_cmd_v_lo, load_cmd_ready_li;
 bp_cce_io_msg_s        load_resp_li;
-logic                  load_resp_v_li;
+logic                  load_resp_v_li, load_resp_ready_lo;
 
 bp_cce_io_msg_s        cfg_cmd_lo;
 logic                  cfg_cmd_v_lo, cfg_cmd_ready_li;
@@ -86,7 +87,7 @@ logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 bp_cce_io_msg_s        nbf_cmd_lo;
 logic                  nbf_cmd_v_lo, nbf_cmd_ready_li;
 bp_cce_io_msg_s        nbf_resp_li;
-logic                  nbf_resp_v_li;
+logic                  nbf_resp_v_li, nbf_resp_ready_lo;
 
 wire [io_noc_did_width_p-1:0] dram_did_li = '1;
 wire [io_noc_did_width_p-1:0] proc_did_li = 1;
@@ -328,12 +329,12 @@ bp_me_cce_to_io_link_bidir
   ,.reset_i(reset_i)
 
   ,.io_cmd_i(load_cmd_lo)
-  ,.io_cmd_v_i(load_cmd_ready_li & load_cmd_v_lo)
+  ,.io_cmd_v_i(load_cmd_v_lo)
   ,.io_cmd_ready_o(load_cmd_ready_li)
 
   ,.io_resp_o(load_resp_li)
   ,.io_resp_v_o(load_resp_v_li)
-  ,.io_resp_yumi_i(load_resp_v_li) // Always accept responses
+  ,.io_resp_yumi_i(load_resp_ready_lo & load_resp_v_li) // Always accept responses
 
   ,.io_cmd_o(host_cmd_li)
   ,.io_cmd_v_o(host_cmd_v_li)
@@ -397,6 +398,7 @@ bp_mem
  #(.bp_params_p(bp_params_p)
    ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
    ,.mem_load_p(mem_load_p)
+   ,.mem_zero_p(mem_zero_p)
    ,.mem_file_p(mem_file_p)
    ,.mem_offset_p(mem_offset_p)
  
@@ -448,18 +450,16 @@ bp_nonsynth_nbf_loader
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.io_cmd_o()//nbf_cmd_lo)
-   ,.io_cmd_v_o()//nbf_cmd_v_lo)
-   ,.io_cmd_ready_i(nbf_cmd_ready_li)
+   ,.io_cmd_o(nbf_cmd_lo)
+   ,.io_cmd_v_o(nbf_cmd_v_lo)
+   ,.io_cmd_yumi_i(nbf_cmd_ready_li & nbf_cmd_v_lo)
 
    ,.io_resp_i(nbf_resp_li)
    ,.io_resp_v_i(nbf_resp_v_li)
-   ,.io_resp_yumi_o()
+   ,.io_resp_ready_o(nbf_resp_ready_lo)
 
-   ,.done_o()//nbf_done_lo)
+   ,.done_o(nbf_done_lo)
    );
-assign {nbf_cmd_lo, nbf_cmd_v_lo} = '0;
-assign nbf_done_lo = 1'b1;
 
 localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
 bp_cce_mmio_cfg_loader
@@ -484,19 +484,38 @@ bp_cce_mmio_cfg_loader
 
 // CFG and NBF are mutex, so we can just use fixed arbitration here
 always_comb
-  begin
-    load_cmd_lo = nbf_cmd_v_lo ? nbf_cmd_lo : cfg_cmd_lo;
-    load_cmd_v_lo = nbf_cmd_v_lo | cfg_cmd_v_lo;
-    nbf_cmd_ready_li = load_cmd_ready_li;
-    cfg_cmd_ready_li = load_cmd_ready_li;
+  if (nbf_done_lo)
+    begin
+      load_cmd_lo = cfg_cmd_lo;
+      load_cmd_v_lo = cfg_cmd_v_lo;
 
-    // Either/both can sink responses
-    nbf_resp_li = load_resp_li;
-    nbf_resp_v_li = load_resp_v_li;
+      nbf_cmd_ready_li = 1'b0;
+      cfg_cmd_ready_li = load_cmd_ready_li;
 
-    cfg_resp_li = load_resp_li;
-    cfg_resp_v_li = load_resp_v_li;
-  end
+      nbf_resp_li = '0;
+      nbf_resp_v_li = 1'b0;
+
+      cfg_resp_li = load_resp_li;
+      cfg_resp_v_li = load_resp_v_li;
+
+      load_resp_ready_lo = cfg_resp_ready_lo;
+    end
+  else
+    begin
+      load_cmd_lo = nbf_cmd_lo;
+      load_cmd_v_lo = nbf_cmd_v_lo;
+
+      nbf_cmd_ready_li = load_cmd_ready_li;
+      cfg_cmd_ready_li = 1'b0;
+
+      nbf_resp_li = load_resp_li;
+      nbf_resp_v_li = load_resp_v_li;
+
+      cfg_resp_li = '0;
+      cfg_resp_v_li = 1'b0;
+
+      load_resp_ready_lo = nbf_resp_ready_lo;
+    end
 
 bp_nonsynth_if_verif
  #(.bp_params_p(bp_params_p))

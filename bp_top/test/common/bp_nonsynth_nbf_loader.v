@@ -33,16 +33,16 @@ module bp_nonsynth_nbf_loader
   
   ,output [cce_io_msg_width_lp-1:0]        io_cmd_o
   ,output                                  io_cmd_v_o
-  ,input                                   io_cmd_ready_i
+  ,input                                   io_cmd_yumi_i
   
   ,input  [cce_io_msg_width_lp-1:0]        io_resp_i
   ,input                                   io_resp_v_i
-  ,output                                  io_resp_yumi_o
+  ,output                                  io_resp_ready_o
   );
   
   // response network not used
   wire unused_resp = &{io_resp_i, io_resp_v_i};
-  assign io_resp_yumi_o = io_resp_v_i;
+  assign io_resp_ready_o = 1'b1;
 
   // bp_nbf packet
   typedef struct packed {
@@ -101,10 +101,7 @@ module bp_nonsynth_nbf_loader
         else 
           begin
             io_cmd_v_lo = 1'b1;
-            if (io_cmd_ready_i)
-              begin
-                nbf_index_n = nbf_index_r + 1;
-              end
+            nbf_index_n = nbf_index_r + io_cmd_yumi_i;
           end
       end
   end

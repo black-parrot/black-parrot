@@ -317,7 +317,7 @@ module bp_me_cce_to_cache
           end
       end
       RESP_SEND: begin
-        mem_resp_v_lo = 1'b1;
+        mem_resp_v_lo = mem_resp_ready_i;
         if (mem_resp_ready_i)
           begin
             small_fifo_yumi_li = 1'b1;
