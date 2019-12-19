@@ -52,12 +52,12 @@ package bp_common_aviary_pkg;
       ,mem_noc_flit_width    : 128
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
-      ,bypass_flit_width     : 10
+      ,bypass_flit_width     : 16
 
       ,async_io_clk         : 0
       ,io_noc_max_credits   : 16
-      ,io_noc_did_width     : 3
       ,io_noc_flit_width    : 64
+      ,io_noc_did_width     : 3
       ,io_noc_len_width     : 5
       };
 
@@ -87,7 +87,7 @@ package bp_common_aviary_pkg;
       ,cce_pc_width         : 8
 
       ,l2_sets : 128
-      ,l2_assoc: 2
+      ,l2_assoc: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -98,17 +98,17 @@ package bp_common_aviary_pkg;
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 5
 
-      ,async_mem_clk         : 0
+      ,async_mem_clk         : 1
       ,mem_noc_max_credits   : 16
       ,mem_noc_flit_width    : 128
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
-      ,bypass_flit_width     : 10
+      ,bypass_flit_width     : 16
 
-      ,async_io_clk         : 0
+      ,async_io_clk         : 1
       ,io_noc_max_credits   : 16
-      ,io_noc_did_width     : 3
       ,io_noc_flit_width    : 64
+      ,io_noc_did_width     : 3
       ,io_noc_len_width     : 5
       };
 
@@ -155,12 +155,12 @@ package bp_common_aviary_pkg;
       ,mem_noc_flit_width    : 128
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
-      ,bypass_flit_width     : 10
+      ,bypass_flit_width     : 16
 
       ,async_io_clk         : 0
       ,io_noc_max_credits   : 16
-      ,io_noc_did_width     : 3
       ,io_noc_flit_width    : 64
+      ,io_noc_did_width     : 3
       ,io_noc_len_width     : 5
       };
 
@@ -206,12 +206,12 @@ package bp_common_aviary_pkg;
       ,mem_noc_flit_width    : 128
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
-      ,bypass_flit_width     : 10
+      ,bypass_flit_width     : 16
 
       ,async_io_clk         : 0
       ,io_noc_max_credits   : 16
-      ,io_noc_did_width     : 3
       ,io_noc_flit_width    : 64
+      ,io_noc_did_width     : 3
       ,io_noc_len_width     : 5
       };
 
@@ -246,23 +246,23 @@ package bp_common_aviary_pkg;
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
 
-      ,async_coh_clk       : 0
+      ,async_coh_clk       : 1
       ,coh_noc_max_credits : 16
       ,coh_noc_flit_width  : 96
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 5
 
-      ,async_mem_clk         : 0
+      ,async_mem_clk         : 1
       ,mem_noc_max_credits   : 16
       ,mem_noc_flit_width    : 128
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
-      ,bypass_flit_width     : 10
+      ,bypass_flit_width     : 16
 
-      ,async_io_clk         : 0
+      ,async_io_clk         : 1
       ,io_noc_max_credits   : 16
-      ,io_noc_did_width     : 3
       ,io_noc_flit_width    : 64
+      ,io_noc_did_width     : 3
       ,io_noc_len_width     : 5
       };
 
@@ -308,12 +308,12 @@ package bp_common_aviary_pkg;
       ,mem_noc_flit_width    : 128
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
-      ,bypass_flit_width     : 10
+      ,bypass_flit_width     : 16
 
       ,async_io_clk         : 0
       ,io_noc_max_credits   : 16
-      ,io_noc_did_width     : 3
       ,io_noc_flit_width    : 64
+      ,io_noc_did_width     : 3
       ,io_noc_len_width     : 5
       };
 
@@ -359,12 +359,12 @@ package bp_common_aviary_pkg;
       ,mem_noc_flit_width    : 128
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
-      ,bypass_flit_width     : 10
+      ,bypass_flit_width     : 16
 
       ,async_io_clk         : 0
       ,io_noc_max_credits   : 16
-      ,io_noc_did_width     : 3
       ,io_noc_flit_width    : 64
+      ,io_noc_did_width     : 3
       ,io_noc_len_width     : 5
       };
 
@@ -410,12 +410,12 @@ package bp_common_aviary_pkg;
       ,mem_noc_flit_width    : 128
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 5
-      ,bypass_flit_width     : 10
+      ,bypass_flit_width     : 16
 
       ,async_io_clk         : 0
       ,io_noc_max_credits   : 16
-      ,io_noc_did_width     : 3
       ,io_noc_flit_width    : 64
+      ,io_noc_did_width     : 3
       ,io_noc_len_width     : 5
       };
 

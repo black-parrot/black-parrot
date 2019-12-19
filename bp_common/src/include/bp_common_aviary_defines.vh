@@ -170,20 +170,20 @@ typedef struct packed
   , localparam cc_x_dim_p  = proc_param_lp.cc_x_dim                                                \
   , localparam cc_y_dim_p  = proc_param_lp.cc_y_dim                                                \
                                                                                                    \
-  , localparam ic_x_dim_p = cc_x_dim_p                                                            \
-  , localparam ic_y_dim_p = proc_param_lp.ic_y_dim                                               \
-  , localparam mc_x_dim_p  = cc_x_dim_p                                                            \
-  , localparam mc_y_dim_p  = proc_param_lp.mc_y_dim                                                \
-  , localparam ac_x_dim_p = proc_param_lp.ac_x_dim                                               \
-  , localparam ac_y_dim_p = cc_y_dim_p                                                            \
+  , localparam ic_x_dim_p = cc_x_dim_p                                                             \
+  , localparam ic_y_dim_p = proc_param_lp.ic_y_dim                                                 \
+  , localparam mc_x_dim_p = cc_x_dim_p                                                             \
+  , localparam mc_y_dim_p = proc_param_lp.mc_y_dim                                                 \
+  , localparam ac_x_dim_p = proc_param_lp.ac_x_dim                                                 \
+  , localparam ac_y_dim_p = cc_y_dim_p                                                             \
                                                                                                    \
   , localparam num_core_p  = cc_x_dim_p * cc_y_dim_p                                               \
-  , localparam num_io_p    = ic_x_dim_p * ic_y_dim_p                                             \
+  , localparam num_io_p    = ic_x_dim_p * ic_y_dim_p                                               \
   , localparam num_l2e_p   = mc_x_dim_p * mc_y_dim_p                                               \
-  , localparam num_acc_p   = ac_x_dim_p * ac_y_dim_p                                             \
+  , localparam num_acc_p   = ac_x_dim_p * ac_y_dim_p                                               \
                                                                                                    \
   , localparam num_cce_p   = num_core_p + num_l2e_p                                                \
-  , localparam num_lce_p   = 2*num_core_p + num_acc_p                                             \
+  , localparam num_lce_p   = 2*num_core_p + num_acc_p                                              \
                                                                                                    \
   , localparam core_id_width_p = `BSG_SAFE_CLOG2(cc_x_dim_p*cc_y_dim_p)                            \
   , localparam cce_id_width_p  = `BSG_SAFE_CLOG2((cc_x_dim_p*1+2)*(cc_y_dim_p*1+2))                \

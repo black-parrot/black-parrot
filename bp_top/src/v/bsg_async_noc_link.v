@@ -55,10 +55,10 @@ module bsg_async_noc_link
       );
 
   logic blink_full_lo;
-  assign alink_cast_o.ready_and_rev = ~blink_full_lo;
+  assign blink_cast_o.ready_and_rev = ~blink_full_lo;
   wire blink_enq_li = blink_cast_i.v & blink_cast_o.ready_and_rev;
   wire alink_deq_li = alink_cast_o.v & alink_cast_i.ready_and_rev;
-  bsg_aync_fifo
+  bsg_async_fifo
    #(.width_p(width_p)
      ,.lg_size_p(lg_size_p)
      )
