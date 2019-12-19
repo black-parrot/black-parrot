@@ -99,6 +99,7 @@ sim.v: dirs.v
 	$(shell mkdir -p $(SIM_DIR))
 	-@ln -sf $(BUILD_DIR)/simv $(SIM_DIR)/simv
 	-@ln -sf $(BUILD_DIR)/simv.daidir $(SIM_DIR)/simv.daidir
+	-@cp $(MEM_PATH)/$(PROG).nbf $(SIM_DIR)/prog.nbf
 	-@cp $(MEM_PATH)/$(PROG).mem $(SIM_DIR)/prog.mem
 	-@cp $(MEM_PATH)/$(PROG).riscv $(SIM_DIR)/prog.elf
 	-@cp $(MEM_PATH)/$(PROG).dump $(SIM_DIR)/prog.dump
