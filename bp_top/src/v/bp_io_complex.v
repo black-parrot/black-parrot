@@ -40,8 +40,7 @@ module bp_io_complex
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
   `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_ready_and_link_s);
 
-  bp_io_ready_and_link_s [ioc_x_dim_p-1:0][S:W]  io_cmd_link_li, io_cmd_link_lo, io_resp_link_li, io_resp_link_lo;
-  bp_io_ready_and_link_s [S:N][ioc_x_dim_p-1:0]  io_cmd_ver_link_li, io_cmd_ver_link_lo, io_resp_ver_link_li, io_resp_ver_link_lo;
+  bp_io_ready_and_link_s [ioc_x_dim_p-1:0][E:W]  io_cmd_link_li, io_cmd_link_lo, io_resp_link_li, io_resp_link_lo;
   bp_io_ready_and_link_s [E:W]                   io_cmd_hor_link_li, io_cmd_hor_link_lo, io_resp_hor_link_li, io_resp_hor_link_lo;
   bp_coh_ready_and_link_s [ioc_x_dim_p-1:0][S:W] lce_req_link_li, lce_req_link_lo, lce_cmd_link_li, lce_cmd_link_lo;
   bp_coh_ready_and_link_s [S:N][ioc_x_dim_p-1:0] lce_req_ver_link_li, lce_req_ver_link_lo, lce_cmd_ver_link_li, lce_cmd_ver_link_lo;
@@ -49,7 +48,7 @@ module bp_io_complex
   
   for (genvar i = 0; i < ioc_x_dim_p; i++)
     begin : node
-      wire [io_noc_cord_width_p-1:0] cord_li = {'0, io_noc_x_cord_width_p'(i)};
+      wire [coh_noc_cord_width_p-1:0] cord_li = {'0, coh_noc_x_cord_width_p'(i)};
       bp_io_tile_node
        #(.bp_params_p(bp_params_p))
        io
@@ -117,7 +116,12 @@ module bp_io_complex
      );
   assign coh_cmd_link_o = lce_cmd_ver_link_lo[S];
 
-  assign io_cmd_ver_link_li = '0;
+  bp_io_ready_and_link_s [ioc_x_dim_p-1:0][S:W] io_cmd_mesh_lo, io_cmd_mesh_li;
+  for (genvar i = 0; i < ioc_x_dim_p; i++)
+    begin : cmd_link
+      assign io_cmd_mesh_lo[i][E:W] = io_cmd_link_lo[i][E:W];
+      assign io_cmd_link_li[i][E:W] = io_cmd_mesh_li[i][E:W];
+    end
   assign io_cmd_hor_link_li = io_cmd_link_i;
   bsg_mesh_stitch
    #(.width_p(io_noc_ral_link_width_lp)
@@ -125,31 +129,36 @@ module bp_io_complex
      ,.y_max_p(1)
      )
    cmd_mesh
-    (.outs_i(io_cmd_link_lo)
-     ,.ins_o(io_cmd_link_li)
+    (.outs_i(io_cmd_mesh_lo)
+     ,.ins_o(io_cmd_mesh_li)
 
      ,.hor_i(io_cmd_hor_link_li)
      ,.hor_o(io_cmd_hor_link_lo)
-     ,.ver_i(io_cmd_ver_link_li)
-     ,.ver_o(io_cmd_ver_link_lo)
+     ,.ver_i()
+     ,.ver_o()
      );
   assign io_cmd_link_o  = io_cmd_hor_link_lo;
 
-  assign io_resp_ver_link_li = '0;
+  bp_io_ready_and_link_s [ioc_x_dim_p-1:0][S:W] io_resp_mesh_lo, io_resp_mesh_li;
+  for (genvar i = 0; i < ioc_x_dim_p; i++)
+    begin : resp_link
+      assign io_resp_mesh_lo[i][E:W] = io_resp_link_lo[i][E:W];
+      assign io_resp_link_li[i][E:W] = io_resp_mesh_li[i][E:W];
+    end
   assign io_resp_hor_link_li = io_resp_link_i;
   bsg_mesh_stitch
    #(.width_p(io_noc_ral_link_width_lp)
      ,.x_max_p(ioc_x_dim_p)
-     ,.y_max_p(1)
+     ,.y_max_p(ioc_y_dim_p)
      )
    resp_mesh
-    (.outs_i(io_resp_link_lo)
-     ,.ins_o(io_resp_link_li)
+    (.outs_i(io_resp_mesh_lo)
+     ,.ins_o(io_resp_mesh_li)
 
      ,.hor_i(io_resp_hor_link_li)
      ,.hor_o(io_resp_hor_link_lo)
-     ,.ver_i(io_resp_ver_link_li)
-     ,.ver_o(io_resp_ver_link_lo)
+     ,.ver_i()
+     ,.ver_o()
      );
   assign io_resp_link_o = io_resp_hor_link_lo;
 

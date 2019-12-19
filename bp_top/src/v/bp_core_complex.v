@@ -123,7 +123,6 @@ for (genvar j = 0; j < cc_y_dim_p; j++)
 
      ,.hor_i(lce_req_hor_link_li)
      ,.hor_o(lce_req_hor_link_lo)
-
      ,.ver_i(lce_req_ver_link_li)
      ,.ver_o(lce_req_ver_link_lo)
      );
@@ -143,7 +142,6 @@ for (genvar j = 0; j < cc_y_dim_p; j++)
 
      ,.hor_i(lce_cmd_hor_link_li)
      ,.hor_o(lce_cmd_hor_link_lo)
-
      ,.ver_i(lce_cmd_ver_link_li)
      ,.ver_o(lce_cmd_ver_link_lo)
      );
@@ -163,7 +161,6 @@ for (genvar j = 0; j < cc_y_dim_p; j++)
 
      ,.hor_i(lce_resp_hor_link_li)
      ,.hor_o(lce_resp_hor_link_lo)
-
      ,.ver_i(lce_resp_ver_link_li)
      ,.ver_o(lce_resp_ver_link_lo)
      );
@@ -189,7 +186,6 @@ for (genvar j = 0; j < cc_y_dim_p; j++)
 
      ,.hor_i()
      ,.hor_o()
-
      ,.ver_i(mem_resp_ver_link_li)
      ,.ver_o(mem_cmd_ver_link_lo)
      );
