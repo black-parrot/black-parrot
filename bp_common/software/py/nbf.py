@@ -34,7 +34,7 @@ class NBF:
   # take x,y coord, epa, data and turn it into nbf format.
   def print_nbf(self, opcode, addr, data):
     line =  self.get_hexstr(opcode, 2) + "_"
-    line += self.get_hexstr(addr, int(self.addr_width)/4) + "_"
+    line += self.get_hexstr(addr, int(self.addr_width)//4) + "_"
     line += self.get_hexstr(data, self.block_size*2)
     print(line)
   
