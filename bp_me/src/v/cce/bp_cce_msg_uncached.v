@@ -128,7 +128,7 @@ module bp_cce_msg_uncached
 
         if (mem_resp_v_i & (mem_resp_li.msg_type == e_cce_mem_uc_rd)) begin
           // after load response is received, need to send data back to LCE
-          lce_cmd_v_o = 1'b1;
+          lce_cmd_v_o = lce_cmd_ready_i;
 
           lce_cmd.dst_id = mem_resp_li.payload.lce_id;
           lce_cmd.msg_type = e_lce_cmd_uc_data;
@@ -141,7 +141,7 @@ module bp_cce_msg_uncached
 
         end else if (mem_resp_v_i & (mem_resp_li.msg_type == e_cce_mem_uc_wr)) begin
           // after store response is received, need to send uncached store done command to LCE
-          lce_cmd_v_o = 1'b1;
+          lce_cmd_v_o = lce_cmd_ready_i;
 
           lce_cmd.dst_id = mem_resp_li.payload.lce_id;
           lce_cmd.msg_type = e_lce_cmd_uc_st_done;
@@ -166,7 +166,7 @@ module bp_cce_msg_uncached
       end
       SEND_MEM_CMD: begin
         // uncached load, send a memory cmd
-        mem_cmd_v_o = 1'b1;
+        mem_cmd_v_o = mem_cmd_ready_i;
 
         mem_cmd_lo.msg_type = e_cce_mem_uc_rd;
         mem_cmd_lo.addr = lce_req_r.addr;
@@ -189,7 +189,7 @@ module bp_cce_msg_uncached
       end
       SEND_MEM_DATA_CMD: begin
         // uncached store, send memory data cmd
-        mem_cmd_v_o = 1'b1;
+        mem_cmd_v_o = mem_cmd_ready_i;
 
         mem_cmd_lo.msg_type = e_cce_mem_uc_wr;
         mem_cmd_lo.addr = lce_req_r.addr;
