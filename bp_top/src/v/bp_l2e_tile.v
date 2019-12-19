@@ -273,7 +273,7 @@ bp_coh_ready_and_link_s cce_lce_resp_link_li, cce_lce_resp_link_lo;
      ,.mem_resp_ready_o(dma_mem_resp_ready_lo)
      );
 
-  localparam dram_y_cord_lp = ioc_y_dim_p + cc_y_dim_p + mc_y_dim_p;
+  localparam dram_y_cord_lp = ic_y_dim_p + cc_y_dim_p + mc_y_dim_p;
   wire [io_noc_did_width_p-1:0]  dst_did_li  = my_did_i;
   wire [mem_noc_cord_width_p-1:0] dst_cord_li = 
       {mem_noc_y_cord_width_p'(dram_y_cord_lp), my_cord_i[0+:mem_noc_x_cord_width_p]};

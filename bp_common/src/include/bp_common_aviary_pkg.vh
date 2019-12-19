@@ -13,10 +13,9 @@ package bp_common_aviary_pkg;
   localparam bp_proc_param_s bp_half_core_cfg_p =
     '{cc_x_dim   : 1
       ,cc_y_dim  : 1
-      ,ioc_y_dim : 1
+      ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,sac_x_dim : 0
-      ,cac_x_dim : 0
+      ,ac_x_dim  : 0
 
       ,vaddr_width: 39
       ,paddr_width: 40
@@ -65,10 +64,9 @@ package bp_common_aviary_pkg;
   localparam bp_proc_param_s bp_single_core_cfg_p = 
     '{cc_x_dim   : 1
       ,cc_y_dim  : 1
-      ,ioc_y_dim : 1
+      ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,sac_x_dim : 0
-      ,cac_x_dim : 0
+      ,ac_x_dim  : 0
 
       ,vaddr_width: 39
       ,paddr_width: 40
@@ -118,10 +116,9 @@ package bp_common_aviary_pkg;
   localparam bp_proc_param_s bp_dual_core_cfg_p = 
     '{cc_x_dim   : 2
       ,cc_y_dim  : 1
-      ,ioc_y_dim : 1
+      ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,sac_x_dim : 0
-      ,cac_x_dim : 0
+      ,ac_x_dim  : 0
 
       ,vaddr_width: 39
       ,paddr_width: 40
@@ -170,10 +167,9 @@ package bp_common_aviary_pkg;
   localparam bp_proc_param_s bp_tri_core_cfg_p = 
     '{cc_x_dim   : 3
       ,cc_y_dim  : 1
-      ,ioc_y_dim : 1
+      ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,sac_x_dim : 0
-      ,cac_x_dim : 0
+      ,ac_x_dim  : 0
 
       ,vaddr_width: 39
       ,paddr_width: 40
@@ -222,10 +218,9 @@ package bp_common_aviary_pkg;
   localparam bp_proc_param_s bp_quad_core_cfg_p =
     '{cc_x_dim   : 2
       ,cc_y_dim  : 2
-      ,ioc_y_dim : 1
+      ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,sac_x_dim : 0
-      ,cac_x_dim : 0
+      ,ac_x_dim  : 0
 
       ,vaddr_width: 39
       ,paddr_width: 40
@@ -274,10 +269,9 @@ package bp_common_aviary_pkg;
   localparam bp_proc_param_s bp_hexa_core_cfg_p =
     '{cc_x_dim   : 3
       ,cc_y_dim  : 2
-      ,ioc_y_dim : 1
+      ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,sac_x_dim : 0
-      ,cac_x_dim : 0
+      ,ac_x_dim  : 0
 
       ,vaddr_width: 39
       ,paddr_width: 40
@@ -326,10 +320,9 @@ package bp_common_aviary_pkg;
   localparam bp_proc_param_s bp_oct_core_cfg_p =
     '{cc_x_dim   : 4
       ,cc_y_dim  : 2
-      ,ioc_y_dim : 1
+      ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,sac_x_dim : 0
-      ,cac_x_dim : 0
+      ,ac_x_dim  : 0
 
       ,vaddr_width: 39
       ,paddr_width: 40
@@ -378,10 +371,9 @@ package bp_common_aviary_pkg;
   localparam bp_proc_param_s bp_sexta_core_cfg_p =
     '{cc_x_dim   : 4
       ,cc_y_dim  : 4
-      ,ioc_y_dim : 1
+      ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,sac_x_dim : 0
-      ,cac_x_dim : 0
+      ,ac_x_dim  : 0
 
       ,vaddr_width: 39
       ,paddr_width: 40

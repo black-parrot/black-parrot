@@ -517,7 +517,7 @@ for (genvar i = 0; i < 2; i++)
      ,.mem_resp_ready_o(dma_mem_resp_ready_lo)
      );
 
-  localparam dram_y_cord_lp = ioc_y_dim_p + cc_y_dim_p + mc_y_dim_p;
+  localparam dram_y_cord_lp = ic_y_dim_p + cc_y_dim_p + mc_y_dim_p;
   wire [mem_noc_cord_width_p-1:0] dst_cord_li = dram_y_cord_lp;
   bp_me_cce_to_mem_link_master
    #(.bp_params_p(bp_params_p))
