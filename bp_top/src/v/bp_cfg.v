@@ -24,7 +24,7 @@ module bp_cfg
    , input                              mem_resp_ready_i
 
    , output [cfg_bus_width_lp-1:0]      cfg_bus_o
-   , input [mem_noc_cord_width_p-1:0]   cord_i
+   , input [coh_noc_cord_width_p-1:0]   cord_i
    , input [io_noc_did_width_p-1:0]     did_i
    , input [dword_width_p-1:0]          irf_data_i
    , input [vaddr_width_p-1:0]          npc_data_i

@@ -30,9 +30,6 @@ module bp_mem_complex
    , output [mc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_cmd_link_o
 
    , input  [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_cmd_link_i
-   , output [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_cmd_link_o
-
-   , input  [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_resp_link_i
    , output [mc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_resp_link_o
 
    // TEMP
@@ -62,9 +59,6 @@ module bp_mem_complex
       assign coh_cmd_link_o  = '0;
 
       assign mem_cmd_link_lo[S]  = mem_cmd_link_i;
-      assign mem_resp_link_lo[S] = mem_resp_link_i;
-
-      assign mem_cmd_link_o      = mem_cmd_link_li[S];
       assign mem_resp_link_o     = mem_resp_link_li[S];
     end
   else
@@ -74,13 +68,10 @@ module bp_mem_complex
       assign coh_cmd_link_o  = '0;
 
       assign mem_cmd_link_lo[S]  = mem_cmd_link_i;
-      assign mem_resp_link_lo[S] = mem_resp_link_i;
-
-      assign mem_cmd_link_o      = mem_cmd_link_li[S];
       assign mem_resp_link_o     = mem_resp_link_li[S];
     end
 
-  bp_mem_ready_and_link_s cmd_concentrated_link_li, cmd_concentrated_link_lo;
+  bp_mem_ready_and_link_s cmd_concentrated_link_lo, resp_concentrated_link_li;;
   bsg_wormhole_concentrator
    #(.flit_width_p(mem_noc_flit_width_p)
      ,.len_width_p(mem_noc_len_width_p)
@@ -88,34 +79,15 @@ module bp_mem_complex
      ,.cord_width_p(mem_noc_cord_width_p)
      ,.num_in_p(mc_x_dim_p)
      )
-   cmd_concentrator
+   concentrator
     (.clk_i(mem_clk_i)
      ,.reset_i(mem_reset_i)
 
      ,.links_i(mem_cmd_link_lo[S])
-     ,.links_o(mem_cmd_link_li[S])
-
-     ,.concentrated_link_i(cmd_concentrated_link_li)
-     ,.concentrated_link_o(cmd_concentrated_link_lo)
-     );
-
-  bp_mem_ready_and_link_s resp_concentrated_link_li, resp_concentrated_link_lo;
-  bsg_wormhole_concentrator
-   #(.flit_width_p(mem_noc_flit_width_p)
-     ,.len_width_p(mem_noc_len_width_p)
-     ,.cid_width_p(mem_noc_cid_width_p)
-     ,.cord_width_p(mem_noc_cord_width_p)
-     ,.num_in_p(mc_x_dim_p)
-     )
-   resp_concentrator
-    (.clk_i(mem_clk_i)
-     ,.reset_i(mem_reset_i)
-
-     ,.links_i(mem_resp_link_lo[S])
      ,.links_o(mem_resp_link_li[S])
 
+     ,.concentrated_link_o(cmd_concentrated_link_lo)
      ,.concentrated_link_i(resp_concentrated_link_li)
-     ,.concentrated_link_o(resp_concentrated_link_lo)
      );
 
   bp_me_cce_to_mem_link_client
@@ -133,9 +105,6 @@ module bp_mem_complex
      ,.mem_resp_ready_o(dram_resp_ready_o)
 
      ,.cmd_link_i(cmd_concentrated_link_lo)
-     ,.cmd_link_o(cmd_concentrated_link_li)
-
-     ,.resp_link_i(resp_concentrated_link_lo)
      ,.resp_link_o(resp_concentrated_link_li)
      );
   
