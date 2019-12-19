@@ -211,7 +211,6 @@ $BP_ME_DIR/src/v/wormhole/bp_me_cce_id_to_cord.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_io_link_bidir.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_io_link_client.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_io_link_master.v
-$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_mem_link_bidir.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_mem_link_client.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_mem_link_master.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cord_to_id.v

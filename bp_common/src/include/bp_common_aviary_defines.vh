@@ -236,11 +236,14 @@ typedef struct packed
   , localparam mem_noc_len_width_p       = proc_param_lp.mem_noc_len_width                         \
   , localparam mem_noc_y_cord_width_p    = `BSG_SAFE_CLOG2(ioc_y_dim_p+cc_y_dim_p+mc_y_dim_p) + 2  \
   , localparam mem_noc_x_cord_width_p    = `BSG_SAFE_CLOG2(sac_x_dim_p+cc_x_dim_p+cac_x_dim_p) + 2 \
-  , localparam mem_noc_cord_width_p      = mem_noc_x_cord_width_p + mem_noc_y_cord_width_p         \
-  , localparam mem_noc_dims_p            = 2                                                       \
+  , localparam mem_noc_dims_p            = 1                                                       \
+  , localparam mem_noc_cord_dims_p       = 2                                                       \
   , localparam mem_noc_dirs_p            = mem_noc_dims_p*2 + 1                                    \
-  , localparam int mem_noc_cord_markers_pos_p[mem_noc_dims_p:0] =                                  \
-      '{mem_noc_cord_width_p, mem_noc_x_cord_width_p, 0}                                           \
+  , localparam mem_noc_trans_p           = 1                                                       \
+  , localparam int mem_noc_cord_markers_pos_p[mem_noc_cord_dims_p:0] = mem_noc_trans_p             \
+      ? '{mem_noc_x_cord_width_p, mem_noc_y_cord_width_p, 0}                                       \
+      : '{mem_noc_y_cord_width_p, mem_noc_x_cord_width_p, 0}                                       \
+  , localparam mem_noc_cord_width_p      = mem_noc_cord_markers_pos_p[mem_noc_dims_p]              \
                                                                                                    \
   , localparam async_io_clk_p           = proc_param_lp.async_io_clk                               \
   , localparam io_noc_max_credits_p     = proc_param_lp.io_noc_max_credits                         \
@@ -251,7 +254,8 @@ typedef struct packed
   , localparam io_noc_x_cord_width_p    = `BSG_SAFE_CLOG2(sac_x_dim_p+cc_x_dim_p+cac_x_dim_p) + 2  \
   , localparam io_noc_cord_width_p      = io_noc_x_cord_width_p + io_noc_y_cord_width_p            \
   , localparam io_noc_dims_p            = 2                                                        \
-  , localparam io_noc_dirs_p            = io_noc_dims_p*2 + 1                                      \
+  , localparam io_noc_cord_dims_p       = 2                                                        \
+  , localparam io_noc_dirs_p            = io_noc_cord_dims_p*2 + 1                                 \
   , localparam int io_noc_cord_markers_pos_p[io_noc_dims_p:0] =                                    \
       '{io_noc_cord_width_p, io_noc_x_cord_width_p, 0}                                             \
                                                                                                    \

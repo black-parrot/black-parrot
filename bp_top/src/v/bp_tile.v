@@ -30,7 +30,7 @@ module bp_tile
 
    // Memory side connection
    , input [io_noc_did_width_p-1:0]                           my_did_i
-   , input [mem_noc_cord_width_p-1:0]                         my_cord_i
+   , input [coh_noc_cord_width_p-1:0]                         my_cord_i
 
    // Connected to other tiles on east and west
    , input [coh_noc_ral_link_width_lp-1:0]                    lce_req_link_i
@@ -42,11 +42,8 @@ module bp_tile
    , input [coh_noc_ral_link_width_lp-1:0]                    lce_resp_link_i
    , output [coh_noc_ral_link_width_lp-1:0]                   lce_resp_link_o
 
-   , input [mem_noc_ral_link_width_lp-1:0]                    mem_cmd_link_i
    , output [mem_noc_ral_link_width_lp-1:0]                   mem_cmd_link_o
-
    , input [mem_noc_ral_link_width_lp-1:0]                    mem_resp_link_i
-   , output [mem_noc_ral_link_width_lp-1:0]                   mem_resp_link_o
    );
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
@@ -521,8 +518,7 @@ for (genvar i = 0; i < 2; i++)
      );
 
   localparam dram_y_cord_lp = ioc_y_dim_p + cc_y_dim_p + mc_y_dim_p;
-  wire [mem_noc_cord_width_p-1:0] dst_cord_li = 
-      {mem_noc_y_cord_width_p'(dram_y_cord_lp), my_cord_i[0+:mem_noc_x_cord_width_p]};
+  wire [mem_noc_cord_width_p-1:0] dst_cord_li = dram_y_cord_lp;
   bp_me_cce_to_mem_link_master
    #(.bp_params_p(bp_params_p))
    dma_link
@@ -537,14 +533,14 @@ for (genvar i = 0; i < 2; i++)
      ,.mem_resp_v_o(dma_mem_resp_v_li)
      ,.mem_resp_yumi_i(dma_mem_resp_ready_lo & dma_mem_resp_v_li)
 
-     ,.my_cord_i(my_cord_i)
+     ,.my_cord_i(my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p])
+     // TODO: CID == noc cord right now (1 DMC per column)
+     ,.my_cid_i(my_cord_i[0+:mem_noc_cid_width_p])
      ,.dst_cord_i(dst_cord_li)
+     ,.dst_cid_i('0)
 
-     ,.cmd_link_i(mem_cmd_link_i)
      ,.cmd_link_o(mem_cmd_link_o)
-
      ,.resp_link_i(mem_resp_link_i)
-     ,.resp_link_o(mem_resp_link_o)
      );
 
 endmodule
