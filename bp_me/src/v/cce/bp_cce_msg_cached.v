@@ -221,7 +221,9 @@ module bp_cce_msg_cached
       // Note: speculative access is only supported for cached requests
       if (mem_resp_li.payload.speculative) begin
         // TODO: remove assertion
+        // synopsys translate_off
         assert(spec_bits_v_lo) else $error("speculative memory response but spec_bits invalid output");
+        // synopsys translate_on
 
         if (spec_bits_lo.spec) begin // speculation not resolved yet
           // do nothing, wait for speculation to be resolved

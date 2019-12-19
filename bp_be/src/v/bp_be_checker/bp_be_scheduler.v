@@ -83,7 +83,19 @@ assign wb_pkt          = wb_pkt_i;
 
 wire issue_v = fe_queue_yumi_o | cfg_bus_cast_i.ninstr_w_v;
 
+bp_be_issue_pkt_s issue_pkt_r;
 logic issue_pkt_v_r, poison_iss_r;
+bsg_dff_reset_en
+ #(.width_p(1+$bits(bp_be_issue_pkt_s)))
+ issue_pkt_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i | cache_miss_v_i)
+   ,.en_i(issue_v | dispatch_v_i)
+   
+   ,.data_i({issue_v, issue_pkt})
+   ,.data_o({issue_pkt_v_r, issue_pkt_r})
+   );
+
 wire npc_mismatch = isd_status.isd_v & (expected_npc_i != issue_pkt_r.pc);
 bsg_dff_reset_en
  #(.width_p(1))
@@ -94,18 +106,6 @@ bsg_dff_reset_en
 
    ,.data_i(poison_iss_i | npc_mismatch)
    ,.data_o(poison_iss_r)
-   );
-
-bp_be_issue_pkt_s issue_pkt_r;
-bsg_dff_reset_en
- #(.width_p(1+$bits(bp_be_issue_pkt_s)))
- issue_pkt_reg
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i | cache_miss_v_i)
-   ,.en_i(issue_v | dispatch_v_i)
-   
-   ,.data_i({issue_v, issue_pkt})
-   ,.data_o({issue_pkt_v_r, issue_pkt_r})
    );
 
 always_comb

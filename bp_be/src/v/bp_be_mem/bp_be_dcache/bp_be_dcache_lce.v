@@ -218,7 +218,6 @@ module bp_be_dcache_lce
       ,.set_tag_received_i(set_tag_received)
       ,.set_tag_wakeup_received_i(set_tag_wakeup_received)
 
-      ,.lce_req_uncached_store_o(lce_req_uncached_store_lo)
       ,.lce_req_o(lce_req)
       ,.lce_req_v_o(lce_req_v_o)
       ,.lce_req_ready_i(lce_req_ready_i)

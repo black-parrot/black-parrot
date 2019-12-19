@@ -60,7 +60,6 @@ module bp_be_dcache_lce_req
     , input set_tag_received_i
     , input set_tag_wakeup_received_i
 
-    , output logic lce_req_uncached_store_o
     , output logic [lce_cce_req_width_lp-1:0] lce_req_o
     , output logic lce_req_v_o
     , input lce_req_ready_i
@@ -132,7 +131,6 @@ module bp_be_dcache_lce_req
 
   always_comb begin
     cache_miss_o = 1'b0;
-    lce_req_uncached_store_o = 1'b0;
 
     state_n = state_r;
     load_not_store_n = load_not_store_r;
@@ -208,7 +206,6 @@ module bp_be_dcache_lce_req
           lce_req.dst_id = req_cce_id_lo;
 
           cache_miss_o = ~lce_req_ready_i | credits_full_i;
-          lce_req_uncached_store_o = ~cache_miss_o;
           state_n = e_READY;
         end
         else begin

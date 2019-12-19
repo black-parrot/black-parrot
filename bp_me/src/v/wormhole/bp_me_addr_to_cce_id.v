@@ -30,13 +30,15 @@ localparam lg_num_cce_lp = `BSG_SAFE_CLOG2(num_cce_p);
 // convert miss address (excluding block offset bits) into CCE ID
 // For now, assume all CCE's have ID [0,num_core_p-1] and addresses are striped
 // at the cache block granularity
+logic [lg_lce_sets_lp-1:0] hash_addr_li;
 logic [lg_num_cce_lp-1:0] cce_dst_id_lo;
+assign hash_addr_li = {<< {paddr_i[block_offset_lp+:lg_lce_sets_lp]}};
 bsg_hash_bank
   #(.banks_p(num_cce_p) // number of CCE's to spread way groups over
     ,.width_p(lg_lce_sets_lp) // width of address input
     )
   addr_to_cce_id
-   (.i({<< {paddr_i[block_offset_lp+:lg_lce_sets_lp]}})
+   (.i(hash_addr_li)
     ,.bank_o(cce_dst_id_lo)
     ,.index_o()
     );

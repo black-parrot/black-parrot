@@ -203,6 +203,23 @@ bp_be_bypass
    ,.bypass_rs2_o(bypass_irs2)
    );
 
+bp_be_dispatch_pkt_s reservation_n, reservation_r;
+always_comb
+  begin
+    reservation_n        = dispatch_pkt_i;
+    reservation_n.decode = (~flush_i & dispatch_pkt.v) ? dispatch_pkt.decode : '0;
+    reservation_n.rs1    = bypass_rs1;
+    reservation_n.rs2    = bypass_rs2;
+  end
+
+bsg_dff
+ #(.width_p(dispatch_pkt_width_lp))
+ reservation_reg
+  (.clk_i(clk_i)
+   ,.data_i(reservation_n)
+   ,.data_o(reservation_r)
+   );
+
 // Computation pipelines
 // Integer pipe: 1 cycle latency
 bp_be_pipe_int 
@@ -291,23 +308,6 @@ bsg_dff
   (.clk_i(clk_i)
    ,.data_i({calc_stage_r[0+:pipe_stage_els_lp-1], calc_stage_isd})
    ,.data_o(calc_stage_r)
-   );
-
-bp_be_dispatch_pkt_s reservation_n, reservation_r;
-always_comb
-  begin
-    reservation_n        = dispatch_pkt_i;
-    reservation_n.decode = (~flush_i & dispatch_pkt.v) ? dispatch_pkt.decode : '0;
-    reservation_n.rs1    = bypass_rs1;
-    reservation_n.rs2    = bypass_rs2;
-  end
-
-bsg_dff
- #(.width_p(dispatch_pkt_width_lp))
- reservation_reg
-  (.clk_i(clk_i)
-   ,.data_i(reservation_n)
-   ,.data_o(reservation_r)
    );
 
 // If a pipeline has completed an instruction (pipe_xxx_v), then mux in the calculated result.

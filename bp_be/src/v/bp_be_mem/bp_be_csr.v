@@ -98,10 +98,6 @@ logic [rv64_priv_width_gp-1:0] priv_mode_n, priv_mode_r;
 logic debug_mode_n, debug_mode_r;
 logic translation_en_n, translation_en_r;
 
-assign priv_mode_o      = priv_mode_r;
-assign translation_en_o = translation_en_r
-                          | (mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
-
 wire is_debug_mode = debug_mode_r;
 // Debug Mode grants pseudo M-mode permission
 wire is_m_mode = is_debug_mode | (priv_mode_r == `PRIV_MODE_M);
@@ -716,6 +712,10 @@ assign trap_pkt_cast_o.translation_en_n = translation_en_n;
 assign trap_pkt_cast_o.exception        = exception_v_o;
 assign trap_pkt_cast_o._interrupt       = interrupt_v_o;
 assign trap_pkt_cast_o.eret             = ret_v_o;
+
+assign priv_mode_o      = priv_mode_r;
+assign translation_en_o = translation_en_r
+                          | (mstatus_lo.mprv & (mstatus_lo.mpp < `PRIV_MODE_M) & (satp_lo.mode == 4'd8));
 
 endmodule
 
