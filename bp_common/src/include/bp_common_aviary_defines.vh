@@ -96,10 +96,9 @@ typedef struct packed
   integer cc_x_dim;
   integer cc_y_dim;
 
-  integer ioc_y_dim;
+  integer ic_y_dim;
   integer mc_y_dim;
-  integer sac_x_dim;
-  integer cac_x_dim;
+  integer ac_x_dim;
 
   integer vaddr_width;
   integer paddr_width;
@@ -171,23 +170,20 @@ typedef struct packed
   , localparam cc_x_dim_p  = proc_param_lp.cc_x_dim                                                \
   , localparam cc_y_dim_p  = proc_param_lp.cc_y_dim                                                \
                                                                                                    \
-  , localparam ioc_x_dim_p = cc_x_dim_p                                                            \
-  , localparam ioc_y_dim_p = proc_param_lp.ioc_y_dim                                               \
+  , localparam ic_x_dim_p = cc_x_dim_p                                                            \
+  , localparam ic_y_dim_p = proc_param_lp.ic_y_dim                                               \
   , localparam mc_x_dim_p  = cc_x_dim_p                                                            \
   , localparam mc_y_dim_p  = proc_param_lp.mc_y_dim                                                \
-  , localparam sac_x_dim_p = proc_param_lp.sac_x_dim                                               \
-  , localparam sac_y_dim_p = cc_y_dim_p                                                            \
-  , localparam cac_x_dim_p = proc_param_lp.cac_x_dim                                               \
-  , localparam cac_y_dim_p = cc_y_dim_p                                                            \
+  , localparam ac_x_dim_p = proc_param_lp.ac_x_dim                                               \
+  , localparam ac_y_dim_p = cc_y_dim_p                                                            \
                                                                                                    \
   , localparam num_core_p  = cc_x_dim_p * cc_y_dim_p                                               \
-  , localparam num_io_p    = ioc_x_dim_p * ioc_y_dim_p                                             \
+  , localparam num_io_p    = ic_x_dim_p * ic_y_dim_p                                             \
   , localparam num_l2e_p   = mc_x_dim_p * mc_y_dim_p                                               \
-  , localparam num_sacc_p  = sac_x_dim_p * sac_y_dim_p                                             \
-  , localparam num_cacc_p  = cac_x_dim_p * cac_y_dim_p                                             \
+  , localparam num_acc_p   = ac_x_dim_p * ac_y_dim_p                                             \
                                                                                                    \
   , localparam num_cce_p   = num_core_p + num_l2e_p                                                \
-  , localparam num_lce_p   = 2*num_core_p + num_cacc_p                                             \
+  , localparam num_lce_p   = 2*num_core_p + num_acc_p                                             \
                                                                                                    \
   , localparam core_id_width_p = `BSG_SAFE_CLOG2(cc_x_dim_p*cc_y_dim_p)                            \
   , localparam cce_id_width_p  = `BSG_SAFE_CLOG2((cc_x_dim_p*1+2)*(cc_y_dim_p*1+2))                \
@@ -223,8 +219,8 @@ typedef struct packed
   , localparam coh_noc_flit_width_p   = proc_param_lp.coh_noc_flit_width                           \
   , localparam coh_noc_cid_width_p    = proc_param_lp.coh_noc_cid_width                            \
   , localparam coh_noc_len_width_p    = proc_param_lp.coh_noc_len_width                            \
-  , localparam coh_noc_y_cord_width_p = `BSG_SAFE_CLOG2(ioc_y_dim_p+cc_y_dim_p+mc_y_dim_p+1)       \
-  , localparam coh_noc_x_cord_width_p = `BSG_SAFE_CLOG2(sac_x_dim_p+cc_x_dim_p+cac_x_dim_p+1)      \
+  , localparam coh_noc_y_cord_width_p = `BSG_SAFE_CLOG2(ic_y_dim_p+cc_y_dim_p+mc_y_dim_p+1)        \
+  , localparam coh_noc_x_cord_width_p = `BSG_SAFE_CLOG2(cc_x_dim_p+ac_x_dim_p+1)                   \
   , localparam coh_noc_dims_p         = 2                                                          \
   , localparam coh_noc_dirs_p         = coh_noc_dims_p*2 + 1                                       \
   , localparam coh_noc_trans_p        = 0                                                          \
@@ -239,8 +235,8 @@ typedef struct packed
   , localparam mem_noc_cid_width_p       = proc_param_lp.mem_noc_cid_width                         \
   , localparam mem_noc_len_width_p       = proc_param_lp.mem_noc_len_width                         \
   , localparam bypass_flit_width_p       = proc_param_lp.bypass_flit_width                         \
-  , localparam mem_noc_y_cord_width_p    = `BSG_SAFE_CLOG2(ioc_y_dim_p+cc_y_dim_p+mc_y_dim_p+1)    \
-  , localparam mem_noc_x_cord_width_p    = `BSG_SAFE_CLOG2(sac_x_dim_p+cc_x_dim_p+cac_x_dim_p+1)   \
+  , localparam mem_noc_y_cord_width_p    = `BSG_SAFE_CLOG2(ic_y_dim_p+cc_y_dim_p+mc_y_dim_p+1)     \
+  , localparam mem_noc_x_cord_width_p    = `BSG_SAFE_CLOG2(cc_x_dim_p+ac_x_dim_p+1)                \
   , localparam mem_noc_dims_p            = 1                                                       \
   , localparam mem_noc_cord_dims_p       = 2                                                       \
   , localparam mem_noc_dirs_p            = mem_noc_dims_p*2 + 1                                    \
@@ -255,7 +251,7 @@ typedef struct packed
   , localparam io_noc_did_width_p       = proc_param_lp.io_noc_did_width                           \
   , localparam io_noc_flit_width_p      = proc_param_lp.io_noc_flit_width                          \
   , localparam io_noc_len_width_p       = proc_param_lp.io_noc_len_width                           \
-  , localparam io_noc_y_cord_width_p    = `BSG_SAFE_CLOG2(ioc_y_dim_p+1)                           \
+  , localparam io_noc_y_cord_width_p    = `BSG_SAFE_CLOG2(ic_y_dim_p+1)                            \
   , localparam io_noc_x_cord_width_p    = io_noc_did_width_p                                       \
   , localparam io_noc_dims_p            = 1                                                        \
   , localparam io_noc_cord_dims_p       = 2                                                        \

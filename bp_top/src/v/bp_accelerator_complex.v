@@ -1,5 +1,5 @@
 
-module bp_cacc_complex
+module bp_accelerator_complex
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_common_cfg_link_pkg::*;
@@ -12,35 +12,35 @@ module bp_cacc_complex
 
    , localparam coh_noc_ral_link_width_lp = `bsg_ready_and_link_sif_width(coh_noc_flit_width_p)
    )
-  (input                                                         core_clk_i
-   , input                                                       core_reset_i
+  (input                                                        core_clk_i
+   , input                                                      core_reset_i
 
-   , input                                                       coh_clk_i
-   , input                                                       coh_reset_i
+   , input                                                      coh_clk_i
+   , input                                                      coh_reset_i
 
-   , input [cac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]      coh_req_link_i
-   , output [cac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]     coh_req_link_o
+   , input [ac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]      coh_req_link_i
+   , output [ac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]     coh_req_link_o
 
-   , input [cac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]      coh_cmd_link_i
-   , output [cac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]     coh_cmd_link_o
+   , input [ac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]      coh_cmd_link_i
+   , output [ac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]     coh_cmd_link_o
 
-   , input [cac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]      coh_resp_link_i
-   , output [cac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]     coh_resp_link_o
+   , input [ac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]      coh_resp_link_i
+   , output [ac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]     coh_resp_link_o
    );
 
   `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
 
-  bp_coh_ready_and_link_s [cac_y_dim_p-1:0][S:W] lce_req_link_li, lce_req_link_lo;
-  bp_coh_ready_and_link_s [E:W][cac_y_dim_p-1:0] lce_req_hor_link_li, lce_req_hor_link_lo;
-  bp_coh_ready_and_link_s [S:N]                  lce_req_ver_link_li, lce_req_ver_link_lo;
+  bp_coh_ready_and_link_s [ac_y_dim_p-1:0][S:W] lce_req_link_li, lce_req_link_lo;
+  bp_coh_ready_and_link_s [E:W][ac_y_dim_p-1:0] lce_req_hor_link_li, lce_req_hor_link_lo;
+  bp_coh_ready_and_link_s [S:N]                 lce_req_ver_link_li, lce_req_ver_link_lo;
   
-  bp_coh_ready_and_link_s [cac_y_dim_p-1:0][S:W] lce_cmd_link_li, lce_cmd_link_lo;
-  bp_coh_ready_and_link_s [E:W][cac_y_dim_p-1:0] lce_cmd_hor_link_li, lce_cmd_hor_link_lo;
-  bp_coh_ready_and_link_s [S:N]                  lce_cmd_ver_link_li, lce_cmd_ver_link_lo;
+  bp_coh_ready_and_link_s [ac_y_dim_p-1:0][S:W] lce_cmd_link_li, lce_cmd_link_lo;
+  bp_coh_ready_and_link_s [E:W][ac_y_dim_p-1:0] lce_cmd_hor_link_li, lce_cmd_hor_link_lo;
+  bp_coh_ready_and_link_s [S:N]                 lce_cmd_ver_link_li, lce_cmd_ver_link_lo;
   
-  bp_coh_ready_and_link_s [cac_y_dim_p-1:0][S:W] lce_resp_link_li, lce_resp_link_lo;
-  bp_coh_ready_and_link_s [E:W][cac_y_dim_p-1:0] lce_resp_hor_link_li, lce_resp_hor_link_lo;
-  bp_coh_ready_and_link_s [S:N]                  lce_resp_ver_link_li, lce_resp_ver_link_lo;
+  bp_coh_ready_and_link_s [ac_y_dim_p-1:0][S:W] lce_resp_link_li, lce_resp_link_lo;
+  bp_coh_ready_and_link_s [E:W][ac_y_dim_p-1:0] lce_resp_hor_link_li, lce_resp_hor_link_lo;
+  bp_coh_ready_and_link_s [S:N]                 lce_resp_ver_link_li, lce_resp_ver_link_lo;
   
   // TODO: Insert tiles here
   //
@@ -48,14 +48,14 @@ module bp_cacc_complex
   //   i.e. we leave `accelerator_type_1, `accelerator_type_2
   //   and then substitute based on a parameter pattern...
   //
-  if (cac_x_dim_p > 0)
-    begin : cac_stitch
+  if (ac_x_dim_p > 0)
+    begin : ac_stitch
       assign lce_req_ver_link_li    = '0;
       assign lce_req_hor_link_li[E] = '0;
       assign lce_req_hor_link_li[W] = coh_req_link_i;
       bsg_mesh_stitch
        #(.width_p(coh_noc_ral_link_width_lp)
-         ,.x_max_p(cac_x_dim_p)
+         ,.x_max_p(ac_x_dim_p)
          ,.y_max_p(1)
          )
        coh_req_mesh
@@ -74,7 +74,7 @@ module bp_cacc_complex
       assign lce_cmd_hor_link_li[W] = coh_cmd_link_i;
       bsg_mesh_stitch
        #(.width_p(coh_noc_ral_link_width_lp)
-         ,.x_max_p(cac_x_dim_p)
+         ,.x_max_p(ac_x_dim_p)
          ,.y_max_p(1)
          )
        coh_cmd_mesh
@@ -93,7 +93,7 @@ module bp_cacc_complex
       assign lce_resp_ver_link_li[W] = coh_resp_link_i;
       bsg_mesh_stitch
        #(.width_p(coh_noc_ral_link_width_lp)
-         ,.x_max_p(cac_x_dim_p)
+         ,.x_max_p(ac_x_dim_p)
          ,.y_max_p(1)
          )
        coh_resp_mesh
