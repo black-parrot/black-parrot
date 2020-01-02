@@ -66,13 +66,14 @@ bp_coh_ready_and_link_s [S:N][cc_x_dim_p-1:0] coh_req_ver_link_li, coh_req_ver_l
 bp_coh_ready_and_link_s [S:N][cc_x_dim_p-1:0] coh_cmd_ver_link_li, coh_cmd_ver_link_lo;
 bp_coh_ready_and_link_s [S:N][cc_x_dim_p-1:0] coh_resp_ver_link_li, coh_resp_ver_link_lo;
 
-bp_mem_ready_and_link_s [S:N][cc_x_dim_p-1:0] mem_cmd_link_lo, mem_resp_link_li;
+bp_mem_ready_and_link_s [N:N][cc_x_dim_p-1:0] mem_cmd_ver_link_li, mem_resp_ver_link_lo;
+bp_mem_ready_and_link_s [S:S][cc_x_dim_p-1:0] mem_resp_ver_link_li, mem_cmd_ver_link_lo;
 
 assign coh_req_hor_link_li[W] = '0;
 assign coh_cmd_hor_link_li[W] = '0;
 assign coh_resp_hor_link_li[W] = '0;
 assign coh_resp_ver_link_li[S:N] = '0;
-assign mem_resp_link_li[N] = '0;
+assign mem_cmd_ver_link_li[N] = '0;
 bp_core_complex
  #(.bp_params_p(bp_params_p))
  cc
@@ -105,8 +106,11 @@ bp_core_complex
    ,.coh_resp_ver_link_i(coh_resp_ver_link_li)
    ,.coh_resp_ver_link_o(coh_resp_ver_link_lo)
 
-   ,.mem_cmd_link_o(mem_cmd_link_lo)
-   ,.mem_resp_link_i(mem_resp_link_li)
+   ,.mem_cmd_ver_link_i(mem_cmd_ver_link_li)
+   ,.mem_cmd_ver_link_o(mem_cmd_ver_link_lo)
+
+   ,.mem_resp_ver_link_i(mem_resp_ver_link_li)
+   ,.mem_resp_ver_link_o(mem_resp_ver_link_lo)
    );
 
 bp_io_complex
@@ -154,8 +158,8 @@ bp_mem_complex
    ,.coh_cmd_link_i(coh_cmd_ver_link_lo[S])
    ,.coh_cmd_link_o(coh_cmd_ver_link_li[S])
 
-   ,.mem_cmd_link_i(mem_cmd_link_lo[S])
-   ,.mem_resp_link_o(mem_resp_link_li[S])
+   ,.mem_cmd_link_i(mem_cmd_ver_link_lo)
+   ,.mem_resp_link_o(mem_resp_ver_link_li)
 
    ,.bypass_cmd_link_o(bypass_cmd_link_o)
    ,.bypass_resp_link_i(bypass_resp_link_i)

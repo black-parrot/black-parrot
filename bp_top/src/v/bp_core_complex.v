@@ -53,8 +53,11 @@ module bp_core_complex
    , input [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_resp_ver_link_i
    , output [S:N][cc_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_resp_ver_link_o
 
-   , output [S:N][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] mem_cmd_link_o
-   , input [S:N][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_resp_link_i
+   , input [N:N][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_cmd_ver_link_i
+   , output [S:S][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] mem_cmd_ver_link_o
+
+   , input [S:S][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0]  mem_resp_ver_link_i
+   , output [N:N][cc_x_dim_p-1:0][mem_noc_ral_link_width_lp-1:0] mem_resp_ver_link_o
    );
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
@@ -65,7 +68,8 @@ coh_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] lce_req_link_lo, lce_re
 coh_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] lce_cmd_link_lo, lce_cmd_link_li;
 coh_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] lce_resp_link_lo, lce_resp_link_li;
 
-mem_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:N] mem_cmd_link_lo, mem_resp_link_li;
+mem_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:S] mem_cmd_link_lo, mem_resp_link_li;
+mem_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][N:N] mem_resp_link_lo, mem_cmd_link_li;
 
 coh_noc_ral_link_s [E:W][cc_y_dim_p-1:0] lce_req_hor_link_li, lce_req_hor_link_lo;
 coh_noc_ral_link_s [S:N][cc_x_dim_p-1:0] lce_req_ver_link_li, lce_req_ver_link_lo;
@@ -74,7 +78,7 @@ coh_noc_ral_link_s [S:N][cc_x_dim_p-1:0] lce_cmd_ver_link_li, lce_cmd_ver_link_l
 coh_noc_ral_link_s [E:W][cc_y_dim_p-1:0] lce_resp_hor_link_li, lce_resp_hor_link_lo;
 coh_noc_ral_link_s [S:N][cc_x_dim_p-1:0] lce_resp_ver_link_li, lce_resp_ver_link_lo;
 
-mem_noc_ral_link_s [S:N][cc_x_dim_p-1:0] mem_cmd_ver_link_lo, mem_resp_ver_link_li;
+mem_noc_ral_link_s [S:N][cc_x_dim_p-1:0] mem_ver_link_lo, mem_ver_link_li;
 
 for (genvar j = 0; j < cc_y_dim_p; j++)
   begin : y
@@ -103,9 +107,12 @@ for (genvar j = 0; j < cc_y_dim_p; j++)
            ,.coh_lce_req_link_o(lce_req_link_lo[j][i])
            ,.coh_lce_resp_link_o(lce_resp_link_lo[j][i])
            ,.coh_lce_cmd_link_o(lce_cmd_link_lo[j][i])
-    
+
+           ,.mem_cmd_link_i(mem_cmd_link_li[j][i])
            ,.mem_cmd_link_o(mem_cmd_link_lo[j][i])
+
            ,.mem_resp_link_i(mem_resp_link_li[j][i])
+           ,.mem_resp_link_o(mem_resp_link_lo[j][i])
            );
       end
   end
@@ -167,29 +174,32 @@ for (genvar j = 0; j < cc_y_dim_p; j++)
   assign coh_resp_hor_link_o = lce_resp_hor_link_lo;
   assign coh_resp_ver_link_o = lce_resp_ver_link_lo;
   
-  mem_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] mem_cmd_mesh_lo, mem_resp_mesh_li;
+  mem_noc_ral_link_s [cc_y_dim_p-1:0][cc_x_dim_p-1:0][S:W] mem_mesh_lo, mem_mesh_li;
   for (genvar i = 0; i < cc_y_dim_p; i++)
     for (genvar j = 0; j < cc_x_dim_p; j++)
       begin : link
-        assign mem_cmd_mesh_lo[i][j][S:N]  = mem_cmd_link_lo[i][j][S:N];
-        assign mem_resp_link_li[i][j][S:N] = mem_resp_mesh_li[i][j][S:N];
+        assign mem_mesh_lo[i][j][S] = mem_cmd_link_lo[i][j];
+        assign mem_mesh_lo[i][j][N] = mem_resp_link_lo[i][j];
+
+        assign mem_cmd_link_li[i][j] = mem_mesh_li[i][j][N];
+        assign mem_resp_link_li[i][j] = mem_mesh_li[i][j][S];
       end
-  assign mem_resp_ver_link_li = mem_resp_link_i;
+  assign mem_ver_link_li = {mem_resp_ver_link_i, mem_cmd_ver_link_i};
   bsg_mesh_stitch
    #(.width_p($bits(mem_noc_ral_link_s))
      ,.x_max_p(cc_x_dim_p)
      ,.y_max_p(cc_y_dim_p)
      )
    mem_mesh
-    (.outs_i(mem_cmd_mesh_lo)
-     ,.ins_o(mem_resp_mesh_li)
+    (.outs_i(mem_mesh_lo)
+     ,.ins_o(mem_mesh_li)
 
      ,.hor_i()
      ,.hor_o()
-     ,.ver_i(mem_resp_ver_link_li)
-     ,.ver_o(mem_cmd_ver_link_lo)
+     ,.ver_i(mem_ver_link_li)
+     ,.ver_o(mem_ver_link_lo)
      );
-  assign mem_cmd_link_o = mem_cmd_ver_link_lo;
+  assign {mem_cmd_ver_link_o, mem_resp_ver_link_o} = mem_ver_link_lo;
 
 endmodule
 
