@@ -45,24 +45,27 @@ module bp_tile_node
    , input [S:W][coh_noc_ral_link_width_lp-1:0]  coh_lce_resp_link_i
    , output [S:W][coh_noc_ral_link_width_lp-1:0] coh_lce_resp_link_o
 
-   , output [S:N][mem_noc_ral_link_width_lp-1:0] mem_cmd_link_o
-   , input [S:N][mem_noc_ral_link_width_lp-1:0]  mem_resp_link_i
+   , input [mem_noc_ral_link_width_lp-1:0]       mem_cmd_link_i
+   , output [mem_noc_ral_link_width_lp-1:0]      mem_cmd_link_o
+
+   , input [mem_noc_ral_link_width_lp-1:0]       mem_resp_link_i
+   , output [mem_noc_ral_link_width_lp-1:0]      mem_resp_link_o
    );
 
-`declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
-
-// Declare the routing links
-`declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
-`declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_ready_and_link_s);
-
-// Tile-side coherence connections
-bp_coh_ready_and_link_s core_lce_req_link_li, core_lce_req_link_lo;
-bp_coh_ready_and_link_s core_lce_cmd_link_li, core_lce_cmd_link_lo;
-bp_coh_ready_and_link_s core_lce_resp_link_li, core_lce_resp_link_lo;
-
-// Tile side membus connections
-bp_mem_ready_and_link_s core_mem_cmd_link_lo, core_mem_resp_link_li;
+  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+  
+  // Declare the routing links
+  `declare_bsg_ready_and_link_sif_s(coh_noc_flit_width_p, bp_coh_ready_and_link_s);
+  `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_ready_and_link_s);
+  
+  // Tile-side coherence connections
+  bp_coh_ready_and_link_s core_lce_req_link_li, core_lce_req_link_lo;
+  bp_coh_ready_and_link_s core_lce_cmd_link_li, core_lce_cmd_link_lo;
+  bp_coh_ready_and_link_s core_lce_resp_link_li, core_lce_resp_link_lo;
+  
+  // Tile side membus connections
+  bp_mem_ready_and_link_s core_mem_cmd_link_lo, core_mem_resp_link_li;
 
   bp_tile
    #(.bp_params_p(bp_params_p))
@@ -87,13 +90,13 @@ bp_mem_ready_and_link_s core_mem_cmd_link_lo, core_mem_resp_link_li;
      ,.mem_resp_link_i(core_mem_resp_link_li)
      );
 
-// Network-side coherence connections
-bp_coh_ready_and_link_s coh_lce_req_link_li, coh_lce_req_link_lo;
-bp_coh_ready_and_link_s coh_lce_cmd_link_li, coh_lce_cmd_link_lo;
-bp_coh_ready_and_link_s coh_lce_resp_link_li, coh_lce_resp_link_lo;
-
-// Network side membus connections
-bp_mem_ready_and_link_s mem_cmd_link_lo, mem_resp_link_li;
+  // Network-side coherence connections
+  bp_coh_ready_and_link_s coh_lce_req_link_li, coh_lce_req_link_lo;
+  bp_coh_ready_and_link_s coh_lce_cmd_link_li, coh_lce_cmd_link_lo;
+  bp_coh_ready_and_link_s coh_lce_resp_link_li, coh_lce_resp_link_lo;
+  
+  // Network side membus connections
+  bp_mem_ready_and_link_s mem_cmd_link_lo, mem_resp_link_li;
 
   if (async_coh_clk_p == 1)
     begin : coh_async
@@ -251,14 +254,14 @@ bp_mem_ready_and_link_s mem_cmd_link_lo, mem_resp_link_li;
      ,.reverse_order_p(1)
      ,.routing_matrix_p(StrictX)
      )
-   mem_cmd_router 
+   mem_router 
    (.clk_i(mem_clk_i)
     ,.reset_i(mem_reset_i)
 
     ,.my_cord_i(my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p])
 
-    ,.link_i({mem_resp_link_i, mem_cmd_link_lo})
-    ,.link_o({mem_cmd_link_o, mem_resp_link_li})
+    ,.link_i({{mem_resp_link_i, mem_cmd_link_i}, mem_cmd_link_lo})
+    ,.link_o({{mem_cmd_link_o, mem_resp_link_o}, mem_resp_link_li})
     );
 
 endmodule
