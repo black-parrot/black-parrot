@@ -135,7 +135,6 @@ typedef struct packed
   integer mem_noc_cid_width;
   integer mem_noc_flit_width;
   integer mem_noc_len_width;
-  integer bypass_flit_width;
 
   integer async_io_clk;
   integer io_noc_max_credits;
@@ -234,7 +233,6 @@ typedef struct packed
   , localparam mem_noc_flit_width_p      = proc_param_lp.mem_noc_flit_width                        \
   , localparam mem_noc_cid_width_p       = proc_param_lp.mem_noc_cid_width                         \
   , localparam mem_noc_len_width_p       = proc_param_lp.mem_noc_len_width                         \
-  , localparam bypass_flit_width_p       = proc_param_lp.bypass_flit_width                         \
   , localparam mem_noc_y_cord_width_p    = `BSG_SAFE_CLOG2(ic_y_dim_p+cc_y_dim_p+mc_y_dim_p+1)     \
   , localparam mem_noc_x_cord_width_p    = `BSG_SAFE_CLOG2(cc_x_dim_p+ac_x_dim_p+1)                \
   , localparam mem_noc_dims_p            = 1                                                       \

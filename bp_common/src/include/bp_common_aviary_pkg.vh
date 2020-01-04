@@ -43,22 +43,21 @@ package bp_common_aviary_pkg;
 
       ,async_coh_clk       : 0
       ,coh_noc_max_credits : 16
-      ,coh_noc_flit_width  : 96
+      ,coh_noc_flit_width  : 128
       ,coh_noc_cid_width   : 2
-      ,coh_noc_len_width   : 5
+      ,coh_noc_len_width   : 3
 
-      ,async_mem_clk         : 0
+      ,async_mem_clk         : 1
       ,mem_noc_max_credits   : 16
-      ,mem_noc_flit_width    : 128
+      ,mem_noc_flit_width    : 64
       ,mem_noc_cid_width     : 2
-      ,mem_noc_len_width     : 5
-      ,bypass_flit_width     : 16
+      ,mem_noc_len_width     : 4
 
-      ,async_io_clk         : 0
+      ,async_io_clk         : 1
       ,io_noc_max_credits   : 16
       ,io_noc_flit_width    : 64
       ,io_noc_did_width     : 3
-      ,io_noc_len_width     : 5
+      ,io_noc_len_width     : 4
       };
 
   localparam bp_proc_param_s bp_single_core_cfg_p = 
@@ -94,22 +93,21 @@ package bp_common_aviary_pkg;
 
       ,async_coh_clk       : 0
       ,coh_noc_max_credits : 16
-      ,coh_noc_flit_width  : 96
+      ,coh_noc_flit_width  : 128
       ,coh_noc_cid_width   : 2
-      ,coh_noc_len_width   : 5
+      ,coh_noc_len_width   : 3
 
       ,async_mem_clk         : 1
       ,mem_noc_max_credits   : 16
-      ,mem_noc_flit_width    : 128
+      ,mem_noc_flit_width    : 64
       ,mem_noc_cid_width     : 2
-      ,mem_noc_len_width     : 5
-      ,bypass_flit_width     : 16
+      ,mem_noc_len_width     : 4
 
       ,async_io_clk         : 1
       ,io_noc_max_credits   : 16
       ,io_noc_flit_width    : 64
       ,io_noc_did_width     : 3
-      ,io_noc_len_width     : 5
+      ,io_noc_len_width     : 4
       };
 
 
@@ -146,22 +144,21 @@ package bp_common_aviary_pkg;
 
       ,async_coh_clk       : 0
       ,coh_noc_max_credits : 16
-      ,coh_noc_flit_width  : 96
+      ,coh_noc_flit_width  : 128
       ,coh_noc_cid_width   : 2
-      ,coh_noc_len_width   : 5
+      ,coh_noc_len_width   : 3
 
-      ,async_mem_clk         : 0
+      ,async_mem_clk         : 1
       ,mem_noc_max_credits   : 16
-      ,mem_noc_flit_width    : 128
+      ,mem_noc_flit_width    : 64
       ,mem_noc_cid_width     : 2
-      ,mem_noc_len_width     : 5
-      ,bypass_flit_width     : 16
+      ,mem_noc_len_width     : 4
 
-      ,async_io_clk         : 0
+      ,async_io_clk         : 1
       ,io_noc_max_credits   : 16
       ,io_noc_flit_width    : 64
       ,io_noc_did_width     : 3
-      ,io_noc_len_width     : 5
+      ,io_noc_len_width     : 4
       };
 
   localparam bp_proc_param_s bp_tri_core_cfg_p = 
@@ -197,22 +194,21 @@ package bp_common_aviary_pkg;
 
       ,async_coh_clk       : 0
       ,coh_noc_max_credits : 16
-      ,coh_noc_flit_width  : 96
+      ,coh_noc_flit_width  : 128
       ,coh_noc_cid_width   : 2
-      ,coh_noc_len_width   : 5
+      ,coh_noc_len_width   : 3
 
-      ,async_mem_clk         : 0
+      ,async_mem_clk         : 1
       ,mem_noc_max_credits   : 16
-      ,mem_noc_flit_width    : 128
+      ,mem_noc_flit_width    : 64
       ,mem_noc_cid_width     : 2
-      ,mem_noc_len_width     : 5
-      ,bypass_flit_width     : 16
+      ,mem_noc_len_width     : 4
 
-      ,async_io_clk         : 0
+      ,async_io_clk         : 1
       ,io_noc_max_credits   : 16
       ,io_noc_flit_width    : 64
       ,io_noc_did_width     : 3
-      ,io_noc_len_width     : 5
+      ,io_noc_len_width     : 4
       };
 
   localparam bp_proc_param_s bp_quad_core_cfg_p =
@@ -248,22 +244,21 @@ package bp_common_aviary_pkg;
 
       ,async_coh_clk       : 1
       ,coh_noc_max_credits : 16
-      ,coh_noc_flit_width  : 96
+      ,coh_noc_flit_width  : 128
       ,coh_noc_cid_width   : 2
-      ,coh_noc_len_width   : 5
+      ,coh_noc_len_width   : 3
 
       ,async_mem_clk         : 1
       ,mem_noc_max_credits   : 16
-      ,mem_noc_flit_width    : 128
+      ,mem_noc_flit_width    : 64
       ,mem_noc_cid_width     : 2
-      ,mem_noc_len_width     : 5
-      ,bypass_flit_width     : 16
+      ,mem_noc_len_width     : 4
 
       ,async_io_clk         : 1
       ,io_noc_max_credits   : 16
       ,io_noc_flit_width    : 64
       ,io_noc_did_width     : 3
-      ,io_noc_len_width     : 5
+      ,io_noc_len_width     : 4
       };
 
   localparam bp_proc_param_s bp_hexa_core_cfg_p =
@@ -299,22 +294,21 @@ package bp_common_aviary_pkg;
 
       ,async_coh_clk       : 0
       ,coh_noc_max_credits : 16
-      ,coh_noc_flit_width  : 96
+      ,coh_noc_flit_width  : 128
       ,coh_noc_cid_width   : 2
-      ,coh_noc_len_width   : 5
+      ,coh_noc_len_width   : 3
 
-      ,async_mem_clk         : 0
+      ,async_mem_clk         : 1
       ,mem_noc_max_credits   : 16
-      ,mem_noc_flit_width    : 128
+      ,mem_noc_flit_width    : 64
       ,mem_noc_cid_width     : 2
-      ,mem_noc_len_width     : 5
-      ,bypass_flit_width     : 16
+      ,mem_noc_len_width     : 4
 
-      ,async_io_clk         : 0
+      ,async_io_clk         : 1
       ,io_noc_max_credits   : 16
       ,io_noc_flit_width    : 64
       ,io_noc_did_width     : 3
-      ,io_noc_len_width     : 5
+      ,io_noc_len_width     : 4
       };
 
   localparam bp_proc_param_s bp_oct_core_cfg_p =
@@ -350,22 +344,21 @@ package bp_common_aviary_pkg;
 
       ,async_coh_clk       : 0
       ,coh_noc_max_credits : 16
-      ,coh_noc_flit_width  : 96
+      ,coh_noc_flit_width  : 128
       ,coh_noc_cid_width   : 2
-      ,coh_noc_len_width   : 5
+      ,coh_noc_len_width   : 3
 
-      ,async_mem_clk         : 0
+      ,async_mem_clk         : 1
       ,mem_noc_max_credits   : 16
-      ,mem_noc_flit_width    : 128
+      ,mem_noc_flit_width    : 64
       ,mem_noc_cid_width     : 2
-      ,mem_noc_len_width     : 5
-      ,bypass_flit_width     : 16
+      ,mem_noc_len_width     : 4
 
-      ,async_io_clk         : 0
+      ,async_io_clk         : 1
       ,io_noc_max_credits   : 16
       ,io_noc_flit_width    : 64
       ,io_noc_did_width     : 3
-      ,io_noc_len_width     : 5
+      ,io_noc_len_width     : 4
       };
 
   localparam bp_proc_param_s bp_sexta_core_cfg_p =
@@ -401,22 +394,21 @@ package bp_common_aviary_pkg;
 
       ,async_coh_clk       : 0
       ,coh_noc_max_credits : 16
-      ,coh_noc_flit_width  : 96
+      ,coh_noc_flit_width  : 128
       ,coh_noc_cid_width   : 2
-      ,coh_noc_len_width   : 5
+      ,coh_noc_len_width   : 3
 
-      ,async_mem_clk         : 0
+      ,async_mem_clk         : 1
       ,mem_noc_max_credits   : 16
-      ,mem_noc_flit_width    : 128
+      ,mem_noc_flit_width    : 64
       ,mem_noc_cid_width     : 2
-      ,mem_noc_len_width     : 5
-      ,bypass_flit_width     : 16
+      ,mem_noc_len_width     : 4
 
-      ,async_io_clk         : 0
+      ,async_io_clk         : 1
       ,io_noc_max_credits   : 16
       ,io_noc_flit_width    : 64
       ,io_noc_did_width     : 3
-      ,io_noc_len_width     : 5
+      ,io_noc_len_width     : 4
       };
 
   typedef enum bit [lg_max_cfgs-1:0] 
