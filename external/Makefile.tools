@@ -9,6 +9,7 @@ INCLUDE_DIR := $(BP_EXTERNAL_DIR)/include
 VERILATOR_DIR := $(BP_EXTERNAL_DIR)/verilator
 GNU_DIR       := $(BP_EXTERNAL_DIR)/riscv-gnu-toolchain
 SPIKE_DIR     := $(BP_EXTERNAL_DIR)/riscv-isa-sim
+DROMAJO_DIR   := $(BP_EXTERNAL_DIR)/dromajo
 AXE_DIR       := $(BP_EXTERNAL_DIR)/axe
 DRAMSIM2_DIR  := $(BP_EXTERNAL_DIR)/DRAMSim2
 CMURPHI_DIR   := $(BP_EXTERNAL_DIR)/cmurphi
@@ -36,6 +37,11 @@ spike:
 		./configure --enable-commitlog --enable-histogram --with-isa=rv64ia --prefix=$(BP_EXTERNAL_DIR)
 	$(MAKE) -C $(SPIKE_DIR)
 	$(MAKE) -C $(SPIKE_DIR) install
+
+dromajo:
+	@cd $(TOP); git submodule update --init --recursive $(DROMAJO_DIR)
+	$(MAKE) -C $(DROMAJO_DIR)/src
+	cp $(DROMAJO_DIR)/src/dromajo $(BP_EXTERNAL_DIR)/bin
 
 axe: 
 	@cd $(TOP); git submodule update --init --recursive $(AXE_DIR)

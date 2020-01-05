@@ -88,3 +88,9 @@
   branch = master
   ignore = dirty
 
+[submodule "external/dromajo"]
+  path = external/dromajo
+  url = https://github.com/bsg-external/dromajo.git
+  branch = blackparrot_mods
+  ignore = dirty
+

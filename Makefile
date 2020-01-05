@@ -34,6 +34,7 @@ tools: update_libs
 	$(MAKE) systemc
 	$(MAKE) verilator
 	$(MAKE) spike
+	$(MAKE) dromajo
 	$(MAKE) axe
 	$(MAKE) dramsim2
 	$(MAKE) cmurphi
