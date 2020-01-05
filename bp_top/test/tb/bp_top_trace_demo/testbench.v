@@ -27,9 +27,9 @@ module testbench
    , parameter npc_trace_p                 = 0
    , parameter dcache_trace_p              = 0
    , parameter vm_trace_p                  = 0
+   , parameter preload_mem_p               = 0
    , parameter skip_init_p                 = 0
 
-   , parameter mem_load_p         = 0
    , parameter mem_zero_p         = 1
    , parameter mem_file_p         = "prog.mem"
    , parameter mem_cap_in_bytes_p = 2**20
@@ -375,7 +375,7 @@ bp_me_cce_to_mem_link_client
 bp_mem
  #(.bp_params_p(bp_params_p)
    ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
-   ,.mem_load_p(mem_load_p)
+   ,.mem_load_p(preload_mem_p)
    ,.mem_zero_p(mem_zero_p)
    ,.mem_file_p(mem_file_p)
    ,.mem_offset_p(mem_offset_p)
@@ -422,22 +422,29 @@ bp_nonsynth_host
    );
 
 logic nbf_done_lo;
-bp_nonsynth_nbf_loader
- #(.bp_params_p(bp_params_p))
- nbf_loader
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+if (preload_mem_p == 0)
+  begin : preload
+    bp_nonsynth_nbf_loader
+     #(.bp_params_p(bp_params_p))
+     nbf_loader
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
 
-   ,.io_cmd_o(nbf_cmd_lo)
-   ,.io_cmd_v_o(nbf_cmd_v_lo)
-   ,.io_cmd_yumi_i(nbf_cmd_ready_li & nbf_cmd_v_lo)
+       ,.io_cmd_o(nbf_cmd_lo)
+       ,.io_cmd_v_o(nbf_cmd_v_lo)
+       ,.io_cmd_yumi_i(nbf_cmd_ready_li & nbf_cmd_v_lo)
 
-   ,.io_resp_i(nbf_resp_li)
-   ,.io_resp_v_i(nbf_resp_v_li)
-   ,.io_resp_ready_o(nbf_resp_ready_lo)
+       ,.io_resp_i(nbf_resp_li)
+       ,.io_resp_v_i(nbf_resp_v_li)
+       ,.io_resp_ready_o(nbf_resp_ready_lo)
 
-   ,.done_o(nbf_done_lo)
-   );
+       ,.done_o(nbf_done_lo)
+       );
+  end
+else
+  begin : no_preload
+    assign nbf_done_lo = 1'b1;
+  end
 
 localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
 bp_cce_mmio_cfg_loader
