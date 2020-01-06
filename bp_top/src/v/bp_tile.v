@@ -107,6 +107,10 @@ logic                  clint_mem_cmd_v_li, clint_mem_cmd_ready_lo;
 bp_cce_mem_msg_s       clint_mem_resp_lo;
 logic                  clint_mem_resp_v_lo, clint_mem_resp_yumi_li;
 
+logic reset_r;
+always_ff @(posedge clk_i)
+  reset_r <= reset_i;
+
 bp_cfg_bus_s cfg_bus_lo;
 logic [dword_width_p-1:0] cfg_irf_data_li;
 logic [vaddr_width_p-1:0] cfg_npc_data_li;
@@ -118,7 +122,7 @@ bp_cfg_buffered
  #(.bp_params_p(bp_params_p))
  cfg
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
 
    ,.mem_cmd_i(cfg_mem_cmd_li)
    ,.mem_cmd_v_i(cfg_mem_cmd_v_li)
@@ -143,7 +147,7 @@ bp_clint_slice_buffered
  #(.bp_params_p(bp_params_p))
  clint
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
 
    ,.mem_cmd_i(clint_mem_cmd_li)
    ,.mem_cmd_v_i(clint_mem_cmd_v_li)
@@ -163,7 +167,7 @@ bp_core
  #(.bp_params_p(bp_params_p))
  core
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
 
    ,.cfg_bus_i(cfg_bus_lo)
    ,.cfg_irf_data_o(cfg_irf_data_li)
@@ -196,7 +200,7 @@ bp_cce
  #(.bp_params_p(bp_params_p))
  cce
   (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+   ,.reset_i(reset_r)
 
    ,.cfg_bus_i(cfg_bus_lo)
    ,.cfg_cce_ucode_data_o(cfg_cce_ucode_data_li)
@@ -255,7 +259,7 @@ for (genvar i = 0; i < 2; i++)
        )
      lce_req_adapter_in
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
 
        ,.packet_i(lce_req_packet_lo[i])
        ,.v_i(lce_req_v_lo[i])
@@ -280,7 +284,7 @@ for (genvar i = 0; i < 2; i++)
        )
      cmd_adapter
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
 
        ,.packet_i(lce_cmd_packet_lo[i])
        ,.v_i(lce_cmd_v_lo[i])
@@ -310,7 +314,7 @@ for (genvar i = 0; i < 2; i++)
        )
      lce_resp_adapter_in
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_r)
 
        ,.packet_i(lce_resp_packet_lo[i])
        ,.v_i(lce_resp_v_lo[i])
@@ -330,7 +334,7 @@ for (genvar i = 0; i < 2; i++)
      )
    cce_req_adapter_out
    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+    ,.reset_i(reset_r)
 
     ,.link_i(lce_req_link_i)
     ,.link_o(cce_lce_req_link_lo)
@@ -357,7 +361,7 @@ for (genvar i = 0; i < 2; i++)
      )
    cmd_adapter_in
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.packet_i(cce_lce_cmd_packet_lo)
      ,.v_i(cce_lce_cmd_v_lo)
@@ -376,7 +380,7 @@ for (genvar i = 0; i < 2; i++)
      )
    cce_resp_adapter_out
    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+    ,.reset_i(reset_r)
 
     ,.link_i(lce_resp_link_i)
     ,.link_o(cce_lce_resp_link_lo)
@@ -405,7 +409,7 @@ for (genvar i = 0; i < 2; i++)
      )
    req_concentrator
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.links_i(lce_req_link_lo)
      ,.links_o(lce_req_link_li)
@@ -425,7 +429,7 @@ for (genvar i = 0; i < 2; i++)
      )
    cmd_concentrator
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.links_i({cce_lce_cmd_link_lo, lce_cmd_link_lo})
      ,.links_o({cce_lce_cmd_link_li, lce_cmd_link_li})
@@ -448,7 +452,7 @@ for (genvar i = 0; i < 2; i++)
      )
    resp_concentrator
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.links_i(lce_resp_link_lo)
      ,.links_o(lce_resp_link_li)
@@ -498,7 +502,7 @@ for (genvar i = 0; i < 2; i++)
    #(.bp_params_p(bp_params_p))
    l2s
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.mem_cmd_i(cache_mem_cmd_li)
      ,.mem_cmd_v_i(cache_mem_cmd_v_li)
@@ -523,7 +527,7 @@ for (genvar i = 0; i < 2; i++)
    #(.bp_params_p(bp_params_p))
    dma_link
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.reset_i(reset_r)
 
      ,.mem_cmd_i(dma_mem_cmd_lo)
      ,.mem_cmd_v_i(dma_mem_cmd_v_lo)
