@@ -114,7 +114,6 @@ always_ff @(posedge clk_i)
 bp_cfg_bus_s cfg_bus_lo;
 logic [dword_width_p-1:0] cfg_irf_data_li;
 logic [vaddr_width_p-1:0] cfg_npc_data_li;
-logic                     cfg_haz_v_li;
 logic [dword_width_p-1:0] cfg_csr_data_li;
 logic [1:0]               cfg_priv_data_li;
 logic [cce_instr_width_p-1:0] cfg_cce_ucode_data_li;
@@ -137,7 +136,6 @@ bp_cfg_buffered
    ,.cord_i(my_cord_i)
    ,.irf_data_i(cfg_irf_data_li)
    ,.npc_data_i(cfg_npc_data_li)
-   ,.haz_v_i(cfg_haz_v_li)
    ,.csr_data_i(cfg_csr_data_li)
    ,.priv_data_i(cfg_priv_data_li)
    ,.cce_ucode_data_i(cfg_cce_ucode_data_li)

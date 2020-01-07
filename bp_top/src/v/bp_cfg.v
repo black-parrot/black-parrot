@@ -28,7 +28,6 @@ module bp_cfg
    , input [io_noc_did_width_p-1:0]     did_i
    , input [dword_width_p-1:0]          irf_data_i
    , input [vaddr_width_p-1:0]          npc_data_i
-   , input                              haz_v_i
    , input [dword_width_p-1:0]          csr_data_i
    , input [1:0]                        priv_data_i
    , input [cce_instr_width_p-1:0]      cce_ucode_data_i

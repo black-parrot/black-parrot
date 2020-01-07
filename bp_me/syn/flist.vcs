@@ -18,6 +18,7 @@
 +incdir+$BP_TOP_DIR/src/include
 //// Packages
 // bsg_ip_cores packages
+$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkg.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_noc_pkg.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_pkg.v
 // Interface packages
@@ -178,9 +179,10 @@ $BP_ME_DIR/src/v/cce/bp_cce_pending.v
 $BP_ME_DIR/src/v/cce/bp_cce_reg.v
 $BP_ME_DIR/src/v/cce/bp_cce_spec.v
 // Network
+$BP_ME_DIR/src/v/wormhole/bp_me_cord_to_id.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_id_to_cord.v
-$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_master.v
-$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_wormhole_link_client.v
+$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_mem_link_master.v
+$BP_ME_DIR/src/v/wormhole/bp_me_cce_to_mem_link_client.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_cmd.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_req.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.v

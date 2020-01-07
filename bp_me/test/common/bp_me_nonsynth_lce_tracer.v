@@ -48,7 +48,7 @@ module bp_me_nonsynth_lce_tracer
   );
 
   // LCE-CCE interface structs
-  `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
+  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   // Structs for messages
   bp_lce_cce_req_s lce_req;

@@ -58,13 +58,19 @@ module testbench
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
-`declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
+`declare_bp_io_if(paddr_width_p, dword_width_p, lce_id_width_p);
+`declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
 // CFG IF
-bp_cce_mem_msg_s       cfg_cmd_lo;
-logic                  cfg_cmd_v_lo, cfg_cmd_yumi_li;
-bp_cce_mem_msg_s       cfg_resp_li;
-logic                  cfg_resp_v_li, cfg_resp_ready_lo;
+bp_cce_io_msg_s       cfg_io_cmd_lo;
+logic                 cfg_io_cmd_v_lo, cfg_io_cmd_yumi_li;
+bp_cce_io_msg_s       cfg_io_resp_li;
+logic                 cfg_io_resp_v_li, cfg_io_resp_ready_lo;
+
+bp_cce_mem_msg_s      cfg_mem_cmd_lo;
+logic                 cfg_mem_cmd_v_lo, cfg_mem_cmd_yumi_li;
+bp_cce_mem_msg_s      cfg_mem_resp_li;
+logic                 cfg_mem_resp_v_li, cfg_mem_resp_ready_lo;
 
 // CCE-MEM IF
 bp_cce_mem_msg_s       mem_resp;
@@ -148,6 +154,15 @@ bp_me_nonsynth_mock_lce #(
   ,.lce_cmd_ready_i(lce_cmd_ready_li)
 );
 
+// Transduce between mem and io
+assign cfg_mem_cmd_lo = cfg_io_cmd_lo;
+assign cfg_mem_cmd_v_lo = cfg_io_cmd_v_lo;
+assign cfg_io_cmd_yumi_li = cfg_mem_cmd_yumi_li;
+
+assign cfg_io_resp_li = cfg_mem_resp_li;
+assign cfg_io_resp_v_li = cfg_mem_resp_v_li;
+assign cfg_mem_resp_ready_lo = cfg_io_resp_ready_lo;
+
 bp_cfg_bus_s cfg_bus_lo;
 bp_cfg
  #(.bp_params_p(bp_params_p))
@@ -155,13 +170,13 @@ bp_cfg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.mem_cmd_i(cfg_cmd_lo)
-   ,.mem_cmd_v_i(cfg_cmd_v_lo)
-   ,.mem_cmd_yumi_o(cfg_cmd_yumi_li)
+   ,.mem_cmd_i(cfg_mem_cmd_lo)
+   ,.mem_cmd_v_i(cfg_mem_cmd_v_lo)
+   ,.mem_cmd_yumi_o(cfg_mem_cmd_yumi_li)
 
-   ,.mem_resp_o(cfg_resp_li)
-   ,.mem_resp_v_o(cfg_resp_v_li)
-   ,.mem_resp_ready_i(cfg_resp_ready_lo)
+   ,.mem_resp_o(cfg_mem_resp_li)
+   ,.mem_resp_v_o(cfg_mem_resp_v_li)
+   ,.mem_resp_ready_i(cfg_mem_resp_ready_lo)
 
    ,.cfg_bus_o(cfg_bus_lo)
    ,.irf_data_i()
@@ -259,13 +274,13 @@ bp_cce_mmio_cfg_loader
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    
-   ,.mem_cmd_o(cfg_cmd_lo)
-   ,.mem_cmd_v_o(cfg_cmd_v_lo)
-   ,.mem_cmd_yumi_i(cfg_cmd_yumi_li)
+   ,.io_cmd_o(cfg_io_cmd_lo)
+   ,.io_cmd_v_o(cfg_io_cmd_v_lo)
+   ,.io_cmd_yumi_i(cfg_io_cmd_yumi_li)
    
-   ,.mem_resp_i(cfg_resp_li)
-   ,.mem_resp_v_i(cfg_resp_v_li)
-   ,.mem_resp_ready_o(cfg_resp_ready_lo)
+   ,.io_resp_i(cfg_io_resp_li)
+   ,.io_resp_v_i(cfg_io_resp_v_li)
+   ,.io_resp_ready_o(cfg_io_resp_ready_lo)
   );
 
 

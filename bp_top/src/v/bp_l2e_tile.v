@@ -109,7 +109,6 @@ bp_cfg_buffered
    ,.cord_i(my_cord_i)
    ,.irf_data_i()
    ,.npc_data_i()
-   ,.haz_v_i()
    ,.csr_data_i()
    ,.priv_data_i()
    ,.cce_ucode_data_i(cfg_cce_ucode_data_li)
