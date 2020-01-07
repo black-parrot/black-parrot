@@ -547,7 +547,7 @@ typedef enum logic [2:0] {
 
 // Note: number of gpr must be a power of 2
 `define bp_cce_inst_num_gpr (2**$bits(bp_cce_gpr_e))
-`define bp_cce_inst_gpr_width 64
+`define bp_cce_inst_gpr_width 48
 
 // source select for reqlce and reqaddr registers writes
 typedef enum logic [1:0] {
