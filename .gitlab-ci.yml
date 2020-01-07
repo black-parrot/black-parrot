@@ -9,6 +9,7 @@ stages:
   - test-medium
   - test-long
  
+# Useless comment to trigger CI
 #pass:
 #  script:
 #    - echo "Passing job 1"
