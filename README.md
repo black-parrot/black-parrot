@@ -5,7 +5,9 @@ BlackParrot aims to be the default Linux-capable, cache-coherent, RV64GC multico
 [Getting Started](GETTING_STARTED.md)
 
 # Project Status
-The next release of BlackParrot, v1.0, is coming in September 2019, and will contain support for a (up to) 16 core, cache-coherent, Linux-capable, RV64IA multicore.
+The next release of BlackParrot, v 1.0, is coming in January 2020, and will contain support for 1 to 24-way cache coherent multicore, and include baseline user and privilege mode functionality and run Linux.
+
+A 14-nm BlackParrot multicore chip was taped out in July 2019.
 
 # BlackParrot repository overview
 - **bp_fe/** contains the front-end (FE) of BlackParrot, responsible for speculative fetching of instructions.
