@@ -95,22 +95,23 @@ lint-verilator:
     - verilator
   script:
     - $CI_PROJECT_DIR/ci/regress.sh lint.sc bp_top
-      
-me-regress-verilator:
-  <<: *job_definition
-  stage: test-short
-  tags:
-    - verilator
-  script:
-    - $CI_PROJECT_DIR/ci/regress.sh regress.me.sc bp_me
-     
-me-regress-vcs:
-  <<: *job_definition
-  stage: test-short
-  tags:
-    - vcs
-  script:
-    - $CI_PROJECT_DIR/ci/regress.sh regress.me.v bp_me
+ 
+# TODO: Re-enable when testbenches are fixed up     
+#me-regress-verilator:
+#  <<: *job_definition
+#  stage: test-short
+#  tags:
+#    - verilator
+#  script:
+#    - $CI_PROJECT_DIR/ci/regress.sh regress.me.sc bp_me
+#     
+#me-regress-vcs:
+#  <<: *job_definition
+#  stage: test-short
+#  tags:
+#    - vcs
+#  script:
+#    - $CI_PROJECT_DIR/ci/regress.sh regress.me.v bp_me
       
 top-riscv-verilator:
   <<: *job_definition
