@@ -55,7 +55,7 @@ module bp_me_cord_to_id
         lce_id0_o  = max_cc_lce_lp + (ycord_li-ic_y_dim_p);
         lce_id1_o  = 'X;
       end
-    else if (cord_in_io_li)
+    else // if (cord_in_io_li)
       begin
         cce_id_o   = max_ac_cce_lp + xcord_li;
         lce_id0_o  = max_mc_lce_lp + xcord_li;
