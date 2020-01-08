@@ -38,40 +38,36 @@ module bp_core_minimal
     , output [dword_width_p-1:0] cfg_csr_data_o
     , output [1:0] cfg_priv_data_o
 
-    // request side
-    , output [1:0] ready_o
-    , output [1:0] cache_miss_o
+    // BP request side
+    , input [1:0] ready_i
+    , input [1:0] cache_miss_i
 
-    , input [1:0] load_miss_i
-    , input [1:0] store_miss_i
-    , input [1:0] lr_miss_i
-    , input [1:0] uncached_load_req_i
-    , input [1:0] uncached_store_req_i
+    , output [1:0] load_miss_o
+    , output [1:0] store_miss_o
+    , output [1:0] lr_miss_o
+    , output [1:0] uncached_load_req_o
+    , output [1:0] uncached_store_req_o
 
-    , input [1:0][cce_block_width_p-1:0] data_mem_data_i
-    , input [1:0][paddr_width_p-1:0] miss_addr_i
-    , input [1:0][way_id_width_lp-1:0] lru_way_i
-    , input [1:0][lce_assoc_p-1:0] dirty_i
-    , input [1:0][dword_width_p-1:0] store_data_i
-    , input [1:0] size_op_i
+    , output [1:0][cce_block_width_p-1:0] data_mem_data_o
+    , output [1:0][paddr_width_p-1:0] miss_addr_o
+    , output [1:0][way_id_width_lp-1:0] lru_way_o
+    , output [1:0][lce_assoc_p-1:0] dirty_o
+    , output [1:0][dword_width_p-1:0] store_data_o
+    , output [1:0] size_op_o
 
     // response side
-    , output [1:0][dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
-    , output [1:0] data_mem_pkt_v_o
-    , input [1:0] data_mem_pkt_yumi_i
+    , input [1:0][dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
+    , input [1:0] data_mem_pkt_v_i
+    , output [1:0] data_mem_pkt_yumi_o
 
-    , output [1:0][dcache_lce_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_o
-    , output [1:0] tag_mem_pkt_v_o
-    , input [1:0] tag_mem_pkt_yumi_i
+    , input [1:0][dcache_lce_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_i
+    , input [1:0] tag_mem_pkt_v_i
+    , output [1:0] tag_mem_pkt_yumi_o
 
-    , output [1:0][dcache_lce_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
-    , output [1:0] stat_mem_pkt_v_o
-    , input [1:0] stat_mem_pkt_yumi_i
+    , input [1:0][dcache_lce_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
+    , input [1:0] stat_mem_pkt_v_i
+    , output [1:0] stat_mem_pkt_yumi_o
     );
-
-  logic load_miss, store_miss;
-  logic [paddr_width_p-1:0] miss_addr;
-  logic [dword_width_p-1:0] miss_data;
 
   `declare_bp_be_dcache_lce_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
   `declare_bp_be_dcache_lce_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, ptag_width_p);
