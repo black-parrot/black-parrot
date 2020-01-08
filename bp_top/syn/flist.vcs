@@ -230,6 +230,7 @@ $BP_TOP_DIR/src/v/bp_cfg.v
 $BP_TOP_DIR/src/v/bp_cfg_buffered.v
 $BP_TOP_DIR/src/v/bp_core.v
 $BP_TOP_DIR/src/v/bp_core_complex.v
+$BP_TOP_DIR/src/v/bp_core_minimal.v
 $BP_TOP_DIR/src/v/bp_clint.v
 $BP_TOP_DIR/src/v/bp_clint_node.v
 $BP_TOP_DIR/src/v/bp_clint_slice.v
