@@ -49,7 +49,7 @@ cache: &global_cache
     - $CI_PROJECT_DIR/external/
   policy: pull
 
-update-tools-cache:
+update-cache:
   <<: *job_definition
   when: manual
   stage: prereq
@@ -58,20 +58,6 @@ update-tools-cache:
   script:
     - make tools -j $CI_CORES > make_tools.log
     - make tidy_tools > make_tidy_tools.log
-  cache:
-    key: $CI_COMMIT_REF_SLUG
-    paths:
-      - $CI_PROJECT_DIR/external/
-      - $CI_PROJECT_DIR/bp_common/test/mem/
-    policy: pull-push
-
-update-progs-cache:
-  <<: *job_definition
-  when: manual
-  stage: prereq
-  tags:
-    - bsg
-  script:
     - make progs > make_progs.log
     - make -C bp_common/test riscvdv > make_riscvdv.log
   cache:
@@ -79,7 +65,7 @@ update-progs-cache:
     paths:
       - $CI_PROJECT_DIR/external/
       - $CI_PROJECT_DIR/bp_common/test/mem/
-    policy: pull-push
+    policy: push
 
 check-design:
   <<: *job_definition
