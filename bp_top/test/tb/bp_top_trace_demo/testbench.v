@@ -178,7 +178,7 @@ wrapper
        ,.mhartid_i(cfg_bus_cast_i.core_id)
 
        ,.v_tv_r(v_tv_r)
-       ,.cache_miss_o(cache_miss_o)
+       ,.cache_miss_i(cache_miss_i)
 
        ,.paddr_tv_r(paddr_tv_r)
        ,.uncached_tv_r(uncached_tv_r)

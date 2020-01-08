@@ -26,9 +26,14 @@ module bp_be_mem_top
    , localparam block_offset_width_lp  = (word_offset_width_lp + byte_offset_width_lp)
    , localparam index_width_lp         = `BSG_SAFE_CLOG2(lce_sets_p)
    , localparam page_offset_width_lp   = (block_offset_width_lp + index_width_lp)
-   , localparam dcache_pkt_width_lp    = `bp_be_dcache_pkt_width(page_offset_width_lp
-                                                                 , dword_width_p
-                                                                 )
+   , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
+   , localparam dcache_lce_data_mem_pkt_width_lp=
+     `bp_be_dcache_lce_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
+   , localparam dcache_lce_tag_mem_pkt_width_lp=
+     `bp_be_dcache_lce_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, ptag_width_p)
+   , localparam dcache_lce_stat_mem_pkt_width_lp=
+     `bp_be_dcache_lce_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
+
    , localparam cfg_bus_width_lp      = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
 
    , localparam trap_pkt_width_lp      = `bp_be_trap_pkt_width(vaddr_width_p)
@@ -147,6 +152,33 @@ logic [ptag_width_p-1:0]  dcache_ptag;
 logic                     dcache_ready, dcache_miss_v, dcache_v, dcache_pkt_v;
 logic                     dcache_tlb_miss, dcache_poison;
 logic                     dcache_uncached;
+logic                     dcache_load_miss_lo;
+logic                     dcache_store_miss_lo;
+logic                     dcache_lr_miss_lo;
+logic                     dcache_uc_load_req_lo;
+logic                     dcache_uc_store_req_lo;
+logic [paddr_width_p-1:0] dcache_miss_addr_lo;
+logic [dword_width_p-1:0] dcache_store_data_lo;
+logic [1:0]               dcache_size_op_lo;
+logic [way_id_width_lp-1:0] dcache_lru_way_lo;
+logic [lce_assoc_p-1:0]   dcache_dirty_lo;
+logic                     dcache_lr_hit_tv_lo;
+
+/* D$-LCE Packets */
+// data_mem
+logic lce_data_mem_pkt_v_lo;
+logic [dcache_lce_data_mem_pkt_width_lp-1:0] lce_data_mem_pkt_lo;
+logic [cce_block_width_p-1:0] lce_data_mem_data_li;
+logic lce_data_mem_pkt_yumi_li;
+// tag_mem
+logic lce_tag_mem_pkt_v_lo;
+logic [dcache_lce_tag_mem_pkt_width_lp-1:0] lce_tag_mem_pkt_lo;
+logic lce_tag_mem_pkt_yumi_li;
+// stat_mem
+logic lce_stat_mem_pkt_v_lo;
+logic [dcache_lce_stat_mem_pkt_width_lp-1:0] lce_stat_mem_pkt_lo;
+logic lce_stat_mem_pkt_yumi_li;
+
 
 /* CSR signals */
 logic                     csr_illegal_instr_lo;
@@ -357,7 +389,7 @@ bp_be_dcache
 
     ,.dcache_pkt_i(dcache_pkt)
     ,.v_i(dcache_pkt_v)
-    ,.ready_o(dcache_ready)
+    ,.ready_i(dcache_ready)
 
     ,.v_o(dcache_v)
     ,.data_o(dcache_data)
@@ -369,30 +401,90 @@ bp_be_dcache
     ,.load_op_tl_o(load_op_tl_lo)
     ,.store_op_tl_o(store_op_tl_lo)
 
-    ,.cache_miss_o(dcache_miss_v)
+    ,.cache_miss_i(dcache_miss_v)
     ,.poison_i(dcache_poison)
 
-    // LCE-CCE interface
-    ,.lce_req_o(lce_req_o)
-    ,.lce_req_v_o(lce_req_v_o)
-    ,.lce_req_ready_i(lce_req_ready_i)
-
-    ,.lce_resp_o(lce_resp_o)
-    ,.lce_resp_v_o(lce_resp_v_o)
-    ,.lce_resp_ready_i(lce_resp_ready_i)
-
-    // CCE-LCE interface
-    ,.lce_cmd_i(lce_cmd_i)
-    ,.lce_cmd_v_i(lce_cmd_v_i)
-    ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
-
-    ,.lce_cmd_o(lce_cmd_o)
-    ,.lce_cmd_v_o(lce_cmd_v_o)
-    ,.lce_cmd_ready_i(lce_cmd_ready_i)
-
-    ,.credits_full_o(credits_full_o)
-    ,.credits_empty_o(credits_empty_o)
+    // D$-LCE Interface
+    ,.load_miss_o(dcache_load_miss_lo)
+    ,.store_miss_o(dcache_store_miss_lo)
+    ,.lr_miss_o(dcache_lr_miss_lo)
+    ,.uncached_load_req_o(dcache_uc_load_req_lo)
+    ,.uncached_store_req_o(dcache_uc_store_req_lo)
+    ,.miss_addr_o(dcache_miss_addr_lo)
+    ,.store_data_o(dcache_store_data_lo)
+    ,.size_op_o(dcache_size_op_lo)
+    ,.lru_way_o(dcache_lru_way_lo)
+    ,.dirty_o(dcache_dirty_lo)
+    ,.lr_hit_tv_o(dcache_lr_hit_tv_lo)
+    ,.lce_data_mem_pkt_v_i(lce_data_mem_pkt_v_lo)
+    ,.lce_data_mem_pkt_i(lce_data_mem_pkt_lo)
+    ,.lce_data_mem_data_o(lce_data_mem_data_li)
+    ,.lce_data_mem_pkt_yumi_o(lce_data_mem_pkt_yumi_li)
+    ,.lce_tag_mem_pkt_v_i(lce_tag_mem_pkt_v_lo)
+    ,.lce_tag_mem_pkt_i(lce_tag_mem_pkt_lo)
+    ,.lce_tag_mem_pkt_yumi_o(lce_tag_mem_pkt_yumi_li)
+    ,.lce_stat_mem_pkt_v_i(lce_stat_mem_pkt_v_lo)
+    ,.lce_stat_mem_pkt_i(lce_stat_mem_pkt_lo)
+    ,.lce_stat_mem_pkt_yumi_o(lce_stat_mem_pkt_yumi_li)
     );
+
+  bp_be_dcache_lce
+    #(.bp_params_p(bp_params_p))
+    lce
+      (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+
+      ,.lce_id_i(cfg_bus.dcache_id)
+
+      ,.ready_o(dcache_ready)
+      ,.cache_miss_o(dcache_miss_v)
+
+      ,.load_miss_i(dcache_load_miss_lo)
+      ,.store_miss_i(dcache_store_miss_lo)
+      ,.lr_miss_i(dcache_lr_miss_lo)
+      ,.uncached_load_req_i(dcache_uc_load_req_lo)
+      ,.uncached_store_req_i(dcache_uc_store_req_lo)
+
+      ,.miss_addr_i(dcache_miss_addr_lo)
+      ,.size_op_i(dcache_size_op_lo)
+      ,.store_data_i(dcache_store_data_lo)
+      ,.dirty_i(dcache_dirty_lo)
+      ,.lru_way_i(dcache_lru_way_lo)
+      ,.lr_hit_tv_i(dcache_lr_hit_tv_lo)
+      ,.cache_v_o_i(dcache_v)
+
+      ,.data_mem_pkt_v_o(lce_data_mem_pkt_v_lo)
+      ,.data_mem_pkt_o(lce_data_mem_pkt_lo)
+      ,.data_mem_data_i(lce_data_mem_data_li)
+      ,.data_mem_pkt_yumi_i(lce_data_mem_pkt_yumi_li)
+
+      ,.tag_mem_pkt_v_o(lce_tag_mem_pkt_v_lo)
+      ,.tag_mem_pkt_o(lce_tag_mem_pkt_lo)
+      ,.tag_mem_pkt_yumi_i(lce_tag_mem_pkt_yumi_li)
+
+      ,.stat_mem_pkt_v_o(lce_stat_mem_pkt_v_lo)
+      ,.stat_mem_pkt_o(lce_stat_mem_pkt_lo)
+      ,.stat_mem_pkt_yumi_i(lce_stat_mem_pkt_yumi_li)
+
+      ,.lce_req_o(lce_req_o)
+      ,.lce_req_v_o(lce_req_v_o)
+      ,.lce_req_ready_i(lce_req_ready_i)
+
+      ,.lce_resp_o(lce_resp_o)
+      ,.lce_resp_v_o(lce_resp_v_o)
+      ,.lce_resp_ready_i(lce_resp_ready_i)
+
+      ,.lce_cmd_i(lce_cmd_i)
+      ,.lce_cmd_v_i(lce_cmd_v_i)
+      ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
+
+      ,.lce_cmd_o(lce_cmd_o)
+      ,.lce_cmd_v_o(lce_cmd_v_o)
+      ,.lce_cmd_ready_i(lce_cmd_ready_i)
+
+      ,.credits_full_o(credits_full_o)
+      ,.credits_empty_o(credits_empty_o)
+      );
 
 // We delay the tlb miss signal by one cycle to synchronize with cache miss signal
 // We latch the dcache miss signal
