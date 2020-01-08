@@ -36,8 +36,7 @@ module bp_cce_msg_cached
   (input                                               clk_i
    , input                                             reset_i
 
-   , input [cce_id_width_p-1:0]                         cce_id_i
-   , input bp_cce_mode_e                               cce_mode_i
+   , input [cce_id_width_p-1:0]                        cce_id_i
 
    // LCE-CCE Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)

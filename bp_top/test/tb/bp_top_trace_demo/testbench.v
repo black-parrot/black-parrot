@@ -472,7 +472,7 @@ always_comb
   if (nbf_done_lo)
     begin
       load_cmd_lo = cfg_cmd_lo;
-      load_cmd_v_lo = cfg_cmd_v_lo;
+      load_cmd_v_lo = load_cmd_ready_li & cfg_cmd_v_lo;
 
       nbf_cmd_ready_li = 1'b0;
       cfg_cmd_ready_li = load_cmd_ready_li;
@@ -481,14 +481,14 @@ always_comb
       nbf_resp_v_li = 1'b0;
 
       cfg_resp_li = load_resp_li;
-      cfg_resp_v_li = load_resp_v_li;
+      cfg_resp_v_li = load_resp_v_li & load_resp_ready_lo & cfg_resp_ready_lo;
 
       load_resp_ready_lo = cfg_resp_ready_lo;
     end
   else
     begin
       load_cmd_lo = nbf_cmd_lo;
-      load_cmd_v_lo = nbf_cmd_v_lo;
+      load_cmd_v_lo = load_cmd_ready_li & nbf_cmd_v_lo;
 
       nbf_cmd_ready_li = load_cmd_ready_li;
       cfg_cmd_ready_li = 1'b0;

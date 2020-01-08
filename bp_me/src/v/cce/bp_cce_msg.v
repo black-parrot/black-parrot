@@ -121,20 +121,6 @@ module bp_cce_msg
   bp_cce_mem_msg_s                               mem_resp_from_uc;
   logic                                          mem_resp_v_from_uc, mem_resp_yumi_from_uc;
 
-  logic [$bits(bp_cce_mode_e)-1:0] cce_mode_r;
-  bp_cce_mode_e cce_mode_lo;
-  bsg_dff_reset_en
-   #(.width_p($bits(bp_cce_mode_e)))
-   cce_mode_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.en_i(mem_resp_yumi_o)
-
-     ,.data_i(cfg_bus_cast_i.cce_mode)
-     ,.data_o(cce_mode_r)
-     );
-  assign cce_mode_lo = {cce_mode_r};
-
   // Message unit
   bp_cce_msg_cached
     #(.bp_params_p(bp_params_p))
@@ -143,7 +129,6 @@ module bp_cce_msg
       ,.reset_i(reset_i)
 
       ,.cce_id_i(cfg_bus_cast_i.cce_id)
-      ,.cce_mode_i(cce_mode_lo)
 
       // To CCE
       ,.lce_req_i(lce_req_from_msg)
@@ -194,7 +179,6 @@ module bp_cce_msg
       ,.reset_i(reset_i)
 
       ,.cce_id_i(cfg_bus_cast_i.cce_id)
-      ,.cce_mode_i(cce_mode_lo)
 
       // To CCE
       ,.lce_req_i(lce_req_from_uc)
@@ -217,6 +201,16 @@ module bp_cce_msg
       ,.mem_cmd_ready_i(mem_cmd_ready_from_uc)
       );
 
+  // Need to resolve the last outstanding msg during a mode switch
+  logic uncached_outstanding;
+  always_ff @(posedge clk_i)
+    begin
+      if (reset_i)
+        uncached_outstanding <= '0;
+      else if (mem_cmd_v_from_uc | mem_resp_yumi_from_uc)
+        uncached_outstanding <= ~mem_resp_yumi_from_uc;
+    end
+
   // Output Message Formation
   //
   // Input messages to the CCE are buffered by two element FIFOs in bp_cce_buffered.v, thus
@@ -231,7 +225,7 @@ module bp_cce_msg
 
     {lce_req_from_msg, lce_req_v_from_msg, lce_resp_from_msg, lce_resp_v_from_msg, lce_cmd_ready_from_msg} = '0;
     {mem_cmd_ready_from_msg, mem_resp_from_msg, mem_resp_v_from_msg} = '0;
-    if (cce_mode_lo == e_cce_mode_uncached) begin
+    if (uncached_outstanding || (cfg_bus_cast_i.cce_mode == e_cce_mode_uncached)) begin
       lce_req_from_uc = lce_req_i;
       lce_req_v_from_uc = lce_req_v_i;
       lce_req_yumi_o = lce_req_yumi_from_uc;

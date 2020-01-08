@@ -87,6 +87,22 @@ module bp_cce_mmio_cfg_loader
     ,DONE
   } state_n, state_r;
 
+  logic [`BSG_WIDTH(io_noc_max_credits_p)-1:0] credit_count_lo;
+  bsg_flow_counter
+   #(.els_p(io_noc_max_credits_p))
+   cfg_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.v_i(io_cmd_yumi_i)
+     ,.ready_i(1'b1)
+
+     ,.yumi_i(io_resp_v_i)
+     ,.count_o(credit_count_lo)
+     );
+  wire credits_full_lo = (credit_count_lo == io_noc_max_credits_p);
+  wire credits_empty_lo = (credit_count_lo == '0);
+
   logic [cfg_addr_width_p-1:0] sync_cnt_r;
   logic sync_cnt_clr, sync_cnt_inc;
   bsg_counter_clear_up
@@ -167,7 +183,7 @@ module bp_cce_mmio_cfg_loader
 
   always_comb
     begin
-      io_cmd_v_o = cfg_w_v_lo | cfg_r_v_lo;
+      io_cmd_v_o = (cfg_w_v_lo | cfg_r_v_lo) & ~credits_full_lo;
 
       // uncached store
       io_cmd_cast_o.msg_type      = cfg_w_v_lo ? e_cce_io_wr : e_cce_io_rd;
@@ -280,10 +296,10 @@ module bp_cce_mmio_cfg_loader
         SEND_CCE_NORMAL: begin
           state_n = core_prog_done ? WAIT_FOR_SYNC : SEND_CCE_NORMAL;
 
-          core_cnt_inc = ~core_prog_done;
-          core_cnt_clr = core_prog_done;
+          core_cnt_inc = ~core_prog_done & credits_empty_lo;
+          core_cnt_clr = core_prog_done & credits_empty_lo;
 
-          cfg_w_v_lo = 1'b1;
+          cfg_w_v_lo = credits_empty_lo;
           cfg_addr_lo = bp_cfg_reg_cce_mode_gp;
           cfg_data_lo = dword_width_p'(e_cce_mode_normal);
         end

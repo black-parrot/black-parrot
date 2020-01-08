@@ -38,7 +38,6 @@ module bp_cce_msg_uncached
    , input                                             reset_i
 
    , input [cce_id_width_p-1:0]                        cce_id_i
-   , input bp_cce_mode_e                               cce_mode_i
 
    // LCE-CCE Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
@@ -90,7 +89,7 @@ module bp_cce_msg_uncached
 
   always_ff @(posedge clk_i) begin
     // This module only operates when reset is low and CCE is in uncached mode
-    if (reset_i | (cce_mode_i != e_cce_mode_uncached)) begin
+    if (reset_i) begin
       uc_state <= READY;
       lce_req_r <= '0;
     end else begin
@@ -120,8 +119,7 @@ module bp_cce_msg_uncached
 
     uc_state_n = READY;
 
-    // only operate if not in reset and cce mode is uncached
-    if (~reset_i & (cce_mode_i == e_cce_mode_uncached)) begin
+    if (~reset_i) begin
       case (uc_state)
       READY: begin
         uc_state_n = READY;
