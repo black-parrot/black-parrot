@@ -29,7 +29,7 @@ module bp_fe_lce_cmd
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
    `declare_bp_fe_tag_widths(lce_assoc_p, lce_sets_p, lce_id_width_p, cce_id_width_p, dword_width_p, paddr_width_p)
-   `declare_bp_fe_lce_widths(lce_assoc_p, lce_sets_p, tag_width_lp, lce_data_width_lp)
+   `declare_bp_fe_lce_widths(lce_assoc_p, lce_sets_p, tag_width_lp, cce_block_width_p)
 
     // width for counter used during initiliazation and for sync messages
     , localparam cnt_width_lp = `BSG_MAX(cce_id_width_p+1, `BSG_SAFE_CLOG2(lce_sets_p)+1)
@@ -48,7 +48,7 @@ module bp_fe_lce_cmd
     , output logic                                               cce_data_received_o
     , output logic                                               uncached_data_received_o
 
-    , input [lce_data_width_lp-1:0]                              data_mem_data_i
+    , input [cce_block_width_p-1:0]                              data_mem_data_i
     , output logic [data_mem_pkt_width_lp-1:0]                   data_mem_pkt_o
     , output logic                                               data_mem_pkt_v_o
     , input                                                      data_mem_pkt_yumi_i
@@ -93,7 +93,7 @@ module bp_fe_lce_cmd
  
   // lce pkt
   //
-  `declare_bp_fe_icache_lce_data_mem_pkt_s(lce_sets_p, lce_assoc_p, lce_data_width_lp);
+  `declare_bp_fe_icache_lce_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
   `declare_bp_fe_icache_lce_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, tag_width_lp);
   `declare_bp_fe_icache_lce_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
 
@@ -107,7 +107,7 @@ module bp_fe_lce_cmd
 
   // states
   //
-  logic [lce_data_width_lp-1:0] data_r, data_n;
+  logic [cce_block_width_p-1:0] data_r, data_n;
   logic flag_data_buffered_r, flag_data_buffered_n;
   logic flag_invalidate_r, flag_invalidate_n;
 

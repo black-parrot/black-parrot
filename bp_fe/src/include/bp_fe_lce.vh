@@ -120,7 +120,6 @@ typedef enum logic [1:0] {
  */
 `define declare_bp_fe_tag_widths(ways_mp, sets_mp, lce_id_width_mp, cce_id_width_mp, data_width_mp, paddr_width_mp)   \
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_mp)                                                   \
-    , localparam lce_data_width_lp=(ways_mp*data_width_mp)                                                  \
     , localparam block_size_in_words_lp=ways_mp                                                             \
     , localparam data_mask_width_lp=(data_width_mp>>3)                                                      \
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)                                   \

@@ -3,15 +3,18 @@ module bp_fe_mem
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_fe_pkg::*;
+ import bp_fe_icache_pkg::*;
  import bp_common_rv64_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+   `declare_bp_fe_lce_widths(lce_assoc_p, lce_sets_p, ptag_width_p, cce_block_width_p) 
 
    , localparam mem_cmd_width_lp  = `bp_fe_mem_cmd_width(vaddr_width_p, vtag_width_p, ptag_width_p)
    , localparam mem_resp_width_lp = `bp_fe_mem_resp_width
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam lg_lce_assoc_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
    )
   (input                                              clk_i
    , input                                            reset_i
@@ -102,6 +105,31 @@ bp_pma
 
 logic [instr_width_p-1:0] icache_data_lo;
 logic                     icache_data_v_lo;
+
+/* I$-LCE Packets */
+`declare_bp_fe_icache_lce_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
+`declare_bp_fe_icache_lce_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, ptag_width_p);
+`declare_bp_fe_icache_lce_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
+
+bp_fe_icache_lce_data_mem_pkt_s lce_data_mem_pkt_lo;
+bp_fe_icache_lce_tag_mem_pkt_s lce_tag_mem_pkt_lo;
+bp_fe_icache_lce_stat_mem_pkt_s lce_stat_mem_pkt_lo;
+
+logic [lce_assoc_p-1:0][dword_width_p-1:0] lce_data_mem_data_li;
+logic                                      lce_data_mem_pkt_v_lo;
+logic                                      lce_data_mem_pkt_yumi_li;
+
+logic                                      lce_tag_mem_pkt_v_lo;
+logic                                      lce_tag_mem_pkt_yumi_li;
+
+logic                                      lce_stat_mem_pkt_v_lo;
+logic                                      lce_stat_mem_pkt_yumi_li;
+
+logic [lg_lce_assoc_lp-1:0] icache_lru_way_lo;
+logic icache_miss_tv_lo;
+logic [paddr_width_p-1:0] icache_miss_addr_tv_lo;
+logic icache_uc_req_lo;
+
 bp_fe_icache 
  #(.bp_params_p(bp_params_p)) 
  icache
@@ -112,33 +140,82 @@ bp_fe_icache
 
    ,.vaddr_i(mem_cmd_cast_i.operands.fetch.vaddr)
    ,.vaddr_v_i(fetch_v)
-   ,.vaddr_ready_o(icache_ready_lo)
 
-   ,.uncached_i(uncached_li)
    ,.ptag_i(ptag_li)
    ,.ptag_v_i(ptag_v_li)
+   ,.uncached_i(uncached_li)
    ,.poison_i(mem_poison_i)
 
    ,.data_o(icache_data_lo)
    ,.data_v_o(icache_data_v_lo)
+   ,.cache_miss_i(icache_miss_lo)
+   ,.lru_way_o(icache_lru_way_lo)
+
+   ,.miss_tv_o(icache_miss_tv_lo)
+   ,.miss_addr_tv_o(icache_miss_addr_tv_lo)
+   ,.uncached_req_o(icache_uc_req_lo)
+
+   ,.lce_data_mem_data_o(lce_data_mem_data_li)
+   ,.lce_data_mem_pkt_i(lce_data_mem_pkt_lo)
+   ,.lce_data_mem_pkt_v_i(lce_data_mem_pkt_v_lo)
+   ,.lce_data_mem_pkt_yumi_o(lce_data_mem_pkt_yumi_li)
+
+   ,.lce_tag_mem_pkt_i(lce_tag_mem_pkt_lo)
+   ,.lce_tag_mem_pkt_v_i(lce_tag_mem_pkt_v_lo)
+   ,.lce_tag_mem_pkt_yumi_o(lce_tag_mem_pkt_yumi_li)
+
+   ,.lce_stat_mem_pkt_v_i(lce_stat_mem_pkt_v_lo)
+   ,.lce_stat_mem_pkt_i(lce_stat_mem_pkt_lo)
+   ,.lce_stat_mem_pkt_yumi_o(lce_stat_mem_pkt_yumi_li)
+   );
+
+// LCE
+bp_fe_lce
+  #(.bp_params_p(bp_params_p))
+lce
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.cfg_bus_i(cfg_bus_i)
+
+   ,.ready_o(icache_ready_lo)
    ,.cache_miss_o(icache_miss_lo)
-  
+
+   ,.miss_i(icache_miss_tv_lo)
+   ,.miss_addr_i(icache_miss_addr_tv_lo)
+   ,.uncached_req_i(icache_uc_req_lo)
+   ,.lru_way_i(icache_lru_way_lo)
+
+   ,.data_mem_data_i(lce_data_mem_data_li)
+   ,.data_mem_pkt_o(lce_data_mem_pkt_lo)
+   ,.data_mem_pkt_v_o(lce_data_mem_pkt_v_lo)
+   ,.data_mem_pkt_yumi_i(lce_data_mem_pkt_yumi_li)
+
+   ,.tag_mem_pkt_o(lce_tag_mem_pkt_lo)
+   ,.tag_mem_pkt_v_o(lce_tag_mem_pkt_v_lo)
+   ,.tag_mem_pkt_yumi_i(lce_tag_mem_pkt_yumi_li)
+
+   ,.stat_mem_pkt_v_o(lce_stat_mem_pkt_v_lo)
+   ,.stat_mem_pkt_o(lce_stat_mem_pkt_lo)
+   ,.stat_mem_pkt_yumi_i(lce_stat_mem_pkt_yumi_li)
+
    ,.lce_req_o(lce_req_o)
    ,.lce_req_v_o(lce_req_v_o)
    ,.lce_req_ready_i(lce_req_ready_i)
-         
-   ,.lce_cmd_i(lce_cmd_i)
-   ,.lce_cmd_v_i(lce_cmd_v_i)
-   ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
-         
-   ,.lce_cmd_o(lce_cmd_o)
-   ,.lce_cmd_v_o(lce_cmd_v_o)
-   ,.lce_cmd_ready_i(lce_cmd_ready_i)
 
    ,.lce_resp_o(lce_resp_o)
    ,.lce_resp_v_o(lce_resp_v_o)
    ,.lce_resp_ready_i(lce_resp_ready_i)
-   );
+
+   ,.lce_cmd_i(lce_cmd_i)
+   ,.lce_cmd_v_i(lce_cmd_v_i)
+   ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
+
+   ,.lce_cmd_o(lce_cmd_o)
+   ,.lce_cmd_v_o(lce_cmd_v_o)
+   ,.lce_cmd_ready_i(lce_cmd_ready_i)
+   ); 
+
 
 assign mem_cmd_yumi_o = itlb_fence_v | itlb_fill_v | fetch_v;
 
