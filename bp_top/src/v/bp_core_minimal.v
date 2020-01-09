@@ -109,7 +109,7 @@ module bp_core_minimal
 
       // Set up the address
       lru_way_o[0] = 3'b0;
-      miss_addr_o[0] = 40'hff_f0c2_0000;
+      miss_addr_o[0] = 40'hfff0c2c000;
 
       // Wait for start
       @(negedge reset_i);
@@ -118,8 +118,10 @@ module bp_core_minimal
       @(ready_i);
 
       // Set up the new data
-      size_op_o[0] = 2'b10;
-      store_data_o[0] = 32'hffff_face;
+      //size_op_o[0] = 2'b10;
+      //store_data_o[0] = 32'hffff_face;
+      size_op_o[0] = 2'b00;
+      store_data_o[0] = "h";
 
       // Do uncached store
       uncached_store_req_o[0] = 1'b1;
@@ -134,10 +136,10 @@ module bp_core_minimal
       //  @(posedge clk_i);
       
       // Do uncached load
-      uncached_load_req_o[0] = 1'b1;
-      @(posedge clk_i);
-      uncached_load_req_o[0] = 1'b0;
-      $display("[%t] BP uncached load", $time);
+      //uncached_load_req_o[0] = 1'b1;
+      //@(posedge clk_i);
+      //uncached_load_req_o[0] = 1'b0;
+      //$display("[%t] BP uncached load", $time);
       
       @(data_mem_pkt_v_i)
       data_mem_pkt_yumi_o = 1'b1;
@@ -145,7 +147,7 @@ module bp_core_minimal
       @(posedge clk_i);
       data_mem_pkt_yumi_o = 1'b0;
 
-      miss_addr_o[0] = 32'hcafebabe;
+      miss_addr_o[0] = 32'ha0a0_a0a0;
 
       // Do load miss
       load_miss_o[0] = 1'b1;
@@ -174,7 +176,7 @@ module bp_core_minimal
       //for (integer i = 0; i < 500; i++)
       //  @(posedge clk_i);
 
-      store_data_o[0] = 32'hdeadbeef;
+      store_data_o[0] = 64'hcafebabe_deadbeef;
       size_op_o[0] = 2'b11;
 
       store_o[0] = 1'b1;

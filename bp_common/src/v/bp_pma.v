@@ -13,8 +13,7 @@ module bp_pma
    );
 
   // FIXME: OpenPiton integration
-  //assign uncached_o = ptag_v_i & (ptag_i < (dram_base_addr_gp >> page_offset_width_p));
-  assign uncached_o = ptag_v_i & ptag_i[ptag_width_p-1];
+  assign uncached_o = ptag_v_i & (ptag_i < (dram_base_addr_gp >> page_offset_width_p)) || ptag_i[ptag_width_p-1];
 
 endmodule
 
