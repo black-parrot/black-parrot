@@ -91,8 +91,6 @@ module bp_core_minimal
 
   assign data_mem_data_o = '0;
   assign dirty_o = '0;
-  assign store_data_o = '0;
-  assign size_op_o = '0;
 
   initial
     begin
@@ -100,15 +98,23 @@ module bp_core_minimal
       miss_addr_o = '0;
       load_miss_o = '0;
 
+      store_o = '0;
+      store_data_o = '0;
+      size_op_o = '0;
+
       data_mem_pkt_yumi_o = '0;
       tag_mem_pkt_yumi_o = '0;
       stat_mem_pkt_yumi_o = '0;
 
+      // Set up the address
+      lru_way_o[0] = 3'b0;
+      miss_addr_o[0] = 32'hdeadbeef;
+
+      // Wait a long time
       for (integer i = 0; i < 10000; i++)
         @(posedge clk_i);
 
-      lru_way_o[0] = 3'b0;
-      miss_addr_o[0] = 32'hdeadbeef;
+      // Do load miss
       load_miss_o[0] = 1'b1;
       @(posedge clk_i);
       load_miss_o[0] = 1'b0;
@@ -122,6 +128,35 @@ module bp_core_minimal
       @(posedge clk_i);
       tag_mem_pkt_yumi_o = 1'b0;
 
+      stat_mem_pkt_yumi_o = 1'b1;
+      @(posedge clk_i);
+      stat_mem_pkt_yumi_o = 1'b0;
+
+      // Wait, then store data
+      for (integer i = 0; i < 500; i++)
+        @(posedge clk_i);
+
+      store_o[0] = 1'b1;
+      store_data_o[0] = 32'hcafebabe;
+      size_op_o[0] = 2'b11;
+      @(posedge clk_i);
+      store_o[0] = 1'b0;
+
+      // Wait, then load data again
+      for (integer i = 0; i < 500; i++)
+        @(posedge clk_i);
+
+      load_miss_o[0] = 1'b1;
+      @(posedge clk_i);
+      load_miss_o[0] = 1'b0;
+
+      @(data_mem_pkt_v_i)
+      data_mem_pkt_yumi_o = 1'b1;
+      @(posedge clk_i);
+      data_mem_pkt_yumi_o = 1'b0;
+      tag_mem_pkt_yumi_o = 1'b1;
+      @(posedge clk_i);
+      tag_mem_pkt_yumi_o = 1'b0;
       stat_mem_pkt_yumi_o = 1'b1;
       @(posedge clk_i);
       stat_mem_pkt_yumi_o = 1'b0;
