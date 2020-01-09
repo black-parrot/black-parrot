@@ -12,7 +12,7 @@ module bp_core_minimal
  import bp_be_dcache_pkg::*;
  import bp_common_rv64_pkg::*;
  import bp_common_cfg_link_pkg::*;
-  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+  #(parameter bp_params_e bp_params_p = e_bp_single_core_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
@@ -42,31 +42,32 @@ module bp_core_minimal
     , input [1:0] ready_i
     , input [1:0] cache_miss_i
 
-    , output [1:0] load_miss_o
-    , output [1:0] store_miss_o
-    , output [1:0] lr_miss_o
-    , output [1:0] uncached_load_req_o
-    , output [1:0] uncached_store_req_o
+    , output logic [1:0] load_miss_o
+    , output logic [1:0] store_miss_o
+    , output logic [1:0] lr_miss_o
+    , output logic [1:0] uncached_load_req_o
+    , output logic [1:0] uncached_store_req_o
 
-    , output [1:0][cce_block_width_p-1:0] data_mem_data_o
-    , output [1:0][paddr_width_p-1:0] miss_addr_o
-    , output [1:0][way_id_width_lp-1:0] lru_way_o
-    , output [1:0][lce_assoc_p-1:0] dirty_o
-    , output [1:0][dword_width_p-1:0] store_data_o
-    , output [1:0] size_op_o
+    , output logic [1:0][cce_block_width_p-1:0] data_mem_data_o
+    , output logic [1:0][paddr_width_p-1:0] miss_addr_o
+    , output logic [1:0][way_id_width_lp-1:0] lru_way_o
+    , output logic [1:0][lce_assoc_p-1:0] dirty_o
+    , output logic [1:0] store_o
+    , output logic [1:0][dword_width_p-1:0] store_data_o
+    , output logic [1:0][1:0] size_op_o
 
     // response side
     , input [1:0][dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
     , input [1:0] data_mem_pkt_v_i
-    , output [1:0] data_mem_pkt_yumi_o
+    , output logic [1:0] data_mem_pkt_yumi_o
 
     , input [1:0][dcache_lce_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_i
     , input [1:0] tag_mem_pkt_v_i
-    , output [1:0] tag_mem_pkt_yumi_o
+    , output logic [1:0] tag_mem_pkt_yumi_o
 
     , input [1:0][dcache_lce_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
     , input [1:0] stat_mem_pkt_v_i
-    , output [1:0] stat_mem_pkt_yumi_o
+    , output logic [1:0] stat_mem_pkt_yumi_o
     );
 
   `declare_bp_be_dcache_lce_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
@@ -74,12 +75,57 @@ module bp_core_minimal
   `declare_bp_be_dcache_lce_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
 
   bp_be_dcache_lce_data_mem_pkt_s data_mem_pkt;
-  logic data_mem_pkt_v, data_mem_pkt_yumi;
   bp_be_dcache_lce_tag_mem_pkt_s tag_mem_pkt;
-  logic tag_mem_pkt_v, tag_mem_pkt_yumi;
   bp_be_dcache_lce_stat_mem_pkt_s stat_mem_pkt;
-  logic stat_mem_pkt_v, stat_mem_pkt_yumi;
 
+  wire unused = &{cfg_bus_i};
+  assign cfg_npc_data_o = '0;
+  assign cfg_irf_data_o = '0;
+  assign cfg_csr_data_o = '0;
+  assign cfg_priv_data_o = '0;
+
+  assign store_miss_o = '0;
+  assign lr_miss_o = '0;
+  assign uncached_load_req_o = '0;
+  assign uncached_store_req_o = '0;
+
+  assign data_mem_data_o = '0;
+  assign dirty_o = '0;
+  assign store_data_o = '0;
+  assign size_op_o = '0;
+
+  initial
+    begin
+      lru_way_o = '0;
+      miss_addr_o = '0;
+      load_miss_o = '0;
+
+      data_mem_pkt_yumi_o = '0;
+      tag_mem_pkt_yumi_o = '0;
+      stat_mem_pkt_yumi_o = '0;
+
+      for (integer i = 0; i < 10000; i++)
+        @(posedge clk_i);
+
+      lru_way_o[0] = 3'b0;
+      miss_addr_o[0] = 32'hdeadbeef;
+      load_miss_o[0] = 1'b1;
+      @(posedge clk_i);
+      load_miss_o[0] = 1'b0;
+
+      @(data_mem_pkt_v_i)
+      data_mem_pkt_yumi_o = 1'b1;
+      @(posedge clk_i);
+      data_mem_pkt_yumi_o = 1'b0;
+
+      tag_mem_pkt_yumi_o = 1'b1;
+      @(posedge clk_i);
+      tag_mem_pkt_yumi_o = 1'b0;
+
+      stat_mem_pkt_yumi_o = 1'b1;
+      @(posedge clk_i);
+      stat_mem_pkt_yumi_o = 1'b0;
+    end
 
 endmodule
 
