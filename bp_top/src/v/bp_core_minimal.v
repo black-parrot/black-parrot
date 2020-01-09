@@ -109,19 +109,22 @@ module bp_core_minimal
 
       // Set up the address
       lru_way_o[0] = 3'b0;
-      miss_addr_o[0] = 40'hfff0c2c000;
+      miss_addr_o[0] = 32'habcd_0000;
+      //miss_addr_o[0] = 40'hfff0c2c000;
 
       // Wait for start
       @(negedge reset_i);
 
       @(posedge clk_i);
-      @(ready_i);
+      $display("BP WAITING FOR READY");
+      while (~ready_i[0]) @(posedge clk_i);
+      $display("BP ACHIEVED READY");
 
       // Set up the new data
-      //size_op_o[0] = 2'b10;
-      //store_data_o[0] = 32'hffff_face;
-      size_op_o[0] = 2'b00;
-      store_data_o[0] = "h";
+      size_op_o[0] = 2'b10;
+      store_data_o[0] = 32'hffff_face;
+      //size_op_o[0] = 2'b00;
+      //store_data_o[0] = "h";
 
       // Do uncached store
       uncached_store_req_o[0] = 1'b1;
@@ -130,16 +133,13 @@ module bp_core_minimal
       $display("[%t] BP uncached store %x", $time, store_data_o);
 
       @(posedge clk_i);
-      @(ready_i);
-      // Wait, then load data
-      //for (integer i = 0; i < 500; i++)
-      //  @(posedge clk_i);
+      while (~ready_i[0]) @(posedge clk_i);
       
       // Do uncached load
-      //uncached_load_req_o[0] = 1'b1;
-      //@(posedge clk_i);
-      //uncached_load_req_o[0] = 1'b0;
-      //$display("[%t] BP uncached load", $time);
+      uncached_load_req_o[0] = 1'b1;
+      @(posedge clk_i);
+      uncached_load_req_o[0] = 1'b0;
+      $display("[%t] BP uncached load", $time);
       
       @(data_mem_pkt_v_i)
       data_mem_pkt_yumi_o = 1'b1;
@@ -171,10 +171,7 @@ module bp_core_minimal
       stat_mem_pkt_yumi_o = 1'b0;
 
       @(posedge clk_i);
-      @(ready_i);
-      // Wait, then store data
-      //for (integer i = 0; i < 500; i++)
-      //  @(posedge clk_i);
+      while (~ready_i[0]) @(posedge clk_i);
 
       store_data_o[0] = 64'hcafebabe_deadbeef;
       size_op_o[0] = 2'b11;
@@ -186,10 +183,7 @@ module bp_core_minimal
       $display("[%t] BP sending store %x", $time, store_data_o);
 
       @(posedge clk_i);
-      @(ready_i);
-      // Wait, then load data again
-      //for (integer i = 0; i < 500; i++)
-      //  @(posedge clk_i);
+      while (~ready_i[0]) @(posedge clk_i);
 
       load_miss_o[0] = 1'b1;
       @(posedge clk_i);
