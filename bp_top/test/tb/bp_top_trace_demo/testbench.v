@@ -228,7 +228,7 @@ wrapper
        ,.mpp_i(be_mem.csr.mstatus_n.mpp)
        );
 
-  bind bp_core
+  bind bp_core_minimal
     bp_be_nonsynth_vm_tracer
     #(.bp_params_p(bp_params_p))
     vm_tracer

@@ -45,12 +45,13 @@ module bp_fe_icache
     
     , output [instr_width_p-1:0]                       data_o
     , output                                           data_v_o
-    , input                                            cache_miss_i
-    , output [lg_lce_assoc_lp-1:0]                     lru_way_o
 
+    // LCE Interface
+    , input                                            cache_miss_i
     , output                                           miss_tv_o
     , output [paddr_width_p-1:0]                       miss_addr_tv_o
     , output                                           uncached_req_o
+    , output [lg_lce_assoc_lp-1:0]                     lru_way_o
 
     // data_mem
     , input lce_data_mem_pkt_v_i
@@ -269,7 +270,6 @@ module bp_fe_icache
  );
   
   // invalid way takes priority over LRU way
-  logic [way_id_width_lp-1:0]           lru_way_o;
   assign lru_way_o = invalid_exist ? way_invalid_index : lru_encode;
 
   // LCE

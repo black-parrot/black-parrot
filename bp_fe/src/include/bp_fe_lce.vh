@@ -21,9 +21,9 @@ typedef enum logic [1:0] {
 
 `define bp_fe_icache_tag_mem_opcode_width $bits(bp_fe_icache_tag_mem_opcode_e)
 
-typedef enum logic {
-  e_stat_mem_set_clear = 1'b0
-  , e_stat_mem_read = 1'b1
+typedef enum logic [1:0] {
+  e_stat_mem_set_clear = 2'b0
+  , e_stat_mem_read = 2'b1
 } bp_fe_icache_stat_mem_opcode_e;
 
 `define bp_fe_icache_stat_mem_opcode_width $bits(bp_fe_icache_stat_mem_opcode_e)

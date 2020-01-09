@@ -38,13 +38,17 @@ module bp_core_minimal
     , output [dword_width_p-1:0] cfg_csr_data_o
     , output [1:0] cfg_priv_data_o
 
-    // BP request side
-    , input [1:0] ready_i
-    , input [1:0] cache_miss_i
+    // BP request side - Interface to LCE
+    , input [1:0] lce_ready_i
+    , input [1:0] lce_miss_i
+    , input credits_full_i
+    , input credits_empty_i
 
     , output logic [1:0] load_miss_o
     , output logic [1:0] store_miss_o
     , output logic [1:0] lr_miss_o
+    , output logic [1:0] lr_hit_o
+    , output logic [1:0] cache_v_o
     , output logic [1:0] uncached_load_req_o
     , output logic [1:0] uncached_store_req_o
 
@@ -56,7 +60,7 @@ module bp_core_minimal
     , output logic [1:0][dword_width_p-1:0] store_data_o
     , output logic [1:0][1:0] size_op_o
 
-    // response side
+    // response side - Interface from LCE
     , input [1:0][dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
     , input [1:0] data_mem_pkt_v_i
     , output logic [1:0] data_mem_pkt_yumi_o
@@ -68,6 +72,11 @@ module bp_core_minimal
     , input [1:0][dcache_lce_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
     , input [1:0] stat_mem_pkt_v_i
     , output logic [1:0] stat_mem_pkt_yumi_o
+
+    , input                                        timer_irq_i
+    , input                                        software_irq_i
+    , input                                        external_irq_i
+
     );
 
   `declare_bp_be_dcache_lce_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
@@ -77,6 +86,224 @@ module bp_core_minimal
   bp_be_dcache_lce_data_mem_pkt_s data_mem_pkt;
   bp_be_dcache_lce_tag_mem_pkt_s tag_mem_pkt;
   bp_be_dcache_lce_stat_mem_pkt_s stat_mem_pkt;
+
+  // TODO: fix interfaces for fe/be
+  `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
+
+  bp_fe_queue_s fe_queue_li, fe_queue_lo;
+  logic fe_queue_v_li, fe_queue_ready_lo;
+  logic fe_queue_v_lo, fe_queue_yumi_li;
+
+  bp_fe_cmd_s fe_cmd_li, fe_cmd_lo;
+  logic fe_cmd_v_li, fe_cmd_ready_lo;
+  logic fe_cmd_v_lo, fe_cmd_yumi_li;
+
+  logic fe_cmd_processed_li;
+
+  // stub unsued outputs at I$ index
+  always_comb begin
+    store_miss_o[0] = '0;
+    lr_miss_o[0] = '0;
+    lr_hit_o[0] = '0;
+    cache_v_o[0] = '0;
+    uncached_store_req_o[0] = '0;
+    dirty_o[0] = '0;
+    store_o[0] = '0;
+    store_data_o[0] = '0;
+    size_op_o[0] = '0;
+  end
+
+  bp_fe_top
+   #(.bp_params_p(bp_params_p))
+   fe 
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.cfg_bus_i(cfg_bus_i)
+
+     ,.fe_queue_o(fe_queue_li)
+     ,.fe_queue_v_o(fe_queue_v_li)
+     ,.fe_queue_ready_i(fe_queue_ready_lo)
+
+     ,.fe_cmd_i(fe_cmd_lo)
+     ,.fe_cmd_v_i(fe_cmd_v_lo)
+     ,.fe_cmd_yumi_o(fe_cmd_yumi_li)
+     ,.fe_cmd_processed_o(fe_cmd_processed_li)
+
+     ,.lce_ready_i(lce_ready_i[0])
+     ,.lce_miss_i(lce_miss_i[0])
+
+     ,.uncached_req_o(uncached_load_req_o[0])
+     ,.miss_tv_o(load_miss_o[0])
+     ,.miss_addr_tv_o(miss_addr_o[0])
+     ,.lru_way_o(lru_way_o[0])
+
+     ,.data_mem_data_o(data_mem_data_o[0])
+     ,.data_mem_pkt_i(data_mem_pkt_i[0])
+     ,.data_mem_pkt_v_i(data_mem_pkt_v_i[0])
+     ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o[0])
+
+     ,.tag_mem_pkt_i(tag_mem_pkt_i[0])
+     ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i[0])
+     ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o[0])
+
+     ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i[0])
+     ,.stat_mem_pkt_i(stat_mem_pkt_i[0])
+     ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o[0])
+
+     /*
+     ,.lce_req_o(lce_req_o[0])
+     ,.lce_req_v_o(lce_req_v_o[0])
+     ,.lce_req_ready_i(lce_req_ready_i[0])
+
+     ,.lce_resp_o(lce_resp_o[0])
+     ,.lce_resp_v_o(lce_resp_v_o[0])
+     ,.lce_resp_ready_i(lce_resp_ready_i[0])
+
+     ,.lce_cmd_i(lce_cmd_i[0])
+     ,.lce_cmd_v_i(lce_cmd_v_i[0])
+     ,.lce_cmd_yumi_o(lce_cmd_yumi_o[0])
+
+     ,.lce_cmd_o(lce_cmd_o[0])
+     ,.lce_cmd_v_o(lce_cmd_v_o[0])
+     ,.lce_cmd_ready_i(lce_cmd_ready_i[0])
+     */
+     );
+
+  logic fe_fence_r;
+  wire fe_cmd_nonattaboy_v_li = fe_cmd_v_li & (fe_cmd_li.opcode != e_op_attaboy);
+  bsg_fifo_1r1w_fence
+   #(.width_p(fe_cmd_width_lp)
+     ,.els_p(fe_cmd_fifo_els_p)
+     ,.ready_THEN_valid_p(1)
+     )
+   fe_cmd_fifo
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.fence_set_i(fe_cmd_nonattaboy_v_li)
+     ,.fence_clr_i(fe_cmd_processed_li)
+     ,.fence_o(fe_fence_r)
+      
+     ,.data_i(fe_cmd_li)
+     ,.v_i(fe_cmd_v_li)
+     ,.ready_o(fe_cmd_ready_lo)
+                  
+     ,.data_o(fe_cmd_lo)
+     ,.v_o(fe_cmd_v_lo)
+     ,.yumi_i(fe_cmd_yumi_li)
+     );
+
+  logic fe_queue_deq_li, fe_queue_roll_li;
+  wire fe_queue_clr_li = fe_fence_r & fe_cmd_processed_li;
+  bsg_fifo_1r1w_rolly 
+   #(.width_p(fe_queue_width_lp)
+     ,.els_p(fe_queue_fifo_els_p)
+     ,.ready_THEN_valid_p(1)
+     )
+   fe_queue_fifo
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.clr_v_i(fe_queue_clr_li)
+     ,.deq_v_i(fe_queue_deq_li)
+     ,.roll_v_i(fe_queue_roll_li)
+
+     ,.data_i(fe_queue_li)
+     ,.v_i(fe_queue_v_li)
+     ,.ready_o(fe_queue_ready_lo)
+
+     ,.data_o(fe_queue_lo)
+     ,.v_o(fe_queue_v_lo)
+     ,.yumi_i(fe_queue_yumi_li)
+     );
+
+  bp_be_top 
+   #(.bp_params_p(bp_params_p))
+   be
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     
+     ,.cfg_bus_i(cfg_bus_i)
+     ,.cfg_npc_data_o(cfg_npc_data_o)
+     ,.cfg_irf_data_o(cfg_irf_data_o)
+     ,.cfg_csr_data_o(cfg_csr_data_o)
+     ,.cfg_priv_data_o(cfg_priv_data_o)
+
+     ,.fe_queue_deq_o(fe_queue_deq_li)
+     ,.fe_queue_roll_o(fe_queue_roll_li)
+
+     ,.fe_queue_i(fe_queue_lo)
+     ,.fe_queue_v_i(~fe_fence_r & fe_queue_v_lo)
+     ,.fe_queue_yumi_o(fe_queue_yumi_li)
+
+     ,.fe_cmd_o(fe_cmd_li)
+     ,.fe_cmd_v_o(fe_cmd_v_li)
+     ,.fe_cmd_ready_i(fe_cmd_ready_lo)
+
+     ,.lce_ready_i(lce_ready_i[1])
+     ,.lce_miss_i(lce_miss_i[1])
+     ,.load_miss_o(load_miss_o[1])
+     ,.store_miss_o(store_miss_o[1])
+     ,.store_hit_o(store_o[1])
+     ,.lr_miss_o(lr_miss_o[1])
+     ,.uncached_load_req_o(uncached_load_req_o[1])
+     ,.uncached_store_req_o(uncached_store_req_o[1])
+     ,.miss_addr_o(miss_addr_o[1])
+     ,.store_data_o(store_data_o[1])
+     ,.size_op_o(size_op_o[1])
+     ,.lru_way_o(lru_way_o[1])
+     ,.dirty_o(dirty_o[1])
+     ,.lr_hit_tv_o(lr_hit_o[1])
+     ,.cache_v_o(cache_v_o[1])
+
+     ,.data_mem_data_o(data_mem_data_o[1])
+     ,.data_mem_pkt_i(data_mem_pkt_i[1])
+     ,.data_mem_pkt_v_i(data_mem_pkt_v_i[1])
+     ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o[1])
+
+     ,.tag_mem_pkt_i(tag_mem_pkt_i[1])
+     ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i[1])
+     ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o[1])
+
+     ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i[1])
+     ,.stat_mem_pkt_i(stat_mem_pkt_i[1])
+     ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o[1])
+
+     /*
+     ,.lce_req_o(lce_req_o[1])
+     ,.lce_req_v_o(lce_req_v_o[1])
+     ,.lce_req_ready_i(lce_req_ready_i[1])
+
+     ,.lce_resp_o(lce_resp_o[1])
+     ,.lce_resp_v_o(lce_resp_v_o[1])
+     ,.lce_resp_ready_i(lce_resp_ready_i[1])
+
+     ,.lce_cmd_i(lce_cmd_i[1])
+     ,.lce_cmd_v_i(lce_cmd_v_i[1])
+     ,.lce_cmd_yumi_o(lce_cmd_yumi_o[1])
+
+     ,.lce_cmd_o(lce_cmd_o[1])
+     ,.lce_cmd_v_o(lce_cmd_v_o[1])
+     ,.lce_cmd_ready_i(lce_cmd_ready_i[1])
+     */
+
+     ,.credits_full_i(credits_full_i)
+     ,.credits_empty_i(credits_empty_i)
+
+     ,.timer_irq_i(timer_irq_i)
+     ,.software_irq_i(software_irq_i)
+     ,.external_irq_i(external_irq_i)
+     );
+
+
+
+/*
+
+
+
+
+
 
   wire unused = &{cfg_bus_i};
   assign cfg_npc_data_o = '0;
@@ -203,6 +430,6 @@ module bp_core_minimal
       @(posedge clk_i);
       stat_mem_pkt_yumi_o = 1'b0;
     end
-
+*/
 endmodule
 

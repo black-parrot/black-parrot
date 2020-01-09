@@ -46,8 +46,8 @@ module bp_fe_lce
 
     , input                                                      miss_i
     , input [paddr_width_p-1:0]                                  miss_addr_i
-
     , input                                                      uncached_req_i
+    , input [way_id_width_lp-1:0]                                lru_way_i
 
     , input [cce_block_width_p-1:0]                              data_mem_data_i
     , output logic [data_mem_pkt_width_lp-1:0]                   data_mem_pkt_o
@@ -60,7 +60,6 @@ module bp_fe_lce
        
     , output logic                                               stat_mem_pkt_v_o
     , output logic [stat_mem_pkt_width_lp-1:0]                   stat_mem_pkt_o
-    , input [way_id_width_lp-1:0]                                lru_way_i
     , input                                                      stat_mem_pkt_yumi_i
       
     // LCE-CCE interface 
