@@ -80,7 +80,8 @@ module bp_be_dcache
   import bp_common_aviary_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
-   
+
+    , parameter writethrough_p=0
     , parameter debug_p=0 
 
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
@@ -136,6 +137,7 @@ module bp_be_dcache
     // signals to LCE
     , output logic load_miss_o
     , output logic store_miss_o
+    , output logic store_hit_o
     , output logic lr_miss_o
     , output logic uncached_load_req_o
     , output logic uncached_store_req_o
@@ -468,6 +470,10 @@ module bp_be_dcache
 
   assign load_miss_tv = ~load_hit & v_tv_r & load_op_tv_r & ~uncached_tv_r;
   assign store_miss_tv = ~store_hit & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r;
+  // output store hit signal from TV stage, could be SC or regular store
+  // store_data_o and size_op_o will also be valid and provide data and size
+  // of store data
+  assign store_hit_o = (writethrough_p == 1) & store_hit & v_tv_r & store_op_tv_r & ~uncached_tv_r;
 
   // uncached req
   //
@@ -947,7 +953,9 @@ module bp_be_dcache
 
   // write buffer
   //
-  assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r;
+  // disallow write buffer write on store hit that cannot be processed by LCE
+  // to avoid multiple wbuf entries when the store replays
+  assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r & ~cache_miss_i;
   assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we);
   assign bypass_v_li = tv_we & load_op_tl_r;
   assign lce_snoop_index_li = lce_data_mem_pkt.index;
