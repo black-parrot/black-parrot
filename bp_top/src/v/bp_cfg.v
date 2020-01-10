@@ -86,7 +86,7 @@ wire [cfg_data_width_p-1:0] cfg_data_li = mem_cmd_cast_i.data[0+:cfg_data_width_
 always_ff @(posedge clk_i)
   if (reset_i)
     begin
-      freeze_r            <= 1'b1;
+      freeze_r            <= 1'b0;
       icache_mode_r       <= e_lce_mode_uncached;
       dcache_mode_r       <= e_lce_mode_uncached;
       cce_mode_r          <= e_cce_mode_uncached;

@@ -105,7 +105,9 @@ assign npc_w_v = cfg_bus_cast_i.npc_w_v
                  | (commit_pkt.tlb_miss | commit_pkt.cache_miss)
                  | (trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret);
 bsg_dff_reset_en 
- #(.width_p(vaddr_width_p))
+ #(.width_p(vaddr_width_p)
+   ,.reset_val_p(32'h8000_0000)
+   )
  npc
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
