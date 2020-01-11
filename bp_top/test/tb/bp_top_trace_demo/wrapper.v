@@ -41,10 +41,8 @@ module wrapper
    , input  [E:W][io_noc_ral_link_width_lp-1:0]        io_resp_link_i
    , output [E:W][io_noc_ral_link_width_lp-1:0]        io_resp_link_o
 
-   , output [E:W][mem_noc_ral_link_width_lp-1:0]       bypass_cmd_link_o
-   , input [E:W][mem_noc_ral_link_width_lp-1:0]        bypass_resp_link_i
-
-   // TODO: DMC links
+   , output [mem_noc_ral_link_width_lp-1:0]            dram_cmd_link_o
+   , input [mem_noc_ral_link_width_lp-1:0]             dram_resp_link_i
    );
 
   bp_processor

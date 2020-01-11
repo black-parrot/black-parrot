@@ -44,10 +44,8 @@ module bp_processor
    , input  [E:W][io_noc_ral_link_width_lp-1:0]     io_resp_link_i
    , output [E:W][io_noc_ral_link_width_lp-1:0]     io_resp_link_o
 
-   , output [E:W][mem_noc_ral_link_width_lp-1:0]    bypass_cmd_link_o
-   , input [E:W][mem_noc_ral_link_width_lp-1:0]     bypass_resp_link_i
-
-   // TODO: DMC links
+   , output [mem_noc_ral_link_width_lp-1:0]         dram_cmd_link_o
+   , input [mem_noc_ral_link_width_lp-1:0]          dram_resp_link_i
    );
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
@@ -160,8 +158,8 @@ bp_mem_complex
    ,.mem_cmd_link_i(mem_cmd_ver_link_lo)
    ,.mem_resp_link_o(mem_resp_ver_link_li)
 
-   ,.bypass_cmd_link_o(bypass_cmd_link_o)
-   ,.bypass_resp_link_i(bypass_resp_link_i)
+   ,.dram_cmd_link_o(dram_cmd_link_o)
+   ,.dram_resp_link_i(dram_resp_link_i)
    );
 
 bp_accelerator_complex

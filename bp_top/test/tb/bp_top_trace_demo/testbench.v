@@ -67,7 +67,7 @@ logic            dram_resp_v_lo, dram_resp_ready_li;
 bp_io_noc_ral_link_s proc_cmd_link_li, proc_cmd_link_lo;
 bp_io_noc_ral_link_s proc_resp_link_li, proc_resp_link_lo;
 
-bp_mem_noc_ral_link_s bypass_cmd_link_lo, bypass_resp_link_li;
+bp_mem_noc_ral_link_s dram_cmd_link_lo, dram_resp_link_li;
 
 bp_cce_io_msg_s        host_cmd_li;
 logic                  host_cmd_v_li, host_cmd_yumi_lo;
@@ -97,8 +97,6 @@ bp_io_noc_ral_link_s stub_cmd_link_lo, stub_resp_link_lo;
 assign stub_cmd_link_li  = '0;
 assign stub_resp_link_li = '0;
 
-bp_mem_noc_ral_link_s stub_bypass_cmd_link_lo, stub_bypass_resp_link_li;
-assign stub_bypass_resp_link_li = '0;
 // Chip
 wrapper
  #(.bp_params_p(bp_params_p))
@@ -123,8 +121,8 @@ wrapper
    ,.io_resp_link_i({proc_resp_link_li, stub_resp_link_li})
    ,.io_resp_link_o({proc_resp_link_lo, stub_resp_link_lo})
 
-   ,.bypass_cmd_link_o({bypass_cmd_link_lo, stub_bypass_cmd_link_lo})
-   ,.bypass_resp_link_i({bypass_resp_link_li, stub_bypass_resp_link_li})
+   ,.dram_cmd_link_o(dram_cmd_link_lo)
+   ,.dram_resp_link_i(dram_resp_link_li)
    );
 
   bind bp_be_top
@@ -368,8 +366,8 @@ bp_me_cce_to_mem_link_client
    ,.mem_resp_v_i(dram_resp_v_lo)
    ,.mem_resp_ready_o(dram_resp_ready_li)
 
-   ,.cmd_link_i(bypass_cmd_link_lo)
-   ,.resp_link_o(bypass_resp_link_li)
+   ,.cmd_link_i(dram_cmd_link_lo)
+   ,.resp_link_o(dram_resp_link_li)
    );
 
 bp_mem
