@@ -26,6 +26,19 @@ module bp_nonsynth_host
    , output [num_core_p-1:0]                       program_finish_o
    );
 
+import "DPI-C" context function void start();
+import "DPI-C" context function int scan();
+import "DPI-C" context function void pop();
+
+logic [63:0] ch;
+initial begin
+  start();
+end
+
+always_ff @(posedge clk_i) begin
+  ch = scan();
+end
+
 `declare_bp_io_if(paddr_width_p, dword_width_p, lce_id_width_p);
 
 // HOST I/O mappings
@@ -34,9 +47,9 @@ module bp_nonsynth_host
 // Host I/O mappings (arbitrarily decided for now)
 //   Overall host controls 32'h0300_0000-32'h03FF_FFFF
 
-localparam hprint_base_addr_gp = paddr_width_p'(32'h0010_0???);
-localparam cprint_base_addr_gp = paddr_width_p'(64'h0010_1???);
-localparam finish_base_addr_gp = paddr_width_p'(64'h0010_2???);
+localparam getchar_base_addr_gp = paddr_width_p'(32'h0300_0000);
+localparam putchar_base_addr_gp = paddr_width_p'(64'h0300_1000);
+localparam finish_base_addr_gp = paddr_width_p'(64'h0300_2???);
 
 bp_cce_io_msg_s  io_cmd_cast_i;
 
@@ -44,51 +57,31 @@ assign io_cmd_cast_i = io_cmd_i;
 
 localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
 
-logic hprint_data_cmd_v;
-logic cprint_data_cmd_v;
+logic putchar_data_cmd_v;
+logic getchar_data_cmd_v;
 logic finish_data_cmd_v;
 
 always_comb
   begin
-    hprint_data_cmd_v = 1'b0;
-    cprint_data_cmd_v = 1'b0;
+    putchar_data_cmd_v = 1'b0;
+    getchar_data_cmd_v = 1'b0;
     finish_data_cmd_v = 1'b0;
 
     unique
     casez (io_cmd_cast_i.addr)
-      hprint_base_addr_gp: hprint_data_cmd_v = io_cmd_v_i; 
-      cprint_base_addr_gp: cprint_data_cmd_v = io_cmd_v_i;
+      putchar_base_addr_gp: putchar_data_cmd_v = io_cmd_v_i; 
+      getchar_base_addr_gp: getchar_data_cmd_v = io_cmd_v_i;
       finish_base_addr_gp: finish_data_cmd_v = io_cmd_v_i;
       default: begin end
     endcase
   end
 
-logic [num_core_p-1:0] hprint_w_v_li;
-logic [num_core_p-1:0] cprint_w_v_li;
 logic [num_core_p-1:0] finish_w_v_li;
 
 // Memory-mapped I/O is 64 bit aligned
 localparam byte_offset_width_lp = 3;
 wire [lg_num_core_lp-1:0] io_cmd_core_enc =
   io_cmd_cast_i.addr[byte_offset_width_lp+:lg_num_core_lp];
-
-bsg_decode_with_v
- #(.num_out_p(num_core_p))
- hprint_data_cmd_decoder
-  (.v_i(hprint_data_cmd_v)
-   ,.i(io_cmd_core_enc)
-   
-   ,.o(hprint_w_v_li)
-   );
-
-bsg_decode_with_v
- #(.num_out_p(num_core_p))
- cprint_data_cmd_decoder
-  (.v_i(cprint_data_cmd_v)
-   ,.i(io_cmd_core_enc)
-
-   ,.o(cprint_w_v_li)
-   );
 
 bsg_decode_with_v
  #(.num_out_p(num_core_p))
@@ -127,10 +120,12 @@ always_ff @(negedge clk_i)
   begin
     for (integer i = 0; i < num_core_p; i++)
       begin
-        if (hprint_w_v_li[i] & io_cmd_yumi_o)
-          $display("[CORE%0x PRT] %x", i, io_cmd_cast_i.data[0+:8]);
-        if (cprint_w_v_li[i] & io_cmd_yumi_o)
-          $display("[CORE%0x PRT] %c", i, io_cmd_cast_i.data[0+:8]);
+        if (putchar_data_cmd_v & io_cmd_yumi_o) begin
+          $write("%c", io_cmd_cast_i.data[0+:8]);
+          $fflush(32'h8000_0001);
+        end
+        if (getchar_data_cmd_v & io_cmd_yumi_o)
+          pop();
         if (finish_w_v_li[i] & io_cmd_yumi_o & ~io_cmd_cast_i.data[0])
           $display("[CORE%0x FSH] PASS", i);
         if (finish_w_v_li[i] & io_cmd_yumi_o &  io_cmd_cast_i.data[0])
@@ -168,9 +163,8 @@ assign io_resp_lo =
     ,addr          : io_cmd_cast_i.addr
     ,payload       : io_cmd_cast_i.payload
     ,size          : io_cmd_cast_i.size
-    ,data          : '0
+    ,data          : ch
     };
-
 
 endmodule : bp_nonsynth_host
 
