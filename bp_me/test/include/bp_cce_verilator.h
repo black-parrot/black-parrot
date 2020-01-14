@@ -10,6 +10,10 @@
 
 #define CCE_INIT_CLKS 1000
 
+#include <iomanip>
+#include <sstream>
+#include <string>
+
 void print_header(std::string dut, std::map<std::string, std::string>& arg_map)
 {
     cout << "DUT is " << dut << endl;
@@ -46,5 +50,28 @@ void sc_init(std::string dut, int argc, char **argv)
     Verilated::traceEverOn(true);  
     Verilated::randReset(2);
 }
+
+template<typename T>
+std::string toHex(T in)
+{
+  std::stringstream ss;
+  ss << std::setfill('0') << std::setw(sizeof(T)*2) << std::hex << in;
+  return ss.str();
+}
+
+template<typename T>
+std::string toString(T in, int bits)
+{
+  std::stringstream ss;
+  for (int i = bits; i > 0; i--) {
+    if (((in >> (i-1)) & 0x1) == 1) {
+      ss << "1";
+    } else {
+      ss << "0";
+    }
+  }
+  return ss.str();
+}
+
 
 #endif
