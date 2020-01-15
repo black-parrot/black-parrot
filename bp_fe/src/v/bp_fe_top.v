@@ -4,6 +4,7 @@
 
 module bp_fe_top
  import bp_fe_pkg::*;
+ import bp_fe_icache_pkg::*;
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
  import bp_common_rv64_pkg::*;
@@ -13,6 +14,8 @@ module bp_fe_top
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+   `declare_bp_fe_tag_widths(lce_assoc_p, lce_sets_p, lce_id_width_p, cce_id_width_p, dword_width_p, paddr_width_p)
+   `declare_bp_fe_lce_widths(lce_assoc_p, lce_sets_p, ptag_width_p, cce_block_width_p)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    )
@@ -30,21 +33,27 @@ module bp_fe_top
    , output                                           fe_queue_v_o
    , input                                            fe_queue_ready_i
 
-   , output [lce_cce_req_width_lp-1:0]                lce_req_o
-   , output                                           lce_req_v_o
-   , input                                            lce_req_ready_i
+   // Interface to LCE
+   , input                                            lce_ready_i
+   , input                                            lce_miss_i
 
-   , input [lce_cmd_width_lp-1:0]                     lce_cmd_i
-   , input                                            lce_cmd_v_i
-   , output                                           lce_cmd_yumi_o
+   , output logic                                     uncached_req_o
+   , output logic                                     miss_tv_o
+   , output logic [paddr_width_p-1:0]                 miss_addr_tv_o
+   , output logic [way_id_width_lp-1:0]               lru_way_o
 
-   , output [lce_cmd_width_lp-1:0]                    lce_cmd_o
-   , output                                           lce_cmd_v_o
-   , input                                            lce_cmd_ready_i
+   , output logic [cce_block_width_p-1:0]             data_mem_data_o
+   , input [data_mem_pkt_width_lp-1:0]                data_mem_pkt_i
+   , input                                            data_mem_pkt_v_i
+   , output logic                                     data_mem_pkt_yumi_o
 
-   , output [lce_cce_resp_width_lp-1:0]               lce_resp_o
-   , output                                           lce_resp_v_o
-   , input                                            lce_resp_ready_i
+   , input [tag_mem_pkt_width_lp-1:0]                 tag_mem_pkt_i
+   , input                                            tag_mem_pkt_v_i
+   , output logic                                     tag_mem_pkt_yumi_o
+
+   , input                                            stat_mem_pkt_v_i
+   , input [stat_mem_pkt_width_lp-1:0]                stat_mem_pkt_i
+   , output logic                                     stat_mem_pkt_yumi_o
    );
 
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -105,21 +114,26 @@ bp_fe_mem
    ,.mem_resp_v_o(mem_resp_v_li)
    ,.mem_resp_ready_i(mem_resp_ready_lo)
 
-   ,.lce_req_o(lce_req_o)
-   ,.lce_req_v_o(lce_req_v_o)
-   ,.lce_req_ready_i(lce_req_ready_i)
-         
-   ,.lce_cmd_i(lce_cmd_i)
-   ,.lce_cmd_v_i(lce_cmd_v_i)
-   ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
-         
-   ,.lce_cmd_o(lce_cmd_o)
-   ,.lce_cmd_v_o(lce_cmd_v_o)
-   ,.lce_cmd_ready_i(lce_cmd_ready_i)
+   ,.lce_ready_i(lce_ready_i)
+   ,.lce_miss_i(lce_miss_i)
 
-   ,.lce_resp_o(lce_resp_o)
-   ,.lce_resp_v_o(lce_resp_v_o)
-   ,.lce_resp_ready_i(lce_resp_ready_i)
+   ,.uncached_req_o(uncached_req_o)
+   ,.miss_tv_o(miss_tv_o)
+   ,.miss_addr_tv_o(miss_addr_tv_o)
+   ,.lru_way_o(lru_way_o)
+
+   ,.data_mem_data_o(data_mem_data_o)
+   ,.data_mem_pkt_i(data_mem_pkt_i)
+   ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
+   ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
+
+   ,.tag_mem_pkt_i(tag_mem_pkt_i)
+   ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
+   ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
+
+   ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
+   ,.stat_mem_pkt_i(stat_mem_pkt_i)
+   ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
    );
 
 endmodule

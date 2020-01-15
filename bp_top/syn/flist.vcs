@@ -1,42 +1,28 @@
 +define+DRAMSIM2
-## Includes
-# bsg_ip_cores includes
 +incdir+$BASEJUMP_STL_DIR/bsg_dataflow
 +incdir+$BASEJUMP_STL_DIR/bsg_mem
 +incdir+$BASEJUMP_STL_DIR/bsg_misc
 +incdir+$BASEJUMP_STL_DIR/bsg_test
 +incdir+$BASEJUMP_STL_DIR/bsg_noc
-# common includes
 +incdir+$BP_COMMON_DIR/src/include
-# fe includes
 +incdir+$BP_FE_DIR/src/include
-# be includes
 +incdir+$BP_BE_DIR/src/include
 +incdir+$BP_BE_DIR/src/include/bp_be_dcache
-# me includes 
 +incdir+$BP_ME_DIR/src/include/v
-# top includes
 +incdir+$BP_TOP_DIR/src/include
-## Packages
-# bsg_ip_cores packages
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkg.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_noc_pkg.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_pkg.v
-# Interface packages
 $BP_COMMON_DIR/src/include/bp_common_rv64_pkg.vh
 $BP_COMMON_DIR/src/include/bp_common_pkg.vh
 $BP_COMMON_DIR/src/include/bp_common_aviary_pkg.vh
 $BP_COMMON_DIR/src/include/bp_common_cfg_link_pkg.vh
-# FE packages
 $BP_FE_DIR/src/include/bp_fe_icache_pkg.vh
 $BP_FE_DIR/src/include/bp_fe_pkg.vh
-# BE packages
 $BP_BE_DIR/src/include/bp_be_pkg.vh
 $BP_BE_DIR/src/include/bp_be_dcache/bp_be_dcache_pkg.vh
-# ME packages
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
 $BP_ME_DIR/src/include/v/bp_me_pkg.vh
-## bsg_ip_cores files
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_fifo.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_launch_sync_sync.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_ptr_gray.v
@@ -140,15 +126,12 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v  
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v 
-# Common files
 $BP_COMMON_DIR/src/v/bsg_fifo_1r1w_fence.v
 $BP_COMMON_DIR/src/v/bsg_fifo_1r1w_rolly.v
 $BP_COMMON_DIR/src/v/bp_pma.v
 $BP_COMMON_DIR/src/v/bp_tlb.v
 $BP_COMMON_DIR/src/v/bp_tlb_replacement.v
-## BE files
 $BP_BE_DIR/src/v/bp_be_top.v
-# Calculator
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_bypass.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_calculator_top.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_instr_decoder.v
@@ -158,12 +141,10 @@ $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_int.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mem.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mul.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_regfile.v
-# Checker
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_checker_top.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_detector.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_director.v
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_scheduler.v
-# MMU
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_ptw.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_csr.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache.v
@@ -173,7 +154,6 @@ $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_lce_req.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_dcache/bp_be_dcache_wbuf_queue.v
 $BP_BE_DIR/src/v/bp_be_mem/bp_be_mem_top.v
-## FE files
 $BP_FE_DIR/src/v/bp_fe_bht.v
 $BP_FE_DIR/src/v/bp_fe_btb.v
 $BP_FE_DIR/src/v/bp_fe_lce_cmd.v
@@ -184,13 +164,10 @@ $BP_FE_DIR/src/v/bp_fe_lce_req.v
 $BP_FE_DIR/src/v/bp_fe_mem.v
 $BP_FE_DIR/src/v/bp_fe_pc_gen.v
 $BP_FE_DIR/src/v/bp_fe_top.v
-## ME files
-# Cache
 $BP_ME_DIR/src/v/cache/bp_me_cache_dma_to_cce.v
 $BP_ME_DIR/src/v/cache/bp_me_cache_slice.v
 $BP_ME_DIR/src/v/cache/bp_me_cce_to_cache.v
 $BP_ME_DIR/src/v/cache/bp_me_cce_to_cache_buffered.v
-# CCE
 $BP_ME_DIR/src/v/cce/bp_cce.v
 $BP_ME_DIR/src/v/cce/bp_cce_alu.v
 $BP_ME_DIR/src/v/cce/bp_cce_buffered.v
@@ -207,7 +184,6 @@ $BP_ME_DIR/src/v/cce/bp_cce_pending.v
 $BP_ME_DIR/src/v/cce/bp_cce_reg.v
 $BP_ME_DIR/src/v/cce/bp_cce_spec.v
 $BP_ME_DIR/src/v/cce/bp_io_cce.v
-# Network
 $BP_ME_DIR/src/v/wormhole/bp_me_addr_to_cce_id.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_id_to_cord.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_io_link_bidir.v
@@ -224,12 +200,12 @@ $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_req.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.v
-## TOP
 $BP_TOP_DIR/src/v/bp_accelerator_complex.v
 $BP_TOP_DIR/src/v/bp_cfg.v
 $BP_TOP_DIR/src/v/bp_cfg_buffered.v
 $BP_TOP_DIR/src/v/bp_core.v
 $BP_TOP_DIR/src/v/bp_core_complex.v
+$BP_TOP_DIR/src/v/bp_core_minimal.v
 $BP_TOP_DIR/src/v/bp_clint.v
 $BP_TOP_DIR/src/v/bp_clint_node.v
 $BP_TOP_DIR/src/v/bp_clint_slice.v
@@ -245,5 +221,4 @@ $BP_TOP_DIR/src/v/bp_processor.v
 $BP_TOP_DIR/src/v/bp_tile.v
 $BP_TOP_DIR/src/v/bp_tile_node.v
 
-## BSG Staging area
 $BP_TOP_DIR/src/v/bsg_async_noc_link.v
