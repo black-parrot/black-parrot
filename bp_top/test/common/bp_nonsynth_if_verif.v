@@ -49,6 +49,11 @@ initial
 
     $display("########### CCE IO IF  ##############");
     $display("bp_cce_io_msg_s        bits: struct %d width %d", $bits(bp_cce_io_msg_s), cce_io_msg_width_lp);
+
+    if (!(num_cce_p inside {1,2,3,4,6,7,8,12,14,15,16,24,28,30,31,32})) begin
+      $fatal("Error: unsupported number of CCE's");
+    end
+
   end
 
   if (ic_y_dim_p != 1)
