@@ -27,7 +27,6 @@
 
 #include "bp_cce_verilator.h"
 #include "bp_cce.h"
-#include "bp_cce_lce_msg_util.h"
 
 uint32_t genShared(uint32_t reqLce, uint32_t &reqWay, uint32_t &ways, uint32_t &states) {
   reqWay = rand() % LCE_ASSOC;

@@ -121,6 +121,7 @@ typedef enum logic [3:0] {
   ,e_popq_op                             = 4'b0010   // Pop Queue
   ,e_poph_op                             = 4'b0011   // Pop Header From Queue - does not pop message
   ,e_specq_op                            = 4'b0100   // Modify speculative access bits
+  ,e_inv_op                              = 4'b0101   // Send all Invalidations based on sharers vector
 } bp_cce_inst_minor_queue_op_e;
 
 // Minor Op Code Union
@@ -381,6 +382,7 @@ typedef enum logic [3:0] {
   ,e_dir_lce_sel_r7                      = 4'b0111
   ,e_dir_lce_sel_req_lce                 = 4'b1000
   ,e_dir_lce_sel_transfer_lce            = 4'b1001
+  ,e_dir_lce_sel_inv                     = 4'b1010
 } bp_cce_inst_dir_lce_sel_e;
 
 `define bp_cce_inst_dir_lce_sel_width $bits(bp_cce_inst_dir_lce_sel_e)
@@ -398,6 +400,7 @@ typedef enum logic [3:0] {
   ,e_dir_way_sel_req_addr_way            = 4'b1000
   ,e_dir_way_sel_lru_way_addr_way        = 4'b1001
   ,e_dir_way_sel_sh_way_r0               = 4'b1010
+  ,e_dir_way_sel_inv                     = 4'b1011
 } bp_cce_inst_dir_way_sel_e;
 
 `define bp_cce_inst_dir_way_sel_width $bits(bp_cce_inst_dir_way_sel_e)
@@ -1075,6 +1078,7 @@ typedef struct packed {
   // outbound messages - valid signals
   logic                                    lce_cmd_v;
   logic                                    mem_cmd_v;
+  logic                                    inv_cmd_v;
 
   // clear mshr
   logic                                    mshr_clear;

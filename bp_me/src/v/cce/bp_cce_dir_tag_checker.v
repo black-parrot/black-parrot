@@ -12,7 +12,6 @@ module bp_cce_dir_tag_checker
   import bp_common_pkg::*;
   import bp_cce_pkg::*;
   #(parameter tag_sets_per_row_p          = "inv"
-    , parameter rows_per_wg_p             = "inv"
     , parameter row_width_p               = "inv"
     , parameter lce_assoc_p               = "inv"
     , parameter tag_width_p               = "inv"
@@ -22,7 +21,7 @@ module bp_cce_dir_tag_checker
   (
    // input row from directory RAM
    input [row_width_p-1:0]                                        row_i
-   , input                                                        row_v_i
+   , input [tag_sets_per_row_p-1:0]                               row_v_i
    , input [tag_width_p-1:0]                                      tag_i
 
    , output logic [tag_sets_per_row_p-1:0]                        sharers_hits_o
@@ -30,25 +29,24 @@ module bp_cce_dir_tag_checker
    , output logic [tag_sets_per_row_p-1:0][`bp_coh_bits-1:0]      sharers_coh_states_o
   );
 
-  typedef struct packed {
-    logic [tag_width_p-1:0]      tag;
-    logic [`bp_coh_bits-1:0]     state;
-  } dir_entry_s;
+  initial begin
+    assert(tag_sets_per_row_p == 2) else
+      $error("unsupported configuration: number of sets per row must equal 2");
+  end
+
+  `declare_bp_cce_dir_entry_s(tag_width_p);
 
   // Directory RAM row cast
   dir_entry_s [tag_sets_per_row_p-1:0][lce_assoc_p-1:0] row;
   assign row = row_i;
 
   // one bit per way per tag set indicating if a target block is cached in valid state
-  logic [tag_sets_per_row_p-1:0][lce_assoc_p-1:0]                row_hits;
+  logic [tag_sets_per_row_p-1:0][lce_assoc_p-1:0] row_hits;
 
   // compute hit per way per tag set
   for (genvar i = 0; i < tag_sets_per_row_p; i++) begin : row_hits_tag_set
     for (genvar j = 0; j < lce_assoc_p; j++) begin : row_hits_way
-      assign row_hits[i][j] =
-        (row_v_i)
-        ? (row[i][j].tag == tag_i) & |(row[i][j].state)
-        : '0;
+      assign row_hits[i][j] = row_v_i[i] & (row[i][j].tag == tag_i) & |(row[i][j].state);
     end
   end
 

@@ -26,7 +26,7 @@ module bp_cce_msg
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
     , localparam lg_lce_assoc_lp           = `BSG_SAFE_CLOG2(lce_assoc_p)
     , localparam lg_lce_sets_lp            = `BSG_SAFE_CLOG2(lce_sets_p)
-    , localparam num_way_groups_lp         = (lce_sets_p/num_cce_p)
+    , localparam num_way_groups_lp         = ((lce_sets_p % num_cce_p) == 0) ? (lce_sets_p/num_cce_p) : ((lce_sets_p/num_cce_p) + 1)
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
     , localparam mshr_width_lp = `bp_cce_mshr_width(lce_id_width_p, lce_assoc_p, paddr_width_p)
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
@@ -80,14 +80,21 @@ module bp_cce_msg
    // arbitration signals to instruction decode
    , output logic                                      pending_w_busy_o
    , output logic                                      lce_cmd_busy_o
+   , output logic                                      msg_inv_busy_o
 
    , input [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_i
 
+   , input [num_lce_p-1:0]                             sharers_hits_i
    , input [num_lce_p-1:0][lg_lce_assoc_lp-1:0]        sharers_ways_i
 
    , input [dword_width_p-1:0]                         nc_data_i
 
    , output logic                                      fence_zero_o
+
+   , output logic [lg_num_lce_lp-1:0]                  lce_id_o
+   , output logic [lg_lce_assoc_lp-1:0]                lce_way_o
+
+   , output logic                                      dir_w_v_o
   );
 
   // Define structure variables for output queues
@@ -163,12 +170,19 @@ module bp_cce_msg
 
       ,.pending_w_busy_o(pending_w_busy_o)
       ,.lce_cmd_busy_o(lce_cmd_busy_o)
+      ,.msg_inv_busy_o(msg_inv_busy_o)
 
       ,.gpr_i(gpr_i)
+      ,.sharers_hits_i(sharers_hits_i)
       ,.sharers_ways_i(sharers_ways_i)
       ,.nc_data_i(nc_data_i)
 
       ,.fence_zero_o(fence_zero_o)
+
+      ,.lce_id_o(lce_id_o)
+      ,.lce_way_o(lce_way_o)
+
+      ,.dir_w_v_o(dir_w_v_o)
       );
 
   // Uncached access module
