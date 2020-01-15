@@ -67,16 +67,6 @@ module bp_cce
    , input                                             mem_cmd_ready_i
   );
 
-  /*
-  //synopsys translate_off
-  initial begin
-    assert (lce_sets_p > 1) else $error("Number of LCE sets must be greater than 1");
-    assert (num_cce_p >= 1 && `BSG_IS_POW2(num_cce_p))
-      else $error("Number of CCE must be power of two");
-  end
-  //synopsys translate_on
-  */
-
   // Define structure variables for output queues
 
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
@@ -299,12 +289,10 @@ module bp_cce
       ,.num_lce_p(num_lce_p)
       ,.lce_assoc_p(lce_assoc_p)
       ,.tag_width_p(tag_width_lp)
-      ,.cce_id_width_p(cce_id_width_p)
       )
     directory
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.cce_id_i(cfg_bus_cast_i.cce_id)
 
       ,.set_i(dir_set_li[0+:lg_num_way_groups_lp])
       ,.lce_i(dir_lce_li)

@@ -198,16 +198,6 @@ module bp_cce_msg_cached
   wire fwd_mod_v_li = decoded_inst_i.spec_w_v;
   wire state_v_li = decoded_inst_i.spec_w_v;
 
-  /*
-  wire squash_v_li = (decoded_inst_i.spec_cmd == e_spec_cmd_squash)
-                     || (decoded_inst_i.spec_cmd == e_spec_cmd_clear);
-  wire fwd_mod_v_li = (decoded_inst_i.spec_cmd == e_spec_cmd_fwd_mod)
-                      || (decoded_inst_i.spec_cmd == e_spec_cmd_clear);
-  wire state_v_li = (decoded_inst_i.spec_cmd == e_spec_cmd_fwd_mod)
-                    || (decoded_inst_i.spec_cmd == e_spec_cmd_clear);
-  */
-
-  // TODO: way group calculation needs to change for npot
   bp_cce_spec
     #(.num_way_groups_p(num_way_groups_lp))
     spec_bits
@@ -356,10 +346,6 @@ module bp_cce_msg_cached
       // Speculative access response
       // Note: speculative access is only supported for cached requests
       if (mem_resp_li.payload.speculative) begin
-        // TODO: remove assertion
-        // synopsys translate_off
-        assert(spec_bits_v_lo) else $error("speculative memory response but spec_bits invalid output");
-        // synopsys translate_on
 
         if (spec_bits_lo.spec) begin // speculation not resolved yet
           // do nothing, wait for speculation to be resolved
@@ -748,7 +734,6 @@ module bp_cce_msg_cached
             mem_resp_yumi_o = decoded_inst_i.mem_resp_yumi;
             // decrement the fence counter when dequeueing the memory response
             fence_dec = mem_resp_v_i & mem_resp_yumi_o;
-            // TODO: dec pending bit?
             // clear pending bit
             pending_w_v_o = 1'b1;
             pending_w_addr_lo = mem_resp_li.addr;

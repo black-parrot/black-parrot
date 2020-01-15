@@ -44,6 +44,7 @@ module bp_cce_dir
 
     // Number of rows to hold one set from all LCEs
     // TODO: this wastes space if there is an odd number of LCEs in the system
+    // since tag_sets_per_row_lp is hard-coded to 2.
     , localparam rows_per_set_lp          = (num_lce_p == 1) ? 1
                                             :((num_lce_p % tag_sets_per_row_lp) == 0)
                                               ? (num_lce_p / tag_sets_per_row_lp)
@@ -67,9 +68,6 @@ module bp_cce_dir
     , localparam lg_rows_lp               = `BSG_SAFE_CLOG2(rows_lp)
 
     , localparam addr_offset_shift_lp     = 1
-
-    // TODO: DEBUG only
-    , parameter cce_id_width_p            = "inv"
   )
   (input                                                          clk_i
    , input                                                        reset_i
@@ -85,7 +83,7 @@ module bp_cce_dir
    , input [$bits(bp_coh_states_e)-1:0]                           coh_state_i
    , input [`bp_cce_inst_minor_op_width-1:0]                      w_cmd_i
    , input                                                        w_v_i
-   // TODO: fix this input functionality?
+   // TODO: this is used by FSM CCE, but not ucode CCE currently
    , input                                                        w_clr_row_i
 
    , output logic                                                 busy_o
@@ -100,9 +98,6 @@ module bp_cce_dir
    , output logic [tag_width_p-1:0]                               lru_tag_o
 
    , output logic [tag_width_p-1:0]                               tag_o
-
-   // TODO: debug only, remove
-   , input [cce_id_width_p-1:0]                                   cce_id_i
   );
 
   initial begin
@@ -122,8 +117,7 @@ module bp_cce_dir
     end
   endgenerate
   wire [lg_num_lce_lp-1:0] addr_lce = (lce_i >> addr_offset_shift_lp);
-  wire [lg_rows_lp-1:0] addr_offset;
-  assign addr_offset = addr_offset_table[addr_lce[0+:lg_rows_per_set_lp]];
+  wire [lg_rows_lp-1:0] addr_offset = addr_offset_table[addr_lce[0+:lg_rows_per_set_lp]];
 
   // directory address for single entry operations
   wire [lg_rows_lp-1:0] entry_row_addr = addr_offset + set_i;
@@ -181,21 +175,6 @@ module bp_cce_dir
   logic [tag_sets_per_row_lp-1:0]                                 sharers_hits;
   logic [tag_sets_per_row_lp-1:0][lg_lce_assoc_lp-1:0]            sharers_ways;
   logic [tag_sets_per_row_lp-1:0][$bits(bp_coh_states_e)-1:0]     sharers_coh_states;
-
-  // TODO: debug, remove
-  /*
-  always_ff @(negedge clk_i) begin
-    if (~reset_i) begin
-      if (w_v_i) begin
-        $display("[%t] CCE[%d] write WG[%d] ramAddr[%d]"
-                 , $time, cce_id_i, set_i, dir_ram_addr);
-      end
-      if (r_v_i) begin
-        $display("[%t] CCE[%d] read WG[%d]", $time, cce_id_i, set_i);
-      end
-    end
-  end
-  */
 
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
