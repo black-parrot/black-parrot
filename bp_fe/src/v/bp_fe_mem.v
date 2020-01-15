@@ -114,6 +114,7 @@ bp_pma
 logic [instr_width_p-1:0] icache_data_lo;
 logic                     icache_data_v_lo;
 
+
 logic instr_access_fault_v, instr_page_fault_v;
 bp_fe_icache 
  #(.bp_params_p(bp_params_p)) 
