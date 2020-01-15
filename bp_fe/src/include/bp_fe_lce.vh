@@ -21,9 +21,9 @@ typedef enum logic [1:0] {
 
 `define bp_fe_icache_tag_mem_opcode_width $bits(bp_fe_icache_tag_mem_opcode_e)
 
-typedef enum logic {
-  e_stat_mem_set_clear = 1'b0
-  , e_stat_mem_read = 1'b1
+typedef enum logic [1:0] {
+  e_stat_mem_set_clear = 2'b0
+  , e_stat_mem_read = 2'b1
 } bp_fe_icache_stat_mem_opcode_e;
 
 `define bp_fe_icache_stat_mem_opcode_width $bits(bp_fe_icache_stat_mem_opcode_e)
@@ -120,7 +120,6 @@ typedef enum logic [1:0] {
  */
 `define declare_bp_fe_tag_widths(ways_mp, sets_mp, lce_id_width_mp, cce_id_width_mp, data_width_mp, paddr_width_mp)   \
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(ways_mp)                                                   \
-    , localparam lce_data_width_lp=(ways_mp*data_width_mp)                                                  \
     , localparam block_size_in_words_lp=ways_mp                                                             \
     , localparam data_mask_width_lp=(data_width_mp>>3)                                                      \
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_mask_width_lp)                                   \

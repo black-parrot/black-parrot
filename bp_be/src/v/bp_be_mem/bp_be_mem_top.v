@@ -26,9 +26,14 @@ module bp_be_mem_top
    , localparam block_offset_width_lp  = (word_offset_width_lp + byte_offset_width_lp)
    , localparam index_width_lp         = `BSG_SAFE_CLOG2(lce_sets_p)
    , localparam page_offset_width_lp   = (block_offset_width_lp + index_width_lp)
-   , localparam dcache_pkt_width_lp    = `bp_be_dcache_pkt_width(page_offset_width_lp
-                                                                 , dword_width_p
-                                                                 )
+   , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
+   , localparam dcache_lce_data_mem_pkt_width_lp=
+     `bp_be_dcache_lce_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
+   , localparam dcache_lce_tag_mem_pkt_width_lp=
+     `bp_be_dcache_lce_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, ptag_width_p)
+   , localparam dcache_lce_stat_mem_pkt_width_lp=
+     `bp_be_dcache_lce_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
+
    , localparam cfg_bus_width_lp      = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
 
    , localparam trap_pkt_width_lp      = `bp_be_trap_pkt_width(vaddr_width_p)
@@ -67,24 +72,40 @@ module bp_be_mem_top
    , output [vaddr_width_p-1:0]              itlb_fill_vaddr_o
    , output [tlb_entry_width_lp-1:0]         itlb_fill_entry_o
 
-   , output [lce_cce_req_width_lp-1:0]       lce_req_o
-   , output                                  lce_req_v_o
-   , input                                   lce_req_ready_i
+   // D$-LCE Interface
+   // signals to LCE
+   , input lce_ready_i
+   , input lce_miss_i
+   , output logic load_miss_o
+   , output logic store_miss_o
+   , output logic store_hit_o
+   , output logic lr_miss_o
+   , output logic uncached_load_req_o
+   , output logic uncached_store_req_o
+   , output logic [paddr_width_p-1:0] miss_addr_o
+   , output logic [dword_width_p-1:0] store_data_o
+   , output logic [1:0] size_op_o
+   , output logic [way_id_width_lp-1:0] lru_way_o
+   , output logic [lce_assoc_p-1:0] dirty_o
+   // for lock logic inside LCE
+   , output logic lr_hit_tv_o
+   , output logic cache_v_o
 
-   , output [lce_cce_resp_width_lp-1:0]      lce_resp_o
-   , output                                  lce_resp_v_o
-   , input                                   lce_resp_ready_i
+   // data_mem
+   , input data_mem_pkt_v_i
+   , input [dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
+   , output logic [cce_block_width_p-1:0] data_mem_data_o
+   , output logic data_mem_pkt_yumi_o
 
-   , input [lce_cmd_width_lp-1:0]            lce_cmd_i
-   , input                                   lce_cmd_v_i
-   , output                                  lce_cmd_yumi_o
+   // tag_mem
+   , input tag_mem_pkt_v_i
+   , input [dcache_lce_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_i
+   , output logic tag_mem_pkt_yumi_o
 
-   , output [lce_cmd_width_lp-1:0]           lce_cmd_o
-   , output                                  lce_cmd_v_o
-   , input                                   lce_cmd_ready_i
-
-   , output                                  credits_full_o
-   , output                                  credits_empty_o
+   // stat_mem
+   , input stat_mem_pkt_v_i
+   , input [dcache_lce_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
+   , output logic stat_mem_pkt_yumi_o
 
    , input [commit_pkt_width_lp-1:0]         commit_pkt_i
 
@@ -144,9 +165,25 @@ logic                     ptw_page_fault_v, ptw_instr_page_fault_v, ptw_load_pag
 bp_be_dcache_pkt_s        dcache_pkt;
 logic [dword_width_p-1:0] dcache_data;
 logic [ptag_width_p-1:0]  dcache_ptag;
-logic                     dcache_ready, dcache_miss_v, dcache_v, dcache_pkt_v;
+logic                     dcache_v, dcache_pkt_v;
 logic                     dcache_tlb_miss, dcache_poison;
 logic                     dcache_uncached;
+
+/* D$-LCE Packets */
+// data_mem
+logic lce_data_mem_pkt_v_lo;
+logic [dcache_lce_data_mem_pkt_width_lp-1:0] lce_data_mem_pkt_lo;
+logic [cce_block_width_p-1:0] lce_data_mem_data_li;
+logic lce_data_mem_pkt_yumi_li;
+// tag_mem
+logic lce_tag_mem_pkt_v_lo;
+logic [dcache_lce_tag_mem_pkt_width_lp-1:0] lce_tag_mem_pkt_lo;
+logic lce_tag_mem_pkt_yumi_li;
+// stat_mem
+logic lce_stat_mem_pkt_v_lo;
+logic [dcache_lce_stat_mem_pkt_width_lp-1:0] lce_stat_mem_pkt_lo;
+logic lce_stat_mem_pkt_yumi_li;
+
 
 /* CSR signals */
 logic                     csr_illegal_instr_lo;
@@ -340,13 +377,14 @@ bp_be_ptw
    ,.dcache_v_o(ptw_dcache_v)
    ,.dcache_pkt_o(ptw_dcache_pkt)
    ,.dcache_ptag_o(ptw_dcache_ptag)
-   ,.dcache_rdy_i(dcache_ready)
-   ,.dcache_miss_i(dcache_miss_v)
+   ,.dcache_rdy_i(lce_ready_i)
+   ,.dcache_miss_i(lce_miss_i)
   );
 
 logic load_op_tl_lo, store_op_tl_lo;
 bp_be_dcache
-  #(.bp_params_p(bp_params_p))
+  #(.bp_params_p(bp_params_p)
+    ,.writethrough_p(0))
   dcache
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -355,7 +393,6 @@ bp_be_dcache
 
     ,.dcache_pkt_i(dcache_pkt)
     ,.v_i(dcache_pkt_v)
-    ,.ready_o(dcache_ready)
 
     ,.v_o(dcache_v)
     ,.data_o(dcache_data)
@@ -366,31 +403,36 @@ bp_be_dcache
 
     ,.load_op_tl_o(load_op_tl_lo)
     ,.store_op_tl_o(store_op_tl_lo)
-
-    ,.cache_miss_o(dcache_miss_v)
     ,.poison_i(dcache_poison)
 
-    // LCE-CCE interface
-    ,.lce_req_o(lce_req_o)
-    ,.lce_req_v_o(lce_req_v_o)
-    ,.lce_req_ready_i(lce_req_ready_i)
-
-    ,.lce_resp_o(lce_resp_o)
-    ,.lce_resp_v_o(lce_resp_v_o)
-    ,.lce_resp_ready_i(lce_resp_ready_i)
-
-    // CCE-LCE interface
-    ,.lce_cmd_i(lce_cmd_i)
-    ,.lce_cmd_v_i(lce_cmd_v_i)
-    ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
-
-    ,.lce_cmd_o(lce_cmd_o)
-    ,.lce_cmd_v_o(lce_cmd_v_o)
-    ,.lce_cmd_ready_i(lce_cmd_ready_i)
-
-    ,.credits_full_o(credits_full_o)
-    ,.credits_empty_o(credits_empty_o)
+    // D$-LCE Interface
+    ,.ready_i(lce_ready_i)
+    ,.cache_miss_i(lce_miss_i)
+    ,.load_miss_o(load_miss_o)
+    ,.store_miss_o(store_miss_o)
+    ,.store_hit_o(store_hit_o)
+    ,.lr_miss_o(lr_miss_o)
+    ,.uncached_load_req_o(uncached_load_req_o)
+    ,.uncached_store_req_o(uncached_store_req_o)
+    ,.miss_addr_o(miss_addr_o)
+    ,.store_data_o(store_data_o)
+    ,.size_op_o(size_op_o)
+    ,.lru_way_o(lru_way_o)
+    ,.dirty_o(dirty_o)
+    ,.lr_hit_tv_o(lr_hit_tv_o)
+    ,.lce_data_mem_pkt_v_i(data_mem_pkt_v_i)
+    ,.lce_data_mem_pkt_i(data_mem_pkt_i)
+    ,.lce_data_mem_data_o(data_mem_data_o)
+    ,.lce_data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
+    ,.lce_tag_mem_pkt_v_i(tag_mem_pkt_v_i)
+    ,.lce_tag_mem_pkt_i(tag_mem_pkt_i)
+    ,.lce_tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
+    ,.lce_stat_mem_pkt_v_i(stat_mem_pkt_v_i)
+    ,.lce_stat_mem_pkt_i(stat_mem_pkt_i)
+    ,.lce_stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
     );
+
+  assign cache_v_o = dcache_v;
 
 // We delay the tlb miss signal by one cycle to synchronize with cache miss signal
 // We latch the dcache miss signal
@@ -476,7 +518,7 @@ assign mem_resp.miss_v = mmu_cmd_v_rr & ~dcache_v & ~|exception_ecode_dec_li;
 assign mem_resp.data   = dcache_v ? dcache_data : csr_data_lo;
 
 assign mem_resp_v_o    = ptw_busy ? 1'b0 : mmu_cmd_v_rr | csr_v_lo;
-assign mmu_cmd_ready_o = dcache_ready & ~dcache_miss_v & ~ptw_busy;
+assign mmu_cmd_ready_o = lce_ready_i & ~lce_miss_i & ~ptw_busy;
 
 assign itlb_fill_v_o     = ptw_tlb_w_v & itlb_not_dtlb_resp;
 assign itlb_fill_vaddr_o = fault_vaddr;

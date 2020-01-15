@@ -19,7 +19,7 @@ module bp_be_nonsynth_dcache_tracer
 
    , input [mhartid_width_lp-1:0]                          mhartid_i
    , input                                                 v_tv_r
-   , input                                                 cache_miss_o
+   , input                                                 cache_miss_i
 
    , input [paddr_width_p-1:0]                             paddr_tv_r
    , input                                                 uncached_tv_r
@@ -66,7 +66,7 @@ always_ff @(posedge clk_i)
   begin
     if (v_tv_r)
       begin
-        $fwrite(file, "[%t] %s addr: %x data: %x uncached: %x, miss: %x\n", $time, op, paddr_tv_r, data_li, uncached_tv_r, cache_miss_o);
+        $fwrite(file, "[%t] %s addr: %x data: %x uncached: %x, miss: %x\n", $time, op, paddr_tv_r, data_li, uncached_tv_r, cache_miss_i);
       end
   end
 
