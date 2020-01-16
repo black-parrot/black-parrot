@@ -132,13 +132,15 @@ module bp_cce_msg_cached
   logic [paddr_width_p-1:0] pending_w_addr_lo;
   logic [`BSG_SAFE_CLOG2(num_cce_p)-1:0] pending_cce_id_lo;
   logic [hash_index_width_lp-1:0] pending_wg_id_lo;
+  wire [lg_lce_sets_lp-1:0] pending_w_addr_rev =
+    {<< {pending_w_addr_lo[lg_block_size_in_bytes_lp+:lg_lce_sets_lp]}};
 
   bsg_hash_bank
     #(.banks_p(num_cce_p) // number of CCE's to spread way groups over
       ,.width_p(lg_lce_sets_lp) // width of address input
       )
     pending_addr_to_wg_id
-     (.i({<< {pending_w_addr_lo[lg_block_size_in_bytes_lp+:lg_lce_sets_lp]}})
+     (.i(pending_w_addr_rev)
       ,.bank_o(pending_cce_id_lo)
       ,.index_o(pending_wg_id_lo)
       );
@@ -147,13 +149,15 @@ module bp_cce_msg_cached
   // convert spec bits write address (excluding block offset bits) into way group
   logic [`BSG_SAFE_CLOG2(num_cce_p)-1:0] spec_w_cce_id_lo;
   logic [hash_index_width_lp-1:0] spec_w_wg_id_lo;
+  wire [lg_lce_sets_lp-1:0] spec_wr_addr_rev =
+    {<< {mshr.paddr[lg_block_size_in_bytes_lp+:lg_lce_sets_lp]}};
 
   bsg_hash_bank
     #(.banks_p(num_cce_p) // number of CCE's to spread way groups over
       ,.width_p(lg_lce_sets_lp) // width of address input
       )
     spec_wr_addr_to_wg_id
-     (.i({<< {mshr.paddr[lg_block_size_in_bytes_lp+:lg_lce_sets_lp]}})
+     (.i(spec_wr_addr_rev)
       ,.bank_o(spec_w_cce_id_lo)
       ,.index_o(spec_w_wg_id_lo)
       );
@@ -161,13 +165,15 @@ module bp_cce_msg_cached
   // convert spec bits read address (excluding block offset bits) into way group
   logic [`BSG_SAFE_CLOG2(num_cce_p)-1:0] spec_rd_cce_id_lo;
   logic [hash_index_width_lp-1:0] spec_rd_wg_id_lo;
+  wire [lg_lce_sets_lp-1:0] spec_rd_addr_rev =
+    {<< {mem_resp_li.addr[lg_block_size_in_bytes_lp+:lg_lce_sets_lp]}};
 
   bsg_hash_bank
     #(.banks_p(num_cce_p) // number of CCE's to spread way groups over
       ,.width_p(lg_lce_sets_lp) // width of address input
       )
     spec_rd_addr_to_wg_id
-     (.i({<< {mem_resp_li.addr[lg_block_size_in_bytes_lp+:lg_lce_sets_lp]}})
+     (.i(spec_rd_addr_rev)
       ,.bank_o(spec_rd_cce_id_lo)
       ,.index_o(spec_rd_wg_id_lo)
       );

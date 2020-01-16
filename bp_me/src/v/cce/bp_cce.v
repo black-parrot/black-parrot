@@ -272,13 +272,15 @@ module bp_cce
   logic [paddr_width_p-1:0] hash_addr_li;
   assign hash_addr_li =
     (decoded_inst_lo.dir_way_group_sel == e_dir_wg_sel_req_addr) ? mshr.paddr : mshr.lru_paddr;
+  wire [lg_lce_sets_lp-1:0] hash_addr_rev =
+    {<< {hash_addr_li[lg_block_size_in_bytes_lp+:lg_lce_sets_lp]}};
 
   bsg_hash_bank
     #(.banks_p(num_cce_p) // number of CCE's to spread way groups over
       ,.width_p(lg_lce_sets_lp) // width of address input
       )
     addr_to_cce_id
-     (.i({<< {hash_addr_li[lg_block_size_in_bytes_lp+:lg_lce_sets_lp]}})
+     (.i(hash_addr_rev)
       ,.bank_o(cce_dst_id_lo)
       ,.index_o(cce_set_id_lo)
       );
