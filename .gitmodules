@@ -1,6 +1,6 @@
 [submodule "external/riscv-isa-sim"]
   path = external/riscv-isa-sim
-  url = https://github.com/bsg-external/riscv-isa-sim.git
+  url = https://github.com/black-parrot/riscv-isa-sim.git
   branch = blackparrot_mods
   ignore = dirty
 

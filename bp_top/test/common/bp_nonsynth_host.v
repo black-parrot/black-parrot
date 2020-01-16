@@ -47,9 +47,9 @@ end
 // Host I/O mappings (arbitrarily decided for now)
 //   Overall host controls 32'h0300_0000-32'h03FF_FFFF
 
-localparam getchar_base_addr_gp = paddr_width_p'(32'h0300_0000);
-localparam putchar_base_addr_gp = paddr_width_p'(64'h0300_1000);
-localparam finish_base_addr_gp = paddr_width_p'(64'h0300_2???);
+localparam getchar_base_addr_gp = paddr_width_p'(64'h0010_0000);
+localparam putchar_base_addr_gp = paddr_width_p'(64'h0010_1000);
+localparam finish_base_addr_gp  = paddr_width_p'(64'h0010_2???);
 
 bp_cce_io_msg_s  io_cmd_cast_i;
 
