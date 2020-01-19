@@ -19,7 +19,8 @@ A 14-nm BlackParrot multicore chip was taped out in July 2019.
 
 
 # BlackParrot software developer guide
-Coming soon!
+Working document is here:
+https://docs.google.com/document/d/11kXYtJNYU8KpUl5uo1vKjAUDdxn5DxK5cAOT29KwN7Y/edit#
 
 # BlackParrot interface specification
 BlackParrot is an aggresively modular design: communication between the components is performed over a set of narrow
