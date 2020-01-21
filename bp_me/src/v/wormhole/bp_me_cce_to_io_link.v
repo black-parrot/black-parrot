@@ -45,32 +45,26 @@ module bp_me_cce_to_io_link_bidir
    );
 
 `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bsg_ready_and_link_sif_s);
-bsg_ready_and_link_sif_s cmd_link_cast_i, cmd_link_cast_o;
-bsg_ready_and_link_sif_s resp_link_cast_i, resp_link_cast_o;
+bsg_ready_and_link_sif_s cmd_link_cast_i, cmd_link_cast_o, resp_link_cast_i, resp_link_cast_o;
+bsg_ready_and_link_sif_s master_cmd_link_lo, master_resp_link_li;
+bsg_ready_and_link_sif_s client_cmd_link_li, client_resp_link_lo;
 
-bsg_ready_and_link_sif_s master_cmd_link_li, master_cmd_link_lo;
-bsg_ready_and_link_sif_s master_resp_link_li, master_resp_link_lo;
-bsg_ready_and_link_sif_s client_cmd_link_li, client_cmd_link_lo;
-bsg_ready_and_link_sif_s client_resp_link_li, client_resp_link_lo;
-
-assign cmd_link_cast_i  = cmd_link_i;
+assign cmd_link_cast_i = cmd_link_i;
 assign resp_link_cast_i = resp_link_i;
-
 assign cmd_link_o  = cmd_link_cast_o;
 assign resp_link_o = resp_link_cast_o;
 
-assign master_cmd_link_li  = '{ready_and_rev: cmd_link_cast_i.ready_and_rev, default: '0};
+// Swizzle ready_and_rev 
 assign client_cmd_link_li  = cmd_link_cast_i;
 assign cmd_link_cast_o     = '{data          : master_cmd_link_lo.data
                                ,v            : master_cmd_link_lo.v
-                               ,ready_and_rev: client_cmd_link_lo.ready_and_rev
+                               ,ready_and_rev: client_resp_link_lo.ready_and_rev
                                };
 
 assign master_resp_link_li = resp_link_cast_i;
-assign client_resp_link_li = '{ready_and_rev: resp_link_cast_i.ready_and_rev, default: '0};
 assign resp_link_cast_o    = '{data          : client_resp_link_lo.data
                                ,v            : client_resp_link_lo.v
-                               ,ready_and_rev: master_resp_link_lo.ready_and_rev
+                               ,ready_and_rev: master_cmd_link_lo.ready_and_rev
                                };
 
 bp_me_cce_to_io_link_master
@@ -90,11 +84,8 @@ bp_me_cce_to_io_link_master
   ,.my_cord_i(my_cord_i)
   ,.dst_cord_i(dst_cord_i)
   
-  ,.cmd_link_i(master_cmd_link_li)
   ,.cmd_link_o(master_cmd_link_lo)
-
   ,.resp_link_i(master_resp_link_li)
-  ,.resp_link_o(master_resp_link_lo)
   );
 
 bp_me_cce_to_io_link_client
@@ -112,9 +103,6 @@ bp_me_cce_to_io_link_client
   ,.io_resp_ready_o(io_resp_ready_o)
 
   ,.cmd_link_i(client_cmd_link_li)
-  ,.cmd_link_o(client_cmd_link_lo)
-
-  ,.resp_link_i(client_resp_link_li)
   ,.resp_link_o(client_resp_link_lo)
   );
 

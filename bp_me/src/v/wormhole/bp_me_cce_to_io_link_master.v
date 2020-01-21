@@ -32,11 +32,8 @@ module bp_me_cce_to_io_link_master
    , input [io_noc_cord_width_p-1:0]              dst_cord_i
    
    // bsg_noc_wormhole interface
-   , input [bsg_ready_and_link_sif_width_lp-1:0]  cmd_link_i
    , output [bsg_ready_and_link_sif_width_lp-1:0] cmd_link_o
-
    , input [bsg_ready_and_link_sif_width_lp-1:0]  resp_link_i
-   , output [bsg_ready_and_link_sif_width_lp-1:0] resp_link_o
    );
   
 // CCE-IO interface packets
@@ -63,13 +60,14 @@ bp_me_wormhole_packet_encode_io_cmd
    ,.packet_o(io_cmd_packet_li)
    );
 
-bsg_wormhole_router_adapter_in
+io_resp_packet_s io_resp_packet_lo;
+bsg_wormhole_router_adapter
  #(.max_payload_width_p($bits(io_cmd_payload_s))
    ,.len_width_p(io_noc_len_width_p)
    ,.cord_width_p(io_noc_cord_width_p)
    ,.flit_width_p(io_noc_flit_width_p)
    )
- io_cmd_adapter_in
+ io_adapter
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
@@ -77,28 +75,13 @@ bsg_wormhole_router_adapter_in
    ,.v_i(io_cmd_v_i)
    ,.ready_o(io_cmd_ready_o)
 
-   ,.link_i(cmd_link_i)
    ,.link_o(cmd_link_o)
+   ,.link_i(resp_link_i)
+
+   ,.packet_o(io_resp_packet_lo)
+   ,.v_o(io_resp_v_o)
+   ,.yumi_i(io_resp_yumi_i)
    );
-
-io_resp_packet_s io_resp_packet_lo;
-bsg_wormhole_router_adapter_out
- #(.max_payload_width_p($bits(io_resp_payload_s))
-   ,.len_width_p(io_noc_len_width_p)
-   ,.cord_width_p(io_noc_cord_width_p)
-   ,.flit_width_p(io_noc_flit_width_p)
-   )
- io_resp_adapter_out
-  (.clk_i(clk_i)
-    ,.reset_i(reset_i)
-
-    ,.link_i(resp_link_i)
-    ,.link_o(resp_link_o)
-
-    ,.packet_o(io_resp_packet_lo)
-    ,.v_o(io_resp_v_o)
-    ,.yumi_i(io_resp_yumi_i)
-    );
 io_resp_payload_s io_resp_payload_lo;
 assign io_resp_payload_lo = io_resp_packet_lo.payload;
 assign io_resp_cast_o = io_resp_payload_lo.data;

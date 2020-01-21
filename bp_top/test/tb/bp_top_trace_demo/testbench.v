@@ -319,10 +319,9 @@ bind bp_be_top
 
 wire [io_noc_cord_width_p-1:0] dst_cord_lo = 1;
 
-// Host + cfg link 
 bp_me_cce_to_io_link_bidir
  #(.bp_params_p(bp_params_p))
- host_cfg_link
+ host_link
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
@@ -332,7 +331,10 @@ bp_me_cce_to_io_link_bidir
 
    ,.io_resp_o(load_resp_li)
    ,.io_resp_v_o(load_resp_v_li)
-   ,.io_resp_yumi_i(load_resp_ready_lo & load_resp_v_li) // Always accept responses
+   ,.io_resp_yumi_i(load_resp_ready_lo & load_resp_v_li)
+
+   ,.my_cord_i(io_noc_cord_width_p'(dram_did_li))
+   ,.dst_cord_i(dst_cord_lo)
 
    ,.io_cmd_o(host_cmd_li)
    ,.io_cmd_v_o(host_cmd_v_li)
@@ -342,12 +344,8 @@ bp_me_cce_to_io_link_bidir
    ,.io_resp_v_i(host_resp_v_lo)
    ,.io_resp_ready_o(host_resp_ready_li)
 
-   ,.my_cord_i(io_noc_cord_width_p'(dram_did_li))
-   ,.dst_cord_i(dst_cord_lo)
-      
    ,.cmd_link_i(proc_cmd_link_lo)
    ,.cmd_link_o(proc_cmd_link_li)
-
    ,.resp_link_i(proc_resp_link_lo)
    ,.resp_link_o(proc_resp_link_li)
    );

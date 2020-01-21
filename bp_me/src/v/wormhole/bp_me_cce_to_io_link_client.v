@@ -31,9 +31,6 @@ module bp_me_cce_to_io_link_client
 
   // bsg_noc_wormhole interface
   , input [bsg_ready_and_link_sif_width_lp-1:0]  cmd_link_i
-  , output [bsg_ready_and_link_sif_width_lp-1:0] cmd_link_o
-
-  , input [bsg_ready_and_link_sif_width_lp-1:0]  resp_link_i
   , output [bsg_ready_and_link_sif_width_lp-1:0] resp_link_o
   );
   
@@ -49,23 +46,28 @@ module bp_me_cce_to_io_link_client
 
   io_cmd_packet_s io_cmd_packet_lo;
   logic io_cmd_packet_v_lo, io_cmd_packet_yumi_li;
-  bsg_wormhole_router_adapter_out
+  io_resp_packet_s io_resp_packet_lo;
+  bsg_wormhole_router_adapter
    #(.max_payload_width_p($bits(io_cmd_payload_s))
      ,.len_width_p(io_noc_len_width_p)
      ,.cord_width_p(io_noc_cord_width_p)
      ,.flit_width_p(io_noc_flit_width_p)
      )
-   io_cmd_adapter_out
+   io_adapter
     (.clk_i(clk_i)
-      ,.reset_i(reset_i)
+     ,.reset_i(reset_i)
+ 
+     ,.packet_o(io_cmd_packet_lo)
+     ,.v_o(io_cmd_packet_v_lo)
+     ,.yumi_i(io_cmd_packet_yumi_li)
+
+     ,.link_i(cmd_link_i)
+     ,.link_o(resp_link_o)
   
-      ,.link_i(cmd_link_i)
-      ,.link_o(cmd_link_o)
-  
-      ,.packet_o(io_cmd_packet_lo)
-      ,.v_o(io_cmd_packet_v_lo)
-      ,.yumi_i(io_cmd_packet_yumi_li)
-      );
+     ,.packet_i(io_resp_packet_lo)
+     ,.v_i(io_resp_v_i)
+     ,.ready_o(io_resp_ready_o)
+     );
   io_cmd_payload_s io_cmd_payload_lo;
   assign io_cmd_payload_lo = io_cmd_packet_lo.payload;
   assign io_cmd_o = io_cmd_payload_lo.data;
@@ -95,10 +97,8 @@ module bp_me_cce_to_io_link_client
   assign fifo_yumi_li = fifo_v_lo & io_resp_v_i;
 
   wire [io_noc_cord_width_p-1:0] src_cord_lo = bypass_fifo ? io_cmd_payload_lo.src_cord : fifo_cord_lo;
-  
   wire [io_noc_cord_width_p-1:0] dst_cord_lo = src_cord_lo;
 
-  io_resp_packet_s io_resp_packet_lo;
   bp_me_wormhole_packet_encode_io_resp
    #(.bp_params_p(bp_params_p))
    io_resp_encode
@@ -108,23 +108,5 @@ module bp_me_cce_to_io_link_client
      ,.packet_o(io_resp_packet_lo)
      );
   
-  bsg_wormhole_router_adapter_in
-   #(.max_payload_width_p($bits(io_resp_payload_s))
-     ,.len_width_p(io_noc_len_width_p)
-     ,.cord_width_p(io_noc_cord_width_p)
-     ,.flit_width_p(io_noc_flit_width_p)
-     )
-   io_resp_adapter_in
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-  
-     ,.packet_i(io_resp_packet_lo)
-     ,.v_i(io_resp_v_i)
-     ,.ready_o(io_resp_ready_o)
-  
-     ,.link_i(resp_link_i)
-     ,.link_o(resp_link_o)
-     );
-
 endmodule
 

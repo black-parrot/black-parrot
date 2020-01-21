@@ -210,11 +210,9 @@ module bp_io_tile
 
      ,.cmd_link_i(io_cmd_link_i)
      ,.cmd_link_o(io_cmd_link_o)
-
      ,.resp_link_i(io_resp_link_i)
      ,.resp_link_o(io_resp_link_o)
      );
-
 
 endmodule
 

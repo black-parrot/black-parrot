@@ -82,9 +82,9 @@ bsg_wormhole_router_adapter
    ,.link_o(cmd_link_o)
    ,.link_i(resp_link_i)
 
-    ,.packet_o(mem_resp_packet_lo)
-    ,.v_o(mem_resp_v_o)
-    ,.yumi_i(mem_resp_yumi_i)
+   ,.packet_o(mem_resp_packet_lo)
+   ,.v_o(mem_resp_v_o)
+   ,.yumi_i(mem_resp_yumi_i)
    );
 mem_resp_payload_s mem_resp_payload_lo;
 assign mem_resp_payload_lo = mem_resp_packet_lo.payload;
