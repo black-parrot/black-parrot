@@ -25,11 +25,7 @@ module bp_cce
     , localparam lg_lce_sets_lp            = `BSG_SAFE_CLOG2(lce_sets_p)
     , localparam tag_width_lp              = (paddr_width_p-lg_lce_sets_lp
                                               -lg_block_size_in_bytes_lp)
-    , localparam entry_width_lp            = (tag_width_lp+`bp_coh_bits)
-    , localparam tag_set_width_lp          = (entry_width_lp*lce_assoc_p)
-    , localparam way_group_width_lp        = (tag_set_width_lp*num_lce_p)
-    , localparam way_group_offset_high_lp  = (lg_block_size_in_bytes_lp+lg_lce_sets_lp)
-    , localparam num_way_groups_lp         = (lce_sets_p/num_cce_p)
+    , localparam num_way_groups_lp         = ((lce_sets_p % num_cce_p) == 0) ? (lce_sets_p/num_cce_p) : ((lce_sets_p/num_cce_p) + 1)
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
     , localparam inst_ram_addr_width_lp    = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
     , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
@@ -70,14 +66,6 @@ module bp_cce
    , output logic                                      mem_cmd_v_o
    , input                                             mem_cmd_ready_i
   );
-
-  //synopsys translate_off
-  initial begin
-    assert (lce_sets_p > 1) else $error("Number of LCE sets must be greater than 1");
-    assert (num_cce_p >= 1 && `BSG_IS_POW2(num_cce_p))
-      else $error("Number of CCE must be power of two");
-  end
-  //synopsys translate_on
 
   // Define structure variables for output queues
 
@@ -130,7 +118,7 @@ module bp_cce
   logic [tag_width_lp-1:0] dir_lru_tag_lo, dir_tag_lo;
   logic dir_busy_lo;
 
-  logic [lg_num_way_groups_lp-1:0] dir_way_group_li;
+  logic [lg_lce_sets_lp-1:0] dir_set_li;
   logic [lg_num_lce_lp-1:0] dir_lce_li;
   logic [lg_lce_assoc_lp-1:0] dir_way_li;
   logic [tag_width_lp-1:0] dir_tag_li;
@@ -142,7 +130,7 @@ module bp_cce
   logic pending_li, pending_from_msg;
   logic pending_w_v_li, pending_w_v_from_msg;
   logic [lg_num_way_groups_lp-1:0] pending_w_way_group_li, pending_r_way_group_li, pending_w_way_group_from_msg;
-  assign pending_r_way_group_li = dir_way_group_li;
+  assign pending_r_way_group_li = dir_set_li;
 
   // WDP write is valid if instruction pending_w_v is set (WDP op) and decoder is not stalling
   // the instruction (due to mem data resp writing pending bit)
@@ -150,7 +138,7 @@ module bp_cce
   assign wdp_pending_w_v = decoded_inst_lo.pending_w_v & ~pc_stall_lo;
   assign pending_li = (wdp_pending_w_v) ? decoded_inst_lo.imm[0] : pending_from_msg;
   assign pending_w_v_li = (wdp_pending_w_v) ? decoded_inst_lo.pending_w_v : pending_w_v_from_msg;
-  assign pending_w_way_group_li = (wdp_pending_w_v) ? dir_way_group_li : pending_w_way_group_from_msg;
+  assign pending_w_way_group_li = (wdp_pending_w_v) ? dir_set_li : pending_w_way_group_from_msg;
 
   // GAD signals
   logic gad_v_li;
@@ -182,6 +170,10 @@ module bp_cce
   logic                                          fence_zero_lo;
   logic                                          pending_w_busy_from_msg;
   logic                                          lce_cmd_busy_from_msg;
+  logic                                          msg_inv_busy_lo;
+  logic                                          msg_dir_w_v_lo;
+  logic [lg_num_lce_lp-1:0]                      inv_dir_lce_lo;
+  logic [lg_lce_assoc_lp-1:0]                    inv_dir_way_lo;
 
   // PC Logic, Instruction RAM
   bp_cce_pc
@@ -196,6 +188,8 @@ module bp_cce
       ,.alu_branch_res_i(alu_branch_res_lo)
 
       ,.dir_busy_i(dir_busy_lo)
+
+      ,.inv_busy_i(msg_inv_busy_lo)
 
       ,.pc_stall_i(pc_stall_lo)
       ,.pc_branch_target_i(pc_branch_target_lo)
@@ -268,11 +262,33 @@ module bp_cce
       ,.pending_v_o(pending_v_lo)
       );
 
+  // convert address (excluding block offset bits) into CCE local set index
+  // TODO: for now, there is a 1:1 ratio of sets stored in directory and way groups
+  // - when this changes, or when adding support for multiple LCE organizations, one bsg_hash_bank
+  //   will be needed to map address to way group, and one per directory to map address to LCE set
+  logic [lg_num_cce_lp-1:0] cce_dst_id_lo;
+  localparam hash_index_width_lp=$clog2((2**lg_lce_sets_lp+num_cce_p-1)/num_cce_p);
+  logic [hash_index_width_lp-1:0] cce_set_id_lo;
+  logic [paddr_width_p-1:0] hash_addr_li;
+  assign hash_addr_li =
+    (decoded_inst_lo.dir_way_group_sel == e_dir_wg_sel_req_addr) ? mshr.paddr : mshr.lru_paddr;
+  wire [lg_lce_sets_lp-1:0] hash_addr_rev =
+    {<< {hash_addr_li[lg_block_size_in_bytes_lp+:lg_lce_sets_lp]}};
+
+  bsg_hash_bank
+    #(.banks_p(num_cce_p) // number of CCE's to spread way groups over
+      ,.width_p(lg_lce_sets_lp) // width of address input
+      )
+    addr_to_cce_id
+     (.i(hash_addr_rev)
+      ,.bank_o(cce_dst_id_lo)
+      ,.index_o(cce_set_id_lo)
+      );
+
   // Directory
   bp_cce_dir
-    #(.num_way_groups_p(num_way_groups_lp)
+    #(.sets_p(num_way_groups_lp)
       ,.num_lce_p(num_lce_p)
-      ,.num_cce_p(num_cce_p)
       ,.lce_assoc_p(lce_assoc_p)
       ,.tag_width_p(tag_width_lp)
       )
@@ -280,7 +296,7 @@ module bp_cce
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
 
-      ,.way_group_i(dir_way_group_li)
+      ,.set_i(dir_set_li[0+:lg_num_way_groups_lp])
       ,.lce_i(dir_lce_li)
       ,.way_i(dir_way_li)
       ,.lru_way_i(mshr.lru_way_id)
@@ -292,8 +308,8 @@ module bp_cce
       ,.coh_state_i(dir_coh_state_li)
 
       ,.w_cmd_i(decoded_inst_lo.dir_op)
-      ,.w_v_i(decoded_inst_lo.dir_w_v)
-      ,.w_clr_wg_i('0)
+      ,.w_v_i(decoded_inst_lo.dir_w_v | msg_dir_w_v_lo)
+      ,.w_clr_row_i('0)
 
       ,.sharers_v_o(sharers_v_lo)
       ,.sharers_hits_o(sharers_hits_lo)
@@ -427,12 +443,19 @@ module bp_cce
 
       ,.pending_w_busy_o(pending_w_busy_from_msg)
       ,.lce_cmd_busy_o(lce_cmd_busy_from_msg)
+      ,.msg_inv_busy_o(msg_inv_busy_lo)
 
       ,.gpr_i(gpr_r_lo)
+      ,.sharers_hits_i(sharers_hits_lo)
       ,.sharers_ways_i(sharers_ways_lo)
       ,.nc_data_i(nc_data_r_lo)
 
       ,.fence_zero_o(fence_zero_lo)
+
+      ,.lce_id_o(inv_dir_lce_lo)
+      ,.lce_way_o(inv_dir_way_lo)
+
+      ,.dir_w_v_o(msg_dir_w_v_lo)
       );
 
 
@@ -445,37 +468,37 @@ module bp_cce
   begin
     case (decoded_inst_lo.dir_way_group_sel)
       e_dir_wg_sel_r0: begin
-        dir_way_group_li = gpr_r_lo[e_gpr_r0][lg_num_way_groups_lp-1:0];
+        dir_set_li = gpr_r_lo[e_gpr_r0][lg_lce_sets_lp-1:0];
       end
       e_dir_wg_sel_r1: begin
-        dir_way_group_li = gpr_r_lo[e_gpr_r1][lg_num_way_groups_lp-1:0];
+        dir_set_li = gpr_r_lo[e_gpr_r1][lg_lce_sets_lp-1:0];
       end
       e_dir_wg_sel_r2: begin
-        dir_way_group_li = gpr_r_lo[e_gpr_r2][lg_num_way_groups_lp-1:0];
+        dir_set_li = gpr_r_lo[e_gpr_r2][lg_lce_sets_lp-1:0];
       end
       e_dir_wg_sel_r3: begin
-        dir_way_group_li = gpr_r_lo[e_gpr_r3][lg_num_way_groups_lp-1:0];
+        dir_set_li = gpr_r_lo[e_gpr_r3][lg_lce_sets_lp-1:0];
       end
       e_dir_wg_sel_r4: begin
-        dir_way_group_li = gpr_r_lo[e_gpr_r4][lg_num_way_groups_lp-1:0];
+        dir_set_li = gpr_r_lo[e_gpr_r4][lg_lce_sets_lp-1:0];
       end
       e_dir_wg_sel_r5: begin
-        dir_way_group_li = gpr_r_lo[e_gpr_r5][lg_num_way_groups_lp-1:0];
+        dir_set_li = gpr_r_lo[e_gpr_r5][lg_lce_sets_lp-1:0];
       end
       e_dir_wg_sel_r6: begin
-        dir_way_group_li = gpr_r_lo[e_gpr_r6][lg_num_way_groups_lp-1:0];
+        dir_set_li = gpr_r_lo[e_gpr_r6][lg_lce_sets_lp-1:0];
       end
       e_dir_wg_sel_r7: begin
-        dir_way_group_li = gpr_r_lo[e_gpr_r7][lg_num_way_groups_lp-1:0];
+        dir_set_li = gpr_r_lo[e_gpr_r7][lg_lce_sets_lp-1:0];
       end
       e_dir_wg_sel_req_addr: begin
-        dir_way_group_li = mshr.paddr[way_group_offset_high_lp-1 -: lg_num_way_groups_lp];
+        dir_set_li[0+:hash_index_width_lp] = cce_set_id_lo;
       end
       e_dir_wg_sel_lru_way_addr: begin
-        dir_way_group_li = mshr.lru_paddr[way_group_offset_high_lp-1 -: lg_num_way_groups_lp];
+        dir_set_li[0+:hash_index_width_lp] = cce_set_id_lo;
       end
       default: begin
-        dir_way_group_li = '0;
+        dir_set_li = '0;
       end
     endcase
     case (decoded_inst_lo.dir_lce_sel)
@@ -489,6 +512,7 @@ module bp_cce
       e_dir_lce_sel_r7: dir_lce_li = gpr_r_lo[e_gpr_r7][lg_num_lce_lp-1:0];
       e_dir_lce_sel_req_lce: dir_lce_li = mshr.lce_id;
       e_dir_lce_sel_transfer_lce: dir_lce_li = mshr.tr_lce_id;
+      e_dir_lce_sel_inv: dir_lce_li = inv_dir_lce_lo;
       default: dir_lce_li = '0;
     endcase
     case (decoded_inst_lo.dir_way_sel)
@@ -503,6 +527,7 @@ module bp_cce
       e_dir_way_sel_req_addr_way: dir_way_li = mshr.way_id;
       e_dir_way_sel_lru_way_addr_way: dir_way_li = mshr.lru_way_id;
       e_dir_way_sel_sh_way_r0: dir_way_li = sharers_ways_lo[gpr_r_lo[e_gpr_r0][lg_num_lce_lp-1:0]];
+      e_dir_way_sel_inv: dir_way_li = inv_dir_way_lo;
       default: dir_way_li = '0;
     endcase
     case (decoded_inst_lo.dir_coh_state_sel)
