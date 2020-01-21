@@ -28,6 +28,7 @@ module testbench
    , parameter dcache_trace_p              = 0
    , parameter vm_trace_p                  = 0
    , parameter preload_mem_p               = 0
+   , parameter load_nbf_p                  = 0
    , parameter skip_init_p                 = 0
 
    , parameter mem_zero_p         = 1
@@ -430,14 +431,14 @@ bp_nonsynth_host
    ,.program_finish_o(program_finish)
    );
 
-logic nbf_done_lo;
-if (preload_mem_p == 0)
-  begin : preload
+logic nbf_done_lo, cfg_done_lo;
+if (load_nbf_p)
+  begin : nbf
     bp_nonsynth_nbf_loader
      #(.bp_params_p(bp_params_p))
      nbf_loader
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_i | ~cfg_done_lo)
 
        ,.io_cmd_o(nbf_cmd_lo)
        ,.io_cmd_v_o(nbf_cmd_v_lo)
@@ -453,6 +454,10 @@ if (preload_mem_p == 0)
 else
   begin : no_preload
     assign nbf_done_lo = 1'b1;
+    
+    assign nbf_cmd_lo = '0;
+    assign nbf_cmd_v_lo = '0;
+    assign nbf_resp_ready_lo = '0;
   end
 
 localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
@@ -462,10 +467,11 @@ bp_cce_mmio_cfg_loader
     ,.inst_ram_addr_width_p(cce_instr_ram_addr_width_lp)
     ,.inst_ram_els_p(num_cce_instr_ram_els_p)
     ,.skip_ram_init_p(skip_init_p)
+    ,.clear_freeze_p(~load_nbf_p)
     )
   cfg_loader
   (.clk_i(clk_i)
-   ,.reset_i(reset_i | ~nbf_done_lo)
+   ,.reset_i(reset_i)
    
    ,.io_cmd_o(cfg_cmd_lo)
    ,.io_cmd_v_o(cfg_cmd_v_lo)
@@ -474,11 +480,13 @@ bp_cce_mmio_cfg_loader
    ,.io_resp_i(cfg_resp_li)
    ,.io_resp_v_i(cfg_resp_v_li)
    ,.io_resp_ready_o(cfg_resp_ready_lo)
+   
+   ,.done_o(cfg_done_lo)
   );
 
 // CFG and NBF are mutex, so we can just use fixed arbitration here
 always_comb
-  if (nbf_done_lo)
+  if (~cfg_done_lo)
     begin
       load_cmd_lo = cfg_cmd_lo;
       load_cmd_v_lo = load_cmd_ready_li & cfg_cmd_v_lo;
