@@ -55,6 +55,9 @@ update-cache:
   tags:
     - bsg
   script:
+    - git submodule deinit -f .
+    - git clean -fdx
+    - git submodule sync
     - make tools -j $CI_CORES > make_tools.log
     - make tidy_tools > make_tidy_tools.log
     - make progs > make_progs.log
