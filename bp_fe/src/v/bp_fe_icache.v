@@ -444,10 +444,10 @@ module bp_fe_icache
 
   // stat mem
   assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r) | stat_mem_pkt_yumi_li;
-  assign stat_mem_w_li = v_tv_r
+  assign stat_mem_w_li = (v_tv_r & ~uncached_tv_r)
     ? ~miss_tv
     : stat_mem_pkt_yumi_li & (stat_mem_pkt.opcode != e_stat_mem_read);
-  assign stat_mem_addr_li = v_tv_r
+  assign stat_mem_addr_li = (v_tv_r & ~uncached_tv_r)
     ? addr_index_tv 
     : stat_mem_pkt.index;
 

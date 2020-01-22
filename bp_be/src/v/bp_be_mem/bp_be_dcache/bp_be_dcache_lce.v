@@ -169,12 +169,16 @@ module bp_be_dcache_lce
 
   logic [paddr_width_p-1:0] miss_addr_lo;
 
-  // Outstanding Uncached Store Counter
+  // Outstanding Requests Counter - counts all requests, cached and uncached
   //
   logic [`BSG_WIDTH(coh_noc_max_credits_p)-1:0] credit_count_lo;
   wire credit_v_li = lce_req_v_o;
   wire credit_ready_li = lce_req_ready_i;
-  wire credit_returned_li = uncached_store_done_received | cce_data_received | uncached_data_received;
+  // credit is returned when request completes
+  // UC store done for UC Store, UC Data for UC Load, Set Tag Wakeup for
+  // a miss that is actually an upgrade, and data and tag for normal requests.
+  wire credit_returned_li = uncached_store_done_received | uncached_data_received
+                            | set_tag_wakeup_received | (cce_data_received & set_tag_received);
   bsg_flow_counter
     #(.els_p(coh_noc_max_credits_p))
     uncached_store_counter

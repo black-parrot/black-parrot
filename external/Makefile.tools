@@ -9,6 +9,7 @@ INCLUDE_DIR := $(BP_EXTERNAL_DIR)/include
 VERILATOR_DIR := $(BP_EXTERNAL_DIR)/verilator
 GNU_DIR       := $(BP_EXTERNAL_DIR)/riscv-gnu-toolchain
 SPIKE_DIR     := $(BP_EXTERNAL_DIR)/riscv-isa-sim
+FESVR_DIR      := $(BP_EXTERNAL_DIR)/riscv-fesvr
 DROMAJO_DIR   := $(BP_EXTERNAL_DIR)/dromajo
 AXE_DIR       := $(BP_EXTERNAL_DIR)/axe
 DRAMSIM2_DIR  := $(BP_EXTERNAL_DIR)/DRAMSim2
@@ -31,10 +32,18 @@ verilator:
 	$(MAKE) -C $(VERILATOR_DIR)
 	$(MAKE) -C $(VERILATOR_DIR) install
 
+fesvr:
+	@cd $(TOP); git submodule update --init --recursive $(FESVR_DIR)
+	cd $(FESVR_DIR); \
+		./configure --prefix=$(BP_EXTERNAL_DIR)
+	$(MAKE) -C $(FESVR_DIR)
+	$(MAKE) -C $(FESVR_DIR) install
+
 spike:
 	@cd $(TOP); git submodule update --init --recursive $(SPIKE_DIR)
 	cd $(SPIKE_DIR); \
-		./configure --enable-commitlog --enable-histogram --with-isa=rv64ia --prefix=$(BP_EXTERNAL_DIR)
+		./configure --enable-commitlog --enable-histogram --with-isa=rv64ia --prefix=$(BP_EXTERNAL_DIR) \
+			--with-fesvr=$(BP_EXTERNAL_DIR)
 	$(MAKE) -C $(SPIKE_DIR)
 	$(MAKE) -C $(SPIKE_DIR) install
 

@@ -44,6 +44,22 @@ module bp_nonsynth_nbf_loader
   wire unused_resp = &{io_resp_i, io_resp_v_i};
   assign io_resp_ready_o = 1'b1;
 
+  logic [`BSG_WIDTH(io_noc_max_credits_p)-1:0] credit_count_lo;
+  bsg_flow_counter
+   #(.els_p(io_noc_max_credits_p))
+   nbf_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.v_i(io_cmd_yumi_i)
+     ,.ready_i(1'b1)
+
+     ,.yumi_i(io_resp_v_i)
+     ,.count_o(credit_count_lo)
+     );
+  wire credits_full_lo = (credit_count_lo == io_noc_max_credits_p);
+  wire credits_empty_lo = (credit_count_lo == '0);
+
   // bp_nbf packet
   typedef struct packed {
     logic [nbf_opcode_width_p-1:0] opcode;
@@ -84,7 +100,7 @@ module bp_nonsynth_nbf_loader
   initial $readmemh(nbf_filename_p, nbf);
 
   logic done_r, done_n;
-  assign done_o = done_r;
+  assign done_o = done_r & credits_empty_lo;
  
  // combinational
   always_comb 
@@ -100,7 +116,7 @@ module bp_nonsynth_nbf_loader
           end
         else 
           begin
-            io_cmd_v_lo = 1'b1;
+            io_cmd_v_lo = ~credits_full_lo;
             nbf_index_n = nbf_index_r + io_cmd_yumi_i;
           end
       end

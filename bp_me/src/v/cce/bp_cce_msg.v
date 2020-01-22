@@ -26,7 +26,7 @@ module bp_cce_msg
     , localparam lg_block_size_in_bytes_lp = `BSG_SAFE_CLOG2(block_size_in_bytes_lp)
     , localparam lg_lce_assoc_lp           = `BSG_SAFE_CLOG2(lce_assoc_p)
     , localparam lg_lce_sets_lp            = `BSG_SAFE_CLOG2(lce_sets_p)
-    , localparam num_way_groups_lp         = (lce_sets_p/num_cce_p)
+    , localparam num_way_groups_lp         = ((lce_sets_p % num_cce_p) == 0) ? (lce_sets_p/num_cce_p) : ((lce_sets_p/num_cce_p) + 1)
     , localparam lg_num_way_groups_lp      = `BSG_SAFE_CLOG2(num_way_groups_lp)
     , localparam mshr_width_lp = `bp_cce_mshr_width(lce_id_width_p, lce_assoc_p, paddr_width_p)
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
@@ -80,14 +80,21 @@ module bp_cce_msg
    // arbitration signals to instruction decode
    , output logic                                      pending_w_busy_o
    , output logic                                      lce_cmd_busy_o
+   , output logic                                      msg_inv_busy_o
 
    , input [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_i
 
+   , input [num_lce_p-1:0]                             sharers_hits_i
    , input [num_lce_p-1:0][lg_lce_assoc_lp-1:0]        sharers_ways_i
 
    , input [dword_width_p-1:0]                         nc_data_i
 
    , output logic                                      fence_zero_o
+
+   , output logic [lg_num_lce_lp-1:0]                  lce_id_o
+   , output logic [lg_lce_assoc_lp-1:0]                lce_way_o
+
+   , output logic                                      dir_w_v_o
   );
 
   // Define structure variables for output queues
@@ -121,20 +128,6 @@ module bp_cce_msg
   bp_cce_mem_msg_s                               mem_resp_from_uc;
   logic                                          mem_resp_v_from_uc, mem_resp_yumi_from_uc;
 
-  logic [$bits(bp_cce_mode_e)-1:0] cce_mode_r;
-  bp_cce_mode_e cce_mode_lo;
-  bsg_dff_reset_en
-   #(.width_p($bits(bp_cce_mode_e)))
-   cce_mode_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.en_i(mem_resp_yumi_o)
-
-     ,.data_i(cfg_bus_cast_i.cce_mode)
-     ,.data_o(cce_mode_r)
-     );
-  assign cce_mode_lo = {cce_mode_r};
-
   // Message unit
   bp_cce_msg_cached
     #(.bp_params_p(bp_params_p))
@@ -143,7 +136,6 @@ module bp_cce_msg
       ,.reset_i(reset_i)
 
       ,.cce_id_i(cfg_bus_cast_i.cce_id)
-      ,.cce_mode_i(cce_mode_lo)
 
       // To CCE
       ,.lce_req_i(lce_req_from_msg)
@@ -178,12 +170,19 @@ module bp_cce_msg
 
       ,.pending_w_busy_o(pending_w_busy_o)
       ,.lce_cmd_busy_o(lce_cmd_busy_o)
+      ,.msg_inv_busy_o(msg_inv_busy_o)
 
       ,.gpr_i(gpr_i)
+      ,.sharers_hits_i(sharers_hits_i)
       ,.sharers_ways_i(sharers_ways_i)
       ,.nc_data_i(nc_data_i)
 
       ,.fence_zero_o(fence_zero_o)
+
+      ,.lce_id_o(lce_id_o)
+      ,.lce_way_o(lce_way_o)
+
+      ,.dir_w_v_o(dir_w_v_o)
       );
 
   // Uncached access module
@@ -194,7 +193,6 @@ module bp_cce_msg
       ,.reset_i(reset_i)
 
       ,.cce_id_i(cfg_bus_cast_i.cce_id)
-      ,.cce_mode_i(cce_mode_lo)
 
       // To CCE
       ,.lce_req_i(lce_req_from_uc)
@@ -217,6 +215,16 @@ module bp_cce_msg
       ,.mem_cmd_ready_i(mem_cmd_ready_from_uc)
       );
 
+  // Need to resolve the last outstanding msg during a mode switch
+  logic uncached_outstanding;
+  always_ff @(posedge clk_i)
+    begin
+      if (reset_i)
+        uncached_outstanding <= '0;
+      else if (mem_cmd_v_from_uc | mem_resp_yumi_from_uc)
+        uncached_outstanding <= ~mem_resp_yumi_from_uc;
+    end
+
   // Output Message Formation
   //
   // Input messages to the CCE are buffered by two element FIFOs in bp_cce_buffered.v, thus
@@ -231,7 +239,7 @@ module bp_cce_msg
 
     {lce_req_from_msg, lce_req_v_from_msg, lce_resp_from_msg, lce_resp_v_from_msg, lce_cmd_ready_from_msg} = '0;
     {mem_cmd_ready_from_msg, mem_resp_from_msg, mem_resp_v_from_msg} = '0;
-    if (cce_mode_lo == e_cce_mode_uncached) begin
+    if (uncached_outstanding || (cfg_bus_cast_i.cce_mode == e_cce_mode_uncached)) begin
       lce_req_from_uc = lce_req_i;
       lce_req_v_from_uc = lce_req_v_i;
       lce_req_yumi_o = lce_req_yumi_from_uc;

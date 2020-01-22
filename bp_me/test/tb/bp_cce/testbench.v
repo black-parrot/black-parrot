@@ -154,7 +154,7 @@ bp_me_nonsynth_mock_lce #(
   ,.lce_cmd_ready_i(lce_cmd_ready_li)
 );
 
-// Transduce between mem and io
+// TODO: Transduce between mem and io
 assign cfg_mem_cmd_lo = cfg_io_cmd_lo;
 assign cfg_mem_cmd_v_lo = cfg_io_cmd_v_lo;
 assign cfg_io_cmd_yumi_li = cfg_mem_cmd_yumi_li;

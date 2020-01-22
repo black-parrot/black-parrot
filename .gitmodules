@@ -94,3 +94,8 @@
   branch = blackparrot_mods
   ignore = dirty
 
+[submodule "external/riscv-fesvr"]
+  path = external/riscv-fesvr
+  url = https://github.com/riscv/riscv-fesvr.git
+  branch = master
+  ignore = dirty

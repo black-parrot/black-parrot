@@ -56,6 +56,9 @@ update-cache:
   tags:
     - bsg
   script:
+    - git submodule deinit -f .
+    - git clean -fdx
+    - git submodule sync
     - make tools -j $CI_CORES > make_tools.log
     - make tidy_tools > make_tidy_tools.log
     - make progs > make_progs.log
@@ -83,22 +86,23 @@ lint-verilator:
   script:
     - $CI_PROJECT_DIR/ci/regress.sh lint.sc bp_top
  
-# TODO: Re-enable when testbenches are fixed up     
-#me-regress-verilator:
-#  <<: *job_definition
-#  stage: test-short
-#  tags:
-#    - verilator
-#  script:
-#    - $CI_PROJECT_DIR/ci/regress.sh regress.me.sc bp_me
-#     
-#me-regress-vcs:
-#  <<: *job_definition
-#  stage: test-short
-#  tags:
-#    - vcs
-#  script:
-#    - $CI_PROJECT_DIR/ci/regress.sh regress.me.v bp_me
+me-regress-verilator:
+  <<: *job_definition
+  when: manual
+  stage: test-short
+  tags:
+    - verilator
+  script:
+    - $CI_PROJECT_DIR/ci/regress.sh regress.me.sc bp_me
+     
+me-regress-vcs:
+  <<: *job_definition
+  when: manual
+  stage: test-short
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/regress.sh regress.me.v bp_me
       
 top-riscv-verilator:
   <<: *job_definition
@@ -172,6 +176,7 @@ top-coremark-vcs:
 
 top-riscvdv-vcs:
   <<: *job_definition
+  when: manual
   stage: test-medium
   tags:
     - vcs

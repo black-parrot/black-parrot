@@ -24,8 +24,8 @@ typedef enum logic {
 // e_cce_mode_normal: CCE operates as a microcoded engine, features depend on microcode provided
 typedef enum bit
 {
-  e_cce_mode_uncached = 1'b0
-  ,e_cce_mode_normal  = 1'b1
+  e_cce_mode_uncached
+  ,e_cce_mode_normal
 } bp_cce_mode_e;
 
 `define declare_bp_cfg_bus_s(vaddr_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp, cce_pc_width_mp, cce_instr_width_mp) \
