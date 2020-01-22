@@ -70,6 +70,16 @@ update-cache:
       - $CI_PROJECT_DIR/bp_common/test/mem/
     policy: push
 
+clean:
+  <<: *job_definition
+  when: manual
+  stage: prereq
+  tags:
+    - bsg
+  script:
+    - git submodule deinit -f .
+    - git clean -fdx
+
 check-design:
   <<: *job_definition
   stage: check
@@ -106,11 +116,12 @@ me-regress-vcs:
       
 top-riscv-verilator:
   <<: *job_definition
+  when: manual
   stage: test-short
   tags:
     - verilator
   script:
-    - make -C bp_top/syn clean build.sc
+    - make -C bp_top/syn build.sc
     - $CI_PROJECT_DIR/ci/regress.sh regress_riscv.sc bp_top
  
 top-coremark-verilator:
@@ -120,7 +131,7 @@ top-coremark-verilator:
   tags:
     - verilator
   script:
-    - make -C bp_top/syn clean build.sc
+    - make -C bp_top/syn build.sc
     - $CI_PROJECT_DIR/ci/regress.sh "sim.sc PROG=coremark" bp_top
 
 # Disabled because it's too long running     
@@ -132,16 +143,17 @@ top-beebs-verilator:
   tags:
     - verilator
   script:
-    - make -C bp_top/syn clean build.sc
+    - make -C bp_top/syn build.sc
     - $CI_PROJECT_DIR/ci/regress.sh regress_beebs.sc bp_top
 
 top-mc-verilator:
   <<: *job_definition
+  when: manual
   stage: test-short
   tags:
     - verilator
   script:
-    - make -C bp_top/syn clean build.sc CFG=e_bp_single_core_cfg
+    - make -C bp_top/syn build.sc CFG=e_bp_single_core_cfg
     - make -C bp_top/syn build.sc CFG=e_bp_dual_core_cfg
     - make -C bp_top/syn build.sc CFG=e_bp_quad_core_cfg
     - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_1.sc CFG=e_bp_single_core_cfg" bp_top
@@ -162,7 +174,7 @@ top-riscv-tests-vcs:
   tags:
     - vcs
   script:
-    - make -C bp_top/syn clean build.v
+    - make -C bp_top/syn build.v
     - $CI_PROJECT_DIR/ci/regress.sh regress_riscv.v bp_top
       
 top-coremark-vcs:
@@ -171,7 +183,7 @@ top-coremark-vcs:
   tags:
     - vcs
   script:
-    - make -C bp_top/syn clean build.v
+    - make -C bp_top/syn build.v
     - $CI_PROJECT_DIR/ci/regress.sh "sim.v PROG=coremark" bp_top
 
 top-riscvdv-vcs:
@@ -181,7 +193,7 @@ top-riscvdv-vcs:
   tags:
     - vcs
   script:
-    - make -C bp_top/syn clean build.v
+    - make -C bp_top/syn build.v
     - $CI_PROJECT_DIR/ci/regress.sh regress_dv.v bp_top
 
 top-beebs-vcs:
@@ -190,7 +202,7 @@ top-beebs-vcs:
   tags:
     - vcs
   script:
-    - make -C bp_top/syn clean build.v
+    - make -C bp_top/syn build.v
     - $CI_PROJECT_DIR/ci/regress.sh regress_beebs.v bp_top
 
 top-mc-vcs:
@@ -199,7 +211,7 @@ top-mc-vcs:
   tags:
     - vcs
   script:
-    - make -C bp_top/syn clean build.v CFG=e_bp_single_core_cfg
+    - make -C bp_top/syn build.v CFG=e_bp_single_core_cfg
     - make -C bp_top/syn build.v CFG=e_bp_dual_core_cfg
     - make -C bp_top/syn build.v CFG=e_bp_quad_core_cfg
     - make -C bp_top/syn build.v CFG=e_bp_oct_core_cfg
