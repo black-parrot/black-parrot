@@ -17,7 +17,7 @@ module bp_accelerator_complex
 
    , input                                                      coh_clk_i
    , input                                                      coh_reset_i
-
+   
    , input [ac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]      coh_req_link_i
    , output [ac_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]     coh_req_link_o
 
@@ -48,6 +48,33 @@ module bp_accelerator_complex
   //   i.e. we leave `accelerator_type_1, `accelerator_type_2
   //   and then substitute based on a parameter pattern...
   //
+
+  for (genvar j=0; j < cc_y_dim_p; j++)
+    begin : y
+       wire [coh_noc_cord_width_p-1:0] cord_li = {coh_noc_y_cord_width_p'(1+j), coh_noc_x_cord_width_p'(cc_x_dim_p+1)};
+       bp_accelerator_tile_node
+         #(.bp_params_p(bp_params_p))
+         accel_tile_node
+           (.core_clk_i(core_clk_i)
+           ,.core_reset_i(core_reset_i)
+
+           ,.coh_clk_i(coh_clk_i)
+           ,.coh_reset_i(coh_reset_i)
+
+           ,.my_cord_i(cord_li)
+
+           ,.coh_lce_req_link_i(lce_req_link_li[j])
+           ,.coh_lce_resp_link_i(lce_resp_link_li[j])
+           ,.coh_lce_cmd_link_i(lce_cmd_link_li[j])
+    
+           ,.coh_lce_req_link_o(lce_req_link_lo[j])
+           ,.coh_lce_resp_link_o(lce_resp_link_lo[j])
+           ,.coh_lce_cmd_link_o(lce_cmd_link_lo[j])
+           );
+  end
+
+
+   
   if (ac_x_dim_p > 0)
     begin : ac_stitch
       assign lce_req_ver_link_li    = '0;
@@ -67,7 +94,7 @@ module bp_accelerator_complex
          ,.ver_i(lce_req_ver_link_li)
          ,.ver_o(lce_req_ver_link_lo)
          );
-      assign coh_req_link_o = lce_req_ver_link_lo[W];
+      assign coh_req_link_o = lce_req_ver_link_lo[W]; //change it to lce_req_hor_link_lo[W]
 
       assign lce_cmd_ver_link_li    = '0;
       assign lce_cmd_hor_link_li[E] = '0;

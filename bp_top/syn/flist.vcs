@@ -225,6 +225,9 @@ $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.v
 ## TOP
+$BP_TOP_DIR/src/v/bp_accelerator_example.v
+$BP_TOP_DIR/src/v/bp_accelerator_tile.v
+$BP_TOP_DIR/src/v/bp_accelerator_tile_node.v
 $BP_TOP_DIR/src/v/bp_accelerator_complex.v
 $BP_TOP_DIR/src/v/bp_cfg.v
 $BP_TOP_DIR/src/v/bp_cfg_buffered.v
