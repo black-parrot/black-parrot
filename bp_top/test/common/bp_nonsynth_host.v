@@ -10,23 +10,23 @@ module bp_nonsynth_host
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_io_if_widths(paddr_width_p, dword_width_p, lce_id_width_p)
+   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
    )
   (input clk_i
    , input reset_i
 
-   , input [cce_io_msg_width_lp-1:0]               io_cmd_i
+   , input [cce_mem_msg_width_lp-1:0]               io_cmd_i
    , input                                         io_cmd_v_i
    , output logic                                  io_cmd_yumi_o
 
-   , output logic [cce_io_msg_width_lp-1:0]        io_resp_o
+   , output logic [cce_mem_msg_width_lp-1:0]        io_resp_o
    , output logic                                  io_resp_v_o
    , input                                         io_resp_ready_i
 
    , output [num_core_p-1:0]                       program_finish_o
    );
 
-`declare_bp_io_if(paddr_width_p, dword_width_p, lce_id_width_p);
+`declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
 
 // HOST I/O mappings
 //localparam host_dev_base_addr_gp     = 32'h03??_????;
@@ -38,7 +38,7 @@ localparam hprint_base_addr_gp = paddr_width_p'(32'h0010_0???);
 localparam cprint_base_addr_gp = paddr_width_p'(64'h0010_1???);
 localparam finish_base_addr_gp = paddr_width_p'(64'h0010_2???);
 
-bp_cce_io_msg_s  io_cmd_cast_i;
+bp_cce_mem_msg_s  io_cmd_cast_i;
 
 assign io_cmd_cast_i = io_cmd_i;
 
@@ -144,11 +144,11 @@ always_ff @(negedge clk_i)
       end
   end
 
-bp_cce_io_msg_s io_resp_lo;
+bp_cce_mem_msg_s io_resp_lo;
 logic io_resp_v_lo, io_resp_ready_lo;
 assign io_cmd_yumi_o = io_cmd_v_i & io_resp_ready_lo;
 bsg_one_fifo
- #(.width_p(cce_io_msg_width_lp))
+ #(.width_p(cce_mem_msg_width_lp))
  io_resp_buffer
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -172,5 +172,5 @@ assign io_resp_lo =
     };
 
 
-endmodule : bp_nonsynth_host
+endmodule
 
