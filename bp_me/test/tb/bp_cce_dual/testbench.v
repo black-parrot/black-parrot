@@ -64,9 +64,9 @@ module testbench
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 
 // CFG IF
-bp_cce_io_msg_s       cfg_cmd_lo;
+bp_cce_mem_msg_s       cfg_cmd_lo;
 logic  io             cfg_cmd_v_lo, cfg_cmd_yumi_li;
-bp_cce_io_msg_s       cfg_resp_li;
+bp_cce_mem_msg_s       cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
 // CCE-MEM IF

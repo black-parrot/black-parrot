@@ -522,7 +522,12 @@ for (genvar i = 0; i < 2; i++)
   localparam dram_y_cord_lp = ic_y_dim_p + cc_y_dim_p + mc_y_dim_p;
   wire [mem_noc_cord_width_p-1:0] dst_cord_li = dram_y_cord_lp;
   bp_me_cce_to_mem_link_master
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p)
+     ,.flit_width_p(mem_noc_flit_width_p)
+     ,.cord_width_p(mem_noc_cord_width_p)
+     ,.cid_width_p(mem_noc_cid_width_p)
+     ,.len_width_p(mem_noc_len_width_p)
+     )
    dma_link
     (.clk_i(clk_i)
      ,.reset_i(reset_r)
