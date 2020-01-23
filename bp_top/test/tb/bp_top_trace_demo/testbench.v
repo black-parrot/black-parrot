@@ -318,8 +318,14 @@ bind bp_be_top
 
 wire [io_noc_cord_width_p-1:0] dst_cord_lo = 1;
 
-bp_me_cce_to_mem_link
- #(.bp_params_p(bp_params_p))
+bp_me_cce_to_mem_link_bidir
+ #(.bp_params_p(bp_params_p)
+   ,.num_outstanding_req_p(io_noc_max_credits_p)
+   ,.flit_width_p(io_noc_flit_width_p)
+   ,.cord_width_p(io_noc_cord_width_p)
+   ,.cid_width_p(io_noc_cid_width_p)
+   ,.len_width_p(io_noc_len_width_p)
+   )
  host_link
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -352,7 +358,13 @@ bp_me_cce_to_mem_link
    );
 
 bp_me_cce_to_mem_link_client
- #(.bp_params_p(bp_params_p))
+ #(.bp_params_p(bp_params_p)
+   ,.num_outstanding_req_p(mem_noc_max_credits_p)
+   ,.flit_width_p(mem_noc_flit_width_p)
+   ,.cord_width_p(mem_noc_cord_width_p)
+   ,.cid_width_p(mem_noc_cid_width_p)
+   ,.len_width_p(mem_noc_len_width_p)
+   )
  dram_link
   (.clk_i(clk_i)
    ,.reset_i(reset_i)

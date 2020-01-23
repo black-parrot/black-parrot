@@ -1,5 +1,5 @@
 
-module bp_me_cce_to_mem_link
+module bp_me_cce_to_mem_link_bidir
  import bp_cce_pkg::*;
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
@@ -8,33 +8,40 @@ module bp_me_cce_to_mem_link
   `declare_bp_proc_params(bp_params_p)
   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
-  , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
-  )
+   , parameter num_outstanding_req_p = "inv"
+
+   , parameter flit_width_p = "inv"
+   , parameter cord_width_p = "inv"
+   , parameter cid_width_p  = "inv"
+   , parameter len_width_p  = "inv"
+
+   , localparam bsg_ready_and_link_sif_width_lp = `bsg_ready_and_link_sif_width(mem_noc_flit_width_p)
+   )
 
   (input                                          clk_i
    , input                                        reset_i
 
    // Configuration
-   , input [mem_noc_cord_width_p-1:0]              my_cord_i
-   , input [mem_noc_cid_width_p-1:0]               my_cid_i
-   , input [mem_noc_cord_width_p-1:0]              dst_cord_i
-   , input [mem_noc_cid_width_p-1:0]               dst_cid_i
+   , input [cord_width_p-1:0]                     my_cord_i
+   , input [cid_width_p-1:0]                      my_cid_i
+   , input [cord_width_p-1:0]                     dst_cord_i
+   , input [cid_width_p-1:0]                      dst_cid_i
 
    // Master link
-   , input  [cce_mem_msg_width_lp-1:0]             mem_cmd_i
+   , input  [cce_mem_msg_width_lp-1:0]            mem_cmd_i
    , input                                        mem_cmd_v_i
    , output                                       mem_cmd_ready_o
 
-   , output [cce_mem_msg_width_lp-1:0]             mem_resp_o
+   , output [cce_mem_msg_width_lp-1:0]            mem_resp_o
    , output                                       mem_resp_v_o
    , input                                        mem_resp_yumi_i
 
    // Client link
-   , output  [cce_mem_msg_width_lp-1:0]            mem_cmd_o
+   , output  [cce_mem_msg_width_lp-1:0]           mem_cmd_o
    , output                                       mem_cmd_v_o
    , input                                        mem_cmd_yumi_i
 
-   , input [cce_mem_msg_width_lp-1:0]              mem_resp_i
+   , input [cce_mem_msg_width_lp-1:0]             mem_resp_i
    , input                                        mem_resp_v_i
    , output                                       mem_resp_ready_o
 
@@ -77,7 +84,12 @@ assign resp_link_cast_o    = '{data          : client_resp_link_lo.data
 
 
 bp_me_cce_to_mem_link_master
- #(.bp_params_p(bp_params_p))
+ #(.bp_params_p(bp_params_p)
+   ,.flit_width_p(flit_width_p)
+   ,.cord_width_p(cord_width_p)
+   ,.cid_width_p(cid_width_p)
+   ,.len_width_p(len_width_p)
+   )
   master_link
   (.clk_i(clk_i)
   ,.reset_i(reset_i)
@@ -100,7 +112,13 @@ bp_me_cce_to_mem_link_master
   );
 
 bp_me_cce_to_mem_link_client
- #(.bp_params_p(bp_params_p))
+ #(.bp_params_p(bp_params_p)
+   ,.num_outstanding_req_p(num_outstanding_req_p)
+   ,.flit_width_p(flit_width_p)
+   ,.cord_width_p(cord_width_p)
+   ,.cid_width_p(cid_width_p)
+   ,.len_width_p(len_width_p)
+   )
   client_link
   (.clk_i(clk_i)
   ,.reset_i(reset_i)

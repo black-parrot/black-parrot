@@ -183,8 +183,14 @@ module bp_io_tile
   assign dst_did_lo  = is_host_addr ? '1 : global_addr_lo.did;
   assign dst_cord_lo = dst_did_lo;
 
-  bp_me_cce_to_mem_link
-   #(.bp_params_p(bp_params_p))
+  bp_me_cce_to_mem_link_bidir
+   #(.bp_params_p(bp_params_p)
+     ,.num_outstanding_req_p(io_noc_max_credits_p)
+     ,.flit_width_p(io_noc_flit_width_p)
+     ,.cord_width_p(io_noc_cord_width_p)
+     ,.cid_width_p(io_noc_cid_width_p)
+     ,.len_width_p(io_noc_len_width_p)
+     )
    mem_link
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
