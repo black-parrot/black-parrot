@@ -66,7 +66,7 @@ package bp_common_aviary_pkg;
       ,cc_y_dim  : 1
       ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,ac_x_dim  : 0
+      ,ac_x_dim  : 1
 
       ,vaddr_width: 39
       ,paddr_width: 40
