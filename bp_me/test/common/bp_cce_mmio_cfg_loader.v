@@ -17,7 +17,7 @@ module bp_cce_mmio_cfg_loader
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_io_if_widths(paddr_width_p, dword_width_p, lce_id_width_p)
+    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
     , parameter inst_width_p          = "inv"
     , parameter inst_ram_addr_width_p = "inv"
@@ -31,12 +31,12 @@ module bp_cce_mmio_cfg_loader
    , input                                           reset_i
 
    // Config channel
-   , output logic [cce_io_msg_width_lp-1:0]          io_cmd_o
+   , output logic [cce_mem_msg_width_lp-1:0]          io_cmd_o
    , output logic                                    io_cmd_v_o
    , input                                           io_cmd_yumi_i
 
    // We don't need a response from the cfg network
-   , input [cce_io_msg_width_lp-1:0]                 io_resp_i
+   , input [cce_mem_msg_width_lp-1:0]                 io_resp_i
    , input                                           io_resp_v_i
    , output                                          io_resp_ready_o
    );
@@ -44,10 +44,10 @@ module bp_cce_mmio_cfg_loader
   wire unused0 = &{io_resp_i, io_resp_v_i};
   assign io_resp_ready_o = 1'b1;
    
- `declare_bp_io_if(paddr_width_p, dword_width_p, lce_id_width_p);
+ `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
 
-  bp_cce_io_msg_s io_cmd_cast_o;
-  bp_cce_io_msg_s io_resp_cast_i;
+  bp_cce_mem_msg_s io_cmd_cast_o;
+  bp_cce_mem_msg_s io_resp_cast_i;
 
   assign io_cmd_o = io_cmd_cast_o;
   assign io_resp_cast_i = io_resp_i;
@@ -186,10 +186,10 @@ module bp_cce_mmio_cfg_loader
       io_cmd_v_o = (cfg_w_v_lo | cfg_r_v_lo) & ~credits_full_lo;
 
       // uncached store
-      io_cmd_cast_o.msg_type      = cfg_w_v_lo ? e_cce_io_wr : e_cce_io_rd;
+      io_cmd_cast_o.msg_type      = cfg_w_v_lo ? e_cce_mem_uc_wr : e_cce_mem_uc_rd;
       io_cmd_cast_o.addr          = local_addr_lo; 
       io_cmd_cast_o.payload       = '0;
-      io_cmd_cast_o.size          = e_io_size_8;
+      io_cmd_cast_o.size          = e_mem_size_8;
       io_cmd_cast_o.data          = cfg_data_lo;
     end
 

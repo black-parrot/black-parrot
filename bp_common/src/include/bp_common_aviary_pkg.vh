@@ -42,21 +42,22 @@ package bp_common_aviary_pkg;
       ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
-      ,coh_noc_max_credits : 16
+      ,coh_noc_max_credits : 8
       ,coh_noc_flit_width  : 128
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 3
 
       ,async_mem_clk         : 1
-      ,mem_noc_max_credits   : 16
+      ,mem_noc_max_credits   : 8
       ,mem_noc_flit_width    : 64
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 4
 
       ,async_io_clk         : 1
+      ,io_noc_did_width     : 3
       ,io_noc_max_credits   : 16
       ,io_noc_flit_width    : 64
-      ,io_noc_did_width     : 3
+      ,io_noc_cid_width     : 2
       ,io_noc_len_width     : 4
       };
 
@@ -92,21 +93,22 @@ package bp_common_aviary_pkg;
       ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
-      ,coh_noc_max_credits : 16
+      ,coh_noc_max_credits : 8
       ,coh_noc_flit_width  : 128
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 3
 
       ,async_mem_clk         : 1
-      ,mem_noc_max_credits   : 16
+      ,mem_noc_max_credits   : 8
       ,mem_noc_flit_width    : 64
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 4
 
       ,async_io_clk         : 1
+      ,io_noc_did_width     : 3
       ,io_noc_max_credits   : 16
       ,io_noc_flit_width    : 64
-      ,io_noc_did_width     : 3
+      ,io_noc_cid_width     : 2
       ,io_noc_len_width     : 4
       };
 
@@ -143,21 +145,22 @@ package bp_common_aviary_pkg;
       ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
-      ,coh_noc_max_credits : 16
+      ,coh_noc_max_credits : 8
       ,coh_noc_flit_width  : 128
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 3
 
       ,async_mem_clk         : 1
-      ,mem_noc_max_credits   : 16
+      ,mem_noc_max_credits   : 8
       ,mem_noc_flit_width    : 64
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 4
 
       ,async_io_clk         : 1
+      ,io_noc_did_width     : 3
       ,io_noc_max_credits   : 16
       ,io_noc_flit_width    : 64
-      ,io_noc_did_width     : 3
+      ,io_noc_cid_width     : 2
       ,io_noc_len_width     : 4
       };
 
@@ -193,21 +196,22 @@ package bp_common_aviary_pkg;
       ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
-      ,coh_noc_max_credits : 16
+      ,coh_noc_max_credits : 8
       ,coh_noc_flit_width  : 128
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 3
 
       ,async_mem_clk         : 1
-      ,mem_noc_max_credits   : 16
+      ,mem_noc_max_credits   : 8
       ,mem_noc_flit_width    : 64
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 4
 
       ,async_io_clk         : 1
+      ,io_noc_did_width     : 3
       ,io_noc_max_credits   : 16
       ,io_noc_flit_width    : 64
-      ,io_noc_did_width     : 3
+      ,io_noc_cid_width     : 2
       ,io_noc_len_width     : 4
       };
 
@@ -243,21 +247,22 @@ package bp_common_aviary_pkg;
       ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 1
-      ,coh_noc_max_credits : 16
+      ,coh_noc_max_credits : 8
       ,coh_noc_flit_width  : 128
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 3
 
       ,async_mem_clk         : 1
-      ,mem_noc_max_credits   : 16
+      ,mem_noc_max_credits   : 8
       ,mem_noc_flit_width    : 64
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 4
 
       ,async_io_clk         : 1
+      ,io_noc_did_width     : 3
       ,io_noc_max_credits   : 16
       ,io_noc_flit_width    : 64
-      ,io_noc_did_width     : 3
+      ,io_noc_cid_width     : 2
       ,io_noc_len_width     : 4
       };
 
@@ -293,21 +298,22 @@ package bp_common_aviary_pkg;
       ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
-      ,coh_noc_max_credits : 16
+      ,coh_noc_max_credits : 8
       ,coh_noc_flit_width  : 128
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 3
 
       ,async_mem_clk         : 1
-      ,mem_noc_max_credits   : 16
+      ,mem_noc_max_credits   : 8
       ,mem_noc_flit_width    : 64
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 4
 
       ,async_io_clk         : 1
+      ,io_noc_did_width     : 3
       ,io_noc_max_credits   : 16
       ,io_noc_flit_width    : 64
-      ,io_noc_did_width     : 3
+      ,io_noc_cid_width     : 2
       ,io_noc_len_width     : 4
       };
 
@@ -343,21 +349,22 @@ package bp_common_aviary_pkg;
       ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
-      ,coh_noc_max_credits : 16
+      ,coh_noc_max_credits : 8
       ,coh_noc_flit_width  : 128
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 3
 
       ,async_mem_clk         : 1
-      ,mem_noc_max_credits   : 16
+      ,mem_noc_max_credits   : 8
       ,mem_noc_flit_width    : 64
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 4
 
       ,async_io_clk         : 1
+      ,io_noc_did_width     : 3
       ,io_noc_max_credits   : 16
       ,io_noc_flit_width    : 64
-      ,io_noc_did_width     : 3
+      ,io_noc_cid_width     : 2
       ,io_noc_len_width     : 4
       };
 
@@ -393,21 +400,22 @@ package bp_common_aviary_pkg;
       ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
-      ,coh_noc_max_credits : 16
+      ,coh_noc_max_credits : 8
       ,coh_noc_flit_width  : 128
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 3
 
       ,async_mem_clk         : 1
-      ,mem_noc_max_credits   : 16
+      ,mem_noc_max_credits   : 8
       ,mem_noc_flit_width    : 64
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 4
 
       ,async_io_clk         : 1
+      ,io_noc_did_width     : 3
       ,io_noc_max_credits   : 16
       ,io_noc_flit_width    : 64
-      ,io_noc_did_width     : 3
+      ,io_noc_cid_width     : 2
       ,io_noc_len_width     : 4
       };
 
@@ -443,21 +451,22 @@ package bp_common_aviary_pkg;
       ,fe_cmd_fifo_els  : 4
 
       ,async_coh_clk       : 0
-      ,coh_noc_max_credits : 16
+      ,coh_noc_max_credits : 8
       ,coh_noc_flit_width  : 128
       ,coh_noc_cid_width   : 2
       ,coh_noc_len_width   : 3
 
       ,async_mem_clk         : 1
-      ,mem_noc_max_credits   : 16
+      ,mem_noc_max_credits   : 8
       ,mem_noc_flit_width    : 64
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 4
 
       ,async_io_clk         : 1
+      ,io_noc_did_width     : 3
       ,io_noc_max_credits   : 16
       ,io_noc_flit_width    : 64
-      ,io_noc_did_width     : 3
+      ,io_noc_cid_width     : 1
       ,io_noc_len_width     : 4
       };
 
