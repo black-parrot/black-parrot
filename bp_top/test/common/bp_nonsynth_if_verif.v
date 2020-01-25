@@ -60,9 +60,9 @@ initial
     $fatal("Error: Must have exactly 1 row of I/O routers");
   if (mc_y_dim_p != 0)
     $fatal("Error: L2 expansion nodes not yet supported, MC must have 0 rows");
-  if (ac_x_dim_p != 0)
+/*  if (ac_x_dim_p != 0)
     $fatal("Error: CAC not yet supported");
-
+*/
   if (vaddr_width_p != 39)
     $warning("Warning: VM will not work without 39 bit vaddr");
   if (paddr_width_p != 40)

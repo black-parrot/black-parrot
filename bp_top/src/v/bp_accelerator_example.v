@@ -16,12 +16,15 @@ module bp_accelerator_example
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-    `declare_bp_io_if_widths(paddr_width_p, dword_width_p, lce_id_width_p) 
+    `declare_bp_io_if_widths(paddr_width_p, dword_width_p, lce_id_width_p)
+    , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     )
    (
     input                                     clk_i
     , input                                   reset_i
 
+    , input [lce_id_width_p-1:0]              lce_id_i
+    
     , output [lce_cce_req_width_lp-1:0]       lce_req_o
     , output                                  lce_req_v_o
     , input                                   lce_req_ready_i
@@ -63,6 +66,13 @@ module bp_accelerator_example
   logic                     dcache_uncached;
   logic                     dcache_miss_v;
   logic                    load_op_tl_lo, store_op_tl_lo;
+
+  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+  bp_cfg_bus_s cfg_bus_cast_i;
+  assign cfg_bus_cast_i.dcache_id = lce_id_i;
+  
+  assign dcache_pkt = '0;
+  assign dcache_ptag = '0;
    
  bp_be_dcache 
   #(.bp_params_p(bp_params_p))
@@ -70,7 +80,7 @@ module bp_accelerator_example
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
-    ,.cfg_bus_i()//cfg_bus_cast_i.dcache_id is used inside cache to set the lce_id (prog needs to send it)
+    ,.cfg_bus_i(cfg_bus_cast_i)//cfg_bus_cast_i.dcache_id is used inside cache to set the lce_id (prog needs to send it)
 
     ,.dcache_pkt_i(dcache_pkt)
     ,.v_i(/*dcache_pkt_v*/ 1'b0)
@@ -100,7 +110,7 @@ module bp_accelerator_example
 
     // CCE-LCE interface
     ,.lce_cmd_i(lce_cmd_i)
-    ,.lce_cmd_v_i(lce_cmd_v_i)
+    ,.lce_cmd_v_i(lce_cmd_v_i & (ac_x_dim_p > 0))
     ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
 
     ,.lce_cmd_o(lce_cmd_o)
@@ -116,9 +126,18 @@ module bp_accelerator_example
   `declare_bp_io_if(paddr_width_p, dword_width_p, lce_id_width_p);
   
   bp_cce_io_msg_s io_cmd_cast_i, io_resp_cast_o;
-
+  assign io_cmd_ready_o = 1'b1;
   assign io_cmd_cast_i = io_cmd_i;
   assign io_resp_o = io_resp_cast_o;
+  assign io_resp_v_o = '0;
+  logic [63:0]            ch;
+  assign ch = '0;
+//  bp_cce_io_msg_s io_resp_lo; 
+  assign io_resp_cast_o = '{msg_type       : io_cmd_cast_i.msg_type
+                        ,addr          : io_cmd_cast_i.addr
+                        ,payload       : io_cmd_cast_i.payload
+                        ,size          : io_cmd_cast_i.size
+                        ,data          : ch  };
 
 
 endmodule
