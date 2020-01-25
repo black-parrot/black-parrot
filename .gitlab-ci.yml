@@ -207,6 +207,7 @@ top-coremark-vcs:
 
 top-riscvdv-vcs:
   <<: *job_definition
+  when: manual
   stage: test-medium
   tags:
     - vcs
