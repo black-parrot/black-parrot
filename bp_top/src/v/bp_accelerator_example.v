@@ -86,7 +86,7 @@ module bp_accelerator_example
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
-    ,.cfg_bus_i(cfg_bus_cast_i)//cfg_bus_cast_i.dcache_id is used inside cache to set the lce_id (prog needs to send it)
+    ,.cfg_bus_i(cfg_bus_cast_i)
 
     ,.dcache_pkt_i(dcache_pkt)
     ,.v_i(dcache_pkt_v)
@@ -139,29 +139,73 @@ module bp_accelerator_example
   assign io_resp_o = io_resp_cast_o;
 //  assign io_resp_v_o = io_cmd_v_i;
    
-  logic [63:0]  resp_data, start_cmd, input_ptr, input_len, res_status, res_ptr, res_len, operation, dot_product_res;
+  logic [63:0] resp_data, start_cmd, input_a_ptr, input_b_ptr, input_len, res_status, res_ptr, res_len, operation, dot_product_res;
+  logic [63:0] vector_a [0:7];
+  logic [63:0] vector_b [0:7];
+  logic [2:0] len_a_cnt, len_b_cnt; 
+  logic load, second_operand, done; 
   bp_cce_io_msg_payload_s    resp_payload;
   bp_cce_io_req_size_e       resp_size;
   logic [paddr_width_p-1:0]  resp_addr;
   bp_cce_io_cmd_type_e       resp_msg;
-    
+  logic [63:0] product_temp [0:7];
+  logic [63:0] sum_1_temp [0:3];
+  logic [63:0] sum_2_temp [0:1];
+  logic [63:0] product_sum_temp;
+
+   logic [63:0] a, b, c ,d, e,f,g,h,z;
+   assign {a, b, c ,d, e,f,g,h,z} = {vector_a[0], vector_a[1], vector_b[0], vector_b[1], product_temp [0], product_temp[1], sum_1_temp[0], sum_2_temp[0], product_sum_temp};
+   
  
   bp_local_addr_s  local_addr_li;
   assign local_addr_li = io_cmd_cast_i.addr;
+
+  typedef enum logic [3:0] {
+    RESET
+    , WAIT_START
+    , WAIT_FETCH                            
+    , FETCH
+    , WAIT_DCACHE_1
+    , WAIT_DCACHE_2
+    , FETCH_MISS
+    , WAIT_DCACHE_MISS
+    , CHECK_B_LEN
+    , FETCH_SECOND
+    , CHECK_A_LEN
+    , OPERATION
+    , WB_RESULT
+    , DONE
+  } state_e;
+  state_e state_r, state_n;
+
  
 always_ff @(posedge clk_i) begin
   io_resp_v_o  <= io_cmd_v_i;
-  if (reset_i)
+  vector_a[len_a_cnt] <= (dcache_v & load & ~second_operand) ? dcache_data : vector_a[len_a_cnt];
+  len_a_cnt <= (dcache_v & load & ~second_operand) ? len_a_cnt + 1'b1 : len_a_cnt;
+  vector_b[len_b_cnt]  <= (dcache_v & load & second_operand) ? dcache_data : vector_b[len_b_cnt];
+  len_b_cnt <= (dcache_v & load & second_operand) ? len_b_cnt + 1'b1 : len_b_cnt;
+ 
+  if (reset_i || done)
     begin
       start_cmd            <= '0;
-      input_ptr            <= '0;
+      input_a_ptr          <= '0;
+      input_b_ptr          <= '0;
       input_len            <= '0;
 //      res_status           <= '0;
       res_ptr              <= '0;
       res_len              <= '0;
       operation            <= '0;
-      io_resp_v_o          <= '0; 
-    end
+      io_resp_v_o          <= '0;
+      len_a_cnt            <= '0;
+      len_b_cnt            <= '0;
+      vector_a             <= '{default:64'd0};
+      vector_b             <= '{default:64'd0}; 
+    end 
+  if (state_r == DONE) 
+    begin
+       start_cmd  <= '0;
+     end
   else if (io_cmd_v_i & (io_cmd_cast_i.msg_type == e_cce_io_wr))
     begin
       resp_size    <= io_cmd_cast_i.size;
@@ -170,13 +214,14 @@ always_ff @(posedge clk_i) begin
        resp_msg     <= io_cmd_cast_i.msg_type;
       unique 
       case (local_addr_li.addr)
-        20'h00000 : input_ptr  <= io_cmd_cast_i.data;
-        20'h00040 : input_len  <= io_cmd_cast_i.data;
-        20'h00080 : start_cmd  <= io_cmd_cast_i.data;
-//        20'h000c0 : res_status 
-        20'h00100 : res_ptr    <= io_cmd_cast_i.data;
-        20'h00140 : res_len    <= io_cmd_cast_i.data;
-        20'h00180 : operation  <= io_cmd_cast_i.data;
+        20'h00000 : input_a_ptr <= io_cmd_cast_i.data;
+        20'h00040 : input_b_ptr <= io_cmd_cast_i.data;
+        20'h00080 : input_len  <= io_cmd_cast_i.data;
+        20'h000c0 : start_cmd  <= io_cmd_cast_i.data;
+//      20'h00100 : res_status 
+        20'h00140 : res_ptr    <= io_cmd_cast_i.data;
+        20'h00180 : res_len    <= io_cmd_cast_i.data;
+        20'h00200 : operation  <= io_cmd_cast_i.data;
         default : begin end
       endcase 
     end 
@@ -188,13 +233,14 @@ always_ff @(posedge clk_i) begin
        resp_msg     <= io_cmd_cast_i.msg_type;
       unique 
       case (local_addr_li.addr)
-        20'h00000 : resp_data <= input_ptr;
-        20'h00040 : resp_data <= input_len;
-        20'h00080 : resp_data <= start_cmd;
-        20'h000c0 : resp_data <= res_status; 
-        20'h00100 : resp_data <= res_ptr;
-        20'h00140 : resp_data <= res_len;
-        20'h00180 : resp_data <= operation;
+        20'h00000 : resp_data <= input_a_ptr;
+        20'h00040 : resp_data <= input_b_ptr;
+        20'h00080 : resp_data <= input_len;
+        20'h000c0 : resp_data <= start_cmd;
+        20'h00100 : resp_data <= res_status; 
+        20'h00140 : resp_data <= res_ptr;
+        20'h00180 : resp_data <= res_len;
+        20'h00200 : resp_data <= operation;
         default : begin end
       endcase 
     end
@@ -207,20 +253,6 @@ always_ff @(posedge clk_i) begin
                             ,size          : resp_size
                             ,data          : resp_data  };
 
-  typedef enum logic [3:0] {
-    RESET
-    , WAIT_START
-    , WAIT_FETCH                            
-    , FETCH
-    , WAIT_DCACHE_1
-    , WAIT_DCACHE_2
-    , FETCH_MISS
-    , WAIT_DCACHE_MISS
-    , ADD
-    , WB_RESULT
-    , DONE
-  } state_e;
-  state_e state_r, state_n;
    
   always_ff @(posedge clk_i) begin
      if (reset_i) begin
@@ -231,8 +263,7 @@ always_ff @(posedge clk_i) begin
   end
 
   bp_be_mmu_vaddr_s v_addr;
-  logic load; 
-  assign v_addr = load ? input_ptr : res_ptr;
+  assign v_addr = load ? (second_operand ? (input_b_ptr+len_b_cnt*8) : (input_a_ptr+len_a_cnt*8)) : res_ptr;
  
   always_comb begin
     state_n = state_r; 
@@ -244,14 +275,18 @@ always_ff @(posedge clk_i) begin
          dcache_pkt = '0;
          dcache_pkt_v = '0;
          load = 0;
+         second_operand = 0;
+         done = 0;
       end
       WAIT_START: begin
          state_n = start_cmd ? WAIT_FETCH : WAIT_START;
-         res_status = '0;
+         res_status = '1;
          dcache_ptag = '0;
          dcache_pkt = '0;
          dcache_pkt_v = '0;
          load = 1;
+         second_operand= 0;
+         done = 0;
       end
       WAIT_FETCH: begin
          state_n = dcache_ready ? FETCH : WAIT_FETCH;
@@ -259,6 +294,7 @@ always_ff @(posedge clk_i) begin
          dcache_ptag = '0;
          dcache_pkt = '0;
          dcache_pkt_v = '0;
+         done = 0;
       end
       FETCH: begin
         dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr.tag};
@@ -268,6 +304,7 @@ always_ff @(posedge clk_i) begin
         res_status = '0;
         dcache_pkt_v = '1;
         state_n = WAIT_DCACHE_1;
+        done = 0;
       end
       WAIT_DCACHE_1: begin
         state_n = WAIT_DCACHE_2;
@@ -277,15 +314,17 @@ always_ff @(posedge clk_i) begin
         dcache_pkt.page_offset = {v_addr.index, v_addr.offset};
         dcache_pkt.data = load ? '0 : dot_product_res;
         dcache_pkt_v = '0;
+        done = 0;
       end
       WAIT_DCACHE_2: begin
-        state_n = dcache_miss_v ? WAIT_DCACHE_2 : FETCH_MISS;
+        state_n = dcache_miss_v ? WAIT_DCACHE_2 : (dcache_v ? (load ? (second_operand ? CHECK_B_LEN : CHECK_A_LEN) : DONE) : FETCH_MISS);
         res_status = '0;
         dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr.tag};
         dcache_pkt.opcode = load ? e_dcache_opcode_ld : e_dcache_opcode_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
         dcache_pkt.page_offset = {v_addr.index, v_addr.offset};
         dcache_pkt_v = '0;
+        done = 0;
       end
       FETCH_MISS: begin
         dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr.tag};
@@ -295,43 +334,95 @@ always_ff @(posedge clk_i) begin
         res_status = '0;
         dcache_pkt_v = '1;
         state_n = WAIT_DCACHE_MISS;
+        done = 0;
       end
       WAIT_DCACHE_MISS: begin
-        state_n = dcache_v ? (load ? ADD : DONE) : WAIT_DCACHE_MISS;
+        state_n = dcache_v ? (load ? (second_operand ? CHECK_B_LEN : CHECK_A_LEN) : DONE) : WAIT_DCACHE_MISS;
         res_status = '0;
         dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr.tag};
         dcache_pkt.opcode = load ? e_dcache_opcode_ld : e_dcache_opcode_sd;
         dcache_pkt.data = load ? '0 : dot_product_res;
         dcache_pkt.page_offset = {v_addr.index, v_addr.offset};
         dcache_pkt_v = '0;
+        done = 0;
       end
-      ADD: begin
+      CHECK_A_LEN: begin
+        state_n = (len_a_cnt == input_len) ? FETCH_SECOND : WAIT_FETCH;
+        res_status = '0;
+        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr.tag};
+        dcache_pkt.opcode = load ? e_dcache_opcode_ld : e_dcache_opcode_sd;
+        dcache_pkt.data = load ? '0 : dot_product_res;
+        dcache_pkt.page_offset = {v_addr.index, v_addr.offset};
+        dcache_pkt_v = '0;
+        done = 0;
+      end
+      FETCH_SECOND: begin
+        state_n = WAIT_FETCH;
+        res_status = '0;
+        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr.tag};
+        dcache_pkt.opcode = load ? e_dcache_opcode_ld : e_dcache_opcode_sd;
+        dcache_pkt.data = load ? '0 : dot_product_res;
+        dcache_pkt.page_offset = {v_addr.index, v_addr.offset};
+        dcache_pkt_v = '0;
+        second_operand= 1;
+        done = 0;
+      end
+      CHECK_B_LEN: begin
+         state_n= (len_b_cnt == input_len) ? OPERATION : WAIT_FETCH;
+         res_status = '0;
+        dcache_ptag = {(ptag_width_p-vtag_width_p)'(0), v_addr.tag};
+        dcache_pkt.opcode = load ? e_dcache_opcode_ld : e_dcache_opcode_sd;
+        dcache_pkt.data = load ? '0 : dot_product_res;
+        dcache_pkt.page_offset = {v_addr.index, v_addr.offset};
+        dcache_pkt_v = '0;
+        second_operand= 1;
+        done = 0;
+      end
+      OPERATION: begin
         state_n = WB_RESULT;
         res_status = '0;
-  //      dcache_ptag = '0;
         dcache_pkt = '0;
         dcache_pkt_v = '0;
         load = 0;
-        dot_product_res = 64'hABCDEFFF; 
+        second_operand= 0;
+        dot_product_res = product_sum_temp;
+        done = 0;
       end
       WB_RESULT: begin
         load = 0;
         state_n = WAIT_FETCH;
+        second_operand= 0;
+        done = 0;
       end
       DONE: begin
-        //state_n = RESET;
-        state_n = DONE;
+        state_n = RESET;
         res_status = 1;
         dcache_ptag = '0;
         dcache_pkt = '0;
         dcache_pkt_v = '0;
-        load = 0; 
+        load = 0;
+        second_operand= 0;
+        done = 1; 
       end
-    endcase // case (state_r)
-  end // always_comb
+    endcase 
+  end 
    
+ //dot product unit
+for (genvar i=0; i < 8; i++)
+  begin : product
+    assign product_temp [i]= vector_a[i] * vector_b[i];
+  end
+for (genvar i=0; i < 4; i++)
+  begin : sum_1
+    assign sum_1_temp [i]= product_temp[2*i] + product_temp[2*i+1];
+  end
 
+for (genvar i=0; i < 2; i++)
+  begin : sum_2
+    assign sum_2_temp [i]= sum_1_temp[2*i] + sum_1_temp[2*i+1];
+  end
 
-
+  assign product_sum_temp = sum_2_temp[0] + sum_2_temp [1];
+  
 endmodule
 

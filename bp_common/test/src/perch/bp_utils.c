@@ -55,3 +55,50 @@ void bp_cprint(uint8_t ch) {
   *(CPRINT_BASE_ADDR+core_id*8) = ch;
 }
 
+
+
+///////////////////////////dot-product accelerator///////////////////////////
+
+void bp_set_CSR(uint64_t *accel_base_address, uint8_t csr_idx, uint64_t csr_value)
+{
+   *(accel_base_address+csr_idx*8) = csr_value;
+}
+uint64_t bp_get_CSR(uint64_t *accel_base_address, uint8_t csr_idx)
+{
+  uint64_t csr_value;
+  csr_value = *(accel_base_address+csr_idx*8);
+  return csr_value;
+}
+
+void bp_vdp_config_accelerator(uint64_t *input_a_ptr, uint64_t *input_b_ptr, uint64_t input_length, 
+                               uint64_t operation, uint64_t *resp_ptr, uint64_t resp_length){
+  bp_set_CSR(ACCEL_VDP_BASE_ADDR, ACCEL_VPD_INPUT_A_PTR, (uint64_t) input_a_ptr);
+  bp_set_CSR(ACCEL_VDP_BASE_ADDR, ACCEL_VPD_INPUT_B_PTR, (uint64_t) input_b_ptr);
+  bp_set_CSR(ACCEL_VDP_BASE_ADDR, ACCEL_VPD_INPUT_LEN, input_length);
+  bp_set_CSR(ACCEL_VDP_BASE_ADDR, ACCEL_VPD_RESP_PTR, (uint64_t) resp_ptr);
+  bp_set_CSR(ACCEL_VDP_BASE_ADDR, ACCEL_VPD_RESP_LEN, resp_length); 
+}
+
+void bp_vdp_accelerator_start_cmd(){
+  bp_set_CSR(ACCEL_VDP_BASE_ADDR, ACCEL_VPD_START_CMD, 1);
+}
+
+
+void bp_vdp_wait_for_completion(){
+  uint64_t status;
+  while (1)
+    {
+      status = bp_get_CSR(ACCEL_VDP_BASE_ADDR,ACCEL_VPD_RESP_STATUS);
+      if(status)
+        break;
+    }
+}
+
+void bp_call_vector_dot_product_accelerator(struct VDP_CSR vdp_csrs){
+  bp_vdp_config_accelerator(vdp_csrs.input_a_ptr, vdp_csrs.input_b_ptr, 
+                            vdp_csrs.input_length, 0, vdp_csrs.resp_ptr,1);
+  bp_vdp_accelerator_start_cmd(0);
+  bp_vdp_wait_for_completion(0);
+}
+
+

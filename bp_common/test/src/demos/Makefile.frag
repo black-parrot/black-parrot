@@ -1,5 +1,6 @@
 BP_DEMOS_C = \
   basic_demo            \
+  accel_dp               \
   atomic_queue_demo_2   \
   atomic_queue_demo_4   \
   atomic_queue_demo_8   \
@@ -43,7 +44,8 @@ BP_DEMOS_C = \
 BP_DEMOS_S = \
 	simple                \
 	uc_simple             \
-  hello_world
+  hello_world           \
+  accel_simple          \
 
 BP_DEMOS = $(BP_DEMOS_S) $(BP_DEMOS_C)
 

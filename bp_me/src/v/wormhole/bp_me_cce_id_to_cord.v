@@ -36,7 +36,7 @@ module bp_me_cce_id_to_cord
     // Coherent accelerator complex
     else if (cce_id_i < max_ac_cce_lp)
       begin
-        cce_cord_o[0+:coh_noc_x_cord_width_p]                      = cc_x_dim_p + 1'b1;
+         cce_cord_o[0+:coh_noc_x_cord_width_p]                      = cc_x_dim_p; // + 1'b1;
         cce_cord_o[coh_noc_x_cord_width_p+:coh_noc_y_cord_width_p] = ic_y_dim_p  + (cce_id_i % cc_y_dim_p);
         cce_cid_o = '0;
       end
