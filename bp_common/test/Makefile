@@ -11,13 +11,14 @@ MEM_DIR        = $(TEST_DIR)/mem
 
 RISCV_SIM      = spike
 RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -D
-RISCV_OBJCOPY  = riscv64-unknown-elf-objcopy -O verilog
-RISCV_OBJCOPY_BIN = riscv64-unknown-elf-objcopy -O binary
+RISCV_OBJCOPY  = riscv64-unknown-elf-objcopy
 MKLFS = $(TEST_DIR)/bin/bsg_newlib_mklfs
+DROMAJO        = dromajo
 
 PATH := $(BP_EXTERNAL_DIR)/bin:$(PATH)
 
 NC ?= 1
+MEMSIZE ?= 1
 
 export TEST_DIR
 
@@ -186,10 +187,10 @@ riscvdv_spike: $(foreach x, $(BP_RVDV), $(x).spike)
 riscvdv_dump: $(foreach x, $(BP_RVDV), $(x).dump)
 
 %.mem: 
-	$(RISCV_OBJCOPY) $(MEM_DIR)/$*.riscv $(MEM_DIR)/$@
+	$(RISCV_OBJCOPY) -O verilog $(MEM_DIR)/$*.riscv $(MEM_DIR)/$@
 
 %.bin: 
-	$(RISCV_OBJCOPY_BIN) $(MEM_DIR)/$*.riscv $(MEM_DIR)/$@
+	$(RISCV_OBJCOPY) -O binary $(MEM_DIR)/$*.riscv $(MEM_DIR)/$@
 
 %.dump:
 	$(RISCV_OBJDUMP) $(MEM_DIR)/$*.riscv > $(MEM_DIR)/$@
@@ -202,6 +203,26 @@ riscvdv_dump: $(foreach x, $(BP_RVDV), $(x).dump)
 
 %.nbf:
 	$(PYTHON) $(MEM2NBF) $(MEM_DIR)/$*.mem > $(MEM_DIR)/$@
+
+%.dromajo: $(%.config)
+	$(DROMAJO) $(MEM_DIR)/$*.riscv --host --maxinsn=$(MAXINSN) --save=$* --memory_size=$(MEMSIZE)
+	$(RISCV_OBJCOPY) --change-addresses 0x80000000 \
+		 -I binary -O elf64-littleriscv -B riscv $*.mainram $(MEM_DIR)/$@.$(MAXINSN).riscv
+	$(RISCV_OBJCOPY) -O verilog $(MEM_DIR)/$@.$(MAXINSN).riscv $(MEM_DIR)/$@.$(MAXINSN).mem
+	$(RISCV_OBJDUMP) $(MEM_DIR)/$@.$(MAXINSN).riscv > $(MEM_DIR)/$@.$(MAXINSN).dump
+	cp $*.bp_regs $(MEM_DIR)/$@.$(MAXINSN).nbf
+	cp $*.bootram $(MEM_DIR)/$@.$(MAXINSN).bootram
+	cp $*.mainram $(MEM_DIR)/$@.$(MAXINSN).mainram
+	echo -e "\
+	{\n\
+	  \"version\":1,\n\
+	  \"machine\":\"riscv64\",\n\
+	  \"bios\": \"prog.mainram\",\n\
+	  \"load\": \"prog\",\n\
+	  \"memory_base_addr\": 0x80000000,\n\
+	  \"memory_size\": $(MEMSIZE)\n\
+	}" > $(MEM_DIR)/$@.$(MAXINSN).cfg
+	rm $*.*
 
 clean:
 	-$(MAKE) -C $(TEST_DIR)/src/perch clean
