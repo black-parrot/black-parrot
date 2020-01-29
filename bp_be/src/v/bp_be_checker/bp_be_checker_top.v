@@ -49,8 +49,10 @@ module bp_be_checker_top
    , output [fe_cmd_width_lp-1:0]     fe_cmd_o
    , output                           fe_cmd_v_o
    , input                            fe_cmd_ready_i
+   , input                            fe_cmd_fence_i
 
    // FE queue interface
+   , output                           fe_queue_clr_o
    , output                           fe_queue_roll_o
    , output                           fe_queue_deq_o
 
@@ -99,6 +101,7 @@ assign calc_status_cast_i = calc_status_i;
 // Intermediate connections
 bp_be_isd_status_s isd_status;
 logic [vaddr_width_p-1:0] expected_npc_lo;
+logic suppress_iss_lo;
 
 // Datapath
 bp_be_director 
@@ -118,6 +121,9 @@ bp_be_director
    ,.fe_cmd_o(fe_cmd_o)
    ,.fe_cmd_v_o(fe_cmd_v_o)
    ,.fe_cmd_ready_i(fe_cmd_ready_i)
+   ,.fe_cmd_fence_i(fe_cmd_fence_i)
+
+   ,.suppress_iss_o(suppress_iss_lo)
 
    ,.commit_pkt_i(commit_pkt_i)
    ,.trap_pkt_i(trap_pkt_i)
@@ -167,13 +173,15 @@ bp_be_scheduler
    ,.cache_miss_v_i(commit_pkt.cache_miss | commit_pkt.tlb_miss)
    ,.cmt_v_i(commit_pkt.queue_v)
    ,.debug_mode_i(debug_mode_i)
-
-   ,.fe_queue_roll_o(fe_queue_roll_o)
-   ,.fe_queue_deq_o(fe_queue_deq_o)
+   ,.suppress_iss_i(suppress_iss_lo)
 
    ,.fe_queue_i(fe_queue_i)
    ,.fe_queue_v_i(fe_queue_v_i)
    ,.fe_queue_yumi_o(fe_queue_yumi_o)
+   ,.fe_queue_clr_o(fe_queue_clr_o)
+   ,.fe_queue_roll_o(fe_queue_roll_o)
+   ,.fe_queue_deq_o(fe_queue_deq_o)
+
 
    ,.dispatch_pkt_o(dispatch_pkt_o)
    

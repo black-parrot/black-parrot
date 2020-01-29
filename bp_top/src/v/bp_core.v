@@ -65,8 +65,6 @@ module bp_core
   logic fe_cmd_v_li, fe_cmd_ready_lo;
   logic fe_cmd_v_lo, fe_cmd_yumi_li;
 
-  logic fe_cmd_processed_li;
-
   bp_fe_top
    #(.bp_params_p(bp_params_p))
    fe 
@@ -82,7 +80,6 @@ module bp_core
      ,.fe_cmd_i(fe_cmd_lo)
      ,.fe_cmd_v_i(fe_cmd_v_lo)
      ,.fe_cmd_yumi_o(fe_cmd_yumi_li)
-     ,.fe_cmd_processed_o(fe_cmd_processed_li)
 
      ,.lce_req_o(lce_req_o[0])
      ,.lce_req_v_o(lce_req_v_o[0])
@@ -101,9 +98,7 @@ module bp_core
      ,.lce_cmd_ready_i(lce_cmd_ready_i[0])
      );
 
-  logic fe_fence_r;
-  wire fe_cmd_nonattaboy_v_li = fe_cmd_v_li & (fe_cmd_li.opcode != e_op_attaboy);
-  bsg_fifo_1r1w_fence
+  bsg_fifo_1r1w_small
    #(.width_p(fe_cmd_width_lp)
      ,.els_p(fe_cmd_fifo_els_p)
      ,.ready_THEN_valid_p(1)
@@ -112,10 +107,6 @@ module bp_core
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.fence_set_i(fe_cmd_nonattaboy_v_li)
-     ,.fence_clr_i(fe_cmd_processed_li)
-     ,.fence_o(fe_fence_r)
-      
      ,.data_i(fe_cmd_li)
      ,.v_i(fe_cmd_v_li)
      ,.ready_o(fe_cmd_ready_lo)
@@ -124,9 +115,11 @@ module bp_core
      ,.v_o(fe_cmd_v_lo)
      ,.yumi_i(fe_cmd_yumi_li)
      );
+  wire fe_cmd_empty_lo = ~fe_cmd_v_lo;
+  wire fe_cmd_full_lo  = ~fe_cmd_ready_lo;
+  wire fe_cmd_fence_li = fe_cmd_v_lo;
 
-  logic fe_queue_deq_li, fe_queue_roll_li;
-  wire fe_queue_clr_li = fe_fence_r & fe_cmd_processed_li;
+  logic fe_queue_clr_li, fe_queue_deq_li, fe_queue_roll_li;
   bsg_fifo_1r1w_rolly 
    #(.width_p(fe_queue_width_lp)
      ,.els_p(fe_queue_fifo_els_p)
@@ -161,16 +154,17 @@ module bp_core
      ,.cfg_csr_data_o(cfg_csr_data_o)
      ,.cfg_priv_data_o(cfg_priv_data_o)
 
+     ,.fe_queue_i(fe_queue_lo)
+     ,.fe_queue_v_i(fe_queue_v_lo)
+     ,.fe_queue_yumi_o(fe_queue_yumi_li)
+     ,.fe_queue_clr_o(fe_queue_clr_li)
      ,.fe_queue_deq_o(fe_queue_deq_li)
      ,.fe_queue_roll_o(fe_queue_roll_li)
-
-     ,.fe_queue_i(fe_queue_lo)
-     ,.fe_queue_v_i(~fe_fence_r & fe_queue_v_lo)
-     ,.fe_queue_yumi_o(fe_queue_yumi_li)
 
      ,.fe_cmd_o(fe_cmd_li)
      ,.fe_cmd_v_o(fe_cmd_v_li)
      ,.fe_cmd_ready_i(fe_cmd_ready_lo)
+     ,.fe_cmd_fence_i(fe_cmd_fence_li)
 
      ,.lce_req_o(lce_req_o[1])
      ,.lce_req_v_o(lce_req_v_o[1])

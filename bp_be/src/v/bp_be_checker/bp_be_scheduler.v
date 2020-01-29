@@ -44,14 +44,15 @@ module bp_be_scheduler
   , input                              cache_miss_v_i
   , input                              cmt_v_i
   , input                              debug_mode_i
+  , input                              suppress_iss_i
 
   // Fetch interface
-  , output                             fe_queue_roll_o
-  , output                             fe_queue_deq_o
-
   , input [fe_queue_width_lp-1:0]      fe_queue_i
   , input                              fe_queue_v_i
   , output                             fe_queue_yumi_o
+  , output                             fe_queue_clr_o
+  , output                             fe_queue_roll_o
+  , output                             fe_queue_deq_o
 
   // Dispatch interface
   , output [dispatch_pkt_width_lp-1:0] dispatch_pkt_o
@@ -189,9 +190,10 @@ always_comb
   end
 
 // Interface handshakes
-assign fe_queue_yumi_o = ~debug_mode_i & fe_queue_v_i & (dispatch_v_i | ~issue_pkt_v_r);
+assign fe_queue_yumi_o = ~debug_mode_i & ~suppress_iss_i & fe_queue_v_i & (dispatch_v_i | ~issue_pkt_v_r);
 
 // Queue control signals
+assign fe_queue_clr_o  = ~debug_mode_i & suppress_iss_i;
 assign fe_queue_roll_o = ~debug_mode_i & cache_miss_v_i;
 assign fe_queue_deq_o  = ~debug_mode_i & ~cache_miss_v_i & cmt_v_i;
 
