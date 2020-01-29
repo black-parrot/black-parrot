@@ -150,8 +150,10 @@ always_comb
                  | (|frs2_data_haz_v);
 
     // Combine all structural hazard information
+    // We block on mmu not ready even on not memory instructions, because it means there's an
+    //   operation being performed asynchronously (such as a page fault)
     struct_haz_v = (cfg_bus_cast_i.freeze & ~isd_status_cast_i.isd_debug_v)
-                   | (~mmu_cmd_ready_i & isd_status_cast_i.isd_mem_v)
+                   | ~mmu_cmd_ready_i
                    | queue_haz_v;
   end
 
