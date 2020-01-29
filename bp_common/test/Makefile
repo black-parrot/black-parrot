@@ -220,7 +220,9 @@ riscvdv_dump: $(foreach x, $(BP_RVDV), $(x).dump)
 	  \"bios\": \"prog.mainram\",\n\
 	  \"load\": \"prog\",\n\
 	  \"memory_base_addr\": 0x80000000,\n\
-	  \"memory_size\": $(MEMSIZE)\n\
+	  \"memory_size\": $(MEMSIZE),\n\
+	  \"mmio_start\": 0x20000,\n\
+	  \"mmio_end\": 0x80000000\n\
 	}" > $(MEM_DIR)/$@.$(MAXINSN).cfg
 	rm $*.*
 

@@ -23,5 +23,6 @@ $BP_TOP_DIR/test/common/bp_nonsynth_host.v
 $BP_TOP_DIR/test/common/bp_nonsynth_if_verif.v
 $BP_TOP_DIR/test/common/bp_nonsynth_commit_tracer.v
 $BP_TOP_DIR/test/common/bp_nonsynth_nbf_loader.v
+$BP_TOP_DIR/test/common/bp_nonsynth_cosim.v
 $BP_TOP_DIR/test/common/bp_monitor.cpp
 $BP_TOP_DIR/test/common/dromajo_cosim.cpp

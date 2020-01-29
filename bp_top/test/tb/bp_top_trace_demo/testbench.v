@@ -30,6 +30,7 @@ module testbench
    , parameter preload_mem_p               = 0
    , parameter load_nbf_p                  = 0
    , parameter skip_init_p                 = 0
+   , parameter cosim_p                     = 0
 
    , parameter mem_zero_p         = 1
    , parameter mem_file_p         = "prog.mem"
@@ -143,6 +144,30 @@ wrapper
        ,.rd_addr_i(be_calculator.wb_pkt.rd_addr)
        ,.rd_data_i(be_calculator.wb_pkt.rd_data)
        );
+
+  if(cosim_p)
+    bind bp_be_top
+      bp_nonsynth_cosim
+       #(.bp_params_p(bp_params_p)
+         ,.config_file_p("prog.cfg"))
+        cosim
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+         ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
+
+         ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
+
+         ,.commit_v_i(be_calculator.commit_pkt.instret)
+         ,.commit_pc_i(be_calculator.commit_pkt.pc)
+         ,.commit_instr_i(be_calculator.commit_pkt.instr)
+
+         ,.rd_w_v_i(be_calculator.wb_pkt.rd_w_v)
+         ,.rd_addr_i(be_calculator.wb_pkt.rd_addr)
+         ,.rd_data_i(be_calculator.wb_pkt.rd_data)
+
+         ,.interrupt_v_i(be_mem.csr.trap_pkt_cast_o._interrupt)
+         ,.cause_i(be_mem.csr.trap_pkt_cast_o.cause)
+         );
 
   bind bp_be_director
     bp_be_nonsynth_npc_tracer
