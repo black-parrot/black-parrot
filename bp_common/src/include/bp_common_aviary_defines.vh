@@ -132,14 +132,15 @@ typedef struct packed
 
   integer async_mem_clk;
   integer mem_noc_max_credits;
-  integer mem_noc_cid_width;
   integer mem_noc_flit_width;
+  integer mem_noc_cid_width;
   integer mem_noc_len_width;
 
   integer async_io_clk;
   integer io_noc_max_credits;
-  integer io_noc_did_width;
   integer io_noc_flit_width;
+  integer io_noc_did_width;
+  integer io_noc_cid_width;
   integer io_noc_len_width;
 
 }  bp_proc_param_s;
@@ -248,6 +249,7 @@ typedef struct packed
   , localparam io_noc_max_credits_p     = proc_param_lp.io_noc_max_credits                         \
   , localparam io_noc_did_width_p       = proc_param_lp.io_noc_did_width                           \
   , localparam io_noc_flit_width_p      = proc_param_lp.io_noc_flit_width                          \
+  , localparam io_noc_cid_width_p       = proc_param_lp.io_noc_cid_width                           \
   , localparam io_noc_len_width_p       = proc_param_lp.io_noc_len_width                           \
   , localparam io_noc_y_cord_width_p    = `BSG_SAFE_CLOG2(ic_y_dim_p+1)                            \
   , localparam io_noc_x_cord_width_p    = io_noc_did_width_p                                       \
