@@ -33,7 +33,6 @@ module bp_be_csr
     , input [core_id_width_p-1:0]       hartid_i
     , input                             instret_i
 
-    , input                             bubble_v_i
     , input                             exception_v_i
     , input [vaddr_width_p-1:0]         exception_pc_i
     , input [vaddr_width_p-1:0]         exception_npc_i

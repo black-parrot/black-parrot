@@ -197,7 +197,6 @@ bsg_dff_chain
 
 bp_be_ecode_dec_s exception_ecode_dec_li;
 
-wire bubble_v_li    = commit_pkt.bubble_v;
 wire exception_v_li = commit_pkt.v | ptw_page_fault_v;
 wire [vaddr_width_p-1:0] exception_pc_li = ptw_page_fault_v ? fault_pc : commit_pkt.pc;
 wire [vaddr_width_p-1:0] exception_npc_li = commit_pkt.npc;
@@ -244,7 +243,6 @@ bp_be_csr
    ,.hartid_i(cfg_bus.core_id)
    ,.instret_i(commit_pkt.instret)
 
-   ,.bubble_v_i(bubble_v_li)
    ,.exception_v_i(exception_v_li)
    ,.exception_pc_i(exception_pc_li)
    ,.exception_npc_i(exception_npc_li)
@@ -485,9 +483,13 @@ assign itlb_fill_vaddr_o = fault_vaddr;
 assign itlb_fill_entry_o = ptw_tlb_w_entry;
 
 // synopsys translate_off
+bp_be_mmu_cmd_s mmu_cmd_r;
+always_ff @(posedge clk_i)
+  mmu_cmd_r <= mmu_cmd;
+
 always_ff @(negedge clk_i)
   begin
-    assert (~(dtlb_r_v_lo & dcache_uncached & mmu_cmd.mem_op inside {e_lrw, e_lrd, e_scw, e_scd}))
+    assert (~(mmu_cmd_v_r & dtlb_r_v_lo & dcache_uncached & (mmu_cmd_r.mem_op inside {e_lrw, e_lrd, e_scw, e_scd})))
       else $warning("LR/SC to uncached memory not supported");
   end
 // synopsys translate_on

@@ -112,7 +112,6 @@
   {                                                                                                \
     logic                        v;                                                                \
     logic                        queue_v;                                                          \
-    logic                        bubble_v;                                                         \
     logic                        instret;                                                          \
     logic                        cache_miss;                                                       \
     logic                        tlb_miss;                                                         \
@@ -183,7 +182,7 @@
    )                                                                                               
 
 `define bp_be_commit_pkt_width(vaddr_width_mp) \
-  (6                                                                                               \
+  (5                                                                                               \
    + 2 * vaddr_width_mp                                                                            \
    + instr_width_p                                                                                 \
    )
