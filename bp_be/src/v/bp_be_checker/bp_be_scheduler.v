@@ -264,7 +264,7 @@ always_comb
 
     // Form dispatch packet
     dispatch_pkt.v      = (issue_pkt_v_r | enter_debug_li | exit_debug_li | accept_irq_i) & dispatch_v_i;
-    dispatch_pkt.poison = (poison_iss_r | npc_mismatch)
+    dispatch_pkt.poison = (poison_iss_r | npc_mismatch | ~dispatch_pkt.v)
                           & ~(accept_irq_i & dispatch_v_i)
                           & ~(enter_debug_li | exit_debug_li);
     dispatch_pkt.pc     = expected_npc_i;
