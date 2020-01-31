@@ -169,8 +169,13 @@ wire instr_priv_access_fault = ((mem_priv_i == `PRIV_MODE_S) & itlb_r_entry.u)
                                | ((mem_priv_i == `PRIV_MODE_U) & ~itlb_r_entry.u);
 wire instr_exe_access_fault = ~itlb_r_entry.x;
 
+// Fault if in uncached mode but access is not for an uncached address
 wire is_uncached_mode = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached);
-assign instr_access_fault_v = is_uncached_mode & ~uncached_li;
+wire mode_fault_v = (is_uncached_mode & ~uncached_li);
+// TODO: Enable other domains by setting enabled dids with cfg_bus
+wire did_fault_v = (ptag_li[ptag_width_p-1-:io_noc_did_width_p] != '0);
+
+assign instr_access_fault_v = mode_fault_v | did_fault_v;
 assign instr_access_err_v  = fetch_v_r & itlb_r_v_lo & mem_translation_en_i & (instr_priv_access_fault | instr_exe_access_fault);
 
 wire unused = &{mem_resp_ready_i};
