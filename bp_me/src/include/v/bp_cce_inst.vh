@@ -91,7 +91,6 @@ typedef enum logic [3:0] {
 typedef enum logic [3:0] {
   e_sf_op                                = 4'b0000   // Move imm[0] = 1 to dst(flag)
   ,e_sfz_op                              = 4'b0001   // Move imm[0] = 0 to dst(flag)
-  // TODO: multiple flags? - already have and, or, nand, nor source operands
   ,e_andf_op                             = 4'b0010   // Logical AND two flags to GPR
   ,e_orf_op                              = 4'b0011   // Logical OR two flags to GPR
 } bp_cce_inst_minor_flag_op_e;
@@ -313,17 +312,10 @@ typedef enum logic [3:0] {
   ,e_flag_sel_cof                        = 4'b1000 // cached owned by other flag
   ,e_flag_sel_cdf                        = 4'b1001 // cached dirty by other flag
 
-// TODO: rethink flags
-// e_flag_sel_rc  -- requestor has block cached in any valid state
-// e_flag_sel_rcs -- requestor cached shared (1) exclusive/not-shared (0)
-// e_flag_sel_rco -- requestor cached owned (1)
-// e_flag_sel_rcd -- requestor cached possibly dirty (1) guaranteed clean (0)
-
   ,e_flag_sel_tf                         = 4'b1010 // transfer flag == cof
   ,e_flag_sel_rf                         = 4'b1011 // replacement flag == ~uf & lef & ldf
   ,e_flag_sel_uf                         = 4'b1100 // upgrade flag == rqf & cached by requesting LCE & cached in shared by requestor
   ,e_flag_sel_if                         = 4'b1101 // invalidate flag == (rqf & cf) | (~rqf & cef)
-  // note: invalidate conditions should be more flexible
 
   ,e_flag_sel_nwbf                       = 4'b1110 // null writeback flag
 
@@ -1038,11 +1030,6 @@ typedef struct packed {
   bp_cce_mem_cmd_type_e                    mem_resp;
 
   // Register write enables
-  // TODO: write enable for every register
-  // - not really an enable, but rather a signal to tell register file when/how to set source
-  // for register _n signals
-  // TODO: CCE tracer - add detection of current instruction == stall, terminate simulation
-  // this allows testing microcode by finishing with stall
   logic                                    mov_dst_w_v;
   logic                                    alu_dst_w_v;
   logic [`bp_cce_inst_num_gpr-1:0]         gpr_w_mask;

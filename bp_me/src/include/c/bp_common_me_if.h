@@ -108,41 +108,4 @@ typedef enum {
 
 #define bp_cce_mem_msg_type_width 4
 
-// Width Macros
-
-// TODO: these widths are incorrect - need to be updated to reflect updates to ME IF
-/*
-#define bp_lce_cce_req_width (LG_N_CCE+LG_N_LCE+bp_lce_cce_req_type_width \
-  +bp_lce_cce_req_non_excl_width+ADDR_WIDTH+LG_LCE_ASSOC+bp_lce_cce_lru_dirty_width \
-  +bp_lce_cce_req_non_cacheable_width+bp_lce_cce_nc_req_size_width+NC_DATA_WIDTH)
-
-#define bp_lce_cce_resp_width (LG_N_CCE+LG_N_LCE+bp_lce_cce_ack_type_width+ADDR_WIDTH)
-
-#define bp_lce_cce_data_resp_width (LG_N_CCE+LG_N_LCE+bp_lce_cce_resp_msg_type_width+ADDR_WIDTH \
-  +DATA_WIDTH_BITS)
-
-#define bp_cce_lce_cmd_width (LG_N_CCE+LG_N_LCE+bp_cce_lce_cmd_type_width+ADDR_WIDTH \
-  +2*(LG_LCE_ASSOC)+bp_cce_coh_bits+LG_N_LCE)
-
-#define bp_lce_data_cmd_width (LG_N_LCE+bp_lce_data_cmd_type_width+LG_LCE_ASSOC+DATA_WIDTH_BITS)
-
-#define bp_cce_mem_cmd_payload_width (LG_N_LCE+LG_LCE_ASSOC)
-
-#define bp_cce_mem_data_cmd_payload_width ((2*LG_N_LCE)+(2*LG_LCE_ASSOC)+ADDR_WIDTH+2)
-
-#define bp_cce_mem_cmd_width (bp_lce_cce_req_type_width+ADDR_WIDTH+bp_cce_mem_cmd_payload_width \
-  +bp_lce_cce_req_non_cacheable_width+bp_lce_cce_nc_req_size_width)
-
-#define bp_cce_mem_data_cmd_width (bp_lce_cce_req_type_width+ADDR_WIDTH+DATA_WIDTH_BITS \
-  +bp_cce_mem_data_cmd_payload_width \
-  +bp_lce_cce_req_non_cacheable_width+bp_lce_cce_nc_req_size_width)
-
-#define bp_mem_cce_resp_width (bp_lce_cce_req_type_width+ADDR_WIDTH \
-  +bp_cce_mem_data_cmd_payload_width \
-  +bp_lce_cce_req_non_cacheable_width+bp_lce_cce_nc_req_size_width)
-
-#define bp_mem_cce_data_resp_width (bp_lce_cce_req_type_width+ADDR_WIDTH+DATA_WIDTH_BITS \
-  +bp_cce_mem_cmd_payload_width+bp_lce_cce_req_non_cacheable_width+bp_lce_cce_nc_req_size_width)
-*/
-
 #endif

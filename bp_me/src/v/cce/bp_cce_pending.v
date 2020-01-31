@@ -13,9 +13,7 @@
  *   Pending bits are actually small counters. The pending bit is unset if the count is 0, and
  *   set if the count is > 0.
  *
- * TODO: pending bit count can over/underflow. This can cause problems if we can't rely on hardware
- *       to properly set initial values to 0. This can be fixed in microcode, however, by reading
- *       and writing pending bits, adjusting each count to be 0.
+ *   NOTE: pending bit count can over/underflow.
  *
  */
 
