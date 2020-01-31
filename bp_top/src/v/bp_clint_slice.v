@@ -60,7 +60,7 @@ always_comb
     endcase
   end
 
-logic [dword_width_p-1:0] mtime_r, mtimecmp_n, mtimecmp_r;
+logic [dword_width_p-1:0] mtime_r, mtime_val_li, mtimecmp_n, mtimecmp_r;
 logic                     mipi_n, mipi_r;
 logic                     plic_n, plic_r;
 
@@ -76,17 +76,19 @@ bsg_strobe
    ,.init_val_r_i(ds_ratio_li)
    ,.strobe_r_o(mtime_inc_li)
    );
-bsg_counter_clear_up
- #(.max_val_p(2**dword_width_p-1)
-   ,.ptr_width_lp(dword_width_p)
-   ,.init_val_p(0)
+assign mtime_val_li = mem_cmd_li.data[0+:dword_width_p];
+wire mtime_w_v_li = wr_not_rd & mtime_cmd_v;
+bsg_counter_set_en
+ #(.lg_max_val_lp(dword_width_p)
+   ,.reset_val_p(0)
    )
  mtime_counter
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.clear_i(1'b0)
 
-   ,.up_i(mtime_inc_li)
+   ,.set_i(mtime_w_v_li)
+   ,.en_i(mtime_inc_li)
+   ,.val_i(mtime_val_li)
    ,.count_o(mtime_r)
    );
 
