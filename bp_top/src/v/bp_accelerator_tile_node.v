@@ -183,7 +183,7 @@ module bp_accelerator_tile_node
      ,.link_o({coh_lce_cmd_link_o, coh_lce_cmd_link_lo})
      );
 
-//  if(accelerator_type_p)
+   
   bsg_wormhole_router
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.dims_p(coh_noc_dims_p)

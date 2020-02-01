@@ -7,7 +7,7 @@ uint64_t main(uint64_t argc, char * argv[]) {
   uint8_t vlen;
   uint64_t input_array_a [8];
   uint64_t input_array_b [8];
-  uint64_t resp_data = 0;
+  uint64_t resp_data = 0, output_data=0;
   struct VDP_CSR vdp_csr;
    
   /////////////first call////////////
@@ -24,9 +24,16 @@ uint64_t main(uint64_t argc, char * argv[]) {
   vdp_csr.resp_ptr =  (uint64_t *) &resp_data;
   bp_call_vector_dot_product_accelerator(vdp_csr);
 
+  output_data = resp_data * 16;
+
   for(i = 0; i < 8;++i){
     bp_hprint((uint8_t)(resp_data>>i*8));
   }
+
+  for(i = 0; i < 8;++i){
+    bp_hprint((uint8_t)(output_data>>i*8));
+  }
+
   ////////second call/////////////
   vlen = 4;
   for(i = 0; i < vlen; ++i){
@@ -37,8 +44,14 @@ uint64_t main(uint64_t argc, char * argv[]) {
   vdp_csr.input_length = vlen;
   bp_call_vector_dot_product_accelerator(vdp_csr);
 
+  output_data = resp_data * 16;
+  
   for(i = 0; i < 8;++i){
     bp_hprint((uint8_t)(resp_data>>i*8));
+  }
+
+ for(i = 0; i < 8;++i){
+    bp_hprint((uint8_t)(output_data>>i*8));
   }
 
 
