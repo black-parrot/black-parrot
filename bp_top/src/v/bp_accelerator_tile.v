@@ -281,9 +281,6 @@ module bp_accelerator_tile
      ,.io_resp_v_o(cce_io_resp_v_li)
      ,.io_resp_yumi_i(cce_io_resp_yumi_lo)
 
-//     ,.my_cord_i(io_noc_cord_width_p'(my_did_i))
-//     ,.dst_cord_i(dst_cord_lo)
-
      ,.lce_req_o(lce_req_lo)
      ,.lce_req_v_o(lce_req_v_lo)
      ,.lce_req_ready_i(lce_req_ready_li)

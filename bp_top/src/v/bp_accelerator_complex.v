@@ -51,7 +51,8 @@ module bp_accelerator_complex
 
   for (genvar j=0; j < cc_y_dim_p; j++)
     begin : y
-       wire [coh_noc_cord_width_p-1:0] cord_li = {coh_noc_y_cord_width_p'(1+j), coh_noc_x_cord_width_p'(cc_x_dim_p)};
+       wire [coh_noc_cord_width_p-1:0] cord_li = {coh_noc_y_cord_width_p'(1+j), 
+                                                  coh_noc_x_cord_width_p'(cc_x_dim_p)};
        bp_accelerator_tile_node
          #(.bp_params_p(bp_params_p))
          accel_tile_node
@@ -94,7 +95,7 @@ module bp_accelerator_complex
          ,.ver_i(lce_req_ver_link_li)
          ,.ver_o(lce_req_ver_link_lo)
          );
-      assign coh_req_link_o = lce_req_hor_link_lo[W]; //change it to lce_req_hor_link_lo[W]
+      assign coh_req_link_o = lce_req_hor_link_lo[W]; 
 
       assign lce_cmd_ver_link_li    = '0;
       assign lce_cmd_hor_link_li[E] = '0;
