@@ -331,9 +331,6 @@ module bp_be_dcache
         );
   end
 
-  assign store_op_tl_o = store_op_tl_r;
-  assign load_op_tl_o  = load_op_tl_r;
-
   // TV stage
   //
   logic v_tv_r;
@@ -358,6 +355,9 @@ module bp_be_dcache
   logic [word_offset_width_lp-1:0] addr_word_offset_tv;
 
   assign tv_we = v_tl_r & ~poison_i & ~tlb_miss_i;
+
+  assign store_op_tl_o = tv_we & store_op_tl_r;
+  assign load_op_tl_o  = tv_we & load_op_tl_r;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin

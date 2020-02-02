@@ -4,7 +4,7 @@
  *   bp_cce_buffered.v
  *
  * Description:
- *   This is the top level module for the CCE.
+ *   This is the top level module for the CCE if buffering around the CCE is required.
  *
  * Notes:
  *   All inputs from the LCE are buffered. LCE Responses require a FIFO that can hold up to

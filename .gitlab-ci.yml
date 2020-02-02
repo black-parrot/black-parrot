@@ -9,6 +9,7 @@ stages:
   - test-medium
   - test-long
  
+# Useless comment to trigger CI
 #pass:
 #  script:
 #    - echo "Passing job 1"
@@ -68,6 +69,18 @@ update-cache:
       - $CI_PROJECT_DIR/external/
       - $CI_PROJECT_DIR/bp_common/test/mem/
     policy: push
+
+hotfix_job:
+  <<: *job_definition
+  only:
+    - /^.*hotfix.*$/
+  stage: check
+  tags:
+    - bsg
+    - vcs
+  script:
+    - make -C bp_top/syn clean
+    - $CI_PROJECT_DIR/ci/regress.sh check_design.syn bp_top
 
 clean_build:
   <<: *job_definition

@@ -88,13 +88,10 @@ complete_transfer: popq lceResp r0
 bi ready
 
 # Read Line from L2 Routine
-# TODO: move memory request earlier to hide some latency
 read_l2: pushq memCmd
 bi ready
 
 # Uncached Request Routine
-# TODO: collapse, hardware detects if it is load/store for the memCmd based on rqf
-# but, it might be better to change HW to require a command type and addr sel in ucode for every memCmd
 uncached_req: popq lceReq
 bf rqf uncached_store
 pushq memCmd

@@ -4,6 +4,7 @@
  *   bp_cce.v
  *
  * Description:
+ *   This is the top level module for the CCE.
  *
  */
 
@@ -458,8 +459,6 @@ module bp_cce
       ,.dir_w_v_o(msg_dir_w_v_lo)
       );
 
-
-  // TODO: move source select into module
 
   // Combinational logic to select input source for various blocks
 
