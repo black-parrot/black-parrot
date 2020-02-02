@@ -17,6 +17,7 @@ module bp_processor
  import bp_common_cfg_link_pkg::*;
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   , parameter bp_enable_accelerator_p = 0
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
@@ -163,7 +164,9 @@ bp_mem_complex
    );
 
 bp_accelerator_complex
- #(.bp_params_p(bp_params_p))
+ #(.bp_params_p(bp_params_p)
+   ,.bp_enable_accelerator_p(bp_enable_accelerator_p)
+   )
  ac
   (.core_clk_i(core_clk_i)
    ,.core_reset_i(core_reset_i)
