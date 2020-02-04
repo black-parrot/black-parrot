@@ -34,17 +34,18 @@ module bp_be_top
    , output [1:0]                            cfg_priv_data_o
 
    // FE queue interface
-   , output                                  fe_queue_deq_o
-   , output                                  fe_queue_roll_o
- 
    , input [fe_queue_width_lp-1:0]           fe_queue_i
    , input                                   fe_queue_v_i
    , output                                  fe_queue_yumi_o
+   , output                                  fe_queue_clr_o
+   , output                                  fe_queue_deq_o
+   , output                                  fe_queue_roll_o
 
    // FE cmd interface
    , output [fe_cmd_width_lp-1:0]            fe_cmd_o
    , output                                  fe_cmd_v_o
    , input                                   fe_cmd_ready_i
+   , input                                   fe_cmd_fence_i
 
    // LCE-CCE interface
    , output [lce_cce_req_width_lp-1:0]       lce_req_o
@@ -145,13 +146,14 @@ bp_be_checker_top
    ,.fe_cmd_o(fe_cmd_o)
    ,.fe_cmd_v_o(fe_cmd_v_o)
    ,.fe_cmd_ready_i(fe_cmd_ready_i)
-
-   ,.fe_queue_roll_o(fe_queue_roll_o)
-   ,.fe_queue_deq_o(fe_queue_deq_o)
+   ,.fe_cmd_fence_i(fe_cmd_fence_i)
 
    ,.fe_queue_i(fe_queue_i)
    ,.fe_queue_v_i(fe_queue_v_i)
    ,.fe_queue_yumi_o(fe_queue_yumi_o)
+   ,.fe_queue_clr_o(fe_queue_clr_o)
+   ,.fe_queue_roll_o(fe_queue_roll_o)
+   ,.fe_queue_deq_o(fe_queue_deq_o)
 
    ,.dispatch_pkt_o(dispatch_pkt)
 

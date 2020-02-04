@@ -517,16 +517,6 @@ module bp_cce_inst_decode
       // Write enables
 
       // GPR writes occur for mov op, alu op, and LCE Response type pop - only if dst_sel is GPR
-      // TODO: consolidate signals into a gpr_w_v signal in decoded_inst
-      // -- need to make sure signals are not used directly elsewhere
-      // -- may need a select signal for gpr_n values
-      //    -- alu_result
-      //    -- move_src (same as alu_src_a?)
-      //    -- lce_resp_type
-      //    -- mem_resp_type
-      //    -- directory_tag_output - from RDE op
-      //    --
-      //    --
       gpr_w_v = (decoded_inst_o.mov_dst_w_v | decoded_inst_o.alu_dst_w_v
                  | decoded_inst_o.resp_type_w_v | decoded_inst_o.rde_w_v
                  | decoded_inst_o.mem_resp_type_w_v)

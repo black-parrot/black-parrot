@@ -21,7 +21,9 @@ localparam max_mc_cce_lp  = max_cc_cce_lp + num_l2e_p;
 localparam max_ac_cce_lp  = max_mc_cce_lp + num_acc_p;
 localparam max_ioc_cce_lp = max_ac_cce_lp + num_io_p;
 
-wire external_io_li = (global_addr_li.did > '0);
+wire external_io_v_li = (global_addr_li.did > '0);
+wire local_addr_v_li  = (paddr_i < dram_base_addr_gp);
+wire dram_addr_v_li   = (paddr_i >= dram_base_addr_gp) && (paddr_i < coproc_base_addr_gp);
 
 localparam block_offset_lp = `BSG_SAFE_CLOG2(cce_block_width_p/8);
 localparam lg_lce_sets_lp = `BSG_SAFE_CLOG2(lce_sets_p);
@@ -50,10 +52,10 @@ always_comb begin
     cce_id_o = (num_io_p > 1)
                ? max_ac_cce_lp + paddr_i[page_offset_width_p+:`BSG_SAFE_CLOG2(num_io_p)]
                : max_ac_cce_lp;
-  else if (paddr_i < dram_base_addr_gp)
+  else if (local_addr_v_li)
     // Split uncached I/O region by max 128 cores
     cce_id_o = local_addr_li.cce;
-  else if ((paddr_i >= dram_base_addr_gp) && (paddr_i < coproc_base_addr_gp))
+  else if (dram_addr_v_li)
     // Stripe by cache line
     cce_id_o[0+:lg_num_cce_lp] = cce_dst_id_lo;
   else

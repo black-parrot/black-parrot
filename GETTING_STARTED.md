@@ -1,27 +1,41 @@
-# Getting started
+# Getting started (Quickstart)
+    # Clone the latest repo
     git clone https://github.com/black-parrot/pre-alpha-release.git
+    cd pre-alpha-release
+
+    # Install a minimal set of tools
+    make verilator
+    make ucode
+    make libs
+
+    # Running your first test
+    cd bp_top/syn
+    make build.sc sim.sc PROG=hello_world
+
+## Getting started (Full)
+    # Clone the latest repo
+    git clone https://github.com/black-parrot/pre-alpha-release.git
+    cd pre-alpha-release
+
     # make tools will clone, build and install toolchains needed for BlackParrot
     # For faster builds, make tools -j is parallelizable!
     make tools
-    # make tidy_tools will remove all tool build directories, while leaving the installation
+    # make tidy_tools  will remove all (10+ GB) tool build directories, while leaving the installation
+    make tidy_tools
     # make progs will build all open source test programs that ship with BlackParrot
     make progs
     # make ucode will build the CCE microcode used for BlackParrot's coherence engine
     # This is necessary whenever changes are made to CCE ucode. Eventually, CCE ucode
     #  will be built 'on demand' and so this command may become unnecessary
     make ucode
-
+    # Update hardware libraries (basejump_stl)
+    make libs
 
 The *master* branch contains most recent stable version. This is the recommended branch for someone wishing to try out BlackParrot.
 
 The *dev* branch contains the most recent development version, being tested internally. This branch may have bugfixes or improvements not yet propagated to master.
 
 Other branches are used for internal development and are not recommended for casual usage.
-
-## Running your first test
-
-    cd bp_top/syn
-    make build.sc sim.sc PROG=hello_world
 
 ## Prerequisites
 BlackParrot requires Python, Verilator and a RISCV GNU toolchain in order to build and run tests. The easiest way to get these and ensure compatibility is by using the tools in external/, which the Makefiles are automatically set up to use. One can also override these paths in Makefile.common.  Dependencies for riscv-gnu-toolchain are listed below:

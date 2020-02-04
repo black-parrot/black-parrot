@@ -6,32 +6,9 @@
  * Description:
  *   PC register, next PC logic, and instruction memory
  *
- * Configuration Link
- *   The config link is used to fill the instruction RAM, and to set the operating mode of the CCE.
- *   At startup, reset_i and freeze_i will both be high. After reset_i goes low, and while freeze_i
- *   is still high, the CCE waits for the mode register to be written.
- *
- *   config_addr_i specifies which address to read or write from. The address must be large enough
- *   to support 2*inst_ram_els_p addresses, plus the CCE mode register.
- *
- *   cfg_link_addr_width_p is assumed to be 16 bits, and cfg_link_data_width_p to be 32 bits
- *
- *   The msb of cfg_link_addr_width_p is reserved for the bridge link module. Of the address bits
- *   that are sent to the CCE, they are used as follows:
- *
- *   The address arriving on config_addr_i is interpreted as follows (and is 15-bits wide)
- *   14 - 1 if address is for CCE
- *   13 - 1 if address is for CCE instruction RAM, 0 if control register
- *
- *   For instruction RAM addresses (15'b11._...._...._....)
- *   1+:inst_ram_addr_width_lp - address into instruction RAM
- *   0 - specifies if instruction RAM address is for lo (0) or hi (1) 32-bit chunk of instruction
- *
- *   For configuration register addresses (15'b10._...._...._....)
- *   0+:cfg_reg_addr_width_lp - config register address
- *
- *   Current configuration registers:
- *   0 - cce_mode_r : controls the operating mode of the CCE
+ * Configuration Bus
+ *   The config bus is used to fill the instruction RAM and set the operating mode of the CCE.
+ *   The CCE operates in an uncached only mode until the config bus sets the CCE mode to "normal."
  *
  */
 

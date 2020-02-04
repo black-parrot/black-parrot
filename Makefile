@@ -29,10 +29,11 @@ bleach_all:
 #    you already have a copy of. If your version of a tool significantly differs from 
 #    our submodule version, use at your own risk.
 #
-tools: update_libs
+tools:
 	$(MAKE) gnu
 	$(MAKE) systemc
 	$(MAKE) verilator
+	$(MAKE) fesvr
 	$(MAKE) spike
 	$(MAKE) dromajo
 	$(MAKE) axe
@@ -44,4 +45,6 @@ progs: update_tests
 
 ucode:
 	$(MAKE) -C $(BP_ME_DIR)/src/asm roms
+
+libs: update_libs
 

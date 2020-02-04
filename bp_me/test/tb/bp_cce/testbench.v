@@ -58,13 +58,12 @@ module testbench
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
-`declare_bp_io_if(paddr_width_p, dword_width_p, lce_id_width_p);
 `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
 // CFG IF
-bp_cce_io_msg_s       cfg_io_cmd_lo;
+bp_cce_mem_msg_s       cfg_io_cmd_lo;
 logic                 cfg_io_cmd_v_lo, cfg_io_cmd_yumi_li;
-bp_cce_io_msg_s       cfg_io_resp_li;
+bp_cce_mem_msg_s       cfg_io_resp_li;
 logic                 cfg_io_resp_v_li, cfg_io_resp_ready_lo;
 
 bp_cce_mem_msg_s      cfg_mem_cmd_lo;

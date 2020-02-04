@@ -106,7 +106,6 @@ module bp_cce_dir
   end
 
   // address offset table
-  // TODO: how expensive is this?
   // bits is O(rows_per_set), computation should all be static since it is generate/params
   // lookup: lce_i[1+:], assuming tag_sets_per_row_lp == 2
   logic [rows_per_set_lp-1:0][lg_rows_lp-1:0] addr_offset_table;
@@ -355,7 +354,7 @@ module bp_cce_dir
 
       end
       READ_FULL: begin
-        // TODO: if value of tag_sets_per_row_lp changes (is no longer 2), this logic will break!
+        // WARNING: if value of tag_sets_per_row_lp changes (is no longer 2), this logic will break!
 
         // directory is busy
         busy_o = 1'b1;
@@ -385,7 +384,7 @@ module bp_cce_dir
         cnt_inc = ~cnt_clr;
       end
       READ_ENTRY: begin
-        // TODO: if value of tag_sets_per_row_lp changes (is no longer 2), this logic will break!
+        // WARNING: if value of tag_sets_per_row_lp changes (is no longer 2), this logic will break!
         busy_o = 1'b1;
         sharers_hits_n[0] = 1'b1;
         sharers_ways_n[0] = way_r;

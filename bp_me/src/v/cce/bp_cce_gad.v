@@ -101,7 +101,6 @@ module bp_cce_gad
   assign cached_owned_flag_o = |(lce_cached_owned & ~lce_id_one_hot);
   assign cached_dirty_flag_o = |(lce_cached_dirty & ~lce_id_one_hot);
 
-  // TODO: These flags might be redundant given the above four
   // If the block has an owner, we can do an LCE to LCE transfer
   assign transfer_flag_o = cached_owned_flag_o;
   // Upgrade from read-only to read-write
@@ -109,7 +108,6 @@ module bp_cce_gad
   // Replace the LRU block if not doing an upgrade and the lru block is actually dirty
   assign replacement_flag_o = (~upgrade_flag_o & lru_cached_excl_flag_i & lru_dirty_flag_i);
 
-  // TODO: whether or not invalidations are required should be determined by microcode
   // for now, if the request results in a transfer, we invalidate the other LCEA
   // this works for MESI, MSI, MI/EI, but needs adjustment if adding O or F states in MOESIF
   assign invalidate_flag_o = (req_rd) ? cached_exclusive_flag_o : cached_flag_o;
