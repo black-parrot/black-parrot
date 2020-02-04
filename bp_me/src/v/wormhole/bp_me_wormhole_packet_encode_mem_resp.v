@@ -20,14 +20,13 @@ module bp_me_wormhole_packet_encode_mem_resp
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
+    , parameter flit_width_p = "inv"
     , parameter cord_width_p = "inv"
     , parameter cid_width_p = "inv"
     , parameter len_width_p = "inv"
 
-    , localparam mem_resp_payload_width_lp =
-        `bp_mem_wormhole_payload_width(cord_width_p, cid_width_p, cce_mem_msg_width_lp)
     , localparam mem_resp_packet_width_lp = 
-        `bsg_wormhole_concentrator_packet_width(cord_width_p, len_width_p, cid_width_p, mem_resp_payload_width_lp)
+        `bp_mem_wormhole_packet_width(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_width_lp-cce_block_width_p, cce_block_width_p)
     )
    (input [cce_mem_msg_width_lp-1:0]        mem_resp_i
     , input [cord_width_p-1:0]              src_cord_i
@@ -38,16 +37,13 @@ module bp_me_wormhole_packet_encode_mem_resp
     );
 
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
-  `declare_bp_mem_wormhole_payload_s(cord_width_p, cid_width_p, cce_mem_msg_width_lp, bp_resp_wormhole_payload_s);
-  `declare_bsg_wormhole_concentrator_packet_s(cord_width_p, len_width_p, cid_width_p, $bits(bp_resp_wormhole_payload_s), bp_resp_wormhole_packet_s);
+  `declare_bp_mem_wormhole_packet_s(flit_width_p, cord_width_p, len_width_p, cid_width_p, cce_mem_msg_width_lp-cce_block_width_p, cce_block_width_p, bp_resp_wormhole_packet_s);
 
   bp_cce_mem_msg_s mem_resp_cast_i;
   bp_resp_wormhole_packet_s packet_cast_o;
 
   assign mem_resp_cast_i = mem_resp_i;
   assign packet_o        = packet_cast_o;
-
-  bp_resp_wormhole_payload_s payload_li;
 
   localparam mem_resp_ack_len_lp =
     `BSG_CDIV(mem_resp_packet_width_lp-$bits(mem_resp_cast_i.data), mem_noc_flit_width_p) - 1;
@@ -69,11 +65,11 @@ module bp_me_wormhole_packet_encode_mem_resp
   logic [len_width_p-1:0] data_resp_len_li;
 
   always_comb begin
-    payload_li.data       = mem_resp_i;
-    payload_li.src_cord   = src_cord_i;
-    payload_li.src_cid    = src_cid_i;
+    packet_cast_o.data       = mem_resp_cast_i.data;
+    packet_cast_o.msg        = mem_resp_cast_i[0+:cce_mem_msg_width_lp-cce_block_width_p];
+    packet_cast_o.src_cord   = src_cord_i;
+    packet_cast_o.src_cid    = src_cid_i;
 
-    packet_cast_o.payload = payload_li;
     packet_cast_o.cord    = dst_cord_i;
     packet_cast_o.cid     = dst_cid_i;
 
