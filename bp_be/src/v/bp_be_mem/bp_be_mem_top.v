@@ -182,7 +182,7 @@ bsg_dff_en
    ,.data_o({fault_vaddr, fault_pc})
    );
 
-wire is_store = mmu_cmd_v_i & mmu_cmd.mem_op inside {e_sb, e_sh, e_sw, e_sd};
+wire is_store = mmu_cmd_v_i & mmu_cmd.mem_op inside {e_sb, e_sh, e_sw, e_sd, e_scw, e_scd};
 
 bsg_dff_chain
  #(.width_p(vaddr_width_p)
