@@ -43,7 +43,7 @@ $BASEJUMP_STL_DIR/bsg_async/bsg_async_ptr_gray.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_dma.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_miss.v
-$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkt_decode.v
+$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_decode.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_sbuf.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_sbuf_queue.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_channel_tunnel.v
@@ -141,7 +141,6 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v  
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v 
 # Common files
-$BP_COMMON_DIR/src/v/bsg_fifo_1r1w_fence.v
 $BP_COMMON_DIR/src/v/bsg_fifo_1r1w_rolly.v
 $BP_COMMON_DIR/src/v/bp_pma.v
 $BP_COMMON_DIR/src/v/bp_tlb.v

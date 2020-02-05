@@ -37,7 +37,6 @@ module bp_fe_pc_gen
    , input [fe_cmd_width_lp-1:0]                     fe_cmd_i
    , input                                           fe_cmd_v_i
    , output                                          fe_cmd_yumi_o
-   , output                                          fe_cmd_processed_o
 
    , output [fe_queue_width_lp-1:0]                  fe_queue_o
    , output                                          fe_queue_v_o
@@ -347,7 +346,7 @@ assign mem_resp_ready_o = 1'b1;
 
 // Handshaking signals
 assign fe_cmd_yumi_o      = fe_cmd_v_i; // Always accept FE commands
-assign fe_cmd_processed_o = fe_cmd_yumi_o; // All FE cmds are processed in 1 cycle, for now
+                                        // All FE cmds are processed in 1 cycle, for now                                      
 
 // Organize the FE queue message
 assign fe_queue_v_o = fe_queue_ready_i & (fe_instr_v | fe_exception_v);
