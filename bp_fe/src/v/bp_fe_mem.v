@@ -54,11 +54,13 @@ bp_cfg_bus_s cfg_bus_cast_i;
 bp_fe_mem_cmd_s  mem_cmd_cast_i;
 bp_fe_mem_resp_s mem_resp_cast_o;
 
+wire unused = &{mem_resp_ready_i};
+
 assign cfg_bus_cast_i = cfg_bus_i;
 assign mem_cmd_cast_i = mem_cmd_i;
 assign mem_resp_o     = mem_resp_cast_o;
 
-logic instr_page_fault_lo, instr_access_fault_lo, icache_miss_lo, itlb_miss_lo;
+logic icache_miss_lo, itlb_miss_lo;
 logic icache_ready_lo;
 
 wire itlb_fence_v = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fence);
@@ -102,49 +104,9 @@ bp_pma
 
 logic [instr_width_p-1:0] icache_data_lo;
 logic                     icache_data_v_lo;
-bp_fe_icache 
- #(.bp_params_p(bp_params_p)) 
- icache
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-
-   ,.cfg_bus_i(cfg_bus_i)
-
-   ,.vaddr_i(mem_cmd_cast_i.operands.fetch.vaddr)
-   ,.vaddr_v_i(fetch_v)
-   ,.vaddr_ready_o(icache_ready_lo)
-
-   ,.uncached_i(uncached_li)
-   ,.ptag_i(ptag_li)
-   ,.ptag_v_i(ptag_v_li)
-   ,.poison_i(mem_poison_i)
-
-   ,.data_o(icache_data_lo)
-   ,.data_v_o(icache_data_v_lo)
-   ,.cache_miss_o(icache_miss_lo)
-  
-   ,.lce_req_o(lce_req_o)
-   ,.lce_req_v_o(lce_req_v_o)
-   ,.lce_req_ready_i(lce_req_ready_i)
-         
-   ,.lce_cmd_i(lce_cmd_i)
-   ,.lce_cmd_v_i(lce_cmd_v_i)
-   ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
-         
-   ,.lce_cmd_o(lce_cmd_o)
-   ,.lce_cmd_v_o(lce_cmd_v_o)
-   ,.lce_cmd_ready_i(lce_cmd_ready_i)
-
-   ,.lce_resp_o(lce_resp_o)
-   ,.lce_resp_v_o(lce_resp_v_o)
-   ,.lce_resp_ready_i(lce_resp_ready_i)
-   );
-
-assign mem_cmd_yumi_o = itlb_fence_v | itlb_fill_v | fetch_v;
-
 logic fetch_v_r, fetch_v_rr;
 logic itlb_miss_r;
-logic instr_access_fault_v, instr_access_fault_r, instr_access_err_v, instr_page_fault_r;
+logic instr_access_fault_v, instr_access_fault_r, instr_page_fault_v, instr_page_fault_r;
 always_ff @(posedge clk_i)
   begin
     if(reset_i) begin
@@ -161,13 +123,13 @@ always_ff @(posedge clk_i)
       itlb_miss_r <= itlb_miss_lo & ~mem_poison_i;
 
       instr_access_fault_r <= instr_access_fault_v & ~mem_poison_i;
-      instr_page_fault_r   <= instr_access_err_v & ~mem_poison_i;
+      instr_page_fault_r   <= instr_page_fault_v & ~mem_poison_i;
     end
   end
 
-wire instr_priv_access_fault = ((mem_priv_i == `PRIV_MODE_S) & itlb_r_entry.u)
+wire instr_priv_page_fault = ((mem_priv_i == `PRIV_MODE_S) & itlb_r_entry.u)
                                | ((mem_priv_i == `PRIV_MODE_U) & ~itlb_r_entry.u);
-wire instr_exe_access_fault = ~itlb_r_entry.x;
+wire instr_exe_page_fault = ~itlb_r_entry.x;
 
 // Fault if in uncached mode but access is not for an uncached address
 wire is_uncached_mode = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached);
@@ -175,10 +137,10 @@ wire mode_fault_v = (is_uncached_mode & ~uncached_li);
 // TODO: Enable other domains by setting enabled dids with cfg_bus
 wire did_fault_v = (ptag_li[ptag_width_p-1-:io_noc_did_width_p] != '0);
 
-assign instr_access_fault_v = mode_fault_v | did_fault_v;
-assign instr_access_err_v  = fetch_v_r & itlb_r_v_lo & mem_translation_en_i & (instr_priv_access_fault | instr_exe_access_fault);
+assign instr_access_fault_v = fetch_v_r & (mode_fault_v | did_fault_v);
+assign instr_page_fault_v   = fetch_v_r & itlb_r_v_lo & mem_translation_en_i & (instr_priv_page_fault | instr_exe_page_fault);
 
-wire unused = &{mem_resp_ready_i};
+assign mem_cmd_yumi_o = itlb_fence_v | itlb_fill_v | fetch_v;
 
 assign mem_resp_v_o    = fetch_v_rr;
 assign mem_resp_cast_o = '{instr_access_fault: instr_access_fault_r
@@ -187,5 +149,43 @@ assign mem_resp_cast_o = '{instr_access_fault: instr_access_fault_r
                            ,icache_miss      : fetch_v_rr & ~icache_data_v_lo
                            ,data             : icache_data_lo
                            };
+
+bp_fe_icache
+ #(.bp_params_p(bp_params_p))
+ icache
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.cfg_bus_i(cfg_bus_i)
+
+   ,.vaddr_i(mem_cmd_cast_i.operands.fetch.vaddr)
+   ,.vaddr_v_i(fetch_v)
+   ,.vaddr_ready_o(icache_ready_lo)
+
+   ,.uncached_i(uncached_li)
+   ,.ptag_i(ptag_li)
+   ,.ptag_v_i(ptag_v_li)
+   ,.poison_i(mem_poison_i | instr_access_fault_v | instr_page_fault_v)
+
+   ,.data_o(icache_data_lo)
+   ,.data_v_o(icache_data_v_lo)
+   ,.cache_miss_o(icache_miss_lo)
+
+   ,.lce_req_o(lce_req_o)
+   ,.lce_req_v_o(lce_req_v_o)
+   ,.lce_req_ready_i(lce_req_ready_i)
+
+   ,.lce_cmd_i(lce_cmd_i)
+   ,.lce_cmd_v_i(lce_cmd_v_i)
+   ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
+
+   ,.lce_cmd_o(lce_cmd_o)
+   ,.lce_cmd_v_o(lce_cmd_v_o)
+   ,.lce_cmd_ready_i(lce_cmd_ready_i)
+
+   ,.lce_resp_o(lce_resp_o)
+   ,.lce_resp_v_o(lce_resp_v_o)
+   ,.lce_resp_ready_i(lce_resp_ready_i)
+   );
 
 endmodule
