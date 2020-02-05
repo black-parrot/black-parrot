@@ -48,8 +48,7 @@ module wrapper
 
   bp_processor
    #(.bp_params_p(bp_params_p)
-     ,.bp_enable_accelerator_p(bp_enable_accelerator_p)
-     )
+     ,.bp_enable_accelerator_p(bp_enable_accelerator_p))
    dut
     (.*);
 
