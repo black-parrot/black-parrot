@@ -411,6 +411,8 @@ typedef struct packed
   logic       sum;
   logic       mprv;
 
+  logic [1:0] fs;
+
   logic [1:0] mpp;
   logic       spp;
 
@@ -428,6 +430,7 @@ typedef struct packed
     ,mxr : data_cast_mp.mxr  \
     ,sum : data_cast_mp.sum  \
     ,mprv: data_cast_mp.mprv \
+    ,fs  : data_cast_mp.fs   \
     ,mpp : data_cast_mp.mpp  \
     ,spp : data_cast_mp.spp  \
     ,mpie: data_cast_mp.mpie \
@@ -437,7 +440,8 @@ typedef struct packed
     }
 
 `define decompress_mstatus_s(data_comp_mp) \
-  '{sxl  : 2'b10             \
+  '{sd   : (data_comp_mp.fs == 2'b11) \
+    ,sxl : 2'b10             \
     ,uxl : 2'b10             \
     ,tsr : data_comp_mp.tsr  \
     ,tvm : data_comp_mp.tvm  \
@@ -445,6 +449,7 @@ typedef struct packed
     ,mxr : data_comp_mp.mxr  \
     ,sum : data_comp_mp.sum  \
     ,mprv: data_comp_mp.mprv \
+    ,fs  : data_comp_mp.fs   \
     ,mpp : data_comp_mp.mpp  \
     ,spp : data_comp_mp.spp  \
     ,mpie: data_comp_mp.mpie \

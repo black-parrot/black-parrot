@@ -47,8 +47,6 @@ module bp_accelerator_example
     , output [cce_mem_msg_width_lp-1:0]        io_resp_o
     , output logic                            io_resp_v_o
     , input                                   io_resp_yumi_i
-    
-    , input [io_noc_cord_width_p-1:0]         my_cord_i
     );
 
 

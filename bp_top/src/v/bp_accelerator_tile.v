@@ -272,7 +272,7 @@ module bp_accelerator_tile
      ,.reset_i(reset_i)
 
      ,.lce_id_i(lce_id_li)
-     ,.my_cord_i(my_cord_i)
+
      ,.io_cmd_i(cce_io_cmd_lo)
      ,.io_cmd_v_i(cce_io_cmd_v_lo)
      ,.io_cmd_ready_o(cce_io_cmd_ready_li)
