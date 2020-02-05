@@ -16,10 +16,12 @@ bp_local_addr_s  local_addr_li;
 assign global_addr_li = paddr_i;
 assign local_addr_li  = paddr_i;
 
+  // CCE: CC -> MC -> CAC -> SAC -> IOC
 localparam max_cc_cce_lp  = num_core_p;
 localparam max_mc_cce_lp  = max_cc_cce_lp + num_l2e_p;
-localparam max_ac_cce_lp  = max_mc_cce_lp + num_acc_p;
-localparam max_ioc_cce_lp = max_ac_cce_lp + num_io_p;
+localparam max_cac_cce_lp = max_mc_cce_lp + num_cacc_p;
+localparam max_sac_cce_lp = max_cac_cce_lp + num_sacc_p;
+localparam max_ioc_cce_lp = max_sac_cce_lp + num_io_p;
 
 wire external_io_v_li = (global_addr_li.did > '0);
 wire local_addr_v_li  = (paddr_i < dram_base_addr_gp);
@@ -50,8 +52,8 @@ always_comb begin
   if (external_io_v_li || (local_addr_v_li && (local_addr_li.dev == host_dev_gp)))
     // Stripe by 4kiB page, start at io CCE id
     cce_id_o = (num_io_p > 1)
-               ? max_ac_cce_lp + paddr_i[page_offset_width_p+:`BSG_SAFE_CLOG2(num_io_p)]
-               : max_ac_cce_lp;
+               ? max_sac_cce_lp + paddr_i[page_offset_width_p+:`BSG_SAFE_CLOG2(num_io_p)]
+               : max_sac_cce_lp;
   else if (local_addr_v_li)
     // Split uncached I/O region by max 128 cores
     cce_id_o = local_addr_li.cce;

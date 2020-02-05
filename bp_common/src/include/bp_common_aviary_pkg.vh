@@ -15,7 +15,8 @@ package bp_common_aviary_pkg;
       ,cc_y_dim  : 1
       ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,ac_x_dim  : 0
+      ,cac_x_dim : 0
+      ,sac_x_dim : 0
 
       ,vaddr_width: 39
       ,paddr_width: 40
@@ -66,7 +67,8 @@ package bp_common_aviary_pkg;
       ,cc_y_dim  : 1
       ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,ac_x_dim  : 1
+      ,cac_x_dim : 1
+      ,sac_x_dim : 0
 
       ,vaddr_width: 39
       ,paddr_width: 40
@@ -118,7 +120,8 @@ package bp_common_aviary_pkg;
       ,cc_y_dim  : 1
       ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,ac_x_dim  : 0
+      ,cac_x_dim : 0
+      ,sac_x_dim : 0
 
       ,vaddr_width: 39
       ,paddr_width: 40
@@ -169,7 +172,8 @@ package bp_common_aviary_pkg;
       ,cc_y_dim  : 1
       ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,ac_x_dim  : 0
+      ,cac_x_dim : 0
+      ,sac_x_dim : 0
 
       ,vaddr_width: 39
       ,paddr_width: 40
@@ -220,7 +224,8 @@ package bp_common_aviary_pkg;
       ,cc_y_dim  : 2
       ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,ac_x_dim  : 0
+      ,cac_x_dim : 0
+      ,sac_x_dim : 0
 
       ,vaddr_width: 39
       ,paddr_width: 40
@@ -271,7 +276,8 @@ package bp_common_aviary_pkg;
       ,cc_y_dim  : 2
       ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,ac_x_dim  : 0
+      ,cac_x_dim : 0
+      ,sac_x_dim : 0
 
       ,vaddr_width: 39
       ,paddr_width: 40
@@ -322,7 +328,8 @@ package bp_common_aviary_pkg;
       ,cc_y_dim  : 2
       ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,ac_x_dim  : 0
+      ,cac_x_dim : 0
+      ,sac_x_dim : 0
 
       ,vaddr_width: 39
       ,paddr_width: 40
@@ -373,7 +380,8 @@ package bp_common_aviary_pkg;
       ,cc_y_dim  : 3
       ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,ac_x_dim  : 0
+      ,cac_x_dim : 0
+      ,sac_x_dim : 0
 
       ,vaddr_width: 39
       ,paddr_width: 40
@@ -424,7 +432,8 @@ package bp_common_aviary_pkg;
       ,cc_y_dim  : 4
       ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,ac_x_dim  : 0
+      ,cac_x_dim : 0
+      ,sac_x_dim : 0
 
       ,vaddr_width: 39
       ,paddr_width: 40
