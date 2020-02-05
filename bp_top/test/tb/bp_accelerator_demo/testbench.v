@@ -54,7 +54,6 @@ module testbench
 `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_noc_ral_link_s);
 `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_noc_ral_link_s);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
-`declare_bp_io_if(paddr_width_p, dword_width_p, lce_id_width_p)
 
 bp_io_noc_ral_link_s [E:P] cmd_link_li, cmd_link_lo;
 bp_io_noc_ral_link_s [E:P] resp_link_li, resp_link_lo;
@@ -69,24 +68,24 @@ bp_io_noc_ral_link_s proc_resp_link_li, proc_resp_link_lo;
 
 bp_mem_noc_ral_link_s dram_cmd_link_lo, dram_resp_link_li;
 
-bp_cce_io_msg_s        host_cmd_li;
+bp_cce_mem_msg_s       host_cmd_li;
 logic                  host_cmd_v_li, host_cmd_yumi_lo;
-bp_cce_io_msg_s        host_resp_lo;
+bp_cce_mem_msg_s       host_resp_lo;
 logic                  host_resp_v_lo, host_resp_ready_li;
 
-bp_cce_io_msg_s        load_cmd_lo;
+bp_cce_mem_msg_s       load_cmd_lo;
 logic                  load_cmd_v_lo, load_cmd_ready_li;
-bp_cce_io_msg_s        load_resp_li;
-logic                  load_resp_v_li, load_resp_ready_lo;
+bp_cce_mem_msg_s       load_resp_li;
+logic                  load_resp_v_li, load_resp_yumi_lo;
 
-bp_cce_io_msg_s        cfg_cmd_lo;
+bp_cce_mem_msg_s       cfg_cmd_lo;
 logic                  cfg_cmd_v_lo, cfg_cmd_ready_li;
-bp_cce_io_msg_s        cfg_resp_li;
+bp_cce_mem_msg_s       cfg_resp_li;
 logic                  cfg_resp_v_li, cfg_resp_ready_lo;
 
-bp_cce_io_msg_s        nbf_cmd_lo;
+bp_cce_mem_msg_s       nbf_cmd_lo;
 logic                  nbf_cmd_v_lo, nbf_cmd_ready_li;
-bp_cce_io_msg_s        nbf_resp_li;
+bp_cce_mem_msg_s       nbf_resp_li;
 logic                  nbf_resp_v_li, nbf_resp_ready_lo;
 
 wire [io_noc_did_width_p-1:0] dram_did_li = '1;
@@ -320,41 +319,53 @@ bind bp_be_top
 
 wire [io_noc_cord_width_p-1:0] dst_cord_lo = 1;
 
-// Host + cfg link 
-bp_me_cce_to_io_link_bidir
- #(.bp_params_p(bp_params_p))
- host_cfg_link
+bp_me_cce_to_mem_link_bidir
+ #(.bp_params_p(bp_params_p)
+   ,.num_outstanding_req_p(io_noc_max_credits_p)
+   ,.flit_width_p(io_noc_flit_width_p)
+   ,.cord_width_p(io_noc_cord_width_p)
+   ,.cid_width_p(io_noc_cid_width_p)
+   ,.len_width_p(io_noc_len_width_p)
+   )
+ host_link
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.io_cmd_i(load_cmd_lo)
-   ,.io_cmd_v_i(load_cmd_v_lo)
-   ,.io_cmd_ready_o(load_cmd_ready_li)
+   ,.mem_cmd_i(load_cmd_lo)
+   ,.mem_cmd_v_i(load_cmd_v_lo)
+   ,.mem_cmd_ready_o(load_cmd_ready_li)
 
-   ,.io_resp_o(load_resp_li)
-   ,.io_resp_v_o(load_resp_v_li)
-   ,.io_resp_yumi_i(load_resp_ready_lo & load_resp_v_li) // Always accept responses
-
-   ,.io_cmd_o(host_cmd_li)
-   ,.io_cmd_v_o(host_cmd_v_li)
-   ,.io_cmd_yumi_i(host_cmd_yumi_lo)
-
-   ,.io_resp_i(host_resp_lo)
-   ,.io_resp_v_i(host_resp_v_lo)
-   ,.io_resp_ready_o(host_resp_ready_li)
+   ,.mem_resp_o(load_resp_li)
+   ,.mem_resp_v_o(load_resp_v_li)
+   ,.mem_resp_yumi_i(load_resp_yumi_lo)
 
    ,.my_cord_i(io_noc_cord_width_p'(dram_did_li))
+   ,.my_cid_i('0)
    ,.dst_cord_i(dst_cord_lo)
-      
+   ,.dst_cid_i('0)
+
+   ,.mem_cmd_o(host_cmd_li)
+   ,.mem_cmd_v_o(host_cmd_v_li)
+   ,.mem_cmd_yumi_i(host_cmd_yumi_lo)
+
+   ,.mem_resp_i(host_resp_lo)
+   ,.mem_resp_v_i(host_resp_v_lo)
+   ,.mem_resp_ready_o(host_resp_ready_li)
+
    ,.cmd_link_i(proc_cmd_link_lo)
    ,.cmd_link_o(proc_cmd_link_li)
-
    ,.resp_link_i(proc_resp_link_lo)
    ,.resp_link_o(proc_resp_link_li)
    );
 
 bp_me_cce_to_mem_link_client
- #(.bp_params_p(bp_params_p))
+ #(.bp_params_p(bp_params_p)
+   ,.num_outstanding_req_p(mem_noc_max_credits_p)
+   ,.flit_width_p(mem_noc_flit_width_p)
+   ,.cord_width_p(mem_noc_cord_width_p)
+   ,.cid_width_p(mem_noc_cid_width_p)
+   ,.len_width_p(mem_noc_len_width_p)
+   )
  dram_link
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -480,9 +491,9 @@ always_comb
       nbf_resp_v_li = 1'b0;
 
       cfg_resp_li = load_resp_li;
-      cfg_resp_v_li = load_resp_v_li & load_resp_ready_lo & cfg_resp_ready_lo;
+      cfg_resp_v_li = cfg_resp_ready_lo & load_resp_v_li;
 
-      load_resp_ready_lo = cfg_resp_ready_lo;
+      load_resp_yumi_lo = cfg_resp_v_li;
     end
   else
     begin
@@ -493,12 +504,12 @@ always_comb
       cfg_cmd_ready_li = 1'b0;
 
       nbf_resp_li = load_resp_li;
-      nbf_resp_v_li = load_resp_v_li;
+      nbf_resp_v_li = nbf_resp_ready_lo & load_resp_v_li;
 
       cfg_resp_li = '0;
       cfg_resp_v_li = 1'b0;
 
-      load_resp_ready_lo = nbf_resp_ready_lo;
+      load_resp_yumi_lo = nbf_resp_v_li;
     end
 
 bp_nonsynth_if_verif
