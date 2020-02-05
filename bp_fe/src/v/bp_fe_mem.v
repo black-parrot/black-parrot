@@ -136,8 +136,10 @@ wire is_uncached_mode = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached);
 wire mode_fault_v = (is_uncached_mode & ~uncached_li);
 // TODO: Enable other domains by setting enabled dids with cfg_bus
 wire did_fault_v = (ptag_li[ptag_width_p-1-:io_noc_did_width_p] != '0);
+// Don't allow speculative access to local tile memory
+wire local_fault_v = (ptag_li < (dram_base_addr_gp >> page_offset_width_p));
 
-assign instr_access_fault_v = fetch_v_r & (mode_fault_v | did_fault_v);
+assign instr_access_fault_v = fetch_v_r & (mode_fault_v | did_fault_v | local_fault_v);
 assign instr_page_fault_v   = fetch_v_r & itlb_r_v_lo & mem_translation_en_i & (instr_priv_page_fault | instr_exe_page_fault);
 
 assign mem_cmd_yumi_o = itlb_fence_v | itlb_fill_v | fetch_v;
