@@ -272,15 +272,15 @@ bsg_dff_reset
    );
 
 // sstatus mask
-assign sstatus_wmask_li = '{mxr: 1'b1, sum: 1'b1
+assign sstatus_wmask_li = '{fs: 2'b11
+                            ,mxr: 1'b1, sum: 1'b1
                             ,mpp: 2'b00, spp: 2'b11
                             ,mpie: 1'b0, spie: 1'b1
                             ,mie: 1'b0, sie: 1'b1
                             ,default: '0
                             };
-assign sstatus_rmask_li = '{sd: 1'b1, uxl: 2'b11
+assign sstatus_rmask_li = '{sd: 1'b1, uxl: 2'b11, fs: 2'b11
                             ,mxr: 1'b1, sum: 1'b1
-                            ,xs: 2'b11, fs: 2'b11
                             ,mpp: 2'b00, spp: 2'b11
                             ,mpie: 1'b0, spie: 1'b1
                             ,mie: 1'b0, sie: 1'b1
