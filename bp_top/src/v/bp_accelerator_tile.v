@@ -34,7 +34,7 @@ module bp_accelerator_tile
 
    );
 
-  `declare_bp_io_if(paddr_width_p, dword_width_p, lce_id_width_p);
+  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   `declare_bsg_wormhole_concentrator_packet_s(coh_noc_cord_width_p, coh_noc_len_width_p, coh_noc_cid_width_p, lce_cce_req_width_lp, lce_req_packet_s);
@@ -49,9 +49,9 @@ module bp_accelerator_tile
   bp_lce_cmd_s cce_lce_cmd_lo;
   logic cce_lce_cmd_v_lo, cce_lce_cmd_ready_li;
   
-  bp_cce_io_msg_s cce_io_cmd_lo;
+  bp_cce_mem_msg_s cce_io_cmd_lo;
   logic cce_io_cmd_v_lo, cce_io_cmd_ready_li;
-  bp_cce_io_msg_s cce_io_resp_li;
+  bp_cce_mem_msg_s cce_io_resp_li;
   logic cce_io_resp_v_li, cce_io_resp_yumi_lo;
 
   // accelerator-side connections network connections

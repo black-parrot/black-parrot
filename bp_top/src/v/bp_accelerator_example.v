@@ -15,7 +15,7 @@ module bp_accelerator_example
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-    `declare_bp_io_if_widths(paddr_width_p, dword_width_p, lce_id_width_p)
+    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     )
    (
@@ -40,11 +40,11 @@ module bp_accelerator_example
     , output                                  lce_cmd_v_o
     , input                                   lce_cmd_ready_i
 
-    , input  [cce_io_msg_width_lp-1:0]        io_cmd_i
+    , input  [cce_mem_msg_width_lp-1:0]        io_cmd_i
     , input                                   io_cmd_v_i
     , output                                  io_cmd_ready_o
 
-    , output [cce_io_msg_width_lp-1:0]        io_resp_o
+    , output [cce_mem_msg_width_lp-1:0]        io_resp_o
     , output logic                            io_resp_v_o
     , input                                   io_resp_yumi_i
     
@@ -123,10 +123,10 @@ module bp_accelerator_example
     );
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
-  `declare_bp_io_if(paddr_width_p, dword_width_p, lce_id_width_p);
-  
-  bp_cce_io_msg_s io_resp_cast_o;
-  bp_cce_io_msg_s io_cmd_cast_i;
+   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
+   
+  bp_cce_mem_msg_s io_resp_cast_o;
+  bp_cce_mem_msg_s io_cmd_cast_i;
   
   assign io_cmd_ready_o = 1'b1;
   assign io_cmd_cast_i = io_cmd_i;
@@ -146,9 +146,9 @@ module bp_accelerator_example
   logic [63:0] sum_l2 [0:1];
   logic [63:0] dot_product_temp;
    
-  bp_cce_io_msg_payload_s  resp_payload;
-  bp_cce_io_req_size_e     resp_size;
-  bp_cce_io_cmd_type_e     resp_msg;
+  bp_cce_mem_msg_payload_s  resp_payload;
+  bp_cce_mem_req_size_e     resp_size;  
+  bp_cce_mem_cmd_type_e     resp_msg;
   bp_local_addr_s          local_addr_li;
   
   assign local_addr_li = io_cmd_cast_i.addr;
@@ -209,7 +209,7 @@ module bp_accelerator_example
     end 
     if (state_r == DONE) 
       start_cmd  <= '0;
-    else if (io_cmd_v_i & (io_cmd_cast_i.msg_type == e_cce_io_wr))
+    else if (io_cmd_v_i & (io_cmd_cast_i.msg_type == e_cce_mem_uc_wr))
     begin
       resp_size    <= io_cmd_cast_i.size;
       resp_payload <= io_cmd_cast_i.payload;
@@ -227,7 +227,7 @@ module bp_accelerator_example
         default : begin end
       endcase 
     end 
-    else if (io_cmd_v_i & (io_cmd_cast_i.msg_type == e_cce_io_rd))
+    else if (io_cmd_v_i & (io_cmd_cast_i.msg_type == e_cce_mem_uc_rd))
     begin
       resp_size    <= io_cmd_cast_i.size;
       resp_payload <= io_cmd_cast_i.payload;
