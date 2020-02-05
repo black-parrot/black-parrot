@@ -45,7 +45,6 @@ BP_DEMOS_S = \
 	simple                \
 	uc_simple             \
   hello_world           \
-  accel_simple          \
 
 BP_DEMOS = $(BP_DEMOS_S) $(BP_DEMOS_C)
 
