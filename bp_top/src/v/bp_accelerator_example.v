@@ -109,7 +109,7 @@ module bp_accelerator_example
 
      // IOCCE-LCE interface
      ,.lce_cmd_i(lce_cmd_i)
-     ,.lce_cmd_v_i(lce_cmd_v_i & (ac_x_dim_p > 0))
+     ,.lce_cmd_v_i(lce_cmd_v_i)
      ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
 
      ,.lce_cmd_o(lce_cmd_o)
