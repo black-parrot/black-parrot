@@ -145,29 +145,28 @@ wrapper
        ,.rd_data_i(be_calculator.wb_pkt.rd_data)
        );
 
-  if(cosim_p)
-    bind bp_be_top
-      bp_nonsynth_cosim
-       #(.bp_params_p(bp_params_p)
-         ,.config_file_p("prog.cfg"))
-        cosim
-        (.clk_i(clk_i)
-         ,.reset_i(reset_i)
-         ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
+  bind bp_be_top
+    bp_nonsynth_cosim
+     #(.bp_params_p(bp_params_p)
+       ,.config_file_p("prog.cfg"))
+      cosim
+      (.clk_i(clk_i & (testbench.cosim_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
 
-         ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
+       ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
-         ,.commit_v_i(be_calculator.commit_pkt.instret)
-         ,.commit_pc_i(be_calculator.commit_pkt.pc)
-         ,.commit_instr_i(be_calculator.commit_pkt.instr)
+       ,.commit_v_i(be_calculator.commit_pkt.instret)
+       ,.commit_pc_i(be_calculator.commit_pkt.pc)
+       ,.commit_instr_i(be_calculator.commit_pkt.instr)
 
-         ,.rd_w_v_i(be_calculator.wb_pkt.rd_w_v)
-         ,.rd_addr_i(be_calculator.wb_pkt.rd_addr)
-         ,.rd_data_i(be_calculator.wb_pkt.rd_data)
+       ,.rd_w_v_i(be_calculator.wb_pkt.rd_w_v)
+       ,.rd_addr_i(be_calculator.wb_pkt.rd_addr)
+       ,.rd_data_i(be_calculator.wb_pkt.rd_data)
 
-         ,.interrupt_v_i(be_mem.csr.trap_pkt_cast_o._interrupt)
-         ,.cause_i(be_mem.csr.trap_pkt_cast_o.cause)
-         );
+       ,.interrupt_v_i(be_mem.csr.trap_pkt_cast_o._interrupt)
+       ,.cause_i(be_mem.csr.trap_pkt_cast_o.cause)
+       );
 
   bind bp_be_director
     bp_be_nonsynth_npc_tracer
