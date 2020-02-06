@@ -13,6 +13,7 @@ module bp_accelerator_example
  import bp_me_pkg::*;
  import bp_be_dcache_pkg::*;  
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+    , parameter bp_enable_accelerator_p = 0
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
@@ -109,7 +110,7 @@ module bp_accelerator_example
 
      // IOCCE-LCE interface
      ,.lce_cmd_i(lce_cmd_i)
-     ,.lce_cmd_v_i(lce_cmd_v_i & (ac_x_dim_p > 0))
+     ,.lce_cmd_v_i(lce_cmd_v_i & bp_enable_accelerator_p)
      ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
 
      ,.lce_cmd_o(lce_cmd_o)
