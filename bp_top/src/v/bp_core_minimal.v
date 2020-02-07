@@ -16,16 +16,18 @@ module bp_core_minimal
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+    `declare_bp_cache_if_widths(lce_assoc_p, lce_sets_p, ptag_width_p, cce_block_width_p)
+    `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
 
     , localparam way_id_width_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , localparam dcache_lce_data_mem_pkt_width_lp=
-      `bp_be_dcache_lce_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
+      `bp_cache_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
     , localparam dcache_lce_tag_mem_pkt_width_lp=
-      `bp_be_dcache_lce_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, ptag_width_p)
+      `bp_cache_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, ptag_width_p)
     , localparam dcache_lce_stat_mem_pkt_width_lp=
-      `bp_be_dcache_lce_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
+      `bp_cache_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
     )
    (
     input          clk_i
@@ -40,25 +42,29 @@ module bp_core_minimal
 
     // BP request side - Interface to LCE
     , input [1:0] lce_ready_i
-    , input [1:0] lce_miss_i
+    //, input [1:0] lce_miss_i
     , input credits_full_i
     , input credits_empty_i
 
-    , output logic [1:0] load_miss_o
-    , output logic [1:0] store_miss_o
-    , output logic [1:0] lr_miss_o
+    //, output logic [1:0] load_miss_o
+    //, output logic [1:0] store_miss_o
+    //, output logic [1:0] lr_miss_o
     , output logic [1:0] lr_hit_o
     , output logic [1:0] cache_v_o
-    , output logic [1:0] uncached_load_req_o
-    , output logic [1:0] uncached_store_req_o
+    //, output logic [1:0] uncached_load_req_o
+    //, output logic [1:0] uncached_store_req_o
 
     , output logic [1:0][cce_block_width_p-1:0] data_mem_data_o
-    , output logic [1:0][paddr_width_p-1:0] miss_addr_o
-    , output logic [1:0][way_id_width_lp-1:0] lru_way_o
-    , output logic [1:0][lce_assoc_p-1:0] dirty_o
+    //, output logic [1:0][paddr_width_p-1:0] miss_addr_o
+    //, output logic [1:0][way_id_width_lp-1:0] lru_way_o
+    //, output logic [1:0][lce_assoc_p-1:0] dirty_o
     , output logic [1:0] store_o
-    , output logic [1:0][dword_width_p-1:0] store_data_o
-    , output logic [1:0][1:0] size_op_o
+    //, output logic [1:0][dword_width_p-1:0] store_data_o
+    //, output logic [1:0][1:0] size_op_o
+
+    , output logic [1:0][bp_cache_miss_width_lp-1:0] cache_miss_o
+    , output logic [1:0] cache_miss_v_o
+    , input [1:0] cache_miss_ready_i
 
     // response side - Interface from LCE
     , input [1:0][dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
@@ -79,13 +85,13 @@ module bp_core_minimal
 
     );
 
-  `declare_bp_be_dcache_lce_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
-  `declare_bp_be_dcache_lce_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, ptag_width_p);
-  `declare_bp_be_dcache_lce_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
+  `declare_bp_cache_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
+  `declare_bp_cache_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, ptag_width_p);
+  `declare_bp_cache_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
 
-  bp_be_dcache_lce_data_mem_pkt_s data_mem_pkt;
-  bp_be_dcache_lce_tag_mem_pkt_s tag_mem_pkt;
-  bp_be_dcache_lce_stat_mem_pkt_s stat_mem_pkt;
+  bp_cache_data_mem_pkt_s data_mem_pkt;
+  bp_cache_tag_mem_pkt_s tag_mem_pkt;
+  bp_cache_stat_mem_pkt_s stat_mem_pkt;
 
   // TODO: fix interfaces for fe/be
   `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -102,16 +108,16 @@ module bp_core_minimal
 
   // stub unsued outputs at I$ index
   always_comb begin
-    store_miss_o[0] = '0;
-    lr_miss_o[0] = '0;
+    //store_miss_o[0] = '0;
+    //lr_miss_o[0] = '0;
     lr_hit_o[0] = '0;
     cache_v_o[0] = '0;
-    uncached_store_req_o[0] = '0;
-    dirty_o[0] = '0;
+    //uncached_store_req_o[0] = '0;
+    //dirty_o[0] = '0;
     store_o[0] = '0;
-    store_data_o[0] = '0;
-    size_op_o[0] = '0;
-  end
+    //store_data_o[0] = '0;
+    //size_op_o[0] = '0;
+  end 
 
   bp_fe_top
    #(.bp_params_p(bp_params_p))
@@ -131,12 +137,16 @@ module bp_core_minimal
      ,.fe_cmd_processed_o(fe_cmd_processed_li)
 
      ,.lce_ready_i(lce_ready_i[0])
-     ,.lce_miss_i(lce_miss_i[0])
+     //,.lce_miss_i(lce_miss_i[0])
 
-     ,.uncached_req_o(uncached_load_req_o[0])
-     ,.miss_tv_o(load_miss_o[0])
-     ,.miss_addr_tv_o(miss_addr_o[0])
-     ,.lru_way_o(lru_way_o[0])
+     //,.uncached_req_o(uncached_load_req_o[0])
+     //,.miss_tv_o(load_miss_o[0])
+     //,.miss_addr_tv_o(miss_addr_o[0])
+     //,.lru_way_o(lru_way_o[0])
+
+     ,.cache_miss_o(cache_miss_o[0])
+     ,.cache_miss_v_o(cache_miss_v_o[0])
+     ,.cache_miss_ready_i(cache_miss_ready_i[0])
 
      ,.data_mem_data_o(data_mem_data_o[0])
      ,.data_mem_pkt_i(data_mem_pkt_i[0])
@@ -224,18 +234,22 @@ module bp_core_minimal
      ,.fe_cmd_ready_i(fe_cmd_ready_lo)
 
      ,.lce_ready_i(lce_ready_i[1])
-     ,.lce_miss_i(lce_miss_i[1])
-     ,.load_miss_o(load_miss_o[1])
-     ,.store_miss_o(store_miss_o[1])
+     //,.lce_miss_i(lce_miss_i[1])
+     //,.load_miss_o(load_miss_o[1])
+     //,.store_miss_o(store_miss_o[1])
      ,.store_hit_o(store_o[1])
-     ,.lr_miss_o(lr_miss_o[1])
-     ,.uncached_load_req_o(uncached_load_req_o[1])
-     ,.uncached_store_req_o(uncached_store_req_o[1])
-     ,.miss_addr_o(miss_addr_o[1])
-     ,.store_data_o(store_data_o[1])
-     ,.size_op_o(size_op_o[1])
-     ,.lru_way_o(lru_way_o[1])
-     ,.dirty_o(dirty_o[1])
+     //,.lr_miss_o(lr_miss_o[1])
+     //,.uncached_load_req_o(uncached_load_req_o[1])
+     //,.uncached_store_req_o(uncached_store_req_o[1])
+     //,.miss_addr_o(miss_addr_o[1])
+     //,.store_data_o(store_data_o[1])
+     //,.size_op_o(size_op_o[1])
+     //,.lru_way_o(lru_way_o[1])
+     //,.dirty_o(dirty_o[1])
+     
+     ,.cache_miss_o(cache_miss_o[1])
+     ,.cache_miss_v_o(cache_miss_v_o[1])
+     ,.cache_miss_ready_i(cache_miss_ready_i[1])
      ,.lr_hit_tv_o(lr_hit_o[1])
      ,.cache_v_o(cache_v_o[1])
 

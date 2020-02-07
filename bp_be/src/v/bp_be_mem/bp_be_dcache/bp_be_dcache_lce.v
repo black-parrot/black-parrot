@@ -62,13 +62,14 @@ module bp_be_dcache_lce
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
   
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p) 
+    `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
 
     , localparam dcache_lce_data_mem_pkt_width_lp=
-      `bp_be_dcache_lce_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
+      `bp_cache_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
     , localparam dcache_lce_tag_mem_pkt_width_lp=
-      `bp_be_dcache_lce_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, ptag_width_lp)
+      `bp_cache_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, ptag_width_lp)
     , localparam dcache_lce_stat_mem_pkt_width_lp=
-      `bp_be_dcache_lce_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
+      `bp_cache_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
     
   )
   (
@@ -78,17 +79,21 @@ module bp_be_dcache_lce
     , input [lce_id_width_p-1:0] lce_id_i
 
     , output logic ready_o
-    , output logic cache_miss_o
+    //, output logic cache_miss_o
 
-    , input load_miss_i
-    , input store_miss_i
-    , input lr_miss_i
-    , input uncached_load_req_i
-    , input uncached_store_req_i
+    //, input load_miss_i
+    //, input store_miss_i
+    //, input lr_miss_i
+    //, input uncached_load_req_i
+    //, input uncached_store_req_i
 
-    , input [paddr_width_p-1:0] miss_addr_i
-    , input [dword_width_p-1:0] store_data_i
-    , input [1:0] size_op_i
+    //, input [paddr_width_p-1:0] miss_addr_i
+    //, input [dword_width_p-1:0] store_data_i
+    //, input [1:0] size_op_i
+
+    , input [bp_cache_miss_width_lp-1:0] cache_miss_i
+    , input cache_miss_v_i
+    , output logic cache_miss_ready_o
 
     // data_mem
     , output logic data_mem_pkt_v_o
@@ -174,17 +179,17 @@ module bp_be_dcache_lce
   //
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
-  `declare_bp_be_dcache_lce_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
-  `declare_bp_be_dcache_lce_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, ptag_width_lp);
-  `declare_bp_be_dcache_lce_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
+  `declare_bp_cache_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
+  `declare_bp_cache_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, ptag_width_lp);
+  `declare_bp_cache_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
  
   bp_lce_cce_req_s lce_req;
   bp_lce_cce_resp_s lce_resp;
   bp_lce_cmd_s lce_cmd_in, lce_cmd_out;
 
-  bp_be_dcache_lce_data_mem_pkt_s data_mem_pkt;
-  bp_be_dcache_lce_tag_mem_pkt_s tag_mem_pkt;
-  bp_be_dcache_lce_stat_mem_pkt_s stat_mem_pkt;
+  bp_cache_data_mem_pkt_s data_mem_pkt;
+  bp_cache_tag_mem_pkt_s tag_mem_pkt;
+  bp_cache_stat_mem_pkt_s stat_mem_pkt;
 
   assign lce_req_o = lce_req;
   assign lce_resp_o = lce_resp;
@@ -242,17 +247,21 @@ module bp_be_dcache_lce
 
       ,.lce_id_i(lce_id_i)
   
-      ,.load_miss_i(load_miss_i)
-      ,.store_miss_i(store_miss_i)
-      ,.lr_miss_i(lr_miss_i)
-      ,.uncached_load_req_i(uncached_load_req_i)
-      ,.uncached_store_req_i(uncached_store_req_i)
+      //,.load_miss_i(load_miss_i)
+      //,.store_miss_i(store_miss_i)
+      //,.lr_miss_i(lr_miss_i)
+      //,.uncached_load_req_i(uncached_load_req_i)
+      //,.uncached_store_req_i(uncached_store_req_i)
 
-      ,.miss_addr_i(miss_addr_i)
-      ,.lru_way_i(lru_way_i)
-      ,.dirty_i(dirty_i)
-      ,.store_data_i(store_data_i)
-      ,.size_op_i(size_op_i)
+      //,.miss_addr_i(miss_addr_i)
+      //,.lru_way_i(lru_way_i)
+      //,.dirty_i(dirty_i)
+      //,.store_data_i(store_data_i)
+      //,.size_op_i(size_op_i)
+
+      ,.cache_miss_i(cache_miss_i)
+      ,.cache_miss_v_i(cache_miss_v_i)
+      ,.cache_miss_ready_o(cache_miss_ready_o)
 
       ,.cache_miss_o(cache_miss_o)
       ,.miss_addr_o(miss_addr_lo)
@@ -322,7 +331,7 @@ module bp_be_dcache_lce
       ,.stat_mem_pkt_o(stat_mem_pkt)
       ,.stat_mem_pkt_v_o(stat_mem_pkt_v_o)
       ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_i)
-      ,.dirty_i(dirty_i)
+      ,.dirty_i(dirty_i) // TODO: Need to change this
       );
 
   // LCE_CCE_resp arbiter
