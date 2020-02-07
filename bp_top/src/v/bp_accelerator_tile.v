@@ -11,6 +11,7 @@ module bp_accelerator_tile
    import bsg_wormhole_router_pkg::*;
   
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   , parameter bp_enable_accelerator_p = 0
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
@@ -266,7 +267,9 @@ module bp_accelerator_tile
 
  
   bp_accelerator_example
-   #(.bp_params_p(bp_params_p))
+   #(.bp_params_p(bp_params_p)
+     , .bp_enable_accelerator_p(bp_enable_accelerator_p)
+     )
    accelerator_link
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
