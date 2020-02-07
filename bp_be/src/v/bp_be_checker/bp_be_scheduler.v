@@ -91,7 +91,7 @@ bsg_dff_reset_en
  issue_pkt_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i | cache_miss_v_i)
-   ,.en_i(issue_v | dispatch_v_i)
+   ,.en_i(issue_v | (dispatch_v_i & ~accept_irq_i))
    
    ,.data_i({issue_v, issue_pkt})
    ,.data_o({issue_pkt_v_r, issue_pkt_r})
@@ -103,7 +103,7 @@ bsg_dff_reset_en
  issue_status_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(issue_v | dispatch_v_i | poison_iss_i | npc_mismatch)
+   ,.en_i(issue_v | (dispatch_v_i & ~accept_irq_i) | poison_iss_i | npc_mismatch)
 
    ,.data_i(poison_iss_i | npc_mismatch)
    ,.data_o(poison_iss_r)
@@ -190,7 +190,7 @@ always_comb
   end
 
 // Interface handshakes
-assign fe_queue_yumi_o = ~debug_mode_i & ~suppress_iss_i & fe_queue_v_i & (dispatch_v_i | ~issue_pkt_v_r);
+assign fe_queue_yumi_o = ~debug_mode_i & ~suppress_iss_i & fe_queue_v_i & ((dispatch_v_i & ~accept_irq_i) | ~issue_pkt_v_r);
 
 // Queue control signals
 assign fe_queue_clr_o  = ~debug_mode_i & suppress_iss_i;
@@ -264,7 +264,7 @@ always_comb
 
     // Form dispatch packet
     dispatch_pkt.v      = (issue_pkt_v_r | enter_debug_li | exit_debug_li | accept_irq_i) & dispatch_v_i;
-    dispatch_pkt.poison = (poison_iss_r | npc_mismatch)
+    dispatch_pkt.poison = (poison_iss_r | npc_mismatch | ~dispatch_pkt.v)
                           & ~(accept_irq_i & dispatch_v_i)
                           & ~(enter_debug_li | exit_debug_li);
     dispatch_pkt.pc     = expected_npc_i;
