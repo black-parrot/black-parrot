@@ -17,6 +17,8 @@ module bp_be_mem_top
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+   `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
+
    // Generated parameters
    // D$
    , localparam block_size_in_words_lp = lce_assoc_p // Due to cache interleaving scheme
@@ -28,11 +30,11 @@ module bp_be_mem_top
    , localparam page_offset_width_lp   = (block_offset_width_lp + index_width_lp)
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
    , localparam dcache_lce_data_mem_pkt_width_lp=
-     `bp_be_dcache_lce_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
+     `bp_cache_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
    , localparam dcache_lce_tag_mem_pkt_width_lp=
-     `bp_be_dcache_lce_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, ptag_width_p)
+     `bp_cache_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, ptag_width_p)
    , localparam dcache_lce_stat_mem_pkt_width_lp=
-     `bp_be_dcache_lce_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
+     `bp_cache_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
 
    , localparam cfg_bus_width_lp      = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
 
@@ -75,18 +77,23 @@ module bp_be_mem_top
    // D$-LCE Interface
    // signals to LCE
    , input lce_ready_i
-   , input lce_miss_i
-   , output logic load_miss_o
-   , output logic store_miss_o
+   //, input lce_miss_i
+   //, output logic load_miss_o
+   //, output logic store_miss_o
    , output logic store_hit_o
-   , output logic lr_miss_o
-   , output logic uncached_load_req_o
-   , output logic uncached_store_req_o
-   , output logic [paddr_width_p-1:0] miss_addr_o
-   , output logic [dword_width_p-1:0] store_data_o
-   , output logic [1:0] size_op_o
-   , output logic [way_id_width_lp-1:0] lru_way_o
-   , output logic [lce_assoc_p-1:0] dirty_o
+   //, output logic lr_miss_o
+   //, output logic uncached_load_req_o
+   //, output logic uncached_store_req_o
+   //, output logic [paddr_width_p-1:0] miss_addr_o
+   //, output logic [dword_width_p-1:0] store_data_o
+   //, output logic [1:0] size_op_o
+   //, output logic [way_id_width_lp-1:0] lru_way_o
+   //, output logic [lce_assoc_p-1:0] dirty_o
+  
+   , output logic [bp_cache_miss_width_lp-1:0] cache_miss_o
+   , output logic                              cache_miss_v_o
+   , input                                     cache_miss_ready_i
+
    // for lock logic inside LCE
    , output logic lr_hit_tv_o
    , output logic cache_v_o
@@ -407,18 +414,22 @@ bp_be_dcache
 
     // D$-LCE Interface
     ,.ready_i(lce_ready_i)
-    ,.cache_miss_i(lce_miss_i)
-    ,.load_miss_o(load_miss_o)
-    ,.store_miss_o(store_miss_o)
+    //,.cache_miss_i(lce_miss_i)
+    //,.load_miss_o(load_miss_o)
+    //,.store_miss_o(store_miss_o)
     ,.store_hit_o(store_hit_o)
-    ,.lr_miss_o(lr_miss_o)
-    ,.uncached_load_req_o(uncached_load_req_o)
-    ,.uncached_store_req_o(uncached_store_req_o)
-    ,.miss_addr_o(miss_addr_o)
-    ,.store_data_o(store_data_o)
-    ,.size_op_o(size_op_o)
-    ,.lru_way_o(lru_way_o)
-    ,.dirty_o(dirty_o)
+    //,.lr_miss_o(lr_miss_o)
+    //,.uncached_load_req_o(uncached_load_req_o)
+    //,.uncached_store_req_o(uncached_store_req_o)
+    //,.miss_addr_o(miss_addr_o)
+    //,.store_data_o(store_data_o)
+    //,.size_op_o(size_op_o)
+    //,.lru_way_o(lru_way_o)
+    //,.dirty_o(dirty_o)
+    ,.cache_miss_o(cache_miss_o)
+    ,.cache_miss_v_o(cache_miss_v_o)
+    ,.cache_miss_ready_i(cache_miss_ready_i)
+
     ,.lr_hit_tv_o(lr_hit_tv_o)
     ,.lce_data_mem_pkt_v_i(data_mem_pkt_v_i)
     ,.lce_data_mem_pkt_i(data_mem_pkt_i)

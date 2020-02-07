@@ -24,7 +24,8 @@ module bp_fe_icache
    `declare_bp_proc_params(bp_params_p)
     `declare_bp_fe_tag_widths(lce_assoc_p, lce_sets_p, lce_id_width_p, cce_id_width_p, dword_width_p, paddr_width_p)
     `declare_bp_icache_widths(vaddr_width_p, tag_width_lp, lce_assoc_p) 
-    `declare_bp_fe_lce_widths(lce_assoc_p, lce_sets_p, tag_width_lp, cce_block_width_p)
+    `declare_bp_cache_if_widths(lce_assoc_p, lce_sets_p, tag_width_lp, cce_block_width_p)
+    `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , localparam lg_lce_assoc_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
@@ -47,26 +48,34 @@ module bp_fe_icache
     , output                                           data_v_o
 
     // LCE Interface
-    , input                                            cache_miss_i
-    , output                                           miss_tv_o
-    , output [paddr_width_p-1:0]                       miss_addr_tv_o
-    , output                                           uncached_req_o
-    , output [lg_lce_assoc_lp-1:0]                     lru_way_o
+    
+    , input                                            lce_ready_i
+    //, output                                           miss_tv_o        
+    //, output [paddr_width_p-1:0]                       miss_addr_tv_o   Done
+    //, output                                           uncached_req_o   
+    //, output [lg_lce_assoc_lp-1:0]                     lru_way_o        Done
+
+    , output [bp_cache_miss_width_lp-1:0]              cache_miss_o
+    , output                                           cache_miss_v_o
+    , input                                            cache_miss_ready_i
 
     // data_mem
     , input lce_data_mem_pkt_v_i
-    , input [data_mem_pkt_width_lp-1:0] lce_data_mem_pkt_i
+    //input [data_mem_pkt_width_lp-1:0] lce_data_mem_pkt_i
+    , input [bp_cache_data_mem_pkt_width_lp-1:0] lce_data_mem_pkt_i
     , output logic [cce_block_width_p-1:0] lce_data_mem_data_o
     , output logic lce_data_mem_pkt_yumi_o
 
     // tag_mem
     , input lce_tag_mem_pkt_v_i
-    , input [tag_mem_pkt_width_lp-1:0] lce_tag_mem_pkt_i
+    //, input [tag_mem_pkt_width_lp-1:0] lce_tag_mem_pkt_i
+    , input [bp_cache_tag_mem_pkt_width_lp-1:0] lce_tag_mem_pkt_i
     , output logic lce_tag_mem_pkt_yumi_o
 
     // stat_mem
     , input lce_stat_mem_pkt_v_i
-    , input [stat_mem_pkt_width_lp-1:0] lce_stat_mem_pkt_i
+    //, input [stat_mem_pkt_width_lp-1:0] lce_stat_mem_pkt_i
+    , input [bp_cache_stat_mem_pkt_width_lp-1:0] lce_stat_mem_pkt_i
     , output logic lce_stat_mem_pkt_yumi_o
  );
 
@@ -74,6 +83,10 @@ module bp_fe_icache
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
+  `declare_bp_cache_miss_s(cce_block_width_p, lce_assoc_p, paddr_width_p);
+  bp_cache_miss_s cache_miss_cast_lo;
+  assign cache_miss_o = cache_miss_cast_lo;
+  
   logic [index_width_lp-1:0]            vaddr_index;
 
   logic [word_offset_width_lp-1:0] vaddr_offset;
@@ -179,7 +192,7 @@ module bp_fe_icache
   logic [word_offset_width_lp-1:0]              addr_word_offset_tv;
 
   assign tv_we = v_tl_r & ~poison_i & ptag_v_i;
-  assign miss_addr_tv_o = addr_tv_r;
+  assign cache_miss_cast_lo.addr = addr_tv_r;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -221,13 +234,52 @@ module bp_fe_icache
     ,.addr_o(hit_index)
   );
 
-  assign miss_tv_o = ~hit & v_tv_r & ~uncached_tv_r;
+  logic miss_tv;
+  assign miss_tv = ~hit & v_tv_r & ~uncached_tv_r;  //TODO: Can be replaced with internal signal (miss_tv) and cache_miss_v_o can be used to convey miss_i along with cache miss msg type
 
   // uncached request
   logic uncached_load_data_v_r;
   logic [dword_width_p-1:0] uncached_load_data_r;
 
-  assign uncached_req_o = v_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
+  logic uncached_req;
+  assign uncached_req = v_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
+
+  logic cache_miss_v, cache_miss_lo;
+  assign cache_miss_v_o = cache_miss_v;
+
+  //TODO: Check if the below functional change is ok
+
+  always_comb begin
+    if (cache_miss_ready_i) begin
+      if (miss_tv) begin
+        cache_miss_cast_lo.msg_type = e_miss_load;
+        cache_miss_v = 1'b1;
+      end
+      else if (uncached_req) begin
+        cache_miss_cast_lo.msg_type = e_uc_load;
+        cache_miss_v = 1'b0;   // TODO: This has to be change dto 1'b1
+      end
+      else begin
+        cache_miss_cast_lo.msg_type = e_miss_load;
+        cache_miss_v = 1'b0;
+      end
+    end
+    else begin
+      cache_miss_cast_lo.msg_type = e_miss_load;
+      cache_miss_v = 1'b0;
+    end
+  end
+
+  bsg_dff_reset_en #(
+    .width_p(1),
+    .reset_val_p(0)
+  ) cache_miss_info(
+    .clk_i(clk_i)
+    ,.reset_i(lce_ready_i)
+    ,.en_i(cache_miss_v)
+    ,.data_i(1'b1)
+    ,.data_o(cache_miss_lo)
+  ); 
 
   // stat memory
   logic                                       stat_mem_v_li;
@@ -270,22 +322,24 @@ module bp_fe_icache
  );
   
   // invalid way takes priority over LRU way
-  assign lru_way_o = invalid_exist ? way_invalid_index : lru_encode;
+  assign cache_miss_cast_lo.repl_way = invalid_exist ? way_invalid_index : lru_encode;
 
   // LCE
-  `declare_bp_fe_icache_lce_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
-  `declare_bp_fe_icache_lce_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, tag_width_lp);
-  `declare_bp_fe_icache_lce_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
+  `declare_bp_cache_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
+  `declare_bp_cache_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, tag_width_lp);
+  `declare_bp_cache_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
 
-  bp_fe_icache_lce_data_mem_pkt_s lce_data_mem_pkt;
+  bp_cache_data_mem_pkt_s lce_data_mem_pkt;
   assign lce_data_mem_pkt = lce_data_mem_pkt_i;
-  bp_fe_icache_lce_tag_mem_pkt_s tag_mem_pkt;
+  bp_cache_tag_mem_pkt_s tag_mem_pkt;
   assign tag_mem_pkt = lce_tag_mem_pkt_i;
-  bp_fe_icache_lce_stat_mem_pkt_s stat_mem_pkt;
+  bp_cache_stat_mem_pkt_s stat_mem_pkt;
   assign stat_mem_pkt = lce_stat_mem_pkt_i;
 
   // Fault if in uncached mode but access is not for an uncached address
-  assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r) | ~cache_miss_i);
+  //
+  // TODO: Find out how to replace cache_miss_i with an internal signal
+  assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r) | ~cache_miss_lo);
 
   logic [dword_width_p-1:0]   ld_data_way_picked;
 
@@ -304,7 +358,7 @@ module bp_fe_icache
     ,.els_p(2)
   ) final_data_mux (
     .data_i({uncached_load_data_r, ld_data_way_picked})
-    ,.sel_i(uncached_tv_r)
+    ,.sel_i(1'b0/*uncached_tv_r*/)
     ,.data_o(final_data)
   );
 
@@ -318,7 +372,7 @@ module bp_fe_icache
   // data mem
 
   logic lce_data_mem_v;
-  assign lce_data_mem_v = (lce_data_mem_pkt.opcode != e_icache_lce_data_mem_uncached)
+  assign lce_data_mem_v = (lce_data_mem_pkt.opcode != e_cache_data_mem_uncached)
     & lce_data_mem_pkt_yumi_o;
 
   assign data_mem_v_li = tl_we
@@ -326,7 +380,7 @@ module bp_fe_icache
     : {lce_assoc_p{lce_data_mem_v}};
 
   assign data_mem_w_li = lce_data_mem_pkt_yumi_o
-    & (lce_data_mem_pkt.opcode == e_icache_lce_data_mem_write);   
+    & (lce_data_mem_pkt.opcode == e_cache_data_mem_write);   
 
   logic [lce_assoc_p-1:0][dword_width_p-1:0] lce_data_mem_write_data;
 
@@ -363,21 +417,29 @@ module bp_fe_icache
     ,.o(lce_tag_mem_way_one_hot)
   );
 
+  //TODO: Resolve the cache_miss values in the always_comb block below
+
   always_comb begin
     case (tag_mem_pkt.opcode)
-      e_tag_mem_set_clear: begin
+      e_cache_tag_mem_set_clear: begin
         for (integer i = 0 ; i < lce_assoc_p; i++) begin
           tag_mem_data_li[i]    = '0;
           tag_mem_w_mask_li[i]  = {(`bp_coh_bits+tag_width_lp){1'b1}};
         end
       end
-      e_tag_mem_invalidate: begin
+      e_cache_tag_mem_invalidate: begin
         for (integer i = 0; i < lce_assoc_p; i++) begin
           tag_mem_data_li[i]    = '0;
           tag_mem_w_mask_li[i] = {{`bp_coh_bits{lce_tag_mem_way_one_hot[i]}}, {tag_width_lp{1'b0}}};
         end
       end
-      e_tag_mem_set_tag: begin
+      e_cache_tag_mem_set_tag: begin
+        for (integer i = 0; i < lce_assoc_p; i++) begin
+          tag_mem_data_li[i]   = {tag_mem_pkt.state, tag_mem_pkt.tag};
+          tag_mem_w_mask_li[i] = {(`bp_coh_bits+tag_width_lp){lce_tag_mem_way_one_hot[i]}};
+        end
+      end
+      e_cache_tag_mem_set_tag_wakeup: begin            //TODO: Add additional logic to resolve the miss
         for (integer i = 0; i < lce_assoc_p; i++) begin
           tag_mem_data_li[i]   = {tag_mem_pkt.state, tag_mem_pkt.tag};
           tag_mem_w_mask_li[i] = {(`bp_coh_bits+tag_width_lp){lce_tag_mem_way_one_hot[i]}};
@@ -393,8 +455,8 @@ module bp_fe_icache
   // stat mem
   assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r) | lce_stat_mem_pkt_yumi_o;
   assign stat_mem_w_li = (v_tv_r & ~uncached_tv_r)
-    ? ~miss_tv_o
-    : lce_stat_mem_pkt_yumi_o & (stat_mem_pkt.opcode != e_stat_mem_read);
+    ? ~miss_tv
+    : lce_stat_mem_pkt_yumi_o & (stat_mem_pkt.opcode != e_cache_stat_mem_read);
   assign stat_mem_addr_li = (v_tv_r & ~uncached_tv_r)
     ? addr_index_tv 
     : stat_mem_pkt.index;
@@ -424,7 +486,7 @@ module bp_fe_icache
   logic [way_id_width_lp-1:0] lce_data_mem_pkt_way_r;
 
   always_ff @ (posedge clk_i) begin
-    if (lce_data_mem_pkt_yumi_o & (lce_data_mem_pkt.opcode == e_icache_lce_data_mem_read)) begin
+    if (lce_data_mem_pkt_yumi_o & (lce_data_mem_pkt.opcode == e_cache_data_mem_read)) begin
       lce_data_mem_pkt_way_r <= lce_data_mem_pkt.way_id;
     end
   end
@@ -438,7 +500,7 @@ module bp_fe_icache
     ,.data_o(lce_data_mem_data_o)
   );
 
-  assign lce_data_mem_pkt_yumi_o = (lce_data_mem_pkt.opcode == e_icache_lce_data_mem_uncached)
+  assign lce_data_mem_pkt_yumi_o = (lce_data_mem_pkt.opcode == e_cache_data_mem_uncached)
     ? lce_data_mem_pkt_v_i
     : lce_data_mem_pkt_v_i & ~tl_we;
 
@@ -448,7 +510,7 @@ module bp_fe_icache
       uncached_load_data_v_r <= 1'b0;
     end
     else begin
-      if (lce_data_mem_pkt_yumi_o & (lce_data_mem_pkt.opcode == e_icache_lce_data_mem_uncached)) begin
+      if (lce_data_mem_pkt_yumi_o & (lce_data_mem_pkt.opcode == e_cache_data_mem_uncached)) begin
         uncached_load_data_r <= lce_data_mem_pkt.data[0+:dword_width_p];
         uncached_load_data_v_r <= 1'b1;
       end

@@ -1,24 +1,15 @@
 /**
- *  Name:
- *    bp_be_dcache_pkt.vh
- *
- *  Description:
- *    dcache packet format to be sent from mmu.
+ * bp_be_dcache.vh
+ * This file declares the internal structs of the BlackParrot Back End D-Cache module.
+ * Each struct declares its width separately to prevent pre-processor oredering issues.
  */
 
-`ifndef BP_BE_DCACHE_PKT_VH
-`define BP_BE_DCACHE_PKT_VH
+`ifndef BP_CACHE_MISS_PKT_VH
+`define BP_CACHE_MISS_PKT_VH
 
-`define declare_bp_be_dcache_pkt_s(page_offset_width_mp, data_width_mp) \
-  typedef struct packed {                                      \
-    bp_be_dcache_opcode_e opcode;                              \
-    logic [page_offset_width_mp-1:0] page_offset;              \
-    logic [data_width_mp-1:0] data;                            \
-  } bp_be_dcache_pkt_s
+//`include "bsg_defines.vh"
+//`include "bp_common_me_if.vh"
 
-`define bp_be_dcache_pkt_width(page_offset_width_mp, data_width_mp) \
-  ($bits(bp_be_dcache_opcode_e)+page_offset_width_mp+data_width_mp)
-/*
 // Cache Service Interface - Cache miss message type
 
 typedef enum [2:0]
@@ -63,5 +54,5 @@ typedef enum logic [2:0]
 
 `define declare_bp_cache_miss_widths(data_width_mp, ways_mp, paddr_width_mp) \
  , localparam bp_cache_miss_width_lp = `bp_cache_miss_width(data_width_mp, ways_mp, paddr_width_mp)
-*/
+
 `endif

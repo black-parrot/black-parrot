@@ -8,7 +8,7 @@
 
 package bp_be_dcache_pkg;
     
-  
+  `include "bp_cache_miss_pkt.vh"
   `include "bp_be_dcache_pkt.vh"
   `include "bp_be_dcache_lce_pkt.vh"
   `include "bp_be_dcache_tag_info.vh"
@@ -41,6 +41,7 @@ package bp_be_dcache_pkg;
 
   // LCE data_mem_pkt opcode
   //
+  
   typedef enum logic [1:0] {
    
     // write cache block 
@@ -54,8 +55,24 @@ package bp_be_dcache_pkg;
     
   } bp_be_dcache_lce_data_mem_opcode_e;
 
+
+  typedef enum logic [1:0] {
+   
+    // write cache block 
+    e_cache_data_mem_write,
+
+    // read cache block
+    e_cache_data_mem_read,
+
+    // write uncached load data
+    e_cache_data_mem_uncached
+    
+  } bp_cache_data_mem_opcode_e;
+
+
   //  LCE tag_mem_pkt opcode
   //
+
   typedef enum logic [1:0] {
 
     // clear all blocks in a set for given index.
@@ -70,8 +87,26 @@ package bp_be_dcache_pkg;
   } bp_be_dcache_lce_tag_mem_opcode_e;
 
 
+  typedef enum logic [1:0] {
+
+    // clear all blocks in a set for given index.
+    e_cache_tag_mem_set_clear,
+    
+    // invalidate a block for given index and way_id.
+    e_cache_tag_mem_invalidate,
+    
+    // set tag and coh_state for given index and way_id.
+    e_cache_tag_mem_set_tag
+
+    // set tag and coh_state for given index and way_id, then wakeup cache
+    ,e_cache_tag_mem_set_tag_wakeup
+
+  } bp_cache_tag_mem_opcode_e;
+
+
   // LCE stat_mem_pkt opcode
   //
+
   typedef enum logic [1:0] {
 
     // clear all dirty bits and LRU bits to zero for given index.
@@ -84,5 +119,19 @@ package bp_be_dcache_pkg;
     e_dcache_lce_stat_mem_clear_dirty
 
   } bp_be_dcache_lce_stat_mem_opcode_e;
+
+
+  typedef enum logic [1:0] {
+
+    // clear all dirty bits and LRU bits to zero for given index.
+    e_cache_stat_mem_set_clear,
+    
+    // read stat_info for given index.
+    e_cache_stat_mem_read,
+    
+    // clear dirty bit for given index and way_id.
+    e_cache_stat_mem_clear_dirty
+
+  } bp_cache_stat_mem_opcode_e;
 
 endpackage

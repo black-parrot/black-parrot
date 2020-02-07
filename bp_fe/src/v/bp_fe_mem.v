@@ -8,7 +8,8 @@ module bp_fe_mem
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-   `declare_bp_fe_lce_widths(lce_assoc_p, lce_sets_p, ptag_width_p, cce_block_width_p)
+   `declare_bp_cache_if_widths(lce_assoc_p, lce_sets_p, ptag_width_p, cce_block_width_p)
+   `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
 
    , localparam mem_cmd_width_lp  = `bp_fe_mem_cmd_width(vaddr_width_p, vtag_width_p, ptag_width_p)
    , localparam mem_resp_width_lp = `bp_fe_mem_resp_width
@@ -36,24 +37,29 @@ module bp_fe_mem
 
    // Interface to LCE
    , input                                            lce_ready_i
-   , input                                            lce_miss_i
+   //, input                                            lce_miss_i
 
-   , output logic                                     uncached_req_o
-   , output                                           miss_tv_o
-   , output [paddr_width_p-1:0]                       miss_addr_tv_o
-   , output logic [way_id_width_lp-1:0]               lru_way_o
+   //, output logic                                     uncached_req_o
+   //, output                                           miss_tv_o
+   //, output [paddr_width_p-1:0]                       miss_addr_tv_o
+   //, output logic [way_id_width_lp-1:0]               lru_way_o
+
+   , output [bp_cache_miss_width_lp-1:0]              cache_miss_o
+   , output                                           cache_miss_v_o
+   , input                                            cache_miss_ready_i
 
    , output logic [cce_block_width_p-1:0]             data_mem_data_o
-   , input [data_mem_pkt_width_lp-1:0]                data_mem_pkt_i
+   //, input [data_mem_pkt_width_lp-1:0]                data_mem_pkt_i
+   , input [bp_cache_data_mem_pkt_width_lp-1:0]       data_mem_pkt_i
    , input                                            data_mem_pkt_v_i
    , output logic                                     data_mem_pkt_yumi_o
 
-   , input [tag_mem_pkt_width_lp-1:0]                 tag_mem_pkt_i
+   , input [bp_cache_tag_mem_pkt_width_lp-1:0]        tag_mem_pkt_i
    , input                                            tag_mem_pkt_v_i
    , output logic                                     tag_mem_pkt_yumi_o
 
    , input                                            stat_mem_pkt_v_i
-   , input [stat_mem_pkt_width_lp-1:0]                stat_mem_pkt_i
+   , input [bp_cache_stat_mem_pkt_width_lp-1:0]       stat_mem_pkt_i
    , output logic                                     stat_mem_pkt_yumi_o
    );
 
@@ -136,11 +142,15 @@ bp_fe_icache
    ,.data_v_o(icache_data_v_lo)
 
    // LCE Interface
-   ,.cache_miss_i(lce_miss_i)
-   ,.lru_way_o(lru_way_o)
-   ,.miss_tv_o(miss_tv_o)
-   ,.miss_addr_tv_o(miss_addr_tv_o)
-   ,.uncached_req_o(uncached_req_o)
+   ,.lce_ready_i(lce_ready_i)      // TODO: Check this once
+   //,.lru_way_o(lru_way_o)
+   //,.miss_tv_o(miss_tv_o)
+   //,.miss_addr_tv_o(miss_addr_tv_o)
+   //,.uncached_req_o(uncached_req_o)
+
+   ,.cache_miss_o(cache_miss_o)
+   ,.cache_miss_v_o(cache_miss_v_o)
+   ,.cache_miss_ready_i(cache_miss_ready_i)
 
    ,.lce_data_mem_data_o(data_mem_data_o)
    ,.lce_data_mem_pkt_i(data_mem_pkt_i)

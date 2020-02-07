@@ -33,6 +33,8 @@ module bp_fe_lce
 
    `declare_bp_fe_tag_widths(lce_assoc_p, lce_sets_p, lce_id_width_p, cce_id_width_p, dword_width_p, paddr_width_p)
    `declare_bp_fe_lce_widths(lce_assoc_p, lce_sets_p, tag_width_lp, cce_block_width_p) 
+   `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
+
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
   )
   (
@@ -42,12 +44,17 @@ module bp_fe_lce
     , input [cfg_bus_width_lp-1:0]                               cfg_bus_i
 
     , output logic                                               ready_o
-    , output logic                                               cache_miss_o
 
-    , input                                                      miss_i
-    , input [paddr_width_p-1:0]                                  miss_addr_i
-    , input                                                      uncached_req_i
-    , input [way_id_width_lp-1:0]                                lru_way_i
+    //, output logic                                               cache_miss_o
+
+    //, input                                                      miss_i
+    //, input [paddr_width_p-1:0]                                  miss_addr_i
+    //, input                                                      uncached_req_i
+    //, input [way_id_width_lp-1:0]                                lru_way_i
+
+    , input [bp_cache_miss_width_lp-1:0]                         cache_miss_i
+    , input                                                      cache_miss_v_i
+    , output logic                                               cache_miss_ready_o
 
     , input [cce_block_width_p-1:0]                              data_mem_data_i
     , output logic [data_mem_pkt_width_lp-1:0]                   data_mem_pkt_o
@@ -83,9 +90,10 @@ module bp_fe_lce
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
-  `declare_bp_fe_icache_lce_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
-  `declare_bp_fe_icache_lce_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, tag_width_lp);
-  `declare_bp_fe_icache_lce_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
+  `declare_bp_cache_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
+  `declare_bp_cache_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, tag_width_lp);
+  `declare_bp_cache_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
+  `declare_bp_cache_miss_s(cce_block_width_p, lce_assoc_p, paddr_width_p);
 
   bp_cfg_bus_s cfg_bus_cast_i;
 
@@ -94,9 +102,12 @@ module bp_fe_lce
   bp_lce_cmd_s lce_cmd;
   bp_lce_cmd_s lce_cmd_out;
 
-  bp_fe_icache_lce_data_mem_pkt_s data_mem_pkt;
-  bp_fe_icache_lce_tag_mem_pkt_s tag_mem_pkt;
-  bp_fe_icache_lce_stat_mem_pkt_s stat_mem_pkt;
+  //bp_cache_miss_s cache_miss_cast_li
+  //assign cache_miss_cast_li = cache_miss_i;
+
+  bp_cache_data_mem_pkt_s data_mem_pkt;
+  bp_cache_tag_mem_pkt_s tag_mem_pkt;
+  bp_cache_stat_mem_pkt_s stat_mem_pkt;
 
   assign cfg_bus_cast_i = cfg_bus_i;
 
@@ -105,9 +116,9 @@ module bp_fe_lce
   assign lce_cmd          = lce_cmd_i;
   assign lce_cmd_o    = lce_cmd_out;
 
-  assign data_mem_pkt_o        = data_mem_pkt;
-  assign tag_mem_pkt_o         = tag_mem_pkt;
-  assign stat_mem_pkt_o    = stat_mem_pkt;
+  assign data_mem_pkt_o = data_mem_pkt;
+  assign tag_mem_pkt_o  = tag_mem_pkt;
+  assign stat_mem_pkt_o = stat_mem_pkt;
 
   // lce_REQ
   bp_lce_cce_resp_s lce_req_lce_resp_lo;
@@ -118,6 +129,7 @@ module bp_fe_lce
   logic lce_req_lce_resp_v_lo;
   logic lce_req_lce_resp_yumi_li;
   logic [paddr_width_p-1:0] miss_addr_lo;
+  logic cache_miss_lo;
 
   bp_fe_lce_req #(.bp_params_p(bp_params_p))
     lce_req_inst (
@@ -126,12 +138,17 @@ module bp_fe_lce
   
     ,.lce_id_i(cfg_bus_cast_i.icache_id)
 
-    ,.miss_i(miss_i)
-    ,.miss_addr_i(miss_addr_i)
-    ,.lru_way_i(lru_way_i)
-    ,.uncached_req_i(uncached_req_i)
+    //,.miss_i(miss_i)
+    //,.miss_addr_i(miss_addr_i)
+    //,.lru_way_i(lru_way_i)
+    //,.uncached_req_i(uncached_req_i)
 
-    ,.cache_miss_o(cache_miss_o)
+    ,.cache_miss_i(cache_miss_i)
+    ,.cache_miss_v_i(cache_miss_v_i)
+    ,.cache_miss_ready_o(cache_miss_ready_o)
+
+    ,.cache_miss_o(cache_miss_lo)
+
     ,.miss_addr_o(miss_addr_lo)
 
     ,.cce_data_received_i(cce_data_received)
@@ -249,6 +266,6 @@ module bp_fe_lce
   end
 
   wire lce_ready = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached) ? 1'b1 : lce_ready_lo;
-  assign ready_o = lce_ready & ~timeout & ~cache_miss_o;
+  assign ready_o = lce_ready & ~timeout & ~cache_miss_lo;
  
 endmodule
