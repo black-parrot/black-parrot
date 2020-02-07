@@ -73,8 +73,6 @@ module bp_be_checker_top
    , output                           chk_dispatch_v_o
    , output                           flush_o
 
-   , input                            tlb_fence_i
-   , input                            fencei_i
    , input                            accept_irq_i
    , input                            debug_mode_i
    , input                            single_step_i
@@ -127,8 +125,6 @@ bp_be_director
 
    ,.commit_pkt_i(commit_pkt_i)
    ,.trap_pkt_i(trap_pkt_i)
-   ,.tlb_fence_i(tlb_fence_i)
-   ,.fencei_i(fencei_i)
 
    ,.itlb_fill_v_i(itlb_fill_v_i)
    ,.itlb_fill_vaddr_i(itlb_fill_vaddr_i)
