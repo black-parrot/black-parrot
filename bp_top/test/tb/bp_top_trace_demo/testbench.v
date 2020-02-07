@@ -31,6 +31,8 @@ module testbench
    , parameter load_nbf_p                  = 0
    , parameter skip_init_p                 = 0
    , parameter cosim_p                     = 0
+   , parameter cosim_cfg_file_p            = "prog.cfg"
+   , parameter elf_file_p                  = "prog.elf"
 
    , parameter mem_zero_p         = 1
    , parameter mem_file_p         = "prog.mem"
@@ -148,7 +150,9 @@ wrapper
   bind bp_be_top
     bp_nonsynth_cosim
      #(.bp_params_p(bp_params_p)
-       ,.config_file_p("prog.cfg"))
+       ,.config_file_p(testbench.load_nbf_p
+                       ? testbench.cosim_cfg_file_p
+                       : testbench.elf_file_p))
       cosim
       (.clk_i(clk_i & (testbench.cosim_p == 1))
        ,.reset_i(reset_i)
