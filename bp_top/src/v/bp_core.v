@@ -68,12 +68,13 @@ module bp_core
 
   `declare_bp_cache_miss_s(cce_block_width_p, lce_assoc_p, paddr_width_p);
 
-  bp_cache_miss_s cache_miss_icache_cast_lo, cache_miss_dcache_cast_lo;
+  //bp_cache_miss_s cache_miss_icache_cast_lo, cache_miss_dcache_cast_lo;
+  logic [1:0][bp_cache_miss_width_lp-1:0] cache_miss_cast_lo;
 
   logic cache_miss_dcache_v_lo, cache_miss_icache_v_lo, cache_miss_dcache_ready_li, cache_miss_icache_ready_li;
 
   logic [1:0] lce_ready_lo;
-  //logic [1:0] lce_miss_lo;
+  logic [1:0] lce_miss_lo;
   logic credits_full_lo, credits_empty_lo;
 /*
   logic [1:0] load_miss_lo;
@@ -121,7 +122,7 @@ module bp_core
 
      // BP request side - Interface to LCE
      ,.lce_ready_i(lce_ready_lo)
-     //,.lce_miss_i(lce_miss_lo)
+     ,.lce_miss_i(lce_miss_lo)
      ,.credits_full_i(credits_full_lo)
      ,.credits_empty_i(credits_empty_lo)
 
@@ -141,7 +142,7 @@ module bp_core
      //,.store_data_o(store_data_lo)
      //,.size_op_o(size_op_lo)
 
-     ,.cache_miss_o({cache_miss_dcache_cast_lo, cache_miss_icache_cast_lo})
+     ,.cache_miss_o(cache_miss_cast_lo)
      ,.cache_miss_v_o({cache_miss_dcache_v_lo, cache_miss_icache_v_lo})
      ,.cache_miss_ready_i({cache_miss_dcache_ready_li, cache_miss_icache_ready_li})
 
@@ -173,14 +174,14 @@ module bp_core
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.ready_o(lce_ready_lo[0])
-     //,.cache_miss_o(lce_miss_lo[0])
+     ,.cache_miss_o(lce_miss_lo[0])
 
      //,.miss_i(load_miss_lo[0])
      //,.miss_addr_i(miss_addr_lo[0])
      //,.uncached_req_i(uncached_load_req_lo[0])
      //,.lru_way_i(lru_way_lo[0])
 
-     ,.cache_miss_i(cache_miss_icache_cast_lo)
+     ,.cache_miss_i(cache_miss_cast_lo[0])
      ,.cache_miss_v_i(cache_miss_icache_v_lo)
      ,.cache_miss_ready_o(cache_miss_icache_ready_li)
 
@@ -223,7 +224,7 @@ module bp_core
     ,.lce_id_i(cfg_bus_cast_i.dcache_id)
 
     ,.ready_o(lce_ready_lo[1])
-    //,.cache_miss_o(lce_miss_lo[1])
+    ,.cache_miss_o(lce_miss_lo[1])
 
     //,.load_miss_i(load_miss_lo[1])
     //,.store_miss_i(store_miss_lo[1])
@@ -237,7 +238,7 @@ module bp_core
     //,.dirty_i(dirty_lo[1])
     //,.lru_way_i(lru_way_lo[1])
 
-    ,.cache_miss_i(cache_miss_dcache_cast_lo)
+    ,.cache_miss_i(cache_miss_cast_lo[1])
     ,.cache_miss_v_i(cache_miss_dcache_v_lo)
     ,.cache_miss_ready_o(cache_miss_dcache_ready_li)
 

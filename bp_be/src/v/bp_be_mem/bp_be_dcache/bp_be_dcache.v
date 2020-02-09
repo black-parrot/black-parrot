@@ -140,7 +140,7 @@ module bp_be_dcache
     , output logic store_op_tl_o
 
     // ctrl
-    //, input cache_miss_i
+    , input lce_miss_i
     , input poison_i
 
     // D$-LCE Interface
@@ -702,7 +702,8 @@ module bp_be_dcache
   assign cache_miss_cast_o.dirty = stat_mem_data_lo.dirty;
   assign lr_hit_tv_o = lr_hit_tv;
 
-  logic cache_miss_lo;
+  //logic cache_miss;
+  //assign cache_miss = ~	ready_i;
 
   // TODO: Verify before finalising
   // Assigning sizes to cache miss packet
@@ -747,10 +748,11 @@ module bp_be_dcache
       end
       else begin
         cache_miss_cast_o.msg_type = e_miss_load;
+        cache_miss_v_o = 1'b0;
       end
     end
   end
-
+/*
   bsg_dff_reset_en #(
     .width_p(1),
     .reset_val_p(0)
@@ -761,7 +763,7 @@ module bp_be_dcache
     ,.data_i(1'b1)
     ,.data_o(cache_miss_lo)
   );
-
+*/
 
   // output stage
   //
@@ -775,7 +777,7 @@ module bp_be_dcache
           // uncached store_op can be committed,
           // as long as there is no cache_miss_i signal raised.
           // TODO: Replace cache_miss_i with internal signal
-          v_o = ~cache_miss_lo;
+          v_o = ~lce_miss_i;
         end
         else begin
           v_o = 1'b0; // this should never happen
@@ -783,7 +785,7 @@ module bp_be_dcache
       end
       else begin
         // Replace cache_miss_i with internal signal
-        v_o = v_tv_r & ~cache_miss_lo; // cached request
+        v_o = v_tv_r & ~lce_miss_i; // cached request
       end
     end
     else begin
@@ -1051,7 +1053,7 @@ module bp_be_dcache
   //
   // disallow write buffer write on store hit that cannot be processed by LCE
   // to avoid multiple wbuf entries when the store replays
-  assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r & ~cache_miss_lo;
+  assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r & ~lce_miss_i;
   assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we);
   assign bypass_v_li = tv_we & load_op_tl_r;
   assign lce_snoop_index_li = lce_data_mem_pkt.index;

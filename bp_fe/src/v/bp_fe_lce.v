@@ -45,7 +45,7 @@ module bp_fe_lce
 
     , output logic                                               ready_o
 
-    //, output logic                                               cache_miss_o
+    , output logic                                               cache_miss_o
 
     //, input                                                      miss_i
     //, input [paddr_width_p-1:0]                                  miss_addr_i
@@ -129,7 +129,7 @@ module bp_fe_lce
   logic lce_req_lce_resp_v_lo;
   logic lce_req_lce_resp_yumi_li;
   logic [paddr_width_p-1:0] miss_addr_lo;
-  logic cache_miss_lo;
+  // logic cache_miss_lo;
 
   bp_fe_lce_req #(.bp_params_p(bp_params_p))
     lce_req_inst (
@@ -147,7 +147,7 @@ module bp_fe_lce
     ,.cache_miss_v_i(cache_miss_v_i)
     ,.cache_miss_ready_o(cache_miss_ready_o)
 
-    ,.cache_miss_o(cache_miss_lo)
+    ,.cache_miss_o(cache_miss_o)
 
     ,.miss_addr_o(miss_addr_lo)
 
@@ -266,6 +266,6 @@ module bp_fe_lce
   end
 
   wire lce_ready = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached) ? 1'b1 : lce_ready_lo;
-  assign ready_o = lce_ready & ~timeout & ~cache_miss_lo;
+  assign ready_o = lce_ready & ~timeout & ~cache_miss_o;
  
 endmodule

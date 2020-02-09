@@ -49,7 +49,7 @@ module bp_fe_icache
 
     // LCE Interface
     
-    , input                                            lce_ready_i
+    , input                                            lce_miss_i                                            
     //, output                                           miss_tv_o        
     //, output [paddr_width_p-1:0]                       miss_addr_tv_o   Done
     //, output                                           uncached_req_o   
@@ -244,7 +244,9 @@ module bp_fe_icache
   logic uncached_req;
   assign uncached_req = v_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
 
-  logic cache_miss_v, cache_miss_lo;
+  logic cache_miss_v;
+  // logic  cache_miss;
+  // assign cache_miss = ~lce_ready_i;
   assign cache_miss_v_o = cache_miss_v;
 
   //TODO: Check if the below functional change is ok
@@ -257,7 +259,7 @@ module bp_fe_icache
       end
       else if (uncached_req) begin
         cache_miss_cast_lo.msg_type = e_uc_load;
-        cache_miss_v = 1'b0;   // TODO: This has to be change dto 1'b1
+        cache_miss_v = 1'b1;   
       end
       else begin
         cache_miss_cast_lo.msg_type = e_miss_load;
@@ -269,7 +271,7 @@ module bp_fe_icache
       cache_miss_v = 1'b0;
     end
   end
-
+/*
   bsg_dff_reset_en #(
     .width_p(1),
     .reset_val_p(0)
@@ -280,7 +282,7 @@ module bp_fe_icache
     ,.data_i(1'b1)
     ,.data_o(cache_miss_lo)
   ); 
-
+*/
   // stat memory
   logic                                       stat_mem_v_li;
   logic                                       stat_mem_w_li;
@@ -339,7 +341,7 @@ module bp_fe_icache
   // Fault if in uncached mode but access is not for an uncached address
   //
   // TODO: Find out how to replace cache_miss_i with an internal signal
-  assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r) | ~cache_miss_lo);
+  assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r) | ~lce_miss_i);
 
   logic [dword_width_p-1:0]   ld_data_way_picked;
 
@@ -358,7 +360,7 @@ module bp_fe_icache
     ,.els_p(2)
   ) final_data_mux (
     .data_i({uncached_load_data_r, ld_data_way_picked})
-    ,.sel_i(1'b0/*uncached_tv_r*/)
+    ,.sel_i(uncached_tv_r)
     ,.data_o(final_data)
   );
 

@@ -36,7 +36,7 @@ module bp_fe_top
 
    // Interface to LCE
    , input                                            lce_ready_i
-   //, input                                            lce_miss_i
+   , input                                            lce_miss_i
 
    //, output logic                                     uncached_req_o
    //, output logic                                     miss_tv_o
@@ -119,7 +119,7 @@ bp_fe_mem
    ,.mem_resp_ready_i(mem_resp_ready_lo)
 
    ,.lce_ready_i(lce_ready_i)
-   //,.lce_miss_i(lce_miss_i)
+   ,.lce_miss_i(lce_miss_i)
 
    //,.uncached_req_o(uncached_req_o)
    //,.miss_tv_o(miss_tv_o)
