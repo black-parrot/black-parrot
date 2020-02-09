@@ -79,7 +79,7 @@ module bp_be_dcache_lce
     , input [lce_id_width_p-1:0] lce_id_i
 
     , output logic ready_o
-    //, output logic cache_miss_o
+    , output logic cache_miss_o
 
     //, input load_miss_i
     //, input store_miss_i

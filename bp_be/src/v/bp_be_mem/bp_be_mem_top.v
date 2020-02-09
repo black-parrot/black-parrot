@@ -77,7 +77,7 @@ module bp_be_mem_top
    // D$-LCE Interface
    // signals to LCE
    , input lce_ready_i
-   //, input lce_miss_i
+   , input lce_miss_i
    //, output logic load_miss_o
    //, output logic store_miss_o
    , output logic store_hit_o
@@ -416,7 +416,7 @@ bp_be_dcache
 
     // D$-LCE Interface
     ,.ready_i(lce_ready_i)
-    //,.cache_miss_i(lce_miss_i)
+    ,.lce_miss_i(lce_miss_i)
     //,.load_miss_o(load_miss_o)
     //,.store_miss_o(store_miss_o)
     ,.store_hit_o(store_hit_o)
