@@ -277,8 +277,12 @@ module bp_be_dcache_lce_cmd
           end
 
           e_lce_cmd_uc_st_done: begin
-            lce_cmd_yumi_o = lce_cmd_v_i;
             uncached_store_done_received_o = lce_cmd_v_i;
+            
+            /*tag_mem_pkt.opcode = e_cache_tag_mem_set_tag_wakeup;
+	            tag_mem_pkt_v_o = lce_cmd_v_i;*/
+            
+            lce_cmd_yumi_o = lce_cmd_v_i; // TODO: Do we even need this logic? "& tag_mem_pkt_yumi_i;"
           end
 
           e_lce_cmd_uc_data: begin
@@ -390,8 +394,12 @@ module bp_be_dcache_lce_cmd
           //  <uncached store done>
           //  Uncached store done from CCE - decrement flow counter
           e_lce_cmd_uc_st_done: begin
-            lce_cmd_yumi_o = lce_cmd_v_i;
             uncached_store_done_received_o = lce_cmd_v_i;
+            
+	          /*tag_mem_pkt.opcode = e_cache_tag_mem_set_tag_wakeup;
+              tag_mem_pkt_v_o = lce_cmd_v_i;*/
+            
+            lce_cmd_yumi_o = lce_cmd_v_i; // TODO: Do we even need this? " & tag_mem_pkt_yumi_i;
           end
 
           e_lce_cmd_data: begin

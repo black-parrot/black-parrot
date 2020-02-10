@@ -79,7 +79,7 @@ module bp_be_dcache_lce
     , input [lce_id_width_p-1:0] lce_id_i
 
     , output logic ready_o
-    , output logic cache_miss_o
+    //, output logic cache_miss_o
 
     //, input load_miss_i
     //, input store_miss_i
@@ -150,8 +150,8 @@ module bp_be_dcache_lce
   // TODO: Extract into bsg_edge_detector
   logic cache_miss_r;
   always_ff @(posedge clk_i)
-    cache_miss_r <= cache_miss_o;
-  wire cache_miss_resolved = cache_miss_r & ~cache_miss_o;
+    cache_miss_r <= cache_miss_lo;
+  wire cache_miss_resolved = cache_miss_r & ~cache_miss_lo;
 
   logic [`BSG_SAFE_CLOG2(lock_max_limit_p+1)-1:0] lock_cnt_r;
   wire lock_clr = cache_v_o_i || (lock_cnt_r == lock_max_limit_p);
@@ -239,6 +239,7 @@ module bp_be_dcache_lce
   assign credits_full_o = (credit_count_lo == coh_noc_max_credits_p);
   assign credits_empty_o = (credit_count_lo == 0);
 
+  logic cache_miss_lo;
   bp_be_dcache_lce_req
     #(.bp_params_p(bp_params_p))
     lce_req_inst
@@ -263,7 +264,7 @@ module bp_be_dcache_lce
       ,.cache_miss_v_i(cache_miss_v_i)
       ,.cache_miss_ready_o(cache_miss_ready_o)
 
-      ,.cache_miss_o(cache_miss_o)
+      ,.cache_miss_o(cache_miss_lo)
       ,.miss_addr_o(miss_addr_lo)
 
       ,.cce_data_received_i(cce_data_received)
@@ -378,6 +379,6 @@ module bp_be_dcache_lce
 
   // LCE Ready Signal
   wire lce_ready = lce_ready_lo;
-  assign ready_o = lce_ready & ~timeout & ~cache_miss_o; 
+  assign ready_o = lce_ready & ~timeout & ~cache_miss_lo; 
 
 endmodule

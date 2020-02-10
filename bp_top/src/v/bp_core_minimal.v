@@ -42,7 +42,7 @@ module bp_core_minimal
 
     // BP request side - Interface to LCE
     , input [1:0] lce_ready_i
-    , input [1:0] lce_miss_i
+    //, input [1:0] lce_miss_i
     , input credits_full_i
     , input credits_empty_i
 
@@ -136,7 +136,7 @@ module bp_core_minimal
      ,.fe_cmd_yumi_o(fe_cmd_yumi_li)
 
      ,.lce_ready_i(lce_ready_i[0])
-     ,.lce_miss_i(lce_miss_i[0])
+     //,.lce_miss_i(lce_miss_i[0])
 
      //,.uncached_req_o(uncached_load_req_o[0])
      //,.miss_tv_o(load_miss_o[0])
@@ -232,7 +232,7 @@ module bp_core_minimal
      ,.fe_cmd_fence_i(fe_cmd_fence_li)
 
      ,.lce_ready_i(lce_ready_i[1])
-     ,.lce_miss_i(lce_miss_i[1])
+     //,.lce_miss_i(lce_miss_i[1])
      //,.load_miss_o(load_miss_o[1])
      //,.store_miss_o(store_miss_o[1])
      ,.store_hit_o(store_o[1])

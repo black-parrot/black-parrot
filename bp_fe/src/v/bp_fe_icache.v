@@ -49,7 +49,7 @@ module bp_fe_icache
 
     // LCE Interface
     
-    , input                                            lce_miss_i                                            
+    //, input                                            lce_miss_i                                            
     //, output                                           miss_tv_o        
     //, output [paddr_width_p-1:0]                       miss_addr_tv_o   Done
     //, output                                           uncached_req_o   
@@ -245,8 +245,6 @@ module bp_fe_icache
   assign uncached_req = v_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
 
   logic cache_miss_v;
-  // logic  cache_miss;
-  // assign cache_miss = ~lce_ready_i;
   assign cache_miss_v_o = cache_miss_v;
 
   //TODO: Check if the below functional change is ok
@@ -338,10 +336,61 @@ module bp_fe_icache
   bp_cache_stat_mem_pkt_s stat_mem_pkt;
   assign stat_mem_pkt = lce_stat_mem_pkt_i;
 
+  enum logic [1:0] { A, B, C } state_n, state_r;
+  logic cache_miss;
+  always_comb begin
+    cache_miss = 1'b0;
+    state_n = state_r;
+    case(state_r) 
+      A: if(cache_miss_v_o) begin
+           cache_miss = 1'b1;
+           state_n = B;
+         end else begin
+           cache_miss = 1'b0;
+           state_n = A;
+         end
+
+      B: if(lce_tag_mem_pkt_v_i & lce_data_mem_pkt_v_i & (lce_data_mem_pkt.opcode == e_cache_data_mem_write) & (tag_mem_pkt.opcode == e_cache_tag_mem_set_tag)) begin
+         cache_miss = 1'b0;
+         state_n = C;
+       end
+       else if(lce_data_mem_pkt_v_i & lce_data_mem_pkt.opcode == e_cache_data_mem_uncached) begin
+         cache_miss = 1'b0;
+         state_n = C;
+       end
+       else begin
+         cache_miss = 1'b1;
+         state_n = B;
+       end
+
+      C: if(cache_miss_v_o) begin
+           cache_miss = 1'b1;
+           state_n = B;
+         end else begin
+           cache_miss = 1'b0;
+           state_n = C;
+         end
+
+      default: begin
+           cache_miss = 1'b0;
+           state_n = A;
+         end
+    endcase
+  end
+
+  always_ff @(posedge clk_i) begin
+    if(reset_i) begin
+      state_r <= A;
+    end
+    else begin
+      state_r <= state_n;
+    end
+  end
+
   // Fault if in uncached mode but access is not for an uncached address
   //
   // TODO: Find out how to replace cache_miss_i with an internal signal
-  assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r) | ~lce_miss_i);
+  assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r) | ~cache_miss);
 
   logic [dword_width_p-1:0]   ld_data_way_picked;
 
@@ -436,12 +485,6 @@ module bp_fe_icache
         end
       end
       e_cache_tag_mem_set_tag: begin
-        for (integer i = 0; i < lce_assoc_p; i++) begin
-          tag_mem_data_li[i]   = {tag_mem_pkt.state, tag_mem_pkt.tag};
-          tag_mem_w_mask_li[i] = {(`bp_coh_bits+tag_width_lp){lce_tag_mem_way_one_hot[i]}};
-        end
-      end
-      e_cache_tag_mem_set_tag_wakeup: begin            //TODO: Add additional logic to resolve the miss
         for (integer i = 0; i < lce_assoc_p; i++) begin
           tag_mem_data_li[i]   = {tag_mem_pkt.state, tag_mem_pkt.tag};
           tag_mem_w_mask_li[i] = {(`bp_coh_bits+tag_width_lp){lce_tag_mem_way_one_hot[i]}};
