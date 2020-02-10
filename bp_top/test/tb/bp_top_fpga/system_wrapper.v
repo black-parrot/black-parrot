@@ -342,7 +342,7 @@ module system_wrapper
                     
   ,.my_cord_i       (io_noc_cord_width_p'(dram_did_li))
   ,.my_cid_i        ('0)
-  ,.dst_cord_i      (dst_cord_lo)
+  ,.dst_cord_i      (proc_did_li)
   ,.dst_cid_i       ('0)
                     
   ,.mem_cmd_o       (host_cmd_li)
