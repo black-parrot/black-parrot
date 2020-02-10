@@ -6,11 +6,6 @@ package bp_common_aviary_pkg;
   localparam max_cfgs    = 128;
   localparam lg_max_cfgs = `BSG_SAFE_CLOG2(max_cfgs);
 
-  localparam bp_proc_param_s bp_inv_cfg_p = 
-    // '{default: 1};
-    // Vivado-friendly default parameter
-    bp_single_core_cfg_p;
-
   // NOTE: To use this config, need to manually override CCE=1 and LCE=1 at instantiation
   localparam bp_proc_param_s bp_half_core_cfg_p =
     '{cc_x_dim   : 1
@@ -485,6 +480,11 @@ package bp_common_aviary_pkg;
     ,e_bp_half_core_cfg     = 1
     ,e_bp_inv_cfg           = 0
   } bp_params_e;
+  
+  localparam bp_proc_param_s bp_inv_cfg_p = 
+    // '{default: 1};
+    // Vivado-friendly default parameter
+    bp_single_core_cfg_p;
 
   /* verilator lint_off WIDTH */     
   parameter bp_proc_param_s [max_cfgs-1:0] all_cfgs_gp =
