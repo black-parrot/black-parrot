@@ -51,6 +51,8 @@ dromajo:
 	@cd $(TOP); git submodule update --init --recursive $(DROMAJO_DIR)
 	$(MAKE) -C $(DROMAJO_DIR)/src
 	cp $(DROMAJO_DIR)/src/dromajo $(BP_EXTERNAL_DIR)/bin
+	cp $(DROMAJO_DIR)/src/libdromajo_cosim.a $(LIB_DIR)
+	cp $(DROMAJO_DIR)/src/dromajo_cosim.h $(INCLUDE_DIR)
 
 axe: 
 	@cd $(TOP); git submodule update --init --recursive $(AXE_DIR)

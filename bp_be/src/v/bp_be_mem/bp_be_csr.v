@@ -704,6 +704,7 @@ assign trap_pkt_cast_o.epc              = (csr_cmd.csr_op == e_sret)
                                             ? mepc_r
                                             : dpc_r;
 assign trap_pkt_cast_o.tvec             = (priv_mode_n == `PRIV_MODE_S) ? stvec_r : mtvec_r;
+assign trap_pkt_cast_o.cause            = (priv_mode_n == `PRIV_MODE_S) ? scause_li : mcause_li;
 assign trap_pkt_cast_o.priv_n           = priv_mode_n;
 assign trap_pkt_cast_o.translation_en_n = translation_en_n;
 // TODO: Find more solid invariant

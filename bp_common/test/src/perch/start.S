@@ -5,7 +5,7 @@ _start:
 /* setup stack pointers. Stacks start at 0x8FFF_CFFF */
 /* We then subtract off 8K*coreID. The top 4K is for the core emulation stack
  * the lower 4K is for the program TODO: Maybe larger stack value? */
-    li   sp, 0x8FFFCFF0
+    li   sp, 0x80010000
     csrr x1, mhartid 
     slli x1, x1, 13
     sub  sp, sp, x1
