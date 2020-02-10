@@ -293,9 +293,9 @@ module system_wrapper
   assign stub_resp_link_li = '0;
   
   // Chip
-  wrapper
+  bp_processor
  #(.bp_params_p (bp_params_p)
-  ) wrapper
+  ) proc
   (.core_clk_i  (mig_clk)
   ,.core_reset_i(~mig_rstn)
   

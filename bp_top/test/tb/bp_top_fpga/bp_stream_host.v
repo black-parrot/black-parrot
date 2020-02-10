@@ -71,11 +71,11 @@ module bp_stream_host
 
   ,.io_cmd_o       (io_cmd_o)
   ,.io_cmd_v_o     (io_cmd_v_o)
-  ,.io_cmd_ready_i (io_cmd_yumi_i)
+  ,.io_cmd_yumi_i (io_cmd_yumi_i)
 
   ,.io_resp_i      (io_resp_i)
   ,.io_resp_v_i    (io_resp_v_i)
-  ,.io_resp_yumi_o (io_resp_ready_o)
+  ,.io_resp_ready_o (io_resp_ready_o)
 
   ,.stream_v_i     (nbf_v_li)
   ,.stream_data_i  (stream_data_i)
