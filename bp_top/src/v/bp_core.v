@@ -74,7 +74,7 @@ module bp_core
   logic cache_miss_dcache_v_lo, cache_miss_icache_v_lo, cache_miss_dcache_ready_li, cache_miss_icache_ready_li;
 
   logic [1:0] lce_ready_lo;
-  logic [1:0] lce_miss_lo;
+  //logic [1:0] lce_miss_lo;
   logic credits_full_lo, credits_empty_lo;
 /*
   logic [1:0] load_miss_lo;
@@ -122,7 +122,7 @@ module bp_core
 
      // BP request side - Interface to LCE
      ,.lce_ready_i(lce_ready_lo)
-     ,.lce_miss_i(lce_miss_lo)
+     //,.lce_miss_i(lce_miss_lo)
      ,.credits_full_i(credits_full_lo)
      ,.credits_empty_i(credits_empty_lo)
 
@@ -174,7 +174,7 @@ module bp_core
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.ready_o(lce_ready_lo[0])
-     ,.cache_miss_o(lce_miss_lo[0])
+     //,.cache_miss_o(lce_miss_lo[0])
 
      //,.miss_i(load_miss_lo[0])
      //,.miss_addr_i(miss_addr_lo[0])
@@ -224,7 +224,7 @@ module bp_core
     ,.lce_id_i(cfg_bus_cast_i.dcache_id)
 
     ,.ready_o(lce_ready_lo[1])
-    ,.cache_miss_o(lce_miss_lo[1])
+    //,.cache_miss_o(lce_miss_lo[1])
 
     //,.load_miss_i(load_miss_lo[1])
     //,.store_miss_i(store_miss_lo[1])

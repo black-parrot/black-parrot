@@ -140,7 +140,7 @@ module bp_be_dcache
     , output logic store_op_tl_o
 
     // ctrl
-    , input lce_miss_i
+    , output dcache_miss_o // Used for mem connections (ptw and MMU resp connections)
     , input poison_i
 
     // D$-LCE Interface
@@ -767,6 +767,88 @@ module bp_be_dcache
 
   // output stage
   //
+
+  logic cache_miss;
+  assign dcache_miss_o = cache_miss;
+/*
+  always_comb begin
+    cache_miss = 1'b0;
+    if(cache_miss_v_o == 1'b1) begin
+      cache_miss = 1'b1;
+    end
+    else if(cache_miss_ready_i == 1'b0) begin
+      if(lce_tag_mem_pkt_v_i && lce_data_mem_pkt_v_i && (lce_data_mem_pkt.opcode == e_cache_data_mem_write) && (lce_tag_mem_pkt.opcode == e_cache_tag_mem_set_tag)) begin
+	cache_miss = 1'b0;
+      end
+      else if(lce_data_mem_pkt_v_i && lce_data_mem_pkt.opcode == e_cache_data_mem_uncached) begin
+	cache_miss = 1'b0;
+      end
+      else if(lce_tag_mem_pkt_v_i && lce_tag_mem_pkt.opcode == e_cache_tag_mem_set_tag_wakeup) begin
+	cache_miss = 1'b0;
+      end
+      else begin
+	cache_miss = 1'b1;
+      end 
+    end
+  end
+*/
+
+  enum logic [1:0] { A, B, C } state_n, state_r;
+
+  always_comb begin
+    cache_miss = 1'b0;
+    state_n = state_r;
+    case(state_r) 
+      A: if(cache_miss_v_o & ~uncached_store_req) begin
+           cache_miss = 1'b1;
+           state_n = B;
+         end else begin
+           cache_miss = 1'b0;
+           state_n = A;
+         end
+
+      B: if(lce_tag_mem_pkt_v_i & lce_data_mem_pkt_v_i & (lce_data_mem_pkt.opcode == e_cache_data_mem_write) & (lce_tag_mem_pkt.opcode == e_cache_tag_mem_set_tag)) begin
+         cache_miss = 1'b0;
+         state_n = C;
+       end
+       else if(lce_data_mem_pkt_v_i & lce_data_mem_pkt.opcode == e_cache_data_mem_uncached) begin
+         cache_miss = 1'b0;
+         state_n = C;
+       end
+       /*else if(lce_tag_mem_pkt_v_i & lce_tag_mem_pkt.opcode == e_cache_tag_mem_set_tag_wakeup) begin
+         cache_miss = 1'b0;
+         state_n = C;
+       end*/
+       else begin
+         cache_miss = 1'b1;
+         state_n = B;
+       end
+
+      C: if(cache_miss_v_o & ~uncached_store_req) begin
+           cache_miss = 1'b1;
+           state_n = B;
+         end else begin
+           cache_miss = 1'b0;
+           state_n = C;
+         end
+
+      default: begin
+                 cache_miss = 1'b0;
+                 state_n = A;
+               end
+    endcase
+  end
+
+  always_ff @(posedge clk_i) begin
+    if(reset_i) begin
+      state_r <= A;
+    end
+    else begin
+      state_r <= state_n;
+    end
+  end
+
+
   always_comb begin
     if (v_tv_r) begin
       if (uncached_tv_r) begin
@@ -777,7 +859,7 @@ module bp_be_dcache
           // uncached store_op can be committed,
           // as long as there is no cache_miss_i signal raised.
           // TODO: Replace cache_miss_i with internal signal
-          v_o = ~lce_miss_i;
+          v_o = ~cache_miss;
         end
         else begin
           v_o = 1'b0; // this should never happen
@@ -785,7 +867,7 @@ module bp_be_dcache
       end
       else begin
         // Replace cache_miss_i with internal signal
-        v_o = v_tv_r & ~lce_miss_i; // cached request
+        v_o = v_tv_r & ~cache_miss; // cached request
       end
     end
     else begin
@@ -966,13 +1048,13 @@ module bp_be_dcache
           tag_mem_mask_li[i].tag = {ptag_width_lp{lce_tag_mem_way_one_hot[i]}};
         end
       end
-      e_cache_tag_mem_set_tag_wakeup: begin
-        tag_mem_data_li = {lce_assoc_p{lce_tag_mem_pkt.state, lce_tag_mem_pkt.tag}};
-        for (integer i = 0; i < lce_assoc_p; i++) begin
-          tag_mem_mask_li[i].coh_state = {`bp_coh_bits{lce_tag_mem_way_one_hot[i]}};
-          tag_mem_mask_li[i].tag = {ptag_width_lp{lce_tag_mem_way_one_hot[i]}};
-        end
-      end
+      /*e_cache_tag_mem_set_tag_wakeup: begin
+          // Nothing goes here. Used to resolve uncached store misses. Done
+          // apart from decrementing credits counter. 
+          // TODO: Change name to something more sensible.
+          // TODO: Might need to add address comparison if we have more than
+          // one outstanding miss.
+      end*/
       // TODO: Write logic to assert/de-asser cache_miss_o
       default: begin
         tag_mem_data_li = {(tag_info_width_lp*lce_assoc_p){1'b0}};
@@ -1053,7 +1135,7 @@ module bp_be_dcache
   //
   // disallow write buffer write on store hit that cannot be processed by LCE
   // to avoid multiple wbuf entries when the store replays
-  assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r & ~lce_miss_i;
+  assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r & ~cache_miss;
   assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we);
   assign bypass_v_li = tv_we & load_op_tl_r;
   assign lce_snoop_index_li = lce_data_mem_pkt.index;

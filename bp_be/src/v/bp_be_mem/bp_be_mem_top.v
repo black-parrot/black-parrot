@@ -77,7 +77,7 @@ module bp_be_mem_top
    // D$-LCE Interface
    // signals to LCE
    , input lce_ready_i
-   , input lce_miss_i
+   //, input lce_miss_i
    //, output logic load_miss_o
    //, output logic store_miss_o
    , output logic store_hit_o
@@ -267,6 +267,7 @@ assign exception_ecode_dec_li =
     ,default: '0
     };
 
+logic dcache_miss_lo;
 bp_be_csr
  #(.bp_params_p(bp_params_p))
   csr
@@ -387,7 +388,7 @@ bp_be_ptw
    ,.dcache_pkt_o(ptw_dcache_pkt)
    ,.dcache_ptag_o(ptw_dcache_ptag)
    ,.dcache_rdy_i(lce_ready_i)
-   ,.dcache_miss_i(lce_miss_i)
+   ,.dcache_miss_i(dcache_miss_lo)
   );
 
 logic load_op_tl_lo, store_op_tl_lo;
@@ -416,7 +417,7 @@ bp_be_dcache
 
     // D$-LCE Interface
     ,.ready_i(lce_ready_i)
-    ,.lce_miss_i(lce_miss_i)
+    ,.dcache_miss_o(dcache_miss_lo)
     //,.load_miss_o(load_miss_o)
     //,.store_miss_o(store_miss_o)
     ,.store_hit_o(store_hit_o)
@@ -528,7 +529,7 @@ assign mem_resp.miss_v = mmu_cmd_v_rr & ~dcache_v & ~|exception_ecode_dec_li;
 assign mem_resp.data   = dcache_v ? dcache_data : csr_data_lo;
 
 assign mem_resp_v_o    = ptw_busy ? 1'b0 : mmu_cmd_v_rr | csr_v_lo;
-assign mmu_cmd_ready_o = lce_ready_i & ~lce_miss_i & ~ptw_busy;
+assign mmu_cmd_ready_o = lce_ready_i & ~dcache_miss_lo & ~ptw_busy;
 
 assign itlb_fill_v_o     = ptw_tlb_w_v & itlb_not_dtlb_resp;
 assign itlb_fill_vaddr_o = fault_vaddr;
