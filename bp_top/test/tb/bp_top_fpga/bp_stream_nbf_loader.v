@@ -33,11 +33,11 @@ module bp_stream_nbf_loader
   
   ,output [cce_mem_msg_width_lp-1:0]        io_cmd_o
   ,output                                   io_cmd_v_o
-  ,input                                    io_cmd_ready_i
+  ,input                                    io_cmd_yumi_i
   
   ,input  [cce_mem_msg_width_lp-1:0]        io_resp_i
   ,input                                    io_resp_v_i
-  ,output                                   io_resp_yumi_o
+  ,output                                   io_resp_ready_o
   
   ,input                                    stream_v_i
   ,input  [stream_data_width_p-1:0]         stream_data_i
@@ -46,7 +46,7 @@ module bp_stream_nbf_loader
   
   // response network not used
   wire unused_resp = &{io_resp_i, io_resp_v_i};
-  assign io_resp_yumi_o = io_resp_v_i;
+  assign io_resp_ready_o = 1'b1;
   
   // nbf credit counter
   logic [`BSG_WIDTH(io_noc_max_credits_p)-1:0] credit_count_lo;
@@ -58,9 +58,9 @@ module bp_stream_nbf_loader
   ) nbf_counter
   (.clk_i  (clk_i)
   ,.reset_i(reset_i)
-  ,.v_i    (io_cmd_v_o & io_cmd_ready_i)
+  ,.v_i    (io_cmd_yumi_i)
   ,.ready_i(1'b1)
-  ,.yumi_i (io_resp_yumi_o)
+  ,.yumi_i (io_resp_v_i)
   ,.count_o(credit_count_lo)
   );
 
@@ -142,7 +142,7 @@ module bp_stream_nbf_loader
             io_cmd.data = '0;
             io_cmd.addr = counter_r;
             io_cmd.size = e_mem_size_8;
-            if (io_cmd_ready_i)
+            if (io_cmd_yumi_i)
               begin
                 counter_n = counter_r + 32'h8;
                 if (counter_r == 32'h84000000)
@@ -167,10 +167,7 @@ module bp_stream_nbf_loader
                 if (~credits_full_lo)
                   begin
                     io_cmd_v_lo = 1'b1;
-                    if (io_cmd_ready_i)
-                      begin
-                        incoming_nbf_yumi_li = 1'b1;
-                      end
+                    incoming_nbf_yumi_li = io_cmd_yumi_i;
                   end
               end
           end

@@ -23,14 +23,21 @@ module bp_stream_host
   ,input                                        reset_i
   ,output                                       prog_done_o
 
-  ,input  [io_noc_cord_width_p-1:0]             my_cord_i
-  ,input  [io_noc_cord_width_p-1:0]             dst_cord_i
+  ,input  [cce_mem_msg_width_lp-1:0]            io_cmd_i
+  ,input                                        io_cmd_v_i
+  ,output                                       io_cmd_yumi_o
 
-  ,input  [bsg_ready_and_link_sif_width_lp-1:0] cmd_link_i
-  ,output [bsg_ready_and_link_sif_width_lp-1:0] cmd_link_o
-
-  ,input  [bsg_ready_and_link_sif_width_lp-1:0] resp_link_i
-  ,output [bsg_ready_and_link_sif_width_lp-1:0] resp_link_o
+  ,output [cce_mem_msg_width_lp-1:0]            io_resp_o
+  ,output                                       io_resp_v_o
+  ,input                                        io_resp_ready_i
+  
+  ,output [cce_mem_msg_width_lp-1:0]            io_cmd_o
+  ,output                                       io_cmd_v_o
+  ,input                                        io_cmd_yumi_i
+  
+  ,input  [cce_mem_msg_width_lp-1:0]            io_resp_i
+  ,input                                        io_resp_v_i
+  ,output                                       io_resp_ready_o
   
   ,input                                        stream_v_i
   ,input  [stream_addr_width_p-1:0]             stream_addr_i
@@ -43,58 +50,6 @@ module bp_stream_host
   );
   
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
-  
-  // Client
-  bp_cce_mem_msg_s       cce_resp_lo;
-  logic                  cce_resp_v_lo, cce_resp_ready_li;
-  bp_cce_mem_msg_s       cce_cmd_li;
-  logic                  cce_cmd_v_li, cce_cmd_yumi_lo;
-  
-  // Master
-  bp_cce_mem_msg_s       cce_cmd_lo;
-  logic                  cce_cmd_v_lo, cce_cmd_ready_li;
-  bp_cce_mem_msg_s       cce_resp_li;
-  logic                  cce_resp_v_li, cce_resp_yumi_lo;
-  
-  // cce to wormhole link
-  bp_me_cce_to_mem_link_bidir
- #(.bp_params_p          (bp_params_p)
-  ,.num_outstanding_req_p(io_noc_max_credits_p)
-  ,.flit_width_p         (io_noc_flit_width_p)
-  ,.cord_width_p         (io_noc_cord_width_p)
-  ,.cid_width_p          (io_noc_cid_width_p)
-  ,.len_width_p          (io_noc_len_width_p)
-  ) bidir_link
-  (.clk_i           (clk_i)
-  ,.reset_i         (reset_i)
-  // Master
-  ,.mem_cmd_i       (cce_cmd_lo)
-  ,.mem_cmd_v_i     (cce_cmd_v_lo)
-  ,.mem_cmd_ready_o (cce_cmd_ready_li)
-
-  ,.mem_resp_o      (cce_resp_li)
-  ,.mem_resp_v_o    (cce_resp_v_li)
-  ,.mem_resp_yumi_i (cce_resp_yumi_lo)
-  // Client
-  ,.mem_cmd_o       (cce_cmd_li)
-  ,.mem_cmd_v_o     (cce_cmd_v_li)
-  ,.mem_cmd_yumi_i  (cce_cmd_yumi_lo)
-
-  ,.mem_resp_i      (cce_resp_lo)
-  ,.mem_resp_v_i    (cce_resp_v_lo)
-  ,.mem_resp_ready_o(cce_resp_ready_li)
-
-  ,.my_cord_i(my_cord_i)
-  ,.my_cid_i('0)
-  ,.dst_cord_i(dst_cord_i)
-  ,.dst_cid_i('0)
-     
-  ,.cmd_link_i      (cmd_link_i)
-  ,.cmd_link_o      (cmd_link_o)
-
-  ,.resp_link_i     (resp_link_i)
-  ,.resp_link_o     (resp_link_o)
-  );
   
   // Stream address map
   logic nbf_v_li, mmio_v_li;
@@ -114,13 +69,13 @@ module bp_stream_host
   ,.reset_i        (reset_i)
   ,.done_o         (prog_done_o)
 
-  ,.io_cmd_o       (cce_cmd_lo)
-  ,.io_cmd_v_o     (cce_cmd_v_lo)
-  ,.io_cmd_ready_i (cce_cmd_ready_li)
+  ,.io_cmd_o       (io_cmd_o)
+  ,.io_cmd_v_o     (io_cmd_v_o)
+  ,.io_cmd_ready_i (io_cmd_yumi_i)
 
-  ,.io_resp_i      (cce_resp_li)
-  ,.io_resp_v_i    (cce_resp_v_li)
-  ,.io_resp_yumi_o (cce_resp_yumi_lo)
+  ,.io_resp_i      (io_resp_i)
+  ,.io_resp_v_i    (io_resp_v_i)
+  ,.io_resp_yumi_o (io_resp_ready_o)
 
   ,.stream_v_i     (nbf_v_li)
   ,.stream_data_i  (stream_data_i)
@@ -135,13 +90,13 @@ module bp_stream_host
   (.clk_i           (clk_i)
   ,.reset_i         (reset_i)
 
-  ,.io_cmd_i        (cce_cmd_li)
-  ,.io_cmd_v_i      (cce_cmd_v_li)
-  ,.io_cmd_yumi_o   (cce_cmd_yumi_lo)
+  ,.io_cmd_i        (io_cmd_i)
+  ,.io_cmd_v_i      (io_cmd_v_i)
+  ,.io_cmd_yumi_o   (io_cmd_yumi_o)
 
-  ,.io_resp_o       (cce_resp_lo)
-  ,.io_resp_v_o     (cce_resp_v_lo)
-  ,.io_resp_ready_i (cce_resp_ready_li)
+  ,.io_resp_o       (io_resp_o)
+  ,.io_resp_v_o     (io_resp_v_o)
+  ,.io_resp_ready_i (io_resp_ready_i)
 
   ,.stream_v_i      (mmio_v_li)
   ,.stream_data_i   (stream_data_i)
