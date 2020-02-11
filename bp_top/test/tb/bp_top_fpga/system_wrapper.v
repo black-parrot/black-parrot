@@ -21,7 +21,7 @@ module system_wrapper
  import bsg_wormhole_router_pkg::*;
  import bsg_cache_pkg::*;
   
- #(parameter bp_params_e bp_params_p = e_bp_single_core_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_dual_core_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
    
@@ -545,6 +545,7 @@ module system_wrapper
   ,.block_size_in_words_p(cce_block_width_p/dword_width_p)
   ,.data_width_p         (dword_width_p)
   ,.num_cache_p          (1)
+  ,.tag_fifo_els_p       (num_core_p)
 
   ,.axi_id_width_p       (axi_id_width_p)
   ,.axi_addr_width_p     (axi_addr_width_p)
