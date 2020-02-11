@@ -138,7 +138,7 @@ module bp_stream_nbf_loader
       begin
         if (~reset_i)
           begin
-            io_cmd_v_lo = 1'b1;
+            io_cmd_v_lo = ~credits_full_lo;
             io_cmd.data = '0;
             io_cmd.addr = counter_r;
             io_cmd.size = e_mem_size_8;
@@ -164,11 +164,8 @@ module bp_stream_nbf_loader
               end
             else 
               begin
-                if (~credits_full_lo)
-                  begin
-                    io_cmd_v_lo = 1'b1;
-                    incoming_nbf_yumi_li = io_cmd_yumi_i;
-                  end
+                io_cmd_v_lo = ~credits_full_lo;
+                incoming_nbf_yumi_li = io_cmd_yumi_i;
               end
           end
       end

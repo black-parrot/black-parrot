@@ -199,7 +199,7 @@ module system_wrapper
   assign led[0] = pcie_lnk_up;
   assign led[1] = mig_calib_done;
   //assign led[2] = 1'b0;
-  assign led[3] = 1'b0;
+  //assign led[3] = 1'b0;
   
   // m_axi_lite adapter
   bsg_m_axi_lite_to_fifo
@@ -361,6 +361,7 @@ module system_wrapper
    
   // pcie stream host (NBF and MMIO)
   logic nbf_done_lo;
+  assign led[3] = nbf_done_lo;
   
   bp_stream_host
  #(.bp_params_p(bp_params_p)
@@ -460,6 +461,12 @@ module system_wrapper
   ,.cmd_o (proc_cmd_link_lo)
   ,.resp_i(proc_resp_link_li)
   ,.resp_o(proc_resp_link_lo)
+  );
+  
+  design_4 design_4_i
+  (.clk_i (mig_clk)
+  ,.cmd_o (dram_cmd_link_lo)
+  ,.resp_i(dram_resp_link_li)
   );
   
   // dram link to CCE
