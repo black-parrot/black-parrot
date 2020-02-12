@@ -35,11 +35,6 @@ module bp_fe_lce_req
 
     , input [lce_id_width_p-1:0] lce_id_i
  
-    //, input miss_i
-    //, input [paddr_width_p-1:0] miss_addr_i
-    //, input [way_id_width_lp-1:0] lru_way_i
-    //, input uncached_req_i
-
     , input [bp_cache_miss_width_lp-1:0] cache_miss_i
     , input cache_miss_v_i
     , output logic cache_miss_ready_o
@@ -141,9 +136,8 @@ module bp_fe_lce_req
     lce_resp.data         = '0;
   
     cache_miss_o = 1'b0;
-    
     cache_miss_ready_o = 1'b1;
- 
+    
     case (state_r)
       e_lce_req_ready: begin
        cache_miss_ready_o = 1'b1;

@@ -101,12 +101,6 @@ module bp_be_dcache
     , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(ptag_width_lp)
     , localparam stat_info_width_lp=`bp_be_dcache_stat_info_width(lce_assoc_p)
 
-    /*, localparam dcache_lce_data_mem_pkt_width_lp=
-      `bp_be_dcache_lce_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
-    , localparam dcache_lce_tag_mem_pkt_width_lp=
-      `bp_be_dcache_lce_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, ptag_width_lp)
-    , localparam dcache_lce_stat_mem_pkt_width_lp=
-      `bp_be_dcache_lce_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)*/
     , localparam dcache_lce_data_mem_pkt_width_lp=
       `bp_cache_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
     , localparam dcache_lce_tag_mem_pkt_width_lp=
@@ -124,9 +118,6 @@ module bp_be_dcache
     , input [dcache_pkt_width_lp-1:0] dcache_pkt_i
     , input v_i
 
-    // TODO: What ready_i signal is this?
-    // LCE ready signal
-    , input ready_i
 
     , output logic [dword_width_p-1:0] data_o
     , output logic v_o
@@ -145,19 +136,10 @@ module bp_be_dcache
 
     // D$-LCE Interface
     // signals to LCE
-    // , output logic load_miss_o
-    //, output logic store_miss_o
-    //, output logic lr_miss_o
-    //, output logic uncached_load_req_o
-    //, output logic uncached_store_req_o
-    //, output logic [paddr_width_p-1:0] miss_addr_o
-    //, output logic [dword_width_p-1:0] store_data_o
-    //, output logic [1:0] size_op_o
-    //, output logic [way_id_width_lp-1:0] lru_way_o
-    //, output logic [lce_assoc_p-1:0] dirty_o
+    , input lce_ready_i
     , input cache_miss_ready_i
     , output [bp_cache_miss_width_lp-1:0] cache_miss_o
-    , output cache_miss_v_o 
+    , output logic cache_miss_v_o 
 
     // for lock logic inside LCE
     , output logic lr_hit_tv_o
@@ -168,7 +150,6 @@ module bp_be_dcache
     // data_mem
     , input lce_data_mem_pkt_v_i
     , input [dcache_lce_data_mem_pkt_width_lp-1:0] lce_data_mem_pkt_i
-    // TODO: Keep the data_mem_data_o. Reflect this in icache
     , output logic [cce_block_width_p-1:0] lce_data_mem_data_o
     , output logic lce_data_mem_pkt_yumi_o
 
@@ -291,7 +272,7 @@ module bp_be_dcache
   logic [dword_width_p-1:0] data_tl_r;
 
   // TODO: Which ready_i is this? LCE's??
-  assign tl_we = v_i & ready_i & ~poison_i;
+  assign tl_we = v_i & lce_ready_i & ~poison_i;
  
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -688,24 +669,14 @@ module bp_be_dcache
   logic lce_stat_mem_pkt_yumi;
   assign lce_stat_mem_pkt_yumi_o = lce_stat_mem_pkt_yumi;
 
-  // assign load_miss_o = load_miss_tv;
-  // assign store_miss_o = store_miss_tv;
-  // assign lr_miss_o = lr_miss_tv;
-  // assign uncached_load_req_o = uncached_load_req;
-  // assign uncached_store_req_o = uncached_store_req;
   // Packaged the items to be sent out to the LCE
   assign cache_miss_cast_o.addr = paddr_tv_r;
   assign cache_miss_cast_o.data = data_tv_r;
   // Handle sizes in a different way
-  // assign cache_miss_cast_o.size = size_op_tv_r;
   assign cache_miss_cast_o.repl_way = lce_lru_way_li;
   assign cache_miss_cast_o.dirty = stat_mem_data_lo.dirty;
   assign lr_hit_tv_o = lr_hit_tv;
 
-  //logic cache_miss;
-  //assign cache_miss = ~	ready_i;
-
-  // TODO: Verify before finalising
   // Assigning sizes to cache miss packet
   always_comb begin
     if(size_op_tv_r == 2'b11) begin
@@ -726,7 +697,6 @@ module bp_be_dcache
   end
 
   // Assigning message types
-  // TODO: Verify before finalising
   always_comb begin
     cache_miss_v_o = 1'b0;
     if(cache_miss_ready_i) begin
@@ -752,46 +722,12 @@ module bp_be_dcache
       end
     end
   end
-/*
-  bsg_dff_reset_en #(
-    .width_p(1),
-    .reset_val_p(0)
-  ) cache_miss_info(
-    .clk_i(clk_i)
-    ,.reset_i(lce_ready_i)
-    ,.en_i(cache_miss_v_o)
-    ,.data_i(1'b1)
-    ,.data_o(cache_miss_lo)
-  );
-*/
 
   // output stage
   //
 
   logic cache_miss;
   assign dcache_miss_o = cache_miss;
-/*
-  always_comb begin
-    cache_miss = 1'b0;
-    if(cache_miss_v_o == 1'b1) begin
-      cache_miss = 1'b1;
-    end
-    else if(cache_miss_ready_i == 1'b0) begin
-      if(lce_tag_mem_pkt_v_i && lce_data_mem_pkt_v_i && (lce_data_mem_pkt.opcode == e_cache_data_mem_write) && (lce_tag_mem_pkt.opcode == e_cache_tag_mem_set_tag)) begin
-	cache_miss = 1'b0;
-      end
-      else if(lce_data_mem_pkt_v_i && lce_data_mem_pkt.opcode == e_cache_data_mem_uncached) begin
-	cache_miss = 1'b0;
-      end
-      else if(lce_tag_mem_pkt_v_i && lce_tag_mem_pkt.opcode == e_cache_tag_mem_set_tag_wakeup) begin
-	cache_miss = 1'b0;
-      end
-      else begin
-	cache_miss = 1'b1;
-      end 
-    end
-  end
-*/
 
   enum logic [1:0] { A, B, C } state_n, state_r;
 
@@ -858,7 +794,6 @@ module bp_be_dcache
         else if (store_op_tv_r) begin
           // uncached store_op can be committed,
           // as long as there is no cache_miss_i signal raised.
-          // TODO: Replace cache_miss_i with internal signal
           v_o = ~cache_miss;
         end
         else begin

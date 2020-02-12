@@ -1,7 +1,5 @@
 /**
- * bp_be_dcache.vh
- * This file declares the internal structs of the BlackParrot Back End D-Cache module.
- * Each struct declares its width separately to prevent pre-processor oredering issues.
+ * bp_common_cache_service.vh
  */
 
 `ifndef BP_CACHE_MISS_PKT_VH

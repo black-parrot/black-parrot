@@ -36,13 +36,8 @@ module bp_fe_top
    , input                                            fe_queue_ready_i
 
    // Interface to LCE
-   , input                                            lce_ready_i
-   //, input                                            lce_miss_i
 
-   //, output logic                                     uncached_req_o
-   //, output logic                                     miss_tv_o
-   //, output logic [paddr_width_p-1:0]                 miss_addr_tv_o
-   //, output logic [way_id_width_lp-1:0]               lru_way_o
+   , input                                            lce_ready_i
 
    , output [bp_cache_miss_width_lp-1:0]              cache_miss_o
    , output                                           cache_miss_v_o
@@ -121,13 +116,6 @@ bp_fe_mem
    ,.mem_resp_ready_i(mem_resp_ready_lo)
 
    ,.lce_ready_i(lce_ready_i)
-   //,.lce_miss_i(lce_miss_i)
-
-   //,.uncached_req_o(uncached_req_o)
-   //,.miss_tv_o(miss_tv_o)
-   //,.miss_addr_tv_o(miss_addr_tv_o)
-   //,.lru_way_o(lru_way_o)
-
    ,.cache_miss_o(cache_miss_o)
    ,.cache_miss_v_o(cache_miss_v_o)
    ,.cache_miss_ready_i(cache_miss_ready_i)

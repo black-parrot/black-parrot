@@ -41,26 +41,15 @@ module bp_core_minimal
     , output [1:0] cfg_priv_data_o
 
     // BP request side - Interface to LCE
-    , input [1:0] lce_ready_i
-    //, input [1:0] lce_miss_i
     , input credits_full_i
     , input credits_empty_i
 
-    //, output logic [1:0] load_miss_o
-    //, output logic [1:0] store_miss_o
-    //, output logic [1:0] lr_miss_o
+    , input [1:0] lce_ready_i
     , output logic [1:0] lr_hit_o
     , output logic [1:0] cache_v_o
-    //, output logic [1:0] uncached_load_req_o
-    //, output logic [1:0] uncached_store_req_o
 
     , output logic [1:0][cce_block_width_p-1:0] data_mem_data_o
-    //, output logic [1:0][paddr_width_p-1:0] miss_addr_o
-    //, output logic [1:0][way_id_width_lp-1:0] lru_way_o
-    //, output logic [1:0][lce_assoc_p-1:0] dirty_o
     , output logic [1:0] store_o
-    //, output logic [1:0][dword_width_p-1:0] store_data_o
-    //, output logic [1:0][1:0] size_op_o
 
     , output logic [1:0][bp_cache_miss_width_lp-1:0] cache_miss_o
     , output logic [1:0] cache_miss_v_o
@@ -108,15 +97,9 @@ module bp_core_minimal
 
   // stub unsued outputs at I$ index
   always_comb begin
-    //store_miss_o[0] = '0;
-    //lr_miss_o[0] = '0;
     lr_hit_o[0] = '0;
     cache_v_o[0] = '0;
-    //uncached_store_req_o[0] = '0;
-    //dirty_o[0] = '0;
     store_o[0] = '0;
-    //store_data_o[0] = '0;
-    //size_op_o[0] = '0;
   end 
 
   bp_fe_top
@@ -137,12 +120,6 @@ module bp_core_minimal
      ,.fe_cmd_processed_o(fe_cmd_processed_li)
 
      ,.lce_ready_i(lce_ready_i[0])
-     //,.lce_miss_i(lce_miss_i[0])
-
-     //,.uncached_req_o(uncached_load_req_o[0])
-     //,.miss_tv_o(load_miss_o[0])
-     //,.miss_addr_tv_o(miss_addr_o[0])
-     //,.lru_way_o(lru_way_o[0])
 
      ,.cache_miss_o(cache_miss_o[0])
      ,.cache_miss_v_o(cache_miss_v_o[0])
@@ -234,18 +211,7 @@ module bp_core_minimal
      ,.fe_cmd_ready_i(fe_cmd_ready_lo)
 
      ,.lce_ready_i(lce_ready_i[1])
-     //,.lce_miss_i(lce_miss_i[1])
-     //,.load_miss_o(load_miss_o[1])
-     //,.store_miss_o(store_miss_o[1])
      ,.store_hit_o(store_o[1])
-     //,.lr_miss_o(lr_miss_o[1])
-     //,.uncached_load_req_o(uncached_load_req_o[1])
-     //,.uncached_store_req_o(uncached_store_req_o[1])
-     //,.miss_addr_o(miss_addr_o[1])
-     //,.store_data_o(store_data_o[1])
-     //,.size_op_o(size_op_o[1])
-     //,.lru_way_o(lru_way_o[1])
-     //,.dirty_o(dirty_o[1])
      
      ,.cache_miss_o(cache_miss_o[1])
      ,.cache_miss_v_o(cache_miss_v_o[1])

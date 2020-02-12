@@ -37,19 +37,12 @@ module bp_fe_mem
 
    // Interface to LCE
    , input                                            lce_ready_i
-   //, input                                            lce_miss_i
-
-   //, output logic                                     uncached_req_o
-   //, output                                           miss_tv_o
-   //, output [paddr_width_p-1:0]                       miss_addr_tv_o
-   //, output logic [way_id_width_lp-1:0]               lru_way_o
 
    , output [bp_cache_miss_width_lp-1:0]              cache_miss_o
    , output                                           cache_miss_v_o
    , input                                            cache_miss_ready_i
 
    , output logic [cce_block_width_p-1:0]             data_mem_data_o
-   //, input [data_mem_pkt_width_lp-1:0]                data_mem_pkt_i
    , input [bp_cache_data_mem_pkt_width_lp-1:0]       data_mem_pkt_i
    , input                                            data_mem_pkt_v_i
    , output logic                                     data_mem_pkt_yumi_o
@@ -139,11 +132,6 @@ bp_fe_icache
    ,.data_v_o(icache_data_v_lo)
 
    // LCE Interface
-   //,.lce_miss_i(lce_miss_i)      // TODO: Check this once
-   //,.lru_way_o(lru_way_o)
-   //,.miss_tv_o(miss_tv_o)
-   //,.miss_addr_tv_o(miss_addr_tv_o)
-   //,.uncached_req_o(uncached_req_o)
 
    ,.cache_miss_o(cache_miss_o)
    ,.cache_miss_v_o(cache_miss_v_o)

@@ -86,7 +86,7 @@ module bp_be_dcache_lce_cmd
     // stat_mem
     , output logic stat_mem_pkt_v_o
     , output logic [dcache_lce_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
-    , input [lce_assoc_p-1:0] dirty_i
+    , input dirty_i
     , input stat_mem_pkt_yumi_i
   );
 
@@ -278,11 +278,7 @@ module bp_be_dcache_lce_cmd
 
           e_lce_cmd_uc_st_done: begin
             uncached_store_done_received_o = lce_cmd_v_i;
-            
-            /*tag_mem_pkt.opcode = e_cache_tag_mem_set_tag_wakeup;
-	            tag_mem_pkt_v_o = lce_cmd_v_i;*/
-            
-            lce_cmd_yumi_o = lce_cmd_v_i; // TODO: Do we even need this logic? "& tag_mem_pkt_yumi_i;"
+            lce_cmd_yumi_o = lce_cmd_v_i; 
           end
 
           e_lce_cmd_uc_data: begin
@@ -395,11 +391,7 @@ module bp_be_dcache_lce_cmd
           //  Uncached store done from CCE - decrement flow counter
           e_lce_cmd_uc_st_done: begin
             uncached_store_done_received_o = lce_cmd_v_i;
-            
-	          /*tag_mem_pkt.opcode = e_cache_tag_mem_set_tag_wakeup;
-              tag_mem_pkt_v_o = lce_cmd_v_i;*/
-            
-            lce_cmd_yumi_o = lce_cmd_v_i; // TODO: Do we even need this? " & tag_mem_pkt_yumi_i;
+            lce_cmd_yumi_o = lce_cmd_v_i; 
           end
 
           e_lce_cmd_data: begin
@@ -480,7 +472,7 @@ module bp_be_dcache_lce_cmd
       // <WRITEBACK state>
       // Determine if the block is dirty or not.
       e_lce_cmd_state_wb: begin
-        state_n = dirty_i[lce_cmd_li.way_id] 
+        state_n = dirty_i 
           ? e_lce_cmd_state_wb_dirty
           : e_lce_cmd_state_wb_not_dirty;
       end

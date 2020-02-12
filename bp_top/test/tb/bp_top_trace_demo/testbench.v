@@ -165,7 +165,7 @@ wrapper
        ,.commit_pkt_i(commit_pkt)
        );
 
-  bind bp_be_dcache
+  /*bind bp_be_dcache
     bp_be_nonsynth_dcache_tracer
      #(.bp_params_p(bp_params_p))
      dcache_tracer
@@ -176,7 +176,7 @@ wrapper
        ,.mhartid_i(cfg_bus_cast_i.core_id)
 
        ,.v_tv_r(v_tv_r)
-       ,.cache_miss_i(cache_miss_i)
+       //,.cache_miss_i(cache_miss_i)
 
        ,.paddr_tv_r(paddr_tv_r)
        ,.uncached_tv_r(uncached_tv_r)
@@ -186,7 +186,7 @@ wrapper
        ,.sc_op_tv_r(sc_op_tv_r)
        ,.store_data(data_tv_r)
        ,.load_data(data_o)
-       );
+       );*/
 
   bind bp_be_top
     bp_be_nonsynth_calc_tracer
