@@ -45,13 +45,6 @@ module bp_fe_lce
 
     , output logic                                               ready_o
 
-    //, output logic                                               cache_miss_o
-
-    //, input                                                      miss_i
-    //, input [paddr_width_p-1:0]                                  miss_addr_i
-    //, input                                                      uncached_req_i
-    //, input [way_id_width_lp-1:0]                                lru_way_i
-
     , input [bp_cache_miss_width_lp-1:0]                         cache_miss_i
     , input                                                      cache_miss_v_i
     , output logic                                               cache_miss_ready_o
@@ -102,9 +95,6 @@ module bp_fe_lce
   bp_lce_cmd_s lce_cmd;
   bp_lce_cmd_s lce_cmd_out;
 
-  //bp_cache_miss_s cache_miss_cast_li
-  //assign cache_miss_cast_li = cache_miss_i;
-
   bp_cache_data_mem_pkt_s data_mem_pkt;
   bp_cache_tag_mem_pkt_s tag_mem_pkt;
   bp_cache_stat_mem_pkt_s stat_mem_pkt;
@@ -137,11 +127,6 @@ module bp_fe_lce
     ,.reset_i(reset_i)
   
     ,.lce_id_i(cfg_bus_cast_i.icache_id)
-
-    //,.miss_i(miss_i)
-    //,.miss_addr_i(miss_addr_i)
-    //,.lru_way_i(lru_way_i)
-    //,.uncached_req_i(uncached_req_i)
 
     ,.cache_miss_i(cache_miss_i)
     ,.cache_miss_v_i(cache_miss_v_i)

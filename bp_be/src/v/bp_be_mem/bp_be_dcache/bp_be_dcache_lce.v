@@ -78,22 +78,11 @@ module bp_be_dcache_lce
 
     , input [lce_id_width_p-1:0] lce_id_i
 
-    , output logic ready_o
-    //, output logic cache_miss_o
-
-    //, input load_miss_i
-    //, input store_miss_i
-    //, input lr_miss_i
-    //, input uncached_load_req_i
-    //, input uncached_store_req_i
-
-    //, input [paddr_width_p-1:0] miss_addr_i
-    //, input [dword_width_p-1:0] store_data_i
-    //, input [1:0] size_op_i
-
     , input [bp_cache_miss_width_lp-1:0] cache_miss_i
     , input cache_miss_v_i
     , output logic cache_miss_ready_o
+ 
+    , output logic ready_o
 
     // data_mem
     , output logic data_mem_pkt_v_o
@@ -109,8 +98,6 @@ module bp_be_dcache_lce
     // stat_mem
     , output logic stat_mem_pkt_v_o
     , output logic [dcache_lce_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
-    , input [way_id_width_lp-1:0] lru_way_i
-    , input [lce_assoc_p-1:0] dirty_i
     , input stat_mem_pkt_yumi_i
 
     // LCE-CCE interface
@@ -148,7 +135,7 @@ module bp_be_dcache_lce
   //      after each LR, we minimize the chance of SC failure at the cost of less coherence
   //      responsiveness
   // TODO: Extract into bsg_edge_detector
-  logic cache_miss_r;
+  logic cache_miss_r, cache_miss_lo;
   always_ff @(posedge clk_i)
     cache_miss_r <= cache_miss_lo;
   wire cache_miss_resolved = cache_miss_r & ~cache_miss_lo;
@@ -182,6 +169,7 @@ module bp_be_dcache_lce
   `declare_bp_cache_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
   `declare_bp_cache_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, ptag_width_lp);
   `declare_bp_cache_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
+  `declare_bp_cache_miss_s(cce_block_width_p, lce_assoc_p, paddr_width_p);
  
   bp_lce_cce_req_s lce_req;
   bp_lce_cce_resp_s lce_resp;
@@ -190,6 +178,7 @@ module bp_be_dcache_lce
   bp_cache_data_mem_pkt_s data_mem_pkt;
   bp_cache_tag_mem_pkt_s tag_mem_pkt;
   bp_cache_stat_mem_pkt_s stat_mem_pkt;
+  bp_cache_miss_s cache_miss_cast_i;
 
   assign lce_req_o = lce_req;
   assign lce_resp_o = lce_resp;
@@ -199,6 +188,7 @@ module bp_be_dcache_lce
   assign data_mem_pkt_o = data_mem_pkt;
   assign tag_mem_pkt_o = tag_mem_pkt;
   assign stat_mem_pkt_o = stat_mem_pkt;
+  assign cache_miss_cast_i = cache_miss_i;
 
   // LCE_CCE_req
   //
@@ -239,7 +229,6 @@ module bp_be_dcache_lce
   assign credits_full_o = (credit_count_lo == coh_noc_max_credits_p);
   assign credits_empty_o = (credit_count_lo == 0);
 
-  logic cache_miss_lo;
   bp_be_dcache_lce_req
     #(.bp_params_p(bp_params_p))
     lce_req_inst
@@ -248,18 +237,6 @@ module bp_be_dcache_lce
 
       ,.lce_id_i(lce_id_i)
   
-      //,.load_miss_i(load_miss_i)
-      //,.store_miss_i(store_miss_i)
-      //,.lr_miss_i(lr_miss_i)
-      //,.uncached_load_req_i(uncached_load_req_i)
-      //,.uncached_store_req_i(uncached_store_req_i)
-
-      //,.miss_addr_i(miss_addr_i)
-      //,.lru_way_i(lru_way_i)
-      //,.dirty_i(dirty_i)
-      //,.store_data_i(store_data_i)
-      //,.size_op_i(size_op_i)
-
       ,.cache_miss_i(cache_miss_i)
       ,.cache_miss_v_i(cache_miss_v_i)
       ,.cache_miss_ready_o(cache_miss_ready_o)
@@ -332,7 +309,7 @@ module bp_be_dcache_lce
       ,.stat_mem_pkt_o(stat_mem_pkt)
       ,.stat_mem_pkt_v_o(stat_mem_pkt_v_o)
       ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_i)
-      ,.dirty_i(dirty_i) // TODO: Need to change this
+      ,.dirty_i(cache_miss_cast_i.dirty)
       );
 
   // LCE_CCE_resp arbiter

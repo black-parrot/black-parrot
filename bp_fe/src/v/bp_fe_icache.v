@@ -49,32 +49,23 @@ module bp_fe_icache
 
     // LCE Interface
     
-    //, input                                            lce_miss_i                                            
-    //, output                                           miss_tv_o        
-    //, output [paddr_width_p-1:0]                       miss_addr_tv_o   Done
-    //, output                                           uncached_req_o   
-    //, output [lg_lce_assoc_lp-1:0]                     lru_way_o        Done
-
     , output [bp_cache_miss_width_lp-1:0]              cache_miss_o
     , output                                           cache_miss_v_o
     , input                                            cache_miss_ready_i
 
     // data_mem
     , input lce_data_mem_pkt_v_i
-    //input [data_mem_pkt_width_lp-1:0] lce_data_mem_pkt_i
     , input [bp_cache_data_mem_pkt_width_lp-1:0] lce_data_mem_pkt_i
     , output logic [cce_block_width_p-1:0] lce_data_mem_data_o
     , output logic lce_data_mem_pkt_yumi_o
 
     // tag_mem
     , input lce_tag_mem_pkt_v_i
-    //, input [tag_mem_pkt_width_lp-1:0] lce_tag_mem_pkt_i
     , input [bp_cache_tag_mem_pkt_width_lp-1:0] lce_tag_mem_pkt_i
     , output logic lce_tag_mem_pkt_yumi_o
 
     // stat_mem
     , input lce_stat_mem_pkt_v_i
-    //, input [stat_mem_pkt_width_lp-1:0] lce_stat_mem_pkt_i
     , input [bp_cache_stat_mem_pkt_width_lp-1:0] lce_stat_mem_pkt_i
     , output logic lce_stat_mem_pkt_yumi_o
  );
@@ -235,7 +226,7 @@ module bp_fe_icache
   );
 
   logic miss_tv;
-  assign miss_tv = ~hit & v_tv_r & ~uncached_tv_r;  //TODO: Can be replaced with internal signal (miss_tv) and cache_miss_v_o can be used to convey miss_i along with cache miss msg type
+  assign miss_tv = ~hit & v_tv_r & ~uncached_tv_r;
 
   // uncached request
   logic uncached_load_data_v_r;
@@ -246,8 +237,6 @@ module bp_fe_icache
 
   logic cache_miss_v;
   assign cache_miss_v_o = cache_miss_v;
-
-  //TODO: Check if the below functional change is ok
 
   always_comb begin
     if (cache_miss_ready_i) begin
@@ -269,18 +258,7 @@ module bp_fe_icache
       cache_miss_v = 1'b0;
     end
   end
-/*
-  bsg_dff_reset_en #(
-    .width_p(1),
-    .reset_val_p(0)
-  ) cache_miss_info(
-    .clk_i(clk_i)
-    ,.reset_i(lce_ready_i)
-    ,.en_i(cache_miss_v)
-    ,.data_i(1'b1)
-    ,.data_o(cache_miss_lo)
-  ); 
-*/
+
   // stat memory
   logic                                       stat_mem_v_li;
   logic                                       stat_mem_w_li;
@@ -388,8 +366,6 @@ module bp_fe_icache
   end
 
   // Fault if in uncached mode but access is not for an uncached address
-  //
-  // TODO: Find out how to replace cache_miss_i with an internal signal
   assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r) | ~cache_miss);
 
   logic [dword_width_p-1:0]   ld_data_way_picked;
@@ -467,8 +443,6 @@ module bp_fe_icache
     .i(tag_mem_pkt.way_id)
     ,.o(lce_tag_mem_way_one_hot)
   );
-
-  //TODO: Resolve the cache_miss values in the always_comb block below
 
   always_comb begin
     case (tag_mem_pkt.opcode)

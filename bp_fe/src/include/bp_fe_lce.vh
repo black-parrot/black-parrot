@@ -10,20 +10,6 @@
 
 `include "bp_common_me_if.vh"
 
-/*
- *
-*/
-
-// Old tag mem opcodes
-/*
-typedef enum logic [1:0] {
-  e_tag_mem_set_clear   = 2'b00
-  , e_tag_mem_invalidate  = 2'b01
-  , e_tag_mem_set_tag    = 2'b10
-} bp_fe_icache_tag_mem_opcode_e;
-*/
-// new tag mem opcodes
-
 typedef enum logic [1:0] {
   e_cache_tag_mem_set_clear        = 2'b00
   , e_cache_tag_mem_invalidate     = 2'b01
@@ -31,17 +17,7 @@ typedef enum logic [1:0] {
   , e_cache_tag_mem_set_tag_wakeup = 2'b11
 } bp_cache_tag_mem_opcode_e;
 
-//`define bp_fe_icache_tag_mem_opcode_width $bits(bp_fe_icache_tag_mem_opcode_e)
 `define bp_cache_tag_mem_opcode_width $bits(bp_cache_tag_mem_opcode_e)
-
-// Old stat mem opcodes
-/*
-typedef enum logic [1:0] {
-  e_stat_mem_set_clear = 2'b00
-  , e_stat_mem_read = 2'b01
-} bp_fe_icache_stat_mem_opcode_e;
-*/
-// New stat mem opcodes
 
 typedef enum logic [1:0] {
   e_cache_stat_mem_set_clear     = 2'b00
@@ -49,7 +25,6 @@ typedef enum logic [1:0] {
   , e_cache_stat_mem_clear_dirty = 2'b10
 } bp_cache_stat_mem_opcode_e;
 
-//`define bp_fe_icache_stat_mem_opcode_width $bits(bp_fe_icache_stat_mem_opcode_e)
 `define bp_cache_stat_mem_opcode_width $bits(bp_cache_stat_mem_opcode_e)
 
 typedef enum logic [1:0] {
@@ -90,19 +65,6 @@ typedef enum logic [1:0] {
  * data_mem_pkt_s specifies a data memory packet transferred from LCE to the i-cache
 */
 
-// Old data mem pkt
-/*
-`define declare_bp_fe_icache_lce_data_mem_pkt_s(sets_p, ways_p, data_width_p)          \
-  typedef struct packed                                                                \
-  {                                                                                    \
-    logic [`BSG_SAFE_CLOG2(sets_p)-1:0]      index;                                    \
-    logic [`BSG_SAFE_CLOG2(ways_p)-1:0]      way_id;                                   \
-    logic [data_width_p-1:0]                 data;                                     \
-    bp_fe_icache_lce_data_mem_opcode_e       opcode;                                   \
-  }  bp_fe_icache_lce_data_mem_pkt_s;
-*/
-// New data mem pkt
-
 `define declare_bp_cache_data_mem_pkt_s(sets_p, ways_p, data_width_p)                  \
   typedef struct packed                                                                \
   {                                                                                    \
@@ -111,11 +73,7 @@ typedef enum logic [1:0] {
     logic [data_width_p-1:0]                 data;                                     \
     bp_cache_data_mem_opcode_e               opcode;                                   \
   }  bp_cache_data_mem_pkt_s;
-/*
-`define bp_fe_icache_lce_data_mem_pkt_width(sets_p, ways_p, data_width_p) \
-  (`BSG_SAFE_CLOG2(sets_p)+`BSG_SAFE_CLOG2(ways_p)+data_width_p \
-   +`bp_fe_icache_lce_data_mem_opcode_width)
-*/
+
 `define bp_cache_data_mem_pkt_width(sets_p, ways_p, data_width_p) \
   (`BSG_SAFE_CLOG2(sets_p)+`BSG_SAFE_CLOG2(ways_p)+data_width_p \
    +`bp_cache_data_mem_opcode_width)
@@ -123,19 +81,6 @@ typedef enum logic [1:0] {
 /* 
  * tag_mem_pkt_s specifies a tag memory packet transferred from LCE to the i-cache
 */               
-
-// Old tag mem pkt
-/*
-`define declare_bp_fe_icache_lce_tag_mem_pkt_s(sets_p, ways_p, tag_width_p)     \
-  typedef struct packed {                                                       \
-    logic [`BSG_SAFE_CLOG2(sets_p)-1:0]        index;                           \
-    logic [`BSG_SAFE_CLOG2(ways_p)-1:0]        way_id;                          \
-    logic [`bp_coh_bits-1:0]                   state;                           \
-    logic [tag_width_p-1:0]                    tag;                             \
-    bp_fe_icache_tag_mem_opcode_e              opcode;                          \
-  }  bp_fe_icache_lce_tag_mem_pkt_s;
-*/
-// New tag mem pkt
 
 `define declare_bp_cache_tag_mem_pkt_s(sets_p, ways_p, tag_width_p)             \
   typedef struct packed {                                                       \
@@ -145,10 +90,7 @@ typedef enum logic [1:0] {
     logic [tag_width_p-1:0]                    tag;                             \
     bp_cache_tag_mem_opcode_e                  opcode;                          \
   }  bp_cache_tag_mem_pkt_s;
-/*
-`define bp_fe_icache_lce_tag_mem_pkt_width(sets_p, ways_p, tag_width_p) \
-  (`BSG_SAFE_CLOG2(sets_p)+`BSG_SAFE_CLOG2(ways_p)+`bp_coh_bits+tag_width_p+$bits(bp_fe_icache_tag_mem_opcode_e))
-*/
+
 `define bp_cache_tag_mem_pkt_width(sets_p, ways_p, tag_width_p) \
   (`BSG_SAFE_CLOG2(sets_p)+`BSG_SAFE_CLOG2(ways_p)+`bp_coh_bits+tag_width_p+$bits(bp_cache_tag_mem_opcode_e))
 
@@ -156,27 +98,13 @@ typedef enum logic [1:0] {
  * stat_mem_pkt_s specifies a meta data memory packet transferred from LCE to the i-cache
 */      
 
-// Old stat mem pkt
-/* 
-`define declare_bp_fe_icache_lce_stat_mem_pkt_s(sets_p, ways_p)          \
-  typedef struct packed {                                                \
-    logic [`BSG_SAFE_CLOG2(sets_p)-1:0]    index;                        \
-    logic [`BSG_SAFE_CLOG2(ways_p)-1:0]    way;                          \
-    bp_fe_icache_stat_mem_opcode_e         opcode;                       \
-  } bp_fe_icache_lce_stat_mem_pkt_s;
-*/
-// New stat mem pkt
-
 `define declare_bp_cache_stat_mem_pkt_s(sets_p, ways_p)                  \
   typedef struct packed {                                                \
     logic [`BSG_SAFE_CLOG2(sets_p)-1:0]    index;                        \
     logic [`BSG_SAFE_CLOG2(ways_p)-1:0]    way_id;                          \
     bp_cache_stat_mem_opcode_e         opcode;                       \
   } bp_cache_stat_mem_pkt_s;
-/*
-`define bp_fe_icache_lce_stat_mem_pkt_width(sets_p, ways_p) \
-  (`BSG_SAFE_CLOG2(sets_p)+`BSG_SAFE_CLOG2(ways_p)+$bits(bp_fe_icache_stat_mem_opcode_e))
-*/
+
 `define bp_cache_stat_mem_pkt_width(sets_p, ways_p) \
   (`BSG_SAFE_CLOG2(sets_p)+`BSG_SAFE_CLOG2(ways_p)+$bits(bp_cache_stat_mem_opcode_e))
 
