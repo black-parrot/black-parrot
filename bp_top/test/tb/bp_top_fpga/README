@@ -18,7 +18,7 @@ vivado -mode tcl
 open_poroject ./artix_7_xdma/artix_7_xdma.xpr
 write_project_tcl -force bp_fpga.tcl
 exit
-(To be continued...)
+source modify_tcl.sh
 
 
 /* Switching between single-core and dual-core settings */
