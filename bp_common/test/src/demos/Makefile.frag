@@ -1,6 +1,8 @@
 BP_DEMOS_C = \
   basic_demo            \
-  accel_dp               \
+  accel_dp              \
+  coherent_accel_dp     \
+  streaming_accel_dp    \
   atomic_queue_demo_2   \
   atomic_queue_demo_4   \
   atomic_queue_demo_8   \

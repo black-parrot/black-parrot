@@ -45,8 +45,8 @@ uint64_t main(uint64_t argc, char * argv[]) {
 
   vdp_csr.input_length = vlen;
 
-  //type:1, streaming
-  bp_call_vector_dot_product_accelerator(1, vdp_csr);
+  //type:0, coherent 
+  bp_call_vector_dot_product_accelerator(0, vdp_csr);
 
   output_data = resp_data * 16;
   

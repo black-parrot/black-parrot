@@ -35,7 +35,7 @@ module bp_me_cord_to_id
   wire cord_in_cc_li  = (xcord_li >= sac_x_dim_p) & (xcord_li < sac_x_dim_p+cc_x_dim_p)
                         & (ycord_li >= ic_y_dim_p) & (ycord_li < ic_y_dim_p+cc_y_dim_p);
   wire cord_in_mc_li  = (ycord_li >= ic_y_dim_p+cc_y_dim_p);
-  wire cord_in_cac_li = (xcord_li >= cc_x_dim_p);
+  wire cord_in_cac_li = (xcord_li >= cc_x_dim_p+sac_x_dim_p);
   wire cord_in_sac_li = (xcord_li < sac_x_dim_p);
   wire cord_in_io_li  = (ycord_li < ic_y_dim_p);
 
