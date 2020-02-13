@@ -208,6 +208,7 @@ $BP_ME_DIR/src/v/cce/bp_cce_reg.v
 $BP_ME_DIR/src/v/cce/bp_cce_spec.v
 $BP_ME_DIR/src/v/cce/bp_io_cce.v
 # Network
+$BP_ME_DIR/src/v/cce/bp_uce.v
 $BP_ME_DIR/src/v/wormhole/bp_me_addr_to_cce_id.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_id_to_cord.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_mem_link_bidir.v
@@ -239,6 +240,7 @@ $BP_TOP_DIR/src/v/bp_io_tile.v
 $BP_TOP_DIR/src/v/bp_io_tile_node.v
 $BP_TOP_DIR/src/v/bp_mem_complex.v
 $BP_TOP_DIR/src/v/bp_processor.v
+$BP_TOP_DIR/src/v/bp_softcore.v
 $BP_TOP_DIR/src/v/bp_tile.v
 $BP_TOP_DIR/src/v/bp_tile_node.v
 
