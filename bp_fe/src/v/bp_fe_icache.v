@@ -314,7 +314,27 @@ module bp_fe_icache
   bp_cache_stat_mem_pkt_s stat_mem_pkt;
   assign stat_mem_pkt = lce_stat_mem_pkt_i;
 
-  enum logic [1:0] { A, B, C } state_n, state_r;
+  // Cache Miss Tracker
+  logic cache_miss, miss_tracker_lo;
+  logic miss_tracker_reset_li;
+  logic miss_tracker_en_li;
+
+  assign miss_tracker_reset_li = lce_data_mem_pkt_v_i && (lce_data_mem_pkt.opcode == e_cache_data_mem_write || lce_data_mem_pkt.opcode == e_cache_data_mem_uncached);  assign miss_tracker_en_li = cache_miss_v_o && (cache_miss_cast_lo.msg_type != e_block_read);
+
+  bsg_dff_reset_en
+    #(.width_p(1)
+     ,.reset_val_p(0))
+     cache_miss_tracker
+     (.clk_i(clk_i)
+     ,.reset_i(reset_i || miss_tracker_reset_li)
+     ,.en_i(miss_tracker_en_li)
+     ,.data_i(cache_miss_v_o)
+     ,.data_o(miss_tracker_lo)
+     );
+
+  assign cache_miss = cache_miss_v_o || miss_tracker_lo;
+
+  /*enum logic [1:0] { A, B, C } state_n, state_r;
   logic cache_miss;
   always_comb begin
     cache_miss = 1'b0;
@@ -363,7 +383,7 @@ module bp_fe_icache
     else begin
       state_r <= state_n;
     end
-  end
+  end*/
 
   // Fault if in uncached mode but access is not for an uncached address
   assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r) | ~cache_miss);

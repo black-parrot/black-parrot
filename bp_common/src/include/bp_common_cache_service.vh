@@ -17,7 +17,7 @@ typedef enum [2:0]
   , e_uc_load          = 3'b010
   , e_uc_store         = 3'b011
   , e_wt_store         = 3'b100
-  , e_block_read_resp  = 3'b101
+  , e_block_read       = 3'b101
 } bp_cache_miss_msg_type_e;
 
 // Cache Service Interface - Cache miss size

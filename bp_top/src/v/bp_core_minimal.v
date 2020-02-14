@@ -45,11 +45,11 @@ module bp_core_minimal
     , input credits_empty_i
 
     , input [1:0] lce_ready_i
-    , output logic [1:0] lr_hit_o
-    , output logic [1:0] cache_v_o
+    //, output logic [1:0] lr_hit_o
+    //, output logic [1:0] cache_v_o
 
     , output logic [1:0][cce_block_width_p-1:0] data_mem_data_o
-    , output logic [1:0] store_o
+    //, output logic [1:0] store_o
 
     , output logic [1:0][bp_cache_miss_width_lp-1:0] cache_miss_o
     , output logic [1:0] cache_miss_v_o
@@ -96,11 +96,11 @@ module bp_core_minimal
   logic fe_cmd_processed_li;
 
   // stub unsued outputs at I$ index
-  always_comb begin
-    lr_hit_o[0] = '0;
-    cache_v_o[0] = '0;
-    store_o[0] = '0;
-  end 
+  //always_comb begin
+    //lr_hit_o[0] = '0;
+    //cache_v_o[0] = '0;
+    //store_o[0] = '0;
+  //end 
 
   bp_fe_top
    #(.bp_params_p(bp_params_p))
@@ -211,13 +211,13 @@ module bp_core_minimal
      ,.fe_cmd_ready_i(fe_cmd_ready_lo)
 
      ,.lce_ready_i(lce_ready_i[1])
-     ,.store_hit_o(store_o[1])
+     //,.store_hit_o(store_o[1])
      
      ,.cache_miss_o(cache_miss_o[1])
      ,.cache_miss_v_o(cache_miss_v_o[1])
      ,.cache_miss_ready_i(cache_miss_ready_i[1])
-     ,.lr_hit_tv_o(lr_hit_o[1])
-     ,.cache_v_o(cache_v_o[1])
+     //,.lr_hit_tv_o(lr_hit_o[1])
+     //,.cache_v_o(cache_v_o[1])
 
      ,.data_mem_data_o(data_mem_data_o[1])
      ,.data_mem_pkt_i(data_mem_pkt_i[1])

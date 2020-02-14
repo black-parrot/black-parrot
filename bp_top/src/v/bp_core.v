@@ -79,7 +79,7 @@ module bp_core
   logic [1:0] cache_v_lo;
 
   logic [1:0][cce_block_width_p-1:0] data_mem_data_lo;
-  logic [1:0] store_lo;
+  // logic [1:0] store_lo;
 
   // response side - Interface from LCE
   logic [1:0][dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_li;
@@ -112,11 +112,11 @@ module bp_core
      ,.credits_full_i(credits_full_lo)
      ,.credits_empty_i(credits_empty_lo)
 
-     ,.lr_hit_o(lr_hit_lo)
-     ,.cache_v_o(cache_v_lo)
+     //,.lr_hit_o(lr_hit_lo)
+     //,.cache_v_o(cache_v_lo)
 
      ,.data_mem_data_o(data_mem_data_lo)
-     ,.store_o(store_lo)
+     //,.store_o(store_lo)
 
      ,.cache_miss_o(cache_miss_cast_lo)
      ,.cache_miss_v_o({cache_miss_dcache_v_lo, cache_miss_icache_v_lo})
@@ -198,8 +198,8 @@ module bp_core
     ,.cache_miss_ready_o(cache_miss_dcache_ready_li)
 
     // locking logic
-    ,.lr_hit_tv_i(lr_hit_lo[1])
-    ,.cache_v_o_i(cache_v_lo[1])
+    //,.lr_hit_tv_i(lr_hit_lo[1])
+    //,.cache_v_o_i(cache_v_lo[1])
 
     ,.data_mem_data_i(data_mem_data_lo[1])
     ,.data_mem_pkt_o(data_mem_pkt_li[1])

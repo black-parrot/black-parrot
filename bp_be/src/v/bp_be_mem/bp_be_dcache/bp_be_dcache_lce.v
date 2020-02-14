@@ -50,7 +50,7 @@ module bp_be_dcache_lce
    `declare_bp_proc_params(bp_params_p)
     
     , parameter timeout_max_limit_p=4
-    , parameter lock_max_limit_p=8
+    //, parameter lock_max_limit_p=8
 
     , localparam block_size_in_words_lp=lce_assoc_p
     , localparam data_mask_width_lp=(dword_width_p>>3)
@@ -123,44 +123,9 @@ module bp_be_dcache_lce
     , output logic credits_empty_o
 
     // for locking logic
-    , input lr_hit_tv_i
-    , input cache_v_o_i
+    //, input lr_hit_tv_i
+    //, input cache_v_o_i
   );
-
-  // Lock logic
-  // There are two potential sources for livelock in this cache, both due to multicore interference.
-  // 1) Cache misses are replayed with a 1 cycle delay
-  // 2) LR/SC sequences are guaranteed to make forward progress by the RISC-V spec as long as the
-  //      sequences meet certain conditions.  By ignoring incoming invalidations for a short period
-  //      after each LR, we minimize the chance of SC failure at the cost of less coherence
-  //      responsiveness
-  // TODO: Extract into bsg_edge_detector
-  logic cache_miss_r, cache_miss_lo;
-  always_ff @(posedge clk_i)
-    cache_miss_r <= cache_miss_lo;
-  wire cache_miss_resolved = cache_miss_r & ~cache_miss_lo;
-
-  logic [`BSG_SAFE_CLOG2(lock_max_limit_p+1)-1:0] lock_cnt_r;
-  wire lock_clr = cache_v_o_i || (lock_cnt_r == lock_max_limit_p);
-  wire lock_inc = ~lock_clr & (cache_miss_resolved || lr_hit_tv_i || (lock_cnt_r > 0));
-  bsg_counter_clear_up
-   #(.max_val_p(lock_max_limit_p)
-     ,.init_val_p(0)
-     ,.disable_overflow_warning_p(1)
-     )
-   lock_counter
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.clear_i(lock_clr)
-     ,.up_i(lock_inc)
-     ,.count_o(lock_cnt_r)
-     );
-  // We could actually be more clever here.  We only need to block invalidations to this
-  //   specific line.  However, being extra safe is easier to implement for now.
-  logic lce_cmd_v_li, lce_cmd_lock_lo;
-  assign lce_cmd_lock_lo = (lock_cnt_r != '0);
-  assign lce_cmd_v_li = lce_cmd_v_i & ~lce_cmd_lock_lo;
 
   // casting structs
   //
@@ -286,7 +251,7 @@ module bp_be_dcache_lce
       ,.uncached_data_received_o(uncached_data_received)
 
       ,.lce_cmd_i(lce_cmd_in)
-      ,.lce_cmd_v_i(lce_cmd_v_li)
+      ,.lce_cmd_v_i(lce_cmd_v_i)
       ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
 
       ,.lce_resp_o(lce_cmd_to_lce_resp_lo)

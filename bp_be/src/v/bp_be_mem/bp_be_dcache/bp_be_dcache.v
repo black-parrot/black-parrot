@@ -84,6 +84,7 @@ module bp_be_dcache
 
     , parameter writethrough_p=0
     , parameter debug_p=0 
+    , parameter lock_max_limit_p=8
 
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , localparam block_size_in_words_lp=lce_assoc_p
@@ -142,9 +143,9 @@ module bp_be_dcache
     , output logic cache_miss_v_o 
 
     // for lock logic inside LCE
-    , output logic lr_hit_tv_o
+    //, output logic lr_hit_tv_o
     // for logic inside LCE
-     , output logic store_hit_o
+    //, output logic store_hit_o
 
 
     // data_mem
@@ -273,7 +274,7 @@ module bp_be_dcache
 
   // TODO: Which ready_i is this? LCE's??
   assign tl_we = v_i & lce_ready_i & ~poison_i;
- 
+  
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       v_tl_r <= 1'b0;
@@ -477,7 +478,7 @@ module bp_be_dcache
   // output store hit signal from TV stage, could be SC or regular store
   // store_data_o and size_op_o will also be valid and provide data and size
   // of store data
-  assign store_hit_o = (writethrough_p == 1) & store_hit & v_tv_r & store_op_tv_r & ~uncached_tv_r;
+  // assign store_hit_o = (writethrough_p == 1) & store_hit & v_tv_r & store_op_tv_r & ~uncached_tv_r;
 
   // uncached req
   //
@@ -675,8 +676,9 @@ module bp_be_dcache
   // Handle sizes in a different way
   assign cache_miss_cast_o.repl_way = lce_lru_way_li;
   assign cache_miss_cast_o.dirty = stat_mem_data_lo.dirty;
-  assign lr_hit_tv_o = lr_hit_tv;
-
+  // assign lr_hit_tv_o = lr_hit_tv;
+  
+  logic lce_data_mem_pkt_v, lce_tag_mem_pkt_v, lce_stat_mem_pkt_v, cache_lock;
   // Assigning sizes to cache miss packet
   always_comb begin
     if(size_op_tv_r == 2'b11) begin
@@ -724,67 +726,29 @@ module bp_be_dcache
   end
 
   // output stage
-  //
+  // Cache Miss Tracking logic
+  logic cache_miss, miss_tracker_lo;
+  logic miss_tracker_reset_li;
+  logic miss_tracker_en_li;
 
-  logic cache_miss;
+  assign miss_tracker_reset_li = lce_data_mem_pkt_v && (lce_data_mem_pkt.opcode == e_cache_data_mem_write || lce_data_mem_pkt.opcode == e_cache_data_mem_uncached);
+  assign miss_tracker_en_li = cache_miss_v_o && ~uncached_store_req && (cache_miss_cast_o.msg_type != e_block_read);
+
+  bsg_dff_reset_en
+   #(.width_p(1)
+    ,.reset_val_p(0))
+    cache_miss_tracker
+    (.clk_i(clk_i)
+    ,.reset_i(reset_i || miss_tracker_reset_li)
+    ,.en_i(miss_tracker_en_li)
+    ,.data_i(cache_miss_v_o)
+    ,.data_o(miss_tracker_lo)
+    );
+
+  assign cache_miss = (cache_miss_v_o & ~uncached_store_req) || miss_tracker_lo;
   assign dcache_miss_o = cache_miss;
 
-  enum logic [1:0] { A, B, C } state_n, state_r;
-
-  always_comb begin
-    cache_miss = 1'b0;
-    state_n = state_r;
-    case(state_r) 
-      A: if(cache_miss_v_o & ~uncached_store_req) begin
-           cache_miss = 1'b1;
-           state_n = B;
-         end else begin
-           cache_miss = 1'b0;
-           state_n = A;
-         end
-
-      B: if(lce_tag_mem_pkt_v_i & lce_data_mem_pkt_v_i & (lce_data_mem_pkt.opcode == e_cache_data_mem_write) & (lce_tag_mem_pkt.opcode == e_cache_tag_mem_set_tag)) begin
-         cache_miss = 1'b0;
-         state_n = C;
-       end
-       else if(lce_data_mem_pkt_v_i & lce_data_mem_pkt.opcode == e_cache_data_mem_uncached) begin
-         cache_miss = 1'b0;
-         state_n = C;
-       end
-       /*else if(lce_tag_mem_pkt_v_i & lce_tag_mem_pkt.opcode == e_cache_tag_mem_set_tag_wakeup) begin
-         cache_miss = 1'b0;
-         state_n = C;
-       end*/
-       else begin
-         cache_miss = 1'b1;
-         state_n = B;
-       end
-
-      C: if(cache_miss_v_o & ~uncached_store_req) begin
-           cache_miss = 1'b1;
-           state_n = B;
-         end else begin
-           cache_miss = 1'b0;
-           state_n = C;
-         end
-
-      default: begin
-                 cache_miss = 1'b0;
-                 state_n = A;
-               end
-    endcase
-  end
-
-  always_ff @(posedge clk_i) begin
-    if(reset_i) begin
-      state_r <= A;
-    end
-    else begin
-      state_r <= state_n;
-    end
-  end
-
-
+  // Output logic
   always_comb begin
     if (v_tv_r) begin
       if (uncached_tv_r) begin
@@ -810,6 +774,40 @@ module bp_be_dcache
     end
   end
 
+ // Locking logic - Block processing of new dcache_packets
+  // Clean up this logic. 
+  logic cache_miss_r;
+  always_ff @(posedge clk_i)
+    cache_miss_r <= cache_miss;
+  wire cache_miss_resolved = cache_miss_r & ~cache_miss;
+
+  logic [`BSG_SAFE_CLOG2(lock_max_limit_p+1)-1:0] lock_cnt_r;
+  wire lock_clr = v_o || (lock_cnt_r == lock_max_limit_p);
+  wire lock_inc = ~lock_clr & (cache_miss_resolved || lr_hit_tv || (lock_cnt_r > 0));
+
+  logic lock_reset, cache_reset;
+  assign cache_reset = (lce_tag_mem_pkt_v_i && lce_stat_mem_pkt_v_i) &&  (lce_stat_mem_pkt.opcode == e_cache_stat_mem_set_clear && lce_tag_mem_pkt.opcode == e_cache_tag_mem_set_clear);
+  assign lock_reset = reset_i || cache_reset; 
+  
+  bsg_counter_clear_up
+   #(.max_val_p(lock_max_limit_p)
+     ,.init_val_p(0)
+     ,.disable_overflow_warning_p(1)
+     )
+   lock_counter
+    (.clk_i(clk_i)
+     ,.reset_i(lock_reset)
+
+     ,.clear_i(lock_clr)
+     ,.up_i(lock_inc)
+     ,.count_o(lock_cnt_r)
+     );
+  
+  assign cache_lock = (lock_cnt_r != '0);
+  assign lce_data_mem_pkt_v = lce_data_mem_pkt_v_i & ~cache_lock;
+  assign lce_tag_mem_pkt_v = lce_tag_mem_pkt_v_i & ~cache_lock;
+  assign lce_stat_mem_pkt_v = lce_stat_mem_pkt_v_i & ~cache_lock;
+ 
   logic [dword_width_p-1:0] ld_data_way_picked;
   logic [dword_width_p-1:0] bypass_data_masked;
 
@@ -950,7 +948,7 @@ module bp_be_dcache
   // tag_mem
   //
   assign tag_mem_v_li = tl_we | lce_tag_mem_pkt_yumi; 
-  assign tag_mem_w_li = ~tl_we & lce_tag_mem_pkt_v_i;
+  assign tag_mem_w_li = ~tl_we & lce_tag_mem_pkt_v;
   assign tag_mem_addr_li = tl_we 
     ? addr_index
     : lce_tag_mem_pkt.index;
@@ -1096,8 +1094,8 @@ module bp_be_dcache
   );
 
   assign lce_data_mem_pkt_yumi = (lce_data_mem_pkt.opcode == e_cache_data_mem_uncached)
-    ? lce_data_mem_pkt_v_i
-    : ~(load_op & tl_we) & ~wbuf_v_lo & ~lce_snoop_match_lo & lce_data_mem_pkt_v_i;
+    ? lce_data_mem_pkt_v
+    : ~(load_op & tl_we) & ~wbuf_v_lo & ~lce_snoop_match_lo & lce_data_mem_pkt_v;
 
   // load reservation logic
   always_ff @ (posedge clk_i) begin
@@ -1114,7 +1112,7 @@ module bp_be_dcache
       end else if (sc_op_tv_r) begin
         load_reserved_v_r <= 1'b0;
       // Invalidates from other harts which match the reservation address clear the reservation
-      end else if (lce_tag_mem_pkt_v_i & (lce_tag_mem_pkt.opcode == e_cache_tag_mem_invalidate)
+      end else if (lce_tag_mem_pkt_v & (lce_tag_mem_pkt.opcode == e_cache_tag_mem_invalidate)
                   & (lce_tag_mem_pkt.tag == load_reserved_tag_r) 
                   & (lce_tag_mem_pkt.index == load_reserved_index_r)) begin
         load_reserved_v_r <= 1'b0;
@@ -1148,11 +1146,11 @@ module bp_be_dcache
   
   // LCE tag_mem
   //
-  assign lce_tag_mem_pkt_yumi = lce_tag_mem_pkt_v_i & ~tl_we;
+  assign lce_tag_mem_pkt_yumi = lce_tag_mem_pkt_v & ~tl_we;
   
   // LCE stat_mem
   //
-  assign lce_stat_mem_pkt_yumi = ~(v_tv_r & ~uncached_tv_r) & lce_stat_mem_pkt_v_i;
+  assign lce_stat_mem_pkt_yumi = ~(v_tv_r & ~uncached_tv_r) & lce_stat_mem_pkt_v;
 
   // synopsys translate_off
   if (debug_p) begin: axe

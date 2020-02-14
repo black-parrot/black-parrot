@@ -62,15 +62,15 @@ module bp_be_top
    // D$-LCE Interface
    // signals to LCE
    , input lce_ready_i
-   , output logic store_hit_o
+   //, output logic store_hit_o
    
    , output logic [bp_cache_miss_width_lp-1:0]   cache_miss_o
    , output logic                                cache_miss_v_o
    , input                                       cache_miss_ready_i
 
    // for lock logic inside LCE
-   , output logic lr_hit_tv_o
-   , output logic cache_v_o
+   //, output logic lr_hit_tv_o
+   //, output logic cache_v_o
 
    // data_mem
    , input data_mem_pkt_v_i
@@ -251,14 +251,14 @@ bp_be_mem_top
     ,.itlb_fill_entry_o(itlb_fill_entry)
 
     ,.lce_ready_i(lce_ready_i)
-    ,.store_hit_o(store_hit_o)
+    //,.store_hit_o(store_hit_o)
     
     ,.cache_miss_o(cache_miss_o)
     ,.cache_miss_v_o(cache_miss_v_o)
     ,.cache_miss_ready_i(cache_miss_ready_i)
     
-    ,.lr_hit_tv_o(lr_hit_tv_o)
-    ,.cache_v_o(cache_v_o)
+    //,.lr_hit_tv_o(lr_hit_tv_o)
+    //,.cache_v_o(cache_v_o)
 
     ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
     ,.data_mem_pkt_i(data_mem_pkt_i)
