@@ -39,8 +39,8 @@ module bp_cce_msg_cached
    , input [cce_id_width_p-1:0]                        cce_id_i
 
    // LCE-CCE Interface
-   // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
-   // outbound: ready&valid (connects directly to ME network)
+   // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer
+   // outbound: ready->valid (connects directly to ME network)
    , input [lce_cce_req_width_lp-1:0]                  lce_req_i
    , input                                             lce_req_v_i
    , output logic                                      lce_req_yumi_o
@@ -54,8 +54,8 @@ module bp_cce_msg_cached
    , input                                             lce_cmd_ready_i
 
    // CCE-MEM Interface
-   // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
-   // outbound: ready&valid (connects to FIFO)
+   // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer
+   // outbound: ready->valid
    , input [cce_mem_msg_width_lp-1:0]                  mem_resp_i
    , input                                             mem_resp_v_i
    , output logic                                      mem_resp_yumi_o
@@ -502,7 +502,7 @@ module bp_cce_msg_cached
       else if (mem_resp_li.msg_type == e_cce_mem_uc_wr) begin
 
         // handshaking
-        lce_cmd_v_o = mem_resp_v_i;
+        lce_cmd_v_o = lce_cmd_ready_i & mem_resp_v_i;
         mem_resp_yumi_o = lce_cmd_ready_i;
 
         // inform ucode decode that this unit is using the LCE Command network
@@ -629,7 +629,7 @@ module bp_cce_msg_cached
 
           // Uncached request
           if (mshr.flags[e_flag_sel_ucf]) begin
-            mem_cmd_v_o = 1'b1;
+            mem_cmd_v_o = mem_cmd_ready_i;
             // load or store
             if (mshr.flags[e_flag_sel_rqf]) begin
               mem_cmd_lo.msg_type = e_cce_mem_uc_wr;
@@ -652,7 +652,7 @@ module bp_cce_msg_cached
 
           // Cached request
           else begin
-            mem_cmd_v_o = 1'b1;
+            mem_cmd_v_o = mem_cmd_ready_i;
 
             // Writeback command - override default command fields as needed
             if (decoded_inst_i.mem_cmd == e_cce_mem_wb) begin
@@ -683,7 +683,7 @@ module bp_cce_msg_cached
         // Command can only be sent if a memory response is not already using the
         // command out port
         else if (decoded_inst_i.lce_cmd_v & ~lce_cmd_busy_o) begin
-          lce_cmd_v_o = 1'b1;
+          lce_cmd_v_o = lce_cmd_ready_i;
 
           lce_cmd.dst_id = lce_cmd_lce;
           lce_cmd.msg_type = decoded_inst_i.lce_cmd;
@@ -774,7 +774,7 @@ module bp_cce_msg_cached
           // try to send additional commands, but give priority to mem_resp auto-forward
           if (~lce_cmd_busy_o) begin
 
-            lce_cmd_v_o = 1'b1;
+            lce_cmd_v_o = lce_cmd_ready_i;
             lce_cmd.msg_type = decoded_inst_i.lce_cmd;
 
             // destination and way come from sharers information
