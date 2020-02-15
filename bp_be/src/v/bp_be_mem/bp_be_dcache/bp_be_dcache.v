@@ -356,8 +356,8 @@ module bp_be_dcache
 
   assign tv_we = v_tl_r & ~poison_i & ~tlb_miss_i;
 
-  assign store_op_tl_o = tv_we & store_op_tl_r;
-  assign load_op_tl_o  = tv_we & load_op_tl_r;
+  assign store_op_tl_o = v_tl_r & ~tlb_miss_i & store_op_tl_r;
+  assign load_op_tl_o  = v_tl_r & ~tlb_miss_i & load_op_tl_r;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
