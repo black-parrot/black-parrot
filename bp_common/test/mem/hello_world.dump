@@ -16,12 +16,17 @@ Disassembly of section .text.init:
     80000020:	00c09093          	slli	ra,ra,0xc
     80000024:	40110133          	sub	sp,sp,ra
 <<<<<<< HEAD
+<<<<<<< HEAD
     80000028:	00000097          	auipc	ra,0x0
     8000002c:	7500b083          	ld	ra,1872(ra) # 80000778 <_GLOBAL_OFFSET_TABLE_+0x10>
 =======
     80000028:	00001097          	auipc	ra,0x1
     8000002c:	8a00b083          	ld	ra,-1888(ra) # 800008c8 <_GLOBAL_OFFSET_TABLE_+0x10>
 >>>>>>> Adding dramsim3 to build
+=======
+    80000028:	00000097          	auipc	ra,0x0
+    8000002c:	7500b083          	ld	ra,1872(ra) # 80000778 <_GLOBAL_OFFSET_TABLE_+0x10>
+>>>>>>> Adding profilers for core and pc
     80000030:	30509073          	csrw	mtvec,ra
     80000034:	00000093          	li	ra,0
     80000038:	00000193          	li	gp,0
@@ -54,12 +59,17 @@ Disassembly of section .text.init:
     800000a4:	00000f13          	li	t5,0
     800000a8:	00000f93          	li	t6,0
 <<<<<<< HEAD
+<<<<<<< HEAD
     800000ac:	00000197          	auipc	gp,0x0
     800000b0:	6c41b183          	ld	gp,1732(gp) # 80000770 <_GLOBAL_OFFSET_TABLE_+0x8>
 =======
     800000ac:	00001197          	auipc	gp,0x1
     800000b0:	8141b183          	ld	gp,-2028(gp) # 800008c0 <_GLOBAL_OFFSET_TABLE_+0x8>
 >>>>>>> Adding dramsim3 to build
+=======
+    800000ac:	00000197          	auipc	gp,0x0
+    800000b0:	6c41b183          	ld	gp,1732(gp) # 80000770 <_GLOBAL_OFFSET_TABLE_+0x8>
+>>>>>>> Adding profilers for core and pc
     800000b4:	00c000ef          	jal	ra,800000c0 <main>
 
 00000000800000b8 <loop>:
@@ -76,6 +86,7 @@ Disassembly of section .text:
     800000d0:	04800113          	li	sp,72
     800000d4:	00218023          	sb	sp,0(gp) # 101000 <_start-0x7feff000>
     800000d8:	06500113          	li	sp,101
+<<<<<<< HEAD
 <<<<<<< HEAD
     800000dc:	00218023          	sb	sp,0(gp) # 80001210 <__global_pointer$>
     800000e0:	06c00113          	li	sp,108
@@ -105,32 +116,40 @@ Disassembly of section .text:
     80000140:	00018023          	sb	zero,0(gp) # 80001210 <__global_pointer$>
 =======
     800000dc:	00218023          	sb	sp,0(gp) # 80001360 <__global_pointer$>
+=======
+    800000dc:	00218023          	sb	sp,0(gp) # 80001210 <__global_pointer$>
+>>>>>>> Adding profilers for core and pc
     800000e0:	06c00113          	li	sp,108
-    800000e4:	00218023          	sb	sp,0(gp) # 80001360 <__global_pointer$>
+    800000e4:	00218023          	sb	sp,0(gp) # 80001210 <__global_pointer$>
     800000e8:	06c00113          	li	sp,108
-    800000ec:	00218023          	sb	sp,0(gp) # 80001360 <__global_pointer$>
+    800000ec:	00218023          	sb	sp,0(gp) # 80001210 <__global_pointer$>
     800000f0:	06f00113          	li	sp,111
-    800000f4:	00218023          	sb	sp,0(gp) # 80001360 <__global_pointer$>
+    800000f4:	00218023          	sb	sp,0(gp) # 80001210 <__global_pointer$>
     800000f8:	02000113          	li	sp,32
-    800000fc:	00218023          	sb	sp,0(gp) # 80001360 <__global_pointer$>
+    800000fc:	00218023          	sb	sp,0(gp) # 80001210 <__global_pointer$>
     80000100:	07700113          	li	sp,119
-    80000104:	00218023          	sb	sp,0(gp) # 80001360 <__global_pointer$>
+    80000104:	00218023          	sb	sp,0(gp) # 80001210 <__global_pointer$>
     80000108:	06f00113          	li	sp,111
-    8000010c:	00218023          	sb	sp,0(gp) # 80001360 <__global_pointer$>
+    8000010c:	00218023          	sb	sp,0(gp) # 80001210 <__global_pointer$>
     80000110:	07200113          	li	sp,114
-    80000114:	00218023          	sb	sp,0(gp) # 80001360 <__global_pointer$>
+    80000114:	00218023          	sb	sp,0(gp) # 80001210 <__global_pointer$>
     80000118:	06c00113          	li	sp,108
-    8000011c:	00218023          	sb	sp,0(gp) # 80001360 <__global_pointer$>
+    8000011c:	00218023          	sb	sp,0(gp) # 80001210 <__global_pointer$>
     80000120:	06400113          	li	sp,100
-    80000124:	00218023          	sb	sp,0(gp) # 80001360 <__global_pointer$>
+    80000124:	00218023          	sb	sp,0(gp) # 80001210 <__global_pointer$>
     80000128:	02100113          	li	sp,33
-    8000012c:	00218023          	sb	sp,0(gp) # 80001360 <__global_pointer$>
+    8000012c:	00218023          	sb	sp,0(gp) # 80001210 <__global_pointer$>
     80000130:	00d00113          	li	sp,13
-    80000134:	00218023          	sb	sp,0(gp) # 80001360 <__global_pointer$>
+    80000134:	00218023          	sb	sp,0(gp) # 80001210 <__global_pointer$>
     80000138:	00a00113          	li	sp,10
+<<<<<<< HEAD
     8000013c:	00218023          	sb	sp,0(gp) # 80001360 <__global_pointer$>
     80000140:	00018023          	sb	zero,0(gp) # 80001360 <__global_pointer$>
 >>>>>>> Adding dramsim3 to build
+=======
+    8000013c:	00218023          	sb	sp,0(gp) # 80001210 <__global_pointer$>
+    80000140:	00018023          	sb	zero,0(gp) # 80001210 <__global_pointer$>
+>>>>>>> Adding profilers for core and pc
     80000144:	001022b7          	lui	t0,0x102
     80000148:	004282b3          	add	t0,t0,tp
     8000014c:	00000313          	li	t1,0
@@ -182,10 +201,14 @@ Disassembly of section .text:
     800001fc:	342025f3          	csrr	a1,mcause
     80000200:	34302673          	csrr	a2,mtval
 <<<<<<< HEAD
+<<<<<<< HEAD
     80000204:	09c000ef          	jal	ra,800002a0 <decode_illegal>
 =======
     80000204:	1e8000ef          	jal	ra,800003ec <decode_illegal>
 >>>>>>> Adding dramsim3 to build
+=======
+    80000204:	09c000ef          	jal	ra,800002a0 <decode_illegal>
+>>>>>>> Adding profilers for core and pc
     80000208:	341022f3          	csrr	t0,mepc
     8000020c:	00428293          	addi	t0,t0,4
     80000210:	34129073          	csrw	mepc,t0
@@ -226,6 +249,9 @@ Disassembly of section .text:
     8000029c:	30200073          	mret
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Adding profilers for core and pc
 00000000800002a0 <decode_illegal>:
     800002a0:	fa010113          	addi	sp,sp,-96
     800002a4:	04113c23          	sd	ra,88(sp)
@@ -512,6 +538,7 @@ Disassembly of section .text:
     80000688:	01c2ce33          	xor	t3,t0,t3
     8000068c:	19c5332f          	sc.d	t1,t3,(a0)
     80000690:	fe0312e3          	bnez	t1,80000674 <amo_maxud>
+<<<<<<< HEAD
     80000694:	00028513          	mv	a0,t0
     80000698:	00008067          	ret
 
@@ -1153,4 +1180,71 @@ Disassembly of section .riscv.attributes:
     800008a8:	00028513          	mv	a0,t0
     800008ac:	00008067          	ret
 >>>>>>> Adding dramsim3 to build
+<<<<<<< HEAD
 >>>>>>> Adding dramsim3 to build
+=======
+=======
+    80000694:	00028513          	mv	a0,t0
+    80000698:	00008067          	ret
+
+000000008000069c <amo_maxuw>:
+    8000069c:	100522af          	lr.w	t0,(a0)
+    800006a0:	00b2b333          	sltu	t1,t0,a1
+    800006a4:	4060033b          	negw	t1,t1
+    800006a8:	00b2c3b3          	xor	t2,t0,a1
+    800006ac:	00737e33          	and	t3,t1,t2
+    800006b0:	01c2ce33          	xor	t3,t0,t3
+    800006b4:	19c5232f          	sc.w	t1,t3,(a0)
+    800006b8:	fe0312e3          	bnez	t1,8000069c <amo_maxuw>
+    800006bc:	00028513          	mv	a0,t0
+    800006c0:	00008067          	ret
+
+00000000800006c4 <amo_mind>:
+    800006c4:	100532af          	lr.d	t0,(a0)
+    800006c8:	00b2a333          	slt	t1,t0,a1
+    800006cc:	40600333          	neg	t1,t1
+    800006d0:	00b2c3b3          	xor	t2,t0,a1
+    800006d4:	00737e33          	and	t3,t1,t2
+    800006d8:	01c5ce33          	xor	t3,a1,t3
+    800006dc:	19c5332f          	sc.d	t1,t3,(a0)
+    800006e0:	fe0312e3          	bnez	t1,800006c4 <amo_mind>
+    800006e4:	00028513          	mv	a0,t0
+    800006e8:	00008067          	ret
+
+00000000800006ec <amo_minw>:
+    800006ec:	100522af          	lr.w	t0,(a0)
+    800006f0:	00b2a333          	slt	t1,t0,a1
+    800006f4:	4060033b          	negw	t1,t1
+    800006f8:	00b2c3b3          	xor	t2,t0,a1
+    800006fc:	00737e33          	and	t3,t1,t2
+    80000700:	01c5ce33          	xor	t3,a1,t3
+    80000704:	19c5232f          	sc.w	t1,t3,(a0)
+    80000708:	fe0312e3          	bnez	t1,800006ec <amo_minw>
+    8000070c:	00028513          	mv	a0,t0
+    80000710:	00008067          	ret
+
+0000000080000714 <amo_minud>:
+    80000714:	100532af          	lr.d	t0,(a0)
+    80000718:	00b2b333          	sltu	t1,t0,a1
+    8000071c:	40600333          	neg	t1,t1
+    80000720:	00b2c3b3          	xor	t2,t0,a1
+    80000724:	00737e33          	and	t3,t1,t2
+    80000728:	01c5ce33          	xor	t3,a1,t3
+    8000072c:	19c5332f          	sc.d	t1,t3,(a0)
+    80000730:	fe0312e3          	bnez	t1,80000714 <amo_minud>
+    80000734:	00028513          	mv	a0,t0
+    80000738:	00008067          	ret
+
+000000008000073c <amo_minuw>:
+    8000073c:	100522af          	lr.w	t0,(a0)
+    80000740:	00b2b333          	sltu	t1,t0,a1
+    80000744:	4060033b          	negw	t1,t1
+    80000748:	00b2c3b3          	xor	t2,t0,a1
+    8000074c:	00737e33          	and	t3,t1,t2
+    80000750:	01c5ce33          	xor	t3,a1,t3
+    80000754:	19c5232f          	sc.w	t1,t3,(a0)
+    80000758:	fe0312e3          	bnez	t1,8000073c <amo_minuw>
+    8000075c:	00028513          	mv	a0,t0
+    80000760:	00008067          	ret
+>>>>>>> Adding profilers for core and pc
+>>>>>>> Adding profilers for core and pc
