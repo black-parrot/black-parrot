@@ -49,7 +49,7 @@ module bp_fe_lce
     , input                                                      cache_miss_v_i
     , output logic                                               cache_miss_ready_o
 
-    , input [cce_block_width_p-1:0]                              data_mem_data_i
+    //, input [cce_block_width_p-1:0]                              data_mem_data_i
     , output logic [data_mem_pkt_width_lp-1:0]                   data_mem_pkt_o
     , output logic                                               data_mem_pkt_v_o
     , input                                                      data_mem_pkt_yumi_i
@@ -120,6 +120,7 @@ module bp_fe_lce
   logic lce_req_lce_resp_yumi_li;
   logic [paddr_width_p-1:0] miss_addr_lo;
   logic cache_miss_lo;
+  logic req_cache_miss_ready_lo;
 
   bp_fe_lce_req #(.bp_params_p(bp_params_p))
     lce_req_inst (
@@ -130,7 +131,7 @@ module bp_fe_lce
 
     ,.cache_miss_i(cache_miss_i)
     ,.cache_miss_v_i(cache_miss_v_i)
-    ,.cache_miss_ready_o(cache_miss_ready_o)
+    ,.cache_miss_ready_o(req_cache_miss_ready_lo)
 
     ,.cache_miss_o(cache_miss_lo)
 
@@ -153,6 +154,7 @@ module bp_fe_lce
    
   // lce_CMD
   logic lce_ready_lo;
+  logic cmd_cache_miss_ready_lo;
   
   bp_lce_cce_resp_s lce_cmd_lce_resp_lo;
   logic lce_cmd_lce_resp_v_lo;
@@ -172,10 +174,14 @@ module bp_fe_lce
     ,.cce_data_received_o(cce_data_received)
     ,.uncached_data_received_o(uncached_data_received)
 
+    ,.cache_miss_i(cache_miss_i)
+    ,.cache_miss_v_i(cache_miss_v_i)
+    ,.cache_miss_ready_o(cmd_cache_miss_ready_lo)
+
     ,.data_mem_pkt_o(data_mem_pkt)
     ,.data_mem_pkt_v_o(data_mem_pkt_v_o)
     ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_i)
-    ,.data_mem_data_i(data_mem_data_i)
+    //,.data_mem_data_i(data_mem_data_i)
 
     ,.tag_mem_pkt_o(tag_mem_pkt)
     ,.tag_mem_pkt_v_o(tag_mem_pkt_v_o)
@@ -250,6 +256,7 @@ module bp_fe_lce
     end
   end
 
+  assign cache_miss_ready_o = cmd_cache_miss_ready_lo || req_cache_miss_ready_lo;
   wire lce_ready = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached) ? 1'b1 : lce_ready_lo;
   assign ready_o = lce_ready & ~timeout & ~cache_miss_lo;
  

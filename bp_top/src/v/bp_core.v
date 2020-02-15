@@ -78,7 +78,7 @@ module bp_core
   logic [1:0] lr_hit_lo;
   logic [1:0] cache_v_lo;
 
-  logic [1:0][cce_block_width_p-1:0] data_mem_data_lo;
+  //logic [1:0][cce_block_width_p-1:0] data_mem_data_lo;
   // logic [1:0] store_lo;
 
   // response side - Interface from LCE
@@ -115,7 +115,7 @@ module bp_core
      //,.lr_hit_o(lr_hit_lo)
      //,.cache_v_o(cache_v_lo)
 
-     ,.data_mem_data_o(data_mem_data_lo)
+     //,.data_mem_data_o(data_mem_data_lo)
      //,.store_o(store_lo)
 
      ,.cache_miss_o(cache_miss_cast_lo)
@@ -154,7 +154,7 @@ module bp_core
      ,.cache_miss_v_i(cache_miss_icache_v_lo)
      ,.cache_miss_ready_o(cache_miss_icache_ready_li)
 
-     ,.data_mem_data_i(data_mem_data_lo[0])
+     //,.data_mem_data_i(data_mem_data_lo[0])
      ,.data_mem_pkt_o(data_mem_pkt_li[0])
      ,.data_mem_pkt_v_o(data_mem_pkt_v_li[0])
      ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_lo[0])
@@ -201,7 +201,7 @@ module bp_core
     //,.lr_hit_tv_i(lr_hit_lo[1])
     //,.cache_v_o_i(cache_v_lo[1])
 
-    ,.data_mem_data_i(data_mem_data_lo[1])
+    //,.data_mem_data_i(data_mem_data_lo[1])
     ,.data_mem_pkt_o(data_mem_pkt_li[1])
     ,.data_mem_pkt_v_o(data_mem_pkt_v_li[1])
     ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_lo[1])

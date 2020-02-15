@@ -48,7 +48,7 @@ module bp_core_minimal
     //, output logic [1:0] lr_hit_o
     //, output logic [1:0] cache_v_o
 
-    , output logic [1:0][cce_block_width_p-1:0] data_mem_data_o
+    //, output logic [1:0][cce_block_width_p-1:0] data_mem_data_o
     //, output logic [1:0] store_o
 
     , output logic [1:0][bp_cache_miss_width_lp-1:0] cache_miss_o
@@ -124,7 +124,7 @@ module bp_core_minimal
      ,.cache_miss_v_o(cache_miss_v_o[0])
      ,.cache_miss_ready_i(cache_miss_ready_i[0])
 
-     ,.data_mem_data_o(data_mem_data_o[0])
+     //,.data_mem_data_o(data_mem_data_o[0])
      ,.data_mem_pkt_i(data_mem_pkt_i[0])
      ,.data_mem_pkt_v_i(data_mem_pkt_v_i[0])
      ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o[0])
@@ -217,7 +217,7 @@ module bp_core_minimal
      //,.lr_hit_tv_o(lr_hit_o[1])
      //,.cache_v_o(cache_v_o[1])
 
-     ,.data_mem_data_o(data_mem_data_o[1])
+     //,.data_mem_data_o(data_mem_data_o[1])
      ,.data_mem_pkt_i(data_mem_pkt_i[1])
      ,.data_mem_pkt_v_i(data_mem_pkt_v_i[1])
      ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o[1])

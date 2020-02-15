@@ -42,7 +42,7 @@ module bp_fe_mem
    , output                                           cache_miss_v_o
    , input                                            cache_miss_ready_i
 
-   , output logic [cce_block_width_p-1:0]             data_mem_data_o
+   //, output logic [cce_block_width_p-1:0]             data_mem_data_o
    , input [bp_cache_data_mem_pkt_width_lp-1:0]       data_mem_pkt_i
    , input                                            data_mem_pkt_v_i
    , output logic                                     data_mem_pkt_yumi_o
@@ -140,7 +140,7 @@ bp_fe_icache
    ,.cache_miss_v_o(cache_miss_v_o)
    ,.cache_miss_ready_i(cache_miss_ready_i)
 
-   ,.lce_data_mem_data_o(data_mem_data_o)
+   //,.lce_data_mem_data_o(data_mem_data_o)
    ,.lce_data_mem_pkt_i(data_mem_pkt_i)
    ,.lce_data_mem_pkt_v_i(data_mem_pkt_v_i)
    ,.lce_data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
