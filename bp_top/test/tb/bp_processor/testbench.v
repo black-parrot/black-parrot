@@ -451,7 +451,7 @@ bind bp_be_top
       (.clk_i(clk_i & (testbench.core_profile_p == 1))
        ,.reset_i(reset_i)
        ,.freeze_i(be.be_checker.scheduler.int_regfile.cfg_bus.freeze)
-
+  
        ,.mhartid_i(be.be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
        ,.fe_wait_stall(fe.pc_gen.is_wait)

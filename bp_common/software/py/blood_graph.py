@@ -393,7 +393,6 @@ class BloodGraph:
         tg_y = trace["y"] - self.ymin
         row = floor#*(2+(self.xdim*self.ydim))) + (tg_x+(tg_y*self.xdim))
 
-
         # determine color
         if trace["operation"] in self.stall_bubble_color.keys():
             self.pixel[col,row] = self.stall_bubble_color[trace["operation"]]
