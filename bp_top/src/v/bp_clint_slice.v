@@ -41,6 +41,9 @@ logic mtime_cmd_v;
 logic plic_cmd_v;
 logic wr_not_rd;
 
+bp_local_addr_s local_addr;
+assign local_addr = mem_cmd_li.addr;
+
 always_comb
   begin
     mtime_cmd_v    = 1'b0;
@@ -51,7 +54,7 @@ always_comb
     wr_not_rd = mem_cmd_li.msg_type inside {e_cce_mem_wb, e_cce_mem_uc_wr};
 
     unique 
-    casez (mem_cmd_li.addr)
+    casez ({local_addr.dev, local_addr.addr})
       mtime_reg_addr_gp        : mtime_cmd_v    = mem_cmd_v_i;
       mtimecmp_reg_base_addr_gp: mtimecmp_cmd_v = mem_cmd_v_i;
       mipi_reg_base_addr_gp    : mipi_cmd_v     = mem_cmd_v_i;
