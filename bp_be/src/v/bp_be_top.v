@@ -75,7 +75,7 @@ module bp_be_top
    // data_mem
    , input data_mem_pkt_v_i
    , input [dcache_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
-   , output logic [cce_block_width_p-1:0] data_mem_data_o
+   //, output logic [cce_block_width_p-1:0] data_mem_data_o
    , output logic data_mem_pkt_yumi_o
 
    // tag_mem
@@ -262,7 +262,7 @@ bp_be_mem_top
 
     ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
     ,.data_mem_pkt_i(data_mem_pkt_i)
-    ,.data_mem_data_o(data_mem_data_o)
+    //,.data_mem_data_o(data_mem_data_o)
     ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
     ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
     ,.tag_mem_pkt_i(tag_mem_pkt_i)

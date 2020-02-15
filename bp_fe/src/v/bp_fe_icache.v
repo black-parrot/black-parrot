@@ -56,7 +56,7 @@ module bp_fe_icache
     // data_mem
     , input lce_data_mem_pkt_v_i
     , input [bp_cache_data_mem_pkt_width_lp-1:0] lce_data_mem_pkt_i
-    , output logic [cce_block_width_p-1:0] lce_data_mem_data_o
+    //, output logic [cce_block_width_p-1:0] lce_data_mem_data_o
     , output logic lce_data_mem_pkt_yumi_o
 
     // tag_mem
@@ -235,30 +235,7 @@ module bp_fe_icache
   logic uncached_req;
   assign uncached_req = v_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
 
-  logic cache_miss_v;
-  assign cache_miss_v_o = cache_miss_v;
-
-  always_comb begin
-    if (cache_miss_ready_i) begin
-      if (miss_tv) begin
-        cache_miss_cast_lo.msg_type = e_miss_load;
-        cache_miss_v = 1'b1;
-      end
-      else if (uncached_req) begin
-        cache_miss_cast_lo.msg_type = e_uc_load;
-        cache_miss_v = 1'b1;   
-      end
-      else begin
-        cache_miss_cast_lo.msg_type = e_miss_load;
-        cache_miss_v = 1'b0;
-      end
-    end
-    else begin
-      cache_miss_cast_lo.msg_type = e_miss_load;
-      cache_miss_v = 1'b0;
-    end
-  end
-
+ 
   // stat memory
   logic                                       stat_mem_v_li;
   logic                                       stat_mem_w_li;
@@ -314,6 +291,55 @@ module bp_fe_icache
   bp_cache_stat_mem_pkt_s stat_mem_pkt;
   assign stat_mem_pkt = lce_stat_mem_pkt_i;
 
+  logic cache_miss_v;
+  assign cache_miss_v_o = cache_miss_v;
+
+  // Having a flip flop to generate correct valid signals in case of
+  // transfers because mem read takes one cycle.
+  logic [1:0] delayed_opcode;
+  logic delayed_data_mem_pkt_v;
+
+  bsg_dff
+   #(.width_p(2))
+   opcode_delayed
+   (.clk_i(clk_i)
+   ,.data_i(lce_data_mem_pkt.opcode)
+   ,.data_o(delayed_opcode)
+   );
+
+  bsg_dff
+   #(.width_p(1))
+   valid_delayed
+   (.clk_i(clk_i)
+   ,.data_i(lce_data_mem_pkt_v_i)
+   ,.data_o(delayed_data_mem_pkt_v)
+   );
+
+  always_comb begin
+    if (cache_miss_ready_i) begin
+      if (miss_tv) begin
+        cache_miss_cast_lo.msg_type = e_miss_load;
+        cache_miss_v = 1'b1;
+      end
+      else if (uncached_req) begin
+        cache_miss_cast_lo.msg_type = e_uc_load;
+        cache_miss_v = 1'b1;   
+      end
+      else if (delayed_data_mem_pkt_v && delayed_opcode == e_cache_data_mem_read) begin
+        cache_miss_cast_lo.msg_type = e_block_read;
+        cache_miss_v = 1'b1;
+      end
+      else begin
+        cache_miss_cast_lo.msg_type = e_miss_load;
+        cache_miss_v = 1'b0;
+      end
+    end
+    else begin
+      cache_miss_cast_lo.msg_type = e_miss_load;
+      cache_miss_v = 1'b0;
+    end
+  end
+
   // Cache Miss Tracker
   logic cache_miss, miss_tracker_lo;
   logic miss_tracker_reset_li;
@@ -333,57 +359,6 @@ module bp_fe_icache
      );
 
   assign cache_miss = cache_miss_v_o || miss_tracker_lo;
-
-  /*enum logic [1:0] { A, B, C } state_n, state_r;
-  logic cache_miss;
-  always_comb begin
-    cache_miss = 1'b0;
-    state_n = state_r;
-    case(state_r) 
-      A: if(cache_miss_v_o) begin
-           cache_miss = 1'b1;
-           state_n = B;
-         end else begin
-           cache_miss = 1'b0;
-           state_n = A;
-         end
-
-      B: if(lce_tag_mem_pkt_v_i & lce_data_mem_pkt_v_i & (lce_data_mem_pkt.opcode == e_cache_data_mem_write) & (tag_mem_pkt.opcode == e_cache_tag_mem_set_tag)) begin
-         cache_miss = 1'b0;
-         state_n = C;
-       end
-       else if(lce_data_mem_pkt_v_i & lce_data_mem_pkt.opcode == e_cache_data_mem_uncached) begin
-         cache_miss = 1'b0;
-         state_n = C;
-       end
-       else begin
-         cache_miss = 1'b1;
-         state_n = B;
-       end
-
-      C: if(cache_miss_v_o) begin
-           cache_miss = 1'b1;
-           state_n = B;
-         end else begin
-           cache_miss = 1'b0;
-           state_n = C;
-         end
-
-      default: begin
-           cache_miss = 1'b0;
-           state_n = A;
-         end
-    endcase
-  end
-
-  always_ff @(posedge clk_i) begin
-    if(reset_i) begin
-      state_r <= A;
-    end
-    else begin
-      state_r <= state_n;
-    end
-  end*/
 
   // Fault if in uncached mode but access is not for an uncached address
   assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r) | ~cache_miss);
@@ -536,7 +511,7 @@ module bp_fe_icache
   ) read_mux_butterfly (
     .data_i(data_mem_data_lo)
     ,.sel_i(lce_data_mem_pkt_way_r)
-    ,.data_o(lce_data_mem_data_o)
+    ,.data_o(cache_miss_cast_lo.data)
   );
 
   assign lce_data_mem_pkt_yumi_o = (lce_data_mem_pkt.opcode == e_cache_data_mem_uncached)

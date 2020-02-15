@@ -87,7 +87,7 @@ module bp_be_dcache_lce
     // data_mem
     , output logic data_mem_pkt_v_o
     , output logic [dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
-    , input [cce_block_width_p-1:0] data_mem_data_i
+    //, input [cce_block_width_p-1:0] data_mem_data_i
     , input data_mem_pkt_yumi_i
   
     // tag_mem
@@ -168,6 +168,8 @@ module bp_be_dcache_lce
   logic lce_req_to_lce_resp_yumi_li;
 
   logic [paddr_width_p-1:0] miss_addr_lo;
+  logic cmd_cache_miss_ready_lo, req_cache_miss_ready_lo;
+  assign cache_miss_ready_o = cmd_cache_miss_ready_lo || req_cache_miss_ready_lo;
 
   // Outstanding Requests Counter - counts all requests, cached and uncached
   //
@@ -204,7 +206,7 @@ module bp_be_dcache_lce
   
       ,.cache_miss_i(cache_miss_i)
       ,.cache_miss_v_i(cache_miss_v_i)
-      ,.cache_miss_ready_o(cache_miss_ready_o)
+      ,.cache_miss_ready_o(req_cache_miss_ready_lo)
 
       ,.cache_miss_o(cache_miss_lo)
       ,.miss_addr_o(miss_addr_lo)
@@ -250,6 +252,10 @@ module bp_be_dcache_lce
       ,.cce_data_received_o(cce_data_received)
       ,.uncached_data_received_o(uncached_data_received)
 
+      ,.cache_miss_i(cache_miss_i)
+      ,.cache_miss_v_i(cache_miss_v_i)
+      ,.cache_miss_ready_o(cmd_cache_miss_ready_lo)
+
       ,.lce_cmd_i(lce_cmd_in)
       ,.lce_cmd_v_i(lce_cmd_v_i)
       ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
@@ -265,7 +271,7 @@ module bp_be_dcache_lce
       ,.data_mem_pkt_o(data_mem_pkt)
       ,.data_mem_pkt_v_o(data_mem_pkt_v_o)
       ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_i)
-      ,.data_mem_data_i(data_mem_data_i)
+      //,.data_mem_data_i(data_mem_data_i)
 
       ,.tag_mem_pkt_o(tag_mem_pkt)
       ,.tag_mem_pkt_v_o(tag_mem_pkt_v_o)
@@ -274,7 +280,7 @@ module bp_be_dcache_lce
       ,.stat_mem_pkt_o(stat_mem_pkt)
       ,.stat_mem_pkt_v_o(stat_mem_pkt_v_o)
       ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_i)
-      ,.dirty_i(cache_miss_cast_i.dirty)
+      //,.dirty_i(cache_miss_cast_i.dirty)
       );
 
   // LCE_CCE_resp arbiter

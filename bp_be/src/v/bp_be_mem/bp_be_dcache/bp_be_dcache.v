@@ -151,7 +151,7 @@ module bp_be_dcache
     // data_mem
     , input lce_data_mem_pkt_v_i
     , input [dcache_lce_data_mem_pkt_width_lp-1:0] lce_data_mem_pkt_i
-    , output logic [cce_block_width_p-1:0] lce_data_mem_data_o
+    // [cce_block_width_p-1:0] lce_data_mem_data_o
     , output logic lce_data_mem_pkt_yumi_o
 
     // tag_mem
@@ -661,7 +661,7 @@ module bp_be_dcache
   assign lce_stat_mem_pkt = lce_stat_mem_pkt_i;
 
   logic [lce_assoc_p-1:0][dword_width_p-1:0] lce_data_mem_data_li;
-  assign lce_data_mem_data_o = lce_data_mem_data_li;
+  // assign lce_data_mem_data_o = lce_data_mem_data_li;
 
   logic lce_data_mem_pkt_yumi;
   assign lce_data_mem_pkt_yumi_o = lce_data_mem_pkt_yumi;
@@ -671,12 +671,7 @@ module bp_be_dcache
   assign lce_stat_mem_pkt_yumi_o = lce_stat_mem_pkt_yumi;
 
   // Packaged the items to be sent out to the LCE
-  assign cache_miss_cast_o.addr = paddr_tv_r;
-  assign cache_miss_cast_o.data = data_tv_r;
-  // Handle sizes in a different way
-  assign cache_miss_cast_o.repl_way = lce_lru_way_li;
-  assign cache_miss_cast_o.dirty = stat_mem_data_lo.dirty;
-  // assign lr_hit_tv_o = lr_hit_tv;
+    // assign lr_hit_tv_o = lr_hit_tv;
   
   logic lce_data_mem_pkt_v, lce_tag_mem_pkt_v, lce_stat_mem_pkt_v, cache_lock;
   // Assigning sizes to cache miss packet
@@ -698,6 +693,27 @@ module bp_be_dcache
     end
   end
 
+  // Having a flip flop to generate correct valid signals in case of
+  // writebacks and transfers because mem read takes one cycle.
+  logic [1:0] delayed_data_mem_opcode;
+  logic delayed_data_mem_pkt_v;
+
+  bsg_dff
+   #(.width_p(2))
+   opcode_delayed
+   (.clk_i(clk_i)
+   ,.data_i(lce_data_mem_pkt.opcode)
+   ,.data_o(delayed_data_mem_opcode)
+   );
+
+   bsg_dff
+    #(.width_p(1))
+    valid_delayed
+    (.clk_i(clk_i)
+    ,.data_i(lce_data_mem_pkt_v)
+    ,.data_o(delayed_data_mem_pkt_v)
+    );
+
   // Assigning message types
   always_comb begin
     cache_miss_v_o = 1'b0;
@@ -718,12 +734,21 @@ module bp_be_dcache
         cache_miss_cast_o.msg_type = e_uc_store;
         cache_miss_v_o = 1'b1;
       end
+      else if(delayed_data_mem_pkt_v && delayed_data_mem_opcode == e_cache_data_mem_read) begin
+         cache_miss_cast_o.msg_type = e_block_read;
+         cache_miss_v_o = 1'b1;
+      end
       else begin
         cache_miss_cast_o.msg_type = e_miss_load;
         cache_miss_v_o = 1'b0;
       end
     end
   end
+
+  assign cache_miss_cast_o.addr = paddr_tv_r;
+  assign cache_miss_cast_o.repl_way = lce_lru_way_li;
+  assign cache_miss_cast_o.dirty = stat_mem_data_lo.dirty;
+  assign cache_miss_cast_o.data = (delayed_data_mem_pkt_v && delayed_data_mem_opcode == e_cache_data_mem_read) ? lce_data_mem_data_li : data_tv_r;
 
   // output stage
   // Cache Miss Tracking logic
@@ -1068,7 +1093,7 @@ module bp_be_dcache
   //
   // disallow write buffer write on store hit that cannot be processed by LCE
   // to avoid multiple wbuf entries when the store replays
-  assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r & ~cache_miss;
+  assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r; // & ~cache_miss;
   assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we);
   assign bypass_v_li = tv_we & load_op_tl_r;
   assign lce_snoop_index_li = lce_data_mem_pkt.index;
