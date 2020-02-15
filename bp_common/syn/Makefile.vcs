@@ -1,9 +1,7 @@
 
-VPD2VCD          ?= vpd2vcd
 PYTHON           ?= python
-TRACEDIFF        ?= $(BP_COMMON_DIR)/software/py/tracediff.py
-UNHARDWARE_DIR   ?= $(BP_EXTERNAL_DIR)/agile-unhardware
-UNHARDWARE_MODEL ?= blackparrot
+
+BLOODGRAPH ?= $(BP_COMMON_DIR)/software/py/blood_graph.py --generate --generate-key
 
 ## Tool specific options
 VCS_OPTIONS ?= +vcs+finish+5000000000ps   # Change this to run longer / shorter
@@ -152,9 +150,9 @@ cov.v: dirs.v
 wave.v: dirs.v
 	cd $(SIM_DIR); $(DVE) -full64 -vpd vcdplus.vpd &
 
-debug.v: dirs.v
-	$(VPD2VCD) +splitpacked $(SIM_DIR)/vcdplus.vpd $(SIM_DIR)/debug.vcd
-	$(MAKE) regen -C $(UNHARDWARE_DIR) MODEL=$(UNHARDWARE_MODEL) DATA=$(SIM_DIR)/debug.vcd BINARY=$(SIM_DIR)/prog.elf 
+# TODO: Make compatible with multi-core
+blood.v: dirs.v
+	cd $(SIM_DIR); $(PYTHON) $(BLOODGRAPH) --input $(SIM_DIR)/stall_0.trace
 
 clean.v:
 	@rm -rf results/vcs

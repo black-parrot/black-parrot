@@ -2,7 +2,6 @@
 CC ?= $(GCC)
 VV ?= $(VERILATOR)
 PYTHON    ?= python
-TRACEDIFF ?= $(BP_COMMON_DIR)/software/py/tracediff.py
 
 ## Tool options
 VV_OPTS  = --sc                 # Output in SystemC rather than C++
@@ -22,8 +21,6 @@ COV  ?= 0
 .PHONY: dirs.sc lint.sc build.sc run.sc clean.sc
 
 run.sc: sim.sc
-
-VERILATOR_RUN_DIR ?= $(SYN_PATH)/run_verilator
 
 dirs.sc:
 	$(eval RESULTS_DIR := $(RESULTS_PATH)/verilator)
@@ -152,10 +149,9 @@ cov.sc: dirs.sc
 wave.sc: dirs.sc
 	cd $(SIM_DIR); $(GTKWAVE) -f dump.vcd &
 
-debug.sc: dirs.sc
-	@echo "BlackParrot hardware model does not currently support Verilator VCD dumps"
-	exit 1
-	$(MAKE) regen -C $(UNHARDWARE_DIR) MODEL=$(UNHARDWARE_MODEL) DATA=$(SIM_DIR)/dump.vcd BINARY=$(SIM_DIR)/prog.elf
+# TODO: Make compatible with multi-core
+blood.sc: dirs.sc
+	cd $(SIM_DIR); $(PYTHON) $(BLOODGRAPH) --input $(SIM_DIR)/stall_0.trace
 
 clean.sc:
 	@rm -rf results/verilator
