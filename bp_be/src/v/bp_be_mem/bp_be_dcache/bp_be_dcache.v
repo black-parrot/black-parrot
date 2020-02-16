@@ -80,8 +80,7 @@ module bp_be_dcache
   import bp_common_aviary_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
-
+   
     , parameter writethrough_p=0
     , parameter debug_p=0 
     , parameter lock_max_limit_p=8
@@ -97,6 +96,8 @@ module bp_be_dcache
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
   
     , localparam lce_data_width_lp=(lce_assoc_p*dword_width_p)
+
+    `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p, ptag_width_lp)
 
     , localparam dcache_pkt_width_lp=`bp_be_dcache_pkt_width(page_offset_width_p,dword_width_p)
     , localparam tag_info_width_lp=`bp_be_dcache_tag_info_width(ptag_width_lp)
@@ -142,16 +143,9 @@ module bp_be_dcache
     , output [bp_cache_miss_width_lp-1:0] cache_miss_o
     , output logic cache_miss_v_o 
 
-    // for lock logic inside LCE
-    //, output logic lr_hit_tv_o
-    // for logic inside LCE
-    //, output logic store_hit_o
-
-
     // data_mem
     , input lce_data_mem_pkt_v_i
     , input [dcache_lce_data_mem_pkt_width_lp-1:0] lce_data_mem_pkt_i
-    // [cce_block_width_p-1:0] lce_data_mem_data_o
     , output logic lce_data_mem_pkt_yumi_o
 
     // tag_mem
@@ -170,7 +164,7 @@ module bp_be_dcache
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
-  `declare_bp_cache_miss_s(cce_block_width_p, lce_assoc_p, paddr_width_p);
+  `declare_bp_cache_miss_s(cce_block_width_p, lce_assoc_p, paddr_width_p, ptag_width_lp);
   bp_cache_miss_s cache_miss_cast_o;
   assign cache_miss_o = cache_miss_cast_o;
 
@@ -181,12 +175,20 @@ module bp_be_dcache
   bp_be_dcache_pkt_s dcache_pkt;
   assign dcache_pkt = dcache_pkt_i;
 
+  typedef enum logic [1:0] {
+      e_dword
+    , e_word
+    , e_halfword
+    , e_byte
+  } size_op_e;
+
+
   logic lr_op;
   logic sc_op;
   logic load_op;
   logic store_op;
   logic signed_op;
-  logic [1:0] size_op;
+  size_op_e  size_op;
   logic double_op;
   logic word_op;
   logic half_op;
@@ -204,7 +206,7 @@ module bp_be_dcache
     word_op   = 1'b0;
     half_op   = 1'b0;
     byte_op   = 1'b0;
-    size_op   = 1'b0;
+    size_op   = e_byte;
 
     unique case (dcache_pkt.opcode)
       e_dcache_opcode_lrw, e_dcache_opcode_lrd: begin
@@ -233,20 +235,20 @@ module bp_be_dcache
     unique case (dcache_pkt.opcode)
       e_dcache_opcode_ld, e_dcache_opcode_lrd, e_dcache_opcode_sd, e_dcache_opcode_scd: begin
         double_op = 1'b1;
-        size_op   = 2'b11;
+        size_op   = e_dword;
       end
       e_dcache_opcode_lw, e_dcache_opcode_lwu, e_dcache_opcode_sw
         , e_dcache_opcode_lrw, e_dcache_opcode_scw: begin
         word_op = 1'b1;
-        size_op = 2'b10;
+        size_op = e_word;
       end
       e_dcache_opcode_lh, e_dcache_opcode_lhu, e_dcache_opcode_sh: begin
         half_op = 1'b1;
-        size_op = 2'b01;
+        size_op = e_halfword;
       end
       e_dcache_opcode_lb, e_dcache_opcode_lbu, e_dcache_opcode_sb: begin
         byte_op = 1'b1;
-        size_op = 2'b00;
+        size_op = e_byte;
       end
       default: begin end
     endcase
@@ -264,7 +266,7 @@ module bp_be_dcache
   logic load_op_tl_r;
   logic store_op_tl_r;
   logic signed_op_tl_r;
-  logic [1:0] size_op_tl_r;
+  size_op_e  size_op_tl_r;
   logic double_op_tl_r;
   logic word_op_tl_r;
   logic half_op_tl_r;
@@ -272,7 +274,6 @@ module bp_be_dcache
   logic [bp_page_offset_width_gp-1:0] page_offset_tl_r;
   logic [dword_width_p-1:0] data_tl_r;
 
-  // TODO: Which ready_i is this? LCE's??
   assign tl_we = v_i & lce_ready_i & ~poison_i;
   
   always_ff @ (posedge clk_i) begin
@@ -361,7 +362,7 @@ module bp_be_dcache
   logic load_op_tv_r;
   logic store_op_tv_r;
   logic signed_op_tv_r;
-  logic [1:0] size_op_tv_r;
+  size_op_e  size_op_tv_r;
   logic double_op_tv_r;
   logic word_op_tv_r;
   logic half_op_tv_r;
@@ -390,7 +391,7 @@ module bp_be_dcache
       store_op_tv_r <= '0;
       uncached_tv_r <= '0;
       signed_op_tv_r <= '0;
-      size_op_tv_r <= '0;
+      size_op_tv_r <= e_byte;
       double_op_tv_r <= '0;
       word_op_tv_r <= '0;
       half_op_tv_r <= '0;
@@ -661,8 +662,8 @@ module bp_be_dcache
   assign lce_stat_mem_pkt = lce_stat_mem_pkt_i;
 
   logic [lce_assoc_p-1:0][dword_width_p-1:0] lce_data_mem_data_li;
-  // assign lce_data_mem_data_o = lce_data_mem_data_li;
-
+  bp_be_dcache_tag_info_s lce_tag_mem_data_li;
+ 
   logic lce_data_mem_pkt_yumi;
   assign lce_data_mem_pkt_yumi_o = lce_data_mem_pkt_yumi;
   logic lce_tag_mem_pkt_yumi;
@@ -676,21 +677,13 @@ module bp_be_dcache
   logic lce_data_mem_pkt_v, lce_tag_mem_pkt_v, lce_stat_mem_pkt_v, cache_lock;
   // Assigning sizes to cache miss packet
   always_comb begin
-    if(size_op_tv_r == 2'b11) begin
-      cache_miss_cast_o.size = e_size_8B;
-    end
-    else if(size_op_tv_r == 2'b10) begin
-      cache_miss_cast_o.size = e_size_4B;
-    end
-    else if(size_op_tv_r == 2'b01) begin
-      cache_miss_cast_o.size = e_size_2B;
-    end
-    else if(size_op_tv_r == 2'b00) begin
-      cache_miss_cast_o.size = e_size_1B;
-    end
-    else begin
-      cache_miss_cast_o.size = e_size_8B;
-    end
+    unique case (size_op_tv_r)
+      e_dword: cache_miss_cast_o.size = e_size_8B;
+      e_word: cache_miss_cast_o.size = e_size_4B;
+      e_halfword: cache_miss_cast_o.size = e_size_2B;
+      e_byte: cache_miss_cast_o.size = e_size_1B;
+      default: cache_miss_cast_o.size = e_size_8B;
+    endcase
   end
 
   // Having a flip flop to generate correct valid signals in case of
@@ -698,9 +691,10 @@ module bp_be_dcache
   logic [1:0] delayed_data_mem_opcode;
   logic delayed_data_mem_pkt_v;
 
+  // TODO: Parameterize widths of the flops
   bsg_dff
    #(.width_p(2))
-   opcode_delayed
+   data_mem_opcode_delayed
    (.clk_i(clk_i)
    ,.data_i(lce_data_mem_pkt.opcode)
    ,.data_o(delayed_data_mem_opcode)
@@ -713,7 +707,7 @@ module bp_be_dcache
     ,.data_i(lce_data_mem_pkt_v)
     ,.data_o(delayed_data_mem_pkt_v)
     );
-
+  
   // Assigning message types
   always_comb begin
     cache_miss_v_o = 1'b0;
@@ -734,6 +728,8 @@ module bp_be_dcache
         cache_miss_cast_o.msg_type = e_uc_store;
         cache_miss_v_o = 1'b1;
       end
+      // Since tag reads always happen with data reads, no need to include
+      // both conditions
       else if(delayed_data_mem_pkt_v && delayed_data_mem_opcode == e_cache_data_mem_read) begin
          cache_miss_cast_o.msg_type = e_block_read;
          cache_miss_v_o = 1'b1;
@@ -749,7 +745,7 @@ module bp_be_dcache
   assign cache_miss_cast_o.repl_way = lce_lru_way_li;
   assign cache_miss_cast_o.dirty = stat_mem_data_lo.dirty;
   assign cache_miss_cast_o.data = (delayed_data_mem_pkt_v && delayed_data_mem_opcode == e_cache_data_mem_read) ? lce_data_mem_data_li : data_tv_r;
-
+  
   // output stage
   // Cache Miss Tracking logic
   logic cache_miss, miss_tracker_lo;
@@ -790,7 +786,6 @@ module bp_be_dcache
         end
       end
       else begin
-        // Replace cache_miss_i with internal signal
         v_o = v_tv_r & ~cache_miss; // cached request
       end
     end
@@ -799,8 +794,7 @@ module bp_be_dcache
     end
   end
 
- // Locking logic - Block processing of new dcache_packets
-  // Clean up this logic. 
+  // Locking logic - Block processing of new dcache_packets
   logic cache_miss_r;
   always_ff @(posedge clk_i)
     cache_miss_r <= cache_miss;
@@ -1006,14 +1000,6 @@ module bp_be_dcache
           tag_mem_mask_li[i].tag = {ptag_width_lp{lce_tag_mem_way_one_hot[i]}};
         end
       end
-      /*e_cache_tag_mem_set_tag_wakeup: begin
-          // Nothing goes here. Used to resolve uncached store misses. Done
-          // apart from decrementing credits counter. 
-          // TODO: Change name to something more sensible.
-          // TODO: Might need to add address comparison if we have more than
-          // one outstanding miss.
-      end*/
-      // TODO: Write logic to assert/de-asser cache_miss_o
       default: begin
         tag_mem_data_li = {(tag_info_width_lp*lce_assoc_p){1'b0}};
         tag_mem_mask_li = {(tag_info_width_lp*lce_assoc_p){1'b0}};
@@ -1109,15 +1095,15 @@ module bp_be_dcache
     end
   end
 
-  bsg_mux_butterfly #(
-    .width_p(dword_width_p)
-    ,.els_p(lce_assoc_p)
-  ) read_mux_butterfly (
-    .data_i(data_mem_data_lo)
+  bsg_mux_butterfly
+   #(.width_p(dword_width_p)
+    ,.els_p(lce_assoc_p))
+    read_mux_butterfly
+    (.data_i(data_mem_data_lo)
     ,.sel_i(lce_data_mem_pkt_way_r)
     ,.data_o(lce_data_mem_data_li)
-  );
-
+    );
+   
   assign lce_data_mem_pkt_yumi = (lce_data_mem_pkt.opcode == e_cache_data_mem_uncached)
     ? lce_data_mem_pkt_v
     : ~(load_op & tl_we) & ~wbuf_v_lo & ~lce_snoop_match_lo & lce_data_mem_pkt_v;
@@ -1170,7 +1156,17 @@ module bp_be_dcache
   end
   
   // LCE tag_mem
-  //
+  
+  logic [way_id_width_lp-1:0] lce_tag_mem_pkt_way_r;
+
+  always_ff @ (posedge clk_i) begin
+    if (lce_tag_mem_pkt_yumi & (lce_tag_mem_pkt.opcode == e_cache_tag_mem_read)) begin
+      lce_tag_mem_pkt_way_r <= lce_tag_mem_pkt.way_id;
+    end
+  end
+
+  assign cache_miss_cast_o.tag =  tag_mem_data_lo[lce_tag_mem_pkt_way_r].tag;
+
   assign lce_tag_mem_pkt_yumi = lce_tag_mem_pkt_v & ~tl_we;
   
   // LCE stat_mem

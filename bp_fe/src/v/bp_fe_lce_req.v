@@ -26,9 +26,17 @@ module bp_fe_lce_req
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-   `declare_bp_fe_tag_widths(lce_assoc_p, lce_sets_p, lce_id_width_p, cce_id_width_p, dword_width_p, paddr_width_p)
-   `declare_bp_fe_lce_widths(lce_assoc_p, lce_sets_p, tag_width_lp, cce_block_width_p)
-   `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
+   
+   , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
+   , localparam block_size_in_words_lp=lce_assoc_p
+   , localparam data_mask_width_lp=(dword_width_p>>3)
+   , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
+   , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
+   , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)
+   , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
+   , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
+
+   `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p, tag_width_lp)
   )
    (input clk_i
     , input reset_i
@@ -60,7 +68,7 @@ module bp_fe_lce_req
   //
 
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
-  `declare_bp_cache_miss_s(cce_block_width_p, lce_assoc_p, paddr_width_p);  
+  `declare_bp_cache_miss_s(cce_block_width_p, lce_assoc_p, paddr_width_p, tag_width_lp);  
 
   bp_lce_cce_resp_s lce_resp;
   bp_lce_cce_req_s lce_req;
@@ -71,7 +79,16 @@ module bp_fe_lce_req
 
   assign cache_miss_cast_li = cache_miss_i;
   
-  // states 
+  // states
+  typedef enum logic [2:0] {
+    e_lce_req_ready
+  , e_lce_req_send_miss_req
+  , e_lce_req_send_ack_tr
+  , e_lce_req_send_coh_ack
+  , e_lce_req_send_uncached_load_req
+  , e_lce_req_sleep
+  } bp_fe_lce_req_state_e;
+
   bp_fe_lce_req_state_e state_r, state_n;
   logic [paddr_width_p-1:0] miss_addr_r, miss_addr_n;
   logic cce_data_received_r, cce_data_received_n, cce_data_received;

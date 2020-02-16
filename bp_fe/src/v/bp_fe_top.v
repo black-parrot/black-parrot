@@ -14,10 +14,18 @@ module bp_fe_top
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-   `declare_bp_fe_tag_widths(lce_assoc_p, lce_sets_p, lce_id_width_p, cce_id_width_p, dword_width_p, paddr_width_p)
-   //`declare_bp_fe_lce_widths(lce_assoc_p, lce_sets_p, ptag_width_p, cce_block_width_p)
+   
+   , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
+   , localparam block_size_in_words_lp=lce_assoc_p
+   , localparam data_mask_width_lp=(dword_width_p>>3)
+   , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
+   , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
+   , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)
+   , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
+   , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
+   
    `declare_bp_cache_if_widths(lce_assoc_p, lce_sets_p, ptag_width_p, cce_block_width_p)
-   `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
+   `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p, tag_width_lp)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    )
@@ -42,7 +50,6 @@ module bp_fe_top
    , output                                           cache_miss_v_o
    , input                                            cache_miss_ready_i
 
-   //, output logic [cce_block_width_p-1:0]             data_mem_data_o
    , input [bp_cache_data_mem_pkt_width_lp-1:0]       data_mem_pkt_i
    , input                                            data_mem_pkt_v_i
    , output logic                                     data_mem_pkt_yumi_o

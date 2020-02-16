@@ -17,7 +17,7 @@ module bp_core_minimal
     `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
     `declare_bp_cache_if_widths(lce_assoc_p, lce_sets_p, ptag_width_p, cce_block_width_p)
-    `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
+    `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p, ptag_width_p)
 
     , localparam way_id_width_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
 
@@ -45,11 +45,6 @@ module bp_core_minimal
     , input credits_empty_i
 
     , input [1:0] lce_ready_i
-    //, output logic [1:0] lr_hit_o
-    //, output logic [1:0] cache_v_o
-
-    //, output logic [1:0][cce_block_width_p-1:0] data_mem_data_o
-    //, output logic [1:0] store_o
 
     , output logic [1:0][bp_cache_miss_width_lp-1:0] cache_miss_o
     , output logic [1:0] cache_miss_v_o
@@ -95,13 +90,6 @@ module bp_core_minimal
 
   logic fe_cmd_processed_li;
 
-  // stub unsued outputs at I$ index
-  //always_comb begin
-    //lr_hit_o[0] = '0;
-    //cache_v_o[0] = '0;
-    //store_o[0] = '0;
-  //end 
-
   bp_fe_top
    #(.bp_params_p(bp_params_p))
    fe
@@ -124,7 +112,6 @@ module bp_core_minimal
      ,.cache_miss_v_o(cache_miss_v_o[0])
      ,.cache_miss_ready_i(cache_miss_ready_i[0])
 
-     //,.data_mem_data_o(data_mem_data_o[0])
      ,.data_mem_pkt_i(data_mem_pkt_i[0])
      ,.data_mem_pkt_v_i(data_mem_pkt_v_i[0])
      ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o[0])
@@ -209,15 +196,11 @@ module bp_core_minimal
      ,.fe_cmd_fence_i(fe_cmd_fence_li)
 
      ,.lce_ready_i(lce_ready_i[1])
-     //,.store_hit_o(store_o[1])
      
      ,.cache_miss_o(cache_miss_o[1])
      ,.cache_miss_v_o(cache_miss_v_o[1])
      ,.cache_miss_ready_i(cache_miss_ready_i[1])
-     //,.lr_hit_tv_o(lr_hit_o[1])
-     //,.cache_v_o(cache_v_o[1])
 
-     //,.data_mem_data_o(data_mem_data_o[1])
      ,.data_mem_pkt_i(data_mem_pkt_i[1])
      ,.data_mem_pkt_v_i(data_mem_pkt_v_i[1])
      ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o[1])
