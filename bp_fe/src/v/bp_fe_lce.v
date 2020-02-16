@@ -190,7 +190,6 @@ module bp_fe_lce
     ,.data_mem_pkt_o(data_mem_pkt)
     ,.data_mem_pkt_v_o(data_mem_pkt_v_o)
     ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_i)
-    //,.data_mem_data_i(data_mem_data_i)
 
     ,.tag_mem_pkt_o(tag_mem_pkt)
     ,.tag_mem_pkt_v_o(tag_mem_pkt_v_o)
@@ -265,7 +264,12 @@ module bp_fe_lce
     end
   end
 
-  assign cache_miss_ready_o = cmd_cache_miss_ready_lo || req_cache_miss_ready_lo;
+  logic is_cmd_ready;
+  //assign is_cmd_ready = (stat_mem_pkt_v_o && (stat_mem_pkt.opcode == e_cache_stat_mem_read)) || (tag_mem_pkt_v_o && data_mem_pkt_v_o && tag_mem_pkt.opcode == e_cache_tag_mem_read && data_mem_pkt.opcode == e_cache_data_mem_read);
+  //assign cache_miss_ready_o = is_cmd_ready ? cmd_cache_miss_ready_lo :  req_cache_miss_ready_lo;
+  
+  assign cache_miss_ready_o = req_cache_miss_ready_lo || cmd_cache_miss_ready_lo;
+
   wire lce_ready = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached) ? 1'b1 : lce_ready_lo;
   assign ready_o = lce_ready & ~timeout & ~cache_miss_lo;
  
