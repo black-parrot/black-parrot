@@ -29,7 +29,7 @@ module bp_be_dcache_lce_cmd
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
     
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p) 
-    `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
+    `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p, tag_width_lp)
 
     , localparam dcache_lce_data_mem_pkt_width_lp=
       `bp_cache_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
@@ -81,7 +81,6 @@ module bp_be_dcache_lce_cmd
     // data_mem
     , output logic data_mem_pkt_v_o
     , output logic [dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
-    //, input [cce_block_width_p-1:0] data_mem_data_i
     , input data_mem_pkt_yumi_i
   
     // tag_mem
@@ -92,7 +91,6 @@ module bp_be_dcache_lce_cmd
     // stat_mem
     , output logic stat_mem_pkt_v_o
     , output logic [dcache_lce_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
-    //, input dirty_i
     , input stat_mem_pkt_yumi_i
   );
 
@@ -101,7 +99,7 @@ module bp_be_dcache_lce_cmd
   `declare_bp_cache_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
   `declare_bp_cache_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, tag_width_lp);
   `declare_bp_cache_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
-  `declare_bp_cache_miss_s(cce_block_width_p, lce_assoc_p, paddr_width_p);
+  `declare_bp_cache_miss_s(cce_block_width_p, lce_assoc_p, paddr_width_p, tag_width_lp);
 
   bp_lce_cmd_s lce_cmd_li;
   bp_lce_cce_resp_s lce_resp;
@@ -336,6 +334,11 @@ module bp_be_dcache_lce_cmd
             data_mem_pkt.way_id = lce_cmd_li.way_id;
             data_mem_pkt.opcode = e_cache_data_mem_read;
             data_mem_pkt_v_o = lce_cmd_v_i;
+
+            tag_mem_pkt.index = lce_cmd_addr_index;
+            tag_mem_pkt.way_id = lce_cmd_li.way_id;
+            tag_mem_pkt.opcode = e_cache_tag_mem_read;
+            tag_mem_pkt_v_o = lce_cmd_v_i;
 
             state_n = data_mem_pkt_yumi_i
               ? e_lce_cmd_state_tr

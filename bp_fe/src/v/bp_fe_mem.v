@@ -8,15 +8,23 @@ module bp_fe_mem
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+   
+   , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
+   , localparam block_size_in_words_lp=lce_assoc_p
+   , localparam data_mask_width_lp=(dword_width_p>>3)
+   , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
+   , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
+   , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)
+   , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
+   , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
+
    `declare_bp_cache_if_widths(lce_assoc_p, lce_sets_p, ptag_width_p, cce_block_width_p)
-   `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
+   `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p, tag_width_lp)
 
    , localparam mem_cmd_width_lp  = `bp_fe_mem_cmd_width(vaddr_width_p, vtag_width_p, ptag_width_p)
    , localparam mem_resp_width_lp = `bp_fe_mem_resp_width
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-   , localparam lg_lce_assoc_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
-   , localparam way_id_width_lp = lg_lce_assoc_lp
    )
   (input                                              clk_i
    , input                                            reset_i
@@ -42,7 +50,6 @@ module bp_fe_mem
    , output                                           cache_miss_v_o
    , input                                            cache_miss_ready_i
 
-   //, output logic [cce_block_width_p-1:0]             data_mem_data_o
    , input [bp_cache_data_mem_pkt_width_lp-1:0]       data_mem_pkt_i
    , input                                            data_mem_pkt_v_i
    , output logic                                     data_mem_pkt_yumi_o

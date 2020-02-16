@@ -50,7 +50,6 @@ module bp_be_dcache_lce
    `declare_bp_proc_params(bp_params_p)
     
     , parameter timeout_max_limit_p=4
-    //, parameter lock_max_limit_p=8
 
     , localparam block_size_in_words_lp=lce_assoc_p
     , localparam data_mask_width_lp=(dword_width_p>>3)
@@ -62,7 +61,7 @@ module bp_be_dcache_lce
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
   
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p) 
-    `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
+    `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p, ptag_width_lp)
 
     , localparam dcache_lce_data_mem_pkt_width_lp=
       `bp_cache_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
@@ -87,7 +86,6 @@ module bp_be_dcache_lce
     // data_mem
     , output logic data_mem_pkt_v_o
     , output logic [dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
-    //, input [cce_block_width_p-1:0] data_mem_data_i
     , input data_mem_pkt_yumi_i
   
     // tag_mem
@@ -122,9 +120,6 @@ module bp_be_dcache_lce
     , output logic credits_full_o
     , output logic credits_empty_o
 
-    // for locking logic
-    //, input lr_hit_tv_i
-    //, input cache_v_o_i
   );
 
   // casting structs
@@ -134,7 +129,7 @@ module bp_be_dcache_lce
   `declare_bp_cache_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
   `declare_bp_cache_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, ptag_width_lp);
   `declare_bp_cache_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
-  `declare_bp_cache_miss_s(cce_block_width_p, lce_assoc_p, paddr_width_p);
+  `declare_bp_cache_miss_s(cce_block_width_p, lce_assoc_p, paddr_width_p, ptag_width_lp);
  
   bp_lce_cce_req_s lce_req;
   bp_lce_cce_resp_s lce_resp;
@@ -169,7 +164,11 @@ module bp_be_dcache_lce
 
   logic [paddr_width_p-1:0] miss_addr_lo;
   logic cmd_cache_miss_ready_lo, req_cache_miss_ready_lo;
-  assign cache_miss_ready_o = cmd_cache_miss_ready_lo || req_cache_miss_ready_lo;
+  logic is_cmd_ready;
+  // TODO: Need to add tag_mem_pkt info as well
+  assign is_cmd_ready = (stat_mem_pkt_v_o && stat_mem_pkt.opcode == e_cache_stat_mem_read) || (data_mem_pkt_v_o && data_mem_pkt.opcode == e_cache_data_mem_read);
+  assign cache_miss_ready_o = is_cmd_ready ? cmd_cache_miss_ready_lo : req_cache_miss_ready_lo;
+  // assign cache_miss_ready_o = cmd_cache_miss_ready_lo || req_cache_miss_ready_lo;
 
   // Outstanding Requests Counter - counts all requests, cached and uncached
   //

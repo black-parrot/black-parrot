@@ -21,11 +21,20 @@ module bp_fe_icache
   import bp_fe_pkg::*;
   import bp_fe_icache_pkg::*;  
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
-   `declare_bp_proc_params(bp_params_p)
-    `declare_bp_fe_tag_widths(lce_assoc_p, lce_sets_p, lce_id_width_p, cce_id_width_p, dword_width_p, paddr_width_p)
+    `declare_bp_proc_params(bp_params_p)
+        
+    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
+    , localparam block_size_in_words_lp=lce_assoc_p          
+    , localparam data_mask_width_lp=(dword_width_p>>3)       
+    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3) 
+    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)      
+    , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)                        
+    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp) 
+    , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp) 
+    
     `declare_bp_icache_widths(vaddr_width_p, tag_width_lp, lce_assoc_p) 
     `declare_bp_cache_if_widths(lce_assoc_p, lce_sets_p, tag_width_lp, cce_block_width_p)
-    `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
+    `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p, tag_width_lp) 
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , localparam lg_lce_assoc_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
@@ -56,7 +65,6 @@ module bp_fe_icache
     // data_mem
     , input lce_data_mem_pkt_v_i
     , input [bp_cache_data_mem_pkt_width_lp-1:0] lce_data_mem_pkt_i
-    //, output logic [cce_block_width_p-1:0] lce_data_mem_data_o
     , output logic lce_data_mem_pkt_yumi_o
 
     // tag_mem
@@ -74,7 +82,7 @@ module bp_fe_icache
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
-  `declare_bp_cache_miss_s(cce_block_width_p, lce_assoc_p, paddr_width_p);
+  `declare_bp_cache_miss_s(cce_block_width_p, lce_assoc_p, paddr_width_p, tag_width_lp);
   bp_cache_miss_s cache_miss_cast_lo;
   assign cache_miss_o = cache_miss_cast_lo;
   
@@ -296,15 +304,16 @@ module bp_fe_icache
 
   // Having a flip flop to generate correct valid signals in case of
   // transfers because mem read takes one cycle.
-  logic [1:0] delayed_opcode;
+  logic [1:0] delayed_data_mem_opcode;
   logic delayed_data_mem_pkt_v;
 
+  // TODO: Parameterize the widths of the dffs
   bsg_dff
    #(.width_p(2))
-   opcode_delayed
+   data_mem_opcode_delayed
    (.clk_i(clk_i)
    ,.data_i(lce_data_mem_pkt.opcode)
-   ,.data_o(delayed_opcode)
+   ,.data_o(delayed_data_mem_opcode)
    );
 
   bsg_dff
@@ -314,8 +323,8 @@ module bp_fe_icache
    ,.data_i(lce_data_mem_pkt_v_i)
    ,.data_o(delayed_data_mem_pkt_v)
    );
-
-  always_comb begin
+  
+   always_comb begin
     if (cache_miss_ready_i) begin
       if (miss_tv) begin
         cache_miss_cast_lo.msg_type = e_miss_load;
@@ -325,7 +334,9 @@ module bp_fe_icache
         cache_miss_cast_lo.msg_type = e_uc_load;
         cache_miss_v = 1'b1;   
       end
-      else if (delayed_data_mem_pkt_v && delayed_opcode == e_cache_data_mem_read) begin
+      // Since tags and data go together for a read, no need of using tag info
+      // for this condition
+      else if (delayed_data_mem_pkt_v && delayed_data_mem_opcode == e_cache_data_mem_read) begin
         cache_miss_cast_lo.msg_type = e_block_read;
         cache_miss_v = 1'b1;
       end
@@ -540,6 +551,16 @@ module bp_fe_icache
   end
 
   // LCE: tag_mem
+  
+  logic [way_id_width_lp-1:0] lce_tag_mem_pkt_way_r;
+  
+  always_ff @ (posedge clk_i) begin
+    if (lce_tag_mem_pkt_yumi_o & (tag_mem_pkt.opcode == e_cache_tag_mem_read)) begin
+      lce_tag_mem_pkt_way_r <= tag_mem_pkt.way_id;
+    end
+  end
+
+  assign cache_miss_cast_lo.tag = tag_mem_data_lo[lce_tag_mem_pkt_way_r][0+:tag_width_lp];
   assign lce_tag_mem_pkt_yumi_o = lce_tag_mem_pkt_v_i & ~tl_we;
 
   // LCE: stat_mem

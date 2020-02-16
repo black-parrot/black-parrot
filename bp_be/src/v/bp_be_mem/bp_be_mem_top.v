@@ -17,8 +17,7 @@ module bp_be_mem_top
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-   `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
-
+   
    // Generated parameters
    // D$
    , localparam block_size_in_words_lp = lce_assoc_p // Due to cache interleaving scheme
@@ -29,6 +28,9 @@ module bp_be_mem_top
    , localparam index_width_lp         = `BSG_SAFE_CLOG2(lce_sets_p)
    , localparam page_offset_width_lp   = (block_offset_width_lp + index_width_lp)
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
+   
+   `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p, ptag_width_p)
+   
    , localparam dcache_lce_data_mem_pkt_width_lp=
      `bp_cache_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
    , localparam dcache_lce_tag_mem_pkt_width_lp=

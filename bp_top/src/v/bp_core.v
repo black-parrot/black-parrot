@@ -16,7 +16,7 @@ module bp_core
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-    `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
+    `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p, ptag_width_p)
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , localparam way_id_width_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
@@ -66,7 +66,7 @@ module bp_core
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
-  `declare_bp_cache_miss_s(cce_block_width_p, lce_assoc_p, paddr_width_p);
+  `declare_bp_cache_miss_s(cce_block_width_p, lce_assoc_p, paddr_width_p, ptag_width_p);
 
   logic [1:0][bp_cache_miss_width_lp-1:0] cache_miss_cast_lo;
 
@@ -77,9 +77,6 @@ module bp_core
 
   logic [1:0] lr_hit_lo;
   logic [1:0] cache_v_lo;
-
-  //logic [1:0][cce_block_width_p-1:0] data_mem_data_lo;
-  // logic [1:0] store_lo;
 
   // response side - Interface from LCE
   logic [1:0][dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_li;
@@ -111,12 +108,6 @@ module bp_core
      ,.lce_ready_i(lce_ready_lo)
      ,.credits_full_i(credits_full_lo)
      ,.credits_empty_i(credits_empty_lo)
-
-     //,.lr_hit_o(lr_hit_lo)
-     //,.cache_v_o(cache_v_lo)
-
-     //,.data_mem_data_o(data_mem_data_lo)
-     //,.store_o(store_lo)
 
      ,.cache_miss_o(cache_miss_cast_lo)
      ,.cache_miss_v_o({cache_miss_dcache_v_lo, cache_miss_icache_v_lo})
@@ -154,7 +145,6 @@ module bp_core
      ,.cache_miss_v_i(cache_miss_icache_v_lo)
      ,.cache_miss_ready_o(cache_miss_icache_ready_li)
 
-     //,.data_mem_data_i(data_mem_data_lo[0])
      ,.data_mem_pkt_o(data_mem_pkt_li[0])
      ,.data_mem_pkt_v_o(data_mem_pkt_v_li[0])
      ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_lo[0])
@@ -197,11 +187,6 @@ module bp_core
     ,.cache_miss_v_i(cache_miss_dcache_v_lo)
     ,.cache_miss_ready_o(cache_miss_dcache_ready_li)
 
-    // locking logic
-    //,.lr_hit_tv_i(lr_hit_lo[1])
-    //,.cache_v_o_i(cache_v_lo[1])
-
-    //,.data_mem_data_i(data_mem_data_lo[1])
     ,.data_mem_pkt_o(data_mem_pkt_li[1])
     ,.data_mem_pkt_v_o(data_mem_pkt_v_li[1])
     ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_lo[1])
