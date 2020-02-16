@@ -79,20 +79,14 @@ module bp_be_mem_top
    // D$-LCE Interface
    // signals to LCE
    , input lce_ready_i
-   //, output logic store_hit_o
   
    , output logic [bp_cache_miss_width_lp-1:0] cache_miss_o
    , output logic                              cache_miss_v_o
    , input                                     cache_miss_ready_i
 
-   // for lock logic inside LCE
-   //, output logic lr_hit_tv_o
-   //, output logic cache_v_o
-
    // data_mem
    , input data_mem_pkt_v_i
    , input [dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
-   //, output logic [cce_block_width_p-1:0] data_mem_data_o
    , output logic data_mem_pkt_yumi_o
 
    // tag_mem
@@ -426,8 +420,6 @@ bp_be_dcache
     ,.lce_stat_mem_pkt_i(stat_mem_pkt_i)
     ,.lce_stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
     );
-
-  //assign cache_v_o = dcache_v;
 
 // We delay the tlb miss signal by one cycle to synchronize with cache miss signal
 // We latch the dcache miss signal

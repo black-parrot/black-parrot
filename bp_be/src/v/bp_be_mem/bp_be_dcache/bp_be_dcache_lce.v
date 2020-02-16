@@ -165,10 +165,10 @@ module bp_be_dcache_lce
   logic [paddr_width_p-1:0] miss_addr_lo;
   logic cmd_cache_miss_ready_lo, req_cache_miss_ready_lo;
   logic is_cmd_ready;
-  // TODO: Need to add tag_mem_pkt info as well
-  assign is_cmd_ready = (stat_mem_pkt_v_o && stat_mem_pkt.opcode == e_cache_stat_mem_read) || (data_mem_pkt_v_o && data_mem_pkt.opcode == e_cache_data_mem_read);
-  assign cache_miss_ready_o = is_cmd_ready ? cmd_cache_miss_ready_lo : req_cache_miss_ready_lo;
-  // assign cache_miss_ready_o = cmd_cache_miss_ready_lo || req_cache_miss_ready_lo;
+  //assign is_cmd_ready = (stat_mem_pkt_v_o && stat_mem_pkt.opcode == e_cache_stat_mem_read) || (tag_mem_pkt_v_o && data_mem_pkt_v_o && data_mem_pkt.opcode == e_cache_data_mem_read && tag_mem_pkt.opcode == e_cache_tag_mem_read);
+  //assign cache_miss_ready_o = is_cmd_ready ? cmd_cache_miss_ready_lo : req_cache_miss_ready_lo;
+
+  assign cache_miss_ready_o = cmd_cache_miss_ready_lo || req_cache_miss_ready_lo;
 
   // Outstanding Requests Counter - counts all requests, cached and uncached
   //
@@ -195,6 +195,8 @@ module bp_be_dcache_lce
   assign credits_full_o = (credit_count_lo == coh_noc_max_credits_p);
   assign credits_empty_o = (credit_count_lo == 0);
 
+  logic lce_busy_lo;
+
   bp_be_dcache_lce_req
     #(.bp_params_p(bp_params_p))
     lce_req_inst
@@ -207,7 +209,7 @@ module bp_be_dcache_lce
       ,.cache_miss_v_i(cache_miss_v_i)
       ,.cache_miss_ready_o(req_cache_miss_ready_lo)
 
-      ,.cache_miss_o(cache_miss_lo)
+      ,.lce_busy_o(lce_busy_lo)
       ,.miss_addr_o(miss_addr_lo)
 
       ,.cce_data_received_i(cce_data_received)
@@ -270,7 +272,6 @@ module bp_be_dcache_lce
       ,.data_mem_pkt_o(data_mem_pkt)
       ,.data_mem_pkt_v_o(data_mem_pkt_v_o)
       ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_i)
-      //,.data_mem_data_i(data_mem_data_i)
 
       ,.tag_mem_pkt_o(tag_mem_pkt)
       ,.tag_mem_pkt_v_o(tag_mem_pkt_v_o)
@@ -279,7 +280,6 @@ module bp_be_dcache_lce
       ,.stat_mem_pkt_o(stat_mem_pkt)
       ,.stat_mem_pkt_v_o(stat_mem_pkt_v_o)
       ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_i)
-      //,.dirty_i(cache_miss_cast_i.dirty)
       );
 
   // LCE_CCE_resp arbiter
@@ -326,6 +326,6 @@ module bp_be_dcache_lce
 
   // LCE Ready Signal
   wire lce_ready = lce_ready_lo;
-  assign ready_o = lce_ready & ~timeout & ~cache_miss_lo; 
+  assign ready_o = lce_ready & ~timeout & ~lce_busy_lo; 
 
 endmodule

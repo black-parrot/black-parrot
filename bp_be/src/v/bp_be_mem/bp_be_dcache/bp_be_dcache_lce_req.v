@@ -51,7 +51,7 @@ module bp_be_dcache_lce_req
     , input cache_miss_v_i
     , output logic cache_miss_ready_o
 
-    , output logic cache_miss_o
+    , output logic lce_busy_o
     , output logic [paddr_width_p-1:0] miss_addr_o
 
     , input cce_data_received_i
@@ -134,7 +134,7 @@ module bp_be_dcache_lce_req
      );
 
   always_comb begin
-    cache_miss_o = 1'b0;
+    lce_busy_o = 1'b0;
 
     state_n = state_r;
     load_not_store_n = load_not_store_r;
@@ -181,7 +181,7 @@ module bp_be_dcache_lce_req
           cce_data_received_n = 1'b0;
           set_tag_received_n = 1'b0;
 
-          cache_miss_o = 1'b1;
+          lce_busy_o = 1'b1;
           state_n = e_SEND_CACHED_REQ;
         end
         else if (cache_miss_cast_li.msg_type == e_miss_load | cache_miss_cast_li.msg_type == e_miss_store) begin
@@ -191,7 +191,7 @@ module bp_be_dcache_lce_req
           cce_data_received_n = 1'b0;
           set_tag_received_n = 1'b0;
 
-          cache_miss_o = 1'b1;
+          lce_busy_o = 1'b1;
           state_n = e_SEND_CACHED_REQ;
         end
         else if (cache_miss_cast_li.msg_type == e_uc_load) begin
@@ -200,7 +200,7 @@ module bp_be_dcache_lce_req
           cce_data_received_n = 1'b0;
           set_tag_received_n = 1'b0;
 
-          cache_miss_o = 1'b1;
+          lce_busy_o = 1'b1;
           state_n = e_SEND_UNCACHED_LOAD_REQ;
         end
         else if (cache_miss_cast_li.msg_type == e_uc_store) begin
@@ -213,11 +213,11 @@ module bp_be_dcache_lce_req
           lce_req.src_id = lce_id_i;
           lce_req.dst_id = req_cce_id_lo;
 
-          cache_miss_o = ~lce_req_ready_i | credits_full_i;
+          lce_busy_o = ~lce_req_ready_i | credits_full_i;
           state_n = e_READY;
         end
         else begin
-          cache_miss_o = 1'b0;
+          lce_busy_o = 1'b0;
           state_n = e_READY;
         end
        end
@@ -248,7 +248,7 @@ module bp_be_dcache_lce_req
         lce_req.src_id = lce_id_i;
         lce_req.dst_id = req_cce_id_lo;
 
-        cache_miss_o = 1'b1;
+        lce_busy_o = 1'b1;
         cache_miss_ready_o = 1'b0;
 
         state_n = lce_req_ready_i
@@ -267,7 +267,7 @@ module bp_be_dcache_lce_req
         lce_req.src_id = lce_id_i;
         lce_req.dst_id = req_cce_id_lo;
 
-        cache_miss_o = 1'b1;
+        lce_busy_o = 1'b1;
         cache_miss_ready_o = 1'b0;
 
         state_n = lce_req_ready_i
@@ -278,7 +278,7 @@ module bp_be_dcache_lce_req
       // SLEEP 
       // wait for signals from other modules to wake up.
       e_SLEEP: begin
-        cache_miss_o = 1'b1;
+        lce_busy_o = 1'b1;
         cache_miss_ready_o = 1'b0;
         cce_data_received_n = cce_data_received_i ? 1'b1 : cce_data_received_r;
         set_tag_received_n = set_tag_received_i ? 1'b1 : set_tag_received_r;
@@ -308,7 +308,7 @@ module bp_be_dcache_lce_req
         lce_resp_v_o = 1'b1;
         lce_resp.msg_type = e_lce_cce_coh_ack;
 
-        cache_miss_o = 1'b1;
+        lce_busy_o = 1'b1;
 	cache_miss_ready_o = 1'b0;
         state_n = lce_resp_yumi_i
           ? e_READY

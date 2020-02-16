@@ -182,7 +182,7 @@ module bp_fe_lce_cmd
     flag_data_buffered_n = flag_data_buffered_r;
     flag_invalidate_n = flag_invalidate_r;
 
-    cache_miss_ready_o = 1'b1;
+    cache_miss_ready_o = 1'b0;
            
     case (state_r)
 
@@ -202,7 +202,7 @@ module bp_fe_lce_cmd
           : e_lce_cmd_reset;
         cnt_clear = (state_n == e_lce_cmd_uncached_only);
         cnt_inc = ~cnt_clear & (tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i);
-        cache_miss_ready_o = 1'b1;
+        cache_miss_ready_o = 1'b0;
       end
 
       e_lce_cmd_uncached_only: begin
@@ -217,7 +217,7 @@ module bp_fe_lce_cmd
           stat_mem_pkt_v_o         = lce_cmd_v_i;
           lce_cmd_yumi_o           = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
 
-          cache_miss_ready_o = 1'b1;
+          cache_miss_ready_o = 1'b0;
 
         end else if (lce_cmd_li.msg_type == e_lce_cmd_sync) begin
           lce_resp.dst_id = lce_cmd_li.msg.cmd.src_id;
@@ -233,7 +233,7 @@ module bp_fe_lce_cmd
           // sync messages, and when the lce_resp is sent
           cnt_inc = ~cnt_clear & lce_resp_yumi_i;
 
-          cache_miss_ready_o = 1'b1;
+          cache_miss_ready_o = 1'b0;
 
         end else if (lce_cmd_li.msg_type == e_lce_cmd_uc_data) begin
           data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
@@ -258,7 +258,7 @@ module bp_fe_lce_cmd
           data_mem_pkt_v_o    = lce_cmd_v_i;
           state_n             = data_mem_pkt_yumi_i ? e_lce_cmd_send_transfer : e_lce_cmd_ready;
 
-          cache_miss_ready_o = 1'b1;
+          cache_miss_ready_o = 1'b0;
 
         end else if (lce_cmd_li.msg_type == e_lce_cmd_writeback) begin
           lce_resp.dst_id   = lce_cmd_li.msg.cmd.src_id;
@@ -359,7 +359,7 @@ module bp_fe_lce_cmd
           stat_mem_pkt_v_o         = lce_cmd_v_i;
           lce_cmd_yumi_o           = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
 
-          cache_miss_ready_o = 1'b1;
+          cache_miss_ready_o = 1'b0;
         end
 
       end
@@ -376,6 +376,8 @@ module bp_fe_lce_cmd
         lce_cmd_v_o          = lce_cmd_ready_i && cache_miss_v_i;
         lce_cmd_yumi_o       = lce_cmd_v_o;
         state_n              = lce_cmd_v_o ? e_lce_cmd_ready : e_lce_cmd_send_transfer;
+        
+        cache_miss_ready_o = 1'b1;
       end
 
       default: begin
