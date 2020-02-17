@@ -85,7 +85,7 @@ module bp_streaming_accelerator_complex
       bsg_mesh_stitch
        #(.width_p(coh_noc_ral_link_width_lp)
          ,.x_max_p(sac_x_dim_p)
-         ,.y_max_p(1)
+         ,.y_max_p(sac_y_dim_p)
          )
        coh_req_mesh
         (.outs_i(lce_req_link_lo)
@@ -104,7 +104,7 @@ module bp_streaming_accelerator_complex
       bsg_mesh_stitch
        #(.width_p(coh_noc_ral_link_width_lp)
          ,.x_max_p(sac_x_dim_p)
-         ,.y_max_p(1)
+         ,.y_max_p(sac_y_dim_p)
          )
        coh_cmd_mesh
         (.outs_i(lce_cmd_link_lo)

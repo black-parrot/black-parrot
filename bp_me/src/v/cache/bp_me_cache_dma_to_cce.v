@@ -320,10 +320,9 @@ module bp_me_cache_dma_to_cce
         if (resp_count_r == block_size_in_words_lp-1)
           begin
             resp_count_n = '0;
-            arbiter_fifo_yumi_li = 1'b1;
+            arbiter_fifo_yumi_li = 1'b1;          
           end
       end
   end
-  
   
 endmodule

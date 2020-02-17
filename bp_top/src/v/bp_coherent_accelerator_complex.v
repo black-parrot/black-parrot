@@ -91,10 +91,11 @@ module bp_coherent_accelerator_complex
       assign lce_req_ver_link_li    = '0;
       assign lce_req_hor_link_li[E] = '0;
       assign lce_req_hor_link_li[W] = coh_req_link_i;
+       
       bsg_mesh_stitch
        #(.width_p(coh_noc_ral_link_width_lp)
          ,.x_max_p(cac_x_dim_p)
-         ,.y_max_p(1)
+         ,.y_max_p(cac_y_dim_p)
          )
        coh_req_mesh
         (.outs_i(lce_req_link_lo)
@@ -106,14 +107,15 @@ module bp_coherent_accelerator_complex
          ,.ver_o(lce_req_ver_link_lo)
          );
       assign coh_req_link_o = lce_req_hor_link_lo[W];
-
+        
       assign lce_cmd_ver_link_li    = '0;
       assign lce_cmd_hor_link_li[E] = '0;
       assign lce_cmd_hor_link_li[W] = coh_cmd_link_i;
+        
       bsg_mesh_stitch
        #(.width_p(coh_noc_ral_link_width_lp)
          ,.x_max_p(cac_x_dim_p)
-         ,.y_max_p(1)
+         ,.y_max_p(cac_y_dim_p)
          )
        coh_cmd_mesh
         (.outs_i(lce_cmd_link_lo)
@@ -124,15 +126,16 @@ module bp_coherent_accelerator_complex
          ,.ver_i(lce_cmd_ver_link_li)
          ,.ver_o(lce_cmd_ver_link_lo)
          );
-      assign coh_cmd_link_o = lce_cmd_hor_link_lo[W];
+      assign coh_cmd_link_o = lce_cmd_hor_link_lo[W]; 
 
       assign lce_resp_ver_link_li    = '0;
       assign lce_resp_hor_link_li[E] = '0;
       assign lce_resp_hor_link_li[W] = coh_resp_link_i;
+
       bsg_mesh_stitch
        #(.width_p(coh_noc_ral_link_width_lp)
          ,.x_max_p(cac_x_dim_p)
-         ,.y_max_p(1)
+         ,.y_max_p(cac_y_dim_p)
          )
        coh_resp_mesh
         (.outs_i(lce_resp_link_lo)
@@ -144,6 +147,7 @@ module bp_coherent_accelerator_complex
          ,.ver_o(lce_resp_ver_link_lo)
          );
       assign coh_resp_link_o = lce_resp_hor_link_lo[W];
+        
     end
   else
     begin : stub

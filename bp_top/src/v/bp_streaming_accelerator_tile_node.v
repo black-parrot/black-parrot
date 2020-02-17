@@ -124,7 +124,7 @@ module bp_streaming_accelerator_tile_node
      ,.dims_p(coh_noc_dims_p)
      ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
      ,.len_width_p(coh_noc_len_width_p)
-     ,.reverse_order_p(0)
+     ,.reverse_order_p(1)
      ,.routing_matrix_p(StrictYX | YX_Allow_E)
      )
    lce_req_router
@@ -142,7 +142,7 @@ module bp_streaming_accelerator_tile_node
      ,.dims_p(coh_noc_dims_p)
      ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
      ,.len_width_p(coh_noc_len_width_p)
-     ,.reverse_order_p(0)
+     ,.reverse_order_p(1)
      ,.routing_matrix_p(StrictYX | YX_Allow_E)
      )
    lce_cmd_router

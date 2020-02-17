@@ -82,7 +82,8 @@ module bp_coherent_accelerator_example
 
       ,.uncached_o(dcache_uncached)
       );
-   
+
+
   bp_be_dcache 
    #(.bp_params_p(bp_params_p))
    accel_dcache
@@ -167,7 +168,6 @@ module bp_coherent_accelerator_example
                             ,data          : resp_data  };
 
    
-
   bp_be_mmu_vaddr_s v_addr;
   assign v_addr = load ? (second_operand ? (input_b_ptr+len_b_cnt*8) 
                                          : (input_a_ptr+len_a_cnt*8)) 

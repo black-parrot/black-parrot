@@ -53,7 +53,7 @@ module bp_me_lce_id_to_cord
     // IO complex
     else
       begin
-        lce_cord_o[0+:coh_noc_x_cord_width_p]                      = sac_x_dim_p + (lce_id_i % (2*cc_x_dim_p+cac_x_dim_p+sac_x_dim_p));
+        lce_cord_o[0+:coh_noc_x_cord_width_p]                      = sac_x_dim_p +(lce_id_i-max_sac_lce_lp) % ic_x_dim_p; 
         lce_cord_o[coh_noc_x_cord_width_p+:coh_noc_y_cord_width_p] = '0;
         lce_cid_o                                                  = '0;
       end
