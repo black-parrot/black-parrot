@@ -54,8 +54,6 @@ module bp_be_csr
     , output                            translation_en_o
     , output                            mstatus_sum_o
     , output                            mstatus_mxr_o
-    , output logic                      tlb_fence_o
-    , output logic                      fencei_o
     
     // FE Exceptions
     , output logic                      itlb_fill_o
@@ -304,7 +302,7 @@ assign sip_wmask_li    = '{meip: 1'b0, seip: 1'b0
                             ,default: '0
                            };
 
-logic exception_v_o, interrupt_v_o, ret_v_o;
+logic exception_v_o, interrupt_v_o, ret_v_o, fencei_v_o, sfence_v_o;
 // CSR data
 always_comb
   begin
@@ -352,9 +350,9 @@ always_comb
     ret_v_o          = '0;
     illegal_instr_o  = '0;
     csr_data_lo      = '0;
-    tlb_fence_o      = '0;
-    fencei_o         = '0;
+    sfence_v_o       = '0;
     
+    fencei_v_o            = '0;
     itlb_fill_o           = '0;
     instr_page_fault_o    = '0;
     instr_access_fault_o  = '0;
@@ -395,12 +393,12 @@ always_comb
               illegal_instr_o = 1'b1;
           else
             begin
-              tlb_fence_o     = 1'b1;
+              sfence_v_o = 1'b1;
             end
         end
       else if (csr_cmd.csr_op == e_fencei)
         begin
-          fencei_o = 1'b1;
+          fencei_v_o = 1'b1;
         end
       else if (csr_cmd.csr_op == e_dret)
         begin
@@ -707,6 +705,8 @@ assign trap_pkt_cast_o.tvec             = (priv_mode_n == `PRIV_MODE_S) ? stvec_
 assign trap_pkt_cast_o.priv_n           = priv_mode_n;
 assign trap_pkt_cast_o.translation_en_n = translation_en_n;
 // TODO: Find more solid invariant
+assign trap_pkt_cast_o.fencei           = fencei_v_o;
+assign trap_pkt_cast_o.sfence           = sfence_v_o;
 assign trap_pkt_cast_o.exception        = exception_v_o;
 assign trap_pkt_cast_o._interrupt       = interrupt_v_o;
 assign trap_pkt_cast_o.eret             = ret_v_o;
