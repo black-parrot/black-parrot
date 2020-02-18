@@ -36,18 +36,18 @@ module bp_fe_lce_req
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
 
-   `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p, tag_width_lp)
+   `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
   )
    (input clk_i
     , input reset_i
 
     , input [lce_id_width_p-1:0] lce_id_i
  
-    , input [bp_cache_miss_width_lp-1:0] cache_miss_i
-    , input cache_miss_v_i
-    , output logic cache_miss_ready_o
+    , input [bp_cache_req_width_lp-1:0] cache_req_i
+    , input cache_req_v_i
+    , output logic cache_req_ready_o
 
-    , output logic cache_miss_o
+    , output logic cache_req_complete_o
     , output logic [paddr_width_p-1:0] miss_addr_o
           
     , input cce_data_received_i
@@ -65,19 +65,18 @@ module bp_fe_lce_req
    );
 
   // lce interface
-  //
 
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
-  `declare_bp_cache_miss_s(cce_block_width_p, lce_assoc_p, paddr_width_p, tag_width_lp);  
+  `declare_bp_cache_req_s(cce_block_width_p, lce_assoc_p, paddr_width_p, tag_width_lp);  
 
   bp_lce_cce_resp_s lce_resp;
   bp_lce_cce_req_s lce_req;
-  bp_cache_miss_s cache_miss_cast_li;
+  bp_cache_req_s cache_req_cast_li;
 
   assign lce_req_o = lce_req;
   assign lce_resp_o = lce_resp;
 
-  assign cache_miss_cast_li = cache_miss_i;
+  assign cache_req_cast_li = cache_req_i;
   
   // states
   typedef enum logic [2:0] {
@@ -122,7 +121,7 @@ module bp_fe_lce_req
     state_n               = state_r;
     miss_addr_n           = miss_addr_r;
     cce_data_received_n   = cce_data_received_r;
-    set_tag_received_n             = set_tag_received_r;
+    set_tag_received_n    = set_tag_received_r;
     lru_way_n             = lru_way_r;
     lru_flopped_n         = lru_flopped_r;
 
@@ -140,7 +139,7 @@ module bp_fe_lce_req
     lce_req.msg.req.lru_dirty     = e_lce_req_lru_clean;
     lce_req.msg.req.lru_way_id    = lru_flopped_r
                                     ? lru_way_r
-                                    : cache_miss_cast_li.repl_way;
+                                    : cache_req_cast_li.repl_way;
     lce_req.msg.req.pad    = '0;
 
 
@@ -152,27 +151,28 @@ module bp_fe_lce_req
     lce_resp.addr         = miss_addr_r;
     lce_resp.data         = '0;
   
-    cache_miss_o = 1'b0;
-    cache_miss_ready_o = 1'b1;
+    cache_req_complete_o = 1'b1;
+    cache_req_ready_o = 1'b1;
     
     case (state_r)
       e_lce_req_ready: begin
-       cache_miss_ready_o = 1'b1;
-       if(cache_miss_v_i) begin
-        if (cache_miss_cast_li.msg_type == e_miss_load) begin
-          miss_addr_n = cache_miss_cast_li.addr;
+       cache_req_ready_o = 1'b1;
+
+       if(cache_req_v_i) begin
+        if (cache_req_cast_li.msg_type == e_miss_load) begin
+          miss_addr_n = cache_req_cast_li.addr;
           cce_data_received_n = 1'b0;
           set_tag_received_n = 1'b0;
           lru_flopped_n = 1'b0;
           state_n = e_lce_req_send_miss_req;
-          cache_miss_o = 1'b1;
+          cache_req_complete_o = 1'b0;
         end
-        else if (cache_miss_cast_li.msg_type == e_uc_load) begin
-          miss_addr_n = cache_miss_cast_li.addr;
+        else if (cache_req_cast_li.msg_type == e_uc_load) begin
+          miss_addr_n = cache_req_cast_li.addr;
           cce_data_received_n = 1'b0;
           set_tag_received_n = 1'b0;
           lru_flopped_n = 1'b0;
-          cache_miss_o = 1'b1;
+          cache_req_complete_o = 1'b0;
           state_n = e_lce_req_send_uncached_load_req;
         end
        end
@@ -180,11 +180,13 @@ module bp_fe_lce_req
 
       e_lce_req_send_miss_req: begin
         lru_flopped_n = 1'b1;
-        lru_way_n = lru_flopped_r ? lru_way_r : cache_miss_cast_li.repl_way;
+        lru_way_n = lru_flopped_r ? lru_way_r : cache_req_cast_li.repl_way;
 
         lce_req_v_o           = 1'b1;
-        cache_miss_o          = 1'b1;
-        cache_miss_ready_o    = 1'b0;
+        
+        cache_req_complete_o  = 1'b0;
+        cache_req_ready_o    = 1'b0;
+        
         state_n = lce_req_ready_i
           ? e_lce_req_sleep 
           : e_lce_req_send_miss_req;
@@ -192,8 +194,8 @@ module bp_fe_lce_req
 
       e_lce_req_send_uncached_load_req: begin
         lce_req_v_o = 1'b1;
-        cache_miss_o = 1'b1;
-        cache_miss_ready_o = 1'b0;
+        cache_req_complete_o = 1'b0;
+        cache_req_ready_o = 1'b0;
 
         lce_req.msg_type = e_lce_req_type_uc_rd;
         // TODO: this may need to change depending on what the LCE and CCE behavior spec is
@@ -214,8 +216,8 @@ module bp_fe_lce_req
         cce_data_received_n = cce_data_received_i ? 1'b1 : cce_data_received_r;
         set_tag_received_n = set_tag_received_i ? 1'b1 : set_tag_received_r;
 
-        cache_miss_o = 1'b1;
-        cache_miss_ready_o = 1'b0;
+        cache_req_complete_o = 1'b0;
+        cache_req_ready_o = 1'b0;
 
         if (set_tag_wakeup_received_i) begin
           state_n = e_lce_req_send_coh_ack;
@@ -239,8 +241,8 @@ module bp_fe_lce_req
       e_lce_req_send_coh_ack: begin
         lce_resp_v_o = 1'b1;
         lce_resp.msg_type = e_lce_cce_coh_ack;
-        cache_miss_o = 1'b1;
-        cache_miss_ready_o = 1'b0;
+        cache_req_complete_o = 1'b0;
+        cache_req_ready_o = 1'b0;
         state_n = lce_resp_yumi_i
           ? e_lce_req_ready
           : e_lce_req_send_coh_ack;

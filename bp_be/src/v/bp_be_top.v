@@ -34,8 +34,7 @@ module bp_be_top
      `bp_cache_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, ptag_width_p)
    , localparam dcache_stat_mem_pkt_width_lp=
      `bp_cache_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
-
-   )
+  )
   (input                                     clk_i
    , input                                   reset_i
 
