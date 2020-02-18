@@ -29,7 +29,7 @@ module bp_be_mem_top
    , localparam page_offset_width_lp   = (block_offset_width_lp + index_width_lp)
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
    
-   `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p, ptag_width_p)
+   `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
    
    , localparam dcache_lce_data_mem_pkt_width_lp=
      `bp_cache_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
@@ -79,25 +79,29 @@ module bp_be_mem_top
    // D$-LCE Interface
    // signals to LCE
    , input lce_ready_i
-  
-   , output logic [bp_cache_miss_width_lp-1:0] cache_miss_o
-   , output logic                              cache_miss_v_o
-   , input                                     cache_miss_ready_i
+   , input cache_req_complete_o
+
+   , output logic [bp_cache_req_width_lp-1:0]  cache_req_o
+   , output logic                              cache_req_v_o
+   , input                                     cache_req_ready_i
 
    // data_mem
    , input data_mem_pkt_v_i
    , input [dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
-   , output logic data_mem_pkt_yumi_o
+   , output logic data_mem_pkt_ready_o
+   , output logic [cce_block_width_p-1:0] lce_data_mem_o
 
    // tag_mem
    , input tag_mem_pkt_v_i
    , input [dcache_lce_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_i
-   , output logic tag_mem_pkt_yumi_o
+   , output logic tag_mem_pkt_ready_o
+   , output logic [ptag_width_p-1:0] lce_tag_mem_o
 
    // stat_mem
    , input stat_mem_pkt_v_i
    , input [dcache_lce_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
-   , output logic stat_mem_pkt_yumi_o
+   , output logic stat_mem_pkt_ready_o
+   , output logic lce_stat_mem_o
 
    , input [commit_pkt_width_lp-1:0]         commit_pkt_i
 
@@ -372,7 +376,7 @@ bp_be_ptw
    ,.dcache_v_o(ptw_dcache_v)
    ,.dcache_pkt_o(ptw_dcache_pkt)
    ,.dcache_ptag_o(ptw_dcache_ptag)
-   ,.dcache_rdy_i(lce_ready_i) // TODO: Make this based on cache_miss_ready
+   ,.dcache_rdy_i(lce_ready_i) 
    ,.dcache_miss_i(dcache_miss_lo)
   );
 
@@ -403,22 +407,23 @@ bp_be_dcache
     // D$-LCE Interface
     ,.dcache_miss_o(dcache_miss_lo)
     ,.lce_ready_i(lce_ready_i)
-    //,.store_hit_o(store_hit_o)
-    ,.cache_miss_o(cache_miss_o)
-    ,.cache_miss_v_o(cache_miss_v_o)
-    ,.cache_miss_ready_i(cache_miss_ready_i)
+    ,.cache_req_complete_i(cache_req_complete_i)
+    ,.cache_req_o(cache_req_o)
+    ,.cache_req_v_o(cache_req_v_o)
+    ,.cache_req_ready_i(cache_req_ready_i)
 
-    //,.lr_hit_tv_o(lr_hit_tv_o)
     ,.lce_data_mem_pkt_v_i(data_mem_pkt_v_i)
     ,.lce_data_mem_pkt_i(data_mem_pkt_i)
-    //,.lce_data_mem_data_o(data_mem_data_o)
-    ,.lce_data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
+    ,.lce_data_mem_o(lce_data_mem_o)
+    ,.lce_data_mem_pkt_ready_o(data_mem_pkt_ready_o)
     ,.lce_tag_mem_pkt_v_i(tag_mem_pkt_v_i)
     ,.lce_tag_mem_pkt_i(tag_mem_pkt_i)
-    ,.lce_tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
+    ,.lce_tag_mem_o(lce_tag_mem_o)
+    ,.lce_tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
     ,.lce_stat_mem_pkt_v_i(stat_mem_pkt_v_i)
     ,.lce_stat_mem_pkt_i(stat_mem_pkt_i)
-    ,.lce_stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+    ,.lce_stat_mem_o(lce_stat_mem_o)
+    ,.lce_stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
     );
 
 // We delay the tlb miss signal by one cycle to synchronize with cache miss signal
