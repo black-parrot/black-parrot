@@ -18,7 +18,7 @@ module bp_be_top
    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
-   `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p, ptag_width_p)
+   `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
 
    // Default parameters 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
@@ -63,31 +63,29 @@ module bp_be_top
    // D$-LCE Interface
    // signals to LCE
    , input lce_ready_i
-   //, output logic store_hit_o
+   , input cache_req_complete_i
    
-   , output logic [bp_cache_miss_width_lp-1:0]   cache_miss_o
-   , output logic                                cache_miss_v_o
-   , input                                       cache_miss_ready_i
-
-   // for lock logic inside LCE
-   //, output logic lr_hit_tv_o
-   //, output logic cache_v_o
+   , output logic [bp_cache_req_width_lp-1:0]    cache_req_o
+   , output logic                                cache_req_v_o
+   , input                                       cache_req_ready_i
 
    // data_mem
    , input data_mem_pkt_v_i
    , input [dcache_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
-   //, output logic [cce_block_width_p-1:0] data_mem_data_o
-   , output logic data_mem_pkt_yumi_o
+   , output logic [cce_block_width_p-1:0] lce_data_mem_o
+   , output logic data_mem_pkt_ready_o
 
    // tag_mem
    , input tag_mem_pkt_v_i
    , input [dcache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_i
-   , output logic tag_mem_pkt_yumi_o
+   , output logic [ptag_width_p-1:0] lce_tag_mem_o
+   , output logic tag_mem_pkt_ready_o
 
    // stat_mem
    , input stat_mem_pkt_v_i
    , input [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
-   , output logic stat_mem_pkt_yumi_o
+   , output logic lce_stat_mem_o
+   , output logic stat_mem_pkt_ready_o
 
    , input                                   credits_full_i
    , input                                   credits_empty_i
@@ -253,25 +251,24 @@ bp_be_mem_top
     ,.itlb_fill_entry_o(itlb_fill_entry)
 
     ,.lce_ready_i(lce_ready_i)
-    //,.store_hit_o(store_hit_o)
+    ,.cache_req_complete_i(cache_req_complete_i)   
+ 
+    ,.cache_req_o(cache_req_o)
+    ,.cache_req_v_o(cache_req_v_o)
+    ,.cache_req_ready_i(cache_req_ready_i)
     
-    ,.cache_miss_o(cache_miss_o)
-    ,.cache_miss_v_o(cache_miss_v_o)
-    ,.cache_miss_ready_i(cache_miss_ready_i)
-    
-    //,.lr_hit_tv_o(lr_hit_tv_o)
-    //,.cache_v_o(cache_v_o)
-
     ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
     ,.data_mem_pkt_i(data_mem_pkt_i)
-    //,.data_mem_data_o(data_mem_data_o)
-    ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
+    ,.lce_data_mem_o(lce_data_mem_o)
+    ,.data_mem_pkt_ready_o(data_mem_pkt_ready_o)
     ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
     ,.tag_mem_pkt_i(tag_mem_pkt_i)
-    ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
+    ,.lce_tag_mem_o(lce_tag_mem_o)
+    ,.tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
     ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
     ,.stat_mem_pkt_i(stat_mem_pkt_i)
-    ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+    ,.lce_stat_mem_o(lce_stat_mem_o)
+    ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
 
     ,.commit_pkt_i(commit_pkt)
 
