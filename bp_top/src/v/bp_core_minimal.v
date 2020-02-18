@@ -150,7 +150,7 @@ module bp_core_minimal
      ,.v_o(fe_cmd_v_lo)
      ,.yumi_i(fe_cmd_yumi_li)
      );
-  
+ 
   wire fe_cmd_empty_lo = ~fe_cmd_v_lo;
   wire fe_cmd_full_lo  = ~fe_cmd_ready_lo;
   wire fe_cmd_fence_li = fe_cmd_v_lo;

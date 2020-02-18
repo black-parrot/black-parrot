@@ -74,7 +74,9 @@ module bp_fe_mem
  bp_fe_mem_cmd_s  mem_cmd_cast_i;
  bp_fe_mem_resp_s mem_resp_cast_o;
 
+
 wire unused = &{mem_resp_ready_i};
+
 
  assign cfg_bus_cast_i = cfg_bus_i;
  assign mem_cmd_cast_i = mem_cmd_i;
