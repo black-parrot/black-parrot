@@ -1082,7 +1082,7 @@ module bp_be_dcache
     ,.data_o(lce_data_mem_data_li)
     );
    
-  assign lce_data_mem_pkt_ready_o = ~(load_op & tl_we) & ~wbuf_v_lo & ~lce_snoop_match_lo;
+  assign lce_data_mem_pkt_ready = ~(load_op & tl_we) & ~wbuf_v_lo & ~lce_snoop_match_lo;
 
   // load reservation logic
   always_ff @ (posedge clk_i) begin
@@ -1143,11 +1143,11 @@ module bp_be_dcache
 
   assign lce_tag_mem_o =  tag_mem_data_lo[lce_tag_mem_pkt_way_r].tag;
 
-  assign lce_tag_mem_pkt_ready_o = ~tl_we;
+  assign lce_tag_mem_pkt_ready = ~tl_we;
   
   // LCE stat_mem
   //
-  assign lce_stat_mem_pkt_ready_o = ~(v_tv_r & ~uncached_tv_r);
+  assign lce_stat_mem_pkt_ready = ~(v_tv_r & ~uncached_tv_r);
 
   logic [way_id_width_lp-1:0] lce_stat_mem_pkt_way_r;
 

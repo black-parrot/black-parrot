@@ -205,7 +205,7 @@ module bp_be_dcache_lce
   
       ,.cache_req_i(cache_req_i)
       ,.cache_req_v_i(cache_req_v_i)
-      ,.cache_req_ready_o(req_cache_req_ready_lo)
+      ,.cache_req_ready_o(cache_req_ready_o)
 
       ,.cache_req_complete_o(cache_req_complete_o)
       ,.miss_addr_o(miss_addr_lo)
@@ -304,7 +304,7 @@ module bp_be_dcache_lce
   // when the timer reaches max, it deasserts ready_o of dcache for one cycle, allowing it to access mem
   // by creating a free slot.
   logic [`BSG_SAFE_CLOG2(timeout_max_limit_p+1)-1:0] timeout_cnt_r;
-  wire coherence_blocked = (lce_cmd_v_i & (lce_cmd_in.msg_type != e_uc_st_done))
+  wire coherence_blocked = (lce_cmd_v_i & (lce_cmd_in.msg_type != e_lce_cmd_uc_st_done))
                            & (~data_mem_pkt_ready_i & ~tag_mem_pkt_ready_i & ~stat_mem_pkt_ready_i);
   bsg_counter_clear_up
    #(.max_val_p(timeout_max_limit_p)
@@ -323,6 +323,6 @@ module bp_be_dcache_lce
 
   // LCE Ready Signal
   wire lce_ready = lce_ready_lo;
-  assign ready_o = lce_ready & ~timeout & cache_req_complete_o; 
+  assign lce_ready_o = lce_ready & ~timeout & cache_req_complete_o; 
 
 endmodule

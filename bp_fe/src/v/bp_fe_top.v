@@ -25,7 +25,7 @@ module bp_fe_top
    , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
    
    `declare_bp_cache_if_widths(lce_assoc_p, lce_sets_p, ptag_width_p, cce_block_width_p)
-   `declare_bp_cache_miss_widths(cce_block_width_p, lce_assoc_p, paddr_width_p, tag_width_lp)
+   `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    )
@@ -46,21 +46,25 @@ module bp_fe_top
 
    , input                                            lce_ready_i
 
-   , output [bp_cache_miss_width_lp-1:0]              cache_miss_o
-   , output                                           cache_miss_v_o
-   , input                                            cache_miss_ready_i
+   , output [bp_cache_req_width_lp-1:0]               cache_req_o
+   , output                                           cache_req_v_o
+   , input                                            cache_req_ready_i
+   , input                                            cache_req_complete_i
 
    , input [bp_cache_data_mem_pkt_width_lp-1:0]       data_mem_pkt_i
    , input                                            data_mem_pkt_v_i
-   , output logic                                     data_mem_pkt_yumi_o
+   , output logic                                     data_mem_pkt_ready_o
+   , output logic [cce_block_width_p-1:0]             data_mem_o
 
    , input [bp_cache_tag_mem_pkt_width_lp-1:0]        tag_mem_pkt_i
    , input                                            tag_mem_pkt_v_i
-   , output logic                                     tag_mem_pkt_yumi_o
+   , output logic                                     tag_mem_pkt_ready_o
+   , output logic [tag_width_lp-1:0]                  tag_mem_o
 
    , input                                            stat_mem_pkt_v_i
    , input [bp_cache_stat_mem_pkt_width_lp-1:0]       stat_mem_pkt_i
-   , output logic                                     stat_mem_pkt_yumi_o
+   , output logic                                     stat_mem_pkt_ready_o
+   , output logic                                     stat_mem_o
    );
 
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -121,22 +125,25 @@ bp_fe_mem
    ,.mem_resp_ready_i(mem_resp_ready_lo)
 
    ,.lce_ready_i(lce_ready_i)
-   ,.cache_miss_o(cache_miss_o)
-   ,.cache_miss_v_o(cache_miss_v_o)
-   ,.cache_miss_ready_i(cache_miss_ready_i)
+   ,.cache_req_o(cache_req_o)
+   ,.cache_req_v_o(cache_req_v_o)
+   ,.cache_req_ready_i(cache_req_ready_i)
+   ,.cache_req_complete_i(cache_req_complete_i)
 
-   //,.data_mem_data_o(data_mem_data_o)
    ,.data_mem_pkt_i(data_mem_pkt_i)
    ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
-   ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
+   ,.data_mem_pkt_ready_o(data_mem_pkt_ready_o)
+   ,.data_mem_o(data_mem_o)
 
    ,.tag_mem_pkt_i(tag_mem_pkt_i)
    ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
-   ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
+   ,.tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
+   ,.tag_mem_o(tag_mem_o)
 
    ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
    ,.stat_mem_pkt_i(stat_mem_pkt_i)
-   ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+   ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
+   ,.stat_mem_o(stat_mem_o)
    );
 
 endmodule

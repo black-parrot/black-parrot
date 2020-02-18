@@ -79,7 +79,7 @@ module bp_be_mem_top
    // D$-LCE Interface
    // signals to LCE
    , input lce_ready_i
-   , input cache_req_complete_o
+   , input cache_req_complete_i
 
    , output logic [bp_cache_req_width_lp-1:0]  cache_req_o
    , output logic                              cache_req_v_o
@@ -170,15 +170,15 @@ logic                     dcache_uncached;
 logic lce_data_mem_pkt_v_lo;
 logic [dcache_lce_data_mem_pkt_width_lp-1:0] lce_data_mem_pkt_lo;
 logic [cce_block_width_p-1:0] lce_data_mem_data_li;
-logic lce_data_mem_pkt_yumi_li;
+logic lce_data_mem_pkt_ready_li;
 // tag_mem
 logic lce_tag_mem_pkt_v_lo;
 logic [dcache_lce_tag_mem_pkt_width_lp-1:0] lce_tag_mem_pkt_lo;
-logic lce_tag_mem_pkt_yumi_li;
+logic lce_tag_mem_pkt_ready_li;
 // stat_mem
 logic lce_stat_mem_pkt_v_lo;
 logic [dcache_lce_stat_mem_pkt_width_lp-1:0] lce_stat_mem_pkt_lo;
-logic lce_stat_mem_pkt_yumi_li;
+logic lce_stat_mem_pkt_ready_li;
 
 
 /* CSR signals */

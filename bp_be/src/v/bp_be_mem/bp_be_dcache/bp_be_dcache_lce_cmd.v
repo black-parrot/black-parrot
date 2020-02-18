@@ -379,7 +379,7 @@ module bp_be_dcache_lce_cmd
 
             lce_cmd_yumi_o = tag_mem_pkt_v;
 
-            set_tag_received_o = tag_mem_pkt_yumi_i;
+            set_tag_received_o = tag_mem_pkt_v;
 
           end
 
@@ -397,7 +397,7 @@ module bp_be_dcache_lce_cmd
 
             lce_cmd_yumi_o = tag_mem_pkt_v;
 
-            set_tag_wakeup_received_o = tag_mem_pkt_yumi_i;
+            set_tag_wakeup_received_o = tag_mem_pkt_v;
 
           end
 
@@ -507,8 +507,8 @@ module bp_be_dcache_lce_cmd
 
         data_buf_n = tr_data_buffered_r
           ? data_buf_r
-          : data_mem_i
-        tr_data_buffered_n = ~lce_tr_done
+          : data_mem_i;
+        tr_data_buffered_n = ~lce_tr_done;
 
         lce_cmd_out.dst_id = lce_cmd_li.msg.cmd.target;
         lce_cmd_out.msg_type = e_lce_cmd_data;
@@ -548,7 +548,7 @@ module bp_be_dcache_lce_cmd
 
         data_buf_n = wb_data_buffered_r
           ? data_buf_r
-          : (wb_data_read_r)
+          : (wb_data_read_r
             ? data_mem_i
             : data_buf_r);
         wb_data_buffered_n = lce_resp_done
@@ -579,7 +579,7 @@ module bp_be_dcache_lce_cmd
         
         lce_resp.data = wb_data_buffered_r
           ? data_buf_r
-          : data_mem_i
+          : data_mem_i;
         
         lce_resp.addr = lce_cmd_li.msg.cmd.addr;
         lce_resp.msg_type = e_lce_cce_resp_wb;
