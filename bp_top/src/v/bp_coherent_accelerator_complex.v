@@ -33,15 +33,15 @@ module bp_coherent_accelerator_complex
 
   bp_coh_ready_and_link_s [cac_y_dim_p-1:0][S:W] lce_req_link_li, lce_req_link_lo;
   bp_coh_ready_and_link_s [E:W][cac_y_dim_p-1:0] lce_req_hor_link_li, lce_req_hor_link_lo;
-  bp_coh_ready_and_link_s [S:N]                  lce_req_ver_link_li, lce_req_ver_link_lo;
+  bp_coh_ready_and_link_s [S:N] lce_req_ver_link_li, lce_req_ver_link_lo;
 
   bp_coh_ready_and_link_s [cac_y_dim_p-1:0][S:W] lce_cmd_link_li, lce_cmd_link_lo;
   bp_coh_ready_and_link_s [E:W][cac_y_dim_p-1:0] lce_cmd_hor_link_li, lce_cmd_hor_link_lo;
-  bp_coh_ready_and_link_s [S:N]                  lce_cmd_ver_link_li, lce_cmd_ver_link_lo;
+  bp_coh_ready_and_link_s [S:N] lce_cmd_ver_link_li, lce_cmd_ver_link_lo;
 
   bp_coh_ready_and_link_s [cac_y_dim_p-1:0][S:W] lce_resp_link_li, lce_resp_link_lo;
   bp_coh_ready_and_link_s [E:W][cac_y_dim_p-1:0] lce_resp_hor_link_li, lce_resp_hor_link_lo;
-  bp_coh_ready_and_link_s [S:N]                  lce_resp_ver_link_li, lce_resp_ver_link_lo;
+  bp_coh_ready_and_link_s [S:N] lce_resp_ver_link_li, lce_resp_ver_link_lo;
 
   // TODO: Insert tiles here
   //
@@ -52,8 +52,8 @@ module bp_coherent_accelerator_complex
 
   for (genvar j=0; j < cac_y_dim_p; j++)
     begin : y
-       wire [coh_noc_cord_width_p-1:0] cord_li = {coh_noc_y_cord_width_p'(ic_y_dim_p+j),
-                                                  coh_noc_x_cord_width_p'(sac_x_dim_p+cc_x_dim_p)};
+      wire [coh_noc_cord_width_p-1:0] cord_li = {coh_noc_y_cord_width_p'(ic_y_dim_p+j),
+                                                 coh_noc_x_cord_width_p'(sac_x_dim_p+cc_x_dim_p)};
          if (cac_x_dim_p > 0)
            begin: node
            bp_coherent_accelerator_tile_node
@@ -82,7 +82,8 @@ module bp_coherent_accelerator_complex
           assign lce_cmd_link_lo[j] = '0;
           assign lce_resp_link_lo[j] = '0;
         end
-  end
+     end 
+   
 
 
 
