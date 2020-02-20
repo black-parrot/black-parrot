@@ -79,7 +79,7 @@ module bp_fe_icache
     , input lce_stat_mem_pkt_v_i
     , input [bp_cache_stat_mem_pkt_width_lp-1:0] lce_stat_mem_pkt_i
     , output logic lce_stat_mem_pkt_ready_o
-    , output logic lce_stat_mem_o
+    , output logic [bp_fe_icache_stat_width_lp-1:0] lce_stat_mem_o
  );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
@@ -323,25 +323,20 @@ module bp_fe_icache
   end
 
   // Cache Miss Tracker
-  logic cache_miss, miss_tracker_lo;
-  logic miss_tracker_reset_li;
-  logic miss_tracker_en_li;
-
-  assign miss_tracker_reset_li = cache_req_complete_i;
-  assign miss_tracker_en_li = cache_req_v_o; 
+  logic cache_miss, miss_tracker_r;
 
   bsg_dff_reset_en
     #(.width_p(1)
      ,.reset_val_p(0))
      cache_miss_tracker
      (.clk_i(clk_i)
-     ,.reset_i(reset_i || miss_tracker_reset_li)
-     ,.en_i(miss_tracker_en_li)
+     ,.reset_i(reset_i)
+     ,.en_i(cache_req_v_o | cache_req_complete_i)
      ,.data_i(cache_req_v_o)
-     ,.data_o(miss_tracker_lo)
+     ,.data_o(miss_tracker_r)
      );
 
-  assign cache_miss = cache_req_v_o || miss_tracker_lo;
+  assign cache_miss = cache_req_v_o || miss_tracker_r;
 
   // Fault if in uncached mode but access is not for an uncached address
   assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r) | ~cache_miss);
@@ -534,7 +529,7 @@ module bp_fe_icache
   assign lce_tag_mem_pkt_ready_o = ~tl_we;
 
   // LCE: stat_mem
-  assign lce_stat_mem_o = 1'b0;
+  assign lce_stat_mem_o = stat_mem_data_lo;
   assign lce_stat_mem_pkt_ready_o = ~(v_tv_r & ~uncached_tv_r);
 
   // synopsys translate_off

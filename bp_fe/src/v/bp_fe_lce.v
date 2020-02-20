@@ -39,6 +39,8 @@ module bp_fe_lce
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
    
+   , localparam bp_fe_icache_stat_width_lp = `bp_fe_icache_stat_width(lce_assoc_p)
+
    `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
    `declare_bp_cache_if_widths(lce_assoc_p, lce_sets_p, tag_width_lp, cce_block_width_p)
 
@@ -49,8 +51,6 @@ module bp_fe_lce
     , input                                                      reset_i
 
     , input [cfg_bus_width_lp-1:0]                               cfg_bus_i
-
-    , output logic                                               lce_ready_o
 
     , input [bp_cache_req_width_lp-1:0]                          cache_req_i
     , input                                                      cache_req_v_i
@@ -70,7 +70,7 @@ module bp_fe_lce
     , output logic                                               stat_mem_pkt_v_o
     , output logic [bp_cache_stat_mem_pkt_width_lp-1:0]          stat_mem_pkt_o
     , input                                                      stat_mem_pkt_ready_i
-    , input                                                      stat_mem_i
+    , input  [bp_fe_icache_stat_width_lp-1:0]                    stat_mem_i
       
     // LCE-CCE interface 
     , output logic [lce_cce_req_width_lp-1:0] lce_req_o
@@ -129,6 +129,7 @@ module bp_fe_lce
   logic lce_req_lce_resp_v_lo;
   logic lce_req_lce_resp_yumi_li;
   logic [paddr_width_p-1:0] miss_addr_lo;
+  logic cache_req_ready_lo;
 
   bp_fe_lce_req #(.bp_params_p(bp_params_p))
     lce_req_inst (
@@ -139,7 +140,7 @@ module bp_fe_lce
 
     ,.cache_req_i(cache_req_i)
     ,.cache_req_v_i(cache_req_v_i)
-    ,.cache_req_ready_o(cache_req_ready_o)
+    ,.cache_req_ready_o(cache_req_ready_lo)
 
     ,.cache_req_complete_o(cache_req_complete_o)
 
@@ -241,10 +242,8 @@ module bp_fe_lce
       timeout_cnt_n = '0;
     end
     else begin
-      if (lce_cmd_v_i) begin
-        timeout_cnt_n = ~(data_mem_pkt_ready_i | tag_mem_pkt_ready_i | stat_mem_pkt_ready_i)
-          ? (timeout_cnt_r + 1)
-          : '0;
+      if (lce_cmd_v_i & ~lce_cmd_yumi_o) begin
+        timeout_cnt_n = timeout_cnt_r + 1;
       end
       else begin
         timeout_cnt_n = '0;
@@ -262,6 +261,6 @@ module bp_fe_lce
   end
 
   wire lce_ready = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached) ? 1'b1 : lce_ready_lo;
-  assign lce_ready_o = lce_ready & ~timeout & cache_req_complete_o ;
+  assign cache_req_ready_o = lce_ready & ~timeout & cache_req_ready_lo ;
  
 endmodule

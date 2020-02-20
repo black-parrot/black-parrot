@@ -27,6 +27,8 @@ module bp_fe_top
    `declare_bp_cache_if_widths(lce_assoc_p, lce_sets_p, ptag_width_p, cce_block_width_p)
    `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
 
+   , localparam bp_fe_icache_stat_width_lp = `bp_fe_icache_stat_width(lce_assoc_p)
+
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    )
   (input                                              clk_i
@@ -43,8 +45,6 @@ module bp_fe_top
    , input                                            fe_queue_ready_i
 
    // Interface to LCE
-
-   , input                                            lce_ready_i
 
    , output [bp_cache_req_width_lp-1:0]               cache_req_o
    , output                                           cache_req_v_o
@@ -64,7 +64,7 @@ module bp_fe_top
    , input                                            stat_mem_pkt_v_i
    , input [bp_cache_stat_mem_pkt_width_lp-1:0]       stat_mem_pkt_i
    , output logic                                     stat_mem_pkt_ready_o
-   , output logic                                     stat_mem_o
+   , output logic [bp_fe_icache_stat_width_lp-1:0]    stat_mem_o
    );
 
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -124,7 +124,6 @@ bp_fe_mem
    ,.mem_resp_v_o(mem_resp_v_li)
    ,.mem_resp_ready_i(mem_resp_ready_lo)
 
-   ,.lce_ready_i(lce_ready_i)
    ,.cache_req_o(cache_req_o)
    ,.cache_req_v_o(cache_req_v_o)
    ,.cache_req_ready_i(cache_req_ready_i)

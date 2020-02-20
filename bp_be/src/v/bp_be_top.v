@@ -26,6 +26,9 @@ module bp_be_top
    // VM parameters
    , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
 
+   , localparam stat_info_width_lp=
+     `bp_be_dcache_stat_info_width(lce_assoc_p)
+
    // derived parameters
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
    , localparam dcache_data_mem_pkt_width_lp=
@@ -61,7 +64,6 @@ module bp_be_top
 
    // D$-LCE Interface
    // signals to LCE
-   , input lce_ready_i
    , input cache_req_complete_i
    
    , output logic [bp_cache_req_width_lp-1:0]    cache_req_o
@@ -83,8 +85,8 @@ module bp_be_top
    // stat_mem
    , input stat_mem_pkt_v_i
    , input [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
-   , output logic lce_stat_mem_o
-   , output logic stat_mem_pkt_ready_o
+   , output logic [stat_info_width_lp-1:0] lce_stat_mem_o
+   , output logic  stat_mem_pkt_ready_o
 
    , input                                   credits_full_i
    , input                                   credits_empty_i
@@ -249,7 +251,6 @@ bp_be_mem_top
     ,.itlb_fill_vaddr_o(itlb_fill_vaddr)
     ,.itlb_fill_entry_o(itlb_fill_entry)
 
-    ,.lce_ready_i(lce_ready_i)
     ,.cache_req_complete_i(cache_req_complete_i)   
  
     ,.cache_req_o(cache_req_o)

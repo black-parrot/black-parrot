@@ -27,6 +27,9 @@ module bp_core
       `bp_cache_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, ptag_width_p)
     , localparam lce_stat_mem_pkt_width_lp=
       `bp_cache_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
+    , localparam bp_be_dcache_stat_info_width_lp = `bp_be_dcache_stat_info_width(lce_assoc_p)
+    , localparam bp_fe_icache_stat_width_lp = `bp_fe_icache_stat_width(lce_assoc_p)
+ 
     )
    (
     input                                          clk_i
@@ -72,7 +75,6 @@ module bp_core
 
   logic cache_req_dcache_v_lo, cache_req_icache_v_lo, cache_req_dcache_ready_li, cache_req_icache_ready_li;
 
-  logic [1:0] lce_ready_lo;
   logic [1:0] cache_req_complete_lo;
   logic credits_full_lo, credits_empty_lo;
 
@@ -93,7 +95,8 @@ module bp_core
   logic [1:0][lce_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_li;
   logic [1:0] stat_mem_pkt_v_li;
   logic [1:0] stat_mem_pkt_ready_lo;
-  logic [1:0] stat_mem_lo;
+  logic [bp_be_dcache_stat_info_width_lp-1:0] dcache_stat_mem_lo;
+  logic [bp_fe_icache_stat_width_lp-1:0] icache_stat_mem_lo;
 
   bp_core_minimal
     #(.bp_params_p(bp_params_p))
@@ -109,7 +112,6 @@ module bp_core
      ,.cfg_priv_data_o(cfg_priv_data_o)
 
      // BP request side - Interface to LCE
-     ,.lce_ready_i(lce_ready_lo)
      ,.credits_full_i(credits_full_lo)
      ,.credits_empty_i(credits_empty_lo)
 
@@ -132,7 +134,8 @@ module bp_core
      ,.stat_mem_pkt_i(stat_mem_pkt_li)
      ,.stat_mem_pkt_v_i(stat_mem_pkt_v_li)
      ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_lo)
-     ,.stat_mem_o(stat_mem_lo)
+     ,.dcache_stat_mem_o(dcache_stat_mem_lo)
+     ,.icache_stat_mem_o(icache_stat_mem_lo)
 
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
@@ -148,7 +151,6 @@ module bp_core
 
      ,.cfg_bus_i(cfg_bus_i)
 
-     ,.lce_ready_o(lce_ready_lo[0])
      ,.cache_req_i(cache_req_cast_lo[0])
      ,.cache_req_v_i(cache_req_icache_v_lo)
      ,.cache_req_ready_o(cache_req_icache_ready_li)
@@ -167,7 +169,7 @@ module bp_core
      ,.stat_mem_pkt_v_o(stat_mem_pkt_v_li[0])
      ,.stat_mem_pkt_o(stat_mem_pkt_li[0])
      ,.stat_mem_pkt_ready_i(stat_mem_pkt_ready_lo[0])
-     ,.stat_mem_i(stat_mem_lo[0])
+     ,.stat_mem_i(icache_stat_mem_lo)
 
      ,.lce_req_o(lce_req_o[0])
      ,.lce_req_v_o(lce_req_v_o[0])
@@ -194,7 +196,6 @@ module bp_core
 
     ,.lce_id_i(cfg_bus_cast_i.dcache_id)
 
-    ,.lce_ready_o(lce_ready_lo[1])
     ,.cache_req_i(cache_req_cast_lo[1])
     ,.cache_req_v_i(cache_req_dcache_v_lo)
     ,.cache_req_ready_o(cache_req_dcache_ready_li)
@@ -213,7 +214,7 @@ module bp_core
     ,.stat_mem_pkt_v_o(stat_mem_pkt_v_li[1])
     ,.stat_mem_pkt_o(stat_mem_pkt_li[1])
     ,.stat_mem_pkt_ready_i(stat_mem_pkt_ready_lo[1])
-    ,.stat_mem_i(stat_mem_lo[1])
+    ,.stat_mem_i(dcache_stat_mem_lo)
 
     ,.lce_req_o(lce_req_o[1])
     ,.lce_req_v_o(lce_req_v_o[1])

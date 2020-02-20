@@ -63,6 +63,9 @@ module bp_be_dcache_lce
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p) 
     `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
 
+    , localparam stat_info_width_lp=
+      `bp_be_dcache_stat_info_width(lce_assoc_p)
+
     , localparam dcache_lce_data_mem_pkt_width_lp=
       `bp_cache_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
     , localparam dcache_lce_tag_mem_pkt_width_lp=
@@ -81,7 +84,6 @@ module bp_be_dcache_lce
     , input cache_req_v_i
     , output logic cache_req_ready_o
  
-    , output logic lce_ready_o
     , output logic cache_req_complete_o
 
     // data_mem
@@ -100,7 +102,7 @@ module bp_be_dcache_lce
     , output logic stat_mem_pkt_v_o
     , output logic [dcache_lce_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
     , input stat_mem_pkt_ready_i
-    , input stat_mem_i
+    , input [stat_info_width_lp-1:0] stat_mem_i
 
     // LCE-CCE interface
     , output logic [lce_cce_req_width_lp-1:0] lce_req_o
@@ -193,7 +195,7 @@ module bp_be_dcache_lce
   assign credits_full_o = (credit_count_lo == coh_noc_max_credits_p);
   assign credits_empty_o = (credit_count_lo == 0);
 
-  logic lce_busy_lo;
+  logic cache_req_ready_lo;
 
   bp_be_dcache_lce_req
     #(.bp_params_p(bp_params_p))
@@ -205,7 +207,7 @@ module bp_be_dcache_lce
   
       ,.cache_req_i(cache_req_i)
       ,.cache_req_v_i(cache_req_v_i)
-      ,.cache_req_ready_o(cache_req_ready_o)
+      ,.cache_req_ready_o(cache_req_ready_lo)
 
       ,.cache_req_complete_o(cache_req_complete_o)
       ,.miss_addr_o(miss_addr_lo)
@@ -304,8 +306,8 @@ module bp_be_dcache_lce
   // when the timer reaches max, it deasserts ready_o of dcache for one cycle, allowing it to access mem
   // by creating a free slot.
   logic [`BSG_SAFE_CLOG2(timeout_max_limit_p+1)-1:0] timeout_cnt_r;
-  wire coherence_blocked = (lce_cmd_v_i & (lce_cmd_in.msg_type != e_lce_cmd_uc_st_done))
-                           & (~data_mem_pkt_ready_i & ~tag_mem_pkt_ready_i & ~stat_mem_pkt_ready_i);
+  wire coherence_blocked = (lce_cmd_v_i & ~lce_cmd_yumi_o & (lce_cmd_in.msg_type != e_lce_cmd_uc_st_done));
+  
   bsg_counter_clear_up
    #(.max_val_p(timeout_max_limit_p)
      ,.init_val_p(0)
@@ -323,6 +325,6 @@ module bp_be_dcache_lce
 
   // LCE Ready Signal
   wire lce_ready = lce_ready_lo;
-  assign lce_ready_o = lce_ready & ~timeout & cache_req_complete_o; 
+  assign cache_req_ready_o = lce_ready & ~timeout & cache_req_ready_lo; 
 
 endmodule

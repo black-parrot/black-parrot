@@ -30,7 +30,10 @@ module bp_be_mem_top
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
    
    `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
-   
+
+   , localparam stat_info_width_lp=
+     `bp_be_dcache_stat_info_width(lce_assoc_p)   
+
    , localparam dcache_lce_data_mem_pkt_width_lp=
      `bp_cache_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
    , localparam dcache_lce_tag_mem_pkt_width_lp=
@@ -78,7 +81,6 @@ module bp_be_mem_top
 
    // D$-LCE Interface
    // signals to LCE
-   , input lce_ready_i
    , input cache_req_complete_i
 
    , output logic [bp_cache_req_width_lp-1:0]  cache_req_o
@@ -101,7 +103,7 @@ module bp_be_mem_top
    , input stat_mem_pkt_v_i
    , input [dcache_lce_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
    , output logic stat_mem_pkt_ready_o
-   , output logic lce_stat_mem_o
+   , output logic [stat_info_width_lp-1:0] lce_stat_mem_o
 
    , input [commit_pkt_width_lp-1:0]         commit_pkt_i
 
@@ -164,6 +166,8 @@ logic [ptag_width_p-1:0]  dcache_ptag;
 logic                     dcache_v, dcache_pkt_v;
 logic                     dcache_tlb_miss, dcache_poison;
 logic                     dcache_uncached;
+logic                     dcache_ready_lo;
+logic                     dcache_miss_lo;
 
 /* D$-LCE Packets */
 // data_mem
@@ -255,7 +259,6 @@ assign exception_ecode_dec_li =
     ,default: '0
     };
 
-logic dcache_miss_lo;
 bp_be_csr
  #(.bp_params_p(bp_params_p))
   csr
@@ -374,7 +377,7 @@ bp_be_ptw
    ,.dcache_v_o(ptw_dcache_v)
    ,.dcache_pkt_o(ptw_dcache_pkt)
    ,.dcache_ptag_o(ptw_dcache_ptag)
-   ,.dcache_rdy_i(lce_ready_i) 
+   ,.dcache_rdy_i(dcache_ready_lo) 
    ,.dcache_miss_i(dcache_miss_lo)
   );
 
@@ -390,6 +393,7 @@ bp_be_dcache
 
     ,.dcache_pkt_i(dcache_pkt)
     ,.v_i(dcache_pkt_v)
+    ,.ready_o(dcache_ready_lo)
 
     ,.v_o(dcache_v)
     ,.data_o(dcache_data)
@@ -404,7 +408,6 @@ bp_be_dcache
 
     // D$-LCE Interface
     ,.dcache_miss_o(dcache_miss_lo)
-    ,.lce_ready_i(lce_ready_i)
     ,.cache_req_complete_i(cache_req_complete_i)
     ,.cache_req_o(cache_req_o)
     ,.cache_req_v_o(cache_req_v_o)
@@ -508,7 +511,7 @@ assign mem_resp.miss_v = mmu_cmd_v_rr & ~dcache_v & ~|exception_ecode_dec_li;
 assign mem_resp.data   = dcache_v ? dcache_data : csr_data_lo;
 
 assign mem_resp_v_o    = ptw_busy ? 1'b0 : mmu_cmd_v_rr | csr_v_lo;
-assign mmu_cmd_ready_o = lce_ready_i & ~dcache_miss_lo & ~ptw_busy;
+assign mmu_cmd_ready_o = dcache_ready_lo & ~dcache_miss_lo & ~ptw_busy;
 
 assign itlb_fill_v_o     = ptw_tlb_w_v & itlb_not_dtlb_resp;
 assign itlb_fill_vaddr_o = fault_vaddr;

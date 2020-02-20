@@ -21,6 +21,8 @@ module bp_fe_mem
    `declare_bp_cache_if_widths(lce_assoc_p, lce_sets_p, ptag_width_p, cce_block_width_p)
    `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
 
+   , localparam bp_fe_icache_stat_width_lp = `bp_fe_icache_stat_width(lce_assoc_p)
+
    , localparam mem_cmd_width_lp  = `bp_fe_mem_cmd_width(vaddr_width_p, vtag_width_p, ptag_width_p)
    , localparam mem_resp_width_lp = `bp_fe_mem_resp_width
 
@@ -44,8 +46,6 @@ module bp_fe_mem
    , input                                            mem_resp_ready_i
 
    // Interface to LCE
-   , input                                            lce_ready_i
-
    , output [bp_cache_req_width_lp-1:0]               cache_req_o
    , output                                           cache_req_v_o
    , input                                            cache_req_ready_i
@@ -54,7 +54,7 @@ module bp_fe_mem
    , input [bp_cache_data_mem_pkt_width_lp-1:0]       data_mem_pkt_i
    , input                                            data_mem_pkt_v_i
    , output logic                                     data_mem_pkt_ready_o
-   , output logic [cce_block_width_p-1:0]            data_mem_o
+   , output logic [cce_block_width_p-1:0]             data_mem_o
 
    , input [bp_cache_tag_mem_pkt_width_lp-1:0]        tag_mem_pkt_i
    , input                                            tag_mem_pkt_v_i
@@ -64,33 +64,33 @@ module bp_fe_mem
    , input                                            stat_mem_pkt_v_i
    , input [bp_cache_stat_mem_pkt_width_lp-1:0]       stat_mem_pkt_i
    , output logic                                     stat_mem_pkt_ready_o
-   , output logic                                     stat_mem_o
+   , output logic [bp_fe_icache_stat_width_lp-1:0]    stat_mem_o
    );
 
  `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
  `declare_bp_fe_mem_structs(vaddr_width_p, lce_sets_p, cce_block_width_p, vtag_width_p, ptag_width_p)
 
- bp_cfg_bus_s cfg_bus_cast_i;
- bp_fe_mem_cmd_s  mem_cmd_cast_i;
- bp_fe_mem_resp_s mem_resp_cast_o;
+bp_cfg_bus_s cfg_bus_cast_i;
+bp_fe_mem_cmd_s  mem_cmd_cast_i;
+bp_fe_mem_resp_s mem_resp_cast_o;
 
 
 wire unused = &{mem_resp_ready_i};
 
 
- assign cfg_bus_cast_i = cfg_bus_i;
- assign mem_cmd_cast_i = mem_cmd_i;
- assign mem_resp_o     = mem_resp_cast_o;
+assign cfg_bus_cast_i = cfg_bus_i;
+assign mem_cmd_cast_i = mem_cmd_i;
+assign mem_resp_o     = mem_resp_cast_o;
 
- logic instr_page_fault_lo, instr_access_fault_lo, icache_miss_lo, itlb_miss_lo;
+logic instr_page_fault_lo, instr_access_fault_lo, icache_miss_lo, itlb_miss_lo;
 
- wire itlb_fence_v = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fence);
- wire itlb_fill_v  = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fill);
- wire fetch_v      = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_fetch) & lce_ready_i;
+wire itlb_fence_v = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fence);
+wire itlb_fill_v  = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fill);
+wire fetch_v      = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_fetch) & cache_req_ready_i;
 
- bp_fe_tlb_entry_s itlb_r_entry;
- logic itlb_r_v_lo;
- bp_tlb
+bp_fe_tlb_entry_s itlb_r_entry;
+logic itlb_r_v_lo;
+bp_tlb
  #(.bp_params_p(bp_params_p), .tlb_els_p(itlb_els_p))
  itlb
   (.clk_i(clk_i)
@@ -110,11 +110,11 @@ wire unused = &{mem_resp_ready_i};
    ,.miss_vtag_o()
    );
 
- wire [ptag_width_p-1:0] ptag_li     = itlb_r_entry.ptag;
- wire                    ptag_v_li   = itlb_r_v_lo;
+wire [ptag_width_p-1:0] ptag_li     = itlb_r_entry.ptag;
+wire                    ptag_v_li   = itlb_r_v_lo;
 
- logic uncached_li;
- bp_pma
+logic uncached_li;
+bp_pma
  #(.bp_params_p(bp_params_p))
  pma
   (.ptag_v_i(ptag_v_li)
@@ -123,11 +123,11 @@ wire unused = &{mem_resp_ready_i};
    ,.uncached_o(uncached_li)
    );
 
- logic [instr_width_p-1:0] icache_data_lo;
- logic                     icache_data_v_lo;
+logic [instr_width_p-1:0] icache_data_lo;
+logic                     icache_data_v_lo;
 
- logic instr_access_fault_v, instr_page_fault_v;
- bp_fe_icache 
+logic instr_access_fault_v, instr_page_fault_v;
+bp_fe_icache 
  #(.bp_params_p(bp_params_p)) 
  icache
   (.clk_i(clk_i)
@@ -169,7 +169,7 @@ wire unused = &{mem_resp_ready_i};
    ,.lce_stat_mem_o(stat_mem_o)
    );
 
- assign mem_cmd_yumi_o = itlb_fence_v | itlb_fill_v | fetch_v;
+assign mem_cmd_yumi_o = itlb_fence_v | itlb_fill_v | fetch_v;
 
 logic fetch_v_r, fetch_v_rr;
 logic itlb_miss_r;
@@ -194,7 +194,6 @@ always_ff @(posedge clk_i)
     end
   end
 
-<<<<<<< HEAD
 wire instr_priv_page_fault = ((mem_priv_i == `PRIV_MODE_S) & itlb_r_entry.u)
                                | ((mem_priv_i == `PRIV_MODE_U) & ~itlb_r_entry.u);
 wire instr_exe_page_fault = ~itlb_r_entry.x;
@@ -212,8 +211,8 @@ assign instr_page_fault_v   = fetch_v_r & itlb_r_v_lo & mem_translation_en_i & (
 
 assign mem_cmd_yumi_o = itlb_fence_v | itlb_fill_v | fetch_v;
 
- assign mem_resp_v_o    = fetch_v_rr;
- assign mem_resp_cast_o = '{instr_access_fault: instr_access_fault_r
+assign mem_resp_v_o    = fetch_v_rr;
+assign mem_resp_cast_o = '{instr_access_fault: instr_access_fault_r
                            ,instr_page_fault : instr_page_fault_r
                            ,itlb_miss        : itlb_miss_r
                            ,icache_miss      : fetch_v_rr & ~icache_data_v_lo

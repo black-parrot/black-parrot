@@ -134,7 +134,7 @@ module bp_be_dcache_lce_req
      );
 
   always_comb begin
-    cache_req_complete_o = 1'b1;
+    cache_req_complete_o = 1'b0;
 
     state_n = state_r;
     load_not_store_n = load_not_store_r;
@@ -218,7 +218,7 @@ module bp_be_dcache_lce_req
           state_n = e_READY;
         end
         else begin
-          cache_req_complete_o = 1'b1;
+          cache_req_complete_o = 1'b0;
           state_n = e_READY;
         end
        end
@@ -279,18 +279,20 @@ module bp_be_dcache_lce_req
       // SLEEP 
       // wait for signals from other modules to wake up.
       e_SLEEP: begin
-        cache_req_complete_o = 1'b0;
         cache_req_ready_o = 1'b0;
         cce_data_received_n = cce_data_received_i ? 1'b1 : cce_data_received_r;
         set_tag_received_n = set_tag_received_i ? 1'b1 : set_tag_received_r;
 
         if (set_tag_wakeup_received_i) begin
+          cache_req_complete_o = 1'b0;
           state_n = e_SEND_COH_ACK;
         end
         else if (uncached_data_received_i) begin
+          cache_req_complete_o = 1'b1;
           state_n = e_READY;
         end
         else if (set_tag_received) begin
+          cache_req_complete_o = 1'b0;
           if (cce_data_received) begin
             state_n = e_SEND_COH_ACK;
           end
@@ -299,6 +301,7 @@ module bp_be_dcache_lce_req
           end
         end
         else begin
+          cache_req_complete_o = 1'b0;
           state_n = e_SLEEP;
         end
       end
@@ -309,7 +312,7 @@ module bp_be_dcache_lce_req
         lce_resp_v_o = 1'b1;
         lce_resp.msg_type = e_lce_cce_coh_ack;
 
-        cache_req_complete_o = 1'b0;
+        cache_req_complete_o = 1'b1;
 	cache_req_ready_o = 1'b0;
         state_n = lce_resp_yumi_i
           ? e_READY

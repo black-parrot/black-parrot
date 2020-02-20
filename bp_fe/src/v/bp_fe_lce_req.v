@@ -151,7 +151,7 @@ module bp_fe_lce_req
     lce_resp.addr         = miss_addr_r;
     lce_resp.data         = '0;
   
-    cache_req_complete_o = 1'b1;
+    cache_req_complete_o = 1'b0;
     cache_req_ready_o = 1'b1;
     
     case (state_r)
@@ -216,16 +216,18 @@ module bp_fe_lce_req
         cce_data_received_n = cce_data_received_i ? 1'b1 : cce_data_received_r;
         set_tag_received_n = set_tag_received_i ? 1'b1 : set_tag_received_r;
 
-        cache_req_complete_o = 1'b0;
         cache_req_ready_o = 1'b0;
 
         if (set_tag_wakeup_received_i) begin
+          cache_req_complete_o = 1'b0;
           state_n = e_lce_req_send_coh_ack;
         end
         else if (uncached_data_received_i) begin
+          cache_req_complete_o = 1'b1;
           state_n = e_lce_req_ready;
         end
         else if (set_tag_received) begin
+          cache_req_complete_o = 1'b0;
           if (cce_data_received) begin
             state_n = e_lce_req_send_coh_ack;
           end
@@ -234,6 +236,7 @@ module bp_fe_lce_req
           end
         end
         else begin
+          cache_req_complete_o = 1'b0;
           state_n = e_lce_req_sleep;
         end
       end
@@ -241,7 +244,7 @@ module bp_fe_lce_req
       e_lce_req_send_coh_ack: begin
         lce_resp_v_o = 1'b1;
         lce_resp.msg_type = e_lce_cce_coh_ack;
-        cache_req_complete_o = 1'b0;
+        cache_req_complete_o = 1'b1;
         cache_req_ready_o = 1'b0;
         state_n = lce_resp_yumi_i
           ? e_lce_req_ready

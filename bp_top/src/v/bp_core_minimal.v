@@ -10,6 +10,8 @@ module bp_core_minimal
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_be_dcache_pkg::*;
+ import bp_fe_pkg::*;
+ import bp_fe_icache_pkg::*;
  import bp_common_rv64_pkg::*;
  import bp_common_cfg_link_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_single_core_cfg
@@ -28,6 +30,9 @@ module bp_core_minimal
       `bp_cache_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, ptag_width_p)
     , localparam lce_stat_mem_pkt_width_lp=
       `bp_cache_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
+
+    , localparam bp_be_dcache_stat_info_width_lp = `bp_be_dcache_stat_info_width(lce_assoc_p)
+    , localparam bp_fe_icache_stat_width_lp = `bp_fe_icache_stat_width(lce_assoc_p)
     )
    (
     input          clk_i
@@ -43,8 +48,6 @@ module bp_core_minimal
     // BP request side - Interface to LCE
     , input credits_full_i
     , input credits_empty_i
-
-    , input [1:0] lce_ready_i
 
     , output logic [1:0][bp_cache_req_width_lp-1:0] cache_req_o
     , output logic [1:0] cache_req_v_o
@@ -65,7 +68,8 @@ module bp_core_minimal
     , input [1:0][lce_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
     , input [1:0] stat_mem_pkt_v_i
     , output logic [1:0] stat_mem_pkt_ready_o
-    , output logic [1:0] stat_mem_o
+    , output logic [bp_be_dcache_stat_info_width_lp-1:0] dcache_stat_mem_o
+    , output logic [bp_fe_icache_stat_width_lp-1:0] icache_stat_mem_o
 
     , input                                        timer_irq_i
     , input                                        software_irq_i
@@ -92,8 +96,6 @@ module bp_core_minimal
   logic fe_cmd_v_li, fe_cmd_ready_lo;
   logic fe_cmd_v_lo, fe_cmd_yumi_li;
 
-  logic fe_cmd_processed_li;
-
   bp_fe_top
    #(.bp_params_p(bp_params_p))
    fe
@@ -109,8 +111,6 @@ module bp_core_minimal
      ,.fe_cmd_i(fe_cmd_lo)
      ,.fe_cmd_v_i(fe_cmd_v_lo)
      ,.fe_cmd_yumi_o(fe_cmd_yumi_li)
-
-     ,.lce_ready_i(lce_ready_i[0])
 
      ,.cache_req_o(cache_req_o[0])
      ,.cache_req_v_o(cache_req_v_o[0])
@@ -130,7 +130,7 @@ module bp_core_minimal
      ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i[0])
      ,.stat_mem_pkt_i(stat_mem_pkt_i[0])
      ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o[0])
-     ,.stat_mem_o(stat_mem_o[0])
+     ,.stat_mem_o(icache_stat_mem_o)
      );
 
   bsg_fifo_1r1w_small
@@ -203,8 +203,6 @@ module bp_core_minimal
      ,.fe_cmd_ready_i(fe_cmd_ready_lo)
      ,.fe_cmd_fence_i(fe_cmd_fence_li)
 
-     ,.lce_ready_i(lce_ready_i[1])
-     
      ,.cache_req_o(cache_req_o[1])
      ,.cache_req_v_o(cache_req_v_o[1])
      ,.cache_req_ready_i(cache_req_ready_i[1])
@@ -223,7 +221,7 @@ module bp_core_minimal
      ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i[1])
      ,.stat_mem_pkt_i(stat_mem_pkt_i[1])
      ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o[1])
-     ,.lce_stat_mem_o(stat_mem_o[1])
+     ,.lce_stat_mem_o(dcache_stat_mem_o)
 
      ,.credits_full_i(credits_full_i)
      ,.credits_empty_i(credits_empty_i)

@@ -30,6 +30,9 @@ module bp_be_dcache_lce_cmd
     
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p) 
 
+    , localparam stat_info_width_lp=
+      `bp_be_dcache_stat_info_width(lce_assoc_p)
+
     , localparam dcache_lce_data_mem_pkt_width_lp=
       `bp_cache_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
     , localparam dcache_lce_tag_mem_pkt_width_lp=
@@ -88,7 +91,7 @@ module bp_be_dcache_lce_cmd
     , output logic stat_mem_pkt_v_o
     , output logic [dcache_lce_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
     , input stat_mem_pkt_ready_i
-    , input stat_mem_i
+    , input [stat_info_width_lp-1:0] stat_mem_i
   );
 
   // casting structs
@@ -96,6 +99,8 @@ module bp_be_dcache_lce_cmd
   `declare_bp_cache_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
   `declare_bp_cache_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, tag_width_lp);
   `declare_bp_cache_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
+
+  `declare_bp_be_dcache_stat_info_s(lce_assoc_p);
 
   bp_lce_cmd_s lce_cmd_li;
   bp_lce_cce_resp_s lce_resp;
@@ -109,9 +114,13 @@ module bp_be_dcache_lce_cmd
   bp_cache_tag_mem_pkt_s tag_mem_pkt;
   bp_cache_stat_mem_pkt_s stat_mem_pkt;
 
+  bp_be_dcache_stat_info_s stat_mem_cast_i;
+
   assign data_mem_pkt_o = data_mem_pkt;
   assign tag_mem_pkt_o = tag_mem_pkt;
   assign stat_mem_pkt_o = stat_mem_pkt;
+
+  assign stat_mem_cast_i = stat_mem_i;
 
   logic [index_width_lp-1:0] lce_cmd_addr_index;
   logic [tag_width_lp-1:0] lce_cmd_addr_tag;
@@ -530,7 +539,7 @@ module bp_be_dcache_lce_cmd
       // Determine if the block is dirty or not.
       e_lce_cmd_state_wb: begin
 
-        state_n = stat_mem_i 
+        state_n = stat_mem_cast_i.dirty[lce_cmd_li.way_id]
           ? e_lce_cmd_state_wb_dirty
           : e_lce_cmd_state_wb_not_dirty;
       end
