@@ -11,7 +11,7 @@ module bp_nonsynth_cosim
     , input                                   freeze_i
 
     , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
-    , input [31:0]                            config_file_i
+    , input [63:0]                            config_file_i
 
     , input                                   commit_v_i
     , input [vaddr_width_p-1:0]               commit_pc_i
