@@ -56,8 +56,6 @@ module bp_be_director
 
    , input [commit_pkt_width_lp-1:0]  commit_pkt_i
    , input [trap_pkt_width_lp-1:0]    trap_pkt_i
-   , input                            tlb_fence_i
-   , input                            fencei_i
    
    //iTLB fill interface
    , input                            itlb_fill_v_i
@@ -236,7 +234,7 @@ always_comb
 
         flush_o = 1'b1;
       end
-    else if (tlb_fence_i)
+    else if (trap_pkt.sfence)
       begin
         fe_cmd.opcode = e_op_itlb_fence;
         fe_cmd.vaddr  = commit_pkt.npc;
@@ -249,7 +247,7 @@ always_comb
 
         flush_o = 1'b1;
       end
-    else if (fencei_i)
+    else if (trap_pkt.fencei)
       begin
         fe_cmd.opcode = e_op_icache_fence;
         fe_cmd.vaddr  = commit_pkt.npc;

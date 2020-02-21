@@ -14,7 +14,7 @@ VV_OPTS += -O3
 LINT_OPTS   = --lint-only -Wall --Wno-unoptflat 
 BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat --exe -CFLAGS -std=c++11 
 BUILD_OPTS += -I$(BP_EXTERNAL_DIR)/share/verilator/include/vltstd/ 
-BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
+BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -lpthread -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
 
 TOP_MODULE ?= testbench
 

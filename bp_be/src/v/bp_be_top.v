@@ -183,9 +183,6 @@ bp_be_checker_top
 
    ,.dispatch_pkt_o(dispatch_pkt)
 
-   ,.tlb_fence_i(chk_tlb_fence_li)
-   ,.fencei_i(chk_fencei_li)
-   
    ,.itlb_fill_v_i(itlb_fill_v)
    ,.itlb_fill_vaddr_i(itlb_fill_vaddr)
    ,.itlb_fill_entry_i(itlb_fill_entry)
@@ -272,8 +269,6 @@ bp_be_mem_top
 
     ,.commit_pkt_i(commit_pkt)
 
-    //,.credits_full_o(credits_full_lo)
-    //,.credits_empty_o(credits_empty_lo)
     ,.debug_mode_o(debug_mode_lo)
     ,.single_step_o(single_step_lo)
 
@@ -283,8 +278,6 @@ bp_be_mem_top
     ,.accept_irq_o(accept_irq_lo)
 
     ,.trap_pkt_o(trap_pkt)
-    ,.tlb_fence_o(chk_tlb_fence_li)
-    ,.fencei_o(chk_fencei_li)
     );
 
 endmodule
