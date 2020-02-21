@@ -34,7 +34,7 @@ Users who just want to test their setup and run a minimal BlackParrot test shoul
     cd bp_top/syn
     make build.sc sim.sc PROG=hello_world
 
-Users who want to fully evaluate BlackParrot, or develop hardware or software using it should follow [Getting Started (Full)](GETTING_STARTED.md)
+Users who want to fully evaluate BlackParrot, or develop hardware or software using it should follow [Getting Started (Full)](docs/getting_started.md)
 
 # BlackParrot Interface Specification
 BlackParrot is an aggresively modular design: communication between the components is performed over a set of narrow, latency-insensitive interfaces. The interfaces are designed to allow implementations of the various system components to change independently of one another, without worrying about cascading functional or timing effects. Read more about BlackParrot's standardized interfaces here: [Interface specification](docs/interface_specification.md)
