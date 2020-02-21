@@ -17,6 +17,9 @@ The next release of BlackParrot, v 1.0, is coming in March 2020, and will contai
 
 A 12nm BlackParrot multicore chip was taped out in July 2019.
 
+## Updates
+FOSDEM 2020: [slides](https://fosdem.org/2020/schedule/event/riscv_blackparrot/attachments/slides/3718/export/events/attachments/riscv_blackparrot/slides/3718/Talk_Slides) [video](https://video.fosdem.org/2020/K.3.401/riscv_blackparrot.mp4) 
+
 # Getting Started
 ## Quickstart
 Users who just want to test their setup and run a minimal BlackParrot test should run the following:
