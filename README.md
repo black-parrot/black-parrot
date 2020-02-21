@@ -1,5 +1,5 @@
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
-[![Gitlab CI](https://gitlab.com/black-parrot/pre-alpha-release/badges/master/pipeline.svg)](https://gitlab.com/black-parrot/pre-alpha-release/pipelines) 
+[![Gitlab CI](https://gitlab.com/black-parrot/black-parrot/badges/master/pipeline.svg)](https://gitlab.com/black-parrot/black-parrot/pipelines) 
 
 # Description
 BlackParrot aims to be the default open-source, Linux-capable, cache-coherent, RV64GC multicore used by the world. Although originally developed by the University of Washington and Boston University, BlackParrot strives to be community-driven and infrastructure agnostic, a core which is Pareto optimal in terms of power, performance, area and complexity. In order to ensure BlackParrot is easy to use, integrate, modify and trust, development is guided by three core principles: Be Tiny, Be Modular, and Be Friendly. Development efforts have prioritized ease of use and silicon validation as first order design metrics, so that users can quickly get started and trust that their results will be representative of state-of-the-art ASIC designs. BlackParrot is ideal as the basis for a lightweight accelerator host, a standalone Linux core, or as a hardware research platform.
@@ -22,8 +22,8 @@ A 14-nm BlackParrot multicore chip was taped out in July 2019.
 Users who just want to test their setup and run a minimal BlackParrot test should run the following:
 
     # Clone the latest repo
-    git clone https://github.com/black-parrot/pre-alpha-release.git
-    cd pre-alpha-release
+    git clone https://github.com/black-parrot/black-parrot.git
+    cd black-parrot
 
     # Install a minimal set of tools
     make libs
