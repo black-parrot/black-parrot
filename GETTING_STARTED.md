@@ -1,7 +1,7 @@
 ## Getting started (Full)
     # Clone the latest repo
-    git clone https://github.com/black-parrot/pre-alpha-release.git
-    cd pre-alpha-release
+    git clone https://github.com/black-parrot/black-parrot.git
+    cd black-parrot
 
     # make tools will clone, build and install toolchains needed for BlackParrot
     # For faster builds, make tools -j is parallelizable!
