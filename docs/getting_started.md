@@ -112,5 +112,7 @@ The reports directory contains very brief summaries of tool runs. For example, w
 - **bp_me/** contains the memory-end (ME) of BlackParrot, responsible for servicing memory/IO requests as well as maintaining cache coherence between BlackParrot cores. 
 - **bp_top/** contains configurations of FE, BE, and ME components. For instance, tile components and NOC assemblies.
 - **bp_common/** contains the interface components which connect FE, BE and ME. FE, BE, ME may depend on bp\_common, but not each other.
+- **ci/** contains scripts used to run Continuous Integration jobs, mostly using the same Makefile commands but with additional data collection.
+- **docs/** contains documentation, images, guides and links to document Blackparrot.
 - **external/** contains submodules corresponding to tooling that BlackParrot depends upon, such as the riscv-gnu-toolchain and Verilator.
 
