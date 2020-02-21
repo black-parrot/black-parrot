@@ -25,6 +25,7 @@ module bp_nonsynth_nbf_loader
   ,localparam nbf_width_lp = nbf_opcode_width_p + nbf_addr_width_p + nbf_data_width_p
   ,localparam max_nbf_index_lp = 2**20
   ,localparam nbf_index_width_lp = `BSG_SAFE_CLOG2(max_nbf_index_lp)
+  ,localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p)
   )
 
   (input  clk_i
@@ -68,6 +69,22 @@ module bp_nonsynth_nbf_loader
   wire credits_full_lo = (credit_count_lo == io_noc_max_credits_p);
   wire credits_empty_lo = (credit_count_lo == '0);
 
+  logic [lg_num_core_lp-1:0] core_cnt_r;
+  wire core_done = (core_cnt_r == (num_core_p-1)) & io_cmd_yumi_i;
+  bsg_counter_clear_up
+   #(.max_val_p(num_core_p-1)
+     ,.init_val_p(0)
+     )
+   core_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.clear_i(1'b0)
+     ,.up_i((state_r == FREEZE_CLR) & io_cmd_yumi_i)
+
+     ,.count_o(core_cnt_r)
+     );
+
   // bp_nbf packet
   typedef struct packed {
     logic [nbf_opcode_width_p-1:0] opcode;
@@ -92,11 +109,17 @@ module bp_nonsynth_nbf_loader
   assign curr_nbf = nbf[nbf_index_r];
   
   // assemble cce cmd packet
+  bp_local_addr_s freeze_addr;
   always_comb
   begin
+    freeze_addr.nonlocal = '0;
+    freeze_addr.cce      = core_cnt_r;
+    freeze_addr.dev      = cfg_dev_gp;
+    freeze_addr.addr     = bp_cfg_reg_freeze_gp;
+
     io_cmd.data = (state_r == FREEZE_CLR) ? dword_width_p'(0) : curr_nbf.data;
     io_cmd.payload = '0;
-    io_cmd.addr = (state_r == FREEZE_CLR) ? {cfg_dev_gp, cfg_addr_width_p'(bp_cfg_reg_freeze_gp)} : curr_nbf.addr;
+    io_cmd.addr = (state_r == FREEZE_CLR) ? freeze_addr : curr_nbf.addr;
     io_cmd.msg_type = e_cce_mem_uc_wr;
     
     case (curr_nbf.opcode)
@@ -117,7 +140,7 @@ module bp_nonsynth_nbf_loader
     unique casez (state_r)
       RESET       : state_n = reset_i ? RESET : SEND_NBF;
       SEND_NBF    : state_n = (curr_nbf.opcode == 8'hFF) ? FREEZE_CLR : SEND_NBF;
-      FREEZE_CLR  : state_n = io_cmd_yumi_i ? DONE : FREEZE_CLR;
+      FREEZE_CLR  : state_n = (core_done) ? DONE : FREEZE_CLR;
       DONE        : state_n = DONE;
       default : state_n = RESET;
     endcase
