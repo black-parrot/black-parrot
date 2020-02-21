@@ -35,7 +35,6 @@ tools:
 	$(MAKE) verilator
 	$(MAKE) fesvr
 	$(MAKE) spike
-	$(MAKE) dromajo
 	$(MAKE) axe
 	$(MAKE) cmurphi
 
@@ -47,4 +46,5 @@ ucode: update_libs
 
 libs: update_libs
 	$(MAKE) dramsim2
+	$(MAKE) dromajo
 
