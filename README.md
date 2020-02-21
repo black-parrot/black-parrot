@@ -12,10 +12,10 @@ BlackParrot aims to be the default open-source, Linux-capable, cache-coherent, R
 - Be Friendly
     - Combat NIH, welcome external contributions and strive for infrastructure agnosticism.
 
-# Project Status
+## Project Status
 The next release of BlackParrot, v 1.0, is coming in March 2020, and will contain support for an up to 16-core cache coherent multicore, including enough baseline user and privilege mode functionality to run Linux. An optimized single core variant of BlackParrot will also be released at this time.
 
-A 14-nm BlackParrot multicore chip was taped out in July 2019.
+A 12nm BlackParrot multicore chip was taped out in July 2019.
 
 # Getting Started
 ## Quickstart
@@ -36,29 +36,27 @@ Users who just want to test their setup and run a minimal BlackParrot test shoul
 
 Users who want to fully evaluate BlackParrot, or develop hardware or software using it should follow [Getting Started (Full)](docs/getting_started.md)
 
-# BlackParrot Interface Specification
+## BlackParrot Interface Specification
 BlackParrot is an aggresively modular design: communication between the components is performed over a set of narrow, latency-insensitive interfaces. The interfaces are designed to allow implementations of the various system components to change independently of one another, without worrying about cascading functional or timing effects. Read more about BlackParrot's standardized interfaces here: [Interface specification](docs/interface_specification.md)
 
-# BlackParrot Microarchitectural Specification
+## BlackParrot Microarchitectural Specification
 Coming soon!
 
-# BlackParrot SoC Platform Guide
+## BlackParrot SoC Platform Guide
 Coming soon!
 
-# BlackParrot Tapeout Guide
-Coming soon!
+## BlackParrot CAD Backend Guide
+A key feature of using BlackParrot is that it has been heavily validated in both silicon and FPGA implementations.  All BlackParrot tapeouts and FPGA environments can be found at [BlackParrot Examples](https://github.com/black-parrot-examples/). Taped out BlackParrot yourself and want to share tips and tricks? Let us know and we can add it to the collection! Looking to implement BlackParrot in a physical system? Take a look at our [CAD Backend Guide](docs/backend_guide.md).
 
-All BlackParrot tapeouts and FPGA environments can be found at [BlackParrot Examples](https://github.com/black-parrot-examples/). Taped out BlackParrot yourself and want to share tips and tricks? Let us know and we can add it to the collection!
+## BlackParrot Software Developer Guide
+BlackParrot is Linux-capable, so it is possible to run all programs which run on BusyBox. However, for more targeted benchmarks which don't want O/S management overheads (or the overheads of a long Linux boot time in simulation!), it is preferable to write for bare-metal. Additionally, some platform-specific features are only available at the firmware level. Developers looking to write low-level BlackParrot code, or optimize for the BlackParrot platform should look at our [SW Developer Guide](docs/software_guide.md)
 
-# BlackParrot Software Developer Guide
-BlackParrot is Linux-capable, so it is possible to run all programs which run on BusyBox. However, for more targeted benchmarks which don't want O/S management overheads (or the overheads of a long Linux boot time in simulation!), it is preferable to write for bare-metal. Additionally, some platform-specific features are only available at the firmware level. The BlackParrot SW Developer Guide can be found here: [SW Developer Guide](docs/sw_guide.md)
-
-# Continuous Integration
+## Continuous Integration
 Above is the current status of BlackParrot CI builds. Upon commit to the listed branch, a functional regression consisting of full-system tests and module level tests is run and checked for correctness. Additionally, the design is checked with Synopsys DC to verify synthesizability. Work is in progress to continuously monitor PPA.
 
-# How to Contribute
+## How to Contribute
 We welcome external contributions! Please join our mailing at [Mailing List](black-parrot@googlegroups.com) to discuss, ask questions or just tell us how you're using BlackParrot! For a smooth contribution experience, take a look at our [Contribution Guide](CONTRIBUTING.md).
 
-# BlackParrot Coding Style
+## BlackParrot Coding Style
 BlackParrot is written in standard SystemVerilog, using a subset of the language known to be both synthesizable and compatible with a wide variety of vendor tools. Details of these style choices both functional and aesthetic can be found in our [Style Guide](docs/style_guide.md)
 

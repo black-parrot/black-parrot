@@ -69,7 +69,7 @@ NOTE: Verilator is the free, open-source tool used to evaluate BlackParrot.  VCS
 - DUMP: dump a vcd
 - COV: generate line and toggle coverage
 - COSIM: Run with Dromajo-based cosimulation
-- *\_TRACE\_P: Enable a specific tracer (tracer list can be found in the [SW Developer Guide](sw_guide.md))
+- *\_TRACE\_P: Enable a specific tracer (tracer list can be found in the [SW Developer Guide](software_guide.md))
 
 ### Example Commands
     make build.v sim.v PROG=hello_world DUMP=1  # Run hello_world in VCS with dumping
