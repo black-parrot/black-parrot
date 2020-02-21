@@ -1,4 +1,14 @@
-# FE-BE Interfaces
+# BlackParrot Interface Specifications
+
+BlackParrot is designed as a set of modular processor building blocks connected by intentionally designed, narrow, flexible interfaces. By standardizing these interfaces at a suitable level of abstraction, designers can easily understand differnt configurations composing a wide variety of implementations, write peripheral components, or even substitute their own optimized version of modules. BlackParrot currently has 6 standardized interfaces which are unlikely to significantly change.
+- Front End to Back End (Issue Interface)
+- Back End to Front End (Resolution Interface)
+- Cache Service (Cache Miss and Management Interface)
+- Local Cache Engine to Cache Coherence Engine (BedRock Interface)
+- Memory Interface (DRAM and I/O Interfaces)
+
+
+## FE-BE Interfaces
 
 The Front End and Back End communicate using FIFO queues. There will be an unambiguous and uniform policy for priority between queues. The number of queues is minimized subject to correct functionality, to reduce the complexity of the interface. The Front End Queue sends information from the Front End to the Back End. The Command Queue sends information from the Back End to the Front End. All “true” architectural state lives in the backend, but the front end may have shadow state.
 
@@ -6,7 +16,7 @@ Logically, the BE controls the FE and may command the FE to flush all state, red
 
 If a queue is full, the unit wishing to send data should stall until a new entry can be enqueued in the appropriate queue to prevent information loss. The handshake shall conform to one of the three [BaseJump STL](http://cseweb.ucsd.edu/~mbtaylor/papers/Taylor\_DAC\_BaseJump\_STL\_2018.pdf) handshakes, most likely valid->ready on the consumer side, and ready->valid on the input. The queues shall be implemented with one of the BaseJump STL queue implementations. Each block is responsible for only issuing operations (e.g., translation requests, cache access, instruction execution, etc.) if it is capable of storing any possible exception information for that operation.
 
-# FE->BE (fe\_queue)
+### FE->BE (fe\_queue)
 - Description: Front End Queue (FIFO) passes bp\_fe\_queue\_s comprising a message type and the message data:
   - bp\_fe\_fetch\_s
   - bp\_fe\_exception\_s
@@ -51,7 +61,7 @@ Illegal Instruction
   - Future possible extensions (or non-features for this version.)
     - Support for multiple fetch entries in a single packet. Only useful for multiple-issue BE implementations.
 
-# BE->FE (fe\_cmd)
+### BE->FE (fe\_cmd)
 - Description: FE Command Queue (fe\_cmd) sends the following commands from the Back End to the Front End, using a single command queue containing structures of type bp\_fe\_cmd\_s. From the perspective of architectural and microarchitectural state, enqueuing a command onto the command queue is beyond the point of no return, although the side-effects are not guaranteed until after the fence line goes high. With the exception of the attaboy commands, the BE will not enqueue additional commands until all prior commands have been processed. The FE must dequeue attaboys immediately upon reception and should process other commands as quickly as possible. However, due to the fence line it is not an invariant that the FE processes other instructions within a single cycle. The Command Queue shall transmit a union data structure, bp\_fe\_cmd\_s which contains opcodes and operands.
 - Interface
   - The FIFO should not need to support a clear operation (except for via a full reset), all things enqueued must be processed.
@@ -118,10 +128,104 @@ Illegal Instruction
       - All asid flag
     - A simple implementation will flush the entire itlb
 
+## Cache Service Interface
 
-# LCE-CCE Interface
+The Cache Service interface provides flexible connections between an (optionally) coherent cache and
+a Cache Engine, which services misses, invalidations, coherence transactions, etc. The Cache Service
+interface supports both coherent and non-coherent caches, and can be extended to support
+both blocking and non-blocking caches. The interface is latency insensitive and may be optionally
+routed through a FIFO. BlackParrot provides 3 types of Cache Engines:
 
-The LCE-CCE Interface comprises the connections between the BlackParrot processor cores and the
+- Local Cache Engines (LCE), which manages structures in the cache by responding to local misses and
+  remote coherence messages.
+- Cache Coherence Engines (CCE), which maintain a distributed set of directory tags and send messages to
+  maintain coherence among caches.
+- Unified Cache Engines (UCE), which respond to cache requests by directly managing data from
+  memory. In this way, a UCE is a combination of an LCE and a CCE, optimized for size and complexity
+  in order to service a single cache.
+
+More details are provided about the LCE and CCE interface in the following section.
+
+A UCE implementation must support the following operations:
+- Service loads, stores and optionally amo operations
+- Handle remote invalidations
+- Handle both uncached and cached requests
+- Support both write-through and write-back protocols
+- Support credit-based flow control, to support fencing in the core
+
+The request interface is ready-valid and uses a parameterized struct to pass arguments,
+bp_cache_req_s, which contains the following fields.
+- Message type
+  - Load Miss
+  - Store Miss
+  - Uncached Load
+  - Uncached Store
+  - Writethrough Store
+- Physical address
+- Size (1B-64B)
+- Dirty (For misses)
+- Replacement way (For misses)
+- Data (For uncached stores or writethroughs)
+
+The fill interface is implemented as a set of ready-valid connections that provide read/write access
+to memory structures in a typical cache. A single cache request may trigger a set of fill responses. To decouple cache logic from any particular fill strategy, there is an additional signal which is raised when a request is
+completed. The three memory structures are a data memory, tag memory and status memory.
+
+The data memory contains cache block data, and the packet format is:
+- Opcode
+  - Write data memory
+  - Read data memory
+  - Write uncached data memory
+- Cacheline data
+- Replacement way
+- Replacement index
+
+The tag memory contains tags and coherence state, and the packet format is:
+- Opcode
+  - Clear all tags in a set for a given index
+  - Write tag memory
+  - Read tag memory
+- Tag data
+- Coherence data
+- Replacement way
+- Replacement index
+
+The stat memory contains LRU and dirty data for a block, and the packet format is:
+- Opcode
+  - Clear all dirty and LRU bits for a given index
+  - Read stat memory
+  - Clear dirty bit for given index and way id
+- Stat data
+- Replacement way
+- Replacement index
+
+When a transaction is completed, cache_req_complete_o will go high for one cycle.
+
+## Memory Interface
+
+The BlackParrot Memory Interface is a simple command / response interface used for communicating with memory or I/O devices. The goal is to provide a simple and understandable way to access any type of memory system, be it a shared bus or a more sophisticated network-on-chip scheme. The Memory Interface can easily be transduced to standard protocols such as AXI, AXI-lite or WishBone. Because there are a wide variety of components which connect using the Memory Interface, there is no specific handshake associated with it. However, all nodes should be latency-insensitive.
+
+A memory command or response packet is composed of:
+- Message type
+  - Read request
+  - Write request
+  - Uncached read request
+  - Uncached write request
+  - Writeback
+  - Prefetch
+- Physical address
+- Request Size
+- Payload (A black-box to the command receiver, this is returned as-is along with the memory response)
+  - An example payload for the CCE is:
+  - Requesting LCE
+  - Requesting way id
+  - Coherence state
+  - Whether this is a speculative request
+- Data
+
+## LCE-CCE Interface
+
+The LCE-CCE Interface comprises the connections between the BlackParrot caches and the
 memory system. The interface is implemented as a collection of networks, whose primary purpose is
 to carry the memory access and cache coherence traffic between the L1 instruction and data caches
 and the coherence directory and rest of the memory system. The two components that interact through
@@ -144,7 +248,7 @@ The LCEs and CCEs must also be input buffered to conform to the handshaking of t
 
 The LCE-CCE Interface is defined in [bp\_common\_me\_if.vh](../bp_common/src/include/bp_common_me_if.vh)
 
-## LCE Request Network
+### LCE Request Network
 
 The LCE Request network carries coherence requests from the LCEs to the CCEs. Requests are initiated
 when an LCE encounters a cache or coherence miss. Cache misses occur when the LCE does not contain
@@ -154,7 +258,7 @@ a cache block that the LCE has with read-only permissions). An LCE Request may a
 perform an uncached load or store operation. Issuing an LCE Request initiates a new coherence
 transaction, which is handled by one of the CCEs in the system.
 
-### LCE Request Messages
+#### LCE Request Messages
 
 An LCE Request is sent from an LCE to a CCE when the LCE requests a new cache block, needs different
 coherence permissions that it already has for a cache block, or needs to perform an uncached load
@@ -177,7 +281,7 @@ An LCE Request for an uncached load or store has the following fields:
 * Uncached Request Size - size of load or store, in bytes
 * Uncached Store Data - data to store (stores only)
 
-## LCE Command Network
+### LCE Command Network
 
 The LCE Command network carries commands and data to the LCEs. Most messages on this network originate
 at the CCEs. LCEs may also occasionally send LCE Command messages to perform LCE to LCE transfers
@@ -186,7 +290,7 @@ block invalidation and writeback commands, data and tag commands that deliver a 
 and coherence permissions to an LCE, and transfer commands that tell an LCE to send a cache block
 to another LCE in the system.
 
-### LCE Command Messages
+#### LCE Command Messages
 
 LCE Command Messages have two formats, one for commands that send data to an LCE and one that does
 not send data. Not all fields in each of the messages are used by every command type. For example,
@@ -222,7 +326,7 @@ LCE Command Message Types:
 * Data and Tag - send tag, coherence state, and cache block data to an LCE, and wake up the LCE
 * Uncached Data - send uncached load data to an LCE
 
-## LCE Response Network
+### LCE Response Network
 
 The LCE Response network carries acknowledgement and data writeback messages from the LCEs to the
 CCEs. The CCE must be able to sink any potential LCE Response that could be generated in the system
@@ -231,7 +335,7 @@ the message when it arrives or placing it into a buffer to consume it from the n
 buffering is used, the buffer must be large enough to hold all possible response messages to the
 CCE.
 
-### LCE Response Messages
+#### LCE Response Messages
 
 An LCE Response message has the following fields:
 * Destination ID - destination CCE ID
@@ -247,7 +351,7 @@ LCE Response Message Types:
 * Resp WB - cache block writeback response, with cache block data
 * Resp Null WB - cache block writeback response, without cache block data
 
-## Network Priorities
+### Network Priorities
 
 The three networks of the LCE-CCE Interface have a priority ordering, from highest to lowest, of
 LCE Response, LCE Command, LCE Request. In other words, LCE Responses are the highest priority
@@ -258,7 +362,7 @@ sent on a higher priority network, but a higher priority message may not cause a
 message to be sent. These priority restrictions prevent the presence of cycles between messages
 on the three networks, the presence of which may lead to deadlock in the protocol.
 
-# Cache Coherence Protocol Overview
+### Cache Coherence Protocol Overview
 
 The LCEs and CCEs operate cooperatively to implement the cache coherence protocol in a multicore
 BlackParrot processor. The standard coherence protocol is a directory-based MESI protocol. The
@@ -280,7 +384,7 @@ CCE with a coherence acknowledgement message.
 The LCE-CCE Interface described above carries the coherence protocol messages between LCEs and CCEs
 in a BlackParrot multicore system.
 
-## Tag Sets and Way Groups
+### Tag Sets and Way Groups
 
 Coherence information in a multicore BlackParrot system is maintained using Tag Sets and Way Groups.
 A Tag Set Entry comprises an address tag and coherence state for a single cache
@@ -312,7 +416,7 @@ and memory, and a transaction is only complete when all memory commands have bee
 the LCE has responded with a coherence acknowldegement, which may arrive before or after the last
 memory response.
 
-## LCE Request Processing
+### LCE Request Processing
 
 Each LCE Request is processed by a single CCE, and requests are processed in the order they arrive at
 the CCE. When a new request arrives, the CCE performs a sequence of operations including reading
