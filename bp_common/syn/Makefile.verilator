@@ -15,6 +15,7 @@ LINT_OPTS   = --lint-only -Wall --Wno-unoptflat
 BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat --exe -CFLAGS -std=c++11 
 BUILD_OPTS += -I$(BP_EXTERNAL_DIR)/share/verilator/include/vltstd/ 
 BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -lpthread -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
+BUILD_OPTS += $(BP_EXTERNAL_DIR)/lib/libdromajo_cosim.a
 
 TOP_MODULE ?= testbench
 
@@ -105,7 +106,7 @@ endif
 sim.sc: SIM_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).sim.$(PROG).log
 sim.sc: SIM_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).sim.$(PROG).rpt
 sim.sc: SIM_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).sim.$(PROG).err
-sim.sc: PROG ?= rv64ui-p-simple
+sim.sc: PROG ?= hello_world
 sim.sc: COVERAGE_DAT ?= $(PROG)_coverage.dat
 sim.sc: dirs.sc 
 	$(shell mkdir -p $(SIM_DIR))
@@ -127,7 +128,7 @@ sim.sc: dirs.sc
 match.sc: MATCH_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).match.$(PROG).log
 match.sc: MATCH_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).match.$(PROG).rpt
 match.sc: MATCH_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).match.$(PROG).err
-match.sc: PROG ?= rv64ui-p-simple
+match.sc: PROG ?= hello_world
 match.sc: dirs.sc
 	-cd $(SIM_DIR); $(PYTHON) $(TRACEDIFF) prog.spike prog.trace $(START_PC) --tolerance=$(TOLERANCE) \
 		| tee -a $(MATCH_LOG)
