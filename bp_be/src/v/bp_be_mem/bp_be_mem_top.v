@@ -96,8 +96,6 @@ module bp_be_mem_top
    , output                                  debug_mode_o
 
    , output [trap_pkt_width_lp-1:0]          trap_pkt_o
-   , output                                  tlb_fence_o
-   , output                                  fencei_o
    );
 
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -114,6 +112,7 @@ bp_be_csr_cmd_s        csr_cmd;
 bp_be_mem_resp_s       mem_resp;
 bp_be_mmu_vaddr_s      mmu_cmd_vaddr;
 bp_be_commit_pkt_s     commit_pkt;
+bp_be_trap_pkt_s       trap_pkt;
 
 assign cfg_bus = cfg_bus_i;
 assign mmu_cmd = mmu_cmd_i;
@@ -121,6 +120,7 @@ assign csr_cmd = csr_cmd_i;
 
 assign mem_resp_o = mem_resp;
 assign commit_pkt = commit_pkt_i;
+assign trap_pkt_o = trap_pkt;
 
 // Suppress unused signal warnings
 wire unused0 = mem_resp_ready_i;
@@ -258,13 +258,11 @@ bp_be_csr
    ,.single_step_o(single_step_o)
 
    ,.priv_mode_o(priv_mode_lo)
-   ,.trap_pkt_o(trap_pkt_o)
+   ,.trap_pkt_o(trap_pkt)
    ,.satp_ppn_o(satp_ppn_lo)
    ,.translation_en_o(translation_en_lo)
    ,.mstatus_sum_o(mstatus_sum_lo)
    ,.mstatus_mxr_o(mstatus_mxr_lo)
-   ,.tlb_fence_o(tlb_fence_o)
-   ,.fencei_o(fencei_o)
 
    ,.itlb_fill_o(itlb_fill_lo)
    ,.instr_page_fault_o(instr_page_fault_lo)
@@ -280,7 +278,7 @@ bp_tlb
   dtlb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.flush_i(tlb_fence_o)
+   ,.flush_i(trap_pkt.sfence)
    ,.translation_en_i(translation_en_lo)
 
    ,.v_i(dtlb_r_v | dtlb_w_v)

@@ -42,7 +42,7 @@ module bp_cce_msg
 
    // LCE-CCE Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
-   // outbound: ready&valid (connects directly to ME network)
+   // outbound: ready->valid (connects directly to ME network)
    , input [lce_cce_req_width_lp-1:0]                  lce_req_i
    , input                                             lce_req_v_i
    , output logic                                      lce_req_yumi_o
@@ -57,7 +57,7 @@ module bp_cce_msg
 
    // CCE-MEM Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
-   // outbound: ready&valid (connects to FIFO)
+   // outbound: ready->valid (connects to FIFO)
    , input [cce_mem_msg_width_lp-1:0]                  mem_resp_i
    , input                                             mem_resp_v_i
    , output logic                                      mem_resp_yumi_o
