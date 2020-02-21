@@ -75,133 +75,29 @@ module bp_coherent_accelerator_tile_node
 
      );
 
-  // Network-side coherence connections
-  bp_coh_ready_and_link_s coh_lce_req_link_li, coh_lce_req_link_lo;
-  bp_coh_ready_and_link_s coh_lce_cmd_link_li, coh_lce_cmd_link_lo;
-  bp_coh_ready_and_link_s coh_lce_resp_link_li, coh_lce_resp_link_lo;
-  
-  if (async_coh_clk_p == 1)
-    begin : coh_async
-      bsg_async_noc_link
-       #(.width_p(coh_noc_flit_width_p)
-         ,.lg_size_p(3)
-         )
-       lce_req_cdc
-        (.aclk_i(core_clk_i)
-         ,.areset_i(core_reset_i)
-
-         ,.bclk_i(coh_clk_i)
-         ,.breset_i(coh_reset_i)
-
-         ,.alink_i(accel_lce_req_link_lo)
-         ,.alink_o(accel_lce_req_link_li)
-
-         ,.blink_i(coh_lce_req_link_lo)
-         ,.blink_o(coh_lce_req_link_li)
-         );
-
-      bsg_async_noc_link
-       #(.width_p(coh_noc_flit_width_p)
-         ,.lg_size_p(3)
-         )
-       lce_cmd_cdc
-        (.aclk_i(core_clk_i)
-         ,.areset_i(core_reset_i)
-
-         ,.bclk_i(coh_clk_i)
-         ,.breset_i(coh_reset_i)
-
-         ,.alink_i(accel_lce_cmd_link_lo)
-         ,.alink_o(accel_lce_cmd_link_li)
-
-         ,.blink_i(coh_lce_cmd_link_lo)
-         ,.blink_o(coh_lce_cmd_link_li)
-         );
-
-      bsg_async_noc_link
-       #(.width_p(coh_noc_flit_width_p)
-         ,.lg_size_p(3)
-         )
-       lce_resp_cdc
-        (.aclk_i(core_clk_i)
-         ,.areset_i(core_reset_i)
-
-         ,.bclk_i(coh_clk_i)
-         ,.breset_i(coh_reset_i)
-
-         ,.alink_i(accel_lce_resp_link_lo)
-         ,.alink_o(accel_lce_resp_link_li)
-
-         ,.blink_i(coh_lce_resp_link_lo)
-         ,.blink_o(coh_lce_resp_link_li)
-         );
-    end
-  else
-    begin : coh_sync
-      assign coh_lce_req_link_li  = accel_lce_req_link_lo;
-      assign coh_lce_cmd_link_li  = accel_lce_cmd_link_lo;
-      assign coh_lce_resp_link_li = accel_lce_resp_link_lo;
-
-      assign accel_lce_req_link_li  = coh_lce_req_link_lo;
-      assign accel_lce_cmd_link_li  = coh_lce_cmd_link_lo;
-      assign accel_lce_resp_link_li = coh_lce_resp_link_lo;
-    end
-
-
-  bsg_wormhole_router
-   #(.flit_width_p(coh_noc_flit_width_p)
-     ,.dims_p(coh_noc_dims_p)
-     ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
-     ,.len_width_p(coh_noc_len_width_p)
-     ,.reverse_order_p(1)
-     ,.routing_matrix_p(StrictYX | YX_Allow_W)
-     )
-   lce_req_router
-    (.clk_i(coh_clk_i)
-     ,.reset_i(coh_reset_i)
-
-     ,.my_cord_i(my_cord_i)
-
-     ,.link_i({coh_lce_req_link_i, coh_lce_req_link_li})
-     ,.link_o({coh_lce_req_link_o, coh_lce_req_link_lo})
-     );
-
-  bsg_wormhole_router
-   #(.flit_width_p(coh_noc_flit_width_p)
-     ,.dims_p(coh_noc_dims_p)
-     ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
-     ,.len_width_p(coh_noc_len_width_p)
-     ,.reverse_order_p(1)
-     ,.routing_matrix_p(StrictYX | YX_Allow_W)
-     )
-   lce_cmd_router
-    (.clk_i(coh_clk_i)
-     ,.reset_i(coh_reset_i)
-
-     ,.my_cord_i(my_cord_i)
-
-     ,.link_i({coh_lce_cmd_link_i, coh_lce_cmd_link_li})
-     ,.link_o({coh_lce_cmd_link_o, coh_lce_cmd_link_lo})
-     );
-
    
-  bsg_wormhole_router
+  bp_nd_socket
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.dims_p(coh_noc_dims_p)
+     ,.cord_dims_p(coh_noc_dims_p)
      ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
      ,.len_width_p(coh_noc_len_width_p)
-     ,.reverse_order_p(1)
      ,.routing_matrix_p(StrictYX | YX_Allow_W)
+     ,.async_clk_p(async_coh_clk_p)
+     ,.num_p(3)
      )
-   lce_resp_router
-    (.clk_i(coh_clk_i)
-     ,.reset_i(coh_reset_i)
-
+   cac_coh_socket
+    (.tile_clk_i(core_clk_i)
+     ,.tile_reset_i(core_reset_i)
+     ,.network_clk_i(coh_clk_i)
+     ,.network_reset_i(coh_reset_i)
      ,.my_cord_i(my_cord_i)
-
-     ,.link_i({coh_lce_resp_link_i, coh_lce_resp_link_li})
-     ,.link_o({coh_lce_resp_link_o, coh_lce_resp_link_lo})
+     ,.network_link_i({coh_lce_req_link_i, coh_lce_cmd_link_i, coh_lce_resp_link_i})
+     ,.network_link_o({coh_lce_req_link_o, coh_lce_cmd_link_o, coh_lce_resp_link_o})
+     ,.tile_link_i({accel_lce_req_link_lo, accel_lce_cmd_link_lo, accel_lce_resp_link_lo})
+     ,.tile_link_o({accel_lce_req_link_li, accel_lce_cmd_link_li, accel_lce_resp_link_li})
      );
-
+   
+     
 endmodule
 
