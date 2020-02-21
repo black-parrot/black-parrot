@@ -51,7 +51,7 @@ Coming soon!
 All BlackParrot tapeouts and FPGA environments can be found at [BlackParrot Examples](https://github.com/black-parrot-examples/). Taped out BlackParrot yourself and want to share tips and tricks? Let us know and we can add it to the collection!
 
 # BlackParrot Software Developer Guide
-BlackParrot is Linux-capable, so it is possible to run all programs which run on BusyBox. However, for more targeted benchmarks which don't want O/S management overheads (or the overheads of a long Linux boot time in simulation!), it is preferable to write for bare-metal. Additionally, some platform-specific features are only available at the firmware level. The BlackParrot SW Developer Guide can be found here: [SW Developer Guide](SW_GUIDE.md)
+BlackParrot is Linux-capable, so it is possible to run all programs which run on BusyBox. However, for more targeted benchmarks which don't want O/S management overheads (or the overheads of a long Linux boot time in simulation!), it is preferable to write for bare-metal. Additionally, some platform-specific features are only available at the firmware level. The BlackParrot SW Developer Guide can be found here: [SW Developer Guide](docs/sw_guide.md)
 
 # Continuous Integration
 Above is the current status of BlackParrot CI builds. Upon commit to the listed branch, a functional regression consisting of full-system tests and module level tests is run and checked for correctness. Additionally, the design is checked with Synopsys DC to verify synthesizability. Work is in progress to continuously monitor PPA.
@@ -60,5 +60,5 @@ Above is the current status of BlackParrot CI builds. Upon commit to the listed 
 We welcome external contributions! Please join our mailing at [Mailing List](black-parrot@googlegroups.com) to discuss, ask questions or just tell us how you're using BlackParrot! For a smooth contribution experience, take a look at our [Contribution Guide](CONTRIBUTING.md).
 
 # BlackParrot Coding Style
-BlackParrot is written in standard SystemVerilog, using a subset of the language known to be both synthesizable and compatible with a wide variety of vendor tools. Details of these style choices both functional and aesthetic can be found in our [Style Guide](STYLE_GUIDE.md)
+BlackParrot is written in standard SystemVerilog, using a subset of the language known to be both synthesizable and compatible with a wide variety of vendor tools. Details of these style choices both functional and aesthetic can be found in our [Style Guide](docs/style_guide.md)
 
