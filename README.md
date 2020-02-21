@@ -2,7 +2,22 @@
 BlackParrot aims to be the default Linux-capable, cache-coherent, RV64GC multicore used by the world.
 
 # Getting started
-[Getting Started](GETTING_STARTED.md)
+
+## Quickstart
+    # Clone the latest repo
+    git clone https://github.com/black-parrot/pre-alpha-release.git
+    cd pre-alpha-release
+
+    # Install a minimal set of tools
+    make libs
+    make verilator
+    make ucode
+
+    # Running your first test
+    cd bp_top/syn
+    make build.sc sim.sc PROG=hello_world
+
+[Getting Started (Full)](GETTING_STARTED.md)
 
 # Project Status
 The next release of BlackParrot, v 1.0, is coming in January 2020, and will contain support for 1 to 24-way cache coherent multicore, and include baseline user and privilege mode functionality and run Linux.
