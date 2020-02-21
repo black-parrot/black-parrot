@@ -1,17 +1,3 @@
-# Getting started (Quickstart)
-    # Clone the latest repo
-    git clone https://github.com/black-parrot/pre-alpha-release.git
-    cd pre-alpha-release
-
-    # Install a minimal set of tools
-    make verilator
-    make ucode
-    make libs
-
-    # Running your first test
-    cd bp_top/syn
-    make build.sc sim.sc PROG=hello_world
-
 ## Getting started (Full)
     # Clone the latest repo
     git clone https://github.com/black-parrot/pre-alpha-release.git
@@ -22,14 +8,14 @@
     make tools
     # make tidy_tools  will remove all (10+ GB) tool build directories, while leaving the installation
     make tidy_tools
+    # Update hardware libraries (basejump_stl)
+    make libs
     # make progs will build all open source test programs that ship with BlackParrot
     make progs
     # make ucode will build the CCE microcode used for BlackParrot's coherence engine
     # This is necessary whenever changes are made to CCE ucode. Eventually, CCE ucode
     #  will be built 'on demand' and so this command may become unnecessary
     make ucode
-    # Update hardware libraries (basejump_stl)
-    make libs
 
 The *master* branch contains most recent stable version. This is the recommended branch for someone wishing to try out BlackParrot.
 
@@ -46,7 +32,7 @@ BlackParrot requires Python, Verilator and a RISCV GNU toolchain in order to bui
 
 ### Ubuntu
 
-    sudo apt-get install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev
+    sudo apt-get install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev wget byacc device-tree-compiler python
 
 BlackParrot has been tested extensively on CentOS 7. Please raise issues with problems found on this or other platforms! 
 
