@@ -69,6 +69,8 @@ set BASEJUMP_STL_DIR $::env(BASEJUMP_STL_DIR)
 set SYN_PATH $::env(SYN_PATH)
 set TB_PATH  $::env(TB_PATH)
 
+set STDCELL_DB $::env(STDCELL_DB)
+
 #========================
 # TOP-LEVEL PARAMETERS
 #========================
@@ -97,8 +99,8 @@ set param_str [join ${param_list} ","]
 # be process mapping therefore we have no link library and the target library
 # should be the generic and synthetic libraries that DC uses by default.
 
-set_app_var link_library ""
-set_app_var target_library "*"
+set_app_var link_library ${STDCELL_DB}
+set_app_var target_library ${STDCELL_DB}
 
 #========================
 # ANALYSIS
@@ -131,6 +133,10 @@ if { ![elaborate ${DESIGN_NAME} -param ${param_str}] } {
 
 if { ![link] } {
   exit_failed
+}
+
+if { ${STDCELL_DB} != "" } {
+  redirect -tee ${DESIGN_NAME}.check_design.loop.rpt { report_timing -loop }
 }
 
 #========================
