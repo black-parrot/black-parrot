@@ -339,7 +339,7 @@ module bp_fe_icache
   assign cache_miss = cache_req_v_o || miss_tracker_r;
 
   // Fault if in uncached mode but access is not for an uncached address
-  assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r) | ~cache_miss);
+  assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r) | ~miss_tv);
 
   logic [dword_width_p-1:0]   ld_data_way_picked;
 

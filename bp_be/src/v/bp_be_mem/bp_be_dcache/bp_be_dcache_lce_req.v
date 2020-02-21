@@ -38,6 +38,8 @@ module bp_be_dcache_lce_req
     , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)
     , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
 
+    , parameter timeout_max_limit_p=4
+
     `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
 
   )
@@ -51,8 +53,10 @@ module bp_be_dcache_lce_req
     , input cache_req_v_i
     , output logic cache_req_ready_o
 
-    , output logic cache_req_complete_o
     , output logic [paddr_width_p-1:0] miss_addr_o
+
+    , input coherence_blocked_i
+    , input cmd_ready_i
 
     , input cce_data_received_i
     , input uncached_data_received_i
@@ -73,7 +77,7 @@ module bp_be_dcache_lce_req
   // casting struct
   //
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-  `declare_bp_cache_req_s(cce_block_width_p, lce_assoc_p, paddr_width_p, tag_width_lp);
+  `declare_bp_cache_req_s(cce_block_width_p, lce_assoc_p, paddr_width_p);
 
   bp_lce_cce_req_s lce_req;
   bp_lce_cce_resp_s lce_resp;
@@ -105,6 +109,7 @@ module bp_be_dcache_lce_req
   logic [paddr_width_p-1:0] miss_addr_r, miss_addr_n;
   logic dirty_lru_flopped_r, dirty_lru_flopped_n;
   logic [1:0] size_op_r, size_op_n;
+  logic cache_req_ready;
 
   logic cce_data_received_r, cce_data_received_n, cce_data_received;
   logic set_tag_received_r, set_tag_received_n, set_tag_received;
@@ -134,7 +139,7 @@ module bp_be_dcache_lce_req
      );
 
   always_comb begin
-    cache_req_complete_o = 1'b0;
+    // cache_req_complete_o = 1'b0;
 
     state_n = state_r;
     load_not_store_n = load_not_store_r;
@@ -163,17 +168,18 @@ module bp_be_dcache_lce_req
     lce_resp.addr = miss_addr_r;
     lce_resp.data = '0;
 
-    cache_req_ready_o = 1'b1;
+    cache_req_ready = 1'b1;
 
     unique case (state_r)
 
       // READY
       // wait for the cache miss.
       e_READY: begin
-      cache_req_ready_o = 1'b1;
+      cache_req_ready = 1'b1;
 
         // LR needs priority over regular load miss, otherwise it might get sent out as a regular
         // load miss if the cache block is not in the cache at all.
+        // LR misses are sent out as store misses.
       if (cache_req_v_i) begin 
         if (cache_req_cast_li.msg_type == e_miss_store) begin
           miss_addr_n = cache_req_cast_li.addr;
@@ -182,7 +188,6 @@ module bp_be_dcache_lce_req
           cce_data_received_n = 1'b0;
           set_tag_received_n = 1'b0;
 
-          cache_req_complete_o = 1'b0;
           state_n = e_SEND_CACHED_REQ;
         end
         else if (cache_req_cast_li.msg_type == e_miss_load | cache_req_cast_li.msg_type == e_miss_store) begin
@@ -192,7 +197,6 @@ module bp_be_dcache_lce_req
           cce_data_received_n = 1'b0;
           set_tag_received_n = 1'b0;
  
-          cache_req_complete_o = 1'b0;
           state_n = e_SEND_CACHED_REQ;
         end
         else if (cache_req_cast_li.msg_type == e_uc_load) begin
@@ -201,7 +205,6 @@ module bp_be_dcache_lce_req
           cce_data_received_n = 1'b0;
           set_tag_received_n = 1'b0;
  
-          cache_req_complete_o = 1'b0;
           state_n = e_SEND_UNCACHED_LOAD_REQ;
         end
         else if (cache_req_cast_li.msg_type == e_uc_store) begin
@@ -214,11 +217,9 @@ module bp_be_dcache_lce_req
           lce_req.src_id = lce_id_i;
           lce_req.dst_id = req_cce_id_lo;
 
-          cache_req_complete_o = ~lce_req_ready_i | credits_full_i;
           state_n = e_READY;
         end
         else begin
-          cache_req_complete_o = 1'b0;
           state_n = e_READY;
         end
        end
@@ -249,8 +250,7 @@ module bp_be_dcache_lce_req
         lce_req.src_id = lce_id_i;
         lce_req.dst_id = req_cce_id_lo;
 
-        cache_req_complete_o = 1'b0;
-        cache_req_ready_o = 1'b0;
+        cache_req_ready = 1'b0;
 
         state_n = lce_req_ready_i
           ? e_SLEEP
@@ -268,8 +268,7 @@ module bp_be_dcache_lce_req
         lce_req.src_id = lce_id_i;
         lce_req.dst_id = req_cce_id_lo;
 
-        cache_req_complete_o = 1'b0;
-        cache_req_ready_o = 1'b0;
+        cache_req_ready = 1'b0;
 
         state_n = lce_req_ready_i
           ? e_SLEEP
@@ -279,20 +278,17 @@ module bp_be_dcache_lce_req
       // SLEEP 
       // wait for signals from other modules to wake up.
       e_SLEEP: begin
-        cache_req_ready_o = 1'b0;
+        cache_req_ready = 1'b0;
         cce_data_received_n = cce_data_received_i ? 1'b1 : cce_data_received_r;
         set_tag_received_n = set_tag_received_i ? 1'b1 : set_tag_received_r;
 
         if (set_tag_wakeup_received_i) begin
-          cache_req_complete_o = 1'b0;
           state_n = e_SEND_COH_ACK;
         end
         else if (uncached_data_received_i) begin
-          cache_req_complete_o = 1'b1;
           state_n = e_READY;
         end
         else if (set_tag_received) begin
-          cache_req_complete_o = 1'b0;
           if (cce_data_received) begin
             state_n = e_SEND_COH_ACK;
           end
@@ -301,7 +297,6 @@ module bp_be_dcache_lce_req
           end
         end
         else begin
-          cache_req_complete_o = 1'b0;
           state_n = e_SLEEP;
         end
       end
@@ -312,8 +307,8 @@ module bp_be_dcache_lce_req
         lce_resp_v_o = 1'b1;
         lce_resp.msg_type = e_lce_cce_coh_ack;
 
-        cache_req_complete_o = 1'b1;
-	cache_req_ready_o = 1'b0;
+        // cache_req_complete_o = 1'b1;
+	      cache_req_ready = 1'b0;
         state_n = lce_resp_yumi_i
           ? e_READY
           : e_SEND_COH_ACK;
@@ -348,6 +343,31 @@ module bp_be_dcache_lce_req
       size_op_r <= size_op_n;
     end
   end
+
+  // LCE timeout logic
+  // LCE can read/write to data_mem, tag_mem, and stat_mem, when they are free (e.g. tl stage in dcache is not accessing them).
+  // In order to prevent LCE taking too much time to process incoming coherency requests,
+  // there is a timer, which counts up whenever LCE needs to access mem, but have not been able to.
+  // when the timer reaches max, it deasserts ready_o of dcache for one cycle, allowing it to access mem
+  // by creating a free slot.
+  logic [`BSG_SAFE_CLOG2(timeout_max_limit_p+1)-1:0] timeout_cnt_r;
+
+  bsg_counter_clear_up
+   #(.max_val_p(timeout_max_limit_p)
+     ,.init_val_p(0)
+     ,.disable_overflow_warning_p(1)
+     )
+   timeout_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.clear_i(~coherence_blocked_i)
+     ,.up_i(coherence_blocked_i)
+     ,.count_o(timeout_cnt_r)
+     );
+  wire timeout = (timeout_cnt_r == timeout_max_limit_p);
+
+  assign cache_req_ready_o = cmd_ready_i & ~timeout & cache_req_ready;
 
   // synopsys translate_off
   always_ff @ (negedge clk_i) begin

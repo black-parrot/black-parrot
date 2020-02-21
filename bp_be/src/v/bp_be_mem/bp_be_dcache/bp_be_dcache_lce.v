@@ -49,8 +49,6 @@ module bp_be_dcache_lce
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
     
-    , parameter timeout_max_limit_p=4
-
     , localparam block_size_in_words_lp=lce_assoc_p
     , localparam data_mask_width_lp=(dword_width_p>>3)
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
@@ -85,7 +83,7 @@ module bp_be_dcache_lce
     , output logic cache_req_ready_o
  
     , output logic cache_req_complete_o
-
+    
     // data_mem
     , output logic data_mem_pkt_v_o
     , output logic [dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
@@ -195,7 +193,9 @@ module bp_be_dcache_lce
   assign credits_full_o = (credit_count_lo == coh_noc_max_credits_p);
   assign credits_empty_o = (credit_count_lo == 0);
 
-  logic cache_req_ready_lo;
+  logic cmd_ready_lo;
+  logic coherence_blocked_li;
+  assign coherence_blocked_li = lce_cmd_v_i & ~lce_cmd_yumi_o;
 
   bp_be_dcache_lce_req
     #(.bp_params_p(bp_params_p))
@@ -207,15 +207,17 @@ module bp_be_dcache_lce
   
       ,.cache_req_i(cache_req_i)
       ,.cache_req_v_i(cache_req_v_i)
-      ,.cache_req_ready_o(cache_req_ready_lo)
+      ,.cache_req_ready_o(cache_req_ready_o)
 
-      ,.cache_req_complete_o(cache_req_complete_o)
       ,.miss_addr_o(miss_addr_lo)
 
       ,.cce_data_received_i(cce_data_received)
       ,.uncached_data_received_i(uncached_data_received)
       ,.set_tag_received_i(set_tag_received)
       ,.set_tag_wakeup_received_i(set_tag_wakeup_received)
+      
+      ,.coherence_blocked_i(coherence_blocked_li)
+      ,.cmd_ready_i(cmd_ready_lo)
 
       ,.lce_req_o(lce_req)
       ,.lce_req_v_o(lce_req_v_o)
@@ -229,8 +231,6 @@ module bp_be_dcache_lce
       );
 
   // LCE cmd
-  //
-  logic lce_ready_lo;
 
   bp_lce_cce_resp_s lce_cmd_to_lce_resp_lo;
   logic lce_cmd_to_lce_resp_v_lo;
@@ -246,12 +246,13 @@ module bp_be_dcache_lce
 
       ,.miss_addr_i(miss_addr_lo)
 
-      ,.lce_ready_o(lce_ready_lo)
+      ,.lce_ready_o(cmd_ready_lo)
       ,.set_tag_received_o(set_tag_received)
       ,.set_tag_wakeup_received_o(set_tag_wakeup_received)
       ,.uncached_store_done_received_o(uncached_store_done_received)
       ,.cce_data_received_o(cce_data_received)
       ,.uncached_data_received_o(uncached_data_received)
+      ,.cache_req_complete_o(cache_req_complete_o)
 
       ,.lce_cmd_i(lce_cmd_in)
       ,.lce_cmd_v_i(lce_cmd_v_i)
@@ -299,32 +300,5 @@ module bp_be_dcache_lce
     end
   end
 
-  // LCE timeout logic
-  // LCE can read/write to data_mem, tag_mem, and stat_mem, when they are free (e.g. tl stage in dcache is not accessing them).
-  // In order to prevent LCE taking too much time to process incoming coherency requests,
-  // there is a timer, which counts up whenever LCE needs to access mem, but have not been able to.
-  // when the timer reaches max, it deasserts ready_o of dcache for one cycle, allowing it to access mem
-  // by creating a free slot.
-  logic [`BSG_SAFE_CLOG2(timeout_max_limit_p+1)-1:0] timeout_cnt_r;
-  wire coherence_blocked = (lce_cmd_v_i & ~lce_cmd_yumi_o & (lce_cmd_in.msg_type != e_lce_cmd_uc_st_done));
-  
-  bsg_counter_clear_up
-   #(.max_val_p(timeout_max_limit_p)
-     ,.init_val_p(0)
-     ,.disable_overflow_warning_p(1)
-     )
-   timeout_counter
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.clear_i(~coherence_blocked)
-     ,.up_i(coherence_blocked)
-     ,.count_o(timeout_cnt_r)
-     );
-  wire timeout = (timeout_cnt_r == timeout_max_limit_p);
-
-  // LCE Ready Signal
-  wire lce_ready = lce_ready_lo;
-  assign cache_req_ready_o = lce_ready & ~timeout & cache_req_ready_lo; 
-
 endmodule
+

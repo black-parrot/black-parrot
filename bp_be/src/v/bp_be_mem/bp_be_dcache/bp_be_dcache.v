@@ -71,7 +71,7 @@
  *
  *    LR/SC aq/rl semantics are irrelevant for BlackParrot. Since we are in-order single issue and
  *    do not use a store buffer that allows stores before cache lines have been fetched,, all
- *    memory requests are inherently ordered within a hart. 
+ *     memory requests are inherently ordered within a hart. 
  */
 
 module bp_be_dcache
@@ -480,10 +480,6 @@ module bp_be_dcache
 
   assign load_miss_tv = ~load_hit & v_tv_r & load_op_tv_r & ~uncached_tv_r;
   assign store_miss_tv = ~store_hit & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r;
-  // output store hit signal from TV stage, could be SC or regular store
-  // store_data_o and size_op_o will also be valid and provide data and size
-  // of store data
-  // assign store_hit_o = (writethrough_p == 1) & store_hit & v_tv_r & store_op_tv_r & ~uncached_tv_r;
 
   // uncached req
   //
@@ -672,9 +668,6 @@ module bp_be_dcache
   logic lce_tag_mem_pkt_ready;
   logic lce_stat_mem_pkt_ready;
 
-  // Packaged the items to be sent out to the LCE
-    // assign lr_hit_tv_o = lr_hit_tv;
-  
   logic cache_lock;
   // Assigning sizes to cache miss packet
   always_comb begin
@@ -751,15 +744,15 @@ module bp_be_dcache
         end
         else if (store_op_tv_r) begin
           // uncached store_op can be committed,
-          // as long as there is no cache_miss_i signal raised.
-          v_o = ~cache_miss;
+          // as long as there is no cache_miss signal raised.
+          v_o = cache_req_ready_i;
         end
         else begin
           v_o = 1'b0; // this should never happen
         end
       end
       else begin
-        v_o = v_tv_r & ~cache_miss; // cached request
+        v_o = v_tv_r & ~(load_miss_tv || store_miss_tv || lr_miss_tv); // cached request
       end
     end
     else begin
@@ -1049,7 +1042,7 @@ module bp_be_dcache
   //
   // disallow write buffer write on store hit that cannot be processed by LCE
   // to avoid multiple wbuf entries when the store replays
-  assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r; // & ~cache_miss;
+  assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r; 
   assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we);
   assign bypass_v_li = tv_we & load_op_tl_r;
   assign lce_snoop_index_li = lce_data_mem_pkt.index;
@@ -1073,7 +1066,8 @@ module bp_be_dcache
     ,.sel_i(lce_data_mem_pkt_way_r)
     ,.data_o(lce_data_mem_data_li)
     );
-   
+  
+  assign lce_data_mem_o = lce_data_mem_data_li; 
   assign lce_data_mem_pkt_ready = ~(load_op & tl_we) & ~wbuf_v_lo & ~lce_snoop_match_lo;
 
   // load reservation logic

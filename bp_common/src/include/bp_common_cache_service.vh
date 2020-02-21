@@ -35,7 +35,7 @@ typedef enum logic [2:0]
 
 // Cache Service Interface - Cache miss structure
 
-`define declare_bp_cache_req_s(data_width_mp, ways_mp, paddr_width_mp, tag_width_mp) \
+`define declare_bp_cache_req_s(data_width_mp, ways_mp, paddr_width_mp) \
  typedef struct packed                             \
  {                                                 \
    logic [data_width_mp-1:0] data;                 \

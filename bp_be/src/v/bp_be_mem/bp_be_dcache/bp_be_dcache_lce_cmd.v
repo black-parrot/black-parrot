@@ -59,6 +59,7 @@ module bp_be_dcache_lce_cmd
     , output logic uncached_store_done_received_o
     , output logic cce_data_received_o
     , output logic uncached_data_received_o
+    , output logic cache_req_complete_o
 
     // CCE_LCE_cmd
     , input [lce_cmd_width_lp-1:0] lce_cmd_i
@@ -210,6 +211,7 @@ module bp_be_dcache_lce_cmd
     uncached_store_done_received_o = 1'b0;
     uncached_data_received_o = 1'b0;
     cce_data_received_o = 1'b0;
+    cache_req_complete_o = 1'b0;
 
     lce_cmd_yumi_o = 1'b0;
 
@@ -251,6 +253,7 @@ module bp_be_dcache_lce_cmd
           : e_lce_cmd_state_reset;
         cnt_clear = (state_n == e_lce_cmd_state_uncached_only);
         cnt_inc = ~cnt_clear & (tag_mem_pkt_v & stat_mem_pkt_v);
+        cache_req_complete_o = 1'b0;
 
       end
 
@@ -280,6 +283,7 @@ module bp_be_dcache_lce_cmd
             // only increment counter when staying in uncached_only state and waiting for more
             // sync messages, and when the lce_resp is sent
             cnt_inc = ~cnt_clear & lce_resp_yumi_i;
+            cache_req_complete_o = 1'b0;
 
           end
 
@@ -297,12 +301,14 @@ module bp_be_dcache_lce_cmd
             end
 
             lce_cmd_yumi_o = tag_mem_pkt_v & stat_mem_pkt_v;
+            cache_req_complete_o = 1'b0;
 
           end
 
           e_lce_cmd_uc_st_done: begin
             uncached_store_done_received_o = lce_cmd_v_i;
             lce_cmd_yumi_o = lce_cmd_v_i;
+            cache_req_complete_o = 1'b0;
 
           end
 
@@ -318,6 +324,7 @@ module bp_be_dcache_lce_cmd
             lce_cmd_yumi_o = data_mem_pkt_v;
 
             uncached_data_received_o = data_mem_pkt_v;
+            cache_req_complete_o = data_mem_pkt_v;
 
           end
 
@@ -351,9 +358,11 @@ module bp_be_dcache_lce_cmd
               tag_mem_pkt_v = lce_cmd_v_i;
             end
 
-            state_n = data_mem_pkt_v & tag_mem_pkt_v
+            state_n = (data_mem_pkt_v & tag_mem_pkt_v)
               ? e_lce_cmd_state_tr
               : e_lce_cmd_state_ready;
+
+            cache_req_complete_o = 1'b0;
 
           end
 
@@ -372,6 +381,8 @@ module bp_be_dcache_lce_cmd
               ? e_lce_cmd_state_wb
               : e_lce_cmd_state_ready;
 
+            cache_req_complete_o = 1'b0;
+
           end
 
           //  <set tag>
@@ -389,6 +400,7 @@ module bp_be_dcache_lce_cmd
             lce_cmd_yumi_o = tag_mem_pkt_v;
 
             set_tag_received_o = tag_mem_pkt_v;
+            cache_req_complete_o = 1'b0;
 
           end
 
@@ -407,6 +419,7 @@ module bp_be_dcache_lce_cmd
             lce_cmd_yumi_o = tag_mem_pkt_v;
 
             set_tag_wakeup_received_o = tag_mem_pkt_v;
+            cache_req_complete_o = tag_mem_pkt_v;
 
           end
 
@@ -436,6 +449,8 @@ module bp_be_dcache_lce_cmd
             lce_resp_v_o = invalidated_tag_r | tag_mem_pkt_v;
             lce_cmd_yumi_o = lce_resp_yumi_i;
 
+            cache_req_complete_o = 1'b0;
+
           end
 
           //  <uncached store done>
@@ -443,6 +458,8 @@ module bp_be_dcache_lce_cmd
           e_lce_cmd_uc_st_done: begin
             uncached_store_done_received_o = lce_cmd_v_i;
             lce_cmd_yumi_o = lce_cmd_v_i;
+
+            cache_req_complete_o = 1'b0;
 
           end
 
@@ -468,7 +485,8 @@ module bp_be_dcache_lce_cmd
 
             cce_data_received_o = tag_mem_pkt_v & data_mem_pkt_v;
             set_tag_received_o  = tag_mem_pkt_v & data_mem_pkt_v;
-            
+            cache_req_complete_o = tag_mem_pkt_v & data_mem_pkt_v;
+
           end
 
           e_lce_cmd_uc_data: begin
@@ -483,6 +501,7 @@ module bp_be_dcache_lce_cmd
             lce_cmd_yumi_o = data_mem_pkt_v;
 
             uncached_data_received_o = data_mem_pkt_v;
+            cache_req_complete_o = data_mem_pkt_v;
 
           end
 
@@ -500,6 +519,7 @@ module bp_be_dcache_lce_cmd
             end
 
             lce_cmd_yumi_o = tag_mem_pkt_v & stat_mem_pkt_v;
+            cache_req_complete_o = 1'b0;
 
           end
 
@@ -533,6 +553,9 @@ module bp_be_dcache_lce_cmd
         state_n = lce_tr_done
           ? e_lce_cmd_state_ready
           : e_lce_cmd_state_tr;
+
+        cache_req_complete_o = 1'b0;
+
       end
 
       // <WRITEBACK state>
@@ -542,6 +565,9 @@ module bp_be_dcache_lce_cmd
         state_n = stat_mem_cast_i.dirty[lce_cmd_li.way_id]
           ? e_lce_cmd_state_wb_dirty
           : e_lce_cmd_state_wb_not_dirty;
+
+        cache_req_complete_o = 1'b0;
+
       end
 
       // <WRITEBACK dirty state>
@@ -601,6 +627,9 @@ module bp_be_dcache_lce_cmd
         state_n = lce_resp_done
           ? e_lce_cmd_state_ready
           : e_lce_cmd_state_wb_dirty;
+
+        cache_req_complete_o = 1'b0;
+
       end
 
       //  <WRITEBACK not-dirty state>
@@ -619,11 +648,14 @@ module bp_be_dcache_lce_cmd
           ? e_lce_cmd_state_ready
           : e_lce_cmd_state_wb_not_dirty;
 
+        cache_req_complete_o = 1'b0;
+
       end      
 
       // we should never get in this state, but if we do, return to the sync state.
       default: begin 
         state_n = e_lce_cmd_state_reset;
+        cache_req_complete_o = 1'b0;
       end
     endcase
   end

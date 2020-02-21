@@ -29,7 +29,6 @@ module bp_fe_lce
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
-   , parameter timeout_max_limit_p=4
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
    , localparam block_size_in_words_lp=lce_assoc_p
    , localparam data_mask_width_lp=(dword_width_p>>3)
@@ -129,8 +128,13 @@ module bp_fe_lce
   logic lce_req_lce_resp_v_lo;
   logic lce_req_lce_resp_yumi_li;
   logic [paddr_width_p-1:0] miss_addr_lo;
-  logic cache_req_ready_lo;
-
+  
+  logic lce_ready_lo;
+  logic coherence_blocked_li;
+  
+  assign coherence_blocked_li = lce_cmd_v_i & ~lce_cmd_yumi_o; 
+  wire cmd_ready = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached) ? 1'b1 : lce_ready_lo;
+  
   bp_fe_lce_req #(.bp_params_p(bp_params_p))
     lce_req_inst (
     .clk_i(clk_i)
@@ -140,11 +144,12 @@ module bp_fe_lce
 
     ,.cache_req_i(cache_req_i)
     ,.cache_req_v_i(cache_req_v_i)
-    ,.cache_req_ready_o(cache_req_ready_lo)
-
-    ,.cache_req_complete_o(cache_req_complete_o)
+    ,.cache_req_ready_o(cache_req_ready_o)
 
     ,.miss_addr_o(miss_addr_lo)
+
+    ,.coherence_blocked_i(coherence_blocked_li)
+    ,.cmd_ready_i(cmd_ready)
 
     ,.cce_data_received_i(cce_data_received)
     ,.uncached_data_received_i(uncached_data_received)
@@ -159,10 +164,6 @@ module bp_fe_lce
     ,.lce_resp_v_o(lce_req_lce_resp_v_lo)
     ,.lce_resp_yumi_i(lce_req_lce_resp_yumi_li)
   );
- 
-   
-  // lce_CMD
-  logic lce_ready_lo;
   
   bp_lce_cce_resp_s lce_cmd_lce_resp_lo;
   logic lce_cmd_lce_resp_v_lo;
@@ -181,6 +182,8 @@ module bp_fe_lce
     ,.set_tag_wakeup_received_o(set_tag_wakeup_received)
     ,.cce_data_received_o(cce_data_received)
     ,.uncached_data_received_o(uncached_data_received)
+    
+    ,.cache_req_complete_o(cache_req_complete_o)
 
     ,.data_mem_pkt_o(data_mem_pkt)
     ,.data_mem_pkt_v_o(data_mem_pkt_v_o)
@@ -229,38 +232,4 @@ module bp_fe_lce
     end
   end
 
-  // timeout logic (similar to dcache timeout logic)
-  logic [`BSG_SAFE_CLOG2(timeout_max_limit_p)-1:0] timeout_cnt_r, timeout_cnt_n;
-  logic timeout;
-
-  always_comb begin
-    timeout       = 1'b0;
-    timeout_cnt_n = timeout_cnt_r;
-    
-    if (timeout_cnt_r == timeout_max_limit_p) begin
-      timeout = 1'b1;
-      timeout_cnt_n = '0;
-    end
-    else begin
-      if (lce_cmd_v_i & ~lce_cmd_yumi_o) begin
-        timeout_cnt_n = timeout_cnt_r + 1;
-      end
-      else begin
-        timeout_cnt_n = '0;
-      end
-    end
-  end
-
-  always_ff @ (posedge clk_i) begin
-    if (reset_i) begin
-      timeout_cnt_r   <= '0;
-    end
-    else begin
-      timeout_cnt_r   <= timeout_cnt_n;
-    end
-  end
-
-  wire lce_ready = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached) ? 1'b1 : lce_ready_lo;
-  assign cache_req_ready_o = lce_ready & ~timeout & cache_req_ready_lo ;
- 
-endmodule
+  endmodule

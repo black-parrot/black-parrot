@@ -57,6 +57,8 @@ module bp_fe_lce_cmd
     , output logic                                               set_tag_wakeup_received_o
     , output logic                                               cce_data_received_o
     , output logic                                               uncached_data_received_o
+
+    , output logic                                               cache_req_complete_o
    
     , output logic [bp_cache_data_mem_pkt_width_lp-1:0]          data_mem_pkt_o
     , output logic                                               data_mem_pkt_v_o
@@ -181,6 +183,7 @@ module bp_fe_lce_cmd
     set_tag_wakeup_received_o        = 1'b0;
     cce_data_received_o              = 1'b0;
     uncached_data_received_o         = 1'b0;
+    cache_req_complete_o             = 1'b0;
 
     state_n = state_r;
     data_n = data_r;
@@ -211,6 +214,7 @@ module bp_fe_lce_cmd
           : e_lce_cmd_reset;
         cnt_clear = (state_n == e_lce_cmd_uncached_only);
         cnt_inc = ~cnt_clear & (tag_mem_pkt_v & stat_mem_pkt_v);
+        cache_req_complete_o = 1'b0;
       end
 
       e_lce_cmd_uncached_only: begin
@@ -230,6 +234,7 @@ module bp_fe_lce_cmd
           end
 
           lce_cmd_yumi_o           = tag_mem_pkt_v & stat_mem_pkt_v;
+          cache_req_complete_o = 1'b0;
 
         end
         else if (lce_cmd_li.msg_type == e_lce_cmd_sync) begin
@@ -246,6 +251,7 @@ module bp_fe_lce_cmd
           // only increment counter when staying in uncached_only state and waiting for more
           // sync messages, and when the lce_resp is sent
           cnt_inc = ~cnt_clear & lce_resp_yumi_i;
+          cache_req_complete_o = 1'b0;
          
         end 
         else if (lce_cmd_li.msg_type == e_lce_cmd_uc_data) begin
@@ -260,6 +266,7 @@ module bp_fe_lce_cmd
           lce_cmd_yumi_o = data_mem_pkt_v;
 
           uncached_data_received_o = data_mem_pkt_v;
+          cache_req_complete_o = data_mem_pkt_v;
 
         end
       end
@@ -281,6 +288,7 @@ module bp_fe_lce_cmd
           end
 
           state_n             = (data_mem_pkt_v & tag_mem_pkt_v) ? e_lce_cmd_send_transfer : e_lce_cmd_ready;
+          cache_req_complete_o = 1'b0;
 
         end else if (lce_cmd_li.msg_type == e_lce_cmd_writeback) begin
           lce_resp.dst_id   = lce_cmd_li.msg.cmd.src_id;
@@ -288,6 +296,7 @@ module bp_fe_lce_cmd
           lce_resp.addr     = lce_cmd_li.msg.cmd.addr;
           lce_resp_v_o      = lce_cmd_v_i;
           lce_cmd_yumi_o    = lce_resp_yumi_i;
+          cache_req_complete_o = 1'b0;
 
         end else if (lce_cmd_li.msg_type == e_lce_cmd_set_tag) begin
           if(tag_mem_pkt_ready_i) begin
@@ -301,6 +310,7 @@ module bp_fe_lce_cmd
 
           lce_cmd_yumi_o     = tag_mem_pkt_v;
           set_tag_received_o = tag_mem_pkt_v;
+          cache_req_complete_o = 1'b0;
 
         end else if (lce_cmd_li.msg_type == e_lce_cmd_set_tag_wakeup) begin
           if(tag_mem_pkt_ready_i) begin
@@ -314,6 +324,7 @@ module bp_fe_lce_cmd
 
           lce_cmd_yumi_o     = tag_mem_pkt_v;
           set_tag_wakeup_received_o = tag_mem_pkt_v;
+          cache_req_complete_o = tag_mem_pkt_v;
 
         end else if (lce_cmd_li.msg_type == e_lce_cmd_invalidate_tag) begin
           if(tag_mem_pkt_ready_i) begin
@@ -337,6 +348,7 @@ module bp_fe_lce_cmd
           lce_resp.addr = lce_cmd_li.msg.cmd.addr;
           lce_resp_v_o = (flag_invalidate_r | tag_mem_pkt_v);
           lce_cmd_yumi_o = lce_resp_yumi_i;
+          cache_req_complete_o = 1'b0;
 
         end else if (lce_cmd_li.msg_type == e_lce_cmd_data) begin
           if(data_mem_pkt_ready_i) begin
@@ -360,6 +372,7 @@ module bp_fe_lce_cmd
 
           cce_data_received_o = tag_mem_pkt_v & data_mem_pkt_v;
           set_tag_received_o  = tag_mem_pkt_v & data_mem_pkt_v;
+          cache_req_complete_o = tag_mem_pkt_v & data_mem_pkt_v;
 
         end else if (lce_cmd_li.msg_type == e_lce_cmd_uc_data) begin
           if(data_mem_pkt_ready_i) begin
@@ -373,6 +386,7 @@ module bp_fe_lce_cmd
           lce_cmd_yumi_o = data_mem_pkt_v;
 
           uncached_data_received_o = data_mem_pkt_v;
+          cache_req_complete_o = data_mem_pkt_v;
 
         end else if (lce_cmd_li.msg_type == e_lce_cmd_set_clear) begin
           if(tag_mem_pkt_ready_i) begin
@@ -390,6 +404,7 @@ module bp_fe_lce_cmd
           end
           
           lce_cmd_yumi_o           = tag_mem_pkt_v & stat_mem_pkt_v;
+          cache_req_complete_o = 1'b0;
 
         end
 
@@ -409,7 +424,8 @@ module bp_fe_lce_cmd
         lce_cmd_v_o          = lce_cmd_ready_i;
         lce_cmd_yumi_o       = lce_cmd_v_o;
         state_n              = lce_cmd_v_o ? e_lce_cmd_ready : e_lce_cmd_send_transfer;
-        
+        cache_req_complete_o = 1'b0;
+
       end
 
       default: begin
