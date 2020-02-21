@@ -106,3 +106,12 @@ Run directory for tools, generating output artifacts
 Full output of tool runs
 ### reports
 Summary of tool runs. For example, whether tests pass or fail
+
+# BlackParrot Repository Overview
+- **bp_fe/** contains the front-end (FE) of BlackParrot, responsible for speculative fetching of instructions.
+- **bp_be/** contains the back-end (BE) of BlackParrot, responsible for atomically executing instructions, as well as logically controlling the FE.
+- **bp_me/** contains the memory-end (ME) of BlackParrot, responsible for servicing memory/IO requests as well as maintaining cache coherence between BlackParrot cores. 
+- **bp_top/** contains configurations of FE, BE, and ME components. For instance, tile components and NOC assemblies.
+- **bp_common/** contains the interface components which connect FE, BE and ME. FE, BE, ME may depend on bp\_common, but not each other.
+- **external/** contains submodules corresponding to tooling that BlackParrot depends upon, such as the riscv-gnu-toolchain and Verilator.
+
