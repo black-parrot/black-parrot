@@ -123,6 +123,7 @@
   /* TODO: make opcode */                                                                          \
   typedef struct packed                                                                            \
   {                                                                                                \
+    logic [dword_width_p-1:0]       cause;                                                         \
     logic [vaddr_width_p-1:0]       epc;                                                           \
     logic [vaddr_width_p-1:0]       tvec;                                                          \
     logic [rv64_priv_width_gp-1:0]  priv_n;                                                        \
@@ -190,7 +191,7 @@
    )
  
 `define bp_be_trap_pkt_width(vaddr_width_mp) \
-  (2 * vaddr_width_mp + rv64_priv_width_gp + 6)
+  (2 * vaddr_width_mp + rv64_priv_width_gp + dword_width_p + 6)
 
 `define bp_be_wb_pkt_width(vaddr_width_mp) \
   (1                                                                                               \

@@ -1,4 +1,5 @@
 BP_DEMOS = \
+  bs                  \
   uc_simple           \
   simple              \
   hello_world         \

@@ -24,6 +24,7 @@ module bp_cce_mmio_cfg_loader
     , parameter inst_ram_els_p        = "inv"
     , parameter cce_ucode_filename_p  = "cce_ucode.mem"
     , parameter skip_ram_init_p       = 0
+    , parameter clear_freeze_p        = 0
     
     , localparam bp_pc_entry_point_gp=39'h00_8000_0000
     )
@@ -39,6 +40,8 @@ module bp_cce_mmio_cfg_loader
    , input [cce_mem_msg_width_lp-1:0]                 io_resp_i
    , input                                           io_resp_v_i
    , output                                          io_resp_ready_o
+   
+   , output                                          done_o
    );
 
   wire unused0 = &{io_resp_i, io_resp_v_i};
@@ -84,6 +87,7 @@ module bp_cce_mmio_cfg_loader
     ,BP_NINSTR_RD
     ,BP_NINSTR_LD
     ,BP_EXIT_DEBUG
+    ,WAIT_FOR_CREDITS
     ,DONE
   } state_n, state_r;
 
@@ -172,12 +176,14 @@ module bp_cce_mmio_cfg_loader
   wire ucode_prog_done = (ucode_cnt_r == cfg_addr_width_p'(inst_ram_els_p-1));
   wire core_prog_done  = (core_cnt_r == cfg_addr_width_p'(num_core_p-1));
   wire irf_done = (irf_cnt_r == cfg_addr_width_p'(reg_els_lp-1));
+  
+  assign done_o = (state_r == DONE)? 1'b1 : 1'b0;
 
   always_ff @(posedge clk_i) 
     begin
       if (reset_i)
         state_r <= RESET;
-      else if (io_cmd_yumi_i || (state_r == RESET) || (state_r == WAIT_FOR_SYNC))
+      else if (io_cmd_yumi_i || (state_r == RESET) || (state_r == WAIT_FOR_SYNC) || (state_r == WAIT_FOR_CREDITS))
         state_r <= state_n;
     end
 
@@ -314,7 +320,7 @@ module bp_cce_mmio_cfg_loader
           cfg_data_lo = '0;
         end
         SEND_PC: begin
-          state_n = core_prog_done ? BP_FREEZE_CLR : SEND_PC;
+          state_n = core_prog_done ? (clear_freeze_p ? BP_FREEZE_CLR : WAIT_FOR_CREDITS) : SEND_PC;
 
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
@@ -352,7 +358,7 @@ module bp_cce_mmio_cfg_loader
           cfg_data_lo = 1'b1;
         end
         BP_FREEZE_CLR: begin
-          state_n = core_prog_done ? DONE : BP_FREEZE_CLR;
+          state_n = core_prog_done ? WAIT_FOR_CREDITS : BP_FREEZE_CLR;
           //state_n = core_prog_done ? BP_NINSTR_RD : BP_FREEZE_CLR;
           //state_n = core_prog_done ? BP_EXIT_DEBUG : BP_FREEZE_CLR;
 
@@ -371,11 +377,14 @@ module bp_cce_mmio_cfg_loader
           cfg_data_lo = 32'h00100093;
         end
         BP_EXIT_DEBUG: begin
-          state_n = DONE;
+          state_n = WAIT_FOR_CREDITS;
 
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_exit_debug_gp);
           cfg_data_lo = 1'b1;
+        end
+        WAIT_FOR_CREDITS: begin
+          state_n = credits_empty_lo ? DONE : WAIT_FOR_CREDITS;
         end
         DONE: begin
           state_n = DONE;

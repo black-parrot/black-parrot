@@ -20,7 +20,8 @@ void monitor() {
   int c = -1;
   while(1) {
     c = getchar();
-    getchar_queue.push(c);
+    if(c != -1)
+      getchar_queue.push(c);
   }
 }
 
