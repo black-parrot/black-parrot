@@ -8,14 +8,25 @@ module bp_fe_mem
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-   `declare_bp_fe_lce_widths(lce_assoc_p, lce_sets_p, ptag_width_p, cce_block_width_p)
+   
+   , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
+   , localparam block_size_in_words_lp=lce_assoc_p
+   , localparam data_mask_width_lp=(dword_width_p>>3)
+   , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
+   , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
+   , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)
+   , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
+   , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
+
+   `declare_bp_cache_if_widths(lce_assoc_p, lce_sets_p, ptag_width_p, cce_block_width_p)
+   `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
+
+   , localparam bp_fe_icache_stat_width_lp = `bp_fe_icache_stat_width(lce_assoc_p)
 
    , localparam mem_cmd_width_lp  = `bp_fe_mem_cmd_width(vaddr_width_p, vtag_width_p, ptag_width_p)
    , localparam mem_resp_width_lp = `bp_fe_mem_resp_width
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-   , localparam lg_lce_assoc_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
-   , localparam way_id_width_lp = lg_lce_assoc_lp
    )
   (input                                              clk_i
    , input                                            reset_i
@@ -35,36 +46,37 @@ module bp_fe_mem
    , input                                            mem_resp_ready_i
 
    // Interface to LCE
-   , input                                            lce_ready_i
-   , input                                            lce_miss_i
+   , output [bp_cache_req_width_lp-1:0]               cache_req_o
+   , output                                           cache_req_v_o
+   , input                                            cache_req_ready_i
+   , input                                            cache_req_complete_i
 
-   , output logic                                     uncached_req_o
-   , output                                           miss_tv_o
-   , output [paddr_width_p-1:0]                       miss_addr_tv_o
-   , output logic [way_id_width_lp-1:0]               lru_way_o
-
-   , output logic [cce_block_width_p-1:0]             data_mem_data_o
-   , input [data_mem_pkt_width_lp-1:0]                data_mem_pkt_i
+   , input [bp_cache_data_mem_pkt_width_lp-1:0]       data_mem_pkt_i
    , input                                            data_mem_pkt_v_i
-   , output logic                                     data_mem_pkt_yumi_o
+   , output logic                                     data_mem_pkt_ready_o
+   , output logic [cce_block_width_p-1:0]             data_mem_o
 
-   , input [tag_mem_pkt_width_lp-1:0]                 tag_mem_pkt_i
+   , input [bp_cache_tag_mem_pkt_width_lp-1:0]        tag_mem_pkt_i
    , input                                            tag_mem_pkt_v_i
-   , output logic                                     tag_mem_pkt_yumi_o
+   , output logic                                     tag_mem_pkt_ready_o
+   , output logic [tag_width_lp-1:0]                  tag_mem_o
 
    , input                                            stat_mem_pkt_v_i
-   , input [stat_mem_pkt_width_lp-1:0]                stat_mem_pkt_i
-   , output logic                                     stat_mem_pkt_yumi_o
+   , input [bp_cache_stat_mem_pkt_width_lp-1:0]       stat_mem_pkt_i
+   , output logic                                     stat_mem_pkt_ready_o
+   , output logic [bp_fe_icache_stat_width_lp-1:0]    stat_mem_o
    );
 
-`declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-`declare_bp_fe_mem_structs(vaddr_width_p, lce_sets_p, cce_block_width_p, vtag_width_p, ptag_width_p)
+ `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+ `declare_bp_fe_mem_structs(vaddr_width_p, lce_sets_p, cce_block_width_p, vtag_width_p, ptag_width_p)
 
 bp_cfg_bus_s cfg_bus_cast_i;
 bp_fe_mem_cmd_s  mem_cmd_cast_i;
 bp_fe_mem_resp_s mem_resp_cast_o;
 
+
 wire unused = &{mem_resp_ready_i};
+
 
 assign cfg_bus_cast_i = cfg_bus_i;
 assign mem_cmd_cast_i = mem_cmd_i;
@@ -74,7 +86,7 @@ logic instr_page_fault_lo, instr_access_fault_lo, icache_miss_lo, itlb_miss_lo;
 
 wire itlb_fence_v = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fence);
 wire itlb_fill_v  = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fill);
-wire fetch_v      = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_fetch) & lce_ready_i;
+wire fetch_v      = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_fetch) & cache_req_ready_i;
 
 bp_fe_tlb_entry_s itlb_r_entry;
 logic itlb_r_v_lo;
@@ -135,24 +147,26 @@ bp_fe_icache
    ,.data_v_o(icache_data_v_lo)
 
    // LCE Interface
-   ,.cache_miss_i(lce_miss_i)
-   ,.lru_way_o(lru_way_o)
-   ,.miss_tv_o(miss_tv_o)
-   ,.miss_addr_tv_o(miss_addr_tv_o)
-   ,.uncached_req_o(uncached_req_o)
 
-   ,.lce_data_mem_data_o(data_mem_data_o)
+   ,.cache_req_o(cache_req_o)
+   ,.cache_req_v_o(cache_req_v_o)
+   ,.cache_req_ready_i(cache_req_ready_i)
+   ,.cache_req_complete_i(cache_req_complete_i)
+
    ,.lce_data_mem_pkt_i(data_mem_pkt_i)
    ,.lce_data_mem_pkt_v_i(data_mem_pkt_v_i)
-   ,.lce_data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
+   ,.lce_data_mem_pkt_ready_o(data_mem_pkt_ready_o)
+   ,.lce_data_mem_o(data_mem_o)
 
    ,.lce_tag_mem_pkt_i(tag_mem_pkt_i)
    ,.lce_tag_mem_pkt_v_i(tag_mem_pkt_v_i)
-   ,.lce_tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
+   ,.lce_tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
+   ,.lce_tag_mem_o(tag_mem_o)
 
    ,.lce_stat_mem_pkt_v_i(stat_mem_pkt_v_i)
    ,.lce_stat_mem_pkt_i(stat_mem_pkt_i)
-   ,.lce_stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+   ,.lce_stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
+   ,.lce_stat_mem_o(stat_mem_o)
    );
 
 assign mem_cmd_yumi_o = itlb_fence_v | itlb_fill_v | fetch_v;

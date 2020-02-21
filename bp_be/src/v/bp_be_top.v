@@ -12,10 +12,13 @@ module bp_be_top
  import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
  import bp_common_cfg_link_pkg::*;
+ import bp_be_dcache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+
+   `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
 
    // Default parameters 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
@@ -23,16 +26,18 @@ module bp_be_top
    // VM parameters
    , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
 
+   , localparam stat_info_width_lp=
+     `bp_be_dcache_stat_info_width(lce_assoc_p)
+
    // derived parameters
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
    , localparam dcache_data_mem_pkt_width_lp=
-     `bp_be_dcache_lce_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
+     `bp_cache_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
    , localparam dcache_tag_mem_pkt_width_lp=
-     `bp_be_dcache_lce_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, ptag_width_p)
+     `bp_cache_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, ptag_width_p)
    , localparam dcache_stat_mem_pkt_width_lp=
-     `bp_be_dcache_lce_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
-
-   )
+     `bp_cache_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
+  )
   (input                                     clk_i
    , input                                   reset_i
 
@@ -59,38 +64,29 @@ module bp_be_top
 
    // D$-LCE Interface
    // signals to LCE
-   , input lce_ready_i
-   , input lce_miss_i
-   , output logic load_miss_o
-   , output logic store_miss_o
-   , output logic store_hit_o
-   , output logic lr_miss_o
-   , output logic uncached_load_req_o
-   , output logic uncached_store_req_o
-   , output logic [paddr_width_p-1:0] miss_addr_o
-   , output logic [dword_width_p-1:0] store_data_o
-   , output logic [1:0] size_op_o
-   , output logic [way_id_width_lp-1:0] lru_way_o
-   , output logic [lce_assoc_p-1:0] dirty_o
-   // for lock logic inside LCE
-   , output logic lr_hit_tv_o
-   , output logic cache_v_o
+   , input cache_req_complete_i
+   
+   , output logic [bp_cache_req_width_lp-1:0]    cache_req_o
+   , output logic                                cache_req_v_o
+   , input                                       cache_req_ready_i
 
    // data_mem
    , input data_mem_pkt_v_i
    , input [dcache_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
-   , output logic [cce_block_width_p-1:0] data_mem_data_o
-   , output logic data_mem_pkt_yumi_o
+   , output logic [cce_block_width_p-1:0] lce_data_mem_o
+   , output logic data_mem_pkt_ready_o
 
    // tag_mem
    , input tag_mem_pkt_v_i
    , input [dcache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_i
-   , output logic tag_mem_pkt_yumi_o
+   , output logic [ptag_width_p-1:0] lce_tag_mem_o
+   , output logic tag_mem_pkt_ready_o
 
    // stat_mem
    , input stat_mem_pkt_v_i
    , input [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
-   , output logic stat_mem_pkt_yumi_o
+   , output logic [stat_info_width_lp-1:0] lce_stat_mem_o
+   , output logic  stat_mem_pkt_ready_o
 
    , input                                   credits_full_i
    , input                                   credits_empty_i
@@ -255,32 +251,24 @@ bp_be_mem_top
     ,.itlb_fill_vaddr_o(itlb_fill_vaddr)
     ,.itlb_fill_entry_o(itlb_fill_entry)
 
-    ,.lce_ready_i(lce_ready_i)
-    ,.lce_miss_i(lce_miss_i)
-    ,.load_miss_o(load_miss_o)
-    ,.store_miss_o(store_miss_o)
-    ,.store_hit_o(store_hit_o)
-    ,.lr_miss_o(lr_miss_o)
-    ,.uncached_load_req_o(uncached_load_req_o)
-    ,.uncached_store_req_o(uncached_store_req_o)
-    ,.miss_addr_o(miss_addr_o)
-    ,.store_data_o(store_data_o)
-    ,.size_op_o(size_op_o)
-    ,.lru_way_o(lru_way_o)
-    ,.dirty_o(dirty_o)
-    ,.lr_hit_tv_o(lr_hit_tv_o)
-    ,.cache_v_o(cache_v_o)
-
+    ,.cache_req_complete_i(cache_req_complete_i)   
+ 
+    ,.cache_req_o(cache_req_o)
+    ,.cache_req_v_o(cache_req_v_o)
+    ,.cache_req_ready_i(cache_req_ready_i)
+    
     ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
     ,.data_mem_pkt_i(data_mem_pkt_i)
-    ,.data_mem_data_o(data_mem_data_o)
-    ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
+    ,.lce_data_mem_o(lce_data_mem_o)
+    ,.data_mem_pkt_ready_o(data_mem_pkt_ready_o)
     ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
     ,.tag_mem_pkt_i(tag_mem_pkt_i)
-    ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
+    ,.lce_tag_mem_o(lce_tag_mem_o)
+    ,.tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
     ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
     ,.stat_mem_pkt_i(stat_mem_pkt_i)
-    ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
+    ,.lce_stat_mem_o(lce_stat_mem_o)
+    ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
 
     ,.commit_pkt_i(commit_pkt)
 
