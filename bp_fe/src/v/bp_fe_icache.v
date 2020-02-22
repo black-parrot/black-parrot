@@ -85,7 +85,7 @@ module bp_fe_icache
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
-  `declare_bp_cache_req_s(cce_block_width_p, lce_assoc_p, paddr_width_p);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p);
   bp_cache_req_s cache_req_cast_lo;
   assign cache_req_o = cache_req_cast_lo;
   
@@ -289,10 +289,6 @@ module bp_fe_icache
   assign cache_req_cast_lo.repl_way = invalid_exist ? way_invalid_index : lru_encode;
 
   // LCE
-  `declare_bp_cache_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
-  `declare_bp_cache_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, tag_width_lp);
-  `declare_bp_cache_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
-
   bp_cache_data_mem_pkt_s lce_data_mem_pkt;
   assign lce_data_mem_pkt = lce_data_mem_pkt_i;
   bp_cache_tag_mem_pkt_s tag_mem_pkt;

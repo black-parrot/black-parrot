@@ -47,7 +47,7 @@ typedef enum logic [2:0]
  } bp_cache_req_s
 
 `define bp_cache_req_width(data_width_mp, ways_mp, paddr_width_mp) \
- (data_width_mp+ways_mp+1+$bits(bp_cache_req_size_e) \
+ (data_width_mp+`BSG_SAFE_CLOG2(ways_mp)+1+$bits(bp_cache_req_size_e) \
  +paddr_width_mp+$bits(bp_cache_req_msg_type_e))
 
 // Fill IF

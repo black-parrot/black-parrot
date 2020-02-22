@@ -21,12 +21,6 @@ module bp_core
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , localparam way_id_width_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
 
-    , localparam lce_data_mem_pkt_width_lp=
-      `bp_cache_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
-    , localparam lce_tag_mem_pkt_width_lp=
-      `bp_cache_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, ptag_width_p)
-    , localparam lce_stat_mem_pkt_width_lp=
-      `bp_cache_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
     , localparam stat_info_width_lp = `bp_be_dcache_stat_info_width(lce_assoc_p)
  
     )

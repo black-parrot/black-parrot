@@ -62,7 +62,7 @@ module bp_fe_lce_req
   // lce interface
 
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
-  `declare_bp_cache_req_s(cce_block_width_p, lce_assoc_p, paddr_width_p);  
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   bp_lce_cce_resp_s lce_resp;
   bp_lce_cce_req_s lce_req;
