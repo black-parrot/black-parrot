@@ -5,14 +5,13 @@ module bp_nonsynth_cosim
   import bp_common_rv64_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
     `declare_bp_proc_params(bp_params_p)
-    
-    , parameter config_file_p = "inv"
     )
    (input                                     clk_i
     , input                                   reset_i
     , input                                   freeze_i
 
     , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
+    , input [63:0]                            config_file_i
 
     , input                                   commit_v_i
     , input [vaddr_width_p-1:0]               commit_pc_i
@@ -38,7 +37,7 @@ always_ff @(posedge clk_i)
 always_ff @(negedge clk_i)
   if (freeze_r & ~freeze_i)
     begin
-      init_dromajo(config_file_p);
+      init_dromajo(config_file_i);
     end
 
   logic                     commit_v_r;

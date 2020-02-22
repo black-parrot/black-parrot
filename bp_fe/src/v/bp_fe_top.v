@@ -25,7 +25,7 @@ module bp_fe_top
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
    
-   , localparam bp_fe_icache_stat_width_lp = `bp_fe_icache_stat_width(lce_assoc_p)
+   , localparam bp_be_dcache_stat_width_lp = `bp_be_dcache_stat_info_width(lce_assoc_p)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    )
@@ -62,7 +62,7 @@ module bp_fe_top
    , input [cache_stat_mem_pkt_width_lp-1:0]          stat_mem_pkt_i
    , input                                            stat_mem_pkt_v_i
    , output logic                                     stat_mem_pkt_ready_o
-   , output logic [bp_fe_icache_stat_width_lp-1:0]    stat_mem_o
+   , output logic [bp_be_dcache_stat_width_lp-1:0]    stat_mem_o
    );
 
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);

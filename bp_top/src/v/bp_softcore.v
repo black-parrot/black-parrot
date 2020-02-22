@@ -57,38 +57,29 @@ module bp_softcore
      ,.cfg_csr_data_o()
      ,.cfg_priv_data_o()
 
-     ,.lce_ready_i()
-     ,.lce_miss_i()
-     ,.credits_full_i()
-     ,.credits_empty_i()
-
-     ,.load_miss_o()
-     ,.store_miss_o()
-     ,.lr_miss_o()
-     ,.lr_hit_o()
-     ,.cache_v_o()
-     ,.uncached_load_req_o()
-     ,.uncached_store_req_o()
-
-     ,.data_mem_data_o()
-     ,.miss_addr_o()
-     ,.lru_way_o()
-     ,.dirty_o()
-     ,.store_o()
-     ,.store_data_o()
-     ,.size_op_o()
+     ,.cache_req_o()
+     ,.cache_req_v_o()
+     ,.cache_req_ready_i()
 
      ,.data_mem_pkt_i()
      ,.data_mem_pkt_v_i()
-     ,.data_mem_pkt_yumi_o()
+     ,.data_mem_pkt_ready_o()
+     ,.data_mem_o()
 
      ,.tag_mem_pkt_i()
      ,.tag_mem_pkt_v_i()
-     ,.tag_mem_pkt_yumi_o()
+     ,.tag_mem_pkt_ready_o()
+     ,.tag_mem_o()
 
      ,.stat_mem_pkt_i()
      ,.stat_mem_pkt_v_i()
-     ,.stat_mem_pkt_yumi_o()
+     ,.stat_mem_pkt_ready_o()
+     ,.stat_mem_o()
+
+     ,.cache_req_complete_o()
+
+     ,.credits_full_i()
+     ,.credits_empty_i()
 
      ,.timer_irq_i()
      ,.software_irq_i()
@@ -121,6 +112,9 @@ module bp_softcore
      ,.stat_mem_i()
 
      ,.cache_req_complete_o()
+
+     ,.credits_full_i()
+     ,.credits_empty()
 
      ,.mem_cmd_o()
      ,.mem_cmd_v_o()

@@ -35,8 +35,8 @@ module bp_fe_icache
     
     `declare_bp_icache_widths(vaddr_width_p, tag_width_lp, lce_assoc_p) 
 
+    , localparam bp_be_dcache_stat_width_lp = `bp_be_dcache_stat_info_width(lce_assoc_p)
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-    , localparam lg_lce_assoc_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
     , parameter debug_p=0
     )
    (input                                              clk_i
@@ -78,7 +78,7 @@ module bp_fe_icache
     , input lce_stat_mem_pkt_v_i
     , input [cache_stat_mem_pkt_width_lp-1:0] lce_stat_mem_pkt_i
     , output logic lce_stat_mem_pkt_ready_o
-    , output logic [bp_fe_icache_stat_width_lp-1:0] lce_stat_mem_o
+    , output logic [bp_be_dcache_stat_width_lp-1:0] lce_stat_mem_o
  );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
@@ -528,7 +528,8 @@ module bp_fe_icache
   assign lce_tag_mem_pkt_ready_o = ~tl_we;
 
   // LCE: stat_mem
-  assign lce_stat_mem_o = stat_mem_data_lo;
+  // Stub out dirty bits in icache
+  assign lce_stat_mem_o = {stat_mem_data_lo, lce_assoc_p'(0)};
   assign lce_stat_mem_pkt_ready_o = ~(v_tv_r & ~uncached_tv_r);
 
   // synopsys translate_off

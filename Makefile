@@ -35,16 +35,16 @@ tools:
 	$(MAKE) verilator
 	$(MAKE) fesvr
 	$(MAKE) spike
-	$(MAKE) dromajo
 	$(MAKE) axe
-	$(MAKE) dramsim2
 	$(MAKE) cmurphi
 
 progs: update_tests
 	$(MAKE) -C $(BP_COMMON_DIR)/test all_mem all_dump all_nbf
 
-ucode:
+ucode: update_libs
 	$(MAKE) -C $(BP_ME_DIR)/src/asm roms
 
 libs: update_libs
+	$(MAKE) dramsim2
+	$(MAKE) dromajo
 

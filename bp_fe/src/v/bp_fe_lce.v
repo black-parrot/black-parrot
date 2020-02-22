@@ -14,6 +14,8 @@
 module bp_fe_lce
   import bp_common_pkg::*;
   import bp_fe_pkg::*;
+  import bp_be_pkg::*;
+  import bp_be_dcache_pkg::*;
   import bp_fe_icache_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_common_cfg_link_pkg::*;
@@ -31,7 +33,7 @@ module bp_fe_lce
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
    
-   , localparam bp_fe_icache_stat_width_lp = `bp_fe_icache_stat_width(lce_assoc_p)
+   , localparam bp_be_dcache_stat_width_lp = `bp_be_dcache_stat_info_width(lce_assoc_p)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
   )
@@ -59,7 +61,7 @@ module bp_fe_lce
     , output logic [cache_stat_mem_pkt_width_lp-1:0]             stat_mem_pkt_o
     , output logic                                               stat_mem_pkt_v_o
     , input                                                      stat_mem_pkt_ready_i
-    , input  [bp_fe_icache_stat_width_lp-1:0]                    stat_mem_i
+    , input  [bp_be_dcache_stat_width_lp-1:0]                    stat_mem_i
       
     // LCE-CCE interface 
     , output logic [lce_cce_req_width_lp-1:0] lce_req_o

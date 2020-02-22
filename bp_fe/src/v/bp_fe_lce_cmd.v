@@ -30,7 +30,7 @@ module bp_fe_lce_cmd
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
    
-   , localparam bp_fe_icache_stat_width_lp = `bp_fe_icache_stat_width(lce_assoc_p)
+   , localparam bp_be_dcache_stat_width_lp = `bp_be_dcache_stat_info_width(lce_assoc_p)
 
     // width for counter used during initiliazation and for sync messages
     , localparam cnt_width_lp = `BSG_MAX(cce_id_width_p+1, `BSG_SAFE_CLOG2(lce_sets_p)+1)
@@ -64,7 +64,7 @@ module bp_fe_lce_cmd
     , output logic                                               stat_mem_pkt_v_o
     , output logic [cache_stat_mem_pkt_width_lp-1:0]             stat_mem_pkt_o
     , input                                                      stat_mem_pkt_ready_i
-    , input  [bp_fe_icache_stat_width_lp-1:0]                    stat_mem_i
+    , input  [bp_be_dcache_stat_width_lp-1:0]                    stat_mem_i
 
     , output logic [lce_cce_resp_width_lp-1:0]                   lce_resp_o
     , output logic                                               lce_resp_v_o

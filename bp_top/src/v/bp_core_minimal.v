@@ -20,18 +20,9 @@ module bp_core_minimal
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
     `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
-    , localparam way_id_width_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
-
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-    , localparam lce_data_mem_pkt_width_lp=
-      `bp_cache_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
-    , localparam lce_tag_mem_pkt_width_lp=
-      `bp_cache_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, ptag_width_p)
-    , localparam lce_stat_mem_pkt_width_lp=
-      `bp_cache_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
 
-    , localparam bp_be_dcache_stat_info_width_lp = `bp_be_dcache_stat_info_width(lce_assoc_p)
-    , localparam bp_fe_icache_stat_width_lp = `bp_fe_icache_stat_width(lce_assoc_p)
+    , localparam stat_info_width_lp = `bp_be_dcache_stat_info_width(lce_assoc_p)
     )
    (
     input          clk_i
@@ -67,8 +58,7 @@ module bp_core_minimal
     , input [1:0][cache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
     , input [1:0] stat_mem_pkt_v_i
     , output logic [1:0] stat_mem_pkt_ready_o
-    , output logic [bp_be_dcache_stat_info_width_lp-1:0] dcache_stat_mem_o
-    , output logic [bp_fe_icache_stat_width_lp-1:0] icache_stat_mem_o
+    , output logic [1:0][stat_info_width_lp-1:0] stat_mem_o
 
     , input                                        timer_irq_i
     , input                                        software_irq_i
@@ -129,7 +119,7 @@ module bp_core_minimal
      ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i[0])
      ,.stat_mem_pkt_i(stat_mem_pkt_i[0])
      ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o[0])
-     ,.stat_mem_o(icache_stat_mem_o)
+     ,.stat_mem_o(stat_mem_o[0])
      );
 
   bsg_fifo_1r1w_small
@@ -220,7 +210,7 @@ module bp_core_minimal
      ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i[1])
      ,.stat_mem_pkt_i(stat_mem_pkt_i[1])
      ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o[1])
-     ,.stat_mem_o(dcache_stat_mem_o)
+     ,.stat_mem_o(stat_mem_o[1])
 
      ,.credits_full_i(credits_full_i)
      ,.credits_empty_i(credits_empty_i)

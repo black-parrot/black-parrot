@@ -36,6 +36,9 @@ module bp_uce
 
     , output logic                             cache_req_complete_o
 
+    , output logic                             credits_full_o
+    , output logic                             credits_empty_o
+
     , output [cce_mem_msg_width_lp-1:0]        mem_cmd_o
     , output logic                             mem_cmd_v_o
     , input                                    mem_cmd_ready_i
