@@ -22,6 +22,7 @@ module bp_fe_icache
   import bp_fe_icache_pkg::*;  
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
     `declare_bp_proc_params(bp_params_p)
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p)
         
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
     , localparam block_size_in_words_lp=lce_assoc_p          
@@ -33,8 +34,6 @@ module bp_fe_icache
     , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp) 
     
     `declare_bp_icache_widths(vaddr_width_p, tag_width_lp, lce_assoc_p) 
-    `declare_bp_cache_if_widths(lce_assoc_p, lce_sets_p, tag_width_lp, cce_block_width_p)
-    `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p) 
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , localparam lg_lce_assoc_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
@@ -58,26 +57,26 @@ module bp_fe_icache
 
     // LCE Interface
     
-    , output [bp_cache_req_width_lp-1:0]               cache_req_o
+    , output [cache_req_width_lp-1:0]                  cache_req_o
     , output logic                                     cache_req_v_o
     , input                                            cache_req_ready_i
     , input                                            cache_req_complete_i
 
     // data_mem
     , input lce_data_mem_pkt_v_i
-    , input [bp_cache_data_mem_pkt_width_lp-1:0] lce_data_mem_pkt_i
+    , input [cache_data_mem_pkt_width_lp-1:0] lce_data_mem_pkt_i
     , output logic lce_data_mem_pkt_ready_o
     , output logic [cce_block_width_p-1:0] lce_data_mem_o
 
     // tag_mem
     , input lce_tag_mem_pkt_v_i
-    , input [bp_cache_tag_mem_pkt_width_lp-1:0] lce_tag_mem_pkt_i
+    , input [cache_tag_mem_pkt_width_lp-1:0] lce_tag_mem_pkt_i
     , output logic lce_tag_mem_pkt_ready_o
     , output logic [tag_width_lp-1:0] lce_tag_mem_o
 
     // stat_mem
     , input lce_stat_mem_pkt_v_i
-    , input [bp_cache_stat_mem_pkt_width_lp-1:0] lce_stat_mem_pkt_i
+    , input [cache_stat_mem_pkt_width_lp-1:0] lce_stat_mem_pkt_i
     , output logic lce_stat_mem_pkt_ready_o
     , output logic [bp_fe_icache_stat_width_lp-1:0] lce_stat_mem_o
  );

@@ -16,7 +16,7 @@ module bp_core
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-    `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , localparam way_id_width_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
@@ -65,13 +65,12 @@ module bp_core
     );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
-  `declare_bp_cache_req_s(cce_block_width_p, lce_assoc_p, paddr_width_p);
-
-  logic [1:0][bp_cache_req_width_lp-1:0] cache_req_cast_lo;
+  bp_cache_req_s [1:0] cache_req_cast_lo;
 
   logic cache_req_dcache_v_lo, cache_req_icache_v_lo, cache_req_dcache_ready_li, cache_req_icache_ready_li;
 
@@ -82,17 +81,17 @@ module bp_core
   logic [1:0] cache_v_lo;
 
   // response side - Interface from LCE
-  logic [1:0][lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_li;
+  bp_cache_data_mem_pkt_s [1:0] data_mem_pkt_li;
   logic [1:0] data_mem_pkt_v_li;
   logic [1:0] data_mem_pkt_ready_lo;
   logic [1:0][cce_block_width_p-1:0] data_mem_lo;
 
-  logic [1:0][lce_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_li;
+  bp_cache_tag_mem_pkt_s[1:0] tag_mem_pkt_li;
   logic [1:0] tag_mem_pkt_v_li;
   logic [1:0] tag_mem_pkt_ready_lo;
   logic [1:0][ptag_width_p-1:0] tag_mem_lo;
 
-  logic [1:0][lce_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_li;
+  bp_cache_stat_mem_pkt_s [1:0] stat_mem_pkt_li;
   logic [1:0] stat_mem_pkt_v_li;
   logic [1:0] stat_mem_pkt_ready_lo;
   logic [bp_be_dcache_stat_info_width_lp-1:0] dcache_stat_mem_lo;

@@ -30,26 +30,13 @@ localparam bp_log_file_gp   = 2;
     if (print_type_mp[1]) $fwrite(file_mp, "%s", $sformatf str_mp); \
   end while (0)
 
+`define bp_cast_i(struct_name_mp, port_mp) \
+  struct_name_mp ``port_mp``_cast_i;    \
+  assign ``port_mp``_cast_i = port_mp
 
-  /* TODO: Use actual cache service interface */
-  typedef enum logic [3:0] 
-  {
-    e_miss_load
-    ,e_miss_store
-    ,e_uc_load
-    ,e_uc_store
-    ,e_wt_store
-    ,e_block_read
-  } bp_cache_service_msg_type_e;
-
-  // TODO: Replace stubs with actual definition
-  `define bp_cache_service_width(paddr_width_mp) (paddr_width_mp)
-  `define declare_bp_cache_service_s(paddr_width_mp) \
-    typedef struct packed                      \
-    {                                          \
-      logic dirty;                             \
-      bp_cache_service_msg_type_e msg_type;    \
-    }  bp_cache_service_s
+`define bp_cast_o(struct_name_mp, port_mp) \
+  struct_name_mp ``port_mp``_cast_o;    \
+  assign port_mp = ``port_mp``_cast_o;
 
 `endif
 

@@ -15,6 +15,25 @@ module bp_softcore
   (input                                               clk_i
    , input                                             reset_i
 
+   // Outgoing I/O
+   , output [cce_mem_msg_width_lp-1:0]                 io_cmd_o
+   , output                                            io_cmd_v_o
+   , input                                             io_cmd_ready_i
+
+   , input [cce_mem_msg_width_lp-1:0]                  io_resp_i
+   , input                                             io_resp_v_i
+   , output                                            io_resp_yumi_o
+
+   // Incoming I/O
+   , input [cce_mem_msg_width_lp-1:0]                  io_cmd_i
+   , input                                             io_cmd_v_i
+   , output                                            io_cmd_yumi_o
+
+   , output [cce_mem_msg_width_lp-1:0]                 io_resp_o
+   , output                                            io_resp_v_o
+   , input                                             io_resp_ready_i
+
+   // Memory Requests
    , output [cce_mem_msg_width_lp-1:0]                 mem_cmd_o
    , output                                            mem_cmd_v_o
    , input                                             mem_cmd_ready_i
@@ -82,15 +101,26 @@ module bp_softcore
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.cache_service_i()
-     ,.cache_service_v_i()
-     ,.cache_service_ready_o()
+     ,.cache_req_i()
+     ,.cache_req_v_i()
+     ,.cache_req_ready_o()
 
      ,.tag_mem_pkt_o()
+     ,.tag_mem_pkt_v_o()
+     ,.tag_mem_pkt_ready_i()
+     ,.tag_mem_i()
+
      ,.data_mem_pkt_o()
+     ,.data_mem_pkt_v_o()
+     ,.data_mem_pkt_ready_i()
+     ,.data_mem_i()
+
      ,.stat_mem_pkt_o()
-     ,.cache_fill_v_o()
-     ,.cache_fill_yumi_i()
+     ,.stat_mem_pkt_v_o()
+     ,.stat_mem_pkt_ready_i()
+     ,.stat_mem_i()
+
+     ,.cache_req_complete_o()
 
      ,.mem_cmd_o()
      ,.mem_cmd_v_o()

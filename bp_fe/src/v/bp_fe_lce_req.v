@@ -6,14 +6,6 @@
  * Description:
  *   To	be updated
  *
- * Parameters:
- *
- * Inputs:
- *
- * Outputs:
- *
- * Keywords:
- *
  * Notes:
  *
  */
@@ -26,6 +18,7 @@ module bp_fe_lce_req
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p)
    
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
    , localparam block_size_in_words_lp=lce_assoc_p
@@ -37,15 +30,13 @@ module bp_fe_lce_req
    , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
    
    , parameter timeout_max_limit_p=4
-
-   `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
   )
    (input clk_i
     , input reset_i
 
     , input [lce_id_width_p-1:0] lce_id_i
  
-    , input [bp_cache_req_width_lp-1:0] cache_req_i
+    , input [cache_req_width_lp-1:0] cache_req_i
     , input cache_req_v_i
     , output logic cache_req_ready_o
 

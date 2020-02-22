@@ -21,6 +21,25 @@ module wrapper
   (input                                               clk_i
    , input                                             reset_i
 
+   // Outgoing I/O
+   , output [cce_mem_msg_width_lp-1:0]                 io_cmd_o
+   , output                                            io_cmd_v_o
+   , input                                             io_cmd_ready_i
+
+   , input [cce_mem_msg_width_lp-1:0]                  io_resp_i
+   , input                                             io_resp_v_i
+   , output                                            io_resp_yumi_o
+
+   // Incoming I/O
+   , input [cce_mem_msg_width_lp-1:0]                  io_cmd_i
+   , input                                             io_cmd_v_i
+   , output                                            io_cmd_yumi_o
+
+   , output [cce_mem_msg_width_lp-1:0]                 io_resp_o
+   , output                                            io_resp_v_o
+   , input                                             io_resp_ready_i
+
+   // Memory Requests
    , output [cce_mem_msg_width_lp-1:0]                 mem_cmd_o
    , output                                            mem_cmd_v_o
    , input                                             mem_cmd_ready_i
