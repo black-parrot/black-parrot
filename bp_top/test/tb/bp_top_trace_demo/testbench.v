@@ -34,6 +34,7 @@ module testbench
    , parameter cosim_cfg_file_p            = load_nbf_p ? "prog.cfg" : "prog.elf"
 
    , parameter mem_zero_p         = 1
+   , parameter mem_load_p         = preload_mem_p
    , parameter mem_file_p         = "prog.mem"
    , parameter mem_cap_in_bytes_p = 2**20
    , parameter [paddr_width_p-1:0] mem_offset_p = paddr_width_p'(32'h8000_0000)

@@ -32,7 +32,6 @@ module bp_fe_pc_gen
 
    , input [mem_resp_width_lp-1:0]                   mem_resp_i
    , input                                           mem_resp_v_i
-   , output                                          mem_resp_ready_o
 
    , input [fe_cmd_width_lp-1:0]                     fe_cmd_i
    , input                                           fe_cmd_v_i
@@ -341,8 +340,6 @@ always_comb
 assign mem_poison_o         = pc_gen_stage_r[0].v & ~pc_gen_stage_n[1].v;
 assign mem_priv_o           = shadow_priv_w ? shadow_priv_n : shadow_priv_r;
 assign mem_translation_en_o = shadow_translation_en_w ? shadow_translation_en_n : shadow_translation_en_r;
-
-assign mem_resp_ready_o = 1'b1;
 
 // Handshaking signals
 assign fe_cmd_yumi_o      = fe_cmd_v_i; // Always accept FE commands

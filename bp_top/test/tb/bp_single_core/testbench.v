@@ -36,8 +36,8 @@ module testbench
    , parameter [paddr_width_p-1:0] mem_offset_p = paddr_width_p'(32'h8000_0000)
 
    // Number of elements in the fake BlackParrot memory
-   , parameter use_max_latency_p      = 0
-   , parameter use_random_latency_p   = 1
+   , parameter use_max_latency_p      = 1
+   , parameter use_random_latency_p   = 0
    , parameter use_dramsim2_latency_p = 0
 
    , parameter max_latency_p = 15
@@ -62,6 +62,22 @@ wrapper
  wrapper
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
+
+   ,.io_cmd_o()
+   ,.io_cmd_v_o()
+   ,.io_cmd_ready_i()
+
+   ,.io_resp_i()
+   ,.io_resp_v_i()
+   ,.io_resp_yumi_o()
+
+   ,.io_cmd_i()
+   ,.io_cmd_v_i()
+   ,.io_cmd_yumi_o()
+
+   ,.io_resp_o()
+   ,.io_resp_v_o()
+   ,.io_resp_ready_i()
 
    ,.mem_cmd_o(proc_cmd_lo)
    ,.mem_cmd_v_o(proc_cmd_v_lo)

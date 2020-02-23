@@ -41,7 +41,6 @@ module bp_fe_mem
 
    , output [mem_resp_width_lp-1:0]                   mem_resp_o
    , output                                           mem_resp_v_o
-   , input                                            mem_resp_ready_i
 
    // Interface to LCE
    , output [cache_req_width_lp-1:0]                  cache_req_o
@@ -72,19 +71,16 @@ bp_cfg_bus_s cfg_bus_cast_i;
 bp_fe_mem_cmd_s  mem_cmd_cast_i;
 bp_fe_mem_resp_s mem_resp_cast_o;
 
-
-wire unused = &{mem_resp_ready_i};
-
-
 assign cfg_bus_cast_i = cfg_bus_i;
 assign mem_cmd_cast_i = mem_cmd_i;
 assign mem_resp_o     = mem_resp_cast_o;
 
 logic instr_page_fault_lo, instr_access_fault_lo, icache_miss_lo, itlb_miss_lo;
 
+logic fetch_ready;
 wire itlb_fence_v = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fence);
 wire itlb_fill_v  = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fill);
-wire fetch_v      = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_fetch) & cache_req_ready_i;
+wire fetch_v      = fetch_ready & mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_fetch);
 
 bp_fe_tlb_entry_s itlb_r_entry;
 logic itlb_r_v_lo;
@@ -135,6 +131,7 @@ bp_fe_icache
 
    ,.vaddr_i(mem_cmd_cast_i.operands.fetch.vaddr)
    ,.vaddr_v_i(fetch_v)
+   ,.vaddr_ready_o(fetch_ready)
 
    ,.ptag_i(ptag_li)
    ,.ptag_v_i(ptag_v_li)
@@ -143,6 +140,7 @@ bp_fe_icache
 
    ,.data_o(icache_data_lo)
    ,.data_v_o(icache_data_v_lo)
+   ,.miss_o()
 
    // LCE Interface
 
@@ -151,20 +149,20 @@ bp_fe_icache
    ,.cache_req_ready_i(cache_req_ready_i)
    ,.cache_req_complete_i(cache_req_complete_i)
 
-   ,.lce_data_mem_pkt_i(data_mem_pkt_i)
-   ,.lce_data_mem_pkt_v_i(data_mem_pkt_v_i)
-   ,.lce_data_mem_pkt_ready_o(data_mem_pkt_ready_o)
-   ,.lce_data_mem_o(data_mem_o)
+   ,.data_mem_pkt_i(data_mem_pkt_i)
+   ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
+   ,.data_mem_pkt_ready_o(data_mem_pkt_ready_o)
+   ,.data_mem_o(data_mem_o)
 
-   ,.lce_tag_mem_pkt_i(tag_mem_pkt_i)
-   ,.lce_tag_mem_pkt_v_i(tag_mem_pkt_v_i)
-   ,.lce_tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
-   ,.lce_tag_mem_o(tag_mem_o)
+   ,.tag_mem_pkt_i(tag_mem_pkt_i)
+   ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
+   ,.tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
+   ,.tag_mem_o(tag_mem_o)
 
-   ,.lce_stat_mem_pkt_v_i(stat_mem_pkt_v_i)
-   ,.lce_stat_mem_pkt_i(stat_mem_pkt_i)
-   ,.lce_stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
-   ,.lce_stat_mem_o(stat_mem_o)
+   ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
+   ,.stat_mem_pkt_i(stat_mem_pkt_i)
+   ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
+   ,.stat_mem_o(stat_mem_o)
    );
 
 assign mem_cmd_yumi_o = itlb_fence_v | itlb_fill_v | fetch_v;

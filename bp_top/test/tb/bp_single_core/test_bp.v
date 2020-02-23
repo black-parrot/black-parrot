@@ -38,9 +38,13 @@ testbench
 initial 
   begin
     $assertoff();
-    @(posedge clk)
-    @(negedge reset)
+    @(posedge clk);
+    @(negedge reset);
     $asserton();
+
+    for (integer i = 0; i < 10000; i++)
+      @(posedge clk);
+    $finish();
   end
 
 endmodule : test_bp

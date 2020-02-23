@@ -73,7 +73,7 @@ logic            mem_cmd_v_lo, mem_cmd_yumi_li;
 logic [rv64_priv_width_gp-1:0]  mem_priv_lo;
 logic            mem_poison_lo, mem_translation_en_lo;
 bp_fe_mem_resp_s mem_resp_li;
-logic            mem_resp_v_li, mem_resp_ready_lo;
+logic            mem_resp_v_li;
 
 bp_fe_pc_gen 
  #(.bp_params_p(bp_params_p)) 
@@ -91,7 +91,6 @@ bp_fe_pc_gen
 
    ,.mem_resp_i(mem_resp_li)
    ,.mem_resp_v_i(mem_resp_v_li)
-   ,.mem_resp_ready_o(mem_resp_ready_lo)
 
    ,.fe_cmd_i(fe_cmd_i)
    ,.fe_cmd_v_i(fe_cmd_v_i)
@@ -120,7 +119,6 @@ bp_fe_mem
 
    ,.mem_resp_o(mem_resp_li)
    ,.mem_resp_v_o(mem_resp_v_li)
-   ,.mem_resp_ready_i(mem_resp_ready_lo)
 
    ,.cache_req_o(cache_req_o)
    ,.cache_req_v_o(cache_req_v_o)

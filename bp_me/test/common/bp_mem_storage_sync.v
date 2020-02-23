@@ -40,17 +40,25 @@ assign data_li = data_i;
 
 import "DPI-C" context function string rebase_hexfile(input string memfile_name
                                                       , input longint dram_base);
+
+logic reset_r;
+always_ff @(posedge clk_i)
+  reset_r <= reset_i;
+wire reset_done = reset_r & ~reset_i;
+                                                      
 string hex_file;
 always_ff @(posedge clk_i)
   begin
-    if (reset_i & mem_load_p)
+    if (reset_done & mem_load_p)
       begin
         for (integer i = 0; i < mem_cap_in_bytes_p; i++)
           mem[i] = '0;
         hex_file = rebase_hexfile(mem_file_p, mem_offset_p);
+        $display("READ START");
         $readmemh(hex_file, mem);
+        $display("READ END");
       end
-    else if (reset_i & mem_zero_p)
+    else if (reset_done & mem_zero_p)
       begin
         for (integer i = 0; i < mem_cap_in_bytes_p; i++)
           mem[i] = '0;

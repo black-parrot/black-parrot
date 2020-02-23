@@ -655,49 +655,47 @@ module bp_be_dcache
   logic tag_mem_pkt_ready;
   logic stat_mem_pkt_ready;
 
-  logic cache_lock;
-  // Assigning sizes to cache miss packet
-  always_comb begin
-    unique case (size_op_tv_r)
-      e_dword: cache_req_cast_o.size = e_size_8B;
-      e_word: cache_req_cast_o.size = e_size_4B;
-      e_halfword: cache_req_cast_o.size = e_size_2B;
-      e_byte: cache_req_cast_o.size = e_size_1B;
-      default: cache_req_cast_o.size = e_size_8B;
-    endcase
-  end
   
   // Assigning message types
   always_comb begin
     cache_req_v_o = 1'b0;
-    if(cache_req_ready_i) begin
-      if(load_miss_tv) begin
-        cache_req_cast_o.msg_type = e_miss_load;
-        cache_req_v_o = 1'b1;
-      end
-      else if(store_miss_tv | lr_miss_tv) begin
-        cache_req_cast_o.msg_type = e_miss_store;
-        cache_req_v_o = 1'b1;
-      end
-      else if(uncached_load_req) begin
-        cache_req_cast_o.msg_type = e_uc_load;
-        cache_req_v_o = 1'b1;
-      end
-      else if(uncached_store_req) begin
-        cache_req_cast_o.msg_type = e_uc_store;
-        cache_req_v_o = 1'b1;
-      end
-      else begin
-        cache_req_cast_o.msg_type = e_miss_load;
-        cache_req_v_o = 1'b0;
-      end
-    end
-  end
 
-  assign cache_req_cast_o.addr = paddr_tv_r;
-  assign cache_req_cast_o.repl_way = lce_lru_way_li;
-  assign cache_req_cast_o.dirty = stat_mem_data_lo.dirty[lce_lru_way_li];
-  assign cache_req_cast_o.data = data_tv_r;
+    cache_req_cast_o = '0;
+
+    // Assigning sizes to cache miss packet
+    if (uncached_tv_r)
+      unique case (size_op_tv_r)
+        e_dword: cache_req_cast_o.size = e_size_8B;
+        e_word: cache_req_cast_o.size = e_size_4B;
+        e_halfword: cache_req_cast_o.size = e_size_2B;
+        e_byte: cache_req_cast_o.size = e_size_1B;
+        default: cache_req_cast_o.size = e_size_8B;
+      endcase
+    else
+      cache_req_cast_o.size = e_size_64B;
+
+    if(load_miss_tv) begin
+      cache_req_cast_o.msg_type = e_miss_load;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(store_miss_tv | lr_miss_tv) begin
+      cache_req_cast_o.msg_type = e_miss_store;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(uncached_load_req) begin
+      cache_req_cast_o.msg_type = e_uc_load;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(uncached_store_req) begin
+      cache_req_cast_o.msg_type = e_uc_store;
+      cache_req_v_o = cache_req_ready_i;
+    end
+
+    cache_req_cast_o.addr = paddr_tv_r;
+    cache_req_cast_o.repl_way = lce_lru_way_li;
+    cache_req_cast_o.dirty = stat_mem_data_lo.dirty[lce_lru_way_li];
+    cache_req_cast_o.data = data_tv_r;
+  end
   
   // output stage
   // Cache Miss Tracking logic
@@ -771,7 +769,7 @@ module bp_be_dcache
      ,.count_o(lock_cnt_r)
      );
   
-  assign cache_lock = (lock_cnt_r != '0);
+  wire cache_lock = (lock_cnt_r != '0);
   
   assign data_mem_pkt_ready_o = data_mem_pkt_ready & ~cache_lock;
   assign tag_mem_pkt_ready_o = tag_mem_pkt_ready & ~cache_lock;

@@ -32,11 +32,11 @@ localparam bp_log_file_gp   = 2;
 
 `define bp_cast_i(struct_name_mp, port_mp) \
   struct_name_mp ``port_mp``_cast_i;    \
-  assign ``port_mp``_cast_i = port_mp
+  assign ``port_mp``_cast_i = ``port_mp``_i
 
 `define bp_cast_o(struct_name_mp, port_mp) \
   struct_name_mp ``port_mp``_cast_o;    \
-  assign port_mp = ``port_mp``_cast_o;
+  assign ``port_mp``_o = ``port_mp``_cast_o;
 
 `endif
 

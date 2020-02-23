@@ -90,8 +90,8 @@ module bp_core
   logic [1:0][stat_info_width_lp-1:0] stat_mem_lo;
 
   bp_core_minimal
-    #(.bp_params_p(bp_params_p))
-  core_minimal
+   #(.bp_params_p(bp_params_p))
+   core_minimal
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
