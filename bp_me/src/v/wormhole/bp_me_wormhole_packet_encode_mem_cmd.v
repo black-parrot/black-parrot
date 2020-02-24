@@ -75,7 +75,7 @@ module bp_me_wormhole_packet_encode_mem_cmd
     packet_cast_o.cord    = dst_cord_i;
     packet_cast_o.cid     = dst_cid_i;
 
-    case (mem_cmd_cast_i.size)
+    case (mem_cmd_cast_i.header.size)
       e_mem_size_1 : data_cmd_len_li = len_width_p'(mem_cmd_data_len_1_lp);
       e_mem_size_2 : data_cmd_len_li = len_width_p'(mem_cmd_data_len_2_lp);
       e_mem_size_4 : data_cmd_len_li = len_width_p'(mem_cmd_data_len_4_lp);
@@ -86,7 +86,7 @@ module bp_me_wormhole_packet_encode_mem_cmd
       default: data_cmd_len_li = '0;
     endcase
 
-    case (mem_cmd_cast_i.msg_type)
+    case (mem_cmd_cast_i.header.msg_type)
       e_cce_mem_rd
       ,e_cce_mem_wr
       ,e_cce_mem_uc_rd: packet_cast_o.len = len_width_p'(mem_cmd_req_len_lp);
