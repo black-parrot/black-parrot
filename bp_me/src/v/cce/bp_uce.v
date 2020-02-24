@@ -61,11 +61,12 @@ module bp_uce
   `bp_cast_o(bp_cce_mem_msg_s, mem_cmd);
   `bp_cast_i(bp_cce_mem_msg_s, mem_resp);
 
-  logic cache_req_v_r, dirty_data_v_r;
+  logic cache_req_v_r, dirty_data_v_r, dirty_tag_v_r;
   always_ff @(posedge clk_i)
     begin
       cache_req_v_r <= cache_req_v_i;
       dirty_data_v_r <= data_mem_pkt_v_o & (data_mem_pkt_cast_o.opcode == e_cache_data_mem_read);
+      dirty_tag_v_r <= tag_mem_pkt_v_o & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_read);
     end
 
   bp_cache_req_s cache_req_r;
@@ -100,6 +101,17 @@ module bp_uce
     ,.en_i(dirty_data_v_r)
     ,.data_i(data_mem_i)
     ,.data_o(dirty_data_r)
+    );
+
+  logic [ptag_width_p-1:0] dirty_tag_r;
+  bsg_dff_en_bypass
+   #(.width_p(ptag_width_p))
+   dirty_tag_reg
+    (.clk_i(clk_i)
+
+    ,.en_i(dirty_tag_v_r)
+    ,.data_i(tag_mem_i)
+    ,.data_o(dirty_tag_r)
     );
 
   // We can do a little better by sending the read_request before the writeback
@@ -147,8 +159,8 @@ module bp_uce
   assign index_done = (index_cnt == '0) & is_flush & tag_mem_pkt_v_o & stat_mem_pkt_v_o;
 
   // TODO: Count credits
-  assign credits_full_o = '0;
-  assign credits_empty_o = '0;
+  assign credits_full_o = 1'b0;
+  assign credits_empty_o = 1'b1;
 
   // We ack mem_resps for uncached stores no matter what, so mem_resp_yumi_lo is for other responses 
   logic mem_resp_yumi_lo;
@@ -225,21 +237,28 @@ module bp_uce
               data_mem_pkt_cast_o.way_id = cache_req_metadata_r.repl_way;
               data_mem_pkt_v_o = data_mem_pkt_ready_i;
 
+              tag_mem_pkt_cast_o.opcode  = e_cache_tag_mem_read;
+              tag_mem_pkt_cast_o.index   = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
+              tag_mem_pkt_cast_o.way_id  = cache_req_metadata_r.repl_way;
+              tag_mem_pkt_v_o = tag_mem_pkt_ready_i;
+
               state_n = data_mem_pkt_v_o ? e_write_wait : e_send_req;
             end
         e_writeback:
           begin
-            // TODO: Need to dequeue the writeback response while still preserving the original
-            // request
+            mem_cmd_cast_o.msg_type = e_cce_mem_wb;
+            mem_cmd_cast_o.addr     = {dirty_tag_r, cache_req_r.addr[block_offset_width_lp+:index_width_lp]};
+            mem_cmd_cast_o.size     = e_mem_size_64;
+            mem_cmd_v_o = mem_cmd_ready_i;
 
-            //state_n = block_read_li ? e_write_wait : e_writeback;
-            state_n = state_r;
+            state_n = mem_cmd_v_o ? e_write_wait : e_writeback;
           end
         e_write_wait:
           begin
-            state_n = state_r;
-            $error("Writeback not implemented");
-            //state_n = mem_resp_yumi_lo ? e_read_wait : e_ready;
+            // Wait for writeback
+            mem_resp_yumi_lo = mem_resp_v_i & ~uc_store_resp_v_li;
+
+            state_n = mem_resp_yumi_lo ? e_read_wait : e_ready;
           end
         e_read_wait:
           begin

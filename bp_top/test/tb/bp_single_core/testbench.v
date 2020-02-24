@@ -227,6 +227,29 @@ bind bp_be_top
      ,.program_finish_i(testbench.program_finish_lo)
      );
 
+logic reset_r;
+always_ff @(posedge clk_i)
+  reset_r <= reset_i;
+
+bind bp_be_top
+  bp_nonsynth_commit_tracer
+   #(.bp_params_p(bp_params_p))
+   commit_tracer
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.freeze_i(testbench.reset_r)
+
+     ,.mhartid_i('0)
+
+     ,.commit_v_i(be_calculator.commit_pkt.instret)
+     ,.commit_pc_i(be_calculator.commit_pkt.pc)
+     ,.commit_instr_i(be_calculator.commit_pkt.instr)
+
+     ,.rd_w_v_i(be_calculator.wb_pkt.rd_w_v)
+     ,.rd_addr_i(be_calculator.wb_pkt.rd_addr)
+     ,.rd_data_i(be_calculator.wb_pkt.rd_data)
+     );
+
 bp_nonsynth_if_verif
  #(.bp_params_p(bp_params_p))
  if_verif

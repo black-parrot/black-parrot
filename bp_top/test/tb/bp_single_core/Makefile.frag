@@ -5,7 +5,7 @@ DRAM_TRACE_P   ?= 0
 DCACHE_TRACE_P ?= 0
 NPC_TRACE_P    ?= 0
 VM_TRACE_P     ?= 0
-PRELOAD_MEM_P  ?= 0
+PRELOAD_MEM_P  ?= 1
 
 export DUT_PARAMS = 
 
