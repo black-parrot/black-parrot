@@ -49,7 +49,7 @@ cache: &global_cache
     - $CI_PROJECT_DIR/external/
   policy: pull
 
-update-cache:
+update-cache: &update-cache-manual
   <<: *job_definition
   when: manual
   stage: prereq
@@ -69,6 +69,16 @@ update-cache:
       - $CI_PROJECT_DIR/external/
       - $CI_PROJECT_DIR/bp_common/test/mem/
     policy: push
+
+update-cache-auto:
+    <<: *update-cache-manual
+    when: always
+    only:
+      changes:
+        - Makefile
+        - Makefile.common
+        - bp_common/test/*
+        - external/*
 
 hotfix_job:
   <<: *job_definition
