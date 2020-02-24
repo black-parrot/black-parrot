@@ -87,8 +87,8 @@ always_ff @(posedge clk_i)
   if (reset_i)
     begin
       freeze_r            <= 1'b1;
-      icache_mode_r       <= e_lce_mode_uncached;
-      dcache_mode_r       <= e_lce_mode_uncached;
+      icache_mode_r       <= e_lce_mode_normal; //e_lce_mode_uncached;
+      dcache_mode_r       <= e_lce_mode_normal; // e_lce_mode_uncached;
       cce_mode_r          <= e_cce_mode_uncached;
     end
   else if (cfg_w_v_li)

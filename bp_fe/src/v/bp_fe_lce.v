@@ -6,14 +6,6 @@
  * Description:
  *   To	be updated
  *
- * Parameters:
- *
- * Inputs:
- *
- * Outputs:
- *
- * Keywords:
- *
  * Notes:
  *
  */
@@ -22,12 +14,15 @@
 module bp_fe_lce
   import bp_common_pkg::*;
   import bp_fe_pkg::*;
+  import bp_be_pkg::*;
+  import bp_be_dcache_pkg::*;
   import bp_fe_icache_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_common_cfg_link_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
    , localparam block_size_in_words_lp=lce_assoc_p
@@ -38,10 +33,7 @@ module bp_fe_lce
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
    
-   , localparam bp_fe_icache_stat_width_lp = `bp_fe_icache_stat_width(lce_assoc_p)
-
-   `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
-   `declare_bp_cache_if_widths(lce_assoc_p, lce_sets_p, tag_width_lp, cce_block_width_p)
+   , localparam bp_be_dcache_stat_width_lp = `bp_be_dcache_stat_info_width(lce_assoc_p)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
   )
@@ -51,25 +43,26 @@ module bp_fe_lce
 
     , input [cfg_bus_width_lp-1:0]                               cfg_bus_i
 
-    , input [bp_cache_req_width_lp-1:0]                          cache_req_i
+    , input [cache_req_width_lp-1:0]                             cache_req_i
     , input                                                      cache_req_v_i
     , output logic                                               cache_req_ready_o
+    , input [cache_req_metadata_width_lp-1:0]                    cache_req_metadata_i
     , output logic                                               cache_req_complete_o
 
-    , output logic [bp_cache_data_mem_pkt_width_lp-1:0]          data_mem_pkt_o
+    , output logic [cache_data_mem_pkt_width_lp-1:0]             data_mem_pkt_o
     , output logic                                               data_mem_pkt_v_o
     , input                                                      data_mem_pkt_ready_i
     , input  [cce_block_width_p-1:0]                             data_mem_i
 
-    , output logic [bp_cache_tag_mem_pkt_width_lp-1:0]           tag_mem_pkt_o
+    , output logic [cache_tag_mem_pkt_width_lp-1:0]              tag_mem_pkt_o
     , output logic                                               tag_mem_pkt_v_o
     , input                                                      tag_mem_pkt_ready_i
     , input [tag_width_lp-1:0]                                   tag_mem_i
        
+    , output logic [cache_stat_mem_pkt_width_lp-1:0]             stat_mem_pkt_o
     , output logic                                               stat_mem_pkt_v_o
-    , output logic [bp_cache_stat_mem_pkt_width_lp-1:0]          stat_mem_pkt_o
     , input                                                      stat_mem_pkt_ready_i
-    , input  [bp_fe_icache_stat_width_lp-1:0]                    stat_mem_i
+    , input  [bp_be_dcache_stat_width_lp-1:0]                    stat_mem_i
       
     // LCE-CCE interface 
     , output logic [lce_cce_req_width_lp-1:0] lce_req_o
@@ -91,11 +84,7 @@ module bp_fe_lce
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
-
-  `declare_bp_cache_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
-  `declare_bp_cache_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, tag_width_lp);
-  `declare_bp_cache_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
-  `declare_bp_cache_req_s(cce_block_width_p, lce_assoc_p, paddr_width_p);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   bp_cfg_bus_s cfg_bus_cast_i;
 
@@ -145,6 +134,7 @@ module bp_fe_lce
     ,.cache_req_i(cache_req_i)
     ,.cache_req_v_i(cache_req_v_i)
     ,.cache_req_ready_o(cache_req_ready_o)
+    ,.cache_req_metadata_i(cache_req_metadata_i)
 
     ,.miss_addr_o(miss_addr_lo)
 

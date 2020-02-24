@@ -6,14 +6,6 @@
  * Description:
  *   To	be updated
  *
- * Parameters:
- *
- * Inputs:
- *
- * Outputs:
- *
- * Keywords:
- *
  * Notes:
  *
  */
@@ -26,6 +18,7 @@ module bp_fe_lce_req
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p)
    
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
    , localparam block_size_in_words_lp=lce_assoc_p
@@ -37,17 +30,16 @@ module bp_fe_lce_req
    , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
    
    , parameter timeout_max_limit_p=4
-
-   `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
   )
    (input clk_i
     , input reset_i
 
     , input [lce_id_width_p-1:0] lce_id_i
  
-    , input [bp_cache_req_width_lp-1:0] cache_req_i
+    , input [cache_req_width_lp-1:0] cache_req_i
     , input cache_req_v_i
     , output logic cache_req_ready_o
+    , input [cache_req_metadata_width_lp-1:0] cache_req_metadata_i
 
     , output logic [paddr_width_p-1:0] miss_addr_o
           
@@ -71,16 +63,18 @@ module bp_fe_lce_req
   // lce interface
 
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
-  `declare_bp_cache_req_s(cce_block_width_p, lce_assoc_p, paddr_width_p);  
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   bp_lce_cce_resp_s lce_resp;
   bp_lce_cce_req_s lce_req;
   bp_cache_req_s cache_req_cast_li;
+  bp_cache_req_metadata_s cache_req_metadata_cast_li;
 
   assign lce_req_o = lce_req;
   assign lce_resp_o = lce_resp;
 
   assign cache_req_cast_li = cache_req_i;
+  assign cache_req_metadata_cast_li = cache_req_metadata_i;
   
   // states
   typedef enum logic [2:0] {
@@ -144,7 +138,7 @@ module bp_fe_lce_req
     lce_req.msg.req.lru_dirty     = e_lce_req_lru_clean;
     lce_req.msg.req.lru_way_id    = lru_flopped_r
                                     ? lru_way_r
-                                    : cache_req_cast_li.repl_way;
+                                    : cache_req_metadata_cast_li.repl_way;
     lce_req.msg.req.pad    = '0;
 
 
@@ -182,7 +176,7 @@ module bp_fe_lce_req
 
       e_lce_req_send_miss_req: begin
         lru_flopped_n = 1'b1;
-        lru_way_n = lru_flopped_r ? lru_way_r : cache_req_cast_li.repl_way;
+        lru_way_n = lru_flopped_r ? lru_way_r : cache_req_metadata_cast_li.repl_way;
 
         lce_req_v_o           = 1'b1;
         

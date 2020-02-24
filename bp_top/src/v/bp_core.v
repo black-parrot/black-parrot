@@ -16,19 +16,12 @@ module bp_core
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-    `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , localparam way_id_width_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
 
-    , localparam lce_data_mem_pkt_width_lp=
-      `bp_cache_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
-    , localparam lce_tag_mem_pkt_width_lp=
-      `bp_cache_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, ptag_width_p)
-    , localparam lce_stat_mem_pkt_width_lp=
-      `bp_cache_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
-    , localparam bp_be_dcache_stat_info_width_lp = `bp_be_dcache_stat_info_width(lce_assoc_p)
-    , localparam bp_fe_icache_stat_width_lp = `bp_fe_icache_stat_width(lce_assoc_p)
+    , localparam stat_info_width_lp = `bp_be_dcache_stat_info_width(lce_assoc_p)
  
     )
    (
@@ -65,15 +58,14 @@ module bp_core
     );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
-  `declare_bp_cache_req_s(cce_block_width_p, lce_assoc_p, paddr_width_p);
-
-  logic [1:0][bp_cache_req_width_lp-1:0] cache_req_cast_lo;
-
-  logic cache_req_dcache_v_lo, cache_req_icache_v_lo, cache_req_dcache_ready_li, cache_req_icache_ready_li;
+  bp_cache_req_s [1:0] cache_req_cast_lo;
+  logic [1:0] cache_req_ready_li, cache_req_v_lo;
+  bp_cache_req_metadata_s [1:0] cache_req_metadata_lo;
 
   logic [1:0] cache_req_complete_lo;
   logic credits_full_lo, credits_empty_lo;
@@ -82,25 +74,24 @@ module bp_core
   logic [1:0] cache_v_lo;
 
   // response side - Interface from LCE
-  logic [1:0][lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_li;
+  bp_cache_data_mem_pkt_s [1:0] data_mem_pkt_li;
   logic [1:0] data_mem_pkt_v_li;
   logic [1:0] data_mem_pkt_ready_lo;
   logic [1:0][cce_block_width_p-1:0] data_mem_lo;
 
-  logic [1:0][lce_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_li;
+  bp_cache_tag_mem_pkt_s[1:0] tag_mem_pkt_li;
   logic [1:0] tag_mem_pkt_v_li;
   logic [1:0] tag_mem_pkt_ready_lo;
   logic [1:0][ptag_width_p-1:0] tag_mem_lo;
 
-  logic [1:0][lce_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_li;
+  bp_cache_stat_mem_pkt_s [1:0] stat_mem_pkt_li;
   logic [1:0] stat_mem_pkt_v_li;
   logic [1:0] stat_mem_pkt_ready_lo;
-  logic [bp_be_dcache_stat_info_width_lp-1:0] dcache_stat_mem_lo;
-  logic [bp_fe_icache_stat_width_lp-1:0] icache_stat_mem_lo;
+  logic [1:0][stat_info_width_lp-1:0] stat_mem_lo;
 
   bp_core_minimal
-    #(.bp_params_p(bp_params_p))
-  core_minimal
+   #(.bp_params_p(bp_params_p))
+   core_minimal
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
@@ -116,8 +107,10 @@ module bp_core
      ,.credits_empty_i(credits_empty_lo)
 
      ,.cache_req_o(cache_req_cast_lo)
-     ,.cache_req_v_o({cache_req_dcache_v_lo, cache_req_icache_v_lo})
-     ,.cache_req_ready_i({cache_req_dcache_ready_li, cache_req_icache_ready_li})
+     ,.cache_req_v_o(cache_req_v_lo)
+     ,.cache_req_ready_i(cache_req_ready_li)
+     ,.cache_req_metadata_o(cache_req_metadata_lo)
+
      ,.cache_req_complete_i(cache_req_complete_lo)
      
      // response side - Interface from LCE
@@ -134,8 +127,7 @@ module bp_core
      ,.stat_mem_pkt_i(stat_mem_pkt_li)
      ,.stat_mem_pkt_v_i(stat_mem_pkt_v_li)
      ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_lo)
-     ,.dcache_stat_mem_o(dcache_stat_mem_lo)
-     ,.icache_stat_mem_o(icache_stat_mem_lo)
+     ,.stat_mem_o(stat_mem_lo)
 
      ,.timer_irq_i(timer_irq_i)
      ,.software_irq_i(software_irq_i)
@@ -152,8 +144,9 @@ module bp_core
      ,.cfg_bus_i(cfg_bus_i)
 
      ,.cache_req_i(cache_req_cast_lo[0])
-     ,.cache_req_v_i(cache_req_icache_v_lo)
-     ,.cache_req_ready_o(cache_req_icache_ready_li)
+     ,.cache_req_v_i(cache_req_v_lo[0])
+     ,.cache_req_ready_o(cache_req_ready_li[0])
+     ,.cache_req_metadata_i(cache_req_metadata_lo[0])
      ,.cache_req_complete_o(cache_req_complete_lo[0])
 
      ,.data_mem_pkt_o(data_mem_pkt_li[0])
@@ -169,7 +162,7 @@ module bp_core
      ,.stat_mem_pkt_v_o(stat_mem_pkt_v_li[0])
      ,.stat_mem_pkt_o(stat_mem_pkt_li[0])
      ,.stat_mem_pkt_ready_i(stat_mem_pkt_ready_lo[0])
-     ,.stat_mem_i(icache_stat_mem_lo)
+     ,.stat_mem_i(stat_mem_lo[0])
 
      ,.lce_req_o(lce_req_o[0])
      ,.lce_req_v_o(lce_req_v_o[0])
@@ -197,8 +190,10 @@ module bp_core
     ,.lce_id_i(cfg_bus_cast_i.dcache_id)
 
     ,.cache_req_i(cache_req_cast_lo[1])
-    ,.cache_req_v_i(cache_req_dcache_v_lo)
-    ,.cache_req_ready_o(cache_req_dcache_ready_li)
+    ,.cache_req_v_i(cache_req_v_lo[1])
+    ,.cache_req_ready_o(cache_req_ready_li[1])
+    ,.cache_req_metadata_i(cache_req_metadata_lo[1])
+
     ,.cache_req_complete_o(cache_req_complete_lo[1])
 
     ,.data_mem_pkt_o(data_mem_pkt_li[1])
@@ -214,7 +209,7 @@ module bp_core
     ,.stat_mem_pkt_v_o(stat_mem_pkt_v_li[1])
     ,.stat_mem_pkt_o(stat_mem_pkt_li[1])
     ,.stat_mem_pkt_ready_i(stat_mem_pkt_ready_lo[1])
-    ,.stat_mem_i(dcache_stat_mem_lo)
+    ,.stat_mem_i(stat_mem_lo[1])
 
     ,.lce_req_o(lce_req_o[1])
     ,.lce_req_v_o(lce_req_v_o[1])

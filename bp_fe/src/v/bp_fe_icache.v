@@ -22,6 +22,7 @@ module bp_fe_icache
   import bp_fe_icache_pkg::*;  
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
     `declare_bp_proc_params(bp_params_p)
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p)
         
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
     , localparam block_size_in_words_lp=lce_assoc_p          
@@ -33,11 +34,9 @@ module bp_fe_icache
     , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp) 
     
     `declare_bp_icache_widths(vaddr_width_p, tag_width_lp, lce_assoc_p) 
-    `declare_bp_cache_if_widths(lce_assoc_p, lce_sets_p, tag_width_lp, cce_block_width_p)
-    `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p) 
 
+    , localparam bp_be_dcache_stat_width_lp = `bp_be_dcache_stat_info_width(lce_assoc_p)
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-    , localparam lg_lce_assoc_lp = `BSG_SAFE_CLOG2(lce_assoc_p)
     , parameter debug_p=0
     )
    (input                                              clk_i
@@ -47,6 +46,7 @@ module bp_fe_icache
 
     , input [vaddr_width_p-1:0]                        vaddr_i
     , input                                            vaddr_v_i
+    , output                                           vaddr_ready_o
 
     , input [ptag_width_p-1:0]                         ptag_i
     , input                                            ptag_v_i
@@ -55,40 +55,45 @@ module bp_fe_icache
     
     , output [instr_width_p-1:0]                       data_o
     , output                                           data_v_o
+    , output                                           miss_o
 
     // LCE Interface
     
-    , output [bp_cache_req_width_lp-1:0]               cache_req_o
+    , output [cache_req_width_lp-1:0]                  cache_req_o
     , output logic                                     cache_req_v_o
     , input                                            cache_req_ready_i
+    , output [cache_req_metadata_width_lp-1:0]         cache_req_metadata_o
+
     , input                                            cache_req_complete_i
 
     // data_mem
-    , input lce_data_mem_pkt_v_i
-    , input [bp_cache_data_mem_pkt_width_lp-1:0] lce_data_mem_pkt_i
-    , output logic lce_data_mem_pkt_ready_o
-    , output logic [cce_block_width_p-1:0] lce_data_mem_o
+    , input data_mem_pkt_v_i
+    , input [cache_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
+    , output logic data_mem_pkt_ready_o
+    , output logic [cce_block_width_p-1:0] data_mem_o
 
     // tag_mem
-    , input lce_tag_mem_pkt_v_i
-    , input [bp_cache_tag_mem_pkt_width_lp-1:0] lce_tag_mem_pkt_i
-    , output logic lce_tag_mem_pkt_ready_o
-    , output logic [tag_width_lp-1:0] lce_tag_mem_o
+    , input tag_mem_pkt_v_i
+    , input [cache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_i
+    , output logic tag_mem_pkt_ready_o
+    , output logic [tag_width_lp-1:0] tag_mem_o
 
     // stat_mem
-    , input lce_stat_mem_pkt_v_i
-    , input [bp_cache_stat_mem_pkt_width_lp-1:0] lce_stat_mem_pkt_i
-    , output logic lce_stat_mem_pkt_ready_o
-    , output logic [bp_fe_icache_stat_width_lp-1:0] lce_stat_mem_o
+    , input stat_mem_pkt_v_i
+    , input [cache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
+    , output logic stat_mem_pkt_ready_o
+    , output logic [bp_be_dcache_stat_width_lp-1:0] stat_mem_o
  );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
-  `declare_bp_cache_req_s(cce_block_width_p, lce_assoc_p, paddr_width_p);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p);
   bp_cache_req_s cache_req_cast_lo;
+  bp_cache_req_metadata_s cache_req_metadata_cast_lo;
   assign cache_req_o = cache_req_cast_lo;
+  assign cache_req_metadata_o = cache_req_metadata_cast_lo;
   
   logic [index_width_lp-1:0]            vaddr_index;
 
@@ -109,7 +114,7 @@ module bp_fe_icache
   logic [bp_page_offset_width_gp-1:0] page_offset_tl_r;
   logic [vaddr_width_p-1:0]           vaddr_tl_r;
 
-  assign tl_we = vaddr_v_i;
+  assign tl_we = vaddr_v_i & cache_req_ready_i;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -193,7 +198,6 @@ module bp_fe_icache
   logic [word_offset_width_lp-1:0]              addr_word_offset_tv;
 
   assign tv_we = v_tl_r & ~poison_i & ptag_v_i;
-  assign cache_req_cast_lo.addr = addr_tv_r;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -286,41 +290,37 @@ module bp_fe_icache
     ,.addr_o(way_invalid_index)
  );
   
-  // invalid way takes priority over LRU way
-  assign cache_req_cast_lo.repl_way = invalid_exist ? way_invalid_index : lru_encode;
-
   // LCE
-  `declare_bp_cache_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
-  `declare_bp_cache_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, tag_width_lp);
-  `declare_bp_cache_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
-
-  bp_cache_data_mem_pkt_s lce_data_mem_pkt;
-  assign lce_data_mem_pkt = lce_data_mem_pkt_i;
+  bp_cache_data_mem_pkt_s data_mem_pkt;
+  assign data_mem_pkt = data_mem_pkt_i;
   bp_cache_tag_mem_pkt_s tag_mem_pkt;
-  assign tag_mem_pkt = lce_tag_mem_pkt_i;
+  assign tag_mem_pkt = tag_mem_pkt_i;
   bp_cache_stat_mem_pkt_s stat_mem_pkt;
-  assign stat_mem_pkt = lce_stat_mem_pkt_i;
+  assign stat_mem_pkt = stat_mem_pkt_i;
 
   always_comb begin
+    cache_req_cast_lo = '0;
+    cache_req_v_o = '0;
+
     if (cache_req_ready_i) begin
       if (miss_tv) begin
+        cache_req_cast_lo.addr = addr_tv_r;
         cache_req_cast_lo.msg_type = e_miss_load;
+        cache_req_cast_lo.size = e_size_64B;
         cache_req_v_o = 1'b1;
       end
       else if (uncached_req) begin
+        cache_req_cast_lo.addr = addr_tv_r;
         cache_req_cast_lo.msg_type = e_uc_load;
+        cache_req_cast_lo.size = e_size_4B;
         cache_req_v_o = 1'b1;   
       end
-      else begin
-        cache_req_cast_lo.msg_type = e_miss_load;
-        cache_req_v_o = 1'b0;
-      end
-    end
-    else begin
-      cache_req_cast_lo.msg_type = e_miss_load;
-      cache_req_v_o = 1'b0;
     end
   end
+
+  // invalid way takes priority over LRU way
+  assign cache_req_metadata_cast_lo.repl_way = invalid_exist ? way_invalid_index : lru_encode;
+  assign cache_req_metadata_cast_lo.dirty = '0;
 
   // Cache Miss Tracker
   logic cache_miss, miss_tracker_r;
@@ -337,9 +337,11 @@ module bp_fe_icache
      );
 
   assign cache_miss = cache_req_v_o || miss_tracker_r;
+  assign vaddr_ready_o = cache_req_ready_i & ~cache_miss;
 
   // Fault if in uncached mode but access is not for an uncached address
   assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r) | ~miss_tv);
+  assign miss_o = miss_tv | cache_miss;
 
   logic [dword_width_p-1:0]   ld_data_way_picked;
 
@@ -371,25 +373,25 @@ module bp_fe_icache
 
   // data mem
 
-  logic lce_data_mem_v;
-  assign lce_data_mem_v = (lce_data_mem_pkt.opcode != e_cache_data_mem_uncached)
-    & lce_data_mem_pkt_v_i;
+  logic data_mem_v;
+  assign data_mem_v = (data_mem_pkt.opcode != e_cache_data_mem_uncached)
+    & data_mem_pkt_v_i;
 
   assign data_mem_v_li = tl_we
     ? {lce_assoc_p{1'b1}}
-    : {lce_assoc_p{lce_data_mem_v}};
+    : {lce_assoc_p{data_mem_v}};
 
-  assign data_mem_w_li = lce_data_mem_pkt_v_i
-    & (lce_data_mem_pkt.opcode == e_cache_data_mem_write);   
+  assign data_mem_w_li = data_mem_pkt_v_i
+    & (data_mem_pkt.opcode == e_cache_data_mem_write);   
 
-  logic [lce_assoc_p-1:0][dword_width_p-1:0] lce_data_mem_write_data;
+  logic [lce_assoc_p-1:0][dword_width_p-1:0] data_mem_write_data;
 
   for (genvar i = 0; i < lce_assoc_p; i++) begin
     assign data_mem_addr_li[i] = tl_we
       ? {vaddr_index, vaddr_offset}
-      : {lce_data_mem_pkt.index, lce_data_mem_pkt.way_id ^ ((word_offset_width_lp)'(i))};
+      : {data_mem_pkt.index, data_mem_pkt.way_id ^ ((word_offset_width_lp)'(i))};
 
-    assign data_mem_data_li[i] = lce_data_mem_write_data[i];
+    assign data_mem_data_li[i] = data_mem_write_data[i];
     assign data_mem_w_mask_li[i] = {data_mask_width_lp{1'b1}};
   end
 
@@ -397,24 +399,24 @@ module bp_fe_icache
     .width_p(dword_width_p)
     ,.els_p(lce_assoc_p)
   ) write_mux_butterfly (
-    .data_i(lce_data_mem_pkt.data)
-    ,.sel_i(lce_data_mem_pkt.way_id)
-    ,.data_o(lce_data_mem_write_data)
+    .data_i(data_mem_pkt.data)
+    ,.sel_i(data_mem_pkt.way_id)
+    ,.data_o(data_mem_write_data)
   );
    
   // tag_mem
-  assign tag_mem_v_li = tl_we | lce_tag_mem_pkt_v_i;
-  assign tag_mem_w_li = ~tl_we & lce_tag_mem_pkt_v_i;
+  assign tag_mem_v_li = tl_we | tag_mem_pkt_v_i;
+  assign tag_mem_w_li = ~tl_we & tag_mem_pkt_v_i;
   assign tag_mem_addr_li = tl_we
     ? vaddr_index
     : tag_mem_pkt.index;
 
-  logic [lce_assoc_p-1:0] lce_tag_mem_way_one_hot;
+  logic [lce_assoc_p-1:0] tag_mem_way_one_hot;
   bsg_decode #(
     .num_out_p(lce_assoc_p)
-  ) lce_tag_mem_way_decode (
+  ) tag_mem_way_decode (
     .i(tag_mem_pkt.way_id)
-    ,.o(lce_tag_mem_way_one_hot)
+    ,.o(tag_mem_way_one_hot)
   );
 
   always_comb begin
@@ -428,13 +430,13 @@ module bp_fe_icache
       e_cache_tag_mem_invalidate: begin
         for (integer i = 0; i < lce_assoc_p; i++) begin
           tag_mem_data_li[i]    = '0;
-          tag_mem_w_mask_li[i] = {{`bp_coh_bits{lce_tag_mem_way_one_hot[i]}}, {tag_width_lp{1'b0}}};
+          tag_mem_w_mask_li[i] = {{`bp_coh_bits{tag_mem_way_one_hot[i]}}, {tag_width_lp{1'b0}}};
         end
       end
       e_cache_tag_mem_set_tag: begin
         for (integer i = 0; i < lce_assoc_p; i++) begin
           tag_mem_data_li[i]   = {tag_mem_pkt.state, tag_mem_pkt.tag};
-          tag_mem_w_mask_li[i] = {(`bp_coh_bits+tag_width_lp){lce_tag_mem_way_one_hot[i]}};
+          tag_mem_w_mask_li[i] = {(`bp_coh_bits+tag_width_lp){tag_mem_way_one_hot[i]}};
         end
       end
       default: begin
@@ -445,10 +447,10 @@ module bp_fe_icache
   end
 
   // stat mem
-  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r) | lce_stat_mem_pkt_v_i;
+  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r) | stat_mem_pkt_v_i;
   assign stat_mem_w_li = (v_tv_r & ~uncached_tv_r)
     ? ~miss_tv
-    : lce_stat_mem_pkt_v_i & (stat_mem_pkt.opcode != e_cache_stat_mem_read);
+    : stat_mem_pkt_v_i & (stat_mem_pkt.opcode != e_cache_stat_mem_read);
   assign stat_mem_addr_li = (v_tv_r & ~uncached_tv_r)
     ? addr_index_tv 
     : stat_mem_pkt.index;
@@ -475,11 +477,11 @@ module bp_fe_icache
   end
    
   // LCE: data mem
-  logic [way_id_width_lp-1:0] lce_data_mem_pkt_way_r;
+  logic [way_id_width_lp-1:0] data_mem_pkt_way_r;
 
   always_ff @ (posedge clk_i) begin
-    if (lce_data_mem_pkt_v_i & (lce_data_mem_pkt.opcode == e_cache_data_mem_read)) begin
-      lce_data_mem_pkt_way_r <= lce_data_mem_pkt.way_id;
+    if (data_mem_pkt_v_i & (data_mem_pkt.opcode == e_cache_data_mem_read)) begin
+      data_mem_pkt_way_r <= data_mem_pkt.way_id;
     end
   end
 
@@ -488,11 +490,11 @@ module bp_fe_icache
     ,.els_p(lce_assoc_p)
   ) read_mux_butterfly (
     .data_i(data_mem_data_lo)
-    ,.sel_i(lce_data_mem_pkt_way_r)
-    ,.data_o(lce_data_mem_o)
+    ,.sel_i(data_mem_pkt_way_r)
+    ,.data_o(data_mem_o)
   );
 
-  assign lce_data_mem_pkt_ready_o = ~tl_we;
+  assign data_mem_pkt_ready_o = ~tl_we;
 
   // uncached load data logic
   always_ff @(posedge clk_i) begin
@@ -500,8 +502,8 @@ module bp_fe_icache
       uncached_load_data_v_r <= 1'b0;
     end
     else begin
-      if (lce_data_mem_pkt_v_i & (lce_data_mem_pkt.opcode == e_cache_data_mem_uncached)) begin
-        uncached_load_data_r <= lce_data_mem_pkt.data[0+:dword_width_p];
+      if (data_mem_pkt_v_i & (data_mem_pkt.opcode == e_cache_data_mem_uncached)) begin
+        uncached_load_data_r <= data_mem_pkt.data[0+:dword_width_p];
         uncached_load_data_v_r <= 1'b1;
       end
       else if (poison_i)
@@ -517,20 +519,21 @@ module bp_fe_icache
 
   // LCE: tag_mem
   
-  logic [way_id_width_lp-1:0] lce_tag_mem_pkt_way_r;
+  logic [way_id_width_lp-1:0] tag_mem_pkt_way_r;
   
   always_ff @ (posedge clk_i) begin
-    if (lce_tag_mem_pkt_v_i & (tag_mem_pkt.opcode == e_cache_tag_mem_read)) begin
-      lce_tag_mem_pkt_way_r <= tag_mem_pkt.way_id;
+    if (tag_mem_pkt_v_i & (tag_mem_pkt.opcode == e_cache_tag_mem_read)) begin
+      tag_mem_pkt_way_r <= tag_mem_pkt.way_id;
     end
   end
 
-  assign lce_tag_mem_o = tag_mem_data_lo[lce_tag_mem_pkt_way_r][0+:tag_width_lp];
-  assign lce_tag_mem_pkt_ready_o = ~tl_we;
+  assign tag_mem_o = tag_mem_data_lo[tag_mem_pkt_way_r][0+:tag_width_lp];
+  assign tag_mem_pkt_ready_o = ~tl_we;
 
   // LCE: stat_mem
-  assign lce_stat_mem_o = stat_mem_data_lo;
-  assign lce_stat_mem_pkt_ready_o = ~(v_tv_r & ~uncached_tv_r);
+  // Stub out dirty bits in icache
+  assign stat_mem_o = {stat_mem_data_lo, lce_assoc_p'(0)};
+  assign stat_mem_pkt_ready_o = ~(v_tv_r & ~uncached_tv_r);
 
   // synopsys translate_off
   if (debug_p) begin

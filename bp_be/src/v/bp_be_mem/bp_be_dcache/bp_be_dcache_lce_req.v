@@ -28,6 +28,7 @@ module bp_be_dcache_lce_req
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p)
      
     , localparam block_size_in_words_lp=lce_assoc_p
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
@@ -40,8 +41,6 @@ module bp_be_dcache_lce_req
 
     , parameter timeout_max_limit_p=4
 
-    `declare_bp_cache_req_widths(cce_block_width_p, lce_assoc_p, paddr_width_p)
-
   )
   (
     input clk_i
@@ -49,9 +48,10 @@ module bp_be_dcache_lce_req
 
     , input [lce_id_width_p-1:0] lce_id_i
 
-    , input [bp_cache_req_width_lp-1:0] cache_req_i
+    , input [cache_req_width_lp-1:0] cache_req_i
     , input cache_req_v_i
     , output logic cache_req_ready_o
+    , input [cache_req_metadata_width_lp-1:0] cache_req_metadata_i
 
     , output logic [paddr_width_p-1:0] miss_addr_o
 
@@ -70,14 +70,12 @@ module bp_be_dcache_lce_req
     , output logic [lce_cce_resp_width_lp-1:0] lce_resp_o
     , output logic lce_resp_v_o
     , input lce_resp_yumi_i
-
-    , input credits_full_i
   );
 
   // casting struct
   //
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-  `declare_bp_cache_req_s(cce_block_width_p, lce_assoc_p, paddr_width_p);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
   bp_lce_cce_req_s lce_req;
   bp_lce_cce_resp_s lce_resp;
@@ -86,30 +84,32 @@ module bp_be_dcache_lce_req
   assign lce_resp_o = lce_resp;
 
   bp_cache_req_s cache_req_cast_li;
+  bp_cache_req_metadata_s cache_req_metadata_cast_li;
 
   assign cache_req_cast_li = cache_req_i;
+  assign cache_req_metadata_cast_li = cache_req_metadata_i;
 
   // For uncached store buffering
   //
 
   // states
   //
-  typedef enum logic [2:0] {
+  enum logic [2:0] {
     e_READY
     ,e_SEND_CACHED_REQ
     ,e_SEND_UNCACHED_LOAD_REQ
     ,e_SEND_COH_ACK
     ,e_SLEEP
-  } lce_req_state_e; 
+  } state_n, state_r;
 
-  lce_req_state_e state_r, state_n;
+  wire is_ready = (state_r == e_READY);
+
   logic load_not_store_r, load_not_store_n;
   logic [way_id_width_lp-1:0] lru_way_r, lru_way_n;
   logic dirty_r, dirty_n;
   logic [paddr_width_p-1:0] miss_addr_r, miss_addr_n;
   logic dirty_lru_flopped_r, dirty_lru_flopped_n;
   logic [1:0] size_op_r, size_op_n;
-  logic cache_req_ready;
 
   logic cce_data_received_r, cce_data_received_n, cce_data_received;
   logic set_tag_received_r, set_tag_received_n, set_tag_received;
@@ -139,8 +139,6 @@ module bp_be_dcache_lce_req
      );
 
   always_comb begin
-    // cache_req_complete_o = 1'b0;
-
     state_n = state_r;
     load_not_store_n = load_not_store_r;
     lru_way_n = lru_way_r;
@@ -168,15 +166,11 @@ module bp_be_dcache_lce_req
     lce_resp.addr = miss_addr_r;
     lce_resp.data = '0;
 
-    cache_req_ready = 1'b1;
-
     unique case (state_r)
 
       // READY
       // wait for the cache miss.
       e_READY: begin
-      cache_req_ready = 1'b1;
-
         // LR needs priority over regular load miss, otherwise it might get sent out as a regular
         // load miss if the cache block is not in the cache at all.
         // LR misses are sent out as store misses.
@@ -208,7 +202,7 @@ module bp_be_dcache_lce_req
           state_n = e_SEND_UNCACHED_LOAD_REQ;
         end
         else if (cache_req_cast_li.msg_type == e_uc_store) begin
-          lce_req_v_o = ~credits_full_i & lce_req_ready_i;
+          lce_req_v_o = lce_req_ready_i;
 
           lce_req.msg.uc_req.data = cache_req_cast_li.data[dword_width_p-1:0];
           lce_req.msg.uc_req.uc_size = bp_lce_cce_uc_req_size_e'(cache_req_cast_li.size);
@@ -229,18 +223,18 @@ module bp_be_dcache_lce_req
       // send out cache miss request to CCE.
       e_SEND_CACHED_REQ: begin
         dirty_lru_flopped_n = 1'b1;
-        lru_way_n = dirty_lru_flopped_r ? lru_way_r : cache_req_cast_li.repl_way;
-        dirty_n = dirty_lru_flopped_r ? dirty_r : cache_req_cast_li.dirty;
+        lru_way_n = dirty_lru_flopped_r ? lru_way_r : cache_req_metadata_cast_li.repl_way;
+        dirty_n = dirty_lru_flopped_r ? dirty_r : cache_req_metadata_cast_li.dirty;
 
         lce_req_v_o = 1'b1;
 
         lce_req.msg.req.pad = '0;
         lce_req.msg.req.lru_dirty = dirty_lru_flopped_r
           ? bp_lce_cce_lru_dirty_e'(dirty_r)
-          : bp_lce_cce_lru_dirty_e'(cache_req_cast_li.dirty);
+          : bp_lce_cce_lru_dirty_e'(cache_req_metadata_cast_li.dirty);
         lce_req.msg.req.lru_way_id = dirty_lru_flopped_r
           ? lru_way_r
-          : cache_req_cast_li.repl_way;
+          : cache_req_metadata_cast_li.repl_way;
         lce_req.msg.req.non_exclusive = e_lce_req_excl;
 
         lce_req.addr = miss_addr_r;
@@ -249,8 +243,6 @@ module bp_be_dcache_lce_req
           : e_lce_req_type_wr;
         lce_req.src_id = lce_id_i;
         lce_req.dst_id = req_cce_id_lo;
-
-        cache_req_ready = 1'b0;
 
         state_n = lce_req_ready_i
           ? e_SLEEP
@@ -268,7 +260,6 @@ module bp_be_dcache_lce_req
         lce_req.src_id = lce_id_i;
         lce_req.dst_id = req_cce_id_lo;
 
-        cache_req_ready = 1'b0;
 
         state_n = lce_req_ready_i
           ? e_SLEEP
@@ -278,7 +269,6 @@ module bp_be_dcache_lce_req
       // SLEEP 
       // wait for signals from other modules to wake up.
       e_SLEEP: begin
-        cache_req_ready = 1'b0;
         cce_data_received_n = cce_data_received_i ? 1'b1 : cce_data_received_r;
         set_tag_received_n = set_tag_received_i ? 1'b1 : set_tag_received_r;
 
@@ -307,8 +297,6 @@ module bp_be_dcache_lce_req
         lce_resp_v_o = 1'b1;
         lce_resp.msg_type = e_lce_cce_coh_ack;
 
-        // cache_req_complete_o = 1'b1;
-	      cache_req_ready = 1'b0;
         state_n = lce_resp_yumi_i
           ? e_READY
           : e_SEND_COH_ACK;
@@ -367,7 +355,7 @@ module bp_be_dcache_lce_req
      );
   wire timeout = (timeout_cnt_r == timeout_max_limit_p);
 
-  assign cache_req_ready_o = cmd_ready_i & ~timeout & cache_req_ready;
+  assign cache_req_ready_o = cmd_ready_i & is_ready & ~timeout & lce_req_ready_i;
 
   // synopsys translate_off
   always_ff @ (negedge clk_i) begin
