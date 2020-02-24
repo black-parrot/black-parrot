@@ -51,6 +51,7 @@ module bp_be_dcache_lce_req
     , input [cache_req_width_lp-1:0] cache_req_i
     , input cache_req_v_i
     , output logic cache_req_ready_o
+    , input [cache_req_metadata_width_lp-1:0] cache_req_metadata_i
 
     , output logic [paddr_width_p-1:0] miss_addr_o
 
@@ -83,8 +84,10 @@ module bp_be_dcache_lce_req
   assign lce_resp_o = lce_resp;
 
   bp_cache_req_s cache_req_cast_li;
+  bp_cache_req_metadata_s cache_req_metadata_cast_li;
 
   assign cache_req_cast_li = cache_req_i;
+  assign cache_req_metadata_cast_li = cache_req_metadata_i;
 
   // For uncached store buffering
   //
@@ -220,18 +223,18 @@ module bp_be_dcache_lce_req
       // send out cache miss request to CCE.
       e_SEND_CACHED_REQ: begin
         dirty_lru_flopped_n = 1'b1;
-        lru_way_n = dirty_lru_flopped_r ? lru_way_r : cache_req_cast_li.repl_way;
-        dirty_n = dirty_lru_flopped_r ? dirty_r : cache_req_cast_li.dirty;
+        lru_way_n = dirty_lru_flopped_r ? lru_way_r : cache_req_metadata_cast_li.repl_way;
+        dirty_n = dirty_lru_flopped_r ? dirty_r : cache_req_metadata_cast_li.dirty;
 
         lce_req_v_o = 1'b1;
 
         lce_req.msg.req.pad = '0;
         lce_req.msg.req.lru_dirty = dirty_lru_flopped_r
           ? bp_lce_cce_lru_dirty_e'(dirty_r)
-          : bp_lce_cce_lru_dirty_e'(cache_req_cast_li.dirty);
+          : bp_lce_cce_lru_dirty_e'(cache_req_metadata_cast_li.dirty);
         lce_req.msg.req.lru_way_id = dirty_lru_flopped_r
           ? lru_way_r
-          : cache_req_cast_li.repl_way;
+          : cache_req_metadata_cast_li.repl_way;
         lce_req.msg.req.non_exclusive = e_lce_req_excl;
 
         lce_req.addr = miss_addr_r;

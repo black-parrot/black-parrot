@@ -54,9 +54,7 @@ always_ff @(posedge clk_i)
         for (integer i = 0; i < mem_cap_in_bytes_p; i++)
           mem[i] = '0;
         hex_file = rebase_hexfile(mem_file_p, mem_offset_p);
-        $display("READ START");
         $readmemh(hex_file, mem);
-        $display("READ END");
       end
     else if (reset_done & mem_zero_p)
       begin

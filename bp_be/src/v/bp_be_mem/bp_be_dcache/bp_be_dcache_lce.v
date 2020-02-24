@@ -73,6 +73,7 @@ module bp_be_dcache_lce
     , input [cache_req_width_lp-1:0] cache_req_i
     , input cache_req_v_i
     , output logic cache_req_ready_o
+    , input [cache_req_metadata_width_lp-1:0] cache_req_metadata_i
  
     , output logic cache_req_complete_o
     
@@ -196,6 +197,7 @@ module bp_be_dcache_lce
       ,.cache_req_i(cache_req_i)
       ,.cache_req_v_i(cache_req_v_i)
       ,.cache_req_ready_o(cache_req_ready_o)
+      ,.cache_req_metadata_i(cache_req_metadata_i)
 
       ,.miss_addr_o(miss_addr_lo)
 
@@ -214,8 +216,6 @@ module bp_be_dcache_lce
       ,.lce_resp_o(lce_req_to_lce_resp_lo)
       ,.lce_resp_v_o(lce_req_to_lce_resp_v_lo)
       ,.lce_resp_yumi_i(lce_req_to_lce_resp_yumi_li)
-
-      ,.credits_full_i(credits_full_o)
       );
 
   // LCE cmd

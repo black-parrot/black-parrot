@@ -33,7 +33,7 @@ COV  ?= 0
 ifeq ($(DUMP), 1)
 VCS_BUILD_OPTS += -debug_pp
 VCS_BUILD_OPTS += +memcbk
-VCS_BUILD_OPTS += -plusargs_save
+VCS_BUILD_OPTS += +plusarg_save
 VCS_BUILD_OPTS += +vcs+vcdpluson
 VCS_BUILD_OPTS += +vcs+vcdplusmemon
 VCS_BUILD_OPTS += +vcs+vcdplusautoflushon

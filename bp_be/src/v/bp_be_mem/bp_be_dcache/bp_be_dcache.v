@@ -129,11 +129,12 @@ module bp_be_dcache
 
     // D$-LCE Interface
     // signals to LCE
-    , input cache_req_complete_i
-
-    , input cache_req_ready_i
     , output [cache_req_width_lp-1:0] cache_req_o
     , output logic cache_req_v_o 
+    , input cache_req_ready_i
+    , output [cache_req_metadata_width_lp-1:0] cache_req_metadata_o
+
+    , input cache_req_complete_i
 
     // data_mem
     , input data_mem_pkt_v_i
@@ -161,7 +162,9 @@ module bp_be_dcache
 
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p);
   bp_cache_req_s cache_req_cast_o;
+  bp_cache_req_metadata_s cache_req_metadata_cast_o;
   assign cache_req_o = cache_req_cast_o;
+  assign cache_req_metadata_o = cache_req_metadata_cast_o;
 
   
   // packet decoding
@@ -636,8 +639,7 @@ module bp_be_dcache
       );
 
   // if there is invalid way, then it take prioirty over LRU way.
-  logic [way_id_width_lp-1:0] lce_lru_way_li;
-  assign lce_lru_way_li = invalid_exist ? invalid_way : lru_encode;
+  wire [way_id_width_lp-1:0] lru_way_li = invalid_exist ? invalid_way : lru_encode;
  
   // LCE Packet casting
   //
@@ -649,7 +651,6 @@ module bp_be_dcache
   assign stat_mem_pkt = stat_mem_pkt_i;
 
   logic [lce_assoc_p-1:0][dword_width_p-1:0] lce_data_mem_data_li;
-  bp_be_dcache_tag_info_s lce_tag_mem_data_li;
  
   logic data_mem_pkt_ready;
   logic tag_mem_pkt_ready;
@@ -692,10 +693,11 @@ module bp_be_dcache
     end
 
     cache_req_cast_o.addr = paddr_tv_r;
-    cache_req_cast_o.repl_way = lce_lru_way_li;
-    cache_req_cast_o.dirty = stat_mem_data_lo.dirty[lce_lru_way_li];
     cache_req_cast_o.data = data_tv_r;
   end
+
+  assign cache_req_metadata_cast_o.repl_way = lru_way_li;
+  assign cache_req_metadata_cast_o.dirty = stat_mem_data_lo.dirty[lru_way_li];
   
   // output stage
   // Cache Miss Tracking logic
@@ -1052,7 +1054,7 @@ module bp_be_dcache
     ,.data_o(lce_data_mem_data_li)
     );
   
-  assign lce_data_mem_o = lce_data_mem_data_li; 
+  assign data_mem_o = lce_data_mem_data_li; 
   assign data_mem_pkt_ready = ~(load_op & tl_we) & ~wbuf_v_lo & ~lce_snoop_match_lo;
 
   // load reservation logic
@@ -1128,7 +1130,7 @@ module bp_be_dcache
     end
   end
 
-  assign lce_stat_mem_o = stat_mem_data_lo;
+  assign stat_mem_o = stat_mem_data_lo;
 
   // synopsys translate_off
   if (debug_p) begin: axe

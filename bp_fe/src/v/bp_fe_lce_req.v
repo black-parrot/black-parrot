@@ -39,6 +39,7 @@ module bp_fe_lce_req
     , input [cache_req_width_lp-1:0] cache_req_i
     , input cache_req_v_i
     , output logic cache_req_ready_o
+    , input [cache_req_metadata_width_lp-1:0] cache_req_metadata_i
 
     , output logic [paddr_width_p-1:0] miss_addr_o
           
@@ -67,11 +68,13 @@ module bp_fe_lce_req
   bp_lce_cce_resp_s lce_resp;
   bp_lce_cce_req_s lce_req;
   bp_cache_req_s cache_req_cast_li;
+  bp_cache_req_metadata_s cache_req_metadata_cast_li;
 
   assign lce_req_o = lce_req;
   assign lce_resp_o = lce_resp;
 
   assign cache_req_cast_li = cache_req_i;
+  assign cache_req_metadata_cast_li = cache_req_metadata_i;
   
   // states
   typedef enum logic [2:0] {
@@ -135,7 +138,7 @@ module bp_fe_lce_req
     lce_req.msg.req.lru_dirty     = e_lce_req_lru_clean;
     lce_req.msg.req.lru_way_id    = lru_flopped_r
                                     ? lru_way_r
-                                    : cache_req_cast_li.repl_way;
+                                    : cache_req_metadata_cast_li.repl_way;
     lce_req.msg.req.pad    = '0;
 
 
@@ -173,7 +176,7 @@ module bp_fe_lce_req
 
       e_lce_req_send_miss_req: begin
         lru_flopped_n = 1'b1;
-        lru_way_n = lru_flopped_r ? lru_way_r : cache_req_cast_li.repl_way;
+        lru_way_n = lru_flopped_r ? lru_way_r : cache_req_metadata_cast_li.repl_way;
 
         lce_req_v_o           = 1'b1;
         

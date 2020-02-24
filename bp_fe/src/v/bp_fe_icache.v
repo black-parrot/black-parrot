@@ -62,6 +62,8 @@ module bp_fe_icache
     , output [cache_req_width_lp-1:0]                  cache_req_o
     , output logic                                     cache_req_v_o
     , input                                            cache_req_ready_i
+    , output [cache_req_metadata_width_lp-1:0]         cache_req_metadata_o
+
     , input                                            cache_req_complete_i
 
     // data_mem
@@ -89,7 +91,9 @@ module bp_fe_icache
 
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p);
   bp_cache_req_s cache_req_cast_lo;
+  bp_cache_req_metadata_s cache_req_metadata_cast_lo;
   assign cache_req_o = cache_req_cast_lo;
+  assign cache_req_metadata_o = cache_req_metadata_cast_lo;
   
   logic [index_width_lp-1:0]            vaddr_index;
 
@@ -302,8 +306,6 @@ module bp_fe_icache
       if (miss_tv) begin
         cache_req_cast_lo.addr = addr_tv_r;
         cache_req_cast_lo.msg_type = e_miss_load;
-        // invalid way takes priority over LRU way
-        cache_req_cast_lo.repl_way = invalid_exist ? way_invalid_index : lru_encode;
         cache_req_cast_lo.size = e_size_64B;
         cache_req_v_o = 1'b1;
       end
@@ -311,13 +313,14 @@ module bp_fe_icache
         cache_req_cast_lo.addr = addr_tv_r;
         cache_req_cast_lo.msg_type = e_uc_load;
         cache_req_cast_lo.size = e_size_4B;
-        // invalid way takes priority over LRU way
-        cache_req_cast_lo.repl_way = invalid_exist ? way_invalid_index : lru_encode;
-        cache_req_cast_lo.size = e_size_64B;
         cache_req_v_o = 1'b1;   
       end
     end
   end
+
+  // invalid way takes priority over LRU way
+  assign cache_req_metadata_cast_lo.repl_way = invalid_exist ? way_invalid_index : lru_encode;
+  assign cache_req_metadata_cast_lo.dirty = '0;
 
   // Cache Miss Tracker
   logic cache_miss, miss_tracker_r;

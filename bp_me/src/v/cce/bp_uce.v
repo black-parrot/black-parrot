@@ -50,13 +50,27 @@ module bp_uce
 
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p);
-  `bp_cast_i(bp_cache_req_s, cache_req);
+  // FIXME: Should use this directly
+  //`bp_cast_i(bp_cache_req_s, cache_req);
+  bp_cache_req_s cache_req_r, cache_req_cast_i;
   `bp_cast_o(bp_cache_tag_mem_pkt_s, tag_mem_pkt);
   `bp_cast_o(bp_cache_data_mem_pkt_s, data_mem_pkt);
   `bp_cast_o(bp_cache_stat_mem_pkt_s, stat_mem_pkt);
 
   `bp_cast_o(bp_cce_mem_msg_s, mem_cmd);
   `bp_cast_i(bp_cce_mem_msg_s, mem_resp);
+
+  // FIXME: This is a hack to get around the stat info coming a cycle after other info during misses
+  //
+  bsg_dff_reset
+   #(.width_p($bits(bp_cache_req_s)))
+   cache_req_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i(cache_req_i)
+     ,.data_o(cache_req_r)
+     );
 
   enum logic [2:0] {e_reset, e_flush, e_ready, e_writeback, e_write_request, e_read_request} state_n, state_r;
   wire is_reset         = (state_r == e_reset);

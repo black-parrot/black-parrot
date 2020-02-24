@@ -44,6 +44,8 @@ module bp_core_minimal
     , input [1:0] cache_req_ready_i
     , input [1:0] cache_req_complete_i
 
+    , output logic [1:0][cache_req_metadata_width_lp-1:0] cache_req_metadata_o
+
     // response side - Interface from LCE
     , input [1:0][cache_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
     , input [1:0] data_mem_pkt_v_i
@@ -104,6 +106,7 @@ module bp_core_minimal
      ,.cache_req_o(cache_req_o[0])
      ,.cache_req_v_o(cache_req_v_o[0])
      ,.cache_req_ready_i(cache_req_ready_i[0])
+     ,.cache_req_metadata_o(cache_req_metadata_o[0])
      ,.cache_req_complete_i(cache_req_complete_i[0])
 
      ,.data_mem_pkt_i(data_mem_pkt_i[0])
@@ -195,6 +198,8 @@ module bp_core_minimal
      ,.cache_req_o(cache_req_o[1])
      ,.cache_req_v_o(cache_req_v_o[1])
      ,.cache_req_ready_i(cache_req_ready_i[1])
+     ,.cache_req_metadata_o(cache_req_metadata_o[1])
+
      ,.cache_req_complete_i(cache_req_complete_i[1])
 
      ,.data_mem_pkt_i(data_mem_pkt_i[1])

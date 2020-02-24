@@ -52,12 +52,13 @@ module bp_be_top
 
    // D$-LCE Interface
    // signals to LCE
-   , input cache_req_complete_i
-   
-   , output logic [cache_req_width_lp-1:0]    cache_req_o
+   , output logic [cache_req_width_lp-1:0]       cache_req_o
    , output logic                                cache_req_v_o
    , input                                       cache_req_ready_i
+   , output logic [cache_req_metadata_width_lp-1:0] cache_req_metadata_o
 
+   , input cache_req_complete_i
+   
    // data_mem
    , input data_mem_pkt_v_i
    , input [cache_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
@@ -239,6 +240,7 @@ bp_be_mem_top
     ,.cache_req_complete_i(cache_req_complete_i)   
  
     ,.cache_req_o(cache_req_o)
+    ,.cache_req_metadata_o(cache_req_metadata_o)
     ,.cache_req_v_o(cache_req_v_o)
     ,.cache_req_ready_i(cache_req_ready_i)
     
