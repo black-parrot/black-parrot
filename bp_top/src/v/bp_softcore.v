@@ -24,15 +24,6 @@ module bp_softcore
    , input                                             io_resp_v_i
    , output                                            io_resp_yumi_o
 
-   // Incoming I/O
-   , input [cce_mem_msg_width_lp-1:0]                  io_cmd_i
-   , input                                             io_cmd_v_i
-   , output                                            io_cmd_yumi_o
-
-   , output [cce_mem_msg_width_lp-1:0]                 io_resp_o
-   , output                                            io_resp_v_o
-   , input                                             io_resp_ready_i
-
    // Memory Requests
    , output [cce_mem_msg_width_lp-1:0]                 mem_cmd_o
    , output                                            mem_cmd_v_o
@@ -49,8 +40,14 @@ module bp_softcore
   `declare_bp_be_dcache_stat_info_s(lce_assoc_p);
   bp_cfg_bus_s cfg_bus_li;
 
+  `bp_cast_o(bp_cce_mem_msg_s, mem_cmd);
+  `bp_cast_o(bp_cce_mem_msg_s, io_cmd);
+  `bp_cast_i(bp_cce_mem_msg_s, mem_resp);
+  `bp_cast_i(bp_cce_mem_msg_s, io_resp);
+
   bp_cache_req_s [1:0] cache_req_lo;
   logic [1:0] cache_req_v_lo, cache_req_ready_li;
+  bp_cache_req_metadata_s [1:0] cache_req_metadata_lo;
 
   bp_cache_tag_mem_pkt_s [1:0] tag_mem_pkt_li;
   logic [1:0] tag_mem_pkt_v_li, tag_mem_pkt_ready_lo;
@@ -67,7 +64,7 @@ module bp_softcore
   logic timer_irq_li, software_irq_li, external_irq_li;
 
   bp_cce_mem_msg_s [1:0] mem_cmd_lo;
-  logic [1:0] mem_cmd_v_lo, mem_cmd_yumi_li;
+  logic [1:0] mem_cmd_v_lo, mem_cmd_ready_li;
   bp_cce_mem_msg_s [1:0] mem_resp_li;
   logic [1:0] mem_resp_v_li, mem_resp_yumi_lo;
 
@@ -98,6 +95,8 @@ module bp_softcore
      ,.cache_req_o(cache_req_lo)
      ,.cache_req_v_o(cache_req_v_lo)
      ,.cache_req_ready_i(cache_req_ready_li)
+     ,.cache_req_metadata_o(cache_req_metadata_lo)
+     ,.cache_req_complete_i(cache_req_complete_li)
 
      ,.tag_mem_pkt_i(tag_mem_pkt_li)
      ,.tag_mem_pkt_v_i(tag_mem_pkt_v_li)
@@ -113,8 +112,6 @@ module bp_softcore
      ,.stat_mem_pkt_v_i(stat_mem_pkt_v_li)
      ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_lo)
      ,.stat_mem_o(stat_mem_lo)
-
-     ,.cache_req_complete_i(cache_req_complete_li)
 
      ,.credits_full_i(|credits_full_li)
      ,.credits_empty_i(&credits_empty_li)
@@ -132,9 +129,13 @@ module bp_softcore
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
+         // TODO: Should come from config bus
+         ,.lce_id_i(lce_id_width_p'(i))
+
          ,.cache_req_i(cache_req_lo[i])
          ,.cache_req_v_i(cache_req_v_lo[i])
          ,.cache_req_ready_o(cache_req_ready_li[i])
+         ,.cache_req_metadata_i(cache_req_metadata_lo[i])
 
          ,.tag_mem_pkt_o(tag_mem_pkt_li[i])
          ,.tag_mem_pkt_v_o(tag_mem_pkt_v_li[i])
@@ -158,7 +159,7 @@ module bp_softcore
 
          ,.mem_cmd_o(mem_cmd_lo[i])
          ,.mem_cmd_v_o(mem_cmd_v_lo[i])
-         ,.mem_cmd_yumi_i(mem_cmd_yumi_li[i])
+         ,.mem_cmd_ready_i(mem_cmd_ready_li[i])
 
          ,.mem_resp_i(mem_resp_li[i])
          ,.mem_resp_v_i(mem_resp_v_li[i])
@@ -166,46 +167,65 @@ module bp_softcore
          );
     end
 
-  // TODO: Does this work with same cycle returns? I don't think so
-  logic [1:0] fifo_li;
-  logic fifo_ready_lo, fifo_v_li;
-  logic [1:0] fifo_lo;
-  logic fifo_v_lo, fifo_yumi_li;
-  bsg_fifo_1r1w_small
-   #(.width_p(2), .els_p(8))
-   req_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+  // Arbitration logic
+  //   Don't necessarily need to arbitrate. On an FPGA, can use a 2r1w RAM. But, we might also be on
+  //   a bus
+  bp_cce_mem_msg_s [1:0] fifo_lo;
+  logic [1:0] fifo_v_lo, fifo_yumi_li;
+  for (genvar i = 0; i < 2; i++)
+    begin : fifo
+      bsg_one_fifo
+       #(.width_p($bits(bp_cce_mem_msg_s)))
+       mem_fifo
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
 
-     ,.data_i(fifo_li)
-     ,.v_i(fifo_v_li)
-     ,.ready_o(fifo_ready_lo)
+         ,.data_i(mem_cmd_lo[i])
+         ,.v_i(mem_cmd_v_lo[i])
+         ,.ready_o(mem_cmd_ready_li[i])
 
-     ,.data_o(fifo_lo)
-     ,.v_o(fifo_v_lo)
-     ,.yumi_i(fifo_yumi_li)
-     );
+         ,.data_o(fifo_lo[i])
+         ,.v_o(fifo_v_lo[i])
+         ,.yumi_i(fifo_yumi_li[i])
+         );
+    end
 
-  assign fifo_li      = mem_cmd_yumi_li;
-  assign fifo_v_li    = mem_cmd_v_o;
-  assign fifo_yumi_li = mem_resp_yumi_o;
-
-  wire arb_ready_li = mem_cmd_ready_i & fifo_ready_lo;
+  wire arb_ready_li = mem_cmd_ready_i & io_cmd_ready_i;
   bsg_arb_fixed
    #(.inputs_p(2)
      ,.lo_to_hi_p(0)
      )
    mem_arbiter
     (.ready_i(arb_ready_li)
-     ,.reqs_i(mem_cmd_v_lo)
-     ,.grants_o(mem_cmd_yumi_li)
+     ,.reqs_i(fifo_v_lo)
+     ,.grants_o(fifo_yumi_li)
      );
-  assign mem_resp_v_li   = {2{fifo_v_lo}} & {2{mem_resp_v_i}} & fifo_lo;
-  assign mem_resp_li     = {2{mem_resp_i}};
 
-  assign mem_cmd_o       = mem_cmd_yumi_li[1] ? mem_cmd_lo[1] : mem_cmd_lo[0];
-  assign mem_cmd_v_o     = |mem_cmd_yumi_li;
-  assign mem_resp_yumi_o = |mem_resp_yumi_lo;
+  /* TODO: Extract local memory map to module */
+  wire local_cmd_li = (mem_cmd_cast_o.addr < 32'h8000_0000);
+  wire [3:0] device_cmd_li = mem_cmd_cast_o.addr[20+:4];
+  wire is_io_cmd = local_cmd_li & (device_cmd_li == host_dev_gp);
+
+  assign io_cmd_cast_o  = fifo_v_lo[1] ? fifo_lo[1] : fifo_lo[0];
+  assign io_cmd_v_o     = is_io_cmd & |fifo_yumi_li;
+
+  assign mem_cmd_cast_o = fifo_v_lo[1] ? fifo_lo[1] : fifo_lo[0];
+  assign mem_cmd_v_o    = ~is_io_cmd & |fifo_yumi_li;
+
+  assign mem_resp_li[0]   = io_resp_v_i & (io_resp_cast_i.payload.lce_id == 1'b0)
+                            ? io_resp_i 
+                            : mem_resp_i;
+  assign mem_resp_li[1]   = io_resp_v_i & (io_resp_cast_i.payload.lce_id == 1'b1)
+                            ? io_resp_i
+                            : mem_resp_i;
+  assign mem_resp_v_li[0] = (mem_resp_v_i & (mem_resp_cast_i.payload.lce_id == 1'b0))
+                            | (io_resp_v_i & (io_resp_cast_i.payload.lce_id == 1'b0));
+  assign mem_resp_v_li[1] = (mem_resp_v_i & (mem_resp_cast_i.payload.lce_id == 1'b1))
+                            | (io_resp_v_i & (io_resp_cast_i.payload.lce_id == 1'b1));
+  assign mem_resp_yumi_o  = ((mem_resp_v_i & (mem_resp_cast_i.payload.lce_id == 1'b0)) & mem_resp_yumi_lo[0])
+                            | ((mem_resp_v_i & (mem_resp_cast_i.payload.lce_id == 1'b1)) & mem_resp_yumi_lo[1]);
+  assign io_resp_yumi_o   = ((io_resp_v_i & (io_resp_cast_i.payload.lce_id == 1'b0)) & mem_resp_yumi_lo[0])
+                            | ((io_resp_v_i & (io_resp_cast_i.payload.lce_id == 1'b1)) & mem_resp_yumi_lo[1]);
 
 endmodule
 

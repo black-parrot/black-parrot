@@ -460,8 +460,6 @@ for (genvar i = 0; i < 2; i++)
      );
 
   /* TODO: Extract local memory map to module */
-  localparam clint_device_id_lp = 1;
-  localparam cfg_device_id_lp   = 2;
   wire local_cmd_li    = (cce_mem_cmd_lo.addr < 32'h8000_0000);
   wire [3:0] device_li =  cce_mem_cmd_lo.addr[20+:4];
 
