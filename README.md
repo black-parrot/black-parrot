@@ -42,17 +42,23 @@ Users who want to fully evaluate BlackParrot, or develop hardware or software us
 ## Interface Specification
 BlackParrot is an aggresively modular design: communication between the components is performed over a set of narrow, latency-insensitive interfaces. The interfaces are designed to allow implementations of the various system components to change independently of one another, without worrying about cascading functional or timing effects. Read more about BlackParrot's standardized interfaces here: [Interface specification](docs/interface_specification.md)
 
-## Microarchitectural Specification
+## BedRock Coherence System Guide
 Coming soon!
+[BedRock Guide](docs/bedrock_guide.md)
 
-## SoC Platform Guide
+## Microarchitecture Guide
 Coming soon!
+[Microarchitecture Guide](docs/microarchitecture_guide.md)
 
-## CAD Backend Guide
-A key feature of using BlackParrot is that it has been heavily validated in both silicon and FPGA implementations.  All BlackParrot tapeouts and FPGA environments can be found at [BlackParrot Examples](https://github.com/black-parrot-examples/). Taped out BlackParrot yourself and want to share tips and tricks? Let us know and we can add it to the collection! Looking to implement BlackParrot in a physical system? Take a look at our [CAD Backend Guide](docs/backend_guide.md).
+## Platform Guide
+Coming soon!
+[Platform Guide](docs/platform_guide.md)
 
 ## Software Developer Guide
 BlackParrot is Linux-capable, so it is possible to run all programs which run on BusyBox. However, for more targeted benchmarks which don't want O/S management overheads (or the overheads of a long Linux boot time in simulation!), it is preferable to write for bare-metal. Additionally, some platform-specific features are only available at the firmware level. Developers looking to write low-level BlackParrot code, or optimize for the BlackParrot platform should look at our [SW Developer Guide](docs/software_guide.md)
+
+## CAD Backend Guide
+A key feature of using BlackParrot is that it has been heavily validated in both silicon and FPGA implementations.  All BlackParrot tapeouts and FPGA environments can be found at [BlackParrot Examples](https://github.com/black-parrot-examples/). Taped out BlackParrot yourself and want to share tips and tricks? Let us know and we can add it to the collection! Looking to implement BlackParrot in a physical system? Take a look at our [CAD Backend Guide](docs/backend_guide.md).
 
 ## Continuous Integration
 Upon commit to the listed branch, a functional regression consisting of full-system tests and module level tests is run and checked for correctness. Additionally, the design is checked with Synopsys DC to verify synthesizability. Work is in progress to continuously monitor PPA.
