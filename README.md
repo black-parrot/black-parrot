@@ -42,7 +42,8 @@ Users who just want to test their setup and run a minimal BlackParrot test shoul
 
 This should output (roughly)
 
-    Hello world![CORE0 FSH] PASS
+    Hello world!
+    [CORE0 FSH] PASS
     [CORE0 STATS]
         clk   :                  220
         instr :                   66
