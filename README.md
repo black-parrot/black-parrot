@@ -27,6 +27,8 @@ Users who just want to test their setup and run a minimal BlackParrot test shoul
     # Clone the latest repo
     git clone https://github.com/black-parrot/black-parrot.git
     cd black-parrot
+    # Checkout the correct branch
+    git checkout uw_ee477_pparrot_wi20
 
     # Install a minimal set of tools
     make libs
@@ -35,7 +37,22 @@ Users who just want to test their setup and run a minimal BlackParrot test shoul
 
     # Running your first test
     cd bp_top/syn
+    # Run a test in Verilator (indicated by .sc extension)
     make build.sc sim.sc PROG=hello_world
+
+This should output (roughly)
+
+    Hello world![CORE0 FSH] PASS
+    [CORE0 STATS]
+        clk   :                  220
+        instr :                   66
+        fe_nop:                    0
+        be_nop:                    0
+        me_nop:                    0
+        poison:                  115
+        roll  :                   21
+        mIPC  :                  300
+    All cores finished! Terminating...
 
 Users who want to fully evaluate BlackParrot, or develop hardware or software using it should follow [Getting Started (Full)](docs/getting_started.md)
 

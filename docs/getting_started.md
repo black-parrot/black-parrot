@@ -2,6 +2,7 @@
     # Clone the latest repo
     git clone https://github.com/black-parrot/black-parrot.git
     cd black-parrot
+    git checkout uw_ee477_pparrot_wi20
 
     # make tools will clone, build and install toolchains needed for BlackParrot
     # For faster builds, make tools -j is parallelizable!
