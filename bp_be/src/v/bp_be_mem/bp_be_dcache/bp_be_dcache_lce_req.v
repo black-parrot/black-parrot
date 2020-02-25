@@ -89,6 +89,22 @@ module bp_be_dcache_lce_req
   assign cache_req_cast_li = cache_req_i;
   assign cache_req_metadata_cast_li = cache_req_metadata_i;
 
+  logic cache_req_v_r;
+  always_ff @(posedge clk_i)
+    cache_req_v_r <= cache_req_v_i;
+
+  bp_cache_req_metadata_s cache_req_metadata_r;
+  bsg_dff_en_bypass
+   #(.width_p($bits(bp_cache_req_metadata_s)))
+   metadata_reg
+    (.clk_i(clk_i)
+
+     ,.en_i(cache_req_v_r)
+     ,.data_i(cache_req_metadata_i)
+     ,.data_o(cache_req_metadata_r)
+     );
+
+
   // For uncached store buffering
   //
 
@@ -105,10 +121,7 @@ module bp_be_dcache_lce_req
   wire is_ready = (state_r == e_READY);
 
   logic load_not_store_r, load_not_store_n;
-  logic [way_id_width_lp-1:0] lru_way_r, lru_way_n;
-  logic dirty_r, dirty_n;
   logic [paddr_width_p-1:0] miss_addr_r, miss_addr_n;
-  logic dirty_lru_flopped_r, dirty_lru_flopped_n;
   logic [1:0] size_op_r, size_op_n;
 
   logic cce_data_received_r, cce_data_received_n, cce_data_received;
@@ -141,10 +154,7 @@ module bp_be_dcache_lce_req
   always_comb begin
     state_n = state_r;
     load_not_store_n = load_not_store_r;
-    lru_way_n = lru_way_r;
-    dirty_n = dirty_r;
     miss_addr_n = miss_addr_r;
-    dirty_lru_flopped_n = dirty_lru_flopped_r;
     size_op_n = size_op_r;
     
     cce_data_received_n = cce_data_received_r;
@@ -177,7 +187,6 @@ module bp_be_dcache_lce_req
       if (cache_req_v_i) begin 
         if (cache_req_cast_li.msg_type == e_miss_store) begin
           miss_addr_n = cache_req_cast_li.addr;
-          dirty_lru_flopped_n = 1'b0;
           load_not_store_n = 1'b0; // We force a store miss to upgrade the block to exclusive
           cce_data_received_n = 1'b0;
           set_tag_received_n = 1'b0;
@@ -186,7 +195,6 @@ module bp_be_dcache_lce_req
         end
         else if (cache_req_cast_li.msg_type == e_miss_load | cache_req_cast_li.msg_type == e_miss_store) begin
           miss_addr_n = cache_req_cast_li.addr;
-          dirty_lru_flopped_n = 1'b0;
           load_not_store_n = (cache_req_cast_li.msg_type == e_miss_load);
           cce_data_received_n = 1'b0;
           set_tag_received_n = 1'b0;
@@ -222,19 +230,11 @@ module bp_be_dcache_lce_req
       // SEND_CACHED_REQ
       // send out cache miss request to CCE.
       e_SEND_CACHED_REQ: begin
-        dirty_lru_flopped_n = 1'b1;
-        lru_way_n = dirty_lru_flopped_r ? lru_way_r : cache_req_metadata_cast_li.repl_way;
-        dirty_n = dirty_lru_flopped_r ? dirty_r : cache_req_metadata_cast_li.dirty;
-
         lce_req_v_o = 1'b1;
 
         lce_req.msg.req.pad = '0;
-        lce_req.msg.req.lru_dirty = dirty_lru_flopped_r
-          ? bp_lce_cce_lru_dirty_e'(dirty_r)
-          : bp_lce_cce_lru_dirty_e'(cache_req_metadata_cast_li.dirty);
-        lce_req.msg.req.lru_way_id = dirty_lru_flopped_r
-          ? lru_way_r
-          : cache_req_metadata_cast_li.repl_way;
+        lce_req.msg.req.lru_dirty = bp_lce_cce_lru_dirty_e'(cache_req_metadata_r.dirty);
+        lce_req.msg.req.lru_way_id = cache_req_metadata_r.repl_way;
         lce_req.msg.req.non_exclusive = e_lce_req_excl;
 
         lce_req.addr = miss_addr_r;
@@ -315,17 +315,13 @@ module bp_be_dcache_lce_req
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       state_r <= e_READY;
-      dirty_lru_flopped_r <= 1'b0;
       cce_data_received_r <= 1'b0;
       set_tag_received_r <= 1'b0;
     end
     else begin
       state_r <= state_n;
       load_not_store_r <= load_not_store_n;
-      lru_way_r <= lru_way_n;
-      dirty_r <= dirty_n;
       miss_addr_r <= miss_addr_n;
-      dirty_lru_flopped_r <= dirty_lru_flopped_n;
       cce_data_received_r <= cce_data_received_n;
       set_tag_received_r <= set_tag_received_n;
       size_op_r <= size_op_n;
