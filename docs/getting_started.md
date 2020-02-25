@@ -4,7 +4,7 @@ BlackParrot requires Python, Verilator and a RISCV GNU toolchain in order to bui
 
 ### Centos
 
-    yum install autoconf automake libmpc-devel mpfr-devel gmp-devel gawk  bison flex texinfo patchutils gcc gcc-c++ zlib-devel expat-devel
+    yum install autoconf automake libmpc-devel mpfr-devel gmp-devel gawk  bison flex texinfo patchutils gcc gcc-c++ zlib-devel expat-devel dtc
 
 ### Ubuntu
 
