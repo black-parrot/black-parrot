@@ -31,9 +31,7 @@ bleach_all:
 #
 tools:
 	$(MAKE) gnu
-	$(MAKE) systemc
 	$(MAKE) verilator
-	$(MAKE) fesvr
 	$(MAKE) spike
 	$(MAKE) axe
 	$(MAKE) cmurphi
@@ -45,6 +43,8 @@ ucode: update_libs
 	$(MAKE) -C $(BP_ME_DIR)/src/asm roms
 
 libs: update_libs
+	$(MAKE) fesvr
+	$(MAKE) systemc
 	$(MAKE) dramsim2
 	$(MAKE) dromajo
 
