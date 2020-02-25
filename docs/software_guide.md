@@ -31,7 +31,13 @@ To run the RTL simulation from the checkpoint, we have to run it with `PRELOAD_M
     make build.v sim.v PROG=bs.dromajo.5000 PRELOAD_MEM_P=1 LOAD_NBF_P=1
 
 ## Cosimulation
-BlackParrot also uses Dromajo to verify the correct execution of the program. It is done through comparing the commit information with the ideal C model in Dromajo using DPI calls in RTL. To enable cosimulation simply run the RTL simulation  with `COSIM_P=1` flag.
+BlackParrot also uses Dromajo to verify the correct execution of the program. It is done through comparing the commit information with the ideal C model in Dromajo using DPI calls in RTL in simulation runtime. To enable cosimulation simply run the RTL simulation  with `COSIM_P=1` flag.
+
+The DPI calls which are used in the nonsynth cosim module are listed below. `init_dromajo` initializes a Dromajo model instance with a config file which includes pointers to Dromajo checkpoint files, and is called once at the beginning of the simulation. `dromajo_step` is called whenever we commit an instruction in RTL, and it compares the commit information with Dromajo and prints an error message if they diverge. Finally `dromajo_trap` is used to notify Dromajo about an interrupt event in RTL so the C model can follow the same program flow, because the C model cannot precisely predict interrupts beforehand due to their asynchronous nature.
+
+* void init_dromajo(char* cfg_f_name);
+* void dromajo_step(int hart_id, uint64_t pc, uint32_t insn, uint64_t wdata);
+* void dromajo_trap(int hart_id, uint64_t cause);
 
 **Note:** Currently cosimulation only works with the single-core system.
 
