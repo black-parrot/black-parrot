@@ -7,9 +7,7 @@ TRACEDIFF ?= $(BP_COMMON_DIR)/software/py/tracediff.py
 ## Tool options
 VV_OPTS  = --sc                 # Output in SystemC rather than C++
 #VV_OPTS += --debug --gdbbt     # Debugs and produces stack trace
-VV_OPTS += -O3
-
-#VV_OPTS += -O1 -fstrict-aliasing # Fastest compile time options
+VV_OPTS += -O2
 
 LINT_OPTS   = --lint-only -Wall --Wno-unoptflat 
 BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat --exe -CFLAGS -std=c++11 
@@ -124,16 +122,6 @@ sim.sc: dirs.sc
 	-cd $(SIM_DIR); ./simsc | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "PASS" -A 9 $(SIM_LOG) > $(SIM_REPORT)
-
-match.sc: MATCH_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).match.$(PROG).log
-match.sc: MATCH_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).match.$(PROG).rpt
-match.sc: MATCH_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).match.$(PROG).err
-match.sc: PROG ?= hello_world
-match.sc: dirs.sc
-	-cd $(SIM_DIR); $(PYTHON) $(TRACEDIFF) prog.spike prog.trace $(START_PC) --tolerance=$(TOLERANCE) \
-		| tee -a $(MATCH_LOG)
-	-@grep "MATCH" $(MATCH_LOG) || echo "MISMATCHED" >> $(MATCH_ERROR)
-	-@grep "MATCH" -A 4 $(MATCH_LOG) > $(MATCH_REPORT)
 
 regress_riscv.sc: $(RV64_REGRESSION_SC) 
 $(RV64_REGRESSION_SC):

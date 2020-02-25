@@ -1,4 +1,18 @@
 # Getting started (Full)
+## Prerequisites
+BlackParrot requires Python, Verilator and a RISCV GNU toolchain in order to build and run tests. The easiest way to get these and ensure compatibility is by using the tools in external/, which the Makefiles are automatically set up to use. One can also override these paths in Makefile.common.  Dependencies for riscv-gnu-toolchain are listed below:
+
+### Centos
+
+    yum install autoconf automake libmpc-devel mpfr-devel gmp-devel gawk  bison flex texinfo patchutils gcc gcc-c++ zlib-devel expat-devel
+
+### Ubuntu
+
+    sudo apt-get install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev wget byacc device-tree-compiler python
+
+BlackParrot has been tested extensively on CentOS 7. Please raise issues with problems found on this or other platforms! 
+
+## Build the toolchains
     # Clone the latest repo
     git clone https://github.com/black-parrot/black-parrot.git
     cd black-parrot
@@ -24,48 +38,49 @@ The *dev* branch contains the most recent development version, being tested inte
 
 Other branches are used for internal development and are not recommended for casual usage.
 
-## Prerequisites
-BlackParrot requires Python, Verilator and a RISCV GNU toolchain in order to build and run tests. The easiest way to get these and ensure compatibility is by using the tools in external/, which the Makefiles are automatically set up to use. One can also override these paths in Makefile.common.  Dependencies for riscv-gnu-toolchain are listed below:
-
-### Centos
-
-    yum install autoconf automake libmpc-devel mpfr-devel gmp-devel gawk  bison flex texinfo patchutils gcc gcc-c++ zlib-devel expat-devel
-
-### Ubuntu
-
-    sudo apt-get install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev wget byacc device-tree-compiler python
-
-BlackParrot has been tested extensively on CentOS 7. Please raise issues with problems found on this or other platforms! 
-
 ## Running Tests
 The main testbenches are at the FE, BE, ME and TOP levels. The general syntax for running a testbench is:
     
     cd bp_<end>/syn
     make <ACTION>.<TOOL> [TB=] [CFG=] [PROG=] [DUMP=] [COV=] [COSIM=] [<TRACER>_P=]
     
-NOTE: pardon our dust as we update our testbenches. The main testbench bp_top testbench is well supported.
+### Supported TBs
+There are two main testbenches supported for running test programs on BlackParrot. These testbenches live in bp_top/test/tb/
+- bp_processor: Instantiates a full BlackParrot cache-coherent multicore, with support for 1-16 coherent cores
+- bp_softcore: Instantiates a minimal BlackParrot softcore, with instruction and data caches, with simple DRAM and I/O ports.
+The default testbench in bp_top/ is bp_softcore.
+
+Additionally, each of bp_fe, bp_be and bp_me has a set of more targeted testbenches. These testbenches are more prone to breakage due to their tighter coupling to implementation, but they are intended to serve as a set of compliance tests for external contributors.
+
+NOTE: pardon our dust as we update our testbenches. The main testbench bp_processor testbench is well supported.
+
+### Supported CFGs
+All configurations can be found in bp\_common/src/include/bp_common_aviary_pkg.vh
+A configuration is selected by passing one of the enums found in bp_params_e. These correspond to the struct of parameters in all_cfgs_gp.
+- bp_processor supports all configurations in the bp_common_aviary_pkg
+- bp_softcore only supports e_bp_single_core_cfg at the moment.
+
+In the future, BlackParrot core parameters will be separated from SoC parameters.
 
 ### Supported ACTIONs
+Each testbench supports a set of actions which act upon that specific testbench. These include:
 - lint (lints the DUT of a single testbench)
 - build (builds a single testbench)
 - sim (runs a single test)
 - check_design (checks for DC elaborability, which is a proxy for synthesizability)
-- regress (runs a suite of tests, only defined for select testbenches)
+- regress (runs a suite of tests. This target is only defined for select testbenches)
+
 ### Supported TOOLs
-- Verilator
-- Synopsys VCS
-- Synopsys DC
+BlackParrot supports these tools for simulation and design checking. We welcome contributions for additional tool support, especially for open-source tools.
+- Verilator (.sc suffix)
+- Synopsys VCS (.v suffix)
+- Synopsys DC (.syn suffix)
 
 NOTE: Verilator is the free, open-source tool used to evaluate BlackParrot.  VCS and DC are used for simulation and synthesis. If you wish to use these tools, set up the appropriate environment variables in Makefile.common
 
-### Supported TBs
-- Found in bp\_\<end\>/test/tb/
-### Supported CFGs
-- Found in bp\_common/src/include/bp_common_aviary_pkg.vh
-- List of system parameters passed to most modules in BlackParrot
 ### Supported PROGs
-- Found in bp\_common/test/mem
-- Verilog hex format, generated by make progs
+The set of programs built by the make progs target can be found in bp_common/test/Makefile.frag. More details about BlackParrot software can be found in the [Software Developer Guide](software_guide.md). 
+
 ### Other flags
 - DUMP: dump a vcd
 - COV: generate line and toggle coverage

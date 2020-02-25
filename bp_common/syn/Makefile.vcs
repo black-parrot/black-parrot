@@ -122,16 +122,6 @@ sim.v: dirs.v
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "PASS" -A 9 $(SIM_LOG) > $(SIM_REPORT)
 
-match.v: MATCH_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).match.$(PROG).log
-match.v: MATCH_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).match.$(PROG).rpt
-match.v: MATCH_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).match.$(PROG).err
-match.v: PROG ?= hello_world
-match.v: dirs.v
-	-cd $(SIM_DIR); $(PYTHON) $(TRACEDIFF) commit.spike commit_0.trace $(START_PC) --tolerance=$(TOLERANCE) \
-		| tee -a $(MATCH_LOG)
-	-@grep "MATCH" $(MATCH_LOG) || echo "MISMATCHED" >> $(MATCH_ERROR)
-	-@grep "MATCH" -A 4 $(MATCH_LOG) > $(MATCH_REPORT)
-
 regress_riscv.v: $(RV64_REGRESSION_V) 
 $(RV64_REGRESSION_V):
 	$(MAKE) sim.v PROG=$(basename $@)
