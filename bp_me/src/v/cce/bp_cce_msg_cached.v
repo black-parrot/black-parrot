@@ -386,7 +386,7 @@ module bp_cce_msg_cached
           lce_cmd.data = mem_resp_li.data;
           lce_cmd.header.addr = mem_resp_li.header.addr;
           // modify the coherence state
-          lce_cmd.header.state = spec_bits_lo.state;
+          lce_cmd.header.state = bp_coh_states_e'(spec_bits_lo.state);
 
           if (lce_cmd_ready_i) begin
             pending_w_busy_o = 1'b1;
@@ -692,7 +692,7 @@ module bp_cce_msg_cached
           lce_cmd.header.src_id = cce_id_i;
           lce_cmd.header.addr = lce_cmd_addr;
 
-          lce_cmd.header.state = '0;
+          lce_cmd.header.state = e_COH_I;
           lce_cmd.header.target = '0;
           lce_cmd.header.target_way_id = '0;
 
