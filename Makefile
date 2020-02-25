@@ -33,7 +33,6 @@ tools:
 	$(MAKE) gnu
 	$(MAKE) systemc
 	$(MAKE) verilator
-	$(MAKE) fesvr
 	$(MAKE) spike
 	$(MAKE) dromajo
 	$(MAKE) axe
