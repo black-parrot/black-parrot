@@ -31,8 +31,7 @@ module testbench
    , parameter load_nbf_p                  = 0
    , parameter skip_init_p                 = 0
    , parameter cosim_p                     = 0
-   , parameter cosim_cfg_file_p            = "prog.cfg"
-   , parameter elf_file_p                  = "prog.elf"
+   , parameter cosim_cfg_file_p            = load_nbf_p ? "prog.cfg" : "prog.elf"
 
    , parameter mem_zero_p         = 1
    , parameter mem_file_p         = "prog.mem"
@@ -149,16 +148,16 @@ wrapper
 
   bind bp_be_top
     bp_nonsynth_cosim
-     #(.bp_params_p(bp_params_p)
-       ,.config_file_p(testbench.load_nbf_p
-                       ? testbench.cosim_cfg_file_p
-                       : testbench.elf_file_p))
+     #(.bp_params_p(bp_params_p))
       cosim
       (.clk_i(clk_i & (testbench.cosim_p == 1))
        ,.reset_i(reset_i)
        ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
 
        ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
+       // Want to pass config file as a parameter, but cannot in Verilator 4.025
+       // Parameter-resolved constants must not use dotted references
+       ,.config_file_i(testbench.cosim_cfg_file_p)
 
        ,.commit_v_i(be_calculator.commit_pkt.instret)
        ,.commit_pc_i(be_calculator.commit_pkt.pc)
