@@ -19,6 +19,22 @@ BlackParrot test sources live in `bp_common/test/src` and are compiled with `mak
   * The file format is (size(in 2^N bytes)_address(40 bit)_data(size bits)
     * 03_0080000000_ffd1011b00090137 = 8 bytes, address 0x8000_0000, data ffd1011b00090137
 
+## Building a Checkpoint Test
+BlackParrot can use Dromajo to generate checkpoints for certain tests. It runs the test on Dromajo for a certain number of instructions and then generates a memory image and a nbf file which contains the internal architectural state of the core(PC, registers, CSRs, privilege mode, ...). To create the checkpoint simply make sure that the target test is already built in the `bp_common/test/mem` directory and run `make <test>.dromajo MAXINSN=<n>` which will generate the files under the `<test>.dromajo.<n>` name. You can also specify the memory size of the image with `MEMSIZE=<k in MB>`. Default value is 1MB which should be enough for the small tests.
+
+To run the RTL simulation from the checkpoint, we have to run it with `PRELOAD_MEM_P=1 LOAD_NBF_P=1`. The former preloads the memory from the `.mem` file instead of using the nbf loader, and the latter loads the rest of state into the cores through the nbf loader.
+### Example:
+    cd <TOP>/bp_common/test
+    make demos
+    make bs.dromajo MAXINSN=5000
+    cd <TOP>/bp_top/syn
+    make build.v sim.v PROG=bs.dromajo.5000 PRELOAD_MEM_P=1 LOAD_NBF_P=1
+
+## Cosimulation
+BlackParrot also uses Dromajo to verify the correct execution of the program. It is done through comparing the commit information with the ideal C model in Dromajo using DPI calls in RTL. To enable cosimulation simply run the RTL simulation  with `COSIM_P=1` flag.
+
+**Note:** Currently cosimulation only works with the single-core system.
+
 ## Test Libraries
 ### libperch
 libperch is the BlackParrot firmware library. It includes sample linker scripts for supported SoC platforms, start code for running bare-metal tests, emulation code for missing instructions and firmware routines for printing, serial input and output and program termination.
