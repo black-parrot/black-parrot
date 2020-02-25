@@ -21,7 +21,7 @@ bsg_nonsynth_clock_gen
 
 bsg_nonsynth_reset_gen 
  #(.num_clocks_p(1)
-   ,.reset_cycles_lo_p(1)
+   ,.reset_cycles_lo_p(0)
    ,.reset_cycles_hi_p(20)
    )
  reset_gen

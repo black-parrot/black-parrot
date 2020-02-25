@@ -28,7 +28,10 @@ module testbench
    , parameter dcache_trace_p              = 0
    , parameter vm_trace_p                  = 0
    , parameter preload_mem_p               = 0
+   , parameter load_nbf_p                  = 0
    , parameter skip_init_p                 = 0
+   , parameter cosim_p                     = 0
+   , parameter cosim_cfg_file_p            = load_nbf_p ? "prog.cfg" : "prog.elf"
 
    , parameter mem_zero_p         = 1
    , parameter mem_file_p         = "prog.mem"
@@ -208,6 +211,50 @@ bp_nonsynth_host
    );
 
 bind bp_be_top
+  bp_nonsynth_commit_tracer
+   #(.bp_params_p(bp_params_p))
+   commit_tracer
+    (.clk_i(clk_i & (testbench.cmt_trace_p == 1))
+     ,.reset_i(reset_i)
+     ,.freeze_i('0)
+
+     ,.mhartid_i('0)
+
+     ,.commit_v_i(be_calculator.commit_pkt.instret)
+     ,.commit_pc_i(be_calculator.commit_pkt.pc)
+     ,.commit_instr_i(be_calculator.commit_pkt.instr)
+
+     ,.rd_w_v_i(be_calculator.wb_pkt.rd_w_v)
+     ,.rd_addr_i(be_calculator.wb_pkt.rd_addr)
+     ,.rd_data_i(be_calculator.wb_pkt.rd_data)
+     );
+
+  bind bp_be_top
+    bp_nonsynth_cosim
+     #(.bp_params_p(bp_params_p))
+      cosim
+      (.clk_i(clk_i & (testbench.cosim_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i('0)
+
+       ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
+       // Want to pass config file as a parameter, but cannot in Verilator 4.025
+       // Parameter-resolved constants must not use dotted references
+       ,.config_file_i(testbench.cosim_cfg_file_p)
+
+       ,.commit_v_i(be_calculator.commit_pkt.instret)
+       ,.commit_pc_i(be_calculator.commit_pkt.pc)
+       ,.commit_instr_i(be_calculator.commit_pkt.instr)
+
+       ,.rd_w_v_i(be_calculator.wb_pkt.rd_w_v)
+       ,.rd_addr_i(be_calculator.wb_pkt.rd_addr)
+       ,.rd_data_i(be_calculator.wb_pkt.rd_data)
+
+       ,.interrupt_v_i(be_mem.csr.trap_pkt_cast_o._interrupt)
+       ,.cause_i(be_mem.csr.trap_pkt_cast_o.cause)
+       );
+
+bind bp_be_top
   bp_be_nonsynth_perf
    #(.bp_params_p(bp_params_p))
    perf
@@ -227,27 +274,120 @@ bind bp_be_top
      ,.program_finish_i(testbench.program_finish_lo)
      );
 
-logic reset_r;
-always_ff @(posedge clk_i)
-  reset_r <= reset_i;
+  bind bp_be_director
+    bp_be_nonsynth_npc_tracer
+     #(.bp_params_p(bp_params_p))
+     npc_tracer
+      (.clk_i(clk_i & (testbench.npc_trace_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i('0)
 
-bind bp_be_top
-  bp_nonsynth_commit_tracer
+       ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
+
+       ,.npc_w_v(npc_w_v)
+       ,.npc_n(npc_n)
+       ,.npc_r(npc_r)
+       ,.expected_npc_o(expected_npc_o)
+
+       ,.fe_cmd_i(fe_cmd)
+       ,.fe_cmd_v(fe_cmd_v)
+
+       ,.commit_pkt_i(commit_pkt)
+       );
+
+  /*bind bp_be_dcache
+    bp_be_nonsynth_dcache_tracer
+     #(.bp_params_p(bp_params_p))
+     dcache_tracer
+      (.clk_i(clk_i & (testbench.dcache_trace_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i('0)
+
+       ,.mhartid_i(cfg_bus_cast_i.core_id)
+
+       ,.v_tv_r(v_tv_r)
+       //,.cache_miss_i(cache_miss_i)
+
+       ,.paddr_tv_r(paddr_tv_r)
+       ,.uncached_tv_r(uncached_tv_r)
+       ,.load_op_tv_r(load_op_tv_r)
+       ,.store_op_tv_r(store_op_tv_r)
+       ,.lr_op_tv_r(lr_op_tv_r)
+       ,.sc_op_tv_r(sc_op_tv_r)
+       ,.store_data(data_tv_r)
+       ,.load_data(data_o)
+       );*/
+
+  bind bp_be_top
+    bp_be_nonsynth_calc_tracer
+     #(.bp_params_p(bp_params_p))
+     calc_tracer
+      (.clk_i(clk_i & (testbench.calc_trace_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i('0)
+
+       ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
+
+       ,.issue_pkt_i(be_checker.scheduler.issue_pkt)
+       ,.issue_pkt_v_i(be_checker.scheduler.fe_queue_yumi_o)
+
+       ,.fe_nop_v_i(be_calculator.exc_stage_n[0].fe_nop_v)
+       ,.be_nop_v_i(be_calculator.exc_stage_n[0].be_nop_v)
+       ,.me_nop_v_i(be_calculator.exc_stage_n[0].me_nop_v)
+       ,.dispatch_pkt_i(be_calculator.dispatch_pkt)
+
+       ,.ex1_br_tgt_i(be_calculator.calc_status.ex1_npc)
+       ,.ex1_btaken_i(be_calculator.pipe_int.btaken)
+       ,.iwb_result_i(be_calculator.comp_stage_n[3])
+       ,.fwb_result_i(be_calculator.comp_stage_n[4])
+
+       ,.cmt_trace_exc_i(be_calculator.exc_stage_n[1+:5])
+
+       ,.trap_v_i(be_mem.csr.trap_pkt_cast_o._interrupt | be_mem.csr.trap_pkt_cast_o.exception)
+       ,.mtvec_i(be_mem.csr.mtvec_n)
+       ,.mtval_i(be_mem.csr.mtval_n[0+:vaddr_width_p])
+       ,.ret_v_i(be_mem.csr.trap_pkt_cast_o.eret)
+       ,.mepc_i(be_mem.csr.mepc_n[0+:vaddr_width_p])
+       ,.mcause_i(be_mem.csr.mcause_n)
+
+       ,.priv_mode_i(be_mem.csr.priv_mode_n)
+       ,.mpp_i(be_mem.csr.mstatus_n.mpp)
+       );
+
+  bind bp_core_minimal
+    bp_be_nonsynth_vm_tracer
+    #(.bp_params_p(bp_params_p))
+    vm_tracer
+      (.clk_i(clk_i & (testbench.vm_trace_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i('0)
+
+       ,.mhartid_i(be.be_checker.scheduler.int_regfile.cfg_bus.core_id)
+
+       ,.itlb_clear_i(fe.mem.itlb.flush_i)
+       ,.itlb_fill_v_i(fe.mem.itlb.v_i & fe.mem.itlb.w_i)
+       ,.itlb_vtag_i(fe.mem.itlb.vtag_i)
+       ,.itlb_entry_i(fe.mem.itlb.entry_i)
+
+       ,.dtlb_clear_i(be.be_mem.dtlb.flush_i)
+       ,.dtlb_fill_v_i(be.be_mem.dtlb.v_i & be.be_mem.dtlb.w_i)
+       ,.dtlb_vtag_i(be.be_mem.dtlb.vtag_i)
+       ,.dtlb_entry_i(be.be_mem.dtlb.entry_i)
+       );
+
+  bp_mem_nonsynth_tracer
    #(.bp_params_p(bp_params_p))
-   commit_tracer
-    (.clk_i(clk_i)
+   bp_mem_tracer
+    (.clk_i(clk_i & (testbench.dram_trace_p == 1))
      ,.reset_i(reset_i)
-     ,.freeze_i(testbench.reset_r)
 
-     ,.mhartid_i('0)
+     ,.mem_cmd_i(dram_cmd_li)
+     ,.mem_cmd_v_i(dram_cmd_v_li)
+     ,.mem_cmd_yumi_i(dram_cmd_yumi_lo)
 
-     ,.commit_v_i(be_calculator.commit_pkt.instret)
-     ,.commit_pc_i(be_calculator.commit_pkt.pc)
-     ,.commit_instr_i(be_calculator.commit_pkt.instr)
-
-     ,.rd_w_v_i(be_calculator.wb_pkt.rd_w_v)
-     ,.rd_addr_i(be_calculator.wb_pkt.rd_addr)
-     ,.rd_data_i(be_calculator.wb_pkt.rd_data)
+     ,.mem_resp_i(dram_resp_lo)
+     ,.mem_resp_v_i(dram_resp_v_lo)
+     ,.mem_resp_ready_i(dram_resp_ready_li)
      );
 
 bp_nonsynth_if_verif

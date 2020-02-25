@@ -111,12 +111,8 @@ bsg_dff_reset_en
 integer file;
 string file_name;
 
-logic freeze_r;
-always_ff @(posedge clk_i)
-  freeze_r <= freeze_i;
-
 always_ff @(negedge clk_i)
-  if (freeze_r & ~freeze_i)
+  if (~reset_i & ~freeze_i)
     begin
       file_name = $sformatf("%s_%x.trace", calc_trace_file_p, mhartid_i);
       file      = $fopen(file_name, "w");

@@ -30,12 +30,8 @@ import "DPI-C" context function void dromajo_step(int      hart_id,
                                                   longint wdata);
 import "DPI-C" context function void dromajo_trap(int hart_id, longint cause);
 
-logic freeze_r;
-always_ff @(posedge clk_i)
-  freeze_r <= freeze_i;
-
 always_ff @(negedge clk_i)
-  if (freeze_r & ~freeze_i)
+  if (~reset_i & ~freeze_i)
     begin
       init_dromajo(config_file_i);
     end
