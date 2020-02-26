@@ -81,7 +81,6 @@ update-cache-auto:
         - external/*
 
 hotfix_job:
-  <<: *job_definition
   only:
     - /^.*hotfix.*$/
   stage: check
@@ -91,6 +90,15 @@ hotfix_job:
   script:
     - make -C bp_top/syn clean
     - $CI_PROJECT_DIR/ci/regress.sh check_design.syn bp_top
+  cache:
+    key: "dev"
+    paths:
+      - $CI_PROJECT_DIR/external/
+    policy: pull
+  artifacts:
+    when: always
+    paths:
+      - "bp_top/syn/reports/"
 
 clean_build:
   <<: *job_definition

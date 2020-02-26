@@ -82,7 +82,7 @@ module bp_fe_lce_req
   bp_me_addr_to_cce_id
    #(.bp_params_p(bp_params_p))
    req_map
-    (.paddr_i(lce_req.addr)
+    (.paddr_i(lce_req.header.addr)
 
      ,.cce_id_o(req_cce_id_lo)
      );
@@ -91,7 +91,7 @@ module bp_fe_lce_req
   bp_me_addr_to_cce_id
    #(.bp_params_p(bp_params_p))
    resp_map
-    (.paddr_i(lce_resp.addr)
+    (.paddr_i(lce_resp.header.addr)
 
      ,.cce_id_o(resp_cce_id_lo)
      );
@@ -111,25 +111,26 @@ module bp_fe_lce_req
 
     lce_req_v_o           = 1'b0;
 
-    lce_req.dst_id        = req_cce_id_lo;
-    lce_req.src_id        = lce_id_i;
-    lce_req.msg_type      = e_lce_req_type_rd;
-    lce_req.addr          = miss_addr_r;
+    lce_req = '0;
+    lce_req.header.dst_id        = req_cce_id_lo;
+    lce_req.header.src_id        = lce_id_i;
+    lce_req.header.msg_type      = e_lce_req_type_rd;
+    lce_req.header.addr          = miss_addr_r;
 
-    lce_req.msg.req.non_exclusive = e_lce_req_non_excl;
-    lce_req.msg.req.lru_dirty     = e_lce_req_lru_clean;
-    lce_req.msg.req.lru_way_id    = lru_flopped_r
+    lce_req.header.non_exclusive = e_lce_req_non_excl;
+    lce_req.header.lru_dirty     = e_lce_req_lru_clean;
+    lce_req.header.lru_way_id    = lru_flopped_r
                                     ? lru_way_r
                                     : lru_way_i;
-    lce_req.msg.req.pad    = '0;
 
 
     lce_resp_v_o          = 1'b0;
 
-    lce_resp.dst_id       = resp_cce_id_lo;
-    lce_resp.src_id       = lce_id_i;
-    lce_resp.msg_type     = bp_lce_cce_resp_type_e'('0);
-    lce_resp.addr         = miss_addr_r;
+    lce_resp = '0;
+    lce_resp.header.dst_id       = resp_cce_id_lo;
+    lce_resp.header.src_id       = lce_id_i;
+    lce_resp.header.msg_type     = bp_lce_cce_resp_type_e'('0);
+    lce_resp.header.addr         = miss_addr_r;
     lce_resp.data         = '0;
   
     cache_miss_o = 1'b0;
@@ -169,15 +170,15 @@ module bp_fe_lce_req
         lce_req_v_o = 1'b1;
         cache_miss_o = 1'b1;
 
-        lce_req.msg_type = e_lce_req_type_uc_rd;
+        lce_req.header.msg_type = e_lce_req_type_uc_rd;
         // TODO: this may need to change depending on what the LCE and CCE behavior spec is
         // In order for the uncached load to replay successfully and extract the correct
         // 32-bits, we fetch the aligned 64-bits containing the desired 32-bits.
         // Zero out the byte offset bits so the address is 64-bit aligned.
-        lce_req.addr = {miss_addr_r[paddr_width_p-1:byte_offset_width_lp]
-                        , {byte_offset_width_lp{1'b0}}};
-        lce_req.msg.uc_req.uc_size = e_lce_uc_req_8;
-        lce_req.msg.uc_req.data = '0;
+        lce_req.header.addr = {miss_addr_r[paddr_width_p-1:byte_offset_width_lp]
+                               , {byte_offset_width_lp{1'b0}}};
+        lce_req.header.uc_size = e_lce_uc_req_8;
+        lce_req.data = '0;
 
         state_n = lce_req_ready_i
           ? e_lce_req_sleep 
@@ -211,7 +212,7 @@ module bp_fe_lce_req
 
       e_lce_req_send_coh_ack: begin
         lce_resp_v_o = 1'b1;
-        lce_resp.msg_type = e_lce_cce_coh_ack;
+        lce_resp.header.msg_type = e_lce_cce_coh_ack;
         cache_miss_o = 1'b1;
         state_n = lce_resp_yumi_i
           ? e_lce_req_ready
