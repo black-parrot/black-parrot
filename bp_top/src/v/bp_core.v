@@ -66,6 +66,7 @@ module bp_core
   bp_cache_req_s [1:0] cache_req_cast_lo;
   logic [1:0] cache_req_ready_li, cache_req_v_lo;
   bp_cache_req_metadata_s [1:0] cache_req_metadata_lo;
+  logic [1:0] cache_req_metadata_v_lo;
 
   logic [1:0] cache_req_complete_lo;
   logic credits_full_lo, credits_empty_lo;
@@ -110,6 +111,7 @@ module bp_core
      ,.cache_req_v_o(cache_req_v_lo)
      ,.cache_req_ready_i(cache_req_ready_li)
      ,.cache_req_metadata_o(cache_req_metadata_lo)
+     ,.cache_req_metadata_v_o(cache_req_metadata_v_lo)
 
      ,.cache_req_complete_i(cache_req_complete_lo)
      
@@ -147,6 +149,7 @@ module bp_core
      ,.cache_req_v_i(cache_req_v_lo[0])
      ,.cache_req_ready_o(cache_req_ready_li[0])
      ,.cache_req_metadata_i(cache_req_metadata_lo[0])
+     ,.cache_req_metadata_v_i(cache_req_metadata_v_lo[0])
      ,.cache_req_complete_o(cache_req_complete_lo[0])
 
      ,.data_mem_pkt_o(data_mem_pkt_li[0])
@@ -193,6 +196,7 @@ module bp_core
     ,.cache_req_v_i(cache_req_v_lo[1])
     ,.cache_req_ready_o(cache_req_ready_li[1])
     ,.cache_req_metadata_i(cache_req_metadata_lo[1])
+    ,.cache_req_metadata_v_i(cache_req_metadata_v_lo[1])
 
     ,.cache_req_complete_o(cache_req_complete_lo[1])
 

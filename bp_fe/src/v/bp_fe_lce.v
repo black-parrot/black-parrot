@@ -47,6 +47,8 @@ module bp_fe_lce
     , input                                                      cache_req_v_i
     , output logic                                               cache_req_ready_o
     , input [cache_req_metadata_width_lp-1:0]                    cache_req_metadata_i
+    , input                                                      cache_req_metadata_v_i
+
     , output logic                                               cache_req_complete_o
 
     , output logic [cache_data_mem_pkt_width_lp-1:0]             data_mem_pkt_o
@@ -135,6 +137,7 @@ module bp_fe_lce
     ,.cache_req_v_i(cache_req_v_i)
     ,.cache_req_ready_o(cache_req_ready_o)
     ,.cache_req_metadata_i(cache_req_metadata_i)
+    ,.cache_req_metadata_v_i(cache_req_metadata_v_i)
 
     ,.miss_addr_o(miss_addr_lo)
 

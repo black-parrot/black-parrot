@@ -40,6 +40,7 @@ module bp_fe_lce_req
     , input cache_req_v_i
     , output logic cache_req_ready_o
     , input [cache_req_metadata_width_lp-1:0] cache_req_metadata_i
+    , input cache_req_metadata_v_i
 
     , output logic [paddr_width_p-1:0] miss_addr_o
           
@@ -75,7 +76,33 @@ module bp_fe_lce_req
 
   assign cache_req_cast_li = cache_req_i;
   assign cache_req_metadata_cast_li = cache_req_metadata_i;
+
+  logic cache_req_v_r;
+  always_ff @(posedge clk_i)
+    cache_req_v_r <= cache_req_v_i;
+
+  bp_cache_req_metadata_s cache_req_metadata_r;
+  bsg_dff_en_bypass
+   #(.width_p($bits(bp_cache_req_metadata_s)))
+   metadata_reg
+    (.clk_i(clk_i)
+
+     ,.en_i(cache_req_v_r)
+     ,.data_i(cache_req_metadata_i)
+     ,.data_o(cache_req_metadata_r)
+     );
   
+  logic cache_req_metadata_v_r;
+  bsg_dff_en_bypass
+   #(.width_p(1))
+   metadata_v_reg
+    (.clk_i(clk_i)
+
+     ,.en_i(cache_req_v_i | cache_req_metadata_v_i)
+     ,.data_i(cache_req_metadata_v_i)
+     ,.data_o(cache_req_metadata_v_r)
+     );
+
   // states
   typedef enum logic [2:0] {
     e_lce_req_ready
@@ -90,8 +117,6 @@ module bp_fe_lce_req
   logic [paddr_width_p-1:0] miss_addr_r, miss_addr_n;
   logic cce_data_received_r, cce_data_received_n, cce_data_received;
   logic set_tag_received_r, set_tag_received_n, set_tag_received;
-  logic [way_id_width_lp-1:0] lru_way_r, lru_way_n;
-  logic lru_flopped_r, lru_flopped_n;
   logic cache_req_ready;
 
   assign miss_addr_o = miss_addr_r;
@@ -121,8 +146,6 @@ module bp_fe_lce_req
     miss_addr_n           = miss_addr_r;
     cce_data_received_n   = cce_data_received_r;
     set_tag_received_n    = set_tag_received_r;
-    lru_way_n             = lru_way_r;
-    lru_flopped_n         = lru_flopped_r;
 
     cce_data_received     = cce_data_received_r | cce_data_received_i;
     set_tag_received      = set_tag_received_r | set_tag_received_i;
@@ -136,9 +159,7 @@ module bp_fe_lce_req
 
     lce_req.msg.req.non_exclusive = e_lce_req_non_excl;
     lce_req.msg.req.lru_dirty     = e_lce_req_lru_clean;
-    lce_req.msg.req.lru_way_id    = lru_flopped_r
-                                    ? lru_way_r
-                                    : cache_req_metadata_cast_li.repl_way;
+    lce_req.msg.req.lru_way_id    = cache_req_metadata_r.repl_way;
     lce_req.msg.req.pad    = '0;
 
 
@@ -161,34 +182,29 @@ module bp_fe_lce_req
           miss_addr_n = cache_req_cast_li.addr;
           cce_data_received_n = 1'b0;
           set_tag_received_n = 1'b0;
-          lru_flopped_n = 1'b0;
           state_n = e_lce_req_send_miss_req;
         end
         else if (cache_req_cast_li.msg_type == e_uc_load) begin
           miss_addr_n = cache_req_cast_li.addr;
           cce_data_received_n = 1'b0;
           set_tag_received_n = 1'b0;
-          lru_flopped_n = 1'b0;
           state_n = e_lce_req_send_uncached_load_req;
         end
        end
       end
 
       e_lce_req_send_miss_req: begin
-        lru_flopped_n = 1'b1;
-        lru_way_n = lru_flopped_r ? lru_way_r : cache_req_metadata_cast_li.repl_way;
-
-        lce_req_v_o           = 1'b1;
+        lce_req_v_o        = lce_req_ready_i & cache_req_metadata_v_r;
         
         cache_req_ready    = 1'b0;
         
-        state_n = lce_req_ready_i
+        state_n = lce_req_v_o
           ? e_lce_req_sleep 
           : e_lce_req_send_miss_req;
       end
 
       e_lce_req_send_uncached_load_req: begin
-        lce_req_v_o = 1'b1;
+        lce_req_v_o = lce_req_ready_i & cache_req_metadata_v_r;
         cache_req_ready = 1'b0;
 
         lce_req.msg_type = e_lce_req_type_uc_rd;
@@ -201,7 +217,7 @@ module bp_fe_lce_req
         lce_req.msg.uc_req.uc_size = e_lce_uc_req_8;
         lce_req.msg.uc_req.data = '0;
 
-        state_n = lce_req_ready_i
+        state_n = lce_req_v_o
           ? e_lce_req_sleep 
           : e_lce_req_send_uncached_load_req;
       end
@@ -277,7 +293,7 @@ module bp_fe_lce_req
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       state_r              <= e_lce_req_ready;
-      lru_flopped_r        <= 1'b0;
+      miss_addr_r          <= '0;
       cce_data_received_r  <= 1'b0;
       set_tag_received_r   <= 1'b0;
     end else begin
@@ -285,8 +301,6 @@ module bp_fe_lce_req
       miss_addr_r          <= miss_addr_n;
       cce_data_received_r  <= cce_data_received_n;
       set_tag_received_r   <= set_tag_received_n;
-      lru_way_r            <= lru_way_n;
-      lru_flopped_r        <= lru_flopped_n;
     end
   end
 

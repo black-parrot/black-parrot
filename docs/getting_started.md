@@ -79,7 +79,14 @@ BlackParrot supports these tools for simulation and design checking. We welcome 
 NOTE: Verilator is the free, open-source tool used to evaluate BlackParrot.  VCS and DC are used for simulation and synthesis. If you wish to use these tools, set up the appropriate environment variables in Makefile.common
 
 ### Supported PROGs
-The set of programs built by the make progs target can be found in bp_common/test/Makefile.frag. More details about BlackParrot software can be found in the [Software Developer Guide](software_guide.md). 
+The set of programs built by the make progs target can be found in bp_common/test/Makefile.frag. More details about BlackParrot software can be found in the [Software Developer Guide](software_guide.md).
+Notably, BlackParrot has been tested with:
+- riscv-tests (a set of unit tests for RISC-V functionality)
+  - Note: rv64ui-p-fence_i and rv64ui-v/vt/pt are known to fail with bp_softcore. This is due to the
+    lack of a coherence system. Work is in progress to remedy these failures.
+- BEEBS (Embedded core test suite)
+- Coremark (Standard benchmark for core performance)
+- demos (one-off tests which are used to test various aspects of the system)
 
 ### Other flags
 - DUMP: dump a vcd

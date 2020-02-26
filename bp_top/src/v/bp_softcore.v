@@ -48,6 +48,7 @@ module bp_softcore
   bp_cache_req_s [1:0] cache_req_lo;
   logic [1:0] cache_req_v_lo, cache_req_ready_li;
   bp_cache_req_metadata_s [1:0] cache_req_metadata_lo;
+  logic [1:0] cache_req_metadata_v_lo;
 
   bp_cache_tag_mem_pkt_s [1:0] tag_mem_pkt_li;
   logic [1:0] tag_mem_pkt_v_li, tag_mem_pkt_ready_lo;
@@ -96,6 +97,7 @@ module bp_softcore
      ,.cache_req_v_o(cache_req_v_lo)
      ,.cache_req_ready_i(cache_req_ready_li)
      ,.cache_req_metadata_o(cache_req_metadata_lo)
+     ,.cache_req_metadata_v_o(cache_req_metadata_v_lo)
      ,.cache_req_complete_i(cache_req_complete_li)
 
      ,.tag_mem_pkt_i(tag_mem_pkt_li)
@@ -136,6 +138,7 @@ module bp_softcore
          ,.cache_req_v_i(cache_req_v_lo[i])
          ,.cache_req_ready_o(cache_req_ready_li[i])
          ,.cache_req_metadata_i(cache_req_metadata_lo[i])
+         ,.cache_req_metadata_v_i(cache_req_metadata_v_lo[i])
 
          ,.tag_mem_pkt_o(tag_mem_pkt_li[i])
          ,.tag_mem_pkt_v_o(tag_mem_pkt_v_li[i])
