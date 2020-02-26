@@ -133,6 +133,7 @@ module bp_be_dcache
     , output logic cache_req_v_o 
     , input cache_req_ready_i
     , output [cache_req_metadata_width_lp-1:0] cache_req_metadata_o
+    , output cache_req_metadata_v_o
 
     , input cache_req_complete_i
 
@@ -437,8 +438,6 @@ module bp_be_dcache
   logic [lce_assoc_p-1:0] load_hit_tv;
   logic [lce_assoc_p-1:0] store_hit_tv;
   logic [lce_assoc_p-1:0] invalid_tv;
-  logic load_miss_tv;
-  logic store_miss_tv;
   logic load_hit;
   logic store_hit;
   logic [way_id_width_lp-1:0] load_hit_way;
@@ -472,8 +471,11 @@ module bp_be_dcache
       ,.addr_o(store_hit_way)
       );
 
-  assign load_miss_tv = ~load_hit & v_tv_r & load_op_tv_r & ~uncached_tv_r;
-  assign store_miss_tv = ~store_hit & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r;
+  wire load_miss_tv = ~load_hit & v_tv_r & load_op_tv_r & ~uncached_tv_r;
+  wire store_miss_tv = ~store_hit & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r;
+  wire lr_miss_tv = v_tv_r & lr_op_tv_r & ~store_hit;
+
+  wire miss_tv = load_miss_tv | store_miss_tv | lr_miss_tv;
 
   // uncached req
   //
@@ -483,7 +485,7 @@ module bp_be_dcache
   logic [dword_width_p-1:0] uncached_load_data_r;
 
   // load reserved / store conditional
-  logic lr_hit_tv, lr_miss_tv;
+  logic lr_hit_tv;
   logic sc_success;
   logic sc_fail;
   logic [ptag_width_lp-1:0]  load_reserved_tag_r;
@@ -492,7 +494,6 @@ module bp_be_dcache
 
   // Load reserved misses if not in exclusive or modified (whether load hit or not)
   assign lr_hit_tv = v_tv_r & lr_op_tv_r & store_hit;
-  assign lr_miss_tv = v_tv_r & lr_op_tv_r & ~store_hit;
   // Succeed if the address matches and we have a store hit
   assign sc_success  = v_tv_r & sc_op_tv_r & store_hit & load_reserved_v_r 
                        & (load_reserved_tag_r == addr_tag_tv)
@@ -696,6 +697,17 @@ module bp_be_dcache
     cache_req_cast_o.data = data_tv_r;
   end
 
+  // The cache pipeline is designed to always send metadata a cycle after the request
+  bsg_dff_reset
+   #(.width_p(1))
+   cache_req_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i(cache_req_v_o)
+     ,.data_o(cache_req_metadata_v_o)
+     );
+
   assign cache_req_metadata_cast_o.repl_way = lru_way_li;
   assign cache_req_metadata_cast_o.dirty = stat_mem_data_lo.dirty[lru_way_li];
   
@@ -722,36 +734,22 @@ module bp_be_dcache
 
   assign ready_o = cache_req_ready_i & ~cache_miss;
 
-  // Output logic
-  always_comb begin
-    if (v_tv_r) begin
-      if (uncached_tv_r) begin
-        if (load_op_tv_r) begin
-          v_o = uncached_load_data_v_r;
-        end
-        else if (store_op_tv_r) begin
-          // uncached store_op can be committed,
-          // as long as there is no cache_miss signal raised.
-          v_o = cache_req_ready_i;
-        end
-        else begin
-          v_o = 1'b0; // this should never happen
-        end
-      end
-      else begin
-        v_o = v_tv_r & ~(load_miss_tv || store_miss_tv || lr_miss_tv); // cached request
-      end
-    end
-    else begin
-      v_o = 1'b0;
-    end
-  end
+  assign v_o = v_tv_r & ((uncached_tv_r & (load_op_tv_r & uncached_load_data_v_r))
+                         | (uncached_tv_r & (store_op_tv_r & cache_req_ready_i))
+                         | (~uncached_tv_r & ~miss_tv)
+                         );
 
   // Locking logic - Block processing of new dcache_packets
-  logic cache_miss_r;
-  always_ff @(posedge clk_i)
-    cache_miss_r <= cache_miss;
-  wire cache_miss_resolved = cache_miss_r & ~cache_miss;
+  logic cache_miss_resolved;
+  bsg_edge_detect
+   #(.falling_not_rising_p(1))
+   cache_miss_detect
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.sig_i(cache_miss)
+     ,.detect_o(cache_miss_resolved)
+     );
 
   logic [`BSG_SAFE_CLOG2(lock_max_limit_p+1)-1:0] lock_cnt_r;
   wire lock_clr = v_o || (lock_cnt_r == lock_max_limit_p);
