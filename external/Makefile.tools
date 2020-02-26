@@ -8,6 +8,7 @@ INCLUDE_DIR := $(BP_EXTERNAL_DIR)/include
 
 VERILATOR_DIR := $(BP_EXTERNAL_DIR)/verilator
 GNU_DIR       := $(BP_EXTERNAL_DIR)/riscv-gnu-toolchain
+DTC_DIR       := $(BP_EXTERNAL_DIR)/dtc
 SPIKE_DIR     := $(BP_EXTERNAL_DIR)/riscv-isa-sim
 DROMAJO_DIR   := $(BP_EXTERNAL_DIR)/dromajo
 AXE_DIR       := $(BP_EXTERNAL_DIR)/axe
@@ -30,6 +31,11 @@ verilator:
 		./configure --prefix=$(BP_EXTERNAL_DIR)
 	$(MAKE) -C $(VERILATOR_DIR)
 	$(MAKE) -C $(VERILATOR_DIR) install
+
+dtc:
+	@cd $(TOP); git submodule update --init --recursive $(DTC_DIR)
+	$(MAKE) -C $(DTC_DIR) install
+	cp $(DTC_DIR)/dtc $(BIN_DIR)
 
 spike:
 	@cd $(TOP); git submodule update --init --recursive $(SPIKE_DIR)

@@ -94,3 +94,6 @@
   branch = blackparrot_mods
   ignore = dirty
 
+[submodule "external/dtc"]
+	path = external/dtc
+	url = https://git.kernel.org/pub/scm/utils/dtc/dtc.git
