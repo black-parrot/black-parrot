@@ -65,6 +65,8 @@ module bp_me_wormhole_packet_encode_mem_resp
   logic [len_width_p-1:0] data_resp_len_li;
 
   always_comb begin
+    packet_cast_o = '0;
+
     packet_cast_o.data       = mem_resp_cast_i.data;
     packet_cast_o.msg        = mem_resp_cast_i[0+:cce_mem_msg_width_lp-cce_block_width_p];
     packet_cast_o.src_cord   = src_cord_i;
