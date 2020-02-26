@@ -32,12 +32,12 @@ module bp_cce_mmio_cfg_loader
    , input                                           reset_i
 
    // Config channel
-   , output logic [cce_mem_msg_width_lp-1:0]          io_cmd_o
+   , output logic [cce_mem_msg_width_lp-1:0]         io_cmd_o
    , output logic                                    io_cmd_v_o
    , input                                           io_cmd_yumi_i
 
    // We don't need a response from the cfg network
-   , input [cce_mem_msg_width_lp-1:0]                 io_resp_i
+   , input [cce_mem_msg_width_lp-1:0]                io_resp_i
    , input                                           io_resp_v_i
    , output                                          io_resp_ready_o
    
@@ -192,10 +192,10 @@ module bp_cce_mmio_cfg_loader
       io_cmd_v_o = (cfg_w_v_lo | cfg_r_v_lo) & ~credits_full_lo;
 
       // uncached store
-      io_cmd_cast_o.msg_type      = cfg_w_v_lo ? e_cce_mem_uc_wr : e_cce_mem_uc_rd;
-      io_cmd_cast_o.addr          = local_addr_lo; 
-      io_cmd_cast_o.payload       = '0;
-      io_cmd_cast_o.size          = e_mem_size_8;
+      io_cmd_cast_o.header.msg_type      = cfg_w_v_lo ? e_cce_mem_uc_wr : e_cce_mem_uc_rd;
+      io_cmd_cast_o.header.addr          = local_addr_lo;
+      io_cmd_cast_o.header.payload       = '0;
+      io_cmd_cast_o.header.size          = e_mem_size_8;
       io_cmd_cast_o.data          = cfg_data_lo;
     end
 

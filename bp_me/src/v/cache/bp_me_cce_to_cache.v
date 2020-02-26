@@ -84,7 +84,7 @@ module bp_me_cce_to_cache
   assign mem_cmd_yumi_o = mem_cmd_yumi_lo;
   
   logic [paddr_width_p-1:0] cmd_addr;
-  assign cmd_addr = mem_cmd.addr;
+  assign cmd_addr = mem_cmd.header.addr;
   
   logic [block_size_in_words_lp-1:0][dword_width_p-1:0] cmd_data;
   assign cmd_data = mem_cmd.data;
@@ -101,10 +101,10 @@ module bp_me_cce_to_cache
   (.clk_i(clk_i)
   ,.reset_i(reset_i)
   ,.v_i(small_fifo_v_li)
-  ,.data_i({mem_cmd.msg_type, mem_cmd.addr, mem_cmd.size, mem_cmd.payload})
+  ,.data_i({mem_cmd.header.msg_type, mem_cmd.header.addr, mem_cmd.header.size, mem_cmd.header.payload})
   ,.ready_o(small_fifo_ready_lo)
   ,.v_o(small_fifo_v_lo)
-  ,.data_o({mem_resp.msg_type, mem_resp.addr, mem_resp.size, mem_resp.payload})
+  ,.data_o({mem_resp.header.msg_type, mem_resp.header.addr, mem_resp.header.size, mem_resp.header.payload})
   ,.yumi_i(small_fifo_yumi_li)
   );
   
@@ -171,7 +171,7 @@ module bp_me_cce_to_cache
       READY: begin
         if (mem_cmd_v_i & small_fifo_ready_lo)
           begin
-            case (mem_cmd.size)
+            case (mem_cmd.header.size)
               e_mem_size_1
               ,e_mem_size_2
               ,e_mem_size_4
@@ -187,11 +187,11 @@ module bp_me_cce_to_cache
       end
       SEND: begin
         v_o = 1'b1;
-        case (mem_cmd.msg_type)
+        case (mem_cmd.header.msg_type)
           e_cce_mem_rd
           ,e_cce_mem_wr
           ,e_cce_mem_uc_rd:
-            case (mem_cmd.size)
+            case (mem_cmd.header.size)
               e_mem_size_1: cache_pkt.opcode = LB;
               e_mem_size_2: cache_pkt.opcode = LH;
               e_mem_size_4: cache_pkt.opcode = LW;
@@ -203,7 +203,7 @@ module bp_me_cce_to_cache
             endcase
           e_cce_mem_uc_wr
           ,e_cce_mem_wb   :
-            case (mem_cmd.size)
+            case (mem_cmd.header.size)
               e_mem_size_1: cache_pkt.opcode = SB;
               e_mem_size_2: cache_pkt.opcode = SH;
               e_mem_size_4: cache_pkt.opcode = SW;
@@ -286,7 +286,7 @@ module bp_me_cce_to_cache
       RESP_READY: begin
         if (small_fifo_v_lo)
           begin
-            case (mem_resp.size)
+            case (mem_resp.header.size)
               e_mem_size_1
               ,e_mem_size_2
               ,e_mem_size_4

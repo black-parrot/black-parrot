@@ -42,7 +42,7 @@ logic plic_cmd_v;
 logic wr_not_rd;
 
 bp_local_addr_s local_addr;
-assign local_addr = mem_cmd_li.addr;
+assign local_addr = mem_cmd_li.header.addr;
 
 always_comb
   begin
@@ -51,7 +51,7 @@ always_comb
     mipi_cmd_v     = 1'b0;
     plic_cmd_v     = 1'b0;
 
-    wr_not_rd = mem_cmd_li.msg_type inside {e_cce_mem_wb, e_cce_mem_uc_wr};
+    wr_not_rd = mem_cmd_li.header.msg_type inside {e_cce_mem_wb, e_cce_mem_uc_wr};
 
     unique 
     casez ({local_addr.dev, local_addr.addr})
@@ -147,10 +147,12 @@ wire [dword_width_p-1:0] rdata_lo = plic_cmd_v
 
 bp_cce_mem_msg_s mem_resp_lo;
 assign mem_resp_lo =
-  '{msg_type       : mem_cmd_li.msg_type
-    ,addr          : mem_cmd_li.addr
-    ,payload       : mem_cmd_li.payload
-    ,size          : mem_cmd_li.size
+  '{header : '{
+    msg_type       : mem_cmd_li.header.msg_type
+    ,addr          : mem_cmd_li.header.addr
+    ,payload       : mem_cmd_li.header.payload
+    ,size          : mem_cmd_li.header.size
+    }
     ,data          : cce_block_width_p'(rdata_lo)
     };
 assign mem_resp_o = mem_resp_lo;

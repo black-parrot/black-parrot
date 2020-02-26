@@ -141,6 +141,8 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_adapter_out.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_decoder_dor.v
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_input_control.v  
 $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v 
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_stream_in.v
+$BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_stream_out.v
 # Common files
 $BP_COMMON_DIR/src/v/bsg_fifo_1r1w_rolly.v
 $BP_COMMON_DIR/src/v/bp_pma.v
