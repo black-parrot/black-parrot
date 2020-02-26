@@ -111,6 +111,7 @@ module bp_fe_lce_req
 
     lce_req_v_o           = 1'b0;
 
+    lce_req = '0;
     lce_req.header.dst_id        = req_cce_id_lo;
     lce_req.header.src_id        = lce_id_i;
     lce_req.header.msg_type      = e_lce_req_type_rd;
@@ -125,6 +126,7 @@ module bp_fe_lce_req
 
     lce_resp_v_o          = 1'b0;
 
+    lce_resp = '0;
     lce_resp.header.dst_id       = resp_cce_id_lo;
     lce_resp.header.src_id       = lce_id_i;
     lce_resp.header.msg_type     = bp_lce_cce_resp_type_e'('0);
