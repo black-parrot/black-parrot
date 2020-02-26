@@ -21,6 +21,7 @@ module bp_uce
     , input                                          cache_req_v_i
     , output logic                                   cache_req_ready_o
     , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
+    , input                                          cache_req_metadata_v_i
     , output logic                                   cache_req_complete_o
 
     , output logic [cache_tag_mem_pkt_width_lp-1:0]  tag_mem_pkt_o
@@ -81,15 +82,26 @@ module bp_uce
      ,.data_o(cache_req_r)
      );
  
-  bp_cache_req_metadata_s cache_req_metadata_r; 
+  bp_cache_req_metadata_s cache_req_metadata_r;
   bsg_dff_en_bypass
    #(.width_p($bits(bp_cache_req_metadata_s)))
-   cache_req_metadata_reg
+   metadata_reg
     (.clk_i(clk_i)
-     
-     ,.en_i(cache_req_v_r)
+
+     ,.en_i(cache_req_metadata_v_i)
      ,.data_i(cache_req_metadata_i)
      ,.data_o(cache_req_metadata_r)
+     );
+
+  logic cache_req_metadata_v_r;
+  bsg_dff_en_bypass
+   #(.width_p(1))
+   metadata_v_reg
+    (.clk_i(clk_i)
+
+     ,.en_i(cache_req_v_i | cache_req_metadata_v_i)
+     ,.data_i(cache_req_metadata_v_i)
+     ,.data_o(cache_req_metadata_v_r)
      );
 
   logic [cce_block_width_p-1:0] dirty_data_r;

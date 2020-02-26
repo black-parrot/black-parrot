@@ -63,6 +63,7 @@ module bp_fe_icache
     , output logic                                     cache_req_v_o
     , input                                            cache_req_ready_i
     , output [cache_req_metadata_width_lp-1:0]         cache_req_metadata_o
+    , output                                           cache_req_metadata_v_o
 
     , input                                            cache_req_complete_i
 
@@ -318,6 +319,17 @@ module bp_fe_icache
     end
   end
 
+  // The cache pipeline is designed to always send metadata a cycle after the request
+  bsg_dff_reset
+   #(.width_p(1))
+   cache_req_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i(cache_req_v_o)
+     ,.data_o(cache_req_metadata_v_o)
+     );
+
   // invalid way takes priority over LRU way
   assign cache_req_metadata_cast_lo.repl_way = invalid_exist ? way_invalid_index : lru_encode;
   assign cache_req_metadata_cast_lo.dirty = '0;
@@ -340,7 +352,9 @@ module bp_fe_icache
   assign vaddr_ready_o = cache_req_ready_i & ~cache_miss;
 
   // Fault if in uncached mode but access is not for an uncached address
-  assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r) | ~miss_tv);
+  assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r)
+                              | (~uncached_tv_r & ~miss_tv)
+                              );
   assign miss_o = miss_tv | cache_miss;
 
   logic [dword_width_p-1:0]   ld_data_way_picked;

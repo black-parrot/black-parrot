@@ -52,6 +52,7 @@ module bp_be_dcache_lce_req
     , input cache_req_v_i
     , output logic cache_req_ready_o
     , input [cache_req_metadata_width_lp-1:0] cache_req_metadata_i
+    , input cache_req_metadata_v_i
 
     , output logic [paddr_width_p-1:0] miss_addr_o
 
@@ -89,21 +90,27 @@ module bp_be_dcache_lce_req
   assign cache_req_cast_li = cache_req_i;
   assign cache_req_metadata_cast_li = cache_req_metadata_i;
 
-  logic cache_req_v_r;
-  always_ff @(posedge clk_i)
-    cache_req_v_r <= cache_req_v_i;
-
   bp_cache_req_metadata_s cache_req_metadata_r;
   bsg_dff_en_bypass
    #(.width_p($bits(bp_cache_req_metadata_s)))
    metadata_reg
     (.clk_i(clk_i)
 
-     ,.en_i(cache_req_v_r)
+     ,.en_i(cache_req_metadata_v_i)
      ,.data_i(cache_req_metadata_i)
      ,.data_o(cache_req_metadata_r)
      );
 
+  logic cache_req_metadata_v_r;
+  bsg_dff_en_bypass
+   #(.width_p(1))
+   metadata_v_reg
+    (.clk_i(clk_i)
+
+     ,.en_i(cache_req_v_i | cache_req_metadata_v_i)
+     ,.data_i(cache_req_metadata_v_i)
+     ,.data_o(cache_req_metadata_v_r)
+     );
 
   // For uncached store buffering
   //
@@ -230,7 +237,7 @@ module bp_be_dcache_lce_req
       // SEND_CACHED_REQ
       // send out cache miss request to CCE.
       e_SEND_CACHED_REQ: begin
-        lce_req_v_o = 1'b1;
+        lce_req_v_o = lce_req_ready_i & cache_req_metadata_v_r;
 
         lce_req.msg.req.pad = '0;
         lce_req.msg.req.lru_dirty = bp_lce_cce_lru_dirty_e'(cache_req_metadata_r.dirty);
@@ -244,14 +251,14 @@ module bp_be_dcache_lce_req
         lce_req.src_id = lce_id_i;
         lce_req.dst_id = req_cce_id_lo;
 
-        state_n = lce_req_ready_i
+        state_n = lce_req_v_o
           ? e_SLEEP
           : e_SEND_CACHED_REQ;
       end
 
       // SEND UNCACHED_LOAD_REQ
       e_SEND_UNCACHED_LOAD_REQ: begin
-        lce_req_v_o = 1'b1;
+        lce_req_v_o = lce_req_ready_i & cache_req_metadata_v_r;
 
         lce_req.msg.uc_req.data = '0;
         lce_req.msg.uc_req.uc_size = bp_lce_cce_uc_req_size_e'(size_op_r);
@@ -261,7 +268,7 @@ module bp_be_dcache_lce_req
         lce_req.dst_id = req_cce_id_lo;
 
 
-        state_n = lce_req_ready_i
+        state_n = lce_req_v_o
           ? e_SLEEP
           : e_SEND_UNCACHED_LOAD_REQ;
       end

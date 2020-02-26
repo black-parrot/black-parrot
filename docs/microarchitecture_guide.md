@@ -9,6 +9,8 @@ This guide focuses on the core microarchitecture of a BlackParrot system. For in
 ## BlackParrot Core Overview
 Communication between BlackParrot components is performed over a set of narrow interfaces. The interfaces are designed to allow the implementations of the Front End, Back End and Memory End to change independently of one another. For more information about these interfaces, refer to the [Interface Specification](interface_specification.md).
 
+![Pipeline diagram](core_micro.png)
+
 ## Front End
 The FE is responsible for speculatively fetching instructions from the Memory End and providing the BE with stream of speculative PC-instruction pairs. To this end, FE consists of 2 major components: pc-generation and instruction memory. Note that the FE does not modify any architectural state and the BE logically controls the FE through PC redirect or flush commands.
 

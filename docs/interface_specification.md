@@ -163,9 +163,11 @@ bp_cache_req_s, which contains the following fields.
   - Writethrough Store
 - Physical address
 - Size (1B-64B)
-- Dirty (For misses)
-- Replacement way (For misses)
 - Data (For uncached stores or writethroughs)
+
+Additionally, the Cache Engine may require some metadata in order to service cache misses. This metadata may not be available at the same time as the request, due to the nature of high performance caches. The handshake here is valid-only. If a Cache Engines needs metadata in order to service the miss, it needs to be ready to accept metadata at any cycle later than or equal to the original cache miss. The cache is required to eventually provide this data, although not in any particular cycle. The current metadata fields are:
+- Dirty
+- Replacement way
 
 The fill interface is implemented as a set of ready-valid connections that provide read/write access
 to memory structures in a typical cache. A single cache request may trigger a set of fill responses. To decouple cache logic from any particular fill strategy, there is an additional signal which is raised when a request is
