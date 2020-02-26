@@ -18,6 +18,7 @@ typedef enum logic [2:0]
   , e_uc_load          = 3'b010
   , e_uc_store         = 3'b011
   , e_wt_store         = 3'b100
+  , e_flush            = 3'b101
 } bp_cache_req_msg_type_e;
 
 // Cache Service Interface - Cache miss size

@@ -69,24 +69,26 @@ module bp_softcore
   bp_cce_mem_msg_s [1:0] mem_resp_li;
   logic [1:0] mem_resp_v_li, mem_resp_yumi_lo;
 
+  bp_cce_mem_msg_s clint_cmd_li;
+  logic clint_cmd_v_li, clint_cmd_ready_lo;
+  bp_cce_mem_msg_s clint_resp_lo;
+  logic clint_resp_v_lo, clint_resp_yumi_li;
+
   always_comb
     begin
       cfg_bus_li = '0;
       cfg_bus_li.icache_mode = e_lce_mode_normal;
+      cfg_bus_li.icache_id   = 1'b0;
       cfg_bus_li.dcache_mode = e_lce_mode_normal;
+      cfg_bus_li.dcache_id   = 1'b1;
     end
 
-  // TODO: Connect CLINT
-  assign timer_irq_li = '0;
-  assign software_irq_li = '0;
-  assign external_irq_li = '0;
   bp_core_minimal
    #(.bp_params_p(bp_params_p))
    core
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     // TODO: Set PC and HartId
      ,.cfg_bus_i(cfg_bus_li)
      ,.cfg_npc_data_o()
      ,.cfg_irf_data_o()
@@ -123,6 +125,7 @@ module bp_softcore
      ,.external_irq_i(external_irq_li)
      );
 
+  wire [1:0][lce_id_width_p-1:0] lce_id_li = {cfg_bus_li.dcache_id, cfg_bus_li.icache_id};
   for (genvar i = 0; i < 2; i++)
     begin : uce
       bp_uce
@@ -131,8 +134,7 @@ module bp_softcore
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
-         // TODO: Should come from config bus
-         ,.lce_id_i(lce_id_width_p'(i))
+         ,.lce_id_i(lce_id_li[i])
 
          ,.cache_req_i(cache_req_lo[i])
          ,.cache_req_v_i(cache_req_v_lo[i])
@@ -170,6 +172,25 @@ module bp_softcore
          );
     end
 
+  bp_clint_slice_buffered
+   #(.bp_params_p(bp_params_p))
+   clint
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.mem_cmd_i(clint_cmd_li)
+     ,.mem_cmd_v_i(clint_cmd_v_li)
+     ,.mem_cmd_ready_o(clint_cmd_ready_lo)
+
+     ,.mem_resp_o(clint_resp_lo)
+     ,.mem_resp_v_o(clint_resp_v_lo)
+     ,.mem_resp_yumi_i(clint_resp_yumi_li)
+
+     ,.timer_irq_o(timer_irq_li)
+     ,.software_irq_o(software_irq_li)
+     ,.external_irq_o(external_irq_li)
+     );
+
   // Arbitration logic
   //   Don't necessarily need to arbitrate. On an FPGA, can use a 2r1w RAM. But, we might also be on
   //   a bus
@@ -193,7 +214,7 @@ module bp_softcore
          );
     end
 
-  wire arb_ready_li = mem_cmd_ready_i & io_cmd_ready_i;
+  wire arb_ready_li = clint_cmd_ready_lo & mem_cmd_ready_i & io_cmd_ready_i;
   bsg_arb_fixed
    #(.inputs_p(2)
      ,.lo_to_hi_p(0)
@@ -208,23 +229,35 @@ module bp_softcore
   wire local_cmd_li = (mem_cmd_cast_o.addr < 32'h8000_0000);
   wire [3:0] device_cmd_li = mem_cmd_cast_o.addr[20+:4];
   wire is_io_cmd = local_cmd_li & (device_cmd_li == host_dev_gp);
+  wire is_clint_cmd = local_cmd_li & (device_cmd_li == clint_dev_gp);
+
+  assign clint_cmd_li   = fifo_v_lo[1] ? fifo_lo[1] : fifo_lo[0];
+  assign clint_cmd_v_li = is_clint_cmd & |fifo_yumi_li;
 
   assign io_cmd_cast_o  = fifo_v_lo[1] ? fifo_lo[1] : fifo_lo[0];
   assign io_cmd_v_o     = is_io_cmd & |fifo_yumi_li;
 
   assign mem_cmd_cast_o = fifo_v_lo[1] ? fifo_lo[1] : fifo_lo[0];
-  assign mem_cmd_v_o    = ~is_io_cmd & |fifo_yumi_li;
+  assign mem_cmd_v_o    = ~is_clint_cmd & ~is_io_cmd & |fifo_yumi_li;
 
-  assign mem_resp_li[0]   = io_resp_v_i & (io_resp_cast_i.payload.lce_id == 1'b0)
-                            ? io_resp_i 
-                            : mem_resp_i;
-  assign mem_resp_li[1]   = io_resp_v_i & (io_resp_cast_i.payload.lce_id == 1'b1)
-                            ? io_resp_i
-                            : mem_resp_i;
-  assign mem_resp_v_li[0] = (mem_resp_v_i & (mem_resp_cast_i.payload.lce_id == 1'b0))
+  assign mem_resp_li[0]   = clint_resp_v_lo & (clint_resp_lo.payload.lce_id == 1'b0)
+                            ? clint_resp_lo
+                            : io_resp_v_i & (io_resp_cast_i.payload.lce_id == 1'b0)
+                              ? io_resp_i 
+                              : mem_resp_i;
+  assign mem_resp_li[1]   = clint_resp_v_lo & (clint_resp_lo.payload.lce_id == 1'b1)
+                            ? clint_resp_lo
+                            : io_resp_v_i & (io_resp_cast_i.payload.lce_id == 1'b1)
+                              ? io_resp_i
+                              : mem_resp_i;
+  assign mem_resp_v_li[0] = (clint_resp_v_lo & (clint_resp_lo.payload.lce_id == 1'b0))
+                            | (mem_resp_v_i & (mem_resp_cast_i.payload.lce_id == 1'b0))
                             | (io_resp_v_i & (io_resp_cast_i.payload.lce_id == 1'b0));
-  assign mem_resp_v_li[1] = (mem_resp_v_i & (mem_resp_cast_i.payload.lce_id == 1'b1))
+  assign mem_resp_v_li[1] = (clint_resp_v_lo & (clint_resp_lo.payload.lce_id == 1'b1))
+                            | (mem_resp_v_i & (mem_resp_cast_i.payload.lce_id == 1'b1))
                             | (io_resp_v_i & (io_resp_cast_i.payload.lce_id == 1'b1));
+  assign clint_resp_yumi_li = ((clint_resp_v_lo & (clint_resp_lo.payload.lce_id == 1'b0)) & mem_resp_yumi_lo[0])
+                            | ((clint_resp_v_lo & (clint_resp_lo.payload.lce_id == 1'b1)) & mem_resp_yumi_lo[1]);
   assign mem_resp_yumi_o  = ((mem_resp_v_i & (mem_resp_cast_i.payload.lce_id == 1'b0)) & mem_resp_yumi_lo[0])
                             | ((mem_resp_v_i & (mem_resp_cast_i.payload.lce_id == 1'b1)) & mem_resp_yumi_lo[1]);
   assign io_resp_yumi_o   = ((io_resp_v_i & (io_resp_cast_i.payload.lce_id == 1'b0)) & mem_resp_yumi_lo[0])

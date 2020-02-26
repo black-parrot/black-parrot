@@ -69,7 +69,7 @@ logic                     plic_n, plic_r;
 
 // TODO: Should be actual RTC
 localparam ds_width_lp = 5;
-localparam [ds_width_lp-1:0] ds_ratio_li = 10;
+localparam [ds_width_lp-1:0] ds_ratio_li = 8;
 logic mtime_inc_li;
 bsg_strobe
  #(.width_p(ds_width_lp))

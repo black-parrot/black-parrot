@@ -127,7 +127,7 @@ module bp_uce
     );
 
   // We can do a little better by sending the read_request before the writeback
-  enum logic [2:0] {e_reset, e_flush, e_ready, e_send_req, e_writeback, e_write_wait, e_read_wait} state_n, state_r;
+  enum logic [2:0] {e_reset, e_flush, e_ready, e_send_req, e_writeback, e_write_wait, e_read_wait, e_uc_read_wait} state_n, state_r;
   wire is_reset         = (state_r == e_reset);
   wire is_flush         = (state_r == e_flush);
   wire is_ready         = (state_r == e_ready);
@@ -242,6 +242,16 @@ module bp_uce
 
               state_n = mem_cmd_v_o ? e_read_wait : e_send_req;
             end
+          else if (uc_load_v_li)
+            begin
+              mem_cmd_cast_o.msg_type       = e_cce_mem_uc_rd;
+              mem_cmd_cast_o.addr           = cache_req_r.addr;
+              mem_cmd_cast_o.size           = e_mem_size_8;
+              mem_cmd_cast_o.payload.lce_id = lce_id_i;
+              mem_cmd_v_o = mem_cmd_ready_i;
+
+              state_n = mem_cmd_v_o ? e_uc_read_wait : e_send_req;
+            end
           else if (miss_v_li & cache_req_metadata_r.dirty)
             begin
               data_mem_pkt_cast_o.opcode = e_cache_data_mem_read;
@@ -274,7 +284,6 @@ module bp_uce
           end
         e_read_wait:
           begin
-            // Need to handle uncached loads here too
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
             tag_mem_pkt_cast_o.index  = mem_resp_cast_i.addr[block_offset_width_lp+:index_width_lp];
             // We fill in M because we don't want to trigger additional coherence traffic
@@ -289,12 +298,21 @@ module bp_uce
             data_mem_pkt_cast_o.data   = mem_resp_cast_i.data;
             data_mem_pkt_v_o = mem_resp_v_i & data_mem_pkt_ready_i & tag_mem_pkt_ready_i;
 
-            // TODO: Should we clear dirty bit?
-            //
             cache_req_complete_o = tag_mem_pkt_v_o & data_mem_pkt_v_o;
             mem_resp_yumi_lo = cache_req_complete_o; 
 
             state_n = cache_req_complete_o ? e_ready : e_read_wait;
+          end
+        e_uc_read_wait:
+          begin
+            data_mem_pkt_cast_o.opcode = e_cache_data_mem_uncached;
+            data_mem_pkt_cast_o.data = mem_resp_cast_i.data;
+            data_mem_pkt_v_o = mem_resp_v_i & data_mem_pkt_ready_i;
+
+            cache_req_complete_o = data_mem_pkt_v_o;
+            mem_resp_yumi_lo = cache_req_complete_o;
+
+            state_n = cache_req_complete_o ? e_ready : e_uc_read_wait;
           end
         default: state_n = e_reset;
       endcase
@@ -306,16 +324,13 @@ module bp_uce
     else
       state_r <= state_n;
 
-//  //synopsys translate_on
-//  always_ff @(negedge clk_i)
-//    begin
-//      if (cache_req_v_i)
-//        begin
-//          assert (~wt_store_v_li)
-//            $display("Unsupported op: wt store %p", cache_req_cast_i);
-//        end
-//    end
-//  //synopsys translate_off
+////synopsys translate_on
+//always_ff @(negedge clk_i)
+//  begin
+//    assert (reset_i || ~wt_store_v_li)
+//      $display("Unsupported op: wt store %p", cache_req_cast_i);
+//  end
+////synopsys translate_off
 
 endmodule
 
