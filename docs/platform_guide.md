@@ -1,5 +1,6 @@
 # BlackParrot Platform Guide
-**Coming soon**
+## Tile Taxonomy
+![Tile Taxonomy](tile_taxonomy.png)
 
 ## Instruction Latencies
 * RV64I arithmetic instructions have 1-cycle latency

@@ -20,8 +20,8 @@ A 12nm BlackParrot multicore chip was taped out in July 2019.
 ## Press
 We first announced BlackParrot at FOSDEM 2020! [slides](https://fosdem.org/2020/schedule/event/riscv_blackparrot/attachments/slides/3718/export/events/attachments/riscv_blackparrot/slides/3718/Talk_Slides) [video](https://video.fosdem.org/2020/K.3.401/riscv_blackparrot.mp4) 
 
-# Getting Started
-## Tire Kick
+## Getting Started
+### Tire Kick
 Users who just want to test their setup and run a minimal BlackParrot test should run the following:
 
     # Clone the latest repo
@@ -55,8 +55,10 @@ This should output (roughly)
         mIPC  :                  300
     All cores finished! Terminating...
 
-## Getting Started for Real
+### Getting Started for Real
 Users who want to fully evaluate BlackParrot, or develop hardware or software using it should follow [Getting Started (Full)](docs/getting_started.md).
+
+Although the information in collected in this repo, it's recommended to look at these [Slides](https://fosdem.org/2020/schedule/event/riscv_blackparrot/attachments/slides/3718/export/events/attachments/riscv_blackparrot/slides/3718/Talk_Slides) for a quick overview of BlackParrot.
 
 ## How to Contribute
 We welcome external contributions! Please join our mailing at (Coming soon!) and follow us on [Twitter](https://twitter.com/BlackParrotCore) to discuss, ask questions or just tell us how you're using BlackParrot! For a smooth contribution experience, take a look at our [Contribution Guide](CONTRIBUTING.md).
