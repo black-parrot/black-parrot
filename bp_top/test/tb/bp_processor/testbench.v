@@ -151,9 +151,9 @@ wrapper
     bp_nonsynth_cosim
      #(.bp_params_p(bp_params_p))
       cosim
-      (.clk_i(clk_i & (testbench.cosim_p == 1))
+      (.clk_i(clk_i)
        ,.reset_i(reset_i)
-       ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
+       ,.en_i(testbench.cosim_p == 1)
 
        ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
        // Want to pass config file as a parameter, but cannot in Verilator 4.025
