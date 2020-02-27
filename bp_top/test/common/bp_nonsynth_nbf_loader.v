@@ -72,7 +72,7 @@ module bp_nonsynth_nbf_loader
   logic [lg_num_core_lp-1:0] core_cnt_r;
   wire core_done = (core_cnt_r == (num_core_p-1)) & io_cmd_yumi_i;
   bsg_counter_clear_up
-   #(.max_val_p(num_core_p-1)
+   #(.max_val_p(num_core_p)
      ,.init_val_p(0)
      )
    core_counter
@@ -118,14 +118,14 @@ module bp_nonsynth_nbf_loader
     freeze_addr.addr     = bp_cfg_reg_freeze_gp;
 
     io_cmd.data = (state_r == FREEZE_CLR) ? dword_width_p'(0) : curr_nbf.data;
-    io_cmd.payload = '0;
-    io_cmd.addr = (state_r == FREEZE_CLR) ? freeze_addr : curr_nbf.addr;
-    io_cmd.msg_type = e_cce_mem_uc_wr;
+    io_cmd.header.payload = '0;
+    io_cmd.header.addr = (state_r == FREEZE_CLR) ? freeze_addr : curr_nbf.addr;
+    io_cmd.header.msg_type = e_cce_mem_uc_wr;
     
     case (curr_nbf.opcode)
-      2: io_cmd.size = e_mem_size_4;
-      3: io_cmd.size = e_mem_size_8;
-      default: io_cmd.size = e_mem_size_4;
+      2: io_cmd.header.size = e_mem_size_4;
+      3: io_cmd.header.size = e_mem_size_8;
+      default: io_cmd.header.size = e_mem_size_4;
     endcase
   end
 
