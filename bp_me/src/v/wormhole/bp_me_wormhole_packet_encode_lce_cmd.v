@@ -33,7 +33,7 @@ module bp_me_wormhole_packet_encode_lce_cmd
   assign packet_o = packet_cast_o;
 
   localparam lce_cmd_cmd_len_lp = 
-    `BSG_CDIV(lce_cmd_packet_width_lp-$bits(payload_cast_i.msg.cmd.pad), coh_noc_flit_width_p) - 1;
+    `BSG_CDIV(lce_cmd_packet_width_lp-$bits(payload_cast_i.data), coh_noc_flit_width_p) - 1;
   localparam lce_cmd_data_len_lp = 
     `BSG_CDIV(lce_cmd_packet_width_lp, coh_noc_flit_width_p) - 1;
   localparam lce_cmd_uc_data_len_lp =
@@ -44,7 +44,7 @@ module bp_me_wormhole_packet_encode_lce_cmd
   bp_me_lce_id_to_cord
    #(.bp_params_p(bp_params_p))
    router_cord
-    (.lce_id_i(payload_cast_i.dst_id)
+    (.lce_id_i(payload_cast_i.header.dst_id)
      ,.lce_cord_o(lce_cord_li)
      ,.lce_cid_o(lce_cid_li)
      );
@@ -54,7 +54,7 @@ module bp_me_wormhole_packet_encode_lce_cmd
     packet_cast_o.cid     = lce_cid_li;
     packet_cast_o.cord    = lce_cord_li;
 
-    case (payload_cast_i.msg_type)
+    case (payload_cast_i.header.msg_type)
       e_lce_cmd_sync
       ,e_lce_cmd_set_clear
       ,e_lce_cmd_transfer

@@ -138,7 +138,7 @@ module bp_uce
 
   // We check for uncached stores ealier than other requests, because they get sent out in ready
   wire uc_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
-  wire uc_store_resp_v_li = mem_resp_v_i & mem_resp_cast_i.msg_type inside {e_cce_mem_uc_wr};
+  wire uc_store_resp_v_li = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_cce_mem_uc_wr};
 
   wire miss_load_v_li  = cache_req_v_r & cache_req_r.msg_type inside {e_miss_load};
   wire miss_store_v_li = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
@@ -218,11 +218,11 @@ module bp_uce
             cache_req_ready_o = mem_cmd_ready_i;
             if (uc_store_v_li)
               begin
-                mem_cmd_cast_o.msg_type       = e_cce_mem_uc_wr;
-                mem_cmd_cast_o.addr           = cache_req_cast_i.addr;
-                mem_cmd_cast_o.size           = bp_cce_mem_req_size_e'(cache_req_cast_i.size);
-                mem_cmd_cast_o.payload.lce_id = lce_id_i;
-                mem_cmd_cast_o.data           = cache_req_cast_i.data;
+                mem_cmd_cast_o.header.msg_type       = e_cce_mem_uc_wr;
+                mem_cmd_cast_o.header.addr           = cache_req_cast_i.addr;
+                mem_cmd_cast_o.header.size           = bp_cce_mem_req_size_e'(cache_req_cast_i.size);
+                mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
+                mem_cmd_cast_o.data                  = cache_req_cast_i.data;
                 mem_cmd_v_o = mem_cmd_ready_i;
               end
             else
@@ -233,21 +233,21 @@ module bp_uce
         e_send_req:
           if (miss_v_li & ~cache_req_metadata_r.dirty)
             begin
-              mem_cmd_cast_o.msg_type       = miss_load_v_li ? e_cce_mem_rd : e_cce_mem_wr;
-              mem_cmd_cast_o.addr           = cache_req_r.addr;
-              mem_cmd_cast_o.size           = e_mem_size_64;
-              mem_cmd_cast_o.payload.way_id = cache_req_metadata_r.repl_way;
-              mem_cmd_cast_o.payload.lce_id = lce_id_i;
+              mem_cmd_cast_o.header.msg_type       = miss_load_v_li ? e_cce_mem_rd : e_cce_mem_wr;
+              mem_cmd_cast_o.header.addr           = cache_req_r.addr;
+              mem_cmd_cast_o.header.size           = e_mem_size_64;
+              mem_cmd_cast_o.header.payload.way_id = cache_req_metadata_r.repl_way;
+              mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
               mem_cmd_v_o = mem_cmd_ready_i;
 
               state_n = mem_cmd_v_o ? e_read_wait : e_send_req;
             end
           else if (uc_load_v_li)
             begin
-              mem_cmd_cast_o.msg_type       = e_cce_mem_uc_rd;
-              mem_cmd_cast_o.addr           = cache_req_r.addr;
-              mem_cmd_cast_o.size           = e_mem_size_8;
-              mem_cmd_cast_o.payload.lce_id = lce_id_i;
+              mem_cmd_cast_o.header.msg_type       = e_cce_mem_uc_rd;
+              mem_cmd_cast_o.header.addr           = cache_req_r.addr;
+              mem_cmd_cast_o.header.size           = e_mem_size_8;
+              mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
               mem_cmd_v_o = mem_cmd_ready_i;
 
               state_n = mem_cmd_v_o ? e_uc_read_wait : e_send_req;
@@ -268,9 +268,9 @@ module bp_uce
             end
         e_writeback:
           begin
-            mem_cmd_cast_o.msg_type = e_cce_mem_wb;
-            mem_cmd_cast_o.addr     = {dirty_tag_r, cache_req_r.addr[block_offset_width_lp+:index_width_lp]};
-            mem_cmd_cast_o.size     = e_mem_size_64;
+            mem_cmd_cast_o.header.msg_type = e_cce_mem_wb;
+            mem_cmd_cast_o.header.addr     = {dirty_tag_r, cache_req_r.addr[block_offset_width_lp+:index_width_lp]};
+            mem_cmd_cast_o.header.size     = e_mem_size_64;
             mem_cmd_v_o = mem_cmd_ready_i;
 
             state_n = mem_cmd_v_o ? e_write_wait : e_writeback;
@@ -285,16 +285,16 @@ module bp_uce
         e_read_wait:
           begin
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
-            tag_mem_pkt_cast_o.index  = mem_resp_cast_i.addr[block_offset_width_lp+:index_width_lp];
+            tag_mem_pkt_cast_o.index  = mem_resp_cast_i.header.addr[block_offset_width_lp+:index_width_lp];
             // We fill in M because we don't want to trigger additional coherence traffic
-            tag_mem_pkt_cast_o.way_id = mem_resp_cast_i.payload.way_id;
+            tag_mem_pkt_cast_o.way_id = mem_resp_cast_i.header.payload.way_id;
             tag_mem_pkt_cast_o.state  = e_COH_M;
-            tag_mem_pkt_cast_o.tag    = mem_resp_cast_i.addr[block_offset_width_lp+index_width_lp+:ptag_width_p];
+            tag_mem_pkt_cast_o.tag    = mem_resp_cast_i.header.addr[block_offset_width_lp+index_width_lp+:ptag_width_p];
             tag_mem_pkt_v_o = mem_resp_v_i & tag_mem_pkt_ready_i & data_mem_pkt_ready_i;
 
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_write;
-            data_mem_pkt_cast_o.index  = mem_resp_cast_i.addr[block_offset_width_lp+:index_width_lp];
-            data_mem_pkt_cast_o.way_id = mem_resp_cast_i.payload.way_id;
+            data_mem_pkt_cast_o.index  = mem_resp_cast_i.header.addr[block_offset_width_lp+:index_width_lp];
+            data_mem_pkt_cast_o.way_id = mem_resp_cast_i.header.payload.way_id;
             data_mem_pkt_cast_o.data   = mem_resp_cast_i.data;
             data_mem_pkt_v_o = mem_resp_v_i & data_mem_pkt_ready_i & tag_mem_pkt_ready_i;
 

@@ -69,7 +69,6 @@ module bp_cce_msg_uncached
   bp_lce_cce_req_s lce_req, lce_req_r, lce_req_n;
   bp_cce_mem_msg_s mem_resp_li, mem_cmd_lo;
   bp_lce_cmd_s     lce_cmd;
-  bp_lce_cmd_cmd_s lce_cmd_cmd;
 
   // cast output queue messages from structure variables
   assign lce_cmd_o = lce_cmd;
@@ -110,7 +109,6 @@ module bp_cce_msg_uncached
 
     lce_cmd_v_o = '0;
     lce_cmd = '0;
-    lce_cmd_cmd = '0;
     mem_cmd_v_o = '0;
     mem_cmd_lo = '0;
 
@@ -124,31 +122,29 @@ module bp_cce_msg_uncached
       READY: begin
         uc_state_n = READY;
 
-        if (mem_resp_v_i & (mem_resp_li.msg_type == e_cce_mem_uc_rd)) begin
+        if (mem_resp_v_i & (mem_resp_li.header.msg_type == e_cce_mem_uc_rd)) begin
           // after load response is received, need to send data back to LCE
           lce_cmd_v_o = lce_cmd_ready_i;
 
-          lce_cmd.dst_id = mem_resp_li.payload.lce_id;
-          lce_cmd.msg_type = e_lce_cmd_uc_data;
-          lce_cmd.way_id = '0;
-          lce_cmd.msg.dt_cmd.data = mem_resp_li.data;
-          lce_cmd.msg.dt_cmd.addr = mem_resp_li.addr;
+          lce_cmd.header.dst_id = mem_resp_li.header.payload.lce_id;
+          lce_cmd.header.msg_type = e_lce_cmd_uc_data;
+          lce_cmd.header.way_id = '0;
+          lce_cmd.data = mem_resp_li.data;
+          lce_cmd.header.addr = mem_resp_li.header.addr;
 
           // dequeue the mem data response if outbound lce data cmd is accepted
           mem_resp_yumi_o = lce_cmd_ready_i;
 
-        end else if (mem_resp_v_i & (mem_resp_li.msg_type == e_cce_mem_uc_wr)) begin
+        end else if (mem_resp_v_i & (mem_resp_li.header.msg_type == e_cce_mem_uc_wr)) begin
           // after store response is received, need to send uncached store done command to LCE
           lce_cmd_v_o = lce_cmd_ready_i;
 
-          lce_cmd.dst_id = mem_resp_li.payload.lce_id;
-          lce_cmd.msg_type = e_lce_cmd_uc_st_done;
-          lce_cmd.way_id = '0;
+          lce_cmd.header.dst_id = mem_resp_li.header.payload.lce_id;
+          lce_cmd.header.msg_type = e_lce_cmd_uc_st_done;
+          lce_cmd.header.way_id = '0;
 
-          lce_cmd_cmd.src_id = (cce_id_width_p)'(cce_id_i);
-          lce_cmd_cmd.addr = mem_resp_li.addr;
-
-          lce_cmd.msg.cmd = lce_cmd_cmd;
+          lce_cmd.header.src_id = (cce_id_width_p)'(cce_id_i);
+          lce_cmd.header.addr = mem_resp_li.header.addr;
 
           // dequeue the mem data response if outbound lce data cmd is accepted
           mem_resp_yumi_o = lce_cmd_ready_i;
@@ -157,7 +153,7 @@ module bp_cce_msg_uncached
           lce_req_n = lce_req;
           lce_req_yumi_o = lce_req_v_i;
           // uncached read first sends a memory cmd, uncached store sends memory data cmd
-          uc_state_n = (lce_req.msg_type == e_lce_req_type_uc_rd)
+          uc_state_n = (lce_req.header.msg_type == e_lce_req_type_uc_rd)
                        ? SEND_MEM_CMD
                        : SEND_MEM_DATA_CMD;
         end
@@ -166,19 +162,19 @@ module bp_cce_msg_uncached
         // uncached load, send a memory cmd
         mem_cmd_v_o = mem_cmd_ready_i;
 
-        mem_cmd_lo.msg_type = e_cce_mem_uc_rd;
-        mem_cmd_lo.addr = lce_req_r.addr;
-        mem_cmd_lo.size =
-          (lce_req_r.msg.uc_req.uc_size == e_lce_uc_req_1)
+        mem_cmd_lo.header.msg_type = e_cce_mem_uc_rd;
+        mem_cmd_lo.header.addr = lce_req_r.header.addr;
+        mem_cmd_lo.header.size =
+          (lce_req_r.header.uc_size == e_lce_uc_req_1)
           ? e_mem_size_1
-          : (lce_req_r.msg.uc_req.uc_size == e_lce_uc_req_2)
+          : (lce_req_r.header.uc_size == e_lce_uc_req_2)
             ? e_mem_size_2
-            : (lce_req_r.msg.uc_req.uc_size == e_lce_uc_req_4)
+            : (lce_req_r.header.uc_size == e_lce_uc_req_4)
               ? e_mem_size_4
               : e_mem_size_8
           ;
-        mem_cmd_lo.payload.lce_id = lce_req_r.src_id;
-        mem_cmd_lo.payload.way_id = '0;
+        mem_cmd_lo.header.payload.lce_id = lce_req_r.header.src_id;
+        mem_cmd_lo.header.payload.way_id = '0;
         mem_cmd_lo.data = '0;
 
         lce_req_n = (mem_cmd_ready_i) ? '0 : lce_req_r;
@@ -189,20 +185,20 @@ module bp_cce_msg_uncached
         // uncached store, send memory data cmd
         mem_cmd_v_o = mem_cmd_ready_i;
 
-        mem_cmd_lo.msg_type = e_cce_mem_uc_wr;
-        mem_cmd_lo.addr = lce_req_r.addr;
-        mem_cmd_lo.size =
-          (lce_req_r.msg.uc_req.uc_size == e_lce_uc_req_1)
+        mem_cmd_lo.header.msg_type = e_cce_mem_uc_wr;
+        mem_cmd_lo.header.addr = lce_req_r.header.addr;
+        mem_cmd_lo.header.size =
+          (lce_req_r.header.uc_size == e_lce_uc_req_1)
           ? e_mem_size_1
-          : (lce_req_r.msg.uc_req.uc_size == e_lce_uc_req_2)
+          : (lce_req_r.header.uc_size == e_lce_uc_req_2)
             ? e_mem_size_2
-            : (lce_req_r.msg.uc_req.uc_size == e_lce_uc_req_4)
+            : (lce_req_r.header.uc_size == e_lce_uc_req_4)
               ? e_mem_size_4
               : e_mem_size_8
           ;
-        mem_cmd_lo.payload.lce_id = lce_req_r.src_id;
-        mem_cmd_lo.payload.way_id = '0;
-        mem_cmd_lo.data = lce_req_r.msg.uc_req.data;
+        mem_cmd_lo.header.payload.lce_id = lce_req_r.header.src_id;
+        mem_cmd_lo.header.payload.way_id = '0;
+        mem_cmd_lo.data = lce_req_r.data;
 
         lce_req_n = (mem_cmd_ready_i) ? '0 : lce_req_r;
 

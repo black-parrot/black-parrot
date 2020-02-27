@@ -78,9 +78,9 @@ bsg_dff_reset
 assign mem_cmd_yumi_o = mem_cmd_v_i & mem_resp_v_o;
 
 wire                        cfg_v_li    = mem_cmd_yumi_o;
-wire                        cfg_w_v_li  = cfg_v_li & (mem_cmd_cast_i.msg_type == e_cce_mem_uc_wr);
-wire                        cfg_r_v_li  = cfg_v_li & (mem_cmd_cast_i.msg_type == e_cce_mem_uc_rd);
-wire [cfg_addr_width_p-1:0] cfg_addr_li = mem_cmd_cast_i.addr[0+:cfg_addr_width_p];
+wire                        cfg_w_v_li  = cfg_v_li & (mem_cmd_cast_i.header.msg_type == e_cce_mem_uc_wr);
+wire                        cfg_r_v_li  = cfg_v_li & (mem_cmd_cast_i.header.msg_type == e_cce_mem_uc_rd);
+wire [cfg_addr_width_p-1:0] cfg_addr_li = mem_cmd_cast_i.header.addr[0+:cfg_addr_width_p];
 wire [cfg_data_width_p-1:0] cfg_data_li = mem_cmd_cast_i.data[0+:cfg_data_width_p];
 
 always_ff @(posedge clk_i)
@@ -191,10 +191,11 @@ assign cfg_bus_cast_o = '{freeze: freeze_r
                           };
 
 assign mem_resp_v_o    = mem_resp_ready_i & read_ready_r;
-assign mem_resp_cast_o = '{msg_type: mem_cmd_cast_i.msg_type
-                           ,addr   : mem_cmd_cast_i.addr
-                           ,payload: mem_cmd_cast_i.payload
-                           ,size   : mem_cmd_cast_i.size
+assign mem_resp_cast_o = '{header : '{msg_type: mem_cmd_cast_i.header.msg_type
+                                      ,addr   : mem_cmd_cast_i.header.addr
+                                      ,payload: mem_cmd_cast_i.header.payload
+                                      ,size   : mem_cmd_cast_i.header.size
+																			}
                            // TODO: Add all mode bits to mux
                            ,data   : irf_r_v_li 
                                      ? irf_data_i 

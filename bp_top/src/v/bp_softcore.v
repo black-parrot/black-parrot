@@ -226,8 +226,8 @@ module bp_softcore
      );
 
   /* TODO: Extract local memory map to module */
-  wire local_cmd_li = (mem_cmd_cast_o.addr < 32'h8000_0000);
-  wire [3:0] device_cmd_li = mem_cmd_cast_o.addr[20+:4];
+  wire local_cmd_li = (mem_cmd_cast_o.header.addr < 32'h8000_0000);
+  wire [3:0] device_cmd_li = mem_cmd_cast_o.header.addr[20+:4];
   wire is_io_cmd = local_cmd_li & (device_cmd_li == host_dev_gp);
   wire is_clint_cmd = local_cmd_li & (device_cmd_li == clint_dev_gp);
 
@@ -240,28 +240,28 @@ module bp_softcore
   assign mem_cmd_cast_o = fifo_v_lo[1] ? fifo_lo[1] : fifo_lo[0];
   assign mem_cmd_v_o    = ~is_clint_cmd & ~is_io_cmd & |fifo_yumi_li;
 
-  assign mem_resp_li[0]   = clint_resp_v_lo & (clint_resp_lo.payload.lce_id == 1'b0)
+  assign mem_resp_li[0]   = clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == 1'b0)
                             ? clint_resp_lo
-                            : io_resp_v_i & (io_resp_cast_i.payload.lce_id == 1'b0)
+                            : io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == 1'b0)
                               ? io_resp_i 
                               : mem_resp_i;
-  assign mem_resp_li[1]   = clint_resp_v_lo & (clint_resp_lo.payload.lce_id == 1'b1)
+  assign mem_resp_li[1]   = clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == 1'b1)
                             ? clint_resp_lo
-                            : io_resp_v_i & (io_resp_cast_i.payload.lce_id == 1'b1)
+                            : io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == 1'b1)
                               ? io_resp_i
                               : mem_resp_i;
-  assign mem_resp_v_li[0] = (clint_resp_v_lo & (clint_resp_lo.payload.lce_id == 1'b0))
-                            | (mem_resp_v_i & (mem_resp_cast_i.payload.lce_id == 1'b0))
-                            | (io_resp_v_i & (io_resp_cast_i.payload.lce_id == 1'b0));
-  assign mem_resp_v_li[1] = (clint_resp_v_lo & (clint_resp_lo.payload.lce_id == 1'b1))
-                            | (mem_resp_v_i & (mem_resp_cast_i.payload.lce_id == 1'b1))
-                            | (io_resp_v_i & (io_resp_cast_i.payload.lce_id == 1'b1));
-  assign clint_resp_yumi_li = ((clint_resp_v_lo & (clint_resp_lo.payload.lce_id == 1'b0)) & mem_resp_yumi_lo[0])
-                            | ((clint_resp_v_lo & (clint_resp_lo.payload.lce_id == 1'b1)) & mem_resp_yumi_lo[1]);
-  assign mem_resp_yumi_o  = ((mem_resp_v_i & (mem_resp_cast_i.payload.lce_id == 1'b0)) & mem_resp_yumi_lo[0])
-                            | ((mem_resp_v_i & (mem_resp_cast_i.payload.lce_id == 1'b1)) & mem_resp_yumi_lo[1]);
-  assign io_resp_yumi_o   = ((io_resp_v_i & (io_resp_cast_i.payload.lce_id == 1'b0)) & mem_resp_yumi_lo[0])
-                            | ((io_resp_v_i & (io_resp_cast_i.payload.lce_id == 1'b1)) & mem_resp_yumi_lo[1]);
+  assign mem_resp_v_li[0] = (clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == 1'b0))
+                            | (mem_resp_v_i & (mem_resp_cast_i.header.payload.lce_id == 1'b0))
+                            | (io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == 1'b0));
+  assign mem_resp_v_li[1] = (clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == 1'b1))
+                            | (mem_resp_v_i & (mem_resp_cast_i.header.payload.lce_id == 1'b1))
+                            | (io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == 1'b1));
+  assign clint_resp_yumi_li = ((clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == 1'b0)) & mem_resp_yumi_lo[0])
+                            | ((clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == 1'b1)) & mem_resp_yumi_lo[1]);
+  assign mem_resp_yumi_o  = ((mem_resp_v_i & (mem_resp_cast_i.header.payload.lce_id == 1'b0)) & mem_resp_yumi_lo[0])
+                            | ((mem_resp_v_i & (mem_resp_cast_i.header.payload.lce_id == 1'b1)) & mem_resp_yumi_lo[1]);
+  assign io_resp_yumi_o   = ((io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == 1'b0)) & mem_resp_yumi_lo[0])
+                            | ((io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == 1'b1)) & mem_resp_yumi_lo[1]);
 
 endmodule
 
