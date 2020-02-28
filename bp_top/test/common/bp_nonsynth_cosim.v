@@ -8,7 +8,7 @@ module bp_nonsynth_cosim
     )
    (input                                     clk_i
     , input                                   reset_i
-    , input                                   freeze_i
+    , input                                   en_i
 
     , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
     , input [63:0]                            config_file_i
@@ -30,9 +30,10 @@ import "DPI-C" context function void dromajo_step(int      hart_id,
                                                   longint wdata);
 import "DPI-C" context function void dromajo_trap(int hart_id, longint cause);
 
-always_ff @(negedge clk_i)
-  if (~reset_i & ~freeze_i)
+always_ff @(negedge reset_i)
+  if (en_i)
     begin
+      $display("Running with Dromajo cosimulation");
       init_dromajo(config_file_i);
     end
 
@@ -58,11 +59,13 @@ always_ff @(negedge clk_i)
      );
 
   always_ff @(negedge clk_i) begin
-    if(interrupt_v_r) begin
-      dromajo_trap(mhartid_i, cause_r);
-    end
-    else if (commit_v_r & commit_pc_r != '0) begin
-      dromajo_step(mhartid_i, 64'($signed(commit_pc_r)), commit_instr_r, rd_data_i);
+    if(en_i) begin
+      if(interrupt_v_r) begin
+        dromajo_trap(mhartid_i, cause_r);
+      end
+      else if (commit_v_r & commit_pc_r != '0) begin
+        dromajo_step(mhartid_i, 64'($signed(commit_pc_r)), commit_instr_r, rd_data_i);
+      end
     end
   end
 

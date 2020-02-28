@@ -171,8 +171,6 @@ bp_fe_icache
    ,.stat_mem_o(stat_mem_o)
    );
 
-assign mem_cmd_yumi_o = itlb_fence_v | itlb_fill_v | fetch_v;
-
 logic fetch_v_r, fetch_v_rr;
 logic itlb_miss_r;
 logic instr_access_fault_r, instr_page_fault_r;

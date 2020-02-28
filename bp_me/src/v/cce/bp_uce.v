@@ -127,9 +127,9 @@ module bp_uce
     );
 
   // We can do a little better by sending the read_request before the writeback
-  enum logic [2:0] {e_reset, e_flush, e_ready, e_send_req, e_writeback, e_write_wait, e_read_wait, e_uc_read_wait} state_n, state_r;
+  enum logic [2:0] {e_reset, e_do_flush, e_ready, e_send_req, e_writeback, e_write_wait, e_read_wait, e_uc_read_wait} state_n, state_r;
   wire is_reset         = (state_r == e_reset);
-  wire is_flush         = (state_r == e_flush);
+  wire is_flush         = (state_r == e_do_flush);
   wire is_ready         = (state_r == e_ready);
   wire is_send_req      = (state_r == e_send_req);
   wire is_writeback     = (state_r == e_writeback);
@@ -199,9 +199,9 @@ module bp_uce
       unique case (state_r)
         e_reset:
           begin
-            state_n = e_flush;
+            state_n = e_do_flush;
           end
-        e_flush:
+        e_do_flush:
           begin
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_clear;
             tag_mem_pkt_cast_o.index  = index_cnt;
@@ -211,7 +211,7 @@ module bp_uce
             stat_mem_pkt_cast_o.index  = index_cnt;
             stat_mem_pkt_v_o = stat_mem_pkt_ready_i & tag_mem_pkt_ready_i;
 
-            state_n = index_done ? e_ready : e_flush;
+            state_n = index_done ? e_ready : e_do_flush;
           end
         e_ready:
           begin
