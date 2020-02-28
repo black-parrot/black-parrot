@@ -337,25 +337,22 @@ module bp_fe_icache
   // Cache Miss Tracker
   logic cache_miss, miss_tracker_r;
 
-  bsg_dff_reset_en
-    #(.width_p(1)
-     ,.reset_val_p(0))
+  bsg_dff_reset_en_bypass
+    #(.width_p(1))
      cache_miss_tracker
      (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.en_i(cache_req_v_o | cache_req_complete_i)
      ,.data_i(cache_req_v_o)
-     ,.data_o(miss_tracker_r)
+     ,.data_o(cache_miss)
      );
+  assign miss_o = cache_miss_r;
 
-  assign cache_miss = cache_req_v_o || miss_tracker_r;
   assign vaddr_ready_o = cache_req_ready_i & ~cache_miss;
 
-  // Fault if in uncached mode but access is not for an uncached address
   assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r)
                               | (~uncached_tv_r & ~miss_tv)
                               );
-  assign miss_o = miss_tv | cache_miss;
 
   logic [dword_width_p-1:0]   ld_data_way_picked;
 
