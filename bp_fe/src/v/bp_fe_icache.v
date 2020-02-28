@@ -115,7 +115,7 @@ module bp_fe_icache
   logic [bp_page_offset_width_gp-1:0] page_offset_tl_r;
   logic [vaddr_width_p-1:0]           vaddr_tl_r;
 
-  assign tl_we = vaddr_v_i;
+  assign tl_we = vaddr_v_i & cache_req_ready_i;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
