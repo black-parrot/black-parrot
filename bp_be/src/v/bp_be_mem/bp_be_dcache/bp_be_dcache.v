@@ -521,10 +521,6 @@ module bp_be_dcache
   logic [dword_width_p-1:0] bypass_data_lo;
   logic [data_mask_width_lp-1:0] bypass_mask_lo;
 
-  logic [index_width_lp-1:0] lce_snoop_index_li;
-  logic [way_id_width_lp-1:0] lce_snoop_way_li;
-  logic lce_snoop_match_lo; 
- 
   bp_be_dcache_wbuf
     #(.data_width_p(dword_width_p)
       ,.paddr_width_p(paddr_width_p)
@@ -548,10 +544,6 @@ module bp_be_dcache
       ,.bypass_addr_i({ptag_i, page_offset_tl_r})
       ,.bypass_data_o(bypass_data_lo)
       ,.bypass_mask_o(bypass_mask_lo)
-
-      ,.lce_snoop_index_i(lce_snoop_index_li)
-      ,.lce_snoop_way_i(lce_snoop_way_li)
-      ,.lce_snoop_match_o(lce_snoop_match_lo)
       );
 
   logic [word_offset_width_lp-1:0] wbuf_entry_out_word_offset;
@@ -1020,13 +1012,9 @@ module bp_be_dcache
 
   // write buffer
   //
-  // disallow write buffer write on store hit that cannot be processed by LCE
-  // to avoid multiple wbuf entries when the store replays
   assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r; 
   assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we);
   assign bypass_v_li = tv_we & load_op_tl_r;
-  assign lce_snoop_index_li = data_mem_pkt.index;
-  assign lce_snoop_way_li = data_mem_pkt.way_id;
 
   // LCE data_mem
   //
@@ -1048,7 +1036,7 @@ module bp_be_dcache
     );
   
   assign data_mem_o = lce_data_mem_data_li; 
-  assign data_mem_pkt_ready = ~(load_op & tl_we) & ~wbuf_v_lo & ~lce_snoop_match_lo;
+  assign data_mem_pkt_ready = ~(load_op & tl_we) & ~wbuf_v_lo;
 
   // load reservation logic
   always_ff @ (posedge clk_i) begin
