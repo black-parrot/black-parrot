@@ -1112,7 +1112,7 @@ module bp_be_dcache
     end
   end
 
-  assign lce_tag_mem_o =  tag_mem_data_lo[tag_mem_pkt_way_r].tag;
+  //assign lce_tag_mem_o =  tag_mem_data_lo[tag_mem_pkt_way_r].tag;
 
   assign tag_mem_pkt_ready = ~tl_we;
   
