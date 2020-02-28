@@ -115,7 +115,7 @@ module bp_fe_icache
   logic [bp_page_offset_width_gp-1:0] page_offset_tl_r;
   logic [vaddr_width_p-1:0]           vaddr_tl_r;
 
-  assign tl_we = vaddr_v_i & cache_req_ready_i;
+  assign tl_we = vaddr_v_i;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -337,7 +337,7 @@ module bp_fe_icache
   // Cache Miss Tracker
   logic cache_miss, miss_tracker_r;
 
-  bsg_dff_reset_en_bypass
+  bsg_dff_reset_en
     #(.width_p(1))
      cache_miss_tracker
      (.clk_i(clk_i)
@@ -346,9 +346,9 @@ module bp_fe_icache
      ,.data_i(cache_req_v_o)
      ,.data_o(cache_miss)
      );
-  assign miss_o = cache_miss_r;
+  assign miss_o = cache_miss;
 
-  assign vaddr_ready_o = cache_req_ready_i & ~cache_miss;
+  assign vaddr_ready_o = cache_req_ready_i & ~cache_miss & ~cache_req_v_o;
 
   assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r)
                               | (~uncached_tv_r & ~miss_tv)
