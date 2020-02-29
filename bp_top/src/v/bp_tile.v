@@ -467,14 +467,14 @@ for (genvar i = 0; i < 2; i++)
 
   assign cce_mem_cmd_ready_li = cache_mem_cmd_ready_lo & cfg_mem_cmd_ready_lo & clint_mem_cmd_ready_lo;
 
-  assign cache_mem_cmd_li      = cce_mem_cmd_lo;
-  assign cache_mem_cmd_v_li    = cce_mem_cmd_v_lo & ~local_cmd_li;
-
   assign cfg_mem_cmd_li       = cce_mem_cmd_lo;
   assign cfg_mem_cmd_v_li     = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == cfg_dev_gp);
 
   assign clint_mem_cmd_li     = cce_mem_cmd_lo;
   assign clint_mem_cmd_v_li   = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == clint_dev_gp);
+
+  assign cache_mem_cmd_li      = cce_mem_cmd_lo;
+  assign cache_mem_cmd_v_li    = cce_mem_cmd_v_lo & ~cfg_mem_cmd_v_li & ~clint_mem_cmd_v_li;
 
   bsg_arb_fixed
    #(.inputs_p(3)

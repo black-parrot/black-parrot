@@ -8,6 +8,8 @@
 #define FINISH_BASE_ADDR ((char *)(HOST_DEV_BASE_ADDR+0x2000))
 
 
+uint64_t bp_get_hart();
+
 void bp_barrier_end(volatile uint64_t *barrier_address, uint64_t total_num_cores);
 
 void bp_hprint(uint8_t hex);

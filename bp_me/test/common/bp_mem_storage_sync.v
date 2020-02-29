@@ -41,21 +41,26 @@ assign data_li = data_i;
 import "DPI-C" context function string rebase_hexfile(input string memfile_name
                                                       , input longint dram_base);
 string hex_file;
-always_ff @(posedge clk_i)
+
+initial
   begin
-    if (reset_i & mem_load_p)
+    if (mem_load_p)
       begin
         for (integer i = 0; i < mem_cap_in_bytes_p; i++)
           mem[i] = '0;
         hex_file = rebase_hexfile(mem_file_p, mem_offset_p);
-        $readmemh(hex_file, mem);
+        $readmemh(hex_file, mem);     
       end
-    else if (reset_i & mem_zero_p)
+    else if (mem_zero_p)
       begin
         for (integer i = 0; i < mem_cap_in_bytes_p; i++)
           mem[i] = '0;
       end
-    else if (v_i & w_i)
+  end
+
+always @(posedge clk_i)
+  begin
+    if (v_i & w_i)
       // byte-maskable writes
       begin
         for (integer i = 0; i < num_data_bytes_lp; i++)
