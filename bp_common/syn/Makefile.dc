@@ -26,7 +26,7 @@ check_design.syn: dirs.syn
 	$(shell mkdir -p  $(BUILD_DIR))
 	$(eval include $(TB_PATH)/$(TB)/Makefile.frag) 
 	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v > $(BUILD_DIR)/wrapper.v
-	-@grep -v -e "^\#" $(SYN_PATH)/flist.vcs > $(BUILD_DIR)/flist.vcs 
+	-@grep -v -e "^\#" $(SYN_FLIST) > $(BUILD_DIR)/flist.vcs
 	-@echo $(BUILD_DIR)/wrapper.v           >> $(BUILD_DIR)/flist.vcs
 	cd $(BUILD_DIR); \
 	$(DC_SHELL) -64bit -f $(BP_COMMON_DIR)/syn/tcl/dc_elab.tcl | tee -i $(CHK_LOG)
