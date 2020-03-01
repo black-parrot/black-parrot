@@ -26,12 +26,12 @@ run.sc: sim.sc
 VERILATOR_RUN_DIR ?= $(SYN_PATH)/run_verilator
 
 dirs.sc:
-	$(eval RESULTS_DIR := $(RESULTS_PATH)/verilator)
-	$(eval REPORT_DIR  := $(REPORT_PATH)/verilator)
-	$(eval SIM_DIR     := $(RESULTS_DIR)/$(TB).$(CFG).sim/$(PROG))
-	$(eval BUILD_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).build)
-	$(eval COV_DIR     := $(RESULTS_DIR)/$(TB).$(CFG).cov)
-	$(eval LOG_DIR     := $(LOG_PATH)/verilator)
+	$(eval RESULTS_DIR ?= $(RESULTS_PATH)/verilator)
+	$(eval REPORT_DIR  ?= $(REPORT_PATH)/verilator)
+	$(eval SIM_DIR     ?= $(RESULTS_DIR)/$(TB).$(CFG).sim/$(PROG))
+	$(eval BUILD_DIR   ?= $(RESULTS_DIR)/$(TB).$(CFG).build)
+	$(eval COV_DIR     ?= $(RESULTS_DIR)/$(TB).$(CFG).cov)
+	$(eval LOG_DIR     ?= $(LOG_PATH)/verilator)
 
 	$(shell mkdir -p $(LOG_DIR))
 	$(shell mkdir -p $(REPORT_DIR))
