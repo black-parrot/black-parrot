@@ -66,8 +66,6 @@ typedef enum bit [4:0]
 
   // We treat FE exceptions as CSR ops
   ,e_op_take_interrupt     = 5'b11000
-  ,e_op_enter_debug        = 5'b11101
-  ,e_op_exit_debug         = 5'b11110
   ,e_op_instr_access_fault = 5'b11001
   ,e_op_instr_page_fault   = 5'b11010
   ,e_op_instr_misaligned   = 5'b11011

@@ -82,11 +82,7 @@ module bp_cce_mmio_cfg_loader
     ,SEND_PC
     ,SEND_IRF
     ,RECV_IRF
-    ,BP_ENTER_DEBUG
     ,BP_FREEZE_CLR
-    ,BP_NINSTR_RD
-    ,BP_NINSTR_LD
-    ,BP_EXIT_DEBUG
     ,WAIT_FOR_CREDITS
     ,DONE
   } state_n, state_r;
@@ -341,7 +337,7 @@ module bp_cce_mmio_cfg_loader
           cfg_data_lo = dword_width_p'(irf_cnt_r);
         end
         RECV_IRF: begin
-          state_n = irf_done ? BP_ENTER_DEBUG : RECV_IRF;
+          state_n = irf_done ? BP_FREEZE_CLR : RECV_IRF;
 
           irf_cnt_inc = ~irf_done;
           irf_cnt_clr = irf_done;
@@ -350,17 +346,8 @@ module bp_cce_mmio_cfg_loader
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_irf_x0_gp + irf_cnt_r);
           cfg_data_lo = '0;
         end
-        BP_ENTER_DEBUG: begin
-          state_n = BP_FREEZE_CLR;
-
-          cfg_w_v_lo = 1'b1;
-          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_enter_debug_gp);
-          cfg_data_lo = 1'b1;
-        end
         BP_FREEZE_CLR: begin
           state_n = core_prog_done ? WAIT_FOR_CREDITS : BP_FREEZE_CLR;
-          //state_n = core_prog_done ? BP_NINSTR_RD : BP_FREEZE_CLR;
-          //state_n = core_prog_done ? BP_EXIT_DEBUG : BP_FREEZE_CLR;
 
           core_cnt_inc = ~core_prog_done;
           core_cnt_clr = core_prog_done;
@@ -368,20 +355,6 @@ module bp_cce_mmio_cfg_loader
           cfg_w_v_lo = 1'b1;
           cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_freeze_gp);
           cfg_data_lo = dword_width_p'(0);
-        end
-        BP_NINSTR_RD: begin
-          state_n = BP_EXIT_DEBUG;
-
-          cfg_w_v_lo = 1'b1;
-          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_ninstr_gp);
-          cfg_data_lo = 32'h00100093;
-        end
-        BP_EXIT_DEBUG: begin
-          state_n = WAIT_FOR_CREDITS;
-
-          cfg_w_v_lo = 1'b1;
-          cfg_addr_lo = cfg_addr_width_p'(bp_cfg_reg_exit_debug_gp);
-          cfg_data_lo = 1'b1;
         end
         WAIT_FOR_CREDITS: begin
           state_n = credits_empty_lo ? DONE : WAIT_FOR_CREDITS;

@@ -374,19 +374,6 @@ always_comb
               dcsr_li.prv    = priv_mode_r;
             end
         end
-      else if (~is_debug_mode & (csr_cmd.csr_op == e_op_enter_debug))
-        begin
-          debug_mode_n  = 1'b1;
-          dpc_li        = paddr_width_p'($signed(exception_pc_i));
-          dcsr_li.cause = 3; // Requested halt
-          dcsr_li.prv   = priv_mode_r;
-        end
-      else if (is_debug_mode & (csr_cmd.csr_op == e_op_exit_debug))
-        begin
-          debug_mode_n  = 1'b0;
-          priv_mode_n   = dcsr_lo.prv;
-          ret_v_o       = 1'b1;
-        end
       else if (csr_cmd.csr_op == e_sfence_vma)
         begin
           if (is_s_mode & mstatus_lo.tvm)

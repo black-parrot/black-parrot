@@ -32,17 +32,12 @@ typedef enum bit
   typedef struct packed                                                                            \
   {                                                                                                \
     logic                                    freeze;                                               \
-    logic                                    enter_debug;                                          \
-    logic                                    exit_debug;                                           \
     logic [core_id_width_mp-1:0]             core_id;                                              \
     logic [lce_id_width_mp-1:0]              icache_id;                                            \
     bp_lce_mode_e                            icache_mode;                                          \
     logic                                    npc_w_v;                                              \
     logic                                    npc_r_v;                                              \
     logic [vaddr_width_mp-1:0]               npc;                                                  \
-    logic                                    ninstr_w_v;                                           \
-    logic [instr_width_p-1:0]                ninstr;                                               \
-    logic                                    dispatch;                                             \
     logic [lce_id_width_mp-1:0]              dcache_id;                                            \
     bp_lce_mode_e                            dcache_mode;                                          \
     logic [cce_id_width_mp-1:0]              cce_id;                                               \
@@ -65,12 +60,11 @@ typedef enum bit
   }  bp_cfg_bus_s
 
 `define bp_cfg_bus_width(vaddr_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp, cce_pc_width_mp, cce_instr_width_mp) \
-  (3                                \
+  (1                                \
    + core_id_width_mp               \
    + lce_id_width_mp                \
    + $bits(bp_lce_mode_e)           \
-   + 3                              \
-   + instr_width_p                  \
+   + 1                              \
    + 1                              \
    + vaddr_width_mp                 \
    + lce_id_width_mp                \
