@@ -60,12 +60,12 @@ endif
 run.v: sim.v
 
 dirs.v:
-	$(eval RESULTS_DIR := $(RESULTS_PATH)/vcs)
-	$(eval REPORT_DIR  := $(REPORT_PATH)/vcs)
-	$(eval SIM_DIR     := $(RESULTS_DIR)/$(TB).$(CFG).sim/$(PROG))
-	$(eval BUILD_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).build)
-	$(eval COV_DIR     := $(RESULTS_DIR)/$(TB).$(CFG).cov)
-	$(eval LOG_DIR     := $(LOG_PATH)/vcs)
+	$(eval RESULTS_DIR ?= $(RESULTS_PATH)/vcs)
+	$(eval REPORT_DIR  ?= $(REPORT_PATH)/vcs)
+	$(eval SIM_DIR     ?= $(RESULTS_DIR)/$(TB).$(CFG).sim/$(PROG))
+	$(eval BUILD_DIR   ?= $(RESULTS_DIR)/$(TB).$(CFG).build)
+	$(eval COV_DIR     ?= $(RESULTS_DIR)/$(TB).$(CFG).cov)
+	$(eval LOG_DIR     ?= $(LOG_PATH)/vcs)
 
 	$(shell mkdir -p $(LOG_DIR))
 	$(shell mkdir -p $(REPORT_DIR))
