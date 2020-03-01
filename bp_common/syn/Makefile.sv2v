@@ -13,8 +13,8 @@ dirs.sv2v:
 
 command.txt: dirs.sv2v
 	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v   > $(BUILD_DIR)/wrapper.v
-	-@cp $(SYN_PATH)/flist.vcs $(BUILD_DIR)/flist.vcs
-	-@cp $(SYN_PATH)/flist.vcs $(BUILD_DIR)/command.txt
+	-@cp $(SYN_FLSIT) $(BUILD_DIR)/flist.vcs
+	-@cp $(SYN_FLIST) $(BUILD_DIR)/command.txt
 	-@sed -i "/#/d" $(BUILD_DIR)/command.txt
 	-@echo $(BUILD_DIR)/wrapper.v >> $(BUILD_DIR)/command.txt
 	-@sed -i "s/+incdir+/--incdir=/" $(BUILD_DIR)/command.txt
