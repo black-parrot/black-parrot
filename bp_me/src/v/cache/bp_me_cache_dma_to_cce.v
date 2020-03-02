@@ -174,13 +174,13 @@ module bp_me_cache_dma_to_cce
   logic mem_cmd_v_lo;
   bp_cce_mem_msg_s mem_cmd_lo;
   
-  assign mem_cmd_lo.msg_type = (send_dma_pkt_r.write_not_read)? 
-                                e_cce_mem_wb : e_cce_mem_rd;
-  assign mem_cmd_lo.addr     = (num_mem_p == 1)? send_dma_pkt_r.addr : 
-                               {send_dma_pkt_r.addr[paddr_width_p-1:block_offset_width_lp], 
+  assign mem_cmd_lo.header.msg_type = (send_dma_pkt_r.write_not_read)? 
+                                       e_cce_mem_wb : e_cce_mem_rd;
+  assign mem_cmd_lo.header.addr = (num_mem_p == 1)? send_dma_pkt_r.addr : 
+                                {send_dma_pkt_r.addr[paddr_width_p-1:block_offset_width_lp], 
                                 dma_pkt_rr_tag_r, send_dma_pkt_r.addr[block_offset_width_lp-1:0]};
-  assign mem_cmd_lo.payload  = '0;
-  assign mem_cmd_lo.size     = e_mem_size_64;
+  assign mem_cmd_lo.header.payload  = '0;
+  assign mem_cmd_lo.header.size     = e_mem_size_64;
   assign mem_cmd_lo.data     = (send_dma_pkt_r.write_not_read)? data_r : '0;
   
   assign mem_cmd_o           = mem_cmd_lo;
@@ -287,8 +287,8 @@ module bp_me_cache_dma_to_cce
   ,.yumi_i (two_fifo_yumi_li)
   );
 
-  assign piso_v_li = two_fifo_v_lo & (mem_resp_li.msg_type == e_cce_mem_rd);
-  assign two_fifo_yumi_li = two_fifo_v_lo & ((mem_resp_li.msg_type == e_cce_mem_wb) | piso_ready_lo);
+  assign piso_v_li = two_fifo_v_lo & (mem_resp_li.header.msg_type == e_cce_mem_rd);
+  assign two_fifo_yumi_li = two_fifo_v_lo & ((mem_resp_li.header.msg_type == e_cce_mem_wb) | piso_ready_lo);
   
   bsg_parallel_in_serial_out 
  #(.width_p(dword_width_p)

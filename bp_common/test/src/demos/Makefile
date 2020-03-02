@@ -1,8 +1,8 @@
 
 include Makefile.frag
 
-RISCV_GCC  = riscv64-unknown-elf-gcc --static -nostdlib -nostartfiles -fPIC -march=rv64ia -mabi=lp64 -mcmodel=medany -I$(TEST_DIR)/include
-RISCV_LINK = -static -nostdlib -nostartfiles -L$(TEST_DIR)/lib -T src/riscv.ld 
+RISCV_GCC  = riscv64-unknown-elf-gcc --static -nostartfiles -fPIC -march=rv64ia -mabi=lp64 -mcmodel=medany -I$(TEST_DIR)/include
+RISCV_LINK = -static -nostartfiles -L$(TEST_DIR)/lib -T src/riscv.ld 
 
 .PHONY: all bp-demo-riscv bp-demo-s
 

@@ -176,8 +176,8 @@ module bp_io_tile
   bp_global_addr_s global_addr_lo;
   bp_local_addr_s  local_addr_lo;
 
-  assign global_addr_lo = cce_io_cmd_lo.addr;
-  assign local_addr_lo  = cce_io_cmd_lo.addr;
+  assign global_addr_lo = cce_io_cmd_lo.header.addr;
+  assign local_addr_lo  = cce_io_cmd_lo.header.addr;
 
   wire is_host_addr  = (~local_addr_lo.nonlocal && (local_addr_lo.dev == host_dev_gp));
   assign dst_did_lo  = is_host_addr ? '1 : global_addr_lo.did;

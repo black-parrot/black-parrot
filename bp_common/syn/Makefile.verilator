@@ -14,7 +14,7 @@ VV_OPTS += -O3
 LINT_OPTS   = --lint-only -Wall --Wno-unoptflat 
 BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat --exe -CFLAGS -std=c++11 
 BUILD_OPTS += -I$(BP_EXTERNAL_DIR)/share/verilator/include/vltstd/ 
-BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
+BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -lpthread -ldramsim -ldromajo_cosim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
 
 TOP_MODULE ?= testbench
 
@@ -116,6 +116,9 @@ sim.sc: dirs.sc
 	-@cp $(MEM_PATH)/$(PROG).mem $(SIM_DIR)/prog.mem
 	-@cp $(MEM_PATH)/$(PROG).riscv $(SIM_DIR)/prog.elf
 	-@cp $(MEM_PATH)/$(PROG).dump $(SIM_DIR)/prog.dump
+	-@cp $(MEM_PATH)/$(PROG).mainram $(SIM_DIR)/prog.mainram
+	-@cp $(MEM_PATH)/$(PROG).bootram $(SIM_DIR)/prog.bootram
+	-@cp $(MEM_PATH)/$(PROG).cfg $(SIM_DIR)/prog.cfg
 	-@cp $(MEM_PATH)/$(PROG).spike $(SIM_DIR)/prog.spike
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(SIM_DIR)/dram_ch.ini
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(SIM_DIR)/dram_sys.ini
