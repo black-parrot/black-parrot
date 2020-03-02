@@ -210,6 +210,8 @@ bp_nonsynth_host
    ,.program_finish_o(program_finish_lo)
    );
 
+`ifndef NO_MONITOR
+
 bind bp_be_top
   bp_nonsynth_commit_tracer
    #(.bp_params_p(bp_params_p))
@@ -374,6 +376,8 @@ bind bp_be_top
        ,.dtlb_vtag_i(be.be_mem.dtlb.vtag_i)
        ,.dtlb_entry_i(be.be_mem.dtlb.entry_i)
        );
+
+`endif // NO_MONITOR
 
   bp_mem_nonsynth_tracer
    #(.bp_params_p(bp_params_p))

@@ -11,6 +11,8 @@ export LOG_PATH     := $(BP_TOP_DIR)/syn/logs
 export RESULTS_PATH := $(BP_TOP_DIR)/syn/results
 export REPORT_PATH  := $(BP_TOP_DIR)/syn/reports
 
+SYN_FLIST ?= $(SYN_PATH)/flist.vcs
+
 TB          ?= bp_softcore
 #TB          ?= bp_processor
 CFG         ?= e_bp_single_core_cfg
@@ -30,6 +32,8 @@ include $(BP_COMMON_DIR)/syn/Makefile.regress
 include $(BP_COMMON_DIR)/syn/Makefile.verilator
 include $(BP_COMMON_DIR)/syn/Makefile.vcs
 include $(BP_COMMON_DIR)/syn/Makefile.sv2v
+
+include uw_ee477_saed90/Makefile.include
 
 regress.top: regress
 regress: regress.v check_design.syn

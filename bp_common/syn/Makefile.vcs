@@ -60,12 +60,12 @@ endif
 run.v: sim.v
 
 dirs.v:
-	$(eval RESULTS_DIR := $(RESULTS_PATH)/vcs)
-	$(eval REPORT_DIR  := $(REPORT_PATH)/vcs)
-	$(eval SIM_DIR     := $(RESULTS_DIR)/$(TB).$(CFG).sim/$(PROG))
-	$(eval BUILD_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).build)
-	$(eval COV_DIR     := $(RESULTS_DIR)/$(TB).$(CFG).cov)
-	$(eval LOG_DIR     := $(LOG_PATH)/vcs)
+	$(eval RESULTS_DIR ?= $(RESULTS_PATH)/vcs)
+	$(eval REPORT_DIR  ?= $(REPORT_PATH)/vcs)
+	$(eval SIM_DIR     ?= $(RESULTS_DIR)/$(TB).$(CFG).sim/$(PROG))
+	$(eval BUILD_DIR   ?= $(RESULTS_DIR)/$(TB).$(CFG).build)
+	$(eval COV_DIR     ?= $(RESULTS_DIR)/$(TB).$(CFG).cov)
+	$(eval LOG_DIR     ?= $(LOG_PATH)/vcs)
 
 	$(shell mkdir -p $(LOG_DIR))
 	$(shell mkdir -p $(REPORT_DIR))
@@ -85,7 +85,7 @@ pre-build.v: dirs.v
 	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/testbench.v > $(BUILD_DIR)/testbench.v
 	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v   > $(BUILD_DIR)/wrapper.v
 	-@cp $(TB_PATH)/$(TB)/test_bp.v $(BUILD_DIR)/test_bp.v
-	-@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $(BUILD_DIR)/flist.vcs
+	-@grep -v -e "^\#" $(SYN_FLIST)                > $(BUILD_DIR)/flist.vcs
 	-@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $(BUILD_DIR)/flist.vcs
 	-@echo $(BUILD_DIR)/wrapper.v                 >> $(BUILD_DIR)/flist.vcs
 	-@echo $(BUILD_DIR)/testbench.v               >> $(BUILD_DIR)/flist.vcs

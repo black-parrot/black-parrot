@@ -4,6 +4,10 @@
  *
  */
 
+`ifndef BP_SIM_CLK_PERIOD
+`define BP_SIM_CLK_PERIOD 10
+`endif
+
 module test_bp
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
@@ -15,7 +19,7 @@ module test_bp
 logic clk, reset;
 
 bsg_nonsynth_clock_gen 
- #(.cycle_time_p(10))
+ #(.cycle_time_p(`BP_SIM_CLK_PERIOD))
  clock_gen 
   (.o(clk));
 

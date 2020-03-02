@@ -27,12 +27,12 @@ run.sc: sim.sc
 VERILATOR_RUN_DIR ?= $(SYN_PATH)/run_verilator
 
 dirs.sc:
-	$(eval RESULTS_DIR := $(RESULTS_PATH)/verilator)
-	$(eval REPORT_DIR  := $(REPORT_PATH)/verilator)
-	$(eval SIM_DIR     := $(RESULTS_DIR)/$(TB).$(CFG).sim/$(PROG))
-	$(eval BUILD_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).build)
-	$(eval COV_DIR     := $(RESULTS_DIR)/$(TB).$(CFG).cov)
-	$(eval LOG_DIR     := $(LOG_PATH)/verilator)
+	$(eval RESULTS_DIR ?= $(RESULTS_PATH)/verilator)
+	$(eval REPORT_DIR  ?= $(REPORT_PATH)/verilator)
+	$(eval SIM_DIR     ?= $(RESULTS_DIR)/$(TB).$(CFG).sim/$(PROG))
+	$(eval BUILD_DIR   ?= $(RESULTS_DIR)/$(TB).$(CFG).build)
+	$(eval COV_DIR     ?= $(RESULTS_DIR)/$(TB).$(CFG).cov)
+	$(eval LOG_DIR     ?= $(LOG_PATH)/verilator)
 
 	$(shell mkdir -p $(LOG_DIR))
 	$(shell mkdir -p $(REPORT_DIR))
@@ -47,7 +47,7 @@ lint.sc: dirs.sc
 	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v > $(BUILD_DIR)/wrapper.v
 	-@cat $(SYN_PATH)/lint_settings.verilator | envsubst > $(BUILD_DIR)/config.vlt
 	-@cp $(TB_PATH)/$(TB)/test_bp.cpp $(BUILD_DIR)/test_bp.cpp
-	-@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $(BUILD_DIR)/flist.vcs 
+	-@grep -v -e "^\#" $(SYN_FLIST)                > $(BUILD_DIR)/flist.vcs
 	-@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $(BUILD_DIR)/flist.vcs
 	-@echo $(BUILD_DIR)/wrapper.v                 >> $(BUILD_DIR)/flist.vcs
 	-@echo $(BUILD_DIR)/testbench.v               >> $(BUILD_DIR)/flist.vcs
@@ -66,7 +66,7 @@ pre-verilate.sc: dirs.sc
 	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v > $(BUILD_DIR)/wrapper.v
 	-@cat $(SYN_PATH)/coverage_hier.verilator | envsubst > $(BUILD_DIR)/config.vlt
 	-@cp $(TB_PATH)/$(TB)/test_bp.cpp $(BUILD_DIR)/test_bp.cpp
-	-@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $(BUILD_DIR)/flist.vcs 
+	-@grep -v -e "^\#" $(SYN_FLIST)                > $(BUILD_DIR)/flist.vcs
 	-@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $(BUILD_DIR)/flist.vcs
 	-@echo $(BUILD_DIR)/wrapper.v                 >> $(BUILD_DIR)/flist.vcs
 	-@echo $(BUILD_DIR)/testbench.v               >> $(BUILD_DIR)/flist.vcs
