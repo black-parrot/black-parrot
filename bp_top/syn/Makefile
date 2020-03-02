@@ -33,6 +33,8 @@ include $(BP_COMMON_DIR)/syn/Makefile.verilator
 include $(BP_COMMON_DIR)/syn/Makefile.vcs
 include $(BP_COMMON_DIR)/syn/Makefile.sv2v
 
+include uw_ee477_saed90/Makefile.include
+
 regress.top: regress
 regress: regress.v check_design.syn
 	$(MAKE) lint.v || true
