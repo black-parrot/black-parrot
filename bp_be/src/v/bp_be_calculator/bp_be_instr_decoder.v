@@ -222,9 +222,8 @@ always_comb
             `RV64_FENCE_I : 
               begin 
                 decode.pipe_mem_v  = 1'b1;
-                decode.csr_v       = 1'b1;
-                decode.serial_v    = 1'b1;
-                decode.fu_op       = e_fencei;
+                decode.dcache_w_v  = 1'b1;
+                decode.fu_op       = e_flush;
               end
             default : illegal_instr = 1'b1;
           endcase

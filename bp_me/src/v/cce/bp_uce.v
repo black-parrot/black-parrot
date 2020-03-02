@@ -204,7 +204,7 @@ module bp_uce
 
      ,.count_o(way_cnt)
      );
-  wire way_done = (index_cnt == lce_assoc_p-1);
+  wire way_done = (way_cnt == lce_assoc_p-1);
 
   // Outstanding Requests Counter - counts all requests, cached and uncached
   //
@@ -294,6 +294,8 @@ module bp_uce
                 tag_mem_pkt_cast_o.index  = index_cnt;
                 tag_mem_pkt_v_o = tag_mem_pkt_ready_i & data_mem_pkt_ready_i;
 
+                // Need to clear the dirty bit
+
                 state_n = (data_mem_pkt_v_o & tag_mem_pkt_v_o) ? e_flush_write : e_flush_scan;
               end
             else
@@ -301,14 +303,21 @@ module bp_uce
                 way_up   = 1'b1;
                 index_up = way_done;
 
-                state_n = way_done ? e_flush_read : e_flush_scan;
+                cache_req_complete_o = (index_done & way_done);
+
+                state_n = cache_req_complete_o
+                          ? e_ready
+                          : way_done 
+                            ? e_flush_read 
+                            : e_flush_scan;
               end
           end
         e_flush_write:
           begin
             mem_cmd_cast_o.header.msg_type = e_cce_mem_wb;
-            mem_cmd_cast_o.header.addr     = {dirty_tag_r, index_cnt};
+            mem_cmd_cast_o.header.addr     = {dirty_tag_r, index_cnt, block_offset_width_lp'(0)};
             mem_cmd_cast_o.header.size     = e_mem_size_64;
+            mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
             mem_cmd_v_o = mem_cmd_ready_i;
 
             state_n = mem_cmd_v_o ? e_flush_wait : e_flush_scan;
@@ -321,7 +330,7 @@ module bp_uce
             way_up   = mem_resp_yumi_lo;
             index_up = way_done & mem_resp_yumi_lo;
 
-            cache_req_complete_o = (index_done & mem_resp_yumi_lo);
+            cache_req_complete_o = (index_done & way_done & mem_resp_yumi_lo);
 
             state_n = cache_req_complete_o
                       ? e_ready

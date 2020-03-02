@@ -117,6 +117,10 @@ module bp_be_mem_top
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p/8)
 `declare_bp_be_dcache_pkt_s(page_offset_width_lp, dword_width_p);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p);
+  bp_cache_req_s cache_req_cast_o;
+
+  assign cache_req_o = cache_req_cast_o;
 
 // Cast input and output ports
 bp_cfg_bus_s           cfg_bus;
@@ -238,6 +242,7 @@ assign exception_ecode_dec_li =
     ,default: '0
     };
 
+wire fencei_v_li = cache_req_v_o & (cache_req_cast_o.msg_type == e_cache_flush);
 bp_be_csr
  #(.bp_params_p(bp_params_p))
   csr
@@ -260,6 +265,7 @@ bp_be_csr
    ,.instret_i(commit_pkt.instret)
 
    ,.exception_v_i(exception_v_li)
+   ,.fencei_v_i(fencei_v_li)
    ,.exception_pc_i(exception_pc_li)
    ,.exception_npc_i(exception_npc_li)
    ,.exception_vaddr_i(exception_vaddr_li)
@@ -386,7 +392,7 @@ bp_be_dcache
     // D$-LCE Interface
     ,.dcache_miss_o(dcache_miss_lo)
     ,.cache_req_complete_i(cache_req_complete_i)
-    ,.cache_req_o(cache_req_o)
+    ,.cache_req_o(cache_req_cast_o)
     ,.cache_req_v_o(cache_req_v_o)
     ,.cache_req_ready_i(cache_req_ready_i)
     ,.cache_req_metadata_o(cache_req_metadata_o)

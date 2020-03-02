@@ -44,6 +44,7 @@ typedef enum bit [4:0]
 
   ,e_lrd   = 5'b01101
   ,e_scd   = 5'b01110
+  ,e_flush = 5'b01111
 } bp_be_mmu_fu_op_e;
 
 typedef enum bit [4:0]
@@ -70,7 +71,6 @@ typedef enum bit [4:0]
   ,e_op_instr_page_fault   = 5'b11010
   ,e_op_instr_misaligned   = 5'b11011
   ,e_itlb_fill             = 5'b11100
-  ,e_fencei                = 5'b10110
 
   ,e_op_illegal_instr      = 5'b11111
 } bp_be_csr_fu_op_e;
