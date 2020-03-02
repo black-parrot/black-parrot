@@ -1,5 +1,10 @@
 THIS_DIR := $(realpath $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST)))))
 
+# Default all simulations to this speed for ee477 so power reports are
+# not crazy large from the normal 10ps default clock period.
+CLK_PER        ?= 10000
+VCS_BUILD_OPTS += +define+BP_SIM_CLK_PERIOD=$(CLK_PER)
+
 RTL_HARD ?= 0
 ifeq ($(RTL_HARD),1)
   SIM_DIR   = $(RESULTS_DIR)/$(TB).$(CFG).sim.rtl_hard/$(PROG)
@@ -39,10 +44,8 @@ ifeq ($(POST_PNR_TIME),1)
   COV_DIR   = $(RESULTS_DIR)/$(TB).$(CFG).cov.post_pnr_time
 
   SYN_FLIST      := $(THIS_DIR)/post_pnr.flist.vcs
-  CLK_PER        ?= 10000
   VCS_BUILD_OPTS += +warn=noTFIPC
   VCS_BUILD_OPTS += +define+NO_MONITOR
-  VCS_BUILD_OPTS += +define+BP_SIM_CLK_PERIOD=$(CLK_PER)
   VCS_BUILD_OPTS += +sdfverbose +neg_tchk +overlap +multisource_int_delays -negdelay
   VCS_BUILD_OPTS += +define+CHANNELS_UNDEFINED +define+TIMING_CORNER_MAXMIN
   VCS_BUILD_OPTS += +warn=noSDFCOM_ANICD
