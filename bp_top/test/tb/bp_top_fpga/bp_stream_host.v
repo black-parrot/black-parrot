@@ -51,7 +51,11 @@ module bp_stream_host
   
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
   
-  // Stream address map
+  // AXI-Lite address map
+  //
+  // Host software should send data to specific addresses for 
+  // specific purposes
+  //
   logic nbf_v_li, mmio_v_li;
   logic nbf_ready_lo, mmio_ready_lo;;
   

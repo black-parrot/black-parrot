@@ -455,7 +455,7 @@ module system_wrapper
       end
   
   // Logic Analyzer
-  design_1 design_1_i
+  design_1 design_1_io_link
   (.clk_i (mig_clk)
   ,.cmd_i (proc_cmd_link_li)
   ,.cmd_o (proc_cmd_link_lo)
@@ -463,7 +463,8 @@ module system_wrapper
   ,.resp_o(proc_resp_link_lo)
   );
   
-  design_4 design_4_i
+  // Logic Analyzer
+  design_4 design_4_mem_link
   (.clk_i (mig_clk)
   ,.cmd_o (dram_cmd_link_lo)
   ,.resp_i(dram_resp_link_li)

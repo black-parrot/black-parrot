@@ -1,21 +1,20 @@
 
 /* Steps for opening Vivado project: */
 
-cd pre-alpha-release
+cd black-parrot
 make libs
 make ucode
 
-cd pre-alpha-release/bp_top/test/tb/bp_top_fpga
-vivado -mode tcl
-source bp_fpga.tcl
-start_gui
+cd black-parrot/bp_top/test/tb/bp_top_fpga
+vivado -mode batch -source bp_fpga.tcl
+vivado artix_7_xdma/artix_7_xdma.xpr
 
 
 /* Steps for updating project tcl: */
 
-cd pre-alpha-release/bp_top/test/tb/bp_top_fpga
+cd black-parrot/bp_top/test/tb/bp_top_fpga
 vivado -mode tcl
-open_poroject ./artix_7_xdma/artix_7_xdma.xpr
+open_project ./artix_7_xdma/artix_7_xdma.xpr
 write_project_tcl -force bp_fpga.tcl
 exit
 source modify_tcl.sh
