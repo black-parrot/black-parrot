@@ -1,0 +1,52 @@
+THIS_DIR := $(realpath $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST)))))
+
+RTL_HARD ?= 0
+ifeq ($(RTL_HARD),1)
+  SIM_DIR   = $(RESULTS_DIR)/$(TB).$(CFG).sim.rtl_hard/$(PROG)
+  BUILD_DIR = $(RESULTS_DIR)/$(TB).$(CFG).build.rtl_hard
+  COV_DIR   = $(RESULTS_DIR)/$(TB).$(CFG).cov.rtl_hard
+
+  TB             := bp_softcore
+  SYN_FLIST      := $(THIS_DIR)/rtl_hard.flist.vcs
+  VCS_BUILD_OPTS += +nospecify +notimingcheck +delay_mode_zero
+endif
+
+POST_SYNTH ?= 0
+ifeq ($(POST_SYNTH),1)
+  SIM_DIR   = $(RESULTS_DIR)/$(TB).$(CFG).sim.post_synth/$(PROG)
+  BUILD_DIR = $(RESULTS_DIR)/$(TB).$(CFG).build.post_synth
+  COV_DIR   = $(RESULTS_DIR)/$(TB).$(CFG).cov.post_synth
+
+  TB             := bp_softcore_no_bind
+  SYN_FLIST      := $(THIS_DIR)/post_synth.flist.vcs
+  VCS_BUILD_OPTS += +nospecify +notimingcheck +delay_mode_zero +warn=noTFIPC
+endif
+
+POST_PNR_FUNC ?= 0
+ifeq ($(POST_PNR_FUNC),1)
+  SIM_DIR   = $(RESULTS_DIR)/$(TB).$(CFG).sim.post_pnr_func/$(PROG)
+  BUILD_DIR = $(RESULTS_DIR)/$(TB).$(CFG).build.post_pnr_func
+  COV_DIR   = $(RESULTS_DIR)/$(TB).$(CFG).cov.post_pnr_func
+
+  TB             := bp_softcore_no_bind
+  SYN_FLIST      := $(THIS_DIR)/post_pnr.flist.vcs
+  VCS_BUILD_OPTS += +nospecify +notimingcheck +delay_mode_zero +warn=noTFIPC
+endif
+
+POST_PNR_TIME ?= 0
+ifeq ($(POST_PNR_TIME),1)
+  SIM_DIR   = $(RESULTS_DIR)/$(TB).$(CFG).sim.post_pnr_time/$(PROG)
+  BUILD_DIR = $(RESULTS_DIR)/$(TB).$(CFG).build.post_pnr_time
+  COV_DIR   = $(RESULTS_DIR)/$(TB).$(CFG).cov.post_pnr_time
+
+  TB             := bp_softcore_no_bind
+  SYN_FLIST      := $(THIS_DIR)/post_pnr.flist.vcs
+  CLK_PER        ?= 10000
+  VCS_BUILD_OPTS += +warn=noTFIPC
+  VCS_BUILD_OPTS += +define+BP_SIM_CLK_PERIOD=$(CLK_PER)
+  VCS_BUILD_OPTS += +sdfverbose +neg_tchk +overlap +multisource_int_delays -negdelay
+  VCS_BUILD_OPTS += +define+CHANNELS_UNDEFINED +define+TIMING_CORNER_MAXMIN
+  VCS_BUILD_OPTS += +warn=noSDFCOM_ANICD
+  VCS_BUILD_OPTS += +no_tchk_msg -sdf typ:bp_softcore:$(TOP)/../ee477-chip/results/icc/bp_softcore.chip_finish_icc.output.sdf
+endif
+
