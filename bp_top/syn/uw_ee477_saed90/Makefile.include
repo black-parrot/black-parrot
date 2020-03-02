@@ -6,7 +6,6 @@ ifeq ($(RTL_HARD),1)
   BUILD_DIR = $(RESULTS_DIR)/$(TB).$(CFG).build.rtl_hard
   COV_DIR   = $(RESULTS_DIR)/$(TB).$(CFG).cov.rtl_hard
 
-  TB             := bp_softcore
   SYN_FLIST      := $(THIS_DIR)/rtl_hard.flist.vcs
   VCS_BUILD_OPTS += +nospecify +notimingcheck +delay_mode_zero
 endif
@@ -17,8 +16,8 @@ ifeq ($(POST_SYNTH),1)
   BUILD_DIR = $(RESULTS_DIR)/$(TB).$(CFG).build.post_synth
   COV_DIR   = $(RESULTS_DIR)/$(TB).$(CFG).cov.post_synth
 
-  TB             := bp_softcore_no_bind
   SYN_FLIST      := $(THIS_DIR)/post_synth.flist.vcs
+  VCS_BUILD_OPTS += +define+NO_MONITOR
   VCS_BUILD_OPTS += +nospecify +notimingcheck +delay_mode_zero +warn=noTFIPC
 endif
 
@@ -28,8 +27,8 @@ ifeq ($(POST_PNR_FUNC),1)
   BUILD_DIR = $(RESULTS_DIR)/$(TB).$(CFG).build.post_pnr_func
   COV_DIR   = $(RESULTS_DIR)/$(TB).$(CFG).cov.post_pnr_func
 
-  TB             := bp_softcore_no_bind
   SYN_FLIST      := $(THIS_DIR)/post_pnr.flist.vcs
+  VCS_BUILD_OPTS += +define+NO_MONITOR
   VCS_BUILD_OPTS += +nospecify +notimingcheck +delay_mode_zero +warn=noTFIPC
 endif
 
@@ -39,10 +38,10 @@ ifeq ($(POST_PNR_TIME),1)
   BUILD_DIR = $(RESULTS_DIR)/$(TB).$(CFG).build.post_pnr_time
   COV_DIR   = $(RESULTS_DIR)/$(TB).$(CFG).cov.post_pnr_time
 
-  TB             := bp_softcore_no_bind
   SYN_FLIST      := $(THIS_DIR)/post_pnr.flist.vcs
   CLK_PER        ?= 10000
   VCS_BUILD_OPTS += +warn=noTFIPC
+  VCS_BUILD_OPTS += +define+NO_MONITOR
   VCS_BUILD_OPTS += +define+BP_SIM_CLK_PERIOD=$(CLK_PER)
   VCS_BUILD_OPTS += +sdfverbose +neg_tchk +overlap +multisource_int_delays -negdelay
   VCS_BUILD_OPTS += +define+CHANNELS_UNDEFINED +define+TIMING_CORNER_MAXMIN
