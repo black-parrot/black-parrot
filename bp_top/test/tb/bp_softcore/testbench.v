@@ -15,7 +15,7 @@ module testbench
  import bp_me_pkg::*;
  import bp_common_cfg_link_pkg::*;
  import bsg_noc_pkg::*;
- #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_softcore_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
@@ -35,7 +35,7 @@ module testbench
 
    , parameter mem_zero_p         = 1
    , parameter mem_file_p         = "prog.mem"
-   , parameter mem_cap_in_bytes_p = 2**20
+   , parameter mem_cap_in_bytes_p = 2**25
    , parameter [paddr_width_p-1:0] mem_offset_p = paddr_width_p'(32'h8000_0000)
 
    // Number of elements in the fake BlackParrot memory

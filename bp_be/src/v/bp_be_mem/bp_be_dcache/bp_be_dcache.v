@@ -192,7 +192,7 @@ module bp_be_dcache
   logic word_op;
   logic half_op;
   logic byte_op;
-  logic flush_op;
+  logic fencei_op;
   logic [index_width_lp-1:0] addr_index;
   logic [word_offset_width_lp-1:0] addr_word_offset;
 
@@ -207,7 +207,7 @@ module bp_be_dcache
     half_op   = 1'b0;
     byte_op   = 1'b0;
     size_op   = e_byte;
-    flush_op  = 1'b0;
+    fencei_op  = 1'b0;
 
     unique case (dcache_pkt.opcode)
       e_dcache_opcode_lrw, e_dcache_opcode_lrd: begin
@@ -230,8 +230,8 @@ module bp_be_dcache
       e_dcache_opcode_sd, e_dcache_opcode_sw, e_dcache_opcode_sh, e_dcache_opcode_sb: begin
         store_op  = 1'b1;
       end
-      e_dcache_opcode_flush: begin
-        flush_op  = 1'b1;
+      e_dcache_opcode_fencei: begin
+        fencei_op  = 1'b1;
       end
       default: begin end
     endcase
@@ -275,12 +275,12 @@ module bp_be_dcache
   logic word_op_tl_r;
   logic half_op_tl_r;
   logic byte_op_tl_r;
-  logic flush_op_tl_r;
+  logic fencei_op_tl_r;
   logic [bp_page_offset_width_gp-1:0] page_offset_tl_r;
   logic [dword_width_p-1:0] data_tl_r;
-  logic flush_req;
+  logic fencei_req;
 
-  assign tl_we = v_i & cache_req_ready_i & ~flush_req;
+  assign tl_we = v_i & cache_req_ready_i & ~fencei_req;
   
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
@@ -299,7 +299,7 @@ module bp_be_dcache
         word_op_tl_r <= word_op;
         half_op_tl_r <= half_op;
         byte_op_tl_r <= byte_op;
-        flush_op_tl_r <= flush_op;
+        fencei_op_tl_r <= fencei_op;
         page_offset_tl_r <= dcache_pkt.page_offset;
       end
     
@@ -374,7 +374,7 @@ module bp_be_dcache
   logic word_op_tv_r;
   logic half_op_tv_r;
   logic byte_op_tv_r;
-  logic flush_op_tv_r;
+  logic fencei_op_tv_r;
   logic uncached_tv_r;
   logic [paddr_width_p-1:0] paddr_tv_r;
   logic [dword_width_p-1:0] data_tv_r;
@@ -384,7 +384,7 @@ module bp_be_dcache
   logic [index_width_lp-1:0] addr_index_tv;
   logic [word_offset_width_lp-1:0] addr_word_offset_tv;
 
-  assign tv_we = v_tl_r & ~poison_i & ~tlb_miss_i & ~flush_req;
+  assign tv_we = v_tl_r & ~poison_i & ~tlb_miss_i & ~fencei_req;
 
   assign store_op_tl_o = v_tl_r & ~tlb_miss_i & store_op_tl_r;
   assign load_op_tl_o  = v_tl_r & ~tlb_miss_i & load_op_tl_r;
@@ -404,7 +404,7 @@ module bp_be_dcache
       word_op_tv_r <= '0;
       half_op_tv_r <= '0;
       byte_op_tv_r <= '0;
-      flush_op_tv_r <= '0;
+      fencei_op_tv_r <= '0;
       paddr_tv_r <= '0;
       tag_info_tv_r <= '0;
 
@@ -423,7 +423,7 @@ module bp_be_dcache
         word_op_tv_r <= word_op_tl_r;
         half_op_tv_r <= half_op_tl_r;
         byte_op_tv_r <= byte_op_tl_r;
-        flush_op_tv_r <= flush_op_tl_r;
+        fencei_op_tv_r <= fencei_op_tl_r;
         paddr_tv_r <= {ptag_i, page_offset_tl_r};
         tag_info_tv_r <= tag_mem_data_lo;
         uncached_tv_r <= uncached_i;
@@ -513,7 +513,7 @@ module bp_be_dcache
   assign sc_fail     = v_tv_r & sc_op_tv_r & ~sc_success;
   assign uncached_load_req = v_tv_r & load_op_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
   assign uncached_store_req = v_tv_r & store_op_tv_r & uncached_tv_r;
-  assign flush_req = v_tv_r & flush_op_tv_r;
+  assign fencei_req = v_tv_r & fencei_op_tv_r;
 
   // write buffer
   //
@@ -696,9 +696,10 @@ module bp_be_dcache
       cache_req_cast_o.msg_type = e_uc_store;
       cache_req_v_o = cache_req_ready_i;
     end
-    else if(flush_req) begin
+    else if(fencei_req) begin
+      // Don't flush on fencei when coherent
       cache_req_cast_o.msg_type = e_cache_flush;
-      cache_req_v_o = cache_req_ready_i;
+      cache_req_v_o = cache_req_ready_i & (coherent_l1_p == 0);
     end
 
     cache_req_cast_o.addr = paddr_tv_r;
@@ -722,25 +723,23 @@ module bp_be_dcache
   // output stage
   // Cache Miss Tracking logic
   logic cache_miss_r;
-  wire miss_tracker_en_li = cache_req_v_o & ~uncached_store_req;
-  bsg_dff_reset_en
+  bsg_dff_reset_en_bypass
    #(.width_p(1))
    cache_miss_tracker
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.en_i(miss_tracker_en_li | cache_req_complete_i)
-     ,.data_i(cache_req_v_o)
+     ,.en_i(cache_req_v_o | cache_req_complete_i)
+     ,.data_i(cache_req_v_o & ~cache_req_complete_i)
      ,.data_o(cache_miss_r)
      );
-  assign dcache_miss_o = cache_miss_r | miss_tracker_en_li;
-
-  assign ready_o = cache_req_ready_i & ~cache_miss_r & ~dcache_miss_o;
+  assign dcache_miss_o = cache_miss_r;
+  assign ready_o = cache_req_ready_i & ~cache_miss_r;
 
   assign v_o = v_tv_r & ((uncached_tv_r & (load_op_tv_r & uncached_load_data_v_r))
-                         | (uncached_tv_r & (store_op_tv_r & cache_req_ready_i))
-                         | (flush_op_tv_r & cache_req_ready_i)
-                         | (~uncached_tv_r & ~flush_op_tv_r & ~miss_tv)
+                         | (fencei_op_tv_r & (cache_req_ready_i || (coherent_l1_p == 0)))
+                         | (cache_req_v_o & cache_req_complete_i)
+                         | (~uncached_tv_r & ~fencei_op_tv_r & ~miss_tv)
                          );
 
   // Locking logic - Block processing of new dcache_packets

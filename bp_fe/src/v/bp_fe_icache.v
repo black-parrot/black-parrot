@@ -46,7 +46,7 @@ module bp_fe_icache
 
     , input [vaddr_width_p-1:0]                        vaddr_i
     , input                                            vaddr_v_i
-    , input                                            flush_v_i
+    , input                                            fencei_v_i
     , output                                           vaddr_ready_o
 
     , input [ptag_width_p-1:0]                         ptag_i
@@ -106,7 +106,7 @@ module bp_fe_icache
   logic                                 invalid_exist;
 
   logic uncached_req;
-  logic flush_req;
+  logic fencei_req;
 
   assign vaddr_index      = vaddr_i[word_offset_width_lp+byte_offset_width_lp+:index_width_lp];
   assign vaddr_offset     = vaddr_i[byte_offset_width_lp+:word_offset_width_lp];
@@ -116,21 +116,21 @@ module bp_fe_icache
   logic tl_we;
   logic [bp_page_offset_width_gp-1:0] page_offset_tl_r;
   logic [vaddr_width_p-1:0]           vaddr_tl_r;
-  logic flush_op_tl_r;
+  logic fencei_op_tl_r;
 
-  assign tl_we = (vaddr_v_i | flush_v_i) & cache_req_ready_i & ~flush_req;
+  assign tl_we = (vaddr_v_i | fencei_v_i) & cache_req_ready_i & ~fencei_req;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       v_tl_r       <= 1'b0;
 
-      flush_op_tl_r <= 1'b0;
+      fencei_op_tl_r <= 1'b0;
     end else begin
       v_tl_r       <= tl_we;
       if (tl_we) begin
         page_offset_tl_r <= vaddr_i[bp_page_offset_width_gp-1:0];
         vaddr_tl_r       <= vaddr_i;
-        flush_op_tl_r    <= flush_v_i;
+        fencei_op_tl_r    <= fencei_v_i;
       end
     end
   end
@@ -203,16 +203,16 @@ module bp_fe_icache
   logic [tag_width_lp-1:0]                      addr_tag_tv;
   logic [index_width_lp-1:0]                    addr_index_tv;
   logic [word_offset_width_lp-1:0]              addr_word_offset_tv;
-  logic                                         flush_op_tv_r;
+  logic                                         fencei_op_tv_r;
 
   // Flush ops are non-speculative and so cannot be poisoned
-  assign tv_we = v_tl_r & ((~poison_i & ptag_v_i) | flush_op_tl_r) & ~flush_req;
+  assign tv_we = v_tl_r & ((~poison_i & ptag_v_i) | fencei_op_tl_r) & ~fencei_req;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       v_tv_r       <= 1'b0;
 
-      flush_op_tv_r <= 1'b0;
+      fencei_op_tv_r <= 1'b0;
     end
     else begin
       v_tv_r <= tv_we;
@@ -223,7 +223,7 @@ module bp_fe_icache
         state_tv_r   <= state_tl;
         ld_data_tv_r <= data_mem_data_lo;
         uncached_tv_r <= uncached_i;
-        flush_op_tv_r <= flush_op_tl_r;
+        fencei_op_tv_r <= fencei_op_tl_r;
       end
     end
   end
@@ -259,7 +259,7 @@ module bp_fe_icache
   logic [dword_width_p-1:0] uncached_load_data_r;
 
   assign uncached_req = v_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
-  assign flush_req = v_tv_r & flush_op_tv_r;
+  assign fencei_req = v_tv_r & fencei_op_tv_r;
 
  
   // stat memory
@@ -314,23 +314,22 @@ module bp_fe_icache
     cache_req_cast_lo = '0;
     cache_req_v_o = '0;
 
-    if (cache_req_ready_i) begin
-      if (miss_tv) begin
-        cache_req_cast_lo.addr = addr_tv_r;
-        cache_req_cast_lo.msg_type = e_miss_load;
-        cache_req_cast_lo.size = e_size_64B;
-        cache_req_v_o = 1'b1;
-      end
-      else if (uncached_req) begin
-        cache_req_cast_lo.addr = addr_tv_r;
-        cache_req_cast_lo.msg_type = e_uc_load;
-        cache_req_cast_lo.size = e_size_4B;
-        cache_req_v_o = 1'b1;   
-      end
-      else if (flush_req) begin
-        cache_req_cast_lo.msg_type = e_cache_clear;
-        cache_req_v_o = 1'b1;
-      end
+    if (miss_tv) begin
+      cache_req_cast_lo.addr = addr_tv_r;
+      cache_req_cast_lo.msg_type = e_miss_load;
+      cache_req_cast_lo.size = e_size_64B;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if (uncached_req) begin
+      cache_req_cast_lo.addr = addr_tv_r;
+      cache_req_cast_lo.msg_type = e_uc_load;
+      cache_req_cast_lo.size = e_size_4B;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if (fencei_req) begin
+      // Don't flush on fencei when coherent
+      cache_req_cast_lo.msg_type = e_cache_clear;
+      cache_req_v_o = cache_req_ready_i & (coherent_l1_p == 0);
     end
   end
 
@@ -366,7 +365,7 @@ module bp_fe_icache
   assign vaddr_ready_o = cache_req_ready_i & ~cache_miss & ~cache_req_v_o;
 
   assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r)
-                              | (~uncached_tv_r & ~flush_op_tv_r & ~miss_tv)
+                              | (~uncached_tv_r & ~fencei_op_tv_r & ~miss_tv)
                               );
 
   logic [dword_width_p-1:0]   ld_data_way_picked;

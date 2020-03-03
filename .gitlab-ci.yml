@@ -90,7 +90,9 @@ hotfix_job:
     - vcs
   script:
     - make -C bp_top/syn clean
-    - $CI_PROJECT_DIR/ci/regress.sh check_design.syn bp_top
+    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_single_core_cfg" bp_top
+    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_quad_core_cfg" bp_top
+    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_softcore" bp_top
   cache:
     key: "dev"
     paths:
@@ -126,7 +128,9 @@ check-design:
   tags:
     - dc
   script:
-    - $CI_PROJECT_DIR/ci/regress.sh check_design.syn bp_top
+    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_single_core_cfg" bp_top
+    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_quad_core_cfg" bp_top
+    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_softcore" bp_top
       
 lint-verilator:
   <<: *job_definition
@@ -145,15 +149,6 @@ me-regress-verilator:
   script:
     - $CI_PROJECT_DIR/ci/regress.sh regress.me.sc bp_me
      
-me-regress-vcs:
-  <<: *job_definition
-  when: manual
-  stage: test-short
-  tags:
-    - vcs
-  script:
-    - $CI_PROJECT_DIR/ci/regress.sh regress.me.v bp_me
-      
 top-riscv-verilator:
   <<: *job_definition
   when: manual
@@ -210,14 +205,23 @@ top-mc-verilator:
     - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_4.sc CFG=e_bp_quad_core_cfg" bp_top &
     - wait
 
-
 lint-vcs:
   <<: *job_definition
   stage: check
   tags:
     - vcs
   script:
-    - $CI_PROJECT_DIR/ci/regress.sh lint.v bp_top
+    - $CI_PROJECT_DIR/ci/regress.sh "lint.v TB=bp_processor" bp_top
+    - $CI_PROJECT_DIR/ci/regress.sh "lint.v TB=bp_softcore" bp_top
+
+me-regress-vcs:
+  <<: *job_definition
+  when: manual
+  stage: test-short
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/regress.sh regress.me.v bp_me
 
 top-riscv-tests-vcs:
   <<: *job_definition
@@ -225,8 +229,11 @@ top-riscv-tests-vcs:
   tags:
     - vcs
   script:
-    - make -C bp_top/syn build.v
-    - $CI_PROJECT_DIR/ci/regress.sh regress_riscv.v bp_top
+    - make -C bp_top/syn build.v TB=bp_processor
+    - make -C bp_top/syn build.v TB=bp_softcore
+    - $CI_PROJECT_DIR/ci/regress.sh "regress_riscv.v TB=bp_processor" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "regress_riscv.v TB=bp_softcore" bp_top &
+    - wait
       
 top-coremark-vcs:
   <<: *job_definition
@@ -234,8 +241,11 @@ top-coremark-vcs:
   tags:
     - vcs
   script:
-    - make -C bp_top/syn build.v
-    - $CI_PROJECT_DIR/ci/regress.sh "sim.v PROG=coremark" bp_top
+    - make -C bp_top/syn build.v TB=bp_processor
+    - make -C bp_top/syn build.v TB=bp_softcore
+    - $CI_PROJECT_DIR/ci/regress.sh "sim.v TB=bp_processor PROG=coremark" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "sim.v TB=bp_softcore PROG=coremark" bp_top &
+    - wait
 
 top-riscvdv-vcs:
   <<: *job_definition
@@ -244,8 +254,11 @@ top-riscvdv-vcs:
   tags:
     - vcs
   script:
-    - make -C bp_top/syn build.v
-    - $CI_PROJECT_DIR/ci/regress.sh regress_dv.v bp_top
+    - make -C bp_top/syn build.v TB=bp_processor
+    - make -C bp_top/syn build.v TB=bp_softcore
+    - $CI_PROJECT_DIR/ci/regress.sh "regress_dv.v TB=bp_processor" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "regress_dv.v TB=bp_softcore" bp_top &
+    - wait
 
 top-beebs-vcs:
   <<: *job_definition
@@ -253,8 +266,23 @@ top-beebs-vcs:
   tags:
     - vcs
   script:
-    - make -C bp_top/syn build.v
-    - $CI_PROJECT_DIR/ci/regress.sh regress_beebs.v bp_top
+    - make -C bp_top/syn build.v TB=bp_processor
+    - make -C bp_top/syn build.v TB=bp_softcore
+    - $CI_PROJECT_DIR/ci/regress.sh "regress_beebs.v TB=bp_processor" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "regress_beebs.v TB=bp_softcore" bp_top &
+    - wait
+
+top-cache-vcs:
+  <<: *job_definition
+  stage: test-medium
+  tags:
+    - vcs
+  script:
+    - make -C bp_top/syn build.v TB=bp_processor
+    - make -C bp_top/syn build.v TB=softcore
+    - $CI_PROJECT_DIR/ci/regress.sh "sim.v TB=bp_processor PROG=cache_hammer" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "sim.v TB=bp_softcore PROG=cache_hammer" bp_top &
+    - wait
 
 top-mc-vcs:
   <<: *job_definition
@@ -262,25 +290,25 @@ top-mc-vcs:
   tags:
     - vcs
   script:
-    - make -C bp_top/syn build.v CFG=e_bp_single_core_cfg
-    - make -C bp_top/syn build.v CFG=e_bp_dual_core_cfg
-    - make -C bp_top/syn build.v CFG=e_bp_quad_core_cfg
-    - make -C bp_top/syn build.v CFG=e_bp_oct_core_cfg
-    - make -C bp_top/syn build.v CFG=e_bp_sexta_core_cfg
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_1.v CFG=e_bp_single_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_2.v CFG=e_bp_dual_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_4.v CFG=e_bp_quad_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_8.v CFG=e_bp_oct_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_16.v CFG=e_bp_sexta_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_1.v CFG=e_bp_single_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_2.v CFG=e_bp_dual_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_4.v CFG=e_bp_quad_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_8.v CFG=e_bp_oct_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_16.v CFG=e_bp_sexta_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_1.v CFG=e_bp_single_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_2.v CFG=e_bp_dual_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_4.v CFG=e_bp_quad_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_8.v CFG=e_bp_oct_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_16.v CFG=e_bp_sexta_core_cfg" bp_top &
+    - make -C bp_top/syn build.v TB=bp_processor CFG=e_bp_single_core_cfg
+    - make -C bp_top/syn build.v TB=bp_processor CFG=e_bp_dual_core_cfg
+    - make -C bp_top/syn build.v TB=bp_processor CFG=e_bp_quad_core_cfg
+    - make -C bp_top/syn build.v TB=bp_processor CFG=e_bp_oct_core_cfg
+    - make -C bp_top/syn build.v TB=bp_processor CFG=e_bp_sexta_core_cfg
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_1.v TB=bp_processor CFG=e_bp_single_core_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_2.v TB=bp_processor CFG=e_bp_dual_core_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_4.v TB=bp_processor CFG=e_bp_quad_core_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_8.v TB=bp_processor CFG=e_bp_oct_core_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_16.v TB=bp_processor CFG=e_bp_sexta_core_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_1.v TB=bp_processor CFG=e_bp_single_core_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_2.v TB=bp_processor CFG=e_bp_dual_core_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_4.v TB=bp_processor CFG=e_bp_quad_core_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_8.v TB=bp_processor CFG=e_bp_oct_core_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_16.v TB=bp_processor CFG=e_bp_sexta_core_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_1.v TB=bp_processor CFG=e_bp_single_core_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_2.v TB=bp_processor CFG=e_bp_dual_core_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_4.v TB=bp_processor CFG=e_bp_quad_core_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_8.v TB=bp_processor CFG=e_bp_oct_core_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_16.v TB=bp_processor CFG=e_bp_sexta_core_cfg" bp_top &
     - wait
 

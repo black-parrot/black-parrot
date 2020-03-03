@@ -140,15 +140,17 @@ module bp_uce
      );
 
   // We can do a little better by sending the read_request before the writeback
-  enum logic [3:0] {e_reset, e_clear, e_flush_read, e_flush_scan, e_flush_write, e_flush_wait, e_ready, e_send_req, e_writeback, e_write_wait, e_read_wait, e_uc_read_wait} state_n, state_r;
+  enum logic [3:0] {e_reset, e_clear, e_flush_read, e_flush_scan, e_flush_write, e_flush_fence, e_ready, e_send_req, e_writeback_read, e_writeback_req, e_write_wait, e_read_wait, e_uc_read_wait} state_n, state_r;
   wire is_reset         = (state_r == e_reset);
   wire is_clear         = (state_r == e_clear);
   wire is_flush_read    = (state_r == e_flush_read);
   wire is_flush_scan    = (state_r == e_flush_scan);
   wire is_flush_write   = (state_r == e_flush_write);
+  wire is_flush_fence   = (state_r == e_flush_fence);
   wire is_ready         = (state_r == e_ready);
   wire is_send_req      = (state_r == e_send_req);
-  wire is_writeback     = (state_r == e_writeback);
+  wire is_writeback_read = (state_r == e_writeback_read);
+  wire is_writeback_req = (state_r == e_writeback_req);
   wire is_write_request = (state_r == e_write_wait);
   wire is_read_request  = (state_r == e_read_wait);
 
@@ -156,7 +158,9 @@ module bp_uce
   wire flush_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_flush};
   wire clear_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_clear};
   wire uc_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
-  wire uc_store_resp_v_li = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_cce_mem_uc_wr};
+
+  wire store_resp_v_li    = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_cce_mem_wb, e_cce_mem_uc_wr};
+  wire load_resp_v_li     = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_cce_mem_rd, e_cce_mem_wr, e_cce_mem_uc_rd};
 
   wire miss_load_v_li  = cache_req_v_r & cache_req_r.msg_type inside {e_miss_load};
   wire miss_store_v_li = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
@@ -233,7 +237,7 @@ module bp_uce
 
   // We ack mem_resps for uncached stores no matter what, so mem_resp_yumi_lo is for other responses 
   logic mem_resp_yumi_lo;
-  assign mem_resp_yumi_o = mem_resp_yumi_lo | uc_store_resp_v_li;
+  assign mem_resp_yumi_o = mem_resp_yumi_lo | store_resp_v_li;
   always_comb
     begin
       cache_req_ready_o = '0;
@@ -310,10 +314,8 @@ module bp_uce
                 way_up   = 1'b1;
                 index_up = way_done;
 
-                cache_req_complete_o = (index_done & way_done);
-
-                state_n = cache_req_complete_o
-                          ? e_ready
+                state_n = (index_done & way_done)
+                          ? e_flush_fence
                           : way_done 
                             ? e_flush_read 
                             : e_flush_scan;
@@ -328,23 +330,20 @@ module bp_uce
             mem_cmd_cast_o.data            = dirty_data_r;
             mem_cmd_v_o = mem_cmd_ready_i;
 
-            state_n = mem_cmd_v_o ? e_flush_wait : e_flush_scan;
-          end
-        e_flush_wait:
-          begin
-            // Wait for writeback. Do we have to?
-            mem_resp_yumi_lo = mem_resp_v_i & ~uc_store_resp_v_li;
+            way_up = mem_cmd_v_o;
+            index_up = way_done & mem_cmd_v_o;
 
-            way_up   = mem_resp_yumi_lo;
-            index_up = way_done & mem_resp_yumi_lo;
-
-            cache_req_complete_o = (index_done & way_done & mem_resp_yumi_lo);
-
-            state_n = cache_req_complete_o
-                      ? e_ready
-                      : mem_resp_yumi_lo
+            state_n = (mem_cmd_v_o & index_done & way_done)
+                      ? e_flush_fence
+                      : mem_cmd_v_o
                         ? e_flush_scan
-                        : e_flush_wait;
+                        : e_flush_write;
+          end
+        e_flush_fence:
+          begin
+            cache_req_complete_o = credits_empty_o;
+
+            state_n = cache_req_complete_o ? e_ready : e_flush_fence;
           end
         e_ready:
           begin
@@ -357,6 +356,8 @@ module bp_uce
                 mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
                 mem_cmd_cast_o.data                  = cache_req_cast_i.data;
                 mem_cmd_v_o = mem_cmd_ready_i;
+
+                cache_req_complete_o = mem_cmd_v_o;
               end
             else
               begin
@@ -370,7 +371,7 @@ module bp_uce
               end
           end
         e_send_req:
-          if (miss_v_li & ~cache_req_metadata_r.dirty)
+          if (miss_v_li)
             begin
               mem_cmd_cast_o.header.msg_type       = miss_load_v_li ? e_cce_mem_rd : e_cce_mem_wr;
               mem_cmd_cast_o.header.addr           = cache_req_r.addr;
@@ -379,7 +380,11 @@ module bp_uce
               mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
               mem_cmd_v_o = mem_cmd_ready_i;
 
-              state_n = mem_cmd_v_o ? e_read_wait : e_send_req;
+              state_n = mem_cmd_v_o 
+                        ? cache_req_metadata_r.dirty 
+                          ? e_writeback_read
+                          : e_read_wait 
+                        : e_send_req;
             end
           else if (uc_load_v_li)
             begin
@@ -391,41 +396,35 @@ module bp_uce
 
               state_n = mem_cmd_v_o ? e_uc_read_wait : e_send_req;
             end
-          else if (miss_v_li & cache_req_metadata_r.dirty)
-            begin
-              data_mem_pkt_cast_o.opcode = e_cache_data_mem_read;
-              data_mem_pkt_cast_o.index  = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
-              data_mem_pkt_cast_o.way_id = cache_req_metadata_r.repl_way;
-              data_mem_pkt_v_o = data_mem_pkt_ready_i & tag_mem_pkt_ready_i & stat_mem_pkt_ready_i;
+        e_writeback_read:
+          begin
+            data_mem_pkt_cast_o.opcode = e_cache_data_mem_read;
+            data_mem_pkt_cast_o.index  = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
+            data_mem_pkt_cast_o.way_id = cache_req_metadata_r.repl_way;
+            data_mem_pkt_v_o = data_mem_pkt_ready_i & tag_mem_pkt_ready_i & stat_mem_pkt_ready_i;
 
-              tag_mem_pkt_cast_o.opcode  = e_cache_tag_mem_read;
-              tag_mem_pkt_cast_o.index   = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
-              tag_mem_pkt_cast_o.way_id  = cache_req_metadata_r.repl_way;
-              tag_mem_pkt_v_o = data_mem_pkt_ready_i & tag_mem_pkt_ready_i & stat_mem_pkt_ready_i;
+            tag_mem_pkt_cast_o.opcode  = e_cache_tag_mem_read;
+            tag_mem_pkt_cast_o.index   = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
+            tag_mem_pkt_cast_o.way_id  = cache_req_metadata_r.repl_way;
+            tag_mem_pkt_v_o = data_mem_pkt_ready_i & tag_mem_pkt_ready_i & stat_mem_pkt_ready_i;
 
-              stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_clear_dirty;
-              stat_mem_pkt_cast_o.index  = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
-              stat_mem_pkt_cast_o.way_id = cache_req_metadata_r.repl_way;
-              stat_mem_pkt_v_o = data_mem_pkt_ready_i & tag_mem_pkt_ready_i & stat_mem_pkt_ready_i;
+            stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_clear_dirty;
+            stat_mem_pkt_cast_o.index  = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
+            stat_mem_pkt_cast_o.way_id = cache_req_metadata_r.repl_way;
+            stat_mem_pkt_v_o = data_mem_pkt_ready_i & tag_mem_pkt_ready_i & stat_mem_pkt_ready_i;
 
-              state_n = (data_mem_pkt_v_o & tag_mem_pkt_v_o & stat_mem_pkt_v_o) ? e_write_wait : e_send_req;
-            end
-        e_writeback:
+            state_n = (data_mem_pkt_v_o & tag_mem_pkt_v_o & stat_mem_pkt_v_o) ? e_writeback_req : e_writeback_read;
+          end
+        e_writeback_req:
           begin
             mem_cmd_cast_o.header.msg_type = e_cce_mem_wb;
-            mem_cmd_cast_o.header.addr     = {dirty_tag_r, cache_req_r.addr[block_offset_width_lp+:index_width_lp]};
+            mem_cmd_cast_o.header.addr     = {dirty_tag_r, cache_req_r.addr[block_offset_width_lp+:index_width_lp], block_offset_width_lp'(0)};
             mem_cmd_cast_o.header.size     = e_mem_size_64;
+            mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
             mem_cmd_cast_o.data            = dirty_data_r;
             mem_cmd_v_o = mem_cmd_ready_i;
 
-            state_n = mem_cmd_v_o ? e_write_wait : e_writeback;
-          end
-        e_write_wait:
-          begin
-            // Wait for writeback.  Do we actually have to?
-            mem_resp_yumi_lo = mem_resp_v_i & ~uc_store_resp_v_li;
-
-            state_n = mem_resp_yumi_lo ? e_read_wait : e_write_wait;
+            state_n = mem_cmd_v_o ? e_read_wait : e_writeback_req;
           end
         e_read_wait:
           begin
@@ -435,13 +434,13 @@ module bp_uce
             tag_mem_pkt_cast_o.way_id = mem_resp_cast_i.header.payload.way_id;
             tag_mem_pkt_cast_o.state  = e_COH_M;
             tag_mem_pkt_cast_o.tag    = mem_resp_cast_i.header.addr[block_offset_width_lp+index_width_lp+:ptag_width_p];
-            tag_mem_pkt_v_o = mem_resp_v_i & tag_mem_pkt_ready_i & data_mem_pkt_ready_i;
+            tag_mem_pkt_v_o = load_resp_v_li & tag_mem_pkt_ready_i & data_mem_pkt_ready_i;
 
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_write;
             data_mem_pkt_cast_o.index  = mem_resp_cast_i.header.addr[block_offset_width_lp+:index_width_lp];
             data_mem_pkt_cast_o.way_id = mem_resp_cast_i.header.payload.way_id;
             data_mem_pkt_cast_o.data   = mem_resp_cast_i.data;
-            data_mem_pkt_v_o = mem_resp_v_i & data_mem_pkt_ready_i & tag_mem_pkt_ready_i;
+            data_mem_pkt_v_o = load_resp_v_li & data_mem_pkt_ready_i & tag_mem_pkt_ready_i;
 
             cache_req_complete_o = tag_mem_pkt_v_o & data_mem_pkt_v_o;
             mem_resp_yumi_lo = cache_req_complete_o; 
@@ -452,7 +451,7 @@ module bp_uce
           begin
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_uncached;
             data_mem_pkt_cast_o.data = mem_resp_cast_i.data;
-            data_mem_pkt_v_o = mem_resp_v_i & data_mem_pkt_ready_i;
+            data_mem_pkt_v_o = load_resp_v_li & data_mem_pkt_ready_i;
 
             cache_req_complete_o = data_mem_pkt_v_o;
             mem_resp_yumi_lo = cache_req_complete_o;

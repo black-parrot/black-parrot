@@ -11,8 +11,8 @@ export LOG_PATH     := $(BP_TOP_DIR)/syn/logs
 export RESULTS_PATH := $(BP_TOP_DIR)/syn/results
 export REPORT_PATH  := $(BP_TOP_DIR)/syn/reports
 
-TB          ?= bp_softcore
-#TB          ?= bp_processor
+#TB          ?= bp_softcore
+TB          ?= bp_processor
 CFG         ?= e_bp_single_core_cfg
 START_PC    ?= 0x80000000
 TOLERANCE   ?= 2

@@ -94,6 +94,8 @@ typedef struct packed
   integer mc_y_dim;
   integer ac_x_dim;
 
+  integer coherent_l1;
+
   integer vaddr_width;
   integer paddr_width;
   integer asid_width;
@@ -182,6 +184,8 @@ typedef struct packed
   , localparam core_id_width_p = `BSG_SAFE_CLOG2(cc_x_dim_p*cc_y_dim_p)                            \
   , localparam cce_id_width_p  = `BSG_SAFE_CLOG2((cc_x_dim_p*1+2)*(cc_y_dim_p*1+2))                \
   , localparam lce_id_width_p  = `BSG_SAFE_CLOG2((cc_x_dim_p*2+2)*(cc_y_dim_p*2+2))                \
+                                                                                                   \
+  , localparam coherent_l1_p = proc_param_lp.coherent_l1                                           \
                                                                                                    \
   , localparam vaddr_width_p = proc_param_lp.vaddr_width                                           \
   , localparam paddr_width_p = proc_param_lp.paddr_width                                           \

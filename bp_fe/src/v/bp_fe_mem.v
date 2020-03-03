@@ -135,7 +135,7 @@ bp_fe_icache
 
    ,.vaddr_i(mem_cmd_cast_i.operands.fetch.vaddr)
    ,.vaddr_v_i(fetch_v)
-   ,.flush_v_i(fencei_v)
+   ,.fencei_v_i(fencei_v)
    ,.vaddr_ready_o(fetch_ready)
 
    ,.ptag_i(ptag_li)

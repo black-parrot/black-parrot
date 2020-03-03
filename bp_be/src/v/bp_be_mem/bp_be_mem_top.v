@@ -183,6 +183,8 @@ logic load_page_fault_v, load_page_fault_mem3, store_page_fault_v, store_page_fa
 
 /* Control signals */
 logic dcache_cmd_v;
+logic fencei_cmd_v;
+logic fencei_v_r, fencei_v_rr;
 logic itlb_not_dtlb_resp;
 logic mmu_cmd_v_r, mmu_cmd_v_rr, dtlb_miss_r;
 logic is_store_r, is_store_rr;
@@ -265,7 +267,7 @@ bp_be_csr
    ,.instret_i(commit_pkt.instret)
 
    ,.exception_v_i(exception_v_li)
-   ,.fencei_v_i(fencei_v_li)
+   ,.fencei_v_i(fencei_v_rr & dcache_v)
    ,.exception_pc_i(exception_pc_li)
    ,.exception_npc_i(exception_npc_li)
    ,.exception_vaddr_i(exception_vaddr_li)
@@ -420,6 +422,9 @@ always_ff @(posedge clk_i) begin
     mmu_cmd_v_r  <= '0;
     mmu_cmd_v_rr <= '0;
     is_store_r   <= '0;
+    is_store_rr  <= '0;
+    fencei_v_r   <= '0;
+    fencei_v_rr  <= '0;
     load_page_fault_mem3    <= '0;
     store_page_fault_mem3   <= '0;
     load_access_fault_mem3  <= '0;
@@ -431,6 +436,8 @@ always_ff @(posedge clk_i) begin
     mmu_cmd_v_rr <= mmu_cmd_v_r & ~chk_poison_ex_i;
     is_store_r   <= is_store;
     is_store_rr  <= is_store_r & ~chk_poison_ex_i;
+    fencei_v_r   <= fencei_cmd_v;
+    fencei_v_rr  <= fencei_v_r & ~chk_poison_ex_i;
     load_page_fault_mem3    <= load_page_fault_v & ~chk_poison_ex_i;
     store_page_fault_mem3   <= store_page_fault_v & ~chk_poison_ex_i;
     load_access_fault_mem3  <= load_access_fault_v & ~chk_poison_ex_i;
@@ -448,6 +455,7 @@ assign store_page_fault_v = mmu_cmd_v_r & dtlb_r_v_lo & translation_en_lo & is_s
 
 // Decode cmd type
 assign dcache_cmd_v    = mmu_cmd_v_i;
+assign fencei_cmd_v    = mmu_cmd_v_i & (mmu_cmd.mem_op == e_fencei);
 
 // D-Cache connections
 assign dcache_ptag     = (ptw_busy)? ptw_dcache_ptag : dtlb_r_entry.ptag;
@@ -463,6 +471,7 @@ always_comb
       dcache_pkt = ptw_dcache_pkt;
     end
     else begin
+      // We assume that mem op == dcache op
       dcache_pkt.opcode      = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
       dcache_pkt.page_offset = {mmu_cmd.vaddr.index, mmu_cmd.vaddr.offset};
       dcache_pkt.data        = mmu_cmd.data;

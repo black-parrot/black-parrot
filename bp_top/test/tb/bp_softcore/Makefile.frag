@@ -1,10 +1,10 @@
-CCE_TRACE_P    ?= 1
-CALC_TRACE_P   ?= 1
-CMT_TRACE_P    ?= 1
-DRAM_TRACE_P   ?= 1
-DCACHE_TRACE_P ?= 1
-NPC_TRACE_P    ?= 1
-VM_TRACE_P     ?= 1
+CCE_TRACE_P    ?= 0
+CALC_TRACE_P   ?= 0
+CMT_TRACE_P    ?= 0
+DRAM_TRACE_P   ?= 0
+DCACHE_TRACE_P ?= 0
+NPC_TRACE_P    ?= 0
+VM_TRACE_P     ?= 0
 PRELOAD_MEM_P  ?= 1
 LOAD_NBF_P     ?= 0
 COSIM_P        ?= 0

@@ -63,6 +63,7 @@ module bp_be_dcache_lce_req
     , input uncached_data_received_i
     , input set_tag_received_i
     , input set_tag_wakeup_received_i
+    , output logic cache_req_complete_o
 
     , output logic [lce_cce_req_width_lp-1:0] lce_req_o
     , output logic lce_req_v_o
@@ -167,6 +168,8 @@ module bp_be_dcache_lce_req
     cce_data_received_n = cce_data_received_r;
     set_tag_received_n = set_tag_received_r;
 
+    cache_req_complete_o = 1'b0;
+
     lce_req_v_o = 1'b0;
 
     lce_req = '0;
@@ -226,6 +229,8 @@ module bp_be_dcache_lce_req
           lce_req.header.msg_type = e_lce_req_type_uc_wr;
           lce_req.header.src_id = lce_id_i;
           lce_req.header.dst_id = req_cce_id_lo;
+
+          cache_req_complete_o = 1'b1;
 
           state_n = e_READY;
         end
