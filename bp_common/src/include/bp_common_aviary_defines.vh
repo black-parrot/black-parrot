@@ -22,7 +22,7 @@ typedef enum logic {
 // CCE Operating Mode
 // e_cce_mode_uncached: CCE supports uncached requests only
 // e_cce_mode_normal: CCE operates as a microcoded engine, features depend on microcode provided
-typedef enum bit
+typedef enum logic
 {
   e_cce_mode_uncached
   ,e_cce_mode_normal

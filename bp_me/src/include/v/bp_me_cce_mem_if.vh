@@ -19,7 +19,7 @@
 /*
  * bp_cce_mem_cmd_type_e specifies the memory command from the CCE
  */
-typedef enum bit [3:0]
+typedef enum logic [3:0]
 {
   e_cce_mem_rd       = 4'b0000  // Read-miss request
   ,e_cce_mem_wr      = 4'b0001  // Write-miss request
@@ -30,7 +30,7 @@ typedef enum bit [3:0]
   // 4'b0110 - 4'b1111 reserved // custom
 } bp_cce_mem_cmd_type_e;
 
-typedef enum bit [2:0]
+typedef enum logic [2:0]
 {
   e_mem_size_1     = 3'b000  // 1 byte
   ,e_mem_size_2    = 3'b001  // 2 bytes

@@ -31,7 +31,7 @@ DUMP ?= 0
 COV  ?= 0
 
 ifeq ($(DUMP), 1)
-VCS_BUILD_OPTS += -debug_pp
+VCS_BUILD_OPTS += -debug_all
 VCS_BUILD_OPTS += +memcbk
 VCS_BUILD_OPTS += +plusarg_save
 VCS_BUILD_OPTS += +vcs+vcdpluson

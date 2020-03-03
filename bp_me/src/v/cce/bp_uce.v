@@ -154,6 +154,7 @@ module bp_uce
 
   // We check for uncached stores ealier than other requests, because they get sent out in ready
   wire flush_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_flush};
+  wire clear_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_clear};
   wire uc_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
   wire uc_store_resp_v_li = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_cce_mem_uc_wr};
 
@@ -272,6 +273,8 @@ module bp_uce
 
             index_up = tag_mem_pkt_v_o & stat_mem_pkt_v_o;
 
+            cache_req_complete_o = (index_done & index_up);
+
             state_n = (index_done & index_up) ? e_ready : e_clear;
           end
         e_flush_read:
@@ -284,19 +287,23 @@ module bp_uce
           end
         e_flush_scan:
           begin
+            // Could check if |dirty_stat_r to skip index entirely
             if (dirty_stat_r[way_cnt])
               begin
                 data_mem_pkt_cast_o.opcode = e_cache_data_mem_read;
                 data_mem_pkt_cast_o.index  = index_cnt;
-                data_mem_pkt_v_o = tag_mem_pkt_ready_i & data_mem_pkt_ready_i;
+                data_mem_pkt_v_o = stat_mem_pkt_ready_i & tag_mem_pkt_ready_i & data_mem_pkt_ready_i;
 
                 tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_read;
                 tag_mem_pkt_cast_o.index  = index_cnt;
-                tag_mem_pkt_v_o = tag_mem_pkt_ready_i & data_mem_pkt_ready_i;
+                tag_mem_pkt_v_o = stat_mem_pkt_ready_i & tag_mem_pkt_ready_i & data_mem_pkt_ready_i;
 
-                // Need to clear the dirty bit
+                stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_clear_dirty;
+                stat_mem_pkt_cast_o.index  = index_cnt;
+                stat_mem_pkt_cast_o.way_id = way_cnt;
+                stat_mem_pkt_v_o = stat_mem_pkt_ready_i & tag_mem_pkt_ready_i & data_mem_pkt_ready_i;
 
-                state_n = (data_mem_pkt_v_o & tag_mem_pkt_v_o) ? e_flush_write : e_flush_scan;
+                state_n = (data_mem_pkt_v_o & tag_mem_pkt_v_o & stat_mem_pkt_v_o) ? e_flush_write : e_flush_scan;
               end
             else
               begin
@@ -318,6 +325,7 @@ module bp_uce
             mem_cmd_cast_o.header.addr     = {dirty_tag_r, index_cnt, block_offset_width_lp'(0)};
             mem_cmd_cast_o.header.size     = e_mem_size_64;
             mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
+            mem_cmd_cast_o.data            = dirty_data_r;
             mem_cmd_v_o = mem_cmd_ready_i;
 
             state_n = mem_cmd_v_o ? e_flush_wait : e_flush_scan;
@@ -354,8 +362,10 @@ module bp_uce
               begin
                 state_n = cache_req_v_i
                           ? flush_v_li
-                            ?  e_flush_read
-                            : e_send_req
+                            ? e_flush_read
+                            : clear_v_li
+                              ? e_clear
+                              : e_send_req
                           : e_ready;
               end
           end
@@ -405,6 +415,7 @@ module bp_uce
             mem_cmd_cast_o.header.msg_type = e_cce_mem_wb;
             mem_cmd_cast_o.header.addr     = {dirty_tag_r, cache_req_r.addr[block_offset_width_lp+:index_width_lp]};
             mem_cmd_cast_o.header.size     = e_mem_size_64;
+            mem_cmd_cast_o.data            = dirty_data_r;
             mem_cmd_v_o = mem_cmd_ready_i;
 
             state_n = mem_cmd_v_o ? e_write_wait : e_writeback;

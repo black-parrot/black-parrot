@@ -87,12 +87,11 @@ module bp_cce_nonsynth_tracer
   integer file;
   string file_name;
  
-  always_ff @(negedge clk_i)
-    if (~reset_i & ~freeze_i)
-      begin
-        file_name = $sformatf("%s_%x.trace", cce_trace_file_p, cce_id_i);
-        file      = $fopen(file_name, "w");
-      end
+  always_ff @(negedge (reset_i | freeze_i))
+    begin
+      file_name = $sformatf("%s_%x.trace", cce_trace_file_p, cce_id_i);
+      file      = $fopen(file_name, "w");
+    end
 
   // Tracer
   always_ff @(negedge clk_i) begin

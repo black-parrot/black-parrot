@@ -46,6 +46,7 @@ module bp_fe_icache
 
     , input [vaddr_width_p-1:0]                        vaddr_i
     , input                                            vaddr_v_i
+    , input                                            flush_v_i
     , output                                           vaddr_ready_o
 
     , input [ptag_width_p-1:0]                         ptag_i
@@ -104,7 +105,8 @@ module bp_fe_icache
   logic [way_id_width_lp-1:0]           way_invalid_index; // first invalid way
   logic                                 invalid_exist;
 
-  logic                                 invalidate_cmd_v; // an invalidate command from CCE
+  logic uncached_req;
+  logic flush_req;
 
   assign vaddr_index      = vaddr_i[word_offset_width_lp+byte_offset_width_lp+:index_width_lp];
   assign vaddr_offset     = vaddr_i[byte_offset_width_lp+:word_offset_width_lp];
@@ -114,17 +116,21 @@ module bp_fe_icache
   logic tl_we;
   logic [bp_page_offset_width_gp-1:0] page_offset_tl_r;
   logic [vaddr_width_p-1:0]           vaddr_tl_r;
+  logic flush_op_tl_r;
 
-  assign tl_we = vaddr_v_i & cache_req_ready_i;
+  assign tl_we = (vaddr_v_i | flush_v_i) & cache_req_ready_i & ~flush_req;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       v_tl_r       <= 1'b0;
+
+      flush_op_tl_r <= 1'b0;
     end else begin
       v_tl_r       <= tl_we;
       if (tl_we) begin
         page_offset_tl_r <= vaddr_i[bp_page_offset_width_gp-1:0];
         vaddr_tl_r       <= vaddr_i;
+        flush_op_tl_r    <= flush_v_i;
       end
     end
   end
@@ -197,12 +203,16 @@ module bp_fe_icache
   logic [tag_width_lp-1:0]                      addr_tag_tv;
   logic [index_width_lp-1:0]                    addr_index_tv;
   logic [word_offset_width_lp-1:0]              addr_word_offset_tv;
+  logic                                         flush_op_tv_r;
 
-  assign tv_we = v_tl_r & ~poison_i & ptag_v_i;
+  // Flush ops are non-speculative and so cannot be poisoned
+  assign tv_we = v_tl_r & ((~poison_i & ptag_v_i) | flush_op_tl_r) & ~flush_req;
 
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       v_tv_r       <= 1'b0;
+
+      flush_op_tv_r <= 1'b0;
     end
     else begin
       v_tv_r <= tv_we;
@@ -213,6 +223,7 @@ module bp_fe_icache
         state_tv_r   <= state_tl;
         ld_data_tv_r <= data_mem_data_lo;
         uncached_tv_r <= uncached_i;
+        flush_op_tv_r <= flush_op_tl_r;
       end
     end
   end
@@ -247,8 +258,8 @@ module bp_fe_icache
   logic uncached_load_data_v_r;
   logic [dword_width_p-1:0] uncached_load_data_r;
 
-  logic uncached_req;
   assign uncached_req = v_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
+  assign flush_req = v_tv_r & flush_op_tv_r;
 
  
   // stat memory
@@ -316,6 +327,10 @@ module bp_fe_icache
         cache_req_cast_lo.size = e_size_4B;
         cache_req_v_o = 1'b1;   
       end
+      else if (flush_req) begin
+        cache_req_cast_lo.msg_type = e_cache_clear;
+        cache_req_v_o = 1'b1;
+      end
     end
   end
 
@@ -351,7 +366,7 @@ module bp_fe_icache
   assign vaddr_ready_o = cache_req_ready_i & ~cache_miss & ~cache_req_v_o;
 
   assign data_v_o = v_tv_r & ((uncached_tv_r & uncached_load_data_v_r)
-                              | (~uncached_tv_r & ~miss_tv)
+                              | (~uncached_tv_r & ~flush_op_tv_r & ~miss_tv)
                               );
 
   logic [dword_width_p-1:0]   ld_data_way_picked;

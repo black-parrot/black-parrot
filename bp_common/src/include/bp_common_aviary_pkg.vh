@@ -470,7 +470,7 @@ package bp_common_aviary_pkg;
       ,io_noc_len_width     : 4
       };
 
-  typedef enum bit [lg_max_cfgs-1:0] 
+  typedef enum logic [lg_max_cfgs-1:0]
   {
     e_bp_sexta_core_cfg     = 9
     ,e_bp_twelve_core_cfg   = 8

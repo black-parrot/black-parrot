@@ -92,7 +92,7 @@ logic [vaddr_width_p-1:0]               npc_n, npc_r, pc_r;
 logic                                   npc_mismatch_v;
 
 // Logic for handling coming out of reset
-enum bit [1:0] {e_reset, e_boot, e_run, e_fence} state_n, state_r;
+enum logic [1:0] {e_reset, e_boot, e_run, e_fence} state_n, state_r;
 
 // Control signals
 logic npc_w_v, attaboy_pending;
