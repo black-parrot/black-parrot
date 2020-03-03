@@ -267,7 +267,7 @@ bp_be_csr
    ,.instret_i(commit_pkt.instret)
 
    ,.exception_v_i(exception_v_li)
-   ,.fencei_v_i(fencei_v_rr & dcache_v)
+   ,.fencei_v_i(fencei_v_rr & cache_req_ready_i)
    ,.exception_pc_i(exception_pc_li)
    ,.exception_npc_i(exception_npc_li)
    ,.exception_vaddr_i(exception_vaddr_li)

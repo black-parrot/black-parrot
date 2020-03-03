@@ -356,8 +356,6 @@ module bp_uce
                 mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
                 mem_cmd_cast_o.data                  = cache_req_cast_i.data;
                 mem_cmd_v_o = mem_cmd_ready_i;
-
-                cache_req_complete_o = mem_cmd_v_o;
               end
             else
               begin

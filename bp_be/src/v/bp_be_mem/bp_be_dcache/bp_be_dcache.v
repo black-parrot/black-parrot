@@ -723,22 +723,23 @@ module bp_be_dcache
   // output stage
   // Cache Miss Tracking logic
   logic cache_miss_r;
-  bsg_dff_reset_en_bypass
+  wire miss_tracker_en_li = cache_req_v_o & ~uncached_store_req & ~fencei_req;
+  bsg_dff_reset_en
    #(.width_p(1))
    cache_miss_tracker
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.en_i(cache_req_v_o | cache_req_complete_i)
-     ,.data_i(cache_req_v_o & ~cache_req_complete_i)
+     ,.en_i(miss_tracker_en_li | cache_req_complete_i)
+     ,.data_i(cache_req_v_o)
      ,.data_o(cache_miss_r)
      );
-  assign dcache_miss_o = cache_miss_r;
+  assign dcache_miss_o = cache_miss_r || miss_tracker_en_li;
   assign ready_o = cache_req_ready_i & ~cache_miss_r;
 
   assign v_o = v_tv_r & ((uncached_tv_r & (load_op_tv_r & uncached_load_data_v_r))
+                         | (uncached_tv_r & (store_op_tv_r & cache_req_ready_i))
                          | (fencei_op_tv_r & (cache_req_ready_i || (coherent_l1_p == 0)))
-                         | (cache_req_v_o & cache_req_complete_i)
                          | (~uncached_tv_r & ~fencei_op_tv_r & ~miss_tv)
                          );
 

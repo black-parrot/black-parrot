@@ -187,7 +187,6 @@ module bp_be_dcache_lce
   logic coherence_blocked_li;
   assign coherence_blocked_li = lce_cmd_v_i & ~lce_cmd_yumi_o;
 
-  logic req_cache_req_complete_lo;
   bp_be_dcache_lce_req
     #(.bp_params_p(bp_params_p))
     lce_req_inst
@@ -201,7 +200,6 @@ module bp_be_dcache_lce
       ,.cache_req_ready_o(cache_req_ready_o)
       ,.cache_req_metadata_i(cache_req_metadata_i)
       ,.cache_req_metadata_v_i(cache_req_metadata_v_i)
-      ,.cache_req_complete_o(req_cache_req_complete_lo)
 
       ,.miss_addr_o(miss_addr_lo)
 
@@ -228,7 +226,6 @@ module bp_be_dcache_lce
   logic lce_cmd_to_lce_resp_v_lo;
   logic lce_cmd_to_lce_resp_yumi_li;
 
-  logic cmd_cache_req_complete_lo;
   bp_be_dcache_lce_cmd
     #(.bp_params_p(bp_params_p))
     lce_cmd_inst
@@ -245,7 +242,7 @@ module bp_be_dcache_lce
       ,.uncached_store_done_received_o(uncached_store_done_received)
       ,.cce_data_received_o(cce_data_received)
       ,.uncached_data_received_o(uncached_data_received)
-      ,.cache_req_complete_o(cmd_cache_req_complete_lo)
+      ,.cache_req_complete_o(cache_req_complete_o)
 
       ,.lce_cmd_i(lce_cmd_in)
       ,.lce_cmd_v_i(lce_cmd_v_i)
@@ -274,8 +271,6 @@ module bp_be_dcache_lce
       ,.stat_mem_pkt_ready_i(stat_mem_pkt_ready_i)
       ,.stat_mem_i(stat_mem_i)
       );
-
-  assign cache_req_complete_o = req_cache_req_complete_lo | cmd_cache_req_complete_lo;
 
   // LCE_CCE_resp arbiter
   // lce_cce_req has higher priority over cce_lce_cmd.
