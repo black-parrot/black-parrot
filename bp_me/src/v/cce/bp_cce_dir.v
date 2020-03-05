@@ -347,7 +347,7 @@ module bp_cce_dir
             dir_ram_w_data[lce_i[0]][way_i].tag = tag_i;
             dir_ram_w_data[lce_i[0]][way_i].state = bp_coh_states_e'(coh_state_i);
           end else if (w_cmd_i == e_wds_op) begin
-            dir_ram_w_mask[lce_i[0]][way_i].state = {$bits(bp_coh_states_e){1'b1}};
+            dir_ram_w_mask[lce_i[0]][way_i].state = bp_coh_states_e'({$bits(bp_coh_states_e){1'b1}});
             dir_ram_w_data[lce_i[0]][way_i].state = bp_coh_states_e'(coh_state_i);
           end
         end
