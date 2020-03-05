@@ -92,7 +92,7 @@ logic [vaddr_width_p-1:0]               npc_n, npc_r, pc_r;
 logic                                   npc_mismatch_v;
 
 // Logic for handling coming out of reset
-enum bit [1:0] {e_reset, e_boot, e_run, e_fence} state_n, state_r;
+enum logic [1:0] {e_reset, e_boot, e_run, e_fence} state_n, state_r;
 
 // Control signals
 logic npc_w_v, attaboy_pending;
@@ -106,7 +106,7 @@ assign npc_w_v = cfg_bus_cast_i.npc_w_v
                  | (commit_pkt.tlb_miss | commit_pkt.cache_miss)
                  | (trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret);
 bsg_dff_reset_en 
- #(.width_p(vaddr_width_p))
+ #(.width_p(vaddr_width_p), .reset_val_p(32'h8000_0000))
  npc
   (.clk_i(clk_i)
    ,.reset_i(reset_i)

@@ -10,7 +10,7 @@ TEST_DIR       = $(BP_COMMON_DIR)/test
 MEM_DIR        = $(TEST_DIR)/mem
 
 RISCV_SIM      = spike
-RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -D
+RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -d
 RISCV_OBJCOPY  = riscv64-unknown-elf-objcopy
 MKLFS = $(TEST_DIR)/bin/bsg_newlib_mklfs
 DROMAJO        = dromajo

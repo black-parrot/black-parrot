@@ -71,7 +71,7 @@ logic [2:0] irs1_data_haz_v , irs2_data_haz_v;
 logic [2:0] frs1_data_haz_v , frs2_data_haz_v;
 logic [2:0] rs1_match_vector, rs2_match_vector;
 
-logic fence_haz_v, step_haz_v, debug_haz_v, queue_haz_v, interrupt_haz_v, serial_haz_v;
+logic fence_haz_v, queue_haz_v, interrupt_haz_v, serial_haz_v;
 logic data_haz_v, control_haz_v, struct_haz_v;
 logic instr_in_pipe_v, mem_in_pipe_v;
 
@@ -130,17 +130,14 @@ always_comb
     fence_haz_v        = (isd_status_cast_i.isd_fence_v & (~credits_empty_i | mem_in_pipe_v))
                          | (isd_status_cast_i.isd_mem_v & credits_full_i);
     interrupt_haz_v    = isd_status_cast_i.isd_irq_v & instr_in_pipe_v;
-    debug_haz_v        = (~isd_status_cast_i.isd_debug_v & debug_mode_i)
-                         | (isd_status_cast_i.isd_debug_v & instr_in_pipe_v);
     queue_haz_v        = ~fe_cmd_ready_i;
-    step_haz_v         = single_step_i & instr_in_pipe_v;
 
     serial_haz_v       = dep_status_li[0].serial_v
                          | dep_status_li[1].serial_v
                          | dep_status_li[2].serial_v
                          | dep_status_li[3].serial_v;
 
-    control_haz_v = fence_haz_v | interrupt_haz_v | step_haz_v | serial_haz_v | debug_haz_v;
+    control_haz_v = fence_haz_v | interrupt_haz_v | serial_haz_v;
 
     // Combine all data hazard information
     // TODO: Parameterize away floating point data hazards without hardware support
@@ -152,13 +149,13 @@ always_comb
     // Combine all structural hazard information
     // We block on mmu not ready even on not memory instructions, because it means there's an
     //   operation being performed asynchronously (such as a page fault)
-    struct_haz_v = (cfg_bus_cast_i.freeze & ~isd_status_cast_i.isd_debug_v)
+    struct_haz_v = cfg_bus_cast_i.freeze
                    | ~mmu_cmd_ready_i
                    | queue_haz_v;
   end
 
 // Generate calculator control signals
-assign chk_dispatch_v_o = cfg_bus_cast_i.dispatch || ~(control_haz_v | data_haz_v | struct_haz_v);
+assign chk_dispatch_v_o = ~(control_haz_v | data_haz_v | struct_haz_v);
 
 endmodule
 

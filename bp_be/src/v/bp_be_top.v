@@ -12,17 +12,20 @@ module bp_be_top
  import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
  import bp_common_cfg_link_pkg::*;
+ import bp_be_dcache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 
    // Default parameters 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    
    // VM parameters
    , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
-   )
+   , localparam stat_info_width_lp = `bp_be_dcache_stat_info_width(lce_assoc_p)
+  )
   (input                                     clk_i
    , input                                   reset_i
 
@@ -47,22 +50,36 @@ module bp_be_top
    , input                                   fe_cmd_ready_i
    , input                                   fe_cmd_fence_i
 
-   // LCE-CCE interface
-   , output [lce_cce_req_width_lp-1:0]       lce_req_o
-   , output                                  lce_req_v_o
-   , input                                   lce_req_ready_i
+   // D$-LCE Interface
+   // signals to LCE
+   , output logic [cache_req_width_lp-1:0]       cache_req_o
+   , output logic                                cache_req_v_o
+   , input                                       cache_req_ready_i
+   , output logic [cache_req_metadata_width_lp-1:0] cache_req_metadata_o
+   , output logic                                cache_req_metadata_v_o
 
-   , output [lce_cce_resp_width_lp-1:0]      lce_resp_o
-   , output                                  lce_resp_v_o
-   , input                                   lce_resp_ready_i                                 
+   , input cache_req_complete_i
+   
+   // data_mem
+   , input data_mem_pkt_v_i
+   , input [cache_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
+   , output logic [cce_block_width_p-1:0] data_mem_o
+   , output logic data_mem_pkt_ready_o
 
-   , input [lce_cmd_width_lp-1:0]            lce_cmd_i
-   , input                                   lce_cmd_v_i
-   , output                                  lce_cmd_yumi_o
+   // tag_mem
+   , input tag_mem_pkt_v_i
+   , input [cache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_i
+   , output logic [ptag_width_p-1:0] tag_mem_o
+   , output logic tag_mem_pkt_ready_o
 
-   , output [lce_cmd_width_lp-1:0]           lce_cmd_o
-   , output                                  lce_cmd_v_o
-   , input                                   lce_cmd_ready_i
+   // stat_mem
+   , input stat_mem_pkt_v_i
+   , input [cache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
+   , output logic [stat_info_width_lp-1:0] stat_mem_o
+   , output logic  stat_mem_pkt_ready_o
+
+   , input                                   credits_full_i
+   , input                                   credits_empty_i
 
    , input                                   timer_irq_i
    , input                                   software_irq_i
@@ -103,7 +120,8 @@ logic chk_dispatch_v;
 logic [vaddr_width_p-1:0] chk_tvec_li;
 logic [vaddr_width_p-1:0] chk_epc_li;
 
-logic credits_full_lo, credits_empty_lo;
+logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li, chk_fencei_li;
+
 logic debug_mode_lo;
 logic single_step_lo;
 logic accept_irq_lo;
@@ -135,8 +153,8 @@ bp_be_checker_top
 
    ,.calc_status_i(calc_status)
    ,.mmu_cmd_ready_i(mmu_cmd_rdy)
-   ,.credits_full_i(credits_full_lo)
-   ,.credits_empty_i(credits_empty_lo)
+   ,.credits_full_i(credits_full_i)
+   ,.credits_empty_i(credits_empty_i)
    ,.debug_mode_i(debug_mode_lo)
    ,.single_step_i(single_step_lo)
    ,.accept_irq_i(accept_irq_lo)
@@ -220,26 +238,29 @@ bp_be_mem_top
     ,.itlb_fill_vaddr_o(itlb_fill_vaddr)
     ,.itlb_fill_entry_o(itlb_fill_entry)
 
-    ,.lce_req_o(lce_req_o)
-    ,.lce_req_v_o(lce_req_v_o)
-    ,.lce_req_ready_i(lce_req_ready_i)
-
-    ,.lce_resp_o(lce_resp_o)
-    ,.lce_resp_v_o(lce_resp_v_o)
-    ,.lce_resp_ready_i(lce_resp_ready_i)        
-
-    ,.lce_cmd_i(lce_cmd_i)
-    ,.lce_cmd_v_i(lce_cmd_v_i)
-    ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
-
-    ,.lce_cmd_o(lce_cmd_o)
-    ,.lce_cmd_v_o(lce_cmd_v_o)
-    ,.lce_cmd_ready_i(lce_cmd_ready_i)
+    ,.cache_req_complete_i(cache_req_complete_i)   
+ 
+    ,.cache_req_o(cache_req_o)
+    ,.cache_req_metadata_o(cache_req_metadata_o)
+    ,.cache_req_v_o(cache_req_v_o)
+    ,.cache_req_ready_i(cache_req_ready_i)
+    ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
+    
+    ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
+    ,.data_mem_pkt_i(data_mem_pkt_i)
+    ,.data_mem_o(data_mem_o)
+    ,.data_mem_pkt_ready_o(data_mem_pkt_ready_o)
+    ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
+    ,.tag_mem_pkt_i(tag_mem_pkt_i)
+    ,.tag_mem_o(tag_mem_o)
+    ,.tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
+    ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
+    ,.stat_mem_pkt_i(stat_mem_pkt_i)
+    ,.stat_mem_o(stat_mem_o)
+    ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
 
     ,.commit_pkt_i(commit_pkt)
 
-    ,.credits_full_o(credits_full_lo)
-    ,.credits_empty_o(credits_empty_lo)
     ,.debug_mode_o(debug_mode_lo)
     ,.single_step_o(single_step_lo)
 

@@ -82,7 +82,7 @@ assign fe_queue_cast_i = fe_queue_i;
 assign fetch_instr     = fe_queue_cast_i.msg.fetch.instr;
 assign wb_pkt          = wb_pkt_i;
 
-wire issue_v = fe_queue_yumi_o | cfg_bus_cast_i.ninstr_w_v;
+wire issue_v = fe_queue_yumi_o;
 
 bp_be_issue_pkt_s issue_pkt_r;
 logic issue_pkt_v_r, poison_iss_r;
@@ -118,18 +118,9 @@ always_comb
 
         issue_pkt.fe_exception_not_instr = 1'b0;
 
-        if (debug_mode_i)
-          begin
-            issue_pkt.pc                     = expected_npc_i;
-            issue_pkt.branch_metadata_fwd    = '0; // Debug mode _will_ mess up branch metadata
-            issue_pkt.instr                  = cfg_bus_cast_i.ninstr;
-          end
-        else
-          begin
-            issue_pkt.pc                     = fe_queue_cast_i.msg.fetch.pc;
-            issue_pkt.branch_metadata_fwd    = fe_queue_cast_i.msg.fetch.branch_metadata_fwd;
-            issue_pkt.instr                  = fe_queue_cast_i.msg.fetch.instr;
-          end
+        issue_pkt.pc                     = fe_queue_cast_i.msg.fetch.pc;
+        issue_pkt.branch_metadata_fwd    = fe_queue_cast_i.msg.fetch.branch_metadata_fwd;
+        issue_pkt.instr                  = fe_queue_cast_i.msg.fetch.instr;
 
         // Pre-decode
         casez (fetch_instr.opcode)
@@ -221,9 +212,6 @@ bp_be_regfile
    ,.rs2_data_o(irf_rs2)
    );
 
-wire enter_debug_li = cfg_bus_cast_i.enter_debug;
-wire exit_debug_li  = cfg_bus_cast_i.exit_debug;
-
 // Decode the dispatched instruction
 logic                  fe_exc_not_instr_isd;
 bp_fe_exception_code_e fe_exc_isd;
@@ -232,8 +220,6 @@ bp_be_decode_s          decoded;
 bp_be_instr_decoder
  instr_decoder
   (.interrupt_v_i(accept_irq_i)
-   ,.enter_debug_v_i(enter_debug_li)
-   ,.exit_debug_v_i(exit_debug_li)
    ,.fe_exc_not_instr_i(issue_pkt_r.fe_exception_not_instr)
    ,.fe_exc_i(issue_pkt_r.fe_exception_code)
    ,.instr_i(issue_pkt_r.instr)
@@ -247,12 +233,10 @@ always_comb
     // Calculator status ISD stage
     isd_status.isd_v        = (issue_pkt_v_r & dispatch_v_i)
                               & ~(poison_iss_r | poison_iss_i)
-                              & ~(accept_irq_i & dispatch_v_i)
-                              & ~(enter_debug_li | exit_debug_li);
+                              & ~(accept_irq_i & dispatch_v_i);
     isd_status.isd_pc       = issue_pkt_r.pc;
     isd_status.isd_branch_metadata_fwd = issue_pkt_r.branch_metadata_fwd;
     isd_status.isd_irq_v    = accept_irq_i;
-    isd_status.isd_debug_v  = enter_debug_li | exit_debug_li;
     isd_status.isd_fence_v  = issue_pkt_v_r & issue_pkt_r.fence_v;
     isd_status.isd_mem_v    = issue_pkt_v_r & issue_pkt_r.mem_v;
     isd_status.isd_irs1_v   = issue_pkt_v_r & issue_pkt_r.irs1_v;
@@ -263,10 +247,9 @@ always_comb
     isd_status.isd_rs2_addr = issue_pkt_r.instr.fields.rtype.rs2_addr;
 
     // Form dispatch packet
-    dispatch_pkt.v      = (issue_pkt_v_r | enter_debug_li | exit_debug_li | accept_irq_i) & dispatch_v_i;
+    dispatch_pkt.v      = (issue_pkt_v_r | accept_irq_i) & dispatch_v_i;
     dispatch_pkt.poison = (poison_iss_r | npc_mismatch | ~dispatch_pkt.v)
-                          & ~(accept_irq_i & dispatch_v_i)
-                          & ~(enter_debug_li | exit_debug_li);
+                          & ~(accept_irq_i & dispatch_v_i);
     dispatch_pkt.pc     = expected_npc_i;
     dispatch_pkt.instr  = issue_pkt_r.instr;
     dispatch_pkt.rs1    = irf_rs1; // TODO: Add float forwarding

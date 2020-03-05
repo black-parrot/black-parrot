@@ -135,7 +135,7 @@
 /*
  * bp_lce_cce_data_length_e specifies how many 64-bit data chunks are sent following the header
  */
-typedef enum bit [3:0]
+typedef enum logic [3:0]
 {
   e_lce_data_length_0   = 4'b0000
   ,e_lce_data_length_1  = 4'b0001
@@ -159,7 +159,7 @@ typedef enum bit [3:0]
  * bp_lce_cce_req_type_e specifies whether the containing message is related to a read or write
  * cache miss request from and LCE.
  */
-typedef enum bit [2:0]
+typedef enum logic [2:0]
 {
   e_lce_req_type_rd         = 3'b000 // Read-miss
   ,e_lce_req_type_wr        = 3'b001 // Write-miss
@@ -176,7 +176,7 @@ typedef enum bit [2:0]
  * state as opposed to the S state in a MESI protocol. The CCE treats this bit as a hint, and is
  * not required to follow it.
  */
-typedef enum bit 
+typedef enum logic 
 {
   e_lce_req_excl            = 1'b0 // exclusive cache line request (read-only, exclusive request)
   ,e_lce_req_non_excl       = 1'b1 // non-exclusive cache line request (read-only, shared request)
@@ -187,7 +187,7 @@ typedef enum bit
  * bp_lce_cce_lru_dirty_e specifies whether the LRU way in an LCE request (bp_lce_cce_req_s)
  * contains a dirty cache block. The 
  */
-typedef enum bit 
+typedef enum logic 
 {
   e_lce_req_lru_clean       = 1'b0 // lru way from requesting lce's tag set is clean
   ,e_lce_req_lru_dirty      = 1'b1 // lru way from requesting lce's tag set is dirty
@@ -197,7 +197,7 @@ typedef enum bit
  * bp_lce_cce_uc_req_size_e defines the size of a uncached load or store request, in bytes.
  *
  */
-typedef enum bit [1:0]
+typedef enum logic [1:0]
 {
   e_lce_uc_req_1  = 2'b00
   ,e_lce_uc_req_2 = 2'b01
@@ -215,7 +215,7 @@ typedef enum bit [1:0]
  * These properties are derived from "A Primer on Memory Consistency and Cache Coherence", and
  * they allow an easy definition for the common MOESIF coherence states.
  */
-typedef enum bit [2:0] 
+typedef enum logic [2:0] 
 {
   e_COH_I                   = 3'b000 // Invalid
   ,e_COH_S                  = 3'b001 // Shared - clean, not owned, shared (not exclusive)
@@ -246,7 +246,7 @@ typedef enum bit [2:0]
  *   the coherence state of the specified entry being changed to Invalid (no read or write
  *   permissions)
  */
-typedef enum bit [3:0] 
+typedef enum logic [3:0] 
 {
   e_lce_cmd_sync             = 4'b0000
   ,e_lce_cmd_set_clear       = 4'b0001
@@ -272,7 +272,7 @@ typedef enum bit [3:0]
  * e_lce_resp_null_wb indicates that the LCE never wrote to the cache block and the block is still
  *   clean. The data field should be 0 and is invalid.
  */
-typedef enum bit [2:0] 
+typedef enum logic [2:0] 
 {
   e_lce_cce_sync_ack         = 3'b000
   ,e_lce_cce_inv_ack         = 3'b001

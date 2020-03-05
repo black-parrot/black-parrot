@@ -81,7 +81,6 @@
     logic                                    isd_v;                                                \
     logic [vaddr_width_mp-1:0]               isd_pc;                                               \
     logic [branch_metadata_fwd_width_mp-1:0] isd_branch_metadata_fwd;                              \
-    logic                                    isd_debug_v;                                          \
     logic                                    isd_irq_v;                                            \
     logic                                    isd_fence_v;                                          \
     logic                                    isd_mem_v;                                            \
@@ -172,7 +171,7 @@
    )
 
 `define bp_be_isd_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
-  (1 + vaddr_width_mp + branch_metadata_fwd_width_mp + 6 + rv64_reg_addr_width_gp +  2 + rv64_reg_addr_width_gp)
+  (1 + vaddr_width_mp + branch_metadata_fwd_width_mp + 5 + rv64_reg_addr_width_gp +  2 + rv64_reg_addr_width_gp)
 
 `define bp_be_dep_status_width \
   (8 + rv64_reg_addr_width_gp)

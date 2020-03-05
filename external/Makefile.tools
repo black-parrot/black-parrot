@@ -58,6 +58,7 @@ axe:
 	cp $(AXE_DIR)/axe $(BIN_DIR)
 
 gnu:
+	rm -rf $(GNU_DIR)/riscv-newlib
 	@cd $(TOP); git submodule update --init --recursive $(GNU_DIR)
 	cd $(GNU_DIR); \
 		rm -rf riscv-newlib; \
@@ -70,6 +71,8 @@ gnu:
 dramsim2:
 	@cd $(TOP); git submodule update --init --recursive $(DRAMSIM2_DIR)
 	$(MAKE) -C $(DRAMSIM2_DIR) libdramsim.so
+	mkdir -p $(LIB_DIR)
+	mkdir -p $(INCLUDE_DIR)
 	cp $(DRAMSIM2_DIR)/libdramsim.so $(LIB_DIR) 
 	cp $(DRAMSIM2_DIR)/*.h $(INCLUDE_DIR)
 

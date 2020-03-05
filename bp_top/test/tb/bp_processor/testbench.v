@@ -34,8 +34,9 @@ module testbench
    , parameter cosim_cfg_file_p            = load_nbf_p ? "prog.cfg" : "prog.elf"
 
    , parameter mem_zero_p         = 1
+   , parameter mem_load_p         = preload_mem_p
    , parameter mem_file_p         = "prog.mem"
-   , parameter mem_cap_in_bytes_p = 2**20
+   , parameter mem_cap_in_bytes_p = 2**25
    , parameter [paddr_width_p-1:0] mem_offset_p = paddr_width_p'(32'h8000_0000)
 
    // Number of elements in the fake BlackParrot memory
@@ -150,9 +151,9 @@ wrapper
     bp_nonsynth_cosim
      #(.bp_params_p(bp_params_p))
       cosim
-      (.clk_i(clk_i & (testbench.cosim_p == 1))
+      (.clk_i(clk_i)
        ,.reset_i(reset_i)
-       ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
+       ,.en_i(testbench.cosim_p == 1)
 
        ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
        // Want to pass config file as a parameter, but cannot in Verilator 4.025
@@ -192,7 +193,7 @@ wrapper
        ,.commit_pkt_i(commit_pkt)
        );
 
-  bind bp_be_dcache
+  /*bind bp_be_dcache
     bp_be_nonsynth_dcache_tracer
      #(.bp_params_p(bp_params_p))
      dcache_tracer
@@ -203,7 +204,7 @@ wrapper
        ,.mhartid_i(cfg_bus_cast_i.core_id)
 
        ,.v_tv_r(v_tv_r)
-       ,.cache_miss_o(cache_miss_o)
+       //,.cache_miss_i(cache_miss_i)
 
        ,.paddr_tv_r(paddr_tv_r)
        ,.uncached_tv_r(uncached_tv_r)
@@ -213,7 +214,7 @@ wrapper
        ,.sc_op_tv_r(sc_op_tv_r)
        ,.store_data(data_tv_r)
        ,.load_data(data_o)
-       );
+       );*/
 
   bind bp_be_top
     bp_be_nonsynth_calc_tracer
@@ -253,7 +254,7 @@ wrapper
        ,.mpp_i(be_mem.csr.mstatus_n.mpp)
        );
 
-  bind bp_core
+  bind bp_core_minimal
     bp_be_nonsynth_vm_tracer
     #(.bp_params_p(bp_params_p))
     vm_tracer

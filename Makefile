@@ -30,13 +30,13 @@ bleach_all:
 #    our submodule version, use at your own risk.
 #
 tools:
+	mkdir -p external/bin
+	mkdir -p external/lib
+	mkdir -p external/include
 	$(MAKE) gnu
-	$(MAKE) systemc
 	$(MAKE) verilator
 	$(MAKE) spike
-	$(MAKE) dromajo
 	$(MAKE) axe
-	$(MAKE) dramsim2
 	$(MAKE) cmurphi
 
 progs: update_tests
@@ -46,4 +46,10 @@ ucode: update_libs
 	$(MAKE) -C $(BP_ME_DIR)/src/asm roms
 
 libs: update_libs
+	mkdir -p external/bin
+	mkdir -p external/lib
+	mkdir -p external/include
+	$(MAKE) systemc
+	$(MAKE) dramsim2
+	$(MAKE) dromajo
 

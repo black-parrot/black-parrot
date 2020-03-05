@@ -87,8 +87,8 @@ always_ff @(posedge clk_i)
   if (reset_i)
     begin
       freeze_r            <= 1'b1;
-      icache_mode_r       <= e_lce_mode_uncached;
-      dcache_mode_r       <= e_lce_mode_uncached;
+      icache_mode_r       <= e_lce_mode_normal; //e_lce_mode_uncached;
+      dcache_mode_r       <= e_lce_mode_normal; // e_lce_mode_uncached;
       cce_mode_r          <= e_cce_mode_uncached;
     end
   else if (cfg_w_v_li)
@@ -103,9 +103,6 @@ always_ff @(posedge clk_i)
       endcase
     end
 
-wire enter_debug_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_enter_debug_gp);
-wire exit_debug_li  = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_exit_debug_gp);
-
 wire cord_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_cord_gp);
 wire did_r_v_li  = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_did_gp);
 
@@ -117,12 +114,6 @@ wire [cce_instr_width_p-1:0] cce_ucode_data_li = cfg_data_li[0+:cce_instr_width_
 wire npc_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_npc_gp);
 wire npc_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_npc_gp);
 wire [vaddr_width_p-1:0] npc_li = cfg_data_li[0+:vaddr_width_p];
-
-wire ninstr_w_v_li = cfg_w_v_li & (cfg_addr_li == bp_cfg_reg_ninstr_gp);
-wire [instr_width_p-1:0] ninstr_li = cfg_data_li[0+:instr_width_p];
-logic dispatch_r;
-always_ff @(posedge clk_i)
-  dispatch_r <= ninstr_w_v_li;
 
 wire irf_w_v_li = cfg_w_v_li & (cfg_addr_li >= bp_cfg_reg_irf_x0_gp && cfg_addr_li <= bp_cfg_reg_irf_x31_gp);
 wire irf_r_v_li = cfg_r_v_li & (cfg_addr_li >= bp_cfg_reg_irf_x0_gp && cfg_addr_li <= bp_cfg_reg_irf_x31_gp);
@@ -158,17 +149,12 @@ bp_me_cord_to_id
    );
 
 assign cfg_bus_cast_o = '{freeze: freeze_r
-                          ,enter_debug: enter_debug_li
-                          ,exit_debug: exit_debug_li
                           ,core_id: core_id_li
                           ,icache_id: icache_id_li
                           ,icache_mode: icache_mode_r
                           ,npc_w_v: npc_w_v_li
                           ,npc_r_v: npc_r_v_li
                           ,npc: npc_li
-                          ,ninstr_w_v: ninstr_w_v_li
-                          ,ninstr: ninstr_li
-                          ,dispatch: dispatch_r
                           ,dcache_id: dcache_id_li
                           ,dcache_mode: dcache_mode_r
                           ,cce_id: cce_id_li
