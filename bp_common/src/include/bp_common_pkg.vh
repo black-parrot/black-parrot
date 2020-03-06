@@ -14,6 +14,7 @@ package bp_common_pkg;
   `include "bp_common_defines.vh"
   `include "bp_common_fe_be_if.vh"
   `include "bp_common_me_if.vh"
+  `include "bp_common_cache_service_if.vh"
 
   /*
    * RV64 specifies a 64b effective address and 32b instruction.
@@ -46,7 +47,7 @@ package bp_common_pkg;
   
   localparam mipi_reg_base_addr_gp     = 32'h0030_0000;
   localparam mtimecmp_reg_base_addr_gp = 32'h0030_4000;
-  localparam mtime_reg_addr_gp         = 32'h0030_8000;
+  localparam mtime_reg_addr_gp         = 32'h0030_bff8;
   localparam plic_reg_base_addr_gp     = 32'h0030_b000;
 
   localparam dram_base_addr_gp         = 40'h00_8000_0000;

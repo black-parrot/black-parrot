@@ -1,6 +1,6 @@
 +define+DRAMSIM2
 ## Includes
-# bsg_ip_cores includes
+# BSG_IP_CORES includes
 +incdir+$BASEJUMP_STL_DIR/bsg_dataflow
 +incdir+$BASEJUMP_STL_DIR/bsg_mem
 +incdir+$BASEJUMP_STL_DIR/bsg_misc
@@ -13,7 +13,7 @@
 # be includes
 +incdir+$BP_BE_DIR/src/include
 +incdir+$BP_BE_DIR/src/include/bp_be_dcache
-# me includes 
+# me includes
 +incdir+$BP_ME_DIR/src/include/v
 # top includes
 +incdir+$BP_TOP_DIR/src/include
@@ -90,6 +90,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_circular_ptr.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_concentrate_static.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_clear_up.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_set_down.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_counter_set_en.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_up_down.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_up_down_variable.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_crossbar_o_by_i.v
@@ -98,10 +99,12 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_decode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_decode_with_v.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_en_bypass.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset_en_bypass.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_chain.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_en.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset_en.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_edge_detect.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_encode_one_hot.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_expand_bitmask.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_hash_bank.v
@@ -207,6 +210,7 @@ $BP_ME_DIR/src/v/cce/bp_cce_reg.v
 $BP_ME_DIR/src/v/cce/bp_cce_spec.v
 $BP_ME_DIR/src/v/cce/bp_io_cce.v
 # Network
+$BP_ME_DIR/src/v/cce/bp_uce.v
 $BP_ME_DIR/src/v/wormhole/bp_me_addr_to_cce_id.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_id_to_cord.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_mem_link_bidir.v
@@ -233,6 +237,7 @@ $BP_TOP_DIR/src/v/bp_cfg.v
 $BP_TOP_DIR/src/v/bp_cfg_buffered.v
 $BP_TOP_DIR/src/v/bp_core.v
 $BP_TOP_DIR/src/v/bp_core_complex.v
+$BP_TOP_DIR/src/v/bp_core_minimal.v
 $BP_TOP_DIR/src/v/bp_clint.v
 $BP_TOP_DIR/src/v/bp_clint_node.v
 $BP_TOP_DIR/src/v/bp_clint_slice.v
@@ -245,8 +250,9 @@ $BP_TOP_DIR/src/v/bp_io_tile.v
 $BP_TOP_DIR/src/v/bp_io_tile_node.v
 $BP_TOP_DIR/src/v/bp_mem_complex.v
 $BP_TOP_DIR/src/v/bp_processor.v
+$BP_TOP_DIR/src/v/bp_softcore.v
 $BP_TOP_DIR/src/v/bp_tile.v
 $BP_TOP_DIR/src/v/bp_tile_node.v
 
-## BSG Staging area
+# BSG Staging area
 $BP_TOP_DIR/src/v/bsg_async_noc_link.v

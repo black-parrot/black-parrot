@@ -46,6 +46,12 @@ main:
     /* ! */
     li x2, 0x21
     sb x2, 0(x3)
+    /* \r */
+    li x2, 0x0D
+    sb x2, 0(x3)
+    /* \n */
+    li x2, 0x0A
+    sb x2, 0(x3)
     /* \0 */
     sb x0, 0(x3)
     /* return back to the start code to finish the simulation */

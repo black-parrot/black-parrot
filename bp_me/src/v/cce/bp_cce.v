@@ -43,7 +43,7 @@ module bp_cce
 
    // LCE-CCE Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
-   // outbound: ready&valid (connects directly to ME network)
+   // outbound: ready->valid (connects directly to ME network)
    , input [lce_cce_req_width_lp-1:0]                  lce_req_i
    , input                                             lce_req_v_i
    , output logic                                      lce_req_yumi_o
@@ -58,7 +58,7 @@ module bp_cce
 
    // CCE-MEM Interface
    // inbound: valid->ready (a.k.a., valid->yumi), demanding consumer (connects to FIFO)
-   // outbound: ready&valid (connects to FIFO)
+   // outbound: ready->valid
    , input [cce_mem_msg_width_lp-1:0]                  mem_resp_i
    , input                                             mem_resp_v_i
    , output logic                                      mem_resp_yumi_o
@@ -161,7 +161,7 @@ module bp_cce
   bp_cce_mshr_s mshr;
 
   logic null_wb_flag_li;
-  assign null_wb_flag_li = (lce_resp_v_i & (lce_resp_li.msg_type == e_lce_cce_resp_null_wb));
+  assign null_wb_flag_li = (lce_resp_v_i & (lce_resp_li.header.msg_type == e_lce_cce_resp_null_wb));
 
   logic [`bp_cce_inst_num_gpr-1:0][`bp_cce_inst_gpr_width-1:0] gpr_r_lo;
   logic [dword_width_p-1:0] nc_data_r_lo;
@@ -216,7 +216,7 @@ module bp_cce
 
       ,.lce_req_v_i(lce_req_v_i)
       ,.lce_resp_v_i(lce_resp_v_i)
-      ,.lce_resp_type_i(lce_resp_li.msg_type)
+      ,.lce_resp_type_i(lce_resp_li.header.msg_type)
       ,.mem_resp_v_i(mem_resp_v_i)
       ,.pending_v_i('0)
 
@@ -370,8 +370,8 @@ module bp_cce
       ,.decoded_inst_i(decoded_inst_lo)
       ,.lce_req_i(lce_req_li)
       ,.null_wb_flag_i(null_wb_flag_li)
-      ,.lce_resp_type_i(lce_resp_li.msg_type)
-      ,.mem_resp_type_i(mem_resp_li.msg_type)
+      ,.lce_resp_type_i(lce_resp_li.header.msg_type)
+      ,.mem_resp_type_i(mem_resp_li.header.msg_type)
       ,.alu_res_i(alu_res_lo)
       ,.mov_src_i(src_a)
 
@@ -639,7 +639,7 @@ module bp_cce
           e_src_mem_resp_v: src_a[0] = mem_resp_v_i;
           e_src_pending_v: src_a = '0; // TODO: v2
           e_src_lce_resp_v: src_a[0] = lce_resp_v_i;
-          e_src_lce_resp_type: src_a[0+:$bits(bp_lce_cce_resp_type_e)] = lce_resp_li.msg_type;
+          e_src_lce_resp_type: src_a[0+:$bits(bp_lce_cce_resp_type_e)] = lce_resp_li.header.msg_type;
           e_src_special_0: src_a[0] = 1'b0;
           e_src_special_1: src_a[0] = 1'b1;
           e_src_cce_id: src_a[0+:lg_num_cce_lp] = cfg_bus_cast_i.cce_id;
@@ -711,7 +711,7 @@ module bp_cce
           e_src_mem_resp_v: src_b[0] = mem_resp_v_i;
           e_src_pending_v: src_b = '0; // TODO: v2
           e_src_lce_resp_v: src_b[0] = lce_resp_v_i;
-          e_src_lce_resp_type: src_b[0+:$bits(bp_lce_cce_resp_type_e)] = lce_resp_li.msg_type;
+          e_src_lce_resp_type: src_b[0+:$bits(bp_lce_cce_resp_type_e)] = lce_resp_li.header.msg_type;
           e_src_special_0: src_b[0] = 1'b0;
           e_src_special_1: src_b[0] = 1'b1;
           e_src_cce_id: src_b[0+:lg_num_cce_lp] = cfg_bus_cast_i.cce_id;

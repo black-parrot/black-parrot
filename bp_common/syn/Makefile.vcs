@@ -12,13 +12,18 @@ VCS_OPTIONS += +libext+.v+.vlib+.vh       # Find library files with these extens
 VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
 
 VCS_BUILD_OPTS += -full64             # Compile a 64-bit executable
+VCS_BUILD_OPTS += -notice
+VCS_BUILD_OPTS += -V
+VCS_BUILD_OPTS += +v2k
 VCS_BUILD_OPTS += -sverilog # Enable SystemVerilog
-VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
 VCS_BUILD_OPTS += -assert svaext      # Enable elaboration system tasks
+VCS_BUILD_OPTS += +noportcoerce
+VCS_BUILD_OPTS += -timescale=1ps/1ps  # Set timescale
+VCS_BUILD_OPTS += -diag timescale
 VCS_BUILD_OPTS += -CFLAGS "-I$(BP_EXTERNAL_DIR)/include -std=c++11"
 VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
 VCS_BUILD_OPTS += +lint=TFIPC-L
-VCS_BUILD_OPTS += -notice
+VCS_BUILD_OPTS += $(BP_EXTERNAL_DIR)/lib/libdromajo_cosim.a
 
 LINT_OPTIONS = +lint=all,noSVA-UA,noSVA-NSVU,noNS,noVCDE
 
@@ -26,9 +31,12 @@ DUMP ?= 0
 COV  ?= 0
 
 ifeq ($(DUMP), 1)
-VCS_BUILD_OPTS += -debug_all
-VCS_OPTIONS += +vcs+vcdpluson # Enable vcd dump
-VCS_OPTIONS += +memcbk        # Dump memory 
+VCS_BUILD_OPTS += -debug_pp
+VCS_BUILD_OPTS += +memcbk
+VCS_BUILD_OPTS += +plusarg_save
+VCS_BUILD_OPTS += +vcs+vcdpluson
+VCS_BUILD_OPTS += +vcs+vcdplusmemon
+VCS_BUILD_OPTS += +vcs+vcdplusautoflushon
 endif
 
 ifeq ($(COV), 1)
@@ -94,7 +102,7 @@ build.v: pre-build.v
 sim.v: SIM_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).sim.$(PROG).log
 sim.v: SIM_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).sim.$(PROG).rpt
 sim.v: SIM_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).sim.$(PROG).err
-sim.v: PROG ?= rv64ui-p-simple
+sim.v: PROG ?= hello_world
 sim.v: dirs.v
 	$(shell mkdir -p $(SIM_DIR))
 	-@ln -sf $(BUILD_DIR)/simv $(SIM_DIR)/simv
@@ -103,6 +111,9 @@ sim.v: dirs.v
 	-@cp $(MEM_PATH)/$(PROG).mem $(SIM_DIR)/prog.mem
 	-@cp $(MEM_PATH)/$(PROG).riscv $(SIM_DIR)/prog.elf
 	-@cp $(MEM_PATH)/$(PROG).dump $(SIM_DIR)/prog.dump
+	-@cp $(MEM_PATH)/$(PROG).mainram $(SIM_DIR)/prog.mainram
+	-@cp $(MEM_PATH)/$(PROG).bootram $(SIM_DIR)/prog.bootram
+	-@cp $(MEM_PATH)/$(PROG).cfg $(SIM_DIR)/prog.cfg
 	-@cp $(MEM_PATH)/$(PROG).spike $(SIM_DIR)/commit.spike
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(SIM_DIR)/dram_ch.ini
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(SIM_DIR)/dram_sys.ini
@@ -110,16 +121,6 @@ sim.v: dirs.v
 	-cd $(SIM_DIR); ./simv $(VCS_OPTIONS) | tee $(SIM_LOG) 
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "PASS" -A 9 $(SIM_LOG) > $(SIM_REPORT)
-
-match.v: MATCH_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).match.$(PROG).log
-match.v: MATCH_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).match.$(PROG).rpt
-match.v: MATCH_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).match.$(PROG).err
-match.v: PROG ?= rv64ui-p-simple
-match.v: dirs.v
-	-cd $(SIM_DIR); $(PYTHON) $(TRACEDIFF) commit.spike commit_0.trace $(START_PC) --tolerance=$(TOLERANCE) \
-		| tee -a $(MATCH_LOG)
-	-@grep "MATCH" $(MATCH_LOG) || echo "MISMATCHED" >> $(MATCH_ERROR)
-	-@grep "MATCH" -A 4 $(MATCH_LOG) > $(MATCH_REPORT)
 
 regress_riscv.v: $(RV64_REGRESSION_V) 
 $(RV64_REGRESSION_V):

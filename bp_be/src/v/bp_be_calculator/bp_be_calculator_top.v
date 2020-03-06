@@ -203,11 +203,11 @@ bp_be_bypass
    ,.bypass_rs2_o(bypass_irs2)
    );
 
+// Override operands with bypass data
 bp_be_dispatch_pkt_s reservation_n, reservation_r;
 always_comb
   begin
     reservation_n        = dispatch_pkt_i;
-    reservation_n.decode = (~flush_i & dispatch_pkt.v) ? dispatch_pkt.decode : '0;
     reservation_n.rs1    = bypass_rs1;
     reservation_n.rs2    = bypass_rs2;
   end
@@ -433,17 +433,16 @@ always_comb
         exc_stage_n[2].roll_v          = exc_stage_r[1].roll_v   | pipe_mem_miss_v_lo;
         exc_stage_n[3].roll_v          = exc_stage_r[2].roll_v   | pipe_mem_miss_v_lo;
 
-        exc_stage_n[0].poison_v        = dispatch_pkt.poison     | flush_i;
+        exc_stage_n[0].poison_v        = reservation_n.poison    | flush_i;
         exc_stage_n[1].poison_v        = exc_stage_r[0].poison_v | flush_i;
         exc_stage_n[2].poison_v        = exc_stage_r[1].poison_v | flush_i;
         exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | pipe_mem_miss_v_lo | pipe_mem_exc_v_lo;
   end
 
 assign commit_pkt.v          = calc_stage_r[2].v & ~exc_stage_r[2].poison_v;
-assign commit_pkt.queue_v    = calc_stage_r[2].queue_v & ~exc_stage_r[2].roll_v;
-assign commit_pkt.bubble_v   = ~calc_stage_r[2].queue_v & ~exc_stage_r[2].poison_v;
-assign commit_pkt.instret    = calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v;
-assign commit_pkt.cache_miss = pipe_mem_miss_v_lo & ~exc_stage_r[2].poison_v;
+assign commit_pkt.queue_v    = calc_stage_r[2].v & calc_stage_r[2].queue_v & ~exc_stage_r[2].roll_v;
+assign commit_pkt.instret    = calc_stage_r[2].v & calc_stage_r[2].instr_v & ~exc_stage_n[3].poison_v;
+assign commit_pkt.cache_miss = calc_stage_r[2].v & pipe_mem_miss_v_lo & ~exc_stage_r[2].poison_v;
 assign commit_pkt.tlb_miss   = 1'b0; // TODO: Add to mem resp
 assign commit_pkt.pc         = calc_stage_r[2].pc;
 assign commit_pkt.npc        = calc_stage_r[1].pc;

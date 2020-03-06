@@ -1,9 +1,8 @@
 /**
  * bp_common_me_if.vh
  *
- * This file defines the interface between the CCEs and LCEs, and the CCEs and memory in the
- * BlackParrot coherence system. For ease of reuse and flexiblity, this interface is defined as a
- * collection of parameterized structs.
+ * This file defines the interface between the CCEs and LCEs in the BlackParrot coherence system.
+ * The interface is defined as a set of parameterized structs.
  *
  */
 
@@ -19,42 +18,25 @@
  * The following enums and structs define the LCE-CCE Interface within a BlackParrot coherence
  * system.
  *
- * There are 5 logical networks/message types:
+ * There are 3 message classes:
  * 1. LCE Request
  * 2. LCE Response
- * 3. LCE Data Response
- * 4. LCE Command
- * 5. LCE Data Command
+ * 3. LCE Command
  *
- * These five logical message types are carried on three networks:
+ * These three message types are carried on three physical networks:
  * 1. Request (low priority)
- * 2. Command (medium priority), LCE Commands and Data Commands
- * 3. Response (high priority), LCE Responses and Data Responses
+ * 2. Command (medium priority)
+ * 3. Response (high priority)
  *
  * A Request message may cause a Command message, and a Command message may cause a Response.
  * A higher priority message may not cause a lower priority message to be sent, which avoids
- * a circular dependency between message classes.
+ * a circular dependency between message classes, and prevents certain instances of deadlock.
  *
- * LCE Request Processing Flow:
- *  At a high level, a cache miss is handled by an LCE Request being sent to the CCE, followed by
- *  a series of commands and and responses that handle invalidating, evicting, and writing-back
- *  blocks as needed, sending data and tags to the LCE, and concluding with the LCE sending a response
- *  to the CCE managing the transaction. The length of a coherence transaction depends on the type of
- *  request (read- or write-miss), the current state of the requested block, and the current state of
- *  the cache way that the miss will be filled into.
- *
- *
- * Clients should use the declare_bp_me_if() macro to declare all of the interface structs at once.
+ * Users should use the declare_bp_lce_cce_if macro to declare all of the interface structs
+ * at once. The declare_*_widths macros can be used to declare needed packet and header
+ * widths in module parameter lists.
  *
  */
-
-
-/* TODO list
-
-1. Align cache block data fields in Command and Response messages to physical network flit boundary
-
-*/
-
 
 /*
  * 
@@ -65,19 +47,6 @@
  */
 
 `define declare_bp_lce_cce_if(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp, data_width_mp, cce_block_width_mp) \
-  typedef struct packed                                                                                  \
-  {                                                                                                      \
-    logic [`bp_lce_req_pad(lce_assoc_mp, data_width_mp)-1:0]  pad;                                       \
-    bp_lce_cce_lru_dirty_e                                    lru_dirty;                                 \
-    logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]                 lru_way_id;                                \
-    bp_lce_cce_req_non_excl_e                                 non_exclusive;                             \
-  }  bp_lce_cce_req_req_s;                                                                               \
-                                                                                                         \
-  typedef struct packed                                                                                  \
-  {                                                                                                      \
-    logic [data_width_mp-1:0]  data;                                                                     \
-    bp_lce_cce_uc_req_size_e   uc_size;                                                                  \
-  }  bp_lce_cce_req_uc_req_s;                                                                            \
                                                                                                          \
 /*                                                                                                       \
  * bp_lce_cce_req_s defines an LCE request sent by an LCE to a CCE on a cache miss. An LCE enters        \
@@ -94,56 +63,46 @@
  */                                                                                                      \
   typedef struct packed                                                                                  \
   {                                                                                                      \
-    union packed                                                                                         \
-    {                                                                                                    \
-      bp_lce_cce_req_req_s     req;                                                                      \
-      bp_lce_cce_req_uc_req_s  uc_req;                                                                   \
-    }                                        msg;                                                        \
-    logic [paddr_width_mp-1:0]               addr;                                                       \
-    bp_lce_cce_req_type_e                    msg_type;                                                   \
-    logic [lce_id_width_mp-1:0]              src_id;                                                     \
-    logic [cce_id_width_mp-1:0]              dst_id;                                                     \
-  }  bp_lce_cce_req_s;                                                                                   \
+    bp_lce_cce_uc_req_size_e                     uc_size;                                                \
+    bp_lce_cce_lru_dirty_e                       lru_dirty;                                              \
+    logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    lru_way_id;                                             \
+    bp_lce_cce_req_non_excl_e                    non_exclusive;                                          \
+    logic [paddr_width_mp-1:0]                   addr;                                                   \
+    logic [lce_id_width_mp-1:0]                  src_id;                                                 \
+    bp_lce_cce_data_length_e                     data_length;                                            \
+    bp_lce_cce_req_type_e                        msg_type;                                               \
+    logic [cce_id_width_mp-1:0]                  dst_id;                                                 \
+  } bp_lce_cce_req_header_s;                                                                             \
                                                                                                          \
-  // CCE to LCE Command                                                                                  \
-  // This command does not include data                                                                  \
   typedef struct packed                                                                                  \
   {                                                                                                      \
-    logic [`bp_lce_cmd_pad(cce_id_width_mp, lce_id_width_mp, lce_assoc_mp, paddr_width_mp, cce_block_width_mp)-1:0]\
-                                                 pad;                                                    \
-    logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    target_way_id;                                          \
-    logic [lce_id_width_mp-1:0]                  target;                                                 \
-    logic [`bp_coh_bits-1:0]                     state;                                                  \
-    logic [paddr_width_mp-1:0]                   addr;                                                   \
-    logic [cce_id_width_mp-1:0]                  src_id;                                                 \
-  }  bp_lce_cmd_cmd_s;                                                                                   \
-                                                                                                         \
-  // LCE Data and Tag Command                                                                            \
-  // This command sends data and cache tag to an LCE                                                     \
-  typedef struct packed                                                                                  \
-  {                                                                                                      \
-    logic [cce_block_width_mp-1:0]               data;                                                   \
-    logic [`bp_coh_bits-1:0]                     state;                                                  \
-    logic [paddr_width_mp-1:0]                   addr;                                                   \
-  }  bp_lce_cmd_dt_s;                                                                                    \
+    logic [data_width_mp-1:0]                    data;                                                   \
+    bp_lce_cce_req_header_s                      header;                                                 \
+  } bp_lce_cce_req_s;                                                                                    \
                                                                                                          \
 /**                                                                                                      \
  *  bp_lce_cmd_s is the generic message for LCE Command and LCE Data Command that is sent across the     \
  *  Command network from CCE to LCE.                                                                     \
  *  Although not required, It is designed to be sent through a wormhole routed network that will send    \
- *  the minimum number of flits required, based on the msg_type field.                                   \
- *  msg_type: indicates the type of message and implies the size of the message payload                  \
+ *  the minimum number of flits required, based on the data_length field.                                \
  */                                                                                                      \
   typedef struct packed                                                                                  \
   {                                                                                                      \
-    union packed                                                                                         \
-    {                                                                                                    \
-      bp_lce_cmd_dt_s                 dt_cmd;                                                            \
-      bp_lce_cmd_cmd_s                cmd;                                                               \
-    }                                            msg;                                                    \
+    logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    target_way_id;                                          \
+    logic [lce_id_width_mp-1:0]                  target;                                                 \
+    bp_coh_states_e                              state;                                                  \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id;                                                 \
+    logic [paddr_width_mp-1:0]                   addr;                                                   \
+    logic [cce_id_width_mp-1:0]                  src_id;                                                 \
+    bp_lce_cce_data_length_e                     data_length;                                            \
     bp_lce_cmd_type_e                            msg_type;                                               \
     logic [lce_id_width_mp-1:0]                  dst_id;                                                 \
+  } bp_lce_cmd_header_s;                                                                                 \
+                                                                                                         \
+  typedef struct packed                                                                                  \
+  {                                                                                                      \
+    logic [cce_block_width_mp-1:0]               data;                                                   \
+    bp_lce_cmd_header_s                          header;                                                 \
   } bp_lce_cmd_s;                                                                                        \
                                                                                                          \
 /**                                                                                                      \
@@ -152,11 +111,17 @@
  */                                                                                                      \
   typedef struct packed                                                                                  \
   {                                                                                                      \
-    logic [cce_block_width_mp-1:0]               data;                                                   \
     logic [paddr_width_mp-1:0]                   addr;                                                   \
-    bp_lce_cce_resp_type_e                       msg_type;                                               \
     logic [lce_id_width_mp-1:0]                  src_id;                                                 \
+    bp_lce_cce_data_length_e                     data_length;                                            \
+    bp_lce_cce_resp_type_e                       msg_type;                                               \
     logic [cce_id_width_mp-1:0]                  dst_id;                                                 \
+  } bp_lce_cce_resp_header_s;                                                                            \
+                                                                                                         \
+  typedef struct packed                                                                                  \
+  {                                                                                                      \
+    logic [cce_block_width_mp-1:0]               data;                                                   \
+    bp_lce_cce_resp_header_s                     header;                                                 \
   } bp_lce_cce_resp_s;                                                                                   \
 
 
@@ -168,10 +133,33 @@
  */
 
 /*
+ * bp_lce_cce_data_length_e specifies how many 64-bit data chunks are sent following the header
+ */
+typedef enum logic [3:0]
+{
+  e_lce_data_length_0   = 4'b0000
+  ,e_lce_data_length_1  = 4'b0001
+  ,e_lce_data_length_2  = 4'b0010
+  ,e_lce_data_length_3  = 4'b0011
+  ,e_lce_data_length_4  = 4'b0100
+  ,e_lce_data_length_5  = 4'b0101
+  ,e_lce_data_length_6  = 4'b0110
+  ,e_lce_data_length_7  = 4'b0111
+  ,e_lce_data_length_8  = 4'b1000
+  ,e_lce_data_length_9  = 4'b1001
+  ,e_lce_data_length_10 = 4'b1010
+  ,e_lce_data_length_11 = 4'b1011
+  ,e_lce_data_length_12 = 4'b1100
+  ,e_lce_data_length_13 = 4'b1101
+  ,e_lce_data_length_14 = 4'b1110
+  ,e_lce_data_length_15 = 4'b1111
+} bp_lce_cce_data_length_e;
+
+/*
  * bp_lce_cce_req_type_e specifies whether the containing message is related to a read or write
  * cache miss request from and LCE.
  */
-typedef enum bit [2:0]
+typedef enum logic [2:0]
 {
   e_lce_req_type_rd         = 3'b000 // Read-miss
   ,e_lce_req_type_wr        = 3'b001 // Write-miss
@@ -188,7 +176,7 @@ typedef enum bit [2:0]
  * state as opposed to the S state in a MESI protocol. The CCE treats this bit as a hint, and is
  * not required to follow it.
  */
-typedef enum bit 
+typedef enum logic 
 {
   e_lce_req_excl            = 1'b0 // exclusive cache line request (read-only, exclusive request)
   ,e_lce_req_non_excl       = 1'b1 // non-exclusive cache line request (read-only, shared request)
@@ -199,7 +187,7 @@ typedef enum bit
  * bp_lce_cce_lru_dirty_e specifies whether the LRU way in an LCE request (bp_lce_cce_req_s)
  * contains a dirty cache block. The 
  */
-typedef enum bit 
+typedef enum logic 
 {
   e_lce_req_lru_clean       = 1'b0 // lru way from requesting lce's tag set is clean
   ,e_lce_req_lru_dirty      = 1'b1 // lru way from requesting lce's tag set is dirty
@@ -209,7 +197,7 @@ typedef enum bit
  * bp_lce_cce_uc_req_size_e defines the size of a uncached load or store request, in bytes.
  *
  */
-typedef enum bit [1:0]
+typedef enum logic [1:0]
 {
   e_lce_uc_req_1  = 2'b00
   ,e_lce_uc_req_2 = 2'b01
@@ -227,7 +215,7 @@ typedef enum bit [1:0]
  * These properties are derived from "A Primer on Memory Consistency and Cache Coherence", and
  * they allow an easy definition for the common MOESIF coherence states.
  */
-typedef enum bit [2:0] 
+typedef enum logic [2:0] 
 {
   e_COH_I                   = 3'b000 // Invalid
   ,e_COH_S                  = 3'b001 // Shared - clean, not owned, shared (not exclusive)
@@ -258,7 +246,7 @@ typedef enum bit [2:0]
  *   the coherence state of the specified entry being changed to Invalid (no read or write
  *   permissions)
  */
-typedef enum bit [3:0] 
+typedef enum logic [3:0] 
 {
   e_lce_cmd_sync             = 4'b0000
   ,e_lce_cmd_set_clear       = 4'b0001
@@ -284,7 +272,7 @@ typedef enum bit [3:0]
  * e_lce_resp_null_wb indicates that the LCE never wrote to the cache block and the block is still
  *   clean. The data field should be 0 and is invalid.
  */
-typedef enum bit [2:0] 
+typedef enum logic [2:0] 
 {
   e_lce_cce_sync_ack         = 3'b000
   ,e_lce_cce_inv_ack         = 3'b001
@@ -295,51 +283,44 @@ typedef enum bit [2:0]
 } bp_lce_cce_resp_type_e;
 
 /*
- * Width macros for packed unions. Clients should not need to modify or use these.
+ * Width macros for headers. Users should not need to call these directly. Instead, use the message
+ * width macros defined further below.
  */
 
-`define bp_lce_req_no_pad_width(lce_assoc_mp) \
-  ($bits(bp_lce_cce_req_non_excl_e)+`BSG_SAFE_CLOG2(lce_assoc_mp)+$bits(bp_lce_cce_lru_dirty_e))
+`define bp_lce_cce_req_header_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp) \
+  (cce_id_width_mp+$bits(bp_lce_cce_req_type_e)+$bits(bp_lce_cce_data_length_e)+lce_id_width_mp     \
+   +paddr_width_mp+$bits(bp_lce_cce_req_non_excl_e)+`BSG_SAFE_CLOG2(lce_assoc_mp)                   \
+   +$bits(bp_lce_cce_lru_dirty_e)+$bits(bp_lce_cce_uc_req_size_e))
 
-`define bp_lce_uc_req_width(data_width_mp) \
-  (data_width_mp+$bits(bp_lce_cce_uc_req_size_e))
+`define bp_lce_cmd_header_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp)     \
+  (cce_id_width_mp+$bits(bp_lce_cmd_type_e)+$bits(bp_lce_cce_data_length_e)+lce_id_width_mp         \
+   +paddr_width_mp+(2*`BSG_SAFE_CLOG2(lce_assoc_mp))+$bits(bp_coh_states_e)+lce_id_width_mp)
 
-`define bp_lce_req_pad(lce_assoc_mp, data_width_mp)                                        \
-  (`bp_lce_uc_req_width(data_width_mp)-`bp_lce_req_no_pad_width(lce_assoc_mp))
+`define bp_lce_cce_resp_header_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp)              \
+  (cce_id_width_mp+$bits(bp_lce_cce_resp_type_e)+$bits(bp_lce_cce_data_length_e)+lce_id_width_mp    \
+   +paddr_width_mp)
 
-`define bp_lce_req_msg_u_width(data_width_mp) \
-  (`bp_lce_uc_req_width(data_width_mp))
-
-`define bp_lce_cmd_no_pad_width(cce_id_width_mp, lce_id_width_mp, lce_assoc_mp, paddr_width_mp)       \
-  (cce_id_width_mp+paddr_width_mp+`bp_coh_bits+lce_id_width_mp+`BSG_SAFE_CLOG2(lce_assoc_mp))
-
-`define bp_lce_cmd_pad(cce_id_width_mp, lce_id_width_mp, lce_assoc_mp, paddr_width_mp, cce_block_width_mp) \
-  (cce_block_width_mp+paddr_width_mp+`bp_coh_bits \
-   -`bp_lce_cmd_no_pad_width(cce_id_width_mp, lce_id_width_mp, lce_assoc_mp, paddr_width_mp))
-
-`define bp_lce_cmd_msg_u_width(cce_block_width_mp, paddr_width_mp) \
-  (cce_block_width_mp+paddr_width_mp+`bp_coh_bits)
-
+`define declare_bp_lce_cce_if_header_widths(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp)                               \
+    , localparam lce_cce_req_header_width_lp=`bp_lce_cce_req_header_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp) \
+    , localparam lce_cmd_header_width_lp=`bp_lce_cmd_header_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp)         \
+    , localparam lce_cce_resp_header_width_lp=`bp_lce_cce_resp_header_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp)
 
 /*
  * Width macros for LCE-CCE Message Networks
  */
 
-`define bp_lce_cce_req_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, data_width_mp) \
-  (cce_id_width_mp+lce_id_width_mp+$bits(bp_lce_cce_req_type_e) \
-   +paddr_width_mp+`bp_lce_req_msg_u_width(data_width_mp))
+`define bp_lce_cce_req_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp, data_width_mp) \
+  (`bp_lce_cce_req_header_width(cce_id_width_mp,lce_id_width_mp,paddr_width_mp,lce_assoc_mp)+data_width_mp)
 
-`define bp_lce_cmd_width(lce_id_width_mp, lce_assoc_mp, paddr_width_mp, cce_block_width_mp) \
-  (lce_id_width_mp+$bits(bp_lce_cmd_type_e)+`BSG_SAFE_CLOG2(lce_assoc_mp) \
-   +`bp_lce_cmd_msg_u_width(cce_block_width_mp, paddr_width_mp))
+`define bp_lce_cmd_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp, cce_block_width_mp) \
+  (`bp_lce_cmd_header_width(cce_id_width_mp,lce_id_width_mp,paddr_width_mp,lce_assoc_mp)+cce_block_width_mp)
 
 `define bp_lce_cce_resp_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, cce_block_width_mp) \
-  (cce_id_width_mp+lce_id_width_mp+$bits(bp_lce_cce_resp_type_e) \
-   +paddr_width_mp+cce_block_width_mp)
+  (`bp_lce_cce_resp_header_width(cce_id_width_mp,lce_id_width_mp,paddr_width_mp)+cce_block_width_mp)
 
-`define declare_bp_lce_cce_if_widths(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp, data_width_mp, cce_block_width_mp) \
-    , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, data_width_mp)        \
-    , localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, cce_block_width_mp) \
-    , localparam lce_cmd_width_lp=`bp_lce_cmd_width(lce_id_width_mp, lce_assoc_mp, paddr_width_mp, cce_block_width_mp)
+`define declare_bp_lce_cce_if_widths(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp, data_width_mp, cce_block_width_mp)    \
+    , localparam lce_cce_req_width_lp=`bp_lce_cce_req_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp, data_width_mp) \
+    , localparam lce_cmd_width_lp=`bp_lce_cmd_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp, cce_block_width_mp)    \
+    , localparam lce_cce_resp_width_lp=`bp_lce_cce_resp_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, cce_block_width_mp)
 
 `endif

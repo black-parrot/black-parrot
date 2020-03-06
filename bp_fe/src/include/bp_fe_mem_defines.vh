@@ -2,11 +2,12 @@
 `ifndef BP_FE_MEM_DEFINES_VH
 `define BP_FE_MEM_DEFINES_VH
 
-typedef enum bit [1:0]
+typedef enum logic [1:0]
 {
-  e_fe_op_fetch      = 2'b00
-  ,e_fe_op_tlb_fence = 2'b01
-  ,e_fe_op_tlb_fill  = 2'b10
+  e_fe_op_fetch         = 2'b00
+  ,e_fe_op_tlb_fence    = 2'b01
+  ,e_fe_op_tlb_fill     = 2'b10
+  ,e_fe_op_icache_fence = 2'b11
 } bp_fe_mem_cmd_op_e;
 
 `define declare_bp_fe_mem_structs(vaddr_width_mp, lce_sets_mp, cce_block_width_mp, vtag_width_mp, ptag_width_mp) \

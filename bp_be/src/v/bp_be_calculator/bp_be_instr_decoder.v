@@ -23,9 +23,7 @@ module bp_be_instr_decoder
    localparam instr_width_lp = rv64_instr_width_gp
    , localparam decode_width_lp = `bp_be_decode_width
    )
-  (input                             enter_debug_v_i
-   , input                           exit_debug_v_i
-   , input                           interrupt_v_i
+  (input                             interrupt_v_i
    , input                           fe_exc_not_instr_i
    , input bp_fe_exception_code_e    fe_exc_i
    , input [instr_width_lp-1:0]      instr_i
@@ -224,7 +222,7 @@ always_comb
             `RV64_FENCE_I : 
               begin 
                 decode.pipe_mem_v  = 1'b1;
-                decode.csr_v       = 1'b1;
+                decode.dcache_w_v  = 1'b1;
                 decode.serial_v    = 1'b1;
                 decode.fu_op       = e_fencei;
               end
@@ -283,25 +281,7 @@ always_comb
       default : illegal_instr = 1'b1;
     endcase
 
-    if (enter_debug_v_i)
-      begin
-        decode = '0;
-        decode.queue_v     = 1'b0;
-        decode.pipe_mem_v  = 1'b1;
-        decode.csr_v       = 1'b1;
-        decode.serial_v    = 1'b1;
-        decode.fu_op       = e_op_enter_debug;
-      end
-    else if (exit_debug_v_i)
-      begin
-        decode = '0;
-        decode.queue_v     = 1'b0;
-        decode.pipe_mem_v  = 1'b1;
-        decode.csr_v       = 1'b1;
-        decode.serial_v    = 1'b1;
-        decode.fu_op       = e_op_exit_debug;
-      end
-    else if (interrupt_v_i)
+    if (interrupt_v_i)
       begin
         decode = '0;
         decode.queue_v     = 1'b0;

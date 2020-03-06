@@ -33,8 +33,8 @@ module bp_be_csr
     , input [core_id_width_p-1:0]       hartid_i
     , input                             instret_i
 
-    , input                             bubble_v_i
     , input                             exception_v_i
+    , input                             fencei_v_i
     , input [vaddr_width_p-1:0]         exception_pc_i
     , input [vaddr_width_p-1:0]         exception_npc_i
     , input [vaddr_width_p-1:0]         exception_vaddr_i
@@ -55,8 +55,6 @@ module bp_be_csr
     , output                            translation_en_o
     , output                            mstatus_sum_o
     , output                            mstatus_mxr_o
-    , output logic                      tlb_fence_o
-    , output logic                      fencei_o
     
     // FE Exceptions
     , output logic                      itlb_fill_o
@@ -83,7 +81,7 @@ assign cfg_bus_csr_cmd_li.csr_addr = cfg_bus_cast_i.csr_addr;
 assign cfg_bus_csr_cmd_li.data     = cfg_bus_cast_i.csr_r_v ? '0 : cfg_bus_cast_i.csr_data;
 
 assign cfg_bus_cast_i = cfg_bus_i;
-assign csr_cmd = cfg_bus_cast_i.csr_r_v ? cfg_bus_csr_cmd_li : csr_cmd_i;
+assign csr_cmd = (cfg_bus_cast_i.csr_r_v | cfg_bus_cast_i.csr_w_v) ? cfg_bus_csr_cmd_li : csr_cmd_i;
 assign exception_ecode_dec_cast_i = exception_ecode_dec_i;
 assign trap_pkt_o = trap_pkt_cast_o;
 
@@ -305,7 +303,7 @@ assign sip_wmask_li    = '{meip: 1'b0, seip: 1'b0
                             ,default: '0
                            };
 
-logic exception_v_o, interrupt_v_o, ret_v_o;
+logic exception_v_o, interrupt_v_o, ret_v_o, sfence_v_o;
 // CSR data
 always_comb
   begin
@@ -353,8 +351,7 @@ always_comb
     ret_v_o          = '0;
     illegal_instr_o  = '0;
     csr_data_lo      = '0;
-    tlb_fence_o      = '0;
-    fencei_o         = '0;
+    sfence_v_o       = '0;
     
     itlb_fill_o           = '0;
     instr_page_fault_o    = '0;
@@ -362,7 +359,7 @@ always_comb
     instr_misaligned_o    = '0;
     ebreak_o              = '0;
 
-    if (csr_cmd_v_i)
+    if (csr_cmd_v_i | cfg_bus_cast_i.csr_r_v | cfg_bus_cast_i.csr_w_v)
       if (~is_debug_mode & (csr_cmd.csr_op == e_ebreak))
         begin
           ebreak_o = (is_m_mode & ~dcsr_lo.ebreakm) 
@@ -377,31 +374,14 @@ always_comb
               dcsr_li.prv    = priv_mode_r;
             end
         end
-      else if (~is_debug_mode & (csr_cmd.csr_op == e_op_enter_debug))
-        begin
-          debug_mode_n  = 1'b1;
-          dpc_li        = paddr_width_p'($signed(exception_pc_i));
-          dcsr_li.cause = 3; // Requested halt
-          dcsr_li.prv   = priv_mode_r;
-        end
-      else if (is_debug_mode & (csr_cmd.csr_op == e_op_exit_debug))
-        begin
-          debug_mode_n  = 1'b0;
-          priv_mode_n   = dcsr_lo.prv;
-          ret_v_o       = 1'b1;
-        end
       else if (csr_cmd.csr_op == e_sfence_vma)
         begin
           if (is_s_mode & mstatus_lo.tvm)
               illegal_instr_o = 1'b1;
           else
             begin
-              tlb_fence_o     = 1'b1;
+              sfence_v_o = 1'b1;
             end
-        end
-      else if (csr_cmd.csr_op == e_fencei)
-        begin
-          fencei_o = 1'b1;
         end
       else if (csr_cmd.csr_op == e_dret)
         begin
@@ -519,8 +499,7 @@ always_comb
         illegal_instr_o = 1'b1;
       else
         begin
-          // Read case, we need to read as well as write for config bus
-          if (csr_cmd_v_i | cfg_bus_cast_i.csr_r_v | cfg_bus_cast_i.csr_w_v) 
+            // Read case
             unique casez (csr_cmd.csr_addr)
               `CSR_ADDR_CYCLE  : csr_data_lo = mcycle_lo;
               // Time must be done by trapping, since we can't stall at this point
@@ -576,7 +555,7 @@ always_comb
               `CSR_ADDR_DPC: csr_data_lo = dpc_lo;
               default: illegal_instr_o = 1'b1;
             endcase
-          if (csr_cmd_v_i | cfg_bus_cast_i.csr_w_v) // Write case
+            // Write case
             unique casez (csr_cmd.csr_addr)
               `CSR_ADDR_CYCLE  : mcycle_li = csr_data_li;
               // Time must be done by trapping, since we can't stall at this point
@@ -706,9 +685,12 @@ assign trap_pkt_cast_o.epc              = (csr_cmd.csr_op == e_sret)
                                             ? mepc_r
                                             : dpc_r;
 assign trap_pkt_cast_o.tvec             = (priv_mode_n == `PRIV_MODE_S) ? stvec_r : mtvec_r;
+assign trap_pkt_cast_o.cause            = (priv_mode_n == `PRIV_MODE_S) ? scause_li : mcause_li;
 assign trap_pkt_cast_o.priv_n           = priv_mode_n;
 assign trap_pkt_cast_o.translation_en_n = translation_en_n;
 // TODO: Find more solid invariant
+assign trap_pkt_cast_o.fencei           = fencei_v_i;
+assign trap_pkt_cast_o.sfence           = sfence_v_o;
 assign trap_pkt_cast_o.exception        = exception_v_o;
 assign trap_pkt_cast_o._interrupt       = interrupt_v_o;
 assign trap_pkt_cast_o.eret             = ret_v_o;

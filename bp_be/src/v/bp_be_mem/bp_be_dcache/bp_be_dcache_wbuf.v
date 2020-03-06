@@ -41,10 +41,6 @@ module bp_be_dcache_wbuf
     , input bypass_v_i
     , output logic [data_width_p-1:0] bypass_data_o
     , output logic [data_mask_width_lp-1:0] bypass_mask_o
-
-    , input [index_width_lp-1:0] lce_snoop_index_i
-    , input [way_id_width_lp-1:0] lce_snoop_way_i
-    , output logic lce_snoop_match_o
   );
 
   `declare_bp_be_dcache_wbuf_entry_s(paddr_width_p, data_width_p, ways_p);
@@ -200,25 +196,5 @@ module bp_be_dcache_wbuf
       end
     end
   end
-
-  // LCE snoop
-  //
-  logic lce_snoop_el2_match;
-  logic lce_snoop_el0_match;
-  logic lce_snoop_el1_match;
-
-  assign lce_snoop_el2_match = v_i
-    & (lce_snoop_index_i == wbuf_entry_in.paddr[block_offset_width_lp+:index_width_lp])
-    & (lce_snoop_way_i == wbuf_entry_in.way_id);
-
-  assign lce_snoop_el0_match = el0_valid
-    & (lce_snoop_index_i == wbuf_entry_el0.paddr[block_offset_width_lp+:index_width_lp])
-    & (lce_snoop_way_i == wbuf_entry_el0.way_id);
-
-  assign lce_snoop_el1_match = el1_valid
-    & (lce_snoop_index_i == wbuf_entry_el1.paddr[block_offset_width_lp+:index_width_lp])
-    & (lce_snoop_way_i == wbuf_entry_el1.way_id);
-
-  assign lce_snoop_match_o = lce_snoop_el2_match | lce_snoop_el0_match | lce_snoop_el1_match;
 
 endmodule

@@ -1,6 +1,12 @@
 #include <stdint.h>
 #include "bp_utils.h"
 
+uint64_t bp_get_hart() {
+    uint64_t core_id;
+    __asm__ volatile("csrr %0, mhartid": "=r"(core_id): :);
+    return core_id;
+}
+
 void bp_barrier_end(volatile uint64_t * barrier_address, uint64_t total_num_cores) {
     uint64_t core_id;
     uint64_t atomic_inc = 1;

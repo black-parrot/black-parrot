@@ -48,27 +48,21 @@ module bp_be_dcache_lce
   import bp_be_dcache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
+   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p) 
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p)
     
-    , parameter timeout_max_limit_p=4
-   
     , localparam block_size_in_words_lp=lce_assoc_p
     , localparam data_mask_width_lp=(dword_width_p>>3)
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
     , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
     , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
     , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-    , localparam tag_width_lp=(paddr_width_p-index_width_lp-block_offset_width_lp)
+    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
   
-    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p) 
 
-    , localparam dcache_lce_data_mem_pkt_width_lp=
-      `bp_be_dcache_lce_data_mem_pkt_width(lce_sets_p, lce_assoc_p, cce_block_width_p)
-    , localparam dcache_lce_tag_mem_pkt_width_lp=
-      `bp_be_dcache_lce_tag_mem_pkt_width(lce_sets_p, lce_assoc_p, tag_width_lp)
-    , localparam dcache_lce_stat_mem_pkt_width_lp=
-      `bp_be_dcache_lce_stat_mem_pkt_width(lce_sets_p, lce_assoc_p)
-    
+    , localparam stat_info_width_lp=
+      `bp_be_dcache_stat_info_width(lce_assoc_p)
   )
   (
     input clk_i
@@ -76,36 +70,31 @@ module bp_be_dcache_lce
 
     , input [lce_id_width_p-1:0] lce_id_i
 
-    , output logic ready_o
-    , output logic cache_miss_o
-
-    , input load_miss_i
-    , input store_miss_i
-    , input lr_miss_i
-    , input uncached_load_req_i
-    , input uncached_store_req_i
-
-    , input [paddr_width_p-1:0] miss_addr_i
-    , input [dword_width_p-1:0] store_data_i
-    , input [1:0] size_op_i
-
+    , input [cache_req_width_lp-1:0] cache_req_i
+    , input cache_req_v_i
+    , output logic cache_req_ready_o
+    , input [cache_req_metadata_width_lp-1:0] cache_req_metadata_i
+    , input cache_req_metadata_v_i
+ 
+    , output logic cache_req_complete_o
+    
     // data_mem
     , output logic data_mem_pkt_v_o
-    , output logic [dcache_lce_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
-    , input [cce_block_width_p-1:0] data_mem_data_i
-    , input data_mem_pkt_yumi_i
+    , output logic [cache_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
+    , input data_mem_pkt_ready_i
+    , input [cce_block_width_p-1:0] data_mem_i
   
     // tag_mem
     , output logic tag_mem_pkt_v_o
-    , output logic [dcache_lce_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_o
-    , input tag_mem_pkt_yumi_i
+    , output logic [cache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_o
+    , input tag_mem_pkt_ready_i
+    , input [ptag_width_lp-1:0] tag_mem_i
     
     // stat_mem
     , output logic stat_mem_pkt_v_o
-    , output logic [dcache_lce_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
-    , input [way_id_width_lp-1:0] lru_way_i
-    , input [lce_assoc_p-1:0] dirty_i
-    , input stat_mem_pkt_yumi_i
+    , output logic [cache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
+    , input stat_mem_pkt_ready_i
+    , input [stat_info_width_lp-1:0] stat_mem_i
 
     // LCE-CCE interface
     , output logic [lce_cce_req_width_lp-1:0] lce_req_o
@@ -126,25 +115,24 @@ module bp_be_dcache_lce
     , output logic lce_cmd_v_o
     , input lce_cmd_ready_i
 
-    , output credits_full_o
-    , output credits_empty_o
+    , output logic credits_full_o
+    , output logic credits_empty_o
+
   );
 
   // casting structs
   //
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-
-  `declare_bp_be_dcache_lce_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
-  `declare_bp_be_dcache_lce_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, tag_width_lp);
-  `declare_bp_be_dcache_lce_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p);
  
   bp_lce_cce_req_s lce_req;
   bp_lce_cce_resp_s lce_resp;
   bp_lce_cmd_s lce_cmd_in, lce_cmd_out;
 
-  bp_be_dcache_lce_data_mem_pkt_s data_mem_pkt;
-  bp_be_dcache_lce_tag_mem_pkt_s tag_mem_pkt;
-  bp_be_dcache_lce_stat_mem_pkt_s stat_mem_pkt;
+  bp_cache_data_mem_pkt_s data_mem_pkt;
+  bp_cache_tag_mem_pkt_s tag_mem_pkt;
+  bp_cache_stat_mem_pkt_s stat_mem_pkt;
+  bp_cache_req_s cache_req_cast_i;
 
   assign lce_req_o = lce_req;
   assign lce_resp_o = lce_resp;
@@ -154,6 +142,7 @@ module bp_be_dcache_lce
   assign data_mem_pkt_o = data_mem_pkt;
   assign tag_mem_pkt_o = tag_mem_pkt;
   assign stat_mem_pkt_o = stat_mem_pkt;
+  assign cache_req_cast_i = cache_req_i;
 
   // LCE_CCE_req
   //
@@ -194,6 +183,10 @@ module bp_be_dcache_lce
   assign credits_full_o = (credit_count_lo == coh_noc_max_credits_p);
   assign credits_empty_o = (credit_count_lo == 0);
 
+  logic cmd_ready_lo;
+  logic coherence_blocked_li;
+  assign coherence_blocked_li = lce_cmd_v_i & ~lce_cmd_yumi_o;
+
   bp_be_dcache_lce_req
     #(.bp_params_p(bp_params_p))
     lce_req_inst
@@ -202,25 +195,21 @@ module bp_be_dcache_lce
 
       ,.lce_id_i(lce_id_i)
   
-      ,.load_miss_i(load_miss_i)
-      ,.store_miss_i(store_miss_i)
-      ,.lr_miss_i(lr_miss_i)
-      ,.uncached_load_req_i(uncached_load_req_i)
-      ,.uncached_store_req_i(uncached_store_req_i)
+      ,.cache_req_i(cache_req_i)
+      ,.cache_req_v_i(cache_req_v_i)
+      ,.cache_req_ready_o(cache_req_ready_o)
+      ,.cache_req_metadata_i(cache_req_metadata_i)
+      ,.cache_req_metadata_v_i(cache_req_metadata_v_i)
 
-      ,.miss_addr_i(miss_addr_i)
-      ,.lru_way_i(lru_way_i)
-      ,.dirty_i(dirty_i)
-      ,.store_data_i(store_data_i)
-      ,.size_op_i(size_op_i)
-
-      ,.cache_miss_o(cache_miss_o)
       ,.miss_addr_o(miss_addr_lo)
 
       ,.cce_data_received_i(cce_data_received)
       ,.uncached_data_received_i(uncached_data_received)
       ,.set_tag_received_i(set_tag_received)
       ,.set_tag_wakeup_received_i(set_tag_wakeup_received)
+      
+      ,.coherence_blocked_i(coherence_blocked_li)
+      ,.cmd_ready_i(cmd_ready_lo)
 
       ,.lce_req_o(lce_req)
       ,.lce_req_v_o(lce_req_v_o)
@@ -229,13 +218,9 @@ module bp_be_dcache_lce
       ,.lce_resp_o(lce_req_to_lce_resp_lo)
       ,.lce_resp_v_o(lce_req_to_lce_resp_v_lo)
       ,.lce_resp_yumi_i(lce_req_to_lce_resp_yumi_li)
-
-      ,.credits_full_i(credits_full_o)
       );
 
   // LCE cmd
-  //
-  logic lce_ready_lo;
 
   bp_lce_cce_resp_s lce_cmd_to_lce_resp_lo;
   logic lce_cmd_to_lce_resp_v_lo;
@@ -251,12 +236,13 @@ module bp_be_dcache_lce
 
       ,.miss_addr_i(miss_addr_lo)
 
-      ,.lce_ready_o(lce_ready_lo)
+      ,.lce_ready_o(cmd_ready_lo)
       ,.set_tag_received_o(set_tag_received)
       ,.set_tag_wakeup_received_o(set_tag_wakeup_received)
       ,.uncached_store_done_received_o(uncached_store_done_received)
       ,.cce_data_received_o(cce_data_received)
       ,.uncached_data_received_o(uncached_data_received)
+      ,.cache_req_complete_o(cache_req_complete_o)
 
       ,.lce_cmd_i(lce_cmd_in)
       ,.lce_cmd_v_i(lce_cmd_v_i)
@@ -272,17 +258,18 @@ module bp_be_dcache_lce
 
       ,.data_mem_pkt_o(data_mem_pkt)
       ,.data_mem_pkt_v_o(data_mem_pkt_v_o)
-      ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_i)
-      ,.data_mem_data_i(data_mem_data_i)
+      ,.data_mem_pkt_ready_i(data_mem_pkt_ready_i)
+      ,.data_mem_i(data_mem_i)
 
       ,.tag_mem_pkt_o(tag_mem_pkt)
       ,.tag_mem_pkt_v_o(tag_mem_pkt_v_o)
-      ,.tag_mem_pkt_yumi_i(tag_mem_pkt_yumi_i)
+      ,.tag_mem_pkt_ready_i(tag_mem_pkt_ready_i)
+      ,.tag_mem_i(tag_mem_i)
 
       ,.stat_mem_pkt_o(stat_mem_pkt)
       ,.stat_mem_pkt_v_o(stat_mem_pkt_v_o)
-      ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_i)
-      ,.dirty_i(dirty_i)
+      ,.stat_mem_pkt_ready_i(stat_mem_pkt_ready_i)
+      ,.stat_mem_i(stat_mem_i)
       );
 
   // LCE_CCE_resp arbiter
@@ -303,32 +290,5 @@ module bp_be_dcache_lce
     end
   end
 
-  // LCE timeout logic
-  // LCE can read/write to data_mem, tag_mem, and stat_mem, when they are free (e.g. tl stage in dcache is not accessing them).
-  // In order to prevent LCE taking too much time to process incoming coherency requests,
-  // there is a timer, which counts up whenever LCE needs to access mem, but have not been able to.
-  // when the timer reaches max, it deasserts ready_o of dcache for one cycle, allowing it to access mem
-  // by creating a free slot.
-  logic [`BSG_SAFE_CLOG2(timeout_max_limit_p+1)-1:0] timeout_cnt_r;
-  wire coherence_blocked = (data_mem_pkt_v_o | tag_mem_pkt_v_o | stat_mem_pkt_v_o)
-                           & (~data_mem_pkt_yumi_i & ~tag_mem_pkt_yumi_i & ~stat_mem_pkt_yumi_i);
-  bsg_counter_clear_up
-   #(.max_val_p(timeout_max_limit_p)
-     ,.init_val_p(0)
-     ,.disable_overflow_warning_p(1)
-     )
-   timeout_counter
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.clear_i(~coherence_blocked)
-     ,.up_i(coherence_blocked)
-     ,.count_o(timeout_cnt_r)
-     );
-  wire timeout = (timeout_cnt_r == timeout_max_limit_p);
-
-  // LCE Ready Signal
-  wire lce_ready = lce_ready_lo;
-  assign ready_o = lce_ready & ~timeout & ~cache_miss_o; 
-
 endmodule
+

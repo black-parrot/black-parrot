@@ -11,39 +11,11 @@ export LOG_PATH     := $(BP_TOP_DIR)/syn/logs
 export RESULTS_PATH := $(BP_TOP_DIR)/syn/results
 export REPORT_PATH  := $(BP_TOP_DIR)/syn/reports
 
-TB          ?= bp_top_trace_demo
+#TB          ?= bp_softcore
+TB          ?= bp_processor
 CFG         ?= e_bp_single_core_cfg
 START_PC    ?= 0x80000000
 TOLERANCE   ?= 2
-
-# Select CCE ROM based on CFG and Coherence Protocol
-# TODO: is there a more scalable way to do this?
-ifeq ($(CFG), e_bp_half_core_cfg)
-  NUM_LCE_P=1
-  N_WG=64
-else ifeq ($(CFG), e_bp_single_core_cfg)
-  NUM_LCE_P=2
-  N_WG=64
-else ifeq ($(CFG), e_bp_dual_core_cfg)
-  NUM_LCE_P=4
-  N_WG=32
-else ifeq ($(CFG), e_bp_quad_core_cfg)
-  NUM_LCE_P=8
-  N_WG=16
-else ifeq ($(CFG), e_bp_oct_core_cfg)
-  NUM_LCE_P=16
-  N_WG=8
-else ifeq ($(CFG), e_bp_sexta_core_cfg)
-  NUM_LCE_P=32
-  N_WG=4
-else ifeq ($(CFG), e_bp_quad_core_2d_cfg)
-  NUM_LCE_P=8
-  N_WG=16
-else ifeq ($(CFG), e_bp_oct_core_2d_cfg)
-  NUM_LCE_P=16
-  N_WG=8
-endif
-
 
 COH_PROTO   ?= mesi
 CCE_MEM_PATH = $(BP_ME_DIR)/src/asm/roms/$(COH_PROTO)
@@ -63,4 +35,24 @@ regress.top: regress
 regress: regress.v check_design.syn
 	$(MAKE) lint.v || true
 	$(MAKE) lint.sc || true
+
+LIST ?= /dev/null
+LIST_PROGS = $(shell cat $(LIST))
+
+regress.list.sc:
+	$(MAKE) regress.list.common _TS=sc
+	($(foreach p, $(LIST_PROGS), echo $p; echo "=========="; cat reports/verilator/$(TB).$(CFG).sim.$p.rpt; echo "";)) | tee -i reports/verilator/$(TB).$(CFG).$@.rpt
+
+regress.list.v:
+	$(MAKE) regress.list.common _TS=v
+	($(foreach p, $(LIST_PROGS), echo $p; echo "=========="; cat reports/vcs/$(TB).$(CFG).sim.$p.rpt; echo "";)) | tee -i reports/vcs/$(TB).$(CFG).$@.rpt
+
+regress.list.common:
+	$(MAKE) build.$(_TS)
+	$(MAKE) regress.list.common.run_in_parallel
+
+regress.list.common.run_in_parallel: $(foreach p, $(LIST_PROGS), regress.list.common.launch_run.$p)
+
+regress.list.common.launch_run.%:
+	$(MAKE) run.$(_TS) PROG=$*
 

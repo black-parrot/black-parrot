@@ -68,7 +68,7 @@ always_comb
     finish_data_cmd_v = 1'b0;
 
     unique
-    casez (io_cmd_cast_i.addr)
+    casez (io_cmd_cast_i.header.addr)
       putchar_base_addr_gp: putchar_data_cmd_v = io_cmd_v_i; 
       getchar_base_addr_gp: getchar_data_cmd_v = io_cmd_v_i;
       finish_base_addr_gp: finish_data_cmd_v = io_cmd_v_i;
@@ -81,7 +81,7 @@ logic [num_core_p-1:0] finish_w_v_li;
 // Memory-mapped I/O is 64 bit aligned
 localparam byte_offset_width_lp = 3;
 wire [lg_num_core_lp-1:0] io_cmd_core_enc =
-  io_cmd_cast_i.addr[byte_offset_width_lp+:lg_num_core_lp];
+  io_cmd_cast_i.header.addr[byte_offset_width_lp+:lg_num_core_lp];
 
 bsg_decode_with_v
  #(.num_out_p(num_core_p))
@@ -118,24 +118,25 @@ assign program_finish_o = finish_r;
 
 always_ff @(negedge clk_i)
   begin
-     for (integer i = 0; i < num_core_p; i++)
-       begin
-         if (putchar_data_cmd_v & io_cmd_yumi_o) begin
-           $write("%c", io_cmd_cast_i.data[0+:8]);
-           $fflush(32'h8000_0001);
-         end
-         if (getchar_data_cmd_v & io_cmd_yumi_o)
-           pop();
-         if (finish_w_v_li[i] & io_cmd_yumi_o & ~io_cmd_cast_i.data[0])
-           $display("[CORE%0x FSH] PASS", i);
-         if (finish_w_v_li[i] & io_cmd_yumi_o &  io_cmd_cast_i.data[0])
-           $display("[CORE%0x FSH] FAIL", i);
-       end
-     if (all_finished_r)
-       begin
-         $display("All cores finished! Terminating...");
-         $finish();
-        end
+    if (putchar_data_cmd_v & io_cmd_yumi_o) begin
+      $write("%c", io_cmd_cast_i.data[0+:8]);
+      $fflush(32'h8000_0001);
+    end
+    if (getchar_data_cmd_v & io_cmd_yumi_o)
+      pop();
+    for (integer i = 0; i < num_core_p; i++)
+      begin
+        if (finish_w_v_li[i] & io_cmd_yumi_o & ~io_cmd_cast_i.data[0])
+          $display("[CORE%0x FSH] PASS", i);
+        if (finish_w_v_li[i] & io_cmd_yumi_o &  io_cmd_cast_i.data[0])
+          $display("[CORE%0x FSH] FAIL", i);
+      end
+
+    if (all_finished_r)
+      begin
+        $display("All cores finished! Terminating...");
+        $finish();
+      end
   end
 
 bp_cce_mem_msg_s io_resp_lo;
@@ -158,10 +159,13 @@ bsg_one_fifo
 assign io_resp_v_o = io_resp_v_lo & io_resp_ready_i;
 
 assign io_resp_lo =
-  '{msg_type       : io_cmd_cast_i.msg_type
-    ,addr          : io_cmd_cast_i.addr
-    ,payload       : io_cmd_cast_i.payload
-    ,size          : io_cmd_cast_i.size
+  '{header:
+    '{
+    msg_type       : io_cmd_cast_i.header.msg_type
+    ,addr          : io_cmd_cast_i.header.addr
+    ,payload       : io_cmd_cast_i.header.payload
+    ,size          : io_cmd_cast_i.header.size
+    }
     ,data          : ch
     };
 

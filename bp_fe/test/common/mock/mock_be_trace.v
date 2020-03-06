@@ -114,7 +114,7 @@ logic tlb_miss;
 
 assign tlb_miss = (bp_fe_queue.msg_type == e_fe_exception) & bp_fe_queue.msg.exception.exception_code == e_itlb_miss;
    
-enum bit [1:0] {e_reset, e_boot, e_run} state_n, state_r;
+enum logic [1:0] {e_reset, e_boot, e_run} state_n, state_r;
 always_comb begin : be_cmd_gen
   if (state_r == e_boot)
     begin
