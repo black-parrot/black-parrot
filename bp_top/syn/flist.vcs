@@ -43,7 +43,7 @@ $BASEJUMP_STL_DIR/bsg_async/bsg_async_ptr_gray.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_dma.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_miss.v
-$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkt_decode.v
+$BASEJUMP_STL_DIR/bsg_cache/bsg_cache_decode.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_sbuf.v
 $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_sbuf_queue.v
 $BASEJUMP_STL_DIR/bsg_dataflow/bsg_channel_tunnel.v
@@ -220,10 +220,15 @@ $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.v
 ## TOP
-$BP_TOP_DIR/src/v/bp_accelerator_example.v
-$BP_TOP_DIR/src/v/bp_accelerator_tile.v
-$BP_TOP_DIR/src/v/bp_accelerator_tile_node.v
-$BP_TOP_DIR/src/v/bp_accelerator_complex.v
+$BP_TOP_DIR/src/v/bp_nd_socket.v
+$BP_TOP_DIR/src/v/bp_cac_example.v
+$BP_TOP_DIR/src/v/bp_cac_tile.v
+$BP_TOP_DIR/src/v/bp_cac_tile_node.v
+$BP_TOP_DIR/src/v/bp_cac_complex.v
+$BP_TOP_DIR/src/v/bp_sac_example.v
+$BP_TOP_DIR/src/v/bp_sac_tile.v
+$BP_TOP_DIR/src/v/bp_sac_tile_node.v
+$BP_TOP_DIR/src/v/bp_sac_complex.v
 $BP_TOP_DIR/src/v/bp_cfg.v
 $BP_TOP_DIR/src/v/bp_cfg_buffered.v
 $BP_TOP_DIR/src/v/bp_core.v
