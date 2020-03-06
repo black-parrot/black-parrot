@@ -1,4 +1,5 @@
 
+
 module bp_me_addr_to_cce_id
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
@@ -23,10 +24,11 @@ localparam max_cac_cce_lp = max_mc_cce_lp + num_cacc_p;
 localparam max_sac_cce_lp = max_cac_cce_lp + num_sacc_p;
 localparam max_ioc_cce_lp = max_sac_cce_lp + num_io_p;
 
-wire external_io_v_li = (global_addr_li.did > '0);
-wire local_addr_v_li  = (paddr_i < dram_base_addr_gp);
-wire dram_addr_v_li   = (paddr_i >= dram_base_addr_gp) && (paddr_i < coproc_base_addr_gp);
-
+wire external_io_v_li = (global_addr_li.did > '1);
+wire local_addr_v_li = (paddr_i < dram_base_addr_gp);
+wire dram_addr_v_li = (paddr_i >= dram_base_addr_gp) && (paddr_i < coproc_base_addr_gp);
+wire core_local_addr_v_li = local_addr_v_li && (local_addr_li.cce < num_core_p);   
+     
 localparam block_offset_lp = `BSG_SAFE_CLOG2(cce_block_width_p/8);
 localparam lg_lce_sets_lp = `BSG_SAFE_CLOG2(lce_sets_p);
 localparam lg_num_cce_lp = `BSG_SAFE_CLOG2(num_cce_p);
@@ -49,7 +51,7 @@ bsg_hash_bank
 
 always_comb begin
   cce_id_o = '0;
-  if (external_io_v_li || (local_addr_v_li && (local_addr_li.dev == host_dev_gp) && local_addr_li.cce < num_core_p))
+  if (external_io_v_li || (core_local_addr_v_li && (local_addr_li.dev == host_dev_gp)))
     // Stripe by 4kiB page, start at io CCE id
     cce_id_o = (num_io_p > 1)
                ? max_sac_cce_lp + paddr_i[page_offset_width_p+:`BSG_SAFE_CLOG2(num_io_p)]
@@ -61,12 +63,11 @@ always_comb begin
     // Stripe by cache line
     cce_id_o[0+:lg_num_cce_lp] = cce_dst_id_lo;
   else
-    // TODO: Coprocessor address space, figure out.  Probably striped by CCEs within the AC
-     cce_id_o = (num_sacc_p > 1)  
-                ? paddr_i[bp_sv39_vaddr_width_gp-io_noc_did_width_p-1: bp_sv39_vaddr_width_gp-io_noc_did_width_p-1-`BSG_SAFE_CLOG2(num_sacc_p)]
-                  % (cc_y_dim_p*cc_y_dim_p)
-                : '0;
-    //cce_id_o = '0;
+    cce_id_o = (num_sacc_p > 1)
+               ? max_cac_cce_lp + paddr_i[paddr_width_p-io_noc_did_width_p-1-:`BSG_SAFE_CLOG2(num_sacc_p)]
+               : max_cac_cce_lp;
+     
+   
 end
 
 endmodule
