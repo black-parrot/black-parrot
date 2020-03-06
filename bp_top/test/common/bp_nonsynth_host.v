@@ -118,26 +118,24 @@ assign program_finish_o = finish_r;
 
 always_ff @(negedge clk_i)
   begin
-    for (integer i = 0; i < num_core_p; i++)
-      begin
-        if (putchar_data_cmd_v & io_cmd_yumi_o) begin
-          $write("%c", io_cmd_cast_i.data[0+:8]);
-          $fflush(32'h8000_0001);
+     for (integer i = 0; i < num_core_p; i++)
+       begin
+         if (putchar_data_cmd_v & io_cmd_yumi_o) begin
+           $write("%c", io_cmd_cast_i.data[0+:8]);
+           $fflush(32'h8000_0001);
+         end
+         if (getchar_data_cmd_v & io_cmd_yumi_o)
+           pop();
+         if (finish_w_v_li[i] & io_cmd_yumi_o & ~io_cmd_cast_i.data[0])
+           $display("[CORE%0x FSH] PASS", i);
+         if (finish_w_v_li[i] & io_cmd_yumi_o &  io_cmd_cast_i.data[0])
+           $display("[CORE%0x FSH] FAIL", i);
+       end
+     if (all_finished_r)
+       begin
+         $display("All cores finished! Terminating...");
+         $finish();
         end
-        if (getchar_data_cmd_v & io_cmd_yumi_o)
-          //pop();
-          $display("[CORE%0x PRT] %x", i, io_cmd_cast_i.data[0+:8]);
-        if (finish_w_v_li[i] & io_cmd_yumi_o & ~io_cmd_cast_i.data[0])
-          $display("[CORE%0x FSH] PASS", i);
-        if (finish_w_v_li[i] & io_cmd_yumi_o &  io_cmd_cast_i.data[0])
-          $display("[CORE%0x FSH] FAIL", i);
-      end
-
-    if (all_finished_r)
-      begin
-        $display("All cores finished! Terminating...");
-        $finish();
-      end
   end
 
 bp_cce_mem_msg_s io_resp_lo;
