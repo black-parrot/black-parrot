@@ -87,7 +87,8 @@ module bp_cce_nonsynth_tracer
   integer file;
   string file_name;
  
-  always_ff @(negedge (reset_i | freeze_i))
+  wire delay_li = reset_i | freeze_i;
+  always_ff @(negedge delay_li)
     begin
       file_name = $sformatf("%s_%x.trace", cce_trace_file_p, cce_id_i);
       file      = $fopen(file_name, "w");
