@@ -25,7 +25,8 @@ module bp_nonsynth_commit_tracer
 integer file;
 string file_name;
 
-always_ff @(negedge (reset_i | freeze_i))
+wire delay_li = reset_i | freeze_i;
+always_ff @(negedge delay_li)
   begin
     file_name = $sformatf("%s_%x.trace", commit_trace_file_p, mhartid_i);
     file      = $fopen(file_name, "w");
