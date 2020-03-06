@@ -43,6 +43,7 @@ module bp_sac_example
    `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
    
   bp_cce_mem_msg_s io_resp_cast_o;
+  bp_cce_mem_msg_header_s resp_header; 
   bp_cce_mem_msg_s io_cmd_cast_i;
  // bp_cce_mem_msg_s io_resp_cast_i;
  // bp_cce_mem_msg_s io_cmd_cast_o;
@@ -79,15 +80,17 @@ module bp_sac_example
   bp_local_addr_s           local_addr_li;
   bp_global_addr_s          global_addr_li;
   
-  assign global_addr_li = io_cmd_cast_i.addr;
-  assign local_addr_li = io_cmd_cast_i.addr;
+  assign global_addr_li = io_cmd_cast_i.header.addr;
+  assign local_addr_li = io_cmd_cast_i.header.addr;
   assign resp_data = spm_external_v_lo ? spm_data_lo : csr_data;
-   
-  assign io_resp_cast_o = '{msg_type       : resp_msg
+
+  assign resp_header   =  '{msg_type       : resp_msg
                             ,addr          : resp_addr
                             ,payload       : resp_payload
-                            ,size          : resp_size
-                            ,data          : resp_data};
+                            ,size          : resp_size  };
+
+  assign io_resp_cast_o = '{header         : resp_header
+                            ,data          : resp_data  };
 
    
   assign spm_internal_addr = load ? (second_operand ? (input_b_ptr+len_b_cnt*8) 
@@ -147,12 +150,12 @@ module bp_sac_example
       spm_external_write_v_li <= '0;
       spm_external_read_v_li  <= '0;
     end
-    else if (io_cmd_v_i & (io_cmd_cast_i.msg_type == e_cce_mem_uc_wr) & (global_addr_li.did == '0))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_cce_mem_uc_wr) & (global_addr_li.did == '0))
     begin
-      resp_size    <= io_cmd_cast_i.size;
-      resp_payload <= io_cmd_cast_i.payload;
-      resp_addr    <= io_cmd_cast_i.addr;
-      resp_msg     <= io_cmd_cast_i.msg_type;
+      resp_size    <= io_cmd_cast_i.header.size;
+      resp_payload <= io_cmd_cast_i.header.payload;
+      resp_addr    <= io_cmd_cast_i.header.addr;
+      resp_msg     <= io_cmd_cast_i.header.msg_type;
       spm_external_write_v_li <= '0;
       spm_external_read_v_li  <= '0;
       resp_v_lo <= 1;
@@ -169,12 +172,12 @@ module bp_sac_example
       endcase 
 
     end 
-    else if (io_cmd_v_i & (io_cmd_cast_i.msg_type == e_cce_mem_uc_rd) &  (global_addr_li.did == '0))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_cce_mem_uc_rd) &  (global_addr_li.did == '0))
     begin
-      resp_size    <= io_cmd_cast_i.size;
-      resp_payload <= io_cmd_cast_i.payload;
-      resp_addr    <= io_cmd_cast_i.addr;
-      resp_msg     <= io_cmd_cast_i.msg_type;
+      resp_size    <= io_cmd_cast_i.header.size;
+      resp_payload <= io_cmd_cast_i.header.payload;
+      resp_addr    <= io_cmd_cast_i.header.addr;
+      resp_msg     <= io_cmd_cast_i.header.msg_type;
       spm_external_write_v_li <= '0;
       spm_external_read_v_li  <= '0;
       resp_v_lo <= 1;
@@ -191,28 +194,28 @@ module bp_sac_example
         default : begin end
       endcase 
     end 
-    else if (io_cmd_v_i & (io_cmd_cast_i.msg_type == e_cce_mem_uc_wr) & (global_addr_li.did == 1))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_cce_mem_uc_wr) & (global_addr_li.did == 1))
     begin
-      resp_size    <= io_cmd_cast_i.size;
-      resp_payload <= io_cmd_cast_i.payload;
-      resp_addr    <= io_cmd_cast_i.addr;
-      resp_msg     <= io_cmd_cast_i.msg_type;
+      resp_size    <= io_cmd_cast_i.header.size;
+      resp_payload <= io_cmd_cast_i.header.payload;
+      resp_addr    <= io_cmd_cast_i.header.addr;
+      resp_msg     <= io_cmd_cast_i.header.msg_type;
       spm_external_write_v_li <= '1;
       spm_external_read_v_li  <= '0;
       resp_v_lo <= 1; 
       spm_external_data_li  <= io_cmd_cast_i.data;
-      spm_external_addr <= io_cmd_cast_i.addr; 
+      spm_external_addr <= io_cmd_cast_i.header.addr; 
     end
-    else if (io_cmd_v_i & (io_cmd_cast_i.msg_type == e_cce_mem_uc_rd) &  (global_addr_li.did == 1))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_cce_mem_uc_rd) &  (global_addr_li.did == 1))
     begin
-      resp_size    <= io_cmd_cast_i.size;
-      resp_payload <= io_cmd_cast_i.payload;
-      resp_addr    <= io_cmd_cast_i.addr;
-      resp_msg     <= io_cmd_cast_i.msg_type;
+      resp_size    <= io_cmd_cast_i.header.size;
+      resp_payload <= io_cmd_cast_i.header.payload;
+      resp_addr    <= io_cmd_cast_i.header.addr;
+      resp_msg     <= io_cmd_cast_i.header.msg_type;
       spm_external_read_v_li  <= '1;
       spm_external_write_v_li <= '0;
       resp_v_lo <= 0;  
-      spm_external_addr <= io_cmd_cast_i.addr; 
+      spm_external_addr <= io_cmd_cast_i.header.addr; 
     end
     else
     begin

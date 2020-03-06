@@ -1,8 +1,3 @@
-/**
- *  bp_accelerator_example.v
- *
- */
-
 module bp_cac_example
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
@@ -17,7 +12,9 @@ module bp_cac_example
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p)
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+    , localparam stat_info_width_lp = `bp_be_dcache_stat_info_width(lce_assoc_p)
     )
    (
     input                                     clk_i
@@ -73,69 +70,139 @@ module bp_cac_example
   assign dcache_poison = '0;
   assign dcache_tlb_miss = '0;
 
-  bp_pma
-   #(.bp_params_p(bp_params_p))
-   pma
-     (.ptag_v_i(dcache_pkt_v)
-      ,.ptag_i(dcache_ptag)
+  logic cache_req_v_o, cache_req_ready_i, cache_req_metadata_v_o, 
+  data_mem_pkt_v_i, data_mem_pkt_ready_o,
+  tag_mem_pkt_v_i, tag_mem_pkt_ready_o,
+  stat_mem_pkt_v_i, stat_mem_pkt_ready_o,
+  cache_req_complete_lo;
+   
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p);
 
-      ,.uncached_o(dcache_uncached)
-      );
+  bp_cache_req_s cache_req_cast_o;
+  bp_cache_data_mem_pkt_s data_mem_pkt_i;
+  logic [cce_block_width_p-1:0] data_mem_o;
+  bp_cache_tag_mem_pkt_s tag_mem_pkt_i;
+  logic [ptag_width_p-1:0] tag_mem_o;
+  bp_cache_stat_mem_pkt_s stat_mem_pkt_i;
+  logic [stat_info_width_lp-1:0] stat_mem_o;
+  bp_cache_req_metadata_s cache_req_metadata_o; 
+   
+bp_pma
+ #(.bp_params_p(bp_params_p))
+  pma
+   (.ptag_v_i(dcache_pkt_v)
+    ,.ptag_i(dcache_ptag)
 
-
-  bp_be_dcache 
-   #(.bp_params_p(bp_params_p))
-   accel_dcache
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.cfg_bus_i(cfg_bus_cast_i)
-
-     ,.dcache_pkt_i(dcache_pkt)
-     ,.v_i(dcache_pkt_v)
-     ,.ready_o(dcache_ready)
-
-     ,.v_o(dcache_v)
-     ,.data_o(dcache_data)
-
-     ,.tlb_miss_i(dcache_tlb_miss)
-     ,.ptag_i(dcache_ptag)
-     ,.uncached_i(dcache_uncached)
-
-     ,.load_op_tl_o(load_op_tl_lo)
-     ,.store_op_tl_o(store_op_tl_lo)
-
-     ,.cache_miss_o(dcache_miss_v)
-     ,.poison_i(dcache_poison)
-
-     // LCE-IOCCE interface
-     ,.lce_req_o(lce_req_o)
-     ,.lce_req_v_o(lce_req_v_o)
-     ,.lce_req_ready_i(lce_req_ready_i)
-
-     ,.lce_resp_o(lce_resp_o)
-     ,.lce_resp_v_o(lce_resp_v_o)
-     ,.lce_resp_ready_i(lce_resp_ready_i)
-
-     // IOCCE-LCE interface
-     ,.lce_cmd_i(lce_cmd_i)
-     ,.lce_cmd_v_i(lce_cmd_v_i)
-     ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
-
-     ,.lce_cmd_o(lce_cmd_o)
-     ,.lce_cmd_v_o(lce_cmd_v_o)
-     ,.lce_cmd_ready_i(lce_cmd_ready_i)
-
-     ,.credits_full_o(credits_full_o)
-     ,.credits_empty_o(credits_empty_o)
+    ,.uncached_o(dcache_uncached)
     );
+
+bp_be_dcache
+  #(.bp_params_p(bp_params_p)
+    ,.writethrough_p(0))
+  dcache
+   (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+
+    ,.cfg_bus_i(cfg_bus_cast_i)
+
+    ,.dcache_pkt_i(dcache_pkt)
+    ,.v_i(dcache_pkt_v)
+    ,.ready_o(dcache_ready)
+
+    ,.v_o(dcache_v)
+    ,.data_o(dcache_data)
+
+    ,.tlb_miss_i(dcache_tlb_miss)
+    ,.ptag_i(dcache_ptag)
+    ,.uncached_i(dcache_uncached)
+
+    ,.load_op_tl_o(load_op_tl_lo)
+    ,.store_op_tl_o(store_op_tl_lo)
+    ,.poison_i(dcache_poison)
+
+    // D$-LCE Interface
+    ,.dcache_miss_o(dcache_miss_v)
+    ,.cache_req_complete_i(cache_req_complete_lo) 
+    ,.cache_req_o(cache_req_cast_o)
+    ,.cache_req_v_o(cache_req_v_o)
+    ,.cache_req_ready_i(cache_req_ready_i)
+    ,.cache_req_metadata_o(cache_req_metadata_o)
+    ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
+
+    ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
+    ,.data_mem_pkt_i(data_mem_pkt_i)
+    ,.data_mem_o(data_mem_o)
+    ,.data_mem_pkt_ready_o(data_mem_pkt_ready_o)
+    ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
+    ,.tag_mem_pkt_i(tag_mem_pkt_i)
+    ,.tag_mem_o(tag_mem_o)
+    ,.tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
+    ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
+    ,.stat_mem_pkt_i(stat_mem_pkt_i)
+    ,.stat_mem_o(stat_mem_o)
+    ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
+    );
+   
+   
+bp_be_dcache_lce
+ #(.bp_params_p(bp_params_p))
+  be_lce
+   (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+
+    ,.lce_id_i(cfg_bus_cast_i.dcache_id)
+
+    ,.cache_req_i(cache_req_cast_o)
+    ,.cache_req_v_i(cache_req_v_o)
+    ,.cache_req_ready_o(cache_req_ready_i)
+    ,.cache_req_metadata_i(cache_req_metadata_o)
+    ,.cache_req_metadata_v_i(cache_req_metadata_v_o)
+
+    ,.cache_req_complete_o(cache_req_complete_lo)
+
+    ,.data_mem_pkt_o(data_mem_pkt_i)
+    ,.data_mem_pkt_v_o(data_mem_pkt_v_i)
+    ,.data_mem_pkt_ready_i(data_mem_pkt_ready_o)
+    ,.data_mem_i(data_mem_o)
+
+    ,.tag_mem_pkt_o(tag_mem_pkt_i)
+    ,.tag_mem_pkt_v_o(tag_mem_pkt_v_i)
+    ,.tag_mem_pkt_ready_i(tag_mem_pkt_ready_o)
+    ,.tag_mem_i(tag_mem_o)
+
+    ,.stat_mem_pkt_v_o(stat_mem_pkt_v_i)
+    ,.stat_mem_pkt_o(stat_mem_pkt_i)
+    ,.stat_mem_pkt_ready_i(stat_mem_pkt_ready_o)
+    ,.stat_mem_i(stat_mem_o)
+
+    ,.lce_req_o(lce_req_o)
+    ,.lce_req_v_o(lce_req_v_o)
+    ,.lce_req_ready_i(lce_req_ready_i)
+
+    ,.lce_resp_o(lce_resp_o)
+    ,.lce_resp_v_o(lce_resp_v_o)
+    ,.lce_resp_ready_i(lce_resp_ready_i)
+
+    ,.lce_cmd_i(lce_cmd_i)
+    ,.lce_cmd_v_i(lce_cmd_v_i)
+    ,.lce_cmd_yumi_o(lce_cmd_yumi_o)
+
+    ,.lce_cmd_o(lce_cmd_o)
+    ,.lce_cmd_v_o(lce_cmd_v_o)
+    ,.lce_cmd_ready_i(lce_cmd_ready_i)
+
+    ,.credits_full_o(credits_full_o)
+    ,.credits_empty_o(credits_empty_o)
+    );
+     
 
   // CCE-IO interface is used for uncached requests-read/write memory mapped CSR
    `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
    
   bp_cce_mem_msg_s io_resp_cast_o;
   bp_cce_mem_msg_s io_cmd_cast_i;
-  
+  bp_cce_mem_msg_header_s resp_header;
+   
   assign io_cmd_ready_o = 1'b1;
   assign io_cmd_cast_i = io_cmd_i;
   assign io_resp_o = io_resp_cast_o;
@@ -159,11 +226,13 @@ module bp_cac_example
   bp_cce_mem_cmd_type_e     resp_msg;
   bp_local_addr_s          local_addr_li;
   
-  assign local_addr_li = io_cmd_cast_i.addr;
-  assign io_resp_cast_o = '{msg_type       : resp_msg
+  assign local_addr_li = io_cmd_cast_i.header.addr;
+  assign resp_header   =  '{msg_type       : resp_msg
                             ,addr          : resp_addr
                             ,payload       : resp_payload
-                            ,size          : resp_size
+                            ,size          : resp_size  };
+
+  assign io_resp_cast_o = '{header         : resp_header
                             ,data          : resp_data  };
 
    
@@ -216,12 +285,12 @@ module bp_cac_example
     end 
     if (state_r == DONE) 
       start_cmd  <= '0;
-    else if (io_cmd_v_i & (io_cmd_cast_i.msg_type == e_cce_mem_uc_wr))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_cce_mem_uc_wr))
     begin
-      resp_size    <= io_cmd_cast_i.size;
-      resp_payload <= io_cmd_cast_i.payload;
-      resp_addr    <= io_cmd_cast_i.addr;
-      resp_msg     <= io_cmd_cast_i.msg_type;
+      resp_size    <= io_cmd_cast_i.header.size;
+      resp_payload <= io_cmd_cast_i.header.payload;
+      resp_addr    <= io_cmd_cast_i.header.addr;
+      resp_msg     <= io_cmd_cast_i.header.msg_type;
       unique 
       case (local_addr_li.addr)
         20'h00000 : input_a_ptr <= io_cmd_cast_i.data;
@@ -234,12 +303,12 @@ module bp_cac_example
         default : begin end
       endcase 
     end 
-    else if (io_cmd_v_i & (io_cmd_cast_i.msg_type == e_cce_mem_uc_rd))
+    else if (io_cmd_v_i & (io_cmd_cast_i.header.msg_type == e_cce_mem_uc_rd))
     begin
-      resp_size    <= io_cmd_cast_i.size;
-      resp_payload <= io_cmd_cast_i.payload;
-      resp_addr    <= io_cmd_cast_i.addr;
-      resp_msg     <= io_cmd_cast_i.msg_type;
+      resp_size    <= io_cmd_cast_i.header.size;
+      resp_payload <= io_cmd_cast_i.header.payload;
+      resp_addr    <= io_cmd_cast_i.header.addr;
+      resp_msg     <= io_cmd_cast_i.header.msg_type;
       unique 
       case (local_addr_li.addr)
         20'h00000 : resp_data <= input_a_ptr;
