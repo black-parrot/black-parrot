@@ -482,7 +482,9 @@ end
 wire is_uncached_mode = (cfg_bus.dcache_mode == e_lce_mode_uncached);
 wire mode_fault_v = (is_uncached_mode & ~dcache_uncached);
   // TODO: Enable other domains by setting enabled dids with cfg_bus
-wire did_fault_v = (dcache_ptag[ptag_width_p-1-:io_noc_did_width_p] != '0);
+wire did_fault_v = (dcache_ptag[ptag_width_p-1-:io_noc_did_width_p] != '0) &
+                   ~((dcache_ptag[ptag_width_p-1-:io_noc_did_width_p] == 1) & sac_x_dim_p > 0);
+
 assign load_access_fault_v  = load_op_tl_lo & (mode_fault_v | did_fault_v);
 assign store_access_fault_v = store_op_tl_lo & (mode_fault_v | did_fault_v);
 
