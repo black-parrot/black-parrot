@@ -162,7 +162,7 @@ bp_mem_complex
    ,.dram_resp_link_i(dram_resp_link_i)
    );
 
-bp_coherent_accelerator_complex
+bp_cac_complex
  #(.bp_params_p(bp_params_p)
    ,.bp_enable_accelerator_p(bp_enable_accelerator_p)
    )
@@ -183,7 +183,7 @@ bp_coherent_accelerator_complex
    ,.coh_resp_link_o(coh_resp_hor_link_li[E])
    );
 
-bp_streaming_accelerator_complex
+bp_sac_complex
  #(.bp_params_p(bp_params_p)
    ,.bp_enable_accelerator_p(bp_enable_accelerator_p)
    )
