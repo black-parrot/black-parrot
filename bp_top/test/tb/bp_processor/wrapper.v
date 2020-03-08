@@ -34,6 +34,7 @@ module wrapper
    , input                                             mem_reset_i
 
    , input [io_noc_did_width_p-1:0]                    my_did_i
+   , input [io_noc_did_width_p-1:0]                    host_did_i
 
    , input  [E:W][io_noc_ral_link_width_lp-1:0]        io_cmd_link_i
    , output [E:W][io_noc_ral_link_width_lp-1:0]        io_cmd_link_o

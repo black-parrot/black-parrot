@@ -23,6 +23,7 @@ module bp_io_complex
    , input                                                       io_reset_i
 
    , input [io_noc_did_width_p-1:0]                              my_did_i
+   , input [io_noc_did_width_p-1:0]                              host_did_i
 
    , input [ic_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]       coh_req_link_i
    , output [ic_x_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]      coh_req_link_o
@@ -61,6 +62,7 @@ module bp_io_complex
          ,.io_clk_i(io_clk_i)
          ,.io_reset_i(io_reset_i)
   
+         ,.host_did_i(host_did_i)
          ,.my_did_i(my_did_i)
          ,.my_cord_i(cord_li)
   

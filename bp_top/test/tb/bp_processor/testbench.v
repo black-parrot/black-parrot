@@ -117,6 +117,7 @@ wrapper
    ,.mem_reset_i(reset_i)
 
    ,.my_did_i(proc_did_li)
+   ,.host_did_i(dram_did_li)
 
    ,.io_cmd_link_i({proc_cmd_link_li, stub_cmd_link_li})
    ,.io_cmd_link_o({proc_cmd_link_lo, stub_cmd_link_lo})
