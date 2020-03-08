@@ -111,7 +111,8 @@ bsg_dff_reset_en
 integer file;
 string file_name;
 
-always_ff @(negedge (reset_i | freeze_i))
+wire delay_li = reset_i | freeze_i;
+always_ff @(negedge delay_li)
   begin
     file_name = $sformatf("%s_%x.trace", calc_trace_file_p, mhartid_i);
     file      = $fopen(file_name, "w");
