@@ -17,11 +17,11 @@ module bp_nonsynth_host
 
    , input [cce_mem_msg_width_lp-1:0]              io_cmd_i
    , input                                         io_cmd_v_i
-   , output logic                                  io_cmd_yumi_o
+   , output logic                                  io_cmd_ready_o
 
    , output logic [cce_mem_msg_width_lp-1:0]       io_resp_o
    , output logic                                  io_resp_v_o
-   , input                                         io_resp_ready_i
+   , input                                         io_resp_yumi_i
 
    , output [num_core_p-1:0]                       program_finish_o
    );
@@ -118,20 +118,20 @@ assign program_finish_o = finish_r;
 
 always_ff @(negedge clk_i)
   begin
-    if (putchar_data_cmd_v & io_cmd_yumi_o) begin
+    if (putchar_data_cmd_v & io_cmd_v_i) begin
       $write("%c", io_cmd_cast_i.data[0+:8]);
       $fflush(32'h8000_0001);
     end
-    if (getchar_data_cmd_v & io_cmd_yumi_o)
+    if (getchar_data_cmd_v & io_cmd_v_i)
       pop();
     for (integer i = 0; i < num_core_p; i++)
       begin
         // PASS when returned value in finish packet is zero
-        if (finish_w_v_li[i] & io_cmd_yumi_o &
+        if (finish_w_v_li[i] & io_cmd_v_i &
           (io_cmd_cast_i.data[0+:8] == 8'(0)))
           $display("[CORE%0x FSH] PASS", i);
         // FAIL when returned value in finish packet is non-zero
-        if (finish_w_v_li[i] & io_cmd_yumi_o &
+        if (finish_w_v_li[i] & io_cmd_v_i &
           (io_cmd_cast_i.data[0+:8] != 8'(0)))
           $display("[CORE%0x FSH] FAIL", i);
       end
@@ -144,33 +144,28 @@ always_ff @(negedge clk_i)
   end
 
 bp_cce_mem_msg_s io_resp_lo;
-logic io_resp_v_lo, io_resp_ready_lo;
-assign io_cmd_yumi_o = io_cmd_v_i & io_resp_ready_lo;
-bsg_one_fifo
- #(.width_p(cce_mem_msg_width_lp))
+bsg_two_fifo
+ #(.width_p($bits(bp_cce_mem_msg_s)))
  io_resp_buffer
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
    ,.data_i(io_resp_lo)
-   ,.v_i(io_cmd_yumi_o)
-   ,.ready_o(io_resp_ready_lo)
+   ,.v_i(io_cmd_v_i)
+   ,.ready_o(io_cmd_ready_o)
 
    ,.data_o(io_resp_o)
-   ,.v_o(io_resp_v_lo)
-   ,.yumi_i(io_resp_ready_i & io_resp_v_lo)
+   ,.v_o(io_resp_v_o)
+   ,.yumi_i(io_resp_yumi_i)
    );
-assign io_resp_v_o = io_resp_v_lo & io_resp_ready_i;
 
 assign io_resp_lo =
-  '{header:
-    '{
-    msg_type       : io_cmd_cast_i.header.msg_type
-    ,addr          : io_cmd_cast_i.header.addr
-    ,payload       : io_cmd_cast_i.header.payload
-    ,size          : io_cmd_cast_i.header.size
-    }
-    ,data          : ch
+  '{header: '{msg_type       : io_cmd_cast_i.header.msg_type
+              ,addr          : io_cmd_cast_i.header.addr
+              ,payload       : io_cmd_cast_i.header.payload
+              ,size          : io_cmd_cast_i.header.size
+              }
+    ,data : ch
     };
 
 endmodule

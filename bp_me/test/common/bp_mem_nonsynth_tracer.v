@@ -20,16 +20,16 @@ module bp_mem_nonsynth_tracer
    // BP side
    , input [cce_mem_msg_width_lp-1:0]    mem_cmd_i
    , input                               mem_cmd_v_i
-   , input                               mem_cmd_yumi_i
+   , input                               mem_cmd_ready_i
 
    , input [cce_mem_msg_width_lp-1:0]    mem_resp_i
    , input                               mem_resp_v_i
-   , input                               mem_resp_ready_i
+   , input                               mem_resp_yumi_i
    );
 
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
-wire unused = &{mem_cmd_v_i, mem_resp_ready_i};
+wire unused = &{mem_cmd_ready_i, mem_resp_v_i};
 
 integer file;
 always_ff @(negedge reset_i) begin
@@ -43,7 +43,7 @@ assign mem_cmd_cast_i = mem_cmd_i;
 assign mem_resp_cast_i = mem_resp_i;
 
 always_ff @(posedge clk_i) begin
-  if (mem_cmd_yumi_i)
+  if (mem_cmd_v_i)
     case (mem_cmd_cast_i.header.msg_type)
       e_cce_mem_rd: 
         $fwrite(file, "[%t] CMD  RD  : (%x) %b\n", $time, mem_cmd_cast_i.header.addr, mem_cmd_cast_i.header.size);
@@ -59,7 +59,7 @@ always_ff @(posedge clk_i) begin
         $fwrite(file, "[%t] CMD  ERROR: unknown cmd_type %x received!", $time, mem_resp_cast_i.header.msg_type);
     endcase
 
-  if (mem_resp_v_i)
+  if (mem_resp_yumi_i)
     case (mem_resp_cast_i.header.msg_type)
       e_cce_mem_rd:
         $fwrite(file, "[%t] RESP RD  : (%x) %b %x\n", $time, mem_resp_cast_i.header.addr, mem_resp_cast_i.header.size, mem_resp_cast_i.data);
