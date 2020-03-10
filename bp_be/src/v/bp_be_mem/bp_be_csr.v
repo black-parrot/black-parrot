@@ -303,7 +303,7 @@ assign sip_wmask_li    = '{meip: 1'b0, seip: 1'b0
                             ,default: '0
                            };
 
-logic exception_v_o, interrupt_v_o, ret_v_o, sfence_v_o;
+logic exception_v_o, interrupt_v_o, null_trap_v_o, ret_v_o, sfence_v_o;
 // CSR data
 always_comb
   begin
@@ -348,6 +348,7 @@ always_comb
 
     exception_v_o    = '0;
     interrupt_v_o    = '0;
+    null_trap_v_o    = '0;
     ret_v_o          = '0;
     illegal_instr_o  = '0;
     csr_data_lo      = '0;
@@ -473,6 +474,11 @@ always_comb
               exception_v_o        = 1'b0;
               interrupt_v_o        = 1'b1;
               ret_v_o              = 1'b0;
+            end
+          else
+            begin
+              // The interrupt has gone away by the time we went to take it
+              null_trap_v_o        = 1'b1;
             end
         end
       else if (csr_cmd.csr_op == e_wfi)
@@ -693,6 +699,7 @@ assign trap_pkt_cast_o.fencei           = fencei_v_i;
 assign trap_pkt_cast_o.sfence           = sfence_v_o;
 assign trap_pkt_cast_o.exception        = exception_v_o;
 assign trap_pkt_cast_o._interrupt       = interrupt_v_o;
+assign trap_pkt_cast_o.null_trap        = null_trap_v_o;
 assign trap_pkt_cast_o.eret             = ret_v_o;
 
 assign priv_mode_o      = priv_mode_r;

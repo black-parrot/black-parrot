@@ -230,12 +230,13 @@ typedef enum logic [1:0]
  * miss. e_instruction_access_fault is when the access control is violated.
  * e_instr_page_fault is when the instruction page is accessed with insufficent privilege
  */
-typedef enum logic [1:0]
+typedef enum logic [2:0]
 {
   e_instr_misaligned    = 0
   ,e_itlb_miss          = 1
   ,e_instr_access_fault = 2
   ,e_instr_page_fault   = 3
+  ,e_take_interrupt     = 4
 } bp_fe_exception_code_e;
 
 /*

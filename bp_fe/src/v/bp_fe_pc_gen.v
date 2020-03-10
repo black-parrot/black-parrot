@@ -40,6 +40,8 @@ module bp_fe_pc_gen
    , output [fe_queue_width_lp-1:0]                  fe_queue_o
    , output                                          fe_queue_v_o
    , input                                           fe_queue_ready_i
+
+   , input                                           accept_irq_i
    );
 
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -143,7 +145,7 @@ wire instr_page_fault_exception   = v_if2 & (mem_resp_v_i & mem_resp_cast_i.inst
 wire fetch_fail     = v_if2 & ~fe_queue_v_o;
 wire queue_miss     = v_if2 & ~fe_queue_ready_i;
 wire icache_miss    = v_if2 & (mem_resp_v_i & mem_resp_cast_i.icache_miss);
-wire fe_exception_v = v_if2 & (instr_page_fault_exception | instr_access_fault_exception | misalign_exception | itlb_miss_exception);
+wire fe_exception_v = v_if2 & (instr_page_fault_exception | instr_access_fault_exception | misalign_exception | itlb_miss_exception | accept_irq_i);
 wire flush          = fe_exception_v | icache_miss | queue_miss | cmd_nonattaboy_v;
 wire fe_instr_v     = v_if2 & mem_resp_v_i & ~flush;
 
@@ -451,13 +453,15 @@ always_comb
       begin
         fe_queue_cast_o.msg_type                     = e_fe_exception;
         fe_queue_cast_o.msg.exception.vaddr          = pc_if2;
-        fe_queue_cast_o.msg.exception.exception_code = misalign_exception
-                                                       ? e_instr_misaligned
-                                                       : itlb_miss_exception
-                                                         ? e_itlb_miss
-                                                         : instr_page_fault_exception
-                                                           ? e_instr_page_fault
-                                                           : e_instr_access_fault;
+        fe_queue_cast_o.msg.exception.exception_code = accept_irq_i
+                                                       ? e_take_interrupt
+                                                       : misalign_exception
+                                                         ? e_instr_misaligned
+                                                         : itlb_miss_exception
+                                                           ? e_itlb_miss
+                                                           : instr_page_fault_exception
+                                                             ? e_instr_page_fault
+                                                             : e_instr_access_fault;
       end
     else 
       begin

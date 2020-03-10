@@ -107,7 +107,7 @@ logic [vaddr_width_p-1:0] br_mux_o, roll_mux_o, ret_mux_o, exc_mux_o;
 assign npc_w_v = cfg_bus_cast_i.npc_w_v
                  | calc_status.ex1_instr_v
                  | (commit_pkt.tlb_miss | commit_pkt.cache_miss)
-                 | (trap_pkt.exception | trap_pkt._interrupt | trap_pkt.eret);
+                 | (trap_pkt.exception | trap_pkt._interrupt | trap_pkt.null_trap | trap_pkt.eret);
 bsg_dff_reset_en 
  #(.width_p(vaddr_width_p), .reset_val_p(dram_base_addr_gp))
  npc
@@ -272,6 +272,24 @@ always_comb
         // TODO: Fill in missing subopcodes.  They're not used by FE yet...
         fe_cmd_pc_redirect_operands.subopcode            = e_subop_trap;
         fe_cmd_pc_redirect_operands.branch_metadata_fwd  = '0; 
+        fe_cmd_pc_redirect_operands.misprediction_reason = e_not_a_branch;
+        fe_cmd_pc_redirect_operands.priv                 = trap_pkt.priv_n;
+        fe_cmd_pc_redirect_operands.translation_enabled  = trap_pkt.translation_en_n;
+        fe_cmd.operands.pc_redirect_operands             = fe_cmd_pc_redirect_operands;
+
+        fe_cmd_v = fe_cmd_ready_i;
+
+        flush_o = 1'b1;
+      end
+    else if (trap_pkt.null_trap)
+      begin
+        fe_cmd_pc_redirect_operands = '0;
+
+        fe_cmd.opcode                                    = e_op_pc_redirection;
+        fe_cmd.vaddr                                     = npc_n;
+        // TODO: Fill in missing subopcodes.  They're not used by FE yet...
+        fe_cmd_pc_redirect_operands.subopcode            = e_subop_trap;
+        fe_cmd_pc_redirect_operands.branch_metadata_fwd  = '0;
         fe_cmd_pc_redirect_operands.misprediction_reason = e_not_a_branch;
         fe_cmd_pc_redirect_operands.priv                 = trap_pkt.priv_n;
         fe_cmd_pc_redirect_operands.translation_enabled  = trap_pkt.translation_en_n;

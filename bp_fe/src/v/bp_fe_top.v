@@ -44,6 +44,8 @@ module bp_fe_top
    , output                                           fe_queue_v_o
    , input                                            fe_queue_ready_i
 
+   , input                                            accept_irq_i
+
    // Interface to LCE
 
    , output logic [icache_req_width_lp-1:0]           cache_req_o
@@ -104,6 +106,8 @@ bp_fe_pc_gen
    ,.fe_queue_o(fe_queue_o)
    ,.fe_queue_v_o(fe_queue_v_o)
    ,.fe_queue_ready_i(fe_queue_ready_i)
+
+   ,.accept_irq_i(accept_irq_i)
    );
 
 bp_fe_mem

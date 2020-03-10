@@ -84,6 +84,8 @@ module bp_be_top
    , input                                   timer_irq_i
    , input                                   software_irq_i
    , input                                   external_irq_i
+
+   , output                                  accept_irq_o
    );
 
 // Declare parameterized structures
@@ -125,7 +127,6 @@ logic chk_trap_v_li, chk_ret_v_li, chk_tlb_fence_li, chk_fencei_li;
 
 logic debug_mode_lo;
 logic single_step_lo;
-logic accept_irq_lo;
 
 logic                     instret_mem3;
 logic                     pc_v_mem3;
@@ -158,7 +159,6 @@ bp_be_checker_top
    ,.credits_empty_i(credits_empty_i)
    ,.debug_mode_i(debug_mode_lo)
    ,.single_step_i(single_step_lo)
-   ,.accept_irq_i(accept_irq_lo)
 
    ,.fe_cmd_o(fe_cmd_o)
    ,.fe_cmd_v_o(fe_cmd_v_o)
@@ -268,7 +268,7 @@ bp_be_mem_top
     ,.timer_irq_i(timer_irq_i)
     ,.software_irq_i(software_irq_i)
     ,.external_irq_i(external_irq_i)
-    ,.accept_irq_o(accept_irq_lo)
+    ,.accept_irq_o(accept_irq_o)
 
     ,.trap_pkt_o(trap_pkt)
     );

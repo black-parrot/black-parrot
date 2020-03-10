@@ -71,7 +71,7 @@ logic [2:0] irs1_data_haz_v , irs2_data_haz_v;
 logic [2:0] frs1_data_haz_v , frs2_data_haz_v;
 logic [2:0] rs1_match_vector, rs2_match_vector;
 
-logic fence_haz_v, queue_haz_v, interrupt_haz_v, serial_haz_v, long_haz_v;
+logic fence_haz_v, queue_haz_v, serial_haz_v, long_haz_v;
 logic data_haz_v, control_haz_v, struct_haz_v;
 logic instr_in_pipe_v, mem_in_pipe_v;
 
@@ -130,7 +130,6 @@ always_comb
     mem_in_pipe_v      = dep_status_li[0].mem_v | dep_status_li[1].mem_v | dep_status_li[2].mem_v;
     fence_haz_v        = (isd_status_cast_i.isd_fence_v & (~credits_empty_i | mem_in_pipe_v))
                          | (isd_status_cast_i.isd_mem_v & credits_full_i);
-    interrupt_haz_v    = isd_status_cast_i.isd_irq_v & instr_in_pipe_v;
     queue_haz_v        = ~fe_cmd_ready_i;
 
     serial_haz_v       = dep_status_li[0].serial_v
@@ -140,7 +139,7 @@ always_comb
 
     long_haz_v = calc_status_cast_i.long_busy;
 
-    control_haz_v = fence_haz_v | interrupt_haz_v | serial_haz_v | long_haz_v;
+    control_haz_v = fence_haz_v | serial_haz_v | long_haz_v;
 
     // Combine all data hazard information
     // TODO: Parameterize away floating point data hazards without hardware support
