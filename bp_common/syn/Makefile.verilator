@@ -7,14 +7,12 @@ TRACEDIFF ?= $(BP_COMMON_DIR)/software/py/tracediff.py
 ## Tool options
 VV_OPTS  = --sc                 # Output in SystemC rather than C++
 #VV_OPTS += --debug --gdbbt     # Debugs and produces stack trace
-VV_OPTS += -O3
-
-#VV_OPTS += -O1 -fstrict-aliasing # Fastest compile time options
+VV_OPTS += -O1
 
 LINT_OPTS   = --lint-only -Wall --Wno-unoptflat 
 BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat --exe -CFLAGS -std=c++11 
 BUILD_OPTS += -I$(BP_EXTERNAL_DIR)/share/verilator/include/vltstd/ 
-BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -lpthread -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
+BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -lpthread -ldramsim -ldromajo_cosim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
 
 TOP_MODULE ?= testbench
 
@@ -105,7 +103,7 @@ endif
 sim.sc: SIM_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).sim.$(PROG).log
 sim.sc: SIM_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).sim.$(PROG).rpt
 sim.sc: SIM_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).sim.$(PROG).err
-sim.sc: PROG ?= rv64ui-p-simple
+sim.sc: PROG ?= hello_world
 sim.sc: COVERAGE_DAT ?= $(PROG)_coverage.dat
 sim.sc: dirs.sc 
 	$(shell mkdir -p $(SIM_DIR))
@@ -116,6 +114,9 @@ sim.sc: dirs.sc
 	-@cp $(MEM_PATH)/$(PROG).mem $(SIM_DIR)/prog.mem
 	-@cp $(MEM_PATH)/$(PROG).riscv $(SIM_DIR)/prog.elf
 	-@cp $(MEM_PATH)/$(PROG).dump $(SIM_DIR)/prog.dump
+	-@cp $(MEM_PATH)/$(PROG).mainram $(SIM_DIR)/prog.mainram
+	-@cp $(MEM_PATH)/$(PROG).bootram $(SIM_DIR)/prog.bootram
+	-@cp $(MEM_PATH)/$(PROG).cfg $(SIM_DIR)/prog.cfg
 	-@cp $(MEM_PATH)/$(PROG).spike $(SIM_DIR)/prog.spike
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(SIM_DIR)/dram_ch.ini
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(SIM_DIR)/dram_sys.ini
@@ -123,16 +124,6 @@ sim.sc: dirs.sc
 	-cd $(SIM_DIR); ./simsc | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "PASS" -A 9 $(SIM_LOG) > $(SIM_REPORT)
-
-match.sc: MATCH_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).match.$(PROG).log
-match.sc: MATCH_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).match.$(PROG).rpt
-match.sc: MATCH_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).match.$(PROG).err
-match.sc: PROG ?= rv64ui-p-simple
-match.sc: dirs.sc
-	-cd $(SIM_DIR); $(PYTHON) $(TRACEDIFF) prog.spike prog.trace $(START_PC) --tolerance=$(TOLERANCE) \
-		| tee -a $(MATCH_LOG)
-	-@grep "MATCH" $(MATCH_LOG) || echo "MISMATCHED" >> $(MATCH_ERROR)
-	-@grep "MATCH" -A 4 $(MATCH_LOG) > $(MATCH_REPORT)
 
 regress_riscv.sc: $(RV64_REGRESSION_SC) 
 $(RV64_REGRESSION_SC):

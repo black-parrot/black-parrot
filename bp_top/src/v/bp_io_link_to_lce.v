@@ -61,11 +61,11 @@ module bp_io_link_to_lce
   assign lce_cmd_yumi_o = io_resp_v_o;
 
   bp_lce_cce_uc_req_size_e lce_req_size;
-  assign lce_req_size = (io_cmd_li.size == e_mem_size_1)
+  assign lce_req_size = (io_cmd_li.header.size == e_mem_size_1)
                         ? e_lce_uc_req_1
-                        : (io_cmd_li.size == e_mem_size_2)
+                        : (io_cmd_li.header.size == e_mem_size_2)
                           ? e_lce_uc_req_2
-                          : (io_cmd_li.size == e_mem_size_4)
+                          : (io_cmd_li.header.size == e_mem_size_4)
                             ? e_lce_uc_req_4
                             : e_lce_uc_req_8;
 
@@ -78,28 +78,28 @@ module bp_io_link_to_lce
   bp_me_addr_to_cce_id
    #(.bp_params_p(bp_params_p))
    addr_map
-    (.paddr_i(io_cmd_li.addr)
+    (.paddr_i(io_cmd_li.header.addr)
 
      ,.cce_id_o(cce_id_lo)
      );
 
-  wire io_cmd_wr_not_rd = (io_cmd_li.msg_type == e_cce_mem_uc_wr);
-  wire lce_cmd_wr_not_rd = (lce_cmd_li.msg_type == e_lce_cmd_uc_st_done);
+  wire io_cmd_wr_not_rd = (io_cmd_li.header.msg_type == e_cce_mem_uc_wr);
+  wire lce_cmd_wr_not_rd = (lce_cmd_li.header.msg_type == e_lce_cmd_uc_st_done);
   always_comb
     begin
       lce_req_lo                    = '0;
-      lce_req_lo.msg.uc_req.data    = io_cmd_li.data;
-      lce_req_lo.msg.uc_req.uc_size = lce_req_size;
-      lce_req_lo.addr               = io_cmd_li.addr;
-      lce_req_lo.msg_type           = io_cmd_wr_not_rd ? e_lce_req_type_uc_wr : e_lce_req_type_uc_rd;
-      lce_req_lo.src_id             = lce_id_i;
-      lce_req_lo.dst_id             = cce_id_lo;
+      lce_req_lo.data               = io_cmd_li.data;
+      lce_req_lo.header.uc_size     = lce_req_size;
+      lce_req_lo.header.addr        = io_cmd_li.header.addr;
+      lce_req_lo.header.msg_type    = io_cmd_wr_not_rd ? e_lce_req_type_uc_wr : e_lce_req_type_uc_rd;
+      lce_req_lo.header.src_id      = lce_id_i;
+      lce_req_lo.header.dst_id      = cce_id_lo;
 
-      io_resp_lo                = '0;
-      io_resp_lo.data           = lce_cmd_li.msg.dt_cmd.data;
-      io_resp_lo.size           = io_resp_size;
-      io_resp_lo.addr           = lce_cmd_wr_not_rd ? lce_cmd_li.msg.cmd.addr : lce_cmd_li.msg.dt_cmd.addr;
-      io_resp_lo.msg_type       = lce_cmd_wr_not_rd ? e_cce_mem_uc_wr : e_cce_mem_uc_rd;
+      io_resp_lo                 = '0;
+      io_resp_lo.data            = lce_cmd_li.data;
+      io_resp_lo.header.size     = io_resp_size;
+      io_resp_lo.header.addr     = lce_cmd_li.header.addr;
+      io_resp_lo.header.msg_type = lce_cmd_wr_not_rd ? e_cce_mem_uc_wr : e_cce_mem_uc_rd;
     end
 
 endmodule

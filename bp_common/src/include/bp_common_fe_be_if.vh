@@ -183,7 +183,7 @@
  * bp_fe_queue_s can either contain an instruction or exception.
  * bp_fe_queue_type_e specifies which information it contains.
  */
-typedef enum bit
+typedef enum logic
 {
   e_fe_fetch       = 0
   ,e_fe_exception  = 1
@@ -200,7 +200,7 @@ typedef enum bit
  * e_op_itlb_fill_response happens when itlb populates translation.
  * e_op_itlb_fence issues a fence operation to itlb.
  */
-typedef enum bit [2:0]
+typedef enum logic [2:0]
 {
   e_op_state_reset         = 0
   ,e_op_pc_redirection     = 1
@@ -214,7 +214,7 @@ typedef enum bit [2:0]
 /*
  * bp_fe_misprediction_reason_e is the misprediction reason provided by the backend.
  */
-typedef enum bit
+typedef enum logic
 {
   e_incorrect_prediction = 0
   ,e_not_a_branch        = 1
@@ -228,7 +228,7 @@ typedef enum bit
  * miss. e_instruction_access_fault is when the access control is violated.
  * e_instr_page_fault is when the instruction page is accessed with insufficent privilege
  */
-typedef enum bit [1:0]
+typedef enum logic [1:0]
 {
   e_instr_misaligned    = 0
   ,e_itlb_miss          = 1
@@ -245,7 +245,7 @@ typedef enum bit [1:0]
  * e_subop_trap is at-fault PC redirection. It will changes the permission bits.
  * e_subop_context_switch is no-fault PC redirection. It redirect pc to a new address space.
 */
-typedef enum bit [2:0]
+typedef enum logic [2:0]
 {
   e_subop_uret
   ,e_subop_sret

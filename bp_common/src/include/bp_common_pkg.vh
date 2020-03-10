@@ -14,6 +14,7 @@ package bp_common_pkg;
   `include "bp_common_defines.vh"
   `include "bp_common_fe_be_if.vh"
   `include "bp_common_me_if.vh"
+  `include "bp_common_cache_service_if.vh"
 
   /*
    * RV64 specifies a 64b effective address and 32b instruction.

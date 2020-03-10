@@ -111,16 +111,12 @@ bsg_dff_reset_en
 integer file;
 string file_name;
 
-logic freeze_r;
-always_ff @(posedge clk_i)
-  freeze_r <= freeze_i;
-
-always_ff @(negedge clk_i)
-  if (freeze_r & ~freeze_i)
-    begin
-      file_name = $sformatf("%s_%x.trace", calc_trace_file_p, mhartid_i);
-      file      = $fopen(file_name, "w");
-    end
+wire delay_li = reset_i | freeze_i;
+always_ff @(negedge delay_li)
+  begin
+    file_name = $sformatf("%s_%x.trace", calc_trace_file_p, mhartid_i);
+    file      = $fopen(file_name, "w");
+  end
 
 logic [4:0][2:0][7:0] stage_aliases;
 assign stage_aliases = {"FWB", "IWB", "EX2", "EX1"};

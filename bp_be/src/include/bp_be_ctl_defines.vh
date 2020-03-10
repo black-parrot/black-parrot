@@ -5,7 +5,7 @@
  * int_fu_op [3] is an alternate version of that operation.
  */
 // TODO: Think more carefully about these encodings
-typedef enum bit [4:0]
+typedef enum logic [4:0]
 {
   e_int_op_add        = 5'b00000
   ,e_int_op_sub       = 5'b01000
@@ -24,7 +24,7 @@ typedef enum bit [4:0]
   ,e_int_op_pass_src2 = 5'b01111
 } bp_be_int_fu_op_e;
 
-typedef enum bit [4:0]
+typedef enum logic [4:0]
 {
   e_lb     = 5'b00000
   ,e_lh    = 5'b00001
@@ -44,9 +44,10 @@ typedef enum bit [4:0]
 
   ,e_lrd   = 5'b01101
   ,e_scd   = 5'b01110
+  ,e_fencei = 5'b01111
 } bp_be_mmu_fu_op_e;
 
-typedef enum bit [4:0]
+typedef enum logic [4:0]
 {
   e_csrrw   = 5'b00001
   ,e_csrrs  = 5'b00010
@@ -66,15 +67,11 @@ typedef enum bit [4:0]
 
   // We treat FE exceptions as CSR ops
   ,e_op_take_interrupt     = 5'b11000
-  ,e_op_enter_debug        = 5'b11101
-  ,e_op_exit_debug         = 5'b11110
   ,e_op_instr_access_fault = 5'b11001
   ,e_op_instr_page_fault   = 5'b11010
   ,e_op_instr_misaligned   = 5'b11011
-  ,e_itlb_fill             = 5'b11100
-  ,e_fencei                = 5'b10110
-
   ,e_op_illegal_instr      = 5'b11111
+  ,e_itlb_fill             = 5'b11100
 } bp_be_csr_fu_op_e;
 
 typedef struct packed
@@ -87,31 +84,31 @@ typedef struct packed
   }  fu_op;
 }  bp_be_fu_op_s;
 
-typedef enum bit
+typedef enum logic
 {
   e_src1_is_rs1 = 1'b0
   ,e_src1_is_pc = 1'b1
 } bp_be_src1_e;
 
-typedef enum bit
+typedef enum logic
 {
   e_src2_is_rs2  = 1'b0
   ,e_src2_is_imm = 1'b1
 } bp_be_src2_e;
 
-typedef enum bit
+typedef enum logic
 {
   e_baddr_is_pc   = 1'b0
   ,e_baddr_is_rs1 = 1'b1
 } bp_be_baddr_e;
 
-typedef enum bit
+typedef enum logic
 {
   e_offset_is_imm   = 1'b0
   ,e_offset_is_zero = 1'b1
 } bp_be_offset_e;
 
-typedef enum bit
+typedef enum logic
 {
   e_result_from_alu       = 1'b0
   ,e_result_from_pc_plus4 = 1'b1

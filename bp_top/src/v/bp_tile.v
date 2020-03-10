@@ -460,21 +460,19 @@ for (genvar i = 0; i < 2; i++)
      );
 
   /* TODO: Extract local memory map to module */
-  localparam clint_device_id_lp = 1;
-  localparam cfg_device_id_lp   = 2;
-  wire local_cmd_li    = (cce_mem_cmd_lo.addr < 32'h8000_0000);
-  wire [3:0] device_li =  cce_mem_cmd_lo.addr[20+:4];
+  wire local_cmd_li    = (cce_mem_cmd_lo.header.addr < 32'h8000_0000);
+  wire [3:0] device_li =  cce_mem_cmd_lo.header.addr[20+:4];
 
   assign cce_mem_cmd_ready_li = cache_mem_cmd_ready_lo & cfg_mem_cmd_ready_lo & clint_mem_cmd_ready_lo;
-
-  assign cache_mem_cmd_li      = cce_mem_cmd_lo;
-  assign cache_mem_cmd_v_li    = cce_mem_cmd_v_lo & ~local_cmd_li;
 
   assign cfg_mem_cmd_li       = cce_mem_cmd_lo;
   assign cfg_mem_cmd_v_li     = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == cfg_dev_gp);
 
   assign clint_mem_cmd_li     = cce_mem_cmd_lo;
   assign clint_mem_cmd_v_li   = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == clint_dev_gp);
+
+  assign cache_mem_cmd_li      = cce_mem_cmd_lo;
+  assign cache_mem_cmd_v_li    = cce_mem_cmd_v_lo & ~cfg_mem_cmd_v_li & ~clint_mem_cmd_v_li;
 
   bsg_arb_fixed
    #(.inputs_p(3)

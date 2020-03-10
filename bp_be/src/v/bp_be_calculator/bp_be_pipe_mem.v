@@ -6,36 +6,6 @@
  * Description:
  *   Pipeline for RISC-V memory instructions. This includes both int + float loads + stores.
  *
- * Parameters:
- *   vaddr_width_p    -
- *
- * Inputs:
- *   clk_i            -
- *   reset_i          -
- *
- *   decode_i         - All of the pipeline control information needed for a dispatched instruction
- *   pc_i             - PC of the dispatched instruction
- *   rs1_i            - Source register data for the dispatched instruction
- *   rs2_i            - Source register data for the dispatched instruction
- *   imm_i            - Immediate data for the dispatched instruction
- *   exc_i            - Exception information for a dispatched instruction
- *
- *   mem_resp_i       - Load / store response from the MMU.
- *   mem_resp_v_i     - 'ready-then-valid' interface
- *   mem_resp_ready_o   - 
-
- *
- * Outputs:
- *   mmu_cmd_o        -  Load / store command to the MMU
- *   mmu_cmd_v_o      -  'ready-then-valid' interface
- *   mmu_cmd_ready_i  - 
- * 
- *   data_o         - The calculated result of a load 
- *   cache_miss_o     - Goes high when the result of the load or store is a cache miss 
- *   
- * Keywords:
- *   calculator, mem, mmu, load, store, rv64i, rv64f
- *
  * Notes:
  *   
  */

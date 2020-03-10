@@ -29,7 +29,7 @@ assign proc_param = all_cfgs_gp[bp_params_p];
 initial 
   begin
     $display("########### BP Parameters ##############");
-    $display("bp_proc_param_s %p", proc_param);
+    $display("bp_params_e %s: bp_proc_param_s %p", bp_params_p.name(), proc_param);
     $display("########### TOP IF ##############");
     $display("bp_cfg_bus_s          bits: struct %d width %d", $bits(bp_cfg_bus_s), cfg_bus_width_lp);
 

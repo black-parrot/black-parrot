@@ -32,19 +32,23 @@ module bp_me_wormhole_packet_encode_lce_req
   assign payload_cast_i = payload_i;
   assign packet_o = packet_cast_o;
 
+  // TODO: remove commented code after testing. Normal request and UC Rd have length = header = full msg - dword_width_p
+  // UC Store is header + dword_width_p = full length
   localparam lce_cce_req_req_len_lp =
-    `BSG_CDIV(lce_cce_req_packet_width_lp-$bits(payload_cast_i.msg.req.pad), coh_noc_flit_width_p) - 1;
+    `BSG_CDIV(lce_cce_req_packet_width_lp-$bits(payload_cast_i.data), coh_noc_flit_width_p) - 1;
+    //`BSG_CDIV(lce_cce_req_packet_width_lp-$bits(payload_cast_i.msg.req.pad), coh_noc_flit_width_p) - 1;
   localparam lce_cce_req_uc_wr_len_lp =
     `BSG_CDIV(lce_cce_req_packet_width_lp, coh_noc_flit_width_p) - 1;
   localparam lce_cce_req_uc_rd_len_lp =
-    `BSG_CDIV(lce_cce_req_packet_width_lp-$bits(payload_cast_i.msg.uc_req.data), coh_noc_flit_width_p) - 1;
+    `BSG_CDIV(lce_cce_req_packet_width_lp-$bits(payload_cast_i.data), coh_noc_flit_width_p) - 1;
+    //`BSG_CDIV(lce_cce_req_packet_width_lp-$bits(payload_cast_i.msg.uc_req.data), coh_noc_flit_width_p) - 1;
 
   logic [coh_noc_cord_width_p-1:0] cce_cord_li;
   logic [coh_noc_cid_width_p-1:0]  cce_cid_li;
   bp_me_cce_id_to_cord
    #(.bp_params_p(bp_params_p))
    router_cord
-    (.cce_id_i(payload_cast_i.dst_id)
+    (.cce_id_i(payload_cast_i.header.dst_id)
      ,.cce_cord_o(cce_cord_li)
      ,.cce_cid_o(cce_cid_li)
      );
@@ -54,7 +58,7 @@ module bp_me_wormhole_packet_encode_lce_req
     packet_cast_o.cid     = cce_cid_li;
     packet_cast_o.cord    = cce_cord_li;
 
-    case (payload_cast_i.msg_type)
+    case (payload_cast_i.header.msg_type)
       e_lce_req_type_rd
       ,e_lce_req_type_wr  : packet_cast_o.len = coh_noc_len_width_p'(lce_cce_req_req_len_lp);
       e_lce_req_type_uc_rd: packet_cast_o.len = coh_noc_len_width_p'(lce_cce_req_uc_wr_len_lp);
