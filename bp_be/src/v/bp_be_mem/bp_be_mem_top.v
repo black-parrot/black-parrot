@@ -487,7 +487,7 @@ assign load_access_fault_v  = load_op_tl_lo & (mode_fault_v | did_fault_v);
 assign store_access_fault_v = store_op_tl_lo & (mode_fault_v | did_fault_v);
 
 // D-TLB connections
-assign dtlb_r_v     = dcache_cmd_v;
+assign dtlb_r_v     = dcache_cmd_v & ~fencei_cmd_v;
 assign dtlb_r_vtag  = mmu_cmd.vaddr.tag;
 assign dtlb_w_v     = ptw_tlb_w_v & ~itlb_not_dtlb_resp;
 assign dtlb_w_vtag  = ptw_tlb_w_vtag;
