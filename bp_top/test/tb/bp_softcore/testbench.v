@@ -31,7 +31,7 @@ module testbench
    , parameter load_nbf_p                  = 0
    , parameter skip_init_p                 = 0
    , parameter cosim_p                     = 0
-   , parameter cosim_cfg_file_p            = load_nbf_p ? "prog.cfg" : "prog.elf"
+   , parameter cosim_cfg_file_p            = "prog.cfg"
 
    , parameter mem_zero_p         = 1
    , parameter mem_file_p         = "prog.mem"

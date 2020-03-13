@@ -204,7 +204,7 @@ riscvdv_dump: $(foreach x, $(BP_RVDV), $(x).dump)
 %.nbf:
 	$(PYTHON) $(MEM2NBF) $(MEM_DIR)/$*.mem > $(MEM_DIR)/$@
 
-%.dromajo: $(%.config)
+%.dromajo:
 	$(DROMAJO) $(MEM_DIR)/$*.riscv --host --maxinsn=$(MAXINSN) --save=$* --memory_size=$(MEMSIZE)
 	$(RISCV_OBJCOPY) --change-addresses 0x80000000 \
 		 -I binary -O elf64-littleriscv -B riscv $*.mainram $(MEM_DIR)/$@.$(MAXINSN).riscv
