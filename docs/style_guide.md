@@ -32,7 +32,7 @@ This document is intended to provide more rigid structure for coding style and f
         else
           begin
             x = 1;
-	    	y = 0;
+            y = 0;
           end
 
 - Use localparam keyword for derived parameters and input parameters that should not be set by the party instantiating the module.
@@ -162,3 +162,16 @@ This document is intended to provide more rigid structure for coding style and f
           ,e_bar = 2’b01  // Values aligned
           ,e_baz = 2’b10
         } foo_e;           
+
+- Do not begin comments with // Verilator.  Verilator transforms all comments to /**/ style, which can cause Verilator to interpret an innocuous comment as an invalid pragma. For example, the following example will fail to compile in Verilator!
+
+        module foo
+        input logic a;
+        output logic b;
+
+        // Verilator cannot handle this construct
+        `ifndef VERILATOR
+          syntax error
+        `endif
+
+        endmodule
