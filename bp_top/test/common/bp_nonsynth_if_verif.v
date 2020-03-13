@@ -29,7 +29,7 @@ assign proc_param = all_cfgs_gp[bp_params_p];
 initial 
   begin
     $display("########### BP Parameters ##############");
-    // Verilator 4.031 throws a std::length_error exception based on the length of 
+    //  This throws an std::length_error in Verilator 4.031 based on the length of 
     //   this (admittedly massive) parameter
     `ifndef VERILATOR
     $display("bp_params_e %s: bp_proc_param_s %p", bp_params_p.name(), proc_param);
