@@ -126,9 +126,13 @@ always_ff @(negedge clk_i)
       pop();
     for (integer i = 0; i < num_core_p; i++)
       begin
-        if (finish_w_v_li[i] & io_cmd_yumi_o & ~io_cmd_cast_i.data[0])
+        // PASS when returned value in finish packet is zero
+        if (finish_w_v_li[i] & io_cmd_yumi_o &
+          (io_cmd_cast_i.data[0+:8] == 8'(0)))
           $display("[CORE%0x FSH] PASS", i);
-        if (finish_w_v_li[i] & io_cmd_yumi_o &  io_cmd_cast_i.data[0])
+        // FAIL when returned value in finish packet is non-zero
+        if (finish_w_v_li[i] & io_cmd_yumi_o &
+          (io_cmd_cast_i.data[0+:8] != 8'(0)))
           $display("[CORE%0x FSH] FAIL", i);
       end
 
