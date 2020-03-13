@@ -116,6 +116,7 @@ sim.sc: dirs.sc
 	-@cp $(MEM_PATH)/$(PROG).dump $(SIM_DIR)/prog.dump
 	-@cp $(MEM_PATH)/$(PROG).mainram $(SIM_DIR)/prog.mainram
 	-@cp $(MEM_PATH)/$(PROG).bootram $(SIM_DIR)/prog.bootram
+	-@cp $(BP_COMMON_DIR)/test/cfg/cosim.cfg $(SIM_DIR)/prog.cfg
 	-@cp $(MEM_PATH)/$(PROG).cfg $(SIM_DIR)/prog.cfg
 	-@cp $(MEM_PATH)/$(PROG).spike $(SIM_DIR)/prog.spike
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(SIM_DIR)/dram_ch.ini
