@@ -746,7 +746,6 @@ module bp_be_dcache
   // Always send fencei when coherent
   assign fencei_v_o = fencei_req & (~gdirty_r | (coherent_l1_p == 1));
 
-
   // Locking logic - Block processing of new dcache_packets
   logic cache_miss_resolved;
   bsg_edge_detect
