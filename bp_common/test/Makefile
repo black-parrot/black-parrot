@@ -18,7 +18,7 @@ DROMAJO        = dromajo
 PATH := $(BP_EXTERNAL_DIR)/bin:$(PATH)
 
 NC ?= 1
-MEMSIZE ?= 1
+MEMSIZE ?= 32 # MB
 
 export TEST_DIR
 
