@@ -296,10 +296,12 @@ module bp_uce
               begin
                 data_mem_pkt_cast_o.opcode = e_cache_data_mem_read;
                 data_mem_pkt_cast_o.index  = index_cnt;
+                data_mem_pkt_cast_o.way_id = way_cnt;
                 data_mem_pkt_v_o = stat_mem_pkt_ready_i & tag_mem_pkt_ready_i & data_mem_pkt_ready_i;
 
                 tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_read;
                 tag_mem_pkt_cast_o.index  = index_cnt;
+                tag_mem_pkt_cast_o.way_id = way_cnt;
                 tag_mem_pkt_v_o = stat_mem_pkt_ready_i & tag_mem_pkt_ready_i & data_mem_pkt_ready_i;
 
                 stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_clear_dirty;
@@ -335,9 +337,11 @@ module bp_uce
 
             state_n = (mem_cmd_v_o & index_done & way_done)
                       ? e_flush_fence
-                      : mem_cmd_v_o
-                        ? e_flush_scan
-                        : e_flush_write;
+                      : index_up
+                        ? e_flush_read
+                          : mem_cmd_v_o
+                            ? e_flush_scan
+                            : e_flush_write;
           end
         e_flush_fence:
           begin

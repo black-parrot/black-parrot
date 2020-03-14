@@ -114,6 +114,7 @@ module bp_be_dcache
 
     , output logic [dword_width_p-1:0] data_o
     , output logic v_o
+    , output logic fencei_v_o
 
     // TLB interface
     , input tlb_miss_i
@@ -279,6 +280,7 @@ module bp_be_dcache
   logic [bp_page_offset_width_gp-1:0] page_offset_tl_r;
   logic [dword_width_p-1:0] data_tl_r;
   logic fencei_req;
+  logic gdirty_r;
 
   assign tl_we = v_i & cache_req_ready_i & ~fencei_req;
   
@@ -699,7 +701,7 @@ module bp_be_dcache
     else if(fencei_req) begin
       // Don't flush on fencei when coherent
       cache_req_cast_o.msg_type = e_cache_flush;
-      cache_req_v_o = cache_req_ready_i & (coherent_l1_p == 0);
+      cache_req_v_o = cache_req_ready_i & gdirty_r & (coherent_l1_p == 0);
     end
 
     cache_req_cast_o.addr = paddr_tv_r;
@@ -739,9 +741,10 @@ module bp_be_dcache
 
   assign v_o = v_tv_r & ((uncached_tv_r & (load_op_tv_r & uncached_load_data_v_r))
                          | (uncached_tv_r & (store_op_tv_r & cache_req_ready_i))
-                         | (fencei_op_tv_r & (cache_req_ready_i || (coherent_l1_p == 0)))
                          | (~uncached_tv_r & ~fencei_op_tv_r & ~miss_tv)
                          );
+  assign fencei_v_o = fencei_req & ~gdirty_r;
+
 
   // Locking logic - Block processing of new dcache_packets
   logic cache_miss_resolved;
@@ -754,6 +757,25 @@ module bp_be_dcache
      ,.sig_i(cache_miss_r)
      ,.detect_o(cache_miss_resolved)
      );
+
+  // Maintain a global dirty bit for the cache. When data is written to the write buffer, we set
+  //   it. When we send a flush request to the CE, we clear it.
+  // The way this works with fence.i is:
+  //   1) If dirty bit is set, we force a miss and send off a flush request to the CE
+  //   2) If dirty bit is not set, we do not send a request and simply return valid flush.
+  //        The CSR unit is now responsible for sending the clear request to the I$.
+  wire flush_req = cache_req_v_o & (cache_req_cast_o.msg_type == e_cache_flush);
+  bsg_dff_reset_en
+   #(.width_p(1))
+   gdirty_reg
+   (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+
+    ,.en_i(wbuf_v_li | flush_req)
+    ,.data_i(wbuf_v_li)
+
+    ,.data_o(gdirty_r)
+    );
 
   logic [`BSG_SAFE_CLOG2(lock_max_limit_p+1)-1:0] lock_cnt_r;
   wire lock_clr = v_o || (lock_cnt_r == lock_max_limit_p);
@@ -961,11 +983,11 @@ module bp_be_dcache
 
   // stat_mem
   //
-  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r) | stat_mem_pkt_v_i;
-  assign stat_mem_w_li = (v_tv_r & ~uncached_tv_r)
+  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r) | stat_mem_pkt_v_i;
+  assign stat_mem_w_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r)
     ? ~(load_miss_tv | store_miss_tv | lr_miss_tv)
     : stat_mem_pkt_v_i & (stat_mem_pkt.opcode != e_cache_stat_mem_read);
-  assign stat_mem_addr_li = (v_tv_r & ~uncached_tv_r)
+  assign stat_mem_addr_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r)
     ? addr_index_tv
     : stat_mem_pkt.index;
 
@@ -1095,7 +1117,7 @@ module bp_be_dcache
       else begin
         // once uncached load request is replayed, and v_o goes high,
         // cleared the valid bit.
-        if (v_o) begin
+        if (v_o | fencei_v_o) begin
           uncached_load_data_v_r <= 1'b0;
         end
       end
