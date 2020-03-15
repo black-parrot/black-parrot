@@ -37,11 +37,11 @@ module bp_mem
    // BP side
    , input [cce_mem_msg_width_lp-1:0]    mem_cmd_i
    , input                               mem_cmd_v_i
-   , output                              mem_cmd_yumi_o
+   , output                              mem_cmd_ready_o
 
    , output [cce_mem_msg_width_lp-1:0]   mem_resp_o
    , output                              mem_resp_v_o
-   , input                               mem_resp_ready_i
+   , input                               mem_resp_yumi_i
    );
 
 logic                          dram_v_li, dram_w_li;
@@ -61,11 +61,11 @@ bp_mem_transducer
 
    ,.mem_cmd_i(mem_cmd_i)
    ,.mem_cmd_v_i(mem_cmd_v_i)
-   ,.mem_cmd_yumi_o(mem_cmd_yumi_o)
+   ,.mem_cmd_ready_o(mem_cmd_ready_o)
 
    ,.mem_resp_o(mem_resp_o)
    ,.mem_resp_v_o(mem_resp_v_o)
-   ,.mem_resp_ready_i(mem_resp_ready_i)
+   ,.mem_resp_yumi_i(mem_resp_yumi_i)
 
    ,.ready_i(dram_ready_lo)
    ,.v_o(dram_v_li)

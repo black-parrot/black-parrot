@@ -37,6 +37,7 @@ module bp_processor
    , input                                          mem_reset_i
 
    , input [io_noc_did_width_p-1:0]                 my_did_i
+   , input [io_noc_did_width_p-1:0]                 host_did_i
 
    , input  [E:W][io_noc_ral_link_width_lp-1:0]     io_cmd_link_i
    , output [E:W][io_noc_ral_link_width_lp-1:0]     io_cmd_link_o
@@ -84,6 +85,7 @@ bp_core_complex
    ,.mem_reset_i(mem_reset_i)
 
    ,.my_did_i(my_did_i)
+   ,.host_did_i(host_did_i)
 
    ,.coh_req_hor_link_i(coh_req_hor_link_li)
    ,.coh_req_hor_link_o(coh_req_hor_link_lo)
@@ -123,6 +125,7 @@ bp_io_complex
    ,.io_reset_i(io_reset_i)
 
    ,.my_did_i(my_did_i)
+   ,.host_did_i(host_did_i)
 
    ,.coh_req_link_i(coh_req_ver_link_lo[N])
    ,.coh_req_link_o(coh_req_ver_link_li[N])

@@ -34,6 +34,7 @@ module bp_core_complex
    , input                                                       mem_reset_i
 
    , input [io_noc_did_width_p-1:0]                              my_did_i
+   , input [io_noc_did_width_p-1:0]                              host_did_i
 
    , input [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0]  coh_req_hor_link_i
    , output [E:W][cc_y_dim_p-1:0][coh_noc_ral_link_width_lp-1:0] coh_req_hor_link_o
@@ -96,8 +97,9 @@ for (genvar j = 0; j < cc_y_dim_p; j++)
 
            ,.mem_clk_i(mem_clk_i)
            ,.mem_reset_i(mem_reset_i)
- 
+
            ,.my_did_i(my_did_i)
+           ,.host_did_i(host_did_i)
            ,.my_cord_i(cord_li)
 
            ,.coh_lce_req_link_i(lce_req_link_li[j][i])
