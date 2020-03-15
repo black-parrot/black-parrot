@@ -87,7 +87,6 @@ bp_cce_mem_msg_s       cfg_mem_cmd_li;
 logic                  cfg_mem_cmd_v_li, cfg_mem_cmd_ready_lo;
 bp_cce_mem_msg_s       cfg_mem_resp_lo;
 logic                  cfg_mem_resp_v_lo, cfg_mem_resp_yumi_li;
-
 bp_cfg_bus_s cfg_bus_lo;
 logic [cce_instr_width_p-1:0] cfg_cce_ucode_data_li;
 bp_cfg_buffered
