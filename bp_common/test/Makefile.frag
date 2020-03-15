@@ -3,6 +3,8 @@ BP_DEMOS = \
   uc_simple           \
   simple              \
   hello_world         \
+  streaming_accelerator_demo\
+  coherent_accelerator_demo\
   basic_demo          \
   atomic_queue_demo_2 \
   atomic_queue_demo_4 \

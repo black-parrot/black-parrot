@@ -59,8 +59,10 @@ initial
     $fatal("Error: Must have exactly 1 row of I/O routers");
   if (mc_y_dim_p != 0)
     $fatal("Error: L2 expansion nodes not yet supported, MC must have 0 rows");
-  if (ac_x_dim_p != 0)
-    $fatal("Error: CAC not yet supported");
+  if (sac_x_dim_p > 1)
+    $fatal("Error: Must have <= 1 column of streaming accelerators");
+  if (cac_x_dim_p > 1)
+    $fatal("Error: Must have <= 1 column of coherent accelerators");
 
   if (vaddr_width_p != 39)
     $warning("Warning: VM will not work without 39 bit vaddr");

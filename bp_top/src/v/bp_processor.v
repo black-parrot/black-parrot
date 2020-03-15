@@ -67,8 +67,7 @@ bp_coh_ready_and_link_s [S:N][cc_x_dim_p-1:0] coh_resp_ver_link_li, coh_resp_ver
 bp_mem_ready_and_link_s [N:N][cc_x_dim_p-1:0] mem_cmd_ver_link_li, mem_resp_ver_link_lo;
 bp_mem_ready_and_link_s [S:S][cc_x_dim_p-1:0] mem_resp_ver_link_li, mem_cmd_ver_link_lo;
 
-assign coh_req_hor_link_li[W] = '0;
-assign coh_cmd_hor_link_li[W] = '0;
+
 assign coh_resp_hor_link_li[W] = '0;
 assign coh_resp_ver_link_li[S:N] = '0;
 assign mem_cmd_ver_link_li[N] = '0;
@@ -165,9 +164,9 @@ bp_mem_complex
    ,.dram_resp_link_i(dram_resp_link_i)
    );
 
-bp_accelerator_complex
+bp_cacc_complex
  #(.bp_params_p(bp_params_p))
- ac
+ cac
   (.core_clk_i(core_clk_i)
    ,.core_reset_i(core_reset_i)
 
@@ -182,6 +181,22 @@ bp_accelerator_complex
 
    ,.coh_resp_link_i(coh_resp_hor_link_lo[E])
    ,.coh_resp_link_o(coh_resp_hor_link_li[E])
+   );
+
+bp_sacc_complex
+ #(.bp_params_p(bp_params_p))
+ sac
+  (.core_clk_i(core_clk_i)
+   ,.core_reset_i(core_reset_i)
+
+   ,.coh_clk_i(coh_clk_i)
+   ,.coh_reset_i(coh_reset_i)
+
+   ,.coh_req_link_i(coh_req_hor_link_lo[W])
+   ,.coh_req_link_o(coh_req_hor_link_li[W])
+
+   ,.coh_cmd_link_i(coh_cmd_hor_link_lo[W])
+   ,.coh_cmd_link_o(coh_cmd_hor_link_li[W])
    );
 
 endmodule

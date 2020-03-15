@@ -542,7 +542,7 @@ for (genvar i = 0; i < 2; i++)
 
      ,.my_cord_i(my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p])
      // TODO: CID == noc cord right now (1 DMC per column)
-     ,.my_cid_i(my_cord_i[0+:mem_noc_cid_width_p])
+     ,.my_cid_i(my_cord_i[0+:mem_noc_cid_width_p]-sac_x_dim_p[0+:mem_noc_cid_width_p])
      ,.dst_cord_i(dst_cord_li)
      ,.dst_cid_i('0)
 

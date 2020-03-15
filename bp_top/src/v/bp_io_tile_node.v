@@ -1,4 +1,3 @@
-
 module bp_io_tile_node
  import bp_common_pkg::*;
  import bp_common_rv64_pkg::*;
@@ -78,181 +77,54 @@ module bp_io_tile_node
      ,.io_resp_link_o(core_io_resp_link_lo)
      );
 
+   
   // Network-side coherence connections
-  bp_coh_ready_and_link_s coh_lce_req_link_li, coh_lce_req_link_lo;
-  bp_coh_ready_and_link_s coh_lce_cmd_link_li, coh_lce_cmd_link_lo;
+//  bp_coh_ready_and_link_s coh_lce_req_link_li, coh_lce_req_link_lo;
+ // bp_coh_ready_and_link_s coh_lce_cmd_link_li, coh_lce_cmd_link_lo;
 
-  // Network-side IO connections
-  bp_io_ready_and_link_s io_cmd_link_li, io_cmd_link_lo;
-  bp_io_ready_and_link_s io_resp_link_li, io_resp_link_lo;
-
-  if (async_coh_clk_p == 1)
-    begin : coh_async
-      bsg_async_noc_link
-       #(.width_p(coh_noc_flit_width_p)
-         ,.lg_size_p(3)
-         )
-       lce_req_link
-        (.aclk_i(core_clk_i)
-         ,.areset_i(core_reset_i)
-
-         ,.bclk_i(coh_clk_i)
-         ,.breset_i(coh_reset_i)
-
-         ,.alink_i(core_lce_req_link_lo)
-         ,.alink_o(core_lce_req_link_li)
-
-         ,.blink_i(coh_lce_req_link_lo)
-         ,.blink_o(coh_lce_req_link_li)
-         );
-
-      bsg_async_noc_link
-       #(.width_p(coh_noc_flit_width_p)
-         ,.lg_size_p(3)
-         )
-       lce_cmd_link
-        (.aclk_i(core_clk_i)
-         ,.areset_i(core_reset_i)
-
-         ,.bclk_i(coh_clk_i)
-         ,.breset_i(coh_reset_i)
-
-         ,.alink_i(core_lce_cmd_link_lo)
-         ,.alink_o(core_lce_cmd_link_li)
-
-         ,.blink_i(coh_lce_cmd_link_lo)
-         ,.blink_o(coh_lce_cmd_link_li)
-         );
-    end
-  else
-    begin : coh_sync
-      assign coh_lce_req_link_li = core_lce_req_link_lo;
-      assign coh_lce_cmd_link_li = core_lce_cmd_link_lo;
-
-      assign core_lce_req_link_li = coh_lce_req_link_lo;
-      assign core_lce_cmd_link_li = coh_lce_cmd_link_lo;
-    end
-
-  if (async_io_clk_p == 1)
-    begin : io_async
-      bsg_async_noc_link
-       #(.width_p(io_noc_flit_width_p)
-         ,.lg_size_p(3)
-         )
-       io_cmd_link
-        (.aclk_i(core_clk_i)
-         ,.areset_i(core_reset_i)
-
-         ,.bclk_i(io_clk_i)
-         ,.breset_i(io_reset_i)
-
-         ,.alink_i(core_io_cmd_link_lo)
-         ,.alink_o(core_io_cmd_link_li)
-
-         ,.blink_i(io_cmd_link_lo)
-         ,.blink_o(io_cmd_link_li)
-         );
-
-      bsg_async_noc_link
-       #(.width_p(io_noc_flit_width_p)
-         ,.lg_size_p(3)
-         )
-       io_resp_link
-        (.aclk_i(core_clk_i)
-         ,.areset_i(core_reset_i)
-
-         ,.bclk_i(io_clk_i)
-         ,.breset_i(io_reset_i)
-
-         ,.alink_i(core_io_resp_link_lo)
-         ,.alink_o(core_io_resp_link_li)
-
-         ,.blink_i(io_resp_link_lo)
-         ,.blink_o(io_resp_link_li)
-         );
-    end
-  else
-    begin : io_sync
-      assign io_cmd_link_li  = core_io_cmd_link_lo;
-      assign io_resp_link_li = core_io_resp_link_lo;
-
-      assign core_io_cmd_link_li  = io_cmd_link_lo;
-      assign core_io_resp_link_li = io_resp_link_lo;
-    end
-
-  bsg_wormhole_router
+  bp_nd_socket
    #(.flit_width_p(coh_noc_flit_width_p)
      ,.dims_p(coh_noc_dims_p)
+     ,.cord_dims_p(coh_noc_dims_p)
      ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
      ,.len_width_p(coh_noc_len_width_p)
-     ,.reverse_order_p(1)
      ,.routing_matrix_p(StrictYX)
+     ,.async_clk_p(async_coh_clk_p)
+     ,.num_p(2)
      )
-   lce_req_router
-    (.clk_i(coh_clk_i)
-     ,.reset_i(coh_reset_i)
-
-     ,.link_i({coh_lce_req_link_i, coh_lce_req_link_li})
-     ,.link_o({coh_lce_req_link_o, coh_lce_req_link_lo})
-
+   io_coh_socket
+    (.tile_clk_i(core_clk_i)
+     ,.tile_reset_i(core_reset_i)
+     ,.network_clk_i(coh_clk_i)
+     ,.network_reset_i(coh_reset_i)
      ,.my_cord_i(my_cord_i)
+     ,.network_link_i({coh_lce_req_link_i, coh_lce_cmd_link_i})
+     ,.network_link_o({coh_lce_req_link_o, coh_lce_cmd_link_o})
+     ,.tile_link_i({core_lce_req_link_lo, core_lce_cmd_link_lo})
+     ,.tile_link_o({core_lce_req_link_li, core_lce_cmd_link_li})
      );
 
-  bsg_wormhole_router
-   #(.flit_width_p(coh_noc_flit_width_p)
-     ,.dims_p(coh_noc_dims_p)
-     ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
-     ,.len_width_p(coh_noc_len_width_p)
-     ,.reverse_order_p(1)
-     ,.routing_matrix_p(StrictYX)
-     )
-   lce_cmd_router
-    (.clk_i(coh_clk_i)
-     ,.reset_i(coh_reset_i)
-
-     ,.link_i({coh_lce_cmd_link_i, coh_lce_cmd_link_li})
-     ,.link_o({coh_lce_cmd_link_o, coh_lce_cmd_link_lo})
-
-     ,.my_cord_i(my_cord_i)
-     );
-
-  bsg_wormhole_router
+ bp_nd_socket
    #(.flit_width_p(io_noc_flit_width_p)
      ,.dims_p(io_noc_dims_p)
      ,.cord_dims_p(io_noc_cord_dims_p)
      ,.cord_markers_pos_p(io_noc_cord_markers_pos_p)
      ,.len_width_p(io_noc_len_width_p)
-     ,.reverse_order_p(1)
      ,.routing_matrix_p(StrictX)
+     ,.async_clk_p(async_io_clk_p)
+     ,.num_p(2)
      )
-   io_cmd_router
-    (.clk_i(io_clk_i)
-     ,.reset_i(io_reset_i)
-
-     ,.link_i({io_cmd_link_i, io_cmd_link_li})
-     ,.link_o({io_cmd_link_o, io_cmd_link_lo})
-
+   io_socket
+    (.tile_clk_i(core_clk_i)
+     ,.tile_reset_i(core_reset_i)
+     ,.network_clk_i(io_clk_i)
+     ,.network_reset_i(io_reset_i)
      ,.my_cord_i(io_noc_cord_width_p'(my_did_i))
+     ,.network_link_i({io_cmd_link_i, io_resp_link_i})
+     ,.network_link_o({io_cmd_link_o, io_resp_link_o})
+     ,.tile_link_i({core_io_cmd_link_lo, core_io_resp_link_lo})
+     ,.tile_link_o({core_io_cmd_link_li, core_io_resp_link_li})
      );
-
-  bsg_wormhole_router
-   #(.flit_width_p(io_noc_flit_width_p)
-     ,.dims_p(io_noc_dims_p)
-     ,.cord_dims_p(io_noc_cord_dims_p)
-     ,.cord_markers_pos_p(io_noc_cord_markers_pos_p)
-     ,.len_width_p(io_noc_len_width_p)
-     ,.reverse_order_p(1)
-     ,.routing_matrix_p(StrictX)
-     )
-   io_resp_router
-    (.clk_i(io_clk_i)
-     ,.reset_i(io_reset_i)
-
-     ,.link_i({io_resp_link_i, io_resp_link_li})
-     ,.link_o({io_resp_link_o, io_resp_link_lo})
-
-     ,.my_cord_i(io_noc_cord_width_p'(my_did_i))
-     );
-
+   
 endmodule
 

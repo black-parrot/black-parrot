@@ -49,7 +49,7 @@ module bp_io_complex
   
   for (genvar i = 0; i < ic_x_dim_p; i++)
     begin : node
-      wire [coh_noc_cord_width_p-1:0] cord_li = {'0, coh_noc_x_cord_width_p'(i)};
+      wire [coh_noc_cord_width_p-1:0] cord_li = {'0, coh_noc_x_cord_width_p'(i+sac_x_dim_p)};
       bp_io_tile_node
        #(.bp_params_p(bp_params_p))
        io
