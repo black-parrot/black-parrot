@@ -45,7 +45,6 @@ module bp_be_director
    , input [isd_status_width_lp-1:0]  isd_status_i
    , input [calc_status_width_lp-1:0] calc_status_i
    , output [vaddr_width_p-1:0]       expected_npc_o
-   , output                           poison_isd_o
    , output logic                     flush_o
 
    // FE-BE interface
@@ -54,6 +53,7 @@ module bp_be_director
    , input                            fe_cmd_ready_i
    , input                            fe_cmd_fence_i
 
+   , output logic                     poison_iss_o
    , output                           suppress_iss_o
 
    , input [trap_pkt_width_lp-1:0]    trap_pkt_i
@@ -136,7 +136,7 @@ bsg_mux
    );
 
 assign npc_mismatch_v = isd_status.isd_v & (expected_npc_o != isd_status.isd_pc);
-assign poison_isd_o = npc_mismatch_v;
+assign poison_iss_o = flush_o | npc_mismatch_v;
 
 // Last operation was branch. Was it successful? Let's find out
 // TODO: I think this is wrong, may send extra attaboys
@@ -181,7 +181,7 @@ always_ff @(posedge clk_i)
       state_r <= state_n;
     end
 
-assign suppress_iss_o = (state_n == e_fence) & fe_cmd_fence_i;
+assign suppress_iss_o = flush_o || ((state_r == e_fence) & fe_cmd_fence_i);
 
 // Flush on FE cmds which are not attaboys.  Also don't flush the entire pipeline on a mispredict.
 always_comb 

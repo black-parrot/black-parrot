@@ -29,7 +29,7 @@ module bp_be_pipe_long
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
   bp_be_decode_s decode;
-  rv64_instr_s instr;
+  rv64_instr_rtype_s instr;
   bp_be_wb_pkt_s wb_pkt;
 
   assign decode = decode_i;
@@ -89,7 +89,7 @@ module bp_be_pipe_long
      ,.reset_i(reset_i | flush_i)
      ,.en_i(v_i | v_lo)
 
-     ,.data_i({v_i, instr.t.rtype.rd_addr, decode.fu_op, decode.opw_v})
+     ,.data_i({v_i, instr.rd_addr, decode.fu_op, decode.opw_v})
      ,.data_o({rd_w_v_r, rd_addr_r, fu_op_r, opw_v_r})
      );
 

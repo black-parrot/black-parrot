@@ -42,6 +42,12 @@ module bp_be_top
    , output                                          fe_queue_deq_o
    , output                                          fe_queue_roll_o
 
+   , input [reg_addr_width_p-1:0]                    rs1_addr_i
+   , input                                           rs1_v_i
+
+   , input [reg_addr_width_p-1:0]                    rs2_addr_i
+   , input                                           rs2_v_i
+
    // FE cmd interface
    , output [fe_cmd_width_lp-1:0]                    fe_cmd_o
    , output                                          fe_cmd_v_o
@@ -106,7 +112,7 @@ bp_be_wb_pkt_s wb_pkt;
 
 bp_be_isd_status_s isd_status;
 logic [vaddr_width_p-1:0] expected_npc_lo;
-logic poison_isd_lo, suppress_iss_lo;
+logic poison_iss_lo, suppress_iss_lo;
 
 logic [rv64_priv_width_gp-1:0] priv_mode_lo;
 logic [ptag_width_p-1:0]       satp_ppn_lo;
@@ -135,7 +141,7 @@ bp_be_director
    ,.fe_cmd_fence_i(fe_cmd_fence_i)
 
    ,.suppress_iss_o(suppress_iss_lo)
-   ,.poison_isd_o(poison_isd_lo)
+   ,.poison_iss_o(poison_iss_lo)
 
    ,.trap_pkt_i(trap_pkt)
    ,.ptw_fill_pkt_i(ptw_fill_pkt)
@@ -172,11 +178,10 @@ bp_be_scheduler
 
    ,.isd_status_o(isd_status)
    ,.expected_npc_i(expected_npc_lo)
-   ,.poison_iss_i(flush)
-   ,.poison_isd_i(poison_isd_lo)
    ,.dispatch_v_i(chk_dispatch_v)
    ,.cache_miss_v_i(trap_pkt.rollback)
    ,.cmt_v_i(commit_pkt.queue_v)
+   ,.poison_iss_i(poison_iss_lo)
    ,.suppress_iss_i(suppress_iss_lo)
 
    ,.fe_queue_i(fe_queue_i)
@@ -186,6 +191,11 @@ bp_be_scheduler
    ,.fe_queue_roll_o(fe_queue_roll_o)
    ,.fe_queue_deq_o(fe_queue_deq_o)
 
+   ,.rs1_addr_i(rs1_addr_i)
+   ,.rs1_v_i(rs1_v_i)
+
+   ,.rs2_addr_i(rs2_addr_i)
+   ,.rs2_v_i(rs2_v_i)
 
    ,.dispatch_pkt_o(dispatch_pkt)
    
