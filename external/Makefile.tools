@@ -40,7 +40,7 @@ dtc:
 spike:
 	@cd $(TOP); git submodule update --init --recursive $(SPIKE_DIR)
 	cd $(SPIKE_DIR); \
-		./configure --enable-commitlog --enable-histogram --with-isa=rv64ia --prefix=$(BP_EXTERNAL_DIR)
+		./configure --enable-commitlog --enable-histogram --with-isa=rv64ima --prefix=$(BP_EXTERNAL_DIR)
 	$(MAKE) -C $(SPIKE_DIR)
 	$(MAKE) -C $(SPIKE_DIR) install
 
@@ -63,7 +63,7 @@ gnu:
 	cd $(GNU_DIR); \
 		rm -rf riscv-newlib; \
 		git clone -b bsg_manycore_newlib https://github.com/bespoke-silicon-group/bsg_newlib_dramfs.git riscv-newlib; \
-		./configure --prefix=$(BP_EXTERNAL_DIR) --with-arch=rv64ia --with-abi=lp64 --with-cmodel=medany 
+		./configure --prefix=$(BP_EXTERNAL_DIR) --with-arch=rv64ima --with-abi=lp64 --with-cmodel=medany 
 	$(MAKE) -C $(GNU_DIR)
 	$(MAKE) -C $(GNU_DIR) install
 	cp $(BP_EXTERNAL_DIR)/riscv64-unknown-elf/bin/bsg_newlib_mklfs $(BIN_DIR)
