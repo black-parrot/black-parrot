@@ -30,6 +30,7 @@ module bp_tile
 
    // Memory side connection
    , input [io_noc_did_width_p-1:0]                           my_did_i
+   , input [io_noc_did_width_p-1:0]                           host_did_i
    , input [coh_noc_cord_width_p-1:0]                         my_cord_i
 
    // Connected to other tiles on east and west
@@ -133,6 +134,7 @@ bp_cfg_buffered
 
    ,.cfg_bus_o(cfg_bus_lo)
    ,.did_i(my_did_i)
+   ,.host_did_i(host_did_i)
    ,.cord_i(my_cord_i)
    ,.irf_data_i(cfg_irf_data_li)
    ,.npc_data_i(cfg_npc_data_li)
