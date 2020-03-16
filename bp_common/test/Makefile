@@ -68,6 +68,7 @@ riscv_elf:
 	find $(TEST_DIR)/src/riscv-tests/isa/ -executable -name "rv64ua-*" -execdir mv {} $(MEM_DIR)/{}.riscv \;
 	find $(TEST_DIR)/src/riscv-tests/isa/ -executable -name "rv64mi-*" -execdir mv {} $(MEM_DIR)/{}.riscv \;
 	find $(TEST_DIR)/src/riscv-tests/isa/ -executable -name "rv64si-*" -execdir mv {} $(MEM_DIR)/{}.riscv \;
+	find $(TEST_DIR)/src/riscv-tests/isa/ -executable -name "rv64um-*" -execdir mv {} $(MEM_DIR)/{}.riscv \;
 	find $(TEST_DIR)/src/riscv-tests/benchmarks/ -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
 
 coremark_elf:
@@ -84,7 +85,7 @@ opensbi_elf:
 
 bbl_elf:
 	cd $(TEST_DIR)/src/riscv-pk/ && mkdir -p build && cd build \
-	&& ../configure --host=riscv64-unknown-elf --with-arch=rv64ia --with-abi=lp64 --includedir=$(TEST_DIR)/src/riscv-pk/machine/
+	&& ../configure --host=riscv64-unknown-elf --with-arch=rv64ima --with-abi=lp64 --includedir=$(TEST_DIR)/src/riscv-pk/machine/
 	$(MAKE) -C $(TEST_DIR)/src/riscv-pk/build
 	@cp $(TEST_DIR)/src/riscv-pk/build/bbl $(MEM_DIR)/bbl.riscv
 
@@ -196,7 +197,7 @@ riscvdv_dump: $(foreach x, $(BP_RVDV), $(x).dump)
 	$(RISCV_OBJDUMP) $(MEM_DIR)/$*.riscv > $(MEM_DIR)/$@
 
 %.spike:
-	$(RISCV_SIM) --isa=rv64ia -p$(NC) --log-commits $(MEM_DIR)/$*.riscv 2> $(MEM_DIR)/$@
+	$(RISCV_SIM) --isa=rv64ima -p$(NC) --log-commits $(MEM_DIR)/$*.riscv 2> $(MEM_DIR)/$@
 
 %.dump:
 	$(RISCV_OBJDUMP) $(MEM_DIR)/$*.riscv > $(MEM_DIR)/$@

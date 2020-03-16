@@ -147,7 +147,12 @@ RV64_P_TESTS = \
   rv64ua-p-amoswap_w \
   rv64ua-p-amoxor_d  \
   rv64ua-p-amoxor_w  \
-  rv64ua-p-lrsc
+  rv64ua-p-lrsc      \
+  rv64um-p-mul       \
+  rv64um-p-mulh      \
+  rv64um-p-mulhsu    \
+  rv64um-p-mulhu     \
+  rv64um-p-mulw      \
 
   #rv64ua-v-amominu_w
 RV64_V_TESTS = \
