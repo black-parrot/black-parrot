@@ -745,7 +745,7 @@ module bp_cce_fsm
         // Next state depends on the CCE mode, as set by config bus
         state_n = cnt_0_clr
                   ? cce_normal_mode
-                    ? READY
+                    ? SEND_SYNC
                     : UNCACHED_ONLY
                   : CLEAR_DIR;
 

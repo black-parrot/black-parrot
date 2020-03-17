@@ -113,7 +113,7 @@ bp_cfg_buffered
    ,.cce_ucode_data_i(cfg_cce_ucode_data_li)
    );
 
-bp_cce
+bp_cce_wrapper
  #(.bp_params_p(bp_params_p))
  cce
   (.clk_i(clk_i)

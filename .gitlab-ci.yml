@@ -93,6 +93,8 @@ hotfix_job:
     - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_single_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_quad_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_softcore" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_single_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_quad_core_ucode_cce_cfg" bp_top &
     - wait
   cache:
     key: "dev"
@@ -132,6 +134,8 @@ check-design:
     - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_single_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_quad_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_softcore" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_single_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_quad_core_ucode_cce_cfg" bp_top &
     - wait
       
 lint-verilator:
@@ -195,15 +199,33 @@ top-mc-verilator:
     - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_1.sc CFG=e_bp_single_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_2.sc CFG=e_bp_dual_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_4.sc CFG=e_bp_quad_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_1.sc CFG=e_bp_single_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_2.sc CFG=e_bp_dual_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_4.sc CFG=e_bp_quad_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_1.sc CFG=e_bp_single_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_2.sc CFG=e_bp_dual_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_4.sc CFG=e_bp_quad_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_1.sc CFG=e_bp_single_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_2.sc CFG=e_bp_dual_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_4.sc CFG=e_bp_quad_core_cfg" bp_top &
+    - wait
+
+top-mc-verilator-ucode:
+  <<: *job_definition
+  when: manual
+  stage: test-medium
+  tags:
+    - verilator
+  script:
+    - make -C bp_top/syn build.sc CFG=e_bp_single_core_ucode_cce_cfg
+    - make -C bp_top/syn build.sc CFG=e_bp_dual_core_ucode_cce_cfg
+    - make -C bp_top/syn build.sc CFG=e_bp_quad_core_ucode_cce_cfg
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_1.sc CFG=e_bp_single_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_2.sc CFG=e_bp_dual_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_4.sc CFG=e_bp_quad_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_1.sc CFG=e_bp_single_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_2.sc CFG=e_bp_dual_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_4.sc CFG=e_bp_quad_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_1.sc CFG=e_bp_single_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_2.sc CFG=e_bp_dual_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_4.sc CFG=e_bp_quad_core_ucode_cce_cfg" bp_top &
     - wait
 
 lint-vcs:
@@ -310,5 +332,33 @@ top-mc-vcs:
     - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_4.v TB=bp_processor CFG=e_bp_quad_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_8.v TB=bp_processor CFG=e_bp_oct_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_16.v TB=bp_processor CFG=e_bp_sexta_core_cfg" bp_top &
+    - wait
+
+top-mc-vcs-ucode:
+  <<: *job_definition
+  stage: test-medium
+  tags:
+    - vcs
+  script:
+    - make -C bp_top/syn build.v TB=bp_processor CFG=e_bp_single_core_ucode_cce_cfg
+    - make -C bp_top/syn build.v TB=bp_processor CFG=e_bp_dual_core_ucode_cce_cfg
+    - make -C bp_top/syn build.v TB=bp_processor CFG=e_bp_quad_core_ucode_cce_cfg
+    - make -C bp_top/syn build.v TB=bp_processor CFG=e_bp_oct_core_ucode_cce_cfg
+    - make -C bp_top/syn build.v TB=bp_processor CFG=e_bp_sexta_core_ucode_cce_cfg
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_1.v TB=bp_processor CFG=e_bp_single_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_2.v TB=bp_processor CFG=e_bp_dual_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_4.v TB=bp_processor CFG=e_bp_quad_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_8.v TB=bp_processor CFG=e_bp_oct_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_16.v TB=bp_processor CFG=e_bp_sexta_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_1.v TB=bp_processor CFG=e_bp_single_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_2.v TB=bp_processor CFG=e_bp_dual_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_4.v TB=bp_processor CFG=e_bp_quad_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_8.v TB=bp_processor CFG=e_bp_oct_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_16.v TB=bp_processor CFG=e_bp_sexta_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_1.v TB=bp_processor CFG=e_bp_single_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_2.v TB=bp_processor CFG=e_bp_dual_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_4.v TB=bp_processor CFG=e_bp_quad_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_8.v TB=bp_processor CFG=e_bp_oct_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_16.v TB=bp_processor CFG=e_bp_sexta_core_ucode_cce_cfg" bp_top &
     - wait
 
