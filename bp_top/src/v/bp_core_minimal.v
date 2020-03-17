@@ -72,10 +72,11 @@ module bp_core_minimal
   `declare_bp_cache_data_mem_pkt_s(lce_sets_p, lce_assoc_p, cce_block_width_p);
   `declare_bp_cache_tag_mem_pkt_s(lce_sets_p, lce_assoc_p, ptag_width_p);
   `declare_bp_cache_stat_mem_pkt_s(lce_sets_p, lce_assoc_p);
-
+  //`declare_bp_fe_cache_data_mem_pkt_s(lce_fe_sets_p, lce_fe_assoc_p, cce_fe_block_width_p);
   bp_cache_data_mem_pkt_s data_mem_pkt;
   bp_cache_tag_mem_pkt_s tag_mem_pkt;
   bp_cache_stat_mem_pkt_s stat_mem_pkt;
+  //bp_fe_cache_data_mem_pkt_s data_fe_mem_pkt;
 
   // TODO: fix interfaces for fe/be
   `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);

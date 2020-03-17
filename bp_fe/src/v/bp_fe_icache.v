@@ -6,7 +6,7 @@
  * Description:
  *   To	be updated
  * The icache module implements a virtually-indexed physically-tagged cache. Although the cache
- * design is parameterized, our default icache configuration is a 4-way set associative cache. Our
+ * design is parameterized, our default icache configuration is a lce_assoc_p-way set associative cache. Our
  * icache has an LCE as part of the cache controller that communicates with the CCE. For replacement
  * policy, we use the pseudo-LRU module implemnted for dcache.
  *
@@ -38,6 +38,7 @@ module bp_fe_icache
     , localparam bp_be_dcache_stat_width_lp = `bp_be_dcache_stat_info_width(lce_assoc_p)
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , parameter debug_p=0
+    , parameter lce_assoc_np=4
     )
    (input                                              clk_i
     , input                                            reset_i
