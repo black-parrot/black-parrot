@@ -32,9 +32,9 @@ always_ff @(negedge delay_li)
     file      = $fopen(file_name, "w");
   end
 
-  logic [30:0] itag_cnt;
+  logic [29:0] itag_cnt;
   bsg_counter_clear_up
-   #(.max_val_p(2**31-1)
+   #(.max_val_p(2**30-1)
      ,.init_val_p(0)
      )
    itag_reg
