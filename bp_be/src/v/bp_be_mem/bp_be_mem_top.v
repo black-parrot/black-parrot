@@ -519,7 +519,7 @@ always_ff @(posedge clk_i)
 
 always_ff @(negedge clk_i)
   begin
-    assert (~(mmu_cmd_v_r & dtlb_r_v_lo & dcache_uncached & (mmu_cmd_r.mem_op inside {e_lrw, e_lrd, e_scw, e_scd})))
+    assert ((reset_i !== 1'b0) || ~(mmu_cmd_v_r & dtlb_r_v_lo & dcache_uncached & (mmu_cmd_r.mem_op inside {e_lrw, e_lrd, e_scw, e_scd})))
       else $warning("LR/SC to uncached memory not supported");
   end
 
