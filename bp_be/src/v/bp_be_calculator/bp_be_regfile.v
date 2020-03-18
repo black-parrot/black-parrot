@@ -27,7 +27,7 @@ module bp_be_regfile
    , input                         reset_i
 
    // Pipeline control signals
-   , input [cfg_bus_width_lp-1:0] cfg_bus_i
+   , input [cfg_bus_width_lp-1:0]  cfg_bus_i
    , output [dword_width_p-1:0]    cfg_data_o
 
    // rd write bus
@@ -90,17 +90,15 @@ bsg_dff_reset_en
    ,.data_o({rs1_addr_r, rs2_addr_r})
    );
 
-logic zero_rs1_r, zero_rs2_r, fwd_rs1_r, fwd_rs2_r;
+logic fwd_rs1_r, fwd_rs2_r;
 wire fwd_rs1  = rd_w_v_i & (rd_addr_i == rs1_reread_addr);
 wire fwd_rs2  = rd_w_v_i & (rd_addr_i == rs2_reread_addr);
-wire zero_rs1 = (rs1_reread_addr == '0);
-wire zero_rs2 = (rs2_reread_addr == '0);
 bsg_dff
- #(.width_p(4+dword_width_p))
+ #(.width_p(2+dword_width_p))
  rw_fwd_reg
   (.clk_i(clk_i)
-   ,.data_i({zero_rs1, zero_rs2, fwd_rs1, fwd_rs2, rd_data_i})
-   ,.data_o({zero_rs1_r, zero_rs2_r, fwd_rs1_r, fwd_rs2_r, rd_data_r})
+   ,.data_i({fwd_rs1, fwd_rs2, rd_data_i})
+   ,.data_o({fwd_rs1_r, fwd_rs2_r, rd_data_r})
    );
 
 always_comb 
@@ -117,9 +115,9 @@ always_comb
     rs2_reread_addr = rs2_r_v_i ? rs2_addr_i : rs2_addr_r;
 end
 
-// RISC-V defines x0 as 0. Else, forward if we read/wrote, else pass out the register data
-assign rs1_data_o = zero_rs1_r ? '0 : fwd_rs1_r ? rd_data_r : rs1_reg_data;
-assign rs2_data_o = zero_rs2_r ? '0 : fwd_rs2_r ? rd_data_r : rs2_reg_data;
+// Forward if we read/wrote, else pass out the register data
+assign rs1_data_o = fwd_rs1_r ? rd_data_r : rs1_reg_data;
+assign rs2_data_o = fwd_rs2_r ? rd_data_r : rs2_reg_data;
 
 endmodule 
 

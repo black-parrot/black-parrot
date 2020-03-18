@@ -55,7 +55,7 @@ assign cfg_bus_cast_i = cfg_bus_i;
 // Casting 
 bp_be_isd_status_s       isd_status_cast_i;
 bp_be_calc_status_s      calc_status_cast_i;
-bp_be_dep_status_s [4:0] dep_status_li;
+bp_be_dep_status_s [5:0] dep_status_li;
 
 assign isd_status_cast_i  = isd_status_i;
 assign calc_status_cast_i = calc_status_i;

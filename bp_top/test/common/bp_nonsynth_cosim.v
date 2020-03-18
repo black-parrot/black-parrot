@@ -40,8 +40,8 @@ always_ff @(negedge reset_i)
   logic                     commit_v_r;
   logic [vaddr_width_p-1:0] commit_pc_r;
   logic [instr_width_p-1:0] commit_instr_r;
-  bsg_dff
-   #(.width_p(1+vaddr_width_p+instr_width_p))
+  bsg_dff_chain
+   #(.width_p(1+vaddr_width_p+instr_width_p), .num_stages_p(2))
    commit__reg
     (.clk_i(clk_i)
      ,.data_i({commit_v_i, commit_pc_i, commit_instr_i})
@@ -50,8 +50,8 @@ always_ff @(negedge reset_i)
      
   logic                     interrupt_v_r;
   logic [dword_width_p-1:0] cause_r;
-  bsg_dff
-   #(.width_p(1+dword_width_p))
+  bsg_dff_chain
+   #(.width_p(1+dword_width_p), .num_stages_p(2))
    trap__reg
     (.clk_i(clk_i)
      ,.data_i({interrupt_v_i, cause_i})
