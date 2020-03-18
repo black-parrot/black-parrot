@@ -88,7 +88,11 @@ always_comb
     unique casez (instr.opcode) 
       `RV64_OP_OP, `RV64_OP_32_OP : 
         begin
-          decode.pipe_int_v = 1'b1;
+          if (instr inside {`RV64_MUL, `RV64_MULW})
+            decode.pipe_mul_v = 1'b1;
+          else
+            decode.pipe_int_v = 1'b1;
+
           decode.irf_w_v    = 1'b1;
           decode.opw_v      = (instr.opcode == `RV64_OP_32_OP);
           unique casez (instr)
@@ -102,6 +106,8 @@ always_comb
             `RV64_XOR             : decode.fu_op = e_int_op_xor;
             `RV64_OR              : decode.fu_op = e_int_op_or;
             `RV64_AND             : decode.fu_op = e_int_op_and;
+
+            `RV64_MUL, `RV64_MULW : decode.fu_op = e_mul_op_mul;
             default : illegal_instr = 1'b1;
           endcase
 
