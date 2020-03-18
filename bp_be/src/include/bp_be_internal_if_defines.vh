@@ -64,6 +64,11 @@
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
+    logic [dword_width_p-1:0] data;                                                                \
+  }  bp_be_comp_stage_reg_s;                                                                       \
+                                                                                                   \
+  typedef struct packed                                                                            \
+  {                                                                                                \
     logic                              v;                                                          \
     logic                              int_iwb_v;                                                  \
     logic                              mul_iwb_v;                                                  \
@@ -104,7 +109,7 @@
      * In fact, we don't need all of this dependency information, since some of the stages are     \
      *    post-commit. However, for now we're passing all of it.                                   \
      */                                                                                            \
-    bp_be_dep_status_s[4:0]                 dep_status;                                            \
+    bp_be_dep_status_s[5:0]                 dep_status;                                            \
   }  bp_be_calc_status_s;                                                                          \
                                                                                                    \
   typedef struct packed                                                                            \
@@ -170,6 +175,9 @@
    + 12                                                                                            \
    )
 
+`define bp_be_comp_stage_reg_width \
+  (dword_width_p)
+
 `define bp_be_isd_status_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
   (1 + vaddr_width_mp + branch_metadata_fwd_width_mp + 5 + rv64_reg_addr_width_gp +  2 + rv64_reg_addr_width_gp)
 
@@ -180,7 +188,7 @@
   (2                                                                                               \
    + vaddr_width_p                                                                                 \
    + 1                                                                                             \
-   + 5 * `bp_be_dep_status_width                                                                   \
+   + 6 * `bp_be_dep_status_width                                                                   \
    )                                                                                               
 
 `define bp_be_commit_pkt_width(vaddr_width_mp) \
