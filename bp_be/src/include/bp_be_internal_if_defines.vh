@@ -104,6 +104,8 @@
     logic [vaddr_width_p-1:0]                ex1_npc;                                              \
     logic                                    ex1_br_or_jmp;                                        \
                                                                                                    \
+    logic                                    long_busy;                                            \
+                                                                                                   \
     /*                                                                                             \
      * 5 is the number of stages in the pipeline.                                                  \
      * In fact, we don't need all of this dependency information, since some of the stages are     \
@@ -187,7 +189,7 @@
 `define bp_be_calc_status_width(vaddr_width_mp) \
   (2                                                                                               \
    + vaddr_width_p                                                                                 \
-   + 1                                                                                             \
+   + 2                                                                                             \
    + 6 * `bp_be_dep_status_width                                                                   \
    )                                                                                               
 

@@ -142,9 +142,9 @@ wrapper
        ,.commit_pc_i(be_calculator.commit_pkt.pc)
        ,.commit_instr_i(be_calculator.commit_pkt.instr)
 
-       ,.rd_w_v_i(be_calculator.wb_pkt.rd_w_v)
-       ,.rd_addr_i(be_calculator.wb_pkt.rd_addr)
-       ,.rd_data_i(be_calculator.wb_pkt.rd_data)
+       ,.rd_w_v_i(be_calculator.calc_wb_pkt.rd_w_v)
+       ,.rd_addr_i(be_calculator.calc_wb_pkt.rd_addr)
+       ,.rd_data_i(be_calculator.calc_wb_pkt.rd_data)
        );
 
   bind bp_be_top
@@ -164,9 +164,9 @@ wrapper
        ,.commit_pc_i(be_calculator.commit_pkt.pc)
        ,.commit_instr_i(be_calculator.commit_pkt.instr)
 
-       ,.rd_w_v_i(be_calculator.wb_pkt.rd_w_v)
-       ,.rd_addr_i(be_calculator.wb_pkt.rd_addr)
-       ,.rd_data_i(be_calculator.wb_pkt.rd_data)
+       ,.rd_w_v_i(be_calculator.calc_wb_pkt.rd_w_v)
+       ,.rd_addr_i(be_calculator.calc_wb_pkt.rd_addr)
+       ,.rd_data_i(be_calculator.calc_wb_pkt.rd_data)
 
        ,.interrupt_v_i(be_mem.csr.trap_pkt_cast_o._interrupt)
        ,.cause_i(be_mem.csr.trap_pkt_cast_o.cause)

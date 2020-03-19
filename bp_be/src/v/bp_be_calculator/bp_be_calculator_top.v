@@ -81,13 +81,12 @@ bp_be_dispatch_pkt_s   dispatch_pkt;
 bp_be_calc_status_s    calc_status;
 bp_be_mem_resp_s       mem_resp;
 bp_cfg_bus_s           cfg_bus;
-bp_be_wb_pkt_s         wb_pkt;
+bp_be_wb_pkt_s         long_wb_pkt, calc_wb_pkt;
 bp_be_commit_pkt_s     commit_pkt;
 
 assign dispatch_pkt = dispatch_pkt_i;
 assign mem_resp = mem_resp_i;
 assign calc_status_o = calc_status;
-assign wb_pkt_o = wb_pkt;
 assign commit_pkt_o = commit_pkt;
 
 // Declare intermediate signals
@@ -110,10 +109,10 @@ bp_be_comp_stage_reg_s [pipe_stage_els_lp  :0] comp_stage_n;
 bp_be_comp_stage_reg_s [pipe_stage_els_lp-1:0] comp_stage_r;
 
 logic [dword_width_p-1:0] pipe_nop_data_lo;
-logic [dword_width_p-1:0] pipe_int_data_lo, pipe_mul_data_lo, pipe_mem_data_lo, pipe_fp_data_lo;
+logic [dword_width_p-1:0] pipe_int_data_lo, pipe_mul_data_lo, pipe_mem_data_lo, pipe_fp_data_lo, pipe_long_data_lo;
 
 logic nop_pipe_result_v;
-logic pipe_int_data_lo_v, pipe_mul_data_lo_v, pipe_mem_data_lo_v, pipe_fp_data_lo_v;
+logic pipe_int_data_lo_v, pipe_mul_data_lo_v, pipe_mem_data_lo_v, pipe_fp_data_lo_v, pipe_long_data_lo_v;
 logic pipe_mem_exc_v_lo, pipe_mem_miss_v_lo;
 
 logic [vaddr_width_p-1:0] br_tgt_int1;
@@ -285,6 +284,26 @@ bp_be_pipe_mem
      ,.data_o(pipe_fp_data_lo)
      );
 
+  logic pipe_long_ready_lo;
+  bp_be_pipe_long
+   #(.bp_params_p(bp_params_p))
+   pipe_long
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.decode_i(reservation_r.decode)
+     ,.instr_i(reservation_r.instr)
+     ,.rs1_i(reservation_r.rs1)
+     ,.rs2_i(reservation_r.rs2)
+     ,.v_i(reservation_r.decode.pipe_long_v)
+     ,.ready_o(pipe_long_ready_lo)
+
+     ,.flush_i(flush_i)
+
+     ,.wb_pkt_o(long_wb_pkt)
+     ,.v_o(pipe_long_data_lo_v)
+     );
+
 // Execution pipelines
 // Shift in dispatch pkt and move everything else down the pipe
 assign calc_stage_n = {calc_stage_r[0+:pipe_stage_els_lp], calc_stage_isd};
@@ -361,6 +380,8 @@ always_comb
     calc_status.ex1_br_or_jmp            = reservation_r.decode.br_v | reservation_r.decode.jmp_v;
     calc_status.ex1_instr_v              = reservation_r.decode.instr_v & ~exc_stage_r[0].poison_v;
 
+    calc_status.long_busy                = ~pipe_long_ready_lo;
+
     // Dependency information for pipelines
     for (integer i = 0; i < pipe_stage_els_lp; i++) 
       begin : dep_status
@@ -430,9 +451,11 @@ assign commit_pkt.pc         = calc_stage_r[2].pc;
 assign commit_pkt.npc        = calc_stage_r[1].pc;
 assign commit_pkt.instr      = calc_stage_r[2].instr;
 
-assign wb_pkt.rd_w_v  = calc_stage_r[4].irf_w_v & ~exc_stage_r[4].poison_v;
-assign wb_pkt.rd_addr = calc_stage_r[4].instr.fields.rtype.rd_addr;
-assign wb_pkt.rd_data = comp_stage_r[4];
+assign calc_wb_pkt.rd_w_v  = calc_stage_r[4].irf_w_v & ~exc_stage_r[4].poison_v;
+assign calc_wb_pkt.rd_addr = calc_stage_r[4].instr.fields.rtype.rd_addr;
+assign calc_wb_pkt.rd_data = comp_stage_r[4];
+
+assign wb_pkt_o = pipe_long_data_lo_v ? long_wb_pkt : calc_wb_pkt;
 
 endmodule
 
