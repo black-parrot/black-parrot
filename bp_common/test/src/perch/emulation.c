@@ -1,6 +1,7 @@
 #include <stdint.h>
 
 #include "emulation.h"
+#include "bp_utils.h"
 
 #define CSR_ADDR_MVENDORID  0xF11
 #define CSR_ADDR_MARCHID    0xF12
@@ -9,6 +10,7 @@
 
 #define RISCV_OPCODE_SYSTEM 0b1110011
 #define RISCV_OPCODE_ATOMIC 0b0101111
+#define RISCV_OPCODE_OP     0b0110011
 
 #define OPCODE(x)  ((x >> 0) & 0x7F)
 #define RD(x)      ((x >> 7) & 0x1F)
@@ -67,6 +69,11 @@ static uint64_t (**amo_jt[8])(uint64_t, uint64_t) =
   0, 0, amow_jt, amod_jt, 0, 0, 0, 0
 };
 
+static uint64_t (*mul_jt[8])(uint64_t, uint64_t) =
+{
+  0, mul_mulh, mul_mulhsu, mul_mulhu, 0, 0, 0, 0
+};
+
 void decode_illegal(uint64_t *regs, uint64_t mcause, uint64_t instr) 
 {
   // TODO: We only emulate A extension for now
@@ -83,8 +90,12 @@ void decode_illegal(uint64_t *regs, uint64_t mcause, uint64_t instr)
 
   if (opcode == RISCV_OPCODE_ATOMIC) {
     regs[rd_addr] = amo_jt[funct3][funct5](rs1_data, rs2_data);
+  } else if (opcode == RISCV_OPCODE_OP) {
+    // We just assume the funct7 wis correct
+    regs[rd_addr] = mul_jt[funct3](rs1_data, rs2_data);
   } else {
-    while (1); // Infinite loop, since we don't have a truly illegal instruction handler
+    // Fail on truly illegal instruction
+    while(1);
   }
 }
 
