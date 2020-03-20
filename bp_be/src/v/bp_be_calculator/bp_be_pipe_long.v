@@ -61,6 +61,7 @@ module bp_be_pipe_long
 
   // We actual could exit early here 
   logic [dword_width_p-1:0] quotient_lo, remainder_lo;
+  logic idiv_ready_lo;
   logic v_lo;
   bsg_idiv_iterative
    #(.width_p(dword_width_p))
@@ -72,7 +73,7 @@ module bp_be_pipe_long
      ,.divisor_i(op_b)
      ,.signed_div_i(signed_div_li)
      ,.v_i(v_i)
-     ,.ready_o(ready_o)
+     ,.ready_o(idiv_ready_lo)
 
      ,.quotient_o(quotient_lo)
      ,.remainder_o(remainder_lo)
@@ -112,6 +113,8 @@ module bp_be_pipe_long
   assign wb_pkt.rd_addr = rd_addr_r;
   assign wb_pkt.rd_data = rd_data_lo;
   assign v_o = v_lo & rd_w_v_r;
+
+  assign ready_o = idiv_ready_lo & ~v_i;
 
 endmodule
 
