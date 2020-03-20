@@ -98,7 +98,8 @@ always_comb
           else
             decode.pipe_int_v = 1'b1;
 
-          decode.irf_w_v    = 1'b1;
+          // The writeback for long latency ops comes out of band
+          decode.irf_w_v    = ~decode.pipe_long_v;
           decode.opw_v      = (instr.opcode == `RV64_OP_32_OP);
           unique casez (instr)
             `RV64_ADD, `RV64_ADDW : decode.fu_op = e_int_op_add;

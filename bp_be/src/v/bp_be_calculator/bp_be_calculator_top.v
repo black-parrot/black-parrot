@@ -365,9 +365,10 @@ always_comb
     calc_stage_isd.queue_v        = reservation_n.decode.queue_v;
     calc_stage_isd.instr_v        = reservation_n.decode.instr_v;
     calc_stage_isd.pipe_int_v     = reservation_n.decode.pipe_int_v;
-    calc_stage_isd.pipe_mul_v     = reservation_n.decode.pipe_mul_v;
     calc_stage_isd.pipe_mem_v     = reservation_n.decode.pipe_mem_v;
+    calc_stage_isd.pipe_mul_v     = reservation_n.decode.pipe_mul_v;
     calc_stage_isd.pipe_fp_v      = reservation_n.decode.pipe_fp_v;
+    calc_stage_isd.pipe_long_v    = reservation_n.decode.pipe_long_v;
     calc_stage_isd.mem_v          = reservation_n.decode.mem_v;
     calc_stage_isd.csr_v          = reservation_n.decode.csr_v;
     calc_stage_isd.serial_v       = reservation_n.decode.serial_v;

@@ -50,9 +50,10 @@
     logic                              queue_v;                                                    \
     logic                              instr_v;                                                    \
     logic                              pipe_int_v;                                                 \
-    logic                              pipe_mul_v;                                                 \
     logic                              pipe_mem_v;                                                 \
+    logic                              pipe_mul_v;                                                 \
     logic                              pipe_fp_v;                                                  \
+    logic                              pipe_long_v;                                                \
                                                                                                    \
     logic                              mem_v;                                                      \
     logic                              csr_v;                                                      \
@@ -174,7 +175,7 @@
 `define bp_be_pipe_stage_reg_width(vaddr_width_mp) \
    (vaddr_width_mp                                                                                 \
    + rv64_instr_width_gp                                                                           \
-   + 12                                                                                            \
+   + 13                                                                                            \
    )
 
 `define bp_be_comp_stage_reg_width \
