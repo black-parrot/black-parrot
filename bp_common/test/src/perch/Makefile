@@ -1,7 +1,7 @@
 
-RISCV_GCC = riscv64-unknown-elf-gcc -fPIC -march=rv64ima -mabi=lp64 -mcmodel=medany -static
-RISCV_AR = riscv64-unknown-elf-ar 
-RISCV_RANLIB = riscv64-unknown-elf-ranlib
+RISCV_GCC = riscv64-unknown-elf-dramfs-gcc -fPIC -march=rv64ima -mabi=lp64 -mcmodel=medany -static
+RISCV_AR = riscv64-unknown-elf-dramfs-ar
+RISCV_RANLIB = riscv64-unknown-elf-dramfs-ranlib
 
 build:
 	$(RISCV_GCC) -c *.c *.S

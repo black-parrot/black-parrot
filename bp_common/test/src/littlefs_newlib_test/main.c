@@ -1,20 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "bp_utils.h"
 
 int main() {
-    char c;
+    // Initialize LFS
+    dramfs_init();
 
     // Read from a file
     FILE *hello = fopen("hello.txt", "r");
     if(hello == NULL)
       return -1;
 
+    char c;
     while((c = fgetc(hello)) != '\n') {
-      putchar(c);
+      bp_cprint(c);
     }
-    putchar('\n');
-    
+    bp_cprint('\n');
+
     fclose(hello);
+    bp_finish(0);
     return 0;
 }
