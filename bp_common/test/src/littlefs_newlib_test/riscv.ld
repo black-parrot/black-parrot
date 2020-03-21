@@ -60,8 +60,6 @@ SECTIONS
     *(.tbss.end)
   }
 
-  /* TODO: please change my name/reference in newlib sbrk */
-  _bsg_dram_end_addr = .;
   /* End of uninitalized data segement */
   _end = .;
 }

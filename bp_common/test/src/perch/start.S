@@ -54,6 +54,10 @@ _start:
     addi x30, x0, 0
     addi x31, x0, 0
 
+.option push
+.option norelax
+    la gp, __global_pointer$
+.option pop
 
 /* jump to main */
     jal main
