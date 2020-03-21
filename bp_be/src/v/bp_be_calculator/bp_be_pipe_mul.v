@@ -4,10 +4,12 @@
  *   bp_be_pipe_mul.v
  * 
  * Description:
- *   Pipeline for RISC-V float instructions. Handles float and double computation.
+ *   Pipeline for RISC-V multiplication instructions.
  *
  * Notes:
- *
+ *   Does not handle high-half multiplication. These operations take up more than half
+ *     of the area of a 64x64->128-bit multiplier, but are used rarely
+ *   Must use retiming for good QoR.
  */
 module bp_be_pipe_mul
   import bp_be_pkg::*;
