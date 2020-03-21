@@ -12,7 +12,6 @@ MEM_DIR        = $(TEST_DIR)/mem
 RISCV_SIM      = spike
 RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -d
 RISCV_OBJCOPY  = riscv64-unknown-elf-objcopy
-MKLFS = $(TEST_DIR)/bin/bsg_newlib_mklfs
 DROMAJO        = dromajo
 
 PATH := $(BP_EXTERNAL_DIR)/bin:$(PATH)
@@ -89,8 +88,8 @@ bbl_elf:
 	@cp $(TEST_DIR)/src/riscv-pk/build/bbl $(MEM_DIR)/bbl.riscv
 
 littlefs_test_elf:
-	$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test/fhello/
-	find $(TEST_DIR)/src/littlefs_newlib_test/fhello/ -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
+	$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test/
+	find $(TEST_DIR)/src/littlefs_newlib_test/ -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
 
 mtest_lfs: $(foreach x, $(PROGS), $(x).bin)
 	cd $(MEM_DIR) && $(MKLFS) 128 204800 $(foreach x, $(PROGS), $(x).bin) > $(TEST_DIR)/src/mtest/src/lfs.c
@@ -232,7 +231,7 @@ clean:
 	-$(MAKE) -C $(TEST_DIR)/src/demos clean
 	-$(MAKE) -C $(TEST_DIR)/src/opensbi clean
 	-$(MAKE) -C $(TEST_DIR)/src/coremark/barebones clean
-	-$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test/fhello clean
+	-$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test clean
 	-$(MAKE) -C $(TEST_DIR)/src/beebs clean
 	-$(MAKE) -C $(TEST_DIR)/src/spec/spec2000/benchmarks/spec2000/CINT2000/175.vpr/src.raw/ clean
 	-$(MAKE) -C $(TEST_DIR)/src/riscv-dv clean
