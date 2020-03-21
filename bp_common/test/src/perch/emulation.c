@@ -91,7 +91,7 @@ void decode_illegal(uint64_t *regs, uint64_t mcause, uint64_t instr)
   if (opcode == RISCV_OPCODE_ATOMIC) {
     regs[rd_addr] = amo_jt[funct3][funct5](rs1_data, rs2_data);
   } else if (opcode == RISCV_OPCODE_OP) {
-    // We just assume the funct7 wis correct
+    // We just assume the funct7 is correct
     regs[rd_addr] = mul_jt[funct3](rs1_data, rs2_data);
   } else {
     // Fail on truly illegal instruction
