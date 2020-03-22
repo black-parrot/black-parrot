@@ -9,10 +9,12 @@ MEM2NBF  ?= $(BP_COMMON_DIR)/software/py/nbf.py
 TEST_DIR       = $(BP_COMMON_DIR)/test
 MEM_DIR        = $(TEST_DIR)/mem
 
+RISCV_TARGET   = riscv64-unknown-elf-dramfs
+CROSS_COMPILE  = $(RISCV_TARGET)-
+
 RISCV_SIM      = spike
-RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -d
-RISCV_OBJCOPY  = riscv64-unknown-elf-objcopy
-MKLFS = $(TEST_DIR)/bin/bsg_newlib_mklfs
+RISCV_OBJDUMP  = $(CROSS_COMPILE)objdump -d
+RISCV_OBJCOPY  = $(CROSS_COMPILE)objcopy
 DROMAJO        = dromajo
 
 PATH := $(BP_EXTERNAL_DIR)/bin:$(PATH)
@@ -45,24 +47,20 @@ demos: demos_mem demos_nbf demos_dump
 riscvdv: riscvdv_mem riscvdv_nbf riscvdv_dump riscvdv_spike
 # OpenSBI requires hardfloat and does not support softfloat libraries, so the compilation will fail
 #opensbi: opensbi_mem opensbi_dump
-#bbl: bbl_mem bbl_dump
 # We don't run demos on spike because a lot of them don't terminate
 
 # Spec is separate because it is proprietary
 spec: spec_mem spec_dump spec_spike
 
-# mtest is separate because there's not a good default
-mtest: mtest_mem mtest_dump mtest_spike
-
 perch:
-	$(MAKE) -C $(TEST_DIR)/src/perch
+	$(MAKE) -C $(TEST_DIR)/src/perch CROSS_COMPILE=$(CROSS_COMPILE)
 	mkdir -p $(TEST_DIR)/lib
 	mkdir -p $(TEST_DIR)/include
 	cp $(TEST_DIR)/src/perch/libperch.a $(TEST_DIR)/lib
 	cp $(TEST_DIR)/src/perch/*.h $(TEST_DIR)/include
 
 riscv_elf: 
-	cd $(TEST_DIR)/src/riscv-tests/ && ./configure
+	cd $(TEST_DIR)/src/riscv-tests/ && ./configure --target=$(RISCV_TARGET)
 	$(MAKE) -C $(TEST_DIR)/src/riscv-tests/
 	find $(TEST_DIR)/src/riscv-tests/isa/ -executable -name "rv64ui-*" -execdir mv {} $(MEM_DIR)/{}.riscv \;
 	find $(TEST_DIR)/src/riscv-tests/isa/ -executable -name "rv64ua-*" -execdir mv {} $(MEM_DIR)/{}.riscv \;
@@ -71,40 +69,25 @@ riscv_elf:
 	find $(TEST_DIR)/src/riscv-tests/benchmarks/ -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
 
 coremark_elf:
-	$(MAKE) -C $(TEST_DIR)/src/coremark/barebones/
+	$(MAKE) -C $(TEST_DIR)/src/coremark/barebones/ CROSS_COMPILE=$(CROSS_COMPILE)
 	find $(TEST_DIR)/src/coremark/barebones/ -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
 
 demos_elf:
-	$(MAKE) -C $(TEST_DIR)/src/demos
+	$(MAKE) -C $(TEST_DIR)/src/demos CROSS_COMPILE=$(CROSS_COMPILE)
 	find $(TEST_DIR)/src/demos/ -executable -type f -execdir mv {} $(MEM_DIR)/{} \;
 
 opensbi_elf:
-	$(MAKE) -C $(TEST_DIR)/src/opensbi PLATFORM=blackparrot CROSS_COMPILE=riscv64-unknown-elf- PLATFORM_RISCV_ISA=rv64imaf
+	$(MAKE) -C $(TEST_DIR)/src/opensbi PLATFORM=blackparrot CROSS_COMPILE=$(CROSS_COMPILE) PLATFORM_RISCV_ISA=rv64imaf
 	@cp $(TEST_DIR)/src/opensbi/build/platform/blackparrot/firmware/fw_jump.elf $(MEM_DIR)/opensbi.riscv
 
-bbl_elf:
-	cd $(TEST_DIR)/src/riscv-pk/ && mkdir -p build && cd build \
-	&& ../configure --host=riscv64-unknown-elf --with-arch=rv64ia --with-abi=lp64 --includedir=$(TEST_DIR)/src/riscv-pk/machine/
-	$(MAKE) -C $(TEST_DIR)/src/riscv-pk/build
-	@cp $(TEST_DIR)/src/riscv-pk/build/bbl $(MEM_DIR)/bbl.riscv
-
 littlefs_test_elf:
-	$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test/fhello/
-	find $(TEST_DIR)/src/littlefs_newlib_test/fhello/ -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
-
-mtest_lfs: $(foreach x, $(PROGS), $(x).bin)
-	cd $(MEM_DIR) && $(MKLFS) 128 204800 $(foreach x, $(PROGS), $(x).bin) > $(TEST_DIR)/src/mtest/src/lfs.c
-	rm $(foreach x, $(PROGS), $(MEM_DIR)/$(x).bin)
-	$(PYTHON) $(TEST_DIR)/src/mtest/py/testgen.py $(NC) $(PROGS) > $(TEST_DIR)/src/mtest/src/benchmarks.h
-
-mtest_elf:
-	$(MAKE) -C $(TEST_DIR)/src/mtest/
-	find $(TEST_DIR)/src/mtest -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
-	find $(TEST_DIR)/src/mtest -type f -name "*dump" -execdir mv {} $(MEM_DIR)/{} \;
+	$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test/ CROSS_COMPILE=$(CROSS_COMPILE)
+	find $(TEST_DIR)/src/littlefs_newlib_test/ -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
 
 #Change the number of iterations per test by changing BOARD_REPEAT_FACTOR in beebs/support/support.h
 beebs_elf:
-	cd $(TEST_DIR)/src/beebs/ && ./configure --host=riscv64 --with-chip=black-parrot 
+	cd $(TEST_DIR)/src/beebs/ && ./configure --host=riscv64 --with-chip=black-parrot \
+		 --includedir=$(TEST_DIR)/include --libdir=$(TEST_DIR)/lib
 	$(MAKE) -C $(TEST_DIR)/src/beebs/
 	find $(TEST_DIR)/src/beebs/src/ -type f -executable -execdir mv {} $(MEM_DIR)/{}.riscv \;
 
@@ -116,7 +99,7 @@ spec_elf:
 riscvdv_elf: $(BP_RVDV)
 $(BP_RVDV):
 	rm -rf $(TEST_DIR)/src/riscv-dv/out/
-	$(MAKE) -C $(TEST_DIR)/src/riscv-dv/ generate.$@
+	$(MAKE) -C $(TEST_DIR)/src/riscv-dv/ generate.$@ CROSS_COMPILE=$(CROSS_COMPILE)
 	cp $(TEST_DIR)/src/riscv-dv/out/asm_tests/$@_0.o $(MEM_DIR)/$@.riscv
 
 riscv_nbf: $(foreach x, $(RV64_P_TESTS) $(RV64_PT_TESTS) $(RV64_V_TESTS) $(RV64_VT_TESTS) $(RV64_BENCHMARKS), $(x).nbf)
@@ -147,26 +130,11 @@ zero_nbf: zero.nbf
 zero_mem:
 	$(PYTHON) $(ZERO_MEM) > $(MEM_DIR)/zero.mem
 
-mtest_nbf: mtest.nbf
-#mtest_mem: beebs_elf
-mtest_mem: mtest_lfs
-mtest_mem: mtest_elf
-mtest_mem: mtest.mem
-mtest_spike: mtest.spike
-mtest_dump: mtest.dump
-
 opensbi_nbf: opensbi.nbf
 opensbi_mem: opensbi_elf
 opensbi_mem: opensbi.mem
 # Need to kill spike at the end of opensbi payload for this to work
 #opensbi_spike: opensbi.spike
-
-bbl_nbf: bbl.nbf
-bbl_mem: bbl_elf
-bbl_mem: bbl.mem
-bbl_dump: bbl.dump
-# Need to kill spike at the end of bbl payload for this to work
-#bbl_spike: bbl.spike
 
 beebs_nbf: $(foreach x, $(BEEBS_TESTS), $(x).nbf)
 beebs_mem: beebs_elf
@@ -232,7 +200,7 @@ clean:
 	-$(MAKE) -C $(TEST_DIR)/src/demos clean
 	-$(MAKE) -C $(TEST_DIR)/src/opensbi clean
 	-$(MAKE) -C $(TEST_DIR)/src/coremark/barebones clean
-	-$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test/fhello clean
+	-$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test clean
 	-$(MAKE) -C $(TEST_DIR)/src/beebs clean
 	-$(MAKE) -C $(TEST_DIR)/src/spec/spec2000/benchmarks/spec2000/CINT2000/175.vpr/src.raw/ clean
 	-$(MAKE) -C $(TEST_DIR)/src/riscv-dv clean
