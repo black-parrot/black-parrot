@@ -52,9 +52,6 @@ riscvdv: riscvdv_mem riscvdv_nbf riscvdv_dump riscvdv_spike
 # Spec is separate because it is proprietary
 spec: spec_mem spec_dump spec_spike
 
-# mtest is outdated
-# mtest: mtest_mem mtest_dump mtest_spike
-
 perch:
 	$(MAKE) -C $(TEST_DIR)/src/perch CROSS_COMPILE=$(CROSS_COMPILE)
 	mkdir -p $(TEST_DIR)/lib
@@ -86,16 +83,6 @@ opensbi_elf:
 littlefs_test_elf:
 	$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test/ CROSS_COMPILE=$(CROSS_COMPILE)
 	find $(TEST_DIR)/src/littlefs_newlib_test/ -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
-
-mtest_lfs: $(foreach x, $(PROGS), $(x).bin)
-	cd $(MEM_DIR) && $(MKLFS) 128 204800 $(foreach x, $(PROGS), $(x).bin) > $(TEST_DIR)/src/mtest/src/lfs.c
-	rm $(foreach x, $(PROGS), $(MEM_DIR)/$(x).bin)
-	$(PYTHON) $(TEST_DIR)/src/mtest/py/testgen.py $(NC) $(PROGS) > $(TEST_DIR)/src/mtest/src/benchmarks.h
-
-mtest_elf:
-	$(MAKE) -C $(TEST_DIR)/src/mtest/
-	find $(TEST_DIR)/src/mtest -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
-	find $(TEST_DIR)/src/mtest -type f -name "*dump" -execdir mv {} $(MEM_DIR)/{} \;
 
 #Change the number of iterations per test by changing BOARD_REPEAT_FACTOR in beebs/support/support.h
 beebs_elf:
@@ -142,14 +129,6 @@ littlefs_test_dump: littlefs_test.dump
 zero_nbf: zero.nbf
 zero_mem:
 	$(PYTHON) $(ZERO_MEM) > $(MEM_DIR)/zero.mem
-
-mtest_nbf: mtest.nbf
-#mtest_mem: beebs_elf
-mtest_mem: mtest_lfs
-mtest_mem: mtest_elf
-mtest_mem: mtest.mem
-mtest_spike: mtest.spike
-mtest_dump: mtest.dump
 
 opensbi_nbf: opensbi.nbf
 opensbi_mem: opensbi_elf
