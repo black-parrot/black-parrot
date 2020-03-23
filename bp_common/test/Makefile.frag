@@ -1,5 +1,5 @@
 BP_DEMOS = \
-  bubblesort          \
+  bubblesort_demo     \
   uc_simple           \
   simple              \
   hello_world         \
