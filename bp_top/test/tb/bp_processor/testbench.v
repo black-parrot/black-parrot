@@ -139,13 +139,15 @@ wrapper
 
        ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
+       ,.decode_i(be_calculator.reservation_n.decode)
+
        ,.commit_v_i(be_calculator.commit_pkt.instret)
        ,.commit_pc_i(be_calculator.commit_pkt.pc)
        ,.commit_instr_i(be_calculator.commit_pkt.instr)
 
-       ,.rd_w_v_i(be_calculator.calc_wb_pkt.rd_w_v)
-       ,.rd_addr_i(be_calculator.calc_wb_pkt.rd_addr)
-       ,.rd_data_i(be_calculator.calc_wb_pkt.rd_data)
+       ,.rd_w_v_i(be_checker.scheduler.wb_pkt.rd_w_v)
+       ,.rd_addr_i(be_checker.scheduler.wb_pkt.rd_addr)
+       ,.rd_data_i(be_checker.scheduler.wb_pkt.rd_data)
        );
 
   bind bp_be_top
