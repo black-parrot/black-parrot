@@ -38,6 +38,8 @@ all_dump: riscv_dump coremark_dump beebs_dump littlefs_test_dump demos_dump
 
 all_spike: riscv_spike coremark_spike beebs_spike littlefs_test_spike 
 
+checkout: spec_checkout
+
 zero: zero_mem zero_nbf
 riscv: riscv_mem riscv_nbf riscv_dump riscv_spike
 coremark: coremark_mem coremark_nbf coremark_dump coremark_spike
@@ -47,7 +49,7 @@ demos: demos_mem demos_nbf demos_dump
 riscvdv: riscvdv_mem riscvdv_nbf riscvdv_dump riscvdv_spike
 
 # Spec is separate because it is proprietary
-spec: spec_mem spec_dump spec_spike
+spec: spec_mem spec_dump
 
 perch:
 	$(MAKE) -C $(TEST_DIR)/src/perch CROSS_COMPILE=$(CROSS_COMPILE)
@@ -85,10 +87,12 @@ beebs_elf:
 	$(MAKE) -C $(TEST_DIR)/src/beebs/
 	find $(TEST_DIR)/src/beebs/src/ -type f -executable -execdir mv {} $(MEM_DIR)/{}.riscv \;
 
-#Be sure to read the README and clone spec first
+spec_checkout:
+	$(MAKE) -C $(TEST_DIR)/src/spec/ checkout
+
 spec_elf:
-	$(MAKE) -C $(TEST_DIR)/src/spec/spec2000/benchmarks/spec2000/CINT2000/175.vpr/src.raw/ 
-	find $(TEST_DIR)/src/spec/spec2000/benchmarks/spec2000/CINT2000/175.vpr/src.raw/  -executable -type f -execdir mv {} $(MEM_DIR)/{} \;
+	$(MAKE) -C $(TEST_DIR)/src/spec/ CROSS_COMPILE=$(CROSS_COMPILE)
+	find $(TEST_DIR)/src/spec/ -executable -name "*.riscv" -type f -execdir mv {} $(MEM_DIR)/{} \;
 
 riscvdv_elf: $(BP_RVDV)
 $(BP_RVDV):
@@ -189,7 +193,7 @@ clean:
 	-$(MAKE) -C $(TEST_DIR)/src/coremark/barebones clean
 	-$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test clean
 	-$(MAKE) -C $(TEST_DIR)/src/beebs clean
-	-$(MAKE) -C $(TEST_DIR)/src/spec/spec2000/benchmarks/spec2000/CINT2000/175.vpr/src.raw/ clean
+	-$(MAKE) -C $(TEST_DIR)/src/spec clean
 	-$(MAKE) -C $(TEST_DIR)/src/riscv-dv clean
 	-rm -rf $(TEST_DIR)/src/bsg_newlib_dramfs/build-newlib 
 	-rm -rf $(TEST_DIR)/src/bsg_newlib_dramfs/install-newlib
