@@ -23,8 +23,8 @@ module bp_nonsynth_nbf_loader
   ,parameter nbf_data_width_p = dword_width_p
 
   ,parameter skip_freeze_clear_p = 0
-
-  ,localparam nbf_width_lp = nbf_opcode_width_p + nbf_addr_width_p + nbf_data_width_p
+  
+  ,localparam nbf_width_lp = 1 + nbf_opcode_width_p + nbf_addr_width_p + nbf_data_width_p
   ,localparam max_nbf_index_lp = 2**20
   ,localparam nbf_index_width_lp = `BSG_SAFE_CLOG2(max_nbf_index_lp)
   ,localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p+1)
@@ -92,6 +92,7 @@ module bp_nonsynth_nbf_loader
 
   // bp_nbf packet
   typedef struct packed {
+    logic write_not_read;
     logic [nbf_opcode_width_p-1:0] opcode;
     logic [nbf_addr_width_p-1:0] addr;
     logic [nbf_data_width_p-1:0] data;
@@ -122,17 +123,35 @@ module bp_nonsynth_nbf_loader
     freeze_addr.dev      = cfg_dev_gp;
     freeze_addr.addr     = bp_cfg_reg_freeze_gp;
 
-    io_cmd.data = (state_r == FREEZE_CLR) ? dword_width_p'(0) : curr_nbf.data;
-    io_cmd.header.payload = '0;
-    io_cmd.header.payload.lce_id = lce_id_i;
-    io_cmd.header.addr = (state_r == FREEZE_CLR) ? freeze_addr : curr_nbf.addr;
-    io_cmd.header.msg_type = e_cce_mem_uc_wr;
-    
-    case (curr_nbf.opcode)
-      2: io_cmd.header.size = e_mem_msg_size_4;
-      3: io_cmd.header.size = e_mem_msg_size_8;
-      default: io_cmd.header.size = e_mem_msg_size_4;
-    endcase
+    if (state_r == FREEZE_CLR)
+      begin
+        io_cmd.data = '0;
+        io_cmd.header.payload = '0;
+        io_cmd.header.payload.lce_id = lce_id_i;
+        io_cmd.header.addr = freeze_addr;
+        io_cmd.header.msg_type = e_cce_mem_uc_wr;
+      end
+    else
+      begin
+        io_cmd.data = curr_nbf.data;
+        io_cmd.header.payload = '0;
+        io_cmd.header.addr = curr_nbf.addr;
+        io_cmd.header.msg_type = e_cce_mem_uc_wr;
+
+        case (curr_nbf.opcode[0+:4])
+          4'h0: io_cmd.header.size = e_mem_msg_size_1;
+          4'h1: io_cmd.header.size = e_mem_msg_size_2;
+          4'h2: io_cmd.header.size = e_mem_msg_size_4;
+          4'h3: io_cmd.header.size = e_mem_msg_size_8;
+          default: io_cmd.header.size = e_mem_msg_size_1;
+        endcase
+
+        case (curr_nbf.opcode)
+          8'h00, 8'h01, 8'h02, 8'h03: io_cmd.header.msg_type = e_cce_mem_uc_wr;
+          8'h10, 8'h11, 8'h12, 8'h13: io_cmd.header.msg_type = e_cce_mem_uc_rd;
+          default: io_cmd.header.msg_type = e_cce_mem_uc_rd;
+        endcase
+      end
   end
 
   // read nbf file

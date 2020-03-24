@@ -4,7 +4,7 @@
 #   MEM (.mem) to Network Boot Format (.nbf)
 #
 
-
+import argparse
 import sys
 import math
 import os
@@ -14,17 +14,11 @@ import subprocess
 class NBF:
 
   # constructor
-  def __init__(self, config):
-    self.config = config
-
+  def __init__(self):
     # input parameters
-    self.mem_file = config["mem_file"]
     self.addr_width = 40
     self.block_size = 8
 
-    # process riscv
-    self.read_dram()
-   
   ##### UTIL FUNCTIONS #####
 
   # take width and val and convert to hex string
@@ -33,16 +27,38 @@ class NBF:
 
   # take x,y coord, epa, data and turn it into nbf format.
   def print_nbf(self, opcode, addr, data):
-    line =  self.get_hexstr(opcode, 2) + "_"
+    line  = self.get_hexstr(opcode, 2) + "_"
     line += self.get_hexstr(addr, int(self.addr_width)//4) + "_"
     line += self.get_hexstr(data, self.block_size*2)
     print(line)
   
-  # decide how many bytes to write
-  def get_opcode(self, addr):
-    opcode = 2
+  def get_size(self, addr):
+    #if addr % 64 == 0:
+    #  size = 6
+    #elif addr % 32 == 0:
+    #  size = 5
+    #elif addr % 16 == 0:
+    #  size = 4
     if addr % 8 == 0:
-      opcode = 3
+      size = 3
+    elif addr % 4 == 0:
+      size = 2
+    elif addr % 2 == 0:
+      size = 1
+    else:
+      size = 0
+
+    return size
+
+  def get_store_opcode(self, addr):
+    size = self.get_size(addr)
+
+    return size
+
+  def get_load_opcode(self, addr):
+    size = self.get_size(addr)
+    opcode = size | (1 << 4)
+
     return opcode
 
   # read objcopy dumped in 'verilog' format.
@@ -67,7 +83,7 @@ class NBF:
             assembled_hex = ""
             count = 0
           curr_addr = int(stripped.strip("@"), 16)
-          addr_step = 1 << self.get_opcode(curr_addr)
+          addr_step = 1 << self.get_size(curr_addr)
         else:
           words = stripped.split()
           for i in range(len(words)):
@@ -76,7 +92,7 @@ class NBF:
             if count == addr_step:
               addr_val[curr_addr] = int(assembled_hex, 16)
               curr_addr += addr_step
-              addr_step = 1 << self.get_opcode(curr_addr)
+              addr_step = 1 << self.get_size(curr_addr)
               assembled_hex = ""
               count = 0
               
@@ -86,8 +102,8 @@ class NBF:
     return addr_val
 
   # read dram
-  def read_dram(self):
-    self.dram_data = self.read_objcopy(self.mem_file)    
+  def read_dram(self, mem_file):
+    self.dram_data = self.read_objcopy(mem_file)    
 
   ##### END UTIL FUNCTIONS #####
 
@@ -98,37 +114,42 @@ class NBF:
   def init_cache(self):
     for k in sorted(self.dram_data.keys()):
       addr = k
-      opcode = self.get_opcode(addr)
+      opcode = self.get_store_opcode(addr)
       self.print_nbf(opcode, addr, self.dram_data[k])
+
+  def dram_iter(self, N):
+    for k in range(N):
+      addr = k << 6
+      opcode = 0 | (1 << 4)
+      self.print_nbf(opcode, addr, 0)
 
   # print finish
   # when spmd loader sees, this it stops sending packets.
   def print_finish(self):
     self.print_nbf(0xff, 0x0, 0x0)
 
-
   ##### LOADER ROUTINES END  #####  
-
-  # users only have to call this function.
-  def dump(self):
-    self.init_cache()
-    self.print_finish()
-
 
 #
 #   main()
 #
 if __name__ == "__main__":
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--mem_file")
+  parser.add_argument("--dram")
+  args = parser.parse_args()
 
-  if len(sys.argv) == 2:
-    # config setting
-    config = {
-      "mem_file" : sys.argv[1],
-    }
-    converter = NBF(config)
-    converter.dump()
+  dram_iter = args.dram
+
+  converter = NBF()
+
+  if args.mem_file:
+    converter.read_dram(args.mem_file)
+    converter.init_cache()
+    converter.print_finish()
+  elif args.dram:
+    converter.dram_iter(int(args.dram))
+    converter.print_finish()
   else:
-    print("USAGE:")
-    command = "python nbf.py {program.mem}"
-    print(command)
+    print("Error: either pass --mem_file or --dram")
 
