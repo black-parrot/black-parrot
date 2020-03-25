@@ -21,6 +21,8 @@ module bp_nonsynth_cosim
     , input [dword_width_p-1:0]               rd_data_i
     , input                                   interrupt_v_i
     , input [dword_width_p-1:0]               cause_i
+
+    , input                                   host_finish_i
     );
 
 import "DPI-C" context function void init_dromajo(string cfg_f_name);
@@ -67,8 +69,13 @@ always_ff @(negedge reset_i)
       end
       else if (commit_v_r & commit_pc_r != '0) begin
         finish = dromajo_step(mhartid_i, 64'($signed(commit_pc_r)), commit_instr_r, rd_data_i);
-        if(finish)
+        if(finish) begin
+          $display("COSIM_FAIL");
           $finish();
+        end
+      end
+      else if(host_finish_i) begin
+        $display("COSIM_PASS");
       end
     end
   end
