@@ -5,7 +5,7 @@ BENCHMARK = 175.vpr
 MAX_CYCLES = 1000000000
 
 BENCHMARK_OBJS = \
-	lfs.o main.o util.o read_netlist.o read_arch.o place.o route.o \
+	main.o util.o read_netlist.o read_arch.o place.o route.o \
 	draw.o graphics.o stats.o segment_stats.o rr_graph.o \
 	rr_graph2.o rr_graph_sbox.o rr_graph_util.o \
 	rr_graph_timing_params.o rr_graph_area.o check_rr_graph.o \
@@ -29,7 +29,6 @@ ARGV=vpr $(INPUT_TYPE).net small.arch.in place.out other.out \
 LFS_BLOCK_SIZE = 128
 LFS_BLOCK_COUNT = 64 # 8K
 
-CLEAN_ITEMS = lfs.c
-CLEAN_ITEMS += $(BENCHMARK_INPS)
+CLEAN_ITEMS = $(BENCHMARK_INPS)
 
 include ./Makefile.common
