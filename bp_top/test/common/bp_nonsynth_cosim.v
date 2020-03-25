@@ -105,10 +105,8 @@ always_ff @(negedge reset_i)
           $display("COSIM_FAIL");
           $finish();
         end
-      end
-
-      if ((cosim_instr_i != '0) && (instr_cnt >= cosim_instr_i)) begin
-        $display("COSIM PASSED");
+      end else if ((cosim_instr_i != '0) && (instr_cnt >= cosim_instr_i)) begin
+        $display("COSIM_PASS");
         $finish();
       end
     end
