@@ -34,11 +34,13 @@ module bp_nonsynth_cosim
     );
 
 import "DPI-C" context function void init_dromajo(string cfg_f_name);
-import "DPI-C" context function void dromajo_step(int      hart_id,
+import "DPI-C" context function bit  dromajo_step(int      hart_id,
                                                   longint pc,
                                                   int insn,
                                                   longint wdata);
 import "DPI-C" context function void dromajo_trap(int hart_id, longint cause);
+
+logic finish;
 
 always_ff @(negedge reset_i)
   if (en_i)
@@ -100,7 +102,8 @@ always_ff @(negedge reset_i)
         dromajo_trap(mhartid_i, cause_r);
       end
       else if (commit_fifo_yumi_li & commit_v_r & commit_pc_r != '0) begin
-        dromajo_step(mhartid_i, 64'($signed(commit_pc_r)), commit_instr_r, rd_data_i);
+        if (dromajo_step(mhartid_i, 64'($signed(commit_pc_r)), commit_instr_r, rd_data_i))
+          $finish();
       end
 
       if ((cosim_instr_i != '0) && (instr_cnt >= cosim_instr_i)) begin
