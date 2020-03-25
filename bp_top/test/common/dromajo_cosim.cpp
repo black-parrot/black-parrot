@@ -14,7 +14,7 @@ extern "C" void init_dromajo(char* cfg_f_name) {
   dromajo_pointer = dromajo_cosim_init(2, argv);
 }
 
-extern "C" void dromajo_step(int      hart_id,
+extern "C" bool dromajo_step(int      hart_id,
                              uint64_t pc,
                              uint32_t insn,
                              uint64_t wdata) {
@@ -26,11 +26,10 @@ extern "C" void dromajo_step(int      hart_id,
                                      0,
                                      true,
                                      false);
-
-  if (exit_code != 0) {
-    std::cout << "oops!" << std::endl;
-    exit(exit_code);
-  }
+  if(exit_code != 0)
+    return true;
+  else
+    return false;
 }
 
 extern "C" void dromajo_trap(int hart_id, uint64_t cause) {
