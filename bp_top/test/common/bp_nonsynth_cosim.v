@@ -99,10 +99,12 @@ always_ff @(negedge reset_i)
       if(commit_fifo_yumi_li & interrupt_v_r) begin
         dromajo_trap(mhartid_i, cause_r);
       end else if (commit_fifo_yumi_li & commit_v_r & commit_pc_r != '0) begin
-        if (dromajo_step(mhartid_i, 64'($signed(commit_pc_r)), commit_instr_r, rd_data_i))
+        if (dromajo_step(mhartid_i, 64'($signed(commit_pc_r)), commit_instr_r, rd_data_i)) begin
+          $display("COSIM_FAIL");
           $finish();
+        end
       end else if ((cosim_instr_i != '0) && (instr_cnt >= cosim_instr_i)) begin
-        $display("COSIM PASSED");
+        $display("COSIM_PASS");
         $finish();
       end
     end
