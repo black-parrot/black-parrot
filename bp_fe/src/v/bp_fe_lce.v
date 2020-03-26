@@ -26,7 +26,7 @@ module bp_fe_lce
 
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
    , localparam block_size_in_words_lp=icache_assoc_p
-   , localparam cache_block_width_multiplier_lp = 2**(3-BSG_SAFE_CLOG2(icache_assoc_p))
+   , localparam cache_block_width_multiplier_lp = 2**(3-`BSG_SAFE_CLOG2(icache_assoc_p))
    , localparam cache_block_width_lp = dword_width_p * cache_block_width_multiplier_lp
    , localparam data_mem_mask_width_lp=(cache_block_width_lp>>3)
    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(cache_block_width_lp>>3)

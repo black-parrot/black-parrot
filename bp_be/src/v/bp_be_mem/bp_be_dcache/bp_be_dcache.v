@@ -960,7 +960,7 @@ module bp_be_dcache
         ? {wbuf_entry_out_index, wbuf_entry_out_word_offset}
         : {data_mem_pkt.index, data_mem_pkt.way_id ^ ((word_offset_width_lp)'(i))});
     assign data_mem_data_li[i] = wbuf_yumi_li
-      ? wbuf_entry_out.data
+      ? {cache_block_width_multiplier_lp{wbuf_entry_out.data}}
       : lce_data_mem_write_data[i];
   
     assign data_mem_mask_li[i] = wbuf_yumi_li
