@@ -82,7 +82,7 @@ module bp_be_dcache_lce_cmd
     , output logic tag_mem_pkt_v_o
     , output logic [dcache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_o
     , input tag_mem_pkt_ready_i
-    , input [tag_width_lp-1:0] tag_mem_i    
+    , input [ptag_width_lp-1:0] tag_mem_i    
 
     // stat_mem
     , output logic stat_mem_pkt_v_o
@@ -92,10 +92,10 @@ module bp_be_dcache_lce_cmd
   );
 
   // casting structs
+ `declare_bp_be_dcache_stat_info_s(dcache_assoc_p);
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, dcache_assoc_p, dword_width_p, cce_block_width_p, dcache)
-  `declare_bp_be_dcache_stat_info_s(dcache_assoc_p);
-
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, dcache_assoc_p, dword_width_p, cce_block_width_p, dcache);
+  
   bp_lce_cmd_s lce_cmd_li;
   bp_lce_cce_resp_s lce_resp;
   bp_lce_cmd_s lce_cmd_out;
@@ -120,7 +120,7 @@ module bp_be_dcache_lce_cmd
   logic [ptag_width_lp-1:0] lce_cmd_addr_tag;
 
   assign lce_cmd_addr_index = lce_cmd_li.header.addr[block_offset_width_lp+:index_width_lp];
-  assign lce_cmd_addr_tag = lce_cmd_li.header.addr[block_offset_width_lp+index_width_lp+:tag_width_lp];
+  assign lce_cmd_addr_tag = lce_cmd_li.header.addr[block_offset_width_lp+index_width_lp+:ptag_width_lp];
 
 
   // states

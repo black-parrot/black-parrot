@@ -201,7 +201,7 @@ module bp_fe_icache
   logic [vaddr_width_p-1:0]                     vaddr_tv_r; 
   logic [icache_assoc_p-1:0][ptag_width_lp-1:0] tag_tv_r;
   logic [icache_assoc_p-1:0][`bp_coh_bits-1:0]  state_tv_r;
-  logic [icache_assoc_p-1:0][dword_width_p-1:0] ld_data_tv_r;
+  logic [icache_assoc_p-1:0][cache_block_width_lp-1:0] ld_data_tv_r;
   logic [ptag_width_lp-1:0]                     addr_tag_tv;
   logic [index_width_lp-1:0]                    addr_index_tv;
   logic [word_offset_width_lp-1:0]              addr_word_offset_tv;
@@ -370,7 +370,7 @@ module bp_fe_icache
                               | (~uncached_tv_r & ~fencei_op_tv_r & ~miss_tv)
                               );
 
-  logic [dword_width_p-1:0]   ld_data_way_picked;
+  logic [cache_block_width_lp-1:0]   ld_data_way_picked;
 
   bsg_mux #(
     .width_p(cache_block_width_lp)

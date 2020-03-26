@@ -13,7 +13,8 @@ export REPORT_PATH  := $(BP_TOP_DIR)/syn/reports
 
 TB          ?= bp_softcore
 #TB          ?= bp_processor
-CFG         ?= e_bp_single_core_cfg
+CFG         ?= e_bp_softcore_cfg
+#CFG         ?= e_bp_single_core_cfg
 START_PC    ?= 0x80000000
 TOLERANCE   ?= 2
 
