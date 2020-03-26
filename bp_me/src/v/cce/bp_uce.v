@@ -6,11 +6,26 @@ module bp_uce
   import bp_common_cfg_link_pkg::*;
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   ,parameter assoc_p = 8
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
-    , localparam stat_info_width_lp = `bp_be_dcache_stat_info_width(lce_assoc_p)
+    , localparam stat_info_width_lp = `bp_be_dcache_stat_info_width(assoc_p)
+
+    , localparam cache_block_multiplier_lp = 2**(3-`BSG_SAFE_CLOG2(assoc_p))
+    , localparam cache_block_width_lp = dword_width_p * cache_block_multiplier_lp
+    , localparam byte_offset_width_lp  = `BSG_SAFE_CLOG2(cache_block_width_lp>>3)
+    // Words per line == associativity
+    , localparam word_offset_width_lp  = `BSG_SAFE_CLOG2(assoc_p)
+    , localparam block_offset_width_lp = (word_offset_width_lp + byte_offset_width_lp)
+    , localparam index_width_lp = `BSG_SAFE_CLOG2(lce_sets_p)
+    , localparam way_width_lp = `BSG_SAFE_CLOG2(assoc_p)
+
+    , localparam cache_req_width_lp = `bp_cache_req_width(dword_width_p, paddr_width_p) 
+    , localparam cache_req_metadata_width_lp = `bp_cache_req_metadata_width(assoc_p)
+    , localparam cache_tag_mem_pkt_width_lp = `bp_cache_tag_mem_pkt_width(lce_sets_p, assoc_p, ptag_width_p)
+    , localparam cache_data_mem_pkt_width_lp = `bp_cache_data_mem_pkt_width(lce_sets_p, assoc_p, cce_block_width_p)
+    , localparam cache_stat_mem_pkt_width_lp = `bp_cache_stat_mem_pkt_width(lce_sets_p, assoc_p)
     )
    (input                                            clk_i
     , input                                          reset_i
@@ -52,8 +67,8 @@ module bp_uce
     );
 
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p);
-  `declare_bp_be_dcache_stat_info_s(lce_assoc_p);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, assoc_p, dword_width_p, cce_block_width_p, cache);
+  `declare_bp_be_dcache_stat_info_s(assoc_p);
 
   `bp_cast_i(bp_cache_req_s, cache_req);
   `bp_cast_o(bp_cache_tag_mem_pkt_s, tag_mem_pkt);
@@ -168,12 +183,6 @@ module bp_uce
   wire uc_load_v_li    = cache_req_v_r & cache_req_r.msg_type inside {e_uc_load};
   wire wt_store_v_li   = cache_req_v_r & cache_req_r.msg_type inside {e_wt_store};
 
-  localparam byte_offset_width_lp  = `BSG_SAFE_CLOG2(dword_width_p>>3);
-  // Words per line == associativity
-  localparam word_offset_width_lp  = `BSG_SAFE_CLOG2(lce_assoc_p);
-  localparam block_offset_width_lp = (word_offset_width_lp + byte_offset_width_lp);
-
-  localparam index_width_lp = `BSG_SAFE_CLOG2(lce_sets_p);
   logic [index_width_lp-1:0] index_cnt;
   logic index_up;
   bsg_counter_clear_up
@@ -192,11 +201,10 @@ module bp_uce
      );
   wire index_done = (index_cnt == lce_sets_p-1);
 
-  localparam way_width_lp = `BSG_SAFE_CLOG2(lce_assoc_p);
   logic [way_width_lp-1:0] way_cnt;
   logic way_up;
   bsg_counter_clear_up
-   #(.max_val_p(lce_assoc_p-1)
+   #(.max_val_p(assoc_p-1)
      ,.init_val_p(0)
      ,.disable_overflow_warning_p(1)
      )
@@ -209,7 +217,7 @@ module bp_uce
 
      ,.count_o(way_cnt)
      );
-  wire way_done = (way_cnt == lce_assoc_p-1);
+  wire way_done = (way_cnt == assoc_p-1);
 
   // Outstanding Requests Counter - counts all requests, cached and uncached
   //
@@ -378,7 +386,7 @@ module bp_uce
               mem_cmd_cast_o.header.msg_type       = miss_load_v_li ? e_cce_mem_rd : e_cce_mem_wr;
               mem_cmd_cast_o.header.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], block_offset_width_lp'(0)};
               mem_cmd_cast_o.header.size           = e_mem_size_64;
-              mem_cmd_cast_o.header.payload.way_id = cache_req_metadata_r.repl_way;
+              mem_cmd_cast_o.header.payload.way_id = {'0, cache_req_metadata_r.repl_way};
               mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
               mem_cmd_v_o = mem_cmd_ready_i;
 
@@ -433,14 +441,14 @@ module bp_uce
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
             tag_mem_pkt_cast_o.index  = mem_resp_cast_i.header.addr[block_offset_width_lp+:index_width_lp];
             // We fill in M because we don't want to trigger additional coherence traffic
-            tag_mem_pkt_cast_o.way_id = mem_resp_cast_i.header.payload.way_id;
+            tag_mem_pkt_cast_o.way_id = mem_resp_cast_i.header.payload.way_id[0+:`BSG_SAFE_CLOG2(assoc_p)];
             tag_mem_pkt_cast_o.state  = e_COH_M;
             tag_mem_pkt_cast_o.tag    = mem_resp_cast_i.header.addr[block_offset_width_lp+index_width_lp+:ptag_width_p];
             tag_mem_pkt_v_o = load_resp_v_li & tag_mem_pkt_ready_i & data_mem_pkt_ready_i;
 
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_write;
             data_mem_pkt_cast_o.index  = mem_resp_cast_i.header.addr[block_offset_width_lp+:index_width_lp];
-            data_mem_pkt_cast_o.way_id = mem_resp_cast_i.header.payload.way_id;
+            data_mem_pkt_cast_o.way_id = mem_resp_cast_i.header.payload.way_id[0+:`BSG_SAFE_CLOG2(assoc_p)];
             data_mem_pkt_cast_o.data   = mem_resp_cast_i.data;
             data_mem_pkt_v_o = load_resp_v_li & data_mem_pkt_ready_i & tag_mem_pkt_ready_i;
 
