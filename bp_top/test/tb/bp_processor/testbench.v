@@ -201,28 +201,49 @@ wrapper
        ,.commit_pkt_i(commit_pkt)
        );
 
-  /*bind bp_be_dcache
+  bind bp_be_dcache
     bp_be_nonsynth_dcache_tracer
      #(.bp_params_p(bp_params_p))
      dcache_tracer
       (.clk_i(clk_i & (testbench.dcache_trace_p == 1))
        ,.reset_i(reset_i)
+       
        ,.freeze_i(cfg_bus_cast_i.freeze)
-
        ,.mhartid_i(cfg_bus_cast_i.core_id)
 
+       ,.v_tl_r(v_tl_r)
+       
        ,.v_tv_r(v_tv_r)
-       //,.cache_miss_i(cache_miss_i)
-
        ,.paddr_tv_r(paddr_tv_r)
-       ,.uncached_tv_r(uncached_tv_r)
-       ,.load_op_tv_r(load_op_tv_r)
-       ,.store_op_tv_r(store_op_tv_r)
-       ,.lr_op_tv_r(lr_op_tv_r)
+       ,.lr_miss_tv(lr_miss_tv)
        ,.sc_op_tv_r(sc_op_tv_r)
-       ,.store_data(data_tv_r)
+       ,.sc_success(sc_success)
+        
+       ,.cache_req_v_o(cache_req_v_o)
+       ,.cache_req_o(cache_req_o)
+
+       ,.cache_req_metadata_o(cache_req_metadata_o)
+       ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
+        
+       ,.cache_req_complete_i(cache_req_complete_i)
+
+       ,.v_o(v_o)
        ,.load_data(data_o)
-       );*/
+       ,.dcache_miss_o(dcache_miss_o)
+       ,.store_data(data_tv_r)
+
+       ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
+       ,.data_mem_pkt_i(data_mem_pkt_i)
+       ,.data_mem_pkt_ready_o(data_mem_pkt_ready_o)
+       
+       ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
+       ,.tag_mem_pkt_i(tag_mem_pkt_i)
+       ,.tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
+
+       ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
+       ,.stat_mem_pkt_i(stat_mem_pkt_i)
+       ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
+       );
 
   bind bp_be_top
     bp_be_nonsynth_calc_tracer
