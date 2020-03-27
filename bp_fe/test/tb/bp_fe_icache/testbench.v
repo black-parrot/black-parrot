@@ -206,7 +206,6 @@ module testbench
      ,.ptag_v_i(trace_v_lo)
 
      ,.uncached_i(uncached_li)
-
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
 
@@ -265,7 +264,6 @@ module testbench
       
       ,.freeze_i(cfg_bus_cast_i.freeze)
       ,.mhartid_i(cfg_bus_cast_i.core_id)
-
       
       ,.v_tl_r(v_tl_r)
 
