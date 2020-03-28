@@ -79,7 +79,7 @@ module bp_be_nonsynth_dcache_tracer
   bp_dcache_req_s cache_req_cast_o;
   bp_dcache_req_metadata_s cache_req_metadata_cast_o;
   assign cache_req_cast_o = cache_req_o;
-  assign cache_req_metadata_cast_o = cache_req_metadata_cast_o;
+  assign cache_req_metadata_cast_o = cache_req_metadata_o;
 
   bp_dcache_data_mem_pkt_s data_mem_pkt_cast_i;
   bp_dcache_tag_mem_pkt_s tag_mem_pkt_cast_i;

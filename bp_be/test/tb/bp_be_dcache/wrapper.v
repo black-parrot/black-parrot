@@ -121,7 +121,20 @@ module wrapper
   
    assign rollback_li = dcache_miss_lo;
    assign rolly_yumi_li = rolly_v_lo & dcache_ready_lo;
-   
+  
+   logic [ptag_width_lp-1:0] rolly_ptag_r;
+   bsg_dff_reset
+    #(.width_p(ptag_width_lp)
+     ,.reset_val_p(0)
+    )
+    ptag_dff
+    (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+
+    ,.data_i(rolly_ptag_lo)
+    ,.data_o(rolly_ptag_r)
+    );
+     
    bp_be_dcache
    #(.bp_params_p(bp_params_p))
    dcache
@@ -139,7 +152,7 @@ module wrapper
    ,.fencei_v_o()
 
    ,.tlb_miss_i(1'b0)
-   ,.ptag_i(rolly_ptag_lo)
+   ,.ptag_i(rolly_ptag_r)
    ,.uncached_i(1'b0)
 
    ,.poison_i(1'b0)

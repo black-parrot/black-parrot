@@ -28,6 +28,10 @@ def main(argv):
     file.write(tracer.send_store(8, i-8, 0, i))
     file.write(tracer.nop())
 
+  file.write(tracer.print_comment("wait for 8 cycles for all the stores to complete"))
+  file.write(tracer.wait(8))
+  file.write(tracer.print_comment("Receive zero (to dequeue fifo)"))
+  file.write(tracer.recv_data(0))
   file.write(tracer.print_comment("load from address - 0, 8, 16, 24, 32, 40, 48, 56"))
   for i in range(8, 72, 8):
     file.write(tracer.send_load(True, 8, i-8, 0))
@@ -35,7 +39,7 @@ def main(argv):
     file.write(tracer.recv_data(i))
     file.write(tracer.nop())
 
-  file.write(tracer.test_done())
+  # file.write(tracer.test_done())
   file.write(tracer.test_finish())
   file.close()
 

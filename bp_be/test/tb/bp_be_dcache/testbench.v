@@ -79,20 +79,21 @@ module testbench
   logic [ptag_width_lp-1:0] ptag_li;
 
   // Setting up the config bus
+  logic switch_cce_mode;
   always_comb begin
     cfg_bus_cast_li = '0;
     cfg_bus_cast_li.freeze = '0;
     cfg_bus_cast_li.core_id = '0;
     cfg_bus_cast_li.dcache_id = '0;
     cfg_bus_cast_li.dcache_mode = e_lce_mode_normal;
-    cfg_bus_cast_li.cce_mode = e_cce_mode_normal;
+    cfg_bus_cast_li.cce_mode = switch_cce_mode ? e_cce_mode_normal : e_cce_mode_uncached;
   end
  
-  logic [9:0] count_o;
-  logic sync_done;
+  logic [6:0] count_lo;
+  localparam counter_max_val_lp = lce_sets_p + 1;
 
   bsg_counter_clear_up
-    #(.max_val_p(853)
+    #(.max_val_p(counter_max_val_lp)
      ,.init_val_p(0)
      )
      sync_counter
@@ -100,12 +101,12 @@ module testbench
      ,.reset_i(reset_i)
 
      ,.clear_i(1'b0)
-     ,.up_i(~sync_done)
+     ,.up_i(~switch_cce_mode)
 
-     ,.count_o(count_o)
+     ,.count_o(count_lo)
      );
 
-  assign sync_done = (count_o == 10'd853);
+  assign switch_cce_mode = (count_lo == counter_max_val_lp);
 
   // Trace Replay
   bsg_trace_replay
@@ -115,7 +116,7 @@ module testbench
     trace_replay
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
-    ,.en_i(sync_done)
+    ,.en_i(switch_cce_mode)
 
     ,.v_i(trace_v_li)
     ,.data_i(trace_data_li)
@@ -150,11 +151,10 @@ module testbench
   assign fifo_yumi_li = trace_v_li & trace_ready_lo;
   assign trace_data_li = {'0, fifo_data_lo};
 
-  bsg_fifo_1r1w_small #(
-    .width_p(dword_width_p)
-    ,.els_p(16)
-  ) output_fifo (
-    .clk_i(clk_i)
+  bsg_one_fifo 
+    #(.width_p(dword_width_p))
+    output_fifo 
+    (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
     // from dcache
@@ -170,62 +170,62 @@ module testbench
 
   // Subsystem Under Test
   wrapper
-  #(.bp_params_p(bp_params_p))
-  wrapper
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+    #(.bp_params_p(bp_params_p))
+    wrapper
+    (.clk_i(clk_i)
+    ,.reset_i(reset_i)
   
-   ,.cfg_bus_i(cfg_bus_li)
+    ,.cfg_bus_i(cfg_bus_li)
 
-   ,.dcache_pkt_i(dcache_pkt_li)
-   ,.v_i(trace_v_lo)
-   ,.ready_o(dut_ready_lo)
+    ,.dcache_pkt_i(dcache_pkt_li)
+    ,.v_i(trace_v_lo)
+    ,.ready_o(dut_ready_lo)
 
-   ,.data_o(data_lo)
-   ,.v_o(v_lo)
+    ,.data_o(data_lo)
+    ,.v_o(v_lo)
 
-   ,.ptag_i(ptag_li)
+    ,.ptag_i(ptag_li)
    
-   ,.mem_resp_v_i(mem_resp_v_lo)
-   ,.mem_resp_i(mem_resp_lo)
-   ,.mem_resp_ready_o(mem_resp_ready_lo)
+    ,.mem_resp_v_i(mem_resp_v_lo)
+    ,.mem_resp_i(mem_resp_lo)
+    ,.mem_resp_ready_o(mem_resp_ready_lo)
 
-   ,.mem_cmd_v_o(mem_cmd_v_lo)
-   ,.mem_cmd_o(mem_cmd_lo)
-   ,.mem_cmd_yumi_i(mem_cmd_v_lo & mem_cmd_ready_lo)
-   );
+    ,.mem_cmd_v_o(mem_cmd_v_lo)
+    ,.mem_cmd_o(mem_cmd_lo)
+    ,.mem_cmd_yumi_i(mem_cmd_v_lo & mem_cmd_ready_lo)
+    );
 
   // Memory
   bp_mem
-  #(.bp_params_p(bp_params_p)
-   ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
-   ,.mem_load_p(mem_load_p)
-   ,.mem_zero_p(mem_zero_p)
-   ,.mem_file_p(mem_file_p)
-   ,.mem_offset_p(mem_offset_p)
+    #(.bp_params_p(bp_params_p)
+    ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
+    ,.mem_load_p(mem_load_p)
+    ,.mem_zero_p(mem_zero_p)
+    ,.mem_file_p(mem_file_p)
+    ,.mem_offset_p(mem_offset_p)
  
-   ,.use_max_latency_p(use_max_latency_p)
-   ,.use_random_latency_p(use_random_latency_p)
-   ,.use_dramsim2_latency_p(use_dramsim2_latency_p)
-   ,.max_latency_p(max_latency_p)
+    ,.use_max_latency_p(use_max_latency_p)
+    ,.use_random_latency_p(use_random_latency_p)
+    ,.use_dramsim2_latency_p(use_dramsim2_latency_p)
+    ,.max_latency_p(max_latency_p)
  
-   ,.dram_clock_period_in_ps_p(dram_clock_period_in_ps_p)
-   ,.dram_cfg_p(dram_cfg_p)
-   ,.dram_sys_cfg_p(dram_sys_cfg_p)
-   ,.dram_capacity_p(dram_capacity_p)
-   )
-  mem
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+    ,.dram_clock_period_in_ps_p(dram_clock_period_in_ps_p)
+    ,.dram_cfg_p(dram_cfg_p)
+    ,.dram_sys_cfg_p(dram_sys_cfg_p)
+    ,.dram_capacity_p(dram_capacity_p)
+    )
+    mem
+    (.clk_i(clk_i)
+    ,.reset_i(reset_i)
  
-   ,.mem_cmd_i(mem_cmd_lo)
-   ,.mem_cmd_v_i(mem_cmd_v_lo)
-   ,.mem_cmd_ready_o(mem_cmd_ready_lo)
+    ,.mem_cmd_i(mem_cmd_lo)
+    ,.mem_cmd_v_i(mem_cmd_v_lo)
+    ,.mem_cmd_ready_o(mem_cmd_ready_lo)
  
-   ,.mem_resp_o(mem_resp_lo)
-   ,.mem_resp_v_o(mem_resp_v_lo)
-   ,.mem_resp_yumi_i(mem_resp_v_lo & mem_resp_ready_lo)
-   );
+    ,.mem_resp_o(mem_resp_lo)
+    ,.mem_resp_v_o(mem_resp_v_lo)
+    ,.mem_resp_yumi_i(mem_resp_v_lo & mem_resp_ready_lo)
+    );
 
   // Tracers
   bind bp_be_dcache
