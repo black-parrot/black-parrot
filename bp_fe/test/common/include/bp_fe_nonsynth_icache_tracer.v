@@ -1,4 +1,4 @@
-module bp_fe_icache_nonsynth_tracer
+module bp_fe_nonsynth_icache_tracer
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_common_cfg_link_pkg::*;
@@ -9,13 +9,15 @@ module bp_fe_icache_nonsynth_tracer
   
   , parameter icache_trace_file_p = "icache"
   // I-Cache Widths
-
-  , localparam bp_be_dcache_stat_width_lp = `bp_be_dcache_stat_info_width(lce_assoc_p)
+  , localparam bp_be_icache_stat_width_lp = `bp_be_dcache_stat_info_width(icache_assoc_p)
   
   , localparam mhartid_width_lp      = `BSG_SAFE_CLOG2(num_core_p)
-  , localparam block_size_in_words_lp=lce_assoc_p
-  , localparam data_mask_width_lp=(dword_width_p>>3)
-  , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
+  , localparam block_size_in_words_lp=icache_assoc_p
+  , localparam cache_block_multiplier_width_lp = 2**(3-`BSG_SAFE_CLOG2(dcache_assoc_p))
+  , localparam cache_block_width_lp = dword_width_p * cache_block_multiplier_width_lp
+  , localparam data_mem_mask_width_lp=(cache_block_width_lp>>3)
+  , localparam bypass_data_width_lp = (dword_width_p >> 3)
+  , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(cache_block_width_lp>>3)
   , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
   , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
   , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)
@@ -23,8 +25,8 @@ module bp_fe_icache_nonsynth_tracer
   , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
 
   , localparam lce_data_width_lp=(lce_assoc_p*dword_width_p)
-  `declare_bp_icache_widths(vaddr_width_p, tag_width_lp, lce_assoc_p) 
-  `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+  `declare_bp_icache_widths(vaddr_width_p, tag_width_lp, icache_assoc_p) 
+  `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, icache_assoc_p, dword_width_p, cce_block_width_p, icache)
 
   )
   ( input                                    clk_i
@@ -39,38 +41,38 @@ module bp_fe_icache_nonsynth_tracer
   , input				     v_tv_r
 
   , input                                    cache_req_ready_i
-  , input [cache_req_width_lp-1:0]           cache_req_o
+  , input [icache_req_width_lp-1:0]          cache_req_o
   , input                                    cache_req_v_o
-  , input [cache_req_metadata_width_lp-1:0]  cache_req_metadata_o
+  , input [icache_req_metadata_width_lp-1:0] cache_req_metadata_o
   , input				     cache_req_metadata_v_o
 
   , input				     cache_req_complete_i
 
   , input 			             data_mem_pkt_v_i
-  , input [cache_data_mem_pkt_width_lp-1:0]  data_mem_pkt_i
+  , input [icache_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
   , input [cce_block_width_p-1:0]            data_mem_o
   , input 			             data_mem_pkt_ready_o
 
   , input 			             tag_mem_pkt_v_i
-  , input [cache_tag_mem_pkt_width_lp-1:0]   tag_mem_pkt_i
+  , input [icache_tag_mem_pkt_width_lp-1:0]  tag_mem_pkt_i
   , input [tag_width_lp-1:0]                 tag_mem_o
   , input 				     tag_mem_pkt_ready_o
 
   , input 				     stat_mem_pkt_v_i
-  , input [cache_stat_mem_pkt_width_lp-1:0]  stat_mem_pkt_i
-  , input [bp_be_dcache_stat_width_lp-1:0]   stat_mem_o
+  , input [icache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
+  , input [bp_be_icache_stat_width_lp-1:0]   stat_mem_o
   , input 				     stat_mem_pkt_ready_o
   );
 
-`declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p);
-bp_cache_req_s cache_req_cast_lo;
-bp_cache_req_metadata_s cache_req_metadata_cast_lo;
+`declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, icache_assoc_p, dword_width_p, cce_block_width_p, icache);
+bp_icache_req_s cache_req_cast_lo;
+bp_icache_req_metadata_s cache_req_metadata_cast_lo;
 assign cache_req_cast_lo = cache_req_o;
 assign cache_req_metadata_cast_lo = cache_req_metadata_o;
 
-bp_cache_data_mem_pkt_s data_mem_pkt_cast_i;
-bp_cache_tag_mem_pkt_s tag_mem_pkt_cast_i;
-bp_cache_stat_mem_pkt_s stat_mem_pkt_cast_i;
+bp_icache_data_mem_pkt_s data_mem_pkt_cast_i;
+bp_icache_tag_mem_pkt_s tag_mem_pkt_cast_i;
+bp_icache_stat_mem_pkt_s stat_mem_pkt_cast_i;
 assign data_mem_pkt_cast_i = data_mem_pkt_i;
 assign tag_mem_pkt_cast_i = tag_mem_pkt_i;
 assign stat_mem_pkt_cast_i = stat_mem_pkt_i;

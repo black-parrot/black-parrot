@@ -25,21 +25,27 @@ def main(argv):
   
   file.write(tracer.print_comment("store to address - 0, 8, 16, 24, 32, 40, 48, 56"))
   for i in range(8, 72, 8):
-    file.write(tracer.send_store(8, i-8, 0, i))
+    temp_ptag = (i-1) >> 3
+    file.write(tracer.send_store(8, i-8, temp_ptag, i))
     file.write(tracer.nop())
+    file.write(tracer.recv_data(0))
 
-  file.write(tracer.print_comment("wait for 8 cycles for all the stores to complete"))
-  file.write(tracer.wait(8))
+  file.write(tracer.print_comment("Store to same cache index but different physical address"))
+  file.write(tracer.send_store(8, 0, 8, 72))
   file.write(tracer.print_comment("Receive zero (to dequeue fifo)"))
   file.write(tracer.recv_data(0))
+  file.write(tracer.print_comment("Load from same cache index but new address"))
+  file.write(tracer.send_load(True, 8, 0, 8))
+  file.write(tracer.nop())
+  file.write(tracer.recv_data(72))
   file.write(tracer.print_comment("load from address - 0, 8, 16, 24, 32, 40, 48, 56"))
-  for i in range(8, 72, 8):
-    file.write(tracer.send_load(True, 8, i-8, 0))
-    file.write(tracer.nop())
-    file.write(tracer.recv_data(i))
-    file.write(tracer.nop())
-
-  # file.write(tracer.test_done())
+  file.write(tracer.send_load(True, 8, 0, 0))
+  file.write(tracer.nop())
+  file.write(tracer.recv_data(8))
+  file.write(tracer.nop())
+  file.write(tracer.send_load(True, 8, 0, 8))
+  file.write(tracer.nop())
+  file.write(tracer.recv_data(72))
   file.write(tracer.test_finish())
   file.close()
 

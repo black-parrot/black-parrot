@@ -5,7 +5,7 @@ include $(TOP)/Makefile.common
 
 export SYN_PATH     := $(BP_FE_DIR)/syn
 export TB_PATH      := $(BP_FE_DIR)/test/tb
-export MEM_PATH     := $(BP_COMMON_DIR)/test/mem
+export MEM_PATH     := $(BP_FE_DIR)/test/tb
 
 export LOG_PATH     := $(BP_FE_DIR)/syn/logs
 export RESULTS_PATH := $(BP_FE_DIR)/syn/results
@@ -13,6 +13,8 @@ export REPORT_PATH  := $(BP_FE_DIR)/syn/reports
 
 TB          ?= bp_fe_icache
 CFG         ?= e_bp_half_core_cfg
+START_PC    ?= 0x80000000
+TOLERANCE   ?= 2
 
 DRAMSIM_CH_CFG  ?= DDR2_micron_16M_8b_x8_sg3E.ini
 DRAMSIM_SYS_CFG ?= system.ini

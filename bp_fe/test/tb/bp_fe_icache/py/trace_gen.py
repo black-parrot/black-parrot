@@ -5,12 +5,11 @@
 class TraceGen:
 
   # constructor
-  def __init__(self, ptag_width_p, page_offset_width_p, opcode_width_p, data_width_p):
+  def __init__(self, vaddr_width_p, ptag_width_p, instr_width_p):
+    self.vaddr_width_p = vaddr_width_p
     self.ptag_width_p = ptag_width_p
-    self.page_offset_width_p = page_offset_width_p
-    self.opcode_width_p = opcode_width_p
-    self.data_width_p = data_width_p
-    self.packet_len = ptag_width_p + page_offset_width_p + opcode_width_p + data_width_p
+    self.instr_width_p = instr_width_p
+    self.packet_len = vaddr_width_p + ptag_width_p
 
   # print header
   def print_header(self):
@@ -19,67 +18,18 @@ class TraceGen:
     return header
 
   # send load
-  # signed: sign extend or not
-  # size: load size in bytes
-  # page_offset: dcache pkt page offset
-  def send_load(self, signed, size, page_offset, ptag):
+  def send_load(self, vaddr, ptag):
     packet = "0001_"
-    packet += format(ptag, "0"+str(self.ptag_width_p)+"b") + "_"
-
-    if (size == 8):
-      packet += "0011_"
-    else:
-      if (signed):
-        if (size == 1):
-          packet+= "0000_"
-        elif (size == 2):
-          packet += "0001_"
-        elif (size == 4):
-          packet += "0010_"
-        else:
-          raise ValueError("unexpected size for signed load.")
-      else:
-        if (size == 1):
-          packet += "0100_"
-        elif (size == 2):
-          packet += "0101_"
-        elif (size == 4):
-          packet += "0110_"
-        else:
-          raise ValueError("unexpected size for unsigned load.")
-
-    packet += format(page_offset, "0"+str(self.page_offset_width_p)+"b") + "_"
-    packet += format(0, "064b") + "\n" 
-    return packet
-
-  # send store
-  # signed: sign extend or not
-  # size: store size in bytes
-  # page_offset: dcache pkt page offset
-  def send_store(self, size, page_offset, ptag, data):
-    packet = "0001_"
-    packet += format(ptag, "0"+str(self.ptag_width_p)+"b") + "_"
-    
-    if (size == 1):
-      packet += "1000_"
-    elif (size == 2):
-      packet += "1001_"
-    elif (size == 4):
-      packet += "1010_"
-    elif (size == 8):
-      packet += "1011_"
-    else:
-      raise ValueError("unexpected size for store.")
-    
-    packet += format(page_offset, "0" + str(self.page_offset_width_p) + "b") + "_"
-    packet += format(data, "064b") + "\n"
+    #packet += "0"*(self.instr_width_p) + "_"
+    packet += format(vaddr, "0"+str(self.vaddr_width_p)+"b") + "_"
+    packet += format(ptag, "0"+str(self.ptag_width_p)+"b") + "\n"
     return packet
 
   # receive data
   # data: expected data
   def recv_data(self, data):
     packet = "0010_"
-    packet += "0"*(self.ptag_width_p) + "_" + "0"*(self.opcode_width_p) + "_" + "0"*(self.page_offset_width_p) + "_" + format(data, "064b") + "\n"
+    packet += "0"*(self.packet_len - self.instr_width_p) + "_" + format(data, "0"+str(self.instr_width_p)+"b") + "\n"
     return packet
 
   # wait for a number of cycles

@@ -18,23 +18,16 @@ def main(argv):
     elif opt in ("-i", "--trace_file"):
       filename = arg
   
-  tracer = TraceGen(28, 12, 4, 64)
+  tracer = TraceGen(39, 28, 32)
   file = open(filename, "w")
 
   file.write(tracer.print_header())
   
-  file.write(tracer.print_comment("store to address - 0, 8, 16, 24, 32, 40, 48, 56"))
-  for i in range(8, 72, 8):
-    file.write(tracer.send_store(8, i-8, 0, i))
-    file.write(tracer.nop())
-
-  file.write(tracer.print_comment("wait for 8 cycles for all the stores to complete"))
-  file.write(tracer.wait(8))
-  file.write(tracer.print_comment("Receive zero (to dequeue fifo)"))
-  file.write(tracer.recv_data(0))
-  file.write(tracer.print_comment("load from address - 0, 8, 16, 24, 32, 40, 48, 56"))
-  for i in range(8, 72, 8):
-    file.write(tracer.send_load(True, 8, i-8, 0))
+  file.write(tracer.print_comment("load from address - 0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60"))
+  for i in range(0, 64, 4):
+    temp_vaddr = (1 << 31) | i
+    temp_ptag = (1<<19)
+    file.write(tracer.send_load(temp_vaddr, temp_ptag))
     file.write(tracer.nop())
     file.write(tracer.recv_data(i))
     file.write(tracer.nop())
