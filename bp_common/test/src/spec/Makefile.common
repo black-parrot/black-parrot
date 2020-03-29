@@ -8,8 +8,7 @@ OBJECT_FILES += lfs.o $(INIT_FILES)
 
 IN_FILES := $(BENCHMARK_INPS)
 
-CLEAN_ITEMS += lfs.c
-CLEAN_ITEMS += $(BENCHMARK).riscv
+CLEAN_ITEMS = $(IN_FILES) $(OBJECT_FILES) lfs.c
 
 vpath %.c $(BENCHMARK_DIR)/src.raw
 vpath %.h $(BENCHMARK_DIR)/src.raw
