@@ -29,6 +29,4 @@ ARGV=vpr $(INPUT_TYPE).net small.arch.in place.out other.out \
 LFS_BLOCK_SIZE = 128
 LFS_BLOCK_COUNT = 64 # 8K
 
-CLEAN_ITEMS = $(BENCHMARK_INPS)
-
 include ./Makefile.common
