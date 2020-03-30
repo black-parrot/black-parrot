@@ -106,11 +106,11 @@ $(BP_RVDV):
 	$(MAKE) -C $(TEST_DIR)/src/riscv-dv/ generate.$@
 	cp $(TEST_DIR)/src/riscv-dv/out/asm_tests/$@_0.o $(MEM_DIR)/$@.riscv
 
-riscv_nbf: $(foreach x, $(RV64_P_TESTS), $(x).nbf)
+riscv_nbf: $(foreach x, $(RV64_P_TESTS) $(RV64_PT_TESTS) $(RV64_V_TESTS) $(RV64_VT_TESTS) $(RV64_BENCHMARKS), $(x).nbf)
 riscv_mem: riscv_elf
-riscv_mem: $(foreach x, $(RV64_P_TESTS), $(x).mem)
-riscv_spike: $(foreach x, $(RV64_P_TESTS), $(x).spike)
-riscv_dump: $(foreach x, $(RV64_P_TESTS), $(x).dump)
+riscv_mem: $(foreach x, $(RV64_P_TESTS) $(RV64_PT_TESTS) $(RV64_V_TESTS) $(RV64_VT_TESTS) $(RV64_BENCHMARKS), $(x).mem)
+riscv_spike: $(foreach x, $(RV64_P_TESTS) $(RV64_PT_TESTS) $(RV64_V_TESTS) $(RV64_VT_TESTS) $(RV64_BENCHMARKS), $(x).spike)
+riscv_dump: $(foreach x, $(RV64_P_TESTS) $(RV64_PT_TESTS) $(RV64_V_TESTS) $(RV64_VT_TESTS) $(RV64_BENCHMARKS), $(x).dump)
 
 demos_nbf: $(foreach x, $(BP_DEMOS), $(x).nbf)
 demos_mem: demos_elf

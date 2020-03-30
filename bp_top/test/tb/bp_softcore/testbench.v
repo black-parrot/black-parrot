@@ -196,16 +196,11 @@ bind bp_be_top
    perf
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+     ,.freeze_i('0)
 
      ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
-     ,.fe_nop_i(be_calculator.exc_stage_r[2].fe_nop_v)
-     ,.be_nop_i(be_calculator.exc_stage_r[2].be_nop_v)
-     ,.me_nop_i(be_calculator.exc_stage_r[2].me_nop_v)
-     ,.poison_i(be_calculator.exc_stage_r[2].poison_v)
-     ,.roll_i(be_calculator.exc_stage_r[2].roll_v)
-
-     ,.instr_cmt_i(be_calculator.commit_pkt.instret)
+     ,.commit_v_i(be_calculator.commit_pkt.instret)
 
      ,.program_finish_i(testbench.program_finish_lo)
      );

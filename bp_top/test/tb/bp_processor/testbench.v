@@ -63,7 +63,7 @@ bp_io_noc_ral_link_s [E:P] cmd_link_li, cmd_link_lo;
 bp_io_noc_ral_link_s [E:P] resp_link_li, resp_link_lo;
 
 bp_cce_mem_msg_s dram_cmd_li;
-logic            dram_cmd_v_li, dram_cmd_yumi_lo, dram_cmd_ready_lo;
+logic            dram_cmd_v_li, dram_cmd_ready_lo;
 bp_cce_mem_msg_s dram_resp_lo;
 logic            dram_resp_v_lo, dram_resp_ready_li;
 
@@ -287,15 +287,11 @@ bind bp_be_top
    perf
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+     ,.freeze_i(be.be_checker.scheduler.int_regfile.cfg_bus.freeze)
 
      ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
-     ,.fe_nop_i(be_calculator.exc_stage_r[2].fe_nop_v)
-     ,.be_nop_i(be_calculator.exc_stage_r[2].be_nop_v)
-     ,.me_nop_i(be_calculator.exc_stage_r[2].me_nop_v)
-     ,.poison_i(be_calculator.exc_stage_r[2].poison_v)
-     ,.roll_i(be_calculator.exc_stage_r[2].roll_v)
-     ,.instr_cmt_i(be_calculator.commit_pkt.instret)
+     ,.commit_v_i(be_calculator.commit_pkt.instret)
 
      ,.program_finish_i(testbench.program_finish)
      );
