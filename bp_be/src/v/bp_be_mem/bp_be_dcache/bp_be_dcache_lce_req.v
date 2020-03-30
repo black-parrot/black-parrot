@@ -61,7 +61,6 @@ module bp_be_dcache_lce_req
 
     , input cce_data_received_i
     , input uncached_data_received_i
-    , input set_tag_received_i
     , input set_tag_wakeup_received_i
 
     , output logic [lce_cce_req_width_lp-1:0] lce_req_o
@@ -132,12 +131,10 @@ module bp_be_dcache_lce_req
   logic [1:0] size_op_r, size_op_n;
 
   logic cce_data_received_r, cce_data_received_n, cce_data_received;
-  logic set_tag_received_r, set_tag_received_n, set_tag_received;
 
   // comb logic
   //
   assign cce_data_received = cce_data_received_r | cce_data_received_i;
-  assign set_tag_received = set_tag_received_r | set_tag_received_i;
   assign miss_addr_o = miss_addr_r;
 
   logic [cce_id_width_p-1:0] req_cce_id_lo;
@@ -165,7 +162,6 @@ module bp_be_dcache_lce_req
     size_op_n = size_op_r;
     
     cce_data_received_n = cce_data_received_r;
-    set_tag_received_n = set_tag_received_r;
 
     lce_req_v_o = 1'b0;
 
@@ -197,7 +193,6 @@ module bp_be_dcache_lce_req
           miss_addr_n = cache_req_cast_li.addr;
           load_not_store_n = 1'b0; // We force a store miss to upgrade the block to exclusive
           cce_data_received_n = 1'b0;
-          set_tag_received_n = 1'b0;
 
           state_n = e_SEND_CACHED_REQ;
         end
@@ -205,7 +200,6 @@ module bp_be_dcache_lce_req
           miss_addr_n = cache_req_cast_li.addr;
           load_not_store_n = (cache_req_cast_li.msg_type == e_miss_load);
           cce_data_received_n = 1'b0;
-          set_tag_received_n = 1'b0;
  
           state_n = e_SEND_CACHED_REQ;
         end
@@ -213,7 +207,6 @@ module bp_be_dcache_lce_req
           miss_addr_n = cache_req_cast_li.addr;
           size_op_n = bp_lce_cce_uc_req_size_e'(cache_req_cast_li.size);
           cce_data_received_n = 1'b0;
-          set_tag_received_n = 1'b0;
  
           state_n = e_SEND_UNCACHED_LOAD_REQ;
         end
@@ -277,7 +270,6 @@ module bp_be_dcache_lce_req
       // wait for signals from other modules to wake up.
       e_SLEEP: begin
         cce_data_received_n = cce_data_received_i ? 1'b1 : cce_data_received_r;
-        set_tag_received_n = set_tag_received_i ? 1'b1 : set_tag_received_r;
 
         if (set_tag_wakeup_received_i) begin
           state_n = e_SEND_COH_ACK;
@@ -285,13 +277,8 @@ module bp_be_dcache_lce_req
         else if (uncached_data_received_i) begin
           state_n = e_READY;
         end
-        else if (set_tag_received) begin
-          if (cce_data_received) begin
-            state_n = e_SEND_COH_ACK;
-          end
-          else begin
-            state_n = e_SLEEP;
-          end
+        else if (cce_data_received) begin
+          state_n = e_SEND_COH_ACK;
         end
         else begin
           state_n = e_SLEEP;
@@ -323,14 +310,12 @@ module bp_be_dcache_lce_req
     if (reset_i) begin
       state_r <= e_READY;
       cce_data_received_r <= 1'b0;
-      set_tag_received_r <= 1'b0;
     end
     else begin
       state_r <= state_n;
       load_not_store_r <= load_not_store_n;
       miss_addr_r <= miss_addr_n;
       cce_data_received_r <= cce_data_received_n;
-      set_tag_received_r <= set_tag_received_n;
       size_op_r <= size_op_n;
     end
   end
@@ -365,8 +350,6 @@ module bp_be_dcache_lce_req
     if (state_r == e_READY) begin
       assert(~cce_data_received_i)
         else $error("id: %0d, data_cmd received while no cache miss.", lce_id_i);
-      assert(~set_tag_received_i)
-        else $error("id: %0d, set_tag_cmd received while no cache miss.", lce_id_i);
       assert(~set_tag_wakeup_received_i)
         else $error("id: %0d, set_tag_wakeup_cmd received while no cache miss.", lce_id_i);
     end
