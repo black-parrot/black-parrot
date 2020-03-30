@@ -63,7 +63,7 @@ bp_io_noc_ral_link_s [E:P] cmd_link_li, cmd_link_lo;
 bp_io_noc_ral_link_s [E:P] resp_link_li, resp_link_lo;
 
 bp_cce_mem_msg_s dram_cmd_li;
-logic            dram_cmd_v_li, dram_cmd_yumi_lo;
+logic            dram_cmd_v_li, dram_cmd_yumi_lo, dram_cmd_ready_lo;
 bp_cce_mem_msg_s dram_resp_lo;
 logic            dram_resp_v_lo, dram_resp_ready_li;
 
@@ -312,7 +312,7 @@ bind bp_be_top
      );
 
   bind bp_cce
-    bp_cce_nonsynth_tracer
+    bp_me_nonsynth_cce_tracer
       #(.bp_params_p(bp_params_p))
       bp_cce_tracer
        (.clk_i(clk_i & (testbench.cce_trace_p == 1))
@@ -492,7 +492,7 @@ else
 localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
 bp_cce_mmio_cfg_loader
   #(.bp_params_p(bp_params_p)
-    ,.inst_width_p(`bp_cce_inst_width)
+    ,.inst_width_p($bits(bp_cce_inst_s))
     ,.inst_ram_addr_width_p(cce_instr_ram_addr_width_lp)
     ,.inst_ram_els_p(num_cce_instr_ram_els_p)
     ,.skip_ram_init_p(skip_init_p)
