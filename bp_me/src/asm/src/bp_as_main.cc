@@ -1,8 +1,6 @@
 /*
  * bp_as_main.cc
  *
- * @author markw
- *
  * BlackParrot CCE Microcode Assembler Main
  *
  */
