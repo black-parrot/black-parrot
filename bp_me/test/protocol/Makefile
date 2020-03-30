@@ -14,11 +14,11 @@ CMURPHI_INC_DIR = $(CMURPHI_DIR)/include
 
 # compiler and settings
 # note: cmurphi seems to like g++-4.8 or g++-5.4, and doesn't like g++-7 or g++-8,
-#       set CXX explicitly if you have issues
-CXX            ?= g++
-CXX_FLAGS       =
-OXX_FLAGS       = -O3
-LD_FLAGS        = -lm
+# explicitly set CPLUSPLUS
+CPLUSPLUS       ?= g++-4.8
+CPLUSPLUS_FLAGS  =
+OXX_FLAGS        = -O3
+LD_FLAGS         = -lm
 
 # internal variables
 M_FILE_NO_PATH  = $(notdir $(M_FILE))
@@ -31,14 +31,14 @@ TIMESTAMP      := $(shell date +%s)
 .DEFAULT: echo
 
 echo:
-	$(CXX) --version
+	@$(CPLUSPLUS) --version
 	@echo M_FILE: $(M_FILE)
 	@echo try: make build run
 
 mu: $(CMURPHI)
 
 $(CMURPHI):
-	make -C $(CMURPHI_SRC_DIR) CPLUSPLUS=$(CXX) mu
+	make -C $(CMURPHI_SRC_DIR) CPLUSPLUS=$(CPLUSPLUS) mu
 
 dirs:
 	mkdir -p bin
@@ -49,7 +49,7 @@ build: $(CMURPHI) dirs
 	cp $(M_FILE) $(M_FILE_BUILD)
 	sed -i 's;CFG_PROCS;$(CFG_PROCS);g' $(M_FILE_BUILD)
 	$(CMURPHI) -b -c --disk $(M_FILE_BUILD)
-	$(CXX) $(CXX_FLAGS) $(OXX_FLAGS) -o bin/$(EXE) $(CPP_FILE) -I$(CMURPHI_INC_DIR) $(LD_FLAGS)
+	$(CPLUSPLUS) $(CPLUSPLUS_FLAGS) $(OXX_FLAGS) -o bin/$(EXE) $(CPP_FILE) -I$(CMURPHI_INC_DIR) $(LD_FLAGS)
 
 dbg:
 	bin/$(EXE) -p -pr -tf -ta -tv -d ./ > run.log
