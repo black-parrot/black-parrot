@@ -27,7 +27,7 @@ bleach_all:
 ## This target fetches and builds all dependencies needed for running simulations
 #    to test BlackParrot. By default, all tools are built but comment any tools that 
 #    you already have a copy of. If your version of a tool significantly differs from 
-#    our submodule version, use at your own risk.
+#    our submodule version, use at your own risk. 
 #
 tools:
 	mkdir -p external/bin
