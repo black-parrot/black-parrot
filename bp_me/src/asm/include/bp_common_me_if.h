@@ -12,7 +12,26 @@
 #ifndef BP_COMMON_ME_IF_H
 #define BP_COMMON_ME_IF_H
 
-#include "bp_cce.h"
+typedef enum {
+  e_lce_data_length_0        = 0
+  ,e_lce_data_length_1       = 1
+  ,e_lce_data_length_2       = 2
+  ,e_lce_data_length_3       = 3
+  ,e_lce_data_length_4       = 4
+  ,e_lce_data_length_5       = 5
+  ,e_lce_data_length_6       = 6
+  ,e_lce_data_length_7       = 7
+  ,e_lce_data_length_8       = 8
+  ,e_lce_data_length_9       = 9
+  ,e_lce_data_length_10      = 10
+  ,e_lce_data_length_11      = 11
+  ,e_lce_data_length_12      = 12
+  ,e_lce_data_length_13      = 13
+  ,e_lce_data_length_14      = 14
+  ,e_lce_data_length_15      = 15
+} bp_lce_cce_data_length_e;
+
+#define bp_lce_cce_data_length_width 4
 
 // LCE Requests
 typedef enum {
@@ -57,13 +76,13 @@ typedef enum {
   // 5 = potentially dirty, not owned, shared
   ,e_COH_M = 6
   ,e_COH_O = 7
-} bp_cce_coh_states_e;
+} bp_coh_states_e;
 
-#define bp_cce_coh_shared_bit 0
-#define bp_cce_coh_owned_bit 1
-#define bp_cce_coh_dirty_bit 2
+#define bp_coh_shared_bit 0
+#define bp_coh_owned_bit 1
+#define bp_coh_dirty_bit 2
 
-#define bp_cce_coh_bits 3
+#define bp_coh_bits 3
 
 // LCE Commands
 typedef enum {
@@ -77,6 +96,12 @@ typedef enum {
   ,e_lce_cmd_uc_st_done      = 7
   ,e_lce_cmd_data            = 8
   ,e_lce_cmd_uc_data         = 9
+  ,e_lce_cmd_custom_10       = 10
+  ,e_lce_cmd_custom_11       = 11
+  ,e_lce_cmd_custom_12       = 12
+  ,e_lce_cmd_custom_13       = 13
+  ,e_lce_cmd_custom_14       = 14
+  ,e_lce_cmd_custom_15       = 15
 } bp_lce_cmd_type_e;
 
 #define bp_lce_cmd_type_width 4
@@ -99,13 +124,21 @@ typedef enum {
   ,e_cce_mem_uc_rd           = 2
   ,e_cce_mem_uc_wr           = 3
   ,e_cce_mem_wb              = 4
+  ,e_cce_mem_pre             = 5
 } bp_cce_mem_cmd_type_e;
 
-typedef enum {
-  e_mem_cce_inv              = 0
-  ,e_mem_cce_flush           = 1
-} bp_mem_cce_cmd_type_e;
+#define bp_cce_mem_cmd_type_width 4
 
-#define bp_cce_mem_msg_type_width 4
+typedef enum {
+  e_mem_size_1               = 0
+  ,e_mem_size_2              = 1
+  ,e_mem_size_4              = 2
+  ,e_mem_size_8              = 3
+  ,e_mem_size_16             = 4
+  ,e_mem_size_32             = 5
+  ,e_mem_size_64             = 6
+} bp_cce_mem_req_size_e;
+
+#define bp_cce_mem_req_size_width 3
 
 #endif

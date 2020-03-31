@@ -12,29 +12,68 @@
  *   Some software operations are supported via assembler transforms rather than being supported
  *   directly in hardware (e.g., ALU increment and decrement).
  *
- * Notes:
- *   Some operations that a programmer can specify in the CCE microcode program are not directly
- *   supported in hardware. These operations are translated into hardware microcode ops by the
- *   assembler. See the C code version of this file and the assembler source code for the available
- *   software supported operations.
- *
+ *   Note: this file may rely on defines from bsg_defines.h in the BaseJump STL repo.
+ *   Note: this file relies on the LCE-CCE IF defines in bp_common_me_if.vh
  */
 
 `ifndef BP_CCE_INST_VH
 `define BP_CCE_INST_VH
 
-// Major Op Codes
-typedef enum logic [3:0] {
-  e_op_alu                               = 4'b0000
-  ,e_op_branch                           = 4'b0001
-  ,e_op_move                             = 4'b0010
-  ,e_op_flag                             = 4'b0011
-  ,e_op_dir                              = 4'b0100
-  ,e_op_misc                             = 4'b0110
-  ,e_op_queue                            = 4'b0111
+/*
+ * Instruction width definitions
+ */
+
+// Instructions are 32-bits wide with 2 bits of attached metadata
+// cce_instr_width_p should be equal to 34, and used when passing instruction+metadata
+`define bp_cce_inst_data_width 32
+`define bp_cce_inst_metadata_width 2
+`define bp_cce_inst_op_width 3
+`define bp_cce_inst_minor_op_width 4
+
+// Microcode RAM address width
+// 9 bits allows up to 512 instructions
+// this must be greater or equal to cce_pc_width_p in bp_common_aviary_pkg
+`define bp_cce_inst_addr_width 9
+
+// Immediate field widths
+`define bp_cce_inst_imm1_width 1
+`define bp_cce_inst_imm2_width 2
+`define bp_cce_inst_imm4_width 4
+`define bp_cce_inst_imm8_width 8
+`define bp_cce_inst_imm16_width 16
+
+/*
+ * General Purpose Registers
+ *
+ * Note: number of GPRs must be less than or equal to the number that can be
+ * represented in the GPR operand enum. Currently, the maximum is 16 GPRs, but only
+ * 8 are actually implemented and used.
+ */
+
+`define bp_cce_inst_num_gpr 8
+// Note: this is hard-coded so it can be used in part-select / bit-slicing expressions
+`define bp_cce_inst_gpr_sel_width 3
+//`BSG_SAFE_CLOG2(`bp_cce_inst_num_gpr)
+`define bp_cce_inst_gpr_width 64
+
+/*
+ * Major Op Codes
+ */
+
+typedef enum logic [2:0] {
+  e_op_alu                               = 3'b000    // ALU operation
+  ,e_op_branch                           = 3'b001    // Branch (control flow) operation
+  ,e_op_reg_data                         = 3'b010    // Register data movement operation
+//,e_op_mem                              = 3'b011    // Memory data operation (not implemented)
+  ,e_op_flag                             = 3'b100
+  ,e_op_dir                              = 3'b101
+  ,e_op_queue                            = 3'b110
+//,e_op_unused                           = 3'b111
 } bp_cce_inst_op_e;
 
-`define bp_cce_inst_op_width $bits(bp_cce_inst_op_e)
+/*
+ * Minor Op Codes
+ */
 
 // Minor ALU Op Codes
 typedef enum logic [3:0] {
@@ -46,389 +85,446 @@ typedef enum logic [3:0] {
   ,e_or_op                               = 4'b0101   // Bit-wise OR
   ,e_xor_op                              = 4'b0110   // Bit-wise XOR
   ,e_neg_op                              = 4'b0111   // Bit-wise negation (unary)
-  /* Software supported ALU operations
-  nop - r0 = r0 + 0
-  inc - increment GPR by 1
-  addi - add immediate to src GPR, store in dst GPR
-  dec - decrement GPR by 1
-  subi - subtract immediate from src GPR, store in dst GPR
-  */
+  ,e_addi_op                             = 4'b1000   // Add immediate
+//,e_nop_op                              = 4'b1000   // Null Operation (r0 = r0 + 0)
+//,e_inc_op                              = 4'b1000   // Increment register by 1
+  ,e_subi_op                             = 4'b1001   // Subtract immediate
+//,e_dec_op                              = 4'b1001   // Decrement register by 1
+  ,e_lshi_op                             = 4'b1010   // Left Shift immediate
+  ,e_rshi_op                             = 4'b1011   // Right Shift immediate
+  ,e_not_op                              = 4'b1111   // Logical Not
 } bp_cce_inst_minor_alu_op_e;
 
 // Minor Branch Op Codes
 typedef enum logic [3:0] {
   e_beq_op                               = 4'b0000   // Branch if A == B
+//,e_bi_op                               = 4'b0000   // Unconditional Branch, or Branch if A == A
   ,e_bne_op                              = 4'b0001   // Branch if A != B
-  ,e_bf_op                               = 4'b0010   // Branch if flag == 1 or 0 (set by immediate)
-  ,e_bs_op                               = 4'b0011   // Branch if special == GPR/imm
-  ,e_blt_op                              = 4'b0100   // Branch if A < B
-  ,e_ble_op                              = 4'b0101   // Branch if A <= B
-  ,e_bqv_op                              = 4'b0110   // Branch if queue.valid == 1
-  ,e_bi_op                               = 4'b0111   // Branch Immediate (Unconditional)
-  /* Software supported branch operations
-  beqi - branch GPR equal to immediate
-  bneqi - branch GPR not equal to immediate
-  bz - branch GPR equal to zero
-  bnz - branch GPR not equal to zero
-  bfz - branch flag zero
-  bsi - branch special equal to immediate
-  bgt - branch GPR greater than GPR
-  bge - branch GPR greater than or equal to GPR
-  */
+  ,e_blt_op                              = 4'b0010   // Branch if A < B
+//,e_bgt_op                              = 4'b0010   // Branch if A > B, or B < A
+  ,e_ble_op                              = 4'b0011   // Branch if A <= B
+//,e_bge_op                              = 4'b0011   // Branch if A >= B, or B <= A
+
+  ,e_bs_op                               = 4'b0100   // Branch if special == GPR
+  ,e_bss_op                              = 4'b0101   // Branch if special == special
+
+  ,e_beqi_op                             = 4'b1000   // Branch if A == immediate
+//,e_bz_op                               = 4'b1000   // Branch if A == 0
+  ,e_bneqi_op                            = 4'b1001   // Branch if A != immediate
+//,e_bnz_op                              = 4'b1001   // Branch if A != 0
+
+  ,e_bsi_op                              = 4'b1100   // Branch if special == immediate
 } bp_cce_inst_minor_branch_op_e;
 
-// Minor Move Op Codes
+// Minor Register Data Movement Op Codes
 typedef enum logic [3:0] {
   e_mov_op                               = 4'b0000   // Move GPR to GPR
-  ,e_movi_op                             = 4'b0001   // Move Immediate to GPR
-  ,e_movf_op                             = 4'b0010   // Move Flag to GPR
-  ,e_movsg_op                            = 4'b0011   // Move Special Register to GPR
-  ,e_movgs_op                            = 4'b0100   // Move GPR to Special Register
-  ,e_movis_op                            = 4'b0101   // Move Immediate to Special Register
-} bp_cce_inst_minor_mov_op_e;
+  ,e_movsg_op                            = 4'b0001   // Move Special Register to GPR
+  ,e_movgs_op                            = 4'b0010   // Move GPR to Special Register
+  //,e_ld_flags_op                       = 4'b0010   // MSHR.flags = GPR[0+:num_flags]
+  ,e_movfg_op                            = 4'b0011   // Move Flag to GPR[0]
+  ,e_movgf_op                            = 4'b0100   // Move GPR[0] to Flag
+  ,e_movpg_op                            = 4'b0101   // Move Param to GPR
+  ,e_movgp_op                            = 4'b0110   // Move GPR to Param
+  ,e_movi_op                             = 4'b1000   // Move Immediate to GPR
+  ,e_movis_op                            = 4'b1001   // Move Immediate to Special Register
+//,e_ld_flags_i_op                       = 4'b1001   // MSHR.flags = imm[0+:num_flags]
+//,e_clf_op                              = 4'b1001   // MSHR.flags = 0
+  ,e_movip_op                            = 4'b1010   // Move Immediate to Param Register
+  ,e_clm_op                              = 4'b1111   // Clear MSHR register
+} bp_cce_inst_minor_reg_data_op_e;
+
+// Minor Memory Op Codes
+// Note: these are not implemented in the CCE by default. In software, the e_m* operations
+// operate on global memory (i.e., physical/main memory in the system). There is a bit
+// in the instruction encoding to indicate local (i.e., CCE scratchpad) or global memory
+// operation.
+typedef enum logic [3:0] {
+  e_ldb_op                               = 4'b0000   // Load byte from memory
+  ,e_ldh_op                              = 4'b0001   // Load half-word from memory
+  ,e_ldw_op                              = 4'b0010   // Load word from memory
+  ,e_ldd_op                              = 4'b0011   // Load double-word from memory
+  ,e_stb_op                              = 4'b0100   // Store byte to memory
+  ,e_sth_op                              = 4'b0101   // Store half-word to memory
+  ,e_stw_op                              = 4'b0110   // Store word to memory
+  ,e_std_op                              = 4'b0111   // Store double-word to memory
+} bp_cce_inst_minor_mem_op_e;
 
 // Minor Flag Op Codes
 typedef enum logic [3:0] {
-  e_sf_op                                = 4'b0000   // Move imm[0] = 1 to dst(flag)
-  ,e_sfz_op                              = 4'b0001   // Move imm[0] = 0 to dst(flag)
-  ,e_andf_op                             = 4'b0010   // Logical AND two flags to GPR
-  ,e_orf_op                              = 4'b0011   // Logical OR two flags to GPR
+  e_sf_op                                = 4'b0000   // Move imm[0] = 1 to flag
+//,e_sfz_op                              = 4'b0000   // Move imm[0] = 0 to flag
+  ,e_andf_op                             = 4'b0001   // Logical AND two flags to GPR
+  ,e_orf_op                              = 4'b0010   // Logical OR two flags to GPR
+  ,e_nandf_op                            = 4'b0011   // Logical AND two flags to GPR
+  ,e_norf_op                             = 4'b0100   // Logical OR two flags to GPR
+  ,e_notf_op                             = 4'b0101   // Logical not of flag
+
+  ,e_bf_op                               = 4'b1000   // Branch if (MSHR.Flags & mask) == mask
+  ,e_bfz_op                              = 4'b1001   // Branch if (MSHR.Flags & mask) == 0
+  ,e_bfnz_op                             = 4'b1010   // Branch if (MSHR.Flags & mask) != 0
+  ,e_bfnot_op                            = 4'b1011   // Branch if (MSHR.Flags & mask) != mask
 } bp_cce_inst_minor_flag_op_e;
 
 // Minor Directory Op Codes
 typedef enum logic [3:0] {
-  e_rdp_op                               = 4'b0000   // Read Directory Pending Bit
+  e_rdp_op                               = 4'b0000   // Read Pending Bit
   ,e_rdw_op                              = 4'b0001   // Read Directory Way Group
   ,e_rde_op                              = 4'b0010   // Read Directory Entry
-  ,e_wdp_op                              = 4'b0011   // Write Directory Pending Bit
-  ,e_wde_op                              = 4'b0100   // Write Directory Entry
-  ,e_wds_op                              = 4'b0101   // Write Directory Entry State
-  ,e_gad_op                              = 4'b1000   // Generate Auxiliary Data
+  ,e_wdp_op                              = 4'b0100   // Write Pending Bit
+  ,e_clp_op                              = 4'b0101   // Clear Pending Bit
+  ,e_clr_op                              = 4'b0110   // Clear Directory Row
+  ,e_wde_op                              = 4'b0111   // Write Directory Entry
+  ,e_wds_op                              = 4'b1000   // Write Directory Entry State
+  ,e_gad_op                              = 4'b1001   // Generate Auxiliary Data
 } bp_cce_inst_minor_dir_op_e;
 
-// Minor Misc Op Codes
-typedef enum logic [3:0] {
-  e_clm_op                               = 4'b0000   // Clear MSHR register
-  ,e_fence_op                            = 4'b0001   // CCE Fence
-  ,e_stall_op                            = 4'b1111   // Stall PC
-} bp_cce_inst_minor_misc_op_e;
-
 // Minor Queue Op Codes
+// 1. poph does not dequeue data or memory, but captures the standard header fields into the MSHR,
+//    and also captures the message type into the specified GPR.
+// 2. popd dequeues a single 64-bit data packet into a single GPR. The user must first have at
+//    at least done a poph to determine that data was available and so ucode can use data_length
+//    field in MSHR to determine how many packets to dequeue.
+// 3. popq dequeues only the header. We assume that all data has been popped off
+//    either by popd commands, or by the message unit auto-forward mechanism, or by issuing
+//    a pushq command that consumes the data (e.g., an explicit pushq memCmd that consumes an
+//    lceResp containing writeback data). No state is written from the message to the CCE.
+
 typedef enum logic [3:0] {
   e_wfq_op                               = 4'b0000   // Wait for Queue Valid
   ,e_pushq_op                            = 4'b0001   // Push Queue
-  ,e_popq_op                             = 4'b0010   // Pop Queue
+//,e_pushqc_op                           = 4'b0001   // Push Queue Custom Message
+  ,e_popq_op                             = 4'b0010   // Pop Queue - dequeue the header
   ,e_poph_op                             = 4'b0011   // Pop Header From Queue - does not pop message
-  ,e_specq_op                            = 4'b0100   // Modify speculative access bits
-  ,e_inv_op                              = 4'b0101   // Send all Invalidations based on sharers vector
+  // TODO: popd not yet fully supported - will be supported after serdes changes
+  ,e_popd_op                             = 4'b0100   // Pop Data From Queue
+  ,e_specq_op                            = 4'b0101   // Write or read speculative access bits
+  ,e_inv_op                              = 4'b1000   // Send all Invalidations based on sharers vector
 } bp_cce_inst_minor_queue_op_e;
 
 // Minor Op Code Union
 typedef union packed {
   bp_cce_inst_minor_alu_op_e             alu_minor_op;
   bp_cce_inst_minor_branch_op_e          branch_minor_op;
-  bp_cce_inst_minor_mov_op_e             mov_minor_op;
+  bp_cce_inst_minor_reg_data_op_e        reg_data_minor_op;
+//bp_cce_inst_minor_mem_op_e             mem_minor_op;
   bp_cce_inst_minor_flag_op_e            flag_minor_op;
   bp_cce_inst_minor_dir_op_e             dir_minor_op;
-  bp_cce_inst_minor_misc_op_e            misc_minor_op;
   bp_cce_inst_minor_queue_op_e           queue_minor_op;
+  //                                     unused op
 } bp_cce_inst_minor_op_u;
 
-`define bp_cce_inst_minor_op_width $bits(bp_cce_inst_minor_op_u)
+
+/*
+ * ALU Unit Operation
+ */
+typedef enum logic [3:0] {
+  e_alu_add                              = 4'b0000   // Add
+  ,e_alu_sub                             = 4'b0001   // Subtract
+  ,e_alu_lsh                             = 4'b0010   // Left Shift
+  ,e_alu_rsh                             = 4'b0011   // Right Shift
+  ,e_alu_and                             = 4'b0100   // Bit-wise AND
+  ,e_alu_or                              = 4'b0101   // Bit-wise OR
+  ,e_alu_xor                             = 4'b0110   // Bit-wise XOR
+  ,e_alu_neg                             = 4'b0111   // Bit-wise negation (unary)
+  ,e_alu_not                             = 4'b1000   // Logical Not (unary)
+  ,e_alu_nand                            = 4'b1001   // Logical Not of Bit-wise And
+  ,e_alu_nor                             = 4'b1010   // Logical Not of Bit-wise Or
+} bp_cce_inst_alu_op_e;
+
+`define bp_cce_inst_alu_op_width $bits(bp_cce_inst_alu_op_e)
+
+/*
+ * Branch Unit Operation
+ */
+typedef enum logic [1:0] {
+  e_branch_eq                            = 2'b00   // Branch if A == B
+  ,e_branch_neq                          = 2'b01   // Branch if A != B
+  ,e_branch_lt                           = 2'b10   // Branch if A < B
+  ,e_branch_le                           = 2'b11   // Branch if A <= B
+} bp_cce_inst_branch_op_e;
+
+`define bp_cce_inst_branch_op_width $bits(bp_cce_inst_branch_op_e)
+
+/*
+ * Speculative Bits Unit Operation
+ */
+typedef enum logic [3:0] {
+  e_spec_set                             = 4'b0000 // Set spec bit to 1
+  ,e_spec_unset                          = 4'b0001 // Set spec bit to 0
+  ,e_spec_squash                         = 4'b0010 // Set squash bit to 1, clear spec bit
+  ,e_spec_fwd_mod                        = 4'b0011 // Set fwd_mod bit to 1, clear spec bit, set state to state
+  ,e_spec_rd_spec                        = 4'b1000 // Read spec bit to sf
+} bp_cce_inst_spec_op_e;
+
+`define bp_cce_inst_spec_op_width $bits(bp_cce_inst_spec_op_e)
+
+// Struct that defines speculative memory access tracking metadata
+// This is used in the decoded instruction and the bp_cce_spec module
+typedef struct packed
+{
+  logic                          spec;
+  logic                          squash;
+  logic                          fwd_mod;
+  bp_coh_states_e                state;
+} bp_cce_spec_s;
 
 
-// GPR Source Select
-typedef enum logic [4:0] {
-  e_src_r0                               = 5'b00000
-  ,e_src_r1                              = 5'b00001
-  ,e_src_r2                              = 5'b00010
-  ,e_src_r3                              = 5'b00011
-  ,e_src_r4                              = 5'b00100
-  ,e_src_r5                              = 5'b00101
-  ,e_src_r6                              = 5'b00110
-  ,e_src_r7                              = 5'b00111
+/*
+ * Operand Selects
+ */
 
-  ,e_src_gpr_imm                         = 5'b11111
+`define bp_cce_inst_opd_width 4
 
-} bp_cce_inst_src_gpr_e;
+// GPR Operand Select
+// GPR's can be source or destination
+typedef enum logic [3:0] {
+  e_opd_r0                               = 4'b0000
+  ,e_opd_r1                              = 4'b0001
+  ,e_opd_r2                              = 4'b0010
+  ,e_opd_r3                              = 4'b0011
+  ,e_opd_r4                              = 4'b0100
+  ,e_opd_r5                              = 4'b0101
+  ,e_opd_r6                              = 4'b0110
+  ,e_opd_r7                              = 4'b0111
+} bp_cce_inst_opd_gpr_e;
 
-`define bp_cce_inst_src_gpr_width $bits(bp_cce_inst_src_gpr_e)
+// Flag Operand Select
+// Flags can be source or destination
+typedef enum logic [3:0] {
+  e_opd_rqf                              = 4'b0000
+  ,e_opd_ucf                             = 4'b0001
+  ,e_opd_nerf                            = 4'b0010
+  ,e_opd_ldf                             = 4'b0011
+  ,e_opd_pf                              = 4'b0100
+  ,e_opd_lef                             = 4'b0101
+  ,e_opd_cf                              = 4'b0110
+  ,e_opd_cef                             = 4'b0111
+  ,e_opd_cof                             = 4'b1000
+  ,e_opd_cdf                             = 4'b1001
+  ,e_opd_csf                             = 4'b1010
+  ,e_opd_rf                              = 4'b1011
+  ,e_opd_uf                              = 4'b1100
+  ,e_opd_if                              = 4'b1101
+  ,e_opd_nwbf                            = 4'b1110
+  ,e_opd_sf                              = 4'b1111
+} bp_cce_inst_opd_flag_e;
 
-// Flag Source Select
-typedef enum logic [4:0] {
-  e_src_rqf                              = 5'b00000
-  ,e_src_ucf                             = 5'b00001
-  ,e_src_nerf                            = 5'b00010
-  ,e_src_ldf                             = 5'b00011
-  ,e_src_pf                              = 5'b00100
-  ,e_src_lef                             = 5'b00101
-  ,e_src_cf                              = 5'b00110
-  ,e_src_cef                             = 5'b00111
-  ,e_src_cof                             = 5'b01000
-  ,e_src_cdf                             = 5'b01001
-  ,e_src_tf                              = 5'b01010
-  ,e_src_rf                              = 5'b01011
-  ,e_src_uf                              = 5'b01100
-  ,e_src_if                              = 5'b01101
-  ,e_src_nwbf                            = 5'b01110
-  ,e_src_sf                              = 5'b01111
+// Control Flag one hot encoding
+typedef enum logic [15:0] {
+  e_flag_rqf                    = 16'b0000_0000_0000_0001 // request type flag
+  ,e_flag_ucf                   = 16'b0000_0000_0000_0010 // uncached request flag
+  ,e_flag_nerf                  = 16'b0000_0000_0000_0100 // non-exclusive request flag
+  ,e_flag_ldf                   = 16'b0000_0000_0000_1000 // lru dirty flag
+  ,e_flag_pf                    = 16'b0000_0000_0001_0000 // pending flag
+  ,e_flag_lef                   = 16'b0000_0000_0010_0000 // lru cached exclusive flag
+  ,e_flag_cf                    = 16'b0000_0000_0100_0000 // cached by other flag
+  ,e_flag_cef                   = 16'b0000_0000_1000_0000 // cached exclusive by other flag
+  ,e_flag_cof                   = 16'b0000_0001_0000_0000 // cached owned by other flag
+  ,e_flag_cdf                   = 16'b0000_0010_0000_0000 // cached dirty by other flag
+  ,e_flag_csf                   = 16'b0000_0100_0000_0000 // cached shared by other flag
+  ,e_flag_rf                    = 16'b0000_1000_0000_0000 // replacement flag
+  ,e_flag_uf                    = 16'b0001_0000_0000_0000 // upgrade flag
+  ,e_flag_if                    = 16'b0010_0000_0000_0000 // invalidate flag
+  ,e_flag_nwbf                  = 16'b0100_0000_0000_0000 // null writeback flag
+  ,e_flag_sf                    = 16'b1000_0000_0000_0000 // speculative flag
+} bp_cce_inst_flag_onehot_e;
 
-  ,e_src_flag_and                        = 5'b10000
-  ,e_src_flag_nand                       = 5'b10001
-  ,e_src_flag_or                         = 5'b10010
-  ,e_src_flag_nor                        = 5'b10011
+`define bp_cce_inst_num_flags $bits(bp_cce_inst_flag_onehot_e)
 
-  ,e_src_flag_imm                        = 5'b11111
+// Special Operand Select
+typedef enum logic [3:0] {
+  // MSHR fields can be source or destination
+  e_opd_req_lce                          = 4'b0000 // MSHR.lce_id
+  ,e_opd_req_addr                        = 4'b0001 // MSHR.paddr
+  ,e_opd_req_way                         = 4'b0010 // MSHR.way_id
+  ,e_opd_lru_addr                        = 4'b0011 // MSHR.lru_paddr
+  ,e_opd_lru_way                         = 4'b0100 // MSHR.lru_way_id
+  ,e_opd_owner_lce                       = 4'b0101 // MSHR.owner_lce_id
+  ,e_opd_owner_way                       = 4'b0110 // MSHR.owner_way_id
+  ,e_opd_next_coh_state                  = 4'b0111 // MSHR.next_coh_state
+  ,e_opd_flags                           = 4'b1000 // MSHR.flags
+  ,e_opd_uc_req_size                     = 4'b1001 // MSHR.uc_req_size
+  ,e_opd_data_length                     = 4'b1010 // MSHR.data_length
 
-} bp_cce_inst_src_flag_e;
+  // only used as a source
+  ,e_opd_flags_and_mask                  = 4'b1011 // MSHR.flags & imm[0+:num_flags]
 
-`define bp_cce_inst_src_flag_width $bits(bp_cce_inst_src_flag_e)
+  // sharers vectors require src_b to provide GPR rX containing index to use
+  // These can only be used as source a, not as source b or destinations
+  ,e_opd_sharers_hit                     = 4'b1101 // sharers_hits[rX]
+  ,e_opd_sharers_way                     = 4'b1110 // sharers_ways[rX]
+  ,e_opd_sharers_state                   = 4'b1111 // sharers_states[rX]
+} bp_cce_inst_opd_special_e;
 
-// Special Source Select
-typedef enum logic [4:0] {
-  e_src_sharers_hit_r0                   = 5'b00000
-  ,e_src_sharers_way_r0                  = 5'b00001
-  ,e_src_sharers_state_r0                = 5'b00010
+`define bp_cce_inst_opd_special_width $bits(bp_cce_inst_opd_special_e)
 
-  ,e_src_req_lce                         = 5'b01000
-  ,e_src_next_coh_state                  = 5'b01001
-  ,e_src_num_lce                         = 5'b01010
-  ,e_src_req_addr                        = 5'b01011
-  ,e_src_coh_state                       = 5'b01100
-  ,e_src_num_cce                         = 5'b01101
-  ,e_src_lce_assoc                       = 5'b01110
-  ,e_src_num_wg                          = 5'b01111
+// Params Operand Select
+typedef enum logic [3:0] {
+  // These four parameters can only be sources
+  e_opd_cce_id                           = 4'b0000 // ID of this CCE
+  ,e_opd_num_lce                         = 4'b0001 // total number of LCE in system
+  ,e_opd_num_cce                         = 4'b0010 // total number of CCE in system
+  ,e_opd_num_wg                          = 4'b0011 // Number of WG managed by this CCE
+  // The following can be source or destination
+  ,e_opd_auto_fwd_msg                    = 4'b0100 // Message auto-forward control
+  ,e_opd_coh_state_default               = 4'b0101 // Default for MSHR.next_coh_state
+} bp_cce_inst_opd_params_e;
 
-  ,e_src_lce_req_v                       = 5'b10000
-  ,e_src_mem_resp_v                      = 5'b10001
-  ,e_src_pending_v                       = 5'b10010
-  ,e_src_lce_resp_v                      = 5'b10011
+`define bp_cce_inst_opd_params_width $bits(bp_cce_inst_opd_params_e)
 
-  ,e_src_lce_resp_type                   = 5'b11000
-  ,e_src_cce_id                          = 5'b11001
+// Queue valid signals and message types
+// These can only be used as sources
+typedef enum logic [3:0] {
+  e_opd_mem_resp_v                       = 4'b0000
+  ,e_opd_lce_resp_v                      = 4'b0001
+  ,e_opd_pending_v                       = 4'b0010
+  ,e_opd_lce_req_v                       = 4'b0011
+  ,e_opd_lce_resp_type                   = 4'b0100
+  ,e_opd_mem_resp_type                   = 4'b0101
+  ,e_opd_lce_resp_data                   = 4'b0110
+  ,e_opd_mem_resp_data                   = 4'b0111
+  ,e_opd_lce_req_data                    = 4'b1000
+} bp_cce_inst_opd_queue_e;
 
-  ,e_src_special_0                       = 5'b11100
-  ,e_src_special_1                       = 5'b11101
+`define bp_cce_inst_opd_queue_width $bits(bp_cce_inst_opd_queue_e)
 
-  ,e_src_special_imm                     = 5'b11111
-
-} bp_cce_inst_src_special_e;
-
-`define bp_cce_inst_src_special_width $bits(bp_cce_inst_src_special_e)
+/*
+ * Source Operands
+ */
 
 // Source Union
 typedef union packed {
-  bp_cce_inst_src_gpr_e        gpr;
-  bp_cce_inst_src_flag_e       flag;
-  bp_cce_inst_src_special_e    special;
+  bp_cce_inst_opd_gpr_e        gpr;
+  bp_cce_inst_opd_flag_e       flag;
+  bp_cce_inst_opd_special_e    special;
+  bp_cce_inst_opd_params_e     param;
+  bp_cce_inst_opd_queue_e      q;
 } bp_cce_inst_src_u;
 
-`define bp_cce_inst_src_width $bits(bp_cce_inst_src_u)
-
-typedef enum logic [1:0] {
+typedef enum logic [2:0] {
   e_src_sel_gpr
   ,e_src_sel_flag
   ,e_src_sel_special
+  ,e_src_sel_param
+  ,e_src_sel_queue
+  ,e_src_sel_imm
+  ,e_src_sel_zero
 } bp_cce_inst_src_sel_e;
 
 `define bp_cce_inst_src_sel_width $bits(bp_cce_inst_src_sel_e)
 
-// GPR Destination Select
-typedef enum logic [4:0] {
-  e_dst_r0                               = 5'b00000
-  ,e_dst_r1                              = 5'b00001
-  ,e_dst_r2                              = 5'b00010
-  ,e_dst_r3                              = 5'b00011
-  ,e_dst_r4                              = 5'b00100
-  ,e_dst_r5                              = 5'b00101
-  ,e_dst_r6                              = 5'b00110
-  ,e_dst_r7                              = 5'b00111
-
-} bp_cce_inst_dst_gpr_e;
-
-`define bp_cce_inst_dst_gpr_width $bits(bp_cce_inst_dst_gpr_e)
-
-// Flag Destination Select
-typedef enum logic [4:0] {
-  e_dst_rqf                              = 5'b00000
-  ,e_dst_ucf                             = 5'b00001
-  ,e_dst_nerf                            = 5'b00010
-  ,e_dst_ldf                             = 5'b00011
-  ,e_dst_pf                              = 5'b00100
-  ,e_dst_lef                             = 5'b00101
-  ,e_dst_cf                              = 5'b00110
-  ,e_dst_cef                             = 5'b00111
-  ,e_dst_cof                             = 5'b01000
-  ,e_dst_cdf                             = 5'b01001
-  ,e_dst_tf                              = 5'b01010
-  ,e_dst_rf                              = 5'b01011
-  ,e_dst_uf                              = 5'b01100
-  ,e_dst_if                              = 5'b01101
-  ,e_dst_nwbf                            = 5'b01110
-  ,e_dst_sf                              = 5'b01111
-
-} bp_cce_inst_dst_flag_e;
-
-`define bp_cce_inst_dst_flag_width $bits(bp_cce_inst_dst_flag_e)
-
-// Special Destination Select
-typedef enum logic [4:0] {
-  e_dst_next_coh_state                   = 5'b00000
-  ,e_dst_num_lce                         = 5'b00001
-  ,e_dst_coh_state                       = 5'b00010
-} bp_cce_inst_dst_special_e;
-
-`define bp_cce_inst_dst_special_width $bits(bp_cce_inst_dst_special_e)
+/*
+ * Destination Operands
+ */
 
 // Destination Union
 typedef union packed {
-  bp_cce_inst_dst_gpr_e        gpr;
-  bp_cce_inst_dst_flag_e       flag;
-  bp_cce_inst_dst_special_e    special;
+  bp_cce_inst_opd_gpr_e        gpr;
+  bp_cce_inst_opd_flag_e       flag;
+  bp_cce_inst_opd_special_e    special;
+  bp_cce_inst_opd_params_e     param;
 } bp_cce_inst_dst_u;
-
-`define bp_cce_inst_dst_width $bits(bp_cce_inst_dst_u)
 
 typedef enum logic [1:0] {
   e_dst_sel_gpr
   ,e_dst_sel_flag
   ,e_dst_sel_special
+  ,e_dst_sel_param
 } bp_cce_inst_dst_sel_e;
 
 `define bp_cce_inst_dst_sel_width $bits(bp_cce_inst_dst_sel_e)
 
-// Flag register index select
+
+/*
+ * MUX Controls
+ *
+ * These are used to pick where an address, LCE ID, or way ID are sourced from for
+ * various instructions, including message and directory operations.
+ */
+
+// Address
 typedef enum logic [3:0] {
-  e_flag_sel_rqf                         = 4'b0000 // request type flag
-  ,e_flag_sel_ucf                        = 4'b0001 // uncached request flag
-  ,e_flag_sel_nerf                       = 4'b0010 // non-exclusive request flag
-  ,e_flag_sel_ldf                        = 4'b0011 // lru dirty flag
+  e_mux_sel_addr_r0                      = 4'b0000
+  ,e_mux_sel_addr_r1                     = 4'b0001
+  ,e_mux_sel_addr_r2                     = 4'b0010
+  ,e_mux_sel_addr_r3                     = 4'b0011
+  ,e_mux_sel_addr_r4                     = 4'b0100
+  ,e_mux_sel_addr_r5                     = 4'b0101
+  ,e_mux_sel_addr_r6                     = 4'b0110
+  ,e_mux_sel_addr_r7                     = 4'b0111
+  ,e_mux_sel_addr_mshr_req               = 4'b1000
+  ,e_mux_sel_addr_mshr_lru               = 4'b1001
+  ,e_mux_sel_addr_lce_req                = 4'b1010
+  ,e_mux_sel_addr_lce_resp               = 4'b1011
+  ,e_mux_sel_addr_mem_resp               = 4'b1100
+  ,e_mux_sel_addr_pending                = 4'b1101
+  ,e_mux_sel_addr_0                      = 4'b1111 // constant 0
+} bp_cce_inst_mux_sel_addr_e;
 
-  ,e_flag_sel_pf                         = 4'b0100 // pending flag
+`define bp_cce_inst_mux_sel_addr_width $bits(bp_cce_inst_mux_sel_addr_e)
 
-  ,e_flag_sel_lef                        = 4'b0101 // lru cached exclusive flag
-  ,e_flag_sel_cf                         = 4'b0110 // cached by other flag
-  ,e_flag_sel_cef                        = 4'b0111 // cached exclusive by other flag
-  ,e_flag_sel_cof                        = 4'b1000 // cached owned by other flag
-  ,e_flag_sel_cdf                        = 4'b1001 // cached dirty by other flag
-
-  ,e_flag_sel_tf                         = 4'b1010 // transfer flag == cof
-  ,e_flag_sel_rf                         = 4'b1011 // replacement flag == ~uf & lef & ldf
-  ,e_flag_sel_uf                         = 4'b1100 // upgrade flag == rqf & cached by requesting LCE & cached in shared by requestor
-  ,e_flag_sel_if                         = 4'b1101 // invalidate flag == (rqf & cf) | (~rqf & cef)
-
-  ,e_flag_sel_nwbf                       = 4'b1110 // null writeback flag
-
-  ,e_flag_sel_sf                         = 4'b1111 // speculative flag - current request (MSHR) is still speculative
-} bp_cce_inst_flag_sel_e;
-
-`define bp_cce_inst_flag_sel_width $bits(bp_cce_inst_flag_sel_e)
-
-// Flag register one hot
-typedef enum logic [15:0] {
-  e_flag_rqf                             = 16'b0000_0000_0000_0001 // request type flag
-  ,e_flag_ucf                            = 16'b0000_0000_0000_0010 // uncached request flag
-  ,e_flag_nerf                           = 16'b0000_0000_0000_0100 // non-exclusive request flag
-  ,e_flag_ldf                            = 16'b0000_0000_0000_1000 // lru dirty flag
-  ,e_flag_pf                             = 16'b0000_0000_0001_0000 // pending flag
-  ,e_flag_lef                            = 16'b0000_0000_0010_0000 // lru cached exclusive flag
-  ,e_flag_cf                             = 16'b0000_0000_0100_0000 // cached by other flag
-  ,e_flag_cef                            = 16'b0000_0000_1000_0000 // cached exclusive by other flag
-  ,e_flag_cof                            = 16'b0000_0001_0000_0000 // cached owned by other flag
-  ,e_flag_cdf                            = 16'b0000_0010_0000_0000 // cached dirty by other flag
-  ,e_flag_tf                             = 16'b0000_0100_0000_0000 // transfer flag
-  ,e_flag_rf                             = 16'b0000_1000_0000_0000 // replacement flag
-  ,e_flag_uf                             = 16'b0001_0000_0000_0000 // upgrade flag
-  ,e_flag_if                             = 16'b0010_0000_0000_0000 // invalidate flag
-  ,e_flag_nwbf                           = 16'b0100_0000_0000_0000 // null writeback flag
-  ,e_flag_sf                             = 16'b1000_0000_0000_0000 // speculative flag
-} bp_cce_inst_flag_e;
-
-`define bp_cce_inst_num_flags $bits(bp_cce_inst_flag_e)
-
-// source select for directory way group input
+// LCE ID
 typedef enum logic [3:0] {
-  e_dir_wg_sel_r0                        = 4'b0000
-  ,e_dir_wg_sel_r1                       = 4'b0001
-  ,e_dir_wg_sel_r2                       = 4'b0010
-  ,e_dir_wg_sel_r3                       = 4'b0011
-  ,e_dir_wg_sel_r4                       = 4'b0100
-  ,e_dir_wg_sel_r5                       = 4'b0101
-  ,e_dir_wg_sel_r6                       = 4'b0110
-  ,e_dir_wg_sel_r7                       = 4'b0111
-  ,e_dir_wg_sel_req_addr                 = 4'b1000
-  ,e_dir_wg_sel_lru_way_addr             = 4'b1001
-} bp_cce_inst_dir_way_group_sel_e;
+  e_mux_sel_lce_r0                       = 4'b0000
+  ,e_mux_sel_lce_r1                      = 4'b0001
+  ,e_mux_sel_lce_r2                      = 4'b0010
+  ,e_mux_sel_lce_r3                      = 4'b0011
+  ,e_mux_sel_lce_r4                      = 4'b0100
+  ,e_mux_sel_lce_r5                      = 4'b0101
+  ,e_mux_sel_lce_r6                      = 4'b0110
+  ,e_mux_sel_lce_r7                      = 4'b0111
+  ,e_mux_sel_lce_mshr_req                = 4'b1000
+  ,e_mux_sel_lce_mshr_owner              = 4'b1001
+  ,e_mux_sel_lce_lce_req                 = 4'b1010
+  ,e_mux_sel_lce_lce_resp                = 4'b1011
+  ,e_mux_sel_lce_mem_resp                = 4'b1100
+  ,e_mux_sel_lce_pending                 = 4'b1101
+  ,e_mux_sel_lce_0                       = 4'b1111 // constant 0
+} bp_cce_inst_mux_sel_lce_e;
 
-`define bp_cce_inst_dir_way_group_sel_width $bits(bp_cce_inst_dir_way_group_sel_e)
+`define bp_cce_inst_mux_sel_lce_width $bits(bp_cce_inst_mux_sel_lce_e)
 
-// source select for directory lce input
+// Way
 typedef enum logic [3:0] {
-  e_dir_lce_sel_r0                       = 4'b0000
-  ,e_dir_lce_sel_r1                      = 4'b0001
-  ,e_dir_lce_sel_r2                      = 4'b0010
-  ,e_dir_lce_sel_r3                      = 4'b0011
-  ,e_dir_lce_sel_r4                      = 4'b0100
-  ,e_dir_lce_sel_r5                      = 4'b0101
-  ,e_dir_lce_sel_r6                      = 4'b0110
-  ,e_dir_lce_sel_r7                      = 4'b0111
-  ,e_dir_lce_sel_req_lce                 = 4'b1000
-  ,e_dir_lce_sel_transfer_lce            = 4'b1001
-  ,e_dir_lce_sel_inv                     = 4'b1010
-} bp_cce_inst_dir_lce_sel_e;
+  e_mux_sel_way_r0                       = 4'b0000
+  ,e_mux_sel_way_r1                      = 4'b0001
+  ,e_mux_sel_way_r2                      = 4'b0010
+  ,e_mux_sel_way_r3                      = 4'b0011
+  ,e_mux_sel_way_r4                      = 4'b0100
+  ,e_mux_sel_way_r5                      = 4'b0101
+  ,e_mux_sel_way_r6                      = 4'b0110
+  ,e_mux_sel_way_r7                      = 4'b0111
+  ,e_mux_sel_way_mshr_req                = 4'b1000
+  ,e_mux_sel_way_mshr_owner              = 4'b1001
+  ,e_mux_sel_way_mshr_lru                = 4'b1010
+  ,e_mux_sel_way_sh_way                  = 4'b1011 // Sharer's vector ways, indexed by src_a
+  ,e_mux_sel_way_0                       = 4'b1111 // constant 0
+} bp_cce_inst_mux_sel_way_e;
 
-`define bp_cce_inst_dir_lce_sel_width $bits(bp_cce_inst_dir_lce_sel_e)
+`define bp_cce_inst_mux_sel_way_width $bits(bp_cce_inst_mux_sel_way_e)
 
-// source select for directory way input
-typedef enum logic [3:0] {
-  e_dir_way_sel_r0                       = 4'b0000
-  ,e_dir_way_sel_r1                      = 4'b0001
-  ,e_dir_way_sel_r2                      = 4'b0010
-  ,e_dir_way_sel_r3                      = 4'b0011
-  ,e_dir_way_sel_r4                      = 4'b0100
-  ,e_dir_way_sel_r5                      = 4'b0101
-  ,e_dir_way_sel_r6                      = 4'b0110
-  ,e_dir_way_sel_r7                      = 4'b0111
-  ,e_dir_way_sel_req_addr_way            = 4'b1000
-  ,e_dir_way_sel_lru_way_addr_way        = 4'b1001
-  ,e_dir_way_sel_sh_way_r0               = 4'b1010
-  ,e_dir_way_sel_inv                     = 4'b1011
-} bp_cce_inst_dir_way_sel_e;
-
-`define bp_cce_inst_dir_way_sel_width $bits(bp_cce_inst_dir_way_sel_e)
-
+// Coherence State
 // source select for directory coherence state input
 typedef enum logic [3:0] {
-  e_dir_coh_sel_r0                       = 4'b0000
-  ,e_dir_coh_sel_r1                      = 4'b0001
-  ,e_dir_coh_sel_r2                      = 4'b0010
-  ,e_dir_coh_sel_r3                      = 4'b0011
-  ,e_dir_coh_sel_r4                      = 4'b0100
-  ,e_dir_coh_sel_r5                      = 4'b0101
-  ,e_dir_coh_sel_r6                      = 4'b0110
-  ,e_dir_coh_sel_r7                      = 4'b0111
-  ,e_dir_coh_sel_next_coh_st             = 4'b1000
-  ,e_dir_coh_sel_inst_imm                = 4'b1001
-} bp_cce_inst_dir_coh_state_sel_e;
+  e_mux_sel_coh_r0                       = 4'b0000
+  ,e_mux_sel_coh_r1                      = 4'b0001
+  ,e_mux_sel_coh_r2                      = 4'b0010
+  ,e_mux_sel_coh_r3                      = 4'b0011
+  ,e_mux_sel_coh_r4                      = 4'b0100
+  ,e_mux_sel_coh_r5                      = 4'b0101
+  ,e_mux_sel_coh_r6                      = 4'b0110
+  ,e_mux_sel_coh_r7                      = 4'b0111
+  ,e_mux_sel_coh_next_coh_state          = 4'b1000
+  ,e_mux_sel_sharer_state                = 4'b1001 // Sharer's vector states, indexed by src_a
+  ,e_mux_sel_coh_inst_imm                = 4'b1111
+} bp_cce_inst_mux_sel_coh_state_e;
 
-`define bp_cce_inst_dir_coh_state_sel_width $bits(bp_cce_inst_dir_coh_state_sel_e)
+`define bp_cce_inst_mux_sel_coh_state_width $bits(bp_cce_inst_mux_sel_coh_state_e)
 
-// source select for directory tag input
-typedef enum logic [3:0] {
-  e_dir_tag_sel_r0                       = 4'b0000
-  ,e_dir_tag_sel_r1                      = 4'b0001
-  ,e_dir_tag_sel_r2                      = 4'b0010
-  ,e_dir_tag_sel_r3                      = 4'b0011
-  ,e_dir_tag_sel_r4                      = 4'b0100
-  ,e_dir_tag_sel_r5                      = 4'b0101
-  ,e_dir_tag_sel_r6                      = 4'b0110
-  ,e_dir_tag_sel_r7                      = 4'b0111
-  ,e_dir_tag_sel_req_addr                = 4'b1000
-  ,e_dir_tag_sel_lru_way_addr            = 4'b1001
-  ,e_dir_tag_sel_const_0                 = 4'b1010
-} bp_cce_inst_dir_tag_sel_e;
-
-`define bp_cce_inst_dir_tag_sel_width $bits(bp_cce_inst_dir_tag_sel_e)
+/*
+ * Source and Destination Queue Selects and One-hot masks
+ */
 
 // Source queue one hot
 // order: {lceReq, lceResp, memResp, pending}
@@ -442,506 +538,298 @@ typedef enum logic [3:0] {
 `define bp_cce_num_src_q $bits(bp_cce_inst_src_q_e)
 
 // Source queue select
-typedef enum logic [2:0] {
-  e_src_q_sel_lce_req                    = 3'b000
-  ,e_src_q_sel_mem_resp                  = 3'b001
-  ,e_src_q_sel_pending                   = 3'b010
-  ,e_src_q_sel_lce_resp                  = 3'b011
+typedef enum logic [1:0] {
+  e_src_q_sel_lce_req                    = 2'b00
+  ,e_src_q_sel_mem_resp                  = 2'b01
+  ,e_src_q_sel_pending                   = 2'b10
+  ,e_src_q_sel_lce_resp                  = 2'b11
 } bp_cce_inst_src_q_sel_e;
 
 `define bp_cce_inst_src_q_sel_width $bits(bp_cce_inst_src_q_sel_e)
 
+// Destination queue one hot
+typedef enum logic [1:0] {
+  e_dst_q_lce_cmd                        = 2'b01
+  ,e_dst_q_mem_cmd                       = 2'b10
+} bp_cce_inst_dst_q_e;
+
+`define bp_cce_num_dst_q $bits(bp_cce_inst_dst_q_e)
+
 // Destination queue select
 typedef enum logic [1:0] {
-  e_dst_q_lce_cmd                        = 2'b00
-  ,e_dst_q_mem_cmd                       = 2'b01
+  e_dst_q_sel_lce_cmd                    = 2'b00
+  ,e_dst_q_sel_mem_cmd                   = 2'b01
 } bp_cce_inst_dst_q_sel_e;
 
 `define bp_cce_inst_dst_q_sel_width $bits(bp_cce_inst_dst_q_sel_e)
 
-// LCE cmd lce_id source select
-typedef enum logic [3:0] {
-  e_lce_cmd_lce_r0                       = 4'b0000
-  ,e_lce_cmd_lce_r1                      = 4'b0001
-  ,e_lce_cmd_lce_r2                      = 4'b0010
-  ,e_lce_cmd_lce_r3                      = 4'b0011
-  ,e_lce_cmd_lce_r4                      = 4'b0100
-  ,e_lce_cmd_lce_r5                      = 4'b0101
-  ,e_lce_cmd_lce_r6                      = 4'b0110
-  ,e_lce_cmd_lce_r7                      = 4'b0111
-  ,e_lce_cmd_lce_req_lce                 = 4'b1000
-  ,e_lce_cmd_lce_tr_lce                  = 4'b1001
-  ,e_lce_cmd_lce_0                       = 4'b1010
-} bp_cce_inst_lce_cmd_lce_sel_e;
-
-`define bp_cce_inst_lce_cmd_lce_sel_width $bits(bp_cce_inst_lce_cmd_lce_sel_e)
-
-// LCE cmd addr source select
-typedef enum logic [3:0] {
-  e_lce_cmd_addr_r0                      = 4'b0000
-  ,e_lce_cmd_addr_r1                     = 4'b0001
-  ,e_lce_cmd_addr_r2                     = 4'b0010
-  ,e_lce_cmd_addr_r3                     = 4'b0011
-  ,e_lce_cmd_addr_r4                     = 4'b0100
-  ,e_lce_cmd_addr_r5                     = 4'b0101
-  ,e_lce_cmd_addr_r6                     = 4'b0110
-  ,e_lce_cmd_addr_r7                     = 4'b0111
-  ,e_lce_cmd_addr_req_addr               = 4'b1000
-  ,e_lce_cmd_addr_lru_way_addr           = 4'b1001
-  ,e_lce_cmd_addr_0                      = 4'b1010
-} bp_cce_inst_lce_cmd_addr_sel_e;
-
-`define bp_cce_inst_lce_cmd_addr_sel_width $bits(bp_cce_inst_lce_cmd_addr_sel_e)
-
-// LCE cmd way source select
-typedef enum logic [3:0] {
-  e_lce_cmd_way_r0                       = 4'b0000
-  ,e_lce_cmd_way_r1                      = 4'b0001
-  ,e_lce_cmd_way_r2                      = 4'b0010
-  ,e_lce_cmd_way_r3                      = 4'b0011
-  ,e_lce_cmd_way_r4                      = 4'b0100
-  ,e_lce_cmd_way_r5                      = 4'b0101
-  ,e_lce_cmd_way_r6                      = 4'b0110
-  ,e_lce_cmd_way_r7                      = 4'b0111
-  ,e_lce_cmd_way_req_addr_way            = 4'b1000
-  ,e_lce_cmd_way_tr_addr_way             = 4'b1001
-  ,e_lce_cmd_way_sh_list_r0              = 4'b1010
-  ,e_lce_cmd_way_lru_addr_way            = 4'b1011
-  ,e_lce_cmd_way_0                       = 4'b1100
-} bp_cce_inst_lce_cmd_way_sel_e;
-
-`define bp_cce_inst_lce_cmd_way_sel_width $bits(bp_cce_inst_lce_cmd_way_sel_e)
-
-// Mem Cmd addr source select
-typedef enum logic [3:0] {
-  e_mem_cmd_addr_r0                      = 4'b0000
-  ,e_mem_cmd_addr_r1                     = 4'b0001
-  ,e_mem_cmd_addr_r2                     = 4'b0010
-  ,e_mem_cmd_addr_r3                     = 4'b0011
-  ,e_mem_cmd_addr_r4                     = 4'b0100
-  ,e_mem_cmd_addr_r5                     = 4'b0101
-  ,e_mem_cmd_addr_r6                     = 4'b0110
-  ,e_mem_cmd_addr_r7                     = 4'b0111
-  ,e_mem_cmd_addr_lru_way_addr           = 4'b1000
-  ,e_mem_cmd_addr_req_addr               = 4'b1001
-} bp_cce_inst_mem_cmd_addr_sel_e;
-
-`define bp_cce_inst_mem_cmd_addr_sel_width $bits(bp_cce_inst_mem_cmd_addr_sel_e)
-
-// GPR Numbers
-typedef enum logic [2:0] {
-  e_gpr_r0                               = 3'b000
-  ,e_gpr_r1                              = 3'b001
-  ,e_gpr_r2                              = 3'b010
-  ,e_gpr_r3                              = 3'b011
-  ,e_gpr_r4                              = 3'b100
-  ,e_gpr_r5                              = 3'b101
-  ,e_gpr_r6                              = 3'b110
-  ,e_gpr_r7                              = 3'b111
-} bp_cce_gpr_e;
-
-// Note: number of gpr must be a power of 2
-`define bp_cce_inst_num_gpr (2**$bits(bp_cce_gpr_e))
-`define bp_cce_inst_gpr_width 48
-
-// source select for reqlce and reqaddr registers writes
-typedef enum logic [1:0] {
-  e_req_sel_lce_req                      = 2'b00
-  ,e_req_sel_pending                     = 2'b01
-} bp_cce_inst_req_sel_e;
-
-`define bp_cce_inst_req_sel_width $bits(bp_cce_inst_req_sel_e)
-
-// Source select for req_addr_way
-typedef enum logic [1:0] {
-  e_req_addr_way_sel_logic               = 2'b00
-  ,e_req_addr_way_sel_mem_resp           = 2'b01
-} bp_cce_inst_req_addr_way_sel_e;
-
-`define bp_cce_inst_req_addr_way_sel_width $bits(bp_cce_inst_req_addr_way_sel_e)
-
-// Source select for lru_way
-typedef enum logic [1:0] {
-  e_lru_way_sel_lce_req                  = 2'b00
-  ,e_lru_way_sel_pending                 = 2'b01
-} bp_cce_inst_lru_way_sel_e;
-
-`define bp_cce_inst_lru_way_sel_width $bits(bp_cce_inst_lru_way_sel_e)
-
-// RQF
-typedef enum logic [1:0] {
-  e_rqf_lce_req                          = 2'b00
-  ,e_rqf_pending                         = 2'b01
-  ,e_rqf_imm0                            = 2'b10
-} bp_cce_inst_rqf_sel_e;
-
-`define bp_cce_inst_rqf_sel_width $bits(bp_cce_inst_rqf_sel_e)
-
-// UCF
-typedef enum logic [1:0] {
-  e_ucf_lce_req                         = 2'b00
-  ,e_ucf_pending                        = 2'b01
-  ,e_ucf_imm0                           = 2'b10
-} bp_cce_inst_ucf_sel_e;
-
-`define bp_cce_inst_ucf_sel_width $bits(bp_cce_inst_ucf_sel_e)
-
-// NERF
-typedef enum logic [1:0] {
-  e_nerf_lce_req                        = 2'b00
-  ,e_nerf_pending                       = 2'b01
-  ,e_nerf_imm0                          = 2'b10
-} bp_cce_inst_nerf_sel_e;
-
-`define bp_cce_inst_nerf_sel_width $bits(bp_cce_inst_nerf_sel_e)
-
-// LDF
-typedef enum logic [1:0] {
-  e_ldf_lce_req                          = 2'b00
-  ,e_ldf_pending                         = 2'b01
-  ,e_ldf_imm0                            = 2'b10
-} bp_cce_inst_ldf_sel_e;
-
-`define bp_cce_inst_ldf_sel_width $bits(bp_cce_inst_ldf_sel_e)
-
-// PF
-typedef enum logic {
-  e_pf_logic                             = 1'b0
-  ,e_pf_imm0                             = 1'b1
-} bp_cce_inst_pf_sel_e;
-
-`define bp_cce_inst_pf_sel_width $bits(bp_cce_inst_pf_sel_e)
-
-// LEF
-typedef enum logic {
-  e_lef_logic                             = 1'b0
-  ,e_lef_imm0                             = 1'b1
-} bp_cce_inst_lef_sel_e;
-
-`define bp_cce_inst_lef_sel_width $bits(bp_cce_inst_lef_sel_e)
-
-// CF
-typedef enum logic {
-  e_cf_logic                             = 1'b0
-  ,e_cf_imm0                             = 1'b1
-} bp_cce_inst_cf_sel_e;
-
-`define bp_cce_inst_cf_sel_width $bits(bp_cce_inst_cf_sel_e)
-
-// CEF
-typedef enum logic {
-  e_cef_logic                             = 1'b0
-  ,e_cef_imm0                             = 1'b1
-} bp_cce_inst_cef_sel_e;
-
-`define bp_cce_inst_cef_sel_width $bits(bp_cce_inst_cef_sel_e)
-
-// COF
-typedef enum logic {
-  e_cof_logic                             = 1'b0
-  ,e_cof_imm0                             = 1'b1
-} bp_cce_inst_cof_sel_e;
-
-`define bp_cce_inst_cof_sel_width $bits(bp_cce_inst_cof_sel_e)
-
-// CDF
-typedef enum logic {
-  e_cdf_logic                             = 1'b0
-  ,e_cdf_imm0                             = 1'b1
-} bp_cce_inst_cdf_sel_e;
-
-`define bp_cce_inst_cdf_sel_width $bits(bp_cce_inst_cdf_sel_e)
-
-// TF
-typedef enum logic {
-  e_tf_logic                              = 1'b0
-  ,e_tf_imm0                              = 1'b1
-} bp_cce_inst_tf_sel_e;
-
-`define bp_cce_inst_tf_sel_width $bits(bp_cce_inst_tf_sel_e)
-
-// RF
-typedef enum logic {
-  e_rf_logic                              = 1'b0
-  ,e_rf_imm0                              = 1'b1
-} bp_cce_inst_rf_sel_e;
-
-`define bp_cce_inst_rf_sel_width $bits(bp_cce_inst_rf_sel_e)
-
-// UF
-typedef enum logic {
-  e_uf_logic                             = 1'b0
-  ,e_uf_imm0                             = 1'b1
-} bp_cce_inst_uf_sel_e;
-
-`define bp_cce_inst_uf_sel_width $bits(bp_cce_inst_uf_sel_e)
-
-// IF
-typedef enum logic {
-  e_if_logic                             = 1'b0
-  ,e_if_imm0                             = 1'b1
-} bp_cce_inst_if_sel_e;
-
-`define bp_cce_inst_if_sel_width $bits(bp_cce_inst_if_sel_e)
-
-// NWBF
-typedef enum logic {
-  e_nwbf_lce_resp                        = 1'b0
-  ,e_nwbf_imm0                           = 1'b1
-} bp_cce_inst_nwbf_sel_e;
-
-`define bp_cce_inst_nwbf_sel_width $bits(bp_cce_inst_nwbf_sel_e)
-
-// SF
-typedef enum logic {
-  e_sf_logic                             = 1'b0
-  ,e_sf_imm0                             = 1'b1
-} bp_cce_inst_sf_sel_e;
-
-`define bp_cce_inst_sf_sel_width $bits(bp_cce_inst_sf_sel_e)
-
-// Instruction immediate fields
-`define bp_cce_inst_imm8_width 8
-`define bp_cce_inst_imm16_width 16
-`define bp_cce_inst_imm32_width 32
-`define bp_cce_inst_imm64_width 64
-
 /*
  * Instruction Struct Definitions
  *
- * Each instruction is capped at 48-bits (currently). The size is statically set to allow for
- * proper padding to be inserted into the instruction structs, which helps normalize the microcode
- * structs and formats.
+ * Each instruction is 32-bits wide. There are also two metadata bits attached to each
+ * instruction that indicate if the instruction is a branch and if the branch should
+ * be predicted taken or not. The metadata bits enable the pre-decoder to quickly decide
+ * what PC should be (speculatively) fetched next.
  *
  * Each instruction contains:
- *   op (4-bits)
+ *   op (3-bits)
  *   minor_op (4-bits)
- *   instruction type specific struct with padding (40-bits)
+ *   instruction type specific struct with padding (25-bits)
  *
  * Any changes made to this file must be reflected in the C version used by the assembler, and
  * in the assembler itself.
+ *
  */
 
-`define bp_cce_inst_width 48
 `define bp_cce_inst_type_u_width \
-  (`bp_cce_inst_width-`bp_cce_inst_op_width-`bp_cce_inst_minor_op_width)
-
-// Microcode RAM address width
-// 10 bits allows for up to 1024 ucode instructions. Current implementations use 256 entry
-// ucode instruction RAMs.
-`define bp_cce_inst_addr_width 10
+  (`bp_cce_inst_data_width-`bp_cce_inst_op_width-`bp_cce_inst_minor_op_width)
 
 /*
- * ALU Operation
+ * 2-Register Encoding
+ *
  */
 
-`define bp_cce_inst_alu_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_dst_width \
-  -(2*`bp_cce_inst_src_width)-`bp_cce_inst_imm16_width)
+`define bp_cce_inst_rtype_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_opd_width \
+  -(2*`bp_cce_inst_opd_width))
 
 typedef struct packed {
-  bp_cce_inst_dst_gpr_e                  dst;
-  bp_cce_inst_src_gpr_e                  src_a;
-  bp_cce_inst_src_gpr_e                  src_b;
-  logic [`bp_cce_inst_imm16_width-1:0]   imm;
-  logic [`bp_cce_inst_alu_pad-1:0]       pad;
-} bp_cce_inst_alu_op_s;
-
-/*
- * Branch Operation
- */
-
-`define bp_cce_inst_branch_pad (`bp_cce_inst_type_u_width-(2*`bp_cce_inst_src_width) \
-  -`bp_cce_inst_imm16_width-`bp_cce_inst_addr_width)
-
-typedef struct packed {
-  bp_cce_inst_src_u                      src_a;
+  logic [`bp_cce_inst_rtype_pad-1:0]     pad;
   bp_cce_inst_src_u                      src_b;
+  bp_cce_inst_dst_u                      dst;
+  bp_cce_inst_src_u                      src_a;
+} bp_cce_inst_rtype_s;
+
+/*
+ * Immediate Encoding
+ *
+ */
+
+`define bp_cce_inst_itype_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_opd_width \
+  -`bp_cce_inst_opd_width-`bp_cce_inst_imm16_width)
+
+typedef struct packed {
+  logic [`bp_cce_inst_imm16_width-1:0]   imm;
+  logic [`bp_cce_inst_itype_pad-1:0]     pad;
+  bp_cce_inst_dst_u                      dst;
+  bp_cce_inst_src_u                      src_a;
+} bp_cce_inst_itype_s;
+
+/*
+ * Memory Load Encoding (same as I-Type)
+ * rd = mem[ra+imm]
+ *
+ * Src and dst can only be GPR
+ */
+
+// no padding needed
+
+typedef struct packed {
+  logic [`bp_cce_inst_imm16_width-1:0]   imm;
+  logic                                  global_mem;
+  bp_cce_inst_opd_gpr_e                  dst;
+  bp_cce_inst_opd_gpr_e                  src_a;
+} bp_cce_inst_mltype_s;
+
+/*
+ * Memory Store Encoding (basically I-Type, but second source instead of destination)
+ * mem[ra+imm] = rb
+ *
+ * Src and dst can only be GPR
+ */
+
+// no padding needed
+
+typedef struct packed {
+  logic [`bp_cce_inst_imm16_width-1:0]   imm;
+  logic                                  global_mem;
+  bp_cce_inst_opd_gpr_e                  src_b;
+  bp_cce_inst_opd_gpr_e                  src_a;
+} bp_cce_inst_mstype_s;
+
+/*
+ * Branch Encoding
+ *
+ */
+
+`define bp_cce_inst_btype_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_imm4_width \
+  -(2*`bp_cce_inst_opd_width)-`bp_cce_inst_addr_width)
+
+typedef struct packed {
+  logic [`bp_cce_inst_addr_width-1:0]    target;
+  logic [`bp_cce_inst_btype_pad-1:0]     pad;
+  bp_cce_inst_src_u                      src_b;
+  logic [`bp_cce_inst_imm4_width-1:0]    pad4;
+  bp_cce_inst_src_u                      src_a;
+} bp_cce_inst_btype_s;
+
+/*
+ * Branch-Immediate Encoding
+ *
+ */
+
+`define bp_cce_inst_bitype_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_opd_width \
+  -`bp_cce_inst_imm8_width-`bp_cce_inst_addr_width)
+
+typedef struct packed {
+  logic [`bp_cce_inst_addr_width-1:0]    target;
+  logic [`bp_cce_inst_bitype_pad-1:0]    pad;
+  logic [`bp_cce_inst_imm8_width-1:0]    imm;
+  bp_cce_inst_src_u                      src_a;
+} bp_cce_inst_bitype_s;
+
+/*
+ * Branch-Flag Encoding
+ *
+ */
+
+// no padding, target and immediate occupy exactly 25 bits
+
+typedef struct packed {
   logic [`bp_cce_inst_addr_width-1:0]    target;
   logic [`bp_cce_inst_imm16_width-1:0]   imm;
-  logic [`bp_cce_inst_branch_pad-1:0]    pad;
-} bp_cce_inst_branch_op_s;
+} bp_cce_inst_bftype_s;
 
 /*
- * Move Operation
- */
-
-typedef struct packed {
-  logic [`bp_cce_inst_imm32_width-1:0]   imm;
-} bp_cce_inst_movi_bits_s;
-
-`define bp_cce_inst_mov_bits_pad (`bp_cce_inst_imm32_width-`bp_cce_inst_src_width)
-
-typedef struct packed {
-  bp_cce_inst_src_u                      src;
-  logic [`bp_cce_inst_mov_bits_pad-1:0]  pad;
-} bp_cce_inst_mov_bits_s;
-
-`define bp_cce_inst_mov_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_dst_width \
-  -`bp_cce_inst_imm32_width)
-
-typedef union packed {
-  bp_cce_inst_mov_bits_s  mov;
-  bp_cce_inst_movi_bits_s movi;
-} bp_cce_inst_mov_op_u;
-
-typedef struct packed {
-  bp_cce_inst_dst_u                      dst;
-  bp_cce_inst_mov_op_u                   op;
-  logic [`bp_cce_inst_mov_pad-1:0]       pad;
-} bp_cce_inst_mov_op_s;
-
-/*
- * Flag Operation
+ * SpecQ Encoding (S-Type)
  *
  */
 
-`define bp_cce_inst_flag_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_dst_width \
-  -(2*`bp_cce_inst_src_width)-1)
+`define bp_cce_inst_stype_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_spec_op_width \
+  -`bp_cce_inst_mux_sel_addr_width-$bits(bp_coh_states_e)-`bp_cce_inst_opd_width)
 
 typedef struct packed {
-  bp_cce_inst_dst_u                      dst;
-  bp_cce_inst_src_flag_e                 src_a;
-  bp_cce_inst_src_flag_e                 src_b;
-  logic                                  val;
-  logic [`bp_cce_inst_flag_pad-1:0]      pad;
-} bp_cce_inst_flag_op_s;
+  logic [`bp_cce_inst_stype_pad-1:0]     pad;
+  bp_coh_states_e                        state;
+  bp_cce_inst_mux_sel_addr_e             addr_sel;
+  bp_cce_inst_opd_gpr_e                  dst;
+  bp_cce_inst_spec_op_e                  cmd;
+} bp_cce_inst_stype_s;
 
 /*
- * Directory Operation
+ * Directory Pending Encoding (DP-Type)
  *
  */
 
-`define bp_cce_inst_dir_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_dir_way_group_sel_width \
-  -`bp_cce_inst_dir_lce_sel_width-`bp_cce_inst_dir_way_sel_width \
-  -`bp_cce_inst_dir_coh_state_sel_width-`bp_cce_inst_dir_tag_sel_width \
-  -`bp_coh_bits-`bp_cce_inst_dst_width-1)
+`define bp_cce_inst_dptype_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_mux_sel_addr_width \
+  -`bp_cce_inst_opd_width-1)
 
 typedef struct packed {
-  bp_cce_inst_dir_way_group_sel_e        dir_way_group_sel;
-  bp_cce_inst_dir_lce_sel_e              dir_lce_sel;
-  bp_cce_inst_dir_way_sel_e              dir_way_sel;
-  bp_cce_inst_dir_coh_state_sel_e        dir_coh_state_sel;
-  bp_cce_inst_dir_tag_sel_e              dir_tag_sel;
-  logic [`bp_coh_bits-1:0]               state;
+  logic [`bp_cce_inst_dptype_pad-1:0]    pad;
   logic                                  pending;
-  bp_cce_inst_dst_gpr_e                  dst;
-  logic [`bp_cce_inst_dir_pad-1:0]       pad;
-} bp_cce_inst_dir_op_s;
+  bp_cce_inst_opd_gpr_e                  dst;
+  bp_cce_inst_mux_sel_addr_e             addr_sel;
+} bp_cce_inst_dptype_s;
 
 /*
- * Misc Operation
+ * Directory Read Encoding (DR-Type)
  *
- * Currently, Misc operations require nothing; the entire struct is padding
  */
 
+`define bp_cce_inst_drtype_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_mux_sel_addr_width \
+  -`bp_cce_inst_mux_sel_lce_width-(2*`bp_cce_inst_mux_sel_way_width) \
+  -(2*`bp_cce_inst_opd_width))
+
 typedef struct packed {
-  logic [`bp_cce_inst_type_u_width-1:0]  pad;
-} bp_cce_inst_misc_op_s;
+  logic [`bp_cce_inst_drtype_pad-1:0]    pad;
+  bp_cce_inst_opd_gpr_e                  src_a;
+  bp_cce_inst_mux_sel_way_e              lru_way_sel;
+  bp_cce_inst_mux_sel_way_e              way_sel;
+  bp_cce_inst_mux_sel_lce_e              lce_sel;
+  bp_cce_inst_opd_gpr_e                  dst;
+  bp_cce_inst_mux_sel_addr_e             addr_sel;
+} bp_cce_inst_drtype_s;
 
 /*
- * Queue Operation
+ * Directory Write Encoding (DW-Type)
+ *
  */
 
-`define bp_cce_inst_pushq_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_dst_q_sel_width \
-  -$bits(bp_lce_cmd_type_e)-`bp_cce_inst_lce_cmd_lce_sel_width \
-  -`bp_cce_inst_lce_cmd_addr_sel_width-`bp_cce_inst_lce_cmd_way_sel_width \
-  -`bp_cce_inst_mem_cmd_addr_sel_width-1)
+`define bp_cce_inst_dwtype_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_mux_sel_addr_width \
+  -`bp_cce_inst_mux_sel_lce_width-`bp_cce_inst_mux_sel_way_width \
+  -`bp_cce_inst_mux_sel_coh_state_width-$bits(bp_coh_states_e)-`bp_cce_inst_opd_width)
 
 typedef struct packed {
-  bp_cce_inst_dst_q_sel_e                dst_q;
-  union packed
-  {
-    bp_lce_cmd_type_e      lce_cmd;
-    bp_cce_mem_cmd_type_e  mem_cmd;
-    bp_cce_mem_cmd_type_e  mem_resp;
-  }                                      cmd;
-  // cce_lce_cmd_queue inputs
-  bp_cce_inst_lce_cmd_lce_sel_e          lce_cmd_lce_sel;
-  bp_cce_inst_lce_cmd_addr_sel_e         lce_cmd_addr_sel;
-  bp_cce_inst_lce_cmd_way_sel_e          lce_cmd_way_sel;
-  // mem_cmd_queue inputs
-  bp_cce_inst_mem_cmd_addr_sel_e         mem_cmd_addr_sel;
-  logic                                  speculative;
-  logic [`bp_cce_inst_pushq_pad-1:0]     pad;
-} bp_cce_inst_pushq_s;
+  logic [`bp_cce_inst_dwtype_pad-1:0]    pad;
+  bp_cce_inst_opd_gpr_e                  src_a;
+  bp_coh_states_e                        state;
+  bp_cce_inst_mux_sel_way_e              way_sel;
+  bp_cce_inst_mux_sel_lce_e              lce_sel;
+  bp_cce_inst_mux_sel_coh_state_e        state_sel;
+  bp_cce_inst_mux_sel_addr_e             addr_sel;
+} bp_cce_inst_dwtype_s;
+
+/*
+ * Pop Queue Encoding
+ *
+ */
 
 `define bp_cce_inst_popq_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_src_q_sel_width \
-  -`bp_cce_inst_dst_width)
+  -`bp_cce_inst_opd_width-`bp_cce_inst_imm2_width-1)
 
 typedef struct packed {
-  bp_cce_inst_src_q_sel_e                src_q;
-  bp_cce_inst_dst_gpr_e                  dst;
+  logic                                  write_pending;
   logic [`bp_cce_inst_popq_pad-1:0]      pad;
+  bp_cce_inst_opd_gpr_e                  dst;
+  logic [`bp_cce_inst_imm2_width-1:0]    pad2;
+  bp_cce_inst_src_q_sel_e                src_q;
 } bp_cce_inst_popq_s;
 
-`define bp_cce_inst_wfq_pad (`bp_cce_inst_type_u_width-`bp_cce_num_src_q)
+/*
+ * Push Queue Encoding
+ *
+ */
+
+// no padding, all bits used
 
 typedef struct packed {
-  logic [`bp_cce_num_src_q-1:0]          qmask;
-  logic [`bp_cce_inst_wfq_pad-1:0]       pad;
-} bp_cce_inst_wfq_s;
-
-typedef enum logic [2:0] {
-  e_spec_cmd_set          = 3'b000 // Set spec bit to 1
-  ,e_spec_cmd_unset       = 3'b001 // Set spec bit to 0
-  ,e_spec_cmd_squash      = 3'b010 // Set squash bit to 1, clear spec bit
-  ,e_spec_cmd_fwd_mod     = 3'b011 // Set fwd_mod bit to 1, clear spec bit, set state to state
-  ,e_spec_cmd_clear       = 3'b111 // Write all fields of speculative access bits
-} bp_cce_inst_spec_cmd_e;
-
-`define bp_cce_inst_spec_cmd_width $bits(bp_cce_inst_spec_cmd_e)
-
-`define bp_cce_inst_specq_pad (`bp_cce_inst_type_u_width-`bp_cce_inst_spec_cmd_width \
-  -`bp_coh_bits)
-
-typedef struct packed {
-  bp_cce_inst_spec_cmd_e                 cmd;
-  logic [`bp_coh_bits-1:0]               state;
-  logic [`bp_cce_inst_specq_pad-1:0]     pad;
-} bp_cce_inst_specq_s;
-
-typedef union packed {
-  bp_cce_inst_pushq_s                    pushq;
-  bp_cce_inst_popq_s                     popq;
-  bp_cce_inst_wfq_s                      wfq;
-  bp_cce_inst_specq_s                    specq;
-} bp_cce_inst_queue_op_u;
-
-typedef struct packed {
-  bp_cce_inst_queue_op_u                 op;
-} bp_cce_inst_queue_op_s;
+  logic                                  write_pending;
+  union packed
+  {
+    bp_cce_inst_mux_sel_way_e     way_sel;
+    bp_lce_cce_data_length_e      data_length;
+  }                                      way_or_length;
+  bp_cce_inst_opd_gpr_e                  src_a;
+  bp_cce_inst_mux_sel_lce_e              lce_sel;
+  bp_cce_inst_mux_sel_addr_e             addr_sel;
+  union packed
+  {
+    bp_lce_cmd_type_e             lce_cmd;
+    bp_cce_mem_cmd_type_e         mem_cmd;
+  }                                      cmd;
+  logic                                  spec;
+  logic                                  custom;
+  bp_cce_inst_dst_q_sel_e                dst_q;
+} bp_cce_inst_pushq_s;
 
 /*
  * Instruction Type Struct Union
  */
 
 typedef union packed {
-  bp_cce_inst_alu_op_s                   alu_op_s;
-  bp_cce_inst_branch_op_s                branch_op_s;
-  bp_cce_inst_mov_op_s                   mov_op_s;
-  bp_cce_inst_flag_op_s                  flag_op_s;
-  bp_cce_inst_dir_op_s                   dir_op_s;
-  bp_cce_inst_misc_op_s                  misc_op_s;
-  bp_cce_inst_queue_op_s                 queue_op_s;
+  bp_cce_inst_rtype_s                    rtype;
+  bp_cce_inst_itype_s                    itype;
+  bp_cce_inst_mltype_s                   mltype;
+  bp_cce_inst_mstype_s                   mstype;
+  bp_cce_inst_btype_s                    btype;
+  bp_cce_inst_bitype_s                   bitype;
+  bp_cce_inst_bftype_s                   bftype;
+  bp_cce_inst_stype_s                    stype;
+  bp_cce_inst_dptype_s                   dptype;
+  bp_cce_inst_dwtype_s                   dwtype;
+  bp_cce_inst_drtype_s                   drtype;
+  bp_cce_inst_popq_s                     popq;
+  bp_cce_inst_pushq_s                    pushq;
 } bp_cce_inst_type_u;
 
 typedef struct packed {
-  bp_cce_inst_op_e                       op;
-  bp_cce_inst_minor_op_u                 minor_op_u;
+  logic                                  predict_taken;
+  logic                                  branch;
   bp_cce_inst_type_u                     type_u;
+  bp_cce_inst_minor_op_u                 minor_op_u;
+  bp_cce_inst_op_e                       op;
 } bp_cce_inst_s;
 
 `define bp_cce_inst_s_width $bits(bp_cce_inst_s)
-
-// Struct that defines speculative memory access tracking metadata
-// This is used in the decoded instruction and the bp_cce_spec module
-typedef struct packed
-{
-  logic                          spec;
-  logic                          squash;
-  logic                          fwd_mod;
-  logic [`bp_coh_bits-1:0]       state;
-} bp_cce_spec_s;
 
 /*
  * bp_cce_inst_decoded_s defines the decoded form of the CCE microcode instructions
@@ -949,131 +837,112 @@ typedef struct packed
  */
 typedef struct packed {
 
+  // instruction is valid
+  logic                                    v;
+
+  // branch and predict taken bits from raw instruction
+  logic                                    branch;
+  logic                                    predict_taken;
+
   // Basic operation information
   bp_cce_inst_op_e                         op;
   bp_cce_inst_minor_op_u                   minor_op_u;
 
-  // Destination and Source signals
+  // Destination and Source signals with selects
   bp_cce_inst_dst_u                        dst;
-  bp_cce_inst_src_u                        src_a;
-  bp_cce_inst_src_u                        src_b;
-
-  // Select signals for dst and src unions
   bp_cce_inst_dst_sel_e                    dst_sel;
+  bp_cce_inst_src_u                        src_a;
   bp_cce_inst_src_sel_e                    src_a_sel;
+  bp_cce_inst_src_u                        src_b;
   bp_cce_inst_src_sel_e                    src_b_sel;
+
+  // Address, LCE, Way, and Coherence State Selects
+  // These are used by directory, pending bits, speculative bits, messages, etc.
+  // note: addr_bypass signal generated by src_sel depending on mux signal
+  // bypass will occur for GPR as source
+  bp_cce_inst_mux_sel_addr_e               addr_sel;
+  bp_cce_inst_mux_sel_lce_e                lce_sel;
+  bp_cce_inst_mux_sel_way_e                way_sel;
+  bp_cce_inst_mux_sel_way_e                lru_way_sel;
+  bp_cce_inst_mux_sel_coh_state_e          coh_state_sel;
 
   // Immediate
   logic [`bp_cce_inst_gpr_width-1:0]       imm;
 
-  // ALU signals
-  // ALU arithmetic operation
-  logic                                    alu_v;
-  // ALU branch operation
-  logic                                    branch_v;
+  // ALU Unit
+  bp_cce_inst_alu_op_e                     alu_op;
 
-  // op uses gad module
-  logic                                    gad_v;
-  // Pending Bit Read Operation
-  logic                                    pending_r_v;
-  // Pending Bit Write Operation
-  logic                                    pending_w_v;
+  // Branch Unit
+  bp_cce_inst_branch_op_e                  branch_op;
+  logic [`bp_cce_inst_addr_width-1:0]      branch_target;
 
-  // Register source selects
-  bp_cce_inst_req_sel_e                    req_sel;
-  bp_cce_inst_lru_way_sel_e                lru_way_sel;
-
-  // Flag source selects
-  bp_cce_inst_rqf_sel_e                    rqf_sel;
-  bp_cce_inst_ucf_sel_e                    ucf_sel;
-  bp_cce_inst_nerf_sel_e                   nerf_sel;
-  bp_cce_inst_ldf_sel_e                    ldf_sel;
-  bp_cce_inst_pf_sel_e                     pf_sel;
-  bp_cce_inst_lef_sel_e                    lef_sel;
-  bp_cce_inst_cf_sel_e                     cf_sel;
-  bp_cce_inst_cef_sel_e                    cef_sel;
-  bp_cce_inst_cof_sel_e                    cof_sel;
-  bp_cce_inst_cdf_sel_e                    cdf_sel;
-  bp_cce_inst_tf_sel_e                     tf_sel;
-  bp_cce_inst_rf_sel_e                     rf_sel;
-  bp_cce_inst_uf_sel_e                     uf_sel;
-  bp_cce_inst_if_sel_e                     if_sel;
-  bp_cce_inst_nwbf_sel_e                   nwbf_sel;
-  bp_cce_inst_sf_sel_e                     sf_sel;
-
-  // Directory source selects
-  bp_cce_inst_dir_way_group_sel_e          dir_way_group_sel;
-  bp_cce_inst_dir_lce_sel_e                dir_lce_sel;
-  bp_cce_inst_dir_way_sel_e                dir_way_sel;
-  bp_cce_inst_dir_coh_state_sel_e          dir_coh_state_sel;
-  bp_cce_inst_dir_tag_sel_e                dir_tag_sel;
-
-  // Directory inputs
+  // Directory
   logic                                    dir_r_v;
   logic                                    dir_w_v;
-  bp_cce_inst_minor_dir_op_e               dir_op;
 
-  // LCE command queue input selects
-  bp_cce_inst_lce_cmd_lce_sel_e            lce_cmd_lce_sel;
-  bp_cce_inst_lce_cmd_addr_sel_e           lce_cmd_addr_sel;
-  bp_cce_inst_lce_cmd_way_sel_e            lce_cmd_way_sel;
+  // GAD Module
+  logic                                    gad_v;
 
-  // LCE Command Queue message command
-  bp_lce_cmd_type_e                        lce_cmd;
+  // WFQ
+  logic                                    wfq_v;
 
-  // Mem Command Queue message command
-  bp_cce_mem_cmd_type_e                    mem_cmd;
-  // Mem Command queue input selects
-  bp_cce_inst_mem_cmd_addr_sel_e           mem_cmd_addr_sel;
+  // Pending Bits
+  logic                                    pending_r_v;
+  logic                                    pending_w_v;
+  logic                                    pending_bit;
+  logic                                    pending_clear;
 
-  // Mem Response type
-  bp_cce_mem_cmd_type_e                    mem_resp;
+  // Speculative Memory Access Bits
+  logic                                    spec_r_v;
+  logic                                    spec_w_v;
+  logic                                    spec_v;
+  logic                                    spec_squash_v;
+  logic                                    spec_fwd_mod_v;
+  logic                                    spec_state_v;
+  bp_cce_spec_s                            spec_bits;
 
-  // Register write enables
-  logic                                    mov_dst_w_v;
-  logic                                    alu_dst_w_v;
-  logic [`bp_cce_inst_num_gpr-1:0]         gpr_w_mask;
-  logic [`bp_cce_inst_num_flags-1:0]       flag_mask_w_v;
-
-  // Write enable for gpr from RDE op
-  logic                                    rde_w_v;
-
-  // Write enable for req_lce, req_addr registers
-  logic                                    req_w_v;
-  // Write enable for req_addr_way register
-  logic                                    req_addr_way_w_v;
-  logic                                    lru_way_w_v;
-  // Write enable for tr_lce and tr_lce_way registers
-  logic                                    transfer_lce_w_v;
-  // Write enable for lce response type
-  logic                                    resp_type_w_v;
-  // Write enable for mem response type
-  logic                                    mem_resp_type_w_v;
-
-
-  // Write enables for uncached data and request size registers
-  // data written on lce request
-  logic                                    nc_data_w_v;
-  // request size written any time ucf (rqf) written
-  logic                                    nc_req_size_w_v;
-
-  // inbound messages - yumi signals
+  // Message Unit / Messages
+  logic                                    poph;
+  logic                                    popq;
+  logic                                    popd;
+  logic                                    pushq;
+  logic                                    pushq_custom;
+  bp_lce_cce_data_length_e                 data_length;
+  bp_cce_inst_dst_q_sel_e                  pushq_qsel;
+  bp_cce_inst_src_q_sel_e                  popq_qsel;
   logic                                    lce_req_yumi;
   logic                                    lce_resp_yumi;
   logic                                    mem_resp_yumi;
-
-  // outbound messages - valid signals
+  logic                                    pending_yumi;
   logic                                    lce_cmd_v;
+  bp_lce_cmd_type_e                        lce_cmd;
   logic                                    mem_cmd_v;
+  bp_cce_mem_cmd_type_e                    mem_cmd;
   logic                                    inv_cmd_v;
 
-  // clear mshr
-  logic                                    mshr_clear;
+  // GPR write mask
+  logic [`bp_cce_inst_num_gpr-1:0]         gpr_w_v;
 
-  // speculative access bit management
-  logic                                    spec_w_v;
-  bp_cce_inst_spec_cmd_e                   spec_cmd;
-  bp_cce_spec_s                            spec_bits;
+  // MSHR write signals
+  logic                                    mshr_clear;
+  logic                                    lce_w_v;
+  logic                                    addr_w_v;
+  logic                                    way_w_v;
+  logic                                    lru_addr_w_v;
+  logic                                    lru_way_w_v;
+  logic                                    owner_lce_w_v;
+  logic                                    owner_way_w_v;
+  logic                                    next_coh_state_w_v;
+  // Flag write mask - for instructions that write flags, e.g., GAD, poph, mov, sf
+  logic [`bp_cce_inst_num_flags-1:0]       flag_w_v;
+  logic                                    uc_req_size_w_v;
+  logic                                    data_length_w_v;
+  // Special/Param registers
+  logic                                    coh_state_w_v;
+  logic                                    auto_fwd_msg_w_v;
+
+  // stall counter
+  logic                                    clr_stall_cnt;
 
 } bp_cce_inst_decoded_s;
 

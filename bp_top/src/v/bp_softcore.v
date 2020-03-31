@@ -6,6 +6,7 @@ module bp_softcore
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_common_rv64_pkg::*;
+ import bp_me_pkg::*;
  import bp_cce_pkg::*;
  import bsg_noc_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg

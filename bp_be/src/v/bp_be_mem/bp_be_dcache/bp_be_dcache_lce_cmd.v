@@ -54,7 +54,6 @@ module bp_be_dcache_lce_cmd
     , input [paddr_width_p-1:0] miss_addr_i
 
     , output logic lce_ready_o
-    , output logic set_tag_received_o
     , output logic set_tag_wakeup_received_o
     , output logic uncached_store_done_received_o
     , output logic cce_data_received_o
@@ -206,7 +205,6 @@ module bp_be_dcache_lce_cmd
 
     data_buf_n = data_buf_r;
 
-    set_tag_received_o = 1'b0;
     set_tag_wakeup_received_o = 1'b0;
     uncached_store_done_received_o = 1'b0;
     uncached_data_received_o = 1'b0;
@@ -400,7 +398,6 @@ module bp_be_dcache_lce_cmd
 
               lce_cmd_yumi_o = tag_mem_pkt_v;
 
-              set_tag_received_o = tag_mem_pkt_v;
               cache_req_complete_o = 1'b0;
 
             end
@@ -485,7 +482,6 @@ module bp_be_dcache_lce_cmd
             lce_cmd_yumi_o      = tag_mem_pkt_v & data_mem_pkt_v;
 
             cce_data_received_o = tag_mem_pkt_v & data_mem_pkt_v;
-            set_tag_received_o  = tag_mem_pkt_v & data_mem_pkt_v;
             cache_req_complete_o = tag_mem_pkt_v & data_mem_pkt_v;
 
           end
