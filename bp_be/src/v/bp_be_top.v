@@ -17,14 +17,14 @@ module bp_be_top
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, dcache_assoc_p, dword_width_p, cce_block_width_p, dcache)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
 
    // Default parameters 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    
    // VM parameters
    , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
-   , localparam stat_info_width_lp = `bp_be_dcache_stat_info_width(dcache_assoc_p)
+   , localparam stat_info_width_lp = `bp_cache_stat_info_width(dcache_assoc_p)
   )
   (input                                     clk_i
    , input                                   reset_i
@@ -63,7 +63,7 @@ module bp_be_top
    // data_mem
    , input data_mem_pkt_v_i
    , input [dcache_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
-   , output logic [cce_block_width_p-1:0] data_mem_o
+   , output logic [dcache_block_width_p-1:0] data_mem_o
    , output logic data_mem_pkt_ready_o
 
    // tag_mem
@@ -87,7 +87,8 @@ module bp_be_top
    );
 
 // Declare parameterized structures
-`declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p)
+// TODO: Shouldn't the block size be in bytes and not in bits?
+`declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, dcache_sets_p, dcache_block_width_p)
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 

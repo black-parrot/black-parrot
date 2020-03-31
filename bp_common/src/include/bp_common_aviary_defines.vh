@@ -123,11 +123,13 @@ typedef struct packed
 
   integer dcache_sets;
   integer dcache_assoc;
+  integer dcache_block_width;
   integer icache_sets;
   integer icache_assoc;
+  integer icache_block_width;
   integer acache_sets;
   integer acache_assoc;
-  integer cce_block_width;
+  integer acache_block_width;
   integer cce_pc_width;
   integer ucode_cce;
 
@@ -225,10 +227,13 @@ typedef struct packed
                                                                                                    \
   , localparam dcache_sets_p              = proc_param_lp.dcache_sets                              \
   , localparam dcache_assoc_p             = proc_param_lp.dcache_assoc                             \
+  , localparam dcache_block_width_p       = proc_param_lp.dcache_block_width                       \
   , localparam icache_sets_p              = proc_param_lp.icache_sets                              \
   , localparam icache_assoc_p             = proc_param_lp.icache_assoc                             \
+  , localparam icache_block_width_p       = proc_param_lp.icache_block_width                       \
   , localparam acache_sets_p              = proc_param_lp.acache_sets                              \
   , localparam acache_assoc_p             = proc_param_lp.acache_assoc                             \
+  , localparam acache_block_width_p       = proc_param_lp.acache_block_width                       \
   , localparam lce_assoc_p                = `BSG_MAX(dcache_assoc_p,                               \
                                                      `BSG_MAX(icache_assoc_p, acache_assoc_p))     \
   , localparam lce_assoc_width_p          = `BSG_SAFE_CLOG2(lce_assoc_p)                           \
@@ -236,7 +241,11 @@ typedef struct packed
                                                      `BSG_MAX(icache_sets_p, acache_sets_p))       \
   , localparam lce_sets_width_p           = `BSG_SAFE_CLOG2(lce_sets_p)                            \
                                                                                                    \
-  , localparam cce_block_width_p          = proc_param_lp.cce_block_width                          \
+  , localparam cce_block_width_p          =  `BSG_MAX(dcache_block_width_p,                        \
+                                                     `BSG_MAX(icache_block_width_p,                \
+                                                       acache_block_width_p))                      \
+                                                                                                   \
+                                                                                                   \
   , localparam cce_pc_width_p             = proc_param_lp.cce_pc_width                             \
   , localparam num_cce_instr_ram_els_p    = 2**cce_pc_width_p                                      \
   , localparam cce_way_groups_p           = `BSG_MAX(dcache_sets_p, icache_sets_p)                 \

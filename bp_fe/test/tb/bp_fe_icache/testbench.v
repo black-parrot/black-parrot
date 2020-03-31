@@ -5,8 +5,8 @@ module testbench
   import bp_fe_pkg::*;
   import bp_be_dcache_pkg::*;
   import bp_fe_icache_pkg::*;
-  import bp_cce_pkg::*;
   import bp_me_pkg::*;
+  import bp_cce_pkg::*;
   #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR
    `declare_bp_proc_params(bp_params_p)
 
@@ -35,8 +35,8 @@ module testbench
    , parameter dram_capacity_p           = 16384
 
   // I-Cache Widths
-  `declare_bp_fe_tag_widths(icache_assoc_p, lce_sets_p, lce_id_width_p, cce_id_width_p, dword_width_p, paddr_width_p)
-  `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, icache_assoc_p, dword_width_p, cce_block_width_p, icache)
+  `declare_bp_fe_tag_widths(icache_assoc_p, icache_sets_p, lce_id_width_p, cce_id_width_p, dword_width_p, paddr_width_p)
+  `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache)
   
   // LCE-CCE Interface Widths
   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
@@ -47,7 +47,7 @@ module testbench
   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
   , localparam page_offset_width_lp = bp_page_offset_width_gp
   , localparam ptag_width_lp = (paddr_width_p - page_offset_width_lp)
-  , localparam trace_replay_data_width_lp = ptag_width_lp + vaddr_width_p
+  , localparam trace_replay_data_width_lp = ptag_width_lp + vaddr_width_p + 1
   , localparam trace_rom_addr_width_lp = 7
   )
   ( input clk_i
@@ -80,6 +80,7 @@ module testbench
 
   logic [vaddr_width_p-1:0] vaddr_li;
   logic [ptag_width_lp-1:0] ptag_li;
+  logic uncached_li;
 
   logic switch_cce_mode;
   always_comb begin
@@ -92,7 +93,7 @@ module testbench
   end
  
   logic [6:0] count_lo;
-  localparam counter_max_val_lp = lce_sets_p + 1;
+  localparam counter_max_val_lp = icache_sets_p + 1;
 
   bsg_counter_clear_up
     #(.max_val_p(counter_max_val_lp)
@@ -112,6 +113,7 @@ module testbench
 
   assign ptag_li = trace_data_lo[0+:(ptag_width_lp)];
   assign vaddr_li = trace_data_lo[ptag_width_lp+:vaddr_width_p];
+  assign uncached_li = trace_data_lo[(ptag_width_lp+vaddr_width_p)+:1];
   assign trace_yumi_li = trace_v_lo & dut_ready_lo;
 
   logic [15:0] count_sim;
@@ -170,7 +172,7 @@ module testbench
   assign fifo_yumi_li = trace_v_li & trace_ready_lo;
   assign trace_data_li = {'0, fifo_data_lo};
 
-  bsg_one_fifo 
+  bsg_two_fifo 
     #(.width_p(instr_width_p))
     output_fifo 
     (.clk_i(clk_i)
@@ -202,6 +204,8 @@ module testbench
      
      ,.ptag_i(ptag_li)
      ,.ptag_v_i(trace_v_lo)
+
+     ,.uncached_i(uncached_li)
 
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
@@ -249,47 +253,55 @@ module testbench
 
   // I$ tracer
   bind bp_fe_icache
-    bp_fe_nonsynth_icache_tracer
-    #(.bp_params_p(bp_params_p))
+    bp_nonsynth_cache_tracer
+    #(.bp_params_p(bp_params_p)
+     ,.assoc_p(icache_assoc_p)
+     ,.sets_p(icache_sets_p)
+     ,.block_width_p(icache_block_width_p)
+     ,.trace_file_p("icache"))
     icache_tracer
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
+      
       ,.freeze_i(cfg_bus_cast_i.freeze)
+      ,.mhartid_i(cfg_bus_cast_i.core_id)
 
-      ,.data_o(data_o)
-      ,.data_v_o(data_v_o)
-      ,.miss_o(miss_o)
-
+      
       ,.v_tl_r(v_tl_r)
-      ,.v_tv_r(v_tv_r)
 
-      ,.cache_req_ready_i(cache_req_ready_i)
+      ,.v_tv_r(v_tv_r)
+      ,.addr_tv_r(addr_tv_r)
+      ,.lr_miss_tv(1'b0)
+      ,.sc_op_tv_r(1'b0)
+      ,.sc_success(1'b0)
+
       ,.cache_req_o(cache_req_o)
       ,.cache_req_v_o(cache_req_v_o)
       ,.cache_req_metadata_o(cache_req_metadata_o)
       ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-
       ,.cache_req_complete_i(cache_req_complete_i)
+      
+      ,.v_o(data_v_o)
+      ,.load_data(dword_width_p'(data_o))
+      ,.store_data(dword_width_p'(0))
+      ,.cache_miss_o(miss_o)
 
       ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
       ,.data_mem_pkt_i(data_mem_pkt_i)
-      ,.data_mem_o(data_mem_o)
       ,.data_mem_pkt_ready_o(data_mem_pkt_ready_o)
 
       ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
       ,.tag_mem_pkt_i(tag_mem_pkt_i)
-      ,.tag_mem_o(tag_mem_o)
       ,.tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
 
       ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
       ,.stat_mem_pkt_i(stat_mem_pkt_i)
-      ,.stat_mem_o(stat_mem_o)
       ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
       );
 
   // CCE tracer
   bind bp_cce_fsm
-    bp_cce_nonsynth_tracer
+    bp_me_nonsynth_cce_tracer
       #(.bp_params_p(bp_params_p))
       bp_cce_tracer
        (.clk_i(clk_i & (testbench.cce_trace_p == 1))

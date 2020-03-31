@@ -28,18 +28,18 @@ module bp_be_dcache_lce_req
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, dcache_assoc_p, dword_width_p, cce_block_width_p, dcache)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
      
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , localparam block_size_in_words_lp = dcache_assoc_p
-    , localparam cache_block_width_multiplier_lp = 2**(3 - `BSG_SAFE_CLOG2(dcache_assoc_p)) // Need to change '3' if assoc_p can be > 8
-    , localparam cache_block_width_lp = dword_width_p * cache_block_width_multiplier_lp
-    , localparam bypass_data_mask_width_lp = (dword_width_p >> 3) // Need to change '3' if dword_width_p changes
-    , localparam data_mem_mask_width_lp = (cache_block_width_lp >> 3)
-    , localparam byte_offset_width_lp = `BSG_SAFE_CLOG2(cache_block_width_lp>>3)
+    , localparam bank_width_lp = dcache_block_width_p / dcache_assoc_p
+    , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
+    , localparam bypass_data_mask_width_lp = (dword_width_p >> 3)
+    , localparam data_mem_mask_width_lp = (bank_width_lp >> 3)
+    , localparam byte_offset_width_lp = `BSG_SAFE_CLOG2(bank_width_lp>>3)
     , localparam word_offset_width_lp = `BSG_SAFE_CLOG2(block_size_in_words_lp)
     , localparam block_offset_width_lp = (word_offset_width_lp+byte_offset_width_lp)
-    , localparam index_width_lp = `BSG_SAFE_CLOG2(lce_sets_p)
+    , localparam index_width_lp = `BSG_SAFE_CLOG2(dcache_sets_p)
     , localparam ptag_width_lp = (paddr_width_p-bp_page_offset_width_gp)
     , localparam way_id_width_lp = `BSG_SAFE_CLOG2(dcache_assoc_p)
 
@@ -79,7 +79,7 @@ module bp_be_dcache_lce_req
   // casting struct
   //
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, dcache_assoc_p, dword_width_p, cce_block_width_p, dcache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache);
 
   bp_lce_cce_req_s lce_req;
   bp_lce_cce_resp_s lce_resp;
@@ -238,7 +238,7 @@ module bp_be_dcache_lce_req
         lce_req_v_o = lce_req_ready_i & cache_req_metadata_v_r;
 
         lce_req.header.lru_dirty = bp_lce_cce_lru_dirty_e'(cache_req_metadata_r.dirty);
-        lce_req.header.lru_way_id = cache_req_metadata_r.repl_way;
+        lce_req.header.lru_way_id = lce_assoc_p'(cache_req_metadata_r.repl_way);
         lce_req.header.non_exclusive = e_lce_req_excl;
 
         lce_req.header.addr = miss_addr_r;

@@ -38,11 +38,11 @@ module bp_softcore
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, dcache_assoc_p, dword_width_p, cce_block_width_p, dcache);
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, icache_assoc_p, dword_width_p, cce_block_width_p, icache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache);
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
-  `declare_bp_be_dcache_stat_info_s(dcache_assoc_p);
-  `declare_bp_fe_icache_stat_info_s(icache_assoc_p);
+  `declare_bp_cache_stat_info_s(dcache_assoc_p, dcache);
+  `declare_bp_cache_stat_info_s(icache_assoc_p, icache);
 
   bp_cfg_bus_s cfg_bus_li;
 
@@ -70,14 +70,15 @@ module bp_softcore
   bp_icache_data_mem_pkt_s icache_data_mem_pkt_li;
   logic dcache_data_mem_pkt_v_li, dcache_data_mem_pkt_ready_lo;
   logic icache_data_mem_pkt_v_li, icache_data_mem_pkt_ready_lo;
-  logic [cce_block_width_p-1:0] dcache_data_mem_lo, icache_data_mem_lo;
+  logic [dcache_block_width_p-1:0] dcache_data_mem_lo;
+  logic [icache_block_width_p-1:0] icache_data_mem_lo;
 
   bp_dcache_stat_mem_pkt_s dcache_stat_mem_pkt_li;
   bp_icache_stat_mem_pkt_s icache_stat_mem_pkt_li;
   logic dcache_stat_mem_pkt_v_li, dcache_stat_mem_pkt_ready_lo;
   logic icache_stat_mem_pkt_v_li, icache_stat_mem_pkt_ready_lo;
-  bp_be_dcache_stat_info_s dcache_stat_mem_lo;
-  bp_fe_icache_stat_info_s icache_stat_mem_lo;
+  bp_dcache_stat_info_s dcache_stat_mem_lo;
+  bp_icache_stat_info_s icache_stat_mem_lo;
 
   logic dcache_req_complete_li, icache_req_complete_li;
 
@@ -176,7 +177,9 @@ module bp_softcore
 
   bp_uce
     #(.bp_params_p(bp_params_p)
-     ,.assoc_p(dcache_assoc_p))
+     ,.assoc_p(dcache_assoc_p)
+     ,.sets_p(dcache_sets_p)
+     ,.block_width_p(dcache_block_width_p))
     dcache_uce
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -220,7 +223,9 @@ module bp_softcore
 
   bp_uce
     #(.bp_params_p(bp_params_p)
-     ,.assoc_p(icache_assoc_p))
+     ,.assoc_p(icache_assoc_p)
+     ,.sets_p(icache_sets_p)
+     ,.block_width_p(icache_block_width_p))
     icache_uce
     (.clk_i(clk_i)
     ,.reset_i(reset_i)

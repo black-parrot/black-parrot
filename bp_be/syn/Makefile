@@ -5,7 +5,7 @@ include $(TOP)/Makefile.common
 
 export SYN_PATH     := $(BP_BE_DIR)/syn
 export TB_PATH      := $(BP_BE_DIR)/test/tb
-export MEM_PATH     := $(BP_COMMON_DIR)/test/mem
+export MEM_PATH     := $(BP_BE_DIR)/test/tb
 
 export LOG_PATH     := $(BP_BE_DIR)/syn/logs
 export RESULTS_PATH := $(BP_BE_DIR)/syn/results

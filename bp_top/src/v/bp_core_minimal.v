@@ -18,13 +18,13 @@ module bp_core_minimal
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, dcache_assoc_p, dword_width_p, cce_block_width_p, dcache)
-    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, icache_assoc_p, dword_width_p, cce_block_width_p, icache)
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache)
 
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
 
-    , localparam dcache_stat_info_width_lp = `bp_be_dcache_stat_info_width(dcache_assoc_p)
-    , localparam icache_stat_info_width_lp = `bp_fe_icache_stat_info_width(icache_assoc_p)
+    , localparam dcache_stat_info_width_lp = `bp_cache_stat_info_width(dcache_assoc_p)
+    , localparam icache_stat_info_width_lp = `bp_cache_stat_info_width(icache_assoc_p)
     )
    (
     input          clk_i
@@ -61,7 +61,7 @@ module bp_core_minimal
     , input [dcache_data_mem_pkt_width_lp-1:0] dcache_data_mem_pkt_i
     , input dcache_data_mem_pkt_v_i
     , output logic dcache_data_mem_pkt_ready_o
-    , output logic [cce_block_width_p-1:0] dcache_data_mem_o 
+    , output logic [dcache_block_width_p-1:0] dcache_data_mem_o 
 
     , input [dcache_tag_mem_pkt_width_lp-1:0] dcache_tag_mem_pkt_i
     , input dcache_tag_mem_pkt_v_i
@@ -77,7 +77,7 @@ module bp_core_minimal
     , input [icache_data_mem_pkt_width_lp-1:0] icache_data_mem_pkt_i
     , input icache_data_mem_pkt_v_i
     , output logic icache_data_mem_pkt_ready_o
-    , output logic [cce_block_width_p-1:0] icache_data_mem_o 
+    , output logic [icache_block_width_p-1:0] icache_data_mem_o 
 
     , input [icache_tag_mem_pkt_width_lp-1:0] icache_tag_mem_pkt_i
     , input icache_tag_mem_pkt_v_i

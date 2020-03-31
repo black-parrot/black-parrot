@@ -22,20 +22,20 @@ module bp_fe_lce
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, icache_assoc_p, dword_width_p, cce_block_width_p, icache)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache)
 
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
    , localparam block_size_in_words_lp=icache_assoc_p
-   , localparam cache_block_width_multiplier_lp = 2**(3-`BSG_SAFE_CLOG2(icache_assoc_p))
-   , localparam cache_block_width_lp = dword_width_p * cache_block_width_multiplier_lp
-   , localparam data_mem_mask_width_lp=(cache_block_width_lp>>3)
-   , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(cache_block_width_lp>>3)
+   , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
+   , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
+   , localparam data_mem_mask_width_lp=(bank_width_lp >> 3)
+   , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp >> 3)
    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
-   , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)
+   , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
    
-   , localparam stat_width_lp = `bp_be_dcache_stat_info_width(icache_assoc_p)
+   , localparam stat_width_lp = `bp_cache_stat_info_width(icache_assoc_p)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
   )
@@ -56,7 +56,7 @@ module bp_fe_lce
     , output logic [icache_data_mem_pkt_width_lp-1:0]            data_mem_pkt_o
     , output logic                                               data_mem_pkt_v_o
     , input                                                      data_mem_pkt_ready_i
-    , input  [cce_block_width_p-1:0]                             data_mem_i
+    , input  [icache_block_width_p-1:0]                             data_mem_i
 
     , output logic [icache_tag_mem_pkt_width_lp-1:0]             tag_mem_pkt_o
     , output logic                                               tag_mem_pkt_v_o
@@ -88,7 +88,7 @@ module bp_fe_lce
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, icache_assoc_p, dword_width_p, cce_block_width_p, icache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache);
 
   bp_cfg_bus_s cfg_bus_cast_i;
 

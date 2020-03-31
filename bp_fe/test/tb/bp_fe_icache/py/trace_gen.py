@@ -2,6 +2,8 @@
 #   trace_gen.py
 #
 
+import numpy as np
+
 class TraceGen:
 
   # constructor
@@ -9,7 +11,7 @@ class TraceGen:
     self.vaddr_width_p = vaddr_width_p
     self.ptag_width_p = ptag_width_p
     self.instr_width_p = instr_width_p
-    self.packet_len = vaddr_width_p + ptag_width_p
+    self.packet_len = vaddr_width_p + ptag_width_p + 1 # A bit is added to denote cached/uncached accesses
 
   # print header
   def print_header(self):
@@ -18,9 +20,14 @@ class TraceGen:
     return header
 
   # send load
-  def send_load(self, vaddr, ptag):
+  def send_load(self, vaddr, ptag, uncached):
     packet = "0001_"
-    #packet += "0"*(self.instr_width_p) + "_"
+    
+    if(uncached):
+      packet += "1_"
+    else:
+      packet += "0_"
+
     packet += format(vaddr, "0"+str(self.vaddr_width_p)+"b") + "_"
     packet += format(ptag, "0"+str(self.ptag_width_p)+"b") + "\n"
     return packet

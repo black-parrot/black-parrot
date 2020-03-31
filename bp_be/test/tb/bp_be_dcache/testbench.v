@@ -25,8 +25,8 @@ module testbench
    , parameter mem_zero_p         = 1
    , parameter mem_load_p         = preload_mem_p
    , parameter mem_file_p         = "prog.mem"
-   , parameter mem_cap_in_bytes_p = 2**25
-   , parameter [paddr_width_p-1:0] mem_offset_p = paddr_width_p'(32'h8000_0000)
+   , parameter mem_cap_in_bytes_p = 2**17
+   , parameter [paddr_width_p-1:0] mem_offset_p = paddr_width_p'(32'h0000_0000)
 
    // Number of elements in the fake BlackParrot memory
    , parameter use_max_latency_p      = 0
@@ -45,8 +45,8 @@ module testbench
    , localparam page_offset_width_lp = bp_page_offset_width_gp
    , localparam ptag_width_lp = (paddr_width_p - page_offset_width_lp)
    , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(page_offset_width_p, dword_width_p)
-   , localparam trace_replay_data_width_lp = ptag_width_lp + dcache_pkt_width_lp
-   , localparam trace_rom_addr_width_lp = 6 
+   , localparam trace_replay_data_width_lp = ptag_width_lp + dcache_pkt_width_lp + 1 // The 1 extra bit is for uncached accesses
+   , localparam trace_rom_addr_width_lp = 8 
    )
   (input clk_i
    , input reset_i
@@ -77,6 +77,7 @@ module testbench
 
   logic [dcache_pkt_width_lp-1:0] dcache_pkt_li;
   logic [ptag_width_lp-1:0] ptag_li;
+  logic uncached_li;
 
   // Setting up the config bus
   logic switch_cce_mode;
@@ -144,6 +145,7 @@ module testbench
       
   assign dcache_pkt_li = trace_data_lo[0+:dcache_pkt_width_lp];
   assign ptag_li = trace_data_lo[dcache_pkt_width_lp+:ptag_width_lp];
+  assign uncached_li = trace_data_lo[(dcache_pkt_width_lp+ptag_width_lp)+:1];
 
   // Output FIFO
   logic fifo_yumi_li;
@@ -151,7 +153,7 @@ module testbench
   assign fifo_yumi_li = trace_v_li & trace_ready_lo;
   assign trace_data_li = {'0, fifo_data_lo};
 
-  bsg_one_fifo 
+  bsg_two_fifo 
     #(.width_p(dword_width_p))
     output_fifo 
     (.clk_i(clk_i)
@@ -185,7 +187,9 @@ module testbench
     ,.v_o(v_lo)
 
     ,.ptag_i(ptag_li)
-   
+
+    ,.uncached_i(uncached_li)
+ 
     ,.mem_resp_v_i(mem_resp_v_lo)
     ,.mem_resp_i(mem_resp_lo)
     ,.mem_resp_ready_o(mem_resp_ready_lo)
@@ -229,8 +233,12 @@ module testbench
 
   // Tracers
   bind bp_be_dcache
-    bp_be_nonsynth_dcache_tracer
-     #(.bp_params_p(bp_params_p))
+    bp_nonsynth_cache_tracer
+     #(.bp_params_p(bp_params_p)
+      ,.sets_p(dcache_sets_p)
+      ,.assoc_p(dcache_assoc_p)
+      ,.block_width_p(dcache_block_width_p)
+      ,.trace_file_p("dcache"))
      dcache_tracer
       (.clk_i(clk_i & (testbench.dcache_trace_p == 1))
        ,.reset_i(reset_i)
@@ -241,7 +249,7 @@ module testbench
        ,.v_tl_r(v_tl_r)
 
        ,.v_tv_r(v_tv_r)
-       ,.paddr_tv_r(paddr_tv_r)
+       ,.addr_tv_r(paddr_tv_r)
        ,.lr_miss_tv(lr_miss_tv)
        ,.sc_op_tv_r(sc_op_tv_r)
        ,.sc_success(sc_success)
@@ -255,7 +263,7 @@ module testbench
        ,.v_o(v_o)
        ,.load_data(data_o)
        ,.store_data(data_tv_r)
-       ,.dcache_miss_o(dcache_miss_o)
+       ,.cache_miss_o(dcache_miss_o)
 
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
        ,.data_mem_pkt_i(data_mem_pkt_i)
@@ -271,7 +279,7 @@ module testbench
        );
 
   bind bp_cce_fsm
-    bp_cce_nonsynth_tracer
+    bp_me_nonsynth_cce_tracer
       #(.bp_params_p(bp_params_p))
       bp_cce_tracer
        (.clk_i(clk_i & (testbench.cce_trace_p == 1))

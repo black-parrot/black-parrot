@@ -2,6 +2,8 @@
 #   trace_gen.py
 #
 
+import numpy as np
+
 class TraceGen:
 
   # constructor
@@ -10,7 +12,7 @@ class TraceGen:
     self.page_offset_width_p = page_offset_width_p
     self.opcode_width_p = opcode_width_p
     self.data_width_p = data_width_p
-    self.packet_len = ptag_width_p + page_offset_width_p + opcode_width_p + data_width_p
+    self.packet_len = ptag_width_p + page_offset_width_p + opcode_width_p + data_width_p + 1 # A bit is added to denote cached/uncached accesses
 
   # print header
   def print_header(self):
@@ -22,8 +24,14 @@ class TraceGen:
   # signed: sign extend or not
   # size: load size in bytes
   # page_offset: dcache pkt page offset
-  def send_load(self, signed, size, page_offset, ptag):
+  def send_load(self, signed, size, page_offset, ptag, uncached):
     packet = "0001_"
+    
+    if(uncached):
+      packet += "1_"
+    else:
+      packet += "0_"
+
     packet += format(ptag, "0"+str(self.ptag_width_p)+"b") + "_"
 
     if (size == 8):
@@ -56,8 +64,14 @@ class TraceGen:
   # signed: sign extend or not
   # size: store size in bytes
   # page_offset: dcache pkt page offset
-  def send_store(self, size, page_offset, ptag, data):
+  def send_store(self, size, page_offset, ptag, uncached, data):
     packet = "0001_"
+
+    if(uncached):
+      packet += "1_"
+    else:
+      packet += "0_"
+
     packet += format(ptag, "0"+str(self.ptag_width_p)+"b") + "_"
     
     if (size == 1):
@@ -79,7 +93,8 @@ class TraceGen:
   # data: expected data
   def recv_data(self, data):
     packet = "0010_"
-    packet += "0"*(self.ptag_width_p) + "_" + "0"*(self.opcode_width_p) + "_" + "0"*(self.page_offset_width_p) + "_" + format(data, "064b") + "\n"
+    bin_data = np.binary_repr(data, 64)
+    packet += "0" + "0"*(self.ptag_width_p) + "_" + "0"*(self.opcode_width_p) + "_" + "0"*(self.page_offset_width_p) + "_" + bin_data + "\n"
     return packet
 
   # wait for a number of cycles
