@@ -466,7 +466,10 @@ BEEBS_TESTS = \
   #qsort \
 
 BP_SPEC = \
-  175.vpr
+  175.vpr \
+  181.mcf \
+  164.gzip
+
 
 BP_RVDV = \
   riscv_arithmetic_basic_test \
