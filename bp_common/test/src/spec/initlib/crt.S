@@ -5,7 +5,7 @@ _start:
 /* setup stack pointers. Stacks start at 0x8FFF_CFFF */
 /* We then subtract off 8K*coreID. The top 4K is for the core emulation stack
  * the lower 4K is for the program TODO: Maybe larger stack value? */
-    li   sp, 0x800F0000
+    li   sp, 0x80800000
     csrr x1, mhartid 
     slli x1, x1, 13
     sub  sp, sp, x1
@@ -70,8 +70,9 @@ _start:
 /* jump to main */
     jal main
 
-/* to stop, make an ecall */
+/* send BP finish packet */
+    call bp_finish
+
 loop:
-    addi x0, x0, 0
     j loop
 
