@@ -1,5 +1,5 @@
 
-module bp_halting_solver
+module bp_nonsynth_watchdog
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
   import bp_common_rv64_pkg::*;
@@ -7,7 +7,11 @@ module bp_halting_solver
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
     `declare_bp_proc_params(bp_params_p)
 
-    , localparam timeout_p = 100000
+    , parameter timeout_cycles_p   = "inv"
+    , parameter heartbeat_instr_p  = "inv"
+
+    // Something super big
+    , parameter max_instr_lp = 2**30
     )
    (input                                     clk_i
     , input                                   reset_i
@@ -17,6 +21,7 @@ module bp_halting_solver
     , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
 
     , input [vaddr_width_p-1:0]               npc_i
+    , input                                   instret_i
     );
 
   logic [vaddr_width_p-1:0] npc_r;
@@ -31,9 +36,9 @@ module bp_halting_solver
      );
   wire npc_change = (npc_i != npc_r);
 
-  logic [`BSG_SAFE_CLOG2(timeout_p)-1:0] stall_cnt;
+  logic [`BSG_SAFE_CLOG2(timeout_cycles_p)-1:0] stall_cnt;
   bsg_counter_clear_up
-   #(.max_val_p(timeout_p), .init_val_p(0))
+   #(.max_val_p(timeout_cycles_p), .init_val_p(0))
    stall_counter
     (.clk_i(clk_i)
      ,.reset_i(reset_i | freeze_i)
@@ -43,17 +48,37 @@ module bp_halting_solver
      ,.count_o(stall_cnt)
      );
 
+  logic [`BSG_SAFE_CLOG2(max_instr_lp+1)-1:0] instr_cnt;
+  bsg_counter_clear_up
+   #(.max_val_p(max_instr_lp), .init_val_p(0))
+   instr_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i | freeze_i)
+
+     ,.clear_i(1'b0)
+     ,.up_i(instret_i)
+     ,.count_o(instr_cnt)
+     );
+
   always_ff @(negedge clk_i)
-    if (reset_i === '0 && stall_cnt >= timeout_p)
+    if (reset_i === '0 && (stall_cnt >= timeout_cycles_p))
       begin
         $display("FAIL! Core %x stalled for %d cycles!", mhartid_i, stall_cnt);
         $finish();
       end
-    else if (reset_i === '0 && npc_r === 'X)
+    else if (reset_i === '0 && (npc_r === 'X))
       begin
         $display("FAIL! Core %x PC has become X!", mhartid_i);
         $finish();
       end
+
+  always_ff @(negedge clk_i)
+    begin
+      if (reset_i === '0 && (instr_cnt > '0) && (instr_cnt % heartbeat_instr_p == '0))
+        begin
+          $display("BEAT: %d instructions completed (%d total)", heartbeat_instr_p, instr_cnt);
+        end
+    end
 
 endmodule
 

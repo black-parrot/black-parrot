@@ -91,10 +91,10 @@ module bp_be_pipe_long
    #(.width_p(1+reg_addr_width_p+$bits(bp_be_fu_op_s)+1))
    wb_reg
     (.clk_i(clk_i)
-     ,.reset_i(reset_i | flush_i | v_lo)
-     ,.en_i(v_i)
+     ,.reset_i(reset_i | flush_i)
+     ,.en_i(v_i | v_lo)
 
-     ,.data_i({1'b1, instr.fields.rtype.rd_addr, decode.fu_op, decode.opw_v})
+     ,.data_i({v_i, instr.fields.rtype.rd_addr, decode.fu_op, decode.opw_v})
      ,.data_o({rd_w_v_r, rd_addr_r, fu_op_r, opw_v_r})
      );
 
@@ -114,6 +114,7 @@ module bp_be_pipe_long
   assign wb_pkt.rd_data = rd_data_lo;
   assign v_o = v_lo & rd_w_v_r;
 
+  // Actually a "busy" signal
   assign ready_o = idiv_ready_lo & ~v_i;
 
 endmodule

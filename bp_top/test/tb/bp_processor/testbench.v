@@ -297,9 +297,12 @@ bind bp_be_top
      );
 
   bind bp_be_top
-    bp_halting_solver
-     #(.bp_params_p(bp_params_p))
-     halt
+    bp_nonsynth_watchdog
+     #(.bp_params_p(bp_params_p)
+       ,.timeout_cycles_p(100000)
+       ,.heartbeat_instr_p(100000)
+       )
+     watchdog
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
        ,.freeze_i(be.be_checker.scheduler.int_regfile.cfg_bus.freeze)
@@ -307,6 +310,7 @@ bind bp_be_top
        ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
        ,.npc_i(be_checker.director.npc_r)
+       ,.instret_i(be_calculator.commit_pkt.instret)
        );
 
   bp_mem_nonsynth_tracer

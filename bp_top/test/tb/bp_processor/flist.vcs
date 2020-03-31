@@ -19,7 +19,7 @@ $BP_ME_DIR/test/common/bp_mem_utils.cpp
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.v
 $BP_ME_DIR/test/common/bp_mem_nonsynth_tracer.v
 # top files
-$BP_TOP_DIR/test/common/bp_halting_solver.v
+$BP_TOP_DIR/test/common/bp_nonsynth_watchdog.v
 $BP_TOP_DIR/test/common/bp_nonsynth_host.v
 $BP_TOP_DIR/test/common/bp_nonsynth_if_verif.v
 $BP_TOP_DIR/test/common/bp_nonsynth_commit_tracer.v
