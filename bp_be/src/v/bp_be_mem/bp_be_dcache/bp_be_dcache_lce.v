@@ -148,7 +148,6 @@ module bp_be_dcache_lce
   //
   logic cce_data_received;
   logic uncached_data_received;
-  logic set_tag_received;
   logic set_tag_wakeup_received;
   logic uncached_store_done_received;
 
@@ -167,7 +166,7 @@ module bp_be_dcache_lce
   // UC store done for UC Store, UC Data for UC Load, Set Tag Wakeup for
   // a miss that is actually an upgrade, and data and tag for normal requests.
   wire credit_returned_li = uncached_store_done_received | uncached_data_received
-                            | set_tag_wakeup_received | (cce_data_received & set_tag_received);
+                            | set_tag_wakeup_received | cce_data_received;
   bsg_flow_counter
     #(.els_p(coh_noc_max_credits_p))
     uncached_store_counter
@@ -205,7 +204,6 @@ module bp_be_dcache_lce
 
       ,.cce_data_received_i(cce_data_received)
       ,.uncached_data_received_i(uncached_data_received)
-      ,.set_tag_received_i(set_tag_received)
       ,.set_tag_wakeup_received_i(set_tag_wakeup_received)
       
       ,.coherence_blocked_i(coherence_blocked_li)
@@ -237,7 +235,6 @@ module bp_be_dcache_lce
       ,.miss_addr_i(miss_addr_lo)
 
       ,.lce_ready_o(cmd_ready_lo)
-      ,.set_tag_received_o(set_tag_received)
       ,.set_tag_wakeup_received_o(set_tag_wakeup_received)
       ,.uncached_store_done_received_o(uncached_store_done_received)
       ,.cce_data_received_o(cce_data_received)

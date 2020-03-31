@@ -35,6 +35,7 @@ module bp_mem
    , input                               reset_i
 
    // BP side
+   // ready->valid (ready then valid)
    , input [cce_mem_msg_width_lp-1:0]    mem_cmd_i
    , input                               mem_cmd_v_i
    , output                              mem_cmd_ready_o

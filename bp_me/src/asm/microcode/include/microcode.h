@@ -29,10 +29,11 @@
 #define COH_M 6
 #define COH_O 7
 
-#define MEM_CMD_REQ 0
+#define MEM_CMD_RD 0
+#define MEM_CMD_WR 1
+#define MEM_CMD_UC_RD 2
+#define MEM_CMD_UC_WR 3
 #define MEM_CMD_WB 4
-
-#define MEM_CMD_INV 0
-#define MEM_CMD_FLUSH 1
+#define MEM_CMD_PRE 5
 
 #endif

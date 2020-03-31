@@ -1,6 +1,11 @@
 #
-#   trace_gen.py
+# trace_gen.py
 #
+#
+# Packet format is defined in bp_me_nonsynth_pkg.vh
+# {cmd, addr, uncached, data}
+#
+# Trace replay mechanism adds another 4 bits at start for internal TR command
 
 
 class TraceGen:
@@ -9,7 +14,7 @@ class TraceGen:
   def __init__(self, addr_width_p, data_width_p):
     self.addr_width_p = addr_width_p
     self.data_width_p = data_width_p
-    self.packet_len = addr_width_p + data_width_p + 4 + 4
+    self.packet_len = addr_width_p + data_width_p + 1 + 4 + 4
 
   # print header
   def print_header(self):
@@ -20,7 +25,7 @@ class TraceGen:
   # signed: sign extend or not
   # size: load size in bytes
   # addr: load address
-  def send_load(self, signed, size, addr):
+  def send_load(self, signed, size, addr, uc=0):
     packet = "0001_"
     if (size == 8):
       packet += "0011_"
@@ -45,6 +50,7 @@ class TraceGen:
           raise ValueError("unexpected size for unsigned load.")
 
     packet += format(addr, "0"+str(self.addr_width_p)+"b") + "_"
+    packet += format(uc, "01b") + "_"
     packet += format(0, "064b")  
     print(packet)
 
@@ -53,7 +59,7 @@ class TraceGen:
   # signed: sign extend or not
   # size: store size in bytes
   # addr: store address
-  def send_store(self, size, addr, data):
+  def send_store(self, size, addr, data, uc=0):
     packet = "0001_"
     if (size == 1):
       packet += "1000_"
@@ -66,14 +72,17 @@ class TraceGen:
     else:
       raise ValueError("unexpected size for store.")
     packet += format(addr, "0" + str(self.addr_width_p) + "b") + "_"
+    packet += format(uc, "01b") + "_"
     packet += format(data, "064b")
     print(packet)
 
   # receive data
   # data: expected data
-  def recv_data(self, data):
+  def recv_data(self, addr, data, uc=0):
     packet = "0010_0000_"
-    packet += (self.addr_width_p)*"0" + "_" + format(data, "064b")
+    packet += format(addr, "0" + str(self.addr_width_p) + "b") + "_"
+    packet += format(uc, "01b") + "_"
+    packet += format(data, "064b")
     print(packet)
 
   # wait for a number of cycles

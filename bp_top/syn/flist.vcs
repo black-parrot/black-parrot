@@ -34,8 +34,8 @@ $BP_FE_DIR/src/include/bp_fe_pkg.vh
 $BP_BE_DIR/src/include/bp_be_pkg.vh
 $BP_BE_DIR/src/include/bp_be_dcache/bp_be_dcache_pkg.vh
 # ME packages
-$BP_ME_DIR/src/include/v/bp_cce_pkg.v
 $BP_ME_DIR/src/include/v/bp_me_pkg.vh
+$BP_ME_DIR/src/include/v/bp_cce_pkg.v
 ## bsg_ip_cores files
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_fifo.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_launch_sync_sync.v
@@ -195,19 +195,23 @@ $BP_ME_DIR/src/v/cache/bp_me_cce_to_cache_buffered.v
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce.v
 $BP_ME_DIR/src/v/cce/bp_cce_alu.v
+$BP_ME_DIR/src/v/cce/bp_cce_arbitrate.v
+$BP_ME_DIR/src/v/cce/bp_cce_branch.v
 $BP_ME_DIR/src/v/cce/bp_cce_buffered.v
 $BP_ME_DIR/src/v/cce/bp_cce_dir.v
-$BP_ME_DIR/src/v/cce/bp_cce_dir_tag_checker.v
 $BP_ME_DIR/src/v/cce/bp_cce_dir_lru_extract.v
+$BP_ME_DIR/src/v/cce/bp_cce_dir_segment.v
+$BP_ME_DIR/src/v/cce/bp_cce_dir_tag_checker.v
 $BP_ME_DIR/src/v/cce/bp_cce_gad.v
 $BP_ME_DIR/src/v/cce/bp_cce_inst_decode.v
+$BP_ME_DIR/src/v/cce/bp_cce_inst_predecode.v
+$BP_ME_DIR/src/v/cce/bp_cce_inst_ram.v
+$BP_ME_DIR/src/v/cce/bp_cce_inst_stall.v
 $BP_ME_DIR/src/v/cce/bp_cce_msg.v
-$BP_ME_DIR/src/v/cce/bp_cce_msg_cached.v
-$BP_ME_DIR/src/v/cce/bp_cce_msg_uncached.v
-$BP_ME_DIR/src/v/cce/bp_cce_pc.v
-$BP_ME_DIR/src/v/cce/bp_cce_pending.v
+$BP_ME_DIR/src/v/cce/bp_cce_pending_bits.v
 $BP_ME_DIR/src/v/cce/bp_cce_reg.v
-$BP_ME_DIR/src/v/cce/bp_cce_spec.v
+$BP_ME_DIR/src/v/cce/bp_cce_spec_bits.v
+$BP_ME_DIR/src/v/cce/bp_cce_src_sel.v
 $BP_ME_DIR/src/v/cce/bp_io_cce.v
 # Network
 $BP_ME_DIR/src/v/cce/bp_uce.v
