@@ -205,6 +205,19 @@ bind bp_be_top
      ,.program_finish_i(testbench.program_finish_lo)
      );
 
+  bind bp_be_top
+    bp_halting_solver
+     #(.bp_params_p(bp_params_p))
+     halt
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
+       ,.freeze_i('0)
+
+       ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
+
+       ,.npc_i(be_checker.director.npc_r)
+       );
+
   bind bp_be_director
     bp_be_nonsynth_npc_tracer
      #(.bp_params_p(bp_params_p))
