@@ -126,7 +126,8 @@ module bp_cce_arbitrate
       spec_r_addr_o        = msg_spec_r_addr_i;
       spec_r_addr_bypass_o = msg_spec_r_addr_bypass_i;
     end else begin
-      spec_r_v_o           = spec_r_v_i & ~stall_i;
+      // register file does not change state of spec flag unless not stalling
+      spec_r_v_o           = spec_r_v_i;
       spec_r_addr_o        = spec_r_addr_i;
       spec_r_addr_bypass_o = spec_r_addr_bypass_i;
     end
