@@ -152,8 +152,7 @@ module bp_cce_dir
   bp_cce_inst_opd_gpr_e dcache_addr_dst_gpr_lo;
   bp_coh_states_e dcache_lru_coh_state_lo;
 
-  generate begin : dcache
-  if (num_lce_p > 1) begin
+  if (num_lce_p > 1) begin : dcache
 
     wire [dcache_lce_id_width_lp-1:0] dcache_lce_id = lce_i[1+:dcache_lce_id_width_lp];
 
@@ -215,7 +214,6 @@ module bp_cce_dir
       dcache_addr_dst_gpr_lo = e_opd_r0;
     end
   end
-  end endgenerate
 
   // A$ directory segment
 
@@ -235,8 +233,7 @@ module bp_cce_dir
   bp_cce_inst_opd_gpr_e acache_addr_dst_gpr_lo;
   bp_coh_states_e acache_lru_coh_state_lo;
 
-  generate begin : acache
-  if (num_acc_p > 0) begin
+  if (num_acc_p > 0) begin : acache
     // A$ segment signals
     wire [acache_lce_id_width_lp-1:0] acache_lce_id =
       acache_lce_id_width_lp'(lce_i - acc_lce_id_offset_lp);
@@ -301,7 +298,6 @@ module bp_cce_dir
       acache_addr_dst_gpr_lo = e_opd_r0;
     end
   end
-  end endgenerate
 
   // Output combination
   assign busy_o = icache_busy | dcache_busy | acache_busy;
