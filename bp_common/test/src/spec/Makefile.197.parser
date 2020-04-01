@@ -1,0 +1,29 @@
+.DEFAULT_GOAL = all
+
+BENCHMARK = 197.parser
+
+MAX_CYCLES = 1000000000
+
+BENCHMARK_OBJS = \
+analyze-linkage.o extract-links.o main.o parse.o prune.o utilities.o and.o fast-match.o \
+massage.o post-process.o read-dict.o word-file.o build-disjuncts.o idiom.o my_qsort.o \
+print.o strncasecmp.o xalloc.o raw.o
+
+INPUT_TYPE = smred
+
+BENCHMARK_INPS = 2.1.dict $(INPUT_TYPE).in words
+
+$(BENCHMARK_INPS): %:
+	cp -r $(BENCHMARK_DIR)/input/$@ $@
+
+BENCHMARK_DEFS = -D__raw__
+
+ARGC=3
+ARGV=parser 2.1.dict $(INPUT_TYPE).in
+
+# lfs disk image size
+LFS_BLOCK_SIZE = 128
+LFS_BLOCK_COUNT = 16384 # 2MB
+
+
+include ./Makefile.common
