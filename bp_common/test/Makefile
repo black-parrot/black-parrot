@@ -21,6 +21,7 @@ PATH := $(BP_EXTERNAL_DIR)/bin:$(PATH)
 
 NC ?= 1
 MEMSIZE ?= 32 # MB
+DUMP_PERIOD ?= 0
 
 export TEST_DIR
 
@@ -160,15 +161,13 @@ riscvdv_dump: $(foreach x, $(BP_RVDV), $(x).dump)
 %.nbf:
 	$(PYTHON) $(MEM2NBF) $(MEM_DIR)/$*.mem > $(MEM_DIR)/$@
 
-%.dromajo:
-	$(DROMAJO) $(MEM_DIR)/$*.riscv --host --maxinsn=$(MAXINSN) --save=$* --memory_size=$(MEMSIZE)
+%.checkpoint:
 	$(RISCV_OBJCOPY) --change-addresses 0x80000000 \
-		 -I binary -O elf64-littleriscv -B riscv $*.mainram $(MEM_DIR)/$@.$(MAXINSN).riscv
-	$(RISCV_OBJCOPY) -O verilog $(MEM_DIR)/$@.$(MAXINSN).riscv $(MEM_DIR)/$@.$(MAXINSN).mem
-	$(RISCV_OBJDUMP) $(MEM_DIR)/$@.$(MAXINSN).riscv > $(MEM_DIR)/$@.$(MAXINSN).dump
-	cp $*.bp_regs $(MEM_DIR)/$@.$(MAXINSN).nbf
-	cp $*.bootram $(MEM_DIR)/$@.$(MAXINSN).bootram
-	cp $*.mainram $(MEM_DIR)/$@.$(MAXINSN).mainram
+		 -I binary -O elf64-littleriscv -B riscv $*.mainram $(MEM_DIR)/$*.riscv
+	$(RISCV_OBJCOPY) -O verilog $(MEM_DIR)/$*.riscv $(MEM_DIR)/$*.mem
+	cp $*.bp_regs $(MEM_DIR)/$*.nbf
+	cp $*.bootram $(MEM_DIR)/$*.bootram
+	cp $*.mainram $(MEM_DIR)/$*.mainram
 	echo -e "\
 	{\n\
 	  \"version\":1,\n\
@@ -179,8 +178,15 @@ riscvdv_dump: $(foreach x, $(BP_RVDV), $(x).dump)
 	  \"memory_size\": $(MEMSIZE),\n\
 	  \"mmio_start\": 0x20000,\n\
 	  \"mmio_end\": 0x80000000\n\
-	}" > $(MEM_DIR)/$@.$(MAXINSN).cfg
+	}" > $(MEM_DIR)/$*.cfg
 	rm $*.*
+
+%.run_dromajo:
+	$(DROMAJO) $(MEM_DIR)/$*.riscv --host --dump_period=$(DUMP_PERIOD) --maxinsn=$(MAXINSN) --save=$*.dromajo --memory_size=$(MEMSIZE)
+
+%.dromajo: %.run_dromajo
+	$(eval FILES := $(patsubst %.mainram, %, $(shell ls $**.mainram)))
+	$(foreach f, $(FILES), $(MAKE) $f.checkpoint;)
 
 clean:
 	-$(MAKE) -C $(TEST_DIR)/src/perch clean
