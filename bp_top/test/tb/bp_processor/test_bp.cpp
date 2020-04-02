@@ -6,7 +6,9 @@
 #include "Vtestbench.h"
 #include "Vtestbench__Dpi.h"
 
-#define CLK_TIME 10
+#ifndef BP_SIM_CLK_PERIOD
+#define BP_SIM_CLK_PERIOD 10
+#endif
 
 int sc_main(int argc, char **argv)
 {
@@ -19,7 +21,7 @@ int sc_main(int argc, char **argv)
   // Use me to find the correct scope of your DPI functions
   //Verilated::scopesDump();
 
-  sc_clock clock("clk", sc_time(CLK_TIME, SC_NS));
+  sc_clock clock("clk", sc_time(BP_SIM_CLK_PERIOD, SC_NS));
   sc_signal <bool> reset("reset");
 
   tb->clk_i(clock);
@@ -34,14 +36,14 @@ int sc_main(int argc, char **argv)
   reset = 1;
 
   for (int i = 0; i < 20; i++) {
-    sc_start(CLK_TIME, SC_NS);
+    sc_start(BP_SIM_CLK_PERIOD, SC_NS);
   }
 
   reset = 0;
   Verilated::assertOn(true);
 
   while (!Verilated::gotFinish()) {
-    sc_start(CLK_TIME, SC_NS);
+    sc_start(BP_SIM_CLK_PERIOD, SC_NS);
   }
 
 #if VM_COVERAGE
