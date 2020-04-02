@@ -60,6 +60,9 @@ stage until all credits have been returned and no memory instructions are in the
 instruction and data caches are fully coherent, FENCE.I is implemented as a normal fence and a full
 pipeline flush, restarting instruction fetch at the instruction after the FENCE.I.
 
+For the softcore version of BlackParrot, the caches are not coherent. Therefore, on FENCE.I, the
+D$ goes through a flush routine, then the I$ goes through an invalidate routine.
+
 ## Emulated Instructions
 BlackParrot implements the A extension partially in hardware and partially via emulation.
 Specifically, LR (Load Reserved) and SC (Store Conditional) are implemented in hardware. For
@@ -85,6 +88,8 @@ A typical execution for an atomic instruction is therefore:
 * software decode instruction
 * execute emulation routine
 * return from M-mode emulation 
+
+Similarly, BlackParrot emulates MULH, MULHSU, MULHU using hardware supported MUL instructions.
 
 ## Platform Address Maps
 ### Global Address Memory Map

@@ -32,6 +32,7 @@ module testbench
    , parameter skip_init_p                 = 0
    , parameter cosim_p                     = 0
    , parameter cosim_cfg_file_p            = "prog.cfg"
+   , parameter cosim_instr_p               = 0
 
    , parameter mem_zero_p         = 1
    , parameter mem_load_p         = preload_mem_p
@@ -63,7 +64,7 @@ bp_io_noc_ral_link_s [E:P] cmd_link_li, cmd_link_lo;
 bp_io_noc_ral_link_s [E:P] resp_link_li, resp_link_lo;
 
 bp_cce_mem_msg_s dram_cmd_li;
-logic            dram_cmd_v_li, dram_cmd_yumi_lo, dram_cmd_ready_lo;
+logic            dram_cmd_v_li, dram_cmd_ready_lo;
 bp_cce_mem_msg_s dram_resp_lo;
 logic            dram_resp_v_lo, dram_resp_ready_li;
 
@@ -139,13 +140,15 @@ wrapper
 
        ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
+       ,.decode_i(be_calculator.reservation_n.decode)
+
        ,.commit_v_i(be_calculator.commit_pkt.instret)
        ,.commit_pc_i(be_calculator.commit_pkt.pc)
        ,.commit_instr_i(be_calculator.commit_pkt.instr)
 
-       ,.rd_w_v_i(be_calculator.wb_pkt.rd_w_v)
-       ,.rd_addr_i(be_calculator.wb_pkt.rd_addr)
-       ,.rd_data_i(be_calculator.wb_pkt.rd_data)
+       ,.rd_w_v_i(be_checker.scheduler.wb_pkt.rd_w_v)
+       ,.rd_addr_i(be_checker.scheduler.wb_pkt.rd_addr)
+       ,.rd_data_i(be_checker.scheduler.wb_pkt.rd_data)
        );
 
   bind bp_be_top
@@ -154,20 +157,24 @@ wrapper
       cosim
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
+       ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
        ,.en_i(testbench.cosim_p == 1)
+       ,.cosim_instr_i(testbench.cosim_instr_p)
 
        ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
        // Want to pass config file as a parameter, but cannot in Verilator 4.025
        // Parameter-resolved constants must not use dotted references
        ,.config_file_i(testbench.cosim_cfg_file_p)
 
+       ,.decode_i(be_calculator.reservation_n.decode)
+
        ,.commit_v_i(be_calculator.commit_pkt.instret)
        ,.commit_pc_i(be_calculator.commit_pkt.pc)
        ,.commit_instr_i(be_calculator.commit_pkt.instr)
 
-       ,.rd_w_v_i(be_calculator.wb_pkt.rd_w_v)
-       ,.rd_addr_i(be_calculator.wb_pkt.rd_addr)
-       ,.rd_data_i(be_calculator.wb_pkt.rd_data)
+       ,.rd_w_v_i(be_checker.scheduler.wb_pkt.rd_w_v)
+       ,.rd_addr_i(be_checker.scheduler.wb_pkt.rd_addr)
+       ,.rd_data_i(be_checker.scheduler.wb_pkt.rd_data)
 
        ,.interrupt_v_i(be_mem.csr.trap_pkt_cast_o._interrupt)
        ,.cause_i(be_mem.csr.trap_pkt_cast_o.cause)
@@ -283,18 +290,31 @@ bind bp_be_top
    perf
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
+     ,.freeze_i(be.be_checker.scheduler.int_regfile.cfg_bus.freeze)
 
      ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
-     ,.fe_nop_i(be_calculator.exc_stage_r[2].fe_nop_v)
-     ,.be_nop_i(be_calculator.exc_stage_r[2].be_nop_v)
-     ,.me_nop_i(be_calculator.exc_stage_r[2].me_nop_v)
-     ,.poison_i(be_calculator.exc_stage_r[2].poison_v)
-     ,.roll_i(be_calculator.exc_stage_r[2].roll_v)
-     ,.instr_cmt_i(be_calculator.commit_pkt.instret)
+     ,.commit_v_i(be_calculator.commit_pkt.instret)
 
      ,.program_finish_i(testbench.program_finish)
      );
+
+  bind bp_be_top
+    bp_nonsynth_watchdog
+     #(.bp_params_p(bp_params_p)
+       ,.timeout_cycles_p(100000)
+       ,.heartbeat_instr_p(100000)
+       )
+     watchdog
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i)
+       ,.freeze_i(be.be_checker.scheduler.int_regfile.cfg_bus.freeze)
+
+       ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
+
+       ,.npc_i(be_checker.director.npc_r)
+       ,.instret_i(be_calculator.commit_pkt.instret)
+       );
 
   bp_mem_nonsynth_tracer
    #(.bp_params_p(bp_params_p))

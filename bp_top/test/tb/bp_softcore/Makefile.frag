@@ -8,6 +8,7 @@ VM_TRACE_P     ?= 0
 PRELOAD_MEM_P  ?= 1
 LOAD_NBF_P     ?= 0
 COSIM_P        ?= 0
+COSIM_INSTR_P  ?= 0
 
 export DUT_PARAMS = 
 
@@ -20,7 +21,8 @@ export TB_PARAMS  = -pvalue+calc_trace_p=$(CALC_TRACE_P) \
                     -pvalue+vm_trace_p=$(VM_TRACE_P) \
                     -pvalue+preload_mem_p=$(PRELOAD_MEM_P) \
                     -pvalue+load_nbf_p=$(LOAD_NBF_P) \
-                    -pvalue+cosim_p=$(COSIM_P)
+                    -pvalue+cosim_p=$(COSIM_P) \
+                    -pvalue+cosim_instr_p=$(COSIM_INSTR_P)
 
 HDL_PARAMS  = $(DUT_PARAMS) $(TB_PARAMS)
 

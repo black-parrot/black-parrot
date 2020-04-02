@@ -1,5 +1,5 @@
 BP_DEMOS = \
-  bubblesort          \
+  bubblesort_demo     \
   uc_simple           \
   simple              \
   hello_world         \
@@ -147,7 +147,20 @@ RV64_P_TESTS = \
   rv64ua-p-amoswap_w \
   rv64ua-p-amoxor_d  \
   rv64ua-p-amoxor_w  \
-  rv64ua-p-lrsc
+  rv64ua-p-lrsc      \
+  rv64um-p-mul       \
+  rv64um-p-mulh      \
+  rv64um-p-mulhsu    \
+  rv64um-p-mulhu     \
+  rv64um-p-mulw      \
+  rv64um-p-div       \
+  rv64um-p-divu      \
+  rv64um-p-divuw     \
+  rv64um-p-divw      \
+  rv64um-p-rem       \
+  rv64um-p-remu      \
+  rv64um-p-remuw     \
+  rv64um-p-remw
 
   #rv64ua-v-amominu_w
 RV64_V_TESTS = \

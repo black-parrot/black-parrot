@@ -4,33 +4,21 @@
  *   bp_be_pipe_mul.v
  * 
  * Description:
- *   Pipeline for RISC-V float instructions. Handles float and double computation.
- *
- * Parameters:
- *
- * Inputs:
- *   clk_i            -
- *   reset_i          -
- *
- *   decode_i         - All of the stage register information needed for a dispatched instruction
- *   rs1_i            - Source register data for the dispatched instruction
- *   rs2_i            - Source register data for the dispatched instruction
- *
- * Outputs:
- *   data_o           - The calculated result of the instruction
- *   
- * Keywords:
- *   calculator, mul, div, rv64m
+ *   Pipeline for RISC-V multiplication instructions.
  *
  * Notes:
- *
+ *   Does not handle high-half multiplication. These operations take up more than half
+ *     of the area of a 64x64->128-bit multiplier, but are used rarely
+ *   Must use retiming for good QoR.
  */
 module bp_be_pipe_mul
   import bp_be_pkg::*;
   import bp_common_rv64_pkg::*;
- #(// Generated parameters
-   localparam decode_width_lp      = `bp_be_decode_width
+ #(localparam latency_p = 4
+   // Generated parameters
+   , localparam decode_width_lp      = `bp_be_decode_width
    // From RISC-V specifications
+   , localparam word_width_lp = rv64_word_width_gp
    , localparam reg_data_width_lp = rv64_reg_data_width_gp
    )
   (input                            clk_i
@@ -45,28 +33,32 @@ module bp_be_pipe_mul
    );
 
 // Cast input and output ports 
-bp_be_decode_s    decode;
-
+bp_be_decode_s decode;
 assign decode = decode_i;
 
-// Suppress unused signal warnings
-wire unused0 = clk_i;
-wire unused1 = reset_i;
+wire opw_li = decode.opw_v;
 
-wire [decode_width_lp-1:0]    unused4 = decode_i;
-wire [reg_data_width_lp-1:0]  unused5 = rs1_i;
-wire [reg_data_width_lp-1:0]  unused6 = rs2_i;
+// TODO: Gate FU with pipe_mul_v
 
-// Submodule connections
+wire [reg_data_width_lp-1:0] src1_w_sgn = $signed(rs1_i[0+:word_width_lp]);
+wire [reg_data_width_lp-1:0] src2_w_sgn = $signed(rs2_i[0+:word_width_lp]);
 
-// Module instantiations
-assign data_o = '0;
+wire [reg_data_width_lp-1:0] op_a = opw_li ? src1_w_sgn : rs1_i;
+wire [reg_data_width_lp-1:0] op_b = opw_li ? src2_w_sgn : rs2_i;
 
-always_comb 
-  begin : runtime_assertions
-    // Fires immediately after reset
-    //assert(reset_i | ~decode.pipe_mul_v) 
-    //  else $warning("RV64M is not currently supported");
-  end
+wire [reg_data_width_lp-1:0] full_result = op_a * op_b;
 
-endmodule : bp_be_pipe_mul
+wire [reg_data_width_lp-1:0] mul_lo = opw_li ? $signed(full_result[0+:word_width_lp]) : full_result;
+
+bsg_dff_chain
+ #(.width_p(reg_data_width_lp)
+   ,.num_stages_p(latency_p-1)
+   )
+ retime_chain
+  (.clk_i(clk_i)
+
+   ,.data_i(mul_lo)
+   ,.data_o(data_o)
+   );
+
+endmodule
