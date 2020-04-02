@@ -95,7 +95,7 @@ assign commit_pkt_o = commit_pkt;
 logic [dword_width_p-1:0] irf_rs1    , irf_rs2;
 logic [dword_width_p-1:0] frf_rs1    , frf_rs2;
 logic [dword_width_p-1:0] bypass_irs1, bypass_irs2;
-logic [dword_width_p-1:0] bypass_frs1, bypass_frs2;
+logic [dword_width_p-1:0] bypass_frs1, bypass_frs2, bypass_frs3;
 logic [dword_width_p-1:0] bypass_rs1 , bypass_rs2;
 
 // Pipeline stage registers

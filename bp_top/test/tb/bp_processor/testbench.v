@@ -32,6 +32,7 @@ module testbench
    , parameter skip_init_p                 = 0
    , parameter cosim_p                     = 0
    , parameter cosim_cfg_file_p            = "prog.cfg"
+   , parameter cosim_instr_p               = 0
 
    , parameter mem_zero_p         = 1
    , parameter mem_load_p         = preload_mem_p
@@ -156,7 +157,9 @@ wrapper
       cosim
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
+       ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
        ,.en_i(testbench.cosim_p == 1)
+       ,.cosim_instr_i(testbench.cosim_instr_p)
 
        ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
        // Want to pass config file as a parameter, but cannot in Verilator 4.025

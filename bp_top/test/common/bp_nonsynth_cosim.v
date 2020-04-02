@@ -7,14 +7,17 @@ module bp_nonsynth_cosim
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
     `declare_bp_proc_params(bp_params_p)
 
+    , localparam max_instr_lp = 2**30
     , localparam decode_width_lp = `bp_be_decode_width
     )
    (input                                     clk_i
     , input                                   reset_i
+    , input                                   freeze_i
     , input                                   en_i
 
     , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
     , input [63:0]                            config_file_i
+    , input [31:0]                            cosim_instr_i
 
     , input [decode_width_lp-1:0]             decode_i
 
@@ -79,6 +82,18 @@ always_ff @(negedge reset_i)
      );
   assign commit_fifo_yumi_li = commit_fifo_v_lo & (interrupt_v_r | ~commit_rd_w_v_r | (commit_rd_w_v_r & rd_w_v_i));
 
+  logic [`BSG_SAFE_CLOG2(max_instr_lp+1)-1:0] instr_cnt;
+  bsg_counter_clear_up
+   #(.max_val_p(max_instr_lp), .init_val_p(0))
+   instr_counter
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i | freeze_i)
+
+     ,.clear_i(1'b0)
+     ,.up_i(commit_v_i)
+     ,.count_o(instr_cnt)
+     );
+
   always_ff @(negedge clk_i) begin
     if(en_i) begin
       if(commit_fifo_yumi_li & interrupt_v_r) begin
@@ -86,6 +101,11 @@ always_ff @(negedge reset_i)
       end
       else if (commit_fifo_yumi_li & commit_v_r & commit_pc_r != '0) begin
         dromajo_step(mhartid_i, 64'($signed(commit_pc_r)), commit_instr_r, rd_data_i);
+      end
+
+      if ((cosim_instr_i != '0) && (instr_cnt >= cosim_instr_i)) begin
+        $display("COSIM PASSED");
+        $finish();
       end
     end
   end
