@@ -48,7 +48,7 @@ module testbench
 
    , parameter max_latency_p = 15
 
-   , parameter dram_clock_period_in_ps_p = 1000
+   , parameter dram_clock_period_in_ps_p = `BP_SIM_CLK_PERIOD
    , parameter dram_cfg_p                = "dram_ch.ini"
    , parameter dram_sys_cfg_p            = "dram_sys.ini"
    , parameter dram_capacity_p           = 16384

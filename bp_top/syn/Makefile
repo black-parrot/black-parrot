@@ -22,7 +22,7 @@ COH_PROTO   ?= mesi
 CCE_MEM_PATH = $(BP_ME_DIR)/src/asm/roms/$(COH_PROTO)
 CCE_MEM      = bp_cce_inst_rom_$(COH_PROTO).mem
 
-DRAMSIM_CH_CFG  ?= DDR2_micron_16M_8b_x8_sg3E.ini
+DRAMSIM_CH_CFG  ?= DDR3_micron_32M_8B_x8_sg25E.ini
 DRAMSIM_SYS_CFG ?= system.ini
 
 include $(BP_COMMON_DIR)/syn/Makefile.common
