@@ -1,7 +1,7 @@
 
 include Makefile.frag
 
-RISCV_GCC  = $(CROSS_COMPILE)gcc --static -nostartfiles -fPIC -march=rv64ia -mabi=lp64 -mcmodel=medany -I$(TEST_DIR)/include
+RISCV_GCC  = $(CROSS_COMPILE)gcc --static -nostartfiles -fPIC -march=rv64ima -mabi=lp64 -mcmodel=medany -I$(TEST_DIR)/include
 RISCV_LINK = -static -nostartfiles -L$(TEST_DIR)/lib -T src/riscv.ld 
 
 .PHONY: all bp-demo-riscv bp-demo-s
