@@ -108,6 +108,14 @@ module bp_me_cce_to_cache
   ,.yumi_i(small_fifo_yumi_li)
   );
   
+  always_ff @(negedge clk_i)
+    begin
+      if (mem_cmd_yumi_o)
+        $display("[%t] CCE->CACHE CMD: %x", $time, mem_cmd.header.addr);
+      if (mem_resp_v_o)
+        $display("[%t] CCE->CACHE RESP: %x", $time, mem_resp.header.addr);
+    end
+
 
   // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i) begin

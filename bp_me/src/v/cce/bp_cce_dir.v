@@ -220,20 +220,20 @@ module bp_cce_dir
   // A$ segment parameters
   localparam acache_dir_sets_lp = `BSG_CDIV(acache_sets_p, num_cce_p);
   localparam lg_acache_assoc_lp = `BSG_SAFE_CLOG2(acache_assoc_p);
-  localparam acache_lce_id_width_lp = `BSG_SAFE_CLOG2(num_acc_p);
+  localparam acache_lce_id_width_lp = `BSG_SAFE_CLOG2(num_cacc_p);
   localparam lg_acache_sets_lp = `BSG_SAFE_CLOG2(acache_sets_p);
 
   logic                                                 acache_sharers_v;
-  logic [num_acc_p-1:0]                                 acache_sharers_hits;
-  logic [num_acc_p-1:0][lg_acache_assoc_lp-1:0]         acache_sharers_ways;
-  bp_coh_states_e [num_acc_p-1:0]                       acache_sharers_coh_states;
+  logic [num_cacc_p-1:0]                                 acache_sharers_hits;
+  logic [num_cacc_p-1:0][lg_acache_assoc_lp-1:0]         acache_sharers_ways;
+  bp_coh_states_e [num_cacc_p-1:0]                       acache_sharers_coh_states;
 
   logic acache_busy, acache_lru_v, acache_lru_cached_excl, acache_addr_v;
   logic [paddr_width_p-1:0] acache_lru_addr_lo, acache_addr_lo;
   bp_cce_inst_opd_gpr_e acache_addr_dst_gpr_lo;
   bp_coh_states_e acache_lru_coh_state_lo;
 
-  if (num_acc_p > 0) begin : acache
+  if (num_cacc_p > 0) begin : acache
     // A$ segment signals
     wire [acache_lce_id_width_lp-1:0] acache_lce_id =
       acache_lce_id_width_lp'(lce_i - acc_lce_id_offset_lp);
@@ -245,7 +245,7 @@ module bp_cce_dir
     // Accelerator LCEs exist, instantiate a directory segmenet to track them
     bp_cce_dir_segment
       #(.tag_sets_p(acache_dir_sets_lp)
-        ,.num_lce_p(num_acc_p)
+        ,.num_lce_p(num_cacc_p)
         ,.sets_p(acache_sets_p)
         ,.assoc_p(acache_assoc_p)
         ,.paddr_width_p(paddr_width_p)
@@ -311,7 +311,7 @@ module bp_cce_dir
       sharers_ways_o[(2*i)+1]       = {'0, dcache_sharers_ways[i]};
       sharers_coh_states_o[(2*i)+1] = dcache_sharers_coh_states[i];
     end
-    for (int i = 0; i < num_acc_p; i++) begin
+    for (int i = 0; i < num_cacc_p; i++) begin
       sharers_hits_o[i+(2*num_core_p)] = acache_sharers_hits[i];
       sharers_ways_o[i+(2*num_core_p)] = {'0, acache_sharers_ways[i]};
       sharers_coh_states_o[i+(2*num_core_p)] = acache_sharers_coh_states[i];

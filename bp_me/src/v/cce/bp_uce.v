@@ -376,7 +376,7 @@ module bp_uce
           if (miss_v_li)
             begin
               mem_cmd_cast_o.header.msg_type       = miss_load_v_li ? e_cce_mem_rd : e_cce_mem_wr;
-              mem_cmd_cast_o.header.addr           = cache_req_r.addr;
+              mem_cmd_cast_o.header.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], block_offset_width_lp'(0)};
               mem_cmd_cast_o.header.size           = e_mem_size_64;
               mem_cmd_cast_o.header.payload.way_id = cache_req_metadata_r.repl_way;
               mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
@@ -470,6 +470,20 @@ module bp_uce
       state_r <= e_reset;
     else
       state_r <= state_n;
+
+  always_ff @(negedge clk_i)
+    begin
+      if (mem_cmd_v_o)
+        begin
+          $display("[%t] UCE: %x state %s: CMD ADDR: %x", $time, lce_id_i, state_r.name(), mem_cmd_cast_o.header.addr);
+        end
+      if (mem_resp_yumi_o)
+        begin
+          $display("[%t] UCE: %x state %s: RESP ADDR: %x", $time, lce_id_i, state_r.name(), mem_resp_cast_i.header.addr);
+          $display("\t Data: %p", data_mem_pkt_cast_o); 
+          $display("\t Tag: %p", tag_mem_pkt_cast_o);
+        end
+    end
 
 ////synopsys translate_on
 //always_ff @(negedge clk_i)
