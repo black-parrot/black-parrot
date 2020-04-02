@@ -13,6 +13,7 @@ SPIKE_DIR     := $(BP_EXTERNAL_DIR)/riscv-isa-sim
 DROMAJO_DIR   := $(BP_EXTERNAL_DIR)/dromajo
 AXE_DIR       := $(BP_EXTERNAL_DIR)/axe
 DRAMSIM2_DIR  := $(BP_EXTERNAL_DIR)/DRAMSim2
+DRAMSIM3_DIR  := $(BP_EXTERNAL_DIR)/DRAMsim3
 CMURPHI_DIR   := $(BP_EXTERNAL_DIR)/cmurphi
 SV2V_DIR      := $(BP_EXTERNAL_DIR)/sv2v
 
@@ -75,6 +76,14 @@ dramsim2:
 	mkdir -p $(INCLUDE_DIR)
 	cp $(DRAMSIM2_DIR)/libdramsim.so $(LIB_DIR) 
 	cp $(DRAMSIM2_DIR)/*.h $(INCLUDE_DIR)
+
+dramsim3:
+	@cd $(TOP); git submodule update --init --recursive $(DRAMSIM3_DIR)
+	$(MAKE) -C $(DRAMSIM3_DIR) libdramsim3.so
+	mkdir -p $(LIB_DIR)
+	mkdir -p $(INCLUDE_DIR)
+	cp $(DRAMSIM3_DIR)/libdramsim3.so $(LIB_DIR)
+	cp $(DRAMSIM3_DIR)/src/*.h $(INCLUDE_DIR)
 
 cmurphi:
 	@cd $(TOP); git submodule update --init --recursive $(CMURPHI_DIR)

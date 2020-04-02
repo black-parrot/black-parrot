@@ -51,5 +51,6 @@ libs: update_libs
 	mkdir -p external/include
 	$(MAKE) systemc
 	$(MAKE) dramsim2
+	$(MAKE) dramsim3
 	$(MAKE) dromajo
 
