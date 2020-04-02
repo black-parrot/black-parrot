@@ -26,5 +26,13 @@ export TB_PARAMS  = -pvalue+calc_trace_p=$(CALC_TRACE_P) \
                     -pvalue+cosim_p=$(COSIM_P) \
                     -pvalue+cosim_instr_p=$(COSIM_INSTR_P)
 
+BP_SIM_CLK_PERIOD ?= 10
+
+export DUT_DEFINES = 
+
+export TB_DEFINES = +define+BP_SIM_CLK_PERIOD=$(BP_SIM_CLK_PERIOD)
+
+HDL_DEFINES = $(DUT_DEFINES) $(TB_DEFINES)
+
 HDL_PARAMS  = $(DUT_PARAMS) $(TB_PARAMS)
 

@@ -179,8 +179,6 @@ wrapper
 
        ,.interrupt_v_i(be_mem.csr.trap_pkt_cast_o._interrupt)
        ,.cause_i(be_mem.csr.trap_pkt_cast_o.cause)
-
-       ,.host_finish_i(&(testbench.program_finish))
        );
 
   bind bp_be_director
