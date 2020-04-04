@@ -21,7 +21,9 @@ module bp_nonsynth_nbf_loader
   ,parameter nbf_opcode_width_p = 8
   ,parameter nbf_addr_width_p = paddr_width_p
   ,parameter nbf_data_width_p = dword_width_p
-  
+
+  ,parameter skip_freeze_clear_p = 0
+
   ,localparam nbf_width_lp = nbf_opcode_width_p + nbf_addr_width_p + nbf_data_width_p
   ,localparam max_nbf_index_lp = 2**20
   ,localparam nbf_index_width_lp = `BSG_SAFE_CLOG2(max_nbf_index_lp)
@@ -30,8 +32,9 @@ module bp_nonsynth_nbf_loader
 
   (input  clk_i
   ,input  reset_i
-  ,output done_o
   
+  ,input [lce_id_width_p-1:0]              lce_id_i
+
   ,output [cce_mem_msg_width_lp-1:0]        io_cmd_o
   ,output                                  io_cmd_v_o
   ,input                                   io_cmd_yumi_i
@@ -39,6 +42,8 @@ module bp_nonsynth_nbf_loader
   ,input  [cce_mem_msg_width_lp-1:0]        io_resp_i
   ,input                                   io_resp_v_i
   ,output                                  io_resp_ready_o
+
+  ,output done_o
   );
   
   enum logic [5:0] {
@@ -119,6 +124,7 @@ module bp_nonsynth_nbf_loader
 
     io_cmd.data = (state_r == FREEZE_CLR) ? dword_width_p'(0) : curr_nbf.data;
     io_cmd.header.payload = '0;
+    io_cmd.header.payload.lce_id = lce_id_i;
     io_cmd.header.addr = (state_r == FREEZE_CLR) ? freeze_addr : curr_nbf.addr;
     io_cmd.header.msg_type = e_cce_mem_uc_wr;
     
@@ -139,7 +145,7 @@ module bp_nonsynth_nbf_loader
   begin
     unique casez (state_r)
       RESET       : state_n = reset_i ? RESET : SEND_NBF;
-      SEND_NBF    : state_n = (curr_nbf.opcode == 8'hFF) ? FREEZE_CLR : SEND_NBF;
+      SEND_NBF    : state_n = (curr_nbf.opcode == 8'hFF) ? skip_freeze_clear_p ? DONE : FREEZE_CLR : SEND_NBF;
       FREEZE_CLR  : state_n = (core_done) ? DONE : FREEZE_CLR;
       DONE        : state_n = DONE;
       default : state_n = RESET;
