@@ -309,54 +309,35 @@ module bp_softcore
          );
     end
 
-  wire arb_ready_li = clint_cmd_ready_lo & cache_cmd_ready_lo & io_cmd_ready_i;
+  wire arb_ready_li = cache_cmd_ready_lo & io_cmd_ready_i & clint_cmd_ready_lo;
   bsg_arb_fixed
-   #(.inputs_p(2)
-     ,.lo_to_hi_p(0)
-     )
-   mem_arbiter
+   #(.inputs_p(2), .lo_to_hi_p(0))
+   cmd_arbiter
     (.ready_i(arb_ready_li)
      ,.reqs_i(fifo_v_lo)
      ,.grants_o(fifo_yumi_li)
      );
 
+  bp_cce_mem_msg_s fifo_selected_lo;
+  bsg_mux_one_hot
+   #(.width_p($bits(bp_cce_mem_msg_s)), .els_p(2))
+   cmd_select
+    (.data_i(fifo_lo)
+     ,.sel_one_hot_i(fifo_yumi_li)
+     ,.data_o(fifo_selected_lo)
+     );
+  assign {cache_cmd_li, io_cmd_cast_o, clint_cmd_li} = {3{fifo_selected_lo}};
+
   /* TODO: Extract local memory map to module */
-  wire local_cmd_li = (cache_cmd_li.header.addr < 32'h8000_0000);
-  wire [3:0] device_cmd_li = cache_cmd_li.header.addr[20+:4];
-  wire is_io_cmd = local_cmd_li & (device_cmd_li == host_dev_gp);
-  wire is_clint_cmd = local_cmd_li & (device_cmd_li == clint_dev_gp);
+  wire local_cmd_li        = (fifo_selected_lo.header.addr < 32'h8000_0000);
+  wire [3:0] device_cmd_li = fifo_selected_lo.header.addr[20+:4];
+  wire is_io_cmd           = local_cmd_li & (device_cmd_li == host_dev_gp);
+  wire is_clint_cmd        = local_cmd_li & (device_cmd_li == clint_dev_gp);
+  wire is_cache_cmd        = ~local_cmd_li;
 
-  assign clint_cmd_li   = fifo_v_lo[1] ? fifo_lo[1] : fifo_lo[0];
   assign clint_cmd_v_li = is_clint_cmd & |fifo_yumi_li;
-
-  assign io_cmd_cast_o  = fifo_v_lo[1] ? fifo_lo[1] : fifo_lo[0];
-  assign io_cmd_v_o     = is_io_cmd & |fifo_yumi_li;
-
-  assign cache_cmd_li   = fifo_v_lo[1] ? fifo_lo[1] : fifo_lo[0];
-  assign cache_cmd_v_li = ~is_clint_cmd & ~is_io_cmd & |fifo_yumi_li;
-
-  assign proc_resp_li[0]   = clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == 1'b0)
-                            ? clint_resp_lo
-                            : io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == 1'b0)
-                              ? io_resp_i 
-                              : cache_resp_lo;
-  assign proc_resp_li[1]   = clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == 1'b1)
-                            ? clint_resp_lo
-                            : io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == 1'b1)
-                              ? io_resp_i
-                              : cache_resp_lo;
-  assign proc_resp_v_li[0] = (clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == 1'b0))
-                            | (cache_resp_v_lo & (cache_resp_lo.header.payload.lce_id == 1'b0))
-                            | (io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == 1'b0));
-  assign proc_resp_v_li[1] = (clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == 1'b1))
-                            | (cache_resp_v_lo & (cache_resp_lo.header.payload.lce_id == 1'b1))
-                            | (io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == 1'b1));
-  assign clint_resp_yumi_li = ((clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == 1'b0)) & proc_resp_yumi_lo[0])
-                            | ((clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == 1'b1)) & proc_resp_yumi_lo[1]);
-  assign io_resp_yumi_o   = ((io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == 1'b0)) & proc_resp_yumi_lo[0])
-                            | ((io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == 1'b1)) & proc_resp_yumi_lo[1]);
-  assign cache_resp_yumi_li = ((cache_resp_v_lo & (cache_resp_lo.header.payload.lce_id == 1'b0)) & proc_resp_yumi_lo[0])
-                              | ((cache_resp_v_lo & (cache_resp_lo.header.payload.lce_id == 1'b1)) & proc_resp_yumi_lo[1]);
+  assign io_cmd_v_o     = is_io_cmd    & |fifo_yumi_li;
+  assign cache_cmd_v_li = is_cache_cmd & |fifo_yumi_li;
 
   if (l2_en_p)
     begin : l2
@@ -395,6 +376,28 @@ module bp_softcore
       assign cache_resp_v_lo = mem_resp_v_i;
       assign mem_resp_yumi_o = cache_resp_yumi_li;
     end
+
+  logic [1:0] clint_resp_match;
+  logic [1:0] io_resp_match;
+  logic [1:0] cache_resp_match;
+  for (genvar i = 0; i < 2; i++)
+    begin : resp_arb
+      // This is guaranteed to be onehot as long as each UCE can only send 1 request at a time
+      assign clint_resp_match[i] = clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == i);
+      assign io_resp_match[i]    = io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == i);
+      assign cache_resp_match[i] = cache_resp_v_lo & (mem_resp_cast_i.header.payload.lce_id == i);
+      bsg_mux_one_hot
+       #(.width_p($bits(bp_cce_mem_msg_s)), .els_p(3))
+       resp_select
+        (.data_i({mem_resp_i, io_resp_i, clint_resp_lo})
+         ,.sel_one_hot_i({mem_resp_match[i], io_resp_match[i], clint_resp_match[i]})
+         ,.data_o(mem_resp_li[i])
+         );
+      assign mem_resp_v_li[i] = (clint_resp_match[i] | io_resp_match[i] | mem_resp_match[i]);
+    end
+  assign clint_resp_yumi_o  = |(clint_resp_match & proc_resp_yumi_lo);
+  assign io_resp_yumi_o     = |(io_resp_match & proc_resp_yumi_lo);
+  assign cache_resp_yumi_li = |(cache_resp_match & proc_resp_yumi_lo);
 
 endmodule
 
