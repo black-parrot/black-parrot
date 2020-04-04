@@ -15,6 +15,7 @@ module bp_softcore
    )
   (input                                               clk_i
    , input                                             reset_i
+   , input                                             freeze_i
 
    // Outgoing I/O
    , output [cce_mem_msg_width_lp-1:0]                 io_cmd_o
@@ -92,6 +93,7 @@ module bp_softcore
   always_comb
     begin
       cfg_bus_li = '0;
+      cfg_bus_li.freeze      = freeze_i;
       cfg_bus_li.icache_mode = e_lce_mode_normal;
       cfg_bus_li.icache_id   = 1'b0;
       cfg_bus_li.dcache_mode = e_lce_mode_normal;
