@@ -109,19 +109,6 @@ module testbench
 
   assign switch_cce_mode = (count_lo == counter_max_val_lp);
 
-  logic [15:0] done_counter;
-  always_ff @(posedge clk_i) begin
-    if(reset_i)
-      done_counter <= 16'b0;
-    else
-      done_counter <= done_counter + 1'b1;
-  end
-
-  always_comb begin
-    if(done_counter == 16'd65535) 
-      $finish;
-  end
-
   // Trace Replay
   bsg_trace_replay
     #(.payload_width_p(trace_replay_data_width_lp)
