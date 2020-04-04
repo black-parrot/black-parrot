@@ -67,7 +67,7 @@ module bp_sacc_tile_node
      ,.len_width_p(coh_noc_len_width_p)
      ,.routing_matrix_p(StrictYX)
      ,.async_clk_p(async_coh_clk_p)
-     ,.num_p(2)
+     ,.els_p(2)
      )
    sac_coh_socket
     (.tile_clk_i(core_clk_i)

@@ -90,7 +90,7 @@ module bp_io_tile_node
      ,.len_width_p(coh_noc_len_width_p)
      ,.routing_matrix_p(StrictYX)
      ,.async_clk_p(async_coh_clk_p)
-     ,.num_p(2)
+     ,.els_p(2)
      )
    io_coh_socket
     (.tile_clk_i(core_clk_i)
@@ -112,7 +112,7 @@ module bp_io_tile_node
      ,.len_width_p(io_noc_len_width_p)
      ,.routing_matrix_p(StrictX)
      ,.async_clk_p(async_io_clk_p)
-     ,.num_p(2)
+     ,.els_p(2)
      )
    io_socket
     (.tile_clk_i(core_clk_i)

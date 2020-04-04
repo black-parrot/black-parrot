@@ -471,20 +471,6 @@ module bp_uce
     else
       state_r <= state_n;
 
-  always_ff @(negedge clk_i)
-    begin
-      if (mem_cmd_v_o)
-        begin
-          $display("[%t] UCE: %x state %s: CMD ADDR: %x", $time, lce_id_i, state_r.name(), mem_cmd_cast_o.header.addr);
-        end
-      if (mem_resp_yumi_o)
-        begin
-          $display("[%t] UCE: %x state %s: RESP ADDR: %x", $time, lce_id_i, state_r.name(), mem_resp_cast_i.header.addr);
-          $display("\t Data: %p", data_mem_pkt_cast_o); 
-          $display("\t Tag: %p", tag_mem_pkt_cast_o);
-        end
-    end
-
 ////synopsys translate_on
 //always_ff @(negedge clk_i)
 //  begin

@@ -8,14 +8,15 @@ module bp_nd_socket
  import bsg_noc_pkg::*;
  import bsg_wormhole_router_pkg::*;
  #(parameter flit_width_p = "inv"
-   , parameter dims_p = "inv"
+   , parameter len_width_p = 1
+   , parameter dims_p = 2
    , parameter cord_dims_p = dims_p
    , parameter int cord_markers_pos_p[cord_dims_p:0] = '{ 5, 4, 0 } 
-   , parameter len_width_p = "inv"
    , localparam dirs_lp = dims_p*2+1 
    , parameter bit [1:0][dirs_lp-1:0][dirs_lp-1:0] routing_matrix_p =  (dims_p == 2) ? StrictXY : StrictX
-   , parameter async_clk_p = "inv"
-   , parameter num_p = "inv"
+   , parameter async_clk_p = 0
+   , parameter els_p = 0
+
    , localparam ral_link_width_lp = `bsg_ready_and_link_sif_width(flit_width_p)
    )
   (input                                                     tile_clk_i
@@ -26,19 +27,19 @@ module bp_nd_socket
 
    , input  [cord_markers_pos_p[dims_p]-1:0]                 my_cord_i
 
-   , input  [num_p-1:0][dirs_lp-2:0][ral_link_width_lp-1:0]  network_link_i
-   , output [num_p-1:0][dirs_lp-2:0][ral_link_width_lp-1:0]  network_link_o
+   , input  [els_p-1:0][dirs_lp-2:0][ral_link_width_lp-1:0]  network_link_i
+   , output [els_p-1:0][dirs_lp-2:0][ral_link_width_lp-1:0]  network_link_o
 
-   , input  [num_p-1:0][ral_link_width_lp-1:0]               tile_link_i
-   , output [num_p-1:0][ral_link_width_lp-1:0]               tile_link_o
+   , input  [els_p-1:0][ral_link_width_lp-1:0]               tile_link_i
+   , output [els_p-1:0][ral_link_width_lp-1:0]               tile_link_o
    
    );
 
   
   `declare_bsg_ready_and_link_sif_s(flit_width_p, bsg_ready_and_link_s);
-  bsg_ready_and_link_s [num_p-1:0] network_link_li, network_link_lo;
+  bsg_ready_and_link_s [els_p-1:0] network_link_li, network_link_lo;
 
-for (genvar i=0; i < num_p; i++)
+for (genvar i=0; i < els_p; i++)
   begin: routers
   if (async_clk_p == 1)
     begin : async

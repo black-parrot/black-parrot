@@ -269,14 +269,6 @@ module bp_softcore
   assign cache_resp_yumi_li = ((cache_resp_v_lo & (cache_resp_lo.header.payload.lce_id == 1'b0)) & proc_resp_yumi_lo[0])
                               | ((cache_resp_v_lo & (cache_resp_lo.header.payload.lce_id == 1'b1)) & proc_resp_yumi_lo[1]);
 
-  always_ff @(negedge clk_i)
-    begin
-      if (cache_cmd_v_li)
-        $display("[%t] CACHE CMD %p", $time, cache_cmd_li.header);
-      if (cache_resp_yumi_li)
-        $display("[%t] CACHE RESP %p", $time, cache_resp_lo.header);
-    end
-
   if (l2_en_p)
     begin : l2
       logic mem_resp_ready_lo;
