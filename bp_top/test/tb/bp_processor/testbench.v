@@ -489,6 +489,9 @@ if (load_nbf_p)
       (.clk_i(clk_i)
        ,.reset_i(reset_i | ~cfg_done_lo)
 
+       // LCE id will get overridden by the I/O tile in this case
+       ,.lce_id_i('0)
+
        ,.io_cmd_o(nbf_cmd_lo)
        ,.io_cmd_v_o(nbf_cmd_v_lo)
        ,.io_cmd_yumi_i(nbf_cmd_ready_li & nbf_cmd_v_lo)
