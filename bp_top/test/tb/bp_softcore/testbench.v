@@ -94,6 +94,7 @@ wrapper
  wrapper
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
+   ,.freeze_i(freeze_li)
 
    ,.io_cmd_o(proc_io_cmd_lo)
    ,.io_cmd_v_o(proc_io_cmd_v_lo)
