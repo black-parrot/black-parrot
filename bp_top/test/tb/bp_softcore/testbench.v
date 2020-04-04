@@ -86,6 +86,14 @@ wrapper
    ,.io_resp_v_i(proc_io_resp_v_li)
    ,.io_resp_yumi_o(proc_io_resp_yumi_lo)
 
+   ,.io_cmd_i('0)
+   ,.io_cmd_v_i('0)
+   ,.io_cmd_yumi_o()
+
+   ,.io_resp_o()
+   ,.io_resp_v_o()
+   ,.io_resp_ready_i('0)
+
    ,.mem_cmd_o(proc_mem_cmd_lo)
    ,.mem_cmd_v_o(proc_mem_cmd_v_lo)
    ,.mem_cmd_ready_i(proc_mem_cmd_ready_li)

@@ -26,6 +26,15 @@ module bp_softcore
    , input                                             io_resp_v_i
    , output                                            io_resp_yumi_o
 
+   // Incoming I/O
+   , input [cce_mem_msg_width_lp-1:0]                  io_cmd_i
+   , input                                             io_cmd_v_i
+   , output                                            io_cmd_yumi_o
+
+   , output [cce_mem_msg_width_lp-1:0]                 io_resp_o
+   , output                                            io_resp_v_o
+   , input                                             io_resp_ready_i
+
    // Memory Requests
    , output [cce_mem_msg_width_lp-1:0]                 mem_cmd_o
    , output                                            mem_cmd_v_o
@@ -85,10 +94,10 @@ module bp_softcore
   logic [1:0] credits_full_li, credits_empty_li;
   logic timer_irq_li, software_irq_li, external_irq_li;
 
-  bp_cce_mem_msg_s [1:0] proc_cmd_lo;
-  logic [1:0] proc_cmd_v_lo, proc_cmd_ready_li;
-  bp_cce_mem_msg_s [1:0] proc_resp_li;
-  logic [1:0] proc_resp_v_li, proc_resp_yumi_lo;
+  bp_cce_mem_msg_s [2:0] proc_cmd_lo;
+  logic [2:0] proc_cmd_v_lo, proc_cmd_ready_li;
+  bp_cce_mem_msg_s [2:0] proc_resp_li;
+  logic [2:0] proc_resp_v_li, proc_resp_yumi_lo;
 
   bp_cce_mem_msg_s clint_cmd_li;
   logic clint_cmd_v_li, clint_cmd_ready_lo;
@@ -286,12 +295,21 @@ module bp_softcore
      ,.external_irq_o(external_irq_li)
      );
 
+  // Assign incoming I/O as basically another UCE interface
+  assign mem_cmd_lo[2] = io_cmd_i;
+  assign mem_cmd_v_lo[2] = io_cmd_v_i;
+  assign io_cmd_yumi_o = mem_cmd_ready_li[2] & mem_cmd_v_lo[2];
+
+  assign io_resp_o = mem_resp_li[2];
+  assign io_resp_v_o = mem_resp_v_li[2];
+  assign mem_resp_yumi_lo[2] = io_resp_ready_i & io_resp_v_o;
+
   // Arbitration logic
   //   Don't necessarily need to arbitrate. On an FPGA, can use a 2r1w RAM. But, we might also be on
   //   a bus
-  bp_cce_mem_msg_s [1:0] fifo_lo;
-  logic [1:0] fifo_v_lo, fifo_yumi_li;
-  for (genvar i = 0; i < 2; i++)
+  bp_cce_mem_msg_s [2:0] fifo_lo;
+  logic [2:0] fifo_v_lo, fifo_yumi_li;
+  for (genvar i = 0; i < 3; i++)
     begin : fifo
       bsg_two_fifo
        #(.width_p($bits(bp_cce_mem_msg_s)))
@@ -311,7 +329,7 @@ module bp_softcore
 
   wire arb_ready_li = cache_cmd_ready_lo & io_cmd_ready_i & clint_cmd_ready_lo;
   bsg_arb_fixed
-   #(.inputs_p(2), .lo_to_hi_p(0))
+   #(.inputs_p(3), .lo_to_hi_p(0))
    cmd_arbiter
     (.ready_i(arb_ready_li)
      ,.reqs_i(fifo_v_lo)
@@ -320,7 +338,7 @@ module bp_softcore
 
   bp_cce_mem_msg_s fifo_selected_lo;
   bsg_mux_one_hot
-   #(.width_p($bits(bp_cce_mem_msg_s)), .els_p(2))
+   #(.width_p($bits(bp_cce_mem_msg_s)), .els_p(3))
    cmd_select
     (.data_i(fifo_lo)
      ,.sel_one_hot_i(fifo_yumi_li)
@@ -377,10 +395,8 @@ module bp_softcore
       assign mem_resp_yumi_o = cache_resp_yumi_li;
     end
 
-  logic [1:0] clint_resp_match;
-  logic [1:0] io_resp_match;
-  logic [1:0] cache_resp_match;
-  for (genvar i = 0; i < 2; i++)
+  logic [2:0] cache_resp_match, io_resp_match, clint_resp_match;
+  for (genvar i = 0; i < 3; i++)
     begin : resp_arb
       // This is guaranteed to be onehot as long as each UCE can only send 1 request at a time
       assign clint_resp_match[i] = clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == i);
