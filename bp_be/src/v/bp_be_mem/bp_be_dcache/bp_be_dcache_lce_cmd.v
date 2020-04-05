@@ -126,8 +126,8 @@ module bp_be_dcache_lce_cmd
   logic [index_width_lp-1:0] lce_cmd_addr_index;
   logic [tag_width_lp-1:0] lce_cmd_addr_tag;
 
-  assign lce_cmd_addr_index = lce_cmd_li.msg.cmd.addr[block_offset_width_lp+:index_width_lp];
-  assign lce_cmd_addr_tag = lce_cmd_li.msg.cmd.addr[block_offset_width_lp+index_width_lp+:tag_width_lp];
+  assign lce_cmd_addr_index = lce_cmd_li.header.addr[block_offset_width_lp+:index_width_lp];
+  assign lce_cmd_addr_tag = lce_cmd_li.header.addr[block_offset_width_lp+index_width_lp+:tag_width_lp];
 
 
   // states
@@ -266,73 +266,73 @@ module bp_be_dcache_lce_cmd
       // every CCE in the system, it moves onto READY state.
 
       e_lce_cmd_state_uncached_only: begin
+        if (lce_cmd_v_i)
+          unique case (lce_cmd_li.header.msg_type)
 
-        unique case (lce_cmd_li.msg_type)
+            e_lce_cmd_sync: begin
+              lce_resp.header.dst_id = lce_cmd_li.header.src_id;
+              lce_resp.header.src_id = lce_id_i;
+              lce_resp.header.msg_type = e_lce_cce_sync_ack;
+              lce_resp_v_o = lce_cmd_v_i;
+              lce_cmd_yumi_o = lce_resp_yumi_i;
+              state_n = ((cnt_r == cnt_width_lp'(num_cce_p-1)) & lce_resp_yumi_i)
+                ? e_lce_cmd_state_ready
+                : e_lce_cmd_state_uncached_only;
+              // clear counter when moving to ready state
+              cnt_clear = (state_n == e_lce_cmd_state_ready);
+              // only increment counter when staying in uncached_only state and waiting for more
+              // sync messages, and when the lce_resp is sent
+              cnt_inc = ~cnt_clear & lce_resp_yumi_i;
+              cache_req_complete_o = 1'b0;
 
-          e_lce_cmd_sync: begin
-            lce_resp.dst_id = lce_cmd_li.msg.cmd.src_id;
-            lce_resp.src_id = lce_id_i;
-            lce_resp.msg_type = e_lce_cce_sync_ack;
-            lce_resp_v_o = lce_cmd_v_i;
-            lce_cmd_yumi_o = lce_resp_yumi_i;
-            state_n = ((cnt_r == cnt_width_lp'(num_cce_p-1)) & lce_resp_yumi_i)
-              ? e_lce_cmd_state_ready
-              : e_lce_cmd_state_uncached_only;
-            // clear counter when moving to ready state
-            cnt_clear = (state_n == e_lce_cmd_state_ready);
-            // only increment counter when staying in uncached_only state and waiting for more
-            // sync messages, and when the lce_resp is sent
-            cnt_inc = ~cnt_clear & lce_resp_yumi_i;
-            cache_req_complete_o = 1'b0;
-
-          end
-
-          e_lce_cmd_set_clear: begin
-            if (tag_mem_pkt_ready_i) begin
-              tag_mem_pkt.index = lce_cmd_addr_index;
-              tag_mem_pkt.opcode = e_cache_tag_mem_set_clear;
-              tag_mem_pkt_v = lce_cmd_v_i;
             end
 
-            if (stat_mem_pkt_ready_i) begin
-              stat_mem_pkt.index = lce_cmd_addr_index;
-              stat_mem_pkt.opcode = e_cache_stat_mem_set_clear;
-              stat_mem_pkt_v = lce_cmd_v_i;
+            e_lce_cmd_set_clear: begin
+              if (tag_mem_pkt_ready_i) begin
+                tag_mem_pkt.index = lce_cmd_addr_index;
+                tag_mem_pkt.opcode = e_cache_tag_mem_set_clear;
+                tag_mem_pkt_v = lce_cmd_v_i;
+              end
+
+              if (stat_mem_pkt_ready_i) begin
+                stat_mem_pkt.index = lce_cmd_addr_index;
+                stat_mem_pkt.opcode = e_cache_stat_mem_set_clear;
+                stat_mem_pkt_v = lce_cmd_v_i;
+              end
+
+              lce_cmd_yumi_o = tag_mem_pkt_v & stat_mem_pkt_v;
+              cache_req_complete_o = 1'b0;
+
             end
 
-            lce_cmd_yumi_o = tag_mem_pkt_v & stat_mem_pkt_v;
-            cache_req_complete_o = 1'b0;
+            e_lce_cmd_uc_st_done: begin
+              uncached_store_done_received_o = lce_cmd_v_i;
+              lce_cmd_yumi_o = lce_cmd_v_i;
+              cache_req_complete_o = 1'b0;
 
-          end
-
-          e_lce_cmd_uc_st_done: begin
-            uncached_store_done_received_o = lce_cmd_v_i;
-            lce_cmd_yumi_o = lce_cmd_v_i;
-            cache_req_complete_o = 1'b0;
-
-          end
-
-          e_lce_cmd_uc_data: begin
-            if (data_mem_pkt_ready_i) begin
-              data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
-              data_mem_pkt.way_id = lce_cmd_li.way_id;
-              data_mem_pkt.data = lce_cmd_li.msg.dt_cmd.data;
-              data_mem_pkt.opcode = e_cache_data_mem_uncached;
-              data_mem_pkt_v = lce_cmd_v_i;
             end
 
-            lce_cmd_yumi_o = data_mem_pkt_v;
+            e_lce_cmd_uc_data: begin
+              if (data_mem_pkt_ready_i) begin
+                data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
+                data_mem_pkt.way_id = lce_cmd_li.header.way_id;
+                data_mem_pkt.data = lce_cmd_li.data;
+                data_mem_pkt.opcode = e_cache_data_mem_uncached;
+                data_mem_pkt_v = lce_cmd_v_i;
+              end
 
-            uncached_data_received_o = data_mem_pkt_v;
-            cache_req_complete_o = data_mem_pkt_v;
+              lce_cmd_yumi_o = data_mem_pkt_v;
 
-          end
+              uncached_data_received_o = data_mem_pkt_v;
+              cache_req_complete_o = data_mem_pkt_v;
 
-          // for other message types in this state, use default as defined at top.
-          default: begin
-	     
-          end
-        endcase 
+            end
+
+            // for other message types in this state, use default as defined at top.
+            default: begin
+	       
+            end
+          endcase 
 
       end
 
@@ -340,77 +340,78 @@ module bp_be_dcache_lce_cmd
       // LCE is ready to process cce_lce_cmd packets. In general, the packets are dequeued, when LCE
       // has finished with the job related to the packet.
       e_lce_cmd_state_ready: begin
-        unique case (lce_cmd_li.msg_type)
-          // <transfer packet>
-          // LCE first reads the data mem, and moves onto TRANSFER state.
-          e_lce_cmd_transfer: begin
-            if (data_mem_pkt_ready_i) begin
-              data_mem_pkt.index = lce_cmd_addr_index;
-              data_mem_pkt.way_id = lce_cmd_li.way_id;
-              data_mem_pkt.opcode = e_cache_data_mem_read;
-              data_mem_pkt_v = lce_cmd_v_i;
+        if (lce_cmd_v_i)
+          unique case (lce_cmd_li.header.msg_type)
+            // <transfer packet>
+            // LCE first reads the data mem, and moves onto TRANSFER state.
+            e_lce_cmd_transfer: begin
+              if (data_mem_pkt_ready_i) begin
+                data_mem_pkt.index = lce_cmd_addr_index;
+                data_mem_pkt.way_id = lce_cmd_li.header.way_id;
+                data_mem_pkt.opcode = e_cache_data_mem_read;
+                data_mem_pkt_v = lce_cmd_v_i;
+              end
+
+              if (tag_mem_pkt_ready_i) begin
+                tag_mem_pkt.index = lce_cmd_addr_index;
+                tag_mem_pkt.way_id = lce_cmd_li.header.way_id;
+                tag_mem_pkt.opcode = e_cache_tag_mem_read;
+                tag_mem_pkt_v = lce_cmd_v_i;
+              end
+
+              state_n = (data_mem_pkt_v & tag_mem_pkt_v)
+                ? e_lce_cmd_state_tr
+                : e_lce_cmd_state_ready;
+
+              cache_req_complete_o = 1'b0;
+
             end
 
-            if (tag_mem_pkt_ready_i) begin
-              tag_mem_pkt.index = lce_cmd_addr_index;
-              tag_mem_pkt.way_id = lce_cmd_li.way_id;
-              tag_mem_pkt.opcode = e_cache_tag_mem_read;
-              tag_mem_pkt_v = lce_cmd_v_i;
+            //  <writeback packet>
+            //  LCE is asked to writeback a cache line.
+            //  It first reads stat_mem to check if the line is dirty.
+            e_lce_cmd_writeback: begin
+              if (stat_mem_pkt_ready_i) begin
+                stat_mem_pkt.index = lce_cmd_addr_index;
+                stat_mem_pkt.way_id = lce_cmd_li.header.way_id;
+                stat_mem_pkt.opcode = e_cache_stat_mem_read;
+                stat_mem_pkt_v = lce_cmd_v_i;
+              end
+
+              state_n = stat_mem_pkt_v
+                ? e_lce_cmd_state_wb
+                : e_lce_cmd_state_ready;
+
+              cache_req_complete_o = 1'b0;
+
             end
 
-            state_n = (data_mem_pkt_v & tag_mem_pkt_v)
-              ? e_lce_cmd_state_tr
-              : e_lce_cmd_state_ready;
+            //  <set tag>
+            //  set the tag and coherency state of given index/way.
+            e_lce_cmd_set_tag: begin
+              if (tag_mem_pkt_ready_i) begin
+                tag_mem_pkt.index = lce_cmd_addr_index;
+                tag_mem_pkt.way_id = lce_cmd_li.header.way_id;
+                tag_mem_pkt.state = lce_cmd_li.header.state;
+                tag_mem_pkt.tag = lce_cmd_addr_tag;
+                tag_mem_pkt.opcode = e_cache_tag_mem_set_tag;
+                tag_mem_pkt_v = lce_cmd_v_i;
+              end
 
-            cache_req_complete_o = 1'b0;
+              lce_cmd_yumi_o = tag_mem_pkt_v;
 
-          end
+              set_tag_received_o = tag_mem_pkt_v;
+              cache_req_complete_o = 1'b0;
 
-          //  <writeback packet>
-          //  LCE is asked to writeback a cache line.
-          //  It first reads stat_mem to check if the line is dirty.
-          e_lce_cmd_writeback: begin
-            if (stat_mem_pkt_ready_i) begin
-              stat_mem_pkt.index = lce_cmd_addr_index;
-              stat_mem_pkt.way_id = lce_cmd_li.way_id;
-              stat_mem_pkt.opcode = e_cache_stat_mem_read;
-              stat_mem_pkt_v = lce_cmd_v_i;
             end
-
-            state_n = stat_mem_pkt_v
-              ? e_lce_cmd_state_wb
-              : e_lce_cmd_state_ready;
-
-            cache_req_complete_o = 1'b0;
-
-          end
-
-          //  <set tag>
-          //  set the tag and coherency state of given index/way.
-          e_lce_cmd_set_tag: begin
-            if (tag_mem_pkt_ready_i) begin
-              tag_mem_pkt.index = lce_cmd_addr_index;
-              tag_mem_pkt.way_id = lce_cmd_li.way_id;
-              tag_mem_pkt.state = lce_cmd_li.msg.cmd.state;
-              tag_mem_pkt.tag = lce_cmd_addr_tag;
-              tag_mem_pkt.opcode = e_cache_tag_mem_set_tag;
-              tag_mem_pkt_v = lce_cmd_v_i;
-            end
-
-            lce_cmd_yumi_o = tag_mem_pkt_v;
-
-            set_tag_received_o = tag_mem_pkt_v;
-            cache_req_complete_o = 1'b0;
-
-          end
 
           //  <set tag wakeup>
           //  set the tag and send wake-up signal to lce_cce_req module.
           e_lce_cmd_set_tag_wakeup: begin
             if (tag_mem_pkt_ready_i) begin
               tag_mem_pkt.index = lce_cmd_addr_index;
-              tag_mem_pkt.way_id = lce_cmd_li.way_id;
-              tag_mem_pkt.state = lce_cmd_li.msg.cmd.state;
+              tag_mem_pkt.way_id = lce_cmd_li.header.way_id;
+              tag_mem_pkt.state = lce_cmd_li.header.state;
               tag_mem_pkt.tag = lce_cmd_addr_tag;
               tag_mem_pkt.opcode = e_cache_tag_mem_set_tag;
               tag_mem_pkt_v = lce_cmd_v_i;
@@ -429,7 +430,7 @@ module bp_be_dcache_lce_cmd
           e_lce_cmd_invalidate_tag: begin
             if (tag_mem_pkt_ready_i) begin
               tag_mem_pkt.index = lce_cmd_addr_index;
-              tag_mem_pkt.way_id = lce_cmd_li.way_id;
+              tag_mem_pkt.way_id = lce_cmd_li.header.way_id;
               tag_mem_pkt.opcode = e_cache_tag_mem_invalidate;
               tag_mem_pkt_v = invalidated_tag_r
                 ? 1'b0
@@ -442,10 +443,10 @@ module bp_be_dcache_lce_cmd
                 ? 1'b1
                 : tag_mem_pkt_v);
 
-            lce_resp.dst_id = lce_cmd_li.msg.cmd.src_id;
-            lce_resp.msg_type = e_lce_cce_inv_ack;
-            lce_resp.src_id = lce_id_i;
-            lce_resp.addr = lce_cmd_li.msg.cmd.addr;
+            lce_resp.header.dst_id = lce_cmd_li.header.src_id;
+            lce_resp.header.msg_type = e_lce_cce_inv_ack;
+            lce_resp.header.src_id = lce_id_i;
+            lce_resp.header.addr = lce_cmd_li.header.addr;
             lce_resp_v_o = invalidated_tag_r | tag_mem_pkt_v;
             lce_cmd_yumi_o = lce_resp_yumi_i;
 
@@ -466,17 +467,17 @@ module bp_be_dcache_lce_cmd
           e_lce_cmd_data: begin
             if (data_mem_pkt_ready_i) begin
               data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
-              data_mem_pkt.way_id = lce_cmd_li.way_id;
-              data_mem_pkt.data = lce_cmd_li.msg.dt_cmd.data;
+              data_mem_pkt.way_id = lce_cmd_li.header.way_id;
+              data_mem_pkt.data = lce_cmd_li.data;
               data_mem_pkt.opcode = e_cache_data_mem_write;
               data_mem_pkt_v = lce_cmd_v_i;
             end
 
             if (tag_mem_pkt_ready_i) begin
               tag_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
-              tag_mem_pkt.way_id = lce_cmd_li.way_id;
-              tag_mem_pkt.state = lce_cmd_li.msg.dt_cmd.state;
-              tag_mem_pkt.tag = lce_cmd_li.msg.dt_cmd.addr[block_offset_width_lp+index_width_lp+:tag_width_lp];
+              tag_mem_pkt.way_id = lce_cmd_li.header.way_id;
+              tag_mem_pkt.state = lce_cmd_li.header.state;
+              tag_mem_pkt.tag = lce_cmd_li.header.addr[block_offset_width_lp+index_width_lp+:tag_width_lp];
               tag_mem_pkt.opcode = e_cache_tag_mem_set_tag;
               tag_mem_pkt_v = lce_cmd_v_i;
             end
@@ -492,8 +493,8 @@ module bp_be_dcache_lce_cmd
           e_lce_cmd_uc_data: begin
             if (data_mem_pkt_ready_i) begin
               data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
-              data_mem_pkt.way_id = lce_cmd_li.way_id;
-              data_mem_pkt.data = lce_cmd_li.msg.dt_cmd.data;
+              data_mem_pkt.way_id = lce_cmd_li.header.way_id;
+              data_mem_pkt.data = lce_cmd_li.data;
               data_mem_pkt.opcode = e_cache_data_mem_uncached;
               data_mem_pkt_v = lce_cmd_v_i;
             end
@@ -502,7 +503,6 @@ module bp_be_dcache_lce_cmd
 
             uncached_data_received_o = data_mem_pkt_v;
             cache_req_complete_o = data_mem_pkt_v;
-
           end
 
           e_lce_cmd_set_clear: begin
@@ -539,12 +539,12 @@ module bp_be_dcache_lce_cmd
           : data_mem_i;
         tr_data_buffered_n = ~lce_tr_done;
 
-        lce_cmd_out.dst_id = lce_cmd_li.msg.cmd.target;
-        lce_cmd_out.msg_type = e_lce_cmd_data;
-        lce_cmd_out.way_id = lce_cmd_li.msg.cmd.target_way_id;
-        lce_cmd_out.msg.dt_cmd.addr = lce_cmd_li.msg.cmd.addr;
-        lce_cmd_out.msg.dt_cmd.state = lce_cmd_li.msg.cmd.state;
-        lce_cmd_out.msg.dt_cmd.data = tr_data_buffered_r
+        lce_cmd_out.header.dst_id = lce_cmd_li.header.target;
+        lce_cmd_out.header.msg_type = e_lce_cmd_data;
+        lce_cmd_out.header.way_id = lce_cmd_li.header.target_way_id;
+        lce_cmd_out.header.addr = lce_cmd_li.header.addr;
+        lce_cmd_out.header.state = lce_cmd_li.header.state;
+        lce_cmd_out.data = tr_data_buffered_r
           ? data_buf_r
           : data_mem_i;
         lce_cmd_v_o = lce_cmd_ready_i;
@@ -562,7 +562,7 @@ module bp_be_dcache_lce_cmd
       // Determine if the block is dirty or not.
       e_lce_cmd_state_wb: begin
 
-        state_n = stat_mem_cast_i.dirty[lce_cmd_li.way_id]
+        state_n = stat_mem_cast_i.dirty[lce_cmd_li.header.way_id]
           ? e_lce_cmd_state_wb_dirty
           : e_lce_cmd_state_wb_not_dirty;
 
@@ -576,7 +576,7 @@ module bp_be_dcache_lce_cmd
       e_lce_cmd_state_wb_dirty: begin
         if (data_mem_pkt_ready_i) begin
           data_mem_pkt.index = lce_cmd_addr_index;
-          data_mem_pkt.way_id = lce_cmd_li.way_id;
+          data_mem_pkt.way_id = lce_cmd_li.header.way_id;
           data_mem_pkt.opcode = e_cache_data_mem_read;
           data_mem_pkt_v = ~wb_data_read_r;
         end
@@ -599,7 +599,7 @@ module bp_be_dcache_lce_cmd
 
         if (stat_mem_pkt_ready_i) begin
           stat_mem_pkt.index = lce_cmd_addr_index;
-          stat_mem_pkt.way_id = lce_cmd_li.way_id;
+          stat_mem_pkt.way_id = lce_cmd_li.header.way_id;
           stat_mem_pkt.opcode = e_cache_stat_mem_clear_dirty;
           stat_mem_pkt_v = wb_dirty_cleared_r
             ? 1'b0
@@ -616,10 +616,10 @@ module bp_be_dcache_lce_cmd
           ? data_buf_r
           : data_mem_i;
         
-        lce_resp.addr = lce_cmd_li.msg.cmd.addr;
-        lce_resp.msg_type = e_lce_cce_resp_wb;
-        lce_resp.src_id = lce_id_i;
-        lce_resp.dst_id = lce_cmd_li.msg.cmd.src_id;
+        lce_resp.header.addr = lce_cmd_li.header.addr;
+        lce_resp.header.msg_type = e_lce_cce_resp_wb;
+        lce_resp.header.src_id = lce_id_i;
+        lce_resp.header.dst_id = lce_cmd_li.header.src_id;
         lce_resp_v_o = wb_data_read_r & (wb_dirty_cleared_r | stat_mem_pkt_v);
 
         lce_cmd_yumi_o = lce_resp_done;
@@ -636,10 +636,10 @@ module bp_be_dcache_lce_cmd
       //  If not dirty, just respond with null writeback data.
       e_lce_cmd_state_wb_not_dirty: begin
         lce_resp.data = '0;
-        lce_resp.addr = lce_cmd_li.msg.cmd.addr;
-        lce_resp.msg_type = e_lce_cce_resp_null_wb;
-        lce_resp.src_id = lce_id_i;
-        lce_resp.dst_id = lce_cmd_li.msg.cmd.src_id;
+        lce_resp.header.addr = lce_cmd_li.header.addr;
+        lce_resp.header.msg_type = e_lce_cce_resp_null_wb;
+        lce_resp.header.src_id = lce_id_i;
+        lce_resp.header.dst_id = lce_cmd_li.header.src_id;
         lce_resp_v_o = 1'b1;
 
         lce_cmd_yumi_o = lce_resp_done;

@@ -87,7 +87,8 @@ module bp_cce_reg
   assign lce_req = lce_req_i;
 
   logic uc_req;
-  assign uc_req = (lce_req.msg_type == e_lce_req_type_uc_rd) | (lce_req.msg_type == e_lce_req_type_uc_wr);
+  assign uc_req = (lce_req.header.msg_type == e_lce_req_type_uc_rd)
+                  | (lce_req.header.msg_type == e_lce_req_type_uc_wr);
 
   // Registers
   `declare_bp_cce_mshr_s(lce_id_width_p, lce_assoc_p, paddr_width_p);
@@ -128,7 +129,7 @@ module bp_cce_reg
     // Uncached data register is always sourced from LCE Request
     // Uncached data that is being returned to an LCE from a Mem Data Resp does not need
     // to be registered, and is handled by bp_cce_msg module.
-    nc_data_n = lce_req.msg.uc_req.data;
+    nc_data_n = lce_req.data;
 
     // Default coherence state
     coh_state_n = bp_coh_states_e'(mov_src_i[0+:`bp_coh_bits]);
@@ -148,8 +149,8 @@ module bp_cce_reg
       // Request LCE, address, tag
       case (decoded_inst_i.req_sel)
         e_req_sel_lce_req: begin
-          mshr_n.lce_id = lce_req.src_id;
-          mshr_n.paddr = lce_req.addr;
+          mshr_n.lce_id = lce_req.header.src_id;
+          mshr_n.paddr = lce_req.header.addr;
         end
         e_req_sel_pending: begin // TODO: v2
           mshr_n.lce_id = '0;
@@ -167,7 +168,7 @@ module bp_cce_reg
       // LRU Way
       case (decoded_inst_i.lru_way_sel)
         e_lru_way_sel_lce_req: begin
-          mshr_n.lru_way_id = lce_req.msg.req.lru_way_id;
+          mshr_n.lru_way_id = lce_req.header.lru_way_id;
         end
         e_lru_way_sel_pending: begin
           mshr_n.lru_way_id = '0; // TODO: v2
@@ -185,7 +186,7 @@ module bp_cce_reg
 
       case (decoded_inst_i.rqf_sel)
         e_rqf_lce_req: begin
-          mshr_n.flags[e_flag_sel_rqf] = lce_req.msg_type;
+          mshr_n.flags[e_flag_sel_rqf] = lce_req.header.msg_type;
         end
         e_rqf_pending: begin
           mshr_n.flags[e_flag_sel_rqf] = '0; // TODO: v2
@@ -201,7 +202,7 @@ module bp_cce_reg
       case (decoded_inst_i.ucf_sel)
         e_ucf_lce_req: begin
           mshr_n.flags[e_flag_sel_ucf] = uc_req;
-          mshr_n.uc_req_size           = bp_lce_cce_uc_req_size_e'(lce_req.msg.uc_req.uc_size);
+          mshr_n.uc_req_size           = bp_lce_cce_uc_req_size_e'(lce_req.header.uc_size);
         end
         e_ucf_pending: begin
           mshr_n.flags[e_flag_sel_ucf] = '0;
@@ -219,7 +220,7 @@ module bp_cce_reg
 
       case (decoded_inst_i.nerf_sel)
         e_nerf_lce_req: begin
-          mshr_n.flags[e_flag_sel_nerf] = lce_req.msg.req.non_exclusive;
+          mshr_n.flags[e_flag_sel_nerf] = lce_req.header.non_exclusive;
         end
         e_nerf_pending: begin
           mshr_n.flags[e_flag_sel_nerf] = '0; // TODO: v2
@@ -234,7 +235,7 @@ module bp_cce_reg
 
       case (decoded_inst_i.ldf_sel)
         e_ldf_lce_req: begin
-          mshr_n.flags[e_flag_sel_ldf] = lce_req.msg.req.lru_dirty;
+          mshr_n.flags[e_flag_sel_ldf] = lce_req.header.lru_dirty;
         end
         e_ldf_pending: begin
           mshr_n.flags[e_flag_sel_ldf] = '0; // TODO: v2

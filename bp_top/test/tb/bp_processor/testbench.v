@@ -35,12 +35,12 @@ module testbench
    , parameter load_nbf_p                  = 0
    , parameter skip_init_p                 = 0
    , parameter cosim_p                     = 0
-   , parameter cosim_cfg_file_p            = load_nbf_p ? "prog.cfg" : "prog.elf"
+   , parameter cosim_cfg_file_p            = "prog.cfg"
 
    , parameter mem_zero_p         = 1
    , parameter mem_load_p         = preload_mem_p
    , parameter mem_file_p         = "prog.mem"
-   , parameter mem_cap_in_bytes_p = 2**20
+   , parameter mem_cap_in_bytes_p = 2**25
    , parameter [paddr_width_p-1:0] mem_offset_p = paddr_width_p'(32'h8000_0000)
 
    // Number of elements in the fake BlackParrot memory
@@ -77,7 +77,7 @@ bp_io_noc_ral_link_s proc_resp_link_li, proc_resp_link_lo;
 bp_mem_noc_ral_link_s dram_cmd_link_lo, dram_resp_link_li;
 
 bp_cce_mem_msg_s       host_cmd_li;
-logic                  host_cmd_v_li, host_cmd_yumi_lo;
+logic                  host_cmd_v_li, host_cmd_ready_lo;
 bp_cce_mem_msg_s       host_resp_lo;
 logic                  host_resp_v_lo, host_resp_ready_li;
 
@@ -121,6 +121,7 @@ wrapper
    ,.mem_reset_i(reset_i)
 
    ,.my_did_i(proc_did_li)
+   ,.host_did_i(dram_did_li)
 
    ,.io_cmd_link_i({proc_cmd_link_li, stub_cmd_link_li})
    ,.io_cmd_link_o({proc_cmd_link_lo, stub_cmd_link_lo})
@@ -306,12 +307,12 @@ bind bp_be_top
      ,.reset_i(reset_i)
 
      ,.mem_cmd_i(dram_cmd_li)
-     ,.mem_cmd_v_i(dram_cmd_v_li)
-     ,.mem_cmd_yumi_i(dram_cmd_yumi_lo)
+     ,.mem_cmd_v_i(dram_cmd_v_li & dram_cmd_ready_lo)
+     ,.mem_cmd_ready_i(dram_cmd_ready_lo)
 
      ,.mem_resp_i(dram_resp_lo)
      ,.mem_resp_v_i(dram_resp_v_lo)
-     ,.mem_resp_ready_i(dram_resp_ready_li)
+     ,.mem_resp_yumi_i(dram_resp_ready_li & dram_resp_v_lo)
      );
 
   bind bp_cce
@@ -378,7 +379,7 @@ bp_me_cce_to_mem_link_bidir
 
    ,.mem_cmd_o(host_cmd_li)
    ,.mem_cmd_v_o(host_cmd_v_li)
-   ,.mem_cmd_yumi_i(host_cmd_yumi_lo)
+   ,.mem_cmd_yumi_i(host_cmd_ready_lo & host_cmd_v_li)
 
    ,.mem_resp_i(host_resp_lo)
    ,.mem_resp_v_i(host_resp_v_lo)
@@ -404,10 +405,10 @@ bp_me_cce_to_mem_link_client
 
    ,.mem_cmd_o(dram_cmd_li)
    ,.mem_cmd_v_o(dram_cmd_v_li)
-   ,.mem_cmd_yumi_i(dram_cmd_yumi_lo)
+   ,.mem_cmd_yumi_i(dram_cmd_ready_lo & dram_cmd_v_li)
 
    ,.mem_resp_i(dram_resp_lo)
-   ,.mem_resp_v_i(dram_resp_v_lo)
+   ,.mem_resp_v_i(dram_resp_v_lo & dram_resp_ready_li)
    ,.mem_resp_ready_o(dram_resp_ready_li)
 
    ,.cmd_link_i(dram_cmd_link_lo)
@@ -437,12 +438,12 @@ bp_mem
    ,.reset_i(reset_i)
  
    ,.mem_cmd_i(dram_cmd_li)
-   ,.mem_cmd_v_i(dram_cmd_v_li)
-   ,.mem_cmd_yumi_o(dram_cmd_yumi_lo)
+   ,.mem_cmd_v_i(dram_cmd_v_li & dram_cmd_ready_lo)
+   ,.mem_cmd_ready_o(dram_cmd_ready_lo)
  
    ,.mem_resp_o(dram_resp_lo)
    ,.mem_resp_v_o(dram_resp_v_lo)
-   ,.mem_resp_ready_i(dram_resp_ready_li)
+   ,.mem_resp_yumi_i(dram_resp_ready_li & dram_resp_v_lo)
    );
 
 logic [num_core_p-1:0] program_finish;
@@ -453,12 +454,12 @@ bp_nonsynth_host
    ,.reset_i(reset_i)
 
    ,.io_cmd_i(host_cmd_li)
-   ,.io_cmd_v_i(host_cmd_v_li)
-   ,.io_cmd_yumi_o(host_cmd_yumi_lo)
+   ,.io_cmd_v_i(host_cmd_v_li & host_cmd_ready_lo)
+   ,.io_cmd_ready_o(host_cmd_ready_lo)
 
    ,.io_resp_o(host_resp_lo)
    ,.io_resp_v_o(host_resp_v_lo)
-   ,.io_resp_ready_i(host_resp_ready_li)
+   ,.io_resp_yumi_i(host_resp_ready_li & host_resp_v_lo)
 
    ,.program_finish_o(program_finish)
    );

@@ -19,7 +19,7 @@ module testbench
  import bp_me_pkg::*;
  import bp_common_cfg_link_pkg::*;
  import bsg_noc_pkg::*;
- #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_softcore_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
@@ -35,11 +35,11 @@ module testbench
    , parameter load_nbf_p                  = 0
    , parameter skip_init_p                 = 0
    , parameter cosim_p                     = 0
-   , parameter cosim_cfg_file_p            = load_nbf_p ? "prog.cfg" : "prog.elf"
+   , parameter cosim_cfg_file_p            = "prog.cfg"
 
    , parameter mem_zero_p         = 1
    , parameter mem_file_p         = "prog.mem"
-   , parameter mem_cap_in_bytes_p = 2**20
+   , parameter mem_cap_in_bytes_p = 2**25
    , parameter [paddr_width_p-1:0] mem_offset_p = paddr_width_p'(32'h8000_0000)
 
    // Number of elements in the fake BlackParrot memory
@@ -97,74 +97,6 @@ wrapper
    ,.mem_resp_yumi_o(proc_mem_resp_yumi_lo)
    );
 
-bp_cce_mem_msg_s dram_cmd_li;
-logic            dram_cmd_v_li, dram_cmd_yumi_lo;
-bp_cce_mem_msg_s dram_resp_lo;
-logic            dram_resp_v_lo, dram_resp_ready_li;
-bsg_two_fifo
- #(.width_p($bits(bp_cce_mem_msg_s)))
- mem_cmd_fifo
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-
-   ,.data_i(proc_mem_cmd_lo)
-   ,.v_i(proc_mem_cmd_v_lo)
-   ,.ready_o(proc_mem_cmd_ready_li)
-
-   ,.data_o(dram_cmd_li)
-   ,.v_o(dram_cmd_v_li)
-   ,.yumi_i(dram_cmd_yumi_lo)
-   );
-
-bsg_two_fifo
- #(.width_p($bits(bp_cce_mem_msg_s)))
- mem_resp_fifo
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-
-   ,.data_i(dram_resp_lo)
-   ,.v_i(dram_resp_v_lo)
-   ,.ready_o(dram_resp_ready_li)
-
-   ,.data_o(proc_mem_resp_li)
-   ,.v_o(proc_mem_resp_v_li)
-   ,.yumi_i(proc_mem_resp_yumi_lo)
-   );
-
-bp_cce_mem_msg_s io_cmd_li;
-logic            io_cmd_v_li, io_cmd_yumi_lo;
-bp_cce_mem_msg_s io_resp_lo;
-logic            io_resp_v_lo, io_resp_ready_li;
-bsg_two_fifo
- #(.width_p($bits(bp_cce_mem_msg_s)))
- io_cmd_fifo
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-
-   ,.data_i(proc_io_cmd_lo)
-   ,.v_i(proc_io_cmd_v_lo)
-   ,.ready_o(proc_io_cmd_ready_li)
-
-   ,.data_o(io_cmd_li)
-   ,.v_o(io_cmd_v_li)
-   ,.yumi_i(io_cmd_yumi_lo)
-   );
-
-bsg_two_fifo
- #(.width_p($bits(bp_cce_mem_msg_s)))
- io_resp_fifo
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-
-   ,.data_i(io_resp_lo)
-   ,.v_i(io_resp_v_lo)
-   ,.ready_o(io_resp_ready_li)
-
-   ,.data_o(proc_io_resp_li)
-   ,.v_o(proc_io_resp_v_li)
-   ,.yumi_i(proc_io_resp_yumi_lo)
-   );
-
 bp_mem
  #(.bp_params_p(bp_params_p)
    ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
@@ -187,13 +119,13 @@ bp_mem
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
  
-   ,.mem_cmd_i(dram_cmd_li)
-   ,.mem_cmd_v_i(dram_cmd_v_li)
-   ,.mem_cmd_yumi_o(dram_cmd_yumi_lo)
+   ,.mem_cmd_i(proc_mem_cmd_lo)
+   ,.mem_cmd_v_i(proc_mem_cmd_v_lo & proc_mem_cmd_ready_li)
+   ,.mem_cmd_ready_o(proc_mem_cmd_ready_li)
  
-   ,.mem_resp_o(dram_resp_lo)
-   ,.mem_resp_v_o(dram_resp_v_lo)
-   ,.mem_resp_ready_i(dram_resp_ready_li)
+   ,.mem_resp_o(proc_mem_resp_li)
+   ,.mem_resp_v_o(proc_mem_resp_v_li)
+   ,.mem_resp_yumi_i(proc_mem_resp_yumi_lo)
    );
 
 logic program_finish_lo;
@@ -203,13 +135,13 @@ bp_nonsynth_host
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.io_cmd_i(io_cmd_li)
-   ,.io_cmd_v_i(io_cmd_v_li)
-   ,.io_cmd_yumi_o(io_cmd_yumi_lo)
+   ,.io_cmd_i(proc_io_cmd_lo)
+   ,.io_cmd_v_i(proc_io_cmd_v_lo & proc_io_cmd_ready_li)
+   ,.io_cmd_ready_o(proc_io_cmd_ready_li)
 
-   ,.io_resp_o(io_resp_lo)
-   ,.io_resp_v_o(io_resp_v_lo)
-   ,.io_resp_ready_i(io_resp_ready_li)
+   ,.io_resp_o(proc_io_resp_li)
+   ,.io_resp_v_o(proc_io_resp_v_li)
+   ,.io_resp_yumi_i(proc_io_resp_yumi_lo)
 
    ,.program_finish_o(program_finish_lo)
    );
@@ -389,13 +321,13 @@ bind bp_be_top
     (.clk_i(clk_i & (testbench.dram_trace_p == 1))
      ,.reset_i(reset_i)
 
-     ,.mem_cmd_i(dram_cmd_li)
-     ,.mem_cmd_v_i(dram_cmd_v_li)
-     ,.mem_cmd_yumi_i(dram_cmd_yumi_lo)
+     ,.mem_cmd_i(proc_mem_cmd_lo)
+     ,.mem_cmd_v_i(proc_mem_cmd_v_lo & proc_mem_cmd_ready_li)
+     ,.mem_cmd_ready_i(proc_mem_cmd_ready_li)
 
-     ,.mem_resp_i(dram_resp_lo)
-     ,.mem_resp_v_i(dram_resp_v_lo)
-     ,.mem_resp_ready_i(dram_resp_ready_li)
+     ,.mem_resp_i(proc_mem_resp_li)
+     ,.mem_resp_v_i(proc_mem_resp_v_li)
+     ,.mem_resp_yumi_i(proc_mem_resp_yumi_lo)
      );
 
 bp_nonsynth_if_verif

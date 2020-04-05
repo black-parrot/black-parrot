@@ -30,6 +30,7 @@ module bp_tile
 
    // Memory side connection
    , input [io_noc_did_width_p-1:0]                           my_did_i
+   , input [io_noc_did_width_p-1:0]                           host_did_i
    , input [coh_noc_cord_width_p-1:0]                         my_cord_i
 
    // Connected to other tiles on east and west
@@ -133,6 +134,7 @@ bp_cfg_buffered
 
    ,.cfg_bus_o(cfg_bus_lo)
    ,.did_i(my_did_i)
+   ,.host_did_i(host_did_i)
    ,.cord_i(my_cord_i)
    ,.irf_data_i(cfg_irf_data_li)
    ,.npc_data_i(cfg_npc_data_li)
@@ -460,19 +462,19 @@ for (genvar i = 0; i < 2; i++)
      );
 
   /* TODO: Extract local memory map to module */
-  wire local_cmd_li    = (cce_mem_cmd_lo.addr < 32'h8000_0000);
-  wire [3:0] device_li =  cce_mem_cmd_lo.addr[20+:4];
+  wire local_cmd_li    = (cce_mem_cmd_lo.header.addr < 32'h8000_0000);
+  wire [3:0] device_li =  cce_mem_cmd_lo.header.addr[20+:4];
 
   assign cce_mem_cmd_ready_li = cache_mem_cmd_ready_lo & cfg_mem_cmd_ready_lo & clint_mem_cmd_ready_lo;
-
-  assign cache_mem_cmd_li      = cce_mem_cmd_lo;
-  assign cache_mem_cmd_v_li    = cce_mem_cmd_v_lo & ~local_cmd_li;
 
   assign cfg_mem_cmd_li       = cce_mem_cmd_lo;
   assign cfg_mem_cmd_v_li     = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == cfg_dev_gp);
 
   assign clint_mem_cmd_li     = cce_mem_cmd_lo;
   assign clint_mem_cmd_v_li   = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == clint_dev_gp);
+
+  assign cache_mem_cmd_li      = cce_mem_cmd_lo;
+  assign cache_mem_cmd_v_li    = cce_mem_cmd_v_lo & ~cfg_mem_cmd_v_li & ~clint_mem_cmd_v_li;
 
   bsg_arb_fixed
    #(.inputs_p(3)

@@ -99,6 +99,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_decode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_decode_with_v.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_en_bypass.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset_en_bypass.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_chain.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_en.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_dff_reset.v

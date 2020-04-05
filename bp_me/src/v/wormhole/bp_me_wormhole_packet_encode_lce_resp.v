@@ -42,7 +42,7 @@ module bp_me_wormhole_packet_encode_lce_resp
   bp_me_cce_id_to_cord
    #(.bp_params_p(bp_params_p))
    router_cord
-    (.cce_id_i(payload_cast_i.dst_id)
+    (.cce_id_i(payload_cast_i.header.dst_id)
      ,.cce_cord_o(cce_cord_li)
      ,.cce_cid_o(cce_cid_li)
      );
@@ -52,7 +52,7 @@ module bp_me_wormhole_packet_encode_lce_resp
     packet_cast_o.cid     = cce_cid_li;
     packet_cast_o.cord    = cce_cord_li;
 
-    case (payload_cast_i.msg_type)
+    case (payload_cast_i.header.msg_type)
       e_lce_cce_sync_ack
       ,e_lce_cce_inv_ack
       ,e_lce_cce_coh_ack    : packet_cast_o.len = coh_noc_len_width_p'(lce_cce_resp_ack_len_lp);

@@ -84,6 +84,7 @@ logic fetch_ready;
 wire itlb_fence_v = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fence);
 wire itlb_fill_v  = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fill);
 wire fetch_v      = fetch_ready & mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_fetch);
+wire fencei_v     = fetch_ready & mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_icache_fence);
 
 bp_fe_tlb_entry_s itlb_r_entry;
 logic itlb_r_v_lo;
@@ -134,6 +135,7 @@ bp_fe_icache
 
    ,.vaddr_i(mem_cmd_cast_i.operands.fetch.vaddr)
    ,.vaddr_v_i(fetch_v)
+   ,.fencei_v_i(fencei_v)
    ,.vaddr_ready_o(fetch_ready)
 
    ,.ptag_i(ptag_li)
@@ -209,7 +211,7 @@ wire local_fault_v = (ptag_li < (dram_base_addr_gp >> page_offset_width_p));
 assign instr_access_fault_v = fetch_v_r & (mode_fault_v | did_fault_v | local_fault_v);
 assign instr_page_fault_v   = fetch_v_r & itlb_r_v_lo & mem_translation_en_i & (instr_priv_page_fault | instr_exe_page_fault);
 
-assign mem_cmd_yumi_o = itlb_fence_v | itlb_fill_v | fetch_v;
+assign mem_cmd_yumi_o = itlb_fence_v | itlb_fill_v | fetch_v | fencei_v;
 
 assign mem_resp_v_o    = fetch_v_rr;
 assign mem_resp_cast_o = '{instr_access_fault: instr_access_fault_r

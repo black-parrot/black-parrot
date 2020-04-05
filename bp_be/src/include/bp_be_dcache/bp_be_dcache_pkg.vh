@@ -34,6 +34,7 @@ package bp_be_dcache_pkg;
 
     ,e_dcache_opcode_lrd = 4'b1101  // load reserved double
     ,e_dcache_opcode_scd = 4'b1110  // store conditional double
+    ,e_dcache_opcode_fencei = 4'b1111 // Writeback all data in data cache
   } bp_be_dcache_opcode_e;
 
 endpackage

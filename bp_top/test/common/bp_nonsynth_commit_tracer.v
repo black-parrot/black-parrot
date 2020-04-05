@@ -25,12 +25,12 @@ module bp_nonsynth_commit_tracer
 integer file;
 string file_name;
 
-always_ff @(negedge clk_i)
-  if (~reset_i & ~freeze_i)
-    begin
-      file_name = $sformatf("%s_%x.trace", commit_trace_file_p, mhartid_i);
-      file      = $fopen(file_name, "w");
-    end
+wire delay_li = reset_i | freeze_i;
+always_ff @(negedge delay_li)
+  begin
+    file_name = $sformatf("%s_%x.trace", commit_trace_file_p, mhartid_i);
+    file      = $fopen(file_name, "w");
+  end
 
   logic [30:0] itag_cnt;
   bsg_counter_clear_up

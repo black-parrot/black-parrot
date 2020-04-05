@@ -3,6 +3,9 @@ export DESIGN_NAME ?= wrapper
 
 .PHONY: deps.syn check_design.syn lookup.syn clean.syn
 
+# Change to your own stdcell db from a PDK. We suggest the freely available FreePDK45
+export STDCELL_DB ?= $(FREE45_NLDM_DB_TYP)
+
 dirs.syn:
 	$(eval RESULTS_DIR := $(RESULTS_PATH)/dc)
 	$(eval REPORT_DIR  := $(REPORT_PATH)/dc)
@@ -37,6 +40,7 @@ check_design.syn: dirs.syn
 	-@grep --color      "Cannot find the design"               $(CHK_LOG) | tee -a $(CHK_ERROR)
 	-@grep --color      "undeclared symbol"                    $(CHK_LOG) | tee -a $(CHK_ERROR)
 	-@grep --color      "(ELAB-395)"                           $(CHK_LOG) | tee -a $(CHK_ERROR)
+	-@grep --color      "(OPT-150)"                            $(CHK_LOG) | tee -a $(CHK_ERROR)
 	-@test -s $(CHK_ERROR) && echo "Design Compiler check_synth: FAILED" > $(CHK_REPORT) \
 	|| (echo "Design Compiler check_synth: PASSED" > $(CHK_REPORT) && rm $(CHK_ERROR))
 

@@ -27,8 +27,6 @@ Users who just want to test their setup and run a minimal BlackParrot test shoul
     # Clone the latest repo
     git clone https://github.com/black-parrot/black-parrot.git
     cd black-parrot
-    # Checkout the correct branch
-    git checkout uw_ee477_pparrot_wi20
 
     # Install a minimal set of tools
     make libs

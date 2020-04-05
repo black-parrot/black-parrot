@@ -27,7 +27,7 @@ module bp_mem_delay_model
 
 localparam latency_width_lp = `BSG_SAFE_CLOG2(max_latency_p+1);
 
-enum bit {e_idle, e_service} state_n, state_r;
+enum logic {e_idle, e_service} state_n, state_r;
 
 always_ff @(posedge clk_i)
   if (reset_i)

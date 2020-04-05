@@ -10,7 +10,7 @@ TEST_DIR       = $(BP_COMMON_DIR)/test
 MEM_DIR        = $(TEST_DIR)/mem
 
 RISCV_SIM      = spike
-RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -D
+RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -d
 RISCV_OBJCOPY  = riscv64-unknown-elf-objcopy
 MKLFS = $(TEST_DIR)/bin/bsg_newlib_mklfs
 DROMAJO        = dromajo
@@ -18,7 +18,7 @@ DROMAJO        = dromajo
 PATH := $(BP_EXTERNAL_DIR)/bin:$(PATH)
 
 NC ?= 1
-MEMSIZE ?= 1
+MEMSIZE ?= 32 # MB
 
 export TEST_DIR
 
@@ -196,7 +196,7 @@ riscvdv_dump: $(foreach x, $(BP_RVDV), $(x).dump)
 	$(RISCV_OBJDUMP) $(MEM_DIR)/$*.riscv > $(MEM_DIR)/$@
 
 %.spike:
-	$(RISCV_SIM) --isa=rv64ia -p$(NC) -l $(MEM_DIR)/$*.riscv 2> $(MEM_DIR)/$@
+	$(RISCV_SIM) --isa=rv64ia -p$(NC) --log-commits $(MEM_DIR)/$*.riscv 2> $(MEM_DIR)/$@
 
 %.dump:
 	$(RISCV_OBJDUMP) $(MEM_DIR)/$*.riscv > $(MEM_DIR)/$@
@@ -204,7 +204,7 @@ riscvdv_dump: $(foreach x, $(BP_RVDV), $(x).dump)
 %.nbf:
 	$(PYTHON) $(MEM2NBF) $(MEM_DIR)/$*.mem > $(MEM_DIR)/$@
 
-%.dromajo: $(%.config)
+%.dromajo:
 	$(DROMAJO) $(MEM_DIR)/$*.riscv --host --maxinsn=$(MAXINSN) --save=$* --memory_size=$(MEMSIZE)
 	$(RISCV_OBJCOPY) --change-addresses 0x80000000 \
 		 -I binary -O elf64-littleriscv -B riscv $*.mainram $(MEM_DIR)/$@.$(MAXINSN).riscv

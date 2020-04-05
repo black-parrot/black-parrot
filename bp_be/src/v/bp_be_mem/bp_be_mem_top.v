@@ -117,6 +117,10 @@ module bp_be_mem_top
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, lce_sets_p, cce_block_width_p/8)
 `declare_bp_be_dcache_pkt_s(page_offset_width_lp, dword_width_p);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p);
+  bp_cache_req_s cache_req_cast_o;
+
+  assign cache_req_o = cache_req_cast_o;
 
 // Cast input and output ports
 bp_cfg_bus_s           cfg_bus;
@@ -157,7 +161,7 @@ logic                     ptw_page_fault_v, ptw_instr_page_fault_v, ptw_load_pag
 bp_be_dcache_pkt_s        dcache_pkt;
 logic [dword_width_p-1:0] dcache_data;
 logic [ptag_width_p-1:0]  dcache_ptag;
-logic                     dcache_v, dcache_pkt_v;
+logic                     dcache_v, dcache_fencei_v, dcache_pkt_v;
 logic                     dcache_tlb_miss, dcache_poison;
 logic                     dcache_uncached;
 logic                     dcache_ready_lo;
@@ -179,6 +183,8 @@ logic load_page_fault_v, load_page_fault_mem3, store_page_fault_v, store_page_fa
 
 /* Control signals */
 logic dcache_cmd_v;
+logic fencei_cmd_v;
+logic fencei_v_r, fencei_v_rr;
 logic itlb_not_dtlb_resp;
 logic mmu_cmd_v_r, mmu_cmd_v_rr, dtlb_miss_r;
 logic is_store_r, is_store_rr;
@@ -260,6 +266,7 @@ bp_be_csr
    ,.instret_i(commit_pkt.instret)
 
    ,.exception_v_i(exception_v_li)
+   ,.fencei_v_i(dcache_fencei_v)
    ,.exception_pc_i(exception_pc_li)
    ,.exception_npc_i(exception_npc_li)
    ,.exception_vaddr_i(exception_vaddr_li)
@@ -372,6 +379,7 @@ bp_be_dcache
     ,.v_i(dcache_pkt_v)
     ,.ready_o(dcache_ready_lo)
 
+    ,.fencei_v_o(dcache_fencei_v)
     ,.v_o(dcache_v)
     ,.data_o(dcache_data)
 
@@ -383,10 +391,11 @@ bp_be_dcache
     ,.store_op_tl_o(store_op_tl_lo)
     ,.poison_i(dcache_poison)
 
+
     // D$-LCE Interface
     ,.dcache_miss_o(dcache_miss_lo)
     ,.cache_req_complete_i(cache_req_complete_i)
-    ,.cache_req_o(cache_req_o)
+    ,.cache_req_o(cache_req_cast_o)
     ,.cache_req_v_o(cache_req_v_o)
     ,.cache_req_ready_i(cache_req_ready_i)
     ,.cache_req_metadata_o(cache_req_metadata_o)
@@ -414,6 +423,9 @@ always_ff @(posedge clk_i) begin
     mmu_cmd_v_r  <= '0;
     mmu_cmd_v_rr <= '0;
     is_store_r   <= '0;
+    is_store_rr  <= '0;
+    fencei_v_r   <= '0;
+    fencei_v_rr  <= '0;
     load_page_fault_mem3    <= '0;
     store_page_fault_mem3   <= '0;
     load_access_fault_mem3  <= '0;
@@ -425,6 +437,8 @@ always_ff @(posedge clk_i) begin
     mmu_cmd_v_rr <= mmu_cmd_v_r & ~chk_poison_ex_i;
     is_store_r   <= is_store;
     is_store_rr  <= is_store_r & ~chk_poison_ex_i;
+    fencei_v_r   <= fencei_cmd_v;
+    fencei_v_rr  <= fencei_v_r & ~chk_poison_ex_i;
     load_page_fault_mem3    <= load_page_fault_v & ~chk_poison_ex_i;
     store_page_fault_mem3   <= store_page_fault_v & ~chk_poison_ex_i;
     load_access_fault_mem3  <= load_access_fault_v & ~chk_poison_ex_i;
@@ -442,6 +456,7 @@ assign store_page_fault_v = mmu_cmd_v_r & dtlb_r_v_lo & translation_en_lo & is_s
 
 // Decode cmd type
 assign dcache_cmd_v    = mmu_cmd_v_i;
+assign fencei_cmd_v    = mmu_cmd_v_i & (mmu_cmd.mem_op == e_fencei);
 
 // D-Cache connections
 assign dcache_ptag     = (ptw_busy)? ptw_dcache_ptag : dtlb_r_entry.ptag;
@@ -457,6 +472,7 @@ always_comb
       dcache_pkt = ptw_dcache_pkt;
     end
     else begin
+      // We assume that mem op == dcache op
       dcache_pkt.opcode      = bp_be_dcache_opcode_e'(mmu_cmd.mem_op);
       dcache_pkt.page_offset = {mmu_cmd.vaddr.index, mmu_cmd.vaddr.offset};
       dcache_pkt.data        = mmu_cmd.data;
@@ -472,7 +488,7 @@ assign load_access_fault_v  = load_op_tl_lo & (mode_fault_v | did_fault_v);
 assign store_access_fault_v = store_op_tl_lo & (mode_fault_v | did_fault_v);
 
 // D-TLB connections
-assign dtlb_r_v     = dcache_cmd_v;
+assign dtlb_r_v     = dcache_cmd_v & ~fencei_cmd_v;
 assign dtlb_r_vtag  = mmu_cmd.vaddr.tag;
 assign dtlb_w_v     = ptw_tlb_w_v & ~itlb_not_dtlb_resp;
 assign dtlb_w_vtag  = ptw_tlb_w_vtag;
@@ -486,7 +502,7 @@ assign ptw_store_not_load = dtlb_fill_cmd_v & is_store_rr;
 
 // MMU response connections
 assign mem_resp.exc_v  = |exception_ecode_dec_li;
-assign mem_resp.miss_v = mmu_cmd_v_rr & ~dcache_v & ~|exception_ecode_dec_li;
+assign mem_resp.miss_v = mmu_cmd_v_rr & ~dcache_v & ~dcache_fencei_v & ~|exception_ecode_dec_li;
 assign mem_resp.data   = dcache_v ? dcache_data : csr_data_lo;
 
 assign mem_resp_v_o    = ptw_busy ? 1'b0 : mmu_cmd_v_rr | csr_v_lo;
