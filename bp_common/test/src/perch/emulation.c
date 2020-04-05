@@ -20,34 +20,6 @@
 #define FUNCT5(x)  ((x >> 27) & 0x1F)
 #define FUNCT11(x) ((x >> 20) & 0x7FF)
 
-uint8_t get_byte(uint64_t dword, uint8_t byte_idx)
-{
-  return (dword >> 8*byte_idx) & 0xFF;
-} 
-
-void print_reg(uint8_t reg, uint64_t dword)
-{
-  uint8_t *print_address_n = (uint8_t*) 0x8FFFFFFF;
-  uint8_t *print_address_c = (uint8_t*) 0x8FFFEFFF;
-
-  *print_address_c = 'r';
-  *print_address_c = 'e';
-  *print_address_c = 'g';
-  *print_address_c = ' ';
-  *print_address_n = reg;
-  *print_address_c = ' ';
-
-  for (int i = 7; i >= 0; i--)
-  {
-    *print_address_n = get_byte(dword, i);
-  }
-  *print_address_c = ' ';
-  *print_address_c = ' ';
-  *print_address_c = ' ';
-}
-
-static uint64_t csr_array[4096];
-
 static uint64_t (*amow_jt[32])(uint64_t, uint64_t) =
 {
   amo_addw, amo_swapw, 0, 0, amo_xorw, 0, 0, 0,
@@ -76,7 +48,6 @@ static uint64_t (*mul_jt[8])(uint64_t, uint64_t) =
 
 void decode_illegal(uint64_t *regs, uint64_t mcause, uint64_t instr) 
 {
-  // TODO: We only emulate A extension for now
   uint16_t funct11 = FUNCT11(instr);
   uint8_t funct5 = FUNCT5(instr);
   uint8_t rs2_addr = RS2(instr);
@@ -96,6 +67,7 @@ void decode_illegal(uint64_t *regs, uint64_t mcause, uint64_t instr)
   } else {
     // Fail on truly illegal instruction
     while(1);
+    //bp_finish(-1);
   }
 }
 
