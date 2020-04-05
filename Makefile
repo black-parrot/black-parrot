@@ -12,18 +12,28 @@ include $(BP_EXTERNAL_DIR)/Makefile.tools
 
 .DEFAULT: prep
 
+<<<<<<< HEAD
 ## This is a small target which runs fast and allows folks to run hello world
 prep_lite: | $(TARGET_DIRS)
+=======
+prep_lite:
+>>>>>>> Cleaning up submodules and simplifying build process for tools
 	git submodule update --init
 	$(MAKE) libs
 	$(MAKE) verilator
 	$(MAKE) -j1 ucode
 
 ## This is the big target that just builds everything. Most users should just press this button
+<<<<<<< HEAD
 prep: | $(TARGET_DIRS)
 	git submodule update --init
 	$(MAKE) libs
 	$(MAKE) tools
+=======
+prep:
+	git submodule update --init
+	$(MAKE) libs tools
+>>>>>>> Cleaning up submodules and simplifying build process for tools
 	$(MAKE) -j1 progs 
 	$(MAKE) -j1 ucode
 
@@ -32,6 +42,7 @@ prep: | $(TARGET_DIRS)
 #    are for building tools, which we should only need to do every so often
 
 tidy_tools:
+<<<<<<< HEAD
 	cd $(TOP); git submodule deinit -f external/riscv-gnu-toolchain
 	cd $(TOP); git submodule deinit -f external/verilator
 	cd $(TOP); git submodule deinit -f external/dromajo
@@ -39,6 +50,14 @@ tidy_tools:
 	cd $(TOP); git submodule deinit -f external/axe
 	cd $(TOP); git submodule deinit -f external/cmurphi
 	cd $(TOP); git submodule deinit -f external/sv2v
+=======
+	cd $(TOP); git submodule deinit -f external/gnu
+	cd $(TOP); git submodule deinit -f external/verilator
+	cd $(TOP); git submodule deinit -f external/dromajo
+	cd $(TOP); git submodule deinit -f external/spike
+	cd $(TOP); git submodule deinit -f external/axe
+	cd $(TOP); git submodule deinit -f external/cmurphi
+>>>>>>> Cleaning up submodules and simplifying build process for tools
 
 
 ## This target just wipes the whole repo clean.
@@ -61,20 +80,34 @@ libs: $(TARGET_DIRS)
 	$(MAKE) dramsim2
 	$(MAKE) dramsim3
 
+<<<<<<< HEAD
 tools: | $(TARGET_DIRS)
+=======
+tools: libs
+>>>>>>> Cleaning up submodules and simplifying build process for tools
 	$(MAKE) gnu
 	$(MAKE) verilator
 	$(MAKE) dromajo
 	$(MAKE) spike
+<<<<<<< HEAD
 	#$(MAKE) axe
 	#$(MAKE) cmurphi
 	#$(MAKE) sv2v
 	#$(MAKE) bsg_sv2v
+=======
+	$(MAKE) axe
+	$(MAKE) cmurphi
+	$(MAKE) bsg_sv2v
+>>>>>>> Cleaning up submodules and simplifying build process for tools
 
 progs: tools
 	git submodule update --init --recursive $(BP_COMMON_DIR)/test
 	$(MAKE) -C $(BP_COMMON_DIR)/test all_mem all_dump all_nbf
 
+<<<<<<< HEAD
 ucode: | basejump
+=======
+ucode: tools
+>>>>>>> Cleaning up submodules and simplifying build process for tools
 	$(MAKE) -C $(BP_ME_DIR)/src/asm roms
 

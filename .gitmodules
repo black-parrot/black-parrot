@@ -119,15 +119,3 @@
   ignore = dirty
   update = none
 
-[submodule "external/dtc"]
-  path = external/dtc
-  url = https://git.kernel.org/pub/scm/utils/dtc/dtc.git
-  branch = master
-  ignore = dirty
-
-[submodule "external/DRAMsim3"]
-  path = external/DRAMsim3
-  url = https://github.com/umd-memsys/DRAMsim3.git
-  branch = master
-  ignore = dirty
-

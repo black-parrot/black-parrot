@@ -35,6 +35,8 @@ systemc_build:
 	$(MAKE) -C $(systemc_dir)
 	$(MAKE) -C $(systemc_dir) install
 
+verilator_build: SYSTEMC_INCLUDE ?= $(BP_EXTERNAL_DIR)/include
+verilator_build: SYSTEMC_LIBDIR  ?= $(BP_EXTERNAL_DIR)/lib-linux64
 verilator_build: systemc
 	cd $(verilator_dir); \
 		autoconf; \
