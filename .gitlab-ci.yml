@@ -47,6 +47,8 @@ bleach_all:
     - top_dev
     - sw_dev
   before_script:
+    - echo "Forcefully updating submodules"
+    - git submodule update --init --force
     - echo "Making CCE ucode"
     - make ucode > make_ucode.log
   artifacts:
@@ -57,12 +59,18 @@ bleach_all:
       - "bp_be/syn/reports/"
       - "bp_me/syn/reports/"
       - "bp_top/syn/reports/"
-
-cache: &global_cache
-  key: $CI_COMMIT_REF_SLUG
-  paths:
-    - $CI_PROJECT_DIR/external/
-  policy: pull
+  cache: &global_cache
+    key: $CI_COMMIT_REF_SLUG
+    paths:
+      - $CI_PROJECT_DIR/bp_common/test/mem
+      - $CI_PROJECT_DIR/external/bin
+      - $CI_PROJECT_DIR/external/lib
+      - $CI_PROJECT_DIR/external/lib64
+      - $CI_PROJECT_DIR/external/lib-linux64
+      - $CI_PROJECT_DIR/external/include
+      - $CI_PROJECT_DIR/external/share
+      - $CI_PROJECT_DIR/external/touchfiles
+    policy: pull-push
 
 update-cache: &update-cache-manual
   when: manual
@@ -77,8 +85,14 @@ update-cache: &update-cache-manual
   cache:
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/external/
-      - $CI_PROJECT_DIR/bp_common/test/mem/
+      - $CI_PROJECT_DIR/bp_common/test/mem
+      - $CI_PROJECT_DIR/external/bin
+      - $CI_PROJECT_DIR/external/lib
+      - $CI_PROJECT_DIR/external/lib64
+      - $CI_PROJECT_DIR/external/lib-linux64
+      - $CI_PROJECT_DIR/external/include
+      - $CI_PROJECT_DIR/external/share
+      - $CI_PROJECT_DIR/external/touchfiles
     policy: push
 
 update-cache-auto:
@@ -86,6 +100,7 @@ update-cache-auto:
     when: always
     only:
       changes:
+        - .gitlab-ci.yml
         - Makefile
         - Makefile.common
         - bp_common/test/*

@@ -30,10 +30,10 @@ prep:
 #    are for building tools, which we should only need to do every so often
 
 tidy_tools:
-	cd $(TOP); git submodule deinit -f external/gnu
+	cd $(TOP); git submodule deinit -f external/riscv-gnu-toolchain
 	cd $(TOP); git submodule deinit -f external/verilator
 	cd $(TOP); git submodule deinit -f external/dromajo
-	cd $(TOP); git submodule deinit -f external/spike
+	cd $(TOP); git submodule deinit -f external/riscv-isa-sim
 	cd $(TOP); git submodule deinit -f external/axe
 	cd $(TOP); git submodule deinit -f external/cmurphi
 
