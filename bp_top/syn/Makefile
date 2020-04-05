@@ -12,11 +12,7 @@ export RESULTS_PATH := $(BP_TOP_DIR)/syn/results
 export REPORT_PATH  := $(BP_TOP_DIR)/syn/reports
 
 TB          ?= bp_softcore
-#TB          ?= bp_processor
 CFG         ?= e_bp_softcore_cfg
-#CFG         ?= e_bp_single_core_cfg
-START_PC    ?= 0x80000000
-TOLERANCE   ?= 2
 
 COH_PROTO   ?= mesi
 CCE_MEM_PATH = $(BP_ME_DIR)/src/asm/roms/$(COH_PROTO)
