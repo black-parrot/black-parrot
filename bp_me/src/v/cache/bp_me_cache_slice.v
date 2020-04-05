@@ -107,10 +107,6 @@ module bp_me_cache_slice
      ,.v_we_o()
      );
 
-  bp_cce_mem_msg_s dma_mem_cmd_lo;
-  logic dma_mem_cmd_v_lo, dma_mem_cmd_ready_li;
-  bp_cce_mem_msg_s dma_mem_resp_li;
-  logic dma_mem_resp_v_li, dma_mem_resp_ready_lo;
   bp_me_cache_dma_to_cce
    #(.bp_params_p(bp_params_p))
    dma_to_mem

@@ -108,7 +108,6 @@ module bp_me_cce_to_cache
   ,.yumi_i(small_fifo_yumi_li)
   );
   
-
   // synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i) begin
     if (reset_i) begin

@@ -28,6 +28,16 @@ typedef enum logic
   ,e_cce_mode_normal
 } bp_cce_mode_e;
 
+
+typedef enum logic [15:0]{
+  e_sacc_vdp
+} bp_sacc_type_e;
+
+typedef enum logic [15:0]{
+  e_cacc_vdp
+} bp_cacc_type_e;
+
+
 `define declare_bp_cfg_bus_s(vaddr_width_mp, core_id_width_mp, cce_id_width_mp, lce_id_width_mp, cce_pc_width_mp, cce_instr_width_mp) \
   typedef struct packed                                                                            \
   {                                                                                                \
@@ -92,8 +102,10 @@ typedef struct packed
 
   integer ic_y_dim;
   integer mc_y_dim;
-  integer ac_x_dim;
-
+  integer cac_x_dim;
+  integer sac_x_dim;
+  integer cacc_type;
+  integer sacc_type;
   integer coherent_l1;
 
   integer vaddr_width;
@@ -119,6 +131,7 @@ typedef struct packed
   integer cce_block_width;
   integer cce_pc_width;
 
+  integer l2_en;
   integer l2_sets;
   integer l2_assoc;
 
@@ -175,16 +188,21 @@ typedef struct packed
   , localparam ic_y_dim_p = proc_param_lp.ic_y_dim                                                 \
   , localparam mc_x_dim_p = cc_x_dim_p                                                             \
   , localparam mc_y_dim_p = proc_param_lp.mc_y_dim                                                 \
-  , localparam ac_x_dim_p = proc_param_lp.ac_x_dim                                                 \
-  , localparam ac_y_dim_p = cc_y_dim_p                                                             \
+  , localparam cac_x_dim_p = proc_param_lp.cac_x_dim                                               \
+  , localparam cac_y_dim_p = cc_y_dim_p                                                            \
+  , localparam sac_x_dim_p = proc_param_lp.sac_x_dim                                               \
+  , localparam sac_y_dim_p = cc_y_dim_p                                                            \
+  , localparam cacc_type_p = proc_param_lp.cacc_type                                               \
+  , localparam sacc_type_p = proc_param_lp.sacc_type                                               \
                                                                                                    \
   , localparam num_core_p  = cc_x_dim_p * cc_y_dim_p                                               \
   , localparam num_io_p    = ic_x_dim_p * ic_y_dim_p                                               \
   , localparam num_l2e_p   = mc_x_dim_p * mc_y_dim_p                                               \
-  , localparam num_acc_p   = ac_x_dim_p * ac_y_dim_p                                               \
+  , localparam num_cacc_p  = cac_x_dim_p * cac_y_dim_p                                             \
+  , localparam num_sacc_p  = sac_x_dim_p * sac_y_dim_p                                             \
                                                                                                    \
-  , localparam num_cce_p   = num_core_p + num_l2e_p                                                \
-  , localparam num_lce_p   = (bp_params_e_mp == e_bp_half_core_cfg) ? 1 : 2*num_core_p + num_acc_p \
+  , localparam num_cce_p = num_core_p + num_l2e_p                                                  \
+  , localparam num_lce_p = (bp_params_e_mp == e_bp_half_core_cfg) ? 1 : 2*num_core_p + num_cacc_p  \
                                                                                                    \
   , localparam core_id_width_p = `BSG_SAFE_CLOG2(cc_x_dim_p*cc_y_dim_p)                            \
   , localparam cce_id_width_p  = `BSG_SAFE_CLOG2((cc_x_dim_p*1+2)*(cc_y_dim_p*1+2))                \
@@ -224,6 +242,7 @@ typedef struct packed
   , localparam cce_way_groups_p           = `BSG_MAX(dcache_sets_p, icache_sets_p)                 \
   , localparam cce_instr_width_p          = 34                                                     \
                                                                                                    \
+  , localparam l2_en_p    = proc_param_lp.l2_en                                                    \
   , localparam l2_sets_p  = proc_param_lp.l2_sets                                                  \
   , localparam l2_assoc_p = proc_param_lp.l2_assoc                                                 \
                                                                                                    \
@@ -236,7 +255,7 @@ typedef struct packed
   , localparam coh_noc_cid_width_p    = proc_param_lp.coh_noc_cid_width                            \
   , localparam coh_noc_len_width_p    = proc_param_lp.coh_noc_len_width                            \
   , localparam coh_noc_y_cord_width_p = `BSG_SAFE_CLOG2(ic_y_dim_p+cc_y_dim_p+mc_y_dim_p+1)        \
-  , localparam coh_noc_x_cord_width_p = `BSG_SAFE_CLOG2(cc_x_dim_p+ac_x_dim_p+1)                   \
+  , localparam coh_noc_x_cord_width_p = `BSG_SAFE_CLOG2(sac_x_dim_p+cc_x_dim_p+cac_x_dim_p+1)      \
   , localparam coh_noc_dims_p         = 2                                                          \
   , localparam coh_noc_dirs_p         = coh_noc_dims_p*2 + 1                                       \
   , localparam coh_noc_trans_p        = 0                                                          \
@@ -251,7 +270,7 @@ typedef struct packed
   , localparam mem_noc_cid_width_p       = proc_param_lp.mem_noc_cid_width                         \
   , localparam mem_noc_len_width_p       = proc_param_lp.mem_noc_len_width                         \
   , localparam mem_noc_y_cord_width_p    = `BSG_SAFE_CLOG2(ic_y_dim_p+cc_y_dim_p+mc_y_dim_p+1)     \
-  , localparam mem_noc_x_cord_width_p    = `BSG_SAFE_CLOG2(cc_x_dim_p+ac_x_dim_p+1)                \
+  , localparam mem_noc_x_cord_width_p    = `BSG_SAFE_CLOG2(sac_x_dim_p+cc_x_dim_p+cac_x_dim_p+1)   \
   , localparam mem_noc_dims_p            = 1                                                       \
   , localparam mem_noc_cord_dims_p       = 2                                                       \
   , localparam mem_noc_dirs_p            = mem_noc_dims_p*2 + 1                                    \
