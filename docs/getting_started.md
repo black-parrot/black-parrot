@@ -16,20 +16,11 @@ BlackParrot has been tested extensively on CentOS 7. Please raise issues with pr
     # Clone the latest repo
     git clone https://github.com/black-parrot/black-parrot.git
     cd black-parrot
-
-    # make tools will clone, build and install toolchains needed for BlackParrot
-    # For faster builds, make tools -j is parallelizable!
-    make tools
-    # make tidy_tools  will remove all (10+ GB) tool build directories, while leaving the installation
-    make tidy_tools
-    # Update hardware libraries (basejump_stl)
-    make libs
-    # make progs will build all open source test programs that ship with BlackParrot
-    make progs
-    # make ucode will build the CCE microcode used for the BlackParrot coherence engine
-    # This is necessary whenever changes are made to CCE ucode. Eventually, CCE ucode
-    #  will be built 'on demand' and so this command may become unnecessary
-    make ucode
+    # make prep is a meta-target which will build the RISC-V toolchains, programs and microcode
+    #   needed for a full BlackParrot evaluation setup.
+    # Users who are changing code can use the 'libs' 'progs' or 'ucode' targets as appropriate
+    # For faster builds, make prep -j is parallelizable!
+    make prep
 
 The *master* branch contains most recent stable version. This is the recommended branch for someone wishing to try out BlackParrot.
 

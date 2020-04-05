@@ -20,6 +20,23 @@ stages:
 #    - echo "Failing job 2"
 #    - exit 1 
 
+clean_all:
+  when: manual
+  stage: prereq
+  tags:
+    - bsg
+  script:
+      - git clean -fdx
+
+bleach_all:
+  when: manual
+  stage: prereq
+  tags:
+    - bsg
+  script:
+    - git submodule deinit -f .
+    - git clean -fdx
+
 .job_template: &job_definition
   only:
     - master
@@ -31,7 +48,7 @@ stages:
     - sw_dev
   before_script:
     - echo "Updating libraries"
-    - make update_libs
+    - make libs > make_libs.log
     - echo "Making CCE ucode"
     - make ucode > make_ucode.log
   artifacts:
@@ -50,7 +67,6 @@ cache: &global_cache
   policy: pull
 
 update-cache: &update-cache-manual
-  <<: *job_definition
   when: manual
   stage: prereq
   tags:
@@ -59,10 +75,7 @@ update-cache: &update-cache-manual
     - git submodule deinit -f .
     - git clean -fdx
     - git submodule sync
-    - make libs > make_libs.log
-    - make tools -j $CI_CORES > make_tools.log
-    - make tidy_tools > make_tidy_tools.log
-    - make progs > make_progs.log
+    - make prep -j $CI_CORES > make_prep.log
     - make -C bp_common/test riscvdv > make_riscvdv.log
   cache:
     key: $CI_COMMIT_REF_SLUG
@@ -103,25 +116,6 @@ hotfix_job:
     when: always
     paths:
       - "bp_top/syn/reports/"
-
-clean_build:
-  <<: *job_definition
-  when: manual
-  stage: prereq
-  tags:
-    - bsg
-  script:
-      - make -C bp_top/syn clean
-
-clean_all:
-  <<: *job_definition
-  when: manual
-  stage: prereq
-  tags:
-    - bsg
-  script:
-    - git submodule deinit -f .
-    - git clean -fdx
 
 check-design:
   <<: *job_definition
