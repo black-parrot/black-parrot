@@ -17,8 +17,6 @@ RISCV_OBJDUMP  = $(CROSS_COMPILE)objdump -d
 RISCV_OBJCOPY  = $(CROSS_COMPILE)objcopy
 DROMAJO        = dromajo
 
-PATH := $(BP_EXTERNAL_DIR)/bin:$(PATH)
-
 NC ?= 1
 MEMSIZE ?= 32 # MB
 DUMP_PERIOD ?= 0

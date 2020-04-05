@@ -47,8 +47,6 @@ bleach_all:
     - top_dev
     - sw_dev
   before_script:
-    - echo "Updating libraries"
-    - make libs > make_libs.log
     - echo "Making CCE ucode"
     - make ucode > make_ucode.log
   artifacts:
@@ -73,10 +71,9 @@ update-cache: &update-cache-manual
     - bsg
   script:
     - git submodule deinit -f .
-    - git clean -fdx
     - git submodule sync
     - make prep -j $CI_CORES > make_prep.log
-    - make -C bp_common/test riscvdv > make_riscvdv.log
+    - make tidy_tools > make_tidy_tools.log
   cache:
     key: $CI_COMMIT_REF_SLUG
     paths:
