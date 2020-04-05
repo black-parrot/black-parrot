@@ -205,17 +205,3 @@ clean:
 	-rm -rf $(TEST_DIR)/src/bsg_newlib_dramfs/install-newlib
 	-rm -rf $(MEM_DIR)/*
 
-####### These targets are not maintained at the moment
-#
-#%_random.riscv:
-#	$(RANDOM_GEN) -seed $(SEED) -mem 50 20 -mode m -o $@.S
-#	${RISCV_GCC_RAND}  $@.S -o $@
-#	rm $@.S
-#
-#rv_random:
-#	num=1; while [ $$num -le $(RANDOM_NUM) ]; do \
-#  make test`expr $$num + 0`_random.v SEED=`expr $$num + 0`; \
-#  num=`expr $$num + 1`; \
-#  done
-#
-##########################################

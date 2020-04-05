@@ -28,10 +28,9 @@ Users who just want to test their setup and run a minimal BlackParrot test shoul
     git clone https://github.com/black-parrot/black-parrot.git
     cd black-parrot
 
-    # Install a minimal set of tools
-    make libs
-    make verilator
-    make ucode
+    # Install a minimal set of tools and libraries
+    # For faster builds, make prep_lite -j is parallelizable!
+    make prep_lite
 
     # Running your first test
     cd bp_top/syn
