@@ -54,7 +54,7 @@ $(TARGET_DIRS):
 #    you already have a copy of. If your version of a tool significantly differs from 
 #    our submodule version, use at your own risk. 
 #
-libs: $(TARGET_DIRS)
+libs: | $(TARGET_DIRS)
 	$(MAKE) basejump
 	$(MAKE) dramsim2
 	#$(MAKE) dramsim3

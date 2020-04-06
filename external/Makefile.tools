@@ -23,7 +23,7 @@ $(BP_TOUCH_DIR)/$$($(1)_tag):
 	cd $(TOP); git submodule update --init --recursive $$($(1)_dir)
 	+$(MAKE) $(1)_build
 	touch $(BP_TOUCH_DIR)/$$($(1)_tag)
-$(1): $(BP_TOUCH_DIR)/$$($(1)_tag)
+$(1): | $(BP_TOUCH_DIR)/$$($(1)_tag)
 endef
 
 basejump_build: ;

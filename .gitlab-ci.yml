@@ -107,7 +107,6 @@ prep:
   tags:
     - bsg
   script:
-    - touch -t 7001010000 $CI_PROJECT_DIR/external/touchfiles/*
     - make prep -j $CI_CORES > make_prep.log
     - make tidy_tools > make_tidy_tools_post.log
   cache: &global_cache
