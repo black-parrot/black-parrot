@@ -21,7 +21,6 @@ module wrapper
    )
   (input                                               clk_i
    , input                                             reset_i
-   , input                                             freeze_i
 
    // Outgoing I/O
    , output [cce_mem_msg_width_lp-1:0]                 io_cmd_o
