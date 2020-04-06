@@ -105,3 +105,9 @@
   url = https://github.com/bsg-external/systemc.git
   branch = master
   ignore = dirty
+[submodule "external/sv2v"]
+  path = external/sv2v
+  url = https://github.com/zachjs/sv2v.git
+  branch = master
+  ignore = dirty
+
