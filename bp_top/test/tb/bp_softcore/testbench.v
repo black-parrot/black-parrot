@@ -77,13 +77,22 @@ bp_cce_mem_msg_s nbf_cmd_lo;
 logic nbf_cmd_v_lo, nbf_cmd_yumi_li;
 bp_cce_mem_msg_s nbf_resp_li;
 logic nbf_resp_v_li, nbf_resp_ready_lo;
-logic freeze_li;
+
+bp_cce_mem_msg_s cfg_cmd_lo;
+logic cfg_cmd_v_lo, cfg_cmd_yumi_li;
+bp_cce_mem_msg_s cfg_resp_li;
+logic cfg_resp_v_li, cfg_resp_ready_lo;
+
+bp_cce_mem_msg_s load_cmd_lo;
+logic load_cmd_v_lo, load_cmd_yumi_li;
+bp_cce_mem_msg_s load_resp_li;
+logic load_resp_v_li, load_resp_ready_lo;
+
 wrapper
  #(.bp_params_p(bp_params_p))
  wrapper
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.freeze_i(freeze_li)
 
    ,.io_cmd_o(proc_io_cmd_lo)
    ,.io_cmd_v_o(proc_io_cmd_v_lo)
@@ -93,13 +102,13 @@ wrapper
    ,.io_resp_v_i(proc_io_resp_v_li)
    ,.io_resp_yumi_o(proc_io_resp_yumi_lo)
 
-   ,.io_cmd_i(nbf_cmd_lo)
-   ,.io_cmd_v_i(nbf_cmd_v_lo)
-   ,.io_cmd_yumi_o(nbf_cmd_yumi_li)
+   ,.io_cmd_i(load_cmd_lo)
+   ,.io_cmd_v_i(load_cmd_v_lo)
+   ,.io_cmd_yumi_o(load_cmd_yumi_li)
 
-   ,.io_resp_o(nbf_resp_li)
-   ,.io_resp_v_o(nbf_resp_v_li)
-   ,.io_resp_ready_i(nbf_resp_ready_lo)
+   ,.io_resp_o(load_resp_li)
+   ,.io_resp_v_o(load_resp_v_li)
+   ,.io_resp_ready_i(load_resp_ready_lo)
 
    ,.mem_cmd_o(proc_mem_cmd_lo)
    ,.mem_cmd_v_o(proc_mem_cmd_v_lo)
@@ -142,14 +151,14 @@ bp_mem
    );
 
 
-logic nbf_done_lo;
+logic nbf_done_lo, cfg_done_lo;
 if (load_nbf_p)
   begin : nbf
     bp_nonsynth_nbf_loader
      #(.bp_params_p(bp_params_p), .skip_freeze_clear_p(1))
      nbf_loader
       (.clk_i(clk_i)
-       ,.reset_i(reset_i)
+       ,.reset_i(reset_i | ~cfg_done_lo)
     
        ,.lce_id_i(4'b10)
     
@@ -166,13 +175,73 @@ if (load_nbf_p)
   end
 else
   begin : no_nbf
-    assign nbf_resp_ready_lo = '0;
+    assign nbf_resp_ready_lo = 1'b1;
     assign nbf_cmd_v_lo = '0;
     assign nbf_cmd_lo = '0;
 
     assign nbf_done_lo = 1'b1;
   end
-assign freeze_li = ~nbf_done_lo;
+
+localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
+bp_cce_mmio_cfg_loader
+  #(.bp_params_p(bp_params_p)
+    ,.inst_width_p($bits(bp_cce_inst_s))
+    ,.inst_ram_addr_width_p(cce_instr_ram_addr_width_lp)
+    ,.inst_ram_els_p(num_cce_instr_ram_els_p)
+    ,.skip_ram_init_p(skip_init_p)
+    ,.clear_freeze_p(!load_nbf_p)
+    )
+  cfg_loader
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.lce_id_i(4'b10)
+    
+   ,.io_cmd_o(cfg_cmd_lo)
+   ,.io_cmd_v_o(cfg_cmd_v_lo)
+   ,.io_cmd_yumi_i(cfg_cmd_yumi_li)
+
+   ,.io_resp_i(cfg_resp_li)
+   ,.io_resp_v_i(cfg_resp_v_li)
+   ,.io_resp_ready_o(cfg_resp_ready_lo)
+
+   ,.done_o(cfg_done_lo)
+  );
+
+// CFG and NBF are mutex, so we can just use fixed arbitration here
+always_comb
+  if (~cfg_done_lo)
+    begin
+      load_cmd_lo = cfg_cmd_lo;
+      load_cmd_v_lo = cfg_cmd_v_lo;
+
+      nbf_cmd_yumi_li = '0; 
+      cfg_cmd_yumi_li = load_cmd_yumi_li;
+
+      load_resp_ready_lo = cfg_resp_ready_lo;
+
+      nbf_resp_li = '0;
+      nbf_resp_v_li = '0;
+
+      cfg_resp_li = load_resp_li;
+      cfg_resp_v_li = load_resp_v_li;
+    end
+  else
+    begin
+      load_cmd_lo = nbf_cmd_lo;
+      load_cmd_v_lo = nbf_cmd_v_lo;
+
+      nbf_cmd_yumi_li = load_cmd_yumi_li; 
+      cfg_cmd_yumi_li = '0;
+
+      load_resp_ready_lo = nbf_resp_ready_lo;
+
+      nbf_resp_li = load_resp_li;
+      nbf_resp_v_li = load_resp_v_li;
+
+      cfg_resp_li = '0;
+      cfg_resp_v_li = '0;
+    end
 
 logic program_finish_lo;
 bp_nonsynth_host
