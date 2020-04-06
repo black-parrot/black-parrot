@@ -72,8 +72,8 @@ bleach_all:
       - $CI_PROJECT_DIR/external/lib
       - $CI_PROJECT_DIR/external/lib64
       - $CI_PROJECT_DIR/external/lib-linux64
-      - $CI_PROJECT_DIR/external/include
       - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
+      - $CI_PROJECT_DIR/external/include
       - $CI_PROJECT_DIR/external/share
       - $CI_PROJECT_DIR/external/touchfiles
     policy: pull
@@ -85,7 +85,6 @@ update-cache: &update-cache-manual
     - bsg
   script:
     - make bleach_all > make_bleach_all.log
-    - git submodule update --init --recursive --force
     - make prep -j $CI_CORES > make_prep.log
     - make tidy_tools > make_tidy_tools.log
   cache:
@@ -96,8 +95,8 @@ update-cache: &update-cache-manual
       - $CI_PROJECT_DIR/external/lib
       - $CI_PROJECT_DIR/external/lib64
       - $CI_PROJECT_DIR/external/lib-linux64
-      - $CI_PROJECT_DIR/external/include
       - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
+      - $CI_PROJECT_DIR/external/include
       - $CI_PROJECT_DIR/external/share
       - $CI_PROJECT_DIR/external/touchfiles
     policy: push
@@ -108,7 +107,6 @@ prep:
   tags:
     - bsg
   script:
-    - git submodule deinit -f .
     - make prep -j $CI_CORES > make_prep.log
     - make tidy_tools > make_tidy_tools_post.log
   cache: &global_cache
@@ -119,8 +117,8 @@ prep:
       - $CI_PROJECT_DIR/external/lib
       - $CI_PROJECT_DIR/external/lib64
       - $CI_PROJECT_DIR/external/lib-linux64
-      - $CI_PROJECT_DIR/external/include
       - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
+      - $CI_PROJECT_DIR/external/include
       - $CI_PROJECT_DIR/external/share
       - $CI_PROJECT_DIR/external/touchfiles
     policy: pull-push
@@ -335,8 +333,8 @@ hotfix_job:
       - $CI_PROJECT_DIR/external/lib
       - $CI_PROJECT_DIR/external/lib64
       - $CI_PROJECT_DIR/external/lib-linux64
-      - $CI_PROJECT_DIR/external/include
       - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
+      - $CI_PROJECT_DIR/external/include
       - $CI_PROJECT_DIR/external/share
       - $CI_PROJECT_DIR/external/touchfiles
     policy: pull
