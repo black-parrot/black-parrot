@@ -367,7 +367,12 @@ module bp_cce_msg
 
           uc_cnt_dec = mem_resp_yumi_o;
 
-        end else if (lce_req_v_i) begin
+        // process uncached read or write requests
+        // cached requests will stall on the input port until normal mode is entered
+        end else if (lce_req_v_i
+                     & ((lce_req.header.msg_type == e_lce_req_type_uc_rd)
+                        | (lce_req.header.msg_type == e_lce_req_type_uc_wr))
+                    ) begin
           // uncached read first sends a memory cmd, uncached store sends memory data cmd
           uc_state_n = (lce_req.header.msg_type == e_lce_req_type_uc_rd)
                        ? e_uc_send_mem_cmd
