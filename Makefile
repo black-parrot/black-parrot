@@ -57,17 +57,17 @@ $(TARGET_DIRS):
 libs: $(TARGET_DIRS)
 	$(MAKE) basejump
 	$(MAKE) dramsim2
-	$(MAKE) dramsim3
+	#$(MAKE) dramsim3
 
 tools: libs
 	$(MAKE) gnu
 	$(MAKE) verilator
 	$(MAKE) dromajo
 	$(MAKE) spike
-	$(MAKE) axe
-	$(MAKE) cmurphi
-	$(MAKE) sv2v
-	$(MAKE) bsg_sv2v
+	#$(MAKE) axe
+	#$(MAKE) cmurphi
+	#$(MAKE) sv2v
+	#$(MAKE) bsg_sv2v
 
 progs: tools
 	git submodule update --init --recursive $(BP_COMMON_DIR)/test

@@ -4,6 +4,7 @@ variables:
 
 stages:
   - prereq
+  - prep
   - check
   - test-short
   - test-medium
@@ -36,6 +37,12 @@ bleach_all:
   script:
     - git submodule deinit -f .
     - git clean -fdx
+  cache: &global_cache
+    key: $CI_COMMIT_REF_SLUG
+    paths:
+      - $CI_PROJECT_DIR/bp_common/test/mem
+      - $CI_PROJECT_DIR/external/
+    policy: push
 
 .job_template: &job_definition
   only:
@@ -47,8 +54,6 @@ bleach_all:
     - top_dev
     - sw_dev
   before_script:
-    - echo "Forcefully updating submodules"
-    - git submodule update --init --force
     - echo "Making CCE ucode"
     - make ucode > make_ucode.log
   artifacts:
@@ -68,9 +73,10 @@ bleach_all:
       - $CI_PROJECT_DIR/external/lib64
       - $CI_PROJECT_DIR/external/lib-linux64
       - $CI_PROJECT_DIR/external/include
+      - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
       - $CI_PROJECT_DIR/external/share
       - $CI_PROJECT_DIR/external/touchfiles
-    policy: pull-push
+    policy: pull
 
 update-cache: &update-cache-manual
   when: manual
@@ -78,8 +84,8 @@ update-cache: &update-cache-manual
   tags:
     - bsg
   script:
-    - git submodule deinit -f .
-    - git submodule sync
+    - make bleach_all > make_bleach_all.log
+    - git submodule update --init --recursive --force
     - make prep -j $CI_CORES > make_prep.log
     - make tidy_tools > make_tidy_tools.log
   cache:
@@ -91,43 +97,33 @@ update-cache: &update-cache-manual
       - $CI_PROJECT_DIR/external/lib64
       - $CI_PROJECT_DIR/external/lib-linux64
       - $CI_PROJECT_DIR/external/include
+      - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
       - $CI_PROJECT_DIR/external/share
       - $CI_PROJECT_DIR/external/touchfiles
     policy: push
 
-update-cache-auto:
-    <<: *update-cache-manual
-    when: always
-    only:
-      changes:
-        - .gitlab-ci.yml
-        - Makefile
-        - Makefile.common
-        - bp_common/test/*
-        - external/*
-
-hotfix_job:
-  only:
-    - /^.*hotfix.*$/
-  stage: check
+prep:
+  <<: *job_definition
+  stage: prep
   tags:
     - bsg
-    - vcs
   script:
-    - make -C bp_top/syn clean
-    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_single_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_quad_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_softcore" bp_top &
-    - wait
-  cache:
-    key: "dev"
+    - git submodule deinit -f .
+    - make prep -j $CI_CORES > make_prep.log
+    - make tidy_tools > make_tidy_tools_post.log
+  cache: &global_cache
+    key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/external/
-    policy: pull
-  artifacts:
-    when: always
-    paths:
-      - "bp_top/syn/reports/"
+      - $CI_PROJECT_DIR/bp_common/test/mem
+      - $CI_PROJECT_DIR/external/bin
+      - $CI_PROJECT_DIR/external/lib
+      - $CI_PROJECT_DIR/external/lib64
+      - $CI_PROJECT_DIR/external/lib-linux64
+      - $CI_PROJECT_DIR/external/include
+      - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
+      - $CI_PROJECT_DIR/external/share
+      - $CI_PROJECT_DIR/external/touchfiles
+    policy: pull-push
 
 check-design:
   <<: *job_definition
@@ -317,4 +313,35 @@ top-mc-vcs:
     - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_8.v TB=bp_processor CFG=e_bp_oct_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_16.v TB=bp_processor CFG=e_bp_sexta_core_cfg" bp_top &
     - wait
+
+hotfix_job:
+  only:
+    - /^.*hotfix.*$/
+  stage: check
+  tags:
+    - bsg
+    - vcs
+  script:
+    - make -C bp_top/syn clean
+    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_single_core_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_quad_core_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_softcore" bp_top &
+    - wait
+  cache:
+    key: "dev"
+    paths:
+      - $CI_PROJECT_DIR/bp_common/test/mem
+      - $CI_PROJECT_DIR/external/bin
+      - $CI_PROJECT_DIR/external/lib
+      - $CI_PROJECT_DIR/external/lib64
+      - $CI_PROJECT_DIR/external/lib-linux64
+      - $CI_PROJECT_DIR/external/include
+      - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
+      - $CI_PROJECT_DIR/external/share
+      - $CI_PROJECT_DIR/external/touchfiles
+    policy: pull
+  artifacts:
+    when: always
+    paths:
+      - "bp_top/syn/reports/"
 
