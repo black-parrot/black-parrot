@@ -130,6 +130,7 @@ typedef struct packed
 
   integer cce_block_width;
   integer cce_pc_width;
+  integer ucode_cce;
 
   integer l2_en;
   integer l2_sets;
@@ -241,6 +242,7 @@ typedef struct packed
   , localparam num_cce_instr_ram_els_p    = 2**cce_pc_width_p                                      \
   , localparam cce_way_groups_p           = `BSG_MAX(dcache_sets_p, icache_sets_p)                 \
   , localparam cce_instr_width_p          = 34                                                     \
+  , localparam ucode_cce_p                = proc_param_lp.ucode_cce                                \
                                                                                                    \
   , localparam l2_en_p    = proc_param_lp.l2_en                                                    \
   , localparam l2_sets_p  = proc_param_lp.l2_sets                                                  \

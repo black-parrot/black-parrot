@@ -331,15 +331,15 @@ bind bp_be_top
      ,.mem_resp_yumi_i(dram_resp_ready_li & dram_resp_v_lo)
      );
 
-  bind bp_cce
+  bind bp_cce_wrapper
     bp_me_nonsynth_cce_tracer
       #(.bp_params_p(bp_params_p))
       bp_cce_tracer
        (.clk_i(clk_i & (testbench.cce_trace_p == 1))
         ,.reset_i(reset_i)
-        ,.freeze_i(bp_cce.cfg_bus_cast_i.freeze)
+        ,.freeze_i(cfg_bus_cast_i.freeze)
   
-        ,.cce_id_i(bp_cce.cfg_bus_cast_i.cce_id)
+        ,.cce_id_i(cfg_bus_cast_i.cce_id)
   
         // To CCE
         ,.lce_req_i(lce_req_i)

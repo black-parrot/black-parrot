@@ -110,7 +110,7 @@ module bp_cce_fsm
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
-  wire cce_normal_mode = (~cfg_bus_cast_i.freeze & (cfg_bus_cast_i.cce_mode == e_cce_mode_normal));
+  wire cce_normal_mode = (cfg_bus_cast_i.cce_mode == e_cce_mode_normal);
 
   // CCE FSM
 
@@ -745,7 +745,7 @@ module bp_cce_fsm
         // Next state depends on the CCE mode, as set by config bus
         state_n = cnt_0_clr
                   ? cce_normal_mode
-                    ? READY
+                    ? SEND_SYNC
                     : UNCACHED_ONLY
                   : CLEAR_DIR;
 
@@ -765,7 +765,12 @@ module bp_cce_fsm
         if (cce_normal_mode) begin
           state_n = SEND_SYNC;
         // only issue uncached request if number of outstanding is less than max allowed
-        end else if (lce_req_v_i & mem_cmd_ready_i & (uc_cnt < max_uc_req_lp)) begin
+        // only process uncached requests
+        // cached requests will stall on the input port
+        end else if (lce_req_v_i
+                     & ((lce_req.header.msg_type == e_lce_req_type_uc_wr)
+                        | (lce_req.header.msg_type == e_lce_req_type_uc_rd))
+                     & mem_cmd_ready_i & (uc_cnt < max_uc_req_lp)) begin
 
           // handshaking
           mem_cmd_v_o = lce_req_v_i & mem_cmd_ready_i;
