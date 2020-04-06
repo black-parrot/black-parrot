@@ -13,6 +13,7 @@ axe_dir       := $(BP_EXTERNAL_DIR)/axe
 dramsim2_dir  := $(BP_EXTERNAL_DIR)/DRAMSim2
 dramsim3_dir  := $(BP_EXTERNAL_DIR)/DRAMsim3
 cmurphi_dir   := $(BP_EXTERNAL_DIR)/cmurphi
+sv2v_dir      := $(BP_EXTERNAL_DIR)/sv2v
 bsg_sv2v_dir  := $(BP_EXTERNAL_DIR)/bsg_sv2v
 
 define submodule_tool_template
@@ -85,7 +86,16 @@ dramsim3_build:
 
 cmurphi_build:
 	$(MAKE) -C $(cmurphi_dir)/src/ mu
-	cp $(cmurphi_dir)/src/mu $(BP_BIN_DIR)/
+	cp $(cmurphi_dir)/src/mu $(BP_BIN_DIR)
+
+stack:
+	wget -qO- https://get.haskellstack.org/stable/linux-x86_64-static.tar.gz | tar xz
+	cp stack*/stack $(BP_BIN_DIR)
+	rm -rf stack*
+
+sv2v_build: stack
+	$(MAKE) -C $(sv2v_dir)
+	cp $(sv2v_dir)/bin/sv2v $(BP_BIN_DIR)
 
 bsg_sv2v_build:
 	$(MAKE) -j1 -C $(bsg_sv2v_dir) tools
@@ -101,5 +111,6 @@ $(eval $(call submodule_tool_template,axe,$(axe_dir)))
 $(eval $(call submodule_tool_template,dramsim2,$(dramsim2_dir)))
 $(eval $(call submodule_tool_template,dramsim3,$(dramsim3_dir)))
 $(eval $(call submodule_tool_template,cmurphi,$(cmurphi_dir)))
+$(eval $(call submodule_tool_template,sv2v,$(sv2v_dir)))
 $(eval $(call submodule_tool_template,bsg_sv2v,$(bsg_sv2v_dir)))
 
