@@ -72,7 +72,7 @@ bleach_all:
       - $CI_PROJECT_DIR/external/lib
       - $CI_PROJECT_DIR/external/lib64
       - $CI_PROJECT_DIR/external/lib-linux64
-      - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
+      - $CI_PROJECT_DIR/external/libexec
       - $CI_PROJECT_DIR/external/include
       - $CI_PROJECT_DIR/external/share
       - $CI_PROJECT_DIR/external/touchfiles
@@ -95,7 +95,7 @@ update-cache: &update-cache-manual
       - $CI_PROJECT_DIR/external/lib
       - $CI_PROJECT_DIR/external/lib64
       - $CI_PROJECT_DIR/external/lib-linux64
-      - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
+      - $CI_PROJECT_DIR/external/libexec
       - $CI_PROJECT_DIR/external/include
       - $CI_PROJECT_DIR/external/share
       - $CI_PROJECT_DIR/external/touchfiles
@@ -107,6 +107,7 @@ prep:
   tags:
     - bsg
   script:
+    - touch -t 7001010000 $CI_PROJECT_DIR/external/touchfiles/*
     - make prep -j $CI_CORES > make_prep.log
     - make tidy_tools > make_tidy_tools_post.log
   cache: &global_cache
@@ -117,7 +118,7 @@ prep:
       - $CI_PROJECT_DIR/external/lib
       - $CI_PROJECT_DIR/external/lib64
       - $CI_PROJECT_DIR/external/lib-linux64
-      - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
+      - $CI_PROJECT_DIR/external/libexec
       - $CI_PROJECT_DIR/external/include
       - $CI_PROJECT_DIR/external/share
       - $CI_PROJECT_DIR/external/touchfiles
@@ -333,7 +334,7 @@ hotfix_job:
       - $CI_PROJECT_DIR/external/lib
       - $CI_PROJECT_DIR/external/lib64
       - $CI_PROJECT_DIR/external/lib-linux64
-      - $CI_PROJECT_DIR/external/riscv64-unknown-elf-dramfs
+      - $CI_PROJECT_DIR/external/libexec
       - $CI_PROJECT_DIR/external/include
       - $CI_PROJECT_DIR/external/share
       - $CI_PROJECT_DIR/external/touchfiles
