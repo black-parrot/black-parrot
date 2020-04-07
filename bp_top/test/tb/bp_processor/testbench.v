@@ -525,6 +525,9 @@ bp_cce_mmio_cfg_loader
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    
+   // LCE id will get overridden by the I/O tile in this case
+   ,.lce_id_i('0)
+
    ,.io_cmd_o(cfg_cmd_lo)
    ,.io_cmd_v_o(cfg_cmd_v_lo)
    ,.io_cmd_yumi_i(cfg_cmd_ready_li & cfg_cmd_v_lo)
