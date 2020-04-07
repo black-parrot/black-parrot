@@ -12,6 +12,7 @@ include $(BP_EXTERNAL_DIR)/Makefile.tools
 
 .DEFAULT: prep
 
+## This is a small target which runs fast and allows folks to run hello world
 prep_lite: | $(TARGET_DIRS)
 	git submodule update --init
 	$(MAKE) libs
