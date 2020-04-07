@@ -155,7 +155,7 @@ logic nbf_done_lo, cfg_done_lo;
 if (load_nbf_p)
   begin : nbf
     bp_nonsynth_nbf_loader
-     #(.bp_params_p(bp_params_p), .skip_freeze_clear_p(1))
+     #(.bp_params_p(bp_params_p))
      nbf_loader
       (.clk_i(clk_i)
        ,.reset_i(reset_i | ~cfg_done_lo)
