@@ -212,13 +212,13 @@ module bp_softcore
     ,.credits_full_o(credits_full_li[1])
     ,.credits_empty_o(credits_empty_li[1])
 
-    ,.mem_cmd_o(mem_cmd_lo[1])
-    ,.mem_cmd_v_o(mem_cmd_v_lo[1])
-    ,.mem_cmd_ready_i(mem_cmd_ready_li[1])
+    ,.mem_cmd_o(proc_cmd_lo[1])
+    ,.mem_cmd_v_o(proc_cmd_v_lo[1])
+    ,.mem_cmd_ready_i(proc_cmd_ready_li[1])
 
-    ,.mem_resp_i(mem_resp_li[1])
-    ,.mem_resp_v_i(mem_resp_v_li[1])
-    ,.mem_resp_yumi_o(mem_resp_yumi_lo[1])
+    ,.mem_resp_i(proc_resp_li[1])
+    ,.mem_resp_v_i(proc_resp_v_li[1])
+    ,.mem_resp_yumi_o(proc_resp_yumi_lo[1])
     );
 
   bp_uce
@@ -258,13 +258,13 @@ module bp_softcore
     ,.credits_full_o(credits_full_li[0])
     ,.credits_empty_o(credits_empty_li[0])
 
-    ,.mem_cmd_o(mem_cmd_lo[0])
-    ,.mem_cmd_v_o(mem_cmd_v_lo[0])
-    ,.mem_cmd_ready_i(mem_cmd_ready_li[0])
+    ,.mem_cmd_o(proc_cmd_lo[0])
+    ,.mem_cmd_v_o(proc_cmd_v_lo[0])
+    ,.mem_cmd_ready_i(proc_cmd_ready_li[0])
 
-    ,.mem_resp_i(mem_resp_li[0])
-    ,.mem_resp_v_i(mem_resp_v_li[0])
-    ,.mem_resp_yumi_o(mem_resp_yumi_lo[0])
+    ,.mem_resp_i(proc_resp_li[0])
+    ,.mem_resp_v_i(proc_resp_v_li[0])
+    ,.mem_resp_yumi_o(proc_resp_yumi_lo[0])
     );
 
   bp_clint_slice_buffered
