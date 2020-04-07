@@ -17,7 +17,7 @@ sv2v_dir      := $(BP_EXTERNAL_DIR)/sv2v
 bsg_sv2v_dir  := $(BP_EXTERNAL_DIR)/bsg_sv2v
 
 define submodule_tool_template
-$(1)_tag := $(addprefix $(1)., $(shell cd $(2); git rev-parse HEAD))
+$(1)_tag = $(addprefix $(1)., $(shell cd $(2); git rev-parse HEAD))
 $(BP_TOUCH_DIR)/$$($(1)_tag):
 	rm -rf $(BP_TOUCH_DIR)/$(1).*
 	cd $(TOP); git submodule update --init --recursive $$($(1)_dir)
@@ -42,7 +42,7 @@ verilator_build: systemc
 	$(MAKE) -C $(verilator_dir)
 	$(MAKE) -C $(verilator_dir) install
 
-gnu_build:
+gnu_build: ;
 	cd $(gnu_dir); \
 		git apply $(BP_EXTERNAL_DIR)/newlib.patch; \
 		git submodule sync; \

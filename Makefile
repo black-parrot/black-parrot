@@ -12,15 +12,22 @@ include $(BP_EXTERNAL_DIR)/Makefile.tools
 
 .DEFAULT: prep
 
-prep_lite: | $(TARGET_DIRS)
+## This is the list of target directories that tools and libraries will be installed into
+TARGET_DIRS := $(BP_BIN_DIR) $(BP_LIB_DIR) $(BP_INCLUDE_DIR) $(BP_TOUCH_DIR)
+$(TARGET_DIRS):
+	mkdir $@
+
+## This target initializes the submodules to help out the build system
+pre_prep: $(TARGET_DIRS)
 	git submodule update --init
+
+prep_lite: pre_prep
 	$(MAKE) libs
 	$(MAKE) verilator
 	$(MAKE) -j1 ucode
 
 ## This is the big target that just builds everything. Most users should just press this button
-prep: | $(TARGET_DIRS)
-	git submodule update --init
+prep: pre_prep
 	$(MAKE) libs
 	$(MAKE) tools
 	$(MAKE) -j1 progs 
@@ -45,22 +52,17 @@ tidy_tools:
 bleach_all:
 	cd $(TOP); git clean -fdx; git submodule deinit -f .
 
-## This is the list of target directories that tools and libraries will be installed into
-TARGET_DIRS := $(BP_BIN_DIR) $(BP_LIB_DIR) $(BP_INCLUDE_DIR) $(BP_TOUCH_DIR)
-$(TARGET_DIRS):
-	mkdir $@
-
 ## These targets fetch and build all dependencies needed for running simulations
 #    to test BlackParrot. By default, all tools are built but comment any tools that 
 #    you already have a copy of. If your version of a tool significantly differs from 
 #    our submodule version, use at your own risk. 
 #
-libs: | $(TARGET_DIRS)
+libs:
 	$(MAKE) basejump
 	$(MAKE) dramsim2
 	#$(MAKE) dramsim3
 
-tools: | $(TARGET_DIRS)
+tools: libs
 	$(MAKE) gnu
 	$(MAKE) verilator
 	$(MAKE) dromajo
