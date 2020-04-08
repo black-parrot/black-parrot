@@ -35,10 +35,11 @@ module testbench
    , parameter cosim_p                     = 0
    , parameter cosim_cfg_file_p            = "prog.cfg"
    , parameter cosim_instr_p               = 0
+   , parameter warmup_instr_p              = 0
 
    , parameter mem_zero_p         = 1
    , parameter mem_file_p         = "prog.mem"
-   , parameter mem_cap_in_bytes_p = 2**25
+   , parameter mem_cap_in_bytes_p = 2**29
    , parameter [paddr_width_p-1:0] mem_offset_p = paddr_width_p'(32'h8000_0000)
 
    // Number of elements in the fake BlackParrot memory
@@ -283,6 +284,7 @@ bind bp_be_top
      ,.rd_data_i(be_checker.scheduler.wb_pkt.rd_data)
      );
 
+  logic cosim_finish_lo;
   bind bp_be_top
     bp_nonsynth_cosim
      #(.bp_params_p(bp_params_p))
@@ -310,7 +312,23 @@ bind bp_be_top
 
        ,.interrupt_v_i(be_mem.csr.trap_pkt_cast_o._interrupt)
        ,.cause_i(be_mem.csr.trap_pkt_cast_o.cause)
+
+       ,.finish_o(testbench.cosim_finish_lo)
        );
+
+logic [29:0] warmup_cnt;
+logic warm;
+bsg_counter_clear_up
+ #(.max_val_p(2**30-1), .init_val_p(0))
+ warmup_counter
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i | testbench.wrapper.dut.core.be.be_checker.scheduler.int_regfile.cfg_bus.freeze)
+
+   ,.clear_i(1'b0)
+   ,.up_i(testbench.wrapper.dut.core.be.be_calculator.commit_pkt.instret & ~warm)
+   ,.count_o(warmup_cnt)
+   );
+assign warm = (warmup_cnt == warmup_instr_p);
 
 bind bp_be_top
   bp_be_nonsynth_perf
@@ -318,13 +336,13 @@ bind bp_be_top
    perf
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
+     ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze | ~testbench.warm)
 
      ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
      ,.commit_v_i(be_calculator.commit_pkt.instret)
 
-     ,.program_finish_i(testbench.program_finish_lo)
+     ,.program_finish_i(testbench.program_finish_lo | testbench.cosim_finish_lo)
      );
 
   bind bp_be_top

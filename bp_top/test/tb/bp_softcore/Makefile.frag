@@ -11,6 +11,7 @@ PRELOAD_MEM_P  ?= 1
 LOAD_NBF_P     ?= 0
 COSIM_P        ?= 0
 COSIM_INSTR_P  ?= 0
+WARMUP_INSTR_P ?= 0
 USE_DRAMSIM2_LATENCY_P ?= 0
 USE_MAX_LATENCY_P      ?= 1
 USE_RANDOM_LATENCY_P   ?= 0
@@ -30,6 +31,7 @@ export TB_PARAMS  = -pvalue+calc_trace_p=$(CALC_TRACE_P) \
                     -pvalue+load_nbf_p=$(LOAD_NBF_P) \
                     -pvalue+cosim_p=$(COSIM_P) \
                     -pvalue+cosim_instr_p=$(COSIM_INSTR_P) \
+                    -pvalue+warmup_instr_p=$(WARMUP_INSTR_P) \
 					-pvalue+use_dramsim2_latency_p=$(USE_DRAMSIM2_LATENCY_P) \
 					-pvalue+use_max_latency_p=$(USE_MAX_LATENCY_P) \
 					-pvalue+use_random_latency_p=$(USE_RANDOM_LATENCY_P)

@@ -18,7 +18,7 @@ RISCV_OBJCOPY  = $(CROSS_COMPILE)objcopy
 DROMAJO        = dromajo
 
 NC ?= 1
-MEMSIZE ?= 32 # MB
+MEMSIZE ?= 256 # MB
 DUMP_PERIOD ?= 0
 
 export TEST_DIR
