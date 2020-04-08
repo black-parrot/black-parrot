@@ -20,7 +20,7 @@ module bp_nonsynth_pc_profiler
     // Commit packet
     , input [commit_pkt_width_lp-1:0] commit_pkt
     
-    , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] program_finish_i
+    , input [num_core_p-1:0] program_finish_i
     );
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -55,7 +55,7 @@ module bp_nonsynth_pc_profiler
 
   logic [num_core_p-1:0] program_finish_r;
   bsg_dff_reset
-   #(.width_p(`BSG_SAFE_CLOG2(num_core_p)))
+   #(.width_p(num_core_p))
    program_finish_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

@@ -161,7 +161,7 @@ if (load_nbf_p)
       (.clk_i(clk_i)
        ,.reset_i(reset_i | ~cfg_done_lo)
     
-       ,.lce_id_i(4'b10)
+       ,.lce_id_i(lce_id_width_p'('b10))
     
        ,.io_cmd_o(nbf_cmd_lo)
        ,.io_cmd_v_o(nbf_cmd_v_lo)
@@ -196,7 +196,7 @@ bp_cce_mmio_cfg_loader
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.lce_id_i(4'b10)
+   ,.lce_id_i(lce_id_width_p'('b10))
     
    ,.io_cmd_o(cfg_cmd_lo)
    ,.io_cmd_v_o(cfg_cmd_v_lo)
