@@ -37,8 +37,6 @@ all_dump: riscv_dump coremark_dump beebs_dump littlefs_test_dump demos_dump
 
 all_spike: riscv_spike coremark_spike beebs_spike littlefs_test_spike 
 
-checkout: spec_checkout
-
 zero: zero_mem zero_nbf
 riscv: riscv_mem riscv_nbf riscv_dump riscv_spike
 coremark: coremark_mem coremark_nbf coremark_dump coremark_spike
@@ -85,9 +83,6 @@ beebs_elf:
 		 --includedir=$(TEST_DIR)/include --libdir=$(TEST_DIR)/lib
 	$(MAKE) -C $(TEST_DIR)/src/beebs/
 	find $(TEST_DIR)/src/beebs/src/ -type f -executable -execdir mv {} $(MEM_DIR)/{}.riscv \;
-
-spec_checkout:
-	$(MAKE) -C $(TEST_DIR)/src/spec/ checkout
 
 spec_elf:
 	$(MAKE) -C $(TEST_DIR)/src/spec/ CROSS_COMPILE=$(CROSS_COMPILE)
