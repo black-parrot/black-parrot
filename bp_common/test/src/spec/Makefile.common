@@ -21,7 +21,7 @@ empty:=
 space:= $(empty) $(empty)
 
 RISCV_GCC  = $(CROSS_COMPILE)gcc
-RISCV_GCC_OPTS  = -mabi=lp64 -march=rv64ima -mcmodel=medany -mstrict-align -static -nostartfiles -I$(TEST_DIR)/include
+RISCV_GCC_OPTS  = -O2 -mabi=lp64 -march=rv64ima -mcmodel=medany -mstrict-align -static -nostartfiles -I$(TEST_DIR)/include
 RISCV_GCC_OPTS += -Irawlib $(BENCHMARK_DEFS)
 RISCV_GCC_OPTS += -D__init_argc=$(ARGC) -D__init_argv=\"$(subst $(space),\"$(comma)\",$(strip $(ARGV)))\"
 
