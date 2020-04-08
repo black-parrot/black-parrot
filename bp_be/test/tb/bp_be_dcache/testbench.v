@@ -21,6 +21,7 @@ module testbench
    , parameter dram_trace_p                = 0
    , parameter dcache_trace_p              = 0
    , parameter preload_mem_p               = 0
+   , parameter random_yumi_p               = 0
 
    , parameter mem_zero_p         = 1
    , parameter mem_load_p         = preload_mem_p
@@ -47,6 +48,9 @@ module testbench
    , localparam dcache_pkt_width_lp = `bp_be_dcache_pkt_width(page_offset_width_p, dword_width_p)
    , localparam trace_replay_data_width_lp = ptag_width_lp + dcache_pkt_width_lp + 1 // The 1 extra bit is for uncached accesses
    , localparam trace_rom_addr_width_lp = 8 
+
+   , localparam yumi_min_delay_lp = 0
+   , localparam yumi_max_delay_lp = 15
    )
   (input clk_i
    , input reset_i
@@ -80,35 +84,16 @@ module testbench
   logic uncached_li;
 
   // Setting up the config bus
-  logic switch_cce_mode;
+  // logic switch_cce_mode;
   always_comb begin
     cfg_bus_cast_li = '0;
     cfg_bus_cast_li.freeze = '0;
     cfg_bus_cast_li.core_id = '0;
     cfg_bus_cast_li.dcache_id = '0;
     cfg_bus_cast_li.dcache_mode = e_lce_mode_normal;
-    cfg_bus_cast_li.cce_mode = switch_cce_mode ? e_cce_mode_normal : e_cce_mode_uncached;
+    cfg_bus_cast_li.cce_mode = e_cce_mode_normal;
   end
  
-  logic [6:0] count_lo;
-  localparam counter_max_val_lp = lce_sets_p + 1;
-
-  bsg_counter_clear_up
-    #(.max_val_p(counter_max_val_lp)
-     ,.init_val_p(0)
-     )
-     sync_counter
-     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.clear_i(1'b0)
-     ,.up_i(~switch_cce_mode)
-
-     ,.count_o(count_lo)
-     );
-
-  assign switch_cce_mode = (count_lo == counter_max_val_lp);
-
   // Trace Replay
   bsg_trace_replay
     #(.payload_width_p(trace_replay_data_width_lp)
@@ -117,7 +102,7 @@ module testbench
     trace_replay
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
-    ,.en_i(switch_cce_mode)
+    ,.en_i(1'b1)
 
     ,.v_i(trace_v_li)
     ,.data_i(trace_data_li)
@@ -142,16 +127,29 @@ module testbench
     (.addr_i(trace_rom_addr_lo)
     ,.data_o(trace_rom_data_li)
     );
-      
+        
   assign dcache_pkt_li = trace_data_lo[0+:dcache_pkt_width_lp];
   assign ptag_li = trace_data_lo[dcache_pkt_width_lp+:ptag_width_lp];
   assign uncached_li = trace_data_lo[(dcache_pkt_width_lp+ptag_width_lp)+:1];
 
   // Output FIFO
-  logic fifo_yumi_li;
+  logic fifo_yumi_li, fifo_v_lo, fifo_random_yumi_lo;
   logic [dword_width_p-1:0] fifo_data_lo;
-  assign fifo_yumi_li = trace_v_li & trace_ready_lo;
+  assign fifo_yumi_li = (random_yumi_p == 1) ? (fifo_random_yumi_lo & trace_ready_lo) : (fifo_v_lo & trace_ready_lo);
+  assign trace_v_li = (random_yumi_p == 1) ? fifo_yumi_li  : fifo_v_lo;
   assign trace_data_li = {'0, fifo_data_lo};
+
+  bsg_nonsynth_random_yumi_gen
+    #(.yumi_min_delay_p(yumi_min_delay_lp)
+     ,.yumi_max_delay_p(yumi_max_delay_lp)
+     )
+     yumi_gen
+     (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.v_i(fifo_v_lo)
+     ,.yumi_o(fifo_random_yumi_lo)
+     );
 
   bsg_two_fifo 
     #(.width_p(dword_width_p))
@@ -165,7 +163,7 @@ module testbench
     ,.data_i(data_lo)
 
     // to trace replay
-    ,.v_o(trace_v_li)
+    ,.v_o(fifo_v_lo)
     ,.yumi_i(fifo_yumi_li)
     ,.data_o(fifo_data_lo)
   );

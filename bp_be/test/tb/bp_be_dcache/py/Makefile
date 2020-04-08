@@ -26,3 +26,7 @@ writeback_test: generate_tests
 
 uncached_test: generate_tests
 	python $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py test_uncached.tr mem_test_trace_rom > ../mem_test_trace_rom.v
+
+unaligned_test: generate_tests
+	python $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py test_unaligned.tr mem_test_trace_rom > ../mem_test_trace_rom.v
+

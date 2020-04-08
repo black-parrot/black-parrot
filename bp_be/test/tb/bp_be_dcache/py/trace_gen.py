@@ -120,6 +120,7 @@ class TraceGen:
   # wait for a single cycle
   def nop(self):
     return "0000_" + "0"*(self.packet_len) + "\n"
-
+  
+  # print comments in the trace file
   def print_comment(self, comment):
     return "# " + comment + "\n"

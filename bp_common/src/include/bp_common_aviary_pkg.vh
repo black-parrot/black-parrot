@@ -1800,7 +1800,12 @@ package bp_common_aviary_pkg;
 
   /* verilator lint_off WIDTH */
   parameter bp_proc_param_s [max_cfgs-1:0] all_cfgs_gp =
-  { bp_sexta_core_ucode_cce_cfg_p
+  { 
+    bp_single_core_l1_medium_cfg_p
+    ,bp_single_core_l1_small_cfg_p
+    ,bp_softcore_l1_medium_cfg_p
+    ,bp_softcore_l1_small_cfg_p
+    ,bp_sexta_core_ucode_cce_cfg_p
     ,bp_twelve_core_ucode_cce_cfg_p
     ,bp_oct_core_ucode_cce_cfg_p
     ,bp_hexa_core_ucode_cce_cfg_p
@@ -1818,13 +1823,9 @@ package bp_common_aviary_pkg;
     ,bp_quad_core_cfg_p
     ,bp_tri_core_cfg_p
     ,bp_dual_core_cfg_p
-    ,bp_single_core_l1_small_cfg_p
-    ,bp_single_core_l1_medium_cfg_p
     ,bp_single_core_cfg_p
     ,bp_single_core_no_l2_cfg_p
     ,bp_half_core_cfg_p
-    ,bp_softcore_l1_small_cfg_p
-    ,bp_softcore_l1_medium_cfg_p
     ,bp_softcore_cfg_p
     ,bp_softcore_no_l2_cfg_p
     ,bp_inv_cfg_p
