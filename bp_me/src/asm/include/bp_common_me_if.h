@@ -51,13 +51,6 @@ typedef enum {
 #define bp_lce_cce_req_non_excl_width 1
 
 typedef enum {
-  e_lce_req_lru_clean        = 0 // LRU way from requesting LCE's tag set is clean
-  ,e_lce_req_lru_dirty       = 1 // LRU way from requesting LCE's tag set is dirty
-} bp_lce_cce_lru_dirty_e;
-
-#define bp_lce_cce_lru_dirty_width 1
-
-typedef enum {
   e_lce_uc_req_1     = 0
   ,e_lce_uc_req_2    = 1
   ,e_lce_uc_req_4    = 2
@@ -88,17 +81,17 @@ typedef enum {
 typedef enum {
   e_lce_cmd_sync             = 0
   ,e_lce_cmd_set_clear       = 1
-  ,e_lce_cmd_transfer        = 2
-  ,e_lce_cmd_writeback       = 3
-  ,e_lce_cmd_set_tag         = 4
-  ,e_lce_cmd_set_tag_wakeup  = 5
-  ,e_lce_cmd_invalidate_tag  = 6
-  ,e_lce_cmd_uc_st_done      = 7
-  ,e_lce_cmd_data            = 8
-  ,e_lce_cmd_uc_data         = 9
-  ,e_lce_cmd_custom_10       = 10
-  ,e_lce_cmd_custom_11       = 11
-  ,e_lce_cmd_custom_12       = 12
+  ,e_lce_cmd_inv             = 2
+  ,e_lce_cmd_st              = 3
+  ,e_lce_cmd_data            = 4
+  ,e_lce_cmd_st_wakeup       = 5
+  ,e_lce_cmd_wb              = 6
+  ,e_lce_cmd_st_wb           = 7
+  ,e_lce_cmd_tr              = 8
+  ,e_lce_cmd_st_tr           = 9
+  ,e_lce_cmd_st_tr_wb        = 10
+  ,e_lce_cmd_uc_data         = 11
+  ,e_lce_cmd_uc_st_done      = 12
   ,e_lce_cmd_custom_13       = 13
   ,e_lce_cmd_custom_14       = 14
   ,e_lce_cmd_custom_15       = 15

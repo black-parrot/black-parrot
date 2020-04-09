@@ -39,11 +39,29 @@ else ifeq ($(CFG), e_bp_twelve_core_cfg)
   NUM_LCE_P=24
 else ifeq ($(CFG), e_bp_sexta_core_cfg)
   NUM_LCE_P=32
+else ifeq ($(CFG), e_bp_half_core_ucode_cce_cfg)
+  NUM_LCE_P=1
+else ifeq ($(CFG), e_bp_single_core_ucode_cce_cfg)
+  NUM_LCE_P=2
+else ifeq ($(CFG), e_bp_dual_core_ucode_cce_cfg)
+  NUM_LCE_P=4
+else ifeq ($(CFG), e_bp_tri_core_ucode_cce_cfg)
+  NUM_LCE_P=6
+else ifeq ($(CFG), e_bp_quad_core_ucode_cce_cfg)
+  NUM_LCE_P=8
+else ifeq ($(CFG), e_bp_hexa_core_ucode_cce_cfg)
+  NUM_LCE_P=12
+else ifeq ($(CFG), e_bp_oct_core_ucode_cce_cfg)
+  NUM_LCE_P=16
+else ifeq ($(CFG), e_bp_twelve_core_ucode_cce_cfg)
+  NUM_LCE_P=24
+else ifeq ($(CFG), e_bp_sexta_core_ucode_cce_cfg)
+  NUM_LCE_P=32
 endif
 
 COH_PROTO   ?= mesi
-CCE_MEM_PATH = $(BP_ME_DIR)/src/asm/roms/$(COH_PROTO)
-CCE_MEM      = bp_cce_inst_rom_$(COH_PROTO).mem
+CCE_MEM_PATH = $(BP_ME_DIR)/src/asm/roms
+CCE_MEM      = $(COH_PROTO).mem
 
 NUMS = $(shell seq 0 `expr $(NUM_LCE_P) - 1`)
 BASE = bsg_trace_rom_

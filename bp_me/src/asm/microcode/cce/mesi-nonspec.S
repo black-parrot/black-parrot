@@ -1,4 +1,4 @@
-# This microcode uses MESI protocol with LCE transfers enabled
+# This microcode uses MESI protocol
 
 #include "microcode.h"
 
@@ -11,11 +11,14 @@
 sync_init: movi 0 r0
 movpg numLCE r1
 movi SYNC_ACK r3
-sync_top: bge r0 r1 ready
+sync_top: bge r0 r1 finish_init
 pushq lceCmd SYNC addr=0 lce=r0 way=0
 popq lceResp r4
 inc r0
 bi sync_top
+
+# set default value for mshr.next_coh_state
+finish_init: movip COH_E cohSt
 
 # Ready Routine
 ready: wfq lceReq
@@ -31,11 +34,23 @@ rdw addr=req lce=req lru_way=lru
 gad
 # fall through
 
+# Replacement Check Routine
+replace_check: bfz next_coh_state rf
+
+# Replacement Routine
+replace: pushq lceCmd WB addr=lru lce=req way=lru
+# wait for writeback response
+replacement_poph: poph lceResp r0
+beqi r0 COH_ACK replacement_poph
+bf complete_replacement nwbf
+pushq memCmd MEM_CMD_WB addr=lru lce=req way=lru wp=1
+complete_replacement: popq lceResp
+
 # Next Coherence State Routine
 # write request means set to M, else read means set to E or S
 next_coh_state: bf next_coh_set_m rqf
 # check non-exclusive request (read-only) or block cached anywhere, set to S
-bfnz next_coh_set_s nerf cf
+bfnz next_coh_set_s nerf csf cef cmf
 next_coh_set_e: movis COH_E nextCohSt
 bi inv_check
 next_coh_set_s: movis COH_S nextCohSt
@@ -44,7 +59,7 @@ next_coh_set_m: movis COH_M nextCohSt
 # fall through to inv_check
 
 # Invalidation Check
-inv_check: bfz upgrade_check if pt
+inv_check: bfnot upgrade_check rqf csf pt
 
 # Invalidation Routine
 invalidate: inv
@@ -59,38 +74,18 @@ bi ready
 
 set_entry: wde addr=req lce=req way=lru state=nextCohSt
 
-# Replacement Check Routine
-replace_check: bfz transfer_check rf
-
-# Replacement Routine
-replace: pushq lceCmd WB addr=lru lce=req way=lru
-# wait for writeback response
-replacement_poph: poph lceResp r0
-beqi r0 COH_ACK replacement_poph
-bf complete_replacement nwbf
-pushq memCmd MEM_CMD_WB addr=lru lce=req way=lru wp=1
-complete_replacement: popq lceResp
-# replacement done, explicitly set replacement flag to 0
-sfz rf
-
 # Transfer Check
-transfer_check: bfz read_l2 cof pt
+transfer_check: bfz read_l2 cef cmf pt
 
 # Transfer routine - other cache has block in E/M
-# write requests invalidate owner, read requests downgrade owner to S
+# write requests invalidate owner, read requests downgrade owner to S and writeback
 transfer: bf transfer_write rqf
+
+# transfer from owner in E/M, downgrade owner to S, send block to req in S
 movis COH_S nextCohSt
 pushq lceCmd ST addr=req lce=owner way=owner
 wds addr=req lce=owner way=owner state=nextCohSt
-bi transfer_tr
-
-transfer_write: movsg nextCohSt r7
-movis COH_I nextCohSt
-pushq lceCmd ST addr=req lce=owner way=owner
-wds addr=req lce=owner way=owner state=nextCohSt
-movgs r7 nextCohSt
-
-transfer_tr: pushq lceCmd TR addr=req lce=owner way=owner
+pushq lceCmd TR addr=req lce=owner way=owner
 pushq lceCmd WB addr=req lce=owner way=owner
 # wait for transfer WB response
 transfer_poph: poph lceResp r0
@@ -98,6 +93,13 @@ beqi r0 COH_ACK transfer_poph
 bf complete_transfer nwbf
 pushq memCmd MEM_CMD_WB addr=req lce=owner way=owner wp=1
 complete_transfer: popq lceResp
+bi ready
+
+transfer_write: movis COH_I nextCohSt
+pushq lceCmd ST addr=req lce=owner way=owner
+wds addr=req lce=owner way=owner state=nextCohSt
+movis COH_M nextCohSt
+pushq lceCmd TR addr=req lce=owner way=owner
 bi ready
 
 # Read Line from L2 Routine
