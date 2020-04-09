@@ -141,12 +141,12 @@ module bp_fe_icache
   logic                                     tag_mem_v_li;
   logic                                     tag_mem_w_li;
   logic [index_width_lp-1:0]                tag_mem_addr_li;
-  logic [icache_assoc_p-1:0][`bp_coh_bits+ptag_width_lp-1:0] tag_mem_data_li;
-  logic [icache_assoc_p-1:0][`bp_coh_bits+ptag_width_lp-1:0] tag_mem_w_mask_li;
-  logic [icache_assoc_p-1:0][`bp_coh_bits+ptag_width_lp-1:0] tag_mem_data_lo;
+  logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)+ptag_width_lp-1:0] tag_mem_data_li;
+  logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)+ptag_width_lp-1:0] tag_mem_w_mask_li;
+  logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)+ptag_width_lp-1:0] tag_mem_data_lo;
 
   bsg_mem_1rw_sync_mask_write_bit #(
-    .width_p(icache_assoc_p*(`bp_coh_bits+ptag_width_lp))
+    .width_p(icache_assoc_p*($bits(bp_coh_states_e)+ptag_width_lp))
     ,.els_p(icache_sets_p)
   ) tag_mem (
     .clk_i(clk_i)
@@ -159,11 +159,11 @@ module bp_fe_icache
     ,.data_o(tag_mem_data_lo)
   );
 
-  logic [icache_assoc_p-1:0][`bp_coh_bits-1:0] state_tl;
+  logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)-1:0] state_tl;
   logic [icache_assoc_p-1:0][ptag_width_lp-1:0] tag_tl;
 
   for (genvar i = 0; i < icache_assoc_p; i++) begin
-    assign state_tl[i] = tag_mem_data_lo[i][ptag_width_lp+:`bp_coh_bits];
+    assign state_tl[i] = tag_mem_data_lo[i][ptag_width_lp+:$bits(bp_coh_states_e)];
     assign tag_tl[i]   = tag_mem_data_lo[i][0+:ptag_width_lp];
   end
 
@@ -199,9 +199,9 @@ module bp_fe_icache
   logic uncached_tv_r;
   logic [paddr_width_p-1:0]                     addr_tv_r;
   logic [vaddr_width_p-1:0]                     vaddr_tv_r; 
-  logic [icache_assoc_p-1:0][ptag_width_lp-1:0] tag_tv_r;
-  logic [icache_assoc_p-1:0][`bp_coh_bits-1:0]  state_tv_r;
-  logic [icache_assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
+  logic [icache_assoc_p-1:0][ptag_width_lp-1:0]          tag_tv_r;
+  logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)-1:0] state_tv_r;
+  logic [icache_assoc_p-1:0][bank_width_lp-1:0]          ld_data_tv_r;
   logic [ptag_width_lp-1:0]                     addr_tag_tv;
   logic [index_width_lp-1:0]                    addr_index_tv;
   logic [word_offset_width_lp-1:0]              addr_word_offset_tv;
@@ -462,19 +462,19 @@ module bp_fe_icache
       e_cache_tag_mem_set_clear: begin
         for (integer i = 0 ; i < icache_assoc_p; i++) begin
           tag_mem_data_li[i]    = '0;
-          tag_mem_w_mask_li[i]  = {(`bp_coh_bits+ptag_width_lp){1'b1}};
+          tag_mem_w_mask_li[i]  = {($bits(bp_coh_states_e)+ptag_width_lp){1'b1}};
         end
       end
       e_cache_tag_mem_invalidate: begin
         for (integer i = 0; i < icache_assoc_p; i++) begin
           tag_mem_data_li[i]    = '0;
-          tag_mem_w_mask_li[i] = {{`bp_coh_bits{tag_mem_way_one_hot[i]}}, {ptag_width_lp{1'b0}}};
+          tag_mem_w_mask_li[i] = {{$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}, {ptag_width_lp{1'b0}}};
         end
       end
       e_cache_tag_mem_set_tag: begin
         for (integer i = 0; i < icache_assoc_p; i++) begin
           tag_mem_data_li[i]   = {tag_mem_pkt.state, tag_mem_pkt.tag};
-          tag_mem_w_mask_li[i] = {(`bp_coh_bits+ptag_width_lp){tag_mem_way_one_hot[i]}};
+          tag_mem_w_mask_li[i] = {($bits(bp_coh_states_e)+ptag_width_lp){tag_mem_way_one_hot[i]}};
         end
       end
       default: begin

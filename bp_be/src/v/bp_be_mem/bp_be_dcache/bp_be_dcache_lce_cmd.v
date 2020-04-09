@@ -336,7 +336,7 @@ module bp_be_dcache_lce_cmd
           unique case (lce_cmd_li.header.msg_type)
             // <transfer packet>
             // LCE first reads the data mem, and moves onto TRANSFER state.
-            e_lce_cmd_transfer: begin
+            e_lce_cmd_tr: begin
               if (data_mem_pkt_ready_i) begin
                 data_mem_pkt.index = lce_cmd_addr_index;
                 data_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
@@ -362,7 +362,7 @@ module bp_be_dcache_lce_cmd
             //  <writeback packet>
             //  LCE is asked to writeback a cache line.
             //  It first reads stat_mem to check if the line is dirty.
-            e_lce_cmd_writeback: begin
+            e_lce_cmd_wb: begin
               if (stat_mem_pkt_ready_i) begin
                 stat_mem_pkt.index = lce_cmd_addr_index;
                 stat_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
@@ -380,7 +380,7 @@ module bp_be_dcache_lce_cmd
 
             //  <set tag>
             //  set the tag and coherency state of given index/way.
-            e_lce_cmd_set_tag: begin
+            e_lce_cmd_st: begin
               if (tag_mem_pkt_ready_i) begin
                 tag_mem_pkt.index = lce_cmd_addr_index;
                 tag_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
@@ -398,7 +398,7 @@ module bp_be_dcache_lce_cmd
 
           //  <set tag wakeup>
           //  set the tag and send wake-up signal to lce_cce_req module.
-          e_lce_cmd_set_tag_wakeup: begin
+          e_lce_cmd_st_wakeup: begin
             if (tag_mem_pkt_ready_i) begin
               tag_mem_pkt.index = lce_cmd_addr_index;
               tag_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
@@ -418,7 +418,7 @@ module bp_be_dcache_lce_cmd
           //  <invalidate tag>
           //  invalidate tag. It does not update the LRU. It sends out
           //  invalidate_ack response.
-          e_lce_cmd_invalidate_tag: begin
+          e_lce_cmd_inv: begin
             if (tag_mem_pkt_ready_i) begin
               tag_mem_pkt.index = lce_cmd_addr_index;
               tag_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];

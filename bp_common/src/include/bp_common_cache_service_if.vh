@@ -118,13 +118,13 @@ typedef enum logic [1:0] {
   typedef struct packed {                                                        \
     logic [`BSG_SAFE_CLOG2(sets_mp)-1:0]        index;                           \
     logic [`BSG_SAFE_CLOG2(ways_mp)-1:0]        way_id;                          \
-    logic [`bp_coh_bits-1:0]                    state;                           \
+    bp_coh_states_e                             state;                           \
     logic [tag_width_mp-1:0]                    tag;                             \
     bp_cache_tag_mem_opcode_e                   opcode;                          \
   }  bp_``cache_name_mp``_tag_mem_pkt_s
 
 `define bp_cache_tag_mem_pkt_width(sets_mp, ways_mp, tag_width_mp) \
-  (`BSG_SAFE_CLOG2(sets_mp)+`BSG_SAFE_CLOG2(ways_mp)+`bp_coh_bits+tag_width_mp+`bp_cache_tag_mem_opcode_width)
+  (`BSG_SAFE_CLOG2(sets_mp)+`BSG_SAFE_CLOG2(ways_mp)+$bits(bp_coh_states_e)+tag_width_mp+`bp_cache_tag_mem_opcode_width)
 
 `define declare_bp_cache_stat_mem_pkt_s(sets_mp, ways_mp, cache_name_mp)  \
   typedef struct packed {                                                 \

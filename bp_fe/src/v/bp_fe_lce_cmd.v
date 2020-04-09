@@ -263,7 +263,7 @@ module bp_fe_lce_cmd
 
       e_lce_cmd_ready: begin
         if (lce_cmd_v_i)
-          if (lce_cmd_li.header.msg_type == e_lce_cmd_transfer) begin
+          if (lce_cmd_li.header.msg_type == e_lce_cmd_tr) begin
             if(data_mem_pkt_ready_i) begin
               data_mem_pkt.index  = lce_cmd_addr_index;
               data_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
@@ -281,7 +281,7 @@ module bp_fe_lce_cmd
             state_n             = (data_mem_pkt_v & tag_mem_pkt_v) ? e_lce_cmd_send_transfer : e_lce_cmd_ready;
             cache_req_complete_o = 1'b0;
 
-          end else if (lce_cmd_li.header.msg_type == e_lce_cmd_writeback) begin
+          end else if (lce_cmd_li.header.msg_type == e_lce_cmd_wb) begin
             lce_resp.header.dst_id   = lce_cmd_li.header.src_id;
             lce_resp.header.msg_type = e_lce_cce_resp_null_wb;
             lce_resp.header.addr     = lce_cmd_li.header.addr;
@@ -289,7 +289,7 @@ module bp_fe_lce_cmd
             lce_cmd_yumi_o    = lce_resp_yumi_i;
             cache_req_complete_o = 1'b0;
 
-          end else if (lce_cmd_li.header.msg_type == e_lce_cmd_set_tag) begin
+          end else if (lce_cmd_li.header.msg_type == e_lce_cmd_st) begin
             if(tag_mem_pkt_ready_i) begin
               tag_mem_pkt.index  = lce_cmd_addr_index;
               tag_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
@@ -303,7 +303,7 @@ module bp_fe_lce_cmd
             set_tag_received_o = tag_mem_pkt_v;
             cache_req_complete_o = 1'b0;
 
-          end else if (lce_cmd_li.header.msg_type == e_lce_cmd_set_tag_wakeup) begin
+          end else if (lce_cmd_li.header.msg_type == e_lce_cmd_st_wakeup) begin
             if(tag_mem_pkt_ready_i) begin
               tag_mem_pkt.index  = lce_cmd_addr_index;
               tag_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
@@ -317,7 +317,7 @@ module bp_fe_lce_cmd
             set_tag_wakeup_received_o = tag_mem_pkt_v;
             cache_req_complete_o = tag_mem_pkt_v;
 
-          end else if (lce_cmd_li.header.msg_type == e_lce_cmd_invalidate_tag) begin
+          end else if (lce_cmd_li.header.msg_type == e_lce_cmd_inv) begin
             if(tag_mem_pkt_ready_i) begin
               tag_mem_pkt.index = lce_cmd_addr_index;
               tag_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
