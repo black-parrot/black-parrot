@@ -33,6 +33,12 @@ from PIL import Image, ImageDraw, ImageFont
 from itertools import chain
 
 
+import random
+
+random.seed(0xdeadbeef)
+def rand_color():
+    return (random.randint(0,255), random.randint(0,255), random.randint(0,255))
+
 class BloodGraph:
     # for generating the key
     _KEY_WIDTH  = 512
@@ -56,9 +62,12 @@ class BloodGraph:
                               "branch_override",
                               "fe_cmd",
                               "cmd_fence",
-                              "branch_mispredict",
+                              "dir_mispredict",
+                              "target_mispredict",
                               "control_haz",
                               "data_haz",
+                              "load_dep",
+                              "mul_dep",
                               "struct_haz",
                               "dtlb_miss",
                               "dcache_miss",
@@ -167,39 +176,34 @@ class BloodGraph:
         # For detailed mode 
         # i_cache miss is treated the same is stall_ifetch_wait
         self.detailed_stall_bubble_color = {
-                                             "freeze"          : (0xff, 0x00, 0x00), ## red 
-                                             "fe_queue_stall"    : (0xaa, 0x00, 0x00), ## dark red 
+                                             "freeze"                       : rand_color(), 
+                                             "fe_queue_stall"               : rand_color(),
 
-                                             "fe_wait_stall"        : (0x00, 0xff, 0x00), ## green 
-                                             "itlb_miss"         : (0x00, 0xff, 0x00), ## green 
-                                             "icache_miss"  : (0x00, 0x55, 0x00), ## dark green 
-                                             "icache_fence"   : (0x00, 0x55, 0x00), ## dark green 
+                                             "fe_wait_stall"                : rand_color(),
+                                             "itlb_miss"                    : rand_color(),
+                                             "icache_miss"                  : rand_color(),
+                                             "icache_fence"                 : rand_color(),
  
-                                             "branch_override"                            : (0x40, 0x40, 0x40), ## dark gray 
+                                             "branch_override"              : rand_color(),
 
-                                             "fe_cmd"                           : (0x00, 0x00, 0x80), ## navy blue 
-                                             "cmd_fence"                : (0x00, 0xff, 0xff), ## cyan 
+                                             "fe_cmd"                       : rand_color(),
+                                             "cmd_fence"                    : rand_color(),
 
-                                             "branch_mispredict"                    : (0x00, 0xaa, 0xff), ## dark cyan
-                                             "control_haz"                   : (0x00, 0xaa, 0xff), ## dark cyan
+                                             "dir_mispredict"               : rand_color(),
+                                             "target_mispredict"            : rand_color(),
+                                             "control_haz"                  : rand_color(),
 
-                                             "data_haz"                         : (0xff, 0x00, 0xff), ## pink
-                                             "struct_haz"                     : (0x00, 0x55, 0xff), ## dark blue
-                                             "dtlb_miss"                       : (0xff, 0xff, 0x00), ## yellow
-                                             "dcache_miss"                        : (0xff, 0xff, 0x80), ## light yellow
-                                             "long_haz"                           : (0x8b, 0x45, 0x13), ## brown
-                                             "eret"                           : (0x8b, 0x45, 0x13), ## brown
+                                             "data_haz"                     : rand_color(),
+                                             "load_dep"                     : rand_color(),
+                                             "mul_dep"                      : rand_color(),
+                                             "struct_haz"                   : rand_color(),
+                                             "dtlb_miss"                    : rand_color(),
+                                             "dcache_miss"                  : rand_color(),
+                                             "long_haz"                     : rand_color(),
+                                             "eret"                         : rand_color(),
 
-                                             "exception"                            : (0x00, 0x00, 0xff), ## blue
-                                             "interrupt"                      : (0x00, 0x00, 0xff), ## blue
-                                             #"bubble_icache"                          : (0x00, 0x00, 0xff), ## blue
-
-                                             #"bubble_branch_mispredict"               : (0x80, 0x00, 0x80), ## purple
-                                             #"bubble_jalr_mispredict"                 : (0xff, 0xa5, 0x00), ## orange
-                                             #"bubble_fp_op"                           : (0x00, 0x00, 0x00), ## black
-                                             #"bubble"                                 : (0x80, 0x00, 0x00), ## maroon
-
-                                             #"stall_md"                               : (0xff, 0xf0, 0xa0), ## light orange
+                                             "exception"                    : rand_color(),
+                                             "interrupt"                    : rand_color(), 
                                            }
         self.detailed_unified_instr_color    =                                          (0xff, 0xff, 0xff)  ## white
         self.detailed_unified_fp_instr_color =                                          (0xff, 0xaa, 0xff)  ## light pink
@@ -365,7 +369,7 @@ class BloodGraph:
 
     # initialize image
     def __init_image(self):
-        self.img_width = 2048   # default
+        self.img_width = 512 # default
         self.img_height = (((self.end_cycle-self.start_cycle)+self.img_width)//self.img_width)*(2+(self.xdim*self.ydim))
         self.img = Image.new("RGB", (self.img_width, self.img_height), "black")
         self.pixel = self.img.load()
@@ -384,7 +388,7 @@ class BloodGraph:
         floor = cycle // self.img_width
         tg_x = trace["x"] - self.xmin 
         tg_y = trace["y"] - self.ymin
-        row = floor*(2+(self.xdim*self.ydim)) + (tg_x+(tg_y*self.xdim))
+        row = floor#*(2+(self.xdim*self.ydim))) + (tg_x+(tg_y*self.xdim))
 
 
         # determine color

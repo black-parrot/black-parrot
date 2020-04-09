@@ -10,9 +10,12 @@
     logic branch_override;
     logic fe_cmd;
     logic cmd_fence;
-    logic branch_mispredict;
+    logic target_mispredict;
+    logic dir_mispredict;
     logic control_haz;
     logic data_haz;
+    logic load_dep;
+    logic mul_dep;
     logic struct_haz;
     logic dtlb_miss;
     logic dcache_miss;
@@ -24,18 +27,21 @@
 
   typedef enum logic [4:0]
   {
-    freeze               = 5'd18
-    ,fe_queue_stall      = 5'd17
-    ,fe_wait_stall       = 5'd16
-    ,itlb_miss           = 5'd15
-    ,icache_miss         = 5'd14
-    ,icache_fence        = 5'd13
-    ,branch_override     = 5'd12
-    ,fe_cmd              = 5'd11
-    ,cmd_fence           = 5'd10
-    ,branch_mispredict   = 5'd9
-    ,control_haz         = 5'd8
-    ,data_haz            = 5'd7
+    freeze               = 5'd21
+    ,fe_queue_stall      = 5'd20
+    ,fe_wait_stall       = 5'd19
+    ,itlb_miss           = 5'd18
+    ,icache_miss         = 5'd17
+    ,icache_fence        = 5'd16
+    ,branch_override     = 5'd15
+    ,fe_cmd              = 5'd14
+    ,cmd_fence           = 5'd13
+    ,target_mispredict   = 5'd12
+    ,dir_mispredict      = 5'd11
+    ,control_haz         = 5'd10
+    ,data_haz            = 5'd9
+    ,load_dep            = 5'd8
+    ,mul_dep             = 5'd7
     ,struct_haz          = 5'd6
     ,dtlb_miss           = 5'd5
     ,dcache_miss         = 5'd4
@@ -85,10 +91,13 @@ module bp_nonsynth_core_profiler
     , input cmd_fence
 
     // ISD events
-    , input branch_mispredict
+    , input target_mispredict
+    , input dir_mispredict
     , input long_haz
     , input control_haz
     , input data_haz
+    , input load_dep
+    , input mul_dep
     , input struct_haz
 
     // ALU events
@@ -190,19 +199,23 @@ module bp_nonsynth_core_profiler
       stall_stage_n[1].icache_fence      |= icache_fence;
       stall_stage_n[1].branch_override   |= branch_override;
       stall_stage_n[1].fe_cmd            |= fe_cmd;
+      stall_stage_n[1].dir_mispredict    |= dir_mispredict;
+      stall_stage_n[1].target_mispredict |= target_mispredict;
 
       // ISS
       stall_stage_n[2].itlb_miss         |= itlb_miss;
       stall_stage_n[2].icache_miss       |= icache_miss;
       stall_stage_n[2].icache_fence      |= icache_fence;
       stall_stage_n[2].cmd_fence         |= cmd_fence;
-      stall_stage_n[2].branch_mispredict |= branch_mispredict;
+      stall_stage_n[2].dir_mispredict    |= dir_mispredict;
+      stall_stage_n[2].target_mispredict |= target_mispredict;
       stall_stage_n[2].exception         |= exception;
       stall_stage_n[2].eret              |= eret;
       stall_stage_n[2].interrupt         |= interrupt;
 
       // ISD
-      stall_stage_n[3].branch_mispredict |= branch_mispredict;
+      stall_stage_n[3].dir_mispredict    |= dir_mispredict;
+      stall_stage_n[3].target_mispredict |= target_mispredict;
       stall_stage_n[3].dtlb_miss         |= dtlb_miss;
       stall_stage_n[3].dcache_miss       |= dcache_miss;
       stall_stage_n[3].exception         |= exception;
@@ -210,7 +223,8 @@ module bp_nonsynth_core_profiler
       stall_stage_n[3].interrupt         |= interrupt;
 
       // EX1
-      stall_stage_n[4].branch_mispredict |= branch_mispredict;
+      stall_stage_n[4].dir_mispredict    |= dir_mispredict;
+      stall_stage_n[4].target_mispredict |= target_mispredict;
       stall_stage_n[4].dtlb_miss         |= dtlb_miss;
       stall_stage_n[4].dcache_miss       |= dcache_miss;
       stall_stage_n[4].long_haz          |= long_haz;
@@ -218,6 +232,8 @@ module bp_nonsynth_core_profiler
       stall_stage_n[4].eret              |= eret;
       stall_stage_n[4].interrupt         |= interrupt;
       stall_stage_n[4].control_haz       |= control_haz;
+      stall_stage_n[4].load_dep          |= load_dep;
+      stall_stage_n[4].mul_dep           |= mul_dep;
       stall_stage_n[4].data_haz          |= data_haz;
       stall_stage_n[4].struct_haz        |= struct_haz;
 

@@ -451,7 +451,7 @@ bind bp_be_top
       (.clk_i(clk_i & (testbench.core_profile_p == 1))
        ,.reset_i(reset_i)
        ,.freeze_i(be.be_checker.scheduler.int_regfile.cfg_bus.freeze)
-  
+
        ,.mhartid_i(be.be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
        ,.fe_wait_stall(fe.pc_gen.is_wait)
@@ -464,19 +464,29 @@ bind bp_be_top
 
        ,.fe_cmd(fe.pc_gen.fe_cmd_yumi_o & ~fe.pc_gen.attaboy_v)
 
-       ,.cmd_fence(be.be_checker.director.fe_cmd_v_o | be.be_checker.director.suppress_iss_o)
+       ,.cmd_fence(be.be_checker.director.suppress_iss_o)
 
-       ,.branch_mispredict(be.be_checker.scheduler.npc_mismatch)
+       ,.target_mispredict(be.be_checker.scheduler.npc_mismatch & ~be.be_calculator.pipe_int.decode.br_v)
+       ,.dir_mispredict(be.be_checker.scheduler.npc_mismatch & be.be_calculator.pipe_int.decode.br_v)
 
        ,.dtlb_miss(be.be_mem.dtlb_miss_r)
        ,.dcache_miss(~be.be_mem.dcache.ready_o)
        ,.long_haz(be.be_checker.detector.long_haz_v)
-       ,.control_haz(be.be_checker.detector.control_haz_v)
-       ,.data_haz(be.be_checker.detector.data_haz_v)
-       ,.struct_haz(be.be_checker.detector.struct_haz_v)
        ,.exception(be.be_checker.director.trap_pkt.exception)
        ,.eret(be.be_checker.director.trap_pkt.eret)
        ,.interrupt(be.be_checker.director.trap_pkt._interrupt)
+       ,.control_haz(be.be_checker.detector.control_haz_v)
+       ,.data_haz(be.be_checker.detector.data_haz_v)
+       ,.load_dep((be.be_checker.detector.dep_status_li[0].mem_iwb_v
+                   | be.be_checker.detector.dep_status_li[1].mem_iwb_v
+                   ) & be.be_checker.detector.data_haz_v
+                  )
+       ,.mul_dep((be.be_checker.detector.dep_status_li[0].mul_iwb_v
+                  | be.be_checker.detector.dep_status_li[1].mul_iwb_v
+                  | be.be_checker.detector.dep_status_li[2].mul_iwb_v
+                  ) & be.be_checker.detector.data_haz_v
+                 )
+       ,.struct_haz(be.be_checker.detector.struct_haz_v)
 
        ,.reservation(be.be_calculator.reservation_n)
        ,.commit_pkt(be.be_calculator.commit_pkt)
