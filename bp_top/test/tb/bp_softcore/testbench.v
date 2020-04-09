@@ -143,7 +143,7 @@ bp_mem
    ,.reset_i(reset_i)
  
    ,.mem_cmd_i(proc_mem_cmd_lo)
-   ,.mem_cmd_v_i(proc_mem_cmd_v_lo)
+   ,.mem_cmd_v_i(proc_mem_cmd_ready_li & proc_mem_cmd_v_lo)
    ,.mem_cmd_ready_o(proc_mem_cmd_ready_li)
  
    ,.mem_resp_o(proc_mem_resp_li)
