@@ -50,12 +50,11 @@ module bp_cce_gad
 
    , output logic                                          replacement_flag_o
    , output logic                                          upgrade_flag_o
-   , output logic                                          invalidate_flag_o
-   , output logic                                          cached_flag_o
-   , output logic                                          cached_exclusive_flag_o
-   , output logic                                          cached_owned_flag_o
-   , output logic                                          cached_dirty_flag_o
    , output logic                                          cached_shared_flag_o
+   , output logic                                          cached_exclusive_flag_o
+   , output logic                                          cached_modified_flag_o
+   , output logic                                          cached_owned_flag_o
+   , output logic                                          cached_forward_flag_o
   );
 
   // Suppress unused signal warnings
@@ -77,18 +76,25 @@ module bp_cce_gad
   logic [num_lce_p-1:0] lce_cached;
   assign lce_cached = sharers_hits_i;
 
-  logic [num_lce_p-1:0] lce_cached_excl;
-  logic [num_lce_p-1:0] lce_cached_owned;
-  logic [num_lce_p-1:0] lce_cached_dirty;
-  for (genvar i = 0; i < num_lce_p; i=i+1) begin : lce_cached_excl_gen
-    // E or M
-    assign lce_cached_excl[i] = lce_cached[i] & ~sharers_coh_states_i[i][`bp_coh_shared_bit];
-    // E, F, M, or O
-    assign lce_cached_owned[i] = lce_cached[i] & sharers_coh_states_i[i][`bp_coh_owned_bit];
-    // M or O, but also E (which the LCE may have upgraded to M)
-    assign lce_cached_dirty[i] = lce_cached[i] & ((sharers_coh_states_i[i][`bp_coh_dirty_bit])
-                                                  | (sharers_coh_states_i[i] == e_COH_E));
+  logic [num_lce_p-1:0] lce_cached_S;
+  logic [num_lce_p-1:0] lce_cached_E;
+  logic [num_lce_p-1:0] lce_cached_M;
+  logic [num_lce_p-1:0] lce_cached_O;
+  logic [num_lce_p-1:0] lce_cached_F;
+  for (genvar i = 0; i < num_lce_p; i=i+1) begin : lce_cached_flags
+    assign lce_cached_S[i] = lce_cached[i] & (sharers_coh_states_i[i] == e_COH_S);
+    assign lce_cached_E[i] = lce_cached[i] & (sharers_coh_states_i[i] == e_COH_E);
+    assign lce_cached_M[i] = lce_cached[i] & (sharers_coh_states_i[i] == e_COH_M);
+    assign lce_cached_O[i] = lce_cached[i] & (sharers_coh_states_i[i] == e_COH_O);
+    assign lce_cached_F[i] = lce_cached[i] & (sharers_coh_states_i[i] == e_COH_F);
   end
+
+  // Block cached in some state in LCE other than requestor
+  assign cached_shared_flag_o = |(lce_cached_S & ~lce_id_one_hot);
+  assign cached_exclusive_flag_o = |(lce_cached_E & ~lce_id_one_hot);
+  assign cached_modified_flag_o = |(lce_cached_M & ~lce_id_one_hot);
+  assign cached_owned_flag_o = |(lce_cached_O & ~lce_id_one_hot);
+  assign cached_forward_flag_o = |(lce_cached_F & ~lce_id_one_hot);
 
   // hit in requesting LCE
   logic req_lce_cached;
@@ -104,19 +110,10 @@ module bp_cce_gad
     : '0;
 
   // request type
-  logic req_wr, req_rd;
+  logic req_wr;
   assign req_wr = (req_type_flag_i == e_lce_req_type_wr);
-  assign req_rd = ~req_wr;
 
   // Flag outputs
-
-  // Block cached in LCE *other* than requestor
-  // cached owned indicates LCE to LCE transfer can occur
-  assign cached_flag_o = |(lce_cached & ~lce_id_one_hot);
-  assign cached_exclusive_flag_o = |(lce_cached_excl & ~lce_id_one_hot);
-  assign cached_owned_flag_o = |(lce_cached_owned & ~lce_id_one_hot);
-  assign cached_dirty_flag_o = |(lce_cached_dirty & ~lce_id_one_hot);
-  assign cached_shared_flag_o = cached_flag_o & ~cached_owned_flag_o;
 
   // Upgrade from read-only to read-write
   // Requesting LCE has block cached in read-only state and request is a store-miss
@@ -127,18 +124,15 @@ module bp_cce_gad
                                                  | (lru_coh_state_i == e_COH_M)
                                                  | (lru_coh_state_i == e_COH_O));
 
-  // invalidate occurs:
-  // read: never
-  // - owner in O or F will forward, no writeback
-  // - owner in E or M will downgrade, do writeback
-  // - no owner (I or S) block is read from memory
-  // write: if any block is in S
-  assign invalidate_flag_o = req_wr & cached_shared_flag_o;
-
-  // Transfer
+  // Owner LCE
   logic [num_lce_p-1:0] owner_lce_one_hot;
   // output owner even if it is same as requestor
-  assign owner_lce_one_hot = (gad_v_i) ? (lce_cached_owned) : '0;
+  // Owner will be in one of states: E, M, O, or F; and only one LCE may be in those states
+  // It is an error if more than one LCE is in one of these states (or the two LCE's are in some
+  // pair of these states) for a given cache block.
+  assign owner_lce_one_hot = (gad_v_i)
+                             ? (lce_cached_E | lce_cached_M | lce_cached_O | lce_cached_F)
+                             : '0;
 
   logic [lg_num_lce_lp-1:0] owner_lce_lo;
   logic owner_lce_v;

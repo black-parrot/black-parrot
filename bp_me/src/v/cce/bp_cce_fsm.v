@@ -160,7 +160,6 @@ module bp_cce_fsm
   logic [num_lce_p-1:0][lg_lce_assoc_lp-1:0] sharers_ways_lo;
   bp_coh_states_e [num_lce_p-1:0] sharers_coh_states_lo;
   logic dir_lru_v_lo;
-  logic dir_lru_cached_excl_lo;
   logic [paddr_width_p-1:0] dir_lru_addr_lo, dir_addr_lo;
   bp_coh_states_e dir_lru_coh_state_lo;
   logic dir_busy_lo;
@@ -179,12 +178,11 @@ module bp_cce_fsm
   logic [lg_lce_assoc_lp-1:0] gad_owner_lce_way_lo;
   logic gad_replacement_flag_lo;
   logic gad_upgrade_flag_lo;
-  logic gad_invalidate_flag_lo;
-  logic gad_cached_flag_lo;
-  logic gad_cached_exclusive_flag_lo;
-  logic gad_cached_owned_flag_lo;
-  logic gad_cached_dirty_flag_lo;
   logic gad_cached_shared_flag_lo;
+  logic gad_cached_exclusive_flag_lo;
+  logic gad_cached_modified_flag_lo;
+  logic gad_cached_owned_flag_lo;
+  logic gad_cached_forward_flag_lo;
 
   // Directory
   bp_cce_dir
@@ -211,7 +209,6 @@ module bp_cce_fsm
       ,.sharers_ways_o(sharers_ways_lo)
       ,.sharers_coh_states_o(sharers_coh_states_lo)
       ,.lru_v_o(dir_lru_v_lo)
-      ,.lru_cached_excl_o(dir_lru_cached_excl_lo)
       ,.lru_coh_state_o(dir_lru_coh_state_lo)
       ,.lru_addr_o(dir_lru_addr_lo)
       ,.addr_v_o() // only for RDE, can be left unconnected in FSM CCE
@@ -242,12 +239,11 @@ module bp_cce_fsm
       ,.owner_way_o(gad_owner_lce_way_lo)
       ,.replacement_flag_o(gad_replacement_flag_lo)
       ,.upgrade_flag_o(gad_upgrade_flag_lo)
-      ,.invalidate_flag_o(gad_invalidate_flag_lo)
-      ,.cached_flag_o(gad_cached_flag_lo)
-      ,.cached_exclusive_flag_o(gad_cached_exclusive_flag_lo)
-      ,.cached_owned_flag_o(gad_cached_owned_flag_lo)
-      ,.cached_dirty_flag_o(gad_cached_dirty_flag_lo)
       ,.cached_shared_flag_o(gad_cached_shared_flag_lo)
+      ,.cached_exclusive_flag_o(gad_cached_exclusive_flag_lo)
+      ,.cached_modified_flag_o(gad_cached_modified_flag_lo)
+      ,.cached_owned_flag_o(gad_cached_owned_flag_lo)
+      ,.cached_forward_flag_o(gad_cached_forward_flag_lo)
       );
 
 
@@ -455,6 +451,10 @@ module bp_cce_fsm
      );
 
   wire lce_resp_coh_ack_yumi = lce_resp_v_i & (lce_resp.header.msg_type == e_lce_cce_coh_ack) & ~pending_busy;
+
+  wire transfer_flag = (mshr_r.flags[e_opd_cef] | mshr_r.flags[e_opd_cmf]
+                        | mshr_r.flags[e_opd_cof] | mshr_r.flags[e_opd_cff]);
+  wire invalidate_flag = (mshr_r.flags[e_opd_rqf] & mshr_r.flags[e_opd_csf]);
 
   always_comb begin
     state_n = state_r;
@@ -850,7 +850,6 @@ module bp_cce_fsm
 
             mshr_n.paddr = lce_req.header.addr;
             mshr_n.lru_way_id = lce_req.header.lru_way_id;
-            mshr_n.flags[e_opd_ldf] = lce_req.header.lru_dirty;
             mshr_n.flags[e_opd_rqf] = (lce_req.header.msg_type == e_lce_req_type_wr);
             mshr_n.flags[e_opd_nerf] = lce_req.header.non_exclusive;
 
@@ -974,7 +973,6 @@ module bp_cce_fsm
         if (dir_lru_v_lo) begin
           mshr_n.lru_paddr = dir_lru_addr_lo;
           mshr_n.lru_coh_state = dir_lru_coh_state_lo;
-          mshr_n.flags[e_opd_lef] = dir_lru_cached_excl_lo;
         end
 
         if (sharers_v_lo) begin
@@ -989,12 +987,11 @@ module bp_cce_fsm
 
           mshr_n.flags[e_opd_rf] = gad_replacement_flag_lo;
           mshr_n.flags[e_opd_uf] = gad_upgrade_flag_lo;
-          mshr_n.flags[e_opd_if] = gad_invalidate_flag_lo;
-          mshr_n.flags[e_opd_cf] = gad_cached_flag_lo;
-          mshr_n.flags[e_opd_cef] = gad_cached_exclusive_flag_lo;
-          mshr_n.flags[e_opd_cof] = gad_cached_owned_flag_lo;
-          mshr_n.flags[e_opd_cdf] = gad_cached_dirty_flag_lo;
           mshr_n.flags[e_opd_csf] = gad_cached_shared_flag_lo;
+          mshr_n.flags[e_opd_cef] = gad_cached_exclusive_flag_lo;
+          mshr_n.flags[e_opd_cmf] = gad_cached_modified_flag_lo;
+          mshr_n.flags[e_opd_cof] = gad_cached_owned_flag_lo;
+          mshr_n.flags[e_opd_cff] = gad_cached_forward_flag_lo;
 
           mshr_n.owner_lce_id = gad_owner_lce_lo;
           mshr_n.owner_way_id = gad_owner_lce_way_lo;
@@ -1004,7 +1001,8 @@ module bp_cce_fsm
             ? e_COH_M
             : (mshr_r.flags[e_opd_nerf])
               ? e_COH_S
-              : (gad_cached_flag_lo)
+              : (gad_cached_shared_flag_lo | gad_cached_exclusive_flag_lo | gad_cached_modified_flag_lo
+                 | gad_cached_owned_flag_lo | gad_cached_forward_flag_lo)
                 ? e_COH_S
                 : e_COH_E;
 
@@ -1031,23 +1029,23 @@ module bp_cce_fsm
 
         // TODO: for performance, move replacement before invalidation
         state_n =
-          (mshr_r.flags[e_opd_if])
+          (invalidate_flag)
           ? INV_CMD
           : (mshr_r.flags[e_opd_uf])
             ? UPGRADE_STW_CMD
             : (mshr_r.flags[e_opd_rf])
               ? REPLACEMENT
-              : (mshr_r.flags[e_opd_cof])
+              : (transfer_flag)
                 ? TRANSFER_ST_CMD
                 : RESOLVE_SPECULATION;
 
         // setup required state for sending invalidations
-        if (mshr_r.flags[e_opd_if]) begin
+        if (invalidate_flag) begin
           // don't invalidate the requesting LCE
           pe_sharers_n = sharers_hits_r & ~req_lce_id_one_hot;
           // if doing a transfer, also remove owner LCE since transfer
           // routine will take care of setting owner into correct new state
-          pe_sharers_n = mshr_r.flags[e_opd_cof]
+          pe_sharers_n = transfer_flag
                          ? pe_sharers_n & ~owner_lce_id_one_hot
                          : pe_sharers_n;
           sharers_ways_n = sharers_ways_r;
@@ -1065,7 +1063,7 @@ module bp_cce_fsm
           if (~lce_cmd_busy & lce_cmd_ready_i) begin
 
             lce_cmd_v_o = lce_cmd_ready_i;
-            lce_cmd.header.msg_type = e_lce_cmd_invalidate_tag;
+            lce_cmd.header.msg_type = e_lce_cmd_inv;
 
             // destination and way come from sharers information
             lce_cmd.header.dst_id = pe_lce_id;
@@ -1110,7 +1108,7 @@ module bp_cce_fsm
                     ? UPGRADE_STW_CMD
                     : (mshr_r.flags[e_opd_rf])
                       ? REPLACEMENT
-                      : (mshr_r.flags[e_opd_cof])
+                      : (transfer_flag)
                         ? TRANSFER_ST_CMD
                         : RESOLVE_SPECULATION;
         end else begin
@@ -1123,7 +1121,7 @@ module bp_cce_fsm
                         ? UPGRADE_STW_CMD
                         : (mshr_r.flags[e_opd_rf])
                           ? REPLACEMENT
-                          : (mshr_r.flags[e_opd_cof])
+                          : (transfer_flag)
                             ? TRANSFER_ST_CMD
                             : RESOLVE_SPECULATION;
             end // cnt == 'd1
@@ -1137,7 +1135,7 @@ module bp_cce_fsm
 
           // LCE Cmd Common Fields
           lce_cmd.header.dst_id = mshr_r.lce_id;
-          lce_cmd.header.msg_type = e_lce_cmd_writeback;
+          lce_cmd.header.msg_type = e_lce_cmd_wb;
           lce_cmd.header.way_id = mshr_r.lru_way_id;
 
           // Sub message fields
@@ -1150,7 +1148,7 @@ module bp_cce_fsm
         if (lce_resp_v_i) begin
           if (lce_resp.header.msg_type == e_lce_cce_resp_null_wb) begin
             lce_resp_yumi_o = lce_resp_v_i;
-            state_n = (mshr_r.flags[e_opd_cof])
+            state_n = (transfer_flag)
                       ? TRANSFER_ST_CMD
                       : RESOLVE_SPECULATION;
             // clear the replacement flag
@@ -1173,7 +1171,7 @@ module bp_cce_fsm
             mem_cmd.header.size = e_mem_size_64;
 
             state_n = (lce_resp_yumi_o)
-                      ? (mshr_r.flags[e_opd_cof])
+                      ? (transfer_flag)
                         ? TRANSFER_ST_CMD
                         : RESOLVE_SPECULATION
                       : REPLACEMENT_WB_RESP;
@@ -1197,7 +1195,7 @@ module bp_cce_fsm
 
           // LCE Cmd Common Fields
           lce_cmd.header.dst_id = mshr_r.owner_lce_id;
-          lce_cmd.header.msg_type = e_lce_cmd_set_tag;
+          lce_cmd.header.msg_type = e_lce_cmd_st;
           lce_cmd.header.way_id = mshr_r.owner_way_id;
 
           // Sub message fields
@@ -1222,7 +1220,7 @@ module bp_cce_fsm
 
           // LCE Cmd Common Fields
           lce_cmd.header.dst_id = mshr_r.owner_lce_id;
-          lce_cmd.header.msg_type = e_lce_cmd_transfer;
+          lce_cmd.header.msg_type = e_lce_cmd_tr;
           lce_cmd.header.way_id = mshr_r.owner_way_id;
 
           // Sub message fields
@@ -1240,7 +1238,7 @@ module bp_cce_fsm
 
           // LCE Cmd Common Fields
           lce_cmd.header.dst_id = mshr_r.owner_lce_id;
-          lce_cmd.header.msg_type = e_lce_cmd_writeback;
+          lce_cmd.header.msg_type = e_lce_cmd_wb;
           lce_cmd.header.way_id = mshr_r.owner_way_id;
 
           // Sub message fields
@@ -1285,7 +1283,7 @@ module bp_cce_fsm
 
           // LCE Cmd Common Fields
           lce_cmd.header.dst_id = mshr_r.lce_id;
-          lce_cmd.header.msg_type = e_lce_cmd_set_tag_wakeup;
+          lce_cmd.header.msg_type = e_lce_cmd_st_wakeup;
           lce_cmd.header.way_id = mshr_r.way_id;
 
           // Sub message fields
@@ -1297,7 +1295,7 @@ module bp_cce_fsm
       end
       RESOLVE_SPECULATION: begin
         // Resolve speculation
-        if (mshr_r.flags[e_opd_cof] | mshr_r.flags[e_opd_uf]) begin
+        if (transfer_flag | mshr_r.flags[e_opd_uf]) begin
           // squash speculative memory request if transfer or upgrade
           spec_w_v = 1'b1;
           // no longer speculative
@@ -1315,7 +1313,7 @@ module bp_cce_fsm
           spec_bits_li.spec = 1'b0;
           spec_bits_li.state = e_COH_M;
           spec_bits_li.fwd_mod = 1'b1;
-        end else if (mshr_r.flags[e_opd_cf] | mshr_r.flags[e_opd_nerf]) begin
+        end else if (mshr_r.flags[e_opd_csf] | mshr_r.flags[e_opd_nerf]) begin
           // forward with S state
           spec_w_v = 1'b1;
           spec_v_li = 1'b1;

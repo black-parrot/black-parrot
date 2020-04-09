@@ -372,6 +372,9 @@ module bp_cce_inst_decode
             if (op_type_u.itype.dst.special == e_opd_next_coh_state) begin
               decoded_inst_o.next_coh_state_w_v = 1'b1;
             end
+            if (op_type_u.itype.dst.special == e_opd_lru_coh_state) begin
+              decoded_inst_o.lru_coh_state_w_v = 1'b1;
+            end
             if (op_type_u.itype.dst.special == e_opd_flags) begin
               decoded_inst_o.flag_w_v = '1;
             end
@@ -561,12 +564,11 @@ module bp_cce_inst_decode
               decoded_inst_o.owner_way_w_v = 1'b1;
               decoded_inst_o.flag_w_v[e_opd_rf] = 1'b1;
               decoded_inst_o.flag_w_v[e_opd_uf] = 1'b1;
-              decoded_inst_o.flag_w_v[e_opd_if] = 1'b1;
-              decoded_inst_o.flag_w_v[e_opd_cf] = 1'b1;
-              decoded_inst_o.flag_w_v[e_opd_cef] = 1'b1;
-              decoded_inst_o.flag_w_v[e_opd_cof] = 1'b1;
-              decoded_inst_o.flag_w_v[e_opd_cdf] = 1'b1;
               decoded_inst_o.flag_w_v[e_opd_csf] = 1'b1;
+              decoded_inst_o.flag_w_v[e_opd_cef] = 1'b1;
+              decoded_inst_o.flag_w_v[e_opd_cmf] = 1'b1;
+              decoded_inst_o.flag_w_v[e_opd_cof] = 1'b1;
+              decoded_inst_o.flag_w_v[e_opd_cff] = 1'b1;
             end
             default: begin
             end
@@ -705,7 +707,7 @@ module bp_cce_inst_decode
                   decoded_inst_o.lru_way_w_v = 1'b1;
                   decoded_inst_o.uc_req_size_w_v = 1'b1;
                   decoded_inst_o.data_length_w_v = 1'b1;
-                  decoded_inst_o.flag_w_v = (e_flag_rqf | e_flag_nerf | e_flag_ldf | e_flag_ucf);
+                  decoded_inst_o.flag_w_v = (e_flag_rqf | e_flag_nerf | e_flag_ucf);
                 end
                 default: begin
                   decoded_inst_o.src_a.q = e_opd_lce_resp_type;
