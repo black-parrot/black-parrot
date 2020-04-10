@@ -24,7 +24,7 @@ module wrapper
   , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
   , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
   , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
-  , localparam stat_width_lp = `bp_be_dcache_stat_info_width(icache_assoc_p) 
+  , localparam stat_width_lp = `bp_cache_stat_info_width(icache_assoc_p) 
  
   )
   ( input                             clk_i

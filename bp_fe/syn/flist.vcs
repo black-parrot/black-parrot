@@ -82,10 +82,12 @@ $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_byte_synth.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_synth.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_2r1w_sync.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_2r1w_sync_synth.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_adder_cin.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_adder_ripple_carry.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_arb_fixed.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_array_concentrate_static.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_buf.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_buf_ctrl.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_circular_ptr.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_concentrate_static.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_clear_up.v
@@ -109,6 +111,8 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_encode_one_hot.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_expand_bitmask.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_hash_bank.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_hash_bank_reverse.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_idiv_iterative.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_idiv_iterative_controller.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lfsr.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_decode.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_lru_pseudo_tree_encode.v
@@ -117,6 +121,7 @@ $BASEJUMP_STL_DIR/bsg_misc/bsg_mux_butterfly.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux_one_hot.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_mux_segmented.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_muxi2_gatestack.v
+$BASEJUMP_STL_DIR/bsg_misc/bsg_nor2.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_nor3.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_nand.v
 $BASEJUMP_STL_DIR/bsg_misc/bsg_priority_encode.v
@@ -157,6 +162,7 @@ $BP_BE_DIR/src/v/bp_be_calculator/bp_be_instr_decoder.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_int_alu.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_fp.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_int.v
+$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_long.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mem.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mul.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_regfile.v
@@ -213,6 +219,8 @@ $BP_ME_DIR/src/v/cce/bp_cce_reg.v
 $BP_ME_DIR/src/v/cce/bp_cce_spec_bits.v
 $BP_ME_DIR/src/v/cce/bp_cce_src_sel.v
 $BP_ME_DIR/src/v/cce/bp_io_cce.v
+$BP_ME_DIR/src/v/cce/bp_cce_fsm.v
+$BP_ME_DIR/src/v/cce/bp_cce_wrapper.v
 # Network
 $BP_ME_DIR/src/v/cce/bp_uce.v
 $BP_ME_DIR/src/v/wormhole/bp_me_addr_to_cce_id.v
@@ -228,7 +236,15 @@ $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_lce_resp.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.v
 ## TOP
-$BP_TOP_DIR/src/v/bp_accelerator_complex.v
+$BP_TOP_DIR/src/v/bp_nd_socket.v
+$BP_TOP_DIR/src/v/bp_cacc_vdp.v
+$BP_TOP_DIR/src/v/bp_cacc_tile.v
+$BP_TOP_DIR/src/v/bp_cacc_tile_node.v
+$BP_TOP_DIR/src/v/bp_cacc_complex.v
+$BP_TOP_DIR/src/v/bp_sacc_vdp.v
+$BP_TOP_DIR/src/v/bp_sacc_tile.v
+$BP_TOP_DIR/src/v/bp_sacc_tile_node.v
+$BP_TOP_DIR/src/v/bp_sacc_complex.v
 $BP_TOP_DIR/src/v/bp_cfg.v
 $BP_TOP_DIR/src/v/bp_cfg_buffered.v
 $BP_TOP_DIR/src/v/bp_core.v
