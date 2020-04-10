@@ -197,7 +197,6 @@ $BP_FE_DIR/src/v/bp_fe_top.v
 $BP_ME_DIR/src/v/cache/bp_me_cache_dma_to_cce.v
 $BP_ME_DIR/src/v/cache/bp_me_cache_slice.v
 $BP_ME_DIR/src/v/cache/bp_me_cce_to_cache.v
-$BP_ME_DIR/src/v/cache/bp_me_cce_to_cache_buffered.v
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce.v
 $BP_ME_DIR/src/v/cce/bp_cce_alu.v

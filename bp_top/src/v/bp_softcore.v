@@ -336,7 +336,7 @@ module bp_softcore
   logic [2:0] fifo_v_lo, fifo_yumi_li;
   for (genvar i = 0; i < 3; i++)
     begin : fifo
-      bsg_two_fifo
+      bsg_one_fifo
        #(.width_p($bits(bp_cce_mem_msg_s)))
        mem_fifo
         (.clk_i(clk_i)
