@@ -474,7 +474,7 @@ bind bp_be_top
        ,.long_haz(be.be_checker.detector.long_haz_v)
        ,.exception(be.be_checker.director.trap_pkt.exception)
        ,.eret(be.be_checker.director.trap_pkt.eret)
-       ,.interrupt(be.be_checker.director.trap_pkt._interrupt)
+       ,._interrupt(be.be_checker.director.trap_pkt._interrupt)
        ,.control_haz(be.be_checker.detector.control_haz_v)
        ,.data_haz(be.be_checker.detector.data_haz_v)
        ,.load_dep((be.be_checker.detector.dep_status_li[0].mem_iwb_v
