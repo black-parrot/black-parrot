@@ -22,7 +22,7 @@
     logic long_haz;
     logic eret;
     logic exception;
-    logic interrupt;
+    logic _interrupt;
   }  bp_stall_reason_s;
 
   typedef enum logic [4:0]
@@ -48,7 +48,7 @@
     ,long_haz            = 5'd3
     ,eret                = 5'd2
     ,exception           = 5'd1
-    ,interrupt           = 5'd0
+    ,_interrupt           = 5'd0
   } bp_stall_reason_e;
 
 // The BlackParrot core pipeline is a mostly non-stalling pipeline, decoupled between the front-end
@@ -109,7 +109,7 @@ module bp_nonsynth_core_profiler
     , input dcache_miss
     , input eret
     , input exception
-    , input interrupt
+    , input _interrupt
 
     // Reservation packet
     , input [dispatch_pkt_width_lp-1:0] reservation
@@ -211,7 +211,7 @@ module bp_nonsynth_core_profiler
       stall_stage_n[2].target_mispredict |= target_mispredict;
       stall_stage_n[2].exception         |= exception;
       stall_stage_n[2].eret              |= eret;
-      stall_stage_n[2].interrupt         |= interrupt;
+      stall_stage_n[2]._interrupt         |= _interrupt;
 
       // ISD
       stall_stage_n[3].dir_mispredict    |= dir_mispredict;
@@ -220,7 +220,7 @@ module bp_nonsynth_core_profiler
       stall_stage_n[3].dcache_miss       |= dcache_miss;
       stall_stage_n[3].exception         |= exception;
       stall_stage_n[3].eret              |= eret;
-      stall_stage_n[3].interrupt         |= interrupt;
+      stall_stage_n[3]._interrupt         |= _interrupt;
 
       // EX1
       stall_stage_n[4].dir_mispredict    |= dir_mispredict;
@@ -230,7 +230,7 @@ module bp_nonsynth_core_profiler
       stall_stage_n[4].long_haz          |= long_haz;
       stall_stage_n[4].exception         |= exception;
       stall_stage_n[4].eret              |= eret;
-      stall_stage_n[4].interrupt         |= interrupt;
+      stall_stage_n[4]._interrupt         |= _interrupt;
       stall_stage_n[4].control_haz       |= control_haz;
       stall_stage_n[4].load_dep          |= load_dep;
       stall_stage_n[4].mul_dep           |= mul_dep;
@@ -242,21 +242,21 @@ module bp_nonsynth_core_profiler
       stall_stage_n[5].dcache_miss       |= dcache_miss;
       stall_stage_n[5].exception         |= exception;
       stall_stage_n[5].eret              |= eret;
-      stall_stage_n[5].interrupt         |= interrupt;
+      stall_stage_n[5]._interrupt        |= _interrupt;
 
       // EX3
       stall_stage_n[6].dtlb_miss         |= dtlb_miss;
       stall_stage_n[6].dcache_miss       |= dcache_miss;
       stall_stage_n[6].exception         |= exception;
       stall_stage_n[6].eret              |= eret;
-      stall_stage_n[6].interrupt         |= interrupt;
+      stall_stage_n[6]._interrupt        |= _interrupt;
 
       // EX4
       stall_stage_n[7].dtlb_miss         |= dtlb_miss;
       stall_stage_n[7].dcache_miss       |= dcache_miss;
       stall_stage_n[7].exception         |= exception;
       stall_stage_n[7].eret              |= eret;
-      stall_stage_n[7].interrupt         |= interrupt;
+      stall_stage_n[7]._interrupt        |= _interrupt;
     end
 
   bp_stall_reason_s stall_reason_dec;
