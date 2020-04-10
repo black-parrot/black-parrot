@@ -33,11 +33,10 @@ module bp_cce_buffered
 
     // Derived parameters
     , localparam cfg_bus_width_lp      = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-    , localparam block_size_in_bytes_lp = (cce_block_width_p/8)
-    , localparam lg_num_cce_lp          = `BSG_SAFE_CLOG2(num_cce_p)
-    , localparam wg_per_cce_lp          = (lce_sets_p / num_cce_p)
+    , localparam num_way_groups_lp     = `BSG_CDIV(cce_way_groups_p, num_cce_p)
 
     // interface widths
+    `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
   )
@@ -58,8 +57,8 @@ module bp_cce_buffered
    , input                                                 lce_resp_v_i
    , output logic                                          lce_resp_ready_o
 
-   // outbound: ready&valid
-   // messages are not buffered by the CCE, and connection is directly to ME network
+   // outbound: ready->valid
+   // messages are not buffered
    , output logic [lce_cmd_width_lp-1:0]                   lce_cmd_o
    , output logic                                          lce_cmd_v_o
    , input                                                 lce_cmd_ready_i
@@ -108,7 +107,7 @@ module bp_cce_buffered
   bsg_fifo_1r1w_small
     #(.width_p(lce_cce_resp_width_lp)
       // See top comments about sizing
-      ,.els_p(wg_per_cce_lp)
+      ,.els_p(num_way_groups_lp)
       )
     lce_cce_resp_fifo
      (.clk_i(clk_i)
@@ -125,7 +124,7 @@ module bp_cce_buffered
   bsg_fifo_1r1w_small
     #(.width_p(cce_mem_msg_width_lp)
       // See top comments about sizing
-      ,.els_p(wg_per_cce_lp)
+      ,.els_p(num_way_groups_lp)
       )
     mem_cce_resp_fifo
      (.clk_i(clk_i)

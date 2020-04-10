@@ -2,11 +2,8 @@
 -- BlackParrot MESI Coherence Protocol
 --
 -- Notes:
--- 1. Replacement is not modeled since we use the single address assumption. The LCEs are not
---    allowed to evict a block on their own, only the CCE can evict a block.
--- 2. "Message delivery cannot be assumed to be in the same order as they were sent, even for
---     the same sender and receiver pair"
--- 3. A cache is made owner or added to sharers when the CCE / Directory receives the ack. Sharers
+-- 1. Unordered networks are modeled (inherited from the example MESI protocol file)
+-- 2. A cache is made owner or added to sharers when the CCE / Directory receives the ack. Sharers
 --    are cleared at ack receipt.
 --
 ----------------------------------------------------------------------
@@ -15,13 +12,12 @@
 -- Constants
 ----------------------------------------------------------------------
 const
-  ProcCount: CFG_PROCS;  -- number processors
-  ValueCount: 2;         -- number of data values.
-  VC0: 0;                -- low priority - LCE Req
-  VC1: 1;                -- LCE Cmd
-  VC2: 2;                -- LCE Resp
-  NumVCs: VC2 - VC0 + 1;
-  -- TODO: what is max messages?
+  ProcCount: CFG_PROCS;        -- number processors
+  ValueCount: 2;               -- number of data values.
+  ReqNet: 0;                   -- low priority - LCE Req
+  CmdNet: 1;                   -- LCE Cmd
+  RespNet: 2;                  -- LCE Resp
+  NumVCs: RespNet - ReqNet + 1;
   NetMax: 2*ProcCount;
 
 
@@ -35,13 +31,16 @@ type
   Node: union { Home , Proc };
   Count: 0..ProcCount; -- integer range of number of sharers
 
-  VCType: VC0..NumVCs-1;
+  VCType: ReqNet..NumVCs-1;
 
   MessageType: enum { LceRdReq, -- req to dir for read
                       LceWrReq, -- req to dir for write
 
-                      InvTagCmd,  -- cmd to LCE to invalidate block
-                      TrCmd, -- cmd to LCE to send data to another LCE
+                      InvCmd,  -- cmd to LCE to invalidate block
+                      TrCmd, -- cmd to LCE to send data to another LCE then send writeback
+                             -- in practice, TR and WB are two commmands, but they are always sent together,
+                             -- and current implementation uses in-order networks, so consider them as one cmd here
+                      WBCmd, -- cmd to LCE to write back data to CCE (does not invalidate the block)
                       SetTagWakeupCmd, -- cmd to LCE to set tag and wakeup on upgrade (state -> M)
 
                       TagAndDataCmd, -- data block to LCE from CCE
@@ -54,23 +53,27 @@ type
                       };
 
   E_HomeState: enum { H_M, H_S, H_I, H_E, -- stable states
-                      -- "transient" states - states that CCE steps through to process request
-                      H_IA, -- wait for invalidation acks
-                      H_CA, -- wait for coherence ack
-                      H_TWBA, -- wait for coherence ack or transfer writeback
-                      H_TWB -- wait for writeback or null writeback from transferring LCE
+                      -- CCE Microcode Processing
+                      -- These states represent the CCE stepping through the microcode routines that
+                      -- process a single request. They are not transient states of the coherence block.
+                      CCE_IA, -- CCE waiting for invalidation acks
+                      CCE_TWBA, -- CCE waiting for transfer writeback or coherence ack
+                      CCE_TWB, -- CCE waiting for transfer writeback
+                      CCE_WB, -- CCE waiting for writeback
+                      CCE_CA -- CCE waiting for coherence ack
                       };
 
   E_ProcState: enum { P_M, P_S, P_I, P_E, -- stable states
-                      P_ID, -- invalid but still dirty
-                      P_DT -- waiting for data cmd and tag cmd to arrive
+                      -- WAIT state is used to model one transaction per block
+                      P_WAIT -- waiting for data cmd and tag cmd to arrive
                       };
 
   Message:
     Record
       mtype: MessageType;
       src: Node;
-      -- do not need a destination for verification; the destination is indicated by which array entry in the Net the message is placed
+      -- do not need a destination for verification; the destination is indicated by which array entry in the
+      -- Net the message is placed
       -- channel for message
       vc: VCType;
       -- data value for data cmd and data resp
@@ -102,6 +105,7 @@ type
     Record
       state: E_ProcState;
       val: Value;
+      dirty: boolean;
     End;
 
 ----------------------------------------------------------------------
@@ -125,10 +129,12 @@ Begin
     put "LceRdReq";
   case LceWrReq:
     put "LceWrReq";
-  case InvTagCmd:
-    put "InvTagCmd";
+  case InvCmd:
+    put "InvCmd";
   case TrCmd:
     put "TrCmd";
+  case WBCmd:
+    put "WBCmd";
   case SetTagWakeupCmd:
     put "SetTagWakeupCmd";
   case TagAndDataCmd:
@@ -216,7 +222,7 @@ Begin
     then
       if n != rqst
       then
-        Send(InvTagCmd, n, HomeType, VC1, UNDEFINED, false, UNDEFINED, UNDEFINED);
+        Send(InvCmd, n, HomeType, CmdNet, UNDEFINED, false, UNDEFINED, UNDEFINED);
       endif;
     endif;
   endfor;
@@ -239,17 +245,16 @@ Begin
   -- default to 'processing' message.  set to false otherwise
   msg_processed := true;
 
-  -- H_M, H_S, H_I, H_E, H_IA, H_CA, H_TWB, H_TWBA
+  -- H_M, H_S, H_I, H_E, CCE_IA, CCE_CA, CCE_TWB, CCE_TWBA
 
   switch HomeNode.state
   -- Stable states
 
   -- invalid in directory - immediately reply with current data and set tag
   case H_I:
-    assert(cnt = 0) "home invalid, but sharers count not 0";
     switch msg.mtype
       case LceRdReq:
-        HomeNode.state := H_CA;
+        HomeNode.state := CCE_CA;
         HomeNode.ack := 0; -- invalid, no acks required
         HomeNode.upgrade := false; -- not an upgrade
         HomeNode.transfer := false; -- not a transfer
@@ -260,10 +265,10 @@ Begin
 
         -- send commands
         --put "sending data cmd cce and set tag cmd from H_I\n";
-        Send(TagAndDataCmd, msg.src, HomeType, VC1, HomeNode.val, false, UNDEFINED, P_E);
+        Send(TagAndDataCmd, msg.src, HomeType, CmdNet, HomeNode.val, false, UNDEFINED, P_E);
 
       case LceWrReq:
-        HomeNode.state := H_CA;
+        HomeNode.state := CCE_CA;
         HomeNode.ack := 0; -- invalid, no acks required
         HomeNode.upgrade := false; -- not an upgrade
         HomeNode.transfer := false; -- not a transfer
@@ -274,7 +279,7 @@ Begin
 
         -- send commands
         --put "sending data cmd cce and set tag cmd from H_I\n";
-        Send(TagAndDataCmd, msg.src, HomeType, VC1, HomeNode.val, false, UNDEFINED, P_M);
+        Send(TagAndDataCmd, msg.src, HomeType, CmdNet, HomeNode.val, false, UNDEFINED, P_M);
 
       else
         ErrorUnhandledMsg(msg, HomeType);
@@ -284,7 +289,7 @@ Begin
   case H_S:
     switch msg.mtype
       case LceRdReq:
-        HomeNode.state := H_CA;
+        HomeNode.state := CCE_CA;
         HomeNode.ack := 0; -- invalid, no acks required
         HomeNode.upgrade := false; -- not an upgrade
         HomeNode.transfer := false; -- not a transfer
@@ -295,7 +300,7 @@ Begin
 
         -- send commands
         --put "sending data cmd and set tag cmd from H_S\n";
-        Send(TagAndDataCmd, msg.src, HomeType, VC1, HomeNode.val, false, UNDEFINED, P_S);
+        Send(TagAndDataCmd, msg.src, HomeType, CmdNet, HomeNode.val, false, UNDEFINED, P_S);
 
       case LceWrReq:
         -- there are two cases for a write request when block is cached in shared:
@@ -317,17 +322,17 @@ Begin
           if (cnt = 1)
           then
             --put "sending set tag wakeup cmd from H_S\n";
-            Send(SetTagWakeupCmd, msg.src, HomeType, VC1, UNDEFINED, false, UNDEFINED, P_M);
-            HomeNode.state := H_CA;
+            Send(SetTagWakeupCmd, msg.src, HomeType, CmdNet, UNDEFINED, false, UNDEFINED, P_M);
+            HomeNode.state := CCE_CA;
           else
-            HomeNode.state := H_IA;
+            HomeNode.state := CCE_IA;
           endif;
         else
           -- requestor does not have block cached, not an upgrade, all sharers will ack
           HomeNode.upgrade := false; -- not an upgrade
           HomeNode.ack := cnt;
           -- wait for acks
-          HomeNode.state := H_IA;
+          HomeNode.state := CCE_IA;
         endif;
 
         HomeNode.transfer := false; -- not a transfer
@@ -341,13 +346,12 @@ Begin
     endswitch;
 
   case H_E:
-    assert(cnt = 0) "home exclusive, but sharers count not 0";
     switch msg.mtype
       case LceRdReq:
-        HomeNode.state := H_IA;
+        HomeNode.state := CCE_IA;
         -- send invalidation to owner
         --put "sending invalidations from H_E\n";
-        Send(InvTagCmd, HomeNode.owner, HomeType, VC1, UNDEFINED, false, UNDEFINED, UNDEFINED);
+        Send(InvCmd, HomeNode.owner, HomeType, CmdNet, UNDEFINED, false, UNDEFINED, UNDEFINED);
         HomeNode.ack := 1; -- cached in E by single cache
         HomeNode.upgrade := false; -- not an upgrade
         HomeNode.transfer := true; -- transfer
@@ -357,10 +361,10 @@ Begin
         HomeNode.trLce := HomeNode.owner;
 
       case LceWrReq:
-        HomeNode.state := H_IA;
+        HomeNode.state := CCE_IA;
         -- send invalidations
         --put "sending invalidations from H_E\n";
-        Send(InvTagCmd, HomeNode.owner, HomeType, VC1, UNDEFINED, false, UNDEFINED, UNDEFINED);
+        Send(InvCmd, HomeNode.owner, HomeType, CmdNet, UNDEFINED, false, UNDEFINED, UNDEFINED);
         HomeNode.ack := 1; -- cached in E by single cache
         HomeNode.upgrade := false; -- not an upgrade
         HomeNode.transfer := true; -- transfer
@@ -375,12 +379,11 @@ Begin
 
   -- block in modified, cached in a single LCE
   case H_M:
-    assert(cnt = 0) "home modified, but sharers count not 0";
     switch msg.mtype
       case LceRdReq:
-        HomeNode.state := H_IA;
+        HomeNode.state := CCE_IA;
         --put "sending invalidations from H_M\n";
-        Send(InvTagCmd, HomeNode.owner, HomeType, VC1, UNDEFINED, false, UNDEFINED, UNDEFINED);
+        Send(InvCmd, HomeNode.owner, HomeType, CmdNet, UNDEFINED, false, UNDEFINED, UNDEFINED);
         HomeNode.ack := 1; -- cached in E by single cache
         HomeNode.upgrade := false; -- not an upgrade
         HomeNode.transfer := true; -- transfer
@@ -390,9 +393,9 @@ Begin
         HomeNode.trLce := HomeNode.owner;
 
       case LceWrReq:
-        HomeNode.state := H_IA;
+        HomeNode.state := CCE_IA;
         --put "sending invalidations from H_M\n";
-        Send(InvTagCmd, HomeNode.owner, HomeType, VC1, UNDEFINED, false, UNDEFINED, UNDEFINED);
+        Send(InvCmd, HomeNode.owner, HomeType, CmdNet, UNDEFINED, false, UNDEFINED, UNDEFINED);
         HomeNode.ack := 1; -- cached in E by single cache
         HomeNode.upgrade := false; -- not an upgrade
         HomeNode.transfer := true; -- transfer
@@ -407,10 +410,10 @@ Begin
 
 
 
-  -- "Transient" states
+  -- CCE Processing States
 
   -- waiting for invalidation acks
-  case H_IA:
+  case CCE_IA:
     switch msg.mtype
       case LceRdReq, LceWrReq:
         msg_processed := false;
@@ -422,18 +425,18 @@ Begin
         then
           if (HomeNode.upgrade = true)
           then
-            --put "sending set tag wakeup from H_IA\n";
-            Send(SetTagWakeupCmd, HomeNode.reqLce, HomeType, VC1, UNDEFINED, false, UNDEFINED, P_M);
-            HomeNode.state := H_CA;
+            --put "sending set tag wakeup from CCE_IA\n";
+            Send(SetTagWakeupCmd, HomeNode.reqLce, HomeType, CmdNet, UNDEFINED, false, UNDEFINED, P_M);
+            HomeNode.state := CCE_CA;
           elsif (HomeNode.transfer = true)
           then
-            --put "sending set tag, tr, and writeback from H_IA\n";
-            Send(TrCmd, HomeNode.trLce, HomeType, VC1, UNDEFINED, false, HomeNode.reqLce, HomeNode.nextState);
-            HomeNode.state := H_TWBA;
+            --put "sending set tag, tr, and writeback from CCE_IA\n";
+            Send(TrCmd, HomeNode.trLce, HomeType, CmdNet, UNDEFINED, false, HomeNode.reqLce, HomeNode.nextState);
+            HomeNode.state := CCE_TWBA;
           else
-            --put "sending set tag and data cmd from H_IA\n";
-            Send(TagAndDataCmd, HomeNode.reqLce, HomeType, VC1, HomeNode.val, false, UNDEFINED, HomeNode.nextState);
-            HomeNode.state := H_CA;
+            --put "sending set tag and data cmd from CCE_IA\n";
+            Send(TagAndDataCmd, HomeNode.reqLce, HomeType, CmdNet, HomeNode.val, false, UNDEFINED, HomeNode.nextState);
+            HomeNode.state := CCE_CA;
           endif;
         endif;
       else
@@ -441,14 +444,14 @@ Begin
     endswitch;
 
   -- waiting for coherence ack
-  case H_CA:
+  case CCE_CA:
     switch msg.mtype
       case LceRdReq, LceWrReq:
         msg_processed := false;
       case CohAck:
         HomeNode.state := HomeNode.nextHomeState;
         HomeNode.transfer := false;
-        assert(msg.src = HomeNode.reqLce) "Coh Ack arrived from other than requesting LCE";
+        --assert(msg.src = HomeNode.reqLce) "Coh Ack arrived from other than requesting LCE";
         if (HomeNode.nextHomeState = H_E | HomeNode.nextHomeState = H_M)
         then
           RemoveFromSharersList(msg.src);
@@ -464,15 +467,15 @@ Begin
     endswitch;
 
   -- waiting for writeback from transfer LCE or Coh Ack
-  case H_TWBA:
+  case CCE_TWBA:
     switch msg.mtype
       case LceRdReq, LceWrReq:
         msg_processed := false;
       case CohAck:
-        HomeNode.state := H_TWB;
+        HomeNode.state := CCE_TWB;
 
         HomeNode.transfer := false;
-        assert(msg.src = HomeNode.reqLce) "Coh Ack arrived from other than requesting LCE";
+        --assert(msg.src = HomeNode.reqLce) "Coh Ack arrived from other than requesting LCE";
         if (HomeNode.nextHomeState = H_E | HomeNode.nextHomeState = H_M)
         then
           RemoveFromSharersList(msg.src);
@@ -486,17 +489,18 @@ Begin
 
 
       case LceDataResp:
-        HomeNode.state := H_CA;
+        HomeNode.state := CCE_CA;
         HomeNode.val := msg.val;
       case LceDataRespNull:
-        HomeNode.state := H_CA;
-        HomeNode.val := msg.val;
+        HomeNode.state := CCE_CA;
+        --assert(msg.val = HomeNode.val) "TWB arrived with bad value";
+        --HomeNode.val := msg.val;
       else
         ErrorUnhandledMsg(msg, HomeType);
     endswitch;
 
   -- waiting for writeback from transfer LCE, CohAck already processed
-  case H_TWB:
+  case CCE_TWB:
     switch msg.mtype
       case LceRdReq, LceWrReq:
         msg_processed := false;
@@ -505,7 +509,24 @@ Begin
         HomeNode.val := msg.val;
       case LceDataRespNull:
         HomeNode.state := HomeNode.nextHomeState;
+        --assert(msg.val = HomeNode.val) "TWB arrived with bad value";
+        --HomeNode.val := msg.val;
+      else
+        ErrorUnhandledMsg(msg, HomeType);
+    endswitch;
+
+  -- waiting for writeback from LCE after CCE initiated WB
+  case CCE_WB:
+    switch msg.mtype
+      case LceRdReq, LceWrReq:
+        msg_processed := false;
+      case LceDataResp:
+        HomeNode.state := HomeNode.nextHomeState;
         HomeNode.val := msg.val;
+      case LceDataRespNull:
+        HomeNode.state := HomeNode.nextHomeState;
+        --assert(msg.val = HomeNode.val) "WB arrived with bad value";
+        --HomeNode.val := msg.val;
       else
         ErrorUnhandledMsg(msg, HomeType);
     endswitch;
@@ -529,8 +550,8 @@ Begin
   alias pv:Procs[p].val do
 
 -- Processor states
--- P_I, P_ID, P_DT, P_I_D, P_I_T, P_S, P_E, P_M
--- Send(mtype, dst, src, vc, val, upgrade, replace, lruDirty, target, nextState)
+-- P_I, P_S, P_E, P_M, P_WAIT
+-- Send(mtype, dst, src, vc, val, upgrade, target, nextState)
 
   switch ps
     -- invalid, block is clean
@@ -538,45 +559,45 @@ Begin
       switch msg.mtype
         case TrCmd:
           --put "sending data cmd lce from P_I\n";
-          Send(TagAndDataCmd, msg.target, p, VC1, pv, false, UNDEFINED, msg.nextState);
-          Send(LceDataRespNull, msg.src, p, VC2, pv, false, UNDEFINED, UNDEFINED);
+          Send(TagAndDataCmd, msg.target, p, CmdNet, pv, false, UNDEFINED, msg.nextState);
+          if (Procs[p].dirty)
+          then
+            Send(LceDataResp, msg.src, p, RespNet, pv, false, UNDEFINED, UNDEFINED);
+          else
+            Send(LceDataRespNull, msg.src, p, RespNet, pv, false, UNDEFINED, UNDEFINED);
+            Procs[p].dirty := false;
+          endif;
           -- stay in invalid
         else
           ErrorUnhandledMsg(msg, p);
       endswitch;
 
-    -- invalid, but still dirty (waiting for writeback)
-    case P_ID:
-      switch msg.mtype
-        case TrCmd:
-          --put "sending data cmd lce from P_ID\n";
-          Send(TagAndDataCmd, msg.target, p, VC1, pv, false, UNDEFINED, msg.nextState);
-          Send(LceDataResp, msg.src, p, VC2, pv, false, UNDEFINED, UNDEFINED);
-          ps := P_I;
-        else
-          ErrorUnhandledMsg(msg, p);
-      endswitch;
-
     -- invalid, waiting for tag or data
-    case P_DT:
+    case P_WAIT:
       switch msg.mtype
-        case InvTagCmd:
-          --put "sending inv tag ack from P_DT\n";
-          Send(InvTagAck, msg.src, p, VC2, UNDEFINED, false, UNDEFINED, UNDEFINED);
-          ps := P_DT;
+        case InvCmd:
+          --put "sending inv tag ack from P_WAIT\n";
+          Send(InvTagAck, msg.src, p, RespNet, UNDEFINED, false, UNDEFINED, UNDEFINED);
         case TrCmd:
-          --put "sending data cmd lce from P_DT\n";
-          Send(TagAndDataCmd, msg.target, p, VC1, pv, false, UNDEFINED, msg.nextState);
-          Send(LceDataRespNull, msg.src, p, VC2, pv, false, UNDEFINED, UNDEFINED);
-          -- stay in current state
+          --put "sending data cmd lce from P_WAIT\n";
+          Send(TagAndDataCmd, msg.target, p, CmdNet, pv, false, UNDEFINED, msg.nextState);
+          Send(LceDataRespNull, msg.src, p, RespNet, pv, false, UNDEFINED, UNDEFINED);
         case TagAndDataCmd:
           -- record data value received
           pv := msg.val;
           ps := msg.nextState;
-          Send(CohAck, HomeType, p, VC2, UNDEFINED, false, UNDEFINED, msg.nextState);
+          Send(CohAck, HomeType, p, RespNet, UNDEFINED, false, UNDEFINED, msg.nextState);
         case SetTagWakeupCmd:
           ps := P_M;
-          Send(CohAck, msg.src, p, VC2, UNDEFINED, false, UNDEFINED, P_M);
+          Send(CohAck, msg.src, p, RespNet, UNDEFINED, false, UNDEFINED, P_M);
+        case WBCmd:
+          if (Procs[p].dirty)
+          then
+            Send(LceDataResp, msg.src, p, RespNet, pv, false, UNDEFINED, UNDEFINED);
+          else
+            Send(LceDataRespNull, msg.src, p, RespNet, pv, false, UNDEFINED, UNDEFINED);
+            Procs[p].dirty := false;
+          endif;
         else
           ErrorUnhandledMsg(msg, p);
       endswitch;
@@ -584,10 +605,13 @@ Begin
     -- shared
     case P_S:
     switch msg.mtype
-      case InvTagCmd:
+      case InvCmd:
         --put "sending inv tag ack from P_S\n";
-        Send(InvTagAck, msg.src, p, VC2, UNDEFINED, false, UNDEFINED, UNDEFINED);
+        Send(InvTagAck, msg.src, p, RespNet, UNDEFINED, false, UNDEFINED, UNDEFINED);
         ps := P_I;
+      case WBCmd:
+        --put "sending null WB resp from P_S\n";
+        Send(LceDataRespNull, msg.src, p, RespNet, pv, false, UNDEFINED, UNDEFINED);
       else
         ErrorUnhandledMsg(msg, p);
     endswitch;
@@ -595,11 +619,14 @@ Begin
     -- exclusive
     case P_E:
     switch msg.mtype
-      case InvTagCmd:
+      case InvCmd:
         --put "sending inv tag ack from P_E\n";
-        Send(InvTagAck, msg.src, p, VC2, UNDEFINED, false, UNDEFINED, UNDEFINED);
+        Send(InvTagAck, msg.src, p, RespNet, UNDEFINED, false, UNDEFINED, UNDEFINED);
         -- block is clean, so go to invalid state
         ps := P_I;
+      case WBCmd:
+        --put "sending null WB resp from P_E\n";
+        Send(LceDataRespNull, msg.src, p, RespNet, pv, false, UNDEFINED, UNDEFINED);
       else
         ErrorUnhandledMsg(msg, p);
     endswitch;
@@ -607,11 +634,15 @@ Begin
     -- modified
     case P_M:
     switch msg.mtype
-      case InvTagCmd:
+      case InvCmd:
         --put "sending inv tag ack from P_M\n";
-        Send(InvTagAck, msg.src, p, VC2, UNDEFINED, false, UNDEFINED, UNDEFINED);
-        -- block is dirty, go to invalid dirty state
-        ps := P_ID;
+        Send(InvTagAck, msg.src, p, RespNet, UNDEFINED, false, UNDEFINED, UNDEFINED);
+        ps := P_I;
+      case WBCmd:
+        --put "sending null WB resp from P_M\n";
+        Send(LceDataResp, msg.src, p, RespNet, pv, false, UNDEFINED, UNDEFINED);
+        -- clear the dirty bit since block is being written back
+        Procs[p].dirty := false;
       else
         ErrorUnhandledMsg(msg, p);
     endswitch;
@@ -633,7 +664,7 @@ End;
 ----------------------------------------------------------------------
 
 -- Processor states
--- P_M, P_S, P_I, P_E, P_DT, P_ID
+-- P_M, P_S, P_I, P_E, P_WAIT
 
 -- Processor actions (affecting coherency)
 ruleset n:Proc do
@@ -649,6 +680,7 @@ ruleset n:Proc do
       p.val := v;
       LastWrite := v;  --We use LastWrite to sanity check that reads receive the value of the last write
       --put "storing value := "; put v; put " by proc "; put n; put "\n";
+      p.dirty := true;
     endrule;
     endruleset;
 
@@ -660,6 +692,7 @@ ruleset n:Proc do
       LastWrite := v;  --We use LastWrite to sanity check that reads receive the value of the last write
       p.state := P_M;
       --put "storing value := "; put v; put " by proc "; put n; put "\n";
+      p.dirty := true;
     endrule;
     endruleset;
 
@@ -667,31 +700,44 @@ ruleset n:Proc do
     -- load or stores with no replacement
     ---------------------------------------------------------------
     rule "read request"
-      (p.state = P_I)
+      (p.state = P_I & p.dirty = false)
         ==>
       --put "LceRdReq from Proc "; put n; put " in state "; put p.state;
-      Send(LceRdReq, HomeType, n, VC0, UNDEFINED, false, UNDEFINED, UNDEFINED);
-      p.state := P_DT;
+      Send(LceRdReq, HomeType, n, ReqNet, UNDEFINED, false, UNDEFINED, UNDEFINED);
+      p.state := P_WAIT;
     endrule;
 
     rule "write request"
-      (p.state = P_I)
+      (p.state = P_I & p.dirty = false)
         ==>
       --put "LceWrReq from Proc "; put n; put " in state "; put p.state;
-      Send(LceWrReq, HomeType, n, VC0, UNDEFINED, false, UNDEFINED, UNDEFINED);
-      p.state := P_DT;
+      Send(LceWrReq, HomeType, n, ReqNet, UNDEFINED, false, UNDEFINED, UNDEFINED);
+      p.state := P_WAIT;
     endrule;
 
     rule "upgrade request"
       (p.state = P_S)
         ==>
       --put "LceWrReq from Proc "; put n; put " in state "; put p.state;
-      Send(LceWrReq, HomeType, n, VC0, UNDEFINED, true, UNDEFINED, UNDEFINED);
-      p.state := P_DT;
+      Send(LceWrReq, HomeType, n, ReqNet, UNDEFINED, true, UNDEFINED, UNDEFINED);
+      p.state := P_WAIT;
     endrule;
 
   endalias;
 endruleset;
+
+-- Directory Actions
+alias h:HomeNode do
+
+  rule "writeback block"
+    (h.state = H_E | h.state = H_M)
+      ==>
+    Send(WBCmd, h.owner, HomeType, CmdNet, UNDEFINED, false, UNDEFINED, UNDEFINED);
+    h.state := CCE_WB;
+    h.nextHomeState := h.state;
+  endrule;
+
+endalias;
 
 -- Message delivery rules
 ruleset n:Node do
@@ -774,6 +820,7 @@ startstate
   for i:Proc do
     Procs[i].state := P_I;
     undefine Procs[i].val;
+    Procs[i].dirty := false;
   endfor;
 
   -- network initialization
@@ -784,12 +831,18 @@ endstartstate;
 -- Invariants
 ----------------------------------------------------------------------
 
--- Directory Invariants
-
+-- Ownership Invariants
 invariant "Invalid implies empty owner"
   HomeNode.state = H_I
     ->
   IsUndefined(HomeNode.owner);
+
+invariant "Shared implies empty owner"
+  HomeNode.state = H_S
+    ->
+  IsUndefined(HomeNode.owner);
+
+-- Sharers List Invariants
 
 invariant "Modified implies empty sharers list"
   HomeNode.state = H_M
@@ -806,62 +859,77 @@ invariant "Exclusive implies empty sharer list"
     ->
   MultiSetCount(i:HomeNode.sharers, true) = 0;
 
-invariant "Value in memory must match the value of the last write in Invalid state"
-  HomeNode.state = H_I
-    ->
-  HomeNode.val = LastWrite;
+-- Additional State Invariants
 
 invariant "Home in Shared state implies Proc in Invalid or Shared"
   Forall n : Proc do
     HomeNode.state = H_S
       ->
       (Procs[n].state = P_S |  Procs[n].state = P_I
-       | Procs[n].state = P_DT | Procs[n].state = P_ID)
+       | Procs[n].state = P_WAIT)
   end;
+
+-- Data or Value Invariants
+
+invariant "Value in memory matches value of last write, when shared or invalid"
+  (HomeNode.state = H_S | HomeNode.state = H_I)
+    ->
+  HomeNode.val = LastWrite;
 
 invariant "Values in shared state must match last write"
   Forall n : Proc do
     Procs[n].state = P_S
       ->
-      Procs[n].val = LastWrite --LastWrite is updated whenever a new value is created
+      Procs[n].val = LastWrite
   end;
 
--- Not true in our system, CCE invalidates blocks and then requests writeback, so a block may be invalid and
--- still have a valid data value
---invariant "value is undefined while invalid"
---  Forall n : Proc do
---    Procs[n].state = P_I
---      ->
---      IsUndefined(Procs[n].val)
---  end;
+invariant "Values in exclusive state must match last write"
+  Forall n : Proc do
+    Procs[n].state = P_E
+      ->
+      Procs[n].val = LastWrite
+  end;
 
+invariant "Values in modified state must match last write"
+  Forall n : Proc do
+    Procs[n].state = P_M
+      ->
+      Procs[n].val = LastWrite
+  end;
 
 invariant "Exclusive has a clean copy of data"
   Forall n : Proc do
     HomeNode.state = H_E & Procs[n].state = P_E
       ->
-    HomeNode.val = Procs[n].val
+    (HomeNode.val = Procs[n].val & Procs[n].dirty = false)
   end;
 
---TODO: is there any variation of these rules that hold true?
---invariant "values in memory matches value of last write, when shared or invalid"
---  Forall n : Proc do
---    HomeNode.state = H_S | HomeNode.state = H_I
---      ->
---    HomeNode.val = LastWrite
---  end;
-
---invariant "values in memory matches value of last write, when shared"
---  Forall n : Proc do
---    HomeNode.state = H_S
---      ->
---    HomeNode.val = LastWrite
---  end;
-
-invariant "values in shared state match memory"
+invariant "Shared has a clean copy of data"
   Forall n : Proc do
     HomeNode.state = H_S & Procs[n].state = P_S
       ->
-    HomeNode.val = Procs[n].val
+    (HomeNode.val = Procs[n].val & Procs[n].dirty = false)
   end;
+
+invariant "Exclusive has a clean copy of data"
+  Forall n : Proc do
+    Procs[n].state = P_E
+      ->
+    Procs[n].dirty = false
+  end;
+
+invariant "Shared has a clean copy of data"
+  Forall n : Proc do
+    Procs[n].state = P_S
+      ->
+    Procs[n].dirty = false
+  end;
+
+-- Not necessarily true; CCE can writeback the data, making in clean in M
+--invariant "Modified has a dirty copy of data"
+--  Forall n : Proc do
+--    HomeNode.state = H_M & Procs[n].state = P_M
+--      ->
+--    (HomeNode.val != Procs[n].val & Procs[n].dirty = true)
+--  end;
 

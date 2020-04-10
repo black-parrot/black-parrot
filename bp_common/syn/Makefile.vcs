@@ -1,9 +1,7 @@
 
-VPD2VCD          ?= vpd2vcd
 PYTHON           ?= python
-TRACEDIFF        ?= $(BP_COMMON_DIR)/software/py/tracediff.py
-UNHARDWARE_DIR   ?= $(BP_EXTERNAL_DIR)/agile-unhardware
-UNHARDWARE_MODEL ?= blackparrot
+
+BLOODGRAPH ?= $(BP_COMMON_DIR)/software/py/blood_graph.py --generate --generate-key
 
 ## Tool specific options
 VCS_OPTIONS ?= +vcs+finish+5000000000ps   # Change this to run longer / shorter
@@ -92,7 +90,7 @@ pre-build.v: dirs.v
 	-@echo $(BUILD_DIR)/test_bp.v                 >> $(BUILD_DIR)/flist.vcs
 
 build.v: pre-build.v
-	-cd $(BUILD_DIR); $(VCS) $(VCS_OPTIONS) $(VCS_BUILD_OPTS) $(HDL_PARAMS) -top test_bp -f flist.vcs -o simv \
+	-cd $(BUILD_DIR); $(VCS) $(VCS_OPTIONS) $(VCS_BUILD_OPTS) $(HDL_PARAMS) $(HDL_DEFINES) -top test_bp -f flist.vcs -o simv \
 	| tee $(BUILD_LOG)
 	-@grep "Error" -A 5 $(BUILD_LOG) > $(BUILD_ERROR);
 	-@tail -n 2 $(BUILD_LOG) > $(BUILD_REPORT)
@@ -113,6 +111,7 @@ sim.v: dirs.v
 	-@cp $(MEM_PATH)/$(PROG).dump $(SIM_DIR)/prog.dump
 	-@cp $(MEM_PATH)/$(PROG).mainram $(SIM_DIR)/prog.mainram
 	-@cp $(MEM_PATH)/$(PROG).bootram $(SIM_DIR)/prog.bootram
+	-@cp $(BP_COMMON_DIR)/test/cfg/cosim.cfg $(SIM_DIR)/prog.cfg
 	-@cp $(MEM_PATH)/$(PROG).cfg $(SIM_DIR)/prog.cfg
 	-@cp $(MEM_PATH)/$(PROG).spike $(SIM_DIR)/commit.spike
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(SIM_DIR)/dram_ch.ini
@@ -151,9 +150,9 @@ cov.v: dirs.v
 wave.v: dirs.v
 	cd $(SIM_DIR); $(DVE) -full64 -vpd vcdplus.vpd &
 
-debug.v: dirs.v
-	$(VPD2VCD) +splitpacked $(SIM_DIR)/vcdplus.vpd $(SIM_DIR)/debug.vcd
-	$(MAKE) regen -C $(UNHARDWARE_DIR) MODEL=$(UNHARDWARE_MODEL) DATA=$(SIM_DIR)/debug.vcd BINARY=$(SIM_DIR)/prog.elf 
+# TODO: Make compatible with multi-core
+blood.v: dirs.v
+	cd $(SIM_DIR); $(PYTHON) $(BLOODGRAPH) --input $(SIM_DIR)/stall_0.trace
 
 clean.v:
 	@rm -rf results/vcs

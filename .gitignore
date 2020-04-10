@@ -17,6 +17,7 @@ external/*
 *_gendata.pl
 *.o
 *.a
+*.png
 results/
 reports/
 logs/

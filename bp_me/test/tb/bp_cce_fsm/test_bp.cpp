@@ -4,7 +4,7 @@
 #include <verilated_cov.h>
 
 #include "Vtestbench.h"
-#include "Vtestbench__Dpi.h"
+//#include "Vtestbench__Dpi.h"
 
 #define CLK_TIME 10
 

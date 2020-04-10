@@ -5,6 +5,7 @@ module bp_cfg
  import bp_be_pkg::*;
  import bp_common_rv64_pkg::*;
  import bp_cce_pkg::*;
+ import bp_me_pkg::*;
  import bp_common_cfg_link_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
@@ -24,8 +25,9 @@ module bp_cfg
    , input                              mem_resp_ready_i
 
    , output [cfg_bus_width_lp-1:0]      cfg_bus_o
-   , input [coh_noc_cord_width_p-1:0]   cord_i
    , input [io_noc_did_width_p-1:0]     did_i
+   , input [io_noc_did_width_p-1:0]     host_did_i
+   , input [coh_noc_cord_width_p-1:0]   cord_i
    , input [dword_width_p-1:0]          irf_data_i
    , input [vaddr_width_p-1:0]          npc_data_i
    , input [dword_width_p-1:0]          csr_data_i
@@ -34,7 +36,7 @@ module bp_cfg
    );
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+`declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
 
 bp_cfg_bus_s cfg_bus_cast_o;
 bp_cce_mem_msg_s mem_cmd_cast_i, mem_resp_cast_o;
@@ -103,8 +105,9 @@ always_ff @(posedge clk_i)
       endcase
     end
 
-wire cord_r_v_li = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_cord_gp);
-wire did_r_v_li  = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_did_gp);
+wire did_r_v_li       = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_did_gp);
+wire host_did_r_v_li  = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_host_did_gp);
+wire cord_r_v_li      = cfg_r_v_li & (cfg_addr_li == bp_cfg_reg_cord_gp);
 
 wire cce_ucode_w_v_li = cfg_w_v_li & (cfg_addr_li >= 16'h8000);
 wire cce_ucode_r_v_li = cfg_r_v_li & (cfg_addr_li >= 16'h8000);
@@ -191,11 +194,13 @@ assign mem_resp_cast_o = '{header : '{msg_type: mem_cmd_cast_i.header.msg_type
                                          ? csr_data_r
                                          : priv_r_v_li
                                            ? priv_data_i
-                                           : did_r_v_li
-                                             ? did_i
-                                             : cord_r_v_li
-                                               ? cord_i
-                                               : cce_ucode_data_i
+                                             : host_did_r_v_li
+                                             ? host_did_i
+                                             : did_r_v_li
+                                               ? did_i
+                                               : cord_r_v_li
+                                                 ? cord_i
+                                                 : cce_ucode_data_i
                            };
 
 endmodule

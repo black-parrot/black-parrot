@@ -11,7 +11,7 @@ module bp_pma
 
    , output                   uncached_o
    );
-
+   
   wire is_local_addr = (ptag_i < (dram_base_addr_gp >> page_offset_width_p));
   wire is_io_addr    = (ptag_i[ptag_width_p-1-:io_noc_did_width_p] != '0);
 

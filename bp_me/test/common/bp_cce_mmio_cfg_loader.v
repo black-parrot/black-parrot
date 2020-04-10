@@ -31,6 +31,8 @@ module bp_cce_mmio_cfg_loader
   (input                                             clk_i
    , input                                           reset_i
 
+   , input [lce_id_width_p-1:0]                      lce_id_i
+
    // Config channel
    , output logic [cce_mem_msg_width_lp-1:0]         io_cmd_o
    , output logic                                    io_cmd_v_o
@@ -55,9 +57,9 @@ module bp_cce_mmio_cfg_loader
   assign io_cmd_o = io_cmd_cast_o;
   assign io_resp_cast_i = io_resp_i;
 
-  logic [`bp_cce_inst_width-1:0]    cce_inst_boot_rom [0:inst_ram_els_p-1];
+  logic [inst_width_p-1:0]    cce_inst_boot_rom [0:inst_ram_els_p-1];
   logic [inst_ram_addr_width_p-1:0] cce_inst_boot_rom_addr;
-  logic [`bp_cce_inst_width-1:0]    cce_inst_boot_rom_data;
+  logic [inst_width_p-1:0]    cce_inst_boot_rom_data;
   
   initial $readmemb(cce_ucode_filename_p, cce_inst_boot_rom);
 
@@ -191,8 +193,9 @@ module bp_cce_mmio_cfg_loader
       io_cmd_cast_o.header.msg_type      = cfg_w_v_lo ? e_cce_mem_uc_wr : e_cce_mem_uc_rd;
       io_cmd_cast_o.header.addr          = local_addr_lo;
       io_cmd_cast_o.header.payload       = '0;
+      io_cmd_cast_o.header.payload.lce_id = lce_id_i;
       io_cmd_cast_o.header.size          = e_mem_size_8;
-      io_cmd_cast_o.data          = cfg_data_lo;
+      io_cmd_cast_o.data                 = cfg_data_lo;
     end
 
   always_comb

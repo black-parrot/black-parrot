@@ -69,4 +69,5 @@ Currently, the list of tracing parameters is:
 * NPC_TRACE_P - prints each (speculative) PC executed by the BE
 * DCACHE_TRACE_P - prints each load/store
 * VM_TRACE_P - prints each TLB fill
+* CORE_PROFILE_P - prints a cycle-accurate stall trace
 

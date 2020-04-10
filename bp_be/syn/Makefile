@@ -1,40 +1,51 @@
-# Set common environment variables
+## Set common environment variables
 TOP ?= $(shell git rev-parse --show-toplevel)
 
 include $(TOP)/Makefile.common
 
-SYN_PATH    := $(BP_BE_DIR)/syn
-TB_PATH     := $(BP_BE_DIR)/test/tb
-LOG_PATH    := $(BP_BE_DIR)/syn/logs
-REPORT_PATH := $(BP_BE_DIR)/syn/reports
+export SYN_PATH     := $(BP_BE_DIR)/syn
+export TB_PATH      := $(BP_BE_DIR)/test/tb
+export MEM_PATH     := $(BP_BE_DIR)/test/tb
 
-# Default ROM to example
-TB          ?= bp_be_trace_demo
+export LOG_PATH     := $(BP_BE_DIR)/syn/logs
+export RESULTS_PATH := $(BP_BE_DIR)/syn/results
+export REPORT_PATH  := $(BP_BE_DIR)/syn/reports
+
+TB          ?= bp_be_dcache
 CFG         ?= e_bp_half_core_cfg
 
-.EXPORT_ALL_VARIABLES:
+DRAMSIM_CH_CFG  ?= DDR2_micron_16M_8b_x8_sg3E.ini
+DRAMSIM_SYS_CFG ?= system.ini
 
 include $(BP_COMMON_DIR)/syn/Makefile.common
 include $(BP_COMMON_DIR)/syn/Makefile.dc
 include $(BP_COMMON_DIR)/syn/Makefile.regress
 include $(BP_COMMON_DIR)/syn/Makefile.verilator
 include $(BP_COMMON_DIR)/syn/Makefile.vcs
+include $(BP_COMMON_DIR)/syn/Makefile.sv2v
 
-DCACHE_AXE_TEST_DIR = $(BP_BE_DIR)/test/tb/bp_be_dcache/dcache_axe_test
+regress.top: regress
+regress: regress.v check_design.syn
+	$(MAKE) lint.v || true
+	$(MAKE) lint.sc || true
 
-regress: regress.be
-regress.be: check_design.syn
-	#$(MAKE) lint.v || true
-	#$(MAKE) lint.sc || true
-	for lce in 2 4 8 16; do \
-		echo "Running $$lce LCE AXE TEST"; \
-		$(MAKE) -C $(DCACHE_AXE_TEST_DIR) NUM_LCE_P=$$lce NUM_INSTR_P=2500 \
-		| tee $(LOG_PATH)/vcs/dcache_axe_test_$$lce.sim.log; \
-		$(MAKE) -C $(DCACHE_AXE_TEST_DIR) axe \
-		| tee $(LOG_PATH)/vcs/dcache_axe_test_$$lce.axe.log; \
-		grep "OK" $(LOG_PATH)/vcs/dcache_axe_test_$$lce.axe.log \
-		&& echo "$$lce test: OK" >> $(REPORT_PATH)/vcs/dcache_axe_test.rpt \
-		|| echo "$$lce test: FAIL" >> $(REPORT_PATH)/vcs/dcache_axe_test.rpt; \
-		grep "FAIL" $(REPORT_PATH)/vcs/dcache_axe_test.rpt | tee -a $(REPORT_PATH)/vcs/dcache_axe_test.err; \
-	done
+LIST ?= /dev/null
+LIST_PROGS = $(shell cat $(LIST))
+
+regress.list.sc:
+	$(MAKE) regress.list.common _TS=sc
+	($(foreach p, $(LIST_PROGS), echo $p; echo "=========="; cat reports/verilator/$(TB).$(CFG).sim.$p.rpt; echo "";)) | tee -i reports/verilator/$(TB).$(CFG).$@.rpt
+
+regress.list.v:
+	$(MAKE) regress.list.common _TS=v
+	($(foreach p, $(LIST_PROGS), echo $p; echo "=========="; cat reports/vcs/$(TB).$(CFG).sim.$p.rpt; echo "";)) | tee -i reports/vcs/$(TB).$(CFG).$@.rpt
+
+regress.list.common:
+	$(MAKE) build.$(_TS)
+	$(MAKE) regress.list.common.run_in_parallel
+
+regress.list.common.run_in_parallel: $(foreach p, $(LIST_PROGS), regress.list.common.launch_run.$p)
+
+regress.list.common.launch_run.%:
+	$(MAKE) run.$(_TS) PROG=$*
 

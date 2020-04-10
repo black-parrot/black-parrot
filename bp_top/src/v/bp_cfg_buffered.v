@@ -4,6 +4,7 @@ module bp_cfg_buffered
  import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bp_common_rv64_pkg::*;
+ import bp_me_pkg::*;
  import bp_cce_pkg::*;
  import bp_common_cfg_link_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
@@ -26,6 +27,7 @@ module bp_cfg_buffered
    , output [cfg_bus_width_lp-1:0]      cfg_bus_o
    , input [coh_noc_cord_width_p-1:0]   cord_i
    , input [io_noc_did_width_p-1:0]     did_i
+   , input [io_noc_did_width_p-1:0]     host_did_i
    , input [dword_width_p-1:0]          irf_data_i
    , input [vaddr_width_p-1:0]          npc_data_i
    , input [dword_width_p-1:0]          csr_data_i
@@ -33,7 +35,7 @@ module bp_cfg_buffered
    , input [cce_instr_width_p-1:0]      cce_ucode_data_i
    );
 
-`declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+`declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
 
 bp_cce_mem_msg_s mem_cmd_li;
 logic mem_cmd_v_li, mem_cmd_yumi_lo;
@@ -56,8 +58,9 @@ bp_cfg
    ,.mem_resp_ready_i(mem_resp_ready_li)
 
    ,.cfg_bus_o(cfg_bus_o)
-   ,.cord_i(cord_i)
    ,.did_i(did_i)
+   ,.host_did_i(host_did_i)
+   ,.cord_i(cord_i)
    ,.irf_data_i(irf_data_i)
    ,.npc_data_i(npc_data_i)
    ,.csr_data_i(csr_data_i)

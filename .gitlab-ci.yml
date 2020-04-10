@@ -20,6 +20,23 @@ stages:
 #    - echo "Failing job 2"
 #    - exit 1 
 
+clean_all:
+  when: manual
+  stage: prereq
+  tags:
+    - bsg
+  script:
+      - git clean -fdx
+
+bleach_all:
+  when: manual
+  stage: prereq
+  tags:
+    - bsg
+  script:
+    - git submodule deinit -f .
+    - git clean -fdx
+
 .job_template: &job_definition
   only:
     - master
@@ -30,8 +47,8 @@ stages:
     - top_dev
     - sw_dev
   before_script:
-    - echo "Updating libraries"
-    - make update_libs
+    - echo "Forcefully updating submodules"
+    - git submodule update --init --force
     - echo "Making CCE ucode"
     - make ucode > make_ucode.log
   artifacts:
@@ -42,33 +59,40 @@ stages:
       - "bp_be/syn/reports/"
       - "bp_me/syn/reports/"
       - "bp_top/syn/reports/"
-
-cache: &global_cache
-  key: $CI_COMMIT_REF_SLUG
-  paths:
-    - $CI_PROJECT_DIR/external/
-  policy: pull
+  cache: &global_cache
+    key: $CI_COMMIT_REF_SLUG
+    paths:
+      - $CI_PROJECT_DIR/bp_common/test/mem
+      - $CI_PROJECT_DIR/external/bin
+      - $CI_PROJECT_DIR/external/lib
+      - $CI_PROJECT_DIR/external/lib64
+      - $CI_PROJECT_DIR/external/lib-linux64
+      - $CI_PROJECT_DIR/external/include
+      - $CI_PROJECT_DIR/external/share
+      - $CI_PROJECT_DIR/external/touchfiles
+    policy: pull-push
 
 update-cache: &update-cache-manual
-  <<: *job_definition
   when: manual
   stage: prereq
   tags:
     - bsg
   script:
     - git submodule deinit -f .
-    - git clean -fdx
     - git submodule sync
-    - make libs > make_libs.log
-    - make tools -j $CI_CORES > make_tools.log
+    - make prep -j $CI_CORES > make_prep.log
     - make tidy_tools > make_tidy_tools.log
-    - make progs > make_progs.log
-    - make -C bp_common/test riscvdv > make_riscvdv.log
   cache:
     key: $CI_COMMIT_REF_SLUG
     paths:
-      - $CI_PROJECT_DIR/external/
-      - $CI_PROJECT_DIR/bp_common/test/mem/
+      - $CI_PROJECT_DIR/bp_common/test/mem
+      - $CI_PROJECT_DIR/external/bin
+      - $CI_PROJECT_DIR/external/lib
+      - $CI_PROJECT_DIR/external/lib64
+      - $CI_PROJECT_DIR/external/lib-linux64
+      - $CI_PROJECT_DIR/external/include
+      - $CI_PROJECT_DIR/external/share
+      - $CI_PROJECT_DIR/external/touchfiles
     policy: push
 
 update-cache-auto:
@@ -76,6 +100,7 @@ update-cache-auto:
     when: always
     only:
       changes:
+        - .gitlab-ci.yml
         - Makefile
         - Makefile.common
         - bp_common/test/*
@@ -93,6 +118,8 @@ hotfix_job:
     - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_single_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_quad_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_softcore" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_single_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_quad_core_ucode_cce_cfg" bp_top &
     - wait
   cache:
     key: "dev"
@@ -104,25 +131,6 @@ hotfix_job:
     paths:
       - "bp_top/syn/reports/"
 
-clean_build:
-  <<: *job_definition
-  when: manual
-  stage: prereq
-  tags:
-    - bsg
-  script:
-      - make -C bp_top/syn clean
-
-clean_all:
-  <<: *job_definition
-  when: manual
-  stage: prereq
-  tags:
-    - bsg
-  script:
-    - git submodule deinit -f .
-    - git clean -fdx
-
 check-design:
   <<: *job_definition
   stage: check
@@ -132,6 +140,8 @@ check-design:
     - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_single_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_quad_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_softcore" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_single_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "check_design.syn TB=bp_processor CFG=e_bp_quad_core_ucode_cce_cfg" bp_top &
     - wait
       
 lint-verilator:
@@ -144,7 +154,6 @@ lint-verilator:
  
 me-regress-verilator:
   <<: *job_definition
-  when: manual
   stage: test-short
   tags:
     - verilator
@@ -196,15 +205,33 @@ top-mc-verilator:
     - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_1.sc CFG=e_bp_single_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_2.sc CFG=e_bp_dual_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_4.sc CFG=e_bp_quad_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_1.sc CFG=e_bp_single_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_2.sc CFG=e_bp_dual_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_4.sc CFG=e_bp_quad_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_1.sc CFG=e_bp_single_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_2.sc CFG=e_bp_dual_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_4.sc CFG=e_bp_quad_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_1.sc CFG=e_bp_single_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_2.sc CFG=e_bp_dual_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_4.sc CFG=e_bp_quad_core_cfg" bp_top &
+    - wait
+
+top-mc-verilator-ucode:
+  <<: *job_definition
+  when: manual
+  stage: test-medium
+  tags:
+    - verilator
+  script:
+    - make -C bp_top/syn build.sc CFG=e_bp_single_core_ucode_cce_cfg
+    - make -C bp_top/syn build.sc CFG=e_bp_dual_core_ucode_cce_cfg
+    - make -C bp_top/syn build.sc CFG=e_bp_quad_core_ucode_cce_cfg
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_1.sc CFG=e_bp_single_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_2.sc CFG=e_bp_dual_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_4.sc CFG=e_bp_quad_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_1.sc CFG=e_bp_single_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_2.sc CFG=e_bp_dual_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_4.sc CFG=e_bp_quad_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_1.sc CFG=e_bp_single_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_2.sc CFG=e_bp_dual_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_4.sc CFG=e_bp_quad_core_ucode_cce_cfg" bp_top &
     - wait
 
 lint-vcs:
@@ -218,7 +245,6 @@ lint-vcs:
 
 me-regress-vcs:
   <<: *job_definition
-  when: manual
   stage: test-short
   tags:
     - vcs
@@ -312,5 +338,33 @@ top-mc-vcs:
     - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_4.v TB=bp_processor CFG=e_bp_quad_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_8.v TB=bp_processor CFG=e_bp_oct_core_cfg" bp_top &
     - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_16.v TB=bp_processor CFG=e_bp_sexta_core_cfg" bp_top &
+    - wait
+
+top-mc-vcs-ucode:
+  <<: *job_definition
+  stage: test-medium
+  tags:
+    - vcs
+  script:
+    - make -C bp_top/syn build.v TB=bp_processor CFG=e_bp_single_core_ucode_cce_cfg
+    - make -C bp_top/syn build.v TB=bp_processor CFG=e_bp_dual_core_ucode_cce_cfg
+    - make -C bp_top/syn build.v TB=bp_processor CFG=e_bp_quad_core_ucode_cce_cfg
+    - make -C bp_top/syn build.v TB=bp_processor CFG=e_bp_oct_core_ucode_cce_cfg
+    - make -C bp_top/syn build.v TB=bp_processor CFG=e_bp_sexta_core_ucode_cce_cfg
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_1.v TB=bp_processor CFG=e_bp_single_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_2.v TB=bp_processor CFG=e_bp_dual_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_4.v TB=bp_processor CFG=e_bp_quad_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_8.v TB=bp_processor CFG=e_bp_oct_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_sanity_16.v TB=bp_processor CFG=e_bp_sexta_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_1.v TB=bp_processor CFG=e_bp_single_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_2.v TB=bp_processor CFG=e_bp_dual_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_4.v TB=bp_processor CFG=e_bp_quad_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_8.v TB=bp_processor CFG=e_bp_oct_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_rand_walk_16.v TB=bp_processor CFG=e_bp_sexta_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_1.v TB=bp_processor CFG=e_bp_single_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_2.v TB=bp_processor CFG=e_bp_dual_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_4.v TB=bp_processor CFG=e_bp_quad_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_8.v TB=bp_processor CFG=e_bp_oct_core_ucode_cce_cfg" bp_top &
+    - $CI_PROJECT_DIR/ci/regress.sh "mc_work_share_sort_16.v TB=bp_processor CFG=e_bp_sexta_core_ucode_cce_cfg" bp_top &
     - wait
 

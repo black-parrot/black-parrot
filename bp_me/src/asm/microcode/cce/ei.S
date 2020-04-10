@@ -1,5 +1,4 @@
 # This microcode uses EI protocol with LCE transfers enabled
-# The CCE process requests sequentially, and waits for all memory responses
 
 #include "microcode.h"
 
@@ -10,12 +9,11 @@
 # The CCE waits for sync ack after each sync command. This avoids additional buffering being
 # required in the CCE, at a small "performance" cost during startup
 sync_init: movi 0 r0
-movsg numLCE r1
+movpg numLCE r1
 movi SYNC_ACK r3
 sync_top: bge r0 r1 ready
-pushq lceCmd SYNC r0
+pushq lceCmd SYNC addr=0 lce=r0 way=0
 popq lceResp r4
-bne r3 r4 error
 inc r0
 bi sync_top
 
@@ -24,72 +22,60 @@ ready: wfq lceReq
 
 # LCE Request Routine
 lce_req: clm
-poph lceReq
-bf ucf uncached_req
-rdp req
-bf pf ready
-popq lceReq
-rdw req req req
+poph lceReq r0
+bf uncached_req ucf
+rdp addr=req
+bf ready pf
+popq lceReq wp
+rdw addr=req lce=req lru_way=lru
 gad
 # fall through
 
-# Next Coherence State Routine
-next_coh_state: movis E nextCohSt
-
-# Invalidation Check
-inv_check: bfz if upgrade_check
-
-# Invalidation Routine
-invalidate: inv
-
-# Upgrade Check Routine
-upgrade_check: bfz uf set_entry
-
-# Upgrade Routine
-upgrade: bi error
-
-# write directory entry before memory messages may occur
-# next_coh_state is not saved/restored across memory access
-set_entry: wde req req lru req nextCohSt
+set_entry: wde addr=req lce=req way=lru state=nextCohSt
 
 # Replacement Check Routine
-replace_check: bfz rf transfer_check
+replace_check: bfz transfer_check rf
 
 # Replacement Routine
-replace: pushq lceCmd WB req lru lru
+replace: pushq lceCmd WB addr=lru lce=req way=lru
 # wait for writeback response
 replacement_poph: poph lceResp r0
 beqi r0 COH_ACK replacement_poph
-bf nwbf complete_replacement
-pushq memCmd MEM_CMD_WB lru
-popq lceResp r0
+bf complete_replacement nwbf
+pushq memCmd MEM_CMD_WB addr=lru lce=req way=lru wp=1
+complete_replacement: popq lceResp
 # replacement done, explicitly set replacement flag to 0
-complete_replacement: sfz rf
+sfz rf
 
 # Transfer Check
-transfer_check: bfz tf read_l2
+transfer_check: bfz read_l2 cof pt
 
 # Transfer routine - other cache has block in E/M
-transfer: pushq lceCmd TR tr req tr
-pushq lceCmd WB tr req tr
+# state for lceCmd will always come from nextCohSt
+transfer: movis COH_I nextCohSt
+pushq lceCmd ST addr=req lce=owner way=owner
+wds addr=req lce=owner way=owner state=nextCohSt
+movis COH_E nextCohSt
+pushq lceCmd TR addr=req lce=owner way=owner
+pushq lceCmd WB addr=req lce=owner way=owner
 # wait for transfer WB response
 transfer_poph: poph lceResp r0
 beqi r0 COH_ACK transfer_poph
-bf nwbf complete_transfer
-pushq memCmd MEM_CMD_WB req
-complete_transfer: popq lceResp r0
+bf complete_transfer nwbf
+pushq memCmd MEM_CMD_WB addr=req lce=owner way=owner wp=1
+complete_transfer: popq lceResp
 bi ready
 
 # Read Line from L2 Routine
-read_l2: pushq memCmd
+read_l2: pushq memCmd MEM_CMD_WR addr=req lce=req way=lru wp=1
 bi ready
 
 # Uncached Request Routine
-uncached_req: popq lceReq
-bf rqf uncached_store
-pushq memCmd
+uncached_req: bf uncached_store rqf
+pushq memCmd MEM_CMD_UC_RD addr=req lce=req
+popq lceReq
 bi ready
-uncached_store: pushq memCmd
+uncached_store: pushq memCmd MEM_CMD_UC_WR addr=req lce=req
+popq lceReq
 bi ready
 
-error: stall

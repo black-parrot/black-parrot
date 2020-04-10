@@ -74,6 +74,15 @@ typedef enum logic [4:0]
   ,e_itlb_fill             = 5'b11100
 } bp_be_csr_fu_op_e;
 
+typedef enum logic [4:0]
+{
+  e_mul_op_mul        = 5'b00000
+  ,e_mul_op_div       = 5'b00001
+  ,e_mul_op_divu      = 5'b00010
+  ,e_mul_op_rem       = 5'b00011
+  ,e_mul_op_remu      = 5'b00100
+} bp_be_mul_fu_op_e;
+
 typedef struct packed
 {
   union packed
@@ -81,6 +90,7 @@ typedef struct packed
     bp_be_int_fu_op_e int_fu_op;
     bp_be_mmu_fu_op_e mmu_fu_op;
     bp_be_csr_fu_op_e csr_fu_op;
+    bp_be_mul_fu_op_e mul_fu_op;
   }  fu_op;
 }  bp_be_fu_op_s;
 
@@ -121,9 +131,10 @@ typedef struct packed
 
   logic                             pipe_comp_v;
   logic                             pipe_int_v;
-  logic                             pipe_mul_v;
   logic                             pipe_mem_v;
+  logic                             pipe_mul_v;
   logic                             pipe_fp_v;
+  logic                             pipe_long_v;
 
   logic                             irf_w_v;
   logic                             frf_w_v;

@@ -1,0 +1,19 @@
+# bsg_ip_cores files
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_reset_gen.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_clock_gen.v
+$BASEJUMP_STL_DIR/bsg_test/bsg_trace_replay.v
+# top files
+$BP_TOP_DIR/test/common/bp_nonsynth_cache_tracer.v
+# fe files
+$BP_FE_DIR/test/tb/bp_fe_icache/mem_test_trace_rom.v
+# me files
+$BP_ME_DIR/src/v/cce/bp_cce_fsm_top.v
+$BP_ME_DIR/test/common/bp_mem.v
+$BP_ME_DIR/test/common/bp_mem_transducer.v
+$BP_ME_DIR/test/common/bp_mem_delay_model.v
+$BP_ME_DIR/test/common/bp_mem_storage_sync.v
+$BP_ME_DIR/test/common/bp_cce_mmio_cfg_loader.v
+$BP_ME_DIR/test/common/dramsim2_wrapper.cpp
+$BP_ME_DIR/test/common/bp_mem_utils.cpp
+$BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.v
+$BP_ME_DIR/test/common/bp_mem_nonsynth_tracer.v

@@ -30,6 +30,7 @@ module bp_tile
 
    // Memory side connection
    , input [io_noc_did_width_p-1:0]                           my_did_i
+   , input [io_noc_did_width_p-1:0]                           host_did_i
    , input [coh_noc_cord_width_p-1:0]                         my_cord_i
 
    // Connected to other tiles on east and west
@@ -133,6 +134,7 @@ bp_cfg_buffered
 
    ,.cfg_bus_o(cfg_bus_lo)
    ,.did_i(my_did_i)
+   ,.host_did_i(host_did_i)
    ,.cord_i(my_cord_i)
    ,.irf_data_i(cfg_irf_data_li)
    ,.npc_data_i(cfg_npc_data_li)
@@ -194,7 +196,7 @@ bp_core
    ,.external_irq_i(external_irq_li)
    );
 
-bp_cce
+bp_cce_wrapper
  #(.bp_params_p(bp_params_p))
  cce
   (.clk_i(clk_i)
@@ -493,29 +495,43 @@ for (genvar i = 0; i < 2; i++)
   bp_cce_mem_msg_s dma_mem_cmd_lo;
   logic dma_mem_cmd_v_lo, dma_mem_cmd_ready_li;
   bp_cce_mem_msg_s dma_mem_resp_li;
-  logic dma_mem_resp_v_li, dma_mem_resp_ready_lo;
-  bp_me_cache_slice
-   #(.bp_params_p(bp_params_p))
-   l2s
-    (.clk_i(clk_i)
-     ,.reset_i(reset_r)
+  logic dma_mem_resp_v_li, dma_mem_resp_ready_lo, dma_mem_resp_yumi_lo;
+  if (l2_en_p)
+    begin : l2s
+      bp_me_cache_slice
+       #(.bp_params_p(bp_params_p))
+       l2s
+        (.clk_i(clk_i)
+         ,.reset_i(reset_r)
 
-     ,.mem_cmd_i(cache_mem_cmd_li)
-     ,.mem_cmd_v_i(cache_mem_cmd_v_li)
-     ,.mem_cmd_ready_o(cache_mem_cmd_ready_lo)
+         ,.mem_cmd_i(cache_mem_cmd_li)
+         ,.mem_cmd_v_i(cache_mem_cmd_v_li)
+         ,.mem_cmd_ready_o(cache_mem_cmd_ready_lo)
 
-     ,.mem_resp_o(cache_mem_resp_lo)
-     ,.mem_resp_v_o(cache_mem_resp_v_lo)
-     ,.mem_resp_yumi_i(cache_mem_resp_yumi_li)
+         ,.mem_resp_o(cache_mem_resp_lo)
+         ,.mem_resp_v_o(cache_mem_resp_v_lo)
+         ,.mem_resp_yumi_i(cache_mem_resp_yumi_li)
 
-     ,.mem_cmd_o(dma_mem_cmd_lo)
-     ,.mem_cmd_v_o(dma_mem_cmd_v_lo)
-     ,.mem_cmd_yumi_i(dma_mem_cmd_ready_li & dma_mem_cmd_v_lo)
+         ,.mem_cmd_o(dma_mem_cmd_lo)
+         ,.mem_cmd_v_o(dma_mem_cmd_v_lo)
+         ,.mem_cmd_yumi_i(dma_mem_cmd_ready_li & dma_mem_cmd_v_lo)
 
-     ,.mem_resp_i(dma_mem_resp_li)
-     ,.mem_resp_v_i(dma_mem_resp_v_li)
-     ,.mem_resp_ready_o(dma_mem_resp_ready_lo)
-     );
+         ,.mem_resp_i(dma_mem_resp_li)
+         ,.mem_resp_v_i(dma_mem_resp_v_li)
+         ,.mem_resp_ready_o(dma_mem_resp_ready_lo)
+         );
+         assign dma_mem_resp_yumi_lo = dma_mem_resp_ready_lo & dma_mem_resp_v_li;
+    end
+  else
+    begin : no_l2s
+      assign dma_mem_cmd_lo = cache_mem_cmd_li;
+      assign dma_mem_cmd_v_lo = cache_mem_cmd_v_li;
+      assign cache_mem_cmd_ready_lo = dma_mem_cmd_ready_li;
+
+      assign cache_mem_resp_lo = dma_mem_resp_li;
+      assign cache_mem_resp_v_lo = dma_mem_resp_v_li;
+      assign dma_mem_resp_yumi_lo = cache_mem_resp_yumi_li;
+    end
 
   localparam dram_y_cord_lp = ic_y_dim_p + cc_y_dim_p + mc_y_dim_p;
   wire [mem_noc_cord_width_p-1:0] dst_cord_li = dram_y_cord_lp;
@@ -536,11 +552,11 @@ for (genvar i = 0; i < 2; i++)
 
      ,.mem_resp_o(dma_mem_resp_li)
      ,.mem_resp_v_o(dma_mem_resp_v_li)
-     ,.mem_resp_yumi_i(dma_mem_resp_ready_lo & dma_mem_resp_v_li)
+     ,.mem_resp_yumi_i(dma_mem_resp_yumi_lo)
 
      ,.my_cord_i(my_cord_i[coh_noc_x_cord_width_p+:mem_noc_y_cord_width_p])
      // TODO: CID == noc cord right now (1 DMC per column)
-     ,.my_cid_i(my_cord_i[0+:mem_noc_cid_width_p])
+     ,.my_cid_i(my_cord_i[0+:mem_noc_cid_width_p]-sac_x_dim_p[0+:mem_noc_cid_width_p])
      ,.dst_cord_i(dst_cord_li)
      ,.dst_cid_i('0)
 

@@ -140,10 +140,10 @@ module bp_me_cce_to_cache_dma
     dma_data_fifo_valid_li = 1'b0;
     queue_fifo_valid_li = 1'b0;
     
-    dma_pkt_fifo_data_li.write_not_read = (mem_cmd_li.msg_type == e_cce_mem_wb);
-    dma_pkt_fifo_data_li.addr = mem_cmd_li.addr;
+    dma_pkt_fifo_data_li.write_not_read = (mem_cmd_li.header.msg_type == e_cce_mem_wb);
+    dma_pkt_fifo_data_li.addr = mem_cmd_li.header.addr;
     dma_data_fifo_data_li = mem_cmd_li.data;
-    queue_fifo_data_li = {mem_cmd_li.msg_type, mem_cmd_li.addr, mem_cmd_li.payload, mem_cmd_li.size};
+    queue_fifo_data_li = mem_cmd_li.header;
     
     if (mem_cmd_v_i & dma_pkt_fifo_ready_lo & queue_fifo_ready_lo)
       begin
@@ -205,12 +205,12 @@ module bp_me_cce_to_cache_dma
     dma_data_fifo_yumi_li = 1'b0;
     queue_fifo_yumi_li = 1'b0;
     
-    {mem_resp_lo.msg_type, mem_resp_lo.addr, mem_resp_lo.payload, mem_resp_lo.size} = queue_fifo_data_lo;
+    mem_resp_lo.header = queue_fifo_data_lo;
     mem_resp_lo.data = dma_data_fifo_data_lo;
     
     if (~reset_i & queue_fifo_valid_lo)
       begin
-        if (mem_resp_lo.msg_type == e_cce_mem_wb)
+        if (mem_resp_lo.header.msg_type == e_cce_mem_wb)
           begin
             mem_resp_lo.data = '0;
             mem_resp_v_lo = 1'b1;

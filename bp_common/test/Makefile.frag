@@ -1,8 +1,10 @@
 BP_DEMOS = \
-  bubblesort          \
+  bubblesort_demo     \
   uc_simple           \
   simple              \
   hello_world         \
+  streaming_accelerator_demo\
+  coherent_accelerator_demo\
   basic_demo          \
   atomic_queue_demo_2 \
   atomic_queue_demo_4 \
@@ -147,7 +149,20 @@ RV64_P_TESTS = \
   rv64ua-p-amoswap_w \
   rv64ua-p-amoxor_d  \
   rv64ua-p-amoxor_w  \
-  rv64ua-p-lrsc
+  rv64ua-p-lrsc      \
+  rv64um-p-mul       \
+  rv64um-p-mulh      \
+  rv64um-p-mulhsu    \
+  rv64um-p-mulhu     \
+  rv64um-p-mulw      \
+  rv64um-p-div       \
+  rv64um-p-divu      \
+  rv64um-p-divuw     \
+  rv64um-p-divw      \
+  rv64um-p-rem       \
+  rv64um-p-remu      \
+  rv64um-p-remuw     \
+  rv64um-p-remw
 
   #rv64ua-v-amominu_w
 RV64_V_TESTS = \
@@ -453,7 +468,13 @@ BEEBS_TESTS = \
   #qsort \
 
 BP_SPEC = \
-  vpr
+  175.vpr \
+  181.mcf \
+  164.gzip \
+  186.crafty \
+  256.bzip2 \
+  197.parser
+
 
 BP_RVDV = \
   riscv_arithmetic_basic_test \

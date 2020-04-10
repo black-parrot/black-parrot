@@ -112,5 +112,20 @@
 `define RV64_LRD        32'b0001_0??0_0000_????_?011_????_?010_1111
 `define RV64_SCD        32'b0001_1???_????_????_?011_????_?010_1111
 
+`define RV64_MUL        `rv64_r_type(`RV64_OP_OP,3'b000,7'b0000001)
+`define RV64_MULH       `rv64_r_type(`RV64_OP_OP,3'b001,7'b0000001)
+`define RV64_MULHSU     `rv64_r_type(`RV64_OP_OP,3'b010,7'b0000001)
+`define RV64_MULHU      `rv64_r_type(`RV64_OP_OP,3'b011,7'b0000001)
+`define RV64_DIV        `rv64_r_type(`RV64_OP_OP,3'b100,7'b0000001)
+`define RV64_DIVU       `rv64_r_type(`RV64_OP_OP,3'b101,7'b0000001)
+`define RV64_REM        `rv64_r_type(`RV64_OP_OP,3'b110,7'b0000001)
+`define RV64_REMU       `rv64_r_type(`RV64_OP_OP,3'b111,7'b0000001)
+
+`define RV64_MULW       `rv64_r_type(`RV64_OP_32_OP,3'b000,7'b0000001)
+`define RV64_DIVW       `rv64_r_type(`RV64_OP_32_OP,3'b100,7'b0000001)
+`define RV64_DIVUW      `rv64_r_type(`RV64_OP_32_OP,3'b101,7'b0000001)
+`define RV64_REMW       `rv64_r_type(`RV64_OP_32_OP,3'b110,7'b0000001)
+`define RV64_REMUW      `rv64_r_type(`RV64_OP_32_OP,3'b111,7'b0000001)
+
 `endif
 

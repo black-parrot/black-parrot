@@ -2,7 +2,6 @@
 CC ?= $(GCC)
 VV ?= $(VERILATOR)
 PYTHON    ?= python
-TRACEDIFF ?= $(BP_COMMON_DIR)/software/py/tracediff.py
 
 ## Tool options
 VV_OPTS  = --sc                 # Output in SystemC rather than C++
@@ -22,8 +21,6 @@ COV  ?= 0
 .PHONY: dirs.sc lint.sc build.sc run.sc clean.sc
 
 run.sc: sim.sc
-
-VERILATOR_RUN_DIR ?= $(SYN_PATH)/run_verilator
 
 dirs.sc:
 	$(eval RESULTS_DIR := $(RESULTS_PATH)/verilator)
@@ -52,7 +49,7 @@ lint.sc: dirs.sc
 	-@echo $(BUILD_DIR)/testbench.v               >> $(BUILD_DIR)/flist.vcs
 	-@echo $(BUILD_DIR)/test_bp.cpp               >> $(BUILD_DIR)/flist.vcs
 	cd $(BUILD_DIR); $(VV) $(LINT_OPTS) --top-module $(TOP_MODULE) \
-		config.vlt -f flist.vcs $(HDL_PARAMS) |& tee $(LINT_LOG)
+		config.vlt -f flist.vcs $(HDL_PARAMS) $(HDL_DEFINES) |& tee $(LINT_LOG)
 
 
 VBUILD_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).vbuild.log
@@ -73,7 +70,7 @@ pre-verilate.sc: dirs.sc
 
 verilate.sc: pre-verilate.sc
 	cd $(BUILD_DIR); $(VV) $(VV_OPTS) $(BUILD_OPTS) --top-module $(TOP_MODULE) \
-		config.vlt -f flist.vcs $(HDL_PARAMS) | tee $(VBUILD_LOG)
+		config.vlt -f flist.vcs $(HDL_PARAMS) $(HDL_DEFINES) | tee $(VBUILD_LOG)
 	-@grep "Error" -A 5 $(VBUILD_LOG) > $(VBUILD_ERROR);
 	-@tail -n 2 $(VBUILD_LOG) > $(VBUILD_REPORT)
 	-@test -s $(VBUILD_ERROR) && echo "FAILED" >> $(VBUILD_REPORT) \
@@ -116,6 +113,7 @@ sim.sc: dirs.sc
 	-@cp $(MEM_PATH)/$(PROG).dump $(SIM_DIR)/prog.dump
 	-@cp $(MEM_PATH)/$(PROG).mainram $(SIM_DIR)/prog.mainram
 	-@cp $(MEM_PATH)/$(PROG).bootram $(SIM_DIR)/prog.bootram
+	-@cp $(BP_COMMON_DIR)/test/cfg/cosim.cfg $(SIM_DIR)/prog.cfg
 	-@cp $(MEM_PATH)/$(PROG).cfg $(SIM_DIR)/prog.cfg
 	-@cp $(MEM_PATH)/$(PROG).spike $(SIM_DIR)/prog.spike
 	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(SIM_DIR)/dram_ch.ini
@@ -151,10 +149,9 @@ cov.sc: dirs.sc
 wave.sc: dirs.sc
 	cd $(SIM_DIR); $(GTKWAVE) -f dump.vcd &
 
-debug.sc: dirs.sc
-	@echo "BlackParrot hardware model does not currently support Verilator VCD dumps"
-	exit 1
-	$(MAKE) regen -C $(UNHARDWARE_DIR) MODEL=$(UNHARDWARE_MODEL) DATA=$(SIM_DIR)/dump.vcd BINARY=$(SIM_DIR)/prog.elf
+# TODO: Make compatible with multi-core
+blood.sc: dirs.sc
+	cd $(SIM_DIR); $(PYTHON) $(BLOODGRAPH) --input $(SIM_DIR)/stall_0.trace
 
 clean.sc:
 	@rm -rf results/verilator
