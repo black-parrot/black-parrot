@@ -76,18 +76,6 @@
   branch = master
   ignore = dirty
 
-[submodule "external/agile-unhardware"]
-  path = external/agile-unhardware
-  url = https://github.com/bespoke-silicon-group/accelerator-debugger.git
-  branch = master
-  ignore = dirty
-
-[submodule "external/sv2v"]
-  path = external/sv2v
-  url = https://github.com/zachjs/sv2v.git
-  branch = master
-  ignore = dirty
-
 [submodule "external/dromajo"]
   path = external/dromajo
   url = https://github.com/bsg-external/dromajo.git
@@ -95,5 +83,37 @@
   ignore = dirty
 
 [submodule "external/dtc"]
-	path = external/dtc
-	url = https://git.kernel.org/pub/scm/utils/dtc/dtc.git
+  path = external/dtc
+  url = https://git.kernel.org/pub/scm/utils/dtc/dtc.git
+  branch = master
+  ignore = dirty
+
+[submodule "external/DRAMsim3"]
+  path = external/DRAMsim3
+  url = https://github.com/umd-memsys/DRAMsim3.git
+  branch = master
+  ignore = dirty
+
+[submodule "external/bsg_sv2v"]
+  path = external/bsg_sv2v
+  url = https://github.com/bespoke-silicon-group/bsg_sv2v.git
+  branch = master
+  ignore = dirty
+
+[submodule "external/systemc"]
+  path = external/systemc
+  url = https://github.com/bsg-external/systemc.git
+  branch = master
+  ignore = dirty
+[submodule "external/sv2v"]
+  path = external/sv2v
+  url = https://github.com/zachjs/sv2v.git
+  branch = master
+  ignore = dirty
+
+[submodule "bp_common/test/src/spec/src/spec2000"]
+  path = bp_common/test/src/spec/src/spec2000
+  url = https://github.com/black-parrot/spec2000
+  branch = blackparrot_mods
+  ignore = dirty
+  update = none

@@ -28,6 +28,7 @@ module testbench
    , parameter icache_trace_p              = 0
    , parameter dcache_trace_p              = 0
    , parameter vm_trace_p                  = 0
+   , parameter core_profile_p              = 0
    , parameter preload_mem_p               = 0
    , parameter load_nbf_p                  = 0
    , parameter skip_init_p                 = 0
@@ -41,13 +42,13 @@ module testbench
    , parameter [paddr_width_p-1:0] mem_offset_p = paddr_width_p'(32'h8000_0000)
 
    // Number of elements in the fake BlackParrot memory
-   , parameter use_max_latency_p      = 1
+   , parameter use_max_latency_p      = 0
    , parameter use_random_latency_p   = 0
    , parameter use_dramsim2_latency_p = 0
 
    , parameter max_latency_p = 15
 
-   , parameter dram_clock_period_in_ps_p = 1000
+   , parameter dram_clock_period_in_ps_p = `BP_SIM_CLK_PERIOD
    , parameter dram_cfg_p                = "dram_ch.ini"
    , parameter dram_sys_cfg_p            = "dram_sys.ini"
    , parameter dram_capacity_p           = 16384
@@ -72,6 +73,22 @@ bp_cce_mem_msg_s io_cmd_lo;
 logic io_cmd_v_lo, io_cmd_ready_li;
 bp_cce_mem_msg_s io_resp_li;
 logic io_resp_v_li, io_resp_yumi_lo;
+
+bp_cce_mem_msg_s nbf_cmd_lo;
+logic nbf_cmd_v_lo, nbf_cmd_yumi_li;
+bp_cce_mem_msg_s nbf_resp_li;
+logic nbf_resp_v_li, nbf_resp_ready_lo;
+
+bp_cce_mem_msg_s cfg_cmd_lo;
+logic cfg_cmd_v_lo, cfg_cmd_yumi_li;
+bp_cce_mem_msg_s cfg_resp_li;
+logic cfg_resp_v_li, cfg_resp_ready_lo;
+
+bp_cce_mem_msg_s load_cmd_lo;
+logic load_cmd_v_lo, load_cmd_yumi_li;
+bp_cce_mem_msg_s load_resp_li;
+logic load_resp_v_li, load_resp_ready_lo;
+
 wrapper
  #(.bp_params_p(bp_params_p))
  wrapper
@@ -85,6 +102,14 @@ wrapper
    ,.io_resp_i(proc_io_resp_li)
    ,.io_resp_v_i(proc_io_resp_v_li)
    ,.io_resp_yumi_o(proc_io_resp_yumi_lo)
+
+   ,.io_cmd_i(load_cmd_lo)
+   ,.io_cmd_v_i(load_cmd_v_lo)
+   ,.io_cmd_yumi_o(load_cmd_yumi_li)
+
+   ,.io_resp_o(load_resp_li)
+   ,.io_resp_v_o(load_resp_v_li)
+   ,.io_resp_ready_i(load_resp_ready_lo)
 
    ,.mem_cmd_o(proc_mem_cmd_lo)
    ,.mem_cmd_v_o(proc_mem_cmd_v_lo)
@@ -118,13 +143,106 @@ bp_mem
    ,.reset_i(reset_i)
  
    ,.mem_cmd_i(proc_mem_cmd_lo)
-   ,.mem_cmd_v_i(proc_mem_cmd_v_lo & proc_mem_cmd_ready_li)
+   ,.mem_cmd_v_i(proc_mem_cmd_ready_li & proc_mem_cmd_v_lo)
    ,.mem_cmd_ready_o(proc_mem_cmd_ready_li)
  
    ,.mem_resp_o(proc_mem_resp_li)
    ,.mem_resp_v_o(proc_mem_resp_v_li)
    ,.mem_resp_yumi_i(proc_mem_resp_yumi_lo)
    );
+
+
+logic nbf_done_lo, cfg_done_lo;
+if (load_nbf_p)
+  begin : nbf
+    bp_nonsynth_nbf_loader
+     #(.bp_params_p(bp_params_p))
+     nbf_loader
+      (.clk_i(clk_i)
+       ,.reset_i(reset_i | ~cfg_done_lo)
+    
+       ,.lce_id_i(lce_id_width_p'('b10))
+    
+       ,.io_cmd_o(nbf_cmd_lo)
+       ,.io_cmd_v_o(nbf_cmd_v_lo)
+       ,.io_cmd_yumi_i(nbf_cmd_yumi_li)
+    
+       ,.io_resp_i(nbf_resp_li)
+       ,.io_resp_v_i(nbf_resp_v_li)
+       ,.io_resp_ready_o(nbf_resp_ready_lo)
+    
+       ,.done_o(nbf_done_lo)
+       );
+  end
+else
+  begin : no_nbf
+    assign nbf_resp_ready_lo = 1'b1;
+    assign nbf_cmd_v_lo = '0;
+    assign nbf_cmd_lo = '0;
+
+    assign nbf_done_lo = 1'b1;
+  end
+
+localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p);
+bp_cce_mmio_cfg_loader
+  #(.bp_params_p(bp_params_p)
+    ,.inst_width_p($bits(bp_cce_inst_s))
+    ,.inst_ram_addr_width_p(cce_instr_ram_addr_width_lp)
+    ,.inst_ram_els_p(num_cce_instr_ram_els_p)
+    ,.skip_ram_init_p(skip_init_p)
+    ,.clear_freeze_p(!load_nbf_p)
+    )
+  cfg_loader
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.lce_id_i(lce_id_width_p'('b10))
+    
+   ,.io_cmd_o(cfg_cmd_lo)
+   ,.io_cmd_v_o(cfg_cmd_v_lo)
+   ,.io_cmd_yumi_i(cfg_cmd_yumi_li)
+
+   ,.io_resp_i(cfg_resp_li)
+   ,.io_resp_v_i(cfg_resp_v_li)
+   ,.io_resp_ready_o(cfg_resp_ready_lo)
+
+   ,.done_o(cfg_done_lo)
+  );
+
+// CFG and NBF are mutex, so we can just use fixed arbitration here
+always_comb
+  if (~cfg_done_lo)
+    begin
+      load_cmd_lo = cfg_cmd_lo;
+      load_cmd_v_lo = cfg_cmd_v_lo;
+
+      nbf_cmd_yumi_li = '0; 
+      cfg_cmd_yumi_li = load_cmd_yumi_li;
+
+      load_resp_ready_lo = cfg_resp_ready_lo;
+
+      nbf_resp_li = '0;
+      nbf_resp_v_li = '0;
+
+      cfg_resp_li = load_resp_li;
+      cfg_resp_v_li = load_resp_v_li;
+    end
+  else
+    begin
+      load_cmd_lo = nbf_cmd_lo;
+      load_cmd_v_lo = nbf_cmd_v_lo;
+
+      nbf_cmd_yumi_li = load_cmd_yumi_li; 
+      cfg_cmd_yumi_li = '0;
+
+      load_resp_ready_lo = nbf_resp_ready_lo;
+
+      nbf_resp_li = load_resp_li;
+      nbf_resp_v_li = load_resp_v_li;
+
+      cfg_resp_li = '0;
+      cfg_resp_v_li = '0;
+    end
 
 logic program_finish_lo;
 bp_nonsynth_host
@@ -150,7 +268,7 @@ bind bp_be_top
    commit_tracer
     (.clk_i(clk_i & (testbench.cmt_trace_p == 1))
      ,.reset_i(reset_i)
-     ,.freeze_i('0)
+     ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
 
      ,.mhartid_i('0)
 
@@ -171,7 +289,7 @@ bind bp_be_top
       cosim
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
-       ,.freeze_i('0)
+       ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
        ,.en_i(testbench.cosim_p == 1)
        ,.cosim_instr_i(testbench.cosim_instr_p)
 
@@ -200,7 +318,7 @@ bind bp_be_top
    perf
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.freeze_i('0)
+     ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
 
      ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
@@ -218,7 +336,7 @@ bind bp_be_top
      watchdog
       (.clk_i(clk_i)
        ,.reset_i(reset_i)
-       ,.freeze_i('0)
+       ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
 
        ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
@@ -232,7 +350,7 @@ bind bp_be_top
      npc_tracer
       (.clk_i(clk_i & (testbench.npc_trace_p == 1))
        ,.reset_i(reset_i)
-       ,.freeze_i('0)
+       ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
 
        ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
@@ -257,8 +375,8 @@ bind bp_be_top
      dcache_tracer
       (.clk_i(clk_i & (testbench.dcache_trace_p == 1))
        ,.reset_i(reset_i)
-       
        ,.freeze_i(cfg_bus_cast_i.freeze)
+
        ,.mhartid_i(cfg_bus_cast_i.core_id)
 
        ,.v_tl_r(v_tl_r)
@@ -301,7 +419,7 @@ bind bp_be_top
      calc_tracer
       (.clk_i(clk_i & (testbench.calc_trace_p == 1))
        ,.reset_i(reset_i)
-       ,.freeze_i('0)
+       ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
 
        ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
@@ -385,7 +503,7 @@ bind bp_be_top
     vm_tracer
       (.clk_i(clk_i & (testbench.vm_trace_p == 1))
        ,.reset_i(reset_i)
-       ,.freeze_i('0)
+       ,.freeze_i(be.be_checker.scheduler.int_regfile.cfg_bus.freeze)
 
        ,.mhartid_i(be.be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
@@ -414,6 +532,70 @@ bind bp_be_top
      ,.mem_resp_v_i(proc_mem_resp_v_li)
      ,.mem_resp_yumi_i(proc_mem_resp_yumi_lo)
      );
+
+  bind bp_core_minimal
+    bp_nonsynth_core_profiler
+     #(.bp_params_p(bp_params_p))
+     core_profiler
+      (.clk_i(clk_i & (testbench.core_profile_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i(be.be_checker.scheduler.int_regfile.cfg_bus.freeze)
+
+       ,.mhartid_i(be.be_checker.scheduler.int_regfile.cfg_bus.core_id)
+
+       ,.fe_wait_stall(fe.pc_gen.is_wait)
+       ,.fe_queue_stall(~fe.pc_gen.fe_queue_ready_i)
+
+       ,.itlb_miss(fe.mem.itlb_miss_r)
+       ,.icache_miss(~fe.mem.icache.vaddr_ready_o | fe.pc_gen.icache_miss)
+       ,.icache_fence(fe.mem.icache.fencei_req)
+       ,.branch_override(fe.pc_gen.ovr_taken | fe.pc_gen.ovr_ntaken)
+
+       ,.fe_cmd(fe.pc_gen.fe_cmd_yumi_o & ~fe.pc_gen.attaboy_v)
+
+       ,.cmd_fence(be.be_checker.director.suppress_iss_o)
+
+       ,.target_mispredict(be.be_checker.scheduler.npc_mismatch & ~be.be_calculator.pipe_int.decode.br_v)
+       ,.dir_mispredict(be.be_checker.scheduler.npc_mismatch & be.be_calculator.pipe_int.decode.br_v)
+
+       ,.dtlb_miss(be.be_mem.dtlb_miss_r)
+       ,.dcache_miss(~be.be_mem.dcache.ready_o)
+       ,.long_haz(be.be_checker.detector.long_haz_v)
+       ,.exception(be.be_checker.director.trap_pkt.exception)
+       ,.eret(be.be_checker.director.trap_pkt.eret)
+       ,.interrupt(be.be_checker.director.trap_pkt._interrupt)
+       ,.control_haz(be.be_checker.detector.control_haz_v)
+       ,.data_haz(be.be_checker.detector.data_haz_v)
+       ,.load_dep((be.be_checker.detector.dep_status_li[0].mem_iwb_v
+                   | be.be_checker.detector.dep_status_li[1].mem_iwb_v
+                   ) & be.be_checker.detector.data_haz_v
+                  )
+       ,.mul_dep((be.be_checker.detector.dep_status_li[0].mul_iwb_v
+                  | be.be_checker.detector.dep_status_li[1].mul_iwb_v
+                  | be.be_checker.detector.dep_status_li[2].mul_iwb_v
+                  ) & be.be_checker.detector.data_haz_v
+                 )
+       ,.struct_haz(be.be_checker.detector.struct_haz_v)
+
+       ,.reservation(be.be_calculator.reservation_n)
+       ,.commit_pkt(be.be_calculator.commit_pkt)
+       ,.trap_pkt(be.be_mem.csr.trap_pkt_o)
+       );
+
+  bind bp_core_minimal
+    bp_nonsynth_pc_profiler
+     #(.bp_params_p(bp_params_p))
+     pc_profiler
+      (.clk_i(clk_i & (testbench.core_profile_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i(be.be_checker.scheduler.int_regfile.cfg_bus.freeze)
+
+       ,.mhartid_i(be.be_checker.scheduler.int_regfile.cfg_bus.core_id)
+
+       ,.commit_pkt(be.be_calculator.commit_pkt)
+
+       ,.program_finish_i(testbench.program_finish_lo)
+       );
 
 bp_nonsynth_if_verif
  #(.bp_params_p(bp_params_p))

@@ -28,6 +28,7 @@ module testbench
    , parameter icache_trace_p              = 0
    , parameter dcache_trace_p              = 0
    , parameter vm_trace_p                  = 0
+   , parameter core_profile_p              = 0
    , parameter preload_mem_p               = 0
    , parameter load_nbf_p                  = 0
    , parameter skip_init_p                 = 0
@@ -48,7 +49,7 @@ module testbench
 
    , parameter max_latency_p = 15
 
-   , parameter dram_clock_period_in_ps_p = 1000
+   , parameter dram_clock_period_in_ps_p = `BP_SIM_CLK_PERIOD
    , parameter dram_cfg_p                = "dram_ch.ini"
    , parameter dram_sys_cfg_p            = "dram_sys.ini"
    , parameter dram_capacity_p           = 16384
@@ -359,6 +360,7 @@ wrapper
        ,.dtlb_entry_i(be.be_mem.dtlb.entry_i)
        );
 
+logic [num_core_p-1:0] program_finish;
 // We rely on this for termination, so don't gate behind parameter
 bind bp_be_top
   bp_be_nonsynth_perf
@@ -441,6 +443,71 @@ bind bp_be_top
         ,.mem_cmd_v_i(mem_cmd_v_o)
         ,.mem_cmd_ready_i(mem_cmd_ready_i)
         );
+
+  bind bp_core_minimal
+    bp_nonsynth_core_profiler
+     #(.bp_params_p(bp_params_p))
+     core_profiler
+      (.clk_i(clk_i & (testbench.core_profile_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i(be.be_checker.scheduler.int_regfile.cfg_bus.freeze)
+
+       ,.mhartid_i(be.be_checker.scheduler.int_regfile.cfg_bus.core_id)
+
+       ,.fe_wait_stall(fe.pc_gen.is_wait)
+       ,.fe_queue_stall(~fe.pc_gen.fe_queue_ready_i)
+
+       ,.itlb_miss(fe.mem.itlb_miss_r)
+       ,.icache_miss(~fe.mem.icache.vaddr_ready_o | fe.pc_gen.icache_miss)
+       ,.icache_fence(fe.mem.icache.fencei_req)
+       ,.branch_override(fe.pc_gen.ovr_taken | fe.pc_gen.ovr_ntaken)
+
+       ,.fe_cmd(fe.pc_gen.fe_cmd_yumi_o & ~fe.pc_gen.attaboy_v)
+
+       ,.cmd_fence(be.be_checker.director.suppress_iss_o)
+
+       ,.target_mispredict(be.be_checker.scheduler.npc_mismatch & ~be.be_calculator.pipe_int.decode.br_v)
+       ,.dir_mispredict(be.be_checker.scheduler.npc_mismatch & be.be_calculator.pipe_int.decode.br_v)
+
+       ,.dtlb_miss(be.be_mem.dtlb_miss_r)
+       ,.dcache_miss(~be.be_mem.dcache.ready_o)
+       ,.long_haz(be.be_checker.detector.long_haz_v)
+       ,.exception(be.be_checker.director.trap_pkt.exception)
+       ,.eret(be.be_checker.director.trap_pkt.eret)
+       ,.interrupt(be.be_checker.director.trap_pkt._interrupt)
+       ,.control_haz(be.be_checker.detector.control_haz_v)
+       ,.data_haz(be.be_checker.detector.data_haz_v)
+       ,.load_dep((be.be_checker.detector.dep_status_li[0].mem_iwb_v
+                   | be.be_checker.detector.dep_status_li[1].mem_iwb_v
+                   ) & be.be_checker.detector.data_haz_v
+                  )
+       ,.mul_dep((be.be_checker.detector.dep_status_li[0].mul_iwb_v
+                  | be.be_checker.detector.dep_status_li[1].mul_iwb_v
+                  | be.be_checker.detector.dep_status_li[2].mul_iwb_v
+                  ) & be.be_checker.detector.data_haz_v
+                 )
+       ,.struct_haz(be.be_checker.detector.struct_haz_v)
+
+       ,.reservation(be.be_calculator.reservation_n)
+       ,.commit_pkt(be.be_calculator.commit_pkt)
+       ,.trap_pkt(be.be_mem.csr.trap_pkt_o)
+       );
+
+  bind bp_core_minimal
+    bp_nonsynth_pc_profiler
+     #(.bp_params_p(bp_params_p))
+     pc_profiler
+      (.clk_i(clk_i & (testbench.core_profile_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i(be.be_checker.scheduler.int_regfile.cfg_bus.freeze)
+
+       ,.mhartid_i(be.be_checker.scheduler.int_regfile.cfg_bus.core_id)
+
+       ,.commit_pkt(be.be_calculator.commit_pkt)
+
+       ,.program_finish_i(testbench.program_finish)
+       );
+
 
 wire [io_noc_cord_width_p-1:0] dst_cord_lo = 1;
 
@@ -538,7 +605,6 @@ bp_mem
    ,.mem_resp_yumi_i(dram_resp_ready_li & dram_resp_v_lo)
    );
 
-logic [num_core_p-1:0] program_finish;
 bp_nonsynth_host
  #(.bp_params_p(bp_params_p))
  host_mmio
@@ -564,6 +630,9 @@ if (load_nbf_p)
      nbf_loader
       (.clk_i(clk_i)
        ,.reset_i(reset_i | ~cfg_done_lo)
+
+       // LCE id will get overridden by the I/O tile in this case
+       ,.lce_id_i('0)
 
        ,.io_cmd_o(nbf_cmd_lo)
        ,.io_cmd_v_o(nbf_cmd_v_lo)
@@ -598,6 +667,9 @@ bp_cce_mmio_cfg_loader
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    
+   // LCE id will get overridden by the I/O tile in this case
+   ,.lce_id_i('0)
+
    ,.io_cmd_o(cfg_cmd_lo)
    ,.io_cmd_v_o(cfg_cmd_v_lo)
    ,.io_cmd_yumi_i(cfg_cmd_ready_li & cfg_cmd_v_lo)

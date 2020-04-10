@@ -9,16 +9,17 @@ MEM2NBF  ?= $(BP_COMMON_DIR)/software/py/nbf.py
 TEST_DIR       = $(BP_COMMON_DIR)/test
 MEM_DIR        = $(TEST_DIR)/mem
 
-RISCV_SIM      = spike
-RISCV_OBJDUMP  = riscv64-unknown-elf-objdump -d
-RISCV_OBJCOPY  = riscv64-unknown-elf-objcopy
-MKLFS = $(TEST_DIR)/bin/bsg_newlib_mklfs
-DROMAJO        = dromajo
+RISCV_TARGET   = riscv64-unknown-elf-dramfs
+CROSS_COMPILE  = $(RISCV_TARGET)-
 
-PATH := $(BP_EXTERNAL_DIR)/bin:$(PATH)
+RISCV_SIM      = spike
+RISCV_OBJDUMP  = $(CROSS_COMPILE)objdump -d
+RISCV_OBJCOPY  = $(CROSS_COMPILE)objcopy
+DROMAJO        = dromajo
 
 NC ?= 1
 MEMSIZE ?= 32 # MB
+DUMP_PERIOD ?= 0
 
 export TEST_DIR
 
@@ -45,20 +46,17 @@ demos: demos_mem demos_nbf demos_dump
 riscvdv: riscvdv_mem riscvdv_nbf riscvdv_dump riscvdv_spike
 
 # Spec is separate because it is proprietary
-spec: spec_mem spec_dump spec_spike
-
-# mtest is separate because there's not a good default
-mtest: mtest_mem mtest_dump mtest_spike
+spec: spec_mem spec_dump
 
 perch:
-	$(MAKE) -C $(TEST_DIR)/src/perch
+	$(MAKE) -C $(TEST_DIR)/src/perch CROSS_COMPILE=$(CROSS_COMPILE)
 	mkdir -p $(TEST_DIR)/lib
 	mkdir -p $(TEST_DIR)/include
 	cp $(TEST_DIR)/src/perch/libperch.a $(TEST_DIR)/lib
 	cp $(TEST_DIR)/src/perch/*.h $(TEST_DIR)/include
 
 riscv_elf: 
-	cd $(TEST_DIR)/src/riscv-tests/ && ./configure
+	cd $(TEST_DIR)/src/riscv-tests/ && ./configure --target=$(RISCV_TARGET)
 	$(MAKE) -C $(TEST_DIR)/src/riscv-tests/
 	find $(TEST_DIR)/src/riscv-tests/isa/ -executable -name "rv64ui-*" -execdir mv {} $(MEM_DIR)/{}.riscv \;
 	find $(TEST_DIR)/src/riscv-tests/isa/ -executable -name "rv64ua-*" -execdir mv {} $(MEM_DIR)/{}.riscv \;
@@ -68,42 +66,32 @@ riscv_elf:
 	find $(TEST_DIR)/src/riscv-tests/benchmarks/ -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
 
 coremark_elf:
-	$(MAKE) -C $(TEST_DIR)/src/coremark/barebones/
+	$(MAKE) -C $(TEST_DIR)/src/coremark/barebones/ CROSS_COMPILE=$(CROSS_COMPILE)
 	find $(TEST_DIR)/src/coremark/barebones/ -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
 
 demos_elf:
-	$(MAKE) -C $(TEST_DIR)/src/demos
+	$(MAKE) -C $(TEST_DIR)/src/demos CROSS_COMPILE=$(CROSS_COMPILE)
 	find $(TEST_DIR)/src/demos/ -executable -type f -execdir mv {} $(MEM_DIR)/{} \;
 
 littlefs_test_elf:
-	$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test/fhello/
-	find $(TEST_DIR)/src/littlefs_newlib_test/fhello/ -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
-
-mtest_lfs: $(foreach x, $(PROGS), $(x).bin)
-	cd $(MEM_DIR) && $(MKLFS) 128 204800 $(foreach x, $(PROGS), $(x).bin) > $(TEST_DIR)/src/mtest/src/lfs.c
-	rm $(foreach x, $(PROGS), $(MEM_DIR)/$(x).bin)
-	$(PYTHON) $(TEST_DIR)/src/mtest/py/testgen.py $(NC) $(PROGS) > $(TEST_DIR)/src/mtest/src/benchmarks.h
-
-mtest_elf:
-	$(MAKE) -C $(TEST_DIR)/src/mtest/
-	find $(TEST_DIR)/src/mtest -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
-	find $(TEST_DIR)/src/mtest -type f -name "*dump" -execdir mv {} $(MEM_DIR)/{} \;
+	$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test/ CROSS_COMPILE=$(CROSS_COMPILE)
+	find $(TEST_DIR)/src/littlefs_newlib_test/ -type f -executable -execdir mv {} $(MEM_DIR)/{} \;
 
 #Change the number of iterations per test by changing BOARD_REPEAT_FACTOR in beebs/support/support.h
 beebs_elf:
-	cd $(TEST_DIR)/src/beebs/ && ./configure --host=riscv64 --with-chip=black-parrot 
+	cd $(TEST_DIR)/src/beebs/ && ./configure --host=riscv64 --with-chip=black-parrot \
+		 --includedir=$(TEST_DIR)/include --libdir=$(TEST_DIR)/lib
 	$(MAKE) -C $(TEST_DIR)/src/beebs/
 	find $(TEST_DIR)/src/beebs/src/ -type f -executable -execdir mv {} $(MEM_DIR)/{}.riscv \;
 
-#Be sure to read the README and clone spec first
 spec_elf:
-	$(MAKE) -C $(TEST_DIR)/src/spec/spec2000/benchmarks/spec2000/CINT2000/175.vpr/src.raw/ 
-	find $(TEST_DIR)/src/spec/spec2000/benchmarks/spec2000/CINT2000/175.vpr/src.raw/  -executable -type f -execdir mv {} $(MEM_DIR)/{} \;
+	$(MAKE) -C $(TEST_DIR)/src/spec/ CROSS_COMPILE=$(CROSS_COMPILE)
+	find $(TEST_DIR)/src/spec/ -executable -name "*.riscv" -type f -execdir mv {} $(MEM_DIR)/{} \;
 
 riscvdv_elf: $(BP_RVDV)
 $(BP_RVDV):
 	rm -rf $(TEST_DIR)/src/riscv-dv/out/
-	$(MAKE) -C $(TEST_DIR)/src/riscv-dv/ generate.$@
+	$(MAKE) -C $(TEST_DIR)/src/riscv-dv/ generate.$@ CROSS_COMPILE=$(CROSS_COMPILE)
 	cp $(TEST_DIR)/src/riscv-dv/out/asm_tests/$@_0.o $(MEM_DIR)/$@.riscv
 
 riscv_nbf: $(foreach x, $(RV64_P_TESTS) $(RV64_PT_TESTS) $(RV64_V_TESTS) $(RV64_VT_TESTS) $(RV64_BENCHMARKS), $(x).nbf)
@@ -133,14 +121,6 @@ littlefs_test_dump: littlefs_test.dump
 zero_nbf: zero.nbf
 zero_mem:
 	$(PYTHON) $(ZERO_MEM) > $(MEM_DIR)/zero.mem
-
-mtest_nbf: mtest.nbf
-#mtest_mem: beebs_elf
-mtest_mem: mtest_lfs
-mtest_mem: mtest_elf
-mtest_mem: mtest.mem
-mtest_spike: mtest.spike
-mtest_dump: mtest.dump
 
 beebs_nbf: $(foreach x, $(BEEBS_TESTS), $(x).nbf)
 beebs_mem: beebs_elf
@@ -178,15 +158,13 @@ riscvdv_dump: $(foreach x, $(BP_RVDV), $(x).dump)
 %.nbf:
 	$(PYTHON) $(MEM2NBF) $(MEM_DIR)/$*.mem > $(MEM_DIR)/$@
 
-%.dromajo:
-	$(DROMAJO) $(MEM_DIR)/$*.riscv --host --maxinsn=$(MAXINSN) --save=$* --memory_size=$(MEMSIZE)
+%.checkpoint:
 	$(RISCV_OBJCOPY) --change-addresses 0x80000000 \
-		 -I binary -O elf64-littleriscv -B riscv $*.mainram $(MEM_DIR)/$@.$(MAXINSN).riscv
-	$(RISCV_OBJCOPY) -O verilog $(MEM_DIR)/$@.$(MAXINSN).riscv $(MEM_DIR)/$@.$(MAXINSN).mem
-	$(RISCV_OBJDUMP) $(MEM_DIR)/$@.$(MAXINSN).riscv > $(MEM_DIR)/$@.$(MAXINSN).dump
-	cp $*.bp_regs $(MEM_DIR)/$@.$(MAXINSN).nbf
-	cp $*.bootram $(MEM_DIR)/$@.$(MAXINSN).bootram
-	cp $*.mainram $(MEM_DIR)/$@.$(MAXINSN).mainram
+		 -I binary -O elf64-littleriscv -B riscv $*.mainram $(MEM_DIR)/$*.riscv
+	$(RISCV_OBJCOPY) -O verilog $(MEM_DIR)/$*.riscv $(MEM_DIR)/$*.mem
+	cp $*.bp_regs $(MEM_DIR)/$*.nbf
+	cp $*.bootram $(MEM_DIR)/$*.bootram
+	cp $*.mainram $(MEM_DIR)/$*.mainram
 	echo -e "\
 	{\n\
 	  \"version\":1,\n\
@@ -197,33 +175,26 @@ riscvdv_dump: $(foreach x, $(BP_RVDV), $(x).dump)
 	  \"memory_size\": $(MEMSIZE),\n\
 	  \"mmio_start\": 0x20000,\n\
 	  \"mmio_end\": 0x80000000\n\
-	}" > $(MEM_DIR)/$@.$(MAXINSN).cfg
+	}" > $(MEM_DIR)/$*.cfg
 	rm $*.*
+
+%.run_dromajo:
+	$(DROMAJO) $(MEM_DIR)/$*.riscv --host --dump_period=$(DUMP_PERIOD) --maxinsn=$(MAXINSN) --save=$*.dromajo --memory_size=$(MEMSIZE)
+
+%.dromajo: %.run_dromajo
+	$(eval FILES := $(patsubst %.mainram, %, $(shell ls $**.mainram)))
+	$(foreach f, $(FILES), $(MAKE) $f.checkpoint;)
 
 clean:
 	-$(MAKE) -C $(TEST_DIR)/src/perch clean
 	-$(MAKE) -C $(TEST_DIR)/src/riscv-tests/benchmarks clean 
 	-$(MAKE) -C $(TEST_DIR)/src/demos clean
 	-$(MAKE) -C $(TEST_DIR)/src/coremark/barebones clean
-	-$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test/fhello clean
+	-$(MAKE) -C $(TEST_DIR)/src/littlefs_newlib_test clean
 	-$(MAKE) -C $(TEST_DIR)/src/beebs clean
-	-$(MAKE) -C $(TEST_DIR)/src/spec/spec2000/benchmarks/spec2000/CINT2000/175.vpr/src.raw/ clean
+	-$(MAKE) -C $(TEST_DIR)/src/spec clean
 	-$(MAKE) -C $(TEST_DIR)/src/riscv-dv clean
 	-rm -rf $(TEST_DIR)/src/bsg_newlib_dramfs/build-newlib 
 	-rm -rf $(TEST_DIR)/src/bsg_newlib_dramfs/install-newlib
 	-rm -rf $(MEM_DIR)/*
 
-####### These targets are not maintained at the moment
-#
-#%_random.riscv:
-#	$(RANDOM_GEN) -seed $(SEED) -mem 50 20 -mode m -o $@.S
-#	${RISCV_GCC_RAND}  $@.S -o $@
-#	rm $@.S
-#
-#rv_random:
-#	num=1; while [ $$num -le $(RANDOM_NUM) ]; do \
-#  make test`expr $$num + 0`_random.v SEED=`expr $$num + 0`; \
-#  num=`expr $$num + 1`; \
-#  done
-#
-##########################################

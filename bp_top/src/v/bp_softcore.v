@@ -26,6 +26,15 @@ module bp_softcore
    , input                                             io_resp_v_i
    , output                                            io_resp_yumi_o
 
+   // Incoming I/O
+   , input [cce_mem_msg_width_lp-1:0]                  io_cmd_i
+   , input                                             io_cmd_v_i
+   , output                                            io_cmd_yumi_o
+
+   , output [cce_mem_msg_width_lp-1:0]                 io_resp_o
+   , output                                            io_resp_v_o
+   , input                                             io_resp_ready_i
+
    // Memory Requests
    , output [cce_mem_msg_width_lp-1:0]                 mem_cmd_o
    , output                                            mem_cmd_v_o
@@ -43,8 +52,6 @@ module bp_softcore
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
   `declare_bp_cache_stat_info_s(dcache_assoc_p, dcache);
   `declare_bp_cache_stat_info_s(icache_assoc_p, icache);
-
-  bp_cfg_bus_s cfg_bus_li;
 
   `bp_cast_o(bp_cce_mem_msg_s, mem_cmd);
   `bp_cast_o(bp_cce_mem_msg_s, io_cmd);
@@ -85,10 +92,15 @@ module bp_softcore
   logic [1:0] credits_full_li, credits_empty_li;
   logic timer_irq_li, software_irq_li, external_irq_li;
 
-  bp_cce_mem_msg_s [1:0] proc_cmd_lo;
-  logic [1:0] proc_cmd_v_lo, proc_cmd_ready_li;
-  bp_cce_mem_msg_s [1:0] proc_resp_li;
-  logic [1:0] proc_resp_v_li, proc_resp_yumi_lo;
+  bp_cce_mem_msg_s [2:0] proc_cmd_lo;
+  logic [2:0] proc_cmd_v_lo, proc_cmd_ready_li;
+  bp_cce_mem_msg_s [2:0] proc_resp_li;
+  logic [2:0] proc_resp_v_li, proc_resp_yumi_lo;
+
+  bp_cce_mem_msg_s cfg_cmd_li;
+  logic cfg_cmd_v_li, cfg_cmd_ready_lo;
+  bp_cce_mem_msg_s cfg_resp_lo;
+  logic cfg_resp_v_lo, cfg_resp_yumi_li;
 
   bp_cce_mem_msg_s clint_cmd_li;
   logic clint_cmd_v_li, clint_cmd_ready_lo;
@@ -100,26 +112,23 @@ module bp_softcore
   bp_cce_mem_msg_s cache_resp_lo;
   logic cache_resp_v_lo, cache_resp_yumi_li;
 
-  always_comb
-    begin
-      cfg_bus_li = '0;
-      cfg_bus_li.icache_mode = e_lce_mode_normal;
-      cfg_bus_li.icache_id   = 1'b0;
-      cfg_bus_li.dcache_mode = e_lce_mode_normal;
-      cfg_bus_li.dcache_id   = 1'b1;
-    end
-
+  bp_cfg_bus_s cfg_bus_lo;
+  logic [dword_width_p-1:0] cfg_irf_data_li;
+  logic [vaddr_width_p-1:0] cfg_npc_data_li;
+  logic [dword_width_p-1:0] cfg_csr_data_li;
+  logic [1:0]               cfg_priv_data_li;
+  logic [cce_instr_width_p-1:0] cfg_cce_ucode_data_li;
   bp_core_minimal
    #(.bp_params_p(bp_params_p))
    core
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.cfg_bus_i(cfg_bus_li)
-     ,.cfg_npc_data_o()
-     ,.cfg_irf_data_o()
-     ,.cfg_csr_data_o()
-     ,.cfg_priv_data_o()
+     ,.cfg_bus_i(cfg_bus_lo)
+     ,.cfg_npc_data_o(cfg_npc_data_li)
+     ,.cfg_irf_data_o(cfg_irf_data_li)
+     ,.cfg_csr_data_o(cfg_csr_data_li)
+     ,.cfg_priv_data_o(cfg_priv_data_li)
 
      ,.dcache_req_o(dcache_req_lo)
      ,.dcache_req_v_o(dcache_req_v_lo)
@@ -173,7 +182,7 @@ module bp_softcore
      ,.external_irq_i(external_irq_li)
      );
 
-  wire [1:0][lce_id_width_p-1:0] lce_id_li = {cfg_bus_li.dcache_id, cfg_bus_li.icache_id};
+  wire [1:0][lce_id_width_p-1:0] lce_id_li = {cfg_bus_lo.dcache_id, cfg_bus_lo.icache_id};
 
   bp_uce
     #(.bp_params_p(bp_params_p)
@@ -286,12 +295,46 @@ module bp_softcore
      ,.external_irq_o(external_irq_li)
      );
 
+  bp_cfg_buffered
+   #(.bp_params_p(bp_params_p))
+   cfg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.mem_cmd_i(cfg_cmd_li)
+     ,.mem_cmd_v_i(cfg_cmd_v_li)
+     ,.mem_cmd_ready_o(cfg_cmd_ready_lo)
+
+     ,.mem_resp_o(cfg_resp_lo)
+     ,.mem_resp_v_o(cfg_resp_v_lo)
+     ,.mem_resp_yumi_i(cfg_resp_yumi_li)
+
+     ,.cfg_bus_o(cfg_bus_lo)
+     ,.did_i('0)
+     ,.host_did_i('0)
+     ,.cord_i({coh_noc_y_cord_width_p'(1), coh_noc_x_cord_width_p'(0)})
+     ,.irf_data_i(cfg_irf_data_li)
+     ,.npc_data_i(cfg_npc_data_li)
+     ,.csr_data_i(cfg_csr_data_li)
+     ,.priv_data_i(cfg_priv_data_li)
+     ,.cce_ucode_data_i('0)
+     );
+
+  // Assign incoming I/O as basically another UCE interface
+  assign proc_cmd_lo[2] = io_cmd_i;
+  assign proc_cmd_v_lo[2] = io_cmd_v_i;
+  assign io_cmd_yumi_o = proc_cmd_ready_li[2] & proc_cmd_v_lo[2];
+
+  assign io_resp_o = proc_resp_li[2];
+  assign io_resp_v_o = proc_resp_v_li[2];
+  assign proc_resp_yumi_lo[2] = io_resp_ready_i & io_resp_v_o;
+
   // Arbitration logic
   //   Don't necessarily need to arbitrate. On an FPGA, can use a 2r1w RAM. But, we might also be on
   //   a bus
-  bp_cce_mem_msg_s [1:0] fifo_lo;
-  logic [1:0] fifo_v_lo, fifo_yumi_li;
-  for (genvar i = 0; i < 2; i++)
+  bp_cce_mem_msg_s [2:0] fifo_lo;
+  logic [2:0] fifo_v_lo, fifo_yumi_li;
+  for (genvar i = 0; i < 3; i++)
     begin : fifo
       bsg_two_fifo
        #(.width_p($bits(bp_cce_mem_msg_s)))
@@ -309,54 +352,37 @@ module bp_softcore
          );
     end
 
-  wire arb_ready_li = clint_cmd_ready_lo & cache_cmd_ready_lo & io_cmd_ready_i;
+  wire arb_ready_li = cfg_cmd_ready_lo & clint_cmd_ready_lo & io_cmd_ready_i & cache_cmd_ready_lo;
   bsg_arb_fixed
-   #(.inputs_p(2)
-     ,.lo_to_hi_p(0)
-     )
-   mem_arbiter
+   #(.inputs_p(3), .lo_to_hi_p(0))
+   cmd_arbiter
     (.ready_i(arb_ready_li)
      ,.reqs_i(fifo_v_lo)
      ,.grants_o(fifo_yumi_li)
      );
 
+  bp_cce_mem_msg_s fifo_selected_lo;
+  bsg_mux_one_hot
+   #(.width_p($bits(bp_cce_mem_msg_s)), .els_p(3))
+   cmd_select
+    (.data_i(fifo_lo)
+     ,.sel_one_hot_i(fifo_yumi_li)
+     ,.data_o(fifo_selected_lo)
+     );
+  assign {cache_cmd_li, io_cmd_cast_o, clint_cmd_li, cfg_cmd_li} = {4{fifo_selected_lo}};
+
   /* TODO: Extract local memory map to module */
-  wire local_cmd_li = (cache_cmd_li.header.addr < 32'h8000_0000);
-  wire [3:0] device_cmd_li = cache_cmd_li.header.addr[20+:4];
-  wire is_io_cmd = local_cmd_li & (device_cmd_li == host_dev_gp);
-  wire is_clint_cmd = local_cmd_li & (device_cmd_li == clint_dev_gp);
+  wire local_cmd_li        = (fifo_selected_lo.header.addr < 32'h8000_0000);
+  wire [3:0] device_cmd_li = fifo_selected_lo.header.addr[20+:4];
+  wire is_cfg_cmd          = local_cmd_li & (device_cmd_li == cfg_dev_gp);
+  wire is_clint_cmd        = local_cmd_li & (device_cmd_li == clint_dev_gp);
+  wire is_io_cmd           = local_cmd_li & (device_cmd_li == host_dev_gp);
+  wire is_cache_cmd        = ~local_cmd_li;
 
-  assign clint_cmd_li   = fifo_v_lo[1] ? fifo_lo[1] : fifo_lo[0];
+  assign cfg_cmd_v_li   = is_cfg_cmd   & |fifo_yumi_li;
   assign clint_cmd_v_li = is_clint_cmd & |fifo_yumi_li;
-
-  assign io_cmd_cast_o  = fifo_v_lo[1] ? fifo_lo[1] : fifo_lo[0];
-  assign io_cmd_v_o     = is_io_cmd & |fifo_yumi_li;
-
-  assign cache_cmd_li   = fifo_v_lo[1] ? fifo_lo[1] : fifo_lo[0];
-  assign cache_cmd_v_li = ~is_clint_cmd & ~is_io_cmd & |fifo_yumi_li;
-
-  assign proc_resp_li[0]   = clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == 1'b0)
-                            ? clint_resp_lo
-                            : io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == 1'b0)
-                              ? io_resp_i 
-                              : cache_resp_lo;
-  assign proc_resp_li[1]   = clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == 1'b1)
-                            ? clint_resp_lo
-                            : io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == 1'b1)
-                              ? io_resp_i
-                              : cache_resp_lo;
-  assign proc_resp_v_li[0] = (clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == 1'b0))
-                            | (cache_resp_v_lo & (cache_resp_lo.header.payload.lce_id == 1'b0))
-                            | (io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == 1'b0));
-  assign proc_resp_v_li[1] = (clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == 1'b1))
-                            | (cache_resp_v_lo & (cache_resp_lo.header.payload.lce_id == 1'b1))
-                            | (io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == 1'b1));
-  assign clint_resp_yumi_li = ((clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == 1'b0)) & proc_resp_yumi_lo[0])
-                            | ((clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == 1'b1)) & proc_resp_yumi_lo[1]);
-  assign io_resp_yumi_o   = ((io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == 1'b0)) & proc_resp_yumi_lo[0])
-                            | ((io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == 1'b1)) & proc_resp_yumi_lo[1]);
-  assign cache_resp_yumi_li = ((cache_resp_v_lo & (cache_resp_lo.header.payload.lce_id == 1'b0)) & proc_resp_yumi_lo[0])
-                              | ((cache_resp_v_lo & (cache_resp_lo.header.payload.lce_id == 1'b1)) & proc_resp_yumi_lo[1]);
+  assign io_cmd_v_o     = is_io_cmd    & |fifo_yumi_li;
+  assign cache_cmd_v_li = is_cache_cmd & |fifo_yumi_li;
 
   if (l2_en_p)
     begin : l2
@@ -395,6 +421,28 @@ module bp_softcore
       assign cache_resp_v_lo = mem_resp_v_i;
       assign mem_resp_yumi_o = cache_resp_yumi_li;
     end
+
+  logic [2:0] cache_resp_match, io_resp_match, clint_resp_match, cfg_resp_match;
+  for (genvar i = 0; i < 3; i++)
+    begin : resp_arb
+      // This is guaranteed to be onehot as long as each UCE can only send 1 request at a time
+      assign cfg_resp_match[i]   = cfg_resp_v_lo & (cfg_resp_lo.header.payload.lce_id == i);
+      assign clint_resp_match[i] = clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == i);
+      assign io_resp_match[i]    = io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == i);
+      assign cache_resp_match[i] = cache_resp_v_lo & (cache_resp_lo.header.payload.lce_id == i);
+      bsg_mux_one_hot
+       #(.width_p($bits(bp_cce_mem_msg_s)), .els_p(4))
+       resp_select
+        (.data_i({cache_resp_lo, io_resp_i, clint_resp_lo, cfg_resp_lo})
+         ,.sel_one_hot_i({cache_resp_match[i], io_resp_match[i], clint_resp_match[i], cfg_resp_match[i]})
+         ,.data_o(proc_resp_li[i])
+         );
+      assign proc_resp_v_li[i] = (cfg_resp_match[i] | clint_resp_match[i] | io_resp_match[i] | cache_resp_match[i]);
+    end
+  assign cfg_resp_yumi_li   = |(cfg_resp_match & proc_resp_yumi_lo);
+  assign clint_resp_yumi_li = |(clint_resp_match & proc_resp_yumi_lo);
+  assign io_resp_yumi_o     = |(io_resp_match & proc_resp_yumi_lo);
+  assign cache_resp_yumi_li = |(cache_resp_match & proc_resp_yumi_lo);
 
 endmodule
 
