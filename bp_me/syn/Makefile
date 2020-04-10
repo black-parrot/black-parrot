@@ -108,9 +108,6 @@ regress.me.sc: dirs.sc
 	$(MAKE) -j 1 build.sc sim.sc TB=bp_cce_fsm NUM_INSTR_P=$(NUM_INSTR_P) PROG=normal
 	$(MAKE) -j 1 build.sc sim.sc TB=bp_cce_fsm NUM_INSTR_P=$(NUM_INSTR_P) SKIP_INIT_P=1 PROG=uncached
 
-#	$(MAKE) -j 1 build.sc sim.sc TB=bp_cce_alu
-#	$(MAKE) -j 1 build.sc sim.sc TB=bp_cce_gad
-
 regress.me.v: dirs.v
 	$(MAKE) -j 1 build.v sim.v TB=bp_cce NUM_INSTR_P=$(NUM_INSTR_P) PROG=normal
 	$(MAKE) -j 1 build.v sim.v TB=bp_cce NUM_INSTR_P=$(NUM_INSTR_P) SKIP_INIT_P=1 PROG=uncached
@@ -119,6 +116,9 @@ regress.me.v: dirs.v
 
 regress: regress.me
 regress.me: lint.me regress.me.sc regress.me.v
+
+regress_full.me.v:
+	./run-me.sh
 
 clean: clean.me
 clean.me:
