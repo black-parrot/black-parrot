@@ -295,7 +295,7 @@ bp_be_pipe_mem
      ,.instr_i(reservation_r.instr)
      ,.rs1_i(reservation_r.rs1)
      ,.rs2_i(reservation_r.rs2)
-     ,.v_i(reservation_r.v & reservation_r.decode.pipe_long_v)
+     ,.v_i(reservation_r.v & reservation_r.decode.pipe_long_v & ~reservation_r.poison)
      ,.ready_o(pipe_long_ready_lo)
 
      ,.flush_i(flush_i)
