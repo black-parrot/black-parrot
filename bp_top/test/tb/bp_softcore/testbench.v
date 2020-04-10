@@ -25,6 +25,7 @@ module testbench
    , parameter cmt_trace_p                 = 0
    , parameter dram_trace_p                = 0
    , parameter npc_trace_p                 = 0
+   , parameter icache_trace_p              = 0
    , parameter dcache_trace_p              = 0
    , parameter vm_trace_p                  = 0
    , parameter preload_mem_p               = 0
@@ -246,28 +247,53 @@ bind bp_be_top
        ,.commit_pkt_i(commit_pkt)
        );
 
-  /*bind bp_be_dcache
-    bp_be_nonsynth_dcache_tracer
-     #(.bp_params_p(bp_params_p))
+  bind bp_be_dcache
+    bp_nonsynth_cache_tracer
+     #(.bp_params_p(bp_params_p)
+      ,.assoc_p(dcache_assoc_p)
+      ,.sets_p(dcache_sets_p)
+      ,.block_width_p(dcache_block_width_p)
+      ,.trace_file_p("dcache"))
      dcache_tracer
       (.clk_i(clk_i & (testbench.dcache_trace_p == 1))
        ,.reset_i(reset_i)
-       ,.freeze_i('0)
-
+       
+       ,.freeze_i(cfg_bus_cast_i.freeze)
        ,.mhartid_i(cfg_bus_cast_i.core_id)
 
+       ,.v_tl_r(v_tl_r)
+       
        ,.v_tv_r(v_tv_r)
-       //,.cache_miss_i(cache_miss_i)
-
-       ,.paddr_tv_r(paddr_tv_r)
-       ,.uncached_tv_r(uncached_tv_r)
-       ,.load_op_tv_r(load_op_tv_r)
-       ,.store_op_tv_r(store_op_tv_r)
-       ,.lr_op_tv_r(lr_op_tv_r)
+       ,.addr_tv_r(paddr_tv_r)
+       ,.lr_miss_tv(lr_miss_tv)
        ,.sc_op_tv_r(sc_op_tv_r)
-       ,.store_data(data_tv_r)
+       ,.sc_success(sc_success)
+        
+       ,.cache_req_v_o(cache_req_v_o)
+       ,.cache_req_o(cache_req_o)
+
+       ,.cache_req_metadata_o(cache_req_metadata_o)
+       ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
+        
+       ,.cache_req_complete_i(cache_req_complete_i)
+
+       ,.v_o(v_o)
        ,.load_data(data_o)
-       );*/
+       ,.cache_miss_o(dcache_miss_o)
+       ,.store_data(data_tv_r)
+
+       ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
+       ,.data_mem_pkt_i(data_mem_pkt_i)
+       ,.data_mem_pkt_ready_o(data_mem_pkt_ready_o)
+       
+       ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
+       ,.tag_mem_pkt_i(tag_mem_pkt_i)
+       ,.tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
+
+       ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
+       ,.stat_mem_pkt_i(stat_mem_pkt_i)
+       ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
+       );
 
   bind bp_be_top
     bp_be_nonsynth_calc_tracer
@@ -303,6 +329,54 @@ bind bp_be_top
 
        ,.priv_mode_i(be_mem.csr.priv_mode_n)
        ,.mpp_i(be_mem.csr.mstatus_n.mpp)
+       );
+
+  bind bp_fe_icache
+    bp_nonsynth_cache_tracer
+     #(.bp_params_p(bp_params_p)
+      ,.assoc_p(icache_assoc_p)
+      ,.sets_p(icache_sets_p)
+      ,.block_width_p(icache_block_width_p)
+      ,.trace_file_p("icache"))
+     dcache_tracer
+      (.clk_i(clk_i & (testbench.icache_trace_p == 1))
+       ,.reset_i(reset_i)
+       
+       ,.freeze_i(cfg_bus_cast_i.freeze)
+       ,.mhartid_i(cfg_bus_cast_i.core_id)
+
+       ,.v_tl_r(v_tl_r)
+       
+       ,.v_tv_r(v_tv_r)
+       ,.addr_tv_r(addr_tv_r)
+       ,.lr_miss_tv(1'b0)
+       ,.sc_op_tv_r(1'b0)
+       ,.sc_success(1'b0)
+        
+       ,.cache_req_v_o(cache_req_v_o)
+       ,.cache_req_o(cache_req_o)
+
+       ,.cache_req_metadata_o(cache_req_metadata_o)
+       ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
+        
+       ,.cache_req_complete_i(cache_req_complete_i)
+
+       ,.v_o(data_v_o)
+       ,.load_data(dword_width_p'(data_o))
+       ,.cache_miss_o(miss_o)
+       ,.store_data(dword_width_p'(0))
+
+       ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
+       ,.data_mem_pkt_i(data_mem_pkt_i)
+       ,.data_mem_pkt_ready_o(data_mem_pkt_ready_o)
+       
+       ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
+       ,.tag_mem_pkt_i(tag_mem_pkt_i)
+       ,.tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
+
+       ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
+       ,.stat_mem_pkt_i(stat_mem_pkt_i)
+       ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
        );
 
   bind bp_core_minimal

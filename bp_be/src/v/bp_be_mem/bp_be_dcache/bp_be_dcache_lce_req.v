@@ -28,16 +28,20 @@ module bp_be_dcache_lce_req
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
      
-    , localparam block_size_in_words_lp=lce_assoc_p
-    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p>>3)
-    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
-    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
-    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(lce_assoc_p)
-    , localparam data_mask_width_lp=(dword_width_p>>3)
-    , localparam index_width_lp=`BSG_SAFE_CLOG2(lce_sets_p)
-    , localparam tag_width_lp=(paddr_width_p-block_offset_width_lp-index_width_lp)
+    , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+    , localparam block_size_in_words_lp = dcache_assoc_p
+    , localparam bank_width_lp = dcache_block_width_p / dcache_assoc_p
+    , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
+    , localparam bypass_data_mask_width_lp = (dword_width_p >> 3)
+    , localparam data_mem_mask_width_lp = (bank_width_lp >> 3)
+    , localparam byte_offset_width_lp = `BSG_SAFE_CLOG2(bank_width_lp>>3)
+    , localparam word_offset_width_lp = `BSG_SAFE_CLOG2(block_size_in_words_lp)
+    , localparam block_offset_width_lp = (word_offset_width_lp+byte_offset_width_lp)
+    , localparam index_width_lp = `BSG_SAFE_CLOG2(dcache_sets_p)
+    , localparam ptag_width_lp = (paddr_width_p-bp_page_offset_width_gp)
+    , localparam way_id_width_lp = `BSG_SAFE_CLOG2(dcache_assoc_p)
 
     , parameter timeout_max_limit_p=4
 
@@ -48,10 +52,10 @@ module bp_be_dcache_lce_req
 
     , input [lce_id_width_p-1:0] lce_id_i
 
-    , input [cache_req_width_lp-1:0] cache_req_i
+    , input [dcache_req_width_lp-1:0] cache_req_i
     , input cache_req_v_i
     , output logic cache_req_ready_o
-    , input [cache_req_metadata_width_lp-1:0] cache_req_metadata_i
+    , input [dcache_req_metadata_width_lp-1:0] cache_req_metadata_i
     , input cache_req_metadata_v_i
 
     , output logic [paddr_width_p-1:0] miss_addr_o
@@ -75,7 +79,7 @@ module bp_be_dcache_lce_req
   // casting struct
   //
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache);
 
   bp_lce_cce_req_s lce_req;
   bp_lce_cce_resp_s lce_resp;
@@ -83,15 +87,15 @@ module bp_be_dcache_lce_req
   assign lce_req_o = lce_req;
   assign lce_resp_o = lce_resp;
 
-  bp_cache_req_s cache_req_cast_li;
-  bp_cache_req_metadata_s cache_req_metadata_cast_li;
+  bp_dcache_req_s cache_req_cast_li;
+  bp_dcache_req_metadata_s cache_req_metadata_cast_li;
 
   assign cache_req_cast_li = cache_req_i;
   assign cache_req_metadata_cast_li = cache_req_metadata_i;
 
-  bp_cache_req_metadata_s cache_req_metadata_r;
+  bp_dcache_req_metadata_s cache_req_metadata_r;
   bsg_dff_en_bypass
-   #(.width_p($bits(bp_cache_req_metadata_s)))
+   #(.width_p($bits(bp_dcache_req_metadata_s)))
    metadata_reg
     (.clk_i(clk_i)
 
@@ -234,7 +238,7 @@ module bp_be_dcache_lce_req
         lce_req_v_o = lce_req_ready_i & cache_req_metadata_v_r;
 
         lce_req.header.lru_dirty = bp_lce_cce_lru_dirty_e'(cache_req_metadata_r.dirty);
-        lce_req.header.lru_way_id = cache_req_metadata_r.repl_way;
+        lce_req.header.lru_way_id = lce_assoc_p'(cache_req_metadata_r.repl_way);
         lce_req.header.non_exclusive = e_lce_req_excl;
 
         lce_req.header.addr = miss_addr_r;
