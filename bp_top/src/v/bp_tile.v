@@ -143,7 +143,7 @@ bp_cfg_buffered
    ,.cce_ucode_data_i(cfg_cce_ucode_data_li)
    );
 
-bp_clint_slice_buffered
+bp_clint_slice
  #(.bp_params_p(bp_params_p))
  clint
   (.clk_i(clk_i)

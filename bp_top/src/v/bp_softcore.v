@@ -276,7 +276,7 @@ module bp_softcore
     ,.mem_resp_yumi_o(proc_resp_yumi_lo[0])
     );
 
-  bp_clint_slice_buffered
+  bp_clint_slice
    #(.bp_params_p(bp_params_p))
    clint
     (.clk_i(clk_i)
