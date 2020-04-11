@@ -44,9 +44,6 @@ verilator_build: systemc
 
 gnu_build:
 	cd $(gnu_dir); \
-		git apply $(BP_EXTERNAL_DIR)/newlib.patch; \
-		git submodule sync; \
-		git submodule update --remote riscv-newlib; \
 		./configure --prefix=$(BP_EXTERNAL_DIR) --with-arch=rv64ima --with-abi=lp64 --with-cmodel=medany 
 	$(MAKE) -C $(gnu_dir)
 	$(MAKE) -C $(gnu_dir) install
