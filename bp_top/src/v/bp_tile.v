@@ -118,7 +118,7 @@ logic [vaddr_width_p-1:0] cfg_npc_data_li;
 logic [dword_width_p-1:0] cfg_csr_data_li;
 logic [1:0]               cfg_priv_data_li;
 logic [cce_instr_width_p-1:0] cfg_cce_ucode_data_li;
-bp_cfg_buffered
+bp_cfg
  #(.bp_params_p(bp_params_p))
  cfg
   (.clk_i(clk_i)

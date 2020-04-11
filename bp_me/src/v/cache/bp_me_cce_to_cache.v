@@ -261,7 +261,7 @@ module bp_me_cce_to_cache
   end
 
   logic mem_resp_v_lo, mem_resp_yumi_li;
-  bsg_two_fifo
+  bsg_one_fifo
    #(.width_p(cce_mem_msg_width_lp-cce_block_width_p))
    resp_fifo
     (.clk_i(clk_i)

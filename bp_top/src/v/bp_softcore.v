@@ -295,7 +295,7 @@ module bp_softcore
      ,.external_irq_o(external_irq_li)
      );
 
-  bp_cfg_buffered
+  bp_cfg
    #(.bp_params_p(bp_params_p))
    cfg
     (.clk_i(clk_i)
