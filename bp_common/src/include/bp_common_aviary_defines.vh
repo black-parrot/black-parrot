@@ -136,6 +136,7 @@ typedef struct packed
   integer l2_en;
   integer l2_sets;
   integer l2_assoc;
+  integer l2_outstanding_reqs;
 
   integer fe_queue_fifo_els;
   integer fe_cmd_fifo_els;
@@ -255,6 +256,7 @@ typedef struct packed
   , localparam l2_en_p    = proc_param_lp.l2_en                                                    \
   , localparam l2_sets_p  = proc_param_lp.l2_sets                                                  \
   , localparam l2_assoc_p = proc_param_lp.l2_assoc                                                 \
+  , localparam l2_outstanding_reqs_p = proc_param_lp.l2_outstanding_reqs                           \
                                                                                                    \
   , localparam fe_queue_fifo_els_p = proc_param_lp.fe_queue_fifo_els                               \
   , localparam fe_cmd_fifo_els_p   = proc_param_lp.fe_cmd_fifo_els                                 \

@@ -85,8 +85,8 @@ module bp_me_cce_to_cache
   logic mem_cmd_ready_lo;
   bp_cce_mem_msg_s mem_cmd_lo;
   logic mem_cmd_v_lo, mem_cmd_yumi_li;
-  bsg_two_fifo
-   #(.width_p(cce_mem_msg_width_lp))
+  bsg_fifo_1r1w_small
+   #(.width_p(cce_mem_msg_width_lp), .els_p(l2_outstanding_reqs_p))
    cmd_fifo
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -260,8 +260,9 @@ module bp_me_cce_to_cache
     end
   end
 
+  logic mem_resp_ready_li;
   logic mem_resp_v_lo, mem_resp_yumi_li;
-  bsg_one_fifo
+  bsg_two_fifo
    #(.width_p(cce_mem_msg_width_lp-cce_block_width_p))
    resp_fifo
     (.clk_i(clk_i)
@@ -269,7 +270,7 @@ module bp_me_cce_to_cache
 
      ,.data_i(mem_cmd_lo.header)
      ,.v_i(mem_cmd_yumi_li)
-     ,.ready_o(/* Resp fifo will never fill before cmd fifo */)
+     ,.ready_o(mem_resp_ready_li)
 
      ,.data_o(mem_resp_cast_o.header)
      ,.v_o(mem_resp_v_lo)
@@ -313,7 +314,7 @@ module bp_me_cce_to_cache
           end
       end
       RESP_RECEIVE: begin
-        if (v_i)
+        if (v_i & mem_resp_ready_li)
           begin
             yumi_o = 1'b1;
             resp_data_n = data_i;
