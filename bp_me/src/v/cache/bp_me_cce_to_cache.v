@@ -270,24 +270,16 @@ module bp_me_cce_to_cache
     end
   end
 
-  logic mem_resp_ready_li;
-  logic mem_resp_v_lo, mem_resp_yumi_li;
-  bsg_two_fifo
+  bsg_dff_en
    #(.width_p(cce_mem_msg_width_lp-cce_block_width_p))
-   resp_fifo
+   resp_header_reg
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     ,.en_i(mem_cmd_yumi_li)
 
      ,.data_i(mem_cmd_lo.header)
-     ,.v_i(mem_cmd_yumi_li)
-     ,.ready_o(mem_resp_ready_li)
-
      ,.data_o(mem_resp_cast_o.header)
-     ,.v_o(mem_resp_v_lo)
-     ,.yumi_i(mem_resp_yumi_li)
      );
   assign mem_resp_cast_o.data = resp_data_r;
-  assign mem_resp_yumi_li = mem_resp_yumi_i;
 
   always_comb begin
     yumi_o = 1'b0;
@@ -324,7 +316,7 @@ module bp_me_cce_to_cache
           end
       end
       RESP_RECEIVE: begin
-        if (v_i & mem_resp_ready_li)
+        if (v_i)
           begin
             yumi_o = 1'b1;
             resp_data_n = data_i;
