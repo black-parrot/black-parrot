@@ -43,8 +43,8 @@ class BloodGraph:
     # for generating the key
     _KEY_WIDTH  = 512
     _KEY_HEIGHT = 512
-    _DEFAULT_START_CYCLE = 50000 
-    _DEFAULT_END_CYCLE   = 250000
+    _DEFAULT_START_CYCLE = 0 # 50000 
+    _DEFAULT_END_CYCLE   = 10
 
     # default constructor
     def __init__(self, timing_stats_file, abstract):
@@ -306,6 +306,9 @@ class BloodGraph:
                 trace["operation"] = row["operation"]
                 trace["cycle"] = int(row["cycle"])
                 traces.append(trace)
+
+        self.start_cycle = traces[0]["cycle"]
+        self.end_cycle   = traces[-1]["cycle"]
   
         # get tile-group dim
         self.__get_tg_dim(traces)
@@ -370,7 +373,7 @@ class BloodGraph:
     # initialize image
     def __init_image(self):
         self.img_width = 512 # default
-        self.img_height = (((self.end_cycle-self.start_cycle)+self.img_width)//self.img_width)*(2+(self.xdim*self.ydim))
+        self.img_height = (((self.end_cycle-self.start_cycle)+self.img_width)//self.img_width)  # *(2+(self.xdim*self.ydim))
         self.img = Image.new("RGB", (self.img_width, self.img_height), "black")
         self.pixel = self.img.load()
         return  
