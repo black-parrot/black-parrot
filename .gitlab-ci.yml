@@ -61,11 +61,7 @@ update-cache: &update-cache-manual
     - git submodule deinit -f .
     - git submodule sync
     - make prep -j $CI_CORES > make_prep.log
-<<<<<<< HEAD
     - make tidy_tools > make_tidy_tools.log
-=======
-    - make -C bp_common/test riscvdv > make_riscvdv.log
->>>>>>> Cleaning up submodules and simplifying build process for tools
   cache:
     key: $CI_COMMIT_REF_SLUG
     paths:
@@ -115,13 +111,8 @@ update-cache: &update-cache-manual
     - top_dev
     - sw_dev
   before_script:
-<<<<<<< HEAD
     - echo "Forcefully updating submodules"
     - git submodule update --init --force
-=======
-    - echo "Updating libraries"
-    - make libs > make_libs.log
->>>>>>> Cleaning up submodules and simplifying build process for tools
     - echo "Making CCE ucode"
     - make ucode > make_ucode.log
   artifacts:
