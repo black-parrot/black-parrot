@@ -121,7 +121,7 @@ sim.sc: dirs.sc
 	-@cp $(CCE_MEM_PATH)/$(CCE_MEM) $(SIM_DIR)/cce_ucode.mem
 	-cd $(SIM_DIR); ./simsc | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
-	-@grep "PASS" -A 9 $(SIM_LOG) > $(SIM_REPORT)
+	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
 
 regress_riscv.sc: $(RV64_REGRESSION_SC) 
 $(RV64_REGRESSION_SC):
