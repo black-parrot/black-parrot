@@ -57,7 +57,7 @@ Each testbench supports a set of actions which act upon that specific testbench.
 - lint (lints the DUT of a single testbench)
 - build (builds a single testbench)
 - sim (runs a single test)
-- blood (generates bloodgraph based on stall information)
+- blood (generates bloodgraph based on stall information; you must build and run with CORE_PROFILE_P=1)
 - check_design (checks for DC elaborability, which is a proxy for synthesizability)
 - regress (runs a suite of tests. This target is only defined for select testbenches)
 
