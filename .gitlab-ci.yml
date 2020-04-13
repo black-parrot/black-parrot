@@ -77,6 +77,29 @@ update-cache: &update-cache-manual
       - $CI_PROJECT_DIR/external/touchfiles
     policy: push
 
+update-cache: &update-cache-manual
+  when: manual
+  stage: manual
+  tags:
+    - bsg
+  script:
+    - git submodule deinit -f .
+    - git submodule sync
+    - make prep -j $CI_CORES > make_prep.log
+    - make tidy_tools > make_tidy_tools.log
+  cache:
+    key: $CI_COMMIT_REF_SLUG
+    paths:
+      - $CI_PROJECT_DIR/bp_common/test/mem
+      - $CI_PROJECT_DIR/external/bin
+      - $CI_PROJECT_DIR/external/lib
+      - $CI_PROJECT_DIR/external/lib64
+      - $CI_PROJECT_DIR/external/lib-linux64
+      - $CI_PROJECT_DIR/external/include
+      - $CI_PROJECT_DIR/external/share
+      - $CI_PROJECT_DIR/external/touchfiles
+    policy: push
+
 .job_template: &job_definition
   only:
     - master
