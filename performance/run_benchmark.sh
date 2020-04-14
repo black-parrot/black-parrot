@@ -44,6 +44,7 @@ parallel --jobs $N --results logs --progress "$cmd_base PROG={}" ::: "${checkpoi
 
 echo "Extracting results" | tee -a $BENCH.log
 for c in ${checkpoints[@]}; do
+    echo checkpoint ${c}: | sed "s/${BENCH}.dromajo.//g" >> reports/${BENCH}.rpt
     grep "mIPC" $TOP/bp_top/syn/reports/vcs/bp_softcore.e_bp_softcore_cfg.sim.${c}.rpt \
         | sed "s/ //g" | sed "s/\t//g" | sed "s/:/ /g" >> reports/${BENCH}.rpt
 
@@ -54,6 +55,6 @@ done
 
 echo "Averaging mIPC" | tee -a $BENCH.log
 echo -n "Average IPC: " >> reports/${BENCH}.rpt | tee -a $BENCH.log
-awk '{x+=$2} END {print x/(1000*(NR-1))}' reports/${BENCH}.rpt >> reports/${BENCH}.rpt
+grep "mIPC" reports/${BENCH}.rpt | awk '{x+=$2; n+=1} END {print x/(1000*(n))}' >> reports/${BENCH}.rpt
 
 echo "${BENCH} Completed!! Average IPC: $(tail -n 1 reports/${BENCH}.rpt)" | tee -a $BENCH.log
