@@ -13,7 +13,7 @@ RISCV_TARGET   = riscv64-unknown-elf-dramfs
 CROSS_COMPILE  = $(RISCV_TARGET)-
 
 RISCV_SIM      = spike
-RISCV_OBJDUMP  = $(CROSS_COMPILE)objdump -d
+RISCV_OBJDUMP  = $(CROSS_COMPILE)objdump -D
 RISCV_OBJCOPY  = $(CROSS_COMPILE)objcopy
 DROMAJO        = dromajo
 
