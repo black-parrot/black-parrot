@@ -58,7 +58,9 @@ module bp_be_calculator_top
   , output [mmu_cmd_width_lp-1:0]       mmu_cmd_o
   , output                              mmu_cmd_v_o
   , input                               mmu_cmd_ready_i
-   
+ 
+  , input [dword_width_p-1:0]           early_data_i
+
   , output [csr_cmd_width_lp-1:0]       csr_cmd_o
   , output                              csr_cmd_v_o
   , input                               csr_cmd_ready_i
@@ -321,6 +323,7 @@ bsg_dff
 assign pipe_fp_data_lo_v  = calc_stage_r[4].pipe_fp_v;
 assign pipe_mul_data_lo_v = calc_stage_r[3].pipe_mul_v;
 assign pipe_mem_data_lo_v = calc_stage_r[2].pipe_mem_v;
+assign early_data_lo_v    = calc_stage_r[1].pipe_mem_v;
 assign pipe_int_data_lo_v = calc_stage_r[0].pipe_int_v;
 
 assign pipe_nop_data_lo = '0;
@@ -330,7 +333,7 @@ always_comb
     // TODO: Add fflags
     comp_stage_n[0] =                      '{data: pipe_nop_data_lo};
     comp_stage_n[1] = pipe_int_data_lo_v ? '{data: pipe_int_data_lo} : comp_stage_r[0];
-    comp_stage_n[2] = comp_stage_r[1];
+    comp_stage_n[2] = early_data_lo_v    ? '{data: early_data_i    } : comp_stage_r[1];
     comp_stage_n[3] = pipe_mem_data_lo_v ? '{data: pipe_mem_data_lo} : comp_stage_r[2];
     comp_stage_n[4] = pipe_mul_data_lo_v ? '{data: pipe_mul_data_lo} : comp_stage_r[3];
     comp_stage_n[5] = pipe_fp_data_lo_v  ? '{data: pipe_fp_data_lo } : comp_stage_r[4];

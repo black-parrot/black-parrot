@@ -183,6 +183,7 @@ bp_be_checker_top
    ,.wb_pkt_i(wb_pkt)
    );
 
+logic [dword_width_p-1:0] early_data_lo;
 bp_be_calculator_top 
  #(.bp_params_p(bp_params_p))
  be_calculator
@@ -198,6 +199,8 @@ bp_be_calculator_top
    ,.mmu_cmd_o(mmu_cmd)
    ,.mmu_cmd_v_o(mmu_cmd_v)
    ,.mmu_cmd_ready_i(mmu_cmd_rdy)
+
+   ,.early_data_i(early_data_lo)
 
    ,.csr_cmd_o(csr_cmd)
    ,.csr_cmd_v_o(csr_cmd_v)
@@ -230,6 +233,8 @@ bp_be_mem_top
     ,.csr_cmd_i(csr_cmd)
     ,.csr_cmd_v_i(csr_cmd_v)
     ,.csr_cmd_ready_o(csr_cmd_rdy)
+
+    ,.early_data_o(early_data_lo)
 
     ,.mem_resp_o(mem_resp)
     ,.mem_resp_v_o(mem_resp_v)
