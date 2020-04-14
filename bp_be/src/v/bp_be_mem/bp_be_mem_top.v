@@ -65,6 +65,8 @@ module bp_be_mem_top
 
    , input                                   chk_poison_ex_i
 
+   , output [dword_width_p-1:0]              early_data_o
+
    , output [mem_resp_width_lp-1:0]          mem_resp_o
    , output                                  mem_resp_v_o
    , input                                   mem_resp_ready_i
@@ -394,6 +396,7 @@ bp_be_dcache
     ,.store_op_tl_o(store_op_tl_lo)
     ,.poison_i(dcache_poison)
 
+    ,.early_data_o(early_data_o)
 
     // D$-LCE Interface
     ,.dcache_miss_o(dcache_miss_lo)

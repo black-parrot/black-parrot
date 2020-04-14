@@ -104,16 +104,16 @@ always_comb
 
     // Detect integer and float data hazards for EX2
     irs1_data_haz_v[1] = (isd_status_cast_i.isd_irs1_v & rs1_match_vector[1])
-                         & (dep_status_li[1].mul_iwb_v | dep_status_li[1].mem_iwb_v);
+                         & (dep_status_li[1].mul_iwb_v);
 
     irs2_data_haz_v[1] = (isd_status_cast_i.isd_irs2_v & rs2_match_vector[1])
-                         & (dep_status_li[1].mul_iwb_v | dep_status_li[1].mem_iwb_v);
+                         & (dep_status_li[1].mul_iwb_v);
 
     frs1_data_haz_v[1] = (isd_status_cast_i.isd_frs1_v & rs1_match_vector[1])
-                         & (dep_status_li[1].mem_fwb_v | dep_status_li[1].fp_fwb_v);
+                         & (dep_status_li[1].fp_fwb_v);
 
     frs2_data_haz_v[1] = (isd_status_cast_i.isd_frs2_v & rs2_match_vector[1])
-                         & (dep_status_li[1].mem_fwb_v | dep_status_li[1].fp_fwb_v);
+                         & (dep_status_li[1].fp_fwb_v);
 
     irs1_data_haz_v[2] = (isd_status_cast_i.isd_irs1_v & rs1_match_vector[2])
                          & (dep_status_li[2].mul_iwb_v);
