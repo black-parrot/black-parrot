@@ -1,18 +1,15 @@
 #!/bin/usr/python
 
-import sys, getopt
 from trace_gen import TraceGen
 
 def main():
-  
+
   tracer = TraceGen(28, 12, 4, 64)
   
   # Store/Load double word test
   file = open("test_sd_ld.tr", "w")
 
   file.write(tracer.print_header())
-  file.write(tracer.print_comment("Wait for SYNC"))
-  file.write(tracer.wait(65))
   file.write(tracer.print_comment("Store to address - 0, 8, 16, 24, 32, 40, 48, 56"))
   for i in range(8, 72, 8):
     file.write(tracer.send_store(8, i-8, 0, False, i))
@@ -32,8 +29,6 @@ def main():
   file = open("test_sb_lb.tr", "w")
 
   file.write(tracer.print_header())
-  file.write(tracer.print_comment("Wait for SYNC"))
-  file.write(tracer.wait(65))
   file.write(tracer.print_comment("Store byte to address 64"))
   file.write(tracer.send_store(1, 64, 0, False, 170))
   file.write(tracer.recv_data(0))
@@ -55,8 +50,6 @@ def main():
 
   file.write(tracer.print_header())
   file.write(tracer.print_comment("Store halfword to address 128"))
-  file.write(tracer.print_comment("Wait for SYNC"))
-  file.write(tracer.wait(65))
   file.write(tracer.send_store(2, 128, 0, False, 43690))
   file.write(tracer.recv_data(0))
   file.write(tracer.print_comment("Load signed halfword from address 128"))
@@ -76,8 +69,6 @@ def main():
   file = open("test_sw_lw.tr", "w")
 
   file.write(tracer.print_header())
-  file.write(tracer.print_comment("Wait for SYNC"))
-  file.write(tracer.wait(65))
   file.write(tracer.print_comment("Store word to address 192"))
   file.write(tracer.send_store(4, 192, 0, False, 2863311530))
   file.write(tracer.recv_data(0))
@@ -98,8 +89,6 @@ def main():
   file = open("test_wb.tr", "w")
 
   file.write(tracer.print_header())
-  file.write(tracer.print_comment("Wait for SYNC"))
-  file.write(tracer.wait(65))
   file.write(tracer.print_comment("Store to address - 256, 4352, 8448, 12544, 16640, 20736, 24832, 28928"))
   for i in range(8, 72, 8):
     temp_ptag = ((i-1) >> 3)
@@ -135,8 +124,6 @@ def main():
   file = open("test_uncached.tr", "w")
   
   file.write(tracer.print_header())
-  file.write(tracer.print_comment("Wait for SYNC"))
-  file.write(tracer.wait(65))
   file.write(tracer.print_comment("Store to address 320 in uncached mode"))
   file.write(tracer.send_store(8, 320, 0, True, 320))
   file.write(tracer.recv_data(0))
@@ -150,8 +137,6 @@ def main():
   file = open("test_unaligned.tr", "w")
 
   file.write(tracer.print_header())
-  file.write(tracer.print_comment("Wait for SYNC"))
-  file.write(tracer.wait(65))
   file.write(tracer.print_comment("Store byte to address - 7"))
   file.write(tracer.send_store(1, 7, 0, False, 255))
   file.write(tracer.recv_data(0))

@@ -15,9 +15,7 @@ def main():
     temp_vaddr = (1 << 31) | i
     temp_ptag = (1<<19)
     file.write(tracer.send_load(temp_vaddr, temp_ptag, False))
-    file.write(tracer.nop())
     file.write(tracer.recv_data(i))
-    file.write(tracer.nop())
 
   file.write(tracer.test_finish())
   file.close()
@@ -30,7 +28,6 @@ def main():
   temp_vaddr = (1 << 31) | 36
   temp_ptag = (1 << 19)
   file.write(tracer.send_load(temp_vaddr, temp_ptag, True))
-  file.write(tracer.nop())
   file.write(tracer.recv_data(36))
 
   file.write(tracer.test_finish())
@@ -38,3 +35,4 @@ def main():
 
 if __name__ == "__main__":
   main()
+  

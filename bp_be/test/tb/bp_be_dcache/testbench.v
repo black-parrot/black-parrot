@@ -22,6 +22,8 @@ module testbench
    , parameter dcache_trace_p              = 0
    , parameter preload_mem_p               = 0
    , parameter random_yumi_p               = 0
+   , parameter uce_p                       = 1
+   , parameter writethrough_p              = 0
 
    , parameter mem_zero_p         = 1
    , parameter mem_load_p         = preload_mem_p
@@ -64,7 +66,7 @@ module testbench
   assign cfg_bus_li = cfg_bus_cast_li;
 
   logic mem_cmd_v_lo, mem_resp_v_lo;
-  logic mem_cmd_ready_lo, mem_resp_ready_lo;
+  logic mem_cmd_ready_lo, mem_resp_yumi_lo;
   logic [cce_mem_msg_width_lp-1:0] mem_cmd_lo, mem_resp_lo;
  
   logic [trace_replay_data_width_lp-1:0] trace_data_lo;
@@ -93,7 +95,19 @@ module testbench
     cfg_bus_cast_li.dcache_mode = e_lce_mode_normal;
     cfg_bus_cast_li.cce_mode = e_cce_mode_normal;
   end
- 
+
+  logic [15:0] counter;
+  always_ff @(posedge clk_i) begin
+    if(reset_i)
+      counter <= '0;
+    else
+      counter <= counter + 1'b1;
+  end
+  always_comb begin
+    if(counter == 16'd65535)
+      $finish;
+  end
+
   // Trace Replay
   bsg_trace_replay
     #(.payload_width_p(trace_replay_data_width_lp)
@@ -170,7 +184,8 @@ module testbench
 
   // Subsystem Under Test
   wrapper
-    #(.bp_params_p(bp_params_p))
+    #(.bp_params_p(bp_params_p)
+     ,.uce_p(uce_p))
     wrapper
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -190,11 +205,11 @@ module testbench
  
     ,.mem_resp_v_i(mem_resp_v_lo)
     ,.mem_resp_i(mem_resp_lo)
-    ,.mem_resp_ready_o(mem_resp_ready_lo)
+    ,.mem_resp_yumi_o(mem_resp_yumi_lo)
 
     ,.mem_cmd_v_o(mem_cmd_v_lo)
     ,.mem_cmd_o(mem_cmd_lo)
-    ,.mem_cmd_yumi_i(mem_cmd_v_lo & mem_cmd_ready_lo)
+    ,.mem_cmd_ready_i(mem_cmd_ready_lo)
     );
 
   // Memory
@@ -226,7 +241,7 @@ module testbench
  
     ,.mem_resp_o(mem_resp_lo)
     ,.mem_resp_v_o(mem_resp_v_lo)
-    ,.mem_resp_yumi_i(mem_resp_v_lo & mem_resp_ready_lo)
+    ,.mem_resp_yumi_i(mem_resp_yumi_lo)
     );
 
   // Tracers
@@ -276,40 +291,42 @@ module testbench
        ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
        );
 
-  bind bp_cce_fsm
-    bp_me_nonsynth_cce_tracer
-      #(.bp_params_p(bp_params_p))
-      bp_cce_tracer
-       (.clk_i(clk_i & (testbench.cce_trace_p == 1))
-        ,.reset_i(reset_i)
-        
-        ,.freeze_i(bp_cce_fsm.cfg_bus_cast_i.freeze)
-        ,.cce_id_i(bp_cce_fsm.cfg_bus_cast_i.cce_id)
-  
-        // To CCE
-        ,.lce_req_i(lce_req_i)
-        ,.lce_req_v_i(lce_req_v_i)
-        ,.lce_req_yumi_i(lce_req_yumi_o)
+  if (uce_p == 0) begin
+    bind bp_cce_fsm
+      bp_me_nonsynth_cce_tracer
+        #(.bp_params_p(bp_params_p))
+        bp_cce_tracer
+         (.clk_i(clk_i & (testbench.cce_trace_p == 1))
+          ,.reset_i(reset_i)
+          
+          ,.freeze_i(cfg_bus_cast_i.freeze)
+          ,.cce_id_i(cfg_bus_cast_i.cce_id)
+    
+          // To CCE
+          ,.lce_req_i(lce_req_i)
+          ,.lce_req_v_i(lce_req_v_i)
+          ,.lce_req_yumi_i(lce_req_yumi_o)
 
-        ,.lce_resp_i(lce_resp_i)
-        ,.lce_resp_v_i(lce_resp_v_i)
-        ,.lce_resp_yumi_i(lce_resp_yumi_o)
-  
-        // From CCE
-        ,.lce_cmd_i(lce_cmd_o)
-        ,.lce_cmd_v_i(lce_cmd_v_o)
-        ,.lce_cmd_ready_i(lce_cmd_ready_i)
-  
-        // To CCE
-        ,.mem_resp_i(mem_resp_i)
-        ,.mem_resp_v_i(mem_resp_v_i)
-        ,.mem_resp_yumi_i(mem_resp_yumi_o)
-  
-        // From CCE
-        ,.mem_cmd_i(mem_cmd_o)
-        ,.mem_cmd_v_i(mem_cmd_v_o)
-        ,.mem_cmd_ready_i(mem_cmd_ready_i)
-        );
+          ,.lce_resp_i(lce_resp_i)
+          ,.lce_resp_v_i(lce_resp_v_i)
+          ,.lce_resp_yumi_i(lce_resp_yumi_o)
+    
+          // From CCE
+          ,.lce_cmd_i(lce_cmd_o)
+          ,.lce_cmd_v_i(lce_cmd_v_o)
+          ,.lce_cmd_ready_i(lce_cmd_ready_i)
+    
+          // To CCE
+          ,.mem_resp_i(mem_resp_i)
+          ,.mem_resp_v_i(mem_resp_v_i)
+          ,.mem_resp_yumi_i(mem_resp_yumi_o)
+    
+          // From CCE
+          ,.mem_cmd_i(mem_cmd_o)
+          ,.mem_cmd_v_i(mem_cmd_v_o)
+          ,.mem_cmd_ready_i(mem_cmd_ready_i)
+          );
+  end
 
   bp_mem_nonsynth_tracer
    #(.bp_params_p(bp_params_p))
@@ -323,7 +340,13 @@ module testbench
 
      ,.mem_resp_i(mem_resp_lo)
      ,.mem_resp_v_i(mem_resp_v_lo)
-     ,.mem_resp_yumi_i(mem_resp_v_lo & mem_resp_ready_lo)
+     ,.mem_resp_yumi_i(mem_resp_yumi_lo)
      );
+  
+  // Assertions
+  if(uce_p == 0 && writethrough_p == 1)
+    $error("Writethrough cache with CCE not yet supported");
+  if(cce_block_width_p != dcache_block_width_p)
+    $error("Memory fetch block width does not match D$ block width");
 
 endmodule
