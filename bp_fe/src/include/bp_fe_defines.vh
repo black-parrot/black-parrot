@@ -55,6 +55,7 @@ typedef enum logic [3:0]
   {                                 \
     logic v;                        \
     logic pred_taken;               \
+    logic btb;                      \
                                     \
     logic [vaddr_width_p-1:0] pc;   \
   }  bp_fe_pc_gen_stage_s
@@ -66,7 +67,7 @@ typedef enum logic [3:0]
   (1 + btb_tag_width_mp + btb_idx_width_mp + bht_idx_width_mp + ras_idx_width_mp)
 
 `define bp_fe_pc_gen_stage_width(vaddr_width_mp) \
-  (2 + vaddr_width_mp)
+  (3 + vaddr_width_mp)
 
 `endif
 

@@ -189,6 +189,7 @@ always_comb
   begin
     pc_gen_stage_n[0].v          = fetch_v;
     pc_gen_stage_n[0].pred_taken = ovr_taken;
+    pc_gen_stage_n[0].btb        = '0;
 
     // Next PC calculation
     // load boot pc on reset command
@@ -213,6 +214,7 @@ always_comb
     pc_gen_stage_n[1]             = pc_gen_stage_r[0];
     pc_gen_stage_n[1].v          &= ~flush & ~(ovr_taken || ovr_ntaken);
     pc_gen_stage_n[1].pred_taken |= btb_br_tgt_v_lo;
+    pc_gen_stage_n[1].btb         = btb_br_tgt_v_lo;
   end
 
 bsg_dff_reset
@@ -312,8 +314,8 @@ bp_fe_instr_scan
 wire is_br        = mem_resp_v_i & (scan_instr.scan_class == e_rvi_branch);
 wire is_jal       = mem_resp_v_i & (scan_instr.scan_class == e_rvi_jal);
 wire is_jalr      = mem_resp_v_i & (scan_instr.scan_class == e_rvi_jalr);
-assign ovr_taken  = pc_gen_stage_r[1].v & ~btb_br_tgt_v_lo & ((is_br &  bht_pred_lo) | is_jal);
-assign ovr_ntaken = pc_gen_stage_r[1].v &  btb_br_tgt_v_lo &  (is_br & ~bht_pred_lo);
+assign ovr_taken  = pc_gen_stage_r[1].v & ~pc_gen_stage_r[1].btb & ((is_br &  bht_pred_lo) | is_jal);
+assign ovr_ntaken = pc_gen_stage_r[1].v &  pc_gen_stage_r[1].btb &  (is_br & ~bht_pred_lo);
 assign br_target  = pc_gen_stage_r[1].pc + scan_instr.imm;
 
 // We can't fetch from wait state, only run and coming out of stall.
