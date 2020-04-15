@@ -1,0 +1,7 @@
+double_word_test
+word_test
+half_word_test
+byte_test
+writeback_test
+uncached_test
+unaligned_test

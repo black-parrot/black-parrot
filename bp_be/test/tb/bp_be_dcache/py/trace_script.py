@@ -1,13 +1,16 @@
 #!/bin/usr/python
 
+import sys
 from trace_gen import TraceGen
 
 def main():
 
   tracer = TraceGen(28, 12, 4, 64)
-  
+  filepath = sys.argv[1] + "/" + sys.argv[2] + "/py/"
+
   # Store/Load double word test
-  file = open("test_sd_ld.tr", "w")
+  filename = filepath + "test_sd_ld.tr"
+  file = open(filename, "w")
 
   file.write(tracer.print_header())
   file.write(tracer.print_comment("Store to address - 0, 8, 16, 24, 32, 40, 48, 56"))
@@ -26,7 +29,8 @@ def main():
   file.close()
 
   # Store/Load byte test (signed and unsigned)
-  file = open("test_sb_lb.tr", "w")
+  filename = filepath + "test_sb_lb.tr"
+  file = open(filename, "w")
 
   file.write(tracer.print_header())
   file.write(tracer.print_comment("Store byte to address 64"))
@@ -46,7 +50,8 @@ def main():
   file.close()
 
   # Store/Load halfword test (signed and unsigned)
-  file = open("test_sh_lh.tr", "w")
+  filename = filepath + "test_sh_lh.tr"
+  file = open(filename, "w")
 
   file.write(tracer.print_header())
   file.write(tracer.print_comment("Store halfword to address 128"))
@@ -66,7 +71,8 @@ def main():
   file.close()
 
   # Store/Load word test (signed and unsigned)
-  file = open("test_sw_lw.tr", "w")
+  filename = filepath + "test_sw_lw.tr"
+  file = open(filename, "w")
 
   file.write(tracer.print_header())
   file.write(tracer.print_comment("Store word to address 192"))
@@ -86,7 +92,8 @@ def main():
   file.close()
 
   # Store to same index with 9 different ptags (to verify writeback)
-  file = open("test_wb.tr", "w")
+  filename = filepath + "test_wb.tr"
+  file = open(filename, "w")
 
   file.write(tracer.print_header())
   file.write(tracer.print_comment("Store to address - 256, 4352, 8448, 12544, 16640, 20736, 24832, 28928"))
@@ -121,7 +128,8 @@ def main():
   file.close()
 
   # Uncached Store/Load
-  file = open("test_uncached.tr", "w")
+  filename = filepath + "test_uncached.tr"
+  file = open(filename, "w")
   
   file.write(tracer.print_header())
   file.write(tracer.print_comment("Store to address 320 in uncached mode"))
@@ -134,7 +142,8 @@ def main():
   file.close()
 
   # Unaligned accesses
-  file = open("test_unaligned.tr", "w")
+  filename = filepath + "test_unaligned.tr"
+  file = open(filename, "w")
 
   file.write(tracer.print_header())
   file.write(tracer.print_comment("Store byte to address - 7"))

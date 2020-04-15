@@ -23,6 +23,7 @@ include $(BP_COMMON_DIR)/syn/Makefile.regress
 include $(BP_COMMON_DIR)/syn/Makefile.verilator
 include $(BP_COMMON_DIR)/syn/Makefile.vcs
 include $(BP_COMMON_DIR)/syn/Makefile.sv2v
+include $(TB_PATH)/$(TB)/py/Makefile
 
 regress.top: regress
 regress: regress.v check_design.syn
@@ -31,21 +32,45 @@ regress: regress.v check_design.syn
 
 LIST ?= /dev/null
 LIST_PROGS = $(shell cat $(LIST))
+NUM_TESTS = $(shell cat $(LIST) | wc -l)
 
 regress.list.sc:
-	$(MAKE) regress.list.common _TS=sc
-	($(foreach p, $(LIST_PROGS), echo $p; echo "=========="; cat reports/verilator/$(TB).$(CFG).sim.$p.rpt; echo "";)) | tee -i reports/verilator/$(TB).$(CFG).$@.rpt
+	$(MAKE) regress.list.tests _TS=sc _T=verilator
+	$(MAKE) regress.list.output _TS=sc _T=verilator
+	cat reports/verilator/final.rpt
 
 regress.list.v:
-	$(MAKE) regress.list.common _TS=v
-	($(foreach p, $(LIST_PROGS), echo $p; echo "=========="; cat reports/vcs/$(TB).$(CFG).sim.$p.rpt; echo "";)) | tee -i reports/vcs/$(TB).$(CFG).$@.rpt
+	$(MAKE) regress.list.tests _TS=v _T=vcs
+	$(MAKE) regress.list.output _TS=v _T=vcs
+	cat reports/vcs/final.rpt
 
-regress.list.common:
-	$(MAKE) build.$(_TS)
-	$(MAKE) regress.list.common.run_in_parallel
+regress.list.tests: $(foreach p, $(LIST_PROGS), regress.list.build_and_run.$p)
 
-regress.list.common.run_in_parallel: $(foreach p, $(LIST_PROGS), regress.list.common.launch_run.$p)
-
-regress.list.common.launch_run.%:
-	$(MAKE) run.$(_TS) PROG=$*
+regress.list.build_and_run.%:
+	$(MAKE) $*
+	@rm -rf results/$(_T)/*
+	@rm -rf logs/$(_T)/$(TB).$(CFG).sim.hello_world.log
+	$(MAKE) build.$(_TS) sim.$(_TS) UCE_P=0 WRITETHROUGH_P=0
+	@grep FINISH logs/$(_T)/$(TB).$(CFG).sim.hello_world.log >> reports/$(_T)/$(TB).$(CFG).sim.cce_wb.$*.rpt
+	
+	@rm -rf results/$(_T)/*
+	@rm -rf logs/$(_T)/*
+	$(MAKE) build.$(_TS) sim.$(_TS) UCE_P=1 WRITETHROUGH_P=0
+	@grep FINISH logs/$(_T)/$(TB).$(CFG).sim.hello_world.log > reports/$(_T)/$(TB).$(CFG).sim.uce_wb.$*.rpt
+	
+	@rm -rf results/$(_T)/*
+	@rm -rf logs/$(_T)/*
+	$(MAKE) build.$(_TS) sim.$(_TS) UCE_P=1 WRITETHROUGH_P=1
+	@grep FINISH logs/$(_T)/$(TB).$(CFG).sim.hello_world.log > reports/$(_T)/$(TB).$(CFG).sim.uce_wt.$*.rpt
+	
+regress.list.output:
+	touch reports/$(_T)/final.rpt
+	@printf "Tests passed for Writeback Cache with CCE (out of $(NUM_TESTS)): "  >> reports/$(_T)/final.rpt
+	@grep -r FINISH reports/$(_T)/$(TB).$(CFG).sim.cce_wb.* | wc -l >> reports/$(_T)/final.rpt
+	
+	@printf "Tests passed for Writeback Cache with UCE (out of $(NUM_TESTS)): "  >> reports/$(_T)/final.rpt
+	@grep -r FINISH reports/$(_T)/$(TB).$(CFG).sim.uce_wb.* | wc -l >> reports/$(_T)/final.rpt
+	
+	@printf "Tests passed for Writethrough Cache with UCE (out of $(NUM_TESTS)): "  >> reports/$(_T)/final.rpt
+	@grep -r FINISH reports/$(_T)/$(TB).$(CFG).sim.uce_wt.* | wc -l >> reports/$(_T)/final.rpt
 

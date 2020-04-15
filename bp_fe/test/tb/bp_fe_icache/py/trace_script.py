@@ -6,7 +6,10 @@ from trace_gen import TraceGen
 def main():
   
   tracer = TraceGen(39, 28, 32)
-  file = open("test_load.tr", "w")
+  filepath = sys.argv[1] + "/" + sys.argv[2] + "/" + "py/"
+
+  filename = filepath + "test_load.tr"
+  file = open(filename, "w")
 
   file.write(tracer.print_header())
   
@@ -20,7 +23,8 @@ def main():
   file.write(tracer.test_finish())
   file.close()
 
-  file = open("test_uncached_load.tr", "w")
+  filename = filepath + "test_uncached_load.tr"
+  file = open(filename, "w")
   
   file.write(tracer.print_header())
   
