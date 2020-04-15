@@ -167,12 +167,12 @@ bsg_dff_reset_en
  attaboy_pending_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(calc_status.ex1_v | fe_cmd_v_o)
+   ,.en_i(calc_status.ex1_v || isd_status.isd_v)
 
-   ,.data_i(calc_status.ex1_br_or_jmp)
+   ,.data_i(calc_status.ex1_v & calc_status.ex1_br_or_jmp & ~isd_status.isd_v)
    ,.data_o(attaboy_pending)
    );
-wire last_instr_was_branch = attaboy_pending | calc_status.ex1_br_or_jmp;
+wire last_instr_was_branch = attaboy_pending | (calc_status.ex1_v & calc_status.ex1_br_or_jmp);
 
 // Generate control signals
 // On a cache miss, this is actually the generated pc in ex1. We could use this to redirect during 
@@ -297,7 +297,7 @@ always_comb
         fe_cmd_v = fe_cmd_ready_i;
       end 
     // Send an attaboy if there's a correct prediction
-    else if (isd_status.isd_v & ~npc_mismatch_v & attaboy_pending) 
+    else if (isd_status.isd_v & ~npc_mismatch_v & last_instr_was_branch) 
       begin
         fe_cmd.opcode                      = e_op_attaboy;
         fe_cmd.vaddr                       = expected_npc_o;

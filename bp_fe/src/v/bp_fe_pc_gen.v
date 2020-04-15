@@ -188,8 +188,7 @@ always_ff @(posedge clk_i)
 always_comb
   begin
     pc_gen_stage_n[0].v          = fetch_v;
-    pc_gen_stage_n[0].pred_taken = btb_br_tgt_v_lo | ovr_taken;
-    pc_gen_stage_n[0].ovr        = ovr_taken | ovr_ntaken;
+    pc_gen_stage_n[0].pred_taken = ovr_taken;
 
     // Next PC calculation
     // load boot pc on reset command
@@ -211,8 +210,9 @@ always_comb
         pc_gen_stage_n[0].pc = pc_gen_stage_r[0].pc + 4;
       end
 
-    pc_gen_stage_n[1]    = pc_gen_stage_r[0];
-    pc_gen_stage_n[1].v &= ~flush & ~(ovr_taken || ovr_ntaken);
+    pc_gen_stage_n[1]             = pc_gen_stage_r[0];
+    pc_gen_stage_n[1].v          &= ~flush & ~(ovr_taken || ovr_ntaken);
+    pc_gen_stage_n[1].pred_taken |= btb_br_tgt_v_lo;
   end
 
 bsg_dff_reset
@@ -270,11 +270,18 @@ bp_fe_btb
 
    ,.w_tag_i(fe_cmd_branch_metadata.btb_tag) 
    ,.w_idx_i(fe_cmd_branch_metadata.btb_idx)
-   // Literature says that we should only update btb on taken branches, but I'd like to see
-   // benchmarks...
-   ,.w_v_i((br_res_v | attaboy_v) & fe_cmd_yumi_o) // & fe_cmd_branch_metadata.pred_taken)
+   ,.w_set_i((fe_cmd_yumi_o & br_res_v & ~fe_cmd_branch_metadata.pred_taken) | (fe_cmd_yumi_o & attaboy_v & fe_cmd_branch_metadata.pred_taken))
+   ,.w_clear_i(fe_cmd_yumi_o & br_res_v & fe_cmd_branch_metadata.pred_taken)
    ,.br_tgt_i(fe_cmd_cast_i.vaddr)
    );
+
+always_ff @(posedge clk_i)
+  begin
+//    if (br_res_v & fe_cmd_yumi_o)
+//      $display("[MISPRED] vaddr: %x btb index: %x btb tag: %x", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata.btb_idx, fe_cmd_branch_metadata.btb_tag);
+//    if (attaboy_v & fe_cmd_yumi_o)
+//      $display("[ATTABOY] vaddr: %x btb index: %x btb tag: %x", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata.btb_idx, fe_cmd_branch_metadata.btb_tag);
+  end
 
 logic bht_pred_lo;
 bp_fe_bht
@@ -304,8 +311,9 @@ bp_fe_instr_scan
 
 wire is_br        = mem_resp_v_i & (scan_instr.scan_class == e_rvi_branch);
 wire is_jal       = mem_resp_v_i & (scan_instr.scan_class == e_rvi_jal);
-assign ovr_taken  = pc_gen_stage_r[1].v & ~pc_gen_stage_r[0].ovr & ~pc_gen_stage_r[0].pred_taken & ((is_br &  bht_pred_lo) | is_jal);
-assign ovr_ntaken = pc_gen_stage_r[1].v & ~pc_gen_stage_r[0].ovr &  pc_gen_stage_r[0].pred_taken &  (is_br & ~bht_pred_lo);
+wire is_jalr      = mem_resp_v_i & (scan_instr.scan_class == e_rvi_jalr);
+assign ovr_taken  = pc_gen_stage_r[1].v & ~btb_br_tgt_v_lo & ((is_br &  bht_pred_lo) | is_jal);
+assign ovr_ntaken = pc_gen_stage_r[1].v &  btb_br_tgt_v_lo &  (is_br & ~bht_pred_lo);
 assign br_target  = pc_gen_stage_r[1].pc + scan_instr.imm;
 
 // We can't fetch from wait state, only run and coming out of stall.
