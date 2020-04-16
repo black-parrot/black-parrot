@@ -25,7 +25,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -90,7 +90,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -155,7 +155,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
       
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -220,7 +220,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
       
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -285,7 +285,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
       
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -350,7 +350,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -415,7 +415,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
       
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -480,7 +480,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
       
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -545,7 +545,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
       
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -611,7 +611,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -676,7 +676,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -741,7 +741,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -806,7 +806,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -871,7 +871,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -936,7 +936,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -1001,7 +1001,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -1066,7 +1066,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
       
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -1131,7 +1131,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -1196,7 +1196,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -1261,7 +1261,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -1326,7 +1326,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -1391,7 +1391,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -1456,7 +1456,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -1521,7 +1521,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -1586,7 +1586,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -1651,7 +1651,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
@@ -1716,7 +1716,7 @@ package bp_common_aviary_pkg;
       ,paddr_width: 40
       ,asid_width : 1
 
-      ,branch_metadata_fwd_width: 28
+      ,branch_metadata_fwd_width: 30
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9

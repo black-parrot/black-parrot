@@ -44,6 +44,8 @@ typedef enum logic [3:0]
   typedef struct packed                                                                         \
   {                                                                                             \
     logic                           pred_taken;                                                 \
+    logic                           src_btb;                                                    \
+    logic                           src_ovr;                                                    \
     logic [btb_tag_width_mp-1:0]    btb_tag;                                                    \
     logic [btb_idx_width_mp-1:0]    btb_idx;                                                    \
     logic [bht_idx_width_mp-1:0]    bht_idx;                                                    \
@@ -54,8 +56,9 @@ typedef enum logic [3:0]
   typedef struct packed             \
   {                                 \
     logic v;                        \
-    logic pred_taken;               \
     logic btb;                      \
+    logic bht;                      \
+    logic ovr;                      \
                                     \
     logic [vaddr_width_p-1:0] pc;   \
   }  bp_fe_pc_gen_stage_s
@@ -64,10 +67,10 @@ typedef enum logic [3:0]
   (vaddr_width_mp + $bits(bp_fe_instr_scan_class_e))
 
 `define bp_fe_branch_metadata_fwd_width(btb_tag_width_mp, btb_idx_width_mp, bht_idx_width_mp, ras_idx_width_mp) \
-  (1 + btb_tag_width_mp + btb_idx_width_mp + bht_idx_width_mp + ras_idx_width_mp)
+  (3 + btb_tag_width_mp + btb_idx_width_mp + bht_idx_width_mp + ras_idx_width_mp)
 
 `define bp_fe_pc_gen_stage_width(vaddr_width_mp) \
-  (3 + vaddr_width_mp)
+  (4 + vaddr_width_mp)
 
 `endif
 

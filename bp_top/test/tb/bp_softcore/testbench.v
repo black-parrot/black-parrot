@@ -567,7 +567,7 @@ bind bp_be_top
        ,.itlb_miss(fe.mem.itlb_miss_r)
        ,.icache_miss(~fe.mem.icache.vaddr_ready_o | fe.pc_gen.icache_miss)
        ,.icache_fence(fe.mem.icache.fencei_req)
-       ,.branch_override(fe.pc_gen.ovr_taken | fe.pc_gen.ovr_ntaken)
+       ,.branch_override(fe.pc_gen.ovr_taken)
 
        ,.fe_cmd(fe.pc_gen.fe_cmd_yumi_o & ~fe.pc_gen.attaboy_v)
 

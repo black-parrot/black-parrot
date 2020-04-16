@@ -55,7 +55,7 @@ assign mem_resp_cast_i = mem_resp_i;
 
 // branch prediction wires
 logic [vaddr_width_p-1:0]       br_target;
-logic                           ovr_taken, ovr_ntaken;
+logic                           ovr_taken;
 // btb io
 logic [vaddr_width_p-1:0]       btb_br_tgt_lo;
 logic                           btb_br_tgt_v_lo;
@@ -65,6 +65,9 @@ bp_fe_cmd_s fe_cmd_cast_i;
 
 assign fe_cmd_cast_i = fe_cmd_i;
 assign fe_queue_o = fe_queue_cast_o;
+
+bp_fe_branch_metadata_fwd_s fe_cmd_branch_metadata;
+assign fe_cmd_branch_metadata = fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd;
 
 bp_fe_pc_gen_stage_s [1:0] pc_gen_stage_n, pc_gen_stage_r;
 
@@ -85,9 +88,13 @@ wire attaboy_v        = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_attaboy);
 wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
 
 wire trap_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
-wire br_res_v = pc_redirect_v
-                & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_branch_mispredict)
-                & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_incorrect_prediction);
+wire br_miss_v = pc_redirect_v
+                & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_branch_mispredict);
+wire br_res_taken = (attaboy_v & fe_cmd_branch_metadata.pred_taken) | (br_miss_v & ~fe_cmd_branch_metadata.pred_taken);
+wire br_res_ntaken = (attaboy_v & ~fe_cmd_branch_metadata.pred_taken) | (br_miss_v & fe_cmd_branch_metadata.pred_taken);
+wire br_miss_nonbr = pc_redirect_v 
+                    & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_branch_mispredict)
+                    & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_not_a_branch);
 
 logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
 wire shadow_priv_w = state_reset_v | trap_v;
@@ -185,26 +192,25 @@ always_ff @(posedge clk_i)
       state_r <= state_n;
     end
 
+logic bht_pred_lo;
+wire btb_taken = btb_br_tgt_v_lo & bht_pred_lo;
 always_comb
   begin
     pc_gen_stage_n[0].v          = fetch_v;
-    pc_gen_stage_n[0].pred_taken = ovr_taken;
     pc_gen_stage_n[0].btb        = '0;
+    pc_gen_stage_n[0].bht        = '0;
+    pc_gen_stage_n[0].ovr        = '0;
 
     // Next PC calculation
     // load boot pc on reset command
-    if (state_reset_v)
-        pc_gen_stage_n[0].pc = fe_cmd_cast_i.vaddr;
-    // if we need to redirect
-    else if (pc_redirect_v | icache_fence_v | itlb_fence_v)
+    // if we need to redirect or load boot pc on reset
+    if (state_reset_v | pc_redirect_v | icache_fence_v | itlb_fence_v)
         pc_gen_stage_n[0].pc = fe_cmd_cast_i.vaddr;
     else if (state_r != e_run) 
         pc_gen_stage_n[0].pc = pc_resume_r;
     else if (ovr_taken)
         pc_gen_stage_n[0].pc = br_target;
-    else if (ovr_ntaken)
-        pc_gen_stage_n[0].pc = pc_gen_stage_r[1].pc + 4;
-    else if (btb_br_tgt_v_lo)
+    else if (btb_taken)
         pc_gen_stage_n[0].pc = btb_br_tgt_lo;
     else
       begin
@@ -212,9 +218,9 @@ always_comb
       end
 
     pc_gen_stage_n[1]             = pc_gen_stage_r[0];
-    pc_gen_stage_n[1].v          &= ~flush & ~(ovr_taken || ovr_ntaken);
-    pc_gen_stage_n[1].pred_taken |= btb_br_tgt_v_lo;
+    pc_gen_stage_n[1].v          &= ~flush & ~ovr_taken;
     pc_gen_stage_n[1].btb         = btb_br_tgt_v_lo;
+    pc_gen_stage_n[1].ovr         = ovr_taken;
   end
 
 bsg_dff_reset
@@ -229,13 +235,14 @@ bsg_dff_reset
 
 // Branch prediction logic
 bp_fe_branch_metadata_fwd_s fe_queue_cast_o_branch_metadata, fe_queue_cast_o_branch_metadata_r;
-wire                    pred_taken_if2 = pc_gen_stage_r[1].pred_taken;
 wire [btb_tag_width_p-1:0] btb_tag_if2 = pc_if2[2+btb_idx_width_p+:btb_tag_width_p];
 wire [btb_idx_width_p-1:0] btb_idx_if2 = pc_if2[2+:btb_idx_width_p];
 wire [bht_idx_width_p-1:0] bht_idx_if2 = pc_if2[2+:bht_idx_width_p];
 
 assign fe_queue_cast_o_branch_metadata = 
-  '{pred_taken: pred_taken_if2
+  '{pred_taken: pc_gen_stage_r[1].btb | pc_gen_stage_r[1].ovr
+    ,src_btb  : pc_gen_stage_r[1].btb
+    ,src_ovr  : pc_gen_stage_r[1].ovr
     ,btb_tag  : btb_tag_if2
     ,btb_idx  : btb_idx_if2
     ,bht_idx  : bht_idx_if2
@@ -254,8 +261,8 @@ bsg_dff_reset_en
    );
 
 // Casting branch metadata forwarded from BE
-bp_fe_branch_metadata_fwd_s fe_cmd_branch_metadata;
-assign fe_cmd_branch_metadata = fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd;
+wire btb_incorrect = (br_miss_nonbr & fe_cmd_branch_metadata.src_btb)
+                     | (br_res_taken & (~fe_cmd_branch_metadata.src_btb | br_miss_v));
 bp_fe_btb
  #(.vaddr_width_p(vaddr_width_p)
    ,.btb_tag_width_p(btb_tag_width_p)
@@ -272,20 +279,19 @@ bp_fe_btb
 
    ,.w_tag_i(fe_cmd_branch_metadata.btb_tag) 
    ,.w_idx_i(fe_cmd_branch_metadata.btb_idx)
-   ,.w_set_i((fe_cmd_yumi_o & br_res_v & ~fe_cmd_branch_metadata.pred_taken) | (fe_cmd_yumi_o & attaboy_v & fe_cmd_branch_metadata.pred_taken))
-   ,.w_clear_i(fe_cmd_yumi_o & br_res_v & fe_cmd_branch_metadata.pred_taken)
+   ,.w_set_i(btb_incorrect & ~br_miss_nonbr)
+   ,.w_clear_i(btb_incorrect & br_miss_nonbr)
    ,.br_tgt_i(fe_cmd_cast_i.vaddr)
    );
 
 always_ff @(posedge clk_i)
   begin
-//    if (br_res_v & fe_cmd_yumi_o)
+//    if (br_miss_v & fe_cmd_yumi_o)
 //      $display("[MISPRED] vaddr: %x btb index: %x btb tag: %x", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata.btb_idx, fe_cmd_branch_metadata.btb_tag);
 //    if (attaboy_v & fe_cmd_yumi_o)
 //      $display("[ATTABOY] vaddr: %x btb index: %x btb tag: %x", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata.btb_idx, fe_cmd_branch_metadata.btb_tag);
   end
 
-logic bht_pred_lo;
 bp_fe_bht
  #(.bht_idx_width_p(bht_idx_width_p))
  bp_fe_bht
@@ -293,10 +299,10 @@ bp_fe_bht
    ,.reset_i(reset_i)
 
    ,.r_v_i(1'b1)
-   ,.idx_r_i(fe_queue_cast_o_branch_metadata.bht_idx)
+   ,.idx_r_i(pc_gen_stage_r[0].pc[2+:bht_idx_width_p])
    ,.predict_o(bht_pred_lo)
 
-   ,.w_v_i((br_res_v | attaboy_v) & fe_cmd_yumi_o)
+   ,.w_v_i((br_miss_v | attaboy_v) & fe_cmd_yumi_o)
    ,.idx_w_i(fe_cmd_branch_metadata.bht_idx)
    ,.correct_i(attaboy_v)
    );
@@ -311,12 +317,12 @@ bp_fe_instr_scan
    ,.scan_o(scan_instr)
    );
 
-wire is_br        = mem_resp_v_i & (scan_instr.scan_class == e_rvi_branch);
-wire is_jal       = mem_resp_v_i & (scan_instr.scan_class == e_rvi_jal);
-wire is_jalr      = mem_resp_v_i & (scan_instr.scan_class == e_rvi_jalr);
-assign ovr_taken  = pc_gen_stage_r[1].v & ~pc_gen_stage_r[1].btb & ((is_br &  bht_pred_lo) | is_jal);
-assign ovr_ntaken = pc_gen_stage_r[1].v &  pc_gen_stage_r[1].btb &  (is_br & ~bht_pred_lo);
-assign br_target  = pc_gen_stage_r[1].pc + scan_instr.imm;
+wire is_br          = mem_resp_v_i & (scan_instr.scan_class == e_rvi_branch);
+wire is_jal         = mem_resp_v_i & (scan_instr.scan_class == e_rvi_jal);
+wire is_jalr        = mem_resp_v_i & (scan_instr.scan_class == e_rvi_jalr);
+assign ovr_taken    = ~pc_gen_stage_r[1].btb & ((is_br & pc_gen_stage_r[1].bht) | is_jal);
+assign br_target    = pc_gen_stage_r[1].pc + scan_instr.imm;
+
 
 // We can't fetch from wait state, only run and coming out of stall.
 // We wait until both the FE queue and I$ are ready, but flushes invalidate the fetch.
