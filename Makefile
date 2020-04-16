@@ -78,3 +78,33 @@ progs: tools
 ucode: | basejump
 	$(MAKE) -C $(BP_ME_DIR)/src/asm roms
 
+rebuild-gcc:
+	$(MAKE) -C external/riscv-gnu-toolchain clean
+	$(MAKE) -j 8 -C external -f Makefile.tools gnu_build
+
+profile:
+	-find . -iname "stall_0.trace" | xargs -n 1 wc -l
+	-find . -iname "stall_0.trace" | xargs -n 1 grep -c instr
+	-find . -iname "stall_0.trace" | xargs -n 1 grep -v -c instr
+	-find . -iname "stall_0.trace" | xargs -n 1 grep -c load_dep
+	-find . -iname "stall_0.trace" | xargs -n 1 grep -c dir_mispredict
+	-find . -iname "stall_0.trace" | xargs -n 1 grep -c branch_override
+	-find . -iname "stall_0.trace" | xargs -n 1 grep -c target_mispredict
+	-find . -iname "stall_0.trace" | xargs -n 1 grep -c fe_cmd
+	-find . -iname "stall_0.trace" | xargs -n 1 grep -c mul
+	-find . -iname "stall_0.trace" | xargs -n 1 grep -c icache
+	-find . -iname "stall_0.trace" | xargs -n 1 grep -c dcache
+	-find . -iname "stall_0.trace" | xargs -n 1 grep -c long_haz
+	-find . -iname "stall_0.trace" | xargs -n 1 grep -c cmd_fence
+	-find . -iname "stall_0.trace" | xargs -n 1 grep -c fe_wait_stall
+
+
+# note: change coremark compile time parameters in bp_common/test/src/coremark/barebones/Makefile
+# dump files are located in bp_com
+rebuild-run-coremark:
+	$(MAKE) -C bp_common/test coremark_mem coremark_dump coremark_nbf
+	@echo BP: Disassembly in "bp_common/test/mem/coremark.dump".
+	$(MAKE) -C bp_top/syn build.v TB=bp_softcore CFG=e_bp_single_core_cfg PROG=coremark CORE_PROFILE_P=1
+	$(MAKE) -C bp_top/syn sim.v TB=bp_softcore CFG=e_bp_single_core_cfg PROG=coremark CORE_PROFILE_P=1
+	$(MAKE) profile
+
