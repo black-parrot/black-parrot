@@ -51,17 +51,12 @@ always_ff @(posedge clk_i)
   else if (w_v_i) 
     begin
       //2-bit saturating counter(high_bit:prediction direction,low_bit:strong/weak prediction)
-      case ({correct_i, mem[idx_w_i][1], mem[idx_w_i][0]})
+      unique casez ({correct_i, mem[idx_w_i][1], mem[idx_w_i][0]})
         //wrong prediction
-        3'b000: mem[idx_w_i] <= {mem[idx_w_i][1]^mem[idx_w_i][0], 1'b1};//2'b01
-        3'b001: mem[idx_w_i] <= {mem[idx_w_i][1]^mem[idx_w_i][0], 1'b1};//2'b11
-        3'b010: mem[idx_w_i] <= {mem[idx_w_i][1]^mem[idx_w_i][0], 1'b1};//2'b11
-        3'b011: mem[idx_w_i] <= {mem[idx_w_i][1]^mem[idx_w_i][0], 1'b1};//2'b01
+        3'b0??: mem[idx_w_i] <= {mem[idx_w_i][1]^mem[idx_w_i][0], 1'b1}; // Switch if weak, make weak
         //correct prediction
-        3'b100: mem[idx_w_i] <= mem[idx_w_i];//2'b00                            // strongly not taken -> strongly not taken
-        3'b101: mem[idx_w_i] <= {mem[idx_w_i][1], ~mem[idx_w_i][0]};//2'b00     // weakly   not taken -> strongly not taken
-        3'b110: mem[idx_w_i] <= mem[idx_w_i];//2'b10                            // strongly taken -> strongly taken
-        3'b111: mem[idx_w_i] <= {mem[idx_w_i][1], ~mem[idx_w_i][0]};//2'b10     // weakly   taken -> strongly taken
+        3'b1??: mem[idx_w_i] <= {mem[idx_w_i][1], 1'b0}; // Strongly keep prediction
+        default: begin end
       endcase
     end
 

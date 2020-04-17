@@ -67,7 +67,6 @@ assign fe_cmd_cast_i = fe_cmd_i;
 assign fe_queue_o = fe_queue_cast_o;
 
 bp_fe_branch_metadata_fwd_s fe_cmd_branch_metadata;
-assign fe_cmd_branch_metadata = fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd;
 
 bp_fe_pc_gen_stage_s [1:0] pc_gen_stage_n, pc_gen_stage_r;
 
@@ -95,6 +94,7 @@ wire br_res_ntaken = (attaboy_v & ~fe_cmd_branch_metadata.pred_taken) | (br_miss
 wire br_miss_nonbr = pc_redirect_v 
                     & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_branch_mispredict)
                     & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_not_a_branch);
+assign fe_cmd_branch_metadata = br_miss_v ? fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd : fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd;
 
 logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
 wire shadow_priv_w = state_reset_v | trap_v;
@@ -286,10 +286,10 @@ bp_fe_btb
 
 always_ff @(posedge clk_i)
   begin
-//    if (br_miss_v & fe_cmd_yumi_o)
-//      $display("[MISPRED] vaddr: %x btb index: %x btb tag: %x", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata.btb_idx, fe_cmd_branch_metadata.btb_tag);
-//    if (attaboy_v & fe_cmd_yumi_o)
-//      $display("[ATTABOY] vaddr: %x btb index: %x btb tag: %x", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata.btb_idx, fe_cmd_branch_metadata.btb_tag);
+    //if (br_miss_v & fe_cmd_yumi_o)
+    //  $display("[FE MISPRED] vaddr: %x btb index: %x btb tag: %x", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata.btb_idx, fe_cmd_branch_metadata.btb_tag);
+    //if (attaboy_v & fe_cmd_yumi_o)
+    //  $display("[FE ATTABOY] vaddr: %x btb index: %x btb tag: %x", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata.btb_idx, fe_cmd_branch_metadata.btb_tag);
     //if (fe_queue_v_o)
     //  $display("[FETCH  ] %x %p", fe_queue_cast_o.msg.fetch.pc, fe_queue_cast_o_branch_metadata_r);
     //if (br_miss_v & fe_cmd_yumi_o)
