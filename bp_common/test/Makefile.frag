@@ -46,7 +46,8 @@ BP_DEMOS = \
   mc_work_share_sort_8 \
   mc_work_share_sort_12 \
   mc_work_share_sort_16 \
-  cache_hammer
+  cache_hammer \
+  cache_flush
 
 RV64_BENCHMARKS = \
   median   \

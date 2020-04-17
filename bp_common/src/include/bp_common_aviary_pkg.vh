@@ -50,6 +50,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -115,6 +116,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 2
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -180,6 +182,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 0
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 2
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -245,6 +248,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 2
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -310,6 +314,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 2
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -375,6 +380,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -440,6 +446,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 0
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -505,6 +512,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -570,6 +578,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -636,6 +645,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -701,6 +711,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -766,6 +777,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -831,6 +843,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -896,6 +909,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -961,6 +975,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -1026,6 +1041,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -1091,6 +1107,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -1156,6 +1173,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -1221,6 +1239,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -1286,6 +1305,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -1351,6 +1371,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -1416,6 +1437,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -1481,6 +1503,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -1546,6 +1569,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -1611,6 +1635,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -1676,6 +1701,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4
@@ -1741,6 +1767,7 @@ package bp_common_aviary_pkg;
       ,l2_en   : 1
       ,l2_sets : 128
       ,l2_assoc: 8
+      ,l2_outstanding_reqs: 8
 
       ,fe_queue_fifo_els: 8
       ,fe_cmd_fifo_els  : 4

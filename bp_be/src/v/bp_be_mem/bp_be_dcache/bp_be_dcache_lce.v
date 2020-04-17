@@ -210,6 +210,7 @@ module bp_be_dcache_lce
       
       ,.coherence_blocked_i(coherence_blocked_li)
       ,.cmd_ready_i(cmd_ready_lo)
+      ,.credits_ready_i(~credits_full_o)
 
       ,.lce_req_o(lce_req)
       ,.lce_req_v_o(lce_req_v_o)

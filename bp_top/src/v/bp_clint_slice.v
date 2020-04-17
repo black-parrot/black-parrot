@@ -11,17 +11,20 @@ module bp_clint_slice
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+
+   // TODO: Should I be a global param?
+   , localparam clint_max_outstanding_p = 2
    )
   (input                                                clk_i
    , input                                              reset_i
 
    , input [cce_mem_msg_width_lp-1:0]                   mem_cmd_i
    , input                                              mem_cmd_v_i
-   , output                                             mem_cmd_yumi_o
+   , output                                             mem_cmd_ready_o
 
    , output [cce_mem_msg_width_lp-1:0]                  mem_resp_o
    , output                                             mem_resp_v_o
-   , input                                              mem_resp_ready_i
+   , input                                              mem_resp_yumi_i
 
    // Local interrupts
    , output                                             software_irq_o
@@ -31,9 +34,24 @@ module bp_clint_slice
 
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
 
-bp_cce_mem_msg_s mem_cmd_li;
+bp_cce_mem_msg_s mem_cmd_li, mem_cmd_lo;
 assign mem_cmd_li = mem_cmd_i;
-assign mem_cmd_yumi_o = mem_cmd_v_i & mem_resp_ready_i;
+
+logic small_fifo_v_lo, small_fifo_yumi_li;
+bsg_fifo_1r1w_small
+ #(.width_p($bits(bp_cce_mem_msg_s)), .els_p(clint_max_outstanding_p))
+ small_fifo
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.data_i(mem_cmd_li)
+   ,.v_i(mem_cmd_v_i)
+   ,.ready_o(mem_cmd_ready_o)
+
+   ,.data_o(mem_cmd_lo)
+   ,.v_o(small_fifo_v_lo)
+   ,.yumi_i(small_fifo_yumi_li)
+   );
 
 logic mipi_cmd_v;
 logic mtimecmp_cmd_v;
@@ -148,15 +166,16 @@ wire [dword_width_p-1:0] rdata_lo = plic_cmd_v
 bp_cce_mem_msg_s mem_resp_lo;
 assign mem_resp_lo =
   '{header : '{
-    msg_type       : mem_cmd_li.header.msg_type
-    ,addr          : mem_cmd_li.header.addr
-    ,payload       : mem_cmd_li.header.payload
-    ,size          : mem_cmd_li.header.size
+    msg_type       : mem_cmd_lo.header.msg_type
+    ,addr          : mem_cmd_lo.header.addr
+    ,payload       : mem_cmd_lo.header.payload
+    ,size          : mem_cmd_lo.header.size
     }
     ,data          : cce_block_width_p'(rdata_lo)
     };
 assign mem_resp_o = mem_resp_lo;
-assign mem_resp_v_o = mem_cmd_yumi_o;
+assign mem_resp_v_o = small_fifo_v_lo;
+assign small_fifo_yumi_li = mem_resp_yumi_i;
 
 endmodule
 

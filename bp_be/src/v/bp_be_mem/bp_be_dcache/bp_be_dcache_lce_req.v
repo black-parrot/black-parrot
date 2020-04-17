@@ -62,6 +62,7 @@ module bp_be_dcache_lce_req
 
     , input coherence_blocked_i
     , input cmd_ready_i
+    , input credits_ready_i
 
     , input cce_data_received_i
     , input uncached_data_received_i
@@ -347,7 +348,7 @@ module bp_be_dcache_lce_req
      );
   wire timeout = (timeout_cnt_r == timeout_max_limit_p);
 
-  assign cache_req_ready_o = cmd_ready_i & is_ready & ~timeout & lce_req_ready_i;
+  assign cache_req_ready_o = credits_ready_i & cmd_ready_i & is_ready & ~timeout & lce_req_ready_i;
 
   // synopsys translate_off
   always_ff @ (negedge clk_i) begin
