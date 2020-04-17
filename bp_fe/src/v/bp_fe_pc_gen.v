@@ -55,7 +55,7 @@ assign mem_resp_cast_i = mem_resp_i;
 
 // branch prediction wires
 logic [vaddr_width_p-1:0]       br_target;
-logic                           ovr_taken;
+logic                           ovr_ret, ovr_taken;
 // btb io
 logic [vaddr_width_p-1:0]       btb_br_tgt_lo;
 logic                           btb_br_tgt_v_lo;
@@ -193,14 +193,16 @@ always_ff @(posedge clk_i)
     end
 
 logic bht_pred_lo;
+logic [vaddr_width_p-1:0] return_addr_n, return_addr_r;
 wire btb_taken = btb_br_tgt_v_lo & bht_pred_lo;
 always_comb
   begin
     pc_gen_stage_n[0]            = '0;
     pc_gen_stage_n[0].v          = fetch_v;
-    pc_gen_stage_n[0].taken      = ovr_taken | btb_taken;
+    pc_gen_stage_n[0].taken      = ovr_taken | btb_taken | ovr_ret;
     pc_gen_stage_n[0].btb        = btb_br_tgt_v_lo;
     pc_gen_stage_n[0].bht        = bht_pred_lo;
+    pc_gen_stage_n[0].ret        = ovr_ret;
 
     // Next PC calculation
     // load boot pc on reset command
@@ -209,6 +211,8 @@ always_comb
         pc_gen_stage_n[0].pc = fe_cmd_cast_i.vaddr;
     else if (state_r != e_run) 
         pc_gen_stage_n[0].pc = pc_resume_r;
+    else if (ovr_ret)
+        pc_gen_stage_n[0].pc = return_addr_r;
     else if (ovr_taken)
         pc_gen_stage_n[0].pc = br_target;
     else if (btb_taken)
@@ -219,7 +223,7 @@ always_comb
       end
 
     pc_gen_stage_n[1]    = pc_gen_stage_r[0];
-    pc_gen_stage_n[1].v &= ~flush & ~ovr_taken;
+    pc_gen_stage_n[1].v &= ~flush & ~ovr_taken & ~ovr_ret;
   end
 
 bsg_dff_reset
@@ -249,6 +253,7 @@ bp_fe_branch_metadata_fwd_s fe_queue_cast_o_branch_metadata;
 assign fe_queue_cast_o_branch_metadata = 
   '{pred_taken: pc_gen_stage_r[1].taken
     ,src_btb  : pc_gen_stage_r[1].btb
+    ,src_ret  : pc_gen_stage_r[1].ret
     ,src_ovr  : '0 // unused
     ,btb_tag  : pc_site[2+btb_idx_width_p+:btb_tag_width_p]
     ,btb_idx  : pc_site[2+:btb_idx_width_p]
@@ -321,12 +326,25 @@ bp_fe_instr_scan
    ,.scan_o(scan_instr)
    );
 
-wire is_br          = mem_resp_v_i & (scan_instr.scan_class == e_rvi_branch);
-wire is_jal         = mem_resp_v_i & (scan_instr.scan_class == e_rvi_jal);
-wire is_jalr        = mem_resp_v_i & (scan_instr.scan_class == e_rvi_jalr);
+wire is_br          = mem_resp_v_i & scan_instr.branch;
+wire is_jal         = mem_resp_v_i & scan_instr.jal;
+wire is_jalr        = mem_resp_v_i & scan_instr.jalr;
+wire is_call        = mem_resp_v_i & scan_instr.call;
+assign ovr_ret      = mem_resp_v_i & scan_instr.ret;
 assign ovr_taken    = ~pc_gen_stage_r[0].btb & ((is_br & pc_gen_stage_r[0].bht) | is_jal);
 assign br_target    = pc_gen_stage_r[1].pc + scan_instr.imm;
 
+assign return_addr_n = pc_gen_stage_r[1].pc + vaddr_width_p'(4);
+bsg_dff_reset_en
+ #(.width_p(vaddr_width_p))
+ ras
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+   ,.en_i(is_call)
+
+   ,.data_i(return_addr_n)
+   ,.data_o(return_addr_r)
+   );
 
 // We can't fetch from wait state, only run and coming out of stall.
 // We wait until both the FE queue and I$ are ready, but flushes invalidate the fetch.
