@@ -199,7 +199,7 @@ always_comb
     pc_gen_stage_n[0].v          = fetch_v;
     pc_gen_stage_n[0].btb        = '0;
     pc_gen_stage_n[0].bht        = '0;
-    pc_gen_stage_n[0].ovr        = '0;
+    pc_gen_stage_n[0].ovr        = ovr_taken;
 
     // Next PC calculation
     // load boot pc on reset command
@@ -220,7 +220,7 @@ always_comb
     pc_gen_stage_n[1]             = pc_gen_stage_r[0];
     pc_gen_stage_n[1].v          &= ~flush & ~ovr_taken;
     pc_gen_stage_n[1].btb         = btb_br_tgt_v_lo;
-    pc_gen_stage_n[1].ovr         = ovr_taken;
+    pc_gen_stage_n[1].bht         = bht_pred_lo;
   end
 
 bsg_dff_reset
@@ -290,16 +290,24 @@ always_ff @(posedge clk_i)
 //      $display("[MISPRED] vaddr: %x btb index: %x btb tag: %x", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata.btb_idx, fe_cmd_branch_metadata.btb_tag);
 //    if (attaboy_v & fe_cmd_yumi_o)
 //      $display("[ATTABOY] vaddr: %x btb index: %x btb tag: %x", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata.btb_idx, fe_cmd_branch_metadata.btb_tag);
+    //if (fe_queue_v_o)
+    //  $display("[FETCH  ] %x %p", fe_queue_cast_o.msg.fetch.pc, fe_queue_cast_o_branch_metadata_r);
+    //if (br_miss_v & fe_cmd_yumi_o)
+    //  $display("[REDIR  ] %x %p", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata);
+    //if (attaboy_v & fe_cmd_yumi_o)
+    //  $display("[ATTABOY] %x %p", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata);
   end
 
 bp_fe_bht
- #(.bht_idx_width_p(bht_idx_width_p))
+ #(.vaddr_width_p(vaddr_width_p)
+   ,.bht_idx_width_p(bht_idx_width_p)
+   )
  bp_fe_bht
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
-   ,.r_v_i(1'b1)
-   ,.idx_r_i(pc_gen_stage_r[0].pc[2+:bht_idx_width_p])
+   ,.r_v_i(pc_gen_stage_n[0].v)
+   ,.r_addr_i(pc_gen_stage_n[0].pc)
    ,.predict_o(bht_pred_lo)
 
    ,.w_v_i((br_miss_v | attaboy_v) & fe_cmd_yumi_o)
