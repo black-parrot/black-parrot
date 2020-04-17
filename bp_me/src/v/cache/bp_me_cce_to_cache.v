@@ -214,7 +214,7 @@ module bp_me_cce_to_cache
           default: cache_pkt.opcode = LB;
         endcase
 
-        if ((mem_cmd_lo.header.addr < 32'h8000_0000) && (mem_cmd_lo.header.addr[0+:20] == cache_tagfl_base_addr_gp))
+        if ((mem_cmd_lo.header.addr < dram_base_addr_gp) && (mem_cmd_lo.header.addr[0+:20] == cache_tagfl_base_addr_gp))
           begin
             cache_pkt.opcode = TAGFL;
             cache_pkt.addr = {cmd_data[0][0+:lg_sets_lp+lg_ways_lp], block_offset_width_lp'(0)};

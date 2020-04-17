@@ -219,7 +219,7 @@ bp_coh_ready_and_link_s cce_lce_resp_link_li, cce_lce_resp_link_lo;
 
   /* TODO: Extract local memory map to module */
   localparam cfg_device_id_lp   = 2;
-  wire local_cmd_li    = (cce_mem_cmd_lo.addr < 32'h8000_0000);
+  wire local_cmd_li    = (cce_mem_cmd_lo.addr < dram_base_addr_gp);
   wire [3:0] device_li =  cce_mem_cmd_lo.addr[20+:4];
 
   assign cce_mem_cmd_ready_li = cache_mem_cmd_ready_lo & cfg_mem_cmd_ready_lo;

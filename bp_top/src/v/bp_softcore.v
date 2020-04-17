@@ -372,7 +372,7 @@ module bp_softcore
   assign {cache_cmd_li, io_cmd_cast_o, clint_cmd_li, cfg_cmd_li} = {4{fifo_selected_lo}};
 
   /* TODO: Extract local memory map to module */
-  wire local_cmd_li        = (fifo_selected_lo.header.addr < 32'h8000_0000);
+  wire local_cmd_li        = (fifo_selected_lo.header.addr < dram_base_addr_gp);
   wire [3:0] device_cmd_li = fifo_selected_lo.header.addr[20+:4];
   wire is_cfg_cmd          = local_cmd_li & (device_cmd_li == cfg_dev_gp);
   wire is_clint_cmd        = local_cmd_li & (device_cmd_li == clint_dev_gp);
