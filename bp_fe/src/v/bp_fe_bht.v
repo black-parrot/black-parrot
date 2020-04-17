@@ -11,7 +11,7 @@
 module bp_fe_bht
  import bp_fe_pkg::*; 
  #(parameter bht_idx_width_p = "inv"
-
+   , parameter debug_p             = 0
    , localparam els_lp             = 2**bht_idx_width_p
    , localparam saturation_size_lp = 2
    )
@@ -29,7 +29,7 @@ module bp_fe_bht
 
 logic [els_lp-1:0][saturation_size_lp-1:0] mem;
 
-assign predict_o = r_v_i ? mem[idx_r_i][1] : 1'b0;
+assign predict_o = r_v_i ? mem[idx_r_i][1] : `BSG_UNDEFINED_IN_SIM(1'b0);
 
 always_ff @(posedge clk_i) 
   if (reset_i) 
@@ -51,4 +51,17 @@ always_ff @(posedge clk_i)
       endcase
     end
 
+if (debug_p)
+  begin
+     always_ff @(negedge clk_i)
+       begin
+	  $write("v=%b c=%b W[%h] (=%b); v=%b R[%h] (=%b) p=%b ",w_v_i,correct_i,idx_w_i,mem[idx_w_i],r_v_i,idx_r_i,mem[idx_r_i],predict_o);
+
+	  if (w_v_i & ~correct_i)
+	    $write("X\n");
+	  else
+	    $write("\n");
+       end
+end // if (debug_p)
+   
 endmodule
