@@ -16,6 +16,8 @@ def main():
   file.write(tracer.print_comment("Store to address - 0, 8, 16, 24, 32, 40, 48, 56"))
   for i in range(8, 72, 8):
     file.write(tracer.send_store(8, i-8, 0, False, i))
+  
+  for i in range(0, 8, 1):
     file.write(tracer.recv_data(0))
   
   file.write(tracer.print_comment("Load from address - 0, 8, 16, 24, 32, 40, 48, 56"))
@@ -174,6 +176,84 @@ def main():
   file.write(tracer.test_finish())
   
   file.close()
+
+  # Directed test 1
+  filename = filepath + "test_writethrough1.tr"
+  file = open(filename, "w")
+  
+  file.write(tracer.print_header())
+  file.write(tracer.print_comment("Store double word to address - 0"))
+  file.write(tracer.send_store(8, 0, 0, False, 64))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.send_store(8, 0, 1, False, 128))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.send_store(8, 0, 2, False, 256))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.send_store(8, 64, 3, False, 512))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.send_store(8, 64, 3, False, 1024))
+  file.write(tracer.send_store(8, 0, 1, False, 2048))
+  file.write(tracer.send_load(False, 8, 0, 0, False))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.recv_data(64))
+  file.write(tracer.send_load(False, 8, 0, 1, False))
+  file.write(tracer.recv_data(2048))
+
+  file.write(tracer.test_finish())
+
+  file.close()
+
+  # Directed test 2
+  filename = filepath + "test_writethrough2.tr"
+  file = open(filename, "w")
+  
+  file.write(tracer.print_header())
+  file.write(tracer.print_comment("Store double word to address - 0"))
+  file.write(tracer.send_store(8, 0, 0, False, 64))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.send_store(8, 0, 1, False, 128))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.send_store(8, 0, 2, False, 256))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.send_store(8, 64, 3, False, 512))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.send_store(8, 64, 3, False, 1024))
+  file.write(tracer.send_store(8, 0, 1, False, 2048))
+  file.write(tracer.send_load(False, 8, 0, 0, False))
+  file.write(tracer.send_load(False, 8, 0, 1, False))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.recv_data(64))
+  file.write(tracer.recv_data(2048))
+
+  file.write(tracer.test_finish())
+
+  file.close()
+
+  # Directed test 3
+  filename = filepath + "test_writethrough3.tr"
+  file = open(filename, "w")
+  
+  file.write(tracer.print_header())
+  file.write(tracer.print_comment("Store double word to address - 0"))
+  file.write(tracer.send_store(8, 0, 0, False, 64))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.send_store(8, 0, 0, False, 128))
+  file.write(tracer.send_load(False, 8, 64, 0, False))
+  file.write(tracer.send_store(8, 0, 0, False, 256))
+  file.write(tracer.send_load(False, 8, 128, 0, False))
+  file.write(tracer.send_store(8, 0, 0, False, 512))
+  file.write(tracer.send_load(False, 8, 192, 0, False))
+  file.write(tracer.send_store(8, 0, 0, False, 1024))
+  file.write(tracer.send_load(False, 8, 256, 0, False))
+
+  for i in range(0,8):
+    file.write(tracer.recv_data(0))
+
+  file.write(tracer.test_finish())
+
+  file.close() 
 
 if __name__ == "__main__":
   main()

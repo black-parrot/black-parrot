@@ -5,3 +5,6 @@ byte_test
 writeback_test
 uncached_test
 unaligned_test
+wt_test_1
+wt_test_2
+wt_test_3
