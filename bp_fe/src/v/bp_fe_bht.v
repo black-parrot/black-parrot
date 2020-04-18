@@ -45,32 +45,42 @@ bsg_dff
    );
 assign predict_o = r_v_r ? mem[idx_r_r][1] : `BSG_UNDEFINED_IN_SIM(1'b0);
 
+//2-bit saturating counter(high_bit:prediction direction,low_bit:strong/weak prediction)
 always_ff @(posedge clk_i) 
   if (reset_i) 
     mem <= '{default:2'b01};
-  else if (w_v_i) 
-    begin
-      //2-bit saturating counter(high_bit:prediction direction,low_bit:strong/weak prediction)
-      unique casez ({correct_i, mem[idx_w_i][1], mem[idx_w_i][0]})
-        //wrong prediction
-        3'b0??: mem[idx_w_i] <= {mem[idx_w_i][1]^mem[idx_w_i][0], 1'b1}; // Switch if weak, make weak
-        //correct prediction
-        3'b1??: mem[idx_w_i] <= {mem[idx_w_i][1], 1'b0}; // Strongly keep prediction
-        default: begin end
-      endcase
-    end
+  else if (w_v_i & correct_i)
+    mem[idx_w_i] <= {mem[idx_w_i][1], 1'b0};
+  else if (w_v_i & ~correct_i)
+    mem[idx_w_i] <= {mem[idx_w_i][1]^mem[idx_w_i][0], 1'b1};
+
+
+//synopsys translate_off
+logic [bht_idx_width_p-1:0] idx_w_r;
+logic correct_r, w_v_r;
+logic [vaddr_width_p-1:0] r_addr_r;
+bsg_dff
+ #(.width_p(vaddr_width_p+2+bht_idx_width_p))
+ write_reg
+  (.clk_i(clk_i)
+
+   ,.data_i({r_addr_i, correct_i, w_v_i, idx_w_i})
+   ,.data_o({r_addr_r, correct_r, w_v_r, idx_w_r})
+   );
 
 if (debug_p)
   begin
      always_ff @(negedge clk_i)
        begin
-	  $write("v=%b c=%b W[%h] (=%b); v=%b R[%h] (=%b) p=%b ",w_v_i,correct_i,idx_w_i,mem[idx_w_i],r_v_r,idx_r_r,mem[idx_r_r],predict_o);
+         if (w_v_r | r_v_r)
+	       $write("v=%b c=%b W[%h] (=%b); v=%b %h R[%h] (=%b) p=%b ",w_v_r,correct_r,idx_w_r,mem[idx_w_r],r_v_r,r_addr_r, idx_r_r,mem[idx_r_r],predict_o);
 
-	  if (w_v_i & ~correct_i)
+	  if (w_v_r & ~correct_r)
 	    $write("X\n");
-	  else
+	  else if (w_v_r | r_v_r)
 	    $write("\n");
        end
 end // if (debug_p)
-   
+//synopsys translate_on 
+
 endmodule

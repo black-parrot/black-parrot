@@ -169,9 +169,9 @@ bsg_dff_reset_en
  attaboy_pending_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(calc_status.ex1_v || isd_status.isd_v)
+   ,.en_i((calc_status.ex1_v & calc_status.ex1_br_or_jmp) || isd_status.isd_v)
 
-   ,.data_i(calc_status.ex1_v & calc_status.ex1_br_or_jmp & ~isd_status.isd_v)
+   ,.data_i((calc_status.ex1_v & calc_status.ex1_br_or_jmp) & ~isd_status.isd_v)
    ,.data_o(attaboy_pending)
    );
 wire last_instr_was_branch = attaboy_pending | (calc_status.ex1_v & calc_status.ex1_br_or_jmp);

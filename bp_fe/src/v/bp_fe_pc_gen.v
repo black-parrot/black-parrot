@@ -273,25 +273,25 @@ bp_fe_btb
    ,.reset_i(reset_i)
 
    ,.r_addr_i(pc_gen_stage_n[0].pc)
-   ,.r_v_i(pc_gen_stage_n[0].v)
+   ,.r_v_i(pc_gen_stage_n[0].v & ~ovr_taken)
    ,.br_tgt_o(btb_br_tgt_lo)
    ,.br_tgt_v_o(btb_br_tgt_v_lo)
 
    ,.w_tag_i(fe_cmd_branch_metadata.btb_tag) 
    ,.w_idx_i(fe_cmd_branch_metadata.btb_idx)
-   ,.w_set_i(btb_incorrect & ~br_miss_nonbr)
-   ,.w_clear_i(btb_incorrect & br_miss_nonbr)
+   ,.w_set_i(fe_cmd_yumi_o & btb_incorrect & ~br_miss_nonbr)
+   ,.w_clear_i(fe_cmd_yumi_o & btb_incorrect & br_miss_nonbr)
    ,.br_tgt_i(fe_cmd_cast_i.vaddr)
    );
 
 always_ff @(posedge clk_i)
   begin
     //if (br_miss_v & fe_cmd_yumi_o)
-    //  $display("[FE MISPRED] vaddr: %x btb index: %x btb tag: %x", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata.btb_idx, fe_cmd_branch_metadata.btb_tag);
+    //  $display("[FE MISPRED] vaddr: %x %p", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata);
     //if (attaboy_v & fe_cmd_yumi_o)
-    //  $display("[FE ATTABOY] vaddr: %x btb index: %x btb tag: %x", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata.btb_idx, fe_cmd_branch_metadata.btb_tag);
+    //  $display("[FE ATTABOY] vaddr: %x %p", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata);
     //if (fe_queue_v_o)
-    //  $display("[FETCH  ] %x %p", fe_queue_cast_o.msg.fetch.pc, fe_queue_cast_o_branch_metadata_r);
+    //  $display("[FE FETCH  ] %x %p", fe_queue_cast_o.msg.fetch.pc, fe_queue_cast_o_branch_metadata_r);
     //if (br_miss_v & fe_cmd_yumi_o)
     //  $display("[REDIR  ] %x %p", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata);
     //if (attaboy_v & fe_cmd_yumi_o)
