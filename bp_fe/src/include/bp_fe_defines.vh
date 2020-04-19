@@ -58,7 +58,7 @@ typedef enum logic [3:0]
     logic v;                        \
     logic btb;                      \
     logic bht;                      \
-    logic ovr;                      \
+    logic taken;                    \
                                     \
     logic [vaddr_width_p-1:0] pc;   \
   }  bp_fe_pc_gen_stage_s

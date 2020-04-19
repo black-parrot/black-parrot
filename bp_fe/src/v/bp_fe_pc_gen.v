@@ -196,10 +196,11 @@ logic bht_pred_lo;
 wire btb_taken = btb_br_tgt_v_lo & bht_pred_lo;
 always_comb
   begin
+    pc_gen_stage_n[0]            = '0;
     pc_gen_stage_n[0].v          = fetch_v;
-    pc_gen_stage_n[0].btb        = '0;
-    pc_gen_stage_n[0].bht        = '0;
-    pc_gen_stage_n[0].ovr        = ovr_taken;
+    pc_gen_stage_n[0].taken      = ovr_taken | btb_taken;
+    pc_gen_stage_n[0].btb        = btb_br_tgt_v_lo;
+    pc_gen_stage_n[0].bht        = bht_pred_lo;
 
     // Next PC calculation
     // load boot pc on reset command
@@ -217,10 +218,8 @@ always_comb
         pc_gen_stage_n[0].pc = pc_gen_stage_r[0].pc + 4;
       end
 
-    pc_gen_stage_n[1]             = pc_gen_stage_r[0];
-    pc_gen_stage_n[1].v          &= ~flush & ~ovr_taken;
-    pc_gen_stage_n[1].btb         = btb_br_tgt_v_lo;
-    pc_gen_stage_n[1].bht         = bht_pred_lo;
+    pc_gen_stage_n[1]    = pc_gen_stage_r[0];
+    pc_gen_stage_n[1].v &= ~flush & ~ovr_taken;
   end
 
 bsg_dff_reset
@@ -234,31 +233,28 @@ bsg_dff_reset
    );
 
 // Branch prediction logic
-bp_fe_branch_metadata_fwd_s fe_queue_cast_o_branch_metadata, fe_queue_cast_o_branch_metadata_r;
-wire [btb_tag_width_p-1:0] btb_tag_if2 = pc_if2[2+btb_idx_width_p+:btb_tag_width_p];
-wire [btb_idx_width_p-1:0] btb_idx_if2 = pc_if2[2+:btb_idx_width_p];
-wire [bht_idx_width_p-1:0] bht_idx_if2 = pc_if2[2+:bht_idx_width_p];
-
-assign fe_queue_cast_o_branch_metadata = 
-  '{pred_taken: pc_gen_stage_r[1].btb | pc_gen_stage_r[1].ovr
-    ,src_btb  : pc_gen_stage_r[1].btb
-    ,src_ovr  : pc_gen_stage_r[1].ovr
-    ,btb_tag  : btb_tag_if2
-    ,btb_idx  : btb_idx_if2
-    ,bht_idx  : bht_idx_if2
-    ,default  : '0
-    };
-
+logic [vaddr_width_p-1:0] pc_site;
 bsg_dff_reset_en
- #(.width_p(branch_metadata_fwd_width_p))
+ #(.width_p(vaddr_width_p))
  branch_metadata_fwd_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i) 
    ,.en_i(fe_queue_v_o)
 
-   ,.data_i(fe_queue_cast_o_branch_metadata)
-   ,.data_o(fe_queue_cast_o_branch_metadata_r)
+   ,.data_i(pc_if2)
+   ,.data_o(pc_site)
    );
+
+bp_fe_branch_metadata_fwd_s fe_queue_cast_o_branch_metadata;
+assign fe_queue_cast_o_branch_metadata = 
+  '{pred_taken: pc_gen_stage_r[1].taken
+    ,src_btb  : pc_gen_stage_r[1].btb
+    ,src_ovr  : '0 // unused
+    ,btb_tag  : pc_site[2+btb_idx_width_p+:btb_tag_width_p]
+    ,btb_idx  : pc_site[2+:btb_idx_width_p]
+    ,bht_idx  : pc_site[2+:bht_idx_width_p]
+    ,default  : '0
+    };
 
 // Casting branch metadata forwarded from BE
 wire btb_incorrect = (br_miss_nonbr & fe_cmd_branch_metadata.src_btb)
@@ -328,7 +324,7 @@ bp_fe_instr_scan
 wire is_br          = mem_resp_v_i & (scan_instr.scan_class == e_rvi_branch);
 wire is_jal         = mem_resp_v_i & (scan_instr.scan_class == e_rvi_jal);
 wire is_jalr        = mem_resp_v_i & (scan_instr.scan_class == e_rvi_jalr);
-assign ovr_taken    = ~pc_gen_stage_r[1].btb & ((is_br & pc_gen_stage_r[1].bht) | is_jal);
+assign ovr_taken    = ~pc_gen_stage_r[0].btb & ((is_br & pc_gen_stage_r[0].bht) | is_jal);
 assign br_target    = pc_gen_stage_r[1].pc + scan_instr.imm;
 
 
@@ -398,7 +394,7 @@ always_comb
         fe_queue_cast_o.msg_type                      = e_fe_fetch;
         fe_queue_cast_o.msg.fetch.pc                  = pc_if2;
         fe_queue_cast_o.msg.fetch.instr               = mem_resp_cast_i.data;
-        fe_queue_cast_o.msg.fetch.branch_metadata_fwd = fe_queue_cast_o_branch_metadata_r;
+        fe_queue_cast_o.msg.fetch.branch_metadata_fwd = fe_queue_cast_o_branch_metadata;
       end
   end
 

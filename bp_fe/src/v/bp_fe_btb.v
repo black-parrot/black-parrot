@@ -18,6 +18,8 @@ module bp_fe_btb
    , parameter btb_tag_width_p = "inv"
    , parameter btb_idx_width_p = "inv"
 
+   , localparam debug_p = 0
+
    , localparam btb_offset_width_lp = 2 // bottom 2 bits are unused without compressed branches
                                         // TODO: Should be a parameterizable struct
    ) 
@@ -105,24 +107,32 @@ always_ff @(posedge clk_i)
         v_r <= v_r;
   end
 
-always_ff @(posedge clk_i)
-  begin
-//    if (w_v_i)
-//      begin
-//        $display("[BTB] WRITE INDEX: %x TAG: %x TARGET: %x"
-//                 , tag_mem_addr_li
-//                 , tag_mem_li
-//                 , tgt_mem_li
-//                 );
-//      end
-//    if (br_tgt_v_o)
-//      begin
-//        $display("[BTB] READ INDEX: %x TAG: %x TARGET: %x"
-//                 , r_idx_r
-//                 , r_tag_r
-//                 , br_tgt_o
-//                 );
-//      end
-  end
+if (debug_p)
+  always_ff @(negedge clk_i)
+    begin
+      if (w_set_i)
+        begin
+          $display("[BTB] WRITE INDEX: %x TAG: %x TARGET: %x"
+                   , tag_mem_addr_li
+                   , tag_mem_li
+                   , tgt_mem_li
+                   );
+        end
+      if (w_clear_i)
+        begin
+          $display("[BTB] CLEAR INDEX: %x TAG: %x"
+                   , tag_mem_addr_li
+                   , tag_mem_li
+                   );
+        end
+      if (br_tgt_v_o)
+        begin
+          $display("[BTB] READ INDEX: %x TAG: %x TARGET: %x"
+                   , r_idx_r
+                   , r_tag_r
+                   , br_tgt_o
+                   );
+        end
+    end
 
 endmodule
