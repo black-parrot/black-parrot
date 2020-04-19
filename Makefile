@@ -82,24 +82,17 @@ rebuild-gcc:
 	$(MAKE) -C external/riscv-gnu-toolchain clean
 	$(MAKE) -j 8 -C external -f Makefile.tools gnu_build
 
-profile:
+STALLS=instr dir_mispredict load_dep fe_cmd branch_override ret_override target_mispredict ret_mispredict mul icache dcache long_haz cmd_fence unknown control_haz struct_haz f\e_wait_stall
+
+stall.%:
+	-@printf "%-20s: " $*; printf "%8d\n" `find . -iname "stall_0.trace" | xargs -n 1 grep -c $*`
+
+profile-header:	
 	@echo "Coremark score per MHz; divide 5e6 by cycles"
-	-find . -iname "stall_0.trace" | xargs -n 1 wc -l
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c instr
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -v -c instr
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c load_dep
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c dir_mispredict
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c branch_override
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c ret_override
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c target_mispredict
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c ret_mispredict
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c fe_cmd
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c mul
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c icache
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c dcache
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c long_haz
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c cmd_fence
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c fe_wait_stall
+	-@find . -iname "stall_0.trace" | xargs -n 1 grep -v $(foreach x,$(STALLS),-e $(x))
+	-@printf "%-20s: " "cycles"; printf "%8d\n" $$(cat `find . -iname "stall_0.trace" | xargs -n 1` | wc -l)
+
+profile: profile-header $(foreach x,$(STALLS),stall.$(x))
 
 profile-branch-mispredicts:
 	grep dir_mispredict ./bp_top/syn/results/vcs/bp_softcore.e_bp_single_core_cfg.sim/coremark/stall_0.trace | awk -F, '{print $$4}' | sort | uniq -c
