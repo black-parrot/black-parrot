@@ -254,7 +254,7 @@ assign fe_queue_cast_o_branch_metadata =
   '{pred_taken: pc_gen_stage_r[1].taken
     ,src_btb  : pc_gen_stage_r[1].btb
     ,src_ret  : pc_gen_stage_r[1].ret
-    ,src_ovr  : '0 // unused
+    ,src_ovr  : pc_gen_stage_r[1].taken & ~pc_gen_stage_r[1].btb & ~pc_gen_stage_r[1].ret
     ,btb_tag  : pc_site[2+btb_idx_width_p+:btb_tag_width_p]
     ,btb_idx  : pc_site[2+:btb_idx_width_p]
     ,bht_idx  : pc_site[2+:bht_idx_width_p]

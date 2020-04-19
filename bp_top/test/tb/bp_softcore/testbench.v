@@ -567,16 +567,16 @@ bind bp_be_top
        ,.itlb_miss(fe.mem.itlb_miss_r)
        ,.icache_miss(~fe.mem.icache.vaddr_ready_o | fe.pc_gen.icache_miss)
        ,.icache_fence(fe.mem.icache.fencei_req)
-       ,.branch_override(fe.pc_gen.ovr_taken)
+       ,.branch_override(fe.pc_gen.ovr_taken & ~fe.pc_gen.ovr_ret)
        ,.ret_override(fe.pc_gen.ovr_ret)
 
        ,.fe_cmd(fe.pc_gen.fe_cmd_yumi_o & ~fe.pc_gen.attaboy_v)
 
-       ,.cmd_fence(be.be_checker.director.suppress_iss_o)
-
-       ,.target_mispredict(be.be_checker.scheduler.npc_mismatch & be.be_checker.director.redir_md.src_btb)
-       ,.dir_mispredict(be.be_checker.scheduler.npc_mismatch & be.be_calculator.pipe_int.decode.br_v)
        ,.ret_mispredict(be.be_checker.scheduler.npc_mismatch & be.be_checker.director.redir_md.src_ret)
+       ,.ovr_mispredict(be.be_checker.scheduler.npc_mismatch & be.be_checker.director.redir_md.src_ovr)
+       ,.btb_mispredict(be.be_checker.scheduler.npc_mismatch & be.be_checker.director.redir_md.src_btb)
+       ,.dir_mispredict(be.be_checker.scheduler.npc_mismatch & (be.be_checker.director.redir_md.pred_taken ^ be.be_calculator.pipe_int.btaken_r))
+       ,.none_mispredict(be.be_checker.scheduler.npc_mismatch & ~be.be_checker.director.redir_md.src_ret & ~be.be_checker.director.redir_md.src_btb & ~be.be_checker.director.redir_md.src_ovr)
 
        ,.dtlb_miss(be.be_mem.dtlb_miss_r)
        ,.dcache_miss(~be.be_mem.dcache.ready_o)

@@ -80,5 +80,19 @@ assign data_o   = decode.result_sel
 wire btaken = (decode.br_v & alu_result[0]) | decode.jmp_v;
 assign br_tgt_o = (decode.pipe_int_v & btaken) ? baddr + imm_i : pc_plus4;
 
+
+//synopsys translate_off
+bsg_dff_en_bypass
+ #(.width_p(1))
+ btaken_reg
+  (.clk_i(clk_i)
+   ,.en_i(decode.instr_v)
+
+   ,.data_i(btaken)
+   ,.data_o(btaken_r)
+   );
+
+//synopsys translate_on
+
 endmodule : bp_be_pipe_int
 
