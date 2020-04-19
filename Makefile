@@ -90,7 +90,9 @@ profile:
 	-find . -iname "stall_0.trace" | xargs -n 1 grep -c load_dep
 	-find . -iname "stall_0.trace" | xargs -n 1 grep -c dir_mispredict
 	-find . -iname "stall_0.trace" | xargs -n 1 grep -c branch_override
+	-find . -iname "stall_0.trace" | xargs -n 1 grep -c ret_override
 	-find . -iname "stall_0.trace" | xargs -n 1 grep -c target_mispredict
+	-find . -iname "stall_0.trace" | xargs -n 1 grep -c ret_mispredict
 	-find . -iname "stall_0.trace" | xargs -n 1 grep -c fe_cmd
 	-find . -iname "stall_0.trace" | xargs -n 1 grep -c mul
 	-find . -iname "stall_0.trace" | xargs -n 1 grep -c icache

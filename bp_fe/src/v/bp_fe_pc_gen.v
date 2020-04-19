@@ -274,7 +274,7 @@ bp_fe_btb
    ,.reset_i(reset_i)
 
    ,.r_addr_i(pc_gen_stage_n[0].pc)
-   ,.r_v_i(pc_gen_stage_n[0].v & ~ovr_taken)
+   ,.r_v_i(pc_gen_stage_n[0].v & ~ovr_taken & ~ovr_ret)
    ,.br_tgt_o(btb_br_tgt_lo)
    ,.br_tgt_v_o(btb_br_tgt_v_lo)
 
