@@ -83,19 +83,19 @@ module bp_be_dcache_lce
     // data_mem
     , output logic data_mem_pkt_v_o
     , output logic [dcache_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
-    , input data_mem_pkt_ready_i
+    , input data_mem_pkt_yumi_i
     , input [dcache_block_width_p-1:0] data_mem_i
   
     // tag_mem
     , output logic tag_mem_pkt_v_o
     , output logic [dcache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_o
-    , input tag_mem_pkt_ready_i
+    , input tag_mem_pkt_yumi_i
     , input [ptag_width_lp-1:0] tag_mem_i
     
     // stat_mem
     , output logic stat_mem_pkt_v_o
     , output logic [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
-    , input stat_mem_pkt_ready_i
+    , input stat_mem_pkt_yumi_i
     , input [stat_info_width_lp-1:0] stat_mem_i
 
     // LCE-CCE interface
@@ -258,17 +258,17 @@ module bp_be_dcache_lce
 
       ,.data_mem_pkt_o(data_mem_pkt)
       ,.data_mem_pkt_v_o(data_mem_pkt_v_o)
-      ,.data_mem_pkt_ready_i(data_mem_pkt_ready_i)
+      ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_i)
       ,.data_mem_i(data_mem_i)
 
       ,.tag_mem_pkt_o(tag_mem_pkt)
       ,.tag_mem_pkt_v_o(tag_mem_pkt_v_o)
-      ,.tag_mem_pkt_ready_i(tag_mem_pkt_ready_i)
+      ,.tag_mem_pkt_yumi_i(tag_mem_pkt_yumi_i)
       ,.tag_mem_i(tag_mem_i)
 
       ,.stat_mem_pkt_o(stat_mem_pkt)
       ,.stat_mem_pkt_v_o(stat_mem_pkt_v_o)
-      ,.stat_mem_pkt_ready_i(stat_mem_pkt_ready_i)
+      ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_i)
       ,.stat_mem_i(stat_mem_i)
       );
 

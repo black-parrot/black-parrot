@@ -85,33 +85,33 @@ module bp_core
   // response side - Interface from I$ LCE
   bp_icache_data_mem_pkt_s icache_data_mem_pkt_li;
   logic icache_data_mem_pkt_v_li;
-  logic icache_data_mem_pkt_ready_lo;
+  logic icache_data_mem_pkt_yumi_lo;
   logic [icache_block_width_p-1:0] icache_data_mem_lo;
 
   bp_icache_tag_mem_pkt_s icache_tag_mem_pkt_li;
   logic icache_tag_mem_pkt_v_li;
-  logic icache_tag_mem_pkt_ready_lo;
+  logic icache_tag_mem_pkt_yumi_lo;
   logic [ptag_width_p-1:0] icache_tag_mem_lo;
 
   bp_icache_stat_mem_pkt_s icache_stat_mem_pkt_li;
   logic icache_stat_mem_pkt_v_li;
-  logic icache_stat_mem_pkt_ready_lo;
+  logic icache_stat_mem_pkt_yumi_lo;
   logic [icache_stat_info_width_lp-1:0] icache_stat_mem_lo;
 
   // response side - Interface from D$ LCE
   bp_dcache_data_mem_pkt_s dcache_data_mem_pkt_li;
   logic dcache_data_mem_pkt_v_li;
-  logic dcache_data_mem_pkt_ready_lo;
+  logic dcache_data_mem_pkt_yumi_lo;
   logic [dcache_block_width_p-1:0] dcache_data_mem_lo;
 
   bp_dcache_tag_mem_pkt_s dcache_tag_mem_pkt_li;
   logic dcache_tag_mem_pkt_v_li;
-  logic dcache_tag_mem_pkt_ready_lo;
+  logic dcache_tag_mem_pkt_yumi_lo;
   logic [ptag_width_p-1:0] dcache_tag_mem_lo;
 
   bp_dcache_stat_mem_pkt_s dcache_stat_mem_pkt_li;
   logic dcache_stat_mem_pkt_v_li;
-  logic dcache_stat_mem_pkt_ready_lo;
+  logic dcache_stat_mem_pkt_yumi_lo;
   logic [dcache_stat_info_width_lp-1:0] dcache_stat_mem_lo;
 
   bp_core_minimal
@@ -150,33 +150,33 @@ module bp_core
      // response side - Interface from D$ LCE
      ,.dcache_data_mem_pkt_i(dcache_data_mem_pkt_li)
      ,.dcache_data_mem_pkt_v_i(dcache_data_mem_pkt_v_li)
-     ,.dcache_data_mem_pkt_ready_o(dcache_data_mem_pkt_ready_lo)
+     ,.dcache_data_mem_pkt_yumi_o(dcache_data_mem_pkt_yumi_lo)
      ,.dcache_data_mem_o(dcache_data_mem_lo)
 
      ,.dcache_tag_mem_pkt_i(dcache_tag_mem_pkt_li)
      ,.dcache_tag_mem_pkt_v_i(dcache_tag_mem_pkt_v_li)
-     ,.dcache_tag_mem_pkt_ready_o(dcache_tag_mem_pkt_ready_lo)
+     ,.dcache_tag_mem_pkt_yumi_o(dcache_tag_mem_pkt_yumi_lo)
      ,.dcache_tag_mem_o(dcache_tag_mem_lo)
 
      ,.dcache_stat_mem_pkt_i(dcache_stat_mem_pkt_li)
      ,.dcache_stat_mem_pkt_v_i(dcache_stat_mem_pkt_v_li)
-     ,.dcache_stat_mem_pkt_ready_o(dcache_stat_mem_pkt_ready_lo)
+     ,.dcache_stat_mem_pkt_yumi_o(dcache_stat_mem_pkt_yumi_lo)
      ,.dcache_stat_mem_o(dcache_stat_mem_lo)
 
      // response side - Interface from I$ LCE
      ,.icache_data_mem_pkt_i(icache_data_mem_pkt_li)
      ,.icache_data_mem_pkt_v_i(icache_data_mem_pkt_v_li)
-     ,.icache_data_mem_pkt_ready_o(icache_data_mem_pkt_ready_lo)
+     ,.icache_data_mem_pkt_yumi_o(icache_data_mem_pkt_yumi_lo)
      ,.icache_data_mem_o(icache_data_mem_lo)
 
      ,.icache_tag_mem_pkt_i(icache_tag_mem_pkt_li)
      ,.icache_tag_mem_pkt_v_i(icache_tag_mem_pkt_v_li)
-     ,.icache_tag_mem_pkt_ready_o(icache_tag_mem_pkt_ready_lo)
+     ,.icache_tag_mem_pkt_yumi_o(icache_tag_mem_pkt_yumi_lo)
      ,.icache_tag_mem_o(icache_tag_mem_lo)
 
      ,.icache_stat_mem_pkt_i(icache_stat_mem_pkt_li)
      ,.icache_stat_mem_pkt_v_i(icache_stat_mem_pkt_v_li)
-     ,.icache_stat_mem_pkt_ready_o(icache_stat_mem_pkt_ready_lo)
+     ,.icache_stat_mem_pkt_yumi_o(icache_stat_mem_pkt_yumi_lo)
      ,.icache_stat_mem_o(icache_stat_mem_lo)
 
      ,.timer_irq_i(timer_irq_i)
@@ -202,17 +202,17 @@ module bp_core
 
      ,.data_mem_pkt_o(icache_data_mem_pkt_li)
      ,.data_mem_pkt_v_o(icache_data_mem_pkt_v_li)
-     ,.data_mem_pkt_ready_i(icache_data_mem_pkt_ready_lo)
+     ,.data_mem_pkt_yumi_i(icache_data_mem_pkt_yumi_lo)
      ,.data_mem_i(icache_data_mem_lo)
 
      ,.tag_mem_pkt_o(icache_tag_mem_pkt_li)
      ,.tag_mem_pkt_v_o(icache_tag_mem_pkt_v_li)
-     ,.tag_mem_pkt_ready_i(icache_tag_mem_pkt_ready_lo)
+     ,.tag_mem_pkt_yumi_i(icache_tag_mem_pkt_yumi_lo)
      ,.tag_mem_i(icache_tag_mem_lo)
 
      ,.stat_mem_pkt_v_o(icache_stat_mem_pkt_v_li)
      ,.stat_mem_pkt_o(icache_stat_mem_pkt_li)
-     ,.stat_mem_pkt_ready_i(icache_stat_mem_pkt_ready_lo)
+     ,.stat_mem_pkt_yumi_i(icache_stat_mem_pkt_yumi_lo)
      ,.stat_mem_i(icache_stat_mem_lo)
 
      ,.lce_req_o(lce_req_o[0])
@@ -250,17 +250,17 @@ module bp_core
 
     ,.data_mem_pkt_o(dcache_data_mem_pkt_li)
     ,.data_mem_pkt_v_o(dcache_data_mem_pkt_v_li)
-    ,.data_mem_pkt_ready_i(dcache_data_mem_pkt_ready_lo)
+    ,.data_mem_pkt_yumi_i(dcache_data_mem_pkt_yumi_lo)
     ,.data_mem_i(dcache_data_mem_lo)
 
     ,.tag_mem_pkt_o(dcache_tag_mem_pkt_li)
     ,.tag_mem_pkt_v_o(dcache_tag_mem_pkt_v_li)
-    ,.tag_mem_pkt_ready_i(dcache_tag_mem_pkt_ready_lo)
+    ,.tag_mem_pkt_yumi_i(dcache_tag_mem_pkt_yumi_lo)
     ,.tag_mem_i(dcache_tag_mem_lo)
 
     ,.stat_mem_pkt_v_o(dcache_stat_mem_pkt_v_li)
     ,.stat_mem_pkt_o(dcache_stat_mem_pkt_li)
-    ,.stat_mem_pkt_ready_i(dcache_stat_mem_pkt_ready_lo)
+    ,.stat_mem_pkt_yumi_i(dcache_stat_mem_pkt_yumi_lo)
     ,.stat_mem_i(dcache_stat_mem_lo)
 
     ,.lce_req_o(lce_req_o[1])

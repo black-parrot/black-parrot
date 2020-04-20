@@ -62,15 +62,15 @@ module bp_nonsynth_cache_tracer
    // Fill Packets
    , input                                                 data_mem_pkt_v_i
    , input [cache_data_mem_pkt_width_lp-1:0]               data_mem_pkt_i
-   , input                                                 data_mem_pkt_ready_o
+   , input                                                 data_mem_pkt_yumi_o
 
    , input                                                 tag_mem_pkt_v_i
    , input [cache_tag_mem_pkt_width_lp-1:0]                tag_mem_pkt_i
-   , input                                                 tag_mem_pkt_ready_o
+   , input                                                 tag_mem_pkt_yumi_o
 
    , input                                                 stat_mem_pkt_v_i
    , input [cache_stat_mem_pkt_width_lp-1:0]               stat_mem_pkt_i
-   , input                                                 stat_mem_pkt_ready_o
+   , input                                                 stat_mem_pkt_yumi_o
    );
 
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, cache);

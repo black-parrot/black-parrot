@@ -142,19 +142,19 @@ module bp_be_dcache
     // data_mem
     , input data_mem_pkt_v_i
     , input [dcache_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
-    , output logic data_mem_pkt_ready_o
+    , output logic data_mem_pkt_yumi_o
     , output logic [dcache_block_width_p-1:0] data_mem_o
 
     // tag_mem
     , input tag_mem_pkt_v_i
     , input [dcache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_i
-    , output logic tag_mem_pkt_ready_o
+    , output logic tag_mem_pkt_yumi_o
     , output logic [ptag_width_lp-1:0] tag_mem_o
 
     // stat_mem
     , input stat_mem_pkt_v_i
     , input [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
-    , output logic stat_mem_pkt_ready_o
+    , output logic stat_mem_pkt_yumi_o
     , output logic [stat_info_width_lp-1:0] stat_mem_o
 
   );
@@ -660,9 +660,9 @@ module bp_be_dcache
 
   logic [dcache_assoc_p-1:0][bank_width_lp-1:0] lce_data_mem_data_li;
  
-  logic data_mem_pkt_ready;
-  logic tag_mem_pkt_ready;
-  logic stat_mem_pkt_ready;
+  logic data_mem_pkt_v;
+  logic tag_mem_pkt_v;
+  logic stat_mem_pkt_v;
 
   
   // Assigning message types
@@ -798,9 +798,9 @@ module bp_be_dcache
   
   wire cache_lock = (lock_cnt_r != '0);
   
-  assign data_mem_pkt_ready_o = data_mem_pkt_ready & ~cache_lock;
-  assign tag_mem_pkt_ready_o = tag_mem_pkt_ready & ~cache_lock;
-  assign stat_mem_pkt_ready_o = stat_mem_pkt_ready & ~cache_lock;
+  assign data_mem_pkt_v = data_mem_pkt_v_i & ~cache_lock;
+  assign tag_mem_pkt_v = tag_mem_pkt_v_i & ~cache_lock;
+  assign stat_mem_pkt_v = stat_mem_pkt_v_i & ~cache_lock;
 
   logic [bank_width_lp-1:0] ld_data_way_picked;
   logic [dword_width_p-1:0] ld_data_dword_picked;
@@ -913,7 +913,7 @@ module bp_be_dcache
 
   logic lce_data_mem_v;
   assign lce_data_mem_v = (data_mem_pkt.opcode != e_cache_data_mem_uncached)
-    & data_mem_pkt_v_i;
+    & data_mem_pkt_yumi_o;
 
   assign data_mem_v_li = (load_op & tl_we)
     ? {dcache_assoc_p{1'b1}}
@@ -922,7 +922,7 @@ module bp_be_dcache
       : {dcache_assoc_p{lce_data_mem_v}});
 
   assign data_mem_w_li = wbuf_yumi_li
-    | (data_mem_pkt_v_i & data_mem_pkt.opcode == e_cache_data_mem_write);
+    | (data_mem_pkt_yumi_o & data_mem_pkt.opcode == e_cache_data_mem_write);
 
   logic [dcache_assoc_p-1:0][bank_width_lp-1:0] lce_data_mem_write_data;
 
@@ -963,7 +963,7 @@ module bp_be_dcache
  
   // tag_mem
   //
-  assign tag_mem_v_li = tl_we | tag_mem_pkt_v_i; 
+  assign tag_mem_v_li = tl_we | tag_mem_pkt_yumi_o; 
   assign tag_mem_w_li = ~tl_we & tag_mem_pkt_v_i & (tag_mem_pkt.opcode != e_cache_tag_mem_read);
   assign tag_mem_addr_li = tl_we 
     ? addr_index
@@ -1006,10 +1006,10 @@ module bp_be_dcache
 
   // stat_mem
   //
-  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r) | stat_mem_pkt_v_i;
+  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r) | stat_mem_pkt_yumi_o;
   assign stat_mem_w_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r)
     ? ~(load_miss_tv | store_miss_tv | lr_miss_tv)
-    : stat_mem_pkt_v_i & (stat_mem_pkt.opcode != e_cache_stat_mem_read);
+    : stat_mem_pkt_yumi_o & (stat_mem_pkt.opcode != e_cache_stat_mem_read);
   assign stat_mem_addr_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r)
     ? addr_index_tv
     : stat_mem_pkt.index;
@@ -1083,7 +1083,7 @@ module bp_be_dcache
   logic [way_id_width_lp-1:0] data_mem_pkt_way_r;
 
   always_ff @ (posedge clk_i) begin
-    if (data_mem_pkt_v_i & (data_mem_pkt.opcode == e_cache_data_mem_read)) begin
+    if (data_mem_pkt_yumi_o & (data_mem_pkt.opcode == e_cache_data_mem_read)) begin
       data_mem_pkt_way_r <= data_mem_pkt.way_id;
     end
   end
@@ -1098,7 +1098,7 @@ module bp_be_dcache
     );
   
   assign data_mem_o = lce_data_mem_data_li; 
-  assign data_mem_pkt_ready = ~(load_op & tl_we) & ~wbuf_v_lo;
+  assign data_mem_pkt_yumi_o = (data_mem_pkt.opcode == e_cache_data_mem_uncached) ? data_mem_pkt_v : ~(load_op & tl_we) & ~wbuf_v_lo & data_mem_pkt_v;
 
   // load reservation logic
   always_ff @ (posedge clk_i) begin
@@ -1115,7 +1115,7 @@ module bp_be_dcache
       end else if (sc_op_tv_r) begin
         load_reserved_v_r <= 1'b0;
       // Invalidates from other harts which match the reservation address clear the reservation
-      end else if (tag_mem_pkt_v_i & (tag_mem_pkt.opcode == e_cache_tag_mem_invalidate)
+      end else if (tag_mem_pkt_v & (tag_mem_pkt.opcode == e_cache_tag_mem_invalidate)
                   & (tag_mem_pkt.tag == load_reserved_tag_r) 
                   & (tag_mem_pkt.index == load_reserved_index_r)) begin
         load_reserved_v_r <= 1'b0;
@@ -1131,7 +1131,7 @@ module bp_be_dcache
       uncached_load_data_v_r <= 1'b0;
     end
     else begin
-      if (data_mem_pkt_v_i & (data_mem_pkt.opcode == e_cache_data_mem_uncached)) begin
+      if (data_mem_pkt_yumi_o & (data_mem_pkt.opcode == e_cache_data_mem_uncached)) begin
         uncached_load_data_r <= data_mem_pkt.data[0+:dword_width_p];
         uncached_load_data_v_r <= 1'b1;
       end
@@ -1152,23 +1152,23 @@ module bp_be_dcache
   logic [way_id_width_lp-1:0] tag_mem_pkt_way_r;
 
   always_ff @ (posedge clk_i) begin
-    if (tag_mem_pkt_v_i & (tag_mem_pkt.opcode == e_cache_tag_mem_read)) begin
+    if (tag_mem_pkt_yumi_o & (tag_mem_pkt.opcode == e_cache_tag_mem_read)) begin
       tag_mem_pkt_way_r <= tag_mem_pkt.way_id;
     end
   end
 
   assign tag_mem_o =  tag_mem_data_lo[tag_mem_pkt_way_r].tag;
 
-  assign tag_mem_pkt_ready = ~tl_we;
+  assign tag_mem_pkt_yumi_o = ~tl_we & tag_mem_pkt_v;
   
   // LCE stat_mem
   //
-  assign stat_mem_pkt_ready = ~(v_tv_r & ~uncached_tv_r);
+  assign stat_mem_pkt_yumi_o = ~(v_tv_r & ~uncached_tv_r) & stat_mem_pkt_v;
 
   logic [way_id_width_lp-1:0] stat_mem_pkt_way_r;
 
   always_ff @ (posedge clk_i) begin
-    if (stat_mem_pkt_v_i & (stat_mem_pkt.opcode == e_cache_stat_mem_read)) begin
+    if (stat_mem_pkt_yumi_o & (stat_mem_pkt.opcode == e_cache_stat_mem_read)) begin
       stat_mem_pkt_way_r <= stat_mem_pkt.way_id;
     end
   end

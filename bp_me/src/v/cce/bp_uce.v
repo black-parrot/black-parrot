@@ -48,17 +48,17 @@ module bp_uce
 
     , output logic [cache_tag_mem_pkt_width_lp-1:0]  tag_mem_pkt_o
     , output logic                                   tag_mem_pkt_v_o
-    , input                                          tag_mem_pkt_ready_i
+    , input                                          tag_mem_pkt_yumi_i
     , input [ptag_width_p-1:0]                       tag_mem_i
 
     , output logic [cache_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
     , output logic                                   data_mem_pkt_v_o
-    , input                                          data_mem_pkt_ready_i
+    , input                                          data_mem_pkt_yumi_i
     , input [block_width_p-1:0]                      data_mem_i
 
     , output logic [cache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
     , output logic                                   stat_mem_pkt_v_o
-    , input                                          stat_mem_pkt_ready_i
+    , input                                          stat_mem_pkt_yumi_i
     , input [stat_info_width_lp-1:0]                 stat_mem_i
 
     , output logic                                   credits_full_o
@@ -89,9 +89,9 @@ module bp_uce
   always_ff @(posedge clk_i)
     begin
       cache_req_v_r <= cache_req_v_i;
-      dirty_data_v_r <= data_mem_pkt_v_o & (data_mem_pkt_cast_o.opcode == e_cache_data_mem_read);
-      dirty_tag_v_r <= tag_mem_pkt_v_o & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_read);
-      dirty_stat_v_r <= stat_mem_pkt_v_o & (stat_mem_pkt_cast_o.opcode == e_cache_stat_mem_read);
+      dirty_data_v_r <= data_mem_pkt_yumi_i & (data_mem_pkt_cast_o.opcode == e_cache_data_mem_read);
+      dirty_tag_v_r <= tag_mem_pkt_yumi_i & (tag_mem_pkt_cast_o.opcode == e_cache_tag_mem_read);
+      dirty_stat_v_r <= stat_mem_pkt_yumi_i & (stat_mem_pkt_cast_o.opcode == e_cache_stat_mem_read);
     end
 
   bp_cache_req_s cache_req_r;
@@ -284,13 +284,13 @@ module bp_uce
           begin
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_clear;
             tag_mem_pkt_cast_o.index  = index_cnt;
-            tag_mem_pkt_v_o = tag_mem_pkt_ready_i & stat_mem_pkt_ready_i;
+            tag_mem_pkt_v_o = 1'b1;
 
             stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_set_clear;
             stat_mem_pkt_cast_o.index  = index_cnt;
-            stat_mem_pkt_v_o = stat_mem_pkt_ready_i & tag_mem_pkt_ready_i;
+            stat_mem_pkt_v_o = 1'b1;
 
-            index_up = tag_mem_pkt_v_o & stat_mem_pkt_v_o;
+            index_up = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
 
             cache_req_complete_o = (index_done & index_up);
 
@@ -300,9 +300,9 @@ module bp_uce
           begin
             stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_read;
             stat_mem_pkt_cast_o.index = index_cnt;
-            stat_mem_pkt_v_o = stat_mem_pkt_ready_i;
+            stat_mem_pkt_v_o = 1'b1;
 
-            state_n = stat_mem_pkt_v_o ? e_flush_scan : e_flush_read;
+            state_n = stat_mem_pkt_yumi_i ? e_flush_scan : e_flush_read;
           end
         e_flush_scan:
           begin
@@ -312,19 +312,19 @@ module bp_uce
                 data_mem_pkt_cast_o.opcode = e_cache_data_mem_read;
                 data_mem_pkt_cast_o.index  = index_cnt;
                 data_mem_pkt_cast_o.way_id = way_cnt;
-                data_mem_pkt_v_o = stat_mem_pkt_ready_i & tag_mem_pkt_ready_i & data_mem_pkt_ready_i;
+                data_mem_pkt_v_o = 1'b1;
 
                 tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_read;
                 tag_mem_pkt_cast_o.index  = index_cnt;
                 tag_mem_pkt_cast_o.way_id = way_cnt;
-                tag_mem_pkt_v_o = stat_mem_pkt_ready_i & tag_mem_pkt_ready_i & data_mem_pkt_ready_i;
+                tag_mem_pkt_v_o = 1'b1;
 
                 stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_clear_dirty;
                 stat_mem_pkt_cast_o.index  = index_cnt;
                 stat_mem_pkt_cast_o.way_id = way_cnt;
-                stat_mem_pkt_v_o = stat_mem_pkt_ready_i & tag_mem_pkt_ready_i & data_mem_pkt_ready_i;
+                stat_mem_pkt_v_o = 1'b1;
 
-                state_n = (data_mem_pkt_v_o & tag_mem_pkt_v_o & stat_mem_pkt_v_o) ? e_flush_write : e_flush_scan;
+                state_n = (data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i) ? e_flush_write : e_flush_scan;
               end
             else
               begin
@@ -430,19 +430,19 @@ module bp_uce
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_read;
             data_mem_pkt_cast_o.index  = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
             data_mem_pkt_cast_o.way_id = cache_req_metadata_r.repl_way;
-            data_mem_pkt_v_o = data_mem_pkt_ready_i & tag_mem_pkt_ready_i & stat_mem_pkt_ready_i;
+            data_mem_pkt_v_o = 1'b1;
 
             tag_mem_pkt_cast_o.opcode  = e_cache_tag_mem_read;
             tag_mem_pkt_cast_o.index   = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
             tag_mem_pkt_cast_o.way_id  = cache_req_metadata_r.repl_way;
-            tag_mem_pkt_v_o = data_mem_pkt_ready_i & tag_mem_pkt_ready_i & stat_mem_pkt_ready_i;
+            tag_mem_pkt_v_o = 1'b1;
 
             stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_clear_dirty;
             stat_mem_pkt_cast_o.index  = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
             stat_mem_pkt_cast_o.way_id = cache_req_metadata_r.repl_way;
-            stat_mem_pkt_v_o = data_mem_pkt_ready_i & tag_mem_pkt_ready_i & stat_mem_pkt_ready_i;
+            stat_mem_pkt_v_o = 1'b1;
 
-            state_n = (data_mem_pkt_v_o & tag_mem_pkt_v_o & stat_mem_pkt_v_o) ? e_writeback_req : e_writeback_read;
+            state_n = (data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i) ? e_writeback_req : e_writeback_read;
           end
         e_writeback_req:
           begin
@@ -469,15 +469,15 @@ module bp_uce
             tag_mem_pkt_cast_o.way_id = mem_resp_cast_i.header.payload.way_id[0+:`BSG_SAFE_CLOG2(assoc_p)];
             tag_mem_pkt_cast_o.state  = e_COH_M;
             tag_mem_pkt_cast_o.tag    = mem_resp_cast_i.header.addr[block_offset_width_lp+index_width_lp+:ptag_width_p];
-            tag_mem_pkt_v_o = load_resp_v_li & tag_mem_pkt_ready_i & data_mem_pkt_ready_i;
+            tag_mem_pkt_v_o = load_resp_v_li;
 
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_write;
             data_mem_pkt_cast_o.index  = mem_resp_cast_i.header.addr[block_offset_width_lp+:index_width_lp];
             data_mem_pkt_cast_o.way_id = mem_resp_cast_i.header.payload.way_id[0+:`BSG_SAFE_CLOG2(assoc_p)];
             data_mem_pkt_cast_o.data   = mem_resp_cast_i.data;
-            data_mem_pkt_v_o = load_resp_v_li & data_mem_pkt_ready_i & tag_mem_pkt_ready_i;
+            data_mem_pkt_v_o = load_resp_v_li;
 
-            cache_req_complete_o = tag_mem_pkt_v_o & data_mem_pkt_v_o;
+            cache_req_complete_o = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             mem_resp_yumi_lo = cache_req_complete_o; 
 
             state_n = cache_req_complete_o ? e_ready : e_read_wait;
@@ -486,9 +486,9 @@ module bp_uce
           begin
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_uncached;
             data_mem_pkt_cast_o.data = mem_resp_cast_i.data;
-            data_mem_pkt_v_o = load_resp_v_li & data_mem_pkt_ready_i;
+            data_mem_pkt_v_o = load_resp_v_li;
 
-            cache_req_complete_o = data_mem_pkt_v_o;
+            cache_req_complete_o = data_mem_pkt_yumi_i;
             mem_resp_yumi_lo = cache_req_complete_o;
 
             state_n = cache_req_complete_o ? e_ready : e_uc_read_wait;
