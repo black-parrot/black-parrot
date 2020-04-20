@@ -59,6 +59,7 @@ logic                           ovr_ret, ovr_taken;
 // btb io
 logic [vaddr_width_p-1:0]       btb_br_tgt_lo;
 logic                           btb_br_tgt_v_lo;
+logic                           btb_br_tgt_jmp_lo;
 
 bp_fe_queue_s fe_queue_cast_o;
 bp_fe_cmd_s fe_cmd_cast_i;
@@ -272,6 +273,7 @@ assign fe_queue_cast_o_branch_metadata =
 // Casting branch metadata forwarded from BE
 wire btb_incorrect = (br_miss_nonbr & fe_cmd_branch_metadata.src_btb)
                      | (br_res_taken & (~fe_cmd_branch_metadata.src_btb | br_miss_v));
+wire br_res_jmp = fe_cmd_branch_metadata.is_jal | fe_cmd_branch_metadata.is_jalr;
 bp_fe_btb
  #(.vaddr_width_p(vaddr_width_p)
    ,.btb_tag_width_p(btb_tag_width_p)
@@ -285,11 +287,13 @@ bp_fe_btb
    ,.r_v_i(pc_gen_stage_n[0].v & ~ovr_taken & ~ovr_ret)
    ,.br_tgt_o(btb_br_tgt_lo)
    ,.br_tgt_v_o(btb_br_tgt_v_lo)
+   ,.br_tgt_jmp_o(btb_br_tgt_jmp_lo)
 
+   ,.w_v_i(fe_cmd_yumi_o & btb_incorrect)
+   ,.w_clr_i(br_miss_nonbr)
+   ,.w_jmp_i(br_res_jmp)
    ,.w_tag_i(fe_cmd_branch_metadata.btb_tag) 
    ,.w_idx_i(fe_cmd_branch_metadata.btb_idx)
-   ,.w_set_i(fe_cmd_yumi_o & btb_incorrect & ~br_miss_nonbr)
-   ,.w_clear_i(fe_cmd_yumi_o & btb_incorrect & br_miss_nonbr)
    ,.br_tgt_i(fe_cmd_cast_i.vaddr)
    );
 

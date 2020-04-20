@@ -31,9 +31,11 @@ module bp_fe_btb
    , input                        r_v_i
    , output [vaddr_width_p-1:0]   br_tgt_o
    , output                       br_tgt_v_o
+   , output                       br_tgt_jmp_o
 
-   , input                        w_set_i
-   , input                        w_clear_i
+   , input                        w_v_i
+   , input                        w_clr_i
+   , input                        w_jmp_i
    , input [btb_tag_width_p-1:0]  w_tag_i
    , input [btb_idx_width_p-1:0]  w_idx_i
    , input [vaddr_width_p-1:0]    br_tgt_i
@@ -59,7 +61,7 @@ assign tgt_mem_li      = br_tgt_i[0+:vaddr_width_p];
 logic [btb_els_lp-1:0] v_r, v_n;
     
 bsg_mem_1r1w_sync
- #(.width_p(btb_tag_width_p+vaddr_width_p)
+ #(.width_p(1+btb_tag_width_p+vaddr_width_p)
    ,.els_p(btb_els_lp)
    )
  tag_mem
@@ -67,19 +69,20 @@ bsg_mem_1r1w_sync
    ,.reset_i(reset_i)
  
 
-   ,.w_v_i(w_set_i)
+   ,.w_v_i(w_v_i & ~w_clr_i)
    ,.w_addr_i(w_idx_i)
-   ,.w_data_i({tag_mem_li, tgt_mem_li})
+   ,.w_data_i({w_jmp_i, tag_mem_li, tgt_mem_li})
 
    ,.r_v_i(r_v_i)
    ,.r_addr_i(r_addr_i[btb_offset_width_lp+:btb_idx_width_p])
-   ,.r_data_o({tag_mem_lo, tgt_mem_lo})
+   ,.r_data_o({tag_jmp_lo, tag_mem_lo, tgt_mem_lo})
    );
 
 
 assign tag_mem_v_lo = v_r[r_idx_r];
 assign br_tgt_o   = tgt_mem_lo;
 assign br_tgt_v_o = tag_mem_v_lo & r_v_r & (tag_mem_lo == r_tag_r);
+assign br_tgt_jmp_o = tag_mem_v_lo & tag_jmp_lo;
 
 always_ff @(posedge clk_i)
   begin
@@ -99,18 +102,16 @@ always_ff @(posedge clk_i)
     
       if (reset_i)
         v_r <= '0;
-      else if (w_set_i)
-        v_r[w_idx_i] <= 1'b1;
-      else  if (w_clear_i)
+      else if (w_v_i & w_clr_i)
         v_r[w_idx_i] <= 1'b0;
-      else
-        v_r <= v_r;
+      else if (w_v_i & ~w_clr_i)
+        v_r[w_idx_i] <= 1'b1;
   end
 
 if (debug_p)
   always_ff @(negedge clk_i)
     begin
-      if (w_set_i)
+      if (w_v_i & ~w_clr_i)
         begin
           $display("[BTB] WRITE INDEX: %x TAG: %x TARGET: %x"
                    , tag_mem_addr_li
@@ -118,7 +119,7 @@ if (debug_p)
                    , tgt_mem_li
                    );
         end
-      if (w_clear_i)
+      if (w_v_i & w_clr_i)
         begin
           $display("[BTB] CLEAR INDEX: %x TAG: %x"
                    , tag_mem_addr_li
