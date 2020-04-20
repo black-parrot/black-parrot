@@ -104,6 +104,7 @@
     logic                                    ex1_instr_v;                                          \
     logic [vaddr_width_p-1:0]                ex1_npc;                                              \
     logic                                    ex1_br_or_jmp;                                        \
+    logic                                    ex1_btaken;                                           \
                                                                                                    \
     logic                                    long_busy;                                            \
                                                                                                    \
@@ -190,7 +191,7 @@
 `define bp_be_calc_status_width(vaddr_width_mp) \
   (2                                                                                               \
    + vaddr_width_p                                                                                 \
-   + 2                                                                                             \
+   + 3                                                                                             \
    + 6 * `bp_be_dep_status_width                                                                   \
    )                                                                                               
 

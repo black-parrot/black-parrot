@@ -90,11 +90,11 @@ wire cmd_nonattaboy_v = fe_cmd_v_i & (fe_cmd_cast_i.opcode != e_op_attaboy);
 wire trap_v = pc_redirect_v & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
 wire br_miss_v = pc_redirect_v
                 & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_branch_mispredict);
-wire br_res_taken = (attaboy_v & fe_cmd_branch_metadata.pred_taken) | (br_miss_v & ~fe_cmd_branch_metadata.pred_taken);
-wire br_res_ntaken = (attaboy_v & ~fe_cmd_branch_metadata.pred_taken) | (br_miss_v & fe_cmd_branch_metadata.pred_taken);
-wire br_miss_nonbr = pc_redirect_v 
-                    & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_branch_mispredict)
-                    & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_not_a_branch);
+wire br_res_taken = (attaboy_v & fe_cmd_cast_i.operands.attaboy.taken)
+                    | (br_miss_v & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_incorrect_pred_taken));
+wire br_res_ntaken = (attaboy_v & ~fe_cmd_cast_i.operands.attaboy.taken)
+                     | (br_miss_v & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_incorrect_pred_ntaken));
+wire br_miss_nonbr = br_miss_v & (fe_cmd_cast_i.operands.pc_redirect_operands.misprediction_reason == e_not_a_branch);
 assign fe_cmd_branch_metadata = br_miss_v ? fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd : fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd;
 
 logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
@@ -195,7 +195,7 @@ always_ff @(posedge clk_i)
 
 logic bht_pred_lo;
 logic [vaddr_width_p-1:0] return_addr_n, return_addr_r;
-wire btb_taken = btb_br_tgt_v_lo & bht_pred_lo;
+wire btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo);
 always_comb
   begin
     pc_gen_stage_n[0]            = '0;
@@ -239,7 +239,7 @@ bsg_dff_reset
    );
 
 // Branch prediction logic
-logic is_br, is_jal, is_jalr, is_call;
+logic is_br, is_jal, is_jalr, is_call, is_ret;
 logic is_br_site, is_jal_site, is_jalr_site, is_call_site;
 logic [vaddr_width_p-1:0] pc_site;
 bsg_dff_reset_en
@@ -255,7 +255,7 @@ bsg_dff_reset_en
 
 bp_fe_branch_metadata_fwd_s fe_queue_cast_o_branch_metadata;
 assign fe_queue_cast_o_branch_metadata = 
-  '{pred_taken: pc_gen_stage_r[1].taken
+  '{pred_taken: pc_gen_stage_r[1].taken | is_jalr // We can't predict target, but jalr are always taken
     ,src_btb  : pc_gen_stage_r[1].btb
     ,src_ret  : pc_gen_stage_r[1].ret
     ,src_ovr  : pc_gen_stage_r[1].ovr
@@ -329,7 +329,7 @@ bp_fe_bht
    ,.idx_r_i(bht_idx_r_li)
    ,.predict_o(bht_pred_lo)
 
-   ,.w_v_i((br_miss_v | attaboy_v) & fe_cmd_yumi_o)
+   ,.w_v_i((br_miss_v | attaboy_v) & fe_cmd_branch_metadata.is_br & fe_cmd_yumi_o)
    ,.idx_w_i(fe_cmd_branch_metadata.bht_idx)
    ,.correct_i(attaboy_v)
    );
@@ -348,8 +348,11 @@ assign is_br        = mem_resp_v_i & scan_instr.branch;
 assign is_jal       = mem_resp_v_i & scan_instr.jal;
 assign is_jalr      = mem_resp_v_i & scan_instr.jalr;
 assign is_call      = mem_resp_v_i & scan_instr.call;
-assign ovr_ret      = mem_resp_v_i & scan_instr.ret;
-assign ovr_taken    = ~pc_gen_stage_r[0].btb & ((is_br & pc_gen_stage_r[0].bht) | is_jal);
+assign is_ret       = mem_resp_v_i & scan_instr.ret;
+wire btb_miss_ras   = ~pc_gen_stage_r[0].btb | (pc_gen_stage_r[0].pc != return_addr_r);
+wire btb_miss_br    = ~pc_gen_stage_r[0].btb | (pc_gen_stage_r[0].pc != br_target);
+assign ovr_ret      = btb_miss_ras & is_ret;
+assign ovr_taken    = btb_miss_br & ((is_br & pc_gen_stage_r[0].bht) | is_jal);
 assign br_target    = pc_gen_stage_r[1].pc + scan_instr.imm;
 
 assign return_addr_n = pc_gen_stage_r[1].pc + vaddr_width_p'(4);

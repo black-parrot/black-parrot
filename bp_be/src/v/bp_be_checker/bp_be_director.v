@@ -97,7 +97,7 @@ logic                                   npc_mismatch_v;
 enum logic [1:0] {e_reset, e_boot, e_run, e_fence} state_n, state_r;
 
 // Control signals
-logic npc_w_v, attaboy_pending;
+logic npc_w_v, btaken_pending, attaboy_pending;
 
 logic [vaddr_width_p-1:0] br_mux_o, roll_mux_o, ret_mux_o, exc_mux_o;
 
@@ -165,16 +165,17 @@ assign npc_mismatch_v = isd_status.isd_v & (expected_npc_o != isd_status.isd_pc)
 // Last operation was branch. Was it successful? Let's find out
 // TODO: I think this is wrong, may send extra attaboys
 bsg_dff_reset_en
- #(.width_p(1))
+ #(.width_p(2))
  attaboy_pending_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
    ,.en_i((calc_status.ex1_v & calc_status.ex1_br_or_jmp) || isd_status.isd_v)
 
-   ,.data_i((calc_status.ex1_v & calc_status.ex1_br_or_jmp) & ~isd_status.isd_v)
-   ,.data_o(attaboy_pending)
+   ,.data_i({calc_status.ex1_btaken, (calc_status.ex1_v & calc_status.ex1_br_or_jmp) & ~isd_status.isd_v})
+   ,.data_o({btaken_pending, attaboy_pending})
    );
 wire last_instr_was_branch = attaboy_pending | (calc_status.ex1_v & calc_status.ex1_br_or_jmp);
+wire last_instr_was_btaken = btaken_pending | (calc_status.ex1_v & calc_status.ex1_br_or_jmp & calc_status.ex1_btaken);
 
 // Generate control signals
 // On a cache miss, this is actually the generated pc in ex1. We could use this to redirect during 
@@ -292,7 +293,9 @@ always_comb
         fe_cmd_pc_redirect_operands.branch_metadata_fwd  = isd_status.isd_branch_metadata_fwd;
         // TODO: Add not a branch case
         fe_cmd_pc_redirect_operands.misprediction_reason = last_instr_was_branch
-                                                           ? e_incorrect_prediction
+                                                           ? last_instr_was_btaken
+                                                             ? e_incorrect_pred_taken
+                                                             : e_incorrect_pred_ntaken
                                                            : e_not_a_branch;
         fe_cmd.operands.pc_redirect_operands             = fe_cmd_pc_redirect_operands;
 
@@ -303,6 +306,7 @@ always_comb
       begin
         fe_cmd.opcode                      = e_op_attaboy;
         fe_cmd.vaddr                       = expected_npc_o;
+        fe_cmd.operands.attaboy.taken               = last_instr_was_btaken;
         fe_cmd.operands.attaboy.branch_metadata_fwd = isd_status.isd_branch_metadata_fwd;
 
         fe_cmd_v = fe_cmd_ready_i;

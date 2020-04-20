@@ -575,7 +575,7 @@ bind bp_be_top
        ,.ret_mispredict(be.be_checker.scheduler.npc_mismatch & be.be_checker.director.redir_md.src_ret)
        ,.ovr_mispredict(be.be_checker.scheduler.npc_mismatch & be.be_checker.director.redir_md.src_ovr)
        ,.btb_mispredict(be.be_checker.scheduler.npc_mismatch & be.be_checker.director.redir_md.src_btb)
-       ,.dir_mispredict(be.be_checker.scheduler.npc_mismatch & (be.be_checker.director.redir_md.pred_taken ^ be.be_calculator.pipe_int.btaken_r))
+       ,.dir_mispredict(be.be_checker.scheduler.npc_mismatch & (be.be_checker.director.redir_md.pred_taken ^ be.be_checker.director.last_instr_was_btaken))
        ,.none_mispredict(be.be_checker.scheduler.npc_mismatch & ~be.be_checker.director.redir_md.src_ret & ~be.be_checker.director.redir_md.src_btb & ~be.be_checker.director.redir_md.src_ovr)
 
        ,.dtlb_miss(be.be_mem.dtlb_miss_r)
