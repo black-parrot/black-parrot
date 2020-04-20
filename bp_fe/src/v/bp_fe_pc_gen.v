@@ -43,7 +43,7 @@ module bp_fe_pc_gen
    );
 
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-`declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p,ras_idx_width_p);
+`declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p);
 `declare_bp_fe_mem_structs(vaddr_width_p, lce_sets_p, cce_block_width_p, vtag_width_p, ptag_width_p)
 `declare_bp_fe_pc_gen_stage_s(vaddr_width_p);
 
@@ -158,8 +158,8 @@ bsg_dff_reset_en
    ,.reset_i(reset_i)
    ,.en_i(cmd_nonattaboy_v | is_run)
 
-   ,.data_i(pc_resume_n)
-   ,.data_o(pc_resume_r)
+   ,.data_i({pc_resume_n})
+   ,.data_o({pc_resume_r})
    );
 
 // Controlling state machine
@@ -203,13 +203,14 @@ always_comb
     pc_gen_stage_n[0].btb        = btb_br_tgt_v_lo;
     pc_gen_stage_n[0].bht        = bht_pred_lo;
     pc_gen_stage_n[0].ret        = ovr_ret;
+    pc_gen_stage_n[0].ovr        = ovr_taken;
 
     // Next PC calculation
     // load boot pc on reset command
     // if we need to redirect or load boot pc on reset
     if (state_reset_v | pc_redirect_v | icache_fence_v | itlb_fence_v)
         pc_gen_stage_n[0].pc = fe_cmd_cast_i.vaddr;
-    else if (state_r != e_run) 
+    else if (state_r != e_run)
         pc_gen_stage_n[0].pc = pc_resume_r;
     else if (ovr_ret)
         pc_gen_stage_n[0].pc = return_addr_r;
@@ -237,16 +238,18 @@ bsg_dff_reset
    );
 
 // Branch prediction logic
+logic is_br, is_jal, is_jalr, is_call;
+logic is_br_site, is_jal_site, is_jalr_site, is_call_site;
 logic [vaddr_width_p-1:0] pc_site;
 bsg_dff_reset_en
- #(.width_p(vaddr_width_p))
+ #(.width_p(4+vaddr_width_p))
  branch_metadata_fwd_reg
   (.clk_i(clk_i)
-   ,.reset_i(reset_i) 
+   ,.reset_i(reset_i)
    ,.en_i(fe_queue_v_o)
 
-   ,.data_i(pc_if2)
-   ,.data_o(pc_site)
+   ,.data_i({is_br, is_jal, is_jalr, is_call, pc_if2})
+   ,.data_o({is_br_site, is_jal_site, is_jalr_site, is_call_site, pc_site})
    );
 
 bp_fe_branch_metadata_fwd_s fe_queue_cast_o_branch_metadata;
@@ -254,10 +257,15 @@ assign fe_queue_cast_o_branch_metadata =
   '{pred_taken: pc_gen_stage_r[1].taken
     ,src_btb  : pc_gen_stage_r[1].btb
     ,src_ret  : pc_gen_stage_r[1].ret
-    ,src_ovr  : pc_gen_stage_r[1].taken & ~pc_gen_stage_r[1].btb & ~pc_gen_stage_r[1].ret
+    ,src_ovr  : pc_gen_stage_r[1].ovr
+    ,is_br    : is_br_site
+    ,is_jal   : is_jal_site
+    ,is_jalr  : is_jalr_site
+    ,is_call  : is_call_site
     ,btb_tag  : pc_site[2+btb_idx_width_p+:btb_tag_width_p]
     ,btb_idx  : pc_site[2+:btb_idx_width_p]
     ,bht_idx  : pc_site[2+:bht_idx_width_p]
+    ,ghist    : '0
     ,default  : '0
     };
 
@@ -299,6 +307,12 @@ always_ff @(posedge clk_i)
     //  $display("[ATTABOY] %x %p", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata);
   end
 
+
+// Local index
+//
+// Direct bimodal
+wire [bht_idx_width_p-1:0] bht_idx_r_li = pc_gen_stage_n[0].pc[2+:bht_idx_width_p];
+
 bp_fe_bht
  #(.vaddr_width_p(vaddr_width_p)
    ,.bht_idx_width_p(bht_idx_width_p)
@@ -308,7 +322,7 @@ bp_fe_bht
    ,.reset_i(reset_i)
 
    ,.r_v_i(pc_gen_stage_n[0].v)
-   ,.r_addr_i(pc_gen_stage_n[0].pc)
+   ,.idx_r_i(bht_idx_r_li)
    ,.predict_o(bht_pred_lo)
 
    ,.w_v_i((br_miss_v | attaboy_v) & fe_cmd_yumi_o)
@@ -326,10 +340,10 @@ bp_fe_instr_scan
    ,.scan_o(scan_instr)
    );
 
-wire is_br          = mem_resp_v_i & scan_instr.branch;
-wire is_jal         = mem_resp_v_i & scan_instr.jal;
-wire is_jalr        = mem_resp_v_i & scan_instr.jalr;
-wire is_call        = mem_resp_v_i & scan_instr.call;
+assign is_br        = mem_resp_v_i & scan_instr.branch;
+assign is_jal       = mem_resp_v_i & scan_instr.jal;
+assign is_jalr      = mem_resp_v_i & scan_instr.jalr;
+assign is_call      = mem_resp_v_i & scan_instr.call;
 assign ovr_ret      = mem_resp_v_i & scan_instr.ret;
 assign ovr_taken    = ~pc_gen_stage_r[0].btb & ((is_br & pc_gen_stage_r[0].bht) | is_jal);
 assign br_target    = pc_gen_stage_r[1].pc + scan_instr.imm;

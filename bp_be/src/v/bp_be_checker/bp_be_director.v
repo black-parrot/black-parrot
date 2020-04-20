@@ -310,7 +310,7 @@ always_comb
   end
 
 
-`declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p,ras_idx_width_p);
+`declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p);
 bp_fe_branch_metadata_fwd_s attaboy_md;
 bp_fe_branch_metadata_fwd_s redir_md;
 

@@ -32,17 +32,21 @@
     logic [`BSG_SAFE_CLOG2(cce_block_width_p/8)-1:0]                           offset;             \
   }  bp_fe_itlb_vaddr_s;   
 
-`define declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_mp, btb_idx_width_mp, bht_idx_width_mp, ras_idx_width_mp) \
+`define declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_mp, btb_idx_width_mp, bht_idx_width_mp, ghist_width_mp) \
   typedef struct packed                                                                         \
   {                                                                                             \
     logic                           pred_taken;                                                 \
+    logic                           is_br;                                                      \
+    logic                           is_jal;                                                     \
+    logic                           is_jalr;                                                    \
+    logic                           is_call;                                                    \
     logic                           src_btb;                                                    \
     logic                           src_ret;                                                    \
     logic                           src_ovr;                                                    \
     logic [btb_tag_width_mp-1:0]    btb_tag;                                                    \
     logic [btb_idx_width_mp-1:0]    btb_idx;                                                    \
     logic [bht_idx_width_mp-1:0]    bht_idx;                                                    \
-    logic [ras_idx_width_mp-1:0]    ras_idx;                                                    \
+    logic [ghist_width_mp-1:0]      ghist;                                                      \
   }  bp_fe_branch_metadata_fwd_s;
 
 `define declare_bp_fe_pc_gen_stage_s(vaddr_width_mp) \
@@ -52,6 +56,7 @@
     logic btb;                      \
     logic bht;                      \
     logic ret;                      \
+    logic ovr;                      \
     logic taken;                    \
                                     \
     logic [vaddr_width_p-1:0] pc;   \
@@ -59,9 +64,6 @@
 
 `define bp_fe_instr_scan_width(vaddr_width_mp) \
   (vaddr_width_mp + 5)
-
-`define bp_fe_branch_metadata_fwd_width(btb_tag_width_mp, btb_idx_width_mp, bht_idx_width_mp, ras_idx_width_mp) \
-  (3 + btb_tag_width_mp + btb_idx_width_mp + bht_idx_width_mp + ras_idx_width_mp)
 
 `define bp_fe_pc_gen_stage_width(vaddr_width_mp) \
   (5 + vaddr_width_mp)

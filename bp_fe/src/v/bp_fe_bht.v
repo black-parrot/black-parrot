@@ -26,7 +26,7 @@ module bp_fe_bht
    , input                       correct_i
  
    , input                       r_v_i   
-   , input [vaddr_width_p-1:0]   r_addr_i
+   , input [bht_idx_width_p-1:0] idx_r_i
 
    , output                      predict_o
    );
@@ -40,7 +40,7 @@ bsg_dff
  read_reg
   (.clk_i(clk_i)
 
-   ,.data_i({r_v_i, r_addr_i[2+:bht_idx_width_p]})
+   ,.data_i({r_v_i, idx_r_i})
    ,.data_o({r_v_r, idx_r_r})
    );
 assign predict_o = r_v_r ? mem[idx_r_r][1] : `BSG_UNDEFINED_IN_SIM(1'b0);
@@ -58,14 +58,13 @@ always_ff @(posedge clk_i)
 //synopsys translate_off
 logic [bht_idx_width_p-1:0] idx_w_r;
 logic correct_r, w_v_r;
-logic [vaddr_width_p-1:0] r_addr_r;
 bsg_dff
- #(.width_p(vaddr_width_p+2+bht_idx_width_p))
+ #(.width_p(2+bht_idx_width_p))
  write_reg
   (.clk_i(clk_i)
 
-   ,.data_i({r_addr_i, correct_i, w_v_i, idx_w_i})
-   ,.data_o({r_addr_r, correct_r, w_v_r, idx_w_r})
+   ,.data_i({correct_i, w_v_i, idx_w_i})
+   ,.data_o({correct_r, w_v_r, idx_w_r})
    );
 
 if (debug_p)
@@ -73,7 +72,7 @@ if (debug_p)
      always_ff @(negedge clk_i)
        begin
          if (w_v_r | r_v_r)
-	       $write("v=%b c=%b W[%h] (=%b); v=%b %h R[%h] (=%b) p=%b ",w_v_r,correct_r,idx_w_r,mem[idx_w_r],r_v_r,r_addr_r, idx_r_r,mem[idx_r_r],predict_o);
+	       $write("v=%b c=%b W[%h] (=%b); v=%b %h R[%h] (=%b) p=%b ",w_v_r,correct_r,idx_w_r,mem[idx_w_r],r_v_r,idx_r_r,mem[idx_r_r],predict_o);
 
 	  if (w_v_r & ~correct_r)
 	    $write("X\n");
