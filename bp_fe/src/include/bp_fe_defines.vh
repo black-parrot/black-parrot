@@ -9,18 +9,6 @@
 `ifndef BP_FE_DEFINES_VH
 `define BP_FE_DEFINES_VH
 
-/*
- * bp_fe_instr_scan_class_e specifies the type of the current instruction,
- * including whether the instruction is compressed or not.
- */
-typedef enum logic [3:0]
-{
-  e_rvi_branch = 4'b0011
-  ,e_rvi_jalr  = 4'b0010
-  ,e_rvi_jal   = 4'b0001
-  ,e_default   = 4'b0000
- } bp_fe_instr_scan_class_e;
-
 /* 
  * bp_fe_instr_scan_s specifies metadata about the instruction, including FE-special opcodes
  *   and the calculated branch target
@@ -28,8 +16,12 @@ typedef enum logic [3:0]
 `define declare_bp_fe_instr_scan_s(vaddr_width_mp) \
   typedef struct packed                    \
   {                                        \
+    logic branch;                          \
+    logic jal;                             \
+    logic jalr;                            \
+    logic call;                            \
+    logic ret;                             \
     logic [vaddr_width_mp-1:0] imm;        \
-    bp_fe_instr_scan_class_e   scan_class; \
   }  bp_fe_instr_scan_s;
 
 `define declare_bp_fe_itlb_vaddr_s(vaddr_width_mp, sets_mp, cce_block_width_mp)                    \
@@ -40,34 +32,41 @@ typedef enum logic [3:0]
     logic [`BSG_SAFE_CLOG2(cce_block_width_p/8)-1:0]                           offset;             \
   }  bp_fe_itlb_vaddr_s;   
 
-`define declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_mp, btb_idx_width_mp, bht_idx_width_mp, ras_idx_width_mp) \
+`define declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_mp, btb_idx_width_mp, bht_idx_width_mp, ghist_width_mp) \
   typedef struct packed                                                                         \
   {                                                                                             \
     logic                           pred_taken;                                                 \
+    logic                           is_br;                                                      \
+    logic                           is_jal;                                                     \
+    logic                           is_jalr;                                                    \
+    logic                           is_call;                                                    \
+    logic                           src_btb;                                                    \
+    logic                           src_ret;                                                    \
+    logic                           src_ovr;                                                    \
     logic [btb_tag_width_mp-1:0]    btb_tag;                                                    \
     logic [btb_idx_width_mp-1:0]    btb_idx;                                                    \
     logic [bht_idx_width_mp-1:0]    bht_idx;                                                    \
-    logic [ras_idx_width_mp-1:0]    ras_idx;                                                    \
+    logic [ghist_width_mp-1:0]      ghist;                                                      \
   }  bp_fe_branch_metadata_fwd_s;
 
 `define declare_bp_fe_pc_gen_stage_s(vaddr_width_mp) \
   typedef struct packed             \
   {                                 \
     logic v;                        \
-    logic pred_taken;               \
+    logic btb;                      \
+    logic bht;                      \
+    logic ret;                      \
     logic ovr;                      \
+    logic taken;                    \
                                     \
     logic [vaddr_width_p-1:0] pc;   \
   }  bp_fe_pc_gen_stage_s
 
 `define bp_fe_instr_scan_width(vaddr_width_mp) \
-  (vaddr_width_mp + $bits(bp_fe_instr_scan_class_e))
-
-`define bp_fe_branch_metadata_fwd_width(btb_tag_width_mp, btb_idx_width_mp, bht_idx_width_mp, ras_idx_width_mp) \
-  (1 + btb_tag_width_mp + btb_idx_width_mp + bht_idx_width_mp + ras_idx_width_mp)
+  (vaddr_width_mp + 5)
 
 `define bp_fe_pc_gen_stage_width(vaddr_width_mp) \
-  (3 + vaddr_width_mp)
+  (5 + vaddr_width_mp)
 
 `endif
 

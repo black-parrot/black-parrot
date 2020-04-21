@@ -118,6 +118,7 @@ logic pipe_int_data_lo_v, pipe_mul_data_lo_v, pipe_mem_data_lo_v, pipe_fp_data_l
 logic pipe_mem_exc_v_lo, pipe_mem_miss_v_lo;
 
 logic [vaddr_width_p-1:0] br_tgt_int1;
+logic btaken_int1;
 
 // Forwarding information
 logic [pipe_stage_els_lp:1]                        comp_stage_n_slice_iwb_v;
@@ -223,6 +224,7 @@ bp_be_pipe_int
    ,.data_o(pipe_int_data_lo)
    
    ,.br_tgt_o(br_tgt_int1)
+   ,.btaken_o(btaken_int1)
    );
 
 // Multiplication pipe: 2 cycle latency
@@ -382,6 +384,7 @@ always_comb
     calc_status.ex1_v                    = reservation_r.decode.queue_v & ~exc_stage_r[0].poison_v;
     calc_status.ex1_npc                  = br_tgt_int1;
     calc_status.ex1_br_or_jmp            = reservation_r.decode.br_v | reservation_r.decode.jmp_v;
+    calc_status.ex1_btaken               = btaken_int1;
     calc_status.ex1_instr_v              = reservation_r.decode.instr_v & ~exc_stage_r[0].poison_v;
 
     calc_status.long_busy                = ~pipe_long_ready_lo;

@@ -103,6 +103,7 @@
    */                                                                                              \
   typedef struct packed                                                                            \
   {                                                                                                \
+    logic                                    taken;                                                \
     logic [branch_metadata_fwd_width_mp-1:0] branch_metadata_fwd;                                  \
                                                                                                    \
     logic [`bp_fe_cmd_attaboy_padding_width(paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)-1:0] \
@@ -214,10 +215,11 @@ typedef enum logic [2:0]
 /*
  * bp_fe_misprediction_reason_e is the misprediction reason provided by the backend.
  */
-typedef enum logic
+typedef enum logic [1:0]
 {
-  e_incorrect_prediction = 0
-  ,e_not_a_branch        = 1
+  e_not_a_branch           = 0
+  ,e_incorrect_pred_taken  = 1
+  ,e_incorrect_pred_ntaken = 2
 } bp_fe_misprediction_reason_e;
 
 /*
@@ -320,7 +322,7 @@ typedef enum logic [2:0]
    + branch_metadata_fwd_width_mp + $bits(bp_fe_misprediction_reason_e) + 3)
 
 `define bp_fe_cmd_attaboy_width_no_padding(branch_metadata_fwd_width_mp) \
-  (branch_metadata_fwd_width_mp)
+  (1+branch_metadata_fwd_width_mp)
 
 `define bp_fe_cmd_itlb_map_width_no_padding(paddr_width_mp) \
   (`bp_pte_entry_leaf_width(paddr_width_mp))

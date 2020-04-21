@@ -82,29 +82,34 @@ rebuild-gcc:
 	$(MAKE) -C external/riscv-gnu-toolchain clean
 	$(MAKE) -j 8 -C external -f Makefile.tools gnu_build
 
-profile:
-	-find . -iname "stall_0.trace" | xargs -n 1 wc -l
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c instr
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -v -c instr
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c load_dep
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c dir_mispredict
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c branch_override
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c target_mispredict
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c fe_cmd
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c mul
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c icache
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c dcache
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c long_haz
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c cmd_fence
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c fe_wait_stall
+STALLS=instr load_dep fe_cmd branch_override ret_override ret_mispredict btb_mispredict ovr_mispredict none_mispredict dir_mispredict  mul icache dcache long_haz unknown control_haz struct_haz fe_queue_stall fe_wait_stall
 
+stall.%:
+	-@printf "%-20s: " $*; printf "%8d\n" `find . -iname "stall_0.trace" | xargs -n 1 grep -c $*`
+
+profile-header:	
+	@echo "Coremark score per MHz; divide 5e6 by cycles"
+	-@find . -iname "stall_0.trace" | xargs -n 1 grep -v $(foreach x,$(STALLS),-e $(x))
+	-@printf "%-20s: " "cycles"; printf "%8d\n" $$(cat `find . -iname "stall_0.trace" | xargs -n 1` | wc -l)
+
+profile: profile-header $(foreach x,$(STALLS),stall.$(x))
+
+# load-dep mul branch-mispredicts ret-override etc
+profile-%:
+	grep $* ./bp_top/syn/results/vcs/bp_softcore.e_bp_softcore_cfg.sim/coremark/stall_0.trace | awk -F, '{print $$4}' | sort | uniq -c > prof.$*
+
+profile-target-mispredict:
+	echo "#!/bin/bash" > runit	
+	echo grep -B1 `grep target_mispredict ./bp_top/syn/results/vcs/bp_softcore.e_bp_softcore_cfg.sim/coremark/stall_0.trace | awk -F, '{print " -e ",$$4}' | cut --complement -b5-7 | sort | uniq | tr '\n' ':'` bp_common/test/mem/coremark.dump >> runit
+	chmod u+x ./runit;	./runit | tee profile-target-mispredicts-list
+	# eval "grep -B1 $$CMD  
 
 # note: change coremark compile time parameters in bp_common/test/src/coremark/barebones/Makefile
-# dump files are located in bp_com
+# dump files are located in bp_common/test/mem/coremark.dump
 rebuild-run-coremark:
 	$(MAKE) -C bp_common/test coremark_mem coremark_dump coremark_nbf
 	@echo BP: Disassembly in "bp_common/test/mem/coremark.dump".
-	$(MAKE) -C bp_top/syn build.v TB=bp_softcore CFG=e_bp_single_core_cfg PROG=coremark CORE_PROFILE_P=1
-	$(MAKE) -C bp_top/syn sim.v TB=bp_softcore CFG=e_bp_single_core_cfg PROG=coremark CORE_PROFILE_P=1
+	$(MAKE) -C bp_top/syn build.v TB=bp_softcore CFG=e_bp_softcore_cfg PROG=coremark CORE_PROFILE_P=1
+	$(MAKE) -C bp_top/syn sim.v TB=bp_softcore CFG=e_bp_softcore_cfg PROG=coremark CORE_PROFILE_P=1
 	$(MAKE) profile
 
