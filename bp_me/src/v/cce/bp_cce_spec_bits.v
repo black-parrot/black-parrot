@@ -8,8 +8,6 @@
  *
  *   These bits are stored in flops and may be read asynchronously.
  *
- *   Write to Read forwarding is supported.
- *
  *   The width of address into bsg_hash_bank is log2(cce_way_groups_p), where cce_way_groups_p
  *   is the total number of way groups in the system.
  *   num_way_groups_p is the number of way groups managed by this CCE (or that number
@@ -120,10 +118,7 @@ module bp_cce_spec_bits
   end
 
   // Output
-  // Normally, the output is determined by the read way group and comes from the flopped values
-  // If reading from the same way group that is being written, output the next value
-  assign spec_o = (r_v_i & w_v_i & (w_wg == r_wg))
-    ? spec_bits_n[r_wg]
-    : spec_bits_r[r_wg];
+  wire unused0 = r_v_i;
+  assign spec_o = spec_bits_r[r_wg];
 
 endmodule
