@@ -210,7 +210,14 @@ always_comb
     // load boot pc on reset command
     // if we need to redirect or load boot pc on reset
     if (state_reset_v | pc_redirect_v | icache_fence_v | itlb_fence_v)
+      begin
+        pc_gen_stage_n[0].taken = br_res_taken;
+        pc_gen_stage_n[0].btb = fe_cmd_branch_metadata.src_btb;
+        pc_gen_stage_n[0].bht = '0; // Does not come from metadata
+        pc_gen_stage_n[0].ret = fe_cmd_branch_metadata.src_ret;
+        pc_gen_stage_n[0].ovr = '0; // Does not come from metadata
         pc_gen_stage_n[0].pc = fe_cmd_cast_i.vaddr;
+      end
     else if (state_r != e_run)
         pc_gen_stage_n[0].pc = pc_resume_r;
     else if (ovr_ret)
@@ -241,17 +248,32 @@ bsg_dff_reset
 // Branch prediction logic
 logic is_br, is_jal, is_jalr, is_call, is_ret;
 logic is_br_site, is_jal_site, is_jalr_site, is_call_site;
-logic [vaddr_width_p-1:0] pc_site;
-bsg_dff_reset_en
- #(.width_p(4+vaddr_width_p))
- branch_metadata_fwd_reg
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.en_i(fe_queue_v_o)
-
-   ,.data_i({is_br, is_jal, is_jalr, is_call, pc_if2})
-   ,.data_o({is_br_site, is_jal_site, is_jalr_site, is_call_site, pc_site})
-   );
+logic [btb_tag_width_p-1:0] btb_tag_site;
+logic [btb_idx_width_p-1:0] btb_idx_site;
+logic [bht_idx_width_p-1:0] bht_idx_site;
+always_ff @(posedge clk_i)
+  begin
+    if (cmd_nonattaboy_v & fe_cmd_yumi_o)
+      begin
+        is_br_site   <= fe_cmd_branch_metadata.is_br;
+        is_jal_site  <= fe_cmd_branch_metadata.is_br;
+        is_jalr_site <= fe_cmd_branch_metadata.is_jalr;
+        is_call_site <= fe_cmd_branch_metadata.is_call;
+        btb_tag_site <= fe_cmd_branch_metadata.btb_tag;
+        btb_idx_site <= fe_cmd_branch_metadata.btb_idx;
+        bht_idx_site <= fe_cmd_branch_metadata.bht_idx;
+      end
+    if (fe_queue_v_o)
+      begin
+        is_br_site   <= is_br;
+        is_jal_site  <= is_jal;
+        is_jalr_site <= is_jalr;
+        is_call_site <= is_call;
+        btb_tag_site <= pc_if2[2+btb_idx_width_p+:btb_tag_width_p];
+        btb_idx_site <= pc_if2[2+:btb_idx_width_p];
+        bht_idx_site <= pc_if2[2+:bht_idx_width_p];
+      end
+  end
 
 bp_fe_branch_metadata_fwd_s fe_queue_cast_o_branch_metadata;
 assign fe_queue_cast_o_branch_metadata = 
@@ -263,9 +285,9 @@ assign fe_queue_cast_o_branch_metadata =
     ,is_jal   : is_jal_site
     ,is_jalr  : is_jalr_site
     ,is_call  : is_call_site
-    ,btb_tag  : pc_site[2+btb_idx_width_p+:btb_tag_width_p]
-    ,btb_idx  : pc_site[2+:btb_idx_width_p]
-    ,bht_idx  : pc_site[2+:bht_idx_width_p]
+    ,btb_tag  : btb_tag_site
+    ,btb_idx  : btb_idx_site
+    ,bht_idx  : bht_idx_site
     ,ghist    : '0
     ,default  : '0
     };
