@@ -572,11 +572,8 @@ bind bp_be_top
 
        ,.fe_cmd(fe.pc_gen.fe_cmd_yumi_o & ~fe.pc_gen.attaboy_v)
 
-       ,.ret_mispredict(be.be_checker.scheduler.npc_mismatch & be.be_checker.director.redir_md.src_ret)
-       ,.ovr_mispredict(be.be_checker.scheduler.npc_mismatch & be.be_checker.director.redir_md.src_ovr)
-       ,.btb_mispredict(be.be_checker.scheduler.npc_mismatch & be.be_checker.director.redir_md.src_btb)
-       ,.dir_mispredict(be.be_checker.scheduler.npc_mismatch & (be.be_checker.director.redir_md.pred_taken ^ be.be_checker.director.last_instr_was_btaken))
-       ,.none_mispredict(be.be_checker.scheduler.npc_mismatch & ~be.be_checker.director.redir_md.src_ret & ~be.be_checker.director.redir_md.src_btb & ~be.be_checker.director.redir_md.src_ovr)
+       ,.mispredict(be.be_checker.scheduler.npc_mismatch)
+       ,.target(be.be_checker.director.isd_status.isd_pc)
 
        ,.dtlb_miss(be.be_mem.dtlb_miss_r)
        ,.dcache_miss(~be.be_mem.dcache.ready_o)
