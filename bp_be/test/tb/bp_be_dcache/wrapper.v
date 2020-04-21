@@ -87,7 +87,7 @@ module wrapper
 
    // Fill Interface
    logic data_mem_pkt_v_lo, tag_mem_pkt_v_lo, stat_mem_pkt_v_lo;
-   logic data_mem_pkt_ready_lo, tag_mem_pkt_ready_lo, stat_mem_pkt_ready_lo;
+   logic data_mem_pkt_yumi_lo, tag_mem_pkt_yumi_lo, stat_mem_pkt_yumi_lo;
    logic [dcache_data_mem_pkt_width_lp-1:0] data_mem_pkt_lo;
    logic [dcache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_lo;
    logic [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_lo;
@@ -198,17 +198,17 @@ module wrapper
    ,.data_mem_pkt_v_i(data_mem_pkt_v_lo)
    ,.data_mem_pkt_i(data_mem_pkt_lo)
    ,.data_mem_o(data_mem_lo)
-   ,.data_mem_pkt_ready_o(data_mem_pkt_ready_lo)
+   ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_lo)
 
    ,.tag_mem_pkt_v_i(tag_mem_pkt_v_lo)
    ,.tag_mem_pkt_i(tag_mem_pkt_lo)
    ,.tag_mem_o(tag_mem_lo)
-   ,.tag_mem_pkt_ready_o(tag_mem_pkt_ready_lo)
+   ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_lo)
 
    ,.stat_mem_pkt_v_i(stat_mem_pkt_v_lo)
    ,.stat_mem_pkt_i(stat_mem_pkt_lo)
    ,.stat_mem_o(stat_mem_lo)
-   ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_lo)
+   ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_lo)
    );
 
    if(uce_p == 0) begin : cce
@@ -245,17 +245,17 @@ module wrapper
      ,.data_mem_pkt_v_o(data_mem_pkt_v_lo)
      ,.data_mem_pkt_o(data_mem_pkt_lo)
      ,.data_mem_i(data_mem_lo)
-     ,.data_mem_pkt_ready_i(data_mem_pkt_ready_lo)
+     ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_lo)
 
      ,.tag_mem_pkt_v_o(tag_mem_pkt_v_lo)
      ,.tag_mem_pkt_o(tag_mem_pkt_lo)
      ,.tag_mem_i(tag_mem_lo)
-     ,.tag_mem_pkt_ready_i(tag_mem_pkt_ready_lo)
+     ,.tag_mem_pkt_yumi_i(tag_mem_pkt_yumi_lo)
 
      ,.stat_mem_pkt_v_o(stat_mem_pkt_v_lo)
      ,.stat_mem_pkt_o(stat_mem_pkt_lo)
      ,.stat_mem_i(stat_mem_lo)
-     ,.stat_mem_pkt_ready_i(stat_mem_pkt_ready_lo)
+     ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_lo)
       
      ,.lce_req_o(lce_req_lo)
      ,.lce_req_v_o(lce_req_v_lo)
@@ -355,17 +355,17 @@ module wrapper
 
      ,.tag_mem_pkt_o(tag_mem_pkt_lo)
      ,.tag_mem_pkt_v_o(tag_mem_pkt_v_lo)
-     ,.tag_mem_pkt_ready_i(tag_mem_pkt_ready_lo)
+     ,.tag_mem_pkt_yumi_i(tag_mem_pkt_yumi_lo)
      ,.tag_mem_i(tag_mem_lo)
 
      ,.data_mem_pkt_o(data_mem_pkt_lo)
      ,.data_mem_pkt_v_o(data_mem_pkt_v_lo)
-     ,.data_mem_pkt_ready_i(data_mem_pkt_ready_lo)
+     ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_lo)
      ,.data_mem_i(data_mem_lo)
 
      ,.stat_mem_pkt_o(stat_mem_pkt_lo)
      ,.stat_mem_pkt_v_o(stat_mem_pkt_v_lo)
-     ,.stat_mem_pkt_ready_i(stat_mem_pkt_ready_lo)
+     ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_lo)
      ,.stat_mem_i(stat_mem_lo)
 
      ,.credits_full_o(credits_full_lo)

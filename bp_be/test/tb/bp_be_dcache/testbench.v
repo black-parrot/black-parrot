@@ -280,15 +280,15 @@ module testbench
 
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
        ,.data_mem_pkt_i(data_mem_pkt_i)
-       ,.data_mem_pkt_ready_o(data_mem_pkt_ready_o)
+       ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
 
        ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
        ,.tag_mem_pkt_i(tag_mem_pkt_i)
-       ,.tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
+       ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
 
        ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
        ,.stat_mem_pkt_i(stat_mem_pkt_i)
-       ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
+       ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
        );
 
   if (uce_p == 0) begin
