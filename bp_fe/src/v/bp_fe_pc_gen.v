@@ -304,7 +304,7 @@ always_ff @(posedge clk_i)
     //if (attaboy_v & fe_cmd_yumi_o)
     //  $display("[FE ATTABOY] vaddr: %x %p", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata);
     //if (fe_queue_v_o)
-    //  $display("[FE FETCH  ] %x %p", fe_queue_cast_o.msg.fetch.pc, fe_queue_cast_o_branch_metadata_r);
+    //  $display("[FE FETCH  ] %x %p", fe_queue_cast_o.msg.fetch.pc, fe_queue_cast_o_branch_metadata);
     //if (br_miss_v & fe_cmd_yumi_o)
     //  $display("[REDIR  ] %x %p", fe_cmd_cast_i.vaddr, fe_cmd_branch_metadata);
     //if (attaboy_v & fe_cmd_yumi_o)
@@ -344,11 +344,11 @@ bp_fe_instr_scan
    ,.scan_o(scan_instr)
    );
 
-assign is_br        = mem_resp_v_i & scan_instr.branch;
-assign is_jal       = mem_resp_v_i & scan_instr.jal;
-assign is_jalr      = mem_resp_v_i & scan_instr.jalr;
-assign is_call      = mem_resp_v_i & scan_instr.call;
-assign is_ret       = mem_resp_v_i & scan_instr.ret;
+assign is_br        = fe_queue_v_o & scan_instr.branch;
+assign is_jal       = fe_queue_v_o & scan_instr.jal;
+assign is_jalr      = fe_queue_v_o & scan_instr.jalr;
+assign is_call      = fe_queue_v_o & scan_instr.call;
+assign is_ret       = fe_queue_v_o & scan_instr.ret;
 wire btb_miss_ras   = ~pc_gen_stage_r[0].btb | (pc_gen_stage_r[0].pc != return_addr_r);
 wire btb_miss_br    = ~pc_gen_stage_r[0].btb | (pc_gen_stage_r[0].pc != br_target);
 assign ovr_ret      = btb_miss_ras & is_ret;
