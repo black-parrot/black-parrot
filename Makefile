@@ -94,17 +94,18 @@ profile-header:
 
 profile: profile-header $(foreach x,$(STALLS),stall.$(x))
 
-profile-branch-mispredicts:
-	grep dir_mispredict ./bp_top/syn/results/vcs/bp_softcore.e_bp_single_core_cfg.sim/coremark/stall_0.trace | awk -F, '{print $$4}' | sort | uniq -c
+# load-dep mul branch-mispredicts ret-override etc
+profile-%:
+	grep $* ./bp_top/syn/results/vcs/bp_softcore.e_bp_softcore_cfg.sim/coremark/stall_0.trace | awk -F, '{print $$4}' | sort | uniq -c > prof.$*
 
 profile-target-mispredict:
 	echo "#!/bin/bash" > runit	
-	echo grep -B1 `grep target_mispredict ./bp_top/syn/results/vcs/bp_softcore.e_bp_single_core_cfg.sim/coremark/stall_0.trace | awk -F, '{print " -e ",$$4}' | cut --complement -b5-7 | sort | uniq | tr '\n' ':'` bp_common/test/mem/coremark.dump >> runit
+	echo grep -B1 `grep target_mispredict ./bp_top/syn/results/vcs/bp_softcore.e_bp_softcore_cfg.sim/coremark/stall_0.trace | awk -F, '{print " -e ",$$4}' | cut --complement -b5-7 | sort | uniq | tr '\n' ':'` bp_common/test/mem/coremark.dump >> runit
 	chmod u+x ./runit;	./runit | tee profile-target-mispredicts-list
 	# eval "grep -B1 $$CMD  
 
 # note: change coremark compile time parameters in bp_common/test/src/coremark/barebones/Makefile
-# dump files are located in bp_com
+# dump files are located in bp_common/test/mem/coremark.dump
 rebuild-run-coremark:
 	$(MAKE) -C bp_common/test coremark_mem coremark_dump coremark_nbf
 	@echo BP: Disassembly in "bp_common/test/mem/coremark.dump".
