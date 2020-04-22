@@ -82,7 +82,7 @@ rebuild-gcc:
 	$(MAKE) -C external/riscv-gnu-toolchain clean
 	$(MAKE) -j 8 -C external -f Makefile.tools gnu_build
 
-STALLS=instr load_dep fe_cmd branch_override ret_override mispredict mul icache dcache long_haz unknown control_haz struct_haz fe_queue_stall fe_wait_stall
+STALLS=instr load_dep branch_override ret_override mispredict mul icache dcache long_haz unknown control_haz struct_haz fe_queue_stall fe_wait_stall
 
 stall.%:
 	-@printf "%-20s: " $*; printf "%8d\n" `find . -iname "stall_0.trace" | xargs -n 1 grep -c $*`

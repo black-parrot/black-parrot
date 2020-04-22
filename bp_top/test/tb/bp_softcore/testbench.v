@@ -570,8 +570,6 @@ bind bp_be_top
        ,.branch_override(fe.pc_gen.ovr_taken & ~fe.pc_gen.ovr_ret)
        ,.ret_override(fe.pc_gen.ovr_ret)
 
-       ,.fe_cmd(fe.pc_gen.fe_cmd_yumi_o & ~fe.pc_gen.attaboy_v)
-
        ,.mispredict(be.be_checker.scheduler.npc_mismatch)
        ,.target(be.be_checker.director.isd_status.isd_pc)
 

@@ -9,7 +9,6 @@
     logic icache_fence;
     logic branch_override;
     logic ret_override;
-    logic fe_cmd;
     logic mispredict;
     logic control_haz;
     logic data_haz;
@@ -26,15 +25,14 @@
 
   typedef enum logic [4:0]
   {
-    freeze               = 5'd20
-    ,fe_queue_stall      = 5'd19
-    ,fe_wait_stall       = 5'd18
-    ,itlb_miss           = 5'd17
-    ,icache_miss         = 5'd16
-    ,icache_fence        = 5'd15
-    ,branch_override     = 5'd14
-    ,ret_override        = 5'd13
-    ,fe_cmd              = 5'd12
+    freeze               = 5'd19
+    ,fe_queue_stall      = 5'd18
+    ,fe_wait_stall       = 5'd17
+    ,itlb_miss           = 5'd16
+    ,icache_miss         = 5'd15
+    ,icache_fence        = 5'd14
+    ,branch_override     = 5'd13
+    ,ret_override        = 5'd12
     ,mispredict          = 5'd11
     ,control_haz         = 5'd10
     ,data_haz            = 5'd9
@@ -82,10 +80,6 @@ module bp_nonsynth_core_profiler
     , input branch_override
     , input ret_override
  
-    // Backwards ISS events
-    // TODO: Differentiate between different FE cmds
-    , input fe_cmd
-
     // ISD events
     , input mispredict
     , input [vaddr_width_p-1:0] target
@@ -119,7 +113,7 @@ module bp_nonsynth_core_profiler
 
   `declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 
-  localparam num_stages_p = 8;
+  localparam num_stages_p = 7;
   bp_stall_reason_s [num_stages_p-1:0] stall_stage_n, stall_stage_r;
   bsg_dff_reset
    #(.width_p($bits(bp_stall_reason_s)*num_stages_p))
@@ -198,8 +192,6 @@ module bp_nonsynth_core_profiler
       stall_stage_n[0].itlb_miss         |= itlb_miss;
       stall_stage_n[0].icache_miss       |= icache_miss;
       stall_stage_n[0].icache_fence      |= icache_fence;
-      // Only some FE cmds affect IF1
-      stall_stage_n[0].fe_cmd            |= fe_cmd;
 
       // IF2
       stall_stage_n[1].itlb_miss         |= itlb_miss;
@@ -207,60 +199,52 @@ module bp_nonsynth_core_profiler
       stall_stage_n[1].icache_fence      |= icache_fence;
       stall_stage_n[1].branch_override   |= branch_override;
       stall_stage_n[1].ret_override      |= ret_override;
-      stall_stage_n[1].fe_cmd            |= fe_cmd;
       stall_stage_n[1].mispredict        |= mispredict;
 
-      // ISS
-      stall_stage_n[2].mispredict        |= mispredict;
+      // ISD
       stall_stage_n[2].itlb_miss         |= itlb_miss;
       stall_stage_n[2].icache_miss       |= icache_miss;
-      stall_stage_n[2].icache_fence      |= icache_fence;
+      stall_stage_n[2].mispredict        |= mispredict;
+      stall_stage_n[2].dtlb_miss         |= dtlb_miss;
+      stall_stage_n[2].dcache_miss       |= dcache_miss;
       stall_stage_n[2].exception         |= exception;
       stall_stage_n[2].eret              |= eret;
       stall_stage_n[2].interrupt         |= interrupt;
 
-      // ISD
+      // EX1
       stall_stage_n[3].mispredict        |= mispredict;
       stall_stage_n[3].dtlb_miss         |= dtlb_miss;
       stall_stage_n[3].dcache_miss       |= dcache_miss;
+      stall_stage_n[3].long_haz          |= long_haz;
       stall_stage_n[3].exception         |= exception;
       stall_stage_n[3].eret              |= eret;
       stall_stage_n[3].interrupt         |= interrupt;
+      stall_stage_n[3].control_haz       |= control_haz;
+      stall_stage_n[3].load_dep          |= load_dep;
+      stall_stage_n[3].mul_dep           |= mul_dep;
+      stall_stage_n[3].data_haz          |= data_haz;
+      stall_stage_n[3].struct_haz        |= struct_haz;
 
-      // EX1
-      stall_stage_n[4].mispredict        |= mispredict;
+      // EX2
       stall_stage_n[4].dtlb_miss         |= dtlb_miss;
       stall_stage_n[4].dcache_miss       |= dcache_miss;
-      stall_stage_n[4].long_haz          |= long_haz;
       stall_stage_n[4].exception         |= exception;
       stall_stage_n[4].eret              |= eret;
       stall_stage_n[4].interrupt         |= interrupt;
-      stall_stage_n[4].control_haz       |= control_haz;
-      stall_stage_n[4].load_dep          |= load_dep;
-      stall_stage_n[4].mul_dep           |= mul_dep;
-      stall_stage_n[4].data_haz          |= data_haz;
-      stall_stage_n[4].struct_haz        |= struct_haz;
 
-      // EX2
+      // EX3
       stall_stage_n[5].dtlb_miss         |= dtlb_miss;
       stall_stage_n[5].dcache_miss       |= dcache_miss;
       stall_stage_n[5].exception         |= exception;
       stall_stage_n[5].eret              |= eret;
       stall_stage_n[5].interrupt         |= interrupt;
 
-      // EX3
+      // EX4
       stall_stage_n[6].dtlb_miss         |= dtlb_miss;
       stall_stage_n[6].dcache_miss       |= dcache_miss;
       stall_stage_n[6].exception         |= exception;
       stall_stage_n[6].eret              |= eret;
       stall_stage_n[6].interrupt         |= interrupt;
-
-      // EX4
-      stall_stage_n[7].dtlb_miss         |= dtlb_miss;
-      stall_stage_n[7].dcache_miss       |= dcache_miss;
-      stall_stage_n[7].exception         |= exception;
-      stall_stage_n[7].eret              |= eret;
-      stall_stage_n[7].interrupt         |= interrupt;
     end
 
   bp_stall_reason_s stall_reason_dec;

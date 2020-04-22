@@ -145,6 +145,30 @@ module bp_core_minimal
      ,.stat_mem_o(icache_stat_mem_o)
      );
 
+  bp_fe_cmd_s fifo_fe_cmd_li, fifo_fe_cmd_lo;
+  logic fifo_fe_cmd_v_li, fifo_fe_cmd_ready_lo;
+  logic fifo_fe_cmd_v_lo, fifo_fe_cmd_yumi_li;
+
+  bsg_fifo_bypass
+   #(.width_p(fe_cmd_width_lp), .ready_THEN_valid_p(1))
+   fe_cmd_bypass
+    (.data_i(fe_cmd_li)
+     ,.v_i(fe_cmd_v_li)
+     ,.ready_o(fe_cmd_ready_lo)
+
+     ,.data_o(fe_cmd_lo)
+     ,.v_o(fe_cmd_v_lo)
+     ,.yumi_i(fe_cmd_yumi_li)
+
+     ,.fifo_data_o(fifo_fe_cmd_li)
+     ,.fifo_v_o(fifo_fe_cmd_v_li)
+     ,.fifo_ready_i(fifo_fe_cmd_ready_lo)
+
+     ,.fifo_data_i(fifo_fe_cmd_lo)
+     ,.fifo_v_i(fifo_fe_cmd_v_lo)
+     ,.fifo_yumi_o(fifo_fe_cmd_yumi_li)
+     );
+
   bsg_fifo_1r1w_small
    #(.width_p(fe_cmd_width_lp)
      ,.els_p(fe_cmd_fifo_els_p)
@@ -154,13 +178,13 @@ module bp_core_minimal
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(fe_cmd_li)
-     ,.v_i(fe_cmd_v_li)
-     ,.ready_o(fe_cmd_ready_lo)
+     ,.data_i(fifo_fe_cmd_li)
+     ,.v_i(fifo_fe_cmd_v_li)
+     ,.ready_o(fifo_fe_cmd_ready_lo)
 
-     ,.data_o(fe_cmd_lo)
-     ,.v_o(fe_cmd_v_lo)
-     ,.yumi_i(fe_cmd_yumi_li)
+     ,.data_o(fifo_fe_cmd_lo)
+     ,.v_o(fifo_fe_cmd_v_lo)
+     ,.yumi_i(fifo_fe_cmd_yumi_li)
      );
  
   wire fe_cmd_empty_lo = ~fe_cmd_v_lo;
