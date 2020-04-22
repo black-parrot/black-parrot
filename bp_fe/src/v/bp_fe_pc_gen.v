@@ -45,7 +45,7 @@ module bp_fe_pc_gen
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p);
 `declare_bp_fe_mem_structs(vaddr_width_p, lce_sets_p, cce_block_width_p, vtag_width_p, ptag_width_p)
-`declare_bp_fe_pc_gen_stage_s(vaddr_width_p);
+`declare_bp_fe_pc_gen_stage_s(vaddr_width_p, ghist_width_p);
 
 bp_fe_mem_cmd_s mem_cmd_cast_o;
 bp_fe_mem_resp_s mem_resp_cast_i;
@@ -70,6 +70,12 @@ assign fe_queue_o = fe_queue_cast_o;
 bp_fe_branch_metadata_fwd_s fe_cmd_branch_metadata;
 
 bp_fe_pc_gen_stage_s [1:0] pc_gen_stage_n, pc_gen_stage_r;
+
+logic is_br, is_jal, is_jalr, is_call, is_ret;
+logic is_br_site, is_jal_site, is_jalr_site, is_call_site, is_ret_site;
+logic [btb_tag_width_p-1:0] btb_tag_site;
+logic [btb_idx_width_p-1:0] btb_idx_site;
+logic [bht_idx_width_p-1:0] bht_idx_site;
 
 // Helper signals
 wire                      v_if1 = pc_gen_stage_r[0].v;
@@ -193,6 +199,25 @@ always_ff @(posedge clk_i)
       state_r <= state_n;
     end
 
+// Global history
+//
+logic [ghist_width_p-1:0] ghistory_n, ghistory_r;
+wire ghistory_w_v_li = (fe_queue_v_o & is_br_site) | (br_miss_v & fe_cmd_yumi_o);
+assign ghistory_n = ghistory_w_v_li
+                    ? (fe_queue_v_o & is_br_site)
+                      ? {ghistory_r[0+:ghist_width_p-1], pc_gen_stage_r[1].taken}
+                      : fe_cmd_branch_metadata.ghist
+                    : ghistory_r;
+bsg_dff_reset
+ #(.width_p(ghist_width_p))
+ ghist_reg
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.data_i(ghistory_n)
+   ,.data_o(ghistory_r)
+   );
+
 logic bht_pred_lo;
 logic [vaddr_width_p-1:0] return_addr_n, return_addr_r;
 wire btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo);
@@ -205,12 +230,20 @@ always_comb
     pc_gen_stage_n[0].bht        = bht_pred_lo;
     pc_gen_stage_n[0].ret        = ovr_ret;
     pc_gen_stage_n[0].ovr        = ovr_taken;
+    pc_gen_stage_n[0].ghist      = ghistory_n;
 
     // Next PC calculation
     // load boot pc on reset command
     // if we need to redirect or load boot pc on reset
     if (state_reset_v | pc_redirect_v | icache_fence_v | itlb_fence_v)
+      begin
+        pc_gen_stage_n[0].taken = br_res_taken;
+        pc_gen_stage_n[0].btb = fe_cmd_branch_metadata.src_btb;
+        pc_gen_stage_n[0].bht = '0; // Does not come from metadata
+        pc_gen_stage_n[0].ret = fe_cmd_branch_metadata.src_ret;
+        pc_gen_stage_n[0].ovr = '0; // Does not come from metadata
         pc_gen_stage_n[0].pc = fe_cmd_cast_i.vaddr;
+      end
     else if (state_r != e_run)
         pc_gen_stage_n[0].pc = pc_resume_r;
     else if (ovr_ret)
@@ -239,19 +272,31 @@ bsg_dff_reset
    );
 
 // Branch prediction logic
-logic is_br, is_jal, is_jalr, is_call, is_ret;
-logic is_br_site, is_jal_site, is_jalr_site, is_call_site;
-logic [vaddr_width_p-1:0] pc_site;
-bsg_dff_reset_en
- #(.width_p(4+vaddr_width_p))
- branch_metadata_fwd_reg
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
-   ,.en_i(fe_queue_v_o)
-
-   ,.data_i({is_br, is_jal, is_jalr, is_call, pc_if2})
-   ,.data_o({is_br_site, is_jal_site, is_jalr_site, is_call_site, pc_site})
-   );
+always_ff @(posedge clk_i)
+  begin
+    if (cmd_nonattaboy_v & fe_cmd_yumi_o)
+      begin
+        is_br_site   <= fe_cmd_branch_metadata.is_br;
+        is_jal_site  <= fe_cmd_branch_metadata.is_br;
+        is_jalr_site <= fe_cmd_branch_metadata.is_jalr;
+        is_call_site <= fe_cmd_branch_metadata.is_call;
+        is_ret_site  <= fe_cmd_branch_metadata.is_ret;
+        btb_tag_site <= fe_cmd_branch_metadata.btb_tag;
+        btb_idx_site <= fe_cmd_branch_metadata.btb_idx;
+        bht_idx_site <= fe_cmd_branch_metadata.bht_idx;
+      end
+    if (fe_queue_v_o)
+      begin
+        is_br_site   <= is_br;
+        is_jal_site  <= is_jal;
+        is_jalr_site <= is_jalr;
+        is_call_site <= is_call;
+        is_ret_site  <= is_ret;
+        btb_tag_site <= pc_if2[2+btb_idx_width_p+:btb_tag_width_p];
+        btb_idx_site <= pc_if2[2+:btb_idx_width_p];
+        bht_idx_site <= pc_if2[2+:bht_idx_width_p];
+      end
+  end
 
 bp_fe_branch_metadata_fwd_s fe_queue_cast_o_branch_metadata;
 assign fe_queue_cast_o_branch_metadata = 
@@ -259,14 +304,15 @@ assign fe_queue_cast_o_branch_metadata =
     ,src_btb  : pc_gen_stage_r[1].btb
     ,src_ret  : pc_gen_stage_r[1].ret
     ,src_ovr  : pc_gen_stage_r[1].ovr
+    ,ghist    : pc_gen_stage_r[1].ghist
     ,is_br    : is_br_site
     ,is_jal   : is_jal_site
     ,is_jalr  : is_jalr_site
     ,is_call  : is_call_site
-    ,btb_tag  : pc_site[2+btb_idx_width_p+:btb_tag_width_p]
-    ,btb_idx  : pc_site[2+:btb_idx_width_p]
-    ,bht_idx  : pc_site[2+:bht_idx_width_p]
-    ,ghist    : '0
+    ,is_ret   : is_ret_site
+    ,btb_tag  : btb_tag_site
+    ,btb_idx  : btb_idx_site
+    ,bht_idx  : bht_idx_site
     ,default  : '0
     };
 
@@ -315,22 +361,22 @@ always_ff @(posedge clk_i)
 // Local index
 //
 // Direct bimodal
-wire [bht_idx_width_p-1:0] bht_idx_r_li = pc_gen_stage_n[0].pc[2+:bht_idx_width_p];
+wire [bht_idx_width_p-1:0] bht_idx_r_li = pc_gen_stage_n[0].pc[2+:bht_idx_width_p] ^ pc_gen_stage_n[0].ghist;
 
 bp_fe_bht
  #(.vaddr_width_p(vaddr_width_p)
-   ,.bht_idx_width_p(bht_idx_width_p)
+   ,.bht_idx_width_p(bht_idx_width_p+ghist_width_p)
    )
  bp_fe_bht
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
    ,.r_v_i(pc_gen_stage_n[0].v)
-   ,.idx_r_i(bht_idx_r_li)
+   ,.idx_r_i({pc_gen_stage_n[0].pc[2+:bht_idx_width_p], pc_gen_stage_n[0].ghist})
    ,.predict_o(bht_pred_lo)
 
    ,.w_v_i((br_miss_v | attaboy_v) & fe_cmd_branch_metadata.is_br & fe_cmd_yumi_o)
-   ,.idx_w_i(fe_cmd_branch_metadata.bht_idx)
+   ,.idx_w_i({fe_cmd_branch_metadata.bht_idx, fe_cmd_branch_metadata.ghist})
    ,.correct_i(attaboy_v)
    );
 

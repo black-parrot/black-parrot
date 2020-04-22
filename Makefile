@@ -96,7 +96,7 @@ profile: profile-header $(foreach x,$(STALLS),stall.$(x))
 
 # load-dep mul branch-mispredicts ret-override etc
 profile-%:
-	grep $* ./bp_top/syn/results/vcs/bp_softcore.e_bp_softcore_cfg.sim/coremark/stall_0.trace | awk -F, '{print $$4}' | sort | uniq -c > prof.$*
+	grep $* ./bp_top/syn/results/vcs/bp_softcore.e_bp_softcore_cfg.sim/*/stall_0.trace | awk -F, '{print $$4}' | sort | uniq -c > prof.$*
 
 profile-target-mispredict:
 	echo "#!/bin/bash" > runit	
@@ -113,3 +113,8 @@ rebuild-run-coremark:
 	$(MAKE) -C bp_top/syn sim.v TB=bp_softcore CFG=e_bp_softcore_cfg PROG=coremark CORE_PROFILE_P=1
 	$(MAKE) profile
 
+rebuild-run-loop-test:
+	$(MAKE) -C bp_common/test demos_elf demos_mem demos_dump
+	$(MAKE) -C bp_top/syn build.v TB=bp_softcore CFG=e_bp_softcore_cfg PROG=loop_test CORE_PROFILE_P=1
+	$(MAKE) -C bp_top/syn sim.v TB=bp_softcore CFG=e_bp_softcore_cfg PROG=loop_test CORE_PROFILE_P=1
+	$(MAKE) profile

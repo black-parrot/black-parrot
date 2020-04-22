@@ -175,7 +175,7 @@ bsg_dff_reset_en
    ,.data_o({btaken_pending, attaboy_pending})
    );
 wire last_instr_was_branch = attaboy_pending | (calc_status.ex1_v & calc_status.ex1_br_or_jmp);
-wire last_instr_was_btaken = btaken_pending | (calc_status.ex1_v & calc_status.ex1_br_or_jmp & calc_status.ex1_btaken);
+wire last_instr_was_btaken = btaken_pending | (calc_status.ex1_v & calc_status.ex1_btaken);
 
 // Generate control signals
 // On a cache miss, this is actually the generated pc in ex1. We could use this to redirect during 

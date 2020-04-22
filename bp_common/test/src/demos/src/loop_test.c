@@ -6,6 +6,30 @@
 #define N 100
 #endif
 
+long long test_gshare() {
+    long long x = 0;
+
+    for (long long j = 0; j < 100; j++) {
+      for (long long i = 0; i < 2; i++) {
+         x = 1;
+         x = 2;
+         x = 3;
+      }
+      for (long long i = 0; i < 2; i++) {
+         x = 1;
+         x = 2;
+         x = 3;
+      }
+      for (long long i = 0; i < 2; i++) {
+         x = 1;
+         x = 2;
+         x = 3;
+      }
+    }
+
+    return x;
+}
+
 // 3 mispredicts, end up weakly taken for loops, strongly not taken for branch
 int test_loop() {
     int x = 0;
@@ -121,12 +145,13 @@ int main(int argc, char** argv) {
 
     int x = 0;
 
-    x += test_loop();
-    x += test_branch_taken();
-    x += test_branch_ntaken();
-    x += test_branch_mixed();
-    x += test_memcpy(base_addr, base_addr+2048, 128);
-    x += test_strlen("deadbeefdeadbeef");
+    //x += test_loop();
+    //x += test_branch_taken();
+    //x += test_branch_ntaken();
+    //x += test_branch_mixed();
+    //x += test_memcpy(base_addr, base_addr+2048, 128);
+    //x += test_strlen("deadbeefdeadbeef");
+    x += test_gshare();
 
     bp_finish(0);
 
