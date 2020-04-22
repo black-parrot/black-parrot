@@ -54,7 +54,7 @@ module bsg_fifo_1r1w_rolly
               & (cptr_r[ptr_width_lp] != wptr_r[ptr_width_lp]);
 
   assign ready_o = ~clr & ~full;
-  assign v_o     = ~roll & ~empty;
+  assign v_o     = v_i | ~roll & ~empty;
 
   bsg_circular_ptr 
    #(.slots_p(2*els_p), .max_add_p(1)) 
@@ -86,8 +86,9 @@ module bsg_fifo_1r1w_rolly
     ,.n_o()
     );
   
+  logic [width_p-1:0] data_lo;
   bsg_mem_1r1w 
-  #(.width_p(width_p), .els_p(els_p)) 
+  #(.width_p(width_p), .els_p(els_p), .read_write_same_addr_p(1)) 
   fifo_mem
    (.w_clk_i(clk_i)
     ,.w_reset_i(reset_i)
@@ -96,8 +97,9 @@ module bsg_fifo_1r1w_rolly
     ,.w_data_i(data_i)
     ,.r_v_i(read)
     ,.r_addr_i(rptr_r[0+:ptr_width_lp])
-    ,.r_data_o(data_o)
+    ,.r_data_o(data_lo)
     );
+  assign data_o = empty ? data_i : data_lo;
   
 endmodule
 
