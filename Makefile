@@ -90,12 +90,10 @@ profile:
 	-find . -iname "stall_0.trace" | xargs -n 1 grep -c dir_mispredict
 	-find . -iname "stall_0.trace" | xargs -n 1 grep -c branch_override
 	-find . -iname "stall_0.trace" | xargs -n 1 grep -c target_mispredict
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c fe_cmd
 	-find . -iname "stall_0.trace" | xargs -n 1 grep -c mul
 	-find . -iname "stall_0.trace" | xargs -n 1 grep -c icache
 	-find . -iname "stall_0.trace" | xargs -n 1 grep -c dcache
 	-find . -iname "stall_0.trace" | xargs -n 1 grep -c long_haz
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c cmd_fence
 	-find . -iname "stall_0.trace" | xargs -n 1 grep -c fe_wait_stall
 
 
@@ -104,7 +102,7 @@ profile:
 rebuild-run-coremark:
 	$(MAKE) -C bp_common/test coremark_mem coremark_dump coremark_nbf
 	@echo BP: Disassembly in "bp_common/test/mem/coremark.dump".
-	$(MAKE) -C bp_top/syn build.v TB=bp_softcore CFG=e_bp_single_core_cfg PROG=coremark CORE_PROFILE_P=1
-	$(MAKE) -C bp_top/syn sim.v TB=bp_softcore CFG=e_bp_single_core_cfg PROG=coremark CORE_PROFILE_P=1
+	$(MAKE) -C bp_top/syn build.v TB=bp_softcore CFG=e_bp_softcore_cfg PROG=coremark CORE_PROFILE_P=1
+	$(MAKE) -C bp_top/syn sim.v TB=bp_softcore CFG=e_bp_softcore_cfg PROG=coremark CORE_PROFILE_P=1
 	$(MAKE) profile
 

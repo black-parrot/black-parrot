@@ -569,10 +569,6 @@ bind bp_be_top
        ,.icache_fence(fe.mem.icache.fencei_req)
        ,.branch_override(fe.pc_gen.ovr_taken | fe.pc_gen.ovr_ntaken)
 
-       ,.fe_cmd(fe.pc_gen.fe_cmd_yumi_o & ~fe.pc_gen.attaboy_v)
-
-       ,.cmd_fence(be.be_checker.director.suppress_iss_o)
-
        ,.target_mispredict(be.be_checker.scheduler.npc_mismatch & ~be.be_calculator.pipe_int.decode.br_v)
        ,.dir_mispredict(be.be_checker.scheduler.npc_mismatch & be.be_calculator.pipe_int.decode.br_v)
 
