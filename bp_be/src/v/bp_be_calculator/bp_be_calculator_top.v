@@ -109,10 +109,10 @@ bp_be_comp_stage_reg_s [pipe_stage_els_lp  :0] comp_stage_n;
 bp_be_comp_stage_reg_s [pipe_stage_els_lp-1:0] comp_stage_r;
 
 logic [dword_width_p-1:0] pipe_nop_data_lo;
-logic [dword_width_p-1:0] pipe_int_data_lo, pipe_mul_data_lo, pipe_mem_data_lo, pipe_fp_data_lo, pipe_long_data_lo;
+logic [dword_width_p-1:0] pipe_ctrl_data_lo, pipe_int_data_lo, pipe_mul_data_lo, pipe_mem_data_lo, pipe_fp_data_lo, pipe_long_data_lo;
 
 logic nop_pipe_result_v;
-logic pipe_int_data_lo_v, pipe_mul_data_lo_v, pipe_mem_data_lo_v, pipe_fp_data_lo_v, pipe_long_data_lo_v;
+logic pipe_ctrl_data_lo_v, pipe_int_data_lo_v, pipe_mul_data_lo_v, pipe_mem_data_lo_v, pipe_fp_data_lo_v, pipe_long_data_lo_v;
 logic pipe_mem_exc_v_lo, pipe_mem_miss_v_lo;
 
 logic [vaddr_width_p-1:0] br_tgt_int1;
@@ -205,6 +205,23 @@ bsg_dff
    ,.data_o(reservation_r)
    );
 
+bp_be_pipe_ctrl
+ #(.vaddr_width_p(vaddr_width_p))
+ pipe_ctrl
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.decode_i(reservation_r.decode)
+   ,.pc_i(reservation_r.pc)
+   ,.rs1_i(reservation_r.rs1)
+   ,.rs2_i(reservation_r.rs2)
+   ,.imm_i(reservation_r.imm)
+
+   ,.data_o(pipe_ctrl_data_lo)
+   ,.br_tgt_o(br_tgt_int1)
+   ,.btaken_o(btaken_int1)
+   );
+
 // Computation pipelines
 // Integer pipe: 1 cycle latency
 bp_be_pipe_int 
@@ -220,9 +237,9 @@ bp_be_pipe_int
    ,.imm_i(reservation_r.imm)
 
    ,.data_o(pipe_int_data_lo)
-   
-   ,.br_tgt_o(br_tgt_int1)
-   ,.btaken_o(btaken_int1)
+   //
+   //,.br_tgt_o(br_tgt_int1)
+   //,.btaken_o(btaken_int1)
    );
 
 // Multiplication pipe: 2 cycle latency
@@ -324,14 +341,14 @@ assign pipe_fp_data_lo_v  = calc_stage_r[4].pipe_fp_v;
 assign pipe_mul_data_lo_v = calc_stage_r[3].pipe_mul_v;
 assign pipe_mem_data_lo_v = calc_stage_r[2].pipe_mem_v;
 assign pipe_int_data_lo_v = calc_stage_r[0].pipe_int_v;
+assign pipe_ctrl_data_lo_v = calc_stage_r[0].pipe_ctrl_v;
 
-assign pipe_nop_data_lo = '0;
 
 always_comb
   begin
     // TODO: Add fflags
-    comp_stage_n[0] =                      '{data: pipe_nop_data_lo};
-    comp_stage_n[1] = pipe_int_data_lo_v ? '{data: pipe_int_data_lo} : comp_stage_r[0];
+    comp_stage_n[0] = '0;
+    comp_stage_n[1] = pipe_int_data_lo_v ? '{data: pipe_int_data_lo} : pipe_ctrl_data_lo;
     comp_stage_n[2] = comp_stage_r[1];
     comp_stage_n[3] = pipe_mem_data_lo_v ? '{data: pipe_mem_data_lo} : comp_stage_r[2];
     comp_stage_n[4] = pipe_mul_data_lo_v ? '{data: pipe_mul_data_lo} : comp_stage_r[3];
@@ -366,6 +383,7 @@ always_comb
     calc_stage_isd.v              = reservation_n.v;
     calc_stage_isd.queue_v        = reservation_n.decode.queue_v;
     calc_stage_isd.instr_v        = reservation_n.decode.instr_v;
+    calc_stage_isd.pipe_ctrl_v    = reservation_n.decode.pipe_ctrl_v;
     calc_stage_isd.pipe_int_v     = reservation_n.decode.pipe_int_v;
     calc_stage_isd.pipe_mem_v     = reservation_n.decode.pipe_mem_v;
     calc_stage_isd.pipe_mul_v     = reservation_n.decode.pipe_mul_v;
@@ -380,7 +398,7 @@ always_comb
     // Calculator status EX1 information
     calc_status.ex1_v                    = reservation_r.decode.queue_v & ~exc_stage_r[0].poison_v;
     calc_status.ex1_npc                  = br_tgt_int1;
-    calc_status.ex1_br_or_jmp            = reservation_r.decode.br_v | reservation_r.decode.jmp_v;
+    calc_status.ex1_br_or_jmp            = reservation_r.decode.pipe_ctrl_v;
     calc_status.ex1_btaken               = btaken_int1;
     calc_status.ex1_instr_v              = reservation_r.decode.instr_v & ~exc_stage_r[0].poison_v;
 
@@ -390,6 +408,9 @@ always_comb
     for (integer i = 0; i < pipe_stage_els_lp; i++) 
       begin : dep_status
         calc_status.dep_status[i].v         = calc_stage_r[i].queue_v;
+        calc_status.dep_status[i].ctrl_iwb_v = calc_stage_r[i].pipe_ctrl_v 
+                                              & ~exc_stage_n[i+1].poison_v
+                                              & calc_stage_r[i].irf_w_v;
         calc_status.dep_status[i].int_iwb_v = calc_stage_r[i].pipe_int_v 
                                               & ~exc_stage_n[i+1].poison_v
                                               & calc_stage_r[i].irf_w_v;

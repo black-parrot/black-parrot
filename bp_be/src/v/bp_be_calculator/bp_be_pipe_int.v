@@ -34,8 +34,8 @@ module bp_be_pipe_int
    // Pipeline results
    , output [reg_data_width_lp-1:0] data_o
 
-   , output [vaddr_width_p-1:0]     br_tgt_o
-   , output                         btaken_o
+   //, output [vaddr_width_p-1:0]     br_tgt_o
+   //, output                         btaken_o
    );
 
 // Cast input and output ports 
@@ -78,9 +78,9 @@ assign data_o   = decode.result_sel
                   ? pc_plus4
                   : alu_result;
 // TODO: Split into branch unit, will break other pipelines if pc+4 is data gated
-wire btaken = (decode.br_v & alu_result[0]) | decode.jmp_v;
-assign br_tgt_o = (decode.pipe_int_v & btaken) ? baddr + imm_i : pc_plus4;
-assign btaken_o = btaken;
+//wire btaken = (decode.br_v & alu_result[0]) | decode.jmp_v;
+//assign br_tgt_o = (decode.pipe_int_v & btaken) ? baddr + imm_i : pc_plus4;
+//assign btaken_o = btaken;
 
 endmodule : bp_be_pipe_int
 
