@@ -672,7 +672,7 @@ module bp_be_dcache
     cache_req_cast_o = '0;
 
     // Assigning sizes to cache miss packet
-    if (uncached_tv_r)
+    if (uncached_tv_r | (wbuf_v_li & (writethrough_p == 1)))
       unique case (size_op_tv_r)
         e_dword: cache_req_cast_o.size = e_size_8B;
         e_word: cache_req_cast_o.size = e_size_4B;
@@ -693,6 +693,10 @@ module bp_be_dcache
     end
     else if(uncached_load_req) begin
       cache_req_cast_o.msg_type = e_uc_load;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(wbuf_v_li & (writethrough_p == 1)) begin
+      cache_req_cast_o.msg_type = e_wt_store;
       cache_req_v_o = cache_req_ready_i;
     end
     else if(uncached_store_req) begin
@@ -726,7 +730,7 @@ module bp_be_dcache
   // output stage
   // Cache Miss Tracking logic
   logic cache_miss_r;
-  wire miss_tracker_en_li = cache_req_v_o & ~uncached_store_req & ~fencei_req;
+  wire miss_tracker_en_li = cache_req_v_o & ~uncached_store_req & ~fencei_req & ~(wbuf_v_li & (writethrough_p == 1));
   bsg_dff_reset_en
    #(.width_p(1))
    cache_miss_tracker
@@ -772,7 +776,7 @@ module bp_be_dcache
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
 
-    ,.en_i(wbuf_v_li | flush_req)
+    ,.en_i((wbuf_v_li & (writethrough_p == 0)) | flush_req)
     ,.data_i(wbuf_v_li)
 
     ,.data_o(gdirty_r)
@@ -1043,7 +1047,7 @@ module bp_be_dcache
     if (v_tv_r) begin
       lru_decode_way_li = store_op_tv_r ? store_hit_way : load_hit_way;
       dirty_mask_way_li = store_hit_way;
-      dirty_mask_v_li = store_op_tv_r;
+      dirty_mask_v_li = store_op_tv_r & (writethrough_p == 0);
       
       stat_mem_data_li.lru = lru_decode_data_lo;
       stat_mem_data_li.dirty = {dcache_assoc_p{1'b1}};
@@ -1052,7 +1056,7 @@ module bp_be_dcache
     else begin
       lru_decode_way_li = stat_mem_pkt.way_id;
       dirty_mask_way_li = stat_mem_pkt.way_id;
-      dirty_mask_v_li = 1'b1;
+      dirty_mask_v_li = 1'b1 & (writethrough_p == 0);
       case (stat_mem_pkt.opcode)
         e_cache_stat_mem_set_clear: begin
           stat_mem_data_li = {(stat_info_width_lp){1'b0}};

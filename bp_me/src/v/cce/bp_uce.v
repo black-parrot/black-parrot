@@ -382,6 +382,15 @@ module bp_uce
                 mem_cmd_cast_o.data                  = cache_req_cast_i.data;
                 mem_cmd_v_o = mem_cmd_ready_i;
               end
+            else if (cache_req_v_i & (cache_req_cast_i.msg_type == e_wt_store)) 
+              begin
+                mem_cmd_cast_o.header.msg_type       = e_cce_mem_wb;
+                mem_cmd_cast_o.header.addr           = cache_req_cast_i.addr;
+                mem_cmd_cast_o.header.size           = bp_cce_mem_req_size_e'(cache_req_cast_i.size);
+                mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
+                mem_cmd_cast_o.data                  = cache_req_cast_i.data;
+                mem_cmd_v_o = mem_cmd_ready_i;
+              end
             else
               begin
                 state_n = cache_req_v_i

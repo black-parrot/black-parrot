@@ -335,7 +335,61 @@ module bp_softcore
   //   a bus
   bp_cce_mem_msg_s [2:0] fifo_lo;
   logic [2:0] fifo_v_lo, fifo_yumi_li;
-  for (genvar i = 0; i < 3; i++)
+  
+  // TODO: Need to make this parameterisable on writethrough_p (Maybe add
+  // writethrough_p as a global parameter)?
+  bsg_two_fifo
+   #(.width_p($bits(bp_cce_mem_msg_s)))
+   icache_mem_fifo
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i(proc_cmd_lo[0])
+     ,.v_i(proc_cmd_v_lo[0])
+     ,.ready_o(proc_cmd_ready_li[0])
+
+     ,.data_o(fifo_lo[0])
+     ,.v_o(fifo_v_lo[0])
+     ,.yumi_i(fifo_yumi_li[0])
+     );
+
+  // We need a bigger fifo for writethrough D$, however we need to be wary of
+  // the credit counter overflowing in this case. 
+  // With the L2 we may be able to get away with a 2 fifo but without an L2 we
+  // may need more elements.
+  // TODO: Need to investigate
+  bsg_fifo_1r1w_small
+   #(.width_p($bits(bp_cce_mem_msg_s))
+    ,.els_p(3))
+    dcache_mem_fifo
+    (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+
+    ,.data_i(proc_cmd_lo[1])
+    ,.v_i(proc_cmd_v_lo[1])
+    ,.ready_o(proc_cmd_ready_li[1])
+
+    ,.data_o(fifo_lo[1])
+    ,.v_o(fifo_v_lo[1])
+    ,.yumi_i(fifo_yumi_li[1])
+    );
+
+  bsg_two_fifo
+   #(.width_p($bits(bp_cce_mem_msg_s)))
+   io_mem_fifo
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i(proc_cmd_lo[2])
+     ,.v_i(proc_cmd_v_lo[2])
+     ,.ready_o(proc_cmd_ready_li[2])
+
+     ,.data_o(fifo_lo[2])
+     ,.v_o(fifo_v_lo[2])
+     ,.yumi_i(fifo_yumi_li[2])
+     );
+  /*
+  for (genvar i = 0; i < ; i++)
     begin : fifo
       bsg_two_fifo
        #(.width_p($bits(bp_cce_mem_msg_s)))
@@ -351,7 +405,7 @@ module bp_softcore
          ,.v_o(fifo_v_lo[i])
          ,.yumi_i(fifo_yumi_li[i])
          );
-    end
+    end*/
 
   wire arb_ready_li = cfg_cmd_ready_lo & clint_cmd_ready_lo & io_cmd_ready_i & cache_cmd_ready_lo;
   bsg_arb_fixed
