@@ -72,7 +72,7 @@ bp_fe_branch_metadata_fwd_s fe_cmd_branch_metadata;
 bp_fe_pc_gen_stage_s [1:0] pc_gen_stage_n, pc_gen_stage_r;
 
 logic is_br, is_jal, is_jalr, is_call, is_ret;
-logic is_br_site, is_jal_site, is_jalr_site, is_call_site;
+logic is_br_site, is_jal_site, is_jalr_site, is_call_site, is_ret_site;
 logic [btb_tag_width_p-1:0] btb_tag_site;
 logic [btb_idx_width_p-1:0] btb_idx_site;
 logic [bht_idx_width_p-1:0] bht_idx_site;
@@ -280,6 +280,7 @@ always_ff @(posedge clk_i)
         is_jal_site  <= fe_cmd_branch_metadata.is_br;
         is_jalr_site <= fe_cmd_branch_metadata.is_jalr;
         is_call_site <= fe_cmd_branch_metadata.is_call;
+        is_ret_site  <= fe_cmd_branch_metadata.is_ret;
         btb_tag_site <= fe_cmd_branch_metadata.btb_tag;
         btb_idx_site <= fe_cmd_branch_metadata.btb_idx;
         bht_idx_site <= fe_cmd_branch_metadata.bht_idx;
@@ -290,6 +291,7 @@ always_ff @(posedge clk_i)
         is_jal_site  <= is_jal;
         is_jalr_site <= is_jalr;
         is_call_site <= is_call;
+        is_ret_site  <= is_ret;
         btb_tag_site <= pc_if2[2+btb_idx_width_p+:btb_tag_width_p];
         btb_idx_site <= pc_if2[2+:btb_idx_width_p];
         bht_idx_site <= pc_if2[2+:bht_idx_width_p];
@@ -307,6 +309,7 @@ assign fe_queue_cast_o_branch_metadata =
     ,is_jal   : is_jal_site
     ,is_jalr  : is_jalr_site
     ,is_call  : is_call_site
+    ,is_ret   : is_ret_site
     ,btb_tag  : btb_tag_site
     ,btb_idx  : btb_idx_site
     ,bht_idx  : bht_idx_site

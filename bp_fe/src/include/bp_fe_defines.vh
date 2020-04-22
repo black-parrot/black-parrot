@@ -40,6 +40,7 @@
     logic                           is_jal;                                                     \
     logic                           is_jalr;                                                    \
     logic                           is_call;                                                    \
+    logic                           is_ret;                                                     \
     logic                           src_btb;                                                    \
     logic                           src_ret;                                                    \
     logic                           src_ovr;                                                    \
