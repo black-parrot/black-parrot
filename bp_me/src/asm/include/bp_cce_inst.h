@@ -215,19 +215,27 @@ typedef enum {
   ,e_opd_rqf                             = 0x0
   ,e_opd_ucf                             = 0x1
   ,e_opd_nerf                            = 0x2
-  ,e_opd_ldf                             = 0x3
+  ,e_opd_nwbf                            = 0x3
   ,e_opd_pf                              = 0x4
-  ,e_opd_lef                             = 0x5
-  ,e_opd_cf                              = 0x6
+  ,e_opd_sf                              = 0x5 // also not used, when would it be?
+  // Basic flags from GAD
+  // cached dirty == cmf | cof
+  // cached maybe dirty == cmf | cof | cef
+  // cached owned (transfer) == cef | cmf | cof | cff
+  // cached == csf | cef | cmf | cof | cff
+  // not cached == not(any c*f flag)
+  // invalidate = rqf & csf
+  ,e_opd_csf                             = 0x6
   ,e_opd_cef                             = 0x7
-  ,e_opd_cof                             = 0x8
-  ,e_opd_cdf                             = 0x9
-  ,e_opd_csf                             = 0xA
-  ,e_opd_rf                              = 0xB
-  ,e_opd_uf                              = 0xC
-  ,e_opd_if                              = 0xD
-  ,e_opd_nwbf                            = 0xE
-  ,e_opd_sf                              = 0xF
+  ,e_opd_cmf                             = 0x8
+  ,e_opd_cof                             = 0x9
+  ,e_opd_cff                             = 0xA
+  // special flags from GAD
+  ,e_opd_rf                              = 0xB // requesting LCE needs replacement
+  ,e_opd_uf                              = 0xC // rqf & (rsf | rof | rff)
+  // 1101 - unused
+  // 1110 - unused
+  // 1111 - unused
 
   ,e_opd_req_lce                         = 0x0 // MSHR.lce_id
   ,e_opd_req_addr                        = 0x1 // MSHR.paddr
@@ -240,9 +248,10 @@ typedef enum {
   ,e_opd_flags                           = 0x8 // MSHR.flags
   ,e_opd_uc_req_size                     = 0x9 // MSHR.uc_req_size
   ,e_opd_data_length                     = 0xA // MSHR.data_length
+  ,e_opd_lru_coh_state                   = 0xB // MSHR.lru_coh_state
 
   // only used as a source
-  ,e_opd_flags_and_mask                  = 0xB // MSHR.flags & imm[0+:num_flags]
+  ,e_opd_flags_and_mask                  = 0xC // MSHR.flags & imm[0+:num_flags]
 
   // sharers vectors require src_b to provide GPR rX containing index to use
   // These can only be used as source a, not as source b or destinations
@@ -277,22 +286,19 @@ typedef enum {
 
 // Control Flag one hot encoding
 typedef enum {
-  e_flag_rqf                     = 1 // Request Type Flag
-  ,e_flag_ucf                    = 2 // Uncached Request Flag
-  ,e_flag_nerf                   = 4 // Non-Exclusive Request Flag
-  ,e_flag_ldf                    = 8 // LRU Dirty Flag
-  ,e_flag_pf                     = 16 // Pending Flag
-  ,e_flag_lef                    = 32 // LRU Cached Exclusive Flag
-  ,e_flag_cf                     = 64 // Cached by Other Flag
-  ,e_flag_cef                    = 128 // Cached Exclusive by Other Flag
-  ,e_flag_cof                    = 256 // Cached Owned by Other Flag
-  ,e_flag_cdf                    = 512 // Cached Dirty by Other Flag
-  ,e_flag_csf                    = 1024 // Cached Shared by Other Flag
-  ,e_flag_rf                     = 2048 // Replacement Flag
-  ,e_flag_uf                     = 4096 // Upgrade Flag
-  ,e_flag_if                     = 8192 // Invalidate Flag
-  ,e_flag_nwbf                   = 16384 // Null Writeback Flag
-  ,e_flag_sf                     = 32768 // Speculative Flag
+  e_flag_rqf                    = 1 // request type flag
+  ,e_flag_ucf                   = 2 // uncached request flag
+  ,e_flag_nerf                  = 4 // non-exclusive request flag
+  ,e_flag_nwbf                  = 8 // null writeback flag
+  ,e_flag_pf                    = 16 // pending flag
+  ,e_flag_sf                    = 32 // speculative flag
+  ,e_flag_csf                   = 64 // cached S by other flag
+  ,e_flag_cef                   = 128 // cached E by other flag
+  ,e_flag_cmf                   = 256 // cached M by other flag
+  ,e_flag_cof                   = 512 // cached O by other flag
+  ,e_flag_cff                   = 1024 // cached F by other flag
+  ,e_flag_rf                    = 2048 // replacement flag
+  ,e_flag_uf                    = 4096 // upgrade flag
 } bp_cce_inst_flag_onehot_e;
 
 #define bp_cce_inst_num_flags 16
@@ -377,7 +383,8 @@ typedef enum {
   ,e_mux_sel_coh_r6                      = 0x6
   ,e_mux_sel_coh_r7                      = 0x7
   ,e_mux_sel_coh_next_coh_state          = 0x8
-  ,e_mux_sel_sharer_state                = 0x9 // Sharer's vector states, indexed by src_a
+  ,e_mux_sel_coh_lru_coh_state           = 0x9
+  ,e_mux_sel_sharer_state                = 0xA // Sharer's vector states, indexed by src_a
   ,e_mux_sel_coh_inst_imm                = 0xF
 } bp_cce_inst_mux_sel_coh_state_e;
 

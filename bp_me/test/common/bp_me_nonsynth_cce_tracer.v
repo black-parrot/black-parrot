@@ -101,13 +101,13 @@ module bp_me_nonsynth_cce_tracer
       // inbound messages
       if (lce_req_v_i & lce_req_yumi_i) begin
         if (lce_req.header.msg_type == e_lce_req_type_rd | lce_req.header.msg_type == e_lce_req_type_wr) begin
-        $fdisplay(file, "[%t]: CCE[%0d] REQ LCE[%0d] addr[%H] wg[%0d] wr[%0b] ne[%0b] uc[%0b] lruWay[%0d] lruDirty[%0b]"
+        $fdisplay(file, "[%t]: CCE[%0d] REQ LCE[%0d] addr[%H] wg[%0d] wr[%0b] ne[%0b] uc[%0b] lruWay[%0d]"
                  , $time, cce_id_i, lce_req.header.src_id, lce_req.header.addr
                  , lce_req.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , (lce_req.header.msg_type == e_lce_req_type_wr)
                  , lce_req.header.non_exclusive
                  , 1'b0
-                 , lce_req.header.lru_way_id, lce_req.header.lru_dirty
+                 , lce_req.header.lru_way_id
                  );
         end
         if (lce_req.header.msg_type == e_lce_req_type_uc_rd | lce_req.header.msg_type == e_lce_req_type_uc_wr) begin

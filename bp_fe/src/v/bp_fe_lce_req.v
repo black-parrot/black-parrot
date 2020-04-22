@@ -160,7 +160,6 @@ module bp_fe_lce_req
     lce_req.header.msg_type      = e_lce_req_type_rd;
     lce_req.header.addr          = miss_addr_r;
     lce_req.header.non_exclusive = e_lce_req_non_excl;
-    lce_req.header.lru_dirty     = e_lce_req_lru_clean;
     lce_req.header.lru_way_id    = lce_assoc_p'(cache_req_metadata_r.repl_way);
 
 

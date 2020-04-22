@@ -238,7 +238,6 @@ module bp_be_dcache_lce_req
       e_SEND_CACHED_REQ: begin
         lce_req_v_o = lce_req_ready_i & cache_req_metadata_v_r;
 
-        lce_req.header.lru_dirty = bp_lce_cce_lru_dirty_e'(cache_req_metadata_r.dirty);
         lce_req.header.lru_way_id = lce_assoc_p'(cache_req_metadata_r.repl_way);
         lce_req.header.non_exclusive = e_lce_req_excl;
 

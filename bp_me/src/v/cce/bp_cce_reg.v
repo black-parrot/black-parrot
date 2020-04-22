@@ -49,7 +49,6 @@ module bp_cce_reg
    , input                                                                 pending_i
 
    // From Directory - RDW operation generates LRU Cached Exclusive flag and LRU entry address
-   , input                                                                 dir_lru_cached_excl_i
    , input bp_coh_states_e                                                 dir_lru_coh_state_i
    , input [paddr_width_p-1:0]                                             dir_lru_addr_i
    // From Directory - RDE operation writes address to GPR
@@ -62,12 +61,11 @@ module bp_cce_reg
    , input [lce_assoc_width_p-1:0]                                         gad_owner_way_i
    , input                                                                 gad_replacement_flag_i
    , input                                                                 gad_upgrade_flag_i
-   , input                                                                 gad_invalidate_flag_i
-   , input                                                                 gad_cached_flag_i
-   , input                                                                 gad_cached_exclusive_flag_i
-   , input                                                                 gad_cached_owned_flag_i
-   , input                                                                 gad_cached_dirty_flag_i
    , input                                                                 gad_cached_shared_flag_i
+   , input                                                                 gad_cached_exclusive_flag_i
+   , input                                                                 gad_cached_modified_flag_i
+   , input                                                                 gad_cached_owned_flag_i
+   , input                                                                 gad_cached_forward_flag_i
 
    , input                                                                 spec_sf_i
 
@@ -124,7 +122,6 @@ module bp_cce_reg
                        | (lce_req.header.msg_type == e_lce_req_type_uc_wr);
   wire lce_resp_nwbf = (lce_resp.header.msg_type == e_lce_cce_resp_null_wb);
   wire lce_req_nerf  = (lce_req.header.non_exclusive == e_lce_req_non_excl);
-  wire lce_req_ldf   = (lce_req.header.lru_dirty == e_lce_req_lru_dirty);
 
   // operation writes all flags in bulk
   wire write_all_flags = ((decoded_inst_i.dst_sel == e_dst_sel_special)
@@ -187,15 +184,13 @@ module bp_cce_reg
       mshr_n.paddr = src_a_i[0+:paddr_width_p];
       mshr_n.lru_way_id = src_a_i[0+:lce_assoc_width_p];
       mshr_n.next_coh_state = bp_coh_states_e'(src_a_i[0+:$bits(bp_coh_states_e)]);
+      mshr_n.lru_coh_state = bp_coh_states_e'(src_a_i[0+:$bits(bp_coh_states_e)]);
       mshr_n.uc_req_size = bp_lce_cce_uc_req_size_e'(src_a_i[0+:$bits(bp_lce_cce_uc_req_size_e)]);
       mshr_n.data_length = bp_lce_cce_data_length_e'(src_a_i[0+:$bits(bp_lce_cce_data_length_e)]);
       mshr_n.way_id = src_a_i[0+:lce_id_width_p];
       mshr_n.owner_lce_id = src_a_i[0+:lce_id_width_p];
       mshr_n.owner_way_id = src_a_i[0+:lce_assoc_width_p];
       mshr_n.lru_paddr = src_a_i[0+:paddr_width_p];
-
-      // TODO: maybe support lru_coh_state as a destination in microcode
-      mshr_n.lru_coh_state = mshr_r.lru_coh_state;
 
       // Flags - by default, next value comes from src_a
       for (int i = 0; i < `bp_cce_inst_num_flags; i=i+1) begin
@@ -214,7 +209,6 @@ module bp_cce_reg
             mshr_n.flags[e_opd_rqf] = lce_req_rqf;
             mshr_n.flags[e_opd_ucf] = lce_req_ucf;
             mshr_n.flags[e_opd_nerf] = lce_req_nerf;
-            mshr_n.flags[e_opd_ldf] = lce_req_ldf;
           end
           e_src_q_sel_lce_resp: begin
             //mshr_n.lce_id = lce_resp.header.src_id;
@@ -244,18 +238,16 @@ module bp_cce_reg
         mshr_n.owner_way_id = gad_owner_way_i;
         mshr_n.flags[e_opd_rf] = gad_replacement_flag_i;
         mshr_n.flags[e_opd_uf] = gad_upgrade_flag_i;
-        mshr_n.flags[e_opd_if] = gad_invalidate_flag_i;
-        mshr_n.flags[e_opd_cf] = gad_cached_flag_i;
-        mshr_n.flags[e_opd_cef] = gad_cached_exclusive_flag_i;
-        mshr_n.flags[e_opd_cof] = gad_cached_owned_flag_i;
-        mshr_n.flags[e_opd_cdf] = gad_cached_dirty_flag_i;
         mshr_n.flags[e_opd_csf] = gad_cached_shared_flag_i;
+        mshr_n.flags[e_opd_cef] = gad_cached_exclusive_flag_i;
+        mshr_n.flags[e_opd_cmf] = gad_cached_modified_flag_i;
+        mshr_n.flags[e_opd_cof] = gad_cached_owned_flag_i;
+        mshr_n.flags[e_opd_cff] = gad_cached_forward_flag_i;
       end
 
       // Overrides from defaults - Directory
       if (dir_lru_v_i) begin
         mshr_n.lru_paddr = dir_lru_addr_i;
-        mshr_n.flags[e_opd_lef] = dir_lru_cached_excl_i;
         mshr_n.lru_coh_state = dir_lru_coh_state_i;
       end
 
@@ -327,7 +319,7 @@ module bp_cce_reg
         if ((~stall_i & decoded_inst_i.lru_addr_w_v) | dir_lru_v_i) begin
           mshr_r.lru_paddr <= mshr_n.lru_paddr;
         end
-        if (dir_lru_v_i) begin
+        if ((~stall_i & decoded_inst_i.lru_coh_state_w_v) | dir_lru_v_i) begin
           mshr_r.lru_coh_state <= mshr_n.lru_coh_state;
         end
         if (~stall_i & decoded_inst_i.owner_lce_w_v) begin
@@ -343,10 +335,6 @@ module bp_cce_reg
           if (~stall_i & decoded_inst_i.flag_w_v[i]) begin
             mshr_r.flags[i] <= mshr_n.flags[i];
           end
-        end
-        // LRU Cached Exclusive Flag can be written while stalling, from directory
-        if (dir_lru_v_i) begin
-          mshr_r.flags[e_opd_lef] <= mshr_n.flags[e_opd_lef];
         end
         if (~stall_i & decoded_inst_i.uc_req_size_w_v) begin
           mshr_r.uc_req_size <= mshr_n.uc_req_size;

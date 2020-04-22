@@ -57,11 +57,14 @@ module bp_me_wormhole_packet_encode_lce_cmd
     case (payload_cast_i.header.msg_type)
       e_lce_cmd_sync
       ,e_lce_cmd_set_clear
-      ,e_lce_cmd_transfer
-      ,e_lce_cmd_writeback
-      ,e_lce_cmd_set_tag
-      ,e_lce_cmd_set_tag_wakeup
-      ,e_lce_cmd_invalidate_tag
+      ,e_lce_cmd_inv
+      ,e_lce_cmd_st
+      ,e_lce_cmd_st_wakeup
+      ,e_lce_cmd_wb
+      ,e_lce_cmd_st_wb
+      ,e_lce_cmd_tr
+      ,e_lce_cmd_st_tr
+      ,e_lce_cmd_st_tr_wb
       ,e_lce_cmd_uc_st_done: packet_cast_o.len = coh_noc_len_width_p'(lce_cmd_cmd_len_lp);
       e_lce_cmd_data       : packet_cast_o.len = coh_noc_len_width_p'(lce_cmd_data_len_lp);
       e_lce_cmd_uc_data    : packet_cast_o.len = coh_noc_len_width_p'(lce_cmd_uc_data_len_lp); 

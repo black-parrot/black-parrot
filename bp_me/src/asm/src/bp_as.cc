@@ -212,32 +212,26 @@ Assembler::parseOpd(string &s) {
     return e_opd_ucf;
   } else if (!s.compare("nerf")) {
     return e_opd_nerf;
-  } else if (!s.compare("ldf")) {
-    return e_opd_ldf;
+  } else if (!s.compare("nwbf")) {
+    return e_opd_nwbf;
   } else if (!s.compare("pf")) {
     return e_opd_pf;
-  } else if (!s.compare("lef")) {
-    return e_opd_lef;
-  } else if (!s.compare("cf")) {
-    return e_opd_cf;
-  } else if (!s.compare("cef")) {
-    return e_opd_cef;
-  } else if (!s.compare("cof")) {
-    return e_opd_cof;
-  } else if (!s.compare("cdf")) {
-    return e_opd_cdf;
+  } else if (!s.compare("sf")) {
+    return e_opd_sf;
   } else if (!s.compare("csf")) {
     return e_opd_csf;
+  } else if (!s.compare("cef")) {
+    return e_opd_cef;
+  } else if (!s.compare("cmf")) {
+    return e_opd_cmf;
+  } else if (!s.compare("cof")) {
+    return e_opd_cof;
+  } else if (!s.compare("cff")) {
+    return e_opd_cff;
   } else if (!s.compare("rf")) {
     return e_opd_rf;
   } else if (!s.compare("uf")) {
     return e_opd_uf;
-  } else if (!s.compare("if")) {
-    return e_opd_if;
-  } else if (!s.compare("nwbf")) {
-    return e_opd_nwbf;
-  } else if (!s.compare("sf")) {
-    return e_opd_sf;
 
   // Special
   } else if (!s.compare("reqlce")) {
@@ -262,6 +256,8 @@ Assembler::parseOpd(string &s) {
     return e_opd_uc_req_size;
   } else if (!s.compare("datalength")) {
     return e_opd_data_length;
+  } else if (!s.compare("lrucohst")) {
+    return e_opd_lru_coh_state;
 
   } else if (!s.compare("flagsandmask")) {
     return e_opd_flags_and_mask;
@@ -372,32 +368,26 @@ Assembler::parseFlagOneHot(string &s, bool &error) {
     return e_flag_ucf;
   } else if (!s.compare("nerf")) {
     return e_flag_nerf;
-  } else if (!s.compare("ldf")) {
-    return e_flag_ldf;
+  } else if (!s.compare("nwbf")) {
+    return e_flag_nwbf;
   } else if (!s.compare("pf")) {
     return e_flag_pf;
-  } else if (!s.compare("lef")) {
-    return e_flag_lef;
-  } else if (!s.compare("cf")) {
-    return e_flag_cf;
-  } else if (!s.compare("cef")) {
-    return e_flag_cef;
-  } else if (!s.compare("cof")) {
-    return e_flag_cof;
-  } else if (!s.compare("cdf")) {
-    return e_flag_cdf;
+  } else if (!s.compare("sf")) {
+    return e_flag_sf;
   } else if (!s.compare("csf")) {
     return e_flag_csf;
+  } else if (!s.compare("cef")) {
+    return e_flag_cef;
+  } else if (!s.compare("cmf")) {
+    return e_flag_cmf;
+  } else if (!s.compare("cof")) {
+    return e_flag_cof;
+  } else if (!s.compare("cff")) {
+    return e_flag_cff;
   } else if (!s.compare("rf")) {
     return e_flag_rf;
   } else if (!s.compare("uf")) {
     return e_flag_uf;
-  } else if (!s.compare("if")) {
-    return e_flag_if;
-  } else if (!s.compare("nwbf")) {
-    return e_flag_nwbf;
-  } else if (!s.compare("sf")) {
-    return e_flag_sf;
   } else {
     error = true;
     return e_flag_rqf;
@@ -535,6 +525,8 @@ Assembler::parseCohStateSel(string &s) {
     return e_mux_sel_coh_r7;
   } else if (!s.compare("nextcohst")) {
     return e_mux_sel_coh_next_coh_state;
+  } else if (!s.compare("lrucohst")) {
+    return e_mux_sel_coh_lru_coh_state;
   } else if (!s.compare("shcoh")) {
     // note: requires source A
     return e_mux_sel_sharer_state;

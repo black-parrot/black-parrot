@@ -784,12 +784,12 @@ module bp_cce_msg
                 lce_cmd.data = {'0, src_a_i};
               end else begin
                 lce_cmd.header.way_id = way_i;
-                if ((decoded_inst_i.lce_cmd == e_lce_cmd_set_tag)
-                    | (decoded_inst_i.lce_cmd == e_lce_cmd_set_tag_wakeup)) begin
+                if ((decoded_inst_i.lce_cmd == e_lce_cmd_st)
+                    | (decoded_inst_i.lce_cmd == e_lce_cmd_st_wakeup)) begin
                   lce_cmd.header.state = coh_state_i;
                 end
                 // Transfer commands set target and target way fields
-                if (decoded_inst_i.lce_cmd == e_lce_cmd_transfer) begin
+                if (decoded_inst_i.lce_cmd == e_lce_cmd_tr) begin
                   lce_cmd.header.state = coh_state_i;
                   lce_cmd.header.target = mshr.lce_id;
                   lce_cmd.header.target_way_id = mshr.lru_way_id;
@@ -807,7 +807,7 @@ module bp_cce_msg
           if (~lce_cmd_busy_o) begin
 
             lce_cmd_v_o = lce_cmd_ready_i;
-            lce_cmd.header.msg_type = e_lce_cmd_invalidate_tag;
+            lce_cmd.header.msg_type = e_lce_cmd_inv;
 
             // destination and way come from sharers information
             lce_cmd.header.dst_id = pe_lce_id;

@@ -101,7 +101,6 @@ module bp_cce_dir_segment
    , output bp_coh_states_e [num_lce_p-1:0]                       sharers_coh_states_o
 
    , output logic                                                 lru_v_o
-   , output logic                                                 lru_cached_excl_o
    , output bp_coh_states_e                                       lru_coh_state_o
    , output logic [paddr_width_p-1:0]                             lru_addr_o
 
@@ -524,7 +523,6 @@ module bp_cce_dir_segment
       ,.lce_i(lce_r)
       ,.lru_way_i(lru_way_r)
       ,.lru_v_o(lru_v_lo)
-      ,.lru_cached_excl_o(lru_cached_excl_o)
       ,.lru_coh_state_o(lru_coh_state_o)
       ,.lru_tag_o(lru_tag_lo)
      );
