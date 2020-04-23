@@ -29,3 +29,4 @@ $BP_TOP_DIR/test/common/bp_monitor.cpp
 $BP_TOP_DIR/test/common/dromajo_cosim.cpp
 $BP_TOP_DIR/test/common/bp_nonsynth_core_profiler.v
 $BP_TOP_DIR/test/common/bp_nonsynth_pc_profiler.v
+$BP_TOP_DIR/test/common/bp_nonsynth_branch_profiler.v

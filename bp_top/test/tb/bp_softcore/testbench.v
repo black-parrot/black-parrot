@@ -17,6 +17,7 @@ module testbench
  import bsg_noc_pkg::*;
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
    `declare_bp_proc_params(bp_params_p)
+   `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
    // Tracing parameters
@@ -608,6 +609,25 @@ bind bp_be_top
        ,.mhartid_i(be.be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
        ,.commit_pkt(be.be_calculator.commit_pkt)
+
+       ,.program_finish_i(testbench.program_finish_lo)
+       );
+
+  bind bp_be_director
+    bp_nonsynth_branch_profiler
+     #(.bp_params_p(bp_params_p))
+     pc_profiler
+      (.clk_i(clk_i & (testbench.core_profile_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i(cfg_bus_cast_i.freeze)
+
+       ,.mhartid_i(cfg_bus_cast_i.core_id)
+
+       ,.fe_cmd_o(fe_cmd_o)
+       ,.fe_cmd_v_o(fe_cmd_v_o)
+       ,.fe_cmd_ready_i(fe_cmd_ready_i)
+
+       ,.commit_v_i(commit_pkt.instret)
 
        ,.program_finish_i(testbench.program_finish_lo)
        );
