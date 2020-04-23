@@ -38,19 +38,19 @@ NUM_TESTS = $(shell cat $(LIST) | wc -l)
 
 regress.list.sc:
 	$(MAKE) regress.list.common _TS=sc _T=verilator
-	cat reports/verilator/final.rpt
+	@cat reports/verilator/final.rpt
 regress.list.v:
 	$(MAKE) regress.list.common _TS=v _T=vcs
-	cat reports/vcs/final.rpt
+	@cat reports/vcs/final.rpt
 
 regress.list.common:
 	$(MAKE) regress.list.common.tests
-	touch reports/$(_T)/final.rpt
-	printf "Tests passed for cache with CCE (out of $(NUM_TESTS)): " >> reports/$(_T)/final.rpt
-	grep -r FINISH reports/$(_T)/$(TB).$(CFG).sim.cce.* | wc -l >> reports/$(_T)/final.rpt
+	@touch reports/$(_T)/final.rpt
+	@printf "Tests passed for cache with CCE (out of $(NUM_TESTS)): " >> reports/$(_T)/final.rpt
+	@grep -r FINISH reports/$(_T)/$(TB).$(CFG).sim.cce.* | wc -l >> reports/$(_T)/final.rpt
 	
-	printf "Tests passed for cache with UCE (out of $(NUM_TESTS)): " >> reports/$(_T)/final.rpt
-	grep -r FINISH reports/$(_T)/$(TB).$(CFG).sim.uce.* | wc -l >> reports/$(_T)/final.rpt
+	@printf "Tests passed for cache with UCE (out of $(NUM_TESTS)): " >> reports/$(_T)/final.rpt
+	@grep -r FINISH reports/$(_T)/$(TB).$(CFG).sim.uce.* | wc -l >> reports/$(_T)/final.rpt
 	
 regress.list.common.tests: $(foreach p, $(LIST_PROGS), regress.list.common.build_and_run.$p)
 
@@ -60,10 +60,10 @@ regress.list.common.build_and_run.%:
 	rm -rf logs/$(_T)/*
 	$(MAKE) build.$(_TS) UCE_P=0
 	$(MAKE) run.$(_TS)
-	grep FINISH logs/$(_T)/$(TB).$(CFG).sim.$(PROG).log >> reports/$(_T)/$(TB).$(CFG).sim.cce.$*.rpt
+	@grep -i FINISH logs/$(_T)/$(TB).$(CFG).sim.$(PROG).log >> reports/$(_T)/$(TB).$(CFG).sim.cce.$*.rpt
 	
 	rm -rf results/$(_T)/*
 	rm -rf logs/$(_T)/*
 	$(MAKE) build.$(_TS) UCE_P=1
 	$(MAKE) run.$(_TS)
-	grep FINISH logs/$(_T)/$(TB).$(CFG).sim.$(PROG).log >> reports/$(_T)/$(TB).$(CFG).sim.uce.$*.rpt
+	@grep -i FINISH logs/$(_T)/$(TB).$(CFG).sim.$(PROG).log >> reports/$(_T)/$(TB).$(CFG).sim.uce.$*.rpt

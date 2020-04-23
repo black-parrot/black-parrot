@@ -18,4 +18,5 @@ csrc
 *.tr
 obj_dir
 *.vcd
+*.tr
 

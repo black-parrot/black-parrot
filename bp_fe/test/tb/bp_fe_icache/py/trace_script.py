@@ -18,6 +18,8 @@ def main():
     temp_vaddr = (1 << 31) | i
     temp_ptag = (1<<19)
     file.write(tracer.send_load(temp_vaddr, temp_ptag, False))
+    
+  for i in range(0, 64, 4):
     file.write(tracer.recv_data(i))
 
   file.write(tracer.test_finish())

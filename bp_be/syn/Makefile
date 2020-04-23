@@ -5,14 +5,17 @@ include $(TOP)/Makefile.common
 
 export SYN_PATH     := $(BP_BE_DIR)/syn
 export TB_PATH      := $(BP_BE_DIR)/test/tb
-export MEM_PATH     := $(BP_BE_DIR)/test/tb
+export MEM_PATH     := $(BP_BE_DIR)/test/tb/mem
 
 export LOG_PATH     := $(BP_BE_DIR)/syn/logs
 export RESULTS_PATH := $(BP_BE_DIR)/syn/results
 export REPORT_PATH  := $(BP_BE_DIR)/syn/reports
 
-TB          ?= bp_be_dcache
-CFG         ?= e_bp_half_core_cfg
+TB           ?= bp_be_dcache
+CFG          ?= e_bp_half_core_cfg
+UCE          ?= 1
+WRITETHROUGH ?= 0
+RANDOM_YUMI  ?= 0
 
 DRAMSIM_CH_CFG  ?= DDR2_micron_16M_8b_x8_sg3E.ini
 DRAMSIM_SYS_CFG ?= system.ini
@@ -30,47 +33,44 @@ regress: regress.v check_design.syn
 	$(MAKE) lint.v || true
 	$(MAKE) lint.sc || true
 
-LIST ?= /dev/null
-LIST_PROGS = $(shell cat $(LIST))
-NUM_TESTS = $(shell cat $(LIST) | wc -l)
+LIST         ?= /dev/null
+LIST_PROGS   := $(shell cat $(LIST))
+NUM_TESTS    := $(shell cat $(LIST) | wc -l)
+PYTHON_DIR   := $(TB_PATH)/$(TB)/py
+
+ifeq ($(UCE), 0)
+	CE=CCE
+else
+	CE=UCE
+endif
+
+ifeq ($(WRITETHROUGH), 0)
+	CA=WB
+else
+	CA=WT
+endif
 
 regress.list.sc:
+	$(MAKE) generate_tests
+	$(MAKE) build.sc UCE_P=$(UCE) WRITETHROUGH_P=$(WRITETHROUGH) RANDOM_YUMI_P=$(RANDOM_YUMI) REGRESS_P=1
 	$(MAKE) regress.list.tests _TS=sc _T=verilator
-	$(MAKE) regress.list.output _TS=sc _T=verilator
+	touch reports/verilator/final.rpt
+	@printf "Tests passed for $(CA) cache with $(CE) (out of $(NUM_TESTS)): " >> reports/verilator/final.rpt
+	@grep -r FINISH reports/verilator/$(TB).$(CFG).sim.$(CE)_$(CA).*.rpt | wc -l >> reports/verilator/final.rpt
 	cat reports/verilator/final.rpt
 
 regress.list.v:
+	$(MAKE) generate_tests
+	$(MAKE) build.v UCE_P=$(UCE) WRITETHROUGH_P=$(WRITETHROUGH) RANDOM_YUMI_P=$(RANDOM_YUMI) REGRESS_P=1
 	$(MAKE) regress.list.tests _TS=v _T=vcs
-	$(MAKE) regress.list.output _TS=v _T=vcs
+	touch reports/vcs/final.rpt
+	@printf "Tests passed for $(CA) cache with $(CE) (out of $(NUM_TESTS)): " >> reports/vcs/final.rpt
+	@grep -r FINISH reports/vcs/$(TB).$(CFG).sim.$(CE)_$(CA).*.rpt | wc -l >> reports/vcs/final.rpt
 	cat reports/vcs/final.rpt
 
-regress.list.tests: $(foreach p, $(LIST_PROGS), regress.list.build_and_run.$p)
+regress.list.tests: $(foreach p, $(LIST_PROGS), regress.list.run.$p)
 
-regress.list.build_and_run.%:
-	$(MAKE) $*
-	@rm -rf results/$(_T)/*
-	@rm -rf logs/$(_T)/$(TB).$(CFG).sim.hello_world.log
-	$(MAKE) build.$(_TS) sim.$(_TS) UCE_P=0 WRITETHROUGH_P=0
-	@grep FINISH logs/$(_T)/$(TB).$(CFG).sim.hello_world.log >> reports/$(_T)/$(TB).$(CFG).sim.cce_wb.$*.rpt
-	
-	@rm -rf results/$(_T)/*
-	@rm -rf logs/$(_T)/*
-	$(MAKE) build.$(_TS) sim.$(_TS) UCE_P=1 WRITETHROUGH_P=0
-	@grep FINISH logs/$(_T)/$(TB).$(CFG).sim.hello_world.log > reports/$(_T)/$(TB).$(CFG).sim.uce_wb.$*.rpt
-	
-	@rm -rf results/$(_T)/*
-	@rm -rf logs/$(_T)/*
-	$(MAKE) build.$(_TS) sim.$(_TS) UCE_P=1 WRITETHROUGH_P=1
-	@grep FINISH logs/$(_T)/$(TB).$(CFG).sim.hello_world.log > reports/$(_T)/$(TB).$(CFG).sim.uce_wt.$*.rpt
-	
-regress.list.output:
-	touch reports/$(_T)/final.rpt
-	@printf "Tests passed for Writeback Cache with CCE (out of $(NUM_TESTS)): "  >> reports/$(_T)/final.rpt
-	@grep -r FINISH reports/$(_T)/$(TB).$(CFG).sim.cce_wb.* | wc -l >> reports/$(_T)/final.rpt
-	
-	@printf "Tests passed for Writeback Cache with UCE (out of $(NUM_TESTS)): "  >> reports/$(_T)/final.rpt
-	@grep -r FINISH reports/$(_T)/$(TB).$(CFG).sim.uce_wb.* | wc -l >> reports/$(_T)/final.rpt
-	
-	@printf "Tests passed for Writethrough Cache with UCE (out of $(NUM_TESTS)): "  >> reports/$(_T)/final.rpt
-	@grep -r FINISH reports/$(_T)/$(TB).$(CFG).sim.uce_wt.* | wc -l >> reports/$(_T)/final.rpt
-
+regress.list.run.%:
+	$(MAKE) sim.v PROG=$*
+	@cp logs/$(_T)/$(TB).$(CFG).sim.$*.log logs/$(_T)/$(TB).$(CFG).sim.$(CE)_$(CA).$*.log
+	@grep -i FINISH logs/$(_T)/$(TB).$(CFG).sim.$(CE)_$(CA).$*.log > reports/$(_T)/$(TB).$(CFG).sim.$(CE)_$(CA).$*.rpt

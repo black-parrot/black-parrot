@@ -15,6 +15,7 @@ module testbench
    , parameter dram_trace_p                = 0
    , parameter icache_trace_p              = 0
    , parameter preload_mem_p               = 1
+   , parameter random_yumi_p               = 0
    , parameter uce_p                       = 1
 
    , parameter mem_zero_p         = 1
@@ -50,6 +51,9 @@ module testbench
   , localparam ptag_width_lp = (paddr_width_p - page_offset_width_lp)
   , localparam trace_replay_data_width_lp = ptag_width_lp + vaddr_width_p + 1
   , localparam trace_rom_addr_width_lp = 7
+
+  , localparam yumi_min_delay_lp = 0
+  , localparam yumi_max_delay_lp = 15
   )
   ( input clk_i
   , input reset_i
@@ -102,6 +106,7 @@ module testbench
   bsg_trace_replay
   #(.payload_width_p(trace_replay_data_width_lp)
    ,.rom_addr_width_p(trace_rom_addr_width_lp)
+   ,.debug_p(2)
    )
    tr_replay
    (.clk_i(clk_i)
@@ -132,17 +137,30 @@ module testbench
     ,.data_o(trace_rom_data_li)
     );
 
-  logic [trace_replay_data_width_lp+3:0] test;
-  assign test = trace_rom_data_li;
-
   // Output FIFO
-  logic fifo_yumi_li;
+  logic fifo_yumi_li, fifo_v_lo, fifo_random_yumi_lo;
   logic [instr_width_p-1:0] fifo_data_lo;
-  assign fifo_yumi_li = trace_v_li & trace_ready_lo;
+  assign fifo_yumi_li = (random_yumi_p == 1) ? (fifo_random_yumi_lo & trace_ready_lo) : (fifo_v_lo  & trace_ready_lo);
+  assign trace_v_li = (random_yumi_p == 1) ? fifo_yumi_li : fifo_v_lo;
   assign trace_data_li = {'0, fifo_data_lo};
 
-  bsg_two_fifo 
-    #(.width_p(instr_width_p))
+  bsg_nonsynth_random_yumi_gen
+    #(.yumi_min_delay_p(yumi_min_delay_lp)
+     ,.yumi_max_delay_p(yumi_max_delay_lp)
+     )
+     yumi_gen
+     (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.v_i(fifo_v_lo)
+     ,.yumi_o(fifo_random_yumi_lo)
+     );
+
+  // This fifo has 16 elements since maximum number of streaming hits is 16
+  bsg_fifo_1r1w_small 
+    #(.width_p(instr_width_p)
+     ,.els_p(16)
+    )
     output_fifo 
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -153,7 +171,7 @@ module testbench
     ,.data_i(icache_data_lo)
 
     // to trace replay
-    ,.v_o(trace_v_li)
+    ,.v_o(fifo_v_lo)
     ,.yumi_i(fifo_yumi_li)
     ,.data_o(fifo_data_lo)
     );

@@ -24,11 +24,12 @@ module testbench
    , parameter random_yumi_p               = 0
    , parameter uce_p                       = 1
    , parameter writethrough_p              = 0
+   , parameter regress_p                   = 0
 
    , parameter mem_zero_p         = 1
    , parameter mem_load_p         = preload_mem_p
    , parameter mem_file_p         = "prog.mem"
-   , parameter mem_cap_in_bytes_p = 2**17
+   , parameter mem_cap_in_bytes_p = 2**25
    , parameter [paddr_width_p-1:0] mem_offset_p = paddr_width_p'(32'h0000_0000)
 
    // Number of elements in the fake BlackParrot memory
@@ -112,6 +113,7 @@ module testbench
   bsg_trace_replay
     #(.payload_width_p(trace_replay_data_width_lp)
      ,.rom_addr_width_p(trace_rom_addr_width_lp)
+     ,.debug_p(2)
      )
     trace_replay
     (.clk_i(clk_i)
@@ -133,15 +135,28 @@ module testbench
     ,.error_o()
     );
 
-  mem_test_trace_rom
+  if(regress_p == 1) begin : regress
+    trace_rom
     #(.width_p(trace_replay_data_width_lp+4)
-     ,.addr_width_p(trace_rom_addr_width_lp)
-     )
-    ROM
-    (.addr_i(trace_rom_addr_lo)
-    ,.data_o(trace_rom_data_li)
-    );
-        
+      ,.addr_width_p(trace_rom_addr_width_lp)
+      ,.mem_file_p(mem_file_p)
+      )
+      ROM
+      (.addr_i(trace_rom_addr_lo)
+      ,.data_o(trace_rom_data_li)
+      );
+  end
+  else begin : no_regress
+    mem_test_trace_rom
+     #(.width_p(trace_replay_data_width_lp+4)
+      ,.addr_width_p(trace_rom_addr_width_lp)
+      )
+      ROM
+      (.addr_i(trace_rom_addr_lo)
+      ,.data_o(trace_rom_data_li)
+      );
+  end
+           
   assign dcache_pkt_li = trace_data_lo[0+:dcache_pkt_width_lp];
   assign ptag_li = trace_data_lo[dcache_pkt_width_lp+:ptag_width_lp];
   assign uncached_li = trace_data_lo[(dcache_pkt_width_lp+ptag_width_lp)+:1];
@@ -165,8 +180,11 @@ module testbench
      ,.yumi_o(fifo_random_yumi_lo)
      );
 
-  bsg_two_fifo 
-    #(.width_p(dword_width_p))
+  // Having a fifo with 8 elements here since we can get upto a maximum of
+  // 8 things from the cache in the streaming case
+  bsg_fifo_1r1w_small 
+    #(.width_p(dword_width_p)
+     ,.els_p(8))
     output_fifo 
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -185,7 +203,8 @@ module testbench
   // Subsystem Under Test
   wrapper
     #(.bp_params_p(bp_params_p)
-     ,.uce_p(uce_p))
+     ,.uce_p(uce_p)
+     ,.writethrough_p(writethrough_p))
     wrapper
     (.clk_i(clk_i)
     ,.reset_i(reset_i)

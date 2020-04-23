@@ -5,6 +5,7 @@ PRELOAD_MEM_P  ?= 0
 RANDOM_YUMI_P  ?= 0
 UCE_P          ?= 1
 WRITETHROUGH_P ?= 0
+REGRESS_P      ?= 0
 
 export DUT_PARAMS = 
 
@@ -14,7 +15,8 @@ export TB_PARAMS  = -pvalue+cce_trace_p=$(CCE_TRACE_P)   \
                     -pvalue+preload_mem_p=$(PRELOAD_MEM_P) \
 										-pvalue+random_yumi_p=$(RANDOM_YUMI_P) \
 										-pvalue+uce_p=$(UCE_P) \
-										-pvalue+writethrough_p=$(WRITETHROUGH_P)
+										-pvalue+writethrough_p=$(WRITETHROUGH_P) \
+										-pvalue+regress_p=$(REGRESS_P)
 
 HDL_PARAMS  = $(DUT_PARAMS) $(TB_PARAMS)
 

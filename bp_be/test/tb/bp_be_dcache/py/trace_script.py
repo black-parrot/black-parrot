@@ -7,9 +7,11 @@ def main():
 
   tracer = TraceGen(28, 12, 4, 64)
   filepath = sys.argv[1] + "/" + sys.argv[2] + "/py/"
+  mem_filepath = sys.argv[3] + "/"
 
   # Store/Load double word test
-  filename = filepath + "test_sd_ld.tr"
+  filename = filepath + "double_word_test.tr"
+  mem_filename = mem_filepath + "double_word_test.mem"
   file = open(filename, "w")
 
   file.write(tracer.print_header())
@@ -23,15 +25,27 @@ def main():
   file.write(tracer.print_comment("Load from address - 0, 8, 16, 24, 32, 40, 48, 56"))
   for i in range(8, 72, 8):
     file.write(tracer.send_load(True, 8, i-8, 0, False))
+  
+  for i in range(8, 72, 8):
     file.write(tracer.recv_data(i))
 
   file.write(tracer.print_comment("Store/Load double word test done\n"))
   file.write(tracer.test_finish())
 
   file.close()
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (len(l) != 1 and l[0] != "#")]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
 
   # Store/Load byte test (signed and unsigned)
-  filename = filepath + "test_sb_lb.tr"
+  filename = filepath + "byte_test.tr"
+  mem_filename = mem_filepath + "byte_test.mem"
   file = open(filename, "w")
 
   file.write(tracer.print_header())
@@ -50,9 +64,20 @@ def main():
   file.write(tracer.test_finish())
 
   file.close()
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (l[0] != "#" and len(l) != 1)]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
 
   # Store/Load halfword test (signed and unsigned)
-  filename = filepath + "test_sh_lh.tr"
+  filename = filepath + "half_word_test.tr"
+  mem_filename = mem_filepath + "half_word_test.mem"
+  file = open(filename, "w")
   file = open(filename, "w")
 
   file.write(tracer.print_header())
@@ -71,9 +96,19 @@ def main():
   file.write(tracer.test_finish())
 
   file.close()
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (l[0] != "#" and len(l) != 1)]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
 
   # Store/Load word test (signed and unsigned)
-  filename = filepath + "test_sw_lw.tr"
+  filename = filepath + "word_test.tr"
+  mem_filename = mem_filepath + "word_test.mem"
   file = open(filename, "w")
 
   file.write(tracer.print_header())
@@ -92,9 +127,19 @@ def main():
   file.write(tracer.test_finish())
 
   file.close()
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (l[0] != "#" and len(l) != 1)]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
 
   # Store to same index with 9 different ptags (to verify writeback)
-  filename = filepath + "test_wb.tr"
+  filename = filepath + "writeback_test.tr"
+  mem_filename = mem_filepath + "writeback_test.mem"
   file = open(filename, "w")
 
   file.write(tracer.print_header())
@@ -128,9 +173,19 @@ def main():
   file.write(tracer.test_finish())
 
   file.close()
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (l[0] != "#" and len(l) != 1)]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
 
   # Uncached Store/Load
-  filename = filepath + "test_uncached.tr"
+  filename = filepath + "uncached_test.tr"
+  mem_filename = mem_filepath + "uncached_test.mem"
   file = open(filename, "w")
   
   file.write(tracer.print_header())
@@ -142,9 +197,19 @@ def main():
   file.write(tracer.recv_data(320))
   file.write(tracer.test_finish())
   file.close()
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (l[0] != "#" and len(l) != 1)]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
 
   # Unaligned accesses
-  filename = filepath + "test_unaligned.tr"
+  filename = filepath + "unaligned_test.tr"
+  mem_filename = mem_filepath + "unaligned_test.mem"
   file = open(filename, "w")
 
   file.write(tracer.print_header())
@@ -176,9 +241,19 @@ def main():
   file.write(tracer.test_finish())
   
   file.close()
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (l[0] != "#" and len(l) != 1)]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
 
   # Directed test 1
-  filename = filepath + "test_writethrough1.tr"
+  filename = filepath + "wt_test_1.tr"
+  mem_filename = mem_filepath + "wt_test_1.mem"
   file = open(filename, "w")
   
   file.write(tracer.print_header())
@@ -203,9 +278,19 @@ def main():
   file.write(tracer.test_finish())
 
   file.close()
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (l[0] != "#" and len(l) != 1)]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
 
   # Directed test 2
-  filename = filepath + "test_writethrough2.tr"
+  filename = filepath + "wt_test_2.tr"
+  mem_filename = mem_filepath + "wt_test_2.mem"
   file = open(filename, "w")
   
   file.write(tracer.print_header())
@@ -230,9 +315,19 @@ def main():
   file.write(tracer.test_finish())
 
   file.close()
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (l[0] != "#" and len(l) != 1)]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
 
   # Directed test 3
-  filename = filepath + "test_writethrough3.tr"
+  filename = filepath + "wt_test_3.tr"
+  mem_filename = mem_filepath + "wt_test_3.mem"
   file = open(filename, "w")
   
   file.write(tracer.print_header())
@@ -254,6 +349,15 @@ def main():
   file.write(tracer.test_finish())
 
   file.close() 
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (l[0] != "#" and len(l) != 1)]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
 
 if __name__ == "__main__":
   main()
