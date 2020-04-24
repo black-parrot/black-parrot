@@ -36,7 +36,6 @@
 #define MEM_CMD_WR 1
 #define MEM_CMD_UC_RD 2
 #define MEM_CMD_UC_WR 3
-#define MEM_CMD_WB 4
-#define MEM_CMD_PRE 5
+#define MEM_CMD_PRE 4
 
 #endif

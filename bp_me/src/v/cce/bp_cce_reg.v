@@ -185,8 +185,7 @@ module bp_cce_reg
       mshr_n.lru_way_id = src_a_i[0+:lce_assoc_width_p];
       mshr_n.next_coh_state = bp_coh_states_e'(src_a_i[0+:$bits(bp_coh_states_e)]);
       mshr_n.lru_coh_state = bp_coh_states_e'(src_a_i[0+:$bits(bp_coh_states_e)]);
-      mshr_n.uc_req_size = bp_lce_cce_uc_req_size_e'(src_a_i[0+:$bits(bp_lce_cce_uc_req_size_e)]);
-      mshr_n.data_length = bp_lce_cce_data_length_e'(src_a_i[0+:$bits(bp_lce_cce_data_length_e)]);
+      mshr_n.msg_size = bp_mem_msg_size_e'(src_a_i[0+:$bits(bp_mem_msg_size_e)]);
       mshr_n.way_id = src_a_i[0+:lce_id_width_p];
       mshr_n.owner_lce_id = src_a_i[0+:lce_id_width_p];
       mshr_n.owner_way_id = src_a_i[0+:lce_assoc_width_p];
@@ -204,8 +203,7 @@ module bp_cce_reg
             mshr_n.lce_id = lce_req.header.src_id;
             mshr_n.paddr = lce_req.header.addr;
             mshr_n.lru_way_id = lce_req.header.lru_way_id;
-            mshr_n.uc_req_size = lce_req.header.uc_size;
-            mshr_n.data_length = lce_req.header.data_length;
+            mshr_n.msg_size = lce_req.header.size;
             mshr_n.flags[e_opd_rqf] = lce_req_rqf;
             mshr_n.flags[e_opd_ucf] = lce_req_ucf;
             mshr_n.flags[e_opd_nerf] = lce_req_nerf;
@@ -213,7 +211,7 @@ module bp_cce_reg
           e_src_q_sel_lce_resp: begin
             //mshr_n.lce_id = lce_resp.header.src_id;
             //mshr_n.paddr = lce_resp.header.addr;
-            //mshr_n.data_length = lce_resp.header.data_length;
+            //mshr_n.msg_size = lce_resp.header.size;
             mshr_n.flags[e_opd_nwbf] = lce_resp_nwbf;
           end
           e_src_q_sel_mem_resp: begin
@@ -221,9 +219,7 @@ module bp_cce_reg
             //mshr_n.way_id = mem_resp.header.payload.way_id;
             //mshr_n.paddr = mem_resp.header.addr;
             //mshr_n.next_coh_state = mem_resp.header.payload.state;
-            // Note: capturning mem_resp size field into MSHR data_length requires converting
-            // from size (in bytes) to data_length (in 64-bit chunks)
-            //mshr_n.data_length = mem_resp.header.size;
+            //mshr_n.msg_size = mem_resp.header.size;
             mshr_n.flags[e_opd_sf] = mem_resp.header.payload.speculative;
           end
           default: begin
@@ -336,11 +332,8 @@ module bp_cce_reg
             mshr_r.flags[i] <= mshr_n.flags[i];
           end
         end
-        if (~stall_i & decoded_inst_i.uc_req_size_w_v) begin
-          mshr_r.uc_req_size <= mshr_n.uc_req_size;
-        end
-        if (~stall_i & decoded_inst_i.data_length_w_v) begin
-          mshr_r.data_length <= mshr_r.data_length;
+        if (~stall_i & decoded_inst_i.msg_size_w_v) begin
+          mshr_r.msg_size <= mshr_n.msg_size;
         end
       end
 

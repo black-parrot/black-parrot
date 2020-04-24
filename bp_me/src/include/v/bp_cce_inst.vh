@@ -183,7 +183,7 @@ typedef enum logic [3:0] {
 // 1. poph does not dequeue data or memory, but captures the standard header fields into the MSHR,
 //    and also captures the message type into the specified GPR.
 // 2. popd dequeues a single 64-bit data packet into a single GPR. The user must first have at
-//    at least done a poph to determine that data was available and so ucode can use data_length
+//    at least done a poph to determine that data was available and so ucode can use size
 //    field in MSHR to determine how many packets to dequeue.
 // 3. popq dequeues only the header. We assume that all data has been popped off
 //    either by popd commands, or by the message unit auto-forward mechanism, or by issuing
@@ -349,9 +349,8 @@ typedef enum logic [3:0] {
   ,e_opd_owner_way                       = 4'b0110 // MSHR.owner_way_id
   ,e_opd_next_coh_state                  = 4'b0111 // MSHR.next_coh_state
   ,e_opd_flags                           = 4'b1000 // MSHR.flags
-  ,e_opd_uc_req_size                     = 4'b1001 // MSHR.uc_req_size
-  ,e_opd_data_length                     = 4'b1010 // MSHR.data_length
-  ,e_opd_lru_coh_state                   = 4'b1011 // MSHR.lru_coh_state
+  ,e_opd_msg_size                        = 4'b1001 // MSHR.msg_size
+  ,e_opd_lru_coh_state                   = 4'b1010 // MSHR.lru_coh_state
 
   // only used as a source
   ,e_opd_flags_and_mask                  = 4'b1100 // MSHR.flags & imm[0+:num_flags]
@@ -792,9 +791,12 @@ typedef struct packed {
   logic                                  write_pending;
   union packed
   {
-    bp_cce_inst_mux_sel_way_e     way_sel;
-    bp_lce_cce_data_length_e      data_length;
-  }                                      way_or_length;
+    bp_cce_inst_mux_sel_way_e                    way_sel;
+    // msg_size field must be same or fewer bits than way_sel field
+    // currently, msg_size requires 3 bits to hold bp_mem_msg_size_e from
+    // bp_common_me_if.vh
+    logic [$bits(bp_cce_inst_mux_sel_way_e)-1:0] msg_size;
+  }                                      way_or_size;
   bp_cce_inst_opd_gpr_e                  src_a;
   bp_cce_inst_mux_sel_lce_e              lce_sel;
   bp_cce_inst_mux_sel_addr_e             addr_sel;
@@ -914,7 +916,7 @@ typedef struct packed {
   logic                                    popd;
   logic                                    pushq;
   logic                                    pushq_custom;
-  bp_lce_cce_data_length_e                 data_length;
+  bp_mem_msg_size_e                        msg_size;
   bp_cce_inst_dst_q_sel_e                  pushq_qsel;
   bp_cce_inst_src_q_sel_e                  popq_qsel;
   logic                                    lce_req_yumi;
@@ -943,8 +945,7 @@ typedef struct packed {
   logic                                    lru_coh_state_w_v;
   // Flag write mask - for instructions that write flags, e.g., GAD, poph, mov, sf
   logic [`bp_cce_inst_num_flags-1:0]       flag_w_v;
-  logic                                    uc_req_size_w_v;
-  logic                                    data_length_w_v;
+  logic                                    msg_size_w_v;
   // Special/Param registers
   logic                                    coh_state_w_v;
   logic                                    auto_fwd_msg_w_v;

@@ -221,7 +221,7 @@ bp_be_dcache_lce
   logic [63:0] dot_product_temp;
    
   bp_cce_mem_msg_payload_s  resp_payload;
-  bp_cce_mem_req_size_e     resp_size;  
+  bp_mem_msg_size_e         resp_size;  
   bp_cce_mem_cmd_type_e     resp_msg;
   bp_local_addr_s          local_addr_li;
   

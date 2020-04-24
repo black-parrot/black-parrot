@@ -30,6 +30,7 @@ module bp_be_dcache_lce_cmd
     , localparam index_width_lp = `BSG_SAFE_CLOG2(dcache_sets_p)
     , localparam ptag_width_lp = (paddr_width_p-bp_page_offset_width_gp)
     , localparam way_id_width_lp = `BSG_SAFE_CLOG2(dcache_assoc_p)
+    , localparam block_size_in_bytes_lp = (dcache_block_width_p / 8)
     
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p) 
     `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
@@ -179,7 +180,20 @@ module bp_be_dcache_lce_cmd
       ,.clear_i(cnt_clear)
       ,.up_i(cnt_inc)
       ,.count_o(cnt_r)
+
       );
+  // coherence request size
+  // block size smaller than 8-bytes not supported
+  bp_mem_msg_size_e cmd_block_size =
+    (block_size_in_bytes_lp == 128)
+    ? e_mem_msg_size_128
+    : (block_size_in_bytes_lp == 64)
+      ? e_mem_msg_size_64
+      : (block_size_in_bytes_lp == 32)
+        ? e_mem_msg_size_32
+        : (block_size_in_bytes_lp == 16)
+          ? e_mem_msg_size_16
+          : e_mem_msg_size_8;
 
   // next state logic
   //
@@ -534,6 +548,7 @@ module bp_be_dcache_lce_cmd
         lce_cmd_out.header.way_id = lce_cmd_li.header.target_way_id;
         lce_cmd_out.header.addr = lce_cmd_li.header.addr;
         lce_cmd_out.header.state = lce_cmd_li.header.state;
+        lce_cmd_out.header.size = cmd_block_size;
         lce_cmd_out.data = tr_data_buffered_r
           ? data_buf_r
           : data_mem_i;
@@ -610,6 +625,7 @@ module bp_be_dcache_lce_cmd
         lce_resp.header.msg_type = e_lce_cce_resp_wb;
         lce_resp.header.src_id = lce_id_i;
         lce_resp.header.dst_id = lce_cmd_li.header.src_id;
+        lce_resp.header.size = cmd_block_size;
         lce_resp_v_o = wb_data_read_r & (wb_dirty_cleared_r | stat_mem_pkt_v);
 
         lce_cmd_yumi_o = lce_resp_done;

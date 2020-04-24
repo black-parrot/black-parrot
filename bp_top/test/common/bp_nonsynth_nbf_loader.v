@@ -129,9 +129,9 @@ module bp_nonsynth_nbf_loader
     io_cmd.header.msg_type = e_cce_mem_uc_wr;
     
     case (curr_nbf.opcode)
-      2: io_cmd.header.size = e_mem_size_4;
-      3: io_cmd.header.size = e_mem_size_8;
-      default: io_cmd.header.size = e_mem_size_4;
+      2: io_cmd.header.size = e_mem_msg_size_4;
+      3: io_cmd.header.size = e_mem_msg_size_8;
+      default: io_cmd.header.size = e_mem_msg_size_4;
     endcase
   end
 

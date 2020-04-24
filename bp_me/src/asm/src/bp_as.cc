@@ -252,10 +252,8 @@ Assembler::parseOpd(string &s) {
     return e_opd_next_coh_state;
   } else if (!s.compare("flags")) {
     return e_opd_flags;
-  } else if (!s.compare("ucreqsize")) {
-    return e_opd_uc_req_size;
-  } else if (!s.compare("datalength")) {
-    return e_opd_data_length;
+  } else if (!s.compare("msgsize")) {
+    return e_opd_msg_size;
   } else if (!s.compare("lrucohst")) {
     return e_opd_lru_coh_state;
 
@@ -1034,9 +1032,9 @@ Assembler::parseQueue(vector<string> *tokens, int n, parsed_inst_s *parsed_inst)
       inst->type_u.pushq.src_a = qargs.src;
       if (qargs.custom) {
         // for now, send 64-bits of data, sourced from src_a
-        inst->type_u.pushq.way_or_length.data_length = e_lce_data_length_1;
+        inst->type_u.pushq.way_or_size.msg_size = e_mem_msg_size_8;
       } else {
-        inst->type_u.pushq.way_or_length.way_sel = qargs.way_sel;
+        inst->type_u.pushq.way_or_size.way_sel = qargs.way_sel;
       }
       break;
     case e_popq_op:
@@ -1071,7 +1069,7 @@ Assembler::parseQueue(vector<string> *tokens, int n, parsed_inst_s *parsed_inst)
     case e_cmd_op:
       inst->type_u.pushq.addr_sel = parseAddrSel(tokens->at(1));
       inst->type_u.pushq.lce_sel = parseLceSel(tokens->at(2));
-      inst->type_u.pushq.way_or_length.way_sel = parseWaySel(tokens->at(3));
+      inst->type_u.pushq.way_or_size.way_sel = parseWaySel(tokens->at(3));
       if (tokens->size() == 5) {
         inst->type_u.pushq.src_a = parseOpd(tokens->at(4));
       }
@@ -1205,7 +1203,7 @@ Assembler::writeInstToOutput(parsed_inst_s *parsed_inst, uint16_t line_number, s
       break;
     case e_pushq:
       printField(inst->type_u.pushq.write_pending, 1, ss);
-      printField(inst->type_u.pushq.way_or_length.way_sel, bp_cce_inst_mux_sel_way_width, ss);
+      printField(inst->type_u.pushq.way_or_size.way_sel, bp_cce_inst_mux_sel_way_width, ss);
       printField(inst->type_u.pushq.src_a, bp_cce_inst_opd_width, ss);
       printField(inst->type_u.pushq.lce_sel, bp_cce_inst_mux_sel_lce_width, ss);
       printField(inst->type_u.pushq.addr_sel, bp_cce_inst_mux_sel_addr_width, ss);

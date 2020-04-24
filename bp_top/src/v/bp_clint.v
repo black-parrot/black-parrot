@@ -55,7 +55,7 @@ always_comb
     mtime_cmd_v         = 1'b0;
     plic_cmd_v          = 1'b0;
 
-    wr_not_rd = mem_cmd_li.msg_type inside {e_cce_mem_wb, e_cce_mem_uc_wr};
+    wr_not_rd = mem_cmd_li.msg_type inside {e_cce_mem_wr, e_cce_mem_uc_wr};
 
     unique 
     casez (mem_cmd_li.addr)

@@ -87,7 +87,7 @@ module bp_me_nonsynth_cce_tracer
 
   integer file;
   string file_name;
- 
+
   wire delay_li = reset_i | freeze_i;
   always_ff @(negedge delay_li)
     begin
@@ -138,18 +138,17 @@ module bp_me_nonsynth_cce_tracer
         end
       end
       if (mem_resp_v_i & mem_resp_yumi_i) begin
-        if (mem_resp.header.msg_type == e_cce_mem_wb | mem_resp.header.msg_type == e_cce_mem_uc_wr) begin
+        if (mem_resp.header.msg_type == e_cce_mem_wr | mem_resp.header.msg_type == e_cce_mem_uc_wr) begin
         $fdisplay(file, "[%t]: CCE[%0d] MEM RESP wb[%0b] uc[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d]"
-                 , $time, cce_id_i, (mem_resp.header.msg_type == e_cce_mem_wb)
+                 , $time, cce_id_i, (mem_resp.header.msg_type == e_cce_mem_wr)
                  , (mem_resp.header.msg_type == e_cce_mem_uc_wr)
                  , mem_resp.header.addr
                  , mem_resp.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , mem_resp.header.payload.lce_id, mem_resp.header.payload.way_id);
         end
-        if (mem_resp.header.msg_type == e_cce_mem_rd | mem_resp.header.msg_type == e_cce_mem_wr
-            | mem_resp.header.msg_type == e_cce_mem_uc_rd) begin
-        $fdisplay(file, "[%t]: CCE[%0d] MEM DATA RESP wr[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] spec[%0b] uc[%0b] %H"
-                 , $time, cce_id_i, (mem_resp.header.msg_type == e_cce_mem_wr), mem_resp.header.addr
+        if (mem_resp.header.msg_type == e_cce_mem_rd | mem_resp.header.msg_type == e_cce_mem_uc_rd) begin
+        $fdisplay(file, "[%t]: CCE[%0d] MEM DATA RESP addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] spec[%0b] uc[%0b] %H"
+                 , $time, cce_id_i, mem_resp.header.addr
                  , mem_resp.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , mem_resp.header.payload.lce_id, mem_resp.header.payload.way_id, mem_resp.header.payload.state
                  , mem_resp.header.payload.speculative
@@ -185,18 +184,17 @@ module bp_me_nonsynth_cce_tracer
         end
       end
       if (mem_cmd_v_i & mem_cmd_ready_i) begin
-        if (mem_cmd.header.msg_type == e_cce_mem_rd | mem_cmd.header.msg_type == e_cce_mem_wr
-            | mem_cmd.header.msg_type == e_cce_mem_uc_rd) begin
-        $fdisplay(file, "[%t]: CCE[%0d] MEM CMD wr[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d] spec[%0b] uc[%0b]"
-                 , $time, cce_id_i, mem_cmd.header.msg_type, mem_cmd.header.addr
+        if (mem_cmd.header.msg_type == e_cce_mem_rd | mem_cmd.header.msg_type == e_cce_mem_uc_rd) begin
+        $fdisplay(file, "[%t]: CCE[%0d] MEM CMD addr[%H] wg[%0d] lce[%0d] way[%0d] spec[%0b] uc[%0b]"
+                 , $time, cce_id_i, mem_cmd.header.addr
                  , mem_cmd.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , mem_cmd.header.payload.lce_id
                  , mem_cmd.header.payload.way_id, mem_cmd.header.payload.speculative
                  , (mem_cmd.header.msg_type == e_cce_mem_uc_rd));
         end
-        if (mem_cmd.header.msg_type == e_cce_mem_uc_wr | mem_cmd.header.msg_type == e_cce_mem_wb) begin
+        if (mem_cmd.header.msg_type == e_cce_mem_uc_wr | mem_cmd.header.msg_type == e_cce_mem_wr) begin
         $fdisplay(file, "[%t]: CCE[%0d] MEM DATA CMD wb[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d] state[%3b] uc[%0b] %H"
-                 , $time, cce_id_i, (mem_cmd.header.msg_type == e_cce_mem_wb), mem_cmd.header.addr
+                 , $time, cce_id_i, (mem_cmd.header.msg_type == e_cce_mem_wr), mem_cmd.header.addr
                  , mem_cmd.header.addr[lg_block_size_in_bytes_lp +: lg_cce_way_groups_lp]
                  , mem_cmd.header.payload.lce_id, mem_cmd.header.payload.way_id, mem_cmd.header.payload.state
                  , (mem_cmd.header.msg_type == e_cce_mem_uc_wr), mem_cmd.data);

@@ -82,6 +82,10 @@ module bp_cce
       else $error("A$ assoc must be power of two or 0");
     assert(`BSG_IS_POW2(acache_sets_p) || acache_sets_p == 0)
       else $error("A$ sets must be power of two or 0");
+    assert (icache_block_width_p == cce_block_width_p) else $error("icache block width must match cce block width");
+    assert (dcache_block_width_p == cce_block_width_p) else $error("dcache block width must match cce block width");
+    assert (acache_block_width_p == cce_block_width_p) else $error("acache block width must match cce block width");
+    assert (block_size_in_bytes_lp inside {8, 16, 32, 64, 128}) else $error("invalid CCE block width");
   end
   //synopsys translate_on
 

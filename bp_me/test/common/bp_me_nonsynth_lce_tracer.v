@@ -130,10 +130,10 @@ module bp_me_nonsynth_lce_tracer
       // request to CCE
       if (lce_req_v_i & lce_req_ready_i) begin
         assert(lce_req.header.src_id == lce_id_i) else $error("Bad LCE Request - source mismatch");
-        $fdisplay(file, "[%t]: LCE[%0d] REQ addr[%H] cce[%0d] msg[%b] ne[%b] lru[%0d] uc_size[%b]"
+        $fdisplay(file, "[%t]: LCE[%0d] REQ addr[%H] cce[%0d] msg[%b] ne[%b] lru[%0d] size[%b]"
                   , $time, lce_id_i, lce_req.header.addr, lce_req.header.dst_id, lce_req.header.msg_type
                   , lce_req.header.non_exclusive, lce_req.header.lru_way_id
-                  , lce_req.header.uc_size
+                  , lce_req.header.size
                   );
       end
 
@@ -142,7 +142,7 @@ module bp_me_nonsynth_lce_tracer
         assert(lce_resp.header.src_id == lce_id_i) else $error("Bad LCE Response - source mismatch");
         $fdisplay(file, "[%t]: LCE[%0d] RESP addr[%H] cce[%0d] msg[%b] len[%b] %H"
                   , $time, lce_id_i, lce_resp.header.addr, lce_resp.header.dst_id, lce_resp.header.msg_type
-                  , lce_resp.header.data_length, lce_resp.data
+                  , lce_resp.header.size, lce_resp.data
                   );
       end
 
@@ -152,7 +152,7 @@ module bp_me_nonsynth_lce_tracer
         $fdisplay(file, "[%t]: LCE[%0d] CMD IN addr[%H] cce[%0d] msg[%b] way[%0d] state[%b] tgt[%0d] tgt_way[%0d] len[%b] %H"
                   , $time, lce_id_i, lce_cmd.header.addr, lce_cmd.header.src_id, lce_cmd.header.msg_type
                   , lce_cmd.header.way_id, lce_cmd.header.state, lce_cmd.header.target, lce_cmd.header.target_way_id
-                  , lce_cmd.header.data_length, lce_cmd.data
+                  , lce_cmd.header.size, lce_cmd.data
                   );
       end
 
@@ -161,7 +161,7 @@ module bp_me_nonsynth_lce_tracer
         $fdisplay(file, "[%t]: LCE[%0d] CMD OUT dst[%0d] addr[%H] CCE[%0d] msg[%b] way[%0d] state[%b] tgt[%0d] tgt_way[%0d] len[%b] %H"
                   , $time, lce_id_i, lce_cmd_lo.header.dst_id, lce_cmd_lo.header.addr, lce_cmd_lo.header.src_id, lce_cmd_lo.header.msg_type
                   , lce_cmd_lo.header.way_id, lce_cmd_lo.header.state, lce_cmd_lo.header.target, lce_cmd_lo.header.target_way_id
-                  , lce_cmd_lo.header.data_length, lce_cmd_lo.data
+                  , lce_cmd_lo.header.size, lce_cmd_lo.data
                   );
       end
 

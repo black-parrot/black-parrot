@@ -30,6 +30,7 @@ module bp_fe_lce_req
    , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
+   , localparam block_size_in_bytes_lp = (icache_block_width_p / 8)
    
    , parameter timeout_max_limit_p=4
   )
@@ -141,6 +142,19 @@ module bp_fe_lce_req
      ,.cce_id_o(resp_cce_id_lo)
      );
 
+  // coherence request size
+  // block size smaller than 8-bytes not supported
+  bp_mem_msg_size_e req_block_size =
+    (block_size_in_bytes_lp == 128)
+    ? e_mem_msg_size_128
+    : (block_size_in_bytes_lp == 64)
+      ? e_mem_msg_size_64
+      : (block_size_in_bytes_lp == 32)
+        ? e_mem_msg_size_32
+        : (block_size_in_bytes_lp == 16)
+          ? e_mem_msg_size_16
+          : e_mem_msg_size_8;
+
   // lce_req fsm
   always_comb begin
 
@@ -161,6 +175,7 @@ module bp_fe_lce_req
     lce_req.header.addr          = miss_addr_r;
     lce_req.header.non_exclusive = e_lce_req_non_excl;
     lce_req.header.lru_way_id    = lce_assoc_p'(cache_req_metadata_r.repl_way);
+    lce_req.header.size          = req_block_size;
 
 
     lce_resp_v_o          = 1'b0;
@@ -212,10 +227,9 @@ module bp_fe_lce_req
         // TODO: this may need to change depending on what the LCE and CCE behavior spec is
         // In order for the uncached load to replay successfully and extract the correct
         // 32-bits, we fetch the aligned 64-bits containing the desired 32-bits.
-        // Zero out the byte offset bits so the address is 64-bit aligned.
-        lce_req.header.addr = {miss_addr_r[paddr_width_p-1:byte_offset_width_lp]
-                               , {byte_offset_width_lp{1'b0}}};
-        lce_req.header.uc_size = e_lce_uc_req_8;
+        // Zero out LSB 3-bits so the address is 64-bit aligned
+        lce_req.header.addr = {miss_addr_r[paddr_width_p-1:3], {3'b000}};
+        lce_req.header.size = e_mem_msg_size_8;
         lce_req.data = '0;
 
         state_n = lce_req_v_o
