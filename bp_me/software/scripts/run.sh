@@ -20,9 +20,8 @@ nums=("1" "2" "3" "4" "6" "8" "12" "16")
 # test programs
 progs=("mc_sanity" "mc_rand_walk" "mc_work_share_sort")
 
-rm -f regress_results.txt
-touch regress_results.txt
-rm -rf reports/vcs/*sim*
+rm -f regress${cce}results.txt
+touch regress${cce}results.txt
 
 for prog in "${progs[@]}"
 do
@@ -41,9 +40,9 @@ do
       passes=`grep -rE "PASS" reports/vcs/bp_processor.e_bp_${cfgs[$i]}_core${cce}cfg.sim.${prog}_${nums[$i]}.rpt | wc -l`
       if [ $passes -eq ${nums[$i]} ]
       then
-        echo "$prog,$p,${cfgs[$i]},PASS" >> regress_results.txt
+        echo "$prog,$p,${cfgs[$i]},PASS" >> regress${cce}results.txt
       else
-        echo "$prog,$p,${cfgs[$i]},FAIL" >> regress_results.txt
+        echo "$prog,$p,${cfgs[$i]},FAIL" >> regress${cce}results.txt
       fi
     done
   done

@@ -1,2 +1,2 @@
-regress_results.txt
+*.txt
 *.sh
