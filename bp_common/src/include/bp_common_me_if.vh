@@ -62,12 +62,11 @@
  */                                                                                                      \
   typedef struct packed                                                                                  \
   {                                                                                                      \
-    bp_lce_cce_uc_req_size_e                     uc_size;                                                \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    lru_way_id;                                             \
     bp_lce_cce_req_non_excl_e                    non_exclusive;                                          \
     logic [paddr_width_mp-1:0]                   addr;                                                   \
     logic [lce_id_width_mp-1:0]                  src_id;                                                 \
-    bp_lce_cce_data_length_e                     data_length;                                            \
+    bp_mem_msg_size_e                            size;                                                   \
     bp_lce_cce_req_type_e                        msg_type;                                               \
     logic [cce_id_width_mp-1:0]                  dst_id;                                                 \
   } bp_lce_cce_req_header_s;                                                                             \
@@ -82,7 +81,7 @@
  *  bp_lce_cmd_s is the generic message for LCE Command and LCE Data Command that is sent across the     \
  *  Command network from CCE to LCE.                                                                     \
  *  Although not required, It is designed to be sent through a wormhole routed network that will send    \
- *  the minimum number of flits required, based on the data_length field.                                \
+ *  the minimum number of flits required, based on the size field.                                       \
  */                                                                                                      \
   typedef struct packed                                                                                  \
   {                                                                                                      \
@@ -93,7 +92,7 @@
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id;                                                 \
     logic [paddr_width_mp-1:0]                   addr;                                                   \
     logic [cce_id_width_mp-1:0]                  src_id;                                                 \
-    bp_lce_cce_data_length_e                     data_length;                                            \
+    bp_mem_msg_size_e                            size;                                                   \
     bp_lce_cmd_type_e                            msg_type;                                               \
     logic [lce_id_width_mp-1:0]                  dst_id;                                                 \
   } bp_lce_cmd_header_s;                                                                                 \
@@ -112,7 +111,7 @@
   {                                                                                                      \
     logic [paddr_width_mp-1:0]                   addr;                                                   \
     logic [lce_id_width_mp-1:0]                  src_id;                                                 \
-    bp_lce_cce_data_length_e                     data_length;                                            \
+    bp_mem_msg_size_e                            size;                                                   \
     bp_lce_cce_resp_type_e                       msg_type;                                               \
     logic [cce_id_width_mp-1:0]                  dst_id;                                                 \
   } bp_lce_cce_resp_header_s;                                                                            \
@@ -132,27 +131,22 @@
  */
 
 /*
- * bp_lce_cce_data_length_e specifies how many 64-bit data chunks are sent following the header
+ * bp_mem_msg_size_e specifies the size, in bytes, of the request or data field
+ * Request messages use the size field to specify the request size in bytes.
+ * Command messages use the size field to specify the amount of valid data following the header.
+ * Response messages use the size field to specify the amount of valid data following the header.
  */
-typedef enum logic [3:0]
+typedef enum logic [2:0]
 {
-  e_lce_data_length_0   = 4'b0000
-  ,e_lce_data_length_1  = 4'b0001
-  ,e_lce_data_length_2  = 4'b0010
-  ,e_lce_data_length_3  = 4'b0011
-  ,e_lce_data_length_4  = 4'b0100
-  ,e_lce_data_length_5  = 4'b0101
-  ,e_lce_data_length_6  = 4'b0110
-  ,e_lce_data_length_7  = 4'b0111
-  ,e_lce_data_length_8  = 4'b1000
-  ,e_lce_data_length_9  = 4'b1001
-  ,e_lce_data_length_10 = 4'b1010
-  ,e_lce_data_length_11 = 4'b1011
-  ,e_lce_data_length_12 = 4'b1100
-  ,e_lce_data_length_13 = 4'b1101
-  ,e_lce_data_length_14 = 4'b1110
-  ,e_lce_data_length_15 = 4'b1111
-} bp_lce_cce_data_length_e;
+  e_mem_msg_size_1     = 3'b000  // 1 byte
+  ,e_mem_msg_size_2    = 3'b001  // 2 bytes
+  ,e_mem_msg_size_4    = 3'b010  // 4 bytes
+  ,e_mem_msg_size_8    = 3'b011  // 8 bytes
+  ,e_mem_msg_size_16   = 3'b100  // 16 bytes
+  ,e_mem_msg_size_32   = 3'b101  // 32 bytes
+  ,e_mem_msg_size_64   = 3'b110  // 64 bytes
+  ,e_mem_msg_size_128  = 3'b111  // 128 bytes
+} bp_mem_msg_size_e;
 
 /*
  * bp_lce_cce_req_type_e specifies whether the containing message is related to a read or write
@@ -180,19 +174,6 @@ typedef enum logic
   e_lce_req_excl            = 1'b0 // exclusive cache line request (read-only, exclusive request)
   ,e_lce_req_non_excl       = 1'b1 // non-exclusive cache line request (read-only, shared request)
 } bp_lce_cce_req_non_excl_e;
-
-
-/*
- * bp_lce_cce_uc_req_size_e defines the size of a uncached load or store request, in bytes.
- *
- */
-typedef enum logic [1:0]
-{
-  e_lce_uc_req_1  = 2'b00
-  ,e_lce_uc_req_2 = 2'b01
-  ,e_lce_uc_req_4 = 2'b10
-  ,e_lce_uc_req_8 = 2'b11
-} bp_lce_cce_uc_req_size_e;
 
 /*
  * bp_cce_coh_states_e defines the coherence states available in BlackParrot. Each bit represents
@@ -270,16 +251,15 @@ typedef enum logic [2:0]
  */
 
 `define bp_lce_cce_req_header_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp) \
-  (cce_id_width_mp+$bits(bp_lce_cce_req_type_e)+$bits(bp_lce_cce_data_length_e)+lce_id_width_mp     \
-   +paddr_width_mp+$bits(bp_lce_cce_req_non_excl_e)+`BSG_SAFE_CLOG2(lce_assoc_mp)                   \
-   +$bits(bp_lce_cce_uc_req_size_e))
+  (cce_id_width_mp+$bits(bp_lce_cce_req_type_e)+$bits(bp_mem_msg_size_e)+lce_id_width_mp        \
+   +paddr_width_mp+$bits(bp_lce_cce_req_non_excl_e)+`BSG_SAFE_CLOG2(lce_assoc_mp))
 
 `define bp_lce_cmd_header_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp)     \
-  (cce_id_width_mp+$bits(bp_lce_cmd_type_e)+$bits(bp_lce_cce_data_length_e)+lce_id_width_mp         \
+  (cce_id_width_mp+$bits(bp_lce_cmd_type_e)+$bits(bp_mem_msg_size_e)+lce_id_width_mp            \
    +paddr_width_mp+(2*`BSG_SAFE_CLOG2(lce_assoc_mp))+(2*$bits(bp_coh_states_e))+lce_id_width_mp)
 
 `define bp_lce_cce_resp_header_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp)              \
-  (cce_id_width_mp+$bits(bp_lce_cce_resp_type_e)+$bits(bp_lce_cce_data_length_e)+lce_id_width_mp    \
+  (cce_id_width_mp+$bits(bp_lce_cce_resp_type_e)+$bits(bp_mem_msg_size_e)+lce_id_width_mp       \
    +paddr_width_mp)
 
 `define declare_bp_lce_cce_if_header_widths(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp)                               \
