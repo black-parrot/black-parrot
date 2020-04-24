@@ -8,6 +8,12 @@
  *
  */
 
+// TODO:
+// 1. message size fields - mshr.msg_size holds size popped from LCE Req or from move inst
+// 2. address alignment and masking - does the CCE do this? or now require sender to align?
+// 3. set mem_cmd payload bits
+// 4. support globally uncached, locally cached access; locally uncached, globally cached
+
 module bp_cce_msg
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
@@ -336,13 +342,14 @@ module bp_cce_msg
       end
       e_uc_ready: begin
 
+        // TODO: for now, uncached messages from memory are sent as uncached to LCE
         if (mem_resp_v_i & (mem_resp.header.msg_type == e_cce_mem_uc_rd)) begin
           // after load response is received, need to send data back to LCE
           lce_cmd_v_o = lce_cmd_ready_i;
 
           lce_cmd.header.dst_id = mem_resp.header.payload.lce_id;
           lce_cmd.header.msg_type = e_lce_cmd_uc_data;
-          //lce_cmd.header.data_length = ;
+          lce_cmd.header.size = mem_resp.header.size;
           lce_cmd.header.src_id = cfg_bus_cast.cce_id;
           lce_cmd.header.addr = mem_resp.header.addr;
           lce_cmd.data = mem_resp.data;
@@ -358,7 +365,7 @@ module bp_cce_msg
 
           lce_cmd.header.dst_id = mem_resp.header.payload.lce_id;
           lce_cmd.header.msg_type = e_lce_cmd_uc_st_done;
-          //lce_cmd.header.data_length = ;
+          // leave size field as '0 equivalent - no data in this message
           lce_cmd.header.src_id = cfg_bus_cast.cce_id;
           lce_cmd.header.addr = mem_resp.header.addr;
 
@@ -387,16 +394,9 @@ module bp_cce_msg
 
         mem_cmd.header.msg_type = e_cce_mem_uc_rd;
         mem_cmd.header.addr = lce_req.header.addr;
-        mem_cmd.header.size =
-          (lce_req.header.uc_size == e_lce_uc_req_1)
-          ? e_mem_size_1
-          : (lce_req.header.uc_size == e_lce_uc_req_2)
-            ? e_mem_size_2
-            : (lce_req.header.uc_size == e_lce_uc_req_4)
-              ? e_mem_size_4
-              : e_mem_size_8
-          ;
+        mem_cmd.header.size = lce_req.header.size;
         mem_cmd.header.payload.lce_id = lce_req.header.src_id;
+        mem_cmd.header.payload.uncached = 1'b1;
 
         uc_state_n = (lce_req_v_i & mem_cmd_ready_i) ? e_uc_ready : e_uc_send_mem_cmd;
       end
@@ -408,16 +408,9 @@ module bp_cce_msg
 
         mem_cmd.header.msg_type = e_cce_mem_uc_wr;
         mem_cmd.header.addr = lce_req.header.addr;
-        mem_cmd.header.size =
-          (lce_req.header.uc_size == e_lce_uc_req_1)
-          ? e_mem_size_1
-          : (lce_req.header.uc_size == e_lce_uc_req_2)
-            ? e_mem_size_2
-            : (lce_req.header.uc_size == e_lce_uc_req_4)
-              ? e_mem_size_4
-              : e_mem_size_8
-          ;
+        mem_cmd.header.size = lce_req.header.size;
         mem_cmd.header.payload.lce_id = lce_req.header.src_id;
+        mem_cmd.header.payload.uncached = 1'b1;
         mem_cmd.data = lce_req.data;
 
         uc_state_n = (lce_req_v_i & mem_cmd_ready_i) ? e_uc_ready : e_uc_send_mem_data_cmd;
@@ -435,6 +428,7 @@ module bp_cce_msg
       // Auto-forward mechanism
       if (auto_fwd_msg_i) begin
         if (mem_resp_v_i) begin
+          // TODO: for now, uncached messages from memory are sent as uncached to LCE
           // Uncached load response - forward data to LCE
           // This transaction does not modify the pending bits
           if (mem_resp.header.msg_type == e_cce_mem_uc_rd) begin
@@ -447,7 +441,7 @@ module bp_cce_msg
             // output command message
             lce_cmd.header.dst_id = mem_resp.header.payload.lce_id;
             lce_cmd.header.msg_type = e_lce_cmd_uc_data;
-            lce_cmd.header.data_length = e_lce_data_length_1;
+            lce_cmd.header.size = mem_resp.header.size;
             lce_cmd.header.src_id = cfg_bus_cast.cce_id;
             lce_cmd.header.addr = mem_resp.header.addr;
             // Data is copied directly from the Mem Data Response
@@ -468,13 +462,13 @@ module bp_cce_msg
             // after store response is received, need to send uncached store done command to LCE
             lce_cmd.header.dst_id = mem_resp.header.payload.lce_id;
             lce_cmd.header.msg_type = e_lce_cmd_uc_st_done;
-            lce_cmd.header.data_length = e_lce_data_length_0;
+            // leave size as '0 equivalent, no data in this message
             lce_cmd.header.src_id = cfg_bus_cast.cce_id;
             lce_cmd.header.addr = mem_resp.header.addr;
           end // uncached store response
 
           // Writeback response - clears the pending bit
-          else if (mem_resp.header.msg_type == e_cce_mem_wb) begin
+          else if (mem_resp.header.msg_type == e_cce_mem_wr) begin
             mem_resp_yumi_o = mem_resp_v_i;
             pending_w_v_o = mem_resp_v_i;
             pending_w_addr_o = mem_resp.header.addr;
@@ -516,7 +510,7 @@ module bp_cce_msg
               // output command message
               lce_cmd.header.dst_id = mem_resp.header.payload.lce_id;
               lce_cmd.header.msg_type = e_lce_cmd_data;
-              lce_cmd.header.data_length = e_lce_data_length_8;
+              lce_cmd.header.size = mem_resp.header.size;
               lce_cmd.header.way_id = mem_resp.header.payload.way_id;
               lce_cmd.header.src_id = cfg_bus_cast.cce_id;
               lce_cmd.header.addr = mem_resp.header.addr;
@@ -541,7 +535,7 @@ module bp_cce_msg
               // output command message
               lce_cmd.header.dst_id = mem_resp.header.payload.lce_id;
               lce_cmd.header.msg_type = e_lce_cmd_data;
-              lce_cmd.header.data_length = e_lce_data_length_8;
+              lce_cmd.header.size = mem_resp.header.size;
               lce_cmd.header.way_id = mem_resp.header.payload.way_id;
               lce_cmd.header.src_id = cfg_bus_cast.cce_id;
               lce_cmd.header.addr = mem_resp.header.addr;
@@ -558,8 +552,7 @@ module bp_cce_msg
           end // speculative memory response
 
           // Non-speculative Memory Response with cached data
-          else if ((mem_resp.header.msg_type == e_cce_mem_rd)
-                   | (mem_resp.header.msg_type == e_cce_mem_wr)) begin
+          else if (mem_resp.header.msg_type == e_cce_mem_rd) begin
 
             lce_cmd_v_o = lce_cmd_ready_i & mem_resp_v_i;
             mem_resp_yumi_o = lce_cmd_ready_i & mem_resp_v_i;
@@ -569,7 +562,7 @@ module bp_cce_msg
             // output command message
             lce_cmd.header.dst_id = mem_resp.header.payload.lce_id;
             lce_cmd.header.msg_type = e_lce_cmd_data;
-            lce_cmd.header.data_length = e_lce_data_length_8;
+            lce_cmd.header.size = mem_resp.header.size;
             lce_cmd.header.way_id = mem_resp.header.payload.way_id;
             lce_cmd.header.src_id = cfg_bus_cast.cce_id;
             lce_cmd.header.addr = mem_resp.header.addr;
@@ -678,6 +671,10 @@ module bp_cce_msg
               mem_cmd.header.msg_type = decoded_inst_i.mem_cmd;
               // default address to full address
               mem_cmd.header.addr = addr_i;
+              // default to size in MSHR
+              mem_cmd.header.size = mshr.msg_size;
+              // uncached bit set based on bit in MSHR
+              mem_cmd.header.payload.uncached = mshr.flags[e_opd_ucf];
 
               // Custom command
               if (decoded_inst_i.pushq_custom) begin
@@ -686,14 +683,7 @@ module bp_cce_msg
                 // the microcode must be aligned as required by the destination
                 mem_cmd.header.addr = addr_i;
                 mem_cmd.header.payload.lce_id = lce_i;
-                // data_length field is number of 64-bit packets, translate it to bytes
-                unique case (decoded_inst_i.data_length)
-                  e_lce_data_length_1: mem_cmd.header.size = e_mem_size_8;
-                  e_lce_data_length_2: mem_cmd.header.size = e_mem_size_16;
-                  e_lce_data_length_4: mem_cmd.header.size = e_mem_size_32;
-                  e_lce_data_length_8: mem_cmd.header.size = e_mem_size_64;
-                  default: mem_cmd.header.size = e_mem_size_64;
-                endcase
+                mem_cmd.header.size = decoded_inst_i.msg_size;
                 // data comes from src_a_i, as selected by the src_a field of the instruction
                 // this data is one of the GPRs
                 mem_cmd.data = {'0, src_a_i};
@@ -704,21 +694,13 @@ module bp_cce_msg
                 if ((decoded_inst_i.mem_cmd == e_cce_mem_uc_rd)
                     | (decoded_inst_i.mem_cmd == e_cce_mem_uc_wr)) begin
                   // uncached access uses the full address, no masking
+                  // NOTE: address must be aligned to request size
                   mem_cmd.header.addr = addr_i;
                   mem_cmd.header.payload.lce_id = lce_i;
+
                   if (decoded_inst_i.mem_cmd == e_cce_mem_uc_wr) begin
-                    //mem_cmd.data = {(cce_block_width_p-dword_width_p)'('0),lce_req.msg.uc_req.data};
                     mem_cmd.data = {'0,lce_req.data};
                   end
-                  mem_cmd.header.size =
-                    (mshr.uc_req_size == e_lce_uc_req_1)
-                    ? e_mem_size_1
-                    : (mshr.uc_req_size == e_lce_uc_req_2)
-                      ? e_mem_size_2
-                      : (mshr.uc_req_size == e_lce_uc_req_4)
-                        ? e_mem_size_4
-                        : e_mem_size_8
-                    ;
 
                 end // uncached
 
@@ -727,7 +709,6 @@ module bp_cce_msg
 
                   // cached access masks the address to align to cache block
                   mem_cmd.header.addr = (addr_i & addr_mask);
-                  mem_cmd.header.size = e_mem_size_64;
 
                   // set speculative bit if instruction indicates it will be written
                   if (decoded_inst_i.spec_w_v & decoded_inst_i.spec_v
@@ -736,19 +717,16 @@ module bp_cce_msg
                   end
 
                   // Writeback command - override default command fields as needed
-                  if (decoded_inst_i.mem_cmd == e_cce_mem_wb) begin
+                  if (decoded_inst_i.mem_cmd == e_cce_mem_wr) begin
                     mem_cmd.data = lce_resp.data;
-                    //mem_cmd.header.payload.lce_id = lce_resp.src_id;
                     mem_cmd.header.payload.lce_id = lce_i;
                     mem_cmd.header.payload.way_id = '0;
                     mem_cmd.header.payload.state = e_COH_I;
                   end else if (decoded_inst_i.mem_cmd == e_cce_mem_pre) begin
-                    // set nothing extra on prefetch command
+                    mem_cmd.header.payload.prefetch = 1'b1;
                   end else begin
                     mem_cmd.header.payload.state = mshr.next_coh_state;
-                    //mem_cmd.header.payload.way_id = mshr.lru_way_id;
                     mem_cmd.header.payload.way_id = way_i;
-                    //mem_cmd.header.payload.lce_id = mshr.lce_id;
                     mem_cmd.header.payload.lce_id = lce_i;
                   end
 
@@ -780,10 +758,14 @@ module bp_cce_msg
               lce_cmd.header.src_id = cfg_bus_cast.cce_id;
               lce_cmd.header.addr = addr_i;
               if (decoded_inst_i.pushq_custom) begin
-                lce_cmd.header.data_length = decoded_inst_i.data_length;
+                lce_cmd.header.size = decoded_inst_i.msg_size;
                 lce_cmd.data = {'0, src_a_i};
               end else begin
                 lce_cmd.header.way_id = way_i;
+                // size is set based on message type:
+                // by default, leave as '0 equivalent size
+                // only messages that have data are data and uc_data, which are auto-forwarded
+                // for now, use pushqc to send these messages
                 if ((decoded_inst_i.lce_cmd == e_lce_cmd_st)
                     | (decoded_inst_i.lce_cmd == e_lce_cmd_st_wakeup)) begin
                   lce_cmd.header.state = coh_state_i;
@@ -808,6 +790,8 @@ module bp_cce_msg
 
             lce_cmd_v_o = lce_cmd_ready_i;
             lce_cmd.header.msg_type = e_lce_cmd_inv;
+
+            // leave size as '0 equivalent, no data sent for invalidate
 
             // destination and way come from sharers information
             lce_cmd.header.dst_id = pe_lce_id;

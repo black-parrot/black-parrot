@@ -4,7 +4,7 @@
  *   bp_cce_fsm.v
  *
  * Description:
- *   This is an FSM based CCE - not necessarily synthesizable, and meant to compare with ucode CCE
+ *   This is an FSM based CCE
  *
  */
 
@@ -83,6 +83,10 @@ module bp_cce_fsm
     assert (lce_sets_p > 1) else $error("Number of LCE sets must be greater than 1");
     assert (counter_max > num_way_groups_lp) else $error("Counter max value not large enough");
     assert (counter_max > max_tag_sets_lp) else $error("Counter max value not large enough");
+    assert (icache_block_width_p == cce_block_width_p) else $error("icache block width must match cce block width");
+    assert (dcache_block_width_p == cce_block_width_p) else $error("dcache block width must match cce block width");
+    assert (acache_block_width_p == cce_block_width_p) else $error("acache block width must match cce block width");
+    assert (block_size_in_bytes_lp inside {8, 16, 32, 64, 128}) else $error("invalid CCE block width");
   end
   //synopsys translate_on
 
@@ -566,6 +570,7 @@ module bp_cce_fsm
           lce_cmd.header.way_id = mem_resp.header.payload.way_id;
           lce_cmd.data = mem_resp.data;
           lce_cmd.header.addr = mem_resp.header.addr;
+          lce_cmd.header.size = mem_resp.header.size;
           // modify the coherence state
           lce_cmd.header.state = bp_coh_states_e'(spec_bits_lo.state);
 
@@ -593,6 +598,7 @@ module bp_cce_fsm
           lce_cmd.header.way_id = mem_resp.header.payload.way_id;
           lce_cmd.data = mem_resp.data;
           lce_cmd.header.addr = mem_resp.header.addr;
+          lce_cmd.header.size = mem_resp.header.size;
           lce_cmd.header.state = mem_resp.header.payload.state;
 
           // decrement pending bit on mem response dequeue (same as lce cmd send)
@@ -606,8 +612,7 @@ module bp_cce_fsm
       end // speculative response
 
       // non-speculative memory access, forward directly to LCE
-      else if ((mem_resp.header.msg_type == e_cce_mem_rd)
-               | (mem_resp.header.msg_type == e_cce_mem_wr)) begin
+      else if (mem_resp.header.msg_type == e_cce_mem_rd) begin
 
         // handshaking
         lce_cmd_v_o = lce_cmd_ready_i & mem_resp_v_i;
@@ -622,6 +627,7 @@ module bp_cce_fsm
         lce_cmd.header.way_id = mem_resp.header.payload.way_id;
         lce_cmd.data = mem_resp.data;
         lce_cmd.header.addr = mem_resp.header.addr;
+        lce_cmd.header.size = mem_resp.header.size;
         lce_cmd.header.state = mem_resp.header.payload.state;
 
         // decrement pending bit on mem response dequeue (same as lce cmd send)
@@ -653,6 +659,7 @@ module bp_cce_fsm
         lce_cmd.header.way_id = '0;
         lce_cmd.data[0+:dword_width_p] = mem_resp.data[0+:dword_width_p];
         lce_cmd.header.addr = mem_resp.header.addr;
+        lce_cmd.header.size = mem_resp.header.size;
 
       end // uc_rd
 
@@ -676,13 +683,14 @@ module bp_cce_fsm
         lce_cmd.header.msg_type = e_lce_cmd_uc_st_done;
         lce_cmd.header.way_id = '0;
         lce_cmd.header.addr = mem_resp.header.addr;
+        // leave size as '0 equivalent, no data in this message
 
       end // uc_wr
 
       // Dequeue memory writeback response, don't do anything with it
       // decrement pending bit
       // also set pending_busy to block FSM if needed
-      else if (mem_resp.header.msg_type == e_cce_mem_wb) begin
+      else if (mem_resp.header.msg_type == e_cce_mem_wr) begin
 
         mem_resp_yumi_o = mem_resp_v_i;
         pending_busy = mem_resp_yumi_o;
@@ -790,15 +798,7 @@ module bp_cce_fsm
 
           mem_cmd.header.addr = lce_req.header.addr;
           mem_cmd.header.payload.lce_id = lce_req.header.src_id;
-          mem_cmd.header.size =
-            (bp_lce_cce_uc_req_size_e'(lce_req.header.uc_size) == e_lce_uc_req_1)
-            ? e_mem_size_1
-            : (bp_lce_cce_uc_req_size_e'(lce_req.header.uc_size) == e_lce_uc_req_2)
-              ? e_mem_size_2
-              : (bp_lce_cce_uc_req_size_e'(lce_req.header.uc_size) == e_lce_uc_req_4)
-                ? e_mem_size_4
-                : e_mem_size_8
-            ;
+          mem_cmd.header.size = lce_req.header.size;
 
         end // send uncached request
       end // UNCACHED_ONLY
@@ -849,6 +849,7 @@ module bp_cce_fsm
               | lce_req.header.msg_type == e_lce_req_type_wr) begin
 
             mshr_n.paddr = lce_req.header.addr;
+            mshr_n.msg_size = lce_req.header.size;
             mshr_n.lru_way_id = lce_req.header.lru_way_id;
             mshr_n.flags[e_opd_rqf] = (lce_req.header.msg_type == e_lce_req_type_wr);
             mshr_n.flags[e_opd_nerf] = lce_req.header.non_exclusive;
@@ -861,7 +862,7 @@ module bp_cce_fsm
                        | lce_req.header.msg_type == e_lce_req_type_uc_wr) begin
 
             mshr_n.paddr = lce_req.header.addr;
-            mshr_n.uc_req_size = lce_req.header.uc_size;
+            mshr_n.msg_size = lce_req.header.size;
             mshr_n.flags[e_opd_ucf] = 1'b1;
             mshr_n.flags[e_opd_rqf] = (lce_req.header.msg_type == e_lce_req_type_uc_wr);
 
@@ -885,15 +886,7 @@ module bp_cce_fsm
 
           mem_cmd.header.addr = mshr_r.paddr;
           mem_cmd.header.payload.lce_id = mshr_r.lce_id;
-          mem_cmd.header.size =
-            (bp_lce_cce_uc_req_size_e'(mshr_r.uc_req_size) == e_lce_uc_req_1)
-            ? e_mem_size_1
-            : (bp_lce_cce_uc_req_size_e'(mshr_r.uc_req_size) == e_lce_uc_req_2)
-              ? e_mem_size_2
-              : (bp_lce_cce_uc_req_size_e'(mshr_r.uc_req_size) == e_lce_uc_req_4)
-                ? e_mem_size_4
-                : e_mem_size_8
-            ;
+          mem_cmd.header.size = lce_req.header.size;
 
           lce_req_yumi_o = lce_req_v_i & mem_cmd_ready_i;
 
@@ -929,9 +922,9 @@ module bp_cce_fsm
         // writing the pending bit
         if (~pending_busy) begin
           mem_cmd_v_o = mem_cmd_ready_i;
-          mem_cmd.header.msg_type = (mshr_r.flags[e_opd_rqf]) ? e_cce_mem_wr : e_cce_mem_rd;
+          mem_cmd.header.msg_type = e_cce_mem_rd;
           mem_cmd.header.addr = (mshr_r.paddr >> lg_block_size_in_bytes_lp) << lg_block_size_in_bytes_lp;
-          mem_cmd.header.size = e_mem_size_64;
+          mem_cmd.header.size = mshr_r.msg_size;
           mem_cmd.header.payload.lce_id = mshr_r.lce_id;
           mem_cmd.header.payload.way_id = mshr_r.lru_way_id;
           // speculatively issue request for E state
@@ -1163,12 +1156,12 @@ module bp_cce_fsm
             mem_cmd_v_o = lce_resp_v_i & mem_cmd_ready_i;
             lce_resp_yumi_o = lce_resp_v_i & mem_cmd_ready_i;
 
-            mem_cmd.header.msg_type = e_cce_mem_wb;
+            mem_cmd.header.msg_type = e_cce_mem_wr;
             mem_cmd.header.addr = (lce_resp.header.addr >> lg_block_size_in_bytes_lp) << lg_block_size_in_bytes_lp;
             mem_cmd.header.payload.lce_id = mshr_r.lce_id;
             mem_cmd.header.payload.way_id = '0;
             mem_cmd.data = lce_resp.data;
-            mem_cmd.header.size = e_mem_size_64;
+            mem_cmd.header.size = lce_resp.header.size;
 
             state_n = (lce_resp_yumi_o)
                       ? (transfer_flag)
@@ -1260,12 +1253,12 @@ module bp_cce_fsm
             mem_cmd_v_o = lce_resp_v_i & mem_cmd_ready_i;
             lce_resp_yumi_o = lce_resp_v_i & mem_cmd_ready_i;
 
-            mem_cmd.header.msg_type = e_cce_mem_wb;
+            mem_cmd.header.msg_type = e_cce_mem_wr;
             mem_cmd.header.addr = (lce_resp.header.addr >> lg_block_size_in_bytes_lp) << lg_block_size_in_bytes_lp;
             mem_cmd.header.payload.lce_id = mshr_r.lce_id;
             mem_cmd.header.payload.way_id = '0;
             mem_cmd.data = lce_resp.data;
-            mem_cmd.header.size = e_mem_size_64;
+            mem_cmd.header.size = lce_resp.header.size;
 
             state_n = (lce_resp_yumi_o) ? RESOLVE_SPECULATION : TRANSFER_WB_RESP;
 

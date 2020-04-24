@@ -148,8 +148,7 @@ module bp_cce_src_sel
           e_opd_owner_way:      src_a_o[0+:lce_assoc_width_p] = mshr.owner_way_id;
           e_opd_next_coh_state: src_a_o[0+:$bits(bp_coh_states_e)] = mshr.next_coh_state;
           e_opd_flags:          src_a_o[0+:`bp_cce_inst_num_flags] = mshr.flags;
-          e_opd_uc_req_size:    src_a_o[0+:$bits(bp_lce_cce_uc_req_size_e)] = mshr.uc_req_size;
-          e_opd_data_length:    src_a_o[0+:$bits(bp_lce_cce_data_length_e)] = mshr.data_length;
+          e_opd_msg_size:       src_a_o[0+:$bits(bp_mem_msg_size_e)] = mshr.msg_size;
           e_opd_lru_coh_state:  src_a_o[0+:$bits(bp_coh_states_e)] = mshr.lru_coh_state;
           e_opd_flags_and_mask: src_a_o[0+:`bp_cce_inst_num_flags] = mshr.flags & imm_i[0+:`bp_cce_inst_num_flags];
           e_opd_sharers_hit:    src_a_o[0] = sharers_hits_i[gpr_i[src_b_i.gpr[0+:`bp_cce_inst_gpr_sel_width]]];
@@ -238,8 +237,7 @@ module bp_cce_src_sel
           e_opd_owner_way:      src_b_o[0+:lce_assoc_width_p] = mshr.owner_way_id;
           e_opd_next_coh_state: src_b_o[0+:$bits(bp_coh_states_e)] = mshr.next_coh_state;
           e_opd_flags:          src_b_o[0+:`bp_cce_inst_num_flags] = mshr.flags;
-          e_opd_uc_req_size:    src_b_o[0+:$bits(bp_lce_cce_uc_req_size_e)] = mshr.uc_req_size;
-          e_opd_data_length:    src_b_o[0+:$bits(bp_lce_cce_data_length_e)] = mshr.data_length;
+          e_opd_msg_size:       src_b_o[0+:$bits(bp_mem_msg_size_e)] = mshr.msg_size;
           e_opd_lru_coh_state:  src_b_o[0+:$bits(bp_coh_states_e)] = mshr.lru_coh_state;
           e_opd_flags_and_mask: src_b_o[0+:`bp_cce_inst_num_flags] = mshr.flags & imm_i[0+:`bp_cce_inst_num_flags];
           // Sharers vectors as source b is not supported

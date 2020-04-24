@@ -29,7 +29,7 @@ rdp addr=req
 bfnz handle_pf_ucf pf ucf
 # send speculative memory access, also sets speculative flag
 # assumed state for block is S
-pushq memCmd MEM_CMD_WR addr=req lce=req way=lru spec=1 wp=1
+pushq memCmd MEM_CMD_RD addr=req lce=req way=lru spec=1 wp=1
 # dequeue the request
 popq lceReq wp
 # read the directory and process
@@ -69,7 +69,7 @@ replace: pushq lceCmd WB addr=lru lce=req way=lru
 replacement_poph: poph lceResp r0
 beqi r0 COH_ACK replacement_poph
 bf complete_replacement nwbf
-pushq memCmd MEM_CMD_WB addr=lru lce=req way=lru wp=1
+pushq memCmd MEM_CMD_WR addr=lru lce=req way=lru wp=1
 complete_replacement: popq lceResp
 
 # Next Coherence State Routine
@@ -116,7 +116,7 @@ pushq lceCmd WB addr=req lce=owner way=owner
 transfer_poph: poph lceResp r0
 beqi r0 COH_ACK transfer_poph
 bf complete_transfer nwbf
-pushq memCmd MEM_CMD_WB addr=req lce=owner way=owner wp=1
+pushq memCmd MEM_CMD_WR addr=req lce=owner way=owner wp=1
 complete_transfer: popq lceResp
 bi ready
 

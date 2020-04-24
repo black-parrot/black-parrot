@@ -46,15 +46,6 @@ module bp_io_cce
   assign io_resp_cast_i = io_resp_i;
   assign io_cmd_o       = io_cmd_cast_o;
 
-  bp_cce_mem_req_size_e io_cmd_size;
-  assign io_cmd_size = (lce_req_cast_i.header.uc_size == e_lce_uc_req_1)
-                        ? e_mem_size_1
-                        : (lce_req_cast_i.header.uc_size == e_lce_uc_req_2)
-                          ? e_mem_size_2
-                          : (lce_req_cast_i.header.uc_size == e_lce_uc_req_4)
-                            ? e_mem_size_4
-                            : e_mem_size_8;
-
   assign lce_req_yumi_o  = lce_req_v_i & io_cmd_ready_i;
   assign io_cmd_v_o      = lce_req_yumi_o;
   wire lce_req_wr_not_rd = (lce_req_cast_i.header.msg_type == e_lce_req_type_uc_wr);
@@ -64,7 +55,7 @@ module bp_io_cce
         io_cmd_cast_o                       = '0;
         io_cmd_cast_o.header.msg_type       = e_cce_mem_uc_wr;
         io_cmd_cast_o.header.addr           = lce_req_cast_i.header.addr;
-        io_cmd_cast_o.header.size           = io_cmd_size;
+        io_cmd_cast_o.header.size           = lce_req_cast_i.header.size;
         io_cmd_cast_o.header.payload.lce_id = lce_req_cast_i.header.src_id;
         io_cmd_cast_o.data                  = lce_req_cast_i.data;
       end
@@ -73,7 +64,7 @@ module bp_io_cce
         io_cmd_cast_o                       = '0;
         io_cmd_cast_o.header.msg_type       = e_cce_mem_uc_rd;
         io_cmd_cast_o.header.addr           = lce_req_cast_i.header.addr;
-        io_cmd_cast_o.header.size           = io_cmd_size;
+        io_cmd_cast_o.header.size           = lce_req_cast_i.header.size;
         io_cmd_cast_o.header.payload.lce_id = lce_req_cast_i.header.src_id;
         io_cmd_cast_o.data                  = lce_req_cast_i.data;
       end
@@ -95,6 +86,7 @@ module bp_io_cce
         lce_cmd_cast_o                  = '0;
         lce_cmd_cast_o.header.dst_id    = io_resp_cast_i.header.payload.lce_id;
         lce_cmd_cast_o.header.msg_type  = e_lce_cmd_uc_data;
+        lce_cmd_cast_o.header.size      = io_resp_cast_i.header.size;
         lce_cmd_cast_o.data             = io_resp_cast_i.data;
         lce_cmd_cast_o.header.addr      = io_resp_cast_i.header.addr;
       end

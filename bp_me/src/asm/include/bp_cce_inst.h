@@ -164,7 +164,7 @@ typedef enum {
 // 1. poph does not dequeue data or memory, but captures the standard header fields into the MSHR,
 //    and also captures the message type into the specified GPR.
 // 2. popd dequeues a single 64-bit data packet into a single GPR. The user must first have at
-//    at least done a poph to determine that data was available and so ucode can use data_length
+//    at least done a poph to determine that data was available and so ucode can use msg_size
 //    field in MSHR to determine how many packets to dequeue.
 // 3. popq dequeues only the header. We assume that all data has been popped off
 //    either by popd commands, or by the message unit auto-forward mechanism, or by issuing
@@ -246,9 +246,8 @@ typedef enum {
   ,e_opd_owner_way                       = 0x6 // MSHR.owner_way_id
   ,e_opd_next_coh_state                  = 0x7 // MSHR.next_coh_state
   ,e_opd_flags                           = 0x8 // MSHR.flags
-  ,e_opd_uc_req_size                     = 0x9 // MSHR.uc_req_size
-  ,e_opd_data_length                     = 0xA // MSHR.data_length
-  ,e_opd_lru_coh_state                   = 0xB // MSHR.lru_coh_state
+  ,e_opd_msg_size                        = 0x9 // MSHR.msg_size
+  ,e_opd_lru_coh_state                   = 0xA // MSHR.lru_coh_state
 
   // only used as a source
   ,e_opd_flags_and_mask                  = 0xC // MSHR.flags & imm[0+:num_flags]
@@ -651,8 +650,8 @@ typedef struct {
 
 typedef union {
   bp_cce_inst_mux_sel_way_e     way_sel : bp_cce_inst_mux_sel_way_width;
-  bp_lce_cce_data_length_e      data_length : bp_lce_cce_data_length_width;
-} pushq_way_or_length_u;
+  bp_mem_msg_size_e             msg_size : bp_mem_msg_size_width;
+} pushq_way_or_size_u;
 
 typedef union {
   bp_lce_cmd_type_e      lce_cmd : bp_lce_cmd_type_width;
@@ -661,7 +660,7 @@ typedef union {
 
 typedef struct {
   uint8_t                                write_pending : 1;
-  pushq_way_or_length_u                  way_or_length;
+  pushq_way_or_size_u                    way_or_size;
   bp_cce_inst_opd_e                      src_a : bp_cce_inst_opd_width;
   bp_cce_inst_mux_sel_lce_e              lce_sel : bp_cce_inst_mux_sel_lce_width;
   bp_cce_inst_mux_sel_addr_e             addr_sel : bp_cce_inst_mux_sel_addr_width;

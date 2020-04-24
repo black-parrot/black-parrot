@@ -43,7 +43,7 @@ replace: pushq lceCmd WB addr=lru lce=req way=lru
 replacement_poph: poph lceResp r0
 beqi r0 COH_ACK replacement_poph
 bf complete_replacement nwbf
-pushq memCmd MEM_CMD_WB addr=lru lce=req way=lru wp=1
+pushq memCmd MEM_CMD_WR addr=lru lce=req way=lru wp=1
 complete_replacement: popq lceResp
 
 # Next Coherence State Routine
@@ -91,7 +91,7 @@ pushq lceCmd WB addr=req lce=owner way=owner
 transfer_poph: poph lceResp r0
 beqi r0 COH_ACK transfer_poph
 bf complete_transfer nwbf
-pushq memCmd MEM_CMD_WB addr=req lce=owner way=owner wp=1
+pushq memCmd MEM_CMD_WR addr=req lce=owner way=owner wp=1
 complete_transfer: popq lceResp
 bi ready
 
@@ -103,7 +103,7 @@ pushq lceCmd TR addr=req lce=owner way=owner
 bi ready
 
 # Read Line from L2 Routine
-read_l2: pushq memCmd MEM_CMD_WR addr=req lce=req way=lru wp=1
+read_l2: pushq memCmd MEM_CMD_RD addr=req lce=req way=lru wp=1
 bi ready
 
 # Uncached Request Routine
