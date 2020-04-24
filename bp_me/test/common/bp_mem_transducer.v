@@ -77,7 +77,7 @@ module bp_mem_transducer
   wire [cce_block_width_p-1:0]   rd_byte_shift = rd_word_offset*num_word_bytes_lp;
 
   assign v_o = mem_cmd_v_i;
-  assign w_o = v_o & (mem_cmd_cast_i.header.msg_type inside {e_cce_mem_uc_wr, e_cce_mem_wb});
+  assign w_o = v_o & (mem_cmd_cast_i.header.msg_type inside {e_cce_mem_uc_wr, e_cce_mem_wr});
   assign addr_o = (((mem_cmd_cast_i.header.addr - dram_offset_p) >> block_offset_bits_lp) << block_offset_bits_lp);
   assign data_o = mem_cmd_cast_i.data << wr_bit_shift;
   assign write_mask_o = ((1 << (1 << mem_cmd_cast_i.header.size)) - 1) << wr_byte_shift;
