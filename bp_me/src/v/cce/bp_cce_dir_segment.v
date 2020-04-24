@@ -219,6 +219,7 @@ module bp_cce_dir_segment
   logic [tag_sets_per_row_lp-1:0][lg_assoc_lp-1:0]                sharers_ways;
   bp_coh_states_e [tag_sets_per_row_lp-1:0]                       sharers_coh_states;
 
+  // synopsys sync_set_reset reset_i
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
       state_r <= RESET;
