@@ -25,7 +25,7 @@ module bp_cce_mmio_cfg_loader
     , parameter cce_ucode_filename_p  = "cce_ucode.mem"
     , parameter skip_ram_init_p       = 0
     , parameter clear_freeze_p        = 0
-    
+
     , localparam bp_pc_entry_point_gp=39'h00_8000_0000
     )
   (input                                             clk_i
@@ -42,13 +42,13 @@ module bp_cce_mmio_cfg_loader
    , input [cce_mem_msg_width_lp-1:0]                io_resp_i
    , input                                           io_resp_v_i
    , output                                          io_resp_ready_o
-   
+
    , output                                          done_o
    );
 
   wire unused0 = &{io_resp_i, io_resp_v_i};
   assign io_resp_ready_o = 1'b1;
-   
+
  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
 
   bp_cce_mem_msg_s io_cmd_cast_o;
@@ -60,7 +60,7 @@ module bp_cce_mmio_cfg_loader
   logic [inst_width_p-1:0]    cce_inst_boot_rom [0:inst_ram_els_p-1];
   logic [inst_ram_addr_width_p-1:0] cce_inst_boot_rom_addr;
   logic [inst_width_p-1:0]    cce_inst_boot_rom_data;
-  
+
   initial $readmemb(cce_ucode_filename_p, cce_inst_boot_rom);
 
   logic                        cfg_w_v_lo, cfg_r_v_lo;
@@ -174,10 +174,10 @@ module bp_cce_mmio_cfg_loader
   wire ucode_prog_done = (ucode_cnt_r == cfg_addr_width_p'(inst_ram_els_p-1));
   wire core_prog_done  = (core_cnt_r == cfg_addr_width_p'(num_core_p-1));
   wire irf_done = (irf_cnt_r == cfg_addr_width_p'(reg_els_lp-1));
-  
+
   assign done_o = (state_r == DONE)? 1'b1 : 1'b0;
 
-  always_ff @(posedge clk_i) 
+  always_ff @(posedge clk_i)
     begin
       if (reset_i)
         state_r <= RESET;
@@ -194,7 +194,7 @@ module bp_cce_mmio_cfg_loader
       io_cmd_cast_o.header.addr          = local_addr_lo;
       io_cmd_cast_o.header.payload       = '0;
       io_cmd_cast_o.header.payload.lce_id = lce_id_i;
-      io_cmd_cast_o.header.size          = e_mem_size_8;
+      io_cmd_cast_o.header.size          = e_mem_msg_size_8;
       io_cmd_cast_o.data                 = cfg_data_lo;
     end
 
@@ -206,7 +206,7 @@ module bp_cce_mmio_cfg_loader
       local_addr_lo.addr = cfg_addr_lo;
     end
 
-  always_comb 
+  always_comb
     begin
       sync_cnt_clr = 1'b0;
       sync_cnt_inc = 1'b0;
@@ -228,7 +228,7 @@ module bp_cce_mmio_cfg_loader
       case (state_r)
         RESET: begin
           state_n = skip_ram_init_p ? BP_FREEZE_CLR : BP_RESET_SET;
-          
+
           sync_cnt_clr = 1'b1;
           ucode_cnt_clr = 1'b1;
           core_cnt_clr = 1'b1;
