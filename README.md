@@ -52,6 +52,17 @@ This should output (roughly)
         mIPC  :                  300
     All cores finished! Terminating...
 
+### Docker build
+For a painless Ubuntu build, download and install [Docker Desktop](https://www.docker.com/products/docker-desktop) then run the following:
+
+    git clone https://github.com/black-parrot/black-parrot.git
+    cd black-parrot
+    docker-compose build --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) bp
+    docker-compose up -d
+    docker-compose exec bp su - build
+    
+Then follow the [Tire Kick](#-tire-kick) directions above starting with "cd black-parrot" or the "Full" directions below.  The repo directory will be mounted inside the container.
+
 ### Getting Started for Real
 Users who want to fully evaluate BlackParrot, or develop hardware or software using it should follow [Getting Started (Full)](docs/getting_started.md).
 
