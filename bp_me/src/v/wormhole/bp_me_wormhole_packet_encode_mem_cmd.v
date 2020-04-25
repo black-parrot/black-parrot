@@ -78,22 +78,22 @@ module bp_me_wormhole_packet_encode_mem_cmd
     packet_cast_o.cid     = dst_cid_i;
 
     case (mem_cmd_cast_i.header.size)
-      e_mem_size_1 : data_cmd_len_li = len_width_p'(mem_cmd_data_len_1_lp);
-      e_mem_size_2 : data_cmd_len_li = len_width_p'(mem_cmd_data_len_2_lp);
-      e_mem_size_4 : data_cmd_len_li = len_width_p'(mem_cmd_data_len_4_lp);
-      e_mem_size_8 : data_cmd_len_li = len_width_p'(mem_cmd_data_len_8_lp);
-      e_mem_size_16: data_cmd_len_li = len_width_p'(mem_cmd_data_len_16_lp);
-      e_mem_size_32: data_cmd_len_li = len_width_p'(mem_cmd_data_len_32_lp);
-      e_mem_size_64: data_cmd_len_li = len_width_p'(mem_cmd_data_len_64_lp);
+      e_mem_msg_size_1 : data_cmd_len_li = len_width_p'(mem_cmd_data_len_1_lp);
+      e_mem_msg_size_2 : data_cmd_len_li = len_width_p'(mem_cmd_data_len_2_lp);
+      e_mem_msg_size_4 : data_cmd_len_li = len_width_p'(mem_cmd_data_len_4_lp);
+      e_mem_msg_size_8 : data_cmd_len_li = len_width_p'(mem_cmd_data_len_8_lp);
+      e_mem_msg_size_16: data_cmd_len_li = len_width_p'(mem_cmd_data_len_16_lp);
+      e_mem_msg_size_32: data_cmd_len_li = len_width_p'(mem_cmd_data_len_32_lp);
+      e_mem_msg_size_64: data_cmd_len_li = len_width_p'(mem_cmd_data_len_64_lp);
       default: data_cmd_len_li = '0;
     endcase
 
     case (mem_cmd_cast_i.header.msg_type)
       e_cce_mem_rd
-      ,e_cce_mem_wr
-      ,e_cce_mem_uc_rd: packet_cast_o.len = len_width_p'(mem_cmd_req_len_lp);
+      ,e_cce_mem_uc_rd
+      ,e_cce_mem_pre  : packet_cast_o.len = len_width_p'(mem_cmd_req_len_lp);
       e_cce_mem_uc_wr
-      ,e_cce_mem_wb   : packet_cast_o.len = data_cmd_len_li;
+      ,e_cce_mem_wr   : packet_cast_o.len = data_cmd_len_li;
       default: packet_cast_o = '0;
     endcase
   end

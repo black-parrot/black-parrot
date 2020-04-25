@@ -57,7 +57,6 @@ module bp_cce_dir
    , output bp_coh_states_e [num_lce_p-1:0]                       sharers_coh_states_o
 
    , output logic                                                 lru_v_o
-   , output logic                                                 lru_cached_excl_o
    , output bp_coh_states_e                                       lru_coh_state_o
    , output logic [paddr_width_p-1:0]                             lru_addr_o
 
@@ -91,7 +90,7 @@ module bp_cce_dir
   logic [num_core_p-1:0][lg_icache_assoc_lp-1:0]        icache_sharers_ways;
   bp_coh_states_e [num_core_p-1:0]                      icache_sharers_coh_states;
 
-  logic icache_busy, icache_lru_v, icache_lru_cached_excl, icache_addr_v;
+  logic icache_busy, icache_lru_v, icache_addr_v;
   logic [paddr_width_p-1:0] icache_lru_addr_lo, icache_addr_lo;
   bp_cce_inst_opd_gpr_e icache_addr_dst_gpr_lo;
   bp_coh_states_e icache_lru_coh_state_lo;
@@ -125,7 +124,6 @@ module bp_cce_dir
       ,.sharers_ways_o(icache_sharers_ways)
       ,.sharers_coh_states_o(icache_sharers_coh_states)
       ,.lru_v_o(icache_lru_v)
-      ,.lru_cached_excl_o(icache_lru_cached_excl)
       ,.lru_coh_state_o(icache_lru_coh_state_lo)
       ,.lru_addr_o(icache_lru_addr_lo)
       ,.addr_v_o(icache_addr_v)
@@ -147,7 +145,7 @@ module bp_cce_dir
   logic [num_core_p-1:0][lg_dcache_assoc_lp-1:0]        dcache_sharers_ways;
   bp_coh_states_e [num_core_p-1:0]                      dcache_sharers_coh_states;
 
-  logic dcache_busy, dcache_lru_v, dcache_lru_cached_excl, dcache_addr_v;
+  logic dcache_busy, dcache_lru_v, dcache_addr_v;
   logic [paddr_width_p-1:0] dcache_lru_addr_lo, dcache_addr_lo;
   bp_cce_inst_opd_gpr_e dcache_addr_dst_gpr_lo;
   bp_coh_states_e dcache_lru_coh_state_lo;
@@ -189,7 +187,6 @@ module bp_cce_dir
         ,.sharers_ways_o(dcache_sharers_ways)
         ,.sharers_coh_states_o(dcache_sharers_coh_states)
         ,.lru_v_o(dcache_lru_v)
-        ,.lru_cached_excl_o(dcache_lru_cached_excl)
         ,.lru_coh_state_o(dcache_lru_coh_state_lo)
         ,.lru_addr_o(dcache_lru_addr_lo)
         ,.addr_v_o(dcache_addr_v)
@@ -206,7 +203,6 @@ module bp_cce_dir
       dcache_sharers_ways = '0;
       dcache_sharers_coh_states = e_COH_I;
       dcache_lru_v = '0;
-      dcache_lru_cached_excl = '0;
       dcache_lru_coh_state_lo = e_COH_I;
       dcache_lru_addr_lo = '0;
       dcache_addr_v = '0;
@@ -228,7 +224,7 @@ module bp_cce_dir
   logic [num_cacc_p-1:0][lg_acache_assoc_lp-1:0]         acache_sharers_ways;
   bp_coh_states_e [num_cacc_p-1:0]                       acache_sharers_coh_states;
 
-  logic acache_busy, acache_lru_v, acache_lru_cached_excl, acache_addr_v;
+  logic acache_busy, acache_lru_v, acache_addr_v;
   logic [paddr_width_p-1:0] acache_lru_addr_lo, acache_addr_lo;
   bp_cce_inst_opd_gpr_e acache_addr_dst_gpr_lo;
   bp_coh_states_e acache_lru_coh_state_lo;
@@ -272,7 +268,6 @@ module bp_cce_dir
         ,.sharers_ways_o(acache_sharers_ways)
         ,.sharers_coh_states_o(acache_sharers_coh_states)
         ,.lru_v_o(acache_lru_v)
-        ,.lru_cached_excl_o(acache_lru_cached_excl)
         ,.lru_coh_state_o(acache_lru_coh_state_lo)
         ,.lru_addr_o(acache_lru_addr_lo)
         ,.addr_v_o(acache_addr_v)
@@ -290,7 +285,6 @@ module bp_cce_dir
       acache_sharers_ways = '0;
       acache_sharers_coh_states = e_COH_I;
       acache_lru_v = '0;
-      acache_lru_cached_excl = '0;
       acache_lru_coh_state_lo = e_COH_I;
       acache_lru_addr_lo = '0;
       acache_addr_v = '0;
@@ -319,7 +313,6 @@ module bp_cce_dir
   end
 
   assign lru_v_o = icache_lru_v | dcache_lru_v | acache_lru_v;
-  assign lru_cached_excl_o = icache_lru_cached_excl | dcache_lru_cached_excl | acache_lru_cached_excl;
   assign lru_addr_o = icache_lru_v
                       ? icache_lru_addr_lo
                       : dcache_lru_v

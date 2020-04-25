@@ -60,20 +60,6 @@ module bp_io_link_to_lce
   assign io_resp_v_o    = io_resp_ready_i & lce_cmd_v_i;
   assign lce_cmd_yumi_o = io_resp_v_o;
 
-  bp_lce_cce_uc_req_size_e lce_req_size;
-  assign lce_req_size = (io_cmd_li.header.size == e_mem_size_1)
-                        ? e_lce_uc_req_1
-                        : (io_cmd_li.header.size == e_mem_size_2)
-                          ? e_lce_uc_req_2
-                          : (io_cmd_li.header.size == e_mem_size_4)
-                            ? e_lce_uc_req_4
-                            : e_lce_uc_req_8;
-
-  // TODO: Since we don't send size along with lce_cmd, 
-  //         we need to assume all uncached load accesses are 8 bytes.
-  bp_cce_mem_req_size_e io_resp_size;
-  assign io_resp_size = e_mem_size_8;
-
   logic [cce_id_width_p-1:0] cce_id_lo;
   bp_me_addr_to_cce_id
    #(.bp_params_p(bp_params_p))
@@ -89,7 +75,7 @@ module bp_io_link_to_lce
     begin
       lce_req_lo                    = '0;
       lce_req_lo.data               = io_cmd_li.data;
-      lce_req_lo.header.uc_size     = lce_req_size;
+      lce_req_lo.header.size        = io_cmd_li.header.size;
       lce_req_lo.header.addr        = io_cmd_li.header.addr;
       lce_req_lo.header.msg_type    = io_cmd_wr_not_rd ? e_lce_req_type_uc_wr : e_lce_req_type_uc_rd;
       lce_req_lo.header.src_id      = lce_id_i;
@@ -97,7 +83,7 @@ module bp_io_link_to_lce
 
       io_resp_lo                 = '0;
       io_resp_lo.data            = lce_cmd_li.data;
-      io_resp_lo.header.size     = io_resp_size;
+      io_resp_lo.header.size     = lce_cmd_li.header.size;
       io_resp_lo.header.addr     = lce_cmd_li.header.addr;
       io_resp_lo.header.msg_type = lce_cmd_wr_not_rd ? e_cce_mem_uc_wr : e_cce_mem_uc_rd;
     end

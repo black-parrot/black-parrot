@@ -31,6 +31,7 @@ module bp_fe_lce_cmd
    , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
+   , localparam block_size_in_bytes_lp = (icache_block_width_p / 8)
    
    , localparam stat_width_lp = `bp_cache_stat_info_width(icache_assoc_p)
 
@@ -146,7 +147,20 @@ module bp_fe_lce_cmd
       ,.up_i(cnt_inc)
       ,.count_o(cnt_r)
       );
- 
+
+  // coherence message block size
+  // block size smaller than 8-bytes not supported
+  bp_mem_msg_size_e cmd_block_size =
+    (block_size_in_bytes_lp == 128)
+    ? e_mem_msg_size_128
+    : (block_size_in_bytes_lp == 64)
+      ? e_mem_msg_size_64
+      : (block_size_in_bytes_lp == 32)
+        ? e_mem_msg_size_32
+        : (block_size_in_bytes_lp == 16)
+          ? e_mem_msg_size_16
+          : e_mem_msg_size_8;
+
   // lce_cmd fsm
   always_comb begin
     cnt_inc = 1'b0;
@@ -263,7 +277,7 @@ module bp_fe_lce_cmd
 
       e_lce_cmd_ready: begin
         if (lce_cmd_v_i)
-          if (lce_cmd_li.header.msg_type == e_lce_cmd_transfer) begin
+          if (lce_cmd_li.header.msg_type == e_lce_cmd_tr) begin
             if(data_mem_pkt_ready_i) begin
               data_mem_pkt.index  = lce_cmd_addr_index;
               data_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
@@ -281,15 +295,16 @@ module bp_fe_lce_cmd
             state_n             = (data_mem_pkt_v & tag_mem_pkt_v) ? e_lce_cmd_send_transfer : e_lce_cmd_ready;
             cache_req_complete_o = 1'b0;
 
-          end else if (lce_cmd_li.header.msg_type == e_lce_cmd_writeback) begin
+          end else if (lce_cmd_li.header.msg_type == e_lce_cmd_wb) begin
             lce_resp.header.dst_id   = lce_cmd_li.header.src_id;
             lce_resp.header.msg_type = e_lce_cce_resp_null_wb;
             lce_resp.header.addr     = lce_cmd_li.header.addr;
+            // size is '0 equivalent since this is a null writeback
             lce_resp_v_o      = lce_cmd_v_i;
             lce_cmd_yumi_o    = lce_resp_yumi_i;
             cache_req_complete_o = 1'b0;
 
-          end else if (lce_cmd_li.header.msg_type == e_lce_cmd_set_tag) begin
+          end else if (lce_cmd_li.header.msg_type == e_lce_cmd_st) begin
             if(tag_mem_pkt_ready_i) begin
               tag_mem_pkt.index  = lce_cmd_addr_index;
               tag_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
@@ -303,7 +318,7 @@ module bp_fe_lce_cmd
             set_tag_received_o = tag_mem_pkt_v;
             cache_req_complete_o = 1'b0;
 
-          end else if (lce_cmd_li.header.msg_type == e_lce_cmd_set_tag_wakeup) begin
+          end else if (lce_cmd_li.header.msg_type == e_lce_cmd_st_wakeup) begin
             if(tag_mem_pkt_ready_i) begin
               tag_mem_pkt.index  = lce_cmd_addr_index;
               tag_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
@@ -317,7 +332,7 @@ module bp_fe_lce_cmd
             set_tag_wakeup_received_o = tag_mem_pkt_v;
             cache_req_complete_o = tag_mem_pkt_v;
 
-          end else if (lce_cmd_li.header.msg_type == e_lce_cmd_invalidate_tag) begin
+          end else if (lce_cmd_li.header.msg_type == e_lce_cmd_inv) begin
             if(tag_mem_pkt_ready_i) begin
               tag_mem_pkt.index = lce_cmd_addr_index;
               tag_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
@@ -412,6 +427,7 @@ module bp_fe_lce_cmd
         lce_cmd_out.header.way_id   = lce_cmd_li.header.target_way_id;
         lce_cmd_out.header.msg_type = e_lce_cmd_data;
         lce_cmd_out.header.dst_id   = lce_cmd_li.header.target;
+        lce_cmd_out.header.size = cmd_block_size;
         lce_cmd_v_o          = lce_cmd_ready_i;
         lce_cmd_yumi_o       = lce_cmd_v_o;
         state_n              = lce_cmd_v_o ? e_lce_cmd_ready : e_lce_cmd_send_transfer;

@@ -7,14 +7,17 @@
 
 #define SYNC 0
 #define SC 1
-#define TR 2
-#define WB 3
-#define ST 4
+#define INV 2
+#define ST 3
+#define DATA 4
 #define STW 5
-#define INV 6
-#define UCST 7
-#define DATA 8
-#define UC_DATA 9
+#define WB 6
+#define ST_WB 7
+#define TR 8
+#define ST_TR 9
+#define ST_TR_WB 10
+#define UC_DATA 11
+#define UCST 12
 
 #define SYNC_ACK 0
 #define INV_ACK 1
@@ -33,7 +36,6 @@
 #define MEM_CMD_WR 1
 #define MEM_CMD_UC_RD 2
 #define MEM_CMD_UC_WR 3
-#define MEM_CMD_WB 4
-#define MEM_CMD_PRE 5
+#define MEM_CMD_PRE 4
 
 #endif

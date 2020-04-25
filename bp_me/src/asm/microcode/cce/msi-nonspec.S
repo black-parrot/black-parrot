@@ -1,4 +1,4 @@
-# This microcode uses MESI protocol
+# This microcode uses MSI protocol
 
 #include "microcode.h"
 
@@ -18,7 +18,7 @@ inc r0
 bi sync_top
 
 # set default value for mshr.next_coh_state
-finish_init: movip COH_E cohSt
+finish_init: movip COH_S cohSt
 
 # Ready Routine
 ready: wfq lceReq
@@ -47,12 +47,8 @@ pushq memCmd MEM_CMD_WR addr=lru lce=req way=lru wp=1
 complete_replacement: popq lceResp
 
 # Next Coherence State Routine
-# write request means set to M, else read means set to E or S
+# write request means set to M, else read means set to S
 next_coh_state: bf next_coh_set_m rqf
-# check non-exclusive request (read-only) or block cached anywhere, set to S
-bfnz next_coh_set_s nerf csf cef cmf
-next_coh_set_e: movis COH_E nextCohSt
-bi inv_check
 next_coh_set_s: movis COH_S nextCohSt
 bi inv_check
 next_coh_set_m: movis COH_M nextCohSt
@@ -75,13 +71,13 @@ bi ready
 set_entry: wde addr=req lce=req way=lru state=nextCohSt
 
 # Transfer Check
-transfer_check: bfz read_l2 cef cmf pt
+transfer_check: bfz read_l2 cmf pt
 
-# Transfer routine - other cache has block in E/M
+# Transfer routine - other cache has block in M
 # write requests invalidate owner, read requests downgrade owner to S and writeback
 transfer: bf transfer_write rqf
 
-# transfer from owner in E/M, downgrade owner to S, send block to req in S
+# transfer from owner in M, downgrade owner to S, send block to req in S
 movis COH_S nextCohSt
 pushq lceCmd ST addr=req lce=owner way=owner
 wds addr=req lce=owner way=owner state=nextCohSt

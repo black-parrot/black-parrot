@@ -33,7 +33,6 @@ module bp_cce_dir_lru_extract
    , input [lg_assoc_lp-1:0]                                      lru_way_i
 
    , output logic                                                 lru_v_o
-   , output logic                                                 lru_cached_excl_o
    , output bp_coh_states_e                                       lru_coh_state_o
    , output logic [tag_width_p-1:0]                               lru_tag_o
 
@@ -55,13 +54,11 @@ module bp_cce_dir_lru_extract
   // 2. target LCE's tag set is stored on the input row
   assign lru_v_o = (row_v_i[lce_i[0]]) & ((lce_i >> 1) == row_num_i);
 
-  //logic [`bp_coh_bits-1:0] lru_coh_state;
   bp_coh_states_e lru_coh_state;
   assign lru_coh_state = (row_v_i)
                          ? row[lce_i[0]][lru_way_i].state
                          : e_COH_I;
   assign lru_coh_state_o = lru_coh_state;
-  assign lru_cached_excl_o = |lru_coh_state & ~lru_coh_state[`bp_coh_shared_bit];
   assign lru_tag_o = (row_v_i)
                      ? row[lce_i[0]][lru_way_i].tag
                      : '0;

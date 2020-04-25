@@ -1,4 +1,4 @@
-# This microcode uses EI protocol with LCE transfers enabled
+# This microcode uses EI protocol
 
 #include "microcode.h"
 
@@ -11,11 +11,14 @@
 sync_init: movi 0 r0
 movpg numLCE r1
 movi SYNC_ACK r3
-sync_top: bge r0 r1 ready
+sync_top: bge r0 r1 finish_init
 pushq lceCmd SYNC addr=0 lce=r0 way=0
 popq lceResp r4
 inc r0
 bi sync_top
+
+# set default value for mshr.next_coh_state
+finish_init: movip COH_E cohSt
 
 # Ready Routine
 ready: wfq lceReq
@@ -42,13 +45,11 @@ replace: pushq lceCmd WB addr=lru lce=req way=lru
 replacement_poph: poph lceResp r0
 beqi r0 COH_ACK replacement_poph
 bf complete_replacement nwbf
-pushq memCmd MEM_CMD_WB addr=lru lce=req way=lru wp=1
+pushq memCmd MEM_CMD_WR addr=lru lce=req way=lru wp=1
 complete_replacement: popq lceResp
-# replacement done, explicitly set replacement flag to 0
-sfz rf
 
 # Transfer Check
-transfer_check: bfz read_l2 cof pt
+transfer_check: bfz read_l2 cef cmf cof cff pt
 
 # Transfer routine - other cache has block in E/M
 # state for lceCmd will always come from nextCohSt
@@ -62,12 +63,12 @@ pushq lceCmd WB addr=req lce=owner way=owner
 transfer_poph: poph lceResp r0
 beqi r0 COH_ACK transfer_poph
 bf complete_transfer nwbf
-pushq memCmd MEM_CMD_WB addr=req lce=owner way=owner wp=1
+pushq memCmd MEM_CMD_WR addr=req lce=owner way=owner wp=1
 complete_transfer: popq lceResp
 bi ready
 
 # Read Line from L2 Routine
-read_l2: pushq memCmd MEM_CMD_WR addr=req lce=req way=lru wp=1
+read_l2: pushq memCmd MEM_CMD_RD addr=req lce=req way=lru wp=1
 bi ready
 
 # Uncached Request Routine

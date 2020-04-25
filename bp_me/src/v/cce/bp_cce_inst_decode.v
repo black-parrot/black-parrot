@@ -372,14 +372,14 @@ module bp_cce_inst_decode
             if (op_type_u.itype.dst.special == e_opd_next_coh_state) begin
               decoded_inst_o.next_coh_state_w_v = 1'b1;
             end
+            if (op_type_u.itype.dst.special == e_opd_lru_coh_state) begin
+              decoded_inst_o.lru_coh_state_w_v = 1'b1;
+            end
             if (op_type_u.itype.dst.special == e_opd_flags) begin
               decoded_inst_o.flag_w_v = '1;
             end
-            if (op_type_u.itype.dst.special == e_opd_uc_req_size) begin
-              decoded_inst_o.uc_req_size_w_v = 1'b1;
-            end
-            if (op_type_u.itype.dst.special == e_opd_data_length) begin
-              decoded_inst_o.data_length_w_v = 1'b1;
+            if (op_type_u.itype.dst.special == e_opd_msg_size) begin
+              decoded_inst_o.msg_size_w_v = 1'b1;
             end
           end
 
@@ -561,12 +561,11 @@ module bp_cce_inst_decode
               decoded_inst_o.owner_way_w_v = 1'b1;
               decoded_inst_o.flag_w_v[e_opd_rf] = 1'b1;
               decoded_inst_o.flag_w_v[e_opd_uf] = 1'b1;
-              decoded_inst_o.flag_w_v[e_opd_if] = 1'b1;
-              decoded_inst_o.flag_w_v[e_opd_cf] = 1'b1;
-              decoded_inst_o.flag_w_v[e_opd_cef] = 1'b1;
-              decoded_inst_o.flag_w_v[e_opd_cof] = 1'b1;
-              decoded_inst_o.flag_w_v[e_opd_cdf] = 1'b1;
               decoded_inst_o.flag_w_v[e_opd_csf] = 1'b1;
+              decoded_inst_o.flag_w_v[e_opd_cef] = 1'b1;
+              decoded_inst_o.flag_w_v[e_opd_cmf] = 1'b1;
+              decoded_inst_o.flag_w_v[e_opd_cof] = 1'b1;
+              decoded_inst_o.flag_w_v[e_opd_cff] = 1'b1;
             end
             default: begin
             end
@@ -583,7 +582,7 @@ module bp_cce_inst_decode
             end
             e_pushq_op: begin
               // pushq and pushqc have same encoding, except pushq uses
-              // the way_sel field and pushqc the data_length field
+              // the way_sel field and pushqc the msg_size field
               decoded_inst_o.pushq = 1'b1;
               decoded_inst_o.pushq_qsel = op_type_u.pushq.dst_q;
 
@@ -620,10 +619,10 @@ module bp_cce_inst_decode
 
               decoded_inst_o.pushq_custom = op_type_u.pushq.custom;
 
-              // custom push commands use data_length field
-              decoded_inst_o.data_length = op_type_u.pushq.way_or_length.data_length;
+              // custom push commands use msg_size field
+              decoded_inst_o.msg_size = bp_mem_msg_size_e'(op_type_u.pushq.way_or_size.msg_size);
               // normal push commands use way_select and coh_state_select
-              decoded_inst_o.way_sel = op_type_u.pushq.way_or_length.way_sel;
+              decoded_inst_o.way_sel = op_type_u.pushq.way_or_size.way_sel;
               // TODO: make coh_state_sel flexible / set by instruction, not
               // fixed to next coherence state in MSHR?
               decoded_inst_o.coh_state_sel = e_mux_sel_coh_next_coh_state;
@@ -703,9 +702,8 @@ module bp_cce_inst_decode
                   decoded_inst_o.lce_w_v = 1'b1;
                   decoded_inst_o.addr_w_v = 1'b1;
                   decoded_inst_o.lru_way_w_v = 1'b1;
-                  decoded_inst_o.uc_req_size_w_v = 1'b1;
-                  decoded_inst_o.data_length_w_v = 1'b1;
-                  decoded_inst_o.flag_w_v = (e_flag_rqf | e_flag_nerf | e_flag_ldf | e_flag_ucf);
+                  decoded_inst_o.msg_size_w_v = 1'b1;
+                  decoded_inst_o.flag_w_v = (e_flag_rqf | e_flag_nerf | e_flag_ucf);
                 end
                 default: begin
                   decoded_inst_o.src_a.q = e_opd_lce_resp_type;

@@ -183,7 +183,7 @@ typedef enum logic [3:0] {
 // 1. poph does not dequeue data or memory, but captures the standard header fields into the MSHR,
 //    and also captures the message type into the specified GPR.
 // 2. popd dequeues a single 64-bit data packet into a single GPR. The user must first have at
-//    at least done a poph to determine that data was available and so ucode can use data_length
+//    at least done a poph to determine that data was available and so ucode can use size
 //    field in MSHR to determine how many packets to dequeue.
 // 3. popq dequeues only the header. We assume that all data has been popped off
 //    either by popd commands, or by the message unit auto-forward mechanism, or by issuing
@@ -295,19 +295,27 @@ typedef enum logic [3:0] {
   e_opd_rqf                              = 4'b0000
   ,e_opd_ucf                             = 4'b0001
   ,e_opd_nerf                            = 4'b0010
-  ,e_opd_ldf                             = 4'b0011
+  ,e_opd_nwbf                            = 4'b0011
   ,e_opd_pf                              = 4'b0100
-  ,e_opd_lef                             = 4'b0101
-  ,e_opd_cf                              = 4'b0110
+  ,e_opd_sf                              = 4'b0101 // also not used, when would it be?
+  // Basic flags from GAD
+  // cached dirty == cmf | cof
+  // cached maybe dirty == cmf | cof | cef
+  // cached owned (transfer) == cef | cmf | cof | cff
+  // cached == csf | cef | cmf | cof | cff
+  // not cached == not(any c*f flag)
+  // invalidate = rqf & csf
+  ,e_opd_csf                             = 4'b0110
   ,e_opd_cef                             = 4'b0111
-  ,e_opd_cof                             = 4'b1000
-  ,e_opd_cdf                             = 4'b1001
-  ,e_opd_csf                             = 4'b1010
-  ,e_opd_rf                              = 4'b1011
-  ,e_opd_uf                              = 4'b1100
-  ,e_opd_if                              = 4'b1101
-  ,e_opd_nwbf                            = 4'b1110
-  ,e_opd_sf                              = 4'b1111
+  ,e_opd_cmf                             = 4'b1000
+  ,e_opd_cof                             = 4'b1001
+  ,e_opd_cff                             = 4'b1010
+  // special flags from GAD
+  ,e_opd_rf                              = 4'b1011 // requesting LCE needs replacement
+  ,e_opd_uf                              = 4'b1100 // rqf & (rsf | rof | rff)
+  // 1101 - unused
+  // 1110 - unused
+  // 1111 - unused
 } bp_cce_inst_opd_flag_e;
 
 // Control Flag one hot encoding
@@ -315,19 +323,16 @@ typedef enum logic [15:0] {
   e_flag_rqf                    = 16'b0000_0000_0000_0001 // request type flag
   ,e_flag_ucf                   = 16'b0000_0000_0000_0010 // uncached request flag
   ,e_flag_nerf                  = 16'b0000_0000_0000_0100 // non-exclusive request flag
-  ,e_flag_ldf                   = 16'b0000_0000_0000_1000 // lru dirty flag
+  ,e_flag_nwbf                  = 16'b0000_0000_0000_1000 // null writeback flag
   ,e_flag_pf                    = 16'b0000_0000_0001_0000 // pending flag
-  ,e_flag_lef                   = 16'b0000_0000_0010_0000 // lru cached exclusive flag
-  ,e_flag_cf                    = 16'b0000_0000_0100_0000 // cached by other flag
-  ,e_flag_cef                   = 16'b0000_0000_1000_0000 // cached exclusive by other flag
-  ,e_flag_cof                   = 16'b0000_0001_0000_0000 // cached owned by other flag
-  ,e_flag_cdf                   = 16'b0000_0010_0000_0000 // cached dirty by other flag
-  ,e_flag_csf                   = 16'b0000_0100_0000_0000 // cached shared by other flag
+  ,e_flag_sf                    = 16'b0000_0000_0010_0000 // speculative flag
+  ,e_flag_csf                   = 16'b0000_0000_0100_0000 // cached S by other flag
+  ,e_flag_cef                   = 16'b0000_0000_1000_0000 // cached E by other flag
+  ,e_flag_cmf                   = 16'b0000_0001_0000_0000 // cached M by other flag
+  ,e_flag_cof                   = 16'b0000_0010_0000_0000 // cached O by other flag
+  ,e_flag_cff                   = 16'b0000_0100_0000_0000 // cached F by other flag
   ,e_flag_rf                    = 16'b0000_1000_0000_0000 // replacement flag
   ,e_flag_uf                    = 16'b0001_0000_0000_0000 // upgrade flag
-  ,e_flag_if                    = 16'b0010_0000_0000_0000 // invalidate flag
-  ,e_flag_nwbf                  = 16'b0100_0000_0000_0000 // null writeback flag
-  ,e_flag_sf                    = 16'b1000_0000_0000_0000 // speculative flag
 } bp_cce_inst_flag_onehot_e;
 
 `define bp_cce_inst_num_flags $bits(bp_cce_inst_flag_onehot_e)
@@ -344,11 +349,11 @@ typedef enum logic [3:0] {
   ,e_opd_owner_way                       = 4'b0110 // MSHR.owner_way_id
   ,e_opd_next_coh_state                  = 4'b0111 // MSHR.next_coh_state
   ,e_opd_flags                           = 4'b1000 // MSHR.flags
-  ,e_opd_uc_req_size                     = 4'b1001 // MSHR.uc_req_size
-  ,e_opd_data_length                     = 4'b1010 // MSHR.data_length
+  ,e_opd_msg_size                        = 4'b1001 // MSHR.msg_size
+  ,e_opd_lru_coh_state                   = 4'b1010 // MSHR.lru_coh_state
 
   // only used as a source
-  ,e_opd_flags_and_mask                  = 4'b1011 // MSHR.flags & imm[0+:num_flags]
+  ,e_opd_flags_and_mask                  = 4'b1100 // MSHR.flags & imm[0+:num_flags]
 
   // sharers vectors require src_b to provide GPR rX containing index to use
   // These can only be used as source a, not as source b or destinations
@@ -516,7 +521,8 @@ typedef enum logic [3:0] {
   ,e_mux_sel_coh_r6                      = 4'b0110
   ,e_mux_sel_coh_r7                      = 4'b0111
   ,e_mux_sel_coh_next_coh_state          = 4'b1000
-  ,e_mux_sel_sharer_state                = 4'b1001 // Sharer's vector states, indexed by src_a
+  ,e_mux_sel_coh_lru_coh_state           = 4'b1001
+  ,e_mux_sel_sharer_state                = 4'b1010 // Sharer's vector states, indexed by src_a
   ,e_mux_sel_coh_inst_imm                = 4'b1111
 } bp_cce_inst_mux_sel_coh_state_e;
 
@@ -785,9 +791,12 @@ typedef struct packed {
   logic                                  write_pending;
   union packed
   {
-    bp_cce_inst_mux_sel_way_e     way_sel;
-    bp_lce_cce_data_length_e      data_length;
-  }                                      way_or_length;
+    bp_cce_inst_mux_sel_way_e                    way_sel;
+    // msg_size field must be same or fewer bits than way_sel field
+    // currently, msg_size requires 3 bits to hold bp_mem_msg_size_e from
+    // bp_common_me_if.vh
+    logic [$bits(bp_cce_inst_mux_sel_way_e)-1:0] msg_size;
+  }                                      way_or_size;
   bp_cce_inst_opd_gpr_e                  src_a;
   bp_cce_inst_mux_sel_lce_e              lce_sel;
   bp_cce_inst_mux_sel_addr_e             addr_sel;
@@ -907,7 +916,7 @@ typedef struct packed {
   logic                                    popd;
   logic                                    pushq;
   logic                                    pushq_custom;
-  bp_lce_cce_data_length_e                 data_length;
+  bp_mem_msg_size_e                        msg_size;
   bp_cce_inst_dst_q_sel_e                  pushq_qsel;
   bp_cce_inst_src_q_sel_e                  popq_qsel;
   logic                                    lce_req_yumi;
@@ -933,10 +942,10 @@ typedef struct packed {
   logic                                    owner_lce_w_v;
   logic                                    owner_way_w_v;
   logic                                    next_coh_state_w_v;
+  logic                                    lru_coh_state_w_v;
   // Flag write mask - for instructions that write flags, e.g., GAD, poph, mov, sf
   logic [`bp_cce_inst_num_flags-1:0]       flag_w_v;
-  logic                                    uc_req_size_w_v;
-  logic                                    data_length_w_v;
+  logic                                    msg_size_w_v;
   // Special/Param registers
   logic                                    coh_state_w_v;
   logic                                    auto_fwd_msg_w_v;

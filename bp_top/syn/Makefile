@@ -15,8 +15,8 @@ TB          ?= bp_softcore
 CFG         ?= e_bp_softcore_cfg
 
 COH_PROTO   ?= mesi
-CCE_MEM_PATH = $(BP_ME_DIR)/src/asm/roms/$(COH_PROTO)
-CCE_MEM      = bp_cce_inst_rom_$(COH_PROTO).mem
+CCE_MEM_PATH = $(BP_ME_DIR)/src/asm/roms
+CCE_MEM      = $(COH_PROTO).mem
 
 DRAMSIM_CH_CFG  ?= DDR3_micron_32M_8B_x8_sg25E.ini
 DRAMSIM_SYS_CFG ?= system.ini

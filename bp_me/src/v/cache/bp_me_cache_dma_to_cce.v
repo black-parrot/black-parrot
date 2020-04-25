@@ -1,8 +1,6 @@
 // 
 // bp_me_cache_dma_to_cce.v
 // 
-// Paul Gao   10/2019
-//  
 // 
 
 `include "bp_me_cce_mem_if.vh"
@@ -21,6 +19,7 @@ module bp_me_cache_dma_to_cce
   `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
   
   ,localparam block_size_in_words_lp = cce_block_width_p / dword_width_p
+  ,localparam block_size_in_bytes_lp = (cce_block_width_p / 8)
   ,localparam block_offset_width_lp = `BSG_SAFE_CLOG2(cce_block_width_p >> 3)
   ,localparam bsg_cache_dma_pkt_width_lp = `bsg_cache_dma_pkt_width(paddr_width_p)
   // TODO: This module should be 1:1, not N:1
@@ -170,17 +169,30 @@ module bp_me_cache_dma_to_cce
   bsg_cache_dma_pkt_s send_dma_pkt_n, send_dma_pkt_r;
   logic [dword_width_p-1:0] data_n;
   logic [block_size_in_words_lp-1:0][dword_width_p-1:0] data_r ;
-  
+
+  // coherence message block size
+  // block size smaller than 8-bytes not supported
+  bp_mem_msg_size_e mem_cmd_block_size =
+    (block_size_in_bytes_lp == 128)
+    ? e_mem_msg_size_128
+    : (block_size_in_bytes_lp == 64)
+      ? e_mem_msg_size_64
+      : (block_size_in_bytes_lp == 32)
+        ? e_mem_msg_size_32
+        : (block_size_in_bytes_lp == 16)
+          ? e_mem_msg_size_16
+          : e_mem_msg_size_8;
+
   logic mem_cmd_v_lo;
   bp_cce_mem_msg_s mem_cmd_lo;
   
   assign mem_cmd_lo.header.msg_type = (send_dma_pkt_r.write_not_read)? 
-                                       e_cce_mem_wb : e_cce_mem_rd;
+                                       e_cce_mem_wr : e_cce_mem_rd;
   assign mem_cmd_lo.header.addr = (num_mem_p == 1)? send_dma_pkt_r.addr : 
                                 {send_dma_pkt_r.addr[paddr_width_p-1:block_offset_width_lp], 
                                 dma_pkt_rr_tag_r, send_dma_pkt_r.addr[block_offset_width_lp-1:0]};
   assign mem_cmd_lo.header.payload  = '0;
-  assign mem_cmd_lo.header.size     = e_mem_size_64;
+  assign mem_cmd_lo.header.size     = mem_cmd_block_size;
   assign mem_cmd_lo.data     = (send_dma_pkt_r.write_not_read)? data_r : '0;
   
   assign mem_cmd_o           = mem_cmd_lo;
@@ -288,7 +300,7 @@ module bp_me_cache_dma_to_cce
   );
 
   assign piso_v_li = two_fifo_v_lo & (mem_resp_li.header.msg_type == e_cce_mem_rd);
-  assign two_fifo_yumi_li = two_fifo_v_lo & ((mem_resp_li.header.msg_type == e_cce_mem_wb) | piso_ready_lo);
+  assign two_fifo_yumi_li = two_fifo_v_lo & ((mem_resp_li.header.msg_type == e_cce_mem_wr) | piso_ready_lo);
   
   bsg_parallel_in_serial_out 
  #(.width_p(dword_width_p)

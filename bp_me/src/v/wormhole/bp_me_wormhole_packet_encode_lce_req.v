@@ -32,16 +32,13 @@ module bp_me_wormhole_packet_encode_lce_req
   assign payload_cast_i = payload_i;
   assign packet_o = packet_cast_o;
 
-  // TODO: remove commented code after testing. Normal request and UC Rd have length = header = full msg - dword_width_p
   // UC Store is header + dword_width_p = full length
   localparam lce_cce_req_req_len_lp =
     `BSG_CDIV(lce_cce_req_packet_width_lp-$bits(payload_cast_i.data), coh_noc_flit_width_p) - 1;
-    //`BSG_CDIV(lce_cce_req_packet_width_lp-$bits(payload_cast_i.msg.req.pad), coh_noc_flit_width_p) - 1;
   localparam lce_cce_req_uc_wr_len_lp =
     `BSG_CDIV(lce_cce_req_packet_width_lp, coh_noc_flit_width_p) - 1;
   localparam lce_cce_req_uc_rd_len_lp =
     `BSG_CDIV(lce_cce_req_packet_width_lp-$bits(payload_cast_i.data), coh_noc_flit_width_p) - 1;
-    //`BSG_CDIV(lce_cce_req_packet_width_lp-$bits(payload_cast_i.msg.uc_req.data), coh_noc_flit_width_p) - 1;
 
   logic [coh_noc_cord_width_p-1:0] cce_cord_li;
   logic [coh_noc_cid_width_p-1:0]  cce_cid_li;

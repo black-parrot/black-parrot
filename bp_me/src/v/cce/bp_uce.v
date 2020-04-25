@@ -181,8 +181,8 @@ module bp_uce
   wire clear_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_clear};
   wire uc_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
 
-  wire store_resp_v_li    = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_cce_mem_wb, e_cce_mem_uc_wr};
-  wire load_resp_v_li     = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_cce_mem_rd, e_cce_mem_wr, e_cce_mem_uc_rd};
+  wire store_resp_v_li    = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_cce_mem_wr, e_cce_mem_uc_wr};
+  wire load_resp_v_li     = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_cce_mem_rd, e_cce_mem_uc_rd};
 
   wire miss_load_v_li  = cache_req_v_r & cache_req_r.msg_type inside {e_miss_load};
   wire miss_store_v_li = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
@@ -340,15 +340,15 @@ module bp_uce
           end
         e_flush_write:
           begin
-            mem_cmd_cast_o.header.msg_type = e_cce_mem_wb;
+            mem_cmd_cast_o.header.msg_type = e_cce_mem_wr;
             mem_cmd_cast_o.header.addr     = {dirty_tag_r, index_cnt, block_offset_width_lp'(0)};
             mem_cmd_cast_o.header.size     = is_blockwidth_512
-                                              ? e_mem_size_64
+                                              ? e_mem_msg_size_64
                                               : is_blockwidth_256
-                                                ? e_mem_size_32
+                                                ? e_mem_msg_size_32
                                                 : is_blockwidth_128
-                                                  ? e_mem_size_16
-                                                  : e_mem_size_64;
+                                                  ? e_mem_msg_size_16
+                                                  : e_mem_msg_size_64;
             mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
             mem_cmd_cast_o.data            = dirty_data_r;
             mem_cmd_v_o = mem_cmd_ready_i;
@@ -377,7 +377,7 @@ module bp_uce
               begin
                 mem_cmd_cast_o.header.msg_type       = e_cce_mem_uc_wr;
                 mem_cmd_cast_o.header.addr           = cache_req_cast_i.addr;
-                mem_cmd_cast_o.header.size           = bp_cce_mem_req_size_e'(cache_req_cast_i.size);
+                mem_cmd_cast_o.header.size           = bp_mem_msg_size_e'(cache_req_cast_i.size);
                 mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
                 mem_cmd_cast_o.data                  = cache_req_cast_i.data;
                 mem_cmd_v_o = mem_cmd_ready_i;
@@ -396,15 +396,15 @@ module bp_uce
         e_send_req:
           if (miss_v_li)
             begin
-              mem_cmd_cast_o.header.msg_type       = miss_load_v_li ? e_cce_mem_rd : e_cce_mem_wr;
+              mem_cmd_cast_o.header.msg_type       = e_cce_mem_rd;
               mem_cmd_cast_o.header.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], block_offset_width_lp'(0)};
               mem_cmd_cast_o.header.size           = is_blockwidth_512
-                                                      ? e_mem_size_64
+                                                      ? e_mem_msg_size_64
                                                       : is_blockwidth_256
-                                                        ? e_mem_size_32
+                                                        ? e_mem_msg_size_32
                                                         : is_blockwidth_128
-                                                          ? e_mem_size_16
-                                                          : e_mem_size_64;
+                                                          ? e_mem_msg_size_16
+                                                          : e_mem_msg_size_64;
               mem_cmd_cast_o.header.payload.way_id = lce_assoc_p'(cache_req_metadata_r.repl_way);
               mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
               mem_cmd_v_o = mem_cmd_ready_i;
@@ -419,7 +419,7 @@ module bp_uce
             begin
               mem_cmd_cast_o.header.msg_type       = e_cce_mem_uc_rd;
               mem_cmd_cast_o.header.addr           = cache_req_r.addr;
-              mem_cmd_cast_o.header.size           = e_mem_size_8;
+              mem_cmd_cast_o.header.size           = e_mem_msg_size_8;
               mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
               mem_cmd_v_o = mem_cmd_ready_i;
 
@@ -446,15 +446,15 @@ module bp_uce
           end
         e_writeback_req:
           begin
-            mem_cmd_cast_o.header.msg_type = e_cce_mem_wb;
+            mem_cmd_cast_o.header.msg_type = e_cce_mem_wr;
             mem_cmd_cast_o.header.addr     = {dirty_tag_r, cache_req_r.addr[block_offset_width_lp+:index_width_lp], block_offset_width_lp'(0)};
             mem_cmd_cast_o.header.size     = is_blockwidth_512
-                                              ? e_mem_size_64
+                                              ? e_mem_msg_size_64
                                               : is_blockwidth_256
-                                                ? e_mem_size_32
+                                                ? e_mem_msg_size_32
                                                 : is_blockwidth_128
-                                                  ? e_mem_size_16
-                                                  : e_mem_size_64;
+                                                  ? e_mem_msg_size_16
+                                                  : e_mem_msg_size_64;
             mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
             mem_cmd_cast_o.data            = dirty_data_r;
             mem_cmd_v_o = mem_cmd_ready_i;
