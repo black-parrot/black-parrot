@@ -738,7 +738,9 @@ module bp_be_dcache
   // output stage
   // Cache Miss Tracking logic
   logic cache_miss_r;
-  wire miss_tracker_en_li = cache_req_v_o & ~uncached_store_req & ~fencei_req & ~(wbuf_v_li & (writethrough_p == 1));
+  logic wt_req;
+  assign wt_req = (wbuf_v_li & (writethrough_p == 1));
+  wire miss_tracker_en_li = cache_req_v_o & ~uncached_store_req & ~fencei_req & ~wt_req;
   bsg_dff_reset_en
    #(.width_p(1))
    cache_miss_tracker
@@ -778,17 +780,23 @@ module bp_be_dcache
   //   2) If dirty bit is not set, we do not send a request and simply return valid flush.
   //        The CSR unit is now responsible for sending the clear request to the I$.
   wire flush_req = cache_req_v_o & (cache_req_cast_o.msg_type == e_cache_flush);
-  bsg_dff_reset_en
-   #(.width_p(1))
-   gdirty_reg
-   (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+  
+  if(writethrough_p == 1) begin : wt
+    assign gdirty_r = '0;
+  end
+  else begin : wb
+    bsg_dff_reset_en
+     #(.width_p(1))
+     gdirty_reg
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
 
-    ,.en_i((wbuf_v_li & (writethrough_p == 0)) | flush_req)
-    ,.data_i(wbuf_v_li)
+      ,.en_i(wbuf_v_li | flush_req)
+      ,.data_i(wbuf_v_li)
 
-    ,.data_o(gdirty_r)
-    );
+      ,.data_o(gdirty_r)
+      );
+  end
 
   logic [`BSG_SAFE_CLOG2(lock_max_limit_p+1)-1:0] lock_cnt_r;
   wire lock_clr = v_o || (lock_cnt_r == lock_max_limit_p);
@@ -1055,7 +1063,7 @@ module bp_be_dcache
     if (v_tv_r) begin
       lru_decode_way_li = store_op_tv_r ? store_hit_way : load_hit_way;
       dirty_mask_way_li = store_hit_way;
-      dirty_mask_v_li = store_op_tv_r & (writethrough_p == 0);
+      dirty_mask_v_li = store_op_tv_r & (writethrough_p == 0); // Blocks are never dirty in a writethrough cache
       
       stat_mem_data_li.lru = lru_decode_data_lo;
       stat_mem_data_li.dirty = {dcache_assoc_p{1'b1}};
@@ -1064,7 +1072,7 @@ module bp_be_dcache
     else begin
       lru_decode_way_li = stat_mem_pkt.way_id;
       dirty_mask_way_li = stat_mem_pkt.way_id;
-      dirty_mask_v_li = 1'b1 & (writethrough_p == 0);
+      dirty_mask_v_li = 1'b1;
       case (stat_mem_pkt.opcode)
         e_cache_stat_mem_set_clear: begin
           stat_mem_data_li = {(stat_info_width_lp){1'b0}};
@@ -1111,8 +1119,15 @@ module bp_be_dcache
     ,.data_o(lce_data_mem_data_li)
     );
   
-  assign data_mem_o = lce_data_mem_data_li; 
-  assign data_mem_pkt_yumi_o = (data_mem_pkt.opcode == e_cache_data_mem_uncached) ? data_mem_pkt_v : ~(load_op & tl_we) & ~wbuf_v_lo & ~lce_snoop_match_lo & data_mem_pkt_v;
+  assign data_mem_o = lce_data_mem_data_li;
+  // We don't allow any incoming data_mem_pkts until we have drained the write
+  // buffer. As an optimization, we snoop the data_mem_pkts to see if there
+  // are any matching entries in the write buffer and disallow the
+  // data_mem_pkts to allow the write buffers to drain before we can
+  // accept the pkt in case of a match. 
+  assign data_mem_pkt_yumi_o = (data_mem_pkt.opcode == e_cache_data_mem_uncached) 
+                               ? data_mem_pkt_v 
+                               : ~(load_op & tl_we) & ~wbuf_v_lo & ~lce_snoop_match_lo & data_mem_pkt_v;
 
   // load reservation logic
   always_ff @ (posedge clk_i) begin
