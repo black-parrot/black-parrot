@@ -21,8 +21,6 @@ CCE_MEM      = $(COH_PROTO).mem
 DRAMSIM_CH_CFG  ?= DDR3_micron_32M_8B_x8_sg25E.ini
 DRAMSIM_SYS_CFG ?= system.ini
 
-def:
-
 include $(BP_COMMON_DIR)/syn/Makefile.common
 include $(BP_COMMON_DIR)/syn/Makefile.dc
 include $(BP_COMMON_DIR)/syn/Makefile.regress
@@ -54,21 +52,4 @@ regress.list.common.run_in_parallel: $(foreach p, $(LIST_PROGS), regress.list.co
 
 regress.list.common.launch_run.%:
 	$(MAKE) run.$(_TS) PROG=$*
-
-profile:
-	-find . -iname "stall_0.trace" | xargs -n 1 wc -l
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c instr
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -v -c instr
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c load_dep
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c dir_mispredict
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c branch_override
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c target_mispredict
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c fe_cmd
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c mul
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c icache
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c dcache
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c long_haz
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c cmd_fence
-	-find . -iname "stall_0.trace" | xargs -n 1 grep -c fe_wait_stall
-
 
