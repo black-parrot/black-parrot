@@ -83,10 +83,35 @@ assign mem_resp_o     = mem_resp_cast_o;
 logic instr_page_fault_lo, instr_access_fault_lo, icache_miss_lo, itlb_miss_lo;
 
 logic fetch_ready;
-wire itlb_fence_v = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fence);
-wire itlb_fill_v  = mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fill);
-wire fetch_v      = fetch_ready & mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_fetch);
-wire fencei_v     = fetch_ready & mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_icache_fence);
+logic prev_fetch_vtag_v_r; //the validity of the previously fetched virtual address tag
+logic [vtag_width_p-1:0] prev_fetch_vtag_r; //previously fetched virtual address tag
+
+wire itlb_fence_v 		= mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fence);
+wire itlb_fill_v  		= mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fill);
+wire fetch_v      		= fetch_ready & mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_fetch);
+wire itlb_vtag_bypass 	= (prev_fetch_vtag_r == mem_cmd_cast_i.operands.fetch.vaddr.tag) & prev_fetch_vtag_v_r & mem_cmd_v_i & ~(itlb_fence_v | itlb_fill_v);
+//wire fetch_v 			= fetch_ready & mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_fetch) & ~itlb_vtag_bypass;
+wire fencei_v     		= fetch_ready & mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_icache_fence);
+
+
+//itlb bypass pre-itlb logic
+always_ff @(posedge clk_i)
+	begin
+		if (reset_i | itlb_fence_v | itlb_fill_v) begin
+			prev_fetch_vtag_v_r <= '0;
+			prev_fetch_vtag_r 	<= '0;
+		end
+
+		else if (fetch_v) begin 
+			prev_fetch_vtag_r 	<= mem_cmd_cast_i.operands.fetch.vaddr.tag;
+			prev_fetch_vtag_v_r	<= 1'b1;
+		end
+
+		else begin
+			prev_fetch_vtag_r 	<= prev_fetch_vtag_r;
+			prev_fetch_vtag_v_r <= prev_fetch_vtag_v_r;
+		end
+	end
 
 bp_fe_tlb_entry_s itlb_r_entry;
 logic itlb_r_v_lo;
@@ -98,7 +123,7 @@ bp_tlb
    ,.flush_i(itlb_fence_v)
    ,.translation_en_i(mem_translation_en_i)
          
-   ,.v_i(fetch_v | itlb_fill_v)
+   ,.v_i((fetch_v & ~itlb_vtag_bypass) | itlb_fill_v)
    ,.w_i(itlb_fill_v)
    ,.vtag_i(itlb_fill_v ? mem_cmd_cast_i.operands.fill.vtag : mem_cmd_cast_i.operands.fetch.vaddr.tag)
    ,.entry_i(mem_cmd_cast_i.operands.fill.entry)
@@ -108,9 +133,34 @@ bp_tlb
    ,.entry_o(itlb_r_entry)
    );
 
+//itlb bypass post-itlb logic
+logic [ptag_width_p-1:0] prev_fetch_itlb_r_entry_ptag_r;
+logic itlb_vtag_bypass_r;
+
+wire [ptag_width_p-1:0] ptag_li     = itlb_vtag_bypass_r 
+									         ? prev_fetch_itlb_r_entry_ptag_r 
+									         : itlb_r_entry.ptag;
+
+wire ptag_v_li   					      = itlb_vtag_bypass_r 
+									         ? 1'b1 
+									         : itlb_r_v_lo;
+
+always_ff @(posedge clk_i) begin
+	if (reset_i) begin
+		itlb_vtag_bypass_r				   <= '0;
+		prev_fetch_itlb_r_entry_ptag_r	<= '0;
+	end
+
+	else begin
+		itlb_vtag_bypass_r				   <= itlb_vtag_bypass;
+		prev_fetch_itlb_r_entry_ptag_r 	<= (itlb_r_v_lo) ? itlb_r_entry.ptag : prev_fetch_itlb_r_entry_ptag_r;
+	end
+end
+
+/*
 wire [ptag_width_p-1:0] ptag_li     = itlb_r_entry.ptag;
 wire                    ptag_v_li   = itlb_r_v_lo;
-
+*/
 logic uncached_li;
 bp_pma
  #(.bp_params_p(bp_params_p))
