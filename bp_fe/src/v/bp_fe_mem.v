@@ -97,10 +97,14 @@ wire fencei_v     		= fetch_ready & mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_
 //itlb bypass pre-itlb logic
 always_ff @(posedge clk_i)
 	begin
-		if (reset_i | itlb_fence_v | itlb_fill_v) begin
-			prev_fetch_vtag_v_r <= '0;
-			prev_fetch_vtag_r 	<= '0;
+		if (reset_i) begin
+			prev_fetch_vtag_v_r  <= '0;
+			prev_fetch_vtag_r    <= '0;
 		end
+
+      else if (itlb_fence_v | itlb_fill_v | itlb_miss_lo) begin
+         prev_fetch_vtag_r    <= '0;
+      end
 
 		else if (fetch_v) begin 
 			prev_fetch_vtag_r 	<= mem_cmd_cast_i.operands.fetch.vaddr.tag;
