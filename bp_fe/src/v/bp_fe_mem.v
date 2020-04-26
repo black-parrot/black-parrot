@@ -83,14 +83,13 @@ assign mem_resp_o     = mem_resp_cast_o;
 logic instr_page_fault_lo, instr_access_fault_lo, icache_miss_lo, itlb_miss_lo;
 
 logic fetch_ready;
-logic prev_fetch_vtag_v_r; //the validity of the previously fetched virtual address tag
-logic [vtag_width_p-1:0] prev_fetch_vtag_r; //previously fetched virtual address tag
+logic prev_fetch_vtag_v_r; 
+logic [vtag_width_p-1:0] prev_fetch_vtag_r; 
 
 wire itlb_fence_v 		= mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fence);
 wire itlb_fill_v  		= mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_tlb_fill);
 wire fetch_v      		= fetch_ready & mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_fetch);
 wire itlb_vtag_bypass 	= (prev_fetch_vtag_r == mem_cmd_cast_i.operands.fetch.vaddr.tag) & prev_fetch_vtag_v_r & mem_cmd_v_i & ~(itlb_fence_v | itlb_fill_v);
-//wire fetch_v 			= fetch_ready & mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_fetch) & ~itlb_vtag_bypass;
 wire fencei_v     		= fetch_ready & mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_icache_fence);
 
 
@@ -98,12 +97,12 @@ wire fencei_v     		= fetch_ready & mem_cmd_v_i & (mem_cmd_cast_i.op == e_fe_op_
 always_ff @(posedge clk_i)
 	begin
 		if (reset_i) begin
-			prev_fetch_vtag_v_r  <= '0;
-			prev_fetch_vtag_r    <= '0;
+         prev_fetch_vtag_r    <= '0;
+			prev_fetch_vtag_v_r  <= 1'b0;
 		end
 
       else if (itlb_fence_v | itlb_fill_v | itlb_miss_lo) begin
-         prev_fetch_vtag_r    <= '0;
+         prev_fetch_vtag_v_r  <= 1'b0;
       end
 
 		else if (fetch_v) begin 
@@ -113,7 +112,7 @@ always_ff @(posedge clk_i)
 
 		else begin
 			prev_fetch_vtag_r 	<= prev_fetch_vtag_r;
-			prev_fetch_vtag_v_r <= prev_fetch_vtag_v_r;
+			prev_fetch_vtag_v_r  <= prev_fetch_vtag_v_r;
 		end
 	end
 
@@ -151,7 +150,7 @@ wire ptag_v_li   					      = itlb_vtag_bypass_r
 
 always_ff @(posedge clk_i) begin
 	if (reset_i) begin
-		itlb_vtag_bypass_r				   <= '0;
+		itlb_vtag_bypass_r				   <= 1'b0;
 		prev_fetch_itlb_r_entry_ptag_r	<= '0;
 	end
 
