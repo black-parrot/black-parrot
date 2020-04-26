@@ -118,6 +118,7 @@ module bp_softcore
   logic [dword_width_p-1:0] cfg_csr_data_li;
   logic [1:0]               cfg_priv_data_li;
   logic [cce_instr_width_p-1:0] cfg_cce_ucode_data_li;
+
   bp_core_minimal
    #(.bp_params_p(bp_params_p))
    core

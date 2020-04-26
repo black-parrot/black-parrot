@@ -20,7 +20,6 @@ module testbench
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
    // Tracing parameters
-   , parameter calc_trace_p                = 0
    , parameter cce_trace_p                 = 0
    , parameter cmt_trace_p                 = 0
    , parameter dram_trace_p                = 0
@@ -153,6 +152,7 @@ wrapper
        ,.rd_data_i(be_checker.scheduler.wb_pkt.rd_data)
        );
 
+  logic cosim_finish_lo;
   bind bp_be_top
     bp_nonsynth_cosim
      #(.bp_params_p(bp_params_p))
@@ -180,6 +180,8 @@ wrapper
 
        ,.interrupt_v_i(be_mem.csr.trap_pkt_cast_o._interrupt)
        ,.cause_i(be_mem.csr.trap_pkt_cast_o.cause)
+
+       ,.finish_o(testbench.cosim_finish_lo)
        );
 
   bind bp_be_director
@@ -251,44 +253,6 @@ wrapper
        ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
        );
 
-  bind bp_be_top
-    bp_be_nonsynth_calc_tracer
-     #(.bp_params_p(bp_params_p))
-     calc_tracer
-       // Workaround for verilator binding by accident
-       // TODO: Figure out why tracing is always enabled
-      (.clk_i(clk_i & (testbench.calc_trace_p == 1))
-       ,.reset_i(reset_i)
-       ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
-  
-       ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
-
-       ,.issue_pkt_i(be_checker.scheduler.issue_pkt)
-       ,.issue_pkt_v_i(be_checker.scheduler.fe_queue_yumi_o)
-  
-       ,.fe_nop_v_i(be_calculator.exc_stage_n[0].fe_nop_v)
-       ,.be_nop_v_i(be_calculator.exc_stage_n[0].be_nop_v)
-       ,.me_nop_v_i(be_calculator.exc_stage_n[0].me_nop_v)
-       ,.dispatch_pkt_i(be_calculator.dispatch_pkt)
-  
-       ,.ex1_br_tgt_i(be_calculator.calc_status.ex1_npc)
-       ,.ex1_btaken_i(be_calculator.pipe_int.btaken)
-       ,.iwb_result_i(be_calculator.comp_stage_n[3])
-       ,.fwb_result_i(be_calculator.comp_stage_n[4])
-  
-       ,.cmt_trace_exc_i(be_calculator.exc_stage_n[1+:5])
-  
-       ,.trap_v_i(be_mem.csr.trap_pkt_cast_o._interrupt | be_mem.csr.trap_pkt_cast_o.exception)
-       ,.mtvec_i(be_mem.csr.mtvec_n)
-       ,.mtval_i(be_mem.csr.mtval_n[0+:vaddr_width_p])
-       ,.ret_v_i(be_mem.csr.trap_pkt_cast_o.eret)
-       ,.mepc_i(be_mem.csr.mepc_n[0+:vaddr_width_p])
-       ,.mcause_i(be_mem.csr.mcause_n)
-  
-       ,.priv_mode_i(be_mem.csr.priv_mode_n)
-       ,.mpp_i(be_mem.csr.mstatus_n.mpp)
-       );
-  
   bind bp_fe_icache
     bp_nonsynth_cache_tracer
      #(.bp_params_p(bp_params_p)
@@ -374,7 +338,7 @@ bind bp_be_top
 
      ,.commit_v_i(be_calculator.commit_pkt.instret)
 
-     ,.program_finish_i(testbench.program_finish)
+     ,.program_finish_i(testbench.program_finish | testbench.cosim_finish_lo)
      );
 
   bind bp_be_top
@@ -451,7 +415,7 @@ bind bp_be_top
       (.clk_i(clk_i & (testbench.core_profile_p == 1))
        ,.reset_i(reset_i)
        ,.freeze_i(be.be_checker.scheduler.int_regfile.cfg_bus.freeze)
-
+  
        ,.mhartid_i(be.be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
        ,.fe_wait_stall(fe.pc_gen.is_wait)
@@ -460,14 +424,13 @@ bind bp_be_top
        ,.itlb_miss(fe.mem.itlb_miss_r)
        ,.icache_miss(~fe.mem.icache.vaddr_ready_o | fe.pc_gen.icache_miss)
        ,.icache_fence(fe.mem.icache.fencei_req)
-       ,.branch_override(fe.pc_gen.ovr_taken | fe.pc_gen.ovr_ntaken)
+       ,.branch_override(fe.pc_gen.ovr_taken & ~fe.pc_gen.ovr_ret)
+       ,.ret_override(fe.pc_gen.ovr_ret)
 
        ,.fe_cmd(fe.pc_gen.fe_cmd_yumi_o & ~fe.pc_gen.attaboy_v)
 
-       ,.cmd_fence(be.be_checker.director.suppress_iss_o)
-
-       ,.target_mispredict(be.be_checker.scheduler.npc_mismatch & ~be.be_calculator.pipe_int.decode.br_v)
-       ,.dir_mispredict(be.be_checker.scheduler.npc_mismatch & be.be_calculator.pipe_int.decode.br_v)
+       ,.mispredict(be.be_checker.director.npc_mismatch_v)
+       ,.target(be.be_checker.director.isd_status.isd_pc)
 
        ,.dtlb_miss(be.be_mem.dtlb_miss_r)
        ,.dcache_miss(~be.be_mem.dcache.ready_o)

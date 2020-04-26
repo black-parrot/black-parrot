@@ -40,6 +40,7 @@ module bp_be_scheduler
   , output [isd_status_width_lp-1:0]   isd_status_o
   , input [vaddr_width_p-1:0]          expected_npc_i
   , input                              poison_iss_i
+  , input                              poison_isd_i
   , input                              dispatch_v_i
   , input                              cache_miss_v_i
   , input                              cmt_v_i
@@ -97,15 +98,14 @@ bsg_dff_reset_en
    ,.data_o({issue_pkt_v_r, issue_pkt_r})
    );
 
-wire npc_mismatch = isd_status.isd_v & (expected_npc_i != issue_pkt_r.pc);
 bsg_dff_reset_en
  #(.width_p(1))
  issue_status_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(issue_v | (dispatch_v_i & ~accept_irq_i) | poison_iss_i | npc_mismatch)
+   ,.en_i(issue_v | (dispatch_v_i & ~accept_irq_i) | poison_iss_i | poison_isd_i)
 
-   ,.data_i(poison_iss_i | npc_mismatch)
+   ,.data_i(poison_iss_i | poison_isd_i)
    ,.data_o(poison_iss_r)
    );
 
@@ -248,7 +248,7 @@ always_comb
 
     // Form dispatch packet
     dispatch_pkt.v      = (issue_pkt_v_r | accept_irq_i) & dispatch_v_i;
-    dispatch_pkt.poison = (poison_iss_r | npc_mismatch | ~dispatch_pkt.v)
+    dispatch_pkt.poison = (poison_iss_r | poison_isd_i | ~dispatch_pkt.v)
                           & ~(accept_irq_i & dispatch_v_i);
     dispatch_pkt.pc     = expected_npc_i;
     dispatch_pkt.instr  = issue_pkt_r.instr;

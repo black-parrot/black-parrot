@@ -49,6 +49,7 @@
     logic                              v;                                                          \
     logic                              queue_v;                                                    \
     logic                              instr_v;                                                    \
+    logic                              pipe_ctrl_v;                                                \
     logic                              pipe_int_v;                                                 \
     logic                              pipe_mem_v;                                                 \
     logic                              pipe_mul_v;                                                 \
@@ -71,6 +72,7 @@
   typedef struct packed                                                                            \
   {                                                                                                \
     logic                              v;                                                          \
+    logic                              ctrl_iwb_v;                                                 \
     logic                              int_iwb_v;                                                  \
     logic                              mul_iwb_v;                                                  \
     logic                              mem_iwb_v;                                                  \
@@ -104,6 +106,7 @@
     logic                                    ex1_instr_v;                                          \
     logic [vaddr_width_p-1:0]                ex1_npc;                                              \
     logic                                    ex1_br_or_jmp;                                        \
+    logic                                    ex1_btaken;                                           \
                                                                                                    \
     logic                                    long_busy;                                            \
                                                                                                    \
@@ -175,7 +178,7 @@
 `define bp_be_pipe_stage_reg_width(vaddr_width_mp) \
    (vaddr_width_mp                                                                                 \
    + rv64_instr_width_gp                                                                           \
-   + 13                                                                                            \
+   + 14                                                                                            \
    )
 
 `define bp_be_comp_stage_reg_width \
@@ -185,12 +188,12 @@
   (1 + vaddr_width_mp + branch_metadata_fwd_width_mp + 5 + rv64_reg_addr_width_gp +  2 + rv64_reg_addr_width_gp)
 
 `define bp_be_dep_status_width \
-  (8 + rv64_reg_addr_width_gp)
+  (9 + rv64_reg_addr_width_gp)
 
 `define bp_be_calc_status_width(vaddr_width_mp) \
   (2                                                                                               \
    + vaddr_width_p                                                                                 \
-   + 2                                                                                             \
+   + 3                                                                                             \
    + 6 * `bp_be_dep_status_width                                                                   \
    )                                                                                               
 

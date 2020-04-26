@@ -33,6 +33,8 @@ module bp_be_director
    , localparam tlb_entry_width_lp   = `bp_pte_entry_leaf_width(paddr_width_p)
    , localparam commit_pkt_width_lp  = `bp_be_commit_pkt_width(vaddr_width_p)
    , localparam trap_pkt_width_lp    = `bp_be_trap_pkt_width(vaddr_width_p)
+
+   , localparam debug_lp = 0
    )
   (input                              clk_i
    , input                            reset_i
@@ -44,6 +46,7 @@ module bp_be_director
    , input [isd_status_width_lp-1:0]  isd_status_i
    , input [calc_status_width_lp-1:0] calc_status_i
    , output [vaddr_width_p-1:0]       expected_npc_o
+   , output                           poison_isd_o
    , output logic                     flush_o
 
    // FE-BE interface
@@ -95,7 +98,7 @@ logic                                   npc_mismatch_v;
 enum logic [1:0] {e_reset, e_boot, e_run, e_fence} state_n, state_r;
 
 // Control signals
-logic npc_w_v, attaboy_pending;
+logic npc_w_v, btaken_pending, attaboy_pending;
 
 logic [vaddr_width_p-1:0] br_mux_o, roll_mux_o, ret_mux_o, exc_mux_o;
 
@@ -159,20 +162,22 @@ bsg_mux
    );
 
 assign npc_mismatch_v = isd_status.isd_v & (expected_npc_o != isd_status.isd_pc);
+assign poison_isd_o = npc_mismatch_v;
 
 // Last operation was branch. Was it successful? Let's find out
 // TODO: I think this is wrong, may send extra attaboys
 bsg_dff_reset_en
- #(.width_p(1))
+ #(.width_p(2))
  attaboy_pending_reg
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.en_i(calc_status.ex1_v | fe_cmd_v_o)
+   ,.en_i(calc_status.ex1_v || isd_status.isd_v)
 
-   ,.data_i(calc_status.ex1_br_or_jmp)
-   ,.data_o(attaboy_pending)
+   ,.data_i({(calc_status.ex1_v & calc_status.ex1_btaken) & ~isd_status.isd_v, (calc_status.ex1_v & calc_status.ex1_br_or_jmp) & ~isd_status.isd_v})
+   ,.data_o({btaken_pending, attaboy_pending})
    );
-wire last_instr_was_branch = attaboy_pending | calc_status.ex1_br_or_jmp;
+wire last_instr_was_branch = attaboy_pending | (calc_status.ex1_v & calc_status.ex1_br_or_jmp);
+wire last_instr_was_btaken = btaken_pending | (calc_status.ex1_v & calc_status.ex1_btaken);
 
 // Generate control signals
 // On a cache miss, this is actually the generated pc in ex1. We could use this to redirect during 
@@ -290,21 +295,42 @@ always_comb
         fe_cmd_pc_redirect_operands.branch_metadata_fwd  = isd_status.isd_branch_metadata_fwd;
         // TODO: Add not a branch case
         fe_cmd_pc_redirect_operands.misprediction_reason = last_instr_was_branch
-                                                           ? e_incorrect_prediction
+                                                           ? last_instr_was_btaken
+                                                             ? e_incorrect_pred_taken
+                                                             : e_incorrect_pred_ntaken
                                                            : e_not_a_branch;
         fe_cmd.operands.pc_redirect_operands             = fe_cmd_pc_redirect_operands;
 
         fe_cmd_v = fe_cmd_ready_i;
       end 
     // Send an attaboy if there's a correct prediction
-    else if (isd_status.isd_v & ~npc_mismatch_v & attaboy_pending) 
+    else if (isd_status.isd_v & ~npc_mismatch_v & last_instr_was_branch) 
       begin
         fe_cmd.opcode                      = e_op_attaboy;
         fe_cmd.vaddr                       = expected_npc_o;
+        fe_cmd.operands.attaboy.taken               = last_instr_was_btaken;
         fe_cmd.operands.attaboy.branch_metadata_fwd = isd_status.isd_branch_metadata_fwd;
 
         fe_cmd_v = fe_cmd_ready_i;
       end
+  end
+
+
+`declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p);
+bp_fe_branch_metadata_fwd_s attaboy_md;
+bp_fe_branch_metadata_fwd_s redir_md;
+
+assign attaboy_md = fe_cmd.operands.attaboy.branch_metadata_fwd;
+assign redir_md = fe_cmd.operands.pc_redirect_operands.branch_metadata_fwd;
+
+always_ff @(negedge clk_i)
+  if (debug_lp) begin
+    if (fe_cmd_v_o & (fe_cmd.opcode == e_op_pc_redirection))
+      $display("[REDIR  ] %x->%x %p", isd_status.isd_pc, fe_cmd.vaddr, redir_md);
+    else if (fe_cmd_v_o & (fe_cmd.opcode == e_op_attaboy))
+      $display("[ATTABOY] %x %p", fe_cmd.vaddr, attaboy_md);
+    else if (isd_status.isd_v)
+      $display("[FETCH  ] %x   ", isd_status.isd_pc);
   end
 
 endmodule
