@@ -108,8 +108,8 @@ module bp_fe_icache
   assign cache_req_o = cache_req_cast_lo;
   assign cache_req_metadata_o = cache_req_metadata_cast_lo;
 
+  logic [vtag_width_p-1:0]              vaddr_vtag;
   logic [index_width_lp-1:0]            vaddr_index;
-
   logic [bank_offset_width_lp-1:0]      vaddr_offset;
 
   logic [icache_assoc_p-1:0]            way_v_tv_r; // valid bits of each way
@@ -121,6 +121,7 @@ module bp_fe_icache
 
   assign vaddr_index      = vaddr_i[block_offset_width_lp+:index_width_lp];
   assign vaddr_offset     = vaddr_i[byte_offset_width_lp+:bank_offset_width_lp];
+  assign vaddr_vtag       = vaddr_i[block_offset_width_lp+index_width_lp+:vtag_width_p];
 
   // TL stage
   logic v_tl_r;
@@ -141,15 +142,15 @@ module bp_fe_icache
       if (tl_we) begin
         page_offset_tl_r <= vaddr_i[bp_page_offset_width_gp-1:0];
         vaddr_tl_r       <= vaddr_i;
-        fencei_op_tl_r    <= fencei_v_i;
+        fencei_op_tl_r   <= fencei_v_i;
       end
     end
   end
 
   // tag memory
-  logic                                     tag_mem_v_li;
-  logic                                     tag_mem_w_li;
-  logic [index_width_lp-1:0]                tag_mem_addr_li;
+  logic                                                                tag_mem_v_li;
+  logic                                                                tag_mem_w_li;
+  logic [index_width_lp-1:0]                                           tag_mem_addr_li;
   logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)+ptag_width_lp-1:0] tag_mem_data_li;
   logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)+ptag_width_lp-1:0] tag_mem_w_mask_li;
   logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)+ptag_width_lp-1:0] tag_mem_data_lo;
@@ -157,6 +158,7 @@ module bp_fe_icache
   bsg_mem_1rw_sync_mask_write_bit #(
     .width_p(icache_assoc_p*($bits(bp_coh_states_e)+ptag_width_lp))
     ,.els_p(icache_sets_p)
+    ,.latch_last_read_p(1)
   ) tag_mem (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -208,11 +210,15 @@ module bp_fe_icache
   logic [icache_assoc_p-1:0]       hit_v_tl;
   logic [paddr_width_p-1:0]        addr_tl;
   logic [icache_assoc_p-1:0]       way_v_tl;
-
+  logic [index_width_lp-1:0]       vaddr_index_tl;
+  logic [vtag_width_p-1:0]         vaddr_vtag_tl;
+   
   assign addr_tl = {ptag_i, vaddr_tl_r[0+:bp_page_offset_width_gp]};
-
   assign addr_tag_tl = addr_tl[block_offset_width_lp+index_width_lp+:ptag_width_lp];
   assign addr_bank_offset_tl = addr_tl[byte_offset_width_lp+:bank_offset_width_lp];
+
+  assign vaddr_index_tl = vaddr_tl_r[block_offset_width_lp+:index_width_lp];
+  assign vaddr_vtag_tl = vaddr_tl_r[block_offset_width_lp+index_width_lp+:vtag_width_p];
 
   for (genvar i = 0; i < icache_assoc_p; i++) begin: tag_comp_tl
     assign hit_v_tl[i]   = (tag_tl[i] == addr_tag_tl) && (state_tl[i] != e_COH_I);
@@ -227,9 +233,9 @@ module bp_fe_icache
      );
 
   // TV stage
-  logic v_tv_r;
-  logic tv_we;
-  logic uncached_tv_r;
+  logic                                                      v_tv_r;
+  logic                                                      tv_we;
+  logic                                                      uncached_tv_r;
   logic [paddr_width_p-1:0]                                  addr_tv_r;
   logic [vaddr_width_p-1:0]                                  vaddr_tv_r;
   logic [icache_assoc_p-1:0][ptag_width_lp-1:0]              tag_tv_r;
@@ -441,11 +447,43 @@ module bp_fe_icache
   logic [icache_assoc_p-1:0][bank_width_lp-1:0]               data_mem_pkt_data_expanded;
   logic [block_size_in_fill_lp-1:0][fill_size_in_bank_lp-1:0] data_mem_pkt_fill_mask_expanded;
 
+  logic                      data_mem_last_read_r;
+  logic                      data_mem_bypass;
+  logic [icache_assoc_p-1:0] data_mem_bypass_select;
+  logic [icache_assoc_p-1:0] vaddr_offset_dec;
+
+  // during a data mem bypass, only the necessary bank of data memory will be valid
+  bsg_dff_reset #(.width_p(1))
+    data_mem_last_read_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.data_i(tl_we)
+     ,.data_o(data_mem_last_read_r)
+    );
+
+  bsg_decode #(.num_out_p(icache_assoc_p)) 
+    input_offset_decode 
+    (.i(vaddr_offset)
+     ,.o(vaddr_offset_dec)
+    );
+
+  bsg_adder_one_hot #(.width_p(icache_assoc_p))
+    data_mem_bank_select_adder
+    (.a_i(hit_v_tl)
+     ,.b_i(vaddr_offset_dec)
+     ,.o(data_mem_bypass_select)
+    );
+
+  // the following bypass logic assumes that vtag->ptag mapping will not change during bypass
+  assign data_mem_bypass = (vaddr_vtag == vaddr_vtag_tl) & (vaddr_index == vaddr_index_tl) & data_mem_last_read_r;
+
   assign data_mem_v = (data_mem_pkt.opcode != e_cache_data_mem_uncached)
     & data_mem_pkt_yumi_o;
 
   assign data_mem_v_li = tl_we
-    ? {icache_assoc_p{1'b1}}
+    ? data_mem_bypass
+      ? data_mem_bypass_select 
+      : {icache_assoc_p{1'b1}}
     : {icache_assoc_p{data_mem_v}};
 
   assign data_mem_w_li = data_mem_pkt_yumi_o
@@ -489,7 +527,23 @@ module bp_fe_icache
   );
 
   // tag_mem
-  assign tag_mem_v_li = tl_we | tag_mem_pkt_yumi_o;
+  logic tag_mem_bypass;
+  logic tag_mem_last_read_r;
+
+  // tag mem is bypassed if the index is the same on consecutive reads
+  bsg_dff_reset_set_clear #(
+    .width_p(1)
+    ,.clear_over_set_p(1)
+  ) tag_mem_last_read_reg (
+    .clk_i(clk_i)
+    ,.reset_i(reset_i)
+    ,.set_i(tl_we)
+    ,.clear_i(tag_mem_w_li)
+    ,.data_o(tag_mem_last_read_r)
+  ); 
+
+  assign tag_mem_bypass = (vaddr_index == vaddr_index_tl) & tag_mem_last_read_r;
+  assign tag_mem_v_li = (tl_we & ~tag_mem_bypass) | tag_mem_pkt_yumi_o;
   assign tag_mem_w_li = ~tl_we & tag_mem_pkt_v_i;
   assign tag_mem_addr_li = tl_we
     ? vaddr_index

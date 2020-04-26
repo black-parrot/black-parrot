@@ -98,6 +98,7 @@ bp_tlb
    ,.translation_en_i(mem_translation_en_i)
 
    ,.v_i(fetch_v | itlb_fill_v)
+         
    ,.w_i(itlb_fill_v)
    ,.vtag_i(itlb_fill_v ? mem_cmd_cast_i.operands.fill.vtag : mem_cmd_cast_i.operands.fetch.vaddr.tag)
    ,.entry_i(mem_cmd_cast_i.operands.fill.entry)
