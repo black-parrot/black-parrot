@@ -1,15 +1,30 @@
+override TOOL := vcs
 
-PYTHON           ?= python
+override LOG_DIR     := $(LOG_PATH)/$(TOOL)
+override RESULTS_DIR := $(RESULTS_PATH)/$(TOOL)
+override REPORT_DIR  := $(REPORT_PATH)/$(TOOL)
+override TOUCH_DIR   := $(TOUCH_PATH)/$(TOOL)
 
-BLOODGRAPH ?= $(BP_COMMON_DIR)/software/py/blood_graph.py --generate --generate-key
+override LINT_DIR  := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).lint
+override BUILD_DIR := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).build
+override SIM_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG)
+override COV_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).cov
+$(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR) $(BUILD_DIR) $(SIM_DIR) $(COV_DIR):
+	mkdir -p $@
+
+.PHONY: clean.v lint.v build.v sim.v cov.v
+
+include $(TB_PATH)/$(TB)/Makefile.vcs
 
 ## Tool specific options
-VCS_OPTIONS ?= +vcs+finish+5000000000ps   # Change this to run longer / shorter
+LINT_VCS_OPTIONS = +lint=all,noSVA-UA,noSVA-NSVU,noNS,noVCDE
+
+VCS_OPTIONS  = +vcs+finish+5000000000ps   # Change this to run longer / shorter
 VCS_OPTIONS += +vcs+lic+wait              # Wait for license
 VCS_OPTIONS += +libext+.v+.vlib+.vh       # Find library files with these extensions
 VCS_OPTIONS += +vcs+loopdetect +vcs+loopreport
 
-VCS_BUILD_OPTS += -full64             # Compile a 64-bit executable
+VCS_BUILD_OPTS  = -full64             # Compile a 64-bit executable
 VCS_BUILD_OPTS += -notice
 VCS_BUILD_OPTS += -V
 VCS_BUILD_OPTS += +v2k
@@ -21,141 +36,97 @@ VCS_BUILD_OPTS += -diag timescale
 VCS_BUILD_OPTS += -CFLAGS "-I$(BP_EXTERNAL_DIR)/include -std=c++11"
 VCS_BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -ldramsim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
 VCS_BUILD_OPTS += +lint=TFIPC-L
-VCS_BUILD_OPTS += $(BP_EXTERNAL_DIR)/lib/libdromajo_cosim.a
-
-LINT_OPTIONS = +lint=all,noSVA-UA,noSVA-NSVU,noNS,noVCDE
-
-DUMP ?= 0
-COV  ?= 0
-
-ifeq ($(DUMP), 1)
-VCS_BUILD_OPTS += -debug_pp
-VCS_BUILD_OPTS += +memcbk
 VCS_BUILD_OPTS += +plusarg_save
-VCS_BUILD_OPTS += +vcs+vcdpluson
-VCS_BUILD_OPTS += +vcs+vcdplusmemon
-VCS_BUILD_OPTS += +vcs+vcdplusautoflushon
-endif
+VCS_BUILD_OPTS += $(BP_EXTERNAL_DIR)/lib/libdromajo_cosim.a
+VCS_BUILD_OPTS += -top test_bp
+VCS_BUILD_OPTS += -f flist.vcs 
 
-ifeq ($(COV), 1)
-VCS_OPTIONS += -cm line+tgl
-VCS_OPTIONS += -cm_dir $(COV_DIR)/$(PROG)
-VCS_BUILD_OPTS += -cm_hier $(SYN_PATH)/coverage_hier.vcs
-VCS_BUILD_OPTS += -cm_line contassign
-VCS_BUILD_OPTS += -cm_noconst
-VCS_BUILD_OPTS += -cm_seqnoconst
+VCS_PLUSARGS  =
 
 URG_OPTIONS = -full64
 URG_OPTIONS += -show tests
 URG_OPTIONS += -dir $(COV_DIR)/*
 URG_OPTIONS += -format both
 URG_OPTIONS += -dbname coverage
-endif
 
-.PHONY: deps.v lint.v build.v run.v sim.v clean.v
+lint.v: $(LINT_DIR)/lintv
+lint.v: LINT_LOG     := $(LOG_DIR)/$(TB).$(CFG).lint.log
+lint.v: LINT_REPORT  := $(REPORT_DIR)/$(TB).$(CFG).lint.rpt
+lint.v: LINT_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).lint.err
+$(LINT_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR)
+$(LINT_DIR)/lintv: | $(LINT_COLLATERAL)
+	cd $(@D); \
+		$(VCS) $(VCS_BUILD_OPTS) $(LINT_VCS_OPTIONS) $(HDL_PARAMS) $(HDL_DEFINES) -o $@ | tee $(LINT_LOG)
+	-@grep -A5 "Lint" $(LINT_LOG) > $(LINT_REPORT)
 
-# Alias run.v to sim.v
-run.v: sim.v
+build.v: $(BUILD_DIR)/simv
+build.v: BUILD_LOG    := $(LOG_DIR)/$(TB).$(CFG).build.log
+build.v: BUILD_REPORT := $(REPORT_DIR)/$(TB).$(CFG).build.rpt
+build.v: BUILD_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).build.err
+$(BUILD_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
+$(BUILD_DIR)/simv: | $(BUILD_COLLATERAL)
+	cd $(@D); \
+		$(VCS) $(VCS_BUILD_OPTS) $(VCS_OPTIONS) $(HDL_PARAMS) $(HDL_DEFINES) -o $@ | tee $(BUILD_LOG)
+	-@grep "Error" -A5 $(BUILD_LOG) > $(BUILD_ERROR)
+	-@tail -n3 $(BUILD_LOG) > $(BUILD_REPORT)
+	-@test -s $(BUILD_ERROR) && echo "FAILED" >> $(BUILD_REPORT) || rm $(BUILD_ERROR)
 
-dirs.v:
-	$(eval RESULTS_DIR := $(RESULTS_PATH)/vcs)
-	$(eval REPORT_DIR  := $(REPORT_PATH)/vcs)
-	$(eval SIM_DIR     := $(RESULTS_DIR)/$(TB).$(CFG).sim/$(PROG))
-	$(eval BUILD_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).build)
-	$(eval COV_DIR     := $(RESULTS_DIR)/$(TB).$(CFG).cov)
-	$(eval LOG_DIR     := $(LOG_PATH)/vcs)
+build_dump.v: VCS_BUILD_OPTS += -debug_pp
+build_dump.v: build.v
 
-	$(shell mkdir -p $(LOG_DIR))
-	$(shell mkdir -p $(REPORT_DIR))
+build_cov.v: VCS_BUILD_OPTS += -cm line+tgl
+build_cov.v: VCS_BUILD_OPTS += -cm_dir $(COV_DIR)/$(SUITE)_$(PROG)
+build_cov.v: VCS_BUILD_OPTS += -cm_hier $(SYN_PATH)/coverage_hier.vcs
+build_cov.v: VCS_BUILD_OPTS += -cm_line contassign
+build_cov.v: VCS_BUILD_OPTS += -cm_noconst
+build_cov.v: VCS_BUILD_OPTS += -cm_seqnoconst
+build_cov.v: build.v
 
-lint.v: VCS_BUILD_OPTS += $(LINT_OPTIONS)
-lint.v: override BUILD_LOG    = $(LOG_DIR)/$(TB).$(CFG).lint.log
-lint.v: override BUILD_REPORT = $(REPORT_DIR)/$(TB).$(CFG).lint.rpt
-lint.v: override BUILD_ERROR  = $(REPORT_DIR)/$(TB).$(CFG).lint.err
-lint.v: build.v
-
-BUILD_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).build.log
-BUILD_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).build.rpt
-BUILD_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).build.err
-pre-build.v: dirs.v
-	$(shell mkdir -p $(BUILD_DIR))
-	$(eval include $(TB_PATH)/$(TB)/Makefile.frag) 
-	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/testbench.v > $(BUILD_DIR)/testbench.v
-	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v   > $(BUILD_DIR)/wrapper.v
-	-@cp $(TB_PATH)/$(TB)/test_bp.v $(BUILD_DIR)/test_bp.v
-	-@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $(BUILD_DIR)/flist.vcs
-	-@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $(BUILD_DIR)/flist.vcs
-	-@echo $(BUILD_DIR)/wrapper.v                 >> $(BUILD_DIR)/flist.vcs
-	-@echo $(BUILD_DIR)/testbench.v               >> $(BUILD_DIR)/flist.vcs
-	-@echo $(BUILD_DIR)/test_bp.v                 >> $(BUILD_DIR)/flist.vcs
-
-build.v: pre-build.v
-	-cd $(BUILD_DIR); $(VCS) $(VCS_OPTIONS) $(VCS_BUILD_OPTS) $(HDL_PARAMS) $(HDL_DEFINES) -top test_bp -f flist.vcs -o simv \
-	| tee $(BUILD_LOG)
-	-@grep "Error" -A 5 $(BUILD_LOG) > $(BUILD_ERROR);
-	-@tail -n 2 $(BUILD_LOG) > $(BUILD_REPORT)
-	-@test -s $(BUILD_ERROR) && echo "FAILED" >> $(BUILD_REPORT) \
-	|| rm $(BUILD_ERROR)
-
-sim.v: SIM_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).sim.$(PROG).log
-sim.v: SIM_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).sim.$(PROG).rpt
-sim.v: SIM_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).sim.$(PROG).err
-sim.v: PROG ?= hello_world
-sim.v: dirs.v
-	$(shell mkdir -p $(SIM_DIR))
-	-@ln -sf $(BUILD_DIR)/simv $(SIM_DIR)/simv
-	-@ln -sf $(BUILD_DIR)/simv.daidir $(SIM_DIR)/simv.daidir
-	-@cp $(MEM_PATH)/$(PROG).nbf $(SIM_DIR)/prog.nbf
-	-@cp $(MEM_PATH)/$(PROG).mem $(SIM_DIR)/prog.mem
-	-@cp $(MEM_PATH)/$(PROG).riscv $(SIM_DIR)/prog.elf
-	-@cp $(MEM_PATH)/$(PROG).dump $(SIM_DIR)/prog.dump
-	-@cp $(MEM_PATH)/$(PROG).mainram $(SIM_DIR)/prog.mainram
-	-@cp $(MEM_PATH)/$(PROG).bootram $(SIM_DIR)/prog.bootram
-	-@cp $(BP_COMMON_DIR)/test/cfg/cosim.cfg $(SIM_DIR)/prog.cfg
-	-@cp $(MEM_PATH)/$(PROG).cfg $(SIM_DIR)/prog.cfg
-	-@cp $(MEM_PATH)/$(PROG).spike $(SIM_DIR)/commit.spike
-	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(SIM_DIR)/dram_ch.ini
-	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(SIM_DIR)/dram_sys.ini
-	-@cp $(CCE_MEM_PATH)/$(CCE_MEM) $(SIM_DIR)/cce_ucode.mem
-	-cd $(SIM_DIR); ./simv $(VCS_OPTIONS) | tee $(SIM_LOG) 
+sim.v: build.v
+sim.v: $(SIM_DIR)/run_simv
+sim.v: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).sim.log
+sim.v: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).sim.rpt
+sim.v: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).sim.err
+$(SIM_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
+$(SIM_DIR)/run_simv: | $(SIM_COLLATERAL)
+	cd $(@D); ./simv $(VCS_OPTIONS) $(VCS_PLUSARGS) | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
 
-regress_riscv.v: $(RV64_REGRESSION_V) 
-$(RV64_REGRESSION_V):
-	$(MAKE) sim.v PROG=$(basename $@)
-$(COREMARK_REGRESSION_V):
-	$(MAKE) sim.v PROG=$(basename $@)
-regress_beebs.v: $(BEEBS_REGRESSION_V)
-$(BEEBS_REGRESSION_V):
-	$(MAKE) sim.v PROG=$(basename $@)
-regress_mc.v: $(MC_REGRESSION_V)
-$(MC_REGRESSION_V):
-	$(MAKE) sim.v CFG=$(CFG) PROG=$(basename $@)
-regress_dv.v: $(DV_REGRESSION_V)
-$(DV_REGRESSION_V):
-	$(MAKE) sim.v PROG=$(basename $@)
+sim_dump.v: VCS_OPTIONS += +memcbk
+sim_dump.v: VCS_OPTIONS += +vcs+vcdpluson
+sim_dump.v: VCS_OPTIONS += +vcs+vcdplusmemon
+sim_dump.v: VCS_OPTIONS += +vcs+vcdplusautoflushon
+sim_dump.v: sim.v
 
-cov.v: COV_LOG     ?= $(LOG_DIR)/$(TB).$(CFG).cov.log
-cov.v: COV_REPORT  ?= $(REPORT_DIR)/$(TB).$(CFG).cov
-cov.v: COV_HREPORT ?= $(REPORT_DIR)/$(TB).$(CFG).cov.hier.rpt
-cov.v: COV_TREPORT ?= $(REPORT_DIR)/$(TB).$(CFG).cov.test.rpt
-cov.v: COV_ERROR   ?= $(REPORT_DIR)/$(TB).$(CFG).cov.err
-cov.v: dirs.v
-	$(shell mkdir -p $(COV_DIR))
-	cd $(COV_DIR); $(URG) $(URG_OPTIONS) -log $(COV_LOG) -report $(COV_REPORT)
+sim_cov.v: VCS_OPTIONS += -cm line+tgl
+sim_cov.v: sim.v
+
+cov.v: $(COV_DIR)/covv
+cov.v: COV_LOG     := $(LOG_DIR)/$(TB).$(CFG).cov.log
+cov.v: COV_REPORT  := $(REPORT_DIR)/$(TB).$(CFG).cov
+cov.v: COV_HREPORT := $(REPORT_DIR)/$(TB).$(CFG).cov.hier.rpt
+cov.v: COV_TREPORT := $(REPORT_DIR)/$(TB).$(CFG).cov.test.rpt
+cov.v: COV_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).cov.err
+$(COV_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(COV_DIR)
+$(COV_DIR)/covv: | $(COV_COLLATERAL)
+	cd $(@D); $(URG) $(URG_OPTIONS) -log $(COV_LOG) -report $(COV_REPORT)
 	@cp $(COV_REPORT)/tests.txt $(COV_TREPORT)
 	@cp $(COV_REPORT)/hierarchy.txt $(COV_HREPORT) 
 
-wave.v: dirs.v
-	cd $(SIM_DIR); $(DVE) -full64 -vpd vcdplus.vpd &
+wave.v: $(SIM_DIR)/wavev
+$(SIM_DIR)/wavev:
+	cd $(@D); $(_DVE) -full64 -vpd vcdplus.vpd &
 
 # TODO: Make compatible with multi-core
-blood.v: dirs.v
-	cd $(SIM_DIR); $(PYTHON) $(BLOODGRAPH) --input $(SIM_DIR)/stall_0.trace
+BLOODGRAPH ?= $(BP_COMMON_DIR)/software/py/blood_graph.py --generate --generate-key
+blood.v: $(SIM_DIR)/bloodv
+$(SIM_DIR)/bloodv:
+	cd $(@D); $(PYTHON) $(BLOODGRAPH) --input $(@D)/stall_0.trace
 
 clean.v:
-	@rm -rf results/vcs
-	@rm -rf reports/vcs
-	@rm -rf logs/vcs
+	@-rm -rf touchfiles/vcs
+	@-rm -rf results/vcs
+	@-rm -rf reports/vcs
+	@-rm -rf logs/vcs
 

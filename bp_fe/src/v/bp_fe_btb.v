@@ -49,6 +49,7 @@ logic                       tag_mem_v_lo;
 
 logic [vaddr_width_p-1:0]   tgt_mem_li, tgt_mem_lo;
 logic [btb_idx_width_p-1:0] tgt_mem_addr_li;
+logic                       tag_jmp_lo;
    
 logic [btb_tag_width_p-1:0] w_tag_n, w_tag_r;
 logic [btb_tag_width_p-1:0] r_tag_n, r_tag_r;

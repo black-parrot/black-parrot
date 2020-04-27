@@ -5,28 +5,26 @@ include $(TOP)/Makefile.common
 
 export SYN_PATH     := $(BP_TOP_DIR)/syn
 export TB_PATH      := $(BP_TOP_DIR)/test/tb
-export MEM_PATH     := $(BP_COMMON_DIR)/test/mem
 
 export LOG_PATH     := $(BP_TOP_DIR)/syn/logs
 export RESULTS_PATH := $(BP_TOP_DIR)/syn/results
 export REPORT_PATH  := $(BP_TOP_DIR)/syn/reports
+export TOUCH_PATH   := $(BP_TOP_DIR)/syn/touchfiles
 
-TB          ?= bp_softcore
-CFG         ?= e_bp_softcore_cfg
+export TB    ?= bp_softcore
+export CFG   ?= e_bp_softcore_cfg
+export SUITE ?= bp_tests
+export PROG  ?= hello_world
+export TAG   ?= none
 
-COH_PROTO   ?= mesi
-CCE_MEM_PATH = $(BP_ME_DIR)/src/asm/roms
-CCE_MEM      = $(COH_PROTO).mem
-
-DRAMSIM_CH_CFG  ?= DDR3_micron_32M_8B_x8_sg25E.ini
-DRAMSIM_SYS_CFG ?= system.ini
-
+include $(BP_TEST_DIR)/Makefile.tests
+include $(TB_PATH)/$(TB)/Makefile.params
+include $(TB_PATH)/$(TB)/Makefile.testlist
 include $(BP_COMMON_DIR)/syn/Makefile.common
 include $(BP_COMMON_DIR)/syn/Makefile.dc
 include $(BP_COMMON_DIR)/syn/Makefile.regress
 include $(BP_COMMON_DIR)/syn/Makefile.verilator
 include $(BP_COMMON_DIR)/syn/Makefile.vcs
-include $(BP_COMMON_DIR)/syn/Makefile.sv2v
 
 regress.top: regress
 regress: regress.v check_design.syn
@@ -51,5 +49,5 @@ regress.list.common:
 regress.list.common.run_in_parallel: $(foreach p, $(LIST_PROGS), regress.list.common.launch_run.$p)
 
 regress.list.common.launch_run.%:
-	$(MAKE) run.$(_TS) PROG=$*
+	$(MAKE) sim.$(_TS) SUITE=beebs PROG=$*
 

@@ -1,152 +1,115 @@
+override TOOL := verilator
+
+override LOG_DIR     := $(LOG_PATH)/$(TOOL)
+override RESULTS_DIR := $(RESULTS_PATH)/$(TOOL)
+override REPORT_DIR  := $(REPORT_PATH)/$(TOOL)
+override TOUCH_DIR   := $(TOUCH_PATH)/$(TOOL)
+
 ## Tools
 CC ?= $(GCC)
 VV ?= $(VERILATOR)
-PYTHON    ?= python
+
+TOP_MODULE ?= testbench
 
 ## Tool options
 VV_OPTS  = --sc                 # Output in SystemC rather than C++
 #VV_OPTS += --debug --gdbbt     # Debugs and produces stack trace
 VV_OPTS += -O1
+VV_OPTS += --top-module $(TOP_MODULE)
+VV_OPTS += -f flist.vcs
+VV_OPTS += config.vlt
+VV_OPTS += -o simsc
 
-LINT_OPTS   = --lint-only -Wall --Wno-unoptflat 
+LINT_OPTS   = --lint-only -Wall --Wno-unoptflat --top-module $(TOP_MODULE) -f flist.vcs config.vlt
 BUILD_OPTS  = --Wno-fatal --Wno-lint --Wno-style --Wno-widthconcat --Wno-unoptflat --exe -CFLAGS -std=c++11 
 BUILD_OPTS += -I$(BP_EXTERNAL_DIR)/share/verilator/include/vltstd/ 
 BUILD_OPTS += -LDFLAGS "-L$(BP_EXTERNAL_DIR)/lib -lpthread -ldramsim -ldromajo_cosim -Wl,-rpath=$(BP_EXTERNAL_DIR)/lib"
 
-TOP_MODULE ?= testbench
+VERILATOR_OPTIONS =
 
-DUMP ?= 0
-COV  ?= 0
+VERILATOR_PLUSARGS =
 
-.PHONY: dirs.sc lint.sc build.sc run.sc clean.sc
+LINT_DIR  := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).lint
+BUILD_DIR := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).build
+SIM_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).cov
+SIM_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG)
+$(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR) $(BUILD_DIR) $(SIM_DIR):
+	mkdir -p $@
 
-run.sc: sim.sc
+.PHONY: clean.sc lint.sc build.sc run.sc cov.sc
 
-dirs.sc:
-	$(eval RESULTS_DIR := $(RESULTS_PATH)/verilator)
-	$(eval REPORT_DIR  := $(REPORT_PATH)/verilator)
-	$(eval SIM_DIR     := $(RESULTS_DIR)/$(TB).$(CFG).sim/$(PROG))
-	$(eval BUILD_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).build)
-	$(eval COV_DIR     := $(RESULTS_DIR)/$(TB).$(CFG).cov)
-	$(eval LOG_DIR     := $(LOG_PATH)/verilator)
+include $(TB_PATH)/$(TB)/Makefile.verilator
 
-	$(shell mkdir -p $(LOG_DIR))
-	$(shell mkdir -p $(REPORT_DIR))
-
-LINT_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).lint.log
-LINT_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).lint.rpt
-LINT_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).lint.err
-lint.sc: dirs.sc
-	$(shell mkdir -p $(BUILD_DIR))
-	$(eval include $(TB_PATH)/$(TB)/Makefile.frag)
-	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/testbench.v > $(BUILD_DIR)/testbench.v
-	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v > $(BUILD_DIR)/wrapper.v
-	-@cat $(SYN_PATH)/lint_settings.verilator | envsubst > $(BUILD_DIR)/config.vlt
-	-@cp $(TB_PATH)/$(TB)/test_bp.cpp $(BUILD_DIR)/test_bp.cpp
-	-@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $(BUILD_DIR)/flist.vcs 
-	-@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $(BUILD_DIR)/flist.vcs
-	-@echo $(BUILD_DIR)/wrapper.v                 >> $(BUILD_DIR)/flist.vcs
-	-@echo $(BUILD_DIR)/testbench.v               >> $(BUILD_DIR)/flist.vcs
-	-@echo $(BUILD_DIR)/test_bp.cpp               >> $(BUILD_DIR)/flist.vcs
-	cd $(BUILD_DIR); $(VV) $(LINT_OPTS) --top-module $(TOP_MODULE) \
-		config.vlt -f flist.vcs $(HDL_PARAMS) $(HDL_DEFINES) 2>&1 | tee $(LINT_LOG)
+lint.sc: $(LINT_DIR)/lintsc
+lint.sc: LINT_LOG    := $(LOG_DIR)/$(TB).$(CFG).lint.log
+lint.sc: LINT_REPORT := $(REPORT_DIR)/$(TB).$(CFG).lint.rpt
+lint.sc: LINT_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).lint.err
+$(LINT_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR)
+$(LINT_DIR)/lintsc: $(LINT_COLLATERAL)
+	cd $(@D); $(VV) $(LINT_OPTS) $(HDL_PARAMS) $(HDL_DEFINES) |& tee $(LINT_LOG)
 	-@grep -E "Exiting due to .* error\(s\)" -A 5 $(LINT_LOG) > $(LINT_ERROR)
 	-@test -s $(LINT_ERROR) && echo "FAILED" >> $(LINT_REPORT) \
 	|| { rm -f $(LINT_ERROR); echo "PASS" >> $(LINT_REPORT); }
 
-VBUILD_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).vbuild.log
-VBUILD_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).vbuild.rpt
-VBUILD_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).vbuild.err
-pre-verilate.sc: dirs.sc
-	$(shell mkdir -p $(BUILD_DIR))
-	$(eval include $(TB_PATH)/$(TB)/Makefile.frag)
-	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/testbench.v > $(BUILD_DIR)/testbench.v
-	-@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/wrapper.v > $(BUILD_DIR)/wrapper.v
-	-@cat $(SYN_PATH)/coverage_hier.verilator | envsubst > $(BUILD_DIR)/config.vlt
-	-@cp $(TB_PATH)/$(TB)/test_bp.cpp $(BUILD_DIR)/test_bp.cpp
-	-@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $(BUILD_DIR)/flist.vcs 
-	-@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $(BUILD_DIR)/flist.vcs
-	-@echo $(BUILD_DIR)/wrapper.v                 >> $(BUILD_DIR)/flist.vcs
-	-@echo $(BUILD_DIR)/testbench.v               >> $(BUILD_DIR)/flist.vcs
-	-@echo $(BUILD_DIR)/test_bp.cpp                >> $(BUILD_DIR)/flist.vcs
+verilate.sc: $(BUILD_DIR)/obj_dir
+verilate.sc: VBUILD_LOG    := $(LOG_DIR)/$(TB).$(CFG).vbuild.log
+verilate.sc: VBUILD_REPORT := $(REPORT_DIR)/$(TB).$(CFG).vbuild.rpt
+verilate.sc: VBUILD_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).vbuild.err
+$(VBUILD_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
+$(BUILD_DIR)/obj_dir: $(VBUILD_COLLATERAL)
+	cd $(@D); \
+		$(VV) $(VV_OPTS) $(BUILD_OPTS) $(HDL_PARAMS) $(HDL_DEFINES) | tee $(VBUILD_LOG)
+	-@grep "Error" -A 5 $(VBUILD_LOG) > $(VBUILD_ERROR)
+	-@tail -n 3 $(VBUILD_LOG) > $(VBUILD_REPORT)
+	-@test -s $(VBUILD_ERROR) && echo "FAILED" >> $(VBUILD_REPORT) || rm $(VBUILD_ERROR)
 
-verilate.sc: pre-verilate.sc
-	cd $(BUILD_DIR); $(VV) $(VV_OPTS) $(BUILD_OPTS) --top-module $(TOP_MODULE) \
-		config.vlt -f flist.vcs $(HDL_PARAMS) $(HDL_DEFINES) | tee $(VBUILD_LOG)
-	-@grep "Error" -A 5 $(VBUILD_LOG) > $(VBUILD_ERROR);
-	-@tail -n 2 $(VBUILD_LOG) > $(VBUILD_REPORT)
-	-@test -s $(VBUILD_ERROR) && echo "FAILED" >> $(VBUILD_REPORT) \
-	|| rm $(VBUILD_ERROR)
+verilate_dump.sc: VV_OPTS += --trace
+verilate_dump.sc: VV_OPTS += --trace-structs
+verilate_dump.sc: VV_OPTS += --trace-depth 15
+verilate_dump.sc: verilate.sc
 
-CBUILD_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).cbuild.log
-CBUILD_REPORT ?= $(LOG_DIR)/$(TB).$(CFG).cbuild.rpt
-CBUILD_ERROR  ?= $(LOG_DIR)/$(TB).$(CFG).cbuild.err
-build.sc: dirs.sc verilate.sc
-	$(MAKE) -C $(BUILD_DIR)/obj_dir -f V$(TOP_MODULE).mk | tee $(CBUILD_LOG)
+verilate_cov.sc: VV_OPTS += --coverage-line
+verilate_cov.sc: VV_OPTS += --coverage-toggle
+verilate_cov.sc: verilate.sc
+
+build.sc: verilate.sc
+build.sc: $(BUILD_DIR)/obj_dir/simsc
+build.sc: CBUILD_LOG    := $(LOG_DIR)/$(TB).$(CFG).cbuild.log
+build.sc: CBUILD_REPORT := $(LOG_DIR)/$(TB).$(CFG).cbuild.rpt
+build.sc: CBUILD_ERROR  := $(LOG_DIR)/$(TB).$(CFG).cbuild.err
+build.sc: verilate.sc
+$(CBUILD_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
+$(BUILD_DIR)/obj_dir/simsc: $(CBUILD_COLLATERAL)
+	$(MAKE) -C $(@D) -f V$(TOP_MODULE).mk | tee $(CBUILD_LOG)
+>>>>>>> Revamping test flow
 	-@grep "Error" -A 5 $(CBUILD_LOG) > $(CBUILD_ERROR)
 	-@tail -n 2 $(CBUILD_LOG) > $(CBUILD_REPORT)
-	-@test -s $(CBUILD_ERROR) && echo "FAILED" >> $(CBUILD_REPORT) \
-	|| rm $(CBUILD_ERROR)
+	-@test -s $(CBUILD_ERROR) && echo "FAILED" >> $(CBUILD_REPORT) || rm $(CBUILD_ERROR)
 
-ifeq ($(DUMP), 1)
-VV_OPTS += --trace         # Dump a VCD
-VV_OPTS += --trace-structs # Dump struct information with VCD
-VV_OPTS += --trace-depth 15
-endif
+build_dump.sc: verilate_dump.sc
+	$(MAKE) build.sc
 
-ifeq ($(COV), 1)
-VV_OPTS += --coverage-line
-VV_OPTS += --coverage-toggle
-endif
+build_cov.sc: verilate_cov.sc
+	$(MAKE) build.sc
 
-sim.sc: SIM_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).sim.$(PROG).log
-sim.sc: SIM_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).sim.$(PROG).rpt
-sim.sc: SIM_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).sim.$(PROG).err
-sim.sc: PROG ?= hello_world
-sim.sc: COVERAGE_DAT ?= $(PROG)_coverage.dat
-sim.sc: dirs.sc 
-	$(shell mkdir -p $(SIM_DIR))
-	$(shell mkdir -p $(COV_DIR))
-	$(eval include $(TB_PATH)/$(TB)/Makefile.frag)
-	-@ln -sf $(BUILD_DIR)/obj_dir/V$(TOP_MODULE) $(SIM_DIR)/simsc
-	-@cp $(MEM_PATH)/$(PROG).nbf $(SIM_DIR)/prog.nbf
-	-@cp $(MEM_PATH)/$(PROG).mem $(SIM_DIR)/prog.mem
-	-@cp $(MEM_PATH)/$(PROG).riscv $(SIM_DIR)/prog.elf
-	-@cp $(MEM_PATH)/$(PROG).dump $(SIM_DIR)/prog.dump
-	-@cp $(MEM_PATH)/$(PROG).mainram $(SIM_DIR)/prog.mainram
-	-@cp $(MEM_PATH)/$(PROG).bootram $(SIM_DIR)/prog.bootram
-	-@cp $(BP_COMMON_DIR)/test/cfg/cosim.cfg $(SIM_DIR)/prog.cfg
-	-@cp $(MEM_PATH)/$(PROG).cfg $(SIM_DIR)/prog.cfg
-	-@cp $(MEM_PATH)/$(PROG).spike $(SIM_DIR)/prog.spike
-	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(SIM_DIR)/dram_ch.ini
-	-@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(SIM_DIR)/dram_sys.ini
-	-@cp $(CCE_MEM_PATH)/$(CCE_MEM) $(SIM_DIR)/cce_ucode.mem
-	-cd $(SIM_DIR); ./simsc | tee $(SIM_LOG)
+sim.sc: build.sc
+sim.sc: $(SIM_DIR)/run_simsc
+sim.sc: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).sim.$(PROG).log
+sim.sc: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).sim.$(PROG).rpt
+sim.sc: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).sim.$(PROG).err
+$(SIM_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
+$(SIM_DIR)/run_simsc: $(SIM_COLLATERAL)
+	cd $(@D); ./simsc $(VERILATOR_OPTIONS) $(VERILATOR_PLUSARGS) | tee $(SIM_LOG)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
 
-regress_riscv.sc: $(RV64_REGRESSION_SC) 
-$(RV64_REGRESSION_SC):
-	$(MAKE) sim.sc PROG=$(basename $@)
-$(COREMARK_REGRESSION_SC):
-	$(MAKE) sim.sc PROG=$(basename $@)
-regress_beebs.sc: $(BEEBS_REGRESSION_SC) 
-$(BEEBS_REGRESSION_SC):
-	$(MAKE) sim.sc PROG=$(basename $@)
-regress_mc.sc: $(MC_REGRESSION_SC)
-$(MC_REGRESSION_SC):
-	$(MAKE) sim.sc CFG=$(CFG) PROG=$(basename $@)
-regress_dv.sc: $(DV_REGRESSION_SC)
-$(DV_REGRESSION_SC):
-	$(MAKE) sim.sc PROG=$(basename $@)
-
-cov.sc: COV_LOG    ?= $(LOG_DIR)/$(TB).$(CFG).cov.log
-cov.sc: COV_REPORT ?= $(REPORT_DIR)/$(TB).$(CFG).cov.rpt
-cov.sc: COV_ERROR  ?= $(REPORT_DIR)/$(TB).$(CFG).cov.err
-cov.sc: dirs.sc
-	cd $(COV_DIR); \
-	verilator_coverage *.dat --rank | tee $(COV_LOG)
-	-@cp $(COV_LOG) $(COV_REPORT)
+cov.sc: $(RESULTS_DIR)/covsc
+cov.sc: COV_LOG    := $(LOG_DIR)/$(TB).$(CFG).cov.log
+cov.sc: COV_REPORT := $(REPORT_DIR)/$(TB).$(CFG).cov.rpt
+cov.sc: COV_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).cov.err
+$(COV_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
+$(RESULTS_DIR)/covsc: | $(COV_COLLATERAL)
+	cd $(@D); verilator_coverage */*.dat --rank --annotate $(COV_REPORT) | tee $(COV_LOG)
 
 wave.sc: dirs.sc
 	cd $(SIM_DIR); $(GTKWAVE) -f dump.vcd &

@@ -1,0 +1,43 @@
+$(LINT_DIR)/testbench.v $(LINT_DIR)/wrapper.v $(LINT_DIR)/test_bp.v:
+	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
+
+$(LINT_DIR)/flist.vcs:
+	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $@ 
+	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $@ 
+	@echo wrapper.v                              >> $@ 
+	@echo testbench.v                            >> $@ 
+	@echo test_bp.v                              >> $@ 
+
+LINT_COLLATERAL = $(addprefix $(LINT_DIR)/, flist.vcs wrapper.v testbench.v test_bp.v)
+
+$(BUILD_DIR)/testbench.v $(BUILD_DIR)/wrapper.v $(BUILD_DIR)/test_bp.v:
+	@sed "s/BP_CFG_FLOWVAR/$(CFG)/g" $(TB_PATH)/$(TB)/$(@F) > $@
+
+$(BUILD_DIR)/flist.vcs:
+	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $@ 
+	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $@ 
+	@echo wrapper.v                              >> $@ 
+	@echo testbench.v                            >> $@ 
+	@echo test_bp.v                              >> $@ 
+
+BUILD_COLLATERAL = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.v testbench.v test_bp.v)
+
+$(SIM_DIR)/simv $(SIM_DIR)/simv.daidir: $(BUILD_DIR)/simv $(BUILD_DIR)/simv.daidir
+	@ln -nsf $(<D)/$(@F) $@
+
+$(SIM_DIR)/prog.riscv: $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv
+	@cp $^ $@
+	@cp $^ $*.elf
+
+$(SIM_DIR)/cce_ucode.mem: $(CCE_MEM_PATH)/$(CCE_MEM)
+	@cp $^ $@
+
+$(SIM_DIR)/dram_ch.ini $(SIM_DIR)/dram_sys.ini:
+	@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_CH_CFG) $(@D)/dram_ch.ini
+	@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(@D)/dram_sys.ini
+
+SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
+SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.mem prog.nbf prog.dump prog.spike)
+SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
+SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, dram_ch.ini dram_sys.ini)
+

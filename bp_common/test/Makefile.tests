@@ -1,0 +1,81 @@
+TOP ?= $(shell git rev-parse --show-toplevel)
+
+include $(TOP)/Makefile.common
+
+bp_tests_dir    := $(BP_TEST_SRC_DIR)/bp_tests
+riscv_tests_dir := $(BP_TEST_SRC_DIR)/riscv-tests
+beebs_dir       := $(BP_TEST_SRC_DIR)/beebs
+spec_dir        := $(BP_TEST_SRC_DIR)/spec
+riscvdv_dir     := $(BP_TEST_SRC_DIR)/riscv-dv
+
+define submodule_test_template
+$(1)_tag := $(addprefix $(1)., $(shell cd $(2); git rev-parse HEAD))
+$(BP_TOUCH_DIR)/$$($(1)_tag):
+	rm -rf $(BP_TOUCH_DIR)/$(1).*
+	cd $(TOP); git submodule update --init --recursive $$($(1)_dir)
+	+$(MAKE) $(1)_build
+	mkdir -p $(BP_TEST_MEM_DIR)/$(1)
+	find $(2) -name "*.riscv" -exec cp {} $(BP_TEST_MEM_DIR)/$(1)/ \;
+	touch $(BP_TOUCH_DIR)/$$($(1)_tag)
+$(1): $(BP_TOUCH_DIR)/$$($(1)_tag)
+$(1)_manual:
+	+$(MAKE) $(1)_build
+	mkdir -p $(BP_TEST_MEM_DIR)/$(1)
+	find $(2) -name "*.riscv" -exec cp {} $(BP_TEST_MEM_DIR)/$(1)/ \;
+endef
+
+bp_tests_build:
+	$(MAKE) -C $(bp_tests_dir) clean all
+
+riscv_tests_build:
+	$(MAKE) -C $(riscv_tests_dir) clean all
+
+beebs_build:
+	$(MAKE) -C $(beebs_dir) clean all
+	@# TODO: We need to change to output .riscv, but the beebs makefiles are a mess
+	@find $(beebs_dir)/src -type f -executable -exec cp {} {}.riscv \;
+
+spec_build:
+	$(MAKE) -C $(spec_dir)
+
+riscvdv_build:
+	$(MAKE) -C $(riscvdv_dir)
+
+$(eval $(call submodule_test_template,bp_tests,$(bp_tests_dir)))
+$(eval $(call submodule_test_template,riscv_tests,$(riscv_tests_dir)))
+$(eval $(call submodule_test_template,beebs,$(beebs_dir)))
+$(eval $(call submodule_test_template,spec,$(spec_dir)))
+$(eval $(call submodule_test_template,riscvdv,$(riscvdv_dir)))
+
+RISCV_ISA_SIM ?= spike
+RISCV_OBJDUMP ?= $(CROSS_COMPILE)objdump -D
+RISCV_OBJCOPY ?= $(CROSS_COMPILE)objcopy
+MEM2NBF       ?= $(BP_COMMON_DIR)/software/py/nbf.py
+DROMAJO       ?= dromajo
+
+%.mem: %.riscv
+	$(RISCV_OBJCOPY) -O verilog $*.riscv $@
+
+%.bin: %.riscv
+	$(RISCV_OBJCOPY) -O binary $*.riscv $@
+
+%.dump: %.riscv
+	$(RISCV_OBJDUMP) $*.riscv > $@
+
+%.spike: %.riscv
+	$(RISCV_ISA_SIM) $*.riscv > $@ 2>&1
+
+%.nbf: %.mem
+	$(PYTHON) $(MEM2NBF) $*.mem > $@
+
+include $(BP_TEST_DIR)/Makefile.frag
+$(BP_TESTS_RISCV): bp_tests
+$(RV64_P_TESTS_RISCV): riscv_tests
+$(RV64_V_TESTS_RISCV): riscv_tests
+$(RV64_PT_TESTS_RISCV): riscv_tests
+$(RV64_VT_TESTS_RISCV): riscv_tests
+$(RV64_BENCHMARKS_RISCV): riscv_tests
+$(BEEBS_TESTS_RISCV): beebs
+$(SPEC_RISCV): spec
+$(RISCVDV_RISCV): riscvdv
+

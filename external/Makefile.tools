@@ -24,6 +24,8 @@ $(BP_TOUCH_DIR)/$$($(1)_tag):
 	+$(MAKE) $(1)_build
 	touch $(BP_TOUCH_DIR)/$$($(1)_tag)
 $(1): $(BP_TOUCH_DIR)/$$($(1)_tag)
+$(1)_manual:
+	+$(MAKE) $(1)_build
 endef
 
 basejump_build: ;
@@ -35,8 +37,6 @@ systemc_build:
 	$(MAKE) -C $(systemc_dir)
 	$(MAKE) -C $(systemc_dir) install
 
-verilator_build: SYSTEMC_INCLUDE ?= $(BP_EXTERNAL_DIR)/include
-verilator_build: SYSTEMC_LIBDIR  ?= $(BP_EXTERNAL_DIR)/lib-linux64
 verilator_build: systemc
 	cd $(verilator_dir); \
 		autoconf; \
