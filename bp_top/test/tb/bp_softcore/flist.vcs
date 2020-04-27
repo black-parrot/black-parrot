@@ -3,7 +3,6 @@ $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_reset_gen.v
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_clock_gen.v
 $BASEJUMP_STL_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
 # be files
-$BP_BE_DIR/test/common/bp_be_nonsynth_calc_tracer.v
 $BP_BE_DIR/test/common/bp_be_nonsynth_perf.v
 $BP_BE_DIR/test/common/bp_be_nonsynth_npc_tracer.v
 $BP_BE_DIR/test/common/bp_be_nonsynth_vm_tracer.v
@@ -29,3 +28,4 @@ $BP_TOP_DIR/test/common/bp_monitor.cpp
 $BP_TOP_DIR/test/common/dromajo_cosim.cpp
 $BP_TOP_DIR/test/common/bp_nonsynth_core_profiler.v
 $BP_TOP_DIR/test/common/bp_nonsynth_pc_profiler.v
+$BP_TOP_DIR/test/common/bp_nonsynth_branch_profiler.v

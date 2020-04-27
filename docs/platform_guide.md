@@ -5,6 +5,7 @@
 ## Instruction Latencies
 * RV64I arithmetic instructions have 1-cycle latency
 * RV64IA memory instructions have 3-cycle latency
+* RV64M instructions have a 4-cycle latency, except for division, which is iterative
 * BlackParrot has a load-to-use time of 3 cycles
 * BlackParrot has a 2-cycle L1 hit latency
 * BlackParrot has a 2-cycle L2 hit latency, plus possible network interaction

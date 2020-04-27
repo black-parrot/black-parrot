@@ -35,6 +35,9 @@ mc_rand_walk_%.s:
 mc_work_share_sort_%.s:
 	$(RISCV_GCC) -DNUM_CORES=$(notdir $*) -S -o src/mc_work_share_sort_$(notdir $*).s src/mc_work_share_sort.c
 
+loop_test.s:
+	$(RISCV_GCC) -O0 -S -o src/$@ src/loop_test.c
+
 %.s:
 	$(RISCV_GCC) -S -o src/$@ src/$*.c
 
@@ -46,4 +49,5 @@ clean:
 	rm -f src/mc_rand_walk_*.s
 	rm -f src/mc_work_share_sort_*.s
 	rm -f src/queue_demo_*.s
+	rm -f src/loop_test.s
 

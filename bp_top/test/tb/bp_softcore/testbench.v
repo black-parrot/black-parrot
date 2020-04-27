@@ -17,6 +17,7 @@ module testbench
  import bsg_noc_pkg::*;
  #(parameter bp_params_e bp_params_p = BP_CFG_FLOWVAR // Replaced by the flow with a specific bp_cfg
    `declare_bp_proc_params(bp_params_p)
+   `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
    // Tracing parameters
@@ -35,10 +36,11 @@ module testbench
    , parameter cosim_p                     = 0
    , parameter cosim_cfg_file_p            = "prog.cfg"
    , parameter cosim_instr_p               = 0
+   , parameter warmup_instr_p              = 0
 
    , parameter mem_zero_p         = 1
    , parameter mem_file_p         = "prog.mem"
-   , parameter mem_cap_in_bytes_p = 2**25
+   , parameter mem_cap_in_bytes_p = 2**29
    , parameter [paddr_width_p-1:0] mem_offset_p = dram_base_addr_gp
 
    // Number of elements in the fake BlackParrot memory
@@ -283,6 +285,7 @@ bind bp_be_top
      ,.rd_data_i(be_checker.scheduler.wb_pkt.rd_data)
      );
 
+  logic cosim_finish_lo;
   bind bp_be_top
     bp_nonsynth_cosim
      #(.bp_params_p(bp_params_p))
@@ -310,7 +313,23 @@ bind bp_be_top
 
        ,.interrupt_v_i(be_mem.csr.trap_pkt_cast_o._interrupt)
        ,.cause_i(be_mem.csr.trap_pkt_cast_o.cause)
+
+       ,.finish_o(testbench.cosim_finish_lo)
        );
+
+logic [29:0] warmup_cnt;
+logic warm;
+bsg_counter_clear_up
+ #(.max_val_p(2**30-1), .init_val_p(0))
+ warmup_counter
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i | testbench.wrapper.dut.core.be.be_checker.scheduler.int_regfile.cfg_bus.freeze)
+
+   ,.clear_i(1'b0)
+   ,.up_i(testbench.wrapper.dut.core.be.be_calculator.commit_pkt.instret & ~warm)
+   ,.count_o(warmup_cnt)
+   );
+assign warm = (warmup_cnt == warmup_instr_p);
 
 bind bp_be_top
   bp_be_nonsynth_perf
@@ -318,13 +337,13 @@ bind bp_be_top
    perf
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
+     ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze | ~testbench.warm)
 
      ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
      ,.commit_v_i(be_calculator.commit_pkt.instret)
 
-     ,.program_finish_i(testbench.program_finish_lo)
+     ,.program_finish_i(testbench.program_finish_lo | testbench.cosim_finish_lo)
      );
 
   bind bp_be_top
@@ -411,42 +430,6 @@ bind bp_be_top
        ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
        ,.stat_mem_pkt_i(stat_mem_pkt_i)
        ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
-       );
-
-  bind bp_be_top
-    bp_be_nonsynth_calc_tracer
-     #(.bp_params_p(bp_params_p))
-     calc_tracer
-      (.clk_i(clk_i & (testbench.calc_trace_p == 1))
-       ,.reset_i(reset_i)
-       ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
-
-       ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
-
-       ,.issue_pkt_i(be_checker.scheduler.issue_pkt)
-       ,.issue_pkt_v_i(be_checker.scheduler.fe_queue_yumi_o)
-
-       ,.fe_nop_v_i(be_calculator.exc_stage_n[0].fe_nop_v)
-       ,.be_nop_v_i(be_calculator.exc_stage_n[0].be_nop_v)
-       ,.me_nop_v_i(be_calculator.exc_stage_n[0].me_nop_v)
-       ,.dispatch_pkt_i(be_calculator.dispatch_pkt)
-
-       ,.ex1_br_tgt_i(be_calculator.calc_status.ex1_npc)
-       ,.ex1_btaken_i(be_calculator.pipe_int.btaken)
-       ,.iwb_result_i(be_calculator.comp_stage_n[3])
-       ,.fwb_result_i(be_calculator.comp_stage_n[4])
-
-       ,.cmt_trace_exc_i(be_calculator.exc_stage_n[1+:5])
-
-       ,.trap_v_i(be_mem.csr.trap_pkt_cast_o._interrupt | be_mem.csr.trap_pkt_cast_o.exception)
-       ,.mtvec_i(be_mem.csr.mtvec_n)
-       ,.mtval_i(be_mem.csr.mtval_n[0+:vaddr_width_p])
-       ,.ret_v_i(be_mem.csr.trap_pkt_cast_o.eret)
-       ,.mepc_i(be_mem.csr.mepc_n[0+:vaddr_width_p])
-       ,.mcause_i(be_mem.csr.mcause_n)
-
-       ,.priv_mode_i(be_mem.csr.priv_mode_n)
-       ,.mpp_i(be_mem.csr.mstatus_n.mpp)
        );
 
   bind bp_fe_icache
@@ -549,14 +532,13 @@ bind bp_be_top
        ,.itlb_miss(fe.mem.itlb_miss_r)
        ,.icache_miss(~fe.mem.icache.vaddr_ready_o | fe.pc_gen.icache_miss)
        ,.icache_fence(fe.mem.icache.fencei_req)
-       ,.branch_override(fe.pc_gen.ovr_taken | fe.pc_gen.ovr_ntaken)
+       ,.branch_override(fe.pc_gen.ovr_taken & ~fe.pc_gen.ovr_ret)
+       ,.ret_override(fe.pc_gen.ovr_ret)
 
        ,.fe_cmd(fe.pc_gen.fe_cmd_yumi_o & ~fe.pc_gen.attaboy_v)
 
-       ,.cmd_fence(be.be_checker.director.suppress_iss_o)
-
-       ,.target_mispredict(be.be_checker.scheduler.npc_mismatch & ~be.be_calculator.pipe_int.decode.br_v)
-       ,.dir_mispredict(be.be_checker.scheduler.npc_mismatch & be.be_calculator.pipe_int.decode.br_v)
+       ,.mispredict(be.be_checker.director.npc_mismatch_v)
+       ,.target(be.be_checker.director.isd_status.isd_pc)
 
        ,.dtlb_miss(be.be_mem.dtlb_miss_r)
        ,.dcache_miss(~be.be_mem.dcache.ready_o)
@@ -593,6 +575,25 @@ bind bp_be_top
        ,.mhartid_i(be.be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
        ,.commit_pkt(be.be_calculator.commit_pkt)
+
+       ,.program_finish_i(testbench.program_finish_lo)
+       );
+
+  bind bp_be_director
+    bp_nonsynth_branch_profiler
+     #(.bp_params_p(bp_params_p))
+     pc_profiler
+      (.clk_i(clk_i & (testbench.core_profile_p == 1))
+       ,.reset_i(reset_i)
+       ,.freeze_i(cfg_bus_cast_i.freeze)
+
+       ,.mhartid_i(cfg_bus_cast_i.core_id)
+
+       ,.fe_cmd_o(fe_cmd_o)
+       ,.fe_cmd_v_o(fe_cmd_v_o)
+       ,.fe_cmd_ready_i(fe_cmd_ready_i)
+
+       ,.commit_v_i(commit_pkt.instret)
 
        ,.program_finish_i(testbench.program_finish_lo)
        );
