@@ -72,7 +72,7 @@ if (debug_p)
      always_ff @(negedge clk_i)
        begin
          if (w_v_r | r_v_r)
-	       $write("v=%b c=%b W[%h] (=%b); v=%b %h R[%h] (=%b) p=%b ",w_v_r,correct_r,idx_w_r,mem[idx_w_r],r_v_r,idx_r_r,mem[idx_r_r],predict_o);
+	       $write("v=%b c=%b W[%h] (=%b); v=%b R[%h] (=%b) p=%b ",w_v_r,correct_r,idx_w_r,mem[idx_w_r],r_v_r,idx_r_r,mem[idx_r_r],predict_o);
 
 	  if (w_v_r & ~correct_r)
 	    $write("X\n");
