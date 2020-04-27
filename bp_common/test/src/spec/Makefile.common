@@ -1,5 +1,5 @@
 PROG_NAME := $(BENCHMARK)
-SPEC_DIR = $(TEST_DIR)/src/spec
+SPEC_DIR = $(BP_TEST_DIR)/src/spec
 BENCHMARK_DIR = $(SPEC_DIR)/spec2000/benchmarks/spec2000/CINT2000/$(BENCHMARK)
 
 INIT_FILES = crt.o args.o
@@ -21,12 +21,12 @@ empty:=
 space:= $(empty) $(empty)
 
 RISCV_GCC  = $(CROSS_COMPILE)gcc
-RISCV_GCC_OPTS  = -O2 -mabi=lp64 -march=rv64ima -mcmodel=medany -mstrict-align -static -nostartfiles -I$(TEST_DIR)/include
+RISCV_GCC_OPTS  = -O2 -mabi=lp64 -march=rv64ima -mcmodel=medany -mstrict-align -static -nostartfiles -I$(BP_TEST_DIR)/include
 RISCV_GCC_OPTS += -Irawlib $(BENCHMARK_DEFS)
 RISCV_GCC_OPTS += -D__init_argc=$(ARGC) -D__init_argv=\"$(subst $(space),\"$(comma)\",$(strip $(ARGV)))\"
 
 RISCV_LINK = $(RISCV_GCC) -t -T $(SPEC_DIR)/riscv.ld
-RISCV_LINK_OPTS = -nostartfiles -lperch -lm -L$(TEST_DIR)/lib
+RISCV_LINK_OPTS = -nostartfiles -lperch -lm -L$(BP_TEST_DIR)/lib
 
 MKLFS = dramfs_mklfs
 

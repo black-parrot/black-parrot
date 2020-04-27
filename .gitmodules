@@ -2,122 +2,141 @@
   path = external/riscv-isa-sim
   url = https://github.com/black-parrot/riscv-isa-sim.git
   branch = blackparrot_mods
+  update = rebase
   ignore = dirty
 
 [submodule "external/axe"]
   path = external/axe
   url = https://github.com/black-parrot/axe
   branch = blackparrot_mods
+  update = rebase
   ignore = dirty
 
 [submodule "external/riscv-gnu-toolchain"]
   path = external/riscv-gnu-toolchain
   url = https://github.com/black-parrot/riscv-gnu-toolchain
   branch = blackparrot_mods
+  update = rebase
   ignore = dirty
 
 [submodule "external/verilator"]
   path = external/verilator
   url = http://git.veripool.org/git/verilator
   branch = master
+  update = rebase
   ignore = dirty
 
 [submodule "external/basejump_stl"]
   path = external/basejump_stl
   url = https://github.com/black-parrot/basejump_stl.git
   branch = blackparrot_mods
+  update = rebase
   ignore = dirty
 
 [submodule "external/DRAMSim2"]
   path = external/DRAMSim2
   url = https://github.com/umd-memsys/DRAMSim2.git
   branch = master
+  update = rebase
   ignore = dirty
 
 [submodule "bp_common/test/src/riscv-tests"]
   path = bp_common/test/src/riscv-tests
   url = https://github.com/black-parrot/riscv-tests.git
   branch = blackparrot_mods
+  update = rebase
   ignore = dirty
 
 [submodule "bp_common/test/src/coremark"]
   path = bp_common/test/src/coremark
   url = https://github.com/black-parrot/coremark.git
   branch = blackparrot_mods
+  update = rebase
   ignore = dirty
  
 [submodule "bp_common/test/src/opensbi"]
   path = bp_common/test/src/opensbi
   url = https://github.com/black-parrot/opensbi.git
   branch = blackparrot_mods
+  update = rebase
   ignore = dirty
 
 [submodule "bp_common/test/src/riscv-pk"]
   path = bp_common/test/src/riscv-pk
   url = https://github.com/black-parrot/riscv-pk.git
   branch = blackparrot_mods
+  update = rebase
   ignore = dirty
 
 [submodule "bp_common/test/src/beebs"]
   path = bp_common/test/src/beebs
   url = https://github.com/black-parrot/beebs.git
   branch = blackparrot_mods
+  update = rebase
   ignore = dirty
 
 [submodule "bp_common/test/src/riscv-dv"]
   path = bp_common/test/src/riscv-dv
   url = https://github.com/black-parrot/riscv-dv.git
   branch = blackparrot_mods
+  update = rebase
   ignore = dirty
 
 [submodule "external/cmurphi"]
   path = external/cmurphi
   url = https://github.com/black-parrot/cmurphi.git
   branch = master
+  update = rebase
   ignore = dirty
 
 [submodule "external/dromajo"]
   path = external/dromajo
   url = https://github.com/bsg-external/dromajo.git
   branch = blackparrot_mods
+  update = rebase
   ignore = dirty
 
 [submodule "external/dtc"]
   path = external/dtc
   url = https://git.kernel.org/pub/scm/utils/dtc/dtc.git
   branch = master
+  update = rebase
   ignore = dirty
 
 [submodule "external/DRAMsim3"]
   path = external/DRAMsim3
   url = https://github.com/umd-memsys/DRAMsim3.git
   branch = master
+  update = rebase
   ignore = dirty
 
 [submodule "external/bsg_sv2v"]
   path = external/bsg_sv2v
   url = https://github.com/bespoke-silicon-group/bsg_sv2v.git
   branch = master
+  update = rebase
   ignore = dirty
 
 [submodule "external/systemc"]
   path = external/systemc
   url = https://github.com/bsg-external/systemc.git
   branch = master
+  update = rebase
   ignore = dirty
 
 [submodule "external/sv2v"]
   path = external/sv2v
   url = https://github.com/zachjs/sv2v.git
   branch = master
+  update = rebase
   ignore = dirty
 
 [submodule "bp_common/test/src/spec/src/spec2000"]
   path = bp_common/test/src/spec/src/spec2000
   url = https://github.com/black-parrot/spec2000
   branch = blackparrot_mods
-  ignore = dirty
   update = none
+  ignore = dirty
 
 [submodule "bp_common/test/src/bp_tests"]
   path = bp_common/test/src/bp_tests

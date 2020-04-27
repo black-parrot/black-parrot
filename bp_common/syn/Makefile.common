@@ -8,7 +8,7 @@ include $(TOP)/Makefile.common
 .DEFAULT: help
 
 clean:
-	$(MAKE) clean.v clean.sc clean.syn
-	rm -rf logs
-	rm -rf reports
-	
+	@rm -rf results/
+	@rm -rf logs/
+	@rm -rf reports/
+	@rm -rf touchfiles/

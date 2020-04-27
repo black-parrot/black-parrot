@@ -9,6 +9,21 @@ export BP_TOP_DIR       ?= $(TOP)/bp_top
 export BP_EXTERNAL_DIR  ?= $(TOP)/external
 export BASEJUMP_STL_DIR ?= $(BP_EXTERNAL_DIR)/basejump_stl
 
+export BP_BIN_DIR     ?= $(BP_EXTERNAL_DIR)/bin
+export BP_LIB_DIR     ?= $(BP_EXTERNAL_DIR)/lib
+export BP_INCLUDE_DIR ?= $(BP_EXTERNAL_DIR)/include
+export BP_TOUCH_DIR   ?= $(BP_EXTERNAL_DIR)/touchfiles
+
+export BP_TEST_DIR        ?= $(BP_COMMON_DIR)/test
+export BP_TEST_CFG_DIR    ?= $(BP_TEST_DIR)/cfg
+export BP_TEST_SRC_DIR    ?= $(BP_TEST_DIR)/src
+export BP_TEST_INCUDE_DIR ?= $(BP_TEST_DIR)/include
+export BP_TEST_LIB_DIR    ?= $(BP_TEST_DIR)/lib
+export BP_TEST_MEM_DIR    ?= $(BP_TEST_DIR)/mem
+
+export RISCV_TARGET  ?= riscv64-unknown-elf-dramfs
+export CROSS_COMPILE ?= $(RISCV_TARGET)-
+
 ## Setup CAD tools
 
 # If the machine you are working on is bsg_cadenv compliant, then you do not
@@ -26,7 +41,6 @@ export VCS       ?= vcs
 export URG       ?= urg
 export VERILATOR ?= verilator
 export DC_SHELL  ?= dc_shell
-# Some environments have issues with setting DVE as an environment variable
 export _DVE      ?= dve
 export GTKWAVE   ?= gtkwave
 export PYTHON    ?= python3
