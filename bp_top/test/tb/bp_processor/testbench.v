@@ -153,6 +153,7 @@ wrapper
        );
 
   logic cosim_finish_lo;
+  if (num_core_p == 1) begin : cosim
   bind bp_be_top
     bp_nonsynth_cosim
      #(.bp_params_p(bp_params_p))
@@ -183,6 +184,9 @@ wrapper
 
        ,.finish_o(testbench.cosim_finish_lo)
        );
+  end else begin : cosim
+    assign cosim_finish_lo = '0;
+  end
 
   bind bp_be_director
     bp_be_nonsynth_npc_tracer
