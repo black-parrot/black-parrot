@@ -672,6 +672,7 @@ module bp_be_dcache
   logic tag_mem_pkt_v;
   logic stat_mem_pkt_v;
 
+  wire wt_req = (wbuf_v_li & (writethrough_p == 1));
   
   // Assigning message types
   always_comb begin
@@ -680,7 +681,7 @@ module bp_be_dcache
     cache_req_cast_o = '0;
 
     // Assigning sizes to cache miss packet
-    if (uncached_tv_r | (wbuf_v_li & (writethrough_p == 1)))
+    if (uncached_tv_r | wt_req)
       unique case (size_op_tv_r)
         e_dword: cache_req_cast_o.size = e_size_8B;
         e_word: cache_req_cast_o.size = e_size_4B;
@@ -699,12 +700,12 @@ module bp_be_dcache
       cache_req_cast_o.msg_type = e_miss_store;
       cache_req_v_o = cache_req_ready_i;
     end
-    else if(uncached_load_req) begin
-      cache_req_cast_o.msg_type = e_uc_load;
+    else if(wt_req) begin
+      cache_req_cast_o.msg_type = e_wt_store;
       cache_req_v_o = cache_req_ready_i;
     end
-    else if(wbuf_v_li & (writethrough_p == 1)) begin
-      cache_req_cast_o.msg_type = e_wt_store;
+    else if(uncached_load_req) begin
+      cache_req_cast_o.msg_type = e_uc_load;
       cache_req_v_o = cache_req_ready_i;
     end
     else if(uncached_store_req) begin
@@ -738,8 +739,6 @@ module bp_be_dcache
   // output stage
   // Cache Miss Tracking logic
   logic cache_miss_r;
-  logic wt_req;
-  assign wt_req = (wbuf_v_li & (writethrough_p == 1));
   wire miss_tracker_en_li = cache_req_v_o & ~uncached_store_req & ~fencei_req & ~wt_req;
   bsg_dff_reset_en
    #(.width_p(1))
@@ -1095,7 +1094,7 @@ module bp_be_dcache
   // write buffer
   //
   assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r; 
-  assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we);
+  assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we) & ~data_mem_pkt_yumi_o;
   assign bypass_v_li = tv_we & load_op_tl_r;
   assign lce_snoop_index_li = data_mem_pkt.index;
   assign lce_snoop_way_li = data_mem_pkt.way_id;
@@ -1127,7 +1126,7 @@ module bp_be_dcache
   // accept the pkt in case of a match. 
   assign data_mem_pkt_yumi_o = (data_mem_pkt.opcode == e_cache_data_mem_uncached) 
                                ? data_mem_pkt_v 
-                               : ~(load_op & tl_we) & ~wbuf_v_lo & ~lce_snoop_match_lo & data_mem_pkt_v;
+                               : ~(load_op & tl_we) & ~lce_snoop_match_lo & data_mem_pkt_v;
 
   // load reservation logic
   always_ff @ (posedge clk_i) begin

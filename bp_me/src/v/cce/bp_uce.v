@@ -181,6 +181,8 @@ module bp_uce
   wire clear_v_li         = cache_req_v_i & cache_req_cast_i.msg_type inside {e_cache_clear};
   wire uc_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
 
+  wire wt_store_v_li      = cache_req_v_i & cache_req_cast_i.msg_type inside {e_wt_store};
+  
   wire store_resp_v_li    = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_cce_mem_wr, e_cce_mem_uc_wr};
   wire load_resp_v_li     = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_cce_mem_rd, e_cce_mem_uc_rd};
 
@@ -188,7 +190,6 @@ module bp_uce
   wire miss_store_v_li = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
   wire miss_v_li       = miss_load_v_li | miss_store_v_li;
   wire uc_load_v_li    = cache_req_v_r & cache_req_r.msg_type inside {e_uc_load};
-  wire wt_store_v_li   = cache_req_v_r & cache_req_r.msg_type inside {e_wt_store};
 
   logic [index_width_lp-1:0] index_cnt;
   logic index_up;
@@ -382,7 +383,7 @@ module bp_uce
                 mem_cmd_cast_o.data                  = cache_req_cast_i.data;
                 mem_cmd_v_o = mem_cmd_ready_i;
               end
-            else if (cache_req_v_i & (cache_req_cast_i.msg_type == e_wt_store)) 
+            else if (wt_store_v_li) 
               begin
                 mem_cmd_cast_o.header.msg_type       = e_cce_mem_wb;
                 mem_cmd_cast_o.header.addr           = cache_req_cast_i.addr;

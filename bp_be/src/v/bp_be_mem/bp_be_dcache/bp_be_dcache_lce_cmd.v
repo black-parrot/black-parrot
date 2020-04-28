@@ -341,12 +341,7 @@ module bp_be_dcache_lce_cmd
               data_mem_pkt.opcode = e_cache_data_mem_read;
               data_mem_pkt_v_o = lce_cmd_v_i;
 
-              tag_mem_pkt.index = lce_cmd_addr_index;
-              tag_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
-              tag_mem_pkt.opcode = e_cache_tag_mem_read;
-              tag_mem_pkt_v_o = lce_cmd_v_i;
-
-              state_n = (data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i)
+              state_n = data_mem_pkt_yumi_i
                 ? e_lce_cmd_state_tr
                 : e_lce_cmd_state_ready;
 
