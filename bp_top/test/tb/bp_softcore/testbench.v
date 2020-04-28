@@ -40,7 +40,7 @@ module testbench
 
    , parameter mem_zero_p         = 1
    , parameter mem_file_p         = "prog.mem"
-   , parameter mem_cap_in_bytes_p = 2**29
+   , parameter mem_cap_in_bytes_p = 2**28
    , parameter [paddr_width_p-1:0] mem_offset_p = dram_base_addr_gp
 
    // Number of elements in the fake BlackParrot memory
