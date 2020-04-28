@@ -37,12 +37,12 @@ do
     # collect results
     for i in "${!nums[@]}"
     do
-      passes=`grep -rE "PASS" reports/vcs/bp_processor.e_bp_${cfgs[$i]}_core${cce}cfg.sim.${prog}_${nums[$i]}.rpt | wc -l`
-      if [ $passes -eq ${nums[$i]} ]
+      failures=`grep -rE "FAIL" reports/vcs/bp_processor.e_bp_${cfgs[$i]}_core${cce}cfg.sim.${prog}_${nums[$i]}.rpt | wc -l`
+      if [ $failures -gt 0 ]
       then
-        echo "$prog,$p,${cfgs[$i]},PASS" >> regress${cce}results.txt
-      else
         echo "$prog,$p,${cfgs[$i]},FAIL" >> regress${cce}results.txt
+      else
+        echo "$prog,$p,${cfgs[$i]},PASS" >> regress${cce}results.txt
       fi
     done
   done
