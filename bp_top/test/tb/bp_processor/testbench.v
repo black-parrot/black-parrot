@@ -57,6 +57,12 @@ module testbench
    , input reset_i
    );
 
+initial begin
+  if (num_core_p > 1) begin
+    assert (cosim_p == 0) else $error("cosim_p not supported for num_core_p > 1");
+  end
+end
+
 `declare_bsg_ready_and_link_sif_s(io_noc_flit_width_p, bp_io_noc_ral_link_s);
 `declare_bsg_ready_and_link_sif_s(mem_noc_flit_width_p, bp_mem_noc_ral_link_s);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
@@ -153,6 +159,7 @@ wrapper
        );
 
   logic cosim_finish_lo;
+  if (num_core_p == 1) begin : cosim
   bind bp_be_top
     bp_nonsynth_cosim
      #(.bp_params_p(bp_params_p))
@@ -183,6 +190,9 @@ wrapper
 
        ,.finish_o(testbench.cosim_finish_lo)
        );
+  end else begin : cosim
+    assign cosim_finish_lo = '0;
+  end
 
   bind bp_be_director
     bp_be_nonsynth_npc_tracer
