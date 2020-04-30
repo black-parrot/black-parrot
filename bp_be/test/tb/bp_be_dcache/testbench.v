@@ -295,6 +295,7 @@ module testbench
        ,.v_o(v_o)
        ,.load_data(data_o)
        ,.store_data(data_tv_r)
+       ,.wt_req(wt_req)
        ,.cache_miss_o(dcache_miss_o)
 
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)

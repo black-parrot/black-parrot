@@ -57,6 +57,7 @@ module bp_nonsynth_cache_tracer
    , input                                                 v_o
    , input [dword_width_p-1:0]                             load_data
    , input                                                 cache_miss_o
+   , input                                                 wt_req
    , input [dword_width_p-1:0]                             store_data
 
    // Fill Packets
@@ -112,6 +113,8 @@ module bp_nonsynth_cache_tracer
       op = "[load]";
     else if (cache_req_v_o & cache_req_cast_o.msg_type == e_uc_load)
       op = "[uncached load]";
+    else if (cache_req_v_o & cache_req_cast_o.msg_type == e_wt_store)
+      op = "[writethrough store]";
     else if (cache_req_v_o & cache_req_cast_o.msg_type == e_uc_store)
       op = "[uncached store]";
     else if (cache_req_v_o & cache_req_cast_o.msg_type == e_cache_flush)
@@ -166,6 +169,9 @@ module bp_nonsynth_cache_tracer
       if(sc_success)
         $fwrite(file, "SC SUCCESS! \n");
       
+      if(wt_req)
+        $fwrite(file, "[%t] Writethrough incoming\n", $time);
+
       if (cache_req_v_o) begin
         $fwrite(file, "[%t] valid cache_req: %x \n", $time, cache_req_v_o);
         $fwrite(file, "[%t] %s addr: %x data: %x cache_miss: %x \n", $time, op, cache_req_cast_o.addr, cache_req_cast_o.data, cache_miss_o);

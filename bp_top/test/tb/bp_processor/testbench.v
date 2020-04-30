@@ -248,6 +248,7 @@ wrapper
        ,.v_o(v_o)
        ,.load_data(data_o)
        ,.cache_miss_o(dcache_miss_o)
+       ,.wt_req(wt_req)
        ,.store_data(data_tv_r)
 
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
@@ -298,6 +299,7 @@ wrapper
        // this signal seems to be stuck at zero for tracing but the code works
        // fine
        ,.cache_miss_o(miss_o)
+       ,.wt_req(wt_req)
        ,.store_data(dword_width_p'(0))
 
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)

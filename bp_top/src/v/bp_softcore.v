@@ -360,7 +360,7 @@ module bp_softcore
   // TODO: Need to investigate
   bsg_fifo_1r1w_small
    #(.width_p($bits(bp_cce_mem_msg_s))
-    ,.els_p(3))
+    ,.els_p(2))
     dcache_mem_fifo
     (.clk_i(clk_i)
     ,.reset_i(reset_i)

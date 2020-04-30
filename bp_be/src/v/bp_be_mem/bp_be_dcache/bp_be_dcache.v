@@ -755,7 +755,7 @@ module bp_be_dcache
 
   assign v_o = v_tv_r & ((uncached_tv_r & (load_op_tv_r & uncached_load_data_v_r))
                          | (uncached_tv_r & (store_op_tv_r & cache_req_ready_i))
-                         | (~uncached_tv_r & ~fencei_op_tv_r & ~miss_tv)
+                         | (~uncached_tv_r & ~fencei_op_tv_r & ~miss_tv & (~store_op_tv_r | wbuf_v_li | sc_op_tv_r))
                          );
   // Always send fencei when coherent
   assign fencei_v_o = fencei_req & (~gdirty_r | (coherent_l1_p == 1));
@@ -1093,7 +1093,12 @@ module bp_be_dcache
 
   // write buffer
   //
-  assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r; 
+  if (writethrough_p == 0) begin : wb_wbuf
+    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r;
+  end
+  else begin : wt_wbuf
+    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r & cache_req_ready_i;
+  end
   assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we) & ~data_mem_pkt_yumi_o;
   assign bypass_v_li = tv_we & load_op_tl_r;
   assign lce_snoop_index_li = data_mem_pkt.index;
