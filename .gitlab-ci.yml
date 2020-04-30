@@ -213,7 +213,6 @@ top-riscv-verilator:
  
 top-coremark-verilator:
   <<: *job_definition
-  when: manual
   stage: test-long
   tags:
     - verilator
@@ -226,11 +225,8 @@ top-coremark-verilator:
     - wait
     - $CI_PROJECT_DIR/ci/check.sh bp_top
 
-# Disabled because it's too long running     
-# TODO: Investigate why
 top-beebs-verilator:
   <<: *job_definition
-  when: manual
   stage: test-long
   tags:
     - verilator
@@ -245,7 +241,6 @@ top-beebs-verilator:
 
 top-mc-verilator:
   <<: *job_definition
-  when: manual
   stage: test-medium
   tags:
     - verilator
@@ -268,7 +263,6 @@ top-mc-verilator:
 
 top-mc-verilator-ucode:
   <<: *job_definition
-  when: manual
   stage: test-medium
   tags:
     - verilator
