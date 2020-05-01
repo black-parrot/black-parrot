@@ -85,7 +85,7 @@ module wrapper
   assign rolly_yumi_li = rolly_v_lo & icache_ready_lo;
 
   logic icache_miss_lo;
-  logic rollback_li;
+  logic rollback_li, rolly_yumi_rr;
 
   bsg_fifo_1r1w_rolly
    #(.width_p(vaddr_width_p+ptag_width_lp+1)
@@ -112,23 +112,13 @@ module wrapper
   #(.width_p(1)
    ,.num_stages_p(2)
    )
-   vaddr_v_reg
+   rolly_yumi_reg
    (.clk_i(clk_i)
-   ,.data_i(vaddr_v_i)
-   ,.data_o(vaddr_v_rr)
+   ,.data_i(rolly_yumi_li)
+   ,.data_o(rolly_yumi_rr)
    );
 
-  bsg_dff_chain
-  #(.width_p(1)
-   ,.num_stages_p(2)
-   )
-   icache_ready_reg
-   (.clk_i(clk_i)
-   ,.data_i(icache_ready_lo)
-   ,.data_o(icache_ready_rr)
-   );
-
-  assign rollback_li = vaddr_v_rr & icache_ready_rr & ~data_v_o;
+  assign rollback_li = rolly_yumi_rr & ~data_v_o;
 
   logic [ptag_width_lp-1:0] rolly_ptag_r;
   bsg_dff_reset
