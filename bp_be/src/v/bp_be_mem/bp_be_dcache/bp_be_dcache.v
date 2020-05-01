@@ -499,7 +499,7 @@ module bp_be_dcache
         load_hit_way <= load_hit_way_tl;
         store_hit_way <= store_hit_way_tl;
         addr_tag_tv <= addr_tag_tl;
-	invalid_tv <= invalid_tl; 
+        invalid_tv <= invalid_tl;
       end
 
       if (tv_we & load_op_tl_r) begin
