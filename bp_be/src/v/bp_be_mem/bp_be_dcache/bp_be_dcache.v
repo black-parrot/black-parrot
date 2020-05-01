@@ -338,6 +338,7 @@ module bp_be_dcache
 
   // data_mem
   //
+  
   logic [dcache_assoc_p-1:0] data_mem_v_li;
   logic data_mem_w_li;
   logic [dcache_assoc_p-1:0][index_width_lp+word_offset_width_lp-1:0] data_mem_addr_li;
@@ -360,12 +361,56 @@ module bp_be_dcache
         ,.write_mask_i(data_mem_mask_li[i])
         ,.data_o(data_mem_data_lo[i])
         );
+  end // block: data_mem
+
+  // miss_detect
+  //
+  logic [dcache_assoc_p-1:0] tag_match_tl;
+  logic [dcache_assoc_p-1:0] load_hit_tl;
+  logic [dcache_assoc_p-1:0] store_hit_tl;
+  logic load_hit_v_tl;
+  logic store_hit_v_tl;
+  logic [way_id_width_lp-1:0] load_hit_way_tl;
+  logic [way_id_width_lp-1:0] store_hit_way_tl;
+  logic [paddr_width_p-1:0]  paddr_tl;
+  logic [ptag_width_lp-1:0] addr_tag_tl;
+
+  assign paddr_tl = {ptag_i, page_offset_tl_r};
+  
+  assign addr_tag_tl = paddr_tl[block_offset_width_lp+index_width_lp+:ptag_width_lp];
+
+  for (genvar i = 0; i < dcache_assoc_p; i++) begin: tag_comp_tl
+    assign tag_match_tl[i] = addr_tag_tl == tag_mem_data_lo[i].tag;
+    assign load_hit_tl[i] = tag_match_tl[i] & (tag_mem_data_lo[i].coh_state != e_COH_I);
+    assign store_hit_tl[i] = tag_match_tl[i] & ((tag_mem_data_lo[i].coh_state == e_COH_M)
+                                                || (tag_mem_data_lo[i].coh_state == e_COH_E));
   end
+
+  bsg_priority_encode
+    #(.width_p(dcache_assoc_p)
+      ,.lo_to_hi_p(1)
+      )
+    pe_load_hit_tl
+    (.i(load_hit_tl)
+      ,.v_o(load_hit_v_tl)
+      ,.addr_o(load_hit_way_tl)
+      );
+  
+  bsg_priority_encode
+    #(.width_p(dcache_assoc_p)
+      ,.lo_to_hi_p(1)
+      )
+    pe_store_hit_tl
+    (.i(store_hit_tl)
+      ,.v_o(store_hit_v_tl)
+      ,.addr_o(store_hit_way_tl)
+      );
+
+  
 
   // TV stage
   //
   logic v_tv_r;
-  logic tv_we;
   logic lr_op_tv_r;
   logic sc_op_tv_r;
   logic load_op_tv_r;
@@ -385,6 +430,15 @@ module bp_be_dcache
   logic [ptag_width_lp-1:0] addr_tag_tv;
   logic [index_width_lp-1:0] addr_index_tv;
   logic [word_offset_width_lp-1:0] addr_word_offset_tv;
+  logic [dcache_assoc_p-1:0] tag_match_tv;
+  logic [dcache_assoc_p-1:0] load_hit_tv;
+  logic [dcache_assoc_p-1:0] store_hit_tv;
+  logic load_hit;
+  logic store_hit;
+  logic [way_id_width_lp-1:0] load_hit_way;
+  logic [way_id_width_lp-1:0] store_hit_way;
+   
+   
 
   assign tv_we = v_tl_r & ~poison_i & ~tlb_miss_i & ~fencei_req;
 
@@ -409,6 +463,17 @@ module bp_be_dcache
       fencei_op_tv_r <= '0;
       paddr_tv_r <= '0;
       tag_info_tv_r <= '0;
+      tag_match_tv <= '0;      
+      load_hit_tv <= '0;       
+      store_hit_tv <= '0;
+      load_hit <= '0; 
+      store_hit <= '0; 
+      load_hit_way <= '0;
+      store_hit_way <= '0;
+      addr_tag_tv <= '0;
+       
+       
+      
 
     end
     else begin
@@ -426,9 +491,18 @@ module bp_be_dcache
         half_op_tv_r <= half_op_tl_r;
         byte_op_tv_r <= byte_op_tl_r;
         fencei_op_tv_r <= fencei_op_tl_r;
-        paddr_tv_r <= {ptag_i, page_offset_tl_r};
+        paddr_tv_r <= paddr_tl;
         tag_info_tv_r <= tag_mem_data_lo;
         uncached_tv_r <= uncached_i;
+	tag_match_tv <= tag_match_tl;      
+	load_hit_tv <= load_hit_tl;       
+        store_hit_tv <= store_hit_tl;
+        load_hit <= load_hit_v_tl;	 
+        store_hit <= store_hit_v_tl;	 
+        load_hit_way <= load_hit_way_tl;
+        store_hit_way <= store_hit_way_tl;
+	addr_tag_tv <= addr_tag_tl;
+
       end
 
       if (tv_we & load_op_tl_r) begin
@@ -441,48 +515,16 @@ module bp_be_dcache
     end
   end
 
-  assign addr_tag_tv = paddr_tv_r[block_offset_width_lp+index_width_lp+:ptag_width_lp];
   assign addr_index_tv = paddr_tv_r[block_offset_width_lp+:index_width_lp];
   assign addr_word_offset_tv = paddr_tv_r[byte_offset_width_lp+:word_offset_width_lp];
 
-  // miss_detect
+  // invalid_detect
   //
-  logic [dcache_assoc_p-1:0] tag_match_tv;
-  logic [dcache_assoc_p-1:0] load_hit_tv;
-  logic [dcache_assoc_p-1:0] store_hit_tv;
   logic [dcache_assoc_p-1:0] invalid_tv;
-  logic load_hit;
-  logic store_hit;
-  logic [way_id_width_lp-1:0] load_hit_way;
-  logic [way_id_width_lp-1:0] store_hit_way;
 
   for (genvar i = 0; i < dcache_assoc_p; i++) begin: tag_comp
-    assign tag_match_tv[i] = addr_tag_tv == tag_info_tv_r[i].tag;
-    assign load_hit_tv[i] = tag_match_tv[i] & (tag_info_tv_r[i].coh_state != e_COH_I);
-    assign store_hit_tv[i] = tag_match_tv[i] & ((tag_info_tv_r[i].coh_state == e_COH_M)
-                                                || (tag_info_tv_r[i].coh_state == e_COH_E));
     assign invalid_tv[i] = (tag_info_tv_r[i].coh_state == e_COH_I);
   end
-
-  bsg_priority_encode
-    #(.width_p(dcache_assoc_p)
-      ,.lo_to_hi_p(1)
-      )
-    pe_load_hit
-    (.i(load_hit_tv)
-      ,.v_o(load_hit)
-      ,.addr_o(load_hit_way)
-      );
-  
-  bsg_priority_encode
-    #(.width_p(dcache_assoc_p)
-      ,.lo_to_hi_p(1)
-      )
-    pe_store_hit
-    (.i(store_hit_tv)
-      ,.v_o(store_hit)
-      ,.addr_o(store_hit_way)
-      );
 
   // uncached req
   //
@@ -502,7 +544,7 @@ module bp_be_dcache
   wire load_miss_tv = ~load_hit & v_tv_r & load_op_tv_r & ~uncached_tv_r;
   wire store_miss_tv = ~store_hit & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r;
   wire lr_miss_tv = v_tv_r & lr_op_tv_r & ~store_hit;
-  wire wt_miss_tv = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r & ~cache_req_ready_i;
+  wire wt_miss_tv = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r & ~cache_req_ready_i & (l1_writethrough_p == 1);
 
   wire miss_tv = load_miss_tv | store_miss_tv | lr_miss_tv | wt_miss_tv;
 
