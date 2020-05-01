@@ -84,9 +84,9 @@ build_cov.v: build.v
 
 sim.v: build.v
 sim.v: $(SIM_DIR)/run_simv
-sim.v: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).sim.log
-sim.v: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).sim.rpt
-sim.v: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).sim.err
+sim.v: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).sim.$(SUITE).$(PROG).log
+sim.v: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).sim.$(SUITE).$(PROG).rpt
+sim.v: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).sim.$(SUITE).$(PROG).err
 $(SIM_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
 $(SIM_DIR)/run_simv: | $(SIM_COLLATERAL)
 	cd $(@D); ./simv $(VCS_OPTIONS) $(VCS_PLUSARGS) | tee $(SIM_LOG)

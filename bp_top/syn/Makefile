@@ -26,28 +26,3 @@ include $(BP_COMMON_DIR)/syn/Makefile.regress
 include $(BP_COMMON_DIR)/syn/Makefile.verilator
 include $(BP_COMMON_DIR)/syn/Makefile.vcs
 
-regress.top: regress
-regress: regress.v check_design.syn
-	$(MAKE) lint.v || true
-	$(MAKE) lint.sc || true
-
-LIST ?= /dev/null
-LIST_PROGS = $(shell cat $(LIST))
-
-regress.list.sc:
-	$(MAKE) regress.list.common _TS=sc
-	($(foreach p, $(LIST_PROGS), echo $p; echo "=========="; cat reports/verilator/$(TB).$(CFG).sim.$p.rpt; echo "";)) | tee -i reports/verilator/$(TB).$(CFG).$@.rpt
-
-regress.list.v:
-	$(MAKE) regress.list.common _TS=v
-	($(foreach p, $(LIST_PROGS), echo $p; echo "=========="; cat reports/vcs/$(TB).$(CFG).sim.$p.rpt; echo "";)) | tee -i reports/vcs/$(TB).$(CFG).$@.rpt
-
-regress.list.common:
-	$(MAKE) build.$(_TS)
-	$(MAKE) regress.list.common.run_in_parallel
-
-regress.list.common.run_in_parallel: $(foreach p, $(LIST_PROGS), regress.list.common.launch_run.$p)
-
-regress.list.common.launch_run.%:
-	$(MAKE) sim.$(_TS) SUITE=beebs PROG=$*
-

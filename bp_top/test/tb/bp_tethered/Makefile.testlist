@@ -317,6 +317,13 @@ RV64_BENCHMARK_TESTS := \
 
 RV64_BENCHMARK_TESTLIST := $(addprefix riscv_tests., $(RV64_BENCHMARK_TESTS))
 
+RISCV_TESTLIST := \
+	$(RV64_P_ISA_TESTLIST) \
+	$(RV64_V_ISA_TESTLIST) \
+	$(RV64_PT_ISA_TESTLIST)\
+   	$(RV64_VT_ISA_TESTLIST)\
+   	$(RV64_BENCHMARK_TESTLIST)
+
 COREMARK_TESTS := coremark
 
 COREMARK_TESTLIST := $(addprefix coremark., $(COREMARK_TESTS))
@@ -449,9 +456,9 @@ BASELINE_TESTLIST := \
 
 .SECONDEXPANSION:
 TESTLIST ?=
-run_test_list:
-	$(MAKE) build.v
-	$(MAKE) $(addsuffix .v, $(addprefix run_test., $($(TESTLIST))))
+run_test_list.%:
+	$(MAKE) build.$*
+	$(MAKE) $(addsuffix .$*, $(addprefix run_test., $($(TESTLIST))))
 
 run_test.%:
 	$(eval override SUITE := $(word 1,$(subst .,  ,$*)))

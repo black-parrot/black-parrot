@@ -34,21 +34,16 @@ The main testbenches are at the FE, BE, ME and TOP levels. The general syntax fo
     cd bp_<end>/syn
     make <ACTION>.<TOOL> [TB=] [CFG=] [PROG=] [DUMP=] [COV=] [COSIM=] [<TRACER>_P=]
     
-### Supported TBs
-There are two main testbenches supported for running test programs on BlackParrot. These testbenches live in bp_top/test/tb/
-- bp_processor: Instantiates a full BlackParrot cache-coherent multicore, with support for 1-16 coherent cores
-- bp_softcore: Instantiates a minimal BlackParrot softcore, with instruction and data caches, with simple DRAM and I/O ports.
-The default testbench in bp_top/ is bp_softcore.
+### Testbench structure
+The bp_tethered testbench in bp_top/test/tb is the primary testbench for BlackParrot. It can instantiate a full BlackParrot cache-coherent multicore or a minimal BlackParrot softcore, as well as the host infrastructure to bootstrap the core and manage DRAM requests. 
 
 Additionally, each of bp_fe, bp_be and bp_me has a set of more targeted testbenches. These testbenches are more prone to breakage due to their tighter coupling to implementation, but they are intended to serve as a set of compliance tests for external contributors.
 
-NOTE: pardon our dust as we update our testbenches. The main testbench bp_processor testbench is well supported.
+NOTE: pardon our dust as we update our testbenches. The main testbench bp_tethered testbench is well supported.
 
 ### Supported CFGs
 All configurations can be found in bp\_common/src/include/bp_common_aviary_pkg.vh
 A configuration is selected by passing one of the enums found in bp_params_e. These correspond to the struct of parameters in all_cfgs_gp.
-- bp_processor supports all configurations in the bp_common_aviary_pkg
-- bp_softcore only supports e_bp_single_core_cfg at the moment.
 
 In the future, BlackParrot core parameters will be separated from SoC parameters.
 
@@ -56,10 +51,14 @@ In the future, BlackParrot core parameters will be separated from SoC parameters
 Each testbench supports a set of actions which act upon that specific testbench. These include:
 - lint (lints the DUT of a single testbench)
 - build (builds a single testbench)
+  - build_dump (builds with waveform dump enabled)
+  - build_cov (builds with line+toggle coverage enabled)
 - sim (runs a single test)
 - blood (generates bloodgraph based on stall information; you must build and run with CORE_PROFILE_P=1)
+- wave (opens a waveform viewer for the dump file, either GTKWave or Synopsys DVE)
 - check_design (checks for DC elaborability, which is a proxy for synthesizability)
-- regress (runs a suite of tests. This target is only defined for select testbenches)
+- run_testlist (runs a suite of tests. This target may behave differently on different testbenches)
+- report (prints a summary of reports and erroring actions
 
 ### Supported TOOLs
 BlackParrot supports these tools for simulation and design checking. We welcome contributions for additional tool support, especially for open-source tools.
@@ -69,29 +68,28 @@ BlackParrot supports these tools for simulation and design checking. We welcome 
 
 NOTE: Verilator is the free, open-source tool used to evaluate BlackParrot.  VCS and DC are used for simulation and synthesis. If you wish to use these tools, set up the appropriate environment variables in Makefile.common
 
-### Supported PROGs
+### Supported Programs
 The set of programs built by the make progs target can be found in bp_common/test/Makefile.frag. More details about BlackParrot software can be found in the [Software Developer Guide](software_guide.md).
 Notably, BlackParrot has been tested with:
-- riscv-tests (a set of unit tests for RISC-V functionality)
-  - Note: rv64ui-p-fence_i and rv64ui-v/vt/pt are known to fail with bp_softcore. This is due to the
-    lack of a coherence system. Work is in progress to remedy these failures.
+- riscv_tests (a set of unit tests for RISC-V functionality)
 - BEEBS (Embedded core test suite)
 - Coremark (Standard benchmark for core performance)
 - demos (one-off tests which are used to test various aspects of the system)
+- spec2000, requires a copy of the proprietary spec2000 benchmark suite
+
+Each program belongs to a test suite. The full suite list can be found in bp_common/test/Makefile.frag
 
 ### Other flags
-- DUMP: dump a vcd
-- COV: generate line and toggle coverage
-- COSIM: Run with Dromajo-based cosimulation
+- COSIM\_P: Run with Dromajo-based cosimulation
 - *\_TRACE\_P: Enable a specific tracer (tracer list can be found in the [SW Developer Guide](software_guide.md))
 
 ### Example Commands
-    make build.v sim.v PROG=hello_world DUMP=1  # Run hello_world in VCS with dumping
-    make dve.v PROG=hello_world                 # Open hello_world waveform in dve
-    make build.sc sim.sc PROG=hello_world COV=1 # Run hello_world in Verilator with coverage
+    make build_dump.v sim.v SUITE=bp_tests PROG=hello_world  # Run hello_world in VCS with dumping
+    make wave.v SUITE=bp_tests PROG=hello_world              # Open hello_world waveform in dve
+    make build_cov.sc sim.sc SUITE=riscv_tests PROG=rsort    # Run hello_world in Verilator with coverage
 
-    make regress.sc -j 10                       # Run riscv-tests in Verilator with 10 threads
-    make regress_beebs.v -j 5                   # Run beebs suite in VCS with 5 threads
+    make run_testlist.sc -j 10 TESTLIST=BEEBS_TESTLIST    # Run beebs suite in Verilator with 10 threads
+    make run_testlist.v -j 5   TESTLIST=RISCV_TESTLIST    # Run riscv-tests suite in VCS with 5 threads
 
 ## Examining Results
 Running a test will generate a ton of subdirectories in bp_\<end\>/syn/
