@@ -40,7 +40,7 @@ module bp_fe_icache
     , localparam stat_width_lp = `bp_cache_stat_info_width(icache_assoc_p)
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , parameter debug_p=0
-    )
+    )   
    (input                                              clk_i
     , input                                            reset_i
 
@@ -171,10 +171,10 @@ module bp_fe_icache
   logic [icache_assoc_p-1:0]                                           data_mem_v_li;
   logic                                                                data_mem_w_li;
   logic [icache_assoc_p-1:0][index_width_lp+word_offset_width_lp-1:0]  data_mem_addr_li;
-  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                        data_mem_data_li;
+  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                         data_mem_data_li;
   logic [icache_assoc_p-1:0][data_mem_mask_width_lp-1:0]               data_mem_w_mask_li;
-  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                        data_mem_data_lo;
-
+  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                         data_mem_data_lo;
+ 
   // data memory: banks
   for (genvar bank = 0; bank < icache_assoc_p; bank++)
   begin: data_mems
@@ -231,8 +231,6 @@ module bp_fe_icache
   logic [index_width_lp-1:0]                                 addr_index_tv;
   logic                                                      fencei_op_tv_r;
   logic [icache_assoc_p-1:0]                                 hit_v_tv_r;
-
-  // Flush ops are non-speculative and so cannot be poisoned
   assign tv_we = v_tl_r & ((~poison_i & ptag_v_i) | fencei_op_tl_r) & ~fencei_req;
 
   always_ff @ (posedge clk_i) begin
@@ -407,7 +405,7 @@ module bp_fe_icache
      ,.sel_i(addr_tv_r[3+:`BSG_CDIV(num_dwords_per_bank_lp, 2)])
      ,.data_o(ld_data_dword_picked)
      );
-
+   
   logic [dword_width_p-1:0] final_data;
   bsg_mux #(
     .width_p(dword_width_p)
@@ -420,7 +418,7 @@ module bp_fe_icache
 
   logic lower_upper_sel;
 
-  assign lower_upper_sel             = addr_tv_r[2]; // Select upper/lower 32 bits
+  assign lower_upper_sel             = addr_tv_r[2];
   assign data_o = lower_upper_sel
     ? final_data[instr_width_p+:instr_width_p]
     : final_data[instr_width_p-1:0];
