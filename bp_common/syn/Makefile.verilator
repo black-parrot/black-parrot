@@ -94,9 +94,9 @@ build_cov.sc: verilate_cov.sc
 
 sim.sc: build.sc
 sim.sc: $(SIM_DIR)/run_simsc
-sim.sc: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).sim.$(PROG).log
-sim.sc: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).sim.$(PROG).rpt
-sim.sc: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).sim.$(PROG).err
+sim.sc: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).sim.$(SUITE).$(PROG).log
+sim.sc: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).sim.$(SUITE).$(PROG).rpt
+sim.sc: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).sim.$(SUITE).$(PROG).err
 $(SIM_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
 $(SIM_DIR)/run_simsc: $(SIM_COLLATERAL)
 	cd $(@D); ./simsc $(VERILATOR_OPTIONS) $(VERILATOR_PLUSARGS) | tee $(SIM_LOG)
