@@ -25,3 +25,4 @@ bp_common/test/bin/
 bp_common/test/lib/
 bp_common/test/include/
 spec2000/
+regress_logs/

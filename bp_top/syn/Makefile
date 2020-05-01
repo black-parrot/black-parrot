@@ -11,7 +11,7 @@ export RESULTS_PATH := $(BP_TOP_DIR)/syn/results
 export REPORT_PATH  := $(BP_TOP_DIR)/syn/reports
 export TOUCH_PATH   := $(BP_TOP_DIR)/syn/touchfiles
 
-export TB    ?= bp_softcore
+export TB    ?= bp_tethered
 export CFG   ?= e_bp_softcore_cfg
 export SUITE ?= bp_tests
 export PROG  ?= hello_world

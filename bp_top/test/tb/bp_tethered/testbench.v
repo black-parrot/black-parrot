@@ -153,7 +153,6 @@ bp_mem
    ,.mem_resp_yumi_i(proc_mem_resp_yumi_lo)
    );
 
-
 logic nbf_done_lo, cfg_done_lo;
 if (load_nbf_p)
   begin : nbf
@@ -317,19 +316,20 @@ bind bp_be_top
        ,.finish_o(testbench.cosim_finish_lo)
        );
 
-logic [29:0] warmup_cnt;
-logic warm;
-bsg_counter_clear_up
- #(.max_val_p(2**30-1), .init_val_p(0))
- warmup_counter
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i | testbench.wrapper.dut.core.be.be_checker.scheduler.int_regfile.cfg_bus.freeze)
-
-   ,.clear_i(1'b0)
-   ,.up_i(testbench.wrapper.dut.core.be.be_calculator.commit_pkt.instret & ~warm)
-   ,.count_o(warmup_cnt)
-   );
-assign warm = (warmup_cnt == warmup_instr_p);
+// TODO: Put warmup counter inside perf
+//logic [29:0] warmup_cnt;
+//logic warm;
+//bsg_counter_clear_up
+// #(.max_val_p(2**30-1), .init_val_p(0))
+// warmup_counter
+//  (.clk_i(clk_i)
+//   ,.reset_i(reset_i | testbench.wrapper.dut.core.be.be_checker.scheduler.int_regfile.cfg_bus.freeze)
+//
+//   ,.clear_i(1'b0)
+//   ,.up_i(testbench.wrapper.dut.core.be.be_calculator.commit_pkt.instret & ~warm)
+//   ,.count_o(warmup_cnt)
+//   );
+//assign warm = (warmup_cnt == warmup_instr_p);
 
 bind bp_be_top
   bp_be_nonsynth_perf
@@ -337,7 +337,7 @@ bind bp_be_top
    perf
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze | ~testbench.warm)
+     ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
 
      ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
