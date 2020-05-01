@@ -40,7 +40,7 @@ module bp_fe_icache
     , localparam stat_width_lp = `bp_cache_stat_info_width(icache_assoc_p)
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , parameter debug_p=0
-    )   
+    )
    (input                                              clk_i
     , input                                            reset_i
 
@@ -171,10 +171,10 @@ module bp_fe_icache
   logic [icache_assoc_p-1:0]                                           data_mem_v_li;
   logic                                                                data_mem_w_li;
   logic [icache_assoc_p-1:0][index_width_lp+word_offset_width_lp-1:0]  data_mem_addr_li;
-  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                         data_mem_data_li;
+  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                        data_mem_data_li;
   logic [icache_assoc_p-1:0][data_mem_mask_width_lp-1:0]               data_mem_w_mask_li;
-  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                         data_mem_data_lo;
- 
+  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                        data_mem_data_lo;
+
   // data memory: banks
   for (genvar bank = 0; bank < icache_assoc_p; bank++)
   begin: data_mems
@@ -191,14 +191,14 @@ module bp_fe_icache
       ,.w_i(data_mem_w_li)
       ,.data_o(data_mem_data_lo[bank])
     );
-  end   
-
+  end
 
   logic [ptag_width_lp-1:0]    addr_tag_tl;
-  logic [icache_assoc_p-1:0]     hit_v_tl;
-  logic [way_id_width_lp-1:0] hit_index_tl;
-  logic                       hit_tl;
-  logic [paddr_width_p-1:0]   addr_tl;
+  logic [icache_assoc_p-1:0]   hit_v_tl;
+  logic [way_id_width_lp-1:0]  hit_index_tl;
+  logic                        hit_tl;
+  logic [paddr_width_p-1:0]    addr_tl;
+  logic [icache_assoc_p-1:0]  way_v_tl;
    
   assign addr_tl = {ptag_i, vaddr_tl_r[0+:bp_page_offset_width_gp]};
 
@@ -206,11 +206,10 @@ module bp_fe_icache
 
   for (genvar i = 0; i < icache_assoc_p; i++) begin: tag_comp_tl
     assign hit_v_tl[i]   = (tag_tl[i] == addr_tag_tl) && (state_tl[i] != e_COH_I);
-
+    assign way_v_tl[i]   = (state_tl[i] != e_COH_I);
   end     
 
   bsg_priority_encode #(
-
     .width_p(icache_assoc_p)
     ,.lo_to_hi_p(1)
   ) pe_load_hit (
@@ -223,17 +222,18 @@ module bp_fe_icache
   logic v_tv_r;
   logic tv_we;
   logic uncached_tv_r;
-  logic [paddr_width_p-1:0]                     addr_tv_r;
-  logic [vaddr_width_p-1:0]                     vaddr_tv_r; 
-  logic [icache_assoc_p-1:0][ptag_width_lp-1:0]     tag_tv_r;
+  logic [paddr_width_p-1:0]                                  addr_tv_r;
+  logic [vaddr_width_p-1:0] 				     vaddr_tv_r;
+  logic [icache_assoc_p-1:0][ptag_width_lp-1:0]              tag_tv_r;
   logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)-1:0]     state_tv_r;
-  logic [icache_assoc_p-1:0][bank_width_lp-1:0]    ld_data_tv_r;
-  logic [ptag_width_lp-1:0]                      addr_tag_tv_r;
-  logic [index_width_lp-1:0]                    addr_index_tv;
-  logic [word_offset_width_lp-1:0]              addr_word_offset_tv;
-  logic                                         fencei_op_tv_r;
-  logic [way_id_width_lp-1:0] 			hit_index_tv_r;
-  logic 					hit_tv_r;
+  logic [icache_assoc_p-1:0][bank_width_lp-1:0]              ld_data_tv_r;
+  logic [ptag_width_lp-1:0]                                  addr_tag_tv_r;
+  logic [index_width_lp-1:0]                                 addr_index_tv;
+  logic [word_offset_width_lp-1:0]                           addr_word_offset_tv;
+  logic                                                      fencei_op_tv_r;
+  logic [way_id_width_lp-1:0] 			             hit_index_tv_r;
+  logic 					             hit_tv_r;
+  logic [icache_assoc_p-1:0]                                 way_v;
 
   // Flush ops are non-speculative and so cannot be poisoned
   assign tv_we = v_tl_r & ((~poison_i & ptag_v_i) | fencei_op_tl_r) & ~fencei_req;
@@ -247,33 +247,23 @@ module bp_fe_icache
     else begin
       v_tv_r <= tv_we;
       if (tv_we) begin
-        addr_tv_r    <= addr_tl;
-        vaddr_tv_r   <= vaddr_tl_r;
-        tag_tv_r     <= tag_tl;
-        state_tv_r   <= state_tl;
-        ld_data_tv_r <= data_mem_data_lo;
-        uncached_tv_r <= uncached_i;
+        addr_tv_r      <= addr_tl;
+        vaddr_tv_r     <= vaddr_tl_r;
+        tag_tv_r       <= tag_tl;
+        state_tv_r     <= state_tl;
+        ld_data_tv_r   <= data_mem_data_lo;
+        uncached_tv_r  <= uncached_i;
         fencei_op_tv_r <= fencei_op_tl_r;
-	hit_index_tv_r <= hit_index_tl;
-	hit_tv_r       <= hit_tl;
-	addr_tag_tv_r  <= addr_tag_tl;
-	 
- 
+        hit_index_tv_r <= hit_index_tl;
+        hit_tv_r       <= hit_tl;
+        addr_tag_tv_r  <= addr_tag_tl;
+	way_v          <= way_v_tl;
       end
     end
   end
 
   assign addr_index_tv = addr_tv_r[block_offset_width_lp+:index_width_lp];
   assign addr_word_offset_tv = addr_tv_r[byte_offset_width_lp+:word_offset_width_lp];
-
-  //cache hit?
-  
-
-  for (genvar i = 0; i < lce_assoc_p; i++) begin: tag_comp_tv
-    assign way_v[i]   = (state_tv_r[i] != e_COH_I);
-  end
-
-
 
   logic miss_tv;
   assign miss_tv = ~hit_tv_r & v_tv_r & ~uncached_tv_r;
@@ -283,8 +273,7 @@ module bp_fe_icache
   logic [dword_width_p-1:0] uncached_load_data_r;
 
   assign uncached_req = v_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
-  assign fencei_req = v_tv_r & fencei_op_tv_r;
-
+  assign fencei_req = v_tv_r & fencei_op_tv_r; 
  
   // stat memory
   logic                                       stat_mem_v_li;
@@ -413,7 +402,7 @@ module bp_fe_icache
      ,.sel_i(addr_tv_r[3+:`BSG_CDIV(num_dwords_per_bank_lp, 2)])
      ,.data_o(ld_data_dword_picked)
      );
-   
+
   logic [dword_width_p-1:0] final_data;
   bsg_mux #(
     .width_p(dword_width_p)
@@ -426,7 +415,7 @@ module bp_fe_icache
 
   logic lower_upper_sel;
 
-  assign lower_upper_sel             = addr_tv_r[2];
+  assign lower_upper_sel             = addr_tv_r[2]; // Select upper/lower 32 bits
   assign data_o = lower_upper_sel
     ? final_data[instr_width_p+:instr_width_p]
     : final_data[instr_width_p-1:0];
