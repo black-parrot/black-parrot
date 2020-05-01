@@ -13,6 +13,7 @@ clean_tests:
 	rm -rf $(TB_PATH)/$(TB)/py/*rom.v
 
 generate_tests:
+	mkdir -p $(TB_PATH)/mem
 	python3 $(TB_PATH)/$(TB)/py/trace_script.py $(TB_PATH) $(TB) $(MEM_PATH)
 
 double_word_test: generate_tests
