@@ -180,8 +180,9 @@ module testbench
      ,.yumi_o(fifo_random_yumi_lo)
      );
 
-  // Having a fifo with 8 elements here since we can get upto a maximum of
-  // 8 things from the cache in the streaming case
+  // We need an 8 FIFO because we might be receiving all data at once rather
+  // than receive data at regular intervals. This is possible a side effect of
+  // our testing strategy. Open for debate.
   bsg_fifo_1r1w_small 
     #(.width_p(dword_width_p)
      ,.els_p(8))

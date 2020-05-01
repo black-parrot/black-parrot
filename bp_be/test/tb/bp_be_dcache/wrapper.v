@@ -117,8 +117,30 @@ module wrapper
     ,.v_o(rolly_v_lo)
     ,.yumi_i(rolly_yumi_li)
     );
-  
-   assign rollback_li = dcache_miss_lo;
+
+   logic rolly_v_rr, dcache_ready_rr;
+   bsg_dff_chain
+   #(.width_p(1)
+    ,.num_stages_p(2)
+    )
+    dcache_pkt_v_reg
+    (.clk_i(clk_i)
+    ,.data_i(rolly_v_lo)
+    ,.data_o(rolly_v_rr)
+    );
+
+   bsg_dff_chain
+   #(.width_p(1)
+    ,.num_stages_p(2)
+    )
+    dcache_pkt_ready_reg
+    (.clk_i(clk_i)
+    ,.data_i(dcache_ready_lo)
+    ,.data_o(dcache_ready_rr)
+    );
+
+
+   assign rollback_li = rolly_v_rr & dcache_ready_rr & ~v_o;
    assign rolly_yumi_li = rolly_v_lo & dcache_ready_lo;
   
    logic [ptag_width_lp-1:0] rolly_ptag_r;

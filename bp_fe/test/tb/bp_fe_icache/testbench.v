@@ -157,6 +157,7 @@ module testbench
      );
 
   // This fifo has 16 elements since maximum number of streaming hits is 16
+  // Probably a side effect of the testing strategy.  Open for debate
   bsg_fifo_1r1w_small 
     #(.width_p(instr_width_p)
      ,.els_p(16)
@@ -267,6 +268,8 @@ module testbench
       ,.cache_req_metadata_o(cache_req_metadata_o)
       ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
       ,.cache_req_complete_i(cache_req_complete_i)
+
+      ,.wt_req()
       
       ,.v_o(data_v_o)
       ,.load_data(dword_width_p'(data_o))
