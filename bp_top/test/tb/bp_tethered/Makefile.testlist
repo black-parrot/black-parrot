@@ -456,7 +456,7 @@ BASELINE_TESTLIST := \
 
 .SECONDEXPANSION:
 TESTLIST ?=
-run_test_list.%:
+run_testlist.%:
 	$(MAKE) build.$*
 	$(MAKE) $(addsuffix .$*, $(addprefix run_test., $($(TESTLIST))))
 

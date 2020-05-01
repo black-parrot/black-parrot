@@ -61,6 +61,12 @@ module testbench
 
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
+initial begin
+  if (num_core_p > 1) begin
+    assert (cosim_p == 0) else $error("cosim_p not supported for num_core_p > 1");
+  end
+end
+
 bp_cce_mem_msg_s proc_mem_cmd_lo;
 logic proc_mem_cmd_v_lo, proc_mem_cmd_ready_li;
 bp_cce_mem_msg_s proc_mem_resp_li;

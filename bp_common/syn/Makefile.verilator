@@ -36,7 +36,7 @@ SIM_DIR   := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG)
 $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR) $(BUILD_DIR) $(SIM_DIR):
 	mkdir -p $@
 
-.PHONY: clean.sc lint.sc build.sc run.sc cov.sc
+.PHONY: clean.sc lint.sc build.sc cov.sc
 
 include $(TB_PATH)/$(TB)/Makefile.verilator
 
@@ -81,7 +81,6 @@ build.sc: verilate.sc
 $(CBUILD_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
 $(BUILD_DIR)/obj_dir/simsc: $(CBUILD_COLLATERAL)
 	$(MAKE) -C $(@D) -f V$(TOP_MODULE).mk | tee $(CBUILD_LOG)
->>>>>>> Revamping test flow
 	-@grep "Error" -A 5 $(CBUILD_LOG) > $(CBUILD_ERROR)
 	-@tail -n 2 $(CBUILD_LOG) > $(CBUILD_REPORT)
 	-@test -s $(CBUILD_ERROR) && echo "FAILED" >> $(CBUILD_REPORT) || rm $(CBUILD_ERROR)
