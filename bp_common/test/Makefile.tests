@@ -2,6 +2,7 @@ TOP ?= $(shell git rev-parse --show-toplevel)
 
 include $(TOP)/Makefile.common
 
+perch_dir       := $(BP_TEST_SRC_DIR)/perch
 bp_tests_dir    := $(BP_TEST_SRC_DIR)/bp_tests
 riscv_tests_dir := $(BP_TEST_SRC_DIR)/riscv-tests
 beebs_dir       := $(BP_TEST_SRC_DIR)/beebs
@@ -18,7 +19,7 @@ $(BP_TOUCH_DIR)/$$($(1)_tag):
 	find $(2) -name "*.riscv" -exec cp {} $(BP_TEST_MEM_DIR)/$(1)/ \;
 	touch $(BP_TOUCH_DIR)/$$($(1)_tag)
 $(1): $(BP_TOUCH_DIR)/$$($(1)_tag)
-$(1)_manual:
+$(1)_manual: $(BP_TEST_DIR)/lib/libperch.a
 	+$(MAKE) $(1)_build
 	mkdir -p $(BP_TEST_MEM_DIR)/$(1)
 	find $(2) -name "*.riscv" -exec cp {} $(BP_TEST_MEM_DIR)/$(1)/ \;
@@ -28,9 +29,12 @@ bp_tests_build:
 	$(MAKE) -C $(bp_tests_dir) clean all
 
 riscv_tests_build:
+	cd $(riscv_tests_dir); ./configure --target=riscv64-unknown-elf-dramfs
 	$(MAKE) -C $(riscv_tests_dir) clean all
 
 beebs_build:
+	cd $(beebs_dir); ./configure --host=riscv64 --with-chip=black-parrot \
+		--includedir=$(TEST_DIR)/include --libdir=$(TEST_DIR)/lib
 	$(MAKE) -C $(beebs_dir) clean all
 	@# TODO: We need to change to output .riscv, but the beebs makefiles are a mess
 	@find $(beebs_dir)/src -type f -executable -exec cp {} {}.riscv \;
@@ -40,6 +44,14 @@ spec_build:
 
 riscvdv_build:
 	$(MAKE) -C $(riscvdv_dir)
+
+perch: $(BP_TEST_DIR)/lib/libperch.a
+$(BP_TEST_DIR)/lib/libperch.a:
+	$(MAKE) -C $(perch_dir)
+	mkdir -p $(BP_TEST_DIR)/lib
+	mkdir -p $(BP_TEST_DIR)/include
+	cp $(BP_TEST_DIR)/src/perch/libperch.a $(BP_TEST_DIR)/lib
+	cp $(BP_TEST_DIR)/src/perch/*.h $(BP_TEST_DIR)/include
 
 $(eval $(call submodule_test_template,bp_tests,$(bp_tests_dir)))
 $(eval $(call submodule_test_template,riscv_tests,$(riscv_tests_dir)))

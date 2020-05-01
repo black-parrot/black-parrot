@@ -74,7 +74,7 @@ tools: | $(TARGET_DIRS)
 
 progs: tools
 	git submodule update --init --recursive $(BP_COMMON_DIR)/test
-	$(MAKE) -C $(BP_COMMON_DIR)/test all_mem all_dump all_nbf
+	$(MAKE) -C $(BP_COMMON_DIR)/test perch bp_tests riscv_tests beebs
 
 ucode: | basejump
 	$(MAKE) -C $(BP_ME_DIR)/src/asm roms
