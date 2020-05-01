@@ -198,7 +198,7 @@ module bp_fe_icache
   logic [way_id_width_lp-1:0]  hit_index_tl;
   logic                        hit_tl;
   logic [paddr_width_p-1:0]    addr_tl;
-  logic [icache_assoc_p-1:0]  way_v_tl;
+  logic [icache_assoc_p-1:0]   way_v_tl;
    
   assign addr_tl = {ptag_i, vaddr_tl_r[0+:bp_page_offset_width_gp]};
 
@@ -223,7 +223,7 @@ module bp_fe_icache
   logic tv_we;
   logic uncached_tv_r;
   logic [paddr_width_p-1:0]                                  addr_tv_r;
-  logic [vaddr_width_p-1:0] 				     vaddr_tv_r;
+  logic [vaddr_width_p-1:0]                                  vaddr_tv_r;
   logic [icache_assoc_p-1:0][ptag_width_lp-1:0]              tag_tv_r;
   logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)-1:0]     state_tv_r;
   logic [icache_assoc_p-1:0][bank_width_lp-1:0]              ld_data_tv_r;
@@ -231,8 +231,8 @@ module bp_fe_icache
   logic [index_width_lp-1:0]                                 addr_index_tv;
   logic [word_offset_width_lp-1:0]                           addr_word_offset_tv;
   logic                                                      fencei_op_tv_r;
-  logic [way_id_width_lp-1:0] 			             hit_index_tv_r;
-  logic 					             hit_tv_r;
+  logic [way_id_width_lp-1:0]                                hit_index_tv_r;
+  logic                                                      hit_tv_r;
   logic [icache_assoc_p-1:0]                                 way_v;
 
   // Flush ops are non-speculative and so cannot be poisoned
@@ -257,7 +257,7 @@ module bp_fe_icache
         hit_index_tv_r <= hit_index_tl;
         hit_tv_r       <= hit_tl;
         addr_tag_tv_r  <= addr_tag_tl;
-	way_v          <= way_v_tl;
+        way_v          <= way_v_tl;
       end
     end
   end
