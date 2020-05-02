@@ -292,7 +292,7 @@ module bp_fe_lce_cmd
             set_tag_received_o = tag_mem_pkt_yumi_i;
             cache_req_complete_o = 1'b0;
 
-          end else if (lce_cmd_li.header.msg_type == e_lce_cmd_set_tag_wakeup) begin
+          end else if (lce_cmd_li.header.msg_type == e_lce_cmd_st_wakeup) begin
             tag_mem_pkt.index  = lce_cmd_addr_index;
             tag_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
             tag_mem_pkt.state  = lce_cmd_li.header.state;
