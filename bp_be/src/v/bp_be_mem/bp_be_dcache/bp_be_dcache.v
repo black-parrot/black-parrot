@@ -484,12 +484,6 @@ module bp_be_dcache
       ,.addr_o(store_hit_way)
       );
 
-  wire load_miss_tv = ~load_hit & v_tv_r & load_op_tv_r & ~uncached_tv_r;
-  wire store_miss_tv = ~store_hit & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r;
-  wire lr_miss_tv = v_tv_r & lr_op_tv_r & ~store_hit;
-
-  wire miss_tv = load_miss_tv | store_miss_tv | lr_miss_tv;
-
   // uncached req
   //
   logic uncached_load_req;
@@ -504,6 +498,13 @@ module bp_be_dcache
   logic [ptag_width_lp-1:0]  load_reserved_tag_r;
   logic [index_width_lp-1:0] load_reserved_index_r;
   logic load_reserved_v_r;
+
+  wire load_miss_tv = ~load_hit & v_tv_r & load_op_tv_r & ~uncached_tv_r;
+  wire store_miss_tv = ~store_hit & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r;
+  wire lr_miss_tv = v_tv_r & lr_op_tv_r & ~store_hit;
+  wire wt_miss_tv = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r & ~cache_req_ready_i;
+
+  wire miss_tv = load_miss_tv | store_miss_tv | lr_miss_tv | wt_miss_tv;
 
   // Load reserved misses if not in exclusive or modified (whether load hit or not)
   assign lr_hit_tv = v_tv_r & lr_op_tv_r & store_hit;
@@ -754,7 +755,7 @@ module bp_be_dcache
 
   assign v_o = v_tv_r & ((uncached_tv_r & (load_op_tv_r & uncached_load_data_v_r))
                          | (uncached_tv_r & (store_op_tv_r & cache_req_ready_i))
-                         | (~uncached_tv_r & ~fencei_op_tv_r & ~miss_tv & (~store_op_tv_r | wbuf_v_li | sc_op_tv_r))
+                         | (~uncached_tv_r & ~fencei_op_tv_r & ~miss_tv)
                          );
   // Always send fencei when coherent
   assign fencei_v_o = fencei_req & (~gdirty_r | (coherent_l1_p == 1));
@@ -1123,11 +1124,11 @@ module bp_be_dcache
     );
   
   assign data_mem_o = lce_data_mem_data_li;
-  // We don't allow any incoming data_mem_pkts until we have drained the write
-  // buffer. As an optimization, we snoop the data_mem_pkts to see if there
+  // As an optimization, we snoop the data_mem_pkts to see if there
   // are any matching entries in the write buffer and disallow the
   // data_mem_pkts to allow the write buffers to drain before we can
   // accept the pkt in case of a match. 
+  // A similar scheme could be adopted for a non-blocking version, where we snoop the bank
   assign data_mem_pkt_yumi_o = (data_mem_pkt.opcode == e_cache_data_mem_uncached) 
                                ? data_mem_pkt_v 
                                : ~(load_op & tl_we) & ~lce_snoop_match_lo & data_mem_pkt_v;
