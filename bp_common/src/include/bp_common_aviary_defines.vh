@@ -106,7 +106,6 @@ typedef struct packed
   integer sac_x_dim;
   integer cacc_type;
   integer sacc_type;
-  integer coherent_l1;
 
   integer vaddr_width;
   integer paddr_width;
@@ -121,6 +120,8 @@ typedef struct packed
   integer itlb_els;
   integer dtlb_els;
 
+  integer l1_writethrough;
+  integer l1_coherent;
   integer dcache_sets;
   integer dcache_assoc;
   integer dcache_block_width;
@@ -211,8 +212,6 @@ typedef struct packed
   , localparam cce_id_width_p  = `BSG_SAFE_CLOG2((cc_x_dim_p*1+2)*(cc_y_dim_p*1+2))                \
   , localparam lce_id_width_p  = `BSG_SAFE_CLOG2((cc_x_dim_p*2+2)*(cc_y_dim_p*2+2))                \
                                                                                                    \
-  , localparam coherent_l1_p = proc_param_lp.coherent_l1                                           \
-                                                                                                   \
   , localparam vaddr_width_p = proc_param_lp.vaddr_width                                           \
   , localparam paddr_width_p = proc_param_lp.paddr_width                                           \
   , localparam asid_width_p  = proc_param_lp.asid_width                                            \
@@ -226,6 +225,8 @@ typedef struct packed
   , localparam itlb_els_p              = proc_param_lp.itlb_els                                    \
   , localparam dtlb_els_p              = proc_param_lp.dtlb_els                                    \
                                                                                                    \
+  , localparam l1_coherent_p              = proc_param_lp.l1_coherent                              \
+  , localparam l1_writethrough_p          = proc_param_lp.l1_writethrough                          \
   , localparam dcache_sets_p              = proc_param_lp.dcache_sets                              \
   , localparam dcache_assoc_p             = proc_param_lp.dcache_assoc                             \
   , localparam dcache_block_width_p       = proc_param_lp.dcache_block_width                       \

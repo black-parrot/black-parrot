@@ -55,17 +55,17 @@ module bp_fe_mem
 
    , input [icache_data_mem_pkt_width_lp-1:0]         data_mem_pkt_i
    , input                                            data_mem_pkt_v_i
-   , output logic                                     data_mem_pkt_ready_o
+   , output logic                                     data_mem_pkt_yumi_o
    , output logic [icache_block_width_p-1:0]          data_mem_o
 
    , input [icache_tag_mem_pkt_width_lp-1:0]          tag_mem_pkt_i
    , input                                            tag_mem_pkt_v_i
-   , output logic                                     tag_mem_pkt_ready_o
+   , output logic                                     tag_mem_pkt_yumi_o
    , output logic [ptag_width_lp-1:0]                 tag_mem_o
 
    , input [icache_stat_mem_pkt_width_lp-1:0]         stat_mem_pkt_i
    , input                                            stat_mem_pkt_v_i
-   , output logic                                     stat_mem_pkt_ready_o
+   , output logic                                     stat_mem_pkt_yumi_o
    , output logic [stat_width_lp-1:0]                 stat_mem_o
    );
 
@@ -161,17 +161,17 @@ bp_fe_icache
 
    ,.data_mem_pkt_i(data_mem_pkt_i)
    ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
-   ,.data_mem_pkt_ready_o(data_mem_pkt_ready_o)
+   ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
    ,.data_mem_o(data_mem_o)
 
    ,.tag_mem_pkt_i(tag_mem_pkt_i)
    ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
-   ,.tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
+   ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
    ,.tag_mem_o(tag_mem_o)
 
    ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
    ,.stat_mem_pkt_i(stat_mem_pkt_i)
-   ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
+   ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
    ,.stat_mem_o(stat_mem_o)
    );
 

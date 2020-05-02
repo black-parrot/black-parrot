@@ -55,17 +55,17 @@ module bp_fe_lce
 
     , output logic [icache_data_mem_pkt_width_lp-1:0]            data_mem_pkt_o
     , output logic                                               data_mem_pkt_v_o
-    , input                                                      data_mem_pkt_ready_i
-    , input  [icache_block_width_p-1:0]                             data_mem_i
+    , input                                                      data_mem_pkt_yumi_i
+    , input  [icache_block_width_p-1:0]                          data_mem_i
 
     , output logic [icache_tag_mem_pkt_width_lp-1:0]             tag_mem_pkt_o
     , output logic                                               tag_mem_pkt_v_o
-    , input                                                      tag_mem_pkt_ready_i
+    , input                                                      tag_mem_pkt_yumi_i
     , input [ptag_width_lp-1:0]                                  tag_mem_i
        
     , output logic [icache_stat_mem_pkt_width_lp-1:0]            stat_mem_pkt_o
     , output logic                                               stat_mem_pkt_v_o
-    , input                                                      stat_mem_pkt_ready_i
+    , input                                                      stat_mem_pkt_yumi_i
     , input  [stat_width_lp-1:0]                                 stat_mem_i
       
     // LCE-CCE interface 
@@ -182,17 +182,17 @@ module bp_fe_lce
 
     ,.data_mem_pkt_o(data_mem_pkt)
     ,.data_mem_pkt_v_o(data_mem_pkt_v_o)
-    ,.data_mem_pkt_ready_i(data_mem_pkt_ready_i)
+    ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_i)
     ,.data_mem_i(data_mem_i)
 
     ,.tag_mem_pkt_o(tag_mem_pkt)
     ,.tag_mem_pkt_v_o(tag_mem_pkt_v_o)
-    ,.tag_mem_pkt_ready_i(tag_mem_pkt_ready_i)
+    ,.tag_mem_pkt_yumi_i(tag_mem_pkt_yumi_i)
     ,.tag_mem_i(tag_mem_i)    
 
     ,.stat_mem_pkt_v_o(stat_mem_pkt_v_o)
     ,.stat_mem_pkt_o(stat_mem_pkt)
-    ,.stat_mem_pkt_ready_i(stat_mem_pkt_ready_i)
+    ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_i)
     ,.stat_mem_i(stat_mem_i)
 
     ,.lce_cmd_i(lce_cmd)
