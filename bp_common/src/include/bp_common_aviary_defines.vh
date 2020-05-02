@@ -121,6 +121,7 @@ typedef struct packed
   integer itlb_els;
   integer dtlb_els;
 
+  integer writethrough;
   integer dcache_sets;
   integer dcache_assoc;
   integer dcache_block_width;
@@ -226,6 +227,7 @@ typedef struct packed
   , localparam itlb_els_p              = proc_param_lp.itlb_els                                    \
   , localparam dtlb_els_p              = proc_param_lp.dtlb_els                                    \
                                                                                                    \
+  , localparam writethrough_p             = proc_param_lp.writethrough                             \
   , localparam dcache_sets_p              = proc_param_lp.dcache_sets                              \
   , localparam dcache_assoc_p             = proc_param_lp.dcache_assoc                             \
   , localparam dcache_block_width_p       = proc_param_lp.dcache_block_width                       \

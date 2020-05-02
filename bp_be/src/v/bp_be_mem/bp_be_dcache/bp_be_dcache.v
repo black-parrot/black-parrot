@@ -82,7 +82,6 @@ module bp_be_dcache
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
    
-    , parameter writethrough_p=0
     , parameter debug_p=0 
     , parameter lock_max_limit_p=8
 
