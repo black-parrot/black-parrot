@@ -97,7 +97,7 @@ module bp_nonsynth_cache_tracer
    begin
      file_name = $sformatf("%s_%x.trace", trace_file_p, mhartid_i);
      file      = $fopen(file_name, "w");
-     $fwrite(file, "Coherent L1: %x\n", coherent_l1_p);
+     $fwrite(file, "Coherent L1: %x\n", l1_coherent_p);
    end
 
   string op, data_op, tag_op, stat_op;

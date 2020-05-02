@@ -672,7 +672,7 @@ module bp_be_dcache
   logic tag_mem_pkt_v;
   logic stat_mem_pkt_v;
 
-  wire wt_req = (wbuf_v_li & (writethrough_p == 1));
+  wire wt_req = (wbuf_v_li & (l1_writethrough_p == 1));
   
   // Assigning message types
   always_comb begin
@@ -715,7 +715,7 @@ module bp_be_dcache
     else if(fencei_req) begin
       // Don't flush on fencei when coherent
       cache_req_cast_o.msg_type = e_cache_flush;
-      cache_req_v_o = cache_req_ready_i & gdirty_r & (coherent_l1_p == 0);
+      cache_req_v_o = cache_req_ready_i & gdirty_r & (l1_coherent_p == 0);
     end
 
     cache_req_cast_o.addr = paddr_tv_r;
@@ -758,7 +758,7 @@ module bp_be_dcache
                          | (~uncached_tv_r & ~fencei_op_tv_r & ~miss_tv)
                          );
   // Always send fencei when coherent
-  assign fencei_v_o = fencei_req & (~gdirty_r | (coherent_l1_p == 1));
+  assign fencei_v_o = fencei_req & (~gdirty_r | (l1_coherent_p == 1));
 
   // Locking logic - Block processing of new dcache_packets
   logic cache_miss_resolved;
@@ -780,7 +780,7 @@ module bp_be_dcache
   //        The CSR unit is now responsible for sending the clear request to the I$.
   wire flush_req = cache_req_v_o & (cache_req_cast_o.msg_type == e_cache_flush);
   
-  if(writethrough_p == 1) begin : wt
+  if(l1_writethrough_p == 1) begin : wt
     assign gdirty_r = '0;
   end
   else begin : wb
@@ -1062,7 +1062,7 @@ module bp_be_dcache
     if (v_tv_r) begin
       lru_decode_way_li = store_op_tv_r ? store_hit_way : load_hit_way;
       dirty_mask_way_li = store_hit_way;
-      dirty_mask_v_li = store_op_tv_r & (writethrough_p == 0); // Blocks are never dirty in a writethrough cache
+      dirty_mask_v_li = store_op_tv_r & (l1_writethrough_p == 0); // Blocks are never dirty in a writethrough cache
       
       stat_mem_data_li.lru = lru_decode_data_lo;
       stat_mem_data_li.dirty = {dcache_assoc_p{1'b1}};
@@ -1093,7 +1093,7 @@ module bp_be_dcache
 
   // write buffer
   //
-  if (writethrough_p == 0) begin : wb_wbuf
+  if (l1_writethrough_p == 0) begin : wb_wbuf
     assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r;
   end
   else begin : wt_wbuf

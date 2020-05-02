@@ -19,8 +19,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
       
-      ,coherent_l1: 1
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -34,7 +32,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 0
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -86,8 +85,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 0
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -101,7 +98,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 0
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -153,8 +151,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 0
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -168,7 +164,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 1
+      ,l1_writethrough      : 1
+      ,l1_coherent          : 0
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -220,8 +217,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 0
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -235,7 +230,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 0
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -287,8 +283,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 0
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -302,7 +296,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 0
       ,dcache_sets          : 64
       ,dcache_assoc         : 4
       ,dcache_block_width   : 512
@@ -354,8 +349,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 0
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -369,7 +362,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 0
       ,dcache_sets          : 64
       ,dcache_assoc         : 2
       ,dcache_block_width   : 512
@@ -421,8 +415,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-      
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -436,7 +428,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -488,8 +481,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-      
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -503,7 +494,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -545,17 +537,15 @@ package bp_common_aviary_pkg;
       ,io_noc_len_width     : 4
       };
 
-   localparam bp_proc_param_s bp_single_core_l1_medium_cfg_p = 
+  localparam bp_proc_param_s bp_single_core_l1_medium_cfg_p = 
     '{cc_x_dim   : 1
       ,cc_y_dim  : 1
       ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,cac_x_dim  : 0
-      ,sac_x_dim  : 0
+      ,cac_x_dim : 0
+      ,sac_x_dim : 0
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
-
-      ,coherent_l1: 1
 
       ,vaddr_width: 39
       ,paddr_width: 40
@@ -570,7 +560,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 4
       ,dcache_block_width   : 512
@@ -617,12 +608,10 @@ package bp_common_aviary_pkg;
       ,cc_y_dim  : 1
       ,ic_y_dim  : 1
       ,mc_y_dim  : 0
-      ,cac_x_dim  : 0
-      ,sac_x_dim  : 0
+      ,cac_x_dim : 0
+      ,sac_x_dim : 0
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
-
-      ,coherent_l1: 1
 
       ,vaddr_width: 39
       ,paddr_width: 40
@@ -637,7 +626,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 2
       ,dcache_block_width   : 512
@@ -690,8 +680,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -705,7 +693,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -757,8 +746,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -772,7 +759,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -824,8 +812,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -839,7 +825,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -891,8 +878,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -906,7 +891,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -958,8 +944,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -973,7 +957,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -1025,8 +1010,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -1040,7 +1023,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -1092,8 +1076,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -1107,7 +1089,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -1159,8 +1142,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-      
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -1174,7 +1155,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -1226,8 +1208,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-      
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -1241,7 +1221,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -1293,8 +1274,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -1308,7 +1287,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -1360,8 +1340,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -1375,7 +1353,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -1427,8 +1406,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -1442,7 +1419,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -1494,8 +1472,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -1509,7 +1485,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -1561,8 +1538,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -1576,7 +1551,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -1628,8 +1604,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -1643,7 +1617,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -1695,8 +1670,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -1710,7 +1683,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -1762,8 +1736,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -1777,7 +1749,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
@@ -1829,8 +1802,6 @@ package bp_common_aviary_pkg;
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
 
-      ,coherent_l1: 1
-
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -1844,7 +1815,8 @@ package bp_common_aviary_pkg;
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
-      ,writethrough         : 0
+      ,l1_writethrough      : 0
+      ,l1_coherent          : 1
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512

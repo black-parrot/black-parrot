@@ -331,7 +331,7 @@ module bp_fe_icache
     else if (fencei_req) begin
       // Don't flush on fencei when coherent
       cache_req_cast_lo.msg_type = e_cache_clear;
-      cache_req_v_o = cache_req_ready_i & (coherent_l1_p == 0);
+      cache_req_v_o = cache_req_ready_i & (l1_coherent_p == 0);
     end
   end
 
