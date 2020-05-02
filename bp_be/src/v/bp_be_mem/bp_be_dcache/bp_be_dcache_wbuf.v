@@ -39,6 +39,10 @@ module bp_be_dcache_wbuf
     
     , input [paddr_width_p-1:0] bypass_addr_i
     , input bypass_v_i
+
+    , output logic [data_width_p-1:0] early_bypass_data_o
+    , output logic [data_mask_width_lp-1:0] early_bypass_mask_o
+
     , output logic [data_width_p-1:0] bypass_data_o
     , output logic [data_mask_width_lp-1:0] bypass_mask_o
   );
@@ -196,5 +200,8 @@ module bp_be_dcache_wbuf
       end
     end
   end
+
+  assign early_bypass_data_o = bypass_data_n;
+  assign early_bypass_mask_o = bypass_mask_n;
 
 endmodule
