@@ -421,6 +421,19 @@ module bp_be_dcache
     ,.data_o(ld_data_dword_picked_tl)
     );
 
+  logic [dword_width_p-1:0] early_bypass_data_lo;
+  logic [bypass_data_mask_width_lp-1:0] early_bypass_mask_lo;
+  logic [dword_width_p-1:0] early_bypass_data_masked_tl;
+  bsg_mux_segmented #(
+    .segments_p(bypass_data_mask_width_lp)
+    ,.segment_width_p(8)
+  ) early_bypass_mux_segmented (
+    .data0_i(ld_data_dword_picked_tl)
+    ,.data1_i(early_bypass_data_lo)
+    ,.sel_i(early_bypass_mask_lo)
+    ,.data_o(early_bypass_data_masked_tl)
+  );
+
     logic [31:0] data_word_selected_tl;
     logic [15:0] data_half_selected_tl;
     logic [7:0] data_byte_selected_tl;
@@ -432,7 +445,7 @@ module bp_be_dcache
       .width_p(32)
       ,.els_p(2)
     ) word_mux_tl (
-      .data_i(ld_data_dword_picked_tl)
+      .data_i(early_bypass_data_masked_tl)
       ,.sel_i(paddr_tl_r[2])
       ,.data_o(data_word_selected_tl)
     );
@@ -441,7 +454,7 @@ module bp_be_dcache
       .width_p(16)
       ,.els_p(4)
     ) half_mux_tl (
-      .data_i(ld_data_dword_picked_tl)
+      .data_i(early_bypass_data_masked_tl)
       ,.sel_i(paddr_tl_r[2:1])
       ,.data_o(data_half_selected_tl)
     );
@@ -450,7 +463,7 @@ module bp_be_dcache
       .width_p(8)
       ,.els_p(8)
     ) byte_mux_tl (
-      .data_i(ld_data_dword_picked_tl)
+      .data_i(early_bypass_data_masked_tl)
       ,.sel_i(paddr_tl_r[2:0])
       ,.data_o(data_byte_selected_tl)
     );
@@ -460,7 +473,7 @@ module bp_be_dcache
   assign byte_sigext_tl = signed_op_tl_r & data_byte_selected_tl[7];
 
   assign early_data_o = double_op_tl_r
-        ? ld_data_dword_picked_tl
+        ? early_bypass_data_masked_tl
         : word_op_tl_r
           ? {{32{word_sigext_tl}}, data_word_selected_tl}
           : half_op_tl_r
@@ -660,6 +673,8 @@ module bp_be_dcache
     
       ,.bypass_v_i(bypass_v_li)
       ,.bypass_addr_i({ptag_i, page_offset_tl_r})
+      ,.early_bypass_data_o(early_bypass_data_lo)
+      ,.early_bypass_mask_o(early_bypass_mask_lo)
       ,.bypass_data_o(bypass_data_lo)
       ,.bypass_mask_o(bypass_mask_lo)
       );
