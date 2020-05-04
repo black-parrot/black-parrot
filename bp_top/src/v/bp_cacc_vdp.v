@@ -11,9 +11,9 @@ module bp_cacc_vdp
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
-    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p, cache)
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_p, acache_block_width_p, cache)
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-    , localparam stat_info_width_lp = `bp_cache_stat_info_width(lce_assoc_p)
+    , localparam stat_info_width_lp = `bp_cache_stat_info_width(acache_assoc_p)
     )
    (
     input                                     clk_i
@@ -59,7 +59,7 @@ module bp_cacc_vdp
   logic                     dcache_miss_v;
   logic                     load_op_tl_lo, store_op_tl_lo;
   logic                     dcache_pkt_v;
-  logic                    credits_full_o, credits_empty_o;
+  logic                     credits_full_o, credits_empty_o;
    
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
@@ -70,12 +70,12 @@ module bp_cacc_vdp
   assign dcache_tlb_miss = '0;
 
   logic cache_req_v_o, cache_req_ready_i, cache_req_metadata_v_o, 
-  data_mem_pkt_v_i, data_mem_pkt_ready_o,
-  tag_mem_pkt_v_i, tag_mem_pkt_ready_o,
-  stat_mem_pkt_v_i, stat_mem_pkt_ready_o,
+  data_mem_pkt_v_i, data_mem_pkt_yumi_o,
+  tag_mem_pkt_v_i, tag_mem_pkt_yumi_o,
+  stat_mem_pkt_v_i, stat_mem_pkt_yumi_o,
   cache_req_complete_lo;
    
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, lce_sets_p, lce_assoc_p, dword_width_p, cce_block_width_p, cache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_p, acache_block_width_p, cache);
 
   bp_cache_req_s cache_req_cast_o;
   bp_cache_data_mem_pkt_s data_mem_pkt_i;
@@ -96,8 +96,7 @@ bp_pma
     );
 
 bp_be_dcache
-  #(.bp_params_p(bp_params_p)
-    ,.writethrough_p(0))
+  #(.bp_params_p(bp_params_p))
   dcache
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -110,6 +109,7 @@ bp_be_dcache
 
     ,.v_o(dcache_v)
     ,.data_o(dcache_data)
+    ,.fencei_v_o()
 
     ,.tlb_miss_i(dcache_tlb_miss)
     ,.ptag_i(dcache_ptag)
@@ -131,15 +131,15 @@ bp_be_dcache
     ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
     ,.data_mem_pkt_i(data_mem_pkt_i)
     ,.data_mem_o(data_mem_o)
-    ,.data_mem_pkt_ready_o(data_mem_pkt_ready_o)
+    ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
     ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
     ,.tag_mem_pkt_i(tag_mem_pkt_i)
     ,.tag_mem_o(tag_mem_o)
-    ,.tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
+    ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
     ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
     ,.stat_mem_pkt_i(stat_mem_pkt_i)
     ,.stat_mem_o(stat_mem_o)
-    ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
+    ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
     );
    
    
@@ -161,17 +161,17 @@ bp_be_dcache_lce
 
     ,.data_mem_pkt_o(data_mem_pkt_i)
     ,.data_mem_pkt_v_o(data_mem_pkt_v_i)
-    ,.data_mem_pkt_ready_i(data_mem_pkt_ready_o)
+    ,.data_mem_pkt_yumi_i(data_mem_pkt_yumi_o)
     ,.data_mem_i(data_mem_o)
 
     ,.tag_mem_pkt_o(tag_mem_pkt_i)
     ,.tag_mem_pkt_v_o(tag_mem_pkt_v_i)
-    ,.tag_mem_pkt_ready_i(tag_mem_pkt_ready_o)
+    ,.tag_mem_pkt_yumi_i(tag_mem_pkt_yumi_o)
     ,.tag_mem_i(tag_mem_o)
 
     ,.stat_mem_pkt_v_o(stat_mem_pkt_v_i)
     ,.stat_mem_pkt_o(stat_mem_pkt_i)
-    ,.stat_mem_pkt_ready_i(stat_mem_pkt_ready_o)
+    ,.stat_mem_pkt_yumi_i(stat_mem_pkt_yumi_o)
     ,.stat_mem_i(stat_mem_o)
 
     ,.lce_req_o(lce_req_o)
