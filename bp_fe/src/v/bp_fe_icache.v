@@ -22,20 +22,22 @@ module bp_fe_icache
   import bp_fe_icache_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache)
-        
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
+
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
-    , localparam block_size_in_words_lp=icache_assoc_p
+    , localparam block_size_in_bank_lp = icache_assoc_p
     , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
     , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
-    , localparam data_mem_mask_width_lp=(bank_width_lp >> 3)       
-    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp >> 3) 
-    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)      
-    , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)                        
-    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp) 
-    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp) 
-    
-    `declare_bp_icache_widths(vaddr_width_p, ptag_width_lp, icache_assoc_p) 
+    , localparam data_mem_mask_width_lp=(bank_width_lp >> 3)
+    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp >> 3)
+    , localparam bank_offset_width_lp = `BSG_SAFE_CLOG2(block_size_in_bank_lp)
+    , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
+    , localparam block_offset_width_lp = (bank_offset_width_lp+byte_offset_width_lp)
+    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
+    , localparam block_size_in_fill_lp = icache_block_width_p / icache_fill_width_p
+    , localparam fill_size_in_bank_lp = icache_fill_width_p / bank_width_lp
+
+    `declare_bp_icache_widths(vaddr_width_p, ptag_width_lp, icache_assoc_p)
 
     , localparam stat_width_lp = `bp_cache_stat_info_width(icache_assoc_p)
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
@@ -55,13 +57,13 @@ module bp_fe_icache
     , input                                            ptag_v_i
     , input                                            uncached_i
     , input                                            poison_i
-    
+
     , output [instr_width_p-1:0]                       data_o
     , output                                           data_v_o
     , output                                           miss_o
 
     // LCE Interface
-    
+
     , output [icache_req_width_lp-1:0]                 cache_req_o
     , output logic                                     cache_req_v_o
     , input                                            cache_req_ready_i
@@ -69,6 +71,7 @@ module bp_fe_icache
     , output                                           cache_req_metadata_v_o
 
     , input                                            cache_req_complete_i
+    , input                                            cache_req_critical_i
 
     // data_mem
     , input data_mem_pkt_v_i
@@ -93,15 +96,15 @@ module bp_fe_icache
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache);
   bp_icache_req_s cache_req_cast_lo;
   bp_icache_req_metadata_s cache_req_metadata_cast_lo;
   assign cache_req_o = cache_req_cast_lo;
   assign cache_req_metadata_o = cache_req_metadata_cast_lo;
-  
+
   logic [index_width_lp-1:0]            vaddr_index;
 
-  logic [word_offset_width_lp-1:0] vaddr_offset;
+  logic [bank_offset_width_lp-1:0]      vaddr_offset;
 
   logic [icache_assoc_p-1:0]            way_v_tv_r; // valid bits of each way
   logic [way_id_width_lp-1:0]           way_invalid_index; // first invalid way
@@ -110,9 +113,9 @@ module bp_fe_icache
   logic uncached_req;
   logic fencei_req;
 
-  assign vaddr_index      = vaddr_i[word_offset_width_lp+byte_offset_width_lp+:index_width_lp];
-  assign vaddr_offset     = vaddr_i[byte_offset_width_lp+:word_offset_width_lp];
-   
+  assign vaddr_index      = vaddr_i[block_offset_width_lp+:index_width_lp];
+  assign vaddr_offset     = vaddr_i[byte_offset_width_lp+:bank_offset_width_lp];
+
   // TL stage
   logic v_tl_r;
   logic tl_we;
@@ -170,7 +173,7 @@ module bp_fe_icache
   // data memory
   logic [icache_assoc_p-1:0]                                           data_mem_v_li;
   logic                                                                data_mem_w_li;
-  logic [icache_assoc_p-1:0][index_width_lp+word_offset_width_lp-1:0]  data_mem_addr_li;
+  logic [icache_assoc_p-1:0][index_width_lp+bank_offset_width_lp-1:0]  data_mem_addr_li;
   logic [icache_assoc_p-1:0][bank_width_lp-1:0]                        data_mem_data_li;
   logic [icache_assoc_p-1:0][data_mem_mask_width_lp-1:0]               data_mem_w_mask_li;
   logic [icache_assoc_p-1:0][bank_width_lp-1:0]                        data_mem_data_lo;
@@ -194,27 +197,27 @@ module bp_fe_icache
   end
 
   logic [ptag_width_lp-1:0]        addr_tag_tl;
-  logic [word_offset_width_lp-1:0] addr_word_offset_tl;
-  logic [icache_assoc_p-1:0]       addr_word_offset_dec_tl;
+  logic [bank_offset_width_lp-1:0] addr_bank_offset_tl;
+  logic [icache_assoc_p-1:0]       addr_bank_offset_dec_tl;
   logic [icache_assoc_p-1:0]       hit_v_tl;
   logic [paddr_width_p-1:0]        addr_tl;
   logic [icache_assoc_p-1:0]       way_v_tl;
-   
+
   assign addr_tl = {ptag_i, vaddr_tl_r[0+:bp_page_offset_width_gp]};
 
   assign addr_tag_tl = addr_tl[block_offset_width_lp+index_width_lp+:ptag_width_lp];
-  assign addr_word_offset_tl = addr_tl[byte_offset_width_lp+:word_offset_width_lp];
+  assign addr_bank_offset_tl = addr_tl[byte_offset_width_lp+:bank_offset_width_lp];
 
   for (genvar i = 0; i < icache_assoc_p; i++) begin: tag_comp_tl
     assign hit_v_tl[i]   = (tag_tl[i] == addr_tag_tl) && (state_tl[i] != e_COH_I);
     assign way_v_tl[i]   = (state_tl[i] != e_COH_I);
-  end     
+  end
 
   bsg_decode
    #(.num_out_p(icache_assoc_p))
    offset_decode
-    (.i(addr_word_offset_tl)
-     ,.o(addr_word_offset_dec_tl)
+    (.i(addr_bank_offset_tl)
+     ,.o(addr_bank_offset_dec_tl)
      );
 
   // TV stage
@@ -227,10 +230,11 @@ module bp_fe_icache
   logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)-1:0]     state_tv_r;
   logic [icache_assoc_p-1:0][bank_width_lp-1:0]              ld_data_tv_r;
   logic [ptag_width_lp-1:0]                                  addr_tag_tv_r;
-  logic [icache_assoc_p-1:0]                                 addr_word_offset_dec_tv_r;
+  logic [icache_assoc_p-1:0]                                 addr_bank_offset_dec_tv_r;
   logic [index_width_lp-1:0]                                 addr_index_tv;
   logic                                                      fencei_op_tv_r;
   logic [icache_assoc_p-1:0]                                 hit_v_tv_r;
+
 
   // Flush ops are non-speculative and so cannot be poisoned
   assign tv_we = v_tl_r & ((~poison_i & ptag_v_i) | fencei_op_tl_r) & ~fencei_req;
@@ -253,7 +257,7 @@ module bp_fe_icache
         fencei_op_tv_r <= fencei_op_tl_r;
         hit_v_tv_r     <= hit_v_tl;
         addr_tag_tv_r  <= addr_tag_tl;
-        addr_word_offset_dec_tv_r <= addr_word_offset_dec_tl;
+        addr_bank_offset_dec_tv_r <= addr_bank_offset_dec_tl;
         way_v_tv_r     <= way_v_tl;
       end
     end
@@ -269,8 +273,8 @@ module bp_fe_icache
   logic [dword_width_p-1:0] uncached_load_data_r;
 
   assign uncached_req = v_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
-  assign fencei_req = v_tv_r & fencei_op_tv_r; 
- 
+  assign fencei_req = v_tv_r & fencei_op_tv_r;
+
   // stat memory
   logic                                       stat_mem_v_li;
   logic                                       stat_mem_w_li;
@@ -310,7 +314,7 @@ module bp_fe_icache
     ,.v_o(invalid_exist)
     ,.addr_o(way_invalid_index)
  );
-  
+
   // LCE
   bp_icache_data_mem_pkt_s data_mem_pkt;
   assign data_mem_pkt = data_mem_pkt_i;
@@ -384,7 +388,7 @@ module bp_fe_icache
    #(.width_p(icache_assoc_p))
    select_adder
     (.a_i(hit_v_tv_r)
-     ,.b_i(addr_word_offset_dec_tv_r)
+     ,.b_i(addr_bank_offset_dec_tv_r)
      ,.o(ld_data_way_select)
      );
 
@@ -426,8 +430,11 @@ module bp_fe_icache
     : final_data[instr_width_p-1:0];
 
   // data mem
+  logic                                                       data_mem_v;
+  logic [icache_assoc_p-1:0]                                  data_mem_write_bank_mask;
+  logic [icache_assoc_p-1:0][bank_width_lp-1:0]               data_mem_pkt_data_expanded;
+  logic [block_size_in_fill_lp-1:0][fill_size_in_bank_lp-1:0] data_mem_pkt_fill_mask_expanded;
 
-  logic data_mem_v;
   assign data_mem_v = (data_mem_pkt.opcode != e_cache_data_mem_uncached)
     & data_mem_pkt_yumi_o;
 
@@ -436,25 +443,42 @@ module bp_fe_icache
     : {icache_assoc_p{data_mem_v}};
 
   assign data_mem_w_li = data_mem_pkt_yumi_o
-    & (data_mem_pkt.opcode == e_cache_data_mem_write);   
+    & (data_mem_pkt.opcode == e_cache_data_mem_write);
 
   for (genvar i = 0; i < icache_assoc_p; i++) begin : rof1
-    wire [word_offset_width_lp-1:0] data_mem_pkt_offset = (word_offset_width_lp'(i) - data_mem_pkt.way_id);
+    wire [bank_offset_width_lp-1:0] data_mem_pkt_offset = (bank_offset_width_lp'(i) - data_mem_pkt.way_id);
 
     assign data_mem_addr_li[i] = tl_we
       ? {vaddr_index, vaddr_offset}
       : {data_mem_pkt.index, data_mem_pkt_offset};
 
-    assign data_mem_w_mask_li[i] = {data_mem_mask_width_lp{1'b1}};
+    // use fill_index to generate write_mask
+    assign data_mem_w_mask_li[i] = {data_mem_mask_width_lp{data_mem_write_bank_mask[i]}};
   end
+
+  // Expand data_mem_pkt.data (fill width) to cacheline width
+  assign data_mem_pkt_data_expanded = {block_size_in_fill_lp{data_mem_pkt.data}};
 
   wire [`BSG_SAFE_CLOG2(icache_block_width_p)-1:0] write_data_rot_li = data_mem_pkt.way_id*bank_width_lp;
   bsg_rotate_left #(
     .width_p(icache_block_width_p)
   ) write_data_rotate (
-    .data_i(data_mem_pkt.data)
+    .data_i(data_mem_pkt_data_expanded)
     ,.rot_i(write_data_rot_li)
     ,.o(data_mem_data_li)
+  );
+
+  for (genvar i = 0; i < block_size_in_fill_lp; i++) begin
+    assign data_mem_pkt_fill_mask_expanded[i] = {fill_size_in_bank_lp{data_mem_pkt.fill_index[i]}};
+  end
+
+  wire [`BSG_SAFE_CLOG2(icache_assoc_p)-1:0] write_mask_rot_li = data_mem_pkt.way_id;
+  bsg_rotate_left #(
+    .width_p(icache_assoc_p)
+  ) write_mask_rotate (
+    .data_i(data_mem_pkt_fill_mask_expanded)
+    ,.rot_i(write_mask_rot_li)
+    ,.o(data_mem_write_bank_mask)
   );
 
   // tag_mem
@@ -505,7 +529,7 @@ module bp_fe_icache
     ? ~miss_tv
     : stat_mem_pkt_yumi_o & (stat_mem_pkt.opcode != e_cache_stat_mem_read);
   assign stat_mem_addr_li = (v_tv_r & ~uncached_tv_r)
-    ? addr_index_tv 
+    ? addr_index_tv
     : stat_mem_pkt.index;
 
   logic [icache_assoc_p-2:0] lru_decode_data_lo;
@@ -539,7 +563,7 @@ module bp_fe_icache
       stat_mem_mask_li = {(icache_assoc_p-1){1'b1}};
     end
   end
-   
+
   // LCE: data mem
   logic [way_id_width_lp-1:0] data_mem_pkt_way_r;
 
@@ -584,9 +608,9 @@ module bp_fe_icache
   end
 
   // LCE: tag_mem
-  
+
   logic [way_id_width_lp-1:0] tag_mem_pkt_way_r;
-  
+
   always_ff @ (posedge clk_i) begin
     if (tag_mem_pkt_yumi_o & (tag_mem_pkt.opcode == e_cache_tag_mem_read)) begin
       tag_mem_pkt_way_r <= tag_mem_pkt.way_id;
@@ -615,5 +639,5 @@ module bp_fe_icache
     );
   end
   // synopsys translate_on
-   
+
 endmodule

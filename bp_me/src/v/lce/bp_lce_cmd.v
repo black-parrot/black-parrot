@@ -24,6 +24,8 @@ module bp_lce_cmd
     , parameter assoc_p = "inv"
     , parameter sets_p = "inv"
     , parameter block_width_p = "inv"
+    , parameter fill_width_p = block_width_p
+
     , parameter timeout_max_limit_p=4
 
     , localparam block_size_in_bytes_lp = (block_width_p/8)
@@ -34,7 +36,7 @@ module bp_lce_cmd
 
    `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, cache)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache)
 
     , localparam stat_info_width_lp = `bp_cache_stat_info_width(assoc_p)
 
@@ -90,6 +92,7 @@ module bp_lce_cmd
     // cached requests and uncached loads block in the caches, but uncached stores do not
     // cache_req_complete_o is routed to the cache to indicate a blocking request is complete
     , output logic                                   cache_req_complete_o
+    , output logic                                   cache_req_critical_o
     // uncached store request complete is used by the LCE to decrement the request credit counter
     // when an uncached store complete, but is not routed to the cache because the caches do not
     // block (miss) on uncached stores
@@ -115,7 +118,7 @@ module bp_lce_cmd
   );
 
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, cache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_lp, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
   `declare_bp_cache_stat_info_s(assoc_p, cache);
 
   // FSM states
@@ -216,6 +219,7 @@ module bp_lce_cmd
     state_n = state_r;
 
     cache_req_complete_o = 1'b0;
+    cache_req_critical_o = 1'b0;  //TODO partial fill is not supported now
     uc_store_req_complete_o = 1'b0;
 
     // LCE-CCE Interface signals

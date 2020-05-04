@@ -16,8 +16,8 @@ module bp_be_mem_top
   import bp_be_dcache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
-   
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
+
    // Generated parameters
    // D$
    , localparam block_size_in_words_lp = dcache_assoc_p // Due to cache interleaving scheme
@@ -31,8 +31,8 @@ module bp_be_mem_top
    , localparam index_width_lp         = `BSG_SAFE_CLOG2(dcache_sets_p)
    , localparam page_offset_width_lp   = (block_offset_width_lp + index_width_lp)
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(dcache_assoc_p)
-   
-   , localparam stat_info_width_lp = `bp_cache_stat_info_width(dcache_assoc_p)   
+
+   , localparam stat_info_width_lp = `bp_cache_stat_info_width(dcache_assoc_p)
 
    , localparam cfg_bus_width_lp      = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
 
@@ -81,6 +81,7 @@ module bp_be_mem_top
    , output logic                                   cache_req_metadata_v_o
 
    , input cache_req_complete_i
+   , input cache_req_critical_i
 
    // data_mem
    , input data_mem_pkt_v_i
@@ -119,7 +120,7 @@ module bp_be_mem_top
 // Not sure if this is right.
 `declare_bp_be_mmu_structs(vaddr_width_p, ptag_width_p, dcache_sets_p, dcache_block_width_p/8)
 `declare_bp_be_dcache_pkt_s(page_offset_width_lp, dword_width_p);
-`declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache);
+`declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache);
   bp_dcache_req_s cache_req_cast_o;
 
   assign cache_req_o = cache_req_cast_o;
@@ -361,7 +362,7 @@ bp_be_ptw
    ,.dcache_v_o(ptw_dcache_v)
    ,.dcache_pkt_o(ptw_dcache_pkt)
    ,.dcache_ptag_o(ptw_dcache_ptag)
-   ,.dcache_rdy_i(dcache_ready_lo) 
+   ,.dcache_rdy_i(dcache_ready_lo)
    ,.dcache_miss_i(dcache_miss_lo)
   );
 
@@ -394,6 +395,7 @@ bp_be_dcache
     // D$-LCE Interface
     ,.dcache_miss_o(dcache_miss_lo)
     ,.cache_req_complete_i(cache_req_complete_i)
+    ,.cache_req_critical_i(cache_req_critical_i)
     ,.cache_req_o(cache_req_cast_o)
     ,.cache_req_v_o(cache_req_v_o)
     ,.cache_req_ready_i(cache_req_ready_i)
@@ -527,4 +529,3 @@ always_ff @(negedge clk_i)
 // synopsys translate_on
 //
 endmodule
-

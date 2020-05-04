@@ -1,5 +1,5 @@
-/*                                  
- * bp_fe_top.v 
+/*
+ * bp_fe_top.v
  */
 
 module bp_fe_top
@@ -13,8 +13,8 @@ module bp_fe_top
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache)
-   
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
+
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
    , localparam block_size_in_words_lp=icache_assoc_p
    , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
@@ -25,7 +25,7 @@ module bp_fe_top
    , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
-   
+
    , localparam stat_width_lp = `bp_cache_stat_info_width(icache_assoc_p)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
@@ -50,9 +50,9 @@ module bp_fe_top
    , input                                            cache_req_ready_i
    , output logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o
    , output logic                                     cache_req_metadata_v_o
- 
-   , input                                            cache_req_complete_i
 
+   , input                                            cache_req_complete_i
+   , input                                            cache_req_critical_i
    , input [icache_data_mem_pkt_width_lp-1:0]         data_mem_pkt_i
    , input                                            data_mem_pkt_v_i
    , output logic                                     data_mem_pkt_yumi_o
@@ -71,7 +71,7 @@ module bp_fe_top
 
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 `declare_bp_fe_mem_structs(vaddr_width_p, icache_sets_p, icache_block_width_p, vtag_width_p, ptag_width_p)
-   
+
 bp_fe_mem_cmd_s  mem_cmd_lo;
 logic            mem_cmd_v_lo, mem_cmd_yumi_li;
 logic [rv64_priv_width_gp-1:0]  mem_priv_lo;
@@ -79,12 +79,12 @@ logic            mem_poison_lo, mem_translation_en_lo;
 bp_fe_mem_resp_s mem_resp_li;
 logic            mem_resp_v_li;
 
-bp_fe_pc_gen 
- #(.bp_params_p(bp_params_p)) 
+bp_fe_pc_gen
+ #(.bp_params_p(bp_params_p))
  pc_gen
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-               
+
    ,.mem_cmd_o(mem_cmd_lo)
    ,.mem_cmd_v_o(mem_cmd_v_lo)
    ,.mem_cmd_yumi_i(mem_cmd_yumi_li)
@@ -110,9 +110,9 @@ bp_fe_mem
  mem
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   
+
    ,.cfg_bus_i(cfg_bus_i)
-   
+
    ,.mem_cmd_i(mem_cmd_lo)
    ,.mem_cmd_v_i(mem_cmd_v_lo)
    ,.mem_cmd_yumi_o(mem_cmd_yumi_li)
@@ -131,6 +131,7 @@ bp_fe_mem
    ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
 
    ,.cache_req_complete_i(cache_req_complete_i)
+   ,.cache_req_critical_i(cache_req_critical_i)
 
    ,.data_mem_pkt_i(data_mem_pkt_i)
    ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
@@ -149,4 +150,3 @@ bp_fe_mem
    );
 
 endmodule
-
