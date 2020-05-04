@@ -28,8 +28,8 @@ module bp_be_dcache_lce_req
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
-     
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
+
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , localparam block_size_in_words_lp = dcache_assoc_p
     , localparam bank_width_lp = dcache_block_width_p / dcache_assoc_p
@@ -81,7 +81,7 @@ module bp_be_dcache_lce_req
   // casting struct
   //
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache);
 
   bp_lce_cce_req_s lce_req;
   bp_lce_cce_resp_s lce_resp;
@@ -179,7 +179,7 @@ module bp_be_dcache_lce_req
     load_not_store_n = load_not_store_r;
     miss_addr_n = miss_addr_r;
     size_op_n = size_op_r;
-    
+
     cce_data_received_n = cce_data_received_r;
 
     lce_req_v_o = 1'b0;
@@ -207,7 +207,7 @@ module bp_be_dcache_lce_req
         // LR needs priority over regular load miss, otherwise it might get sent out as a regular
         // load miss if the cache block is not in the cache at all.
         // LR misses are sent out as store misses.
-      if (cache_req_v_i) begin 
+      if (cache_req_v_i) begin
         if (cache_req_cast_li.msg_type == e_miss_store) begin
           miss_addr_n = cache_req_cast_li.addr;
           load_not_store_n = 1'b0; // We force a store miss to upgrade the block to exclusive
@@ -219,14 +219,14 @@ module bp_be_dcache_lce_req
           miss_addr_n = cache_req_cast_li.addr;
           load_not_store_n = (cache_req_cast_li.msg_type == e_miss_load);
           cce_data_received_n = 1'b0;
- 
+
           state_n = e_SEND_CACHED_REQ;
         end
         else if (cache_req_cast_li.msg_type == e_uc_load) begin
           miss_addr_n = cache_req_cast_li.addr;
           size_op_n = cache_req_cast_li.size;
           cce_data_received_n = 1'b0;
- 
+
           state_n = e_SEND_UNCACHED_LOAD_REQ;
         end
         else if (cache_req_cast_li.msg_type == e_uc_store) begin
@@ -257,7 +257,7 @@ module bp_be_dcache_lce_req
         lce_req.header.size = req_block_size;
 
         lce_req.header.addr = miss_addr_r;
-        lce_req.header.msg_type = load_not_store_r 
+        lce_req.header.msg_type = load_not_store_r
           ? e_lce_req_type_rd
           : e_lce_req_type_wr;
         lce_req.header.src_id = lce_id_i;
@@ -285,7 +285,7 @@ module bp_be_dcache_lce_req
           : e_SEND_UNCACHED_LOAD_REQ;
       end
 
-      // SLEEP 
+      // SLEEP
       // wait for signals from other modules to wake up.
       e_SLEEP: begin
         cce_data_received_n = cce_data_received_i ? 1'b1 : cce_data_received_r;
@@ -314,7 +314,7 @@ module bp_be_dcache_lce_req
           ? e_READY
           : e_SEND_COH_ACK;
       end
-      
+
       // we should never get in this state, but if we do, return to ready.
       default: begin
         state_n = e_READY;

@@ -2,7 +2,7 @@
  *
  *  Name:
  *    bp_be_top.v
- * 
+ *
  */
 
 
@@ -17,11 +17,11 @@ module bp_be_top
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
 
-   // Default parameters 
+   // Default parameters
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
-   
+
    // VM parameters
    , localparam tlb_entry_width_lp = `bp_pte_entry_leaf_width(paddr_width_p)
    , localparam stat_info_width_lp = `bp_cache_stat_info_width(dcache_assoc_p)
@@ -59,7 +59,8 @@ module bp_be_top
    , output logic                                cache_req_metadata_v_o
 
    , input cache_req_complete_i
-   
+   , input cache_req_critical_i
+
    // data_mem
    , input data_mem_pkt_v_i
    , input [dcache_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
@@ -139,7 +140,7 @@ logic wb_pkt_v;
 
 logic flush;
 // Module instantiations
-bp_be_checker_top 
+bp_be_checker_top
  #(.bp_params_p(bp_params_p))
  be_checker
   (.clk_i(clk_i)
@@ -183,7 +184,7 @@ bp_be_checker_top
    ,.wb_pkt_i(wb_pkt)
    );
 
-bp_be_calculator_top 
+bp_be_calculator_top
  #(.bp_params_p(bp_params_p))
  be_calculator
   (.clk_i(clk_i)
@@ -203,9 +204,9 @@ bp_be_calculator_top
    ,.csr_cmd_v_o(csr_cmd_v)
    ,.csr_cmd_ready_i(csr_cmd_rdy)
 
-   ,.mem_resp_i(mem_resp) 
+   ,.mem_resp_i(mem_resp)
    ,.mem_resp_v_i(mem_resp_v)
-   ,.mem_resp_ready_o(mem_resp_rdy)   
+   ,.mem_resp_ready_o(mem_resp_rdy)
 
    ,.commit_pkt_o(commit_pkt)
    ,.wb_pkt_o(wb_pkt)
@@ -234,19 +235,20 @@ bp_be_mem_top
     ,.mem_resp_o(mem_resp)
     ,.mem_resp_v_o(mem_resp_v)
     ,.mem_resp_ready_i(mem_resp_rdy)
-    
+
     ,.itlb_fill_v_o(itlb_fill_v)
     ,.itlb_fill_vaddr_o(itlb_fill_vaddr)
     ,.itlb_fill_entry_o(itlb_fill_entry)
 
-    ,.cache_req_complete_i(cache_req_complete_i)   
- 
+    ,.cache_req_complete_i(cache_req_complete_i)
+    ,.cache_req_critical_i(cache_req_critical_i)
+
     ,.cache_req_o(cache_req_o)
     ,.cache_req_metadata_o(cache_req_metadata_o)
     ,.cache_req_v_o(cache_req_v_o)
     ,.cache_req_ready_i(cache_req_ready_i)
     ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
-    
+
     ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
     ,.data_mem_pkt_i(data_mem_pkt_i)
     ,.data_mem_o(data_mem_o)
@@ -274,4 +276,3 @@ bp_be_mem_top
     );
 
 endmodule
-

@@ -31,9 +31,9 @@ module bp_be_dcache_lce_cmd
     , localparam ptag_width_lp = (paddr_width_p-bp_page_offset_width_gp)
     , localparam way_id_width_lp = `BSG_SAFE_CLOG2(dcache_assoc_p)
     , localparam block_size_in_bytes_lp = (dcache_block_width_p / 8)
-    
-    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p) 
-    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
+
+    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
 
     , localparam stat_info_width_lp=
       `bp_cache_stat_info_width(dcache_assoc_p)
@@ -71,19 +71,20 @@ module bp_be_dcache_lce_cmd
     // LCE_data_cmd_out
     , output logic [lce_cmd_width_lp-1:0] lce_cmd_o
     , output logic lce_cmd_v_o
-    , input lce_cmd_ready_i 
+    , input lce_cmd_ready_i
 
     // data_mem
     , output logic data_mem_pkt_v_o
     , output logic [dcache_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
     , input data_mem_pkt_yumi_i
     , input [dcache_block_width_p-1:0] data_mem_i
-  
+
     // tag_mem
     , output logic tag_mem_pkt_v_o
     , output logic [dcache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_o
     , input tag_mem_pkt_yumi_i
-    , input [ptag_width_lp-1:0] tag_mem_i    
+    , input [ptag_width_lp-1:0] tag_mem_i
+
 
     // stat_mem
     , output logic stat_mem_pkt_v_o
@@ -95,8 +96,8 @@ module bp_be_dcache_lce_cmd
   // casting structs
  `declare_bp_cache_stat_info_s(dcache_assoc_p, dcache);
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache);
-  
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache);
+
   bp_lce_cmd_s lce_cmd_li;
   bp_lce_cce_resp_s lce_resp;
   bp_lce_cmd_s lce_cmd_out;
@@ -156,7 +157,7 @@ module bp_be_dcache_lce_cmd
   //
   logic lce_resp_done;
   logic lce_tr_done;
-  
+
   assign lce_tr_done = lce_cmd_v_o & lce_cmd_ready_i;
   assign lce_resp_done = lce_resp_yumi_i;
 
@@ -228,7 +229,8 @@ module bp_be_dcache_lce_cmd
     tag_mem_pkt_v_o = 1'b0;
     stat_mem_pkt = '0;
     stat_mem_pkt_v_o = 1'b0;
-    
+
+
     unique case (state_r)
 
       // < RESET >
@@ -321,9 +323,9 @@ module bp_be_dcache_lce_cmd
 
             // for other message types in this state, use default as defined at top.
             default: begin
-	       
+
             end
-          endcase 
+          endcase
 
       end
 
@@ -492,7 +494,7 @@ module bp_be_dcache_lce_cmd
         endcase
       end
 
-      // <TRANSFER state>    
+      // <TRANSFER state>
       // First, buffer the data read from data_mem, and try to send transfer to another LCE.
       e_lce_cmd_state_tr: begin
 
@@ -570,11 +572,12 @@ module bp_be_dcache_lce_cmd
           : (wb_dirty_cleared_r
             ? 1'b1
             : stat_mem_pkt_yumi_i);
-        
+
+
         lce_resp.data = wb_data_buffered_r
           ? data_buf_r
           : data_mem_i;
-        
+
         lce_resp.header.addr = lce_cmd_li.header.addr;
         lce_resp.header.msg_type = e_lce_cce_resp_wb;
         lce_resp.header.src_id = lce_id_i;
@@ -610,10 +613,10 @@ module bp_be_dcache_lce_cmd
 
         cache_req_complete_o = 1'b0;
 
-      end      
+      end
 
       // we should never get in this state, but if we do, return to the sync state.
-      default: begin 
+      default: begin
         state_n = e_lce_cmd_state_reset;
         cache_req_complete_o = 1'b0;
       end

@@ -22,18 +22,20 @@ module bp_fe_icache
   import bp_fe_icache_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
     `declare_bp_proc_params(bp_params_p)
-    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache)
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
         
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
-    , localparam block_size_in_words_lp=icache_assoc_p
+    , localparam block_size_in_bank_lp = icache_assoc_p
     , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
     , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
     , localparam data_mem_mask_width_lp=(bank_width_lp >> 3)       
     , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp >> 3) 
-    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)      
+    , localparam bank_offset_width_lp = `BSG_SAFE_CLOG2(block_size_in_bank_lp)
     , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)                        
-    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp) 
+    , localparam block_offset_width_lp = (bank_offset_width_lp+byte_offset_width_lp)
     , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp) 
+    , localparam block_size_in_fill_lp = icache_block_width_p / icache_fill_width_p
+    , localparam fill_size_in_bank_lp = icache_fill_width_p / bank_width_lp
     
     `declare_bp_icache_widths(vaddr_width_p, ptag_width_lp, icache_assoc_p) 
 
@@ -69,6 +71,7 @@ module bp_fe_icache
     , output                                           cache_req_metadata_v_o
 
     , input                                            cache_req_complete_i
+    , input                                            cache_req_critical_i
 
     // data_mem
     , input data_mem_pkt_v_i
@@ -93,7 +96,7 @@ module bp_fe_icache
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
 
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache);
   bp_icache_req_s cache_req_cast_lo;
   bp_icache_req_metadata_s cache_req_metadata_cast_lo;
   assign cache_req_o = cache_req_cast_lo;
@@ -101,7 +104,7 @@ module bp_fe_icache
   
   logic [index_width_lp-1:0]            vaddr_index;
 
-  logic [word_offset_width_lp-1:0] vaddr_offset;
+  logic [bank_offset_width_lp-1:0]      vaddr_offset;
 
   logic [icache_assoc_p-1:0]            way_v_tv_r; // valid bits of each way
   logic [way_id_width_lp-1:0]           way_invalid_index; // first invalid way
@@ -110,8 +113,8 @@ module bp_fe_icache
   logic uncached_req;
   logic fencei_req;
 
-  assign vaddr_index      = vaddr_i[word_offset_width_lp+byte_offset_width_lp+:index_width_lp];
-  assign vaddr_offset     = vaddr_i[byte_offset_width_lp+:word_offset_width_lp];
+  assign vaddr_index      = vaddr_i[block_offset_width_lp+:index_width_lp];
+  assign vaddr_offset     = vaddr_i[byte_offset_width_lp+:bank_offset_width_lp];
    
   // TL stage
   logic v_tl_r;
@@ -170,7 +173,7 @@ module bp_fe_icache
   // data memory
   logic [icache_assoc_p-1:0]                                           data_mem_v_li;
   logic                                                                data_mem_w_li;
-  logic [icache_assoc_p-1:0][index_width_lp+word_offset_width_lp-1:0]  data_mem_addr_li;
+  logic [icache_assoc_p-1:0][index_width_lp+bank_offset_width_lp-1:0]  data_mem_addr_li;
   logic [icache_assoc_p-1:0][bank_width_lp-1:0]                        data_mem_data_li;
   logic [icache_assoc_p-1:0][data_mem_mask_width_lp-1:0]               data_mem_w_mask_li;
   logic [icache_assoc_p-1:0][bank_width_lp-1:0]                        data_mem_data_lo;
@@ -229,10 +232,15 @@ module bp_fe_icache
   logic [icache_assoc_p-1:0][bank_width_lp-1:0]              ld_data_tv_r;
   logic [ptag_width_lp-1:0]                                  addr_tag_tv_r;
   logic [index_width_lp-1:0]                                 addr_index_tv;
-  logic [word_offset_width_lp-1:0]                           addr_word_offset_tv;
+  logic [bank_offset_width_lp-1:0]              addr_bank_offset_tv;
+
   logic                                                      fencei_op_tv_r;
   logic [way_id_width_lp-1:0] 			             hit_index_tv_r;
   logic 					             hit_tv_r;
+  // Partial fill in-progress register
+  logic [ptag_width_lp-1:0]                     fill_tag_r;
+  logic [index_width_lp-1:0]                    fill_index_r;
+  logic [icache_assoc_p-1:0]                    fill_pending_r;
 
   // Flush ops are non-speculative and so cannot be poisoned
   assign tv_we = v_tl_r & ((~poison_i & ptag_v_i) | fencei_op_tl_r) & ~fencei_req;
@@ -262,7 +270,7 @@ module bp_fe_icache
   end
 
   assign addr_index_tv = addr_tv_r[block_offset_width_lp+:index_width_lp];
-  assign addr_word_offset_tv = addr_tv_r[byte_offset_width_lp+:word_offset_width_lp];
+  assign addr_bank_offset_tv = addr_tv_r[byte_offset_width_lp+:bank_offset_width_lp];
 
   logic miss_tv;
   assign miss_tv = ~hit_tv_r & v_tv_r & ~uncached_tv_r;
@@ -387,7 +395,7 @@ module bp_fe_icache
     ,.els_p(icache_assoc_p)
   ) data_set_select_mux (
     .data_i(ld_data_tv_r)
-    ,.sel_i(hit_index_tv_r ^ addr_word_offset_tv)
+    ,.sel_i(hit_index_tv_r ^ addr_bank_offset_tv)
     ,.data_o(ld_data_way_picked)
   );
 
@@ -420,8 +428,6 @@ module bp_fe_icache
     : final_data[instr_width_p-1:0];
 
   // data mem
-
-  logic data_mem_v;
   assign data_mem_v = (data_mem_pkt.opcode != e_cache_data_mem_uncached)
     & data_mem_pkt_yumi_o;
 
@@ -433,21 +439,36 @@ module bp_fe_icache
     & (data_mem_pkt.opcode == e_cache_data_mem_write);   
 
   logic [icache_assoc_p-1:0][bank_width_lp-1:0] data_mem_write_data;
+  logic [icache_assoc_p-1:0][bank_width_lp-1:0]               data_mem_pkt_data_expanded;
+  logic [block_size_in_fill_lp-1:0][fill_size_in_bank_lp-1:0] data_mem_pkt_fill_mask_expanded;
+  logic [icache_assoc_p-1:0]                                  data_mem_write_bank_mask;
+
+  assign data_mem_write_bank_mask = data_mem_pkt_fill_mask_expanded;
+  for (genvar i = 0; i < block_size_in_fill_lp; i++) begin
+    assign data_mem_pkt_fill_mask_expanded[i] = {fill_size_in_bank_lp{data_mem_pkt.fill_mask}};
+  end
 
   for (genvar i = 0; i < icache_assoc_p; i++) begin
     assign data_mem_addr_li[i] = tl_we
       ? {vaddr_index, vaddr_offset}
-      : {data_mem_pkt.index, data_mem_pkt.way_id ^ ((word_offset_width_lp)'(i))};
+      : {data_mem_pkt.index, data_mem_pkt.way_id ^ ((bank_offset_width_lp)'(i))};
 
     assign data_mem_data_li[i] = data_mem_write_data[i];
-    assign data_mem_w_mask_li[i] = {data_mem_mask_width_lp{1'b1}};
+
+    // use fill_mask to generate write_mask
+    assign data_mem_w_mask_li[i] = {data_mem_mask_width_lp{data_mem_write_bank_mask[i]}};
+    // update fill pending reg
+    assign fill_pending_data_mem_write[i] = data_mem_write_bank_mask[i] ? 1'b0 : fill_pending_r[i];
+
   end
 
+  // Expand data_mem_pkt.data (fill width) to cacheline width
+  assign data_mem_pkt_data_expanded = {block_size_in_fill_lp{data_mem_pkt.data}};
   bsg_mux_butterfly #(
     .width_p(bank_width_lp)
     ,.els_p(icache_assoc_p)
   ) write_mux_butterfly (
-    .data_i(data_mem_pkt.data)
+    .data_i(data_mem_pkt_data_expanded)
     ,.sel_i(data_mem_pkt.way_id)
     ,.data_o(data_mem_write_data)
   );

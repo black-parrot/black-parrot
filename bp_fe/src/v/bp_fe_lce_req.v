@@ -18,8 +18,8 @@ module bp_fe_lce_req
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache)
-   
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
+
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
    , localparam block_size_in_words_lp=icache_assoc_p
    , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
@@ -31,14 +31,14 @@ module bp_fe_lce_req
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
    , localparam block_size_in_bytes_lp = (icache_block_width_p / 8)
-   
+
    , parameter timeout_max_limit_p=4
   )
    (input clk_i
     , input reset_i
 
     , input [lce_id_width_p-1:0] lce_id_i
- 
+
     , input [icache_req_width_lp-1:0] cache_req_i
     , input cache_req_v_i
     , output logic cache_req_ready_o
@@ -46,7 +46,7 @@ module bp_fe_lce_req
     , input cache_req_metadata_v_i
 
     , output logic [paddr_width_p-1:0] miss_addr_o
-          
+
     , input cce_data_received_i
     , input uncached_data_received_i
     , input set_tag_received_i
@@ -54,11 +54,11 @@ module bp_fe_lce_req
 
     , input coherence_blocked_i
     , input cmd_ready_i
-          
+
     , output logic [lce_cce_req_width_lp-1:0] lce_req_o
     , output logic lce_req_v_o
     , input lce_req_ready_i
-          
+
     , output logic [lce_cce_resp_width_lp-1:0] lce_resp_o
     , output logic lce_resp_v_o
     , input lce_resp_yumi_i
@@ -67,7 +67,7 @@ module bp_fe_lce_req
   // lce interface
 
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache);
 
   bp_lce_cce_resp_s lce_resp;
   bp_lce_cce_req_s lce_req;
@@ -94,7 +94,7 @@ module bp_fe_lce_req
      ,.data_i(cache_req_metadata_i)
      ,.data_o(cache_req_metadata_r)
      );
-  
+
   logic cache_req_metadata_v_r;
   bsg_dff_en_bypass
    #(.width_p(1))
@@ -123,7 +123,7 @@ module bp_fe_lce_req
   logic cache_req_ready;
 
   assign miss_addr_o = miss_addr_r;
-   
+
   logic [cce_id_width_p-1:0] req_cce_id_lo;
   bp_me_addr_to_cce_id
    #(.bp_params_p(bp_params_p))
@@ -186,9 +186,9 @@ module bp_fe_lce_req
     lce_resp.header.msg_type     = bp_lce_cce_resp_type_e'('0);
     lce_resp.header.addr         = miss_addr_r;
     lce_resp.data         = '0;
-  
+
     cache_req_ready = 1'b1;
-    
+
     case (state_r)
       e_lce_req_ready: begin
        cache_req_ready = 1'b1;
@@ -211,11 +211,11 @@ module bp_fe_lce_req
 
       e_lce_req_send_miss_req: begin
         lce_req_v_o        = lce_req_ready_i & cache_req_metadata_v_r;
-        
+
         cache_req_ready    = 1'b0;
-        
+
         state_n = lce_req_v_o
-          ? e_lce_req_sleep 
+          ? e_lce_req_sleep
           : e_lce_req_send_miss_req;
       end
 
@@ -233,7 +233,7 @@ module bp_fe_lce_req
         lce_req.data = '0;
 
         state_n = lce_req_v_o
-          ? e_lce_req_sleep 
+          ? e_lce_req_sleep
           : e_lce_req_send_uncached_load_req;
       end
 
@@ -271,7 +271,7 @@ module bp_fe_lce_req
           ? e_lce_req_ready
           : e_lce_req_send_coh_ack;
       end
-  
+
       // should never get in this state.
       default: begin
         state_n = e_lce_req_ready;
@@ -300,7 +300,7 @@ module bp_fe_lce_req
      ,.up_i(coherence_blocked_i)
      ,.count_o(timeout_cnt_r)
      );
-  
+
   wire timeout = (timeout_cnt_r == timeout_max_limit_p);
 
   assign cache_req_ready_o = cmd_ready_i & ~timeout & cache_req_ready;

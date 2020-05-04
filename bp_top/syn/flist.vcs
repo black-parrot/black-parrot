@@ -237,7 +237,7 @@ $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.v
 ## TOP
 $BP_TOP_DIR/src/v/bp_nd_socket.v
-$BP_TOP_DIR/src/v/bp_cacc_vdp.v
+# $BP_TOP_DIR/src/v/bp_cacc_vdp.v
 $BP_TOP_DIR/src/v/bp_cacc_tile.v
 $BP_TOP_DIR/src/v/bp_cacc_tile_node.v
 $BP_TOP_DIR/src/v/bp_cacc_complex.v
