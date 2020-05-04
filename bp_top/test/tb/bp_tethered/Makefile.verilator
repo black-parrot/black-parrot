@@ -34,7 +34,12 @@ $(SIM_DIR)/simsc: $(BUILD_DIR)/obj_dir
 
 $(SIM_DIR)/prog.riscv: $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv
 	@cp $^ $@
-	@cp $^ $*.elf
+
+$(SIM_DIR)/prog.elf: $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv
+	cp $^ $@
+
+$(SIM_DIR)/prog.cfg: $(BP_COMMON_DIR)/test/cfg/cosim.cfg
+	cp $^ $@
 
 $(SIM_DIR)/cce_ucode.mem: $(CCE_MEM_PATH)/$(CCE_MEM)
 	@cp $^ $@
@@ -44,7 +49,8 @@ $(SIM_DIR)/dram_ch.ini $(SIM_DIR)/dram_sys.ini:
 	@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(@D)/dram_sys.ini
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simsc)
-SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.mem prog.nbf prog.dump prog.spike)
+SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump prog.spike)
+SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.cfg)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, dram_ch.ini dram_sys.ini)
 
