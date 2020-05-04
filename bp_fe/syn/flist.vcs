@@ -162,6 +162,7 @@ $BP_BE_DIR/src/v/bp_be_calculator/bp_be_instr_decoder.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_int_alu.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_fp.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_int.v
+$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_ctrl.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_long.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mem.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mul.v
@@ -236,7 +237,7 @@ $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_cmd.v
 $BP_ME_DIR/src/v/wormhole/bp_me_wormhole_packet_encode_mem_resp.v
 ## TOP
 $BP_TOP_DIR/src/v/bp_nd_socket.v
-$BP_TOP_DIR/src/v/bp_cacc_vdp.v
+# $BP_TOP_DIR/src/v/bp_cacc_vdp.v
 $BP_TOP_DIR/src/v/bp_cacc_tile.v
 $BP_TOP_DIR/src/v/bp_cacc_tile_node.v
 $BP_TOP_DIR/src/v/bp_cacc_complex.v

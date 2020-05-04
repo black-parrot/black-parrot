@@ -1,5 +1,5 @@
 /**
- *  Name: 
+ *  Name:
  *    bp_be_dcache_lce.v
  *
  *
@@ -21,11 +21,11 @@
  *    cache. cache_miss_o is raised immediately once load_miss_i or
  *    store_miss_i is raised. cache_miss_o remains asserted until the miss
  *    is resolved.
- *     
+ *
  *      LCE sends responses back to CCE through lce_cce_resp. Both
  *    lce_cce_req or cce_lce_cmd could send response back, and when both
  *    modules want to send the response, lce_cce_req always get the higher
- *    priority in arbitration. We want to prioritize the types of acknowledge 
+ *    priority in arbitration. We want to prioritize the types of acknowledge
  *    that are sent later in the chain of coherence messages which resolves
  *    coherence transaction, otherwise it could create back-pressure in
  *    network and cause a deadlock.
@@ -48,9 +48,9 @@ module bp_be_dcache_lce
   import bp_be_dcache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p) 
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
-    
+   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
+
     , localparam block_size_in_words_lp = dcache_assoc_p
     , localparam bank_width_lp = dcache_block_width_p / dcache_assoc_p
     , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
@@ -77,21 +77,21 @@ module bp_be_dcache_lce
     , output logic cache_req_ready_o
     , input [dcache_req_metadata_width_lp-1:0] cache_req_metadata_i
     , input cache_req_metadata_v_i
- 
+
     , output logic cache_req_complete_o
-    
+
     // data_mem
     , output logic data_mem_pkt_v_o
     , output logic [dcache_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
     , input data_mem_pkt_yumi_i
     , input [dcache_block_width_p-1:0] data_mem_i
-  
+
     // tag_mem
     , output logic tag_mem_pkt_v_o
     , output logic [dcache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_o
     , input tag_mem_pkt_yumi_i
     , input [ptag_width_lp-1:0] tag_mem_i
-    
+
     // stat_mem
     , output logic stat_mem_pkt_v_o
     , output logic [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_o
@@ -125,8 +125,8 @@ module bp_be_dcache_lce
   // casting structs
   //
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache);
- 
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache);
+
   bp_lce_cce_req_s lce_req;
   bp_lce_cce_resp_s lce_resp;
   bp_lce_cmd_s lce_cmd_in, lce_cmd_out;
@@ -195,7 +195,7 @@ module bp_be_dcache_lce
       ,.reset_i(reset_i)
 
       ,.lce_id_i(lce_id_i)
-  
+
       ,.cache_req_i(cache_req_i)
       ,.cache_req_v_i(cache_req_v_i)
       ,.cache_req_ready_o(cache_req_ready_o)
@@ -207,7 +207,7 @@ module bp_be_dcache_lce
       ,.cce_data_received_i(cce_data_received)
       ,.uncached_data_received_i(uncached_data_received)
       ,.set_tag_wakeup_received_i(set_tag_wakeup_received)
-      
+
       ,.coherence_blocked_i(coherence_blocked_li)
       ,.cmd_ready_i(cmd_ready_lo)
       ,.credits_ready_i(~credits_full_o)
@@ -291,4 +291,3 @@ module bp_be_dcache_lce
   end
 
 endmodule
-

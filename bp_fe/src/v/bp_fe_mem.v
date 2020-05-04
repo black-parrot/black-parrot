@@ -8,8 +8,8 @@ module bp_fe_mem
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache)
-   
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
+
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
    , localparam block_size_in_words_lp=icache_assoc_p
    , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
@@ -50,8 +50,9 @@ module bp_fe_mem
    , input                                            cache_req_ready_i
    , output logic [icache_req_metadata_width_lp-1:0]  cache_req_metadata_o
    , output logic                                     cache_req_metadata_v_o
- 
+
    , input                                            cache_req_complete_i
+   , input                                            cache_req_critical_i
 
    , input [icache_data_mem_pkt_width_lp-1:0]         data_mem_pkt_i
    , input                                            data_mem_pkt_v_i
@@ -97,12 +98,12 @@ bp_tlb
    ,.reset_i(reset_i)
    ,.flush_i(itlb_fence_v)
    ,.translation_en_i(mem_translation_en_i)
-         
+
    ,.v_i(fetch_v | itlb_fill_v)
    ,.w_i(itlb_fill_v)
    ,.vtag_i(itlb_fill_v ? mem_cmd_cast_i.operands.fill.vtag : mem_cmd_cast_i.operands.fetch.vaddr.tag)
    ,.entry_i(mem_cmd_cast_i.operands.fill.entry)
-     
+
    ,.v_o(itlb_r_v_lo)
    ,.entry_o(itlb_r_entry)
 
@@ -127,8 +128,8 @@ logic [instr_width_p-1:0] icache_data_lo;
 logic                     icache_data_v_lo;
 
 logic instr_access_fault_v, instr_page_fault_v;
-bp_fe_icache 
- #(.bp_params_p(bp_params_p)) 
+bp_fe_icache
+ #(.bp_params_p(bp_params_p))
  icache
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
@@ -158,6 +159,7 @@ bp_fe_icache
    ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
 
    ,.cache_req_complete_i(cache_req_complete_i)
+   ,.cache_req_critical_i(cache_req_critical_i)
 
    ,.data_mem_pkt_i(data_mem_pkt_i)
    ,.data_mem_pkt_v_i(data_mem_pkt_v_i)

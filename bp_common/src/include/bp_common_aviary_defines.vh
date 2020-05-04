@@ -7,7 +7,7 @@
 `ifndef BP_COMMON_AVIARY_DEFINES_VH
 `define BP_COMMON_AVIARY_DEFINES_VH
 
-// Thoughts: 
+// Thoughts:
 // Hardcoding hartid and lceid width limits us to 8 cores for our standard configurations,
 //   but would allow the hierachical flow to reuse a single BP core for both dual-core and
 //   oct-core configurations.
@@ -125,9 +125,11 @@ typedef struct packed
   integer dcache_sets;
   integer dcache_assoc;
   integer dcache_block_width;
+  integer dcache_fill_width;
   integer icache_sets;
   integer icache_assoc;
   integer icache_block_width;
+  integer icache_fill_width;
   integer acache_sets;
   integer acache_assoc;
   integer acache_block_width;
@@ -230,9 +232,11 @@ typedef struct packed
   , localparam dcache_sets_p              = proc_param_lp.dcache_sets                              \
   , localparam dcache_assoc_p             = proc_param_lp.dcache_assoc                             \
   , localparam dcache_block_width_p       = proc_param_lp.dcache_block_width                       \
+  , localparam dcache_fill_width_p        = proc_param_lp.dcache_fill_width                        \
   , localparam icache_sets_p              = proc_param_lp.icache_sets                              \
   , localparam icache_assoc_p             = proc_param_lp.icache_assoc                             \
   , localparam icache_block_width_p       = proc_param_lp.icache_block_width                       \
+  , localparam icache_fill_width_p        = proc_param_lp.icache_fill_width                        \
   , localparam acache_sets_p              = proc_param_lp.acache_sets                              \
   , localparam acache_assoc_p             = proc_param_lp.acache_assoc                             \
   , localparam acache_block_width_p       = proc_param_lp.acache_block_width                       \
@@ -320,4 +324,3 @@ typedef struct packed
   , localparam ptag_width_p  = proc_param_lp.paddr_width - page_offset_width_p                     \
 
 `endif
-

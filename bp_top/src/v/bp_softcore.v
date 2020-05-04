@@ -14,7 +14,7 @@ module bp_softcore
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
    )
-  (input                                               clk_i
+  (  input                                               clk_i
    , input                                             reset_i
 
    // Outgoing I/O
@@ -47,8 +47,8 @@ module bp_softcore
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache);
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache);
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
   `declare_bp_cache_stat_info_s(dcache_assoc_p, dcache);
   `declare_bp_cache_stat_info_s(icache_assoc_p, icache);
@@ -137,6 +137,7 @@ module bp_softcore
      ,.dcache_req_metadata_o(dcache_req_metadata_lo)
      ,.dcache_req_metadata_v_o(dcache_req_metadata_v_lo)
      ,.dcache_req_complete_i(dcache_req_complete_li)
+     ,.dcache_req_critical_i(dcache_req_critical_li)
 
      ,.icache_req_o(icache_req_lo)
      ,.icache_req_v_o(icache_req_v_lo)
@@ -144,6 +145,7 @@ module bp_softcore
      ,.icache_req_metadata_o(icache_req_metadata_lo)
      ,.icache_req_metadata_v_o(icache_req_metadata_v_lo)
      ,.icache_req_complete_i(icache_req_complete_li)
+     ,.icache_req_critical_i(icache_req_critical_li)
 
      ,.dcache_tag_mem_pkt_i(dcache_tag_mem_pkt_li)
      ,.dcache_tag_mem_pkt_v_i(dcache_tag_mem_pkt_v_li)
@@ -189,7 +191,8 @@ module bp_softcore
     #(.bp_params_p(bp_params_p)
      ,.assoc_p(dcache_assoc_p)
      ,.sets_p(dcache_sets_p)
-     ,.block_width_p(dcache_block_width_p))
+     ,.block_width_p(dcache_block_width_p)
+     ,.fill_width_p(dcache_fill_width_p))
     dcache_uce
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -218,6 +221,7 @@ module bp_softcore
     ,.stat_mem_i(dcache_stat_mem_lo)
 
     ,.cache_req_complete_o(dcache_req_complete_li)
+    ,.cache_req_critical_o(dcache_req_critical_li)
 
     ,.credits_full_o(credits_full_li[1])
     ,.credits_empty_o(credits_empty_li[1])
@@ -235,7 +239,8 @@ module bp_softcore
     #(.bp_params_p(bp_params_p)
      ,.assoc_p(icache_assoc_p)
      ,.sets_p(icache_sets_p)
-     ,.block_width_p(icache_block_width_p))
+     ,.block_width_p(icache_block_width_p)
+     ,.fill_width_p(icache_fill_width_p))
     icache_uce
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -264,6 +269,7 @@ module bp_softcore
     ,.stat_mem_i(icache_stat_mem_lo)
 
     ,.cache_req_complete_o(icache_req_complete_li)
+    ,.cache_req_critical_o(icache_req_critical_li)
 
     ,.credits_full_o(credits_full_li[0])
     ,.credits_empty_o(credits_empty_li[0])
@@ -447,4 +453,3 @@ module bp_softcore
   assign cache_resp_yumi_li = |(cache_resp_match & proc_resp_yumi_lo);
 
 endmodule
-

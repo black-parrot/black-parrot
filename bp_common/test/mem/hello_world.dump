@@ -1,5 +1,5 @@
 
-/mnt/users/ssd0/no_backup/petrisko/pre-alpha-release/bp_common/test/mem/hello_world.riscv:     file format elf64-littleriscv
+/mnt/users/ssd3/homes/scli3/partial_fill/black-parrot/bp_common/test/mem/hello_world.riscv:     file format elf64-littleriscv
 
 
 Disassembly of section .text.init:

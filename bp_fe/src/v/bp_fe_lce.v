@@ -22,7 +22,7 @@ module bp_fe_lce
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
 
    , localparam way_id_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
    , localparam block_size_in_words_lp=icache_assoc_p
@@ -34,7 +34,7 @@ module bp_fe_lce
    , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
-   
+
    , localparam stat_width_lp = `bp_cache_stat_info_width(icache_assoc_p)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
@@ -62,13 +62,13 @@ module bp_fe_lce
     , output logic                                               tag_mem_pkt_v_o
     , input                                                      tag_mem_pkt_yumi_i
     , input [ptag_width_lp-1:0]                                  tag_mem_i
-       
+
     , output logic [icache_stat_mem_pkt_width_lp-1:0]            stat_mem_pkt_o
     , output logic                                               stat_mem_pkt_v_o
     , input                                                      stat_mem_pkt_yumi_i
     , input  [stat_width_lp-1:0]                                 stat_mem_i
-      
-    // LCE-CCE interface 
+
+    // LCE-CCE interface
     , output logic [lce_cce_req_width_lp-1:0] lce_req_o
     , output logic lce_req_v_o
     , input lce_req_ready_i
@@ -88,7 +88,7 @@ module bp_fe_lce
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache);
 
   bp_cfg_bus_s cfg_bus_cast_i;
 
@@ -121,18 +121,18 @@ module bp_fe_lce
   logic lce_req_lce_resp_v_lo;
   logic lce_req_lce_resp_yumi_li;
   logic [paddr_width_p-1:0] miss_addr_lo;
-  
+
   logic lce_ready_lo;
   logic coherence_blocked_li;
-  
-  assign coherence_blocked_li = lce_cmd_v_i & ~lce_cmd_yumi_o; 
+
+  assign coherence_blocked_li = lce_cmd_v_i & ~lce_cmd_yumi_o;
   wire cmd_ready = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached) ? 1'b1 : lce_ready_lo;
-  
+
   bp_fe_lce_req #(.bp_params_p(bp_params_p))
     lce_req_inst (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
-  
+
     ,.lce_id_i(cfg_bus_cast_i.icache_id)
 
     ,.cache_req_i(cache_req_i)
@@ -159,7 +159,7 @@ module bp_fe_lce
     ,.lce_resp_v_o(lce_req_lce_resp_v_lo)
     ,.lce_resp_yumi_i(lce_req_lce_resp_yumi_li)
   );
-  
+
   bp_lce_cce_resp_s lce_cmd_lce_resp_lo;
   logic lce_cmd_lce_resp_v_lo;
   logic lce_cmd_lce_resp_yumi_li;
@@ -177,7 +177,7 @@ module bp_fe_lce
     ,.set_tag_wakeup_received_o(set_tag_wakeup_received)
     ,.cce_data_received_o(cce_data_received)
     ,.uncached_data_received_o(uncached_data_received)
-    
+
     ,.cache_req_complete_o(cache_req_complete_o)
 
     ,.data_mem_pkt_o(data_mem_pkt)
@@ -207,13 +207,13 @@ module bp_fe_lce
     ,.lce_cmd_v_o(lce_cmd_v_o)
     ,.lce_cmd_ready_i(lce_cmd_ready_i)
   );
- 
+
   // lce_RESP arbiter
   // (transfer from lce_req) vs (sync ack or invalidate ack from lce_cmd)
- 
+
   always_comb begin
-    lce_req_lce_resp_yumi_li = 1'b0; 
-    lce_cmd_lce_resp_yumi_li = 1'b0; 
+    lce_req_lce_resp_yumi_li = 1'b0;
+    lce_cmd_lce_resp_yumi_li = 1'b0;
 
     if (lce_req_lce_resp_v_lo) begin
       lce_resp_v_o = 1'b1;
