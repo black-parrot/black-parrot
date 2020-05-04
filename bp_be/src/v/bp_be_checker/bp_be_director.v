@@ -315,7 +315,7 @@ always_comb
       end
   end
 
-
+//synopsys translate_off
 `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p);
 bp_fe_branch_metadata_fwd_s attaboy_md;
 bp_fe_branch_metadata_fwd_s redir_md;
@@ -332,6 +332,7 @@ always_ff @(negedge clk_i)
     else if (isd_status.isd_v)
       $display("[FETCH  ] %x   ", isd_status.isd_pc);
   end
+//synopsys translate_on
 
 endmodule
 
