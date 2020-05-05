@@ -18,8 +18,10 @@ module testbench
    , parameter random_yumi_p               = 0
    , parameter uce_p                       = 1
 
+   , parameter trace_file_p = "test.tr"
+
    , parameter mem_zero_p         = 1
-   , parameter mem_load_p         = preload_mem_p
+   , parameter mem_load_p         = 1
    , parameter mem_file_p         = "prog.mem"
    , parameter mem_cap_in_bytes_p = 2**25
    , parameter [paddr_width_p-1:0] mem_offset_p = dram_base_addr_gp
@@ -103,6 +105,7 @@ module testbench
   assign trace_yumi_li = trace_v_lo & dut_ready_lo;
 
   // Trace replay
+  logic test_done_lo;
   bsg_trace_replay
   #(.payload_width_p(trace_replay_data_width_lp)
    ,.rom_addr_width_p(trace_rom_addr_width_lp)
@@ -124,14 +127,22 @@ module testbench
    ,.rom_addr_o(trace_rom_addr_lo)
    ,.rom_data_i(trace_rom_data_li)
 
-   ,.done_o()
+   ,.done_o(test_done_lo)
    ,.error_o()
    );
 
-  mem_test_trace_rom
-    #(.width_p(trace_replay_data_width_lp+4)
-     ,.addr_width_p(trace_rom_addr_width_lp)
-     )
+  always_ff @(negedge clk_i) begin
+      if (test_done_lo) begin
+        $display("PASS");
+        $finish();
+      end
+    end
+
+  bsg_nonsynth_test_rom
+  #(.data_width_p(trace_replay_data_width_lp+4)
+    ,.addr_width_p(trace_rom_addr_width_lp)
+    ,.filename_p(trace_file_p)
+    )
     ROM
     (.addr_i(trace_rom_addr_lo)
     ,.data_o(trace_rom_data_li)

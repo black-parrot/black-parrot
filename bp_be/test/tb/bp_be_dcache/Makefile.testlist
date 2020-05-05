@@ -12,7 +12,9 @@ DCACHE_TESTLIST := \
 	wt_test_3
 
 run_testlist.%:
-	$(MAKE) build.$*
+	$(MAKE) build.$* CE=CCE CA=WB TAG=CCE.WB
+	$(MAKE) build.$* CE=UCE CA=WB TAG=UCE.WB
+	$(MAKE) build.$* CE=UCE CA=WT TAG=UCE.WT
 	$(MAKE) $(addsuffix .$*, $(addprefix run_test.CCE.WB.,$(DCACHE_TESTLIST)))
 	$(MAKE) $(addsuffix .$*, $(addprefix run_test.UCE.WB.,$(DCACHE_TESTLIST)))
 	$(MAKE) $(addsuffix .$*, $(addprefix run_test.UCE.WT.,$(DCACHE_TESTLIST)))
@@ -23,4 +25,4 @@ run_test.%:
 	$(eval override CA    := $(word 2,$(subst .,  ,$*)))
 	$(eval override PROG  := $(word 3,$(subst .,  ,$*)))
 	$(eval override TS    := $(word 4,$(subst .,  ,$*)))
-	$(MAKE) sim.$(TS) CE=$(CE) CA=$(CA) PROG=$(PROG)
+	$(MAKE) sim.$(TS) CE=$(CE) CA=$(CA) PROG=$(PROG) TAG=$(CE).$(CA)
