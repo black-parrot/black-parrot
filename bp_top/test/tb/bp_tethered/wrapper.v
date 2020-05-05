@@ -50,7 +50,13 @@ module wrapper
    , output                                            mem_resp_yumi_o
    );
 
-  if (bp_params_p == e_bp_softcore_cfg)
+  // TODO: There should be a param about whether to instantiate the uncore, rather than a list of
+  //   softcore configs
+  if ((bp_params_p == e_bp_softcore_cfg)
+      || (bp_params_p == e_bp_softcore_no_l2_cfg)
+      || (bp_params_p == e_bp_softcore_l1_small_cfg)
+      || (bp_params_p == e_bp_softcore_l1_medium_cfg)
+      )
     begin : softcore
       bp_softcore
        #(.bp_params_p(bp_params_p))

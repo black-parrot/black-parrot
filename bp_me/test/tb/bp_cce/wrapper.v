@@ -58,38 +58,5 @@ module wrapper
    dut
     (.*);
 
-  bind bp_cce_wrapper
-    bp_me_nonsynth_cce_tracer
-      #(.bp_params_p(bp_params_p))
-      cce_tracer
-       (.clk_i(clk_i & (wrapper.cce_trace_p == 1))
-        ,.reset_i(reset_i)
-        ,.freeze_i(cfg_bus_cast_i.freeze)
-  
-        ,.cce_id_i('0)
-  
-        // To CCE
-        ,.lce_req_i(lce_req_i)
-        ,.lce_req_v_i(lce_req_v_i)
-        ,.lce_req_yumi_i(lce_req_yumi_o)
-        ,.lce_resp_i(lce_resp_i)
-        ,.lce_resp_v_i(lce_resp_v_i)
-        ,.lce_resp_yumi_i(lce_resp_yumi_o)
-  
-        // From CCE
-        ,.lce_cmd_i(lce_cmd_o)
-        ,.lce_cmd_v_i(lce_cmd_v_o)
-        ,.lce_cmd_ready_i(lce_cmd_ready_i)
-  
-        // To CCE
-        ,.mem_resp_i(mem_resp_i)
-        ,.mem_resp_v_i(mem_resp_v_i)
-        ,.mem_resp_yumi_i(mem_resp_yumi_o)
-  
-        // From CCE
-        ,.mem_cmd_i(mem_cmd_o)
-        ,.mem_cmd_v_i(mem_cmd_v_o)
-        ,.mem_cmd_ready_i(mem_cmd_ready_i)
-        );
 endmodule : wrapper
 

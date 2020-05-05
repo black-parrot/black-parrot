@@ -1,4 +1,4 @@
-NUM_INSTR_P ?= 16
+NUM_INSTR_P ?= 4096
 SEED_P ?= 1
 # uncached / normal mode testing
 SKIP_INIT_P ?= 0
