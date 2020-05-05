@@ -14,10 +14,9 @@ export TOUCH_PATH   := $(BP_BE_DIR)/syn/touchfiles
 export TB    ?= bp_be_dcache
 export CFG   ?= e_bp_half_core_cfg
 export SUITE ?= none
-export PROG  ?= none
+export PROG  ?= double_word_test
 export TAG   ?= none
 
-include $(BP_TEST_DIR)/Makefile.tests
 include $(TB_PATH)/$(TB)/Makefile.params
 include $(TB_PATH)/$(TB)/Makefile.testlist
 include $(BP_COMMON_DIR)/syn/Makefile.common

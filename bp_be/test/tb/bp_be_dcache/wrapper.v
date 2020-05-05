@@ -14,7 +14,6 @@ module wrapper
  import bp_be_dcache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
   ,parameter uce_p = 1
-  ,parameter writethrough_p = 0
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
@@ -172,8 +171,7 @@ module wrapper
    );
   
    bp_be_dcache
-   #(.bp_params_p(bp_params_p)
-    ,.writethrough_p(writethrough_p))
+   #(.bp_params_p(bp_params_p))
    dcache
    (.clk_i(clk_i)
    ,.reset_i(reset_i)
