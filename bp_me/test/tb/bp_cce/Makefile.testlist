@@ -1,11 +1,5 @@
 
-
 run_testlist.%:
-	$(MAKE) build.$* sim.$* SKIP_INIT_P=0 TAG=cached
-	$(MAKE) build.$* sim.$* SKIP_INIT_P=1 TAG=uncached
+	$(MAKE) build.$* sim.$* SKIP_INIT_P=0 TAG=$(COH_PROTO).cached
+	$(MAKE) build.$* sim.$* SKIP_INIT_P=1 TAG=$(COH_PROTO).uncached
 
-run_test.%:
-	$(eval override SUITE := $(word 1,$(subst .,  ,$*)))
-	$(eval override PROG  := $(word 2,$(subst .,  ,$*)))
-	$(eval override TS    := $(word 3,$(subst .,  ,$*)))
-	$(MAKE) sim.$(TS) SUITE=$(SUITE) PROG=$(PROG)

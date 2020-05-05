@@ -35,7 +35,16 @@ let CORES_PER_JOB=${N}/${JOBS}+1
 
 # Run the regression in parallel on each configuration
 echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
-parallel --null --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
+# EI
+parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO=ei CFG={}" ::: ${cfgs}
+# MSI
+parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO=msi CFG={}" ::: ${cfgs}
+# MESI
+parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO=mesi CFG={}" ::: ${cfgs}
+# MSI-Nonspec
+parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO=msi-nonspec CFG={}" ::: ${cfgs}
+# MESI-Nonspec
+parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO=mesi-nonspec CFG={}" ::: ${cfgs}
 
 # Check for failures in the report directory
 grep -cr "FAIL" */syn/reports/ && echo "[CI CHECK] $0: FAILED" && exit 1

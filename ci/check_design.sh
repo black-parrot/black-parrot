@@ -28,6 +28,11 @@ let CORES_PER_JOB=${N}/${JOBS}+1
 echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
 parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
 
+echo "Running check_design on bp_me"
+make -C bp_me/syn CFG=e_bp_half_core_cfg & 
+make -C bp_me/syn CFG=e_bp_half_core_ucode_cce_cfg &
+wait
+
 # Check for failures in the report directory
 grep -cr "FAIL" */syn/reports/ && echo "[CI CHECK] $0: FAILED" && exit 1
 echo "[CI CHECK] $0: PASSED" && exit 0
