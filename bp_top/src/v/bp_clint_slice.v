@@ -60,7 +60,7 @@ logic plic_cmd_v;
 logic wr_not_rd;
 
 bp_local_addr_s local_addr;
-assign local_addr = mem_cmd_li.header.addr;
+assign local_addr = mem_cmd_lo.header.addr;
 
 always_comb
   begin
@@ -69,14 +69,14 @@ always_comb
     mipi_cmd_v     = 1'b0;
     plic_cmd_v     = 1'b0;
 
-    wr_not_rd = mem_cmd_li.header.msg_type inside {e_cce_mem_wr, e_cce_mem_uc_wr};
+    wr_not_rd = mem_cmd_lo.header.msg_type inside {e_cce_mem_wr, e_cce_mem_uc_wr};
 
     unique 
     casez ({local_addr.dev, local_addr.addr})
-      mtime_reg_addr_gp        : mtime_cmd_v    = mem_cmd_v_i;
-      mtimecmp_reg_base_addr_gp: mtimecmp_cmd_v = mem_cmd_v_i;
-      mipi_reg_base_addr_gp    : mipi_cmd_v     = mem_cmd_v_i;
-      plic_reg_base_addr_gp    : plic_cmd_v     = mem_cmd_v_i;
+      mtime_reg_addr_gp        : mtime_cmd_v    = small_fifo_v_lo;
+      mtimecmp_reg_base_addr_gp: mtimecmp_cmd_v = small_fifo_v_lo;
+      mipi_reg_base_addr_gp    : mipi_cmd_v     = small_fifo_v_lo;
+      plic_reg_base_addr_gp    : plic_cmd_v     = small_fifo_v_lo;
       default: begin end
     endcase
   end
@@ -113,7 +113,7 @@ bsg_counter_set_en
    ,.count_o(mtime_r)
    );
 
-assign mtimecmp_n = mem_cmd_li.data[0+:dword_width_p];
+assign mtimecmp_n = mem_cmd_lo.data[0+:dword_width_p];
 wire mtimecmp_w_v_li = wr_not_rd & mtimecmp_cmd_v;
 bsg_dff_reset_en
  #(.width_p(dword_width_p))
@@ -127,7 +127,7 @@ bsg_dff_reset_en
    );
 assign timer_irq_o = (mtime_r >= mtimecmp_r);
 
-assign mipi_n = mem_cmd_li.data[0];
+assign mipi_n = mem_cmd_lo.data[0];
 wire mipi_w_v_li = wr_not_rd & mipi_cmd_v;
 bsg_dff_reset_en
  #(.width_p(1))
@@ -141,7 +141,7 @@ bsg_dff_reset_en
    );
 assign software_irq_o = mipi_r;
 
-assign plic_n = mem_cmd_li.data[0];
+assign plic_n = mem_cmd_lo.data[0];
 wire plic_w_v_li = wr_not_rd & plic_cmd_v;
 bsg_dff_reset_en
  #(.width_p(1))
