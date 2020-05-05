@@ -2,6 +2,7 @@
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_reset_gen.v
 $BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_clock_gen.v
 $BASEJUMP_STL_DIR/bsg_test/bsg_trace_replay.v
+$BASEJUMP_STL_DIR/testing/bsg_cache/common/bsg_nonsynth_random_yumi_gen.v
 # top files
 $BP_TOP_DIR/test/common/bp_nonsynth_cache_tracer.v
 # fe files

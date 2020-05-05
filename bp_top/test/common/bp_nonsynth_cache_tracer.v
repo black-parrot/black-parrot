@@ -57,20 +57,21 @@ module bp_nonsynth_cache_tracer
    , input                                                 v_o
    , input [dword_width_p-1:0]                             load_data
    , input                                                 cache_miss_o
+   , input                                                 wt_req
    , input [dword_width_p-1:0]                             store_data
 
    // Fill Packets
    , input                                                 data_mem_pkt_v_i
    , input [cache_data_mem_pkt_width_lp-1:0]               data_mem_pkt_i
-   , input                                                 data_mem_pkt_ready_o
+   , input                                                 data_mem_pkt_yumi_o
 
    , input                                                 tag_mem_pkt_v_i
    , input [cache_tag_mem_pkt_width_lp-1:0]                tag_mem_pkt_i
-   , input                                                 tag_mem_pkt_ready_o
+   , input                                                 tag_mem_pkt_yumi_o
 
    , input                                                 stat_mem_pkt_v_i
    , input [cache_stat_mem_pkt_width_lp-1:0]               stat_mem_pkt_i
-   , input                                                 stat_mem_pkt_ready_o
+   , input                                                 stat_mem_pkt_yumi_o
    );
 
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, cache);
@@ -96,7 +97,7 @@ module bp_nonsynth_cache_tracer
    begin
      file_name = $sformatf("%s_%x.trace", trace_file_p, mhartid_i);
      file      = $fopen(file_name, "w");
-     $fwrite(file, "Coherent L1: %x\n", coherent_l1_p);
+     $fwrite(file, "Coherent L1: %x\n", l1_coherent_p);
    end
 
   string op, data_op, tag_op, stat_op;
@@ -112,6 +113,8 @@ module bp_nonsynth_cache_tracer
       op = "[load]";
     else if (cache_req_v_o & cache_req_cast_o.msg_type == e_uc_load)
       op = "[uncached load]";
+    else if (cache_req_v_o & cache_req_cast_o.msg_type == e_wt_store)
+      op = "[writethrough store]";
     else if (cache_req_v_o & cache_req_cast_o.msg_type == e_uc_store)
       op = "[uncached store]";
     else if (cache_req_v_o & cache_req_cast_o.msg_type == e_cache_flush)
@@ -166,6 +169,9 @@ module bp_nonsynth_cache_tracer
       if(sc_success)
         $fwrite(file, "SC SUCCESS! \n");
       
+      if(wt_req)
+        $fwrite(file, "[%t] Writethrough incoming\n", $time);
+
       if (cache_req_v_o) begin
         $fwrite(file, "[%t] valid cache_req: %x \n", $time, cache_req_v_o);
         $fwrite(file, "[%t] %s addr: %x data: %x cache_miss: %x \n", $time, op, cache_req_cast_o.addr, cache_req_cast_o.data, cache_miss_o);

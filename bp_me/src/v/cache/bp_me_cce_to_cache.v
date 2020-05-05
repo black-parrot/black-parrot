@@ -118,6 +118,8 @@ module bp_me_cce_to_cache
     end
   end
 
+  logic is_resp_ready;
+
   always_comb begin
     cache_pkt.mask = '0;
     cache_pkt.data = '0;
@@ -166,7 +168,7 @@ module bp_me_cce_to_cache
       end
       READY: begin
         // Technically possible to bypass and save a cycle
-        if (mem_cmd_v_lo)
+        if (mem_cmd_v_lo & is_resp_ready)
           begin
             case (mem_cmd_lo.header.size)
               e_mem_msg_size_1
@@ -280,6 +282,7 @@ module bp_me_cce_to_cache
 
   always_comb begin
     yumi_o = 1'b0;
+    is_resp_ready = 1'b0;
     
     resp_state_n = resp_state_r;
     resp_counter_n = resp_counter_r;
@@ -293,6 +296,7 @@ module bp_me_cce_to_cache
         resp_state_n = RESP_READY;
       end
       RESP_READY: begin
+        is_resp_ready = 1'b1;
         if (mem_cmd_v_lo)
           begin
             case (mem_cmd_lo.header.size)

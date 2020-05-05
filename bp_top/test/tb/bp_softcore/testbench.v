@@ -417,19 +417,20 @@ bind bp_be_top
        ,.v_o(v_o)
        ,.load_data(data_o)
        ,.cache_miss_o(dcache_miss_o)
+       ,.wt_req(wt_req)
        ,.store_data(data_tv_r)
 
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
        ,.data_mem_pkt_i(data_mem_pkt_i)
-       ,.data_mem_pkt_ready_o(data_mem_pkt_ready_o)
+       ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
        
        ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
        ,.tag_mem_pkt_i(tag_mem_pkt_i)
-       ,.tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
+       ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
 
        ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
        ,.stat_mem_pkt_i(stat_mem_pkt_i)
-       ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
+       ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
        );
 
   bind bp_fe_icache
@@ -439,7 +440,7 @@ bind bp_be_top
       ,.sets_p(icache_sets_p)
       ,.block_width_p(icache_block_width_p)
       ,.trace_file_p("icache"))
-     dcache_tracer
+     icache_tracer
       (.clk_i(clk_i & (testbench.icache_trace_p == 1))
        ,.reset_i(reset_i)
        
@@ -465,19 +466,20 @@ bind bp_be_top
        ,.v_o(data_v_o)
        ,.load_data(dword_width_p'(data_o))
        ,.cache_miss_o(miss_o)
+       ,.wt_req()
        ,.store_data(dword_width_p'(0))
 
        ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
        ,.data_mem_pkt_i(data_mem_pkt_i)
-       ,.data_mem_pkt_ready_o(data_mem_pkt_ready_o)
+       ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
        
        ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
        ,.tag_mem_pkt_i(tag_mem_pkt_i)
-       ,.tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
+       ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
 
        ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
        ,.stat_mem_pkt_i(stat_mem_pkt_i)
-       ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
+       ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
        );
 
   bind bp_core_minimal

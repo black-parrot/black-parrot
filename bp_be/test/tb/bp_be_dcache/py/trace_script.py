@@ -1,39 +1,54 @@
 #!/bin/usr/python
 
-import sys, getopt
+import sys
 from trace_gen import TraceGen
 
 def main():
-  
+
   tracer = TraceGen(28, 12, 4, 64)
-  
+  filepath = sys.argv[1] + "/" + sys.argv[2] + "/py/"
+  mem_filepath = sys.argv[3] + "/"
+
   # Store/Load double word test
-  file = open("test_sd_ld.tr", "w")
+  filename = filepath + "double_word_test.tr"
+  mem_filename = mem_filepath + "double_word_test.mem"
+  file = open(filename, "w")
 
   file.write(tracer.print_header())
-  file.write(tracer.print_comment("Wait for SYNC"))
-  file.write(tracer.wait(65))
   file.write(tracer.print_comment("Store to address - 0, 8, 16, 24, 32, 40, 48, 56"))
   for i in range(8, 72, 8):
     file.write(tracer.send_store(8, i-8, 0, False, i))
+  
+  for i in range(0, 8, 1):
     file.write(tracer.recv_data(0))
   
   file.write(tracer.print_comment("Load from address - 0, 8, 16, 24, 32, 40, 48, 56"))
   for i in range(8, 72, 8):
     file.write(tracer.send_load(True, 8, i-8, 0, False))
+  
+  for i in range(8, 72, 8):
     file.write(tracer.recv_data(i))
 
   file.write(tracer.print_comment("Store/Load double word test done\n"))
   file.write(tracer.test_finish())
 
   file.close()
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (len(l) != 1 and l[0] != "#")]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
 
   # Store/Load byte test (signed and unsigned)
-  file = open("test_sb_lb.tr", "w")
+  filename = filepath + "byte_test.tr"
+  mem_filename = mem_filepath + "byte_test.mem"
+  file = open(filename, "w")
 
   file.write(tracer.print_header())
-  file.write(tracer.print_comment("Wait for SYNC"))
-  file.write(tracer.wait(65))
   file.write(tracer.print_comment("Store byte to address 64"))
   file.write(tracer.send_store(1, 64, 0, False, 170))
   file.write(tracer.recv_data(0))
@@ -49,14 +64,24 @@ def main():
   file.write(tracer.test_finish())
 
   file.close()
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (l[0] != "#" and len(l) != 1)]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
 
   # Store/Load halfword test (signed and unsigned)
-  file = open("test_sh_lh.tr", "w")
+  filename = filepath + "half_word_test.tr"
+  mem_filename = mem_filepath + "half_word_test.mem"
+  file = open(filename, "w")
+  file = open(filename, "w")
 
   file.write(tracer.print_header())
   file.write(tracer.print_comment("Store halfword to address 128"))
-  file.write(tracer.print_comment("Wait for SYNC"))
-  file.write(tracer.wait(65))
   file.write(tracer.send_store(2, 128, 0, False, 43690))
   file.write(tracer.recv_data(0))
   file.write(tracer.print_comment("Load signed halfword from address 128"))
@@ -71,13 +96,22 @@ def main():
   file.write(tracer.test_finish())
 
   file.close()
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (l[0] != "#" and len(l) != 1)]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
 
   # Store/Load word test (signed and unsigned)
-  file = open("test_sw_lw.tr", "w")
+  filename = filepath + "word_test.tr"
+  mem_filename = mem_filepath + "word_test.mem"
+  file = open(filename, "w")
 
   file.write(tracer.print_header())
-  file.write(tracer.print_comment("Wait for SYNC"))
-  file.write(tracer.wait(65))
   file.write(tracer.print_comment("Store word to address 192"))
   file.write(tracer.send_store(4, 192, 0, False, 2863311530))
   file.write(tracer.recv_data(0))
@@ -93,13 +127,22 @@ def main():
   file.write(tracer.test_finish())
 
   file.close()
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (l[0] != "#" and len(l) != 1)]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
 
   # Store to same index with 9 different ptags (to verify writeback)
-  file = open("test_wb.tr", "w")
+  filename = filepath + "writeback_test.tr"
+  mem_filename = mem_filepath + "writeback_test.mem"
+  file = open(filename, "w")
 
   file.write(tracer.print_header())
-  file.write(tracer.print_comment("Wait for SYNC"))
-  file.write(tracer.wait(65))
   file.write(tracer.print_comment("Store to address - 256, 4352, 8448, 12544, 16640, 20736, 24832, 28928"))
   for i in range(8, 72, 8):
     temp_ptag = ((i-1) >> 3)
@@ -130,13 +173,22 @@ def main():
   file.write(tracer.test_finish())
 
   file.close()
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (l[0] != "#" and len(l) != 1)]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
 
   # Uncached Store/Load
-  file = open("test_uncached.tr", "w")
+  filename = filepath + "uncached_test.tr"
+  mem_filename = mem_filepath + "uncached_test.mem"
+  file = open(filename, "w")
   
   file.write(tracer.print_header())
-  file.write(tracer.print_comment("Wait for SYNC"))
-  file.write(tracer.wait(65))
   file.write(tracer.print_comment("Store to address 320 in uncached mode"))
   file.write(tracer.send_store(8, 320, 0, True, 320))
   file.write(tracer.recv_data(0))
@@ -145,13 +197,22 @@ def main():
   file.write(tracer.recv_data(320))
   file.write(tracer.test_finish())
   file.close()
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (l[0] != "#" and len(l) != 1)]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
 
   # Unaligned accesses
-  file = open("test_unaligned.tr", "w")
+  filename = filepath + "unaligned_test.tr"
+  mem_filename = mem_filepath + "unaligned_test.mem"
+  file = open(filename, "w")
 
   file.write(tracer.print_header())
-  file.write(tracer.print_comment("Wait for SYNC"))
-  file.write(tracer.wait(65))
   file.write(tracer.print_comment("Store byte to address - 7"))
   file.write(tracer.send_store(1, 7, 0, False, 255))
   file.write(tracer.recv_data(0))
@@ -180,6 +241,123 @@ def main():
   file.write(tracer.test_finish())
   
   file.close()
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (l[0] != "#" and len(l) != 1)]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
+
+  # Directed test 1
+  filename = filepath + "wt_test_1.tr"
+  mem_filename = mem_filepath + "wt_test_1.mem"
+  file = open(filename, "w")
+  
+  file.write(tracer.print_header())
+  file.write(tracer.print_comment("Store double word to address - 0"))
+  file.write(tracer.send_store(8, 0, 0, False, 64))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.send_store(8, 0, 1, False, 128))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.send_store(8, 0, 2, False, 256))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.send_store(8, 64, 3, False, 512))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.send_store(8, 64, 3, False, 1024))
+  file.write(tracer.send_store(8, 0, 1, False, 2048))
+  file.write(tracer.send_load(False, 8, 0, 0, False))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.recv_data(64))
+  file.write(tracer.send_load(False, 8, 0, 1, False))
+  file.write(tracer.recv_data(2048))
+
+  file.write(tracer.test_finish())
+
+  file.close()
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (l[0] != "#" and len(l) != 1)]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
+
+  # Directed test 2
+  filename = filepath + "wt_test_2.tr"
+  mem_filename = mem_filepath + "wt_test_2.mem"
+  file = open(filename, "w")
+  
+  file.write(tracer.print_header())
+  file.write(tracer.print_comment("Store double word to address - 0"))
+  file.write(tracer.send_store(8, 0, 0, False, 64))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.send_store(8, 0, 1, False, 128))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.send_store(8, 0, 2, False, 256))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.send_store(8, 64, 3, False, 512))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.send_store(8, 64, 3, False, 1024))
+  file.write(tracer.send_store(8, 0, 1, False, 2048))
+  file.write(tracer.send_load(False, 8, 0, 0, False))
+  file.write(tracer.send_load(False, 8, 0, 1, False))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.recv_data(64))
+  file.write(tracer.recv_data(2048))
+
+  file.write(tracer.test_finish())
+
+  file.close()
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (l[0] != "#" and len(l) != 1)]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
+
+  # Directed test 3
+  filename = filepath + "wt_test_3.tr"
+  mem_filename = mem_filepath + "wt_test_3.mem"
+  file = open(filename, "w")
+  
+  file.write(tracer.print_header())
+  file.write(tracer.print_comment("Store double word to address - 0"))
+  file.write(tracer.send_store(8, 0, 0, False, 64))
+  file.write(tracer.recv_data(0))
+  file.write(tracer.send_store(8, 0, 0, False, 128))
+  file.write(tracer.send_load(False, 8, 64, 0, False))
+  file.write(tracer.send_store(8, 0, 0, False, 256))
+  file.write(tracer.send_load(False, 8, 128, 0, False))
+  file.write(tracer.send_store(8, 0, 0, False, 512))
+  file.write(tracer.send_load(False, 8, 192, 0, False))
+  file.write(tracer.send_store(8, 0, 0, False, 1024))
+  file.write(tracer.send_load(False, 8, 256, 0, False))
+
+  for i in range(0,8):
+    file.write(tracer.recv_data(0))
+
+  file.write(tracer.test_finish())
+
+  file.close() 
+  
+  with open(filename, "r") as trace_file:
+    lines = trace_file.readlines()
+    lines = [l for l in lines if (l[0] != "#" and len(l) != 1)]
+    with open(mem_filename, "w") as mem_file:
+      mem_file.writelines(lines)
+
+  trace_file.close()
+  mem_file.close()
 
 if __name__ == "__main__":
   main()

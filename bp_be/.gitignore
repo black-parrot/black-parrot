@@ -12,10 +12,11 @@ inter.vpd*
 *.vpd
 csrc
 *_rom.tr.v
-*_rom.v
+*test_trace_rom.v
 *.elf
 *.spike
 *.tr
 obj_dir
 *.vcd
+*.tr
 
