@@ -20,14 +20,13 @@ module testbench
    , parameter cce_trace_p                 = 0
    , parameter dram_trace_p                = 0
    , parameter dcache_trace_p              = 0
-   , parameter preload_mem_p               = 0
    , parameter random_yumi_p               = 0
    , parameter uce_p                       = 1
-   , parameter writethrough_p              = 0
-   , parameter regress_p                   = 0
+
+   , parameter trace_file_p = "test.tr"
 
    , parameter mem_zero_p         = 1
-   , parameter mem_load_p         = preload_mem_p
+   , parameter mem_load_p         = 0
    , parameter mem_file_p         = "prog.mem"
    , parameter mem_cap_in_bytes_p = 2**25
    , parameter [paddr_width_p-1:0] mem_offset_p = paddr_width_p'(32'h0000_0000)
@@ -105,11 +104,13 @@ module testbench
       counter <= counter + 1'b1;
   end
   always_comb begin
-    if(counter == 16'd65535)
-      $finish;
+    if(counter == 16'd65535) begin
+      $display("FAIL: Timeout");
+    end
   end
 
   // Trace Replay
+  logic test_done_lo;
   bsg_trace_replay
     #(.payload_width_p(trace_replay_data_width_lp)
      ,.rom_addr_width_p(trace_rom_addr_width_lp)
@@ -131,31 +132,26 @@ module testbench
     ,.rom_addr_o(trace_rom_addr_lo)
     ,.rom_data_i(trace_rom_data_li)
 
-    ,.done_o()
+    ,.done_o(test_done_lo)
     ,.error_o()
     );
 
-  if(regress_p == 1) begin : regress
-    trace_rom
-    #(.width_p(trace_replay_data_width_lp+4)
+    always_ff @(negedge clk_i) begin
+      if (test_done_lo) begin
+        $display("PASS");
+        $finish();
+      end
+    end
+
+    bsg_nonsynth_test_rom
+    #(.data_width_p(trace_replay_data_width_lp+4)
       ,.addr_width_p(trace_rom_addr_width_lp)
-      ,.mem_file_p(mem_file_p)
+      ,.filename_p(trace_file_p)
       )
       ROM
       (.addr_i(trace_rom_addr_lo)
       ,.data_o(trace_rom_data_li)
       );
-  end
-  else begin : no_regress
-    mem_test_trace_rom
-     #(.width_p(trace_replay_data_width_lp+4)
-      ,.addr_width_p(trace_rom_addr_width_lp)
-      )
-      ROM
-      (.addr_i(trace_rom_addr_lo)
-      ,.data_o(trace_rom_data_li)
-      );
-  end
            
   assign dcache_pkt_li = trace_data_lo[0+:dcache_pkt_width_lp];
   assign ptag_li = trace_data_lo[dcache_pkt_width_lp+:ptag_width_lp];
@@ -205,7 +201,7 @@ module testbench
   wrapper
     #(.bp_params_p(bp_params_p)
      ,.uce_p(uce_p)
-     ,.writethrough_p(writethrough_p))
+     )
     wrapper
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -365,7 +361,7 @@ module testbench
      );
   
   // Assertions
-  if(uce_p == 0 && writethrough_p == 1)
+  if(uce_p == 0 && l1_writethrough_p == 1)
     $error("Writethrough cache with CCE not yet supported");
   if(cce_block_width_p != dcache_block_width_p)
     $error("Memory fetch block width does not match D$ block width");
