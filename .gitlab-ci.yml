@@ -215,7 +215,23 @@ top-riscv-tests-vcs:
   tags:
     - vcs
   script:
-    - $CI_PROJECT_DIR/ci/riscv_tests_verilator.sh vcs RISCV_TESTLIST $CI_NUM_CORES
+    - $CI_PROJECT_DIR/ci/single_core_testlist.sh verilator RISCV_TESTLIST $CI_NUM_CORES
+
+dcache-vcs:
+  <<: *job_definition
+  stage: test-short
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/dcache_regress.sh $CI_NUM_CORES
+
+icache-vcs:
+  <<: *job_definition
+  stage: test-short
+  tags:
+    - vcs
+  script:
+    - $CI_PROJECT_DIR/ci/icache_regress.sh $CI_NUM_CORES
 
 top-mc-verilator:
   <<: *job_definition
@@ -256,13 +272,7 @@ top-riscvdv-vcs:
   tags:
     - vcs
   script:
-    - make -C bp_top/syn clean
-    - make -C bp_top/syn build.v TB=bp_processor CFG=e_bp_single_core_cfg
-    - make -C bp_top/syn build.v TB=bp_softcore CFG=e_bp_softcore_cfg
-    - $CI_PROJECT_DIR/ci/regress.sh "regress_dv.v TB=bp_processor CFG=e_bp_single_core_cfg" bp_top &
-    - $CI_PROJECT_DIR/ci/regress.sh "regress_dv.v TB=bp_softcore CFG=e_bp_softcore_cfg" bp_top &
-    - wait
-    - $CI_PROJECT_DIR/ci/check.sh bp_top
+    - $CI_PROJECT_DIR/ci/single_core_testlist.sh vcs RISCVDV_TESTLIST $CI_NUM_CORES
 
 top-coremark-verilator:
   <<: *job_definition
