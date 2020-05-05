@@ -72,9 +72,9 @@ byte_memory = {}
 def read_memory(mem, addr, size):
   # get the bytes from addr to addr+(size-1)
   # values are read assuming memory store multi-byte values in Little Endian order
-  data = [mem[addr+i] if addr+i in mem else 0 for i in xrange(size-1, -1, -1)]
+  data = [mem[addr+i] if addr+i in mem else 0 for i in range(size-1, -1, -1)]
   val = 0
-  for i in xrange(size):
+  for i in range(size):
     #eprint('read: mem[{0}] == {1:x}'.format(addr+i, data[size-1-i]))
     val = (val << 8) + data[i]
   return val
@@ -83,7 +83,7 @@ def write_memory(mem, addr, value, size):
   # by default
   # create an array of "bytes" (really, integer values of each byte) for addr to addr+(size-1)
   # bytes of value are stored into memory in Little Endian order
-  for i in xrange(size):
+  for i in range(size):
     v = (value >> (i*8)) & 0xff
     #eprint('write: mem[{0}] := {1:x}'.format(addr+i, v))
     mem[addr+i] = v

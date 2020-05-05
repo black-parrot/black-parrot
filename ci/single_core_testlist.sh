@@ -17,9 +17,8 @@ else
   exit 1
 fi
 
-# Priority is CI_CORES environment variable > last argument of script > 1
-CI_CORES=${CI_CORES:-1}
-N=${3:-$CI_CORES}
+# Default to 1 core
+N=${3:-1}
 
 # Bash array to iterate over for configurations
 cfgs=(\

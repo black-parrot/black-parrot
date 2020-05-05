@@ -165,6 +165,7 @@ $BP_ME_DIR/src/v/cce/bp_cce_spec_bits.v
 $BP_ME_DIR/src/v/cce/bp_cce_src_sel.v
 $BP_ME_DIR/src/v/cce/bp_cce.v
 $BP_ME_DIR/src/v/cce/bp_cce_fsm.v
+$BP_ME_DIR/src/v/cce/bp_cce_wrapper.v
 $BP_ME_DIR/src/v/cce/bp_io_cce.v
 # NETWORK
 $BP_ME_DIR/src/v/wormhole/bp_me_cord_to_id.v

@@ -53,12 +53,12 @@ module wrapper
    , input                                                 mem_cmd_ready_i
   );
 
-  bp_cce
+  bp_cce_wrapper
    #(.bp_params_p(bp_params_p))
    dut
     (.*);
 
-  bind bp_cce
+  bind bp_cce_wrapper
     bp_me_nonsynth_cce_tracer
       #(.bp_params_p(bp_params_p))
       cce_tracer
