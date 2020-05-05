@@ -434,7 +434,7 @@ module bp_be_dcache
   logic [dcache_assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
   logic [ptag_width_lp-1:0] addr_tag_tv_r;
   logic [index_width_lp-1:0] addr_index_tv;
-  logic [word_offset_width_lp-1:0] addr_bank_offset_tv;
+  logic [bank_offset_width_lp-1:0] addr_bank_offset_tv;
   logic load_hit_tv_r;
   logic store_hit_tv_r;
   logic [way_id_width_lp-1:0] load_hit_way_tv_r;
@@ -955,7 +955,7 @@ module bp_be_dcache
     .i(wbuf_entry_out.way_id ^ wbuf_entry_out_bank_offset)
     ,.o(wbuf_data_mem_v)
   );  
-
+  logic lce_data_mem_v;
   assign lce_data_mem_v = (data_mem_pkt.opcode != e_cache_data_mem_uncached)
     & data_mem_pkt_yumi_o;
 
@@ -1001,9 +1001,6 @@ module bp_be_dcache
     assign data_mem_mask_li[i] = wbuf_yumi_li
       ? wbuf_mask
       : {data_mem_mask_width_lp{data_mem_write_bank_mask[i]}}; // use fill_mask to generate write_mask
-
-    // update fill pending reg
-    assign fill_pending_data_mem_write[i] = data_mem_write_bank_mask[i] ? 1'b0 : fill_pending_r[i];
 
   end
 

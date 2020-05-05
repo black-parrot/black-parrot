@@ -77,6 +77,7 @@ module bp_core
   logic dcache_req_metadata_v_lo;
 
   logic icache_req_complete_lo, dcache_req_complete_lo;
+  logic icache_req_critical_lo, dcache_req_critical_lo;
   logic credits_full_lo, credits_empty_lo;
 
   logic [1:0] lr_hit_lo;
@@ -138,7 +139,7 @@ module bp_core
      ,.dcache_req_metadata_v_o(dcache_req_metadata_v_lo)
 
      ,.dcache_req_complete_i(dcache_req_complete_lo)
-     // ,.dcache_req_critical_i(dicache_req_critical_lo)
+     ,.dcache_req_critical_i(dcache_req_critical_lo)
 
      ,.icache_req_o(icache_req_cast_lo)
      ,.icache_req_v_o(icache_req_v_lo)
@@ -147,7 +148,7 @@ module bp_core
      ,.icache_req_metadata_v_o(icache_req_metadata_v_lo)
 
      ,.icache_req_complete_i(icache_req_complete_lo)
-     // ,.icache_req_critical_i(icache_req_critical_lo)
+     ,.icache_req_critical_i(icache_req_critical_lo)
      // response side - Interface from D$ LCE
      ,.dcache_data_mem_pkt_i(dcache_data_mem_pkt_li)
      ,.dcache_data_mem_pkt_v_i(dcache_data_mem_pkt_v_li)
@@ -200,6 +201,7 @@ module bp_core
      ,.cache_req_metadata_i(icache_req_metadata_lo)
      ,.cache_req_metadata_v_i(icache_req_metadata_v_lo)
      ,.cache_req_complete_o(icache_req_complete_lo)
+     ,.cache_req_critical_o(icache_req_critical_lo)
 
      ,.data_mem_pkt_o(icache_data_mem_pkt_li)
      ,.data_mem_pkt_v_o(icache_data_mem_pkt_v_li)
@@ -248,6 +250,7 @@ module bp_core
     ,.cache_req_metadata_v_i(dcache_req_metadata_v_lo)
 
     ,.cache_req_complete_o(dcache_req_complete_lo)
+    ,.cache_req_critical_o(dcache_req_critical_lo)
 
     ,.data_mem_pkt_o(dcache_data_mem_pkt_li)
     ,.data_mem_pkt_v_o(dcache_data_mem_pkt_v_li)

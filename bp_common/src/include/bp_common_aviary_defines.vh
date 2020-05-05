@@ -250,6 +250,7 @@ typedef struct packed
   , localparam cce_block_width_p          =  `BSG_MAX(dcache_block_width_p,                        \
                                                      `BSG_MAX(icache_block_width_p,                \
                                                        acache_block_width_p))                      \
+  , localparam lce_fill_width_p           =  `BSG_MAX(dcache_fill_width_p, icache_fill_width_p)    \
                                                                                                    \
                                                                                                    \
   , localparam cce_pc_width_p             = proc_param_lp.cce_pc_width                             \

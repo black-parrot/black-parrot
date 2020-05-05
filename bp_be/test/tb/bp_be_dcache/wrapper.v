@@ -17,7 +17,7 @@ module wrapper
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
 
    , parameter debug_p=0
    , parameter lock_max_limit_p=8
@@ -80,7 +80,7 @@ module wrapper
    // Miss, Management Interfaces
    logic cache_req_v_lo, cache_req_metadata_v_lo;
    logic cache_req_ready_lo;
-   logic cache_req_complete_lo;
+   logic cache_req_complete_lo, cache_req_critical_lo;
    logic [dcache_req_width_lp-1:0] cache_req_lo;
    logic [dcache_req_metadata_width_lp-1:0] cache_req_metadata_lo;
 
@@ -203,6 +203,7 @@ module wrapper
    ,.cache_req_metadata_v_o(cache_req_metadata_v_lo)
    ,.cache_req_ready_i(cache_req_ready_lo)
    ,.cache_req_complete_i(cache_req_complete_lo)
+   ,.cache_req_critical_i(cache_req_critical_lo)
 
    ,.data_mem_pkt_v_i(data_mem_pkt_v_lo)
    ,.data_mem_pkt_i(data_mem_pkt_lo)
@@ -245,6 +246,7 @@ module wrapper
      ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
 
      ,.cache_req_complete_o(cache_req_complete_lo)
+     ,.cache_req_critical_o(cache_req_critical_lo)
 
      ,.data_mem_pkt_v_o(data_mem_pkt_v_lo)
      ,.data_mem_pkt_o(data_mem_pkt_lo)
@@ -356,6 +358,7 @@ module wrapper
      ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
 
      ,.cache_req_complete_o(cache_req_complete_lo)
+     ,.cache_req_critical_o(cache_req_critical_lo)
 
      ,.tag_mem_pkt_o(tag_mem_pkt_lo)
      ,.tag_mem_pkt_v_o(tag_mem_pkt_v_lo)

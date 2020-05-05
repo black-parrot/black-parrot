@@ -63,7 +63,7 @@ module wrapper
   logic [icache_req_metadata_width_lp-1:0] cache_req_metadata_lo;
   logic cache_req_metadata_v_lo;
 
-  logic cache_req_complete_li;
+  logic cache_req_complete_li, cache_req_critical_li;
 
   // Fill Interfaces
   logic data_mem_pkt_v_li, tag_mem_pkt_v_li, stat_mem_pkt_v_li;
@@ -244,6 +244,7 @@ module wrapper
       ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
 
       ,.cache_req_complete_o(cache_req_complete_li)
+      ,.cache_req_critical_o(cache_req_critical_li)
 
       ,.data_mem_i(data_mem_lo)
       ,.data_mem_pkt_o(data_mem_pkt_li)
@@ -351,6 +352,7 @@ module wrapper
       ,.cache_req_metadata_i(cache_req_metadata_lo)
       ,.cache_req_metadata_v_i(cache_req_metadata_v_lo)
       ,.cache_req_complete_o(cache_req_complete_li)
+      ,.cache_req_critical_o(cache_req_critical_li)
 
       ,.tag_mem_pkt_o(tag_mem_pkt_li)
       ,.tag_mem_pkt_v_o(tag_mem_pkt_v_li)

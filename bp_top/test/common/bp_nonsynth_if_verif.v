@@ -26,10 +26,10 @@ assign proc_param = all_cfgs_gp[bp_params_p];
 `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
 
-initial 
+initial
   begin
     $display("########### BP Parameters ##############");
-    //  This throws an std::length_error in Verilator 4.031 based on the length of 
+    //  This throws an std::length_error in Verilator 4.031 based on the length of
     //   this (admittedly massive) parameter
     `ifndef VERILATOR
     $display("bp_params_e %s: bp_proc_param_s %p", bp_params_p.name(), proc_param);
@@ -76,7 +76,7 @@ initial
     $warning("Warning: paddr != 40 has not been tested");
   if ((cce_block_width_p != icache_block_width_p) && (cce_block_width_p != dcache_block_width_p) && (cce_block_width_p != acache_block_width_p))
     $warning("Warning: Different cache block widths not yet supported");
-  
+  if ((icache_fill_width_p != icache_block_width_p) || (dcache_fill_width_p != dcache_block_width_p))
+    $warning("Warning: Fill width is different from block width, partial fill is not yet supported");
 
 endmodule
-

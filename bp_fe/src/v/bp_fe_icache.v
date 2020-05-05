@@ -237,10 +237,6 @@ module bp_fe_icache
   logic                                                      fencei_op_tv_r;
   logic [way_id_width_lp-1:0] 			             hit_index_tv_r;
   logic 					             hit_tv_r;
-  // Partial fill in-progress register
-  logic [ptag_width_lp-1:0]                     fill_tag_r;
-  logic [index_width_lp-1:0]                    fill_index_r;
-  logic [icache_assoc_p-1:0]                    fill_pending_r;
 
   // Flush ops are non-speculative and so cannot be poisoned
   assign tv_we = v_tl_r & ((~poison_i & ptag_v_i) | fencei_op_tl_r) & ~fencei_req;
@@ -428,6 +424,7 @@ module bp_fe_icache
     : final_data[instr_width_p-1:0];
 
   // data mem
+  logic data_mem_v;
   assign data_mem_v = (data_mem_pkt.opcode != e_cache_data_mem_uncached)
     & data_mem_pkt_yumi_o;
 
@@ -457,9 +454,6 @@ module bp_fe_icache
 
     // use fill_mask to generate write_mask
     assign data_mem_w_mask_li[i] = {data_mem_mask_width_lp{data_mem_write_bank_mask[i]}};
-    // update fill pending reg
-    assign fill_pending_data_mem_write[i] = data_mem_write_bank_mask[i] ? 1'b0 : fill_pending_r[i];
-
   end
 
   // Expand data_mem_pkt.data (fill width) to cacheline width
