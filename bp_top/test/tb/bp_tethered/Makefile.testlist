@@ -1,4 +1,8 @@
 
+MISC_TESTS := \
+  cache_hammer
+MISC_TESTLIST := $(addprefix bp_tests., $(MISC_TESTS))
+
 RV64_P_ISA_TESTS := \
   rv64ui-p-add     \
   rv64ui-p-addi    \

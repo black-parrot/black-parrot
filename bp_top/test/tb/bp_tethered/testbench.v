@@ -67,6 +67,9 @@ initial begin
   end
 end
 
+logic [num_core_p-1:0] program_finish_lo;
+logic cosim_finish_lo;
+
 bp_cce_mem_msg_s proc_mem_cmd_lo;
 logic proc_mem_cmd_v_lo, proc_mem_cmd_ready_li;
 bp_cce_mem_msg_s proc_mem_resp_li;
@@ -251,7 +254,6 @@ always_comb
       cfg_resp_v_li = '0;
     end
 
-logic program_finish_lo;
 bp_nonsynth_host
  #(.bp_params_p(bp_params_p))
  host
@@ -290,37 +292,43 @@ bind bp_be_top
      ,.rd_data_i(be_checker.scheduler.wb_pkt.rd_data)
      );
 
-  logic cosim_finish_lo;
-  bind bp_be_top
-    bp_nonsynth_cosim
-     #(.bp_params_p(bp_params_p))
-      cosim
-      (.clk_i(clk_i)
-       ,.reset_i(reset_i)
-       ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
-       ,.en_i(testbench.cosim_p == 1)
-       ,.cosim_instr_i(testbench.cosim_instr_p)
+  if (num_core_p == 1)
+    begin : cosim
+      bind bp_be_top
+        bp_nonsynth_cosim
+         #(.bp_params_p(bp_params_p))
+          cosim
+          (.clk_i(clk_i)
+           ,.reset_i(reset_i)
+           ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
+           ,.en_i(testbench.cosim_p == 1)
+           ,.cosim_instr_i(testbench.cosim_instr_p)
 
-       ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
-       // Want to pass config file as a parameter, but cannot in Verilator 4.025
-       // Parameter-resolved constants must not use dotted references
-       ,.config_file_i(testbench.cosim_cfg_file_p)
+           ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
+           // Want to pass config file as a parameter, but cannot in Verilator 4.025
+           // Parameter-resolved constants must not use dotted references
+           ,.config_file_i(testbench.cosim_cfg_file_p)
 
-       ,.decode_i(be_calculator.reservation_n.decode)
+           ,.decode_i(be_calculator.reservation_n.decode)
 
-       ,.commit_v_i(be_calculator.commit_pkt.instret)
-       ,.commit_pc_i(be_calculator.commit_pkt.pc)
-       ,.commit_instr_i(be_calculator.commit_pkt.instr)
+           ,.commit_v_i(be_calculator.commit_pkt.instret)
+           ,.commit_pc_i(be_calculator.commit_pkt.pc)
+           ,.commit_instr_i(be_calculator.commit_pkt.instr)
 
-       ,.rd_w_v_i(be_checker.scheduler.wb_pkt.rd_w_v)
-       ,.rd_addr_i(be_checker.scheduler.wb_pkt.rd_addr)
-       ,.rd_data_i(be_checker.scheduler.wb_pkt.rd_data)
+           ,.rd_w_v_i(be_checker.scheduler.wb_pkt.rd_w_v)
+           ,.rd_addr_i(be_checker.scheduler.wb_pkt.rd_addr)
+           ,.rd_data_i(be_checker.scheduler.wb_pkt.rd_data)
 
-       ,.interrupt_v_i(be_mem.csr.trap_pkt_cast_o._interrupt)
-       ,.cause_i(be_mem.csr.trap_pkt_cast_o.cause)
+           ,.interrupt_v_i(be_mem.csr.trap_pkt_cast_o._interrupt)
+           ,.cause_i(be_mem.csr.trap_pkt_cast_o.cause)
 
-       ,.finish_o(testbench.cosim_finish_lo)
-       );
+           ,.finish_o(testbench.cosim_finish_lo)
+           );
+    end
+  else
+    begin : no_cosim
+      assign cosim_finish_lo = '0;
+    end
 
 // TODO: Put warmup counter inside perf
 //logic [29:0] warmup_cnt;

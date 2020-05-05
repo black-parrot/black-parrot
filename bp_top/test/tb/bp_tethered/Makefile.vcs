@@ -7,6 +7,8 @@ $(LINT_DIR)/flist.vcs:
 	@echo wrapper.v                              >> $@ 
 	@echo testbench.v                            >> $@ 
 	@echo test_bp.v                              >> $@ 
+	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v" >> $@
+	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v" >> $@
 
 LINT_COLLATERAL = $(addprefix $(LINT_DIR)/, flist.vcs wrapper.v testbench.v test_bp.v)
 
@@ -19,6 +21,8 @@ $(BUILD_DIR)/flist.vcs:
 	@echo wrapper.v                              >> $@ 
 	@echo testbench.v                            >> $@ 
 	@echo test_bp.v                              >> $@ 
+	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v" >> $@
+	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v" >> $@
 
 BUILD_COLLATERAL = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.v testbench.v test_bp.v)
 
@@ -42,7 +46,7 @@ $(SIM_DIR)/dram_ch.ini $(SIM_DIR)/dram_sys.ini:
 	@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(@D)/dram_sys.ini
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
-SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump prog.spike)
+SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.cfg)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, dram_ch.ini dram_sys.ini)

@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Command line arguments
-if [ "$ne" -lt 1 ]; then
+if [ "$ne" == '1' ]
+then
   echo "Usage: $0 <verilator, vcs> [num_cores]"
   exit 1
 elif [ $1 == 'vcs' ]
@@ -21,10 +22,15 @@ N=${2:-$CI_CORES}
 
 # Bash array to iterate over for configurations
 cfgs=(\
-    "e_bp_softcore_cfg" \
-    "e_bp_single_core_cfg" \
-    "e_bp_single_core_ucode_cce_cfg" \
+    "e_bp_softcore_cfg"
+    "e_bp_single_core_cfg"
+    "e_bp_single_core_ucode_cce_cfg"
+    "e_bp_quad_core_cfg"
+    "e_bp_quad_core_ucode_cce_cfg"
     )
+
+let JOBS=${#cfgs[@]}
+let CORES_PER_JOB=${N}/${JOBS}+1
 
 # The base command to append the configuration to
 cmd_base="make -C bp_top/syn lint.${SUFFIX}"
@@ -33,8 +39,8 @@ cmd_base="make -C bp_top/syn lint.${SUFFIX}"
 make -C bp_top/syn clean.${SUFFIX}
 
 # Run the regression in parallel on each configuration
-echo "Running regression with $N jobs"
-parallel --jobs $N --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
+echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
+parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
 
 # Check for failures in the report directory
 grep -cr "FAIL" */syn/reports/ && echo "[CI CHECK] $0: FAILED" && exit 1
