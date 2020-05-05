@@ -4,9 +4,9 @@ $(LINT_DIR)/testbench.v $(LINT_DIR)/wrapper.v $(LINT_DIR)/test_bp.cpp:
 $(LINT_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $@ 
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $@ 
-	@echo $(@D)/wrapper.v                        >> $@ 
-	@echo $(@D)/testbench.v                      >> $@ 
-	@echo $(@D)/test_bp.cpp                      >> $@ 
+	@echo wrapper.v                              >> $@ 
+	@echo testbench.v                            >> $@ 
+	@echo test_bp.cpp                            >> $@ 
 
 $(LINT_DIR)/config.vlt:
 	cat $(SYN_PATH)/lint_settings.verilator | envsubst > $@
@@ -19,9 +19,9 @@ $(BUILD_DIR)/testbench.v $(BUILD_DIR)/wrapper.v $(BUILD_DIR)/test_bp.cpp:
 $(BUILD_DIR)/flist.vcs:
 	@grep -v -e "^\#" $(SYN_PATH)/flist.vcs       > $@ 
 	@grep -v -e "^\#" $(TB_PATH)/$(TB)/flist.vcs >> $@ 
-	@echo $(@D)/wrapper.v                        >> $@ 
-	@echo $(@D)/testbench.v                      >> $@ 
-	@echo $(@D)/test_bp.cpp                      >> $@ 
+	@echo wrapper.v                              >> $@ 
+	@echo testbench.v                            >> $@ 
+	@echo test_bp.cpp                            >> $@ 
 
 $(BUILD_DIR)/config.vlt:
 	cat $(SYN_PATH)/lint_settings.verilator | envsubst > $@
@@ -49,7 +49,7 @@ $(SIM_DIR)/dram_ch.ini $(SIM_DIR)/dram_sys.ini:
 	@cp $(BP_COMMON_DIR)/test/cfg/$(DRAMSIM_SYS_CFG) $(@D)/dram_sys.ini
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simsc)
-SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump prog.spike)
+SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.riscv prog.elf prog.mem prog.nbf prog.dump)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.cfg)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, cce_ucode.mem)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, dram_ch.ini dram_sys.ini)

@@ -2,11 +2,16 @@
 
 # Command line arguments
 TESTLIST=$2
-if [ $1 -eq "vcs" ]
+if [ "$ne" == '1' ]
 then
-    SUFFIX=.v
-elif [ $1 -eq "verilator" ]
-    SUFFIX=.sc
+  echo "Usage: $0 <verilator, vcs> [num_cores]"
+  exit 1
+elif [ $1 == "vcs" ]
+then
+    SUFFIX=v
+elif [ $1 == "verilator" ]
+then
+    SUFFIX=sc
 else
   echo "Usage: $0 <verilator, vcs> <testlist> [num_cores]"
   exit 1
@@ -21,19 +26,20 @@ cfgs=(\
     "e_bp_single_core_ucode_cce_cfg" \
     "e_bp_single_core_cfg" \
     "e_bp_softcore_cfg" \
-    "e_bp_quad_core_cfg" \
-    "e_bp_quad_core_ucode_cce_cfg"\
     )
 
+let JOBS=${#cfgs[@]}
+let CORES_PER_JOB=${N}/${JOBS}+1
+
 # The base command to append the configuration to
-cmd_base="make -C bp_top/syn run_testlist.${SUFFIX} TESTLIST=$TESTLIST"
+cmd_base="make -j ${CORES_PER_JOB} -C bp_top/syn run_testlist.${SUFFIX} TESTLIST=$TESTLIST"
 
 # Any setup needed for the job
 make -C bp_top/syn clean.${SUFFIX}
 
 # Run the regression in parallel on each configuration
-echo "Running regression with $N jobs"
-parallel --jobs $N --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
+echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
+parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base CFG={}" ::: "${cfgs[@]}"
 
 # Check for failures in the report directory
 grep -cr "FAIL" */syn/reports/ && echo "[CI CHECK] $0: FAILED" && exit 1
