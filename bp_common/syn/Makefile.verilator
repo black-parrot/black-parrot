@@ -42,9 +42,9 @@ $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR) $(BUILD_DIR) $(
 include $(TB_PATH)/$(TB)/Makefile.verilator
 
 lint.sc: $(LINT_DIR)/lintsc
-lint.sc: LINT_LOG    := $(LOG_DIR)/$(TB).$(CFG).lint.log
-lint.sc: LINT_REPORT := $(REPORT_DIR)/$(TB).$(CFG).lint.rpt
-lint.sc: LINT_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).lint.err
+lint.sc: LINT_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).lint.log
+lint.sc: LINT_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.rpt
+lint.sc: LINT_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.err
 $(LINT_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR)
 $(LINT_DIR)/lintsc: $(LINT_COLLATERAL)
 	cd $(@D); $(VV) $(LINT_OPTS) $(HDL_PARAMS) $(HDL_DEFINES) |& tee $(LINT_LOG)
@@ -53,9 +53,9 @@ $(LINT_DIR)/lintsc: $(LINT_COLLATERAL)
 	|| { rm -f $(LINT_ERROR); echo "PASS" >> $(LINT_REPORT); }
 
 verilate.sc: $(BUILD_DIR)/obj_dir
-verilate.sc: VBUILD_LOG    := $(LOG_DIR)/$(TB).$(CFG).vbuild.log
-verilate.sc: VBUILD_REPORT := $(REPORT_DIR)/$(TB).$(CFG).vbuild.rpt
-verilate.sc: VBUILD_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).vbuild.err
+verilate.sc: VBUILD_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).vbuild.log
+verilate.sc: VBUILD_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).vbuild.rpt
+verilate.sc: VBUILD_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).vbuild.err
 $(VBUILD_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
 $(BUILD_DIR)/obj_dir: $(VBUILD_COLLATERAL)
 	cd $(@D); \
@@ -75,9 +75,9 @@ verilate_cov.sc: verilate.sc
 
 build.sc: verilate.sc
 build.sc: $(BUILD_DIR)/obj_dir/simsc
-build.sc: CBUILD_LOG    := $(LOG_DIR)/$(TB).$(CFG).cbuild.log
-build.sc: CBUILD_REPORT := $(LOG_DIR)/$(TB).$(CFG).cbuild.rpt
-build.sc: CBUILD_ERROR  := $(LOG_DIR)/$(TB).$(CFG).cbuild.err
+build.sc: CBUILD_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).cbuild.log
+build.sc: CBUILD_REPORT := $(LOG_DIR)/$(TB).$(CFG).$(TAG).cbuild.rpt
+build.sc: CBUILD_ERROR  := $(LOG_DIR)/$(TB).$(CFG).$(TAG).cbuild.err
 build.sc: verilate.sc
 $(CBUILD_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
 $(BUILD_DIR)/obj_dir/simsc: $(CBUILD_COLLATERAL)
@@ -94,9 +94,9 @@ build_cov.sc: verilate_cov.sc
 
 sim.sc: build.sc
 sim.sc: $(SIM_DIR)/run_simsc
-sim.sc: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).sim.$(SUITE).$(PROG).log
-sim.sc: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).sim.$(SUITE).$(PROG).rpt
-sim.sc: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).sim.$(SUITE).$(PROG).err
+sim.sc: SIM_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).log
+sim.sc: SIM_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).rpt
+sim.sc: SIM_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).sim.$(SUITE).$(PROG).err
 $(SIM_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
 $(SIM_DIR)/run_simsc: $(SIM_COLLATERAL)
 	cd $(@D); ./simsc $(VERILATOR_OPTIONS) $(VERILATOR_PLUSARGS) | tee $(SIM_LOG)
@@ -104,9 +104,9 @@ $(SIM_DIR)/run_simsc: $(SIM_COLLATERAL)
 	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
 
 cov.sc: $(RESULTS_DIR)/covsc
-cov.sc: COV_LOG    := $(LOG_DIR)/$(TB).$(CFG).cov.log
-cov.sc: COV_REPORT := $(REPORT_DIR)/$(TB).$(CFG).cov.rpt
-cov.sc: COV_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).cov.err
+cov.sc: COV_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).cov.log
+cov.sc: COV_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.rpt
+cov.sc: COV_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.err
 $(COV_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
 $(RESULTS_DIR)/covsc: $(COV_COLLATERAL)
 	cd $(@D); verilator_coverage */*.dat --rank --annotate $(COV_REPORT) | tee $(COV_LOG)

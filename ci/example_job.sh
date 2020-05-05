@@ -2,9 +2,8 @@
 
 # Command line arguments
 
-# Priority is CI_CORES environment variable > argument of script > 1
-CI_CORES=${CI_CORES:-1}
-N=${1:-$CI_CORES}
+# Default to 1 core
+N=${1:-1}
 
 # Bash array to iterate over for configurations
 cfgs=(

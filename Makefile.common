@@ -43,7 +43,7 @@ export VERILATOR ?= verilator
 export DC_SHELL  ?= dc_shell
 export _DVE      ?= dve
 export GTKWAVE   ?= gtkwave
-export PYTHON    ?= python3
+export PYTHON    ?= python
 
 ## Add external tools and libraries to environment
 #  SystemC paths are needed for verilator-driven builds

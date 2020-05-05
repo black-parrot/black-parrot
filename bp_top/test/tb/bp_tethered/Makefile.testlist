@@ -458,7 +458,6 @@ BASELINE_TESTLIST := \
   riscv_tests.towers \
   riscv_tests.vvadd
 
-.SECONDEXPANSION:
 TESTLIST ?=
 run_testlist.%:
 	$(MAKE) build.$*
