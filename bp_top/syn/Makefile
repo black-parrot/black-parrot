@@ -52,4 +52,3 @@ regress.list.common.run_in_parallel: $(foreach p, $(LIST_PROGS), regress.list.co
 
 regress.list.common.launch_run.%:
 	$(MAKE) run.$(_TS) PROG=$*
-

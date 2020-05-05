@@ -390,10 +390,6 @@ module bp_be_dcache
   logic [ptag_width_lp-1:0]                     addr_tag_tv;
   logic [index_width_lp-1:0]                    addr_index_tv;
   logic [bank_offset_width_lp-1:0]              addr_bank_offset_tv;
-  // Partial fill in-progress register
-  logic [ptag_width_lp-1:0]                     fill_tag_r;
-  logic [index_width_lp-1:0]                    fill_index_r;
-  logic [dcache_assoc_p-1:0]                    fill_pending_r;
 
   assign tv_we = v_tl_r & ~poison_i & ~tlb_miss_i & ~fencei_req;
 
@@ -492,41 +488,11 @@ module bp_be_dcache
     );
 
 
-  logic access_unfill;
-  bsg_mux #(
-    .width_p(1)
-    ,.els_p(icache_assoc_p)
-  ) fill_hit (
-    .data_i(fill_pending_r)
-    ,.sel_i(addr_bank_offset_tv)
-    ,.data_o(access_unfill)
-  );
-  wire load_miss_tv = (~load_hit | access_unfill) & v_tv_r & load_op_tv_r & ~uncached_tv_r;
-  wire store_miss_tv = (~store_hit | access_unfill) & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r;
-  wire lr_miss_tv = v_tv_r & lr_op_tv_r & (~store_hit | access_unfill);
+  wire load_miss_tv = ~load_hit & v_tv_r & load_op_tv_r & ~uncached_tv_r;
+  wire store_miss_tv = ~store_hit & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r;
+  wire lr_miss_tv = v_tv_r & lr_op_tv_r & ~store_hit ;
 
   wire miss_tv = load_miss_tv | store_miss_tv | lr_miss_tv;
-
-  logic lce_data_mem_v;
-  // Update in-progress register when a miss is raised and no pending partial fill_tag_r
-  logic [dcache_assoc_p-1:0]   fill_pending_data_mem_write;
-  logic fill_pending_clear;
-  assign fill_pending_clear = |fill_pending_r;
-  always_ff @(posedge clk_i) begin
-    if (reset_i) begin
-      fill_tag_r <= '0;
-      fill_index_r <= '0;
-      fill_pending_r <= '0;
-    end
-    else if (miss_tv & fill_pending_clear) begin
-      fill_tag_r <= addr_tag_tv;
-      fill_index_r <= addr_index_tv;
-      fill_pending_r <= {dcache_assoc_p{1'b1}};
-    end
-    else if (lce_data_mem_v) begin
-      fill_pending_r <= fill_pending_data_mem_write;
-    end
-  end
 
   // uncached req
   //
@@ -974,7 +940,7 @@ module bp_be_dcache
     .i(wbuf_entry_out.way_id ^ wbuf_entry_out_bank_offset)
     ,.o(wbuf_data_mem_v)
   );
-
+  logic lce_data_mem_v;
   assign lce_data_mem_v = (data_mem_pkt.opcode != e_cache_data_mem_uncached)
     & data_mem_pkt_yumi_o;
 
@@ -1020,9 +986,6 @@ module bp_be_dcache
     assign data_mem_mask_li[i] = wbuf_yumi_li
       ? wbuf_mask
       : {data_mem_mask_width_lp{data_mem_write_bank_mask[i]}}; // use fill_mask to generate write_mask
-
-    // update fill pending reg
-    assign fill_pending_data_mem_write[i] = data_mem_write_bank_mask[i] ? 1'b0 : fill_pending_r[i];
 
   end
 

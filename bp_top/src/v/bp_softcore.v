@@ -88,6 +88,7 @@ module bp_softcore
   bp_icache_stat_info_s icache_stat_mem_lo;
 
   logic dcache_req_complete_li, icache_req_complete_li;
+  logic dcache_req_critical_li, icache_req_critical_li;
 
   logic [1:0] credits_full_li, credits_empty_li;
   logic timer_irq_li, software_irq_li, external_irq_li;

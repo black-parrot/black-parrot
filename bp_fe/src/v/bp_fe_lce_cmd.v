@@ -53,6 +53,7 @@ module bp_fe_lce_cmd
     , output logic                                               uncached_data_received_o
 
     , output logic                                               cache_req_complete_o
+    , output logic                                               cache_req_critical_o
 
     , output logic [icache_data_mem_pkt_width_lp-1:0]            data_mem_pkt_o
     , output logic                                               data_mem_pkt_v_o
@@ -183,6 +184,7 @@ module bp_fe_lce_cmd
     cce_data_received_o              = 1'b0;
     uncached_data_received_o         = 1'b0;
     cache_req_complete_o             = 1'b0;
+    cache_req_critical_o             = 1'b0;
 
     state_n = state_r;
     data_n = data_r;
@@ -250,6 +252,7 @@ module bp_fe_lce_cmd
             data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
             data_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
             data_mem_pkt.data = lce_cmd_li.data;
+            data_mem_pkt.fill_mask = {icache_assoc_p{1'b1}}
             data_mem_pkt.opcode = e_cache_data_mem_uncached;
             data_mem_pkt_v_o = lce_cmd_v_i;
 
@@ -257,6 +260,7 @@ module bp_fe_lce_cmd
 
             uncached_data_received_o = data_mem_pkt_yumi_i;
             cache_req_complete_o = data_mem_pkt_yumi_i;
+            cache_req_critical_o = data_mem_pkt_yumi_i;
           end
       end
 
@@ -316,7 +320,7 @@ module bp_fe_lce_cmd
             flag_invalidate_n = lce_resp_yumi_i
               ? 1'b0
               : (flag_invalidate_r
-                  ? 1'b1  
+                  ? 1'b1
                   : tag_mem_pkt_yumi_i);
 
 
@@ -331,6 +335,7 @@ module bp_fe_lce_cmd
             data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
             data_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
             data_mem_pkt.data = lce_cmd_li.data;
+            data_mem_pkt.fill_mask = {icache_assoc_p{1'b1}};
             data_mem_pkt.opcode = e_cache_data_mem_write;
             data_mem_pkt_v_o = lce_cmd_v_i;
 
@@ -346,11 +351,13 @@ module bp_fe_lce_cmd
             cce_data_received_o = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             set_tag_received_o  = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             cache_req_complete_o = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
+            cache_req_critical_o = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
 
           end else if (lce_cmd_li.header.msg_type == e_lce_cmd_uc_data) begin
             data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
             data_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
             data_mem_pkt.data = lce_cmd_li.data;
+            data_mem_pkt.fill_mask = {icache_assoc_p{1'b1}};
             data_mem_pkt.opcode = e_cache_data_mem_uncached;
             data_mem_pkt_v_o = lce_cmd_v_i;
 
@@ -358,6 +365,7 @@ module bp_fe_lce_cmd
 
             uncached_data_received_o = data_mem_pkt_yumi_i;
             cache_req_complete_o = data_mem_pkt_yumi_i;
+            cache_req_critical_o = data_mem_pkt_yumi_i;
 
           end else if (lce_cmd_li.header.msg_type == e_lce_cmd_set_clear) begin
             tag_mem_pkt.index        = lce_cmd_addr_index;
@@ -372,7 +380,6 @@ module bp_fe_lce_cmd
 
             lce_cmd_yumi_o           = tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i;
             cache_req_complete_o = 1'b0;
-
           end
 
       end

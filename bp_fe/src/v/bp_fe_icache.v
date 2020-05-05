@@ -210,10 +210,6 @@ module bp_fe_icache
   logic [bank_offset_width_lp-1:0]              addr_bank_offset_tv;
 
   logic                                         fencei_op_tv_r;
-  // Partial fill in-progress register
-  logic [ptag_width_lp-1:0]                     fill_tag_r;
-  logic [index_width_lp-1:0]                    fill_index_r;
-  logic [icache_assoc_p-1:0]                    fill_pending_r;
 
   // Flush ops are non-speculative and so cannot be poisoned
   assign tv_we = v_tl_r & ((~poison_i & ptag_v_i) | fencei_op_tl_r) & ~fencei_req;
@@ -262,38 +258,9 @@ module bp_fe_icache
     ,.addr_o(hit_index)
   );
 
-  logic miss_tv, access_unfill;
-  bsg_mux #(
-    .width_p(1)
-    ,.els_p(icache_assoc_p)
-  ) fill_hit (
-    .data_i(fill_pending_r)
-    ,.sel_i(addr_bank_offset_tv)
-    ,.data_o(access_unfill)
-  );
+  logic miss_tv;
+  assign miss_tv = ~hit & v_tv_r & ~uncached_tv_r;
 
-  assign miss_tv = (~hit | access_unfill) & v_tv_r & ~uncached_tv_r;
-
-  logic data_mem_v;
-  // Update in-progress register when a miss is raised and no pending partial fill_tag_r
-  logic [icache_assoc_p-1:0]   fill_pending_data_mem_write;
-  logic fill_pending_clear;
-  assign fill_pending_clear = |fill_pending_r;
-  always_ff @(posedge clk_i) begin
-    if (reset_i) begin
-      fill_tag_r <= '0;
-      fill_index_r <= '0;
-      fill_pending_r <= '0;
-    end
-    else if (miss_tv & fill_pending_clear) begin
-      fill_tag_r <= addr_tag_tv;
-      fill_index_r <= addr_index_tv;
-      fill_pending_r <= {icache_assoc_p{1'b1}};
-    end
-    else if (data_mem_v) begin
-      fill_pending_r <= fill_pending_data_mem_write;
-    end
-  end
 
   // uncached request
   logic uncached_load_data_v_r;
@@ -449,6 +416,7 @@ module bp_fe_icache
     : final_data[instr_width_p-1:0];
 
   // data mem
+  logic data_mem_v;
   assign data_mem_v = (data_mem_pkt.opcode != e_cache_data_mem_uncached)
     & data_mem_pkt_yumi_o;
 
@@ -478,9 +446,6 @@ module bp_fe_icache
 
     // use fill_mask to generate write_mask
     assign data_mem_w_mask_li[i] = {data_mem_mask_width_lp{data_mem_write_bank_mask[i]}};
-    // update fill pending reg
-    assign fill_pending_data_mem_write[i] = data_mem_write_bank_mask[i] ? 1'b0 : fill_pending_r[i];
-
   end
 
   // Expand data_mem_pkt.data (fill width) to cacheline width

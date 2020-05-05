@@ -57,6 +57,7 @@ module bp_be_dcache_lce_cmd
     , output logic cce_data_received_o
     , output logic uncached_data_received_o
     , output logic cache_req_complete_o
+    , output logic cache_req_critical_o
 
     // CCE_LCE_cmd
     , input [lce_cmd_width_lp-1:0] lce_cmd_i
@@ -214,6 +215,7 @@ module bp_be_dcache_lce_cmd
     uncached_data_received_o = 1'b0;
     cce_data_received_o = 1'b0;
     cache_req_complete_o = 1'b0;
+    cache_req_critical_o = 1'b0;
 
     lce_cmd_yumi_o = 1'b0;
 
@@ -311,6 +313,7 @@ module bp_be_dcache_lce_cmd
               data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
               data_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
               data_mem_pkt.data = lce_cmd_li.data;
+              data_mem_pkt.fill_mask = {dcache_assoc_p{1'b1}};
               data_mem_pkt.opcode = e_cache_data_mem_uncached;
               data_mem_pkt_v_o = lce_cmd_v_i;
 
@@ -318,6 +321,7 @@ module bp_be_dcache_lce_cmd
 
               uncached_data_received_o = data_mem_pkt_yumi_i;
               cache_req_complete_o = data_mem_pkt_yumi_i;
+              cache_req_critical_o = data_mem_pkt_yumi_i;
 
             end
 
@@ -443,6 +447,7 @@ module bp_be_dcache_lce_cmd
             data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
             data_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
             data_mem_pkt.data = lce_cmd_li.data;
+            data_mem_pkt.fill_mask = {dcache_assoc_p{1'b1}};
             data_mem_pkt.opcode = e_cache_data_mem_write;
             data_mem_pkt_v_o = lce_cmd_v_i;
 
@@ -457,6 +462,7 @@ module bp_be_dcache_lce_cmd
 
             cce_data_received_o = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             cache_req_complete_o = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
+            cache_req_critical_o = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
 
           end
 
@@ -464,6 +470,7 @@ module bp_be_dcache_lce_cmd
             data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
             data_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
             data_mem_pkt.data = lce_cmd_li.data;
+            data_mem_pkt.fill_mask = {dcache_assoc_p{1'b1}};
             data_mem_pkt.opcode = e_cache_data_mem_uncached;
             data_mem_pkt_v_o = lce_cmd_v_i;
 
@@ -471,6 +478,8 @@ module bp_be_dcache_lce_cmd
 
             uncached_data_received_o = data_mem_pkt_yumi_i;
             cache_req_complete_o = data_mem_pkt_yumi_i;
+            cache_req_critical_o = data_mem_pkt_yumi_i;
+
           end
 
           e_lce_cmd_set_clear: begin

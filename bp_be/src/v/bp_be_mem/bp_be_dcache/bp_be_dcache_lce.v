@@ -79,6 +79,8 @@ module bp_be_dcache_lce
     , input cache_req_metadata_v_i
 
     , output logic cache_req_complete_o
+    , output logic cache_req_critical_o
+
 
     // data_mem
     , output logic data_mem_pkt_v_o
@@ -243,6 +245,7 @@ module bp_be_dcache_lce
       ,.cce_data_received_o(cce_data_received)
       ,.uncached_data_received_o(uncached_data_received)
       ,.cache_req_complete_o(cache_req_complete_o)
+      ,.cache_req_critical_o(cache_req_critical_o)
 
       ,.lce_cmd_i(lce_cmd_in)
       ,.lce_cmd_v_i(lce_cmd_v_i)

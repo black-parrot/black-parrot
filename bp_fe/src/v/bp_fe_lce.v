@@ -52,6 +52,7 @@ module bp_fe_lce
     , input                                                      cache_req_metadata_v_i
 
     , output logic                                               cache_req_complete_o
+    , output logic                                               cache_req_critical_o
 
     , output logic [icache_data_mem_pkt_width_lp-1:0]            data_mem_pkt_o
     , output logic                                               data_mem_pkt_v_o
@@ -179,6 +180,7 @@ module bp_fe_lce
     ,.uncached_data_received_o(uncached_data_received)
 
     ,.cache_req_complete_o(cache_req_complete_o)
+    ,.cache_req_critical_o(cache_req_critical_o)
 
     ,.data_mem_pkt_o(data_mem_pkt)
     ,.data_mem_pkt_v_o(data_mem_pkt_v_o)
