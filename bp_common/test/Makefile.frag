@@ -442,6 +442,7 @@ BEEBS_TESTS = \
   picojpeg \
   prime \
   qrduino \
+  qsort \
   qurt \
   recursion \
   select \
@@ -468,9 +469,6 @@ BEEBS_TESTS = \
   ud \
   whetstone \
   wikisort
-  # qsort works, but there's a name conflict with riscv_tests. We should fix this
-  #   by putting each test suite in its own mem directory
-  #qsort
 BEEBS_TESTS_RISCV := $(addprefix $(BP_TEST_MEM_DIR)/beebs/, $(addsuffix .riscv, $(BEEBS_TESTS)))
 
 SPEC = \
