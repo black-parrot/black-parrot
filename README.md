@@ -33,9 +33,7 @@ Users who just want to test their setup and run a minimal BlackParrot test shoul
     make prep_lite
 
     # Running your first test
-    cd bp_top/syn
-    # Run a test in Verilator (indicated by .sc extension)
-    make build.sc sim.sc PROG=hello_world
+    make -C bp_top/syn tire_kick
 
 This should output (roughly)
 
