@@ -225,7 +225,7 @@ always_comb
           unique casez (instr)
             `RV64_FENCE   : 
               begin
-                decode.pipe_ctrl_v = 1'b1;
+                decode.pipe_mem_v = 1'b1;
               end
             `RV64_FENCE_I : 
               begin 
