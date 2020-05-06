@@ -77,7 +77,7 @@ sims+=(
     )
 fi
 
-let JOBS=${#cfgs[@]}
+let JOBS=${#sims[@]}
 let CORES_PER_JOB=${N}/${JOBS}+1
 
 # The base command to append the configuration to
