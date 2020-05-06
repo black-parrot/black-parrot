@@ -489,8 +489,8 @@ run_psample.%:
 	$(DROMAJO) $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv --host \
 		--dump_period=$(SAMPLE_INSTR_P) --save=dromajo --memory_size=$(SAMPLE_MEMSIZE)
 	$(eval CHECKPOINTS := $(subst .mainram,,$(subst dromajo.,,$(shell ls dromajo.*.mainram))))
+	rm dromajo.*
 	$(MAKE) $(addsuffix @$*, $(addprefix run_sample@, $(CHECKPOINTS)))
-	-rm dromajo.*
 
 # Special case 0, because we won't drop a checkpoint for it
 run_sample@0%:

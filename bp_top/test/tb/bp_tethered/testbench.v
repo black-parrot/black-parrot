@@ -330,21 +330,6 @@ bind bp_be_top
       assign cosim_finish_lo = '0;
     end
 
-// TODO: Put warmup counter inside perf
-//logic [29:0] warmup_cnt;
-//logic warm;
-//bsg_counter_clear_up
-// #(.max_val_p(2**30-1), .init_val_p(0))
-// warmup_counter
-//  (.clk_i(clk_i)
-//   ,.reset_i(reset_i | testbench.wrapper.dut.core.be.be_checker.scheduler.int_regfile.cfg_bus.freeze)
-//
-//   ,.clear_i(1'b0)
-//   ,.up_i(testbench.wrapper.dut.core.be.be_calculator.commit_pkt.instret & ~warm)
-//   ,.count_o(warmup_cnt)
-//   );
-//assign warm = (warmup_cnt == warmup_instr_p);
-
 bind bp_be_top
   bp_be_nonsynth_perf
    #(.bp_params_p(bp_params_p))
@@ -352,6 +337,7 @@ bind bp_be_top
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
+     ,.warmup_instr_i(testbench.warmup_instr_p)
 
      ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
