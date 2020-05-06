@@ -38,6 +38,9 @@ systemc_build:
 	$(MAKE) -C $(systemc_dir) install
 
 verilator_build: systemc
+	# TODO: Remove when https://github.com/verilator/verilator/pull/2312
+	cd $(verilator_dir); \
+		git apply ../verilator.patch
 	cd $(verilator_dir); \
 		autoconf; \
 		./configure --prefix=$(BP_EXTERNAL_DIR)
