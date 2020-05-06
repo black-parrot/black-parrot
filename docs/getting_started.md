@@ -54,10 +54,14 @@ Each testbench supports a set of actions which act upon that specific testbench.
   - build_dump (builds with waveform dump enabled)
   - build_cov (builds with line+toggle coverage enabled)
 - sim (runs a single test)
+  - sim_dump (dumps a waveform)
 - blood (generates bloodgraph based on stall information; you must build and run with CORE_PROFILE_P=1)
 - wave (opens a waveform viewer for the dump file, either GTKWave or Synopsys DVE)
 - check_design (checks for DC elaborability, which is a proxy for synthesizability)
 - run_testlist (runs a suite of tests. This target may behave differently on different testbenches)
+- run_psample (runs a single long test in parallel cosimulation)
+  - SAMPLE_INSTR_P  = number instructions per sample
+  - SAMPLE_WARMUP_P = number of instructions before performance recording starts
 - report (prints a summary of reports and erroring actions
 
 ### Supported TOOLs
@@ -84,7 +88,7 @@ Each program belongs to a test suite. The full suite list can be found in bp_com
 - *\_TRACE\_P: Enable a specific tracer (tracer list can be found in the [SW Developer Guide](software_guide.md))
 
 ### Example Commands
-    make build_dump.v sim.v SUITE=bp_tests PROG=hello_world  # Run hello_world in VCS with dumping
+    make build_dump.v sim_dump.v SUITE=bp_tests PROG=hello_world  # Run hello_world in VCS with dumping
     make wave.v SUITE=bp_tests PROG=hello_world              # Open hello_world waveform in dve
     make build_cov.sc sim.sc SUITE=riscv_tests PROG=rsort    # Run hello_world in Verilator with coverage
 
