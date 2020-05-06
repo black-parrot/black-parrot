@@ -1,28 +1,32 @@
-COH_PROTO   ?= mesi
-CCE_MEM_PATH = $(BP_ME_DIR)/src/asm/roms
-CCE_MEM      = $(COH_PROTO).mem
+export COH_PROTO   ?= mesi
+export CCE_MEM_PATH = $(BP_ME_DIR)/src/asm/roms
+export CCE_MEM      = $(COH_PROTO).mem
 
-DRAMSIM_CH_CFG  ?= DDR3_micron_32M_8B_x8_sg25E.ini
-DRAMSIM_SYS_CFG ?= system.ini
+export DRAMSIM_CH_CFG  ?= DDR3_micron_32M_8B_x8_sg25E.ini
+export DRAMSIM_SYS_CFG ?= system.ini
 
-CCE_TRACE_P    ?= 0
-CMT_TRACE_P    ?= 0
-DRAM_TRACE_P   ?= 0
-ICACHE_TRACE_P ?= 0
-DCACHE_TRACE_P ?= 0
-NPC_TRACE_P    ?= 0
-VM_TRACE_P     ?= 0
-CORE_PROFILE_P ?= 0
-PRELOAD_MEM_P  ?= 1
-LOAD_NBF_P     ?= 0
-COSIM_P        ?= 0
-COSIM_INSTR_P  ?= 0
-WARMUP_INSTR_P ?= 0
-USE_DRAMSIM2_LATENCY_P ?= 0
-USE_MAX_LATENCY_P      ?= 1
-USE_RANDOM_LATENCY_P   ?= 0
+export CCE_TRACE_P    ?= 0
+export CMT_TRACE_P    ?= 0
+export DRAM_TRACE_P   ?= 0
+export ICACHE_TRACE_P ?= 0
+export DCACHE_TRACE_P ?= 0
+export NPC_TRACE_P    ?= 0
+export VM_TRACE_P     ?= 0
+export CORE_PROFILE_P ?= 0
+export PRELOAD_MEM_P  ?= 1
+export LOAD_NBF_P     ?= 0
+export COSIM_P        ?= 0
 
-BP_SIM_CLK_PERIOD ?= 10
+export SAMPLE_MEMSIZE   ?= 32
+export SAMPLE_START_P   ?= 0
+export SAMPLE_WARMUP_P  ?= 0
+export SAMPLE_INSTR_P   ?= 0
+
+export USE_DRAMSIM2_LATENCY_P ?= 0
+export USE_MAX_LATENCY_P      ?= 1
+export USE_RANDOM_LATENCY_P   ?= 0
+
+export BP_SIM_CLK_PERIOD ?= 10
 
 export DUT_PARAMS = 
 export TB_PARAMS  = \
@@ -37,8 +41,8 @@ export TB_PARAMS  = \
                     -pvalue+preload_mem_p=$(PRELOAD_MEM_P) \
                     -pvalue+load_nbf_p=$(LOAD_NBF_P) \
                     -pvalue+cosim_p=$(COSIM_P) \
-                    -pvalue+cosim_instr_p=$(COSIM_INSTR_P) \
-                    -pvalue+warmup_instr_p=$(WARMUP_INSTR_P) \
+                    -pvalue+cosim_instr_p=$(SAMPLE_INSTR_P) \
+                    -pvalue+warmup_instr_p=$(SAMPLE_WARMUP_P) \
                     -pvalue+use_dramsim2_latency_p=$(USE_DRAMSIM2_LATENCY_P) \
                     -pvalue+use_max_latency_p=$(USE_MAX_LATENCY_P) \
                     -pvalue+use_random_latency_p=$(USE_RANDOM_LATENCY_P)
