@@ -106,12 +106,6 @@
   branch = master
   ignore = dirty
 
-[submodule "external/sv2v"]
-  path = external/sv2v
-  url = https://github.com/zachjs/sv2v.git
-  branch = master
-  ignore = dirty
-
 [submodule "bp_common/test/src/spec/src/spec2000"]
   path = bp_common/test/src/spec/src/spec2000
   url = https://github.com/black-parrot/spec2000
@@ -122,6 +116,12 @@
 [submodule "bp_common/test/src/bp_tests"]
   path = bp_common/test/src/bp_tests
   url = https://github.com/black-parrot/bp_tests.git
+  branch = master
+  ignore = dirty
+
+[submodule "external/zachjs_sv2v"]
+  path = external/zachjs_sv2v
+  url = https://github.com/zachjs/sv2v.git
   branch = master
   ignore = dirty
 

@@ -62,7 +62,10 @@ Each testbench supports a set of actions which act upon that specific testbench.
 - run_psample (runs a single long test in parallel cosimulation)
   - SAMPLE_INSTR_P  = number instructions per sample
   - SAMPLE_WARMUP_P = number of instructions before performance recording starts
-- report (prints a summary of reports and erroring actions
+- report (prints a summary of reports and erroring actions)
+- convert.bsg_sv2v (Creates a "pickled" verilog-2005 file out of the top level blackparrot)
+  - NOTE: this target requires Synopsys Design Compiler to be installed. A fully open-source version of
+    sv2v is in progress at https://github.com/zachjs/sv2v
 
 ### Supported TOOLs
 BlackParrot supports these tools for simulation and design checking. We welcome contributions for additional tool support, especially for open-source tools.

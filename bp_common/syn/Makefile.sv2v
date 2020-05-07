@@ -1,0 +1,45 @@
+override TOOL := sv2v
+
+override LOG_DIR     := $(LOG_PATH)/$(TOOL)
+override RESULTS_DIR := $(RESULTS_PATH)/$(TOOL)
+override REPORT_DIR  := $(REPORT_PATH)/$(TOOL)
+override TOUCH_DIR   := $(TOUCH_PATH)/$(TOOL)
+
+override CONVERT_DIR := $(RESULTS_DIR)/$(TB).$(CFG).$(TAG).convert
+
+$(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(CONVERT_DIR):
+	mkdir -p $@
+
+.PHONY: clean.sv2v
+
+include $(TB_PATH)/$(TB)/Makefile.sv2v
+
+ZACHJS_SV2V ?= sv2v
+
+## Tool specific options
+
+convert.bsg_sv2v: $(CONVERT_DIR)/convert_bsg_sv2v
+convert.bsg_sv2v: CONVERT_LOG     := $(LOG_DIR)/$(TB).$(CFG).$(TAG).convert.log
+convert.bsg_sv2v: CONVERT_REPORT  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).convert.rpt
+convert.bsg_sv2v: CONVERT_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).convert.err
+$(CONVERT_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(CONVERT_DIR)
+$(CONVERT_DIR)/convert_bsg_sv2v: $(CONVERT_COLLATERAL)
+	$(MAKE) -C $(BP_EXTERNAL_DIR)/bsg_sv2v convert_sv2v \
+		DESIGN_FILELIST=$(@D)/flist.vcs DESIGN_NAME=wrapper OUTPUT_DIR=$(@D) | tee $(CONVERT_LOG)
+	
+# Note: This target fails for current sv2v builds
+convert.zachjs_sv2v: $(CONVERT_DIR)/convert_zachjs_sv2v
+convert.zachjs_sv2v: CONVERT_LOG     := $(LOG_DIR)/$(TB).$(CFG).$(TAG).convert.log
+convert.zachjs_sv2v: CONVERT_REPORT  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).convert.rpt
+convert.zachjs_sv2v: CONVERT_ERROR   := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).convert.err
+$(CONVERT_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(CONVERT_DIR)
+$(CONVERT_DIR)/convert_zachjs_sv2v: $(CONVERT_COLLATERAL)
+	$(eval sv2v_args := $(shell cat $(@D)/command.txt))
+	cd $(@D); $(ZACHJS_SV2V) $(sv2v_args) | tee $(CONVERT_LOG)
+
+clean.sv2v:
+	@-rm -rf touchfiles/sv2v
+	@-rm -rf results/sv2v
+	@-rm -rf reports/sv2v
+	@-rm -rf logs/sv2v
+
