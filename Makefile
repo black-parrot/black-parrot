@@ -98,7 +98,7 @@ profile-header:
 
 # for branchy stalls, i.e. mispredict, branch_override, grab the PC before the stall, which is likely the source PC
 profile-source-%:
-	grep -B1 $* ./bp_top/syn/results/vcs/bp_softcore.e_bp_softcore_cfg.sim/coremark/stall_0.trace | grep -v "\-\-" | grep -v $* | awk -F, '{print $$4}' | sort | uniq -c > prof-source.$*
+	grep "instr\|$*" ./bp_top/syn/results/vcs/bp_softcore.e_bp_softcore_cfg.sim/coremark/stall_0.trace | grep -B1 $* | grep -v "\-\-" | grep -v $* | awk -F, '{print $$4}' | sort | uniq -c > prof-source.$*
 
 profile: profile-header $(foreach x,$(STALLS),stall.$(x))
 
