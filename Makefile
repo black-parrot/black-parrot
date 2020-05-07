@@ -106,13 +106,15 @@ profile: profile-header $(foreach x,$(STALLS),stall.$(x))
 profile-%:
 	grep $* ./bp_top/syn/results/vcs/bp_softcore.e_bp_softcore_cfg.sim/*/stall_0.trace | awk -F, '{print $$4}' | sort | uniq -c > prof.$*
 
+# mispredict branch_override ret_override
+# computes various branch mispredict/override rates for each individual instruction
 # get PC sources for mispredicts
 # get PC histogram of instructions exectuted
 # perform join on them, and pretty print =_
-branch-mispredict-rates:
-	make profile-source-mispredict
+%-rates:
+	make profile-source-$*
 	make profile-instr
-	join -j 2 prof.instr prof-source.mispredict | awk '{printf "%s %8d %8d   (%3.2f)\n", $$1,$$3,$$2,$$3/$$2}'
+	join -j 2 prof.instr prof-source.$* | awk '{printf "%s %8d %8d   (%3.2f)\n", $$1,$$3,$$2,$$3/$$2}'
 
 profile-target-mispredict:
 	echo "#!/bin/bash" > runit	
