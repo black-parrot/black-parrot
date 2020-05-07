@@ -11,7 +11,7 @@ module bp_cacc_vdp
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
-    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_p, acache_block_width_p, lce_fill_width_p, cache)
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_p, acache_block_width_p, acache_fill_width_p, cache)
 
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     , localparam stat_info_width_lp = `bp_cache_stat_info_width(acache_assoc_p)
@@ -76,7 +76,7 @@ module bp_cacc_vdp
   stat_mem_pkt_v_i, stat_mem_pkt_yumi_o,
   cache_req_complete_lo;
 
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_p, acache_block_width_p, lce_fill_width_p, cache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, acache_sets_p, acache_assoc_p, dword_width_p, acache_block_width_p, acache_fill_width_p, cache);
 
   bp_cache_req_s cache_req_cast_o;
   bp_cache_data_mem_pkt_s data_mem_pkt_i;

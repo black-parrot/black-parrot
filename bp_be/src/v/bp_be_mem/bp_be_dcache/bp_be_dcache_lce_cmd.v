@@ -17,29 +17,33 @@ module bp_be_dcache_lce_cmd
   import bp_common_aviary_pkg::*;
   import bp_be_dcache_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   ,parameter assoc_p = 8
+   ,parameter sets_p = 64
+   ,parameter block_width_p = 512
+   ,parameter fill_width_p = 512
    `declare_bp_proc_params(bp_params_p)
 
-    , localparam block_size_in_words_lp = dcache_assoc_p
-    , localparam bank_width_lp = dcache_block_width_p / dcache_assoc_p
+    , localparam block_size_in_words_lp = assoc_p
+    , localparam bank_width_lp = block_width_p / assoc_p
     , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
     , localparam bypass_data_mask_width_lp = (dword_width_p >> 3)
     , localparam data_mem_mask_width_lp = (bank_width_lp >> 3)
     , localparam byte_offset_width_lp = `BSG_SAFE_CLOG2(bank_width_lp>>3)
     , localparam word_offset_width_lp = `BSG_SAFE_CLOG2(block_size_in_words_lp)
     , localparam block_offset_width_lp = (word_offset_width_lp+byte_offset_width_lp)
-    , localparam index_width_lp = `BSG_SAFE_CLOG2(dcache_sets_p)
+    , localparam index_width_lp = `BSG_SAFE_CLOG2(sets_p)
     , localparam ptag_width_lp = (paddr_width_p-bp_page_offset_width_gp)
-    , localparam way_id_width_lp = `BSG_SAFE_CLOG2(dcache_assoc_p)
-    , localparam block_size_in_bytes_lp = (dcache_block_width_p / 8)
+    , localparam way_id_width_lp = `BSG_SAFE_CLOG2(assoc_p)
+    , localparam block_size_in_bytes_lp = (block_width_p / 8)
 
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache)
+    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, dcache)
 
     , localparam stat_info_width_lp=
-      `bp_cache_stat_info_width(dcache_assoc_p)
+      `bp_cache_stat_info_width(assoc_p)
 
     // width for counter used during initiliazation and for sync messages
-    , localparam cnt_width_lp = `BSG_MAX(cce_id_width_p+1, `BSG_SAFE_CLOG2(dcache_sets_p)+1)
+    , localparam cnt_width_lp = `BSG_MAX(cce_id_width_p+1, `BSG_SAFE_CLOG2(sets_p)+1)
     , localparam cnt_max_val_lp = ((2**cnt_width_lp)-1)
 
   )
@@ -78,7 +82,7 @@ module bp_be_dcache_lce_cmd
     , output logic data_mem_pkt_v_o
     , output logic [dcache_data_mem_pkt_width_lp-1:0] data_mem_pkt_o
     , input data_mem_pkt_yumi_i
-    , input [dcache_block_width_p-1:0] data_mem_i
+    , input [block_width_p-1:0] data_mem_i
 
     // tag_mem
     , output logic tag_mem_pkt_v_o
@@ -95,9 +99,9 @@ module bp_be_dcache_lce_cmd
   );
 
   // casting structs
- `declare_bp_cache_stat_info_s(dcache_assoc_p, dcache);
+ `declare_bp_cache_stat_info_s(assoc_p, dcache);
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache_fill_width_p, dcache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, dcache);
 
   bp_lce_cmd_s lce_cmd_li;
   bp_lce_cce_resp_s lce_resp;
@@ -313,7 +317,7 @@ module bp_be_dcache_lce_cmd
               data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
               data_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
               data_mem_pkt.data = lce_cmd_li.data;
-              data_mem_pkt.fill_mask = {dcache_assoc_p{1'b1}};
+              data_mem_pkt.fill_mask = {assoc_p{1'b1}};
               data_mem_pkt.opcode = e_cache_data_mem_uncached;
               data_mem_pkt_v_o = lce_cmd_v_i;
 
@@ -447,7 +451,7 @@ module bp_be_dcache_lce_cmd
             data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
             data_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
             data_mem_pkt.data = lce_cmd_li.data;
-            data_mem_pkt.fill_mask = {dcache_assoc_p{1'b1}};
+            data_mem_pkt.fill_mask = {assoc_p{1'b1}};
             data_mem_pkt.opcode = e_cache_data_mem_write;
             data_mem_pkt_v_o = lce_cmd_v_i;
 
@@ -470,7 +474,7 @@ module bp_be_dcache_lce_cmd
             data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
             data_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
             data_mem_pkt.data = lce_cmd_li.data;
-            data_mem_pkt.fill_mask = {dcache_assoc_p{1'b1}};
+            data_mem_pkt.fill_mask = {assoc_p{1'b1}};
             data_mem_pkt.opcode = e_cache_data_mem_uncached;
             data_mem_pkt_v_o = lce_cmd_v_i;
 

@@ -20,22 +20,27 @@ module bp_fe_lce
   import bp_common_aviary_pkg::*;
   import bp_common_cfg_link_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+   ,parameter assoc_p = 8
+   ,parameter sets_p = 64
+   ,parameter block_width_p = 512
+   ,parameter fill_width_p = 512
+
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, icache)
 
-   , localparam way_id_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
-   , localparam block_size_in_words_lp=icache_assoc_p
-   , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
+   , localparam way_id_width_lp=`BSG_SAFE_CLOG2(assoc_p)
+   , localparam block_size_in_words_lp=assoc_p
+   , localparam bank_width_lp = block_width_p / assoc_p
    , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
    , localparam data_mem_mask_width_lp=(bank_width_lp >> 3)
    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp >> 3)
    , localparam word_offset_width_lp=`BSG_SAFE_CLOG2(block_size_in_words_lp)
-   , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
+   , localparam index_width_lp=`BSG_SAFE_CLOG2(sets_p)
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
 
-   , localparam stat_width_lp = `bp_cache_stat_info_width(icache_assoc_p)
+   , localparam stat_width_lp = `bp_cache_stat_info_width(assoc_p)
 
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
   )
@@ -57,7 +62,7 @@ module bp_fe_lce
     , output logic [icache_data_mem_pkt_width_lp-1:0]            data_mem_pkt_o
     , output logic                                               data_mem_pkt_v_o
     , input                                                      data_mem_pkt_yumi_i
-    , input  [icache_block_width_p-1:0]                          data_mem_i
+    , input  [block_width_p-1:0]                          data_mem_i
 
     , output logic [icache_tag_mem_pkt_width_lp-1:0]             tag_mem_pkt_o
     , output logic                                               tag_mem_pkt_v_o
@@ -89,7 +94,7 @@ module bp_fe_lce
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
   `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
-  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache);
+  `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, icache);
 
   bp_cfg_bus_s cfg_bus_cast_i;
 
@@ -129,7 +134,12 @@ module bp_fe_lce
   assign coherence_blocked_li = lce_cmd_v_i & ~lce_cmd_yumi_o;
   wire cmd_ready = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached) ? 1'b1 : lce_ready_lo;
 
-  bp_fe_lce_req #(.bp_params_p(bp_params_p))
+  bp_fe_lce_req #(
+    .bp_params_p(bp_params_p)
+    ,.assoc_p(assoc_p)
+    ,.sets_p(sets_p)
+    ,.block_width_p(block_width_p)
+    ,.fill_width_p(fill_width_p))
     lce_req_inst (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -165,7 +175,12 @@ module bp_fe_lce
   logic lce_cmd_lce_resp_v_lo;
   logic lce_cmd_lce_resp_yumi_li;
 
-  bp_fe_lce_cmd #(.bp_params_p(bp_params_p))
+  bp_fe_lce_cmd #(
+    .bp_params_p(bp_params_p)
+    ,.assoc_p(assoc_p)
+    ,.sets_p(sets_p)
+    ,.block_width_p(block_width_p)
+    ,.fill_width_p(fill_width_p))
     lce_cmd_inst (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -190,7 +205,7 @@ module bp_fe_lce
     ,.tag_mem_pkt_o(tag_mem_pkt)
     ,.tag_mem_pkt_v_o(tag_mem_pkt_v_o)
     ,.tag_mem_pkt_yumi_i(tag_mem_pkt_yumi_i)
-    ,.tag_mem_i(tag_mem_i)    
+    ,.tag_mem_i(tag_mem_i)
 
     ,.stat_mem_pkt_v_o(stat_mem_pkt_v_o)
     ,.stat_mem_pkt_o(stat_mem_pkt)
