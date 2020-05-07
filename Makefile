@@ -80,7 +80,11 @@ ucode: | basejump
 
 rebuild-gcc:
 	$(MAKE) -C external/riscv-gnu-toolchain clean
-	$(MAKE) -j 8 -C external -f Makefile.tools gnu_build
+	$(MAKE) -j 30 -C external -f Makefile.tools gnu_build
+
+partial-rebuild-gcc:
+	$(MAKE) -j 30 -C external/riscv-gnu-toolchain/build-gcc-newlib-stage2/
+
 
 STALLS=instr load_dep branch_override ret_override mispredict mul icache dcache long_haz unknown control_haz struct_haz fe_queue_stall fe_wait_stall
 
@@ -92,15 +96,27 @@ profile-header:
 	-@find . -iname "stall_0.trace" | xargs -n 1 grep -v $(foreach x,$(STALLS),-e $(x))
 	-@printf "%-20s: " "cycles"; printf "%8d\n" $$(cat `find . -iname "stall_0.trace" | xargs -n 1` | wc -l)
 
+# for branchy stalls, i.e. mispredict, branch_override, grab the PC before the stall, which is likely the source PC
+profile-source-%:
+	grep -B1 $* ./bp_top/syn/results/vcs/bp_softcore.e_bp_softcore_cfg.sim/coremark/stall_0.trace | grep -v "\-\-" | grep -v $* | awk -F, '{print $$4}' | sort | uniq -c > prof-source.$*
+
 profile: profile-header $(foreach x,$(STALLS),stall.$(x))
 
-# load-dep mul branch-mispredicts ret-override etc
+# instr load-dep mul branch-mispredicts ret-override etc
 profile-%:
 	grep $* ./bp_top/syn/results/vcs/bp_softcore.e_bp_softcore_cfg.sim/*/stall_0.trace | awk -F, '{print $$4}' | sort | uniq -c > prof.$*
 
+# get PC sources for mispredicts
+# get PC histogram of instructions exectuted
+# perform join on them, and pretty print =_
+branch-mispredict-rates:
+	make profile-source-mispredict
+	make profile-instr
+	join -j 2 prof.instr prof-source.mispredict | awk '{printf "%s %8d %8d   (%3.2f)\n", $$1,$$3,$$2,$$3/$$2}'
+
 profile-target-mispredict:
 	echo "#!/bin/bash" > runit	
-	echo grep -B1 `grep target_mispredict ./bp_top/syn/results/vcs/bp_softcore.e_bp_softcore_cfg.sim/coremark/stall_0.trace | awk -F, '{print " -e ",$$4}' | cut --complement -b5-7 | sort | uniq | tr '\n' ':'` bp_common/test/mem/coremark.dump >> runit
+	echo grep -B1 `grep branch_override ./bp_top/syn/results/vcs/bp_softcore.e_bp_softcore_cfg.sim/coremark/stall_0.trace | awk -F, '{print " -e ",$$4}' | cut --complement -b5-7 | sort | uniq | tr '\n' ':'` bp_common/test/mem/coremark.dump >> runit
 	chmod u+x ./runit;	./runit | tee profile-target-mispredicts-list
 	# eval "grep -B1 $$CMD  
 
