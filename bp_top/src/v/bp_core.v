@@ -188,7 +188,11 @@ module bp_core
      );
 
   bp_fe_lce
-    #(.bp_params_p(bp_params_p))
+    #(.bp_params_p(bp_params_p)
+     ,.assoc_p(icache_assoc_p)
+     ,.sets_p(icache_sets_p)
+     ,.block_width_p(icache_block_width_p)
+     ,.fill_width_p(icache_fill_width_p))
   fe_lce
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -236,7 +240,11 @@ module bp_core
      );
 
   bp_be_dcache_lce
-    #(.bp_params_p(bp_params_p))
+    #(.bp_params_p(bp_params_p)
+     ,.assoc_p(dcache_assoc_p)
+     ,.sets_p(dcache_sets_p)
+     ,.block_width_p(dcache_block_width_p)
+     ,.fill_width_p(dcache_fill_width_p))
   be_lce
     (.clk_i(clk_i)
     ,.reset_i(reset_i)

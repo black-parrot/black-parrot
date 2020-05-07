@@ -488,12 +488,6 @@ module bp_be_dcache
     );
 
 
-  wire load_miss_tv = ~load_hit & v_tv_r & load_op_tv_r & ~uncached_tv_r;
-  wire store_miss_tv = ~store_hit & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r;
-  wire lr_miss_tv = v_tv_r & lr_op_tv_r & ~store_hit ;
-
-  wire miss_tv = load_miss_tv | store_miss_tv | lr_miss_tv;
-
   // uncached req
   //
   logic uncached_load_req;
