@@ -102,12 +102,12 @@ profile-source-%:
 
 profile: profile-header $(foreach x,$(STALLS),stall.$(x))
 
-# instr load-dep mul branch-mispredicts ret-override etc
+# instr load_dep mul mispredicts ret_override etc
 profile-%:
 	grep $* ./bp_top/syn/results/vcs/bp_softcore.e_bp_softcore_cfg.sim/*/stall_0.trace | awk -F, '{print $$4}' | sort | uniq -c > prof.$*
 
-# mispredict branch_override ret_override
 # computes various branch mispredict/override rates for each individual instruction
+# mispredict branch_override ret_override
 # get PC sources for mispredicts
 # get PC histogram of instructions exectuted
 # perform join on them, and pretty print =_
