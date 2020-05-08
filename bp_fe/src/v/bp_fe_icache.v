@@ -537,6 +537,7 @@ module bp_fe_icache
                                : data_mem_pkt_v_i & ~tl_we;
 
   // uncached load data logic
+  //synopsys sync_set_reset "reset_i"
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
       uncached_load_data_v_r <= 1'b0;
