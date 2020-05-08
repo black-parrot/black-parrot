@@ -83,8 +83,11 @@ rebuild-gcc:
 	$(MAKE) -j 30 -C external -f Makefile.tools gnu_build
 
 partial-rebuild-gcc:
+	make -C external/riscv-gnu-toolchain/build-gcc-newlib-stage2/ clean
 	$(MAKE) -j 30 -C external/riscv-gnu-toolchain/build-gcc-newlib-stage2/
-
+	$(MAKE) -j 30 -C external/riscv-gnu-toolchain/build-gcc-newlib-stage2/ install
+#	$(MAKE) -j 30 -C external -f Makefile.tools gnu_build
+	#make -C external/riscv-gnu-toolchain install
 
 STALLS=instr load_dep branch_override ret_override mispredict mul icache dcache long_haz unknown control_haz struct_haz fe_queue_stall fe_wait_stall
 
