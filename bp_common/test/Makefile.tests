@@ -78,7 +78,7 @@ DROMAJO       ?= dromajo
 	$(RISCV_ISA_SIM) $*.riscv > $@ 2>&1
 
 %.nbf: %.mem
-	$(PYTHON) $(MEM2NBF) $*.mem > $@
+	$(PYTHON) $(MEM2NBF) --mem_file $*.mem > $@
 
 include $(BP_TEST_DIR)/Makefile.frag
 $(BP_TESTS_RISCV): bp_tests
