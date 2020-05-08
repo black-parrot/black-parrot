@@ -207,7 +207,7 @@ always_ff @(posedge clk_i)
       state_r <= state_n;
     end
 
-assign suppress_iss_o = (state_r == e_fence) & fe_cmd_fence_i;
+assign suppress_iss_o = (state_n == e_fence) & fe_cmd_fence_i;
 
 // Flush on FE cmds which are not attaboys.  Also don't flush the entire pipeline on a mispredict.
 always_comb 
