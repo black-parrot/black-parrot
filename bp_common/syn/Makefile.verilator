@@ -18,7 +18,7 @@ VV_OPTS += -O1
 VV_OPTS += --top-module $(TOP_MODULE)
 VV_OPTS += -f flist.vcs
 VV_OPTS += config.vlt
-VV_OPTS += --exe
+VV_OPTS += --build --exe
 VV_OPTS += -o simsc
 
 LINT_OPTS   = --lint-only -Wall --Wno-unoptflat --top-module $(TOP_MODULE) -f flist.vcs config.vlt
@@ -52,10 +52,10 @@ $(LINT_DIR)/lintsc: $(LINT_COLLATERAL)
 	-@test -s $(LINT_ERROR) && echo "FAILED" >> $(LINT_REPORT) \
 	|| { rm -f $(LINT_ERROR); echo "PASS" >> $(LINT_REPORT); }
 
-verilate.sc: $(BUILD_DIR)/obj_dir
-verilate.sc: VBUILD_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).vbuild.log
-verilate.sc: VBUILD_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).vbuild.rpt
-verilate.sc: VBUILD_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).vbuild.err
+build.sc: $(BUILD_DIR)/obj_dir
+build.sc: VBUILD_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).vbuild.log
+build.sc: VBUILD_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).vbuild.rpt
+build.sc: VBUILD_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).vbuild.err
 $(VBUILD_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
 $(BUILD_DIR)/obj_dir: $(VBUILD_COLLATERAL)
 	cd $(@D); \
@@ -64,33 +64,14 @@ $(BUILD_DIR)/obj_dir: $(VBUILD_COLLATERAL)
 	-@tail -n 3 $(VBUILD_LOG) > $(VBUILD_REPORT)
 	-@test -s $(VBUILD_ERROR) && echo "FAILED" >> $(VBUILD_REPORT) || rm $(VBUILD_ERROR)
 
-verilate_dump.sc: VV_OPTS += --trace
-verilate_dump.sc: VV_OPTS += --trace-structs
-verilate_dump.sc: VV_OPTS += --trace-depth 15
-verilate_dump.sc: verilate.sc
+build_dump.sc: VV_OPTS += --trace
+build_dump.sc: VV_OPTS += --trace-structs
+build_dump.sc: VV_OPTS += --trace-depth 15
+build_dump.sc: build.sc
 
-verilate_cov.sc: VV_OPTS += --coverage-line
-verilate_cov.sc: VV_OPTS += --coverage-toggle
-verilate_cov.sc: verilate.sc
-
-build.sc: verilate.sc
-build.sc: $(BUILD_DIR)/obj_dir/simsc
-build.sc: CBUILD_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).cbuild.log
-build.sc: CBUILD_REPORT := $(LOG_DIR)/$(TB).$(CFG).$(TAG).cbuild.rpt
-build.sc: CBUILD_ERROR  := $(LOG_DIR)/$(TB).$(CFG).$(TAG).cbuild.err
-build.sc: verilate.sc
-$(CBUILD_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(BUILD_DIR)
-$(BUILD_DIR)/obj_dir/simsc: $(CBUILD_COLLATERAL)
-	$(MAKE) -C $(@D) -f V$(TOP_MODULE).mk | tee $(CBUILD_LOG)
-	-@grep "Error" -A 5 $(CBUILD_LOG) > $(CBUILD_ERROR)
-	-@tail -n 2 $(CBUILD_LOG) > $(CBUILD_REPORT)
-	-@test -s $(CBUILD_ERROR) && echo "FAILED" >> $(CBUILD_REPORT) || rm $(CBUILD_ERROR)
-
-build_dump.sc: verilate_dump.sc
-	$(MAKE) build.sc
-
-build_cov.sc: verilate_cov.sc
-	$(MAKE) build.sc
+build_cov.sc: VV_OPTS += --coverage-line
+build_cov.sc: VV_OPTS += --coverage-toggle
+build_cov.sc: build.sc
 
 sim.sc: build.sc
 sim.sc: $(SIM_DIR)/run_simsc

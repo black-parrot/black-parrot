@@ -38,7 +38,7 @@ tidy_tools:
 	cd $(TOP); git submodule deinit -f external/riscv-isa-sim
 	cd $(TOP); git submodule deinit -f external/axe
 	cd $(TOP); git submodule deinit -f external/cmurphi
-	cd $(TOP); git submodule deinit -f external/sv2v
+	cd $(TOP); git submodule deinit -f external/zachjs_sv2v
 
 
 ## This target just wipes the whole repo clean.
@@ -69,7 +69,7 @@ tools: | $(TARGET_DIRS)
 	$(MAKE) spike
 	#$(MAKE) axe
 	#$(MAKE) cmurphi
-	#$(MAKE) sv2v
+	#$(MAKE) zachjs_sv2v
 	#$(MAKE) bsg_sv2v
 
 progs: tools
