@@ -32,7 +32,7 @@ module bp_nonsynth_cosim
     , input                                   interrupt_v_i
     , input [dword_width_p-1:0]               cause_i
 
-    , output logic                            finish_o
+    , output logic [num_core_p-1:0]           finish_o
     );
 
 import "DPI-C" context function void init_dromajo(string cfg_f_name);

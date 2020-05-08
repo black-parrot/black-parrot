@@ -1,0 +1,9 @@
+
+exit_verilator_job:
+	@echo "Verilator is not supported for dcache testbench"
+	exit 1
+
+LINT_COLLATERAL = exit_verilator_job
+CBUILD_COLLATERAL = exit_verilator_job
+VBUILD_COLLATERAL = exit_verilator_job
+SIM_COLLATERAL = exit_verilator_job

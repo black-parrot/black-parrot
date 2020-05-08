@@ -49,13 +49,12 @@ logic                       tag_mem_v_lo;
 
 logic [vaddr_width_p-1:0]   tgt_mem_li, tgt_mem_lo;
 logic [btb_idx_width_p-1:0] tgt_mem_addr_li;
+logic                       tag_jmp_lo;
    
 logic [btb_tag_width_p-1:0] w_tag_n, w_tag_r;
 logic [btb_tag_width_p-1:0] r_tag_n, r_tag_r;
 logic [btb_idx_width_p-1:0] r_idx_n, r_idx_r;
 logic                       r_v_r;
-
-logic tag_jmp_lo;
 
 assign tag_mem_li      = w_tag_i; 
 assign tgt_mem_li      = br_tgt_i[0+:vaddr_width_p];
