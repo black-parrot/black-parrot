@@ -370,8 +370,8 @@ module bp_be_dcache
   logic [dcache_assoc_p-1:0] invalid_tl;
   logic load_hit_v_tl;
   logic store_hit_v_tl;
-  logic [way_id_width_lp-1:0] load_hit_way_tl;
-  logic [way_id_width_lp-1:0] store_hit_way_tl;
+  logic [way_id_width_lp-1:0] load_hit_way_tv_r_tl;
+  logic [way_id_width_lp-1:0] store_hit_way_tv_r_tl;
   logic [paddr_width_p-1:0]  paddr_tl;
   logic [ptag_width_lp-1:0] addr_tag_tl;
 
@@ -394,7 +394,7 @@ module bp_be_dcache
     pe_load_hit_tl
     (.i(load_hit_tl)
       ,.v_o(load_hit_v_tl)
-      ,.addr_o(load_hit_way_tl)
+      ,.addr_o(load_hit_way_tv_r_tl)
       );
   
   bsg_priority_encode
@@ -404,7 +404,7 @@ module bp_be_dcache
     pe_store_hit_tl
     (.i(store_hit_tl)
       ,.v_o(store_hit_v_tl)
-      ,.addr_o(store_hit_way_tl)
+      ,.addr_o(store_hit_way_tv_r_tl)
       );
 
   // TV stage
@@ -427,17 +427,14 @@ module bp_be_dcache
   logic [dword_width_p-1:0] data_tv_r;
   bp_be_dcache_tag_info_s [dcache_assoc_p-1:0] tag_info_tv_r;
   logic [dcache_assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
-  logic [ptag_width_lp-1:0] addr_tag_tv;
+  logic [ptag_width_lp-1:0] addr_tag_tv_r;
   logic [index_width_lp-1:0] addr_index_tv;
   logic [word_offset_width_lp-1:0] addr_word_offset_tv;
-  logic [dcache_assoc_p-1:0] tag_match_tv;
-  logic [dcache_assoc_p-1:0] load_hit_tv;
-  logic [dcache_assoc_p-1:0] store_hit_tv;
-  logic load_hit;
-  logic store_hit;
-  logic [way_id_width_lp-1:0] load_hit_way;
-  logic [way_id_width_lp-1:0] store_hit_way;
-  logic [dcache_assoc_p-1:0] invalid_tv;
+  logic load_hit_tv_r;
+  logic store_hit_tv_r;
+  logic [way_id_width_lp-1:0] load_hit_way_tv_r;
+  logic [way_id_width_lp-1:0] store_hit_way_tv_r;
+  logic [dcache_assoc_p-1:0] invalid_tv_r;
 
   assign tv_we = v_tl_r & ~poison_i & ~tlb_miss_i & ~fencei_req;
 
@@ -462,15 +459,11 @@ module bp_be_dcache
       fencei_op_tv_r <= '0;
       paddr_tv_r <= '0;
       tag_info_tv_r <= '0;
-      tag_match_tv <= '0;
-      load_hit_tv <= '0;
-      store_hit_tv <= '0;
-      load_hit <= '0;
-      store_hit <= '0;
-      load_hit_way <= '0;
-      store_hit_way <= '0;
-      addr_tag_tv <= '0;
-      invalid_tv <= '0;
+      load_hit_tv_r <= '0;
+      store_hit_tv_r <= '0;
+      load_hit_way_tv_r <= '0;
+      store_hit_way_tv_r <= '0;
+      invalid_tv_r <= '0;
     end
     else begin
       v_tv_r <= tv_we;
@@ -490,15 +483,12 @@ module bp_be_dcache
         paddr_tv_r <= paddr_tl;
         tag_info_tv_r <= tag_mem_data_lo;
         uncached_tv_r <= uncached_i;
-        tag_match_tv <= tag_match_tl;
-        load_hit_tv <= load_hit_tl;
-        store_hit_tv <= store_hit_tl;
-        load_hit <= load_hit_v_tl;
-        store_hit <= store_hit_v_tl;
-        load_hit_way <= load_hit_way_tl;
-        store_hit_way <= store_hit_way_tl;
-        addr_tag_tv <= addr_tag_tl;
-	invalid_tv <= invalid_tl; 
+        load_hit_tv_r <= load_hit_v_tl;
+        store_hit_tv_r <= store_hit_v_tl;
+        load_hit_way_tv_r <= load_hit_way_tv_r_tl;
+        store_hit_way_tv_r <= store_hit_way_tv_r_tl;
+        addr_tag_tv_r <= addr_tag_tl;
+        invalid_tv_r <= invalid_tl; 
       end
 
       if (tv_we & load_op_tl_r) begin
@@ -529,18 +519,18 @@ module bp_be_dcache
   logic [index_width_lp-1:0] load_reserved_index_r;
   logic load_reserved_v_r;
 
-  wire load_miss_tv = ~load_hit & v_tv_r & load_op_tv_r & ~uncached_tv_r;
-  wire store_miss_tv = ~store_hit & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r;
-  wire lr_miss_tv = v_tv_r & lr_op_tv_r & ~store_hit;
-  wire wt_miss_tv = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r & ~cache_req_ready_i & (l1_writethrough_p == 1);
+  wire load_miss_tv = ~load_hit_tv_r & v_tv_r & load_op_tv_r & ~uncached_tv_r;
+  wire store_miss_tv = ~store_hit_tv_r & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r;
+  wire lr_miss_tv = v_tv_r & lr_op_tv_r & ~store_hit_tv_r;
+  wire wt_miss_tv = v_tv_r & store_op_tv_r & store_hit_tv_r & ~sc_fail & ~uncached_tv_r & ~cache_req_ready_i & (l1_writethrough_p == 1);
 
   wire miss_tv = load_miss_tv | store_miss_tv | lr_miss_tv | wt_miss_tv;
 
   // Load reserved misses if not in exclusive or modified (whether load hit or not)
-  assign lr_hit_tv = v_tv_r & lr_op_tv_r & store_hit;
+  assign lr_hit_tv = v_tv_r & lr_op_tv_r & store_hit_tv_r;
   // Succeed if the address matches and we have a store hit
-  assign sc_success  = v_tv_r & sc_op_tv_r & store_hit & load_reserved_v_r 
-                       & (load_reserved_tag_r == addr_tag_tv)
+  assign sc_success  = v_tv_r & sc_op_tv_r & store_hit_tv_r & load_reserved_v_r 
+                       & (load_reserved_tag_r == addr_tag_tv_r)
                        & (load_reserved_index_r == addr_index_tv);
   // Fail if we have a store conditional without success
   assign sc_fail     = v_tv_r & sc_op_tv_r & ~sc_success;
@@ -606,7 +596,7 @@ module bp_be_dcache
   assign wbuf_entry_out_index = wbuf_entry_out.paddr[block_offset_width_lp+:index_width_lp];
 
   assign wbuf_entry_in.paddr = paddr_tv_r;
-  assign wbuf_entry_in.way_id = store_hit_way;
+  assign wbuf_entry_in.way_id = store_hit_way_tv_r;
 
   // TODO: Add assertion, otherwise this will just infer latches....
   if (dword_width_p == 64) begin
@@ -679,7 +669,7 @@ module bp_be_dcache
       ,.lo_to_hi_p(1)
       )
     pe_invalid
-      (.i(invalid_tv)
+      (.i(invalid_tv_r)
       ,.v_o(invalid_exist)
       ,.addr_o(invalid_way)
       );
@@ -860,7 +850,7 @@ module bp_be_dcache
     ,.els_p(dcache_assoc_p)
   ) ld_data_set_select_mux (
     .data_i(ld_data_tv_r)
-    ,.sel_i(load_hit_way ^ addr_word_offset_tv)
+    ,.sel_i(load_hit_way_tv_r ^ addr_word_offset_tv)
     ,.data_o(ld_data_way_picked)
   );
 
@@ -1090,8 +1080,8 @@ module bp_be_dcache
 
   always_comb begin
     if (v_tv_r) begin
-      lru_decode_way_li = store_op_tv_r ? store_hit_way : load_hit_way;
-      dirty_mask_way_li = store_hit_way;
+      lru_decode_way_li = store_op_tv_r ? store_hit_way_tv_r : load_hit_way_tv_r;
+      dirty_mask_way_li = store_hit_way_tv_r;
       dirty_mask_v_li = store_op_tv_r & (l1_writethrough_p == 0); // Blocks are never dirty in a writethrough cache
       
       stat_mem_data_li.lru = lru_decode_data_lo;
@@ -1124,10 +1114,10 @@ module bp_be_dcache
   // write buffer
   //
   if (l1_writethrough_p == 0) begin : wb_wbuf
-    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r;
+    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_tv_r & ~sc_fail & ~uncached_tv_r;
   end
   else begin : wt_wbuf
-    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit & ~sc_fail & ~uncached_tv_r & cache_req_ready_i;
+    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_tv_r & ~sc_fail & ~uncached_tv_r & cache_req_ready_i;
   end
   assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we) & ~data_mem_pkt_yumi_o;
   assign bypass_v_li = tv_we & load_op_tl_r;
@@ -1259,12 +1249,10 @@ module bp_be_dcache
 
   always_ff @ (negedge clk_i) begin
     if (v_tv_r) begin
-      assert($countones(load_hit_tv) <= 1)
-        else $error("multiple load hit: %b. id = %0d. addr = %H", load_hit_tv, cfg_bus_cast_i.dcache_id, addr_tag_tv);
-      assert($countones(store_hit_tv) <= 1)
-        else $error("multiple store hit: %b. id = %0d. addr = %H", store_hit_tv, cfg_bus_cast_i.dcache_id, addr_tag_tv);
-      assert (~(sc_op_tv_r & load_reserved_v_r & (load_reserved_tag_r == addr_tag_tv) & (load_reserved_index_r == addr_index_tv)) | store_hit)
-          else $error("sc success without exclusive ownership of cache line: %x %x", load_reserved_tag_r, load_reserved_index_r);
+      assert($countones(load_hit_tl) <= 1)
+        else $error("multiple load hit: %b. id = %0d. addr = %H", load_hit_tl, cfg_bus_cast_i.dcache_id, addr_tag_tl);
+      assert($countones(store_hit_tl) <= 1)
+        else $error("multiple store hit: %b. id = %0d. addr = %H", store_hit_tl, cfg_bus_cast_i.dcache_id, addr_tag_tl);
     end
   end
 

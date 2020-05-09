@@ -103,7 +103,7 @@ module bp_fe_icache
 
   logic [word_offset_width_lp-1:0] vaddr_offset;
 
-  logic [icache_assoc_p-1:0]            way_v; // valid bits of each way
+  logic [icache_assoc_p-1:0]            way_v_tv_r; // valid bits of each way
   logic [way_id_width_lp-1:0]           way_invalid_index; // first invalid way
   logic                                 invalid_exist;
 
@@ -256,7 +256,7 @@ module bp_fe_icache
         hit_index_tv_r <= hit_index_tl;
         hit_tv_r       <= hit_tl;
         addr_tag_tv_r  <= addr_tag_tl;
-	way_v          <= way_v_tl;
+        way_v_tv_r     <= way_v_tl;
       end
     end
   end
@@ -309,7 +309,7 @@ module bp_fe_icache
     .width_p(icache_assoc_p)
     ,.lo_to_hi_p(1)
   ) pe_invalid (
-    .i(~way_v)
+    .i(~way_v_tv_r)
     ,.v_o(invalid_exist)
     ,.addr_o(way_invalid_index)
  );
