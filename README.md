@@ -13,7 +13,9 @@ BlackParrot aims to be the default open-source, Linux-capable, cache-coherent, R
     - Combat NIH, welcome external contributions and strive for infrastructure agnosticism.
 
 ## Project Status
-The next release of BlackParrot, v 1.0, is coming in March 2020, and will contain support for an up to 16-core cache coherent multicore, including enough baseline user and privilege mode functionality to run Linux. An optimized single core variant of BlackParrot will also be released at this time.
+BlackParrot v 1.0 was released in March 2020 and has been up and running in the lab since April 2020. It supports configurations scaling up to a 16-core cache coherent multicore, including the baseline user and privilege mode functionality to run Linux. An optimized single core variant of BlackParrot (also Linux-capable) is also available.
+
+Development of BlackParrot continues, and we are very excited about what we are releasing next!
 
 A 12nm BlackParrot multicore chip was taped out in July 2019.
 
@@ -42,11 +44,6 @@ This should output (roughly)
     [CORE0 STATS]
         clk   :                  220
         instr :                   66
-        fe_nop:                    0
-        be_nop:                    0
-        me_nop:                    0
-        poison:                  115
-        roll  :                   21
         mIPC  :                  300
     All cores finished! Terminating...
 
