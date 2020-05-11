@@ -70,7 +70,7 @@ assign taken_tgt = baddr + imm_i;
 assign ntaken_tgt = pc_i + 4'd4;
 
 assign data_o   = vaddr_width_p'($signed(ntaken_tgt));
-assign br_tgt_o = btaken ? taken_tgt : ntaken_tgt;
+assign br_tgt_o = btaken ? {taken_tgt[vaddr_width_p-1:1], 1'b0} : ntaken_tgt;
 assign btaken_o = btaken;
 
 endmodule
