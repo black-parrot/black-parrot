@@ -162,6 +162,7 @@ $BP_BE_DIR/src/v/bp_be_calculator/bp_be_instr_decoder.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_int_alu.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_fp.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_int.v
+$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_ctrl.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_long.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mem.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mul.v
@@ -197,7 +198,6 @@ $BP_FE_DIR/src/v/bp_fe_top.v
 $BP_ME_DIR/src/v/cache/bp_me_cache_dma_to_cce.v
 $BP_ME_DIR/src/v/cache/bp_me_cache_slice.v
 $BP_ME_DIR/src/v/cache/bp_me_cce_to_cache.v
-$BP_ME_DIR/src/v/cache/bp_me_cce_to_cache_buffered.v
 # CCE
 $BP_ME_DIR/src/v/cce/bp_cce.v
 $BP_ME_DIR/src/v/cce/bp_cce_alu.v
@@ -246,14 +246,12 @@ $BP_TOP_DIR/src/v/bp_sacc_tile.v
 $BP_TOP_DIR/src/v/bp_sacc_tile_node.v
 $BP_TOP_DIR/src/v/bp_sacc_complex.v
 $BP_TOP_DIR/src/v/bp_cfg.v
-$BP_TOP_DIR/src/v/bp_cfg_buffered.v
 $BP_TOP_DIR/src/v/bp_core.v
 $BP_TOP_DIR/src/v/bp_core_complex.v
 $BP_TOP_DIR/src/v/bp_core_minimal.v
 $BP_TOP_DIR/src/v/bp_clint.v
 $BP_TOP_DIR/src/v/bp_clint_node.v
 $BP_TOP_DIR/src/v/bp_clint_slice.v
-$BP_TOP_DIR/src/v/bp_clint_slice_buffered.v
 $BP_TOP_DIR/src/v/bp_l2e_tile.v
 $BP_TOP_DIR/src/v/bp_l2e_tile_node.v
 $BP_TOP_DIR/src/v/bp_io_complex.v

@@ -1,0 +1,18 @@
+
+ICACHE_TESTLIST := \
+	test_load \
+	test_uncached_load
+
+
+run_testlist.%:
+	$(MAKE) build.$* CE=CCE TAG=CCE
+	$(MAKE) build.$* CE=UCE TAG=UCE
+	$(MAKE) $(addsuffix .$*, $(addprefix run_test.CCE.,$(ICACHE_TESTLIST)))
+	$(MAKE) $(addsuffix .$*, $(addprefix run_test.UCE.,$(ICACHE_TESTLIST)))
+
+# We can trim this up a bit when we have custom configs
+run_test.%:
+	$(eval override CE    := $(word 1,$(subst .,  ,$*)))
+	$(eval override PROG  := $(word 2,$(subst .,  ,$*)))
+	$(eval override TS    := $(word 3,$(subst .,  ,$*)))
+	$(MAKE) sim.$(TS) CE=$(CE) PROG=$(PROG) TAG=$(CE)

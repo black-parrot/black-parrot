@@ -67,7 +67,7 @@ module testbench
 // CFG IF
 bp_cfg_bus_s           cfg_bus_lo;
 bp_cce_mem_msg_s       cfg_mem_cmd_lo;
-logic                  cfg_mem_cmd_v_lo, cfg_mem_cmd_yumi_li;
+logic                  cfg_mem_cmd_v_lo, cfg_mem_cmd_ready_li;
 
 // CCE-MEM IF
 bp_cce_mem_msg_s       mem_resp;
@@ -178,6 +178,40 @@ bind bp_me_nonsynth_mock_lce
       ,.lce_cmd_o_i(lce_cmd_o)
       ,.lce_cmd_o_v_i(lce_cmd_v_o)
       ,.lce_cmd_o_ready_i(lce_cmd_ready_i)
+      );
+
+bind bp_cce_wrapper
+  bp_me_nonsynth_cce_tracer
+    #(.bp_params_p(bp_params_p))
+    cce_tracer
+     (.clk_i(clk_i & (wrapper.cce_trace_p == 1))
+      ,.reset_i(reset_i)
+      ,.freeze_i(cfg_bus_cast_i.freeze)
+
+      ,.cce_id_i('0)
+
+      // To CCE
+      ,.lce_req_i(lce_req_i)
+      ,.lce_req_v_i(lce_req_v_i)
+      ,.lce_req_yumi_i(lce_req_yumi_o)
+      ,.lce_resp_i(lce_resp_i)
+      ,.lce_resp_v_i(lce_resp_v_i)
+      ,.lce_resp_yumi_i(lce_resp_yumi_o)
+
+      // From CCE
+      ,.lce_cmd_i(lce_cmd_o)
+      ,.lce_cmd_v_i(lce_cmd_v_o)
+      ,.lce_cmd_ready_i(lce_cmd_ready_i)
+
+      // To CCE
+      ,.mem_resp_i(mem_resp_i)
+      ,.mem_resp_v_i(mem_resp_v_i)
+      ,.mem_resp_yumi_i(mem_resp_yumi_o)
+
+      // From CCE
+      ,.mem_cmd_i(mem_cmd_o)
+      ,.mem_cmd_v_i(mem_cmd_v_o)
+      ,.mem_cmd_ready_i(mem_cmd_ready_i)
       );
 
 bsg_two_fifo
@@ -341,6 +375,7 @@ bp_mem_nonsynth_tracer
    ,.mem_resp_yumi_i(mem_resp_yumi)
    );
 
+logic cfg_resp_v_lo;
 bp_cfg
  #(.bp_params_p(bp_params_p))
  cfg
@@ -349,11 +384,11 @@ bp_cfg
 
    ,.mem_cmd_i(cfg_mem_cmd_lo)
    ,.mem_cmd_v_i(cfg_mem_cmd_v_lo)
-   ,.mem_cmd_yumi_o(cfg_mem_cmd_yumi_li)
+   ,.mem_cmd_ready_o(cfg_mem_cmd_ready_li)
 
    ,.mem_resp_o()
-   ,.mem_resp_v_o()
-   ,.mem_resp_ready_i(1'b1)
+   ,.mem_resp_v_o(cfg_resp_v_lo)
+   ,.mem_resp_yumi_i(cfg_resp_v_lo)
 
    ,.cfg_bus_o(cfg_bus_lo)
    ,.did_i('0)
@@ -374,7 +409,7 @@ always_ff @(posedge clk_i) begin
   if (reset_i) begin
     cfg_loader_resp_v <= '0;
   end else begin
-    cfg_loader_resp_v <= cfg_mem_cmd_yumi_li;
+    cfg_loader_resp_v <= cfg_mem_cmd_v_lo & cfg_mem_cmd_ready_li;
   end
 end
 
@@ -392,9 +427,11 @@ bp_cce_mmio_cfg_loader
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
 
+   ,.lce_id_i('0)
+
    ,.io_cmd_o(cfg_mem_cmd_lo)
    ,.io_cmd_v_o(cfg_mem_cmd_v_lo)
-   ,.io_cmd_yumi_i(cfg_mem_cmd_yumi_li)
+   ,.io_cmd_yumi_i(cfg_mem_cmd_ready_li & cfg_mem_cmd_v_lo)
 
    // Response port not used by module, except for flow control counter.
    // cfg_loader_resp_v is cfg_mem_cmd_yumi_li delayed one cycle through a

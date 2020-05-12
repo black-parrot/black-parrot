@@ -13,25 +13,17 @@
 #define BP_COMMON_ME_IF_H
 
 typedef enum {
-  e_lce_data_length_0        = 0
-  ,e_lce_data_length_1       = 1
-  ,e_lce_data_length_2       = 2
-  ,e_lce_data_length_3       = 3
-  ,e_lce_data_length_4       = 4
-  ,e_lce_data_length_5       = 5
-  ,e_lce_data_length_6       = 6
-  ,e_lce_data_length_7       = 7
-  ,e_lce_data_length_8       = 8
-  ,e_lce_data_length_9       = 9
-  ,e_lce_data_length_10      = 10
-  ,e_lce_data_length_11      = 11
-  ,e_lce_data_length_12      = 12
-  ,e_lce_data_length_13      = 13
-  ,e_lce_data_length_14      = 14
-  ,e_lce_data_length_15      = 15
-} bp_lce_cce_data_length_e;
+  e_mem_msg_size_1        = 0  // 1 byte
+  ,e_mem_msg_size_2       = 1  // 2 bytes
+  ,e_mem_msg_size_4       = 2  // 4 bytes
+  ,e_mem_msg_size_8       = 3  // 8 bytes
+  ,e_mem_msg_size_16      = 4  // 16 bytes
+  ,e_mem_msg_size_32      = 5  // 32 bytes
+  ,e_mem_msg_size_64      = 6  // 64 bytes
+  ,e_mem_msg_size_128     = 7  // 128 bytes
+} bp_mem_msg_size_e;
 
-#define bp_lce_cce_data_length_width 4
+#define bp_mem_msg_size_width 3
 
 // LCE Requests
 typedef enum {
@@ -49,22 +41,6 @@ typedef enum {
 } bp_lce_cce_req_non_excl_e;
 
 #define bp_lce_cce_req_non_excl_width 1
-
-typedef enum {
-  e_lce_req_lru_clean        = 0 // LRU way from requesting LCE's tag set is clean
-  ,e_lce_req_lru_dirty       = 1 // LRU way from requesting LCE's tag set is dirty
-} bp_lce_cce_lru_dirty_e;
-
-#define bp_lce_cce_lru_dirty_width 1
-
-typedef enum {
-  e_lce_uc_req_1     = 0
-  ,e_lce_uc_req_2    = 1
-  ,e_lce_uc_req_4    = 2
-  ,e_lce_uc_req_8    = 3
-} bp_lce_cce_uc_req_size_e;
-
-#define bp_lce_cce_uc_req_size_width 2
 
 // Coherence States
 typedef enum {
@@ -88,17 +64,17 @@ typedef enum {
 typedef enum {
   e_lce_cmd_sync             = 0
   ,e_lce_cmd_set_clear       = 1
-  ,e_lce_cmd_transfer        = 2
-  ,e_lce_cmd_writeback       = 3
-  ,e_lce_cmd_set_tag         = 4
-  ,e_lce_cmd_set_tag_wakeup  = 5
-  ,e_lce_cmd_invalidate_tag  = 6
-  ,e_lce_cmd_uc_st_done      = 7
-  ,e_lce_cmd_data            = 8
-  ,e_lce_cmd_uc_data         = 9
-  ,e_lce_cmd_custom_10       = 10
-  ,e_lce_cmd_custom_11       = 11
-  ,e_lce_cmd_custom_12       = 12
+  ,e_lce_cmd_inv             = 2
+  ,e_lce_cmd_st              = 3
+  ,e_lce_cmd_data            = 4
+  ,e_lce_cmd_st_wakeup       = 5
+  ,e_lce_cmd_wb              = 6
+  ,e_lce_cmd_st_wb           = 7
+  ,e_lce_cmd_tr              = 8
+  ,e_lce_cmd_st_tr           = 9
+  ,e_lce_cmd_st_tr_wb        = 10
+  ,e_lce_cmd_uc_data         = 11
+  ,e_lce_cmd_uc_st_done      = 12
   ,e_lce_cmd_custom_13       = 13
   ,e_lce_cmd_custom_14       = 14
   ,e_lce_cmd_custom_15       = 15
@@ -123,22 +99,9 @@ typedef enum {
   ,e_cce_mem_wr              = 1
   ,e_cce_mem_uc_rd           = 2
   ,e_cce_mem_uc_wr           = 3
-  ,e_cce_mem_wb              = 4
-  ,e_cce_mem_pre             = 5
+  ,e_cce_mem_pre             = 4
 } bp_cce_mem_cmd_type_e;
 
 #define bp_cce_mem_cmd_type_width 4
-
-typedef enum {
-  e_mem_size_1               = 0
-  ,e_mem_size_2              = 1
-  ,e_mem_size_4              = 2
-  ,e_mem_size_8              = 3
-  ,e_mem_size_16             = 4
-  ,e_mem_size_32             = 5
-  ,e_mem_size_64             = 6
-} bp_cce_mem_req_size_e;
-
-#define bp_cce_mem_req_size_width 3
 
 #endif

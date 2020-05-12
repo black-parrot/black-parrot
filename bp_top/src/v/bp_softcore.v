@@ -69,21 +69,21 @@ module bp_softcore
 
   bp_dcache_tag_mem_pkt_s dcache_tag_mem_pkt_li;
   bp_icache_tag_mem_pkt_s icache_tag_mem_pkt_li;
-  logic dcache_tag_mem_pkt_v_li, dcache_tag_mem_pkt_ready_lo;
-  logic icache_tag_mem_pkt_v_li, icache_tag_mem_pkt_ready_lo;
+  logic dcache_tag_mem_pkt_v_li, dcache_tag_mem_pkt_yumi_lo;
+  logic icache_tag_mem_pkt_v_li, icache_tag_mem_pkt_yumi_lo;
   logic [ptag_width_p-1:0] dcache_tag_mem_lo, icache_tag_mem_lo;
 
   bp_dcache_data_mem_pkt_s dcache_data_mem_pkt_li;
   bp_icache_data_mem_pkt_s icache_data_mem_pkt_li;
-  logic dcache_data_mem_pkt_v_li, dcache_data_mem_pkt_ready_lo;
-  logic icache_data_mem_pkt_v_li, icache_data_mem_pkt_ready_lo;
+  logic dcache_data_mem_pkt_v_li, dcache_data_mem_pkt_yumi_lo;
+  logic icache_data_mem_pkt_v_li, icache_data_mem_pkt_yumi_lo;
   logic [dcache_block_width_p-1:0] dcache_data_mem_lo;
   logic [icache_block_width_p-1:0] icache_data_mem_lo;
 
   bp_dcache_stat_mem_pkt_s dcache_stat_mem_pkt_li;
   bp_icache_stat_mem_pkt_s icache_stat_mem_pkt_li;
-  logic dcache_stat_mem_pkt_v_li, dcache_stat_mem_pkt_ready_lo;
-  logic icache_stat_mem_pkt_v_li, icache_stat_mem_pkt_ready_lo;
+  logic dcache_stat_mem_pkt_v_li, dcache_stat_mem_pkt_yumi_lo;
+  logic icache_stat_mem_pkt_v_li, icache_stat_mem_pkt_yumi_lo;
   bp_dcache_stat_info_s dcache_stat_mem_lo;
   bp_icache_stat_info_s icache_stat_mem_lo;
 
@@ -118,6 +118,7 @@ module bp_softcore
   logic [dword_width_p-1:0] cfg_csr_data_li;
   logic [1:0]               cfg_priv_data_li;
   logic [cce_instr_width_p-1:0] cfg_cce_ucode_data_li;
+
   bp_core_minimal
    #(.bp_params_p(bp_params_p))
    core
@@ -146,32 +147,32 @@ module bp_softcore
 
      ,.dcache_tag_mem_pkt_i(dcache_tag_mem_pkt_li)
      ,.dcache_tag_mem_pkt_v_i(dcache_tag_mem_pkt_v_li)
-     ,.dcache_tag_mem_pkt_ready_o(dcache_tag_mem_pkt_ready_lo)
+     ,.dcache_tag_mem_pkt_yumi_o(dcache_tag_mem_pkt_yumi_lo)
      ,.dcache_tag_mem_o(dcache_tag_mem_lo)
 
      ,.dcache_data_mem_pkt_i(dcache_data_mem_pkt_li)
      ,.dcache_data_mem_pkt_v_i(dcache_data_mem_pkt_v_li)
-     ,.dcache_data_mem_pkt_ready_o(dcache_data_mem_pkt_ready_lo)
+     ,.dcache_data_mem_pkt_yumi_o(dcache_data_mem_pkt_yumi_lo)
      ,.dcache_data_mem_o(dcache_data_mem_lo)
 
      ,.dcache_stat_mem_pkt_i(dcache_stat_mem_pkt_li)
      ,.dcache_stat_mem_pkt_v_i(dcache_stat_mem_pkt_v_li)
-     ,.dcache_stat_mem_pkt_ready_o(dcache_stat_mem_pkt_ready_lo)
+     ,.dcache_stat_mem_pkt_yumi_o(dcache_stat_mem_pkt_yumi_lo)
      ,.dcache_stat_mem_o(dcache_stat_mem_lo)
 
      ,.icache_tag_mem_pkt_i(icache_tag_mem_pkt_li)
      ,.icache_tag_mem_pkt_v_i(icache_tag_mem_pkt_v_li)
-     ,.icache_tag_mem_pkt_ready_o(icache_tag_mem_pkt_ready_lo)
+     ,.icache_tag_mem_pkt_yumi_o(icache_tag_mem_pkt_yumi_lo)
      ,.icache_tag_mem_o(icache_tag_mem_lo)
 
      ,.icache_data_mem_pkt_i(icache_data_mem_pkt_li)
      ,.icache_data_mem_pkt_v_i(icache_data_mem_pkt_v_li)
-     ,.icache_data_mem_pkt_ready_o(icache_data_mem_pkt_ready_lo)
+     ,.icache_data_mem_pkt_yumi_o(icache_data_mem_pkt_yumi_lo)
      ,.icache_data_mem_o(icache_data_mem_lo)
 
      ,.icache_stat_mem_pkt_i(icache_stat_mem_pkt_li)
      ,.icache_stat_mem_pkt_v_i(icache_stat_mem_pkt_v_li)
-     ,.icache_stat_mem_pkt_ready_o(icache_stat_mem_pkt_ready_lo)
+     ,.icache_stat_mem_pkt_yumi_o(icache_stat_mem_pkt_yumi_lo)
      ,.icache_stat_mem_o(icache_stat_mem_lo)
 
      ,.credits_full_i(|credits_full_li)
@@ -203,17 +204,17 @@ module bp_softcore
 
     ,.tag_mem_pkt_o(dcache_tag_mem_pkt_li)
     ,.tag_mem_pkt_v_o(dcache_tag_mem_pkt_v_li)
-    ,.tag_mem_pkt_ready_i(dcache_tag_mem_pkt_ready_lo)
+    ,.tag_mem_pkt_yumi_i(dcache_tag_mem_pkt_yumi_lo)
     ,.tag_mem_i(dcache_tag_mem_lo)
 
     ,.data_mem_pkt_o(dcache_data_mem_pkt_li)
     ,.data_mem_pkt_v_o(dcache_data_mem_pkt_v_li)
-    ,.data_mem_pkt_ready_i(dcache_data_mem_pkt_ready_lo)
+    ,.data_mem_pkt_yumi_i(dcache_data_mem_pkt_yumi_lo)
     ,.data_mem_i(dcache_data_mem_lo)
 
     ,.stat_mem_pkt_o(dcache_stat_mem_pkt_li)
     ,.stat_mem_pkt_v_o(dcache_stat_mem_pkt_v_li)
-    ,.stat_mem_pkt_ready_i(dcache_stat_mem_pkt_ready_lo)
+    ,.stat_mem_pkt_yumi_i(dcache_stat_mem_pkt_yumi_lo)
     ,.stat_mem_i(dcache_stat_mem_lo)
 
     ,.cache_req_complete_o(dcache_req_complete_li)
@@ -249,17 +250,17 @@ module bp_softcore
 
     ,.tag_mem_pkt_o(icache_tag_mem_pkt_li)
     ,.tag_mem_pkt_v_o(icache_tag_mem_pkt_v_li)
-    ,.tag_mem_pkt_ready_i(icache_tag_mem_pkt_ready_lo)
+    ,.tag_mem_pkt_yumi_i(icache_tag_mem_pkt_yumi_lo)
     ,.tag_mem_i(icache_tag_mem_lo)
 
     ,.data_mem_pkt_o(icache_data_mem_pkt_li)
     ,.data_mem_pkt_v_o(icache_data_mem_pkt_v_li)
-    ,.data_mem_pkt_ready_i(icache_data_mem_pkt_ready_lo)
+    ,.data_mem_pkt_yumi_i(icache_data_mem_pkt_yumi_lo)
     ,.data_mem_i(icache_data_mem_lo)
 
     ,.stat_mem_pkt_o(icache_stat_mem_pkt_li)
     ,.stat_mem_pkt_v_o(icache_stat_mem_pkt_v_li)
-    ,.stat_mem_pkt_ready_i(icache_stat_mem_pkt_ready_lo)
+    ,.stat_mem_pkt_yumi_i(icache_stat_mem_pkt_yumi_lo)
     ,.stat_mem_i(icache_stat_mem_lo)
 
     ,.cache_req_complete_o(icache_req_complete_li)
@@ -276,7 +277,7 @@ module bp_softcore
     ,.mem_resp_yumi_o(proc_resp_yumi_lo[0])
     );
 
-  bp_clint_slice_buffered
+  bp_clint_slice
    #(.bp_params_p(bp_params_p))
    clint
     (.clk_i(clk_i)
@@ -295,7 +296,7 @@ module bp_softcore
      ,.external_irq_o(external_irq_li)
      );
 
-  bp_cfg_buffered
+  bp_cfg
    #(.bp_params_p(bp_params_p))
    cfg
     (.clk_i(clk_i)
@@ -329,16 +330,18 @@ module bp_softcore
   assign io_resp_v_o = proc_resp_v_li[2];
   assign proc_resp_yumi_lo[2] = io_resp_ready_i & io_resp_v_o;
 
-  // Arbitration logic
-  //   Don't necessarily need to arbitrate. On an FPGA, can use a 2r1w RAM. But, we might also be on
-  //   a bus
-  bp_cce_mem_msg_s [2:0] fifo_lo;
-  logic [2:0] fifo_v_lo, fifo_yumi_li;
+  // Command/response FIFOs for timing and helpfulness
+  bp_cce_mem_msg_s [2:0] cmd_fifo_lo;
+  logic [2:0] cmd_fifo_v_lo, cmd_fifo_yumi_li;
+  
+  bp_cce_mem_msg_s [2:0] resp_fifo_li;
+  logic [2:0] resp_fifo_v_li, resp_fifo_ready_lo;
+
   for (genvar i = 0; i < 3; i++)
     begin : fifo
       bsg_two_fifo
        #(.width_p($bits(bp_cce_mem_msg_s)))
-       mem_fifo
+       cmd_fifo
         (.clk_i(clk_i)
          ,.reset_i(reset_i)
 
@@ -346,43 +349,91 @@ module bp_softcore
          ,.v_i(proc_cmd_v_lo[i])
          ,.ready_o(proc_cmd_ready_li[i])
 
-         ,.data_o(fifo_lo[i])
-         ,.v_o(fifo_v_lo[i])
-         ,.yumi_i(fifo_yumi_li[i])
+         ,.data_o(cmd_fifo_lo[i])
+         ,.v_o(cmd_fifo_v_lo[i])
+         ,.yumi_i(cmd_fifo_yumi_li[i])
+         );
+
+      bsg_two_fifo
+       #(.width_p($bits(bp_cce_mem_msg_s)))
+       resp_fifo
+        (.clk_i(clk_i)
+         ,.reset_i(reset_i)
+
+         ,.data_i(resp_fifo_li[i])
+         ,.v_i(resp_fifo_v_li[i])
+         ,.ready_o(resp_fifo_ready_lo[i])
+
+         ,.data_o(proc_resp_li[i])
+         ,.v_o(proc_resp_v_li[i])
+         ,.yumi_i(proc_resp_yumi_lo[i])
          );
     end
 
-  wire arb_ready_li = cfg_cmd_ready_lo & clint_cmd_ready_lo & io_cmd_ready_i & cache_cmd_ready_lo;
+  // Command arbitration logic
+  // This is suboptimal for performance, because a blocked I/O channel will put backpressure on the
+  //   cache.
+  wire cmd_arb_ready_li = &{cfg_cmd_ready_lo, clint_cmd_ready_lo, io_cmd_ready_i, cache_cmd_ready_lo};
   bsg_arb_fixed
    #(.inputs_p(3), .lo_to_hi_p(0))
    cmd_arbiter
-    (.ready_i(arb_ready_li)
-     ,.reqs_i(fifo_v_lo)
-     ,.grants_o(fifo_yumi_li)
+    (.ready_i(cmd_arb_ready_li)
+     ,.reqs_i(cmd_fifo_v_lo)
+     ,.grants_o(cmd_fifo_yumi_li)
      );
 
-  bp_cce_mem_msg_s fifo_selected_lo;
+  bp_cce_mem_msg_s cmd_fifo_selected_lo;
   bsg_mux_one_hot
    #(.width_p($bits(bp_cce_mem_msg_s)), .els_p(3))
    cmd_select
-    (.data_i(fifo_lo)
-     ,.sel_one_hot_i(fifo_yumi_li)
-     ,.data_o(fifo_selected_lo)
+    (.data_i(cmd_fifo_lo)
+     ,.sel_one_hot_i(cmd_fifo_yumi_li)
+     ,.data_o(cmd_fifo_selected_lo)
      );
-  assign {cache_cmd_li, io_cmd_cast_o, clint_cmd_li, cfg_cmd_li} = {4{fifo_selected_lo}};
+  assign {cache_cmd_li, io_cmd_cast_o, clint_cmd_li, cfg_cmd_li} = {4{cmd_fifo_selected_lo}};
+
+  // Response arbitration logic
+  // UCEs may send two commands as part of a writeback routine. Responses can come back in
+  //   arbitrary orders, especially when considering CLINT or I/O responses
+  // This is also suboptimal. Theoretically, we could dequeue into each fifo at once, but this
+  //   would require more complex arbitration logic
+  wire resp_arb_ready_li = &resp_fifo_ready_lo;
+  bsg_arb_fixed
+   #(.inputs_p(4), .lo_to_hi_p(0))
+   resp_arbiter
+    (.ready_i(resp_arb_ready_li)
+     ,.reqs_i({cache_resp_v_lo, io_resp_v_i, clint_resp_v_lo, cfg_resp_v_lo})
+     ,.grants_o({cache_resp_yumi_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li})
+     );
+    
+  for (genvar i = 0; i < 3; i++)
+    begin : resp_match
+      bp_cce_mem_msg_s resp_fifo_selected_li;
+      bsg_mux_one_hot
+       #(.width_p($bits(bp_cce_mem_msg_s)), .els_p(4))
+       resp_select
+        (.data_i({cache_resp_lo, io_resp_i, clint_resp_lo, cfg_resp_lo})
+         ,.sel_one_hot_i({cache_resp_yumi_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li})
+         ,.data_o(resp_fifo_selected_li)
+         );
+      wire resp_selected_v_li = |{cache_resp_yumi_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li};
+
+      assign resp_fifo_v_li[i] = resp_selected_v_li & (resp_fifo_selected_li.header.payload.lce_id == i);
+      assign resp_fifo_li[i] = resp_fifo_selected_li;
+    end
 
   /* TODO: Extract local memory map to module */
-  wire local_cmd_li        = (fifo_selected_lo.header.addr < 32'h8000_0000);
-  wire [3:0] device_cmd_li = fifo_selected_lo.header.addr[20+:4];
+  wire local_cmd_li        = (cmd_fifo_selected_lo.header.addr < dram_base_addr_gp);
+  wire [3:0] device_cmd_li = cmd_fifo_selected_lo.header.addr[20+:4];
   wire is_cfg_cmd          = local_cmd_li & (device_cmd_li == cfg_dev_gp);
   wire is_clint_cmd        = local_cmd_li & (device_cmd_li == clint_dev_gp);
   wire is_io_cmd           = local_cmd_li & (device_cmd_li == host_dev_gp);
-  wire is_cache_cmd        = ~local_cmd_li;
+  wire is_cache_cmd        = ~local_cmd_li || (local_cmd_li & (device_cmd_li == cache_dev_gp));
 
-  assign cfg_cmd_v_li   = is_cfg_cmd   & |fifo_yumi_li;
-  assign clint_cmd_v_li = is_clint_cmd & |fifo_yumi_li;
-  assign io_cmd_v_o     = is_io_cmd    & |fifo_yumi_li;
-  assign cache_cmd_v_li = is_cache_cmd & |fifo_yumi_li;
+  assign cfg_cmd_v_li   = is_cfg_cmd   & |cmd_fifo_yumi_li;
+  assign clint_cmd_v_li = is_clint_cmd & |cmd_fifo_yumi_li;
+  assign io_cmd_v_o     = is_io_cmd    & |cmd_fifo_yumi_li;
+  assign cache_cmd_v_li = is_cache_cmd & |cmd_fifo_yumi_li;
 
   if (l2_en_p)
     begin : l2
@@ -421,28 +472,6 @@ module bp_softcore
       assign cache_resp_v_lo = mem_resp_v_i;
       assign mem_resp_yumi_o = cache_resp_yumi_li;
     end
-
-  logic [2:0] cache_resp_match, io_resp_match, clint_resp_match, cfg_resp_match;
-  for (genvar i = 0; i < 3; i++)
-    begin : resp_arb
-      // This is guaranteed to be onehot as long as each UCE can only send 1 request at a time
-      assign cfg_resp_match[i]   = cfg_resp_v_lo & (cfg_resp_lo.header.payload.lce_id == i);
-      assign clint_resp_match[i] = clint_resp_v_lo & (clint_resp_lo.header.payload.lce_id == i);
-      assign io_resp_match[i]    = io_resp_v_i & (io_resp_cast_i.header.payload.lce_id == i);
-      assign cache_resp_match[i] = cache_resp_v_lo & (cache_resp_lo.header.payload.lce_id == i);
-      bsg_mux_one_hot
-       #(.width_p($bits(bp_cce_mem_msg_s)), .els_p(4))
-       resp_select
-        (.data_i({cache_resp_lo, io_resp_i, clint_resp_lo, cfg_resp_lo})
-         ,.sel_one_hot_i({cache_resp_match[i], io_resp_match[i], clint_resp_match[i], cfg_resp_match[i]})
-         ,.data_o(proc_resp_li[i])
-         );
-      assign proc_resp_v_li[i] = (cfg_resp_match[i] | clint_resp_match[i] | io_resp_match[i] | cache_resp_match[i]);
-    end
-  assign cfg_resp_yumi_li   = |(cfg_resp_match & proc_resp_yumi_lo);
-  assign clint_resp_yumi_li = |(clint_resp_match & proc_resp_yumi_lo);
-  assign io_resp_yumi_o     = |(io_resp_match & proc_resp_yumi_lo);
-  assign cache_resp_yumi_li = |(cache_resp_match & proc_resp_yumi_lo);
 
 endmodule
 

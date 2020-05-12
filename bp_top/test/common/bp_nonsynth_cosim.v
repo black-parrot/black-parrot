@@ -31,6 +31,8 @@ module bp_nonsynth_cosim
 
     , input                                   interrupt_v_i
     , input [dword_width_p-1:0]               cause_i
+
+    , output logic [num_core_p-1:0]           finish_o
     );
 
 import "DPI-C" context function void init_dromajo(string cfg_f_name);
@@ -96,6 +98,19 @@ always_ff @(negedge reset_i)
      ,.count_o(instr_cnt)
      );
 
+  logic finish_n, finish_r, finish_rr;
+  assign finish_n = finish_r | (cosim_instr_i != 0 && instr_cnt == cosim_instr_i);
+  bsg_dff_reset
+   #(.width_p(2))
+   finish_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i({finish_r, finish_n})
+     ,.data_o({finish_rr, finish_r})
+     );
+  assign finish_o = finish_r;
+
   always_ff @(negedge clk_i) begin
     if(en_i) begin
       if(commit_fifo_yumi_li & interrupt_v_r) begin
@@ -105,7 +120,9 @@ always_ff @(negedge reset_i)
           $display("COSIM_FAIL");
           $finish();
         end
-      end else if ((cosim_instr_i != '0) && (instr_cnt >= cosim_instr_i)) begin
+      end
+
+      if (finish_rr) begin
         $display("COSIM_PASS");
         $finish();
       end

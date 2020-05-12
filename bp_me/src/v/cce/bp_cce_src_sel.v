@@ -124,19 +124,16 @@ module bp_cce_src_sel
           e_opd_rqf:  src_a_o[0] = mshr.flags[e_opd_rqf];
           e_opd_ucf:  src_a_o[0] = mshr.flags[e_opd_ucf];
           e_opd_nerf: src_a_o[0] = mshr.flags[e_opd_nerf];
-          e_opd_ldf:  src_a_o[0] = mshr.flags[e_opd_ldf];
+          e_opd_nwbf: src_a_o[0] = mshr.flags[e_opd_nwbf];
           e_opd_pf:   src_a_o[0] = mshr.flags[e_opd_pf];
-          e_opd_lef:  src_a_o[0] = mshr.flags[e_opd_lef];
-          e_opd_cf:   src_a_o[0] = mshr.flags[e_opd_cf];
-          e_opd_cef:  src_a_o[0] = mshr.flags[e_opd_cef];
-          e_opd_cof:  src_a_o[0] = mshr.flags[e_opd_cof];
-          e_opd_cdf:  src_a_o[0] = mshr.flags[e_opd_cdf];
+          e_opd_sf:   src_a_o[0] = mshr.flags[e_opd_sf];
           e_opd_csf:  src_a_o[0] = mshr.flags[e_opd_csf];
+          e_opd_cef:  src_a_o[0] = mshr.flags[e_opd_cef];
+          e_opd_cmf:  src_a_o[0] = mshr.flags[e_opd_cmf];
+          e_opd_cof:  src_a_o[0] = mshr.flags[e_opd_cof];
+          e_opd_cff:  src_a_o[0] = mshr.flags[e_opd_cff];
           e_opd_rf:   src_a_o[0] = mshr.flags[e_opd_rf];
           e_opd_uf:   src_a_o[0] = mshr.flags[e_opd_uf];
-          e_opd_if:   src_a_o[0] = mshr.flags[e_opd_if];
-          e_opd_nwbf: src_a_o[0] = mshr.flags[e_opd_nwbf];
-          e_opd_sf:   src_a_o[0] = mshr.flags[e_opd_sf];
           default:    src_a_o    = '0;
         endcase
       end
@@ -151,12 +148,12 @@ module bp_cce_src_sel
           e_opd_owner_way:      src_a_o[0+:lce_assoc_width_p] = mshr.owner_way_id;
           e_opd_next_coh_state: src_a_o[0+:$bits(bp_coh_states_e)] = mshr.next_coh_state;
           e_opd_flags:          src_a_o[0+:`bp_cce_inst_num_flags] = mshr.flags;
-          e_opd_uc_req_size:    src_a_o[0+:$bits(bp_lce_cce_uc_req_size_e)] = mshr.uc_req_size;
-          e_opd_data_length:    src_a_o[0+:$bits(bp_lce_cce_data_length_e)] = mshr.data_length;
+          e_opd_msg_size:       src_a_o[0+:$bits(bp_mem_msg_size_e)] = mshr.msg_size;
+          e_opd_lru_coh_state:  src_a_o[0+:$bits(bp_coh_states_e)] = mshr.lru_coh_state;
           e_opd_flags_and_mask: src_a_o[0+:`bp_cce_inst_num_flags] = mshr.flags & imm_i[0+:`bp_cce_inst_num_flags];
           e_opd_sharers_hit:    src_a_o[0] = sharers_hits_i[gpr_i[src_b_i.gpr[0+:`bp_cce_inst_gpr_sel_width]]];
           e_opd_sharers_way:    src_a_o[0+:lce_assoc_width_p] = sharers_ways_i[gpr_i[src_b_i.gpr[0+:`bp_cce_inst_gpr_sel_width]]];
-          e_opd_sharers_state:  src_a_o[0+:`bp_coh_bits] = sharers_coh_states_i[gpr_i[src_b_i.gpr[0+:`bp_cce_inst_gpr_sel_width]]];
+          e_opd_sharers_state:  src_a_o[0+:$bits(bp_coh_states_e)] = sharers_coh_states_i[gpr_i[src_b_i.gpr[0+:`bp_cce_inst_gpr_sel_width]]];
           default:              src_a_o = '0;
         endcase
       end
@@ -216,19 +213,16 @@ module bp_cce_src_sel
           e_opd_rqf:  src_b_o[0] = mshr.flags[e_opd_rqf];
           e_opd_ucf:  src_b_o[0] = mshr.flags[e_opd_ucf];
           e_opd_nerf: src_b_o[0] = mshr.flags[e_opd_nerf];
-          e_opd_ldf:  src_b_o[0] = mshr.flags[e_opd_ldf];
+          e_opd_nwbf: src_b_o[0] = mshr.flags[e_opd_nwbf];
           e_opd_pf:   src_b_o[0] = mshr.flags[e_opd_pf];
-          e_opd_lef:  src_b_o[0] = mshr.flags[e_opd_lef];
-          e_opd_cf:   src_b_o[0] = mshr.flags[e_opd_cf];
-          e_opd_cef:  src_b_o[0] = mshr.flags[e_opd_cef];
-          e_opd_cof:  src_b_o[0] = mshr.flags[e_opd_cof];
-          e_opd_cdf:  src_b_o[0] = mshr.flags[e_opd_cdf];
+          e_opd_sf:   src_b_o[0] = mshr.flags[e_opd_sf];
           e_opd_csf:  src_b_o[0] = mshr.flags[e_opd_csf];
+          e_opd_cef:  src_b_o[0] = mshr.flags[e_opd_cef];
+          e_opd_cmf:  src_b_o[0] = mshr.flags[e_opd_cmf];
+          e_opd_cof:  src_b_o[0] = mshr.flags[e_opd_cof];
+          e_opd_cff:  src_b_o[0] = mshr.flags[e_opd_cff];
           e_opd_rf:   src_b_o[0] = mshr.flags[e_opd_rf];
           e_opd_uf:   src_b_o[0] = mshr.flags[e_opd_uf];
-          e_opd_if:   src_b_o[0] = mshr.flags[e_opd_if];
-          e_opd_nwbf: src_b_o[0] = mshr.flags[e_opd_nwbf];
-          e_opd_sf:   src_b_o[0] = mshr.flags[e_opd_sf];
           default:    src_b_o    = '0;
         endcase
       end
@@ -243,8 +237,8 @@ module bp_cce_src_sel
           e_opd_owner_way:      src_b_o[0+:lce_assoc_width_p] = mshr.owner_way_id;
           e_opd_next_coh_state: src_b_o[0+:$bits(bp_coh_states_e)] = mshr.next_coh_state;
           e_opd_flags:          src_b_o[0+:`bp_cce_inst_num_flags] = mshr.flags;
-          e_opd_uc_req_size:    src_b_o[0+:$bits(bp_lce_cce_uc_req_size_e)] = mshr.uc_req_size;
-          e_opd_data_length:    src_b_o[0+:$bits(bp_lce_cce_data_length_e)] = mshr.data_length;
+          e_opd_msg_size:       src_b_o[0+:$bits(bp_mem_msg_size_e)] = mshr.msg_size;
+          e_opd_lru_coh_state:  src_b_o[0+:$bits(bp_coh_states_e)] = mshr.lru_coh_state;
           e_opd_flags_and_mask: src_b_o[0+:`bp_cce_inst_num_flags] = mshr.flags & imm_i[0+:`bp_cce_inst_num_flags];
           // Sharers vectors as source b is not supported
           //e_opd_sharers_hit:
@@ -382,6 +376,7 @@ module bp_cce_src_sel
       e_mux_sel_coh_r6:             state_o = bp_coh_states_e'(gpr_i[e_opd_r6][0+:$bits(bp_coh_states_e)]);
       e_mux_sel_coh_r7:             state_o = bp_coh_states_e'(gpr_i[e_opd_r7][0+:$bits(bp_coh_states_e)]);
       e_mux_sel_coh_next_coh_state: state_o = mshr.next_coh_state;
+      e_mux_sel_coh_lru_coh_state:  state_o = mshr.lru_coh_state;
       e_mux_sel_sharer_state:       state_o = sharers_coh_states_i[gpr_i[src_a_i.gpr[0+:$bits(bp_coh_states_e)]]];
       e_mux_sel_coh_inst_imm:       state_o = bp_coh_states_e'(imm_i[0+:$bits(bp_coh_states_e)]);
       default:                      state_o = e_COH_I;

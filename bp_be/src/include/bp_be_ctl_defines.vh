@@ -1,10 +1,18 @@
 `ifndef BP_BE_CTL_DEFINES_VH
 `define BP_BE_CTL_DEFINES_VH
 
-/* int_fu_op [2:0] is equivalent to funct3 in the RV instruction.
- * int_fu_op [3] is an alternate version of that operation.
- */
-// TODO: Think more carefully about these encodings
+typedef enum logic [4:0]
+{
+  e_ctrl_op_beq       = 5'b00000
+  ,e_ctrl_op_bne      = 5'b00001
+  ,e_ctrl_op_blt      = 5'b00010
+  ,e_ctrl_op_bltu     = 5'b00011
+  ,e_ctrl_op_bge      = 5'b00100
+  ,e_ctrl_op_bgeu     = 5'b00101
+  ,e_ctrl_op_jal      = 5'b00110
+  ,e_ctrl_op_jalr     = 5'b00111
+} bp_be_ctrl_fu_op_e;
+
 typedef enum logic [4:0]
 {
   e_int_op_add        = 5'b00000
@@ -87,10 +95,11 @@ typedef struct packed
 {
   union packed
   {
-    bp_be_int_fu_op_e int_fu_op;
-    bp_be_mmu_fu_op_e mmu_fu_op;
-    bp_be_csr_fu_op_e csr_fu_op;
-    bp_be_mul_fu_op_e mul_fu_op;
+    bp_be_ctrl_fu_op_e ctrl_fu_op;
+    bp_be_int_fu_op_e  int_fu_op;
+    bp_be_mmu_fu_op_e  mmu_fu_op;
+    bp_be_csr_fu_op_e  csr_fu_op;
+    bp_be_mul_fu_op_e  mul_fu_op;
   }  fu_op;
 }  bp_be_fu_op_s;
 
@@ -129,7 +138,7 @@ typedef struct packed
   logic                             queue_v;
   logic                             instr_v;
 
-  logic                             pipe_comp_v;
+  logic                             pipe_ctrl_v;
   logic                             pipe_int_v;
   logic                             pipe_mem_v;
   logic                             pipe_mul_v;
@@ -146,8 +155,6 @@ typedef struct packed
   logic                             csr_v;
   logic                             serial_v;
   logic                             fp_not_int_v;
-  logic                             jmp_v;
-  logic                             br_v;
   logic                             opw_v;
 
   bp_be_fu_op_s                     fu_op;

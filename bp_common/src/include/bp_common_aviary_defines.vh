@@ -106,7 +106,6 @@ typedef struct packed
   integer sac_x_dim;
   integer cacc_type;
   integer sacc_type;
-  integer coherent_l1;
 
   integer vaddr_width;
   integer paddr_width;
@@ -116,11 +115,13 @@ typedef struct packed
   integer btb_tag_width;
   integer btb_idx_width;
   integer bht_idx_width;
-  integer ras_idx_width;
+  integer ghist_width;
 
   integer itlb_els;
   integer dtlb_els;
 
+  integer l1_writethrough;
+  integer l1_coherent;
   integer dcache_sets;
   integer dcache_assoc;
   integer dcache_block_width;
@@ -136,6 +137,7 @@ typedef struct packed
   integer l2_en;
   integer l2_sets;
   integer l2_assoc;
+  integer l2_outstanding_reqs;
 
   integer fe_queue_fifo_els;
   integer fe_cmd_fifo_els;
@@ -203,14 +205,12 @@ typedef struct packed
   , localparam num_cacc_p  = cac_x_dim_p * cac_y_dim_p                                             \
   , localparam num_sacc_p  = sac_x_dim_p * sac_y_dim_p                                             \
                                                                                                    \
-  , localparam num_cce_p  = (bp_params_e_mp == e_bp_half_core_cfg) ? 1 : num_core_p + num_l2e_p    \
-  , localparam num_lce_p  = (bp_params_e_mp == e_bp_half_core_cfg) ? 1 : 2*num_core_p + num_cacc_p \
+  , localparam num_cce_p  = ((bp_params_e_mp == e_bp_half_core_cfg) | (bp_params_e_mp == e_bp_half_core_ucode_cce_cfg)) ? 1 : num_core_p + num_l2e_p    \
+  , localparam num_lce_p  = ((bp_params_e_mp == e_bp_half_core_cfg) | (bp_params_e_mp == e_bp_half_core_ucode_cce_cfg)) ? 1 : 2*num_core_p + num_cacc_p \
                                                                                                    \
   , localparam core_id_width_p = `BSG_SAFE_CLOG2(cc_x_dim_p*cc_y_dim_p)                            \
   , localparam cce_id_width_p  = `BSG_SAFE_CLOG2((cc_x_dim_p*1+2)*(cc_y_dim_p*1+2))                \
   , localparam lce_id_width_p  = `BSG_SAFE_CLOG2((cc_x_dim_p*2+2)*(cc_y_dim_p*2+2))                \
-                                                                                                   \
-  , localparam coherent_l1_p = proc_param_lp.coherent_l1                                           \
                                                                                                    \
   , localparam vaddr_width_p = proc_param_lp.vaddr_width                                           \
   , localparam paddr_width_p = proc_param_lp.paddr_width                                           \
@@ -220,11 +220,13 @@ typedef struct packed
   , localparam btb_tag_width_p             = proc_param_lp.btb_tag_width                           \
   , localparam btb_idx_width_p             = proc_param_lp.btb_idx_width                           \
   , localparam bht_idx_width_p             = proc_param_lp.bht_idx_width                           \
-  , localparam ras_idx_width_p             = proc_param_lp.ras_idx_width                           \
+  , localparam ghist_width_p               = proc_param_lp.ghist_width                             \
                                                                                                    \
   , localparam itlb_els_p              = proc_param_lp.itlb_els                                    \
   , localparam dtlb_els_p              = proc_param_lp.dtlb_els                                    \
                                                                                                    \
+  , localparam l1_coherent_p              = proc_param_lp.l1_coherent                              \
+  , localparam l1_writethrough_p          = proc_param_lp.l1_writethrough                          \
   , localparam dcache_sets_p              = proc_param_lp.dcache_sets                              \
   , localparam dcache_assoc_p             = proc_param_lp.dcache_assoc                             \
   , localparam dcache_block_width_p       = proc_param_lp.dcache_block_width                       \
@@ -255,6 +257,7 @@ typedef struct packed
   , localparam l2_en_p    = proc_param_lp.l2_en                                                    \
   , localparam l2_sets_p  = proc_param_lp.l2_sets                                                  \
   , localparam l2_assoc_p = proc_param_lp.l2_assoc                                                 \
+  , localparam l2_outstanding_reqs_p = proc_param_lp.l2_outstanding_reqs                           \
                                                                                                    \
   , localparam fe_queue_fifo_els_p = proc_param_lp.fe_queue_fifo_els                               \
   , localparam fe_cmd_fifo_els_p   = proc_param_lp.fe_cmd_fifo_els                                 \

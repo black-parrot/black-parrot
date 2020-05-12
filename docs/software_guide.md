@@ -5,7 +5,7 @@ This document is intended to provide software and firmware developers with platf
 
 ## Architectural Details
 Currently implemented in BlackParrot is:
-* RV64IA_Zfencei (Integer, Atomics and Fence.i) User-mode ISA v2.00
+* RV64IMA_Zfencei (Integer, Multiply/Divide, Atomics and Fence.i) User-mode ISA v2.00
 * MSU (Machine, Supervisor and User) privilege levels conforming to Privileged Architecture v1.11
 * SV39 virtual memory with 40 bit physical address
 

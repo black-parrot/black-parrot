@@ -67,6 +67,8 @@ initial
     $fatal("Error: We can't maintain 64-bit dwords with a 256-bit cache block size and 8-way cache associativity");
   if ((cce_block_width_p == 128) && (dcache_assoc_p == 4 || dcache_assoc_p == 8 || icache_assoc_p == 4 || icache_assoc_p == 8))
     $fatal("Error: We can't maintain 64-bit dwords with a 128-bit cache block size and 4-way or 8-way cache associativity");
+  if ((l1_writethrough_p == 1) && (l1_coherent_p == 1))
+    $fatal("Error: Writethrough with coherent_l1 is unsupported");
 
   if (vaddr_width_p != 39)
     $warning("Warning: VM will not work without 39 bit vaddr");

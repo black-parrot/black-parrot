@@ -11,17 +11,20 @@ module bp_clint_slice
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
+
+   // TODO: Should I be a global param?
+   , localparam clint_max_outstanding_p = 2
    )
   (input                                                clk_i
    , input                                              reset_i
 
    , input [cce_mem_msg_width_lp-1:0]                   mem_cmd_i
    , input                                              mem_cmd_v_i
-   , output                                             mem_cmd_yumi_o
+   , output                                             mem_cmd_ready_o
 
    , output [cce_mem_msg_width_lp-1:0]                  mem_resp_o
    , output                                             mem_resp_v_o
-   , input                                              mem_resp_ready_i
+   , input                                              mem_resp_yumi_i
 
    // Local interrupts
    , output                                             software_irq_o
@@ -31,9 +34,24 @@ module bp_clint_slice
 
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
 
-bp_cce_mem_msg_s mem_cmd_li;
+bp_cce_mem_msg_s mem_cmd_li, mem_cmd_lo;
 assign mem_cmd_li = mem_cmd_i;
-assign mem_cmd_yumi_o = mem_cmd_v_i & mem_resp_ready_i;
+
+logic small_fifo_v_lo, small_fifo_yumi_li;
+bsg_fifo_1r1w_small
+ #(.width_p($bits(bp_cce_mem_msg_s)), .els_p(clint_max_outstanding_p))
+ small_fifo
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.data_i(mem_cmd_li)
+   ,.v_i(mem_cmd_v_i)
+   ,.ready_o(mem_cmd_ready_o)
+
+   ,.data_o(mem_cmd_lo)
+   ,.v_o(small_fifo_v_lo)
+   ,.yumi_i(small_fifo_yumi_li)
+   );
 
 logic mipi_cmd_v;
 logic mtimecmp_cmd_v;
@@ -42,7 +60,7 @@ logic plic_cmd_v;
 logic wr_not_rd;
 
 bp_local_addr_s local_addr;
-assign local_addr = mem_cmd_li.header.addr;
+assign local_addr = mem_cmd_lo.header.addr;
 
 always_comb
   begin
@@ -51,14 +69,14 @@ always_comb
     mipi_cmd_v     = 1'b0;
     plic_cmd_v     = 1'b0;
 
-    wr_not_rd = mem_cmd_li.header.msg_type inside {e_cce_mem_wb, e_cce_mem_uc_wr};
+    wr_not_rd = mem_cmd_lo.header.msg_type inside {e_cce_mem_wr, e_cce_mem_uc_wr};
 
     unique 
     casez ({local_addr.dev, local_addr.addr})
-      mtime_reg_addr_gp        : mtime_cmd_v    = mem_cmd_v_i;
-      mtimecmp_reg_base_addr_gp: mtimecmp_cmd_v = mem_cmd_v_i;
-      mipi_reg_base_addr_gp    : mipi_cmd_v     = mem_cmd_v_i;
-      plic_reg_base_addr_gp    : plic_cmd_v     = mem_cmd_v_i;
+      mtime_reg_addr_gp        : mtime_cmd_v    = small_fifo_v_lo;
+      mtimecmp_reg_base_addr_gp: mtimecmp_cmd_v = small_fifo_v_lo;
+      mipi_reg_base_addr_gp    : mipi_cmd_v     = small_fifo_v_lo;
+      plic_reg_base_addr_gp    : plic_cmd_v     = small_fifo_v_lo;
       default: begin end
     endcase
   end
@@ -95,7 +113,7 @@ bsg_counter_set_en
    ,.count_o(mtime_r)
    );
 
-assign mtimecmp_n = mem_cmd_li.data[0+:dword_width_p];
+assign mtimecmp_n = mem_cmd_lo.data[0+:dword_width_p];
 wire mtimecmp_w_v_li = wr_not_rd & mtimecmp_cmd_v;
 bsg_dff_reset_en
  #(.width_p(dword_width_p))
@@ -109,7 +127,7 @@ bsg_dff_reset_en
    );
 assign timer_irq_o = (mtime_r >= mtimecmp_r);
 
-assign mipi_n = mem_cmd_li.data[0];
+assign mipi_n = mem_cmd_lo.data[0];
 wire mipi_w_v_li = wr_not_rd & mipi_cmd_v;
 bsg_dff_reset_en
  #(.width_p(1))
@@ -123,7 +141,7 @@ bsg_dff_reset_en
    );
 assign software_irq_o = mipi_r;
 
-assign plic_n = mem_cmd_li.data[0];
+assign plic_n = mem_cmd_lo.data[0];
 wire plic_w_v_li = wr_not_rd & plic_cmd_v;
 bsg_dff_reset_en
  #(.width_p(1))
@@ -148,15 +166,16 @@ wire [dword_width_p-1:0] rdata_lo = plic_cmd_v
 bp_cce_mem_msg_s mem_resp_lo;
 assign mem_resp_lo =
   '{header : '{
-    msg_type       : mem_cmd_li.header.msg_type
-    ,addr          : mem_cmd_li.header.addr
-    ,payload       : mem_cmd_li.header.payload
-    ,size          : mem_cmd_li.header.size
+    msg_type       : mem_cmd_lo.header.msg_type
+    ,addr          : mem_cmd_lo.header.addr
+    ,payload       : mem_cmd_lo.header.payload
+    ,size          : mem_cmd_lo.header.size
     }
     ,data          : cce_block_width_p'(rdata_lo)
     };
 assign mem_resp_o = mem_resp_lo;
-assign mem_resp_v_o = mem_cmd_yumi_o;
+assign mem_resp_v_o = small_fifo_v_lo;
+assign small_fifo_yumi_li = mem_resp_yumi_i;
 
 endmodule
 

@@ -82,6 +82,10 @@ module bp_cce
       else $error("A$ assoc must be power of two or 0");
     assert(`BSG_IS_POW2(acache_sets_p) || acache_sets_p == 0)
       else $error("A$ sets must be power of two or 0");
+    assert (icache_block_width_p == cce_block_width_p) else $error("icache block width must match cce block width");
+    assert (dcache_block_width_p == cce_block_width_p) else $error("dcache block width must match cce block width");
+    assert (acache_block_width_p == cce_block_width_p) else $error("acache block width must match cce block width");
+    assert (block_size_in_bytes_lp inside {8, 16, 32, 64, 128}) else $error("invalid CCE block width");
   end
   //synopsys translate_on
 
@@ -165,7 +169,6 @@ module bp_cce
   logic [num_lce_p-1:0][lce_assoc_width_p-1:0] sharers_ways_lo;
   bp_coh_states_e [num_lce_p-1:0]      sharers_coh_states_lo;
   logic                                dir_addr_v_lo, dir_lru_v_lo;
-  logic                                dir_lru_cached_excl_lo;
   bp_coh_states_e                      dir_lru_coh_state_lo;
   logic [paddr_width_p-1:0]            dir_addr_lo, dir_lru_addr_lo;
   bp_cce_inst_opd_gpr_e                dir_addr_dst_gpr_lo;
@@ -182,12 +185,11 @@ module bp_cce
   logic [lce_assoc_width_p-1:0]        gad_owner_way_lo;
   logic                                gad_replacement_flag_lo;
   logic                                gad_upgrade_flag_lo;
-  logic                                gad_invalidate_flag_lo;
-  logic                                gad_cached_flag_lo;
-  logic                                gad_cached_exclusive_flag_lo;
-  logic                                gad_cached_owned_flag_lo;
-  logic                                gad_cached_dirty_flag_lo;
   logic                                gad_cached_shared_flag_lo;
+  logic                                gad_cached_exclusive_flag_lo;
+  logic                                gad_cached_modified_flag_lo;
+  logic                                gad_cached_owned_flag_lo;
+  logic                                gad_cached_forward_flag_lo;
 
   // From Register File
   bp_cce_mshr_s mshr_lo;
@@ -418,7 +420,6 @@ module bp_cce
       ,.sharers_ways_o(sharers_ways_lo)
       ,.sharers_coh_states_o(sharers_coh_states_lo)
       ,.lru_v_o(dir_lru_v_lo)
-      ,.lru_cached_excl_o(dir_lru_cached_excl_lo)
       ,.lru_coh_state_o(dir_lru_coh_state_lo)
       ,.lru_addr_o(dir_lru_addr_lo)
       ,.addr_v_o(dir_addr_v_lo)
@@ -474,12 +475,11 @@ module bp_cce
       ,.owner_way_o(gad_owner_way_lo)
       ,.replacement_flag_o(gad_replacement_flag_lo)
       ,.upgrade_flag_o(gad_upgrade_flag_lo)
-      ,.invalidate_flag_o(gad_invalidate_flag_lo)
-      ,.cached_flag_o(gad_cached_flag_lo)
-      ,.cached_exclusive_flag_o(gad_cached_exclusive_flag_lo)
-      ,.cached_owned_flag_o(gad_cached_owned_flag_lo)
-      ,.cached_dirty_flag_o(gad_cached_dirty_flag_lo)
       ,.cached_shared_flag_o(gad_cached_shared_flag_lo)
+      ,.cached_exclusive_flag_o(gad_cached_exclusive_flag_lo)
+      ,.cached_modified_flag_o(gad_cached_modified_flag_lo)
+      ,.cached_owned_flag_o(gad_cached_owned_flag_lo)
+      ,.cached_forward_flag_o(gad_cached_forward_flag_lo)
       );
 
   // Register File
@@ -505,7 +505,6 @@ module bp_cce
 
       ,.pending_i(pending_lo)
 
-      ,.dir_lru_cached_excl_i(dir_lru_cached_excl_lo)
       ,.dir_lru_coh_state_i(dir_lru_coh_state_lo)
       ,.dir_lru_addr_i(dir_lru_addr_lo)
 
@@ -517,12 +516,11 @@ module bp_cce
       ,.gad_owner_way_i(gad_owner_way_lo)
       ,.gad_replacement_flag_i(gad_replacement_flag_lo)
       ,.gad_upgrade_flag_i(gad_upgrade_flag_lo)
-      ,.gad_invalidate_flag_i(gad_invalidate_flag_lo)
-      ,.gad_cached_flag_i(gad_cached_flag_lo)
-      ,.gad_cached_exclusive_flag_i(gad_cached_exclusive_flag_lo)
-      ,.gad_cached_owned_flag_i(gad_cached_owned_flag_lo)
-      ,.gad_cached_dirty_flag_i(gad_cached_dirty_flag_lo)
       ,.gad_cached_shared_flag_i(gad_cached_shared_flag_lo)
+      ,.gad_cached_exclusive_flag_i(gad_cached_exclusive_flag_lo)
+      ,.gad_cached_modified_flag_i(gad_cached_modified_flag_lo)
+      ,.gad_cached_owned_flag_i(gad_cached_owned_flag_lo)
+      ,.gad_cached_forward_flag_i(gad_cached_forward_flag_lo)
 
       ,.spec_sf_i(spec_bits_lo.spec)
 

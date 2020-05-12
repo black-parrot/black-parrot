@@ -28,17 +28,19 @@ bp_fe_instr_scan_s scan_cast_o;
 assign instr_cast_i = instr_i;
 assign scan_o = scan_cast_o;
 
-// TODO: compressed instruction support
-wire is_compressed = (instr_i[1:0] != 2'b11);
+wire dest_link   = (instr_cast_i.fields.rtype.rd_addr inside {32'h1, 32'h5});
+wire src_link    = (instr_cast_i.fields.rtype.rs1_addr inside {32'h1, 32'h5});
+wire dest_src_eq = (instr_cast_i.fields.rtype.rd_addr == instr_cast_i.fields.rtype.rs1_addr);
 
 always_comb
   begin
-    unique casez (instr_cast_i.opcode)
-      `RV64_BRANCH_OP: scan_cast_o.scan_class = e_rvi_branch;
-      `RV64_JAL_OP   : scan_cast_o.scan_class = e_rvi_jal;
-      `RV64_JALR_OP  : scan_cast_o.scan_class = e_rvi_jalr;
-      default        : scan_cast_o.scan_class = e_default;
-    endcase
+    scan_cast_o = '0;
+
+    scan_cast_o.branch = (instr_cast_i.opcode == `RV64_BRANCH_OP);
+    scan_cast_o.jal    = (instr_cast_i.opcode == `RV64_JAL_OP);
+    scan_cast_o.jalr   = (instr_cast_i.opcode == `RV64_JALR_OP);
+    scan_cast_o.call   = (instr_cast_i.opcode inside {`RV64_JAL_OP, `RV64_JALR_OP}) && dest_link;
+    scan_cast_o.ret    = (instr_cast_i.opcode == `RV64_JALR_OP) && src_link && !dest_src_eq;
 
     unique casez (instr_cast_i.opcode)
       `RV64_BRANCH_OP: scan_cast_o.imm = `rv64_signext_b_imm(instr_i);

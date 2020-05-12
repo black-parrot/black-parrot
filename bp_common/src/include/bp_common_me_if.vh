@@ -59,17 +59,14 @@
  * non_exclusive indicates if the requesting cache prefers non-exclusive read-access                     \
  * addr is the cache missing address                                                                     \
  * lru_way_id indicates the way within the target set that will be used to fill the miss in to           \
- * lru_dirty indicates if the LRU way was dirty or clean when the miss request was sent                  \
  */                                                                                                      \
   typedef struct packed                                                                                  \
   {                                                                                                      \
-    bp_lce_cce_uc_req_size_e                     uc_size;                                                \
-    bp_lce_cce_lru_dirty_e                       lru_dirty;                                              \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    lru_way_id;                                             \
     bp_lce_cce_req_non_excl_e                    non_exclusive;                                          \
     logic [paddr_width_mp-1:0]                   addr;                                                   \
     logic [lce_id_width_mp-1:0]                  src_id;                                                 \
-    bp_lce_cce_data_length_e                     data_length;                                            \
+    bp_mem_msg_size_e                            size;                                                   \
     bp_lce_cce_req_type_e                        msg_type;                                               \
     logic [cce_id_width_mp-1:0]                  dst_id;                                                 \
   } bp_lce_cce_req_header_s;                                                                             \
@@ -84,17 +81,18 @@
  *  bp_lce_cmd_s is the generic message for LCE Command and LCE Data Command that is sent across the     \
  *  Command network from CCE to LCE.                                                                     \
  *  Although not required, It is designed to be sent through a wormhole routed network that will send    \
- *  the minimum number of flits required, based on the data_length field.                                \
+ *  the minimum number of flits required, based on the size field.                                       \
  */                                                                                                      \
   typedef struct packed                                                                                  \
   {                                                                                                      \
+    bp_coh_states_e                              target_state;                                           \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    target_way_id;                                          \
     logic [lce_id_width_mp-1:0]                  target;                                                 \
     bp_coh_states_e                              state;                                                  \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    way_id;                                                 \
     logic [paddr_width_mp-1:0]                   addr;                                                   \
     logic [cce_id_width_mp-1:0]                  src_id;                                                 \
-    bp_lce_cce_data_length_e                     data_length;                                            \
+    bp_mem_msg_size_e                            size;                                                   \
     bp_lce_cmd_type_e                            msg_type;                                               \
     logic [lce_id_width_mp-1:0]                  dst_id;                                                 \
   } bp_lce_cmd_header_s;                                                                                 \
@@ -113,7 +111,7 @@
   {                                                                                                      \
     logic [paddr_width_mp-1:0]                   addr;                                                   \
     logic [lce_id_width_mp-1:0]                  src_id;                                                 \
-    bp_lce_cce_data_length_e                     data_length;                                            \
+    bp_mem_msg_size_e                            size;                                                   \
     bp_lce_cce_resp_type_e                       msg_type;                                               \
     logic [cce_id_width_mp-1:0]                  dst_id;                                                 \
   } bp_lce_cce_resp_header_s;                                                                            \
@@ -133,27 +131,22 @@
  */
 
 /*
- * bp_lce_cce_data_length_e specifies how many 64-bit data chunks are sent following the header
+ * bp_mem_msg_size_e specifies the size, in bytes, of the request or data field
+ * Request messages use the size field to specify the request size in bytes.
+ * Command messages use the size field to specify the amount of valid data following the header.
+ * Response messages use the size field to specify the amount of valid data following the header.
  */
-typedef enum logic [3:0]
+typedef enum logic [2:0]
 {
-  e_lce_data_length_0   = 4'b0000
-  ,e_lce_data_length_1  = 4'b0001
-  ,e_lce_data_length_2  = 4'b0010
-  ,e_lce_data_length_3  = 4'b0011
-  ,e_lce_data_length_4  = 4'b0100
-  ,e_lce_data_length_5  = 4'b0101
-  ,e_lce_data_length_6  = 4'b0110
-  ,e_lce_data_length_7  = 4'b0111
-  ,e_lce_data_length_8  = 4'b1000
-  ,e_lce_data_length_9  = 4'b1001
-  ,e_lce_data_length_10 = 4'b1010
-  ,e_lce_data_length_11 = 4'b1011
-  ,e_lce_data_length_12 = 4'b1100
-  ,e_lce_data_length_13 = 4'b1101
-  ,e_lce_data_length_14 = 4'b1110
-  ,e_lce_data_length_15 = 4'b1111
-} bp_lce_cce_data_length_e;
+  e_mem_msg_size_1     = 3'b000  // 1 byte
+  ,e_mem_msg_size_2    = 3'b001  // 2 bytes
+  ,e_mem_msg_size_4    = 3'b010  // 4 bytes
+  ,e_mem_msg_size_8    = 3'b011  // 8 bytes
+  ,e_mem_msg_size_16   = 3'b100  // 16 bytes
+  ,e_mem_msg_size_32   = 3'b101  // 32 bytes
+  ,e_mem_msg_size_64   = 3'b110  // 64 bytes
+  ,e_mem_msg_size_128  = 3'b111  // 128 bytes
+} bp_mem_msg_size_e;
 
 /*
  * bp_lce_cce_req_type_e specifies whether the containing message is related to a read or write
@@ -182,29 +175,6 @@ typedef enum logic
   ,e_lce_req_non_excl       = 1'b1 // non-exclusive cache line request (read-only, shared request)
 } bp_lce_cce_req_non_excl_e;
 
-
-/*
- * bp_lce_cce_lru_dirty_e specifies whether the LRU way in an LCE request (bp_lce_cce_req_s)
- * contains a dirty cache block. The 
- */
-typedef enum logic 
-{
-  e_lce_req_lru_clean       = 1'b0 // lru way from requesting lce's tag set is clean
-  ,e_lce_req_lru_dirty      = 1'b1 // lru way from requesting lce's tag set is dirty
-} bp_lce_cce_lru_dirty_e;
-
-/*
- * bp_lce_cce_uc_req_size_e defines the size of a uncached load or store request, in bytes.
- *
- */
-typedef enum logic [1:0]
-{
-  e_lce_uc_req_1  = 2'b00
-  ,e_lce_uc_req_2 = 2'b01
-  ,e_lce_uc_req_4 = 2'b10
-  ,e_lce_uc_req_8 = 2'b11
-} bp_lce_cce_uc_req_size_e;
-
 /*
  * bp_cce_coh_states_e defines the coherence states available in BlackParrot. Each bit represents
  * a property of the cache block as defined below:
@@ -231,34 +201,27 @@ typedef enum logic [2:0]
 `define bp_coh_owned_bit 1
 `define bp_coh_dirty_bit 2
 
-`define bp_coh_bits $bits(bp_coh_states_e)
-
 /*
  * bp_cce_lce_cmd_type_e defines the various commands that an CCE may issue to an LCE
  * e_lce_cmd_sync is used at the end of reset to direct the LCE to inform the CCE it is ready
  * e_lce_cmd_set_clear is sent by the CCE to invalidate an entire cache set in the LCE
- * e_lce_cmd_transfer is sent to command an LCE to transfer an entire cache block to another LCE
- * e_lce_cmd_set_tag is sent to update the tag and coherence state of a single cache line
- * e_lce_cmd_set_tag_wakeup is the same as e_lce_cmd_set_tag, plus it tells the LCE to wake up
- *   and resume normal execution. This is sent only when the CCE detects a write-miss request
- *   is actually an upgrade request.
- * e_lce_cmd_invalidate_tag is sent to invalidate a single cache entry. This command results in
- *   the coherence state of the specified entry being changed to Invalid (no read or write
- *   permissions)
  */
 typedef enum logic [3:0] 
 {
-  e_lce_cmd_sync             = 4'b0000
-  ,e_lce_cmd_set_clear       = 4'b0001
-  ,e_lce_cmd_transfer        = 4'b0010
-  ,e_lce_cmd_writeback       = 4'b0011
-  ,e_lce_cmd_set_tag         = 4'b0100
-  ,e_lce_cmd_set_tag_wakeup  = 4'b0101
-  ,e_lce_cmd_invalidate_tag  = 4'b0110
-  ,e_lce_cmd_uc_st_done      = 4'b0111
-  ,e_lce_cmd_data            = 4'b1000 // cache block data to LCE, i.e., cache block fill
-  ,e_lce_cmd_uc_data         = 4'b1001 // unached data to LCE, i.e, up to 64-bits data
-  // 4'b1000 - 4'b1111 reserved / custom
+  e_lce_cmd_sync             = 4'b0000 // sync/ready, respond with sync_ack
+  ,e_lce_cmd_set_clear       = 4'b0001 // clear cache set of address field
+  ,e_lce_cmd_inv             = 4'b0010 // invalidate block, respond with inv_ack
+  ,e_lce_cmd_st              = 4'b0011 // set state
+  ,e_lce_cmd_data            = 4'b0100 // data, adddress, and state to LCE, i.e., cache block fill
+  ,e_lce_cmd_st_wakeup       = 4'b0101 // set state and wakeup
+  ,e_lce_cmd_wb              = 4'b0110 // writeback block
+  ,e_lce_cmd_st_wb           = 4'b0111 // set state and writeback block
+  ,e_lce_cmd_tr              = 4'b1000 // transfer block
+  ,e_lce_cmd_st_tr           = 4'b1001 // set state and transfer block
+  ,e_lce_cmd_st_tr_wb        = 4'b1010 // set state, transfer, and writeback block
+  ,e_lce_cmd_uc_data         = 4'b1011 // unached data to LCE, i.e, up to 64-bits data
+  ,e_lce_cmd_uc_st_done      = 4'b1100 // uncached store complete
+  // 4'b1101 - 4'b1111 reserved / custom
 } bp_lce_cmd_type_e;
 
 /* bp_lce_cce_resp_type_e defines the different LCE-CCE response messages
@@ -288,16 +251,15 @@ typedef enum logic [2:0]
  */
 
 `define bp_lce_cce_req_header_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp) \
-  (cce_id_width_mp+$bits(bp_lce_cce_req_type_e)+$bits(bp_lce_cce_data_length_e)+lce_id_width_mp     \
-   +paddr_width_mp+$bits(bp_lce_cce_req_non_excl_e)+`BSG_SAFE_CLOG2(lce_assoc_mp)                   \
-   +$bits(bp_lce_cce_lru_dirty_e)+$bits(bp_lce_cce_uc_req_size_e))
+  (cce_id_width_mp+$bits(bp_lce_cce_req_type_e)+$bits(bp_mem_msg_size_e)+lce_id_width_mp        \
+   +paddr_width_mp+$bits(bp_lce_cce_req_non_excl_e)+`BSG_SAFE_CLOG2(lce_assoc_mp))
 
 `define bp_lce_cmd_header_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp)     \
-  (cce_id_width_mp+$bits(bp_lce_cmd_type_e)+$bits(bp_lce_cce_data_length_e)+lce_id_width_mp         \
-   +paddr_width_mp+(2*`BSG_SAFE_CLOG2(lce_assoc_mp))+$bits(bp_coh_states_e)+lce_id_width_mp)
+  (cce_id_width_mp+$bits(bp_lce_cmd_type_e)+$bits(bp_mem_msg_size_e)+lce_id_width_mp            \
+   +paddr_width_mp+(2*`BSG_SAFE_CLOG2(lce_assoc_mp))+(2*$bits(bp_coh_states_e))+lce_id_width_mp)
 
 `define bp_lce_cce_resp_header_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp)              \
-  (cce_id_width_mp+$bits(bp_lce_cce_resp_type_e)+$bits(bp_lce_cce_data_length_e)+lce_id_width_mp    \
+  (cce_id_width_mp+$bits(bp_lce_cce_resp_type_e)+$bits(bp_mem_msg_size_e)+lce_id_width_mp       \
    +paddr_width_mp)
 
 `define declare_bp_lce_cce_if_header_widths(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp)                               \

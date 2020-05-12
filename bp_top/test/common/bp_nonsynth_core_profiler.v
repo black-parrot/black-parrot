@@ -8,10 +8,9 @@
     logic icache_miss;
     logic icache_fence;
     logic branch_override;
+    logic ret_override;
     logic fe_cmd;
-    logic cmd_fence;
-    logic target_mispredict;
-    logic dir_mispredict;
+    logic mispredict;
     logic control_haz;
     logic data_haz;
     logic load_dep;
@@ -27,17 +26,16 @@
 
   typedef enum logic [4:0]
   {
-    freeze               = 5'd21
-    ,fe_queue_stall      = 5'd20
-    ,fe_wait_stall       = 5'd19
-    ,itlb_miss           = 5'd18
-    ,icache_miss         = 5'd17
-    ,icache_fence        = 5'd16
-    ,branch_override     = 5'd15
-    ,fe_cmd              = 5'd14
-    ,cmd_fence           = 5'd13
-    ,target_mispredict   = 5'd12
-    ,dir_mispredict      = 5'd11
+    freeze               = 5'd20
+    ,fe_queue_stall      = 5'd19
+    ,fe_wait_stall       = 5'd18
+    ,itlb_miss           = 5'd17
+    ,icache_miss         = 5'd16
+    ,icache_fence        = 5'd15
+    ,branch_override     = 5'd14
+    ,ret_override        = 5'd13
+    ,fe_cmd              = 5'd12
+    ,mispredict          = 5'd11
     ,control_haz         = 5'd10
     ,data_haz            = 5'd9
     ,load_dep            = 5'd8
@@ -82,17 +80,16 @@ module bp_nonsynth_core_profiler
     , input icache_miss
     , input icache_fence
     , input branch_override
+    , input ret_override
  
     // Backwards ISS events
     // TODO: Differentiate between different FE cmds
     , input fe_cmd
 
-    // ISS Stalls
-    , input cmd_fence
-
     // ISD events
-    , input target_mispredict
-    , input dir_mispredict
+    , input mispredict
+    , input [vaddr_width_p-1:0] target
+
     , input long_haz
     , input control_haz
     , input data_haz
@@ -143,6 +140,17 @@ module bp_nonsynth_core_profiler
     (.clk_i(clk_i)
      ,.data_i(reservation)
      ,.data_o(reservation_r)
+     );
+
+  logic [vaddr_width_p-1:0] target_r;
+  bsg_dff_chain
+   #(.width_p(vaddr_width_p)
+     ,.num_stages_p(4)
+     )
+   target_pipe
+    (.clk_i(clk_i)
+     ,.data_i(target)
+     ,.data_o(target_r)
      );
 
   bp_be_commit_pkt_s commit_pkt_r;
@@ -198,24 +206,21 @@ module bp_nonsynth_core_profiler
       stall_stage_n[1].icache_miss       |= icache_miss;
       stall_stage_n[1].icache_fence      |= icache_fence;
       stall_stage_n[1].branch_override   |= branch_override;
+      stall_stage_n[1].ret_override      |= ret_override;
       stall_stage_n[1].fe_cmd            |= fe_cmd;
-      stall_stage_n[1].dir_mispredict    |= dir_mispredict;
-      stall_stage_n[1].target_mispredict |= target_mispredict;
+      stall_stage_n[1].mispredict        |= mispredict;
 
       // ISS
+      stall_stage_n[2].mispredict        |= mispredict;
       stall_stage_n[2].itlb_miss         |= itlb_miss;
       stall_stage_n[2].icache_miss       |= icache_miss;
       stall_stage_n[2].icache_fence      |= icache_fence;
-      stall_stage_n[2].cmd_fence         |= cmd_fence;
-      stall_stage_n[2].dir_mispredict    |= dir_mispredict;
-      stall_stage_n[2].target_mispredict |= target_mispredict;
       stall_stage_n[2].exception         |= exception;
       stall_stage_n[2].eret              |= eret;
       stall_stage_n[2]._interrupt         |= _interrupt;
 
       // ISD
-      stall_stage_n[3].dir_mispredict    |= dir_mispredict;
-      stall_stage_n[3].target_mispredict |= target_mispredict;
+      stall_stage_n[3].mispredict        |= mispredict;
       stall_stage_n[3].dtlb_miss         |= dtlb_miss;
       stall_stage_n[3].dcache_miss       |= dcache_miss;
       stall_stage_n[3].exception         |= exception;
@@ -223,8 +228,7 @@ module bp_nonsynth_core_profiler
       stall_stage_n[3]._interrupt         |= _interrupt;
 
       // EX1
-      stall_stage_n[4].dir_mispredict    |= dir_mispredict;
-      stall_stage_n[4].target_mispredict |= target_mispredict;
+      stall_stage_n[4].mispredict        |= mispredict;
       stall_stage_n[4].dtlb_miss         |= dtlb_miss;
       stall_stage_n[4].dcache_miss       |= dcache_miss;
       stall_stage_n[4].long_haz          |= long_haz;
@@ -287,12 +291,19 @@ module bp_nonsynth_core_profiler
   wire y_cord_li = '0;
 
   always_ff @(negedge clk_i)
-    if (~reset_i & ~freeze_i & commit_pkt_r.v)
-      $fwrite(file, "%0d,%x,%x,%x,%s\n", cycle_cnt, x_cord_li, y_cord_li, commit_pkt_r.pc, "instr");
-    else if (~reset_i & ~freeze_i & ~commit_pkt_r.v & stall_reason_v)
-      $fwrite(file, "%0d,%x,%x,%x,%s\n", cycle_cnt, x_cord_li, y_cord_li, commit_pkt_r.pc, stall_reason_enum.name());
-    else
-      $fwrite(file, "%0d,%x,%x,%x,%s\n", cycle_cnt, x_cord_li, y_cord_li, commit_pkt_r.pc, "unknown");
+    begin
+      if (~reset_i & ~freeze_i & commit_pkt_r.v)
+        $fwrite(file, "%0d,%x,%x,%x,%s", cycle_cnt, x_cord_li, y_cord_li, commit_pkt_r.pc, "instr");
+      else if (~reset_i & ~freeze_i & ~commit_pkt_r.v & stall_reason_v)
+        $fwrite(file, "%0d,%x,%x,%x,%s", cycle_cnt, x_cord_li, y_cord_li, commit_pkt_r.pc, stall_reason_enum.name());
+      else
+        $fwrite(file, "%0d,%x,%x,%x,%s", cycle_cnt, x_cord_li, y_cord_li, commit_pkt_r.pc, "unknown");
+
+      if (~reset_i & ~freeze_i & ~commit_pkt_r.v & stall_reason_v & (stall_reason_enum.name() == "mispredict"))
+        $fwrite(file, "_%x\n", target_r);
+      else if (~reset_i & ~freeze_i)
+        $fwrite(file, "\n");
+    end
 
 endmodule
 

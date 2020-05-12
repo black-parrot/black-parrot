@@ -2,19 +2,19 @@ TOP ?= $(shell git rev-parse --show-toplevel)
 
 include $(TOP)/Makefile.common
 
-basejump_dir  := $(BP_EXTERNAL_DIR)/basejump_stl
-systemc_dir   := $(BP_EXTERNAL_DIR)/systemc
-verilator_dir := $(BP_EXTERNAL_DIR)/verilator
-gnu_dir       := $(BP_EXTERNAL_DIR)/riscv-gnu-toolchain
-dtc_dir       := $(BP_EXTERNAL_DIR)/dtc
-spike_dir     := $(BP_EXTERNAL_DIR)/riscv-isa-sim
-dromajo_dir   := $(BP_EXTERNAL_DIR)/dromajo
-axe_dir       := $(BP_EXTERNAL_DIR)/axe
-dramsim2_dir  := $(BP_EXTERNAL_DIR)/DRAMSim2
-dramsim3_dir  := $(BP_EXTERNAL_DIR)/DRAMsim3
-cmurphi_dir   := $(BP_EXTERNAL_DIR)/cmurphi
-sv2v_dir      := $(BP_EXTERNAL_DIR)/sv2v
-bsg_sv2v_dir  := $(BP_EXTERNAL_DIR)/bsg_sv2v
+basejump_dir    := $(BP_EXTERNAL_DIR)/basejump_stl
+systemc_dir     := $(BP_EXTERNAL_DIR)/systemc
+verilator_dir   := $(BP_EXTERNAL_DIR)/verilator
+gnu_dir         := $(BP_EXTERNAL_DIR)/riscv-gnu-toolchain
+dtc_dir         := $(BP_EXTERNAL_DIR)/dtc
+spike_dir       := $(BP_EXTERNAL_DIR)/riscv-isa-sim
+dromajo_dir     := $(BP_EXTERNAL_DIR)/dromajo
+axe_dir         := $(BP_EXTERNAL_DIR)/axe
+dramsim2_dir    := $(BP_EXTERNAL_DIR)/DRAMSim2
+dramsim3_dir    := $(BP_EXTERNAL_DIR)/DRAMsim3
+cmurphi_dir     := $(BP_EXTERNAL_DIR)/cmurphi
+zachjs_sv2v_dir := $(BP_EXTERNAL_DIR)/zachjs_sv2v
+bsg_sv2v_dir    := $(BP_EXTERNAL_DIR)/bsg_sv2v
 
 define submodule_tool_template
 $(1)_tag := $(addprefix $(1)., $(shell cd $(2); git rev-parse HEAD))
@@ -24,6 +24,8 @@ $(BP_TOUCH_DIR)/$$($(1)_tag):
 	+$(MAKE) $(1)_build
 	touch $(BP_TOUCH_DIR)/$$($(1)_tag)
 $(1): $(BP_TOUCH_DIR)/$$($(1)_tag)
+$(1)_manual:
+	+$(MAKE) $(1)_build
 endef
 
 basejump_build: ;
@@ -44,16 +46,13 @@ verilator_build: systemc
 
 gnu_build:
 	cd $(gnu_dir); \
-		git apply $(BP_EXTERNAL_DIR)/newlib.patch; \
-		git submodule sync; \
-		git submodule update --remote riscv-newlib; \
 		./configure --prefix=$(BP_EXTERNAL_DIR) --with-arch=rv64ima --with-abi=lp64 --with-cmodel=medany 
 	$(MAKE) -C $(gnu_dir)
 	$(MAKE) -C $(gnu_dir) install
-	cp $(BP_EXTERNAL_DIR)/riscv64-unknown-elf-dramfs/bin/dramfs_mklfs $(BP_BIN_DIR)
+	-cp $(BP_EXTERNAL_DIR)/riscv64-unknown-elf-dramfs/bin/dramfs_mklfs $(BP_BIN_DIR)
 
 dtc_build:
-	$(MAKE) -C $(dtc_dir) install
+	$(MAKE) -j1 -C $(dtc_dir) install
 	cp $(dtc_dir)/dtc $(BP_BIN_DIR)
 
 spike_build: dtc
@@ -93,9 +92,9 @@ stack:
 	cp stack*/stack $(BP_BIN_DIR)
 	rm -rf stack*
 
-sv2v_build: stack
-	$(MAKE) -C $(sv2v_dir)
-	cp $(sv2v_dir)/bin/sv2v $(BP_BIN_DIR)
+zachjs_sv2v_build: stack
+	$(MAKE) -C $(zachjs_sv2v_dir)
+	cp $(zachjs_sv2v_dir)/bin/sv2v $(BP_BIN_DIR)
 
 bsg_sv2v_build:
 	$(MAKE) -j1 -C $(bsg_sv2v_dir) tools
@@ -111,6 +110,6 @@ $(eval $(call submodule_tool_template,axe,$(axe_dir)))
 $(eval $(call submodule_tool_template,dramsim2,$(dramsim2_dir)))
 $(eval $(call submodule_tool_template,dramsim3,$(dramsim3_dir)))
 $(eval $(call submodule_tool_template,cmurphi,$(cmurphi_dir)))
-$(eval $(call submodule_tool_template,sv2v,$(sv2v_dir)))
+$(eval $(call submodule_tool_template,zachjs_sv2v,$(zachjs_sv2v_dir)))
 $(eval $(call submodule_tool_template,bsg_sv2v,$(bsg_sv2v_dir)))
 

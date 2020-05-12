@@ -212,32 +212,26 @@ Assembler::parseOpd(string &s) {
     return e_opd_ucf;
   } else if (!s.compare("nerf")) {
     return e_opd_nerf;
-  } else if (!s.compare("ldf")) {
-    return e_opd_ldf;
+  } else if (!s.compare("nwbf")) {
+    return e_opd_nwbf;
   } else if (!s.compare("pf")) {
     return e_opd_pf;
-  } else if (!s.compare("lef")) {
-    return e_opd_lef;
-  } else if (!s.compare("cf")) {
-    return e_opd_cf;
-  } else if (!s.compare("cef")) {
-    return e_opd_cef;
-  } else if (!s.compare("cof")) {
-    return e_opd_cof;
-  } else if (!s.compare("cdf")) {
-    return e_opd_cdf;
+  } else if (!s.compare("sf")) {
+    return e_opd_sf;
   } else if (!s.compare("csf")) {
     return e_opd_csf;
+  } else if (!s.compare("cef")) {
+    return e_opd_cef;
+  } else if (!s.compare("cmf")) {
+    return e_opd_cmf;
+  } else if (!s.compare("cof")) {
+    return e_opd_cof;
+  } else if (!s.compare("cff")) {
+    return e_opd_cff;
   } else if (!s.compare("rf")) {
     return e_opd_rf;
   } else if (!s.compare("uf")) {
     return e_opd_uf;
-  } else if (!s.compare("if")) {
-    return e_opd_if;
-  } else if (!s.compare("nwbf")) {
-    return e_opd_nwbf;
-  } else if (!s.compare("sf")) {
-    return e_opd_sf;
 
   // Special
   } else if (!s.compare("reqlce")) {
@@ -258,10 +252,10 @@ Assembler::parseOpd(string &s) {
     return e_opd_next_coh_state;
   } else if (!s.compare("flags")) {
     return e_opd_flags;
-  } else if (!s.compare("ucreqsize")) {
-    return e_opd_uc_req_size;
-  } else if (!s.compare("datalength")) {
-    return e_opd_data_length;
+  } else if (!s.compare("msgsize")) {
+    return e_opd_msg_size;
+  } else if (!s.compare("lrucohst")) {
+    return e_opd_lru_coh_state;
 
   } else if (!s.compare("flagsandmask")) {
     return e_opd_flags_and_mask;
@@ -372,32 +366,26 @@ Assembler::parseFlagOneHot(string &s, bool &error) {
     return e_flag_ucf;
   } else if (!s.compare("nerf")) {
     return e_flag_nerf;
-  } else if (!s.compare("ldf")) {
-    return e_flag_ldf;
+  } else if (!s.compare("nwbf")) {
+    return e_flag_nwbf;
   } else if (!s.compare("pf")) {
     return e_flag_pf;
-  } else if (!s.compare("lef")) {
-    return e_flag_lef;
-  } else if (!s.compare("cf")) {
-    return e_flag_cf;
-  } else if (!s.compare("cef")) {
-    return e_flag_cef;
-  } else if (!s.compare("cof")) {
-    return e_flag_cof;
-  } else if (!s.compare("cdf")) {
-    return e_flag_cdf;
+  } else if (!s.compare("sf")) {
+    return e_flag_sf;
   } else if (!s.compare("csf")) {
     return e_flag_csf;
+  } else if (!s.compare("cef")) {
+    return e_flag_cef;
+  } else if (!s.compare("cmf")) {
+    return e_flag_cmf;
+  } else if (!s.compare("cof")) {
+    return e_flag_cof;
+  } else if (!s.compare("cff")) {
+    return e_flag_cff;
   } else if (!s.compare("rf")) {
     return e_flag_rf;
   } else if (!s.compare("uf")) {
     return e_flag_uf;
-  } else if (!s.compare("if")) {
-    return e_flag_if;
-  } else if (!s.compare("nwbf")) {
-    return e_flag_nwbf;
-  } else if (!s.compare("sf")) {
-    return e_flag_sf;
   } else {
     error = true;
     return e_flag_rqf;
@@ -535,6 +523,8 @@ Assembler::parseCohStateSel(string &s) {
     return e_mux_sel_coh_r7;
   } else if (!s.compare("nextcohst")) {
     return e_mux_sel_coh_next_coh_state;
+  } else if (!s.compare("lrucohst")) {
+    return e_mux_sel_coh_lru_coh_state;
   } else if (!s.compare("shcoh")) {
     // note: requires source A
     return e_mux_sel_sharer_state;
@@ -1042,9 +1032,9 @@ Assembler::parseQueue(vector<string> *tokens, int n, parsed_inst_s *parsed_inst)
       inst->type_u.pushq.src_a = qargs.src;
       if (qargs.custom) {
         // for now, send 64-bits of data, sourced from src_a
-        inst->type_u.pushq.way_or_length.data_length = e_lce_data_length_1;
+        inst->type_u.pushq.way_or_size.msg_size = e_mem_msg_size_8;
       } else {
-        inst->type_u.pushq.way_or_length.way_sel = qargs.way_sel;
+        inst->type_u.pushq.way_or_size.way_sel = qargs.way_sel;
       }
       break;
     case e_popq_op:
@@ -1079,7 +1069,7 @@ Assembler::parseQueue(vector<string> *tokens, int n, parsed_inst_s *parsed_inst)
     case e_cmd_op:
       inst->type_u.pushq.addr_sel = parseAddrSel(tokens->at(1));
       inst->type_u.pushq.lce_sel = parseLceSel(tokens->at(2));
-      inst->type_u.pushq.way_or_length.way_sel = parseWaySel(tokens->at(3));
+      inst->type_u.pushq.way_or_size.way_sel = parseWaySel(tokens->at(3));
       if (tokens->size() == 5) {
         inst->type_u.pushq.src_a = parseOpd(tokens->at(4));
       }
@@ -1213,7 +1203,7 @@ Assembler::writeInstToOutput(parsed_inst_s *parsed_inst, uint16_t line_number, s
       break;
     case e_pushq:
       printField(inst->type_u.pushq.write_pending, 1, ss);
-      printField(inst->type_u.pushq.way_or_length.way_sel, bp_cce_inst_mux_sel_way_width, ss);
+      printField(inst->type_u.pushq.way_or_size.way_sel, bp_cce_inst_mux_sel_way_width, ss);
       printField(inst->type_u.pushq.src_a, bp_cce_inst_opd_width, ss);
       printField(inst->type_u.pushq.lce_sel, bp_cce_inst_mux_sel_lce_width, ss);
       printField(inst->type_u.pushq.addr_sel, bp_cce_inst_mux_sel_addr_width, ss);

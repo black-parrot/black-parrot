@@ -42,21 +42,16 @@ module bp_be_pipe_long
   logic [dword_width_p-1:0] op_a, op_b;
   always_comb
     begin
-      op_a = rs1_i;
-      op_b = rs2_i;
-      unique case (decode.fu_op)
-        `RV64_DIVW, `RV64_REMW:
-          begin
-            op_a = $signed(rs1_i[0+:word_width_lp]);
-            op_b = $signed(rs2_i[0+:word_width_lp]);
-          end
-        `RV64_DIVUW, `RV64_REMUW:
-          begin
-            op_a = rs1_i[0+:word_width_lp];
-            op_b = rs2_i[0+:word_width_lp];
-          end
-        default : begin end
-      endcase
+      op_a = decode.opw_v 
+             ? signed_div_li
+               ? dword_width_p'($signed(rs1_i[0+:word_width_lp]))
+               : rs1_i[0+:word_width_lp]
+             : rs1_i;
+      op_b = decode.opw_v 
+             ? signed_div_li
+               ? dword_width_p'($signed(rs2_i[0+:word_width_lp]))
+               : rs2_i[0+:word_width_lp]
+             : rs2_i;
     end
 
   // We actual could exit early here 

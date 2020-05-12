@@ -64,19 +64,19 @@ module bp_be_top
    , input data_mem_pkt_v_i
    , input [dcache_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
    , output logic [dcache_block_width_p-1:0] data_mem_o
-   , output logic data_mem_pkt_ready_o
+   , output logic data_mem_pkt_yumi_o
 
    // tag_mem
    , input tag_mem_pkt_v_i
    , input [dcache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_i
    , output logic [ptag_width_p-1:0] tag_mem_o
-   , output logic tag_mem_pkt_ready_o
+   , output logic tag_mem_pkt_yumi_o
 
    // stat_mem
    , input stat_mem_pkt_v_i
    , input [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
    , output logic [stat_info_width_lp-1:0] stat_mem_o
-   , output logic  stat_mem_pkt_ready_o
+   , output logic  stat_mem_pkt_yumi_o
 
    , input                                   credits_full_i
    , input                                   credits_empty_i
@@ -250,15 +250,15 @@ bp_be_mem_top
     ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
     ,.data_mem_pkt_i(data_mem_pkt_i)
     ,.data_mem_o(data_mem_o)
-    ,.data_mem_pkt_ready_o(data_mem_pkt_ready_o)
+    ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
     ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
     ,.tag_mem_pkt_i(tag_mem_pkt_i)
     ,.tag_mem_o(tag_mem_o)
-    ,.tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
+    ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
     ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
     ,.stat_mem_pkt_i(stat_mem_pkt_i)
     ,.stat_mem_o(stat_mem_o)
-    ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
+    ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
 
     ,.commit_pkt_i(commit_pkt)
 

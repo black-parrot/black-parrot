@@ -74,7 +74,7 @@ module bp_sacc_vdp
                             spm_internal_v_lo, spm_external_v_lo, resp_v_lo;
    
   bp_cce_mem_msg_payload_s  resp_payload;
-  bp_cce_mem_req_size_e     resp_size;  
+  bp_mem_msg_size_e         resp_size;
   bp_cce_mem_cmd_type_e     resp_msg;
   bp_local_addr_s           local_addr_li;
   bp_global_addr_s          global_addr_li;

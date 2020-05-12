@@ -1,4 +1,4 @@
-BP_DEMOS = \
+BP_TESTS = \
   bubblesort_demo     \
   uc_simple           \
   simple              \
@@ -46,7 +46,10 @@ BP_DEMOS = \
   mc_work_share_sort_8 \
   mc_work_share_sort_12 \
   mc_work_share_sort_16 \
-  cache_hammer
+  cache_hammer \
+  cache_flush \
+  loop_test
+BP_TESTS_RISCV := $(addprefix $(BP_TEST_MEM_DIR)/bp_tests/, $(addsuffix .riscv, $(BP_TESTS)))
 
 RV64_BENCHMARKS = \
   median   \
@@ -60,7 +63,8 @@ RV64_BENCHMARKS = \
   spmv \
   mt-vvadd \
   mt-matmul \
-  pmp 
+  pmp
+RV64_BENCHMARKS_RISCV := $(addprefix $(BP_TEST_MEM_DIR)/riscv_tests/, $(addsuffix .riscv, $(RV64_BENCHMARKS)))
 
   # Uses m-mode illegal instruction exception
   #rv64mi-p-csr
@@ -163,6 +167,7 @@ RV64_P_TESTS = \
   rv64um-p-remu      \
   rv64um-p-remuw     \
   rv64um-p-remw
+RV64_P_TESTS_RISCV := $(addprefix $(BP_TEST_MEM_DIR)/riscv_tests/, $(addsuffix .riscv, $(RV64_P_TESTS)))
 
   #rv64ua-v-amominu_w
 RV64_V_TESTS = \
@@ -235,6 +240,7 @@ RV64_V_TESTS = \
   rv64ua-v-amoxor_d  \
   rv64ua-v-amoxor_w  \
   rv64ua-v-lrsc
+RV64_V_TESTS_RISCV := $(addprefix $(BP_TEST_MEM_DIR)/riscv_tests/, $(addsuffix .riscv, $(RV64_V_TESTS)))
 
 RV64_PT_TESTS = \
   rv64ui-pt-add     \
@@ -307,7 +313,7 @@ RV64_PT_TESTS = \
   rv64ua-pt-amoxor_d  \
   rv64ua-pt-amoxor_w  \
   rv64ua-pt-lrsc
-
+RV64_PT_TESTS_RISCV := $(addprefix $(BP_TEST_MEM_DIR)/riscv_tests/, $(addsuffix .riscv, $(RV64_PT_TESTS)))
 
 RV64_VT_TESTS = \
   rv64ui-vt-add     \
@@ -380,8 +386,7 @@ RV64_VT_TESTS = \
   rv64ua-vt-amoxor_d  \
   rv64ua-vt-amoxor_w  \
   rv64ua-vt-lrsc
-
-
+RV64_VT_TESTS_RISCV := $(addprefix $(BP_TEST_MEM_DIR)/riscv_tests/, $(addsuffix .riscv, $(RV64_VT_TESTS)))
 
 #Removed from beebs testsuite - 
 #ctl, matmul, sglib-arraysort, trio due to beebs configure -> makefile -> make bug (no exe made)
@@ -437,6 +442,7 @@ BEEBS_TESTS = \
   picojpeg \
   prime \
   qrduino \
+  qsort \
   qurt \
   recursion \
   select \
@@ -463,20 +469,22 @@ BEEBS_TESTS = \
   ud \
   whetstone \
   wikisort
-  # qsort works, but there's a name conflict with riscv-tests. We should fix this
-  #   by putting each test suite in its own mem directory
-  #qsort \
+BEEBS_TESTS_RISCV := $(addprefix $(BP_TEST_MEM_DIR)/beebs/, $(addsuffix .riscv, $(BEEBS_TESTS)))
 
-BP_SPEC = \
+COREMARK_TESTS = \
+  coremark
+COREMARK_TESTS_RISCV := $(addprefix $(BP_TEST_MEM_DIR)/coremark/, $(addsuffix .riscv, $(COREMARK_TESTS)))
+
+SPEC = \
   175.vpr \
   181.mcf \
   164.gzip \
   186.crafty \
   256.bzip2 \
   197.parser
+SPEC_TESTS_RISCV := $(addprefix $(BP_TEST_MEM_DIR)/spec/, $(addsuffix .riscv, $(SPEC_TESTS)))
 
-
-BP_RVDV = \
+RISCVDV = \
   riscv_arithmetic_basic_test \
   riscv_mmu_stress_test \
   riscv_privileged_mode_rand_test \
@@ -487,6 +495,6 @@ BP_RVDV = \
   riscv_sfence_exception_test \
   riscv_illegal_instr_test \
   riscv_full_interrupt_test
-
+RISCVDV_TESTS_RISCV := $(addprefix $(BP_TEST_MEM_DIR)/riscvdv/, $(addsuffix .riscv, $(RISCVDV_TESTS)))
   
 

@@ -26,7 +26,6 @@ module tag_lookup
    , output logic hit_o
    , output logic dirty_o
    , output logic [lg_assoc_lp-1:0] way_o
-   , output logic lru_dirty_o
    , output bp_coh_states_e state_o
   );
 
@@ -57,7 +56,6 @@ module tag_lookup
   assign way_o = way_lo;
   assign dirty_o = (tags[way_o].state == e_COH_M);
   assign state_o = tags[way_o].state;
-  assign lru_dirty_o = dirty_bits_i[lru_way_i];
 
 endmodule
 
@@ -131,6 +129,8 @@ module bp_me_nonsynth_mock_lce
   initial begin
     assert(dword_width_p == 64) else
       $error("dword_width_p must be 64");
+    assert(cce_block_width_p >= 64) else $error("cce_block_width_p must be at least 64-bits");
+    assert(`BSG_IS_POW2(cce_block_width_p)) else $error("cce_block_width_p must be a power of two");
   end
 
   // LCE-CCE interface structs
@@ -259,7 +259,6 @@ module bp_me_nonsynth_mock_lce
     logic store_op;
     logic upgrade;
     logic [lg_assoc_lp-1:0] lru_way;
-    logic lru_dirty;
     logic tag_received;
     logic data_received;
     logic transfer_received;
@@ -358,7 +357,6 @@ module bp_me_nonsynth_mock_lce
   logic tag_hit_lo;
   logic tag_dirty_lo;
   logic [lg_assoc_lp-1:0] tag_hit_way_r, tag_hit_way_n, tag_hit_way_lo;
-  logic lru_dirty_lo;
   bp_coh_states_e tag_hit_state_r, tag_hit_state_n, tag_hit_state_lo;
 
   always_ff @(posedge clk_i) begin
@@ -385,7 +383,6 @@ module bp_me_nonsynth_mock_lce
      ,.hit_o(tag_hit_lo)
      ,.dirty_o(tag_dirty_lo)
      ,.way_o(tag_hit_way_lo)
-     ,.lru_dirty_o(lru_dirty_lo)
      ,.state_o(tag_hit_state_lo)
      );
 
@@ -481,6 +478,22 @@ module bp_me_nonsynth_mock_lce
       ,.index_o()
       );
 
+  wire [paddr_width_p-1:0] addr_mask = {{{paddr_width_p-block_offset_bits_lp}{1'b1}}
+                                        , {{block_offset_bits_lp}{1'b0}}};
+
+  // coherence request size
+  // block size smaller than 8-bytes not supported
+  bp_mem_msg_size_e msg_block_size =
+    (block_size_in_bytes_lp == 128)
+    ? e_mem_msg_size_128
+    : (block_size_in_bytes_lp == 64)
+      ? e_mem_msg_size_64
+      : (block_size_in_bytes_lp == 32)
+        ? e_mem_msg_size_32
+        : (block_size_in_bytes_lp == 16)
+          ? e_mem_msg_size_16
+          : e_mem_msg_size_8;
+
   always_comb begin
     lce_state_n = lce_state_r;
     lce_init_n = lce_init_r;
@@ -563,7 +576,6 @@ module bp_me_nonsynth_mock_lce
         mshr_n.store_op = store_op;
         mshr_n.upgrade = '0;
         mshr_n.lru_way = '0;
-        mshr_n.lru_dirty = '0;
         mshr_n.tag_received = '0;
         mshr_n.data_received = '0;
         mshr_n.transfer_received = '0;
@@ -579,14 +591,14 @@ module bp_me_nonsynth_mock_lce
         lce_req.header.src_id = lce_id_i;
         lce_req.header.addr = mshr_r.paddr;
 
-        lce_req.header.uc_size =
+        lce_req.header.size =
           (double_op)
-          ? e_lce_uc_req_8
+          ? e_mem_msg_size_8
           : (word_op)
-            ? e_lce_uc_req_4
+            ? e_mem_msg_size_4
             : (half_op)
-              ? e_lce_uc_req_2
-              : e_lce_uc_req_1;
+              ? e_mem_msg_size_2
+              : e_mem_msg_size_1;
 
         lce_req.data = (mshr_r.store_op) ? cmd.data : '0;
 
@@ -686,15 +698,15 @@ module bp_me_nonsynth_mock_lce
             lce_state_n = LCE_DATA_CMD;
 
           // non-data command
-          end else if (lce_cmd.header.msg_type == e_lce_cmd_invalidate_tag) begin
+          end else if (lce_cmd.header.msg_type == e_lce_cmd_inv) begin
             lce_state_n = LCE_CMD_INV;
-          end else if (lce_cmd.header.msg_type == e_lce_cmd_transfer) begin
+          end else if (lce_cmd.header.msg_type == e_lce_cmd_tr) begin
             lce_state_n = LCE_CMD_TR_RD;
-          end else if (lce_cmd.header.msg_type == e_lce_cmd_writeback) begin
+          end else if (lce_cmd.header.msg_type == e_lce_cmd_wb) begin
             lce_state_n = LCE_CMD_WB_RD;
-          end else if (lce_cmd.header.msg_type == e_lce_cmd_set_tag) begin
+          end else if (lce_cmd.header.msg_type == e_lce_cmd_st) begin
             lce_state_n = LCE_CMD_ST;
-          end else if (lce_cmd.header.msg_type == e_lce_cmd_set_tag_wakeup) begin
+          end else if (lce_cmd.header.msg_type == e_lce_cmd_st_wakeup) begin
             lce_state_n = LCE_CMD_STW;
           end else begin
             lce_state_n = RESET;
@@ -783,6 +795,7 @@ module bp_me_nonsynth_mock_lce
         lce_cmd_lo.data = data_cur;
         lce_cmd_lo.header.state = lce_cmd_r.header.state;
         lce_cmd_lo.header.addr = lce_cmd_r.header.addr;
+        lce_cmd_lo.header.size = msg_block_size;
 
         // make the command valid
         lce_cmd_v_o = 1'b1;
@@ -809,6 +822,7 @@ module bp_me_nonsynth_mock_lce
         if (dirty_bits[cur_set_r][cur_way_r]) begin
           lce_resp.data = data_cur;
           lce_resp.header.msg_type = e_lce_cce_resp_wb;
+          lce_resp.header.size = msg_block_size;
 
           // clear the dirty bit - but only do the write if the data response is accepted
           // (this prevents the dirty bit from being cleared before the response is sent, which
@@ -819,6 +833,7 @@ module bp_me_nonsynth_mock_lce
         end else begin
           lce_resp.data = '0;
           lce_resp.header.msg_type = e_lce_cce_resp_null_wb;
+          lce_resp.header.size = e_mem_msg_size_1;
 
         end
 
@@ -977,7 +992,6 @@ module bp_me_nonsynth_mock_lce
         mshr_n.store_op = store_op;
         mshr_n.upgrade = '0;
         mshr_n.lru_way = lru_way_li;
-        mshr_n.lru_dirty = lru_dirty_lo;
         mshr_n.tag_received = '0;
         mshr_n.data_received = '0;
         mshr_n.transfer_received = '0;
@@ -1045,10 +1059,11 @@ module bp_me_nonsynth_mock_lce
         lce_req.header.dst_id = mshr_r.cce;
         lce_req.header.msg_type = e_lce_req_type_rd;
         lce_req.header.src_id = lce_id_i;
-        lce_req.header.addr = mshr_r.paddr;
+        lce_req.header.addr = mshr_r.paddr & addr_mask;
         lce_req.header.non_exclusive = e_lce_req_excl;
         lce_req.header.lru_way_id[0+:lg_assoc_lp] = mshr_r.lru_way;
-        lce_req.header.lru_dirty = (mshr_r.lru_dirty ? e_lce_req_lru_dirty : e_lce_req_lru_clean);
+
+        lce_req.header.size = msg_block_size;
 
         // wait for LCE req outbound to be ready (r&v), then wait for responses
         lce_state_n = (lce_req_ready_i) ? READY : TR_CMD_LD_MISS;
@@ -1113,11 +1128,10 @@ module bp_me_nonsynth_mock_lce
         lce_req.header.dst_id = mshr_r.cce;
         lce_req.header.msg_type = e_lce_req_type_wr;
         lce_req.header.src_id = lce_id_i;
-        lce_req.header.addr = mshr_r.paddr;
+        lce_req.header.addr = mshr_r.paddr & addr_mask;
         lce_req.header.non_exclusive = e_lce_req_excl;
         lce_req.header.lru_way_id[0+:lg_assoc_lp] = mshr_r.lru_way;
-        lce_req.header.lru_dirty = (mshr_r.upgrade) ? e_lce_req_lru_clean :
-          ((mshr_r.lru_dirty) ? e_lce_req_lru_dirty : e_lce_req_lru_clean);
+        lce_req.header.size = msg_block_size;
 
         lce_state_n = (lce_req_ready_i) ? READY : TR_CMD_ST_MISS;
 

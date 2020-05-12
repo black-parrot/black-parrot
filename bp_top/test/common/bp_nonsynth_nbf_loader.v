@@ -27,7 +27,7 @@ module bp_nonsynth_nbf_loader
   ,localparam nbf_width_lp = nbf_opcode_width_p + nbf_addr_width_p + nbf_data_width_p
   ,localparam max_nbf_index_lp = 2**20
   ,localparam nbf_index_width_lp = `BSG_SAFE_CLOG2(max_nbf_index_lp)
-  ,localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p)
+  ,localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p+1)
   )
 
   (input  clk_i
@@ -129,9 +129,9 @@ module bp_nonsynth_nbf_loader
     io_cmd.header.msg_type = e_cce_mem_uc_wr;
     
     case (curr_nbf.opcode)
-      2: io_cmd.header.size = e_mem_size_4;
-      3: io_cmd.header.size = e_mem_size_8;
-      default: io_cmd.header.size = e_mem_size_4;
+      2: io_cmd.header.size = e_mem_msg_size_4;
+      3: io_cmd.header.size = e_mem_msg_size_8;
+      default: io_cmd.header.size = e_mem_msg_size_4;
     endcase
   end
 

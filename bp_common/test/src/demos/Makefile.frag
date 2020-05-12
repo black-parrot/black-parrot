@@ -42,7 +42,9 @@ BP_DEMOS_C = \
   mc_work_share_sort_8  \
   mc_work_share_sort_12 \
   mc_work_share_sort_16 \
-  cache_hammer
+  cache_hammer \
+  cache_flush \
+  loop_test
 
 BP_DEMOS_S = \
 	simple                \
