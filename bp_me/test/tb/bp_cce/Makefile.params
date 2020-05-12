@@ -1,7 +1,7 @@
-NUM_INSTR_P ?= 4096
+export NUM_INSTR_P ?= 4096
 SEED_P ?= 1
 # uncached / normal mode testing
-SKIP_INIT_P ?= 0
+export SKIP_INIT_P ?= 0
 
 # Select CCE ROM based on CFG and Coherence Protocol
 ifeq ($(CFG), e_bp_half_core_cfg)
@@ -50,24 +50,22 @@ NUMS = $(shell seq 0 `expr $(NUM_LCE_P) - 1`)
 BASE = bsg_trace_rom_
 TRACE_ROMS = $(addsuffix .v, $(addprefix $(BASE), $(NUMS)))
 
-DRAMSIM_CH_CFG  ?= DDR2_micron_16M_8b_x8_sg3E.ini
-DRAMSIM_SYS_CFG ?= system.ini
+export DRAMSIM_CH_CFG  ?= DDR2_micron_16M_8b_x8_sg3E.ini
+export DRAMSIM_SYS_CFG ?= system.ini
 
-AXE_TRACE_P ?= 0
-CCE_TRACE_P ?= 0
-LCE_TRACE_P ?= 0
-DRAM_TRACE_P ?= 0
+export AXE_TRACE_P ?= 0
+export CCE_TRACE_P ?= 0
+export LCE_TRACE_P ?= 0
+export DRAM_TRACE_P ?= 0
 
 export DUT_PARAMS =
 export TB_PARAMS  = \
-	-pvalue+axe_trace_p=$(AXE_TRACE_P) \
+    -pvalue+axe_trace_p=$(AXE_TRACE_P) \
     -pvalue+cce_trace_p=$(CCE_TRACE_P) \
     -pvalue+instr_count=$(NUM_INSTR_P) \
     -pvalue+skip_init_p=$(SKIP_INIT_P) \
     -pvalue+lce_trace_p=$(LCE_TRACE_P) \
     -pvalue+dram_trace_p=$(DRAM_TRACE_P) \
-
-export TB_PARAMS  = 
 
 export DUT_DEFINES =
 export TB_DEFINES =
