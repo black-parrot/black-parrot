@@ -84,6 +84,11 @@ $(SIM_DIR)/run_simsc: $(SIM_COLLATERAL)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
 
+sim_dump.sc: VV_OPTS += --trace
+sim_dump.sc: VV_OPTS += --trace-structs
+sim_dump.sc: VV_OPTS += --trace-depth 15
+sim_dump.sc: sim.sc
+
 cov.sc: $(RESULTS_DIR)/covsc
 cov.sc: COV_LOG    := $(LOG_DIR)/$(TB).$(CFG).$(TAG).cov.log
 cov.sc: COV_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).cov.rpt
