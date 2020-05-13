@@ -12,8 +12,9 @@ module bp_pce
     parameter sets_p = dcache_sets_p
     parameter pce_id_p = 1 
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, cache);
-   
+   `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, cache)
+   `declare_bp_pce_l15_if_widths(paddr_width_p, dword_width_p)
+
    // Cache parameters
    , localparam bank_width_lp = block_width_p / assoc_p
    , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
@@ -27,65 +28,59 @@ module bp_pce
   , input                                       reset_i
 
   // Cache side
-  , input [cache_req_width_lp-1:0]              cache_req_i
-  , input                                       cache_req_v_i
-  , output                                      cache_req_ready_o
-  , input [cache_req_metadata_width_lp-1:0]     cache_req_metadata_i
-  , input                                       cache_req_metadata_v_i
-  , output                                      cache_req_complete_o
+  , input [cache_req_width_lp-1:0]                 cache_req_i
+  , input                                          cache_req_v_i
+  , output logic                                   cache_req_ready_o
+  , input [cache_req_metadata_width_lp-1:0]        cache_req_metadata_i
+  , input                                          cache_req_metadata_v_i
+  , output logic                                   cache_req_complete_o
 
-  // I-Cache side
-  , output                                      sync_o
-  , output [cache_data_mem_pkt_width_lp-1:0]    cache_data_mem_pkt_o
-  , output                                      cache_data_mem_pkt_v_o
-  , input                                       cache_data_mem_pkt_yumi_i
+  // Cache side
+  , output logic [cache_data_mem_pkt_width_lp-1:0] cache_data_mem_pkt_o
+  , output logic                                   cache_data_mem_pkt_v_o
+  , input                                          cache_data_mem_pkt_yumi_i
 
-  , output [cache_tag_mem_pkt_width_lp-1:0]     cache_tag_mem_pkt_o
-  , output                                      cache_tag_mem_pkt_v_o
-  , input                                       cache_tag_mem_pkt_yumi_i
+  , output logic [cache_tag_mem_pkt_width_lp-1:0]  cache_tag_mem_pkt_o
+  , output logic                                   cache_tag_mem_pkt_v_o
+  , input                                          cache_tag_mem_pkt_yumi_i
 
-  , output [cache_stat_mem_pkt_width_lp-1:0]    cache_stat_mem_pkt_o
-  , output                                      cache_stat_mem_pkt_v_o
-  , input                                       cache_stat_mem_pkt_yumi_i
+  , output logic [cache_stat_mem_pkt_width_lp-1:0] cache_stat_mem_pkt_o
+  , output logic                                   cache_stat_mem_pkt_v_o
+  , input                                          cache_stat_mem_pkt_yumi_i
 
   // PCE -> L1.5
-  , output logic [4:0]                          transducer_l15_rqtype
-  , output logic                                transducer_l15_nc
-  , output logic [2:0]                          transducer_l15_size
-  , output logic                                transducer_l15_val
-  , output logic [39:0]                         transducer_l15_address
-  , output logic [63:0]                         transducer_l15_data
-  , output logic [1:0]                          transducer_l15_l1rplway
-  , output logic [2:0]                          transducer_l15_threadid
-  , input                                       l15_transducer_ack
+  , output logic                                   pce_l15_req_v_o
+  , output logic [bp_pce_l15_req_width_lp-1:0]     pce_l15_req_o
+  , input                                          pce_l15_req_ready_i
 
   // L1.5 -> PCE
-  , input                                       l15_transducer_val
-  , input [3:0]                                 l15_transducer_returntype
-  , input                                       l15_transducer_noncacheable
-  , input [63:0]                                l15_transducer_data_0
-  , input [63:0]                                l15_transducer_data_1
-  , input [63:0]                                l15_transducer_data_2
-  , input [63:0]                                l15_transducer_data_3
-  , input [2:0]                                 l15_transducer_threadid
-  // TODO: OpenPiton defines this as [15:4]. Will this redefinition break things?
-  , input [11:0]                                l15_transducer_inval_address_15_4
-  , input                                       l15_transducer_inval_icache_inval
-  , input                                       l15_transducer_inval_icache_all_way
-  , input                                       l15_transducer_inval_dcache_inval
-  , input                                       l15_transducer_inval_dcache_all_way
-  , input [1:0]                                 l15_transducer_inval_way
-  , output logic                                transducer_l15_req_ack
+  , input                                          l15_pce_ret_v_i
+  , input        [bp_l15_pce_ret_width_lp-1:0]     l15_pce_ret_i
+  , output logic                                   l15_pce_ret_yumi_o
+
+  , output logic                                   credits_full_o
+  , output logic                                   credits_empty_o
   );
 
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, cache);
+  `declare_bp_pce_l15_if(paddr_width_p, data_width_p);
 
   bp_cache_req_s cache_req_cast_i;
   bp_cache_req_metadata_s cache_req_metadata_cast_i;
+  assign cache_req_cast_i = cache_req_i;
+  assign cache_req_metadata_cast_i = cache_req_metadata_i;
 
   bp_cache_data_mem_pkt_s cache_data_mem_pkt_cast_o;
   bp_cache_tag_mem_pkt_s cache_tag_mem_pkt_cast_o;
   bp_cache_stat_mem_pkt_s cache_stat_mem_pkt_cast_o;
+  assign cache_data_mem_pkt_o = cache_data_mem_pkt_cast_o;
+  assign cache_tag_mem_pkt_o = cache_tag_mem_pkt_cast_o;
+  assign cache_stat_mem_pkt_o = cache_stat_mem_pkt_cast_o;
+
+  bp_pce_l15_req_s pce_l15_req_cast_o;
+  bp_l15_pce_ret_s l15_pce_ret_cast_i;
+  assign pce_l15_req_o = pce_l15_req_cast_o;
+  assign l15_pce_ret_cast_i = l15_pce_ret_i;
 
   logic cache_req_v_r;
   always_ff @(posedge clk_i) begin
@@ -120,11 +115,13 @@ module bp_pce
   wire uc_store_v_li   = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
   wire wt_store_v_li   = cache_req_v_i & cache_req_cast_i.msg_type inside {e_wt_store};
 
-  // TODO: Check return types
-  // TODO: Update once we create structures
-  wire store_resp_v_li = l15_transducer_val & (l15_transducer_returntype == e_st_ack);
-  wire load_resp_v_li  = l15_transducer_val & l15_transducer_returntype inside {e_load_ret, e_ifill_ret};
-  wire inval_v_li      = l15_transducer_val & l15_transducer_returntype inside {e_evict_req};
+  wire store_resp_v_li = l15_pce_ret_v_i & (l15_pce_ret_cast_i.rtntype == e_st_ack);
+  wire load_resp_v_li  = l15_pce_ret_v_i & l15_pce_ret_cast_i.rtntype inside {e_load_ret, e_ifill_ret};
+  wire inval_v_li      = l15_pce_ret_v_i & l15_pce_ret_cast_i.rtntype inside {e_evict_req};
+  wire is_ifill_ret_nc = (l15_pce_ret_cast_i.rtntype == e_ifill_ret) & l15_pce_ret_cast_i.noncacheable;
+  wire is_load_ret_nc  = (l15_pce_ret_cast_i.rtntype == e_load_ret) & l15_pce_ret_cast_i.noncacheable;
+  wire is_ifill_ret    = (l15_pce_ret_cast_i.rtntype == e_ifill_ret) & ~l15_pce_ret_cast_i.noncacheable;
+  wire is_load_ret     = (l15_pce_ret_cast_i.rtntype == e_load_ret) & ~l15_pce_ret_cast_i.noncacheable;
 
   wire miss_load_v_li  = cache_req_v_r & cache_req_r.msg_type inside {e_miss_load};
   wire miss_store_v_li = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
@@ -150,8 +147,26 @@ module bp_pce
   
   wire index_done = (index_cnt == sets_p-1);
 
-  logic transducer_l15_req_ack_lo;
-  assign transducer_l15_req_ack = transducer_l15_req_ack_lo | store_resp_v_li;
+  // Outstanding requests counter
+  logic [`BSG_WIDTH(coh_noc_max_credits_p)-1:0] credit_count_lo;
+  wire credit_v_li = pce_l15_req_v_o;
+  wire credit_ready_li = pce_l15_ready_i;
+  wire credit_returned_li = l15_pce_ret_yumi_o;
+  bsg_flow_counter
+    #(.els_p(coh_noc_max_credits_p))
+    credit_counter
+    (.clk_i(clk_i)
+    ,.reset_i(reset_i)
+
+    ,.v_i(credit_v_li)
+    ,.ready_i(credit_ready_li)
+
+    ,.yumi_i(credit_returned_li)
+    ,.count_o(credit_count_lo)
+    );
+
+  logic l15_pce_ret_yumi_lo;
+  assign l15_pce_ret_yumi_o = l15_pce_ret_yumi_lo | store_resp_v_li;
 
   always_comb
     begin
@@ -170,16 +185,10 @@ module bp_pce
 
       cache_req_complete_o = '0;
       
-      transducer_l15_threadid = '0;
-      transducer_l15_rqtype = '0;
-      transducer_l15_nc = '0;
-      transducer_l15_size = '0;
-      transducer_l15_address = '0;
-      transducer_l15_data = '0;
-      transducer_l15_l1rplway = '0;
-      transducer_l15_val = '0;
+      pce_l15_req_cast_o = '0;
+      pce_l15_req_v_o = '0;
 
-      transducer_l15_req_ack_lo = '0;
+      l15_pce_ret_yumi_lo = '0;
       state_n = state_r;
 
       // Need to support invalidations no matter what
@@ -187,54 +196,55 @@ module bp_pce
       // doesn't support inval all way for dcache and inval specific way for
       // icache
       if (inval_v_li) begin
-        if (l15_transducer_inval_icache_inval || l15_transducer_inval_dcache_inval) begin
+        if (l15_pce_ret_cast_i.inval_icache_inval || l15_pce_ret_cast_i.inval_dcache_inval) begin
           cache_tag_mem_pkt_cast_o.index = (pce_id_p == 1) 
-                                                  ? {l15_transducer_inval_way[1], l15_transducer_inval_address_15_4[6:0]} 
-                                                  : l15_transducer_inval_address_15_4[6:0];
+                                                  ? {l15_pce_ret_cast_i.inval_way[1], l15_pce_ret_cast_i.inval_address_15_4[6:0]} 
+                                                  : l15_pce_ret_cast_i.inval_address_15_4[6:0];
           cache_tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_invalidate;
           cache_tag_mem_pkt_cast_o.way_id = (pce_id_p == 1) 
-                                                  ? l15_transducer_inval_way[0] 
-                                                  : l15_transducer_inval_way;
-          cache_tag_mem_pkt_v_o = 1'b1;
+                                                  ? l15_pce_ret_cast_i.inval_way[0] 
+                                                  : l15_pce_ret_cast_i.inval_way;
+          cache_tag_mem_pkt_v_o = l15_pce_ret_v_i;
 
-          transducer_l15_req_ack_lo = cache_tag_mem_pkt_yumi_i;
+          l15_pce_ret_yumi_lo = cache_tag_mem_pkt_yumi_i;
         end
-
-        if (l15_transducer_inval_icache_all_way || l15_transducer_inval_dcache_all_way) begin
+        else if (l15_pce_ret_cast_i.inval_icache_all_way || l15_pce_ret_cast_i.inval_dcache_all_way) begin
           cache_tag_mem_pkt_cast_o.index = (pce_id_p == 1) 
-                                                  ? {l15_transducer_inval_way[1], l15_transducer_inval_address_15_4[6:0]} 
-                                                  : l15_transducer_inval_address_15_4[6:0];
+                                                  ? {l15_pce_ret_cast_i.inval_way[1], l15_pce_ret_cast_i.inval_address_15_4[6:0]} 
+                                                  : l15_pce_ret_cast_i.inval_address_15_4[6:0];
           cache_tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_clear;
           cache_tag_mem_pkt_cast_o.way_id = (pce_id_p == 1) 
-                                                  ? l15_transducer_inval_way[0] 
-                                                  : l15_transducer_inval_way;
-          cache_tag_mem_pkt_v_o = 1'b1;
+                                                  ? l15_pce_ret_cast_i.inval_way[0] 
+                                                  : l15_pce_ret_cast_i.inval_way;
+          cache_tag_mem_pkt_v_o = l15_pce_ret_v_i;
           
           // Do we need to clear stat mem also?
           cache_stat_mem_pkt_cast_o.index = (pce_id_p == 1) 
-                                                  ? {l15_transducer_inval_way[1], l15_transducer_inval_address_15_4[6:0]} 
-                                                  : l15_transducer_inval_address_15_4[6:0];
+                                                  ? {l15_pce_ret_cast_i.inval_way[1], l15_pce_ret_cast_i.inval_address_15_4[6:0]} 
+                                                  : l15_pce_ret_cast_i.inval_address_15_4[6:0];
           cache_stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_set_clear;
           cache_stat_mem_pkt_cast_o.way_id = (pce_id_p == 1) 
-                                                  ? l15_transducer_inval_way[0] 
-                                                  : l15_transducer_inval_way;
+                                                  ? l15_pce_ret_cast_i.inval_way[0] 
+                                                  : l15_pce_ret_cast_i.inval_way;
 
-          cache_stat_mem_pkt_v_o = 1'b1;
+          cache_stat_mem_pkt_v_o = l15_pce_ret_v_i;
 
-          transducer_l15_req_ack_lo = cache_tag_mem_pkt_yumi_i & cache_stat_mem_pkt_yumi_i;
+          l15_pce_ret_yumi_lo = cache_tag_mem_pkt_yumi_i & cache_stat_mem_pkt_yumi_i;
         end
       end
 
       unique case (state_r)
         e_reset:
           begin
-            transducer_l15_req_ack_lo = (l15_transducer_val & (l15_transducer_returntype == e_int_ret));
+            l15_pce_ret_yumi_lo = (l15_pce_ret_v_i & (l15_pce_ret_cast_i.rtntype == e_int_ret));
 
-            state_n = transducer_l15_req_ack_lo 
+            state_n = l15_pce_ret_yumi_lo
                           ? e_clear 
                           : e_reset;
           end
-
+        // TODO: One of the caches would be ready earlier than the other
+        // cache. Is that fine or is it necessary that both the caches have to
+        // be ready at the same time?
         e_clear:
           begin
             cache_tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_clear;
@@ -256,14 +266,13 @@ module bp_pce
 
         e_ready:
           begin
-            // TODO: Need to accommodate the ready/yumi signal from the fifo
+            cache_req_ready_o = pce_l15_req_ready_i;
             if (uc_store_v_li) begin
-              transducer_l15_rqtype = e_store_req;
-              transducer_l15_nc = 1'b1;
-              transducer_l15_address = cache_req_cast_i.addr;
+              pce_l15_req_cast_o.rqtype = e_store_req;
+              pce_l15_req_cast_o.nc = 1'b1;
+              pce_l15_req_cast_o.address = cache_req_cast_i.addr;
               // TODO: Check if the size mapping used here will work.
-              // Something tells me it won't.
-              transducer_l15_size = (cache_req_cast_i.size == e_size_1B)
+              pce_l15_req_cast_o.size = (cache_req_cast_i.size == e_size_1B)
                                     ? e_size_1B
                                     : (cache_req_cast_i.size == e_size_2B)
                                       ? e_size_2B
@@ -272,7 +281,7 @@ module bp_pce
                                         : e_size_8B;
 
               // OpenPiton is big endian whereas BlackParrot is little endian
-              transducer_l15_data = (cache_req_cast_i.size == e_size_1B)
+              pce_l15_req_cast_o.data = (cache_req_cast_i.size == e_size_1B)
                                     ? {8{cache_req_cast_i.data[0+:8]}}
                                     : (cache_req_cast_i.size == e_size_2B)
                                       ? {4{{cache_req_cast_i.data[0+:8], cache_req_cast_i.data[8+:8]}}}
@@ -283,16 +292,16 @@ module bp_pce
                                             cache_req_cast_i.data[16+:8], cache_req_cast_i.data[24+:8],
                                             cache_req_cast_i.data[32+:8], cache_req_cast_i.data[40+:8],
                                             cache_req_cast_i.data[48+:8], cache_req_cast_i.data[56+:8]}};
-              transducer_l15_val = 1'b1;
+              pce_l15_req_v_o = pce_l15_req_ready_i;
               state_n = e_ready;
             end
             // TODO: Check if we need l1rplway for writethrough stores.
             // Actually, do we need to worry about l1rplway for stores?
             else if (wt_store_v_li) begin
-              transducer_l15_rqtype = e_store_req;
-              transducer_l15_nc = 1'b0;
-              transducer_l15_address = cache_req_cast_i.addr;
-              transducer_l15_size = (cache_req_cast_i.size == e_size_1B)
+              pce_l15_req_cast_o.rqtype = e_store_req;
+              pce_l15_req_cast_o.nc = 1'b0;
+              pce_l15_req_cast_o.address = cache_req_cast_i.addr;
+              pce_l15_req_cast_o.size = (cache_req_cast_i.size == e_size_1B)
                                     ? e_size_1B
                                     : (cache_req_cast_i.size == e_size_2B)
                                       ? e_size_2B
@@ -300,7 +309,7 @@ module bp_pce
                                         ? e_size_4B
                                         : e_size_8B;
 
-              transducer_l15_data = (cache_req_cast_i.size == e_size_1B)
+              pce_l15_req_cast_o.data = (cache_req_cast_i.size == e_size_1B)
                                     ? {8{cache_req_cast_i.data[0+:8]}}
                                     : (cache_req_cast_i.size == e_size_2B)
                                       ? {4{{cache_req_cast_i.data[0+:8], cache_req_cast_i.data[8+:8]}}}
@@ -311,7 +320,7 @@ module bp_pce
                                             cache_req_cast_i.data[16+:8], cache_req_cast_i.data[24+:8],
                                             cache_req_cast_i.data[32+:8], cache_req_cast_i.data[40+:8],
                                             cache_req_cast_i.data[48+:8], cache_req_cast_i.data[56+:8]}};
-              transducer_l15_val = 1'b1;
+              pce_l15_req_v_o = pce_l15_req_ready_i;
               state_n = e_ready;
             end
             else begin
@@ -324,30 +333,30 @@ module bp_pce
         e_send_req:
           begin
             if (miss_v_li) begin
-              transducer_l15_rqtype = (pce_id_p == 1)
+              pce_l15_req_cast_o.rqtype = (pce_id_p == 1)
                                           ? e_load_req
                                           : e_imiss_req;
 
-              transducer_l15_nc = 1'b0;
-              transducer_l15_size = (pce_id_p == 1)
+              pce_l15_req_cast_o.nc = 1'b0;
+              pce_l15_req_cast_o.size = (pce_id_p == 1)
                                         ? e_size_8B
                                         : e_size_16B;
-              transducer_l15_address = cache_req_cast_i.addr;
-              transducer_l15_l1rplway = (pce_id_p == 1)
+              pce_l15_req_cast_o.address = cache_req_cast_i.addr;
+              pce_l15_req_cast_o.l1rplway = (pce_id_p == 1)
                                             ? {cache_req_cast_i.addr[11], cache_req_metadata_cast_i.repl_way}
                                             : cache_req_metadata_cast_i.reply_way;
-              transducer_l15_val = 1'b1;
+              pce_l15_req_v_o = pce_l15_req_ready_i;
 
-              state_n = l15_transducer_ack
+              state_n = pce_l15_req_v_o
                         ? e_read_wait
                         : e_send_req;
             end
             else if (uc_load_v_li) begin
-              transducer_l15_rqtype = (pce_id_p == 1)
+              pce_l15_req_cast_i.rqtype = (pce_id_p == 1)
                                             ? e_load_req
                                             : e_imiss_req; 
-              transducer_l15_nc = 1'b1;
-              transducer_l15_size = (cache_req_cast_i.size == e_size_1B)
+              pce_l15_req_cast_i.nc = 1'b1;
+              pce_l15_req_cast_i.size = (cache_req_cast_i.size == e_size_1B)
                                     ? e_size_1B
                                     : (cache_req_cast_i.size == e_size_2B)
                                       ? e_size_2B
@@ -355,14 +364,14 @@ module bp_pce
                                         ? e_size_4B
                                         : e_size_8B;
 
-              transducer_l15_address = cache_req_cast_i.addr;
-              transducer_l15_l1rplway = (pce_id_p == 1) 
+              pce_l15_req_cast_i.address = cache_req_cast_i.addr;
+              pce_l15_req_cast_i.l1rplway = (pce_id_p == 1) 
                                             ? {cache_req_cast_i.addr[11], cache_req_metadata_cast_i.repl_way}
                                             : cache_req_metadata_cast_i.reply_way;
 
-              transducer_l15_val = 1'b1;
+              pce_l15_req_v_o = pce_l15_req_ready_i;
 
-              state_n = l15_transducer_ack
+              state_n = pce_l15_req_v_o
                         ? e_uc_read_wait
                         : e_send_req;
             end
@@ -370,23 +379,28 @@ module bp_pce
           begin
             // Checking for the return type here since we could be in this
             // state when we receive an invalidation
-            if (l15_transducer_returntype == e_ifill_ret) begin
+            if (is_ifill_ret_nc && (pce_id_p == 0)) begin
               cache_data_mem_pkt_cast_o.opcode = e_cache_data_mem_uncached;
               cache_data_mem_pkt_cast_o.data = // TODO: We need to send back 64 bits. Which set of 64 bits do we use?
-              cache_data_mem_pkt_v_o = l15_transducer_val;
+              cache_data_mem_pkt_v_o = l15_pce_ret_v_i;
 
-              transducer_l15_req_ack_lo = icache_data_mem_pkt_yumi_i;
-              state_n = transducer_l15_req_ack_lo 
+              l15_pce_ret_yumi_lo = cache_data_mem_pkt_yumi_i;
+              state_n = l15_pce_ret_yumi_lo 
                             ? e_ready 
                             : e_uc_read_wait;
             end
-            else if (l15_transducer_returntype == e_load_ret) begin
+            else if (is_load_ret_nc && pce_id_p == 1) begin
               cache_data_mem_pkt_cast_o.opcode = e_cache_data_mem_uncached;
               cache_data_mem_pkt_cast_o.data = //TODO: We need to send back 64 bits. Which set of 64 bits do we use?
-              cache_data_mem_pkt_v_o = l15_transducer_val;
+              cache_data_mem_pkt_v_o = l15_pce_ret_v_i;
 
-              transducer_l15_req_ack_lo = cache_data_mem_pkt_yumi_i;
-              state_n = transducer_l15_req_ack_lo ? e_ready : e_uc_read_wait;
+              l15_pce_ret_yumi_lo = cache_data_mem_pkt_yumi_i;
+              state_n = l15_pce_ret_yumi_lo
+                            ? e_ready 
+                            : e_uc_read_wait;
+            end
+            else begin
+              state_n = e_uc_read_wait;
             end
           end
         
@@ -395,63 +409,63 @@ module bp_pce
             // TODO: Remember IFILL_RET needs to be acknowledged the next cycle
             // Checking for return types here since we could also have
             // invalidations coming in at anytime
-            if (l15_transducer_returntype == e_ifill_ret && (pce_id_p == 0)) begin
+            if (is_ifill_ret && (pce_id_p == 0)) begin
               cache_data_mem_pkt_cast_o.opcode = e_cache_data_mem_write;
               cache_data_mem_pkt_cast_o.index = cache_req_r.addr[icache_block_offset_width_lp+:icache_index_width_lp];
               cache_data_mem_pkt_cast_o.way_id = cache_req_metadata_r.repl_way;
-              cache_data_mem_pkt_cast_o.data = {l15_transducer_data_3[0+:8], l15_transducer_data_3[8+:8],
-                                                l15_transducer_data_3[16+:8], l15_transducer_data_3[24+:8],
-                                                l15_transducer_data_3[32+:8], l15_transducer_data_3[40+:8],
-                                                l15_transducer_data_3[48+:8], l15_transducer_data_3[56+:8],
-                                                l15_transducer_data_2[0+:8], l15_transducer_data_2[8+:8],       
-                                                l15_transducer_data_2[16+:8], l15_transducer_data_2[24+:8],
-                                                l15_transducer_data_2[32+:8], l15_transducer_data_2[40+:8],
-                                                l15_transducer_data_2[48+:8], l15_transducer_data_2[56+:8],
-                                                l15_transducer_data_1[0+:8], l15_transducer_data_1[8+:8],    
-                                                l15_transducer_data_1[16+:8], l15_transducer_data_1[24+:8],
-                                                l15_transducer_data_1[32+:8], l15_transducer_data_1[40+:8],
-                                                l15_transducer_data_1[48+:8], l15_transducer_data_1[56+:8],       
-                                                l15_transducer_data_0[0+:8], l15_transducer_data_0[8+:8],    
-                                                l15_transducer_data_0[16+:8], l15_transducer_data_0[24+:8],
-                                                l15_transducer_data_0[32+:8], l15_transducer_data_0[40+:8],
-                                                l15_transducer_data_0[48+:8], l15_transducer_data_0[56+:8]};   
-              cache_data_mem_pkt_v_o = l15_transducer_val;
+              cache_data_mem_pkt_cast_o.data = {l15_pce_ret_cast_i.data_3[0+:8],  l15_pce_ret_cast_i.data_3[8+:8],
+                                                l15_pce_ret_cast_i.data_3[16+:8], l15_pce_ret_cast_i.data_3[24+:8],
+                                                l15_pce_ret_cast_i.data_3[32+:8], l15_pce_ret_cast_i.data_3[40+:8],
+                                                l15_pce_ret_cast_i.data_3[48+:8], l15_pce_ret_cast_i.data_3[56+:8],
+                                                l15_pce_ret_cast_i.data_2[0+:8],  l15_pce_ret_cast_i.data_2[8+:8],       
+                                                l15_pce_ret_cast_i.data_2[16+:8], l15_pce_ret_cast_i.data_2[24+:8],
+                                                l15_pce_ret_cast_i.data_2[32+:8], l15_pce_ret_cast_i.data_2[40+:8],
+                                                l15_pce_ret_cast_i.data_2[48+:8], l15_pce_ret_cast_i.data_2[56+:8],
+                                                l15_pce_ret_cast_i.data_1[0+:8],  l15_pce_ret_cast_i.data_1[8+:8],    
+                                                l15_pce_ret_cast_i.data_1[16+:8], l15_pce_ret_cast_i.data_1[24+:8],
+                                                l15_pce_ret_cast_i.data_1[32+:8], l15_pce_ret_cast_i.data_1[40+:8],
+                                                l15_pce_ret_cast_i.data_1[48+:8], l15_pce_ret_cast_i.data_1[56+:8],       
+                                                l15_pce_ret_cast_i.data_0[0+:8],  l15_pce_ret_cast_i.data_0[8+:8],    
+                                                l15_pce_ret_cast_i.data_0[16+:8], l15_pce_ret_cast_i.data_0[24+:8],
+                                                l15_pce_ret_cast_i.data_0[32+:8], l15_pce_ret_cast_i.data_0[40+:8],
+                                                l15_pce_ret_cast_i.data_0[48+:8], l15_pce_ret_cast_i.data_0[56+:8]};   
+              cache_data_mem_pkt_v_o = l15_pce_ret_v_i;
 
               cache_tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
               cache_tag_mem_pkt_cast_o.index = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
               cache_tag_mem_pkt_cast_o.way_id = cache_req_metadata_r.repl_way;
               cache_tag_mem_pkt_cast_o.tag = cache_req_r.addr[block_offset_width_lp+index_width_lp+:ptag_width_p];
               cache_tag_mem_pkt_cast_o.state = e_COH_M;
-              cache_tag_mem_pkt_v_o = l15_transducer_val;
+              cache_tag_mem_pkt_v_o = l15_pce_ret_v_i;
 
-              transducer_l15_req_ack_lo = cache_data_mem_pkt_yumi_i & cache_tag_mem_pkt_yumi_i;
-              state_n = transducer_l15_req_ack_lo 
+              l15_pce_ret_yumi_lo = cache_data_mem_pkt_yumi_i & cache_tag_mem_pkt_yumi_i;
+              state_n = l15_pce_ret_yumi_lo 
                               ? e_ready 
                               : e_read_wait;
             end
-            if (l15_transducer_returntype == e_load_ret && (pce_id_p == 1)) begin
+            if (is_load_ret && (pce_id_p == 1)) begin
               cache_data_mem_pkt_cast_o.opcode = e_cache_data_mem_write;
               cache_data_mem_pkt_cast_o.index = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
               cache_data_mem_pkt_cast_o.way_id = cache_req_metadata_r.repl_way;
-              cache_data_mem_pkt_cast_o.data = {l15_transducer_data_1[0+:8], l15_transducer_data_1[8+:8],    
-                                                l15_transducer_data_1[16+:8], l15_transducer_data_1[24+:8],
-                                                l15_transducer_data_1[32+:8], l15_transducer_data_1[40+:8],
-                                                l15_transducer_data_1[48+:8], l15_transducer_data_1[56+:8],       
-                                                l15_transducer_data_0[0+:8], l15_transducer_data_0[8+:8],    
-                                                l15_transducer_data_0[16+:8], l15_transducer_data_0[24+:8],
-                                                l15_transducer_data_0[32+:8], l15_transducer_data_0[40+:8],
-                                                l15_transducer_data_0[48+:8], l15_transducer_data_0[56+:8]};
-              cache_data_mem_pkt_v_o = l15_transducer_val;
+              cache_data_mem_pkt_cast_o.data = {l15_pce_ret_cast_i.data_1[0+:8],  l15_pce_ret_cast_i.data_1[8+:8],    
+                                                l15_pce_ret_cast_i.data_1[16+:8], l15_pce_ret_cast_i.data_1[24+:8],
+                                                l15_pce_ret_cast_i.data_1[32+:8], l15_pce_ret_cast_i.data_1[40+:8],
+                                                l15_pce_ret_cast_i.data_1[48+:8], l15_pce_ret_cast_i.data_1[56+:8],       
+                                                l15_pce_ret_cast_i.data_0[0+:8],  l15_pce_ret_cast_i.data_0[8+:8],    
+                                                l15_pce_ret_cast_i.data_0[16+:8], l15_pce_ret_cast_i.data_0[24+:8],
+                                                l15_pce_ret_cast_i.data_0[32+:8], l15_pce_ret_cast_i.data_0[40+:8],
+                                                l15_pce_ret_cast_i.data_0[48+:8], l15_pce_ret_cast_i.data_0[56+:8]};
+              cache_data_mem_pkt_v_o = l15_pce_ret_v_i;
 
               cache_tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
               cache_tag_mem_pkt_cast_o.index = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
               cache_tag_mem_pkt_cast_o.way_id = cache_req_metadata_r.repl_way;
               cache_tag_mem_pkt_cast_o.tag = cache_req_r.addr[block_offset_width_lp+index_width_lp+:ptag_width_p];
               cache_tag_mem_pkt_cast_o.state = e_COH_M;
-              cache_tag_mem_pkt_v_o = l15_transducer_val;
+              cache_tag_mem_pkt_v_o = l15_pce_ret_v_i;
 
-              transducer_l15_req_ack_lo = cache_data_mem_pkt_yumi_i & cache_tag_mem_pkt_yumi_i;
-              state_n = transducer_l15_req_ack_lo 
+              l15_pce_ret_yumi_lo = cache_data_mem_pkt_yumi_i & cache_tag_mem_pkt_yumi_i;
+              state_n = l15_pce_ret_yumi_lo 
                               ? e_ready 
                               : e_read_wait;
             end 
