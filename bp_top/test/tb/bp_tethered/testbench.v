@@ -578,7 +578,7 @@ bind bp_be_top
 
        ,.commit_pkt(be.be_calculator.commit_pkt)
 
-       ,.program_finish_i(testbench.program_finish_lo)
+       ,.program_finish_i(testbench.program_finish_lo | testbench.cosim_finish_lo)
        );
 
   bind bp_be_director
@@ -597,7 +597,7 @@ bind bp_be_top
 
        ,.commit_v_i(commit_pkt.instret)
 
-       ,.program_finish_i(testbench.program_finish_lo)
+       ,.program_finish_i(testbench.program_finish_lo | testbench.cosim_finish_lo)
        );
 
   if (cce_trace_p) begin : cce_tracer
