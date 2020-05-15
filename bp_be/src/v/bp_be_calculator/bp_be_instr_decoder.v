@@ -242,7 +242,7 @@ always_comb
         end
       `RV64_SYSTEM_OP : 
         begin
-          decode.pipe_mem_v = 1'b1;
+          decode.pipe_sys_v = 1'b1;
           decode.csr_v      = 1'b1;
           decode.serial_v   = 1'b1;
           unique casez (instr)
@@ -296,7 +296,7 @@ always_comb
       begin
         decode = '0;
         decode.queue_v     = 1'b0;
-        decode.pipe_mem_v  = 1'b1;
+        decode.pipe_sys_v  = 1'b1;
         decode.csr_v       = 1'b1;
         decode.serial_v    = 1'b1;
         decode.fu_op       = e_op_take_interrupt;
@@ -305,7 +305,7 @@ always_comb
       begin
         decode = '0;
         decode.queue_v     = 1'b1;
-        decode.pipe_mem_v  = 1'b1;
+        decode.pipe_sys_v  = 1'b1;
         decode.csr_v       = 1'b1;
         decode.serial_v    = 1'b1;
         casez (fe_exc_i)
@@ -318,7 +318,7 @@ always_comb
       begin
         decode = '0;
         decode.queue_v     = 1'b1;
-        decode.pipe_mem_v  = 1'b1;
+        decode.pipe_sys_v  = 1'b1;
         decode.csr_v       = 1'b1;
         decode.serial_v    = 1'b1;
         decode.fu_op       = e_op_illegal_instr;
