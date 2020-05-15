@@ -174,6 +174,7 @@ $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_ctrl.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_long.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mem.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_mul.v
+$BP_BE_DIR/src/v/bp_be_calculator/bp_be_pipe_sys.v
 $BP_BE_DIR/src/v/bp_be_calculator/bp_be_regfile.v
 # Checker
 $BP_BE_DIR/src/v/bp_be_checker/bp_be_checker_top.v
