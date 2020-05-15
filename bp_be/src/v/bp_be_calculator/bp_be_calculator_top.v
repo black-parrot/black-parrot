@@ -108,11 +108,12 @@ bp_be_comp_stage_reg_s [pipe_stage_els_lp  :0] comp_stage_n;
 bp_be_comp_stage_reg_s [pipe_stage_els_lp-1:0] comp_stage_r;
 
 logic [dword_width_p-1:0] pipe_nop_data_lo;
-logic [dword_width_p-1:0] pipe_ctrl_data_lo, pipe_int_data_lo, pipe_mul_data_lo, pipe_mem_data_lo, pipe_fp_data_lo, pipe_long_data_lo;
+logic [dword_width_p-1:0] pipe_ctrl_data_lo, pipe_int_data_lo, pipe_mul_data_lo, pipe_mem_data_lo, pipe_sys_data_lo, pipe_fp_data_lo, pipe_long_data_lo;
 
 logic nop_pipe_result_v;
-logic pipe_ctrl_data_lo_v, pipe_int_data_lo_v, pipe_mul_data_lo_v, pipe_mem_data_lo_v, pipe_fp_data_lo_v, pipe_long_data_lo_v;
+logic pipe_ctrl_data_lo_v, pipe_int_data_lo_v, pipe_mul_data_lo_v, pipe_mem_data_lo_v, pipe_sys_data_lo_v, pipe_fp_data_lo_v, pipe_long_data_lo_v;
 logic pipe_mem_exc_v_lo, pipe_mem_miss_v_lo;
+logic pipe_sys_exc_v_lo, pipe_sys_miss_v_lo;
 
 logic [vaddr_width_p-1:0] br_tgt_int1;
 logic btaken_int1;
@@ -251,40 +252,66 @@ bp_be_pipe_mul
    ,.data_o(pipe_mul_data_lo)
    );
 
-// Memory pipe: 3 cycle latency
-bp_be_pipe_mem
- #(.bp_params_p(bp_params_p))
- pipe_mem
-  (.clk_i(clk_i)
-   ,.reset_i(reset_i)
+  // Memory pipe: 3 cycle latency
+  bp_be_pipe_mem
+   #(.bp_params_p(bp_params_p))
+   pipe_mem
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+  
+     ,.kill_ex1_i(exc_stage_n[1].poison_v)
+     ,.kill_ex2_i(exc_stage_n[2].poison_v)
+     ,.kill_ex3_i(exc_stage_r[2].poison_v) 
+  
+     ,.decode_i(reservation_r.decode)
+     ,.pc_i(reservation_r.pc)
+     ,.instr_i(reservation_r.instr)
+     ,.rs1_i(reservation_r.rs1)
+     ,.rs2_i(reservation_r.rs2)
+     ,.imm_i(reservation_r.imm)
+  
+     ,.mmu_cmd_o(mmu_cmd_o)
+     ,.mmu_cmd_v_o(mmu_cmd_v_o)
+     ,.mmu_cmd_ready_i(mmu_cmd_ready_i)
+  
+     ,.mem_resp_i(mem_resp_i)
+     ,.mem_resp_v_i(mem_resp_v_i)
+     ,.mem_resp_ready_o(mem_resp_ready_o)
+  
+     ,.exc_v_o(pipe_mem_exc_v_lo)
+     ,.miss_v_o(pipe_mem_miss_v_lo)
+     ,.data_o(pipe_mem_data_lo)
+     );
 
-   ,.kill_ex1_i(exc_stage_n[1].poison_v)
-   ,.kill_ex2_i(exc_stage_n[2].poison_v)
-   ,.kill_ex3_i(exc_stage_r[2].poison_v) 
+  bp_be_pipe_sys
+   #(.bp_params_p(bp_params_p))
+   pipe_sys
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
 
-   ,.decode_i(reservation_r.decode)
-   ,.pc_i(reservation_r.pc)
-   ,.instr_i(reservation_r.instr)
-   ,.rs1_i(reservation_r.rs1)
-   ,.rs2_i(reservation_r.rs2)
-   ,.imm_i(reservation_r.imm)
+     ,.kill_ex1_i(exc_stage_n[1].poison_v)
+     ,.kill_ex2_i(exc_stage_n[2].poison_v)
+     ,.kill_ex3_i(exc_stage_r[2].poison_v) 
 
-   ,.mmu_cmd_o(mmu_cmd_o)
-   ,.mmu_cmd_v_o(mmu_cmd_v_o)
-   ,.mmu_cmd_ready_i(mmu_cmd_ready_i)
+     ,.decode_i(reservation_r.decode)
+     ,.pc_i(reservation_r.pc)
+     ,.instr_i(reservation_r.instr)
+     ,.rs1_i(reservation_r.rs1)
+     ,.rs2_i(reservation_r.rs2)
+     ,.imm_i(reservation_r.imm)
 
-   ,.csr_cmd_o(csr_cmd_o)
-   ,.csr_cmd_v_o(csr_cmd_v_o)
-   ,.csr_cmd_ready_i(csr_cmd_ready_i)
+     ,.csr_cmd_o(csr_cmd_o)
+     ,.csr_cmd_v_o(csr_cmd_v_o)
+     ,.csr_cmd_ready_i(csr_cmd_ready_i)
 
-   ,.mem_resp_i(mem_resp_i)
-   ,.mem_resp_v_i(mem_resp_v_i)
-   ,.mem_resp_ready_o(mem_resp_ready_o)
-
-   ,.exc_v_o(pipe_mem_exc_v_lo)
-   ,.miss_v_o(pipe_mem_miss_v_lo)
-   ,.data_o(pipe_mem_data_lo)
-   );
+     ,.mem_resp_i(mem_resp_i)
+     ,.mem_resp_v_i(mem_resp_v_i)
+     ,.mem_resp_ready_o(mem_resp_ready_o)
+  
+     ,.exc_v_o(pipe_sys_exc_v_lo)
+     ,.miss_v_o(pipe_sys_miss_v_lo)
+     ,.data_o(pipe_sys_data_lo)
+     );
 
   // Floating point pipe: 4 cycle latency
   bp_be_pipe_fp 
@@ -336,6 +363,7 @@ bsg_dff
 assign pipe_fp_data_lo_v  = calc_stage_r[4].pipe_fp_v;
 assign pipe_mul_data_lo_v = calc_stage_r[3].pipe_mul_v;
 assign pipe_mem_data_lo_v = calc_stage_r[2].pipe_mem_v;
+assign pipe_sys_data_lo_v = calc_stage_r[2].pipe_sys_v;
 assign pipe_int_data_lo_v = calc_stage_r[0].pipe_int_v;
 assign pipe_ctrl_data_lo_v = calc_stage_r[0].pipe_ctrl_v;
 
@@ -346,7 +374,11 @@ always_comb
     comp_stage_n[0] = '0;
     comp_stage_n[1] = pipe_int_data_lo_v ? '{data: pipe_int_data_lo} : pipe_ctrl_data_lo;
     comp_stage_n[2] = comp_stage_r[1];
-    comp_stage_n[3] = pipe_mem_data_lo_v ? '{data: pipe_mem_data_lo} : comp_stage_r[2];
+    comp_stage_n[3] = pipe_sys_data_lo_v 
+                      ? '{data: pipe_sys_data_lo}
+                      : pipe_mem_data_lo_v 
+                        ? '{data: pipe_mem_data_lo}
+                        : comp_stage_r[2];
     comp_stage_n[4] = pipe_mul_data_lo_v ? '{data: pipe_mul_data_lo} : comp_stage_r[3];
     comp_stage_n[5] = pipe_fp_data_lo_v  ? '{data: pipe_fp_data_lo } : comp_stage_r[4];
     comp_stage_n[6] = comp_stage_r[5];
@@ -382,6 +414,7 @@ always_comb
     calc_stage_isd.pipe_ctrl_v    = reservation_n.decode.pipe_ctrl_v;
     calc_stage_isd.pipe_int_v     = reservation_n.decode.pipe_int_v;
     calc_stage_isd.pipe_mem_v     = reservation_n.decode.pipe_mem_v;
+    calc_stage_isd.pipe_sys_v     = reservation_n.decode.pipe_sys_v;
     calc_stage_isd.pipe_mul_v     = reservation_n.decode.pipe_mul_v;
     calc_stage_isd.pipe_fp_v      = reservation_n.decode.pipe_fp_v;
     calc_stage_isd.pipe_long_v    = reservation_n.decode.pipe_long_v;
@@ -460,6 +493,8 @@ always_comb
         exc_stage_n[0].poison_v        = reservation_n.poison    | flush_i;
         exc_stage_n[1].poison_v        = exc_stage_r[0].poison_v | flush_i;
         exc_stage_n[2].poison_v        = exc_stage_r[1].poison_v | flush_i;
+        // We only poison on exception or cache miss, because we also flush
+        // on, for instance, fence.i
         exc_stage_n[3].poison_v        = exc_stage_r[2].poison_v | pipe_mem_miss_v_lo | pipe_mem_exc_v_lo;
   end
 

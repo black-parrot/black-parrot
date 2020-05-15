@@ -21,7 +21,6 @@ module bp_be_pipe_mem
    , localparam decode_width_lp        = `bp_be_decode_width
    , localparam exception_width_lp     = `bp_be_exception_width
    , localparam mmu_cmd_width_lp       = `bp_be_mmu_cmd_width(vaddr_width_p)
-   , localparam csr_cmd_width_lp       = `bp_be_csr_cmd_width
    , localparam mem_resp_width_lp      = `bp_be_mem_resp_width(vaddr_width_p)
 
    // From RISC-V specifications
@@ -45,10 +44,6 @@ module bp_be_pipe_mem
    , output                               mmu_cmd_v_o
    , input                                mmu_cmd_ready_i
 
-   , output [csr_cmd_width_lp-1:0]        csr_cmd_o
-   , output                               csr_cmd_v_o
-   , input                                csr_cmd_ready_i
-
    , input  [mem_resp_width_lp-1:0]       mem_resp_i
    , input                                mem_resp_v_i
    , output                               mem_resp_ready_o
@@ -64,40 +59,22 @@ module bp_be_pipe_mem
 // Cast input and output ports 
 bp_be_decode_s    decode;
 bp_be_mmu_cmd_s   mem1_cmd, mem3_cmd_li, mem3_cmd_lo, mem3_cmd;
-bp_be_csr_cmd_s   csr_cmd_li, csr_cmd_lo;
 bp_be_mem_resp_s  mem_resp;
 rv64_instr_s      instr;
 
 assign decode = decode_i;
 assign mem_resp = mem_resp_i;
-assign csr_cmd_o = csr_cmd_lo;
 assign instr = instr_i;
 
 // Suppress unused signal warnings
 wire unused0 = kill_ex2_i;
 
-logic csr_cmd_v_lo, mem1_cmd_v;
+logic mem1_cmd_v;
 
 // Suppress unused signal warnings
 wire unused2 = mmu_cmd_ready_i;
-wire unused3 = csr_cmd_ready_i;
 
 assign data_o = mem_resp.data;
-
-bsg_shift_reg
- #(.width_p(csr_cmd_width_lp)
-   ,.stages_p(2)
-   )
- csr_shift_reg
-  (.clk(clk_i)
-   ,.reset_i(reset_i)
-
-   ,.valid_i(decode.csr_v)
-   ,.data_i(csr_cmd_li)
-
-   ,.valid_o(csr_cmd_v_lo)
-   ,.data_o(csr_cmd_lo)
-   );
 
 logic [reg_data_width_lp-1:0] offset;
 
@@ -114,17 +91,6 @@ always_comb
     mem1_cmd.mem_op   = decode.fu_op;
     mem1_cmd.data     = rs2_i;
     mem1_cmd.vaddr    = fe_exc_v ? pc_i : (rs1_i + offset);
-  end
-
-assign csr_cmd_v_o = csr_cmd_v_lo & ~kill_ex3_i;
-wire csr_imm_op = (decode.fu_op == e_csrrwi) 
-                  | (decode.fu_op == e_csrrsi) 
-                  | (decode.fu_op == e_csrrci);
-always_comb
-  begin
-    csr_cmd_li.csr_op   = decode.fu_op;
-    csr_cmd_li.csr_addr = instr.fields.itype.imm12;
-    csr_cmd_li.data     = csr_imm_op ? imm_i : rs1_i;
   end
 
 // Output results of memory op
