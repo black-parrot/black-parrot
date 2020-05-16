@@ -150,14 +150,15 @@ logic                    dtlb_en, dtlb_miss_v, dtlb_w_v, dtlb_r_v, dtlb_r_v_lo;
 logic [vtag_width_p-1:0] dtlb_r_vtag, dtlb_w_vtag;
 bp_pte_entry_leaf_s      dtlb_r_entry, dtlb_w_entry;
 
+
 /* PTW ports */
 logic [ptag_width_p-1:0]  ptw_dcache_ptag;
-logic                     ptw_dcache_v, ptw_busy, ptw_store_not_load;
+logic                     ptw_dcache_v, ptw_busy;
 bp_be_dcache_pkt_s        ptw_dcache_pkt;
-logic                     ptw_tlb_miss_v, ptw_tlb_w_v;
-logic [vtag_width_p-1:0]  ptw_tlb_w_vtag, ptw_tlb_miss_vtag;
+logic                     ptw_tlb_w_v, ptw_itlb_not_dtlb;
+bp_be_mmu_vaddr_s         ptw_tlb_w_pc, ptw_tlb_w_vaddr;
 bp_pte_entry_leaf_s       ptw_tlb_w_entry;
-logic                     ptw_page_fault_v, ptw_instr_page_fault_v, ptw_load_page_fault_v, ptw_store_page_fault_v;
+logic                     ptw_instr_page_fault_v, ptw_load_page_fault_v, ptw_store_page_fault_v;
 
 /* D-Cache ports */
 bp_be_dcache_pkt_s        dcache_pkt;
@@ -190,21 +191,10 @@ logic fencei_v_r, fencei_v_rr;
 logic itlb_not_dtlb_resp;
 logic mmu_cmd_v_r, mmu_cmd_v_rr, dtlb_miss_r;
 logic is_store_r, is_store_rr;
-bp_be_mmu_vaddr_s vaddr_mem3, fault_vaddr;
-logic [vaddr_width_p-1:0] fault_pc;
+bp_be_mmu_vaddr_s vaddr_mem3;
 
 wire itlb_fill_cmd_v = itlb_fill_lo;
 wire dtlb_fill_cmd_v = dtlb_miss_r;
-
-bsg_dff_en
- #(.width_p(2*vaddr_width_p))
- fault_reg
-  (.clk_i(clk_i)
-   ,.en_i(itlb_fill_cmd_v | dtlb_fill_cmd_v)
-
-   ,.data_i({vaddr_mem3, commit_pkt.pc})
-   ,.data_o({fault_vaddr, fault_pc})
-   );
 
 wire is_store = mmu_cmd_v_i & mmu_cmd.mem_op inside {e_sb, e_sh, e_sw, e_sd, e_scw, e_scd};
 
@@ -220,12 +210,21 @@ bsg_dff_chain
    );
 
 bp_be_ecode_dec_s exception_ecode_dec_li;
+bp_be_ecode_dec_s ptw_exception_ecode_dec_li;
 
+assign ptw_exception_ecode_dec_li =
+  '{instr_page_fault : ptw_instr_page_fault_v
+    ,load_page_fault : ptw_load_page_fault_v
+    ,store_page_fault: ptw_store_page_fault_v
+    ,default: '0
+    };
+
+wire ptw_page_fault_v  = ptw_instr_page_fault_v | ptw_load_page_fault_v | ptw_store_page_fault_v;
 wire exception_v_li = commit_pkt.v | ptw_page_fault_v;
-wire [vaddr_width_p-1:0] exception_pc_li = ptw_page_fault_v ? fault_pc : commit_pkt.pc;
-wire [vaddr_width_p-1:0] exception_npc_li = commit_pkt.npc;
-// TODO: vaddr_mem3 -> commit_pkt.vaddr
-wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? fault_vaddr : vaddr_mem3;
+wire [vaddr_width_p-1:0] exception_pc_li = ptw_page_fault_v ? ptw_tlb_w_pc : commit_pkt.pc;
+//wire [vaddr_width_p-1:0] exception_npc_li = commit_pkt.npc;
+wire [vaddr_width_p-1:0] exception_npc_li = ptw_page_fault_v ? '0 : commit_pkt.npc;
+wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? ptw_tlb_w_vaddr : vaddr_mem3;
 wire [instr_width_p-1:0] exception_instr_li = commit_pkt.instr;
 // TODO: exception priority is non-compliant with the spec.
 assign exception_ecode_dec_li =
@@ -240,9 +239,9 @@ assign exception_ecode_dec_li =
     ,ecall_u_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_lo == `PRIV_MODE_U)
     ,ecall_s_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_lo == `PRIV_MODE_S)
     ,ecall_m_mode    : csr_cmd_v_i & (csr_cmd.csr_op == e_ecall) & (priv_mode_lo == `PRIV_MODE_M)
-    ,instr_page_fault: ptw_instr_page_fault_v | instr_page_fault_lo
-    ,load_page_fault : ptw_load_page_fault_v | load_page_fault_mem3
-    ,store_page_fault: ptw_store_page_fault_v | store_page_fault_mem3
+    ,instr_page_fault: instr_page_fault_lo
+    ,load_page_fault : load_page_fault_mem3
+    ,store_page_fault: store_page_fault_mem3
     ,default: '0
     };
 
@@ -273,7 +272,7 @@ bp_be_csr
    ,.exception_npc_i(exception_npc_li)
    ,.exception_vaddr_i(exception_vaddr_li)
    ,.exception_instr_i(exception_instr_li)
-   ,.exception_ecode_dec_i(exception_ecode_dec_li)
+   ,.exception_ecode_dec_i(exception_ecode_dec_li | ptw_exception_ecode_dec_li)
 
    ,.timer_irq_i(timer_irq_i)
    ,.software_irq_i(software_irq_i)
@@ -339,21 +338,21 @@ bp_be_ptw
    ,.mstatus_mxr_i(mstatus_mxr_lo)
    ,.busy_o(ptw_busy)
 
-   ,.itlb_not_dtlb_i(itlb_fill_cmd_v)
-   ,.itlb_not_dtlb_o(itlb_not_dtlb_resp)
+   ,.tlb_miss_v_i(itlb_fill_cmd_v | dtlb_fill_cmd_v)
+   ,.tlb_miss_instr_v_i(itlb_fill_cmd_v)
+   ,.tlb_miss_load_v_i(dtlb_fill_cmd_v & ~is_store_rr)
+   ,.tlb_miss_store_v_i(dtlb_fill_cmd_v & is_store_rr)
+   ,.tlb_miss_pc_i(commit_pkt.pc)
+   ,.tlb_miss_vaddr_i(vaddr_mem3)
 
-   ,.store_not_load_i(ptw_store_not_load)
-
+   ,.tlb_w_v_o(ptw_tlb_w_v)
+   ,.tlb_w_itlb_not_dtlb_o(ptw_itlb_not_dtlb)
+   ,.tlb_w_pc_o(ptw_tlb_w_pc)
+   ,.tlb_w_vaddr_o(ptw_tlb_w_vaddr)
+   ,.tlb_w_entry_o(ptw_tlb_w_entry)
    ,.instr_page_fault_o(ptw_instr_page_fault_v)
    ,.load_page_fault_o(ptw_load_page_fault_v)
    ,.store_page_fault_o(ptw_store_page_fault_v)
-
-   ,.tlb_miss_v_i(ptw_tlb_miss_v)
-   ,.tlb_miss_vtag_i(ptw_tlb_miss_vtag)
-
-   ,.tlb_w_v_o(ptw_tlb_w_v)
-   ,.tlb_w_vtag_o(ptw_tlb_w_vtag)
-   ,.tlb_w_entry_o(ptw_tlb_w_entry)
 
    ,.dcache_v_i(dcache_v)
    ,.dcache_data_i(dcache_data)
@@ -491,15 +490,9 @@ assign store_access_fault_v = store_op_tl_lo & (mode_fault_v | did_fault_v);
 // D-TLB connections
 assign dtlb_r_v     = dcache_cmd_v & ~fencei_cmd_v;
 assign dtlb_r_vtag  = mmu_cmd.vaddr.tag;
-assign dtlb_w_v     = ptw_tlb_w_v & ~itlb_not_dtlb_resp;
-assign dtlb_w_vtag  = ptw_tlb_w_vtag;
+assign dtlb_w_v     = ptw_tlb_w_v & ~ptw_itlb_not_dtlb;
+assign dtlb_w_vtag  = ptw_tlb_w_vaddr.tag;
 assign dtlb_w_entry = ptw_tlb_w_entry;
-
-// PTW connections
-assign ptw_tlb_miss_v    = itlb_fill_cmd_v | dtlb_fill_cmd_v;
-assign ptw_tlb_miss_vtag = vaddr_mem3.tag;
-assign ptw_page_fault_v  = ptw_instr_page_fault_v | ptw_load_page_fault_v | ptw_store_page_fault_v;
-assign ptw_store_not_load = dtlb_fill_cmd_v & is_store_rr;
 
 // MMU response connections
 assign mem_resp.exc_v  = |exception_ecode_dec_li;
@@ -509,8 +502,8 @@ assign mem_resp.data   = dcache_v ? dcache_data : csr_data_lo;
 assign mem_resp_v_o    = ptw_busy ? 1'b0 : mmu_cmd_v_rr | csr_v_lo;
 assign mmu_cmd_ready_o = dcache_ready_lo & ~dcache_miss_lo & ~ptw_busy;
 
-assign itlb_fill_v_o     = ptw_tlb_w_v & itlb_not_dtlb_resp;
-assign itlb_fill_vaddr_o = fault_vaddr;
+assign itlb_fill_v_o     = ptw_tlb_w_v & ptw_itlb_not_dtlb;
+assign itlb_fill_vaddr_o = ptw_tlb_w_vaddr;
 assign itlb_fill_entry_o = ptw_tlb_w_entry;
 
 // synopsys translate_off
