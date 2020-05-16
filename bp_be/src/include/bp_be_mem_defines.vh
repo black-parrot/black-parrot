@@ -20,6 +20,7 @@
   {                                                                                                \
     bp_be_fu_op_s                      csr_op;                                                     \
     logic [rv64_csr_addr_width_gp-1:0] csr_addr;                                                   \
+    /* Either the CSR data or the vaddr for fill requests */                                       \
     logic [rv64_reg_data_width_gp-1:0] data;                                                       \
   }  bp_be_csr_cmd_s;                                                                              \
                                                                                                    \
