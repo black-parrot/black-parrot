@@ -21,6 +21,7 @@ module bp_be_pipe_sys
    // Generated parameters
    , localparam decode_width_lp      = `bp_be_decode_width
    , localparam exception_width_lp   = `bp_be_exception_width
+   , localparam ptw_pkt_width_lp     = `bp_be_ptw_pkt_width(vaddr_width_p)
    )
   (input                                  clk_i
    , input                                reset_i
@@ -44,21 +45,26 @@ module bp_be_pipe_sys
    , input                                mem_resp_v_i
    , output                               mem_resp_ready_o
 
+   , input [ptw_pkt_width_lp-1:0]         ptw_pkt_i
+
    , output logic                         exc_v_o
    , output logic                         miss_v_o
    , output logic [dword_width_p-1:0]     data_o
    );
 
+`declare_bp_be_internal_if_structs(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 `declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
 
 bp_be_decode_s    decode;
 bp_be_csr_cmd_s csr_cmd_li, csr_cmd_lo;
 bp_be_mem_resp_s mem_resp;
 rv64_instr_s      instr;
+bp_be_ptw_pkt_s   ptw_pkt;
 
 assign decode = decode_i;
 assign instr = instr_i;
 assign mem_resp = mem_resp_i;
+assign ptw_pkt = ptw_pkt_i;
 
 wire csr_imm_op = decode.fu_op inside {e_csrrwi, e_csrrsi, e_csrrci};
 

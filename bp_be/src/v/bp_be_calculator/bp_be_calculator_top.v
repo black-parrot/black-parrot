@@ -35,6 +35,7 @@ module bp_be_calculator_top
    , localparam pipe_stage_reg_width_lp = `bp_be_pipe_stage_reg_width(vaddr_width_p)
    , localparam commit_pkt_width_lp     = `bp_be_commit_pkt_width(vaddr_width_p)
    , localparam wb_pkt_width_lp         = `bp_be_wb_pkt_width(vaddr_width_p)
+   , localparam ptw_pkt_width_lp        = `bp_be_ptw_pkt_width(vaddr_width_p)
 
    // From BP BE specifications
    , localparam pipe_stage_els_lp = 6
@@ -66,6 +67,7 @@ module bp_be_calculator_top
   , input                               mem_resp_v_i
   , output                              mem_resp_ready_o
 
+  , input [ptw_pkt_width_lp-1:0]        ptw_pkt_i
   , output [commit_pkt_width_lp-1:0]    commit_pkt_o
   , output [wb_pkt_width_lp-1:0]        wb_pkt_o
   );
@@ -299,6 +301,8 @@ bp_be_pipe_mul
      ,.rs1_i(reservation_r.rs1)
      ,.rs2_i(reservation_r.rs2)
      ,.imm_i(reservation_r.imm)
+
+     ,.ptw_pkt_i(ptw_pkt_i)
 
      ,.csr_cmd_o(csr_cmd_o)
      ,.csr_cmd_v_o(csr_cmd_v_o)

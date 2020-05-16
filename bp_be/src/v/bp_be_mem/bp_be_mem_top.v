@@ -38,6 +38,7 @@ module bp_be_mem_top
 
    , localparam trap_pkt_width_lp      = `bp_be_trap_pkt_width(vaddr_width_p)
    , localparam commit_pkt_width_lp    = `bp_be_commit_pkt_width(vaddr_width_p)
+   , localparam ptw_pkt_width_lp       = `bp_be_ptw_pkt_width(vaddr_width_p)
 
    // MMU
    , localparam mmu_cmd_width_lp  = `bp_be_mmu_cmd_width(vaddr_width_p)
@@ -68,9 +69,7 @@ module bp_be_mem_top
    , output                                  mem_resp_v_o
    , input                                   mem_resp_ready_i
 
-   , output                                  itlb_fill_v_o
-   , output [vaddr_width_p-1:0]              itlb_fill_vaddr_o
-   , output [tlb_entry_width_lp-1:0]         itlb_fill_entry_o
+   , output [ptw_pkt_width_lp-1:0]           ptw_pkt_o
 
    // D$-LCE Interface
    // signals to LCE
@@ -132,6 +131,7 @@ bp_be_mem_resp_s       mem_resp;
 bp_be_mmu_vaddr_s      mmu_cmd_vaddr;
 bp_be_commit_pkt_s     commit_pkt;
 bp_be_trap_pkt_s       trap_pkt;
+bp_be_ptw_pkt_s        ptw_pkt;
 
 assign cfg_bus = cfg_bus_i;
 assign mmu_cmd = mmu_cmd_i;
@@ -140,6 +140,7 @@ assign csr_cmd = csr_cmd_i;
 assign mem_resp_o = mem_resp;
 assign commit_pkt = commit_pkt_i;
 assign trap_pkt_o = trap_pkt;
+assign ptw_pkt_o  = ptw_pkt;
 
 // Suppress unused signal warnings
 wire unused0 = mem_resp_ready_i;
@@ -364,6 +365,16 @@ bp_be_ptw
    ,.dcache_miss_i(dcache_miss_lo)
   );
 
+assign ptw_pkt = '{itlb_fill_v            : ptw_tlb_w_v & ptw_itlb_not_dtlb
+                   ,dtlb_fill_v           : ptw_tlb_w_v & ~ptw_itlb_not_dtlb
+                   ,instr_page_fault_v    : ptw_instr_page_fault_v
+                   ,load_page_fault_v     : ptw_load_page_fault_v
+                   ,store_page_fault_v    : ptw_store_page_fault_v
+                   ,pc                    : ptw_tlb_w_pc
+                   ,vaddr                 : ptw_tlb_w_vaddr
+                   ,entry                 : ptw_tlb_w_entry
+                   };
+
 logic load_op_tl_lo, store_op_tl_lo;
 bp_be_dcache
   #(.bp_params_p(bp_params_p))
@@ -501,10 +512,6 @@ assign mem_resp.data   = dcache_v ? dcache_data : csr_data_lo;
 
 assign mem_resp_v_o    = ptw_busy ? 1'b0 : mmu_cmd_v_rr | csr_v_lo;
 assign mmu_cmd_ready_o = dcache_ready_lo & ~dcache_miss_lo & ~ptw_busy;
-
-assign itlb_fill_v_o     = ptw_tlb_w_v & ptw_itlb_not_dtlb;
-assign itlb_fill_vaddr_o = ptw_tlb_w_vaddr;
-assign itlb_fill_entry_o = ptw_tlb_w_entry;
 
 // synopsys translate_off
 bp_be_mmu_cmd_s mmu_cmd_r;
