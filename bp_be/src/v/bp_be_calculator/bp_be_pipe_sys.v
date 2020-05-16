@@ -37,13 +37,11 @@ module bp_be_pipe_sys
    , input                                kill_ex2_i
    , input                                kill_ex3_i
 
-   , output [csr_cmd_width_lp-1:0]        csr_cmd_o
+   , output logic [csr_cmd_width_lp-1:0]  csr_cmd_o
    , output                               csr_cmd_v_o
-   , input                                csr_cmd_ready_i
+   , input logic [dword_width_p-1:0]      csr_data_i
 
-   , input  [mem_resp_width_lp-1:0]       mem_resp_i
-   , input                                mem_resp_v_i
-   , output                               mem_resp_ready_o
+   , input [mem_resp_width_lp-1:0]        mem_resp_i
 
    , input [ptw_pkt_width_lp-1:0]         ptw_pkt_i
 
@@ -56,15 +54,15 @@ module bp_be_pipe_sys
 `declare_bp_be_mmu_structs(vaddr_width_p, ppn_width_p, lce_sets_p, cce_block_width_p/8)
 
 bp_be_decode_s    decode;
-bp_be_csr_cmd_s csr_cmd_li, csr_cmd_lo;
+bp_be_csr_cmd_s csr_cmd_li, csr_cmd_r, csr_cmd_lo;
 bp_be_mem_resp_s mem_resp;
 rv64_instr_s      instr;
 bp_be_ptw_pkt_s   ptw_pkt;
 
 assign decode = decode_i;
 assign instr = instr_i;
-assign mem_resp = mem_resp_i;
 assign ptw_pkt = ptw_pkt_i;
+assign mem_resp = mem_resp_i;
 
 wire csr_imm_op = decode.fu_op inside {e_csrrwi, e_csrrsi, e_csrrci};
 
@@ -87,13 +85,18 @@ bsg_shift_reg
    ,.data_i(csr_cmd_li)
 
    ,.valid_o(csr_cmd_v_lo)
-   ,.data_o(csr_cmd_lo)
+   ,.data_o(csr_cmd_r)
    );
 
+always_comb
+  begin
+    csr_cmd_lo = csr_cmd_r;
+    csr_cmd_lo.data = (csr_cmd_lo.csr_op inside {e_itlb_fill, e_dtlb_fill}) ? mem_resp.vaddr : csr_cmd_r.data;
+  end
 assign csr_cmd_o = csr_cmd_lo;
 assign csr_cmd_v_o = (csr_cmd_v_lo & ~kill_ex3_i);
 
-assign data_o           = mem_resp.data;
+assign data_o           = csr_data_i;
 assign exc_v_o          = 1'b0;
 assign miss_v_o         = 1'b0;
 assign mem_resp_ready_o = 1'b1;

@@ -80,6 +80,7 @@ typedef enum logic [4:0]
   ,e_op_instr_misaligned   = 5'b11011
   ,e_op_illegal_instr      = 5'b11111
   ,e_itlb_fill             = 5'b11100
+  ,e_dtlb_fill             = 5'b11110
 } bp_be_csr_fu_op_e;
 
 typedef enum logic [4:0]
