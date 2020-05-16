@@ -101,6 +101,8 @@ assign cfg_bus = cfg_bus_i;
 bp_be_dispatch_pkt_s dispatch_pkt;
 logic dispatch_pkt_v;
 
+bp_be_ptw_pkt_s ptw_pkt;
+
 bp_be_mmu_cmd_s mmu_cmd;
 logic mmu_cmd_v, mmu_cmd_rdy;
 
@@ -109,10 +111,6 @@ logic csr_cmd_v, csr_cmd_rdy;
 
 bp_be_mem_resp_s mem_resp;
 logic mem_resp_v, mem_resp_rdy;
-
-logic [tlb_entry_width_lp-1:0]  itlb_fill_entry;
-logic [vaddr_width_p-1:0]       itlb_fill_vaddr;
-logic                           itlb_fill_v;
 
 bp_be_calc_status_s    calc_status;
 
@@ -174,9 +172,9 @@ bp_be_checker_top
 
    ,.dispatch_pkt_o(dispatch_pkt)
 
-   ,.itlb_fill_v_i(itlb_fill_v)
-   ,.itlb_fill_vaddr_i(itlb_fill_vaddr)
-   ,.itlb_fill_entry_i(itlb_fill_entry)
+   ,.itlb_fill_v_i(ptw_pkt.itlb_fill_v)
+   ,.itlb_fill_vaddr_i(ptw_pkt.vaddr)
+   ,.itlb_fill_entry_i(ptw_pkt.entry[0+:tlb_entry_width_lp])
 
    ,.commit_pkt_i(commit_pkt)
    ,.trap_pkt_i(trap_pkt)
@@ -207,6 +205,7 @@ bp_be_calculator_top
    ,.mem_resp_v_i(mem_resp_v)
    ,.mem_resp_ready_o(mem_resp_rdy)
 
+   ,.ptw_pkt_i(ptw_pkt)
    ,.commit_pkt_o(commit_pkt)
    ,.wb_pkt_o(wb_pkt)
    );
@@ -234,10 +233,8 @@ bp_be_mem_top
     ,.mem_resp_o(mem_resp)
     ,.mem_resp_v_o(mem_resp_v)
     ,.mem_resp_ready_i(mem_resp_rdy)
-
-    ,.itlb_fill_v_o(itlb_fill_v)
-    ,.itlb_fill_vaddr_o(itlb_fill_vaddr)
-    ,.itlb_fill_entry_o(itlb_fill_entry)
+    
+    ,.ptw_pkt_o(ptw_pkt)
 
     ,.cache_req_complete_i(cache_req_complete_i)
     ,.cache_req_critical_i(cache_req_critical_i)
