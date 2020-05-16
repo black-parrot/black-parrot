@@ -61,7 +61,7 @@ module bp_be_calculator_top
    
   , output [csr_cmd_width_lp-1:0]       csr_cmd_o
   , output                              csr_cmd_v_o
-  , input                               csr_cmd_ready_i
+  , input [dword_width_p-1:0]           csr_data_i
 
   , input [mem_resp_width_lp-1:0]       mem_resp_i
   , input                               mem_resp_v_i
@@ -306,12 +306,10 @@ bp_be_pipe_mul
 
      ,.csr_cmd_o(csr_cmd_o)
      ,.csr_cmd_v_o(csr_cmd_v_o)
-     ,.csr_cmd_ready_i(csr_cmd_ready_i)
+     ,.csr_data_i(csr_data_i)
 
      ,.mem_resp_i(mem_resp_i)
-     ,.mem_resp_v_i(mem_resp_v_i)
-     ,.mem_resp_ready_o(mem_resp_ready_o)
-  
+
      ,.exc_v_o(pipe_sys_exc_v_lo)
      ,.miss_v_o(pipe_sys_miss_v_lo)
      ,.data_o(pipe_sys_data_lo)

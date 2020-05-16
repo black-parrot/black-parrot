@@ -23,10 +23,7 @@ module bp_be_csr
     // CSR instruction interface
     , input [csr_cmd_width_lp-1:0]      csr_cmd_i
     , input                             csr_cmd_v_i
-    , output                            csr_cmd_ready_o
-
-    , output [dword_width_p-1:0]        data_o
-    , output                            v_o
+    , output logic [dword_width_p-1:0]  csr_data_o
     , output logic                      illegal_instr_o
 
     // Misc interface
@@ -653,9 +650,7 @@ assign mstatus_mxr_o = mstatus_lo.mxr;
 
 assign single_step_o = ~is_debug_mode & dcsr_lo.step;
 
-assign csr_cmd_ready_o = 1'b1;
-assign data_o          = dword_width_p'(csr_data_lo);
-assign v_o             = csr_cmd_v_i;
+assign csr_data_o = dword_width_p'(csr_data_lo);
 
 assign cfg_csr_data_o = csr_data_lo;
 assign cfg_priv_data_o = priv_mode_r;

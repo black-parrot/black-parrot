@@ -60,7 +60,7 @@ module bp_be_mem_top
 
    , input [csr_cmd_width_lp-1:0]            csr_cmd_i
    , input                                   csr_cmd_v_i
-   , output                                  csr_cmd_ready_o
+   , output [dword_width_p-1:0]              csr_data_o
 
    , input                                   chk_poison_ex_i
 
@@ -175,8 +175,6 @@ logic                     dcache_miss_lo;
 /* CSR signals */
 logic                     csr_illegal_instr_lo;
 logic [ptag_width_p-1:0]  satp_ppn_lo;
-logic [dword_width_p-1:0] csr_data_lo;
-logic                     csr_v_lo;
 logic                     mstatus_sum_lo, mstatus_mxr_lo, translation_en_lo;
 logic                     itlb_fill_lo, instr_page_fault_lo, instr_access_fault_lo, instr_misaligned_lo;
 logic                     ebreak_lo;
@@ -257,10 +255,7 @@ bp_be_csr
 
    ,.csr_cmd_i(csr_cmd_i)
    ,.csr_cmd_v_i(csr_cmd_v_i)
-   ,.csr_cmd_ready_o(csr_cmd_ready_o)
-
-   ,.data_o(csr_data_lo)
-   ,.v_o(csr_v_lo)
+   ,.csr_data_o(csr_data_o)
    ,.illegal_instr_o(csr_illegal_instr_lo)
 
    ,.hartid_i(cfg_bus.core_id)
@@ -509,10 +504,10 @@ assign mem_resp.store_access_fault = store_access_fault_v;
 assign mem_resp.store_misaligned   = 1'b0; // TODO: detect
 assign mem_resp.load_access_fault  = load_access_fault_mem3;
 assign mem_resp.load_misaligned    = 1'b0; // TODO: detect
-assign mem_resp.data   = dcache_v ? dcache_data : csr_data_lo;
+assign mem_resp.data   = dcache_data;
 assign mem_resp.vaddr  = vaddr_mem3;
 
-assign mem_resp_v_o    = ptw_busy ? 1'b0 : mmu_cmd_v_rr | csr_v_lo;
+assign mem_resp_v_o    = ptw_busy ? 1'b0 : mmu_cmd_v_rr;
 assign mmu_cmd_ready_o = dcache_ready_lo & ~dcache_miss_lo & ~ptw_busy;
 
 // synopsys translate_off
