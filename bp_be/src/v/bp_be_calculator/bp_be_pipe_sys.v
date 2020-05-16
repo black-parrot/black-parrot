@@ -94,7 +94,7 @@ assign csr_cmd_o = csr_cmd_lo;
 assign csr_cmd_v_o = (csr_cmd_v_lo & ~kill_ex3_i);
 
 assign data_o           = mem_resp.data;
-assign exc_v_o          = mem_resp_v_i;
+assign exc_v_o          = 1'b0;
 assign miss_v_o         = 1'b0;
 assign mem_resp_ready_o = 1'b1;
 

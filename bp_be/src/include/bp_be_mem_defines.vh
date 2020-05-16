@@ -25,8 +25,15 @@
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
-    logic                              exc_v;                                                      \
     logic                              miss_v;                                                     \
+    logic                              fencei_v;                                                   \
+    logic                              store_page_fault;                                           \
+    logic                              load_page_fault;                                            \
+    logic                              store_access_fault;                                         \
+    logic                              store_misaligned;                                           \
+    logic                              load_access_fault;                                          \
+    logic                              load_misaligned;                                            \
+    bp_be_mmu_vaddr_s                  vaddr;                                                      \
     logic [rv64_reg_data_width_gp-1:0] data;                                                       \
   }  bp_be_mem_resp_s;                                                                                                  
   
@@ -52,7 +59,7 @@
   (`bp_be_fu_op_width + rv64_csr_addr_width_gp + rv64_reg_data_width_gp)
 
 `define bp_be_mem_resp_width(vaddr_width_mp)                                                                     \
-  (2+rv64_reg_data_width_gp)
+  (8+vaddr_width_mp+rv64_reg_data_width_gp)
 
 `endif
 

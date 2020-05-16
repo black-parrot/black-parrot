@@ -188,7 +188,6 @@ logic load_page_fault_v, load_page_fault_mem3, store_page_fault_v, store_page_fa
 /* Control signals */
 logic dcache_cmd_v;
 logic fencei_cmd_v;
-logic fencei_v_r, fencei_v_rr;
 logic itlb_not_dtlb_resp;
 logic mmu_cmd_v_r, mmu_cmd_v_rr, dtlb_miss_r;
 logic is_store_r, is_store_rr;
@@ -225,7 +224,7 @@ wire exception_v_li = commit_pkt.v | ptw_page_fault_v;
 wire [vaddr_width_p-1:0] exception_pc_li = ptw_page_fault_v ? ptw_tlb_w_pc : commit_pkt.pc;
 //wire [vaddr_width_p-1:0] exception_npc_li = commit_pkt.npc;
 wire [vaddr_width_p-1:0] exception_npc_li = ptw_page_fault_v ? '0 : commit_pkt.npc;
-wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? ptw_tlb_w_vaddr : vaddr_mem3;
+wire [vaddr_width_p-1:0] exception_vaddr_li = ptw_page_fault_v ? ptw_tlb_w_vaddr : mem_resp.vaddr;
 wire [instr_width_p-1:0] exception_instr_li = commit_pkt.instr;
 // TODO: exception priority is non-compliant with the spec.
 assign exception_ecode_dec_li =
@@ -268,12 +267,12 @@ bp_be_csr
    ,.instret_i(commit_pkt.instret)
 
    ,.exception_v_i(exception_v_li)
-   ,.fencei_v_i(dcache_fencei_v)
    ,.exception_pc_i(exception_pc_li)
    ,.exception_npc_i(exception_npc_li)
    ,.exception_vaddr_i(exception_vaddr_li)
    ,.exception_instr_i(exception_instr_li)
    ,.exception_ecode_dec_i(exception_ecode_dec_li | ptw_exception_ecode_dec_li)
+   ,.fencei_v_i(mem_resp.fencei_v)
 
    ,.timer_irq_i(timer_irq_i)
    ,.software_irq_i(software_irq_i)
@@ -400,7 +399,6 @@ bp_be_dcache
     ,.store_op_tl_o(store_op_tl_lo)
     ,.poison_i(dcache_poison)
 
-
     // D$-LCE Interface
     ,.dcache_miss_o(dcache_miss_lo)
     ,.cache_req_complete_i(cache_req_complete_i)
@@ -434,8 +432,6 @@ always_ff @(posedge clk_i) begin
     mmu_cmd_v_rr <= '0;
     is_store_r   <= '0;
     is_store_rr  <= '0;
-    fencei_v_r   <= '0;
-    fencei_v_rr  <= '0;
     load_page_fault_mem3    <= '0;
     store_page_fault_mem3   <= '0;
     load_access_fault_mem3  <= '0;
@@ -447,8 +443,6 @@ always_ff @(posedge clk_i) begin
     mmu_cmd_v_rr <= mmu_cmd_v_r & ~chk_poison_ex_i;
     is_store_r   <= is_store;
     is_store_rr  <= is_store_r & ~chk_poison_ex_i;
-    fencei_v_r   <= fencei_cmd_v;
-    fencei_v_rr  <= fencei_v_r & ~chk_poison_ex_i;
     load_page_fault_mem3    <= load_page_fault_v & ~chk_poison_ex_i;
     store_page_fault_mem3   <= store_page_fault_v & ~chk_poison_ex_i;
     load_access_fault_mem3  <= load_access_fault_v & ~chk_poison_ex_i;
@@ -507,9 +501,16 @@ assign dtlb_w_vtag  = ptw_tlb_w_vaddr.tag;
 assign dtlb_w_entry = ptw_tlb_w_entry;
 
 // MMU response connections
-assign mem_resp.exc_v  = |exception_ecode_dec_li;
-assign mem_resp.miss_v = mmu_cmd_v_rr & ~dcache_v & ~dcache_fencei_v & ~|exception_ecode_dec_li;
+assign mem_resp.miss_v             = mmu_cmd_v_rr & ~dcache_v & ~dcache_fencei_v & ~|exception_ecode_dec_li;
+assign mem_resp.fencei_v           = dcache_fencei_v;
+assign mem_resp.store_page_fault   = store_page_fault_mem3;
+assign mem_resp.load_page_fault    = load_page_fault_mem3;
+assign mem_resp.store_access_fault = store_access_fault_v;
+assign mem_resp.store_misaligned   = 1'b0; // TODO: detect
+assign mem_resp.load_access_fault  = load_access_fault_mem3;
+assign mem_resp.load_misaligned    = 1'b0; // TODO: detect
 assign mem_resp.data   = dcache_v ? dcache_data : csr_data_lo;
+assign mem_resp.vaddr  = vaddr_mem3;
 
 assign mem_resp_v_o    = ptw_busy ? 1'b0 : mmu_cmd_v_rr | csr_v_lo;
 assign mmu_cmd_ready_o = dcache_ready_lo & ~dcache_miss_lo & ~ptw_busy;

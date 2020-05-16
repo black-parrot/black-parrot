@@ -94,7 +94,11 @@ always_comb
   end
 
 // Output results of memory op
-assign exc_v_o            = mem_resp_v_i & mem_resp.exc_v;
+assign exc_v_o            = mem_resp_v_i & ((mem_resp.store_page_fault | mem_resp.load_page_fault)
+                                            | (mem_resp.store_access_fault | mem_resp.store_misaligned)
+                                            | (mem_resp.load_access_fault | mem_resp.load_misaligned)
+                                            );
+
 assign miss_v_o           = mem_resp_v_i & mem_resp.miss_v;
 assign mem_resp_ready_o   = 1'b1;
 
