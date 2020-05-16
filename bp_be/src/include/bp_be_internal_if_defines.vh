@@ -152,7 +152,19 @@
     logic                        rd_w_v;                                                           \
     logic [reg_addr_width_p-1:0] rd_addr;                                                          \
     logic [dword_width_p-1:0]    rd_data;                                                          \
-  }  bp_be_wb_pkt_s;
+  }  bp_be_wb_pkt_s;                                                                               \
+                                                                                                   \
+  typedef struct packed                                                                            \
+  {                                                                                                \
+    logic itlb_fill_v;                                                                             \
+    logic dtlb_fill_v;                                                                             \
+    logic instr_page_fault_v;                                                                      \
+    logic load_page_fault_v;                                                                       \
+    logic store_page_fault_v;                                                                      \
+    logic [vaddr_width_mp-1:0] pc;                                                                 \
+    logic [vaddr_width_mp-1:0] vaddr;                                                              \
+    logic [dword_width_p-1:0]  entry;                                                              \
+  }  bp_be_ptw_pkt_s;
 
 /* Declare width macros so that clients can use structs in ports before struct declaration
  * Each of these macros needs to be kept in sync with the struct definition. The computation
@@ -213,6 +225,13 @@
    + reg_addr_width_p                                                                              \
    + dword_width_p                                                                                 \
    )
+
+`define bp_be_ptw_pkt_width(vaddr_width_mp) \
+  (5                                                                                               \
+   + 2*vaddr_width_mp                                                                              \
+   + dword_width_p                                                                                 \
+   )
+
 
 
 
