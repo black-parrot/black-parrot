@@ -118,7 +118,7 @@ profile-%:
 	make profile-source-$*
 	make profile-instr
 #	join -j 2 prof.instr prof-source.$* | awk '{printf "%s %8d %8d   (%3.2f)\n", $$1,$$3,$$2,$$3/$$2}'
-	join -j 2 prof.instr prof-source.$* | awk '{printf "%3.3x %s %8d %8d   (%3.2f)\n", and(rshift(strtonum( "0x" $$1),2),0x1FF), $$1, $$3,$$2,$$3/$$2}' > $*.log
+	join -j 2 prof.instr prof-source.$* | awk '{printf "%3.3x %s %8d %8d   (%3.2f)\n", and(rshift(strtonum( "0x" $$1),2),0x1FF), $$1, $$3,$$2,$$3/$$2}' > $@.log
 	@echo "hashing conflicts"
 	sort < mispredict.log | uniq -D -w 3
 
