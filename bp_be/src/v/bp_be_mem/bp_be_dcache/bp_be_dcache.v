@@ -287,7 +287,7 @@ module bp_be_dcache
   logic gdirty_r;
 
   assign tl_we = v_i & cache_req_ready_i & ~fencei_req;
-  
+ 
   always_ff @(posedge nclk) begin
     if (reset_i) begin
       v_tl_r <= 1'b0;
