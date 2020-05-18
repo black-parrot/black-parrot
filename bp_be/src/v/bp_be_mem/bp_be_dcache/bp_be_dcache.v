@@ -158,6 +158,10 @@ module bp_be_dcache
 
   );
 
+  // Negedge Inverted Clock
+  //
+  wire   nclk = ~clk_i;
+
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
@@ -284,7 +288,7 @@ module bp_be_dcache
 
   assign tl_we = v_i & cache_req_ready_i & ~fencei_req;
   
-  always_ff @ (negedge clk_i) begin
+  always_ff @(posedge nclk) begin
     if (reset_i) begin
       v_tl_r <= 1'b0;
     end
@@ -326,7 +330,7 @@ module bp_be_dcache
       ,.els_p(dcache_sets_p)
     )
     tag_mem
-      (.clk_i(~clk_i)
+      (.clk_i(nclk)
       ,.reset_i(reset_i)
       ,.v_i(~reset_i & tag_mem_v_li)
       ,.w_i(tag_mem_w_li)
@@ -351,7 +355,7 @@ module bp_be_dcache
         ,.els_p(dcache_sets_p*dcache_assoc_p)
         )
       data_mem
-        (.clk_i(~clk_i)
+        (.clk_i(nclk)
         ,.reset_i(reset_i)
         ,.v_i(~reset_i & data_mem_v_li[i])
         ,.w_i(data_mem_w_li)
@@ -469,7 +473,7 @@ module bp_be_dcache
   assign store_op_tl_o = v_tl_r & ~tlb_miss_i & store_op_tl_r;
   assign load_op_tl_o  = v_tl_r & ~tlb_miss_i & load_op_tl_r;
 
-  always_ff @ (negedge clk_i) begin
+  always_ff @(posedge nclk) begin
     if (reset_i) begin
       v_tv_r <= 1'b0;
 
@@ -754,11 +758,11 @@ module bp_be_dcache
 
     if(load_miss_tv) begin
       cache_req_cast_o.msg_type = e_miss_load;
-      cache_req_v_o = cache_req_ready_i;
+      cache_req_v_o = ~poison_i & cache_req_ready_i;
     end
     else if(store_miss_tv | lr_miss_tv) begin
       cache_req_cast_o.msg_type = e_miss_store;
-      cache_req_v_o = cache_req_ready_i;
+      cache_req_v_o = ~poison_i & cache_req_ready_i;
     end
     else if(wt_req) begin
       cache_req_cast_o.msg_type = e_wt_store;
@@ -766,16 +770,16 @@ module bp_be_dcache
     end
     else if(uncached_load_req) begin
       cache_req_cast_o.msg_type = e_uc_load;
-      cache_req_v_o = cache_req_ready_i;
+      cache_req_v_o = ~poison_i & cache_req_ready_i;
     end
     else if(uncached_store_req) begin
       cache_req_cast_o.msg_type = e_uc_store;
-      cache_req_v_o = cache_req_ready_i;
+      cache_req_v_o = ~poison_i & cache_req_ready_i;
     end
     else if(fencei_req) begin
       // Don't flush on fencei when coherent
       cache_req_cast_o.msg_type = e_cache_flush;
-      cache_req_v_o = cache_req_ready_i & gdirty_r & (l1_coherent_p == 0);
+      cache_req_v_o = ~poison_i & cache_req_ready_i & gdirty_r & (coherent_l1_p == 0);
     end
 
     cache_req_cast_o.addr = paddr_tv_r;
