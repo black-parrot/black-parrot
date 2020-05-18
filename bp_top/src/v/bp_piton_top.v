@@ -35,13 +35,13 @@ module bp_piton_top
    , input [dword_width_p-1:0]                         l15_transducer_data_2
    , input [dword_width_p-1:0]                         l15_transducer_data_3
    , input                                             l15_transducer_noncacheable
-   , input [2:0]                                       l15_transducer_threadid;             
-   , input [11:0]                                      l15_tranducer_inval_address_15_4;    
-   , input                                             l15_transducer_inval_icache_inval;   
-   , input                                             l15_transducer_inval_dcache_inval;   
-   , input                                             l15_transducer_inval_icache_all_way; 
-   , input                                             l15_transducer_inval_dcache_all_way; 
-   , input [1:0]                                       l15_transducer_inval_way;
+   , input [2:0]                                       l15_transducer_threadid 
+   , input [11:0]                                      l15_transducer_inval_address_15_4
+   , input                                             l15_transducer_inval_icache_inval
+   , input                                             l15_transducer_inval_dcache_inval
+   , input                                             l15_transducer_inval_icache_all_way
+   , input                                             l15_transducer_inval_dcache_all_way
+   , input [1:0]                                       l15_transducer_inval_way
    , output logic                                      transducer_l15_req_ack
    );
 
@@ -389,11 +389,11 @@ module bp_piton_top
     l15_pce_ret_v_li[0] = '0;
     l15_pce_ret_v_li[1] = '0;
 
-    if ((fifo_pce_lo.rtntype != `LOAD_RET) && (fifo_pce_lo.rtntype != `ST_ACK)) begin
+    if ((fifo_pce_lo.rtntype != e_load_ret) && (fifo_pce_lo.rtntype != e_st_ack)) begin
       l15_pce_ret_v_li[0] = fifo_pce_v_lo;
     end
 
-    if (fifo_pce_lo.rtntype != `IFILL_RET) begin
+    if (fifo_pce_lo.rtntype != e_ifill_ret) begin
       l15_pce_ret_v_li[1] = fifo_pce_v_lo;
     end
   end

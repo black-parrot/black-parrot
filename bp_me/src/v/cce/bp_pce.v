@@ -20,6 +20,7 @@ module bp_pce
    , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
    , localparam byte_offset_width_lp = `BSG_SAFE_CLOG2(bank_width_lp>>3)
    , localparam word_offset_width_lp = `BSG_SAFE_CLOG2(assoc_p)
+   , localparam block_offset_width_lp = word_offset_width_lp + byte_offset_width_lp
    , localparam index_width_lp = `BSG_SAFE_CLOG2(sets_p)
    , localparam way_width_lp = `BSG_SAFE_CLOG2(assoc_p)
 
@@ -334,6 +335,8 @@ module bp_pce
                         ? e_uc_read_wait
                         : e_send_req;
             end
+          end
+
         e_uc_read_wait:
           begin
             // Checking for the return type here since we could be in this
@@ -375,7 +378,7 @@ module bp_pce
             // invalidations coming in at anytime
             if (is_ifill_ret && (pce_id_p == 0)) begin
               cache_data_mem_pkt_cast_o.opcode = e_cache_data_mem_write;
-              cache_data_mem_pkt_cast_o.index = cache_req_r.addr[icache_block_offset_width_lp+:icache_index_width_lp];
+              cache_data_mem_pkt_cast_o.index = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
               cache_data_mem_pkt_cast_o.way_id = cache_req_metadata_r.repl_way;
               cache_data_mem_pkt_cast_o.data = {l15_pce_ret_cast_i.data_3[0+:8],  l15_pce_ret_cast_i.data_3[8+:8],
                                                 l15_pce_ret_cast_i.data_3[16+:8], l15_pce_ret_cast_i.data_3[24+:8],
