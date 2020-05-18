@@ -284,7 +284,7 @@ module bp_be_dcache
 
   assign tl_we = v_i & cache_req_ready_i & ~fencei_req;
   
-  always_ff @ (posedge clk_i) begin
+  always_ff @ (negedge clk_i) begin
     if (reset_i) begin
       v_tl_r <= 1'b0;
     end
@@ -326,7 +326,7 @@ module bp_be_dcache
       ,.els_p(dcache_sets_p)
     )
     tag_mem
-      (.clk_i(clk_i)
+      (.clk_i(~clk_i)
       ,.reset_i(reset_i)
       ,.v_i(tag_mem_v_li)
       ,.w_i(tag_mem_w_li)
@@ -351,7 +351,7 @@ module bp_be_dcache
         ,.els_p(dcache_sets_p*dcache_assoc_p)
         )
       data_mem
-        (.clk_i(clk_i)
+        (.clk_i(~clk_i)
         ,.reset_i(reset_i)
         ,.v_i(data_mem_v_li[i])
         ,.w_i(data_mem_w_li)
@@ -429,7 +429,7 @@ module bp_be_dcache
   assign store_op_tl_o = v_tl_r & ~tlb_miss_i & store_op_tl_r;
   assign load_op_tl_o  = v_tl_r & ~tlb_miss_i & load_op_tl_r;
 
-  always_ff @ (posedge clk_i) begin
+  always_ff @ (negedge clk_i) begin
     if (reset_i) begin
       v_tv_r <= 1'b0;
 
@@ -575,7 +575,7 @@ module bp_be_dcache
     ( .clk_i(clk_i)
       ,.reset_i(reset_i)
 
-      ,.v_i(wbuf_v_li)
+      ,.v_i(~poison_i & wbuf_v_li)
       ,.wbuf_entry_i(wbuf_entry_in)
 
       ,.v_o(wbuf_v_lo)
@@ -648,7 +648,7 @@ module bp_be_dcache
     stat_mem
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.v_i(stat_mem_v_li)
+      ,.v_i(~poison_i & ~reset_i & stat_mem_v_li)
       ,.w_i(stat_mem_w_li)
       ,.addr_i(stat_mem_addr_li)
       ,.data_i(stat_mem_data_li)
