@@ -287,7 +287,6 @@ module bp_be_dcache
   logic gdirty_r;
 
   assign tl_we = v_i & cache_req_ready_i & ~fencei_req;
- 
   always_ff @(posedge nclk) begin
     if (reset_i) begin
       v_tl_r <= 1'b0;
@@ -765,7 +764,7 @@ module bp_be_dcache
     else if(fencei_req) begin
       // Don't flush on fencei when coherent
       cache_req_cast_o.msg_type = e_cache_flush;
-      cache_req_v_o = ~poison_i & zcache_req_ready_i & gdirty_r & (coherent_l1_p == 0);
+      cache_req_v_o = ~poison_i & cache_req_ready_i & gdirty_r & (coherent_l1_p == 0);
     end
 
     cache_req_cast_o.addr = paddr_tv_r;
