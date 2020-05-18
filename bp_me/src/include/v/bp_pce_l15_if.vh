@@ -23,11 +23,11 @@ typedef enum logic [3:0]
 
 typedef enum logic [2:0]
 {
-  e_size_1B    = 3'b000 // PCX_SZ_1B
-  , e_size_2B  = 3'b001 // PCX_SZ_2B
-  , e_size_4B  = 3'b010 // PCX_SZ_4B
-  , e_size_8B  = 3'b011 // PCX_SZ_8B
-  , e_size_16B = 3'b111 // PCX_SZ_16B
+  e_l15_size_1B    = 3'b000 // PCX_SZ_1B
+  , e_l15_size_2B  = 3'b001 // PCX_SZ_2B
+  , e_l15_size_4B  = 3'b010 // PCX_SZ_4B
+  , e_l15_size_8B  = 3'b011 // PCX_SZ_8B
+  , e_l15_size_16B = 3'b111 // PCX_SZ_16B
 } bp_pce_l15_req_size_e;
 
 `define declare_bp_pce_l15_req_s(paddr_width_mp, data_width_mp)  \
@@ -42,8 +42,9 @@ typedef struct packed                                            \
 } bp_pce_l15_req_s
 
 `define declare_bp_l15_pce_ret_s(data_width_mp)                  \
+typedef struct packed                                            \
 {                                                                \
-  bp_l15_pce_ret_type_e     rtntype                              \
+  bp_l15_pce_ret_type_e     rtntype;                             \
   logic                     noncacheable;                        \
   logic [data_width_mp-1:0] data_0;                              \
   logic [data_width_mp-1:0] data_1;                              \
@@ -66,7 +67,7 @@ typedef struct packed                                            \
   ($bits(bp_l15_pce_ret_type_e) + 3 + 12 + 2 + 4*data_width_mp + 5)
 
 `define declare_bp_pce_l15_if(paddr_width_mp, data_width_mp) \
-  `declare_bp_pce_l15_req_s(paddr_width_mp, data_width_mp) \
+  `declare_bp_pce_l15_req_s(paddr_width_mp, data_width_mp); \
   `declare_bp_l15_pce_ret_s(data_width_mp)
 
 `define declare_bp_pce_l15_if_widths(paddr_width_mp, data_width_mp) \
