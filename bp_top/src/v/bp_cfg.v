@@ -11,6 +11,8 @@ module bp_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
+   // TODO: Should I be a global param
+   , localparam cfg_max_outstanding_p = 1
    , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    )
   (input                                clk_i
@@ -39,49 +41,44 @@ module bp_cfg
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
   
   bp_cfg_bus_s cfg_bus_cast_o;
-  bp_cce_mem_msg_s mem_cmd_cast_i, mem_resp_cast_o;
+  bp_cce_mem_msg_s mem_cmd_li, mem_cmd_lo;
   
   assign cfg_bus_o = cfg_bus_cast_o;
-  assign mem_cmd_cast_i = mem_cmd_i;
-  assign mem_resp_o = mem_resp_cast_o;
+  assign mem_cmd_li = mem_cmd_i;
+
+  logic mem_cmd_v_lo, mem_cmd_yumi_li;
+  bsg_fifo_1r1w_small
+   #(.width_p($bits(bp_cce_mem_msg_s)), .els_p(cfg_max_outstanding_p))
+   small_fifo
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i(mem_cmd_li)
+     ,.v_i(mem_cmd_v_i)
+     ,.ready_o(mem_cmd_ready_o)
+
+     ,.data_o(mem_cmd_lo)
+     ,.v_o(mem_cmd_v_lo)
+     ,.yumi_i(mem_cmd_yumi_li)
+     );
 
   logic         freeze_r;
   bp_lce_mode_e icache_mode_r;
   bp_lce_mode_e dcache_mode_r;
   bp_cce_mode_e cce_mode_r;
-  
-  // The config bus reads are synchronous (regfile, ucode ram, etc.). Therefore, we need to
-  //   wait a cycle before returning mem_resp. However, if we wait to dequeue until mem_resp_ready is high,
-  //   it may no longer be true by the time the synchronous read is complete. To avoid having input
-  //   and output fifos, we simply serialize the requests with a cycle delay. For a config bus, this
-  //   is a very small overhead.
-  bsg_one_fifo
-   #(.width_p(cce_mem_msg_width_lp-cce_block_width_p))
-   cmd_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-  
-     ,.data_i(mem_cmd_cast_i.header)
-     ,.v_i(mem_cmd_v_i)
-     ,.ready_o(mem_cmd_ready_o)
-  
-     ,.data_o(mem_resp_cast_o.header)
-     ,.v_o(mem_resp_v_o)
-     ,.yumi_i(mem_resp_yumi_i)
-     );
 
-wire                        cfg_v_li    = mem_cmd_v_i;
-wire                        cfg_w_v_li  = cfg_v_li & (mem_cmd_cast_i.header.msg_type == e_cce_mem_uc_wr);
-wire                        cfg_r_v_li  = cfg_v_li & (mem_cmd_cast_i.header.msg_type == e_cce_mem_uc_rd);
-wire [cfg_addr_width_p-1:0] cfg_addr_li = mem_cmd_cast_i.header.addr[0+:cfg_addr_width_p];
-wire [cfg_data_width_p-1:0] cfg_data_li = mem_cmd_cast_i.data[0+:cfg_data_width_p];
+wire                        cfg_v_li    = mem_cmd_v_lo;
+wire                        cfg_w_v_li  = cfg_v_li & (mem_cmd_lo.header.msg_type == e_cce_mem_uc_wr);
+wire                        cfg_r_v_li  = cfg_v_li & (mem_cmd_lo.header.msg_type == e_cce_mem_uc_rd);
+wire [cfg_addr_width_p-1:0] cfg_addr_li = mem_cmd_lo.header.addr[0+:cfg_addr_width_p];
+wire [cfg_data_width_p-1:0] cfg_data_li = mem_cmd_lo.data[0+:cfg_data_width_p];
 
 always_ff @(posedge clk_i)
   if (reset_i)
     begin
       freeze_r            <= 1'b1;
-      icache_mode_r       <= e_lce_mode_normal; //e_lce_mode_uncached;
-      dcache_mode_r       <= e_lce_mode_normal; // e_lce_mode_uncached;
+      icache_mode_r       <= e_lce_mode_uncached;
+      dcache_mode_r       <= e_lce_mode_uncached;
       cce_mode_r          <= e_cce_mode_uncached;
     end
   else if (cfg_w_v_li)
@@ -175,6 +172,16 @@ assign cfg_bus_cast_o = '{freeze: freeze_r
                           ,priv_data: priv_data_li
                           };
 
+  logic rdata_v_r;
+  bsg_dff_reset
+   #(.width_p(1))
+   rdata_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i(mem_cmd_v_lo)
+     ,.data_o(rdata_v_r)
+     );
 
   logic [7:0] read_sel_one_hot_r;
   bsg_dff_reset_en
@@ -182,7 +189,7 @@ assign cfg_bus_cast_o = '{freeze: freeze_r
    read_reg_one_hot
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-     ,.en_i(mem_cmd_v_i)
+     ,.en_i(mem_cmd_v_lo)
 
      ,.data_i({irf_r_v_li, npc_r_v_li, csr_r_v_li, priv_r_v_li, host_did_r_v_li, did_r_v_li, cord_r_v_li, cce_ucode_r_v_li})
      ,.data_o(read_sel_one_hot_r)
@@ -205,7 +212,25 @@ assign cfg_bus_cast_o = '{freeze: freeze_r
 
      ,.data_o(read_data)
      );
-  assign mem_resp_cast_o.data = read_data;
+
+  logic [dword_width_p-1:0] read_data_r;
+  bsg_dff_en_bypass
+   #(.width_p(dword_width_p))
+   rdata_reg
+    (.clk_i(clk_i)
+     ,.en_i(rdata_v_r)
+
+     ,.data_i(read_data)
+     ,.data_o(read_data_r)
+     );
+
+  bp_cce_mem_msg_s mem_resp_lo;
+  assign mem_resp_lo = '{header: mem_cmd_lo.header, data: cce_block_width_p'(read_data_r)};
+
+  assign mem_resp_o = mem_resp_lo;
+  assign mem_resp_v_o = mem_cmd_v_lo & rdata_v_r;
+  assign mem_cmd_yumi_li = mem_resp_yumi_i;
+  
 
 endmodule
 
