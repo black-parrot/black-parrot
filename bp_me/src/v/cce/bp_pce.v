@@ -7,10 +7,10 @@ module bp_pce
   import bp_common_cfg_link_pkg::*;
   import bp_pce_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
-    parameter block_width_p = dcache_block_width_p
-    parameter assoc_p = dcache_assoc_p
-    parameter sets_p = dcache_sets_p
-    parameter pce_id_p = 1 
+   ,parameter block_width_p = 128
+   ,parameter assoc_p = 2
+   ,parameter sets_p = 256
+   ,parameter pce_id_p = 1 // 0 = I$, 1 = D$
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, cache)
    `declare_bp_pce_l15_if_widths(paddr_width_p, dword_width_p)
@@ -63,7 +63,7 @@ module bp_pce
   );
 
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, cache);
-  `declare_bp_pce_l15_if(paddr_width_p, data_width_p);
+  `declare_bp_pce_l15_if(paddr_width_p, dword_width_p);
 
   bp_cache_req_s cache_req_cast_i;
   bp_cache_req_metadata_s cache_req_metadata_cast_i;
@@ -71,11 +71,8 @@ module bp_pce
   assign cache_req_metadata_cast_i = cache_req_metadata_i;
 
   bp_cache_data_mem_pkt_s cache_data_mem_pkt_cast_o;
-  bp_cache_tag_mem_pkt_s cache_tag_mem_pkt_cast_o;
-  bp_cache_stat_mem_pkt_s cache_stat_mem_pkt_cast_o;
-  assign cache_data_mem_pkt_o = cache_data_mem_pkt_cast_o;
-  assign cache_tag_mem_pkt_o = cache_tag_mem_pkt_cast_o;
-  assign cache_stat_mem_pkt_o = cache_stat_mem_pkt_cast_o;
+  bp_cache_tag_mem_pkt_s cache_tag_mem_pkt_cast_o, inval_cache_tag_mem_pkt_cast_o;
+  bp_cache_stat_mem_pkt_s cache_stat_mem_pkt_cast_o, inval_cache_stat_mem_pkt_cast_o;
 
   bp_pce_l15_req_s pce_l15_req_cast_o;
   bp_l15_pce_ret_s l15_pce_ret_cast_i;
@@ -150,7 +147,7 @@ module bp_pce
   // Outstanding requests counter
   logic [`BSG_WIDTH(coh_noc_max_credits_p)-1:0] credit_count_lo;
   wire credit_v_li = pce_l15_req_v_o;
-  wire credit_ready_li = pce_l15_ready_i;
+  wire credit_ready_li = pce_l15_req_ready_i;
   wire credit_returned_li = l15_pce_ret_yumi_o;
   bsg_flow_counter
     #(.els_p(coh_noc_max_credits_p))
@@ -168,19 +165,24 @@ module bp_pce
   logic l15_pce_ret_yumi_lo;
   assign l15_pce_ret_yumi_o = l15_pce_ret_yumi_lo | store_resp_v_li;
 
+  // Assigning PCE->$ packets
+  assign cache_data_mem_pkt_o = cache_data_mem_pkt_cast_o;
+  assign cache_tag_mem_pkt_o = inval_v_li ? inval_cache_tag_mem_pkt_cast_o : cache_tag_mem_pkt_cast_o;
+  assign cache_stat_mem_pkt_o = inval_v_li ? inval_cache_stat_mem_pkt_cast_o : cache_stat_mem_pkt_cast_o;
+  
   always_comb
     begin
       cache_req_ready_o = '0;
 
       index_up = '0;
-      index_clr = '0;
-      sync_o = '0;
 
       cache_tag_mem_pkt_cast_o  = '0;
+      inval_cache_tag_mem_pkt_cast_o = '0;
       cache_tag_mem_pkt_v_o     = '0;
       cache_data_mem_pkt_cast_o = '0;
       cache_data_mem_pkt_v_o    = '0;
       cache_stat_mem_pkt_cast_o = '0;
+      inval_cache_stat_mem_pkt_cast_o = '0;
       cache_stat_mem_pkt_v_o    = '0;
 
       cache_req_complete_o = '0;
@@ -190,48 +192,6 @@ module bp_pce
 
       l15_pce_ret_yumi_lo = '0;
       state_n = state_r;
-
-      // Need to support invalidations no matter what
-      // Supporting inval all way and single way for both caches. OpenPiton
-      // doesn't support inval all way for dcache and inval specific way for
-      // icache
-      if (inval_v_li) begin
-        if (l15_pce_ret_cast_i.inval_icache_inval || l15_pce_ret_cast_i.inval_dcache_inval) begin
-          cache_tag_mem_pkt_cast_o.index = (pce_id_p == 1) 
-                                                  ? {l15_pce_ret_cast_i.inval_way[1], l15_pce_ret_cast_i.inval_address_15_4[6:0]} 
-                                                  : l15_pce_ret_cast_i.inval_address_15_4[6:0];
-          cache_tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_invalidate;
-          cache_tag_mem_pkt_cast_o.way_id = (pce_id_p == 1) 
-                                                  ? l15_pce_ret_cast_i.inval_way[0] 
-                                                  : l15_pce_ret_cast_i.inval_way;
-          cache_tag_mem_pkt_v_o = l15_pce_ret_v_i;
-
-          l15_pce_ret_yumi_lo = cache_tag_mem_pkt_yumi_i;
-        end
-        else if (l15_pce_ret_cast_i.inval_icache_all_way || l15_pce_ret_cast_i.inval_dcache_all_way) begin
-          cache_tag_mem_pkt_cast_o.index = (pce_id_p == 1) 
-                                                  ? {l15_pce_ret_cast_i.inval_way[1], l15_pce_ret_cast_i.inval_address_15_4[6:0]} 
-                                                  : l15_pce_ret_cast_i.inval_address_15_4[6:0];
-          cache_tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_clear;
-          cache_tag_mem_pkt_cast_o.way_id = (pce_id_p == 1) 
-                                                  ? l15_pce_ret_cast_i.inval_way[0] 
-                                                  : l15_pce_ret_cast_i.inval_way;
-          cache_tag_mem_pkt_v_o = l15_pce_ret_v_i;
-          
-          // Do we need to clear stat mem also?
-          cache_stat_mem_pkt_cast_o.index = (pce_id_p == 1) 
-                                                  ? {l15_pce_ret_cast_i.inval_way[1], l15_pce_ret_cast_i.inval_address_15_4[6:0]} 
-                                                  : l15_pce_ret_cast_i.inval_address_15_4[6:0];
-          cache_stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_set_clear;
-          cache_stat_mem_pkt_cast_o.way_id = (pce_id_p == 1) 
-                                                  ? l15_pce_ret_cast_i.inval_way[0] 
-                                                  : l15_pce_ret_cast_i.inval_way;
-
-          cache_stat_mem_pkt_v_o = l15_pce_ret_v_i;
-
-          l15_pce_ret_yumi_lo = cache_tag_mem_pkt_yumi_i & cache_stat_mem_pkt_yumi_i;
-        end
-      end
 
       unique case (state_r)
         e_reset:
@@ -271,14 +231,14 @@ module bp_pce
               pce_l15_req_cast_o.rqtype = e_store_req;
               pce_l15_req_cast_o.nc = 1'b1;
               pce_l15_req_cast_o.address = cache_req_cast_i.addr;
-              // TODO: Check if the size mapping used here will work.
+              // TODO: Incorporate new size changes when pushed to byoc repo
               pce_l15_req_cast_o.size = (cache_req_cast_i.size == e_size_1B)
-                                    ? e_size_1B
+                                    ? e_l15_size_1B
                                     : (cache_req_cast_i.size == e_size_2B)
-                                      ? e_size_2B
+                                      ? e_l15_size_2B
                                       : (cache_req_cast_i.size == e_size_4B)
-                                        ? e_size_4B
-                                        : e_size_8B;
+                                        ? e_l15_size_4B
+                                        : e_l15_size_8B;
 
               // OpenPiton is big endian whereas BlackParrot is little endian
               pce_l15_req_cast_o.data = (cache_req_cast_i.size == e_size_1B)
@@ -295,19 +255,18 @@ module bp_pce
               pce_l15_req_v_o = pce_l15_req_ready_i;
               state_n = e_ready;
             end
-            // TODO: Check if we need l1rplway for writethrough stores.
-            // Actually, do we need to worry about l1rplway for stores?
+            // Do we need l1rplway for wt_stores?
             else if (wt_store_v_li) begin
               pce_l15_req_cast_o.rqtype = e_store_req;
               pce_l15_req_cast_o.nc = 1'b0;
               pce_l15_req_cast_o.address = cache_req_cast_i.addr;
               pce_l15_req_cast_o.size = (cache_req_cast_i.size == e_size_1B)
-                                    ? e_size_1B
+                                    ? e_l15_size_1B
                                     : (cache_req_cast_i.size == e_size_2B)
-                                      ? e_size_2B
+                                      ? e_l15_size_2B
                                       : (cache_req_cast_i.size == e_size_4B)
-                                        ? e_size_4B
-                                        : e_size_8B;
+                                        ? e_l15_size_4B
+                                        : e_l15_size_8B;
 
               pce_l15_req_cast_o.data = (cache_req_cast_i.size == e_size_1B)
                                     ? {8{cache_req_cast_i.data[0+:8]}}
@@ -339,8 +298,8 @@ module bp_pce
 
               pce_l15_req_cast_o.nc = 1'b0;
               pce_l15_req_cast_o.size = (pce_id_p == 1)
-                                        ? e_size_8B
-                                        : e_size_16B;
+                                        ? e_l15_size_8B
+                                        : e_l15_size_16B;
               pce_l15_req_cast_o.address = cache_req_cast_i.addr;
               pce_l15_req_cast_o.l1rplway = (pce_id_p == 1)
                                             ? {cache_req_cast_i.addr[11], cache_req_metadata_cast_i.repl_way}
@@ -357,12 +316,12 @@ module bp_pce
                                             : e_imiss_req; 
               pce_l15_req_cast_i.nc = 1'b1;
               pce_l15_req_cast_i.size = (cache_req_cast_i.size == e_size_1B)
-                                    ? e_size_1B
+                                    ? e_l15_size_1B
                                     : (cache_req_cast_i.size == e_size_2B)
-                                      ? e_size_2B
+                                      ? e_l15_size_2B
                                       : (cache_req_cast_i.size == e_size_4B)
-                                        ? e_size_4B
-                                        : e_size_8B;
+                                        ? e_l15_size_4B
+                                        : e_l15_size_8B;
 
               pce_l15_req_cast_i.address = cache_req_cast_i.addr;
               pce_l15_req_cast_i.l1rplway = (pce_id_p == 1) 
@@ -381,7 +340,10 @@ module bp_pce
             // state when we receive an invalidation
             if (is_ifill_ret_nc && (pce_id_p == 0)) begin
               cache_data_mem_pkt_cast_o.opcode = e_cache_data_mem_uncached;
-              cache_data_mem_pkt_cast_o.data = // TODO: We need to send back 64 bits. Which set of 64 bits do we use?
+              cache_data_mem_pkt_cast_o.data = {l15_pce_ret_cast_i.data_0[0+:8],  l15_pce_ret_cast_i.data_0[8+:8],    
+                                                l15_pce_ret_cast_i.data_0[16+:8], l15_pce_ret_cast_i.data_0[24+:8],
+                                                l15_pce_ret_cast_i.data_0[32+:8], l15_pce_ret_cast_i.data_0[40+:8],
+                                                l15_pce_ret_cast_i.data_0[48+:8], l15_pce_ret_cast_i.data_0[56+:8]};   
               cache_data_mem_pkt_v_o = l15_pce_ret_v_i;
 
               l15_pce_ret_yumi_lo = cache_data_mem_pkt_yumi_i;
@@ -391,7 +353,10 @@ module bp_pce
             end
             else if (is_load_ret_nc && pce_id_p == 1) begin
               cache_data_mem_pkt_cast_o.opcode = e_cache_data_mem_uncached;
-              cache_data_mem_pkt_cast_o.data = //TODO: We need to send back 64 bits. Which set of 64 bits do we use?
+              cache_data_mem_pkt_cast_o.data = {l15_pce_ret_cast_i.data_0[0+:8],  l15_pce_ret_cast_i.data_0[8+:8],    
+                                                l15_pce_ret_cast_i.data_0[16+:8], l15_pce_ret_cast_i.data_0[24+:8],
+                                                l15_pce_ret_cast_i.data_0[32+:8], l15_pce_ret_cast_i.data_0[40+:8],
+                                                l15_pce_ret_cast_i.data_0[48+:8], l15_pce_ret_cast_i.data_0[56+:8]};   
               cache_data_mem_pkt_v_o = l15_pce_ret_v_i;
 
               l15_pce_ret_yumi_lo = cache_data_mem_pkt_yumi_i;
@@ -406,7 +371,6 @@ module bp_pce
         
         e_read_wait:
           begin
-            // TODO: Remember IFILL_RET needs to be acknowledged the next cycle
             // Checking for return types here since we could also have
             // invalidations coming in at anytime
             if (is_ifill_ret && (pce_id_p == 0)) begin
@@ -472,6 +436,48 @@ module bp_pce
           end
         default: state_n = e_reset;
       endcase
+
+      // Need to support invalidations no matter what
+      // Supporting inval all way and single way for both caches. OpenPiton
+      // doesn't support inval all way for dcache and inval specific way for
+      // icache
+      if (inval_v_li) begin
+        if (l15_pce_ret_cast_i.inval_icache_inval || l15_pce_ret_cast_i.inval_dcache_inval) begin
+          inval_cache_tag_mem_pkt_cast_o.index = (pce_id_p == 1) 
+                                                  ? {l15_pce_ret_cast_i.inval_way[1], l15_pce_ret_cast_i.inval_address_15_4[6:0]} 
+                                                  : l15_pce_ret_cast_i.inval_address_15_4[6:0];
+          inval_cache_tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_invalidate;
+          inval_cache_tag_mem_pkt_cast_o.way_id = (pce_id_p == 1) 
+                                                  ? l15_pce_ret_cast_i.inval_way[0] 
+                                                  : l15_pce_ret_cast_i.inval_way;
+          cache_tag_mem_pkt_v_o = l15_pce_ret_v_i;
+
+          l15_pce_ret_yumi_lo = cache_tag_mem_pkt_yumi_i;
+        end
+        else if (l15_pce_ret_cast_i.inval_icache_all_way || l15_pce_ret_cast_i.inval_dcache_all_way) begin
+          inval_cache_tag_mem_pkt_cast_o.index = (pce_id_p == 1) 
+                                                  ? {l15_pce_ret_cast_i.inval_way[1], l15_pce_ret_cast_i.inval_address_15_4[6:0]} 
+                                                  : l15_pce_ret_cast_i.inval_address_15_4[6:0];
+          inval_cache_tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_clear;
+          inval_cache_tag_mem_pkt_cast_o.way_id = (pce_id_p == 1) 
+                                                  ? l15_pce_ret_cast_i.inval_way[0] 
+                                                  : l15_pce_ret_cast_i.inval_way;
+          cache_tag_mem_pkt_v_o = l15_pce_ret_v_i;
+          
+          inval_cache_stat_mem_pkt_cast_o.index = (pce_id_p == 1) 
+                                                  ? {l15_pce_ret_cast_i.inval_way[1], l15_pce_ret_cast_i.inval_address_15_4[6:0]} 
+                                                  : l15_pce_ret_cast_i.inval_address_15_4[6:0];
+          inval_cache_stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_set_clear;
+          inval_cache_stat_mem_pkt_cast_o.way_id = (pce_id_p == 1) 
+                                                  ? l15_pce_ret_cast_i.inval_way[0] 
+                                                  : l15_pce_ret_cast_i.inval_way;
+
+          cache_stat_mem_pkt_v_o = l15_pce_ret_v_i;
+
+          l15_pce_ret_yumi_lo = cache_tag_mem_pkt_yumi_i & cache_stat_mem_pkt_yumi_i;
+        end
+      end
+      
     end
     
   always_ff @(posedge clk_i)
