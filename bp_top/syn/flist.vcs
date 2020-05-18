@@ -36,6 +36,7 @@ $BP_BE_DIR/src/include/bp_be_dcache/bp_be_dcache_pkg.vh
 # ME packages
 $BP_ME_DIR/src/include/v/bp_me_pkg.vh
 $BP_ME_DIR/src/include/v/bp_cce_pkg.v
+$BP_ME_DIR/src/include/v/bp_pce_pkg.vh
 ## bsg_ip_cores files
 $BASEJUMP_STL_DIR/bsg_async/bsg_async_fifo.v
 $BASEJUMP_STL_DIR/bsg_async/bsg_launch_sync_sync.v
@@ -229,6 +230,7 @@ $BP_ME_DIR/src/v/cce/bp_cce_wrapper.v
 # Network
 $BP_ME_DIR/src/v/cce/bp_cce_loopback.v
 $BP_ME_DIR/src/v/cce/bp_uce.v
+$BP_ME_DIR/src/v/cce/bp_pce.v
 $BP_ME_DIR/src/v/wormhole/bp_me_addr_to_cce_id.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_id_to_cord.v
 $BP_ME_DIR/src/v/wormhole/bp_me_cce_to_mem_link_bidir.v
@@ -267,6 +269,7 @@ $BP_TOP_DIR/src/v/bp_io_tile_node.v
 $BP_TOP_DIR/src/v/bp_mem_complex.v
 $BP_TOP_DIR/src/v/bp_multicore.v
 $BP_TOP_DIR/src/v/bp_unicore.v
+$BP_TOP_DIR/src/v/bp_piton_top.v
 $BP_TOP_DIR/src/v/bp_tile.v
 $BP_TOP_DIR/src/v/bp_tile_node.v
 
