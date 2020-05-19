@@ -354,7 +354,7 @@ module bp_piton_top
   assign transducer_l15_address = fifo_selected_lo.address;
   assign transducer_l15_data = fifo_selected_lo.data;
   assign transducer_l15_l1rplway = fifo_selected_lo.l1rplway;
-  assign transducer_l15_val = |fifo_yumi_li;
+  assign transducer_l15_val = |fifo_grants_lo;
   assign fifo_yumi_li[0] = fifo_grants_lo[0] & l15_transducer_ack;
   assign fifo_yumi_li[1] = fifo_grants_lo[1] & l15_transducer_ack;
 
