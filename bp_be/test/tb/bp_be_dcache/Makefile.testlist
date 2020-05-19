@@ -12,9 +12,9 @@ DCACHE_TESTLIST := \
 	wt_test_3
 
 run_testlist.%:
-	$(MAKE) build.$* CE=CCE CA=WB TAG=CCE.WB
-	$(MAKE) build.$* CE=UCE CA=WB TAG=UCE.WB
-	$(MAKE) build.$* CE=UCE CA=WT TAG=UCE.WT
+	$(MAKE) build_dump.$* CE=CCE CA=WB TAG=CCE.WB
+	$(MAKE) build_dump.$* CE=UCE CA=WB TAG=UCE.WB
+	$(MAKE) build_dump.$* CE=UCE CA=WT TAG=UCE.WT
 	$(MAKE) $(addsuffix .$*, $(addprefix run_test.CCE.WB.,$(DCACHE_TESTLIST)))
 	$(MAKE) $(addsuffix .$*, $(addprefix run_test.UCE.WB.,$(DCACHE_TESTLIST)))
 	$(MAKE) $(addsuffix .$*, $(addprefix run_test.UCE.WT.,$(DCACHE_TESTLIST)))
