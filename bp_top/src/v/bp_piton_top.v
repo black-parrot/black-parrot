@@ -9,10 +9,12 @@ module bp_piton_top
  import bp_cce_pkg::*;
  import bp_pce_pkg::*;
  import bsg_noc_pkg::*;
- #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
+ #(parameter bp_params_e bp_params_p = e_bp_piton_cfg // Warning: Change this at your own peril!
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
    `declare_bp_pce_l15_if_widths(paddr_width_p, dword_width_p)
+
+   , localparam cce_instr_ram_addr_width_lp = `BSG_SAFE_CLOG2(num_cce_instr_ram_els_p)
    )
   (input                                               clk_i
    , input                                             reset_i
@@ -46,11 +48,11 @@ module bp_piton_top
    );
 
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
+  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, dcache_sets_p, dcache_assoc_p, dword_width_p, dcache_block_width_p, dcache);
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache);
   `declare_bp_pce_l15_if(paddr_width_p, dword_width_p);
-  `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
   `declare_bp_cache_stat_info_s(dcache_assoc_p, dcache);
   `declare_bp_cache_stat_info_s(icache_assoc_p, icache);
 
@@ -253,6 +255,33 @@ module bp_piton_top
     ,.l15_pce_ret_yumi_o(l15_pce_ret_yumi_lo[0])
     );
 
+  logic cfg_resp_ready_li;
+  assign cfg_resp_yumi_li = cfg_resp_v_lo & cfg_resp_ready_li;
+  bp_cce_mmio_cfg_loader
+    #(.bp_params_p(bp_params_p)
+     ,.inst_width_p($bits(bp_cce_inst_s))
+     ,.inst_ram_addr_width_p(cce_instr_ram_addr_width_lp)
+     ,.inst_ram_els_p(num_cce_instr_ram_els_p)
+     ,.skip_ram_init_p(0)
+     ,.clear_freeze_p(1)
+     )
+     cfg_loader
+     (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.lce_id_i('0)
+
+     ,.io_cmd_o(cfg_cmd_li)
+     ,.io_cmd_v_o(cfg_cmd_v_li)
+     ,.io_cmd_yumi_i(cfg_cmd_v_li & cfg_cmd_ready_lo)
+
+     ,.io_resp_i(cfg_resp_lo)
+     ,.io_resp_v_i(cfg_resp_v_lo)
+     ,.io_resp_ready_o(cfg_resp_ready_li)
+
+     ,.done_o()
+     );
+
   bp_cfg
    #(.bp_params_p(bp_params_p))
    cfg
@@ -301,7 +330,6 @@ module bp_piton_top
     end
 
   logic [1:0] fifo_grants_lo;
-
   bsg_arb_fixed
    #(.inputs_p(2), .lo_to_hi_p(0))
    cmd_arbiter
