@@ -371,31 +371,6 @@ module bp_be_dcache
   logic [dcache_assoc_p-1:0] load_hit_tl;
   logic [dcache_assoc_p-1:0] store_hit_tl;
   logic [dcache_assoc_p-1:0] invalid_tl;
-  logic load_hit_v_tl;
-  logic store_hit_v_tl;
-  logic [way_id_width_lp-1:0] load_hit_way_tl;
-  logic [way_id_width_lp-1:0] store_hit_way_tl;
-  logic [paddr_width_p-1:0]  paddr_tl;
-  logic [ptag_width_lp-1:0] addr_tag_tl;
-
-  assign paddr_tl = {ptag_i, page_offset_tl_r};
-  
-  assign addr_tag_tl = paddr_tl[block_offset_width_lp+index_width_lp+:ptag_width_lp];
-
-  for (genvar i = 0; i < dcache_assoc_p; i++) begin: tag_comp_tl
-    assign tag_match_tl[i] = addr_tag_tl == tag_mem_data_lo[i].tag;
-    assign load_hit_tl[i] = tag_match_tl[i] & (tag_mem_data_lo[i].coh_state != e_COH_I);
-    assign store_hit_tl[i] = tag_match_tl[i] & ((tag_mem_data_lo[i].coh_state == e_COH_M)
-                                                || (tag_mem_data_lo[i].coh_state == e_COH_E));
-    assign invalid_tl[i] = (tag_mem_data_lo[i].coh_state == e_COH_I);
-  end
-
-  // miss_detect
-  //
-  logic [dcache_assoc_p-1:0] tag_match_tl;
-  logic [dcache_assoc_p-1:0] load_hit_tl;
-  logic [dcache_assoc_p-1:0] store_hit_tl;
-  logic [dcache_assoc_p-1:0] invalid_tl;
   logic [paddr_width_p-1:0]  paddr_tl;
   logic [ptag_width_lp-1:0] addr_tag_tl;
   logic [word_offset_width_lp-1:0] addr_word_offset_tl;
@@ -764,7 +739,7 @@ module bp_be_dcache
     else if(fencei_req) begin
       // Don't flush on fencei when coherent
       cache_req_cast_o.msg_type = e_cache_flush;
-      cache_req_v_o = ~poison_i & zcache_req_ready_i & gdirty_r & (coherent_l1_p == 0);
+      cache_req_v_o = ~poison_i & cache_req_ready_i & gdirty_r & (l1_coherent_p == 0);
     end
 
     cache_req_cast_o.addr = paddr_tv_r;
