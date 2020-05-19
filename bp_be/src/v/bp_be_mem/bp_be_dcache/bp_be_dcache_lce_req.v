@@ -232,7 +232,7 @@ module bp_be_dcache_lce_req
         else if (cache_req_cast_li.msg_type == e_uc_store) begin
           lce_req_v_o = lce_req_ready_i;
 
-          lce_req.data = cache_req_cast_li.data[dword_width_p-1:0];;
+          lce_req.data = cache_req_cast_li.data[dword_width_p-1:0];
           lce_req.header.size = bp_mem_msg_size_e'(cache_req_cast_li.size);
           lce_req.header.addr = cache_req_cast_li.addr;
           lce_req.header.msg_type = e_lce_req_type_uc_wr;
