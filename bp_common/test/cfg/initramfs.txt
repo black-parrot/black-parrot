@@ -1,0 +1,4 @@
+dir /dev 755 0 0
+nod /dev/console 644 0 0 c 5 1
+nod /dev/null 644 0 0 c 1 3
+slink /init /bin/busybox 755 0 0
