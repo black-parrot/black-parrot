@@ -37,7 +37,7 @@ module bp_piton_top
    , input [dword_width_p-1:0]                         l15_transducer_data_2
    , input [dword_width_p-1:0]                         l15_transducer_data_3
    , input                                             l15_transducer_noncacheable
-   , input [2:0]                                       l15_transducer_threadid 
+   , input                                             l15_transducer_threadid 
    , input [11:0]                                      l15_transducer_inval_address_15_4
    , input                                             l15_transducer_inval_icache_inval
    , input                                             l15_transducer_inval_dcache_inval
@@ -248,7 +248,7 @@ module bp_piton_top
 
     ,.pce_l15_req_v_o(pce_l15_req_v_lo[0])
     ,.pce_l15_req_o(pce_l15_req_lo[0])
-    ,.pce_l15_req_ready_i(pce_l15_ready_li[0])
+    ,.pce_l15_req_ready_i(pce_l15_req_ready_li[0])
 
     ,.l15_pce_ret_v_i(l15_pce_ret_v_li[0])
     ,.l15_pce_ret_i(l15_pce_ret_li[0])
@@ -308,8 +308,8 @@ module bp_piton_top
      );
 
   // PCE -> L1.5 - Arbitration logic
-  bp_pce_l15_req_s [2:0] fifo_lo;
-  logic [2:0] fifo_v_lo, fifo_yumi_li;
+  bp_pce_l15_req_s [1:0] fifo_lo;
+  logic [1:0] fifo_v_lo, fifo_yumi_li;
   
   for (genvar i = 0; i < 2; i++)
     begin : fifo
@@ -378,7 +378,7 @@ module bp_piton_top
     ,.yumi_i(fifo_pce_yumi_li)
     );
 
-  assign l15_fifo_li.rtntype = l15_transducer_returntype;
+  assign l15_fifo_li.rtntype = bp_l15_pce_ret_type_e'(l15_transducer_returntype);
   assign l15_fifo_li.noncacheable = l15_transducer_noncacheable;
   assign l15_fifo_li.data_0 = l15_transducer_data_0;
   assign l15_fifo_li.data_1 = l15_transducer_data_1;

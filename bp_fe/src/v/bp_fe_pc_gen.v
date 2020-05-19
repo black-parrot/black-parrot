@@ -44,7 +44,7 @@ module bp_fe_pc_gen
 
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
 `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p);
-`declare_bp_fe_mem_structs(vaddr_width_p, lce_sets_p, cce_block_width_p, vtag_width_p, ptag_width_p)
+`declare_bp_fe_mem_structs(vaddr_width_p, icache_sets_p, icache_block_width_p, vtag_width_p, ptag_width_p)
 `declare_bp_fe_pc_gen_stage_s(vaddr_width_p, ghist_width_p);
 
 bp_fe_mem_cmd_s mem_cmd_cast_o;

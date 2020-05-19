@@ -50,7 +50,7 @@ typedef struct packed                                            \
   logic [data_width_mp-1:0] data_1;                              \
   logic [data_width_mp-1:0] data_2;                              \
   logic [data_width_mp-1:0] data_3;                              \
-  logic [2:0]               threadid;                            \
+  logic                     threadid;                            \
   logic [11:0]              inval_address_15_4;                  \
   logic                     inval_icache_inval;                  \
   logic                     inval_dcache_inval;                  \
@@ -64,7 +64,7 @@ typedef struct packed                                            \
    + paddr_width_mp + data_width_mp + 2 + 1)
 
 `define bp_l15_pce_ret_width(data_width_mp) \
-  ($bits(bp_l15_pce_ret_type_e) + 3 + 12 + 2 + 4*data_width_mp + 5)
+  ($bits(bp_l15_pce_ret_type_e) + 1 + 12 + 2 + 4*data_width_mp + 5)
 
 `define declare_bp_pce_l15_if(paddr_width_mp, data_width_mp) \
   `declare_bp_pce_l15_req_s(paddr_width_mp, data_width_mp); \

@@ -163,6 +163,9 @@ module bp_pce
     ,.count_o(credit_count_lo)
     );
 
+  assign credits_full_o = (credit_count_lo == coh_noc_max_credits_p);
+  assign credits_empty_o = (credit_count_lo == 0);
+
   logic l15_pce_ret_yumi_lo;
   assign l15_pce_ret_yumi_o = l15_pce_ret_yumi_lo | store_resp_v_li;
 
@@ -304,7 +307,7 @@ module bp_pce
               pce_l15_req_cast_o.address = cache_req_cast_i.addr;
               pce_l15_req_cast_o.l1rplway = (pce_id_p == 1)
                                             ? {cache_req_cast_i.addr[11], cache_req_metadata_cast_i.repl_way}
-                                            : cache_req_metadata_cast_i.reply_way;
+                                            : cache_req_metadata_cast_i.repl_way;
               pce_l15_req_v_o = pce_l15_req_ready_i;
 
               state_n = pce_l15_req_v_o
@@ -312,11 +315,11 @@ module bp_pce
                         : e_send_req;
             end
             else if (uc_load_v_li) begin
-              pce_l15_req_cast_i.rqtype = (pce_id_p == 1)
+              pce_l15_req_cast_o.rqtype = (pce_id_p == 1)
                                             ? e_load_req
                                             : e_imiss_req; 
-              pce_l15_req_cast_i.nc = 1'b1;
-              pce_l15_req_cast_i.size = (cache_req_cast_i.size == e_size_1B)
+              pce_l15_req_cast_o.nc = 1'b1;
+              pce_l15_req_cast_o.size = (cache_req_cast_i.size == e_size_1B)
                                     ? e_l15_size_1B
                                     : (cache_req_cast_i.size == e_size_2B)
                                       ? e_l15_size_2B
@@ -324,10 +327,10 @@ module bp_pce
                                         ? e_l15_size_4B
                                         : e_l15_size_8B;
 
-              pce_l15_req_cast_i.address = cache_req_cast_i.addr;
-              pce_l15_req_cast_i.l1rplway = (pce_id_p == 1) 
+              pce_l15_req_cast_o.address = cache_req_cast_i.addr;
+              pce_l15_req_cast_o.l1rplway = (pce_id_p == 1) 
                                             ? {cache_req_cast_i.addr[11], cache_req_metadata_cast_i.repl_way}
-                                            : cache_req_metadata_cast_i.reply_way;
+                                            : cache_req_metadata_cast_i.repl_way;
 
               pce_l15_req_v_o = pce_l15_req_ready_i;
 
@@ -486,10 +489,10 @@ module bp_pce
   always_ff @(posedge clk_i)
     begin
       if(reset_i) begin
-        state_n <= e_reset;
+        state_r <= e_reset;
       end
       else begin
-        state_n <= state_r;
+        state_r <= state_n;
       end
     end
 
