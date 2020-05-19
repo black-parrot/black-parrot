@@ -157,7 +157,6 @@ $BASEJUMP_STL_DIR/bsg_noc/bsg_wormhole_router_output_control.v
 $BP_COMMON_DIR/src/v/bsg_fifo_1r1w_rolly.v
 $BP_COMMON_DIR/src/v/bp_pma.v
 $BP_COMMON_DIR/src/v/bp_tlb.v
-$BP_COMMON_DIR/src/v/bp_tlb_replacement.v
 ## BE files
 $BP_BE_DIR/src/v/bp_be_top.v
 # Calculator
