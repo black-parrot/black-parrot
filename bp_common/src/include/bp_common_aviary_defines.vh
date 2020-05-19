@@ -106,7 +106,6 @@ typedef struct packed
   integer sac_x_dim;
   integer cacc_type;
   integer sacc_type;
-  integer coherent_l1;
 
   integer vaddr_width;
   integer paddr_width;
@@ -121,6 +120,8 @@ typedef struct packed
   integer itlb_els;
   integer dtlb_els;
 
+  integer l1_writethrough;
+  integer l1_coherent;
   integer dcache_sets;
   integer dcache_assoc;
   integer dcache_block_width;
@@ -204,14 +205,12 @@ typedef struct packed
   , localparam num_cacc_p  = cac_x_dim_p * cac_y_dim_p                                             \
   , localparam num_sacc_p  = sac_x_dim_p * sac_y_dim_p                                             \
                                                                                                    \
-  , localparam num_cce_p  = (bp_params_e_mp == e_bp_half_core_cfg) ? 1 : num_core_p + num_l2e_p    \
-  , localparam num_lce_p  = (bp_params_e_mp == e_bp_half_core_cfg) ? 1 : 2*num_core_p + num_cacc_p \
+  , localparam num_cce_p  = ((bp_params_e_mp == e_bp_half_core_cfg) | (bp_params_e_mp == e_bp_half_core_ucode_cce_cfg)) ? 1 : num_core_p + num_l2e_p    \
+  , localparam num_lce_p  = ((bp_params_e_mp == e_bp_half_core_cfg) | (bp_params_e_mp == e_bp_half_core_ucode_cce_cfg)) ? 1 : 2*num_core_p + num_cacc_p \
                                                                                                    \
   , localparam core_id_width_p = `BSG_SAFE_CLOG2(cc_x_dim_p*cc_y_dim_p)                            \
   , localparam cce_id_width_p  = `BSG_SAFE_CLOG2((cc_x_dim_p*1+2)*(cc_y_dim_p*1+2))                \
   , localparam lce_id_width_p  = `BSG_SAFE_CLOG2((cc_x_dim_p*2+2)*(cc_y_dim_p*2+2))                \
-                                                                                                   \
-  , localparam coherent_l1_p = proc_param_lp.coherent_l1                                           \
                                                                                                    \
   , localparam vaddr_width_p = proc_param_lp.vaddr_width                                           \
   , localparam paddr_width_p = proc_param_lp.paddr_width                                           \
@@ -226,6 +225,8 @@ typedef struct packed
   , localparam itlb_els_p              = proc_param_lp.itlb_els                                    \
   , localparam dtlb_els_p              = proc_param_lp.dtlb_els                                    \
                                                                                                    \
+  , localparam l1_coherent_p              = proc_param_lp.l1_coherent                              \
+  , localparam l1_writethrough_p          = proc_param_lp.l1_writethrough                          \
   , localparam dcache_sets_p              = proc_param_lp.dcache_sets                              \
   , localparam dcache_assoc_p             = proc_param_lp.dcache_assoc                             \
   , localparam dcache_block_width_p       = proc_param_lp.dcache_block_width                       \

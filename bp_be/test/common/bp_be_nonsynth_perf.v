@@ -12,10 +12,26 @@ module bp_be_nonsynth_perf
 
    , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
 
+   , input [31:0] warmup_instr_i
+
    , input commit_v_i
 
    , input [num_core_p-1:0] program_finish_i
    );
+
+logic [29:0] warmup_cnt;
+logic warm;
+bsg_counter_clear_up
+ #(.max_val_p(2**30-1), .init_val_p(0))
+ warmup_counter
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i | freeze_i)
+
+   ,.clear_i(1'b0)
+   ,.up_i(commit_v_i & ~warm)
+   ,.count_o(warmup_cnt)
+   );
+assign warm = (warmup_cnt == warmup_instr_i);
 
 logic [63:0] clk_cnt_r;
 logic [63:0] instr_cnt_r;
@@ -23,7 +39,7 @@ logic [63:0] instr_cnt_r;
 logic [num_core_p-1:0] program_finish_r;
 always_ff @(posedge clk_i)
   begin
-    if (reset_i | freeze_i) 
+    if (reset_i | freeze_i | ~warm) 
       begin
         clk_cnt_r <= '0;
         instr_cnt_r <= '0;

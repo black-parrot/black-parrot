@@ -13,7 +13,9 @@ BlackParrot aims to be the default open-source, Linux-capable, cache-coherent, R
     - Combat NIH, welcome external contributions and strive for infrastructure agnosticism.
 
 ## Project Status
-The next release of BlackParrot, v 1.0, is coming in March 2020, and will contain support for an up to 16-core cache coherent multicore, including enough baseline user and privilege mode functionality to run Linux. An optimized single core variant of BlackParrot will also be released at this time.
+BlackParrot v 1.0 was released in March 2020 and has been up and running in the lab since April 2020. It supports configurations scaling up to a 16-core cache coherent multicore, including the baseline user and privilege mode functionality to run Linux. An optimized single core variant of BlackParrot (also Linux-capable) is also available.
+
+Development of BlackParrot continues, and we are very excited about what we are releasing next!
 
 A 12nm BlackParrot multicore chip was taped out in July 2019.
 
@@ -33,9 +35,7 @@ Users who just want to test their setup and run a minimal BlackParrot test shoul
     make prep_lite
 
     # Running your first test
-    cd bp_top/syn
-    # Run a test in Verilator (indicated by .sc extension)
-    make build.sc sim.sc PROG=hello_world
+    make -C bp_top/syn tire_kick
 
 This should output (roughly)
 
@@ -44,13 +44,19 @@ This should output (roughly)
     [CORE0 STATS]
         clk   :                  220
         instr :                   66
-        fe_nop:                    0
-        be_nop:                    0
-        me_nop:                    0
-        poison:                  115
-        roll  :                   21
         mIPC  :                  300
     All cores finished! Terminating...
+
+### Docker build
+For a painless Ubuntu build, download and install [Docker Desktop](https://www.docker.com/products/docker-desktop) then run the following:
+
+    git clone https://github.com/black-parrot/black-parrot.git
+    cd black-parrot
+    docker-compose build --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) bp
+    docker-compose up -d
+    docker-compose exec bp su - build
+    
+Then follow the [Tire Kick](#-tire-kick) directions above starting with "cd black-parrot" or the "Full" directions below.  The repo directory will be mounted inside the container.
 
 ### Getting Started for Real
 Users who want to fully evaluate BlackParrot, or develop hardware or software using it should follow [Getting Started (Full)](docs/getting_started.md).
@@ -58,7 +64,7 @@ Users who want to fully evaluate BlackParrot, or develop hardware or software us
 Although the information in collected in this repo, it's recommended to look at these [Slides](https://fosdem.org/2020/schedule/event/riscv_blackparrot/attachments/slides/3718/export/events/attachments/riscv_blackparrot/slides/3718/Talk_Slides) for a quick overview of BlackParrot.
 
 ## How to Contribute
-We welcome external contributions! Please join our mailing at (Coming soon!) and follow us on [Twitter](https://twitter.com/BlackParrotCore) to discuss, ask questions or just tell us how you're using BlackParrot! For a smooth contribution experience, take a look at our [Contribution Guide](CONTRIBUTING.md).
+We welcome external contributions! Please join our mailing list at [Google Groups](https://groups.google.com/forum/#!forum/black-parrot) and follow us on [Twitter](https://twitter.com/BlackParrotCore) to discuss, ask questions or just tell us how you're using BlackParrot! For a smooth contribution experience, take a look at our [Contribution Guide](CONTRIBUTING.md).
 
 ## Coding Style
 BlackParrot is written in standard SystemVerilog, using a subset of the language known to be both synthesizable and compatible with a wide variety of vendor tools. Details of these style choices both functional and aesthetic can be found in our [Style Guide](docs/style_guide.md)

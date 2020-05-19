@@ -86,19 +86,19 @@ module bp_be_mem_top
    // data_mem
    , input data_mem_pkt_v_i
    , input [dcache_data_mem_pkt_width_lp-1:0] data_mem_pkt_i
-   , output logic data_mem_pkt_ready_o
+   , output logic data_mem_pkt_yumi_o
    , output logic [dcache_block_width_p-1:0] data_mem_o
 
    // tag_mem
    , input tag_mem_pkt_v_i
    , input [dcache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_i
-   , output logic tag_mem_pkt_ready_o
+   , output logic tag_mem_pkt_yumi_o
    , output logic [ptag_width_p-1:0] tag_mem_o
 
    // stat_mem
    , input stat_mem_pkt_v_i
    , input [dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_i
-   , output logic stat_mem_pkt_ready_o
+   , output logic stat_mem_pkt_yumi_o
    , output logic [stat_info_width_lp-1:0] stat_mem_o
 
    , input [commit_pkt_width_lp-1:0]         commit_pkt_i
@@ -370,8 +370,7 @@ bp_be_ptw
 
 logic load_op_tl_lo, store_op_tl_lo;
 bp_be_dcache
-  #(.bp_params_p(bp_params_p)
-    ,.writethrough_p(0))
+  #(.bp_params_p(bp_params_p))
   dcache
    (.clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -407,15 +406,15 @@ bp_be_dcache
     ,.data_mem_pkt_v_i(data_mem_pkt_v_i)
     ,.data_mem_pkt_i(data_mem_pkt_i)
     ,.data_mem_o(data_mem_o)
-    ,.data_mem_pkt_ready_o(data_mem_pkt_ready_o)
+    ,.data_mem_pkt_yumi_o(data_mem_pkt_yumi_o)
     ,.tag_mem_pkt_v_i(tag_mem_pkt_v_i)
     ,.tag_mem_pkt_i(tag_mem_pkt_i)
     ,.tag_mem_o(tag_mem_o)
-    ,.tag_mem_pkt_ready_o(tag_mem_pkt_ready_o)
+    ,.tag_mem_pkt_yumi_o(tag_mem_pkt_yumi_o)
     ,.stat_mem_pkt_v_i(stat_mem_pkt_v_i)
     ,.stat_mem_pkt_i(stat_mem_pkt_i)
     ,.stat_mem_o(stat_mem_o)
-    ,.stat_mem_pkt_ready_o(stat_mem_pkt_ready_o)
+    ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_o)
     );
 
 // We delay the tlb miss signal by one cycle to synchronize with cache miss signal

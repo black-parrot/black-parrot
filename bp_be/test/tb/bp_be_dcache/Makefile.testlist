@@ -1,0 +1,28 @@
+
+DCACHE_TESTLIST := \
+	byte_test \
+	word_test \
+	double_word_test \
+	writeback_test \
+	half_word_test \
+	unaligned_test \
+	uncached_test \
+	wt_test_1 \
+	wt_test_2 \
+	wt_test_3
+
+run_testlist.%:
+	$(MAKE) build_dump.$* CE=CCE CA=WB TAG=CCE.WB
+	$(MAKE) build_dump.$* CE=UCE CA=WB TAG=UCE.WB
+	$(MAKE) build_dump.$* CE=UCE CA=WT TAG=UCE.WT
+	$(MAKE) $(addsuffix .$*, $(addprefix run_test.CCE.WB.,$(DCACHE_TESTLIST)))
+	$(MAKE) $(addsuffix .$*, $(addprefix run_test.UCE.WB.,$(DCACHE_TESTLIST)))
+	$(MAKE) $(addsuffix .$*, $(addprefix run_test.UCE.WT.,$(DCACHE_TESTLIST)))
+
+# We can trim this up a bit when we have custom configs
+run_test.%:
+	$(eval override CE    := $(word 1,$(subst .,  ,$*)))
+	$(eval override CA    := $(word 2,$(subst .,  ,$*)))
+	$(eval override PROG  := $(word 3,$(subst .,  ,$*)))
+	$(eval override TS    := $(word 4,$(subst .,  ,$*)))
+	$(MAKE) sim.$(TS) CE=$(CE) CA=$(CA) PROG=$(PROG) TAG=$(CE).$(CA)

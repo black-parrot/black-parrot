@@ -1,7 +1,5 @@
 +incdir+$BP_ME_DIR/test/common
 $BASEJUMP_STL_DIR/bsg_fsb/bsg_fsb_node_trace_replay.v
-$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_clock_gen.v
-$BASEJUMP_STL_DIR/bsg_test/bsg_nonsynth_reset_gen.v
 $BP_ME_DIR/test/common/bp_me_nonsynth_pkg.vh
 $BP_ME_DIR/test/common/bp_me_nonsynth_cce_tracer.v
 $BP_ME_DIR/test/common/bp_me_nonsynth_lce_tracer.v
