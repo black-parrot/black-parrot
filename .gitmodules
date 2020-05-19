@@ -125,3 +125,14 @@
   branch = master
   ignore = dirty
 
+[submodule "bp_common/test/src/linux"]
+  path = bp_common/test/src/linux
+  url = https://github.com/torvalds/linux
+  branch = master
+  ignore = dirty
+
+[submodule "bp_common/test/src/buildroot"]
+  path = bp_common/test/src/buildroot
+  url = https://github.com/buildroot/buildroot
+  branch = master
+  ignore = dirty
