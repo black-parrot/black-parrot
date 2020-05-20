@@ -104,10 +104,8 @@ bp_tlb
    ,.entry_i(mem_cmd_cast_i.operands.fill.entry)
      
    ,.v_o(itlb_r_v_lo)
-   ,.entry_o(itlb_r_entry)
-
    ,.miss_v_o(itlb_miss_lo)
-   ,.miss_vtag_o()
+   ,.entry_o(itlb_r_entry)
    );
 
 wire [ptag_width_p-1:0] ptag_li     = itlb_r_entry.ptag;
