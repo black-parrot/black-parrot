@@ -1,7 +1,7 @@
 
 MISC_TESTS := \
   cache_hammer
-MISC_TESTLIST := $(addprefix bp_tests., $(MISC_TESTS))
+MISC_TESTLIST := $(addprefix bp_tests@, $(MISC_TESTS))
 
 RV64_P_ISA_TESTS := \
   rv64ui-p-add     \
@@ -90,7 +90,7 @@ RV64_P_ISA_TESTS := \
   rv64um-p-remuw     \
   rv64um-p-remw
 
-RV64_P_ISA_TESTLIST := $(addprefix riscv_tests., $(RV64_P_ISA_TESTS))
+RV64_P_ISA_TESTLIST := $(addprefix riscv_tests@, $(RV64_P_ISA_TESTS))
 
   #rv64ua-v-amominu_w
 RV64_V_ISA_TESTS := \
@@ -162,7 +162,7 @@ RV64_V_ISA_TESTS := \
   rv64ua-v-amoxor_w  \
   rv64ua-v-lrsc
 
-RV64_V_ISA_TESTLIST := $(addprefix riscv_tests., $(RV64_V_ISA_TESTS))
+RV64_V_ISA_TESTLIST := $(addprefix riscv_tests@, $(RV64_V_ISA_TESTS))
 
 RV64_PT_ISA_TESTS := \
   rv64ui-pt-add     \
@@ -234,7 +234,7 @@ RV64_PT_ISA_TESTS := \
   rv64ua-pt-amoxor_w  \
   rv64ua-pt-lrsc
 
-RV64_PT_ISA_TESTLIST := $(addprefix riscv_tests., $(RV64_PT_ISA_TESTS))
+RV64_PT_ISA_TESTLIST := $(addprefix riscv_tests@, $(RV64_PT_ISA_TESTS))
 
   # TODO: Fails in spike
   #rv64ui-vt-slti
@@ -308,7 +308,7 @@ RV64_VT_ISA_TESTS := \
   rv64ua-vt-amoxor_w  \
   rv64ua-vt-lrsc
 
-RV64_VT_ISA_TESTLIST := $(addprefix riscv_tests., $(RV64_VT_ISA_TESTS))
+RV64_VT_ISA_TESTLIST := $(addprefix riscv_tests@, $(RV64_VT_ISA_TESTS))
 
 RV64_BENCHMARK_TESTS := \
   median   \
@@ -319,7 +319,7 @@ RV64_BENCHMARK_TESTS := \
   vvadd    \
   dhrystone
 
-RV64_BENCHMARK_TESTLIST := $(addprefix riscv_tests., $(RV64_BENCHMARK_TESTS))
+RV64_BENCHMARK_TESTLIST := $(addprefix riscv_tests@, $(RV64_BENCHMARK_TESTS))
 
 RISCV_TESTLIST := \
 	$(RV64_P_ISA_TESTLIST) \
@@ -330,7 +330,7 @@ RISCV_TESTLIST := \
 
 COREMARK_TESTS := coremark
 
-COREMARK_TESTLIST := $(addprefix coremark., $(COREMARK_TESTS))
+COREMARK_TESTLIST := $(addprefix coremark@, $(COREMARK_TESTS))
 
 BEEBS_TESTS := \
   aha-compress \
@@ -411,7 +411,7 @@ BEEBS_TESTS := \
   wikisort \
   qsort
 
-BEEBS_TESTLIST := $(addprefix beebs., $(BEEBS_TESTS))
+BEEBS_TESTLIST := $(addprefix beebs@, $(BEEBS_TESTS))
 
 MC_TESTS := \
   mc_sanity_1 \
@@ -430,7 +430,7 @@ MC_TESTS := \
   mc_work_share_sort_8 \
   mc_work_share_sort_16
 
-MC_TESTLIST := $(addprefix bp_tests., $(MC_TESTS))
+MC_TESTLIST := $(addprefix bp_tests@, $(MC_TESTS))
 
 RISCVDV_TESTS := \
   riscv_arithmetic_basic_test     \
@@ -444,7 +444,7 @@ RISCVDV_TESTS := \
   riscv_rand_jump_test            \
   riscv_sfence_exception_test
 
-RISCVDV_TESTLIST := $(addprefix riscvdv_tests., $(RISCVDV_TESTS))
+RISCVDV_TESTLIST := $(addprefix riscvdv_tests@, $(RISCVDV_TESTS))
 
 SPEC_TESTS := \
   175.vpr \
@@ -454,7 +454,7 @@ SPEC_TESTS := \
   256.bzip2 \
   197.parser
 
-SPEC_TESTLIST := $(addprefix spec., $(SPEC_TESTS))
+SPEC_TESTLIST := $(addprefix spec@, $(SPEC_TESTS))
 
 BASELINE_TESTLIST := \
   bp_tests@hello_world \
@@ -470,7 +470,7 @@ BASELINE_TESTLIST := \
 
 TESTLIST ?=
 run_testlist.%:
-	$(MAKE) build.$*
+	$(MAKE) -j1 build.$*
 	$(MAKE) $(addsuffix @$*, $(addprefix run_test@, $($(TESTLIST))))
 
 # For example: run_test@beebs@frac@v
@@ -480,14 +480,16 @@ run_test@%:
 	$(eval override TS    := $(word 3,$(subst @,  ,$*)))
 	$(MAKE) sim.$(TS) SUITE=$(SUITE) PROG=$(PROG)
 
+dromajo_dump:
+	$(DROMAJO) $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv --host \
+		--dump_period=$(SAMPLE_INSTR_P) --save=dromajo --memory_size=$(SAMPLE_MEMSIZE)
+
 # Run an entire benchmark in parallel
 # Important parameters:
 #   SAMPLE_INSTR_P  - instructions per sample
 #   SAMPLE_WARMUP_P - instructions to run for warmup, without statistics
 #   SAMPLE_MEMSIZE  - RAM size of the sample (affects simulation startup time)
-run_psample.%:
-	$(DROMAJO) $(BP_TEST_MEM_DIR)/$(SUITE)/$(PROG).riscv --host \
-		--dump_period=$(SAMPLE_INSTR_P) --save=dromajo --memory_size=$(SAMPLE_MEMSIZE)
+run_psample.%: dromajo_dump
 	$(eval CHECKPOINTS := $(subst .mainram,,$(subst dromajo.,,$(shell ls dromajo.*.mainram))))
 	rm dromajo.*
 	$(MAKE) $(addsuffix @$*, $(addprefix run_sample@, $(CHECKPOINTS)))
@@ -495,14 +497,18 @@ run_psample.%:
 # Special case 0, because we won't drop a checkpoint for it
 run_sample@0%:
 	$(eval override TS := $(word 1,$(subst @,  ,$*)))
-	$(MAKE) build.$(TS) COSIM_P=1 LOAD_NBF_P=1 PRELOAD_MEM_P=1 TAG=$(SAMPLE_START_P).$(SAMPLE_WARMUP_P).$(SAMPLE_INSTR_P)
+	$(MAKE) -j1 build.$(TS) COSIM_P=1 LOAD_NBF_P=1 PRELOAD_MEM_P=1 TAG=$(SAMPLE_START_P).$(SAMPLE_WARMUP_P).$(SAMPLE_INSTR_P)
 	$(MAKE) sim.$(TS) TAG=$(SAMPLE_START_P).$(SAMPLE_WARMUP_P).$(SAMPLE_INSTR_P)
 
 # For example: run_sample@bp_tests@hello_world@60
 run_sample@%:
 	$(eval override SAMPLE_START_P  := $(word 1,$(subst @,  ,$*)))
 	$(eval override TS              := $(word 2,$(subst @,  ,$*)))
-	$(MAKE) build.$(TS) COSIM_P=1 LOAD_NBF_P=1 PRELOAD_MEM_P=1 TAG=$(SAMPLE_START_P).$(SAMPLE_WARMUP_P).$(SAMPLE_INSTR_P)
+	$(MAKE) -j1 build.$(TS) COSIM_P=1 LOAD_NBF_P=1 PRELOAD_MEM_P=1 TAG=$(SAMPLE_START_P).$(SAMPLE_WARMUP_P).$(SAMPLE_INSTR_P)
 	$(MAKE) sim_sample.$(TS) TAG=$(SAMPLE_START_P).$(SAMPLE_WARMUP_P).$(SAMPLE_INSTR_P)
 
-
+## Aliases
+riscv_regress.%:
+	$(MAKE) run_testlist.$* TESTLIST=RISCV_TESTLIST
+beebs_regress.%:
+	$(MAKE) run_testlist.$* TESTLIST=BEEBS_TESTLIST

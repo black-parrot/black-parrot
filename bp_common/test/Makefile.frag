@@ -471,6 +471,10 @@ BEEBS_TESTS = \
   wikisort
 BEEBS_TESTS_RISCV := $(addprefix $(BP_TEST_MEM_DIR)/beebs/, $(addsuffix .riscv, $(BEEBS_TESTS)))
 
+COREMARK_TESTS = \
+  coremark
+COREMARK_TESTS_RISCV := $(addprefix $(BP_TEST_MEM_DIR)/coremark/, $(addsuffix .riscv, $(COREMARK_TESTS)))
+
 SPEC = \
   175.vpr \
   181.mcf \

@@ -113,6 +113,8 @@ update-cache: &update-cache-manual
       - $CI_PROJECT_DIR/external/share
       - $CI_PROJECT_DIR/external/touchfiles
     policy: pull
+  dependencies: []
+  retry: 1
 
 prep:
   <<: *job_definition
@@ -215,7 +217,7 @@ top-riscv-tests-vcs:
   tags:
     - vcs
   script:
-    - $CI_PROJECT_DIR/ci/single_core_testlist.sh verilator RISCV_TESTLIST $CI_CORES
+    - $CI_PROJECT_DIR/ci/single_core_testlist.sh vcs RISCV_TESTLIST $CI_CORES
 
 dcache-vcs:
   <<: *job_definition

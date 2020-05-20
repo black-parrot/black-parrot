@@ -74,3 +74,13 @@ $(SIM_DIR)/run_samplesc: $(SIM_COLLATERAL)
 	-@grep "PASS" $(SIM_LOG) || echo "FAILED" > $(SIM_ERROR)
 	-@grep "STATS" -A 3 $(SIM_LOG) > $(SIM_REPORT)
 
+tire_kick: $(SIM_DIR)/tire_kick
+tire_kick: $(SIM_DIR)/simsc
+$(SIM_DIR)/tire_kick: $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_DIR)
+	$(MAKE) build.sc
+	$(MAKE) $(@D)/simsc
+	cp $(BP_TEST_MEM_DIR)/hello_world.mem  $(@D)/prog.mem
+	cp $(BP_TEST_MEM_DIR)/hello_world.dump $(@D)/prog.dump
+	cp $(CCE_MEM_PATH)/$(CCE_MEM) $(@D)/cce_ucode.mem
+	cd $(@D); ./simsc $(VERILATOR_OPTIONS) $(VERILATOR_PLUSARGS)
+
