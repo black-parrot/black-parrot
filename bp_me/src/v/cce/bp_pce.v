@@ -351,9 +351,11 @@ module bp_pce
                                                 l15_pce_ret_cast_i.data_0[32+:8], l15_pce_ret_cast_i.data_0[40+:8],
                                                 l15_pce_ret_cast_i.data_0[48+:8], l15_pce_ret_cast_i.data_0[56+:8]};   
               cache_data_mem_pkt_v_o = l15_pce_ret_v_i;
-
+              
               l15_pce_ret_yumi_lo = cache_data_mem_pkt_yumi_i;
-              state_n = l15_pce_ret_yumi_lo 
+              cache_req_complete_o = cache_data_mem_pkt_yumi_i;
+
+              state_n = cache_req_complete_o 
                             ? e_ready 
                             : e_uc_read_wait;
             end
@@ -366,7 +368,9 @@ module bp_pce
               cache_data_mem_pkt_v_o = l15_pce_ret_v_i;
 
               l15_pce_ret_yumi_lo = cache_data_mem_pkt_yumi_i;
-              state_n = l15_pce_ret_yumi_lo
+              cache_req_complete_o = cache_data_mem_pkt_yumi_i;
+
+              state_n = cache_req_complete_o
                             ? e_ready 
                             : e_uc_read_wait;
             end
@@ -409,7 +413,9 @@ module bp_pce
               cache_tag_mem_pkt_v_o = l15_pce_ret_v_i;
 
               l15_pce_ret_yumi_lo = cache_data_mem_pkt_yumi_i & cache_tag_mem_pkt_yumi_i;
-              state_n = l15_pce_ret_yumi_lo 
+              cache_req_complete_o = cache_data_mem_pkt_yumi_i & cache_tag_mem_pkt_yumi_i;
+
+              state_n = cache_req_complete_o 
                               ? e_ready 
                               : e_read_wait;
             end
@@ -435,7 +441,9 @@ module bp_pce
               cache_tag_mem_pkt_v_o = l15_pce_ret_v_i;
 
               l15_pce_ret_yumi_lo = cache_data_mem_pkt_yumi_i & cache_tag_mem_pkt_yumi_i;
-              state_n = l15_pce_ret_yumi_lo 
+              cache_req_complete_o = cache_data_mem_pkt_yumi_i & cache_tag_mem_pkt_yumi_i;
+
+              state_n = cache_req_complete_o 
                               ? e_ready 
                               : e_read_wait;
             end 
