@@ -48,8 +48,9 @@ gnu_build:
 	cd $(gnu_dir); \
 		./configure --prefix=$(BP_EXTERNAL_DIR) --with-arch=rv64ima --with-abi=lp64 --with-cmodel=medany 
 	$(MAKE) -C $(gnu_dir)
+	$(MAKE) -C $(gnu_dir) linux
 	$(MAKE) -C $(gnu_dir) install
-	-cp $(BP_EXTERNAL_DIR)/riscv64-unknown-elf-dramfs/bin/dramfs_mklfs $(BP_BIN_DIR)
+	cp $(BP_EXTERNAL_DIR)/riscv64-unknown-elf-dramfs/bin/dramfs_mklfs $(BP_BIN_DIR)
 
 dtc_build:
 	$(MAKE) -j1 -C $(dtc_dir) install
