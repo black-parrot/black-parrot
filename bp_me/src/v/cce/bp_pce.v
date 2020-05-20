@@ -304,10 +304,10 @@ module bp_pce
               pce_l15_req_cast_o.size = (pce_id_p == 1)
                                         ? e_l15_size_8B
                                         : e_l15_size_16B;
-              pce_l15_req_cast_o.address = cache_req_cast_i.addr;
+              pce_l15_req_cast_o.address = cache_req_r.addr;
               pce_l15_req_cast_o.l1rplway = (pce_id_p == 1)
-                                            ? {cache_req_cast_i.addr[11], cache_req_metadata_cast_i.repl_way}
-                                            : cache_req_metadata_cast_i.repl_way;
+                                            ? {cache_req_r.addr[11], cache_req_metadata_r.repl_way}
+                                            : cache_req_metadata_r.repl_way;
               pce_l15_req_v_o = pce_l15_req_ready_i;
 
               state_n = pce_l15_req_v_o
@@ -319,18 +319,18 @@ module bp_pce
                                             ? e_load_req
                                             : e_imiss_req; 
               pce_l15_req_cast_o.nc = 1'b1;
-              pce_l15_req_cast_o.size = (cache_req_cast_i.size == e_size_1B)
+              pce_l15_req_cast_o.size = (cache_req_r.size == e_size_1B)
                                     ? e_l15_size_1B
-                                    : (cache_req_cast_i.size == e_size_2B)
+                                    : (cache_req_r.size == e_size_2B)
                                       ? e_l15_size_2B
-                                      : (cache_req_cast_i.size == e_size_4B)
+                                      : (cache_req_r.size == e_size_4B)
                                         ? e_l15_size_4B
                                         : e_l15_size_8B;
 
-              pce_l15_req_cast_o.address = cache_req_cast_i.addr;
+              pce_l15_req_cast_o.address = cache_req_r.addr;
               pce_l15_req_cast_o.l1rplway = (pce_id_p == 1) 
-                                            ? {cache_req_cast_i.addr[11], cache_req_metadata_cast_i.repl_way}
-                                            : cache_req_metadata_cast_i.repl_way;
+                                            ? {cache_req_r.addr[11], cache_req_metadata_r.repl_way}
+                                            : cache_req_metadata_r.repl_way;
 
               pce_l15_req_v_o = pce_l15_req_ready_i;
 
