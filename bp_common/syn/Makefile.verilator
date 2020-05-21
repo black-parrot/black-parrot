@@ -47,7 +47,7 @@ lint.sc: LINT_REPORT := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.rpt
 lint.sc: LINT_ERROR  := $(REPORT_DIR)/$(TB).$(CFG).$(TAG).lint.err
 $(LINT_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(LINT_DIR)
 $(LINT_DIR)/lintsc: $(LINT_COLLATERAL)
-	cd $(@D); $(VV) $(LINT_OPTS) $(HDL_PARAMS) $(HDL_DEFINES) |& tee $(LINT_LOG)
+	cd $(@D); $(VV) $(LINT_OPTS) $(HDL_PARAMS) $(HDL_DEFINES) 2>&1 | tee $(LINT_LOG)
 	-@grep -E "Exiting due to .* error\(s\)" -A 5 $(LINT_LOG) > $(LINT_ERROR)
 	-@test -s $(LINT_ERROR) && echo "FAILED" >> $(LINT_REPORT) \
 	|| { rm -f $(LINT_ERROR); echo "PASS" >> $(LINT_REPORT); }
