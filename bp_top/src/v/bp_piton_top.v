@@ -88,6 +88,7 @@ module bp_piton_top
   logic dcache_req_complete_li, icache_req_complete_li;
 
   logic [1:0] credits_full_li, credits_empty_li;
+  // TODO: Need to connect these from CLINT
   logic timer_irq_li, software_irq_li, external_irq_li;
 
   bp_pce_l15_req_s [1:0] pce_l15_req_lo;
@@ -166,9 +167,9 @@ module bp_piton_top
      ,.credits_full_i(|credits_full_li)
      ,.credits_empty_i(&credits_empty_li)
 
-     ,.timer_irq_i(timer_irq_li)
-     ,.software_irq_i(software_irq_li)
-     ,.external_irq_i(external_irq_li)
+     ,.timer_irq_i('0)
+     ,.software_irq_i('0)
+     ,.external_irq_i('0)
      );
 
   bp_pce
