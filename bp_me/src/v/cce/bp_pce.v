@@ -146,10 +146,12 @@ module bp_pce
   wire index_done = (index_cnt == sets_p-1);
 
   // Outstanding requests counter
+  // Need to return credits only on load and store (cached/uncached) requests
   logic [`BSG_WIDTH(coh_noc_max_credits_p)-1:0] credit_count_lo;
   wire credit_v_li = pce_l15_req_v_o;
   wire credit_ready_li = pce_l15_req_ready_i;
-  wire credit_returned_li = l15_pce_ret_yumi_o;
+  wire credit_not_returned = l15_pce_ret_v_i & (l15_pce_ret_cast_i.rtntype inside {e_int_ret, e_evict_req});
+  wire credit_returned_li = l15_pce_ret_yumi_o & ~credit_not_returned;
   bsg_flow_counter
     #(.els_p(coh_noc_max_credits_p))
     credit_counter
