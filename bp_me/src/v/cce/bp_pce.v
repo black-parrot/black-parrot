@@ -456,7 +456,7 @@ module bp_pce
       // doesn't support inval all way for dcache and inval specific way for
       // icache
       if (inval_v_li) begin
-        if (l15_pce_ret_cast_i.inval_icache_inval || l15_pce_ret_cast_i.inval_dcache_inval) begin
+        if (((pce_id_p == 0) && l15_pce_ret_cast_i.inval_icache_inval) || ((pce_id_p == 1) && l15_pce_ret_cast_i.inval_dcache_inval)) begin
           inval_cache_tag_mem_pkt_cast_o.index = (pce_id_p == 1) 
                                                   ? {l15_pce_ret_cast_i.inval_way[1], l15_pce_ret_cast_i.inval_address_15_4[6:0]} 
                                                   : l15_pce_ret_cast_i.inval_address_15_4[6:0];
@@ -468,7 +468,7 @@ module bp_pce
 
           l15_pce_ret_yumi_lo = cache_tag_mem_pkt_yumi_i;
         end
-        else if (l15_pce_ret_cast_i.inval_icache_all_way || l15_pce_ret_cast_i.inval_dcache_all_way) begin
+        else if (((pce_id_p == 0) && l15_pce_ret_cast_i.inval_icache_all_way) || ((pce_id_p == 1) && l15_pce_ret_cast_i.inval_dcache_all_way)) begin
           inval_cache_tag_mem_pkt_cast_o.index = (pce_id_p == 1) 
                                                   ? {l15_pce_ret_cast_i.inval_way[1], l15_pce_ret_cast_i.inval_address_15_4[6:0]} 
                                                   : l15_pce_ret_cast_i.inval_address_15_4[6:0];
