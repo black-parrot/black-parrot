@@ -173,7 +173,10 @@ always_comb
         begin
           decode.pipe_ctrl_v = 1'b1;
           decode.irf_w_v    = 1'b1;
-          decode.fu_op      = e_ctrl_op_jalr;
+          unique casez (instr)
+            `RV64_JALR: decode.fu_op = e_ctrl_op_jalr;
+            default : illegal_instr = 1'b1;
+          endcase
           decode.baddr_sel  = e_baddr_is_rs1;
         end
       `RV64_BRANCH_OP : 
