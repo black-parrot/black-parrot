@@ -304,7 +304,7 @@ module bp_pce
 
               pce_l15_req_cast_o.nc = 1'b0;
               pce_l15_req_cast_o.size = (pce_id_p == 1)
-                                        ? e_l15_size_8B
+                                        ? e_l15_size_16B
                                         : e_l15_size_16B;
               pce_l15_req_cast_o.address = cache_req_r.addr;
               pce_l15_req_cast_o.l1rplway = (pce_id_p == 1)
@@ -461,7 +461,7 @@ module bp_pce
         if (((pce_id_p == 0) && l15_pce_ret_cast_i.inval_icache_inval) || ((pce_id_p == 1) && l15_pce_ret_cast_i.inval_dcache_inval)) begin
           inval_cache_tag_mem_pkt_cast_o.index = (pce_id_p == 1) 
                                                   ? {l15_pce_ret_cast_i.inval_way[1], l15_pce_ret_cast_i.inval_address_15_4[6:0]} 
-                                                  : l15_pce_ret_cast_i.inval_address_15_4[6:0];
+                                                  : l15_pce_ret_cast_i.inval_address_15_4[7:1];
           inval_cache_tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_invalidate;
           inval_cache_tag_mem_pkt_cast_o.way_id = (pce_id_p == 1) 
                                                   ? l15_pce_ret_cast_i.inval_way[0] 
@@ -473,7 +473,7 @@ module bp_pce
         else if (((pce_id_p == 0) && l15_pce_ret_cast_i.inval_icache_all_way) || ((pce_id_p == 1) && l15_pce_ret_cast_i.inval_dcache_all_way)) begin
           inval_cache_tag_mem_pkt_cast_o.index = (pce_id_p == 1) 
                                                   ? {l15_pce_ret_cast_i.inval_way[1], l15_pce_ret_cast_i.inval_address_15_4[6:0]} 
-                                                  : l15_pce_ret_cast_i.inval_address_15_4[6:0];
+                                                  : l15_pce_ret_cast_i.inval_address_15_4[7:1];
           inval_cache_tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_clear;
           inval_cache_tag_mem_pkt_cast_o.way_id = (pce_id_p == 1) 
                                                   ? l15_pce_ret_cast_i.inval_way[0] 
@@ -482,7 +482,7 @@ module bp_pce
           
           inval_cache_stat_mem_pkt_cast_o.index = (pce_id_p == 1) 
                                                   ? {l15_pce_ret_cast_i.inval_way[1], l15_pce_ret_cast_i.inval_address_15_4[6:0]} 
-                                                  : l15_pce_ret_cast_i.inval_address_15_4[6:0];
+                                                  : l15_pce_ret_cast_i.inval_address_15_4[7:1];
           inval_cache_stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_set_clear;
           inval_cache_stat_mem_pkt_cast_o.way_id = (pce_id_p == 1) 
                                                   ? l15_pce_ret_cast_i.inval_way[0] 
