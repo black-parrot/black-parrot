@@ -3,6 +3,7 @@
 `ifndef BP_PCE_L15_IF_VH
 `define BP_PCE_L15_IF_VH
 
+// You can find these bit patterns in the 
 typedef enum logic [4:0]
 {
   e_load_req     = 5'b00000 // LOAD_RQ
@@ -21,13 +22,17 @@ typedef enum logic [3:0]
   , e_int_ret    = 4'b0111 // INT_RET
 } bp_l15_pce_ret_type_e;
 
+// You can find these bit patterns in piton/design/include/define.h.pyv
 typedef enum logic [2:0]
 {
-  e_l15_size_1B    = 3'b000 // PCX_SZ_1B
-  , e_l15_size_2B  = 3'b001 // PCX_SZ_2B
-  , e_l15_size_4B  = 3'b010 // PCX_SZ_4B
-  , e_l15_size_8B  = 3'b011 // PCX_SZ_8B
-  , e_l15_size_16B = 3'b111 // PCX_SZ_16B
+  e_l15_size_0B    = 3'b000 // MSG_DATA_SIZE_0B
+  , e_l15_size_1B  = 3'b001 // MSG_DATA_SIZE_1B
+  , e_l15_size_2B  = 3'b010 // MSG_DATA_SIZE_2B
+  , e_l15_size_4B  = 3'b011 // MSG_DATA_SIZE_4B
+  , e_l15_size_8B  = 3'b100 // MSG_DATA_SIZE_8B
+  , e_l15_size_16B = 3'b101 // MSG_DATA_SIZE_16B
+  , e_l15_size_32B = 3'b110 // MSG_DATA_SIZE_32B
+  , e_l15_size_64B = 3'b111 // MSG_DATA_SIZE_64B
 } bp_pce_l15_req_size_e;
 
 `define declare_bp_pce_l15_req_s(paddr_width_mp, data_width_mp)  \
