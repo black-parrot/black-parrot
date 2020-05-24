@@ -27,6 +27,14 @@ module bp_piton_top
    , output logic [paddr_width_p-1:0]                  transducer_l15_address
    , output logic [dword_width_p-1:0]                  transducer_l15_data
    , output logic [1:0]                                transducer_l15_l1rplway
+   , output logic                                      transducer_l15_threadid
+   , output logic [3:0]                                transducer_l15_amo_op
+   , output logic                                      transducer_l15_prefetch
+   , output logic                                      transducer_l15_invalidate_cacheline
+   , output logic                                      transducer_l15_blockstore
+   , output logic                                      transducer_l15_blockinitstore
+   , output logic [dword_width_p-1:0]                  transducer_l15_data_next_entry
+   , output logic [32:0]                               transducer_l15_csm_data
    , input                                             l15_transducer_ack
    
    // L1.5 -> Transducer
@@ -358,6 +366,16 @@ module bp_piton_top
   assign transducer_l15_val = |fifo_grants_lo;
   assign fifo_yumi_li[0] = fifo_grants_lo[0] & l15_transducer_ack;
   assign fifo_yumi_li[1] = fifo_grants_lo[1] & l15_transducer_ack;
+
+  // Unused signals
+  assign transducer_l15_threadid = '0;
+  assign transducer_l15_amo_op = '0;
+  assign transducer_l15_prefetch = '0;
+  assign transducer_l15_invalidate_cacheline = '0;
+  assign transducer_l15_blockstore = '0;
+  assign transducer_l15_blockinitstore = '0;
+  assign transducer_l15_data_next_entry = '0;
+  assign transducer_l15_csm_data = '0;
 
   // L1.5 -> PCE
   logic l15_fifo_v_li, l15_fifo_ready_lo;
