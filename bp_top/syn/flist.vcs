@@ -275,3 +275,7 @@ $BP_TOP_DIR/src/v/bp_tile_node.v
 
 # BSG Staging area
 $BP_TOP_DIR/src/v/bsg_async_noc_link.v
+
+# This is synthesizable for FPGAs, but should not be used for ASICs
+# TODO: Replace with a minimal, FSM-based configuration engine
+$BP_ME_DIR/test/common/bp_cce_mmio_cfg_loader.v
