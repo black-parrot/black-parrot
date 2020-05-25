@@ -93,3 +93,8 @@ A key feature of using BlackParrot is that it has been heavily validated in both
 ## Continuous Integration
 Upon commit to the listed branch, a functional regression consisting of full-system tests and module level tests is run and checked for correctness. Additionally, the design is checked with Synopsys DC to verify synthesizability. Work is in progress to continuously monitor PPA.
 
+## Attribution
+If used for academic research, please cite:
+
+D. Petrisko, F. Gilani, M. Wyse, D. C. Jung, S. Davidson, P. Gao, C. Zhao, Z. Azad, S. Canakci, B. Veluri, T. Guarino, A. J. Joshi, M. Oskin, M. B. Taylor, "BlackParrot: An Agile Open Source RISC-V Multicore for Accelerator SoCs," in *IEEE Micro Special Issue on Agile and Open-Source Hardware*, July/August, 2020. doi: 10.1109/MM.2020.2996145
+
