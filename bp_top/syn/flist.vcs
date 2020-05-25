@@ -262,8 +262,8 @@ $BP_TOP_DIR/src/v/bp_io_link_to_lce.v
 $BP_TOP_DIR/src/v/bp_io_tile.v
 $BP_TOP_DIR/src/v/bp_io_tile_node.v
 $BP_TOP_DIR/src/v/bp_mem_complex.v
-$BP_TOP_DIR/src/v/bp_processor.v
-$BP_TOP_DIR/src/v/bp_softcore.v
+$BP_TOP_DIR/src/v/bp_multicore.v
+$BP_TOP_DIR/src/v/bp_unicore.v
 $BP_TOP_DIR/src/v/bp_tile.v
 $BP_TOP_DIR/src/v/bp_tile_node.v
 
