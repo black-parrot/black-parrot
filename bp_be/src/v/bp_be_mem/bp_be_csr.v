@@ -299,7 +299,7 @@ assign sip_wmask_li    = '{meip: 1'b0, seip: 1'b0
                             ,default: '0
                            };
 
-logic exception_v_o, interrupt_v_o, ret_v_o, sfence_v_o;
+logic exception_v_o, interrupt_v_o, ret_v_o, sfence_v_o, satp_v_o;
 // CSR data
 always_comb
   begin
@@ -339,6 +339,7 @@ always_comb
     exception_v_o    = '0;
     interrupt_v_o    = '0;
     ret_v_o          = '0;
+    satp_v_o         = '0;
     illegal_instr_o  = '0;
     csr_data_lo      = '0;
     sfence_v_o       = '0;
@@ -560,7 +561,7 @@ always_comb
               `CSR_ADDR_STVAL: stval_li = csr_data_li;
               // SIP subset of MIP
               `CSR_ADDR_SIP: mip_li = (mip_lo & ~sip_wmask_li) | (csr_data_li & sip_wmask_li);
-              `CSR_ADDR_SATP: satp_li = csr_data_li;
+              `CSR_ADDR_SATP: begin satp_li = csr_data_li; satp_v_o = 1'b1; end
               `CSR_ADDR_MVENDORID: begin end
               `CSR_ADDR_MARCHID: begin end
               `CSR_ADDR_MIMPID: begin end
@@ -674,6 +675,7 @@ assign trap_pkt_cast_o.sfence           = sfence_v_o;
 assign trap_pkt_cast_o.exception        = exception_v_o;
 assign trap_pkt_cast_o._interrupt       = interrupt_v_o;
 assign trap_pkt_cast_o.eret             = ret_v_o;
+assign trap_pkt_cast_o.satp             = satp_v_o;
 
 assign priv_mode_o      = priv_mode_r;
 assign translation_en_o = translation_en_r
