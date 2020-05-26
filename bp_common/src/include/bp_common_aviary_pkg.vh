@@ -18,7 +18,7 @@ package bp_common_aviary_pkg;
       ,sac_x_dim : 0
       ,cacc_type : e_cacc_vdp
       ,sacc_type : e_sacc_vdp
-      
+
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
@@ -43,7 +43,7 @@ package bp_common_aviary_pkg;
       ,acache_sets          : 64
       ,acache_assoc         : 8
       ,acache_block_width   : 512
-      
+
       ,cce_pc_width         : 8
       ,ucode_cce            : 0
 
@@ -75,7 +75,7 @@ package bp_common_aviary_pkg;
       ,io_noc_len_width     : 4
       };
 
-  localparam bp_proc_param_s bp_softcore_cfg_p =
+  localparam bp_proc_param_s bp_unicore_cfg_p =
     '{cc_x_dim   : 1
       ,cc_y_dim  : 1
       ,ic_y_dim  : 1
@@ -141,7 +141,7 @@ package bp_common_aviary_pkg;
       ,io_noc_len_width     : 4
       };
 
-  localparam bp_proc_param_s bp_softcore_writethrough_cfg_p =
+  localparam bp_proc_param_s bp_unicore_writethrough_cfg_p =
     '{cc_x_dim   : 1
       ,cc_y_dim  : 1
       ,ic_y_dim  : 1
@@ -207,7 +207,7 @@ package bp_common_aviary_pkg;
       ,io_noc_len_width     : 4
       };
 
-  localparam bp_proc_param_s bp_softcore_no_l2_cfg_p = 
+  localparam bp_proc_param_s bp_unicore_no_l2_cfg_p =
     '{cc_x_dim   : 1
       ,cc_y_dim  : 1
       ,ic_y_dim  : 1
@@ -220,13 +220,13 @@ package bp_common_aviary_pkg;
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
-      
+
       ,branch_metadata_fwd_width: 35
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
       ,ghist_width              : 2
-      
+
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
@@ -273,7 +273,7 @@ package bp_common_aviary_pkg;
       ,io_noc_len_width     : 4
       };
 
-  localparam bp_proc_param_s bp_softcore_l1_medium_cfg_p = 
+  localparam bp_proc_param_s bp_unicore_l1_medium_cfg_p =
     '{cc_x_dim   : 1
       ,cc_y_dim  : 1
       ,ic_y_dim  : 1
@@ -286,13 +286,13 @@ package bp_common_aviary_pkg;
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
-      
+
       ,branch_metadata_fwd_width: 35
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
       ,ghist_width              : 2
-      
+
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
@@ -339,7 +339,7 @@ package bp_common_aviary_pkg;
       ,io_noc_len_width     : 4
       };
 
-  localparam bp_proc_param_s bp_softcore_l1_small_cfg_p = 
+  localparam bp_proc_param_s bp_unicore_l1_small_cfg_p =
     '{cc_x_dim   : 1
       ,cc_y_dim  : 1
       ,ic_y_dim  : 1
@@ -352,13 +352,13 @@ package bp_common_aviary_pkg;
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
-      
+
       ,branch_metadata_fwd_width: 35
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
       ,ghist_width              : 2
-      
+
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
@@ -405,7 +405,7 @@ package bp_common_aviary_pkg;
       ,io_noc_len_width     : 4
       };
 
-  localparam bp_proc_param_s bp_single_core_cfg_p = 
+  localparam bp_proc_param_s bp_single_core_cfg_p =
     '{cc_x_dim   : 1
       ,cc_y_dim  : 1
       ,ic_y_dim  : 1
@@ -471,7 +471,7 @@ package bp_common_aviary_pkg;
       ,io_noc_len_width     : 4
       };
 
-  localparam bp_proc_param_s bp_single_core_no_l2_cfg_p = 
+  localparam bp_proc_param_s bp_single_core_no_l2_cfg_p =
     '{cc_x_dim   : 1
       ,cc_y_dim  : 1
       ,ic_y_dim  : 1
@@ -484,13 +484,13 @@ package bp_common_aviary_pkg;
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
-      
+
       ,branch_metadata_fwd_width: 35
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
       ,ghist_width              : 2
-      
+
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
@@ -537,7 +537,7 @@ package bp_common_aviary_pkg;
       ,io_noc_len_width     : 4
       };
 
-  localparam bp_proc_param_s bp_single_core_l1_medium_cfg_p = 
+  localparam bp_proc_param_s bp_single_core_l1_medium_cfg_p =
     '{cc_x_dim   : 1
       ,cc_y_dim  : 1
       ,ic_y_dim  : 1
@@ -550,13 +550,13 @@ package bp_common_aviary_pkg;
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
-      
+
       ,branch_metadata_fwd_width: 35
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
       ,ghist_width              : 2
-      
+
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
@@ -603,7 +603,7 @@ package bp_common_aviary_pkg;
       ,io_noc_len_width     : 4
       };
 
-  localparam bp_proc_param_s bp_single_core_l1_small_cfg_p = 
+  localparam bp_proc_param_s bp_single_core_l1_small_cfg_p =
     '{cc_x_dim   : 1
       ,cc_y_dim  : 1
       ,ic_y_dim  : 1
@@ -616,13 +616,13 @@ package bp_common_aviary_pkg;
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
-      
+
       ,branch_metadata_fwd_width: 35
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
       ,ghist_width              : 2
-      
+
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
@@ -670,7 +670,7 @@ package bp_common_aviary_pkg;
       };
 
 
-  localparam bp_proc_param_s bp_dual_core_cfg_p = 
+  localparam bp_proc_param_s bp_dual_core_cfg_p =
     '{cc_x_dim   : 2
       ,cc_y_dim  : 1
       ,ic_y_dim  : 1
@@ -1132,7 +1132,7 @@ package bp_common_aviary_pkg;
       ,io_noc_len_width     : 4
       };
 
-  localparam bp_proc_param_s bp_accelerator_single_core_cfg_p = 
+  localparam bp_proc_param_s bp_accelerator_single_core_cfg_p =
     '{cc_x_dim   : 1
       ,cc_y_dim  : 1
       ,ic_y_dim  : 1
@@ -1145,13 +1145,13 @@ package bp_common_aviary_pkg;
       ,vaddr_width: 39
       ,paddr_width: 40
       ,asid_width : 1
-      
+
       ,branch_metadata_fwd_width: 35
       ,btb_tag_width            : 10
       ,btb_idx_width            : 6
       ,bht_idx_width            : 9
       ,ghist_width              : 2
-      
+
       ,itlb_els             : 8
       ,dtlb_els             : 8
 
@@ -1859,13 +1859,13 @@ package bp_common_aviary_pkg;
       };
 
 
-  typedef enum bit [lg_max_cfgs-1:0] 
+  typedef enum bit [lg_max_cfgs-1:0]
   {
-    e_bp_softcore_writethrough_cfg    = 28
+    e_bp_unicore_writethrough_cfg    = 28
     ,e_bp_single_core_l1_medium_cfg   = 27
     ,e_bp_single_core_l1_small_cfg    = 26
-    ,e_bp_softcore_l1_medium_cfg      = 25
-    ,e_bp_softcore_l1_small_cfg       = 24
+    ,e_bp_unicore_l1_medium_cfg      = 25
+    ,e_bp_unicore_l1_small_cfg       = 24
     ,e_bp_sexta_core_ucode_cce_cfg    = 23
     ,e_bp_twelve_core_ucode_cce_cfg   = 22
     ,e_bp_oct_core_ucode_cce_cfg      = 21
@@ -1887,19 +1887,19 @@ package bp_common_aviary_pkg;
     ,e_bp_single_core_cfg             = 5
     ,e_bp_single_core_no_l2_cfg       = 4
     ,e_bp_half_core_cfg               = 3
-    ,e_bp_softcore_cfg                = 2
-    ,e_bp_softcore_no_l2_cfg          = 1
+    ,e_bp_unicore_cfg                = 2
+    ,e_bp_unicore_no_l2_cfg          = 1
     ,e_bp_inv_cfg                     = 0
   } bp_params_e;
 
   /* verilator lint_off WIDTH */
   parameter bp_proc_param_s [max_cfgs-1:0] all_cfgs_gp =
   {
-    bp_softcore_writethrough_cfg_p
+    bp_unicore_writethrough_cfg_p
     ,bp_single_core_l1_medium_cfg_p
     ,bp_single_core_l1_small_cfg_p
-    ,bp_softcore_l1_medium_cfg_p
-    ,bp_softcore_l1_small_cfg_p
+    ,bp_unicore_l1_medium_cfg_p
+    ,bp_unicore_l1_small_cfg_p
     ,bp_sexta_core_ucode_cce_cfg_p
     ,bp_twelve_core_ucode_cce_cfg_p
     ,bp_oct_core_ucode_cce_cfg_p
@@ -1921,8 +1921,8 @@ package bp_common_aviary_pkg;
     ,bp_single_core_cfg_p
     ,bp_single_core_no_l2_cfg_p
     ,bp_half_core_cfg_p
-    ,bp_softcore_cfg_p
-    ,bp_softcore_no_l2_cfg_p
+    ,bp_unicore_cfg_p
+    ,bp_unicore_no_l2_cfg_p
     ,bp_inv_cfg_p
   };
   /* verilator lint_on WIDTH */

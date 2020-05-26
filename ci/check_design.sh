@@ -9,7 +9,7 @@ N=${1:-1}
 cfgs=(\
     "e_bp_single_core_ucode_cce_cfg"
     "e_bp_single_core_cfg"
-    "e_bp_softcore_cfg"
+    "e_bp_unicore_cfg"
     "e_bp_quad_core_cfg"
     "e_bp_quad_core_ucode_cce_cfg"
     )
