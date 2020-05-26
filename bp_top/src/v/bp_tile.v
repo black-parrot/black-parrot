@@ -93,6 +93,11 @@ logic                  cce_mem_cmd_v_lo, cce_mem_cmd_ready_li;
 bp_cce_mem_msg_s       cce_mem_resp_li;
 logic                  cce_mem_resp_v_li, cce_mem_resp_yumi_lo;
 
+bp_cce_mem_msg_s       loopback_mem_cmd_li;
+logic                  loopback_mem_cmd_v_li, loopback_mem_cmd_ready_lo;
+bp_cce_mem_msg_s       loopback_mem_resp_lo;
+logic                  loopback_mem_resp_v_lo, loopback_mem_resp_yumi_li;
+
 bp_cce_mem_msg_s       cache_mem_cmd_li;
 logic                  cache_mem_cmd_v_li, cache_mem_cmd_ready_lo;
 bp_cce_mem_msg_s       cache_mem_resp_lo;
@@ -465,7 +470,7 @@ for (genvar i = 0; i < 2; i++)
   wire local_cmd_li    = (cce_mem_cmd_lo.header.addr < dram_base_addr_gp);
   wire [3:0] device_li =  cce_mem_cmd_lo.header.addr[20+:4];
 
-  assign cce_mem_cmd_ready_li = cache_mem_cmd_ready_lo & cfg_mem_cmd_ready_lo & clint_mem_cmd_ready_lo;
+  assign cce_mem_cmd_ready_li = loopback_mem_cmd_ready_lo & cache_mem_cmd_ready_lo & cfg_mem_cmd_ready_lo & clint_mem_cmd_ready_lo;
 
   assign cfg_mem_cmd_li       = cce_mem_cmd_lo;
   assign cfg_mem_cmd_v_li     = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == cfg_dev_gp);
@@ -473,24 +478,29 @@ for (genvar i = 0; i < 2; i++)
   assign clint_mem_cmd_li     = cce_mem_cmd_lo;
   assign clint_mem_cmd_v_li   = cce_mem_cmd_v_lo &  local_cmd_li & (device_li == clint_dev_gp);
 
-  assign cache_mem_cmd_li      = cce_mem_cmd_lo;
-  assign cache_mem_cmd_v_li    = cce_mem_cmd_v_lo & ~cfg_mem_cmd_v_li & ~clint_mem_cmd_v_li;
+  assign cache_mem_cmd_li     = cce_mem_cmd_lo;
+  assign cache_mem_cmd_v_li   = cce_mem_cmd_v_lo & (~local_cmd_li | (local_cmd_li & (device_li == cache_dev_gp)));
+
+  assign loopback_mem_cmd_li   = cce_mem_cmd_lo;
+  assign loopback_mem_cmd_v_li = cce_mem_cmd_v_lo & (local_cmd_li & ~cfg_mem_cmd_v_li & ~clint_mem_cmd_v_li & ~cache_mem_cmd_v_li);
 
   bsg_arb_fixed
-   #(.inputs_p(3)
+   #(.inputs_p(4)
      ,.lo_to_hi_p(1)
      )
    resp_arb
     (.ready_i(cce_mem_resp_yumi_lo)
-     ,.reqs_i({clint_mem_resp_v_lo, cfg_mem_resp_v_lo, cache_mem_resp_v_lo})
-     ,.grants_o({clint_mem_resp_yumi_li, cfg_mem_resp_yumi_li, cache_mem_resp_yumi_li})
+     ,.reqs_i({loopback_mem_resp_v_lo, clint_mem_resp_v_lo, cfg_mem_resp_v_lo, cache_mem_resp_v_lo})
+     ,.grants_o({loopback_mem_resp_yumi_li, clint_mem_resp_yumi_li, cfg_mem_resp_yumi_li, cache_mem_resp_yumi_li})
      );
-  assign cce_mem_resp_v_li = cache_mem_resp_v_lo | cfg_mem_resp_v_lo | clint_mem_resp_v_lo;
+  assign cce_mem_resp_v_li = loopback_mem_resp_lo | cache_mem_resp_v_lo | cfg_mem_resp_v_lo | clint_mem_resp_v_lo;
   assign cce_mem_resp_li = cache_mem_resp_v_lo
                            ? cache_mem_resp_lo
                            : cfg_mem_resp_v_lo
                              ? cfg_mem_resp_lo
-                               : clint_mem_resp_lo;
+                               : clint_mem_resp_v_lo
+                                 ? clint_mem_resp_lo
+                                 : loopback_mem_resp_lo;
 
   bp_cce_mem_msg_s dma_mem_cmd_lo;
   logic dma_mem_cmd_v_lo, dma_mem_cmd_ready_li;
@@ -532,6 +542,21 @@ for (genvar i = 0; i < 2; i++)
       assign cache_mem_resp_v_lo = dma_mem_resp_v_li;
       assign dma_mem_resp_yumi_lo = cache_mem_resp_yumi_li;
     end
+
+  bp_cce_loopback
+   #(.bp_params_p(bp_params_p))
+   loopback
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.mem_cmd_i(loopback_mem_cmd_li)
+     ,.mem_cmd_v_i(loopback_mem_cmd_v_li)
+     ,.mem_cmd_ready_o(loopback_mem_cmd_ready_lo)
+
+     ,.mem_resp_o(loopback_mem_resp_lo)
+     ,.mem_resp_v_o(loopback_mem_resp_v_lo)
+     ,.mem_resp_yumi_i(loopback_mem_resp_yumi_li)
+     );
 
   localparam dram_y_cord_lp = ic_y_dim_p + cc_y_dim_p + mc_y_dim_p;
   wire [mem_noc_cord_width_p-1:0] dst_cord_li = dram_y_cord_lp;

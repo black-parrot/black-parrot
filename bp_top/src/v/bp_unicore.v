@@ -112,6 +112,11 @@ module bp_unicore
   bp_cce_mem_msg_s cache_resp_lo;
   logic cache_resp_v_lo, cache_resp_yumi_li;
 
+  bp_cce_mem_msg_s loopback_cmd_li;
+  logic loopback_cmd_v_li, loopback_cmd_ready_lo;
+  bp_cce_mem_msg_s loopback_resp_lo;
+  logic loopback_resp_v_lo, loopback_resp_yumi_li;
+
   bp_cfg_bus_s cfg_bus_lo;
   logic [dword_width_p-1:0] cfg_irf_data_li;
   logic [vaddr_width_p-1:0] cfg_npc_data_li;
@@ -373,7 +378,7 @@ module bp_unicore
   // Command arbitration logic
   // This is suboptimal for performance, because a blocked I/O channel will put backpressure on the
   //   cache.
-  wire cmd_arb_ready_li = &{cfg_cmd_ready_lo, clint_cmd_ready_lo, io_cmd_ready_i, cache_cmd_ready_lo};
+  wire cmd_arb_ready_li = &{cfg_cmd_ready_lo, clint_cmd_ready_lo, io_cmd_ready_i, cache_cmd_ready_lo, loopback_cmd_ready_lo};
   bsg_arb_fixed
    #(.inputs_p(3), .lo_to_hi_p(0))
    cmd_arbiter
@@ -390,7 +395,7 @@ module bp_unicore
      ,.sel_one_hot_i(cmd_fifo_yumi_li)
      ,.data_o(cmd_fifo_selected_lo)
      );
-  assign {cache_cmd_li, io_cmd_cast_o, clint_cmd_li, cfg_cmd_li} = {4{cmd_fifo_selected_lo}};
+  assign {loopback_cmd_li, cache_cmd_li, io_cmd_cast_o, clint_cmd_li, cfg_cmd_li} = {5{cmd_fifo_selected_lo}};
 
   // Response arbitration logic
   // UCEs may send two commands as part of a writeback routine. Responses can come back in
@@ -399,24 +404,24 @@ module bp_unicore
   //   would require more complex arbitration logic
   wire resp_arb_ready_li = &resp_fifo_ready_lo;
   bsg_arb_fixed
-   #(.inputs_p(4), .lo_to_hi_p(0))
+   #(.inputs_p(5), .lo_to_hi_p(0))
    resp_arbiter
     (.ready_i(resp_arb_ready_li)
-     ,.reqs_i({cache_resp_v_lo, io_resp_v_i, clint_resp_v_lo, cfg_resp_v_lo})
-     ,.grants_o({cache_resp_yumi_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li})
+     ,.reqs_i({loopback_resp_v_lo, cache_resp_v_lo, io_resp_v_i, clint_resp_v_lo, cfg_resp_v_lo})
+     ,.grants_o({loopback_resp_yumi_li, cache_resp_yumi_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li})
      );
     
   for (genvar i = 0; i < 3; i++)
     begin : resp_match
       bp_cce_mem_msg_s resp_fifo_selected_li;
       bsg_mux_one_hot
-       #(.width_p($bits(bp_cce_mem_msg_s)), .els_p(4))
+       #(.width_p($bits(bp_cce_mem_msg_s)), .els_p(5))
        resp_select
-        (.data_i({cache_resp_lo, io_resp_i, clint_resp_lo, cfg_resp_lo})
-         ,.sel_one_hot_i({cache_resp_yumi_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li})
+        (.data_i({loopback_resp_lo, cache_resp_lo, io_resp_i, clint_resp_lo, cfg_resp_lo})
+         ,.sel_one_hot_i({loopback_resp_yumi_li, cache_resp_yumi_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li})
          ,.data_o(resp_fifo_selected_li)
          );
-      wire resp_selected_v_li = |{cache_resp_yumi_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li};
+      wire resp_selected_v_li = |{loopback_resp_yumi_li, cache_resp_yumi_li, io_resp_yumi_o, clint_resp_yumi_li, cfg_resp_yumi_li};
 
       assign resp_fifo_v_li[i] = resp_selected_v_li & (resp_fifo_selected_li.header.payload.lce_id == i);
       assign resp_fifo_li[i] = resp_fifo_selected_li;
@@ -429,11 +434,28 @@ module bp_unicore
   wire is_clint_cmd        = local_cmd_li & (device_cmd_li == clint_dev_gp);
   wire is_io_cmd           = local_cmd_li & (device_cmd_li == host_dev_gp);
   wire is_cache_cmd        = ~local_cmd_li || (local_cmd_li & (device_cmd_li == cache_dev_gp));
+  wire is_loopback_cmd     = local_cmd_li & ~is_cfg_cmd & ~is_clint_cmd & ~is_io_cmd & ~is_cache_cmd;
 
-  assign cfg_cmd_v_li   = is_cfg_cmd   & |cmd_fifo_yumi_li;
-  assign clint_cmd_v_li = is_clint_cmd & |cmd_fifo_yumi_li;
-  assign io_cmd_v_o     = is_io_cmd    & |cmd_fifo_yumi_li;
-  assign cache_cmd_v_li = is_cache_cmd & |cmd_fifo_yumi_li;
+  assign cfg_cmd_v_li      = is_cfg_cmd   & |cmd_fifo_yumi_li;
+  assign clint_cmd_v_li    = is_clint_cmd & |cmd_fifo_yumi_li;
+  assign io_cmd_v_o        = is_io_cmd    & |cmd_fifo_yumi_li;
+  assign cache_cmd_v_li    = is_cache_cmd & |cmd_fifo_yumi_li;
+  assign loopback_cmd_v_li = is_loopback_cmd & |cmd_fifo_yumi_li;
+
+  bp_cce_loopback
+   #(.bp_params_p(bp_params_p))
+   loopback
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.mem_cmd_i(loopback_cmd_li)
+     ,.mem_cmd_v_i(loopback_cmd_v_li)
+     ,.mem_cmd_ready_o(loopback_cmd_ready_lo)
+
+     ,.mem_resp_o(loopback_resp_lo)
+     ,.mem_resp_v_o(loopback_resp_v_lo)
+     ,.mem_resp_yumi_i(loopback_resp_yumi_li)
+     );
 
   if (l2_en_p)
     begin : l2
