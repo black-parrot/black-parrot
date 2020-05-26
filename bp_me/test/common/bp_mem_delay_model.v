@@ -129,7 +129,7 @@ else if (use_dramsim2_latency_p)
       assign ready_o = (state_r == e_idle);
       assign v_o     = pending_resp_r;
     `else
-      $fatal("DRAMSIM2 delay model selection, but DRAMSIM2 is not set");
+      //$fatal("DRAMSIM2 delay model selection, but DRAMSIM2 is not set");
     `endif
   end
 
