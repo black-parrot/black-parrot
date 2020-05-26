@@ -120,17 +120,19 @@ $(COV_DIR)/covv: $(COV_COLLATERAL)
 
 wave.v: $(SIM_DIR)/wavev
 $(SIM_DIR)/wavev:
-	cd $(@D); $(_DVE) -full64 -vpd vcdplus.vpd &
+	$(_DVE) -full64 -vpd $(@D)/vcdplus.vpd &
 
 # TODO: Make compatible with multi-core
 BLOODGRAPH ?= $(BP_COMMON_DIR)/software/py/blood_graph.py --generate --generate-key
 blood.v: $(SIM_DIR)/bloodv
 $(SIM_DIR)/bloodv:
-	cd $(@D); $(PYTHON) $(BLOODGRAPH) --input $(@D)/stall_0.trace
+	cd $(@D); $(PYTHON) $(BLOODGRAPH) --input stall_0.trace
 
 clean.v:
 	@-rm -rf touchfiles/vcs
 	@-rm -rf results/vcs
 	@-rm -rf reports/vcs
 	@-rm -rf logs/vcs
+	@-rm -rf DVEfiles
+	@-rm -rf stack.info*
 

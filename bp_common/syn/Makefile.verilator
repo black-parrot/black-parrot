@@ -97,12 +97,14 @@ $(COV_COLLATERAL): | $(TOUCH_DIR) $(RESULTS_DIR) $(LOG_DIR) $(REPORT_DIR) $(SIM_
 $(RESULTS_DIR)/covsc: $(COV_COLLATERAL)
 	cd $(@D); verilator_coverage */*.dat --rank --annotate $(COV_REPORT) | tee $(COV_LOG)
 
-wave.sc: dirs.sc
-	cd $(SIM_DIR); $(GTKWAVE) -f dump.vcd &
+wave.sc: $(SIM_DIR)/wavesc
+$(SIM_DIR)/wavesc:
+	$(GTKWAVE) -f $(@D)/dump.vcd &
 
 # TODO: Make compatible with multi-core
-blood.sc: dirs.sc
-	cd $(SIM_DIR); $(PYTHON) $(BLOODGRAPH) --input $(SIM_DIR)/stall_0.trace
+blood.sc: $(SIM_DIR)/bloodsc
+$(SIM_DIR)/bloodsc:
+	cd $(@D); $(PYTHON) $(BLOODGRAPH) --input stall_0.trace
 
 clean.sc:
 	@rm -rf results/verilator
