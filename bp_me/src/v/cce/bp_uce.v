@@ -373,7 +373,7 @@ module bp_uce
           end
         e_ready:
           begin
-            cache_req_ready_o = mem_cmd_ready_i;
+            cache_req_ready_o = mem_cmd_ready_i & ~credits_full_o;
             if (uc_store_v_li)
               begin
                 mem_cmd_cast_o.header.msg_type       = e_cce_mem_uc_wr;
