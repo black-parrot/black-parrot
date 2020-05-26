@@ -63,15 +63,15 @@ module bp_nonsynth_branch_profiler
   always_ff @(negedge clk_i)
     if (reset_i)
       begin
-        instr_cnt   = 0;
-        attaboy_cnt = 0;
-        redirect_cnt = 0;
-        br_cnt      = 0;
-        jal_cnt     = 0;
-        jalr_cnt    = 0;
-        btb_hit_cnt = 0;
-        ras_hit_cnt = 0;
-        bht_hit_cnt = 0;
+        instr_cnt    <= 0;
+        attaboy_cnt  <= 0;
+        redirect_cnt <= 0;
+        br_cnt       <= 0;
+        jal_cnt      <= 0;
+        jalr_cnt     <= 0;
+        btb_hit_cnt  <= 0;
+        ras_hit_cnt  <= 0;
+        bht_hit_cnt  <= 0;
       end
     else
       begin
