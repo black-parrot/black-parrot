@@ -37,6 +37,8 @@ $(buildroot_tar): $(buildroot_srcdir) $(buildroot_wrkdir)/.config
 $(buildroot_sysroot_stamp): $(buildroot_tar)
 	mkdir -p $(buildroot_sysroot)
 	tar -xpf $< -C $(buildroot_sysroot) --exclude ./dev --exclude ./usr/share/locale
+	cp $(BP_TEST_CFG_DIR)/inittab $(buildroot_sysroot)/etc/inittab
+	cp $(BP_TEST_CFG_DIR)/test.sh $(buildroot_sysroot)/test.sh
 	touch $@
 
 $(linux_wrkdir)/.config: $(linux_srcdir)
