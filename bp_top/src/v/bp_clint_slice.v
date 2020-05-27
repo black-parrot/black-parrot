@@ -97,7 +97,7 @@ bsg_strobe
    ,.init_val_r_i(ds_ratio_li)
    ,.strobe_r_o(mtime_inc_li)
    );
-assign mtime_val_li = mem_cmd_li.data[0+:dword_width_p];
+assign mtime_val_li = mem_cmd_lo.data[0+:dword_width_p];
 wire mtime_w_v_li = wr_not_rd & mtime_cmd_v;
 bsg_counter_set_en
  #(.lg_max_val_lp(dword_width_p)
