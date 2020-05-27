@@ -424,10 +424,11 @@ module bp_unicore
 
   /* TODO: Extract local memory map to module */
   wire local_cmd_li        = (cmd_fifo_selected_lo.header.addr < dram_base_addr_gp);
+  wire off_chip_cmd_li     = (cmd_fifo_selected_lo.header.addr > coproc_base_addr_gp);
   wire [3:0] device_cmd_li = cmd_fifo_selected_lo.header.addr[20+:4];
   wire is_cfg_cmd          = local_cmd_li & (device_cmd_li == cfg_dev_gp);
   wire is_clint_cmd        = local_cmd_li & (device_cmd_li == clint_dev_gp);
-  wire is_io_cmd           = local_cmd_li & (device_cmd_li == host_dev_gp);
+  wire is_io_cmd           = off_chip_cmd_li || (local_cmd_li & (device_cmd_li == host_dev_gp));
   wire is_cache_cmd        = ~local_cmd_li || (local_cmd_li & (device_cmd_li == cache_dev_gp));
 
   assign cfg_cmd_v_li   = is_cfg_cmd   & |cmd_fifo_yumi_li;
