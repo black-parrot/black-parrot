@@ -35,6 +35,7 @@ module bp_be_dcache_lce_cmd
     , localparam ptag_width_lp = (paddr_width_p-bp_page_offset_width_gp)
     , localparam way_id_width_lp = `BSG_SAFE_CLOG2(assoc_p)
     , localparam block_size_in_bytes_lp = (block_width_p / 8)
+    , localparam block_size_in_fill_lp = block_width_p/fill_width_p
 
     `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
     `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, dcache)
@@ -317,7 +318,7 @@ module bp_be_dcache_lce_cmd
               data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
               data_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
               data_mem_pkt.data = lce_cmd_li.data;
-              data_mem_pkt.fill_mask = {assoc_p{1'b1}};
+              data_mem_pkt.fill_index = {block_size_in_fill_lp{1'b1}};
               data_mem_pkt.opcode = e_cache_data_mem_uncached;
               data_mem_pkt_v_o = lce_cmd_v_i;
 
@@ -451,7 +452,7 @@ module bp_be_dcache_lce_cmd
             data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
             data_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
             data_mem_pkt.data = lce_cmd_li.data;
-            data_mem_pkt.fill_mask = {assoc_p{1'b1}};
+            data_mem_pkt.fill_index = {block_size_in_fill_lp{1'b1}};
             data_mem_pkt.opcode = e_cache_data_mem_write;
             data_mem_pkt_v_o = lce_cmd_v_i;
 
@@ -474,7 +475,7 @@ module bp_be_dcache_lce_cmd
             data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
             data_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
             data_mem_pkt.data = lce_cmd_li.data;
-            data_mem_pkt.fill_mask = {assoc_p{1'b1}};
+            data_mem_pkt.fill_index = {block_size_in_fill_lp{1'b1}};
             data_mem_pkt.opcode = e_cache_data_mem_uncached;
             data_mem_pkt_v_o = lce_cmd_v_i;
 

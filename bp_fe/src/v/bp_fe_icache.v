@@ -23,21 +23,21 @@ module bp_fe_icache
   #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
-        
+
     , localparam way_id_width_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
     , localparam block_size_in_bank_lp = icache_assoc_p
     , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
     , localparam num_dwords_per_bank_lp = bank_width_lp / dword_width_p
-    , localparam data_mem_mask_width_lp=(bank_width_lp >> 3)       
-    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp >> 3) 
+    , localparam data_mem_mask_width_lp=(bank_width_lp >> 3)
+    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bank_width_lp >> 3)
     , localparam bank_offset_width_lp = `BSG_SAFE_CLOG2(block_size_in_bank_lp)
-    , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)                        
+    , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
     , localparam block_offset_width_lp = (bank_offset_width_lp+byte_offset_width_lp)
-    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp) 
+    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
     , localparam block_size_in_fill_lp = icache_block_width_p / icache_fill_width_p
     , localparam fill_size_in_bank_lp = icache_fill_width_p / bank_width_lp
-    
-    `declare_bp_icache_widths(vaddr_width_p, ptag_width_lp, icache_assoc_p) 
+
+    `declare_bp_icache_widths(vaddr_width_p, ptag_width_lp, icache_assoc_p)
 
     , localparam stat_width_lp = `bp_cache_stat_info_width(icache_assoc_p)
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
@@ -57,13 +57,13 @@ module bp_fe_icache
     , input                                            ptag_v_i
     , input                                            uncached_i
     , input                                            poison_i
-    
+
     , output [instr_width_p-1:0]                       data_o
     , output                                           data_v_o
     , output                                           miss_o
 
     // LCE Interface
-    
+
     , output [icache_req_width_lp-1:0]                 cache_req_o
     , output logic                                     cache_req_v_o
     , input                                            cache_req_ready_i
@@ -101,7 +101,7 @@ module bp_fe_icache
   bp_icache_req_metadata_s cache_req_metadata_cast_lo;
   assign cache_req_o = cache_req_cast_lo;
   assign cache_req_metadata_o = cache_req_metadata_cast_lo;
-  
+
   logic [index_width_lp-1:0]            vaddr_index;
 
   logic [bank_offset_width_lp-1:0]      vaddr_offset;
@@ -115,7 +115,7 @@ module bp_fe_icache
 
   assign vaddr_index      = vaddr_i[block_offset_width_lp+:index_width_lp];
   assign vaddr_offset     = vaddr_i[byte_offset_width_lp+:bank_offset_width_lp];
-   
+
   // TL stage
   logic v_tl_r;
   logic tl_we;
@@ -202,7 +202,7 @@ module bp_fe_icache
   logic                        hit_tl;
   logic [paddr_width_p-1:0]    addr_tl;
   logic [icache_assoc_p-1:0]  way_v_tl;
-   
+
   assign addr_tl = {ptag_i, vaddr_tl_r[0+:bp_page_offset_width_gp]};
 
   assign addr_tag_tl = addr_tl[block_offset_width_lp+index_width_lp+:ptag_width_lp];
@@ -210,7 +210,7 @@ module bp_fe_icache
   for (genvar i = 0; i < icache_assoc_p; i++) begin: tag_comp_tl
     assign hit_v_tl[i]   = (tag_tl[i] == addr_tag_tl) && (state_tl[i] != e_COH_I);
     assign way_v_tl[i]   = (state_tl[i] != e_COH_I);
-  end     
+  end
 
   bsg_priority_encode #(
     .width_p(icache_assoc_p)
@@ -276,8 +276,8 @@ module bp_fe_icache
   logic [dword_width_p-1:0] uncached_load_data_r;
 
   assign uncached_req = v_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
-  assign fencei_req = v_tv_r & fencei_op_tv_r; 
- 
+  assign fencei_req = v_tv_r & fencei_op_tv_r;
+
   // stat memory
   logic                                       stat_mem_v_li;
   logic                                       stat_mem_w_li;
@@ -317,7 +317,7 @@ module bp_fe_icache
     ,.v_o(invalid_exist)
     ,.addr_o(way_invalid_index)
  );
-  
+
   // LCE
   bp_icache_data_mem_pkt_s data_mem_pkt;
   assign data_mem_pkt = data_mem_pkt_i;
@@ -433,16 +433,16 @@ module bp_fe_icache
     : {icache_assoc_p{data_mem_v}};
 
   assign data_mem_w_li = data_mem_pkt_yumi_o
-    & (data_mem_pkt.opcode == e_cache_data_mem_write);   
+    & (data_mem_pkt.opcode == e_cache_data_mem_write);
 
   logic [icache_assoc_p-1:0][bank_width_lp-1:0] data_mem_write_data;
   logic [icache_assoc_p-1:0][bank_width_lp-1:0]               data_mem_pkt_data_expanded;
   logic [block_size_in_fill_lp-1:0][fill_size_in_bank_lp-1:0] data_mem_pkt_fill_mask_expanded;
-  logic [icache_assoc_p-1:0]                                  data_mem_write_bank_mask;
+  logic [icache_assoc_p-1:0]                                  data_mem_write_bank_mask, data_mem_write_mask;
 
   assign data_mem_write_bank_mask = data_mem_pkt_fill_mask_expanded;
   for (genvar i = 0; i < block_size_in_fill_lp; i++) begin
-    assign data_mem_pkt_fill_mask_expanded[i] = {fill_size_in_bank_lp{data_mem_pkt.fill_mask}};
+    assign data_mem_pkt_fill_mask_expanded[i] = {fill_size_in_bank_lp{data_mem_pkt.fill_index[i]}};
   end
 
   for (genvar i = 0; i < icache_assoc_p; i++) begin
@@ -452,8 +452,8 @@ module bp_fe_icache
 
     assign data_mem_data_li[i] = data_mem_write_data[i];
 
-    // use fill_mask to generate write_mask
-    assign data_mem_w_mask_li[i] = {data_mem_mask_width_lp{data_mem_write_bank_mask[i]}};
+    // use fill_index to generate write_mask
+    assign data_mem_w_mask_li[i] = {data_mem_mask_width_lp{data_mem_write_mask[i]}};
   end
 
   // Expand data_mem_pkt.data (fill width) to cacheline width
@@ -466,7 +466,16 @@ module bp_fe_icache
     ,.sel_i(data_mem_pkt.way_id)
     ,.data_o(data_mem_write_data)
   );
-   
+  //TODO
+  bsg_mux_butterfly #(
+    .width_p(1)
+    ,.els_p(icache_assoc_p)
+  ) write_mask_mux_butterfly (
+    .data_i(data_mem_write_bank_mask)
+    ,.sel_i(data_mem_pkt.way_id)
+    ,.data_o(data_mem_write_mask)
+  );
+
   // tag_mem
   assign tag_mem_v_li = tl_we | tag_mem_pkt_yumi_o;
   assign tag_mem_w_li = ~tl_we & tag_mem_pkt_v_i;
@@ -515,7 +524,7 @@ module bp_fe_icache
     ? ~miss_tv
     : stat_mem_pkt_yumi_o & (stat_mem_pkt.opcode != e_cache_stat_mem_read);
   assign stat_mem_addr_li = (v_tv_r & ~uncached_tv_r)
-    ? addr_index_tv 
+    ? addr_index_tv
     : stat_mem_pkt.index;
 
   logic [icache_assoc_p-2:0] lru_decode_data_lo;
@@ -538,7 +547,7 @@ module bp_fe_icache
       stat_mem_mask_li = {(icache_assoc_p-1){1'b1}};
     end
   end
-   
+
   // LCE: data mem
   logic [way_id_width_lp-1:0] data_mem_pkt_way_r;
 
@@ -583,9 +592,9 @@ module bp_fe_icache
   end
 
   // LCE: tag_mem
-  
+
   logic [way_id_width_lp-1:0] tag_mem_pkt_way_r;
-  
+
   always_ff @ (posedge clk_i) begin
     if (tag_mem_pkt_yumi_o & (tag_mem_pkt.opcode == e_cache_tag_mem_read)) begin
       tag_mem_pkt_way_r <= tag_mem_pkt.way_id;
@@ -614,5 +623,5 @@ module bp_fe_icache
     );
   end
   // synopsys translate_on
-   
+
 endmodule

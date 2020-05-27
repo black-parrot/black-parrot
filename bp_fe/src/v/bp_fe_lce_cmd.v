@@ -37,6 +37,7 @@ module bp_fe_lce_cmd
    , localparam block_offset_width_lp=(word_offset_width_lp+byte_offset_width_lp)
    , localparam ptag_width_lp=(paddr_width_p-bp_page_offset_width_gp)
    , localparam block_size_in_bytes_lp = (block_width_p / 8)
+   , localparam block_size_in_fill_lp = block_width_p/fill_width_p
 
    , localparam stat_width_lp = `bp_cache_stat_info_width(assoc_p)
 
@@ -257,7 +258,7 @@ module bp_fe_lce_cmd
             data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
             data_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
             data_mem_pkt.data = lce_cmd_li.data;
-            data_mem_pkt.fill_mask = {assoc_p{1'b1}};
+            data_mem_pkt.fill_index = {block_size_in_fill_lp{1'b1}};
             data_mem_pkt.opcode = e_cache_data_mem_uncached;
             data_mem_pkt_v_o = lce_cmd_v_i;
 
@@ -340,7 +341,7 @@ module bp_fe_lce_cmd
             data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
             data_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
             data_mem_pkt.data = lce_cmd_li.data;
-            data_mem_pkt.fill_mask = {assoc_p{1'b1}};
+            data_mem_pkt.fill_index = {block_size_in_fill_lp{1'b1}};
             data_mem_pkt.opcode = e_cache_data_mem_write;
             data_mem_pkt_v_o = lce_cmd_v_i;
 
@@ -362,7 +363,7 @@ module bp_fe_lce_cmd
             data_mem_pkt.index = miss_addr_i[block_offset_width_lp+:index_width_lp];
             data_mem_pkt.way_id = lce_cmd_li.header.way_id[0+:way_id_width_lp];
             data_mem_pkt.data = lce_cmd_li.data;
-            data_mem_pkt.fill_mask = {assoc_p{1'b1}};
+            data_mem_pkt.fill_index = {block_size_in_fill_lp{1'b1}};
             data_mem_pkt.opcode = e_cache_data_mem_uncached;
             data_mem_pkt_v_o = lce_cmd_v_i;
 
