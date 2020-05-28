@@ -92,6 +92,7 @@ module bp_be_dcache
 
     , parameter debug_p=0
     , parameter lock_max_limit_p=8
+    , parameter l2_atomic_p = 1
 
     , localparam lg_dcache_assoc_lp=`BSG_SAFE_CLOG2(dcache_assoc_p)
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
@@ -503,9 +504,17 @@ module bp_be_dcache
   //
   logic uncached_load_req;
   logic uncached_store_req;
+
+  // For L2 atomics
+  logic lr_req;
+  logic sc_req;
+  logic amo_req;
+
+  // Uncached and L2 atomic refactor
+  // TODO: Figure out a better name for these signals
   logic uncached_load_data_v_r;
   logic [dword_width_p-1:0] uncached_load_data_r;
-
+  
   // load reserved / store conditional
   logic lr_hit_tv;
   logic sc_success;
@@ -534,23 +543,27 @@ module bp_be_dcache
      ,.v_o(load_hit_tv)
      );
 
-  wire load_miss_tv = ~load_hit_tv & v_tv_r & load_op_tv_r & ~uncached_tv_r;
-  wire store_miss_tv = ~store_hit_tv & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r;
-  wire lr_miss_tv = v_tv_r & lr_op_tv_r & ~store_hit_tv;
+  wire load_miss_tv = ~load_hit_tv & v_tv_r & load_op_tv_r & ~uncached_tv_r & ~amo_req;
+  wire store_miss_tv = ~store_hit_tv & v_tv_r & store_op_tv_r & ~uncached_tv_r & ~sc_op_tv_r & ~amo_req;
+  wire lr_miss_tv = v_tv_r & lr_op_tv_r & ~store_hit_tv & (l2_atomic_p == 0);
   wire wt_miss_tv = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~cache_req_ready_i & (l1_writethrough_p == 1);
 
   wire miss_tv = load_miss_tv | store_miss_tv | lr_miss_tv | wt_miss_tv;
 
   // Load reserved misses if not in exclusive or modified (whether load hit or not)
-  assign lr_hit_tv = v_tv_r & lr_op_tv_r & store_hit_tv;
+  assign lr_hit_tv = v_tv_r & lr_op_tv_r & store_hit_tv & (l2_atomic_p == 0);
   // Succeed if the address matches and we have a store hit
   assign sc_success  = v_tv_r & sc_op_tv_r & store_hit_tv & load_reserved_v_r
                        & (load_reserved_tag_r == addr_tag_tv_r)
-                       & (load_reserved_index_r == addr_index_tv);
+                       & (load_reserved_index_r == addr_index_tv) & (l2_atomic_p == 0);
+
   // Fail if we have a store conditional without success
   assign sc_fail     = v_tv_r & sc_op_tv_r & ~sc_success;
   assign uncached_load_req = v_tv_r & load_op_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
   assign uncached_store_req = v_tv_r & store_op_tv_r & uncached_tv_r;
+  assign lr_req = v_tv_r & lr_op_tv_r & (l2_atomic_p == 1);
+  assign sc_req = v_tv_r & sc_op_tv_r & (l2_atomic_p == 1);
+  assign amo_req = lr_req | sc_req;
   assign fencei_req = v_tv_r & fencei_op_tv_r;
 
   // write buffer
@@ -714,7 +727,7 @@ module bp_be_dcache
     cache_req_cast_o = '0;
 
     // Assigning sizes to cache miss packet
-    if (uncached_tv_r | wt_req)
+    if (uncached_tv_r | wt_req | lr_req | sc_req)
       unique case (size_op_tv_r)
         e_dword: cache_req_cast_o.size = e_size_8B;
         e_word: cache_req_cast_o.size = e_size_4B;
@@ -735,6 +748,14 @@ module bp_be_dcache
     end
     else if(wt_req) begin
       cache_req_cast_o.msg_type = e_wt_store;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(lr_req) begin
+      cache_req_cast_o.msg_type = e_amo_lr;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(sc_req) begin
+      cache_req_cast_o.msg_type = e_amo_sc;
       cache_req_v_o = cache_req_ready_i;
     end
     else if(uncached_load_req) begin
@@ -772,7 +793,7 @@ module bp_be_dcache
   // output stage
   // Cache Miss Tracking logic
   logic cache_miss_r;
-  wire miss_tracker_en_li = cache_req_v_o & ~uncached_store_req & ~fencei_req & ~wt_req;
+  wire miss_tracker_en_li = cache_req_v_o & ~uncached_store_req & ~fencei_req & ~wt_req & ~amo_req;
   bsg_dff_reset_en
    #(.width_p(1))
    cache_miss_tracker
@@ -788,7 +809,8 @@ module bp_be_dcache
 
   assign v_o = v_tv_r & ((uncached_tv_r & (load_op_tv_r & uncached_load_data_v_r))
                          | (uncached_tv_r & (store_op_tv_r & cache_req_ready_i))
-                         | (~uncached_tv_r & ~fencei_op_tv_r & ~miss_tv)
+                         | (amo_req & uncached_load_data_v_r)
+                         | (~uncached_tv_r & ~amo_req & ~fencei_op_tv_r & ~miss_tv)
                          );
   // Always send fencei when coherent
   assign fencei_v_o = fencei_req & (~gdirty_r | (l1_coherent_p == 1));
@@ -903,7 +925,7 @@ module bp_be_dcache
     ,.els_p(2)
   ) final_data_mux (
     .data_i({uncached_load_data_r, bypass_data_masked})
-    ,.sel_i(uncached_tv_r)
+    ,.sel_i(uncached_tv_r | amo_req)
     ,.data_o(final_data)
   );
 
@@ -954,9 +976,11 @@ module bp_be_dcache
           : (half_op_tv_r
             ? {{48{half_sigext}}, data_half_selected}
             : {{56{byte_sigext}}, data_byte_selected})))
-      : (sc_op_tv_r & ~sc_success
-         ? 64'b1
-         : 64'b0);
+      : ((l2_atomic_p == 1)
+          ? uncached_load_data_r
+          : (sc_op_tv_r & ~sc_success
+            ? 64'b1
+            : 64'b0));
 
   end
 
@@ -976,7 +1000,8 @@ module bp_be_dcache
   );
 
   logic lce_data_mem_v;
-  assign lce_data_mem_v = (data_mem_pkt.opcode != e_cache_data_mem_uncached)
+  assign lce_data_mem_v = ((data_mem_pkt.opcode != e_cache_data_mem_uncached) 
+    & (data_mem_pkt.opcode != e_cache_data_mem_amo | (l2_atomic_p == 0)))
     & data_mem_pkt_yumi_o;
 
   assign data_mem_v_li = (load_op & tl_we)
@@ -1094,11 +1119,11 @@ module bp_be_dcache
 
   // stat_mem
   //
-  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r) | stat_mem_pkt_yumi_o;
-  assign stat_mem_w_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r)
+  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r & ~amo_req) | stat_mem_pkt_yumi_o;
+  assign stat_mem_w_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r & ~amo_req)
     ? ~(load_miss_tv | store_miss_tv | lr_miss_tv)
     : stat_mem_pkt_yumi_o & (stat_mem_pkt.opcode != e_cache_stat_mem_read);
-  assign stat_mem_addr_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r)
+  assign stat_mem_addr_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r & ~amo_req)
     ? addr_index_tv
     : stat_mem_pkt.index;
 
@@ -1163,10 +1188,10 @@ module bp_be_dcache
   // write buffer
   //
   if (l1_writethrough_p == 0) begin : wb_wbuf
-    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r;
+    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~amo_req;
   end
   else begin : wt_wbuf
-    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & cache_req_ready_i;
+    assign wbuf_v_li = v_tv_r & store_op_tv_r & store_hit_tv & ~sc_fail & ~uncached_tv_r & ~amo_req & cache_req_ready_i;
   end
   assign wbuf_yumi_li = wbuf_v_lo & ~(load_op & tl_we) & ~data_mem_pkt_yumi_o;
 
@@ -1209,17 +1234,17 @@ module bp_be_dcache
     end
     else begin
       // The LR has successfully completed, without a cache miss or upgrade request
-      if (lr_op_tv_r & v_o & ~lr_miss_tv) begin
+      if (lr_op_tv_r & v_o & ~lr_miss_tv & (l2_atomic_p == 0)) begin
         load_reserved_v_r     <= 1'b1;
         load_reserved_tag_r   <= paddr_tv_r[block_offset_width_lp+index_width_lp+:ptag_width_lp];
         load_reserved_index_r <= paddr_tv_r[block_offset_width_lp+:index_width_lp];
       // All SCs clear the reservation (regardless of success)
-      end else if (sc_op_tv_r) begin
+      end else if (sc_op_tv_r & (l2_atomic_p == 0)) begin
         load_reserved_v_r <= 1'b0;
       // Invalidates from other harts which match the reservation address clear the reservation
       end else if (tag_mem_pkt_v & (tag_mem_pkt.opcode == e_cache_tag_mem_invalidate)
-                  & (tag_mem_pkt.tag == load_reserved_tag_r)
-                  & (tag_mem_pkt.index == load_reserved_index_r)) begin
+                  & (tag_mem_pkt.tag == load_reserved_tag_r) 
+                  & (tag_mem_pkt.index == load_reserved_index_r) & (l2_atomic_p == 0)) begin
         load_reserved_v_r <= 1'b0;
       end
     end
@@ -1233,7 +1258,8 @@ module bp_be_dcache
       uncached_load_data_v_r <= 1'b0;
     end
     else begin
-      if (data_mem_pkt_yumi_o & (data_mem_pkt.opcode == e_cache_data_mem_uncached)) begin
+      if (data_mem_pkt_yumi_o 
+            & ((data_mem_pkt.opcode == e_cache_data_mem_uncached) || (data_mem_pkt.opcode == e_cache_data_mem_amo))) begin
         uncached_load_data_r <= data_mem_pkt.data[0+:dword_width_p];
         uncached_load_data_v_r <= 1'b1;
       end
