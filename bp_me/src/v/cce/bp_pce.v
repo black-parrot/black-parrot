@@ -126,7 +126,8 @@ module bp_pce
   wire miss_store_v_li = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
   wire miss_v_li       = miss_load_v_li | miss_store_v_li;
   wire uc_load_v_li    = cache_req_v_r & cache_req_r.msg_type inside {e_uc_load};
-  wire amo_v_li        = cache_req_v_r & cache_req_r.msg_type inside {e_amo_lr, e_amo_sc};
+  wire amo_lr_v_li     = cache_req_v_r & cache_req_r.msg_type inside {e_amo_lr};
+  wire amo_sc_v_li     = cache_req_v_r & cache_req_r.msg_type inside {e_amo_sc};
 
   logic [index_width_lp-1:0] index_cnt;
   logic index_up;
@@ -342,13 +343,9 @@ module bp_pce
                         ? e_uc_read_wait
                         : e_send_req;
             end
-            else if (amo_v_li & (pce_id_p == 1)) begin
+            else if (amo_lr_v_li & (pce_id_p == 1)) begin
               pce_l15_req_cast_o.rqtype = e_amo_req; 
-              pce_l15_req_cast_o.amo_op = (cache_req_r.msg_type == e_amo_lr) 
-                                          ? e_amo_op_lr
-                                          : (cache_req_r.msg_type == e_amo_sc)
-                                            ? e_amo_op_sc
-                                            : e_amo_op_none;
+              pce_l15_req_cast_o.amo_op = e_amo_op_lr;
               pce_l15_req_cast_o.nc = 1'b1;
               pce_l15_req_cast_o.size = (cache_req_r.size == e_size_1B)
                                     ? e_l15_size_1B
@@ -359,6 +356,41 @@ module bp_pce
                                         : e_l15_size_8B;
 
               pce_l15_req_cast_o.address = cache_req_r.addr;
+              pce_l15_req_cast_o.l1rplway = (pce_id_p == 1) 
+                                            ? {cache_req_r.addr[11], cache_req_metadata_r.repl_way}
+                                            : cache_req_metadata_r.repl_way;
+
+              pce_l15_req_v_o = pce_l15_req_ready_i;
+
+              state_n = pce_l15_req_v_o
+                        ? e_amo_wait
+                        : e_send_req;
+            end
+            else if (amo_sc_v_li & (pce_id_p == 1)) begin
+              pce_l15_req_cast_o.rqtype = e_amo_req; 
+              pce_l15_req_cast_o.amo_op = e_amo_op_sc;
+              pce_l15_req_cast_o.nc = 1'b1;
+              pce_l15_req_cast_o.size = (cache_req_r.size == e_size_1B)
+                                    ? e_l15_size_1B
+                                    : (cache_req_r.size == e_size_2B)
+                                      ? e_l15_size_2B
+                                      : (cache_req_r.size == e_size_4B)
+                                        ? e_l15_size_4B
+                                        : e_l15_size_8B;
+
+              pce_l15_req_cast_o.address = cache_req_r.addr;
+              pce_l15_req_cast_o.data = (cache_req_r.size == e_size_1B)
+                                    ? {8{cache_req_r.data[0+:8]}}
+                                    : (cache_req_r.size == e_size_2B)
+                                      ? {4{{cache_req_r.data[0+:8], cache_req_r.data[8+:8]}}}
+                                      : (cache_req_r.size == e_size_4B)
+                                        ? {2{{cache_req_r.data[0+:8], cache_req_r.data[8+:8], 
+                                              cache_req_r.data[16+:8], cache_req_r[24+:8]}}}
+                                        : {{cache_req_r.data[0+:8], cache_req_r.data[8+:8], 
+                                            cache_req_r.data[16+:8], cache_req_r.data[24+:8],
+                                            cache_req_r.data[32+:8], cache_req_r.data[40+:8],
+                                            cache_req_r.data[48+:8], cache_req_r.data[56+:8]}};
+
               pce_l15_req_cast_o.l1rplway = (pce_id_p == 1) 
                                             ? {cache_req_r.addr[11], cache_req_metadata_r.repl_way}
                                             : cache_req_metadata_r.repl_way;
