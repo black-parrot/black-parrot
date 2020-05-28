@@ -11,15 +11,17 @@
 // Miss IF
 // Cache Service Interface - Cache miss message type
 
-typedef enum logic [2:0]
+typedef enum logic [3:0]
 {
-  e_miss_load          = 3'b000
-  , e_miss_store       = 3'b001
-  , e_uc_load          = 3'b010
-  , e_uc_store         = 3'b011
-  , e_wt_store         = 3'b100
-  , e_cache_flush      = 3'b101
-  , e_cache_clear      = 3'b110
+  e_miss_load          = 4'b0000
+  , e_miss_store       = 4'b0001
+  , e_uc_load          = 4'b0010
+  , e_uc_store         = 4'b0011
+  , e_wt_store         = 4'b0100
+  , e_cache_flush      = 4'b0101
+  , e_cache_clear      = 4'b0110
+  , e_amo_lr           = 4'b0111
+  , e_amo_sc           = 4'b1000
 } bp_cache_req_msg_type_e;
 
 // Cache Service Interface - Cache miss size
@@ -68,7 +70,9 @@ typedef enum logic [1:0] {
  // read cache block
  e_cache_data_mem_read,
  // write uncached load data
- e_cache_data_mem_uncached
+ e_cache_data_mem_uncached,
+ // write L2 atomic data
+ e_cache_data_mem_amo
 } bp_cache_data_mem_opcode_e;
 
 `define bp_cache_data_mem_opcode_width $bits(bp_cache_data_mem_opcode_e)
