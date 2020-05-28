@@ -780,7 +780,8 @@ module bp_be_dcache
   // output stage
   // Cache Miss Tracking logic
   logic cache_miss_r;
-  wire miss_tracker_en_li = cache_req_v_o & ~uncached_store_req & ~fencei_req & ~wt_req & ~amo_req;
+  //wire miss_tracker_en_li = cache_req_v_o & ~uncached_store_req & ~fencei_req & ~wt_req & ~amo_req;
+  wire miss_tracker_en_li = cache_req_v_o & ~uncached_store_req & ~fencei_req & ~wt_req;
   bsg_dff_reset_en
    #(.width_p(1))
    cache_miss_tracker
