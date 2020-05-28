@@ -1,3 +1,6 @@
+//                              -*- Mode: Verilog -*-
+// Filename        : bp_be_dcache_wbuf.v
+// Description     : 
 /**
  *  Name:
  *    bp_be_dcache_wbuf.v
@@ -186,18 +189,19 @@ module bp_be_dcache_wbuf
     ,.data1_i(wbuf_entry_in.data)
     ,.sel_i(tag_hit2x4 & wbuf_entry_in.mask)
     ,.data_o(bypass_data_n)
-  );
+  ); 
 
-  always_ff @ (posedge clk_i) begin
+  // Bypass Logic now happens on the negedge as the comparison now happens in the TL stage and it needs to
+  // be inline with the new negedge cutset to effectively forward loads to the Bypass unit.
+  always_ff @ (negedge clk_i) begin
     if (reset_i) begin
       bypass_mask_o <= '0;
       bypass_data_o <= '0;
     end
-    else begin
-      if (bypass_v_i) begin
+    else
+    if (bypass_v_i) begin
         bypass_mask_o <= bypass_mask_n;
-        bypass_data_o <= bypass_data_n; 
-      end
+        bypass_data_o <= bypass_data_n;
     end
   end
 

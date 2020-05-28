@@ -137,7 +137,7 @@ module wrapper
      ,.reset_val_p(0)
     )
     ptag_dff
-    (.clk_i(clk_i)
+    (.clk_i(~clk_i)
     ,.reset_i(reset_i)
 
     ,.data_i(rolly_ptag_lo)
@@ -155,7 +155,9 @@ module wrapper
     ,.data_o(dcache_v_rr)
     );
 
-   assign poison_li = dcache_v_rr & ~v_o;
+   logic dcache_miss_r, v_r;
+
+   assign poison_li = dcache_v_rr & ~v_r;
    
    logic uncached_r;
    bsg_dff_reset
@@ -196,7 +198,7 @@ module wrapper
    ,.store_op_tl_o()
 
    ,.dcache_miss_o(dcache_miss_lo)
-    
+
    ,.cache_req_v_o(cache_req_v_lo)
    ,.cache_req_o(cache_req_lo)
    ,.cache_req_metadata_o(cache_req_metadata_lo)
@@ -219,6 +221,31 @@ module wrapper
    ,.stat_mem_o(stat_mem_lo)
    ,.stat_mem_pkt_yumi_o(stat_mem_pkt_yumi_lo)
    );
+
+   bsg_dff_reset
+   #(.width_p(1)
+    ,.reset_val_p(0)
+   )
+   v_reg
+   (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.data_i(v_o)
+   ,.data_o(v_r)
+   );
+
+   bsg_dff_reset
+   #(.width_p(1)
+    ,.reset_val_p(0)
+   )
+   dcache_miss_reg
+   (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.data_i(dcache_miss_lo)
+   ,.data_o(dcache_miss_r)
+   );
+   
 
    if(uce_p == 0) begin : cce
      logic lce_req_v_lo, lce_resp_v_lo;
