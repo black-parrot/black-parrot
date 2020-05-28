@@ -424,6 +424,7 @@ module bp_piton_top
       assign l15_pce_ret_li[i].data_2 = fifo_pce_lo.data_2;
       assign l15_pce_ret_li[i].data_3 = fifo_pce_lo.data_3;
       assign l15_pce_ret_li[i].threadid = fifo_pce_lo.threadid;
+      assign l15_pce_ret_li[i].atomic = fifo_pce_lo.atomic;
       assign l15_pce_ret_li[i].inval_address_15_4 = fifo_pce_lo.inval_address_15_4;
       assign l15_pce_ret_li[i].inval_icache_inval = fifo_pce_lo.inval_icache_inval;
       assign l15_pce_ret_li[i].inval_dcache_inval = fifo_pce_lo.inval_dcache_inval;
