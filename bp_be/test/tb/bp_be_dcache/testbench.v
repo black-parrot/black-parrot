@@ -106,6 +106,7 @@ module testbench
   always_comb begin
     if(counter == 16'd65535) begin
       $display("FAIL: Timeout");
+      $finish;
     end
   end
 

@@ -332,7 +332,7 @@ module bp_be_dcache
     tag_mem
       (.clk_i(nclk)
       ,.reset_i(reset_i)
-      ,.v_i(~reset_i & tag_mem_v_li)
+      ,.v_i(tag_mem_v_li)
       ,.w_i(tag_mem_w_li)
       ,.addr_i(tag_mem_addr_li)
       ,.data_i(tag_mem_data_li)
@@ -357,7 +357,7 @@ module bp_be_dcache
       data_mem
         (.clk_i(nclk)
         ,.reset_i(reset_i)
-        ,.v_i(~reset_i & data_mem_v_li[i])
+        ,.v_i(data_mem_v_li[i])
         ,.w_i(data_mem_w_li)
         ,.addr_i(data_mem_addr_li[i])
         ,.data_i(data_mem_data_li[i])
@@ -411,6 +411,67 @@ module bp_be_dcache
       ,.addr_o(store_hit_way_tl)
       );
 
+  logic [dcache_assoc_p-1:0] [63:0] ld_data_dword_picked;
+  logic [dcache_assoc_p-1:0] [31:0] data_word_selected;
+  logic [dcache_assoc_p-1:0] [15:0] data_half_selected;
+  logic [dcache_assoc_p-1:0] [7:0]  data_byte_selected;
+  logic [dcache_assoc_p-1:0]        word_sigext;
+  logic [dcache_assoc_p-1:0]        half_sigext;
+  logic [dcache_assoc_p-1:0]        byte_sigext;
+  logic [dcache_assoc_p-1:0] [dword_width_p-1:0] data_o_tl;
+  for (genvar i = 0; i < dcache_assoc_p; i++) begin: data_byte_mux
+     if (dword_width_p == 64) begin: byte_mux
+
+       bsg_mux #(
+          .width_p(dword_width_p)
+          ,.els_p(num_dwords_per_bank_lp)
+       ) dword_mux (
+          .data_i(data_mem_data_lo[i])
+          ,.sel_i(paddr_tl[3+:`BSG_CDIV(num_dwords_per_bank_lp, 2)])
+          ,.data_o(ld_data_dword_picked[i])
+       );
+    
+       bsg_mux #(
+         .width_p(32)
+         ,.els_p(2)
+       ) word_mux (
+         .data_i(ld_data_dword_picked[i])
+         ,.sel_i(paddr_tl[2])
+         ,.data_o(data_word_selected[i])
+       );
+    
+       bsg_mux #(
+         .width_p(16)
+         ,.els_p(4)
+       ) half_mux (
+         .data_i(ld_data_dword_picked[i])
+         ,.sel_i(paddr_tl[2:1])
+         ,.data_o(data_half_selected[i])
+       );
+
+       bsg_mux #(
+         .width_p(8)
+         ,.els_p(8)
+       ) byte_mux (
+         .data_i(ld_data_dword_picked[i])
+         ,.sel_i(paddr_tl[2:0])
+         ,.data_o(data_byte_selected[i])
+       );
+
+       assign word_sigext[i] = signed_op_tl_r & data_word_selected[i][31]; 
+       assign half_sigext[i] = signed_op_tl_r & data_half_selected[i][15]; 
+       assign byte_sigext[i] = signed_op_tl_r & data_byte_selected[i][7]; 
+
+       assign data_o_tl[i] = double_op_tl_r
+                             ? ld_data_dword_picked[i]
+                             : (word_op_tl_r
+                                ? {{32{word_sigext[i]}}, data_word_selected[i]}
+                                : (half_op_tl_r
+                                   ? {{48{half_sigext[i]}}, data_half_selected[i]}
+                                   : {{56{byte_sigext[i]}}, data_byte_selected[i]}));
+     end
+  end
+
   // TV stage
   //
   logic v_tv_r;
@@ -430,7 +491,9 @@ module bp_be_dcache
   logic [paddr_width_p-1:0] paddr_tv_r;
   logic [dword_width_p-1:0] data_tv_r;
   bp_be_dcache_tag_info_s [dcache_assoc_p-1:0] tag_info_tv_r;
+  bp_be_dcache_tag_info_s [dcache_assoc_p-1:0] tag_mem_data_r;
   logic [dcache_assoc_p-1:0][bank_width_lp-1:0] ld_data_tv_r;
+  logic [dcache_assoc_p-1:0][bank_width_lp-1:0] data_mem_data_r;
   logic [ptag_width_lp-1:0] addr_tag_tv_r;
   logic [index_width_lp-1:0] addr_index_tv;
   logic [word_offset_width_lp-1:0] addr_word_offset_tv;
@@ -439,7 +502,8 @@ module bp_be_dcache
   logic [way_id_width_lp-1:0] load_hit_way_tv_r;
   logic [way_id_width_lp-1:0] store_hit_way_tv_r;
   logic [dcache_assoc_p-1:0] invalid_tv_r;
-
+  logic [dcache_assoc_p-1:0] [dword_width_p-1:0] data_o_tv_r;
+  
   assign tv_we = v_tl_r & ~poison_i & ~tlb_miss_i & ~fencei_req;
 
   assign store_op_tl_o = v_tl_r & ~tlb_miss_i & store_op_tl_r;
@@ -448,6 +512,9 @@ module bp_be_dcache
   always_ff @(posedge nclk) begin
     if (reset_i) begin
       v_tv_r <= 1'b0;
+      tag_mem_data_r <= '0;
+      data_mem_data_r <= '0;
+ 
 
       lr_op_tv_r <= '0;
       sc_op_tv_r <= '0;
@@ -469,10 +536,13 @@ module bp_be_dcache
       store_hit_way_tv_r <= '0;
       addr_tag_tv_r <= '0;
       invalid_tv_r <= '0;
+      data_o_tv_r <= '0;
     end
     else begin
       v_tv_r <= tv_we;
-
+`      tag_mem_data_r <= tag_mem_data_lo;
+      data_mem_data_r <= data_mem_data_lo; 
+       
       if (tv_we) begin
         lr_op_tv_r <= lr_op_tl_r;
         sc_op_tv_r <= sc_op_tl_r;
@@ -494,6 +564,7 @@ module bp_be_dcache
         store_hit_way_tv_r <= store_hit_way_tl;
         addr_tag_tv_r <= addr_tag_tl;
         invalid_tv_r <= invalid_tl;
+	data_o_tv_r <= data_o_tl;
       end
 
       if (tv_we & load_op_tl_r) begin
@@ -629,7 +700,8 @@ module bp_be_dcache
              (~paddr_tv_r[2] & ~paddr_tv_r[1] & paddr_tv_r[0]),
              (~paddr_tv_r[2] & ~paddr_tv_r[1] & ~paddr_tv_r[0])
             }));
-  end
+  end // if (dword_width_p == 64)
+
 
   // stat_mem {lru, dirty}
   // It has (ways_p-1) bits to form pseudo-LRU tree, and ways_p bits for dirty
@@ -650,7 +722,7 @@ module bp_be_dcache
     stat_mem
       (.clk_i(clk_i)
       ,.reset_i(reset_i)
-      ,.v_i(~poison_i & ~reset_i & stat_mem_v_li)
+      ,.v_i(~poison_i & stat_mem_v_li)
       ,.w_i(stat_mem_w_li)
       ,.addr_i(stat_mem_addr_li)
       ,.data_i(stat_mem_data_li)
@@ -727,7 +799,7 @@ module bp_be_dcache
     end
     else if(wt_req) begin
       cache_req_cast_o.msg_type = e_wt_store;
-      cache_req_v_o = cache_req_ready_i;
+      cache_req_v_o = ~poison_i & cache_req_ready_i;
     end
     else if(uncached_load_req) begin
       cache_req_cast_o.msg_type = e_uc_load;
@@ -815,7 +887,7 @@ module bp_be_dcache
      (.clk_i(clk_i)
       ,.reset_i(reset_i)
 
-      ,.en_i(wbuf_v_li | flush_req)
+      ,.en_i((~poison_i & wbuf_v_li) | flush_req)
       ,.data_i(wbuf_v_li)
 
       ,.data_o(gdirty_r)
@@ -846,101 +918,89 @@ module bp_be_dcache
   assign tag_mem_pkt_v = tag_mem_pkt_v_i & ~cache_lock;
   assign stat_mem_pkt_v = stat_mem_pkt_v_i & ~cache_lock;
 
-  logic [bank_width_lp-1:0] ld_data_way_picked;
-  logic [dword_width_p-1:0] ld_data_dword_picked;
+  logic [dword_width_p-1:0] ld_data_way_picked;
   logic [dword_width_p-1:0] bypass_data_masked;
 
   bsg_mux #(
-    .width_p(bank_width_lp)
+    .width_p(dword_width_p)
     ,.els_p(dcache_assoc_p)
   ) ld_data_set_select_mux (
-    .data_i(ld_data_tv_r)
+    .data_i(data_o_tv_r)
     ,.sel_i(load_hit_way_tv_r ^ addr_word_offset_tv)
     ,.data_o(ld_data_way_picked)
   );
-
-  bsg_mux
-    #(.width_p(dword_width_p)
-    ,.els_p(num_dwords_per_bank_lp)
-    )
-    dword_mux
-    (.data_i(ld_data_way_picked)
-    ,.sel_i(paddr_tv_r[3+:`BSG_CDIV(num_dwords_per_bank_lp, 2)])
-    ,.data_o(ld_data_dword_picked)
-    );
 
   bsg_mux_segmented #(
     .segments_p(bypass_data_mask_width_lp)
     ,.segment_width_p(8)
   ) bypass_mux_segmented (
-    .data0_i(ld_data_dword_picked)
+    .data0_i(ld_data_way_picked)
     ,.data1_i(bypass_data_lo)
     ,.sel_i(bypass_mask_lo)
     ,.data_o(bypass_data_masked)
   );
+
+  logic [31:0] u_data_word_selected;
+  logic [15:0] u_data_half_selected;
+  logic [7:0]  u_data_byte_selected;
+  logic        u_word_sigext;
+  logic        u_half_sigext;
+  logic        u_byte_sigext;
+  logic [dword_width_p-1:0] u_data_o;
+  bsg_mux #(
+         .width_p(32)
+         ,.els_p(2)
+       ) word_mux (
+         .data_i(uncached_load_data_r)
+         ,.sel_i(paddr_tv_r[2])
+         ,.data_o(u_data_word_selected)
+       );
+    
+  bsg_mux #(
+         .width_p(16)
+         ,.els_p(4)
+       ) half_mux (
+         .data_i(uncached_load_data_r)
+         ,.sel_i(paddr_tv_r[2:1])
+         ,.data_o(u_data_half_selected)
+       );
+
+  bsg_mux #(
+         .width_p(8)
+         ,.els_p(8)
+       ) byte_mux (
+         .data_i(uncached_load_data_r)
+         ,.sel_i(paddr_tv_r[2:0])
+         ,.data_o(u_data_byte_selected)
+       );
+
+  assign u_word_sigext = signed_op_tv_r & u_data_word_selected[31]; 
+  assign u_half_sigext = signed_op_tv_r & u_data_half_selected[15]; 
+  assign u_byte_sigext = signed_op_tv_r & u_data_byte_selected[7]; 
+
+  assign u_data_o = double_op_tv_r
+                    ? uncached_load_data_r
+                    : (word_op_tv_r
+                       ? {{32{u_word_sigext}}, u_data_word_selected}
+                       : (half_op_tv_r
+                          ? {{48{u_half_sigext}}, u_data_half_selected}
+                          : {{56{u_byte_sigext}}, u_data_byte_selected}));
 
   logic [dword_width_p-1:0] final_data;
   bsg_mux #(
     .width_p(dword_width_p)
     ,.els_p(2)
   ) final_data_mux (
-    .data_i({uncached_load_data_r, bypass_data_masked})
+    .data_i({u_data_o, bypass_data_masked})
     ,.sel_i(uncached_tv_r)
     ,.data_o(final_data)
   );
 
-  if (dword_width_p == 64) begin: output64
-    logic [31:0] data_word_selected;
-    logic [15:0] data_half_selected;
-    logic [7:0] data_byte_selected;
-    logic word_sigext;
-    logic half_sigext;
-    logic byte_sigext;
-    
-    bsg_mux #(
-      .width_p(32)
-      ,.els_p(2)
-    ) word_mux (
-      .data_i(final_data)
-      ,.sel_i(paddr_tv_r[2])
-      ,.data_o(data_word_selected)
-    );
-    
-    bsg_mux #(
-      .width_p(16)
-      ,.els_p(4)
-    ) half_mux (
-      .data_i(final_data)
-      ,.sel_i(paddr_tv_r[2:1])
-      ,.data_o(data_half_selected)
-    );
-
-    bsg_mux #(
-      .width_p(8)
-      ,.els_p(8)
-    ) byte_mux (
-      .data_i(final_data)
-      ,.sel_i(paddr_tv_r[2:0])
-      ,.data_o(data_byte_selected)
-    );
-
-    assign word_sigext = signed_op_tv_r & data_word_selected[31]; 
-    assign half_sigext = signed_op_tv_r & data_half_selected[15]; 
-    assign byte_sigext = signed_op_tv_r & data_byte_selected[7]; 
-
-    assign data_o = load_op_tv_r
-      ? (double_op_tv_r
-        ? final_data
-        : (word_op_tv_r
-          ? {{32{word_sigext}}, data_word_selected}
-          : (half_op_tv_r
-            ? {{48{half_sigext}}, data_half_selected}
-            : {{56{byte_sigext}}, data_byte_selected})))
+  assign data_o = load_op_tv_r
+      ? final_data
       : (sc_op_tv_r & ~sc_success
          ? 64'b1
          : 64'b0);
-
-  end
  
   // ctrl logic
   //
@@ -1143,7 +1203,7 @@ module bp_be_dcache
    #(.width_p(bank_width_lp)
     ,.els_p(dcache_assoc_p))
     read_mux_butterfly
-    (.data_i(data_mem_data_lo)
+    (.data_i(data_mem_data_r)
     ,.sel_i(data_mem_pkt_way_r)
     ,.data_o(lce_data_mem_data_li)
     );
@@ -1215,7 +1275,7 @@ module bp_be_dcache
     end
   end
 
-  assign tag_mem_o =  tag_mem_data_lo[tag_mem_pkt_way_r].tag;
+  assign tag_mem_o =  tag_mem_data_r[tag_mem_pkt_way_r].tag;
 
   assign tag_mem_pkt_yumi_o = ~tl_we & tag_mem_pkt_v;
   
