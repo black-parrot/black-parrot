@@ -429,7 +429,7 @@ module bp_unicore
   wire is_cfg_cmd          = local_cmd_li & (device_cmd_li == cfg_dev_gp);
   wire is_clint_cmd        = local_cmd_li & (device_cmd_li == clint_dev_gp);
   wire is_io_cmd           = off_chip_cmd_li || (local_cmd_li & (device_cmd_li == host_dev_gp));
-  wire is_cache_cmd        = ~local_cmd_li || (local_cmd_li & (device_cmd_li == cache_dev_gp));
+  wire is_cache_cmd        = (~local_cmd_li & ~off_chip_cmd_li) || (local_cmd_li & (device_cmd_li == cache_dev_gp));
 
   assign cfg_cmd_v_li   = is_cfg_cmd   & |cmd_fifo_yumi_li;
   assign clint_cmd_v_li = is_clint_cmd & |cmd_fifo_yumi_li;
