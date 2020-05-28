@@ -115,7 +115,7 @@ module bp_pce
 
   wire store_resp_v_li = l15_pce_ret_v_i & (l15_pce_ret_cast_i.rtntype == e_st_ack);
   wire load_resp_v_li  = l15_pce_ret_v_i & l15_pce_ret_cast_i.rtntype inside {e_load_ret, e_ifill_ret};
-  wire inval_v_li      = l15_pce_ret_v_i & l15_pce_ret_cast_i.rtntype inside {e_evict_req};
+  wire inval_v_li      = l15_pce_ret_v_i & l15_pce_ret_cast_i.rtntype inside {e_evict_req, e_st_ack};
   wire is_ifill_ret_nc = (l15_pce_ret_cast_i.rtntype == e_ifill_ret) & l15_pce_ret_cast_i.noncacheable;
   wire is_load_ret_nc  = (l15_pce_ret_cast_i.rtntype == e_load_ret) & l15_pce_ret_cast_i.noncacheable;
   wire is_ifill_ret    = (l15_pce_ret_cast_i.rtntype == e_ifill_ret) & ~l15_pce_ret_cast_i.noncacheable;
@@ -349,7 +349,7 @@ module bp_pce
                                           : (cache_req_r.msg_type == e_amo_sc)
                                             ? e_amo_op_sc
                                             : e_amo_op_none;
-              pce_l15_req_cast_o.nc = 1'b0;
+              pce_l15_req_cast_o.nc = 1'b1;
               pce_l15_req_cast_o.size = (cache_req_r.size == e_size_1B)
                                     ? e_l15_size_1B
                                     : (cache_req_r.size == e_size_2B)
