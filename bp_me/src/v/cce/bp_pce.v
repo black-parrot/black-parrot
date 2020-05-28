@@ -108,7 +108,7 @@ module bp_pce
       ,.data_o(cache_req_metadata_r)
       );
 
-  enum logic [2:0] {e_reset, e_clear, e_ready, e_send_req, e_uc_read_wait, e_amo_read_wait, e_read_wait} state_n, state_r;
+  enum logic [2:0] {e_reset, e_clear, e_ready, e_send_req, e_uc_read_wait, e_amo_wait, e_read_wait} state_n, state_r;
 
   wire uc_store_v_li   = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
   wire wt_store_v_li   = cache_req_v_i & cache_req_cast_i.msg_type inside {e_wt_store};

@@ -45,6 +45,7 @@ module bp_piton_top
    , input [dword_width_p-1:0]                         l15_transducer_data_2
    , input [dword_width_p-1:0]                         l15_transducer_data_3
    , input                                             l15_transducer_noncacheable
+   , input                                             l15_transducer_atomic
    , input                                             l15_transducer_threadid 
    , input [11:0]                                      l15_transducer_inval_address_15_4
    , input                                             l15_transducer_inval_icache_inval
@@ -364,12 +365,12 @@ module bp_piton_top
   assign transducer_l15_data = fifo_selected_lo.data;
   assign transducer_l15_l1rplway = fifo_selected_lo.l1rplway;
   assign transducer_l15_val = |fifo_grants_lo;
+  assign transducer_l15_amo_op = fifo_selected_lo.amo_op;
   assign fifo_yumi_li[0] = fifo_grants_lo[0] & l15_transducer_ack;
   assign fifo_yumi_li[1] = fifo_grants_lo[1] & l15_transducer_ack;
 
   // Unused signals
   assign transducer_l15_threadid = '0;
-  assign transducer_l15_amo_op = '0;
   assign transducer_l15_prefetch = '0;
   assign transducer_l15_invalidate_cacheline = '0;
   assign transducer_l15_blockstore = '0;
@@ -404,6 +405,7 @@ module bp_piton_top
   assign l15_fifo_li.data_2 = l15_transducer_data_2;
   assign l15_fifo_li.data_3 = l15_transducer_data_3;
   assign l15_fifo_li.threadid = l15_transducer_threadid;
+  assign l15_fifo_li.atomic = l15_transducer_atomic;
   assign l15_fifo_li.inval_address_15_4 = l15_transducer_inval_address_15_4;
   assign l15_fifo_li.inval_icache_inval = l15_transducer_inval_icache_inval;
   assign l15_fifo_li.inval_dcache_inval = l15_transducer_inval_dcache_inval;
