@@ -8,7 +8,7 @@ typedef enum logic [4:0]
 {
   e_load_req     = 5'b00000 // LOAD_RQ
   , e_store_req  = 5'b00001 // STORE_RQ
-  , e_atomic_req = 5'b00110 // AMO_RQ
+  , e_amo_req    = 5'b00110 // AMO_RQ
   , e_int_req    = 5'b01001 // INT_RQ
   , e_imiss_req  = 5'b10000 // IMISS_RQ
 } bp_pce_l15_req_type_e;
@@ -63,7 +63,7 @@ typedef struct packed                                            \
   logic [paddr_width_mp-1:0] address;                            \
   logic [data_width_mp-1:0]  data;                               \
   logic [1:0]                l1rplway;                           \
-  bp_pce_l15_amo_type_e      amo_op                              \
+  bp_pce_l15_amo_type_e      amo_op;                             \
 } bp_pce_l15_req_s
 
 `define declare_bp_l15_pce_ret_s(data_width_mp)                  \
@@ -71,7 +71,7 @@ typedef struct packed                                            \
 {                                                                \
   bp_l15_pce_ret_type_e     rtntype;                             \
   logic                     noncacheable;                        \
-  logic                     atomic                               \
+  logic                     atomic;                              \
   logic [data_width_mp-1:0] data_0;                              \
   logic [data_width_mp-1:0] data_1;                              \
   logic [data_width_mp-1:0] data_2;                              \
