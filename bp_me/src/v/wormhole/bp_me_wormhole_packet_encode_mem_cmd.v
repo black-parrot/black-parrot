@@ -63,6 +63,8 @@ module bp_me_wormhole_packet_encode_mem_cmd
     `BSG_CDIV(mem_cmd_packet_width_lp-$bits(mem_cmd_cast_i.data) + 8*32, mem_noc_flit_width_p) - 1;
   localparam mem_cmd_data_len_64_lp =
     `BSG_CDIV(mem_cmd_packet_width_lp-$bits(mem_cmd_cast_i.data) + 8*64, mem_noc_flit_width_p) - 1;
+  localparam mem_cmd_data_len_128_lp =
+    `BSG_CDIV(mem_cmd_packet_width_lp-$bits(mem_cmd_cast_i.data) + 8*128, mem_noc_flit_width_p) - 1;
 
   logic [len_width_p-1:0] data_cmd_len_li;
 
@@ -70,7 +72,7 @@ module bp_me_wormhole_packet_encode_mem_cmd
     packet_cast_o = '0;
 
     packet_cast_o.data       = mem_cmd_cast_i.data;
-    packet_cast_o.msg        = mem_cmd_cast_i[0+:cce_mem_msg_width_lp-cce_block_width_p];
+    packet_cast_o.msg        = mem_cmd_cast_i.header;
     packet_cast_o.src_cord   = src_cord_i;
     packet_cast_o.src_cid    = src_cid_i;
 
@@ -85,6 +87,7 @@ module bp_me_wormhole_packet_encode_mem_cmd
       e_mem_msg_size_16: data_cmd_len_li = len_width_p'(mem_cmd_data_len_16_lp);
       e_mem_msg_size_32: data_cmd_len_li = len_width_p'(mem_cmd_data_len_32_lp);
       e_mem_msg_size_64: data_cmd_len_li = len_width_p'(mem_cmd_data_len_64_lp);
+      e_mem_msg_size_128: data_cmd_len_li = len_width_p'(mem_cmd_data_len_128_lp);
       default: data_cmd_len_li = '0;
     endcase
 
