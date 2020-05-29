@@ -108,7 +108,7 @@ module bp_pce
       ,.data_o(cache_req_metadata_r)
       );
 
-  enum logic [2:0] {e_reset, e_clear, e_ready, e_send_req, e_uc_read_wait, e_amo_wait, e_read_wait} state_n, state_r;
+  enum logic [2:0] {e_reset, e_clear, e_ready, e_send_req, e_uc_read_wait, e_amo_lr_wait, e_amo_sc_wait, e_read_wait} state_n, state_r;
 
   wire uc_store_v_li   = cache_req_v_i & cache_req_cast_i.msg_type inside {e_uc_store};
   wire wt_store_v_li   = cache_req_v_i & cache_req_cast_i.msg_type inside {e_wt_store};
@@ -256,7 +256,7 @@ module bp_pce
                                       ? {4{{cache_req_cast_i.data[0+:8], cache_req_cast_i.data[8+:8]}}}
                                       : (cache_req_cast_i.size == e_size_4B)
                                         ? {2{{cache_req_cast_i.data[0+:8], cache_req_cast_i.data[8+:8], 
-                                              cache_req_cast_i.data[16+:8], cache_req_cast_i[24+:8]}}}
+                                              cache_req_cast_i.data[16+:8], cache_req_cast_i.data[24+:8]}}}
                                         : {{cache_req_cast_i.data[0+:8], cache_req_cast_i.data[8+:8], 
                                             cache_req_cast_i.data[16+:8], cache_req_cast_i.data[24+:8],
                                             cache_req_cast_i.data[32+:8], cache_req_cast_i.data[40+:8],
@@ -283,7 +283,7 @@ module bp_pce
                                       ? {4{{cache_req_cast_i.data[0+:8], cache_req_cast_i.data[8+:8]}}}
                                       : (cache_req_cast_i.size == e_size_4B)
                                         ? {2{{cache_req_cast_i.data[0+:8], cache_req_cast_i.data[8+:8], 
-                                              cache_req_cast_i.data[16+:8], cache_req_cast_i[24+:8]}}}
+                                              cache_req_cast_i.data[16+:8], cache_req_cast_i.data[24+:8]}}}
                                         : {{cache_req_cast_i.data[0+:8], cache_req_cast_i.data[8+:8], 
                                             cache_req_cast_i.data[16+:8], cache_req_cast_i.data[24+:8],
                                             cache_req_cast_i.data[32+:8], cache_req_cast_i.data[40+:8],
@@ -363,7 +363,7 @@ module bp_pce
               pce_l15_req_v_o = pce_l15_req_ready_i;
 
               state_n = pce_l15_req_v_o
-                        ? e_amo_wait
+                        ? e_amo_lr_wait
                         : e_send_req;
             end
             else if (amo_sc_v_li & (pce_id_p == 1)) begin
@@ -385,7 +385,7 @@ module bp_pce
                                       ? {4{{cache_req_r.data[0+:8], cache_req_r.data[8+:8]}}}
                                       : (cache_req_r.size == e_size_4B)
                                         ? {2{{cache_req_r.data[0+:8], cache_req_r.data[8+:8], 
-                                              cache_req_r.data[16+:8], cache_req_r[24+:8]}}}
+                                              cache_req_r.data[16+:8], cache_req_r.data[24+:8]}}}
                                         : {{cache_req_r.data[0+:8], cache_req_r.data[8+:8], 
                                             cache_req_r.data[16+:8], cache_req_r.data[24+:8],
                                             cache_req_r.data[32+:8], cache_req_r.data[40+:8],
@@ -398,7 +398,7 @@ module bp_pce
               pce_l15_req_v_o = pce_l15_req_ready_i;
 
               state_n = pce_l15_req_v_o
-                        ? e_amo_wait
+                        ? e_amo_sc_wait
                         : e_send_req;
             end
           end
@@ -442,16 +442,16 @@ module bp_pce
             end
           end
         
-        e_amo_wait:
+        e_amo_lr_wait:
           begin
             // Checking for the return type here since we could be in this
             // state when we receive an invalidation
             if (is_amo_ret) begin
               cache_data_mem_pkt_cast_o.opcode = e_cache_data_mem_amo;
-              cache_data_mem_pkt_cast_o.data = {l15_pce_ret_cast_i.data_0[0+:8],  l15_pce_ret_cast_i.data_0[8+:8],    
-                                                l15_pce_ret_cast_i.data_0[16+:8], l15_pce_ret_cast_i.data_0[24+:8],
-                                                l15_pce_ret_cast_i.data_0[32+:8], l15_pce_ret_cast_i.data_0[40+:8],
-                                                l15_pce_ret_cast_i.data_0[48+:8], l15_pce_ret_cast_i.data_0[56+:8]};   
+              cache_data_mem_pkt_cast_o.data = {l15_pce_ret_cast_i.data_1[0+:8],  l15_pce_ret_cast_i.data_1[8+:8],    
+                                                l15_pce_ret_cast_i.data_1[16+:8], l15_pce_ret_cast_i.data_1[24+:8],
+                                                l15_pce_ret_cast_i.data_1[32+:8], l15_pce_ret_cast_i.data_1[40+:8],
+                                                l15_pce_ret_cast_i.data_1[48+:8], l15_pce_ret_cast_i.data_1[56+:8]};   
               cache_data_mem_pkt_v_o = l15_pce_ret_v_i;
 
               l15_pce_ret_yumi_lo = cache_data_mem_pkt_yumi_i;
@@ -459,13 +459,41 @@ module bp_pce
 
               state_n = cache_req_complete_o
                             ? e_ready 
-                            : e_amo_wait;
+                            : e_amo_lr_wait;
             end
             else begin
-              state_n = e_amo_wait;
+              state_n = e_amo_lr_wait;
             end
           end
         
+        e_amo_sc_wait:
+          begin
+            // Checking for the return type here since we could be in this
+            // state when we receive an invalidation
+            if (is_amo_ret) begin
+              cache_data_mem_pkt_cast_o.opcode = e_cache_data_mem_amo;
+              // Size for an atomic operation is either 32 bits or 64 bits
+              cache_data_mem_pkt_cast_o.data = (cache_req_r.size == e_size_4B) 
+                                               ? {32'b0, l15_pce_ret_cast_i.data_1[0+:8], l15_pce_ret_cast_i.data_1[8+:8],    
+                                                  l15_pce_ret_cast_i.data_1[16+:8], l15_pce_ret_cast_i.data_1[24+:8]}
+                                               : {l15_pce_ret_cast_i.data_1[0+:8],  l15_pce_ret_cast_i.data_1[8+:8],    
+                                                  l15_pce_ret_cast_i.data_1[16+:8], l15_pce_ret_cast_i.data_1[24+:8],
+                                                  l15_pce_ret_cast_i.data_1[32+:8], l15_pce_ret_cast_i.data_1[40+:8],
+                                                  l15_pce_ret_cast_i.data_1[48+:8], l15_pce_ret_cast_i.data_1[56+:8]};
+              cache_data_mem_pkt_v_o = l15_pce_ret_v_i;
+
+              l15_pce_ret_yumi_lo = cache_data_mem_pkt_yumi_i;
+              cache_req_complete_o = cache_data_mem_pkt_yumi_i;
+
+              state_n = cache_req_complete_o
+                            ? e_ready 
+                            : e_amo_sc_wait;
+            end
+            else begin
+              state_n = e_amo_sc_wait;
+            end
+          end
+
         e_read_wait:
           begin
             // Checking for return types here since we could also have
