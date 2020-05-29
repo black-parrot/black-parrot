@@ -35,11 +35,16 @@ module bp_uce
     , localparam cache_data_mem_pkt_width_lp = `bp_cache_data_mem_pkt_width(sets_p, assoc_p, block_width_p, fill_width_p)
     , localparam cache_stat_mem_pkt_width_lp = `bp_cache_stat_mem_pkt_width(sets_p, assoc_p)
 
-    // Block size parameterisations -
-    , localparam is_fillwidth_512 = (fill_width_p == 512)
-    , localparam is_fillwidth_256 = (fill_width_p == 256)
-    , localparam is_fillwidth_128 = (fill_width_p == 128)
-    , localparam is_fillwidth_64  = (fill_width_p == 64)
+    // Fill size parameterisations -
+    , localparam bp_mem_msg_size_e e_mem_msg_size = (fill_width_p == 512)
+                                                      ? e_mem_msg_size_64
+                                                      : (fill_width_p == 256)
+                                                        ? e_mem_msg_size_32
+                                                        : (fill_width_p == 128)
+                                                          ? e_mem_msg_size_16
+                                                          : (fill_width_p == 64)
+                                                            ? e_mem_msg_size_8
+                                                            : e_mem_msg_size_64
     )
    (input                                            clk_i
     , input                                          reset_i
@@ -179,7 +184,7 @@ module bp_uce
   wire is_flush_fence   = (state_r == e_flush_fence);
   wire is_ready         = (state_r == e_ready);
   wire is_send_critical = (state_r == e_send_critical);
-  wire is_writeback_evict= (state_r == e_writeback_evict); // read dirty data from cache to UCE
+  wire is_writeback_evict = (state_r == e_writeback_evict); // read dirty data from cache to UCE
   wire is_writeback_read = (state_r == e_writeback_read_req); // read data from L2 to cache
   wire is_writeback_wb   = (state_r == e_writeback_write_req); // read dirty data in UCE
   wire is_write_request  = (state_r == e_write_wait);
@@ -316,14 +321,12 @@ module bp_uce
   assign credits_empty_o = (credit_count_lo == 0);
 
   logic [fill_width_p-1:0] writeback_data;
-  logic [block_size_in_fill_lp-1:0] writeback_sel_one_hot;
-  assign writeback_sel_one_hot = 1'b1 << mem_cmd_cnt;
-  bsg_mux_one_hot #(
+  bsg_mux #(
     .width_p(fill_width_p)
     ,.els_p(block_size_in_fill_lp)
     ) writeback_mux (
     .data_i(dirty_data_r)
-    ,.sel_one_hot_i(writeback_sel_one_hot)
+    ,.sel_i(mem_cmd_cnt)
     ,.data_o(writeback_data)
     );
 
@@ -424,15 +427,7 @@ module bp_uce
           begin
             mem_cmd_cast_o.header.msg_type = e_cce_mem_wr;
             mem_cmd_cast_o.header.addr     = {dirty_tag_r, index_cnt, bank_index, byte_offset_width_lp'(0)};
-            mem_cmd_cast_o.header.size     = is_fillwidth_512
-                                              ? e_mem_msg_size_64
-                                              : is_fillwidth_256
-                                                ? e_mem_msg_size_32
-                                                : is_fillwidth_128
-                                                  ? e_mem_msg_size_16
-                                                  : is_fillwidth_64
-                                                    ? e_mem_msg_size_8
-                                                    : e_mem_msg_size_64;
+            mem_cmd_cast_o.header.size     = e_mem_msg_size;
             mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
             mem_cmd_cast_o.data                  = writeback_data;
             mem_cmd_v_o = mem_cmd_ready_i;
@@ -492,15 +487,7 @@ module bp_uce
             begin
               mem_cmd_cast_o.header.msg_type       = e_cce_mem_rd;
               mem_cmd_cast_o.header.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], block_offset_width_lp'(0)};
-              mem_cmd_cast_o.header.size           = is_fillwidth_512
-                                                      ? e_mem_msg_size_64
-                                                      : is_fillwidth_256
-                                                        ? e_mem_msg_size_32
-                                                        : is_fillwidth_128
-                                                          ? e_mem_msg_size_16
-                                                          : is_fillwidth_64
-                                                            ? e_mem_msg_size_8
-                                                            : e_mem_msg_size_64;
+              mem_cmd_cast_o.header.size           = e_mem_msg_size;
               mem_cmd_cast_o.header.payload.way_id = lce_assoc_p'(cache_req_metadata_r.repl_way);
               mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
               mem_cmd_v_o = mem_cmd_ready_i;
@@ -560,21 +547,13 @@ module bp_uce
             data_mem_pkt_cast_o.fill_index = 1'b1 << fill_index_shift;
             data_mem_pkt_v_o = load_resp_v_li;
 
-            cache_req_critical_o = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
+            cache_req_critical_o = '0;
             fill_up = one_mem_cmd ? 1'b0 : tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             mem_resp_yumi_lo = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             // request next sub-block
             mem_cmd_cast_o.header.msg_type       = e_cce_mem_rd;
             mem_cmd_cast_o.header.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], bank_index, byte_offset_width_lp'(0)};
-            mem_cmd_cast_o.header.size           = is_fillwidth_512
-                                                    ? e_mem_msg_size_64
-                                                    : is_fillwidth_256
-                                                      ? e_mem_msg_size_32
-                                                      : is_fillwidth_128
-                                                        ? e_mem_msg_size_16
-                                                        : is_fillwidth_64
-                                                          ? e_mem_msg_size_8
-                                                          : e_mem_msg_size_64;
+            mem_cmd_cast_o.header.size           = e_mem_msg_size;
             mem_cmd_cast_o.header.payload.way_id = lce_assoc_p'(cache_req_metadata_r.repl_way);
             mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
             mem_cmd_v_o = one_mem_cmd ? 1'b0 : (mem_cmd_ready_i & ~mem_cmd_done_r);
@@ -587,15 +566,7 @@ module bp_uce
           begin
             mem_cmd_cast_o.header.msg_type = e_cce_mem_wr;
             mem_cmd_cast_o.header.addr     = {dirty_tag_r, cache_req_r.addr[block_offset_width_lp+:index_width_lp], bank_index, byte_offset_width_lp'(0)};
-            mem_cmd_cast_o.header.size     = is_fillwidth_512
-                                              ? e_mem_msg_size_64
-                                              : is_fillwidth_256
-                                                ? e_mem_msg_size_32
-                                                : is_fillwidth_128
-                                                  ? e_mem_msg_size_16
-                                                  : is_fillwidth_64
-                                                    ? e_mem_msg_size_8
-                                                    : e_mem_msg_size_64;
+            mem_cmd_cast_o.header.size     = e_mem_msg_size;
             mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
             mem_cmd_cast_o.data                  = writeback_data;
             mem_cmd_v_o = mem_cmd_ready_i;
@@ -622,21 +593,13 @@ module bp_uce
             data_mem_pkt_cast_o.fill_index = 1'b1 << fill_index_shift;
             data_mem_pkt_v_o = load_resp_v_li;
 
-            cache_req_critical_o = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
+            cache_req_critical_o = '0;
             fill_up = one_mem_cmd ? 1'b0 : tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             mem_resp_yumi_lo = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             // request next sub-block
             mem_cmd_cast_o.header.msg_type       = e_cce_mem_rd;
             mem_cmd_cast_o.header.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], bank_index, byte_offset_width_lp'(0)};
-            mem_cmd_cast_o.header.size           = is_fillwidth_512
-                                                    ? e_mem_msg_size_64
-                                                    : is_fillwidth_256
-                                                      ? e_mem_msg_size_32
-                                                      : is_fillwidth_128
-                                                        ? e_mem_msg_size_16
-                                                        : is_fillwidth_64
-                                                          ? e_mem_msg_size_8
-                                                          : e_mem_msg_size_64;
+            mem_cmd_cast_o.header.size           = e_mem_msg_size;
             mem_cmd_cast_o.header.payload.way_id = lce_assoc_p'(cache_req_metadata_r.repl_way);
             mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
             mem_cmd_v_o = one_mem_cmd ? 1'b0 : (mem_cmd_ready_i & ~mem_cmd_done_r);
