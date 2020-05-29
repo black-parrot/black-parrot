@@ -16,7 +16,8 @@ module testbench
    `declare_bp_proc_params(bp_params_p)
 
    // interface widths
-   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+   `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
+   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
    , parameter cce_trace_p = 0
@@ -62,7 +63,7 @@ module testbench
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
-`declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
+`declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
 
 // CFG IF
 bp_cfg_bus_s           cfg_bus_lo;
@@ -76,7 +77,7 @@ bp_cce_mem_msg_s       mem_cmd;
 logic                  mem_cmd_v, mem_cmd_ready;
 
 // LCE-CCE IF
-bp_lce_cce_req_s       lce_req, lce_req_lo;
+bp_lce_cce_req_s       lce_req_lo, lce_req_to_cce;
 logic                  lce_req_v, lce_req_v_lo, lce_req_yumi, lce_req_ready_li;
 bp_lce_cce_resp_s      lce_resp, lce_resp_lo;
 logic                  lce_resp_v, lce_resp_v_lo, lce_resp_yumi, lce_resp_ready_li;
@@ -188,7 +189,7 @@ bind bp_cce_wrapper
       ,.reset_i(reset_i)
       ,.freeze_i(cfg_bus_cast_i.freeze)
 
-      ,.cce_id_i('0)
+      ,.cce_id_i(cfg_bus_cast_i.cce_id)
 
       // To CCE
       ,.lce_req_i(lce_req_i)
@@ -226,7 +227,7 @@ lce_req_buffer
   ,.ready_o(lce_req_ready_li)
   // to CCE
   ,.v_o(lce_req_v)
-  ,.data_o(lce_req)
+  ,.data_o(lce_req_to_cce)
   ,.yumi_i(lce_req_yumi)
   );
 
@@ -262,7 +263,7 @@ wrapper
   ,.lce_cmd_v_o(lce_cmd_v)
   ,.lce_cmd_ready_i(lce_cmd_ready)
 
-  ,.lce_req_i(lce_req)
+  ,.lce_req_i(lce_req_to_cce)
   ,.lce_req_v_i(lce_req_v)
   ,.lce_req_yumi_o(lce_req_yumi)
 
@@ -375,6 +376,7 @@ bp_mem_nonsynth_tracer
    ,.mem_resp_yumi_i(mem_resp_yumi)
    );
 
+logic [coh_noc_cord_width_p-1:0] cord_li = {{coh_noc_y_cord_width_p'(1'b1)}, {coh_noc_x_cord_width_p'('0)}};
 logic cfg_resp_v_lo;
 bp_cfg
  #(.bp_params_p(bp_params_p))
@@ -393,7 +395,7 @@ bp_cfg
    ,.cfg_bus_o(cfg_bus_lo)
    ,.did_i('0)
    ,.host_did_i('0)
-   ,.cord_i('0)
+   ,.cord_i(cord_li)
    ,.irf_data_i('0)
    ,.npc_data_i('0)
    ,.csr_data_i('0)

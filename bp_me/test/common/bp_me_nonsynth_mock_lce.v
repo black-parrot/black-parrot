@@ -11,54 +11,6 @@
  *
  */
 
-module tag_lookup
-  import bp_common_pkg::*;
-  import bp_cce_pkg::*;
-  #(parameter assoc_p="inv"
-    , parameter ptag_width_p="inv"
-    , localparam tag_s_width_lp=($bits(bp_coh_states_e)+ptag_width_p)
-    , localparam lg_assoc_lp=`BSG_SAFE_CLOG2(assoc_p)
-   )
-  (input [assoc_p-1:0][tag_s_width_lp-1:0] tag_set_i
-   , input [ptag_width_p-1:0] ptag_i
-   , input [lg_assoc_lp-1:0] lru_way_i
-   , input [assoc_p-1:0] dirty_bits_i
-   , output logic hit_o
-   , output logic dirty_o
-   , output logic [lg_assoc_lp-1:0] way_o
-   , output bp_coh_states_e state_o
-  );
-
-  `declare_bp_cce_dir_entry_s(ptag_width_p);
-  dir_entry_s [assoc_p-1:0] tags;
-  assign tags = tag_set_i;
-
-  logic [assoc_p-1:0] hits;
-  genvar i;
-  generate
-  for (i = 0; i < assoc_p; i=i+1) begin
-    assign hits[i] = ((tags[i].tag == ptag_i) && (tags[i].state != e_COH_I));
-  end
-  endgenerate
-
-  logic hit_lo;
-  logic [lg_assoc_lp-1:0] way_lo;
-  bsg_encode_one_hot
-    #(.width_p(assoc_p))
-  hits_to_way_id
-    (.i(hits)
-     ,.addr_o(way_lo)
-     ,.v_o(hit_lo)
-    );
-
-  // hit_o is set if tag matched and coherence state was any valid state
-  assign hit_o = |hits;
-  assign way_o = way_lo;
-  assign dirty_o = (tags[way_o].state == e_COH_M);
-  assign state_o = tags[way_o].state;
-
-endmodule
-
 module bp_me_nonsynth_mock_lce
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;
@@ -87,8 +39,11 @@ module bp_me_nonsynth_mock_lce
 
     , localparam lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
 
+    , localparam counter_max_p = 512
+    , localparam counter_width_p=`BSG_WIDTH(counter_max_p+1)
+
     `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, assoc_p)
-    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, assoc_p, dword_width_p, cce_block_width_p)
+    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, assoc_p, cce_block_width_p)
 
   )
   (
@@ -134,7 +89,10 @@ module bp_me_nonsynth_mock_lce
   end
 
   // LCE-CCE interface structs
-  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, assoc_p, dword_width_p, cce_block_width_p);
+  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, assoc_p, cce_block_width_p);
+
+  // LCE TR Packet struct
+  `declare_bp_me_nonsynth_lce_tr_pkt_s(paddr_width_p, dword_width_p);
 
   // Tag+State struct
   `declare_bp_cce_dir_entry_s(ptag_width_lp);
@@ -166,88 +124,69 @@ module bp_me_nonsynth_mock_lce
      ,.yumi_i(lce_cmd_yumi)
     );
 
-  // Current set and way for tag, dirty bits, and data array operations
-  logic [lg_sets_lp-1:0] cur_set_r, cur_set_n;
-  logic [lg_assoc_lp-1:0] cur_way_r, cur_way_n;
-
   // Tags
-  dir_entry_s [sets_p-1:0][assoc_p-1:0] tags, tag_next, tag_next_n;
-  logic [sets_p-1:0][assoc_p-1:0] tag_w, tag_w_n;
+  dir_entry_s [assoc_p-1:0] tag_data_li, tag_w_mask_li, tag_data_lo;
+  logic [lg_sets_lp-1:0] tag_addr_li;
+  logic tag_v_li, tag_w_li;
+
+  // Tag Array
+  bsg_mem_1rw_sync_mask_write_bit
+    #(.width_p($bits(dir_entry_s)*assoc_p)
+      ,.els_p(sets_p)
+      )
+    tag_array
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      ,.data_i(tag_data_li)
+      ,.addr_i(tag_addr_li)
+      ,.v_i(tag_v_li)
+      ,.w_mask_i(tag_w_mask_li)
+      ,.w_i(tag_w_li)
+      ,.data_o(tag_data_lo)
+      );
 
   // Dirty bits
-  logic [sets_p-1:0][assoc_p-1:0] dirty_w, dirty_w_n;
-  logic [sets_p-1:0][assoc_p-1:0] dirty_bits, dirty_bits_next, dirty_bits_n;
+  logic [assoc_p-1:0] dirty_bits_data_li, dirty_bits_w_mask_li, dirty_bits_data_lo;
+  logic [lg_sets_lp-1:0] dirty_bits_addr_li;
+  logic dirty_bits_v_li, dirty_bits_w_li;
 
-  always_ff @(posedge clk_i) begin
-    if (reset_i) begin
-      cur_set_r <= '0;
-      cur_way_r <= '0;
-      tag_w <= '0;
-      tag_next <= '0;
-      tags <= '0;
-      dirty_w <= '0;
-      dirty_bits <= '0;
-      dirty_bits_next <= '0;
-    end else begin
-      cur_set_r <= cur_set_n;
-      cur_way_r <= cur_way_n;
-      tag_w <= tag_w_n;
-      tag_next <= tag_next_n;
-      dirty_w <= dirty_w_n;
-      dirty_bits_next <= dirty_bits_n;
-      for (integer i = 0; i < sets_p; i=i+1) begin
-        for (integer j = 0; j < assoc_p; j=j+1) begin
-          if (tag_w[i][j]) begin
-            tags[i][j] <= tag_next[i][j];
-          end
-          if (dirty_w[i][j]) begin
-            dirty_bits[i][j] <= dirty_bits_next[i][j];
-          end
-        end
-      end
-    end
-  end
-
-  // async read of tags at specified set and way
-  dir_entry_s tag_cur;
-  assign tag_cur = tags[cur_set_r][cur_way_r];
+  // Dirty Bits Array
+  bsg_mem_1rw_sync_mask_write_bit
+    #(.width_p(assoc_p)
+      ,.els_p(sets_p)
+      )
+    dirty_bits_array
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      ,.data_i(dirty_bits_data_li)
+      ,.addr_i(dirty_bits_addr_li)
+      ,.v_i(dirty_bits_v_li)
+      ,.w_mask_i(dirty_bits_w_mask_li)
+      ,.w_i(dirty_bits_w_li)
+      ,.data_o(dirty_bits_data_lo)
+      );
 
   // Data
-  logic [sets_p-1:0][assoc_p-1:0][cce_block_width_p-1:0] data;
-  logic [sets_p-1:0][assoc_p-1:0] data_w, data_w_n;
-  logic [cce_block_width_p-1:0] data_next, data_next_n, data_mask, data_mask_n;
+  logic [assoc_p-1:0][cce_block_width_p-1:0] data_li, data_w_mask_li, data_lo;
+  logic [lg_sets_lp-1:0] data_addr_li;
+  logic data_v_li, data_w_li;
 
-  always_ff @(posedge clk_i) begin
-    if (reset_i) begin
-      data_w <= '0;
-      data_mask <= '0;
-      data_next <= '0;
-      data <= '0;
-    end else begin
-      data_w <= data_w_n;
-      data_mask <= data_mask_n;
-      data_next <= data_next_n;
-      for (integer i = 0; i < sets_p; i=i+1) begin
-        for (integer j = 0; j < assoc_p; j=j+1) begin
-          if (data_w[i][j]) begin
-            for (integer k = 0; k < cce_block_width_p; k=k+1) begin
-              if (data_mask[k]) begin
-                data[i][j][k] <= data_next[k];
-              end else begin
-                data[i][j][k] <= data[i][j][k];
-              end
-            end
-          end
-        end
-      end
-    end
-  end
-
-  // async read of data at specified set and way
-  logic [cce_block_width_p-1:0] data_cur;
-  assign data_cur = data[cur_set_r][cur_way_r];
-
-  `declare_bp_me_nonsynth_lce_tr_pkt_s(paddr_width_p, dword_width_p);
+  // Data Array
+  bsg_mem_1rw_sync_mask_write_bit_banked
+    #(.width_p(cce_block_width_p*assoc_p)
+      ,.els_p(sets_p)
+      ,.num_width_bank_p(assoc_p)
+      )
+    data_array
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      ,.data_i(data_li)
+      ,.addr_i(data_addr_li)
+      ,.v_i(data_v_li)
+      ,.w_mask_i(data_w_mask_li)
+      ,.w_i(data_w_li)
+      ,.data_o(data_lo)
+      );
 
   // miss status handling register definition for current trace replay command
   typedef struct packed {
@@ -263,8 +202,6 @@ module bp_me_nonsynth_mock_lce
     logic data_received;
     logic transfer_received;
   } mshr_s;
-
-  `define mshr_width $bits(mshr_s)
 
   // miss status handling register
   mshr_s mshr_r, mshr_n;
@@ -284,24 +221,22 @@ module bp_me_nonsynth_mock_lce
   assign tr_pkt_o = tr_pkt_lo;
 
   // some useful signals from the current trace replay command
-  logic store_op, load_op, signed_op, byte_op, word_op, double_op, half_op;
-  logic [1:0] op_size;
-  logic [2:0] dword_offset;
-  logic [2:0] byte_offset;
+  logic store_op, load_op, signed_op, word_op, double_op, half_op;
+  logic [2:0] byte_offset, dword_offset;
   assign store_op = cmd.cmd[3];
   assign load_op = ~cmd.cmd[3];
   assign signed_op = ~cmd.cmd[2];
-  assign op_size = cmd.cmd[1:0];
   assign double_op = (cmd.cmd[1:0] == 2'b11);
   assign word_op = (cmd.cmd[1:0] == 2'b10);
   assign half_op = (cmd.cmd[1:0] == 2'b01);
-  assign byte_op = (cmd.cmd[1:0] == 2'b00);
   assign dword_offset = cmd.paddr[5:3];
   assign byte_offset = cmd.paddr[2:0];
 
   // Data word (64-bit) targeted by current trace replay command
-  logic [dword_width_p-1:0] load_data;
-  assign load_data = data_cur[dword_width_p*dword_offset +: dword_width_p];
+  logic [dword_width_p-1:0] load_dword;
+  assign load_dword = dword_width_p'(data_lo[mshr_r.lru_way] >> (dword_width_p*dword_offset));
+  // The following doesn't work in Verilator 4.035
+  //assign load_dword = data_lo[mshr_r.lru_way][dword_width_p*dword_offset +: dword_width_p];
   logic word_sigext, half_sigext, byte_sigext;
   logic [31:0] load_word;
   logic [15:0] load_half;
@@ -311,7 +246,7 @@ module bp_me_nonsynth_mock_lce
     .width_p(32)
     ,.els_p(2)
   ) word_mux (
-    .data_i(load_data)
+    .data_i(load_dword)
     ,.sel_i(byte_offset[2])
     ,.data_o(load_word)
   );
@@ -320,7 +255,7 @@ module bp_me_nonsynth_mock_lce
     .width_p(16)
     ,.els_p(4)
   ) half_mux (
-    .data_i(load_data)
+    .data_i(load_dword)
     ,.sel_i(byte_offset[2:1])
     ,.data_o(load_half)
   );
@@ -329,7 +264,7 @@ module bp_me_nonsynth_mock_lce
     .width_p(8)
     ,.els_p(8)
   ) byte_mux (
-    .data_i(load_data)
+    .data_i(load_dword)
     ,.sel_i(byte_offset[2:0])
     ,.data_o(load_byte)
   );
@@ -340,54 +275,54 @@ module bp_me_nonsynth_mock_lce
 
   // Tag lookup
   // inputs
-  dir_entry_s [assoc_p-1:0] tag_set_li;
-  logic [ptag_width_lp-1:0] ptag_li;
-  // LRU way tracking
-  // current policy is Round-Robin per set, because it is simple.
-  logic [sets_p-1:0][lg_assoc_lp-1:0] lru_way_r, lru_way_n;
-  logic [lg_assoc_lp-1:0] lru_way_li;
-  logic [assoc_p-1:0] dirty_bits_li;
+  logic [ptag_width_lp-1:0] tag_lookup_tag_li;
   // set up tag lookup inputs
-  assign tag_set_li = tags[cmd.paddr[block_offset_bits_lp +: lg_sets_lp]];
-  assign ptag_li = cmd.paddr[paddr_width_p-1 -: ptag_width_lp];
-  assign lru_way_li = lru_way_r[cmd.paddr[block_offset_bits_lp +: lg_sets_lp]];
-  assign dirty_bits_li = dirty_bits[cmd.paddr[block_offset_bits_lp +: lg_sets_lp]];
-
+  assign tag_lookup_tag_li = cmd.paddr[paddr_width_p-1 -: ptag_width_lp];
   // outputs
-  logic tag_hit_lo;
-  logic tag_dirty_lo;
-  logic [lg_assoc_lp-1:0] tag_hit_way_r, tag_hit_way_n, tag_hit_way_lo;
-  bp_coh_states_e tag_hit_state_r, tag_hit_state_n, tag_hit_state_lo;
+  logic tag_lookup_hit_lo;
+  logic tag_lookup_dirty_lo;
+  logic [lg_assoc_lp-1:0] tag_hit_way_r, tag_hit_way_n, tag_lookup_hit_way_lo;
+  bp_coh_states_e tag_hit_state_r, tag_hit_state_n, tag_lookup_hit_state_lo;
 
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
-      lru_way_r <= '0;
       tag_hit_way_r <= '0;
       tag_hit_state_r <= e_COH_I;
     end else begin
-      lru_way_r <= lru_way_n;
       tag_hit_way_r <= tag_hit_way_n;
       tag_hit_state_r <= tag_hit_state_n;
     end
   end
 
-  tag_lookup
+  bp_me_nonsynth_mock_lce_tag_lookup
     #(.assoc_p(assoc_p)
       ,.ptag_width_p(ptag_width_lp)
       )
   lce_tag_lookup
-    (.tag_set_i(tag_set_li)
-     ,.ptag_i(ptag_li)
-     ,.lru_way_i(lru_way_li)
-     ,.dirty_bits_i(dirty_bits_li)
-     ,.hit_o(tag_hit_lo)
-     ,.dirty_o(tag_dirty_lo)
-     ,.way_o(tag_hit_way_lo)
-     ,.state_o(tag_hit_state_lo)
+    (.tag_set_i(tag_data_lo)
+     ,.ptag_i(tag_lookup_tag_li)
+     ,.hit_o(tag_lookup_hit_lo)
+     ,.dirty_o(tag_lookup_dirty_lo)
+     ,.way_o(tag_lookup_hit_way_lo)
+     ,.state_o(tag_lookup_hit_state_lo)
      );
 
+  // LRU way tracking
+  // current policy is Round-Robin per set, because it is simple.
+  logic [sets_p-1:0][lg_assoc_lp-1:0] lru_way_r, lru_way_n;
+
+  always_ff @(posedge clk_i) begin
+    if (reset_i) begin
+      lru_way_r <= '0;
+    end else begin
+      lru_way_r <= lru_way_n;
+    end
+  end
+
+  // FSM states
   typedef enum logic [7:0] {
     RESET
+    ,CLEAR_STATE
     ,INIT
     ,SEND_SYNC
     ,READY
@@ -400,9 +335,7 @@ module bp_me_nonsynth_mock_lce
     ,LCE_DATA_CMD
 
     ,LCE_CMD
-    ,LCE_CMD_TR_RD
     ,LCE_CMD_TR
-    ,LCE_CMD_WB_RD
     ,LCE_CMD_WB
     ,LCE_CMD_INV
     ,LCE_CMD_INV_RESP
@@ -415,11 +348,9 @@ module bp_me_nonsynth_mock_lce
     ,TR_CMD
     ,TR_CMD_SWITCH
     ,TR_CMD_TAG
-    ,TR_CMD_LD_HIT
     ,TR_CMD_LD_HIT_RESP
     ,TR_CMD_LD_MISS
     ,TR_CMD_ST_HIT
-    ,TR_CMD_ST_HIT_WR_TAG
     ,TR_CMD_ST_HIT_RESP
     ,TR_CMD_ST_MISS
 
@@ -432,9 +363,9 @@ module bp_me_nonsynth_mock_lce
   // counter
   logic cnt_rst;
   logic cnt_inc, cnt_dec;
-  logic [`BSG_WIDTH(num_cce_p+1)-1:0] cnt;
+  logic [counter_width_p-1:0] cnt;
   bsg_counter_up_down
-    #(.max_val_p(num_cce_p+1)
+    #(.max_val_p(counter_max_p+1)
       ,.init_val_p(0)
       ,.max_step_p(1)
       )
@@ -468,6 +399,7 @@ module bp_me_nonsynth_mock_lce
   logic [lg_sets_lp-1:0] hash_addr_li;
   logic [lg_num_cce_lp-1:0] cce_dst_id_lo;
   assign hash_addr_li = {<< {cmd.paddr[block_offset_bits_lp+:lg_sets_lp]}};
+  logic [($clog2((2**lg_sets_lp+num_cce_p-1)/num_cce_p))-1:0] index_lo;
   bsg_hash_bank
     #(.banks_p(num_cce_p) // number of CCE's to spread way groups over
       ,.width_p(lg_sets_lp) // width of address input
@@ -475,8 +407,9 @@ module bp_me_nonsynth_mock_lce
     addr_to_cce_id
      (.i(hash_addr_li)
       ,.bank_o(cce_dst_id_lo)
-      ,.index_o()
+      ,.index_o(index_lo)
       );
+  wire unused0 = &index_lo;
 
   wire [paddr_width_p-1:0] addr_mask = {{{paddr_width_p-block_offset_bits_lp}{1'b1}}
                                         , {{block_offset_bits_lp}{1'b0}}};
@@ -527,28 +460,54 @@ module bp_me_nonsynth_mock_lce
     lru_way_n = lru_way_r;
 
     // tag, data, and dirty bit arrays
-    tag_next_n = '0;
-    tag_w_n = '0;
-    data_next_n = '0;
-    data_w_n = '0;
-    data_mask_n = '0;
-    dirty_w_n = '0;
-    dirty_bits_n = '0;
+    tag_data_li = '0;
+    tag_w_mask_li = '0;
+    tag_addr_li = '0;
+    tag_v_li = 1'b0;
+    tag_w_li = 1'b0;
+    dirty_bits_data_li = '0;
+    dirty_bits_w_mask_li = '0;
+    dirty_bits_addr_li = '0;
+    dirty_bits_v_li = 1'b0;
+    dirty_bits_w_li = 1'b0;
+    data_li = '0;
+    data_w_mask_li = '0;
+    data_addr_li = '0;
+    data_v_li = 1'b0;
+    data_w_li = 1'b0;
+
 
     // tag lookup module
     tag_hit_way_n = tag_hit_way_r;
     tag_hit_state_n = tag_hit_state_r;
 
-    // tag and data select
-    cur_set_n = cur_set_r;
-    cur_way_n = cur_way_r;
-
     case (lce_state_r)
       RESET: begin
         // If the CCE will skip initialization and operate in uncached only
         // mode, go to UNCACHED_ONLY. If the CCE will run in normal mode, go
-        // to INIT to wait for the SYNC command.
-        lce_state_n = (skip_init_p) ? UNCACHED_ONLY : INIT;
+        // to CLEAR_STATE to reset tag, data, and dirty_bits.
+        lce_state_n = (skip_init_p) ? UNCACHED_ONLY : CLEAR_STATE;
+      end
+      CLEAR_STATE: begin
+        // clear all tag, data, and dirty bit state
+        tag_v_li = 1'b1;
+        tag_w_li = 1'b1;
+        tag_w_mask_li = '1;
+        tag_addr_li = cnt[0+:lg_sets_lp];
+
+        dirty_bits_v_li = 1'b1;
+        dirty_bits_w_li = 1'b1;
+        dirty_bits_w_mask_li = '1;
+        dirty_bits_addr_li = cnt[0+:lg_sets_lp];
+
+        data_v_li = 1'b1;
+        data_w_li = 1'b1;
+        data_w_mask_li = '1;
+        data_addr_li = cnt[0+:lg_sets_lp];
+
+        cnt_rst = (cnt == counter_width_p'(sets_p));
+        cnt_inc = ~cnt_rst;
+        lce_state_n = (cnt_rst) ? INIT : CLEAR_STATE;
       end
       // Until all syncs occur, all requests will be uncached
       UNCACHED_ONLY: begin
@@ -570,7 +529,7 @@ module bp_me_nonsynth_mock_lce
         mshr_n.miss = 1'b1;
         mshr_n.uncached = cmd.uncached;
         assert(cmd.uncached) else $error("LCE received cached access command while uncached only");
-        mshr_n.cce = {'0, cce_dst_id_lo};
+        mshr_n.cce[0+:lg_num_cce_lp] = cce_dst_id_lo;
         mshr_n.paddr = cmd.paddr;
         mshr_n.dirty = '0;
         mshr_n.store_op = store_op;
@@ -600,7 +559,7 @@ module bp_me_nonsynth_mock_lce
               ? e_mem_msg_size_2
               : e_mem_msg_size_1;
 
-        lce_req.data = (mshr_r.store_op) ? cmd.data : '0;
+        lce_req.data[0+:dword_width_p] = (mshr_r.store_op) ? cmd.data : '0;
 
         // wait for LCE req outbound to be ready (r&v), then wait for responses
         lce_state_n = (lce_req_ready_i)
@@ -626,6 +585,7 @@ module bp_me_nonsynth_mock_lce
 
           // clear miss handling state
           mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
+
         end else if (lce_cmd_v & lce_cmd.header.msg_type == e_lce_cmd_uc_data) begin
           assert(!mshr_r.store_op) else $error("LCE received UC Store Done, but not missing on store");
           // load returns the data, and must wait for lce_data_cmd to return
@@ -657,11 +617,12 @@ module bp_me_nonsynth_mock_lce
         end
       end
       INIT: begin
+
         // by default, stay in INIT, waiting for all sync commands to arrive.
-        lce_state_n = (cnt == num_cce_p) ? READY : INIT;
-        cnt_rst = (cnt == num_cce_p);
+        lce_state_n = (cnt == counter_width_p'(num_cce_p)) ? READY : INIT;
+        cnt_rst = (cnt == counter_width_p'(num_cce_p));
         // register that LCE is initialized after sending all sync acks
-        lce_init_n = (cnt == num_cce_p) ? 1'b1 : 1'b0;
+        lce_init_n = (cnt == counter_width_p'(num_cce_p)) ? 1'b1 : 1'b0;
 
         if (lce_cmd_v & lce_cmd.header.msg_type == e_lce_cmd_sync) begin
           // dequeue the command, go to SEND_SYNC
@@ -686,6 +647,7 @@ module bp_me_nonsynth_mock_lce
       end
       READY: begin
         lce_state_n = READY;
+
         if (lce_cmd_v) begin
           // dequeue the command and save
           lce_cmd_yumi = lce_cmd_v;
@@ -701,9 +663,18 @@ module bp_me_nonsynth_mock_lce
           end else if (lce_cmd.header.msg_type == e_lce_cmd_inv) begin
             lce_state_n = LCE_CMD_INV;
           end else if (lce_cmd.header.msg_type == e_lce_cmd_tr) begin
-            lce_state_n = LCE_CMD_TR_RD;
+            // Read data array
+            data_v_li = 1'b1;
+            data_addr_li = lce_cmd.header.addr[block_offset_bits_lp +: lg_sets_lp];
+            lce_state_n = LCE_CMD_TR;
           end else if (lce_cmd.header.msg_type == e_lce_cmd_wb) begin
-            lce_state_n = LCE_CMD_WB_RD;
+            tag_v_li = 1'b1;
+            tag_addr_li = lce_cmd.header.addr[block_offset_bits_lp +: lg_sets_lp];
+            data_v_li = 1'b1;
+            data_addr_li = lce_cmd.header.addr[block_offset_bits_lp +: lg_sets_lp];
+            dirty_bits_v_li = 1'b1;
+            dirty_bits_addr_li = lce_cmd.header.addr[block_offset_bits_lp +: lg_sets_lp];
+            lce_state_n = LCE_CMD_WB;
           end else if (lce_cmd.header.msg_type == e_lce_cmd_st) begin
             lce_state_n = LCE_CMD_ST;
           end else if (lce_cmd.header.msg_type == e_lce_cmd_st_wakeup) begin
@@ -718,30 +689,36 @@ module bp_me_nonsynth_mock_lce
           tr_pkt_yumi_o = tr_pkt_v_i;
           cmd_n = tr_cmd_pkt;
           lce_state_n = TR_CMD;
-          // new trace replay command, clear the mshr
+
+          // read tags
+          tag_v_li = 1'b1;
+          tag_addr_li = cmd_n.paddr[block_offset_bits_lp +: lg_sets_lp];
+
+          // new TR command, clear MSHR
           mshr_n = '0;
+
         end
 
       end
       LCE_DATA_CMD: begin
         // data only arrives in response to an outstanding miss
 
-        // write the full cache block to data array
-        data_mask_n = '1;
-        // use the address stored in the mshr
-        cur_set_n = mshr_r.paddr[block_offset_bits_lp +: lg_sets_lp];
-        // way comes from the data command
-        cur_way_n = lce_cmd_r.header.way_id;
-        data_w_n[cur_set_n][cur_way_n] = '1;
-        // data comes from the data command
-        data_next_n = lce_cmd_r.data;
+        tag_v_li = 1'b1;
+        tag_w_li = 1'b1;
+        tag_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        tag_data_li[lce_cmd_r.header.way_id[0+:lg_assoc_lp]].tag = lce_cmd_r.header.addr[paddr_width_p-1 -: ptag_width_lp];
+        tag_data_li[lce_cmd_r.header.way_id[0+:lg_assoc_lp]].state = lce_cmd_r.header.state;
+        tag_w_mask_li[lce_cmd_r.header.way_id[0+:lg_assoc_lp]] = '{ tag : '1, state: e_COH_O};
 
-        tag_w_n[cur_set_n][cur_way_n] = 1'b1;
-        tag_next_n[cur_set_n][cur_way_n].state = lce_cmd_r.header.state;
-        tag_next_n[cur_set_n][cur_way_n].tag = lce_cmd_r.header.addr[paddr_width_p-1 -: ptag_width_lp];
+        data_v_li = 1'b1;
+        data_w_li = 1'b1;
+        data_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        data_li[lce_cmd_r.header.way_id[0+:lg_assoc_lp]] = lce_cmd_r.data;
+        // write the full cache block on data command
+        data_w_mask_li[lce_cmd_r.header.way_id[0+:lg_assoc_lp]] = '1;
 
-        assert (mshr_r.paddr[paddr_width_p-1 -: ptag_width_lp] == lce_cmd_r.header.addr[paddr_width_p-1 -: ptag_width_lp]) else
-          $error("[%0d]: DT_CMD address mismatch [%H] != [%H]", lce_id_i, mshr_r.paddr, lce_cmd_r.header.addr);
+        assert (mshr_r.paddr[paddr_width_p-1 : block_offset_bits_lp] == lce_cmd_r.header.addr[paddr_width_p-1 : block_offset_bits_lp]) else
+          $error("[%0d]: DATA_CMD address mismatch [%H] != [%H]", lce_id_i, mshr_r.paddr, lce_cmd_r.header.addr);
 
         // update mshr
         mshr_n.data_received = 1'b1;
@@ -753,11 +730,13 @@ module bp_me_nonsynth_mock_lce
       LCE_CMD_INV: begin
         // invalidate cmd received - update tags
         // lce_cmd contains all the necessary information to update tags
-        cur_set_n = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
-        cur_way_n = lce_cmd_r.header.way_id;
-        tag_w_n[cur_set_n][cur_way_n] = 1'b1;
-        tag_next_n[cur_set_n][cur_way_n].state = e_COH_I;
-        tag_next_n[cur_set_n][cur_way_n].tag = lce_cmd_r.header.addr[paddr_width_p-1 -: ptag_width_lp];
+
+        tag_v_li = 1'b1;
+        tag_w_li = 1'b1;
+        tag_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        tag_data_li[lce_cmd_r.header.way_id[0+:lg_assoc_lp]].tag = lce_cmd_r.header.addr[paddr_width_p-1 -: ptag_width_lp];
+        tag_data_li[lce_cmd_r.header.way_id[0+:lg_assoc_lp]].state = e_COH_I;
+        tag_w_mask_li[lce_cmd_r.header.way_id[0+:lg_assoc_lp]] = '{ tag : '1, state: e_COH_O};
 
         // send inv_ack next
         lce_state_n = LCE_CMD_INV_RESP;
@@ -778,13 +757,6 @@ module bp_me_nonsynth_mock_lce
         lce_state_n = (lce_resp_ready_i) ? READY : LCE_CMD_INV_RESP;
 
       end
-      LCE_CMD_TR_RD: begin
-        // data select
-        cur_set_n = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
-        cur_way_n = lce_cmd_r.header.way_id;
-
-        lce_state_n = LCE_CMD_TR;
-      end
       LCE_CMD_TR: begin
         // Common LCE Command fields
         lce_cmd_lo.header.dst_id = lce_cmd_r.header.target;
@@ -792,10 +764,14 @@ module bp_me_nonsynth_mock_lce
         lce_cmd_lo.header.way_id = lce_cmd_r.header.target_way_id;
 
         // Assign data command to msg field of LCE Cmd
-        lce_cmd_lo.data = data_cur;
+        lce_cmd_lo.data = data_lo[lce_cmd_r.header.way_id];
         lce_cmd_lo.header.state = lce_cmd_r.header.state;
         lce_cmd_lo.header.addr = lce_cmd_r.header.addr;
         lce_cmd_lo.header.size = msg_block_size;
+
+        // re-read data if LCE Command does not send this cycle
+        data_v_li = ~lce_cmd_ready_i;
+        data_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
 
         // make the command valid
         lce_cmd_v_o = 1'b1;
@@ -804,31 +780,37 @@ module bp_me_nonsynth_mock_lce
         lce_state_n = (lce_cmd_ready_i) ? READY : LCE_CMD_TR;
 
       end
-      LCE_CMD_WB_RD: begin
-        // tag and data select
-        cur_set_n = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
-        cur_way_n = lce_cmd_r.header.way_id;
-
-        lce_state_n = LCE_CMD_WB;
-
-      end
       LCE_CMD_WB: begin
+
+        // reread tag, data, dirty bits if response does not send
+        tag_v_li = ~lce_resp_ready_i;
+        tag_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+
+        data_v_li = ~lce_resp_ready_i;
+        data_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+
+        // dirty bits are always used; either re-read or they are being written because response
+        // message was sent
+        dirty_bits_v_li = 1'b1;
+        dirty_bits_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+
         // writeback cmd
 
         lce_resp.header.dst_id = lce_cmd_r.header.src_id;
         lce_resp.header.src_id = lce_id_i;
         lce_resp.header.addr = lce_cmd_r.header.addr;
 
-        if (dirty_bits[cur_set_r][cur_way_r]) begin
-          lce_resp.data = data_cur;
+        if (dirty_bits_data_lo[lce_cmd_r.header.way_id]) begin
+          lce_resp.data = data_lo[lce_cmd_r.header.way_id];
           lce_resp.header.msg_type = e_lce_cce_resp_wb;
           lce_resp.header.size = msg_block_size;
 
           // clear the dirty bit - but only do the write if the data response is accepted
           // (this prevents the dirty bit from being cleared before the response is sent, which
           //  could result in a null_wb being sent when an actual wb should have been)
-          dirty_w_n[cur_set_r][cur_way_r] = (lce_resp_ready_i) ? 1'b1 : 1'b0;
-          dirty_bits_n[cur_set_r][cur_way_r] = 1'b0;
+          dirty_bits_w_li = lce_resp_ready_i;
+          dirty_bits_w_mask_li[lce_cmd_r.header.way_id] = 1'b1;
+          dirty_bits_data_li[lce_cmd_r.header.way_id] = 1'b0;
 
         end else begin
           lce_resp.data = '0;
@@ -844,12 +826,14 @@ module bp_me_nonsynth_mock_lce
 
       end
       LCE_CMD_ST: begin
-        // response to miss - tag
-        cur_set_n = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
-        cur_way_n = lce_cmd_r.header.way_id;
-        tag_w_n[cur_set_n][cur_way_n] = 1'b1;
-        tag_next_n[cur_set_n][cur_way_n].state = lce_cmd_r.header.state;
-        tag_next_n[cur_set_n][cur_way_n].tag = lce_cmd_r.header.addr[paddr_width_p-1 -: ptag_width_lp];
+        // Set Tag command, write tags based on command, do not send any response
+
+        tag_v_li = 1'b1;
+        tag_w_li = 1'b1;
+        tag_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        tag_data_li[lce_cmd_r.header.way_id] = '{tag: lce_cmd_r.header.addr[paddr_width_p-1 -: ptag_width_lp]
+                                                 , state: lce_cmd_r.header.state};
+        tag_w_mask_li[lce_cmd_r.header.way_id] = '{tag: '1, state: e_COH_O};
 
         lce_state_n = READY;
 
@@ -875,12 +859,12 @@ module bp_me_nonsynth_mock_lce
         // set tag and wakeup command - response to a miss
 
         // update tag array
-        cur_set_n = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
-        cur_way_n = lce_cmd_r.header.way_id;
-
-        tag_w_n[cur_set_n][cur_way_n] = 1'b1;
-        tag_next_n[cur_set_n][cur_way_n].state = lce_cmd_r.header.state;
-        tag_next_n[cur_set_n][cur_way_n].tag = lce_cmd_r.header.addr[paddr_width_p-1 -: ptag_width_lp];
+        tag_v_li = 1'b1;
+        tag_w_li = 1'b1;
+        tag_addr_li = lce_cmd_r.header.addr[block_offset_bits_lp +: lg_sets_lp];
+        tag_data_li[lce_cmd_r.header.way_id] = '{tag: lce_cmd_r.header.addr[paddr_width_p-1 -: ptag_width_lp]
+                                                 , state: lce_cmd_r.header.state};
+        tag_w_mask_li[lce_cmd_r.header.way_id] = '{tag: '1, state: e_COH_O};
 
         // send coh_ack next cycle
         lce_state_n = LCE_CMD_STW_RESP;
@@ -903,37 +887,43 @@ module bp_me_nonsynth_mock_lce
 
       end
       FINISH_MISS: begin
-        // select data to return
-        cur_set_n = mshr_r.paddr[block_offset_bits_lp +: lg_sets_lp];
-        cur_way_n = mshr_r.lru_way;
 
-        if (mshr_r.store_op) begin
-          // do the store
-          data_w_n[cur_set_n][cur_way_n] = 1'b1;
-          data_mask_n = double_op
-            ? {{(cce_block_width_p-64){1'b0}}, {64{1'b1}}} << (dword_offset*64)
-            : word_op
-              ? {{(cce_block_width_p-32){1'b0}}, {32{1'b1}}} << (dword_offset*64 + 32*byte_offset[2])
-              : half_op
-                ? {{(cce_block_width_p-16){1'b0}}, {16{1'b1}}} << (dword_offset*64 + 16*byte_offset[2:1])
-                : {{(cce_block_width_p-8){1'b0}}, {8{1'b1}}} << (dword_offset*64 + 8*byte_offset[2:0]);
+        // read tags
+        tag_v_li = 1'b1;
+        tag_addr_li = mshr_r.paddr[block_offset_bits_lp +: lg_sets_lp];
 
-          data_next_n = double_op
-            ? {{(cce_block_width_p-64){1'b0}}, cmd.data} << (dword_offset*64)
-            : word_op
-              ? {{(cce_block_width_p-32){1'b0}}, cmd.data[0+:32]} << (dword_offset*64 + 32*byte_offset[2])
-              : half_op
-                ? {{(cce_block_width_p-16){1'b0}}, cmd.data[0+:16]} << (dword_offset*64 + 16*byte_offset[2:1])
-                : {{(cce_block_width_p-8){1'b0}}, cmd.data[0+:8]} << (dword_offset*64 + 8*byte_offset[2:0]);
+        // write data on store miss, read data on load-miss
+        data_v_li = 1'b1;
+        data_w_li = mshr_r.store_op;
+        data_addr_li = mshr_r.paddr[block_offset_bits_lp +: lg_sets_lp];
+        data_li[mshr_r.lru_way] =
+          mshr_r.store_op
+            ? double_op
+              ? {{(cce_block_width_p-64){1'b0}}, cmd.data} << (dword_offset*64)
+              : word_op
+                ? {{(cce_block_width_p-32){1'b0}}, cmd.data[0+:32]} << (dword_offset*64 + 32*byte_offset[2])
+                : half_op
+                  ? {{(cce_block_width_p-16){1'b0}}, cmd.data[0+:16]} << (dword_offset*64 + 16*byte_offset[2:1])
+                  : {{(cce_block_width_p-8){1'b0}}, cmd.data[0+:8]} << (dword_offset*64 + 8*byte_offset[2:0])
+            : '0;
+        data_w_mask_li[mshr_r.lru_way] =
+          mshr_r.store_op
+            ? double_op
+              ? {{(cce_block_width_p-64){1'b0}}, {64{1'b1}}} << (dword_offset*64)
+              : word_op
+                ? {{(cce_block_width_p-32){1'b0}}, {32{1'b1}}} << (dword_offset*64 + 32*byte_offset[2])
+                : half_op
+                  ? {{(cce_block_width_p-16){1'b0}}, {16{1'b1}}} << (dword_offset*64 + 16*byte_offset[2:1])
+                  : {{(cce_block_width_p-8){1'b0}}, {8{1'b1}}} << (dword_offset*64 + 8*byte_offset[2:0])
+            : '0;
 
-          // this is a store, so set the dirty bit for the block
-          dirty_w_n[cur_set_n][cur_way_n] = 1'b1;
-          dirty_bits_n[cur_set_n][cur_way_n] = 1'b1;
-        end else begin
-          // this is a load, so clear the dirty bit for the block
-          dirty_w_n[cur_set_n][cur_way_n] = 1'b1;
-          dirty_bits_n[cur_set_n][cur_way_n] = 1'b0;
-        end
+        // write the dirty bits
+        // set on store, clear on load miss
+        dirty_bits_v_li = 1'b1;
+        dirty_bits_w_li = 1'b1;
+        dirty_bits_addr_li = mshr_r.paddr[block_offset_bits_lp +: lg_sets_lp];
+        dirty_bits_data_li[mshr_r.lru_way] = mshr_r.store_op;
+        dirty_bits_w_mask_li[mshr_r.lru_way] = 1'b1;
 
         lce_state_n = FINISH_MISS_SEND;
       end
@@ -941,17 +931,11 @@ module bp_me_nonsynth_mock_lce
         // send return packet back to TR after CCE handles the LCE miss request
         tr_pkt_v_o = 1'b1;
 
-        if (mshr_r.store_op && tag_cur.state == e_COH_E) begin
-          tag_w_n[cur_set_r][cur_way_r] = 1'b1;
-          tag_next_n[cur_set_r][cur_way_r].state = e_COH_M;
-          tag_next_n[cur_set_r][cur_way_r].tag = mshr_r.paddr[paddr_width_p-1 -: ptag_width_lp];
-        end
-
         tr_pkt_lo.paddr = mshr_r.paddr;
         tr_pkt_lo.data = '0;
         if (load_op) begin
           tr_pkt_lo.data = double_op
-            ? load_data
+            ? load_dword
             : (word_op
               ? {{32{word_sigext}}, load_word}
               : (half_op
@@ -959,46 +943,73 @@ module bp_me_nonsynth_mock_lce
                 : {{56{byte_sigext}}, load_byte}));
         end
 
+
+        if (tr_pkt_ready_i) begin
+          // if this was a store and current state was E, upgrade to M
+          // only write once, when TR packet is sent out
+          if(mshr_r.store_op && tag_data_lo[mshr_r.lru_way].state == e_COH_E) begin
+            tag_v_li = 1'b1;
+            tag_w_li = 1'b1;
+            tag_addr_li = mshr_r.paddr[block_offset_bits_lp +: lg_sets_lp];
+            tag_data_li[mshr_r.lru_way] = '{tag: mshr_r.paddr[paddr_width_p-1 -: ptag_width_lp]
+                                            , state: e_COH_M
+                                           };
+            tag_w_mask_li[mshr_r.lru_way] = '{tag: '1, state: e_COH_O};
+          end
+
+          // clear MSHR when TR packet sends
+          mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
+
+          // update lru_way - round robin, only if TR packet accepted
+          // do not update for an upgrade
+          lru_way_n[mshr_r.paddr[block_offset_bits_lp +: lg_sets_lp]] =
+            (~mshr_r.upgrade)
+            ? (lru_way_r[mshr_r.paddr[block_offset_bits_lp +: lg_sets_lp]] + 'd1)
+            : lru_way_r[mshr_r.paddr[block_offset_bits_lp +: lg_sets_lp]];
+
+        end else begin
+          // re-read tags and data since TR packet did not send this cycle
+          tag_v_li = ~tr_pkt_ready_i;
+          tag_addr_li = mshr_r.paddr[block_offset_bits_lp +: lg_sets_lp];
+
+          data_v_li = ~tr_pkt_ready_i;
+          data_addr_li = mshr_r.paddr[block_offset_bits_lp +: lg_sets_lp];
+        end
+
         // wait until TR accepts packet (r&v), then go to READY
         lce_state_n = (tr_pkt_ready_i) ? READY : FINISH_MISS_SEND;
 
-        // clear miss handling state, only if TR packet accepted
-        mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
-
-        // update lru_way - round robin, only if TR packet accepted
-        // do not update for an upgrade
-        lru_way_n[cur_set_r] = (tr_pkt_ready_i & ~mshr_r.upgrade)
-                             ? (lru_way_r[cur_set_r] + 'd1)
-                             : lru_way_r[cur_set_r];
-
       end
       TR_CMD: begin
-        // set up tag lookup
-        cur_set_n = cmd.paddr[block_offset_bits_lp +: lg_sets_lp];
-
-        // cur_way depends on if there was a hit or not when it is a store
-        cur_way_n = (tag_hit_lo) ? tag_hit_way_lo : '0;
-
-        // capture tag lookup outputs
-        tag_hit_way_n = tag_hit_way_lo;
-        tag_hit_state_n = tag_hit_state_lo;
+        // tag array read initiated last cycle (state), tag output is valid this cycle
 
         // setup miss handling information
-        mshr_n.miss = ~tag_hit_lo;
-        mshr_n.cce = {'0, cce_dst_id_lo};
+        mshr_n.cce[0+:lg_num_cce_lp] = cce_dst_id_lo;
         mshr_n.paddr = cmd.paddr;
         mshr_n.uncached = cmd.uncached;
-        mshr_n.dirty = tag_dirty_lo;
         mshr_n.store_op = store_op;
         mshr_n.upgrade = '0;
-        mshr_n.lru_way = lru_way_li;
+        mshr_n.lru_way = lru_way_r[cmd.paddr[block_offset_bits_lp +: lg_sets_lp]];
         mshr_n.tag_received = '0;
         mshr_n.data_received = '0;
         mshr_n.transfer_received = '0;
+        mshr_n.dirty = tag_lookup_dirty_lo;
+        mshr_n.miss = ~tag_lookup_hit_lo;
+
+        // on a hit, capture tag hit way and state
+        // on a miss, set to 0 equivalent
+        if (tag_lookup_hit_lo) begin
+          tag_hit_way_n = tag_lookup_hit_way_lo;
+          tag_hit_state_n = tag_lookup_hit_state_lo;
+        end else begin
+          tag_hit_way_n = '0;
+          tag_hit_state_n = e_COH_I;
+        end
 
         lce_state_n = TR_CMD_SWITCH;
       end
       TR_CMD_SWITCH: begin
+
         // process the trace replay command
         if (mshr_r.uncached) begin
             lce_state_n = UNCACHED_TR_CMD;
@@ -1006,7 +1017,12 @@ module bp_me_nonsynth_mock_lce
           if (mshr_r.miss) begin
             lce_state_n = TR_CMD_LD_MISS;
           end else begin
-            lce_state_n = TR_CMD_LD_HIT;
+            lce_state_n = TR_CMD_LD_HIT_RESP;
+            // load hit reads data array
+            data_v_li = 1'b1;
+            data_addr_li = mshr_r.paddr[block_offset_bits_lp +: lg_sets_lp];
+            // use tag hit way as lru_way field in MSHR
+            mshr_n.lru_way = tag_hit_way_r;
           end
         end else begin
           if (mshr_r.miss) begin
@@ -1025,24 +1041,13 @@ module bp_me_nonsynth_mock_lce
           end
         end
       end
-      TR_CMD_LD_HIT: begin
-        // load hit
-        cur_set_n = cmd.paddr[block_offset_bits_lp +: lg_sets_lp];
-        cur_way_n = tag_hit_way_r;
-
-        // reset some state
-        tag_hit_way_n = '0;
-        tag_hit_state_n = e_COH_I;
-
-        lce_state_n = TR_CMD_LD_HIT_RESP;
-
-      end
       TR_CMD_LD_HIT_RESP: begin
         tr_pkt_v_o = 1'b1;
         tr_pkt_lo.paddr = mshr_r.paddr;
+
         // select data to return
         tr_pkt_lo.data = double_op
-          ? load_data
+          ? load_dword
           : (word_op
             ? {{32{word_sigext}}, load_word}
             : (half_op
@@ -1051,6 +1056,11 @@ module bp_me_nonsynth_mock_lce
 
         lce_state_n = (tr_pkt_ready_i) ? READY : TR_CMD_LD_HIT_RESP;
         mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
+
+        // re-read data array if packet not sent
+        data_v_li = ~tr_pkt_ready_i;
+        data_addr_li = mshr_r.paddr[block_offset_bits_lp +: lg_sets_lp];
+
       end
       TR_CMD_LD_MISS: begin
         // load miss, send lce request
@@ -1070,12 +1080,26 @@ module bp_me_nonsynth_mock_lce
 
       end
       TR_CMD_ST_HIT: begin
-        // set up tag lookup
-        cur_set_n = cmd.paddr[block_offset_bits_lp +: lg_sets_lp];
-        cur_way_n = tag_hit_way_r;
+
+        // update coherence state to M if current state is E
+        tag_v_li = (tag_hit_state_r == e_COH_E);
+        tag_w_li = tag_v_li;
+        tag_addr_li = cmd.paddr[block_offset_bits_lp +: lg_sets_lp];
+        tag_data_li[tag_hit_way_r].state = e_COH_M;
+        tag_w_mask_li[tag_hit_way_r].state = e_COH_O;
+
+        // write the dirty bits
+        dirty_bits_v_li = tag_v_li;
+        dirty_bits_w_li = tag_v_li;
+        dirty_bits_addr_li = cmd.paddr[block_offset_bits_lp +: lg_sets_lp];
+        dirty_bits_data_li[tag_hit_way_r] = 1'b1;
+        dirty_bits_w_mask_li[tag_hit_way_r] = 1'b1;
+
         // do the store
-        data_w_n[cur_set_n][cur_way_n] = 1'b1;
-        data_mask_n = double_op
+        data_v_li = 1'b1;
+        data_w_li = 1'b1;
+        data_addr_li = cmd.paddr[block_offset_bits_lp +: lg_sets_lp];
+        data_w_mask_li[tag_hit_way_r] = double_op
           ? {{(cce_block_width_p-64){1'b0}}, {64{1'b1}}} << (dword_offset*64)
           : word_op
             ? {{(cce_block_width_p-32){1'b0}}, {32{1'b1}}} << (dword_offset*64 + 32*byte_offset[2])
@@ -1083,7 +1107,7 @@ module bp_me_nonsynth_mock_lce
               ? {{(cce_block_width_p-16){1'b0}}, {16{1'b1}}} << (dword_offset*64 + 16*byte_offset[2:1])
               : {{(cce_block_width_p-8){1'b0}}, {8{1'b1}}} << (dword_offset*64 + 8*byte_offset[2:0]);
 
-        data_next_n = double_op
+        data_li[tag_hit_way_r] = double_op
           ? {{(cce_block_width_p-64){1'b0}}, cmd.data} << (dword_offset*64)
           : word_op
             ? {{(cce_block_width_p-32){1'b0}}, cmd.data[0+:32]} << (dword_offset*64 + 32*byte_offset[2])
@@ -1091,19 +1115,6 @@ module bp_me_nonsynth_mock_lce
               ? {{(cce_block_width_p-16){1'b0}}, cmd.data[0+:16]} << (dword_offset*64 + 16*byte_offset[2:1])
               : {{(cce_block_width_p-8){1'b0}}, cmd.data[0+:8]} << (dword_offset*64 + 8*byte_offset[2:0]);
 
-
-        lce_state_n = TR_CMD_ST_HIT_WR_TAG;
-      end
-      TR_CMD_ST_HIT_WR_TAG: begin
-        // store hit on Exclusive forces upgrade to Modified
-        if (tag_cur.state == e_COH_E) begin
-          tag_w_n[cur_set_r][cur_way_r] = 1'b1;
-          tag_next_n[cur_set_r][cur_way_r].state = e_COH_M;
-          tag_next_n[cur_set_r][cur_way_r].tag = cmd.paddr[paddr_width_p-1 -: ptag_width_lp];
-          // set the dirty bit when writing to a block in Exclusive (first write)
-          dirty_w_n[cur_set_r][cur_way_r] = 1'b1;
-          dirty_bits_n[cur_set_r][cur_way_r] = 1'b1;
-        end
         lce_state_n = TR_CMD_ST_HIT_RESP;
       end
       TR_CMD_ST_HIT_RESP: begin
@@ -1112,7 +1123,7 @@ module bp_me_nonsynth_mock_lce
         tag_hit_state_n = e_COH_I;
 
         // reset the mshr since this is the ack to the transaction
-        mshr_n = '0;
+        mshr_n = (tr_pkt_ready_i) ? '0 : mshr_r;
 
         // output valid trace replay return packet
         tr_pkt_v_o = 1'b1;
@@ -1155,10 +1166,10 @@ module bp_me_nonsynth_mock_lce
     case (lce_state_r)
       TR_CMD_LD_HIT_RESP: begin
         if (tr_pkt_ready_i) begin
-          $display("#AXE %0d: M[%0d] == %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), load_data);
+          $display("#AXE %0d: M[%0d] == %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), load_dword);
         end
       end
-      TR_CMD_ST_HIT_WR_TAG: begin
+      TR_CMD_ST_HIT: begin
         $display("#AXE %0d: M[%0d] := %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), cmd.data);
       end
       FINISH_MISS_SEND: begin
@@ -1166,7 +1177,7 @@ module bp_me_nonsynth_mock_lce
           if (mshr_r.store_op) begin
             $display("#AXE %0d: M[%0d] := %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), cmd.data);
           end else begin
-            $display("#AXE %0d: M[%0d] == %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), load_data);
+            $display("#AXE %0d: M[%0d] == %0d", lce_id_i, (cmd.paddr >> lg_dword_bytes_lp), load_dword);
           end
         end
       end

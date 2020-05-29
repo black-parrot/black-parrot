@@ -33,7 +33,7 @@ module bp_cce
     // Interface Widths
     , localparam cfg_bus_width_lp          = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
     `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
-    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
     `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
   )
   (input                                               clk_i
@@ -91,7 +91,7 @@ module bp_cce
 
   // LCE-CCE and Mem-CCE Interface
   `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p);
-  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p);
+  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
 
   // Config Interface
   `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
@@ -499,9 +499,9 @@ module bp_cce
       ,.src_a_i(src_a)
       ,.alu_res_i(alu_res_lo)
 
-      ,.lce_req_i(lce_req)
-      ,.lce_resp_i(lce_resp)
-      ,.mem_resp_i(mem_resp)
+      ,.lce_req_header_i(lce_req.header)
+      ,.lce_resp_header_i(lce_resp.header)
+      ,.mem_resp_header_i(mem_resp.header)
 
       ,.pending_i(pending_lo)
 
