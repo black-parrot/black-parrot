@@ -561,8 +561,8 @@ module bp_be_dcache
   assign sc_fail     = v_tv_r & sc_op_tv_r & ~sc_success;
   assign uncached_load_req = v_tv_r & load_op_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
   assign uncached_store_req = v_tv_r & store_op_tv_r & uncached_tv_r;
-  assign lr_req = v_tv_r & lr_op_tv_r & (l2_atomic_p == 1);
-  assign sc_req = v_tv_r & sc_op_tv_r & (l2_atomic_p == 1);
+  assign lr_req = v_tv_r & lr_op_tv_r & ~uncached_load_data_v_r & (l2_atomic_p == 1);
+  assign sc_req = v_tv_r & sc_op_tv_r & ~uncached_load_data_v_r & (l2_atomic_p == 1);
   assign amo_req = lr_req | sc_req;
   assign fencei_req = v_tv_r & fencei_op_tv_r;
 
