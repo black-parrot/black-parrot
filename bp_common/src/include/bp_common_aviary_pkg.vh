@@ -106,11 +106,11 @@ package bp_common_aviary_pkg;
       ,dcache_sets          : 64
       ,dcache_assoc         : 8
       ,dcache_block_width   : 512
-      ,dcache_fill_width    : 64
+      ,dcache_fill_width    : 512
       ,icache_sets          : 64
       ,icache_assoc         : 8
       ,icache_block_width   : 512
-      ,icache_fill_width    : 64
+      ,icache_fill_width    : 512
       ,acache_sets          : 64
       ,acache_assoc         : 8
       ,acache_block_width   : 512

@@ -217,40 +217,44 @@ module bp_uce
   end
 
   logic fill_up, fill_cnt_hit_target, mem_cmd_up, mem_cmd_cnt_hit_target;
-  logic one_mem_cmd;
-  assign one_mem_cmd = (block_width_p == fill_width_p);
+  if (fill_width_p == block_width_p) begin
+    assign fill_cnt = 1'b0;
+    assign mem_cmd_cnt = 1'b0;
+    assign fill_cnt_hit_target = 1'b1;
+    assign mem_cmd_cnt_hit_target = 1'b1;
+  end else begin
+    bsg_counter_clear_up #(
+      .max_val_p(block_size_in_fill_lp-1)
+      ,.init_val_p(0)
+      ,.disable_overflow_warning_p(1)
+      )
+    fill_counter
+      (.clk_i(clk_i)
+      ,.reset_i(reset_i)
 
-  bsg_counter_clear_up #(
-    .max_val_p(block_size_in_fill_lp-1)
-    ,.init_val_p(0)
-    ,.disable_overflow_warning_p(1)
-    )
-  fill_counter
-    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+      ,.clear_i('0)
+      ,.up_i(fill_up)
 
-    ,.clear_i('0)
-    ,.up_i(fill_up)
+      ,.count_o(fill_cnt)
+      );
+    assign fill_cnt_hit_target = (fill_cnt == block_size_in_fill_lp-1);
 
-    ,.count_o(fill_cnt)
-    );
-  assign fill_cnt_hit_target = (fill_cnt == block_size_in_fill_lp-1);
+    bsg_counter_clear_up #(
+      .max_val_p(block_size_in_fill_lp-1)
+      ,.init_val_p(0)
+      ,.disable_overflow_warning_p(1)
+      )
+    mem_cmd_counter
+      (.clk_i(clk_i)
+      ,.reset_i(reset_i)
 
-  bsg_counter_clear_up #(
-    .max_val_p(block_size_in_fill_lp-1)
-    ,.init_val_p(0)
-    ,.disable_overflow_warning_p(1)
-    )
-  mem_cmd_counter
-    (.clk_i(clk_i)
-    ,.reset_i(reset_i)
+      ,.clear_i('0)
+      ,.up_i(mem_cmd_up)
 
-    ,.clear_i('0)
-    ,.up_i(mem_cmd_up)
-
-    ,.count_o(mem_cmd_cnt)
-    );
-  assign mem_cmd_cnt_hit_target = (mem_cmd_cnt == block_size_in_fill_lp-1);
+      ,.count_o(mem_cmd_cnt)
+      );
+    assign mem_cmd_cnt_hit_target = (mem_cmd_cnt == block_size_in_fill_lp-1);
+  end
 
   logic [index_width_lp-1:0] index_cnt;
   logic index_up;
@@ -491,8 +495,8 @@ module bp_uce
               mem_cmd_cast_o.header.payload.way_id = lce_assoc_p'(cache_req_metadata_r.repl_way);
               mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
               mem_cmd_v_o = mem_cmd_ready_i;
-              mem_cmd_up = one_mem_cmd ? 1'b0 : mem_cmd_v_o;
-              mem_cmd_done_n = one_mem_cmd;
+              mem_cmd_up = mem_cmd_v_o;
+              mem_cmd_done_n = mem_cmd_cnt_hit_target;
               state_n = mem_cmd_v_o
                         ? cache_req_metadata_r.dirty
                           ? e_writeback_evict
@@ -548,7 +552,7 @@ module bp_uce
             data_mem_pkt_v_o = load_resp_v_li;
 
             cache_req_critical_o = '0;
-            fill_up = one_mem_cmd ? 1'b0 : tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
+            fill_up = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             mem_resp_yumi_lo = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             // request next sub-block
             mem_cmd_cast_o.header.msg_type       = e_cce_mem_rd;
@@ -556,7 +560,7 @@ module bp_uce
             mem_cmd_cast_o.header.size           = e_mem_msg_size;
             mem_cmd_cast_o.header.payload.way_id = lce_assoc_p'(cache_req_metadata_r.repl_way);
             mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
-            mem_cmd_v_o = one_mem_cmd ? 1'b0 : (mem_cmd_ready_i & ~mem_cmd_done_r);
+            mem_cmd_v_o = mem_cmd_ready_i & ~mem_cmd_done_r;
             mem_cmd_up = mem_cmd_v_o;
             mem_cmd_done_n = mem_cmd_cnt_hit_target & mem_cmd_v_o;
 
@@ -594,7 +598,7 @@ module bp_uce
             data_mem_pkt_v_o = load_resp_v_li;
 
             cache_req_critical_o = '0;
-            fill_up = one_mem_cmd ? 1'b0 : tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
+            fill_up = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             mem_resp_yumi_lo = tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i;
             // request next sub-block
             mem_cmd_cast_o.header.msg_type       = e_cce_mem_rd;
@@ -602,7 +606,7 @@ module bp_uce
             mem_cmd_cast_o.header.size           = e_mem_msg_size;
             mem_cmd_cast_o.header.payload.way_id = lce_assoc_p'(cache_req_metadata_r.repl_way);
             mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
-            mem_cmd_v_o = one_mem_cmd ? 1'b0 : (mem_cmd_ready_i & ~mem_cmd_done_r);
+            mem_cmd_v_o = mem_cmd_ready_i & ~mem_cmd_done_r;
             mem_cmd_up = mem_cmd_v_o;
             mem_cmd_done_n = mem_cmd_cnt_hit_target & mem_cmd_v_o;
 
