@@ -242,40 +242,49 @@ module bp_be_dcache
       e_dcache_opcode_amoswapw, e_dcache_opcode_amoswapd: begin
         amoswap_op = 1'b1;
         load_op    = 1'b1;
+        store_op  = 1'b1;
       end
       e_dcache_opcode_amoaddw, e_dcache_opcode_amoaddd: begin
         amoadd_op  = 1'b1;
         load_op    = 1'b1;
+        store_op  = 1'b1;
       end
       e_dcache_opcode_amoxorw, e_dcache_opcode_amoxord: begin
         amoxor_op  = 1'b1;
         load_op    = 1'b1;
+        store_op  = 1'b1;
       end
       e_dcache_opcode_amoandw, e_dcache_opcode_amoandd: begin
         amoand_op  = 1'b1;
         load_op    = 1'b1;
+        store_op  = 1'b1;
       end
       e_dcache_opcode_amoorw, e_dcache_opcode_amoord: begin
         amoor_op   = 1'b1;
         load_op    = 1'b1;
+        store_op  = 1'b1;
       end
       e_dcache_opcode_amominw, e_dcache_opcode_amomind: begin
         amomin_op  = 1'b1;
         load_op    = 1'b1;
+        store_op  = 1'b1;
       end
       e_dcache_opcode_amomaxw, e_dcache_opcode_amomaxd: begin
         amomax_op  = 1'b1;
         load_op    = 1'b1;
+        store_op  = 1'b1;
       end
       e_dcache_opcode_amominuw, e_dcache_opcode_amominud: begin
         amominu_op = 1'b1;
         signed_op  = 1'b0;
         load_op    = 1'b1;
+        store_op  = 1'b1;
       end
       e_dcache_opcode_amomaxuw, e_dcache_opcode_amomaxud: begin
         amomaxu_op = 1'b1;
         signed_op  = 1'b0;
         load_op    = 1'b1;
+        store_op  = 1'b1;
       end
       e_dcache_opcode_ld, e_dcache_opcode_lw, e_dcache_opcode_lh, e_dcache_opcode_lb: begin
         load_op   = 1'b1;
