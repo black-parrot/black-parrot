@@ -399,25 +399,25 @@ module bp_pce
             else if (amo_op_v_li & (pce_id_p == 1)) begin
               pce_l15_req_cast_o.rqtype = e_amo_req;
               // TODO: Can this be done in a more concise manner?
-              pce_l15_req_cast_o.amo_op = (cache_req_r.msg_type == e_amo_swap)
-                                         ? e_amo_op_swap
-                                         : (cache_req_r.msg_type == e_amo_add)
-                                         ? e_amo_op_add
-                                         : (cache_req_r.msg_type == e_amo_and)
-                                         ? e_amo_op_add
-                                         : (cache_req_r.msg_type == e_amo_or)
-                                         ? e_amo_op_or
-                                         : (cache_req_r.msg_type == e_amo_xor)
-                                         ? e_amo_op_xor
-                                         : (cache_req_r.msg_type == e_amo_max)
-                                         ? e_amo_op_max
-                                         : (cache_req_r.msg_type == e_amo_min)
-                                         ? e_amo_op_min
-                                         : (cache_req_r.msg_type == e_amo_maxu)
-                                         ? e_amo_maxu
-                                         : (cache_req_r.msg_type == e_amo_minu)
-                                         ? e_amo_op_minu
-                                         : e_amo_op_none;
+              pce_l15_req_cast_o.amo_op = bp_pce_l15_amo_type_e'((cache_req_r.msg_type == e_amo_swap)
+                                                                  ? e_amo_op_swap
+                                                                  : (cache_req_r.msg_type == e_amo_add)
+                                                                  ? e_amo_op_add
+                                                                  : (cache_req_r.msg_type == e_amo_and)
+                                                                  ? e_amo_op_and
+                                                                  : (cache_req_r.msg_type == e_amo_or)
+                                                                  ? e_amo_op_or
+                                                                  : (cache_req_r.msg_type == e_amo_xor)
+                                                                  ? e_amo_op_xor
+                                                                  : (cache_req_r.msg_type == e_amo_max)
+                                                                  ? e_amo_op_max
+                                                                  : (cache_req_r.msg_type == e_amo_min)
+                                                                  ? e_amo_op_min
+                                                                  : (cache_req_r.msg_type == e_amo_maxu)
+                                                                  ? e_amo_maxu
+                                                                  : (cache_req_r.msg_type == e_amo_minu)
+                                                                  ? e_amo_op_minu
+                                                                  : e_amo_op_none);
 
               // Fetch + Op atomics need to have the nc bit set
               pce_l15_req_cast_o.nc = 1'b1;
