@@ -282,10 +282,30 @@ always_comb
           // Note: could do a more efficent decoding here by having atomic be a flag
           //   And having the op simply taken from funct3
           unique casez (instr)
-            `RV64_LRW: decode.fu_op = e_lrw;
-            `RV64_SCW: decode.fu_op = e_scw;
-            `RV64_LRD: decode.fu_op = e_lrd;
-            `RV64_SCD: decode.fu_op = e_scd;
+            `RV64_LRW:      decode.fu_op = e_lrw;
+            `RV64_SCW:      decode.fu_op = e_scw;
+            if (l2_atomic_p == 1) begin
+              `RV64_AMOSWAPW: decode.fu_op = e_amoswapw;
+              `RV64_AMOADDW:  decode.fu_op = e_amoaddw;
+              `RV64_AMOXORW:  decode.fu_op = e_amoxorw;
+              `RV64_AMOANDW:  decode.fu_op = e_amoandw;
+              `RV64_AMOORW:   decode.fu_op = e_amoorw;
+              `RV64_AMOMINW:  decode.fu_op = e_amominw;
+              `RV64_AMOMAXW:  decode.fu_op = e_amomaxw;
+              `RV64_AMOMINUW: decode.fu_op = e_amominuw;
+              `RV64_AMOMAXUW: decode.fu_op = e_amomaxuw;
+              `RV64_LRD:      decode.fu_op = e_lrd;
+              `RV64_SCD:      decode.fu_op = e_scd;
+              `RV64_AMOSWAPD: decode.fu_op = e_amoswapd;
+              `RV64_AMOADDD:  decode.fu_op = e_amoaddd;
+              `RV64_AMOXORD:  decode.fu_op = e_amoxord;
+              `RV64_AMOANDD:  decode.fu_op = e_amoandd;
+              `RV64_AMOORD:   decode.fu_op = e_amoord;
+              `RV64_AMOMIND:  decode.fu_op = e_amomind;
+              `RV64_AMOMAXD:  decode.fu_op = e_amomaxd;
+              `RV64_AMOMINUD: decode.fu_op = e_amominud;
+              `RV64_AMOMAXUD: decode.fu_op = e_amomaxud;
+            end
             default : illegal_instr = 1'b1;
           endcase
         end
