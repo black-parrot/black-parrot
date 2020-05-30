@@ -3,7 +3,7 @@
 # Command line arguments
 if [ "$ne" == '1' ]
 then
-  echo "Usage: $0 <verilator, vcs> [num_cores]"
+  echo "Usage: $0 <verilator, vcs>"
   exit 1
 elif [ $1 == "vcs" ]
 then
@@ -12,17 +12,17 @@ elif [ $1 == "verilator" ]
 then
     SUFFIX=sc
 else
-  echo "Usage: $0 <verilator, vcs> <testlist> [num_cores]"
+  echo "Usage: $0 <verilator, vcs> <testlist>"
   exit 1
 fi
 
-# Default to 1 core
-N=${2:-1}
-
-# Bash array to iterate over for configurations
-cfgs=(
-    "e_bp_half_core_cfg"
-    "e_bp_half_core_ucode_cce_cfg"
+# Bash array to iterate over for coherence protocols for ucode CCE tests
+protos=(
+    "ei"
+    "msi"
+    "mesi"
+    "msi-nonspec"
+    "mesi-nonspec"
     )
 
 # The base command to append the configuration to
@@ -30,21 +30,15 @@ cmd_base="make -C bp_me/syn run_testlist.${SUFFIX}"
 
 # Any setup needed for the job
 
-let JOBS=${#cfgs[@]}
-let CORES_PER_JOB=${N}/${JOBS}+1
+let JOBS=${#protos[@]}
 
 # Run the regression in parallel on each configuration
-echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
-# EI
-parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO=ei CFG={}" ::: ${cfgs}
-# MSI
-parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO=msi CFG={}" ::: ${cfgs}
-# MESI
-parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO=mesi CFG={}" ::: ${cfgs}
-# MSI-Nonspec
-parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO=msi-nonspec CFG={}" ::: ${cfgs}
-# MESI-Nonspec
-parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO=mesi-nonspec CFG={}" ::: ${cfgs}
+echo "Running ${JOBS} jobs with 1 core per job"
+
+# ucode CCE (EI, MSI, MESI, MSI-nonspec, MESI-nonspec)
+parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO={} CFG=e_bp_half_core_ucode_cce_cfg" ::: ${protos[@]}
+# FSM CCE (MESI)
+parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base COH_PROTO=mesi CFG={}" ::: e_bp_half_core_cfg
 
 # Check for failures in the report directory
 grep -cr "FAIL" */syn/reports/ && echo "[CI CHECK] $0: FAILED" && exit 1
