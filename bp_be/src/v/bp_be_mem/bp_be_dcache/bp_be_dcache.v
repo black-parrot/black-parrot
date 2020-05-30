@@ -92,7 +92,6 @@ module bp_be_dcache
 
     , parameter debug_p=0
     , parameter lock_max_limit_p=8
-    , parameter l2_atomic_p = 1
 
     , localparam lg_dcache_assoc_lp=`BSG_SAFE_CLOG2(dcache_assoc_p)
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
