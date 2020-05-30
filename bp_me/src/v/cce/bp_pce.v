@@ -409,10 +409,17 @@ module bp_pce
             // state when we receive an invalidation
             if (is_ifill_ret_nc && (pce_id_p == 0)) begin
               cache_data_mem_pkt_cast_o.opcode = e_cache_data_mem_uncached;
-              cache_data_mem_pkt_cast_o.data = {l15_pce_ret_cast_i.data_0[0+:8],  l15_pce_ret_cast_i.data_0[8+:8],    
-                                                l15_pce_ret_cast_i.data_0[16+:8], l15_pce_ret_cast_i.data_0[24+:8],
-                                                l15_pce_ret_cast_i.data_0[32+:8], l15_pce_ret_cast_i.data_0[40+:8],
-                                                l15_pce_ret_cast_i.data_0[48+:8], l15_pce_ret_cast_i.data_0[56+:8]};   
+              // TODO: This might need some work (especially for SD cards)
+              // based on how OP does this. 
+              cache_data_mem_pkt_cast_o.data = (cache_req_r.addr[3] == 1'b1)
+                                               ? {l15_pce_ret_cast_i.data_1[0+:8],  l15_pce_ret_cast_i.data_1[8+:8],    
+                                                  l15_pce_ret_cast_i.data_1[16+:8], l15_pce_ret_cast_i.data_1[24+:8],
+                                                  l15_pce_ret_cast_i.data_1[32+:8], l15_pce_ret_cast_i.data_1[40+:8],
+                                                  l15_pce_ret_cast_i.data_1[48+:8], l15_pce_ret_cast_i.data_1[56+:8]}   
+                                               : {l15_pce_ret_cast_i.data_0[0+:8],  l15_pce_ret_cast_i.data_0[8+:8],    
+                                                  l15_pce_ret_cast_i.data_0[16+:8], l15_pce_ret_cast_i.data_0[24+:8],
+                                                  l15_pce_ret_cast_i.data_0[32+:8], l15_pce_ret_cast_i.data_0[40+:8],
+                                                  l15_pce_ret_cast_i.data_0[48+:8], l15_pce_ret_cast_i.data_0[56+:8]};   
               cache_data_mem_pkt_v_o = l15_pce_ret_v_i;
               
               l15_pce_ret_yumi_lo = cache_data_mem_pkt_yumi_i;
@@ -424,10 +431,17 @@ module bp_pce
             end
             else if (is_load_ret_nc && pce_id_p == 1) begin
               cache_data_mem_pkt_cast_o.opcode = e_cache_data_mem_uncached;
-              cache_data_mem_pkt_cast_o.data = {l15_pce_ret_cast_i.data_0[0+:8],  l15_pce_ret_cast_i.data_0[8+:8],    
-                                                l15_pce_ret_cast_i.data_0[16+:8], l15_pce_ret_cast_i.data_0[24+:8],
-                                                l15_pce_ret_cast_i.data_0[32+:8], l15_pce_ret_cast_i.data_0[40+:8],
-                                                l15_pce_ret_cast_i.data_0[48+:8], l15_pce_ret_cast_i.data_0[56+:8]};   
+              // TODO: This might need some work (especially for SD cards)
+              // based on how OP does this. 
+              cache_data_mem_pkt_cast_o.data = (cache_req_r.addr[3] == 1'b1)
+                                               ? {l15_pce_ret_cast_i.data_1[0+:8],  l15_pce_ret_cast_i.data_1[8+:8],    
+                                                  l15_pce_ret_cast_i.data_1[16+:8], l15_pce_ret_cast_i.data_1[24+:8],
+                                                  l15_pce_ret_cast_i.data_1[32+:8], l15_pce_ret_cast_i.data_1[40+:8],
+                                                  l15_pce_ret_cast_i.data_1[48+:8], l15_pce_ret_cast_i.data_1[56+:8]} 
+                                               : {l15_pce_ret_cast_i.data_0[0+:8],  l15_pce_ret_cast_i.data_0[8+:8],    
+                                                  l15_pce_ret_cast_i.data_0[16+:8], l15_pce_ret_cast_i.data_0[24+:8],
+                                                  l15_pce_ret_cast_i.data_0[32+:8], l15_pce_ret_cast_i.data_0[40+:8],
+                                                  l15_pce_ret_cast_i.data_0[48+:8], l15_pce_ret_cast_i.data_0[56+:8]};   
               cache_data_mem_pkt_v_o = l15_pce_ret_v_i;
 
               l15_pce_ret_yumi_lo = cache_data_mem_pkt_yumi_i;
@@ -448,10 +462,17 @@ module bp_pce
             // state when we receive an invalidation
             if (is_amo_ret) begin
               cache_data_mem_pkt_cast_o.opcode = e_cache_data_mem_amo;
-              cache_data_mem_pkt_cast_o.data = {l15_pce_ret_cast_i.data_1[0+:8],  l15_pce_ret_cast_i.data_1[8+:8],    
-                                                l15_pce_ret_cast_i.data_1[16+:8], l15_pce_ret_cast_i.data_1[24+:8],
-                                                l15_pce_ret_cast_i.data_1[32+:8], l15_pce_ret_cast_i.data_1[40+:8],
-                                                l15_pce_ret_cast_i.data_1[48+:8], l15_pce_ret_cast_i.data_1[56+:8]};   
+              // TODO: This might need some work (especially for SD cards)
+              // based on how OP does this. 
+              cache_data_mem_pkt_cast_o.data = (cache_req_r.addr[3] == 1'b1)
+                                               ? {l15_pce_ret_cast_i.data_1[0+:8],  l15_pce_ret_cast_i.data_1[8+:8],    
+                                                  l15_pce_ret_cast_i.data_1[16+:8], l15_pce_ret_cast_i.data_1[24+:8],
+                                                  l15_pce_ret_cast_i.data_1[32+:8], l15_pce_ret_cast_i.data_1[40+:8],
+                                                  l15_pce_ret_cast_i.data_1[48+:8], l15_pce_ret_cast_i.data_1[56+:8]}   
+                                               : {l15_pce_ret_cast_i.data_0[0+:8],  l15_pce_ret_cast_i.data_0[8+:8],    
+                                                  l15_pce_ret_cast_i.data_0[16+:8], l15_pce_ret_cast_i.data_0[24+:8],
+                                                  l15_pce_ret_cast_i.data_0[32+:8], l15_pce_ret_cast_i.data_0[40+:8],
+                                                  l15_pce_ret_cast_i.data_0[48+:8], l15_pce_ret_cast_i.data_0[56+:8]};   
               cache_data_mem_pkt_v_o = l15_pce_ret_v_i;
 
               l15_pce_ret_yumi_lo = cache_data_mem_pkt_yumi_i;
@@ -472,13 +493,14 @@ module bp_pce
             // state when we receive an invalidation
             if (is_amo_ret) begin
               cache_data_mem_pkt_cast_o.opcode = e_cache_data_mem_amo;
-              // Size for an atomic operation is either 32 bits or 64 bits
+              // Size for an atomic operation is either 32 bits or 64 bits. SC
+              // returns either a 0 or 1
               cache_data_mem_pkt_cast_o.data = (cache_req_r.size == e_size_4B) 
-                                               ? {32'b0, l15_pce_ret_cast_i.data_1[0+:8], l15_pce_ret_cast_i.data_1[8+:8],    
-                                                  l15_pce_ret_cast_i.data_1[16+:8], l15_pce_ret_cast_i.data_1[24+:8]}
-                                               : {l15_pce_ret_cast_i.data_1[0+:8],  l15_pce_ret_cast_i.data_1[8+:8],    
-                                                  l15_pce_ret_cast_i.data_1[16+:8], l15_pce_ret_cast_i.data_1[24+:8],
-                                                  l15_pce_ret_cast_i.data_1[32+:8], l15_pce_ret_cast_i.data_1[40+:8],
+                                               ? {32'b0, l15_pce_ret_cast_i.data_0[0+:8], l15_pce_ret_cast_i.data_0[8+:8],    
+                                                  l15_pce_ret_cast_i.data_0[16+:8], l15_pce_ret_cast_i.data_0[24+:8]}
+                                               : {l15_pce_ret_cast_i.data_0[0+:8],  l15_pce_ret_cast_i.data_0[8+:8],    
+                                                  l15_pce_ret_cast_i.data_0[16+:8], l15_pce_ret_cast_i.data_0[24+:8],
+                                                  l15_pce_ret_cast_i.data_0[32+:8], l15_pce_ret_cast_i.data_0[40+:8],
                                                   l15_pce_ret_cast_i.data_1[48+:8], l15_pce_ret_cast_i.data_1[56+:8]};
               cache_data_mem_pkt_v_o = l15_pce_ret_v_i;
 
