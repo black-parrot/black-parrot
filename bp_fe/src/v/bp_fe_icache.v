@@ -439,7 +439,7 @@ module bp_fe_icache
     & (data_mem_pkt.opcode == e_cache_data_mem_write);   
 
   for (genvar i = 0; i < icache_assoc_p; i++) begin : rof1
-    wire [word_offset_width_lp-1:0] data_mem_pkt_offset = (icache_assoc_p'(i) - data_mem_pkt.way_id);
+    wire [word_offset_width_lp-1:0] data_mem_pkt_offset = (word_offset_width_lp'(i) - data_mem_pkt.way_id);
 
     assign data_mem_addr_li[i] = tl_we
       ? {vaddr_index, vaddr_offset}

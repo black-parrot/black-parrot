@@ -65,7 +65,7 @@ $(eval $(call submodule_test_template,spec,$(spec_dir)))
 $(eval $(call submodule_test_template,riscvdv,$(riscvdv_dir)))
 
 RISCV_ISA_SIM ?= spike
-RISCV_OBJDUMP ?= $(CROSS_COMPILE)objdump -D
+RISCV_OBJDUMP ?= $(CROSS_COMPILE)objdump -d
 RISCV_OBJCOPY ?= $(CROSS_COMPILE)objcopy
 MEM2NBF       ?= $(BP_COMMON_DIR)/software/py/nbf.py
 DROMAJO       ?= dromajo
