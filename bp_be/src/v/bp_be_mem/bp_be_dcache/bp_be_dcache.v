@@ -186,6 +186,15 @@ module bp_be_dcache
 
   logic lr_op;
   logic sc_op;
+  logic amoswap_op;
+  logic amoadd_op;
+  logic amoxor_op;
+  logic amoand_op;
+  logic amoor_op;
+  logic amomin_op;
+  logic amomax_op;
+  logic amominu_op;
+  logic amomaxu_op;
   logic load_op;
   logic store_op;
   logic signed_op;
@@ -199,16 +208,25 @@ module bp_be_dcache
   logic [word_offset_width_lp-1:0] addr_word_offset;
 
   always_comb begin
-    lr_op     = 1'b0;
-    sc_op     = 1'b0;
-    load_op   = 1'b0;
-    store_op  = 1'b0;
-    signed_op = 1'b1;
-    double_op = 1'b0;
-    word_op   = 1'b0;
-    half_op   = 1'b0;
-    byte_op   = 1'b0;
-    size_op   = e_byte;
+    lr_op      = 1'b0;
+    sc_op      = 1'b0;
+    amoswap_op = 1'b0;
+    amoadd_op  = 1'b0;
+    amoxor_op  = 1'b0;
+    amoand_op  = 1'b0;
+    amoor_op   = 1'b0;
+    amomin_op  = 1'b0;
+    amomax_op  = 1'b0;
+    amominu_op = 1'b0;
+    amomaxu_op = 1'b0;
+    load_op    = 1'b0;
+    store_op   = 1'b0;
+    signed_op  = 1'b1;
+    double_op  = 1'b0;
+    word_op    = 1'b0;
+    half_op    = 1'b0;
+    byte_op    = 1'b0;
+    size_op    = e_byte;
     fencei_op  = 1'b0;
 
     unique case (dcache_pkt.opcode)
@@ -221,6 +239,44 @@ module bp_be_dcache
         // An SC is a store operation of either double word or word size, inherently signed
         sc_op     = 1'b1;
         store_op  = 1'b1;
+      end
+      e_dcache_opcode_amoswapw, e_dcache_opcode_amoswapd: begin
+        amoswap_op = 1'b1;
+        load_op   = 1'b1;
+      end
+      e_dcache_opcode_amoaddw, e_dcache_opcode_amoaddd: begin
+        amoadd_op  = 1'b1;
+        load_op   = 1'b1;
+      end
+      e_dcache_opcode_amoxorw, e_dcache_opcode_amoxord: begin
+        amoxor_op  = 1'b1;
+        load_op   = 1'b1;
+      end
+      e_dcache_opcode_amoandw, e_dcache_opcode_amoandd: begin
+        amoand_op  = 1'b1;
+        load_op   = 1'b1;
+      end
+      e_dcache_opcode_amoorw, e_dcache_opcode_amoord: begin
+        amoor_op   = 1'b1;
+        load_op   = 1'b1;
+      end
+      e_dcache_opcode_amominw, e_dcache_opcode_amomind: begin
+        amomin_op  = 1'b1;
+        load_op   = 1'b1;
+      end
+      e_dcache_opcode_amomaxw, e_dcache_opcode_amomaxd: begin
+        amomax_op  = 1'b1;
+        load_op   = 1'b1;
+      end
+      e_dcache_opcode_amominuw, e_dcache_opcode_amominud: begin
+        amominu_op = 1'b1;
+        signed_op  = 1'b0;
+        load_op   = 1'b1;
+      end
+      e_dcache_opcode_amomaxuw, e_dcache_opcode_amomaxud: begin
+        amomaxu_o  = 1'b1;
+        signed_op  = 1'b0;
+        load_op   = 1'b1;
       end
       e_dcache_opcode_ld, e_dcache_opcode_lw, e_dcache_opcode_lh, e_dcache_opcode_lb: begin
         load_op   = 1'b1;
@@ -256,6 +312,18 @@ module bp_be_dcache
         byte_op = 1'b1;
         size_op = e_byte;
       end
+      e_dcache_opcode_amoswapw, e_dcache_opcode_amoaddw, e_dcache_opcode_amoxorw
+        , e_dcache_opcode_amoandw, e_dcache_opcode_amoorw, e_dcache_opcode_amominw
+        , e_dcache_opcode_amomaxw, e_dcache_opcode_amominuw, e_dcache_opcode_amomaxuw: begin
+        word_op = 1'b1;
+        size_op = e_word;
+      end
+      e_dcache_opcode_amoswapd, e_dcache_opcode_amoaddd, e_dcache_opcode_amoxord
+        , e_dcache_opcode_amoandd, e_dcache_opcode_amoord, e_dcache_opcode_amomind
+        , e_dcache_opcode_amomaxd, e_dcache_opcode_amominud, e_dcache_opcode_amomaxud: begin
+        double_op = 1'b1;
+        size_op = e_dword;
+      end
       default: begin end
     endcase
   end
@@ -269,6 +337,15 @@ module bp_be_dcache
   logic tl_we;
   logic lr_op_tl_r;
   logic sc_op_tl_r;
+  logic amoswap_op_tl_r;
+  logic amoadd_op_tl_r;
+  logic amoxor_op_tl_r;
+  logic amoand_op_tl_r;
+  logic amoor_op_tl_r;
+  logic amomin_op_tl_r;
+  logic amomax_op_tl_r;
+  logic amominu_op_tl_r;
+  logic amomaxu_op_tl_r;
   logic load_op_tl_r;
   logic store_op_tl_r;
   logic signed_op_tl_r;
@@ -294,6 +371,15 @@ module bp_be_dcache
       if (tl_we) begin
         lr_op_tl_r <= lr_op;
         sc_op_tl_r <= sc_op;
+        amoswap_op_tl_r <= amoswap_op;
+        amoadd_op_tl_r <= amoadd_op;
+        amoxor_op_tl_r <= amoxor_op;
+        amoand_op_tl_r <= amoand_op;
+        amoor_op_tl_r <= amoor_op;
+        amomin_op_tl_r <= amomin_op;
+        amomax_op_tl_r <= amomax_op;
+        amominu_op_tl_r <= amominu_op;
+        amomaxu_op_tl_r <= amomaxu_op;
         load_op_tl_r <= load_op;
         store_op_tl_r <= store_op;
         signed_op_tl_r <= signed_op;
@@ -414,6 +500,15 @@ module bp_be_dcache
   logic tv_we;
   logic lr_op_tv_r;
   logic sc_op_tv_r;
+  logic amoswap_op_tv_r;
+  logic amoadd_op_tv_r;
+  logic amoxor_op_tv_r;
+  logic amoand_op_tv_r;
+  logic amoor_op_tv_r;
+  logic amomin_op_tv_r;
+  logic amomax_op_tv_r;
+  logic amominu_op_tv_r;
+  logic amomaxu_op_tv_r;
   logic load_op_tv_r;
   logic store_op_tv_r;
   logic signed_op_tv_r;
@@ -448,6 +543,15 @@ module bp_be_dcache
 
       lr_op_tv_r <= '0;
       sc_op_tv_r <= '0;
+      amoswap_op_tv_r <= '0;
+      amoadd_op_tv_r <= '0;
+      amoxor_op_tv_r <= '0;
+      amoand_op_tv_r <= '0;
+      amoor_op_tv_r <= '0;
+      amomin_op_tv_r <= '0;
+      amomax_op_tv_r <= '0;
+      amominu_op_tv_r <= '0;
+      amomaxu_op_tv_r <= '0;
       load_op_tv_r <= '0;
       store_op_tv_r <= '0;
       uncached_tv_r <= '0;
@@ -472,6 +576,15 @@ module bp_be_dcache
       if (tv_we) begin
         lr_op_tv_r <= lr_op_tl_r;
         sc_op_tv_r <= sc_op_tl_r;
+        amoswap_op_tv_r <= amoswap_op_tl_r;
+        amoadd_op_tv_r <= amoadd_op_tl_r;
+        amoxor_op_tv_r <= amoxor_op_tl_r;
+        amoand_op_tv_r <= amoand_op_tl_r;
+        amoor_op_tv_r <= amoor_op_tl_r;
+        amomin_op_tv_r <= amomin_op_tl_r;
+        amomax_op_tv_r <= amomax_op_tl_r;
+        amominu_op_tv_r <= amominu_op_tl_r;
+        amomaxu_op_tv_r <= amomaxu_op_tl_r;
         load_op_tv_r <= load_op_tl_r;
         store_op_tv_r <= store_op_tl_r;
         signed_op_tv_r <= signed_op_tl_r;
@@ -513,10 +626,30 @@ module bp_be_dcache
   // For L2 atomics
   logic lr_req;
   logic sc_req;
+  logic amoswap_req;
+  logic amoadd_req;
+  logic amoxor_req;
+  logic amoand_req;
+  logic amoor_req;
+  logic amomin_req;
+  logic amomax_req;
+  logic amominu_req;
+  logic amomaxu_req;
   logic amo_req;
   assign lr_req = v_tv_r & lr_op_tv_r & (l2_atomic_p == 1);
   assign sc_req = v_tv_r & sc_op_tv_r & (l2_atomic_p == 1);
-  assign amo_req = lr_req | sc_req;
+  assign amoswap_req = v_tv_r & amoswap_op_tv_r & (l2_atomic_p == 1);
+  assign amoadd_req = v_tv_r & amoadd_op_tv_r & (l2_atomic_p == 1);
+  assign amoxor_req = v_tv_r & amoxor_op_tv_r & (l2_atomic_p == 1);
+  assign amoand_req = v_tv_r & amoand_op_tv_r & (l2_atomic_p == 1);
+  assign amoor_req = v_tv_r & amoor_op_tv_r & (l2_atomic_p == 1);
+  assign amomin_req = v_tv_r & amomin_op_tv_r & (l2_atomic_p == 1);
+  assign amomax_req = v_tv_r & amomax_op_tv_r & (l2_atomic_p == 1);
+  assign amominu_req = v_tv_r & amominu_op_tv_r & (l2_atomic_p == 1);
+  assign amomaxu_req = v_tv_r & amomaxu_op_tv_r & (l2_atomic_p == 1);
+  assign amo_req = lr_req | sc_req | amoswap_req | amoadd_req | amoxor_req
+                   | amoand_req | amoor_req | amomin_req | amomax_req
+                   | amominu_req | amomaxu_req;
 
   // Uncached and L2 atomic refactor
   // TODO: Figure out a better name for these signals
@@ -743,6 +876,42 @@ module bp_be_dcache
     end
     else if(sc_req & ~uncached_load_data_v_r) begin
       cache_req_cast_o.msg_type = e_amo_sc;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(amoswap_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_swap;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(amoadd_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_add;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(amoxor_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_xor;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(amoand_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_and;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(amoor_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_or;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(amomin_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_min;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(amomax_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_max;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(amominu_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_minu;
+      cache_req_v_o = cache_req_ready_i;
+    end
+    else if(amomaxu_req & ~uncached_load_data_v_r) begin
+      cache_req_cast_o.msg_type = e_amo_maxu;
       cache_req_v_o = cache_req_ready_i;
     end
     else if(uncached_load_req) begin
