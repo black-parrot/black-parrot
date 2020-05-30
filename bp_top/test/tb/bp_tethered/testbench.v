@@ -62,14 +62,8 @@ module testbench
 
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
-initial begin
-  if (num_core_p > 1) begin
-    assert (cosim_p == 0) else $error("cosim_p not supported for num_core_p > 1");
-  end
-end
-
 logic [num_core_p-1:0] program_finish_lo;
-logic cosim_finish_lo;
+logic [num_core_p-1:0] cosim_finish_lo;
 
 bp_cce_mem_msg_s proc_mem_cmd_lo;
 logic proc_mem_cmd_v_lo, proc_mem_cmd_ready_li;
@@ -280,7 +274,7 @@ bind bp_be_top
      ,.reset_i(reset_i)
      ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
 
-     ,.mhartid_i(cfg_bus.core_id)
+     ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
 
      ,.decode_i(be_calculator.reservation_n.decode)
 
@@ -293,43 +287,39 @@ bind bp_be_top
      ,.rd_data_i(be_checker.scheduler.wb_pkt.rd_data)
      );
 
-  if (num_core_p == 1)
-    begin : cosim
-      bind bp_be_top
-        bp_nonsynth_cosim
-         #(.bp_params_p(bp_params_p))
-          cosim
-          (.clk_i(clk_i)
-           ,.reset_i(reset_i)
-           ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
-           ,.en_i(testbench.cosim_p == 1)
-           ,.cosim_instr_i(testbench.cosim_instr_p)
+bind bp_be_top
+  bp_nonsynth_cosim
+   #(.bp_params_p(bp_params_p))
+   cosim
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.freeze_i(be_checker.scheduler.int_regfile.cfg_bus.freeze)
+     ,.en_i(testbench.cosim_p == 1)
+     ,.cosim_instr_i(testbench.cosim_instr_p)
 
-           ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
-           // Want to pass config file as a parameter, but cannot in Verilator 4.025
-           // Parameter-resolved constants must not use dotted references
-           ,.config_file_i(testbench.cosim_cfg_file_p)
+     ,.num_core_i(testbench.num_core_p)
+     ,.mhartid_i(be_checker.scheduler.int_regfile.cfg_bus.core_id)
+     // Want to pass config file as a parameter, but cannot in Verilator 4.025
+     // Parameter-resolved constants must not use dotted references
+     ,.config_file_i(testbench.cosim_cfg_file_p)
 
-           ,.decode_i(be_calculator.reservation_n.decode)
+     ,.decode_i(be_calculator.reservation_n.decode)
 
-           ,.commit_v_i(be_calculator.commit_pkt.instret)
-           ,.commit_pc_i(be_calculator.commit_pkt.pc)
-           ,.commit_instr_i(be_calculator.commit_pkt.instr)
+     ,.commit_v_i(be_calculator.commit_pkt.instret)
+     ,.commit_pc_i(be_calculator.commit_pkt.pc)
+     ,.commit_instr_i(be_calculator.commit_pkt.instr)
 
-           ,.rd_w_v_i(be_checker.scheduler.wb_pkt.rd_w_v)
-           ,.rd_addr_i(be_checker.scheduler.wb_pkt.rd_addr)
-           ,.rd_data_i(be_checker.scheduler.wb_pkt.rd_data)
+     ,.rd_w_v_i(be_checker.scheduler.wb_pkt.rd_w_v)
+     ,.rd_addr_i(be_checker.scheduler.wb_pkt.rd_addr)
+     ,.rd_data_i(be_checker.scheduler.wb_pkt.rd_data)
 
-           ,.interrupt_v_i(be_mem.csr.trap_pkt_cast_o._interrupt)
-           ,.cause_i(be_mem.csr.trap_pkt_cast_o.cause)
+     ,.interrupt_v_i(be_mem.csr.trap_pkt_cast_o._interrupt)
+     ,.cause_i(be_mem.csr.trap_pkt_cast_o.cause)
+     // TODO: Find a way to access the finish_o signals for each core
+     ,.finish_o()
+     );
 
-           ,.finish_o(testbench.cosim_finish_lo)
-           );
-    end
-  else
-    begin : no_cosim
-      assign cosim_finish_lo = '0;
-    end
+assign cosim_finish_lo = '0;
 
 bind bp_be_top
   bp_be_nonsynth_perf

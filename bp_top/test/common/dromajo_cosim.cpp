@@ -4,14 +4,20 @@
 #include "stdlib.h"
 #include <string>
 
+using namespace std;
+
 dromajo_cosim_state_t* dromajo_pointer;
 uint64_t d_address = 0;
 uint64_t d_count = 0;
 
-extern "C" void init_dromajo(char* cfg_f_name) {
-  char *argv[] = {(char*)"Variane", cfg_f_name};
+extern "C" void dromajo_init(char* cfg_f_name, int hartid, int ncpus) {
 
-  dromajo_pointer = dromajo_cosim_init(2, argv);
+  if(hartid == 0) {
+    cout << "Running with Dromajo cosimulation" << endl;
+    string ncpus_str = "--ncpus=" + to_string(ncpus);
+    char *argv[] = {(char*)"", cfg_f_name, (char*)(&ncpus_str[0])};
+    dromajo_pointer = dromajo_cosim_init(3, argv);
+  }
 }
 
 extern "C" bool dromajo_step(int      hart_id,
