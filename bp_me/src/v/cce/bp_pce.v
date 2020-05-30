@@ -510,7 +510,7 @@ module bp_pce
           begin
             // Checking for the return type here since we could be in this
             // state when we receive an invalidation
-            if (is_amo_ret) begin
+            if (is_amo_lrsc_ret) begin
               cache_data_mem_pkt_cast_o.opcode = e_cache_data_mem_amo;
               // TODO: This might need some work based on how OP does this. 
               cache_data_mem_pkt_cast_o.data = (cache_req_r.addr[3] == 1'b1)
@@ -540,7 +540,7 @@ module bp_pce
           begin
             // Checking for the return type here since we could be in this
             // state when we receive an invalidation
-            if (is_amo_ret) begin
+            if (is_amo_lrsc_ret) begin
               cache_data_mem_pkt_cast_o.opcode = e_cache_data_mem_amo;
               // Size for an atomic operation is either 32 bits or 64 bits. SC
               // returns either a 0 or 1
