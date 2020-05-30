@@ -92,7 +92,7 @@ module bp_be_dcache
 
     , parameter debug_p=0
     , parameter lock_max_limit_p=8
-    , parameter l2_atomic_p = 0
+    , parameter l2_atomic_p = 1
 
     , localparam lg_dcache_assoc_lp=`BSG_SAFE_CLOG2(dcache_assoc_p)
     , localparam cfg_bus_width_lp= `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
@@ -509,6 +509,9 @@ module bp_be_dcache
   logic lr_req;
   logic sc_req;
   logic amo_req;
+  assign lr_req = v_tv_r & lr_op_tv_r & (l2_atomic_p == 1);
+  assign sc_req = v_tv_r & sc_op_tv_r & (l2_atomic_p == 1);
+  assign amo_req = lr_req | sc_req;
 
   // Uncached and L2 atomic refactor
   // TODO: Figure out a better name for these signals
@@ -561,9 +564,6 @@ module bp_be_dcache
   assign sc_fail     = v_tv_r & sc_op_tv_r & ~sc_success;
   assign uncached_load_req = v_tv_r & load_op_tv_r & uncached_tv_r & ~uncached_load_data_v_r;
   assign uncached_store_req = v_tv_r & store_op_tv_r & uncached_tv_r;
-  assign lr_req = v_tv_r & lr_op_tv_r & ~uncached_load_data_v_r & (l2_atomic_p == 1);
-  assign sc_req = v_tv_r & sc_op_tv_r & ~uncached_load_data_v_r & (l2_atomic_p == 1);
-  assign amo_req = lr_req | sc_req;
   assign fencei_req = v_tv_r & fencei_op_tv_r;
 
   // write buffer
