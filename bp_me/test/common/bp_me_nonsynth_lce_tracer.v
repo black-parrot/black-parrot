@@ -30,8 +30,10 @@ module bp_me_nonsynth_lce_tracer
 
     , localparam lg_num_cce_lp=`BSG_SAFE_CLOG2(num_cce_p)
 
+    , localparam lce_req_data_width_lp = dword_width_p
+
     `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, assoc_p)
-    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, assoc_p, dword_width_p, cce_block_width_p)
+    `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, assoc_p, cce_block_width_p)
   )
   (
     input                                                   clk_i
@@ -66,8 +68,13 @@ module bp_me_nonsynth_lce_tracer
     ,input                                                  lce_cmd_o_ready_i
   );
 
+  initial begin
+    assert(lce_req_data_width_lp <= cce_block_width_p) else
+      $error("LCE Request max data width must be no greater than CCE block width");
+  end
+
   // LCE-CCE interface structs
-  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, assoc_p, dword_width_p, cce_block_width_p);
+  `declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, assoc_p, cce_block_width_p);
 
   // Structs for output messages
   bp_lce_cce_req_s lce_req;
@@ -117,8 +124,8 @@ module bp_me_nonsynth_lce_tracer
       end
 
       if (tr_pkt_v_o_i & tr_pkt_ready_i) begin
-        $fdisplay(file, "[%t]: LCE[%0d] TR resp uc[%b] addr[%H] set[%d] %H time[%0t]"
-                  , $time, lce_id_i, tr_resp.uncached, tr_resp.paddr
+        $fdisplay(file, "[%t]: LCE[%0d] TR resp cmd[%b] uc[%b] addr[%H] set[%d] %H time[%0t]"
+                  , $time, lce_id_i, tr_resp.cmd, tr_resp.uncached, tr_resp.paddr
                   , tr_resp.paddr[block_offset_bits_lp +: lg_sets_lp]
                   , tr_resp.data, $time-tr_start_t
                   );
@@ -130,10 +137,10 @@ module bp_me_nonsynth_lce_tracer
       // request to CCE
       if (lce_req_v_i & lce_req_ready_i) begin
         assert(lce_req.header.src_id == lce_id_i) else $error("Bad LCE Request - source mismatch");
-        $fdisplay(file, "[%t]: LCE[%0d] REQ addr[%H] cce[%0d] msg[%b] ne[%b] lru[%0d] size[%b]"
-                  , $time, lce_id_i, lce_req.header.addr, lce_req.header.dst_id, lce_req.header.msg_type
+        $fdisplay(file, "[%t]: LCE[%0d] REQ addr[%H] cce[%0d] msg[%b] ne[%b] lru[%0d] size[%b] %H"
+                  , $time, lce_req.header.src_id, lce_req.header.addr, lce_req.header.dst_id, lce_req.header.msg_type
                   , lce_req.header.non_exclusive, lce_req.header.lru_way_id
-                  , lce_req.header.size
+                  , lce_req.header.size, lce_req.data[0+:lce_req_data_width_lp]
                   );
       end
 
@@ -141,7 +148,7 @@ module bp_me_nonsynth_lce_tracer
       if (lce_resp_v_i & lce_resp_ready_i) begin
         assert(lce_resp.header.src_id == lce_id_i) else $error("Bad LCE Response - source mismatch");
         $fdisplay(file, "[%t]: LCE[%0d] RESP addr[%H] cce[%0d] msg[%b] len[%b] %H"
-                  , $time, lce_id_i, lce_resp.header.addr, lce_resp.header.dst_id, lce_resp.header.msg_type
+                  , $time, lce_resp.header.src_id, lce_resp.header.addr, lce_resp.header.dst_id, lce_resp.header.msg_type
                   , lce_resp.header.size, lce_resp.data
                   );
       end
@@ -150,7 +157,7 @@ module bp_me_nonsynth_lce_tracer
       if (lce_cmd_v_i & lce_cmd_ready_i) begin
         assert(lce_cmd.header.dst_id == lce_id_i) else $error("Bad LCE Command - destination mismatch");
         $fdisplay(file, "[%t]: LCE[%0d] CMD IN addr[%H] cce[%0d] msg[%b] way[%0d] state[%b] tgt[%0d] tgt_way[%0d] len[%b] %H"
-                  , $time, lce_id_i, lce_cmd.header.addr, lce_cmd.header.src_id, lce_cmd.header.msg_type
+                  , $time, lce_cmd.header.dst_id, lce_cmd.header.addr, lce_cmd.header.src_id, lce_cmd.header.msg_type
                   , lce_cmd.header.way_id, lce_cmd.header.state, lce_cmd.header.target, lce_cmd.header.target_way_id
                   , lce_cmd.header.size, lce_cmd.data
                   );

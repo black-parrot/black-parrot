@@ -18,7 +18,8 @@ module bp_tile
  #(parameter bp_params_e bp_params_p = e_bp_inv_cfg
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_me_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
-   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+   `declare_bp_lce_cce_if_header_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p)
+   `declare_bp_lce_cce_if_widths(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p)
 
     , localparam cfg_bus_width_lp        = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
    // Wormhole parameters
@@ -48,7 +49,7 @@ module bp_tile
    );
 
 `declare_bp_cfg_bus_s(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p);
-`declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, dword_width_p, cce_block_width_p)
+`declare_bp_lce_cce_if(cce_id_width_p, lce_id_width_p, paddr_width_p, lce_assoc_p, cce_block_width_p);
 `declare_bp_me_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p)
 
 // Cast the routing links
@@ -70,6 +71,7 @@ assign lce_resp_link_o = lce_resp_link_cast_o;
 logic timer_irq_li, software_irq_li, external_irq_li;
 
 // Proc-side connections network connections
+// Proc-side LCE Requests support up to dword_width_p of data, and are passed as header+data
 bp_lce_cce_req_s  [1:0] lce_req_lo;
 logic             [1:0] lce_req_v_lo, lce_req_ready_li;
 bp_lce_cce_resp_s [1:0] lce_resp_lo;
@@ -250,7 +252,8 @@ bp_coh_ready_and_link_s cce_lce_resp_link_li, cce_lce_resp_link_lo;
 for (genvar i = 0; i < 2; i++)
   begin : lce
     bp_me_wormhole_packet_encode_lce_req
-     #(.bp_params_p(bp_params_p))
+     #(.bp_params_p(bp_params_p)
+       )
      req_encode
       (.payload_i(lce_req_lo[i])
        ,.packet_o(lce_req_packet_lo[i])
