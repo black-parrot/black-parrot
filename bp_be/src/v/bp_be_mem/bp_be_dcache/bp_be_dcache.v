@@ -387,7 +387,7 @@ module bp_be_dcache
   end
 
   bsg_decode
-   #(.num_out_p(icache_assoc_p))
+   #(.num_out_p(dcache_assoc_p))
    offset_decode
     (.i(addr_word_offset_tl)
      ,.o(addr_word_offset_dec_tl)
@@ -848,7 +848,7 @@ module bp_be_dcache
   logic [dcache_assoc_p-1:0] ld_data_way_select;
 
   bsg_adder_one_hot
-   #(.width_p(icache_assoc_p))
+   #(.width_p(dcache_assoc_p))
    select_adder
     (.a_i(load_hit_tv_r)
      ,.b_i(addr_word_offset_dec_tv_r)
@@ -1006,7 +1006,7 @@ module bp_be_dcache
   end
 
   // Circular left shift
-  assign lce_data_mem_write_data = (data_mem_pkt.data << (data_mem_pkt.way_id*bank_width_lp)) | (data_mem_pkt.data >> (icache_block_width_p-data_mem_pkt.way_id*bank_width_lp));
+  assign lce_data_mem_write_data = (data_mem_pkt.data << (data_mem_pkt.way_id*bank_width_lp)) | (data_mem_pkt.data >> (dcache_block_width_p-data_mem_pkt.way_id*bank_width_lp));
 
   // tag_mem
   //
