@@ -15,6 +15,7 @@ module bp_nonsynth_cosim
     , input                                   freeze_i
     , input                                   en_i
 
+    , input [31:0]                            num_core_i
     , input [`BSG_SAFE_CLOG2(num_core_p)-1:0] mhartid_i
     , input [63:0]                            config_file_i
     , input [31:0]                            cosim_instr_i
@@ -32,23 +33,20 @@ module bp_nonsynth_cosim
     , input                                   interrupt_v_i
     , input [dword_width_p-1:0]               cause_i
 
-    , output logic [num_core_p-1:0]           finish_o
+    , output logic                            finish_o
     );
 
-import "DPI-C" context function void init_dromajo(string cfg_f_name);
+import "DPI-C" context function void dromajo_init(string cfg_f_name, int hartid, int ncpus);
 import "DPI-C" context function bit  dromajo_step(int      hart_id,
                                                   longint pc,
                                                   int insn,
                                                   longint wdata);
 import "DPI-C" context function void dromajo_trap(int hart_id, longint cause);
 
-logic finish;
-
 always_ff @(negedge reset_i)
   if (en_i)
     begin
-      $display("Running with Dromajo cosimulation");
-      init_dromajo(config_file_i);
+      dromajo_init(config_file_i, mhartid_i, num_core_i);
     end
 
   bp_be_decode_s decode_r;
